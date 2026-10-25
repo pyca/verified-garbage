@@ -74,7 +74,7 @@ theorem bcsubM_toNat' {g : Nat} (hg : G2 g) {x : BitVec 32} (hx : x.toNat < 2 ^ 
 theorem buh_val {g : Nat} (hg : G2 g) (hw : BitVec 32) (r : Zq) :
     (buh g hw (BitVec.ofNat 32 r.val)).toNat = (useHint g (decide (hw ≠ 0)) r).toNat := by
   have hr : r.val < 8380417 := r.isLt
-  have er : (BitVec.ofNat 32 r.val).toNat = r.val := by rw [BitVec.toNat_ofNat]; omega
+  have er : (BitVec.ofNat 32 r.val).toNat = r.val := by rw [BitVec.toNat_ofNat]; omega_arith
   have hF := bhbRaw_toNat hg (a := BitVec.ofNat 32 r.val) (by rw [er]; exact r.isLt)
   rw [er] at hF
   have hfle := hbF_le hg.mem r.isLt
@@ -87,10 +87,10 @@ theorem buh_val {g : Nat} (hg : G2 g) (hw : BitVec 32) (r : Zq) :
   rw [w2g_val hg, nz_eq]
   generalize bhbRaw g (BitVec.ofNat 32 r.val) = F at hF
   have hFm : (BitVec.ofNat 32 (2 * g) * F).toNat = hbF g r.val * (2 * g) := by
-    rw [BitVec.toNat_mul, hF, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * g) (by omega), Nat.mul_comm]
+    rw [BitVec.toNat_mul, hF, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * g) (by omega_arith), Nat.mul_comm]
     have : hbF g r.val * (2 * g) ≤ hbM g * (2 * g) := Nat.mul_le_mul_right _ hfle
     rw [q_eq] at hm
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_arith)
   rw [hFm, ← hMd]
   rw [hMd] at hfle ⊢
   generalize hbF g r.val = f at hF hfle hFm
@@ -98,36 +98,36 @@ theorem buh_val {g : Nat} (hg : G2 g) (hw : BitVec 32) (r : Zq) :
   -- The value before the two conditional subtractions.
   have key : ∀ x : BitVec 32, x.toNat ≤ 2 * dMod g + 1 → dMod g - 1 ≤ x.toNat →
       (bcsubM g (bcsubM g x)).toNat = x.toNat % dMod g := fun x h1 h2 => by
-    have hi := bcsubM_toNat' hg (x := x) (by omega)
-    have hi2 := bcsubM_toNat' hg (x := bcsubM g x) (by rw [hi]; split <;> omega)
+    have hi := bcsubM_toNat' hg (x := x) (by omega_arith)
+    have hi2 := bcsubM_toNat' hg (x := bcsubM g x) (by rw [hi]; split <;> omega_arith)
     rw [hi2, hi]
     by_cases c1 : x.toNat < dMod g
     · rw [ite_eq_left c1, ite_eq_left c1, Nat.mod_eq_of_lt c1]
     · rw [ite_eq_right c1]
       by_cases c2 : x.toNat - dMod g < dMod g
-      · rw [ite_eq_left c2, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt c2]
-      · rw [ite_eq_right c2, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_sub_mod (by omega),
-          Nat.mod_eq_of_lt (by omega)]
+      · rw [ite_eq_left c2, Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt c2]
+      · rw [ite_eq_right c2, Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_sub_mod (by omega_arith),
+          Nat.mod_eq_of_lt (by omega_arith)]
   by_cases h0 : hw = 0
   · rw [ite_eq_left h0, decide_eq_false (fun h => h h0)]
     simp only [Bool.false_eq_true, ite_false]
     have hx : (F + ((1 : BitVec 32) - (if r.val ≤ f * (2 * g) then (1 : BitVec 32) else 0) <<< 1) * 0 +
         BitVec.ofNat 32 (dMod g)).toNat = f + dMod g := by
       bv_omega
-    rw [key _ (by rw [hx]; omega) (by rw [hx]; omega), hx]
+    rw [key _ (by rw [hx]; omega_arith) (by rw [hx]; omega_arith), hx]
   · rw [ite_eq_right h0, decide_eq_true h0]
     simp only [ite_true]
     by_cases hc : r.val ≤ f * (2 * g)
-    · rw [ite_eq_left hc, ite_eq_right (by omega)]
+    · rw [ite_eq_left hc, ite_eq_right (by omega_arith)]
       have hx : (F + ((1 : BitVec 32) - (1 : BitVec 32) <<< 1) * 1 + BitVec.ofNat 32 (dMod g)).toNat =
           f + dMod g - 1 := by
         rw [show ((1 : BitVec 32) - (1 : BitVec 32) <<< 1) * 1 = 4294967295 by decide]; bv_omega
-      rw [key _ (by rw [hx]; omega) (by rw [hx]; omega), hx]
-    · rw [ite_eq_right hc, ite_eq_left (by omega)]
+      rw [key _ (by rw [hx]; omega_arith) (by rw [hx]; omega_arith), hx]
+    · rw [ite_eq_right hc, ite_eq_left (by omega_arith)]
       have hx : (F + ((1 : BitVec 32) - (0 : BitVec 32) <<< 1) * 1 + BitVec.ofNat 32 (dMod g)).toNat =
           f + dMod g + 1 := by
         rw [show ((1 : BitVec 32) - (0 : BitVec 32) <<< 1) * 1 = 1 by decide]; bv_omega
-      rw [key _ (by rw [hx]; omega) (by rw [hx]; omega), hx]
+      rw [key _ (by rw [hx]; omega_arith) (by rw [hx]; omega_arith), hx]
 
 /-! ## The body -/
 

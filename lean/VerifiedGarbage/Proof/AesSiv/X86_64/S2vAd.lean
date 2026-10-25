@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
-import VerifiedGarbage.Proof.AesSiv.X86_64.Env
 
 /-!
 # AES-SIV on x86-64: a step of S2V over the associated data
@@ -122,13 +121,13 @@ theorem adStep_wp {s : State} (h12 : s.gpr .r12 = D) (h15 : s.gpr .r15 = W)
       s'.mem.readW (W + BitVec.ofNat 64 leftOff) 64 = s.mem.readW (W + BitVec.ofNat 64 leftOff) 64 - 1 ∧
       Frame [⟨D, 16⟩, ⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 224, 8⟩] s.mem s'.mem := by
   have inD (d : Nat) (hd : d + 8 ≤ 16) : InRegions s.wr (D + BitVec.ofNat 64 d) 8 :=
-    ⟨_, hDw, Offset.contains_base D hd (by omega)⟩
+    ⟨_, hDw, Offset.contains_base D hd (by omega_arith)⟩
   have inW (d : Nat) (hd : d + 8 ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) 8 :=
-    ⟨_, hWw, Offset.contains_base W hd (by omega)⟩
+    ⟨_, hWw, Offset.contains_base W hd (by omega_arith)⟩
   have rr {a : Addr} (h : InRegions s.wr a 8) : InRegions (s.rd ++ s.wr) a 8 :=
     let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
   have cD (d : Nat) (hd : d + 8 ≤ 16) : (⟨D, 16⟩ : Region).Contains (D + BitVec.ofNat 64 d) 8 :=
-    Offset.contains_base D hd (by omega)
+    Offset.contains_base D hd (by omega_arith)
   have dW {d n : Nat} (hd : d + n ≤ 2560) (r : Region) (hr : r ∈ [(⟨D, 16⟩ : Region)]) :
       (⟨W + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r := by
     simp only [List.mem_singleton] at hr; subst hr; exact hDW.symm.sub_left (Offset.sub_base W hd)
@@ -186,8 +185,8 @@ theorem adStep_wp {s : State} (h12 : s.gpr .r12 = D) (h15 : s.gpr .r15 = W)
   -- The slots at `W + 112` and `W + 120` before the tail.
   have sl {d : Nat} (hd : d + 8 ≤ 224) : s₃.mem.readW (W + BitVec.ofNat 64 d) 64 =
       s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
-    rw [f₃.readW (Region.contains_self _ _) (dW (by omega)) (by decide), f₁.readW (Region.contains_self _ _)
-      (one_out' (Offset.disjoint W (by omega) (by omega) (by omega))) (by decide)]
+    rw [f₃.readW (Region.contains_self _ _) (dW (by omega_arith)) (by decide), f₁.readW (Region.contains_self _ _)
+      (one_out' (Offset.disjoint W (by omega_arith) (by omega_arith) (by omega_arith))) (by decide)]
   have sep : Mem.Sep (W + BitVec.ofNat 64 120) (64 / 8) (W + BitVec.ofNat 64 112) (64 / 8) :=
     Offset.sep W (d := 120) (n := 8) (e := 112) (k := 8) (by decide) (by decide) (by decide)
   have l₃ : (s₃.mem.writeW (W + BitVec.ofNat 64 112) (s₃.mem.readW (W + BitVec.ofNat 64 112) 64 + 16)).readW
@@ -229,7 +228,7 @@ theorem adStep_wp {s : State} (h12 : s.gpr .r12 = D) (h15 : s.gpr .r15 = W)
       one_out' (hDW.sub_right (Offset.sub_base W (by decide)))
     have d128 : ∀ r ∈ [(⟨W + BitVec.ofNat 64 224, 8⟩ : Region)],
         (⟨W + BitVec.ofNat 64 128, 16⟩ : Region).Disjoint r :=
-      one_out' (Offset.disjoint W (by decide) (by omega) (by omega))
+      one_out' (Offset.disjoint W (by decide) (by omega_arith) (by omega_arith))
     rw [bytesAt_frame fd (fun r hr => dW (d := 128) (n := 16) (by decide) r hr) (by decide), m₂, hd,
       bytesAt_frame f₁ dD (by decide), bytesAt_frame f₁ d128 (by decide), Spec.Siv.dbl, Siv.xor_eq]
   · rw [m₄, Mem.readW_writeW_sep (Offset.sep W (d := 112) (n := 8) (e := 120) (k := 8) (by decide) (by decide)

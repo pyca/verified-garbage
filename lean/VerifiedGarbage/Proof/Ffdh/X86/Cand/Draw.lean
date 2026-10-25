@@ -35,7 +35,7 @@ open VG.Impl.Bignum.X86.PublicRt (argAt)
 /-- The bytes at `p + a` are those at `p` from the `a`-th on. -/
 theorem bytesAt_offset (m : Mem) (p : Addr) {a b n : Nat} (h : a + b ≤ n) :
     Spec.Rsa.bytesAt m (p + BitVec.ofNat 64 a) b = ((Spec.Rsa.bytesAt m p n).drop a).take b := by
-  apply List.ext_getElem (by simp [Spec.Rsa.bytesAt]; omega)
+  apply List.ext_getElem (by simp [Spec.Rsa.bytesAt]; omega_arith)
   intro k h₁ h₂
   simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at h₁
   simp [Spec.Rsa.bytesAt, BitVec.add_assoc, BitVec.ofNat_add]
@@ -61,12 +61,12 @@ theorem tape_keep {n : Nat} (G : TapeGeo Ex args base bytes (s.gpr .esp) n) {t :
   have h := S.inp
   have fit := fR_fit h
   have bl := h.bytes_lt
-  refine frame_bytes S.frame (fun r hr => ?_) (by have := G.fit; omega)
+  refine frame_bytes S.frame (fun r hr => ?_) (by have := G.fit; omega_arith)
   rw [frameR, List.mem_cons, List.mem_map] at hr
   rcases hr with rfl | ⟨p, hp, rfl⟩
   · exact G.far
   · have := fit p hp
-    exact G.apart.sub_right (Offset.sub_base _ (by omega))
+    exact G.apart.sub_right (Offset.sub_base _ (by omega_arith))
 
 /-- Slot 13 zeroed, and the pointers `reverseBytes` reads from the cursor `c` and the count `o`. -/
 theorem drawSetup_ok (h : In Ex base bytes len args s) {c o : Nat}
@@ -86,11 +86,11 @@ theorem drawSetup_ok (h : In Ex base bytes len args s) {c o : Nat}
   have ce := cb_eq (len := len) (one_ok .wide)
   rw [cb1] at ce
   unfold drawSetup
-  refine WP.seq (WP.mono (zero_ok h (x := .slot .wide 13) (one_ok .wide) (by rw [cb1]; omega)) fun u ⟨O, Z, K⟩ => ?_)
+  refine WP.seq (WP.mono (zero_ok h (x := .slot .wide 13) (one_ok .wide) (by rw [cb1]; omega_arith)) fun u ⟨O, Z, K⟩ => ?_)
   rw [cb1] at O
-  have Ou : Outside base 0 bytes s.mem u.mem := O.mono (Nat.zero_le _) (by omega)
+  have Ou : Outside base 0 bytes s.mem u.mem := O.mono (Nat.zero_le _) (by omega_arith)
   have hu := h.keep K (by decide) (by decide) Ou
-  refine ptrTo_ok (r := .ebx) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega)
+  refine ptrTo_ok (r := .ebx) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega_arith)
     fun v Kv mv pv => ?_
   have hv := hu.regs Kv mv
   refine wp_movS (hv.arg (i := 2) (by decide)) fun v₁ U₁ _ => ?_
@@ -105,9 +105,9 @@ theorem drawSetup_ok (h : In Ex base bytes len args s) {c o : Nat}
       (U₄.keeps.mono (by decide))).trans (U₅.keeps.mono (by decide))
   have hv₅ : In Ex base bytes len args v₅ := hv.regs K₅ (by rw [m₅, mv])
   have cu : w32 u.mem base curOff = c := by
-    rw [← hc]; exact O.w32 (.inl (by simp only [curOff]; omega)) (by simp only [curOff]; omega)
+    rw [← hc]; exact O.w32 (.inl (by simp only [curOff]; omega_arith)) (by simp only [curOff]; omega_arith)
   have ou : w32 u.mem base octOff = o := by
-    rw [← ho]; exact O.w32 (.inl (by simp only [octOff]; omega)) (by simp only [octOff]; omega)
+    rw [← ho]; exact O.w32 (.inl (by simp only [octOff]; omega_arith)) (by simp only [octOff]; omega_arith)
   have ebx₅ : v₅.gpr .ebx = v.gpr .ebx := by
     rw [U₅.other _ (by decide), U₄.other _ (by decide), U₃.other _ (by decide), U₂.other _ (by decide),
       U₁.other _ (by decide)]
@@ -117,7 +117,7 @@ theorem drawSetup_ok (h : In Ex base bytes len args s) {c o : Nat}
   · rw [U₅.other _ (by decide), U₄.other _ (by decide), U₃.gpr, U₂.mem, U₁.mem, mv, ou]
   · rw [U₅.gpr, U₄.gpr, U₃.other _ (by decide), U₂.gpr, U₁.gpr, U₃.gpr, U₂.mem, U₁.mem, mv, cu, ou]
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
 
 /-- The `o` octets of the tape `T` at the cursor `c` into slot 13, and the cursor past them. -/
 theorem drawLoad_ok {w n : Nat} (P : Prepped Ex base bytes len args w s) (G : TapeGeo Ex args base bytes (s.gpr .esp) n)
@@ -140,30 +140,30 @@ theorem drawLoad_ok {w n : Nat} (P : Prepped Ex base bytes len args w s) (G : Ta
   rw [cb1] at ce
   unfold drawLoad
   refine WP.assoc (WP.seq (WP.mono (drawSetup_ok h hc ho ho1) fun v₅ ⟨hv₅, O, Z, keep, ecx₅, esi₅, pv⟩ => ?_))
-  have Ou : Outside base 0 bytes s.mem v₅.mem := O.mono (Nat.zero_le _) (by omega)
+  have Ou : Outside base 0 bytes s.mem v₅.mem := O.mono (Nat.zero_le _) (by omega_arith)
   have Pn : (args 2 + BitVec.ofNat 32 c).toNat = (args 2).toNat + c := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := c) (by omega), Nat.mod_eq_of_lt (by omega)]
-  have Pa : byteAddr (args 2 + BitVec.ofNat 32 c) = byteAddr (args 2) + BitVec.ofNat 64 c := byteAddr_add (by omega)
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := c) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  have Pa : byteAddr (args 2 + BitVec.ofNat 32 c) = byteAddr (args 2) + BitVec.ofNat 64 c := byteAddr_add (by omega_arith)
   have sub : Region.Sub ⟨byteAddr (args 2 + BitVec.ofNat 32 c), o⟩ ⟨byteAddr (args 2), n⟩ := by
     rw [Pa]; exact Offset.sub_base _ hco
   have rd : InRegions (v₅.rd ++ v₅.wr) (byteAddr (args 2 + BitVec.ofNat 32 c)) o := by
-    rw [Pa]; exact VG.CallLay.inRegions_sub (G.rd _ _ hv₅.extra) hco (by omega)
+    rw [Pa]; exact VG.CallLay.inRegions_sub (G.rd _ _ hv₅.extra) hco (by omega_arith)
   have Ov := O
   have input : Spec.Rsa.bytesAt v₅.mem (byteAddr (args 2 + BitVec.ofNat 32 c)) o = (T.drop c).take o := by
-    rw [VG.Proof.Bignum.scratch_bytes Ou (by omega)
+    rw [VG.Proof.Bignum.scratch_bytes Ou (by omega_arith)
       (G.apart.sub_left sub), Pa, bytesAt_offset _ _ hco, hT]
-  refine WP.seq (WP.mono (reverseInto_ok hv₅ (x := .slot .wide 13) (one_ok .wide) (by rw [cb1]; omega)
-    Z (by omega) (by rw [cb1]; omega) (by omega) rd (G.apart.sub_left sub) pv ecx₅ esi₅) fun t ⟨V, Ot, Kt⟩ => ?_)
+  refine WP.seq (WP.mono (reverseInto_ok hv₅ (x := .slot .wide 13) (one_ok .wide) (by rw [cb1]; omega_arith)
+    Z (by omega_arith) (by rw [cb1]; omega_arith) (by omega_arith) rd (G.apart.sub_left sub) pv ecx₅ esi₅) fun t ⟨V, Ot, Kt⟩ => ?_)
   rw [cb1] at Ot
   rw [cw1, input] at V
   have Ost : Outside base (lo len (.slot .wide 13)) (bc len .wide) s.mem t.mem := Ov.trans Ot
   have Kst : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := keep.trans Kt
-  have ht : In Ex base bytes len args t := h.keep Kst (by decide) (by decide) (Ost.mono (Nat.zero_le _) (by omega))
+  have ht : In Ex base bytes len args t := h.keep Kst (by decide) (by decide) (Ost.mono (Nat.zero_le _) (by omega_arith))
   have St : Step Ex base bytes len args s t := Step.slot h (by decide) Ost Kst
   have ct : w32 t.mem base curOff = c := by
-    rw [← hc]; exact Ost.w32 (.inl (by simp only [curOff]; omega)) (by simp only [curOff]; omega)
+    rw [← hc]; exact Ost.w32 (.inl (by simp only [curOff]; omega_arith)) (by simp only [curOff]; omega_arith)
   have ot : w32 t.mem base octOff = o := by
-    rw [← ho]; exact Ost.w32 (.inl (by simp only [octOff]; omega)) (by simp only [octOff]; omega)
+    rw [← ho]; exact Ost.w32 (.inl (by simp only [octOff]; omega_arith)) (by simp only [octOff]; omega_arith)
   refine wp_movS (hdr_read ht hdr_oct) fun t₁ T₁ _ => wp_addS (hdr_read (ht.regs T₁.keeps T₁.mem) hdr_cur)
     fun t₂ T₂ _ => ?_
   refine hdr_store (ht.regs (T₁.keeps.trans T₂.keeps) (by rw [T₂.mem, T₁.mem])) hdr_cur
@@ -180,7 +180,7 @@ theorem drawLoad_ok {w n : Nat} (P : Prepped Ex base bytes len args w s) (G : Ta
   refine ⟨St.trans (S₂.trans S'), P.keep R' kt (by decide), ?_, ?_, kt⟩
   · rw [k'.slot_eq, T₂.mem, T₁.mem]; exact V
   · rw [W', T₂.gpr, T₁.gpr, T₁.mem, ct, ot, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (a := c) (by omega), Nat.mod_eq_of_lt (by omega),
+      Nat.mod_eq_of_lt (a := o) (by omega_arith), Nat.mod_eq_of_lt (a := c) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith),
       Nat.add_comm]
 
 /-- `cmp d, src`, and the borrow. -/
@@ -204,10 +204,10 @@ theorem Ready.word {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} 
   have f4 := slot_fit1 h (j := 4) (by decide)
   rw [cb1] at f4
   have bw := bc_eq_cwc len .wide
-  refine ⟨R.ctx.keepF2 K di sp (ws := [(d, 4)]) (frameR_of_outside O (by omega) (List.mem_singleton_self _))
-    (by simp; omega) (by simp; omega), ?_, ?_⟩
-  · rw [← R.one]; exact O.val32 (.inr (by omega)) (by omega)
-  · rw [← R.r2]; exact O.val32 (.inr (by omega)) (by omega)
+  refine ⟨R.ctx.keepF2 K di sp (ws := [(d, 4)]) (frameR_of_outside O (by omega_arith) (List.mem_singleton_self _))
+    (by simp; omega_arith) (by simp; omega_arith), ?_, ?_⟩
+  · rw [← R.one]; exact O.val32 (.inr (by omega_arith)) (by omega_arith)
+  · rw [← R.r2]; exact O.val32 (.inr (by omega_arith)) (by omega_arith)
 
 /-- The header words the draws change. -/
 abbrev drawDs : List Nat := [curOff, cntOff, stOff, hitOff, jOff, maskOff]
@@ -363,23 +363,23 @@ theorem passed_ok {s₀ t : State} {w : Nat} {T : List Byte} (G : TapeGeo Ex arg
     apply BitVec.eq_of_toNat_eq
     have h1 : (1 : BitVec 32).toNat = 1 := rfl
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, h1]
-    omega
+    omega_arith
   refine (M.regs (U₁.keeps.trans U₂.keeps) (by rw [U₂.mem, U₁.mem])).store G hdr_cnt (by decide) (by decide)
     fun t₃ M₃ W₃ k₃ g₃ _ _ => ?_
   refine wp_cmpC rfl fun t₄ F₄ c₄ => wp_movS rfl fun t₅ U₅ cf₅ => wp_adcS rfl (c := decide (n < 1))
-    (by rw [cf₅, c₄, g₃, e₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; rfl) fun t₆ U₆ _ => ?_
+    (by rw [cf₅, c₄, g₃, e₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; rfl) fun t₆ U₆ _ => ?_
   have K₆ : Keeps [.eax] t₃ t₆ := ((F₄.keeps [.eax]).trans U₅.keeps).trans U₆.keeps
   have m₆ : t₆.mem = t₃.mem := by rw [U₆.mem, U₅.mem, F₄.mem]
   refine (M₃.regs K₆ m₆).store G hdr_st (by decide) (by decide) fun u Mu W k _ _ _ => WP.block_nil ?_
   have cnt₆ : w32 t₆.mem base cntOff = n := by
     rw [m₆, W₃, U₂.gpr, U₁.gpr, hn, BitVec.toNat_sub, BitVec.toNat_ofNat]
     show (2 ^ 32 - 1 + (n + 1) % 2 ^ 32) % 2 ^ 32 = n
-    omega
+    omega_arith
   refine ⟨Mu, by rw [k.word_eq, cnt₆], ?_, ?_⟩
   · rw [W, U₆.gpr, U₅.gpr]
     by_cases n0 : n = 0
     · subst n0; rfl
-    · simp only [n0, ↓reduceIte, show decide (n < 1) = false by simp; omega]; rfl
+    · simp only [n0, ↓reduceIte, show decide (n < 1) = false by simp; omega_arith]; rfl
   · exact (by rw [U₂.mem, U₁.mem]; exact (Kept.refl _).mono : Kept base len [] [cntOff, stOff] t.mem t₂.mem).trans
       (k₃.mono.trans ((by rw [m₆]; exact (Kept.refl _).mono : Kept base len [] [cntOff, stOff] t₃.mem t₆.mem).trans
         k.mono))
@@ -393,12 +393,12 @@ theorem checkWitnesses_draw {w n c o k : Nat} {T : List Byte} (ho : Spec.Ffdh.wi
         if Spec.Ffdh.mrRound w a then ParameterCandidate.checkWitnesses w n (T.drop (c + o))
         else some (false, T.drop (c + o))
       else ParameterCandidate.checkWitnesses w (n + 1) (T.drop (c + o)) := by
-  rw [ParameterCandidate.checkWitnesses_step (by omega), ho, hk, List.length_drop, List.drop_drop,
-    ite_eq_left (by omega)]
+  rw [ParameterCandidate.checkWitnesses_step (by omega_arith), ho, hk, List.length_drop, List.drop_drop,
+    ite_eq_left (by omega_arith)]
 
 theorem checkWitnesses_short {w n c o : Nat} {T : List Byte} (ho : Spec.Ffdh.witnessOctets w = o) (ho1 : 1 ≤ o)
     (hs : T.length - c < o) : ParameterCandidate.checkWitnesses w (n + 1) (T.drop c) = none := by
-  rw [ParameterCandidate.checkWitnesses_step (by omega), ho, List.length_drop, ite_eq_right (by omega)]
+  rw [ParameterCandidate.checkWitnesses_step (by omega_arith), ho, List.length_drop, ite_eq_right (by omega_arith)]
 
 /-- The tape's octets left compared with a witness's. -/
 theorem drawHead_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
@@ -418,7 +418,7 @@ theorem drawHead_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
   have cu : w32 t₁.mem base curOff = c := by rw [U₁.mem, A.cur]
   have ou : w32 t₂.mem base octOff = Spec.Ffdh.witnessOctets w := by rw [U₂.mem, U₁.mem, A.oct]
   have e1 : (BitVec.ofNat 32 T.length - BitVec.ofNat 32 c).toNat = T.length - c := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_arith
   rw [c₃, U₂.gpr, U₁.gpr, G.len, cu, ou, e1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ol]
 
 /-- A witness drawn and tested for its range: its value `drawA` in slot 13, the cursor past it. -/
@@ -435,14 +435,14 @@ structure Picked (Ex : List Region → List Region → Prop) (base : Addr) (byte
 theorem witness_bits {w : Nat} (hw3 : 3 ≤ w) (hwl : w - 1 < 2 ^ (32 * cwc len .wide)) :
     2 ≤ Spec.RsaKeyGen.bitLength (w - 1) ∧ Spec.RsaKeyGen.bitLength (w - 1) ≤ 32 * cwc len .wide ∧
       Spec.Ffdh.witnessOctets w = (Spec.RsaKeyGen.bitLength (w - 1) + 7) / 8 := by
-  have wb := VG.Proof.Ffdh.KeyScalar.bitLength_bounds (x := w - 1) (by omega)
+  have wb := VG.Proof.Ffdh.KeyScalar.bitLength_bounds (x := w - 1) (by omega_arith)
   generalize hk : Spec.RsaKeyGen.bitLength (w - 1) = k at wb
   refine ⟨?_, ?_, by rw [Spec.Ffdh.witnessOctets, hk]⟩
   · by_contra hk2
-    have : 2 ^ k ≤ 2 ^ 1 := Nat.pow_le_pow_right (by decide) (by omega)
-    omega
+    have : 2 ^ k ≤ 2 ^ 1 := Nat.pow_le_pow_right (by decide) (by omega_arith)
+    omega_arith
   · have := (Nat.pow_lt_pow_iff_right (by decide : 1 < 2)).mp (Nat.lt_of_le_of_lt wb.1 hwl)
-    omega
+    omega_arith
 
 /-- The witness at the cursor loaded, cut to the bits of `w − 1` and tested for `1 < a < w − 1`. -/
 theorem drawPick_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
@@ -461,18 +461,18 @@ theorem drawPick_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
   generalize ha : x % 2 ^ k = a
   have dA : drawA w T c = a := by rw [drawA, hoo, hk, hx, ha]
   have dR : drawRange w T c = decide (2 ≤ a ∧ a < w - 1) := by rw [drawRange, dA]
-  have ob : o ≤ bc len .wide := by omega
+  have ob : o ≤ bc len .wide := by omega_arith
   have G₃ : TapeGeo Ex args base bytes (t.gpr .esp) T.length := by rw [A.step.esp]; exact G
-  refine WP.seq (WP.mono (drawLoad_ok A.prep G₃ A.tape A.cur (by rw [A.oct, hoo]) (by omega) co ob)
+  refine WP.seq (WP.mono (drawLoad_ok A.prep G₃ A.tape A.cur (by rw [A.oct, hoo]) (by omega_arith) co ob)
     fun u₁ ⟨S₁, P₁, V₁, C₁, k₁⟩ => ?_)
   have M₁ := A.toMid.next G S₁ P₁ k₁
   rw [hx] at V₁
   have xl : x < 2 ^ (32 * ((k - 1) / 32 + 1)) := by
     have l := VG.Proof.Bignum.os2ip_lt ((T.drop c).take o)
-    rw [List.length_take, List.length_drop, Nat.min_eq_left (by omega), VG.Proof.Bignum.pow256_eq, hx] at l
-    exact Nat.lt_of_lt_of_le l (Nat.pow_le_pow_right (by decide) (by omega))
+    rw [List.length_take, List.length_drop, Nat.min_eq_left (by omega_arith), VG.Proof.Bignum.pow256_eq, hx] at l
+    exact Nat.lt_of_lt_of_le l (Nat.pow_le_pow_right (by decide) (by omega_arith))
   refine WP.seq (WP.mono (cut_ok S₁.inp (j := 13) (by decide) false (k := k)
-    (by rw [k₁.word_eq, A.bits, hk]) (by omega) kw (by rw [V₁]; exact xl)) fun u₂ ⟨h₂, O₂, V₂, K₂⟩ => ?_)
+    (by rw [k₁.word_eq, A.bits, hk]) (by omega_arith) kw (by rw [V₁]; exact xl)) fun u₂ ⟨h₂, O₂, V₂, K₂⟩ => ?_)
   simp only [Bool.false_eq_true, ↓reduceIte, Nat.or_zero, V₁, ha] at V₂
   have S₂ : Step Ex base bytes len args u₁ u₂ := Step.slot S₁.inp (by decide) O₂ K₂
   have k₂ := kept_slot S₁.inp O₂
@@ -531,14 +531,14 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
         drawCont w n T c = false) := by
   have ht := A.step.inp
   have bw := bc_eq_cwc len .wide
-  obtain ⟨n₁, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨n₁, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega_arith⟩
   obtain ⟨k2, kw, ho⟩ := witness_bits hw3 hwl
   generalize hk : Spec.RsaKeyGen.bitLength (w - 1) = k at k2 kw ho
   obtain ⟨o, hoo⟩ : ∃ o, Spec.Ffdh.witnessOctets w = o := ⟨_, rfl⟩
   rw [hoo] at ho
   have ol : o < 2 ^ 32 := by
     have := bc_le ht.upper' .wide
-    omega
+    omega_arith
   unfold draw
   refine WP.seq (WP.mono (drawHead_ok G (by rw [hoo]; exact ol) A hc) fun t₃ ⟨A₃, cf₃⟩ => ?_)
   rw [hoo] at cf₃
@@ -547,14 +547,14 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
   refine WP.ite (decide (T.length - c < o)) cf₃ (fun e => ?_) fun e => ?_
   · -- Too few octets.
     have sh : T.length - c < o := by simpa using e
-    have D := checkWitnesses_short (n := n₁) hoo (by omega) sh
+    have D := checkWitnesses_short (n := n₁) hoo (by omega_arith) sh
     refine WP.mono (setSt_ok G A₃.toMid (r := 3) (by decide)) fun u ⟨Mu, Wu, _⟩ => .inr ⟨⟨Mu, ?_, ?_⟩, ?_, ?_⟩
     · rw [Wu, D]; rfl
     · intro b r e; rw [D] at e; cases e
     · rw [D]; decide
-    · simp only [drawCont, hoo, show ¬ o ≤ T.length - c by omega, decide_false, Bool.false_and]
-  have co : c + o ≤ T.length := by simp at e; omega
-  have D := checkWitnesses_draw (n := n₁) hoo (by omega) hk co
+    · simp only [drawCont, hoo, show ¬ o ≤ T.length - c by omega_arith, decide_false, Bool.false_and]
+  have co : c + o ≤ T.length := by simp at e; omega_arith
+  have D := checkWitnesses_draw (n := n₁) hoo (by omega_arith) hk co
   generalize hx : Spec.Rsa.os2ip ((T.drop c).take o) = x at D
   generalize ha : x % 2 ^ k = a at D
   have dA : drawA w T c = a := by rw [drawA, hoo, hk, hx, ha]
@@ -566,12 +566,12 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
   rw [dR] at E₄
   refine WP.ite _ E₄ (fun e => WP.block_nil ?_) fun e => ?_
   · -- Out of range: drawn again.
-    have nr : ¬ (2 ≤ a ∧ a < w - 1) := by simp at e; omega
-    refine .inl ⟨n₁ + 1, c + o, ⟨Pk.toMid, Pk.oct, Pk.bits, by rw [Pk.cur, hoo], Pk.cnt, Pk.st⟩, by omega, by omega, co,
+    have nr : ¬ (2 ≤ a ∧ a < w - 1) := by simp at e; omega_arith
+    refine .inl ⟨n₁ + 1, c + o, ⟨Pk.toMid, Pk.oct, Pk.bits, by rw [Pk.cur, hoo], Pk.cnt, Pk.st⟩, by omega_arith, by omega_arith, co,
       ?_, by rw [drawN, dR, decide_eq_false nr]; rfl, by rw [hoo], ?_⟩
     · rw [D, ite_eq_right nr]
-    · rw [drawCont, dR, decide_eq_false nr, hoo, decide_eq_true (by omega : o ≤ T.length - c)]; rfl
-  have r : 2 ≤ a ∧ a < w - 1 := by simp at e; omega
+    · rw [drawCont, dR, decide_eq_false nr, hoo, decide_eq_true (by omega_arith : o ≤ T.length - c)]; rfl
+  have r : 2 ≤ a ∧ a < w - 1 := by simp at e; omega_arith
   refine WP.seq (WP.mono (WP.seq_iff.mp (drawRound_ok G hw3 hodd Pk)) fun u₅ h₅ =>
     WP.seq (WP.mono h₅ fun u₇ ⟨P₇, E₇⟩ => ?_))
   rw [dA] at E₇
@@ -589,7 +589,7 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
       cases e'
       exact ⟨c + o, by rw [ku.word_eq, cur₇], co, rfl⟩
     · rw [D']; simp [drawStatus]
-    · rw [drawCont, dR, decide_eq_true r, hoo, decide_eq_true (by omega : o ≤ T.length - c), dA, mf]; rfl
+    · rw [drawCont, dR, decide_eq_true r, hoo, decide_eq_true (by omega_arith : o ≤ T.length - c), dA, mf]; rfl
   -- The round passed.
   have mt : Spec.Ffdh.mrRound w a = true := by simpa using e
   have D' : ParameterCandidate.checkWitnesses w (n₁ + 1) (T.drop c) =
@@ -608,12 +608,12 @@ theorem draw_ok {s₀ t : State} {w n c : Nat} {T : List Byte}
       cases e'
       exact ⟨c + o, curu, co, rfl⟩
     · rw [D'']; simp [drawStatus]
-    · rw [drawCont, dR, decide_eq_true r, hoo, decide_eq_true (by omega : o ≤ T.length - c), dA, mt]; rfl
-  · refine .inl ⟨n₁, c + o, ⟨Mu, ?_, ?_, curu, Cu, by rw [Su]; simp [n0]⟩, by omega, by omega, co, D'.symm,
+    · rw [drawCont, dR, decide_eq_true r, hoo, decide_eq_true (by omega_arith : o ≤ T.length - c), dA, mt]; rfl
+  · refine .inl ⟨n₁, c + o, ⟨Mu, ?_, ?_, curu, Cu, by rw [Su]; simp [n0]⟩, by omega_arith, by omega_arith, co, D'.symm,
       by rw [drawN, dR, decide_eq_true r]; rfl, by rw [hoo], ?_⟩
     · rw [ku.word_eq, P₇.oct]
     · rw [ku.word_eq, P₇.bits]
-    · rw [drawCont, dR, decide_eq_true r, hoo, decide_eq_true (by omega : o ≤ T.length - c), dA, mt,
-        decide_eq_true (by omega : n₁ + 1 ≠ 1)]; rfl
+    · rw [drawCont, dR, decide_eq_true r, hoo, decide_eq_true (by omega_arith : o ≤ T.length - c), dA, mt,
+        decide_eq_true (by omega_arith : n₁ + 1 ≠ 1)]; rfl
 
 end VG.Proof.Ffdh.X86.Cand

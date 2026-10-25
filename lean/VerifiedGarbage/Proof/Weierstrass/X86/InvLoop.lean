@@ -103,9 +103,9 @@ theorem storePair_ok {s : State} {base : Addr} {size left right : Nat} (hs : Scr
       u.mem.readW (off base right) 32 = s.gpr .eax ∧
       Keeps [] s u ∧ Unch base [(left, 4), (right, 4)] s.mem u.mem := by
   have hn := hs.nowrap
-  refine wp_storeS (hs.ea (by omega)) (hs.write hl) fun s₁ U₁ => ?_
+  refine wp_storeS (hs.ea (by omega_arith)) (hs.write hl) fun s₁ U₁ => ?_
   have hs₁ := hs.of_keeps (U₁.keeps []) (by decide)
-  refine wp_storeS (hs₁.ea (by omega)) (hs₁.write hr) fun u U₂ => WP.block_nil ?_
+  refine wp_storeS (hs₁.ea (by omega_arith)) (hs₁.write hr) fun u U₂ => WP.block_nil ?_
   refine ⟨?_, ?_, (U₁.keeps []).trans (U₂.keeps []), ?_⟩
   · apply BitVec.eq_of_toNat_eq
     change w32 u.mem base left = _
@@ -113,8 +113,8 @@ theorem storePair_ok {s : State} {base : Addr} {size left right : Nat} (hs : Scr
   · apply BitVec.eq_of_toNat_eq
     change w32 u.mem base right = _
     rw [U₂.mem, w32_write_self, U₁.gpr]
-  · have O₁ := writeW32_outside s.mem base (d := left) (s.gpr .ebx) (by omega)
-    have O₂ := writeW32_outside s₁.mem base (d := right) (s₁.gpr .eax) (by omega)
+  · have O₁ := writeW32_outside s.mem base (d := left) (s.gpr .ebx) (by omega_arith)
+    have O₂ := writeW32_outside s₁.mem base (d := right) (s₁.gpr .eax) (by omega_arith)
     intro x hx
     rw [U₂.mem, O₂ x (hx (right, 4) (by simp)), U₁.mem, O₁ x (hx (left, 4) (by simp))]
 
@@ -174,15 +174,15 @@ theorem masks_ok {s : State} {base : Addr} {size t : Nat} (hs : Scr s base size)
   have hn := hs.nowrap
   unfold masks
   refine WP.block_append (WP.block_append ?_)
-  refine wp_movS (readSrc_sc hs (by omega)) fun s₁ U₁ _ => ?_
+  refine wp_movS (readSrc_sc hs (by omega_arith)) fun s₁ U₁ _ => ?_
   have hs₁ := hs.of_keeps U₁.keeps (by decide)
-  refine wp_movS (readSrc_sc hs₁ (by omega)) fun s₂ U₂ _ => WP.block_nil ?_
+  refine wp_movS (readSrc_sc hs₁ (by omega_arith)) fun s₂ U₂ _ => WP.block_nil ?_
   have K₀ : Keeps [.eax, .ebx, .ecx, .edx] s s₂ :=
     (U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))
   have M₀ : s₂.mem = s.mem := U₂.mem.trans U₁.mem
   refine WP.mono (maskRegs_ok s₂) fun s₃ ⟨C, D, A, K, M⟩ => ?_
   have hs₃ := (hs.of_keeps K₀ (by decide)).of_keeps K (by decide)
-  refine wp_storeS (hs₃.ea (by omega)) (hs₃.write (by omega)) fun u U => WP.block_nil ?_
+  refine wp_storeS (hs₃.ea (by omega_arith)) (hs₃.write (by omega_arith)) fun u U => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, (K₀.trans K).trans (U.keeps _), ?_⟩
   · rw [U.gpr, C, U₂.other _ (by decide), U₁.gpr]
   · rw [U.gpr, D, U₂.gpr, U₁.mem, U₂.other _ (by decide), U₁.gpr]
@@ -190,7 +190,7 @@ theorem masks_ok {s : State} {base : Addr} {size t : Nat} (hs : Scr s base size)
     change w32 u.mem base t = _
     rw [U.mem, w32_write_self, A, U₂.gpr, U₁.mem, U₂.other _ (by decide), U₁.gpr]
   · rw [U.mem, M, M₀]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_arith)
 
 end VG.Proof.Weierstrass.X86.Inv
 
@@ -221,14 +221,14 @@ theorem pair_away {base : Addr} {t left right j : Nat} {m m' : Mem}
   apply U
   intro w hw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-  rw [ofs_off base (by omega)]
-  rcases hw with rfl | rfl <;> omega
+  rw [ofs_off base (by omega_arith)]
+  rcases hw with rfl | rfl <;> omega_arith
 
 theorem mask_away {base : Addr} {t j : Nat} {m m' : Mem}
     (U : Outside base t 4 m m') (h : t + 28 ≤ 2 ^ 64) (hj : j < 7) (h0 : 1 ≤ j) :
     atWord m' base t j = atWord m base t j := by
   apply BitVec.eq_of_toNat_eq
-  exact U.w32 (by omega) (by omega)
+  exact U.w32 (by omega_arith) (by omega_arith)
 
 theorem wordStep_ok {s : State} {base : Addr} {size t : Nat} (hs : Scr s base size)
     (ht : t + 28 ≤ size) :
@@ -236,19 +236,19 @@ theorem wordStep_ok {s : State} {base : Addr} {size t : Nat} (hs : Scr s base si
       wordState u.mem base t = Divstep.W32.wstep (wordState s.mem base t) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u ∧ Outside base t 28 s.mem u.mem := by
   have hn := hs.nowrap
-  have ht' : t + 28 ≤ 2 ^ 64 := by omega
+  have ht' : t + 28 ≤ 2 ^ 64 := by omega_arith
   unfold wordStep
   refine WP.block_append (WP.block_append (WP.block_append
-    (WP.mono (masks_ok hs (by omega)) fun s₁ ⟨C₁, D₁, V₁, K₁, O₁⟩ => ?_)))
+    (WP.mono (masks_ok hs (by omega_arith)) fun s₁ ⟨C₁, D₁, V₁, K₁, O₁⟩ => ?_)))
   have hs₁ := hs.of_keeps K₁ (by decide)
   refine WP.mono (pair_ok hs₁ (left := t + 4) (right := t + 8)
-    (by omega) (by omega) (by omega) false) fun s₂ ⟨F₂, G₂, K₂, U₂⟩ => ?_
+    (by omega_arith) (by omega_arith) (by omega_arith) false) fun s₂ ⟨F₂, G₂, K₂, U₂⟩ => ?_
   have hs₂ := hs₁.of_keeps K₂ (by decide)
   refine WP.mono (pair_ok hs₂ (left := t + 12) (right := t + 20)
-    (by omega) (by omega) (by omega) true) fun s₃ ⟨U₃, Q₃, K₃, O₃⟩ => ?_
+    (by omega_arith) (by omega_arith) (by omega_arith) true) fun s₃ ⟨U₃, Q₃, K₃, O₃⟩ => ?_
   have hs₃ := hs₂.of_keeps K₃ (by decide)
   refine WP.mono (pair_ok hs₃ (left := t + 16) (right := t + 24)
-    (by omega) (by omega) (by omega) true) fun u ⟨V₄, R₄, K₄, O₄⟩ => ?_
+    (by omega_arith) (by omega_arith) (by omega_arith) true) fun u ⟨V₄, R₄, K₄, O₄⟩ => ?_
   have E₁ (j : Nat) (hj : j < 7) (h0 : 1 ≤ j) := mask_away O₁ ht' hj h0
   have E₂ (j : Nat) (hj : j < 7) (hl : j ≠ 1) (hr : j ≠ 2) := pair_away U₂ ht' hj hl hr
   have E₃ (j : Nat) (hj : j < 7) (hl : j ≠ 3) (hr : j ≠ 5) := pair_away O₃ ht' hj hl hr
@@ -298,14 +298,14 @@ theorem wordStep_ok {s : State} {base : Addr} {size t : Nat} (hs : Scr s base si
       exact Q₃
     · exact R₄
   · intro x hx
-    have h (j : Nat) (hj : j < 7) : ofs base x < t + 4 * j ∨ t + 4 * j + 4 ≤ ofs base x := by omega
+    have h (j : Nat) (hj : j < 7) : ofs base x < t + 4 * j ∨ t + 4 * j + 4 ≤ ofs base x := by omega_arith
     rw [O₄ x (by intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
                  rcases hw with rfl | rfl <;> first | exact h 4 (by decide) | exact h 6 (by decide)),
       O₃ x (by intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
                rcases hw with rfl | rfl <;> first | exact h 3 (by decide) | exact h 5 (by decide)),
       U₂ x (by intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
                rcases hw with rfl | rfl <;> first | exact h 1 (by decide) | exact h 2 (by decide)),
-      O₁ x (by omega)]
+      O₁ x (by omega_arith)]
 
 end VG.Proof.Weierstrass.X86.Inv
 
@@ -340,11 +340,11 @@ theorem wordSteps_ok {s : State} {base : Addr} {size t n : Nat} (hs : Scr s base
     have hv₁ := hv.of_keeps K₁ (by decide)
     refine WP.block_append (WP.mono (wordStep_ok hv₁ ht) fun v₂ ⟨W₂, K₂, O₂⟩ => ?_)
     have e₂ : v₂.gpr .esi = BitVec.ofNat 32 (j - 1) := by rw [K₂.1 _ (by decide), E₁]
-    refine wp_testCounter (by omega) e₂ fun u F hz => WP.block_nil ⟨?_, hz⟩
+    refine wp_testCounter (by omega_arith) e₂ fun u F hz => WP.block_nil ⟨?_, hz⟩
     refine ⟨(hv₁.of_keeps K₂ (by decide)).of_keeps (F.keeps []) (by decide),
       by rw [F.gpr]; exact e₂, ?_,
       (((Kv.trans (K₁.mono (by decide))).trans (K₂.mono (by decide))).trans (F.keeps _)), ?_⟩
-    · rw [F.mem, W₂, M₁, Wv, show n - (j - 1) = (n - j) + 1 by omega,
+    · rw [F.mem, W₂, M₁, Wv, show n - (j - 1) = (n - j) + 1 by omega_arith,
         Divstep.W32.wsteps_succ]
     · intro x hx
       rw [F.mem, O₂ x hx, M₁, Ov x hx]

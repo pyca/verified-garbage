@@ -34,10 +34,10 @@ theorem group_ok {s : State} {i : Nat} (hi : i<4)
     WP isa (.block (group i)) s fun t=>
       StepKeep [.v1] s t ∧ t.mem=maskMem s.mem (s.gpr .x1+BitVec.ofNat 64 (16*i)) (s.v .v0) := by
   unfold group
-  refine wp_ldrq (by omega) rfl hr fun a ha=>?_
+  refine wp_ldrq (by omega_arith) rfl hr fun a ha=>?_
   refine wp_vop (d := .v1) rfl fun b hb=>?_
   have hk : VChg [.v1] s b := (ha.chg.trans hb.chg).mono (by decide)
-  refine wp_strq (a := s.gpr .x1+BitVec.ofNat 64 (16*i)) (by omega) (by rw [hk.gpr]) (by rw [hk.wr]; exact hw) fun t ht=>wp_nil ?_
+  refine wp_strq (a := s.gpr .x1+BitVec.ofNat 64 (16*i)) (by omega_arith) (by rw [hk.gpr]) (by rw [hk.wr]; exact hw) fun t ht=>wp_nil ?_
   refine ⟨((StepKeep.ofChg hk (by decide)).trans (StepKeep.ofMem ht)).mono (by decide),?_⟩
   rw [ht.mem,hk.mem,hb.v,ha.v,ha.get .v0]
   rfl
@@ -64,7 +64,7 @@ theorem groups_ok {s : State}
       StepKeep [.v1] s t ∧ t.mem=maskRun s.mem (s.gpr .x1) (s.v .v0) 4 := by
   refine wp_range_flatMap (M := isa) (N := 4)
     (fun j t => StepKeep [.v1] s t ∧ t.mem=maskRun s.mem (s.gpr .x1) (s.v .v0) j)
-    (fun j t hj ht => ?_) 4 (by omega) s ⟨⟨Keep.refl [] s,fun _ _ => rfl⟩,rfl⟩
+    (fun j t hj ht => ?_) 4 (by omega_arith) s ⟨⟨Keep.refl [] s,fun _ _ => rfl⟩,rfl⟩
   refine WP.mono (group_ok hj (by rw [ht.1.keep.rd,ht.1.keep.wr,ht.1.keep.get .x1]; exact hr j hj)
     (by rw [ht.1.keep.wr,ht.1.keep.get .x1]; exact hw j hj)) fun u ⟨hu,hm⟩ => ?_
   refine ⟨(ht.1.trans hu).mono (by decide),?_⟩
@@ -112,7 +112,7 @@ theorem maskRun_add (m : Mem) (p : Addr) (v : BitVec 128) (n k : Nat) :
   induction k with
   | zero => simp only [maskRun,Nat.add_zero]
   | succ k ih =>
-    rw [maskRun,ih,show n+(k+1)=(n+k)+1 by omega,maskRun]
+    rw [maskRun,ih,show n+(k+1)=(n+k)+1 by omega_arith,maskRun]
     simp only [Nat.mul_add,BitVec.ofNat_add,BitVec.add_assoc]
 
 structure LoopInv (σ s : State) (p : Addr) (v : BitVec 128) (N j : Nat) : Prop where
@@ -131,11 +131,11 @@ theorem step_ok {σ s : State} {p : Addr} {v : BitVec 128} {N j : Nat}
     WP isa (.block body) s (fun t => LoopInv σ t p v N (j+1)) := by
   have addr k : s.gpr .x1+BitVec.ofNat 64 (16*k)=p+BitVec.ofNat 64 (16*(4*j+k)) := by
     rw [hi.ptr,BitVec.add_assoc,←BitVec.ofNat_add]
-    rw [show 64*j+16*k=16*(4*j+k) by omega]
-  refine WP.mono (body_ok (fun k hk => by rw [hi.keep.rd,hi.keep.wr,addr]; exact hr _ (by omega))
-    (fun k hk => by rw [hi.keep.wr,addr]; exact hw _ (by omega))) fun t ⟨ht,hv,hm,hp,hc⟩ => ?_
-  refine ⟨by omega,(hi.keep.trans ht).mono (by decide),fun r hn => (hv r hn).trans (hi.vec r hn),?_,?_,?_,?_⟩
-  · rw [hm,hi.mem,hi.mask,hi.ptr,show 64*j=16*(4*j) by omega,maskRun_add]
+    rw [show 64*j+16*k=16*(4*j+k) by omega_arith]
+  refine WP.mono (body_ok (fun k hk => by rw [hi.keep.rd,hi.keep.wr,addr]; exact hr _ (by omega_arith))
+    (fun k hk => by rw [hi.keep.wr,addr]; exact hw _ (by omega_arith))) fun t ⟨ht,hv,hm,hp,hc⟩ => ?_
+  refine ⟨by omega_arith,(hi.keep.trans ht).mono (by decide),fun r hn => (hv r hn).trans (hi.vec r hn),?_,?_,?_,?_⟩
+  · rw [hm,hi.mem,hi.mask,hi.ptr,show 64*j=16*(4*j) by omega_arith,maskRun_add]
     congr 1
   · rw [hp,hi.ptr,BitVec.add_assoc]
     change p+(BitVec.ofNat 64 (64*j)+BitVec.ofNat 64 64)=_
@@ -143,7 +143,7 @@ theorem step_ok {σ s : State} {p : Addr} {v : BitVec 128} {N j : Nat}
     congr 1
   · rw [hc,hi.count]
     change BitVec.ofNat 64 (N-j)-BitVec.ofNat 64 1=_
-    rw [BitVec.ofNat_sub_ofNat_of_le (N-j) 1 (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le (N-j) 1 (by decide) (by omega_arith)]
     congr 1
   · rw [hv .v0 (by decide),hi.mask]
 
@@ -157,14 +157,14 @@ theorem loop_ok {σ s : State} {p : Addr} {v : BitVec 128} {N j : Nat}
   rintro rank s ⟨j,rfl,hi,hj⟩
   refine WP.mono (step_ok hi hj hN hr hw) fun t ht => ?_
   have hg : isa.eval (.nonzero .x .x2) t=some (decide (j+1<N)) := by
-    rw [eval_nonzero,ht.count,ne_zero_iff,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
+    rw [eval_nonzero,ht.count,ne_zero_iff,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_arith)]
     congr 1
     apply decide_eq_decide.mpr
     have := ht.bound
-    omega
+    omega_arith
   by_cases hn : j+1<N
-  · exact .inr ⟨by rw [hg,decide_eq_true hn],N-(j+1),by omega,j+1,rfl,ht,hn⟩
-  · have he : j+1=N := by omega
+  · exact .inr ⟨by rw [hg,decide_eq_true hn],N-(j+1),by omega_arith,j+1,rfl,ht,hn⟩
+  · have he : j+1=N := by omega_arith
     exact .inl ⟨by rw [hg,decide_eq_false hn],by simpa only [he] using ht⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.MatrixMask
@@ -189,28 +189,28 @@ theorem coeffAt_write16_1024 (m : Mem) (p : Addr) {j : Nat} (hj : j+4≤1024)
   · rename_i h
     rw [coeffAt_eq,show coeffAddr p i=coeffAddr p j+BitVec.ofNat 64 (4*(i-j)) by
       unfold coeffAddr
-      rw [BitVec.add_assoc,←BitVec.ofNat_add,show 4*j+4*(i-j)=4*i by omega]]
-    exact readW_write16 _ _ _ (by omega)
+      rw [BitVec.add_assoc,←BitVec.ofNat_add,show 4*j+4*(i-j)=4*i by omega_arith]]
+    exact readW_write16 _ _ _ (by omega_arith)
   · have hw : m.write (coeffAddr p j) 16 v=m.writeW (coeffAddr p j) v := by
       simp only [Mem.writeW,BitVec.setWidth_eq]
     rw [hw]
-    exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
 
 theorem maskRun_zero {m : Mem} {p : Addr} {n : Nat} (hn : n≤256) :
     ∀i<4*n,coeffAt (maskRun m p 0#128 n) p i=0#32 := by
   induction n with
-  | zero => intro i hi; omega
+  | zero => intro i hi; omega_arith
   | succ n ih =>
     intro i hi
     rw [maskRun,BoundedFour.maskMem,BitVec.and_zero]
     have hp : p+BitVec.ofNat 64 (16*n)=coeffAddr p (4*n) := by
       unfold coeffAddr
       congr 2
-      omega
-    rw [hp,coeffAt_write16_1024 _ _ (by omega) _ (by omega)]
+      omega_arith
+    rw [hp,coeffAt_write16_1024 _ _ (by omega_arith) _ (by omega_arith)]
     split
     · simp [vword]
-    · exact ih (by omega) i (by omega)
+    · exact ih (by omega_arith) i (by omega_arith)
 
 theorem maskRun_frame (m : Mem) (p : Addr) (v : BitVec 128) {n N : Nat}
     (hn : n≤4*N) (hN : N≤64) : Frame [⟨p,64*N⟩] m (maskRun m p v n) := by
@@ -218,9 +218,9 @@ theorem maskRun_frame (m : Mem) (p : Addr) (v : BitVec 128) {n N : Nat}
   | zero => exact Frame.refl _ _
   | succ n ih =>
     unfold maskRun BoundedFour.maskMem
-    exact (ih (by omega)).write (List.mem_singleton_self _) _
+    exact (ih (by omega_arith)).write (List.mem_singleton_self _) _
       (by simpa only [BitVec.add_zero] using (Offset.contains p (d := 16*n) (e := 0) (n := 16) (k := 64*N)
-        (by omega) (by omega) (by omega)))
+        (by omega_arith) (by omega_arith) (by omega_arith)))
 
 end VG.Proof.MlDsa.AArch64.Optimized.MatrixMask
 
@@ -270,7 +270,7 @@ theorem footer_ok {s : State} {a : Ptr} (ha : a.1∈VG.Proof.MlDsa.AArch64.keptR
   rw [hc]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem setup_ok {s : State} {a : Ptr} (ha : a.1∈VG.Proof.MlDsa.AArch64.keptRegs)
     {N : Nat} (hN : N<65536) (hr : (s.gpr .x0).setWidth 32=0 ∨ (s.gpr .x0).setWidth 32=1) :
@@ -321,15 +321,15 @@ theorem mask_ok {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State}
     rfl
   rw [hcode]
   apply WP.seq
-  refine WP.mono (setup_ok (L.ptrBs hin) (by omega) hr) fun u ⟨hu,hp,hc,hv⟩ => ?_
+  refine WP.mono (setup_ok (L.ptrBs hin) (by omega_arith) hr) fun u ⟨hu,hp,hc,hv⟩ => ?_
   have hr' i (hi : i<4*N) : InRegions (u.rd++u.wr) (pa s a+BitVec.ofNat 64 (16*i)) 16 := by
     rw [hu.keep.rd,hu.keep.wr]
-    exact VG.Proof.MlKem.AArch64.in_rd_wr (inRegions_sub (L.inW hw) (by omega) (by omega))
+    exact VG.Proof.MlKem.AArch64.in_rd_wr (inRegions_sub (L.inW hw) (by omega_arith) (by omega_arith))
   have hw' i (hi : i<4*N) : InRegions u.wr (pa s a+BitVec.ofNat 64 (16*i)) 16 := by
     rw [hu.keep.wr]
-    exact inRegions_sub (L.inW hw) (by omega) (by omega)
+    exact inRegions_sub (L.inW hw) (by omega_arith) (by omega_arith)
   have hi : LoopInv u u (pa s a) (resultMask s) N 0 :=
-    ⟨by omega,Keep.refl _ _,fun _ _ => rfl,rfl,by simpa using hp,by simpa using hc,hv⟩
+    ⟨by omega_arith,Keep.refl _ _,fun _ _ => rfl,rfl,by simpa using hp,by simpa using hc,hv⟩
   refine WP.mono (loop_ok hi hpos hN hr' hw') fun t ht => ?_
   have hk : Keep [.x1,.x2,.x8,.x9] s t := (hu.keep.trans ht.keep).mono (by decide)
   have hm : t.mem=maskRun s.mem (pa s a) (resultMask s) (4*N) := by rw [ht.mem,hu.mem]
@@ -341,7 +341,7 @@ theorem mask_ok {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State}
   rw [hm]
   rcases hr with h | h
   · simp only [resultMask,h]
-    exact maskRun_zero (by omega) i (by omega)
+    exact maskRun_zero (by omega_arith) i (by omega_arith)
   · simp only [resultMask,h,ite_true,BoundedFour.maskRun_identity]
 
 end VG.Proof.MlDsa.AArch64.Optimized.MatrixMask

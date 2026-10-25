@@ -40,7 +40,7 @@ def msgV (i : Nat) (lab : List Byte) (L : Nat) : List Byte :=
   Spec.Rsa.i2osp i 2 ++ lab ++ Spec.Rsa.i2osp (8 * L) 2
 
 theorem msgV_length (i : Nat) (lab : List Byte) (L : Nat) : (msgV i lab L).length = lab.length + 4 := by
-  simp [msgV, VG.Proof.RsaPkcs1Enc.i2osp_length]; omega
+  simp [msgV, VG.Proof.RsaPkcs1Enc.i2osp_length]; omega_arith
 
 /-- The message's first `n` bytes written, memory changed only in its 16
 bytes and the registers but `r2` kept. -/
@@ -67,34 +67,34 @@ theorem MW.strb (h : MW P σ s₀ xs n t) (hr0 : s₀.gpr .r0 = P.scr + BitVec.o
     WP isa (.block (.strb rt .r0 n :: is)) t Q := by
   have hs := h.st
   have ha : State.addr (t.gpr .r0 + BitVec.ofNat 32 n) = msgA P + BitVec.ofNat 64 n := by
-    rw [h.regs _ (by decide), hr0, BitVec.add_assoc, BitVec.ofNat_add_ofNat, hs.1.scrA (by simp only [sMsg]; omega)]
+    rw [h.regs _ (by decide), hr0, BitVec.add_assoc, BitVec.ofNat_add_ofNat, hs.1.scrA (by simp only [sMsg]; omega_arith)]
     exact (Offset.add_ofNat_add_ofNat _ _ _).symm
-  refine wp_strb (by omega) ha (by rw [Offset.add_ofNat_add_ofNat]; exact St.sc_w hs (by simp only [sMsg]; omega))
+  refine wp_strb (by omega_arith) ha (by rw [Offset.add_ofNat_add_ofNat]; exact St.sc_w hs (by simp only [sMsg]; omega_arith))
     fun t' u => k t' ⟨⟨hs.1, ?_⟩, ?_, fun r hr => by rw [u.gpr]; exact h.regs r hr, ?_⟩ u.gpr
   · refine hs.2.write (rs := [sc P sMsg 16]) ?_ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨P.SCR, by simp, hs.1.sc_sub (by decide)⟩) u.rd u.wr u.sp
     rw [u.mem]
-    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   · rw [u.mem]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   · intro j hj
     rw [u.mem, WriteBytes.writeW8_apply]
     by_cases e : j = n
     · subst e; simp [hb]
-    · simp only [Offset.add_ofNat_ne (msgA P) (by omega) (by omega) e, ↓reduceIte]
-      exact h.bytes j (by omega)
+    · simp only [Offset.add_ofNat_ne (msgA P) (by omega_arith) (by omega_arith) e, ↓reduceIte]
+      exact h.bytes j (by omega_arith)
 
 theorem setWidth_ofNat8 (v : Nat) : (BitVec.ofNat 32 v).setWidth 8 = BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- `putByte n v`: the byte `v` at index `n`. -/
 theorem MW.putByte (h : MW P σ s₀ xs n t) (hr0 : s₀.gpr .r0 = P.scr + BitVec.ofNat 32 sMsg) (hn : n < 16)
     {v : Nat} (hv : v < 256) (hb : xs.getD n 0 = BitVec.ofNat 8 v) {is : List Instr} {Q : State → Prop}
     (k : ∀ t', MW P σ s₀ xs (n + 1) t' → WP isa (.block is) t' Q) :
     WP isa (.block (putByte n v ++ is)) t Q :=
-  wp_mov (op2_imm (Proof.RsaPkcs1Sig.Arm.encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega))) fun t1 u1 =>
+  wp_mov (op2_imm (Proof.RsaPkcs1Sig.Arm.encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith))) fun t1 u1 =>
     (h.upd u1).strb hr0 hn (by rw [u1.gpr, setWidth_ofNat8, hb]) fun t2 h2 _ => k t2 h2
 
 /-- `putLabel vs n`: the bytes `vs` from index `n`. -/
@@ -106,9 +106,9 @@ theorem MW.putLabel (hr0 : s₀.gpr .r0 = P.scr + BitVec.ofNat 32 sMsg) :
   | [], n, t, h, _, _, _, _, _, k => by simpa [Impl.RsaPkcs1Enc.Arm.Decrypt.putLabel] using k t h
   | v :: vs, n, t, h, hn, hv, hb, _, _, k => by
     simp only [Impl.RsaPkcs1Enc.Arm.Decrypt.putLabel, List.append_assoc]
-    refine h.putByte hr0 (by simp at hn; omega) (hv v (by simp)) (by simpa using hb 0 (by simp)) fun t1 h1 => ?_
-    refine MW.putLabel hr0 vs h1 (by simp at hn; omega) (fun w hw => hv w (by simp [hw]))
-      (fun j hj => by rw [show n + 1 + j = n + (j + 1) by omega, hb (j + 1) (by simp; omega)]; rfl)
+    refine h.putByte hr0 (by simp at hn; omega_arith) (hv v (by simp)) (by simpa using hb 0 (by simp)) fun t1 h1 => ?_
+    refine MW.putLabel hr0 vs h1 (by simp at hn; omega_arith) (fun w hw => hv w (by simp [hw]))
+      (fun j hj => by rw [show n + 1 + j = n + (j + 1) by omega_arith, hb (j + 1) (by simp; omega_arith)]; rfl)
       fun t2 h2 => k t2 (by simpa [Nat.add_assoc, Nat.add_comm 1] using h2)
 
 end
@@ -135,10 +135,10 @@ theorem msgBytes_wp {σ s : State} {vs : List Nat} {len : List Instr} {L i : Nat
     (by simp only [msgV, i2osp_two_lt hi]; rfl) fun t1 h1 => ?_
   refine h1.strb hr0 (by decide) (by rw [h1.regs _ (by decide), hr1, setWidth_ofNat8]; simp [msgV, i2osp_two_lt hi])
     fun t2 h2 _ => ?_
-  refine MW.putLabel hr0 vs h2 (by omega) hv (fun j hj => ?_) fun t3 h3 => ?_
+  refine MW.putLabel hr0 vs h2 (by omega_arith) hv (fun j hj => ?_) fun t3 h3 => ?_
   · simp only [msgV, i2osp_two_lt hi, List.cons_append, List.nil_append]
-    rw [show 0 + 1 + 1 + j = j + 2 by omega, List.getD_cons_succ, List.getD_cons_succ,
-      getD_append_left _ _ _ (by simp; omega)]
+    rw [show 0 + 1 + 1 + j = j + 2 by omega_arith, List.getD_cons_succ, List.getD_cons_succ,
+      getD_append_left _ _ _ (by simp; omega_arith)]
     simp [List.getD_eq_getElem?_getD, hj]
   · refine hlen (by simpa [Nat.add_comm] using h3) fun t4 h4 => ⟨h4.st, h4.frame, h4.regs, ?_⟩
     rw [← hm]
@@ -163,12 +163,12 @@ theorem clLen_wp {σ s t : State} {lab : List Byte} {i : Nat} (hl : lab.length =
 theorem shl3 (K : Nat) : BitVec.ofNat 32 K <<< 3 = BitVec.ofNat 32 (8 * K) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem shr8 {K : Nat} (hK : K ≤ 1024) : BitVec.ofNat 32 (8 * K) >>> 8 = BitVec.ofNat 32 (8 * K / 256) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 /-- The bit length `8 k` (`amLen`), after a label of 7 bytes, from `k` in `r3`. -/
 theorem amLen_wp {σ s t : State} {lab : List Byte} {i K : Nat} (hl : lab.length = 7) (hK : K ≤ 1024)

@@ -19,14 +19,7 @@ theorem setStatus_ok (s : State) (status : Nat) (bound : status ≤ 4) :
     encodable_byte (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : status < 2 ^ 32)]; omega)
   have zero : (BitVec.ofNat 32 status - (4 : BitVec 32) == (0 : BitVec 32)) = decide (status = 4) :=
     (sub_beq_zero _ _).trans (ofNat_beq_eq (by omega) (by decide))
-  refine withRest [.r3] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block [.mov .r3 (.imm (BitVec.ofNat 32 status)), .cmp .r3 (.imm 4)] : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r3] ?_ (by rfl) (by rfl)
   ffrun [enc, zero]
 
 theorem cmpWord_ok (r : Reg) {s : State} {result : Bool}

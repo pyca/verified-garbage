@@ -133,7 +133,7 @@ theorem lay {s : State} (hs : gatherPre s) : Lay s := by
     have e := congrArg BitVec.toNat hB
     rw [BitVec.toNat_add, BitVec.toNat_ofNat] at e
     have := (Bs s).isLt
-    omega
+    omega_arith
   exact ⟨⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bk, bn, ba, bds, bl, barg, bd, bt,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hgl, hpm⟩, hB, hBn, bk, bn, ba, bds, bl, bd, bt,
     by simp only [argR, stackArgAddr_eq s hB, Nat.mul_zero, Nat.add_zero], w₁, hgl, ods⟩
@@ -158,7 +158,7 @@ theorem inArg (rs : List Region) : InRegions (s.rd ++ rs) (Bs s + BitVec.ofNat 6
 
 theorem sep (d e : Nat) (h₁ : d + 8 ≤ e ∨ e + 8 ≤ d) (hd : d + 8 ≤ 1304) (he : e + 8 ≤ 1304) :
     Mem.Sep (Bs s + BitVec.ofNat 64 d) 8 (Bs s + BitVec.ofNat 64 e) 8 :=
-  Offset.sep _ h₁ (by have := h.hBn; omega) (by have := h.hBn; omega)
+  Offset.sep _ h₁ (by have := h.hBn; omega_arith) (by have := h.hBn; omega_arith)
 
 omit h in
 /-- The memory the entry left outside the frame. -/
@@ -316,14 +316,14 @@ theorem Ready.call {s c : State} (h : Lay s) (hc : Ready s c) :
   obtain ⟨c0, c1, c2, c3, c4, c5, c6⟩ := hc.callGpr
   have hPn : (Bs s + BitVec.ofNat 64 1280).toNat = (Bs s).toNat + 1280 := by
     have := h.hBn
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
   refine ⟨?_, ?_, ?_⟩
   · simp only [callPre, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, State.withRegions_sp,
       State.callEntry_sp, c0, c1, c2, c3, c4, c5, c6, hc.sp, BitVec.add_sub_cancel]
     refine ⟨trivial, trivial, kd, kt, nd, nt, ad, at_, dt, h.bk.sub_left (Region.sub_prefix (by decide)),
       h.bn.sub_left (Region.sub_prefix (by decide)), h.ba.sub_left (Region.sub_prefix (by decide)),
       h.bd.sub_left (Region.sub_prefix (by decide)), h.bt.sub_left (Region.sub_prefix (by decide)),
-      ok, on, oa, od, ot, by omega⟩
+      ok, on, oa, od, ot, by omega_arith⟩
   · have inRd {r : Region} (h' : r ∈ [kR s, nR s, aR s]) : Covers [r] (c.rd ++ c.wr) := by
       refine covers_of_mem (List.mem_append_left _ ?_)
       rw [hc.rd, rd]; simp only [List.mem_cons, List.not_mem_nil, or_false] at h'
@@ -353,7 +353,7 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   obtain ⟨c0, c1, c2, c3, c4, c5, c6⟩ := hc.callGpr
   have hdep := F.depth
   refine WP.callFV (name := F.name) F.verified.1 (sealSpec_pre hcp) hcov hw
-    (fun s' rd' wr' sp' fr' pres' presV' post' => ?_) (by omega)
+    (fun s' rd' wr' sp' fr' pres' presV' post' => ?_) (by omega_arith)
   have hpost := sealSpec_post post'
   simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c0, c1, c2, c3, c4, c5, c6,
     hc.mem] at hpost
@@ -370,8 +370,8 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
     rcases hr with (rfl | rfl) | rfl
     · exact h.bd.symm.sub_right (stk_sub s 1288 8 (by decide)) |>.symm
     · exact h.bt.symm.sub_right (stk_sub s 1288 8 (by decide)) |>.symm
-    · simp only [below, hc.sp, add_ofNat_sub_ofNat _ (show 16 * F.code.aarch64Depth ≤ 1280 by omega)]
-      exact Offset.disjoint _ (.inr (by omega)) (by decide) (by have := h.hBn; omega)
+    · simp only [below, hc.sp, add_ofNat_sub_ofNat _ (show 16 * F.code.aarch64Depth ≤ 1280 by omega_arith)]
+      exact Offset.disjoint _ (.inr (by omega_arith)) (by decide) (by have := h.hBn; omega_arith)
   exact ⟨ra, hpost, fun r hr h30 => by
       obtain ⟨h₄, h₅, hg, h₈, h₉, h₁₀, h₁₆⟩ := hpres r hr h30
       rw [pres' r hr h30, hc.gpr r h₄ h₅ hg h₈ h₉ h₁₀ h₁₆],
@@ -411,10 +411,10 @@ theorem ret_wp {s s' : State} (h : Lay s) (hc : Called s s') :
       rcases hr' with rfl | rfl
       · exact h₁.symm.sub_right (stk_sub s 1280 16 (by decide))
       · exact h₂
-    have hk : bytesAt (gMem s) (K s) 32 = bytesAt s.mem (K s) 32 := bytesAt_frame hfc (apart h.bk kd) (by omega)
-    have hn : bytesAt (gMem s) (Nn s) 12 = bytesAt s.mem (Nn s) 12 := bytesAt_frame hfc (apart h.bn nd) (by omega)
+    have hk : bytesAt (gMem s) (K s) 32 = bytesAt s.mem (K s) 32 := bytesAt_frame hfc (apart h.bk kd) (by omega_arith)
+    have hn : bytesAt (gMem s) (Nn s) 12 = bytesAt s.mem (Nn s) 12 := bytesAt_frame hfc (apart h.bn nd) (by omega_arith)
     have ha : bytesAt (gMem s) (Ad s) (AL s) = bytesAt s.mem (Ad s) (AL s) :=
-      bytesAt_frame hfc (apart h.ba ad) (by omega)
+      bytesAt_frame hfc (apart h.ba ad) (by omega_arith)
     have hd : bytesAt (gMem s) (Dst s) (L s) = pt s (Cnt s) := by
       rw [← h.hlen]
       exact bytesAt_writeBytes_self _ _ _ (by rw [h.hlen]; exact (s.gpr .x7).isLt)
@@ -425,7 +425,7 @@ theorem ret_wp {s s' : State} (h : Lay s) (hc : Called s s') :
 theorem sealGather_wp (F : SealFn) {s : State} (hs : gatherPre s) :
     WP isa (sealGather F.name F.code) s fun z => abiPreserved s z ∧ gatherPost s z := by
   have h := lay hs
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.w₁; omega) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.w₁; omega_arith) ?_
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (gathered_wp h he) fun g hg => ?_)
   refine WP.seq (WP.mono (ready_wp hg) fun c hc => ?_)

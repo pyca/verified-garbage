@@ -11,11 +11,9 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.X448.AArch64.Field56
 import VerifiedGarbage.Proof.X448.AArch64.Env
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.X448.AArch64.Setup
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
-import VerifiedGarbage.Spec.X448.Field56
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
 

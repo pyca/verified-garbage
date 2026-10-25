@@ -62,18 +62,18 @@ theorem trialStep_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u₀ u : State} {k :
   obtain ⟨hw, mem, rest, r12, lr, r11⟩ := h
   have hn := hw.nowrap
   have hWl := hw.wle
-  have hk512 : k < 512 := by simp only [nT] at hk; split at hk <;> omega
+  have hk512 : k < 512 := by simp only [nT] at hk; split at hk <;> omega_arith
   have hz : arr W aTab + 4 * nT W ≤ Z := by
-    have := nT_le hW; simp only [arr, S, nArr, aTab] at *; omega
-  have hzc : arr W aC + 4 * W ≤ Z := by simp only [arr, S, nArr, aC] at *; omega
+    have := nT_le hW; simp only [arr, S, nArr, aTab] at *; omega_arith
+  have hzc : arr W aC + 4 * W ≤ Z := by simp only [arr, S, nArr, aC] at *; omega_arith
   set c := val32 m (State.addr B) (arr W aC) (W - 2) with ec
   have ea : State.addr (u.gpr .r12 + BitVec.ofNat 32 0) = off (State.addr B) (arr W aTab + 4 * k) := by
-    rw [r12, BitVec.add_assoc, ← BitVec.ofNat_add]; exact hw.addr (by omega)
-  have rd : InRegions (u.rd ++ u.wr) (off (State.addr B) (arr W aTab + 4 * k)) 4 := hw.read (by omega)
+    rw [r12, BitVec.add_assoc, ← BitVec.ofNat_add]; exact hw.addr (by omega_arith)
+  have rd : InRegions (u.rd ++ u.wr) (off (State.addr B) (arr W aTab + 4 * k)) 4 := hw.read (by omega_arith)
   have tk : u.mem.readW (off (State.addr B) (arr W aTab + 4 * k)) 32 = BitVec.ofNat 32 (tabWord32 k) :=
     w32_ofNat (by rw [mem]; exact tab k hk)
-  have e0 := tabEntry_facts (i := 2 * k) (by omega)
-  have e1 := tabEntry_facts (i := 2 * k + 1) (by omega)
+  have e0 := tabEntry_facts (i := 2 * k) (by omega_arith)
+  have e1 := tabEntry_facts (i := 2 * k + 1) (by omega_arith)
   rw [trialStep_eq]
   refine WP.seq (wp_ldr (by decide) ea rd fun u1 v1 => wp_dp (op2_imm (by decide)) fun u2 v2 => WP.block_nil ?_)
   have k2 : Rest [.r10, .r12] u u2 := (v1.rest (by simp)).trans (v2.rest (by simp))
@@ -91,9 +91,9 @@ theorem trialStep_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u₀ u : State} {k :
   have r34 : u4.gpr .r3 = BitVec.ofNat 32 (tabEntry (2 * k)) := by
     apply BitVec.eq_of_toNat_eq
     rw [v4.gpr, v3.gpr, lo16, r10, ofNat_toNat_lt (tabWord32_lt hk512), tabWord32_lo hk512,
-      ofNat_toNat_lt (by omega)]
-  refine prime_ok (f := tr (2 * k) c) (hw2.rest k4) (by omega) hWe hzc (by rw [v4.mem, v3.mem, v2.mem, v1.mem, mem]) r34
-    ⟨e0.1, e0.2.1, e0.2.2⟩ (ninv_tab (by omega)) (by rw [k4.gpr _ (by decide), k2.gpr _ (by decide), r11])
+      ofNat_toNat_lt (by omega_arith)]
+  refine prime_ok (f := tr (2 * k) c) (hw2.rest k4) (by omega_arith) hWe hzc (by rw [v4.mem, v3.mem, v2.mem, v1.mem, mem]) r34
+    ⟨e0.1, e0.2.1, e0.2.2⟩ (ninv_tab (by omega_arith)) (by rw [k4.gpr _ (by decide), k2.gpr _ (by decide), r11])
     fun u5 k5 m5 r115 => ?_
   -- The second prime.
   refine WP.seq ?_
@@ -102,10 +102,10 @@ theorem trialStep_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u₀ u : State} {k :
   have r36 : u6.gpr .r3 = BitVec.ofNat 32 (tabEntry (2 * k + 1)) := by
     apply BitVec.eq_of_toNat_eq
     rw [v6.gpr, hi16, k5.gpr _ (by decide), k4.gpr _ (by decide), r10, ofNat_toNat_lt (tabWord32_lt hk512),
-      tabWord32_hi hk512, ofNat_toNat_lt (by omega)]
+      tabWord32_hi hk512, ofNat_toNat_lt (by omega_arith)]
   have hw5 : Ws u5 B Z W nArr := (hw2.rest k4).rest k5
-  refine prime_ok (f := tr (2 * k) c || decide (c % tabEntry (2 * k) = 0)) (hw5.rest k6) (by omega) hWe hzc
-    (by rw [v6.mem, m5]) r36 ⟨e1.1, e1.2.1, e1.2.2⟩ (ninv_tab (by omega)) (by rw [k6.gpr _ (by decide), r115])
+  refine prime_ok (f := tr (2 * k) c || decide (c % tabEntry (2 * k) = 0)) (hw5.rest k6) (by omega_arith) hWe hzc
+    (by rw [v6.mem, m5]) r36 ⟨e1.1, e1.2.1, e1.2.2⟩ (ninv_tab (by omega_arith)) (by rw [k6.gpr _ (by decide), r115])
     fun u7 k7 m7 r117 => ?_
   -- The count.
   refine wp_subs (op2_imm (by decide)) fun u8 v8 z8 => WP.block_nil ?_
@@ -116,20 +116,20 @@ theorem trialStep_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u₀ u : State} {k :
     rw [v8.gpr, k7.gpr _ (by decide), k6.gpr _ (by decide), k5.gpr _ (by decide), k4.gpr _ (by decide),
       k2.gpr _ (by decide), lr]
     apply BitVec.eq_of_toNat_eq
-    have : nT W ≤ 512 := by simp only [nT]; split <;> omega
-    rw [BitVec.toNat_sub, ofNat_toNat_lt (by omega), ofNat_toNat_lt (by omega)]
+    have : nT W ≤ 512 := by simp only [nT]; split <;> omega_arith
+    rw [BitVec.toNat_sub, ofNat_toNat_lt (by omega_arith), ofNat_toNat_lt (by omega_arith)]
     simp only [show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+    omega_arith
   refine ⟨⟨hw.rest kall, by rw [v8.mem, m7], rest.trans kall, ?_, lr8, ?_⟩, ?_⟩
   · rw [v8.other _ (by decide), k7.gpr _ (by decide), k6.gpr _ (by decide), k5.gpr _ (by decide),
       k4.gpr _ (by decide), r12']
-  · rw [v8.other _ (by decide), r117, show 2 * (k + 1) = 2 * k + 1 + 1 by omega, tr_succ, tr_succ]
+  · rw [v8.other _ (by decide), r117, show 2 * (k + 1) = 2 * k + 1 + 1 by omega_arith, tr_succ, tr_succ]
   · rw [z8, ← v8.gpr, lr8]
-    have : nT W ≤ 512 := by simp only [nT]; split <;> omega
+    have : nT W ≤ 512 := by simp only [nT]; split <;> omega_arith
     by_cases h0 : nT W - (k + 1) = 0
     · simp [h0]
     · have : (BitVec.ofNat 32 (nT W - (k + 1))) ≠ 0 := fun e => h0 (by
-        have := congrArg BitVec.toNat e; rw [ofNat_toNat_lt (by omega)] at this; simpa using this)
+        have := congrArg BitVec.toNat e; rw [ofNat_toNat_lt (by omega_arith)] at this; simpa using this)
       simpa [h0] using this
 
 /-- All the words of the table. -/
@@ -137,16 +137,16 @@ theorem trialLoop_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u₀ u : State}
     (h : TO B Z W m u₀ 0 u) (hW : 10 ≤ W) (hWe : W % 2 = 0) (hZ : arr W nArr ≤ Z)
     (tab : ∀ j < nT W, w32 m (State.addr B) (arr W aTab + 4 * j) = tabWord32 j) :
     WP isa (.loop trialStep .ne) u (TO B Z W m u₀ (nT W)) := by
-  have hT : 0 < nT W := by simp only [nT]; split <;> omega
+  have hT : 0 < nT W := by simp only [nT]; split <;> omega_arith
   refine WP.loop (M := isa) (fun n v => 0 < n ∧ n ≤ nT W ∧ TO B Z W m u₀ (nT W - n) v)
     (fun n v ⟨hn, hn2, hu⟩ => ?_) (nT W) u ⟨hT, Nat.le_refl _, by rw [Nat.sub_self]; exact h⟩
-  refine WP.mono (trialStep_ok hu (by omega) hW hWe hZ tab) fun u' ⟨hu', z⟩ => ?_
+  refine WP.mono (trialStep_ok hu (by omega_arith) hW hWe hZ tab) fun u' ⟨hu', z⟩ => ?_
   rw [isa_ne, z]
   by_cases h0 : n = 1
   · subst h0
-    refine .inl ⟨by simp; omega, ?_⟩
-    rwa [show nT W - 1 + 1 = nT W by omega] at hu'
-  · refine .inr ⟨by simp; omega, n - 1, by omega, by omega, by omega, ?_⟩
-    rwa [show nT W - n + 1 = nT W - (n - 1) by omega] at hu'
+    refine .inl ⟨by simp; omega_arith, ?_⟩
+    rwa [show nT W - 1 + 1 = nT W by omega_arith] at hu'
+  · refine .inr ⟨by simp; omega_arith, n - 1, by omega_arith, by omega_arith, by omega_arith, ?_⟩
+    rwa [show nT W - n + 1 = nT W - (n - 1) by omega_arith] at hu'
 
 end VG.Proof.RsaKeyGen.Arm.Cand

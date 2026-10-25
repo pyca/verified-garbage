@@ -31,7 +31,7 @@ theorem pd_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputedCheckedContr
     valid, preLen, inputLen, ePositive, eLen, space⟩ := h
   rw [preLen] at rd nWs stackN nFit
   have preSize : Spec.Rsa.precomputedWords (s.gpr .r1).toNat * 8 = 16 * Spec.Rsa.modulusWords (s.gpr .r1).toNat := by
-    simp only [Spec.Rsa.precomputedWords]; omega
+    simp only [Spec.Rsa.precomputedWords]; omega_arith
   rw [preSize] at rd nWs stackN nFit
   rw [inputLen] at rd xWs stackX xFit
   have frame : FrameStack.belowA s.sp 56 = ⟨State.addr s.sp - BitVec.ofNat 64 56, 56⟩ := by
@@ -53,13 +53,13 @@ theorem pd_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputedCheckedContr
   · simp
   · exact ⟨_, List.mem_append_left _ (by rw [rd]; simp [State.addr]), Region.contains_self _ _⟩
   · unfold stackArg stackArgAddr
-    rw [addr_add (by omega : s.sp.toNat + 4 * 4 < 2 ^ 32)]
+    rw [addr_add (by omega_arith : s.sp.toNat + 4 * 4 < 2 ^ 32)]
   · simp only [stackArg, argAddr]
   · simp only [BitVec.ofNat_toNat, BitVec.setWidth_eq]
     unfold stackArg stackArgAddr
-    rw [addr_add (by omega : s.sp.toNat + 4 * 1 < 2 ^ 32)]
+    rw [addr_add (by omega_arith : s.sp.toNat + 4 * 1 < 2 ^ 32)]
   · unfold stackArg stackArgAddr
-    rw [addr_add (by omega : s.sp.toNat + 4 * 2 < 2 ^ 32)]
+    rw [addr_add (by omega_arith : s.sp.toNat + 4 * 2 < 2 ^ 32)]
   · rw [frame]; simpa only [State.addr, Nat.mul_comm] using stackWs
   · simpa only [State.addr, Nat.mul_comm] using wsArgs.symm
   · rw [frame]; exact stackN

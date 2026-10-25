@@ -65,9 +65,9 @@ theorem countB2_ok (s : State) {a b : BitVec 64} (h23 : s.gpr .x23 = a) (h10 : s
   have hn : (~~~b).toNat = 2 ^ 64 - 1 - b.toNat := by rw [BitVec.toNat_not]
   have hb := b.isLt
   by_cases h : a.toNat < b.toNat
-  · have hc : ¬2 ^ 64 ≤ a.toNat + (~~~b).toNat + (true).toNat := by rw [hn, Bool.toNat_true]; omega
+  · have hc : ¬2 ^ 64 ≤ a.toNat + (~~~b).toNat + (true).toNat := by rw [hn, Bool.toNat_true]; omega_arith
     simp only [hc, h, decide_false, Bool.false_eq_true, ↓reduceIte]
-  · have hc : 2 ^ 64 ≤ a.toNat + (~~~b).toNat + (true).toNat := by rw [hn, Bool.toNat_true]; omega
+  · have hc : 2 ^ 64 ≤ a.toNat + (~~~b).toNat + (true).toNat := by rw [hn, Bool.toNat_true]; omega_arith
     simp only [hc, h, decide_true, ↓reduceIte]
 
 theorem args_ok (s : State) :
@@ -105,9 +105,9 @@ theorem advA_ok (s : State) {S P : Addr} {left m : Nat} (hs : s.gpr .x24 = S) (h
   · simp only [gpr_write, ↓reduceIte, h22, hm, BitVec.setWidth_eq]
     congr 1
     apply BitVec.eq_of_toNat_eq
-    have hm' : m < 2 ^ 64 := by omega
+    have hm' : m < 2 ^ 64 := by omega_arith
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm', Nat.shiftLeft_eq]
-    omega
+    omega_arith
 
 theorem advB_ok (s : State) {Q : Addr} (hq : s.gpr .x21 = Q)
     (rq : InRegions (s.rd ++ s.wr) (Q + BitVec.ofNat 64 12) 4) :
@@ -147,12 +147,12 @@ theorem carry_ok (s : State) {Q : Addr} (hq : s.gpr .x21 = Q)
       by_cases h : 2 ^ 64 ≤ L.toNat + 2 ^ 32 + (false).toNat
       · rw [decide_eq_true h]
         simp only [Bool.toNat_false, Bool.toNat_true] at h ⊢
-        rw [show (L.toNat + 2 ^ 32) / 2 ^ 64 = 1 by omega]
-        omega
+        rw [show (L.toNat + 2 ^ 32) / 2 ^ 64 = 1 by omega_arith]
+        omega_arith
       · rw [decide_eq_false h]
         simp only [Bool.toNat_false] at h ⊢
-        rw [show (L.toNat + 2 ^ 32) / 2 ^ 64 = 0 by omega]
-        omega
+        rw [show (L.toNat + 2 ^ 32) / 2 ^ 64 = 0 by omega_arith]
+        omega_arith
   · refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains_base Q (d := 8) (n := 8) (k := 16) (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ ?_

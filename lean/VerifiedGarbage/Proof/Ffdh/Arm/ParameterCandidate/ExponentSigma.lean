@@ -36,14 +36,7 @@ theorem sigmaHead_ok {s : State} {count : Nat} (stack : Workspace s s.sp 72)
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 60#32)) 4 := by
     rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
     exact stack.read (by decide)
-  refine withRest [.r1] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.exponentSigmaHead : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.exponentSigmaHead
   ffrun [BitVec.add_zero, read, saved, maskCount count]
   change (_ - 0#32 == 0#32) = _

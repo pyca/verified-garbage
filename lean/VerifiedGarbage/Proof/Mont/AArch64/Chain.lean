@@ -42,9 +42,9 @@ theorem loadsR_ok {size : Nat} {rn : Reg} : ∀ (ts : List Reg) {s : State} {bas
     simp only [List.length_cons] at ha
     simp only [List.mem_cons, not_or] at hr
     rw [loadsR, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (ldR_ok hs (d := a) (by omega) ha8 t) fun s₁ ⟨e₁, k₁, c₁⟩ => ?_
+    refine WP.mono (ldR_ok hs (d := a) (by omega_arith) ha8 t) fun s₁ ⟨e₁, k₁, c₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by simpa using hr.1)
-    refine WP.mono (loadsR_ok ts hs₁ (a := a + 8) (by omega) (by omega) (List.nodup_cons.mp hf).2 hr.2)
+    refine WP.mono (loadsR_ok ts hs₁ (a := a + 8) (by omega_arith) (by omega_arith) (List.nodup_cons.mp hf).2 hr.2)
       fun s₂ ⟨e₂, k₂, c₂⟩ => ?_
     have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (List.nodup_cons.mp hf).1
     refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs)), c₂.trans c₁⟩
@@ -67,17 +67,17 @@ theorem storesR_ok {size : Nat} {rn : Reg} : ∀ (ts : List Reg) {s : State} {ba
     have hn := hs.nowrap
     simp only [List.length_cons] at ho
     rw [storesR, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (stR_ok hs (d := o) (by omega) ho8 t) fun s₁ e₁ => ?_
+    refine WP.mono (stR_ok hs (d := o) (by omega_arith) ho8 t) fun s₁ e₁ => ?_
     have hs₁ : PtrW s₁ rn base size := by subst e₁; exact ⟨hs.reg, hs.st, hs.enc, hs.nowrap⟩
-    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [e₁]; exact writeW_outside _ _ _ (by omega)
-    refine WP.mono (storesR_ok ts hs₁ (o := o + 8) (by omega) (by omega) (List.nodup_cons.mp hd).2)
+    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [e₁]; exact writeW_outside _ _ _ (by omega_arith)
+    refine WP.mono (storesR_ok ts hs₁ (o := o + 8) (by omega_arith) (by omega_arith) (List.nodup_cons.mp hd).2)
       fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
     have k₁ : KeepRegs [] s s₁ := by subst e₁; exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
     refine ⟨?_, k₁.trans k₂, fun x hx => ?_⟩
-    · rw [List.length_cons, wordsVal, O₂.word (by omega) (by omega), e₁, word_writeW_self, e₂,
+    · rw [List.length_cons, wordsVal, O₂.word (by omega_arith) (by omega_arith), e₁, word_writeW_self, e₂,
         regsVal, regsVal_congr (s := s) (s' := s₁) fun q _ => by rw [e₁]]
     · simp only [List.length_cons] at hx
-      rw [O₂ x (by omega), O₁ x (by omega)]
+      rw [O₂ x (by omega_arith), O₁ x (by omega_arith)]
 
 theorem stores_ok {size : Nat} (ts : List Reg) {s : State} {base : Addr} {o : Nat}
     (hs : Scr s base size) (ho : o + 8 * ts.length ≤ size) (ho8 : o % 8 = 0) (hd : ts.Nodup) :
@@ -129,12 +129,12 @@ theorem chainAdcs_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr
     simp only [List.length_cons] at hb
     have ht2 : t ≠ .x2 := fun h => hf.head.2 (by simp [h])
     rw [chain, WP.block_append_iff]
-    refine WP.mono (addStep_ok hs t ht2 false (c := s.c) rfl (b := b) (by omega) hb8)
+    refine WP.mono (addStep_ok hs t ht2 false (c := s.c) rfl (b := b) (by omega_arith) hb8)
       fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       exact fun h => by rcases h with h | h <;> [exact absurd h (by decide); exact hf.head.2 (by simp [← h])])
-    refine WP.mono (chainAdcs_ok ts hs₁ (b := b + 8) (by omega) (by omega) hf.tail)
+    refine WP.mono (chainAdcs_ok ts hs₁ (b := b + 8) (by omega_arith) (by omega_arith) hf.tail)
       fun s₂ ⟨e₂, k₂⟩ => ?_
     have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (by
       simp only [List.mem_cons, not_or]; exact ⟨ht2, hf.head.1⟩)
@@ -146,7 +146,7 @@ theorem chainAdcs_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr
     refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
     simp only [regsVal, wordsVal, List.length_cons, pow64_succ, ht]
     rw [Nat.mul_assoc]
-    omega
+    omega_arith
 
 /-- `ts += [b]`, with the carry out. -/
 theorem chainAdds_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {t : Reg}
@@ -158,12 +158,12 @@ theorem chainAdds_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   simp only [List.length_cons] at hb ⊢
   have ht2 : t ≠ .x2 := fun h => hf.head.2 (by simp [h])
   rw [chain, WP.block_append_iff]
-  refine WP.mono (addStep_ok hs t ht2 true (c := false) rfl (b := b) (by omega) hb8)
+  refine WP.mono (addStep_ok hs t ht2 true (c := false) rfl (b := b) (by omega_arith) hb8)
     fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     exact fun h => by rcases h with h | h <;> [exact absurd h (by decide); exact hf.head.2 (by simp [← h])])
-  refine WP.mono (chainAdcs_ok ts hs₁ (b := b + 8) (by omega) (by omega) hf.tail)
+  refine WP.mono (chainAdcs_ok ts hs₁ (b := b + 8) (by omega_arith) (by omega_arith) hf.tail)
     fun s₂ ⟨e₂, k₂⟩ => ?_
   have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (by
     simp only [List.mem_cons, not_or]; exact ⟨ht2, hf.head.1⟩)
@@ -176,7 +176,7 @@ theorem chainAdds_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   simp only [regsVal, wordsVal, pow64_succ, ht]
   simp only [Bool.toNat_false, Nat.add_zero] at e₁
   rw [Nat.mul_assoc]
-  omega
+  omega_arith
 
 /-- `t -= [b] + !c`: one word of a chain (`c` the carry flag in, `subs` with
 `c` true). -/
@@ -205,12 +205,12 @@ theorem chainSbcs_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr
     simp only [List.length_cons] at hb
     have ht2 : t ≠ .x2 := fun h => hf.head.2 (by simp [h])
     rw [chain, WP.block_append_iff]
-    refine WP.mono (subStep_ok hs t ht2 false (c := s.c) rfl (b := b) (by omega) hb8)
+    refine WP.mono (subStep_ok hs t ht2 false (c := s.c) rfl (b := b) (by omega_arith) hb8)
       fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       exact fun h => by rcases h with h | h <;> [exact absurd h (by decide); exact hf.head.2 (by simp [← h])])
-    refine WP.mono (chainSbcs_ok ts hs₁ (b := b + 8) (by omega) (by omega) hf.tail)
+    refine WP.mono (chainSbcs_ok ts hs₁ (b := b + 8) (by omega_arith) (by omega_arith) hf.tail)
       fun s₂ ⟨e₂, k₂⟩ => ?_
     have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (by
       simp only [List.mem_cons, not_or]; exact ⟨ht2, hf.head.1⟩)
@@ -222,7 +222,7 @@ theorem chainSbcs_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr
     refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
     simp only [regsVal, wordsVal, List.length_cons, pow64_succ, ht]
     rw [Nat.mul_assoc]
-    omega
+    omega_arith
 
 /-- `ts -= [b]`, with the borrow `!c` out. -/
 theorem chainSubs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {t : Reg}
@@ -235,12 +235,12 @@ theorem chainSubs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   simp only [List.length_cons] at hb ⊢
   have ht2 : t ≠ .x2 := fun h => hf.head.2 (by simp [h])
   rw [chain, WP.block_append_iff]
-  refine WP.mono (subStep_ok hs t ht2 true (c := true) rfl (b := b) (by omega) hb8)
+  refine WP.mono (subStep_ok hs t ht2 true (c := true) rfl (b := b) (by omega_arith) hb8)
     fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     exact fun h => by rcases h with h | h <;> [exact absurd h (by decide); exact hf.head.2 (by simp [← h])])
-  refine WP.mono (chainSbcs_ok ts hs₁ (b := b + 8) (by omega) (by omega) hf.tail)
+  refine WP.mono (chainSbcs_ok ts hs₁ (b := b + 8) (by omega_arith) (by omega_arith) hf.tail)
     fun s₂ ⟨e₂, k₂⟩ => ?_
   have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (by
     simp only [List.mem_cons, not_or]; exact ⟨ht2, hf.head.1⟩)
@@ -253,6 +253,6 @@ theorem chainSubs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   simp only [regsVal, wordsVal, pow64_succ, ht]
   simp only [Bool.not_true, Bool.toNat_false, Nat.add_zero] at e₁
   rw [Nat.mul_assoc]
-  omega
+  omega_arith
 
 end VG.Proof.Mont.AArch64

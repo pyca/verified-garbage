@@ -65,7 +65,7 @@ theorem invSbox_ok {s : State} (hok : Ok sboxCfg s) :
     subst hqk
     simp only [TableRel, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
       BitVec.testBit_toNat, getLsbD_bsByte _ _ hk8]
-  obtain ⟨s', hs', p₀⟩ := key 0 (by omega)
+  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_arith)
   refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, p₀.sp, fun r hr => p₀.other r ?_, p₀.frame⟩
   · obtain ⟨s'', hs'', p₁⟩ := key p hp
     obtain rfl := run_unique hs'' hs'
@@ -97,7 +97,7 @@ theorem invShiftRows_ok {s : State} (hok : Ok linCfg s) :
     (Q s) (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
   refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
   rw [hout j hj p hp, invSrG, xorBits_cons, xorBits_nil, Bool.xor_false,
-    bitOf_word _ _ _ (by simp only [invSrSrc]; omega)]
+    bitOf_word _ _ _ (by simp only [invSrSrc]; omega_arith)]
 
 theorem invMixColumns_ok {s : State} (hok : Ok linCfg s) :
     ∃ s', runBlock isa Impl.Aes.AArch64.invMixColumns s = some s' ∧
@@ -116,7 +116,7 @@ theorem invMixColumns_ok {s : State} (hok : Ok linCfg s) :
 
 theorem kp_back (K : Addr) {m : Nat} (hm : 0 < m) :
     K + BitVec.ofNat 64 (64 * m) - BitVec.ofNat 64 64 = K + BitVec.ofNat 64 (64 * (m - 1)) := by
-  rw [Offset.add_ofNat_sub K (by omega), show 64 * m - 64 = 64 * (m - 1) by omega]
+  rw [Offset.add_ofNat_sub K (by omega_arith), show 64 * m - 64 = 64 * (m - 1) by omega_arith]
 
 /-- `sub kp, kp, #64`. -/
 theorem subKp_wp {s₀ s : State} {P : State → Prop} (hc : Ctx s₀ s)
@@ -157,9 +157,9 @@ theorem kpLast_wp {s₀ s : State} {P : State → Prop} (hc : Ctx s₀ s)
 
 theorem t0_first (K : Addr) {m : Nat} (hm : m < 15) :
     (K + BitVec.ofNat 64 (64 * m) - K - BitVec.ofNat 64 64 != 0) = !decide (m = 1) := by
-  rw [Offset.add_sub_cancel_left, bne, Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+  rw [Offset.add_sub_cancel_left, bne, Offset.ofNat_sub_ofNat_beq (by omega_arith) (by omega_arith)]
   congr 1
-  exact decide_eq_decide.mpr (by omega)
+  exact decide_eq_decide.mpr (by omega_arith)
 
 /-- A middle round of the inverse cipher. -/
 theorem invRound_ok {s₀ s : State} {R m : Nat} {w : List Byte} {T : Nat → Spec.Aes.State}
@@ -169,11 +169,11 @@ theorem invRound_ok {s₀ s : State} {R m : Nat} {w : List Byte} {T : Nat → Sp
       s'.gpr kp = s₀.gpr .x0 + BitVec.ofNat 64 (64 * (R - (m + 1))) ∧
       BsRel (Q s') (fun b => irnd R w m (T b)) ∧
       AArch64.eval (.nonzero .x t0) s' = some (!decide (m + 2 = R)) := by
-  have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega
+  have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_arith
   simp only [invRoundBody]
   repeat rw [WP.block_append_iff (M := isa)]
   refine subKp_wp hc fun s₁ hc₁ hk₁ hq₁ => ?_
-  rw [hk, kp_back _ (by omega), show R - m - 1 = R - (m + 1) by omega] at hk₁
+  rw [hk, kp_back _ (by omega_arith), show R - m - 1 = R - (m + 1) by omega_arith] at hk₁
   have hbs₁ : BsRel (Q s₁) T := by
     have : Q s₁ = Q s := funext hq₁
     rw [this]; exact hbs
@@ -181,7 +181,7 @@ theorem invRound_ok {s₀ s : State} {R m : Nat} {w : List Byte} {T : Nat → Sp
   have hbs₂ := bs_invShiftRows h₂ hbs₁
   refine layer_wp (invSbox_ok (hc₂.linOk hp.scr)) hc₂ fun s₃ hc₃ h₃ hk₃ => ?_
   have hbs₃ := bs_invSubBytes h₃ hbs₂
-  refine ark_step hp hc₃ (j := R - (m + 1)) (by rw [hk₃, hk₂, hk₁]) (by omega) hbs₃
+  refine ark_step hp hc₃ (j := R - (m + 1)) (by rw [hk₃, hk₂, hk₁]) (by omega_arith) hbs₃
     fun s₄ hc₄ hk₄ hbs₄ => ?_
   refine layer_wp (invMixColumns_ok (hc₄.linOk hp.scr)) hc₄ fun s₅ hc₅ h₅ hk₅ => ?_
   have hbs₅ := bs_invMixColumns h₅ hbs₄
@@ -193,17 +193,17 @@ theorem invRound_ok {s₀ s : State} {R m : Nat} {w : List Byte} {T : Nat → Sp
     rw [this]
     intro b hb i hi
     rw [hbs₅ b hb i hi]
-    simp only [irnd, show R - 1 - m = R - (m + 1) by omega]
+    simp only [irnd, show R - 1 - m = R - (m + 1) by omega_arith]
   · simp only [AArch64.eval, State.read, Size.bits, BitVec.setWidth_eq, ht₆]
-    rw [hk₅', hc₅.keep _ x0_not.1 x0_not.2, t0_first _ (by omega)]
-    exact congrArg (some ∘ not) (decide_eq_decide.mpr (by omega))
+    rw [hk₅', hc₅.keep _ x0_not.1 x0_not.2, t0_first _ (by omega_arith)]
+    exact congrArg (some ∘ not) (decide_eq_decide.mpr (by omega_arith))
 
 /-- Four blocks, from `InRel` to `InRel` of their decryptions. -/
 theorem decrypt4_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.Aes.State}
     (hp : EncPre s₀ R w) (hin : InRel (Q s₀) S) :
     WP isa decrypt4 s₀ fun s => Ctx s₀ s ∧ InRel (Q s) (fun b => invCipher R w (S b)) := by
-  have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega
-  have hR1 : 2 ≤ R := by rcases hp.rounds with h | h | h <;> omega
+  have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_arith
+  have hR1 : 2 ≤ R := by rcases hp.rounds with h | h | h <;> omega_arith
   let A : Nat → Spec.Aes.State := fun b => addRoundKey (S b) (roundKey w R)
   let Inv : Nat → State → Prop := fun n s => ∃ m, n = R - 1 - m ∧ m + 1 < R ∧ Ctx s₀ s ∧
     s.gpr kp = s₀.gpr .x0 + BitVec.ofNat 64 (64 * (R - m)) ∧
@@ -222,20 +222,20 @@ theorem decrypt4_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.A
       rw [this]; exact hbs₁
     have hk₂' : s₂.gpr kp = s₀.gpr .x0 + BitVec.ofNat 64 (64 * R) := by
       rw [hk₂, hc₁.base, hp.k0, BitVec.add_assoc, ← BitVec.ofNat_add, lastKey]
-      congr 2; omega
+      congr 2; omega_arith
     exact ark_step hp hc₂ hk₂' (Nat.le_refl R) hbs₂ fun s₃ hc₃ hk₃ hbs₃ =>
-      ⟨0, by omega, by omega, hc₃, by rw [hk₃, hk₂']; simp, hbs₃⟩
+      ⟨0, by omega_arith, by omega_arith, hc₃, by rw [hk₃, hk₂']; simp, hbs₃⟩
   · -- The middle rounds.
     refine WP.loop (M := isa) Inv (fun n s hs => ?_) (R - 1) s h
     obtain ⟨m, rfl, hm, hc, hk, hbs⟩ := hs
     refine WP.mono (invRound_ok hp hc hk hm hbs) fun s' ⟨hc', hk', hbs', hz⟩ => ?_
     by_cases hlast : m + 2 = R
     · refine .inl ⟨hz.trans (by simp [hlast]), hc', ?_, ?_⟩
-      · rw [hk']; congr 3; omega
-      · rw [show R - 1 = m + 1 by omega]
+      · rw [hk']; congr 3; omega_arith
+      · rw [show R - 1 = m + 1 by omega_arith]
         intro b hb i hi
         rw [hbs' b hb i hi]; simp only [invMid_succ]
-    · refine .inr ⟨hz.trans (by simp [hlast]), R - 1 - (m + 1), by omega, m + 1, rfl, by omega,
+    · refine .inr ⟨hz.trans (by simp [hlast]), R - 1 - (m + 1), by omega_arith, m + 1, rfl, by omega_arith,
         hc', hk', fun b hb i hi => by rw [hbs' b hb i hi]; simp only [invMid_succ]⟩
   · -- The last round, and back to blocks.
     obtain ⟨hc, hk, hbs⟩ := h
@@ -243,7 +243,7 @@ theorem decrypt4_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.A
     simp only [invLastRound]
     repeat rw [WP.block_append_iff (M := isa)]
     refine subKp_wp hc fun s₁ hc₁ hk₁ hq₁ => ?_
-    rw [hk, kp_back _ (by omega)] at hk₁
+    rw [hk, kp_back _ (by omega_arith)] at hk₁
     have hbs₁ : BsRel (Q s₁) (fun b => invMid R w (R - 1) (A b)) := by
       have : Q s₁ = Q s := funext hq₁
       rw [this]; exact hbs

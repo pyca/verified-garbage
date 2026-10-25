@@ -26,7 +26,7 @@ theorem keygenStackBase_toNat {extra : Nat} {s : State} (h : GenerateKeyABI extr
   have hl := h.stackLower
   have hb := (s.gpr .rsp).isLt
   simp only [randomStackBase, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem keygenStack_offset_toNat {extra : Nat} {s : State} (h : GenerateKeyABI extra s)
     {d : Nat} (hd : d ≤ extra + 256) :
@@ -35,7 +35,7 @@ theorem keygenStack_offset_toNat {extra : Nat} {s : State} (h : GenerateKeyABI e
   have hb := (s.gpr .rsp).isLt
   have hk := keygenStackBase_toNat h
   simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- The frame's return slot and the callee's frame lie in the wrapper's stack allowance. -/
 theorem keygen_ret_sub {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
@@ -44,7 +44,7 @@ theorem keygen_ret_sub {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
   have hb := (s.gpr .rsp).isLt
   have hk := keygenStackBase_toNat h
   rw [random_callBase extra s]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_arith)
 
 theorem keygen_callee_sub {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
     Region.Sub (below (randomBase s - 8) extra) (below (s.gpr .rsp) (extra + 256)) := by
@@ -53,7 +53,7 @@ theorem keygen_callee_sub {extra : Nat} {s : State} (h : GenerateKeyABI extra s)
   have hk := keygenStackBase_toNat h
   change Region.Sub ⟨randomBase s - 8 - BitVec.ofNat 64 extra, extra⟩ _
   rw [random_calleeBase extra s]
-  exact Region.sub_prefix (by omega)
+  exact Region.sub_prefix (by omega_arith)
 
 theorem keygen_checkArgs_ok {s t : State} (hs : Scr t (randomBase s) Random.frameBytes)
     (hsp : t.gpr .rsp = randomBase s) (hv : KeygenSaved s t.mem) :
@@ -107,19 +107,19 @@ theorem keygen_check_pre {extra : Nat} {s t : State} (h : GenerateKeyABI extra s
   have hb := (s.gpr .rsp).isLt
   have hk := keygenStackBase_toNat h
   have hR : (randomBase s - 8).toNat = (randomStackBase extra s).toNat + extra := by
-    rw [random_callBase extra s, keygenStack_offset_toNat h (by omega)]
+    rw [random_callBase extra s, keygenStack_offset_toNat h (by omega_arith)]
   have sR := keygen_ret_sub h
   have sK := keygen_callee_sub h
   refine ⟨?_, trivial, trivial, h.paramsScratch, h.stackParams.sub_left sR, ?_, h.paramsBound, h.scratchBound,
     h.lengths, h.paramsLength, ?_⟩
-  · cases extra <;> simp only <;> omega
+  · cases extra <;> simp only <;> omega_arith
   · cases extra with
     | zero => exact h.stackScratch.sub_left sR
     | succ n => exact ⟨h.stackScratch.sub_left sR, h.stackParams.sub_left sK, h.stackScratch.sub_left sK⟩
   · have hh := h.scratchLength
     unfold Spec.Dsa.generationScratchWords at hh
     unfold Spec.Dsa.scratchWords
-    omega
+    omega_arith
 
 /-- The bytes of a buffer apart from the wrapper's stack allowance, as the callee reads them. -/
 theorem keygen_callEntry_bytes {extra : Nat} {s t : State} (h : GenerateKeyABI extra s)
@@ -144,14 +144,14 @@ theorem keygen_check_call (v : Backend) {s t : State} (h : GenerateKeyABI v.stac
   obtain ⟨hc, hcw⟩ := keygen_check_covers h hrd hwr
   have hd := v.parametersDepth
   have hb := v.stackBound
-  refine WP.call_sp_mx v.parametersVerified.1 (SpSafe.of_all v.parametersSp) (by omega)
+  refine WP.call_sp_mx v.parametersVerified.1 (SpSafe.of_all v.parametersSp) (by omega_arith)
     (keygen_check_pre h hsp hdi hsi hdx hcx h8 h9) hc hcw
     (fun u hur huw huc hf _ ⟨w, hwm, hwg, hp⟩ hmx => ?_)
   sig_post [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero] at hp
   simp only [hdi, hsi, hdx, hcx, hwg .rax (by decide)] at hp
   refine ⟨hur, huw, huc, ?_, ?_, hmx⟩
   · rw [hsp] at hf
-    exact VG.X86_64.Frame.below_mono hf (by omega) (by omega)
+    exact VG.X86_64.Frame.below_mono hf (by omega_arith) (by omega_arith)
   · rw [hp, ← keygen_callEntry_bytes h hsp h.stackParams (s.gpr .r8).isLt]
     rfl
 

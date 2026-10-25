@@ -61,8 +61,8 @@ theorem combineChunk_ok {s : State} {i : Nat} (hi : i < 8) {lo hi' : Nat → Nat
     WP isa (.block (combineChunk i)) s fun t =>
       LaneIs t (16 + i) (fun e => lo e + 2 ^ 28 * hi' e) ∧ t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ (∀ r : VReg, r ≠ V (16 + i) → t.v r = s.v r) := by
-  have n1 : V (2 * i + 1) ≠ V (16 + i) := V_ne _ (by omega) _ (by omega) (by omega)
-  have n2 : V (2 * i) ≠ V (16 + i) := V_ne _ (by omega) _ (by omega) (by omega)
+  have n1 : V (2 * i + 1) ≠ V (16 + i) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n2 : V (2 * i) ≠ V (16 + i) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   simp only [combineChunk]
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, WP.block_nil_iff.mpr ⟨fun e he => ?_,
@@ -71,9 +71,9 @@ theorem combineChunk_ok {s : State} {i : Nat} (hi : i < 8) {lo hi' : Nat → Nat
   · rw [RegUpd.v_setV_self, lane_map2 _ _ _ he, BitVec.toNat_add, RegUpd.v_setV_self, lane_shl _ _ _ he,
       RegUpd.v_setV_of_ne _ _ n2, hl e he, hh e he]
     have := hlo e he; have := hhi e he
-    rw [Nat.mod_eq_of_lt (by omega : hi' e * 2 ^ 28 < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_arith : hi' e * 2 ^ 28 < 2 ^ 64), Nat.mod_eq_of_lt (by omega_arith)]
     dsimp only
-    omega
+    omega_arith
   · rw [RegUpd.v_setV_of_ne _ _ hr, RegUpd.v_setV_of_ne _ _ hr]
 
 theorem combine_ok {s : State} (L : Nat → Nat → Nat) (hL : ∀ k < 16, LaneIs s k (L k))
@@ -85,16 +85,16 @@ theorem combine_ok {s : State} (L : Nat → Nat → Nat) (hL : ∀ k < 16, LaneI
     (∀ i < n, LaneIs t (16 + i) (fun e => L (2 * i) e + 2 ^ 28 * L (2 * i + 1) e)) ∧ t.mem = s.mem ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ r : VReg, (∀ i < n, r ≠ V (16 + i)) → t.v r = s.v r)
   refine wp_range_flatMap (M := isa) (N := 8) inv (fun n t hn ⟨ti, tm, tg, tr, tw, tv⟩ => ?_) 8 (by decide) s
-    ⟨fun _ h => absurd h (by omega), rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
+    ⟨fun _ h => absurd h (by omega_arith), rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
   have keep : ∀ k < 16, t.v (V k) = s.v (V k) := fun k hk =>
-    tv _ fun i hi => V_ne _ (by omega) _ (by omega) (by omega)
-  refine WP.mono (combineChunk_ok hn (fun e he' => by rw [keep _ (by omega)]; exact hL _ (by omega) e he')
-    (fun e he' => by rw [keep _ (by omega)]; exact hL _ (by omega) e he') (he n hn) (ho n hn))
+    tv _ fun i hi => V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  refine WP.mono (combineChunk_ok hn (fun e he' => by rw [keep _ (by omega_arith)]; exact hL _ (by omega_arith) e he')
+    (fun e he' => by rw [keep _ (by omega_arith)]; exact hL _ (by omega_arith) e he') (he n hn) (ho n hn))
     fun u ⟨ua, um, ug, ur, uw, uv⟩ => ⟨fun i hi => ?_, um.trans tm, ug.trans tg, ur.trans tr, uw.trans tw,
-      fun r hr => (uv r (hr n (by omega))).trans (tv r fun i hi => hr i (by omega))⟩
-  rcases (show i < n ∨ i = n by omega) with h | rfl
+      fun r hr => (uv r (hr n (by omega_arith))).trans (tv r fun i hi => hr i (by omega_arith))⟩
+  rcases (show i < n ∨ i = n by omega_arith) with h | rfl
   · intro e he'
-    rw [uv _ (V_ne (16 + i) (by omega) (16 + n) (by omega) (by omega))]
+    rw [uv _ (V_ne (16 + i) (by omega_arith) (16 + n) (by omega_arith) (by omega_arith))]
     exact ti i h e he'
   · exact ua
 
@@ -120,11 +120,11 @@ theorem carry56_ok {s : State} {i : Nat} (hi : i = 16 ∨ i = 20)
       LaneIs t i (fun e => x e % 2 ^ 56) ∧ LaneIs t (i + 1) (fun e => y e + x e / 2 ^ 56) ∧ t.mem = s.mem ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r : VReg, r ≠ V 28 → r ≠ V i → r ≠ V (i + 1) → t.v r = s.v r) := by
-  have n1 : V 28 ≠ V i := V_ne _ (by omega) _ (by omega) (by omega)
-  have n2 : V 28 ≠ V (i + 1) := V_ne _ (by omega) _ (by omega) (by omega)
-  have n3 : V i ≠ V (i + 1) := V_ne _ (by omega) _ (by omega) (by omega)
+  have n1 : V 28 ≠ V i := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n2 : V 28 ≠ V (i + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n3 : V i ≠ V (i + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   have n4 : V 31 ≠ V 28 := by decide
-  have n5 : V 31 ≠ V i := V_ne _ (by omega) _ (by omega) (by omega)
+  have n5 : V 31 ≠ V i := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   have n1' := n1.symm
   have n2' := n2.symm
   have n3' := n3.symm
@@ -152,34 +152,34 @@ theorem outChunk_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ k : N
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ r : VReg, r ≠ V 8 → r ≠ V 9 → t.v r = s.v r) := by
   have n89 : V 8 ≠ V 9 := by decide
   have n98 := n89.symm
-  have a8 : V (16 + 2 * k) ≠ V 8 := V_ne _ (by omega) _ (by omega) (by omega)
-  have b8 : V (17 + 2 * k) ≠ V 8 := V_ne _ (by omega) _ (by omega) (by omega)
-  have a9 : V (16 + 2 * k) ≠ V 9 := V_ne _ (by omega) _ (by omega) (by omega)
-  have b9 : V (17 + 2 * k) ≠ V 9 := V_ne _ (by omega) _ (by omega) (by omega)
+  have a8 : V (16 + 2 * k) ≠ V 8 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have b8 : V (17 + 2 * k) ≠ V 8 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have a9 : V (16 + 2 * k) ≠ V 9 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have b9 : V (17 + 2 * k) ≠ V 9 := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   simp only [outChunk]
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   vred
-  refine WP.block_cons_iff.mpr ⟨_, exec_stq (base := base) ?g1 8 (by omega) (by omega), ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_stq (base := base) ?g1 8 (by omega_arith) (by omega_arith), ?_⟩
   case g1 => scr
   vred
-  refine WP.block_cons_iff.mpr ⟨_, exec_stq (base := base) ?g2 9 (by omega) (by omega), ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_stq (base := base) ?g2 9 (by omega_arith) (by omega_arith), ?_⟩
   case g2 => scr
   refine WP.block_nil_iff.mpr ⟨fun j hj => ?_, fun j hj => ?_, ?_, ?_, ?_, ?_, fun r h8 h9 => ?_⟩
   · simp only [setMem_mem]
-    rw [VG.Proof.X448.AArch64.Outside.word (st_outside _ base _ (by omega)) (by omega) (by omega),
-      show o₁ + 8 * (2 * k + j) = o₁ + 16 * k + 8 * j by omega, word_st _ _ _ _ hj]
-    rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
+    rw [VG.Proof.X448.AArch64.Outside.word (st_outside _ base _ (by omega_arith)) (by omega_arith) (by omega_arith),
+      show o₁ + 8 * (2 * k + j) = o₁ + 16 * k + 8 * j by omega_arith, word_st _ _ _ _ hj]
+    rcases (show j = 0 ∨ j = 1 by omega_arith) with rfl | rfl
     · rw [trn1_0]; rfl
-    · rw [trn1_1, show 17 + 2 * k = 16 + (2 * k + 1) by omega]
+    · rw [trn1_1, show 17 + 2 * k = 16 + (2 * k + 1) by omega_arith]
   · simp only [setMem_mem, setMem_v]
-    rw [show o₂ + 8 * (2 * k + j) = o₂ + 16 * k + 8 * j by omega, word_st _ _ _ _ hj, RegUpd.v_setV_self]
-    rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
+    rw [show o₂ + 8 * (2 * k + j) = o₂ + 16 * k + 8 * j by omega_arith, word_st _ _ _ _ hj, RegUpd.v_setV_self]
+    rcases (show j = 0 ∨ j = 1 by omega_arith) with rfl | rfl
     · rw [trn2_0]; rfl
-    · rw [trn2_1, show 17 + 2 * k = 16 + (2 * k + 1) by omega]
+    · rw [trn2_1, show 17 + 2 * k = 16 + (2 * k + 1) by omega_arith]
   · simp only [setMem_mem]
     intro p hp hq
-    rw [st_outside _ base _ (by omega) p hq, st_outside _ base _ (by omega) p hp]
+    rw [st_outside _ base _ (by omega_arith) p hq, st_outside _ base _ (by omega_arith) p hp]
   · simp only [setMem_gpr, RegUpd.gpr_setV]
   · simp only [setMem_rd, RegUpd.rd_setV]
   · simp only [setMem_wr, RegUpd.wr_setV]

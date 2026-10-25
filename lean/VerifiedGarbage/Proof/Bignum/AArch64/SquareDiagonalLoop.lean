@@ -35,24 +35,24 @@ theorem diagStep_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
   have hn := hI.scr.nowrap
   have t7 := (hI.keep.gpr .x7 (by decide)).trans h7
   rw [WP.block_append_iff]
-  refine WP.mono (diagonalStep_ok hI.scr hI.x16 hI.x11 t7 (by omega) (by omega))
+  refine WP.mono (diagonalStep_ok hI.scr hI.x16 hI.x11 t7 (by omega_arith) (by omega_arith))
     fun u ⟨⟨lo, hiw, hm, hv, _, h16, h11⟩, ku⟩ => ?_
   refine WP.mono (dec_ok u .x14) fun t' ⟨⟨h14, hmem, _⟩, kd⟩ => ?_
   have ho : Outside B (A+16*i) 16 t.mem u.mem := by
     rw [hm]
-    exact ((writeW_outside t.mem B lo (d := A+16*i) (by omega)).mono
-      (Nat.le_refl _) (by omega)).trans
+    exact ((writeW_outside t.mem B lo (d := A+16*i) (by omega_arith)).mono
+      (Nat.le_refl _) (by omega_arith)).trans
       ((writeW_outside (t.mem.writeW (off B (A+16*i)) lo) B hiw
-        (d := A+16*i+8) (by omega)).mono (by omega) (by omega))
+        (d := A+16*i+8) (by omega_arith)).mono (by omega_arith) (by omega_arith))
   have rT : wv t.mem B (A+16*i) 2 = wv s₀.mem B (A+16*i) 2 :=
-    hI.out.wv (by omega) (by omega)
+    hI.out.wv (by omega_arith) (by omega_arith)
   have rX : word t.mem B (eb+8*i) = word s₀.mem B (eb+8*i) :=
-    hI.out.word (by omega) (by omega)
+    hI.out.word (by omega_arith) (by omega_arith)
   have rL : wv u.mem B A (2*i) = wv t.mem B A (2*i) :=
-    ho.wv (by omega) (by omega)
+    ho.wv (by omega_arith) (by omega_arith)
   have newPair : wv u.mem B (A+16*i) 2 = lo.toNat + 2 ^ 64*hiw.toNat := by
-    rw [hm, wv_writeW_top _ B (A+16*i) 1 hiw (by omega)]
-    have hlo := wv_writeW_top t.mem B (A+16*i) 0 lo (by omega)
+    rw [hm, wv_writeW_top _ B (A+16*i) 1 hiw (by omega_arith)]
+    have hlo := wv_writeW_top t.mem B (A+16*i) 0 lo (by omega_arith)
     simp only [Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.one_mul, wv, Nat.zero_add] at hlo
     simp [wv, hlo]
   have pairOld : (word t.mem B (A+16*i)).toNat + 2 ^ 64*(word t.mem B (A+16*i+8)).toNat =
@@ -63,14 +63,14 @@ theorem diagStep_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
   · rw [kd.gpr .x16 (by decide), h16]; congr 1
   · rw [kd.gpr .x11 (by decide), h11]; congr 1
   · rw [hmem]
-    exact (hI.out.mono (o' := A) (n' := 16*(i+1)) (Nat.le_refl _) (by omega)).trans
-      (ho.mono (o' := A) (n' := 16*(i+1)) (by omega) (by omega))
+    exact (hI.out.mono (o' := A) (n' := 16*(i+1)) (Nat.le_refl _) (by omega_arith)).trans
+      (ho.mono (o' := A) (n' := 16*(i+1)) (by omega_arith) (by omega_arith))
   · rw [hmem, kd.gpr .x5 (by decide)]
     have hold := hI.val
-    rw [show 2*(i+1) = 2*i+2 by omega, wv_add, wv_add s₀.mem B A, rL,
-      show A+8*(2*i) = A+16*i by omega, newPair,
-      show 64*(2*i) = 128*i by omega,
-      show 128*(i+1) = 128*i+128 by omega, Nat.pow_add, diagonalValue_succ]
+    rw [show 2*(i+1) = 2*i+2 by omega_arith, wv_add, wv_add s₀.mem B A, rL,
+      show A+8*(2*i) = A+16*i by omega_arith, newPair,
+      show 64*(2*i) = 128*i by omega_arith,
+      show 128*(i+1) = 128*i+128 by omega_arith, Nat.pow_add, diagonalValue_succ]
     grind
   · rw [h14, ku.gpr .x14 (by decide)]
 
@@ -95,23 +95,23 @@ theorem diagonal_ok {s : State} {B : Addr} {Z A eb w : Nat}
   have h0 : DiagInv u B Z A eb 0 u :=
     ⟨hs.congr ku.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h11]; rfl,
       Outside.refl _ _ _ _, by simp [wv, h5, diagonalValue, VG.Proof.Bignum.Square.diagonal]⟩
-  refine WP.seq (WP.mono (wp_countdown (N := w) (by omega) hw0 (DiagInv u B Z A eb)
-    (fun i hi t hI _ => diagStep_ok u7 hi (by omega) hb (by omega) hI) h0 h14)
+  refine WP.seq (WP.mono (wp_countdown (N := w) (by omega_arith) hw0 (DiagInv u B Z A eb)
+    (fun i hi t hI _ => diagStep_ok u7 hi (by omega_arith) hb (by omega_arith) hI) h0 h14)
     fun v hI => ?_)
   refine WP.mono (WP.keep [] (Q := fun t =>
       t.mem = v.mem.writeW (off B (A+16*w)) (v.gpr .x5))
-    (by brun [hI.x16, hI.scr.st (show A+16*w+8 ≤ Z by omega)]) rfl rfl rfl)
+    (by brun [hI.x16, hI.scr.st (show A+16*w+8 ≤ Z by omega_arith)]) rfl rfl rfl)
     fun t ⟨htm, kt⟩ => ?_
   refine ⟨?_, ?_, (kt.gpr .x16 (by decide)).trans hI.x16, ((ku.trans hI.keep).trans kt).mono (by decide)⟩
   · have hv := hI.val
     rw [hm] at hv
-    rw [htm, show A+16*w = A+8*(2*w) by omega,
-      wv_writeW_top _ B A (2*w) _ (by omega)]
-    simpa only [show 64*(2*w) = 128*w by omega] using hv
+    rw [htm, show A+16*w = A+8*(2*w) by omega_arith,
+      wv_writeW_top _ B A (2*w) _ (by omega_arith)]
+    simpa only [show 64*(2*w) = 128*w by omega_arith] using hv
   · have ho := hI.out
     rw [hm] at ho
     rw [htm]
-    exact (ho.mono (o' := A) (n' := 16*w+8) (Nat.le_refl _) (by omega)).trans
-      ((writeW_outside v.mem B (v.gpr .x5) (d := A+16*w) (by omega)).mono (by omega) (by omega))
+    exact (ho.mono (o' := A) (n' := 16*w+8) (Nat.le_refl _) (by omega_arith)).trans
+      ((writeW_outside v.mem B (v.gpr .x5) (d := A+16*w) (by omega_arith)).mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Bignum.AArch64.Square

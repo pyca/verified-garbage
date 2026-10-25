@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPriv
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Layout
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: after the private-key operation

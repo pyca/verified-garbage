@@ -35,10 +35,10 @@ theorem selBody_run {t : State} {p q : Addr} {i k kl : Nat} {v ok : Bool} {e a :
   have e1 : 0 + i = i := Nat.zero_add _
   xrun [selBody, ea_bxd (p := p) (j := i), ea_bxd (p := q) (j := i), hdi, hsi, hcx, e1, hie, hia, hw, he, ha,
     hdx, h9, h10, h11, borrow_mask, bmask_not, bmask_and, ofNat_add_one,
-    ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega) (show k < 2 ^ 64 by omega), sel_xor]
+    ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega_arith) (show k < 2 ^ 64 by omega_arith), sel_xor]
   congr 1
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show kl < 2 ^ 64 by omega)]
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show kl < 2 ^ 64 by omega_arith)]
   unfold outByte
   have and255 : ∀ x : Byte, x &&& 255#8 = x := fun x => by
     rw [show (255#8) = BitVec.allOnes 8 from rfl, BitVec.and_allOnes]
@@ -58,20 +58,20 @@ theorem selLoop_ok {t₀ : State} {p q : Addr} {k kl : Nat} {v ok : Bool} (hk0 :
   refine wp_upto (a := 0) (N := k) hk0 (fun j u => Keep [.rax, .r8, .rcx] t₀ u ∧ Outside p 0 j t₀.mem u.mem ∧
       (∀ i < j, byte u.mem p i = outByte v ok kl i (t₀.mem (off p i)) (t₀.mem (off q i))) ∧
       u.gpr .rcx = BitVec.ofNat 64 j) (fun j _ hj u ⟨ku, ho, hb, hcxu⟩ => ?_)
-    (fun _ ⟨k, ho, hb, _⟩ => ⟨k, ho, hb⟩) ⟨Keep.refl _ _, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), hcx⟩
+    (fun _ ⟨k, ho, hb, _⟩ => ⟨k, ho, hb⟩) ⟨Keep.refl _ _, Outside.refl _ _ _ _, fun _ h => absurd h (by omega_arith), hcx⟩
   have g : ∀ r, r ∉ [Reg.rax, .r8, .rcx] → u.gpr r = t₀.gpr r := fun r hr => ku.gpr hr
-  have he : u.mem (off p j) = t₀.mem (off p j) := ho _ (.inr (by rw [ofs_off0 _ (by omega)]; omega))
-  have ha : u.mem (off q j) = t₀.mem (off q j) := ho _ (.inr (by have := hpq j hj; omega))
+  have he : u.mem (off p j) = t₀.mem (off p j) := ho _ (.inr (by rw [ofs_off0 _ (by omega_arith)]; omega_arith))
+  have ha : u.mem (off q j) = t₀.mem (off q j) := ho _ (.inr (by have := hpq j hj; omega_arith))
   refine WP.mono (selBody_run hj hk hkl ((g .rdi (by decide)).trans hdi) ((g .rsi (by decide)).trans hsi) hcxu
     ((g .rdx (by decide)).trans hdx) ((g .r9 (by decide)).trans h9) ((g .r10 (by decide)).trans h10)
     ((g .r11 (by decide)).trans h11) he ha (by rw [ku.2.1, ku.2.2]; exact hie j hj)
     (by rw [ku.2.1, ku.2.2]; exact hia j hj) (by rw [ku.2.2]; exact hw j hj))
     fun u' ⟨hm, hcx', hz, k'⟩ => ⟨hz, (ku.trans k').mono (by decide), ?_, ?_, hcx'⟩
-  · rw [hm]; exact Outside.wb (Outside.mono ho (by omega) (by omega)) _ (by omega) (by omega) (by omega)
+  · rw [hm]; exact Outside.wb (Outside.mono ho (by omega_arith) (by omega_arith)) _ (by omega_arith) (by omega_arith) (by omega_arith)
   · intro i hi
     rw [hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [byte_wb _ _ _ (by omega) (by omega) (by omega)]; exact hb i hi
+    · rw [byte_wb _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact hb i hi
     · rw [show off p i = off p (0 + i) by rw [Nat.zero_add]]
       have := byte_wb_self u.mem p i (outByte v ok kl i (t₀.mem (off p i)) (t₀.mem (off q i)))
       simpa using this
@@ -118,20 +118,20 @@ theorem selPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} 
   have hsc := hc.scr hp
   have hsep : (firstZero EM (kOf s)).getD 0 < kOf s := by
     cases hf : firstZero EM (kOf s) with
-    | none => simp; omega
+    | none => simp; omega_arith
     | some i => have := firstZero_some hf; simpa using this.2.1
   have hal := altFold_le (kOf s) (clOf s) 128
   rw [← altLength_eq] at hal
   have hL : lEM s EM ≤ kOf s := by
-    simp only [lEM, lselOf]; split <;> omega
+    simp only [lEM, lselOf]; split <;> omega_arith
   -- the checks
   have hR : t.mem.readW (fb s + BitVec.ofNat 64 oR) 64 = R := hc.sR
   have hio : ∀ i n, i + n ≤ kOf s → InRegions (t.rd ++ t.wr) (off (s.gpr .rdi) i) n := fun i n h' =>
     let ⟨r, hr, hcr⟩ := hc.outIn hp h'; ⟨r, List.mem_append_right _ hr, hcr⟩
   refine WP.seq (WP.mono (validBlock_run (p := s.gpr .rdi) (F := fb s) (b0 := EM.getD 0 1) (b1 := EM.getD 1 1)
-    h.rdi (by rw [← hc.em (i := 0) (by omega)]; exact (congrArg t.mem (off_zero _)).symm)
-    (hc.em (by omega)) (by have := hio 0 1 (by omega); rwa [off_zero] at this) (hio 1 1 (by omega)) h.rdx h.r10 h.r11
-    h.r9 hc.rsp hR (hs.ld (d := oR) (by decide)) hsep (by omega))
+    h.rdi (by rw [← hc.em (i := 0) (by omega_arith)]; exact (congrArg t.mem (off_zero _)).symm)
+    (hc.em (by omega_arith)) (by have := hio 0 1 (by omega_arith); rwa [off_zero] at this) (hio 1 1 (by omega_arith)) h.rdx h.r10 h.r11
+    h.r9 hc.rsp hR (hs.ld (d := oR) (by decide)) hsep (by omega_arith))
     fun t₁ ⟨⟨hm₁, h10₁, hdx₁, h11₁, hsi₁⟩, k₁⟩ => ?_)
   have hc₁ : Ctx s R EM t₁ := hc.regs hp hm₁ k₁ (by decide)
   have hs₁ := hc₁.frm hp
@@ -151,7 +151,7 @@ theorem selPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} 
       t'.gpr .rdx = BitVec.ofNat 64 (kOf s - lEM s EM) ∧ t'.gpr .rsi = scA s sAM ∧
       t'.gpr .rcx = BitVec.ofNat 64 0) (by
     have e : BitVec.ofNat 64 (kOf s) - BitVec.ofNat 64 (lEM s EM) = BitVec.ofNat 64 (kOf s - lEM s EM) := by
-      apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+      apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_arith
     xrun [outInit, ea_atd (p := s.gpr .rdx), h8₂, hml, hdx₂, hsi₂, hcx₂, e]) rfl)
     fun t₃ ⟨⟨hm₃, hdx₃, hsi₃, hcx₃⟩, k₃⟩ => ?_)
   have hsi' := hp.hsi
@@ -169,14 +169,14 @@ theorem selPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} 
   have he₃ : ∀ i < kOf s, t₃.mem (off (s.gpr .rdi) i) = EM.getD i 1 := fun i hi => by
     rw [← hc.em hi]
     exact hfw₃.bytes (R := ⟨s.gpr .rdi, kOf s⟩) (fun r hr => by rw [List.mem_singleton.mp hr]; exact dOM)
-      (show kOf s ≤ 2 ^ 64 by omega) hi
+      (show kOf s ≤ 2 ^ 64 by omega_arith) hi
   have hAM := h.am
   have ha₃ : ∀ i < kOf s, t₃.mem (off (scA s sAM) i) = (amOf s).getD i 0 := fun i hi => by
     show _ = (Spec.RsaPkcs1Enc.irprf (kdkOf s) (Spec.RsaPkcs1Enc.ascii "message") (kOf s)).getD i 0
     rw [← hAM, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [blen]; exact hi), Option.getD_some, bget]
     exact hfw₃.bytes (R := ⟨scA s sAM, kOf s⟩) (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact (hp.dMs.sub_right (dAM (by unfold sAM scrBytes; omega))).symm)
-      (show kOf s ≤ 2 ^ 64 by omega) hi
+      rw [List.mem_singleton.mp hr]; exact (hp.dMs.sub_right (dAM (by unfold sAM scrBytes; omega_arith))).symm)
+      (show kOf s ≤ 2 ^ 64 by omega_arith) hi
   have kk : Keep (([.rax, .rsi, .rdx, .r10, .r11] : List Reg) ++ ([.r8, .rcx] : List Reg) ++
       ([.rdx, .rsi, .rcx] : List Reg)) t t₃ := (k₁.trans k₂).trans k₃
   have g : ∀ r, r ∉ [Reg.rax, .rsi, .rdx, .r10, .r11, .r8, .rcx] → t₃.gpr r = t.gpr r := fun r hr =>
@@ -188,20 +188,20 @@ theorem selPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} 
     kk.gpr hr'
   have hrw : t₃.rd ++ t₃.wr = t.rd ++ t.wr := by rw [kk.2.1, kk.2.2]
   refine WP.seq (WP.mono (selLoop_ok (p := s.gpr .rdi) (q := scA s sAM) (k := kOf s) (kl := kOf s - lEM s EM)
-    (v := vEM EM (kOf s)) (ok := okOf R) (by omega) (by omega) (by omega) ((g .rdi (by decide)).trans h.rdi)
+    (v := vEM EM (kOf s)) (ok := okOf R) (by omega_arith) (by omega_arith) (by omega_arith) ((g .rdi (by decide)).trans h.rdi)
     hsi₃ hcx₃ hdx₃ ((g .r9 (by decide)).trans h.r9)
     ((k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h10₁))
     ((k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h11₁))
-    (fun i hi => by rw [hrw]; exact hio i 1 (by omega))
+    (fun i hi => by rw [hrw]; exact hio i 1 (by omega_arith))
     (fun i hi => by
       rw [hrw]
-      obtain ⟨r, hr, hcr⟩ := hsc.region (d := sAM + i) (n := 1) (by unfold sAM scrBytes; omega) (by decide)
+      obtain ⟨r, hr, hcr⟩ := hsc.region (d := sAM + i) (n := 1) (by unfold sAM scrBytes; omega_arith) (by decide)
       exact ⟨r, List.mem_append_right _ hr, by rw [scA, off_off]; exact hcr⟩)
-    (fun i hi => by rw [kk.2.2]; exact hc.outIn hp (i := i) (n := 1) (by omega))
-    (fun i hi => ofs_of_disjoint (dOS.sub_right (dAM (by unfold sAM scrBytes; omega))) hi (by omega)))
+    (fun i hi => by rw [kk.2.2]; exact hc.outIn hp (i := i) (n := 1) (by omega_arith))
+    (fun i hi => ofs_of_disjoint (dOS.sub_right (dAM (by unfold sAM scrBytes; omega_arith))) hi (by omega_arith)))
     fun t₄ ⟨k₄, ho₄, hb₄⟩ => ?_)
   have hfo₄ : Frame [⟨s.gpr .rdi, kOf s⟩] t₃.mem t₄.mem := by
-    have := frame_of_out ho₄ (by omega); rwa [off_zero] at this
+    have := frame_of_out ho₄ (by omega_arith); rwa [off_zero] at this
   have hR₄ : word t₄.mem (fb s) oR = R := by
     rw [← hc.sR]
     refine (hfo₄.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)).trans
@@ -210,7 +210,7 @@ theorem selPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} 
     · rw [List.mem_singleton.mp hr]; exact (hp.dKm.sub_left (frame_sub s (by decide)))
   have hsp₄ : t₄.gpr .rsp = fb s := (k₄.gpr (by decide)).trans ((g .rsp (by decide)).trans hc.rsp)
   have hs₄ : Scr t₄ (fb s) frameBytes := Scr.of_mem (by rw [k₄.2.2, kk.2.2, hc.wr]; exact List.mem_cons_self ..)
-    (by have := (fb_toNat hp).1; omega)
+    (by have := (fb_toNat hp).1; omega_arith)
   refine WP.mono (WP.keep [.rax] (c := .block [.mov .rax (.mem (sp oR))]) (Q := fun t' => t'.mem = t₄.mem ∧
     t'.gpr .rax = R) (by xrun [ea_sp, hsp₄, hs₄.ld (d := oR) (by decide), hR₄]) rfl) fun t₅ ⟨⟨hm₅, hax₅⟩, k₅⟩ => ?_
   have k' := (kk.trans k₄).trans k₅

@@ -95,7 +95,7 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
   have q₃ : Quarters s₃ J := by
     intro q hq
     rw [o₃.2 _ (by revert q; decide)]
-    rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_arith : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
     · rw [j₂, show J ^^^ BitVec.ofNat 8 (64 * 0) = J from BitVec.xor_zero]
     · exact a₂
     · exact b₂
@@ -107,7 +107,7 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
   have tb₄ : ∀ k < 256, tbyte s₄.v k = if k = J.toNat then R l else R k := by
     intro k hk
     rw [t₄ k hk, t₃]
-    exact ite_iff ⟨fun h => h.2, fun h => ⟨by omega, h⟩⟩ _ _
+    exact ite_iff ⟨fun h => h.2, fun h => ⟨by omega_arith, h⟩⟩ _ _
   have five₄ : s₄.v .v5 = bc (R J.toNat) := by rw [o₄.2 _ (by decide), v₃']
   have i₄ : s₄.v si = bc (R l) := by rw [o₄.2 _ (by decide), i₃]
   have j₄ : s₄.v (dq 0) = bc J := by rw [o₄.2 _ (by decide), o₃.2 _ (by decide), j₂]
@@ -139,7 +139,7 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
     (w * ((l + 1) % 16)) w) 0 0)
   have e₇ : exec (.vop (.dupE .b16 si (treg ((l + 1) / 16)) ((l + 1) % 16))) s₆ = some s₇ := by
     rw [exec_vop']
-    simp only [VOp.eval, VArr.esize, show (l + 1) % 16 < 128 / 8 by omega, ite_true]
+    simp only [VOp.eval, VArr.esize, show (l + 1) % 16 < 128 / 8 by omega_arith, ite_true]
     rfl
   have i₇ : s₇.v si = bc (tbyte s₄.v (l + 1)) := by
     rw [v_setV_self, dupE_bc, ← t₆]; rfl
@@ -147,7 +147,7 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
   let s₈ := s₇.setV (treg 0) (setLane (s₇.v (treg 0)) 8 l ((s₇.v .v5).extractLsb' (8 * 0) 8))
   have e₈ : exec (.vop (.insE .b16 (treg 0) l .v5 0)) s₇ = some s₈ := by
     rw [exec_vop']
-    simp only [VOp.eval, VArr.esize, show l < 128 / 8 by omega, show 0 < 128 / 8 by omega,
+    simp only [VOp.eval, VArr.esize, show l < 128 / 8 by omega_arith, show 0 < 128 / 8 by omega_arith,
       and_self, ite_true]
     rfl
   have five₇ : s₇.v .v5 = bc (R J.toNat) := by rw [v_setV_of_ne _ _ (by decide), five₆]
@@ -159,23 +159,23 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
     by_cases h0 : k / 16 = 0
     · have : tbyte s₈.v k = vbyte (setLane (s₇.v (treg 0)) 8 l ((s₇.v .v5).extractLsb' (8 * 0) 8))
           (k % 16) := by simp only [tbyte, h0, s₈, v_setV_self]
-      rw [this, vbyte_setLane _ _ hl (by omega), extract_byte, five₇, vbyte_bc _ (by decide)]
+      rw [this, vbyte_setLane _ _ hl (by omega_arith), extract_byte, five₇, vbyte_bc _ (by decide)]
       have old : vbyte (s₇.v (treg 0)) (k % 16) = tbyte s₄.v k := by
         rw [← t₇]; simp only [tbyte, h0]
       rw [old, tb₄ k hk, swapR]
-      exact ite_iff ⟨fun h => by omega, fun h => by omega⟩ _ _
+      exact ite_iff ⟨fun h => by omega_arith, fun h => by omega_arith⟩ _ _
     · have : tbyte s₈.v k = tbyte s₇.v k := by
         simp only [tbyte, s₈]
-        rw [v_setV_of_ne _ _ (fun h => h0 (treg_inj _ (by omega) _ (by decide) h))]
-      rw [this, t₇, tb₄ k hk, swapR, ite_eq_right (show ¬ k = l by omega)]
+        rw [v_setV_of_ne _ _ (fun h => h0 (treg_inj _ (by omega_arith) _ (by decide) h))]
+      rw [this, t₇, tb₄ k hk, swapR, ite_eq_right (show ¬ k = l by omega_arith)]
   refine ⟨s₈, ?_, tb₈, ?_, ?_, ?_, ?_⟩
   · rw [swapStep_eq, List.singleton_append, runBlock_cons, e₁, runStep_some]
     refine runBlock_cat_some run₂ (runBlock_cat_some run₃ (runBlock_cat_some run₄
       (runBlock_cat_some run₆ ?_)))
     rw [runBlock_cons, e₇, runStep_some, runBlock_cons, e₈, runStep_some, runBlock_nil]
   · rw [v_setV_of_ne _ _ (by decide), v_setV_of_ne _ _ (by decide), j₆]
-  · rw [v_setV_of_ne _ _ (by decide), i₇, tb₄ _ (by omega), swapR,
-      ite_eq_right (show ¬ (l + 1 = l) by omega)]
+  · rw [v_setV_of_ne _ _ (by decide), i₇, tb₄ _ (by omega_arith), swapR,
+      ite_eq_right (show ¬ (l + 1 = l) by omega_arith)]
   · intro hp
     rw [v_setV_of_ne _ _ (by decide), v_setV_of_ne _ _ (by decide), six₆ hp]
   · exact ((o₄'.trans (o₆.mono (by decide))).trans (Only.setV _ (by decide) _)).trans

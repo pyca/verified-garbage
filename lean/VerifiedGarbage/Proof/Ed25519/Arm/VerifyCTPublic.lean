@@ -192,7 +192,7 @@ theorem DecodeKeep.table {b : BitVec 32} {s t : State} (h : DecodeKeep b s t) {d
     (hd : 1632 ≤ d) (hn : d + 128 ≤ 8192) : tablePoint t.mem b d = tablePoint s.mem b d := by
   refine tablePoint_frame h.frame fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inr (by omega)) (by omega) (by decide)
+  rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by decide)
 
 end VG.Proof.Ed25519.Arm
 end
@@ -270,15 +270,15 @@ theorem flag_and (x y : Bool) :
 theorem ldrLow_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {d : Nat} (hd : d + 4 ≤ 64) (r : Reg)
     {is : List Instr} {Q : State → Prop} (k : ∀ t, Upd s t r (lw s.mem b d) → WP isa (.block is) t Q) :
     WP isa (.block (.ldr r .r0 d :: is)) s Q :=
-  wp_ldr (a := State.addr b + BitVec.ofNat 64 d) (by omega) (by rw [hc.r0]; exact hc.ptr_addr (by omega))
-    (in_base (List.mem_append_right _ hc.wr) (by omega) (by omega)) k
+  wp_ldr (a := State.addr b + BitVec.ofNat 64 d) (by omega_arith) (by rw [hc.r0]; exact hc.ptr_addr (by omega_arith))
+    (in_base (List.mem_append_right _ hc.wr) (by omega_arith) (by omega_arith)) k
 
 theorem strLow_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {d : Nat} (hd : d + 4 ≤ 64) (r : Reg)
     {is : List Instr} {Q : State → Prop}
     (k : ∀ t, Mupd s t (s.mem.writeW (State.addr b + BitVec.ofNat 64 d) (s.gpr r)) → WP isa (.block is) t Q) :
     WP isa (.block (.str r .r0 d :: is)) s Q :=
-  wp_str (a := State.addr b + BitVec.ofNat 64 d) (by omega) (by rw [hc.r0]; exact hc.ptr_addr (by omega))
-    (in_base hc.wr (by omega) (by omega)) k
+  wp_str (a := State.addr b + BitVec.ofNat 64 d) (by omega_arith) (by rw [hc.r0]; exact hc.ptr_addr (by omega_arith))
+    (in_base hc.wr (by omega_arith) (by omega_arith)) k
 
 /-- A word after a store to another word, or to it. -/
 theorem lw_write (m : Mem) (b : BitVec 32) (w : BitVec 32) {d e : Nat} (hd : d + 4 ≤ 8192) (he : e + 4 ≤ 8192)
@@ -286,15 +286,15 @@ theorem lw_write (m : Mem) (b : BitVec 32) (w : BitVec 32) {d e : Nat} (hd : d +
     lw (m.writeW (State.addr b + BitVec.ofNat 64 e) w) b d = if d = e then w else lw m b d := by
   rcases h with rfl | h
   · rw [ite_eq_left rfl]; exact Mem.readW_writeW_self32 _ _ _
-  · rw [ite_eq_right (by omega)]
-    exact Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+  · rw [ite_eq_right (by omega_arith)]
+    exact Mem.readW_writeW_sep (Offset.sep _ h (by omega_arith) (by omega_arith)) (by decide)
 
 /-- A word outside a frame of one range. -/
 theorem lw_frame {m m' : Mem} {b : BitVec 32} {o n d : Nat}
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, n⟩] m m') (h : d + 4 ≤ o ∨ o + n ≤ d)
     (hn : o + n ≤ 8192) (hd : d + 4 ≤ 8192) : lw m' b d = lw m b d :=
   hf.readW (Region.contains_self _ _) (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ h (by omega) (by omega)) (by decide)
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ h (by omega_arith) (by omega_arith)) (by decide)
 
 /-- The stores of the loop's words, between bytes 32 and 44. -/
 theorem loopFrame_write {m m' : Mem} {b : BitVec 32} (hf : Frame [⟨State.addr b + BitVec.ofNat 64 32, 12⟩] m m')
@@ -305,7 +305,7 @@ theorem loopFrame_write {m m' : Mem} {b : BitVec 32} (hf : Frame [⟨State.addr 
 /-- The input `k`'s place, from the context. -/
 theorem VerifyContext.input {b pk sig challenge : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) {k : Nat} (hk : k < 2) : VerifyInput b (inPtr pk sig k) 32 s := by
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl
   · exact hc.pkInput
   · exact hc.sigInput.prefix (by decide)
 
@@ -370,8 +370,8 @@ theorem decodeNext_ok {b pk sig challenge : BitVec 32} {s : State} (hc : VerifyC
       (∀ o, 1632 ≤ o → o + 128 ≤ 7776 + 128 * k → tablePoint t.mem b o = tablePoint s.mem b o) ∧
       t.z = decide (k = 1) := by
   have cs := hc.ctx
-  have ho : 1632 ≤ 7776 + 128 * k := by omega
-  have hn : 7776 + 128 * k + 128 ≤ 8192 := by omega
+  have ho : 1632 ≤ 7776 + 128 * k := by omega_arith
+  have hn : 7776 + 128 * k + 128 ≤ 8192 := by omega_arith
   rw [decodeNext_eq, WP.block_append_iff]
   refine ldrLow_ok cs (d := DOK) (by decide) .r3 fun u1 h1 => ?_
   have c1 : Ctx b u1 := cs.of_rest (h1.rest (ws := [.r3]) (by decide)) (by decide)
@@ -406,7 +406,7 @@ theorem decodeNext_ok {b pk sig challenge : BitVec 32} {s : State} (hc : VerifyC
   have kx : VerifyKeep b s x :=
     (VerifyKeep.of_small (((((h1.rest (ws := [.r3, .r12]) (by decide)).trans (h2.rest (by decide))).trans
       (h3.rest _)).trans (h4.rest (by decide))).trans (h5.rest (by decide))) (by decide) f5 (by decide) (by decide)).trans
-      (VerifyKeep.of_powers ⟨xk.rest.mono (by decide), TableFrame.table xk.frame⟩ (by omega) (by omega))
+      (VerifyKeep.of_powers ⟨xk.rest.mono (by decide), TableFrame.table xk.frame⟩ (by omega_arith) (by omega_arith))
   rw [WP.block_append_iff]
   refine WP.mono (loadHeader_ok cx 8164 (by decide)) fun y ⟨yr, ym, yp⟩ => ?_
   have cy : Ctx b y := cx.of_rest yr (by decide)
@@ -422,13 +422,13 @@ theorem decodeNext_ok {b pk sig challenge : BitVec 32} {s : State} (hc : VerifyC
   refine wp_movw fun y5 g5 => wp_cmp (op2_reg _ _) fun t ht hz => WP.block_nil ?_
   -- What the stores leave.
   have lwx : ∀ d, d + 4 ≤ 64 → lw x.mem b d = lw u5.mem b d := fun d hd =>
-    lw_frame xk.frame (Or.inl (by omega)) hn (by omega)
+    lw_frame xk.frame (Or.inl (by omega_arith)) hn (by omega_arith)
   have tab3 : y3.gpr .r3 = BitVec.ofNat 32 (7776 + 128 * (k + 1)) := by
     rw [g3.gpr]
     change y2.gpr .r3 + (128 : BitVec 32) = _
     rw [g2.gpr, g1.mem, ym, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide),
       lwx DTAB (by decide), m5, m3, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide), htab]
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;> decide
+    rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl <;> decide
   have mt : t.mem = (x.mem.writeW (State.addr b + BitVec.ofNat 64 DPTR) sig).writeW
       (State.addr b + BitVec.ofNat 64 DTAB) (BitVec.ofNat 32 (7776 + 128 * (k + 1))) := by
     rw [ht.mem, g5.mem, g4.mem, tab3, g3.mem, g2.mem, g1.mem, sig', ym]
@@ -439,7 +439,7 @@ theorem decodeNext_ok {b pk sig challenge : BitVec 32} {s : State} (hc : VerifyC
       (g4.rest _)).trans (g5.rest (by decide))).trans (ht.rest _)
   have tpt : ∀ o, o + 128 ≤ 8192 → 1632 ≤ o → tablePoint t.mem b o = tablePoint x.mem b o := fun o h1 h2 =>
     tablePoint_frame ft fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   refine ⟨kx.trans (VerifyKeep.of_small rt (by decide) ft (by decide) (by decide)), smallFrame_lim ft (by decide) lx,
     ?_, ?_, ?_, fun q hq => ?_, fun o h1 h2 => ?_, ?_⟩
   · rw [mt, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide),
@@ -449,13 +449,13 @@ theorem decodeNext_ok {b pk sig challenge : BitVec 32} {s : State} (hc : VerifyC
       lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_left rfl]
   · rw [mt, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_left rfl]
   · rw [tpt _ hn ho, xp, e5]; exact hpt q hq
-  · rw [tpt _ (by omega) h1]
+  · rw [tpt _ (by omega_arith) h1]
     refine (tablePoint_frame xk.frame fun r hr => ?_).trans ?_
-    · rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inl h2) (by omega) (by omega)
+    · rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inl h2) (by omega_arith) (by omega_arith)
     · exact tablePoint_frame f5 fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   · rw [hz, g5.other _ (by decide), g5.gpr, g4.gpr, tab3]
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;> decide
+    rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl <;> decide
 
 theorem decodeFlagA {b : BitVec 32} {p p' : Option Spec.Ed25519.Point} {s : State}
     (h : DecodeResult b p s) (he : p = p') : s.gpr .r9 = BitVec.ofNat 32 p'.isSome.toNat := by
@@ -501,7 +501,7 @@ theorem decodeBody_ok {s₀ : State} {b pk sig challenge : BitVec 32}
     with_reducible exact decodePtA hv.2.2 hbytes
   refine WP.mono (decodeNext_ok (hc.keep kv) hv.2.1 hk vflag vpt vt)
     fun t hn => ⟨⟨kv.trans hn.1, hn.2.1, fun hk1 => ?_, hn.2.2.2.2.1, ?_, fun j hj q hq => ?_⟩, hn.2.2.2.2.2.2.2⟩
-  · obtain rfl : k = 0 := by omega
+  · obtain rfl : k = 0 := by omega_arith
     exact hn.2.2.2.1
   · have vok : lw v.mem b DOK = lw s.mem b DOK := by
       rw [show lw v.mem b DOK = lw u.mem b DOK from (vk.frame.readW (Region.contains_self _ _) (fun r hr => by
@@ -509,9 +509,9 @@ theorem decodeBody_ok {s₀ : State} {b pk sig challenge : BitVec 32}
         rcases hr with rfl | rfl <;> exact Offset.disjoint _ (Or.inl (by decide)) (by decide) (by decide)) (by decide)),
         hu.mem]
     rw [hn.2.2.1, vok, hs.ok, flag_and, decOk_succ]
-  · rcases (by omega : j = k ∨ j < k) with rfl | hj'
+  · rcases (by omega_arith : j = k ∨ j < k) with rfl | hj'
     · exact hn.2.2.2.2.2.1 q hq
-    · rw [hn.2.2.2.2.2.2.1 _ (by omega) (by omega), vk.table (by omega) (by omega), hu.mem]
+    · rw [hn.2.2.2.2.2.2.1 _ (by omega_arith) (by omega_arith), vk.table (by omega_arith) (by omega_arith), hu.mem]
       exact hs.pts j hj' q hq
 
 /-- `A` and `R` decoded, by the loop. -/
@@ -523,8 +523,8 @@ theorem decodeBoth_ok {b pk sig challenge : BitVec 32} {s : State}
     ⟨0, rfl, by decide, ha⟩
   intro m u ⟨k, hkm, hk, hu⟩
   refine WP.mono (decodeBody_ok hc hk hu) fun t ⟨ht, zt⟩ => ?_
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
-  · exact .inr ⟨by show some (!t.z) = _; rw [zt]; rfl, 1, by omega, 1, rfl, by decide, ht⟩
+  rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl
+  · exact .inr ⟨by show some (!t.z) = _; rw [zt]; rfl, 1, by omega_arith, 1, rfl, by decide, ht⟩
   · exact .inl ⟨by show some (!t.z) = _; rw [zt]; rfl, ht⟩
 
 /-- Both decoded, and the equation if both are points. -/
@@ -631,7 +631,7 @@ theorem verifyEquation_bytes (m : Mem) (pk sig challenge : BitVec 32) (hs : sig.
       (Spec.Ed25519.bytesAt m (State.addr sig) 64) (Spec.Ed25519.bytesAt m (State.addr challenge) 64) =
       (decide (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32) < Spec.Ed25519.L) &&
         decodedEquation m pk sig challenge) := by
-  have ep : State.addr (sig + (32 : BitVec 32)) = State.addr sig + BitVec.ofNat 64 32 := addr_add (k := 32) (by omega)
+  have ep : State.addr (sig + (32 : BitVec 32)) = State.addr sig + BitVec.ofNat 64 32 := addr_add (k := 32) (by omega_arith)
   rw [Spec.Ed25519.verifyEquation]
   simp only [bytesAt_length, bne_self_eq_false, Bool.or_self, Bool.false_eq_true, ite_false,
     signatureBytes_take, signatureBytes_drop, ← ep]
@@ -690,7 +690,7 @@ theorem verifyHeaders_ok {s : State} {b : BitVec 32} (hb : s.gpr .r3 = b)
   have ca (k : Nat) (hk : k + 8160 < 8192) :
       State.addr (c.gpr .r12 + BitVec.ofNat 32 k) = State.addr b + BitVec.ofNat 64 (8160 + k) := by
     rw [cp, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact addr_add (by omega)
+    exact addr_add (by omega_arith)
   refine wp_str (a := State.addr b + BitVec.ofNat 64 8160) (by decide)
     (by simpa only [Nat.add_zero] using ca 0 (by decide))
     (by rw [cr.wr]; exact in_base hw (by decide) (by decide)) fun d hd => ?_
@@ -833,7 +833,7 @@ theorem verifyHeadersSaved_ok {s : State} (h : VerifyPre s) :
       VerifyInput (s.gpr .r3) (s.gpr r) n t := by
     refine ⟨hn, fun i hb => ?_, hd⟩
     rw [kt.rd, kt.wr]
-    exact in_base (List.mem_append_left _ hi) (by omega) (by omega)
+    exact in_base (List.mem_append_left _ hi) (by omega_arith) (by omega_arith)
   refine ⟨⟨tc, ip .r0 32 h.f0 (by rw [h.rd]; simp) h.pk_ws,
     ip .r1 64 h.f1 (by rw [h.rd]; simp) h.sig_ws,
     ip .r2 64 h.f2 (by rw [h.rd]; simp) h.challenge_ws,
@@ -841,7 +841,7 @@ theorem verifyHeadersSaved_ok {s : State} (h : VerifyPre s) :
     ?_, kt, ft⟩
   exact us.frame tf fun r hr i hi => by
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)
+    exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by decide)
 
 theorem verifySetup_ok {s : State} (h : VerifyPre s) :
     WP isa (.block verifySetup) s fun t =>
@@ -857,14 +857,14 @@ theorem verifySetup_ok {s : State} (h : VerifyPre s) :
   have sep : ∀ d, d + 4 ≤ 8172 → t.mem.readW (State.addr (s.gpr .r3) + BitVec.ofNat 64 d) 32 =
       u.mem.readW (State.addr (s.gpr .r3) + BitVec.ofNat 64 d) 32 := fun d hd => by
     rw [tm]
-    exact Mem.readW_writeW_sep (Offset.sep _ (d := d) (e := LRS) (n := 4) (k := 4) (by omega) (by omega)
-      (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep _ (d := d) (e := LRS) (n := 4) (k := 4) (by omega_arith) (by omega_arith)
+      (by omega_arith)) (by decide)
   have inp {p : BitVec 32} {n : Nat} (hi : VerifyInput (s.gpr .r3) p n u) : VerifyInput (s.gpr .r3) p n t :=
     ⟨hi.fit, fun i hn => by rw [tr.rd, tr.wr]; exact hi.readable i hn, hi.separate⟩
   refine ⟨⟨uc.ctx.of_rest tr (by decide), inp uc.pkInput, inp uc.sigInput, inp uc.challengeInput,
       (sep 8160 (by decide)).trans uc.pkHeader, (sep 8164 (by decide)).trans uc.sigHeader,
       (sep 8168 (by decide)).trans uc.challengeHeader⟩,
-    fun i hi => (sep (4 * i) (by omega)).trans (us i hi), ?_, (uk.mono (by decide)).trans (tr.mono (by decide)), ?_⟩
+    fun i hi => (sep (4 * i) (by omega_arith)).trans (us i hi), ?_, (uk.mono (by decide)).trans (tr.mono (by decide)), ?_⟩
   · rw [tm, Mem.readW_writeW_self32, uk.gpr _ (by decide)]
   · rw [tm]; exact uf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
 
@@ -881,7 +881,7 @@ theorem verifyEquation_correct {s : State} (h : VerifyPre s) :
   refine WP.seq (WP.mono (verifyBody_ok uc) fun v ⟨vk, vv⟩ => ?_)
   have vs : ScalarSaved (State.addr (s.gpr .r3)) s.gpr v.mem := us.frame vk.frame fun r hr i hi => by
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)
+    exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by decide)
   have lv : v.mem.readW (State.addr (s.gpr .r3) + BitVec.ofNat 64 LRS) 32 = s.gpr .lr := by
     refine (BitVec.eq_of_toNat_eq (wd_frame vk.frame fun r hr => ?_)).trans ul
     rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
@@ -903,7 +903,7 @@ theorem verifyEquation_correct {s : State} (h : VerifyPre s) :
         Spec.Ed25519.bytesAt u.mem (State.addr p) n = Spec.Ed25519.bytesAt s.mem (State.addr p) n := by
       unfold Spec.Ed25519.bytesAt
       refine List.map_congr_left fun i hi => uf.bytes (R := ⟨State.addr p, n⟩)
-        (fun r hr => ?_) (by omega : n ≤ 2 ^ 64) (List.mem_range.mp hi)
+        (fun r hr => ?_) (by omega_arith : n ≤ 2 ^ 64) (List.mem_range.mp hi)
       rw [List.mem_singleton.mp hr]
       exact hd
     rw [bytes _ _ (by decide) h.pk_ws, bytes _ _ (by decide) h.sig_ws,
@@ -943,7 +943,7 @@ theorem VerifyPublic.sBytes {m : Mem} {b pk sig challenge : BitVec 32} {s : Stat
     (h : VerifyPublic m b pk sig challenge s) :
     Spec.Ed25519.bytesAt s.mem (State.addr (sig + 32)) 32 = Spec.Ed25519.bytesAt m (State.addr (sig + 32)) 32 := by
   have ep : State.addr (sig + (32 : BitVec 32)) = State.addr sig + BitVec.ofNat 64 32 :=
-    addr_add (k := 32) (by have := h.ctx.sigInput.fit; omega)
+    addr_add (k := 32) (by have := h.ctx.sigInput.fit; omega_arith)
   rw [ep]
   have he := congrArg (List.drop 32) h.sigBytes
   simpa only [signatureBytes_drop] using he

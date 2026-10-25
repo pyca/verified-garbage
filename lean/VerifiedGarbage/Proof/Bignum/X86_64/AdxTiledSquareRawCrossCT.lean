@@ -86,7 +86,7 @@ theorem rowCore_head {i n : Nat} {col : Reg} {rest : List Reg} (hr : Regs (col::
     WP isa (.block (AdxTri8.rowCore i col rest)) s (Based L) := by
   obtain ⟨⟨⟨mi,hg,hI⟩,hp⟩,hc⟩ := h
   have he := L.he
-  refine WP.mono (rowCore_ok col rest hg.scr hp (by rw [hlen]; omega) hn
+  refine WP.mono (rowCore_ok col rest hg.scr hp (by rw [hlen]; omega_arith) hn
     hr.1 (fun r h => let q := hr.2 r h; ⟨q.1,q.2.1,q.2.2.1,q.2.2.2.1⟩)) fun t ⟨_,kt⟩ => ?_
   have dr : t.gpr .rdi=s.gpr .rdi := kt.gpr (by
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
@@ -129,8 +129,8 @@ theorem rowStep_stage {i n : Nat} {lo hi : Reg} {tail : List Reg}
   obtain ⟨⟨⟨mi,hg,hI⟩,hp⟩,hc⟩ := h
   have he := L.he; have hiL := L.hi; have hZ := L.hZ
   have bound : slot L.w aAcc+16*L.I+(16+8*(2*i+2))+8≤L.Z := by
-    unfold slot aAcc at *; omega
-  refine WP.mono (rowStep_ok hg.scr hc hp (by rw [hlen]; omega)
+    unfold slot aAcc at *; omega_arith
+  refine WP.mono (rowStep_ok hg.scr hc hp (by rw [hlen]; omega_arith)
     bound hr.1 hr.2)
     fun t ⟨_,ot,kt⟩ => ?_
   have dr : t.gpr .rdi=L.B := (kt.gpr (by
@@ -141,10 +141,10 @@ theorem rowStep_stage {i n : Nat} {lo hi : Reg} {tail : List Reg}
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
     exact ⟨by decide,⟨(hr.2 lo (by simp)).1.2.1.symm,(hr.2 hi (by simp)).1.2.1.symm,
       fun h => (hr.2 .rbp (by simp [h])).1.2.1 rfl⟩⟩)).trans hp
-  have ht := hg.hdr.of_outside ot (by unfold slot; omega)
+  have ht := hg.hdr.of_outside ot (by unfold slot; omega_arith)
   have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.I := by
-    rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
-  have len : tail.length=n := by simp only [List.length_cons] at hlen; omega
+    rw [ot.word (by unfold slot hdrBytes sFn; omega_arith) (by decide)]; exact hI
+  have len : tail.length=n := by simp only [List.length_cons] at hlen; omega_arith
   have cr : t.gpr .rcx=s.gpr .rcx := kt.gpr (by
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
     exact ⟨by decide,⟨(hr.2 lo (by simp)).2.2.2.1.symm,(hr.2 hi (by simp)).2.2.2.1.symm,
@@ -168,18 +168,18 @@ theorem rows_ct (n i : Nat) (rs : List Reg) (hr : Regs rs) (hlen : rs.length=n+1
   | zero => exact RelCT.block_nil fun _ _ _ => trivial
   | succ n ih =>
     cases rs with
-    | nil => simp only [List.length_nil] at hlen; omega
+    | nil => simp only [List.length_nil] at hlen; omega_arith
     | cons lo rs =>
       cases rs with
-      | nil => simp only [List.length_cons,List.length_nil] at hlen; omega
+      | nil => simp only [List.length_cons,List.length_nil] at hlen; omega_arith
       | cons h tail =>
         obtain ⟨⟨ht,hcore,htc,hcc⟩,next⟩ := hc
         change RelCT isa (Two (Stage (n+1) (lo::h::tail)))
           (.seq (AdxTri8.rowStep i lo h tail) (AdxTri8.rows n (i+1) (tail++[lo]))) _
         refine RelCT.seq (two_post (rowStep_ct hr hlen hi htc hcc) (rowStep_stage hr hlen hi)) ?_
-        apply ih (i+1) (tail++[lo]) (rotate_regs hr) _ (by omega) next
+        apply ih (i+1) (tail++[lo]) (rotate_regs hr) _ (by omega_arith) next
         simp only [List.length_cons] at hlen
-        simp only [List.length_append,List.length_cons,List.length_nil]; omega
+        simp only [List.length_append,List.length_cons,List.length_nil]; omega_arith
 
 theorem checks_six : Checks 6 1 (AdxTri8.rotate AdxTri8.columns) := by
   refine ⟨⟨_,_,by taint_decide,by taint_decide⟩,?_⟩
@@ -225,10 +225,10 @@ theorem clearEnds_fw (L : CtLayout) (s : State) (h : CoreReady L s) :
   obtain ⟨⟨mi,hg,hI⟩,hp⟩ := h
   have hi := L.hi
   have hZ := L.hZ
-  refine WP.mono (clearEnds_ok hg.scr hg.rdi hg.hdr L.hZ hI (by have := slot_le (w := L.w) (show aTmp < 8 by decide); unfold slot aAcc aTmp at *; omega)) fun t ⟨_,_,_,ot,ct,kt⟩ => ?_
+  refine WP.mono (clearEnds_ok hg.scr hg.rdi hg.hdr L.hZ hI (by have := slot_le (w := L.w) (show aTmp < 8 by decide); unfold slot aAcc aTmp at *; omega_arith)) fun t ⟨_,_,_,ot,ct,kt⟩ => ?_
   refine ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ot (by unfold slot; omega)⟩,?_⟩,(kt.gpr (by decide)).trans hp⟩,ct⟩
-  rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
+    hg.hdr.of_outside ot (by unfold slot; omega_arith)⟩,?_⟩,(kt.gpr (by decide)).trans hp⟩,ct⟩
+  rw [ot.word (by unfold slot hdrBytes sFn; omega_arith) (by decide)]; exact hI
 
 theorem clearEnds_ct
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -249,7 +249,7 @@ theorem row0Core_head (L : CtLayout) (s : State) (h : Ready0 L s) :
   obtain ⟨⟨⟨mi,hg,hI⟩,hp⟩,hc⟩ := h
   have he := L.he
   have hr := columns_regs
-  refine WP.mono (row0Core_ok _ hg.scr hp (by simp only [List.length_cons,List.length_nil]; omega)
+  refine WP.mono (row0Core_ok _ hg.scr hp (by simp only [List.length_cons,List.length_nil]; omega_arith)
     (by decide) hr.1 (fun r h => let q := hr.2 r h; ⟨q.1,q.2.1,q.2.2.1,q.2.2.2.1⟩)) fun t ⟨_,kt⟩ => ?_
   have dr : t.gpr .rdi=s.gpr .rdi := kt.gpr (by decide)
   have cr : t.gpr .rcx=s.gpr .rcx := kt.gpr (by decide)
@@ -276,14 +276,14 @@ theorem rowStep0_stage (L : CtLayout) (s : State) (h : Ready0 L s) :
   have he := L.he; have hiL := L.hi; have hZ := L.hZ
   have hr := columns_regs
   have bound : slot L.w aAcc+16*L.I+(16+8*(2*0+2))+8≤L.Z := by
-    unfold slot aAcc at *; omega
-  refine WP.mono (rowStep0_ok hg.scr hc hp (by simp only [List.length_cons,List.length_nil]; omega)
+    unfold slot aAcc at *; omega_arith
+  refine WP.mono (rowStep0_ok hg.scr hc hp (by simp only [List.length_cons,List.length_nil]; omega_arith)
     bound hr.1 hr.2) fun t ⟨_,ot,kt⟩ => ?_
   have dr : t.gpr .rdi=L.B := (kt.gpr (by decide)).trans hg.rdi
   have pr : t.gpr .rbp=off L.B L.e := (kt.gpr (by decide)).trans hp
-  have ht := hg.hdr.of_outside ot (by unfold slot; omega)
+  have ht := hg.hdr.of_outside ot (by unfold slot; omega_arith)
   have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.I := by
-    rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
+    rw [ot.word (by unfold slot hdrBytes sFn; omega_arith) (by decide)]; exact hI
   have cr : t.gpr .rcx=s.gpr .rcx := kt.gpr (by decide)
   exact ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,dr,ht⟩,it⟩,pr⟩,cr.trans hc⟩
 
@@ -319,12 +319,12 @@ theorem block_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps
     WP isa (AdxTri8.block ca) s (AtBlock ps p) := by
   obtain ⟨hk,mi,hg,hv,hI⟩ := h
   have wn := p.1.hwN
-  refine WP.mono (block_ok hg.scr hg.rdi hg.hdr p.1.hZ hv pa ha ha1 ha2 (by omega) hI)
+  refine WP.mono (block_ok hg.scr hg.rdi hg.hdr p.1.hZ hv pa ha ha1 ha2 (by omega_arith) hI)
     fun t ⟨_,ot,kt⟩ => ?_
   refine ⟨hk,mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ot (by unfold slot; omega)⟩,
-    hv.of_outside ot (by unfold slot sFn hdrBytes; omega),?_⟩
-  rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
+    hg.hdr.of_outside ot (by unfold slot; omega_arith)⟩,
+    hv.of_outside ot (by unfold slot sFn hdrBytes; omega_arith),?_⟩
+  rw [ot.word (by unfold slot hdrBytes sFn; omega_arith) (by decide)]; exact hI
 
 theorem block_loop_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -334,9 +334,9 @@ theorem block_loop_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps
   dsimp only at hk
   have wn := L.hwN
   have sa := slot_le (w := L.w) ha
-  have hi : 8*k+8≤L.w := by omega
+  have hi : 8*k+8≤L.w := by omega_arith
   have hZ := L.hZ
-  let C : CtLayout := ⟨L.B,L.Z,L.w,8*k,slot L.w a+8*(8*k),L.hZ,hi,by omega⟩
+  let C : CtLayout := ⟨L.B,L.Z,L.w,8*k,slot L.w a+8*(8*k),L.hZ,hi,by omega_arith⟩
   exact block_ct pa hS s t ts tt s' t' ⟨C,⟨⟨mi,gs,is⟩,vs,rfl⟩,⟨⟨mj,gt,it⟩,vt,rfl⟩⟩ es et
 
 theorem step_loop_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
@@ -360,22 +360,22 @@ theorem step_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
   have wn := L.hwN
   have hw := L.hw
   have nowrap := hg.scr.nowrap
-  refine WP.mono (AdxTiledProduct.nextRow_ok hg.scr hg.rdi hg.hdr L.hZ (by omega) (by omega) hI)
+  refine WP.mono (AdxTiledProduct.nextRow_ok hg.scr hg.rdi hg.hdr L.hZ (by omega_arith) (by omega_arith) hI)
     fun t ⟨mt,zt,kt⟩ => ?_
   have ot : Outside L.B (8*sFn 12) 8 u.mem t.mem := by rw [mt]; exact writeW_outside _ _ _ (by decide)
   have ft : Frm L.B (AdxTiledProduct.ranges L.w) u.mem t.mem := by
     intro x hx
     apply ot x
-    have := hx (8*sFn 12,32) (by simp [AdxTiledProduct.ranges]); omega
+    have := hx (8*sFn 12,32) (by simp [AdxTiledProduct.ranges]); omega_arith
   have gt : Good t L.B L.Z L.w mi :=
     ⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,AdxTiledProduct.frame_hdr hg.hdr ft⟩
   have vt := AdxTiledProduct.frame_ops hv ft
   refine ⟨?_,fun _ => ⟨mi,gt,vt,?_⟩,fun _ => ⟨⟨mi,gt⟩,vt⟩⟩
   · simp only [eval,zt,Option.map_some]
     by_cases he : k+1=L.n
-    · simp only [show 8*k+8=L.w by omega,decide_true,Bool.not_true,show ¬(k+1<L.n) by omega,decide_false]
-    · simp only [show ¬(8*k+8=L.w) by omega,decide_false,Bool.not_false,show k+1<L.n by omega,decide_true]
-  · rw [mt,word_writeW_self,show 8*(k+1)=8*k+8 by omega]
+    · simp only [show 8*k+8=L.w by omega_arith,decide_true,Bool.not_true,show ¬(k+1<L.n) by omega_arith,decide_false]
+    · simp only [show ¬(8*k+8=L.w) by omega_arith,decide_false,Bool.not_false,show k+1<L.n by omega_arith,decide_true]
+  · rw [mt,word_writeW_self,show 8*(k+1)=8*k+8 by omega_arith]
 
 theorem blocks_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
     (ha2 : a≠aTmp)

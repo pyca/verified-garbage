@@ -36,11 +36,11 @@ theorem prep32_toNat (a m : BitVec 32) (hm : m.toNat = 65535) :
   split
   · rename_i h
     have h' : a.toNat % 65536 = 0 := by rw [← hs, h]; rfl
-    omega
+    omega_arith
   · rename_i h
     have h' : a.toNat % 65536 ≠ 0 := by
       intro h''; apply h; apply BitVec.eq_of_toNat_eq; rw [hs, h'']; rfl
-    rw [hs]; omega
+    rw [hs]; omega_arith
 
 theorem reduce_nat (H L : Nat) (hL : L < 65536) (hH : H < 65536) :
     ((L + 1 + (2 ^ 32 - H)) % 2 ^ 32 + (L + 1 + (2 ^ 32 - H)) % 2 ^ 32 / 2 ^ 31) % 2 ^ 32 % 65536 =
@@ -66,20 +66,20 @@ theorem reduce32 (p : Nat) (hp₀ : 1 ≤ p) (hp : p ≤ 2 ^ 32) (q m one : BitV
       BitVec.ofNat 32 (p % 65537 % 65536) := by
   generalize hH : (p - 1) / 65536 = H
   generalize hL : (p - 1) % 65536 = L
-  have hdec : p = 65536 * H + L + 1 := by omega
-  have hL' : L < 65536 := by omega
-  have hH' : H < 65536 := by omega
+  have hdec : p = 65536 * H + L + 1 := by omega_arith
+  have hL' : L < 65536 := by omega_arith
+  have hH' : H < 65536 := by omega_arith
   have hlo : (q &&& m).toNat = L := by rw [mask32_toNat _ _ hm, hq, hL]
   have hhi : (q >>> 16).toNat = H := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hq, ← hH]
   generalize hr' : (q &&& m) + one - q >>> 16 = r
   have hr : r.toNat = (L + 1 + (2 ^ 32 - H)) % 2 ^ 32 := by
     rw [← hr', BitVec.toNat_sub, BitVec.toNat_add, hlo, hhi, h1]
-    omega
+    omega_arith
   apply BitVec.eq_of_toNat_eq
   rw [mask32_toNat _ _ hm, BitVec.toNat_add, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hr,
     BitVec.toNat_ofNat, hdec]
-  rw [Nat.mod_eq_of_lt (a := _ % 65536) (by omega)]
+  rw [Nat.mod_eq_of_lt (a := _ % 65536) (by omega_arith)]
   exact reduce_nat H L hL' hH'
 
 theorem mul32_toNat (a b : Spec.Idea.Word) :
@@ -95,7 +95,7 @@ theorem mask32_setWidth (x : BitVec 32) : x &&& 65535 = (x.setWidth 16).setWidth
   apply BitVec.eq_of_toNat_eq
   rw [mask32_toNat _ _ rfl]
   simp only [BitVec.toNat_setWidth]
-  omega
+  omega_arith
 
 /-- `add r, y; and r, 0xffff` on a zero-extended word. -/
 theorem add_mask32 (x : BitVec 16) (y : BitVec 32) :
@@ -103,7 +103,7 @@ theorem add_mask32 (x : BitVec 16) (y : BitVec 32) :
   apply BitVec.eq_of_toNat_eq
   rw [mask32_toNat _ _ rfl]
   simp only [BitVec.toNat_add, BitVec.toNat_setWidth]
-  omega
+  omega_arith
 
 theorem add_setWidth32 (x y : BitVec 16) :
     (x.setWidth 32 + y.setWidth 32).setWidth 16 = x + y := by
@@ -118,7 +118,7 @@ theorem neg_mask32 (x : BitVec 32) : (0 - x) &&& 65535 = (-(x.setWidth 16)).setW
   rw [mask32_toNat _ _ rfl]
   simp only [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_neg,
     show (0 : BitVec 32).toNat = 0 from rfl]
-  omega
+  omega_arith
 
 /-- Two bytes, big-endian, as the code assembles them. -/
 theorem bytes16_32 (x y : BitVec 8) :
@@ -128,9 +128,9 @@ theorem bytes16_32 (x y : BitVec 8) :
     Nat.shiftLeft_eq]
   have hx := x.isLt
   have hy := y.isLt
-  rw [Nat.mod_eq_of_lt (by omega : x.toNat < 2 ^ 32), Nat.mod_eq_of_lt (by omega : y.toNat < 2 ^ 32),
-    Nat.mod_eq_of_lt (by omega : x.toNat * 2 ^ 8 < 2 ^ 32), Nat.or_comm]
-  exact (Nat.mod_eq_of_lt (Nat.or_lt_two_pow (by omega) (by omega))).symm
+  rw [Nat.mod_eq_of_lt (by omega_arith : x.toNat < 2 ^ 32), Nat.mod_eq_of_lt (by omega_arith : y.toNat < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_arith : x.toNat * 2 ^ 8 < 2 ^ 32), Nat.or_comm]
+  exact (Nat.mod_eq_of_lt (Nat.or_lt_two_pow (by omega_arith) (by omega_arith))).symm
 
 theorem lo8_32 (x : BitVec 16) : (x.setWidth 32).setWidth 8 = x.setWidth 8 :=
   BitVec.setWidth_setWidth_of_le _ (by decide)
@@ -139,6 +139,6 @@ theorem hi8_32 (x : BitVec 16) : ((x.setWidth 32) >>> 8).setWidth 8 = (x >>> 8).
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (by omega : x.toNat < 2 ^ 32)]
+  rw [Nat.mod_eq_of_lt (by omega_arith : x.toNat < 2 ^ 32)]
 
 end VG.Proof.Idea

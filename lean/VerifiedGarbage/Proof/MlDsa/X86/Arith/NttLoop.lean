@@ -110,7 +110,7 @@ theorem MemOK.step {s₀ : State} (hp : Pre s₀) {T : List Nat} {G G' : Poly} {
   frame := h.frame.trans (hf.mono fun r hr => by simp at hr ⊢; exact .inl hr)
   tbl k hk := by
     rw [coeffAt_congr (m := m) (fun j hj => hf.bytes (R := polyRegion (sA s₀))
-      (by simpa using hp.f_s.symm) (polyLen _) hj) (by rw [n_eq]; omega)]
+      (by simpa using hp.f_s.symm) (polyLen _) hj) (by rw [n_eq]; omega_arith)]
     exact h.tbl k hk
   arg0 := by rw [hf.readW (hp.arg_in (by decide)) (by simpa using hp.f_a.symm) (by decide)]; exact h.arg0
   slot := by rw [hf.readW (hp.arg_in (by decide)) (by simpa using hp.f_a.symm) (by decide)]; exact h.slot
@@ -148,16 +148,16 @@ theorem bfly_step {s₀ : State} (hp : Pre s₀) (b : Bfly) {T : List Nat} {zv :
   have ff := hp.f_fit
   have fs := hp.s_fit
   have bin : BIn s (fA s₀) (blockN b.op H len (zv k) start t) (start + t) len (coeffAddr (sA s₀) k) (zv k) := {
-    ea_i := by rw [h.esi, ea_add (by omega), Nat.add_zero]
-    ea_d := by rw [h.edi, ea_add (by omega), Nat.add_zero]; congr 2; omega
-    ea_z := by rw [h.ebp, ea_add (by omega), Nat.add_zero]
-    in_i := hp.in_f h.wr (by omega)
-    in_d := hp.in_f h.wr (by omega)
-    in_z := inRd (hp.in_s h.wr (by omega))
+    ea_i := by rw [h.esi, ea_add (by omega_arith), Nat.add_zero]
+    ea_d := by rw [h.edi, ea_add (by omega_arith), Nat.add_zero]; congr 2; omega_arith
+    ea_z := by rw [h.ebp, ea_add (by omega_arith), Nat.add_zero]
+    in_i := hp.in_f h.wr (by omega_arith)
+    in_d := hp.in_f h.wr (by omega_arith)
+    in_z := inRd (hp.in_s h.wr (by omega_arith))
     z_v := by rw [← coeffAt_eq, h.mem.tbl k hk, hT k hk]
-    z_sep := hp.f_s.symm.sep (coeff_contains _ (by rw [n_eq]; omega)) (coeff_contains _ (by rw [n_eq]; omega))
+    z_sep := hp.f_s.symm.sep (coeff_contains _ (by rw [n_eq]; omega_arith)) (coeff_contains _ (by rw [n_eq]; omega_arith))
     poly := h.mem.poly
-    hj := by omega
+    hj := by omega_arith
     hl := hl }
   refine (b.spec bin).mono fun s' o => ⟨⟨?_, o.rd.trans h.rd, o.wr.trans h.wr, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [o.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.esp]
@@ -168,7 +168,7 @@ theorem bfly_step {s₀ : State} (hp : Pre s₀) (b : Bfly) {T : List Nat} {zv :
   · rw [blockN_succ]
     exact h.mem.step hp o.frame o.poly
   · rw [o.ne, h.ecx]
-    exact (Option.map_some (f := (!·)) _).symm.trans (cnt_ne ht (by omega))
+    exact (Option.map_some (f := (!·)) _).symm.trans (cnt_ne ht (by omega_arith))
 
 /-! ## The blocks of a layer -/
 
@@ -206,7 +206,7 @@ theorem blockInit_piece (len c : Nat) {hc : Taint.Hint VG.X86.Taint.T}
     Option.bind_some, State.setReg, arithFlags, State.setFlags, Option.some.injEq, exists_eq_left']
   refine ⟨by simp [h.esp], h.rd, h.wr, by simp [h.esi], ?_, by simp [h.ebp], by simp, ?_⟩
   · simp only [show Reg.edi ≠ Reg.ecx by decide, ite_false, ite_true, h.esi]
-    rw [add_ofNat_add]; congr 2; omega
+    rw [add_ofNat_add]; congr 2; omega_arith
   · rw [blockN_zero]; exact h.mem
 
 theorem bflyLoop_piece (hT : TabOK T zv) (len c : Nat) (hl : 0 < len) (hs : 2 * len * c + 2 * len ≤ 256)
@@ -245,22 +245,22 @@ theorem blk_cond {len B c : Nat} (hB : len * B = 128) (hc : c < B) :
     · rw [h, Nat.zero_mul] at hB; exact absurd hB (by decide)
     · exact h
   have e : 4 * (2 * len * c + len + len) = 8 * (len * (c + 1)) := by
-    rw [Nat.mul_succ, Nat.mul_assoc 2]; omega
+    rw [Nat.mul_succ, Nat.mul_assoc 2]; omega_arith
   rw [e]
   by_cases h : c + 1 = B
   · rw [h, hB]; simp
-  · have hlt : len * (c + 1) < len * B := Nat.mul_lt_mul_of_pos_left (by omega) hl
+  · have hlt : len * (c + 1) < len * B := Nat.mul_lt_mul_of_pos_left (by omega_arith) hl
     rw [hB] at hlt
-    simp only [show ¬ 8 * (len * (c + 1)) = 1024 by omega, decide_false, Bool.not_false,
-      show c + 1 < B by omega, decide_true]
+    simp only [show ¬ 8 * (len * (c + 1)) = 1024 by omega_arith, decide_false, Bool.not_false,
+      show c + 1 < B by omega_arith, decide_true]
 
 /-- The pointer compared with the end of `f`. -/
 theorem end_cmp (x : BitVec 32) {X : Nat} (hX : X ≤ 1024) :
     (x + BitVec.ofNat 32 X - (x + 1024) == 0) = decide (X = 1024) := by
-  rw [sub_beq_zero, BitVec.toNat_add, BitVec.toNat_add, toNat_ofNat32 (by omega),
+  rw [sub_beq_zero, BitVec.toNat_add, BitVec.toNat_add, toNat_ofNat32 (by omega_arith),
     show (1024 : BitVec 32).toNat = 1024 from rfl]
   simp only [Nat.reducePow]
-  exact decide_eq_decide.mpr (by constructor <;> intro h <;> omega)
+  exact decide_eq_decide.mpr (by constructor <;> intro h <;> omega_arith)
 
 theorem blockEnd_piece (up : Bool) (len c B : Nat) (hB : len * B = 128) (hc : c < B)
     (hkf : kf len (c + 1) = if up then kf len c + 1 else kf len c - 1)
@@ -277,7 +277,7 @@ theorem blockEnd_piece (up : Bool) (len c B : Nat) (hB : len * B = 128) (hc : c 
     have ins : InRegions (s.rd ++ s.wr) (argAddr s₀ 1) 4 := hp.in_a h.wr (by decide)
     have hlc : 2 * len * c + 2 * len ≤ 256 := by
       have : len * (c + 1) ≤ len * B := Nat.mul_le_mul_left _ hc
-      rw [Nat.mul_succ] at this; rw [Nat.mul_assoc]; omega
+      rw [Nat.mul_succ] at this; rw [Nat.mul_assoc]; omega_arith
     apply WP.of_runBlock
     cases up
     all_goals
@@ -287,20 +287,20 @@ theorem blockEnd_piece (up : Bool) (len c B : Nat) (hB : len * B = 128) (hc : c 
         Option.some.injEq, exists_eq_left']
       refine ⟨⟨by simp [h.esp], h.rd, h.wr, ?_, ?_, ?_⟩, ?_⟩
     · simp only [show Reg.esi ≠ Reg.ebp by decide, ite_false, ite_true, h.edi]
-      congr 2; rw [Nat.mul_succ]; omega
+      congr 2; rw [Nat.mul_succ]; omega_arith
     · simp only [ite_true, h.ebp, hkf, Bool.false_eq_true, ite_false]
-      rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ptr_prev _ (by have := hk rfl; omega)]
-      congr 2; have := hk rfl; omega
+      rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ptr_prev _ (by have := hk rfl; omega_arith)]
+      congr 2; have := hk rfl; omega_arith
     · rw [layerN_succ]; exact h.mem
     · simp only [eval, Option.map_some, h.edi]
-      rw [end_cmp _ (by omega), blk_cond hB hc]
+      rw [end_cmp _ (by omega_arith), blk_cond hB hc]
     · simp only [show Reg.esi ≠ Reg.ebp by decide, ite_false, ite_true, h.edi]
-      congr 2; rw [Nat.mul_succ]; omega
+      congr 2; rw [Nat.mul_succ]; omega_arith
     · simp only [ite_true, h.ebp, hkf, ite_true]
       rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, add_ofNat_add]; congr 2
     · rw [layerN_succ]; exact h.mem
     · simp only [eval, Option.map_some, h.edi]
-      rw [end_cmp _ (by omega), blk_cond hB hc]
+      rw [end_cmp _ (by omega_arith), blk_cond hB hc]
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [h.esp, h'.esp, pub_esp hq]
@@ -342,6 +342,6 @@ theorem layer_piece (hT : TabOK T zv) (up : Bool) (len B : Nat) (hB : len * B = 
       subst hr
       rw [h.esp, h'.esp, pub_esp hq]
   · have : len * (c + 1) ≤ len * B := Nat.mul_le_mul_left _ hc
-    rw [Nat.mul_succ] at this; rw [Nat.mul_assoc]; omega
+    rw [Nat.mul_succ] at this; rw [Nat.mul_assoc]; omega_arith
 
 end VG.Proof.MlDsa.X86.Arith.NttLoop

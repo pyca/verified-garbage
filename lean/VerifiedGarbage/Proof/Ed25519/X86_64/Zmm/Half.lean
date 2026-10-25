@@ -79,7 +79,7 @@ theorem Rel.half (b : Addr) (h : Nat) (J : List Nat) (z : State) : Rel b h J z (
 
 theorem Rel.lane {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y) {r : XReg}
     (hj : xi r ∉ J) {k : Nat} (hk : k < 2) : y.lane r k = z.zlane r (2 * h + k) := by
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl
   · exact hr.xmm r hj
   · exact hr.hi r hj
 
@@ -104,7 +104,7 @@ theorem ternlog_AC (n : BitVec 4) (a c : BitVec 128) :
     ternlog (maskLane n) a c 0xAC = blendDwords a c n := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   obtain ⟨q, s, rfl, hq, hs⟩ : ∃ q s, i = 32 * q + s ∧ q < 4 ∧ s < 32 :=
-    ⟨i / 32, i % 32, by omega, by omega, by omega⟩
+    ⟨i / 32, i % 32, by omega_arith, by omega_arith, by omega_arith⟩
   simp only [ternlog, List.range, List.range.loop, List.foldl, BitVec.reduceGetLsb, Bool.false_eq_true,
     ↓reduceIte]
   simp only [Nat.testBit_eq_decide_div_mod_eq, Nat.reducePow, Nat.reduceDiv, Nat.reduceMod, Nat.reduceEqDiff,
@@ -112,7 +112,7 @@ theorem ternlog_AC (n : BitVec 4) (a c : BitVec 128) :
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, hi, decide_true, Bool.true_and,
     BitVec.ofNat_eq_ofNat, BitVec.getLsbD_zero, Bool.false_or]
   simp only [maskLane, blendDwords, getLsbD_ofDwords_block _ _ _ _ hq hs]
-  rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_arith : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl <;>
     simp only [↓reduceIte, Nat.reduceEqDiff] <;>
     cases n.getLsbD _ <;>
     simp only [Bool.false_eq_true, ↓reduceIte, getLsbD_dword, decide_eq_true hs, Bool.true_and,
@@ -139,9 +139,9 @@ theorem zlane_vpermq (d a : XReg) (o : BitVec 8) (s : State) (r : XReg) {h k : N
       if r = d then (permQwords (s.zlane a (2 * h + 1) ++ s.zlane a (2 * h)) o).extractLsb' (128 * k) 128
       else s.zlane r (2 * h + k) := by
   simp only [ZOp.exec]
-  rw [State.zlane_setZ _ _ _ _ _ _ _ (by omega)]
+  rw [State.zlane_setZ _ _ _ _ _ _ _ (by omega_arith)]
   split
-  · rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;> rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;> rfl
+  · rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;> rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl <;> rfl
   · rfl
 
 theorem zlane_load (d : XReg) (v : BitVec 512) (s : State) (r : XReg) {i : Nat} (hi : i < 4) :
@@ -155,16 +155,16 @@ theorem zmm_half (s : State) (r : XReg) {h : Nat} (hh : h < 2) :
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [State.zmm, State.ymm, State.zlane, State.lane, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append,
     decide_eq_true hj, Bool.true_and]
-  rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl
+  rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl
   · simp only [Nat.mul_zero, Nat.zero_add, show (0 : Nat) < 2 by decide, show (1 : Nat) < 2 by decide,
       show (1 : Nat) ≠ 0 by decide, ite_true, ite_false]
     rw [ite_eq_left hj]
-  · simp only [show ¬ 256 * 1 + j < 256 by omega, ite_false, show ¬ (2 * 1 + 1 : Nat) < 2 by decide,
-      show ¬ (2 * 1 : Nat) < 2 by decide, BitVec.getLsbD_extractLsb', show 256 * 1 + j - 256 = j by omega]
+  · simp only [show ¬ 256 * 1 + j < 256 by omega_arith, ite_false, show ¬ (2 * 1 + 1 : Nat) < 2 by decide,
+      show ¬ (2 * 1 : Nat) < 2 by decide, BitVec.getLsbD_extractLsb', show 256 * 1 + j - 256 = j by omega_arith]
     by_cases h : j < 128
     · rw [ite_eq_left h, show 2 * 1 - 2 = 0 by rfl, Nat.mul_zero, Nat.zero_add, decide_eq_true h, Bool.true_and]
-    · rw [ite_eq_right h, show 2 * 1 + 1 - 2 = 1 by rfl, Nat.mul_one, decide_eq_true (show j - 128 < 128 by omega),
-        Bool.true_and, show 128 + (j - 128) = j by omega]
+    · rw [ite_eq_right h, show 2 * 1 + 1 - 2 = 1 by rfl, Nat.mul_one, decide_eq_true (show j - 128 < 128 by omega_arith),
+        Bool.true_and, show 128 + (j - 128) = j by omega_arith]
 
 theorem ymm_lanes (s : State) (r : XReg) : s.ymm r = s.lane r 1 ++ s.lane r 0 := rfl
 
@@ -263,8 +263,8 @@ theorem ZOK.of_keep {b : Addr} {z z' : State} (hz : ZOK b z) (hk : ZKeep b z z')
     refine Mem.readW_congr fun j hj => hk.mem _ ?_
     have hm : ∀ sel ∈ blendSels, ZMASK ≤ maskRow sel ∧ maskRow sel + 64 ≤ 6016 := by decide +kernel
     have := hm sel hs
-    rw [Offset.add_ofNat_add_ofNat, off_ofNat _ (by omega)]
-    simp only [InZ]; omega
+    rw [Offset.add_ofNat_add_ofNat, off_ofNat _ (by omega_arith)]
+    simp only [InZ]; omega_arith
 
 theorem ea_sc' {z : State} {b : Addr} (h : z.gpr .rdi = b) (d : Nat) : z.ea (sc d) = b + BitVec.ofNat 64 d := by
   simp only [State.ea, sc, VG.Impl.X25519.X86_64.at_, BitVec.ofInt_natCast, h]
@@ -325,11 +325,11 @@ theorem sim_lanewise {b : Addr} {J : List Nat} {d : XReg} {z : State} {o : ZOp} 
   rw [hv]
   refine rel_write hr (zop_keep b o z) (ZOp.exec_mem o z) jw_J (fun r hrd _ k hk => ?_)
     ?_ ?_
-  · rw [hz r _ (by omega), ite_eq_right hrd]
+  · rw [hz r _ (by omega_arith), ite_eq_right hrd]
   · have e := hF h hh y hr 0 (by decide)
     rw [Nat.add_zero] at e
-    rw [hz d _ (by omega), ite_eq_left rfl, e]
-  · rw [hz d _ (by omega), ite_eq_left rfl, hF h hh y hr 1 (by decide)]
+    rw [hz d _ (by omega_arith), ite_eq_left rfl, e]
+  · rw [hz d _ (by omega_arith), ite_eq_left rfl, hF h hh y hr 1 (by decide)]
 
 /-! ## Rows of the window -/
 
@@ -353,7 +353,7 @@ theorem zmem_ea {m : MemOp} {o : Nat} (h : rdiOff m = some o) (ho : 1024 ≤ o) 
     · rename_i n hn
       cases h
       have e : ((ZB : Int) + 2 * (Int.ofNat o - 1024)) = ((zrow o : Nat) : Int) := by
-        unfold zrow; rw [Int.ofNat_eq_natCast]; omega
+        unfold zrow; rw [Int.ofNat_eq_natCast]; omega_arith
       simp only [State.ea, zmem, hb.1, hb.2, hn, e, BitVec.ofInt_natCast]
     · cases h
   · cases h
@@ -363,11 +363,11 @@ theorem win_byte {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h
     (ho : RowAt o) {j : Nat} (hj : j < 32) :
     y.mem (b + BitVec.ofNat 64 (o + j)) = z.mem (b + BitVec.ofNat 64 (zrow o + 32 * h + j)) := by
   obtain ⟨h1, h2, h3⟩ := ho
-  rw [hr.mem _ (by rw [off_ofNat _ (by omega)]; unfold InZ ZB; omega), hmem,
-    off_ofNat _ (by omega), ite_eq_left (by simp only [InWin]; omega)]
+  rw [hr.mem _ (by rw [off_ofNat _ (by omega_arith)]; unfold InZ ZB; omega_arith), hmem,
+    off_ofNat _ (by omega_arith), ite_eq_left (by simp only [InWin]; omega_arith)]
   refine congrArg z.mem (congrArg (b + ·) (congrArg (BitVec.ofNat 64) ?_))
   unfold zoff zrow
-  omega
+  omega_arith
 
 theorem read_congr2 {m m' : Mem} {a a' : Addr} {n : Nat}
     (h : ∀ i < n, m (a + BitVec.ofNat 64 i) = m' (a' + BitVec.ofNat 64 i)) :
@@ -376,10 +376,10 @@ theorem read_congr2 {m m' : Mem} {a a' : Addr} {n : Nat}
   | zero => rfl
   | succ n ih =>
     simp only [Mem.read]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_arith)
     simp only [BitVec.add_zero] at h0
     rw [h0, ih fun i hi => ?_]
-    have := h (i + 1) (by omega)
+    have := h (i + 1) (by omega_arith)
     rwa [Offset.add_ofNat_succ, Offset.add_ofNat_succ] at this
 
 theorem readW_congr2 {m m' : Mem} {a a' : Addr} {w : Nat}
@@ -393,16 +393,16 @@ theorem win_read {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h
     (z.mem.readW (b + BitVec.ofNat 64 (zrow o)) 512).extractLsb' (128 * (2 * h + k)) 128 =
       (y.mem.readW (b + BitVec.ofNat 64 o) 256).extractLsb' (128 * k) 128 := by
   have e₁ := readW_extract z.mem (b + BitVec.ofNat 64 (zrow o)) (w := 512) (k := 16 * (2 * h + k))
-    (n := 16) (by omega)
-  have e₂ := readW_extract y.mem (b + BitVec.ofNat 64 o) (w := 256) (k := 16 * k) (n := 16) (by omega)
-  rw [show 8 * (16 * (2 * h + k)) = 128 * (2 * h + k) by omega] at e₁
-  rw [show 8 * (16 * k) = 128 * k by omega] at e₂
+    (n := 16) (by omega_arith)
+  have e₂ := readW_extract y.mem (b + BitVec.ofNat 64 o) (w := 256) (k := 16 * k) (n := 16) (by omega_arith)
+  rw [show 8 * (16 * (2 * h + k)) = 128 * (2 * h + k) by omega_arith] at e₁
+  rw [show 8 * (16 * k) = 128 * k by omega_arith] at e₂
   rw [e₁, e₂]
   refine (readW_congr2 fun j hj => ?_).symm
   simp only [Offset.add_ofNat_add_ofNat]
-  rw [Nat.add_assoc, win_byte hr ho (j := 16 * k + j) (by omega)]
+  rw [Nat.add_assoc, win_byte hr ho (j := 16 * k + j) (by omega_arith)]
   refine congrArg z.mem (congrArg (b + ·) (congrArg (BitVec.ofNat 64) ?_))
-  omega
+  omega_arith
 
 /-- Byte `j` of half `h` of a `zmm` register. -/
 theorem zmm_byte (s : State) (r : XReg) {h j : Nat} (hh : h < 2) (hj : j < 32) :
@@ -411,8 +411,8 @@ theorem zmm_byte (s : State) (r : XReg) {h j : Nat} (hh : h < 2) (hj : j < 32) :
   rw [← zmm_half s r hh]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and,
-    decide_eq_true (show 8 * j + i < 256 by omega)]
-  congr 1; omega
+    decide_eq_true (show 8 * j + i < 256 by omega_arith)]
+  congr 1; omega_arith
 
 /-- The bytes of a written row, as half `h` sees them. -/
 theorem win_write {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y) (hh : h < 2)
@@ -427,34 +427,34 @@ theorem win_write {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b 
   generalize hxd : (a - b).toNat = x at *
   by_cases hin : o ≤ x ∧ x < o + 32
   · have hz : zrow o ≤ zoff h x ∧ zoff h x < zrow o + 64 := by
-      unfold zoff zrow; omega
-    rw [ite_eq_left (by omega), ite_eq_left (by simp only [InWin]; omega), Offset.add_sub_add_left,
-      Offset.ofNat_sub_ofNat hz.1, BitVec.toNat_ofNat, ite_eq_left (by omega)]
-    have e : (2 ^ 64 - o % 2 ^ 64 + x) % 2 ^ 64 = x - o := by omega
+      unfold zoff zrow; omega_arith
+    rw [ite_eq_left (by omega_arith), ite_eq_left (by simp only [InWin]; omega_arith), Offset.add_sub_add_left,
+      Offset.ofNat_sub_ofNat hz.1, BitVec.toNat_ofNat, ite_eq_left (by omega_arith)]
+    have e : (2 ^ 64 - o % 2 ^ 64 + x) % 2 ^ 64 = x - o := by omega_arith
     have e' : (zoff h x - zrow o) % 2 ^ 64 = 32 * h + (x - o) := by
-      unfold zoff zrow; omega
+      unfold zoff zrow; omega_arith
     rw [e, e']
     simp only [BitVec.setWidth_eq]
-    rw [zmm_byte z r hh (by omega), State.ymm, ← hr.hi r hf, ← hr.xmm r hf]
-  · rw [ite_eq_right (by omega), hr.mem a (hxd ▸ ha), hmem, hxd]
+    rw [zmm_byte z r hh (by omega_arith), State.ymm, ← hr.hi r hf, ← hr.xmm r hf]
+  · rw [ite_eq_right (by omega_arith), hr.mem a (hxd ▸ ha), hmem, hxd]
     split
     · rename_i hw
       rw [Offset.add_sub_add_left, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
         ite_eq_right]
       simp only [InWin] at hw
       unfold zoff zrow
-      omega
+      omega_arith
     · simp only [InZ] at ha
-      rw [sub_off, ite_eq_right (by unfold zrow at *; unfold ZB ZMASK at *; omega)]
+      rw [sub_off, ite_eq_right (by unfold zrow at *; unfold ZB ZMASK at *; omega_arith)]
 
 /-! ## Each instruction -/
 
 theorem zrow_in {o : Nat} (ho : RowAt o) : ZB ≤ zrow o ∧ zrow o + 64 ≤ ZMASK := by
-  obtain ⟨h1, h2, h3⟩ := ho; unfold zrow ZB ZMASK; omega
+  obtain ⟨h1, h2, h3⟩ := ho; unfold zrow ZB ZMASK; omega_arith
 
 theorem scratch_in {b : Addr} {z : State} (hz : ZOK b z) {d : Nat} (hd : d + 64 ≤ 8192) :
     InRegions z.wr (b + BitVec.ofNat 64 d) 64 :=
-  ⟨_, hz.wr, Offset.contains_base b hd (by omega)⟩
+  ⟨_, hz.wr, Offset.contains_base b hd (by omega_arith)⟩
 
 theorem setZ_keep (b : Addr) (z : State) (d : XReg) (l0 l1 l2 l3 : BitVec 128) :
     ZKeep b z (z.setZ d l0 l1 l2 l3) := ⟨rfl, fun _ _ => rfl⟩
@@ -468,7 +468,7 @@ theorem sim_load {b : Addr} {t : Nat} {J : List Nat} {d : XReg} {m : MemOp} (hm 
   obtain ⟨o, ho, hr⟩ := rowOk_iff hm
   have ea : z.ea (zmem m) = b + BitVec.ofNat 64 (zrow o) := by rw [zmem_ea ho hr.1, hz.rdi]
   have hin : InRegions (z.rd ++ z.wr) (b + BitVec.ofNat 64 (zrow o)) 64 := by
-    obtain ⟨r, hr', hc⟩ := scratch_in hz (d := zrow o) (by have := zrow_in hr; unfold ZMASK at this; omega)
+    obtain ⟨r, hr', hc⟩ := scratch_in hz (d := zrow o) (by have := zrow_in hr; unfold ZMASK at this; omega_arith)
     exact ⟨r, List.mem_append_right _ hr', hc⟩
   let w := z.mem.readW (b + BitVec.ofNat 64 (zrow o)) 512
   refine ⟨z.setZ d (w.extractLsb' 0 128) (w.extractLsb' 128 128) (w.extractLsb' 256 128)
@@ -486,9 +486,9 @@ theorem sim_load {b : Addr} {t : Nat} {J : List Nat} {d : XReg} {m : MemOp} (hm 
   rw [Nat.add_zero, Nat.mul_zero] at r0
   rw [Nat.mul_one] at r1
   refine rel_write hy (setZ_keep b z d _ _ _ _) rfl jw_J (fun r hrd _ k hk => ?_) ?_ ?_
-  · rw [zlane_load _ _ _ _ (by omega), ite_eq_right hrd]
-  · rw [zlane_load _ _ _ _ (by omega), ite_eq_left rfl]; exact r0
-  · rw [zlane_load _ _ _ _ (by omega), ite_eq_left rfl]; exact r1
+  · rw [zlane_load _ _ _ _ (by omega_arith), ite_eq_right hrd]
+  · rw [zlane_load _ _ _ _ (by omega_arith), ite_eq_left rfl]; exact r0
+  · rw [zlane_load _ _ _ _ (by omega_arith), ite_eq_left rfl]; exact r1
 
 /-- A store of a row. -/
 theorem sim_store {b : Addr} {t : Nat} {J : List Nat} {r : XReg} {m : MemOp} (hm : rowOk m = true)
@@ -499,7 +499,7 @@ theorem sim_store {b : Addr} {t : Nat} {J : List Nat} {r : XReg} {m : MemOp} (hm
   have ea : z.ea (zmem m) = b + BitVec.ofNat 64 (zrow o) := by rw [zmem_ea ho hr.1, hz.rdi]
   have zi := zrow_in hr
   have hin : InRegions z.wr (b + BitVec.ofNat 64 (zrow o)) 64 :=
-    scratch_in hz (d := zrow o) (by unfold ZMASK at zi; omega)
+    scratch_in hz (d := zrow o) (by unfold ZMASK at zi; omega_arith)
   refine ⟨z.setMem (z.mem.writeW (b + BitVec.ofNat 64 (zrow o)) (z.zmm r)), runBlock_one ?_, ⟨rfl, ?_⟩, ?_⟩
   · simp only [exec, ea, State.store512_eq, hin, ite_true]
   · intro a ha
@@ -508,7 +508,7 @@ theorem sim_store {b : Addr} {t : Nat} {J : List Nat} {r : XReg} {m : MemOp} (hm
     have := (a - b).isLt
     unfold InZ at ha
     unfold ZB ZMASK at ha zi
-    omega
+    omega_arith
   intro h hh y y' hy e
   have eay : y.ea m = b + BitVec.ofNat 64 o := by rw [rdiOff_ok ho, hy.gpr, hz.rdi]
   simp only [exec, eay, State.store256] at e
@@ -566,13 +566,13 @@ theorem sim_blend {b : Addr} {t : Nat} {J : List Nat} {d a c : XReg} {sel : BitV
       by_cases hd : xi d = t
       · exact hrd (xi_inj.1 (by rw [e, hT, hd]))
       · rw [ite_eq_right hd, e, hT] at hr; exact hr (List.mem_cons_self ..)
-    rw [L r _ (by omega), ite_eq_right (fun h' => h'.elim hrd hrT)]
-  · rw [L d _ (by omega), ite_eq_left (Or.inl rfl), hy.lane hfa (k := 0) (by decide),
+    rw [L r _ (by omega_arith), ite_eq_right (fun h' => h'.elim hrd hrT)]
+  · rw [L d _ (by omega_arith), ite_eq_left (Or.inl rfl), hy.lane hfa (k := 0) (by decide),
       hy.lane hfc (k := 0) (by decide), Nat.add_zero]
     simp only [Nat.mul_mod_right, Nat.mul_zero]
-  · rw [L d _ (by omega), ite_eq_left (Or.inl rfl), hy.lane hfa (k := 1) (by decide),
+  · rw [L d _ (by omega_arith), ite_eq_left (Or.inl rfl), hy.lane hfa (k := 1) (by decide),
       hy.lane hfc (k := 1) (by decide)]
-    simp only [show (2 * h + 1) % 2 = 1 by omega, Nat.mul_one]
+    simp only [show (2 * h + 1) % 2 = 1 by omega_arith, Nat.mul_one]
 
 theorem perm2Lanes_congr {a a' c c' : Nat → BitVec 128} (ha : ∀ k < 2, a k = a' k) (hc : ∀ k < 2, c k = c' k)
     (sel : BitVec 8) (j : Nat) : perm2Lanes a c sel j = perm2Lanes a' c' sel j := by
@@ -589,8 +589,8 @@ theorem sim_perm2 {b : Addr} {t : Nat} {J : List Nat} {d a c : XReg} {sel : BitV
       (if sel = 0x31 then 0xDD else 0x88)).exec z)).zlane d (2 * h + k) =
       perm2Lanes (fun k => z.zlane a (2 * h + k)) (fun k => z.zlane c (2 * h + k)) sel k := by
     intro h hh k hk
-    rcases hsel with rfl | rfl <;> rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;>
-      rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;>
+    rcases hsel with rfl | rfl <;> rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;>
+      rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl <;>
       simp [zlane_vshufi32x4, shuf4Lanes, perm2Lanes]
   refine ⟨_, runBlock_two rfl rfl, (zop_keep b _ _).trans (zop_keep b _ _), ?_⟩
   intro h hh y' y'' hy e
@@ -600,7 +600,7 @@ theorem sim_perm2 {b : Addr} {t : Nat} {J : List Nat} {d a c : XReg} {sel : BitV
       perm2Lanes (fun k => z.zlane a (2 * h + k)) (fun k => z.zlane c (2 * h + k)) sel k :=
     perm2Lanes_congr (fun k hk => hy.lane hfa hk) (fun k hk => hy.lane hfc hk) sel
   refine rel_write hy ((zop_keep b _ _).trans (zop_keep b _ _)) rfl jw_J (fun r hrd _ k hk => ?_) ?_ ?_
-  · simp only [zlane_vshufi32x4 _ _ _ _ _ _ (show 2 * h + k < 4 by omega), hrd, ite_false]
+  · simp only [zlane_vshufi32x4 _ _ _ _ _ _ (show 2 * h + k < 4 by omega_arith), hrd, ite_false]
   · rw [← Nat.add_zero (2 * h), key h hh 0 (by decide), pc]
   · rw [key h hh 1 (by decide), pc]
 
@@ -648,11 +648,11 @@ theorem sim1 {b : Addr} {t : Nat} {J J' : List Nat} {i : Instr} (hj : jstep t J 
     refine ⟨_, runBlock_one rfl, zop_keep b _ z, sim_lanewise
       (F := fun L i => (permQwords (L a (2 * (i / 2) + 1) ++ L a (2 * (i / 2))) o).extractLsb' (128 * (i % 2)) 128)
       (fun r i hi => ?_) (fun _ => rfl) (fun h hh y hr k hk => ?_)⟩
-    · have e := zlane_vpermq d a o z r (h := i / 2) (k := i % 2) (by omega) (by omega)
-      rw [show 2 * (i / 2) + i % 2 = i by omega] at e
+    · have e := zlane_vpermq d a o z r (h := i / 2) (k := i % 2) (by omega_arith) (by omega_arith)
+      rw [show 2 * (i / 2) + i % 2 = i by omega_arith] at e
       exact e
-    · simp only [show k / 2 = 0 by omega, show (2 * h + k) / 2 = h by omega, show (2 * h + k) % 2 = k by omega,
-        show k % 2 = k by omega, Nat.mul_zero, Nat.zero_add]
+    · simp only [show k / 2 = 0 by omega_arith, show (2 * h + k) / 2 = h by omega_arith, show (2 * h + k) % 2 = k by omega_arith,
+        show k % 2 = k by omega_arith, Nat.mul_zero, Nat.zero_add]
       rw [hr.lane ha (k := 1) (by decide), show y.lane a 0 = z.zlane a (2 * h) from hr.xmm a ha]
   next d a c =>
     split at hj

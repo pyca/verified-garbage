@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 import VerifiedGarbage.Proof.Weierstrass.JacMul
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! The public tree carries exact paired field values and fixed loop counters. -/
 

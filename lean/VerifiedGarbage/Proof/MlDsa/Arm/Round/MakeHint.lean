@@ -57,8 +57,8 @@ theorem bmh_val {g : Nat} (hg : G2 g) (z r : Zq) :
     bmh g (BitVec.ofNat 32 z.val) (BitVec.ofNat 32 r.val) = (makeHint g z r).toNat := by
   have hz : z.val < 8380417 := z.isLt
   have hr : r.val < 8380417 := r.isLt
-  have ez : (BitVec.ofNat 32 z.val).toNat = z.val := by rw [BitVec.toNat_ofNat]; omega
-  have er : (BitVec.ofNat 32 r.val).toNat = r.val := by rw [BitVec.toNat_ofNat]; omega
+  have ez : (BitVec.ofNat 32 z.val).toNat = z.val := by rw [BitVec.toNat_ofNat]; omega_arith
+  have er : (BitVec.ofNat 32 r.val).toNat = r.val := by rw [BitVec.toNat_ofNat]; omega_arith
   have hs := sumq_val (z := BitVec.ofNat 32 z.val) (r := BitVec.ofNat 32 r.val) (by rw [ez]; exact z.isLt)
     (by rw [er]; exact r.isLt)
   rw [ez, er] at hs
@@ -74,8 +74,8 @@ theorem bmh_val {g : Nat} (hg : G2 g) (z r : Zq) :
   unfold bmh
   generalize bhb g (fixS _) = X at h1
   generalize bhb g (BitVec.ofNat 32 r.val) = Y at h2
-  have hX : X.toNat < 64 := by rw [h1]; have := Nat.mod_lt (hbF g ((r.val + z.val) % q)) hm0; omega
-  have hY : Y.toNat < 64 := by rw [h2]; have := Nat.mod_lt (hbF g r.val) hm0; omega
+  have hX : X.toNat < 64 := by rw [h1]; have := Nat.mod_lt (hbF g ((r.val + z.val) % q)) hm0; omega_arith
+  have hY : Y.toNat < 64 := by rw [h2]; have := Nat.mod_lt (hbF g r.val) hm0; omega_arith
   have hxy : (X ^^^ Y).toNat < 64 := by
     rw [BitVec.toNat_xor]; exact Nat.xor_lt_two_pow (n := 6) hX hY
   have e : (X ^^^ Y = 0) ↔ X = Y := by
@@ -209,9 +209,9 @@ theorem loop {s s₁ s₂ : State} (hp : PreE s) (hE : Entry 12 s s₁) {g : Nat
       have ht : (s''.gpr .r4).toNat = (s'.gpr .r4).toNat + ((hint s g)[i]!).toNat := by
         rw [r4]
         have : ((((hint s g)[i]!).toNat : Nat) : BitVec 32).toNat = ((hint s g)[i]!).toNat := by
-          rw [BitVec.natCast_eq_ofNat, BitVec.toNat_ofNat]; omega
-        rw [BitVec.toNat_add, this]; omega
-      exact ⟨by omega, by omega⟩
+          rw [BitVec.natCast_eq_ofNat, BitVec.toNat_ofNat]; omega_arith
+        rw [BitVec.toNat_add, this]; omega_arith
+      exact ⟨by omega_arith, by omega_arith⟩
   · rw [hI.fixed r hr, hg₂ r (by revert r; decide)]
   · rw [hI.sp, hsp]
   · have := hI.frame; simp only [List.map_cons, List.map_nil] at this

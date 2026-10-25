@@ -63,7 +63,7 @@ theorem rq_of_checked {s₀ : State} (A : KeyABI s₀) (hc : rChecked s₀ = tru
   have hl : Spec.Dsa.lengthsValid (rInput s₀).pLen (rInput s₀).qLen := A.lengths
   have := (VG.Proof.Dsa.Arm.checkParametersBytes_iff hl hk).mp hc
   have B := VG.Proof.Dsa.supported_bounds this.1.1
-  rw [rQ_decode]; omega
+  rw [rQ_decode]; omega_arith
 
 theorem rResult_unchecked {s₀ : State} (A : KeyABI s₀) (hc : rChecked s₀ = false) :
     rResult s₀ = ⟨none, 0, 0, [4]⟩ := by
@@ -84,7 +84,7 @@ theorem slot_keep {s₀ : State} {m m' : Mem} {rs : List Region} (hf : Frame rs 
   hf.readW (r := ⟨off (rBase s₀) d, 4⟩)
     (by have := Offset.contains_base (off (rBase s₀) d) (d := 0) (n := 4) (k := 4) (by decide) (by decide)
         rwa [BitVec.add_zero] at this)
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by have : frameBytes = 112 := rfl; omega))) (by decide)
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by have : frameBytes = 112 := rfl; omega_arith))) (by decide)
 
 theorem frame_low (s₀ : State) : Region.Disjoint (frameR s₀) ⟨rLow s₀, 32⟩ :=
   Offset.disjoint_base _ (Nat.le_refl 32) (by decide)
@@ -107,7 +107,7 @@ theorem derive_keeps {s₀ : State} (A : KeyABI s₀) : ∀ r ∈ deriveWrites s
 /-- The domain's bytes, which nothing writes. -/
 theorem key_bytes {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) :
     Spec.Rsa.bytesAt t.mem (State.addr (s₀.gpr .r3)) (stackArg s₀ 0).toNat = (rInput s₀).key := by
-  refine rBytes_frame h.frame (fun r hr => ?_) (by have := (stackArg s₀ 0).isLt; omega)
+  refine rBytes_frame h.frame (fun r hr => ?_) (by have := (stackArg s₀ 0).isLt; omega_arith)
   simp only [rWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact A.stackKey.symm
@@ -135,10 +135,10 @@ theorem wp_strP {s₀ t : State} (A : KeyABI s₀) (P : PreR s₀ t) {r : Reg} {
   have hs := A.stackBound
   have hl := A.stackLow
   have ha : State.addr (t.gpr .r12 + BitVec.ofNat 32 d) = off (rBase s₀) d := by
-    rw [P.r12, VG.Arm.addr_add (by rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega),
+    rw [P.r12, VG.Arm.addr_add (by rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega_arith),
       alloc_base A]
-  refine wp_str (by unfold frameBytes at hd; omega) ha
-    ⟨_, by rw [P.wr]; exact List.mem_cons_self, Offset.contains_base _ hd (by unfold frameBytes at *; omega)⟩
+  refine wp_str (by unfold frameBytes at hd; omega_arith) ha
+    ⟨_, by rw [P.wr]; exact List.mem_cons_self, Offset.contains_base _ hd (by unfold frameBytes at *; omega_arith)⟩
     fun u m => k u ⟨by rw [m.gpr]; exact P.r12, m.sp.trans P.sp, m.rd.trans P.rd, m.wr.trans P.wr,
       P.frame.trans (by
         rw [m.mem]
@@ -173,7 +173,7 @@ theorem entry_ok {s₀ : State} (A : KeyABI s₀) :
   have gg : ∀ r, r ≠ .r12 → t₉.gpr r = s₀.gpr r := fun r h => by
     rw [g₉, g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁]; exact g₀ r h
   have nw : (rBase s₀).toNat + frameBytes + 28 ≤ 2 ^ 32 := by
-    rw [rBase_toNat A]; have := A.stackBound; have := A.stackLow; unfold frameBytes; omega
+    rw [rBase_toNat A]; have := A.stackBound; have := A.stackLow; unfold frameBytes; omega_arith
   have h₁₀ : RReady s₀ t₁₀ :=
     ⟨⟨by rw [u₁₀.gpr, P₉.r12, alloc_base A], by rw [u₁₀.wr, P₉.wr]; exact List.mem_cons_self,
       by rw [u₁₀.rd, P₉.rd, A.rd, rBase_args A]; simp, nw⟩,
@@ -207,7 +207,7 @@ theorem entry_ok {s₀ : State} (A : KeyABI s₀) :
     rfl
   refine ⟨h₁₈, ⟨fun i hi => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, fun r h0 h11 h12 => ?_⟩
   · obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨
-      i = 6 ∨ i = 7 ∨ i = 8 := by omega
+      i = 6 ∨ i = 7 ∨ i = 8 := by omega_arith
     all_goals (rw [hm]; simp (disch := decide) only [slot_write_self, slot_write_ne]; rfl)
   all_goals first
     | (rw [hm]; simp (disch := decide) only [slot_write_self, slot_write_ne]; done)
@@ -219,7 +219,7 @@ theorem entry_ok {s₀ : State} (A : KeyABI s₀) :
 
 theorem sampleStatus_none {S : Spec.Dsa.Random.Sample} (h : S.scalar = none) :
     VG.Proof.Dsa.Random.sampleStatus S ≠ 1 := by
-  unfold VG.Proof.Dsa.Random.sampleStatus; simp only [h]; split <;> omega
+  unfold VG.Proof.Dsa.Random.sampleStatus; simp only [h]; split <;> omega_arith
 
 theorem sampleStatus_some {S : Spec.Dsa.Random.Sample} {k : Nat} (h : S.scalar = some k) :
     VG.Proof.Dsa.Random.sampleStatus S = 1 := by
@@ -231,7 +231,7 @@ theorem rResult_status_le {s₀ : State} (A : KeyABI s₀) : (rResult s₀).stat
   · split
     · exact sampleStatus_le _
     · have := status_lt (Spec.Dsa.deriveKeyBytes (rInput s₀).pLen (rInput s₀).qLen (rInput s₀).key
-        (Spec.Dsa.encodeBE (rInput s₀).qLen ‹_›)); dsimp only; omega
+        (Spec.Dsa.encodeBE (rInput s₀).qLen ‹_›)); dsimp only; omega_arith
   · decide
 
 theorem rResult_key {s₀ : State} (A : KeyABI s₀) : (rResult s₀).status ≠ 1 → (rResult s₀).key = none := by
@@ -278,12 +278,12 @@ theorem body_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
     refine WP.seq (WP.mono (prepare_ok A h₄ sv₄.2.2.2.2) fun t₅ ⟨_, P₅, h₅, o₅, _⟩ => ?_)
     have P := P₅ hq
     have lo₅ : ∀ d, d + 4 ≤ oQ → slot t₅.mem (rBase s₀) d = slot t₄.mem (rBase s₀) d := fun d hd =>
-      outs_low o₅ (by decide) hd (by unfold oQ at hd; omega)
+      outs_low o₅ (by decide) hd (by unfold oQ at hd; omega_arith)
     have us₅ : slot t₅.mem (rBase s₀) oUsed = BitVec.ofNat 32 0 := by
       rw [lo₅ _ (by decide), m₄, sl₃ _ (by decide)]; exact us₁
     have S₅ : Smp s₀ 0 (slot t₅.mem (rBase s₀) oDraws).toNat t₅ :=
       ⟨h₅, P.q, P.width, P.mask, us₅, by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq],
-        fun i hi => P.nonce i (by omega), Nat.zero_le _⟩
+        fun i hi => P.nonce i (by omega_arith), Nat.zero_le _⟩
     have sv₅ : Saved s₀ t₅.mem := sv₄.of_outs o₅ (by decide)
     refine WP.seq (WP.mono (sample_ok A S₅ hq) fun t₆ ⟨O₆, r0₆, h₆, o₆, _⟩ => ?_)
     have sv₆ : Saved s₀ t₆.mem := sv₅.of_outs o₆ (by decide)
@@ -294,7 +294,7 @@ theorem body_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
     refine WP.seq (wp_cmp (op2_imm (by decide)) fun t₇ f₇ z₇ => WP.block_nil ?_)
     have h₇ := h₆.fupd f₇
     have m₇ : t₇.mem = t₆.mem := f₇.mem
-    rw [r0₆, one_beq (by have := sampleStatus_le (spl s₀ 128 0); omega)] at z₇
+    rw [r0₆, one_beq (by have := sampleStatus_le (spl s₀ 128 0); omega_arith)] at z₇
     cases hk : (spl s₀ 128 0).scalar with
     | none =>
       simp only [hk] at hR
@@ -327,9 +327,9 @@ theorem body_ok (check derive : String) {s₀ : State} (A : KeyABI s₀) :
       · rw [mem₁₀, slot_write_self, r0₉, hR]
       · rw [mem₁₀, rBytes_frame (frame_store s₀ t₉.mem (by decide) _) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact A.stackOut.symm)
-          (by have := (s₀.gpr .r1).isLt; omega), out₉, hR]
+          (by have := (s₀.gpr .r1).isLt; omega_arith), out₉, hR]
       · exact sv₆.of_slots fun d hd hd' => by
-          rw [mem₁₀, slot_write_ne _ _ _ (by unfold oStatus; omega) (by omega) (by decide), sl₉ d hd']
+          rw [mem₁₀, slot_write_ne _ _ _ (by unfold oStatus; omega_arith) (by omega_arith) (by decide), sl₉ d hd']
   · have hc' : rChecked s₀ = false := by simpa using hc
     rw [hc'] at z₄
     refine WP.ite true (by rw [eval_eq, z₄]; rfl) (fun _ => WP.block_nil ?_) (fun e => Bool.noConfusion e)

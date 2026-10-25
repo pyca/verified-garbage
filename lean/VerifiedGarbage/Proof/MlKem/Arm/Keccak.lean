@@ -62,7 +62,7 @@ theorem squeeze_noFrames : Impl.Sha3.Arm.Stream.squeeze.noFrames = true := by de
 theorem addr_sub {sp : BitVec 32} {n : Nat} (h : n ≤ sp.toNat) :
     State.addr (sp - BitVec.ofNat 32 n) = State.addr sp - BitVec.ofNat 64 n := by
   have := sp.isLt
-  simp only [State.addr]; bv_omega
+  simp only [State.addr]; bv_omega_arith
 
 theorem e8 : BitVec.ofNat 32 (4 * [Reg.r12, Reg.lr].length) = BitVec.ofNat 32 8 := rfl
 
@@ -81,7 +81,7 @@ theorem push2_mem {s : State} (hsp : 8 ≤ s.sp.toNat) : (pushed [.r12, .lr] s).
   show (s.mem.writeW (State.addr (s.sp - BitVec.ofNat 32 8)) (s.gpr .r12)).writeW
     (State.addr (s.sp - BitVec.ofNat 32 8 + 4)) (s.gpr .lr) = _
   rw [addr_sub hsp, show s.sp - BitVec.ofNat 32 8 + 4 = s.sp - BitVec.ofNat 32 8 + BitVec.ofNat 32 4 from rfl,
-    addr_add (by bv_omega), addr_sub hsp]
+    addr_add (by bv_omega_arith), addr_sub hsp]
 
 theorem push2_arg {s t : State} (hsp : 8 ≤ s.sp.toNat) (ht : t.sp = s.sp - BitVec.ofNat 32 8)
     (hm : t.mem = (pushed [.r12, .lr] s).mem) :
@@ -89,11 +89,11 @@ theorem push2_arg {s t : State} (hsp : 8 ≤ s.sp.toNat) (ht : t.sp = s.sp - Bit
       stackArg t 1 = s.gpr .lr := by
   have a0 : stackArgAddr t 0 = State.addr s.sp - BitVec.ofNat 64 8 := by
     unfold stackArgAddr
-    rw [ht, addr_add (by bv_omega), addr_sub hsp]; simp
+    rw [ht, addr_add (by bv_omega_arith), addr_sub hsp]; simp
   have a1 : stackArgAddr t 1 = State.addr s.sp - BitVec.ofNat 64 8 + BitVec.ofNat 64 4 := by
-    unfold stackArgAddr; rw [ht, show 4 * 1 = 4 from rfl, addr_add (by bv_omega), addr_sub hsp]
+    unfold stackArgAddr; rw [ht, show 4 * 1 = 4 from rfl, addr_add (by bv_omega_arith), addr_sub hsp]
   refine ⟨a0, ?_, ?_⟩
-  · rw [stackArg, a0, hm, push2_mem hsp, Mem.readW_writeW_sep (fun x h₁ h₂ => by bv_omega) (by decide),
+  · rw [stackArg, a0, hm, push2_mem hsp, Mem.readW_writeW_sep (fun x h₁ h₂ => by bv_omega_arith) (by decide),
       Mem.readW_writeW_self32]
   · rw [stackArg, a1, hm, push2_mem hsp, Mem.readW_writeW_self32]
 
@@ -103,7 +103,7 @@ theorem push2_frame {s : State} (hsp : 8 ≤ s.sp.toNat) : Frame [below s 8] s.m
   · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
   · simp only [Region.Contains]
     rw [show State.addr s.sp - BitVec.ofNat 64 8 + BitVec.ofNat 64 4 - (State.addr s.sp - BitVec.ofNat 64 8) =
-      BitVec.ofNat 64 4 by bv_omega]; decide
+      BitVec.ofNat 64 4 by bv_omega_arith]; decide
 
 /-- The stack arguments are the frame: the regions a callee is given within
 those of the frame's state. -/
@@ -175,7 +175,7 @@ theorem absorb_pre {s : State} {st scr data : BitVec 32} {rate pos len : Nat}
     State.callEntry_sp, push2_sp]
   refine ⟨trivial, trivial, h.d_st_scr, h.d_data_st, h.d_data_scr, h.b_st, h.b_scr, h.fst, h.fdata, h.fscr, ?_,
     h.hrate, h.hpos⟩
-  have := h.sp; have := s.sp.isLt; bv_omega
+  have := h.sp; have := s.sp.isLt; bv_omega_arith
 
 theorem absorb_ok {s : State} {st scr data : BitVec 32} {rate pos len : Nat}
     (h : AbsorbArgs s st scr data rate pos len) {Q : State → Prop}
@@ -287,7 +287,7 @@ theorem push1_arg {s t : State} (hsp : 8 ≤ s.sp.toNat) (ht : t.sp = s.sp - Bit
     stackArgAddr t 0 = State.addr s.sp - BitVec.ofNat 64 4 ∧ stackArg t 0 = s.gpr .lr := by
   have a0 : stackArgAddr t 0 = State.addr s.sp - BitVec.ofNat 64 4 := by
     unfold stackArgAddr
-    rw [ht, addr_add (by bv_omega), addr_sub (by omega)]; simp
+    rw [ht, addr_add (by bv_omega_arith), addr_sub (by omega)]; simp
   refine ⟨a0, ?_⟩
   rw [stackArg, a0, hm, push1_mem hsp, Mem.readW_writeW_self32]
 
@@ -296,14 +296,14 @@ theorem push1_frame {s : State} (hsp : 8 ≤ s.sp.toNat) : Frame [below s 8] s.m
   refine (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_
   simp only [Region.Contains]
   rw [show State.addr s.sp - BitVec.ofNat 64 4 - (State.addr s.sp - BitVec.ofNat 64 8) = BitVec.ofNat 64 4 by
-    bv_omega]; decide
+    bv_omega_arith]; decide
 
 theorem below4_sub (s : State) : Region.Sub (below s 4) (below s 8) := by
   intro a ha
   have := s.sp.isLt
   have e : (State.addr s.sp).toNat = s.sp.toNat := addr_toNat _
   simp only [Region.Contains] at ha ⊢
-  bv_omega
+  bv_omega_arith
 
 theorem cov_push1 {s : State} (hsp : 8 ≤ s.sp.toNat) {ws : List Region} (hw : Covers ws s.wr) :
     Covers ([below s 4] ++ ws) ((pushed [.lr] s).rd ++ (pushed [.lr] s).wr) := by
@@ -348,7 +348,7 @@ theorem pad_pre {s : State} {st scr : BitVec 32} {rate pos : Nat} {suffix : BitV
     State.callEntry_sp, push1_sp]
   refine ⟨trivial, trivial, h.d_st_scr, h.b_st.sub_left hs, h.b_scr.sub_left hs, h.fst, h.fscr, ?_, h.hrate,
     h.hpos⟩
-  have := h.sp; have := s.sp.isLt; bv_omega
+  have := h.sp; have := s.sp.isLt; bv_omega_arith
 
 theorem pad_ok {s : State} {st scr : BitVec 32} {rate pos : Nat} {suffix : BitVec 32}
     (h : PadArgs s st scr rate pos suffix) {Q : State → Prop}
@@ -473,7 +473,7 @@ theorem squeeze_pre {s : State} {st scr out : BitVec 32} {rate pos len : Nat}
     State.callEntry_sp, push2_sp]
   refine ⟨trivial, trivial, h.d_st_out, h.d_st_scr, h.d_out_scr, h.b_st, h.b_out, h.b_scr, h.fst, h.fout,
     h.fscr, ?_, h.hrate, h.hpos⟩
-  have := h.sp; have := s.sp.isLt; bv_omega
+  have := h.sp; have := s.sp.isLt; bv_omega_arith
 
 theorem cov_squeeze {s : State} (hsp : 8 ≤ s.sp.toNat) {ws : List Region} (hw : Covers ws s.wr) :
     Covers ([below s 8] ++ ws) ((pushed [.r12, .lr] s).rd ++ (pushed [.r12, .lr] s).wr) :=

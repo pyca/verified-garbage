@@ -41,7 +41,7 @@ open VG.Proof.Bignum
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 
 theorem arr_fixed (w : Nat) {j : Nat} : 8 * 22 ≤ slot w j ∨ (8 * 6 ≤ slot w j ∧ slot w j + 8 * (w + 2) ≤ 8 * 16) :=
-  Or.inl (by unfold slot hdrBytes; omega)
+  Or.inl (by unfold slot hdrBytes; omega_arith)
 
 theorem slot0_ge (w : Nat) : 8 * 31 + 8 ≤ slot w 0 ∧ slot w 0 + 8 * (w + 2) ≤ slot w 8 :=
   ⟨hdr_lt_slot w 0 (by decide), slot_le (by decide)⟩
@@ -149,18 +149,18 @@ theorem pcLoad_ct : RelCT isa (Two PcL) (seqs pcLoad) fun _ _ => True := by
     have h' := h
     obtain ⟨hs, h0, hZ, hk1, hk2, hK, hN, -⟩ := h'
     obtain ⟨g0, g8⟩ := slot0_ge p.w
-    refine WP.mono (pcHead_ok hs h0 hZ (by omega) hK hN) fun t ⟨h1, h2, h8, _, _, hf, k⟩ =>
+    refine WP.mono (pcHead_ok hs h0 hZ (by omega_arith) hK hN) fun t ⟨h1, h2, h8, _, _, hf, k⟩ =>
       ⟨h.congr hf (fun r hr => ?_) (fun r hr => ?_) k (by decide), h1, h2, h8⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega
+      rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega_arith
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega
+      rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega_arith
   -- `m`.
   refine RelCT.seq (two_piece (Ψ := fun (p : PcPub) s => s.gpr .x0 = p.B ∧ s.gpr .x8 = off p.B (slot p.w aN)) _
     pins_Pc1 (by taint_decide) ?_) ?_
   · intro p s ⟨h, h1, h2, h8⟩
     obtain ⟨hs, h0, hZ, hk1, hk2, -, -, hn, hnl, -⟩ := h
-    exact WP.mono (loadArr_ok hs (by decide) hZ hn hnl (by omega) (by omega) h1 h2 h8) fun t ⟨_, _, k⟩ =>
+    exact WP.mono (loadArr_ok hs (by decide) hZ hn hnl (by omega_arith) (by omega_arith) h1 h2 h8) fun t ⟨_, _, k⟩ =>
       ⟨(k.gpr .x0 (by decide)).trans h0, (k.gpr .x8 (by decide)).trans h8⟩
   -- `-m⁻¹`.
   exact two_taint [.x0, .x8] (fun p s₁ s₂ h₁ h₂ r hr => by
@@ -177,8 +177,8 @@ theorem pcLoad_r2 {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte
     WP isa (seqs pcLoad) s fun t => ∃ minv, R2Pre ⟨⟨B, Z, (k + 7) / 8, minv⟩, Spec.Rsa.os2ip nb⟩ t ∧
       Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t.mem ∧ Keep mmRegs s t := by
   obtain ⟨hodd, -, hlo⟩ := valid_facts hv hk1
-  exact WP.mono (pcLoad_ok hs h0 hZ (by omega) (by omega) hK hN hnb hnl hodd)
-    fun t ⟨minv, hg, hn, hinv, f, k⟩ => ⟨minv, ⟨⟨hg, hZ⟩, by dsimp only; omega, by dsimp only; omega, hn, hinv,
+  exact WP.mono (pcLoad_ok hs h0 hZ (by omega_arith) (by omega_arith) hK hN hnb hnl hodd)
+    fun t ⟨minv, hg, hn, hinv, f, k⟩ => ⟨minv, ⟨⟨hg, hZ⟩, by dsimp only; omega_arith, by dsimp only; omega_arith, hn, hinv,
       hodd, hlo⟩, f, k⟩
 
 /-- After the first block of `pcLoadW`. -/
@@ -199,18 +199,18 @@ theorem pcLoadW_ct : RelCT isa (Two PcLW) (seqs pcLoadW) fun _ _ => True := by
     have h' := h.1
     obtain ⟨hs, h0, hZ, hk1, hk2, hK, hN, -⟩ := h'
     obtain ⟨g0, g8⟩ := slot0_ge p.w
-    refine WP.mono (pcHead_ok hs h0 hZ (by omega) hK hN) fun t ⟨h1, h2, h8, _, _, hf, k⟩ =>
+    refine WP.mono (pcHead_ok hs h0 hZ (by omega_arith) hK hN) fun t ⟨h1, h2, h8, _, _, hf, k⟩ =>
       ⟨h.congr hf (fun r hr => ?_) (fun r hr => ?_) k (by decide), h1, h2, h8⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega
+      rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega_arith
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega
+      rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega_arith
   -- `m`.
   refine RelCT.seq (two_piece (Ψ := fun (p : PcPub) s => s.gpr .x0 = p.B ∧ s.gpr .x8 = off p.B (slot p.w aN)) _
     pins_Pc1W (by taint_decide) ?_) ?_
   · intro p s ⟨⟨h, hsp⟩, h1, h2, h8⟩
     obtain ⟨hs, h0, hZ, hk1, hk2, -, -, hn, hnl, -⟩ := h
-    exact WP.mono (loadArrW_ok hs (by decide) hZ hn hsp hnl (by omega) (by omega) h1 h2 h8) fun t ⟨_, _, k⟩ =>
+    exact WP.mono (loadArrW_ok hs (by decide) hZ hn hsp hnl (by omega_arith) (by omega_arith) h1 h2 h8) fun t ⟨_, _, k⟩ =>
       ⟨(k.gpr .x0 (by decide)).trans h0, (k.gpr .x8 (by decide)).trans h8⟩
   -- `-m⁻¹`.
   exact two_taint [.x0, .x8] (fun p s₁ s₂ h₁ h₂ r hr => by
@@ -229,8 +229,8 @@ theorem pcLoadW_r2 {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byt
     WP isa (seqs pcLoadW) s fun t => ∃ minv, R2Pre ⟨⟨B, Z, (k + 7) / 8, minv⟩, Spec.Rsa.os2ip nb⟩ t ∧
       Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t.mem ∧ Keep mmRegs s t := by
   obtain ⟨hodd, -, hlo⟩ := valid_facts hv hk1
-  exact WP.mono (pcLoadW_ok hs h0 hZ (by omega) (by omega) hK hN hnb hsp hnl hodd)
-    fun t ⟨minv, hg, hn, hinv, f, k⟩ => ⟨minv, ⟨⟨hg, hZ⟩, by dsimp only; omega, by dsimp only; omega, hn, hinv,
+  exact WP.mono (pcLoadW_ok hs h0 hZ (by omega_arith) (by omega_arith) hK hN hnb hsp hnl hodd)
+    fun t ⟨minv, hg, hn, hinv, f, k⟩ => ⟨minv, ⟨⟨hg, hZ⟩, by dsimp only; omega_arith, by dsimp only; omega_arith, hn, hinv,
       hodd, hlo⟩, f, k⟩
 
 /-! ## `R² mod m` -/
@@ -247,7 +247,7 @@ theorem pc3_minv {p : PcPub} {s₁ s₂ : State} {mi₁ mi₂ : BitVec 64}
     have hv := h.2.2.2.1
     have hi := h.2.2.2.2.1
     dsimp only at hw hv hi
-    rwa [← wv_mod64 _ _ _ (show 1 ≤ p.w by omega), hv] at hi
+    rwa [← wv_mod64 _ _ _ (show 1 ≤ p.w by omega_arith), hv] at hi
   exact minv_unique (by rw [Nat.mod_mod_of_dvd _ (by decide)]; exact h₁.2.2.2.2.2.1) (e h₁) (e h₂)
 
 /-- What the copies to `pre` need. -/
@@ -282,10 +282,10 @@ theorem Good.of_inScr {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (h
   have h8 := hdr_lt_slot w 0 (show 31 < 32 by decide)
   have h0' := slot_le (w := w) (show 0 < 8 by decide)
   have hw : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
-    Mem.readW_congr fun b hb => hi _ (by rw [ofs_off B (d := 8 * i) (i := b) (by omega)]; omega)
+    Mem.readW_congr fun b hb => hi _ (by rw [ofs_off B (d := 8 * i) (i := b) (by omega_arith)]; omega_arith)
   exact ⟨hg.scr.congr hwr, h0, ⟨by rw [hw sW (by decide)]; exact hg.hdr.hw,
     by rw [hw sMinv (by decide)]; exact hg.hdr.hminv,
-    fun j hj => by rw [hw (sArr j) (by unfold sArr; omega)]; exact hg.hdr.harr j hj⟩⟩
+    fun j hj => by rw [hw (sArr j) (by unfold sArr; omega_arith)]; exact hg.hdr.harr j hj⟩⟩
 
 /-- Before the first copy. -/
 def PcO1 (q : PcPub × BitVec 64) (s : State) : Prop :=
@@ -316,14 +316,14 @@ theorem pcCopy_ok {q : PcPub × BitVec 64} {s : State} (h : PcO q s) {e d : Nat}
   have hn := hs.nowrap
   have hZ : slot q.1.w 8 ≤ q.1.Z := hg.2
   have hsep : ∀ x, ofs q.1.B x < q.1.Z → 16 * q.1.w ≤ ofs q.1.op x := fun x hx => le_ofs_of_sep hps hx
-  refine WP.mono (copyWords_ok h16 h17 h12 (by omega) (by omega) (by omega)
-    (fun j hj => hs.ld (by omega))
-    (fun j hj => by rw [show 8 * d + 8 * j = 8 * (d + j) by omega]; exact hpw (d + j) (by omega))
-    (fun j hj b hb => Or.inr (Nat.le_trans (by omega)
-      (hsep _ (by rw [ofs_off q.1.B (d := e + 8 * j) (i := b) (by omega)]; omega)))))
+  refine WP.mono (copyWords_ok h16 h17 h12 (by omega_arith) (by omega_arith) (by omega_arith)
+    (fun j hj => hs.ld (by omega_arith))
+    (fun j hj => by rw [show 8 * d + 8 * j = 8 * (d + j) by omega_arith]; exact hpw (d + j) (by omega_arith))
+    (fun j hj b hb => Or.inr (Nat.le_trans (by omega_arith)
+      (hsep _ (by rw [ofs_off q.1.B (d := e + 8 * j) (i := b) (by omega_arith)]; omega_arith)))))
     fun t ⟨_, _, ho, _, h17', k⟩ => ?_
   have hi : ∀ x, ofs q.1.B x < q.1.Z → t.mem x = s.mem x := fun x hx =>
-    ho x (Or.inr (by have := hsep x hx; omega))
+    ho x (Or.inr (by have := hsep x hx; omega_arith))
   refine ⟨⟨⟨Good.of_inScr (hg.1 : Good s q.1.B q.1.Z q.1.w q.2) hZ hi k.wr
     ((k.gpr .x0 (by decide)).trans hg.1.x0), hZ⟩, hw, hw', ?_,
     fun i hi' => by rw [k.wr]; exact hpw i hi', hps⟩, h17', k⟩
@@ -331,7 +331,7 @@ theorem pcCopy_ok {q : PcPub × BitVec 64} {s : State} (h : PcO q s) {e d : Nat}
   exact Mem.readW_congr fun b hb => hi _ (by
     have := hdr_lt_slot q.1.w 0 (show 31 < 32 by decide)
     have := slot_le (w := q.1.w) (show 0 < 8 by decide)
-    rw [ofs_off q.1.B (d := 8 * sOut) (i := b) (by unfold sOut sFn; omega)]; unfold sOut sFn; omega)
+    rw [ofs_off q.1.B (d := 8 * sOut) (i := b) (by unfold sOut sFn; omega_arith)]; unfold sOut sFn; omega_arith)
 
 theorem PcO.mem {q : PcPub × BitVec 64} {s t : State} (h : PcO q s) (hm : t.mem = s.mem)
     {regs : List Reg} (k : Keep regs s t) (hr : .x0 ∉ regs) : PcO q t := by
@@ -350,7 +350,7 @@ theorem pcOut_ct : RelCT isa (Two PcO) (seqs Precompute.pcOut) fun _ _ => True :
     have hs : Scr s q.1.B q.1.Z := h.1.1.scr
     have hZ : slot q.1.w 8 ≤ q.1.Z := h.1.2
     obtain ⟨g0, g8⟩ := slot0_ge q.1.w
-    have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.1.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+    have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.1.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
     refine WP.mono (WP.keep [.x12, .x16, .x17] (Q := fun t => t.gpr .x12 = BitVec.ofNat 64 q.1.w ∧
         t.gpr .x16 = off q.1.B (slot q.1.w aN) ∧ t.gpr .x17 = off q.1.op 0 ∧ t.mem = s.mem) (by
       brun [h.1.1.x0, hdr_enc (show sW < 32 by decide), hdr_enc (show sArr aN < 32 by decide),
@@ -367,8 +367,8 @@ theorem pcOut_ct : RelCT isa (Two PcO) (seqs Precompute.pcOut) fun _ _ => True :
   · rintro q s ⟨h, h12, h16, h17⟩
     have := slot_le (w := q.1.w) (show aN < 8 by decide)
     have hZ : slot q.1.w 8 ≤ q.1.Z := h.1.2
-    exact WP.mono (pcCopy_ok h (d := 0) (by omega) (by omega) h16 (by rw [h17]) h12)
-      fun t ⟨h', h17', k⟩ => ⟨h', (k.gpr .x12 (by decide)).trans h12, by rw [h17']; congr 1; omega⟩
+    exact WP.mono (pcCopy_ok h (d := 0) (by omega_arith) (by omega_arith) h16 (by rw [h17]) h12)
+      fun t ⟨h', h17', k⟩ => ⟨h', (k.gpr .x12 (by decide)).trans h12, by rw [h17']; congr 1; omega_arith⟩
   -- The second copy's registers.
   refine RelCT.seq (two_piece (Ψ := PcO3) _ (fun q s₁ s₂ h₁ h₂ => pins_PcO q s₁ s₂ h₁.1 h₂.1)
     (by taint_decide) ?_) ?_
@@ -377,7 +377,7 @@ theorem pcOut_ct : RelCT isa (Two PcO) (seqs Precompute.pcOut) fun _ _ => True :
     have hZ : slot q.1.w 8 ≤ q.1.Z := h.1.2
     obtain ⟨g0, g8⟩ := slot0_ge q.1.w
     refine WP.mono (WP.keep [.x16] (Q := fun t => t.gpr .x16 = off q.1.B (slot q.1.w aR2) ∧ t.mem = s.mem) (by
-      brun [h.1.1.x0, hdr_enc (show sArr aR2 < 32 by decide), hs.ld (d := 8 * sArr aR2) (by unfold sArr aR2; omega),
+      brun [h.1.1.x0, hdr_enc (show sArr aR2 < 32 by decide), hs.ld (d := 8 * sArr aR2) (by unfold sArr aR2; omega_arith),
         h.1.1.hdr.harr aR2 (by decide)]) (by decide) (by decide) (by decide +kernel))
       fun t ⟨⟨h16, hm⟩, k⟩ => ⟨h.mem hm k (by decide), (k.gpr .x12 (by decide)).trans h12, h16,
         (k.gpr .x17 (by decide)).trans h17⟩
@@ -437,8 +437,8 @@ theorem pcCode_ct (M : Mont) : RelCT isa (Two PcC) (Precompute.code M.mm) fun _ 
     have hk2 := c.hk2
     have hn := c.hs.nowrap
     rw [WP.block_append_iff]
-    refine WP.mono (pcEntry_ok rfl fun i hi => c.hs.st (by omega)) fun t₁ ⟨h0, hO, hN, hK, ho₁, k₁⟩ => ?_
-    have i₁ : InScr (s.gpr .x4) ((s.gpr .x5).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega)
+    refine WP.mono (pcEntry_ok rfl fun i hi => c.hs.st (by omega_arith)) fun t₁ ⟨h0, hO, hN, hK, ho₁, k₁⟩ => ?_
+    have i₁ : InScr (s.gpr .x4) ((s.gpr .x5).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega_arith)
     have hnb₁ := c.hnb.congrK i₁ k₁
     refine WP.mono (WP.keep [.x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12] (invalid_ok (k₁.gpr .x2 (by decide))
       (by rw [k₁.gpr .x3 (by decide), ofNat_toNat64]) hk1 hk2
@@ -448,7 +448,7 @@ theorem pcCode_ct (M : Mont) : RelCT isa (Two PcC) (Precompute.code M.mm) fun _ 
     have kk := k₁.trans k₂
     subst hB hZ hk hop hnp hnb
     exact ⟨c.hs.congr kk.wr, (k₂.gpr .x0 (by decide)).trans h0,
-      show slot (((s.gpr .x3).toNat + 7) / 8) 8 ≤ (s.gpr .x5).toNat * 8 by unfold slot hdrBytes; omega, hk1, hk2,
+      show slot (((s.gpr .x3).toNat + 7) / 8) 8 ≤ (s.gpr .x5).toNat * 8 by unfold slot hdrBytes; omega_arith, hk1, hk2,
       by rw [hm₂]; exact hO, by rw [hm₂, hK, ofNat_toNat64], by rw [hm₂]; exact hN,
       c.hnb.congrK (by rw [hm₂]; exact i₁) kk, bytesAt_length _ _ _,
       fun i hi => by rw [kk.wr]; exact c.hpw i hi, c.hps, hz₂, by rw [kk.rd, kk.wr]; exact c.hnspan⟩
@@ -466,11 +466,11 @@ theorem pcCode_ct (M : Mont) : RelCT isa (Two PcC) (Precompute.code M.mm) fun _ 
         · rw [h₁.2, h₂.2]) (by taint_decide))
     rintro p t ⟨⟨hs, h0, hZ, hk1, hk2, hO, hK, -⟩, -⟩
     obtain ⟨g0, g8⟩ := slot0_ge p.w
-    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
     refine WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t' => t'.gpr .x1 = off p.op 0 ∧
         t'.gpr .x2 = BitVec.ofNat 64 (2 * p.w)) (by
       brun [h0, hdr_enc (show sOut < 32 by decide), hdr_enc (show sK < 32 by decide), hl sOut (by decide),
-        hl sK (by decide), hO, hK, two_w p.k (by omega)]) (by decide) (by decide) (by decide +kernel))
+        hl sK (by decide), hO, hK, two_w p.k (by omega_arith)]) (by decide) (by decide) (by decide +kernel))
       fun t' ⟨h, _⟩ => h
   · -- `main`.
     refine two_map id (fun p t ⟨⟨hs, h0, hZ, hk1, hk2, hO, hK, hN, hnb, hnl, hpw, hps, hz, hsp⟩, he⟩ =>

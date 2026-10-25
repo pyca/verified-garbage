@@ -17,8 +17,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Impl.AesGcmSiv.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Spec.GcmSiv.Contract
 
 /-!
 # AES-GCM-SIV on x86-64: the contracts, where everything is and running blocks

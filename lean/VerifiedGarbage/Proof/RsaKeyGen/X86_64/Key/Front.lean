@@ -37,7 +37,7 @@ theorem KS.hdrW {I : KIn} {m₀ : Mem} {s t : State} (h : KS I m₀ s) {i : Nat}
     KS I m₀ t ∧ KF I.B I.W [.hdr i] s.mem t.mem ∧ word t.mem I.B (8 * i) = v := by
   have hn := h.ws.scr.nowrap
   have := h.ws.h256
-  have o := writeW_outside s.mem I.B v (d := 8 * i) (by omega)
+  have o := writeW_outside s.mem I.B v (d := 8 * i) (by omega_arith)
   rw [← hm] at o
   have f : KF I.B I.W [.hdr i] s.mem t.mem := KF.of_outside o (.hdr i) (List.mem_singleton_self _)
     (by simp [Rc.range]) (by simp [Rc.range])
@@ -64,16 +64,16 @@ theorem loads_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hpl : I.pb
   have h₂ := h₁.step f₂ (all_mut_arr (by decide)) k₂ (by decide)
   obtain ⟨hg, hZ8⟩ := h₂.ws.good
   refine wp_seqs_append (by simp [loadE]) (by simp) (WP.mono (loadE_ok hg hZ8 h₂.args.e
-    (by rw [h₂.args.el, hel]) (by omega) (by omega) h₂.e) fun s₃ ⟨hbx, m₃, k₃⟩ => ?_)
+    (by rw [h₂.args.el, hel]) (by omega_arith) (by omega_arith) h₂.e) fun s₃ ⟨hbx, m₃, k₃⟩ => ?_)
   have h₃ := h₂.step (cs := []) (by rw [m₃]; exact KF.refl _ _ _) rfl k₃ (by decide)
   simp only [seqs]
-  have hst := h₃.ws.scr.st (d := 8 * kEv) (by have := h₃.ws.h256; unfold kEv sFn; omega)
+  have hst := h₃.ws.scr.st (d := 8 * kEv) (by have := h₃.ws.h256; unfold kEv sFn; omega_arith)
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = s₃.mem.writeW (off I.B (8 * kEv))
     (BitVec.ofNat 64 (Spec.Rsa.os2ip I.eb))) (by
       have hbx' : s₃.gpr .rbx = BitVec.ofNat 64 (Spec.Rsa.os2ip I.eb) := by
         rw [← hbx, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       xrun [State.ea, hdr, h₃.ws.rdi, hdrOff, hst, hbx']) rfl) fun t ⟨hm, k₄⟩ => ?_
-  obtain ⟨ht, f₄, hw⟩ := h₃.hdrW (i := kEv) (by unfold kEv sFn; omega) hm k₄ (by decide)
+  obtain ⟨ht, f₄, hw⟩ := h₃.hdrW (i := kEv) (by unfold kEv sFn; omega_arith) hm k₄ (by decide)
   have hok : [Rc.arr aPa, Rc.arr aQa, Rc.hdr kEv].all Rc.ok = true := by decide
   refine ⟨ht, ((f₁.trans f₂).trans (by rw [← m₃]; exact f₄)).mono (by simp), ?_, ?_, hw⟩
   · dsimp only [av]
@@ -100,15 +100,15 @@ theorem order_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
   refine WP.seq (WP.mono (WP.keep [.r15] (Q := fun t => t.gpr .r15 = mask (decide (av I s.mem aPa < av I s.mem aQa)) ∧
     t.mem = s₁.mem) (by xrun [hbp]) rfl) fun s₂ ⟨⟨h15, m₂⟩, k₂⟩ => ?_)
   refine WP.mono (cswap_ok (h₁.ws.scr.congr k₂.2.2) ((k₂.gpr (by decide)).trans hbx) ((k₂.gpr (by decide)).trans h10)
-    h15 ((k₂.gpr (by decide)).trans h12) (by have := h.ws.w1; omega) (by have := h.ws.w2; omega) (by omega)
-    (by omega) (by omega)) fun t ⟨hX, hY, hf, k₃⟩ => ?_
+    h15 ((k₂.gpr (by decide)).trans h12) (by have := h.ws.w1; omega_arith) (by have := h.ws.w2; omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith)) fun t ⟨hX, hY, hf, k₃⟩ => ?_
   have f : KF I.B I.W [.arr aPa, .arr aQa] s.mem t.mem := by
     rw [m₂, m₁] at hf
     exact KF.of_frm hf fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨.arr aPa, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
-      · exact ⟨.arr aQa, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
+      · exact ⟨.arr aPa, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+      · exact ⟨.arr aQa, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
   rw [m₂, m₁] at hX hY
   refine ⟨h.step f (all_mut_arrs (js := [aPa, aQa]) (by decide)) ((k₁.trans k₂).trans k₃) (by decide), f, ?_, ?_⟩
   · dsimp only [av]; rw [hX]; split <;> simp_all
@@ -120,9 +120,9 @@ theorem dec_arith {x y L : Nat} {b : Bool} (hx : x < L)
     (hv : x + (if (!decide (y = 0)) = true then 1 else 0) = y + L * b.toNat) : x = y - 1 := by
   by_cases hz : y = 0
   · simp only [hz, decide_true, Bool.not_true, Bool.false_eq_true, ite_false, Nat.add_zero, Nat.zero_add] at hv
-    cases b <;> simp only [Bool.toNat_true, Bool.toNat_false, Nat.mul_one, Nat.mul_zero] at hv <;> omega
+    cases b <;> simp only [Bool.toNat_true, Bool.toNat_false, Nat.mul_one, Nat.mul_zero] at hv <;> omega_arith
   · simp only [hz, decide_false, Bool.not_false, ite_true] at hv
-    cases b <;> simp only [Bool.toNat_true, Bool.toNat_false, Nat.mul_one, Nat.mul_zero] at hv <;> omega
+    cases b <;> simp only [Bool.toNat_true, Bool.toNat_false, Nat.mul_one, Nat.mul_zero] at hv <;> omega_arith
 
 /-- `decTo o j`: `[o] := [j] − 1` (0 for 0), with word `W` zero. -/
 theorem decTo_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {o j : Nat} (ho : o < 16) (hj : j < 16)
@@ -152,7 +152,7 @@ theorem decTo_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {o j : Nat}
     (by xrun [hbp, sxM1, maskNot]) rfl) fun s₄ ⟨⟨h15, m₄⟩, k₄⟩ => ?_
   have h₄ := h₃.step (cs := []) (by rw [m₄]; exact KF.refl _ _ _) rfl k₄ (by decide)
   refine wp_seqs_append (by simp [constA]) (by simp [subC]) (WP.mono (constA_k h₄ 1) fun s₅ ⟨h₅, f₅, c₅, k₅⟩ => ?_)
-  have c1 : av I s₅.mem aC = 1 := av_of_full c₅ (Nat.one_lt_two_pow (by have := h.ws.w1; omega))
+  have c1 : av I s₅.mem aC = 1 := av_of_full c₅ (Nat.one_lt_two_pow (by have := h.ws.w1; omega_arith))
   refine WP.mono (subC_k h₅ (o := o) (a := o) ho ho hoC hoC (.inl rfl) (c := !decide (av I s.mem j = 0))
     (by rw [(k₅.gpr (by decide)), h15])) fun t ⟨ht, f₆, hb, t₆, _⟩ => ?_
   obtain ⟨b, hv⟩ := hb

@@ -131,9 +131,9 @@ theorem KC.keep {p : Params} {STK : Nat} {σ s s' : State} (h : KC p STK σ s) {
       · exact .inl (by decide)
       · exact .inl (by decide)
   refine ⟨h.site.kept hk, hk.rd.trans h.rd, hk.wr.trans h.wr, hk.sp.trans h.sp, fun i hi => ?_, ?_, ?_⟩
-  · rw [hk.frame.readW (r := (lay p STK σ).R 0 840 36) (by simp only [Region.Contains]; bv_omega) hd (by decide)]
+  · rw [hk.frame.readW (r := (lay p STK σ).R 0 840 36) (by simp only [Region.Contains]; bv_omega_arith) hd (by decide)]
     exact h.sav i hi
-  · rw [hk.frame.readW (r := (lay p STK σ).R 0 840 36) (by simp only [Region.Contains]; bv_omega) hd (by decide)]
+  · rw [hk.frame.readW (r := (lay p STK σ).R 0 840 36) (by simp only [Region.Contains]; bv_omega_arith) hd (by decide)]
     exact h.lr
   · rw [Proof.MlKem.bytesAt_frame hk.frame hd2 (by decide)]; exact h.xi
 
@@ -173,13 +173,13 @@ theorem pro_ok {p : Params} (hF : PFacts p) {STK : Nat} (hSTK : 8 ≤ STK) {σ :
   run_block [i872, o1, e1]
   have ne1 : ∀ i < 8, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((lay p STK σ).A 0 872) v).readW
       ((lay p STK σ).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay p STK σ).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
-    fun i hi m v => Mem.readW_writeW_sep (fun x h1 h2 => by rw [eA] at h1 h2; bv_omega) (by decide)
+    fun i hi m v => Mem.readW_writeW_sep (fun x h1 h2 => by rw [eA] at h1 h2; bv_omega_arith) (by decide)
   have fr : Frame [(lay p STK σ).R 0 840 36] σ.mem (s₁.mem.writeW ((lay p STK σ).A 0 872) (s₁.gpr .lr)) := by
     refine (h₁.frame.sub fun r hr => ⟨(lay p STK σ).R 0 840 36, List.mem_singleton_self _, ?_⟩).writeW
       (r := (lay p STK σ).R 0 840 36) (List.mem_singleton_self _) _ ?_
     · rw [List.mem_singleton] at hr; subst hr
-      intro x hx; simp only [Region.Contains, eA] at hx ⊢; bv_omega
-    · simp only [Region.Contains, eA]; bv_omega
+      intro x hx; simp only [Region.Contains, eA] at hx ⊢; bv_omega_arith
+    · simp only [Region.Contains, eA]; bv_omega_arith
   refine ⟨⟨⟨hL, rfl, by decide, by decide, by rw [lay_size0]; omega, rfl,
     show σ.sp - BitVec.ofNat 32 STK = s₁.sp - BitVec.ofNat 32 STK by rw [h₁.sp], hSTK,
     by rw [h₁.sp]; exact hp.stk, ?_, ?_, ?_, ?_, fun i hi hi1 => ?_, fun i hi hi1 => ?_⟩, h₁.rd, h₁.wr, h₁.sp,

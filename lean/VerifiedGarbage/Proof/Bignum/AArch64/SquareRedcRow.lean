@@ -29,7 +29,7 @@ theorem redcRow_analyze {s : State} {B : Addr} {Z e eN w n : Nat} {minv : BitVec
       Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x8, .x13, .x14, .x16, .x17] s t := by
   have hn := hs.nowrap
   unfold VG.Impl.Bignum.AArch64.Square.redcRow
-  refine WP.seq (WP.mono (redcHead_ok hs h8 h10 h15 h7 (by omega))
+  refine WP.seq (WP.mono (redcHead_ok hs h8 h10 h15 h7 (by omega_arith))
     fun a ⟨⟨h1, h16, h17, h2, hcf, hm⟩, ka⟩ => ?_)
   have a7 := (ka.gpr .x7 (by decide)).trans h7
   have a12 := (ka.gpr .x12 (by decide)).trans h12
@@ -37,8 +37,8 @@ theorem redcRow_analyze {s : State} {B : Addr} {Z e eN w n : Nat} {minv : BitVec
     ⟨hs.congr ka.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl,
       Outside.refl _ _ _ _, by simp only [carry, h2, hcf, Bool.toNat_false]; rfl,
       by simp only [carry, h2, hcf, Bool.toNat_false]; decide⟩
-  refine WP.seq (WP.mono (tiledRow_ok a7 (by omega) hN (by omega)
-    (by omega) (Or.inl rfl) a12 h0) fun b hI => ?_)
+  refine WP.seq (WP.mono (tiledRow_ok a7 (by omega_arith) hN (by omega_arith)
+    (by omega_arith) (Or.inl rfl) a12 h0) fun b hI => ?_)
   have b7 := (hI.keep.gpr .x7 (by decide)).trans a7
   refine WP.seq (WP.mono (carryOut_ok b b7 hI.carry_lt) fun c ⟨⟨hmc, hcarry⟩, kc⟩ => ?_)
   have kAll := (ka.trans hI.keep).trans kc
@@ -51,25 +51,25 @@ theorem redcRow_analyze {s : State} {B : Addr} {Z e eN w n : Nat} {minv : BitVec
   have ho := hI.out
   rw [hm] at ho
   have hlow : ((word s.mem B eN).toNat*minv.toNat+1) % 2 ^ 64 = 0 → word b.mem B e = 0 :=
-    fun inv => redc_low (by omega) inv val
+    fun inv => redc_low (by omega_arith) inv val
   have top : word c.mem B (e+8*w) = word s.mem B (e+8*w) := by
-    rw [hmc]; exact ho.word (by omega) (by omega)
-  refine WP.mono (redcTail_ok (hs.congr kAll.wr) c8 c16 c7 (by omega))
+    rw [hmc]; exact ho.word (by omega_arith) (by omega_arith)
+  refine WP.mono (redcTail_ok (hs.congr kAll.wr) c8 c16 c7 (by omega_arith))
     fun t ⟨⟨lo, htm, ht, hc, ht8, ht13⟩, kt⟩ => ?_
   rw [top, c5] at ht
   rw [c5] at hc
   have outTop : Outside B (e+8*w) 8 c.mem t.mem := by
-    rw [htm]; exact writeW_outside _ _ _ (by omega)
+    rw [htm]; exact writeW_outside _ _ _ (by omega_arith)
   have allOut : Outside B e (8*(w+1)) s.mem t.mem := by
     have ot := outTop
     rw [hmc] at ot
-    exact (ho.mono (o' := e) (n' := 8*(w+1)) (Nat.le_refl _) (by omega)).trans
-      (ot.mono (o' := e) (n' := 8*(w+1)) (by omega) (by omega))
+    exact (ho.mono (o' := e) (n' := 8*(w+1)) (Nat.le_refl _) (by omega_arith)).trans
+      (ot.mono (o' := e) (n' := 8*(w+1)) (by omega_arith) (by omega_arith))
   have pre : wv t.mem B e w = wv b.mem B e w := by
-    rw [outTop.wv (by omega) (by omega), hmc]
+    rw [outTop.wv (by omega_arith) (by omega_arith), hmc]
   have topNew : word t.mem B (e+8*w) = lo := by rw [htm, word_writeW_self]
   have upper : wv t.mem B (e+8*w+8) (n-(w+1)) = wv s.mem B (e+8*w+8) (n-(w+1)) :=
-    allOut.wv (by omega) (by omega)
+    allOut.wv (by omega_arith) (by omega_arith)
   refine ⟨(redcU (word s.mem B e) minv).toNat, (redcU (word s.mem B e) minv).isLt,
     ?_, ?_, hc, allOut, ht8, (kt.gpr .x16 (by decide)).trans c16, ?_,
     (kAll.trans kt).mono (by decide)⟩
@@ -78,7 +78,7 @@ theorem redcRow_analyze {s : State} {B : Addr} {Z e eN w n : Nat} {minv : BitVec
     rw [vc] at ht
     grind
   · intro inv
-    rw [outTop.word (by omega) (by omega), hmc]
+    rw [outTop.word (by omega_arith) (by omega_arith), hmc]
     exact hlow inv
   · rw [ht13, kAll.gpr .x13 (by decide)]
 
@@ -99,7 +99,7 @@ theorem redcRow_ok {s : State} {B : Addr} {Z e eN w n : Nat} {minv : BitVec 64}
   refine WP.mono (redcRow_analyze hs h8 h10 h12 h15 h7 hw1 hw hwn heZ hN hsep)
     fun t ⟨u, hu, hv, hz, hc, ho, ht8, ht16, ht13, kt⟩ => ?_
   have low := hz hinv
-  rw [show n = (n-1)+1 by omega, wv_low, low] at hv
+  rw [show n = (n-1)+1 by omega_arith, wv_low, low] at hv
   simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.zero_add] at hv
   exact ⟨u, hu, by grind, hc, ho, ht8, ht16, ht13, kt⟩
 

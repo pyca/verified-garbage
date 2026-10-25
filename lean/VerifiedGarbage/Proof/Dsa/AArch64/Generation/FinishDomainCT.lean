@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedValidateCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedSearch
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PackCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PackCT
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPack
 import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FinishDomain
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FinishDomain
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Pack
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PackMemoryCT
 
 /-! # Compose domain packing with the final verified parameter check -/
 

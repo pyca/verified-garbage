@@ -16,6 +16,7 @@ meta import Mathlib.Tactic.SetLike
 meta import Mathlib.Order.RelClasses
 meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 
 /-!
 # Deterministic ECDSA on AArch64: P-384

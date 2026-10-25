@@ -37,7 +37,7 @@ def VW (s : State) (a : Nat) (v : BitVec 64 × BitVec 64) : Prop :=
 
 theorem VW.congr {s s' : State} {a : Nat} {v : BitVec 64 × BitVec 64} (h : VW s a v)
     (hs : ∀ i < 4, slotW s' (a + i) = slotW s (a + i)) : VW s' a v := fun c hc j hj => by
-  rw [hs _ (by omega)]; exact h c hc j hj
+  rw [hs _ (by omega_arith)]; exact h c hc j hj
 
 theorem ok_fromBsCfg {s : State} (hs : Scr s (s.gpr sb)) : Ok fromBsCfg s := ok_fromBs hs
 
@@ -65,44 +65,44 @@ theorem bcast_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Key
     (fun j i hji => by
       simp only [List.mem_map, List.mem_range, Prod.mk.injEq] at hji
       obtain ⟨w, hw, rfl, rfl⟩ := hji
-      exact ⟨by simp only [fromBsCfg, wSlot_eq, tailSlot_eq]; omega, by omega, rfl⟩)
+      exact ⟨by simp only [fromBsCfg, wSlot_eq, tailSlot_eq]; omega_arith, by omega_arith, rfl⟩)
     (fun kv hkv => by simp at hkv) (fun j hj => by simp [fromBsCfg] at hj)
   have hkeep : ∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp bcast_all.1 r (not_layerWrites r hr))
   have hb : s'.gpr sb = s.gpr sb := hkeep _ (by decide)
-  obtain ⟨-, f'⟩ := runBlock_storesIn _ bcast_all.2 (by rw [keySlot_eq]; omega) h'
+  obtain ⟨-, f'⟩ := runBlock_storesIn _ bcast_all.2 (by rw [keySlot_eq]; omega_arith) h'
   have hpl : ∀ k < 32, ∀ p < 32, (slotW s' (d1Slot + k)).getLsbD p =
       (slotW s (wSlot + k / 8)).getLsbD (8 * (p / 8) + k % 8) := fun k hk p hp => by
     have := so' (d1Slot + k) (bcastG (k / 8) (k % 8))
       (by simp only [bcastOuts, List.mem_map, List.mem_range]; exact ⟨k, hk, rfl⟩)
-      (by simp only [fromBsCfg, d1Slot_eq, tailSlot_eq]; omega) p hp
+      (by simp only [fromBsCfg, d1Slot_eq, tailSlot_eq]; omega_arith) p hp
     simp only [fromBsCfg] at this
     rw [slotW, hb, this, bcastG, xorBits_cons, xorBits_nil, Bool.xor_false, Nat.add_assoc,
-      bitOf_word _ _ _ (by omega)]
+      bitOf_word _ _ _ (by omega_arith)]
   refine ⟨s', h', hc.step rd' wr' (fun r h1 _ => hkeep r h1) ?_, hkeep _ (by decide), ⟨?_, ?_⟩,
     fun k h1 h2 => ?_⟩
   · refine f'.sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     refine ⟨_, by simp only [ctxRegions, List.mem_cons]; exact .inl rfl, ?_⟩
     simp only [storeRegion, hc.base]
-    exact VG.Offset.sub_base _ (by rw [d1Slot_eq, keySlot_eq] <;> omega)
+    exact VG.Offset.sub_base _ (by rw [d1Slot_eq, keySlot_eq] <;> omega_arith)
   · intro b hb c hc j hj
     show (slotW s' (d1Slot + (8 * (c / 4) + j))).getLsbD _ = _
-    rw [hpl _ (by omega) _ (by omega), show (8 * (c / 4) + j) / 8 = c / 4 by omega,
-      show (8 * (c / 4) + j) % 8 = j by omega, show (8 * (c % 4) + b) / 8 = c % 4 by omega,
-      hv c (by omega) j hj, itePos hc, Nat.mod_eq_of_lt hc]
+    rw [hpl _ (by omega_arith) _ (by omega_arith), show (8 * (c / 4) + j) / 8 = c / 4 by omega_arith,
+      show (8 * (c / 4) + j) % 8 = j by omega_arith, show (8 * (c % 4) + b) / 8 = c % 4 by omega_arith,
+      hv c (by omega_arith) j hj, itePos hc, Nat.mod_eq_of_lt hc]
   · intro b hb c hc j hj
     show (slotW s' (d2Slot + (8 * (c / 4) + j))).getLsbD _ = _
-    rw [show d2Slot + (8 * (c / 4) + j) = d1Slot + (16 + 8 * (c / 4) + j) by rw [d1Slot_eq, d2Slot_eq]; omega,
-      hpl _ (by omega) _ (by omega), show (16 + 8 * (c / 4) + j) / 8 = (8 + c) / 4 by omega,
-      show (16 + 8 * (c / 4) + j) % 8 = j by omega, show (8 * (c % 4) + b) / 8 = (8 + c) % 4 by omega,
-      hv (8 + c) (by omega) j hj, iteNeg (show ¬ 8 + c < 8 by omega), show (8 + c) % 8 = c by omega]
+    rw [show d2Slot + (8 * (c / 4) + j) = d1Slot + (16 + 8 * (c / 4) + j) by rw [d1Slot_eq, d2Slot_eq]; omega_arith,
+      hpl _ (by omega_arith) _ (by omega_arith), show (16 + 8 * (c / 4) + j) / 8 = (8 + c) / 4 by omega_arith,
+      show (16 + 8 * (c / 4) + j) % 8 = j by omega_arith, show (8 * (c % 4) + b) / 8 = (8 + c) % 4 by omega_arith,
+      hv (8 + c) (by omega_arith) j hj, iteNeg (show ¬ 8 + c < 8 by omega_arith), show (8 + c) % 8 = c by omega_arith]
   · simp only [slotW, hb]
     refine f'.readW (r := ⟨wordAddr (s.gpr sb) k, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    rw [wordAddr, VG.Arm.addr_add (by rw [slots_eq] at h2; omega)]
-    exact VG.Offset.disjoint _ (by rw [d1Slot_eq, keySlot_eq] at *; omega) (by rw [slots_eq] at h2; omega)
-      (by rw [d1Slot_eq, keySlot_eq]; omega)
+    rw [wordAddr, VG.Arm.addr_add (by rw [slots_eq] at h2; omega_arith)]
+    exact VG.Offset.disjoint _ (by rw [d1Slot_eq, keySlot_eq] at *; omega_arith) (by rw [slots_eq] at h2; omega_arith)
+      (by rw [d1Slot_eq, keySlot_eq]; omega_arith)
 
 /-- Lane 0's words back from the planes of the halves. -/
 theorem unbcast_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s)
@@ -118,19 +118,19 @@ theorem unbcast_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : K
     (fun j i hji => by
       simp only [List.mem_map, List.mem_range, Prod.mk.injEq] at hji
       obtain ⟨k, hk, rfl, rfl⟩ := hji
-      exact ⟨by simp only [fromBsCfg, d1Slot_eq, tailSlot_eq]; omega, by omega, rfl⟩)
+      exact ⟨by simp only [fromBsCfg, d1Slot_eq, tailSlot_eq]; omega_arith, by omega_arith, rfl⟩)
     (fun kv hkv => by simp at hkv) (fun j hj => by simp [fromBsCfg] at hj)
   have hkeep : ∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp unbcast_all.1 r (not_layerWrites r hr))
   have hb : s'.gpr sb = s.gpr sb := hkeep _ (by decide)
-  obtain ⟨-, f'⟩ := runBlock_storesIn _ unbcast_all.2 (by rw [wSlot_eq]; omega) h'
+  obtain ⟨-, f'⟩ := runBlock_storesIn _ unbcast_all.2 (by rw [wSlot_eq]; omega_arith) h'
   have hw : ∀ w < 4, ∀ t < 32, (slotW s' (wSlot + w)).getLsbD t =
       (slotW s (d1Slot + (8 * w + t % 8))).getLsbD (8 * (t / 8)) := fun w hw t ht => by
     have := so' (wSlot + w) (unbcastG w)
       (by simp only [unbcastOuts, List.mem_map, List.mem_range]; exact ⟨w, hw, rfl⟩)
-      (by simp only [fromBsCfg, wSlot_eq, tailSlot_eq]; omega) t ht
+      (by simp only [fromBsCfg, wSlot_eq, tailSlot_eq]; omega_arith) t ht
     simp only [fromBsCfg] at this
-    rw [slotW, hb, this, unbcastG, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ (by omega)]
+    rw [slotW, hb, this, unbcastG, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ (by omega_arith)]
   obtain ⟨h1, h2⟩ := hS
   refine ⟨s', h', hc.step rd' wr' (fun r h1 _ => hkeep r h1) ?_, hkeep _ (by decide), fun c hc' j hj => ?_,
     fun k h1 h2 => ?_⟩
@@ -138,25 +138,25 @@ theorem unbcast_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : K
     simp only [List.mem_singleton] at hr; subst hr
     refine ⟨_, by simp only [ctxRegions, List.mem_cons]; exact .inr (.inr (.inl rfl)), ?_⟩
     simp only [storeRegion]
-    rw [← hc.base, VG.Arm.addr_add (by rw [tailSlot_eq]; omega)]
-    exact VG.Offset.sub _ (by rw [wSlot_eq, tailSlot_eq]; omega) (by rw [wSlot_eq, tailSlot_eq]; omega)
-  · rw [hw _ (by omega) _ (by omega), show (8 * (c % 4) + j) % 8 = j by omega,
-      show (8 * (c % 4) + j) / 8 = c % 4 by omega]
+    rw [← hc.base, VG.Arm.addr_add (by rw [tailSlot_eq]; omega_arith)]
+    exact VG.Offset.sub _ (by rw [wSlot_eq, tailSlot_eq]; omega_arith) (by rw [wSlot_eq, tailSlot_eq]; omega_arith)
+  · rw [hw _ (by omega_arith) _ (by omega_arith), show (8 * (c % 4) + j) % 8 = j by omega_arith,
+      show (8 * (c % 4) + j) / 8 = c % 4 by omega_arith]
     by_cases h8 : c < 8
-    · have := h1 0 (by omega) c h8 j hj
+    · have := h1 0 (by omega_arith) c h8 j hj
       simp only [half] at this
       rw [itePos h8, Nat.mod_eq_of_lt h8, ← this, Nat.add_zero]
-    · have := h2 0 (by omega) (c - 8) (by omega) j hj
+    · have := h2 0 (by omega_arith) (c - 8) (by omega_arith) j hj
       simp only [half] at this
-      rw [iteNeg h8, show c % 8 = c - 8 by omega, ← this, Nat.add_zero,
-        show d1Slot + (8 * (c / 4) + j) = d2Slot + (8 * ((c - 8) / 4) + j) by rw [d1Slot_eq, d2Slot_eq]; omega,
-        show c % 4 = (c - 8) % 4 by omega]
+      rw [iteNeg h8, show c % 8 = c - 8 by omega_arith, ← this, Nat.add_zero,
+        show d1Slot + (8 * (c / 4) + j) = d2Slot + (8 * ((c - 8) / 4) + j) by rw [d1Slot_eq, d2Slot_eq]; omega_arith,
+        show c % 4 = (c - 8) % 4 by omega_arith]
   · simp only [slotW, hb]
     refine f'.readW (r := ⟨wordAddr (s.gpr sb) k, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    rw [wordAddr, VG.Arm.addr_add (by rw [slots_eq] at h1; omega)]
-    exact VG.Offset.disjoint _ (by rw [wSlot_eq] at *; omega) (by rw [slots_eq] at h1; omega)
-      (by rw [wSlot_eq]; omega)
+    rw [wordAddr, VG.Arm.addr_add (by rw [slots_eq] at h1; omega_arith)]
+    exact VG.Offset.disjoint _ (by rw [wSlot_eq] at *; omega_arith) (by rw [slots_eq] at h1; omega_arith)
+      (by rw [wSlot_eq]; omega_arith)
 
 /-- Two rounds on the running value, with entries `m` and `m + 1`. -/
 theorem pairPlain_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s)
@@ -168,11 +168,11 @@ theorem pairPlain_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp :
   obtain ⟨s₁, e₁, c₁, k₁, ⟨h1, h2⟩, o₁⟩ := bcast_step hp hc hv
   have hk₁ : AtEntry s₁ (s₀.gpr sb) m := by rw [AtEntry, k₁]; exact hk
   obtain ⟨s₂, e₂, c₂, k₂, d₂, a₂, o₂⟩ := round_step hp c₁ (off := 0) (src := d1Slot) (dst := d2Slot)
-    preL0_check mid0_check post2_check (.inl ⟨rfl, rfl, rfl⟩) hk₁ (by omega) hm34 h1 h2
+    preL0_check mid0_check post2_check (.inl ⟨rfl, rfl, rfl⟩) hk₁ (by omega_arith) hm34 h1 h2
   have hk₂ : AtEntry s₂ (s₀.gpr sb) m := by rw [AtEntry, k₂]; exact hk₁
   have h1' : W32.HalfRel (half s₂ d1Slot) (fun _ => v.1) := h1.congr fun i hi => a₂ i hi
   obtain ⟨s₃, e₃, c₃, k₃, d₃, a₃, o₃⟩ := round_step hp c₂ (off := 16) (src := d2Slot) (dst := d1Slot)
-    preL16_check mid16_check post1_check (.inr ⟨rfl, rfl, rfl⟩) hk₂ (by omega) hm34 d₂ h1'
+    preL16_check mid16_check post1_check (.inr ⟨rfl, rfl, rfl⟩) hk₂ (by omega_arith) hm34 d₂ h1'
   have d₂' : W32.HalfRel (half s₃ d2Slot) (fun _ => v.2 ^^^ Spec.Camellia.f v.1 (E (m + 0 / 16))) :=
     d₂.congr fun i hi => a₃ i hi
   obtain ⟨s₄, e₄, c₄, k₄, w₄, o₄⟩ := unbcast_step hp c₃ (S := fun _ => pair (E m) (E (m + 1)) v) ⟨d₃, d₂'⟩

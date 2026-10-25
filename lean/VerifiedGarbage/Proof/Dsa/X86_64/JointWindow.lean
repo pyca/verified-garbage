@@ -23,10 +23,10 @@ theorem JointTab.of_win {m m' : Mem} {P : Addr} {w n g y : Nat}
     (h : JointTab m P w n g y) (hf : Frm P (crtWinRanges w) m m')
     (hn : P.toNat + (slot w 8 + tabBytes w) ≤ 2 ^ 64) : JointTab m' P w n g y := by
   have he : ∀ j < 16, wv m' P (slot w (8 + j)) w = wv m P (slot w (8 + j)) w := fun j hj =>
-    hf.wv_eq (fun r hr => by have := crtWinRanges_ent w j r hr; omega) (by have := ent_le w hj; omega)
+    hf.wv_eq (fun r hr => by have := crtWinRanges_ent w j r hr; omega_arith) (by have := ent_le w hj; omega_arith)
   refine ⟨?_, fun j hj => (he j hj).symm ▸ h.lt j hj, fun j hj => (he j hj).symm ▸ h.val j hj⟩
   rw [hf.word_eq (crtWinRanges_hdr w (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
-    (by have := hdr_lt_slot w 8 (show Crt.sTab < 32 by decide); omega)]
+    (by have := hdr_lt_slot w 8 (show Crt.sTab < 32 by decide); omega_arith)]
   exact h.tab
 
 theorem joint_mask (V k : Nat) (hV : V < 2 ^ 64) :
@@ -36,7 +36,7 @@ theorem joint_mask (V k : Nat) (hV : V < 2 ^ 64) :
   rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hV,
     Nat.shiftRight_eq_div_pow, show ((3 : BitVec 64)).toNat = 2 ^ 2 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem joint_mid_ok {t : State} {P : Addr} {w n xc V : Nat} {minv : BitVec 64}
     (hc : CExpCtx t P w minv n xc)
@@ -52,9 +52,9 @@ theorem joint_mid_ok {t : State} {P : Addr} {w n xc V : Nat} {minv : BitVec 64}
     fun t' ⟨h, k⟩ => ⟨h, k⟩
   xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.ld (i := Crt.sV) (by decide),
     hc.st (i := Crt.sV) (by decide), hc.st (i := Crt.sNib) (by decide), hV,
-    joint_mask V 14 (by omega), joint_mask V 6 (by omega), ← BitVec.ofNat_add]
-  rw [show V + V + (V + V) = 4 * V by omega]
-  congr 2 <;> omega
+    joint_mask V 14 (by omega_arith), joint_mask V 6 (by omega_arith), ← BitVec.ofNat_add]
+  rw [show V + V + (V + V) = 4 * V by omega_arith]
+  congr 2 <;> omega_arith
 
 /-- A Montgomery product adds the two pairs of exponents. -/
 theorem joint_mul {out A B g y a b c d R n : Nat} (hR : Nat.Coprime R n)
@@ -82,7 +82,7 @@ theorem joint_mont_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b c d : Na
       (∀ k < 32, word u.mem P (8 * k) = word t.mem P (8 * k)) ∧
       Frm P (crtWinRanges w) t.mem u.mem ∧ Keep mmRegs t u := by
   have hb : right < 8 ∧ right ≠ aAcc ∧ right ≠ aTmp := by rcases hr with rfl | rfl <;> decide
-  refine WP.mono (M.ok hc.good (Nat.le_refl _) hw (by omega) (by decide) (by decide) hb.1
+  refine WP.mono (M.ok hc.good (Nat.le_refl _) hw (by omega_arith) (by decide) (by decide) hb.1
     (by decide) (by decide) (by decide) (by decide) hb.2.1 hb.2.2 hc.inv
     (by rw [hc.n]; exact hB)) fun u ⟨_, hl, hm, hf, hk⟩ => ?_
   rw [hc.n] at hl hm
@@ -101,7 +101,7 @@ theorem joint_sq_ok (Sq : MontS) {t : State} {P : Addr} {w n xc g y a b : Nat}
       wv u.mem P (slot w aY) w % n = (g ^ (a + a) * y ^ (b + b)) * 2 ^ (64 * w) % n ∧
       (∀ k < 32, word u.mem P (8 * k) = word t.mem P (8 * k)) ∧
       Frm P (crtWinRanges w) t.mem u.mem ∧ Keep mmRegs t u := by
-  refine WP.mono (Sq.ok hc.good (Nat.le_refl _) hw (by omega) hc.inv (by rw [hc.n]; exact hY))
+  refine WP.mono (Sq.ok hc.good (Nat.le_refl _) hw (by omega_arith) hc.inv (by rw [hc.n]; exact hY))
     fun u ⟨_, hl, hm, hf, hk⟩ => ?_
   rw [hc.n] at hl hm
   have f : Frm P (crtWinRanges w) t.mem u.mem := Frm.of_arrays hf (by simp [crtWinRanges])
@@ -137,7 +137,7 @@ theorem jointWindow_ok (M : Mont) (Sq : MontS) {t : State} {P : Addr} {w n xc g 
   have f04 := f₁.trans f₄
   have k04 : Keep mmRegs t t₄ := (k₁.trans k₄).mono (by decide)
   refine WP.seq (WP.mono (joint_mid_ok (V := V) hc₄ (by rw [hh04 _ (by decide)]; exact hV)
-    (by omega)) fun t₅ ⟨hm₅, k₅⟩ => ?_)
+    (by omega_arith)) fun t₅ ⟨hm₅, k₅⟩ => ?_)
   have o1 := writeW_outside t₄.mem P (d := 8 * Crt.sV) (BitVec.ofNat 64 (4 * V)) (by decide)
   have o2 := writeW_outside (t₄.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (4 * V))) P (d := 8 * Crt.sNib)
     (BitVec.ofNat 64 ((4 * (V / 16384 % 4) + V / 64 % 4))) (by decide)
@@ -181,8 +181,8 @@ theorem jointWindow_ok (M : Mont) (Sq : MontS) {t : State} {P : Addr} {w n xc g 
   refine WP.seq (WP.mono (joint_mont_ok M (g := g) (y := y) (a := 4 * a) (b := 4 * b)
     (c := V / 16384 % 4) (d := V / 64 % 4) hc₆ hw hw' hR (Or.inr rfl)
     (by rw [hT₆]; exact htab₅.lt _ hv16)
-    (by rw [hY₆, hY₅]; simpa only [show a + a + (a + a) = 4 * a by omega,
-      show b + b + (b + b) = 4 * b by omega] using hYv₄)
+    (by rw [hY₆, hY₅]; simpa only [show a + a + (a + a) = 4 * a by omega_arith,
+      show b + b + (b + b) = 4 * b by omega_arith] using hYv₄)
     (by rw [hT₆]; have hv := htab₅.val _ hv16; rw [idx.2.1, idx.2.2] at hv; exact hv))
     fun t₇ ⟨hc₇, hY₇, hYv₇, hh₇, f₇, k₇⟩ => ?_)
   -- The count.

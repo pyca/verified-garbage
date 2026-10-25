@@ -143,7 +143,7 @@ theorem segment_rel {pass slice lane : Nat} {st₁ st₂ : FillState} (hpass : p
       Impl.Argon2.PPC64LE.Derive.segment fun _ _ => True := by
   have pe := T.pb.prm_eq
   have s2 := T.hp₁.segLen_two
-  have hS : Proof.Argon2.segmentStart pass slice ≤ 2 := by unfold Proof.Argon2.segmentStart; split <;> omega
+  have hS : Proof.Argon2.segmentStart pass slice ≤ 2 := by unfold Proof.Argon2.segmentStart; split <;> omega_arith
   have hS2 : pass = 0 → slice = 0 → Proof.Argon2.segmentStart pass slice = 2 := fun a b => by
     unfold Proof.Argon2.segmentStart; rw [ite_eq_left ⟨a, b⟩]
   rw [Proof.Argon2.segment_start _ _ _ _ _ s2, Proof.Argon2.segment_start _ _ _ _ _ s2] at hind
@@ -172,7 +172,7 @@ theorem segment_rel {pass slice lane : Nat} {st₁ st₂ : FillState} (hpass : p
       have e' : some (decide (S = L)) = some false := by
         rw [← hL]; exact c₁.symm.trans e
       have := of_decide_eq_false (Option.some.inj e')
-      omega
+      omega_arith
     exact ⟨S, rfl, Nat.le_refl _, hb, 0, by rw [Nat.sub_self]; exact h₁, by rw [Nat.sub_self]; exact h₂,
       by rw [Nat.sub_self]; exact hind⟩
   case step =>
@@ -180,10 +180,10 @@ theorem segment_rel {pass slice lane : Nat} {st₁ st₂ : FillState} (hpass : p
     have active : pass ≠ 0 ∨ slice ≠ 0 ∨ 2 ≤ i := by
       by_cases a : pass = 0
       · by_cases b : slice = 0
-        · have := hS2 a b; omega
+        · have := hS2 a b; omega_arith
         · exact .inr (.inl b)
       · exact .inl a
-    rw [show L - i = (L - (i + 1)) + 1 by omega] at hidx
+    rw [show L - i = (L - (i + 1)) + 1 by omega_arith] at hidx
     have href := ref_same (prm s₀₁) pass lane slice i (L - (i + 1)) _ _ active hidx
     rw [Proof.Argon2.segment_succ, Proof.Argon2.segment_succ] at hidx
     obtain ⟨ht, ⟨g₁, c₁⟩, ⟨g₂, c₂⟩⟩ := T.segBody_rel (c := c) hpass hl hs (by rw [hL]; exact hi) active
@@ -192,14 +192,14 @@ theorem segment_rel {pass slice lane : Nat} {st₁ st₂ : FillState} (hpass : p
     have eq₁ : ∀ X, Proof.Argon2.segment (prm s₀₁) pass lane slice S (i + 1 - S) X =
         Spec.Argon2.fillBlock (prm s₀₁) pass slice lane i
           (Proof.Argon2.segment (prm s₀₁) pass lane slice S (i - S) X) :=
-      fun X => by rw [show i + 1 - S = (i - S) + 1 by omega, segment_snoc, show S + (i - S) = i by omega]
+      fun X => by rw [show i + 1 - S = (i - S) + 1 by omega_arith, segment_snoc, show S + (i - S) = i by omega_arith]
     rw [← eq₁] at g₁ g₂ hidx
     rw [← eq₁] at hidx
     rw [hL] at c₁ c₂
     refine ⟨ht, c₁.trans c₂.symm, fun _ => trivial, fun hc => ?_⟩
     have e₀ : some (!decide (i + 1 = L)) = some true := c₁.symm.trans hc
     have e : i + 1 ≠ L := by simpa using e₀
-    exact ⟨L - (i + 1), by omega, i + 1, rfl, by omega, by omega, _, g₁, g₂, hidx⟩
+    exact ⟨L - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, by omega_arith, _, g₁, g₂, hidx⟩
 
 /-- A lane's segment and the lane advanced, in two runs. -/
 theorem laneBody_rel {pass slice l : Nat} {X₁ X₂ : FillState} (hpass : pass < 2 ^ 32) (hs : slice < 4)
@@ -249,9 +249,9 @@ theorem lanes_rel {pass slice : Nat} {Y₁ Y₂ : FillState} (hpass : pass < 2 ^
       (Proof.Argon2.lanes (prm s₀₁) pass slice l (N - l) (Proof.Argon2.lanes (prm s₀₁) pass slice 0 l Y₁)).indices =
         (Proof.Argon2.lanes (prm s₀₁) pass slice l (N - l) (Proof.Argon2.lanes (prm s₀₁) pass slice 0 l Y₂)).indices)
     ?step N).mono (fun s₁ s₂ h => ?init) fun _ _ h => h
-  case init => exact ⟨0, by omega, hl1, h.1, h.2, hind⟩
+  case init => exact ⟨0, by omega_arith, hl1, h.1, h.2, hind⟩
   intro n s₁ s₂ t₁ t₂ s₁' s₂' ⟨l, hn, hl, h₁, h₂, hidx⟩ e₁ e₂
-  rw [show N - l = (N - (l + 1)) + 1 by omega] at hidx
+  rw [show N - l = (N - (l + 1)) + 1 by omega_arith] at hidx
   have hseg := Proof.Argon2.lanes_first_segment (prm s₀₁) pass slice l (N - (l + 1)) _ _ s2 hidx
   rw [Proof.Argon2.lanes_succ, Proof.Argon2.lanes_succ] at hidx
   obtain ⟨ht, ⟨g₁, c₁⟩, ⟨g₂, c₂⟩⟩ := T.laneBody_rel hpass hs (by rw [hN]; exact hl) hseg
@@ -267,7 +267,7 @@ theorem lanes_rel {pass slice : Nat} {Y₁ Y₂ : FillState} (hpass : pass < 2 ^
   refine ⟨ht, c₁.trans c₂.symm, fun _ => trivial, fun hc => ?_⟩
   have e₀ : some (!decide (l + 1 = N)) = some true := c₁.symm.trans hc
   have e : l + 1 ≠ N := by simpa using e₀
-  exact ⟨N - (l + 1), by omega, l + 1, rfl, by omega, g₁, g₂, hidx⟩
+  exact ⟨N - (l + 1), by omega_arith, l + 1, rfl, by omega_arith, g₁, g₂, hidx⟩
 
 /-- A slice's lanes and the slice advanced, in two runs. -/
 theorem sliceBody_rel {pass j : Nat} {X₁ X₂ : FillState} (hpass : pass < 2 ^ 32) (hj : j < 4)
@@ -308,7 +308,7 @@ theorem slices_rel {pass : Nat} {Z₁ Z₂ : FillState} (hpass : pass < 2 ^ 32)
     ?step 4).mono (fun s₁ s₂ h => ?init) fun _ _ h => h
   case init => exact ⟨0, rfl, by decide, h.1, h.2, hind⟩
   intro n s₁ s₂ t₁ t₂ s₁' s₂' ⟨j, hn, hj, h₁, h₂, hidx⟩ e₁ e₂
-  rw [show 4 - j = (3 - j) + 1 by omega] at hidx
+  rw [show 4 - j = (3 - j) + 1 by omega_arith] at hidx
   have hl := Proof.Argon2.slices_first_lane_fold (prm s₀₁) pass j (3 - j) _ _ s2 hidx
   rw [Proof.Argon2.slices_succ, Proof.Argon2.slices_succ] at hidx
   obtain ⟨ht, ⟨g₁, c₁⟩, ⟨g₂, c₂⟩⟩ := T.sliceBody_rel hpass hj hl s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂⟩ e₁ e₂
@@ -317,11 +317,11 @@ theorem slices_rel {pass : Nat} {Z₁ Z₂ : FillState} (hpass : pass < 2 ^ 32)
       Proof.Argon2.slices (prm s₀₁) pass 0 (j + 1) X :=
     fun X => by unfold Proof.Argon2.slices; rw [foldl_range'_snoc, Nat.zero_add]; rfl
   rw [eq] at g₁ g₂
-  rw [show 3 - j = 4 - (j + 1) by omega] at hidx
+  rw [show 3 - j = 4 - (j + 1) by omega_arith] at hidx
   refine ⟨ht, c₁.trans c₂.symm, fun _ => trivial, fun hc => ?_⟩
   have e₀ : some (!decide (j + 1 = 4)) = some true := c₁.symm.trans hc
   have e : j + 1 ≠ 4 := by simpa using e₀
-  refine ⟨4 - (j + 1), by omega, j + 1, rfl, by omega, g₁, g₂, ?_⟩
+  refine ⟨4 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, g₁, g₂, ?_⟩
   rw [← eq, ← eq]
   exact hidx
 
@@ -339,8 +339,8 @@ theorem passBody_rel {k : Nat} {X₁ X₂ : FillState} (hk : k < itersN s₀₁)
   have hk₂ : k < itersN s₀₂ := T.pb.itersN_eq ▸ hk
   have hpl : itersN s₀₁ < 2 ^ 32 := (arg32 s₀₁ 5).isLt
   rw [← Proof.Argon2.slices_pass, ← Proof.Argon2.slices_pass] at hind
-  exact rel_wp (RelCT.seqW (T.slices_rel (by omega) hind)
-    (fun s h => slices_ok T.hp₁ h (by omega)) (fun s h => slices_ok T.hp₂ h (by omega))
+  exact rel_wp (RelCT.seqW (T.slices_rel (by omega_arith) hind)
+    (fun s h => slices_ok T.hp₁ h (by omega_arith)) (fun s h => slices_ok T.hp₂ h (by omega_arith))
     (T.leafI (fun s₁ s₂ h => ⟨h.1.fb.inv, h.2.fb.inv⟩) ⟨_, by taint_decide⟩))
     (fun s h => passStep_ok T.hp₁ h hk) (fun s h => passStep_ok T.hp₂ h hk₂)
 
@@ -368,9 +368,9 @@ theorem passes_rel {W₁ W₂ : FillState}
       (Proof.Argon2.iterations (prm s₀₁) k (N - k) (Proof.Argon2.iterations (prm s₀₁) 0 k W₁)).indices =
         (Proof.Argon2.iterations (prm s₀₁) k (N - k) (Proof.Argon2.iterations (prm s₀₁) 0 k W₂)).indices)
     ?step N).mono (fun s₁ s₂ h => ?init) fun _ _ h => h
-  case init => exact ⟨0, by omega, by omega, h.1, h.2, hind⟩
+  case init => exact ⟨0, by omega_arith, by omega_arith, h.1, h.2, hind⟩
   intro n s₁ s₂ t₁ t₂ s₁' s₂' ⟨k, hn, hk, h₁, h₂, hidx⟩ e₁ e₂
-  rw [show N - k = (N - (k + 1)) + 1 by omega] at hidx
+  rw [show N - k = (N - (k + 1)) + 1 by omega_arith] at hidx
   have hpass := Proof.Argon2.iterations_first_pass (prm s₀₁) k (N - (k + 1)) _ _ s2 hidx
   rw [Proof.Argon2.iterations_succ, Proof.Argon2.iterations_succ] at hidx
   obtain ⟨ht, ⟨g₁, c₁⟩, ⟨g₂, c₂⟩⟩ := T.passBody_rel (by rw [hN]; exact hk) hpass s₁ s₂ t₁ t₂ s₁' s₂'
@@ -386,7 +386,7 @@ theorem passes_rel {W₁ W₂ : FillState}
   refine ⟨ht, c₁.trans c₂.symm, fun _ => trivial, fun hc => ?_⟩
   have e₀ : some (!decide (k + 1 = N)) = some true := c₁.symm.trans hc
   have e : k + 1 ≠ N := by simpa using e₀
-  exact ⟨N - (k + 1), by omega, k + 1, rfl, by omega, g₁, g₂, hidx⟩
+  exact ⟨N - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, g₁, g₂, hidx⟩
 
 end Two
 

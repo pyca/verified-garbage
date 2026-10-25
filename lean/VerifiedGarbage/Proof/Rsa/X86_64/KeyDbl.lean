@@ -56,23 +56,23 @@ theorem dblInStep_ok {s₀ : State} {B : Addr} {Z w eA eo : Nat} {c₀ : Bool}
     fun t₁ ⟨⟨c', h₁, r, hm, hr⟩, k₁⟩ => ?_
   · unfold cfFromRbp cfToRbp
     xrun [State.ea, ix, addr0 t8 hI.r14, addr0 tbx hI.r14, hbp, cf_mask,
-      hI.scr.ld (show eo + 8 * j + 8 ≤ Z by omega), hI.scr.st (show eA + 8 * j + 8 ≤ Z by omega)]
+      hI.scr.ld (show eo + 8 * j + 8 ≤ Z by omega_arith), hI.scr.st (show eA + 8 * j + 8 ≤ Z by omega_arith)]
     refine ⟨_, rfl, _, rfl, ?_⟩
     rw [adc_toNat]
     show (word t.mem B (eo + 8 * j)).toNat + (word t.mem B (eo + 8 * j)).toNat + c.toNat = _
-    omega
+    omega_arith
   have t₁14 : t₁.gpr .r14 = BitVec.ofNat 64 j := (k₁.gpr (by decide)).trans hI.r14
   have t₁12 : t₁.gpr .r12 = BitVec.ofNat 64 w := (k₁.gpr (by decide)).trans t12
-  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega) (by omega)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
-  have hx : word t.mem B (eo + 8 * j) = word s₀.mem B (eo + 8 * j) := hI.out.word (by omega) (by omega)
+  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega_arith) (by omega_arith)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
+  have hx : word t.mem B (eo + 8 * j) = word s₀.mem B (eo + 8 * j) := hI.out.word (by omega_arith) (by omega_arith)
   rw [hx] at hr
   refine ⟨hI.scr.congr (k'.2.2.trans k₁.2.2), ((hI.keep.trans k₁).trans k').mono (by decide), h14, ?_,
     ⟨c', (k'.gpr (by decide)).trans h₁, ?_⟩⟩
   · rw [hm', hm]
     intro x hx'
-    rw [writeW_outside t.mem B r (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega)]
+    rw [writeW_outside t.mem B r (by omega_arith) x (by omega_arith)]
+    exact hI.out x (by omega_arith)
+  · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega_arith)]
     simp only [wv]
     rw [pow64_succ]
     grind

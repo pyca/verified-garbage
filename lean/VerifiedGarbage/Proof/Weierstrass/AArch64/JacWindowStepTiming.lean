@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDoubleTiming
 public import VerifiedGarbage.Proof.Weierstrass.Window5
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 @[expose] public section
 

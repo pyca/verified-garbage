@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
-public import VerifiedGarbage.Proof.EcKey.AArch64.Main
+import VerifiedGarbage.Proof.EcKey.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-! # Reuse public-key derivation's verified output encoder -/
 

@@ -56,15 +56,15 @@ theorem ivBytes_length (iv : List (BitVec 32)) : (ivBytes iv).length = 4 * iv.le
   | cons _ _ ih =>
     simp only [ivBytes, List.flatMap_cons, List.length_append, List.length_map, List.length_range,
       List.length_cons] at ih ⊢
-    omega
+    omega_arith
 
 theorem padBytes_length {n : Nat} (h : n + 9 ≤ 64) : (padBytes n).length = 64 - n := by
   simp only [padBytes, List.length_append, List.length_singleton, List.length_replicate, List.length_map,
     List.length_range]
-  omega
+  omega_arith
 
 theorem contains_start (p : Addr) {n k : Nat} (h : n ≤ k) : (⟨p, k⟩ : Region).Contains p n := by
-  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
 
 /-- The three writes of a hash, within its regions. -/
 theorem frame_join {A B C D A' : Region} {m₁ m₂ m₃ m₄ : Mem} (f₁ : Frame [A] m₁ m₂)
@@ -85,10 +85,10 @@ variable {H : Hash} {iv : List (BitVec 32)} (F : HashOk H iv)
 include F
 
 theorem HashOk.N_le : H.N + 12 ≤ 64 := by
-  have := F.ok.sizes.DL; have := F.B; have := F.L; have := F.DN; omega
+  have := F.ok.sizes.DL; have := F.B; have := F.L; have := F.DN; omega_arith
 
 theorem HashOk.N4 : H.N % 4 = 0 := by
-  have := F.ok.sizes.N; omega
+  have := F.ok.sizes.N; omega_arith
 
 /-- The block before the compression: the initial value, the padding after
 the message, the block's address in `eax` and the scratch space's in `ebp`. -/
@@ -105,26 +105,26 @@ theorem prep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       ([.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 H.N))] : List Instr) ++ scr .ebp sHScr)) s Q := by
   have nl := F.N_le; have n4 := F.N4; have ivl := F.ivLen
   have nw := hs.nowrap
-  have hsn : sState + H.N + 64 ≤ sHScr := by simp only [sState, sHScr]; omega
-  have yNat := Scr.toNat_add hs (d := sState) (by simp only [sState, sHScr] at hsz ⊢; omega)
-  have yW := Scr.wide hs (d := sState) (by simp only [sState, sHScr] at hsz ⊢; omega)
+  have hsn : sState + H.N + 64 ≤ sHScr := by simp only [sState, sHScr]; omega_arith
+  have yNat := Scr.toNat_add hs (d := sState) (by simp only [sState, sHScr] at hsz ⊢; omega_arith)
+  have yW := Scr.wide hs (d := sState) (by simp only [sState, sHScr] at hsz ⊢; omega_arith)
   simp only [List.append_assoc]
   refine scr_ok fun s₁ e₁ g₁ m₁ rd₁ wr₁ _ => ?_
   have cov : ∀ d n, sState ≤ d → d + n ≤ sState + H.N + 64 →
       ∀ j, j + 4 ≤ n → InRegions s₁.wr (addr (s.gpr .edi + BitVec.ofNat 32 sState) (d - sState + j)) 4 := by
     intro d n h₁ h₂ j hj
-    rw [addr_eq (by omega), yW, Offset.add_add, wr₁]
-    exact hs.write (d := sState + (d - sState + j)) (n := 4) (by omega)
+    rw [addr_eq (by omega_arith), yW, Offset.add_add, wr₁]
+    exact hs.write (d := sState + (d - sState + j)) (n := 4) (by omega_arith)
   unfold ivStore
-  refine storeW_ok (by decide) iv.length _ s₁ _ (by rw [ivBytes_length]) e₁ (by omega)
-    (fun j hj => by simpa using cov sState (4 * iv.length) (Nat.le_refl _) (by omega) (4 * j) (by omega))
+  refine storeW_ok (by decide) iv.length _ s₁ _ (by rw [ivBytes_length]) e₁ (by omega_arith)
+    (fun j hj => by simpa using cov sState (4 * iv.length) (Nat.le_refl _) (by omega_arith) (4 * j) (by omega_arith))
     fun s₂ g₂ rd₂ wr₂ m₂ => ?_
-  refine storeW_ok (by decide) ((64 - H.N) / 4) _ s₂ _ (by rw [padBytes_length (by omega)]; omega)
-    (by rw [g₂ _ (by decide), e₁]) (by omega)
+  refine storeW_ok (by decide) ((64 - H.N) / 4) _ s₂ _ (by rw [padBytes_length (by omega_arith)]; omega_arith)
+    (by rw [g₂ _ (by decide), e₁]) (by omega_arith)
     (fun j hj => by
       rw [wr₂]
-      have := cov (sState + (H.N + H.N)) (64 - H.N) (by omega) (by omega) (4 * j) (by omega)
-      rwa [show sState + (H.N + H.N) - sState + 4 * j = H.N + H.N + 4 * j by omega] at this)
+      have := cov (sState + (H.N + H.N)) (64 - H.N) (by omega_arith) (by omega_arith) (4 * j) (by omega_arith)
+      rwa [show sState + (H.N + H.N) - sState + 4 * j = H.N + H.N + 4 * j by omega_arith] at this)
     fun s₃ g₃ rd₃ wr₃ m₃ => ?_
   simp only [List.cons_append, List.nil_append]
   refine wp_mov fun s₄ u₄ => wp_addi fun s₅ u₅ => ?_
@@ -139,8 +139,8 @@ theorem prep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   · rw [rd₆, u₅.rd, u₄.rd, rd₃, rd₂, rd₁]
   · rw [wr₆, u₅.wr, u₄.wr, wr₃, wr₂, wr₁]
   · rw [m₆, u₅.mem, u₄.mem, m₃, m₂, m₁, yW, Nat.mul_comm 4 ((64 - H.N) / 4),
-      Nat.div_mul_cancel (by omega), ← ivBytes_length,
-      List.take_of_length_le (Nat.le_refl _), List.take_of_length_le (by rw [padBytes_length (by omega)]),
+      Nat.div_mul_cancel (by omega_arith), ← ivBytes_length,
+      List.take_of_length_le (Nat.le_refl _), List.take_of_length_le (by rw [padBytes_length (by omega_arith)]),
       BitVec.add_zero]
 
 /-- The bytes of the block after the hash value: the message, then the
@@ -150,27 +150,27 @@ theorem block_bytes {m : Mem} {Y : Addr} {k : Nat} (hk : k < 64) :
         (Y + BitVec.ofNat 64 H.N + BitVec.ofNat 64 k) =
       (Spec.Sha256.bytesAt m (Y + BitVec.ofNat 64 H.N) H.N ++ padBytes H.N).getD k 0 := by
   have nl := F.N_le; have ivl := F.ivLen
-  have pl := padBytes_length (n := H.N) (by omega)
+  have pl := padBytes_length (n := H.N) (by omega_arith)
   have il := ivBytes_length iv
   have ml : (Spec.Sha256.bytesAt m (Y + BitVec.ofNat 64 H.N) H.N).length = H.N := by
     simp only [Spec.Sha256.bytesAt, List.length_map, List.length_range]
   rw [Offset.add_add]
-  have d1 := Offset.sub_toNat' Y (d := H.N + H.N) (e := H.N + k) (by omega) (by omega)
-  have d2 := Mem.sub_ofNat_toNat Y (show H.N + k < 2 ^ 64 by omega)
+  have d1 := Offset.sub_toNat' Y (d := H.N + H.N) (e := H.N + k) (by omega_arith) (by omega_arith)
+  have d2 := Mem.sub_ofNat_toNat Y (show H.N + k < 2 ^ 64 by omega_arith)
   simp only [writeBytes, d1, d2, List.getD_eq_getElem?_getD]
   by_cases hN : H.N ≤ k
-  · have c1 : H.N + H.N ≤ H.N + k := by omega
-    have c2 : H.N + k - (H.N + H.N) < (padBytes H.N).length := by rw [pl]; omega
+  · have c1 : H.N + H.N ≤ H.N + k := by omega_arith
+    have c2 : H.N + k - (H.N + H.N) < (padBytes H.N).length := by rw [pl]; omega_arith
     simp only [c1, ↓reduceIte, c2]
     rw [List.getElem?_append_right (by rw [ml]; exact hN), ml]
     congr 2
-    omega
-  · have c1 : ¬ H.N + H.N ≤ H.N + k := by omega
-    have c2 : ¬ 2 ^ 64 + (H.N + k) - (H.N + H.N) < (padBytes H.N).length := by rw [pl]; omega
-    have c3 : ¬ H.N + k < (ivBytes iv).length := by rw [il]; omega
+    omega_arith
+  · have c1 : ¬ H.N + H.N ≤ H.N + k := by omega_arith
+    have c2 : ¬ 2 ^ 64 + (H.N + k) - (H.N + H.N) < (padBytes H.N).length := by rw [pl]; omega_arith
+    have c3 : ¬ H.N + k < (ivBytes iv).length := by rw [il]; omega_arith
     simp only [c1, ↓reduceIte, c2, c3]
-    rw [List.getElem?_append_left (by rw [ml]; omega)]
-    simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show k < H.N by omega),
+    rw [List.getElem?_append_left (by rw [ml]; omega_arith)]
+    simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show k < H.N by omega_arith),
       Option.map_some, Option.getD_some]
     rw [Offset.add_add]
 

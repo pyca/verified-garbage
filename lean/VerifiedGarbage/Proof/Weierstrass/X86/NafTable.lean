@@ -65,7 +65,7 @@ theorem nafTableLive_next (K : WinCfg) (hn : K.M.n=4) (m : Nat) :
     simp only [List.mem_append]; grind
   · have hn' : K.tbl+32*i∈jacCoords (K.tblPt (m+1)) := by
       simp only [jacCoords,WinCfg.tblPt,hn,List.mem_cons,List.not_mem_nil,or_false]
-      omega
+      omega_arith
     simp only [List.mem_append]; grind
 
 theorem nafTable_progUnch {K : WinCfg} {base : Addr} {wk : Nat} {W : List Nat} {s t : State}
@@ -94,7 +94,7 @@ theorem nafTable_advance_ok {s : State} {m : Nat} (hm : m<8)
   refine ⟨trivial,?_,fun r hr => ?_,rfl,rfl,rfl⟩
   · congr 1
     simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (show m+1<2^32 from by omega)]
+    rw [Nat.mod_eq_of_lt (show m+1<2^32 from by omega_arith)]
     rfl
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_arithFlags,RegUpd.gpr_setReg,hr,ite_false]
@@ -143,7 +143,7 @@ theorem nafCopyStore_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Cu
     have hx := hL.tbl K.R.x (List.mem_append_right _ (rr _ (by simp [jacCoords])))
     have hz := hL.tbl K.R.z (List.mem_append_right _ (rr _ (by simp [jacCoords])))
     rw [hL.rxz] at hz
-    omega
+    omega_arith
   rw [WP.block_append_iff,←hL.n]
   refine WP.mono (copyPointFields_ok hL.lay hAcc hN hqa rs hI hV) fun a ⟨ea,ka,ia,va⟩ => ?_
   have ja : InvJ C (tmv C K.M.n base a K.R.x) (tmv C K.M.n base a K.R.y) (tmv C K.M.n base a K.R.z) P := by
@@ -152,9 +152,9 @@ theorem nafCopyStore_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Cu
     rw [va.1,va.2.1,va.2.2]
     exact hp
   have ca : a.gpr .esi=BitVec.ofNat 32 m := (ka.gpr _ (by decide)).trans hc
-  have ts := nafTblPt_mem K hL.n (a:=m+1) (by omega) (by omega)
+  have ts := nafTblPt_mem K hL.n (a:=m+1) (by omega_arith) (by omega_arith)
   refine WP.mono (nafTablePoint_ok hL.lay hAcc hL.n hL.rxy hL.rxz ia.to_tmv hm ca
-    (by have := hL.table_le; omega) ts (fun _ hx => List.mem_append_left _ hx) sep ja)
+    (by have := hL.table_le; omega_arith) ts (fun _ hx => List.mem_append_left _ hx) sep ja)
     fun t ⟨kt,it,jt⟩ => ?_
   refine ⟨(ka.mono (fun _ hx => List.mem_append_left _ hx)).trans
       (kt.mono (fun _ hx => List.mem_append_right _ hx)),?_,?_,jt⟩
@@ -163,7 +163,7 @@ theorem nafCopyStore_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Cu
     intro x hx hy
     have hs := hL.tbl x (List.mem_append_right _ (rr x hx))
     simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hy
-    omega
+    omega_arith
 
 end VG.Proof.Weierstrass.X86
 
@@ -237,7 +237,7 @@ theorem nafTable_init_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
       intro x hx y hy he
       have hs := hL.tbl x (List.mem_append_left _ (pr x hx))
       simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hy
-      omega) ts ia.to_tmv (fun x hx => List.mem_append_right _ (pr x hx))) fun b ⟨eb,kb,ib,vb⟩ => ?_
+      omega_arith) ts ia.to_tmv (fun x hx => List.mem_append_right _ (pr x hx))) fun b ⟨eb,kb,ib,vb⟩ => ?_
   have jb : InvJ C (tmv C K.M.n base b (K.tblPt 1).x) (tmv C K.M.n base b (K.tblPt 1).y)
       (tmv C K.M.n base b (K.tblPt 1).z) P := by
     apply ib.point_tmv (fun _ hx => List.mem_append_left _ hx)
@@ -246,10 +246,10 @@ theorem nafTable_init_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
   have pb := kb.invJ hL.lay hAcc ia.scr ts (fun x hx => slR x (pr x hx)) (by
     intro x hx hy
     have hs := hL.tbl x (List.mem_append_left _ (pr x hx))
-    simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hy; omega) pa
+    simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hy; omega_arith) pa
   have bb := kb.invJ hL.lay hAcc ia.scr ts bs (by
     intro x hx hy
-    simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx hy; omega) ja
+    simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx hy; omega_arith) ja
   rw [WP.block_append_iff]
   refine WP.mono (copyPointFields_ok hL.lay hAcc (q:=K.P) (o:=K.R)
     (by simp [jacCoords,hL.rxy,hL.rxz])
@@ -263,7 +263,7 @@ theorem nafTable_init_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
   have sep (a : Nat) (ha : 1≤a) (ha9 : a≤9) : ∀ x∈jacCoords (K.tblPt a),x∉jacCoords K.R := by
     intro x hx hy
     have hs := hL.tbl x (List.mem_append_right _ (rr x hy))
-    simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx; omega
+    simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx; omega_arith
   have bc := kc.invJ hL.lay hAcc ib.scr (fun x hx => slO x (rr x hx)) bs (sep 9 (by decide) (by decide)) bb
   have tc := kc.invJ hL.lay hAcc ib.scr (fun x hx => slO x (rr x hx)) ts (sep 1 (by decide) (by decide)) jb
   refine WP.mono (nafTable_initCounter_ok c) fun t ⟨ct,kt⟩ => ?_
@@ -280,7 +280,7 @@ theorem nafTable_init_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
   · rw [show 2*1-1=1 from rfl,mul_one_pt]; simpa only [tmv,kt.2.1] using jc
   · simpa only [tmv,kt.2.1,Naf.twice] using bc
   · intro a ha ha1
-    obtain rfl : a=1 := by omega
+    obtain rfl : a=1 := by omega_arith
     rw [show 2*1-1=1 from rfl,mul_one_pt]; simpa only [tmv,kt.2.1] using tc
   · have lift {W : List Nat} {u v : State} (k : ProgKeep K.M base wk W u v) : KeepRegs (nafTableClob K) u v :=
       (Keeps.mono ⟨k.gpr,k.rd,k.wr⟩ (fun _ hx => List.mem_append_left _ hx))
@@ -324,13 +324,13 @@ theorem nafTable_step_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
   refine WP.mono (jacAdd_ok hL.lay hAcc hm hC ha (hL.rcbApart_twice hJ) ds hf hv hOne
     (hC.onCurve_mul hP _) (hC.onCurve_mul hP _) hI.point hI.twice) fun u ⟨eu,ka,iu,ju⟩ => ?_
   have jw : InvJ C (eu K.D.x) (eu K.D.y) (eu K.D.z) (mul (2*(m+1)-1) P) := by
-    rw [hC.add_mul_mul hP,show 2*m-1+2=2*(m+1)-1 by omega] at ju
+    rw [hC.add_mul_mul hP,show 2*m-1+2=2*(m+1)-1 by omega_arith] at ju
     exact ju
   have ka := ka.mono (W' := winOther K) (fun _ hx => List.mem_append_right _ hx)
   have cm : u.gpr .esi=BitVec.ofNat 32 m := by
     rw [ka.gpr _ (by decide),hI.counter]
   rw [WP.block_append_iff]
-  refine WP.mono (nafCopyStore_ok hL hAcc (by omega) iu
+  refine WP.mono (nafCopyStore_ok hL hAcc (by omega_arith) iu
     (fun _ hx => List.mem_append_left _ hx) cm jw) fun v ⟨ks,iv,jr,jnew⟩ => ?_
   let W := winOther K ++ jacCoords (K.tblPt (m+1))
   have kas : ProgKeep K.M base wk W s v := (ka.mono (fun _ hx => List.mem_append_left _ hx)).trans (ks.mono (by
@@ -342,13 +342,13 @@ theorem nafTable_step_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
     · exact List.mem_append_right _ hx))
   have cb : v.gpr .esi=BitVec.ofNat 32 m := by
     rw [kas.gpr _ (by decide),hI.counter]
-  refine WP.mono (nafTable_advance_ok (by omega) cb) fun t ⟨hc,cf,kc⟩ => ?_
+  refine WP.mono (nafTable_advance_ok (by omega_arith) cb) fun t ⟨hc,cf,kc⟩ => ?_
   have it := (iv.of_keeps kc (by decide)).to_tmv.sub (nafTableLive_next K hL.n m)
   have slots : ∀ x∈W, x∈nafSlots K := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
     · exact List.mem_append_left _ (List.mem_append_right _ hx)
-    · exact nafTblPt_mem K hL.n (by omega) (by omega) x hx
+    · exact nafTblPt_mem K hL.n (by omega_arith) (by omega_arith) x hx
   have kct : KeepRegs (nafTableClob K) v t := (CKeeps.regs kc).mono (fun _ hx => List.mem_append_right _ hx)
   have kst : KeepRegs (nafTableClob K) s t :=
     (Keeps.mono ⟨kas.gpr,kas.rd,kas.wr⟩ (fun _ hx => List.mem_append_left _ hx)).trans kct
@@ -364,9 +364,9 @@ theorem nafTable_step_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
       · apply Or.inr
         simp only [WinCfg.tblPt,hL.n,jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl | rfl | rfl
-        · exact nafTbl_mem K (by omega) (by omega) (c:=0) (by decide)
-        · exact nafTbl_mem K (by omega) (by omega) (c:=1) (by decide)
-        · exact nafTbl_mem K (by omega) (by omega) (c:=2) (by decide)
+        · exact nafTbl_mem K (by omega_arith) (by omega_arith) (c:=0) (by decide)
+        · exact nafTbl_mem K (by omega_arith) (by omega_arith) (c:=1) (by decide)
+        · exact nafTbl_mem K (by omega_arith) (by omega_arith) (c:=2) (by decide)
     · exact Or.inr (Or.inl rfl)
     · exact Or.inr (Or.inr (Or.inl rfl))
     · exact Or.inr (Or.inr (Or.inr rfl))
@@ -377,9 +377,9 @@ theorem nafTable_step_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
     rcases List.mem_append.mp hw with hw | hw
     · have sep := hL.tbl x (List.mem_append_right _ hw)
       simp only [jacCoords,Naf.twice,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx
-      omega
+      omega_arith
     · simp only [jacCoords,Naf.twice,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx hw
-      omega
+      omega_arith
   refine ⟨⟨it,?_,?_,?_,hc,hI.keep.trans kst,?_⟩,cf⟩
   · simpa only [tmv,kc.2.1] using jr
   · rw [beq _ (by simp [jacCoords]),beq _ (by simp [jacCoords]),beq _ (by simp [jacCoords])]
@@ -387,18 +387,18 @@ theorem nafTable_step_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : C
   · intro a ha1 ham
     by_cases he : a=m+1
     · subst a; simpa only [tmv,kc.2.1] using jnew
-    · have ham' : a≤m := by omega
+    · have ham' : a≤m := by omega_arith
       have teq (x : Nat) (hx : x∈jacCoords (K.tblPt a)) :
           tmv C K.M.n base t x=tmv C K.M.n base s x := by
         unfold tmv; rw [kc.2.1]
-        rw [kas.slot hL.lay hAcc hf.scr slots (nafTblPt_mem K hL.n ha1 (by omega) x hx) ?_]
+        rw [kas.slot hL.lay hAcc hf.scr slots (nafTblPt_mem K hL.n ha1 (by omega_arith) x hx) ?_]
         intro hw
         rcases List.mem_append.mp hw with hw | hw
         · have sep := hL.tbl x (List.mem_append_right _ hw)
           simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx
-          omega
+          omega_arith
         · simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx hw
-          omega
+          omega_arith
       rw [teq _ (by simp [jacCoords]),teq _ (by simp [jacCoords]),teq _ (by simp [jacCoords])]
       exact hI.table a ha1 ham'
   · exact (hI.unch.trans uw).mono (fun _ hw => (List.mem_append.mp hw).elim id id)
@@ -431,15 +431,15 @@ theorem nafTable_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve}
   refine WP.loop (M:=isa)
     (fun j t => 1≤j ∧ j≤7 ∧ NafTableInv K C base size wk P s t (8-j))
     (fun j u ⟨hj,hj7,hu⟩ => ?_) 7 a ⟨by decide,by decide,ia⟩
-  refine WP.mono (nafTable_step_ok hL hAcc hJ hm hC ha hOne hP (by omega) (by omega) hu)
+  refine WP.mono (nafTable_step_ok hL hAcc hJ hm hC ha hOne hP (by omega_arith) (by omega_arith) hu)
     fun t ⟨it,cf⟩ => ?_
   by_cases hj1 : j=1
   · subst j
     exact Or.inl ⟨cf,it⟩
-  · refine Or.inr ⟨?_,j-1,by omega,by omega,by omega,?_⟩
+  · refine Or.inr ⟨?_,j-1,by omega_arith,by omega_arith,by omega_arith,?_⟩
     · change t.cf=some true
-      rw [cf]; exact congrArg some (decide_eq_true (by omega))
-    · rw [show 8-(j-1)=8-j+1 from by omega]
+      rw [cf]; exact congrArg some (decide_eq_true (by omega_arith))
+    · rw [show 8-(j-1)=8-j+1 from by omega_arith]
       exact it
 
 /-- Table construction leaves the recoded scalar bytes intact. -/
@@ -449,17 +449,17 @@ theorem NafTableInv.digits {K : WinCfg} {C : Curve} {base : Addr} {size m wk : N
     (hb : ∀ i<257, s.mem (off base (K.bits+i))=β i) :
     ∀ i<257, t.mem (off base (K.bits+i))=β i := by
   intro i hi
-  rw [hI.unch.byte (fun w hw => ?_) (by have := hL.bits; have := hI.field.scr.nowrap; omega),hb i hi]
+  rw [hI.unch.byte (fun w hw => ?_) (by have := hL.bits; have := hI.field.scr.nowrap; omega_arith),hb i hi]
   simp only [nafTableWrites,List.mem_append,List.mem_map,List.mem_cons,List.not_mem_nil,or_false] at hw
   rcases hw with ⟨x,hx,rfl⟩ | rfl | rfl | rfl
   · have hb' := hL.bits_w x hx
-    dsimp only; rw [hL.n]; omega
+    dsimp only; rw [hL.n]; omega_arith
   · have hb' := hL.bits_tmp
-    dsimp only; rw [hL.n]; omega
+    dsimp only; rw [hL.n]; omega_arith
 
-  · dsimp only; omega
+  · dsimp only; omega_arith
   · have := hL.bits; have := hL.size_le
-    dsimp only [Mont.outW]; omega
+    dsimp only [Mont.outW]; omega_arith
 
 end VG.Proof.Weierstrass.X86
 

@@ -66,7 +66,7 @@ theorem jacTreeArithmetic_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Na
   have se : ∀ x ∈ [K.E.x,K.E.y,K.E.z], x ∈ winOther K := by
     intro x hx; simp only [winOther,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind
   rw [Jacobian.jacTreeArithmetic]
-  refine WP.seq (WP.mono (jacTreeParity_ok (by omega) h19) fun u ⟨he,ke⟩ => ?_)
+  refine WP.seq (WP.mono (jacTreeParity_ok (by omega_arith) h19) fun u ⟨he,ke⟩ => ?_)
   have iu := hI.of_keeps ke (by decide)
   have ku : ProgKeep K.M base (winOther K) s u := keeps_prog ke (by
     intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -74,15 +74,15 @@ theorem jacTreeArithmetic_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Na
   refine WP.ite (decide (m%2=1)) he (fun hb => ?_) (fun hb => ?_)
   · have ho := of_decide_eq_true hb
     have hc : u.gpr .x19 = BitVec.ofNat 64 (15-2*((m+1)/2-1)) := by
-      rw [ke.gpr _ (by decide),h19]; congr 1; omega
+      rw [ke.gpr _ (by decide),h19]; congr 1; omega_arith
     have es : ∀ x ∈ [K.E.x,K.E.y,K.E.z], x ∈ jacWinSlots K := fun x hx => hs x (List.mem_append_right _ (se x hx))
     have sep : K.E.x+96 ≤ K.tbl+96*((m+1)/2-1) ∨ K.tbl+96*((m+1)/2-1)+96 ≤ K.E.x := by
       have x := hL.tbl K.E.x (List.mem_append_right _ (se _ (by simp)))
       have z := hL.tbl K.E.z (List.mem_append_right _ (se _ (by simp)))
       rw [hL.exz] at z
-      omega
+      omega_arith
     apply WP.seq
-    refine WP.mono (jacTreeFetchPoint_ok hL.lay hAl hL.n hL.exy hL.exz iu hc (by omega) (by omega)
+    refine WP.mono (jacTreeFetchPoint_ok hL.lay hAl hL.n hL.exy hL.exz iu hc (by omega_arith) (by omega_arith)
       ht es hT sep hjt) fun v ⟨kf,iv,jv⟩ => ?_
     have ds : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.E K.E, x ∈ jacWinSlots K := by
       intro x hx; apply hs x
@@ -100,7 +100,7 @@ theorem jacTreeArithmetic_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Na
     · intro x hx
       simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
       grind
-    · rw [hC.add_mul_mul hP,show (m+1)/2+(m+1)/2=m+1 by omega] at jt
+    · rw [hC.add_mul_mul hP,show (m+1)/2+(m+1)/2=m+1 by omega_arith] at jt
       exact jt
   · have ho := of_decide_eq_false hb
     have ds : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.R K.P, x ∈ jacWinSlots K := by

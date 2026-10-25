@@ -68,8 +68,8 @@ theorem j0_blk {o q : Nat} (hq : o + 16 * q ≤ L s) :
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl | rfl | rfl) | rfl
-  · exact Offset.base_disjoint _ (by decide) (by have := hp.w_st; omega)
-  · exact Offset.base_disjoint _ (by decide) (by have := hp.w_st; omega)
+  · exact Offset.base_disjoint _ (by decide) (by have := hp.w_st; omega_arith)
+  · exact Offset.base_disjoint _ (by decide) (by have := hp.w_st; omega_arith)
   · exact (hp.st_d.sub_left hs).sub_right (dst_sub (s := s) hq)
   · exact (hp.st_w.sub_left hs).sub_right scR_sub
   · exact hp.b_st.symm.sub_left hs
@@ -78,13 +78,13 @@ theorem j0_blk {o q : Nat} (hq : o + 16 * q ≤ L s) :
 after them. -/
 theorem pre_blk {o q : Nat} (hq : o + 16 * q ≤ L s) :
     ∀ r ∈ blkWr s o q ++ [tR s], (⟨Dst s, o⟩ : Region).Disjoint r := by
-  have hs : Region.Sub ⟨Dst s, o⟩ (dR s) := Region.sub_prefix (by omega)
+  have hs : Region.Sub ⟨Dst s, o⟩ (dR s) := Region.sub_prefix (by omega_arith)
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl | rfl | rfl) | rfl
   · exact (hp.st_d.symm.sub_left hs).sub_right ctr_sub
   · exact (hp.st_d.symm.sub_left hs).sub_right y_sub
-  · exact Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.w_d; omega)
+  · exact Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.w_d; omega_arith)
   · exact (hp.d_w.sub_left hs).sub_right scR_sub
   · exact hp.b_d.symm.sub_left hs
 
@@ -108,7 +108,7 @@ omit hp in
 /-- The text so far and the `o` bytes done, exact in 64 bits. -/
 theorem tl_add {s : State} {o : Nat} (h : (TL s).toNat + o < 2 ^ 64) :
     (TL s + BitVec.ofNat 64 o).toNat = (TL s).toNat + o := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_arith), Nat.mod_eq_of_lt h]
 
 /-- What the call of the whole blocks leaves: `Mid s (o + 16 q)`, from the
 state `st₄` it starts from (with `o` bytes done and the bytes done after the
@@ -143,16 +143,16 @@ theorem call_mid {o q : Nat} (hq0 : q ≠ 0) (hq : o + 16 * q ≤ L s) (htl : (T
     · refine Or.inl fun e => ?_
       have := congrArg List.length e
       rw [Proof.Gcm.length_gctr, hX] at this; simp at this
-      exact ht0 (by apply BitVec.eq_of_toNat_eq; rw [tl_add (by omega), this.1, this.2]; rfl)
+      exact ht0 (by apply BitVec.eq_of_toNat_eq; rw [tl_add (by omega_arith), this.1, this.2]; rfl)
     · rw [hal, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide : 16 ∣ 2 ^ 64)] at ha
       exact Or.inr ha
   have hc0 : (gctr (ciph s) (inc32 (j0 (hk s) iv)) (p ++ pt s o)).length % 16 = 0 := by
     rw [Proof.Gcm.length_gctr, hX]; exact ht16
   obtain ⟨e₁, hr'⟩ := Proof.Gcm.streamRepr_blocksTo hr₄ hc hc0 hq0
     (blockAt_frame hf (j0_blk hp hq)) o₁ o₂ o₃
-  have hsub : Region.Sub ⟨Src s + BitVec.ofNat 64 o, 16 * q⟩ (srcR s) := Offset.sub_base _ (by omega)
+  have hsub : Region.Sub ⟨Src s + BitVec.ofNat 64 o, 16 * q⟩ (srcR s) := Offset.sub_base _ (by omega_arith)
   have hpt : bytesAt st₄.mem (Src s + BitVec.ofNat 64 o) (16 * q) = bytesAt s.mem (Src s + BitVec.ofNat 64 o) (16 * q) :=
-    bytesAt_frame f₄ (fun r hr => (r_disj hp r hr).sub_left hsub) (by omega)
+    bytesAt_frame f₄ (fun r hr => (r_disj hp r hr).sub_left hsub) (by omega_arith)
   rw [hpt, Proof.Gcm.length_gctr] at e₁
   have hP : p ++ pt s (o + 16 * q) = p ++ pt s o ++ bytesAt s.mem (Src s + BitVec.ofNat 64 o) (16 * q) := by
     rw [List.append_assoc, ← bytesAt_add]
@@ -161,7 +161,7 @@ theorem call_mid {o q : Nat} (hq0 : q ≠ 0) (hq : o + 16 * q ≤ L s) (htl : (T
     rw [hP, Proof.Gcm.gctr_append, e₁]
   refine ⟨by rw [hg]; exact hr', ?_⟩
   have hD : bytesAt st'.mem (Dst s) o = bytesAt st₄.mem (Dst s) o :=
-    bytesAt_frame hf (pre_blk hp hq) (by omega)
+    bytesAt_frame hf (pre_blk hp hq) (by omega_arith)
   rw [hg, bytesAt_add, hD, dd₄, List.drop_append_of_le_length (by rw [Proof.Gcm.length_gctr]; simp)]
 
 /-- `blocks`, from `Mid s o`: some bytes done. -/
@@ -197,7 +197,7 @@ theorem blocks_ok (T : BlkToFn M) {o : Nat} {st : State} (h : Mid s o st) :
   obtain ⟨ht16, ht0⟩ := sel_mod (s := s) (o := o) (by
     simp only [Bool.not_eq_false', beq_iff_eq] at e₂
     have := congrArg BitVec.toNat e₂
-    rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this)
+    rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this)
   rw [tl_add htl] at ht16
   have h11₂ : s₂.gpr .r11 = W s := by rw [g₂ _ (by decide), g₁' _ (by decide), g₁ _ (by decide), h11]
   refine WP.seq (WP.mono (blocksCount_ok hp h11₂ M₂.kept ho M₂.rd M₂.wr) fun s₃ ⟨ax₃, z₃, g₃, m₃, rd₃, wr₃⟩ => ?_)
@@ -212,16 +212,16 @@ theorem blocks_ok (T : BlkToFn M) {o : Nat} {st : State} (h : Mid s o st) :
   have M₄ : Mid s o s₄ := M₃.regs m₄ (fun r hr => g₄ r (by rintro rfl; simp [calleeSaved] at hr)
     (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)) rd₄ wr₄
   have h16 : (BitVec.ofNat 64 (16 * ((L s - o) / 16))).toNat = 16 * ((L s - o) / 16) := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   rw [h16, tl_add htl] at cf₄
   refine WP.ite (decide (2 ^ 64 ≤ (TL s).toNat + o + 16 * ((L s - o) / 16))) (by simp only [eval, cf₄])
     (fun _ => WP.block_nil ⟨o, M₄⟩) (fun e₄ => ?_)
-  have htl' : (TL s).toNat + (o + 16 * ((L s - o) / 16)) < 2 ^ 64 := by simp at e₄; omega
+  have htl' : (TL s).toNat + (o + 16 * ((L s - o) / 16)) < 2 ^ 64 := by simp at e₄; omega_arith
   have h11₄ : s₄.gpr .r11 = W s := by
     rw [g₄ _ (by decide) (by decide) (by decide), g₃ _ (by decide) (by decide), h11₂]
   refine WP.seq (WP.mono (blocksArgs_ok hp h11₄ ax₄ M₄.kept M₄.rd M₄.wr)
     fun s₅ ⟨di, si, dx, cx, r8₅, r10₅, ax₅, g₅, k₅, f₅, rd₅, wr₅⟩ => ?_)
-  have hq : o + 16 * ((L s - o) / 16) ≤ L s := by omega
+  have hq : o + 16 * ((L s - o) / 16) ≤ L s := by omega_arith
   have sp₅ : s₅.gpr .rsp = SP s := by
     rw [g₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), M₄.rsp]
   have r9₅ : s₅.gpr .r9 = BitVec.ofNat 64 ((L s - o) / 16) := by

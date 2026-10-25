@@ -39,7 +39,7 @@ theorem prepareModulus_ok (M : Mont) (R : R2Impl M) {s : State} {B : Addr} {Z w 
     (hlo : 2 ^ (64 * (w - 1)) ≤ N) :
     WP isa (prepareModulus M.mm R.code) s fun t => ∃ mi', ModulusReady t B Z w mi' N ∧
       Frm B (modulusRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hw : w < 2 ^ 31 := by have := hd.w128; omega
+  have hw : w < 2 ^ 31 := by have := hd.w128; omega_arith
   have hz64 : Z ≤ 2 ^ 64 := Nat.le_trans (Nat.le_add_left Z B.toNat) hg.scr.nowrap
   have hNread : slot w aN + 8 * w ≤ 2 ^ 64 := by
     have he := slot_le (w := w) (show aN < 8 by decide)
@@ -57,9 +57,9 @@ theorem prepareModulus_ok (M : Mont) (R : R2Impl M) {s : State} {B : Addr} {Z w 
     omega_using [he, hz64]
   have hRm1read : slot w aRm1 + 8 * w ≤ 2 ^ 64 := by omega_using [hd.x, hz64]
   unfold prepareModulus
-  refine WP.seq (WP.mono (prepareR2_ok M R hg hd.z (by have := hd.w4; omega)
-    (by have := hd.w128; omega) hn hodd hlo) fun u ⟨mi', hgu, hinv, hnu, hone, hr2, _, hf, ku⟩ => ?_)
-  refine WP.seq (WP.mono (prepareConstants_ok M hgu hd.z hd.x (by have := hd.w4; omega) hw hnu hinv hone hodd hN1 hr2)
+  refine WP.seq (WP.mono (prepareR2_ok M R hg hd.z (by have := hd.w4; omega_arith)
+    (by have := hd.w128; omega_arith) hn hodd hlo) fun u ⟨mi', hgu, hinv, hnu, hone, hr2, _, hf, ku⟩ => ?_)
+  refine WP.seq (WP.mono (prepareConstants_ok M hgu hd.z hd.x (by have := hd.w4; omega_arith) hw hnu hinv hone hodd hN1 hr2)
     fun v ⟨hgv, hr1, hrm1, hf', kv⟩ => ?_)
   have hnv : wv v.mem B (slot w aN) w = N := by
     rw [hf'.wv_eq (by simp only [constantRanges]; rng_disj) hNread]
@@ -132,10 +132,10 @@ theorem ModulusReady.of_words {s t : State} {B : Addr} {Z w N : Nat} {mi : BitVe
     have hs := VG.Proof.Rsa.slot_mono (w := w) hj
     exact wv_congr fun i hi => hm _ (by omega_using [hs, hd.x, hi])
   have hh : Hdr t.mem B w mi := by
-    refine ⟨(hm _ (by have := hd.z; unfold slot hdrBytes at this; unfold sW; omega)).trans h.good.hdr.hw,
-      (hm _ (by have := hd.z; unfold slot hdrBytes at this; unfold sMinv; omega)).trans h.good.hdr.hminv, ?_⟩
+    refine ⟨(hm _ (by have := hd.z; unfold slot hdrBytes at this; unfold sW; omega_arith)).trans h.good.hdr.hw,
+      (hm _ (by have := hd.z; unfold slot hdrBytes at this; unfold sMinv; omega_arith)).trans h.good.hdr.hminv, ?_⟩
     intro j hj
-    exact (hm _ (by have := hd.z; unfold slot hdrBytes sArr at *; omega)).trans (h.good.hdr.harr j hj)
+    exact (hm _ (by have := hd.z; unfold slot hdrBytes sArr at *; omega_arith)).trans (h.good.hdr.harr j hj)
   refine ⟨⟨h.good.scr.congr hwr, hdi, hh⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hm _ (by have := slot_le (w := w) (show aN < 8 by decide); omega_using [this, hd.z, hd.w4])]
     exact h.inv
@@ -146,7 +146,7 @@ theorem ModulusReady.of_words {s t : State} {B : Addr} {Z w N : Nat} {mi : BitVe
   · rw [hval aRm1 (by decide)]; exact h.rm1
   · refine ⟨?_, ?_⟩
     · rw [hval aE (by decide)]; exact h.exponent.e
-    · rw [hm _ (by have := aE_fits hd; omega)]
+    · rw [hm _ (by have := aE_fits hd; omega_arith)]
       exact h.exponent.l
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

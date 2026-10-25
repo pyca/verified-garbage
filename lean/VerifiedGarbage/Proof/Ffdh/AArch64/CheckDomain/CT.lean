@@ -67,7 +67,7 @@ theorem qblk_ct : RelCT isa (Two GoodW1) (seqs qblk) fun _ _ => True := by
   · obtain ⟨⟨mi, hg, hZ⟩, hw, hw'⟩ := h
     have hT0 := hdr_lt_slot L.w aTmp (show 31 < 32 by decide)
     exact WP.mono (ltP_ok hg hZ hw hw' (show aXm < 8 by decide) (by decide)) fun t ⟨_, ho, k⟩ =>
-      GoodW1.of_outside ⟨⟨mi, hg, hZ⟩, hw, hw'⟩ (by omega) ho k.wr (k.gpr .x0 (by decide))
+      GoodW1.of_outside ⟨⟨mi, hg, hZ⟩, hw, hw'⟩ (by omega_arith) ho k.wr (k.gpr .x0 (by decide))
   rw [seqs_one]
   exact two_taint [.x0] pins_goodW1 (by taint_decide)
 
@@ -117,7 +117,7 @@ theorem q9_m1 (p : CdP) (t : State) (h : Q9 p t) : M1 sDom sK p.mp t := by
   have ew := hb.ew
   have := hb.k1
   exact ⟨p.D.dom.take p.D.k, hO, hs.get (by simp), hs.get (by simp), hb.dom.take p.D.k, hb.plen,
-    show 1 ≤ p.D.k by omega, show p.D.k ≤ 8 * p.D.w by omega, (valid_facts hm hb.k1).1⟩
+    show 1 ≤ p.D.k by omega_arith, show p.D.k ≤ 8 * p.D.w by omega_arith, (valid_facts hm hb.k1).1⟩
 
 /-- q's workspace's public data. -/
 abbrev CdP.mq (p : CdP) : MPub :=
@@ -128,8 +128,8 @@ theorem q5_m1 (p : CdP) (t : State) (h : Q5 p t) : M1 sEp sEl p.mq t := by
   have hb := hP.1
   obtain ⟨hl, h1, hk, hQ, hsrc⟩ := qe_facts hb hq
   have ew := hb.ew
-  exact ⟨p.qe, hP.outer, hEl, hEp, hsrc, hl, show 1 ≤ p.D.k - lead p.D.qb by omega,
-    show p.D.k - lead p.D.qb ≤ 8 * p.D.w by omega, by rw [hQ]; exact hr.1⟩
+  exact ⟨p.qe, hP.outer, hEl, hEp, hsrc, hl, show 1 ≤ p.D.k - lead p.D.qb by omega_arith,
+    show p.D.k - lead p.D.qb ≤ 8 * p.D.w by omega_arith, by rw [hQ]; exact hr.1⟩
 
 /-- The reduction's public data. -/
 abbrev CdP.xq (p : CdP) : XPub := ⟨p.D.B, p.D.Z, inner p.D.w, p.D.w, p.wq⟩
@@ -140,8 +140,8 @@ theorem q6_rpre (p : CdP) (t : State) (h : Q6 p t) : RPre aX p.xq t := by
   have hw28 := hb.w28
   have ew := hb.ew
   have := hb.qlen hq
-  exact ⟨mq, p.Q, hc, hv, show 2 ≤ p.wq by unfold CdP.wq wsWords; omega,
-    show p.wq ≤ p.D.w by unfold CdP.wq wsWords; omega, show p.D.w < 2 ^ 30 by omega, hr.2.1, by decide⟩
+  exact ⟨mq, p.Q, hc, hv, show 2 ≤ p.wq by unfold CdP.wq wsWords; omega_arith,
+    show p.wq ≤ p.D.w by unfold CdP.wq wsWords; omega_arith, show p.D.w < 2 ^ 30 by omega_arith, hr.2.1, by decide⟩
 
 /-- q's workspace, as the comparison sees it. -/
 abbrev CdP.wsq (p : CdP) : Ws := ⟨off p.D.B (inner p.D.w), slot p.wq 8, p.wq⟩

@@ -104,8 +104,8 @@ theorem wide_implies_enc :
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; try simp only [Nat.mul_comm] at *
+      | omega_arith
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; try simp only [Nat.mul_comm] at *
          first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Sm4.cbcEncChainedScratchContract, Proof.Sm4.cbcChainedScratchSig, Spec.Sm4.cbcChainedSig, Proof.Sm4.cbcEncChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, encPost, ciph, ivAt, dataAt]
@@ -125,8 +125,8 @@ theorem wide_implies_dec :
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; try simp only [Nat.mul_comm] at *
+      | omega_arith
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; try simp only [Nat.mul_comm] at *
          first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Sm4.cbcDecChainedScratchContract, Proof.Sm4.cbcChainedScratchSig, Spec.Sm4.cbcChainedSig, Proof.Sm4.cbcDecChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, decPost, ciph, invCiph, ivAt, dataAt]

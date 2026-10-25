@@ -34,7 +34,7 @@ def params : List Params := [mlDsa44, mlDsa65, mlDsa87]
 abbrev mScrLen (p : Params) : Nat := messageScratchWords p * 8
 
 theorem mScr_eq (p : Params) : mScrLen p = oE p + 1024 := by
-  simp only [mScrLen, messageScratchWords, oE]; omega
+  simp only [mScrLen, messageScratchWords, oE]; omega_arith
 
 theorem oE_lt {p : Params} (hp : p ∈ params) : oE p + 1024 < 2 ^ 31 := by
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -118,7 +118,7 @@ theorem slay_X (p : Params) (s : State) : Within (slay p s).XS ⟨s.gpr .x7, mSc
 
 theorem toNat_X {scr : Addr} {e n : Nat} (h : scr.toNat + n ≤ 2 ^ 64) (he : e + 1024 ≤ n) :
     (scr + BitVec.ofNat 64 e).toNat + 1024 ≤ 2 ^ 64 := by
-  rw [toNat_add_ofNat (by omega)]; omega
+  rw [toNat_add_ofNat (by omega_arith)]; omega_arith
 
 theorem slay_ok {p : Params} (hp : p ∈ params) {s : State} (h : SPre p s) (h8 : (s.gpr .x4).toNat < 256) :
     (slay p s).Ok := by
@@ -132,7 +132,7 @@ theorem slay_ok {p : Params} (hp : p ∈ params) {s : State} (h : SPre p s) (h8 
   intro R hR
   simp only [slay, h.wr, List.mem_cons, List.not_mem_nil, or_false] at hR
   have := h.nSig; have := h.nScr
-  rcases hR with rfl | rfl <;> simp only <;> omega
+  rcases hR with rfl | rfl <;> simp only <;> omega_arith
 
 /-! ## Verification -/
 
@@ -194,6 +194,6 @@ theorem vlay_ok {p : Params} (hp : p ∈ params) {s : State} (h : VPre p s) (h8 
   intro R hR
   simp only [vlay, h.wr, List.mem_cons, List.not_mem_nil, or_false] at hR
   have := h.nScr
-  subst hR; simp only; omega
+  subst hR; simp only; omega_arith
 
 end VG.Proof.MlDsa.AArch64.Message

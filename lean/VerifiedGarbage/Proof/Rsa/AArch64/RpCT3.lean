@@ -75,7 +75,7 @@ theorem MW.step {q : R2Pub} {s t : State} (h : MW q s) {js : List Nat}
     (hf : Frm q.L.B (rg q.L.w js []) s.mem t.mem) (hN : aN ∉ js)
     {regs : List Reg} (k : Keep regs s t) (hr : .x0 ∉ regs) : MW q t := by
   obtain ⟨hw, hmv, hn, hi, h1⟩ := h
-  have hZ16 : slot q.L.w 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+  have hZ16 : slot q.L.w 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
   refine ⟨hw.congrG hf (by simp) k hr, by rw [hf.rg_word (by decide) (by simp)]; exact hmv, ?_, ?_, h1⟩
   · rw [hf.rg_wv hZ16 (by simp) (by decide) hN (by omega_using [])]; exact hn
   · rw [hf.rg_word0 hZ16 (by simp) (by decide) hN]; exact hi
@@ -102,7 +102,7 @@ theorem mr_bind (p : RpP) (s₁ s₂ : State) (h₁ : GR1 p s₁) (h₂ : GR1 p 
 /-- `R² mod n`. -/
 theorem montR2_ct (M : Mont) : RelCT isa (Two GR1) (seqs (VG.Impl.Rsa.AArch64.r2Steps M.mm)) (Two MW) :=
   (two_post (two_map id (fun _ _ h => h.1) (r2_ct M)) fun q s ⟨⟨hg, hw1, hw30, hn, hinv, hodd, hlo⟩, hw, hmv⟩ => by
-    have hZ16 : slot q.L.w 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+    have hZ16 : slot q.L.w 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
     have hN1 : 1 < q.N := by
       have : 2 ^ 64 ≤ 2 ^ (64 * (q.L.w - 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [hw1])
       omega_using [hlo, this]
@@ -140,7 +140,7 @@ theorem montSet_ct : RelCT isa (Two MB) (setWord aOne) (Two MW1) := by
   · have hw := h.1.1
     have := hw.h256
     have hl : InRegions (s.rd ++ s.wr) (off q.L.B (8 * sArr aOne)) 8 :=
-      hw.scr.ld (by have := hw.hZ; have := hdr_lt_slot q.L.w 16 (show sArr aOne < 32 by decide); omega)
+      hw.scr.ld (by have := hw.hZ; have := hdr_lt_slot q.L.w 16 (show sArr aOne < 32 by decide); omega_arith)
     refine WP.mono (WP.keep [.x7, .x8] (Q := fun t => t.gpr .x8 = off q.L.B (slot q.L.w aOne)) (by
       brun [hw.x0, hdr_enc (show sArr aOne < 32 by decide), hl, hw.harr aOne (by decide)])
       (by decide) (by decide) (by decide +kernel)) fun t ⟨h8, k⟩ r hr => ?_
@@ -228,7 +228,7 @@ theorem mont_ct (M : Mont) : RelCT isa (Two GR1) (seqs (mont M.mm)) (Two GR2) :=
     have hk1 := L.k1
     have hel1 := L.el1
     have hel2 := L.el2
-    have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := S₁.ws.scr.nowrap; have := S₁.ws.hZ; omega
+    have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := S₁.ws.scr.nowrap; have := S₁.ws.hZ; omega_arith
     refine WP.mono (mont_ok M S₁.ws hi₁ hn₁ hodd hlo)
       fun s₂ ⟨_, hr2lt, hr2, hone, ho, hng, hf₂, k₂⟩ => ⟨I, m₀, rfl, ?_⟩
     have S₂ := S₁.step hf₂ (by decide) (by decide) k₂ (by decide)
@@ -242,7 +242,7 @@ theorem mont_ct (M : Mont) : RelCT isa (Two GR1) (seqs (mont M.mm)) (Two GR2) :=
       omega_using [hmlt, this]
     have ht1 : 1 ≤ (splitTwos (I.D * I.E - 1)).1 := by
       rcases Nat.eq_zero_or_pos (splitTwos (I.D * I.E - 1)).1 with h0 | h0
-      · have := hspl.1; rw [h0, Nat.pow_zero, Nat.one_mul] at this; have := hspl.2; omega
+      · have := hspl.1; rw [h0, Nat.pow_zero, Nat.one_mul] at this; have := hspl.2; omega_arith
       · exact h0
     have ht2 := VG.Proof.Rsa.splitTwos_lt hm0 hmlt
     refine ⟨S₂, L, O, hv, ⟨S₂.ws, rfl, ?_, ?_, hr2lt, hr2, hone, ho, hng, S₂.args.el, ?_, ?_, hodd, hlo, hel1,

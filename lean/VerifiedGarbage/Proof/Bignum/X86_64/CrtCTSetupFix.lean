@@ -53,12 +53,12 @@ theorem pf1_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {c : B
     (hc : SubCtx s B Z o w wx minv) (hM : word s.mem B (8 * Public.sMask) = mask c) :
     WP isa (.block fixMask) s fun t => SubCtx t B Z o w wx minv ∧ word t.mem (off B o) (8 * sMaskX) = mask c ∧
       Frm (off B o) [(8 * sMaskX, 8)] s.mem t.mem ∧ Keep [.rax] s t := by
-  have h8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have h8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
   refine WP.mono (fixMask_ok hc hM) fun t ⟨hm, k⟩ => ?_
   have o₁ := writeW_outside s.mem (off B o) (d := 8 * sMaskX) (mask c) (by decide)
   rw [← hm] at o₁
   have f₁ : Frm (off B o) [(8 * sMaskX, 8)] s.mem t.mem := Frm.of_outside o₁ (by simp)
-  exact ⟨hc.of_frm f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; unfold sMaskX sFn; omega) k.2.2
+  exact ⟨hc.of_frm f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; unfold sMaskX sFn; omega_arith) k.2.2
     (k.gpr (by decide)), by rw [hm]; exact word_writeW_self _ _ _ _, f₁, k⟩
 
 /-- `maskArr_ok`, with the registers it leaves. -/
@@ -69,22 +69,22 @@ theorem maskArr_regs {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg :
       t.gpr .rbx = off B (slot w j) ∧ t.gpr .r12 = BitVec.ofNat 64 w ∧ Keep mmRegs s t := by
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
   have sj := (slot_le (w := w) hj).trans hZ
   unfold maskArr
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.r15, .r12, .rbx] (Q := fun t => t.gpr .r15 = mask c ∧
       t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .rbx = off B (slot w j) ∧ t.mem = s.mem)
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl sMaskX (by decide),
-      hl (sArr j) (by unfold sArr; omega), hl sW (by decide), hm, hg.hdr.harr j hj,
+      hl (sArr j) (by unfold sArr; omega_arith), hl sW (by decide), hm, hg.hdr.harr j hj,
       hg.hdr.hw]) rfl) fun s₁ ⟨⟨h15, h12, hbx, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hg.scr.congr k₁.2.2
   have h0 : ∀ t, t.gpr .r14 = BitVec.ofNat 64 0 → t.mem = s₁.mem → Keep [.r14] s₁ t → t.cf = s₁.cf →
       MaskInv s₁ B Z (slot w j) c 0 t := fun t h14 hm k _ =>
     ⟨hs₁.congr k.2.2, k.mono (by decide), h14, by rw [hm]; exact Outside.refl _ _ _ _,
       fun i hi => absurd hi (Nat.not_lt_zero _)⟩
-  refine WP.mono (wordLoop_ok (start := 0) (N := w) (by omega) hw' (MaskInv s₁ B Z (slot w j) c) h0
-    (fun i _ hi t hI => maskStep_ok hbx h15 h12 (by omega) (by omega) hi hI)) fun t hI => ?_
+  refine WP.mono (wordLoop_ok (start := 0) (N := w) (by omega_arith) hw' (MaskInv s₁ B Z (slot w j) c) h0
+    (fun i _ hi t hI => maskStep_ok hbx h15 h12 (by omega_arith) (by omega_arith) hi hI)) fun t hI => ?_
   have ho := hI.out
   rw [hm₁] at ho
   exact ⟨ho, (hI.keep.gpr (by decide)).trans hbx, (hI.keep.gpr (by decide)).trans h12,
@@ -100,8 +100,8 @@ theorem pf2_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {c : B
   have h1 := slot_le (w := wx) (show Public.aN < 8 by decide)
   refine WP.mono (maskArr_regs hc.good (Nat.le_refl _) hw hw' (by decide) hm) fun t ⟨ho, hbx, h12, k⟩ => ?_
   have f : Frm (off B o) [(slot wx Public.aN, 8 * (wx + 2))] s.mem t.mem :=
-    Frm.of_outside (ho.mono (o' := slot wx Public.aN) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega)) (by simp)
-  exact ⟨hc.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) k.2.2 (k.gpr (by decide)),
+    Frm.of_outside (ho.mono (o' := slot wx Public.aN) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega_arith)) (by simp)
+  exact ⟨hc.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_arith) k.2.2 (k.gpr (by decide)),
     hbx, h12, f, k⟩
 
 /-- A prime's workspace context after a store of its `-X⁻¹`. -/
@@ -117,13 +117,13 @@ theorem SubCtx.setMinv {s t : State} {B : Addr} {Z o w wx : Nat} {minv v : BitVe
     rw [hm]; exact hdrStore_hdr _ _ _ (by decide) hk (Ne.symm hne)
   have hb : ∀ k < 32, word t.mem B (8 * k) = word s.mem B (8 * k) := fun k hk => by
     rw [hm, off_off]
-    exact (writeW_outside s.mem B (d := o + 8 * sMinv) v (by unfold sMinv; omega)).word
-      (Or.inl (by unfold sMinv; omega)) (by omega)
+    exact (writeW_outside s.mem B (d := o + 8 * sMinv) v (by unfold sMinv; omega_arith)).word
+      (Or.inl (by unfold sMinv; omega_arith)) (by omega_arith)
   exact ⟨h.scr.congr hwr, hdi.trans h.rdi, ⟨(hh _ (by decide) (by decide)).trans h.hdr.hw,
     by rw [hm]; exact word_writeW_self _ _ _ _,
-    fun j hj => (hh _ (by unfold sArr; omega) (by unfold sArr sMinv; omega)).trans (h.hdr.harr j hj)⟩,
+    fun j hj => (hh _ (by unfold sArr; omega_arith) (by unfold sArr sMinv; omega_arith)).trans (h.hdr.harr j hj)⟩,
     (hh _ (by decide) (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
-    fun j hj => (hb _ (by unfold sArr; omega)).trans (h.narr j hj), hlo, hi⟩
+    fun j hj => (hb _ (by unfold sArr; omega_arith)).trans (h.narr j hj), hlo, hi⟩
 
 theorem pf3_ok {s : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64}
     (hc : SubCtx s B Z o w wx mi) (hbx : s.gpr .rbx = off (off B o) (slot wx Public.aN))
@@ -136,7 +136,7 @@ theorem pf3_ok {s : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64}
   have hn := hg.scr.nowrap
   have h0 := hdr_lt_slot wx Public.aN (show 31 < 32 by decide)
   have h1 := slot_le (w := wx) (show Public.aN < 8 by decide)
-  have hd : slot wx Public.aN + 8 ≤ slot wx 8 := by omega
+  have hd : slot wx Public.aN + 8 ≤ slot wx 8 := by omega_arith
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.rax, .rbx] (c := .block fixLow) (Q := fun t =>
       ∃ v : BitVec 64, t.mem = s.mem.writeW (off (off B o) (slot wx Public.aN)) v) (by
@@ -144,11 +144,11 @@ theorem pf3_ok {s : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64}
     xrun [State.ea, at0, hbx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, hg.scr.ld hd,
       hg.scr.st hd]
     exact ⟨_, rfl⟩) rfl) fun s₁ ⟨⟨v, hm₁⟩, k₁⟩ => ?_
-  have o₁ := writeW_outside s.mem (off B o) (d := slot wx Public.aN) v (by omega)
+  have o₁ := writeW_outside s.mem (off B o) (d := slot wx Public.aN) v (by omega_arith)
   rw [← hm₁] at o₁
   have f₁ : Frm (off B o) [(slot wx Public.aN, 8 * (wx + 2))] s.mem s₁.mem :=
-    Frm.of_outside (o₁.mono (o' := slot wx Public.aN) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega)) (by simp)
-  have hc₁ := hc.of_frm f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) k₁.2.2
+    Frm.of_outside (o₁.mono (o' := slot wx Public.aN) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega_arith)) (by simp)
+  have hc₁ := hc.of_frm f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_arith) k₁.2.2
     (k₁.gpr (by decide))
   refine WP.mono (minv_keep s₁) fun s₂ ⟨k₂, hm₂⟩ => ?_
   have hc₂ := hc₁.mem hm₂ k₂ (by decide)
@@ -156,7 +156,7 @@ theorem pf3_ok {s : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64}
   refine WP.mono (WP.keep [.rdx, .rcx] (c := .block fixTail) (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 0 ∧
       t.mem = s₂.mem.writeW (off (off B o) (8 * sMinv)) (s₂.gpr .r15)) (by
     unfold fixTail
-    xrun [State.ea, hdr, hc₂.rdi, hdrOff, hs₂.st (d := 8 * sMinv) (by unfold sMinv; omega)]) rfl)
+    xrun [State.ea, hdr, hc₂.rdi, hdrOff, hs₂.st (d := 8 * sMinv) (by unfold sMinv; omega_arith)]) rfl)
     fun t ⟨⟨hcx, hm₃⟩, k₃⟩ => ?_
   have o₃ := writeW_outside s₂.mem (off B o) (d := 8 * sMinv) (s₂.gpr .r15) (by decide)
   rw [← hm₃] at o₃
@@ -176,9 +176,9 @@ theorem pf4_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
   have h0 := hdr_lt_slot wx Public.aOne (show 31 < 32 by decide)
   have h1 := slot_le (w := wx) (show Public.aOne < 8 by decide)
   refine WP.mono (setWord_ok hc.good.scr hc.rdi hc.hdr (Nat.le_refl _) h12 hw hw' (o := Public.aOne) (by decide)
-    (ri := .rcx) (by decide) (i := 0) (by omega) hcx) fun t ⟨_, ho, k⟩ => ?_
+    (ri := .rcx) (by decide) (i := 0) (by omega_arith) hcx) fun t ⟨_, ho, k⟩ => ?_
   have f : Frm (off B o) [(slot wx Public.aOne, 8 * (wx + 2))] s.mem t.mem := Frm.of_outside ho (by simp)
-  exact ⟨hc.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) k.2.2 (k.gpr (by decide)),
+  exact ⟨hc.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_arith) k.2.2 (k.gpr (by decide)),
     f, k⟩
 
 /-- What `primeFix` changes, whatever the mask and the prime. -/
@@ -249,7 +249,7 @@ theorem fixMask_ct : RelCT isa (Two PF) (.block fixMask) fun _ _ => True := by
   have hn := hc.scr.nowrap
   have hi := hc.hi
   have hl₁ : InRegions (s.rd ++ s.wr) (off (off p.B p.o) (8 * sLink)) 8 :=
-    hc.good.scr.ld (by have := hdr_lt_slot p.wx 8 (show sLink < 32 by decide); omega)
+    hc.good.scr.ld (by have := hdr_lt_slot p.wx 8 (show sLink < 32 by decide); omega_arith)
   exact WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = p.B ∧ t.mem = s.mem)
     (by xrun [State.ea, hdr, hc.rdi, hdrOff, hl₁, hc.link]) rfl)
     fun t ⟨⟨hax, hm⟩, k⟩ => ⟨⟨minv, c, hc.mem hm k (by decide), hm ▸ hM, h1, h2⟩, hax⟩
@@ -264,7 +264,7 @@ theorem primeFix_ct : RelCT isa (Two PF) (seqs primeFix) fun _ _ => True := by
   refine RelCT.seqs_append (by simp [maskArr]) (by simp) (RelCT.seq (two_post (Ψ := PF2)
     (two_map (fun p : XPub => (⟨off p.B p.o, slot p.wx 8, p.wx⟩ : Ws))
       (fun p s ⟨minv, _, hc, _⟩ => ⟨minv, hc.good, Nat.le_refl _⟩) (maskArr_ct (by decide) (by taint_decide)))
-    fun p s ⟨minv, c, hc, hm, h1, h2⟩ => WP.mono (pf2_ok hc (by omega) h2 hm) fun t ⟨hc', hbx, h12, _⟩ =>
+    fun p s ⟨minv, c, hc, hm, h1, h2⟩ => WP.mono (pf2_ok hc (by omega_arith) h2 hm) fun t ⟨hc', hbx, h12, _⟩ =>
       ⟨minv, hc', hbx, h12, h1, h2⟩) ?_)
   simp only [seqs]
   refine RelCT.seq (two_piece (Ψ := PF3) [.rdi, .rbx]
@@ -292,7 +292,7 @@ theorem primeFix_ct : RelCT isa (Two PF) (seqs primeFix) fun _ _ => True := by
   have hn := hc.scr.nowrap
   have hi := hc.hi
   have hl₁ : InRegions (s.rd ++ s.wr) (off (off p.B p.o) (8 * sArr Public.aOne)) 8 :=
-    hc.good.scr.ld (by have := hdr_lt_slot p.wx 8 (show sArr Public.aOne < 32 by decide); omega)
+    hc.good.scr.ld (by have := hdr_lt_slot p.wx 8 (show sArr Public.aOne < 32 by decide); omega_arith)
   exact WP.mono (WP.keep [.r8] (Q := fun t => t.gpr .r8 = off (off p.B p.o) (slot p.wx Public.aOne))
     (by xrun [State.ea, hdr, hc.rdi, hdrOff, hl₁, hc.hdr.harr Public.aOne (by decide)]) rfl)
     fun t ⟨h8, k⟩ => ⟨h8, (k.gpr (by decide)).trans h12, (k.gpr (by decide)).trans hcx⟩

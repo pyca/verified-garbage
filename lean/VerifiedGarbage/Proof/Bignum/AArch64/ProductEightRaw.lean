@@ -52,7 +52,7 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
   have hn := hs.nowrap
   have hP : productBase k + 8 * (16 * k + 2) ≤ Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_arith
   have sep : ∀ j < 8, j ≠ Public.aAcc → j ≠ Public.aTmp →
       slot (8 * k) j + 64 * k ≤ productBase k ∨
         productBase k + 8 * (16 * k + 2) ≤ slot (8 * k) j := by
@@ -60,7 +60,7 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     have := slot_sep (w := 8 * k) hj1
     have := slot_sep (w := 8 * k) hj2
     unfold productBase slot Public.aAcc Public.aTmp at *
-    omega
+    omega_arith
   unfold VG.Impl.Bignum.AArch64.ProductEight.raw
   refine WP.seq (WP.mono (Square.squareSetup_ok hs h0 hH hZ ha)
     fun u ⟨⟨hu8, _, _, hu12, _, hu7, hum⟩, ku⟩ => ?_)
@@ -71,7 +71,7 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     intro x hx
     exact (hvo x hx).trans (congrArg (fun m : Mem => m x) hum)
   have hHv : Hdr v.mem B (8 * k) minv :=
-    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega] using hvs)).hdr hH
+    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega_arith] using hvs)).hdr hH
   refine WP.seq (WP.block_append ?_)
   refine WP.mono (saves_ok v) fun v0 ⟨⟨hv0m, lanes⟩, ks⟩ => ?_
   refine WP.mono (start_ok (hs.congr (ks.wr.trans ksv.wr))
@@ -100,7 +100,7 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     intro x hx
     exact (congrArg (fun m : Mem => m x) hv3m).trans ((hvs1.trans hr.frame) x hx)
   have hHv3 : Hdr v3.mem B (8 * k) minv :=
-    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega] using hvs3)).hdr hH
+    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega_arith] using hvs3)).hdr hH
   refine WP.mono (Square.squareSetup_ok (hs.congr kv3.wr)
     ((kv3.gpr .x0 (by decide)).trans h0) hHv3 hZ ha)
     fun t ⟨⟨ht8, _, ht10, ht12, ht15, ht7, htm⟩, kt⟩ => ?_
@@ -111,7 +111,7 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
       intro j hj hj1 hj2
       have hjZ := slot_le (w := 8 * k) hj
       rw [hv1m, hv0m]
-      exact hvs.wv (by have := sep j hj hj1 hj2; omega) (by omega)
+      exact hvs.wv (by have := sep j hj hj1 hj2; omega_arith) (by omega_arith)
     rw [htm, hv3m, hr.value, hread a ha ha1 ha2, hread b hb hb1 hb2]
   · intro x hx
     exact (congrArg (fun m : Mem => m x) htm).trans (hvs3 x hx)
@@ -143,9 +143,9 @@ theorem low_value {m : Mem} {B : Addr} {e n pad x : Nat}
   have hp := wv_add m B e n pad
   have hu : wv m B (e + 8 * n) pad = 0 := by
     by_contra hz
-    have hle := Nat.mul_le_mul_left (2 ^ (64 * n)) (show 1 ≤ wv m B (e + 8 * n) pad by omega)
+    have hle := Nat.mul_le_mul_left (2 ^ (64 * n)) (show 1 ≤ wv m B (e + 8 * n) pad by omega_arith)
     simp only [Nat.mul_one] at hle
-    omega
+    omega_arith
   rw [hu, Nat.mul_zero, Nat.add_zero] at hp
   exact hp.symm.trans h
 
@@ -163,16 +163,16 @@ theorem raw_width_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       Outside B (slot w Public.aAcc + 16) (8 * (2 * w + 2)) s.mem t.mem ∧
       t.gpr .x8 = off B (slot w Public.aAcc + 16) ∧ t.gpr .x10 = off B (slot w Public.aN) ∧
       t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x15 = minv ∧ t.gpr .x7 = 0 ∧ Keep mmRegs s t := by
-  have he : w = 8 * (w / 8) := by omega
+  have he : w = 8 * (w / 8) := by omega_arith
   have hH' : Hdr s.mem B (8 * (w / 8)) minv := he ▸ hH
   have hZ' : slot (8 * (w / 8)) 8 ≤ Z := he ▸ hZ
-  refine WP.mono (raw_ok hs h0 hH' hZ' (by omega) (by omega) ha hb ha1 ha2 hb1 hb2)
+  refine WP.mono (raw_ok hs h0 hH' hZ' (by omega_arith) (by omega_arith) ha hb ha1 ha2 hb1 hb2)
     fun t ⟨hv, ho, h8, h10, h12, h15, h7, kt⟩ => ?_
-  have hlen : 16 * (w / 8) + 2 = 2 * w + 2 := by omega
+  have hlen : 16 * (w / 8) + 2 = 2 * w + 2 := by omega_arith
   simp only [productBase, ← he, hlen] at hv ho h8 h10 h12
   refine ⟨low_value hv ?_, ho, h8, h10, h12, h15, h7, kt⟩
   have hp := Nat.mul_lt_mul'' (wv_lt s.mem B (slot w a) w) (wv_lt s.mem B (slot w b) w)
-  rw [← Nat.pow_add, show 64 * w + 64 * w = 64 * (2 * w) by omega] at hp
+  rw [← Nat.pow_add, show 64 * w + 64 * w = 64 * (2 * w) by omega_arith] at hp
   exact hp
 
 end VG.Proof.Bignum.AArch64.ProductEight

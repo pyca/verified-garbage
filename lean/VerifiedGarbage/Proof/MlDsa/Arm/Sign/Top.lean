@@ -113,7 +113,7 @@ theorem sgLay (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 3
     by rw [h.sp]; exact hsp⟩
   · intro b hb
     simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
-    rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega
+    rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
   · simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb hb'
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> rcases hb' with rfl | rfl | rfl | rfl | rfl <;>
       simp only [wRegs, List.mem_cons, List.not_mem_nil, or_false, reduceCtorEq, or_self, ne_eq,
@@ -154,13 +154,13 @@ theorem Top.step {D : Nat} {σ s s' : State} {rbs wbs : List (Reg × Nat)} (h : 
     (L : Lay D rbs wbs s) {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws)
     (hc : topChk (rbs ++ wbs) ws = true) : Top σ s' := by
   have hs : ∀ k < 9, s'.mem.readW (pa s' (sc (oSV + 4 * k))) 32 = s.mem.readW (pa s (sc (oSV + 4 * k))) 32 :=
-    fun k hk => L.keepW hP (keepB_sub hc (by simp [oSV]) (by simp [oSV]; omega))
+    fun k hk => L.keepW hP (keepB_sub hc (by simp [oSV]) (by simp [oSV]; omega_arith))
   refine ⟨hP.rd.trans h.rd, hP.wr.trans h.wr, hP.sp.trans h.sp,
     fun r hr => (hP.bs _ hr).trans (h.regs r hr), fun i hi => ?_, ?_⟩
-  · have e := hs i (by omega)
+  · have e := hs i (by omega_arith)
     rw [pa_add, pa_add] at e
     rw [e]; exact h.saved i hi
-  · have e := hs 8 (by omega)
+  · have e := hs 8 (by omega_arith)
     rw [e]; exact h.savlr
 
 /-! ## The prologue -/
@@ -170,7 +170,7 @@ theorem pro_eq : pro = ([.ldrSp .r12 0] : List Instr) ++ Impl.MlKem.Arm.saveRegs
       .mov .r6 (.reg .r2), .mov .r8 (.reg .r3), .mov .r11 (.imm 1)] : List Instr) := rfl
 
 theorem scrLen_ge (p : Params) : 5120 ≤ scrLen p := by
-  unfold scrLen scratchWords; omega
+  unfold scrLen scratchWords; omega_arith
 
 theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
     WP isa (.block pro) σ fun s => Top σ s ∧ Frame [⟨State.addr (stackArg σ 0), scrLen p⟩] σ.mem s.mem ∧
@@ -190,15 +190,15 @@ theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
   refine WP.mono hl fun s₁ ⟨h12, hr, hm, hrd₁, hwr₁, hsp₁⟩ => ?_
   rw [WP.block_append_iff]
   have wS : ∀ o n, o + n ≤ scrLen p → InRegions s₁.wr (State.addr (stackArg σ 0) + BitVec.ofNat 64 o) n :=
-    fun o n h => by rw [hwr₁]; exact inRegions_sub ⟨_, hS, Region.contains_self _ _⟩ h (by omega)
-  refine WP.mono (saveRegs_ok .r12 (off := 840) (by decide) (by rw [h12]; omega) fun i hi => by
-    rw [h12, BitVec.add_assoc, ← BitVec.ofNat_add]; exact wS _ _ (by omega)) fun s₂ h₂ => ?_
+    fun o n h => by rw [hwr₁]; exact inRegions_sub ⟨_, hS, Region.contains_self _ _⟩ h (by omega_arith)
+  refine WP.mono (saveRegs_ok .r12 (off := 840) (by decide) (by rw [h12]; omega_arith) fun i hi => by
+    rw [h12, BitVec.add_assoc, ← BitVec.ofNat_add]; exact wS _ _ (by omega_arith)) fun s₂ h₂ => ?_
   have g12 : s₂.gpr .r12 = stackArg σ 0 := by rw [h₂.gpr, h12]
   have e872 : State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (oSV + 32)) =
       State.addr (stackArg σ 0) + BitVec.ofNat 64 872 := by
-    rw [g12]; exact addr_add (by simp only [oSV]; omega)
+    rw [g12]; exact addr_add (by simp only [oSV]; omega_arith)
   have i872 : InRegions s₂.wr (State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (oSV + 32))) 4 := by
-    rw [e872, h₂.wr]; exact wS _ _ (by omega)
+    rw [e872, h₂.wr]; exact wS _ _ (by omega_arith)
   have o1 : oSV + 32 < 4096 := by decide
   run_block [i872, o1]
   have g : ∀ r, r ≠ .r12 → s₂.gpr r = σ.gpr r := fun r hr' => by rw [h₂.gpr, hr r hr']
@@ -209,8 +209,8 @@ theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
   · simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [ptrOf, g12, g]
   · simp only [pa, ite_true, ite_false, reduceCtorEq, g12]
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Mem.readW_writeW_sep (Offset.sep _ (by simp only [oSV]; omega)
-      (by omega) (by omega)) (by decide)]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, Mem.readW_writeW_sep (Offset.sep _ (by simp only [oSV]; omega_arith)
+      (by omega_arith) (by omega_arith)) (by decide)]
     have := h₂.saved i hi
     rw [h12, BitVec.add_assoc, ← BitVec.ofNat_add] at this
     rw [show oSV = 840 from rfl, this, hr _ (hne i hi)]
@@ -219,9 +219,9 @@ theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
   · have f₁ := h₂.frame
     rw [h12, hm] at f₁
     refine (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_arith) (by omega_arith))
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_arith)
 
 /-! ## The return -/
 
@@ -238,17 +238,17 @@ theorem topEnd_ok {σ s : State} (h : Top σ s) (hin : InRegions (s.rd ++ s.wr) 
   rw [WP.block_append_iff]
   have e3 : State.addr (s₁.gpr .r3) + BitVec.ofNat 64 840 = pa s (sc oSV) := by rw [r3]; rfl
   refine WP.mono (restoreRegs_ok .r3 (by decide) (off := 840) (by decide)
-    (by rw [r3]; omega) (g := σ.gpr) (by rw [e3, m₁]; exact h.saved)
+    (by rw [r3]; omega_arith) (g := σ.gpr) (by rw [e3, m₁]; exact h.saved)
     fun i hi => by
       rw [e3, rd₁, wr₁]
-      exact inRegions_sub hin (by omega) (by decide))
+      exact inRegions_sub hin (by omega_arith) (by decide))
     fun s₂ h₂ => ?_
   have g3 : s₂.gpr .r3 = s.gpr .r7 := by rw [h₂.other .r3 (by decide), r3]
   have e872 : State.addr (s₂.gpr .r3 + BitVec.ofNat 32 (Impl.MlKem.Arm.oSave + 32)) = pa s (sc (oSV + 32)) := by
-    rw [g3]; exact addr_add (by simp only [Impl.MlKem.Arm.oSave]; omega)
+    rw [g3]; exact addr_add (by simp only [Impl.MlKem.Arm.oSave]; omega_arith)
   have i12 : InRegions (s₂.rd ++ s₂.wr) (State.addr (s₂.gpr .r3 + BitVec.ofNat 32 (Impl.MlKem.Arm.oSave + 32))) 4 := by
     rw [e872, h₂.rd, h₂.wr, rd₁, wr₁, pa_add]
-    exact inRegions_sub hin (by omega) (by decide)
+    exact inRegions_sub hin (by omega_arith) (by decide)
   have ho : Impl.MlKem.Arm.oSave + 32 < 4096 := by decide
   have hl : WP isa (.block [.ldr .lr .r3 (Impl.MlKem.Arm.oSave + 32)]) s₂ fun s' =>
       s'.gpr .lr = s₂.mem.readW (State.addr (s₂.gpr .r3 + BitVec.ofNat 32 (Impl.MlKem.Arm.oSave + 32))) 32 ∧
@@ -329,16 +329,16 @@ theorem seqR_ok {f : Nat → Prog isa} {I : Nat → State → Prop} :
   | 0, a, _, s, hs => WP.block_nil hs
   | n + 1, a, h, s, hs => by
     rw [seqR]
-    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun s₁ h₁ => ?_)
-    rw [show a + (n + 1) = a + 1 + n by omega]
-    exact seqR_ok n (a + 1) (fun k hk hk' => h k (by omega) (by omega)) s₁ h₁
+    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega_arith) s hs) fun s₁ h₁ => ?_)
+    rw [show a + (n + 1) = a + 1 + n by omega_arith]
+    exact seqR_ok n (a + 1) (fun k hk hk' => h k (by omega_arith) (by omega_arith)) s₁ h₁
 
 theorem seqR_tr {f : Nat → Prog isa} {R : Nat → State → State → Prop} :
     ∀ (n a : Nat), (∀ k, a ≤ k → k < a + n → RelCT isa (R k) (f k) (R (k + 1))) →
       RelCT isa (R a) (seqR f a n) (R (a + n))
   | 0, _, _ => nil_tr
   | n + 1, a, h => by
-    rw [seqR, show a + (n + 1) = a + 1 + n by omega]
-    exact RelCT.seq (h a (Nat.le_refl _) (by omega)) (seqR_tr n (a + 1) fun k hk hk' => h k (by omega) (by omega))
+    rw [seqR, show a + (n + 1) = a + 1 + n by omega_arith]
+    exact RelCT.seq (h a (Nat.le_refl _) (by omega_arith)) (seqR_tr n (a + 1) fun k hk hk' => h k (by omega_arith) (by omega_arith))
 
 end VG.Proof.MlDsa.Arm.Sign

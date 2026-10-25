@@ -115,7 +115,7 @@ theorem ctr32_next {m m' : Mem} {C : Addr} {k : Nat} (hk : lo32 (bytesAt m C 16)
     (hc : Spec.Gcm.blockAt m' C = Nat.repeat Spec.Gcm.inc32 k (Spec.Gcm.blockAt m C)) :
     bytesAt m' C 16 = next (bytesAt m C 16) k := by
   rw [Proof.Cmac.bytesAt_blockAt, hc]
-  exact counters_eq (Proof.Cmac.bytesAt_length _ _ _) (k := k + 1) (by omega) (by omega)
+  exact counters_eq (Proof.Cmac.bytesAt_length _ _ _) (k := k + 1) (by omega_arith) (by omega_arith)
 
 /-- The counter block `vg_aes_ctr32` leaves after `k` blocks, when the last
 32 bits wrap around to 0 at the last: `t + k − 2³²`, which a carry into the
@@ -125,20 +125,20 @@ theorem ctr32_wrap {m m' : Mem} {C : Addr} {k : Nat} (hk : lo32 (bytesAt m C 16)
     bytesAt m' C 16 = ofNat (toNat (bytesAt m C 16) + k - 2 ^ 32) 16 := by
   have ht := Proof.Cmac.bytesAt_length m C 16
   have hb := toNat_lt ht
-  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by unfold lo32 at hk; omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by unfold lo32 at hk; omega_arith⟩
   have hj := Proof.AesSiv.repeat_inc32 ht (k := j + 1)
-    (by change toNat (bytesAt m C 16) % 2 ^ 32 + (j + 1) ≤ 2 ^ 32; unfold lo32 at hk; omega) j (by omega)
+    (by change toNat (bytesAt m C 16) % 2 ^ 32 + (j + 1) ≤ 2 ^ 32; unfold lo32 at hk; omega_arith) j (by omega_arith)
   rw [Proof.Cmac.bytesAt_blockAt, hc, Nat.repeat, show Spec.Gcm.blockAt m C = Spec.Gcm.ofBytes (bytesAt m C 16)
     from rfl, hj, Proof.AesSiv.ofBytes_be128]
-  have hl : (toNat (bytesAt m C 16) + j) % 2 ^ 32 + 1 = 2 ^ 32 := by unfold lo32 at hk; omega
+  have hl : (toNat (bytesAt m C 16) + j) % 2 ^ 32 + 1 = 2 ^ 32 := by unfold lo32 at hk; omega_arith
   show _ = Spec.Siv.be128 _
   rw [← Proof.AesSiv.toBytes_be128]
   refine congrArg _ (BitVec.eq_of_toNat_eq ?_)
   rw [Proof.AesCcm.toNat_inc32, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   show _ = (toNat (bytesAt m C 16) + (j + 1) - 2 ^ 32) % 2 ^ 128
   have e : Spec.Siv.beNat (bytesAt m C 16) = toNat (bytesAt m C 16) := rfl
-  rw [e, Nat.mod_eq_of_lt (a := toNat (bytesAt m C 16) + j) (by unfold lo32 at hk; omega), hl, Nat.mod_self]
-  omega
+  rw [e, Nat.mod_eq_of_lt (a := toNat (bytesAt m C 16) + j) (by unfold lo32 at hk; omega_arith), hl, Nat.mod_self]
+  omega_arith
 
 /-- The block at `P` plus `d` as two 64-bit words: the reversed words
 `rv64 hi` at `P` and `rv64 lo` at `P + 8`, with `lo` the low word plus `d`
@@ -155,8 +155,8 @@ theorem add_words64 (m : Mem) (P : Addr) (hi lo : BitVec 64) (d : Nat)
     ofNat_toNat_append_add, bytesAt_rv64 m P, bytesAt_rv64 m (P + BitVec.ofNat 64 8), toNat_ofNat, toNat_ofNat,
     length_ofNat, length_ofNat, Nat.mod_eq_of_lt (BitVec.isLt _), Nat.mod_eq_of_lt (BitVec.isLt _)]
   congr 1
-  · exact ofNat_congr (by rw [hhi]; simp only [Nat.reducePow]; omega)
-  · exact ofNat_congr (by rw [hlo]; simp only [Nat.reducePow]; omega)
+  · exact ofNat_congr (by rw [hhi]; simp only [Nat.reducePow]; omega_arith)
+  · exact ofNat_congr (by rw [hlo]; simp only [Nat.reducePow]; omega_arith)
 
 theorem blocksAt_add (m : Mem) (p : Addr) (a b : Nat) :
     Spec.Cbc.blocksAt m p (a + b) = Spec.Cbc.blocksAt m p a ++ Spec.Cbc.blocksAt m (p + BitVec.ofNat 64 (16 * a)) b := by
@@ -168,16 +168,16 @@ theorem blocksAt_add (m : Mem) (p : Addr) (a b : Nat) :
 /-- The last 32 bits of the counter block after `k` increments. -/
 theorem lo32_next {t : List Byte} (ht : t.length = 16) (k : Nat) : lo32 (next t k) = (toNat t + k) % 2 ^ 32 := by
   rw [lo32, next_eq ht, toNat_ofNat]
-  omega
+  omega_arith
 
 theorem blocksAt_take (m : Mem) (p : Addr) {n k : Nat} (hk : k ≤ n) :
     (Spec.Cbc.blocksAt m p n).take k = Spec.Cbc.blocksAt m p k := by
-  obtain ⟨j, rfl⟩ : ∃ j, n = k + j := ⟨n - k, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, n = k + j := ⟨n - k, by omega_arith⟩
   rw [blocksAt_add, List.take_left' (Proof.AesCbc.length_blocksAt _ _ _)]
 
 theorem blocksAt_drop (m : Mem) (p : Addr) {n k : Nat} (hk : k ≤ n) :
     (Spec.Cbc.blocksAt m p n).drop k = Spec.Cbc.blocksAt m (p + BitVec.ofNat 64 (16 * k)) (n - k) := by
-  obtain ⟨j, rfl⟩ : ∃ j, n = k + j := ⟨n - k, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, n = k + j := ⟨n - k, by omega_arith⟩
   rw [blocksAt_add, List.drop_left' (Proof.AesCbc.length_blocksAt _ _ _), Nat.add_sub_cancel_left]
 
 /-- The blocks after a frame outside them. -/
@@ -193,7 +193,7 @@ theorem crypt_step (ciph : Spec.Cbc.Cipher) (t : List Byte) (ys : List (List Byt
     (hl : k + m ≤ ys.length) :
     crypt ciph t (ys.take k) ++ crypt ciph (next t k) ((ys.drop k).take m) ++ ys.drop (k + m) =
       crypt ciph t (ys.take (k + m)) ++ ys.drop (k + m) := by
-  rw [List.take_add, crypt_append, List.length_take, Nat.min_eq_left (by omega)]
+  rw [List.take_add, crypt_append, List.length_take, Nat.min_eq_left (by omega_arith)]
 
 theorem next_add (t : List Byte) (a : Nat) : ∀ b, next t (a + b) = next (next t a) b
   | 0 => rfl
@@ -207,14 +207,14 @@ theorem carry_next {t : List Byte} (ht : t.length = 16) {k m : Nat} (hw : lo32 (
   rw [toNat_ofNat, next_add, next_eq hn]
   apply ofNat_congr
   unfold lo32 at hw
-  have : 2 ^ 32 ≤ toNat (next t k) + m := by omega
-  rw [Nat.mod_eq_of_lt (a := toNat (next t k) + m - 2 ^ 32) (by omega), Nat.sub_add_cancel this]
+  have : 2 ^ 32 ≤ toNat (next t k) + m := by omega_arith
+  rw [Nat.mod_eq_of_lt (a := toNat (next t k) + m - 2 ^ 32) (by omega_arith), Nat.sub_add_cancel this]
 
 /-- The blocks split in three: the first `a`, the next `b`, and the rest. -/
 theorem blocksAt_three (m : Mem) (p : Addr) {n a b : Nat} (h : a + b ≤ n) :
     Spec.Cbc.blocksAt m p n = Spec.Cbc.blocksAt m p a ++ Spec.Cbc.blocksAt m (p + BitVec.ofNat 64 (16 * a)) b ++
       Spec.Cbc.blocksAt m (p + BitVec.ofNat 64 (16 * (a + b))) (n - (a + b)) := by
-  obtain ⟨c, rfl⟩ : ∃ c, n = a + b + c := ⟨n - (a + b), by omega⟩
+  obtain ⟨c, rfl⟩ : ∃ c, n = a + b + c := ⟨n - (a + b), by omega_arith⟩
   rw [blocksAt_add m p (a + b) c, blocksAt_add m p a b, Nat.add_sub_cancel_left]
 
 /-- A 32-bit word is zero when its bytes reversed are. -/
@@ -231,7 +231,7 @@ theorem rv32_eq_zero {a : BitVec 32} : rv32 a = 0 ↔ a = 0 := by
     apply BitVec.eq_of_toNat_eq
     rw [h] at d0 d1 d2 d3
     simp at d0 d1 d2 d3 ⊢
-    omega
+    omega_arith
   · rintro rfl
     decide
 
@@ -254,7 +254,7 @@ theorem lo32_of_leak {t t' : List Byte} (ht : t.length = 16) (ht' : t'.length = 
     conv => lhs; rw [← List.take_append_drop 12 u]
     rw [toNat_append, List.length_drop, hu]
     simp only [Nat.reduceSub, Nat.reducePow] at hb ⊢
-    omega
+    omega_arith
   rw [split t ht, split t' ht', toNat_eq_of_map h]
 
 /-- The last 32 bits of the counter block at `Q`, as read and byte-reversed. -/
@@ -264,13 +264,13 @@ theorem lo32_bytesAt (m : Mem) (Q : Addr) :
     bytesAt_rv32, toNat_ofNat, length_ofNat]
   have := (rv32 (m.readW (Q + BitVec.ofNat 64 12) 32)).isLt
   simp only [Nat.reducePow] at this ⊢
-  omega
+  omega_arith
 
 theorem sub32_toNat (c : BitVec 32) : (0x100000000 - c.setWidth 64 : BitVec 64).toNat = 2 ^ 32 - c.toNat := by
   have hc := c.isLt
-  have h1 : (c.setWidth 64).toNat = c.toNat := by simp [BitVec.toNat_setWidth]; omega
+  have h1 : (c.setWidth 64).toNat = c.toNat := by simp [BitVec.toNat_setWidth]; omega_arith
   have h2 : (0x100000000 : BitVec 64).toNat = 2 ^ 32 := rfl
   rw [BitVec.toNat_sub, h1, h2]
-  omega
+  omega_arith
 
 end VG.Proof.AesCtr

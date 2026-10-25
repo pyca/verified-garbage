@@ -24,14 +24,7 @@ private theorem halveHead_ok {s : State} {dst : BitVec 32} {n : Nat}
         Rest [.r0, .r2, .lr] s t := by
   have out : s.mem.readW (State.addr (s.sp + 4#32)) 32 = dst := frame.saved 4 (by simp)
   have width : s.mem.readW (State.addr (s.sp + 12#32)) 32 = BitVec.ofNat 32 n := frame.saved 12 (by simp)
-  refine withRest [.r0, .r2, .lr] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block [.ldrSp .r0 4, .ldrSp .lr 12, .mov .r2 (.imm 0)] : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r2, .lr] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, frame.read (d := 4) (by decide), frame.read (d := 12) (by decide), out, width]
 
 private theorem andOne (x : BitVec 32) : x &&& 1 = BitVec.ofNat 32 (x.toNat % 2) := by
@@ -48,14 +41,7 @@ private theorem halveTail_ok (s : State) :
     change ((s.gpr .r1 &&& 1) - 0#32 == 0#32) = _
     rw [BitVec.sub_zero, andOne]
     exact ofNat_beq_zero (by omega)
-  refine withRest [.r1] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block [.dp .and .r1 .r1 (.imm 1), .cmp .r1 (.imm 0)] : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   ffrun [zero]
 
 theorem halveQ_ok {s : State} {dst : BitVec 32} {bs : List Byte}

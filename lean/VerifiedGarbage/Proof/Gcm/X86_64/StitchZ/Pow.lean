@@ -114,8 +114,8 @@ theorem ofInt_add_ofNat (p : Addr) (a b : Nat) :
 /-- A lane of a 64-byte write. -/
 theorem readW_lane (m : Mem) (q : Addr) (v : BitVec 512) {l : Nat} (hl : l < 4) :
     (m.writeW q v).readW (q + BitVec.ofNat 64 (16 * l)) 128 = v.extractLsb' (128 * l) 128 := by
-  have e := readW_writeW_inside m q v (k := 16 * l) (n := 16) (by omega) (by decide)
-  rwa [show 8 * (16 * l) = 128 * l by omega] at e
+  have e := readW_writeW_inside m q v (k := 16 * l) (n := 16) (by omega_arith) (by decide)
+  rwa [show 8 * (16 * l) = 128 * l by omega_arith] at e
 
 /-- The first `n` loads of powers, times `zmm12`, stored at `scratch + d`,
 with `L` bytes at `scratch` writable. -/
@@ -131,42 +131,42 @@ theorem powRun_ok (d : Nat) {L : Nat} (hd : 256 ≤ d) (hdl : d + 256 ≤ L) (hL
           s'.zlane r l = s.zlane r l)
   | 0, _, s, _, _ => by
     rw [List.range_zero, List.flatMap_nil]
-    exact WP.block_nil ⟨rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (by omega), fun _ _ _ _ _ _ _ _ => rfl⟩
+    exact WP.block_nil ⟨rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (by omega_arith), fun _ _ _ _ _ _ _ _ => rfl⟩
   | n + 1, hn, s, hin, h1 => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (powRun_ok d hd hdl hL n (by omega) s hin h1) fun s₁ ⟨g₁, rd₁, wr₁, f₁, e₁, x₁⟩ => ?_
+    refine WP.mono (powRun_ok d hd hdl hL n (by omega_arith) s hin h1) fun s₁ ⟨g₁, rd₁, wr₁, f₁, e₁, x₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     have p₁ : s₁.gpr .r11 = s.gpr .r11 := by rw [g₁]
     have h1₁ : ∀ l < 4, s₁.zlane .xmm1 l = poly := fun l hl => by
       rw [x₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl]; exact h1 l hl
     refine WP.mono (powLoad_ok d n s₁ h1₁
-      (by rw [rd₁, wr₁, p₁]; exact Stitch.in_rdwr (Stitch.in_sub_int hin (by omega)))
-      (by rw [wr₁, p₁]; exact Stitch.in_sub_int hin (by omega)))
+      (by rw [rd₁, wr₁, p₁]; exact Stitch.in_rdwr (Stitch.in_sub_int hin (by omega_arith)))
+      (by rw [wr₁, p₁]; exact Stitch.in_sub_int hin (by omega_arith)))
       fun s' ⟨⟨v, m', ev⟩, g', rd', wr', x'⟩ => ?_
     rw [p₁, BitVec.ofInt_natCast] at m'
     simp only [p₁, ofInt_add_ofNat] at ev
     -- The source powers are outside the region written.
     have src : ∀ k < 4, ∀ l < 4, s₁.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (64 * k + 16 * l)) 128 =
         s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (64 * k + 16 * l)) 128 := fun k hk l hl =>
-      f₁.readW (r := ⟨s.gpr .r11, 256⟩) (Offset.contains_base _ (by omega) (by omega))
+      f₁.readW (r := ⟨s.gpr .r11, 256⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith))
         (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.base_disjoint _ (by omega) (by omega)) (by decide)
+          exact Offset.base_disjoint _ (by omega_arith) (by omega_arith)) (by decide)
     refine ⟨by rw [g', g₁], by rw [rd', rd₁], by rw [wr', wr₁], ?_, fun k hk l hl => ?_,
       fun r h7 h8 h9 h10 h11 l hl => by rw [x' r h7 h8 h9 h10 h11 l hl, x₁ r h7 h8 h9 h10 h11 l hl]⟩
     · rw [m']
-      exact f₁.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+      exact f₁.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith))
     · rw [m']
       by_cases hkn : k = n
       · subst hkn
         rw [show s.gpr .r11 + BitVec.ofNat 64 (d + 64 * k + 16 * l) =
             s.gpr .r11 + BitVec.ofNat 64 (d + 64 * k) + BitVec.ofNat 64 (16 * l) by
             rw [BitVec.add_assoc, ← BitVec.ofNat_add],
-          readW_lane _ _ _ hl, ev l hl, src k (by omega) l hl,
+          readW_lane _ _ _ hl, ev l hl, src k (by omega_arith) l hl,
           x₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl]
       · rw [Mem.readW_writeW_sep (Offset.sep (s.gpr .r11) (d := d + 64 * k + 16 * l) (n := 128 / 8)
-          (e := d + 64 * n) (k := 512 / 8) (by omega) (by omega) (by omega)) (by decide)]
-        exact e₁ k (by omega) l hl
+          (e := d + 64 * n) (k := 512 / 8) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+        exact e₁ k (by omega_arith) l hl
 
 /-- `vbroadcasti32x4 d, [b + o]`. -/
 theorem bcast_exec (d : XReg) (b : Reg) (o : Nat) (s : State)
@@ -180,7 +180,7 @@ theorem bcast_exec (d : XReg) (b : Reg) (o : Nat) (s : State)
 /-- A broadcast leaves the lanes it reads in all four. -/
 theorem zlane_bcast (s : State) (d : XReg) (v : BitVec 128) {l : Nat} (hl : l < 4) : (s.setZ d v v v v).zlane d l = v := by
   rw [State.zlane_setZ _ _ _ _ _ _ _ hl]; simp only [ite_true]
-  rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The sixteen powers at `scratch`, as `pow48` reads them. -/
 abbrev pw16 (s : State) (k l : Nat) : BitVec 128 := s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (64 * k + 16 * l)) 128
@@ -239,7 +239,7 @@ theorem pow48_ok (s : State) (hin : InRegions s.wr (s.gpr .r11) 1024) (h1 : ∀ 
     fun s₄ ⟨g₄, rd₄, wr₄, f₄, e₄, x₄⟩ => ?_
   rw [g₂] at f₄ e₄
   have h16 : ∀ k < 4, ∀ l < 4, s₂.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (64 * k + 16 * l)) 128 = pw16 s k l :=
-    fun k hk l hl => keep256 f₂ (by omega) (by decide) (by omega)
+    fun k hk l hl => keep256 f₂ (by omega_arith) (by decide) (by omega_arith)
   have hv : s₂.mem.readW (s.gpr .r11 + BitVec.ofNat 64 256) 128 = reduceB (Prod.zero.acc (pw16 s 0 0) (pw16 s 0 0)) :=
     e₂ 0 (by decide) 0 (by decide)
   -- The reduction constant, stored.
@@ -255,16 +255,16 @@ theorem pow48_ok (s : State) (hin : InRegions s.wr (s.gpr .r11) 1024) (h1 : ∀ 
   rw [WP.block_cons_iff]
   have k₅ : ∀ o, o + 16 ≤ 832 → (s₄.mem.writeW (s.gpr .r11 + BitVec.ofNat 64 832) (s₄.zmm .xmm1)).readW (s.gpr .r11 + BitVec.ofNat 64 o) 128 =
       s₄.mem.readW (s.gpr .r11 + BitVec.ofNat 64 o) 128 := fun o ho =>
-    Mem.readW_writeW_sep (Offset.sep (s.gpr .r11) (d := o) (n := 128 / 8) (e := 832) (k := 512 / 8) (by omega) (by omega)
-      (by omega)) (by decide)
+    Mem.readW_writeW_sep (Offset.sep (s.gpr .r11) (d := o) (n := 128 / 8) (e := 832) (k := 512 / 8) (by omega_arith) (by omega_arith)
+      (by omega_arith)) (by decide)
   refine ⟨_, hst, WP.block_nil ⟨fun k hk l hl => ?_, fun k hk l hl => ?_, fun k hk l hl => ?_, fun l hl => ?_, ?_,
     by rw [State.setMem_gpr, g₄'], by rw [State.setMem_rd, rd₄, rd₂], by rw [State.setMem_wr, wr₄, wr₂],
     fun r h7 h8 h9 h10 h11 h12 l hl => ?_⟩⟩
-  · rw [State.setMem_mem, k₅ (64 * k + 16 * l) (by omega), keep256 f₄ (by omega) (by decide) (by omega)]
+  · rw [State.setMem_mem, k₅ (64 * k + 16 * l) (by omega_arith), keep256 f₄ (by omega_arith) (by decide) (by omega_arith)]
     exact h16 k hk l hl
-  · rw [State.setMem_mem, k₅ (256 + 64 * k + 16 * l) (by omega), keep256 f₄ (by omega) (by decide) (by omega)]
+  · rw [State.setMem_mem, k₅ (256 + 64 * k + 16 * l) (by omega_arith), keep256 f₄ (by omega_arith) (by decide) (by omega_arith)]
     exact e₂ k hk l hl
-  · rw [State.setMem_mem, k₅ (512 + 64 * k + 16 * l) (by omega), e₄ k hk l hl, hv,
+  · rw [State.setMem_mem, k₅ (512 + 64 * k + 16 * l) (by omega_arith), e₄ k hk l hl, hv,
       show pw16 s₂ k l = pw16 s k l by simp only [pw16, g₂]; exact h16 k hk l hl]
   · rw [State.setMem_mem, show s.gpr .r11 + BitVec.ofNat 64 (832 + 16 * l) = s.gpr .r11 + BitVec.ofNat 64 832 + BitVec.ofNat 64 (16 * l) by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add], readW_lane _ _ _ hl, zmm_lane _ _ hl,

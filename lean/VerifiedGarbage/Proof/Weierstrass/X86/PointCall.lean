@@ -67,20 +67,20 @@ structure CallKeepB (k : Nat) (base : Addr) (o : Nat) (s s' : State) : Prop wher
 
 theorem argAddr0_toNat (s : State) (h : (s.gpr .esp).toNat + 8 ≤ 2 ^ 32) :
     (argAddr s 0).toNat = (s.gpr .esp).toNat + 4 := by
-  simp only [argAddr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  simp only [argAddr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
 
 theorem below_toNat (sp : BitVec 32) {n : Nat} (h : n ≤ sp.toNat) : (below sp n).base.toNat = sp.toNat - n := by
   show ((sp - BitVec.ofNat 32 n).setWidth 64).toNat = _
-  rw [BitVec.toNat_setWidth, sub_toNat h]; omega
+  rw [BitVec.toNat_setWidth, sub_toNat h]; omega_arith
 
 /-- The argument is apart from the 20 bytes below `esp`. -/
 theorem args_below {s : State} (h20 : 20 ≤ (s.gpr .esp).toNat) (h : (s.gpr .esp).toNat + 8 ≤ 2 ^ 32) :
     Region.Disjoint ⟨argAddr s 0, 4⟩ (below (s.gpr .esp) 20) :=
   Region.disjoint_of_le (.inr (by
     show (below (s.gpr .esp) 20).base.toNat + 20 ≤ (argAddr s 0).toNat
-    rw [below_toNat _ h20, argAddr0_toNat s h]; omega))
-    (by show (argAddr s 0).toNat + 4 ≤ _; rw [argAddr0_toNat s h]; omega)
-    (by show (below (s.gpr .esp) 20).base.toNat + 20 ≤ _; rw [below_toNat _ h20]; omega)
+    rw [below_toNat _ h20, argAddr0_toNat s h]; omega_arith))
+    (by show (argAddr s 0).toNat + 4 ≤ _; rw [argAddr0_toNat s h]; omega_arith)
+    (by show (below (s.gpr .esp) 20).base.toNat + 20 ≤ _; rw [below_toNat _ h20]; omega_arith)
 
 /-- The argument survives a change of memory within the working space and
 the stack below `esp`. -/
@@ -206,7 +206,7 @@ theorem callB_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hsp : NoSp 
           rw [BitVec.toNat_setWidth, sub_toNat h20]
           exact Nat.mod_eq_of_lt (by omega_arith)
         generalize ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64) = z at hzx e
-        bv_omega
+        bv_omega_arith
       have h2 := hx outW (by simp)
       have h3 : ofs base x < 2 ^ 64 := (x - base).isLt
       simp only at h2
@@ -235,9 +235,9 @@ theorem zone_ofsP {s : State} {base : Addr} (hs : ScrP s base) {x : Addr}
   simp only [ofs]
   have e : ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64).toNat = (s.gpr .esp).toNat - 20 := by
     rw [BitVec.toNat_setWidth, sub_toNat h20]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_arith)
   generalize ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64) = z at hx e
-  bv_omega
+  bv_omega_arith
 
 /-- Memory that changed only in the stack a call uses keeps the working space. -/
 theorem frame_val32P {s : State} {base : Addr} (hs : ScrP s base) {m m' : Mem}
@@ -247,8 +247,8 @@ theorem frame_val32P {s : State} {base : Addr} (hs : ScrP s base) {m m' : Mem}
   refine val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => hF _ fun r hr hc => ?_)
   rw [List.mem_singleton.mp hr] at hc
   have := zone_ofsP hs hc
-  rw [ofs_off base (by omega)] at this
-  omega
+  rw [ofs_off base (by omega_arith)] at this
+  omega_arith
 
 section
 variable {enc : Nat → Nat} {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk S) {s : State} {base : Addr}
@@ -271,12 +271,12 @@ theorem mulCallB_ok (hB : wordsVal s.mem base (enc b) S.k < S.m) :
         val32 m base (enc a) (2 * S.k) * val32 m base (enc b) (2 * S.k) % S.m)
     fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V₁, V₂⟩ => ?_
   · refine WP.mono (mulFn_ok hF.mul hp (by
-      rw [hws, h3, frame_val32P hs hfr (by omega), ← wordsVal_eq_val32]; exact hB))
+      rw [hws, h3, frame_val32P hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hB))
       fun t' ⟨A, O, L, C⟩ => ⟨A, hws ▸ O, ?_⟩
     rw [hws, h1] at L
     rw [hws, h1, h2, h3] at C
     exact ⟨L, C⟩
-  · rw [frame_val32P hs hm (by omega), frame_val32P hs hm (by omega)] at V₂
+  · rw [frame_val32P hs hm (by omega_arith), frame_val32P hs hm (by omega_arith)] at V₂
     refine ⟨K, ?_, ?_⟩
     · rw [wordsVal_eq_val32]; exact V₁
     · rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V₂
@@ -292,12 +292,12 @@ theorem addCallB_ok (hAB : wordsVal s.mem base (enc a) S.k + wordsVal s.mem base
       (val32 m base (enc a) (2 * S.k) + val32 m base (enc b) (2 * S.k)) % S.m)
     fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V⟩ => ?_
   · refine WP.mono (addFn_ok hF.mul hp (by
-      rw [hws, h2, h3, frame_val32P hs hfr (by omega), frame_val32P hs hfr (by omega), ← wordsVal_eq_val32,
+      rw [hws, h2, h3, frame_val32P hs hfr (by omega_arith), frame_val32P hs hfr (by omega_arith), ← wordsVal_eq_val32,
         ← wordsVal_eq_val32]; exact hAB))
       fun t' ⟨A, O, L⟩ => ⟨A, hws ▸ O, ?_⟩
     rw [hws, h1, h2, h3] at L
     exact L
-  · rw [frame_val32P hs hm (by omega), frame_val32P hs hm (by omega)] at V
+  · rw [frame_val32P hs hm (by omega_arith), frame_val32P hs hm (by omega_arith)] at V
     refine ⟨K, ?_⟩
     rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V
 
@@ -312,12 +312,12 @@ theorem subCallB_ok (hA : wordsVal s.mem base (enc a) S.k < S.m) (hB : wordsVal 
       (val32 m base (enc a) (2 * S.k) + S.m - val32 m base (enc b) (2 * S.k)) % S.m)
     fun t hp hws h1 h2 h3 hfr => ?_) fun s' ⟨K, m, hm, V⟩ => ?_
   · refine WP.mono (subFn_ok hF.mul hp
-      (by rw [hws, h2, frame_val32P hs hfr (by omega), ← wordsVal_eq_val32]; exact hA)
-      (by rw [hws, h3, frame_val32P hs hfr (by omega), ← wordsVal_eq_val32]; exact hB))
+      (by rw [hws, h2, frame_val32P hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hA)
+      (by rw [hws, h3, frame_val32P hs hfr (by omega_arith), ← wordsVal_eq_val32]; exact hB))
       fun t' ⟨A, O, L⟩ => ⟨A, hws ▸ O, ?_⟩
     rw [hws, h1, h2, h3] at L
     exact L
-  · rw [frame_val32P hs hm (by omega), frame_val32P hs hm (by omega)] at V
+  · rw [frame_val32P hs hm (by omega_arith), frame_val32P hs hm (by omega_arith)] at V
     refine ⟨K, ?_⟩
     rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32]; exact V
 

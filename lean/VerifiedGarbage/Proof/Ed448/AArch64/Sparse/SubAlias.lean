@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sub
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Finish
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
 

@@ -56,9 +56,9 @@ theorem keeps_of_outs {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) {ws : Addr} {m m
   intro i hi hown ho
   simp only [Spec.Weierstrass.Mont.wsBytes] at hi
   refine h _ fun r hr => ?_
-  rw [ofs_off0 ws (by omega)]
+  rw [ofs_off0 ws (by omega_arith)]
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_arith
 
 /-- The precondition, as the proof has it. -/
 theorem prePt_of {C : Spec.Weierstrass.Point.Curve} (hk3 : 3 ≤ C.k) (hk6 : C.k ≤ 6) {dbl : Bool} {s : State}
@@ -67,9 +67,9 @@ theorem prePt_of {C : Spec.Weierstrass.Point.Curve} (hk3 : 3 ≤ C.k) (hk6 : C.k
   have hl := lay_nums hk3 hk6
   have hn : (wsOf s).toNat + 8192 ≤ 2 ^ 32 := by
     show ((arg s 0).setWidth 64).toNat + 8192 ≤ _
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]; exact hfit
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_arith)]; exact hfit
   have e : ∀ x, x < 4096 → C.coordAt s.mem (wsOf s) x = wordsVal s.mem (wsOf s) x C.k :=
-    fun x hx => coordAt_eq C _ _ (by omega)
+    fun x hx => coordAt_eq C _ _ (by omega_arith)
   refine ⟨⟨rfl, by rw [hrd]; exact List.mem_singleton_self _, by rw [hwr]; exact List.mem_singleton_self _,
     hn, VG.Proof.Weierstrass.X86.stkOk_of (Nat.le_refl _) h20 hn (by decide) hzw, hsp, haw⟩, hrw, hk3, hk6,
     fun x hx => ?_⟩
@@ -79,10 +79,10 @@ theorem prePt_of {C : Spec.Weierstrass.Point.Curve} (hk3 : 3 ≤ C.k) (hk6 : C.k
     simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one,
       Nat.add_zero, Bool.false_eq_true] at q0 q1 q2 ⊢ <;>
     first
-    | (rw [← e _ (by omega)]; assumption)
-    | (rw [← e _ (by omega), show Spec.Weierstrass.Point.elemBytes C.k * 2 = 2 * Spec.Weierstrass.Point.elemBytes C.k by omega]; assumption)
-    | (rw [← e _ (by omega)]; exact ha)
-    | (rw [← e _ (by omega)]; exact hb)
+    | (rw [← e _ (by omega_arith)]; assumption)
+    | (rw [← e _ (by omega_arith), show Spec.Weierstrass.Point.elemBytes C.k * 2 = 2 * Spec.Weierstrass.Point.elemBytes C.k by omega_arith]; assumption)
+    | (rw [← e _ (by omega_arith)]; exact ha)
+    | (rw [← e _ (by omega_arith)]; exact hb)
 
 /-- `vg_<curve>_point_add` or `vg_<curve>_point_double` meets its contract,
 by register. -/
@@ -96,21 +96,21 @@ theorem sum_x86 {C : Spec.Weierstrass.Point.Curve} (hF : FnOk (modP C)) (hk3 : 3
   have hu : UnitMod C.p C.R := unitMod_pow_two hodd _
   have dq := dec_eq C h1 hFe hu
   have e : ∀ (m : Mem) x, x < 4096 → C.coordAt m (wsOf s) x = wordsVal m (wsOf s) x C.k :=
-    fun m x hx => coordAt_eq C _ _ (by omega)
-  have e2 : Spec.Weierstrass.Point.elemBytes C.k * 2 = 2 * Spec.Weierstrass.Point.elemBytes C.k := by omega
+    fun m x hx => coordAt_eq C _ _ (by omega_arith)
+  have e2 : Spec.Weierstrass.Point.elemBytes C.k * 2 = 2 * Spec.Weierstrass.Point.elemBytes C.k := by omega_arith
   refine ⟨t, s', he, A, ?_, ?_, keeps_of_outs hk3 hk6 O⟩
   · have h0 := hlt 0 (by decide); have h1' := hlt 1 (by decide); have h2 := hlt 2 (by decide)
     simp only [enc, Nat.reduceLT, ↓reduceIte, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h0 h1' h2
     refine ⟨?_, ?_, ?_⟩ <;> simp only [Spec.Weierstrass.Point.Curve.pointAt]
-    · rw [e _ _ (by omega)]; exact h0
-    · rw [e _ _ (by omega)]; exact h1'
-    · rw [e _ _ (by omega)]; rw [e2] at h2; exact h2
+    · rw [e _ _ (by omega_arith)]; exact h0
+    · rw [e _ _ (by omega_arith)]; exact h1'
+    · rw [e _ _ (by omega_arith)]; rw [e2] at h2; exact h2
   · simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one,
       Nat.add_zero, E₀, e2] at hEq
     simp only [Spec.Weierstrass.Point.Curve.decPt, Spec.Weierstrass.Point.Curve.pointAt,
       Spec.Weierstrass.Point.Curve.sum, rcbAdd_eq, dq, qOf]
     cases dbl <;> simp only [Bool.false_eq_true, ↓reduceIte] at hEq ⊢ <;>
-      (repeat rw [e _ _ (by omega)]) <;>
+      (repeat rw [e _ _ (by omega_arith)]) <;>
       exact hEq
 
 end VG.Proof.Weierstrass.X86.Point

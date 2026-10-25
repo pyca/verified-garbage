@@ -171,7 +171,7 @@ theorem kLoadBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr 
           have h0₃ : s₃.gpr .x0 = B := ((k₂.trans k₃).gpr .x0 (by decide)).trans h.x0
           have hs₃ := h.scr.congr (k₂.trans k₃).wr
           have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
-            hs₃.ld (by have := h.h256; omega)
+            hs₃.ld (by have := h.h256; omega_arith)
           brun [h0₃, hdr_enc hP, hdr_enc hL, m₃, m₂, hl₃ sPtr hP, hl₃ sLen hL, hp, hl])
         rfl rfl rfl)
       fun t ⟨⟨h1, h2⟩, k₄⟩ r hr => by
@@ -205,11 +205,11 @@ theorem loadA_ct0 {α : Type} {Φ : α → State → Prop} (B : α → Addr) (Z 
     have hn := hw.scr.nowrap
     have sj := hw.sl hj
     have h256 := hw.h256
-    have hs : 8 * 32 ≤ slot (w a) j := by unfold slot hdrBytes; omega
+    have hs : 8 * 32 ≤ slot (w a) j := by unfold slot hdrBytes; omega_arith
     exact WP.mono (zeroA_ok hw hj) fun t ⟨_, o, _, _, _, k⟩ =>
       ⟨hw.congr' (Frm.of_outside o (List.mem_singleton_self _)) (fun r hr => by
           rw [List.mem_singleton.mp hr]; exact KMut.ofSlot _ _ _) k (by decide),
-        by rw [o.word (by omega) (by omega)]; exact hp, by rw [o.word (by omega) (by omega)]; exact hl⟩
+        by rw [o.word (by omega_arith) (by omega_arith)]; exact hp, by rw [o.word (by omega_arith) (by omega_arith)]; exact hl⟩
   have e : zeroA j = .seq (.block (ws ++ (base j .x8 ++ [movi .x7 0]))) zeroAcc := by
     simp only [zeroA, List.append_assoc]
   refine RelCT.assoc (pin_seq0 [.x0, .x8, .x1, .x2]
@@ -229,9 +229,9 @@ theorem pins_K0 : Pins K0 [.x0] := fun _ s₁ s₂ h₁ h₂ r hr => by
   rw [m₁.x0, m₂.x0]
 
 theorem cand_gt {w : Nat} (hw : 4 ≤ w) (x : Nat) : 8161 < Spec.RsaKeyGen.candidate (64 * w) x := by
-  obtain ⟨_, hlo, _⟩ := VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * w) (by omega) x
-  have : 2 ^ 13 ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega)
-  omega
+  obtain ⟨_, hlo, _⟩ := VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * w) (by omega_arith) x
+  have : 2 ^ 13 ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  omega_arith
 
 /-! ### The stages' correctness -/
 
@@ -245,12 +245,12 @@ theorem loadCStage_ok {q : FPub} {s : State} (h : K0 q s) : WP isa (seqs loadC) 
   have hZ := hm.z
   have hW : ∀ {rs : List (Nat × Nat)} {m m' : Mem}, Frm q.B rs m m' → ∀ {i : Nat}, i < 32 →
       (∀ r ∈ rs, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i) → word m' q.B (8 * i) = word m q.B (8 * i) :=
-    fun f _ hi hd => f.word_eq hd (by omega)
+    fun f _ hi hd => f.word_eq hd (by omega_arith)
   have hsrcr : Src s q.B q.Z q.rP (r.take (8 * q.w)) :=
-    ⟨fun i hi => hm.rsrc.rd i (by simp at hi; omega),
-      fun i hi => by rw [hm.rsrc.val i (by simp at hi; omega), List.getElem_take],
-      fun i hi => hm.rsrc.out i (by simp at hi; omega)⟩
-  refine WP.mono (loadC_ok hs hm.x0 hw4 (by have := hm.w64; omega) hZ hm.len hm.rand hsrcr (by simp; omega))
+    ⟨fun i hi => hm.rsrc.rd i (by simp at hi; omega_arith),
+      fun i hi => by rw [hm.rsrc.val i (by simp at hi; omega_arith), List.getElem_take],
+      fun i hi => hm.rsrc.out i (by simp at hi; omega_arith)⟩
+  refine WP.mono (loadC_ok hs hm.x0 hw4 (by have := hm.w64; omega_arith) hZ hm.len hm.rand hsrcr (by simp; omega_arith))
     fun t ⟨ht, hM, hc, hus, f, k⟩ => ?_
   have hin : InScr q.B q.Z s.mem t.mem := InScr.of_frm f (by have := ht.hZ; k_le)
   refine ⟨k.wr.trans hw, hd, ht, ⟨(hW f (by decide) (by k_disj)).trans hm.out, (hW f (by decide) (by k_disj)).trans hm.len,
@@ -261,12 +261,12 @@ theorem loadCStage_ok {q : FPub} {s : State} (h : K0 q s) : WP isa (seqs loadC) 
     by rw [← hrl]; exact (hW f (by decide) (by k_disj)).trans hm.rlen, hus, hM⟩,
     hm.ou.congr k.wr, pB, r, hc, hm.psrc.congrK hin k, hm.esrc.congrK hin k, hm.rsrc.congrK hin k, hpl, hrl, hS⟩
 
-theorem w64_eq (w : Nat) : 8 * (8 * w) = 64 * w := by omega
+theorem w64_eq (w : Nat) : 8 * (8 * w) = 64 * w := by omega_arith
 
 theorem closeRanges_hd (w : Nat) : ∀ r ∈ closeRanges w, 8 * 28 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * 16 ∨ r = (8 * 26, 8) := by
   simp only [closeRanges, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, slot, hdrBytes, aX,
     aAcc, aTmp, aY, kT0, Public.sCnt, sFn]
-  exact ⟨.inl (by omega), .inl (by omega), .inl (by omega), .inl (by omega), .inr (.inr trivial)⟩
+  exact ⟨.inl (by omega_arith), .inl (by omega_arith), .inl (by omega_arith), .inl (by omega_arith), .inr (.inr trivial)⟩
 
 /-- `closeCheck`, from `KSt`: `x15` the mask of the schedule's `close`. -/
 theorem closeStage_ok {q : FPub} {s : State} (h : KSt q s) :
@@ -276,7 +276,7 @@ theorem closeStage_ok {q : FPub} {s : State} (h : KSt q s) :
   refine WP.mono (closeCheck_ok hws hd.w4 hh.p (by rw [hpl]; exact hh.plen) (by rw [hpl]; exact hd.pl) hp)
     fun t ⟨h15, ht, f, k⟩ => ⟨h.step ht f (closeRanges_hd q.w) (fun r hr => ?_) (by k_disj) k, ?_⟩
   · have : r.1 + r.2 ≤ slot q.w 16 := by revert r hr; k_le
-    omega
+    omega_arith
   · rw [h15, hc, ← hS, VG.Proof.RsaKeyGen.sched_close, w64_eq]
 
 /-- `trial`, from `KSt` and a candidate not too close: `x1` not zero iff the
@@ -288,7 +288,7 @@ theorem trialStage_ok {q : FPub} {s : State} (h : KSt q s) (hcl : q.sch.close = 
   have hw4 := hd.w4
   have hcl' := hcl
   rw [← hS, VG.Proof.RsaKeyGen.sched_close] at hcl'
-  have hT : slot q.w aTab + 2048 ≤ q.Z := by simp only [slot, hdrBytes, aTab]; omega
+  have hT : slot q.w aTab + 2048 ≤ q.Z := by simp only [slot, hdrBytes, aTab]; omega_arith
   refine WP.mono (trial_ok hws hT hw4 hd.w64) fun t ⟨hx, ht, f, k⟩ =>
     ⟨h.step ht f (by k_le) (by k_le) (by k_disj) k, ?_⟩
   rw [hx, hc, VG.Proof.RsaKeyGen.trialAny_eq (cand_gt hw4 _), ← hS, VG.Proof.RsaKeyGen.sched_comp hcl', w64_eq]
@@ -303,14 +303,14 @@ theorem gcdStage_ok {q : FPub} {s : State} (h : KSt q s) (hcl : q.sch.close = fa
   rw [← hS, VG.Proof.RsaKeyGen.sched_close] at hcl'
   have hco' := hco
   rw [← hS, VG.Proof.RsaKeyGen.sched_comp hcl'] at hco'
-  obtain ⟨hodd, -, -⟩ := VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * q.w) (by omega)
+  obtain ⟨hodd, -, -⟩ := VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * q.w) (by omega_arith)
     (Spec.Rsa.os2ip (r.take (8 * q.w)))
   have h3 := cand_gt hw4 (Spec.Rsa.os2ip (r.take (8 * q.w)))
-  refine WP.mono (gcdCheck_ok hws (by rw [hc]; exact hodd) (by rw [hc]; omega) hh.e hh.elen hd.el1 hd.el8 he)
+  refine WP.mono (gcdCheck_ok hws (by rw [hc]; exact hodd) (by rw [hc]; omega_arith) hh.e hh.elen hd.el1 hd.el8 he)
     fun t ⟨hx, ht, f, k⟩ => ⟨h.step ht f (by k_le) (fun r hr => ?_) (by k_disj) k, ?_⟩
   · have : r.1 + r.2 ≤ slot q.w 16 := by revert r hr; k_le
     have := hws.hZ
-    omega
+    omega_arith
   · rw [hx, hc, ← hS, VG.Proof.RsaKeyGen.sched_gbad hcl' hco', w64_eq, trial_decide_beq]
 
 /-- `finUsed st`'s loads: `x2` the pointer to `used`. -/
@@ -320,7 +320,7 @@ theorem finUsedHead_ok {q : FPub} {s : State} (h : KSt q s) :
   have hs := hws.scr
   have hn := hs.nowrap
   have h256 := hws.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
   refine WP.mono (WP.keep [.x2, .x3] (Q := fun t => t.gpr .x2 = q.up) (by
     brun [hws.x0, hdr_enc (show kUsed < 32 by decide), hdr_enc (show kUsedP < 32 by decide), hl kUsed (by decide),
       hl kUsedP (by decide), h.hdr.usedP]) (by decide) (by decide) (by decide +kernel)) fun t ⟨h2, _⟩ r hr => by
@@ -399,29 +399,29 @@ theorem headLH_ok {q : FPub} {s : State} (h : K0 q s) :
   have hZ := hm.z
   have hw4 := hm.w4
   have hrk := hm.rk
-  have ew : wk (8 * q.w) = q.w := by simp only [wk]; omega
-  refine WP.mono (kHead_ok hs hm.x0 (by omega) (by have := hm.w64; omega) (by omega) hm.len)
+  have ew : wk (8 * q.w) = q.w := by simp only [wk]; omega_arith
+  refine WP.mono (kHead_ok hs hm.x0 (by omega_arith) (by have := hm.w64; omega_arith) (by omega_arith) hm.len)
     fun t ⟨ht, _, f, k⟩ => ?_
   rw [ew] at ht
   have hin : InScr q.B q.Z s.mem t.mem := InScr.of_frm f (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, sW, sArr, sStride,
-      Public.sMask, sFn]; omega)
+      Public.sMask, sFn]; omega_arith)
   have hsrcr : Src s q.B q.Z q.rP (r.take (8 * q.w)) :=
-    ⟨fun i hi => hm.rsrc.rd i (by simp at hi; omega),
-      fun i hi => by rw [hm.rsrc.val i (by simp at hi; omega), List.getElem_take],
-      fun i hi => hm.rsrc.out i (by simp at hi; omega)⟩
-  refine ⟨ht, ?_, ?_, r.take (8 * q.w), hsrcr.congrK hin k, by simp; omega⟩
+    ⟨fun i hi => hm.rsrc.rd i (by simp at hi; omega_arith),
+      fun i hi => by rw [hm.rsrc.val i (by simp at hi; omega_arith), List.getElem_take],
+      fun i hi => hm.rsrc.out i (by simp at hi; omega_arith)⟩
+  refine ⟨ht, ?_, ?_, r.take (8 * q.w), hsrcr.congrK hin k, by simp; omega_arith⟩
   · rw [f.word_eq (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, kRand,
-      sW, sArr, sStride, Public.sMask, sFn]; omega) (by simp only [kRand, sFn]; omega)]; exact hm.rand
+      sW, sArr, sStride, Public.sMask, sFn]; omega_arith) (by simp only [kRand, sFn]; omega_arith)]; exact hm.rand
   · rw [f.word_eq (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, kLen,
-      Public.sK, sW, sArr, sStride, Public.sMask, sFn]; omega) (by simp only [kLen, Public.sK, sFn]; omega)]
+      Public.sK, sW, sArr, sStride, Public.sMask, sFn]; omega_arith) (by simp only [kLen, Public.sK, sFn]; omega_arith)]
     exact hm.len
 
 theorem loadAN_ok {q : FPub} {s : State} (h : LH q s) : WP isa (seqs (loadA aN kRand kLen)) s (KW q) := by
   obtain ⟨hw, hR, hK, bs, hsrc, hbl⟩ := h
   have := hw.w1
   exact WP.mono (loadA_ok hw (j := aN) (sPtr := kRand) (sLen := kLen) (by decide) (by decide) (by decide) hR hK
-    hsrc hbl (by omega) (by omega)) fun t ⟨_, o, _, _, k⟩ => hw.congr' (Frm.of_outside o (List.mem_singleton_self _))
+    hsrc hbl (by omega_arith) (by omega_arith)) fun t ⟨_, o, _, _, k⟩ => hw.congr' (Frm.of_outside o (List.mem_singleton_self _))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.ofSlot _ _ _) k (by decide)
 
 /-- `loadC` leaks the same in runs that agree on the public data. -/
@@ -444,7 +444,7 @@ theorem closeHead_ok {q : FPub} {s : State} (h : KSt q s) :
   have hs := hws.scr
   have hn := hs.nowrap
   have h256 := hws.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
   refine WP.mono (WP.keep [.x3, .x15] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 q.pl ∧ t.mem = s.mem) (by
     brun [hws.x0, hdr_enc (show kPlen < 32 by decide), hl kPlen (by decide), h.hdr.plen])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h3, hm⟩, k⟩ =>
@@ -469,7 +469,7 @@ theorem loadAX_ok {q : FPub} {s : State} (h : CE q s) : WP isa (seqs (loadA aX k
   obtain ⟨-, hd, hw, hh, -, pB, r, -, hp, -, -, hpb, -⟩ := hk
   have := hw.w1
   exact WP.mono (loadA_ok hw (j := aX) (sPtr := kP) (sLen := kPlen) (by decide) (by decide) (by decide) hh.p hh.plen
-    hp hpb (by omega) (by omega)) fun t ⟨_, o, _, _, k⟩ => hw.congr' (Frm.of_outside o (List.mem_singleton_self _))
+    hp hpb (by omega_arith) (by omega_arith)) fun t ⟨_, o, _, _, k⟩ => hw.congr' (Frm.of_outside o (List.mem_singleton_self _))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.ofSlot _ _ _) k (by decide)
 
 /-- The working space, and the mask of the borrow in `kT0`. -/
@@ -481,7 +481,7 @@ theorem borrow_ok {q : FPub} {s : State} (h : KW q s ∧ s.gpr .x7 = 0) :
   have h256 := h.1.h256
   exact WP.mono (closeMask_ok h.1 h.2) fun t ⟨⟨_, hm⟩, k⟩ =>
     ⟨h.1.congr' (rs := [(8 * kT0, 8)]) (by rw [hm]; exact Frm.of_outside (writeW_outside _ _ _ (by
-      simp only [kT0, Public.sCnt, sFn]; omega)) (List.mem_singleton_self _))
+      simp only [kT0, Public.sCnt, sFn]; omega_arith)) (List.mem_singleton_self _))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.hdr (by simp [kT0, Public.sCnt, sFn, sArr, sStride]))
       k (by decide), _, by rw [hm]; exact word_writeW_self _ _ _ _⟩
 
@@ -491,7 +491,7 @@ theorem subTmp_ok {q : FPub} {s : State} (h : KT q s) : WP isa (seqs (subA aTmp 
   have sT := hw.sl (show aTmp < 16 by decide)
   have hT : 8 * kT0 + 8 ≤ slot q.w aTmp := hdr_lt_slot q.w aTmp (by decide)
   exact WP.mono (subA_kw hw (by decide) (by decide) (by decide) (by decide) (by decide)) fun t ⟨⟨ht, _⟩, o⟩ =>
-    ⟨ht, b, by rw [o.word (by omega) (by omega)]; exact hb⟩
+    ⟨ht, b, by rw [o.word (by omega_arith) (by omega_arith)]; exact hb⟩
 
 /-- `|c − p|` into `aAcc`. -/
 theorem sel_ok {q : FPub} {s : State} (h : KT q s) :
@@ -503,12 +503,12 @@ theorem sel_ok {q : FPub} {s : State} (h : KT q s) :
   have hw2 := hw.w2
   have sA := hw.sl (show aAcc < 16 by decide)
   have sT := hw.sl (show aTmp < 16 by decide)
-  have eA : slot q.w aTmp = slot q.w aAcc + 8 * (q.w + 2) := by simp [slot, aTmp, aAcc]; omega
+  have eA : slot q.w aTmp = slot q.w aAcc + 8 * (q.w + 2) := by simp [slot, aTmp, aAcc]; omega_arith
   have hh := closeSelHead_ok hw hb
   simp only [List.append_assoc, List.cons_append, List.nil_append] at hh
   refine WP.seq (WP.mono hh fun s₆ ⟨⟨h15, h14, h16, h17, hm⟩, k₆⟩ => ?_)
-  refine WP.mono (VG.Proof.Bignum.AArch64.selLoop_ok (hw.scr.congr k₆.wr) h16 h17 h14 h15 (by omega) (by omega)
-    (by omega) (by omega) (by omega)) fun t ⟨_, o, k⟩ => ?_
+  refine WP.mono (VG.Proof.Bignum.AArch64.selLoop_ok (hw.scr.congr k₆.wr) h16 h17 h14 h15 (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith)) fun t ⟨_, o, k⟩ => ?_
   rw [hm] at o
   exact hw.congr' (Frm.of_outside o (List.mem_singleton_self _)) (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact KMut.ofSlot _ _ _) (k₆.trans k) (by decide)
@@ -530,7 +530,7 @@ theorem boundHead_ok {q : FPub} {s : State} (h : KW q s) :
   have sa : sArr aY < 32 := by decide
   refine WP.mono (WP.keep [.x8, .x7] (Q := fun t => t.gpr .x8 = off q.B (slot q.w aY)) (by
     brun [(k₁.gpr .x0 (by decide)).trans h.x0, hdr_enc sa, (hs.congr k₁.wr).ld (d := 8 * sArr aY) (by
-      have := hdr_lt_slot q.w 8 sa; have := h.hZ; unfold slot at *; omega), hm, h.harr aY (by decide)])
+      have := hdr_lt_slot q.w 8 sa; have := h.hZ; unfold slot at *; omega_arith), hm, h.harr aY (by decide)])
     rfl rfl rfl) fun t ⟨h8, k⟩ r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -545,8 +545,8 @@ theorem bound_ok {q : FPub} {s : State} (h : KW q s) :
   have hw2 := h.w2
   refine WP.seq (WP.mono (closeBound_ok h) fun s₈ ⟨⟨h12, _, h13, m₈⟩, k₈⟩ => ?_)
   have h₈ : Ws s₈ q.B q.Z q.w := h.congr' (rs := []) (fun x _ => by rw [m₈]) (by simp) k₈ (by decide)
-  exact WP.mono (setWord_ok h₈.scr h₈.x0 h₈.good.1.hdr h₈.good.2 h12 (by omega) (o := aY) (by decide)
-    (i := q.w - 2) (by omega) h13) fun t ⟨_, o, k⟩ => h₈.congr' (Frm.of_outside o (List.mem_singleton_self _))
+  exact WP.mono (setWord_ok h₈.scr h₈.x0 h₈.good.1.hdr h₈.good.2 h12 (by omega_arith) (o := aY) (by decide)
+    (i := q.w - 2) (by omega_arith) h13) fun t ⟨_, o, k⟩ => h₈.congr' (Frm.of_outside o (List.mem_singleton_self _))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.ofSlot _ _ _) k (by decide)
 
 theorem pins_KW : Pins KW [.x0] := pins_ws FPub.B FPub.Z FPub.w fun _ _ h => h
@@ -601,7 +601,7 @@ def TBI (p : FPub × Nat) (s : State) : Prop :=
   Ws s p.1.B p.1.Z p.1.w ∧ p.2 < 256 ∧ s.gpr .x17 = BitVec.ofNat 64 (tabWord p.2) ∧ s.gpr .x7 = 0 ∧
     s.gpr .x8 = mask true
 
-theorem trN_le (q : FPub) : trN q ≤ 256 ∧ 1 ≤ trN q := by unfold trN; split <;> omega
+theorem trN_le (q : FPub) : trN q ≤ 256 ∧ 1 ≤ trN q := by unfold trN; split <;> omega_arith
 
 /-- The table, and the counts. -/
 theorem trialHead_ok {q : FPub} {s : State} (h : KSt q s) :
@@ -613,7 +613,7 @@ theorem trialHead_ok {q : FPub} {s : State} (h : KSt q s) :
   have hn := hw.scr.nowrap
   have hz := hd.z
   have hw4 := hd.w4
-  have hT : slot q.w aTab + 2048 ≤ q.Z := by simp only [slot, hdrBytes, aTab]; omega
+  have hT : slot q.w aTab + 2048 ≤ q.Z := by simp only [slot, hdrBytes, aTab]; omega_arith
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono hw.ws_ok fun s₁ ⟨⟨h12₁, h11₁, hm₁, _⟩, k₁⟩ => ?_
   refine WP.mono (base_ok aTab .x9 ((k₁.gpr .x0 (by decide)).trans hw.x0) h11₁)
@@ -636,11 +636,11 @@ theorem sub1_bne {n : Nat} (h1 : 1 ≤ n) (h : n < 2 ^ 64) :
   have e : BitVec.ofNat 64 n - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - 1) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
-  rw [e, bne, ofNat64_beq_zero (by omega)]
+    omega_arith
+  rw [e, bne, ofNat64_beq_zero (by omega_arith)]
   by_cases hn : n - 1 = 0
-  · rw [decide_eq_true hn, decide_eq_false (by omega)]; rfl
-  · rw [decide_eq_false hn, decide_eq_true (by omega)]; rfl
+  · rw [decide_eq_true hn, decide_eq_false (by omega_arith)]; rfl
+  · rw [decide_eq_false hn, decide_eq_true (by omega_arith)]; rfl
 
 /-- One word of the table. -/
 theorem trialIter_ok {q : FPub} {k : Nat} {s : State} (hk : k < trN q) (h : TI q k s) :
@@ -650,15 +650,15 @@ theorem trialIter_ok {q : FPub} {k : Nat} {s : State} (hk : k < trN q) (h : TI q
         (k + 1 = trN q → True) := by
   obtain ⟨hw, hT, h9, h10, h7, h8, htab, h1⟩ := h
   have hN := trN_le q
-  refine WP.mono (tlIter_ok (s₀ := s) rfl hT (by omega) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9 h1)
+  refine WP.mono (tlIter_ok (s₀ := s) rfl hT (by omega_arith) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9 h1)
     fun t ⟨⟨hI, h9', h1'⟩, h10'⟩ => ⟨?_, fun _ => ⟨hI.ws, hT, h9', ?_, hI.x7, hI.x8, fun i hi => by
       rw [hI.mem]; exact htab i hi, by rw [h1', hI.mem]⟩, fun _ => trivial⟩
-  · rw [eval_nonzero, h10', h10, sub1_bne (by omega) (by omega)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+  · rw [eval_nonzero, h10', h10, sub1_bne (by omega_arith) (by omega_arith)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_arith))
   · rw [h10', h10]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_arith
 
 /-- An entry's prime and its inverse: registers only. -/
 def entryPre (j : Nat) : List Instr :=
@@ -668,7 +668,7 @@ def entryPre (j : Nat) : List Instr :=
 theorem entryPre_ok {p : FPub × Nat} {s : State} {j : Nat} (hj : j < 4) (h : TBI p s) :
     WP isa (.block (entryPre j)) s fun t => Ws t p.1.B p.1.Z p.1.w := by
   obtain ⟨hw, hk, h17, -, -⟩ := h
-  obtain ⟨hodd, -, -⟩ := tabEntry_facts (i := 4 * p.2 + j) (by omega)
+  obtain ⟨hodd, -, -⟩ := tabEntry_facts (i := 4 * p.2 + j) (by omega_arith)
   unfold entryPre
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (entrySel_ok hk hj h17) fun s₁ ⟨⟨h3₁, hm₁⟩, k₁⟩ => ?_
@@ -716,8 +716,8 @@ theorem trialBody_ct : RelCT isa (Two fun (p : FPub × Nat) s => p.2 < trN p.1 �
     (fun p s h => ?_)) ?_)
   · obtain ⟨hk, hw, hT, h9, -, h7, h8, htab, -⟩ := h
     have hN := trN_le p.1
-    exact WP.mono (tlLoad_ok hT (by omega) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9) fun t ⟨⟨h17, _, hm⟩, k⟩ =>
-      ⟨hw.congr' (rs := []) (fun x _ => by rw [hm]) (by simp) k (by decide), by omega, h17,
+    exact WP.mono (tlLoad_ok hT (by omega_arith) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9) fun t ⟨⟨h17, _, hm⟩, k⟩ =>
+      ⟨hw.congr' (rs := []) (fun x _ => by rw [hm]) (by simp) k (by decide), by omega_arith, h17,
         (k.gpr .x7 (by decide)).trans h7, (k.gpr .x8 (by decide)).trans h8⟩
   refine RelCT.seqs_append (ne 0) (by simp) (RelCT.seq (trialEntry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
   refine RelCT.seqs_append (ne 1) (by simp) (RelCT.seq (trialEntry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
@@ -758,7 +758,7 @@ theorem gePin_ok {q : FPub} {s : State} (h : KSt q s) :
   have hs := hw.scr
   have hn := hs.nowrap
   have h256 := hw.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
   refine WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t => t.gpr .x1 = q.eP ∧ t.gpr .x2 = BitVec.ofNat 64 q.eB.length)
     (by brun [hw.x0, hdr_enc (show kE < 32 by decide), hdr_enc (show kElen < 32 by decide), hl kE (by decide),
       hl kElen (by decide), h.hdr.e, h.hdr.elen]) (by decide) (by decide) (by decide +kernel))
@@ -777,7 +777,7 @@ theorem geFront_ok {q : FPub} {s : State} (h : KSt q s) :
   have h256 := hw.h256
   have hw4 := hd.w4
   have hodd : wv s.mem q.B (slot q.w aN) q.w % 2 = 1 := by
-    rw [hc]; exact (VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * q.w) (by omega) _).1
+    rw [hc]; exact (VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * q.w) (by omega_arith) _).1
   have hG8 : 8 * kG + 8 ≤ slot q.w aN := hdr_lt_slot q.w aN (by decide)
   have sN := hw.sl (show aN < 16 by decide)
   refine WP.seq (WP.mono (loadE_ok hw hh.e hh.elen hd.el1 hd.el8 he) fun s₁ ⟨h3₁, hm₁, k₁⟩ => ?_)
@@ -786,14 +786,14 @@ theorem geFront_ok {q : FPub} {s : State} (h : KSt q s) :
   have hx3 : s₁.gpr .x3 = BitVec.ofNat 64 (Spec.Rsa.os2ip q.eB) := by rw [← h3₁, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine WP.mono (WP.keep [.x4, .x5] (Q := fun t => t.mem = s₁.mem.writeW (off q.B (8 * kG)) (s₁.gpr .x3) ∧
       t.gpr .x5 = BitVec.ofNat 64 (Spec.Rsa.os2ip q.eB % 2) ∧ t.gpr .x3 = s₁.gpr .x3) (by
-    brun [h₁.x0, hdr_enc (show kG < 32 by decide), h₁.scr.st (d := 8 * kG) (by simp only [kG]; omega), one16]
+    brun [h₁.x0, hdr_enc (show kG < 32 by decide), h₁.scr.st (d := 8 * kG) (by simp only [kG]; omega_arith), one16]
     rw [hx3]; apply BitVec.eq_of_toNat_eq
-    rw [and1_toNat]; simp only [BitVec.toNat_ofNat]; omega)
+    rw [and1_toNat]; simp only [BitVec.toNat_ofNat]; omega_arith)
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨hm, h5, h3⟩, k⟩ => ?_
-  have o : Outside q.B (8 * kG) 8 s.mem t.mem := by rw [hm, hm₁]; exact writeW_outside _ _ _ (by omega)
+  have o : Outside q.B (8 * kG) 8 s.mem t.mem := by rw [hm, hm₁]; exact writeW_outside _ _ _ (by omega_arith)
   refine ⟨⟨hw.congr' (Frm.of_outside o (List.mem_singleton_self _)) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact KMut.hdr (by simp [kG, sW])) (k₁.trans k) (by decide),
-    hE64, h3.trans hx3, by rw [hm, word_writeW_self, hx3], by rw [o.wv (Or.inr hG8) (by omega)]; exact hodd⟩, h5⟩
+    hE64, h3.trans hx3, by rw [hm, word_writeW_self, hx3], by rw [o.wv (Or.inr hG8) (by omega_arith)]; exact hodd⟩, h5⟩
 
 /-- `e` odd, and `x5 = e − 1`. -/
 def GE2 (q : FPub) (s : State) : Prop :=
@@ -803,9 +803,9 @@ theorem geDec_ok {q : FPub} {s : State} (h : GE q s ∧ isa.eval (.zero .x .x5) 
     WP isa (.block [.subImm .x .x5 .x3 1]) s (GE2 q) := by
   obtain ⟨⟨⟨hw, hE, h3, hG, hc⟩, h5⟩, hz⟩ := h
   have hodd : Spec.Rsa.os2ip q.eB % 2 = 1 := by
-    rw [eval_zero, h5, ofNat64_beq_zero (by omega)] at hz
+    rw [eval_zero, h5, ofNat64_beq_zero (by omega_arith)] at hz
     simp only [Option.some.injEq, decide_eq_false_iff_not] at hz
-    omega
+    omega_arith
   refine WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = BitVec.ofNat 64 (Spec.Rsa.os2ip q.eB) - BitVec.ofNat 64 1 ∧
       t.mem = s.mem) (by brun [h3]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h5', hm⟩, k⟩ =>
     ⟨⟨hw.congr' (rs := []) (fun x _ => by rw [hm]) (by simp) k (by decide), hE, (k.gpr .x3 (by decide)).trans h3,
@@ -821,7 +821,7 @@ theorem GE2.gg {q : FPub} {s : State} (h : GE2 q s ∧ isa.eval (.zero .x .x5) s
   obtain ⟨⟨⟨hw, hE, -, hG, hc⟩, hodd, h5⟩, hz⟩ := h
   rw [eval_zero, h5, ofNat_sub_one_beq hE] at hz
   simp only [Option.some.injEq, decide_eq_false_iff_not] at hz
-  exact ⟨hw, hc, hG, by omega, hodd, hE⟩
+  exact ⟨hw, hc, hG, by omega_arith, hodd, hE⟩
 
 theorem copyKW_ok {q : FPub} {s : State} (h : GG q s) : WP isa (copyA aX aN) s (KW q) :=
   WP.mono (copyA_ok h.1 (o := aX) (a := aN) (by decide) (by decide) (by decide)) fun _ ⟨_, o, _, _, k⟩ =>

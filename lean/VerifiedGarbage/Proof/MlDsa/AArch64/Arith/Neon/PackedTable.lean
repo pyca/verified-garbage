@@ -23,17 +23,17 @@ theorem vword_ext8 (v : BitVec 128) {e : Nat} (he : e < 4) :
     vword (((v++v) >>> (8*8)).extractLsb' 0 128) e = vword v ((e+2)%4) := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_arith) with rfl | rfl | rfl | rfl <;>
     simp only [vword,BitVec.getLsbD_extractLsb',BitVec.getLsbD_ushiftRight,
       BitVec.getLsbD_append,Nat.reduceAdd,Nat.reduceMul,Nat.reduceMod,Nat.zero_add]
   all_goals rw [BitVec.getLsbD_append]
   all_goals simp +arith [hi]
-  all_goals simp [show i ≤ 31 by omega,show i ≤ 63 by omega,show i ≤ 95 by omega,show i ≤ 127 by omega]
+  all_goals simp [show i ≤ 31 by omega_arith,show i ≤ 63 by omega_arith,show i ≤ 95 by omega_arith,show i ≤ 127 by omega_arith]
 
 theorem table_vec {tab : Nat → Nat} {zt : Zq → Zq} (hzt : TabZ tab zt)
     {m : Mem} {p : Addr} (ht : Tab tab m p 256) {k : Nat} (hk : k+4 ≤ 256) :
     Zetas (m.read (coeffAddr p k) 16) (fun e => zt (Spec.MlDsa.zetas (k+e))) := fun e he => by
-  rw [vword_read16 _ _ he,coeffAddr_add,← coeffAt_eq,ht (k+e) (by omega),
+  rw [vword_read16 _ _ he,coeffAddr_add,← coeffAt_eq,ht (k+e) (by omega_arith),
     BitVec.toNat_ofNat,hzt (k+e)]
   exact Nat.mod_eq_of_lt (Nat.lt_trans (Nat.mod_lt _ (by decide)) (by decide))
 
@@ -48,9 +48,9 @@ theorem zetaPerms_ok {s : State} {F : Nat → Zq} (len : Nat) (hlen : len = 1 �
     intro e he
     simp only [Nat.div_one,ite_true,ite_false,Nat.reduceDiv,Nat.reduceSub]
     change (vword (s₂.v .v18) e).toNat = (F (3-e)).val*2^32%q
-    rw [h₂.v,vword_ext8 _ he,h₁.v,VG.Proof.MlKem.AArch64.vword_rev64s _ (by omega)]
-    have hi : (if ((e+2)%4)%2 = 0 then (e+2)%4+1 else (e+2)%4-1) = 3-e := by split <;> omega
-    rw [hi]; exact hz _ (by omega)
+    rw [h₂.v,vword_ext8 _ he,h₁.v,VG.Proof.MlKem.AArch64.vword_rev64s _ (by omega_arith)]
+    have hi : (if ((e+2)%4)%2 = 0 then (e+2)%4+1 else (e+2)%4-1) = 3-e := by split <;> omega_arith
+    rw [hi]; exact hz _ (by omega_arith)
   · change WP isa (.block []) s _
     refine WP.block_nil_iff.mpr ⟨VChg.refl _ _,?_⟩
     intro e he
@@ -63,15 +63,15 @@ theorem zetaPerms_ok {s : State} {F : Nat → Zq} (len : Nat) (hlen : len = 1 �
     intro e he
     simp only [Nat.div_one,ite_true,ite_false,Nat.reduceDiv,Nat.reduceSub]
     change (vword (s₂.v .v18) e).toNat = (F (1-e/2)).val*2^32%q
-    rw [h₂.v,vword_ext8 _ he,h₁.v,VG.Proof.MlKem.AArch64.vword_zip1_s4 _ (by omega)]
-    have hi : ((e+2)%4)/2 = 1-e/2 := by omega
-    rw [hi]; exact hz _ (by omega)
+    rw [h₂.v,vword_ext8 _ he,h₁.v,VG.Proof.MlKem.AArch64.vword_zip1_s4 _ (by omega_arith)]
+    have hi : ((e+2)%4)/2 = 1-e/2 := by omega_arith
+    rw [hi]; exact hz _ (by omega_arith)
   · change WP isa (.block [.vop (.perm .zip1 .s4 .v18 .v18 .v18)]) s _
     refine wp_vop (d := .v18) rfl fun s' h => WP.block_nil_iff.mpr ⟨h.chg,?_⟩
     intro e he
     simp only [Nat.div_one,ite_true,ite_false,Nat.reduceDiv,Nat.reduceSub]
     change (vword (s'.v .v18) e).toNat = (F (e/2)).val*2^32%q
-    rw [h.v,VG.Proof.MlKem.AArch64.vword_zip1_s4 _ he]; exact hz _ (by omega)
+    rw [h.v,VG.Proof.MlKem.AArch64.vword_zip1_s4 _ he]; exact hz _ (by omega_arith)
 
 def baseZ (len : Nat) (up : Bool) (k : Nat) : Nat := if up then k else k-(4/len-1)
 
@@ -96,7 +96,7 @@ theorem zetaPre_ok (len : Nat) (hlen : len = 1 ∨ len = 2) (up : Bool) {p : Add
   cases up
   · have hN : 4*(4/len-1) < 4096 := by rcases hlen with rfl | rfl <;> decide
     refine WP.mono (moveZ_ok _ hN false s) fun s' ⟨⟨⟨hx,hm⟩,hk⟩,hv⟩ => ⟨⟨⟨?_,hm⟩,hk⟩,hv⟩
-    rw [hx,h3,coeffAddr_sub _ _ _ (by have := hb rfl; omega)]
+    rw [hx,h3,coeffAddr_sub _ _ _ (by have := hb rfl; omega_arith)]
     rfl
   · exact WP.block_nil_iff.mpr ⟨⟨⟨h3,rfl⟩,Keep.refl _ _⟩,rfl⟩
 
@@ -140,19 +140,19 @@ theorem packedZetas_ok {tab : Nat → Nat} {zt : Zq → Zq} (hzt : TabZ tab zt)
           if up then k+e/len else k-e/len := by
         rcases hlen with rfl | rfl <;> cases up <;>
           simp only [baseZ,Bool.false_eq_true,ite_true,ite_false,Nat.div_one,Nat.reduceDiv,Nat.reduceSub] at * <;>
-          have hkk := hb (by trivial) <;> omega
+          have hkk := hb (by trivial) <;> omega_arith
       change (zt (Spec.MlDsa.zetas (baseZ len up k+(if up then e/len else 4/len-1-e/len)))).val*2^32%q = _
       rw [hi]
   · rw [h34,h3v.gpr,h2.gpr,h31]
     rcases hlen with rfl | rfl <;> cases up
     · simp only [baseZ,Bool.false_eq_true,ite_false,Nat.div_one,Nat.reduceDiv,Nat.reduceSub]
-      rw [show (4 : BitVec 64) = BitVec.ofNat 64 (4*1) from rfl,coeffAddr_sub _ _ _ (by have := hb rfl; omega)]
-      exact congrArg (coeffAddr p) (by omega)
+      rw [show (4 : BitVec 64) = BitVec.ofNat 64 (4*1) from rfl,coeffAddr_sub _ _ _ (by have := hb rfl; omega_arith)]
+      exact congrArg (coeffAddr p) (by omega_arith)
     · simp only [baseZ,ite_true,Nat.div_one,Nat.reduceDiv]
       exact coeffAddr_add p k 4
     · simp only [baseZ,Bool.false_eq_true,ite_false,Nat.reduceDiv,Nat.reduceSub]
-      rw [show (4 : BitVec 64) = BitVec.ofNat 64 (4*1) from rfl,coeffAddr_sub _ _ _ (by have := hb rfl; omega)]
-      exact congrArg (coeffAddr p) (by omega)
+      rw [show (4 : BitVec 64) = BitVec.ofNat 64 (4*1) from rfl,coeffAddr_sub _ _ _ (by have := hb rfl; omega_arith)]
+      exact congrArg (coeffAddr p) (by omega_arith)
     · simp only [baseZ,ite_true,Nat.reduceDiv]
       exact coeffAddr_add p k 2
 

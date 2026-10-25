@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.SelectKey
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.SelectKey
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Table
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Table
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Select
 
 /-! The directly indexed odd-key operand preserves bounded field slots. -/
 

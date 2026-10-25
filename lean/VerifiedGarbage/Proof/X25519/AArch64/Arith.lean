@@ -36,19 +36,19 @@ theorem Bnd.mono {f : Nat → Nat} {k k' : Nat} (h : Bnd f k) (hk : k ≤ k') : 
 theorem valN_congr {f g : Nat → Nat} {n : Nat} (h : ∀ i < n, f i = g i) : valN f n = valN g n := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [valN, valN, ih fun i hi => h i (by omega), h n (by omega)]
+  | succ n ih => rw [valN, valN, ih fun i hi => h i (by omega_arith), h n (by omega_arith)]
 
 theorem valN_lt {f : Nat → Nat} {n : Nat} (h : ∀ i < n, f i < 2 ^ 17) : valN f n < 2 ^ (17 * n) := by
   induction n with
   | zero => simp [valN]
   | succ n ih =>
     rw [valN]
-    have h1 := ih fun i hi => h i (by omega)
-    have h2 := h n (by omega)
+    have h1 := ih fun i hi => h i (by omega_arith)
+    have h2 := h n (by omega_arith)
     have : f n * 2 ^ (17 * n) + 2 ^ (17 * n) ≤ 2 ^ 17 * 2 ^ (17 * n) := by
       rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ h2
-    rw [show 17 * (n + 1) = 17 + 17 * n by omega, Nat.pow_add]
-    omega
+    rw [show 17 * (n + 1) = 17 + 17 * n by omega_arith, Nat.pow_add]
+    omega_arith
 
 /-! ## Products -/
 
@@ -60,13 +60,13 @@ theorem valN_mul (c : Nat) (f : Nat → Nat) (n : Nat) : valN (fun i => f i * c)
 theorem valN_add (f g : Nat → Nat) (n : Nat) : valN (fun i => f i + g i) n = valN f n + valN g n := by
   induction n with
   | zero => rfl
-  | succ n ih => simp only [valN, ih, Nat.add_mul]; omega
+  | succ n ih => simp only [valN, ih, Nat.add_mul]; omega_arith
 
 theorem valN_add_split (h : Nat → Nat) (a : Nat) :
     ∀ b, valN h (a + b) = valN h a + 2 ^ (17 * a) * valN (fun j => h (a + j)) b
   | 0 => by rw [Nat.add_zero, valN, Nat.mul_zero, Nat.add_zero]
   | b + 1 => by
-    rw [← Nat.add_assoc, valN, valN_add_split h a b, valN, show 17 * (a + b) = 17 * a + 17 * b by omega,
+    rw [← Nat.add_assoc, valN, valN_add_split h a b, valN, show 17 * (a + b) = 17 * a + 17 * b by omega_arith,
       Nat.pow_add]
     generalize 2 ^ (17 * a) = A
     generalize 2 ^ (17 * b) = C
@@ -74,7 +74,7 @@ theorem valN_add_split (h : Nat → Nat) (a : Nat) :
 
 theorem valN_zero {h : Nat → Nat} : ∀ {n}, (∀ k < n, h k = 0) → valN h n = 0
   | 0, _ => rfl
-  | n + 1, hz => by rw [valN, valN_zero fun k hk => hz k (by omega), hz n (by omega), Nat.zero_mul]
+  | n + 1, hz => by rw [valN, valN_zero fun k hk => hz k (by omega_arith), hz n (by omega_arith), Nat.zero_mul]
 
 /-- `Σ_{i < n} t i`. -/
 def sumR (t : Nat → Nat) : Nat → Nat
@@ -84,11 +84,11 @@ def sumR (t : Nat → Nat) : Nat → Nat
 theorem sumR_congr {t u : Nat → Nat} {n : Nat} (h : ∀ i < n, t i = u i) : sumR t n = sumR u n := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [sumR, sumR, ih fun i hi => h i (by omega), h n (by omega)]
+  | succ n ih => rw [sumR, sumR, ih fun i hi => h i (by omega_arith), h n (by omega_arith)]
 
 theorem sumR_zero {t : Nat → Nat} : ∀ {n}, (∀ i < n, t i = 0) → sumR t n = 0
   | 0, _ => rfl
-  | n + 1, hz => by rw [sumR, sumR_zero fun i hi => hz i (by omega), hz n (by omega)]
+  | n + 1, hz => by rw [sumR, sumR_zero fun i hi => hz i (by omega_arith), hz n (by omega_arith)]
 
 theorem sumR_split (t : Nat → Nat) (a : Nat) :
     ∀ b, sumR t (a + b) = sumR t a + sumR (fun j => t (a + j)) b
@@ -117,40 +117,40 @@ def colsum (f g : Nat → Nat) (n k : Nat) : Nat := sumR (fun i => term f g i k)
 /-- Row `n` is `f n · 2^(17 n) · g`. -/
 theorem row_val (f g : Nat → Nat) {n : Nat} (hn : n ≤ 14) :
     valN (term f g n) 29 = 2 ^ (17 * n) * (f n * valN g 15) := by
-  have z1 : valN (term f g n) n = 0 := valN_zero fun k hk => term_eq_zero (by omega)
+  have z1 : valN (term f g n) n = 0 := valN_zero fun k hk => term_eq_zero (by omega_arith)
   have z2 : valN (fun j => term f g n (n + (15 + j))) (14 - n) = 0 :=
-    valN_zero fun k _ => term_eq_zero (by omega)
+    valN_zero fun k _ => term_eq_zero (by omega_arith)
   have e3 : valN (fun j => term f g n (n + j)) 15 = f n * valN g 15 := by
     rw [valN_congr (g := fun j => g j * f n) fun j hj => by
-      rw [term_eq (by omega), Nat.add_sub_cancel_left, Nat.mul_comm], valN_mul]
-  rw [show 29 = n + (15 + (14 - n)) by omega, valN_add_split, valN_add_split (fun j => term f g n (n + j)),
+      rw [term_eq (by omega_arith), Nat.add_sub_cancel_left, Nat.mul_comm], valN_mul]
+  rw [show 29 = n + (15 + (14 - n)) by omega_arith, valN_add_split, valN_add_split (fun j => term f g n (n + j)),
     z1, z2, e3, Nat.mul_zero, Nat.add_zero, Nat.zero_add]
 
 /-- Product scanning: `f · g` is the sum of its 29 columns. -/
 theorem prod_cols (f g : Nat → Nat) : ∀ n ≤ 15, valN f n * valN g 15 = valN (colsum f g n) 29
   | 0, _ => by rw [valN, Nat.zero_mul]; exact (valN_zero fun _ _ => rfl).symm
   | n + 1, hn => by
-    rw [valN, Nat.add_mul, prod_cols f g n (by omega), Nat.mul_comm (f n), Nat.mul_assoc,
-      ← row_val f g (by omega), ← valN_add]
+    rw [valN, Nat.add_mul, prod_cols f g n (by omega_arith), Nat.mul_comm (f n), Nat.mul_assoc,
+      ← row_val f g (by omega_arith), ← valN_add]
     rfl
 
 theorem colsum_lo (f g : Nat → Nat) {k : Nat} (hk : k < 15) : colsum f g 15 k = lo f g k := by
   have e := sumR_split (fun i => term f g i k) (k + 1) (14 - k)
-  rw [show k + 1 + (14 - k) = 15 by omega,
-    sumR_zero (n := 14 - k) (t := fun j => term f g (k + 1 + j) k) fun j _ => term_eq_zero (by omega),
+  rw [show k + 1 + (14 - k) = 15 by omega_arith,
+    sumR_zero (n := 14 - k) (t := fun j => term f g (k + 1 + j) k) fun j _ => term_eq_zero (by omega_arith),
     Nat.add_zero] at e
   rw [colsum, e, lo]
-  exact sumR_congr fun i hi => term_eq (by omega)
+  exact sumR_congr fun i hi => term_eq (by omega_arith)
 
 theorem colsum_hi (f g : Nat → Nat) {k : Nat} (hk : k < 14) :
     colsum f g 15 (15 + k) = hi f g k := by
   have e := sumR_split (fun i => term f g i (15 + k)) (k + 1) (14 - k)
-  rw [show k + 1 + (14 - k) = 15 by omega,
-    sumR_zero (n := k + 1) (t := fun i => term f g i (15 + k)) fun i hi => term_eq_zero (by omega),
+  rw [show k + 1 + (14 - k) = 15 by omega_arith,
+    sumR_zero (n := k + 1) (t := fun i => term f g i (15 + k)) fun i hi => term_eq_zero (by omega_arith),
     Nat.zero_add] at e
   rw [colsum, e, hi]
   refine sumR_congr fun j hj => ?_
-  rw [term_eq (by omega), show 15 + k - (k + 1 + j) = 14 - j by omega]
+  rw [term_eq (by omega_arith), show 15 + k - (k + 1 + j) = 14 - j by omega_arith]
 
 /-- The columns that do not fold, and `2²⁵⁵` times those that do. -/
 theorem product_eq (f g : Nat → Nat) :
@@ -187,26 +187,26 @@ theorem sum_le {t : Nat → Nat} {c : Nat} : ∀ n, (∀ i < n, t i ≤ c) → s
   | 0, _ => Nat.zero_le _
   | n + 1, h => by
     rw [sumR, Nat.succ_mul]
-    exact Nat.add_le_add (sum_le n fun i hi => h i (by omega)) (h n (by omega))
+    exact Nat.add_le_add (sum_le n fun i hi => h i (by omega_arith)) (h n (by omega_arith))
 
 theorem lo_le {f g : Nat → Nat} (hf : Bnd f 26) (hg : Bnd g 26) {k : Nat} (hk : k < 15) :
     lo f g k ≤ 15 * 2 ^ 52 :=
-  Nat.le_trans (sum_le (k + 1) fun i hi => prod_le hf hg (by omega) (by omega))
-    (Nat.mul_le_mul_right _ (by omega))
+  Nat.le_trans (sum_le (k + 1) fun i hi => prod_le hf hg (by omega_arith) (by omega_arith))
+    (Nat.mul_le_mul_right _ (by omega_arith))
 
 theorem hi_le {f g : Nat → Nat} (hf : Bnd f 26) (hg : Bnd g 26) {k : Nat} (hk : k < 15) :
     hi f g k ≤ 15 * 2 ^ 52 :=
-  Nat.le_trans (sum_le (14 - k) fun j hj => prod_le hf hg (by omega) (by omega))
-    (Nat.mul_le_mul_right _ (by omega))
+  Nat.le_trans (sum_le (14 - k) fun j hj => prod_le hf hg (by omega_arith) (by omega_arith))
+    (Nat.mul_le_mul_right _ (by omega_arith))
 
 theorem colM_eq {f g : Nat → Nat} (hf : Bnd f 26) (hg : Bnd g 26) {k : Nat} (hk : k < 15) :
     colM f g k = lo f g k + 19 * hi f g k ∧ colM f g k ≤ 2 ^ 61 := by
   have h1 := lo_le hf hg hk
   have h2 := hi_le hf hg hk
   simp only [colM]
-  rw [Nat.mod_eq_of_lt (by omega : lo f g k < 2 ^ 64), Nat.mod_eq_of_lt (by omega : hi f g k < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (by omega_arith : lo f g k < 2 ^ 64), Nat.mod_eq_of_lt (by omega_arith : hi f g k < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 theorem cols_spec {f g : Nat → Nat} (hf : Bnd f 26) (hg : Bnd g 26) :
     (∀ k < 15, cols f g k ≤ 2 ^ 61) ∧ toFe (val15 (cols f g)) = toFe (val15 f) * toFe (val15 g) := by
@@ -241,7 +241,7 @@ theorem valN_two {f g : Nat → Nat} {k n : Nat} (hn : k + 2 ≤ n) (hlo : ∀ i
   induction hn with
   | refl =>
     simp only [valN]
-    rw [valN_congr hlo, show 17 * (k + 1) = 17 * k + 17 by omega, Nat.pow_add]
+    rw [valN_congr hlo, show 17 * (k + 1) = 17 * k + 17 by omega_arith, Nat.pow_add]
     have e : g k * 2 ^ (17 * k) + g (k + 1) * (2 ^ (17 * k) * 2 ^ 17) =
         (g k + 2 ^ 17 * g (k + 1)) * 2 ^ (17 * k) := by
       rw [Nat.add_mul, Nat.mul_comm (2 ^ 17), Nat.mul_assoc, Nat.mul_comm (2 ^ 17)]
@@ -254,11 +254,11 @@ theorem valN_two {f g : Nat → Nat} {k n : Nat} (hn : k + 2 ≤ n) (hlo : ∀ i
 theorem cstep_val {f : Nat → Nat} {k : Nat} (hk : k + 2 ≤ 15)
     (h : f (k + 1) + f k / 2 ^ 17 < 2 ^ 64) : valN (cstep k (k + 1) f) 15 = valN f 15 := by
   refine valN_two hk (fun i hi => ?_) (fun i hi => ?_) ?_
-  · simp only [cstep, show i ≠ k by omega, show i ≠ k + 1 by omega, ite_false]
-  · simp only [cstep, show i ≠ k by omega, show i ≠ k + 1 by omega, ite_false]
-  · simp only [cstep, ite_true, show k + 1 ≠ k by omega, ite_false]
+  · simp only [cstep, show i ≠ k by omega_arith, show i ≠ k + 1 by omega_arith, ite_false]
+  · simp only [cstep, show i ≠ k by omega_arith, show i ≠ k + 1 by omega_arith, ite_false]
+  · simp only [cstep, ite_true, show k + 1 ≠ k by omega_arith, ite_false]
     rw [Nat.mod_eq_of_lt h]
-    omega
+    omega_arith
 
 theorem chainN_spec {f : Nat → Nat} {M : Nat} (hM : M + M / 2 ^ 16 < 2 ^ 64)
     (hf : ∀ i < 15, f i ≤ M) {n : Nat} (hn : n ≤ 14) :
@@ -270,35 +270,35 @@ theorem chainN_spec {f : Nat → Nat} {M : Nat} (hM : M + M / 2 ^ 16 < 2 ^ 64)
     have := hf 0 (by decide)
     exact Nat.le_trans this (Nat.le_add_right _ _)
   | succ n ih =>
-    obtain ⟨h1, h2, h3, h4⟩ := ih (by omega)
-    have hn1 : chainN f n (n + 1) = f (n + 1) := h3 (n + 1) (by omega)
-    have hf1 := hf (n + 1) (by omega)
-    have hc : chainN f n n / 2 ^ 17 ≤ M / 2 ^ 16 := by omega
-    have hsum : chainN f n (n + 1) + chainN f n n / 2 ^ 17 < 2 ^ 64 := by omega
+    obtain ⟨h1, h2, h3, h4⟩ := ih (by omega_arith)
+    have hn1 : chainN f n (n + 1) = f (n + 1) := h3 (n + 1) (by omega_arith)
+    have hf1 := hf (n + 1) (by omega_arith)
+    have hc : chainN f n n / 2 ^ 17 ≤ M / 2 ^ 16 := by omega_arith
+    have hsum : chainN f n (n + 1) + chainN f n n / 2 ^ 17 < 2 ^ 64 := by omega_arith
     simp only [chainN]
     refine ⟨fun i hi => ?_, ?_, fun i hi => ?_, ?_⟩
     · simp only [cstep]
       by_cases hin : i = n
       · rw [ite_eq_left hin]; exact Nat.mod_lt _ (by decide)
-      · rw [ite_eq_right hin, ite_eq_right (by omega)]; exact h1 i (by omega)
-    · simp only [cstep, show n + 1 ≠ n by omega, ite_false, ite_true]
-      rw [Nat.mod_eq_of_lt hsum]; omega
-    · simp only [cstep, show i ≠ n by omega, show i ≠ n + 1 by omega, ite_false]
-      exact h3 i (by omega)
-    · rw [cstep_val (by omega) hsum, h4]
+      · rw [ite_eq_right hin, ite_eq_right (by omega_arith)]; exact h1 i (by omega_arith)
+    · simp only [cstep, show n + 1 ≠ n by omega_arith, ite_false, ite_true]
+      rw [Nat.mod_eq_of_lt hsum]; omega_arith
+    · simp only [cstep, show i ≠ n by omega_arith, show i ≠ n + 1 by omega_arith, ite_false]
+      exact h3 i (by omega_arith)
+    · rw [cstep_val (by omega_arith) hsum, h4]
 
 theorem chainN_beyond {f : Nat → Nat} {n i : Nat} (hn : n ≤ 14) (hi : 15 ≤ i) : chainN f n i = f i := by
   induction n with
   | zero => rfl
   | succ n ih =>
-    simp only [chainN, cstep, show i ≠ n by omega, show i ≠ n + 1 by omega, ite_false]
-    exact ih (by omega)
+    simp only [chainN, cstep, show i ≠ n by omega_arith, show i ≠ n + 1 by omega_arith, ite_false]
+    exact ih (by omega_arith)
 
 /-- Folding the carry out of limb 14, as numbers. -/
 theorem cfold_valN {f : Nat → Nat} (h : f 0 + f 14 / 2 ^ 17 * 19 < 2 ^ 64) :
     val15 (cfold f) + 2 ^ 255 * (f 14 / 2 ^ 17) = val15 f + 19 * (f 14 / 2 ^ 17) := by
   have hc : ∀ i, 0 < i → i < 14 → cfold f i = f i := fun i h0 h14 => by
-    simp only [cfold, show i ≠ 14 by omega, show i ≠ 0 by omega, ite_false]
+    simp only [cfold, show i ≠ 14 by omega_arith, show i ≠ 0 by omega_arith, ite_false]
   have h0 : cfold f 0 = f 0 + f 14 / 2 ^ 17 * 19 := by
     simp only [cfold, show (0 : Nat) ≠ 14 by decide, ite_false, ite_true]; exact Nat.mod_eq_of_lt h
   have h14 : cfold f 14 = f 14 % 2 ^ 17 := by simp only [cfold, ite_true]
@@ -307,7 +307,7 @@ theorem cfold_valN {f : Nat → Nat} (h : f 0 + f 14 / 2 ^ 17 * 19 < 2 ^ 64) :
     hc 6 (by decide) (by decide), hc 7 (by decide) (by decide), hc 8 (by decide) (by decide),
     hc 9 (by decide) (by decide), hc 10 (by decide) (by decide), hc 11 (by decide) (by decide),
     hc 12 (by decide) (by decide), hc 13 (by decide) (by decide)]
-  omega
+  omega_arith
 
 /-- Folding the carry out of limb 14 does not change the number modulo `p`. -/
 theorem cfold_val {f : Nat → Nat} (h : f 0 + f 14 / 2 ^ 17 * 19 < 2 ^ 64) :
@@ -319,11 +319,11 @@ theorem cfold_val {f : Nat → Nat} (h : f 0 + f 14 / 2 ^ 17 * 19 < 2 ^ 64) :
   grind
 
 theorem cfold_beyond {f : Nat → Nat} {i : Nat} (hi : 15 ≤ i) : cfold f i = f i := by
-  simp only [cfold, show i ≠ 14 by omega, show i ≠ 0 by omega, ite_false]
+  simp only [cfold, show i ≠ 14 by omega_arith, show i ≠ 0 by omega_arith, ite_false]
 
 theorem cstep_beyond {f : Nat → Nat} {k k' i : Nat} (hk : k < 15) (hk' : k' < 15) (hi : 15 ≤ i) :
     cstep k k' f i = f i := by
-  simp only [cstep, show i ≠ k by omega, show i ≠ k' by omega, ite_false]
+  simp only [cstep, show i ≠ k by omega_arith, show i ≠ k' by omega_arith, ite_false]
 
 /-- The carries of a product: from limbs of at most `2⁶¹`, limbs below `2¹⁸`
 standing for the same number modulo `p`. -/
@@ -334,7 +334,7 @@ theorem carryF_spec {f : Nat → Nat} (hf : ∀ i < 15, f i ≤ 2 ^ 61) :
   have g0 := c1 0 (by decide)
   have g1 := c1 1 (by decide)
   have g2 := c1 2 (by decide)
-  have hfold : g 0 + g 14 / 2 ^ 17 * 19 < 2 ^ 64 := by omega
+  have hfold : g 0 + g 14 / 2 ^ 17 * 19 < 2 ^ 64 := by omega_arith
   have v1 := cfold_val hfold
   generalize hg1 : cfold g = g1 at v1
   have e0 : g1 0 = g 0 + g 14 / 2 ^ 17 * 19 := by
@@ -342,8 +342,8 @@ theorem carryF_spec {f : Nat → Nat} (hf : ∀ i < 15, f i ≤ 2 ^ 61) :
     exact Nat.mod_eq_of_lt hfold
   have e14 : g1 14 < 2 ^ 17 := by rw [← hg1]; simp only [cfold, ite_true]; exact Nat.mod_lt _ (by decide)
   have eo : ∀ i, 0 < i → i < 14 → g1 i = g i := fun i h0 h14 => by
-    rw [← hg1]; simp only [cfold, show i ≠ 14 by omega, show i ≠ 0 by omega, ite_false]
-  have s1 : g1 1 + g1 0 / 2 ^ 17 < 2 ^ 64 := by rw [eo 1 (by decide) (by decide), e0]; omega
+    rw [← hg1]; simp only [cfold, show i ≠ 14 by omega_arith, show i ≠ 0 by omega_arith, ite_false]
+  have s1 : g1 1 + g1 0 / 2 ^ 17 < 2 ^ 64 := by rw [eo 1 (by decide) (by decide), e0]; omega_arith
   have v2 := cstep_val (f := g1) (k := 0) (by decide) s1
   generalize hg2 : cstep 0 1 g1 = g2 at v2
   have f0 : g2 0 < 2 ^ 17 := by rw [← hg2]; simp only [cstep, ite_true]; exact Nat.mod_lt _ (by decide)
@@ -351,9 +351,9 @@ theorem carryF_spec {f : Nat → Nat} (hf : ∀ i < 15, f i ≤ 2 ^ 61) :
     rw [← hg2]; simp only [cstep, show (1 : Nat) ≠ 0 by decide, ite_false, ite_true]
     exact Nat.mod_eq_of_lt s1
   have fo : ∀ i, 1 < i → g2 i = g1 i := fun i h => by
-    rw [← hg2]; simp only [cstep, show i ≠ 0 by omega, show i ≠ 1 by omega, ite_false]
+    rw [← hg2]; simp only [cstep, show i ≠ 0 by omega_arith, show i ≠ 1 by omega_arith, ite_false]
   have s2 : g2 2 + g2 1 / 2 ^ 17 < 2 ^ 64 := by
-    rw [fo 2 (by decide), eo 2 (by decide) (by decide), f1, eo 1 (by decide) (by decide), e0]; omega
+    rw [fo 2 (by decide), eo 2 (by decide) (by decide), f1, eo 1 (by decide) (by decide), e0]; omega_arith
   have v3 := cstep_val (f := g2) (k := 1) (by decide) s2
   have hC : carryF f = cstep 1 2 g2 := by rw [carryF, hg, hg1, hg2]
   refine ⟨fun i hi => ?_, ?_, fun i hi => ?_⟩
@@ -363,15 +363,15 @@ theorem carryF_spec {f : Nat → Nat} (hf : ∀ i < 15, f i ≤ 2 ^ 61) :
     by_cases h2 : i = 2
     · rw [ite_eq_right h1, ite_eq_left h2, Nat.mod_eq_of_lt s2, fo 2 (by decide),
         eo 2 (by decide) (by decide), f1, eo 1 (by decide) (by decide), e0]
-      omega
+      omega_arith
     rw [ite_eq_right h1, ite_eq_right h2]
     by_cases h0 : i = 0
     · subst h0; exact Nat.lt_trans f0 (by decide)
-    rw [fo i (by omega)]
+    rw [fo i (by omega_arith)]
     by_cases h14 : i = 14
     · subst h14; exact Nat.lt_trans e14 (by decide)
-    rw [eo i (by omega) (by omega)]
-    exact Nat.lt_trans (c1 i (by omega)) (by decide)
+    rw [eo i (by omega_arith) (by omega_arith)]
+    exact Nat.lt_trans (c1 i (by omega_arith)) (by decide)
   · rw [hC]
     rw [congrArg toFe v3, congrArg toFe v2, v1]
     exact congrArg toFe c4
@@ -398,8 +398,8 @@ theorem mulSmallF_spec {f : Nat → Nat} (hf : Bnd f 26) :
   have hs : ∀ k < 15, scaleF f k = f k * 121665 := fun k hk => by
     simp only [scaleF, hk, ite_true]
     have := hf k hk
-    exact Nat.mod_eq_of_lt (by omega)
-  obtain ⟨c1, c2, -⟩ := carryF_spec (f := scaleF f) fun k hk => by rw [hs k hk]; have := hf k hk; omega
+    exact Nat.mod_eq_of_lt (by omega_arith)
+  obtain ⟨c1, c2, -⟩ := carryF_spec (f := scaleF f) fun k hk => by rw [hs k hk]; have := hf k hk; omega_arith
   refine ⟨c1, ?_⟩
   rw [mulSmallF, c2, val15, valN_congr hs, valN_mul]
   exact toFe_a24 rfl
@@ -416,12 +416,12 @@ theorem addF_spec {f g : Nat → Nat} {a b : Nat} (hf : Bnd f a) (hg : Bnd g b) 
     have h2 := hg k hk
     have : 2 ^ b ≤ 2 ^ a := Nat.pow_le_pow_right (by decide) hb
     have : 2 ^ a ≤ 2 ^ 62 := Nat.pow_le_pow_right (by decide) ha
-    simp only [addF, hk, ite_true]; exact Nat.mod_eq_of_lt (by omega)
+    simp only [addF, hk, ite_true]; exact Nat.mod_eq_of_lt (by omega_arith)
   refine ⟨fun k hk => ?_, ?_⟩
   · have h1 := hf k hk
     have h2 := hg k hk
     have : 2 ^ b ≤ 2 ^ a := Nat.pow_le_pow_right (by decide) hb
-    rw [e k hk, Nat.pow_succ]; omega
+    rw [e k hk, Nat.pow_succ]; omega_arith
   · rw [val15, valN_congr e, valN_add]; exact toFe_add rfl
 
 /-- The limbs of `16 p`. -/
@@ -438,21 +438,21 @@ def subF (f g : Nat → Nat) (k : Nat) : Nat := if k < 15 then subL (f k) (p16 k
 theorem subF_spec {f g : Nat → Nat} {a : Nat} (hf : Bnd f a) (hg : Bnd g 20) (ha : 21 ≤ a)
     (ha' : a ≤ 62) : Bnd (subF f g) (a + 1) ∧ toFe (val15 (subF f g)) = toFe (val15 f) - toFe (val15 g) := by
   have hp : ∀ k, 2 ^ 21 - 304 ≤ p16 k ∧ p16 k ≤ 2 ^ 21 := fun k => by
-    simp only [p16]; split <;> omega
+    simp only [p16]; split <;> omega_arith
   have e : ∀ k < 15, subF f g k + g k = f k + p16 k := fun k hk => by
     have h1 := hf k hk
     have h2 := hg k hk
     have h3 := hp k
     have : 2 ^ a ≤ 2 ^ 62 := Nat.pow_le_pow_right (by decide) ha'
     simp only [subF, subL, hk, ite_true]
-    rw [Nat.mod_eq_of_lt (by omega : f k + p16 k < 2 ^ 64)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_arith : f k + p16 k < 2 ^ 64)]
+    omega_arith
   refine ⟨fun k hk => ?_, ?_⟩
   · have h1 := hf k hk
     have h3 := hp k
     have := e k hk
     have : 2 ^ 21 ≤ 2 ^ a := Nat.pow_le_pow_right (by decide) ha
-    rw [Nat.pow_succ]; omega
+    rw [Nat.pow_succ]; omega_arith
   · refine toFe_sub ?_
     have e' : valN (fun k => subF f g k + g k) 15 = valN (fun k => f k + p16 k) 15 := valN_congr e
     rw [valN_add, valN_add, valN_p16] at e'

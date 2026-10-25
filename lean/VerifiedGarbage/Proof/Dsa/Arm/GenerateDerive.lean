@@ -61,7 +61,7 @@ theorem deriveFailure_ok {s : State} {base : Addr} {size pLen qLen : Nat} (hs : 
       Rest [.r0, .r4, .r11, .lr] s t ∧
       Outside (State.addr (pointerValue base s (.input .out))) 0 (3 * pLen + 2 * qLen) s.mem t.mem := by
   simp only [Generate.deriveFailure, Core.sequence, List.foldr]
-  refine WP.seq (wp_ldr12 hs (d := 96) (by decide) (by omega) fun u₁ v₁ => ?_)
+  refine WP.seq (wp_ldr12 hs (d := 96) (by decide) (by omega_arith) fun u₁ v₁ => ?_)
   refine wp_movw fun u₂ v₂ => wp_dp (op2_reg _ _) fun u₃ v₃ => wp_mov (op2_imm (by decide)) fun u₄ v₄ => WP.block_nil ?_
   have out : u₄.gpr .r11 = pointerValue base s (.input .out) := by
     rw [v₄.other .r11 (by decide), v₃.other .r11 (by decide), v₂.other .r11 (by decide), v₁.gpr]; rfl
@@ -71,7 +71,7 @@ theorem deriveFailure_ok {s : State} {base : Addr} {size pLen qLen : Nat} (hs : 
   have R₄ : Rest [.r4, .r11, .lr] s u₄ :=
     (((v₁.rest (by decide)).trans (v₂.rest (by decide))).trans (v₃.rest (by decide))).trans (v₄.rest (by decide))
   have M₄ : u₄.mem = s.mem := by rw [v₄.mem, v₃.mem, v₂.mem, v₁.mem]
-  refine WP.seq (WP.mono (failureLoop_ok h0 fit (by omega) out lr v₄.gpr
+  refine WP.seq (WP.mono (failureLoop_ok h0 fit (by omega_arith) out lr v₄.gpr
     (fun i hi => by rw [R₄.wr]; exact wr i hi)) fun t ⟨B, Ot, Rt⟩ => ?_)
   refine WP.seq (wp_mov (op2_imm (by decide)) fun t' v => WP.block_nil (WP.block_nil ⟨v.gpr, ?_, ?_, ?_⟩))
   · rw [v.mem]; exact VG.Proof.Zeroize.prefix_spec B
@@ -95,23 +95,23 @@ theorem deriveIn {s t : State} {base : Addr} {size : Nat} (h : derivePre s) (hb 
   obtain ⟨_, hrd, _, _, _, _, _, dPS, dXS, _, _, fP, fX, _, hv, _, hr3, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hz : 4960 ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have pr : (⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have xr : (⟨State.addr (arg s 1), (arg s 2).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (arg s 0).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 64) (v := s.gpr .r2) (by simp))
-    pr fP (by omega) (.inr rfl) dPS hz
+    pr fP (by omega_arith) (.inr rfl) dPS hz
   rw [BitVec.add_zero] at ip
   have ix := input_of E (p := .input .nonce) (by decide : Impl.Dsa.Layout.Field.nonce ≠ .mask) (o := 0)
     (len := (arg s 2).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 88) (v := arg s 1) (by simp))
-    xr fX (by omega) (.inr rfl) dXS hz
+    xr fX (by omega_arith) (.inr rfl) dXS hz
   rw [BitVec.add_zero] at ix
   have cg := fun {a : Nat} {xs : List (BitVec 32)} (h : (xs.map BitVec.toNat).sum = a) =>
     (sum_ofNat (s.gpr .r2) xs).trans (congrArg (fun n => s.gpr .r2 + BitVec.ofNat 32 n) h)
-  refine ⟨ip, input_of E (p := .input .q) (by decide : Impl.Dsa.Layout.Field.q ≠ .mask) ?_ pr fP (by omega)
-      (.inl (by omega)) dPS hz,
-    input_of E (p := .input .g) (by decide : Impl.Dsa.Layout.Field.g ≠ .mask) ?_ pr fP (by omega)
-      (.inl (by omega)) dPS hz, ix⟩
+  refine ⟨ip, input_of E (p := .input .q) (by decide : Impl.Dsa.Layout.Field.q ≠ .mask) ?_ pr fP (by omega_arith)
+      (.inl (by omega_arith)) dPS hz,
+    input_of E (p := .input .g) (by decide : Impl.Dsa.Layout.Field.g ≠ .mask) ?_ pr fP (by omega_arith)
+      (.inl (by omega_arith)) dPS hz, ix⟩
   · exact (E.field (d := 68) (v := s.gpr .r2 + arg s 0) (by simp)).trans (cg (xs := [arg s 0]) (by simp))
   · exact (E.field (d := 72) (v := s.gpr .r2 + arg s 0 + arg s 2) (by simp)).trans
       (cg (xs := [arg s 0, arg s 2]) (by simp))
@@ -126,13 +126,13 @@ theorem bytesIn_env {s₀ t : State} {base : Addr} {size : Nat} {fields : Fields
     fun i hi => ?_⟩
   · simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at hi
     rw [E.rd, E.wr]
-    exact ⟨_, List.mem_append_left _ hr, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_left _ hr, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   · simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at hi
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
     refine E.mem _ (.inr ?_)
     rw [Nat.zero_add]
     refine ofs_apart hd.symm ?_
-    have := ofs_off (State.addr P) (d := 0) (i := i) (by omega)
+    have := ofs_off (State.addr P) (d := 0) (i := i) (by omega_arith)
     rw [off, BitVec.add_zero, Nat.zero_add] at this
     rw [this]; exact hi
 

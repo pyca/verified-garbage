@@ -43,7 +43,7 @@ theorem bytesAt_scr (hg : Geo L scr) {m : Mem} {o n : Nat} (h : o + n ≤ oRsa) 
   simp only [Spec.Sha256.bytesAt, List.getElem_map, List.getElem_range]
   have e := hx i h1
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h2, Option.getD_some] at e
-  rw [← e, hg.scrA (by omega), sa, sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  rw [← e, hg.scrA (by omega_arith), sa, sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 /-! ## The parameters -/
 
@@ -122,7 +122,7 @@ theorem away_lo {o n : Nat} (hn : o + n ≤ oEm) : Away L scr so sl dOff dl (sR 
 theorem away_low : Away L scr so sl dOff dl L.LOW := by
   have := P.fs; have := P.fd
   obtain ⟨σ', ok⟩ := P.hg.ok
-  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega
+  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega_arith
   exact ⟨Lay.fr_low (by decide) hC, Lay.fr_low (by decide) hC, P.hg.low ok (by oomega), P.hg.low ok (by oomega)⟩
 
 /-- So does a slot other than theirs. -/
@@ -130,9 +130,9 @@ theorem away_slot {d : Nat} (hd : d + 4 ≤ frameBytes) (h₁ : d + 4 ≤ sCtr �
     Away L scr so sl dOff dl (slotR L d) := by
   have := P.fs; have := P.fd
   obtain ⟨σ', ok⟩ := P.hg.ok
-  have hF : d + 4 ≤ L.F + 16 := by rw [P.hg.F]; omega
-  refine ⟨slotSep (by decide) hd (by unfold sCtr sDone at *; omega),
-    slotSep (by decide) hd (by unfold sCtr sDone at *; omega), (P.hg.slot ok (by oomega) hF).symm,
+  have hF : d + 4 ≤ L.F + 16 := by rw [P.hg.F]; omega_arith
+  refine ⟨slotSep (by decide) hd (by unfold sCtr sDone at *; omega_arith),
+    slotSep (by decide) hd (by unfold sCtr sDone at *; omega_arith), (P.hg.slot ok (by oomega) hF).symm,
     (P.hg.slot ok (by oomega) hF).symm⟩
 
 end MP
@@ -260,9 +260,9 @@ theorem mgfD_vp (hc32 : c < 2 ^ 32) :
       g.ok.repr _ _ _ _ _ (fun i hi => ?_) rp⟩, fun i hi => ?_⟩
   · exact fr.bytes (R := sR scr oSt g.H.S) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by oomega) (by oomega) (by oomega))
-      (by show g.H.S ≤ 2 ^ 64; omega) hi
-  rw [m3, sa_writeW32 scr _ _ (by oomega) (by oomega), ite_eq_left (by omega),
-    show oCtr + i - oCtr = i by omega, ctrByte hc32 hi, i2osp4_getD c _ hi]
+      (by show g.H.S ≤ 2 ^ 64; omega_arith) hi
+  rw [m3, sa_writeW32 scr _ _ (by oomega) (by oomega), ite_eq_left (by omega_arith),
+    show oCtr + i - oCtr = i by omega_arith, ctrByte hc32 hi, i2osp4_getD c _ hi]
 
 /-- `update(state, sl, scratch + oCtr, 4)`'s arguments. -/
 theorem mgfE_vp :
@@ -368,7 +368,7 @@ theorem mgfH_vp :
   · have e := congrArg (fun l => l.getD i 0) hd
     simp only [List.nil_append] at e
     rw [← e, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi, Spec.Sha256.bytesAt,
-      List.getElem?_map, List.getElem?_range (by omega)]
+      List.getElem?_map, List.getElem?_range (by omega_arith)]
     simp only [Option.map_some, Option.getD_some, sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 /-- The XOR's registers. -/
@@ -405,7 +405,7 @@ theorem mgfI_vp (hcd : c * g.H.D < dl) :
   have hx : dl - c * g.H.D < 2 ^ 32 := by oomega
   have e6 : t6.gpr .ecx = BitVec.ofNat 32 (dl - c * g.H.D) := by
     rw [u6.gpr, u5.gpr, m5, u4.mem, u3.mem, u2.mem, u1.mem, hg.aFr ok sDone (by decide),
-      P.dstL σ _ hm.1, hm.2.done, sub_ofNat (by omega)]
+      P.dstL σ _ hm.1, hm.2.done, sub_ofNat (by omega_arith)]
   refine ⟨((((((((c5.upd u6 (by decide) (by decide)).upd u7 (by decide) (by decide)).upd u8 (by decide)
     (by decide)).upd u9 (by decide) (by decide)).upd u10 (by decide) (by decide)).upd u11 (by decide)
     (by decide)).upd u12 (by decide) (by decide))), by rw [m12]; exact ⟨hm, hd⟩, ?_, ?_, ?_⟩
@@ -415,7 +415,7 @@ theorem mgfI_vp (hcd : c * g.H.D < dl) :
   · simp (disch := decide) only [u12.other, u11.other, u10.other, u9.other, u8.other, u7.other, u6.other,
       u5.other, u4.gpr, u3.gpr, u2.other, u1.other, hc.ebp]
   · rw [u12.gpr, u11.gpr, u10.gpr, u9.gpr, u9.other .eax (by decide), u8.gpr, u7.gpr, e6,
-      minSel hx (by omega)]
+      minSel hx (by omega_arith)]
 
 /-- The XOR of the digest into `dst`. -/
 theorem mgfJ_vp (hcd : c * g.H.D < dl) :
@@ -433,22 +433,22 @@ theorem mgfJ_vp (hcd : c * g.H.D < dl) :
   have hg := P.hg
   obtain ⟨σ', ok⟩ := hg.ok
   generalize hn : min g.H.D (dl - c * g.H.D) = n
-  have hn0 : 0 < n := by omega
-  have hnD : n ≤ g.H.D := by omega
-  have hnd : c * g.H.D + n ≤ dl := by omega
+  have hn0 : 0 < n := by omega_arith
+  have hnD : n ≤ g.H.D := by omega_arith
+  have hnd : c * g.H.D + n ≤ dl := by omega_arith
   refine (xor_vp hg (od := dOff + c * g.H.D) (os := oDig) (n := n) hn0 (by oomega) (by oomega) (by oomega)
     (X := fun σ m => MI g L scr so sl dOff dl c dstv seed Inv σ m ∧ Dg g scr (seed σ ++ Spec.Rsa.i2osp c 4) m)).mono
     (fun _ _ h => h) fun σ s ⟨hc, m₀, ⟨hm, hd⟩, hf, hx⟩ => ⟨hc, ?_, ?_, ?_, fun i hi => ?_, ?_⟩
   · refine P.I σ _ _ hm.1 (Frame.sub hf fun r hr => ?_)
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨sR scr dOff dl, by simp, Offset.sub _ (by omega) (by omega)⟩
+    exact ⟨sR scr dOff dl, by simp, Offset.sub _ (by omega_arith) (by omega_arith)⟩
   · exact slot_keep hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by oomega) (by rw [hg.F]; decide)) hm.2.ctr
   · exact slot_keep hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by oomega) (by rw [hg.F]; decide)) hm.2.done
   · have old := hm.2.dx i hi
     by_cases h1 : i < c * g.H.D
-    · rw [ite_eq_left (by omega)]
+    · rw [ite_eq_left (by omega_arith)]
       rw [ite_eq_left h1] at old
       rw [← old]
       exact hf _ fun r hr => by
@@ -457,11 +457,11 @@ theorem mgfJ_vp (hcd : c * g.H.D < dl) :
           (Region.contains_self _ _)
     rw [ite_eq_right h1] at old
     by_cases h2 : i < c * g.H.D + n
-    · rw [ite_eq_left (by omega), g.mask_byte (c := c) hi (by omega) (by omega), ← hd _ (by omega), ← old]
-      have e := hx (i - c * g.H.D) (by omega)
-      rw [show dOff + c * g.H.D + (i - c * g.H.D) = dOff + i by omega] at e
+    · rw [ite_eq_left (by omega_arith), g.mask_byte (c := c) hi (by omega_arith) (by omega_arith), ← hd _ (by omega_arith), ← old]
+      have e := hx (i - c * g.H.D) (by omega_arith)
+      rw [show dOff + c * g.H.D + (i - c * g.H.D) = dOff + i by omega_arith] at e
       exact e
-    · rw [ite_eq_right (by omega), ← old]
+    · rw [ite_eq_right (by omega_arith), ← old]
       exact hf _ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Geo.sep (scr := scr) (o := dOff + i) (n := 1) (by oomega) (by oomega) (by oomega) _
@@ -557,7 +557,7 @@ theorem mgf_vp (P : MP g L scr so sl dOff dl seed Inv) :
   obtain ⟨σ', ok⟩ := hg.ok
   generalize hK : (dl + g.H.D - 1) / g.H.D = K
   have hK0 : 0 < K := by
-    rw [← hK]; exact (Nat.le_div_iff_mul_le hD0).2 (by omega)
+    rw [← hK]; exact (Nat.le_div_iff_mul_le hD0).2 (by omega_arith)
   refine VP.seq (G := fun σ s => Ctx L scr σ s ∧ MI g L scr so sl dOff dl 0 dstv seed Inv σ s.mem)
     (VP.taint [.esp, .ebp] mgfInit_taint (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hi, hd, hs⟩ => ?_) ?_
   · simp only [mgfInit, Impl.RsaPss.X86.mi, Impl.RsaPss.X86.st]
@@ -578,11 +578,11 @@ theorem mgf_vp (P : MP g L scr so sl dOff dl seed Inv) :
     · rw [m3, Lay.readW_fr_other (d := sCtr) (e := sDone) L _ _ (by decide) (by decide) (by decide),
         Mem.readW_writeW_self32]; rfl
     · rw [m3, Mem.readW_writeW_self32, Nat.zero_mul]; rfl
-    · rw [ite_eq_right (by omega)]
+    · rw [ite_eq_right (by omega_arith)]
       exact sbytes_keep fr (fun r hr => dis r hr _ _ (by oomega)) (by oomega) hd i hi'
     · exact sbytes_keep fr (fun r hr => dis r hr _ _ (by oomega)) (by oomega) hs
   refine (VP.loop (I := fun k σ s => k ≤ K ∧ Ctx L scr σ s ∧ MI g L scr so sl dOff dl (K - k) dstv seed Inv σ s.mem)
-    (fun k => ?_) (K - 1)).mono (fun σ s hs => ⟨by omega, by rw [show K - (K - 1 + 1) = 0 by omega]; exact hs⟩)
+    (fun k => ?_) (K - 1)).mono (fun σ s hs => ⟨by omega_arith, by rw [show K - (K - 1 + 1) = 0 by omega_arith]; exact hs⟩)
     fun _ _ h => h
   by_cases hk : k + 1 ≤ K
   swap
@@ -590,22 +590,22 @@ theorem mgf_vp (P : MP g L scr so sl dOff dl seed Inv) :
   generalize hc : K - (k + 1) = c
   have key : ∀ x, (dl + g.H.D - 1) / g.H.D ≤ x + 1 ↔ dl ≤ x * g.H.D + g.H.D := fun x => by
     rw [← Nat.lt_succ_iff, Nat.div_lt_iff_lt_mul hD0, Nat.succ_mul, Nat.succ_mul]
-    omega
+    omega_arith
   have hcd : c * g.H.D < dl := by
-    have := (Nat.le_div_iff_mul_le hD0).1 (show c + 1 ≤ (dl + g.H.D - 1) / g.H.D by omega)
+    have := (Nat.le_div_iff_mul_le hD0).1 (show c + 1 ≤ (dl + g.H.D - 1) / g.H.D by omega_arith)
     rw [Nat.succ_mul] at this
-    omega
+    omega_arith
   refine (mgfIter_vp P c hcd).mono (fun σ s ⟨_, hs⟩ => hs) fun σ s ⟨hc', hm, z⟩ => ⟨?_, fun h0 => ?_, fun hp => ?_⟩
   · show eval .b s = _
     simp only [eval, z]
     have e := key c
     rw [hK] at e
     by_cases hz : k = 0
-    · rw [decide_eq_false (fun h' => by have := e.2 (by omega); omega), hz]; rfl
-    · rw [decide_eq_true (by by_contra h'; have := e.2 (by omega); omega), decide_eq_true (by omega)]
-  · have e := (key c).1 (by omega)
+    · rw [decide_eq_false (fun h' => by have := e.2 (by omega_arith); omega_arith), hz]; rfl
+    · rw [decide_eq_true (by by_contra h'; have := e.2 (by omega_arith); omega_arith), decide_eq_true (by omega_arith)]
+  · have e := (key c).1 (by omega_arith)
     refine ⟨hc', hm.1, fun i hi => ?_, hm.2.sd⟩
-    rw [hm.2.dx i hi, ite_eq_left (by rw [Nat.succ_mul]; omega)]
-  · exact ⟨by omega, hc', by rw [show K - k = c + 1 by omega]; exact hm⟩
+    rw [hm.2.dx i hi, ite_eq_left (by rw [Nat.succ_mul]; omega_arith)]
+  · exact ⟨by omega_arith, hc', by rw [show K - k = c + 1 by omega_arith]; exact hm⟩
 
 end VG.Proof.RsaOaep.X86

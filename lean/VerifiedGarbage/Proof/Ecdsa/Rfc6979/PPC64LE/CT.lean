@@ -197,28 +197,28 @@ theorem initAt {L : Lay P.I.hashLen} (hL : L.Ok) {u : State} (hcu : Ctx L g lr m
   have hsp : u.sp = L.B + BitVec.ofNat 64 96 := hcu.sp
   have dS : ∀ {e k e' k' : Nat}, e + k ≤ e' ∨ e' + k' ≤ e → e' + k' ≤ 8192 → e + k ≤ 8192 →
       Region.Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr + BitVec.ofNat 64 e', k'⟩ :=
-    fun h h₁ h₂ => Offset.disjoint _ h (by omega) (by omega)
+    fun h h₁ h₂ => Offset.disjoint _ h (by omega_arith) (by omega_arith)
   have kS : ∀ {e k : Nat}, e + k ≤ 8192 →
       Region.Disjoint ⟨L.B + BitVec.ofNat 64 128, P.K.H.D⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-    fun h => hL.stk_scr (by omega) h
+    fun h => hL.stk_scr (by omega_arith) h
   have bS : ∀ {e k : Nat}, e + k ≤ 8192 → (below u.sp 96).Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ := fun h => by
     rw [hsp, L.below96]; exact hL.low_scr h
-  refine ⟨initPre P.K h3 h4 h5 (by rw [h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) h7
+  refine ⟨initPre P.K h3 h4 h5 (by rw [h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]) h7
     (by rw [P.K.hIS, P.K.hH.hB]; exact hDB)
-    (dS (by omega) (by omega) (by omega)) (kS (by omega)).symm (dS (by omega) (by omega) (by omega))
-    (kS (by omega)).symm (dS (by omega) (by omega) (by omega)) (kS (by omega))
-    (by rw [hsp, hL.sp_toNat]; omega) (bS (by omega)) (bS (by omega))
-    (by rw [hsp, L.below96]; exact Offset.base_disjoint _ (by omega) (by omega)) (bS (by omega))
-    (by rw [Offset.toNat_add_ofNat]; omega) (by rw [Offset.toNat_add_ofNat]; omega)
-    (by rw [Offset.toNat_add_ofNat]; omega) (by rw [Offset.toNat_add_ofNat]; omega), ?_, ?_⟩
+    (dS (by omega_arith) (by omega_arith) (by omega_arith)) (kS (by omega_arith)).symm (dS (by omega_arith) (by omega_arith) (by omega_arith))
+    (kS (by omega_arith)).symm (dS (by omega_arith) (by omega_arith) (by omega_arith)) (kS (by omega_arith))
+    (by rw [hsp, hL.sp_toNat]; omega_arith) (bS (by omega_arith)) (bS (by omega_arith))
+    (by rw [hsp, L.below96]; exact Offset.base_disjoint _ (by omega_arith) (by omega_arith)) (bS (by omega_arith))
+    (by rw [Offset.toNat_add_ofNat]; omega_arith) (by rw [Offset.toNat_add_ofNat]; omega_arith)
+    (by rw [Offset.toNat_add_ofNat]; omega_arith) (by rw [Offset.toNat_add_ofNat]; omega_arith), ?_, ?_⟩
   · exact hcu.covers fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩
-      all_goals exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+      · exact ⟨L.FR, by simp, within_fr _ (by omega_arith) (by omega_arith)⟩
+      all_goals exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
   · exact hcu.coversW fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+      rcases hr with rfl | rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
 
 theorem init_ct :
     RelCT isa (Two P (IA P)) (.call P.K.hm.initN P.K.hm.initC) fun _ _ => True :=
@@ -251,28 +251,28 @@ theorem updAt {da : Lay P.I.hashLen → Addr} {len : Nat} {L : Lay P.I.hashLen} 
   have hsp : u.sp = L.B + BitVec.ofNat 64 96 := hcu.sp
   have dS : ∀ {e k e' k' : Nat}, e + k ≤ e' ∨ e' + k' ≤ e → e' + k' ≤ 8192 → e + k ≤ 8192 →
       Region.Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr + BitVec.ofNat 64 e', k'⟩ :=
-    fun h h₁ h₂ => Offset.disjoint _ h (by omega) (by omega)
+    fun h h₁ h₂ => Offset.disjoint _ h (by omega_arith) (by omega_arith)
   have bS : ∀ {e k : Nat}, e + k ≤ 8192 → (below u.sp 48).Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ := fun h => by
-    rw [hsp, L.below48]; exact hL.stk_scr (by omega) h
+    rw [hsp, L.below48]; exact hL.stk_scr (by omega_arith) h
   have c3 : u.callEntry.gpr .r3 = L.scr + BitVec.ofNat 64 0 := (State.callEntry_gpr _ (by decide)).trans h3
   have c5 : u.callEntry.gpr .r5 = da L := (State.callEntry_gpr _ (by decide)).trans h5
   have c6 : (u.callEntry.gpr .r6).toNat = len := by
-    rw [State.callEntry_gpr _ (by decide), h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [State.callEntry_gpr _ (by decide), h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have c7 : u.callEntry.gpr .r7 = L.scr + BitVec.ofNat 64 384 := (State.callEntry_gpr _ (by decide)).trans h7
   refine ⟨?_, ?_, ?_⟩
   · simp only [Proof.Hmac.Stream.PPC64LE.updK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c3, c5, c6, c7]
-    exact ⟨trivial, trivial, dS (by omega) (by omega) (by omega), hd.scr hL (by omega), hd.scr hL (by omega),
-      by rw [hsp, hL.sp_toNat]; omega, bS (by omega), by rw [hsp, L.below48]; exact hd.low hL (by omega),
-      bS (by omega)⟩
+    exact ⟨trivial, trivial, dS (by omega_arith) (by omega_arith) (by omega_arith), hd.scr hL (by omega_arith), hd.scr hL (by omega_arith),
+      by rw [hsp, hL.sp_toNat]; omega_arith, bS (by omega_arith), by rw [hsp, L.below48]; exact hd.low hL (by omega_arith),
+      bS (by omega_arith)⟩
   · exact hcu.covers fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact hd.within
-      all_goals exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+      all_goals exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
   · exact hcu.coversW fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+      rcases hr with rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
 
 theorem upd_ct {da : Lay P.I.hashLen → Addr} {len : Nat} (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (da L) len) :
     RelCT isa (Two P (UA P da len)) (.call P.K.hm.updN P.K.hm.updC) fun _ _ => True :=
@@ -313,33 +313,33 @@ theorem finAt {len dst : Nat} (hdst : 32 ≤ dst ∧ dst + 64 ≤ 216) {L : Lay 
   have hsp : u.sp = L.B + BitVec.ofNat 64 96 := hcu.sp
   have dS : ∀ {e k e' k' : Nat}, e + k ≤ e' ∨ e' + k' ≤ e → e' + k' ≤ 8192 → e + k ≤ 8192 →
       Region.Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr + BitVec.ofNat 64 e', k'⟩ :=
-    fun h h₁ h₂ => Offset.disjoint _ h (by omega) (by omega)
+    fun h h₁ h₂ => Offset.disjoint _ h (by omega_arith) (by omega_arith)
   have oS : ∀ {e k : Nat}, e + k ≤ 8192 →
       Region.Disjoint ⟨L.B + BitVec.ofNat 64 (96 + dst), P.K.H.D⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-    fun h => hL.stk_scr (by omega) h
+    fun h => hL.stk_scr (by omega_arith) h
   have bS : ∀ {e k : Nat}, e + k ≤ 8192 → (below u.sp 96).Disjoint ⟨L.scr + BitVec.ofNat 64 e, k⟩ := fun h => by
     rw [hsp, L.below96]; exact hL.low_scr h
   refine ⟨finPre P.K (inner := L.scr + BitVec.ofNat 64 0) (outer := L.scr + BitVec.ofNat 64 192)
     (out := L.B + BitVec.ofNat 64 (96 + dst)) (scr := L.scr + BitVec.ofNat 64 384) h3 h4 h6 h7
-    (dS (by omega) (by omega) (by omega)) (oS (by omega)).symm (dS (by omega) (by omega) (by omega))
-    (oS (by omega)).symm (dS (by omega) (by omega) (by omega)) (oS (by omega))
-    (by rw [hsp, hL.sp_toNat]; omega) (bS (by omega)) (bS (by omega))
-    (by rw [hsp, L.below96]; exact Offset.base_disjoint _ (by omega) (by omega)) (bS (by omega))
-    (by rw [Offset.toNat_add_ofNat]; omega) (by rw [Offset.toNat_add_ofNat]; omega)
-    (by rw [Offset.toNat_add_ofNat]; omega) (by rw [Offset.toNat_add_ofNat]; omega), ?_, ?_⟩
+    (dS (by omega_arith) (by omega_arith) (by omega_arith)) (oS (by omega_arith)).symm (dS (by omega_arith) (by omega_arith) (by omega_arith))
+    (oS (by omega_arith)).symm (dS (by omega_arith) (by omega_arith) (by omega_arith)) (oS (by omega_arith))
+    (by rw [hsp, hL.sp_toNat]; omega_arith) (bS (by omega_arith)) (bS (by omega_arith))
+    (by rw [hsp, L.below96]; exact Offset.base_disjoint _ (by omega_arith) (by omega_arith)) (bS (by omega_arith))
+    (by rw [Offset.toNat_add_ofNat]; omega_arith) (by rw [Offset.toNat_add_ofNat]; omega_arith)
+    (by rw [Offset.toNat_add_ofNat]; omega_arith) (by rw [Offset.toNat_add_ofNat]; omega_arith), ?_, ?_⟩
   · exact hcu.covers fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
-      · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
-      · exact ⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩
-      · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+      · exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
+      · exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
+      · exact ⟨L.FR, by simp, within_fr _ (by omega_arith) (by omega_arith)⟩
+      · exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
   · exact hcu.coversW fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
-      · exact ⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩
-      · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+      · exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
+      · exact ⟨L.FR, by simp, within_fr _ (by omega_arith) (by omega_arith)⟩
+      · exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
 
 theorem fin_ct {len dst : Nat} (hdst : 32 ≤ dst ∧ dst + 64 ≤ 216) :
     RelCT isa (Two P (FA P len dst)) (.call P.K.hm.finN P.K.hm.finC) fun _ _ => True :=
@@ -429,30 +429,30 @@ theorem hmac_ct {dataA : List Instr} {da : Lay P.I.hashLen → Addr} {len dst : 
   have iS : RelCT isa (Two P Φ) (.seq (.block (Cfg.hmacArgs₁ P.K.H.D)) (.call P.K.hm.initN P.K.hm.initC))
       (Two P (Ini P)) :=
     two_wp ((two_wp (Ψ := IA P) (two_blk a₁) fun L _ _ _ _ hL _ hc _ =>
-        WP.mono (args₁_ok hL hc (D := P.K.H.D) (by omega)) fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq init_ct)
+        WP.mono (args₁_ok hL hc (D := P.K.H.D) (by omega_arith)) fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq init_ct)
       fun _ _ _ _ t hL _ hc _ => WP.mono (init_step P.K hL hc) fun _ h => ⟨h.ctx, t, h⟩
   have uS : RelCT isa (Two P (Ini P)) (.seq (.block (Cfg.hmacArgs₂ P.K.H.B dataA len))
       (.call P.K.hm.updN P.K.hm.updC)) (Two P (Upt P da len)) :=
     two_wp ((two_wp (Ψ := UA P da len) (two_blk a₂) fun L g lr m₀ _ hL _ hc _ =>
-        WP.mono (args₂_ok hL hc (B := P.K.H.B) (by omega) (len := len) (by omega) (hdA L g lr m₀ hL))
+        WP.mono (args₂_ok hL hc (B := P.K.H.B) (by omega_arith) (len := len) (by omega_arith) (hdA L g lr m₀ hL))
           fun _ ⟨c, _, _, a⟩ => ⟨c, a⟩).seq (upd_ct hd))
-      fun L g lr m₀ _ hL _ _ ⟨t, hi⟩ => WP.mono (upd_step P.K hL hi (hd L hL) (by omega) (hdA L g lr m₀ hL))
+      fun L g lr m₀ _ hL _ _ ⟨t, hi⟩ => WP.mono (upd_step P.K hL hi (hd L hL) (by omega_arith) (hdA L g lr m₀ hL))
         fun _ h => ⟨h.ctx, t, h⟩
   have fS : RelCT isa (Two P (Upt P da len)) (.seq (.block (Cfg.hmacArgs₃ P.K.H.B len dst))
       (.call P.K.hm.finN P.K.hm.finC)) fun _ _ => True :=
     (two_wp (Ψ := FA P len dst) (two_blk a₃) fun _ _ _ _ _ hL _ hc _ =>
-      WP.mono (args₃_ok hL hc (B := P.K.H.B) (len := len) (by omega) (by omega)) fun _ ⟨c, _, _, a⟩ =>
+      WP.mono (args₃_ok hL hc (B := P.K.H.B) (len := len) (by omega_arith) (by omega_arith)) fun _ ⟨c, _, _, a⟩ =>
         ⟨c, a⟩).seq (fin_ct hdst)
   exact RelCT.assoc (iS.seq (RelCT.assoc (uS.seq fS)))
 
 /-- `V = HMAC_K(V)`. -/
 theorem hmacV_ct (B : Blks P.K P.c) {Φ : Pred P} : RelCT isa (Two P Φ) P.c.hmacV fun _ _ => True := by
   have hD := P.K.hH.hD64
-  have hB : P.K.H.B ≤ 128 := by rcases P.K.hH.dims.B with h | h <;> omega
+  have hB : P.K.H.B ≤ 128 := by rcases P.K.hH.dims.B with h | h <;> omega_arith
   rw [Cfg.hmacV, P.hcH]
   exact hmac_ct (da := fun L => L.B + BitVec.ofNat 64 192) (len := P.K.H.D) (dst := 96)
-    (fun _ _ _ _ _ _ hc _ => dataV_ok hc _ rfl) (fun _ _ => .inl ⟨192, rfl, by omega, by omega⟩)
-    (by omega) ⟨by omega, by omega⟩ B.a₁ B.a₂V B.a₃V
+    (fun _ _ _ _ _ _ hc _ => dataV_ok hc _ rfl) (fun _ _ => .inl ⟨192, rfl, by omega_arith, by omega_arith⟩)
+    (by omega_arith) ⟨by omega_arith, by omega_arith⟩ B.a₁ B.a₂V B.a₃V
 
 /-- The pointers `msgPtrs` loads. -/
 def msgP (L : Lay P.I.hashLen) : Reg → BitVec 64
@@ -490,17 +490,17 @@ theorem rekey_gen_ct (B : Blks P.K P.c) {Φ : Pred P} {b : Nat} {full wide : Boo
     RelCT isa (Two P Φ) (.seq (.block (Cfg.msgPtrs wide ++ Cfg.msg P.c.len P.K.H.D b full ho wide))
       (.seq (P.c.hmac [.addi .r5 .r12 sMsg] len fK) P.c.hmacV)) fun _ _ => True := by
   have hD := P.K.hH.hD64
-  have hB : P.K.H.B ≤ 128 := by rcases P.K.hH.dims.B with h | h <;> omega
+  have hB : P.K.H.B ≤ 128 := by rcases P.K.hH.dims.B with h | h <;> omega_arith
   refine (two_wp (Ψ := fun _ _ _ _ _ => True) (two_split (Φ := Φ) (msgRegs wide) msgP (msgPtrs_blk wide)
     (fun L _ _ _ _ hL hc => msgPtrs_two L wide hL hc) tm) fun L _ _ _ _ hL hLq hc _ =>
       WP.mono (hmsg L _ _ _ _ hL hLq hc) fun _ h => ⟨h, trivial⟩).seq ?_
   exact (two_wp (Ψ := fun _ _ _ _ _ => True)
     (hmac_ct (da := fun L => L.scr + BitVec.ofNat 64 2256) (len := len) (dst := 32)
-      (fun _ _ _ _ _ _ _ hr => dataM_ok _ hr) (fun _ _ => .inr ⟨2256, rfl, by omega, by omega⟩)
-      (by omega) ⟨by omega, by omega⟩ B.a₁ t₂ t₃)
+      (fun _ _ _ _ _ _ _ hr => dataM_ok _ hr) (fun _ _ => .inr ⟨2256, rfl, by omega_arith, by omega_arith⟩)
+      (by omega_arith) ⟨by omega_arith, by omega_arith⟩ B.a₁ t₂ t₃)
     fun L _ _ _ _ hL hLq hc _ => by
       refine WP.mono (hmac_ok P.K P.hcH hL hc (dataA := [.addi .r5 .r12 sMsg]) (da := L.scr + BitVec.ofNat 64 2256)
-        (len := len) (dst := 32) (.inr ⟨2256, rfl, by omega, by omega⟩) (by omega) ⟨by omega, by omega⟩
+        (len := len) (dst := 32) (.inr ⟨2256, rfl, by omega_arith, by omega_arith⟩) (by omega_arith) ⟨by omega_arith, by omega_arith⟩
         fun u _ hr => dataM_ok u hr) fun _ h => ⟨h.ctx, trivial⟩).seq (hmacV_ct B)
 
 theorem rekeyFull_ct (B : Blks P.K P.c) {Φ : Pred P} (b : Nat) (hb : b < 2) :
@@ -515,9 +515,9 @@ theorem rekeyFull_ct (B : Blks P.K P.c) {Φ : Pred P} (b : Nat) (hb : b < 2) :
   have hl : P.K.H.D + 2 * P.c.len + 1 ≤ 197 := by
     have := P.K.hH.hD64
     cases hw : P.c.wide
-    · have := P.hk16 hw; have := P.hk hw; omega
-    · have := (P.hW hw).2.1; omega
-  obtain rfl | rfl : b = 0 ∨ b = 1 := by omega
+    · have := P.hk16 hw; have := P.hk hw; omega_arith
+    · have := (P.hW hw).2.1; omega_arith
+  obtain rfl | rfl : b = 0 ∨ b = 1 := by omega_arith
   · exact rekey_gen_ct B (full := true) hl hmsg B.m₀ B.a₂F B.a₃F
   · exact rekey_gen_ct B (full := true) hl hmsg B.m₁ B.a₂F B.a₃F
 
@@ -530,8 +530,8 @@ theorem rekey_ct (B : Blks P.K P.c) {Φ : Pred P} : RelCT isa (Two P Φ) P.c.rek
         fun u => Ctx L g lr m₀ u := fun L g lr m₀ t hL hq hc => by
     rw [← hq]
     exact WP.mono (msg_ok hL hc (D := P.K.H.D) (b := 0) false fH hD4 hD (fun h => nomatch h)
-      (fun h => nomatch h) (fun h => nomatch h) (fun h => nomatch h) (by omega)) fun _ h => h.1
-  exact rekey_gen_ct B (b := 0) (full := false) (wide := false) (len := P.K.H.D + 1) (by omega) hmsg B.mR B.a₂R
+      (fun h => nomatch h) (fun h => nomatch h) (fun h => nomatch h) (by omega_arith)) fun _ h => h.1
+  exact rekey_gen_ct B (b := 0) (full := false) (wide := false) (len := P.K.H.D + 1) (by omega_arith) hmsg B.mR B.a₂R
     B.a₃R
 
 /-! ## The conversions and the candidate -/
@@ -627,7 +627,7 @@ theorem tryOne_ct (B : Blks P.K P.c) {i : Nat} :
       rw [go_iff h.q h.f₁.lt h.f₁.fails, go_iff h.q h.f₂.lt h.f₂.fails, h.x]
     · refine RelCT.mono (P := Two P fun L _ _ m₀ u => Mid P L m₀ i u) ?_ (fun _ _ h => h.1) fun _ _ h => h
       exact (two_wp (Ψ := fun _ _ _ _ _ => True) (rekey_ct B) fun L g lr m₀ t hL hq hc _ =>
-        WP.mono (rekey_ok P.K P.hcH hq.symm hL (lfar hq) (by have := lq_le hq; omega) hc)
+        WP.mono (rekey_ok P.K P.hcH hq.symm hL (lfar hq) (by have := lq_le hq; omega_arith) hc)
           fun _ h => ⟨h.ctx, trivial⟩).seq (two_blk again_blk)
     · exact RelCT.mono (two_blk stop_blk) (fun _ _ h => h.1) fun _ _ h => h
   · rcases h with ⟨he, hx⟩ | ⟨he, hx⟩
@@ -638,8 +638,8 @@ theorem tryOne_ct (B : Blks P.K P.c) {i : Nat} :
         · omega
       exact ⟨by rw [he]; simp [hn], .inr ⟨hn, hx⟩⟩
     · have hn : i < exitAt P L m₀ :=
-        (go_iff hq (by have := hx.lt; omega) fun j hj => hx.fails j (by omega)).mp
-          ⟨hx.fails i (by omega), hx.lt⟩
+        (go_iff hq (by have := hx.lt; omega_arith) fun j hj => hx.fails j (by omega_arith)).mp
+          ⟨hx.fails i (by omega_arith), hx.lt⟩
       exact ⟨by rw [he]; simp [hn], .inl ⟨hn, hx⟩⟩
 
 theorem Two.mono {Φ Ψ : Pred P} (h : ∀ L g lr m₀ t, Φ L g lr m₀ t → Ψ L g lr m₀ t) {a b : State}
@@ -674,10 +674,10 @@ theorem loop_ct (B : Blks P.K P.c) :
       obtain ⟨-, i₁⟩ | ⟨h', -⟩ := h.f₁.2
       · obtain ⟨-, i₂⟩ | ⟨h', -⟩ := h.f₂.2
         · have := i₁.lt
-          refine ⟨n - 1, by omega, L, g₁, g₂, lr₁, lr₂, m₁, m₂, h.ok, h.q, h.x, h.c₁, h.c₂, ⟨?_, by omega⟩,
-            ⟨?_, by omega⟩⟩
-          · rwa [show P.c.tries - (n - 1) = P.c.tries - n + 1 by omega]
-          · rwa [show P.c.tries - (n - 1) = P.c.tries - n + 1 by omega]
+          refine ⟨n - 1, by omega_arith, L, g₁, g₂, lr₁, lr₂, m₁, m₂, h.ok, h.q, h.x, h.c₁, h.c₂, ⟨?_, by omega_arith⟩,
+            ⟨?_, by omega_arith⟩⟩
+          · rwa [show P.c.tries - (n - 1) = P.c.tries - n + 1 by omega_arith]
+          · rwa [show P.c.tries - (n - 1) = P.c.tries - n + 1 by omega_arith]
         · exact absurd hx' h'
       · exact absurd hx h'
   · exact RelCT.of_false fun _ _ ⟨_, _, _, _, _, _, _, h⟩ => hn h.f₁.2
@@ -696,7 +696,7 @@ theorem redPre_two (L : Lay P.I.hashLen) {g lr m₀} {t : State} (hL : L.Ok) (hc
   refine stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_
   have hb : t₁.gpr .r11 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
   refine stepLd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide) (by rw [hb, fr_add]; rfl)
-    (by rw [k₁.rd, k₁.wr]; exact hc.inFr (by omega) (by omega)) fun t₂ k₂ m₂ v₂ => wp_nil ⟨by rw [k₂.sp, k₁.sp],
+    (by rw [k₁.rd, k₁.wr]; exact hc.inFr (by omega_arith) (by omega_arith)) fun t₂ k₂ m₂ v₂ => wp_nil ⟨by rw [k₂.sp, k₁.sp],
       fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl

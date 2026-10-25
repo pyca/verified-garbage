@@ -17,14 +17,7 @@ open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 theorem geFlag_ok (s : State) :
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.geFlag) s fun t =>
       (t.z = decide ((s.gpr .r1).toNat < (s.gpr .r2).toNat) ∧ t.mem = s.mem) ∧ Rest [.r3] s t := by
-  refine withRest [.r3] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.geFlag : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r3] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.geFlag
   by_cases ge : (s.gpr .r2).toNat ≤ (s.gpr .r1).toNat
   · have lt : ¬ (s.gpr .r1).toNat < (s.gpr .r2).toNat := by omega
@@ -41,14 +34,7 @@ private theorem initialHead_ok {s : State} {length width : Nat} (stack : Workspa
   have reads (d : Nat) (fit : d + 4 ≤ 72) : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 d)) 4 := by
     rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
     exact stack.read fit
-  refine withRest [.r1, .r2] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block [.ldrSp .r1 20, .ldrSp .r2 12] : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1, .r2] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, reads 20 (by decide), reads 12 (by decide), savedLength, savedWidth]
 
 theorem initialRoom_ok {s : State} {length width : Nat} (stack : Workspace s s.sp 72)
@@ -79,14 +65,7 @@ private theorem witnessHead_ok {s : State} {length used width : Nat} (stack : Wo
     exact stack.read fit
   have subtract : BitVec.ofNat 32 length - BitVec.ofNat 32 used = BitVec.ofNat 32 (length - used) := by
     exact BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) enough
-  refine withRest [.r1, .r2] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block [.ldrSp .r1 20, .ldrSp .r2 40, .dp .sub .r1 .r1 (.reg .r2), .ldrSp .r2 48] : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1, .r2] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, reads 20 (by decide), reads 40 (by decide), reads 48 (by decide),
     savedLength, savedUsed, savedWidth, subtract]
 

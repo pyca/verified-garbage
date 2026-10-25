@@ -138,19 +138,19 @@ theorem MrCtx.of_wk {s t : State} {B : Addr} {Z w c bm : Nat} {rs : List (Nat ×
     (fun r hr' => ?_)
   · rcases hs r hr' with h | h
     · exact dI r h
-    · subst h; simp only [slot, hdrBytes, aY, sMinv]; omega
+    · subst h; simp only [slot, hdrBytes, aY, sMinv]; omega_arith
   · rcases hs r hr' with h | h
     · exact dN r h
-    · subst h; simp only [slot, hdrBytes, aY, aN]; omega
+    · subst h; simp only [slot, hdrBytes, aY, aN]; omega_arith
   · rcases hs r hr' with h | h
     · exact dB r h
-    · subst h; simp only [slot, hdrBytes, aY, aB]; omega
+    · subst h; simp only [slot, hdrBytes, aY, aB]; omega_arith
   · rcases hs r hr' with h | h
     · exact d1 r h
-    · subst h; simp only [slot, hdrBytes, aY, aR1]; omega
+    · subst h; simp only [slot, hdrBytes, aY, aR1]; omega_arith
   · rcases hs r hr' with h | h
     · exact dm r h
-    · subst h; simp only [slot, hdrBytes, aY, aRm1]; omega
+    · subst h; simp only [slot, hdrBytes, aY, aRm1]; omega_arith
 
 /-- The table and `y` across changes within `wkRanges`. -/
 theorem WW.of_frm {L : WsP} {s t : State} (h : WW L s) {rs : List (Nat × Nat)} (hf : Frm L.B rs s.mem t.mem)
@@ -159,14 +159,14 @@ theorem WW.of_frm {L : WsP} {s t : State} (h : WW L s) {rs : List (Nat × Nat)} 
   have hn := hc.ws.scr.nowrap
   refine ⟨h4, h128, hEZ, c, bm, hc.of_wk hf (fun r hr => Or.inl (hs r hr)) k hr, hodd, hc1, fun j hj => ?_, ?_⟩
   · have := tab_fits hEZ hj
-    have := VG.Proof.Bignum.slot_mono L.w (show aT0 ≤ aT0 + j by omega)
-    rw [hf.wv_eq (fun r hr' => Or.inr (by have := wkRanges_tab L.w r (hs r hr'); omega)) (by omega)]
+    have := VG.Proof.Bignum.slot_mono L.w (show aT0 ≤ aT0 + j by omega_arith)
+    rw [hf.wv_eq (fun r hr' => Or.inr (by have := wkRanges_tab L.w r (hs r hr'); omega_arith)) (by omega_arith)]
     exact hT j hj
   · have := slot_lt (w := L.w) (show aY < aE by decide)
     rw [hf.wv_eq (fun r hr' => by
       rcases wkRanges_low L.w r (hs r hr') with h | h
       · exact Or.inr h
-      · exact Or.inl (by omega)) (by omega)]
+      · exact Or.inl (by omega_arith)) (by omega_arith)]
     exact hY
 
 /-! ## The pieces -/
@@ -178,7 +178,7 @@ theorem mmY_ct (M : Mont) : RelCT isa (Two WW) (M.mm aY aY aY) (Two WW) :=
   two_post (two_map id (fun _ _ h => h.goodW) (M.ct (Or.inr (Or.inl ⟨rfl, rfl, rfl⟩)))) fun L s h => by
     obtain ⟨h4, h128, hEZ, c, bm, hc, hodd, hc1, hT, hY⟩ := h
     have hn := hc.ws.scr.nowrap
-    refine WP.mono (M.mm_ok hc.good.1 hc.good.2 (by omega) (by omega) (o := aY) (a := aY) (b := aY) (by decide)
+    refine WP.mono (M.mm_ok hc.good.1 hc.good.2 (by omega_arith) (by omega_arith) (o := aY) (a := aY) (b := aY) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
       (by rw [hc.n]; exact hY)) fun t ⟨_, hlt, _, ha, k⟩ => ?_
     have hf : Frm L.B [(slot L.w aAcc, 8 * (L.w + 2)), (slot L.w aTmp, 8 * (L.w + 2)), (slot L.w aY, 8 * (L.w + 2))]
@@ -186,15 +186,15 @@ theorem mmY_ct (M : Mont) : RelCT isa (Two WW) (M.mm aY aY aY) (Two WW) :=
     refine ⟨h4, h128, hEZ, c, bm, hc.of_wk hf (by simp [wkRanges]) k (by decide), hodd, hc1, fun j hj => ?_,
       by rw [← hc.n]; exact hlt⟩
     have := tab_fits hEZ hj
-    have := VG.Proof.Bignum.slot_mono L.w (show aT0 ≤ aT0 + j by omega)
-    rw [hf.wv_eq (fun r hr => Or.inr (by have := mul3_low L.w r hr; omega)) (by omega)]
+    have := VG.Proof.Bignum.slot_mono L.w (show aT0 ≤ aT0 + j by omega_arith)
+    rw [hf.wv_eq (fun r hr => Or.inr (by have := mul3_low L.w r hr; omega_arith)) (by omega_arith)]
     exact hT j hj
 
 theorem mmX_ct (M : Mont) : RelCT isa (Two WWX) (M.mm aY aY aXm) (Two WW) :=
   two_post (two_map id (fun _ _ h => h.goodW) (M.ct (Or.inr (Or.inr (Or.inl ⟨rfl, rfl, rfl⟩))))) fun L s h => by
     obtain ⟨h4, h128, hEZ, c, bm, hc, hodd, hc1, hT, hY, hX⟩ := h
     have hn := hc.ws.scr.nowrap
-    refine WP.mono (M.mm_ok hc.good.1 hc.good.2 (by omega) (by omega) (o := aY) (a := aY) (b := aXm) (by decide)
+    refine WP.mono (M.mm_ok hc.good.1 hc.good.2 (by omega_arith) (by omega_arith) (o := aY) (a := aY) (b := aXm) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
       (by rw [hc.n]; exact hX)) fun t ⟨_, hlt, _, ha, k⟩ => ?_
     have hf : Frm L.B [(slot L.w aAcc, 8 * (L.w + 2)), (slot L.w aTmp, 8 * (L.w + 2)), (slot L.w aY, 8 * (L.w + 2))]
@@ -202,8 +202,8 @@ theorem mmX_ct (M : Mont) : RelCT isa (Two WWX) (M.mm aY aY aXm) (Two WW) :=
     refine ⟨h4, h128, hEZ, c, bm, hc.of_wk hf (by simp [wkRanges]) k (by decide), hodd, hc1, fun j hj => ?_,
       by rw [← hc.n]; exact hlt⟩
     have := tab_fits hEZ hj
-    have := VG.Proof.Bignum.slot_mono L.w (show aT0 ≤ aT0 + j by omega)
-    rw [hf.wv_eq (fun r hr => Or.inr (by have := mul3_low L.w r hr; omega)) (by omega)]
+    have := VG.Proof.Bignum.slot_mono L.w (show aT0 ≤ aT0 + j by omega_arith)
+    rw [hf.wv_eq (fun r hr => Or.inr (by have := mul3_low L.w r hr; omega_arith)) (by omega_arith)]
     exact hT j hj
 
 theorem eqW_ct {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
@@ -226,7 +226,7 @@ theorem hdr_ct {blk : List Instr} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
 
 theorem frm_hdr {m : Mem} {B : Addr} {k : Nat} (hk : k < 32) (v : BitVec 64) {rs : List (Nat × Nat)}
     (hr : (8 * k, 8) ∈ rs) : Frm B rs m (m.writeW (off B (8 * k)) v) :=
-  Frm.of_outside (writeW_outside _ B _ (d := 8 * k) (by omega)) hr
+  Frm.of_outside (writeW_outside _ B _ (d := 8 * k) (by omega_arith)) hr
 
 /-- The flag or'ed with `x15`. -/
 theorem flagOr_ct : RelCT isa (Two WW) (.block [ldh .x4 kFlag, .logic .orr .x .x4 .x4 .x15, sth .x4 kFlag]) (Two WW) :=
@@ -237,8 +237,8 @@ theorem flagOr_ct : RelCT isa (Two WW) (.block [ldh .x4 kFlag, .logic .orr .x .x
     have h256 := hw.h256
     refine WP.mono (WP.keep [.x4] (Q := fun t => t.mem = s.mem.writeW (off L.B (8 * kFlag))
         (word s.mem L.B (8 * kFlag) ||| s.gpr .x15)) (by
-      brun [hw.x0, hdr_enc (show kFlag < 32 by decide), hs.ld (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega),
-        hs.st (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega)]) (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ =>
+      brun [hw.x0, hdr_enc (show kFlag < 32 by decide), hs.ld (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega_arith),
+        hs.st (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega_arith)]) (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ =>
       ⟨_, by rw [hm]; exact frm_hdr (show kFlag < 32 by decide) _ (List.mem_singleton_self _), by simp [wkRanges],
         _, k, by decide⟩
 
@@ -250,7 +250,7 @@ theorem kGst_ct : RelCT isa (Two WW) (.block [sth .x15 kG]) (Two WW) :=
     have hn := hs.nowrap
     have h256 := hw.h256
     refine WP.mono (WP.keep [] (Q := fun t => t.mem = s.mem.writeW (off L.B (8 * kG)) (s.gpr .x15)) (by
-      brun [hw.x0, hdr_enc (show kG < 32 by decide), hs.st (d := 8 * kG) (by simp only [kG]; omega)]) (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ =>
+      brun [hw.x0, hdr_enc (show kG < 32 by decide), hs.st (d := 8 * kG) (by simp only [kG]; omega_arith)]) (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ =>
       ⟨_, by rw [hm]; exact frm_hdr (show kG < 32 by decide) _ (List.mem_singleton_self _), by simp [wkRanges],
         _, k, by decide⟩
 
@@ -311,11 +311,11 @@ theorem mrSel_ct : RelCT isa (Two WWD) (seqs mrSel) (Two WWX) := by
   have hn := hc.ws.scr.nowrap
   refine WP.mono (mrSel_ok hc.ws hEZ hd hG) fun t ⟨hv, ho, _, k⟩ => ?_
   have hf : Frm L.B [(slot L.w aXm, 8 * (L.w + 2))] s.mem t.mem :=
-    Frm.of_outside (ho.mono (o' := slot L.w aXm) (n' := 8 * (L.w + 2)) (Nat.le_refl _) (by omega)) (by simp)
+    Frm.of_outside (ho.mono (o' := slot L.w aXm) (n' := 8 * (L.w + 2)) (Nat.le_refl _) (by omega_arith)) (by simp)
   obtain ⟨-, -, -, c', bm', hc', hodd', hc1', hT', hY'⟩ :=
     WW.of_frm ⟨h4, h128, hEZ, c, bm, hc, hodd, hc1, hT, hY⟩ hf (by simp [wkRanges]) k (by decide)
   have hN := hc.ws.sl (show aN < 16 by decide)
-  have hn' : c' = c := by rw [← hc'.n, ← hc.n, hf.wv_eq (by w_disj) (by omega)]
+  have hn' : c' = c := by rw [← hc'.n, ← hc.n, hf.wv_eq (by w_disj) (by omega_arith)]
   subst hn'
   exact ⟨h4, h128, hEZ, c', bm', hc', hodd', hc1', hT', hY', by rw [hv]; exact hT d hd⟩
 
@@ -356,33 +356,33 @@ theorem WLast.of_frm {L : WsP} {s t : State} (h : WLast L s) {rs : List (Nat × 
   have hN := hc.ws.sl (show aN < 16 by decide)
   have hlo : ∀ r ∈ rs, r.1 + r.2 ≤ slot L.w aE := fun r hr => by
     rcases hs r hr with h | h
-    · have := wkRanges_tab L.w r h; have := VG.Proof.Bignum.slot_mono L.w (show aT0 ≤ aE by decide); omega
-    · subst h; have := slot_lt (w := L.w) (show aY < aE by decide); simp only at this ⊢; omega
+    · have := wkRanges_tab L.w r h; have := VG.Proof.Bignum.slot_mono L.w (show aT0 ≤ aE by decide); omega_arith
+    · subst h; have := slot_lt (w := L.w) (show aY < aE by decide); simp only at this ⊢; omega_arith
   have hNe : wv t.mem L.B (slot L.w aN) L.w = wv s.mem L.B (slot L.w aN) L.w := by
     have dN : ∀ r ∈ wkRanges L.w, slot L.w aN + 8 * L.w ≤ r.1 ∨ r.1 + r.2 ≤ slot L.w aN := by
       unfold wkRanges; w_disj
-    refine hf.wv_eq (fun r hr => ?_) (by omega)
+    refine hf.wv_eq (fun r hr => ?_) (by omega_arith)
     rcases hs r hr with h | h
     · exact dN r h
-    · subst h; simp only [slot, hdrBytes, aY, aN]; omega
-  refine ⟨hW, by rw [hNe]; exact hE.of_frm hf (fun r hr => Or.inr (hlo r hr)) (by omega), P, ?_⟩
+    · subst h; simp only [slot, hdrBytes, aY, aN]; omega_arith
+  refine ⟨hW, by rw [hNe]; exact hE.of_frm hf (fun r hr => Or.inr (hlo r hr)) (by omega_arith), P, ?_⟩
   rw [hf.word_eq (fun r hr => ?_) (by decide)]
   · exact hP
   · have dF : ∀ r ∈ wkRanges L.w, r ≠ (8 * kFlag, 8) → 8 * kFlag + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * kFlag := by
       unfold wkRanges
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, ne_eq, Prod.mk.injEq,
         slot, hdrBytes, aAcc, aTmp, aXm, kG, kFlag, kPlen, kV, kT0, sCnt, kBits, kT2, kWords, kT1, sFn]
-      and_intros <;> first | omega | simp
+      and_intros <;> first | omega_arith | simp
     rcases hs r hr with h | h
     · exact dF r h (hF r hr)
-    · subst h; simp only [slot, hdrBytes, aY, kFlag, kPlen, sFn]; omega
+    · subst h; simp only [slot, hdrBytes, aY, kFlag, kPlen, sFn]; omega_arith
 
 theorem mmL_ct (M : Mont) : RelCT isa (Two WLast) (M.mm aY aY aY) (Two WLast) :=
   two_post (two_map id (fun _ _ h => h.1.goodW) (M.ct (Or.inr (Or.inl ⟨rfl, rfl, rfl⟩)))) fun L s h => by
     have hW := h.1
     obtain ⟨h4, h128, hEZ, c, bm, hc, hodd, hc1, hT, hY⟩ := hW
     have hn := hc.ws.scr.nowrap
-    refine WP.mono (M.mm_ok hc.good.1 hc.good.2 (by omega) (by omega) (o := aY) (a := aY) (b := aY) (by decide)
+    refine WP.mono (M.mm_ok hc.good.1 hc.good.2 (by omega_arith) (by omega_arith) (o := aY) (a := aY) (b := aY) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
       (by rw [hc.n]; exact hY)) fun t ⟨_, hlt, _, ha, k⟩ => ?_
     have hf : Frm L.B [(slot L.w aAcc, 8 * (L.w + 2)), (slot L.w aTmp, 8 * (L.w + 2)), (slot L.w aY, 8 * (L.w + 2))]
@@ -390,11 +390,11 @@ theorem mmL_ct (M : Mont) : RelCT isa (Two WLast) (M.mm aY aY aY) (Two WLast) :=
     refine h.of_frm hf (by simp [wkRanges]) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, ne_eq, Prod.mk.injEq, slot,
         hdrBytes, aAcc, aTmp, aY, kFlag, kPlen, sFn]
-      and_intros <;> omega) ⟨h4, h128, hEZ, c, bm, hc.of_wk hf (by simp [wkRanges]) k (by decide), hodd, hc1,
+      and_intros <;> omega_arith) ⟨h4, h128, hEZ, c, bm, hc.of_wk hf (by simp [wkRanges]) k (by decide), hodd, hc1,
         fun j hj => ?_, by rw [← hc.n]; exact hlt⟩
     have := tab_fits hEZ hj
-    have := VG.Proof.Bignum.slot_mono L.w (show aT0 ≤ aT0 + j by omega)
-    rw [hf.wv_eq (fun r hr => Or.inr (by have := mul3_low L.w r hr; omega)) (by omega)]
+    have := VG.Proof.Bignum.slot_mono L.w (show aT0 ≤ aT0 + j by omega_arith)
+    rw [hf.wv_eq (fun r hr => Or.inr (by have := mul3_low L.w r hr; omega_arith)) (by omega_arith)]
     exact hT j hj
 
 theorem eqL_ct : RelCT isa (Two WLast) (seqs (eqMask aRm1)) (Two WLastM) :=
@@ -423,9 +423,9 @@ theorem lastTail_ct {j : Nat} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
       have hn := hc.ws.scr.nowrap
       have hN := hc.ws.sl (show aN < 16 by decide)
       have hNe : wv t.mem L.B (slot L.w aN) L.w = wv s.mem L.B (slot L.w aN) L.w :=
-        hf.wv_eq (by w_disj) (by omega)
-      have hEn : slot L.w aE + 8 * (L.w + 1) ≤ L.Z := by omega
-      refine ⟨hW', by rw [hNe]; exact hE.of_frm hf (by w_disj) (by omega), _, by rw [hm, word_writeW_self]⟩
+        hf.wv_eq (by w_disj) (by omega_arith)
+      have hEn : slot L.w aE + 8 * (L.w + 1) ≤ L.Z := by omega_arith
+      refine ⟨hW', by rw [hNe]; exact hE.of_frm hf (by w_disj) (by omega_arith), _, by rw [hm, word_writeW_self]⟩
 
 theorem mrLast_ct (M : Mont) {j : Nat} (hj : j = 1 ∨ j = 2 ∨ j = 3) :
     RelCT isa (Two WLast) (seqs (mrLast M.mm j)) (Two WLast) := by

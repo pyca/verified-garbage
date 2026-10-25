@@ -180,7 +180,7 @@ theorem restArgs_ok {s₀ : State} {w : State} (hx21 : w.gpr .x21 = cx s₀) :
           by rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hx21],
           by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd],
           by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
-  refine WP.preservedV (WP.mono (WP.kept core (by simp [mov, clobbers, dstOf, preserved]))
+  refine WP.preservedV (WP.mono (WP.kept core (by rfl))
     fun w' ⟨⟨h0, h1, h2, h3, hm, hrd, hwr⟩, hg, hsp⟩ =>
       ⟨h0, h1, h2, h3, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩) (by lit_decide)
 

@@ -39,8 +39,8 @@ theorem shStores_ok {s : State} {base : Addr} (hs : Scr s base) {dst : Nat} (hd 
   have w : ∀ d, d + 8 ≤ 4096 → InRegions s.wr (off base d) 8 :=
     fun d hd => ⟨_, hs.wr, contains_sc hd⟩
   drun [shStores, List.flatMap_cons, List.flatMap_nil, List.cons_append, List.nil_append, List.append_nil, Nat.add_zero,
-    ea_sc, hs.rdi, State.store64, w dst (by omega), w (dst + 8) (by omega), w (dst + 16) (by omega),
-    w (dst + 24) (by omega), RegUpd.gpr_setReg_self, RegUpd.wr_setFlags, RegUpd.gpr_setFlags,
+    ea_sc, hs.rdi, State.store64, w dst (by omega_arith), w (dst + 8) (by omega_arith), w (dst + 16) (by omega_arith),
+    w (dst + 24) (by omega_arith), RegUpd.gpr_setReg_self, RegUpd.wr_setFlags, RegUpd.gpr_setFlags,
     RegUpd.mem_setFlags, RegUpd.rd_setFlags]
   refine ⟨rfl, fun r h1 h2 => ?_⟩
   simp only [h1, h2, ↓reduceIte]
@@ -54,21 +54,21 @@ theorem shW_val (p0 p1 p2 p3 p4 : BitVec 64) :
     have := lo.isLt; have := hi.isLt
     simp only [shW, BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow,
       Nat.shiftLeft_eq]
-    omega
+    omega_arith
   simp only [val4, e]
   have := p0.isLt; have := p1.isLt; have := p2.isLt; have := p3.isLt; have := p4.isLt
-  omega
+  omega_arith
 
 theorem absN_le (w : BitVec 64) : absN w ≤ 2 ^ 63 := by
   unfold absN
   have := w.toInt_lt; have := w.le_toInt
   simp only [Nat.reducePow] at *
-  omega
+  omega_arith
 
 theorem topN_le (w : BitVec 64) (X : Nat) : topN w X ≤ 2 ^ 63 := by
   unfold topN; split
   · exact absN_le w
-  · omega
+  · omega_arith
 
 /-- Bits 59 to 315 of a number modulo `2³²⁰` are its own. -/
 theorem mod320_div (x : Nat) : x % (2 ^ 256 * 2 ^ 64) / 2 ^ 59 % 2 ^ 256 = x / 2 ^ 59 % 2 ^ 256 := by
@@ -101,7 +101,7 @@ theorem fsum_arith (V T₁ T₂ : Nat) (h₁ : T₁ ≤ 2 ^ 63) (h₂ : T₂ ≤
         (2 ^ 256 * 2 ^ 64) / 2 ^ 59 % 2 ^ 256 =
       (V + (2 ^ 256 * 2 ^ 65 - 2 ^ 256 * (T₁ + T₂))) / 2 ^ 59 % 2 ^ 256 := by
   have h : ((V + (2 ^ 256 * 2 ^ 64 - 2 ^ 256 * T₁)) % (2 ^ 256 * 2 ^ 64) + (2 ^ 256 * 2 ^ 64 - 2 ^ 256 * T₂)) %
-      (2 ^ 256 * 2 ^ 64) = (V + (2 ^ 256 * 2 ^ 65 - 2 ^ 256 * (T₁ + T₂))) % (2 ^ 256 * 2 ^ 64) := by omega
+      (2 ^ 256 * 2 ^ 64) = (V + (2 ^ 256 * 2 ^ 65 - 2 ^ 256 * (T₁ + T₂))) % (2 ^ 256 * 2 ^ 64) := by omega_arith
   rw [h, mod320_div]
 
 /-- The registers the inversion writes. -/
@@ -181,15 +181,15 @@ theorem fRow_ok {s : State} {base : Addr} (hs : Scr s base) {m₁ m₂ dst : Nat
     rw [topCorr_val _ _ _ _ _ a2] at v6
     rw [c3, R3 .rcx (by simp), R3 .r13 (by simp), R3 .r14 (by simp), R3 .r15 (by simp), k1, k2,
       cSum_val _ _ _ _ a1 a2, a1, a2, K3.2.1, M2, feX_mask, feX_mask] at v4
-    rw [mt, M6, fe_st4 _ _ (by omega), shW_val]
+    rw [mt, M6, fe_st4 _ _ (by omega_arith), shW_val]
     change val5 s₆ / 2 ^ 59 % 2 ^ 256 = _
     rw [v6, v5, v4]
     unfold fRowV
     rw [fsum_arith _ _ _ (topN_le _ _) (topN_le _ _)]
     congr 2
-    omega
+    omega_arith
   · rw [mt, K6.2.1, K5.2.1, K4.2.1, K3.2.1, K2.2.1]
-    exact st4_outside _ _ (by omega) _ _ _ _
+    exact st4_outside _ _ (by omega_arith) _ _ _ _
   · intro r hr
     have sub : ∀ L : List Reg, (∀ x ∈ L, x ∈ rowClob) → r ∉ L := fun L hL h => hr (hL r h)
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr

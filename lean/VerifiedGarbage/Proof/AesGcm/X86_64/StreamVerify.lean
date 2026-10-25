@@ -43,7 +43,7 @@ abbrev tagOf (m : Mem) (Ctx St : Addr) (R : Nat) (aL tL : BitVec 64) (x : List B
     [ofBytes (lensBlock aL.toNat tL.toNat)] ^^^ ciphOf m Ctx R (blockAt m St))
 
 theorem bytesAt_take (m : Mem) (p : Addr) {t n : Nat} (h : t ≤ n) : bytesAt m p t = (bytesAt m p n).take t := by
-  rw [show n = t + (n - t) by omega, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
+  rw [show n = t + (n - t) by omega_arith, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
 
 section
 variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
@@ -66,13 +66,13 @@ theorem verifyCheck_ok {R t : Nat} {s : State} (he : Env Ctx St W SP s) (hR : Ro
   have dW : ∀ d k, (d + k ≤ 256 ∨ 272 ≤ d) → d + k ≤ 2560 → ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 16⟩ : Region)],
       (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
     intro d k h h' r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact L.w_w (by omega) h' (by decide)
+    exact L.w_w (by omega_arith) h' (by decide)
   have dS : ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 16⟩ : Region)], ∀ d k, d + k ≤ 80 →
       (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
     intro r hr d k hk; simp only [List.mem_singleton] at hr; subst hr
     exact L.st_w hk (.inr ⟨by decide, by decide⟩)
   have rd₁ : ∀ d, d + 8 ≤ 256 → s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
-    fun d hd => f₁.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (dW d 8 (.inl hd) (by omega))
+    fun d hd => f₁.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (dW d 8 (.inl hd) (by omega_arith))
       (by decide)
   have hR₁ : RoundsAt s₁.mem W R := ⟨by rw [rd₁ 176 (by decide)]; exact hR.1, hR.2⟩
   refine WP.seq (WP.mono (finTag_ok v L (o := 0) (.inl rfl) he₁ hR₁ (by rw [rd₁ 184 (by decide), hA])
@@ -81,11 +81,11 @@ theorem verifyCheck_ok {R t : Nat} {s : State} (he : Env Ctx St W SP s) (hR : Ro
     intro d k h₁ h₂ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
-    · simpa using (L.st_w (a := 0) (n := 32) (d := d) (k := k) (by decide) (.inr ⟨by omega, by omega⟩)).symm
-    · exact L.w_w (.inr (by omega)) (by omega) (by decide)
-    · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 16) (.inr (by omega)) (by omega) (by decide)
-    · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact (L.stk_w (by omega)).symm
+    · simpa using (L.st_w (a := 0) (n := 32) (d := d) (k := k) (by decide) (.inr ⟨by omega_arith, by omega_arith⟩)).symm
+    · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+    · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 16) (.inr (by omega_arith)) (by omega_arith) (by decide)
+    · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+    · exact (L.stk_w (by omega_arith)).symm
   have rd₂ : ∀ d, 112 ≤ d → d + 8 ≤ 512 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (dT d 8 h₁ h₂) (by decide)
@@ -128,7 +128,7 @@ theorem verifyCheck_ok {R t : Nat} {s : State} (he : Env Ctx St W SP s) (hR : Ro
         (blockAt s₁.mem (Ctx + BitVec.ofNat 64 240)) x := by
       rw [hH₁]
       exact ha.congr (blockAt_frame f₁ fun r hr => dS r hr 16 16 (by decide))
-        (bytesAt_frame f₁ (fun r hr => dS r hr 32 (x.length % 16) (by omega)) (by omega))
+        (bytesAt_frame f₁ (fun r hr => dS r hr 32 (x.length % 16) (by omega_arith)) (by omega_arith))
     have hT₂ : bytesAt s₂.mem (W + BitVec.ofNat 64 0) 16 = tagOf s.mem Ctx St R aL tL x := by
       rw [ht ha₁, hH₁, hc₁, hJ₁]
     have hT₃ : bytesAt s₃.mem (W + BitVec.ofNat 64 0) t = (tagOf s.mem Ctx St R aL tL x).take t := by
@@ -185,7 +185,7 @@ theorem verifyEntry_ok {s : State} {Ctx St W SP : Addr} (L : Lay Ctx St W SP) (h
   have rd₂ : ∀ d, (d + 8 ≤ 224 ∨ 232 ≤ d) → d + 8 ≤ 2560 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h h' =>
     f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (by omega) h' (by decide)) (by decide)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (by omega_arith) h' (by decide)) (by decide)
   exact ⟨he.env.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide)) hrd₂ hwr₂,
@@ -293,7 +293,7 @@ theorem streamVerify_run (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamVeri
     have hok' : Spec.Gcm.tagLenOk t = true := by simpa using hok
     have hb : 1 ≤ t ∧ t ≤ 16 := by
       simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok'
-      omega
+      omega_arith
     refine WP.mono (verifyCheck_ok v L he₃ hR₃ hA₃ hT₃ htl₃ hbx₃ hb.1 hb.2 hsi₃
       hTr₃ dTW hx)
       fun s₄ ⟨he₄, f₄, hq⟩ => ⟨he₄, f₄, fun ha => ?_⟩
@@ -336,7 +336,7 @@ theorem streamVerify_run (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamVeri
   have ha₃ : Absorbed s₃.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32)
       (blockAt s₃.mem (Ctx + BitVec.ofNat 64 240)) x := by
     rw [hH₃]
-    exact ha.congr (blockAt_frame F₃ (dS 16 16 (by decide))) (bytesAt_frame F₃ (dS 32 _ (by omega)) (by omega))
+    exact ha.congr (blockAt_frame F₃ (dS 16 16 (by decide))) (bytesAt_frame F₃ (dS 32 _ (by omega_arith)) (by omega_arith))
   have hT : tagOf s₃.mem Ctx St (s.gpr .rsi).toNat (s.gpr .rcx) (s.gpr .r8) x =
       tagOf s.mem Ctx St (s.gpr .rsi).toNat (s.gpr .rcx) (s.gpr .r8) x := by
     simp only [tagOf]

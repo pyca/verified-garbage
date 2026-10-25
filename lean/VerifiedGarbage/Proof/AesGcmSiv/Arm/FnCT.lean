@@ -122,13 +122,13 @@ theorem cryptMidL_ok {p : Prm} (L : Lay p) {t : State} (B : BL p 0 t) (hz : t.z 
     rw [h0]; exact WP.block_nil B
   · have h0 : p.n / 16 ≠ 0 := by simpa using hf
     refine WP.loop (M := isa) (fun k t' => ∃ j, k = p.n / 16 - j ∧ j < p.n / 16 ∧ BL p j t') ?_
-      (p.n / 16 - 0) t ⟨0, rfl, by omega, B⟩
+      (p.n / 16 - 0) t ⟨0, rfl, by omega_arith, B⟩
     rintro k t' ⟨j, rfl, hj, B'⟩
-    refine WP.mono (cryptBlockL_ok L (j := j) (by omega) B') fun t'' ⟨B'', z⟩ => ?_
+    refine WP.mono (cryptBlockL_ok L (j := j) (by omega_arith) B') fun t'' ⟨B'', z⟩ => ?_
     have ev := eval_ne' z
     by_cases he : j + 1 = p.n / 16
-    · left; exact ⟨ev.trans (by simp; omega), he ▸ B''⟩
-    · right; exact ⟨ev.trans (by simp; omega), p.n / 16 - (j + 1), by omega, j + 1, rfl, by omega, B''⟩
+    · left; exact ⟨ev.trans (by simp; omega_arith), he ▸ B''⟩
+    · right; exact ⟨ev.trans (by simp; omega_arith), p.n / 16 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, B''⟩
 
 theorem cryptHead_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs []) 12) (.block cryptHead) h).isSome
     = true := ⟨_, by taint_decide⟩
@@ -156,22 +156,22 @@ theorem crypt_rel {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (R₁ : PR p σ₁
     (cryptMidL_ok L B₁ z₁) (cryptMidL_ok L B₂ z₂) fun w₁ w₂ C₁ C₂ => ?_
   · have h0 : p.n / 16 ≠ 0 := by simpa using hf
     refine rel_loop (fun k t₁ t₂ => ∃ j, k = p.n / 16 - j ∧ j < p.n / 16 ∧ BL p j t₁ ∧ BL p j t₂)
-      (fun k t₁ t₂ ⟨j, hk, hj, J₁, J₂⟩ => ?_) (p.n / 16 - 0) ⟨0, rfl, by omega, B₁, B₂⟩
-    refine rel_wpQ (cryptBlock_rel L (j := j) (by omega) J₁ J₂)
-      (cryptBlockL_ok L (by omega) J₁) (cryptBlockL_ok L (by omega) J₂) fun a b ⟨K₁, z₁⟩ ⟨K₂, z₂⟩ => ?_
+      (fun k t₁ t₂ ⟨j, hk, hj, J₁, J₂⟩ => ?_) (p.n / 16 - 0) ⟨0, rfl, by omega_arith, B₁, B₂⟩
+    refine rel_wpQ (cryptBlock_rel L (j := j) (by omega_arith) J₁ J₂)
+      (cryptBlockL_ok L (by omega_arith) J₁) (cryptBlockL_ok L (by omega_arith) J₂) fun a b ⟨K₁, z₁⟩ ⟨K₂, z₂⟩ => ?_
     have ev₁ := eval_ne' z₁
     have ev₂ := eval_ne' z₂
     refine ⟨by rw [ev₁, ev₂], fun hc => ?_⟩
     rw [ev₁] at hc
     have he : (p.n - 16 * (j + 1)) / 16 ≠ 0 := by simpa using hc
-    exact ⟨p.n / 16 - (j + 1), by omega, j + 1, rfl, by omega, K₁, K₂⟩
+    exact ⟨p.n / 16 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, K₁, K₂⟩
   -- The last bytes.
-  have r5₁ : w₁.gpr .r5 = BitVec.ofNat 32 (p.n % 16) := by rw [C₁.r5]; congr 1; omega
-  have r5₂ : w₂.gpr .r5 = BitVec.ofNat 32 (p.n % 16) := by rw [C₂.r5]; congr 1; omega
+  have r5₁ : w₁.gpr .r5 = BitVec.ofNat 32 (p.n % 16) := by rw [C₁.r5]; congr 1; omega_arith
+  have r5₂ : w₂.gpr .r5 = BitVec.ofNat 32 (p.n % 16) := by rw [C₂.r5]; congr 1; omega_arith
   have wC : ∀ {w : State}, BL p (p.n / 16) w → w.gpr .r5 = BitVec.ofNat 32 (p.n % 16) →
       WP isa (.block [.cmp .r5 (Impl.AesGcm.Arm.imm 0)]) w fun u =>
         BL p (p.n / 16) u ∧ u.z = decide (p.n % 16 = 0) := fun B h5 =>
-    WP.mono (cmp5_ok (by omega) h5) fun u ⟨z, g, _, sp, rd, wr⟩ =>
+    WP.mono (cmp5_ok (by omega_arith) h5) fun u ⟨z, g, _, sp, rd, wr⟩ =>
       ⟨⟨B.env.keep (fun r _ => by rw [g]) sp rd wr, by rw [g, B.r4], by rw [g, B.r5]⟩, z⟩
   refine rel_seq (rel_env C₁.env C₂.env [.r4, .r5] (by simp [C₁.r4, C₂.r4, C₁.r5, C₂.r5]) crypt5_check)
     (wC C₁ r5₁) (wC C₂ r5₂) fun c₁ c₂ ⟨D₁, cz₁⟩ ⟨D₂, cz₂⟩ => ?_

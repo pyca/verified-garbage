@@ -78,7 +78,7 @@ theorem op_of_seal {s : State} (h : sealPre s) : OP 9 8 s := by
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp),
     by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hwr]; exact covers_of_mem (by simp),
     by rw [hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp), c_d, c_w, n_d,
-    n_w, a_d, a_w, d_w, d_a, w_a, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa, fd, fw, sp, by omega⟩
+    n_w, a_d, a_w, d_w, d_a, w_a, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa, fd, fw, sp, by omega_arith⟩
 
 /-- The tag `seal` writes. -/
 theorem sealPre_tag {s : State} (h : sealPre s) : Covers [⟨w64 (arg s 7), 16⟩] s.wr ∧
@@ -98,7 +98,7 @@ theorem op_of_open {s : State} (h : openPre s) : OP 10 9 s := by
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp),
     by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hwr]; exact covers_of_mem (by simp),
     by rw [hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp), c_d, c_w, n_d,
-    n_w, a_d, a_w, d_w, d_a, w_a, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa, fd, fw, sp, by omega⟩
+    n_w, a_d, a_w, d_w, d_a, w_a, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa, fd, fw, sp, by omega_arith⟩
 
 /-- The tag `open` reads. -/
 theorem openPre_tag {s : State} (h : openPre s) :
@@ -112,7 +112,7 @@ theorem openPre_tag {s : State} (h : openPre s) :
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), ft, t_w, k_t⟩
 
 theorem stOf_w64 {W : BitVec 32} (hw : W.toNat + 2560 ≤ 2 ^ 32) : w64 (stOf W) = w64 W + BitVec.ofNat 64 16 :=
-  w64_add (by omega)
+  w64_add (by omega_arith)
 
 /-- The layout of `seal` and `open`, for the public data `p`. -/
 structure OL (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
@@ -134,20 +134,20 @@ structure OL (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
 
 theorem OP.ol {nA w : Nat} (hw : nA = w + 1) (h8 : 8 ≤ w) {s : State} (h : OP nA w s)
     {p : BitVec 32 × (Nat → BitVec 32)} (hp : pubSw nA 7 s = p) : OL p := by
-  have a : ∀ i, i < 7 → arg s i = p.2 i := fun i hi => pubSw_arg hp (by omega) (by omega) (by omega)
-  have aW : arg s w = p.2 7 := pubSw_W hp (by omega) hw
+  have a : ∀ i, i < 7 → arg s i = p.2 i := fun i hi => pubSw_arg hp (by omega_arith) (by omega_arith) (by omega_arith)
+  have aW : arg s w = p.2 7 := pubSw_W hp (by omega_arith) hw
   have esp : s.gpr .esp = p.1 := pubSw_esp hp
   obtain ⟨-, -, -, -, -, -, c_d, c_w, n_d, n_w, a_d, a_w, d_w, -, -, r_d, r_w, k_c, k_n, k_a, k_d, k_w, fc, fn, fa,
     fd, fw, sp, -⟩ := h
   have e := fun i hi => a i hi
-  simp only [e 0 (by omega), e 1 (by omega), e 2 (by omega), e 3 (by omega), e 4 (by omega),
-    e 5 (by omega), e 6 (by omega), aW, esp] at c_d c_w n_d n_w a_d a_w d_w r_d r_w k_c k_n
-  simp only [e 0 (by omega), e 1 (by omega), e 2 (by omega), e 3 (by omega), e 4 (by omega), e 5 (by omega),
-    e 6 (by omega), aW, esp] at k_a k_d k_w fc fn fa fd fw sp
+  simp only [e 0 (by omega_arith), e 1 (by omega_arith), e 2 (by omega_arith), e 3 (by omega_arith), e 4 (by omega_arith),
+    e 5 (by omega_arith), e 6 (by omega_arith), aW, esp] at c_d c_w n_d n_w a_d a_w d_w r_d r_w k_c k_n
+  simp only [e 0 (by omega_arith), e 1 (by omega_arith), e 2 (by omega_arith), e 3 (by omega_arith), e 4 (by omega_arith), e 5 (by omega_arith),
+    e 6 (by omega_arith), aW, esp] at k_a k_d k_w fc fn fa fd fw sp
   have hs := stOf_w64 fw
   have sw : (⟨w64 (stOf (p.2 7)), 80⟩ : Region).Sub ⟨w64 (p.2 7), 2560⟩ := by
     rw [hs]; exact Lay.wSub (by decide)
-  refine ⟨Lay4.of fc (by rw [toNat_add32 (by omega)]; omega) fw (by decide) sp
+  refine ⟨Lay4.of fc (by rw [toNat_add32 (by omega_arith)]; omega_arith) fw (by decide) sp
     (c_w.sub_right sw) c_w ?_ ?_ k_c (k_w.sub_right sw) k_w, c_d, n_d, n_w, a_d, a_w, d_w,
     r_d, r_w, k_n, k_a, k_d, fn, fa, fd⟩
   · rw [hs]
@@ -197,14 +197,14 @@ theorem slot_oF {o n : Nat} (h₁ : 128 ≤ o)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · have := Lay.w_w (W := p.2 7) (a := o) (n := n) (d := 0) (k := 16) (.inr (by omega)) (by omega) (by decide)
+  · have := Lay.w_w (W := p.2 7) (a := o) (n := n) (d := 0) (k := 16) (.inr (by omega_arith)) (by omega_arith) (by decide)
     rwa [BitVec.add_zero] at this
-  · exact (G.d_w.sub_right (Lay.wSub (by omega))).symm
-  · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (by simp only [auxO]; omega) (by omega) (by decide)
-  · exact Lay.w_w (by simp only [rO]; omega) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (G.L.stk_w (by omega)).symm
+  · exact (G.d_w.sub_right (Lay.wSub (by omega_arith))).symm
+  · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · exact Lay.w_w (by simp only [auxO]; omega_arith) (by omega_arith) (by decide)
+  · exact Lay.w_w (by simp only [rO]; omega_arith) (by omega_arith) (by decide)
+  · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact (G.L.stk_w (by omega_arith)).symm
 
 /-- The context, outside what the pieces write. -/
 theorem ctx_oF : ∀ r ∈ oFF p, (⟨w64 (p.2 0), 256⟩ : Region).Disjoint r := by
@@ -261,7 +261,7 @@ theorem OEnv.frame {s₀ s s' : State} (h : OEnv p s₀ s)
     by rw [ciph_frame hf (ctx_oF G)]; exact h.ciph,
     by rw [show Hk s'.mem (p.2 0) = Hk s.mem (p.2 0) from blockAt_frame hf fun r hr =>
       (ctx_oF G r hr).sub_left (Lay.ctxSub (by decide))]; exact h.hk,
-    by rw [bytesAt_frame hf (aad_oF G) (by omega)]; exact h.aad, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr,
+    by rw [bytesAt_frame hf (aad_oF G) (by omega_arith)]; exact h.aad, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr,
     by rw [hrd, hwr]; exact h.nIn, by rw [hrd, hwr]; exact h.aIn, by rw [hwr]; exact h.dIn⟩
   · have := sl ctxO (by decide) (by decide); rwa [slotv_eq, slotv_eq] at this
   · exact slot_oF G (o := 128) (n := 16) (by decide) (by decide) r hr
@@ -279,14 +279,14 @@ omit G in
 /-- A part of `W` the pieces write. -/
 theorem w_sub_oF {d k : Nat} (h₁ : 16 ≤ d) (h₂ : d + k ≤ 128) :
     ∃ r' ∈ oF p, Region.Sub ⟨w64 (p.2 7) + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨⟨w64 (p.2 7) + BitVec.ofNat 64 16, 112⟩, by simp, Offset.sub _ h₁ (by omega)⟩
+  ⟨⟨w64 (p.2 7) + BitVec.ofNat 64 16, 112⟩, by simp, Offset.sub _ h₁ (by omega_arith)⟩
 
 theorem st_sub_oF {d k : Nat} (h : d + k ≤ 80) :
     ∃ r' ∈ oF p, Region.Sub ⟨w64 (stOf (p.2 7)) + BitVec.ofNat 64 d, k⟩ r' := by
-  rw [st_eq G]; exact w_sub_oF (by omega) (by omega)
+  rw [st_eq G]; exact w_sub_oF (by omega_arith) (by omega_arith)
 
 theorem st0_sub_oF {k : Nat} (h : k ≤ 80) : ∃ r' ∈ oF p, Region.Sub ⟨w64 (stOf (p.2 7)), k⟩ r' := by
-  rw [stOf_w64 G.L.fw]; exact w_sub_oF (by omega) (by omega)
+  rw [stOf_w64 G.L.fw]; exact w_sub_oF (by omega_arith) (by omega_arith)
 
 omit G in
 theorem ws_sub_oF : ∃ r' ∈ oF p, Region.Sub (wsR (p.2 7)) r' :=
@@ -339,7 +339,7 @@ theorem oTail_ok {W : BitVec 32} {s : State} (hbp : s.gpr .ebp = W) (hw : Covers
     ∃ s', runBlock isa oTail s = some s' ∧ Frame [⟨w64 W + BitVec.ofNat 64 zO, 4⟩] s.mem s'.mem ∧
       slotv s'.mem W zO = 0 ∧ s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esi = s.gpr .esi ∧ s'.gpr .esp = s.gpr .esp ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => w64_add (by omega)
+  have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => w64_add (by omega_arith)
   have wIn : ∀ {o}, o + 4 ≤ 2560 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := fun ho => in_off hw ho (by decide)
   have f₁ : Frame [⟨w64 W + BitVec.ofNat 64 zO, 4⟩] s.mem
       (s.mem.writeW (w64 W + BitVec.ofNat 64 zO) (BitVec.ofNat 32 0)) :=
@@ -375,8 +375,8 @@ theorem oneEntry_pc (nA w : Nat) (hw : nA = w + 1) (h8 : 8 ≤ w) (ex : List (Na
   refine ⟨fun s₀ s ⟨hpre, hpub, hs⟩ => ?_, ?_⟩
   · subst s
     have h := hPre _ hpre
-    have a : ∀ i, i < 7 → arg s₀ i = p.2 i := fun i hi => pubSw_arg hpub (by omega) (by omega) (by omega)
-    have aW : arg s₀ w = p.2 7 := pubSw_W hpub (by omega) hw
+    have a : ∀ i, i < 7 → arg s₀ i = p.2 i := fun i hi => pubSw_arg hpub (by omega_arith) (by omega_arith) (by omega_arith)
+    have aW : arg s₀ w = p.2 7 := pubSw_W hpub (by omega_arith) hw
     have esp := pubSw_esp hpub
     have fw := h.fw
     rw [aW] at fw
@@ -388,9 +388,9 @@ theorem oneEntry_pc (nA w : Nat) (hw : nA = w + 1) (h8 : 8 ≤ w) (ex : List (Na
         (q.2 + 4 ≤ zO ∨ zO + 4 ≤ q.2) := by decide
     have hps : ∀ q ∈ oKeeps ++ ex, q.1 < nA ∧ 144 ≤ q.2 ∧ q.2 + 4 ≤ 2560 ∧ q.2 % 4 = 0 := fun q hq => by
       rcases List.mem_append.mp hq with hq | hq
-      · have := hok q hq; exact ⟨by omega, this.2.1, this.2.2.1, this.2.2.2.1⟩
+      · have := hok q hq; exact ⟨by omega_arith, this.2.1, this.2.2.1, this.2.2.2.1⟩
       · have := hex q hq; exact ⟨this.1, this.2.1, this.2.2.1, this.2.2.2.1⟩
-    refine entry_gen (St := stOf (p.2 7)) _ (oKeeps ++ ex) _ (by omega) hps hnd aW wW rA aw h.fg fw
+    refine entry_gen (St := stOf (p.2 7)) _ (oKeeps ++ ex) _ (by omega_arith) hps hnd aW wW rA aw h.fg fw
       (fun s₁ bp sp rd wr _ => ⟨_, by xrun [bp], by regs [bp], fun r hr => by
         simp only [gpr_arithFlags, gpr_setReg_of_ne _ _ hr], by mems [], by mems [], by mems []⟩) fun s₂ e => ?_
     obtain ⟨s₃, run, f₃, z₃, bp₃, si₃, sp₃, rd₃, wr₃⟩ := oTail_ok (W := p.2 7) e.ebp (by rw [e.wr]; exact wW) fw
@@ -402,7 +402,7 @@ theorem oneEntry_pc (nA w : Nat) (hw : nA = w + 1) (h8 : 8 ≤ w) (ex : List (Na
       refine slot_frame f₃ fun r hr => ?_
       simp only [List.mem_singleton] at hr; subst hr
       simp only [zO] at h₃
-      exact Lay.w_w (by simp only [zO]; omega) (by omega) (by decide)
+      exact Lay.w_w (by simp only [zO]; omega_arith) (by omega_arith) (by decide)
     have f₃' : Frame [⟨w64 (p.2 7) + BitVec.ofNat 64 128, 2432⟩] s₂.mem s₃.mem := f₃.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
@@ -415,13 +415,13 @@ theorem oneEntry_pc (nA w : Nat) (hw : nA = w + 1) (h8 : 8 ≤ w) (ex : List (Na
         rcases List.mem_append.mp hq with hq | hq
         · exact (hok q hq).2.2.2.2
         · exact (hex q hq).2.2.2.2
-      rw [st _ (by have := (hps q hq).2.1; omega) (hps q hq).2.2.1 hz, e.slots q hq]
+      rw [st _ (by have := (hps q hq).2.1; omega_arith) (hps q hq).2.2.1 hz, e.slots q hq]
     have sl : ∀ q ∈ oKeeps, slotv s₃.mem (p.2 7) q.2 = p.2 q.1 := fun q hq => by
       rw [slR q (List.mem_append_left _ hq), a _ (hok q hq).1]
     have he : Env (p.2 0) (stOf (p.2 7)) (p.2 7) p.1 s₃ := by
       refine ⟨by rw [bp₃, e.ebp], by rw [si₃, e.esi], by rw [sp₃, e.esp, esp], ?_, ?_, by rw [wr₃, e.wr]; exact wW,
         by have := sl (0, ctxO) (by simp); rwa [slotv_eq] at this⟩
-      · rw [rd₃, wr₃, e.rd, e.wr, ← a 0 (by omega)]; exact h.cR
+      · rw [rd₃, wr₃, e.rd, e.wr, ← a 0 (by omega_arith)]; exact h.cR
       · rw [wr₃, e.wr, stOf_w64 fw]; exact covers_off wW (by decide) (by decide)
     refine ⟨s₃, run, ⟨⟨he, sl (3, aadO) (by simp),
       sl (4, alO) (by simp), sl (5, dataO) (by simp), sl (6, lenO) (by simp), z₃, sl (2, nlO) (by simp),
@@ -434,12 +434,12 @@ theorem oneEntry_pc (nA w : Nat) (hw : nA = w + 1) (h8 : 8 ≤ w) (ex : List (Na
     · rw [← esp, ret_kept fE (dE (by rw [esp]; exact G.r_w))]
     · exact ciph_frame fE (dE G.L.cw)
     · rw [ctxH_eq]; exact blockAt_frame fE (dE (G.L.cw.sub_left (Lay.ctxSub (by decide))))
-    · exact bytesAt_frame fE (dE G.a_w) (by omega)
-    · rw [rd₃, wr₃, e.rd, e.wr, ← a 1 (by omega), ← a 2 (by omega)]; exact h.nR
-    · rw [rd₃, wr₃, e.rd, e.wr, ← a 3 (by omega), ← a 4 (by omega)]; exact h.aR
-    · rw [wr₃, e.wr, ← a 5 (by omega), ← a 6 (by omega)]; exact h.dW
-    · exact bytesAt_frame fE (dE G.n_w) (by omega)
-    · exact bytesAt_frame fE (dE G.d_w) (by omega)
+    · exact bytesAt_frame fE (dE G.a_w) (by omega_arith)
+    · rw [rd₃, wr₃, e.rd, e.wr, ← a 1 (by omega_arith), ← a 2 (by omega_arith)]; exact h.nR
+    · rw [rd₃, wr₃, e.rd, e.wr, ← a 3 (by omega_arith), ← a 4 (by omega_arith)]; exact h.aR
+    · rw [wr₃, e.wr, ← a 5 (by omega_arith), ← a 6 (by omega_arith)]; exact h.dW
+    · exact bytesAt_frame fE (dE G.n_w) (by omega_arith)
+    · exact bytesAt_frame fE (dE G.d_w) (by omega_arith)
   · refine CT.seq (J := fun s => s.gpr .eax = p.2 7 ∧ s.gpr .esp = p.1)
       (CT.taint [.esp] (fun s₁ s₂ ⟨a₁, _, h₁, e₁⟩ ⟨a₂, _, h₂, e₂⟩ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; subst e₁; subst e₂
@@ -452,7 +452,7 @@ theorem oneEntry_pc (nA w : Nat) (hw : nA = w + 1) (h8 : 8 ≤ w) (ex : List (Na
     subst s
     have h := hPre _ hpre
     have rA : Covers [argsR (s₀.gpr .esp) nA] (s₀.rd ++ s₀.wr) := by rw [argsR_eq]; exact h.argR
-    exact WP.mono (arg0_ok (argIn_of rA h.fg (by omega))) fun s' ⟨ax, sp⟩ =>
-      ⟨by rw [ax]; exact pubSw_W hpub (by omega) hw, by rw [sp]; exact pubSw_esp hpub⟩
+    exact WP.mono (arg0_ok (argIn_of rA h.fg (by omega_arith))) fun s' ⟨ax, sp⟩ =>
+      ⟨by rw [ax]; exact pubSw_W hpub (by omega_arith) hw, by rw [sp]; exact pubSw_esp hpub⟩
 
 end VG.Proof.Sm4Gcm.X86

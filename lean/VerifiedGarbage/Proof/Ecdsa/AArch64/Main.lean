@@ -151,7 +151,7 @@ theorem stage₂_with (hc : BaseCfgOk c) (comb : Prog isa) (hcomb : CombCorrect 
       rcases hx with rfl | rfl | rfl
       · show wordsVal s.mem base (c.sl AP) c.n < _; rw [F.ap]; exact mont_lt hc _
       · show wordsVal s.mem base (c.sl BM) c.n < _; rw [F.bm]; exact mont_lt hc _
-      · show wordsVal s.mem base (c.sl ZERO) c.n < _; rw [F.zero]; omega
+      · show wordsVal s.mem base (c.sl ZERO) c.n < _; rw [F.zero]; omega_arith
   have W := hcomb hS.scr (modP_of hc F.mp) hF
   refine WP.seq (WP.mono W fun s₅ h₅ => ?_)
   obtain ⟨K₅, U₅, M₅, L₅, R₅⟩ := h₅
@@ -287,7 +287,7 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : SignOutp
     fun s₁₁ hs₁₁ g₁₁ _ wr₁₁ U₁₁ ss_lt ss => ?_
   have hF := sl_le c h7 (i := FLAG) (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (checkNonzero_ok c hs₁₁ h0 (sl_le c h7 (i := SS) (by decide)) (by omega)
+  refine WP.mono (checkNonzero_ok c hs₁₁ h0 (sl_le c h7 (i := SS) (by decide)) (by omega_arith)
     (sl_mod8 c SS) (sl_mod8 c FLAG))
     fun s₁₂ ⟨f₁₂, k₁₂, O₁₂⟩ => ?_
   have hs₁₂ := hs₁₁.of_keepRegs k₁₂ (by decide)
@@ -323,13 +323,13 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : SignOutp
       sv c base s X % c.C.n ≠ 0 ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0
   · have hd : decide ((((0 < dv c s₀ ∧ dv c s₀ < c.C.n) ∧ (0 < kv c s₀ ∧ kv c s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = true := by
-      simp only [decide_eq_true_eq]; omega
+      simp only [decide_eq_true_eq]; omega_arith
     rw [ite_eq_left_of_eq_true _ _ (eq_true hP)]
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
     rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode]
   · have hd : decide ((((0 < dv c s₀ ∧ dv c s₀ < c.C.n) ∧ (0 < kv c s₀ ∧ kv c s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = false := by
-      simp only [decide_eq_false_iff_not]; omega
+      simp only [decide_eq_false_iff_not]; omega_arith
     rw [ite_eq_right_of_eq_false _ _ (eq_false hP)]
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
     rw [bytes, hd]; rfl

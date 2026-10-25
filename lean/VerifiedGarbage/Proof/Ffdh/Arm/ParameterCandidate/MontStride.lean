@@ -39,14 +39,7 @@ theorem keyStride_words {s : State} {base : BitVec 32} {capacity w : Nat}
       Spec.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)]
     exact workspace.write (by simp only [Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes,
       Nat.zero_mul, Nat.add_zero] at fit; omega)
-  refine withRest [.r1] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.keyStride : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   have stride := ready.r7
   rw [keyView_stride] at stride
   have addr224 : State.addr (base + 224#32) = off (State.addr base) 224 :=

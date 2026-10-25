@@ -68,10 +68,10 @@ theorem head_ok {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec Hs 
       (fun j => word t.mem (lay P s).Q (8 * j)) := ⟨fun _ _ => rfl, fun _ _ => rfl⟩
   refine WP.mono (privW_ok hL hP hc h9 R₀ hpw.slots) fun u1 ⟨hc1, _, R1⟩ => ?_
   have hS1 : Slots (lay P s) (privW (lay P s) fun j => word t.mem (lay P s).Q (8 * j)) :=
-    hpw.slots.of fun j _ _ h3 => by simp only [privW, upd]; rw [ifn (by omega), ifn (by omega)]
+    hpw.slots.of fun j _ _ h3 => by simp only [privW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]
   refine WP.mono (privR_ok hL hP hc1 R1 hS1) fun u2 ⟨hc2, hm2, hr2⟩ => ?_
   refine ⟨hc2, hr2, _, _, hm2 ▸ R1, hS1, ⟨by simp only [privW, upd]; exact hpw.p, fun j hj => by
-      simp only [privW, upd]; rw [ifn (by omega), ifn (by omega)]; exact hpw.args j hj,
+      simp only [privW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]; exact hpw.args j hj,
       by simp [privW, upd], by simp [privW, upd]⟩⟩
 
 /-- Two calls whose public data agree, in the inner frame. -/
@@ -90,8 +90,8 @@ theorem head_ct (Hs Gs : Spec.Mgf1.Hash) {S : Nat} (hS : 15 ≤ S) :
   have ht := (RelCT.taint (A := taint) (P := fun x y => x.sp = y.sp) (Taint.ofRegs [])
     (fun _ _ h => ⟨h, fun _ hr => False.elim (by simp at hr)⟩) (by taint_decide)
     _ _ _ _ _ _ (by show (entered s₁).sp = (entered s₂).sp; rw [entered_sp (S + 1), entered_sp (S + 1)]; simp only [lay, hsp]) e₁ e₂).1
-  obtain ⟨_, u₁, x₁, y₁⟩ := head_ok h₁ (by omega)
-  obtain ⟨_, u₂, x₂, y₂⟩ := head_ok h₂ (by omega)
+  obtain ⟨_, u₁, x₁, y₁⟩ := head_ok h₁ (by omega_arith)
+  obtain ⟨_, u₂, x₂, y₂⟩ := head_ok h₂ (by omega_arith)
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
   have e : lay (S + 1) s₂ = lay (S + 1) s₁ := by
@@ -114,11 +114,11 @@ theorem priv_args_eq {L : DLay} {g : Reg → BitVec 64} {vv : VReg → BitVec 12
   obtain ⟨hc, -, V, W, R, -, hA⟩ := ha
   intro i hi
   rw [stackArg_ce, hc.sp, show a.mem.readW (L.Q + BitVec.ofNat 64 (8 * i)) 64 = W i from
-    R.fr i (by unfold nW frameBytes; omega)]
+    R.fr i (by unfold nW frameBytes; omega_arith)]
   rcases i with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | i
   exacts [hA.p, hA.args 0 (by decide), hA.args 1 (by decide), hA.args 2 (by decide), hA.args 3 (by decide),
     hA.args 4 (by decide), hA.args 5 (by decide), hA.args 6 (by decide), hA.args 7 (by decide),
-    hA.args 8 (by decide), hA.s10, hA.s11, absurd hi (by omega)]
+    hA.args 8 (by decide), hA.s10, hA.s11, absurd hi (by omega_arith)]
 
 theorem priv_pub' {L : DLay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂ : VReg → BitVec 128} {m₁ m₂ : Mem}
     (hL : L.Ok) (hk : LeakEq L m₁ m₂) {a b : State} (ha : PrivReady L g₁ v₁ m₁ a) (hb : PrivReady L g₂ v₂ m₂ b) :
@@ -165,11 +165,11 @@ theorem resK_ct {H : Hash} (hD : H.D ≤ 64) {S : Nat} (hS : 15 ≤ S) :
     .str .x .x0 .x9 sR] : List Instr) ++ chkK gH)) rfl (by taint_decide))
     (fun _ _ _ _ _ _ _ _ _ _ ⟨_, f₁, _⟩ ⟨_, f₂, _⟩ => ⟨f₁.ctx.sp.trans f₂.ctx.sp.symm, fun _ h => absurd h List.not_mem_nil⟩)
     fun L g vv m₀ t hL hP ⟨W, hcl, hS⟩ => by
-      have hP16 : 16 ≤ L.P := by omega
+      have hP16 : 16 ≤ L.P := by omega_arith
       have hk3 : W 21 = BitVec.ofNat 64 L.k.toNat := by rw [hS.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-      exact WP.mono (resK_ok (H := H) (hcl.ctx.lay hL hP16 hcl.rep hS.scr) hcl.rep hk3 hL.k1024 (by omega))
+      exact WP.mono (resK_ok (H := H) (hcl.ctx.lay hL hP16 hcl.rep hS.scr) hcl.rep hk3 hL.k1024 (by omega_arith))
         fun u ⟨_, S4, R4, x11⟩ => In.of_step hL hP16 hcl.ctx S4 nil_ws R4
-          (hS.of fun j _ _ h3 => by simp only [upd]; rw [ifn (by omega)]) x11
+          (hS.of fun j _ _ h3 => by simp only [upd]; rw [ifn (by omega_arith)]) x11
 
 /-! ## A short `k` -/
 
@@ -191,19 +191,19 @@ theorem decFail_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
   refine RelCT.seq (R := PW S e fun _ _ => True) (pw_seq (X' := fun _ _ => True) [.x11, .x12, .x13]
     (fun r => if r = .x11 then e.L.out else if r = .x12 then e.L.k else 0)
     (by taint_decide) (by taint_decide)
-    (fun _ _ _ t _ _ hL hP hc R hS _ => WP.mono (zeroHead_ok hL (by omega) hc R hS) fun u ⟨hs, x11, x12, x13⟩ =>
+    (fun _ _ _ t _ _ hL hP hc R hS _ => WP.mono (zeroHead_ok hL (by omega_arith) hc R hS) fun u ⟨hs, x11, x12, x13⟩ =>
       ⟨hs, by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> simp [*]⟩)
     fun g vv m₀ t V W hL hP hc R hS _ => ?_) ?_
-  · have hP16 : 16 ≤ e.L.P := by omega
+  · have hP16 : 16 ≤ e.L.P := by omega_arith
     have Ly := hc.lay hL hP16 R hS.scr
     have O := hc.outAt hL hP16 hS
     have hk : W 21 = BitVec.ofNat 64 e.L.k.toNat := by rw [hS.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-    exact WP.mono (zeroOut_ok Ly R O.ho hk (by have := hL.k64; omega) hL.k1024 O.hw O.hnw O.ha)
+    exact WP.mono (zeroOut_ok Ly R O.ho hk (by have := hL.k64; omega_arith) hL.k1024 O.hw O.hnw O.ha)
       fun u ⟨_, Su, Ru, _⟩ => In.of_step hL hP16 hc Su (fun r h => by simp at h; exact .inl h) Ru hS trivial
   · show RelCT isa _ (.block ([.ldrSp .x11 sMl] ++ (.str .x .x13 .x11 0 :: faultBit))) _
     refine RelCT.block_append (pw_seq_tr [.x11] (fun _ => e.L.ml) (by taint_decide) (by taint_decide)
       fun g vv m₀ t V W hL hP hc R hS _ => ?_)
-    have Ly := hc.lay hL (by omega) R hS.scr
+    have Ly := hc.lay hL (by omega_arith) R hS.scr
     have h216 : InRegions (t.rd ++ t.wr) (e.L.Q + BitVec.ofNat 64 216) 8 := Ly.ld (d := 216) (by decide)
     have rml := R.rd8 (d := 216) (k := 27) rfl (by decide) hS.ml
     oaep_run [sMl, h216, Ly.sp, rml]

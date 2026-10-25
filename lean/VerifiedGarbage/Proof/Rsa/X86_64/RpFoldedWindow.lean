@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedSquare
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedSquare
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedReset
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowPowers
 import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
 
 /-! # The arithmetic and tracker transition of one folded window -/
 

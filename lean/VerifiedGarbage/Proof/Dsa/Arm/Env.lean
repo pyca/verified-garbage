@@ -40,7 +40,7 @@ abbrev FieldsOk (fields : Fields) : Prop := ∀ f ∈ fields, 64 ≤ f.1 ∧ f.1
 
 theorem Env.of_installed {s₀ u : State} {base : Addr} {size : Nat} {fields : Fields}
     (I : Installed s₀ base size fields u) (hz : 164 ≤ size) : Env s₀ base size fields u :=
-  ⟨I.ws, I.fields, I.saved, I.mem.mono (Nat.zero_le _) (by omega), I.rest.rd, I.rest.wr, I.rest.sp⟩
+  ⟨I.ws, I.fields, I.saved, I.mem.mono (Nat.zero_le _) (by omega_arith), I.rest.rd, I.rest.wr, I.rest.sp⟩
 
 /-- A step that changes registers but `r12`, and memory in ranges of the working space
 apart from the fields and the saved registers. -/
@@ -54,11 +54,11 @@ theorem Env.keep {s₀ t t' : State} {base : Addr} {size : Nat} {fields : Fields
     R.sp.trans E.sp⟩
   · have := hf f h
     rw [← E.fields f h]
-    exact hdr_keep (s := t) (t := t') O (fun r hr' => by have := hrs r hr'; omega) (by omega)
+    exact hdr_keep (s := t) (t := t') O (fun r hr' => by have := hrs r hr'; omega_arith) (by omega_arith)
   · rw [← E.saved i hi]
-    exact hdr_keep (s := t) (t := t') O (fun r hr' => by have := hrs r hr'; omega) (by omega)
+    exact hdr_keep (s := t) (t := t') O (fun r hr' => by have := hrs r hr'; omega_arith) (by omega_arith)
   · rw [← E.mem x hx]
-    exact O x fun r hr' => .inr (by have := hrs r hr'; omega)
+    exact O x fun r hr' => .inr (by have := hrs r hr'; omega_arith)
 
 theorem Env.of_mem {s₀ t t' : State} {base : Addr} {size : Nat} {fields : Fields} {ws : List Reg}
     (E : Env s₀ base size fields t) (R : Rest ws t t') (hr : .r12 ∉ ws) (M : t'.mem = t.mem) :
@@ -74,7 +74,7 @@ theorem Env.field {s₀ t : State} {base : Addr} {size : Nat} {fields : Fields} 
 theorem ofs_apart {base P x : Addr} {L size : Nat} (hd : Region.Disjoint ⟨P, L⟩ ⟨base, size⟩)
     (hx : ofs base x < size) : L ≤ ofs P x := by
   by_contra h
-  exact hd x (by simp only [Region.Contains, ofs] at h ⊢; omega) (by simp only [Region.Contains, ofs] at hx ⊢; omega)
+  exact hd x (by simp only [Region.Contains, ofs] at h ⊢; omega_arith) (by simp only [Region.Contains, ofs] at hx ⊢; omega_arith)
 
 /-- The saved registers through a body. -/
 theorem Env.saved_body {s₀ t t' : State} {base P : Addr} {size L : Nat} {fields : Fields}
@@ -86,10 +86,10 @@ theorem Env.saved_body {s₀ t t' : State} {base P : Addr} {size L : Nat} {field
   rw [← E.saved i hi]
   refine Mem.readW_congr fun j hj => B.mem _ (fun r hr => ?_) (ofs_apart hd ?_)
   · simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rw [ofs_off base (by omega)]
-    rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega
-  · rw [ofs_off base (by omega)]
-    omega
+    rw [ofs_off base (by omega_arith)]
+    rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
+  · rw [ofs_off base (by omega_arith)]
+    omega_arith
 
 /-- The saved registers past a range of the caller. -/
 theorem Env.saved_outside {s₀ t t' : State} {base P : Addr} {size L : Nat} {fields : Fields}
@@ -100,8 +100,8 @@ theorem Env.saved_outside {s₀ t t' : State} {base P : Addr} {size L : Nat} {fi
   intro i hi
   rw [← E.saved i hi]
   refine Mem.readW_congr fun j hj => O _ (.inr ?_)
-  have := ofs_apart hd (x := off base (128 + 4 * i) + BitVec.ofNat 64 j) (by rw [ofs_off base (by omega)]; omega)
-  omega
+  have := ofs_apart hd (x := off base (128 + 4 * i) + BitVec.ofNat 64 j) (by rw [ofs_off base (by omega_arith)]; omega_arith)
+  omega_arith
 
 /-! ## The operands -/
 
@@ -115,17 +115,17 @@ theorem input_of {s₀ t : State} {base : Addr} {size : Nat} {fields : Fields} (
   have nw := E.ws.nowrap
   have P₀lt := P₀.isLt
   have A : State.addr (pointerValue base t p) = State.addr P₀ + BitVec.ofNat 64 o := by
-    rw [hv, VG.Arm.addr_add (by omega)]
+    rw [hv, VG.Arm.addr_add (by omega_arith)]
   have D : Region.Disjoint ⟨State.addr (pointerValue base t p), len⟩ ⟨base, size⟩ := by
     rw [A]; exact hd.sub_left (Offset.sub_base _ ho)
   refine ⟨⟨hp, ?_, fun e k hek => ?_, D.sub_right (Region.sub_prefix hz)⟩, D, ?_⟩
-  · rw [hv, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : o < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [hv, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : o < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   · rw [A, Offset.add_add, E.rd, E.wr]
-    exact ⟨_, hr, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, hr, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   · simp only [operand, A]
-    rw [bytes_keep E.mem (by rw [← A]; exact D) (by omega) (by omega)]
+    rw [bytes_keep E.mem (by rw [← A]; exact D) (by omega_arith) (by omega_arith)]
 
 /-! ## The exit -/
 
@@ -136,23 +136,23 @@ theorem restore_ok {t : State} {base : Addr} {size : Nat} (hs : Ws t base size) 
   have nw := hs.nowrap
   show WP isa (.block [.ldr .r4 .r12 128, .ldr .r5 .r12 132, .ldr .r6 .r12 136, .ldr .r7 .r12 140,
     .ldr .r8 .r12 144, .ldr .r9 .r12 148, .ldr .r10 .r12 152, .ldr .r11 .r12 156, .ldr .lr .r12 160]) t _
-  refine wp_ldr12 hs (by decide) (by omega) fun u₁ v₁ => ?_
+  refine wp_ldr12 hs (by decide) (by omega_arith) fun u₁ v₁ => ?_
   have w₁ := hs.of_upd v₁ (by decide)
-  refine wp_ldr12 w₁ (by decide) (by omega) fun u₂ v₂ => ?_
+  refine wp_ldr12 w₁ (by decide) (by omega_arith) fun u₂ v₂ => ?_
   have w₂ := w₁.of_upd v₂ (by decide)
-  refine wp_ldr12 w₂ (by decide) (by omega) fun u₃ v₃ => ?_
+  refine wp_ldr12 w₂ (by decide) (by omega_arith) fun u₃ v₃ => ?_
   have w₃ := w₂.of_upd v₃ (by decide)
-  refine wp_ldr12 w₃ (by decide) (by omega) fun u₄ v₄ => ?_
+  refine wp_ldr12 w₃ (by decide) (by omega_arith) fun u₄ v₄ => ?_
   have w₄ := w₃.of_upd v₄ (by decide)
-  refine wp_ldr12 w₄ (by decide) (by omega) fun u₅ v₅ => ?_
+  refine wp_ldr12 w₄ (by decide) (by omega_arith) fun u₅ v₅ => ?_
   have w₅ := w₄.of_upd v₅ (by decide)
-  refine wp_ldr12 w₅ (by decide) (by omega) fun u₆ v₆ => ?_
+  refine wp_ldr12 w₅ (by decide) (by omega_arith) fun u₆ v₆ => ?_
   have w₆ := w₅.of_upd v₆ (by decide)
-  refine wp_ldr12 w₆ (by decide) (by omega) fun u₇ v₇ => ?_
+  refine wp_ldr12 w₆ (by decide) (by omega_arith) fun u₇ v₇ => ?_
   have w₇ := w₆.of_upd v₇ (by decide)
-  refine wp_ldr12 w₇ (by decide) (by omega) fun u₈ v₈ => ?_
+  refine wp_ldr12 w₇ (by decide) (by omega_arith) fun u₈ v₈ => ?_
   have w₈ := w₇.of_upd v₈ (by decide)
-  refine wp_ldr12 w₈ (by decide) (by omega) fun u v₉ => WP.block_nil ⟨?_, ?_, ?_⟩
+  refine wp_ldr12 w₈ (by decide) (by omega_arith) fun u v₉ => WP.block_nil ⟨?_, ?_, ?_⟩
   · have m : ∀ d, hdr base u₈ d = hdr base t d := fun d => by
       simp only [hdr, v₈.mem, v₇.mem, v₆.mem, v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem]
     have m' : ∀ d, hdr base u₇ d = hdr base t d := fun d => by
@@ -166,7 +166,7 @@ theorem restore_ok {t : State} {base : Addr} {size : Nat} (hs : Ws t base size) 
     have m2 : ∀ d, hdr base u₂ d = hdr base t d := fun d => by simp only [hdr, v₂.mem, v₁.mem]
     have m1 : ∀ d, hdr base u₁ d = hdr base t d := fun d => by simp only [hdr, v₁.mem]
     intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8) with
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · simp (disch := decide) only [List.getD, Entry.savedRegs, List.getElem?_cons_zero, Option.getD_some, v₉.other, v₈.other, v₇.other, v₆.other, v₅.other, v₄.other, v₃.other, v₂.other, v₁.gpr]
       exact hv 0 (by decide)

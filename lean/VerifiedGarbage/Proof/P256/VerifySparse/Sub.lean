@@ -139,14 +139,14 @@ theorem sub_ok {s : State} {base : Addr} {size o a b : Nat} (hs : Scr s base siz
     have pp : p<2^256 := by decide
     cases hc : s2.c <;> simp only [hc,Bool.not_false,Bool.not_true,Bool.toNat_true,
       Bool.toNat_false,Nat.mul_one,Nat.mul_zero,Nat.add_zero,Bool.false_eq_true,ite_true,ite_false] at e2 ⊢
-    · have ne : wordsVal s.mem base a 4<wordsVal s.mem base b 4 := by omega
-      have small : wordsVal s.mem base a 4+p-wordsVal s.mem base b 4<p := by omega
-      have eq : regsVal s2 (low 4)+p=2^256+(wordsVal s.mem base a 4+p-wordsVal s.mem base b 4) := by omega
-      rw [eq,Nat.add_mod_left,Nat.mod_eq_of_lt (by omega),Nat.mod_eq_of_lt small]
-    · have ge : wordsVal s.mem base b 4≤wordsVal s.mem base a 4 := by omega
+    · have ne : wordsVal s.mem base a 4<wordsVal s.mem base b 4 := by omega_arith
+      have small : wordsVal s.mem base a 4+p-wordsVal s.mem base b 4<p := by omega_arith
+      have eq : regsVal s2 (low 4)+p=2^256+(wordsVal s.mem base a 4+p-wordsVal s.mem base b 4) := by omega_arith
+      rw [eq,Nat.add_mod_left,Nat.mod_eq_of_lt (by omega_arith),Nat.mod_eq_of_lt small]
+    · have ge : wordsVal s.mem base b 4≤wordsVal s.mem base a 4 := by omega_arith
       rw [Nat.mod_eq_of_lt rr,show wordsVal s.mem base a 4+p-wordsVal s.mem base b 4=
-        (wordsVal s.mem base a 4-wordsVal s.mem base b 4)+p by omega,Nat.add_mod_right,
-        Nat.mod_eq_of_lt (by omega)]
-      omega
+        (wordsVal s.mem base a 4-wordsVal s.mem base b 4)+p by omega_arith,Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
 
 end VG.Proof.P256.VerifySparse

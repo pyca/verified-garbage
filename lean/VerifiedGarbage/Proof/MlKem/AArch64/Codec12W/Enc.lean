@@ -85,8 +85,8 @@ theorem zip_lanes {m : Mem} {p : Addr} {P : Poly} (hp : PolyIsW 16 m p P) {j : N
       (fun e => (P[j + (4 + e)]!).val) := by
   have hz' : ∀ e < 8, vhalf z e = 0 := fun e _ => by subst hz; simp [vhalf]
   refine ⟨fun e he => ?_, fun e he => ?_⟩
-  · rw [(Ntt16.vword_zip_zero hz' he).1, vhalf_read_coeff _ _ _ (by omega), polyIsW16_toNat hp (by omega)]
-  · rw [(Ntt16.vword_zip_zero hz' he).2, vhalf_read_coeff _ _ _ (by omega), polyIsW16_toNat hp (by omega)]
+  · rw [(Ntt16.vword_zip_zero hz' he).1, vhalf_read_coeff _ _ _ (by omega_arith), polyIsW16_toNat hp (by omega_arith)]
+  · rw [(Ntt16.vword_zip_zero hz' he).2, vhalf_read_coeff _ _ _ (by omega_arith), polyIsW16_toNat hp (by omega_arith)]
 
 theorem enc_step {s₀ : State} {p o : Addr} {P : Poly} (hd : EncData s₀ p o P) {k : Nat} (hk : k < 32)
     {s : State} (h : EncInv s₀ p o P k s) : WP isa (.block encBodyW) s fun t =>
@@ -94,26 +94,26 @@ theorem enc_step {s₀ : State} {p o : Addr} {P : Poly} (hd : EncData s₀ p o P
   have hpoly : PolyIsW 16 s.mem p P := by
     refine ⟨fun i hi => ?_, Vector.ext fun i hi => ?_⟩
     · have hi' : i < 256 := hi
-      rw [coeffAtW, h.frame.readW (r := ⟨p, 512⟩) (contains_off (by omega) (by decide))
+      rw [coeffAtW, h.frame.readW (r := ⟨p, 512⟩) (contains_off (by omega_arith) (by decide))
         (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd.apart) (by decide)]
       exact hd.poly.1 i hi
     · rw [← hd.poly.2]
       simp only [polyAtW, Vector.getElem_ofFn, coeffAtW]
       have hi' : i < 256 := hi
-      rw [h.frame.readW (r := ⟨p, 512⟩) (contains_off (by omega) (by decide))
+      rw [h.frame.readW (r := ⟨p, 512⟩) (contains_off (by omega_arith) (by decide))
         (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd.apart) (by decide)]
   unfold encBodyW
   simp only [List.cons_append, List.nil_append]
   refine wp_ldrq (a := p + BitVec.ofNat 64 (2 * (8 * k))) (by decide)
-    (by rw [h.x0, BitVec.add_zero]; congr 2; omega)
-    (by rw [h.rd, h.wr]; exact hd.read _ (by omega)) fun s₁ h₁ => ?_
+    (by rw [h.x0, BitVec.add_zero]; congr 2; omega_arith)
+    (by rw [h.rd, h.wr]; exact hd.read _ (by omega_arith)) fun s₁ h₁ => ?_
   refine wp_vop (d := .v0) rfl fun s₂ h₂ => wp_vop (d := .v1) rfl fun s₃ h₃ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (WP.keepVR (r := .v17) (by decide)
     (math_ok s₃ (by rw [h₃.get .v16, h₂.get .v16, h₁.get .v16]; exact h.mask))) ?_
   intro s₄ ⟨⟨x9, x10, m₄, rd₄, wr₄, sp₄, g₄, v₄⟩, v17₄⟩
   have z₁ : s₁.v .v17 = 0 := by rw [h₁.get .v17]; exact h.zero
-  have L := zip_lanes (j := 8 * k) hpoly (by omega) z₁
+  have L := zip_lanes (j := 8 * k) hpoly (by omega_arith) z₁
   let v := tbl (packed (s₃.v .v0) (s₃.v .v1)) encMask
   have bytes : ∀ j < 12, vbyte v j = (encode12 P)[12 * k + j]! := by
     intro j hj
@@ -135,10 +135,10 @@ theorem enc_step {s₀ : State} {p o : Addr} {P : Poly} (hd : EncData s₀ p o P
         (o + BitVec.ofNat 64 (12 * k + 8)) 4 ((v.extractLsb' 64 64).setWidth 32) := by
     refine wp_strx (a := o + BitVec.ofNat 64 (12 * k)) (by decide)
       (by rw [g41, h.x1, BitVec.add_zero]) ?_ fun s₅ h₅ => ?_
-    · rw [wrs₄, h.wr]; exact hd.write _ _ (by omega)
+    · rw [wrs₄, h.wr]; exact hd.write _ _ (by omega_arith)
     refine wp_strw (a := o + BitVec.ofNat 64 (12 * k + 8)) (by decide)
       (by rw [h₅.gpr, g41, h.x1, ptr_add]) ?_ fun s₆ h₆ => ?_
-    · rw [h₅.wr, wrs₄, h.wr]; exact hd.write _ _ (by omega)
+    · rw [h₅.wr, wrs₄, h.wr]; exact hd.write _ _ (by omega_arith)
     refine wp_addImm (by decide) fun s₇ h₇ e₇ => wp_addImm (by decide) fun s₈ h₈ e₈ =>
       wp_subImm (by decide) fun s₉ h₉ e₉ => wp_nil ?_
     refine ⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -152,11 +152,11 @@ theorem enc_step {s₀ : State} {p o : Addr} {P : Poly} (hd : EncData s₀ p o P
     · rw [h₉.get .x1, e₈, h₇.get .x1, h₆.gpr, h₅.gpr]; rfl
     · have c : (s₈.gpr .x11).toNat = 32 - k := by
         rw [h₈.get .x11, h₇.get .x11, h₆.gpr, h₅.gpr, g411, h.count]
-      rw [e₉, toNat_sub_n (by rw [c]; simp; omega), c]; simp; omega
+      rw [e₉, toNat_sub_n (by rw [c]; simp; omega_arith), c]; simp; omega_arith
     · rw [h₉.mem, h₈.mem, h₇.mem, h₆.mem, h₅.mem, h₅.gpr, x9, x10]; rfl
   refine WP.mono (WP.keepV (by decide) scalar) ?_
   intro t ⟨⟨og, ord, owr, osp, p0, p1, ct, mt⟩, vt⟩
-  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ct, ?_, ?_, ?_, ?_⟩, by rw [ct]; omega⟩
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ct, ?_, ?_, ?_, ?_⟩, by rw [ct]; omega_arith⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [og r (by simp [hr.1, hr.2.1, hr.2.2.2.2]),
       g₄ r hr.2.2.1 hr.2.2.2.1, g₃, h.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2])]
@@ -167,14 +167,14 @@ theorem enc_step {s₀ : State} {p o : Addr} {P : Poly} (hd : EncData s₀ p o P
   · rw [p1, g41, h.x1, show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl, ptr_add]; congr 2
   · rw [vt, v₄, h₃.get .v16, h₂.get .v16, h₁.get .v16, h.mask]
   · rw [vt, v17₄, h₃.get .v17, h₂.get .v17, z₁]
-  · rw [mt, mem₄, show 12 * (k + 1) = 12 * k + 8 + 4 by omega]
-    refine bytes_write (bytes_write h.out (by omega) ?_) (by omega) ?_
-    · intro j hj; rw [low_byte _ hj]; exact bytes j (by omega)
+  · rw [mt, mem₄, show 12 * (k + 1) = 12 * k + 8 + 4 by omega_arith]
+    refine bytes_write (bytes_write h.out (by omega_arith) ?_) (by omega_arith) ?_
+    · intro j hj; rw [low_byte _ hj]; exact bytes j (by omega_arith)
     · intro j hj; rw [high_byte _ hj]
-      simpa only [Nat.add_assoc] using bytes (8 + j) (by omega)
+      simpa only [Nat.add_assoc] using bytes (8 + j) (by omega_arith)
   · rw [mt, mem₄]
-    exact (h.frame.write (n := 8) (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))).write
-      (n := 4) (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))
+    exact (h.frame.write (n := 8) (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by decide))).write
+      (n := 4) (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by decide))
 
 theorem enc_init {s : State} {p o : Addr} (P : Poly) (h0 : s.gpr .x0 = p) (h1 : s.gpr .x1 = o) :
     WP isa (.block (maskVec .v16 [0,1,2,4,5,6,8,9,10,12,13,14] ++

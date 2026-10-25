@@ -47,7 +47,7 @@ theorem triangle_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
   have hn := hs.nowrap
   have hP : productBase k + 8 * (16 * k + 2) ≤ Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_arith
   have sep : ∀ j < 8, j ≠ Public.aAcc → j ≠ Public.aTmp →
       slot (8 * k) j + 64 * k ≤ productBase k ∨
         productBase k + 8 * (16 * k + 2) ≤ slot (8 * k) j := by
@@ -55,7 +55,7 @@ theorem triangle_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     have := slot_sep (w := 8 * k) hj1
     have := slot_sep (w := 8 * k) hj2
     unfold productBase slot Public.aAcc Public.aTmp at *
-    omega
+    omega_arith
   unfold triangle
   refine WP.seq (WP.mono (Square.squareSetup_ok hs h0 hH hZ ha)
     fun u ⟨⟨hu8, _, _, hu12, _, hu7, hum⟩, ku⟩ => ?_)
@@ -66,7 +66,7 @@ theorem triangle_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     intro x hx
     exact (hvo x hx).trans (congrArg (fun m : Mem => m x) hum)
   have hHv : Hdr v.mem B (8 * k) minv :=
-    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega] using hvs)).hdr hH
+    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega_arith] using hvs)).hdr hH
   refine WP.seq (WP.block_append ?_)
   refine WP.mono (saves_ok v) fun v0 ⟨⟨hv0m, lanes⟩, ks⟩ => ?_
   refine WP.mono (start_ok (hs.congr (ks.wr.trans ksv.wr))
@@ -95,7 +95,7 @@ theorem triangle_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     intro x hx
     exact (congrArg (fun m : Mem => m x) hv3m).trans ((hvs1.trans hr.frame) x hx)
   have hHv3 : Hdr v3.mem B (8 * k) minv :=
-    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega] using hvs3)).hdr hH
+    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega_arith] using hvs3)).hdr hH
   refine WP.mono (Square.squareSetup_ok (hs.congr kv3.wr)
     ((kv3.gpr .x0 (by decide)).trans h0) hHv3 hZ ha)
     fun t ⟨⟨ht8, ht9, ht10, ht12, ht15, ht7, htm⟩, kt⟩ => ?_
@@ -105,9 +105,9 @@ theorem triangle_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     apply Square.crossValue_congr
     intro j hj
     rw [hv1m, hv0m]
-    exact hvs.word (by have := sep a ha ha1 ha2; omega) (by
+    exact hvs.word (by have := sep a ha ha1 ha2; omega_arith) (by
       have := slot_le (w := 8*k) ha
-      omega)
+      omega_arith)
   · intro x hx
     exact (congrArg (fun m : Mem => m x) htm).trans (hvs3 x hx)
   · refine ⟨?_, kout.rd, kout.wr, kout.sp, kout.vcs⟩
@@ -148,16 +148,16 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
   have hn := hs.nowrap
   have hP : productBase k+8*(16*k+2) ≤ Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_arith
   have hA : slot (8*k) a+64*k ≤ Z := by
     have := slot_le (w := 8*k) ha
-    omega
+    omega_arith
   have sep : slot (8*k) a+64*k ≤ productBase k ∨
       productBase k+8*(16*k+2) ≤ slot (8*k) a := by
     have := slot_sep (w := 8*k) ha1
     have := slot_sep (w := 8*k) ha2
     unfold productBase slot Public.aAcc Public.aTmp at *
-    omega
+    omega_arith
   have hp : WP isa (.seq (triangle a) VG.Impl.Bignum.AArch64.WideLoops.diagonal) s (fun t =>
       wv t.mem B (productBase k) (16*k) =
         wv s.mem B (slot (8*k) a) (8*k) * wv s.mem B (slot (8*k) a) (8*k) ∧
@@ -170,8 +170,8 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
             Square.crossValue s.mem B (slot (8*k) a) (8*k) := by
           apply Square.crossValue_congr
           intro j hj
-          exact ho.word (by omega) (by omega)
-        have hread := ho.wv (d := slot (8*k) a) (k := 8*k) (by omega) (by omega)
+          exact ho.word (by omega_arith) (by omega_arith)
+        have hread := ho.wv (d := slot (8*k) a) (k := 8*k) (by omega_arith) (by omega_arith)
         exact WP.mono (diagonal_finish_ok (hs.congr kv.wr) h8 h9 h12 h7 hk hk' hP hA sep
           (hv.trans hcross.symm)) fun t ⟨ht, hto, kt⟩ =>
             ⟨by simpa only [hread] using ht, ho.trans hto,
@@ -194,11 +194,11 @@ theorem raw_width_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       Outside B (slot w Public.aAcc+16) (8*(2*w+2)) s.mem t.mem ∧
       t.gpr .x8 = off B (slot w Public.aAcc+16) ∧ t.gpr .x10 = off B (slot w Public.aN) ∧
       t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x15 = minv ∧ t.gpr .x7 = 0 ∧ Keep mmRegs s t := by
-  have he : w = 8*(w/8) := by omega
+  have he : w = 8*(w/8) := by omega_arith
   have hH' : Hdr s.mem B (8*(w/8)) minv := he ▸ hH
   have hZ' : slot (8*(w/8)) 8 ≤ Z := he ▸ hZ
-  have hlen : 16*(w/8) = 2*w := by omega
-  have hp := raw_ok hs h0 hH' hZ' (by omega) (by omega) ha ha1 ha2
+  have hlen : 16*(w/8) = 2*w := by omega_arith
+  have hp := raw_ok hs h0 hH' hZ' (by omega_arith) (by omega_arith) ha ha1 ha2
   simpa only [productBase, ← he, hlen] using hp
 
 end VG.Proof.Bignum.AArch64.SquareEight

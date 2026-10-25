@@ -33,9 +33,9 @@ theorem sz_iff {n v : Nat} (hn : n < 2 ^ 60) (hv : v < 2 ^ 31) :
     ((BitVec.ofNat 64 n + 7) >>> 3 ^^^ BitVec.ofNat 64 v = 0#64) ↔ (n + 7) / 8 = v := by
   have h7 : ((BitVec.ofNat 64 n + 7) >>> 3).toNat = (n + 7) / 8 := by
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-      show (7 : BitVec 64).toNat = 7 from rfl, Nat.mod_eq_of_lt (a := n) (by omega),
-      Nat.mod_eq_of_lt (a := n + 7) (by omega)]
-  rw [BitVec.xor_eq_zero_iff, ← BitVec.toNat_inj, h7, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := v) (by omega)]
+      show (7 : BitVec 64).toNat = 7 from rfl, Nat.mod_eq_of_lt (a := n) (by omega_arith),
+      Nat.mod_eq_of_lt (a := n + 7) (by omega_arith)]
+  rw [BitVec.xor_eq_zero_iff, ← BitVec.toNat_inj, h7, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := v) (by omega_arith)]
 
 /-- `sizes l`: ZF exactly if `n` has `2 W` words and `p` and `q` `W`. -/
 theorem sizes_ok (hl : LayOk l) {t : State} {B : Addr} {Z w pl ql : Nat} {minv : BitVec 64}
@@ -49,17 +49,17 @@ theorem sizes_ok (hl : LayOk l) {t : State} {B : Addr} {Z w pl ql : Nat} {minv :
   have hn := hs.nowrap
   obtain ⟨hW1, hW2⟩ := W_bounds hl
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
-  have hl' : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl' : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
   have sx7 : BitVec.signExtend 64 (7 : BitVec 32) = 7 := by decide
-  have sxW := VG.Proof.Bignum.X86_64.AmmSym.se_ofNat (show l.W < 2 ^ 31 by omega)
-  have sx2W := VG.Proof.Bignum.X86_64.AmmSym.se_ofNat (show 2 * l.W < 2 ^ 31 by omega)
+  have sxW := VG.Proof.Bignum.X86_64.AmmSym.se_ofNat (show l.W < 2 ^ 31 by omega_arith)
+  have sx2W := VG.Proof.Bignum.X86_64.AmmSym.se_ofNat (show 2 * l.W < 2 ^ 31 by omega_arith)
   refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t' =>
     t'.zf = some (decide (w = 2 * l.W ∧ (pl + 7) / 8 = l.W ∧ (ql + 7) / 8 = l.W)) ∧ t'.mem = t.mem) (by
       xrun [sizes, State.ea, hdr, hg.rdi, hdrOff, hl' sW (by decide), hl' sPlen (by decide),
         hl' sQlen (by decide), hg.hdr.hw, hpl, hql, sxW, sx2W]
       rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, show (0 : BitVec 64) = 0#64 from rfl,
         BitVec.or_eq_zero_iff, BitVec.or_eq_zero_iff, BitVec.xor_eq_zero_iff,
-        ofNat_eq_iff hw (by omega), sx7, sz_iff hpl' (by omega), sz_iff hql' (by omega), and_assoc]) rfl)
+        ofNat_eq_iff hw (by omega_arith), sx7, sz_iff hpl' (by omega_arith), sz_iff hql' (by omega_arith), and_assoc]) rfl)
     fun t' ⟨⟨a, b⟩, k⟩ => ⟨a, b, k⟩
 
 /-- The IFMA area fits in the working space the contract asks for. -/
@@ -74,7 +74,7 @@ theorem ifmaZ_of (hl : LayOk l) {Z k pl : Nat} (hzk : 128 * k ≤ Z) (hw : (k + 
       VG.Impl.Rsa.X86_64.CrtIfma.Lay.oTab, VG.Impl.Rsa.X86_64.CrtIfma.Lay.oS, VG.Impl.Rsa.X86_64.CrtIfma.Lay.oX,
       VG.Impl.Rsa.X86_64.CrtIfma.Lay.oY, VG.Impl.Rsa.X86_64.CrtIfma.Lay.NB,
       VG.Impl.Rsa.X86_64.CrtIfma.Lay.T, VG.Impl.Rsa.X86_64.CrtIfma.Lay.XE, VG.Impl.Rsa.X86_64.CrtIfma.Lay.P,
-      VG.Impl.Rsa.X86_64.CrtIfma.Lay.ND, VG.Impl.Rsa.X86_64.CrtIfma.Lay.E, Nat.reduceEqDiff, ↓reduceIte] at * <;> omega
+      VG.Impl.Rsa.X86_64.CrtIfma.Lay.ND, VG.Impl.Rsa.X86_64.CrtIfma.Lay.E, Nat.reduceEqDiff, ↓reduceIte] at * <;> omega_arith
 
 /-- What `main` leaves after the front, for a valid modulus. -/
 abbrev MainQ (s : State) (B : Addr) (Z k pl ql : Nat) (minv mp mq : BitVec 64) (nb xb pb qb qib dpb dqb : List Byte)
@@ -113,7 +113,7 @@ theorem sizesR_ok (hl : LayOk l) {s t₀ : State} {B : Addr} {Z k : Nat}
   have hql2 := h.ql2
   exact WP.mono_mx (sizes_mx hl) (sizes_ok hl (pl := pl) (ql := ql) hr.good
     (by rw [hr.hfix _ (by decide) (by decide)]; exact h.hPl) (by rw [hr.hfix _ (by decide) (by decide)]; exact h.hQl)
-    (by unfold offQ at hZq; omega) (by omega) (by omega) (by omega))
+    (by unfold offQ at hZq; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t₁ ⟨zf, me, k₁⟩ mx₁ => ⟨zf, hr.of_regs me k₁, mx₁⟩
 
 /-- `anySizes`: ZF says whether the key has the sizes of one of the layouts. -/
@@ -170,7 +170,7 @@ theorem sizesA_ok (hl' : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat}
   have hpl2 := h.pl2
   have hql2 := h.ql2
   have hns := preRanges_nsafe (w := (k + 7) / 8) (wp := wp) (wq := wp) (op := offP ((k + 7) / 8))
-    (oq := offQ ((k + 7) / 8) pl) (le_refl _) (by unfold offQ; omega)
+    (oq := offQ ((k + 7) / 8) pl) (le_refl _) (by unfold offQ; omega_arith)
   have hpw : word s₁.mem B (8 * sPlen) = BitVec.ofNat 64 pl := by
     rw [nsafe_word hA.2.2.2.2.1 hns (by decide) (by decide) (by decide), hr.hfix _ (by decide) (by decide)]
     exact h.hPl
@@ -178,7 +178,7 @@ theorem sizesA_ok (hl' : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat}
     rw [nsafe_word hA.2.2.2.2.1 hns (by decide) (by decide) (by decide), hr.hfix _ (by decide) (by decide)]
     exact h.hQl
   exact WP.mono_mx (sizes_mx hl') (sizes_ok hl' (pl := pl) (ql := ql) hA.1 hpw hqw
-    (by unfold offQ at hZq; omega) (by omega) (by omega) (by omega))
+    (by unfold offQ at hZq; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₂ ⟨zf, me, k₂⟩ mx₂ => ⟨zf, APost.of_regs hA me k₂, mx₂⟩
 
 /-- `ifmaAny` after `pre`, for the layout `l` of the key's sizes: `ifma l`. -/
@@ -343,8 +343,8 @@ theorem code_correct (M : Mont)
     (s.gpr .rcx).toNat) (by simp [eval, hz₂]) (fun hb => ?_) (fun hb => ?_)
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
         (s.gpr .rcx).toNat = false := by simpa using hb
-    exact WP.mono_mx (by decide +kernel) (fail_ok hpre'.scr hpre'.rdi (by omega)
-      (by omega) (by omega) hpre'.hO hpre'.hK hpre'.out hpre'.outSep)
+    exact WP.mono_mx (by decide +kernel) (fail_ok hpre'.scr hpre'.rdi (by omega_arith)
+      (by omega_arith) (by omega_arith) hpre'.hO hpre'.hK hpre'.out hpre'.outSep)
       fun t hp mx => ⟨crtCode_fin c h₁ hm₂ k₂ hp (fun h => absurd h (by rw [hv]; decide)) fun _ => ⟨rfl, rfl⟩,
         by rw [mx, mx₂, mx₁]⟩
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))

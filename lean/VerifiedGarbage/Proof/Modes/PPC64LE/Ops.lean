@@ -111,10 +111,10 @@ theorem opCode_wp_plain (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : 
   -- Each base register, through writes of `r8` and `r9`.
   have keep : ∀ {t : State}, (∀ r, r ≠ .r8 → r ≠ .r9 → t.gpr r = s.gpr r) → ∀ l,
       t.gpr (c.loc l).1 = s.gpr (c.loc l).1 := fun ht l => ht _ (loc_ne c l).1 (loc_ne c l).2.1
-  have eaD := h.ea o.dst o.dOff (by omega)
-  have eaS := h.ea o.src o.sOff (by omega)
-  have dD := h.disp o.dst o.dOff (by omega)
-  have dS := h.disp o.src o.sOff (by omega)
+  have eaD := h.ea o.dst o.dOff (by omega_arith)
+  have eaS := h.ea o.src o.sOff (by omega_arith)
+  have dD := h.disp o.dst o.dOff (by omega_arith)
+  have dS := h.disp o.src o.sOff (by omega_arith)
   have nD := (loc_ne c o.dst).2.2
   have nS := (loc_ne c o.src).2.2
   simp only [Core.opCode, hinc, hi32, Bool.false_eq_true, ite_false]
@@ -135,13 +135,13 @@ theorem opCode_wp_plain (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : 
       rw [u₂.mem, u₁.mem, u₁.gpr, setWidth8_64, write1_apply]
       simp only [opMem, hW, Op.val, hinc, hi32, Bool.false_eq_true, ite_false, hxr, cont, byte_xor_zero]
       split
-      · rename_i hlt; rw [show (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat = 0 by omega, Nat.add_zero]
+      · rename_i hlt; rw [show (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat = 0 by omega_arith, Nat.add_zero]
       · rfl
     | some p =>
       obtain ⟨l, off⟩ := p
       have hx' := hx l off hxr
-      have eaX := h.ea l off (by omega)
-      have dX := h.disp l off (by omega)
+      have eaX := h.ea l off (by omega_arith)
+      have dX := h.disp l off (by omega_arith)
       simp only [List.cons_append]
       refine wp_lbz nS dS eaS (h.rd _ _ _ (by decide) hs) fun s₁ u₁ => ?_
       refine wp_lbz (a := A l + BitVec.ofNat 64 off) (loc_ne c l).2.2 dX (by rw [keep (fun r h1 _ => u₁.other r h1) l]; exact eaX)
@@ -158,7 +158,7 @@ theorem opCode_wp_plain (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : 
         setWidth_xor8, write1_apply]
       simp only [opMem, hW, Op.val, hinc, hi32, Bool.false_eq_true, ite_false, hxr, cont]
       split
-      · rename_i hlt; rw [show (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat = 0 by omega,
+      · rename_i hlt; rw [show (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat = 0 by omega_arith,
           Nat.add_zero, Nat.add_zero]
       · rfl
   · -- A word.
@@ -182,8 +182,8 @@ theorem opCode_wp_plain (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : 
     | some p =>
       obtain ⟨l, off⟩ := p
       have hx' := hx l off hxr
-      have eaX := h.ea l off (by omega)
-      have dX := h.disp l off (by omega)
+      have eaX := h.ea l off (by omega_arith)
+      have dX := h.disp l off (by omega_arith)
       simp only [List.cons_append]
       refine wp_lwz nS dS eaS (h.rd _ _ _ (by decide) hs) fun s₁ u₁ => ?_
       refine wp_lwz (a := A l + BitVec.ofNat 64 off) (loc_ne c l).2.2 dX (by rw [keep (fun r h1 _ => u₁.other r h1) l]; exact eaX)
@@ -224,7 +224,7 @@ theorem opCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List L
       have hW : o.width = 4 := by simp [Op.width, hinc, hi32]
       rw [hW] at hd
       simp only [Core.opCode, hinc, hi32, Bool.false_eq_true, ite_false, ite_true]
-      refine Counter.inc32_wp nD.2.2 nD.1 nD.2.1 (h.disp o.dst o.dOff (by omega)) (h.ea o.dst o.dOff (by omega))
+      refine Counter.inc32_wp nD.2.2 nD.1 nD.2.1 (h.disp o.dst o.dOff (by omega_arith)) (h.ea o.dst o.dOff (by omega_arith))
         (h.rd _ _ _ (by decide) hd) (h.wr _ hdst _ _ (by decide) hd) fun s' m' g' rd' wr' => k s' ?_ g' rd' wr'
       rw [m']
       funext x
@@ -234,10 +234,10 @@ theorem opCode_wp (c : Core) {len : Loc → Nat} {A : Loc → Addr} {ws : List L
     have hW : o.width = 16 := by simp [Op.width, hinc]
     rw [hW] at hd
     simp only [Core.opCode, hinc, ite_true]
-    have hdisp := h.disp o.dst (o.dOff + 8) (by omega)
-    refine Counter.inc_wp nD.2.2 nD.1 nD.2.1 (by omega) (h.ea o.dst o.dOff (by omega))
-      (h.rd _ _ _ (by decide) (by omega)) (by rw [VG.Offset.add_add]; exact h.rd _ _ _ (by decide) (by omega))
-      (h.wr _ hdst _ _ (by decide) (by omega)) (by rw [VG.Offset.add_add]; exact h.wr _ hdst _ _ (by decide) (by omega))
+    have hdisp := h.disp o.dst (o.dOff + 8) (by omega_arith)
+    refine Counter.inc_wp nD.2.2 nD.1 nD.2.1 (by omega_arith) (h.ea o.dst o.dOff (by omega_arith))
+      (h.rd _ _ _ (by decide) (by omega_arith)) (by rw [VG.Offset.add_add]; exact h.rd _ _ _ (by decide) (by omega_arith))
+      (h.wr _ hdst _ _ (by decide) (by omega_arith)) (by rw [VG.Offset.add_add]; exact h.wr _ hdst _ _ (by decide) (by omega_arith))
       fun s' m' g' rd' wr' => k s' ?_ g' rd' wr'
     rw [m']
     funext x
@@ -255,14 +255,14 @@ theorem sub_self_add (p : Addr) {i : Nat} (hi : i < 2 ^ 64) : (p + BitVec.ofNat 
 
 theorem contains_area {p : Addr} {n i : Nat} (hi : i < n) (hn : n ≤ 2 ^ 64) :
     (⟨p, n⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 := by
-  simp only [Region.Contains]; rw [sub_self_add p (by omega)]; omega
+  simp only [Region.Contains]; rw [sub_self_add p (by omega_arith)]; omega_arith
 
 /-- A byte the destination of `o` writes is in its area. -/
 theorem in_dst {len : Loc → Nat} {A : Loc → Addr} {o : Op} (ho : o.InBounds len) (hfit : len o.dst < 2 ^ 32)
     {x : Addr} (hx : (x - (A o.dst + BitVec.ofNat 64 o.dOff)).toNat < o.width) :
     (⟨A o.dst, len o.dst⟩ : Region).Contains x 1 := by
-  have := (VG.Offset.lt_iff x (A o.dst) (d := o.dOff) (n := o.width) (by have := ho.1; omega)).mp hx
-  simp only [Region.Contains]; have := ho.1; omega
+  have := (VG.Offset.lt_iff x (A o.dst) (d := o.dOff) (n := o.width) (by have := ho.1; omega_arith)).mp hx
+  simp only [Region.Contains]; have := ho.1; omega_arith
 
 theorem opMem_frame {len : Loc → Nat} {A : Loc → Addr} {ws : List Loc} {o : Op} (ho : o.InBounds len)
     (hdst : o.dst ∈ ws) (hfit : ∀ l, len l < 2 ^ 32) (m : Mem) :
@@ -280,14 +280,14 @@ theorem opMem_cont {c : Core} {s : State} {len : Loc → Nat} {A : Loc → Addr}
   by_cases hd : l = o.dst
   · subst hd
     have e := VG.Offset.lt_iff (A o.dst + BitVec.ofNat 64 i) (A o.dst) (d := o.dOff) (n := o.width)
-      (by have := ho.1; omega)
-    rw [sub_self_add _ (by omega)] at e
+      (by have := ho.1; omega_arith)
+    rw [sub_self_add _ (by omega_arith)] at e
     by_cases hc : o.dOff ≤ i ∧ i < o.dOff + o.width
     · rw [ite_eq_left (e.mpr hc), ite_eq_left ⟨rfl, hc⟩]
       congr 1
-      rw [← VG.Offset.add_add_eq (A o.dst) (Nat.add_sub_cancel' hc.1), sub_self_add _ (by omega)]
+      rw [← VG.Offset.add_add_eq (A o.dst) (Nat.add_sub_cancel' hc.1), sub_self_add _ (by omega_arith)]
     · rw [ite_eq_right (fun h' => hc (e.mp h')), ite_eq_right (fun h' => hc h'.2)]
-  · rw [ite_eq_right (fun h' => h.apart l o.dst hd _ (contains_area hi (by omega)) (in_dst ho (h.fit _) h')),
+  · rw [ite_eq_right (fun h' => h.apart l o.dst hd _ (contains_area hi (by omega_arith)) (in_dst ho (h.fit _) h')),
       ite_eq_right (fun h' => hd h'.1)]
 
 /-! ## Lists of operations -/

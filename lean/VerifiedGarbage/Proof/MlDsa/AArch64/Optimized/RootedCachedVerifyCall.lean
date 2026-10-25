@@ -60,24 +60,24 @@ variable {p : Params} {s : State}
 
 theorem sScrV_sub (p : Params) (s : State) :
     Region.Sub ⟨s.gpr .x6, sScr p⟩ ⟨s.gpr .x6, mScrLen p⟩ :=
-  Region.sub_prefix (by rw [mScr_eq]; simp only [sScr, oE]; omega)
+  Region.sub_prefix (by rw [mScr_eq]; simp only [sScr, oE]; omega_arith)
 
 theorem sv_sScrV {p : Params} (hp : p ∈ params) (s : State) {d n : Nat} (hd : d + n ≤ 88) :
     Region.Disjoint ⟨(cachedLay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d, n⟩ ⟨s.gpr .x6, sScr p⟩ := by
   show Region.Disjoint ⟨s.gpr .x6 + BitVec.ofNat 64 (oE p) + BitVec.ofNat 64 904 + BitVec.ofNat 64 d, n⟩ _
   rw [add_add, add_add]
   have := oE_lt hp
-  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega) (by omega)
+  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega_arith) (by omega_arith)
 
 theorem mu_sScrV {p : Params} (hp : p ∈ params) (s : State) :
     Region.Disjoint ⟨(cachedLay p s).MU, 64⟩ ⟨s.gpr .x6, sScr p⟩ := by
   show Region.Disjoint ⟨s.gpr .x6 + BitVec.ofNat 64 (oE p) + BitVec.ofNat 64 840, 64⟩ _
   rw [add_add]
   have := oE_lt hp
-  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega) (by omega)
+  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega_arith) (by omega_arith)
 
 theorem mu_withinV (p : Params) (s : State) : Within ⟨(cachedLay p s).MU, 64⟩ ⟨s.gpr .x6, mScrLen p⟩ :=
-  (within_off (cachedLay p s).X (d := 840) (n := 64) (k := 1024) (by omega)).trans (cachedLay_X p s)
+  (within_off (cachedLay p s).X (d := 840) (n := 64) (k := 1024) (by omega_arith)).trans (cachedLay_X p s)
 
 /-- The regions the verification function on `μ` reads and writes. -/
 abbrev verifyRd (p : Params) (s : State) : List Region :=
@@ -92,10 +92,10 @@ theorem verifyRegs_of {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ :
   have e1 := hm (.x1, .off oMU) (by simp)
   have e2 := hm (.x2, .slot fSig) (by simp)
   have e3 := hm (.x3, .slot fScr) (by simp)
-  rw [hc.slotV (f := fKey) (j := 0) rfl (by omega)] at e0
+  rw [hc.slotV (f := fKey) (j := 0) rfl (by omega_arith)] at e0
   rw [hc.off] at e1
-  rw [hc.slotV (f := fSig) (j := 6) rfl (by omega)] at e2
-  rw [hc.slotV (f := fScr) (j := 7) rfl (by omega)] at e3
+  rw [hc.slotV (f := fSig) (j := 6) rfl (by omega_arith)] at e2
+  rw [hc.slotV (f := fScr) (j := 7) rfl (by omega_arith)] at e3
   simp only [Lay.vals, cachedLay, List.getD_cons_zero, List.getD_cons_succ] at e0 e2 e3
   exact ⟨e0, e1, e2, e3⟩
 
@@ -125,7 +125,7 @@ theorem verifyK_base_pre (hp : p ∈ params) (h : CachedPre p s) (h8 : (s.gpr .x
   · exact h.nPk
   · exact mu_nowrap hL
   · exact h.nSig
-  · have := h.nScr; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega
+  · have := h.nScr; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega_arith
 
 theorem verifyK_pre (hp : p∈params) (h : CachedPre p s) (h8 : (s.gpr .x4).toNat<256)
     {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t t1 : State}
@@ -153,7 +153,7 @@ theorem verifyK_pre (hp : p∈params) (h : CachedPre p s) (h8 : (s.gpr .x4).toNa
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     subst hr
     exact ⟨⟨s.gpr .x6,mScrLen p⟩,by simp [cachedLay,h.wr],
-      within_base _ (by rw [mScr_eq]; simp only [sScr,oE]; omega)⟩
+      within_base _ (by rw [mScr_eq]; simp only [sScr,oE]; omega_arith)⟩
   let rd := verifyRd p s++rootRegions t1
   have hroot := roots_reborrow hr1 (rd := rd) (List.subset_append_right _ _) hcw
   have hpre : (verifyContract p (abi.withConsts signRootConsts) 16).pre
@@ -206,7 +206,7 @@ theorem verifyCall_ok {n : String} {c : Prog isa} (hV : Message.OptimizedVerify.
       apply ht.frame (W := []) ?_ (by simp) o.rd o.wr o.sp hsy
       rw [o.mem]; exact Frame.refl _ _
     exact ⟨pass hr.forward,pass hr.inverse⟩
-  refine WP.callFV hV.ver.1 hpre ?_ ?_ (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega)
+  refine WP.callFV hV.ver.1 hpre ?_ ?_ (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega_arith)
   · change Covers ((verifyRd p s++rootRegions t1)++verifyWr p s) (t1.rd++t1.wr)
     rw [List.append_assoc]
     apply Covers.append_left
@@ -224,12 +224,12 @@ theorem verifyCall_ok {n : String} {c : Prog isa} (hV : Message.OptimizedVerify.
         simp only [List.mem_singleton] at hr
         subst r
         exact ⟨⟨s.gpr .x6,mScrLen p⟩,by simp [cachedLay,h.wr],
-          within_base _ (by rw [mScr_eq]; simp only [sScr,oE]; omega)⟩
+          within_base _ (by rw [mScr_eq]; simp only [sScr,oE]; omega_arith)⟩
   · rw [hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr
-    exact ⟨⟨s.gpr .x6, mScrLen p⟩, by simp [cachedLay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega)⟩
+    exact ⟨⟨s.gpr .x6, mScrLen p⟩, by simp [cachedLay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega_arith)⟩
   -- After the call.
   have hsv : ∀ d, d + 8 ≤ 88 → s'.mem.readW ((cachedLay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 =
       t1.mem.readW ((cachedLay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 := fun d hd' =>
@@ -238,11 +238,11 @@ theorem verifyCall_ok {n : String} {c : Prog isa} (hV : Message.OptimizedVerify.
       rcases hr with rfl | rfl
       · exact sv_sScrV hp s hd'
       · rw [hsp1]
-        exact (hL.sv_disj (r := below s.sp (16 * c.aarch64Depth)) (.inr (below_sub (by omega) (by decide))) hd'))
+        exact (hL.sv_disj (r := below s.sp (16 * c.aarch64Depth)) (.inr (below_sub (by omega_arith) (by decide))) hd'))
       (by decide)
   refine ⟨⟨hrd.trans hc1.rd, hwr.trans hc1.wr, hsp.trans hc1.sp, (hcs .x28 (by decide) (by decide)).trans hc1.x28,
     fun r hr h28 h30 => (hcs r hr h30).trans (hc1.cs r hr h28 h30), fun r hr => (hvs r hr).trans (hc1.vs r hr),
-    (hsv 0 (by omega)).trans hc1.s28, (hsv 8 (by omega)).trans hc1.s30⟩, ?_⟩
+    (hsv 0 (by omega_arith)).trans hc1.s28, (hsv 8 (by omega_arith)).trans hc1.s30⟩, ?_⟩
   sig_reduce [verifyContract, verifySig, AArch64.abi, AArch64.argRegs, Abi.withConsts, Sign.signRootConsts_eq, List.range, List.range.loop] at hpost
   simp only [e0, e1, e2, o.mem] at hpost
   exact hpost

@@ -286,20 +286,20 @@ theorem arg_in {s₀ : State} (hp : Pre s₀) {d : Nat} (h1 : 4 ≤ d) (h2 : d +
   have hs := hp.sp_fit
   refine ⟨argR s₀, by simp [hp.rd], ?_⟩
   show (addr (s₀.gpr .esp) d - addr (s₀.gpr .esp) 4).toNat + 4 ≤ 8
-  rw [addr_eq (by omega), addr_eq (by omega),
+  rw [addr_eq (by omega_arith), addr_eq (by omega_arith),
     show (s₀.gpr .esp).setWidth 64 + BitVec.ofNat 64 d - ((s₀.gpr .esp).setWidth 64 + BitVec.ofNat 64 4) =
-      BitVec.ofNat 64 (d - 4) by rw [show d = (d - 4) + 4 by omega, BitVec.ofNat_add]; bv_omega,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+      BitVec.ofNat 64 (d - 4) by rw [show d = (d - 4) + 4 by omega_arith, BitVec.ofNat_add]; bv_omega,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 /-- Where `eax`-relative operands point, and that the code may access them. -/
 theorem ea_b {s₀ s : State} (hp : Pre s₀) (h : Keep s₀ s) {d : Nat} (hd : d ≤ 48) :
     s.ea (at_ .eax d) = bA s₀ + BitVec.ofNat 64 d := by
-  rw [ea_at, h.eax]; exact addr_eq (by have := hp.b_fit; omega)
+  rw [ea_at, h.eax]; exact addr_eq (by have := hp.b_fit; omega_arith)
 
 theorem out_b16 {s₀ s : State} (hp : Pre s₀) (h : Keep s₀ s) {d : Nat} (hd : d + 16 ≤ 64) :
     InRegions s.wr (bA s₀ + BitVec.ofNat 64 d) 16 := by
-  rw [h.wr]; exact ⟨bR s₀, by simp [hp.wr], contains_off (by omega) (by omega)⟩
+  rw [h.wr]; exact ⟨bR s₀, by simp [hp.wr], contains_off (by omega_arith) (by omega_arith)⟩
 
 theorem in_b16 {s₀ s : State} (hp : Pre s₀) (h : Keep s₀ s) {d : Nat} (hd : d + 16 ≤ 64) :
     InRegions (s.rd ++ s.wr) (bA s₀ + BitVec.ofNat 64 d) 16 :=
@@ -308,34 +308,34 @@ theorem in_b16 {s₀ s : State} (hp : Pre s₀) (h : Keep s₀ s) {d : Nat} (hd 
 /-- Doubleword `q` of the row at `b + 16 k` is word `4 k + q`. -/
 theorem row_word (s₀ : State) {k q : Nat} (hk : k < 4) (hq : q < 4) :
     dword (s₀.mem.readW (bA s₀ + BitVec.ofNat 64 (16 * k)) 128) q = (V s₀)[4 * k + q]! := by
-  rw [dword_readW _ _ hq, Offset.add_add, V_get! _ (by omega)]
-  exact congrArg (fun o => s₀.mem.readW (bA s₀ + BitVec.ofNat 64 o) 32) (by omega)
+  rw [dword_readW _ _ hq, Offset.add_add, V_get! _ (by omega_arith)]
+  exact congrArg (fun o => s₀.mem.readW (bA s₀ + BitVec.ofNat 64 o) 32) (by omega_arith)
 
 /-- The pointer and the rows, loaded. -/
 theorem load_ok {s₀ : State} (hp : Pre s₀) {rest : List Instr} {Q : State → Prop}
     (k : ∀ s, Keep s₀ s → s.mem = s₀.mem → Arr rowIdx (V s₀) s → WP isa (.block rest) s Q) :
     WP isa (.block (load ++ rest)) s₀ Q := by
   simp only [load, List.cons_append, List.nil_append]
-  refine wp_movm (a := addr (s₀.gpr .esp) 4) rfl (arg_in hp (by omega) (by omega)) fun s₁ u₁ => ?_
+  refine wp_movm (a := addr (s₀.gpr .esp) 4) rfl (arg_in hp (by omega_arith) (by omega_arith)) fun s₁ u₁ => ?_
   have k₁ : Keep s₀ s₁ := ⟨by rw [u₁.gpr]; rfl, fun r h => u₁.other r h, u₁.rd, u₁.wr⟩
-  refine wp_ldq (ea_b hp k₁ (d := 0) (by omega)) (in_b16 hp k₁ (by omega)) fun s₂ R₂ m₂ x₂ o₂ => ?_
+  refine wp_ldq (ea_b hp k₁ (d := 0) (by omega_arith)) (in_b16 hp k₁ (by omega_arith)) fun s₂ R₂ m₂ x₂ o₂ => ?_
   have k₂ := k₁.regs R₂
-  refine wp_ldq (ea_b hp k₂ (d := 16) (by omega)) (in_b16 hp k₂ (by omega)) fun s₃ R₃ m₃ x₃ o₃ => ?_
+  refine wp_ldq (ea_b hp k₂ (d := 16) (by omega_arith)) (in_b16 hp k₂ (by omega_arith)) fun s₃ R₃ m₃ x₃ o₃ => ?_
   have k₃ := k₂.regs R₃
-  refine wp_ldq (ea_b hp k₃ (d := 32) (by omega)) (in_b16 hp k₃ (by omega)) fun s₄ R₄ m₄ x₄ o₄ => ?_
+  refine wp_ldq (ea_b hp k₃ (d := 32) (by omega_arith)) (in_b16 hp k₃ (by omega_arith)) fun s₄ R₄ m₄ x₄ o₄ => ?_
   have k₄ := k₃.regs R₄
-  refine wp_ldq (ea_b hp k₄ (d := 48) (by omega)) (in_b16 hp k₄ (by omega)) fun s₅ R₅ m₅ x₅ o₅ => ?_
+  refine wp_ldq (ea_b hp k₄ (d := 48) (by omega_arith)) (in_b16 hp k₄ (by omega_arith)) fun s₅ R₅ m₅ x₅ o₅ => ?_
   have k₅ := k₄.regs R₅
   have e₁ : s₁.mem = s₀.mem := u₁.mem
   refine k s₅ k₅ (by rw [m₅, m₄, m₃, m₂, e₁]) ⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩
   · rw [o₅ .xmm0 (by decide), o₄ .xmm0 (by decide), o₃ .xmm0 (by decide), x₂, e₁]
-    exact row_word s₀ (k := 0) (by omega) hq
+    exact row_word s₀ (k := 0) (by omega_arith) hq
   · rw [o₅ .xmm1 (by decide), o₄ .xmm1 (by decide), x₃, m₂, e₁]
-    exact row_word s₀ (k := 1) (by omega) hq
+    exact row_word s₀ (k := 1) (by omega_arith) hq
   · rw [o₅ .xmm2 (by decide), x₄, m₃, m₂, e₁]
-    exact row_word s₀ (k := 2) (by omega) hq
+    exact row_word s₀ (k := 2) (by omega_arith) hq
   · rw [x₅, m₄, m₃, m₂, e₁]
-    exact row_word s₀ (k := 3) (by omega) hq
+    exact row_word s₀ (k := 3) (by omega_arith) hq
 
 /-! ## Adding the input -/
 
@@ -345,21 +345,21 @@ theorem rows_read (m : Mem) (p : Addr) (X₀ X₁ X₂ X₃ : BitVec 128) {j : N
       (p + BitVec.ofNat 64 32) X₂).writeW (p + BitVec.ofNat 64 48) X₃).readW (p + BitVec.ofNat 64 (4 * j)) 32 =
       dword (if j < 4 then X₀ else if j < 8 then X₁ else if j < 12 then X₂ else X₃) (j % 4) := by
   have hq : j % 4 < 4 := Nat.mod_lt _ (by decide)
-  rcases (show j < 4 ∨ (4 ≤ j ∧ j < 8) ∨ (8 ≤ j ∧ j < 12) ∨ 12 ≤ j by omega) with h | h | h | h
-  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
-      ← Offset.add_add_eq p (show 0 + 4 * (j % 4) = 4 * j by omega), readW_writeW128 _ _ _ hq,
+  rcases (show j < 4 ∨ (4 ≤ j ∧ j < 8) ∨ (8 ≤ j ∧ j < 12) ∨ 12 ≤ j by omega_arith) with h | h | h | h
+  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      ← Offset.add_add_eq p (show 0 + 4 * (j % 4) = 4 * j by omega_arith), readW_writeW128 _ _ _ hq,
       ite_eq_left h]
-  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
-      ← Offset.add_add_eq p (show 16 + 4 * (j % 4) = 4 * j by omega), readW_writeW128 _ _ _ hq,
-      ite_eq_right (by omega), ite_eq_left h.2]
-  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
-      ← Offset.add_add_eq p (show 32 + 4 * (j % 4) = 4 * j by omega), readW_writeW128 _ _ _ hq,
-      ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left h.2]
-  · rw [← Offset.add_add_eq p (show 48 + 4 * (j % 4) = 4 * j by omega), readW_writeW128 _ _ _ hq,
-      ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
+  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      ← Offset.add_add_eq p (show 16 + 4 * (j % 4) = 4 * j by omega_arith), readW_writeW128 _ _ _ hq,
+      ite_eq_right (by omega_arith), ite_eq_left h.2]
+  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      ← Offset.add_add_eq p (show 32 + 4 * (j % 4) = 4 * j by omega_arith), readW_writeW128 _ _ _ hq,
+      ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), ite_eq_left h.2]
+  · rw [← Offset.add_add_eq p (show 48 + 4 * (j % 4) = 4 * j by omega_arith), readW_writeW128 _ _ _ hq,
+      ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
 
 /-- Doubleword `q` of the sum of row `k` of the result and of the input. -/
 theorem sum_word {s₀ s : State} {R : Vector Word 16} {x : XReg} {k q : Nat} (hk : k < 4) (hq : q < 4)
@@ -373,24 +373,24 @@ theorem addRows_ok {s₀ : State} (hp : Pre s₀) {R : Vector Word 16} {s : Stat
     WP isa (.block addRows) s fun s' => Keep s₀ s' ∧
       ∀ j < 16, s'.mem.readW (bA s₀ + BitVec.ofNat 64 (4 * j)) 32 = R[j]! + (V s₀)[j]! := by
   unfold addRows
-  refine wp_ldq (ea_b hp hk (d := 0) (by omega)) (in_b16 hp hk (by omega)) fun s₁ R₁ m₁ x₁ o₁ => ?_
+  refine wp_ldq (ea_b hp hk (d := 0) (by omega_arith)) (in_b16 hp hk (by omega_arith)) fun s₁ R₁ m₁ x₁ o₁ => ?_
   have k₁ := hk.regs R₁
-  refine wp_ldq (ea_b hp k₁ (d := 16) (by omega)) (in_b16 hp k₁ (by omega)) fun s₂ R₂ m₂ x₂ o₂ => ?_
+  refine wp_ldq (ea_b hp k₁ (d := 16) (by omega_arith)) (in_b16 hp k₁ (by omega_arith)) fun s₂ R₂ m₂ x₂ o₂ => ?_
   have k₂ := k₁.regs R₂
-  refine wp_ldq (ea_b hp k₂ (d := 32) (by omega)) (in_b16 hp k₂ (by omega)) fun s₃ R₃ m₃ x₃ o₃ => ?_
+  refine wp_ldq (ea_b hp k₂ (d := 32) (by omega_arith)) (in_b16 hp k₂ (by omega_arith)) fun s₃ R₃ m₃ x₃ o₃ => ?_
   have k₃ := k₂.regs R₃
-  refine wp_ldq (ea_b hp k₃ (d := 48) (by omega)) (in_b16 hp k₃ (by omega)) fun s₄ R₄ m₄ x₄ o₄ => ?_
+  refine wp_ldq (ea_b hp k₃ (d := 48) (by omega_arith)) (in_b16 hp k₃ (by omega_arith)) fun s₄ R₄ m₄ x₄ o₄ => ?_
   have k₄ := k₃.regs R₄
   refine wp_xbin fun s₅ R₅ m₅ x₅ o₅ => wp_xbin fun s₆ R₆ m₆ x₆ o₆ => wp_xbin fun s₇ R₇ m₇ x₇ o₇ =>
     wp_xbin fun s₈ R₈ m₈ x₈ o₈ => ?_
   have k₈ := (((k₄.regs R₅).regs R₆).regs R₇).regs R₈
-  refine wp_stq (ea_b hp k₈ (d := 0) (by omega)) (out_b16 hp k₈ (by omega)) fun s₉ R₉ m₉ x₉ => ?_
+  refine wp_stq (ea_b hp k₈ (d := 0) (by omega_arith)) (out_b16 hp k₈ (by omega_arith)) fun s₉ R₉ m₉ x₉ => ?_
   have k₉ := k₈.regs R₉
-  refine wp_stq (ea_b hp k₉ (d := 16) (by omega)) (out_b16 hp k₉ (by omega)) fun s₁₀ R₁₀ m₁₀ x₁₀ => ?_
+  refine wp_stq (ea_b hp k₉ (d := 16) (by omega_arith)) (out_b16 hp k₉ (by omega_arith)) fun s₁₀ R₁₀ m₁₀ x₁₀ => ?_
   have k₁₀ := k₉.regs R₁₀
-  refine wp_stq (ea_b hp k₁₀ (d := 32) (by omega)) (out_b16 hp k₁₀ (by omega)) fun s₁₁ R₁₁ m₁₁ x₁₁ => ?_
+  refine wp_stq (ea_b hp k₁₀ (d := 32) (by omega_arith)) (out_b16 hp k₁₀ (by omega_arith)) fun s₁₁ R₁₁ m₁₁ x₁₁ => ?_
   have k₁₁ := k₁₀.regs R₁₁
-  refine wp_stq (ea_b hp k₁₁ (d := 48) (by omega)) (out_b16 hp k₁₁ (by omega)) fun s₁₂ R₁₂ m₁₂ x₁₂ => ?_
+  refine wp_stq (ea_b hp k₁₁ (d := 48) (by omega_arith)) (out_b16 hp k₁₁ (by omega_arith)) fun s₁₂ R₁₂ m₁₂ x₁₂ => ?_
   refine WP.block_nil ⟨k₁₁.regs R₁₂, fun j hj => ?_⟩
   -- The rows stored, as sums of the loaded rows and those of the result.
   have l₀ : s₄.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
@@ -412,19 +412,19 @@ theorem addRows_ok {s₀ : State} (hp : Pre s₀) {R : Vector Word 16} {s : Stat
       .xmm7 (by decide), o₆ .xmm7 (by decide), o₅ .xmm7 (by decide), x₄, m₃, m₂, m₁, hm]
   rw [m₁₂, m₁₁, m₁₀, m₉, m₈, m₇, m₆, m₅, l₀, y₃, y₂, y₁, y₀, rows_read _ _ _ _ _ _ hj]
   have hq : j % 4 < 4 := Nat.mod_lt _ (by decide)
-  rcases (show j < 4 ∨ (4 ≤ j ∧ j < 8) ∨ (8 ≤ j ∧ j < 12) ∨ 12 ≤ j by omega) with c | c | c | c
+  rcases (show j < 4 ∨ (4 ≤ j ∧ j < 8) ∨ (8 ≤ j ∧ j < 12) ∨ 12 ≤ j by omega_arith) with c | c | c | c
   · rw [ite_eq_left c]
     refine (sum_word (k := 0) (by decide) hq ((h.r0 _ hq).trans
-      (congrArg (fun i => R[i]!) (by omega)))).trans (congrArg (fun i => R[i]! + (V s₀)[i]!) (by omega))
-  · rw [ite_eq_right (by omega), ite_eq_left c.2]
+      (congrArg (fun i => R[i]!) (by omega_arith)))).trans (congrArg (fun i => R[i]! + (V s₀)[i]!) (by omega_arith))
+  · rw [ite_eq_right (by omega_arith), ite_eq_left c.2]
     refine (sum_word (k := 1) (by decide) hq ((h.r1 _ hq).trans
-      (congrArg (fun i => R[i]!) (by omega)))).trans (congrArg (fun i => R[i]! + (V s₀)[i]!) (by omega))
-  · rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left c.2]
+      (congrArg (fun i => R[i]!) (by omega_arith)))).trans (congrArg (fun i => R[i]! + (V s₀)[i]!) (by omega_arith))
+  · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), ite_eq_left c.2]
     refine (sum_word (k := 2) (by decide) hq ((h.r2 _ hq).trans
-      (congrArg (fun i => R[i]!) (by omega)))).trans (congrArg (fun i => R[i]! + (V s₀)[i]!) (by omega))
-  · rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
+      (congrArg (fun i => R[i]!) (by omega_arith)))).trans (congrArg (fun i => R[i]! + (V s₀)[i]!) (by omega_arith))
+  · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
     refine (sum_word (k := 3) (by decide) hq ((h.r3 _ hq).trans
-      (congrArg (fun i => R[i]!) (by omega)))).trans (congrArg (fun i => R[i]! + (V s₀)[i]!) (by omega))
+      (congrArg (fun i => R[i]!) (by omega_arith)))).trans (congrArg (fun i => R[i]! + (V s₀)[i]!) (by omega_arith))
 
 /-! ## The whole function -/
 
@@ -434,7 +434,7 @@ theorem input_eq (s₀ : State) :
       V s₀ := by
   apply Vector.ext
   intro j hj
-  rw [Vector.getElem_ofFn, V_get _ hj, wordLE_bytesAt _ _ (by omega)]
+  rw [Vector.getElem_ofFn, V_get _ hj, wordLE_bytesAt _ _ (by omega_arith)]
 
 /-- The result words are where the specification writes its bytes. -/
 theorem post_of {s₀ : State} {m : Mem}
@@ -486,11 +486,11 @@ theorem wf₀ {s : State} (hp : Pre s) : VG.X86.Taint.Wf τ₀ s := by
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨hs, ?_⟩, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 8) (by omega) hp.ret_b hp.a_b
-    · exact VG.X86.Taint.frame_disjoint (n := 8) (by omega) hp.ret_s hp.a_s
+    · exact VG.X86.Taint.frame_disjoint (n := 8) (by omega_arith) hp.ret_b hp.a_b
+    · exact VG.X86.Taint.frame_disjoint (n := 8) (by omega_arith) hp.ret_s hp.a_s
   · intro p hp'
     simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -510,8 +510,8 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Scrypt.salsaX86.pre s₁)
   · simp only [τ₀] at hk
     rw [show VG.X86.Taint.depth τ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq hp₁.sp_fit h4 hk, VG.X86.Taint.argByte_eq hp₂.sp_fit h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 := by omega
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_arith)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_arith))]
+    have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 := by omega_arith
     rcases this with h | h <;> rw [h]
     · exact congrArg _ a0
     · exact congrArg _ a1

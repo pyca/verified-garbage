@@ -207,7 +207,7 @@ structure KeyAt (hH : HashOK H) (s₀ : State) (m : Mem) (kp : Addr) (kl : Nat) 
 
 omit hp hz in
 theorem hash_len (hH : HashOK H) (m : List Byte) : (hH.SH.H.hash m).length = H.D := by
-  rw [hH.hash, List.length_take, VG.Proof.MdStream.Md.hash, hH.md.digest_length]; have := hH.hDN; omega
+  rw [hH.hash, List.length_take, VG.Proof.MdStream.Md.hash, hH.md.digest_length]; have := hH.hDN; omega_arith
 
 omit hp hz in
 /-- A key longer than a block and its digest give the same `K₀`. -/
@@ -215,15 +215,15 @@ theorem blockKey_hash (hH : HashOK H) {k : List Byte} (hk : H.P.B < k.length) :
     blockKey hH.SH.H (hH.SH.H.hash k) = blockKey hH.SH.H k := by
   have hl := hash_len hH k; have hB := hH.hB; have := hH.hDL
   simp only [blockKey, hB, hl, ite_eq_left_of_eq_true _ _ (eq_true hk),
-    ite_eq_right_of_eq_false _ _ (eq_false (show ¬ H.P.B < H.D by omega))]
+    ite_eq_right_of_eq_false _ _ (eq_false (show ¬ H.P.B < H.D by omega_arith))]
 
 omit hp hz in
 theorem blockKey_length (hH : HashOK H) (k : List Byte) : (blockKey hH.SH.H k).length = H.P.B := by
   have hB := hH.hB; have := hH.hDL
   simp only [blockKey, hB, List.length_append, List.length_replicate]
   split
-  · rw [hash_len]; omega
-  · omega
+  · rw [hash_len]; omega_arith
+  · omega_arith
 
 omit hp hz in
 /-- What the entry sets up, kept until the salt is absorbed. -/
@@ -328,7 +328,7 @@ theorem hk4_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s)
   have hSS : H.stream.S = H.P.N + H.P.B := rfl
   have hWb : hH.stream.Wb = H.P.so + 48 := rfl
   have hF : H.stream.F = H.P.N := rfl
-  refine VG.Proof.Pbkdf2.Md.X86_64.Calls.upd_call hH.stream ua (by have := hp.pwnw; omega) fun s₈ a₈ r₈ =>
+  refine VG.Proof.Pbkdf2.Md.X86_64.Calls.upd_call hH.stream ua (by have := hp.pwnw; omega_arith) fun s₈ a₈ r₈ =>
     ⟨h.call hp hz a₈.rd a₈.wr a₈.cs (by decide) a₈.frame fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -436,14 +436,14 @@ theorem key_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s)
     rw [e₁, e₂]
     refine WP.mono (hashKey_ok hp hz hH h) fun t ⟨k, rdx, rcx, hb⟩ =>
       ⟨k, rdx, rcx, ⟨.inr ⟨rfl, rfl⟩, by exact hz.o_D_le_B, ?_⟩⟩
-    rw [hb, blockKey_hash hH (by rw [bytesAt_length]; omega)]
+    rw [hb, blockKey_hash hH (by rw [bytesAt_length]; omega_arith)]
   · have hshort : pwl s₀ < H.P.B + 1 := of_decide_eq_true (by simpa using hF)
     have e₁ : kp H s₀ = pw s₀ := ite_eq_left_of_eq_true _ _ (eq_true hshort)
     have e₂ : kl H s₀ = pwl s₀ := ite_eq_left_of_eq_true _ _ (eq_true hshort)
     rw [e₁, e₂]
     refine wp_mov fun t₁ u₁ _ _ => wp_mov fun t₂ u₂ _ _ => WP.block_nil ?_
     refine ⟨(h.upd u₁ (by decide)).upd u₂ (by decide), by rw [u₂.other _ (by decide), u₁.gpr, h.rbx],
-      by rw [u₂.gpr, u₁.other _ (by decide), h.rbp], ⟨.inl ⟨rfl, rfl⟩, by omega, ?_⟩⟩
+      by rw [u₂.gpr, u₁.other _ (by decide), h.rbp], ⟨.inl ⟨rfl, rfl⟩, by omega_arith, ?_⟩⟩
     rw [u₂.mem, u₁.mem, h.kr.pwBytes hp]
 
 /-! ## HMAC's states -/
@@ -453,15 +453,15 @@ theorem repr_keep (hH : HashOK H) {rs : List Region} {m m' : Mem} (hf : Frame rs
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, H.S⟩ r) {msg : List Byte} (hr : hH.SH.Repr m p msg) :
     hH.SH.Repr m' p msg :=
   hH.stream.repr _ _ _ _ _ (fun i hi => hf.bytes (R := ⟨p, H.S⟩) hd
-    (by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 2 ^ 64; omega) hi) hr
+    (by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 2 ^ 64; omega_arith) hi) hr
 
 omit hp hz in
 /-- A state copied from `p` to `q` represents the same message. -/
 theorem repr_copy (hH : HashOK H) {m : Mem} {p q : Addr} {msg : List Byte} (hr : hH.SH.Repr m p msg) :
     hH.SH.Repr (writeBytes m q (bytesAt m p H.S)) q msg := by
-  have : H.S ≤ 256 := by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 256; omega
+  have : H.S ≤ 256 := by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 256; omega_arith
   refine hH.stream.repr _ _ _ _ _ (fun i hi => ?_) hr
-  rw [writeBytes_at _ _ _ (by rw [bytesAt_length]; exact hi) (by rw [bytesAt_length]; omega),
+  rw [writeBytes_at _ _ _ (by rw [bytesAt_length]; exact hi) (by rw [bytesAt_length]; omega_arith),
     bytesAt_getD' _ _ (show i < H.S from hi)]
 
 /-- `K₀`, the password as a key. -/
@@ -552,7 +552,7 @@ theorem su1_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hdx : s.gpr
       stk_o := stk_sc hp k₃.kr (Nat.le_refl _) (part_sub (by exact hz.o_st1O_S_le_L))
       stk_k := k_stk
       stk_s := stk_sc hp k₃.kr (Nat.le_refl _) low_sub
-      scnw := by show (scr s₀).toNat + 8 * H.W ≤ 2 ^ 64; omega }
+      scnw := by show (scr s₀).toNat + 8 * H.W ≤ 2 ^ 64; omega_arith }
 
 /-- HMAC's `init`: the key's inner and outer states. -/
 theorem su2_ok (hH : HashOK H) (hI : Verified X86_64.target H.hmacInit (initG hH.SH H.W))
@@ -654,7 +654,7 @@ theorem su4_ok (hH : HashOK H) {s₁₀ : State} (k₁₀ : KE (H := H) s₀ s�
   have hWb : hH.stream.Wb = H.P.so + 48 := rfl
   have hSS : H.stream.S = H.P.N + H.P.B := rfl
   have hsnw := hp.snw
-  refine VG.Proof.Pbkdf2.Md.X86_64.Calls.upd_call hH.stream ua (by have := hp.sanw; omega) fun s₁₁ a₁₁ r₁₁ => ?_
+  refine VG.Proof.Pbkdf2.Md.X86_64.Calls.upd_call hH.stream ua (by have := hp.sanw; omega_arith) fun s₁₁ a₁₁ r₁₁ => ?_
   have k₁₁ := k₁₀.call hp hz a₁₁.rd a₁₁.wr a₁₁.cs (by decide) a₁₁.frame fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

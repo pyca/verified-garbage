@@ -31,10 +31,7 @@ theorem cachedPrepareSource_ok (s : State) {p : Inputs} {slots : List Nat}
       (t.gpr .r4 = p.cachedContext + BitVec.ofNat 32 24 ∧ t.mem = s.mem) ∧ Rest [.r4] s t := by
   have addr52 : State.addr (s.sp + BitVec.ofNat 32 52) = off (State.addr s.sp) 52 :=
     VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
-  refine withRest [.r4] ?_ (by
-    intro r hr i hi
-    simp only [instrs, VG.Impl.Ffdh.Arm.CachedPrepare.source, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl <;> cases r <;> simp_all [clobbers, dstOf]) (by rfl)
+  refine withRest_all [.r4] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.CachedPrepare.source
   ffrun [addr52, h.locals.read (d := 52) (by decide), h.saved 52 h52, Inputs.slotValue]
   rfl

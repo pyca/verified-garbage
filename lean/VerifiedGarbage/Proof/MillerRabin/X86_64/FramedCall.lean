@@ -63,7 +63,7 @@ theorem framed_call_ok (M : Mont) {code : Prog isa} {s : State} {B : Addr}
     rcases hr' with rfl | rfl
     · rw [hole, entered_rsp]
       change Region.Disjoint ⟨s.gpr .rsp - 112#64, 112⟩ ⟨s.gpr .rsp - 112#64 - 8#64, 8⟩
-      have heq : s.gpr .rsp - 112#64 - 8#64 = s.gpr .rsp - 120#64 := by bv_omega
+      have heq : s.gpr .rsp - 112#64 - 8#64 = s.gpr .rsp - 120#64 := by bv_omega_arith
       rw [heq, Offset.sub_ofNat_eq (s.gpr .rsp) (by decide : 112 ≤ 120)]
       exact Offset.disjoint_base _ (by decide) (by decide)
     · exact hd.symm
@@ -83,7 +83,7 @@ theorem framed_call_ok (M : Mont) {code : Prog isa} {s : State} {B : Addr}
     have hh : hole ((entered s).gpr .rsp) = ⟨s.gpr .rsp - 120#64, 8⟩ := by
       rw [hole, entered_rsp]
       congr 1
-      bv_omega
+      bv_omega_arith
     refine ((entered_frame s hs).sub ?_).trans (hf.sub ?_)
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

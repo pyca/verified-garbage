@@ -57,7 +57,7 @@ theorem roundPre.pushedWs (h : roundPre s) :
   simp only [List.mem_singleton] at hr; subst hr
   refine disj _ hc ?_
   simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem in_x (h : roundPre s) : In (mkP s) (bodyIn s) := by
   have h0 := h
@@ -70,7 +70,7 @@ theorem in_x (h : roundPre s) : In (mkP s) (bodyIn s) := by
   rw [hw] at w4 w128 fits
   obtain ⟨c3, codd, inv, x5, one, m1, ex, lo⟩ := prep'
   simp only [hw] at c3 codd inv x5 one m1 ex lo
-  refine ⟨rfl, rfl, by simp only [mkP]; omega, by simp only [mkP]; rw [spN]; have := s.sp.isLt; omega, ?_,
+  refine ⟨rfl, rfl, by simp only [mkP]; omega_arith, by simp only [mkP]; rw [spN]; have := s.sp.isLt; omega_arith, ?_,
     w4, w128, fits, ?_, hw, inv, c3, codd, x5, one, m1, ex, lo, ?_⟩
   · show (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region).Disjoint _
     exact disj
@@ -91,8 +91,8 @@ theorem KS.keepsLite {P : MP} {σ s : State} {A : Nat → Nat} {L : List Nat} {V
   intro i hi hk hj
   by_cases hlo : i < kOff
   · exact h.mem_out (pre.ofsB_lo hlo)
-  · have hof : ofs (State.addr P.ws) (State.addr P.ws + BitVec.ofNat 64 i) = i := ofs_off0 _ (by omega)
-    have hB := pre.ofsB (x := State.addr P.ws + BitVec.ofNat 64 i) (by rw [hof]; omega)
+  · have hof : ofs (State.addr P.ws) (State.addr P.ws + BitVec.ofNat 64 i) = i := ofs_off0 _ (by omega_arith)
+    have hB := pre.ofsB (x := State.addr P.ws + BitVec.ofNat 64 i) (by rw [hof]; omega_arith)
     rw [hof] at hB
     refine h.keep _ fun r hr => ?_
     rw [hB]
@@ -100,7 +100,7 @@ theorem KS.keepsLite {P : MP} {σ s : State} {A : Nat → Nat} {L : List Nat} {V
     rcases hr with ⟨j, hjm, rfl⟩ | ⟨d, hd, rfl⟩
     · have := hj j hjm
       have := pre.arr_eq j
-      dsimp only; rw [hS]; omega
+      dsimp only; rw [hS]; omega_arith
     · have := wDs_ok d hd
       have h23 := hk 23 (by simp)
       have h26 := hk 26 (by simp)
@@ -109,6 +109,6 @@ theorem KS.keepsLite {P : MP} {σ s : State} {A : Nat → Nat} {L : List Nat} {V
       dsimp only
       simp only [wDs, List.mem_cons, List.not_mem_nil, or_false] at hd
       rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [sE1, sE2, sT, sV, sF, sK, sQ, sR, kOff] at * <;> omega
+        simp only [sE1, sE2, sT, sV, sF, sK, sQ, sR, kOff] at * <;> omega_arith
 
 end VG.Proof.MillerRabin.Arm

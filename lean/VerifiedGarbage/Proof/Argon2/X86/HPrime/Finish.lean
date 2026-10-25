@@ -47,12 +47,12 @@ include hp
 
 theorem arg_addr {i : Nat} (hi : i < 5) :
     addr (esp₀ s₀) (4 + 4 * i) = (esp₀ s₀).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
-  addr_eq (by have := hp.esp_hi; omega)
+  addr_eq (by have := hp.esp_hi; omega_arith)
 
 theorem arg_sub {i : Nat} (hi : i < 5) : Region.Sub ⟨addr (esp₀ s₀) (4 + 4 * i), 4⟩ (argR s₀) := by
   show Region.Sub _ ⟨addr (esp₀ s₀) (4 + 4 * 0), 20⟩
   rw [arg_addr hp hi, arg_addr hp (by decide)]
-  exact Offset.sub _ (by omega) (by omega)
+  exact Offset.sub _ (by omega_arith) (by omega_arith)
 
 /-- The arguments are kept in the body. -/
 theorem Body.arg {s : State} (b : Body s₀ s) {i : Nat} (hi : i < 5) :
@@ -67,14 +67,14 @@ theorem Body.arg {s : State} (b : Body s₀ s) {i : Nat} (hi : i < 5) :
   · exact hp.arg_scr.sub_left (arg_sub hp hi)
   · show Region.Disjoint _ ⟨(esp₀ s₀ - BitVec.ofNat 32 60).setWidth 64, 60⟩
     rw [arg_addr hp hi, Taint.sub_setWidth hl]
-    exact Offset.disjoint_below _ (by omega)
+    exact Offset.disjoint_below _ (by omega_arith)
 
 theorem Body.arg_in {s : State} (b : Body s₀ s) {i : Nat} (hi : i < 5) :
     InRegions (s.rd ++ s.wr) (addr (esp₀ s₀) (4 + 4 * i)) 4 := by
   refine ⟨argR s₀, by simp [b.rd, hp.rd], ?_⟩
   show Region.Contains ⟨addr (esp₀ s₀) (4 + 4 * 0), 20⟩ _ _
   rw [arg_addr hp hi, arg_addr hp (by decide)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 omit hp in
 theorem Out.same {s t : State} {xs : List Byte} (h : Out s₀ s xs) (hm : t.mem = s.mem) : Out s₀ t xs :=
@@ -101,9 +101,9 @@ theorem choose_ok {s : State} (b : Body s₀ s) (o : Out s₀ s []) :
       show s₂.cf = _
       rw [cf₂, e₁, Proof.Sha256.X86.Stream.toNat_ofNat_lt hol]; rfl)
     (fun h => WP.block_nil ⟨?_, k₂⟩) (fun h => wp_movi fun s₃ u₃ => WP.block_nil ⟨?_, ?_⟩)
-  · have : ol s₀ ≤ 64 := by simp only [decide_eq_true_eq] at h; omega
+  · have : ol s₀ ≤ 64 := by simp only [decide_eq_true_eq] at h; omega_arith
     rw [f₂.gpr, e₁, Nat.min_eq_left this]
-  · have : 64 ≤ ol s₀ := by simp only [decide_eq_false_iff_not] at h; omega
+  · have : 64 ≤ ol s₀ := by simp only [decide_eq_false_iff_not] at h; omega_arith
     rw [u₃.gpr, Nat.min_eq_right this]; rfl
   · exact k₂.trans (Keeps.same (u₃.other _ (by decide)) (u₃.other _ (by decide)) (u₃.other _ (by decide))
       u₃.mem u₃.rd u₃.wr)
@@ -133,12 +133,12 @@ include hp
 theorem F0.keeps {s t : State} (h : F0 s₀ s) (k : Keeps (scr s₀) (esp₀ s₀) s t) : F0 s₀ t := by
   refine ⟨h.body.keeps hp k, h.out.keeps hp k, k.ebp.trans h.ebp, ?_⟩
   have hif := hp.in_fits
-  have := k.bytes (R := inR s₀) (by simp; omega)
+  have := k.bytes (R := inR s₀) (by simp; omega_arith)
     (hp.in_scr.sub_right (Region.sub_prefix (by decide))) hp.stk_in.symm
   simp only at this
   rw [this, h.input]
 
-theorem nF_pos : 1 ≤ nF s₀ := by have := hp.ol_pos; simp only [nF]; omega
+theorem nF_pos : 1 ≤ nF s₀ := by have := hp.ol_pos; simp only [nF]; omega_arith
 
 theorem first_choose {s : State} (h : F0 s₀ s) :
     WP isa chooseLength s fun t => F0 s₀ t ∧ t.gpr .edx = BitVec.ofNat 32 (nF s₀) :=
@@ -166,7 +166,7 @@ theorem first_fixed {s : State}
     WP isa (absorbFixed 832 4) s fun t => F0 s₀ t ∧
       Repr b (Spec.Blake2.init b (nF s₀) 0) t.mem (P s₀) (Spec.Argon2.le32 (ol s₀)) := by
   have hs := hp.scr_fits
-  refine (absorbFixed_ok (h.1.body.ctx hp) (offset := 832) (size := 4) (by omega) (by decide)
+  refine (absorbFixed_ok (h.1.body.ctx hp) (offset := 832) (size := 4) (by omega_arith) (by decide)
     (by decide) (pfx_cov hp h.1.body) (hp.stk_scr.sub_right (Offset.sub_base _ (by decide))) h.2).mono
     fun t ⟨r, k⟩ => ⟨h.1.keeps hp k, ?_⟩
   rw [show BitVec.ofNat 64 832 = (832 : Addr) from rfl, h.1.body.pfx] at r
@@ -215,7 +215,7 @@ theorem first_input {s : State}
   have F₇ := h.1.keeps hp k₇
   refine (update_ok c₇ (h0 := Spec.Blake2.init Spec.Blake2.b (nF s₀) 0) esi₇ edi₇ hif hDc
     (hp.in_scr.sub_right (Region.sub_prefix (by decide))) hp.stk_in (by rw [m₇]; exact h.2) cnt₇
-    (by rw [Proof.Argon2.le32_length]; omega)).mono fun s₈ ⟨r₈, cs₈, rd₈, wr₈, f₈⟩ => ?_
+    (by rw [Proof.Argon2.le32_length]; omega_arith)).mono fun s₈ ⟨r₈, cs₈, rd₈, wr₈, f₈⟩ => ?_
   rw [F₇.input] at r₈
   refine ⟨F₇.keeps hp (Keeps.of_call (of_callee cs₈) rd₈ wr₈ f₈ fun r hr => ?_), r₈⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -266,12 +266,12 @@ theorem first_finish {s : State}
     rw [x₁₂, y₁₂, List.length_append, Proof.Argon2.le32_length]
     simp only [inB, bytesAt, List.length_map, List.length_range]
     apply BitVec.eq_of_toNat_eq
-    rw [Proof.Blake2.X86.Stream.append_ofNat (by omega), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Proof.Blake2.X86.Stream.append_ofNat (by omega_arith), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   have F₁₂ := h.1.keeps hp k₁₂
   refine (finalize_ok c₁₂ (by rw [m₁₂]; exact h.2) cnt
     (by simp only [List.length_append, Proof.Argon2.le32_length, inB, bytesAt, List.length_map,
-      List.length_range]; omega)).mono ?_
+      List.length_range]; omega_arith)).mono ?_
   rintro t ⟨d, cs, rd, wr, f⟩
   refine ⟨F₁₂.keeps hp (Keeps.of_call (fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -336,7 +336,7 @@ abbrev chainOut (V : List Byte) (j : Nat) : List Byte := V.take 32 ++ chainPrefi
 theorem chainOut_length {V : List Byte} (hV : V.length = 64) (j : Nat) :
     (chainOut V j).length = 32 + 32 * j := by
   simp only [chainOut, List.length_append, List.length_take, hV, Proof.Argon2.chainPrefixes_length]
-  omega
+  omega_arith
 
 section
 variable {s₀ : State} (hp : Pre s₀)
@@ -354,7 +354,7 @@ theorem cmp_ok {s : State} (b : Body s₀ s) {xs : List Byte} (o : Out s₀ s xs
     exact ⟨scrR s₀, by simp [hp.wr], Proof.Sha256.X86.Stream.contains_addr (by decide) (by decide) hs⟩
   refine wp_movm (VG.Proof.Sha512.X86.ea_of b.ebx leftOff) rl fun s₁ u₁ =>
     wp_cmpi fun s₂ f₂ cf₂ _ => WP.block_nil ⟨?_, ?_, by rw [f₂.mem, u₁.mem]⟩
-  · rw [cf₂, u₁.gpr, o.left, Proof.Sha256.X86.Stream.toNat_ofNat_lt (by omega)]; rfl
+  · rw [cf₂, u₁.gpr, o.left, Proof.Sha256.X86.Stream.toNat_ofNat_lt (by omega_arith)]; rfl
   · exact Keeps.same (by rw [f₂.gpr, u₁.other _ (by decide)]) (by rw [f₂.gpr, u₁.other _ (by decide)])
       (by rw [f₂.gpr, u₁.other _ (by decide)]) (by rw [f₂.mem, u₁.mem]) (by rw [f₂.rd, u₁.rd])
       (by rw [f₂.wr, u₁.wr])
@@ -407,12 +407,12 @@ theorem chain_ok {e : BitVec 32} {V : List Byte} (hV : V.length = 64) {j : Nat} 
   refine WP.loop (M := isa) (fun (m : Nat) (t : State) => ∃ j', m = ol s₀ - (32 + 32 * j') ∧ ChainInv s₀ e V j' t ∧ 65 ≤ m)
     ?_ (ol s₀ - (32 + 32 * j)) s ⟨j, rfl, h, hl⟩
   rintro m t ⟨j', rfl, hi, hm⟩
-  refine (iter_ok hp hV hi (by omega)).mono fun u ⟨hu, cf⟩ => ?_
+  refine (iter_ok hp hV hi (by omega_arith)).mono fun u ⟨hu, cf⟩ => ?_
   by_cases hc : ol s₀ - (32 + 32 * (j' + 1)) < 65
-  · refine .inl ⟨?_, j' + 1, hu, by omega, by omega, by omega⟩
+  · refine .inl ⟨?_, j' + 1, hu, by omega_arith, by omega_arith, by omega_arith⟩
     show u.cf.map (!·) = some false
     rw [cf]; simp [hc]
-  · refine .inr ⟨?_, _, by omega, j' + 1, rfl, hu, by omega⟩
+  · refine .inr ⟨?_, _, by omega_arith, j' + 1, rfl, hu, by omega_arith⟩
     show u.cf.map (!·) = some true
     rw [cf]; simp [hc]
 
@@ -453,7 +453,7 @@ theorem extend_ok {s : State} (b : Body s₀ s) (o : Out s₀ s []) (hol : 65 �
   have hs := hp.scr_fits
   have hV : (digest s₀ s).length = 64 := by simp [digest, bytesAt]
   unfold extendDigest
-  refine WP.seq ((emit_ok hp b o (by simp only [List.length_nil]; omega)).mono
+  refine WP.seq ((emit_ok hp b o (by simp only [List.length_nil]; omega_arith)).mono
     fun s₁ ⟨b₁, e₁, o₁, d₁⟩ => ?_)
   rw [List.nil_append, show (digest s₀ s).take 32 = chainOut (digest s₀ s) 0 by
     simp [chainOut, chainPrefixes]] at o₁
@@ -466,8 +466,8 @@ theorem extend_ok {s : State} (b : Body s₀ s) (o : Out s₀ s []) (hol : 65 �
       33 ≤ ol s₀ - (32 + 32 * j) ∧ ol s₀ - (32 + 32 * j) ≤ 64 ∧ 32 + 32 * j ≤ ol s₀ := by
     refine WP.ite (decide (ol s₀ - (32 + 32 * 0) < 65)) cf₂ (fun h => WP.block_nil ⟨0, i₂, ?_⟩)
       (fun h => (chain_ok hp hV i₂ ?_).mono fun t h => h)
-    · simp only [decide_eq_true_eq] at h; omega
-    · simp only [decide_eq_false_iff_not] at h; omega
+    · simp only [decide_eq_true_eq] at h; omega_arith
+    · simp only [decide_eq_false_iff_not] at h; omega_arith
   refine WP.seq (hIte.mono fun s₃ ⟨j, i₃, l₁, l₂, l₃⟩ => ?_)
   have rl : InRegions (s₃.rd ++ s₃.wr) (addr (scr s₀) leftOff) 4 := by
     rw [i₃.body.rd, i₃.body.wr]
@@ -478,7 +478,7 @@ theorem extend_ok {s : State} (b : Body s₀ s) (o : Out s₀ s []) (hol : 65 �
   have b₄ := i₃.body.keeps hp k₄
   have edx₄ : s₄.gpr .edx = BitVec.ofNat 32 (ol s₀ - (32 + 32 * j)) := by
     rw [u₄.gpr, i₃.out.left, chainOut_length hV]
-  refine (next_ok (b₄.ctx hp) edx₄ (by omega) l₂).mono fun t ⟨d, k⟩ => ?_
+  refine (next_ok (b₄.ctx hp) edx₄ (by omega_arith) l₂).mono fun t ⟨d, k⟩ => ?_
   have K := k₄.trans k
   refine ⟨j, i₃.body.keeps hp K, by rw [K.ebp, i₃.ebp], i₃.out.keeps hp K, ?_, l₁, l₂, l₃⟩
   rw [Proof.Argon2.H_stream, ← i₃.digest]
@@ -504,23 +504,23 @@ theorem finish_ok {s : State} (b : Body s₀ s) (o : Out s₀ s []) {I : List By
         xs ++ (digest s₀ t).take (ol s₀ - xs.length) = Spec.Argon2.hPrime (ol s₀) I := by
     refine WP.ite (decide (ol s₀ < 65)) cf₁ (fun h => WP.block_nil ?_) (fun h => ?_)
     · simp only [decide_eq_true_eq] at h
-      refine ⟨b₁, k₁.ebp, [], o₁, by simp only [List.length_nil]; omega,
-        by simp only [List.length_nil]; omega, ?_⟩
-      rw [Nat.min_eq_left (by omega)] at hd
+      refine ⟨b₁, k₁.ebp, [], o₁, by simp only [List.length_nil]; omega_arith,
+        by simp only [List.length_nil]; omega_arith, ?_⟩
+      rw [Nat.min_eq_left (by omega_arith)] at hd
       rw [List.nil_append, List.length_nil, Nat.sub_zero, d₁, hd]
-      simp only [Spec.Argon2.hPrime, eq_true (by omega : ol s₀ ≤ 64), ite_true]
+      simp only [Spec.Argon2.hPrime, eq_true (by omega_arith : ol s₀ ≤ 64), ite_true]
     · simp only [decide_eq_false_iff_not] at h
-      refine (extend_ok hp b₁ o₁ (by omega)).mono fun t ⟨j, bt, et, ot, dt, l₁, l₂, l₃⟩ =>
+      refine (extend_ok hp b₁ o₁ (by omega_arith)).mono fun t ⟨j, bt, et, ot, dt, l₁, l₂, l₃⟩ =>
         ⟨bt, et.trans k₁.ebp, _, ot, ?_, ?_, ?_⟩
-      · rw [chainOut_length (by rw [d₁]; exact hV)]; omega
-      · rw [chainOut_length (by rw [d₁]; exact hV)]; omega
+      · rw [chainOut_length (by rw [d₁]; exact hV)]; omega_arith
+      · rw [chainOut_length (by rw [d₁]; exact hV)]; omega_arith
       · have V₁ : digest s₀ s₁ = Spec.Argon2.H 64 (Spec.Argon2.le32 (ol s₀) ++ I) := by
           rw [d₁, ← List.take_of_length_le (l := digest s₀ s) (i := 64) (by rw [hV]),
-            ← Nat.min_eq_right (by omega : 64 ≤ ol s₀), hd]
+            ← Nat.min_eq_right (by omega_arith : 64 ≤ ol s₀), hd]
         rw [chainOut_length (by rw [d₁]; exact hV), dt, chainOut, ← Proof.Argon2.longHash_chain, V₁]
-        have hr : (ol s₀ + 31) / 32 - 2 = j + 1 := by omega
-        simp only [Spec.Argon2.hPrime, eq_false (by omega : ¬ ol s₀ ≤ 64), ite_false]
-        rw [hr, show ol s₀ - 32 * (j + 1) = ol s₀ - (32 + 32 * j) by omega]
+        have hr : (ol s₀ + 31) / 32 - 2 = j + 1 := by omega_arith
+        simp only [Spec.Argon2.hPrime, eq_false (by omega_arith : ¬ ol s₀ ≤ 64), ite_false]
+        rw [hr, show ol s₀ - 32 * (j + 1) = ol s₀ - (32 + 32 * j) by omega_arith]
   refine WP.seq (hIte.mono fun s₂ ⟨b₂, e₂, xs, o₂, l₁, l₂, h₂⟩ => ?_)
   refine (copyRemaining_ok hp b₂ o₂ l₁ l₂).mono fun t ⟨bt, et, ht⟩ => ⟨bt, et.trans e₂, ?_⟩
   rw [ht, h₂]

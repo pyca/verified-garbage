@@ -178,37 +178,37 @@ theorem csub_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M 
     simp only [csub, List.append_assoc]
   rw [ec]
   refine wp_append (WP.mono (chain_ok (sub := true) (W := M.n) hs h3 h7 h3 (by decide) (by decide) src4
-    (by decide) tmp4 (by omega) (by omega) (by omega) (by omega) (by omega) (k := M.n) (Nat.le_refl _))
+    (by decide) tmp4 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (k := M.n) (Nat.le_refl _))
     fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
   simp only [ite_true, Bool.toNat_true, Nat.zero_add, Nat.add_zero] at V₂
-  rw [hm, show cOf true M.n s₂.ca = s₂.ca.toNat by simp only [cOf]; split <;> omega] at V₂
+  rw [hm, show cOf true M.n s₂.ca = s₂.ca.toNat by simp only [cOf]; split <;> omega_arith] at V₂
   have hs₂ := K₂.ws hs
   have h3₂ := K₂.at h3
   have h4₂ := K₂.at h4
-  refine wp_step (ld0_ok hs₂ h3₂ (by decide) (by omega) (d := src + 8 * M.n) (by omega)) ?_
+  refine wp_step (ld0_ok hs₂ h3₂ (by decide) (by omega_arith) (d := src + 8 * M.n) (by omega_arith)) ?_
   refine wp_step exec_addze ?_
   refine wp_step (exec_li (by decide)) ?_
   refine wp_step exec_sub ?_
   simp only [write_gpr, writeCarry_gpr, ite_true, reduceCtorEq, ite_false, RegUpd.ca_write]
   -- The mask.
   have htop : word s₂.mem base (src + 8 * M.n) = word s.mem base (src + 8 * M.n) :=
-    O₂.word (by omega) (by omega)
+    O₂.word (by omega_arith) (by omega_arith)
   rw [htop]
   generalize hc : s₂.ca.toNat = c at V₂
   generalize hT : (word s.mem base (src + 8 * M.n)).toNat = top
-  have hL : wordsVal s₂.mem base src M.n = wordsVal s.mem base src M.n := O₂.wordsVal (by omega) (by omega)
+  have hL : wordsVal s₂.mem base src M.n = wordsVal s.mem base src M.n := O₂.wordsVal (by omega_arith) (by omega_arith)
   have hN' : wordsVal s.mem base src M.n + 2 ^ (64 * M.n) * top < 2 * m := by
     rw [← hT, ← wordsVal_succ_top]; exact hN
   have hm0 : m < 2 ^ (64 * M.n) := by rw [← hm]; exact wordsVal_lt _ _ _ _
   have hc1 : c ≤ 1 := hc ▸ Bool.toNat_le _
   obtain ⟨hct, hsel⟩ := csub_math hm0 hN' (wordsVal_lt s₂.mem base M.tmp M.n)
-    (by have := V₂; omega) hc1
+    (by have := V₂; omega_arith) hc1
   have hadd : BitVec.ofNat 64 (top + c) = BitVec.ofNat 64 (c + top) := by rw [Nat.add_comm]
   rw [hadd]
   refine WP.mono (sels_ok (W := M.n) ((((hs₂.write _ _).writeCarry _ _).write _ _).write _ _)
     ((((h3₂.write _).writeCarry _).write _).write _) ((((h4₂.write _).writeCarry _).write _).write _) src4 tmp4
-    (by simp only [write_gpr, ite_true]; exact neg_mask hct) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (k := M.n) (Nat.le_refl _)) fun u ⟨O₃, V₃, K₃⟩ => ⟨?_, ?_, ?_⟩
+    (by simp only [write_gpr, ite_true]; exact neg_mask hct) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (k := M.n) (Nat.le_refl _)) fun u ⟨O₃, V₃, K₃⟩ => ⟨?_, ?_, ?_⟩
   · simp only [write_gpr, ite_true, write_mem, RegUpd.mem_writeCarry] at V₃
     rw [V₃, hL, wordsVal_succ_top, hT, ← hsel]
     simp only [neg_mask_zero hct]
@@ -216,7 +216,7 @@ theorem csub_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M 
     intro x hx
     rw [O₃ x (hx (O, 8 * M.n) (by simp)), O₂ x (by
       have := hx (M.tmp, 8 * M.n) (by simp)
-      simp only at this; omega)]
+      simp only at this; omega_arith)]
   · exact (K₂.mono (by decide)).trans ((((Kp.write _ _ (by decide)).trans (Kp.writeCarry _ _ (by decide))).trans
       ((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide)))).trans (K₃.mono (by decide)))
 

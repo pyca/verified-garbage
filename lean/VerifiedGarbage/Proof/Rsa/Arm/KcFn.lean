@@ -66,7 +66,7 @@ theorem entry_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) :
   refine WP.mono (entryFirst_ok h h4) fun t1 ⟨e1, p4, p6⟩ => ?_
   rw [wp_seqs_cons (by simp)]
   refine WP.mono (e1.load_ok (j := aE) (by decide) (src := σ.gpr .r2) (k := (σ.gpr .r3).toNat) h.rdE h.eS h.fE
-    (by have := h.e1; omega) h.e2 p4 (by rw [p6]; simp)) fun t2 ⟨e2, _⟩ => ?_
+    (by have := h.e1; omega_arith) h.e2 p4 (by rw [p6]; simp)) fun t2 ⟨e2, _⟩ => ?_
   refine e2.loads_ok ins (fun p hp => hp) (by simp) fun t3 e3 => ?_
   rw [wp_seqs_cons (by simp)]
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
@@ -75,7 +75,7 @@ theorem entry_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) :
     (by decide) (by decide) (by decide) (by decide) (by decide)
   rw [wp_seqs_cons (by simp)]
   refine WP.mono (e5.load_ok (j := aN) (by decide) (src := σ.gpr .r0) (k := fK σ) h.rdN h.nS h.fN
-    (by omega) (Nat.le_refl _) (by rw [u5.other _ (by decide), u4.gpr, e3.r10])
+    (by omega_arith) (Nat.le_refl _) (by rw [u5.other _ (by decide), u4.gpr, e3.r10])
     (by rw [u5.gpr, u4.other _ (by decide), e3.r11]; simp)) fun t6 ⟨e6, r6⟩ => ?_
   have p4' : t6.gpr .r4 = σ.gpr .r0 := by
     rw [r6.gpr _ (by decide), u5.other _ (by decide), u4.gpr, e3.r10]
@@ -84,7 +84,7 @@ theorem entry_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) :
   refine WP.mono (modulusCheck_ok t6 (src := σ.gpr .r0) (k := fK σ) kb.1 kb.2 h.fN
     ⟨_, List.mem_append_left _ (by rw [e6.base.rd]; exact h.rdN), Region.contains_self _ _⟩ p4' p6')
     fun t ⟨z, m, r⟩ => ⟨e6.mid.of_rest r m (by decide) (by decide), ?_⟩
-  rw [z, bytes_frame e6.base.frame (by simpa using h.nS) (by omega)]
+  rw [z, bytes_frame e6.base.frame (by simpa using h.nS) (by omega_arith)]
 
 /-- The bytes of `e`. -/
 abbrev eBytes (σ : State) : List Byte := Spec.Rsa.bytesAt σ.mem (State.addr (σ.gpr .r2)) (σ.gpr .r3).toNat
@@ -99,14 +99,14 @@ theorem eLoad_ok {σ s : State} {A : Nat → Nat} (h : Mid nA iS ins σ s A) :
   have eZ : (geo iS σ).Z = (stackArg σ (iS + 1)).toNat * 8 := rfl
   have eB : (geo iS σ).B.toNat = (stackArg σ iS).toNat := rfl
   have fS := pre.fS
-  have hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega) fits
-  have rdS : (geo iS σ).B.toNat + 64 ≤ 2 ^ 32 := by omega
+  have hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
+  have rdS : (geo iS σ).B.toNat + 64 ≤ 2 ^ 32 := by omega_arith
   have ldS : ∀ (d : Nat) (u : State), Mid nA iS ins σ u A → d + 4 ≤ 64 →
       State.addr (u.gpr .r8 + BitVec.ofNat 32 d) = off (State.addr (geo iS σ).B) d ∧
       InRegions (u.rd ++ u.wr) (off (State.addr (geo iS σ).B) d) 4 := fun d u hu hd =>
-    ⟨by rw [hu.ws.r8]; exact VG.Arm.addr_add (by omega),
+    ⟨by rw [hu.ws.r8]; exact VG.Arm.addr_add (by omega_arith),
       ⟨rS iS σ, List.mem_append_right _ (by rw [hu.base.wr, pre.wr]; simp),
-        Offset.contains_base _ (by omega) (by omega)⟩⟩
+        Offset.contains_base _ (by omega_arith) (by omega_arith)⟩⟩
   refine wp_ldr (by decide) (ldS sE s h (by decide)).1 (ldS sE s h (by decide)).2 fun s1 u1 => ?_
   have h1 := h.of_rest (u1.rest (ws := [.r1]) (by simp)) u1.mem (by decide) (by decide)
   refine wp_ldr (by decide) (ldS sEl s1 h1 (by decide)).1 (ldS sEl s1 h1 (by decide)).2
@@ -121,12 +121,12 @@ theorem eLoad_ok {σ s : State} {A : Nat → Nat} (h : Mid nA iS ins σ s A) :
   have le := pre.e2
   have kb := pre.kb
   have len : (eBytes σ).length = (σ.gpr .r3).toNat := VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _
-  refine ⟨h2, ⟨by rw [len]; omega, by rw [len]; exact pre.fE,
+  refine ⟨h2, ⟨by rw [len]; omega_arith, by rw [len]; exact pre.fE,
     by rw [len]; exact ⟨_, List.mem_append_left _ (by rw [h2.base.rd]; exact pre.rdE), Region.contains_self _ _⟩,
     fun i hi => ?_⟩, e1, by rw [len, e2]; simp⟩
   rw [len] at hi
   have := bytes_frame h2.base.frame (a := State.addr (σ.gpr .r2)) (n := (σ.gpr .r3).toNat)
-    (by simpa using pre.eS) (by omega)
+    (by simpa using pre.eS) (by omega_arith)
   simp only [Spec.Rsa.bytesAt] at this ⊢
   have := congrArg (fun l => l[i]?) this
   simpa [hi] using this
@@ -180,13 +180,13 @@ theorem ret_ok {σ s : State} {c : Bool} (h : FnBase nA iS ins σ s) (h8 : s.gpr
   have pre := h.pre
   have fits := pre.fits
   have fS := pre.fS
-  have hz : 160 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega) fits
+  have hz : 160 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
   have eZ : (geo iS σ).Z = (stackArg σ (iS + 1)).toNat * 8 := rfl
   have eB : (geo iS σ).B.toNat = (stackArg σ iS).toNat := rfl
   have eM : sMask = 120 := rfl
-  refine wp_ldr (by decide) (by rw [h8]; exact VG.Arm.addr_add (by omega))
+  refine wp_ldr (by decide) (by rw [h8]; exact VG.Arm.addr_add (by omega_arith))
     ⟨rS iS σ, List.mem_append_right _ (by rw [h.wr, pre.wr]; simp),
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     fun t u => WP.block_nil ⟨h.of_rest (u.rest (ws := [.r0]) (by simp)) u.mem, ?_⟩
   rw [u.gpr]
   apply BitVec.eq_of_toNat_eq
@@ -201,12 +201,12 @@ theorem ldrSaved {σ s : State} (h : FnBase nA iS ins σ s) (p12 : s.gpr .r12 = 
   have pre := h.pre
   have fS := pre.fS
   have fits := pre.fits
-  have hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega) fits
+  have hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
   have eZ : (geo iS σ).Z = (stackArg σ (iS + 1)).toNat * 8 := rfl
   have eB : (geo iS σ).B.toNat = (stackArg σ iS).toNat := rfl
-  refine wp_ldr (by omega) (by rw [p12]; exact addr_add (by omega))
+  refine wp_ldr (by omega_arith) (by rw [p12]; exact addr_add (by omega_arith))
     ⟨rS iS σ, List.mem_append_right _ (by rw [h.wr, pre.wr]; simp),
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     fun s' u => k s' ?_
   have e : s.mem.readW (off (State.addr (geo iS σ).B) (20 + 4 * i)) 32 = σ.gpr (savedReg i) :=
     BitVec.eq_of_toNat_eq (h.saved i hi)
@@ -216,7 +216,7 @@ theorem restore_ok {σ s : State} (h : FnBase nA iS ins σ s) (h4 : 4 * iS < 409
     WP isa (.block (restore (4 * iS))) s fun t => (∀ r ∈ preserved, t.gpr r = σ.gpr r) ∧ t.sp = σ.sp ∧
       t.mem = s.mem ∧ t.gpr .r0 = s.gpr .r0 := by
   have pre := h.pre
-  refine h.ldrSp (i := iS) (by have := pre.hS; omega) h4 fun s1 d1 u1 => ?_
+  refine h.ldrSp (i := iS) (by have := pre.hS; omega_arith) h4 fun s1 d1 u1 => ?_
   have p12 : s1.gpr .r12 = (geo iS σ).B := u1.gpr
   refine ldrSaved d1 p12 (i := 0) (by decide) fun s2 u2 => ?_
   have d2 := d1.of_rest (u2.rest (ws := [.r4]) (by simp)) u2.mem

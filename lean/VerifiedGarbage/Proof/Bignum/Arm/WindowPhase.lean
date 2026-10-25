@@ -29,37 +29,37 @@ theorem expByteNext_mem (s : State) {base ep : BitVec 32} {len w c : Nat}
       t.mem = (s.mem.writeW (off (State.addr base) 128) (ep + 1)).writeW (off (State.addr base) 132)
         (BitVec.ofNat 32 (c - 1)) ∧ t.z = decide (c = 1) ∧ Rest [.r1] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega_arith
   have addr (d : Nat) (hd : d ≤ 252) : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
+    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_arith)
   unfold expByteNext
   refine wp_ldr (a := off (State.addr base) 128) (by decide) (addr 128 (by decide))
-    (h.workspace.read (by omega)) fun u a => ?_
+    (h.workspace.read (by omega_arith)) fun u a => ?_
   refine wp_dp (op2_imm (by decide)) fun v b => ?_
   refine wp_str (a := off (State.addr base) 128) (by decide)
     (by rw [b.other .r0 (by decide), a.other .r0 (by decide)]; exact addr 128 (by decide))
-    (by rw [b.wr, a.wr]; exact h.workspace.write (by omega)) fun z d => ?_
+    (by rw [b.wr, a.wr]; exact h.workspace.write (by omega_arith)) fun z d => ?_
   have memZ : z.mem = s.mem.writeW (off (State.addr base) 128) (ep + 1) := by
     rw [d.mem, b.mem, a.mem, b.gpr, dpVal, a.gpr, pointer]
   have outsideZ := writeW32_outside s.mem (State.addr base) (d := 128) (ep + 1) (by decide)
   rw [← memZ] at outsideZ
   refine wp_ldr (a := off (State.addr base) 132) (by decide)
     (by rw [congrFun d.gpr .r0, b.other .r0 (by decide), a.other .r0 (by decide)]; exact addr 132 (by decide))
-    (by rw [d.rd, d.wr, b.rd, b.wr, a.rd, a.wr]; exact h.workspace.read (by omega)) fun q e => ?_
+    (by rw [d.rd, d.wr, b.rd, b.wr, a.rd, a.wr]; exact h.workspace.read (by omega_arith)) fun q e => ?_
   refine wp_subs (op2_imm (by decide)) fun r f zero => ?_
   refine wp_str_z (a := off (State.addr base) 132) (by decide)
     (by rw [f.other .r0 (by decide), e.other .r0 (by decide), congrFun d.gpr .r0, b.other .r0 (by decide),
       a.other .r0 (by decide)]; exact addr 132 (by decide))
-    (by rw [f.wr, e.wr, d.wr, b.wr, a.wr]; exact h.workspace.write (by omega)) fun t g zeroT => WP.block_nil ?_
+    (by rw [f.wr, e.wr, d.wr, b.wr, a.wr]; exact h.workspace.write (by omega_arith)) fun t g zeroT => WP.block_nil ?_
   have value : r.gpr .r1 = BitVec.ofNat 32 (c - 1) := by
     rw [f.gpr, e.gpr, outside_read32 outsideZ (d := 132) (by decide) (by decide), count]
     change BitVec.ofNat 32 c - BitVec.ofNat 32 1 = _
-    exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)
+    exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)
   refine ⟨by rw [g.mem, f.mem, e.mem, memZ, value], ?_,
     (a.rest (by simp)).trans ((b.rest (by simp)).trans ((d.rest _).trans ((e.rest (by simp)).trans
       ((f.rest (by simp)).trans (g.rest _)))))⟩
-  rw [zeroT, zero, ← f.gpr, value, ofNat_beq_zero (by omega)]
-  exact decide_eq_decide.mpr (by omega)
+  rw [zeroT, zero, ← f.gpr, value, ofNat_beq_zero (by omega_arith)]
+  exact decide_eq_decide.mpr (by omega_arith)
 
 /-- The first `j` exponent bytes are applied; the exponent buffer is where it was. -/
 structure WinByteLoop (base ep : BitVec 32) (len w M x : Nat) (eb : List Byte) (j : Nat) (s : State) : Prop where
@@ -79,10 +79,10 @@ theorem windowByteStep_ok (t : State) {base ep : BitVec 32} {len w M x j : Nat} 
       Frame [⟨State.addr base, 8 * len⟩] t.mem z.mem ∧ Rest roundClobbers t z := by
   obtain ⟨⟨A, p, state, sum⟩, ptr, counter, countFit, sourceFit, read, separate, bytes⟩ := h
   have address : State.addr (ep + BitVec.ofNat 32 j) = State.addr ep + BitVec.ofNat 64 j :=
-    addr_add (by omega)
+    addr_add (by omega_arith)
   have currentRead : InRegions (t.rd ++ t.wr) (State.addr (ep + BitVec.ofNat 32 j)) 1 := by
     rw [address]
-    exact CallLay.inRegions_sub read (by omega) (by omega)
+    exact CallLay.inRegions_sub read (by omega_arith) (by omega_arith)
   have currentByte : t.mem (State.addr (ep + BitVec.ofNat 32 j)) = eb[j] := by
     rw [address]; exact bytes j hj
   rw [WP.seq_iff]
@@ -95,10 +95,10 @@ theorem windowByteStep_ok (t : State) {base ep : BitVec 32} {len w M x j : Nat} 
     ⟨⟨A, p, stateU, by rw [sum, Nat.pow_zero, Nat.mul_one, Nat.sub_zero, show 2 ^ 8 = 256 from rfl,
       Nat.div_eq_of_lt v256, Nat.add_zero]⟩, by rw [Nat.pow_zero, Nat.mul_one]; exact byteU, countU⟩ v256) ?_
   rintro y ⟨⟨A', p', stateY, sumY⟩, keepsY, frameY, restY⟩
-  rw [show 8 * j + 8 = 8 * (j + 1) by omega] at stateY
+  rw [show 8 * j + 8 = 8 * (j + 1) by omega_arith] at stateY
   have ptrY := (keepsY 128 (by simp)).trans ((keepsU 128 (by simp)).trans ptr)
   have countY := (keepsY 132 (by simp)).trans ((keepsU 132 (by simp)).trans counter)
-  refine WP.mono (expByteNext_mem y stateY.power.ready (c := eb.length - j) (by omega) (by omega) ptrY countY) ?_
+  refine WP.mono (expByteNext_mem y stateY.power.ready (c := eb.length - j) (by omega_arith) (by omega_arith) ptrY countY) ?_
   rintro z ⟨memZ, zero, restZ⟩
   have ctl : CtlOnly base y.mem z.mem := by
     rw [memZ]; exact ctl_write2 _ _ _ _ (by decide) (by decide) (by decide) (by decide)
@@ -111,7 +111,7 @@ theorem windowByteStep_ok (t : State) {base ep : BitVec 32} {len w M x j : Nat} 
   rw [← memZ] at ptrZ counterZ
   have keep (a : Nat) (ha : 136 ≤ a) (ha' : a + 4 ≤ 256) :
       z.mem.readW (off (State.addr base) a) 32 = y.mem.readW (off (State.addr base) a) 32 := by
-    rw [memZ]; exact read_after_writes _ _ _ _ (by omega) (by omega) (by decide) (by decide) ha'
+    rw [memZ]; exact read_after_writes _ _ _ _ (by omega_arith) (by omega_arith) (by decide) (by decide) ha'
   have stateZ : WinState base len w M x A' p' (8 * (j + 1) % 3) z :=
     ⟨powerZ, stateY.table.after_ctl ctl fits nowrap (by decide), fits,
       by rw [keep 196 (by decide) (by decide)]; exact stateY.digit,
@@ -130,9 +130,9 @@ theorem windowByteStep_ok (t : State) {base ep : BitVec 32} {len w M x j : Nat} 
   · intro i hi
     rw [frameAll.bytes (R := ⟨State.addr ep, eb.length⟩)
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact separate)
-      (by change eb.length ≤ 2 ^ 64; omega) hi]
+      (by change eb.length ≤ 2 ^ 64; omega_arith) hi]
     exact bytes i hi
-  · rw [zero]; exact decide_eq_decide.mpr (by omega)
+  · rw [zero]; exact decide_eq_decide.mpr (by omega_arith)
 
 theorem windowBytes_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
     (h : WinByteLoop base ep len w M x eb 0 s) (positive : 0 < eb.length) :
@@ -145,7 +145,7 @@ theorem windowBytes_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb :
   refine WP.loop (M := isa) I ?_ eb.length s ?_
   · intro k t inv
     obtain ⟨j, jk, hk, state, frame, rest⟩ := inv
-    refine WP.mono (windowByteStep_ok t state (by omega)) ?_
+    refine WP.mono (windowByteStep_ok t state (by omega_arith)) ?_
     rintro z ⟨stateZ, zero, frameZ, restZ⟩
     by_cases last : j + 1 = eb.length
     · left
@@ -155,10 +155,10 @@ theorem windowBytes_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb :
       change some (!z.z) = some false
       simp only [zero, last, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, stateZ, frame.trans frameZ, rest.trans restZ⟩
+      refine ⟨?_, k - 1, by omega_arith, j + 1, by omega_arith, by omega_arith, stateZ, frame.trans frameZ, rest.trans restZ⟩
       change some (!z.z) = some true
       simp only [zero, last, decide_false, Bool.not_false]
-  · exact ⟨0, by omega, positive, h, Frame.refl _ _, Rest.refl _ _⟩
+  · exact ⟨0, by omega_arith, positive, h, Frame.refl _ _, Rest.refl _ _⟩
 
 /-- The table built, the exponent's controls as `expInit` left them. -/
 structure WinReady (base ep : BitVec 32) (len w M x : Nat) (eb : List Byte) (s : State) : Prop where
@@ -185,7 +185,7 @@ theorem phaseTable_ok (u : State) {base ep : BitVec 32} {len w M x : Nat} {eb : 
   intro i hi
   rw [frameV.bytes (R := ⟨State.addr ep, eb.length⟩)
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact ready.separate)
-    (by change eb.length ≤ 2 ^ 64; have := ready.countFit; omega) hi]
+    (by change eb.length ≤ 2 ^ 64; have := ready.countFit; omega_arith) hi]
   exact ready.bytes i hi
 
 theorem phaseReset_ok (v : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
@@ -212,15 +212,15 @@ theorem phaseReset_ok (v : State) {base ep : BitVec 32} {len w M x : Nat} {eb : 
   intro i hi
   rw [frameZ.bytes (R := ⟨State.addr ep, eb.length⟩)
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.separate)
-    (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega) hi]
+    (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega_arith) hi]
   exact h.bytes i hi
 
 theorem pending_digit {A p L : Nat} {base : BitVec 32} {len w M x : Nat} {s : State}
     (h : WinState base len w M x A p (8 * L % 3) s) : p < 8 := by
   have := h.bound
-  have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 8 * L % 3 ≤ 2 by omega)
+  have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 8 * L % 3 ≤ 2 by omega_arith)
   simp only [show 2 ^ 2 = 4 from rfl] at this
-  omega
+  omega_arith
 
 theorem windowExpPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
     (h : ExpPhaseInput base ep len w M x eb s) (fits : arrAt w 16 ≤ 8 * len) :

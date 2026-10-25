@@ -32,14 +32,7 @@ theorem qOddLow_ok (s : State) (dst : BitVec 32) (n : Nat)
   have zero (b : Byte) : ((b.setWidth 32 &&& 3) - 3 == 0) = decide (b.toNat % 4 = 3) := by
     rw [lowByte, sub_beq_zero]
     exact ofNat_beq_eq (by omega) (by decide)
-  refine withRest [.r2, .r4, .r5] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.qOdd : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r2, .r4, .r5] ?_ (by rfl) (by rfl)
   change InRegions (s.rd ++ s.wr) (State.addr (s.sp + 4#32)) 4 at readOut
   change InRegions (s.rd ++ s.wr) (State.addr (s.sp + 12#32)) 4 at readWidth
   change s.mem.readW (State.addr (s.sp + 4#32)) 32 = dst at out

@@ -72,21 +72,21 @@ theorem jstepO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
   rw [JacWinCfg.stepO]
   simp only [Code.inline]
-  refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega_arith) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have R₁ := R₀.rbxKeeps hL k₁
   rw [← mul_one_pt Q] at R₁
-  refine WP.seq (WP.mono (dblsO_ok hL hC hD hQ (j := j - 1) (by omega) b₁ R₁) fun s₂ ⟨R₂, b₂, _⟩ => ?_)
-  refine WP.seq (WP.mono (jentryO_ok hL hF (j := j - 1) (by omega) R₂.fr R₂.tbl b₂) fun s₃ h₃ =>
+  refine WP.seq (WP.mono (dblsO_ok hL hC hD hQ (j := j - 1) (by omega_arith) b₁ R₁) fun s₂ ⟨R₂, b₂, _⟩ => ?_)
+  refine WP.seq (WP.mono (jentryO_ok hL hF (j := j - 1) (by omega_arith) R₂.fr R₂.tbl b₂) fun s₃ h₃ =>
     WP.seq (WP.mono h₃ fun s₄ E₄ => ?_))
   -- `R` is not written by the entry.
   have hRe : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₄.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := by
     intro x hx
     have hxo : x ∈ jwOther K := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
-    refine E₄.unch.wordsVal (fun w hw => ?_) (by have := hL.le (other_mem hxo); omega)
+    refine E₄.unch.wordsVal (fun w hw => ?_) (by have := hL.le (other_mem hxo); omega_arith)
     rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
-      exact hL.jg_apart (List.mem_append_right _ hxo) (by have := List.mem_range.mp hc; omega)
+      exact hL.jg_apart (List.mem_append_right _ hxo) (by have := List.mem_range.mp hc; omega_arith)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -122,7 +122,7 @@ theorem jstepO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   have F₅ := E₄.fr.next hL (k₅.scr E₄.fr.scr) k₅.regs U₅ (jwLoopW_sub K)
   have hb₅ : s₅.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
     rw [k₅.gpr _ (rbx_not_clob _), E₄.keep.gpr _ (rbx_not_clob _), b₂]
-  refine WP.mono (testRbx_ok s₅ (by omega) hb₅) fun s₆ ⟨z₆, k₆⟩ => ?_
+  refine WP.mono (testRbx_ok s₅ (by omega_arith) hb₅) fun s₆ ⟨z₆, k₆⟩ => ?_
   have m₆ : s₆.mem = s₅.mem := k₆.2.1
   have F₆ := F₅.next hL (F₅.scr.of_keeps k₆ (by decide)) ((Keeps.regs k₆).mono (by simp)) (W := [])
     (by rw [m₆]; exact Unch.refl _ _ _) (by simp)
@@ -134,9 +134,9 @@ theorem jstepO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     have hm : x ∈ [K.R.x, K.R.y, K.R.z] ++ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2,
         K.z2 + 8 * K.M.n] := List.mem_append_left _ hx
     exact ⟨by show toM _ _ _ = _; rw [m₆]; exact I₅.val x hm, by rw [m₆]; exact I₅.lt x hm⟩
-  have hR := jstepO_pt hC hM3 hO hP hP0 hn2 hn64 hnb (k := k) (i := j - 1) (J := K.J) (by omega)
+  have hR := jstepO_pt hC hM3 hO hP hP0 hn2 hn64 hnb (k := k) (i := j - 1) (J := K.J) (by omega_arith)
     (hC.onCurve_mul hQ 32) (fun hk => by
-      rw [hQe hk, Window5.mul_mul hC hP, show j - 1 + 1 = j by omega]) R₂.rep
+      rw [hQe hk, Window5.mul_mul hC hP, show j - 1 + 1 = j by omega_arith]) R₂.rep
     (Z2 := tmv C K.M.n base s₄ K.E.z) (X2 := tmv C K.M.n base s₄ K.E.x) (Y2 := tmv C K.M.n base s₄ K.E.y)
     (by have J := E₄.ent.jac; rw [tx, ty, tz] at J; exact J) (by have J := E₄.ent.z; rw [tz] at J; exact J)
   obtain ⟨Q', hQ', hQe', hR⟩ := hR
@@ -159,7 +159,7 @@ theorem jfirstO_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} (hP : onC
   have hn := hf.scr.nowrap
   have hJ := hL.J
   rw [JacWinCfg.firstO, WP.block_append_iff]
-  refine WP.mono (mov32Rbx_ok s (j := K.J - 1) (by omega)) fun s₁ ⟨b₁, k₁⟩ => ?_
+  refine WP.mono (mov32Rbx_ok s (j := K.J - 1) (by omega_arith)) fun s₁ ⟨b₁, k₁⟩ => ?_
   have hs₁ := hf.scr.of_keeps k₁ (by decide)
   have m₁ : s₁.mem = s.mem := k₁.2.1
   have F₁ := hf.next hL hs₁ ((Keeps.regs k₁).mono (sub_powClob (by decide))) (W := [])
@@ -219,7 +219,7 @@ theorem jfinO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   have hJ := hL.J
   obtain ⟨Q, -, hQe', R₃⟩ := I₃.st
   have hQe : k % 2 = 1 ∧ k < C.n → Q = mul k P := fun hk => by
-    rw [hQe' hk, OddWin.oS_zero hk.1 (by omega)]
+    rw [hQe' hk, OddWin.oS_zero hk.1 (by omega_arith)]
   -- `Y = 1` where `Z = 0`.
   have hs₃ := R₃.fr.scr
   have hn := hs₃.nowrap
@@ -233,7 +233,7 @@ theorem jfinO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
       else wordsVal s₃.mem base K.R.y K.M.n := ey₄'
   have O₄ : Outside base K.R.y (8 * K.M.n) s₃.mem s₄.mem := O₄'
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
-  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega
+  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega_arith
   have ex₄ : wordsVal s₄.mem base K.R.x K.M.n = wordsVal s₃.mem base K.R.x K.M.n :=
     O₄.wordsVal (hL.ap_oth (i := 0) (j := 1) (by decide) (by decide) (by decide)) (b64 _ (by jw_mem))
   have ez₄ : wordsVal s₄.mem base K.R.z K.M.n = wordsVal s₃.mem base K.R.z K.M.n :=
@@ -323,13 +323,13 @@ theorem winJacO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   have hP0 := hF.ne_infinity hC
   rw [JacWinCfg.windowO]
   simp only [Code.inline]
-  refine WP.seq (WP.mono (jbuildO_ok hL hp hC hM3 hO hP hP0 (by omega) hs hM hF.toJacWinPt)
+  refine WP.seq (WP.mono (jbuildO_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs hM hF.toJacWinPt)
     fun s₁ ⟨F₁, T₁⟩ => ?_)
-  refine WP.seq (WP.mono (jfirstO_ok hL hP hF (by omega) hkJ F₁ T₁) fun s₂ I₂ => ?_)
+  refine WP.seq (WP.mono (jfirstO_ok hL hP hF (by omega_arith) hkJ F₁ T₁) fun s₂ I₂ => ?_)
   refine WP.seq (WP.mono (countLoop_ok (Q := fun t => JInvO K C base size P s k 0 t)
     (Inv := fun j t => JInvO K C base size P s k j t) (n := K.J - 1)
-    (fun j t h1 h2 hi => jstepO_ok hL hp hC hM3 hO hD hP hP0 hn2 hn64 hnb hF h1 (by omega) hi)
-    (fun _ h => h) (by omega) I₂) fun s₃ I₃ => ?_)
+    (fun j t h1 h2 hi => jstepO_ok hL hp hC hM3 hO hD hP hP0 hn2 hn64 hnb hF h1 (by omega_arith) hi)
+    (fun _ h => h) (by omega_arith) I₂) fun s₃ I₃ => ?_)
   exact jfinO_ok hL hp hC hpn hone_lt hone hF I₃
 
 end VG.Proof.Weierstrass.X86_64

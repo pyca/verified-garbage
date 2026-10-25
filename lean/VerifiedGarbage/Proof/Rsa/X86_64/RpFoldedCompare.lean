@@ -5,10 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
 public import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Rsa.X86_64.RpSq
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Rsa.RecoverMath
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
 
 /-! # Comparing a folded accumulator with Montgomery ±1 -/
 

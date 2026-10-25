@@ -141,37 +141,37 @@ omit h in
 theorem sub (x : Blk) : ∃ r ∈ blkRegions c ds Dp S, Region.Sub ⟨addrOf c Dp S x, sz c ds x⟩ r := by
   cases x
   · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-  · exact ⟨⟨State.addr S + BitVec.ofNat 64 oOff, 2 * c.bs⟩, by simp, Region.sub_prefix (by simp [sz]; omega)⟩
+  · exact ⟨⟨State.addr S + BitVec.ofNat 64 oOff, 2 * c.bs⟩, by simp, Region.sub_prefix (by simp [sz]; omega_arith)⟩
   · refine ⟨⟨State.addr S + BitVec.ofNat 64 oOff, 2 * c.bs⟩, by simp, ?_⟩
     show Region.Sub ⟨State.addr S + BitVec.ofNat 64 (oOff + c.bs), c.bs⟩ _
-    rw [← VG.Offset.add_add]; exact VG.Offset.sub_base _ (by omega)
+    rw [← VG.Offset.add_add]; exact VG.Offset.sub_base _ (by omega_arith)
 
 theorem sz_pos (x : Blk) : 0 < sz c ds x := by
-  have := h.ds_pos; have := h.bw; cases x <;> simp [sz, Core.bs] <;> omega
+  have := h.ds_pos; have := h.bw; cases x <;> simp [sz, Core.bs] <;> omega_arith
 
 theorem sz_le (x : Blk) : sz c ds x ≤ c.bs := by
-  have := h.ds_le; cases x <;> simp [sz]; omega
+  have := h.ds_le; cases x <;> simp [sz]; omega_arith
 
 theorem writable (x : Blk) : Covers [⟨addrOf c Dp S x, sz c ds x⟩] wr := by
   cases x
   · exact h.wD
   · refine Covers.trans (Covers.of_sub fun r hr => ?_) h.wS
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_singleton_self _, 0, by simp [addrOf], by simp [sz]; omega⟩
+    exact ⟨_, List.mem_singleton_self _, 0, by simp [addrOf], by simp [sz]; omega_arith⟩
   · refine Covers.trans (Covers.of_sub fun r hr => ?_) h.wS
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_singleton_self _, c.bs, by simp [addrOf, VG.Offset.add_add], by simp [sz]; omega⟩
+    exact ⟨_, List.mem_singleton_self _, c.bs, by simp [addrOf, VG.Offset.add_add], by simp [sz]; omega_arith⟩
 
 theorem disjoint {x y : Blk} (hxy : x ≠ y) :
     Region.Disjoint ⟨addrOf c Dp S x, sz c ds x⟩ ⟨addrOf c Dp S y, sz c ds y⟩ := by
   have hS : S.toNat + oOff + 2 * c.bs ≤ 2 ^ 32 := h.fS
   have ot : Region.Disjoint ⟨State.addr S + BitVec.ofNat 64 oOff, c.bs⟩
       ⟨State.addr S + BitVec.ofNat 64 (oOff + c.bs), c.bs⟩ :=
-    VG.Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    VG.Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
   have dO : Region.Disjoint ⟨State.addr Dp, ds⟩ ⟨State.addr S + BitVec.ofNat 64 oOff, c.bs⟩ :=
-    h.sep.sub_right (Region.sub_prefix (by omega))
+    h.sep.sub_right (Region.sub_prefix (by omega_arith))
   have dT : Region.Disjoint ⟨State.addr Dp, ds⟩ ⟨State.addr S + BitVec.ofNat 64 (oOff + c.bs), c.bs⟩ :=
-    h.sep.sub_right (by rw [← VG.Offset.add_add]; exact VG.Offset.sub_base _ (by omega))
+    h.sep.sub_right (by rw [← VG.Offset.add_add]; exact VG.Offset.sub_base _ (by omega_arith))
   cases x <;> cases y <;> first | exact absurd rfl hxy | skip
   · exact dO
   · exact dT
@@ -192,25 +192,25 @@ theorem base_addr {s : State} (h6 : s.gpr .r6 = Dp) (h8 : s.gpr .r8 = S) (x : Bl
 theorem base_fit {s : State} (h6 : s.gpr .r6 = Dp) (h8 : s.gpr .r8 = S) (x : Blk) :
     (s.gpr (c.base x).1).toNat + (c.base x).2 + sz c ds x ≤ 2 ^ 32 := by
   have := h.fD; have := h.fS
-  cases x <;> simp [Core.base, h6, h8, sz] at * <;> omega
+  cases x <;> simp [Core.base, h6, h8, sz] at * <;> omega_arith
 
 theorem base_off (x : Blk) : (c.base x).2 + c.bs ≤ 4096 := by
   have := h.off
   have := h.bw
   have : c.bs = 4 * c.bw := rfl
-  cases x <;> simp [Core.base] at * <;> omega
+  cases x <;> simp [Core.base] at * <;> omega_arith
 
 /-- Byte `k` of block `x`, through its base register. -/
 theorem byte_addr {s : State} (h6 : s.gpr .r6 = Dp) (h8 : s.gpr .r8 = S) (x : Blk) {k : Nat}
     (hk : k < sz c ds x) :
     State.addr (s.gpr (c.base x).1 + BitVec.ofNat 32 ((c.base x).2 + k)) = addrOf c Dp S x + BitVec.ofNat 64 k := by
   have := h.base_fit h6 h8 x
-  rw [addr_add (by omega), ← VG.Offset.add_add, base_addr h6 h8]
+  rw [addr_add (by omega_arith), ← VG.Offset.add_add, base_addr h6 h8]
 
 theorem byte_in {rs : List Region} {x : Blk} (hc : Covers [⟨addrOf c Dp S x, sz c ds x⟩] rs) {k : Nat}
     (hk : k < sz c ds x) : InRegions rs (addrOf c Dp S x + BitVec.ofNat 64 k) 1 :=
-  hc _ _ ⟨_, List.mem_singleton_self _, VG.Offset.contains_base _ (by omega)
-    (by have := h.sz_le x; have := h.off; omega)⟩
+  hc _ _ ⟨_, List.mem_singleton_self _, VG.Offset.contains_base _ (by omega_arith)
+    (by have := h.sz_le x; have := h.off; omega_arith)⟩
 
 end Lay
 
@@ -245,13 +245,13 @@ theorem writeW_over_step {m : Mem} {P : Addr} {j : Nat} {f : Nat → Byte} (hj :
   by_cases hx : (x - (P + BitVec.ofNat 64 j)).toNat < 8 / 8
   · rw [ite_eq_left (show (x - (P + BitVec.ofNat 64 j)).toNat < 8 / 8 from hx)]
     have e : (x - P).toNat = j := by bv_omega
-    have z : (x - (P + BitVec.ofNat 64 j)).toNat = 0 := by omega
-    simp only [over]; rw [ite_eq_left (show (x - P).toNat < j + 1 by omega), e, z]
+    have z : (x - (P + BitVec.ofNat 64 j)).toNat = 0 := by omega_arith
+    simp only [over]; rw [ite_eq_left (show (x - P).toNat < j + 1 by omega_arith), e, z]
     simp
   · rw [ite_eq_right (show ¬ (x - (P + BitVec.ofNat 64 j)).toNat < 8 / 8 from hx)]
     simp only [over]
     by_cases h1 : (x - P).toNat < j
-    · rw [ite_eq_left h1, ite_eq_left (show (x - P).toNat < j + 1 by omega)]
+    · rw [ite_eq_left h1, ite_eq_left (show (x - P).toNat < j + 1 by omega_arith)]
     · rw [ite_eq_right h1, ite_eq_right (show ¬ (x - P).toNat < j + 1 by bv_omega)]
 
 /-- The bytes of a block after `over` of its first `k` bytes. -/
@@ -260,7 +260,7 @@ theorem bytesAt_over_prefix (m : Mem) (P : Addr) {n k : Nat} (f : Nat → Byte) 
   apply List.map_congr_left
   intro i hi
   have hi := List.mem_range.mp hi
-  simp only [over]; rw [VG.Proof.Modes.off_self P (by omega)]
+  simp only [over]; rw [VG.Proof.Modes.off_self P (by omega_arith)]
 
 /-! ## One operation, and a list of them -/
 
@@ -306,7 +306,7 @@ theorem blkMem_over {c : Core} {ds : Nat} {Dp S : BitVec 32} {wr : List Region} 
     (hv : (List.range (sz c ds x)).map f = v) {k : Nat} (hk : k = sz c ds x) :
     BlkMem c ds Dp S (over m (addrOf c Dp S x) k f) (b.set x v) := by
   subst hk
-  have hfit : ∀ y, sz c ds y ≤ 2 ^ 64 := fun y => by have := h.sz_le y; have := h.fS; omega
+  have hfit : ∀ y, sz c ds y ≤ 2 ^ 64 := fun y => by have := h.sz_le y; have := h.fS; omega_arith
   intro z
   by_cases hz : z = x
   · subst hz
@@ -333,7 +333,7 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
     {s : State} (h : Lay c ds Dp S s.wr) (h6 : s.gpr .r6 = Dp) (h8 : s.gpr .r8 = S) {b : Blks}
     (hb : BlkMem c ds Dp S s.mem b) {op : Op} (hok : opOk c.bs byte op = true) :
     WP isa (.block (c.opCode op)) s (OpsInv c ds Dp S s (runOp op b)) := by
-  have hfit : c.bs ≤ 2 ^ 64 := by have := h.fS; omega
+  have hfit : c.bs ≤ 2 ^ 64 := by have := h.fS; omega_arith
   have hl := bm_len hb
   -- A whole-block operation is on blocks of `c.bs` bytes.
   have whole : ∀ {x y : Blk}, (x != y && (!byte || (x != .d && y != .d))) = true →
@@ -350,7 +350,7 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
     let P := addrOf c Dp S .o
     have w : Covers [⟨P, 16⟩] s.wr := by simpa [P, sz, hbs] using h.writable .o
     have inW (d n : Nat) (hd : d + n ≤ 16) : InRegions s.wr (P + BitVec.ofNat 64 d) n :=
-      w _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P hd (by omega)⟩
+      w _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P hd (by omega_arith)⟩
     obtain ⟨s', he, hg, hsp, hm, hrd, hwr⟩ := Counter.incr_ok s (base := .r8) (off := oOff)
       (by decide) (by decide) (by decide) (Q := P)
       (fun d hd => h.byte_addr h6 h8 .o (by simpa [sz, hbs] using hd))
@@ -382,7 +382,7 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
           (R := ⟨addrOf c Dp S .d, ds⟩) (by
             intro r hr; simp only [List.mem_singleton] at hr; subst hr
             simpa [P, sz, hbs] using h.disjoint (x := .d) (y := .o) (by decide))
-          (by change ds ≤ 2 ^ 64; have := h.ds_le; omega) (List.mem_range.mp hi)
+          (by change ds ≤ 2 ^ 64; have := h.ds_le; omega_arith) (List.mem_range.mp hi)
       | t =>
         change bytesAt (Counter.incMem s.mem P) (addrOf c Dp S .t) c.bs = b.t
         have e : bytesAt s.mem (addrOf c Dp S .t) c.bs = b.t := hb .t
@@ -423,15 +423,15 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
     have hB := h.byte_addr h6 h8 y py
     simp only [Nat.add_zero, add0] at hA hB
     simp only [Core.opCode]
-    refine MdStream.Arm.wp_ldrb (a := addrOf c Dp S x) (by have := h.base_off x; have := h.sz_le x; omega) hA
+    refine MdStream.Arm.wp_ldrb (a := addrOf c Dp S x) (by have := h.base_off x; have := h.sz_le x; omega_arith) hA
       (by have := h.byte_in (Covers.right (rd := s.rd) (h.writable x)) px; simpa [add0] using this)
       fun s₁ u₁ => ?_
-    refine MdStream.Arm.wp_ldrb (a := addrOf c Dp S y) (by have := h.base_off y; have := h.sz_le y; omega)
+    refine MdStream.Arm.wp_ldrb (a := addrOf c Dp S y) (by have := h.base_off y; have := h.sz_le y; omega_arith)
       (by rw [u₁.other _ (base_ne9 c y)]; exact hB)
       (by rw [u₁.rd, u₁.wr]; have := h.byte_in (Covers.right (rd := s.rd) (h.writable y)) py; simpa [add0] using this)
       fun s₂ u₂ => ?_
     refine VG.Proof.CmacAes.Arm.wp_eor (MdStream.Arm.op2_reg _ _) fun s₃ u₃ => ?_
-    refine MdStream.Arm.wp_strb (a := addrOf c Dp S x) (by have := h.base_off x; have := h.sz_le x; omega)
+    refine MdStream.Arm.wp_strb (a := addrOf c Dp S x) (by have := h.base_off x; have := h.sz_le x; omega_arith)
       (by rw [u₃.other _ (base_ne9 c x), u₂.other _ (base_ne10 c x), u₁.other _ (base_ne9 c x)]; exact hA)
       (by rw [u₃.wr, u₂.wr, u₁.wr]; have := h.byte_in (h.writable x) px; simpa [add0] using this)
       fun s₄ u₄ => WP.block_nil ⟨fun r a b => ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -453,23 +453,23 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
         simp [BitVec.toNat_xor]
     · rw [em]; exact frame_over _ x _ px
     · rw [em]
-      have hfx : sz c ds x ≤ 2 ^ 64 := by have := h.sz_le x; have := h.fS; omega
+      have hfx : sz c ds x ≤ 2 ^ 64 := by have := h.sz_le x; have := h.fS; omega_arith
       intro z
       by_cases hz : z = x
       · subst hz
         rw [bytesAt_over_prefix _ _ _ hfx]
         simp only [runOp, Blks.get_set_self]
         rw [← hb z, ← hb y]
-        obtain ⟨n, hn⟩ : ∃ n, sz c ds z = n + 1 := ⟨sz c ds z - 1, by omega⟩
+        obtain ⟨n, hn⟩ : ∃ n, sz c ds z = n + 1 := ⟨sz c ds z - 1, by omega_arith⟩
         rw [hn, List.range_succ_eq_map, List.map_cons, List.map_map]
         simp only [bytesAt, List.range_succ_eq_map, List.map_cons, List.map_map, xorHead, add0]
         refine List.cons_eq_cons.mpr ⟨?_, List.map_congr_left fun i _ => by simp⟩
         cases hy : sz c ds y with
-        | zero => omega
+        | zero => omega_arith
         | succ k => simp [List.range_succ_eq_map]
       · rw [runOp, Blks.get_set_of_ne _ _ hz, ← hb z]
         exact bytesAt_over_other _ _ ((h.disjoint (Ne.symm hz)).sub_left (Region.sub_prefix px))
-          (by have := h.sz_le z; have := h.fS; omega)
+          (by have := h.sz_le z; have := h.fS; omega_arith)
   | shift x y =>
     have hxy : x ≠ y := by simp [opOk] at hok; exact hok.1
     have hx : sz c ds x = c.bs := by simp [opOk] at hok; cases x <;> simp_all [sz]
@@ -492,44 +492,44 @@ theorem opCode_wp {c : Core} {ds : Nat} {byte : Bool} (hds : byte = false → ds
     · obtain ⟨g, rd, wr, sp, hm⟩ := hi
       have h6' : t.gpr .r6 = Dp := by rw [g _ (by decide), h6]
       have h8' : t.gpr .r8 = S := by rw [g _ (by decide), h8]
-      refine MdStream.Arm.wp_ldrb (a := A + BitVec.ofNat 64 (j + 1)) (by omega)
-        (by rw [Nat.add_assoc]; exact h.byte_addr h6' h8' x (by omega))
-        (by rw [rd, wr]; exact h.byte_in (Covers.right (rd := s.rd) hwx) (by omega)) fun t₁ u₁ => ?_
-      refine MdStream.Arm.wp_strb (a := A + BitVec.ofNat 64 j) (by omega)
-        (by rw [u₁.other _ (base_ne9 c x)]; exact h.byte_addr h6' h8' x (by omega))
-        (by rw [u₁.wr, wr]; exact h.byte_in hwx (by omega)) fun t₂ u₂ =>
+      refine MdStream.Arm.wp_ldrb (a := A + BitVec.ofNat 64 (j + 1)) (by omega_arith)
+        (by rw [Nat.add_assoc]; exact h.byte_addr h6' h8' x (by omega_arith))
+        (by rw [rd, wr]; exact h.byte_in (Covers.right (rd := s.rd) hwx) (by omega_arith)) fun t₁ u₁ => ?_
+      refine MdStream.Arm.wp_strb (a := A + BitVec.ofNat 64 j) (by omega_arith)
+        (by rw [u₁.other _ (base_ne9 c x)]; exact h.byte_addr h6' h8' x (by omega_arith))
+        (by rw [u₁.wr, wr]; exact h.byte_in hwx (by omega_arith)) fun t₂ u₂ =>
           WP.block_nil ⟨fun r hr => by rw [u₂.gpr, u₁.other _ hr, g _ hr], by rw [u₂.rd, u₁.rd, rd],
             by rw [u₂.wr, u₁.wr, wr], by rw [u₂.sp, u₁.sp, sp], ?_⟩
       rw [u₂.mem, u₁.gpr, u₁.mem, hm, VG.Proof.Modes.over_out (by
-        rw [VG.Proof.Modes.off_self A (by omega)]; omega)]
+        rw [VG.Proof.Modes.off_self A (by omega_arith)]; omega_arith)]
       rw [show ((s.mem (A + BitVec.ofNat 64 (j + 1))).setWidth 32).setWidth 8 = f j by
         simp only [f, ite_eq_left (show j < c.bs - 1 from hj)]; simp]
-      exact writeW_over_step (by omega)
+      exact writeW_over_step (by omega_arith)
     · have h6' : t.gpr .r6 = Dp := by rw [g _ (by decide), h6]
       have h8' : t.gpr .r8 = S := by rw [g _ (by decide), h8]
       have hB := h.byte_addr h6' h8' y py
       simp only [Nat.add_zero, add0] at hB
-      refine MdStream.Arm.wp_ldrb (a := B) (by omega) hB
+      refine MdStream.Arm.wp_ldrb (a := B) (by omega_arith) hB
         (by rw [rd, wr]; have := h.byte_in (Covers.right (rd := s.rd) hwy) py; simpa [add0] using this) fun t₁ u₁ => ?_
-      refine MdStream.Arm.wp_strb (a := A + BitVec.ofNat 64 (c.bs - 1)) (by omega)
-        (by rw [u₁.other _ (base_ne9 c x)]; exact h.byte_addr h6' h8' x (by omega))
-        (by rw [u₁.wr, wr]; exact h.byte_in hwx (by omega)) fun t₂ u₂ => WP.block_nil ?_
+      refine MdStream.Arm.wp_strb (a := A + BitVec.ofNat 64 (c.bs - 1)) (by omega_arith)
+        (by rw [u₁.other _ (base_ne9 c x)]; exact h.byte_addr h6' h8' x (by omega_arith))
+        (by rw [u₁.wr, wr]; exact h.byte_in hwx (by omega_arith)) fun t₂ u₂ => WP.block_nil ?_
       have em : t₂.mem = over s.mem A c.bs f := by
         rw [u₂.mem, u₁.gpr, u₁.mem, hm]
         have eB : over s.mem A (c.bs - 1) f B = f (c.bs - 1) := by
           have := VG.Proof.Modes.over_sep (m := s.mem) (f := f) (P := A) (Q := B) (n := c.bs - 1) (k := sz c ds y)
-            (((h.disjoint hxy).sub_left (Region.sub_prefix (by omega)))) (i := 0) py (by omega)
+            (((h.disjoint hxy).sub_left (Region.sub_prefix (by omega_arith)))) (i := 0) py (by omega_arith)
           simp only [add0] at this
           rw [this]; simp only [f, show ¬ (c.bs - 1 < c.bs - 1) from Nat.lt_irrefl _, ite_false]
         rw [eB, show ((f (c.bs - 1)).setWidth 32).setWidth 8 = f (c.bs - 1) by simp,
-          writeW_over_step (by omega), Nat.sub_add_cancel (by omega)]
+          writeW_over_step (by omega_arith), Nat.sub_add_cancel (by omega_arith)]
       refine ⟨fun r a b => by rw [u₂.gpr, u₁.other _ a, g _ a], by rw [u₂.rd, u₁.rd, rd], by rw [u₂.wr, u₁.wr, wr],
         by rw [u₂.sp, u₁.sp, sp], by rw [em]; exact frame_over _ x _ (by rw [hx]), ?_⟩
       rw [em]
       refine blkMem_over h hb x _ f ?_ hx.symm
       rw [hx, ← hb x, ← hb y]
-      obtain ⟨n, hn⟩ : ∃ n, c.bs = n + 1 := ⟨c.bs - 1, by omega⟩
-      obtain ⟨k, hk⟩ : ∃ k, sz c ds y = k + 1 := ⟨sz c ds y - 1, by omega⟩
+      obtain ⟨n, hn⟩ : ∃ n, c.bs = n + 1 := ⟨c.bs - 1, by omega_arith⟩
+      obtain ⟨k, hk⟩ : ∃ k, sz c ds y = k + 1 := ⟨sz c ds y - 1, by omega_arith⟩
       have e1 : (List.range (n + 1)).map f =
           (List.range n).map (fun i => s.mem (A + BitVec.ofNat 64 (i + 1))) ++ [s.mem B] := by
         rw [List.range_succ, List.map_append, List.map_singleton]
@@ -579,7 +579,7 @@ theorem runOp_length {c : Core} {op : Op} {byte : Bool} (hok : opOk c.bs byte op
     by_cases hz : z = x
     · subst hz; simp only [runOp, Blks.get_set_self, List.length_append, List.length_tail, hl,
         List.length_singleton]
-      have := hpos z; omega
+      have := hpos z; omega_arith
     · simp [runOp, Blks.get_set_of_ne _ _ hz, hl]
 
 /-- The code of a list of operations. -/

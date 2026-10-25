@@ -48,7 +48,7 @@ theorem wholeR_mut {p : Prm} (L : Lay p) {m : Nat} (hm : 16 * m ≤ p.n) {M M' :
   · exact w_mut L (.inl (by decide))
   · exact w_mut L (.inl (by decide))
   · exact w_mut L (.inr ⟨by decide, by decide⟩)
-  · simpa using data_mut L (a := 0) (l := 16 * m) (by omega)
+  · simpa using data_mut L (a := 0) (l := 16 * m) (by omega_arith)
   · exact below_mut L
 
 /-- The registers `whole` writes. -/
@@ -82,7 +82,7 @@ theorem passR_mut {p : Prm} (L : Lay p) {m : Nat} (hm : 16 * m ≤ p.n) {M M' : 
   · exact w_mut L (.inl (by decide))
   · exact w_mut L (.inl (by decide))
   · exact w_mut L (.inl (by decide))
-  · simpa using data_mut L (a := 0) (l := 16 * m) (by omega)
+  · simpa using data_mut L (a := 0) (l := 16 * m) (by omega_arith)
 
 theorem whole_ok (F : BlkFn) {pre post : List Instr} {fC1 fC2 : Block → Block → Block → Block}
     {ckF1 ckF2 : Nat → Block} {p : Prm} (L : Lay p)
@@ -129,7 +129,7 @@ theorem whole_ok (F : BlkFn) {pre post : List Instr} {fC1 fC2 : Block → Block 
     (p.W + BitVec.ofNat 32 scrO)).setReg .r2 p.D).setReg .r3 (BitVec.ofNat 32 m))))
     (D := p.D) (n := m) (E₂.of_others (rs := [.r0, .r1, .r2, .r3, .r12]) (by others_tac)
       (by rfl) (by rfl) (by rfl)) (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by simp [gpr_setReg])
-      (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by omega)
+      (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by omega_arith)
       (Proof.AesGcm.Arm.covers_prefix E₂.perm.d hmn) (L.k_d.sub_right (Region.sub_prefix hmn))
       ((L.d_w' (d := scrO) (k := 2048) (by decide)).sub_left (Region.sub_prefix hmn))
       (L.bd.sub_right (Region.sub_prefix hmn))
@@ -150,24 +150,24 @@ theorem whole_ok (F : BlkFn) {pre post : List Instr} {fC1 fC2 : Block → Block 
       exacts [h₁, h₂, h₃]
   have dW : ∀ {d : Nat}, d + 16 ≤ 512 → (⟨State.addr p.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint
       ⟨State.addr p.D, 16 * m⟩ := fun hd =>
-    ((L.d_w' (k := 16) (by omega)).sub_left (Region.sub_prefix hmn)).symm
+    ((L.d_w' (k := 16) (by omega_arith)).sub_left (Region.sub_prefix hmn)).symm
   have kWP : ∀ {d : Nat}, (d + 16 ≤ 16 ∨ (48 ≤ d ∧ d + 16 ≤ 96) ∨ (112 ≤ d ∧ d + 16 ≤ 512)) →
       blockAtMem s₃.mem (State.addr p.W + BitVec.ofNat 64 d) = blockAtMem s₁.mem (State.addr p.W + BitVec.ofNat 64 d) :=
     fun hd => by
-      rw [kC (dW (by omega)) (L.w_w (.inl (by simp only [scrO]; omega)) (by omega) (by decide))
-          (L.bw' (by omega)).symm,
+      rw [kC (dW (by omega_arith)) (L.w_w (.inl (by simp only [scrO]; omega_arith)) (by omega_arith) (by decide))
+          (L.bw' (by omega_arith)).symm,
         blockAtMem_frame P₂.frame (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl
-          · exact L.w_w (a := _) (d := 96) (k := 16) (by omega) (by omega) (by decide)
-          · exact L.w_w (a := _) (d := 16) (k := 16) (by omega) (by omega) (by decide)
-          · exact L.w_w (a := _) (d := 32) (k := 16) (by omega) (by omega) (by decide)
-          · exact dW (by omega))]
+          · exact L.w_w (a := _) (d := 96) (k := 16) (by omega_arith) (by omega_arith) (by decide)
+          · exact L.w_w (a := _) (d := 16) (k := 16) (by omega_arith) (by omega_arith) (by decide)
+          · exact L.w_w (a := _) (d := 32) (k := 16) (by omega_arith) (by omega_arith) (by decide)
+          · exact dW (by omega_arith))]
   have o0₃ : blockAtMem s₃.mem (State.addr p.W + BitVec.ofNat 64 o0O) = O0 := by
     rw [kWP (by decide), R₁.mem, ho0]
   -- `Offset_0` again
   refine WP.seq (WP.block_append (WP.mono (copy16_wp (t := s₃) (W := State.addr p.W) (sO := o0O) (dO := ofsO)
-    (by rw [E₃.r11]) (by decide) (by decide) (by rw [E₃.r11]; omega) (by decide) (by decide)
+    (by rw [E₃.r11]) (by decide) (by decide) (by rw [E₃.r11]; omega_arith) (by decide) (by decide)
     (E₃.perm.wCR (by decide)) (E₃.perm.wC (by decide))) fun s₄a R₄ => ?_))
   have E₄a : Env p s₄a := E₃.of_others R₄.gpr R₄.sp R₄.rd R₄.wr
   have r8₄ : s₄a.gpr .r8 = p.D := by rw [R₄.gpr _ (by decide), g₃ _ (by decide), r8₂]
@@ -186,7 +186,7 @@ theorem whole_ok (F : BlkFn) {pre post : List Instr} {fC1 fC2 : Block → Block 
   have X₄ : ∀ k < m, blockAtMem s₄.mem (State.addr p.D + BitVec.ofNat 64 (16 * k)) =
       F.ciph p.R (sched p t.mem)
         (blockAtMem t.mem (State.addr p.D + BitVec.ofNat 64 (16 * k)) ^^^ offAt O0 l (k + 1)) := fun k hk => by
-    rw [kB₄ (bO L (by omega)), C₃.out k hk]
+    rw [kB₄ (bO L (by omega_arith)), C₃.out k hk]
     simp only [mem_setReg]
     rw [hsched, P₂.blk k hk]
     simp only [hk, ↓reduceIte, R₁.mem]

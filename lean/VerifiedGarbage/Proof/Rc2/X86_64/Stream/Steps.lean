@@ -129,18 +129,18 @@ theorem copy_ok (s : State) {src dst cnt : Reg} (hr : CopyRegs src dst cnt) {S D
     (writeBytes_frame s.mem D _ (R := ⟨D, i⟩) (by rw [hlen]; exact Region.contains_self _ _)) _
       fun r hr hcon => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact sep _ (Offset.contains_base S (by omega) (by omega)) (Region.sub_prefix (by omega) _ hcon)
+        exact sep _ (Offset.contains_base S (by omega_arith) (by omega_arith)) (Region.sub_prefix (by omega_arith) _ hcon)
   have hmem : t'.mem = writeBytes s.mem D (Spec.Rc2.bytesAt s.mem S (i + 1)) := by
     rw [mem', mem, hx, bytesAt_succ, writeBytes_snoc s.mem D (Spec.Rc2.bytesAt s.mem S i)
-      (s.mem (S + BitVec.ofNat 64 i)) (by rw [hlen]; omega), hlen]
+      (s.mem (S + BitVec.ofNat 64 i)) (by rw [hlen]; omega_arith), hlen]
   have hz : t'.zf = some (decide (i + 1 = n)) := by
-    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega_arith) (by omega_arith)]
   have gg : ∀ r, r ≠ .r10 → r ≠ .r11 → t'.gpr r = s.gpr r := fun r h₁ h₂ => by rw [g' r h₁ h₂, g r h₁ h₂]
   by_cases he : i + 1 = n
   · left
     refine ⟨by simp [eval, hz, he], by rw [hmem, he], gg, by rw [rd', trd], by rw [wr', twr]⟩
   · right
-    refine ⟨by simp [eval, hz, he], n - (i + 1), by omega, i + 1, rfl, by omega, by rw [r10', succ_ofNat], hmem, gg,
+    refine ⟨by simp [eval, hz, he], n - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, by rw [r10', succ_ofNat], hmem, gg,
       by rw [rd', trd], by rw [wr', twr]⟩
 
 end VG.Proof.Rc2.X86_64.Stream
@@ -252,7 +252,7 @@ theorem update_implies (d : Spec.Rc2.Direction) : (updateContract d).Implies (Pr
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
+      | omega_arith
   post := by sig_implies_post [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
@@ -276,7 +276,7 @@ theorem init_implies : initContract.Implies (Proof.Rc2.cbcInitScratchContract ab
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
+      | omega_arith
   post := by sig_implies_post [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h

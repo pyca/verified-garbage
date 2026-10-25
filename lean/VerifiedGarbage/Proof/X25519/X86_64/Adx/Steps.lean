@@ -126,7 +126,7 @@ theorem mulAcc_ok (s : State) {x y : Reg} {src : Src} {v : BitVec 64} {c : Bool}
       RegUpd.gpr_setFlags]
     have e1 := adc_carry (s.gpr x) (BitVec.ofNat 64 ((s.gpr .rdx).toNat * v.toNat)) c
     have e2 := mulx_arith (s.gpr .rdx) v
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg_of_ne _ _ hr.2.1, RegUpd.gpr_setFlags,
       RegUpd.gpr_setReg_of_ne _ _ hr.2.2, RegUpd.gpr_setReg_of_ne _ _ hr.1]
@@ -158,7 +158,7 @@ theorem madd_ok (s : State) {x y : Reg} {src : Src} {v : BitVec 64} {c o : Bool}
     have e1 := adc_carry (s.gpr x) (BitVec.ofNat 64 ((s.gpr .rdx).toNat * v.toNat)) o
     have e2 := adc_carry (s.gpr y) (BitVec.ofNat 64 ((s.gpr .rdx).toNat * v.toNat / 2 ^ 64)) c
     have e3 := mulx_arith (s.gpr .rdx) v
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2, RegUpd.gpr_setReg_of_ne _ _ hr.2.2.1,
       RegUpd.gpr_setFlags, RegUpd.gpr_setReg_of_ne _ _ hr.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.1]
@@ -192,7 +192,7 @@ theorem maddLast_ok (s : State) {x y : Reg} {src : Src} {v : BitVec 64} {c o : B
         (BitVec.ofNat 64 ((s.gpr .rdx).toNat * v.toNat)).toNat + o.toNat))
     have e4 := mulx_arith (s.gpr .rdx) v
     simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at e2 e3 ⊢
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg_of_ne _ _ hr.2.2, RegUpd.gpr_setReg_of_ne _ _ hr.2.1,
       RegUpd.gpr_setFlags, RegUpd.gpr_setReg_of_ne _ _ hr.1]
@@ -214,7 +214,7 @@ theorem dblAdd_ok (s : State) {x y : Reg} {c o : Bool} (hc : s.cf = some c) (ho 
   refine ⟨_, _, (by trivial), (by trivial), ?_, fun r hr => ?_, (by trivial), (by trivial), (by trivial)⟩
   · have e1 := adc_carry (s.gpr x) (s.gpr x) c
     have e2 := adc_carry (s.gpr x + s.gpr x + (BitVec.ofBool c).setWidth 64) (s.gpr y) o
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_setFlags]
 
@@ -234,7 +234,7 @@ theorem carries_ok (s : State) {x : Reg} {c o : Bool} (hc : s.cf = some c) (ho :
   · have e1 := adc_carry (s.gpr x) 0 c
     have e2 := adc_carry (s.gpr x + 0 + (BitVec.ofBool c).setWidth 64) 0 o
     simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at e1 e2 ⊢
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_setFlags]
 

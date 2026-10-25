@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # Deterministic ECDSA on AArch64: `h = bits2octets(digest)`

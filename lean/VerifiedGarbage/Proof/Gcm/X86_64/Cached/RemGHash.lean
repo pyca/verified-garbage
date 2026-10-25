@@ -129,13 +129,13 @@ theorem hashStep_eq {X : Nat → Block} {T : Nat → BitVec 128} {y : Block} {l 
     (y2 x2 pw : BitVec 128) (hp : j ≠ 0 → p = laneAccG X T y l (4 * j)) (hy : y2 = if l = 0 then y else 0)
     (hx : X (4 * j + l) = x2) (hT : T (4 * j + l) = pw) :
     (if j = 0 then Prod.zero else p).acc ((if j = 0 then y2 else 0) ^^^ x2) pw = laneAccG X T y l (4 * (j + 1)) := by
-  rw [show 4 * (j + 1) = 4 * j + 4 by omega, laneAccG_quad X T y j hl, hx, hT]
+  rw [show 4 * (j + 1) = 4 * j + 4 by omega_arith, laneAccG_quad X T y j hl, hx, hT]
   by_cases hj : j = 0
   · subst hj
     simp only [ite_true, hy, Nat.mul_zero, Nat.zero_add]
     rfl
   · rw [ite_eq_right_iff.mpr (fun h => absurd h hj), ite_eq_right_iff.mpr (fun h => absurd h hj), ← hp hj,
-      ite_eq_right_iff.mpr (fun h => absurd (show j = 0 by omega) hj)]
+      ite_eq_right_iff.mpr (fun h => absurd (show j = 0 by omega_arith) hj)]
 
 /-- The registers `rs`, from the `j`-th, hashed with the powers at
 `rax + 64 j` …, the last's through the mask of its `c` blocks: the lanes'
@@ -172,19 +172,19 @@ theorem hashG_ok : ∀ (rs : List XReg) (j : Nat) (t : State) {c : Nat} (X : Nat
       simp only [prod, State.zproj_xmm, f₁.zlane .xmm8 (by decide) l hl, f₁.zlane .xmm9 (by decide) l hl,
         f₁.zlane .xmm10 (by decide) l hl]
     · rw [f₁.zlane _ (by decide) l hl, h2 l hl]
-    · rw [hX l (by omega), f₁.zlane _ (fun h => hb12 (List.mem_singleton.mp h)) l hl,
-        show l / 4 = 0 by omega, show l % 4 = l by omega]; rfl
-    · rw [hT l (by omega), l₁ l hl, Offset.add_add, show 64 * j + 16 * l = 16 * (4 * j + l) by omega]
+    · rw [hX l (by omega_arith), f₁.zlane _ (fun h => hb12 (List.mem_singleton.mp h)) l hl,
+        show l / 4 = 0 by omega_arith, show l % 4 = l by omega_arith]; rfl
+    · rw [hT l (by omega_arith), l₁ l hl, Offset.add_add, show 64 * j + 16 * l = 16 * (4 * j + l) by omega_arith]
   | b :: b₂ :: bs, j, t, c, X, T, y, _, hrs, hlen, hc, hk, hbk, h0, h2, hin, hX, hT, hP => by
     have hb := hrs b List.mem_cons_self
     have hb12 : b ≠ .xmm12 := by simp only [aregs, List.mem_cons, List.not_mem_nil, or_false] at hb; rcases hb with
       rfl | rfl | rfl | rfl <;> decide
     simp only [List.length_cons] at hin hX hT hlen ⊢
-    have hn64 : 64 * (bs.length + 1 + 1 - 1) + 16 * c < 2 ^ 64 := by omega
+    have hn64 : 64 * (bs.length + 1 + 1 - 1) + 16 * c < 2 ^ 64 := by omega_arith
     rw [show hashG (b :: b₂ :: bs) j = ([.vmovdqu32Load .xmm12 (at_ .rax (64 * j))] : List Instr) ++ hash1 b j ++
       hashG (b₂ :: bs) (j + 1) from rfl, WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (ld512_ok .xmm12 .rax (64 * j) t
-      (by have := CallLay.inRegions_sub (off := 0) (l := 64) hin (by omega) hn64
+      (by have := CallLay.inRegions_sub (off := 0) (l := 64) hin (by omega_arith) hn64
           rwa [BitVec.add_zero] at this)) fun t₁ ⟨l₁, f₁⟩ => ?_
     refine WP.mono (hash1_ok hb j t₁ fun l hl => by rw [f₁.zlane _ (by decide) l hl, h0 l hl])
       fun t₂ ⟨p₂, f₂⟩ => ?_
@@ -203,34 +203,34 @@ theorem hashG_ok : ∀ (rs : List XReg) (j : Nat) (t : State) {c : Nat} (X : Nat
         simp only [prod, State.zproj_xmm, f₁.zlane .xmm8 (by decide) l hl, f₁.zlane .xmm9 (by decide) l hl,
           f₁.zlane .xmm10 (by decide) l hl]
       · rw [f₁.zlane _ (by decide) l hl, h2 l hl]
-      · rw [hX l (by omega), f₁.zlane _ (fun h => hb12 (List.mem_singleton.mp h)) l hl,
-          show l / 4 = 0 by omega, show l % 4 = l by omega]; rfl
-      · rw [hT l (by omega), ite_eq_left (by omega), l₁ l hl, Offset.add_add,
-          show 64 * j + 16 * l = 16 * (4 * j + l) by omega]
+      · rw [hX l (by omega_arith), f₁.zlane _ (fun h => hb12 (List.mem_singleton.mp h)) l hl,
+          show l / 4 = 0 by omega_arith, show l % 4 = l by omega_arith]; rfl
+      · rw [hT l (by omega_arith), ite_eq_left (by omega_arith), l₁ l hl, Offset.add_add,
+          show 64 * j + 16 * l = 16 * (4 * j + l) by omega_arith]
     refine WP.mono (hashG_ok (b₂ :: bs) (j + 1) t₂ X T y (List.cons_ne_nil _ _)
-      (fun r hr => hrs r (List.mem_cons_of_mem _ hr)) (by simp only [List.length_cons]; omega) hc
+      (fun r hr => hrs r (List.mem_cons_of_mem _ hr)) (by simp only [List.length_cons]; omega_arith) hc
       (by rw [f₁₂.gpr]; exact hk) (by rw [f₁₂.gpr]; exact hbk)
       (fun l hl => by rw [keep _ (by decide) l hl, h0 l hl]) (fun l hl => by rw [keep _ (by decide) l hl, h2 l hl])
       (by
         rw [f₁₂.rd, f₁₂.wr, f₁₂.gpr]
         have := CallLay.inRegions_sub (off := 64) (l := 64 * ((b₂ :: bs).length - 1) + 16 * c) hin
-          (by simp only [List.length_cons]; omega) hn64
-        rwa [Offset.add_add, show 64 * j + 64 = 64 * (j + 1) by omega] at this)
+          (by simp only [List.length_cons]; omega_arith) hn64
+        rwa [Offset.add_add, show 64 * j + 64 = 64 * (j + 1) by omega_arith] at this)
       (fun n hn => by
         simp only [List.length_cons] at hn
-        rw [show 4 * (j + 1) + n = 4 * j + (n + 4) by omega, hX (n + 4) (by omega),
-          show (n + 4) / 4 = n / 4 + 1 by omega, show (n + 4) % 4 = n % 4 by omega, List.getD_cons_succ,
+        rw [show 4 * (j + 1) + n = 4 * j + (n + 4) by omega_arith, hX (n + 4) (by omega_arith),
+          show (n + 4) / 4 = n / 4 + 1 by omega_arith, show (n + 4) % 4 = n % 4 by omega_arith, List.getD_cons_succ,
           kreg _ (by
-            rw [← List.getElem_eq_getD (h := by simp only [List.length_cons]; omega)]
-            exact List.mem_cons_of_mem _ (List.getElem_mem _)) _ (by omega)])
+            rw [← List.getElem_eq_getD (h := by simp only [List.length_cons]; omega_arith)]
+            exact List.mem_cons_of_mem _ (List.getElem_mem _)) _ (by omega_arith)])
       (fun n hn => by
         simp only [List.length_cons] at hn ⊢
-        rw [show 4 * (j + 1) + n = 4 * j + (n + 4) by omega, hT (n + 4) (by omega), f₁₂.mem, f₁₂.gpr]
+        rw [show 4 * (j + 1) + n = 4 * j + (n + 4) by omega_arith, hT (n + 4) (by omega_arith), f₁₂.mem, f₁₂.gpr]
         by_cases h : n < 4 * (bs.length + 1 - 1) + c
-        · rw [ite_eq_left (by omega), ite_eq_left h]
-        · rw [ite_eq_right (by omega), ite_eq_right h])
+        · rw [ite_eq_left (by omega_arith), ite_eq_left h]
+        · rw [ite_eq_right (by omega_arith), ite_eq_right h])
       (fun _ => step)) fun t' ⟨p', f'⟩ => ⟨fun l hl => ?_, ?_⟩
-    · rw [p' l hl, show j + 1 + (b₂ :: bs).length = j + (bs.length + 1 + 1) by simp only [List.length_cons]; omega]
+    · rw [p' l hl, show j + 1 + (b₂ :: bs).length = j + (bs.length + 1 + 1) by simp only [List.length_cons]; omega_arith]
     · exact (f₁₂.comp f').mono (by decide)
 
 end VG.Proof.Gcm.X86_64.StitchZH

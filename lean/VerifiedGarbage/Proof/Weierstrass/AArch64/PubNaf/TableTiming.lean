@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.CoZTable
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # Timing of the public NAF's table
@@ -53,7 +52,7 @@ theorem storeFields_ok {K : WinCfg} {base : Addr} {size m : Nat} {C : Curve}
     have := cw 1 (by decide); rw [tblPt_y, hL.rxy]; simpa using this
   have ez : wordsVal t.mem base (K.tblPt (m + 1)).z K.M.n = wordsVal s.mem base K.R.z K.M.n := by
     have := cw 2 (by decide)
-    rw [tblPt_z, hL.rxz, show K.R.x + 16 * K.M.n = K.R.x + 8 * K.M.n * 2 by omega]
+    rw [tblPt_z, hL.rxz, show K.R.x + 16 * K.M.n = K.R.x + 8 * K.M.n * 2 by omega_arith]
     simpa using this
   have kp : ProgKeep K.M base (jacCoords (K.tblPt (m + 1))) s t := by
     refine ⟨fun r hr => kt.gpr r (fun h => hr (by
@@ -72,7 +71,7 @@ theorem storeFields_ok {K : WinCfg} {base : Addr} {size m : Nat} {C : Curve}
     · rw [ey]; exact hI.lt _ (hR _ (by simp [jacCoords]))
     · rw [ez]; exact hI.lt _ (hR _ (by simp [jacCoords]))
   have hTs : ∀ x ∈ jacCoords (K.tblPt (m + 1)), x ∈ winSlots K := fun x hx =>
-    tbl_slot (a := m + 1) (by omega) (by omega) x (by simpa [jacCoords] using hx)
+    tbl_slot (a := m + 1) (by omega_arith) (by omega_arith) x (by simpa [jacCoords] using hx)
   refine ⟨kp, hI.of_progKeep hW.lay kp hTs hlt, ?_⟩
   simp only [Prod.mk.injEq]
   refine ⟨?_, ?_, ?_⟩
@@ -95,14 +94,14 @@ theorem store_relCT {K : WinCfg} {base : Addr} {size m : Nat} {C : Curve}
   let F := fun x => if x = (K.tblPt (m + 1)).x then E K.R.x
     else if x = (K.tblPt (m + 1)).y then E K.R.y else E K.R.z
   have hn0 := hW.n0
-  have qxy : (K.tblPt (m + 1)).y ≠ (K.tblPt (m + 1)).x := by simp only [WinCfg.tblPt]; omega
-  have qxz : (K.tblPt (m + 1)).z ≠ (K.tblPt (m + 1)).x := by simp only [WinCfg.tblPt]; omega
-  have qyz : (K.tblPt (m + 1)).z ≠ (K.tblPt (m + 1)).y := by simp only [WinCfg.tblPt]; omega
+  have qxy : (K.tblPt (m + 1)).y ≠ (K.tblPt (m + 1)).x := by simp only [WinCfg.tblPt]; omega_arith
+  have qxz : (K.tblPt (m + 1)).z ≠ (K.tblPt (m + 1)).x := by simp only [WinCfg.tblPt]; omega_arith
+  have qyz : (K.tblPt (m + 1)).z ≠ (K.tblPt (m + 1)).y := by simp only [WinCfg.tblPt]; omega_arith
   apply fieldWrite_relCT (F := F) (W := jacCoords (K.tblPt (m + 1)))
     (Pre := fun s => s.gpr .x20 = off base (stride K * m)) hW.lay hct
   · intro s t hp ps pt
     exact agree_of hp (ps.trans pt.symm)
-  · exact fun x hx => tbl_slot (a := m + 1) (by omega) (by omega) x (by simpa [jacCoords] using hx)
+  · exact fun x hx => tbl_slot (a := m + 1) (by omega_arith) (by omega_arith) x (by simpa [jacCoords] using hx)
   · intro x hx; exact List.mem_append.mp hx
   · intro s hi hp
     refine WP.mono (storeFields_ok hL hi hm hp hR) fun t ⟨hk, it, ht⟩ => ⟨_, hk, it, ?_⟩
@@ -160,7 +159,7 @@ theorem tblLive_succ (K : WinCfg) {m : Nat} :
     · apply List.mem_append_left
       simp only [jacCoords, tblPt_x, tblPt_y, tblPt_z, Nat.add_sub_cancel, List.mem_cons,
         List.not_mem_nil, or_false]
-      rcases (show i = 3 * m ∨ i = 3 * m + 1 ∨ i = 3 * m + 2 by omega) with rfl | rfl | rfl
+      rcases (show i = 3 * m ∨ i = 3 * m + 1 ∨ i = 3 * m + 2 by omega_arith) with rfl | rfl | rfl
       · exact Or.inl rfl
       · exact Or.inr (Or.inl rfl)
       · exact Or.inr (Or.inr rfl)
@@ -194,7 +193,7 @@ theorem bump_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) (a : State) {j : 
         a'.gpr .x19 = BitVec.ofNat 64 (j - 1)) := by
   rw [show ([.addImm .x .x20 .x20 (stride K), decCounter] : List Instr) =
     [.addImm .x .x20 .x20 (stride K)] ++ [decCounter] from rfl, WP.block_append_iff]
-  have hst : stride K < 4096 := by have := hL.n6; simp only [stride]; omega
+  have hst : stride K < 4096 := by have := hL.n6; simp only [stride]; omega_arith
   refine WP.mono (addImm_ok a (d := .x20) (n := .x20) hst) fun a₁ ⟨v₁, k₁⟩ => ?_
   have b₁ : a₁.gpr .x19 = BitVec.ofNat 64 j := (k₁.gpr _ (by decide)).trans hb
   refine WP.mono (decCounter_ok a₁ hj hj' b₁) fun a₂ ⟨v₂, k₂⟩ => ?_
@@ -257,7 +256,7 @@ theorem tableStepRaw_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
             a'.sp = a.sp ∧ a'.gpr .x0 = a.gpr .x0 ∧ a'.wr = a.wr ∧
             a'.gpr .x20 = off base (stride K * (m + 1)) ∧ a'.gpr .x19 = BitVec.ofNat 64 (8 - (m + 1)) := by
         intro a a' ta h19 h20 ea
-        obtain ⟨_, _, xa, ka, v20, v19⟩ := bump_ok hL a (j := 8 - m) (by omega) (by omega) h19
+        obtain ⟨_, _, xa, ka, v20, v19⟩ := bump_ok hL a (j := 8 - m) (by omega_arith) (by omega_arith) h19
         obtain ⟨_, rfl⟩ := Exec.det ea xa
         refine ⟨ka.mem, ka.sp, ka.gpr _ (by decide), ka.wr, ?_, by rw [v19]; congr 1⟩
         rw [v20, h20]
@@ -332,7 +331,7 @@ theorem tableInit_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
       rw [show ([.addImm .x .x20 .x20 (stride K), .movz .x .x19 7 0] : List Instr) =
         [.addImm .x .x20 .x20 (stride K)] ++ [.movz .x .x19 (BitVec.ofNat 16 7) 0] from rfl,
         WP.block_append_iff]
-      have hst : stride K < 4096 := by have := hL.n6; simp only [stride]; omega
+      have hst : stride K < 4096 := by have := hL.n6; simp only [stride]; omega_arith
       refine WP.mono (addImm_ok a (d := .x20) (n := .x20) hst) fun a₁ ⟨v₁, k₁⟩ => ?_
       refine WP.mono (setCounter_ok a₁ (j := 7) (by decide)) fun a₂ ⟨v₂, k₂⟩ => ?_
       refine ⟨⟨?_, v₂⟩, (k₁.mono (by decide)).trans (k₂.mono (by decide))⟩
@@ -388,7 +387,7 @@ theorem dblu_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
       refine Or.inl (List.mem_append_left _ ?_)
       simp only [jacCoords, tblPt_x, tblPt_y, tblPt_z, Nat.add_sub_cancel, List.mem_cons,
         List.not_mem_nil, or_false]
-      rcases (show i = 3 * 0 ∨ i = 3 * 0 + 1 ∨ i = 3 * 0 + 2 by omega) with rfl | rfl | rfl
+      rcases (show i = 3 * 0 ∨ i = 3 * 0 + 1 ∨ i = 3 * 0 + 2 by omega_arith) with rfl | rfl | rfl
       · exact Or.inl rfl
       · exact Or.inr (Or.inl rfl)
       · exact Or.inr (Or.inr rfl)
@@ -415,11 +414,11 @@ theorem table_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     intro j
     by_cases hj : 1 ≤ j
     · by_cases hj7 : j ≤ 7
-      · have e8 : 8 - (8 - j) = j := by omega
-        refine (tableStepRaw_relCT (base := base) (C := C) hL hp hc (m := 8 - j) (by omega)
-          (by omega)).mono (P' := I j) (fun _ _ h => by rw [e8]; exact h.2.2) ?_
+      · have e8 : 8 - (8 - j) = j := by omega_arith
+        refine (tableStepRaw_relCT (base := base) (C := C) hL hp hc (m := 8 - j) (by omega_arith)
+          (by omega_arith)).mono (P' := I j) (fun _ _ h => by rw [e8]; exact h.2.2) ?_
         intro s t ⟨e, s20, t20, s19, t19⟩
-        have cn : 8 - (8 - j + 1) = j - 1 := by omega
+        have cn : 8 - (8 - j + 1) = j - 1 := by omega_arith
         rw [cn] at s19 t19
         refine ⟨by simp only [eval, State.read, s19, t19], fun he => ?_, fun he => ?_⟩
         · have hz : j - 1 = 0 := by
@@ -428,20 +427,20 @@ theorem table_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
               rw [bne_iff_ne]
               intro hh
               have hh' := congrArg BitVec.toNat hh
-              simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : j - 1 < 2 ^ 64)] at hh'
+              simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : j - 1 < 2 ^ 64)] at hh'
               exact hn hh'
             have htrue : eval (.nonzero .x .x19) s = some true := by
               change some (s.read .x .x19 != 0) = some true
               rw [read_x, s19, hb]
             rw [htrue] at he; cases he
-          have hx : 8 - j + 1 = 8 := by omega
+          have hx : 8 - j + 1 = 8 := by omega_arith
           rw [hx] at e
           exact e
         · have hz : j - 1 ≠ 0 := by
             intro hz; simp only [eval, State.read, s19, hz] at he; cases he
-          have hx : 8 - j + 1 = 8 - (j - 1) := by omega
+          have hx : 8 - j + 1 = 8 - (j - 1) := by omega_arith
           rw [hx] at e s20 t20
-          exact ⟨j - 1, by omega, by omega, by omega, e, s20, t20, s19, t19⟩
+          exact ⟨j - 1, by omega_arith, by omega_arith, by omega_arith, e, s20, t20, s19, t19⟩
       · exact RelCT.of_false (fun _ _ h => hj7 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
   rw [table]

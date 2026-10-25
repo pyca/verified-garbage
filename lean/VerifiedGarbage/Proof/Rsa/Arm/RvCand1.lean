@@ -50,17 +50,17 @@ variable {P : RP}
 
 theorem gR1_mont (j : Nat) : gR P j 1 * Rm P % P.n = (j + 2) * R2v P % P.n := by
   rw [gR, Nat.mod_mul_mod, Nat.mul_mod_mod, Nat.pow_one, Nat.mul_assoc, ← Nat.pow_add,
-    show 64 * P.w6 + 64 * P.w6 = 128 * P.w6 by omega]
+    show 64 * P.w6 + 64 * P.w6 = 128 * P.w6 by omega_arith]
 
 theorem candSet_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (h101 : 101 < P.n) {E : State → Prop} {j : Nat} (hj : j < 100) :
     VP (Cs P E j) (.seq candSet (seqs (mmul iG iG iR2))) (Xs P E j 0) := by
-  have hn0 : 0 < P.n := by omega
+  have hn0 : 0 < P.n := by omega_arith
   simp only [candSet, seqs]
   refine VP.assoc' (VP.seq (St.pcopy gZ_taint (o := mG) (a := aZ) (by decide) (by decide) (by decide) (by decide)
     (by decide)) ?_)
   refine VP.assoc' (VP.seq (St.pstoreG (by decide) (by decide) (fun σ _ => ⟨?_, ?_⟩) (by decide)) ?_)
   · have : Vc P σ j 0 sCand = j := by simp [Vc, upd, sCnt, sCand]
-    omega
+    omega_arith
   · simp [AM, upd, aZ, mG, aOne, mR2, aO, aNg]
   refine VP.assoc' (VP.seq (St.pcopy yO_taint (o := mY) (a := aO) (by decide) (by decide) (by decide) (by decide)
     (by decide)) ?_)
@@ -79,10 +79,10 @@ theorem candSet_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (h101 : 101 < P.n) {E : State 
           (upd (upd (AM P) mG (AM P aZ)) mG (Vc P σ j 0 sCand + 2) aO)) (mBase + iR2) = R2v P := by
         simp [upd, AM, mG, mY, mBase, iR2, mR2, aO, aNg]
       rw [eG, eR]
-      exact ⟨by omega, Nat.mod_lt _ hn0, Nat.mod_lt _ hn0, gR1_mont j⟩
+      exact ⟨by omega_arith, Nat.mod_lt _ hn0, Nat.mod_lt _ hn0, gR1_mont j⟩
     · intro x hx
       simp only [Le, liveM, List.mem_cons, List.not_mem_nil, or_false] at hx
-      refine ⟨by simp only [List.mem_cons, List.not_mem_nil, or_false]; omega, ?_⟩
+      refine ⟨by simp only [List.mem_cons, List.not_mem_nil, or_false]; omega_arith, ?_⟩
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
         simp [Ae, AM, upd, mG, mY, mBase, iG, aZ, aO, aN, aOne, aNg, mR2, gR, Ov, Nat.mod_one]
     · intro x hx

@@ -37,28 +37,28 @@ def TabOK (m : Mem) (B : Addr) (w c b : Nat) : Prop :=
 
 theorem slot_lt24 (w : Nat) {j : Nat} (hj : j ≤ 24) : slot w j ≤ 256 + 192 * (w + 2) := by
   have := slot_mono w hj
-  have e : slot w 24 = 256 + 192 * (w + 2) := by unfold slot hdrBytes; omega
-  omega
+  have e : slot w 24 = 256 + 192 * (w + 2) := by unfold slot hdrBytes; omega_arith
+  omega_arith
 
 theorem slot_lt27 (w : Nat) {j : Nat} (hj : j ≤ 27) : slot w j ≤ 256 + 216 * (w + 2) := by
   have := slot_mono w hj
-  have e : slot w 27 = 256 + 216 * (w + 2) := by unfold slot hdrBytes; omega
-  omega
+  have e : slot w 27 = 256 + 216 * (w + 2) := by unfold slot hdrBytes; omega_arith
+  omega_arith
 
 /-- The table survives changes below it. -/
 theorem TabOK.of_low {m m' : Mem} {B : Addr} {w c b : Nat} {rs : List (Nat × Nat)} (h : TabOK m B w c b)
     (hf : Frm B rs m m') (hl : ∀ r ∈ rs, r.1 + r.2 ≤ slot w 8) (hw : w < 2 ^ 31) : TabOK m' B w c b := fun j hj => by
-  have := slot_mono w (show 8 ≤ 8 + j by omega)
-  have := slot_lt24 w (show 8 + j + 1 ≤ 24 by omega)
+  have := slot_mono w (show 8 ≤ 8 + j by omega_arith)
+  have := slot_lt24 w (show 8 + j + 1 ≤ 24 by omega_arith)
   have := slot_succ w (8 + j)
-  rw [hf.wv_eq (fun r hr => Or.inr (by have := hl r hr; omega)) (by omega)]
+  rw [hf.wv_eq (fun r hr => Or.inr (by have := hl r hr; omega_arith)) (by omega_arith)]
   exact h j hj
 
 /-- `ECtx` survives changes below the table. -/
 theorem ECtx.of_low {m m' : Mem} {B : Addr} {w c : Nat} {rs : List (Nat × Nat)} (h : ECtx m B w c)
     (hf : Frm B rs m m') (hl : ∀ r ∈ rs, r.1 + r.2 ≤ slot w 8) (hn : B.toNat + slot w aE + 8 * (w + 1) ≤ 2 ^ 64) :
     ECtx m' B w c :=
-  h.of_frm hf (fun r hr => Or.inr (by have := hl r hr; have := slot_mono w (show 8 ≤ aE by decide); omega)) hn
+  h.of_frm hf (fun r hr => Or.inr (by have := hl r hr; have := slot_mono w (show 8 ≤ aE by decide); omega_arith)) hn
 
 /-- What a window changes. -/
 def winRanges (w : Nat) : List (Nat × Nat) :=
@@ -119,7 +119,7 @@ theorem winRanges_low (w : Nat) : ∀ r ∈ winRanges w, r.1 + r.2 ≤ slot w 8 
   have h5 := hdr_lt_slot w 8 (show 31 < 32 by decide)
   simp only [winRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-    simp only [kG, kFlag, kPlen, kV, kT0, kBits, kT2, sFn] at * <;> omega
+    simp only [kG, kFlag, kPlen, kV, kT0, kBits, kT2, sFn] at * <;> omega_arith
 
 /-- `MrCtx` survives changes within a window's ranges. -/
 theorem MrCtx.of_win {s t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm : Nat}
@@ -163,7 +163,7 @@ theorem win_flag (P e1 em z : Bool) :
 theorem top_nibble (V : BitVec 64) : (V >>> 60).toNat < 16 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := V.isLt
-  omega
+  omega_arith
 
 theorem mrWin_eq (mul : Nat → Nat → Nat → Prog isa) : mrWin mul =
     mrSq mul ++ (mrSq mul ++ (mrSq mul ++ mrSq mul)) ++
@@ -302,7 +302,7 @@ theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
     rw [hh₇ kBits (Or.inr (Or.inl rfl)), hlo₁ kBits (Or.inr rfl)]; exact hnb
   have hP₇ : word s₇.mem B (8 * kFlag) = mask s4.2 := by rw [hh₇ kFlag (Or.inr (Or.inr rfl))]; exact hP₁
   have hz : decide ((V >>> 60).toNat < (1 : BitVec 64).toNat) = decide (d = 0) := by
-    rw [hd', show (1 : BitVec 64).toNat = 1 from rfl]; exact decide_eq_decide.mpr (by omega)
+    rw [hd', show (1 : BitVec 64).toNat = 1 from rfl]; exact decide_eq_decide.mpr (by omega_arith)
   refine WP.mono (WP.keep [.rax, .rdx, .rbp, .r15] (Q := fun t => t.mem = ((s₇.mem.writeW (off B (8 * kFlag))
       (mask (if decide (d = 0) then s4.2 else decide (s4.1 * Spec.Rsa.powMod b d c % c = 1) ||
         decide (s4.1 * Spec.Rsa.powMod b d c % c = c - 1)))).writeW (off B (8 * kV)) (V <<< 4)).writeW

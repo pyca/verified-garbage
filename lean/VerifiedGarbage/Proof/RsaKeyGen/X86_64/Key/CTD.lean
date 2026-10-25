@@ -51,9 +51,9 @@ theorem KS.arrSome {I : KIn} {m₀ : Mem} {s t : State} (h : KS I m₀ s) {j : N
   obtain ⟨v, hm⟩ := hm
   have hn := h.ws.scr.nowrap
   have sj := h.ws.sl hj
-  have o := writeW_outside s.mem I.B v (d := slot I.W j) (by omega)
+  have o := writeW_outside s.mem I.B v (d := slot I.W j) (by omega_arith)
   rw [← hm] at o
-  have f := KF.arr1 (I := I) (j := j) o (Nat.le_refl _) (by omega)
+  have f := KF.arr1 (I := I) (j := j) o (Nat.le_refl _) (by omega_arith)
   exact ⟨h.step f (all_mut_arr hj) k hr, f⟩
 
 /-! ## `e` into `aE` -/
@@ -73,7 +73,7 @@ theorem loadEvBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
   have hdi₃ : s₃.gpr .rdi = I.B := ((k₂.trans k₃).gpr (by decide)).trans h.ws.rdi
   refine WP.mono (WP.keep [.rax] (Q := fun t => ∃ v : BitVec 64, t.mem = s.mem.writeW (off I.B (slot I.W aE)) v) (by
     xrun [State.ea, at0, hdr, hbx, hdi₃, hdrOff, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
-      hs₃.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega), hs₃.st (d := slot I.W aE) (by omega),
+      hs₃.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_arith), hs₃.st (d := slot I.W aE) (by omega_arith),
       m₃, m₂]
     exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k₄⟩ => ?_
   have kk := (k₂.trans k₃).trans k₄
@@ -100,11 +100,11 @@ theorem lGe2_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kOk] al
   refine rs_app (by simp [ltA]) (by simp) (ltA_ct (G := F) (by decide) (by decide)
     (fun I s t hZ hf hm k _ => hF I s t hZ hf (kf_eq hm) (k.mono (by decide))) (by taint_decide)) ?_
   exact kg_rdi (by taint_decide) fun I _ s h _ hf => by
-    have hst := h.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+    have hst := h.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_arith)
     refine WP.mono (WP.keep [.rbp] (Q := fun t => ∃ v : BitVec 64, t.mem = s.mem.writeW (off I.B (8 * kOk)) v) (by
       xrun [State.ea, hdr, h.ws.rdi, hdrOff, hst]
       exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ?_
-    obtain ⟨ht, f⟩ := h.hdrSome (by unfold kOk sFn; omega) hm k (by decide)
+    obtain ⟨ht, f⟩ := h.hdrSome (by unfold kOk sFn; omega_arith) hm k (by decide)
     exact ⟨ht, hF I s t h.hZ hf (f.mono (by decide)) (k.mono (by decide))⟩
 
 theorem gcdIsOne_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kOk] allR) :
@@ -116,12 +116,12 @@ theorem gcdIsOne_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kOk
   refine rs_app (by simp [eqMask, eqA]) (by simp) (eqMask_ct (G := F) (by decide) (by decide)
     (fun I s t hZ hf hm k _ => hF I s t hZ hf (kf_eq hm) (k.mono (by decide))) (by taint_decide)) ?_
   exact kg_rdi (by taint_decide) fun I _ s h _ hf => by
-    have hst := h.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
-    have hld := h.ws.scr.ld (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+    have hst := h.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_arith)
+    have hld := h.ws.scr.ld (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_arith)
     refine WP.mono (WP.keep [.rbp] (Q := fun t => ∃ v : BitVec 64, t.mem = s.mem.writeW (off I.B (8 * kOk)) v) (by
       xrun [State.ea, hdr, h.ws.rdi, hdrOff, hst, hld]
       exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ?_
-    obtain ⟨ht, f⟩ := h.hdrSome (by unfold kOk sFn; omega) hm k (by decide)
+    obtain ⟨ht, f⟩ := h.hdrSome (by unfold kOk sFn; omega_arith) hm k (by decide)
     exact ⟨ht, hF I s t h.hZ hf (f.mono (by decide)) (k.mono (by decide))⟩
 
 /-! ## `inverse` from `invFrom` -/
@@ -157,11 +157,11 @@ theorem invFrom_ct {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hjU : j
 
 theorem dZero_ct : RelCT isa (Two (KG NF)) (.block dZero) (Two (KG NF)) :=
   kg_rdi (by taint_decide) fun I _ s h _ _ => by
-    have hst := h.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+    have hst := h.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_arith)
     refine WP.mono (WP.keep [.rax] (Q := fun t => ∃ v : BitVec 64, t.mem = s.mem.writeW (off I.B (8 * kOk)) v) (by
       unfold dZero
       xrun [State.ea, hdr, h.ws.rdi, hdrOff, hst]
-      exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ⟨(h.hdrSome (by unfold kOk sFn; omega) hm k (by decide)).1, trivial⟩
+      exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ⟨(h.hdrSome (by unfold kOk sFn; omega_arith) hm k (by decide)).1, trivial⟩
 
 theorem dOne_ct : RelCT isa (Two (KG NF)) (seqs dOne) (Two (KG NF)) := by
   unfold dOne
@@ -172,10 +172,10 @@ theorem dOne_ct : RelCT isa (Two (KG NF)) (seqs dOne) (Two (KG NF)) := by
     (fun _ _ _ _ _ _ _ _ => trivial) (by taint_decide)) ?_
   refine rs_app (by simp) (by simp) (show RelCT isa _ (seqs [.block [.alu .xor .rbp (.imm (BitVec.ofInt 32 (-1))),
     .store (hdr kOk) .rbp]]) _ from kg_rdi (by taint_decide) fun I _ s h _ _ => by
-      have hst := h.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+      have hst := h.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_arith)
       refine WP.mono (WP.keep [.rbp] (Q := fun t => ∃ v : BitVec 64, t.mem = s.mem.writeW (off I.B (8 * kOk)) v) (by
         xrun [State.ea, hdr, h.ws.rdi, hdrOff, hst]
-        exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ⟨(h.hdrSome (by unfold kOk sFn; omega) hm k (by decide)).1, trivial⟩) ?_
+        exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ⟨(h.hdrSome (by unfold kOk sFn; omega_arith) hm k (by decide)).1, trivial⟩) ?_
   exact one_ct (by decide) (stab_nf _ _) (by taint_decide) (by taint_decide)
 
 /-! ## `e` odd -/
@@ -189,8 +189,8 @@ theorem minvBlk_ok {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLe
     (ho : OddE I s) : WP isa (.block (([.mov .rbx (.mem (hdr kEv))] : List Instr) ++ minv)) s fun t =>
       t.mem = s.mem ∧ Keep [.rbx, .rax, .rcx, .rdx, .rsi, .r15] s t := by
   have he64 : I.E < 2 ^ 64 :=
-    Nat.lt_of_lt_of_le (lt_of_os2ip_len L.ebl) (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega))
-  have hld := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega)
+    Nat.lt_of_lt_of_le (lt_of_os2ip_len L.ebl) (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega_arith))
+  have hld := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_arith)
   refine WP.block_append_iff.mpr (WP.mono (WP.keep [.rbx] (Q := fun t => t.gpr .rbx = BitVec.ofNat 64 I.E ∧
     t.mem = s.mem) (by xrun [State.ea, hdr, h.ws.rdi, hdrOff, hld, hev]) rfl) fun s₁ ⟨⟨hbx, m₁⟩, k₁⟩ =>
       WP.mono (minvC_ok s₁ (by rw [hbx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt he64]; exact ho))
@@ -220,12 +220,12 @@ theorem dBlk2_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
   refine WP.mono (WP.keep [.rsi, .rax, .rdx, .r15] (Q := fun t =>
     ∃ v : BitVec 64, t.mem = s.mem.writeW (off I.B (8 * sMo)) v) (by
       xrun [State.ea, at0, hdr, hbx₃, h10, hdi₃, hdrOff, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
-        hs₃.ld (d := slot I.W aX₂) (by omega), hs₃.ld (d := slot I.W aR) (by omega),
-        hs₃.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega),
-        hs₃.st (d := 8 * sMo) (by have := h.ws.h256; unfold sMo sFn; omega), hmu, execMul]
+        hs₃.ld (d := slot I.W aX₂) (by omega_arith), hs₃.ld (d := slot I.W aR) (by omega_arith),
+        hs₃.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_arith),
+        hs₃.st (d := 8 * sMo) (by have := h.ws.h256; unfold sMo sFn; omega_arith), hmu, execMul]
       exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ?_
   have kk := ((ku₁.trans ku₂).trans ku₃).trans k
-  obtain ⟨ht, f⟩ := h.hdrSome (by unfold sMo sFn; omega) hm kk (by decide)
+  obtain ⟨ht, f⟩ := h.hdrSome (by unfold sMo sFn; omega_arith) hm kk (by decide)
   exact ⟨ht, f, kk.mono (by decide)⟩
 
 /-- `dOdd`'s store of `c` into `[aDd]` and its base, `Q`'s, and `t`, after
@@ -238,7 +238,7 @@ theorem dBlk3_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hz : Zero 
     WP isa (.seq (.block (ws ++ dBlk3)) mulAddRow) s fun t => KS I m₀ t ∧ KF I.B I.W [.arr aDd] s.mem t.mem ∧
       Keep allR s t := by
   have hn := h.ws.scr.nowrap
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_arith
   have hw2 := h.ws.w2
   have sD := h.ws.sl (j := aDd) (by decide)
   have sQ := h.ws.sl (j := aQt) (by decide)
@@ -254,27 +254,27 @@ theorem dBlk3_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hz : Zero 
     refine WP.mono (WP.keep [] (c := .block [.store (at0 .r8) .r15]) (Q := fun t => t.mem = s.mem.writeW
       (off I.B (slot I.W aDd)) (s.gpr .r15)) (by
         xrun [State.ea, at0, h8, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
-          hs₂.st (d := slot I.W aDd) (by omega), h15, mu₂, mu₁]) rfl) fun u₃ ⟨mu₃, ku₃⟩ => WP.block_append_iff.mpr ?_
+          hs₂.st (d := slot I.W aDd) (by omega_arith), h15, mu₂, mu₁]) rfl) fun u₃ ⟨mu₃, ku₃⟩ => WP.block_append_iff.mpr ?_
     have hdi₃ : u₃.gpr .rdi = I.B := ((ku₂.trans ku₃).gpr (by decide)).trans hdi₁
     have h9₃ : u₃.gpr .r9 = BitVec.ofNat 64 (8 * (I.W + 2)) := ((ku₂.trans ku₃).gpr (by decide)).trans h9
     refine WP.mono (base_ok aQt (r := .rax) (by decide) hdi₃ h9₃) fun u₄ ⟨hax, mu₄, ku₄⟩ => ?_
     have hs₄ := h.ws.scr.congr (((ku₁.trans ku₂).trans ku₃).trans ku₄).2.2
     refine WP.mono (WP.keep [.r9, .rcx] (Q := fun t => t.gpr .r9 = off I.B (slot I.W aQt) ∧ t.mem = u₄.mem) (by
         xrun [State.ea, hdr, (ku₄.gpr (by decide)).trans hdi₃, hdrOff, hax,
-          hs₄.ld (d := 8 * sMo) (by have := h.ws.h256; unfold sMo sFn; omega)]) rfl) fun t ⟨⟨h9t, mt⟩, kt⟩ =>
+          hs₄.ld (d := 8 * sMo) (by have := h.ws.h256; unfold sMo sFn; omega_arith)]) rfl) fun t ⟨⟨h9t, mt⟩, kt⟩ =>
       ⟨by rw [mt, mu₄, mu₃], ((ku₄.trans kt).gpr (by decide)).trans ((ku₃.gpr (by decide)).trans h8), h9t,
         (((ku₂.trans ku₃).trans ku₄).trans kt).gpr (by decide) |>.trans h12,
         ((((ku₁.trans ku₂).trans ku₃).trans ku₄).trans kt).mono (by decide)⟩
-  have o₁ := writeW_outside s.mem I.B (s.gpr .r15) (d := slot I.W aDd) (by omega)
+  have o₁ := writeW_outside s.mem I.B (s.gpr .r15) (d := slot I.W aDd) (by omega_arith)
   rw [← m₁] at o₁
-  have f₁ := KF.arr1 (I := I) (j := aDd) o₁ (Nat.le_refl _) (by omega)
+  have f₁ := KF.arr1 (I := I) (j := aDd) o₁ (Nat.le_refl _) (by omega_arith)
   have h₁ := h.step f₁ (all_mut_arr (by decide)) k₁ (by decide)
   have vD : wv s₁.mem I.B (slot I.W aDd) (I.W + 2) = (s.gpr .r15).toNat := by
     rw [m₁]
     have := wv_put (m := s.mem) (B := I.B) (d := slot I.W aDd) (N := I.W + 2) (k := 0) (s.gpr .r15)
-      ((wv_eq_zero_iff _ _ _ _).mp hz) (by omega) (by omega) (I.W + 2) (Nat.le_refl _)
+      ((wv_eq_zero_iff _ _ _ _).mp hz) (by omega_arith) (by omega_arith) (I.W + 2) (Nat.le_refl _)
     rw [Nat.mul_zero, Nat.add_zero] at this
-    rw [this, ite_eq_left (show 0 < I.W + 2 by omega), Nat.pow_zero, Nat.one_mul]
+    rw [this, ite_eq_left (show 0 < I.W + 2 by omega_arith), Nat.pow_zero, Nat.one_mul]
   have hbound : wv s₁.mem I.B (slot I.W aDd) (I.W + 2) + (s₁.gpr .rcx).toNat * wv s₁.mem I.B (slot I.W aQt) I.W <
       2 ^ (64 * (I.W + 2)) := by
     rw [vD]
@@ -282,16 +282,16 @@ theorem dBlk3_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hz : Zero 
     have hx := (s₁.gpr .rcx).isLt
     have hQ := wv_lt s₁.mem I.B (slot I.W aQt) I.W
     have h1 : (s₁.gpr .rcx).toNat * wv s₁.mem I.B (slot I.W aQt) I.W < 2 ^ 64 * 2 ^ (64 * I.W) :=
-      Nat.mul_lt_mul_of_lt_of_le hx (Nat.le_of_lt hQ) (by omega)
+      Nat.mul_lt_mul_of_lt_of_le hx (Nat.le_of_lt hQ) (by omega_arith)
     have h2 : 2 ^ 64 + 2 ^ 64 * 2 ^ (64 * I.W) ≤ 2 ^ (64 * (I.W + 2)) := by
-      rw [show 64 * (I.W + 2) = 64 + 64 + 64 * I.W by omega, Nat.pow_add, Nat.pow_add]
+      rw [show 64 * (I.W + 2) = 64 + 64 + 64 * I.W by omega_arith, Nat.pow_add, Nat.pow_add]
       have : 1 ≤ 2 ^ (64 * I.W) := Nat.one_le_two_pow
-      have : 2 ^ 64 ≤ 2 ^ 64 * 2 ^ (64 * I.W) := Nat.le_mul_of_pos_right _ (by omega)
+      have : 2 ^ 64 ≤ 2 ^ 64 * 2 ^ (64 * I.W) := Nat.le_mul_of_pos_right _ (by omega_arith)
       have : 2 * (2 ^ 64 * 2 ^ (64 * I.W)) ≤ 2 ^ 64 * 2 ^ 64 * 2 ^ (64 * I.W) := by
         rw [Nat.mul_assoc]; exact Nat.mul_le_mul_right _ (by decide)
-      omega
-    omega
-  refine WP.mono (mulAddRow_ok h₁.ws.scr h8 h9 h12 (by omega) (by omega) (by omega) (by omega) (by omega) hbound)
+      omega_arith
+    omega_arith
+  refine WP.mono (mulAddRow_ok h₁.ws.scr h8 h9 h12 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hbound)
     fun t ⟨_, o, kt⟩ => ?_
   have ft := KF.arr1 (I := I) (j := aDd) o (Nat.le_refl _) (Nat.le_refl _)
   exact ⟨h₁.step ft (all_mut_arr (by decide)) kt (by decide), (f₁.trans ft).mono (by decide),
@@ -352,7 +352,7 @@ theorem mBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
   refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t =>
     ∃ v : BitVec 64, t.mem = s.mem.writeW (off I.B (slot I.W aM)) v) (by
       xrun [State.ea, at0, hbx₃, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
-        hs₃.ld (d := slot I.W aM) (by omega), hs₃.st (d := slot I.W aM) (by omega), hmu]
+        hs₃.ld (d := slot I.W aM) (by omega_arith), hs₃.st (d := slot I.W aM) (by omega_arith), hmu]
       exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => h.arrSome (by decide) hm (((ku₁.trans ku₂).trans ku₃).trans k) (by decide)
 
 /-- The second part of `dEven`'s mask of `L` odd and at least 3, after `ws`. -/
@@ -368,14 +368,14 @@ theorem oBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {c : Bool} (
     simp only [oBlk, oddMask, List.append_assoc, List.cons_append, List.nil_append]
   rw [e]
   refine WP.block_append_iff.mpr (WP.mono (oddMask_k h (j := aL) (by decide)) fun s₁ ⟨m₁, hax, _, _, k₁⟩ => ?_)
-  have hst := (h.ws.scr.congr k₁.2.2).st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+  have hst := (h.ws.scr.congr k₁.2.2).st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_arith)
   have hcx₁ : s₁.gpr .rcx = mask c := (k₁.gpr (by decide)).trans hcx
   refine WP.mono (WP.keep [.rax, .rbp] (Q := fun t => (∃ v : BitVec 64, t.mem = s.mem.writeW (off I.B (8 * kOk)) v) ∧
     ∃ c', t.gpr .rbp = mask c') (by
       xrun [State.ea, hdr, (k₁.gpr (by decide)).trans h.ws.rdi, hdrOff, hst, hax, hcx₁, mask_and', m₁]
       exact ⟨⟨_, rfl⟩, _, rfl⟩) rfl) fun t ⟨⟨hm, hbp⟩, k₂⟩ => ?_
   have kk := k₁.trans k₂
-  obtain ⟨ht, f⟩ := h.hdrSome (by unfold kOk sFn; omega) hm kk (by decide)
+  obtain ⟨ht, f⟩ := h.hdrSome (by unfold kOk sFn; omega_arith) hm kk (by decide)
   exact ⟨ht, f, hbp, kk.mono (by decide)⟩
 
 theorem dEven_eq2 : dEven = loadEv ++ ([zeroA aM, copyA aM aL] ++ (constA 0 ++ (eqMask aL aC ++
@@ -457,8 +457,8 @@ theorem dPart_ct : RelCT isa (Two (KG EvOK)) dPart (Two (KG NF)) := by
   refine RelCT.seq (kg_rdi (G := fun I t => EvOK I t ∧ t.cf = some (decide (I.E < 1)) ∧
       t.zf = some (decide (I.E = 1))) (by taint_decide) fun I _ s h L hev => ?_) ?_
   · have he64 : I.E < 2 ^ 64 :=
-      Nat.lt_of_lt_of_le (lt_of_os2ip_len L.ebl) (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega))
-    have hld := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega)
+      Nat.lt_of_lt_of_le (lt_of_os2ip_len L.ebl) (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega_arith))
+    have hld := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_arith)
     refine WP.mono (WP.keep [.rax] (Q := fun t => t.cf = some (decide (I.E < 1)) ∧
       t.zf = some (decide (I.E = 1)) ∧ t.mem = s.mem) (by
         xrun [State.ea, hdr, h.ws.rdi, hdrOff, hld, hev, sx1]
@@ -482,8 +482,8 @@ theorem dPart_ct : RelCT isa (Two (KG EvOK)) dPart (Two (KG NF)) := by
   refine RelCT.seq (kg_rdi (G := fun I t => EvOK I t ∧ t.zf = some (decide (I.E % 2 = 0))) (by taint_decide)
     fun I _ s h L hev => ?_) ?_
   · have he64 : I.E < 2 ^ 64 :=
-      Nat.lt_of_lt_of_le (lt_of_os2ip_len L.ebl) (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega))
-    have hld := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega)
+      Nat.lt_of_lt_of_le (lt_of_os2ip_len L.ebl) (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega_arith))
+    have hld := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_arith)
     refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (I.E % 2 = 0)) ∧ t.mem = s.mem) (by
         xrun [State.ea, hdr, h.ws.rdi, hdrOff, hld, hev, sx1]
         rw [and1_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt he64]
@@ -495,7 +495,7 @@ theorem dPart_ct : RelCT isa (Two (KG EvOK)) dPart (Two (KG NF)) := by
     simp only [eval, z₁, z₂, e₁, e₂]
   · exact dOdd_ct.mono (two_kg fun I s ⟨hev, hz⟩ hc => ⟨hev, by
       simp only [eval, hz, Option.map_some, Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at hc
-      omega⟩) fun _ _ h => h
+      omega_arith⟩) fun _ _ h => h
   · exact dEven_ct.mono (two_kg fun _ _ _ _ => trivial) fun _ _ h => h
 
 end VG.Proof.RsaKeyGen.X86_64.Key

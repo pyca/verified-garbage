@@ -52,21 +52,21 @@ theorem hash1_vp {F : State → State → Prop} {c : State → Cfg} {L : Nat}
   have il := HO.ivLen
   subst hL
   simp only [List.append_assoc]
-  refine scr_ok (d := .r0) h.r8 rfl hLv (by simp only [sK, sA, wa, sState]; omega) fun s₁ v₁ R₁ M₁ => ?_
+  refine scr_ok (d := .r0) h.r8 rfl hLv (by simp only [sK, sA, wa, sState]; omega_arith) fun s₁ v₁ R₁ M₁ => ?_
   rw [ivStore_eq]
   have e₀ : State.addr (G.scr + BitVec.ofNat 32 sState) = G.sa sState := h.addr (n := 32)
-    (by simp only [sK, sA, wa, sState]; omega) (by decide)
-  have tn := h.toNat (o := sState) (by simp only [sK, sA, wa, sState]; omega)
+    (by simp only [sK, sA, wa, sState]; omega_arith) (by decide)
+  have tn := h.toNat (o := sState) (by simp only [sK, sA, wa, sState]; omega_arith)
   have e64 : sState = 64 := rfl
-  have kzp : 0 < kz G.pLen := by simp only [kz]; omega
-  have sk4 : 4096 ≤ sK G.pLen := by simp only [sK, sA]; omega
-  refine ivAt_ok (R := G.rScr) Gh.iv 0 s₁ _ _ v₁ (by omega) (by rw [tn]; omega)
+  have kzp : 0 < kz G.pLen := by simp only [kz]; omega_arith
+  have sk4 : 4096 ≤ sK G.pLen := by simp only [sK, sA]; omega_arith
+  refine ivAt_ok (R := G.rScr) Gh.iv 0 s₁ _ _ v₁ (by omega_arith) (by rw [tn]; omega_arith)
     (by rw [R₁.wr, gi.wr, gi.pre.wr, gi.hG]; simp) (fun j hj => ?_) fun s₂ R₂ F₂ W₂ => ?_
   · rw [e₀, Nat.zero_add, Offset.add_add]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   have r8₂ : s₂.gpr .r8 = G.KB := by rw [R₂.gpr _ (by decide), R₁.gpr _ (by decide), h.r8]
-  refine scr_ok (d := .r1) r8₂ rfl hLv (by simp only [sK, sA, wa, sMsg]; omega) fun s₃ v₃ R₃ M₃ => ?_
-  refine scr_ok (d := .r3) (by rw [R₃.gpr _ (by decide), r8₂]) rfl hLv (by simp only [sK, sA, wa]; omega)
+  refine scr_ok (d := .r1) r8₂ rfl hLv (by simp only [sK, sA, wa, sMsg]; omega_arith) fun s₃ v₃ R₃ M₃ => ?_
+  refine scr_ok (d := .r3) (by rw [R₃.gpr _ (by decide), r8₂]) rfl hLv (by simp only [sK, sA, wa]; omega_arith)
     fun t v₄ R₄ M₄ => WP.block_nil ⟨s, hs, ?_, ?_, fun j hj => ?_, ?_, ?_, v₄⟩
   · exact ((R₁.mono (by simp)).trans (R₂.mono (by simp))).trans ((R₃.mono (by simp)).trans (R₄.mono (by simp)))
   · rw [M₄, M₃, ← M₁]
@@ -107,23 +107,23 @@ theorem hash2_vp {F : State → State → Prop} {c : State → Cfg}
     have gi := h.gi
     have big := gi.scrBig
     have fit := gi.scrFit
-    have kzp : 0 < kz G.pLen := by simp only [kz]; omega
-    have sk4 : 4096 + 640 ≤ sK G.pLen := by simp only [sK, sA, wa]; omega
+    have kzp : 0 < kz G.pLen := by simp only [kz]; omega_arith
+    have sk4 : 4096 + 640 ≤ sK G.pLen := by simp only [sK, sA, wa]; omega_arith
     have hB := HO.hB; have hN := HO.hN; have hso := HO.hso; have hk := HO.hk
-    have a0 := h.addr (o := sState) (n := 32) (by simp only [sState]; omega) (by decide)
-    have a1 := h.addr (o := sMsg) (n := 64) (by simp only [sMsg]; omega) (by decide)
-    have a3 := h.addr (o := sA) (n := 112) (by simp only [sA]; omega) (by decide)
-    have t0 := h.toNat (o := sState) (by simp only [sState]; omega)
-    have t1 := h.toNat (o := sMsg) (by simp only [sMsg]; omega)
-    have t3 := h.toNat (o := sA) (by simp only [sA]; omega)
+    have a0 := h.addr (o := sState) (n := 32) (by simp only [sState]; omega_arith) (by decide)
+    have a1 := h.addr (o := sMsg) (n := 64) (by simp only [sMsg]; omega_arith) (by decide)
+    have a3 := h.addr (o := sA) (n := 112) (by simp only [sA]; omega_arith) (by decide)
+    have t0 := h.toNat (o := sState) (by simp only [sState]; omega_arith)
+    have t1 := h.toNat (o := sMsg) (by simp only [sMsg]; omega_arith)
+    have t3 := h.toNat (o := sA) (by simp only [sA]; omega_arith)
     have ws : s.wr = s₀.wr := R.wr
     have rds : s.rd = s₀.rd := R.rd
     have hw : Covers wr s.wr := by
       rw [ws]
       refine Covers.pair (Covers.one (gi.inScr ?_)) (Covers.one (gi.inScr ?_)) <;>
-        simp only [sState, sA, hN, hso] <;> omega
+        simp only [sState, sA, hN, hso] <;> omega_arith
     refine ⟨?_, Covers.append_left (Covers.right (Covers.one (by
-      rw [ws]; exact gi.inScr (by simp only [sMsg, hB]; omega)))) hw.right, hw⟩
+      rw [ws]; exact gi.inScr (by simp only [sMsg, hB]; omega_arith)))) hw.right, hw⟩
     simp only [MdStream.Arm.compressK, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       State.callEntry_gpr _ (show Reg.r0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r1 ∉ linkRegs by decide),
       State.callEntry_gpr _ (show Reg.r2 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide),
@@ -134,7 +134,7 @@ theorem hash2_vp {F : State → State → Prop} {c : State → Cfg}
     have n3 : sA = 4096 := rfl
     rw [one, hB, hN, hso]
     refine ⟨by simp [rd, hB], by simp [wr, hN, hso], gi.sdisj ?_ ?_ ?_, gi.sdisj ?_ ?_ ?_, gi.sdisj ?_ ?_ ?_,
-      ?_, ?_, ?_⟩ <;> omega
+      ?_, ?_, ?_⟩ <;> omega_arith
   refine VP.of_ct (fun σ₁ σ₂ => RelCT.call HO.callee.verified HO.ct rd wr fun s₁ s₂ ⟨⟨h₁, r₁⟩, ⟨h₂, r₂⟩⟩ => ?_)
     fun σ s ⟨h₁, r₂⟩ => ?_
   · obtain ⟨p₁, c₁, w₁⟩ := facts σ₁ s₁ h₁ r₁
@@ -152,11 +152,11 @@ theorem hash2_vp {F : State → State → Prop} {c : State → Cfg}
     have gi := h.gi
     have big := gi.scrBig
     have fit := gi.scrFit
-    have kzp : 0 < kz G.pLen := by simp only [kz]; omega
-    have sk4 : 4096 + 640 ≤ sK G.pLen := by simp only [sK, sA, wa]; omega
+    have kzp : 0 < kz G.pLen := by simp only [kz]; omega_arith
+    have sk4 : 4096 + 640 ≤ sK G.pLen := by simp only [sK, sA, wa]; omega_arith
     have hN := HO.hN; have hso := HO.hso; have hB := HO.hB
-    have a0 := h.addr (o := sState) (n := 32) (by simp only [sState]; omega) (by decide)
-    have a1 := h.addr (o := sMsg) (n := 64) (by simp only [sMsg]; omega) (by decide)
+    have a0 := h.addr (o := sState) (n := 32) (by simp only [sState]; omega_arith) (by decide)
+    have a1 := h.addr (o := sMsg) (n := 64) (by simp only [sMsg]; omega_arith) (by decide)
     have hk : ∀ i ∈ instrs Gh.code, clobbers i .r0 = false ∧ clobbers i .r3 = false := by
       intro i hi
       have := List.all_eq_true.mp HO.callee.keeps i hi
@@ -182,15 +182,15 @@ theorem hash2_vp {F : State → State → Prop} {c : State → Cfg}
       rw [hB] at hk
       exact F₀.bytes (R := G.rs sMsg 64) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact gi.sdisj (by simp only [sMsg, sState]; omega) (by simp only [sMsg]; omega)
-          (by simp only [sState]; have := HO.hk; omega)) (by show 64 ≤ 2 ^ 64; decide) hk
+        exact gi.sdisj (by simp only [sMsg, sState]; omega_arith) (by simp only [sMsg]; omega_arith)
+          (by simp only [sState]; have := HO.hk; omega_arith)) (by show 64 ≤ 2 ^ 64; decide) hk
 theorem out_length (k : Nat) (f : Nat → BitVec 32) :
     ((List.range k).flatMap fun j => MdStream.bytes32 true (f j)).length = 4 * k := by
   induction k with
   | zero => rfl
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, List.length_append, ih, List.flatMap_singleton,
-      MdStream.bytes32_length]; omega
+      MdStream.bytes32_length]; omega_arith
 
 theorem hash3_vp {F Q : State → State → Prop} {c : State → Cfg} {L dst : Nat} {msg : State → List Byte}
     (hF : ∀ σ s, F σ s → SS G σ (c σ) s) (hL : L = G.pLen)
@@ -214,27 +214,27 @@ theorem hash3_vp {F Q : State → State → Prop} {c : State → Cfg} {L dst : N
   have big := gi.scrBig
   have fit := gi.scrFit
   have hLv := h.lens
-  have kzp : 0 < kz G.pLen := by simp only [kz]; omega
-  have sk4 : 4096 + 640 ≤ sK G.pLen := by simp only [sK, sA, wa]; omega
+  have kzp : 0 < kz G.pLen := by simp only [kz]; omega_arith
+  have sk4 : 4096 + 640 ≤ sK G.pLen := by simp only [sK, sA, wa]; omega_arith
   have hk := HO.hk
   have n0 : sState = 64 := rfl
   have n3 : sA = 4096 := rfl
   subst hL
   simp only [List.append_assoc]
   have r8 : s.gpr .r8 = G.KB := by rw [R.gpr _ (by decide), h.r8]
-  refine scr_ok (d := .r6) r8 rfl hLv (by omega) fun s₁ v₁ R₁ M₁ => ?_
-  have a0 := h.addr (o := sState) (n := 4 * Gh.k) (by omega) (by have := HO.hk0; omega)
-  have a6 := h.addr (o := dst) (n := 4 * Gh.k) (by omega) (by have := HO.hk0; omega)
-  have t0 := h.toNat (o := sState) (by omega)
-  have t6 := h.toNat (o := dst) (by omega)
+  refine scr_ok (d := .r6) r8 rfl hLv (by omega_arith) fun s₁ v₁ R₁ M₁ => ?_
+  have a0 := h.addr (o := sState) (n := 4 * Gh.k) (by omega_arith) (by have := HO.hk0; omega_arith)
+  have a6 := h.addr (o := dst) (n := 4 * Gh.k) (by omega_arith) (by have := HO.hk0; omega_arith)
+  have t0 := h.toNat (o := sState) (by omega_arith)
+  have t6 := h.toNat (o := dst) (by omega_arith)
   have r0₁ : s₁.gpr .r0 = G.scr + BitVec.ofNat 32 sState := by rw [R₁.gpr _ (by decide), e0]
-  refine VG.Proof.X25519.Arm.WP.append (VG.Proof.MdStream.Arm.out32_ok (n := Gh.k) true (by omega)
-    (by rw [r0₁, t0]; omega) (by rw [v₁, t6]; omega)
+  refine VG.Proof.X25519.Arm.WP.append (VG.Proof.MdStream.Arm.out32_ok (n := Gh.k) true (by omega_arith)
+    (by rw [r0₁, t0]; omega_arith) (by rw [v₁, t6]; omega_arith)
     (by rw [r0₁, a0, R₁.rd, R₁.wr, R.rd, R.wr]
-        obtain ⟨r, hr, hc⟩ := gi.inScr (o := sState) (n := 4 * Gh.k) (by omega)
+        obtain ⟨r, hr, hc⟩ := gi.inScr (o := sState) (n := 4 * Gh.k) (by omega_arith)
         exact ⟨r, List.mem_append_right _ hr, hc⟩)
-    (by rw [v₁, a6, R₁.wr, R.wr]; exact gi.inScr (by omega))
-    (by rw [r0₁, v₁, a0, a6]; exact gi.sdisj (by omega) (by omega) (by omega)))
+    (by rw [v₁, a6, R₁.wr, R.wr]; exact gi.inScr (by omega_arith))
+    (by rw [r0₁, v₁, a0, a6]; exact gi.sdisj (by omega_arith) (by omega_arith) (by omega_arith)))
     fun s₂ ⟨g₂, rd₂, wr₂, sp₂, m₂⟩ => wp_mov (op2_imm (by
       rcases hLv with e | e | e <;> rw [e] <;> exact encodable_lt (by decide))) fun t u => WP.block_nil ?_
   rw [r0₁, v₁, a0, a6, M₁] at m₂
@@ -257,14 +257,14 @@ theorem hash3_vp {F Q : State → State → Prop} {c : State → Cfg} {L dst : N
   · refine (F₀.sub (rs' := [G.rs sState 32, G.rs sA 112, G.rs dst (4 * Gh.k)]) fun r hr => ?_).trans ?_
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨G.rs sState 32, List.mem_cons_self, Region.sub_prefix (by omega)⟩
+      · exact ⟨G.rs sState 32, List.mem_cons_self, Region.sub_prefix (by omega_arith)⟩
       · exact ⟨G.rs sA 112, by simp, fun _ h => h⟩
     · rw [mt]
       refine (VG.WriteBytes.writeBytes_frame _ _ _ (R := G.rs dst (4 * Gh.k)) ?_).mono (by simp)
       rw [dl]; exact Region.contains_self _ _
   · obtain ⟨ml, hb⟩ := hm σ s₀ hs₀
     have e := VG.Proof.Sha256.Stream.bytesAt_writeBytes s.mem (G.sa dst) 0
-      (HO.md.digest (HO.md.stateAt s.mem (G.sa sState))) (by rw [dl]; omega)
+      (HO.md.digest (HO.md.stateAt s.mem (G.sa sState))) (by rw [dl]; omega_arith)
     rw [BitVec.add_zero, Nat.zero_add, dl] at e
     show Spec.Sha256.bytesAt _ _ _ = _
     rw [mt, e, St, blockAt_eq HO hb, ← HO.hash _ ml]; rfl

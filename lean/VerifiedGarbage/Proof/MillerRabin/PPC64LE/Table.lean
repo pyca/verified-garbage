@@ -38,10 +38,10 @@ theorem selectAt_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) {b : Bo
   have hA := h.arr ha
   have hT := h.arr ht
   refine WP.mono (selectAcc64_ok32 h.hs (dA := slot w a) (dT := slot w t) (dO := slot w o) (w := w) (b := b)
-      h8 h9 h5 h.h11 h20 (by have := h.hw; omega) (by have := h.hw'; omega)
-      (by omega) (by omega) (by omega)
-      (by have := sep hoa; omega) (by have := sep hot; omega)) fun s' ⟨hv, hout, k⟩ =>
-    ⟨⟨hv, hout.mono (Nat.le_refl _) (by omega)⟩, k⟩
+      h8 h9 h5 h.h11 h20 (by have := h.hw; omega_arith) (by have := h.hw'; omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith)
+      (by have := sep hoa; omega_arith) (by have := sep hot; omega_arith)) fun s' ⟨hv, hout, k⟩ =>
+    ⟨⟨hv, hout.mono (Nat.le_refl _) (by omega_arith)⟩, k⟩
 
 theorem ones_ok (s : State) :
     WP isa (.block ones) s fun t => (t.gpr .r20 = mask true ∧ t.mem = s.mem) ∧ Keep [.r20] s t := by
@@ -108,7 +108,7 @@ theorem toEntry_ok {s : State} {B : Addr} {Z w j : Nat} (h : Env s B Z w) (h30 :
   have e5 := e4.keep k5 (by decide)
   have k15 := (((k1.trans k2).trans k3).trans k4).trans k5
   have hm : t₅.mem = s.mem := by rw [m5, m4, m3, m2, m1]
-  refine WP.mono (selectAt_ok e5 (b := true) (o := 11 + j) (a := a) (t := a) (by omega) (by omega) (by omega) (by omega) (by omega)
+  refine WP.mono (selectAt_ok e5 (b := true) (o := 11 + j) (a := a) (t := a) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
       (by rw [k5.gpr .r5 (by decide), k4.gpr .r5 (by decide), a5])
       (by rw [k5.gpr .r8 (by decide), b8]) b9
       ((((k2.trans k3).trans k4).trans k5).gpr .r20 (by decide) |>.trans h20)) fun t ⟨⟨hv, hout⟩, k⟩ => ?_
@@ -142,7 +142,7 @@ structure Fr (rs : List Reg) (s₀ s : State) (B : Addr) (Z w c : Nat) : Prop wh
 theorem Fr.trans {rs rs' : List Reg} {s₀ s t : State} {B : Addr} {Z w c : Nat} (h : Fr rs s₀ s B Z w c)
     (hm : Mut B w s.mem t.mem) (k : Keep rs' s t) (hrs : ∀ r ∈ rs', r ∈ rs) (hmr : ∀ r ∈ mctxRegs, r ∉ rs)
     (h0 : w32 t.mem B (slot w 0) = w32 s.mem B (slot w 0)) : Fr rs s₀ t B Z w c := by
-  have hn : slot w 28 ≤ 2 ^ 64 := by have := h.ctx.hs.nowrap; have := h.ctx.hZ; omega
+  have hn : slot w 28 ≤ 2 ^ 64 := by have := h.ctx.hs.nowrap; have := h.ctx.hZ; omega_arith
   exact ⟨h.ctx.keep k (fun r hr hr' => hmr r hr (hrs r hr')) h0, h.consts.of_mut hm hn,
     Outs.trans h.muts hm, (h.keep.trans k).mono (fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
@@ -151,7 +151,7 @@ theorem Fr.trans {rs rs' : List Reg} {s₀ s t : State} {B : Addr} {Z w c : Nat}
 
 theorem Fr.slot28 {rs : List Reg} {s₀ s : State} {B : Addr} {Z w c : Nat} (h : Fr rs s₀ s B Z w c) :
     slot w 28 ≤ 2 ^ 64 := by
-  have := h.ctx.hs.nowrap; have := h.ctx.hZ; omega
+  have := h.ctx.hs.nowrap; have := h.ctx.hZ; omega_arith
 
 /-- A block that writes only registers among `rs`. -/
 theorem Fr.regs {rs rs' : List Reg} {s₀ s t : State} {B : Addr} {Z w c : Nat} (h : Fr rs s₀ s B Z w c)
@@ -182,7 +182,7 @@ theorem table_ok {s : State} {B : Addr} {Z w c b : Nat} (h : MCtx s B Z w) (hc :
   have li30 : ∀ (j : Nat) (u : State), j < 2 ^ 15 →
       WP isa (.block [.li .r30 j]) u fun t => (t.gpr .r30 = BitVec.ofNat 64 j ∧ t.mem = u.mem) ∧ Keep [.r30] u t :=
     fun j u hj => by
-      refine WP.keep _ ?_ (by simp [writesOnly, instrs, dstOf, Instr.writesLr])
+      refine WP.keep _ ?_ (by rfl)
       prun [hj]
   unfold table
   refine WP.seq (WP.mono (li30 0 s (by decide)) fun s₁ ⟨⟨a30, m1⟩, k1⟩ => ?_)
@@ -209,10 +209,10 @@ theorem table_ok {s : State} {B : Addr} {Z w c b : Nat} (h : MCtx s B Z w) (hc :
   have w5_6 : arr s₆.mem B w 5 = arr s.mem B w 5 := by rw [m6, w5_5]
   -- the first two entries
   have t0 : arr s₂.mem B w 11 = b ^ 0 % c * 2 ^ (64 * w) % c := by
-    rw [v0, m1, hc.one, Nat.pow_zero, Nat.mod_eq_of_lt (show 1 < c by omega), Nat.one_mul]
+    rw [v0, m1, hc.one, Nat.pow_zero, Nat.mod_eq_of_lt (show 1 < c by omega_arith), Nat.one_mul]
   have tab2 : TabUpTo s₆.mem B w c b 2 := by
     intro i hi
-    rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
+    rcases (show i = 0 ∨ i = 1 by omega_arith) with rfl | rfl
     · rw [m6, Outside.arrEq o5 (by decide) (by decide) hn, Outside.arrEq o4 (by decide) (by decide) hn, m3]
       exact t0
     · rw [m6, Outside.arrEq o5 (by decide) (by decide) hn]
@@ -227,18 +227,18 @@ theorem table_ok {s : State} {B : Addr} {Z w c b : Nat} (h : MCtx s B Z w) (hc :
       (fun k hk t ⟨ft, t30, t5, ttab, ty⟩ => ?_) ⟨f6, c30, w5_6, tab2, y6⟩) fun t ⟨ft, _, t5, ttab, ty⟩ => ?_)
   · have tc := ft.consts.cand
     have hb5 : arr t.mem B w 5 < arr t.mem B w 0 := by
-      rw [t5, h5, tc]; exact Nat.mod_lt _ (by omega)
+      rw [t5, h5, tc]; exact Nat.mod_lt _ (by omega_arith)
     refine WP.seq (WP.mono (mont_ok ft.ctx (o := 6) (a := 6) (b := 5) (by simp) (by simp) (by simp) hb5)
       fun u ⟨⟨hlt, heq, hout, h0⟩, ku⟩ => ?_)
     have fu := ft.trans (Mut.of_mont hout (by simp)) ku (by decide) (by decide) h0
     have uy : arr u.mem B w aY = b ^ (2 + k) % c * 2 ^ (64 * w) % c := by
       rw [tc] at hlt heq
-      rw [show 2 + k = (1 + k) + 1 by omega, ← pow_mul_mod]
+      rw [show 2 + k = (1 + k) + 1 by omega_arith, ← pow_mul_mod]
       exact mont_val hR hlt heq ty (by rw [t5, h5])
     have u30 : u.gpr .r30 = BitVec.ofNat 64 (2 + k) := (ku.gpr .r30 (by decide)).trans t30
-    refine WP.seq (WP.mono (toEntry_ok fu.ctx.toEnv u30 (by omega) (a := aY) (by decide))
+    refine WP.seq (WP.mono (toEntry_ok fu.ctx.toEnv u30 (by omega_arith) (a := aY) (by decide))
       fun v ⟨⟨ve, vo⟩, kv⟩ => ?_)
-    have fv := fu.trans (Mut.of_entry vo (by omega)) kv (by decide) (by decide) (Outside.w32_0 vo (by omega) hn)
+    have fv := fu.trans (Mut.of_entry vo (by omega_arith)) kv (by decide) (by decide) (Outside.w32_0 vo (by omega_arith) hn)
     have hblk : WP isa (.block [.addi .r30 .r30 1, .subi .r4 .r30 16]) v fun x =>
         (x.gpr .r30 = BitVec.ofNat 64 (2 + k) + BitVec.ofNat 64 1 ∧
           x.gpr .r4 = BitVec.ofNat 64 (2 + k) + BitVec.ofNat 64 1 - BitVec.ofNat 64 16 ∧ x.mem = v.mem) ∧
@@ -247,26 +247,26 @@ theorem table_ok {s : State} {B : Addr} {Z w c b : Nat} (h : MCtx s B Z w) (hc :
       prun [(kv.gpr .r30 (by decide)).trans u30]
     refine WP.mono hblk fun x ⟨⟨x30, x4, xm⟩, kx⟩ => ⟨⟨fv.regs xm kx, ?_, ?_, ?_, ?_⟩, ?_⟩
     · rw [x30, ← BitVec.ofNat_add, Nat.add_assoc]
-    · rw [xm, Outside.arrEq vo (by decide) (by omega) hn, Outs.arrEq_mont hout (by decide) (by decide)
+    · rw [xm, Outside.arrEq vo (by decide) (by omega_arith) hn, Outs.arrEq_mont hout (by decide) (by decide)
         (by decide) (by decide) hn, t5]
     · intro i hi
       rw [xm]
-      rcases Nat.lt_succ_iff_lt_or_eq.mp (show i < 2 + k + 1 by omega) with hi | rfl
-      · rw [Outside.arrEq vo (by omega) (by omega) hn, Outs.arrEq_mont hout (by omega) (by omega) (by omega)
-          (by omega) hn]
+      rcases Nat.lt_succ_iff_lt_or_eq.mp (show i < 2 + k + 1 by omega_arith) with hi | rfl
+      · rw [Outside.arrEq vo (by omega_arith) (by omega_arith) hn, Outs.arrEq_mont hout (by omega_arith) (by omega_arith) (by omega_arith)
+          (by omega_arith) hn]
         exact ttab i hi
       · rw [ve, uy]
-    · rw [xm, Outside.arrEq vo (by decide) (by simp only [aY]; omega) hn, uy, show 1 + (k + 1) = 2 + k by omega]
+    · rw [xm, Outside.arrEq vo (by decide) (by simp only [aY]; omega_arith) hn, uy, show 1 + (k + 1) = 2 + k by omega_arith]
     · rw [x4, ← BitVec.ofNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_arith
   · refine WP.mono (copy_ok ft.ctx.toEnv (o := aY) (a := aOne) (by decide) (by decide) (by decide))
       fun u ⟨⟨uy, uo⟩, ku⟩ => ?_
     have fu := ft.trans (Mut.of_outside uo (by simp [aY])) ku (by decide) (by decide)
       (Outside.w32_0 uo (by decide) hn)
     refine ⟨fu, ?_, fun i hi => ?_, ?_⟩
     · rw [Outside.arrEq uo (by decide) (by decide) hn, t5]
-    · rw [Outside.arrEq uo (by omega) (by simp [aY]; omega) hn]
-      exact ttab i (by omega)
+    · rw [Outside.arrEq uo (by omega_arith) (by simp [aY]; omega_arith) hn]
+      exact ttab i (by omega_arith)
     · rw [uy, ft.consts.one]
 
 end VG.Proof.MillerRabin.PPC64LE

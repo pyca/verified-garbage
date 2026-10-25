@@ -53,7 +53,7 @@ theorem zeroSt_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m
     (block_rsp_tr (arg_spOnly .rdi (by decide) _) fun _ _ h => h.rsp) fun L g mx m₀ t hL hc hφ => by
       have hok : (aSt p).ok = true := by
         simp only [Impl.MlDsa.X86_64.Message.aSt, Arg.ok, fScr, Bool.and_eq_true, decide_eq_true_eq]
-        have := hL.hE; rw [hΦ L m₀ t hφ]; omega
+        have := hL.hE; rw [hΦ L m₀ t hφ]; omega_arith
       refine WP.mono (Arg.mov_ok .rdi (aSt p) hok (by decide) t hc.frOk) fun t1 ⟨⟨h1, hm1, hx1⟩, k1⟩ =>
         ⟨hc.regs k1.2.1 k1.2.2 hm1 hx1 fun r hr => k1.gpr (by
           simp only [List.mem_singleton]; exact ne_cs hr (by decide)), by rw [h1, hc.aSt p (hΦ L m₀ t hφ)]⟩
@@ -219,7 +219,7 @@ theorem absOk' (hE : oE p + 1024 < 2 ^ 31) {src len pos : Arg} (h1 : src.ok = tr
   simp only [absArgs, List.all_cons, List.all_nil, h1, h2, h3, Bool.and_true, Bool.true_and]
   simp only [Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aKs, Arg.ok, fScr, Bool.and_eq_true,
     decide_eq_true_eq]
-  omega
+  omega_arith
 
 /-- The position after the context string. -/
 abbrev qCtx (L : Lay) : Nat := (66 + L.ctxLen.toNat) % 136
@@ -282,17 +282,17 @@ theorem muHash_tr (hE : oE p + 1024 < 2 ^ 31) {Φ : Lay → Mem → State → Pr
   have pd := kpad_tr (I := I) (Φ := Ψ qMsg) (fun _ _ _ h => h.1) (pos := .ret) (by
       simp only [padArgs, Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aKs, List.all_cons,
         List.all_nil, Arg.ok, fScr, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq, true_and]
-      omega) qMsg (fun L g mx m t _ _ hφ => ofNat_toNat_eq hφ.2) fun L _ => Nat.mod_lt _ (by decide)
+      omega_arith) qMsg (fun L g mx m t _ _ hφ => ofNat_toNat_eq hφ.2) fun L _ => Nat.mod_lt _ (by decide)
   have pd' := two_wp (I := I) (Φ := Ψ qMsg) (Ψ := fun L _ _ => EOk p L) pd
     fun L g mx m₀ t hL hc hφ => WP.mono (kpad_ok hL hφ.1 hc (pos := .ret) (by
       simp only [padArgs, Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aKs, List.all_cons,
         List.all_nil, Arg.ok, fScr, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq, true_and]
-      omega) (ofNat_toNat_eq hφ.2) (Nat.mod_lt _ (by decide))) fun t' ⟨hc', _⟩ => ⟨hc', hφ.1⟩
+      omega_arith) (ofNat_toNat_eq hφ.2) (Nat.mod_lt _ (by decide))) fun t' ⟨hc', _⟩ => ⟨hc', hφ.1⟩
   have sq := ksqz_tr (I := I) (Φ := fun L _ _ => EOk p L) (fun _ _ _ h => h) (by
     simp only [sqzArgs, Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aMu,
       Impl.MlDsa.X86_64.Message.aKs, List.all_cons, List.all_nil, Arg.ok, fScr, Bool.and_true,
       Bool.and_eq_true, decide_eq_true_eq]
-    omega)
+    omega_arith)
   exact RelCT.seq (RelCT.mono z (fun a b h => h) fun _ _ h => h)
     (a1.seq (a2.seq (a3.seq (a4.seq (pd'.seq sq)))))
 
@@ -303,7 +303,7 @@ theorem trHash_tr (hE : oE p + 1024 < 2 ^ 31) (hk : p.pkLen < 2 ^ 31) {Φ : Lay 
       (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.key, L.keyLen⟩ R) ∧
       Region.Disjoint ⟨L.key, L.keyLen⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨L.key, L.keyLen⟩ ⟨L.KS, 640⟩ ∧
       Region.Disjoint ⟨L.B, 40⟩ ⟨L.key, L.keyLen⟩ := fun L hL =>
-    ⟨by decide, by have := hL.hKey.2; omega, ⟨L.KEY, List.mem_append_left _ hL.inKey, within_self _⟩,
+    ⟨by decide, by have := hL.hKey.2; omega_arith, ⟨L.KEY, List.mem_append_left _ hL.inKey, within_self _⟩,
       by have := hL.x_r hL.xKey (e := 0) (k := 200) (by decide); simpa only [x0] using this.symm,
       (hL.x_r hL.xKey (e := 200) (k := 640) (by decide)).symm,
       hL.kKey.sub_left (Region.sub_prefix (by decide))⟩
@@ -312,28 +312,28 @@ theorem trHash_tr (hE : oE p + 1024 < 2 ^ 31) (hk : p.pkLen < 2 ^ 31) {Φ : Lay 
     fun L g mx m₀ t hL hc hφ => WP.mono (zeroSt_ok hL (hΦ L m₀ t hφ).1 hc) fun t' ⟨hc', _⟩ => ⟨hc', hΦ L m₀ t hφ⟩
   have a1 := two_wp (I := I) (Φ := fun L _ _ => EOk p L ∧ L.keyLen = p.pkLen) (Ψ := fun L _ _ => EOk p L)
     (kabs_tr (src := .slot fKey) (len := .imm p.pkLen) (pos := .imm 0) (fun _ _ _ h => h.1)
-      (absOk' hE (by decide) (by simp [Arg.ok]; omega) rfl) (fun L => L.key) (fun L => L.keyLen) (fun _ => 0)
+      (absOk' hE (by decide) (by simp [Arg.ok]; omega_arith) rfl) (fun L => L.key) (fun L => L.keyLen) (fun _ => 0)
       (fun L g mx m t _ hc hφ => ⟨by rw [hc.slot, fKey, hc.pKey], by rw [hφ.2]; rfl, rfl⟩) keySide)
     fun L g mx m₀ t hL hc hφ => by
       obtain ⟨a, b, c, d, e, f⟩ := keySide L hL
       exact WP.mono (kabs_ok hL hφ.1 hc (src := .slot fKey) (len := .imm p.pkLen) (pos := .imm 0)
-        (n := L.keyLen) (q := 0) (absOk' hE (by decide) (by simp [Arg.ok]; omega) rfl)
+        (n := L.keyLen) (q := 0) (absOk' hE (by decide) (by simp [Arg.ok]; omega_arith) rfl)
         (by rw [hc.slot, fKey, hc.pKey]) (by rw [hφ.2]; rfl) rfl a b c d e f)
         fun t' ⟨hc', _⟩ => ⟨hc', hφ.1⟩
   have pd := kpad_tr (I := I) (Φ := fun L _ _ => EOk p L) (fun _ _ _ h => h) (pos := .imm (p.pkLen % 136)) (by
       simp only [padArgs, Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aKs, List.all_cons,
         List.all_nil, Arg.ok, fScr, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
-      omega) (fun _ => p.pkLen % 136) (fun _ _ _ _ _ _ _ _ => rfl) fun _ _ => Nat.mod_lt _ (by decide)
+      omega_arith) (fun _ => p.pkLen % 136) (fun _ _ _ _ _ _ _ _ => rfl) fun _ _ => Nat.mod_lt _ (by decide)
   have pd' := two_wp (I := I) (Φ := fun L _ _ => EOk p L) (Ψ := fun L _ _ => EOk p L) pd
     fun L g mx m₀ t hL hc hφ => WP.mono (kpad_ok hL hφ hc (pos := .imm (p.pkLen % 136)) (by
       simp only [padArgs, Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aKs, List.all_cons,
         List.all_nil, Arg.ok, fScr, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
-      omega) rfl (Nat.mod_lt _ (by decide))) fun t' ⟨hc', _⟩ => ⟨hc', hφ⟩
+      omega_arith) rfl (Nat.mod_lt _ (by decide))) fun t' ⟨hc', _⟩ => ⟨hc', hφ⟩
   have sq := ksqz_tr (I := I) (Φ := fun L _ _ => EOk p L) (fun _ _ _ h => h) (by
     simp only [sqzArgs, Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aMu,
       Impl.MlDsa.X86_64.Message.aKs, List.all_cons, List.all_nil, Arg.ok, fScr, Bool.and_true,
       Bool.and_eq_true, decide_eq_true_eq]
-    omega)
+    omega_arith)
   exact RelCT.seq (RelCT.mono z (fun a b h => h) fun _ _ h => h) (a1.seq (pd'.seq sq))
 
 end

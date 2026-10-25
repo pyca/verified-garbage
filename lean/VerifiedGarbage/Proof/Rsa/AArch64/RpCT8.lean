@@ -84,8 +84,8 @@ theorem zeroOutR_ct {sPtr : Nat} (hP : sPtr < 32) (ptr : RpP → Addr)
       obtain ⟨I, rfl, hs, h0, ha, -, L, -⟩ := h
       dsimp only [RpIn.pub] at hp
       have hn := hs.nowrap
-      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
-      have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega_arith
+      have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
       refine WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t => t.gpr .x1 = ptr I.pub ∧
         t.gpr .x2 = BitVec.ofNat 64 I.k) (by
         brun [h0, hdr_enc hP, hdr_enc (show Public.sK < 32 by decide), hl' sPtr hP,
@@ -101,16 +101,16 @@ theorem zeroOutR_ct {sPtr : Nat} (hP : sPtr < 32) (ptr : RpP → Addr)
       obtain ⟨I, rfl, hs, h0, ha, hW, L, O⟩ := h
       dsimp only [RpIn.pub] at hp hwr hsep ⊢
       have hn := hs.nowrap
-      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
+      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega_arith
       have hk1 := L.k1
       have hk2 := L.k2
-      refine WP.mono (zeroOut_ok hs h0 h256 hP (by decide) hp ha.k (by omega) (by omega)
+      refine WP.mono (zeroOut_ok hs h0 h256 hP (by decide) hp ha.k (by omega_arith) (by omega_arith)
         ⟨fun i hi => by rw [hW]; exact hwr i hi, hsep⟩) fun t ⟨_, hx, k⟩ => ?_
       have fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) :=
-        fun i hi => (frm_scr hsep hx).word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega))
-          (by omega)
+        fun i hi => (frm_scr hsep hx).word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega_arith))
+          (by omega_arith)
       exact ⟨I, rfl, hs.congr k.wr, (k.gpr .x0 (by decide)).trans h0, ha.congr fun i hi => fw i (by
-        unfold rArg at hi; omega), k.wr.trans hW, L, O⟩
+        unfold rArg at hi; omega_arith), k.wr.trans hW, L, O⟩
 
 /-- `fail` leaks the same in two runs with the same public data. -/
 theorem failR_ct : RelCT isa (Two GFr) fail fun _ _ => True := by
@@ -137,11 +137,11 @@ theorem cnt_zero {I : RpIn} (hv : Spec.Rsa.modulusValid I.N I.k = true) (L : RpL
     split <;> simp_all
   rw [e]
   by_cases h : I.D * I.E < 2 ∨ (I.D * I.E - 1) % 2 = 1
-  · rw [VG.Proof.Rsa.recoverPrimes_none h]; omega
+  · rw [VG.Proof.Rsa.recoverPrimes_none h]; omega_arith
   · rw [VG.Proof.Rsa.recoverPrimes_go h]
     have := VG.Proof.Rsa.go_pos I.N (Spec.Rsa.splitTwos (I.D * I.E - 1)).1
       (Spec.Rsa.splitTwos (I.D * I.E - 1)).2 _ (Nat.le_refl _)
-    omega
+    omega_arith
 
 /-- After `main`'s prefix. -/
 def GMP (p : RpP) (s : State) : Prop :=
@@ -182,8 +182,8 @@ theorem rpMain_ct (M : Mont) : RelCT isa (Two GM) (main M.mm) fun _ _ => True :=
     obtain ⟨hNo, hlo⟩ := valid_lo hv
     have hlo' : 2 ^ (64 * (wk I.k - 1)) ≤ I.N := by
       refine Nat.le_trans ?_ hlo
-      rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega)
-    exact ⟨I, σ.mem, rfl, ⟨S, L, hNo, hlo', vN, hi, by rw [vM]; omega, by omega, by omega, by omega,
+      rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega_arith)
+    exact ⟨I, σ.mem, rfl, ⟨S, L, hNo, hlo', vN, hi, by rw [vM]; omega_arith, by omega_arith, by omega_arith, by omega_arith,
       ⟨fun i hi => by rw [S.wr, ← hp.wr]; exact hp.oP.wr i hi, hp.oP.sep⟩,
       ⟨fun i hi => by rw [S.wr, ← hp.wr]; exact hp.oQ.wr i hi, hp.oQ.sep⟩, hp.a⟩, hp.outs, hv⟩
   · exact failR_ct.mono (fun _ _ h => two_mono (fun p t ⟨⟨σ, I, e, hp, hv, S, _⟩, _⟩ =>

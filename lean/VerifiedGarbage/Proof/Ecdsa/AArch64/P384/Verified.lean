@@ -28,6 +28,9 @@ meta import VerifiedGarbage.Proof.P384.Point
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.P384.Prime
+public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
+public import VerifiedGarbage.Impl.P384.CombArithmetic
+meta import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 
 /-!
 # ECDSA over P-384 on AArch64: `Verified`

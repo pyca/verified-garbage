@@ -78,12 +78,12 @@ theorem dblA_ok {s : State} {is : List Instr} {Q : State → Prop} :
       have := Nat.mul_le_mul_right 2 hx
       rw [Nat.mul_right_comm] at this
       rw [e] at hn
-      omega
+      omega_arith
     refine wp_add fun s₁ u₁ _ => dblA_ok (s := s₁) n ?_ fun t ht kt ot => k t ?_
       ((Divide.Keep.of_upd u₁ (by simp)).trans kt) fun q hq => (ot q hq).trans (u₁.other q hq)
-    · rw [u₁.gpr, BitVec.toNat_add, Nat.mod_eq_of_lt (by omega), ← Nat.two_mul, Nat.mul_comm 2]
+    · rw [u₁.gpr, BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_arith), ← Nat.two_mul, Nat.mul_comm 2]
       rw [e] at hn; exact hn
-    · rw [ht, u₁.gpr, BitVec.toNat_add, Nat.mod_eq_of_lt (by omega), ← Nat.two_mul, Nat.mul_comm 2, e]
+    · rw [ht, u₁.gpr, BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_arith), ← Nat.two_mul, Nat.mul_comm 2, e]
 
 /-! ## Addresses -/
 
@@ -91,7 +91,7 @@ section
 variable {s₀ : State} (hp : DPre s₀)
 include hp
 
-theorem laneLen_ge : 8 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega
+theorem laneLen_ge : 8 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_arith
 
 /-- A cell of the matrix, and its bytes, fit below 2³². -/
 theorem cell_fits {lane col : Nat} (hl : lane < lanesN s₀) (hc : col < (prm s₀).laneLen) :
@@ -100,9 +100,9 @@ theorem cell_fits {lane col : Nat} (hl : lane < lanesN s₀) (hc : col < (prm s�
   have hm := hp.mem_fits
   have : lane * (prm s₀).laneLen + col < blocksN s₀ := by
     have e := hp.blocks_eq
-    have := Nat.mul_le_mul_right (prm s₀).laneLen (show lane + 1 ≤ lanesN s₀ by omega)
+    have := Nat.mul_le_mul_right (prm s₀).laneLen (show lane + 1 ≤ lanesN s₀ by omega_arith)
     rw [Nat.succ_mul] at this
-    omega
+    omega_arith
   have h2 : (lane * (prm s₀).laneLen + col + 1) * 1024 ≤ blocksN s₀ * 1024 := Nat.mul_le_mul_right 1024 this
   rw [Nat.succ_mul] at h2
   exact ⟨this, Nat.le_trans (Nat.add_le_add_left h2 _) hm⟩
@@ -120,8 +120,8 @@ theorem blockAddr_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {lane col : 
   have hL : (prm s₀).laneLen < 2 ^ 32 := by
     have := Nat.le_mul_of_pos_left (prm s₀).laneLen (show 0 < lanesN s₀ from hp.lanes_pos)
     have e := hp.blocks_eq
-    omega
-  have lL : lane * (prm s₀).laneLen < 2 ^ 32 := by omega
+    omega_arith
+  have lL : lane * (prm s₀).laneLen < 2 ^ 32 := by omega_arith
   unfold Impl.Argon2.X86.Derive.blockAddr
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_ldloc hp h (d := laneLenOff) (by decide) fun s₁ u₁ => wp_mul fun s₂ a₂ d₂ k₂ o₂ =>
@@ -129,15 +129,15 @@ theorem blockAddr_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {lane col : 
   have i₃ := ((h.upd u₁ (by decide) (by decide)).keep k₂).upd u₃ (by decide) (by decide)
   have e₃ : (s₃.gpr .eax).toNat = lane * (prm s₀).laneLen + col := by
     rw [u₃.gpr, o₂ .ecx (by decide) (by decide), u₁.other .ecx (by decide), hcx, a₂, u₁.other .eax (by decide), ha,
-      u₁.gpr, pr.laneLen, BitVec.toNat_add, Wp.toNat_ofNat_lt (k := lane) (by omega), Wp.toNat_ofNat_lt hL,
-      Wp.toNat_ofNat_lt lL, Wp.toNat_ofNat_lt (k := col) (by omega), Nat.mod_eq_of_lt (by omega)]
-  refine dblA_ok 10 (by rw [e₃]; omega) fun s₄ e₄ k₄ o₄ => ?_
+      u₁.gpr, pr.laneLen, BitVec.toNat_add, Wp.toNat_ofNat_lt (k := lane) (by omega_arith), Wp.toNat_ofNat_lt hL,
+      Wp.toNat_ofNat_lt lL, Wp.toNat_ofNat_lt (k := col) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  refine dblA_ok 10 (by rw [e₃]; omega_arith) fun s₄ e₄ k₄ o₄ => ?_
   have i₄ := i₃.keep k₄
   refine wp_addm i₄.ebp (i₄.arg_in hp (i := 13) (by decide)) fun s₅ u₅ => k s₅ ?_ ?_ ?_
   · rw [u₅.gpr, i₄.arg hp (by decide), BitVec.add_comm]
     congr 1
     apply BitVec.eq_of_toNat_eq
-    rw [e₄, e₃, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [e₄, e₃, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   · rw [u₅.other _ (by decide), o₄ _ (by decide), u₃.other _ (by decide), o₂ _ (by decide) (by decide),
       u₁.other _ (by decide)]
   · exact (((Divide.Keep.of_upd u₁ (by simp)).trans k₂).trans ((Divide.Keep.of_upd u₃ (by simp)).trans k₄)).trans
@@ -174,7 +174,7 @@ theorem segLen_lt : (prm s₀).segmentLen < 2 ^ 30 := by
   have l := hp.laneLen_eq
   have := Nat.le_mul_of_pos_left (prm s₀).laneLen (show 0 < lanesN s₀ from hp.lanes_pos)
   have := hp.blocks_lt
-  omega
+  omega_arith
 
 /-- `column`: `eax` and `ecx :=` the current column, `slice · segLen + index`. -/
 theorem column_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {pass slice lane index : Nat}
@@ -199,11 +199,11 @@ theorem column_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {pass slice lan
   · have e : s₄.gpr .eax = BitVec.ofNat 32 (slice * (prm s₀).segmentLen + index) := by
       rw [u₄.gpr, a₃, u₂.other _ (by decide), u₁.gpr, u₂.gpr, lw_mem u₁.mem, ps.slice, pr.segLen,
         show s₃.mem.readW (addr (E s₀) indexOff) 32 = lw s₀ s₃ indexOff from rfl, lw_mem m₃, ps.index,
-        Wp.toNat_ofNat_lt (by omega), Wp.toNat_ofNat_lt (by omega), BitVec.ofNat_add_ofNat]
+        Wp.toNat_ofNat_lt (by omega_arith), Wp.toNat_ofNat_lt (by omega_arith), BitVec.ofNat_add_ofNat]
     rw [u.other _ (by decide), e]
   · rw [u.gpr, u₄.gpr, a₃, u₂.other _ (by decide), u₁.gpr, u₂.gpr, lw_mem u₁.mem, ps.slice, pr.segLen,
       show s₃.mem.readW (addr (E s₀) indexOff) 32 = lw s₀ s₃ indexOff from rfl, lw_mem m₃, ps.index,
-      Wp.toNat_ofNat_lt (by omega), Wp.toNat_ofNat_lt (by omega), BitVec.ofNat_add_ofNat]
+      Wp.toNat_ofNat_lt (by omega_arith), Wp.toNat_ofNat_lt (by omega_arith), BitVec.ofNat_add_ofNat]
   · exact (((Divide.Keep.of_upd u₁ (by simp)).trans (Divide.Keep.of_upd u₂ (by simp))).trans
       (k₃.trans (Divide.Keep.of_upd u₄ (by simp)))).trans (Divide.Keep.of_upd u (by simp))
 
@@ -222,21 +222,21 @@ theorem prevColumn_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {col : Nat}
   refine WP.seq (WP.ite (decide (col = 0)) ?_ ?_ ?_)
   · show s₁.zf = _
     have z : ∀ y : BitVec 32, y - 0 = y := fun y => by simp
-    rw [z₁, hx, z, Wp.ofNat_beq_zero (by omega)]
+    rw [z₁, hx, z, Wp.ofNat_beq_zero (by omega_arith)]
   · intro hz
     refine wp_ldloc hp i₁ (d := laneLenOff) (by decide) fun s₂ u₂ => WP.block_nil ?_
     refine wp_subi fun t u _ _ => WP.block_nil ⟨?_, ?_⟩
     · have c0 : col = 0 := of_decide_eq_true hz
-      rw [u.gpr, u₂.gpr, lw_mem f₁.mem, pr.laneLen, c0, Wp.ofNat_pred (by omega), Nat.zero_add,
-        Nat.mod_eq_of_lt (by omega)]
+      rw [u.gpr, u₂.gpr, lw_mem f₁.mem, pr.laneLen, c0, Wp.ofNat_pred (by omega_arith), Nat.zero_add,
+        Nat.mod_eq_of_lt (by omega_arith)]
     · exact (k₁.trans (Divide.Keep.of_upd u₂ (by simp))).trans (Divide.Keep.of_upd u (by simp))
   · intro hz
     refine WP.block_nil (wp_subi fun t u _ _ => WP.block_nil ⟨?_, ?_⟩)
     · have c0 : col ≠ 0 := of_decide_eq_false hz
-      rw [u.gpr, f₁.gpr, hx, Wp.ofNat_pred (by omega)]
+      rw [u.gpr, f₁.gpr, hx, Wp.ofNat_pred (by omega_arith)]
       congr 1
-      rw [show col + (prm s₀).laneLen - 1 = col - 1 + (prm s₀).laneLen by omega, Nat.add_mod_right,
-        Nat.mod_eq_of_lt (by omega)]
+      rw [show col + (prm s₀).laneLen - 1 = col - 1 + (prm s₀).laneLen by omega_arith, Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega_arith)]
     · exact k₁.trans (Divide.Keep.of_upd u (by simp))
 
 /-- `prevPointer`: `eax :=` the address of the previous block. -/
@@ -259,7 +259,7 @@ theorem prevPointer_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {pass slic
   refine wp_ldloc hp i₂ (d := laneOff) (by decide) fun s₃ u₃ => ?_
   have i₃ := i₂.upd u₃ (by decide) (by decide)
   rw [← List.append_nil Impl.Argon2.X86.Derive.blockAddr]
-  refine blockAddr_ok hp i₃ (pr.of_mem (by rw [u₃.mem, m₂])) hl (Nat.mod_lt _ (by omega))
+  refine blockAddr_ok hp i₃ (pr.of_mem (by rw [u₃.mem, m₂])) hl (Nat.mod_lt _ (by omega_arith))
     (by rw [u₃.gpr, lw_mem m₂, ps.lane]) (by rw [u₃.other _ (by decide), c₂]) fun t a _ k => WP.block_nil ⟨a, ?_⟩
   exact ((k₁.trans k₂).trans (Divide.Keep.of_upd u₃ (by simp))).trans k
 
@@ -325,8 +325,8 @@ theorem blk_shift (m : Mem) (B : BitVec 32) (o : Nat) : blk m (B + BitVec.ofNat 
 theorem cell_blk {s₀ : State} (hp : DPre s₀) (m : Mem) {k : Nat} (hk : k < blocksN s₀) :
     blockAt m (matrixCell (memB s₀) k) = blk m (memP s₀) (k * 1024) := by
   have := hp.mem_fits
-  have : k * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega
-  rw [← cell_addr hp hk, Proof.Argon2.X86.blockAt_eq (by rw [add_nat (by omega)]; omega), blk_shift]
+  have : k * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_arith
+  rw [← cell_addr hp hk, Proof.Argon2.X86.blockAt_eq (by rw [add_nat (by omega_arith)]; omega_arith), blk_shift]
 
 /-- The first word of a block. -/
 theorem blk_zero (m : Mem) (B : BitVec 32) (o : Nat) :
@@ -351,10 +351,10 @@ theorem independent_eq {s₀ : State} (hk : (kindV s₀).toNat ≤ 2) (pass slic
   have e3' : (Spec.Argon2.Variant.i == .id) = false := rfl
   have e4 : (Spec.Argon2.Variant.id == .i) = false := rfl
   have e5 : (Spec.Argon2.Variant.id == .id) = true := rfl
-  rcases (by omega : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with h | h | h
+  rcases (by omega_arith : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with h | h | h
   · rw [independent, hv, ite_eq_left h, e1, e2, h]; simp
-  · rw [independent, hv, ite_eq_right (by omega), ite_eq_left h, e3, e3', h]; simp
-  · rw [independent, hv, ite_eq_right (by omega), ite_eq_right (by omega), e4, e5, h]; simp
+  · rw [independent, hv, ite_eq_right (by omega_arith), ite_eq_left h, e3, e3', h]; simp
+  · rw [independent, hv, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), e4, e5, h]; simp
     cases pass <;> rfl
 
 theorem mode_bits (a b c d : Bool) :
@@ -405,7 +405,7 @@ theorem addressMode_ok {s : State} (h : Inv s₀ s) {pass slice lane index : Nat
       congr 3
       rw [p₁₀]; rfl
     have p₁₄ : (s₁₄.gpr .eax).toNat = slice := by
-      rw [u₁₄.gpr, lw_mem K₁₃.mem, ps.slice, Wp.toNat_ofNat_lt (by omega)]
+      rw [u₁₄.gpr, lw_mem K₁₃.mem, ps.slice, Wp.toNat_ofNat_lt (by omega_arith)]
     have e₁₇ : s₁₇.gpr .edx = s₁₃.gpr .edx &&& if decide (slice < 2) then BitVec.allOnes 32 else 0 := by
       rw [u₁₇.gpr, u₁₆.other _ (by decide), f₁₅.gpr, u₁₄.other _ (by decide), u₁₆.gpr]
       congr 3
@@ -417,7 +417,7 @@ theorem addressMode_ok {s : State} (h : Inv s₀ s) {pass slice lane index : Nat
     rw [z, u₁₉.gpr, e₁₈, e₁₇, e₁₃, e₉, e₅, independent_eq hk]
     have k3 : decide ((kindV s₀ ^^^ 1).toNat < 1) = decide ((kindV s₀).toNat = 1) ∧
         decide ((kindV s₀ ^^^ 2).toNat < 1) = decide ((kindV s₀).toNat = 2) := by
-      rcases (by omega : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with e | e | e <;>
+      rcases (by omega_arith : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with e | e | e <;>
         · rw [show kindV s₀ = BitVec.ofNat 32 (kindV s₀).toNat by simp, e]; decide
     rw [k3.1, k3.2, show decide (pass < 1) = decide (pass = 0) by simp only [Nat.lt_one_iff],
       mode_bits]

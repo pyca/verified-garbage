@@ -47,14 +47,14 @@ theorem LayOk.steps (hl : LayOk l) :
       l.S % l.R < l.R := hl.amm.steps
 
 theorem regOf_lt {p k i : Nat} (hp : p < l.nl) (hR : 2 ≤ l.R) : regOf l p k i < l.nl * l.R := by
-  have := Nat.mod_lt (k + i) (show 0 < l.R by omega)
-  have := Nat.mul_le_mul_left l.R (show p + 1 ≤ l.nl by omega)
-  unfold regOf; rw [Nat.mul_comm l.nl]; rw [Nat.mul_add, Nat.mul_one] at this; omega
+  have := Nat.mod_lt (k + i) (show 0 < l.R by omega_arith)
+  have := Nat.mul_le_mul_left l.R (show p + 1 ≤ l.nl by omega_arith)
+  unfold regOf; rw [Nat.mul_comm l.nl]; rw [Nat.mul_add, Nat.mul_one] at this; omega_arith
 
 theorem regOf_div {p k i : Nat} (hR : 2 ≤ l.R) : regOf l p k i / l.R = p := by
   unfold regOf
-  rw [Nat.mul_comm, Nat.add_comm, Nat.add_mul_div_right _ _ (by omega),
-    Nat.div_eq_of_lt (Nat.mod_lt _ (by omega)), Nat.zero_add]
+  rw [Nat.mul_comm, Nat.add_comm, Nat.add_mul_div_right _ _ (by omega_arith),
+    Nat.div_eq_of_lt (Nat.mod_lt _ (by omega_arith)), Nat.zero_add]
 
 theorem regOf_mod {p k i : Nat} : regOf l p k i % l.R = (k + i) % l.R := by
   unfold regOf
@@ -62,10 +62,10 @@ theorem regOf_mod {p k i : Nat} : regOf l p k i % l.R = (k + i) % l.R := by
 
 theorem mod_role {R kk y : Nat} (hk : kk < R) (hy : y < R) : ((kk + y) % R + R - y) % R = kk := by
   by_cases h : kk + y < R
-  · rw [Nat.mod_eq_of_lt h, show kk + y + R - y = kk + R by omega, Nat.add_mod_right, Nat.mod_eq_of_lt hk]
+  · rw [Nat.mod_eq_of_lt h, show kk + y + R - y = kk + R by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt hk]
   · have e : (kk + y) % R = kk + y - R := by
-      rw [Nat.mod_eq_sub_mod (a := kk + y) (b := R) (by omega), Nat.mod_eq_of_lt (by omega)]
-    rw [e, show kk + y - R + R - y = kk by omega, Nat.mod_eq_of_lt hk]
+      rw [Nat.mod_eq_sub_mod (a := kk + y) (b := R) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    rw [e, show kk + y - R + R - y = kk by omega_arith, Nat.mod_eq_of_lt hk]
 
 theorem expReg_regOf {p kk i : Nat} (hp : p < l.nl) (hR : 2 ≤ l.R) (hk : kk < l.R) :
     expReg l i (regOf l p kk (i + 1)) = hT l p kk i := by
@@ -74,13 +74,13 @@ theorem expReg_regOf {p kk i : Nat} (hp : p < l.nl) (hR : 2 ≤ l.R) (hk : kk < 
   congr 1
   unfold roleOf
   rw [regOf_mod, Nat.add_mod, Nat.mod_eq_of_lt hk]
-  exact mod_role hk (Nat.mod_lt _ (by omega))
+  exact mod_role hk (Nat.mod_lt _ (by omega_arith))
 
 theorem expReg_zN (i : Nat) : expReg l i (zN l) = .reg (zN l) := by
-  simp only [expReg, zN, tN, show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R by omega,
-    show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + l.nl by omega,
-    show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + 2 * l.nl by omega,
-    show l.nl * l.R + 2 * l.nl ≠ l.nl * l.R + 2 * l.nl + 1 by omega, ite_false]
+  simp only [expReg, zN, tN, show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R by omega_arith,
+    show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + l.nl by omega_arith,
+    show ¬ l.nl * l.R + 2 * l.nl < l.nl * l.R + 2 * l.nl by omega_arith,
+    show l.nl * l.R + 2 * l.nl ≠ l.nl * l.R + 2 * l.nl + 1 by omega_arith, ite_false]
 
 theorem ammStep_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i < l.R) {L a m : Nat → Nat → Nat}
     {k b : Nat → Nat} (h : StepIn l s i L a m k b) (hc : Ctx (lim l) s) :
@@ -129,11 +129,11 @@ def lm (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (a m : Nat → Nat → Nat) (k : Nat
 
 theorem lm_lt (hR : l.R ≤ 20) {a m : Nat → Nat → Nat} {k : Nat → Nat} {bl : Nat → Nat → Nat} {p n j : Nat}
     (hn : n ≤ l.L) (hj : j < l.L) : lm l a m k bl p n j < 2 ^ 63 := by
-  have := Amm52N.steps_lt (o := ops a m k p) (b := bl p) (L := fun _ => 0) (by simp only [Lay.L]; omega)
+  have := Amm52N.steps_lt (o := ops a m k p) (b := bl p) (L := fun _ => 0) (by simp only [Lay.L]; omega_arith)
     (fun _ _ => by decide) n hn j hj
-  have : (n + 1) * 2 ^ 56 ≤ 81 * 2 ^ 56 := Nat.mul_le_mul_right _ (by simp only [Lay.L] at hn; omega)
+  have : (n + 1) * 2 ^ 56 ≤ 81 * 2 ^ 56 := Nat.mul_le_mul_right _ (by simp only [Lay.L] at hn; omega_arith)
   unfold lm
-  omega
+  omega_arith
 
 /-- The machine within block `blk`, before step `i`: the lanes after
 `R blk + i` steps, `r9` at the block's limbs, the zero register zero. -/
@@ -154,7 +154,7 @@ theorem lim_other {b : Reg} (h8 : b ≠ .r8) (h9 : b ≠ .r9) (h10 : b ≠ .r10)
 
 theorem off_blk (hR : 2 ≤ l.R) {blk i : Nat} (hi : i < l.R) : l.off (l.R * blk + i) = 32 * i + 8 * blk := by
   unfold Lay.off
-  rw [Nat.add_comm (l.R * blk), Nat.add_mul_mod_self_left, Nat.add_mul_div_left _ _ (by omega),
+  rw [Nat.add_comm (l.R * blk), Nat.add_mul_mod_self_left, Nat.add_mul_div_left _ _ (by omega_arith),
     Nat.mod_eq_of_lt hi, Nat.div_eq_of_lt hi, Nat.zero_add]
 
 theorem InBlk.stepIn (hl : AmmOk l) {s₀ s : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
@@ -164,26 +164,26 @@ theorem InBlk.stepIn (hl : AmmOk l) {s₀ s : State} {a m : Nat → Nat → Nat}
       Ctx (lim l) s := by
   obtain ⟨hR, hR10⟩ := hl.bounds
   have hbi : l.R * blk + i < l.L := by
-    have := hl.steps; omega
-  have hb4 : blk < 4 := Nat.lt_of_mul_lt_mul_left (a := l.R) (by simp only [Lay.L] at hbi; omega)
-  refine ⟨⟨h.z, h.lanes, fun p _ j hj => lm_lt hR10 (by omega) hj, fun p hp kk hk t ht => ?_,
+    have := hl.steps; omega_arith
+  have hb4 : blk < 4 := Nat.lt_of_mul_lt_mul_left (a := l.R) (by simp only [Lay.L] at hbi; omega_arith)
+  refine ⟨⟨h.z, h.lanes, fun p _ j hj => lm_lt hR10 (by omega_arith) hj, fun p hp kk hk t ht => ?_,
     fun p hp kk hk t ht => ?_, fun p hp t ht => ?_, fun p hp => ?_, e.alt, e.mlt, e.klt,
     fun p hp => e.blt p hp _ hbi⟩, ?_⟩
   · rw [h.mem, h.r8]; exact e.ina p hp kk hk t ht
   · rw [h.mem, h.r10]; exact e.inm p hp kk hk t ht
   · rw [h.mem, h.r10]; exact e.ink p hp t ht
   · rw [h.mem, h.r9, ofNat_add64, ← e.inb p hp (l.R * blk + i) hbi, off_blk hR hi]
-    exact congrArg (fun d => s₀.mem.readW (s₀.gpr .r9 + BitVec.ofNat 64 d) 64) (by omega)
+    exact congrArg (fun d => s₀.mem.readW (s₀.gpr .r9 + BitVec.ofNat 64 d) 64) (by omega_arith)
   · intro b d n hn hdn
     rw [h.rd, h.wr]
     by_cases b8 : b = .r8
     · subst b8; rw [h.r8]; exact e.rd8 d n hn hdn
     by_cases b9 : b = .r9
-    · subst b9; rw [h.r9, ofNat_add64]; exact e.rd9 _ n hn (by omega)
+    · subst b9; rw [h.r9, ofNat_add64]; exact e.rd9 _ n hn (by omega_arith)
     by_cases b10 : b = .r10
     · subst b10; rw [h.r10]; exact e.rd10 d n hn hdn
     · rw [lim_other b8 b9 b10] at hdn
-      omega
+      omega_arith
 
 theorem steps_chain (hl : AmmOk l) {s₀ : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
     {bl : Nat → Nat → Nat} {blk : Nat} (e : Env l s₀ a m k bl) :
@@ -196,9 +196,9 @@ theorem steps_chain (hl : AmmOk l) {s₀ : State} {a m : Nat → Nat → Nat} {k
   | succ i ih =>
     intro hi hb s h
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) (by omega) s h) fun s₁ ⟨h₁, g₁, x₁⟩ => ?_
-    obtain ⟨hst, hc⟩ := h₁.stepIn hl (by omega) (by omega) e
-    refine WP.mono (ammStep_ok hl (by omega) hst hc) fun s₂ ⟨l₂, z₂, k₂⟩ => ?_
+    refine WP.mono (ih (by omega_arith) (by omega_arith) s h) fun s₁ ⟨h₁, g₁, x₁⟩ => ?_
+    obtain ⟨hst, hc⟩ := h₁.stepIn hl (by omega_arith) (by omega_arith) e
+    refine WP.mono (ammStep_ok hl (by omega_arith) hst hc) fun s₂ ⟨l₂, z₂, k₂⟩ => ?_
     refine ⟨⟨fun p hp kk hk t ht => ?_, z₂, ?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => (k₂.gpr r hr).trans (g₁ r hr),
       k₂.mxcsr.trans x₁⟩
     · rw [l₂ p hp kk hk t ht]; rfl
@@ -224,7 +224,7 @@ theorem ammBlock_ok (hl : AmmOk l) {s₀ s : State} {a m : Nat → Nat → Nat} 
     ([.alu .add .r9 (.imm 8), .alu .sub .rcx (.imm 1)] : List Instr) from rfl, WP.block_append_iff]
   have hst := hl.steps
   have hRb : l.R * (blk + 1) ≤ l.R * (l.S / l.R) := Nat.mul_le_mul_left _ hb
-  refine WP.mono (steps_chain hl e l.R (Nat.le_refl _) (by rw [Nat.mul_add, Nat.mul_one] at hRb; omega) s h)
+  refine WP.mono (steps_chain hl e l.R (Nat.le_refl _) (by rw [Nat.mul_add, Nat.mul_one] at hRb; omega_arith) s h)
     fun s₁ ⟨h₁, g₁, x₁⟩ => ?_
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
@@ -234,7 +234,7 @@ theorem ammBlock_ok (hl : AmmOk l) {s₀ s : State} {a m : Nat → Nat → Nat} 
   have e8 : BitVec.signExtend 64 (8 : BitVec 32) = BitVec.ofNat 64 8 := rfl
   have e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := rfl
   have hc : BitVec.ofNat 64 (l.S / l.R - blk) - 1 = BitVec.ofNat 64 (l.S / l.R - (blk + 1)) := by
-    rw [show l.S / l.R - blk = (l.S / l.R - (blk + 1)) + 1 by omega, BitVec.ofNat_add]
+    rw [show l.S / l.R - blk = (l.S / l.R - (blk + 1)) + 1 by omega_arith, BitVec.ofNat_add]
     exact BitVec.add_sub_cancel _ _
   simp only [e8, e1]
   generalize hS₂ : (arithFlags s₁ (s₁.gpr .r9 + BitVec.ofNat 64 8) _ _).setReg .r9 (s₁.gpr .r9 + BitVec.ofNat 64 8) = S₂
@@ -259,7 +259,7 @@ theorem ammBlock_ok (hl : AmmOk l) {s₀ s : State} {a m : Nat → Nat → Nat} 
     exact h₁.lanes p hp kk hk t ht
   · rw [q₃, q₂]; exact h₁.z t ht
   · rw [g₃ _ (by decide), g₂ _ (by decide)]; exact h₁.r8
-  · rw [g₃ _ (by decide), r9₂, r9₁, BitVec.add_assoc, show 8 * (blk + 1) = 8 * blk + 8 by omega, BitVec.ofNat_add]
+  · rw [g₃ _ (by decide), r9₂, r9₁, BitVec.add_assoc, show 8 * (blk + 1) = 8 * blk + 8 by omega_arith, BitVec.ofNat_add]
   · rw [g₃ _ (by decide), g₂ _ (by decide)]; exact h₁.r10
   · rw [v₃.1, v₂.1]; exact h₁.mem
   · rw [v₃.2.1, v₂.2.1]; exact h₁.rd
@@ -268,9 +268,9 @@ theorem ammBlock_ok (hl : AmmOk l) {s₀ s : State} {a m : Nat → Nat → Nat} 
   · rw [z₃, cx₂, hc]
     have hb4 := hst.2.1
     generalize l.S / l.R = nb at hb hb4
-    rcases (by omega : blk = 0 ∨ blk = 1 ∨ blk = 2 ∨ blk = 3) with rfl | rfl | rfl | rfl <;>
-      rcases (by omega : nb = 1 ∨ nb = 2 ∨ nb = 3 ∨ nb = 4) with rfl | rfl | rfl | rfl <;>
-      first | rfl | omega
+    rcases (by omega_arith : blk = 0 ∨ blk = 1 ∨ blk = 2 ∨ blk = 3) with rfl | rfl | rfl | rfl <;>
+      rcases (by omega_arith : nb = 1 ∨ nb = 2 ∨ nb = 3 ∨ nb = 4) with rfl | rfl | rfl | rfl <;>
+      first | rfl | omega_arith
   · rw [g₃ _ h2, g₂ _ h3]; exact g₁ r h1
   · rw [v₃.2.2.2, v₂.2.2.2]; exact x₁
 

@@ -30,17 +30,17 @@ theorem ofNat_add7_shr3 (k : Nat) (hk : k < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem ofNat_shl3 (a : Nat) : BitVec.ofNat 64 a <<< 3 = BitVec.ofNat 64 (8 * a) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem ofNat_shl1 (a : Nat) : BitVec.ofNat 64 a <<< 1 = BitVec.ofNat 64 (2 * a) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 /-- `setup`, `n` at `r5`, `k` in `r6` and the working space at `r21`. -/
 theorem setup_ok {s : State} {P N S : Addr} {Z k : Nat} (hs : Scr s S Z) (h3 : s.gpr .r3 = P)
@@ -55,10 +55,10 @@ theorem setup_ok {s : State} {P N S : Addr} {Z k : Nat} (hs : Scr s S Z) (h3 : s
       Keep [.r4, .r5, .r8, .r9, .r10, .r11, .r12, .r19] s t := by
   refine WP.keep _ ?_ (by decide)
   unfold setup
-  prun [h3, h5, h6, h21, BitVec.add_zero, ofNat_add7_shr3 k (by omega), ofNat_shl3, ofNat_shl1, sW, hdrBytes, Nat.reduceMul, hs.st (d := 48) (n := 8) (by omega)]
+  prun [h3, h5, h6, h21, BitVec.add_zero, ofNat_add7_shr3 k (by omega_arith), ofNat_shl3, ofNat_shl1, sW, hdrBytes, Nat.reduceMul, hs.st (d := 48) (n := 8) (by omega_arith)]
   refine ⟨?_, ?_, ?_, ?_⟩ <;>
     simp only [off, slot, hdrBytes, BitVec.add_assoc, BitVec.ofNat_add_ofNat] <;>
-    congr 2 <;> omega
+    congr 2 <;> omega_arith
 
 /-- `pre`, `pre_len` words at `r3`. -/
 abbrev preR (s : State) : Region := ⟨s.gpr .r3, (s.gpr .r4).toNat * 8⟩
@@ -92,7 +92,7 @@ def fnContract : Contract isa where
 theorem sav_in {S : Addr} {Z : Nat} (hZ : 200 ≤ Z) {i : Nat} (hi : i < 9) :
     (⟨S, Z⟩ : Region).Contains (off (savW S) (8 * i)) 8 := by
   rw [off, Offset.add_add]
-  exact Offset.contains_base S (by omega) (by omega)
+  exact Offset.contains_base S (by omega_arith) (by omega_arith)
 
 theorem pres_not_core : ∀ r ∈ preserved, (∀ i < 9, r ≠ saved i) →
     r ∉ [Reg.r4, .r5, .r8, .r9, .r10, .r11, .r12, .r19] ++ coreRegs ∧ r ≠ .r21 := by
@@ -112,51 +112,51 @@ theorem front_ok {s : State} (h : fnContract.pre s) :
   simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.Rsa.publicScratchWords] at hpl hsl
   have hs : Scr s (s.gpr .r7) ((s.gpr .r8).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) nwS
   have hin : ∀ i < 9, InRegions s.wr (off (savW (s.gpr .r7)) (8 * i)) 8 := fun i hi =>
-    ⟨scrR s, by rw [hwr]; simp, sav_in (by omega) hi⟩
+    ⟨scrR s, by rw [hwr]; simp, sav_in (by omega_arith) hi⟩
   refine WP.block_append (WP.mono (save_ok s hin) fun s₁ hS => ?_)
   have hk1 := hS.keep
   have e6 : s.gpr .r6 = BitVec.ofNat 64 (s.gpr .r6).toNat := (ofNat_toNat64 _).symm
   refine WP.mono (setup_ok (P := s.gpr .r3) (N := s.gpr .r5) (k := (s.gpr .r6).toNat) (hs.congr hk1.wr)
-    (hk1.gpr _ (by decide)) (hk1.gpr _ (by decide)) ((hk1.gpr _ (by decide)).trans e6) hS.r21 (by omega)
-    hk' (by omega)) fun s₂ ⟨⟨j19, j12, j11, j10, j5, j8, j9, jm⟩, k₂⟩ => ?_
+    (hk1.gpr _ (by decide)) (hk1.gpr _ (by decide)) ((hk1.gpr _ (by decide)).trans e6) hS.r21 (by omega_arith)
+    hk' (by omega_arith)) fun s₂ ⟨⟨j19, j12, j11, j10, j5, j8, j9, jm⟩, k₂⟩ => ?_
   have k12 := hk1.trans k₂
-  have hlen : 16 * (((s.gpr .r6).toNat + 7) / 8) = (s.gpr .r4).toNat * 8 := by omega
+  have hlen : 16 * (((s.gpr .r6).toNat + 7) / 8) = (s.gpr .r4).toNat * 8 := by omega_arith
   have hmem : (⟨s.gpr .r3, 16 * (((s.gpr .r6).toNat + 7) / 8)⟩ : Region) ∈ s₂.wr := by
     rw [k12.wr, hwr, hlen]; simp
   -- Only the working space changed.
   have fr₂ : Frame [scrR s] s.mem s₂.mem := by
     rw [jm]
     refine (hS.frame.sub fun r hr => ⟨scrR s, List.mem_singleton_self _, ?_⟩).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by simp; omega) (by decide))
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by simp; omega_arith) (by decide))
     simp only [List.mem_singleton] at hr
     subst hr
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_arith)
   simp only [dataOf]
-  refine ⟨⟨⟨hs.congr k12.wr, Scr.of_mem hmem (by dsimp only [PD.w]; omega), hk, hk',
-    by dsimp only [PD.w]; unfold slot hdrBytes; omega,
+  refine ⟨⟨⟨hs.congr k12.wr, Scr.of_mem hmem (by dsimp only [PD.w]; omega_arith), hk, hk',
+    by dsimp only [PD.w]; unfold slot hdrBytes; omega_arith,
     fun x hx => ?_, bytesAt_length _ _ _, j19, j10, j5, j8, j9, j11,
     (k₂.gpr .r21 (by decide)).trans hS.r21, (k12.gpr .r6 (by decide)).trans e6, j12⟩,
     fun i hi => by
       dsimp only at hi ⊢
-      exact ⟨nR s, by rw [k12.rd, hrd]; simp, Offset.contains_base _ (by omega) (by omega)⟩,
+      exact ⟨nR s, by rw [k12.rd, hrd]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun i hi x hx e => ?_, fun i hi => ?_⟩, fun i hi => ?_, k12⟩
   · dsimp only [PD.w] at hx ⊢
     by_contra hc
-    exact dPS x (by simp only [Region.Contains]; simp only [ofs] at hc; omega)
-      (by simp only [Region.Contains]; simp only [ofs] at hx; omega)
+    exact dPS x (by simp only [Region.Contains]; simp only [ofs] at hc; omega_arith)
+      (by simp only [Region.Contains]; simp only [ofs] at hx; omega_arith)
   · dsimp only at hi hx
     subst e
-    exact dNS _ (Offset.contains_base (d := i) _ (by omega) (by omega))
-      (by simp only [Region.Contains]; simp only [ofs, off] at hx; omega)
+    exact dNS _ (Offset.contains_base (d := i) _ (by omega_arith) (by omega_arith))
+      (by simp only [Region.Contains]; simp only [ofs, off] at hx; omega_arith)
   · dsimp only at hi ⊢
     simp only [bytesAt_length] at hi
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
-    exact fr₂.bytes (R := nR s) (by simpa using dNS) (by show (s.gpr .r6).toNat ≤ 2 ^ 64; omega) hi
+    exact fr₂.bytes (R := nR s) (by simpa using dNS) (by show (s.gpr .r6).toNat ≤ 2 ^ 64; omega_arith) hi
   · have ea : off (savW (s.gpr .r7)) (8 * i) = s.gpr .r7 + BitVec.ofNat 64 (128 + 8 * i) := by
       rw [off, Offset.add_add]
     rw [jm, Mem.readW_writeW_sep ?_ (by decide)]
     · exact hS.saved i hi
-    · rw [ea, off]; exact Offset.sep _ (by omega) (by omega) (by omega)
+    · rw [ea, off]; exact Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem fn_correct (s : State) (h : fnContract.pre s) :
     ∃ tr t, Exec isa precompute s tr t ∧ abiPreserved s t ∧ fnContract.post s t := by
@@ -165,7 +165,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
   obtain ⟨_, hwr, _, dPS, _, nwP, _, nwS, ⟨hk, hk'⟩, hpl, hsl⟩ := h
   simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.Rsa.publicScratchWords] at hpl hsl
   have hin : ∀ i < 9, InRegions s.wr (off (savW (s.gpr .r7)) (8 * i)) 8 := fun i hi =>
-    ⟨scrR s, by rw [hwr]; simp, sav_in (by omega) hi⟩
+    ⟨scrR s, by rw [hwr]; simp, sav_in (by omega_arith) hi⟩
   unfold precompute
   refine WP.seq (WP.mono (front_ok hpre) fun s₂ ⟨hC, hsv, k12⟩ => ?_)
   refine WP.seq (WP.mono (core_C1 hC) fun t ⟨⟨hout, hfr⟩, kt⟩ => ?_)
@@ -178,10 +178,10 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
     · intro r' hr'
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl
-      · rw [ea]; exact Offset.disjoint _ (by unfold hdrBytes; omega) (by omega) (by unfold hdrBytes; omega)
+      · rw [ea]; exact Offset.disjoint _ (by unfold hdrBytes; omega_arith) (by omega_arith) (by unfold hdrBytes; omega_arith)
       · refine Region.Disjoint.sub_left (r₁ := scrR s)
-          (fun a h1 h2 => dPS a (by simp only [Region.Contains] at h2 ⊢; omega) h1) ?_
-        rw [ea]; exact Offset.sub_base _ (by omega)
+          (fun a h1 h2 => dPS a (by simp only [Region.Contains] at h2 ⊢; omega_arith) h1) ?_
+        rw [ea]; exact Offset.sub_base _ (by omega_arith)
   refine WP.mono (restore_ok t (S := s.gpr .r7) (v := fun i => s.gpr (saved i))
     (by rw [kt.gpr .r21 (by decide)]; exact hC.base.r21)
     (fun i hi => by rw [kt.wr, k12.wr]; exact hin i hi) hsav)

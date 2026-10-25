@@ -119,39 +119,39 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M :
   have hn := hs.nowrap
   have hs15 := hs.small
   obtain ⟨n0, acc_le, a_le, b_le, mo_le, acc4, sa, sb, smo⟩ := hL
-  obtain ⟨N, hN⟩ : ∃ N, M.n = N + 1 := ⟨M.n - 1, by omega⟩
+  obtain ⟨N, hN⟩ : ∃ N, M.n = N + 1 := ⟨M.n - 1, by omega_arith⟩
   have ht := I.kp.ws hs
   rw [row_eq]
   -- u
   have hat : word t.mem base (a + 8 * k + 0) = word s.mem base (a + 8 * k) :=
-    I.out.word (by omega) (by omega)
-  refine wp_append (wp_step (ld_ok ht I.r5 (by decide) (by decide) (d := 0) (by omega))
+    I.out.word (by omega_arith) (by omega_arith)
+  refine wp_append (wp_step (ld_ok ht I.r5 (by decide) (by decide) (d := 0) (by omega_arith))
     (wp_step (exec_li (by decide)) (WP.block_nil ?_)))
   rw [hat]
   generalize hu : word s.mem base (a + 8 * k) = u
   -- T += u [b]
   refine wp_append (WP.mono (macs_ok ((ht.write _ _).write _ _) ((I.r6.write _).write _) ((I.r3.write _).write _)
-    (rs := .r6) (src := 0) (rd := acc) (dst := acc) (W := M.n) (by decide) (by decide) acc4 acc4 (by omega)
-    (by omega) (by omega) (Nat.le_refl _) (by omega) (Nat.le_refl _)) fun t₂ ⟨O₂, V₂, K₂⟩ => ?_)
+    (rs := .r6) (src := 0) (rd := acc) (dst := acc) (W := M.n) (by decide) (by decide) acc4 acc4 (by omega_arith)
+    (by omega_arith) (by omega_arith) (Nat.le_refl _) (by omega_arith) (Nat.le_refl _)) fun t₂ ⟨O₂, V₂, K₂⟩ => ?_)
   simp only [write_gpr, write_mem, reduceCtorEq, ite_false, ite_true, Nat.add_zero] at O₂ V₂
   rw [show (BitVec.ofNat 64 0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at V₂
   have K₁₂ : Kp [.r0, .r9, .r10, .r11, .r12] t t₂ :=
     ((Kp.write t _ (by decide)).trans (Kp.write _ _ (by decide))).trans (K₂.mono (by decide))
-  refine wp_append (WP.mono (topB_ok (K₁₂.ws ht) (K₁₂.at I.r3) (d := acc + 8 * M.n) (by omega) (by omega))
+  refine wp_append (WP.mono (topB_ok (K₁₂.ws ht) (K₁₂.at I.r3) (d := acc + 8 * M.n) (by omega_arith) (by omega_arith))
     fun t₃ ⟨O₃, V₃, K₃⟩ => ?_)
   have K₁₃ : Kp [.r0, .r9, .r10, .r11, .r12] t t₃ := K₁₂.trans (K₃.mono (by decide))
   have Ot₃ : Outside base acc (8 * (M.n + 1)) s.mem t₃.mem :=
-    I.out.trans ((O₂.mono (Nat.le_refl _) (by omega)).trans (O₃.mono (by omega) (by omega)))
+    I.out.trans ((O₂.mono (Nat.le_refl _) (by omega_arith)).trans (O₃.mono (by omega_arith) (by omega_arith)))
   -- The accumulator after the first row, with its top word in `r12`: `T₁ = T + u B`.
   generalize hT : wordsVal t.mem base acc (M.n + 1) = T at I
   generalize hTB : wordsVal s.mem base b M.n = B at hB
-  have hbt : wordsVal t.mem base b M.n = B := by rw [← hTB]; exact I.out.wordsVal (by omega) (by omega)
+  have hbt : wordsVal t.mem base b M.n = B := by rw [← hTB]; exact I.out.wordsVal (by omega_arith) (by omega_arith)
   rw [hbt] at V₂
   generalize hc₃ : (t₃.gpr .r12).toNat = c₃ at V₃
   have hT1 : wordsVal t₃.mem base acc (M.n + 1) + 2 ^ (64 * (M.n + 1)) * c₃ = T + u.toNat * B := by
-    rw [wordsVal_succ_top, O₃.wordsVal (by omega) (by omega), show 64 * (M.n + 1) = 64 + 64 * M.n by omega,
+    rw [wordsVal_succ_top, O₃.wordsVal (by omega_arith) (by omega_arith), show 64 * (M.n + 1) = 64 + 64 * M.n by omega_arith,
       Nat.pow_add, ← hT, wordsVal_succ_top]
-    have h2 : word t₂.mem base (acc + 8 * M.n) = word t.mem base (acc + 8 * M.n) := O₂.word (by omega) (by omega)
+    have h2 : word t₂.mem base (acc + 8 * M.n) = word t.mem base (acc + 8 * M.n) := O₂.word (by omega_arith) (by omega_arith)
     rw [h2] at V₃
     generalize 2 ^ (64 * M.n) = P at *
     have e := congrArg (P * ·) V₃
@@ -160,13 +160,13 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M :
   generalize hT1v : wordsVal t₃.mem base acc (M.n + 1) + 2 ^ (64 * (M.n + 1)) * c₃ = T1 at hT1
   -- q, and the first step of its row.
   refine wp_append (WP.mono (qStart_ok (K₁₃.ws ht) (K₁₃.at I.r3) (K₁₃.at I.r7) (a := acc)
-    (mi := acc + 8 * (M.n + 1)) acc4 (by omega) (by omega) (by omega) (by omega))
+    (mi := acc + 8 * (M.n + 1)) acc4 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t₄ ⟨q₄, ⟨lo, hlo, V₄⟩, M₄, K₄⟩ => ?_)
   have hmi : word t₃.mem base (acc + 8 * (M.n + 1)) = word s.mem base (acc + 8 * (M.n + 1)) :=
-    Ot₃.word (by omega) (by omega)
-  have hm0 : word t₃.mem base M.mo = word s.mem base M.mo := Ot₃.word (by omega) (by omega)
+    Ot₃.word (by omega_arith) (by omega_arith)
+  have hm0 : word t₃.mem base M.mo = word s.mem base M.mo := Ot₃.word (by omega_arith) (by omega_arith)
   have ht0 : (word t₃.mem base acc).toNat = T1 % 2 ^ 64 := by
-    rw [← hT1v, show 64 * (M.n + 1) = 64 + 64 * M.n by omega, Nat.pow_add, Nat.mul_assoc, Nat.add_mul_mod_self_left,
+    rw [← hT1v, show 64 * (M.n + 1) = 64 + 64 * M.n by omega_arith, Nat.pow_add, Nat.mul_assoc, Nat.add_mul_mod_self_left,
       wordsVal_low]
   rw [hmi, ht0] at q₄
   rw [hm0, ht0] at V₄
@@ -190,11 +190,11 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M :
   -- The rest of the modulus's row.
   have h7₄ : At t₄ base .r7 M.mo := K₄.at (K₁₃.at I.r7)
   refine wp_append (WP.mono (macs_ok (K₄.ws (K₁₃.ws ht)) h7₄ (K₄.at (K₁₃.at I.r3)) (rs := .r7) (K := M.mo) (src := 8)
-    (rd := acc + 8) (dst := acc) (W := M.n - 1) (by decide) (by decide) (by omega) acc4 (by omega) (by omega)
-    (by omega) (by omega) (by omega) (Nat.le_refl _)) fun t₅ ⟨O₅, V₅, K₅⟩ => ?_)
+    (rd := acc + 8) (dst := acc) (W := M.n - 1) (by decide) (by decide) (by omega_arith) acc4 (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (Nat.le_refl _)) fun t₅ ⟨O₅, V₅, K₅⟩ => ?_)
   rw [M₄, hq] at V₅
   refine wp_append (WP.mono (topQ_ok (K₅.ws (K₄.ws (K₁₃.ws ht))) (K₅.at (K₄.at (K₁₃.at I.r3)))
-    (e := acc + 8 * (M.n - 1)) (f := acc + 8 * M.n) (by omega) (by omega) (by omega)) fun t₆ ⟨O₆, V₆, K₆⟩ => ?_)
+    (e := acc + 8 * (M.n - 1)) (f := acc + 8 * M.n) (by omega_arith) (by omega_arith) (by omega_arith)) fun t₆ ⟨O₆, V₆, K₆⟩ => ?_)
   have K₃₆ : Kp [.r0, .r9, .r10, .r11, .r12] t₃ t₆ :=
     ((K₄.mono (by decide)).trans (K₅.mono (by decide))).trans (K₆.mono (by decide))
   -- The pointers and the count.
@@ -202,15 +202,15 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M :
   refine wp_step (exec_subi (by decide) (by decide)) (WP.block_nil ?_)
   have Ot₆ : Outside base acc (8 * (M.n + 1)) s.mem t₆.mem := by
     rw [← M₄] at Ot₃
-    exact Ot₃.trans ((O₅.mono (Nat.le_refl _) (by omega)).trans (O₆.mono (by omega) (by omega)))
+    exact Ot₃.trans ((O₅.mono (Nat.le_refl _) (by omega_arith)).trans (O₆.mono (by omega_arith) (by omega_arith)))
   -- The accumulator after the second row.
   have hf₅ : word t₅.mem base (acc + 8 * M.n) = word t₃.mem base (acc + 8 * M.n) := by
-    rw [← M₄]; exact O₅.word (by omega) (by omega)
+    rw [← M₄]; exact O₅.word (by omega_arith) (by omega_arith)
   have h12₅ : (t₅.gpr .r12).toNat = c₃ := by
     rw [K₅.g (r := .r12) (by decide), K₄.g (r := .r12) (by decide), hc₃]
   rw [hf₅, h12₅] at V₆
   have hM't : wordsVal t₃.mem base (M.mo + 8) (M.n - 1) = M' := by
-    rw [← hM', show M.n - 1 = N by omega]; exact Ot₃.wordsVal (by omega) (by omega)
+    rw [← hM', show M.n - 1 = N by omega_arith]; exact Ot₃.wordsVal (by omega_arith) (by omega_arith)
   rw [hM't] at V₅
   have hT1s : T1 = T1 % 2 ^ 64 + 2 ^ 64 * (wordsVal t₃.mem base (acc + 8) (M.n - 1) + 2 ^ (64 * (M.n - 1)) *
       ((word t₃.mem base (acc + 8 * M.n)).toNat + 2 ^ 64 * c₃)) := by
@@ -218,25 +218,25 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M :
     have e1 : wordsVal t₃.mem base acc (M.n + 1) = (word t₃.mem base acc).toNat +
         2 ^ 64 * wordsVal t₃.mem base (acc + 8) M.n := rfl
     have e2 := wordsVal_succ_top t₃.mem base (acc + 8) (M.n - 1)
-    rw [show M.n - 1 + 1 = M.n by omega, show acc + 8 + 8 * (M.n - 1) = acc + 8 * M.n by omega] at e2
+    rw [show M.n - 1 + 1 = M.n by omega_arith, show acc + 8 + 8 * (M.n - 1) = acc + 8 * M.n by omega_arith] at e2
     have e3 : 2 ^ (64 * (M.n + 1)) = 2 ^ 64 * 2 ^ (64 * (M.n - 1)) * 2 ^ 64 := by
-      rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega
+      rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega_arith
     rw [e1, e2, e3]
     generalize 2 ^ (64 * (M.n - 1)) = R
     grind
   have hT' : wordsVal t₆.mem base acc (M.n + 1) = wordsVal t₅.mem base acc (M.n - 1) + 2 ^ (64 * (M.n - 1)) *
       ((word t₆.mem base (acc + 8 * (M.n - 1))).toNat + 2 ^ 64 * (word t₆.mem base (acc + 8 * M.n)).toNat) := by
-    rw [show M.n + 1 = M.n - 1 + 2 by omega, wordsVal_append, wordsVal_two, O₆.wordsVal (by omega) (by omega),
-      show acc + 8 * (M.n - 1) + 8 = acc + 8 * M.n by omega]
+    rw [show M.n + 1 = M.n - 1 + 2 by omega_arith, wordsVal_append, wordsVal_two, O₆.wordsVal (by omega_arith) (by omega_arith),
+      show acc + 8 * (M.n - 1) + 8 = acc + 8 * M.n by omega_arith]
   have hmath := rowM_math hT1s hmM V₄ V₅ V₆
   rw [← hT'] at hmath
   have hrow := row_lt I.lt u.isLt hB hq64
   have hX : 2 * m ≤ 2 ^ (64 * (M.n - 1)) * 2 ^ 128 := by
     have : m < 2 ^ (64 * M.n) := by rw [← hm]; exact wordsVal_lt _ _ _ _
-    rw [← Nat.pow_add, show 64 * (M.n - 1) + 128 = 64 * M.n + 64 by omega, Nat.pow_add]
+    rw [← Nat.pow_add, show 64 * (M.n - 1) + 128 = 64 * M.n + 64 by omega_arith, Nat.pow_add]
     have : 2 ≤ 2 ^ 64 := by decide
     have := Nat.mul_le_mul_left (2 ^ (64 * M.n)) this
-    omega
+    omega_arith
   have hca : t₆.ca.toNat = 0 := by
     rcases Nat.eq_zero_or_pos t₆.ca.toNat with h | h
     · exact h
@@ -245,26 +245,26 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M :
         rw [Nat.mul_assoc (2 ^ 64)]; exact Nat.le_mul_of_pos_right _ h
       have := Nat.mul_le_mul_left (2 ^ 64) hX
       rw [hT1] at hmath
-      omega
+      omega_arith
   rw [hca, Nat.mul_zero, Nat.add_zero, hT1] at hmath
   generalize hT'v : wordsVal t₆.mem base acc (M.n + 1) = T' at hmath
   refine ⟨?_, ?_, ?_, ?_, ?_, Ot₆, ?_, ?_, ?_⟩
   · simp only [At, write_gpr, reduceCtorEq, ite_false]; rw [K₃₆.g, K₁₃.g]; exact I.r3
   · simp only [At, write_gpr, reduceCtorEq, ite_false, ite_true]
-    rw [K₃₆.g, K₁₃.g, I.r5, off_add, show a + 8 * k + 8 = a + 8 * (k + 1) by omega]
+    rw [K₃₆.g, K₁₃.g, I.r5, off_add, show a + 8 * k + 8 = a + 8 * (k + 1) by omega_arith]
   · simp only [At, write_gpr, reduceCtorEq, ite_false]; rw [K₃₆.g, K₁₃.g]; exact I.r6
   · simp only [At, write_gpr, reduceCtorEq, ite_false]; rw [K₃₆.g, K₁₃.g]; exact I.r7
   · simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
     rw [K₃₆.g, K₁₃.g, I.r8]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    have : M.n < 2 ^ 15 := by omega
-    omega
+    have : M.n < 2 ^ 15 := by omega_arith
+    omega_arith
   · exact I.kp.trans (((K₁₃.trans K₃₆).mono (by decide)).trans
       ((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))))
   · simp only [write_mem]
     rw [hT'v]
-    have : 2 ^ 64 * T' < 2 ^ 64 * (2 * m) := by omega
+    have : 2 ^ 64 * T' < 2 ^ 64 * (2 * m) := by omega_arith
     exact Nat.lt_of_mul_lt_mul_left this
   · obtain ⟨U, hU⟩ := I.cong
     rw [hT, hTB] at hU
@@ -273,7 +273,7 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M :
     rw [hT'v]
     have hA : wordsVal s.mem base a (k + 1) = wordsVal s.mem base a k + 2 ^ (64 * k) * u.toNat := by
       rw [wordsVal_succ_top, hu]
-    rw [hA, show 64 * (k + 1) = 64 * k + 64 by omega, Nat.pow_add, Nat.mul_assoc, hmath, Nat.mul_add, Nat.mul_add, hU]
+    rw [hA, show 64 * (k + 1) = 64 * k + 64 by omega_arith, Nat.pow_add, Nat.mul_assoc, hmath, Nat.mul_add, Nat.mul_add, hU]
     grind
 
 end VG.Proof.Mont.PPC64LE

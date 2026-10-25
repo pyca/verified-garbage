@@ -53,7 +53,7 @@ theorem envOf_m_lt (s : State) (j : Nat) : (envOf s).m j < 2 ^ 64 := BitVec.isLt
 
 theorem or_pad {x : Nat} (hx : x < 2 ^ 24) : (x ||| 0x1000000) = x + 2 ^ 24 := by
   rw [Nat.or_comm, show (0x1000000 : Nat) = 2 ^ 24 * 1 by decide, ← Nat.two_pow_add_eq_or_of_lt hx]
-  omega
+  omega_arith
 
 structure AddPre (s : State) : Prop where
   r9 : s.gpr .r9 = 0x1000000
@@ -89,8 +89,8 @@ theorem addGroup_ok {s : State} (hp : AddPre s) : WP isa (.block addGroup) s (Ad
       Limbs26.split_or hl]
     have r9 : (s.gpr .r9).toNat = 0x1000000 := by rw [hp.r9]; rfl
     simp only [envOf, r9, blo, bhi] at hl hh ⊢
-    rw [or_pad (by omega)]
-    omega
+    rw [or_pad (by omega_arith)]
+    omega_arith
   refine ⟨h.eq, fun i hi k hk => ?_, fun k hk => ?_, fun k hk i hi => ?_⟩
   · rw [h.reg _ k hk, addS_y i hi]; simp only [Q.eval, xr_xi]
   · obtain ⟨e0, e1, e2, e3, e4⟩ := H k hk
@@ -98,17 +98,17 @@ theorem addGroup_ok {s : State} (hp : AddPre s) : WP isa (.block addGroup) s (Ad
     rw [Limbs26.split_or (envOf_m_lt s (2 * k))] at this
     simp only [Limbs26.val, e0, e1, e2, e3, e4]
     simp only [blo] at this ⊢
-    omega
+    omega_arith
   · obtain ⟨e0, e1, e2, e3, e4⟩ := H k hk
     have hl := envOf_m_lt s (2 * k)
     have hh := envOf_m_lt s (2 * k + 1)
     have b := hp.h k hk
     simp only [blo, bhi] at e0 e1 e2 e3 e4
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
-    · rw [e0]; have := b 0 (by decide); omega
-    · rw [e1]; have := b 1 (by decide); omega
-    · rw [e2]; have := b 2 (by decide); omega
-    · rw [e3]; have := b 3 (by decide); omega
-    · rw [e4]; have := b 4 (by decide); omega
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    · rw [e0]; have := b 0 (by decide); omega_arith
+    · rw [e1]; have := b 1 (by decide); omega_arith
+    · rw [e2]; have := b 2 (by decide); omega_arith
+    · rw [e3]; have := b 3 (by decide); omega_arith
+    · rw [e4]; have := b 4 (by decide); omega_arith
 
 end VG.Proof.Poly1305.X86_64.Avx2

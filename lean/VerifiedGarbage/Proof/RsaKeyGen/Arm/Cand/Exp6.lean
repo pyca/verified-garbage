@@ -35,7 +35,7 @@ theorem shift_div (c t : Nat) :
     hIf (hIf (hIf (c / 2) (b2n (decide (t % 4 ≠ 1)))) (b2n (decide (t % 4 = 3 ∨ t % 4 = 0))))
       (b2n (decide (t % 4 = 0))) = c / 2 ^ (if t % 4 = 0 then 4 else t % 4) := by
   have h := Nat.mod_lt t (show 0 < 4 by decide)
-  rcases (by omega : t % 4 = 0 ∨ t % 4 = 1 ∨ t % 4 = 2 ∨ t % 4 = 3) with e | e | e | e <;>
+  rcases (by omega_arith : t % 4 = 0 ∨ t % 4 = 1 ∨ t % 4 = 2 ∨ t % 4 = 3) with e | e | e | e <;>
     simp [e, hIf, b2n, Nat.div_div_eq_div_mul]
 
 /-- For an odd `c`, `(c − 1) / 2^σ = c / 2^σ` (`σ ≥ 1`). -/
@@ -94,63 +94,63 @@ theorem St.pexpTop (cert : Cert (.block expTop)) (hj : mBase + 27 ∈ L) (hlo : 
       have : BitVec.ofNat 32 P.W <<< 2 = BitVec.ofNat 32 (P.W * 2 ^ 2) := by
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-          Nat.mod_eq_of_lt (a := P.W) (by omega)]
+          Nat.mod_eq_of_lt (a := P.W) (by omega_arith)]
       rw [this, BitVec.add_assoc, BitVec.ofNat_add_ofNat, show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl,
-        VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega)]
-      congr 2; omega
+        VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega_arith)]
+      congr 2; omega_arith
     have k3 : Rest [.r0] s s3 := (r1.mono (by simp)).trans ((u2.rest (by simp)).trans (u3.rest (by simp)))
     have m3 : s3.mem = s.mem := by rw [u3.mem, u2.mem, m1]
     have h3 := h.of_rest k3 m3
     have hw3 := hw.rest k3
     refine h3.ldr hw3 hlo (r := .r1) (by decide) fun s4 h4 hw4 u4 => ?_
     have a4 : State.addr (s4.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr P.B) (arr P.W (mBase + 27) + 4 * (P.W - 2)) := by
-      rw [u4.other _ (by decide), e3, BitVec.add_zero]; exact hw.addr (by omega)
-    refine wp_str (by decide) a4 (hw4.write (by omega)) fun s5 m5 => ?_
+      rw [u4.other _ (by decide), e3, BitVec.add_zero]; exact hw.addr (by omega_arith)
+    refine wp_str (by decide) a4 (hw4.write (by omega_arith)) fun s5 m5 => ?_
     have o5 := writeW32_outside s4.mem (State.addr P.B) (d := arr P.W (mBase + 27) + 4 * (P.W - 2)) (s4.gpr .r1)
-      (by omega)
+      (by omega_arith)
     rw [← m5.mem] at o5
     have n5 : num s5.mem P.B P.W (mBase + 27) = A σ (mBase + 27) + 2 ^ (32 * (P.W - 2)) * V σ sLo := by
       change val32 _ _ _ _ = _
-      rw [m5.mem, val32_write_any _ _ _ (show P.W - 2 < P.W by omega) (by omega), u4.gpr,
+      rw [m5.mem, val32_write_any _ _ _ (show P.W - 2 < P.W by omega_arith) (by omega_arith), u4.gpr,
         ofNat_toNat_lt hl]
       have e4 : val32 s4.mem (State.addr P.B) (arr P.W (mBase + 27)) P.W = A σ (mBase + 27) := by
         rw [u4.mem, m3]; exact ea
       rw [e4, Nat.mod_eq_of_lt ha, Nat.div_eq_of_lt (Nat.lt_of_lt_of_le ha (Nat.pow_le_pow_right (by decide)
-        (by omega)))]
-      omega
-    have h5 := h4.write1 (o := mBase + 27) (ds := []) (Keep.of_arr (d := 4 * (P.W - 2)) o5 (by omega) (by simp))
+        (by omega_arith)))]
+      omega_arith
+    have h5 := h4.write1 (o := mBase + 27) (ds := []) (Keep.of_arr (d := 4 * (P.W - 2)) o5 (by omega_arith) (by simp))
       (by decide) (by simp) m5.sp m5.rd m5.wr n5 (by simp)
     have hw5 := hw4.of_mupd m5
     refine h5.ldr hw5 hhi (r := .r1) (by decide) fun s6 h6 hw6 u6 => ?_
     have a6 : State.addr (s6.gpr .r0 + BitVec.ofNat 32 4) =
         off (State.addr P.B) (arr P.W (mBase + 27) + 4 * (P.W - 1)) := by
       rw [u6.other _ (by decide), m5.gpr, u4.other _ (by decide), e3, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      rw [show arr P.W (mBase + 27) + 4 * (P.W - 2) + 4 = arr P.W (mBase + 27) + 4 * (P.W - 1) by omega]
-      exact hw.addr (by omega)
-    refine wp_str (by decide) a6 (hw6.write (by omega)) fun s7 m7 => WP.block_nil ⟨e, ?_, hw6.of_mupd m7⟩
+      rw [show arr P.W (mBase + 27) + 4 * (P.W - 2) + 4 = arr P.W (mBase + 27) + 4 * (P.W - 1) by omega_arith]
+      exact hw.addr (by omega_arith)
+    refine wp_str (by decide) a6 (hw6.write (by omega_arith)) fun s7 m7 => WP.block_nil ⟨e, ?_, hw6.of_mupd m7⟩
     have o7 := writeW32_outside s6.mem (State.addr P.B) (d := arr P.W (mBase + 27) + 4 * (P.W - 1)) (s6.gpr .r1)
-      (by omega)
+      (by omega_arith)
     rw [← m7.mem] at o7
     have n7 : num s7.mem P.B P.W (mBase + 27) =
         A σ (mBase + 27) + 2 ^ (32 * (P.W - 2)) * (V σ sLo + 2 ^ 32 * V σ sHi) := by
       change val32 _ _ _ _ = _
-      rw [m7.mem, val32_write_any _ _ _ (show P.W - 1 < P.W by omega) (by omega), u6.gpr,
+      rw [m7.mem, val32_write_any _ _ _ (show P.W - 1 < P.W by omega_arith) (by omega_arith), u6.gpr,
         ofNat_toNat_lt hh]
       have e6 : val32 s6.mem (State.addr P.B) (arr P.W (mBase + 27)) P.W =
           A σ (mBase + 27) + 2 ^ (32 * (P.W - 2)) * V σ sLo := by rw [u6.mem]; exact n5
       rw [e6]
       have p1 : 2 ^ (32 * (P.W - 1)) = 2 ^ (32 * (P.W - 2)) * 2 ^ 32 := by
-        rw [← Nat.pow_add]; congr 1 <;> omega
+        rw [← Nat.pow_add]; congr 1 <;> omega_arith
       have p2 : 2 ^ (32 * (P.W - 1 + 1)) = 2 ^ (32 * (P.W - 2)) * 2 ^ 32 * 2 ^ 32 := by
-        rw [← Nat.pow_add, ← Nat.pow_add]; congr 1 <;> omega
+        rw [← Nat.pow_add, ← Nat.pow_add]; congr 1 <;> omega_arith
       have lt1 : A σ (mBase + 27) + 2 ^ (32 * (P.W - 2)) * V σ sLo < 2 ^ (32 * (P.W - 1)) := by
         rw [p1]
         have : 2 ^ (32 * (P.W - 2)) * V σ sLo + 2 ^ (32 * (P.W - 2)) ≤ 2 ^ (32 * (P.W - 2)) * 2 ^ 32 := by
           rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hl
-        omega
+        omega_arith
       rw [Nat.mod_eq_of_lt lt1, Nat.div_eq_of_lt (Nat.lt_of_lt_of_le lt1 (Nat.pow_le_pow_right (by decide)
-        (by omega))), p1, Nat.mul_zero, Nat.add_zero, Nat.mul_add, Nat.mul_assoc, Nat.add_assoc]
-    have h7 := h6.write1 (o := mBase + 27) (ds := []) (Keep.of_arr (d := 4 * (P.W - 1)) o7 (by omega) (by simp))
+        (by omega_arith))), p1, Nat.mul_zero, Nat.add_zero, Nat.mul_add, Nat.mul_assoc, Nat.add_assoc]
+    have h7 := h6.write1 (o := mBase + 27) (ds := []) (Keep.of_arr (d := 4 * (P.W - 1)) o7 (by omega_arith) (by simp))
       (by decide) (by simp) m7.sp m7.rd m7.wr n7 (by simp)
     refine h7.mono (fun j hj' => ⟨?_, ?_⟩) fun d hd => ⟨hd, rfl⟩
     · simp only [List.mem_cons] at hj' ⊢; rcases hj' with h' | h' <;> simp [h']

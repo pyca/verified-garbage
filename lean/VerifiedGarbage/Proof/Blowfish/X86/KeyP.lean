@@ -26,13 +26,13 @@ open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
 
 theorem initWord32_byte (i : Nat) {b : Nat} (hb : b < 4) :
     (initWord32 i).extractLsb' (8 * b) 8 = initByte (4 * i + b) := by
-  have h := initWord_byte (i / 2) (b := 4 * (i % 2) + b) (by omega)
-  rw [show 8 * (i / 2) + (4 * (i % 2) + b) = 4 * i + b by omega] at h
+  have h := initWord_byte (i / 2) (b := 4 * (i % 2) + b) (by omega_arith)
+  rw [show 8 * (i / 2) + (4 * (i % 2) + b) = 4 * i + b by omega_arith] at h
   rw [← h, initWord32]
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    show 8 * b + j < 32 by omega]
-  congr 1; omega
+    show 8 * b + j < 32 by omega_arith]
+  congr 1; omega_arith
 
 theorem flatMap_succ {α : Type} (f : Nat → List α) (n : Nat) :
     (List.range (n + 1)).flatMap f = (List.range n).flatMap f ++ f n := by
@@ -44,7 +44,7 @@ theorem initStore_run (u : State) {i : Nat} (hi : i < 1042) {K : BitVec 32} (fit
     WP isa (.block (initStore i)) u fun t =>
       t.mem = u.mem.writeW (K.setWidth 64 + BitVec.ofNat 64 (4 * i)) (initWord32 i) := by
   have ea : addr (K + BitVec.ofNat 32 0) (4 * i) = K.setWidth 64 + BitVec.ofNat 64 (4 * i) := by
-    rw [BitVec.add_zero]; exact addr_of_fit (by omega)
+    rw [BitVec.add_zero]; exact addr_of_fit (by omega_arith)
   unfold initStore
   brun [hb, ea, hw]
 
@@ -59,23 +59,23 @@ theorem initSchedule_steps (u₀ : State) {K : BitVec 32} (fit : K.toNat + 4168 
     ∀ n ≤ 1042, WP isa (.block ((List.range n).flatMap initStore)) u₀ (InitInv u₀ K n) := by
   intro n hn
   induction n with
-  | zero => exact WP.block_nil ⟨fun o ho => absurd ho (by omega), Frame.refl _ _, Keep.refl _ _⟩
+  | zero => exact WP.block_nil ⟨fun o ho => absurd ho (by omega_arith), Frame.refl _ _, Keep.refl _ _⟩
   | succ n ih =>
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t I => ?_
+    refine WP.mono (ih (by omega_arith)) fun t I => ?_
     have hwt : InRegions t.wr (K.setWidth 64 + BitVec.ofNat 64 (4 * n)) 4 := by
-      rw [I.keep.2.2]; exact inRegions_off hw (by omega)
-    refine WP.mono (WP.keep [.ecx] (initStore_run t (by omega) fit (by rw [I.keep.gpr (by decide), hb]) hwt)
+      rw [I.keep.2.2]; exact inRegions_off hw (by omega_arith)
+    refine WP.mono (WP.keep [.ecx] (initStore_run t (by omega_arith) fit (by rw [I.keep.gpr (by decide), hb]) hwt)
       (by simp [writesOnly, initStore, Code.allInstrs, Taint.clobbers, Taint.dst,
         VG.Proof.MlDsa.X86.Pack.allRegs]))
       fun t' ⟨tm, tk⟩ => ⟨fun o ho => ?_, ?_, (I.keep.trans tk).mono (by decide)⟩
     · rw [tm]
       by_cases hl : o < 4 * n
-      · rw [writeW32_other _ (Offset.disjoint _ (by omega) (by omega) (by omega)), I.bytes o hl]
-      · rw [show o = 4 * n + (o - 4 * n) by omega, ← Offset.add_add, st_byte _ _ _ (by omega),
-          initWord32_byte _ (by omega)]
+      · rw [writeW32_other _ (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)), I.bytes o hl]
+      · rw [show o = 4 * n + (o - 4 * n) by omega_arith, ← Offset.add_add, st_byte _ _ _ (by omega_arith),
+          initWord32_byte _ (by omega_arith)]
     · rw [tm]
-      exact I.frame.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+      exact I.frame.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
 
 /-! ## The key into the P-array -/
 
@@ -87,12 +87,12 @@ theorem key_next (c L : Nat) (hL : 0 < L) (hL' : L < 2 ^ 32) :
   have e1 : BitVec.ofNat 32 (c % L) + BitVec.ofNat 32 1 = BitVec.ofNat 32 (c % L + 1) := by
     rw [← BitVec.ofNat_add]
   have ha : (c + 1) % L = (c % L + 1) % L := by simp only [Nat.add_mod, Nat.mod_mod]
-  rw [e1, ofNat_sub_beq' (by omega) hL']
+  rw [e1, ofNat_sub_beq' (by omega_arith) hL']
   by_cases h : c % L + 1 = L
   · simp only [decide_eq_true h, ↓reduceIte]; rw [ha, h, Nat.mod_self]
   · rw [decide_eq_false h]
     simp only [Bool.false_eq_true, ite_false]
-    rw [ha, Nat.mod_eq_of_lt (show c % L + 1 < L by omega)]
+    rw [ha, Nat.mod_eq_of_lt (show c % L + 1 < L by omega_arith)]
 
 /-- The key bytes: `key` at `Kk`, `L` bytes long, its address and length the
 first two arguments on the stack. -/
@@ -122,7 +122,7 @@ theorem KeyEnv.frame {Kk : BitVec 32} {L : Nat} {u t : State} (E : KeyEnv Kk L u
   · rw [h.gpr hsp, hf.readW (contains_pre _ (by decide)) hd (by decide)]; exact E.kVal
   · rw [h.gpr hsp, hf.readW (r := ⟨addr (u.gpr .esp) 4, 8⟩) ?_ hd (by decide)]
     · exact E.lVal
-    · rw [addr_of_fit (by omega), addr_of_fit (by omega)]
+    · rw [addr_of_fit (by omega_arith), addr_of_fit (by omega_arith)]
       exact Offset.contains _ (by decide) (by decide) (by decide)
 
 theorem keyByte_run (u : State) {Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u) (c : Nat)
@@ -133,8 +133,8 @@ theorem keyByte_run (u : State) {Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u) (
   have hc := Nat.mod_lt c E.pos
   have fit := E.fit
   have ea : addr (Kk + BitVec.ofNat 32 (c % L)) 0 = Kk.setWidth 64 + BitVec.ofNat 64 (c % L) := by
-    unfold addr; rw [BitVec.add_zero, ← addr, addr_of_fit (by omega)]
-  have hr : InRegions (u.rd ++ u.wr) (Kk.setWidth 64 + BitVec.ofNat 64 (c % L)) 1 := inRegions_off E.rd (by omega)
+    unfold addr; rw [BitVec.add_zero, ← addr, addr_of_fit (by omega_arith)]
+  have hr : InRegions (u.rd ++ u.wr) (Kk.setWidth 64 + BitVec.ofNat 64 (c % L)) 1 := inRegions_off E.rd (by omega_arith)
   have r4 := E.aRd 0 (by decide)
   have r8 := E.aRd 1 (by decide)
   simp only [Nat.mul_zero, Nat.mul_one, Nat.reduceAdd] at r4 r8
@@ -145,7 +145,7 @@ theorem keyByte_run (u : State) {Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u) (
       t.gpr .esi = BitVec.ofNat 32 (c % L) + BitVec.ofNat 32 1 ∧
       t.zf = some (BitVec.ofNat 32 (c % L) + BitVec.ofNat 32 1 - BitVec.ofNat 32 L == 0) ∧ t.mem = u.mem)
     (by brun [hsi, ea, hr, r4, r8, E.kVal, E.lVal]) (by decide)) fun v ⟨⟨v5, v4, vz, vm⟩, vk⟩ => ?_
-  have nx := key_next c L E.pos (by have := E.small; omega)
+  have nx := key_next c L E.pos (by have := E.small; omega_arith)
   refine WP.ite _ (by rw [eval_e, vz]) (fun hz => ?_) (fun hz => ?_)
   · rw [hz] at nx
     refine WP.mono (WP.keep [.esi] (Q := fun t => t.gpr .esi = 0#32 ∧ t.gpr .edx = v.gpr .edx ∧ t.mem = v.mem)
@@ -163,7 +163,7 @@ theorem ror24_small (x : BitVec 32) (h : x.toNat < 2 ^ 24) : x.rotateRight 24 = 
   · have : x.getLsbD (24 + i) = false := by
       simp only [BitVec.getLsbD, Nat.testBit]
       rw [Nat.shiftRight_eq_div_pow, Nat.div_eq_of_lt (by
-        have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 24 ≤ 24 + i by omega); omega)]
+        have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 24 ≤ 24 + i by omega_arith); omega_arith)]
       rfl
     simp [h8, this]
   · simp [h8]
@@ -172,14 +172,14 @@ theorem step_small (x : BitVec 32) (b : BitVec 8) {k : Nat} (hx : x.toNat < 2 ^ 
     (x <<< 8 ||| b.setWidth 32).toNat < 2 ^ (k + 8) := by
   rw [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth]
   have hb := b.isLt
-  have h8 : 2 ^ 8 ≤ 2 ^ (k + 8) := Nat.pow_le_pow_right (by decide) (by omega)
+  have h8 : 2 ^ 8 ≤ 2 ^ (k + 8) := Nat.pow_le_pow_right (by decide) (by omega_arith)
   apply Nat.or_lt_two_pow
   · rw [Nat.shiftLeft_eq, Nat.pow_add]
     have := Nat.mod_le (x.toNat * 2 ^ 8) (2 ^ 32)
     have : x.toNat * 2 ^ 8 < 2 ^ k * 2 ^ 8 := Nat.mul_lt_mul_of_pos_right hx (by decide)
-    omega
+    omega_arith
   · have := Nat.mod_le b.toNat (2 ^ 32)
-    omega
+    omega_arith
 
 /-- Four bytes accumulated by rotations, as by shifts. -/
 theorem rot_chain (b0 b1 b2 b3 : Byte) :
@@ -190,8 +190,8 @@ theorem rot_chain (b0 b1 b2 b3 : Byte) :
   have a1 := step_small 0 b0 (k := 0) (by decide) (by decide)
   have a2 := step_small _ b1 a1 (by decide)
   have a3 := step_small _ b2 a2 (by decide)
-  rw [ror24_small 0 (by decide), ror24_small ((0 : Word) <<< 8 ||| b0.setWidth 32) (by omega),
-    ror24_small (((0 : Word) <<< 8 ||| b0.setWidth 32) <<< 8 ||| b1.setWidth 32) (by omega), ror24_small _ a3]
+  rw [ror24_small 0 (by decide), ror24_small ((0 : Word) <<< 8 ||| b0.setWidth 32) (by omega_arith),
+    ror24_small (((0 : Word) <<< 8 ||| b0.setWidth 32) <<< 8 ||| b1.setWidth 32) (by omega_arith), ror24_small _ a3]
 
 /-- The key's byte `c` (mod its length) in memory `m`. -/
 abbrev kb (m : Mem) (Kk : BitVec 32) (L c : Nat) : Byte := m (Kk.setWidth 64 + BitVec.ofNat 64 (c % L))
@@ -275,9 +275,9 @@ theorem keyStep {u₀ : State} {K Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u�
     simp only [List.mem_singleton] at hr; subst hr; exact hA
   refine keyWord_run t Et w I.esi fun v v5 v4 vm vk => ?_
   have ea : addr (K + BitVec.ofNat 32 (4 * w)) 4096 = K.setWidth 64 + BitVec.ofNat 64 (4096 + 4 * w) := by
-    unfold addr; rw [ofs_add, ← addr, addr_of_fit (by omega)]; congr 2; omega
+    unfold addr; rw [ofs_add, ← addr, addr_of_fit (by omega_arith)]; congr 2; omega_arith
   have hwv : InRegions v.wr (K.setWidth 64 + BitVec.ofNat 64 (4096 + 4 * w)) 4 := by
-    rw [vk.2.2, I.keep.2.2, ← Offset.add_add]; exact inRegions_off hw (by omega)
+    rw [vk.2.2, I.keep.2.2, ← Offset.add_add]; exact inRegions_off hw (by omega_arith)
   refine WP.mono (WP.keep [.eax, .ebx, .edi] (keyTail_run v w (by rw [vk.gpr (by decide), I.ebx]) v5 ea hwv)
     (by decide))
     fun t' ⟨⟨tm, tb, td, tz⟩, tk⟩ => ?_
@@ -285,24 +285,24 @@ theorem keyStep {u₀ : State} {K Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u�
   have hkey : bytesAt t.mem (Kk.setWidth 64) L = bytesAt u₀.mem (Kk.setWidth 64) L :=
     bytesAt_frame I.frame fun c hc r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr
-      exact fun h => hd _ (Offset.contains_base _ (by omega) (by have := E.fit; omega)) h
+      exact fun h => hd _ (Offset.contains_base _ (by omega_arith) (by have := E.fit; omega_arith)) h
   have hv8 : v.gpr .edi = BitVec.ofNat 32 (18 - w) := by rw [vk.gpr (by decide), I.edi]
   have h8 : BitVec.ofNat 32 (18 - w) - BitVec.ofNat 32 1 = BitVec.ofNat 32 (18 - (w + 1)) := by
-    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_arith
   have sepw : ∀ j, j < 18 → j ≠ w → Mem.Sep (K.setWidth 64 + BitVec.ofNat 64 (4096 + 4 * j)) (32 / 8)
       (K.setWidth 64 + BitVec.ofNat 64 (4096 + 4 * w)) (32 / 8) :=
-    fun j hj hne => Offset.sep _ (by omega) (by omega) (by omega)
-  refine ⟨⟨by omega, by rw [tk.gpr (by decide), v4], tb, by rw [td, hv8, h8],
+    fun j hj hne => Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)
+  refine ⟨⟨by omega_arith, by rw [tk.gpr (by decide), v4], tb, by rw [td, hv8, h8],
     ((I.keep.trans vk).trans tk).mono (by decide), fun j hj => ?_, fun j h1 h2 => ?_, ?_⟩, by rw [tz, hv8, h8]⟩
   · rw [tm, vm]
     by_cases e : j = w
     · subst e
-      rw [Mem.readW_writeW_self32, I.rest j (by omega) hw18, hkey]
-    · rw [Mem.readW_writeW_sep (sepw j (by omega) e) (by decide)]; exact I.done j (by omega)
-  · rw [tm, vm, Mem.readW_writeW_sep (sepw j h2 (by omega)) (by decide)]; exact I.rest j (by omega) h2
+      rw [Mem.readW_writeW_self32, I.rest j (by omega_arith) hw18, hkey]
+    · rw [Mem.readW_writeW_sep (sepw j (by omega_arith) e) (by decide)]; exact I.done j (by omega_arith)
+  · rw [tm, vm, Mem.readW_writeW_sep (sepw j h2 (by omega_arith)) (by decide)]; exact I.rest j (by omega_arith) h2
   · rw [tm, vm]
     exact I.frame.writeW List.mem_cons_self _ (Offset.contains (e := 4096) (k := 72) (d := 4096 + 4 * w)
-      (n := 4) _ (by omega) (by omega) (by omega))
+      (n := 4) _ (by omega_arith) (by omega_arith) (by omega_arith))
 
 theorem keyP_run {u₀ : State} {K Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u₀)
     (r12 : InRegions (u₀.rd ++ u₀.wr) (addr (u₀.gpr .esp) 12) 4) (hK : u₀.mem.readW (addr (u₀.gpr .esp) 12) 32 = K)
@@ -329,7 +329,7 @@ theorem keyP_run {u₀ : State} {K Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u�
     exact ⟨by rw [e]; rfl, e ▸ J'⟩
   · right
     have nz : BitVec.ofNat 32 (18 - (w + 1)) ≠ 0 := by
-      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega
-    exact ⟨by rw [beq_eq_false_iff_ne.mpr nz]; rfl, _, by omega, w + 1, by omega, rfl, J'⟩
+      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_arith
+    exact ⟨by rw [beq_eq_false_iff_ne.mpr nz]; rfl, _, by omega_arith, w + 1, by omega_arith, rfl, J'⟩
 
 end VG.Proof.Blowfish.X86

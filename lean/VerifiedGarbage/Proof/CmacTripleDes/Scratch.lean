@@ -95,7 +95,7 @@ theorem scheduleAt_congr
   congr 1
   funext i
   refine foldl_congr _ _ fun j hj out => ?_
-  rw [h _ (by have := i.isLt; have := List.mem_range.mp hj; omega)]
+  rw [h _ (by have := i.isLt; have := List.mem_range.mp hj; omega_arith)]
 
 theorem blocksAt_congr {b n : Nat}
     (h : ∀ i < b * n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
@@ -105,7 +105,7 @@ theorem blocksAt_congr {b n : Nat}
   have := List.mem_range.mp hi
   have : b * i + k < b * n := by
     have := Nat.mul_le_mul_left b (Nat.succ_le_of_lt this)
-    rw [Nat.mul_succ] at this; omega
+    rw [Nat.mul_succ] at this; omega_arith
   rw [Offset.add_add]
   exact h _ this
 
@@ -119,10 +119,10 @@ theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_arith) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_arith
 
 variable (pb : Nat)
 
@@ -159,7 +159,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesInitSig.words p
   dsimp only [Curry.apply, tdesInitPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le kl.toNat (2 ^ pb)
   rw [tdesBytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi => hk i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h
 
 theorem updatePost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesUpdateSig.words pb).length →
@@ -188,7 +188,7 @@ theorem updatePost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesUpdateSig.wor
   have hd := agree_of hb.2.2
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [scheduleAt_congr hs, bytesAt_congr ht, blocksAt_congr (b := 8) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h
 
 theorem finalizePre_local : ∀ vs m₁ m₂, vs.length = (tdesFinalizeSig.words pb).length →
@@ -229,12 +229,12 @@ theorem finalizePost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesFinalizeSig
     m₂ m' r
   dsimp only [Curry.apply, tdesFinalizePost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le ll.toNat (2 ^ pb)
-  rw [scheduleAt_congr fun i hi => hk i (by omega), bytesAt_congr ht,
+  rw [scheduleAt_congr fun i hi => hk i (by omega_arith), bytesAt_congr ht,
     bytesAt_congr (n := (ll.setWidth pb).toNat) fun i hi => hl i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     show key + 384 = key + BitVec.ofNat 64 384 from rfl,
     bytesAt_congr (m₁ := m₁) (n := 16) fun i hi => by
-      rw [Offset.add_add]; exact hk _ (by omega)]
+      rw [Offset.add_add]; exact hk _ (by omega_arith)]
   exact h
 
 end VG.Proof.CmacTripleDes

@@ -39,12 +39,12 @@ abbrev mLen (mb : Nat) : Nat := (mb + 7) / 8
 abbrev mW (mb : Nat) : Nat := (mb + 63) / 64
 abbrev mK (mb : Nat) : Nat := mb + 64 - 64 * mW mb
 
-theorem wk_mLen (mb : Nat) : wk (mLen mb) = mW mb := by simp only [wk, mLen, mW]; omega
+theorem wk_mLen (mb : Nat) : wk (mLen mb) = mW mb := by simp only [wk, mLen, mW]; omega_arith
 
 theorem PDims.mb {p : PP} (h : PDims p) (q : Bool) :
     511 ≤ p.mb q ∧ p.mb q ≤ 8192 ∧ p.bits ≤ p.mb q + 1 ∧ p.mb q ≤ p.bits := by
   have := h.b1; have := h.b2
-  unfold PP.mb; cases q <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> omega
+  unfold PP.mb; cases q <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> omega_arith
 
 /-- The header words `phase` writes. -/
 def phaseRanges : List (Nat × Nat) :=
@@ -54,12 +54,12 @@ def phaseRanges : List (Nat × Nat) :=
 theorem phaseRanges_mut : ∀ r ∈ phaseRanges, PMut r := by
   simp only [phaseRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-    simp only [PMut, sK, fChecks, sW, sArr, sStride, Public.sMask, fTop, sFn] <;> omega
+    simp only [PMut, sK, fChecks, sW, sArr, sStride, Public.sMask, fTop, sFn] <;> omega_arith
 
 theorem phaseRanges_kmut : ∀ r ∈ phaseRanges, r.1 + r.2 ≤ 8 * 32 := by
   simp only [phaseRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-    simp only [sK, fChecks, sW, sArr, sStride, Public.sMask, fTop, sFn] <;> omega
+    simp only [sK, fChecks, sW, sArr, sStride, Public.sMask, fTop, sFn] <;> omega_arith
 
 /-- The common part of `phaseHead`, from `mb` in `x3`. -/
 def phaseRest : List Instr :=
@@ -79,7 +79,7 @@ theorem shr_ofNat (a k : Nat) : BitVec.ofNat 64 a >>> k = BitVec.ofNat 64 (a % 2
 theorem imm16 {n : Nat} (hn : n < 65536) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- `phaseRest`, from `mb` in `x3`. -/
 theorem phaseRest_ok {s : State} {B : Addr} {Z mb : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B)
@@ -92,26 +92,26 @@ theorem phaseRest_ok {s : State} {B : Addr} {Z mb : Nat} (hs : Scr s B Z) (h0 : 
   have hn := hs.nowrap
   refine WP.keep [.x4, .x5, .x6, .x8, .x9] ?_ (by decide) (by decide) (by decide +kernel)
   have e1 : (BitVec.ofNat 64 mb + BitVec.ofNat 64 7) >>> 3 = BitVec.ofNat 64 (mLen mb) := by
-    rw [ofNat_add_ofNat, shr_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [ofNat_add_ofNat, shr_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
     simp only [mLen, Nat.reducePow]
   have e2 : ((BitVec.ofNat 64 mb + BitVec.ofNat 64 63) >>> 6) <<< 6 = BitVec.ofNat 64 (64 * mW mb) := by
-    rw [ofNat_add_ofNat, shr_ofNat, Nat.mod_eq_of_lt (by omega), shl_ofNat (by simp only [Nat.reducePow]; omega)]
-    congr 1; simp only [mW, Nat.reducePow]; omega
+    rw [ofNat_add_ofNat, shr_ofNat, Nat.mod_eq_of_lt (by omega_arith), shl_ofNat (by simp only [Nat.reducePow]; omega_arith)]
+    congr 1; simp only [mW, Nat.reducePow]; omega_arith
   have e3 : BitVec.ofNat 64 mb + BitVec.ofNat 64 64 - BitVec.ofNat 64 (64 * mW mb) = BitVec.ofNat 64 (mK mb) := by
     rw [ofNat_add_ofNat]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, mK, mW]
-    omega
+    omega_arith
   have e4 : (if decide (2 ^ 64 ≤ (BitVec.ofNat 64 mb).toNat + (~~~BitVec.ofNat 64 2049).toNat + true.toNat) = true
       then BitVec.ofNat 64 128 else BitVec.ofNat 64 64) = BitVec.ofNat 64 (Spec.Ffdh.primeChecks mb) := by
-    rw [subs_ge (show mb < 2 ^ 64 by omega) (show 2049 < 2 ^ 64 by decide)]
+    rw [subs_ge (show mb < 2 ^ 64 by omega_arith) (show 2049 < 2 ^ 64 by decide)]
     unfold Spec.Ffdh.primeChecks
     by_cases hc : 2049 ≤ mb
-    · simp only [decide_eq_true hc, ite_true, show ¬ mb ≤ 2048 by omega, ite_false]
-    · simp only [decide_eq_false hc, Bool.false_eq_true, ite_false, show mb ≤ 2048 by omega, ite_true]
+    · simp only [decide_eq_true hc, ite_true, show ¬ mb ≤ 2048 by omega_arith, ite_false]
+    · simp only [decide_eq_false hc, Bool.false_eq_true, ite_false, show mb ≤ 2048 by omega_arith, ite_true]
   brun [phaseRest, h0, h3, imm16 (show 64 < 65536 by decide), imm16 (show 128 < 65536 by decide),
     imm16 (show 2049 < 65536 by decide), hdr_enc (show sK < 32 by decide), hdr_enc (show fChecks < 32 by decide),
-    hs.st (d := 8 * sK) (by simp only [sK, sFn]; omega), hs.st (d := 8 * fChecks) (by simp only [fChecks]; omega),
+    hs.st (d := 8 * sK) (by simp only [sK, sFn]; omega_arith), hs.st (d := 8 * fChecks) (by simp only [fChecks]; omega_arith),
     e1, e2, e3, e4]
 
 
@@ -123,11 +123,11 @@ theorem phaseLoad_ok {s : State} {p : PP} (h : PH p s) (q : Bool) :
   have hZ := h.dims.z
   have hb1 := h.dims.b1
   refine WP.keep [.x3] ?_ (by cases q <;> decide) (by cases q <;> rfl) (by cases q <;> decide +kernel)
-  have hl : InRegions (s.rd ++ s.wr) (off p.B (8 * fBits)) 8 := hs.ld (by simp only [fBits, sFn]; omega)
+  have hl : InRegions (s.rd ++ s.wr) (off p.B (8 * fBits)) 8 := hs.ld (by simp only [fBits, sFn]; omega_arith)
   cases q
   · brun [h.x0, hdr_enc (show fBits < 32 by decide), hl, h.args.bits, PP.mb]
   · brun [h.x0, hdr_enc (show fBits < 32 by decide), hl, h.args.bits, PP.mb,
-      ofNat_sub_one' (show 1 ≤ p.bits by omega) (show p.bits < 2 ^ 64 by have := h.dims.b2; omega)]
+      ofNat_sub_one' (show 1 ≤ p.bits by omega_arith) (show p.bits < 2 ^ 64 by have := h.dims.b2; omega_arith)]
 
 /-- One step of the mask's loop. -/
 theorem maskStep_ok (t : State) {i : Nat} (h9 : t.gpr .x9 = BitVec.ofNat 64 (2 ^ i - 1)) :
@@ -142,7 +142,7 @@ theorem maskStep_ok (t : State) {i : Nat} (h9 : t.gpr .x9 = BitVec.ofNat 64 (2 ^
     rw [ofNat_add_ofNat, ofNat_add_ofNat]
     congr 1
     have := Nat.two_pow_pos i
-    rw [Nat.pow_succ]; omega
+    rw [Nat.pow_succ]; omega_arith
   brun [h9, e]
 
 /-- The mask loop: `x9 := 2^k − 1` from `x9 = 0` and `x6 = k`. -/
@@ -151,7 +151,7 @@ theorem maskLoop_ok {s : State} {k : Nat} (hk1 : 1 ≤ k) (hk : k ≤ 64) (h9 : 
     WP isa (countLoop .x6 [.add .x .x9 .x9 .x9, .addImm .x .x9 .x9 1]) s fun t =>
       t.gpr .x9 = BitVec.ofNat 64 (2 ^ k - 1) ∧ t.mem = s.mem ∧ Keep [.x9, .x6] s t := by
   unfold countLoop
-  exact wp_countdown (N := k) (by omega) (by omega)
+  exact wp_countdown (N := k) (by omega_arith) (by omega_arith)
     (fun i t => t.gpr .x9 = BitVec.ofNat 64 (2 ^ i - 1) ∧ t.mem = s.mem ∧ Keep [.x9, .x6] s t)
     (fun i _ t ⟨h9', hm, k'⟩ _ => WP.mono (maskStep_ok t h9') fun t' ⟨⟨a, b, c⟩, d⟩ =>
       ⟨⟨a, b.trans hm, (k'.trans c).mono (by decide)⟩, d⟩)
@@ -167,7 +167,7 @@ theorem phaseBlk_ok {s : State} {p : PP} (h : PH p s) (q : Bool) :
   have hZ := h.dims.z
   obtain ⟨hm1, hm2, hm3, hm4⟩ := h.dims.mb q
   generalize hmb : p.mb q = mb at hm1 hm2 hm3 hm4
-  have hZ' : 8 * 32 ≤ p.Z := by omega
+  have hZ' : 8 * 32 ≤ p.Z := by omega_arith
   rw [phaseHead_eq, List.append_assoc, List.append_assoc]
   refine WP.block_append_iff.mpr (WP.mono (phaseLoad_ok h q) fun s₁ ⟨⟨h3₁, hm₁⟩, k₁⟩ => ?_)
   rw [hmb] at h3₁
@@ -179,8 +179,8 @@ theorem phaseBlk_ok {s : State} {p : PP} (h : PH p s) (q : Bool) :
   have hK₂ : word s₂.mem p.B (8 * sK) = BitVec.ofNat 64 (mLen mb) := by
     rw [hm₂, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
   rw [WP.block_append_iff]
-  refine WP.mono (kHead_ok hs₂ ((k12.gpr .x0 (by decide)).trans h.x0) (by simp only [mLen]; omega)
-    (by simp only [mLen]; omega) (by simp only [mLen, PP.L] at hZ ⊢; omega) hK₂)
+  refine WP.mono (kHead_ok hs₂ ((k12.gpr .x0 (by decide)).trans h.x0) (by simp only [mLen]; omega_arith)
+    (by simp only [mLen]; omega_arith) (by simp only [mLen, PP.L] at hZ ⊢; omega_arith) hK₂)
     fun s₃ ⟨hws₃, _, _, k₃⟩ => ?_
   have i0 := imm16 (show 0 < 65536 by decide)
   refine WP.mono (WP.keep [.x9] (Q := fun t => t.gpr .x9 = 0 ∧ t.mem = s₃.mem) (by brun [i0])
@@ -209,7 +209,7 @@ theorem phase_ok {s : State} {p : PP} (h : PH p s) (q : Bool) :
   have hZ := h.dims.z
   obtain ⟨hm1, hm2, hm3, hm4⟩ := h.dims.mb q
   generalize hmb : p.mb q = mb at hm1 hm2 hm3 hm4
-  have hZ' : 8 * 32 ≤ p.Z := by omega
+  have hZ' : 8 * 32 ≤ p.Z := by omega_arith
   simp only [phase, seqs]
   rw [phaseHead_eq, List.append_assoc, List.append_assoc]
   refine WP.seq (WP.block_append_iff.mpr (WP.mono (phaseLoad_ok h q) fun s₁ ⟨⟨h3₁, hm₁⟩, k₁⟩ => ?_))
@@ -222,36 +222,36 @@ theorem phase_ok {s : State} {p : PP} (h : PH p s) (q : Bool) :
   have hK₂ : word s₂.mem p.B (8 * sK) = BitVec.ofNat 64 (mLen mb) := by
     rw [hm₂, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
   rw [WP.block_append_iff]
-  refine WP.mono (kHead_ok hs₂ ((k12.gpr .x0 (by decide)).trans h.x0) (by simp only [mLen]; omega)
-    (by simp only [mLen]; omega) (by simp only [mLen, PP.L] at hZ ⊢; omega) hK₂)
+  refine WP.mono (kHead_ok hs₂ ((k12.gpr .x0 (by decide)).trans h.x0) (by simp only [mLen]; omega_arith)
+    (by simp only [mLen]; omega_arith) (by simp only [mLen, PP.L] at hZ ⊢; omega_arith) hK₂)
     fun s₃ ⟨hws₃, hmask₃, hf₃, k₃⟩ => ?_
   rw [wk_mLen] at hws₃
   have i0 := imm16 (show 0 < 65536 by decide)
   refine WP.mono (WP.keep [.x9] (Q := fun t => t.gpr .x9 = 0 ∧ t.mem = s₃.mem) (by brun [i0])
     (by decide) (by decide) (by decide +kernel)) fun s₄ ⟨⟨h9₄, hm₄⟩, k₄⟩ => ?_
   have h6₄ : s₄.gpr .x6 = BitVec.ofNat 64 (mK mb) := (k₄.gpr .x6 (by decide)).trans ((k₃.gpr .x6 (by decide)).trans h6₂)
-  refine WP.seq (WP.mono (maskLoop_ok (by simp only [mK, mW]; omega) (by simp only [mK, mW]; omega) h9₄ h6₄)
+  refine WP.seq (WP.mono (maskLoop_ok (by simp only [mK, mW]; omega_arith) (by simp only [mK, mW]; omega_arith) h9₄ h6₄)
     fun s₅ ⟨h9₅, hm₅, k₅⟩ => ?_)
   have k25 := (k₃.trans k₄).trans k₅
   have hs₅ := hs₂.congr k25.wr
   have h0₅ : s₅.gpr .x0 = p.B := ((k12.trans k25).gpr .x0 (by decide)).trans h.x0
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = s₅.mem.writeW (off p.B (8 * fTop)) (BitVec.ofNat 64 (2 ^ mK mb - 1)))
-    (by brun [h0₅, hdr_enc (show fTop < 32 by decide), hs₅.st (d := 8 * fTop) (by simp only [fTop]; omega), h9₅])
+    (by brun [h0₅, hdr_enc (show fTop < 32 by decide), hs₅.st (d := 8 * fTop) (by simp only [fTop]; omega_arith), h9₅])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k₆⟩ => ?_
   have hm35 : s₅.mem = s₃.mem := hm₅.trans hm₄
   -- The frame.
   have f₂ : Frm p.B phaseRanges s.mem s₂.mem := by
     rw [hm₂, hm₁]
-    exact (Frm.of_outside (writeW_outside _ _ _ (by simp only [sK, sFn]; omega)) (by simp [phaseRanges])).trans
-      (Frm.of_outside (writeW_outside _ _ _ (by simp only [fChecks]; omega)) (by simp [phaseRanges]))
+    exact (Frm.of_outside (writeW_outside _ _ _ (by simp only [sK, sFn]; omega_arith)) (by simp [phaseRanges])).trans
+      (Frm.of_outside (writeW_outside _ _ _ (by simp only [fChecks]; omega_arith)) (by simp [phaseRanges]))
   have f₃ : Frm p.B phaseRanges s₂.mem s₃.mem := hf₃.mono (by simp [phaseRanges])
   have f₆ : Frm p.B phaseRanges s₅.mem t.mem := by
-    rw [hm]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [fTop]; omega)) (by simp [phaseRanges])
+    rw [hm]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [fTop]; omega_arith)) (by simp [phaseRanges])
   have hf : Frm p.B phaseRanges s.mem t.mem := (f₂.trans f₃).trans (by rw [hm35] at f₆; exact f₆)
   have k16 := ((k12.trans k25).trans k₆)
   have hws : Ws t p.B p.Z (mW mb) := hws₃.congr' (rs := [(8 * fTop, 8)]) (by
-      rw [hm, hm35]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [fTop]; omega)) (by simp))
-    (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.hdr (by simp only [fTop, sW]; omega))
+      rw [hm, hm35]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [fTop]; omega_arith)) (by simp))
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.hdr (by simp only [fTop, sW]; omega_arith))
     (k₄.trans (k₅.trans k₆)) (by decide)
   have hw36 : ∀ i < 32, i ≠ fTop → word t.mem p.B (8 * i) = word s₃.mem p.B (8 * i) := fun i hi hne => by
     rw [hm, hm35]; exact hdrStore_hdr _ _ _ (by decide) hi (Ne.symm hne)
@@ -259,11 +259,11 @@ theorem phase_ok {s : State} {p : PP} (h : PH p s) (q : Bool) :
     hf₃.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hi with rfl | rfl <;> rcases hr with rfl | rfl | rfl | rfl <;>
-        simp only [sK, sW, sArr, sStride, Public.sMask, fChecks, sFn] <;> omega)
-      (by rcases hi with rfl | rfl <;> simp only [sK, fChecks, sFn] <;> omega)
+        simp only [sK, sW, sArr, sStride, Public.sMask, fChecks, sFn] <;> omega_arith)
+      (by rcases hi with rfl | rfl <;> simp only [sK, fChecks, sFn] <;> omega_arith)
   subst hmb
   refine ⟨⟨hws, h.args.frm hf phaseRanges_mut, h.src.congrK (InScr.of_frm hf fun r hr => by
-      have := phaseRanges_kmut r hr; omega) k16, h.ou.congr k16.wr, h.dims⟩, ?_, ?_, ?_, ?_, hf,
+      have := phaseRanges_kmut r hr; omega_arith) k16, h.ou.congr k16.wr, h.dims⟩, ?_, ?_, ?_, ?_, hf,
     k16.mono (by decide)⟩
   · rw [hw36 _ (by decide) (by decide), hw23 _ (.inl rfl), hK₂]
   · rw [hw36 _ (by decide) (by decide), hw23 _ (.inr rfl), hm₂, word_writeW_self]

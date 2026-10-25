@@ -69,11 +69,11 @@ theorem step_inv {s t : State} {B : Addr} {Z w N R X XM RR c : Nat} {rs : List R
     obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hr
     exact sp (Ne.symm (h k hk))
   have v0 : val32 t.mem B (slot w 0) (2 * w) = N := (ot.val32 (fun r hr => by
-    have := ap (j := 0) (ks := [1, 2, 3, 4, 5, 6, 7]) (by decide) r hr; omega)
-    (by have := sl 0 (by decide); omega)).trans hNd
+    have := ap (j := 0) (ks := [1, 2, 3, 4, 5, 6, 7]) (by decide) r hr; omega_arith)
+    (by have := sl 0 (by decide); omega_arith)).trans hNd
   have w0 : w32 t.mem B (slot w 0) = w32 s.mem B (slot w 0) :=
-    Outs.w32 ot (fun r hr => by have := ap (j := 0) (ks := [1, 2, 3, 4, 5, 6, 7]) (by decide) r hr; omega)
-      (by have := sl 0 (by decide); omega)
+    Outs.w32 ot (fun r hr => by have := ap (j := 0) (ks := [1, 2, 3, 4, 5, 6, 7]) (by decide) r hr; omega_arith)
+      (by have := sl 0 (by decide); omega_arith)
   have g : ∀ r ∈ [Reg.r10, .r11, .r12, .r29], t.gpr r = s.gpr r := fun r hr => kt.gpr r (hkr r hr)
   refine WP.mono (Pub.step_ok (hs.congr kt.wr) hw2 hw' hZ ((g .r10 (by simp)).trans h10) ((g .r29 (by simp)).trans h29)
     ((g .r11 (by simp)).trans h11) (by rw [g .r12 (by simp)]; exact h12)
@@ -83,18 +83,18 @@ theorem step_inv {s t : State} {B : Addr} {Z w N R X XM RR c : Nat} {rs : List R
   rw [t6] at eP
   have os' : Outs B ([2, 3, 4, 1, 5].map fun k => (slot w k, 8 * (w + 2))) t.mem t₁.mem := os
   have v6 : val32 t₁.mem B (slot w 6) (2 * w) = val32 t.mem B (slot w 6) (2 * w) :=
-    os'.val32 (fun r hr => by have := ap (j := 6) (ks := [2, 3, 4, 1, 5]) (by decide) r hr; omega)
-      (by have := sl 6 (by decide); omega)
+    os'.val32 (fun r hr => by have := ap (j := 6) (ks := [2, 3, 4, 1, 5]) (by decide) r hr; omega_arith)
+      (by have := sl 6 (by decide); omega_arith)
   have v7 : val32 t₁.mem B (slot w 7) (2 * w) = val32 t.mem B (slot w 7) (2 * w) :=
-    os'.val32 (fun r hr => by have := ap (j := 7) (ks := [2, 3, 4, 1, 5]) (by decide) r hr; omega)
-      (by have := sl 7 (by decide); omega)
+    os'.val32 (fun r hr => by have := ap (j := 7) (ks := [2, 3, 4, 1, 5]) (by decide) r hr; omega_arith)
+      (by have := sl 7 (by decide); omega_arith)
   refine ⟨⟨(kt.trans k').mono fun r hr => ?_, ot.trans (os'.mono fun r hr => ?_), by rw [v6, t6],
     by rw [v7, t7], by rw [hv]; split <;> with_reducible assumption, fun hE => ?_⟩, h24', k'⟩
   · rcases List.mem_append.mp hr with h | h
     · exact h
     · exact hrs r h
   · obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hr
-    exact List.mem_map.mpr ⟨k, by revert hk; simp only [List.mem_cons, List.not_mem_nil, or_false]; omega, rfl⟩
+    exact List.mem_map.mpr ⟨k, by revert hk; simp only [List.mem_cons, List.not_mem_nil, or_false]; omega_arith, rfl⟩
   · have hS := sq_step hcop (hcA hE) (by rw [← hR]; exact eS)
     have hP := mul_step hcop hS (hXR hE) (by rw [← hR]; exact eP)
     rw [hv]
@@ -155,11 +155,11 @@ theorem byteScan_ok {s t : State} {B D : Addr} {Z w N R X XM RR c i : Nat} {rs :
       omega_using [hc, hlt, hb]
     · omega_using [hc, hlt]
   · rw [a24, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   · have hc' : c' = 256 * c + b := by
       have := (u.gpr .r24).isLt
       rw [show (256 * c + b) * 2 ^ 56 * 2 ^ 8 = (256 * c + b) * 2 ^ 64 by rw [Nat.mul_assoc]] at hc
-      omega
+      omega_arith
     rw [← hc']; exact hu
 
 /-- `scan`: the `L ≥ 1` bytes of `d` at `D` (`r30`, `r31`) scanned, most
@@ -183,16 +183,16 @@ theorem scan_ok {s t : State} {B D : Addr} {Z w N R X XM RR L : Nat} {rs : List 
   have hnw := hs.nowrap
   let Inv : Nat → State → Prop := fun i u =>
     ScanInv s B w N R X XM RR rs (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D i)) u ∧ u.gpr .r30 = off D i
-  refine WP.mono (wp_countdown (cnt := .r31) (N := L) (by omega) (by omega) Inv
+  refine WP.mono (wp_countdown (cnt := .r31) (N := L) (by omega_arith) (by omega_arith) Inv
     (fun i hi u ⟨hu, u30⟩ _ => ?_) ⟨ht, h30⟩ h31) fun u h => h.1
   have hb : u.mem (off D i) = s.mem (off D i) := by
     refine hu.2.1 _ fun r hr => ?_
     obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hr
-    have hk8 : k < 8 := by revert hk; simp only [List.mem_cons, List.not_mem_nil, or_false]; omega
+    have hk8 : k < 8 := by revert hk; simp only [List.mem_cons, List.not_mem_nil, or_false]; omega_arith
     have := Nat.le_trans (slot_le (w := w) hk8) hZ
     right
     by_contra hc
-    exact hsep i hi (off D i) (by simp only [Mont.ofs, ofs] at hc ⊢; omega) rfl
+    exact hsep i hi (off D i) (by simp only [Mont.ofs, ofs] at hc ⊢; omega_arith) rfl
   have hrs' : ∀ r ∈ Pub.stepRegs ++ [Reg.r24, .r25, .r30], r ∈ rs := fun r hr => hrs r (by
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h | h | h <;> simp [h])
@@ -240,17 +240,17 @@ theorem powSecret_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw
     exact sp (Ne.symm (h k hk))
   have v0 : ∀ {m : Mem}, Outs B (powRs w) s.mem m →
       val32 m B (slot w 0) (2 * w) = val32 s.mem B (slot w 0) (2 * w) := fun h =>
-    h.val32 (fun r hr => by have := ap (j := 0) (ks := [1, 2, 3, 4, 5, 6, 7]) (by decide) r hr; omega)
-      (by have := sl 0 (by decide); omega)
+    h.val32 (fun r hr => by have := ap (j := 0) (ks := [1, 2, 3, 4, 5, 6, 7]) (by decide) r hr; omega_arith)
+      (by have := sl 0 (by decide); omega_arith)
   have w0 : ∀ {m : Mem}, Outs B (powRs w) s.mem m → w32 m B (slot w 0) = w32 s.mem B (slot w 0) := fun h =>
-    Outs.w32 h (fun r hr => by have := ap (j := 0) (ks := [1, 2, 3, 4, 5, 6, 7]) (by decide) r hr; omega)
-      (by have := sl 0 (by decide); omega)
+    Outs.w32 h (fun r hr => by have := ap (j := 0) (ks := [1, 2, 3, 4, 5, 6, 7]) (by decide) r hr; omega_arith)
+      (by have := sl 0 (by decide); omega_arith)
   generalize hNd : val32 s.mem B (slot w 0) (2 * w) = N at hN hodd hRRlt v0 ⊢
   generalize hR : 2 ^ (64 * w) = R
   generalize hRRd : val32 s.mem B (slot w 1) (2 * w) = RRv at hRRlt ⊢
   have hcop : Nat.Coprime R N := by rw [← hR]; exact VG.Proof.Bignum.coprime_pow2 hodd _
   generalize hXd : val32 s.mem B (slot w 4) (2 * w) = X
-  have hN0 : 0 < N := by omega
+  have hN0 : 0 < N := by omega_arith
   have outs_of : ∀ {m m' : Mem} {js : List Nat}, (∀ j ∈ js, j ∈ [1, 2, 3, 4, 5, 6, 7]) →
       Outs B (js.map fun k => (slot w k, 8 * (w + 2))) m m' → Outs B (powRs w) m m' := fun hjs h =>
     h.mono fun r hr => by
@@ -259,12 +259,12 @@ theorem powSecret_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw
   have vj : ∀ {m m' : Mem} {js : List Nat} {j : Nat}, j < 8 → (∀ k ∈ js, k ≠ j) →
       Outs B (js.map fun k => (slot w k, 8 * (w + 2))) m m' →
       val32 m' B (slot w j) (2 * w) = val32 m B (slot w j) (2 * w) := fun hj hjs h =>
-    h.val32 (fun r hr => by have := ap hjs r hr; omega) (by have := sl _ hj; omega)
+    h.val32 (fun r hr => by have := ap hjs r hr; omega_arith) (by have := sl _ hj; omega_arith)
   unfold powSecret
   -- 1 in array 7.
-  refine WP.seq (WP.mono (oneP_ok hs (by omega) hw' hZ h10 h29 h11) fun s₁ ⟨⟨h7, out1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (oneP_ok hs (by omega_arith) hw' hZ h10 h29 h11) fun s₁ ⟨⟨h7, out1⟩, k1⟩ => ?_)
   have o1 : Outs B ([7].map fun k => (slot w k, 8 * (w + 2))) s.mem s₁.mem :=
-    Outs.of_outside (o := slot w 7) (n := 8 * (w + 2)) (out1.mono (Nat.le_refl _) (by omega)) (by simp)
+    Outs.of_outside (o := slot w 7) (n := 8 * (w + 2)) (out1.mono (Nat.le_refl _) (by omega_arith)) (by simp)
   have N1 : val32 s₁.mem B (slot w 0) (2 * w) = N := (vj (by decide) (by decide) o1).trans hNd
   have R1 : val32 s₁.mem B (slot w 1) (2 * w) = RRv := by rw [vj (by decide) (by decide) o1, hRRd]
   have X1 : val32 s₁.mem B (slot w 4) (2 * w) = X := (vj (by decide) (by decide) o1).trans hXd
@@ -272,7 +272,7 @@ theorem powSecret_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw
   refine WP.seq (WP.mono (montOp_ok (o := 5) (a := 1) (b := 7) (hs.congr k1.wr) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' hZ ((k1.gpr _ (by decide)).trans h10)
     ((k1.gpr _ (by decide)).trans h29) ((k1.gpr _ (by decide)).trans h11) (by rw [k1.gpr .r12 (by decide)]; exact h12)
-    (by rw [w0 (outs_of (by decide) o1), k1.gpr .r12 (by decide)]; exact hinv) (by rw [h7, N1]; omega))
+    (by rw [w0 (outs_of (by decide) o1), k1.gpr .r12 (by decide)]; exact hinv) (by rw [h7, N1]; omega_arith))
     fun s₂ ⟨⟨hA0, eA0, o2⟩, k2⟩ => ?_)
   rw [N1, R1, h7, hR] at eA0
   rw [N1] at hA0
@@ -313,7 +313,7 @@ theorem powSecret_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw
     (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' hZ ((kt.gpr _ (by decide)).trans h10)
     ((kt.gpr _ (by decide)).trans h29) ((kt.gpr _ (by decide)).trans h11)
     (by rw [kt.gpr .r12 (by decide)]; exact h12) (by rw [w0 ot, kt.gpr .r12 (by decide)]; exact hinv)
-    (by rw [t7, v0 ot]; omega)) fun u ⟨⟨hU, eU, o5⟩, k5⟩ =>
+    (by rw [t7, v0 ot]; omega_arith)) fun u ⟨⟨hU, eU, o5⟩, k5⟩ =>
     ⟨⟨?_, ot.trans (outs_of (js := [2, 3, 4]) (by decide) o5)⟩, (kt.trans k5).mono⟩
   intro hE
   rw [v0 ot] at hU eU

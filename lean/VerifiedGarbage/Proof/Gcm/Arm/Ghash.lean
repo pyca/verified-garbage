@@ -241,7 +241,7 @@ theorem gsave_ok {s : State} {b : BitVec 32} (hw : (⟨State.addr b, 256⟩ : Re
     rw [← slot_addr hfit (by omega_arith)]
     exact h
   · have : (gsaves.all fun i => !clobbers i r) = true := by
-      simp [gsaves, savedRegs, clobbers, dstOf]
+      cases r <;> rfl
     simp [this]
   · have := p.frame
     simpa [Straight.slotRegion, gCfg, hb] using this

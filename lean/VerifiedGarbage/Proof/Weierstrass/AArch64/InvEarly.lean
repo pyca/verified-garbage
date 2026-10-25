@@ -73,7 +73,7 @@ private theorem batch_frame {P : InvCfg} {base : Addr} {s t : State}
   subst hw
   have hh := hx (P.tbl,9*(8*P.M.n)) (by simp [invW])
   dsimp only at hh ⊢
-  omega
+  omega_arith
 
 /-- One optional final batch, selected solely by whether the signed remainder is zero. -/
 theorem earlyTail_ok {P : InvCfg} {B : Nat} {base : Addr} {size m X : Nat} [NeZero m]
@@ -90,12 +90,12 @@ theorem earlyTail_ok {P : InvCfg} {B : Nat} {base : Addr} {size m X : Nat} [NeZe
         toM m (2^(64*P.M.n)) X ^ (m-2) := by
   have hm2' : m%2=1 := by
     rcases Nat.even_or_odd m with ⟨k,hk⟩ | ⟨k,hk⟩
-    · have := hpr.eq_one_or_self_of_dvd 2 ⟨k, by omega⟩; omega
-    · omega
+    · have := hpr.eq_one_or_self_of_dvd 2 ⟨k, by omega_arith⟩; omega_arith
+    · omega_arith
   have hmi : ((m : Int)*(P.M.minv.toNat : Int)+1)%2^64=0 := by exact_mod_cast hM.inv
   obtain ⟨bd,bf1,bf,bg,ba0,ba1,bb0,bb1⟩ := Divstep.invRun_bounds
     (N:=59) (by decide) (p:=m) (m:=P.M.minv.toNat) (x:=X)
-    (by exact_mod_cast hm2') (by exact_mod_cast hpr.one_lt) hmi (by omega) (by exact_mod_cast hX) B
+    (by exact_mod_cast hm2') (by exact_mod_cast hpr.one_lt) hmi (by omega_arith) (by exact_mod_cast hX) B
   have hn := hs.nowrap
   have hsub := invClob_sub hL.n4 hL.n10
   obtain ⟨eL,eF,eG,eA,eB,eNF,eNG,eT⟩ := slots P
@@ -123,9 +123,9 @@ theorem earlyTail_ok {P : InvCfg} {B : Nat} {base : Addr} {size m X : Nat} [NeZe
     have mb : ModOkA P.M size m b.mem base := by rw [kb.mem]; exact ma
     refine WP.seq (WP.mono (batch_ok hL hb mb ib (by
       have hlim := hC.B16
-      have hbi : B<2^16 := by omega
+      have hbi : B<2^16 := by omega_arith
       have hbound : ((59*B : Nat) : Int)≤59*2^16 := by exact_mod_cast (Nat.mul_le_mul_left 59 hbi.le)
-      omega) bf1 bf bg (by rw [abs_of_nonneg ba0]; exact ba1.le)
+      omega_arith) bf1 bf bg (by rw [abs_of_nonneg ba0]; exact ba1.le)
       (by rw [abs_of_nonneg bb0]; exact bb1.le) (j:=1) (by decide) (by decide) b19)
       fun c ⟨ic,_,kc,uc⟩ => ?_)
     have ic' : IInv P base (Divstep.invRun 59 m P.M.minv.toNat X P.B) c := by
@@ -135,7 +135,7 @@ theorem earlyTail_ok {P : InvCfg} {B : Nat} {base : Addr} {size m X : Nat} [NeZe
       have hd := (Divstep.invRun_dfg (N:=59) (p:=(m:Int)) (m:=P.M.minv.toNat) (x:=X)
         (by exact_mod_cast hm2') P.B).1
       have hfn : (m : Int)<2^(64*P.M.n) := by exact_mod_cast (hM.val ▸ wordsVal_lt s.mem base P.M.mo P.M.n)
-      have hzero := (Divstep.divsteps_words (by exact_mod_cast hm2') (by omega : (0:Int)≤X)
+      have hzero := (Divstep.divsteps_words (by exact_mod_cast hm2') (by omega_arith : (0:Int)≤X)
         (by exact_mod_cast hX.le) hfn hC.bound).1
       rw [←hd] at hzero
       exact hzero
@@ -175,11 +175,11 @@ theorem earlyInv_ok {P : InvCfg} {B : Nat} {base : Addr} {size m : Nat} [NeZero 
       wordsVal t.mem base P.acc P.M.n<m ∧
       toM m (2^(64*P.M.n)) (wordsVal t.mem base P.acc P.M.n)=
         toM m (2^(64*P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ (m-2) := by
-  have hb16 : B<2^16 := by have := hC.B16; omega
+  have hb16 : B<2^16 := by have := hC.B16; omega_arith
   have hm2' : m%2=1 := by
     rcases Nat.even_or_odd m with ⟨k,hk⟩ | ⟨k,hk⟩
-    · have := hpr.eq_one_or_self_of_dvd 2 ⟨k, by omega⟩; omega
-    · omega
+    · have := hpr.eq_one_or_self_of_dvd 2 ⟨k, by omega_arith⟩; omega_arith
+    · omega_arith
   let Q := earlyCfg P B m
   have hQ := hL.earlyCfg B m
   have hsub := invClob_sub hL.n4 hL.n10
@@ -190,7 +190,7 @@ theorem earlyInv_ok {P : InvCfg} {B : Nat} {base : Addr} {size m : Nat} [NeZero 
   have kap : KeepRegs (powClob P.M.n) s a := ka.mono fun r hr => hsub r (by
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
-  refine WP.seq (WP.mono (loop_ok hQ ha ma hX hm2' (by omega) hB1 hb16 ia a19)
+  refine WP.seq (WP.mono (loop_ok hQ ha ma hX hm2' (by omega_arith) hB1 hb16 ia a19)
     fun b ⟨ib,kb,ub⟩ => ?_)
   have hb := ha.of_keepRegs kb (by decide)
   have mb := batch_mod hL ha ma ub

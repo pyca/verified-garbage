@@ -59,7 +59,7 @@ theorem decAbs_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr}
   have hk₃ := hk₂.of_others r₃.others
   have m₃ : s₃.mem = s₂.mem := r₃.mem
   have hD₃ : bytesAt s₃.mem D n = bytesAt s.mem D n := by
-    rw [m₃]; exact bytesAt_frame f₂ (data_tFrame h.data) (by omega)
+    rw [m₃]; exact bytesAt_frame f₂ (data_tFrame h.data) (by omega_arith)
   have hd₃ : DataW Ctx St W s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
   have F₃ : Frame (tFrame St W 16 ++ absFrame St W 16) s.mem s₃.mem := by
     rw [m₃]; exact f₂.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
@@ -135,10 +135,10 @@ theorem saved_omFrame {Ctx W : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W) :
 theorem omFrame_hi (W : Addr) : ∀ r ∈ omFrame W, Region.Sub r ⟨W + BitVec.ofNat 64 16, 2544⟩ := by
   have hi : ∀ d k, 16 ≤ d → d + k ≤ 2560 →
       Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ ⟨W + BitVec.ofNat 64 16, 2544⟩ :=
-    fun d k h₁ h₂ => Offset.sub _ h₁ (by omega)
+    fun d k h₁ h₂ => Offset.sub _ h₁ (by omega_arith)
   have st : ∀ d k, d + k ≤ 80 →
       Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 d, k⟩ ⟨W + BitVec.ofNat 64 16, 2544⟩ :=
-    fun d k h => Offset.sub_base _ (by omega)
+    fun d k h => Offset.sub_base _ (by omega_arith)
   intro r hr
   simp only [omFrame, frontFrame, j0Frame, absFrame, tFrame, finFrame, tagFrame, List.cons_append,
     List.nil_append, List.mem_cons, List.not_mem_nil, or_false, List.mem_append] at hr
@@ -305,7 +305,7 @@ theorem openMainA_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     (by rw [slot F₂ 240 (by decide) (by decide), sN])) fun s₃ ⟨x26₃, x27₃, r₃⟩ => ?_)
   have he₃ := he₂.of_regs r₃
   have F₃ : Frame (omFrame W) s.mem s₃.mem := by rw [r₃.mem]; exact F₂
-  have hC₁ : bytesAt s₁.mem D n = bytesAt s.mem D n := bytesAt_frame F₁ dD (by omega)
+  have hC₁ : bytesAt s₁.mem D n = bytesAt s.mem D n := bytesAt_frame F₁ dD (by omega_arith)
   have hlen : ([] ++ bytesAt s₁.mem D n).length = n := by rw [List.nil_append, length_bytesAt]
   have x22₃ : s₃.gpr .x22 = BitVec.ofNat 64 R := by
     rw [r₃.others _ (by decide), hk₂ .x22 (by decide), h₁.x22, h22]
@@ -353,8 +353,8 @@ theorem openMainA_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     rw [r₅.mem, out₄ hab, ciph_frame F₃ dC hR, hj₃, Proof.Gcm.fullTag_eq, List.nil_append, hC₁]
   have hW₅ : bytesAt s₅.mem W tl = bytesAt s.mem W tl := by
     rw [r₅.mem]
-    refine bytesAt_frame F₄ (fun r hr => ?_) (by omega)
-    have := (Offset.disjoint W (d := 0) (n := tl) (e := 16) (k := 2544) (.inl (by omega)) (by omega)
+    refine bytesAt_frame F₄ (fun r hr => ?_) (by omega_arith)
+    have := (Offset.disjoint W (d := 0) (n := tl) (e := 16) (k := 2544) (.inl (by omega_arith)) (by omega_arith)
       (by decide)).sub_right (omFrame_hi W r hr)
     simpa using this
   have hb : (bytesAt s₅.mem (W + BitVec.ofNat 64 112) tl = bytesAt s₅.mem W tl) ↔
@@ -365,7 +365,7 @@ theorem openMainA_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
   have hBeq : decide ((Spec.Gcm.fullTag (ciphOf s.mem Ctx R) (blockAt s.mem (Ctx + BitVec.ofNat 64 240))
       (bytesAt s.mem Np nl) (bytesAt s.mem A al) (bytesAt s.mem D n)).take tl = bytesAt s.mem W tl) = B := by
     rw [← hBd]; exact decide_eq_decide.mpr hb.symm
-  have hD₇ : bytesAt s₇.mem D n = bytesAt s.mem D n := bytesAt_frame F₇ dD (by omega)
+  have hD₇ : bytesAt s₇.mem D n = bytesAt s.mem D n := bytesAt_frame F₇ dD (by omega_arith)
   have x22₇ : s₇.gpr .x22 = BitVec.ofNat 64 R := by
     rw [r₇.others _ (by decide), hk₆ .x22 (by decide), r₅.others _ (by decide), hk₄ .x22 (by decide), x22₃]
   have hcb : blockAt s₇.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
@@ -438,7 +438,7 @@ theorem omIteWith_ok (cr : Prog isa) {Ctx W SP D Np A : Addr} {R nl al n tl : Na
           (bytesAt s.mem Np nl))) (bytesAt s.mem D n) else bytesAt s.mem D n := by
   have hnlt := mo.data.ok.lt
   have F₇ := mo.frame
-  have hD₇ : bytesAt s₇.mem D n = bytesAt s.mem D n := bytesAt_frame F₇ dD (by omega)
+  have hD₇ : bytesAt s₇.mem D n = bytesAt s.mem D n := bytesAt_frame F₇ dD (by omega_arith)
   have x27₇ := mo.x27
   generalize decide ((Spec.Gcm.fullTag (ciphOf s.mem Ctx R) (blockAt s.mem (Ctx + BitVec.ofNat 64 240))
     (bytesAt s.mem Np nl) (bytesAt s.mem A al) (bytesAt s.mem D n)).take tl = bytesAt s.mem W tl) = B at x27₇ ⊢
@@ -456,7 +456,7 @@ theorem omIteWith_ok (cr : Prog isa) {Ctx W SP D Np A : Addr} {R nl al n tl : Na
         inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl)) := by
       rw [r₈.mem, mo.cb]
     have hc₈ : ciphOf s₈.mem Ctx R = ciphOf s.mem Ctx R := ciph_frame F₈ dC hR
-    have hD₈ : bytesAt s₈.mem D n = bytesAt s.mem D n := bytesAt_frame F₈ dD (by omega)
+    have hD₈ : bytesAt s₈.mem D n = bytesAt s.mem D n := bytesAt_frame F₈ dD (by omega_arith)
     refine WP.mono (hcr (oc_in hR mo h₈) (r₈.others _ (by decide)) r₈.wr
       (inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl))))
       fun s₉ h₉ => ⟨h₉.env, ?_, by rw [← r₈.mem]; exact h₉.frame, ?_⟩
@@ -677,15 +677,15 @@ theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Regio
   have hT8 : s.mem.readW (s.sp + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 (stackArg s 1).toNat := by
     rw [ofNat_toNat']; rfl
   have hT0 : s.mem.readW (s.sp + BitVec.ofNat 64 0) 64 = stackArg s 0 := rfl
-  have hsp16 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * w)) 8 := hsp w (by omega)
-  have hsp8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 := hsp 1 (by omega)
-  have hsp0 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8 := hsp 0 (by omega)
+  have hsp16 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * w)) 8 := hsp w (by omega_arith)
+  have hsp8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 := hsp 1 (by omega_arith)
+  have hsp0 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8 := hsp 0 (by omega_arith)
   have darg (j : Nat) (hj : j + 8 ≤ 8 * (w + 1)) :
       (⟨s.sp + BitVec.ofNat 64 j, 8⟩ : Region).Disjoint (workR (stackArg s w)) := by
     refine daA.sub_left ?_
     show Region.Sub ⟨s.sp + BitVec.ofNat 64 j, 8⟩ ⟨s.sp + BitVec.ofNat 64 (8 * 0), 8 * (w + 1)⟩
     rw [show s.sp + BitVec.ofNat 64 (8 * 0) = s.sp by rw [Nat.mul_zero, BitVec.add_zero]]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_arith)
   have h3 := ofNat_toNat' (s.gpr .x3)
   have h5 := ofNat_toNat' (s.gpr .x5)
   have h7 := ofNat_toNat' (s.gpr .x7)
@@ -702,12 +702,12 @@ theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Regio
   generalize htlv : (stackArg s 1).toNat = tl at *
   have hnlt : n < 2 ^ 64 := hn ▸ (s.gpr .x7).isLt
   have htlt : tl < 2 ^ 64 := htlv ▸ (stackArg s 1).isLt
-  refine WP.block_append (WP.mono (entryStash_ok (k := 8 * w) (j := 8) (by omega) (by decide) hW16 hsp16 hsp8 hT8
-      (darg 8 (by omega)) hCtx perm)
+  refine WP.block_append (WP.mono (entryStash_ok (k := 8 * w) (j := 8) (by omega_arith) (by decide) hW16 hsp16 hsp8 hT8
+      (darg 8 (by omega_arith)) hCtx perm)
     fun s₂ ⟨he₂, x22₂, x23₂, x24₂, x26₂, x27₂, x28₂, sl₁, sl₂, sl₃, sl₄, sl₅, f₂, sv₂, rd₂, wr₂⟩ => ?_)
   obtain ⟨s₃, run₃, x12₃, g₃, sp₃, m₃, rd₃, wr₃⟩ := ldrSp_ok (t := .x12) (s := s₂) (k := 0) (by decide)
     (by rw [he₂.sp, f₂.readW (r := ⟨s.sp + BitVec.ofNat 64 0, 8⟩) (Region.contains_self _ _)
-      (keep_of_sub (entryR_work W) (darg 0 (by omega))) (by decide), hT0])
+      (keep_of_sub (entryR_work W) (darg 0 (by omega_arith))) (by decide), hT0])
     (by rw [rd₂, wr₂, he₂.sp]; exact hsp0)
   refine WP.of_runBlock ⟨s₃, run₃, ?_, x12₃⟩
   rw [hA] at sl₁
@@ -746,13 +746,13 @@ theorem OpenIn.vals {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ t : S
   have kE : ∀ {X : Region}, X.Disjoint (workR W) → ∀ r ∈ [entryR W, ⟨W, 16⟩], X.Disjoint r :=
     fun hX => keep_of_sub (entry16_work W) hX
   exact ⟨ciph_frame o.fr (kE o.dcW) o.rounds, blockAt_frame o.fr (kE (o.dcW.sub_left (Lay.ctxSub (by decide)))),
-    bytesAt_frame o.fr (kE o.dnW) (by omega), bytesAt_frame o.fr (kE o.daW) (by omega),
-    bytesAt_frame o.fr (kE o.ddW) (by omega)⟩
+    bytesAt_frame o.fr (kE o.dnW) (by omega_arith), bytesAt_frame o.fr (kE o.daW) (by omega_arith),
+    bytesAt_frame o.fr (kE o.ddW) (by omega_arith)⟩
 
 /-- The received tag, after `tagIn`, as it was on entry. -/
 theorem OpenIn.tag {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s : State}
     (o : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ s) : bytesAt s.mem Tg tl = bytesAt s₀.mem Tg tl :=
-  bytesAt_frame o.fr (keep_of_sub (entry16_work W) o.dtW) (by have := o.tlt; omega)
+  bytesAt_frame o.fr (keep_of_sub (entry16_work W) o.dtW) (by have := o.tlt; omega_arith)
 
 /-- What `open` leaves after its branch on the tag length, from the state
 `s₀` it was called in. -/

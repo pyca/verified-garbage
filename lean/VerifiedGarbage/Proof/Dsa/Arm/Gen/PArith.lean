@@ -32,16 +32,16 @@ theorem pm1_eq (x q : Nat) :
   rw [h2]
   generalize x / q / 2 = a at h3 ⊢
   generalize x / q = b at h1 h3 ⊢
-  have e : x - x % q = q * b := by omega
+  have e : x - x % q = q * b := by omega_arith
   rw [e]
   have e2 : 2 * q * a = 2 * (q * a) := by rw [Nat.mul_assoc]
   rcases Nat.mod_two_eq_zero_or_one b with h | h
   · simp only [h, ↓reduceIte]
-    have : b = 2 * a := by omega
-    rw [this, Nat.mul_left_comm, e2]; omega
-  · simp only [show ¬ b % 2 = 0 by omega, ↓reduceIte]
-    have : b = 2 * a + 1 := by omega
-    rw [this, Nat.mul_add, Nat.mul_one, Nat.mul_left_comm, e2]; omega
+    have : b = 2 * a := by omega_arith
+    rw [this, Nat.mul_left_comm, e2]; omega_arith
+  · simp only [show ¬ b % 2 = 0 by omega_arith, ↓reduceIte]
+    have : b = 2 * a + 1 := by omega_arith
+    rw [this, Nat.mul_add, Nat.mul_one, Nat.mul_left_comm, e2]; omega_arith
 
 /-- The certificates of `pArith`'s pieces that depend on the geometry. -/
 structure PArithCerts (L Lq : Nat) : Prop where
@@ -97,20 +97,20 @@ theorem pLoads_vp {xb qb : List Byte}
     VP (St G c X) (VG.Impl.Rsa.Arm.Keys.seqs [ksSetup, loadS G.pLen aQt sX G.pLen, loadS G.pLen aX sX G.pLen,
         loadS G.pLen aDv sQ G.qLen])
       (fun σ s => St G (cL c G (Spec.Dsa.decodeBE xb) (Spec.Dsa.decodeBE qb)) X σ s ∧ Top G s.mem aDv) := by
-  have w1 : 4 * G.w = G.pLen := by simp only [GP.w]; omega
+  have w1 : 4 * G.w = G.pLen := by simp only [GP.w]; omega_arith
   refine VP.seq (G := St G { c with A := A0, live := [aOne, aZero], KV := KU c.KV 16 G.w, kls := [16] } X)
     ((ksSetup_vp (G := G) (c := c) (X := X)).mono (fun _ _ h => h) fun σ s ⟨h, x⟩ =>
       ⟨h.mono (fun o ho => ⟨ho, rfl⟩) (fun y hy => hy) (fun j hj => ⟨by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; rcases hj with rfl | rfl <;> decide, rfl⟩)
         (fun d hd => ⟨hd, rfl⟩), x⟩) ?_
   refine VP.seq ((loadS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.CrtValues.load aQt), rfl⟩ rfl (by decide) (by exact hx) hxl (by omega) (by omega)).mono
+    (VG.Impl.Rsa.Arm.CrtValues.load aQt), rfl⟩ rfl (by decide) (by exact hx) hxl (by omega_arith) (by omega_arith)).mono
     (fun _ _ h => h) fun _ _ h => h.1) ?_
   refine VP.seq ((loadS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.CrtValues.load aX), rfl⟩ rfl (by decide) (by exact hx) hxl (by omega) (by omega)).mono
+    (VG.Impl.Rsa.Arm.CrtValues.load aX), rfl⟩ rfl (by decide) (by exact hx) hxl (by omega_arith) (by omega_arith)).mono
     (fun _ _ h => h) fun _ _ h => h.1) ?_
   exact loadS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.CrtValues.load aDv), rfl⟩ rfl (by decide) (by exact hqc) hql (by omega) (by omega)
+    (VG.Impl.Rsa.Arm.CrtValues.load aDv), rfl⟩ rfl (by decide) (by exact hqc) hql (by omega_arith) (by omega_arith)
 
 theorem pDivide_vp {x q : Nat} (hpos : 0 < q)
     (hlq : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384) :
@@ -151,7 +151,7 @@ theorem pPm1_vp {x q : Nat} :
         have h1 := Nat.mod_add_div x q
         have h2 : 1 ≤ x / q := Nat.pos_of_ne_zero fun e => hne (by rw [e])
         have h3 := Nat.mul_le_mul_left q h2
-        omega)).mono (fun _ _ h => h) fun σ s ⟨h, xx⟩ => ⟨h.mono (fun o ho => ⟨ho, rfl⟩)
+        omega_arith)).mono (fun _ _ h => h) fun σ s ⟨h, xx⟩ => ⟨h.mono (fun o ho => ⟨ho, rfl⟩)
       (fun y hy => hy) (fun j hj => ?_) (fun d hd => absurd hd (by simp)), xx⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl <;> exact ⟨by simp, by arr_simp⟩
@@ -162,12 +162,12 @@ theorem pVal_lt {x q K : Nat} (hK : 1 ≤ K) (hx : x < 2 ^ K) : pVal x q < 2 ^ K
   have le : 2 * q * (x / (2 * q)) ≤ x := Nat.mul_div_le x (2 * q)
   have odd : pVal x q % 2 = 1 := VG.Proof.Dsa.Generation.pReduction_odd x q
   have ev : 2 ^ K % 2 = 0 := by
-    rw [show K = K - 1 + 1 by omega, Nat.pow_succ]; simp
+    rw [show K = K - 1 + 1 by omega_arith, Nat.pow_succ]; simp
   rw [pVal_eq] at odd ⊢
   rcases Nat.lt_or_ge (2 * q * (x / (2 * q)) + 1) (2 ^ K) with h | h
   · exact h
-  · have : 2 * q * (x / (2 * q)) + 1 = 2 ^ K := by omega
-    rw [this] at odd; omega
+  · have : 2 * q * (x / (2 * q)) + 1 = 2 ^ K := by omega_arith
+    rw [this] at odd; omega_arith
 
 theorem pTail_vp {x q : Nat} (cert : Cert7 (storeBE G.pLen aP sPBE G.pLen)) (hq : 0 < q)
     (hlq : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384) (hx : x < 2 ^ (8 * G.pLen)) {rest : Claims}
@@ -176,15 +176,15 @@ theorem pTail_vp {x q : Nat} (cert : Cert7 (storeBE G.pLen aP sPBE G.pLen)) (hq 
       (VG.Impl.Rsa.Arm.Keys.seqs [VG.Impl.Rsa.Arm.Keys.copy aP aPm1, .block (VG.Impl.Rsa.Arm.Keys.orOne aP),
         VG.Impl.Rsa.Arm.Keys.copy aE aQt, .block (VG.Impl.Rsa.Arm.Keys.clrLow aE), storeBE G.pLen aP sPBE G.pLen])
       (St G (pOut c G x q rest) X) := by
-  have w1 : 4 * G.w = G.pLen := by simp only [GP.w]; omega
+  have w1 : 4 * G.w = G.pLen := by simp only [GP.w]; omega_arith
   have pm := pm1_eq x q
   have pv := pVal_eq x q
-  have plt := pVal_lt (q := q) (by omega) hx
+  have plt := pVal_lt (q := q) (by omega_arith) hx
   have hP : 2 * ((x - x % q - (if x / q % 2 = 0 then 0 else q)) / 2) + 1 = pVal x q := by
     rw [pm, pv, Nat.mul_assoc, Nat.mul_div_cancel_left _ (by decide)]
   have hE : 2 * (x / q / 2) = (pVal x q - 1) / q := by
     rw [VG.Proof.Dsa.Generation.pReduction_generatorExponent x hq, Nat.div_div_eq_div_mul, Nat.mul_comm q 2]
-  have hM : x - x % q - (if x / q % 2 = 0 then 0 else q) = pVal x q - 1 := by rw [pm, pv]; omega
+  have hM : x - x % q - (if x / q % 2 = 0 then 0 else q) = pVal x q - 1 := by rw [pm, pv]; omega_arith
   refine VP.seq (copy_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
     (VG.Impl.Rsa.Arm.Keys.copy aP aPm1), rfl⟩ (by decide) (by simp) (by decide)) ?_
   refine VP.seq (orOne_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
@@ -193,7 +193,7 @@ theorem pTail_vp {x q : Nat} (cert : Cert7 (storeBE G.pLen aP sPBE G.pLen)) (hq 
     (VG.Impl.Rsa.Arm.Keys.copy aE aQt), rfl⟩ (by decide) (by simp) (by decide)) ?_
   refine VP.seq (clrLow_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
     (.block (VG.Impl.Rsa.Arm.Keys.clrLow aE)), rfl⟩ (by simp)) ?_
-  refine (storeBE_vp cert rfl (by simp) (by omega) (by omega) (by simp only [sPBE, sK, sA, wa]; omega)
+  refine (storeBE_vp cert rfl (by simp) (by omega_arith) (by omega_arith) (by simp only [sPBE, sK, sA, wa]; omega_arith)
     (cl' := rest) fun y hy => by exact hrest y hy).mono (fun _ _ h => h) fun σ s ⟨h, xx⟩ =>
       ⟨h.mono (fun o ho => ⟨ho, rfl⟩) (fun y hy => ?_) (fun j hj => ?_) (fun d hd => absurd hd (by simp)), xx⟩
   · rcases List.mem_cons.mp hy with rfl | hy
@@ -217,8 +217,8 @@ theorem pArith_vp {xb qb : List Byte} (certs : PArithCerts G.pLen G.qLen)
   have hxlt : Spec.Dsa.decodeBE xb < 2 ^ (8 * G.pLen) := by
     have := VG.Proof.Dsa.decodeBE_lt xb
     rwa [hxl, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
-  exact VP.seq (pLoads_vp hlq hx hxl hqc hql) (VP.seq (pDivide_vp hpos (by omega))
-    (VP.seq pPm1_vp (pTail_vp certs.st hpos (by omega) hxlt hrest)))
+  exact VP.seq (pLoads_vp hlq hx hxl hqc hql) (VP.seq (pDivide_vp hpos (by omega_arith))
+    (VP.seq pPm1_vp (pTail_vp certs.st hpos (by omega_arith) hxlt hrest)))
 
 end
 

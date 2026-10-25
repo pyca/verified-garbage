@@ -112,7 +112,7 @@ theorem agree {rs : List Reg} {s s' : State} (hk : KR F s₀ s) (hk' : KR F s₀
     (hag : ∀ r ∈ rs, s.gpr r = s'.gpr r) : VG.Arm.Taint.Agree (argTaint rs 4) s s' :=
   agree_argTaint hag (by rw [hk.sp, hk'.sp, hq.sp]) (args_out hp hk.sp hk.wr) (args_out hp' hk'.sp hk'.wr)
     (argMem_of (j := 1) (by rw [hk.sp, hk'.sp, hq.sp]) (by rw [hk.sp]; exact hp.spf) fun i hi => by
-      obtain rfl : i = 0 := by omega
+      obtain rfl : i = 0 := by omega_arith
       rw [hk.stackArg0 hp, hk'.stackArg0 hp', hq.a0])
 
 /-- A piece of code the taint analysis accepts, between states that keep `KR`. -/
@@ -208,7 +208,7 @@ theorem hashKey_rel :
   have r2 : RelCT isa (fun s s' => Hk2a F s₀ s ∧ Hk2a F s₀' s') (.call F.H.initN F.H.initC)
       fun s s' => Hk2 hF.hH s₀ s ∧ Hk2 hF.hH s₀' s' :=
     rel_wp (init_rel hF.hH (st := dO s₀ F.stWO) fun s s' ⟨⟨⟨k, _, a⟩, _⟩, ⟨⟨k', _, a'⟩, _⟩⟩ =>
-        ⟨a, by rw [a', hq.dOEq], by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega, cw hp k.kr,
+        ⟨a, by rw [a', hq.dOEq], by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega_arith, cw hp k.kr,
           by have := cw hp' k'.kr; rw [hq.dOEq] at this; exact this⟩)
       (fun s ⟨⟨k, d, a⟩, l⟩ => WP.mono (hk2b_ok hp hz hF.hH k d a) fun t h => ⟨h, l⟩)
       (fun s ⟨⟨k, d, a⟩, l⟩ => WP.mono (hk2b_ok hp' hz hF.hH k d a) fun t h => ⟨h, l⟩)
@@ -247,7 +247,7 @@ theorem hashKey_rel :
       have ekp : kp F t₀ = dO t₀ F.hkO := by simp only [kp, hlt, ↓reduceIte]
       have ekl : kl F t₀ = F.H.D := by simp only [kl, hlt, ↓reduceIte]
       refine ⟨k', by rw [ekp]; exact d, by rw [ekl]; exact c, ?_⟩
-      rw [ekp, ekl, dO_addr hp₀ hz.hkO_lt, m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega)
+      rw [ekp, ekl, dO_addr hp₀ hz.hkO_lt, m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega_arith)
         (hash_len hF.hH b)])
   exact (r1.seq ((r2a.seq r2).seq (r3.seq (r4.seq (r5.seq (r6.seq r7)))))).mono (fun _ _ h => h) fun _ _ h => h
 
@@ -277,7 +277,7 @@ theorem key_rel :
       exact ⟨⟨h.1.1, this⟩, h.1.2, by rw [hq.klnEq]; exact this⟩
   · refine (hashKey_rel hp hp' hq hc).mono (fun s s' h => ?_) fun _ _ h => h
     have := of_decide_eq_false ((ev h.1.1).symm.trans h.2 |> Option.some.inj)
-    exact ⟨⟨h.1.1.1, by omega⟩, h.1.2.1, by show F.H.B + 1 ≤ kln s₀'; rw [hq.klnEq]; omega⟩
+    exact ⟨⟨h.1.1.1, by omega_arith⟩, h.1.2.1, by show F.H.B + 1 ≤ kln s₀'; rw [hq.klnEq]; omega_arith⟩
 
 /-- After `anyArgs`. -/
 abbrev Ag (hF : FnsOK F) (t₀ t : State) : Prop :=
@@ -296,7 +296,7 @@ theorem ct : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') F.hmacInitAny fun _
     (argTaint inRegs 4) (fun s s' e e' => by
         subst e e'
         refine agree_argTaint (fun r hr => ?_) hq.sp (args_out hp rfl rfl) (args_out hp' rfl rfl)
-          (argMem_of (j := 1) hq.sp hp.spf fun i hi => by obtain rfl : i = 0 := by omega
+          (argMem_of (j := 1) hq.sp hp.spf fun i hi => by obtain rfl : i = 0 := by omega_arith
                                                           exact hq.a0)
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
@@ -365,7 +365,7 @@ theorem anyFramed {I : Spec.Hmac.Instance} {c : Prog isa}
   Arm.Verified.stackScratchWiped (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
     (n := I.initAnyKeyScratch) (post := Spec.Hmac.initPost I.S Arm.abi.ptrBits) (wa := true) (stack := 24)
     (m := 0) (words := 2 * I.initAnyKeyScratch) h rfl rfl rfl hb
-    (by change 4 * (2 * I.initAnyKeyScratch) ≤ I.initAnyKeyScratch * 8; omega)
+    (by change 4 * (2 * I.initAnyKeyScratch) ≤ I.initAnyKeyScratch * 8; omega_arith)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Hmac.initPost_local I.S _) (Hmac.initPostOut_local I.S _ hR hS) hsat rfl
 

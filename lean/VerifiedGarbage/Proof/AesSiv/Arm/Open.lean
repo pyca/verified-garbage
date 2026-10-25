@@ -150,7 +150,7 @@ theorem maskData_ok {s : State} (he : Env c w sp R s) {D : BitVec 32} {n : Nat} 
     refine ⟨he₁, k₁.rd, k₁.wr, fun r a _ _ _ => g₁ r a, ?_⟩
     rw [k₁.mem]; cases ok <;> simp [bytesAt, Spec.Ccm.zeros, writeBytes_nil]
   have hn0 : 0 < n := by have : n ≠ 0 := by simpa using hb
-                         omega
+                         omega_arith
   refine WP.loop (M := isa) (c := .ne)
     (fun (k : Nat) (t : State) => ∃ j, k = n - j ∧ j < n ∧ t.gpr .r6 = D + BitVec.ofNat 32 j ∧
       t.gpr .r5 = BitVec.ofNat 32 (n - j) ∧
@@ -164,18 +164,18 @@ theorem maskData_ok {s : State} (he : Env c w sp R s) {D : BitVec 32} {n : Nat} 
   have aD := addr_i hn hj
   obtain ⟨t', run', mem', r6', r5', z', g', rd', wr', sp'⟩ := maskStep_ok t (ok := ok) r6 r5
     (by rw [g _ (by decide) (by decide) (by decide), h1₁])
-    (by rw [rd, wr, aD]; exact in_of_covers hD.buf.rd hj (by omega))
-    (by rw [wr, aD]; exact in_of_covers hD.wr hj (by omega))
+    (by rw [rd, wr, aD]; exact in_of_covers hD.buf.rd hj (by omega_arith))
+    (by rw [wr, aD]; exact in_of_covers hD.wr hj (by omega_arith))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have fr : Frame [⟨State.addr D, j⟩] s.mem t.mem := by
     rw [mem]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
   have hq : t.mem (State.addr D + BitVec.ofNat 64 j) = s.mem (State.addr D + BitVec.ofNat 64 j) :=
     fr _ fun r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      simp only [Region.Contains, Mem.sub_ofNat_toNat (State.addr D) (show j < 2 ^ 64 by omega)] at hcon; omega
+      simp only [Region.Contains, Mem.sub_ofNat_toNat (State.addr D) (show j < 2 ^ 64 by omega_arith)] at hcon; omega_arith
   have hmem : t'.mem = writeBytes s.mem (State.addr D)
       (if ok then bytesAt s.mem (State.addr D) (j + 1) else Spec.Ccm.zeros (j + 1)) := by
-    rw [mem', aD, hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega), length_mask]
+    rw [mem', aD, hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega_arith), length_mask]
   have hz : t'.z = decide (j + 1 = n) := by rw [z', dec32 hj hn32, z_dec hj hn32]
   have gg : ∀ r, r ≠ .r5 → r ≠ .r6 → r ≠ .r12 → t'.gpr r = s₁.gpr r := fun r a b d => by
     rw [g' r a b d, g r a b d]
@@ -188,7 +188,7 @@ theorem maskData_ok {s : State} (he : Env c w sp R s) {D : BitVec 32} {n : Nat} 
       (by rw [sp', sp, ← k₁.sp]) (by rw [rd', rd, k₁.rd]) (by rw [wr', wr, k₁.wr]), by rw [rd', rd],
       by rw [wr', wr], fun r a b d e => by rw [gg r b d e, g₁ r a], by rw [hmem, hjn]⟩
   · right
-    refine ⟨by rw [ev]; simp [hjn], n - (j + 1), by omega, j + 1, rfl, by omega, r6',
+    refine ⟨by rw [ev]; simp [hjn], n - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, r6',
       by rw [r5', dec32 hj hn32], hmem, gg, by rw [rd', rd], by rw [wr', wr], by rw [sp', sp]⟩
 
 /-- Decryption before the comparison: the received IV at `W`, from `T`, the
@@ -239,7 +239,7 @@ theorem front_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a 
     · exact h.t_stk.symm
   -- The received IV copied from `siv`.
   have a8 : State.addr (s₀.sp + BitVec.ofNat 32 8) = State.addr sp + BitVec.ofNat 64 8 := by
-    rw [O.env.sp]; exact addr_add (by have := h.afit; omega)
+    rw [O.env.sp]; exact addr_add (by have := h.afit; omega_arith)
   have v8 : s₀.mem.readW (State.addr (s₀.sp + BitVec.ofNat 32 8)) 32 = T := by
     rw [a8, f₀₀.readW (r := ⟨State.addr sp + BitVec.ofNat 64 8, 4⟩) (Region.contains_self _ _)
       (fun r hr => (dA₀ r hr).sub_left (Offset.sub_base _ (by decide))) (by decide), h.a2]
@@ -313,8 +313,8 @@ theorem front_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a 
     intro d hd hd' r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact L.w_w (by simp only [ksOff]; omega) hd' (by decide)
-    · exact L.w_w (by omega) hd' (by decide)
+    · exact L.w_w (by simp only [ksOff]; omega_arith) hd' (by decide)
+    · exact L.w_w (by omega_arith) hd' (by decide)
     · exact (L.stk_w' hd').symm
     · exact (h.data.buf.w.sub_right (Lay.wSub hd')).symm
   have ec : ∀ r ∈ ctrR w sp D n, (⟨State.addr c, 512⟩ : Region).Disjoint r := by
@@ -334,10 +334,10 @@ theorem front_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a 
   have hsp₂ : s₂.sp = sp := he₂.sp
   refine WP.seq ?_
   refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 0) (by decide)
-    (by rw [hsp₂]; exact addr_add (by have := h.afit; omega))
+    (by rw [hsp₂]; exact addr_add (by have := h.afit; omega_arith))
     (by rw [rd₂, wr₂, rd₁, wr₁]; exact in_off h.args (by decide) (by decide)) fun s₃ u₃ => ?_
   refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 4) (by decide)
-    (by rw [u₃.sp, hsp₂]; exact addr_add (by have := h.afit; omega))
+    (by rw [u₃.sp, hsp₂]; exact addr_add (by have := h.afit; omega_arith))
     (by rw [u₃.rd, u₃.wr, rd₂, wr₂, rd₁, wr₁]; exact in_off h.args (by decide) (by decide))
     fun s₄ u₄ => WP.block_nil ?_
   have m₄ : s₄.mem = s₂.mem := by rw [u₄.mem, u₃.mem]
@@ -362,9 +362,9 @@ theorem front_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a 
   have iv₁ : bytesAt s₁.mem (State.addr w) 16 = bytesAt s.mem (State.addr T) 16 := by
     rw [iv₀₁, bytesAt_frame f₀₀ dT₀ (by decide)]
   have p₁ : bytesAt s₁.mem (State.addr D) n = bytesAt s.mem (State.addr D) n :=
-    bytesAt_frame f₀₁ dD (by have := h.data.buf.lt; omega)
+    bytesAt_frame f₀₁ dD (by have := h.data.buf.lt; omega_arith)
   have p₅ : bytesAt s₅.mem (State.addr D) n = bytesAt s₂.mem (State.addr D) n :=
-    bytesAt_frame f₅' (dis_wR h.data.buf.w h.data.buf.stk) (by have := h.data.buf.lt; omega)
+    bytesAt_frame f₅' (dis_wR h.data.buf.w h.data.buf.stk) (by have := h.data.buf.lt; omega_arith)
   have acc₂ : bytesAt s₂.mem (State.addr w + BitVec.ofNat 64 dOff) 16 =
       bytesAt s₀.mem (State.addr w + BitVec.ofNat 64 dOff) 16 := by
     rw [bytesAt_frame f₂ (eW (.inr (by decide)) (by decide)) (by decide),
@@ -407,10 +407,10 @@ theorem decrypt_wp {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp 
   have hsp₅ : s₅.sp = sp := M.env.sp
   refine WP.seq (WP.block_append (WP.of_runBlock ⟨s₆, run₆, ?_⟩))
   refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 0) (by decide)
-    (by rw [k₆.sp, hsp₅]; exact addr_add (by have := h.afit; omega))
+    (by rw [k₆.sp, hsp₅]; exact addr_add (by have := h.afit; omega_arith))
     (by rw [k₆.rd, k₆.wr, M.rd, M.wr]; exact in_off h.args (by decide) (by decide)) fun s₇ u₇ => ?_
   refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 4) (by decide)
-    (by rw [u₇.sp, k₆.sp, hsp₅]; exact addr_add (by have := h.afit; omega))
+    (by rw [u₇.sp, k₆.sp, hsp₅]; exact addr_add (by have := h.afit; omega_arith))
     (by rw [u₇.rd, u₇.wr, k₆.rd, k₆.wr, M.rd, M.wr]; exact in_off h.args (by decide) (by decide))
     fun s₈ u₈ => WP.block_nil ?_
   have m₈ : s₈.mem = s₅.mem := by rw [u₈.mem, u₇.mem, k₆.mem]
@@ -439,7 +439,7 @@ theorem decrypt_wp {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp 
       (by rw [hlen]; exact Region.contains_self _ _)) fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     exact (h.data.buf.w.sub_right (Lay.wSub (by decide))).symm
-  refine WP.mono (restore_ok (s₀ := s) he₉.r11 (by omega)
+  refine WP.mono (restore_ok (s₀ := s) he₉.r11 (by omega_arith)
     (by rw [rd₉, wr₉, rd₈, wr₈]; exact covers_left (covers_prefix h.perm.w (by decide))) sv₉
     (by rw [he₉.sp, h.hsp])) fun s₁₀ ⟨ab, m₁₀, r0₁₀, _, _⟩ => ⟨ab, ?_⟩
   have hr0 : s₁₀.gpr .r0 = if ok then 1 else 0 := by
@@ -447,7 +447,7 @@ theorem decrypt_wp {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp 
   have hb : bytesAt s₁₀.mem (State.addr D) n =
       if ok then bytesAt s₅.mem (State.addr D) n else Spec.Ccm.zeros n := by
     have e := bytesAt_writeBytes_self s₈.mem (State.addr D)
-      (if ok then bytesAt s₈.mem (State.addr D) n else Spec.Ccm.zeros n) (by rw [hlen]; have := h.n32; omega)
+      (if ok then bytesAt s₈.mem (State.addr D) n else Spec.Ccm.zeros n) (by rw [hlen]; have := h.n32; omega_arith)
     rw [hlen] at e
     rw [m₁₀, m₉, e, m₈]
   rw [M.iv, M.tag, M.pt] at hok

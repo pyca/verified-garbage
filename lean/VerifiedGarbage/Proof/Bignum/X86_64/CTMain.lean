@@ -61,7 +61,7 @@ theorem out_ct : RelCT isa (Two OPre) (seqs outSteps) fun _ _ => True := by
   · rintro p s ⟨c, hg, hw, hZ, hk1, hk, hO, hK, hM, hout, hsep⟩
     have hn := hg.scr.nowrap
     obtain ⟨g0, g8⟩ := slot0_ge p.L.w
-    have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.L.B (8 * i)) 8 := fun i hi => hg.scr.ld (by omega)
+    have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.L.B (8 * i)) 8 := fun i hi => hg.scr.ld (by omega_arith)
     refine WP.mono (WP.keep [.rbx, .rsi, .rcx, .r15] (Q := fun t =>
         t.gpr .rbx = off p.L.B (slot p.L.w aY) ∧ t.gpr .rsi = p.op ∧ t.gpr .rcx = BitVec.ofNat 64 p.k ∧
         t.gpr .r15 = mask c ∧ t.mem = s.mem) (by
@@ -78,7 +78,7 @@ theorem out_ct : RelCT isa (Two OPre) (seqs outSteps) fun _ _ => True := by
       · rw [c₁, c₂]) (by taint_decide) ?_) ?_
   · rintro p s ⟨c, hs, hdi, hw, hZ, hk1, hk, hbx, hsi, hcx, h15, hout, hsep⟩
     exact WP.mono (storeBE_ok hs hbx hsi hcx h15 hk1 hk hw
-      (by have := slot_le (w := p.L.w) (show aY < 8 by decide); omega) hout hsep)
+      (by have := slot_le (w := p.L.w) (show aY < 8 by decide); omega_arith) hout hsep)
       fun t ⟨_, _, _, _, k⟩ => (k.gpr (by decide)).trans hdi
   exact two_taint [.rdi] (fun p s₁ s₂ h₁ h₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) (by taint_decide)
@@ -170,7 +170,7 @@ theorem MRel.sh {p : MPub} {s : State} (h : MRel p s) : SH ⟨p.B, p.Z, p.k, p.n
   obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
   have := h.k1
   have := h.k2
-  exact ⟨h.scr, h.rdi, h.z, show 9 ≤ p.k by omega, show p.k < 2 ^ 31 by omega, h.hK, h.hN, h.hIn, h.n, h.nl,
+  exact ⟨h.scr, h.rdi, h.z, show 9 ≤ p.k by omega_arith, show p.k < 2 ^ 31 by omega_arith, h.hK, h.hN, h.hIn, h.n, h.nl,
     hodd, xb, h.x, h.xl⟩
 
 /-- The setup leaks the same in runs that agree on `n`. -/
@@ -182,7 +182,7 @@ theorem mainA_ct : RelCT isa (Two MRel) (seqs (loadSteps ++ restSteps)) (Two MA)
   obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
   have := h.k1
   have := h.k2
-  exact WP.mono (setup_ok h.scr h.rdi h.z (by omega) (by omega) h.hK h.hN h.hIn h.n h.x h.nl h.xl hodd)
+  exact WP.mono (setup_ok h.scr h.rdi h.z (by omega_arith) (by omega_arith) h.hK h.hN h.hIn h.n h.x h.nl h.xl hodd)
     fun t ⟨mi, so, f, k⟩ => ⟨s, xb, mi, h, hv, so, f, k⟩
 
 /-- After `R² mod m`. -/
@@ -202,7 +202,7 @@ theorem MA.r2Pre {p : MPub} {t : State} {σ : State} {xb : List Byte} {mi : BitV
   obtain ⟨hodd, -, hlo⟩ := valid_facts hv h.k1
   have := h.k1
   have := h.k2
-  exact ⟨⟨so.good, h.z⟩, show 2 ≤ p.w by unfold MPub.w; omega, show p.w < 2 ^ 30 by unfold MPub.w; omega, so.n, so.inv, so.r12, so.r10,
+  exact ⟨⟨so.good, h.z⟩, show 2 ≤ p.w by unfold MPub.w; omega_arith, show p.w < 2 ^ 30 by unfold MPub.w; omega_arith, so.n, so.inv, so.r12, so.r10,
     hodd, hlo⟩
 
 /-- `R² mod m` leaks the same in runs that agree on `n`. -/
@@ -212,13 +212,13 @@ theorem mainB_ct : RelCT isa (Two MA) (seqs (r2Steps Mont.base)) (Two MB) := by
     obtain ⟨σ₂, xb₂, mi₂, hm₂, -, so₂, -⟩ := h₂
     obtain ⟨hodd, -, -⟩ := valid_facts hv hm₁.k1
     have := hm₁.k1
-    obtain rfl := so_minv so₁ so₂ hodd (show 1 ≤ p.w by unfold MPub.w; omega)
+    obtain rfl := so_minv so₁ so₂ hodd (show 1 ≤ p.w by unfold MPub.w; omega_arith)
     exact ⟨_, MA.r2Pre hm₁ hv so₁, MA.r2Pre hm₂ hv so₂⟩
   rintro p t ⟨σ, xb, mi, hm, hv, so, f, k⟩
   obtain ⟨hodd, -, hlo⟩ := valid_facts hv hm.k1
   have := hm.k1
   have := hm.k2
-  exact WP.mono (r2_ok Mont.base so.good hm.z (by unfold MPub.w; omega) (by unfold MPub.w; omega) so.n so.inv so.r12 so.r10 hodd hlo)
+  exact WP.mono (r2_ok Mont.base so.good hm.z (by unfold MPub.w; omega_arith) (by unfold MPub.w; omega_arith) so.n so.inv so.r12 so.r10 hodd hlo)
     fun t' ⟨hg, hlt, hr, f', k'⟩ => ⟨σ, xb, mi, t, hm, hv, so, f, k, hg, hlt, hr, f', k'⟩
 
 /-- What the exponentiation phase needs, from the facts after `R² mod m`. -/
@@ -236,18 +236,18 @@ theorem mb_ePre {p : MPub} {t σ t₁ : State} {xb : List Byte} {mi : BitVec 64}
   have := hm.L2
   have hn := hm.scr.nowrap
   have hZ : slot p.w 8 ≤ p.Z := hm.z
-  have hn' : p.B.toNat + slot p.w 8 ≤ 2 ^ 64 := by omega
+  have hn' : p.B.toNat + slot p.w 8 ≤ 2 ^ 64 := by omega_arith
   have x₁₂ := (Fixed.of_frm f (setupRanges_fixed _)).trans (Fixed.of_frm f' (r2Ranges_fixed _))
   have i₁₂ := (InScr.of_frm f fun r hr => Nat.le_trans (setupRanges_le _ r hr) hZ).trans
     (InScr.of_frm f' fun r hr => Nat.le_trans (r2Ranges_le _ r hr) hZ)
-  exact ⟨Spec.Rsa.os2ip xb, hg, hZ, show 2 ≤ p.w by unfold MPub.w; omega,
-    show p.w < 2 ^ 31 by unfold MPub.w; omega, hodd, hN1,
+  exact ⟨Spec.Rsa.os2ip xb, hg, hZ, show 2 ≤ p.w by unfold MPub.w; omega_arith,
+    show p.w < 2 ^ 31 by unfold MPub.w; omega_arith, hodd, hN1,
     by rw [f'.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact so.n,
     by rw [f'.r2_word hn' (by decide) (by decide) (by decide) (by decide)]; exact so.inv,
     by rw [f'.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact so.x,
     by rw [f'.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact so.one, hlt, hr,
     by rw [x₁₂ sE (by decide)]; exact hm.hE, by rw [x₁₂ sElen (by decide)]; exact hm.hL, hm.el, hm.L1,
-    show p.len < 2 ^ 31 by omega, hm.e.congrK i₁₂ (k.trans k')⟩
+    show p.len < 2 ^ 31 by omega_arith, hm.e.congrK i₁₂ (k.trans k')⟩
 
 /-- After the exponentiation. -/
 def MC (p : MPub) (t : State) : Prop :=
@@ -265,7 +265,7 @@ theorem mainC_ct : RelCT isa (Two MB) (seqs expSteps) (Two MC) := by
     obtain ⟨σ₂, xb₂, mi₂, u₂, hm₂, -, so₂, f₂, k₂, hg₂, hlt₂, hr₂, f₂', k₂'⟩ := h₂
     obtain ⟨hodd, -, -⟩ := valid_facts hv hm₁.k1
     have := hm₁.k1
-    obtain rfl := so_minv so₁ so₂ hodd (show 1 ≤ p.w by unfold MPub.w; omega)
+    obtain rfl := so_minv so₁ so₂ hodd (show 1 ≤ p.w by unfold MPub.w; omega_arith)
     exact ⟨_, mb_ePre hm₁ hv so₁ f₁ k₁ hg₁ hlt₁ hr₁ f₁' k₁', mb_ePre hm₂ hv so₂ f₂ k₂ hg₂ hlt₂ hr₂ f₂' k₂'⟩
   rintro p t ⟨σ, xb, mi, t₁, hm, hv, so, f, k, hg, hlt, hr, f', k'⟩
   obtain ⟨X, hg', hZ, hw, hw', hodd, hN1, hn, hinv, hX, hone, hlt2, hr2, he, hlen, hL, hL1, hL', heb⟩ :=
@@ -286,11 +286,11 @@ theorem mc_oPre {p : MPub} {t σ t₁ t₂ : State} {xb : List Byte} {mi : BitVe
   have x := ((Fixed.of_frm f (setupRanges_fixed _)).trans (Fixed.of_frm f' (r2Ranges_fixed _))).trans
     (Fixed.of_frm f'' (expPhaseRanges_fixed _))
   have kk := (k.trans k').trans k''
-  refine ⟨decide (Spec.Rsa.os2ip xb < p.N), hg, rfl, hZ, show 1 ≤ p.k by omega, show p.k < 2 ^ 31 by omega,
+  refine ⟨decide (Spec.Rsa.os2ip xb < p.N), hg, rfl, hZ, show 1 ≤ p.k by omega_arith, show p.k < 2 ^ 31 by omega_arith,
     by rw [x sOut (by decide)]; exact hm.hO, by rw [x sK (by decide)]; exact hm.hK, ?_,
     fun j hj => by rw [kk.2.2]; exact hm.out j hj, hm.outSep⟩
   rw [f''.ep_hdr (by decide) (by decide) (by decide) (by decide),
-    f'.word_eq (r2Ranges_hdr _ (by decide) (by decide)) (by unfold sMask sFn; omega)]
+    f'.word_eq (r2Ranges_hdr _ (by decide) (by decide)) (by unfold sMask sFn; omega_arith)]
   exact so.mask
 
 /-- `main` leaks the same in runs that agree on the public data, `n` and `e`. -/
@@ -304,7 +304,7 @@ theorem main_ct : RelCT isa (Two MRel) main fun _ _ => True := by
   obtain ⟨σ₂, xb₂, mi₂, u₂, v₂, hm₂, -, so₂, f₂, k₂, f₂', k₂', hg₂, f₂'', k₂''⟩ := h₂
   obtain ⟨hodd, -, -⟩ := valid_facts hv hm₁.k1
   have := hm₁.k1
-  obtain rfl := so_minv so₁ so₂ hodd (show 1 ≤ p.w by unfold MPub.w; omega)
+  obtain rfl := so_minv so₁ so₂ hodd (show 1 ≤ p.w by unfold MPub.w; omega_arith)
   exact ⟨_, mc_oPre hm₁ so₁ f₁ k₁ f₁' k₁' hg₁ f₁'' k₁'', mc_oPre hm₂ so₂ f₂ k₂ f₂' k₂' hg₂ f₂'' k₂''⟩
 
 /-! ## The whole function -/
@@ -404,7 +404,7 @@ theorem code_ct : RelCT isa (Two CRel) code fun _ _ => True := by
     have := c.hZ
     have := c.hk1
     have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (stackArg s 2) (8 * i)) 8 := fun i hi =>
-      hpre.scr.ld (by omega)
+      hpre.scr.ld (by omega_arith)
     refine WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t' => t'.gpr .rsi = s.gpr .rdi ∧
         t'.gpr .rcx = BitVec.ofNat 64 (s.gpr .rcx).toNat) (by
       xrun [State.ea, hdr, hpre.rdi, hdrOff, hl sOut (by decide), hl sK (by decide), hpre.hO, hpre.hK]) rfl)

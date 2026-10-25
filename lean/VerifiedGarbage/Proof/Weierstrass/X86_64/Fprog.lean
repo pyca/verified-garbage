@@ -105,9 +105,9 @@ theorem opKeep_wordsVal {M : Mod} {base : Addr} {o : Nat} {s s' : State}
   | k + 1, y, ho, ht, hy => by
     simp only [wordsVal]
     have hw : word s'.mem base y = word s.mem base y :=
-      Mem.readW_congr fun i hi => h.mem _ (by rw [ofs_off base (by omega)]; omega)
-        (by rw [ofs_off base (by omega)]; omega)
-    rw [opKeep_wordsVal h (k := k) (y := y + 8) (by omega) (by omega) (by omega), hw]
+      Mem.readW_congr fun i hi => h.mem _ (by rw [ofs_off base (by omega_arith)]; omega_arith)
+        (by rw [ofs_off base (by omega_arith)]; omega_arith)
+    rw [opKeep_wordsVal h (k := k) (y := y + 8) (by omega_arith) (by omega_arith) (by omega_arith), hw]
 
 /-- An operation writing `o`, which then holds `v`, keeps the invariant. -/
 theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
@@ -125,12 +125,12 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       have := hL.apart x o hx ho hxo
       have := hL.tmp x hx
       have := hL.le x hx
-      exact opKeep_wordsVal hk (by omega) (by omega) (by omega)
+      exact opKeep_wordsVal hk (by omega_arith) (by omega_arith) (by omega_arith)
   refine ⟨⟨(hk.gpr _ (rdi_not_clob _)).trans hI.scr.rdi, hk.wr ▸ hI.scr.wr, hn⟩,
     ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
   · have := hM.mo
     have := hM.sep
-    rw [opKeep_wordsVal hk (by omega) (by omega) (by omega)]
+    rw [opKeep_wordsVal hk (by omega_arith) (by omega_arith) (by omega_arith)]
     exact hM.val
   · intro x hx
     rcases List.mem_cons.mp hx with rfl | hx
@@ -168,8 +168,8 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (add_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
-      (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) (by omega)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
+      (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) (by omega_arith)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
+    · rw [heq]; exact Nat.mod_lt _ (by omega_arith)
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
@@ -179,8 +179,8 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     refine WP.mono (sub_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
       (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) hA hB)
       fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
-    · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
+    · rw [heq]; exact Nat.mod_lt _ (by omega_arith)
+    · rw [heq, toM_sub (by omega_arith), hI.val a hR.1, hI.val b hR.2]
 
 theorem fprog_cons (M : Mod) (op : FOp) (ops : List FOp) :
     fprog M (op :: ops) = opCode M op ++ fprog M ops := rfl
@@ -405,8 +405,8 @@ theorem fprogB_range_ok {M : Mod} {g : Nat → List FOp} {N : Nat} {Inv : Nat �
   | 0, _, _, h => WP.block_nil h
   | i + 1, hi, s, h => by
     rw [List.range_succ, List.flatMap_append, fprogB_append_iff]
-    refine WP.mono (fprogB_range_ok step i (by omega) s h) fun t ht => ?_
-    simpa only [List.flatMap_cons, List.flatMap_nil, List.append_nil] using step i (by omega) t ht
+    refine WP.mono (fprogB_range_ok step i (by omega_arith) s h) fun t ht => ?_
+    simpa only [List.flatMap_cons, List.flatMap_nil, List.append_nil] using step i (by omega_arith) t ht
 
 /-! ## The complete addition -/
 

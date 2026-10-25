@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Table
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.X448.AArch64.Base
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! The immutable table words are radix-2^56 limbs of its checked affine points. -/
 

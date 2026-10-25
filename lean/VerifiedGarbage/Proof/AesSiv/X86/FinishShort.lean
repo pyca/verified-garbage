@@ -81,7 +81,7 @@ theorem copyN_ok {s : State} {P Q : BitVec 32} {k : Nat} (hdi : s.gpr .edi = P) 
     · cmems []; simp only [Spec.Aes.bytesAt, List.range_zero, List.map_nil, writeBytes_nil]
     all_goals cmems []
   · have h0 : k ≠ 0 := of_decide_eq_false hz
-    refine WP.mono (copyLoop_ok _ ⟨by cregs [hdi], by cregs [hdx], by cregs [hcx], by omega, hk, fP, fQ,
+    refine WP.mono (copyLoop_ok _ ⟨by cregs [hdi], by cregs [hdx], by cregs [hcx], by omega_arith, hk, fP, fQ,
       by cmems []; exact rP, by cmems []; exact wQ, d⟩) fun s' c => ⟨?_, fun r h₁ h₂ h₃ h₄ => ?_, ?_, ?_⟩
     · rw [c.mem]; cmems []
     · rw [c.other r h₁ h₂ h₃ h₄]; cregs []
@@ -110,9 +110,9 @@ theorem shortB_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W
       s'.mem = padMem s.mem W k ∧ s'.gpr .ebp = W ∧ s'.gpr .esp = SP ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have pB : (W + BitVec.ofNat 32 k + BitVec.ofNat 32 tailOff).setWidth 64 =
       w64 W + BitVec.ofNat 64 32 + BitVec.ofNat 64 k := by
-    rw [add32_assoc, add_ofNat_assoc, Nat.add_comm]; exact L.aW (by simp only [tailOff]; omega)
+    rw [add32_assoc, add_ofNat_assoc, Nat.add_comm]; exact L.aW (by simp only [tailOff]; omega_arith)
   have wB : InRegions s.wr (w64 W + BitVec.ofNat 64 32 + BitVec.ofNat 64 k) 1 := by
-    rw [add_ofNat_assoc]; exact E.perm.wW (by omega)
+    rw [add_ofNat_assoc]; exact E.perm.wW (by omega_arith)
   refine ⟨_, by crun [E.ebp, L.aW, E.perm.wW, E.perm.wR, hk, pB, wB, b80], ?_, ?_, ?_, ?_, ?_⟩
   · cmems [hk, pB, b80, padMem, Cmac.store4, add_ofNat_assoc]
   · cregs [E.ebp]
@@ -146,9 +146,9 @@ theorem shortTail_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have E₁ : Env C W SP s₁ := ⟨bp₁, sp₁, E.perm.of_eq rd₁ wr₁⟩
   have hw := L.fw
-  refine WP.seq (WP.mono (copyN_ok di₁ dx₁ cx₁ h.k32 B.wrap (by rw [L.nW (by decide)]; omega)
-    (by rw [rd₁, wr₁]; exact B.rd) (by rw [L.aW (by decide)]; exact E₁.perm.wC (by omega))
-    (by rw [L.aW (by decide)]; exact B.w.sub_right (Lay.wSub (by omega)))) fun s₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_)
+  refine WP.seq (WP.mono (copyN_ok di₁ dx₁ cx₁ h.k32 B.wrap (by rw [L.nW (by decide)]; omega_arith)
+    (by rw [rd₁, wr₁]; exact B.rd) (by rw [L.aW (by decide)]; exact E₁.perm.wC (by omega_arith))
+    (by rw [L.aW (by decide)]; exact B.w.sub_right (Lay.wSub (by omega_arith)))) fun s₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_)
   have E₂ : Env C W SP s₂ := ⟨by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), bp₁],
     by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), sp₁], E₁.perm.of_eq rd₂ wr₂⟩
   -- The length's slot, still.
@@ -162,8 +162,8 @@ theorem shortTail_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec
   have f₂ : Frame [⟨w64 W + BitVec.ofNat 64 32, 32⟩] s₁.mem s₂.mem := by
     rw [m₂, L.aW (by decide)]
     exact writeBytes_frame _ _ _ (by
-      rw [hlen]; exact Offset.contains (w64 W) (d := 32) (n := k) (e := 32) (k := 32) (by omega) (by omega)
-        (by omega))
+      rw [hlen]; exact Offset.contains (w64 W) (d := 32) (n := k) (e := 32) (k := 32) (by omega_arith) (by omega_arith)
+        (by omega_arith))
   have f₁₂ := f₁.trans f₂
   have k₂ : slotv s₂.mem W slenO = BitVec.ofNat 32 k :=
     (f₁₂.readW (w := 32) (r := ⟨w64 W + BitVec.ofNat 64 slenO, 4⟩) (Region.contains_self _ _) (fun r hr => by
@@ -196,8 +196,8 @@ theorem shortTail_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec
     have f₃ : Frame [⟨w64 W + BitVec.ofNat 64 32, 32⟩, ⟨w64 W + BitVec.ofNat 64 144, 32⟩] s₂.mem s₃.mem := by
       rw [m₃, padMem]
       exact ((Frame.refl _ _).writeW (List.mem_cons_self) _ (by
-        rw [add_ofNat_assoc]; exact Offset.contains (w64 W) (d := 32 + k) (n := 1) (e := 32) (k := 32) (by omega)
-          (by omega) (by omega))).trans ((Cmac.frame_store4 _ _ _ _ _).sub fun r hr => by
+        rw [add_ofNat_assoc]; exact Offset.contains (w64 W) (d := 32 + k) (n := 1) (e := 32) (k := 32) (by omega_arith)
+          (by omega_arith) (by omega_arith))).trans ((Cmac.frame_store4 _ _ _ _ _).sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨⟨w64 W + BitVec.ofNat 64 144, 32⟩, by simp, Offset.sub (d := dbOff) (n := 16) (e := 144) (k := 32) _
           (by decide) (by decide)⟩)
@@ -247,13 +247,13 @@ theorem shortTail_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec
     have hP : bytesAt s₁.mem (w64 P) k = bytesAt s.mem (w64 P) k :=
       Proof.AesGcm.X86.bytesAt_frame f₁ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact B.w.sub_right (Lay.wSub (by decide)))
-        (by have := B.lt; omega)
+        (by have := B.lt; omega_arith)
     have hD : bytesAt s₂.mem (w64 W + BitVec.ofNat 64 2560) 16 = bytesAt s.mem (w64 W + BitVec.ofNat 64 2560) 16 :=
       Proof.AesGcm.X86.bytesAt_frame f₁₂ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide))
         (by decide)
     rw [t₄, q₄, q₃, hD, t₃, m₂, L.aW (o := 32) (by decide), pad, hP, Siv.xor_eq, Spec.Siv.pad,
-      show 16 - k - 1 = 15 - k by omega, length_bytesAt]
+      show 16 - k - 1 = 15 - k by omega_arith, length_bytesAt]
     rfl
 
 /-! ## What `finish` leaves -/
@@ -281,7 +281,7 @@ theorem finR_c {C W SP : BitVec 32} (L : Lay C W SP) {out : Nat} (hout : out = 0
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact L.c_w.sub_right (Lay.wSub (by omega))
+  · exact L.c_w.sub_right (Lay.wSub (by omega_arith))
   · exact L.c_w.sub_right (Lay.wSub (by decide))
   · exact L.c_w.sub_right (Lay.wSub (by decide))
   · exact L.c_w.sub_right (Lay.wSub (by decide))
@@ -323,7 +323,7 @@ theorem ctxMac_block (m : Mem) (C : Addr) (R : Nat) {T : List Byte} (hT : T.leng
       (Spec.Cmac.xor (Spec.Cmac.lastBlock 16 (bytesAt m (C + BitVec.ofNat 64 240) 16)
         (bytesAt m (C + BitVec.ofNat 64 256) 16) T) (Spec.Cmac.zeros 16)) := by
   have := Siv.cmacWith_split (Spec.Siv.schedCiph m C R) (bytesAt m (C + 240) 16) (bytesAt m (C + 256) 16)
-    (msg := []) (last := T) (by decide) (by omega) (.inl rfl)
+    (msg := []) (last := T) (by decide) (by omega_arith) (.inl rfl)
   simp only [List.nil_append] at this
   rw [Spec.Siv.ctxMac, this, Proof.Cmac.xor_comm]
   rfl
@@ -333,21 +333,21 @@ theorem finishShort_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R 
     (hR : R = 10 ∨ R = 12 ∨ R = 14) {P : BitVec 32} {k : Nat} {s : State} (h : CmacPre C W SP R P k s)
     (hk16 : k < 16) {out : Nat} (hout : out = 0 ∨ out = 112) :
     WP isa (.seq shortTail (shortMac v.callee v.suffix out)) s (FinPost C W SP R out P k s) := by
-  have hRb : R ≤ 14 := by omega
+  have hRb : R ≤ 14 := by omega_arith
   refine WP.seq (WP.mono (shortTail_ok L h hk16) fun s₁ ⟨E₁, rd₁, wr₁, f₁, t₁⟩ => ?_)
   have k₁ : ∀ o, 176 ≤ o → o + 4 ≤ 200 → slotv s₁.mem W o = slotv s.mem W o := fun o h₁ h₂ =>
     f₁.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-      · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)) (by decide)
+      · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+      · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)) (by decide)
   obtain ⟨s₂, run₂, m₂, ax₂, cx₂, dx₂, bx₂, si₂, di₂, bp₂, sp₂, rd₂, wr₂⟩ := macPre_ok L E₁
     (by rw [k₁ _ (by decide) (by decide)]; exact h.ctx) (by rw [k₁ _ (by decide) (by decide)]; exact h.rounds) hout
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
   have E₂ : Env C W SP s₂ := ⟨bp₂, sp₂, E₁.perm.of_eq rd₂ wr₂⟩
   have dO : (⟨w64 W + BitVec.ofNat 64 out, 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 32, 16⟩ := by
     rcases hout with rfl | rfl <;> exact Lay.w_w (by decide) (by decide) (by decide)
-  refine WP.mono (finCall_ok v L E₂ hR (y := out) (.inl (by omega)) (P := W + BitVec.ofNat 32 32) (l := 16)
+  refine WP.mono (finCall_ok v L E₂ hR (y := out) (.inl (by omega_arith)) (P := W + BitVec.ofNat 32 32) (l := 16)
     (Nat.le_refl _) (srcW L E₂.perm (t := 32) (k := 16) (by decide))
     (by rw [L.aW (o := 32) (by decide)]; exact dO.symm) ax₂ cx₂ dx₂ bx₂ si₂ di₂)
     fun s₃ ⟨E₃, rd₃, wr₃, _, f₃, o₃⟩ => ⟨E₃, by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], ?_, ?_⟩
@@ -368,7 +368,7 @@ theorem finishShort_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R 
         simp only [List.mem_singleton] at hr; subst hr; exact dO.symm) (by decide)
     have hc : Spec.Siv.ctxMac s₂.mem (w64 C) R = Spec.Siv.ctxMac s.mem (w64 C) R :=
       (ctxMac_frame fz (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.c_w.sub_right (Lay.wSub (by omega))) hRb).trans
+        simp only [List.mem_singleton] at hr; subst hr; exact L.c_w.sub_right (Lay.wSub (by omega_arith))) hRb).trans
       (ctxMac_frame f₁ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact L.c_w.sub_right (Lay.wSub (by decide))) hRb)

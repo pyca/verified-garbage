@@ -56,11 +56,11 @@ abbrev DFrame (base : Addr) (m m' : Mem) : Prop := WsOut2 base 16 2864 ACC 776 m
 
 theorem DFrame.of_v {base : Addr} {m m' : Mem} (h : WsOut2 base 16 2864 ACC 512 m m') :
     DFrame base m m' :=
-  fun p h8 h1 h2 => h p h8 h1 (by simp only [ACC] at h2 ⊢; omega)
+  fun p h8 h1 h2 => h p h8 h1 (by simp only [ACC] at h2 ⊢; omega_arith)
 
 theorem DFrame.of_out {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (h1 : ACC ≤ o)
     (h2 : o + n ≤ ACC + 776) : DFrame base m m' :=
-  fun p _ _ hq => h p (by simp only [ACC] at h1 h2 hq; omega)
+  fun p _ _ hq => h p (by simp only [ACC] at h1 h2 hq; omega_arith)
 
 theorem DFrame.trans {base : Addr} {m₁ m₂ m₃ : Mem} (h₁ : DFrame base m₁ m₂) (h₂ : DFrame base m₂ m₃) :
     DFrame base m₁ m₃ := WsOut2.trans h₁ h₂
@@ -96,20 +96,20 @@ theorem Input.bytesX {s : State} {base : Addr} {p : BitVec 32} {N : Nat} (h : In
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl) hr
   · have := h.far i hi
-    simp only [Region.Contains, ofs] at hr this; omega
-  · exact hd _ (Offset.contains_base _ (by omega) (by have := h.fit; omega)) hr
+    simp only [Region.Contains, ofs] at hr this; omega_arith
+  · exact hd _ (Offset.contains_base _ (by omega_arith) (by have := h.fit; omega_arith)) hr
 
 /-- A slot's value outside a range written. -/
 theorem E_out {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (i : Index)
     (hi : slot i.val + 112 ≤ o ∨ o + n ≤ slot i.val) : E m' base i = E m base i := by
   simp only [E, F]
-  rw [h.fe hi (by have := slot_range i; omega)]
+  rw [h.fe hi (by have := slot_range i; omega_arith)]
 
 /-- Bounded slots outside a range written above them. -/
 theorem BoundedEnv.out {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (ho : 2880 ≤ o)
     (hb : BoundedEnv m base) : BoundedEnv m' base := fun i j hj => by
   have := slot_range i
-  rw [h.limbs (Or.inl (by omega)) (by omega) hj]
+  rw [h.limbs (Or.inl (by omega_arith)) (by omega_arith) hj]
   exact hb i j hj
 
 /-- One store, keeping the flags. -/
@@ -118,7 +118,7 @@ theorem storeZ_ok {s : State} {base : Addr} (hs : Scr s base) (r : Reg) {d : Nat
       t.mem = s.mem.writeW (off base d) (s.gpr r) ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
         t.zf = s.zf :=
   WP.cons (t := {s with mem := s.mem.writeW (off base d) (s.gpr r)})
-    (by simp only [st, exec, hs.ea (by omega : d < 8192), State.store32, hs.write hd, ite_true])
+    (by simp only [st, exec, hs.ea (by omega_arith : d < 8192), State.store32, hs.write hd, ite_true])
     (WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩)
 
 /-- The argument at `[esp + d]`, `p`, in any later state with the same stack pointer and
@@ -185,7 +185,7 @@ theorem vdecodeInit_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded
   refine ⟨by decide, ((h1.rest (by decide)).trans (h2.rest _)).trans ((h3.rest (by decide)).trans (ht.rest _)),
     DFrame.of_out out (by decide) (by decide), XF.of_out out (by decide), BoundedEnv.out out (by decide) hb,
     ?_, fun _ => ?_,
-    fun i _ _ _ => E_out out i (Or.inl (by have := slot_range i; simp only [PCUR]; omega)),
+    fun i _ _ _ => E_out out i (Or.inl (by have := slot_range i; simp only [PCUR]; omega_arith)),
     (BadUpd.rfl'.congr ⟨fun _ => ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩,
       fun _ => trivial⟩).of_eq bt, fun h => absurd h (by decide), fun h => absurd h (by decide),
     fun h => absurd h (by decide), fun h => absurd h (by decide)⟩
@@ -257,7 +257,7 @@ theorem vdecodeRest_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s ba
     rw [g4.gpr]
     show w3.gpr .ebx - 1 = _
     rw [c3]
-    rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;> rfl
+    rcases (by omega_arith : c = 0 ∨ c = 1) with rfl | rfl <;> rfl
   have mt' : t.mem = (w.mem.writeW (off base PCUR) pk).writeW (off base CNT) (BitVec.ofNat 32 c) := by
     rw [mt, c4, g4.mem, g3.mem, g2.mem, g1.gpr, g1.mem]
   have out : Outside base PCUR 8 w.mem t.mem := by
@@ -266,9 +266,9 @@ theorem vdecodeRest_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s ba
       ((writeW_outside _ _ _ (by decide)).mono (by decide) (by decide))
   have wl : ∀ o, ACC + 512 ≤ o → o + 112 ≤ PCUR → ∀ i < 28, limbs t.mem base o i = limbs s.mem base o i :=
     fun o h1 h2 i hi => by
-      rw [out.limbs (Or.inl h2) (by simp only [PCUR] at h2; omega) hi]
-      exact congrArg BitVec.toNat (kw.mem.word (Or.inr (by simp only [ACC] at h1; omega))
-        (Or.inr (by omega)) (by simp only [PCUR] at h2; omega))
+      rw [out.limbs (Or.inl h2) (by simp only [PCUR] at h2; omega_arith) hi]
+      exact congrArg BitVec.toNat (kw.mem.word (Or.inr (by simp only [ACC] at h1; omega_arith))
+        (Or.inr (by omega_arith)) (by simp only [PCUR] at h2; omega_arith))
   refine ⟨?_, (DFrame.of_v kw.mem).trans (DFrame.of_out out (by decide) (by decide)),
     xw.trans (XF.of_out out (by decide)), BoundedEnv.out out (by decide) bw, cw.of_eq (out.word (Or.inl (by decide)) (by decide)), fun a ha => ?_,
     fun i h6 h7 hi => ?_, wl RX (by decide) (by decide), wl RY (by decide) (by decide), ?_, ?_, ?_⟩
@@ -276,19 +276,19 @@ theorem vdecodeRest_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s ba
       (g4.rest (by decide))).trans ⟨fun r _ => by rw [gt], rdt, wrt⟩))
   · obtain ⟨x, y, z⟩ := vw a ha
     exact ⟨by rw [E_out out 6 (Or.inl (by decide))]; exact x, by rw [E_out out 7 (Or.inl (by decide))]; exact y, z⟩
-  · rw [E_out out i (Or.inl (by have := slot_range i; simp only [PCUR]; omega)), ew i h6 h7 (by omega)]
+  · rw [E_out out i (Or.inl (by have := slot_range i; simp only [PCUR]; omega_arith)), ew i h6 h7 (by omega_arith)]
   · rw [mt', word_write_aligned _ _ (by decide) (by decide) (by decide) (by decide), ite_eq_right (by decide),
       word_write_aligned _ _ (by decide) (by decide) (by decide) (by decide), ite_eq_left rfl]
   · rw [mt', word_write_aligned _ _ (by decide) (by decide) (by decide) (by decide), ite_eq_left rfl]
   · rw [zt, z4]
     show some (w3.gpr .ebx - 1 == 0) = _
     rw [c3]
-    rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;> rfl
+    rcases (by omega_arith : c = 0 ∨ c = 1) with rfl | rfl <;> rfl
 
 /-- `Input` of the first 57 bytes. -/
 theorem Input.take57 {s : State} {base : Addr} {p : BitVec 32} {N : Nat} (h : Input s base p N) (hN : 57 ≤ N) :
     Input s base p 57 :=
-  ⟨by have := h.fit; omega, fun i hi => h.read i (by omega), fun i hi => h.far i (by omega)⟩
+  ⟨by have := h.fit; omega_arith, fun i hi => h.read i (by omega_arith), fun i hi => h.far i (by omega_arith)⟩
 
 /-- An iteration's second part, after `vbodyA_ok`: from `m` decodings left to `m - 1`. -/
 theorem vbodyB_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (hcc : CallCtx s base)
@@ -308,7 +308,7 @@ theorem vbodyB_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   have stku : callStk u = callStk s := by simp only [callStk, kt.1 _ (by decide : Reg.esp ∉ _)]
   have DAu : DFrame base t.mem u.mem := DFrame.of_out ao (by decide) (by decide)
   have Eu : ∀ i : Index, E u.mem base i = E t.mem base i := fun i =>
-    E_out ao i (Or.inl (by have := slot_range i; simp only [RX]; omega))
+    E_out ao i (Or.inl (by have := slot_range i; simp only [RX]; omega_arith))
   have bu : BoundedEnv u.mem base := BoundedEnv.out ao (by decide) ht.bounded
   have badu : word u.mem base BAD = word t.mem base BAD := ao.word (Or.inl (by decide)) (by decide)
   have h10u : E u.mem base 10 = 1 := by rw [Eu, ht.other 10 (by decide) (by decide) (by decide), h10]
@@ -326,27 +326,27 @@ theorem vbodyB_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
     · exact congrArg Spec.Ed448.decodePoint (ipk.bytesX dpk Ou)
   refine WP.mono (vdecodeRest_ok hR hsu (hcc.keep (kt.1 _ (by decide))) (kt.2.2.trans hw) bu hp hin h10u h11u
     (hpk.of kt (by decide) Ou) (c := m - 1)
-    (by have := ht.le; omega) hc) fun v ⟨kv, Dv, Xv, bv, cv, vv, ev, xv, yv, pv, nv, zv⟩ => ?_
+    (by have := ht.le; omega_arith) hc) fun v ⟨kv, Dv, Xv, bv, cv, vv, ev, xv, yv, pv, nv, zv⟩ => ?_
   rw [dec] at cv vv
   change Frame [⟨base, 8192⟩, callStk u] _ _ at Xv
   rw [stku] at Xv
-  refine ⟨⟨by have := ht.le; omega, kt.trans kv, (ht.frame.trans DAu).trans Dv, Ou.trans Xv, bv, nv, fun h => ?_,
+  refine ⟨⟨by have := ht.le; omega_arith, kt.trans kv, (ht.frame.trans DAu).trans Dv, Ou.trans Xv, bv, nv, fun h => ?_,
     fun i h6 h7 hi => by rw [ev i h6 h7 hi, Eu, ht.other i h6 h7 hi], ?_, fun h => ?_, fun h => ?_,
     fun h => ?_, fun h => ?_⟩, zv⟩
-  · have : m = 2 := by have := ht.le; omega
+  · have : m = 2 := by have := ht.le; omega_arith
     subst this
     rw [pv]; rfl
   · rw [badu] at cv
     refine (ht.bad.trans cv).congr ?_
-    rcases (by have := ht.le; omega : m = 1 ∨ m = 2) with rfl | rfl
+    rcases (by have := ht.le; omega_arith : m = 1 ∨ m = 2) with rfl | rfl
     · exact ⟨fun ⟨⟨h1, _⟩, h2⟩ => ⟨fun _ => h1 (by decide), fun _ => h2⟩,
         fun ⟨h1, h2⟩ => ⟨⟨fun _ => h1 (by decide), fun h => absurd h (by decide)⟩, h2 rfl⟩⟩
     · exact ⟨fun ⟨_, h2⟩ => ⟨fun _ => h2, fun h => absurd h (by decide)⟩,
         fun ⟨h1, _⟩ => ⟨⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩, h1 (by decide)⟩⟩
-  · have : m = 2 := by omega
+  · have : m = 2 := by omega_arith
     subst this
     exact vv
-  · have : m = 1 := by omega
+  · have : m = 1 := by omega_arith
     subst this
     intro r hr
     obtain ⟨x, y, z⟩ := ht.rIn rfl r hr
@@ -357,11 +357,11 @@ theorem vbodyB_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
     · show Proof.X448.toFe (fe v.mem base RY) = r.Y
       rw [← y]
       exact congrArg Proof.X448.toFe (valN_congr fun i hi => (yv i hi).trans (ary i hi))
-  · have : m = 1 := by omega
+  · have : m = 1 := by omega_arith
     subst this
     exact ⟨fun i hi => by rw [xv i hi, arx i hi]; exact ht.bounded 6 i hi,
       fun i hi => by rw [yv i hi, ary i hi]; exact ht.bounded 7 i hi⟩
-  · have : m = 1 := by omega
+  · have : m = 1 := by omega_arith
     subst this
     exact vv
 
@@ -390,7 +390,7 @@ theorem vdecode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) 
   refine WP.loop (M := isa) (fun n (t : State) => 1 ≤ n ∧ DecInv base s sig pk n t) ?_ 2 t ⟨by decide, ht⟩
   intro n u ⟨hn, hu⟩
   refine WP.mono (vdecodeStep_ok hR hs hcc hw hpk isig ipk dsig dpk h10 h11 hn hu) fun v ⟨hv, zv⟩ => ?_
-  rcases (by have := hu.le; omega : n = 1 ∨ n = 2) with rfl | rfl
+  rcases (by have := hu.le; omega_arith : n = 1 ∨ n = 2) with rfl | rfl
   · exact .inl ⟨by show v.zf.map (!·) = _; rw [zv]; rfl, hv⟩
   · exact .inr ⟨by show v.zf.map (!·) = _; rw [zv]; rfl, 1, by decide, by decide, hv⟩
 
@@ -414,7 +414,7 @@ theorem vR_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem
   have lo : ∀ i : Index, i ≠ 8 → i ≠ 9 → ∀ j < 28, limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j :=
     fun i h8 h9 j hj => by
       have := slot_range i
-      rw [o2.limbs (slot_sep (j := 9) h9) (by omega) hj, o1.limbs (slot_sep (j := 8) h8) (by omega) hj]
+      rw [o2.limbs (slot_sep (j := 9) h9) (by omega_arith) hj, o1.limbs (slot_sep (j := 8) h8) (by omega_arith) hj]
   refine ⟨⟨(k1.mono ?_).trans (k2.mono ?_), fun p _ hp _ => O p hp⟩, fun i j hj => ?_, ?_, ?_,
     fun i h8 h9 => ?_⟩
   · intro r hr; revert r; decide
@@ -435,9 +435,9 @@ theorem vR_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem
 theorem F_high {base : Addr} {x nx : Nat} {m m' : Mem} (h : WsOut2 base x nx ACC 512 m m') (hx : x + nx ≤ 4096)
     {o : Nat} (ho : o = RX ∨ o = RY) : F m' base o = F m base o ∧ (Bounded m base o → Bounded m' base o) := by
   have l : ∀ j < 28, limbs m' base o j = limbs m base o j := fun j hj =>
-    congrArg BitVec.toNat (h.word (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY] <;> omega))
-      (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, ACC] <;> omega))
-      (by rcases ho with rfl | rfl <;> simp only [RX, RY] <;> omega))
+    congrArg BitVec.toNat (h.word (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY] <;> omega_arith))
+      (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, ACC] <;> omega_arith))
+      (by rcases ho with rfl | rfl <;> simp only [RX, RY] <;> omega_arith))
   exact ⟨congrArg Proof.X448.toFe (valN_congr l), fun hb j hj => by rw [l j hj]; exact hb j hj⟩
 
 end VG.Proof.Ed448.X86

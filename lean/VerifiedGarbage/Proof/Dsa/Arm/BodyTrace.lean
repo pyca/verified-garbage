@@ -54,9 +54,9 @@ theorem signCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat
     fun u₁ u₂ ⟨_, K₁, B₁⟩ ⟨_, K₂, B₂⟩ => ?_
   have X₂ := X₁.run B₁ B₂
   have M₁ : localVal base u₁ Impl.Dsa.Layout.qMinusTwo qLen = val₁ (.input .q) - 2 := by
-    rw [K₁ _ _ (by decide) (by dsimp only; omega), L₁]
+    rw [K₁ _ _ (by decide) (by dsimp only; omega_arith), L₁]
   have M₂ : localVal base u₂ Impl.Dsa.Layout.qMinusTwo qLen = val₂ (.input .q) - 2 := by
-    rw [K₂ _ _ (by decide) (by dsimp only; omega), L₂]
+    rw [K₂ _ _ (by decide) (by dsimp only; omega_arith), L₂]
   have c₁ := ((countValue_run B₁).trans (countValue_run A₁)).trans hc₁
   have c₂ := ((countValue_run B₂).trans (countValue_run A₂)).trans hc₂
   refine SameTrace.seq (sign_trace X₂ mp mq mg mx mk md c₁ c₂ D₁ D₂)
@@ -67,21 +67,21 @@ theorem signCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat
     fun u₁ u₂ ⟨_, _, _, A₁⟩ ⟨_, _, _, A₂⟩ => ?_
   have X₃ := X₂.run A₁ A₂
   have ok : ∀ o, o < 2 ^ 16 → PtrOk (.local o) := local_ptrOk
-  refine SameTrace.assoc_left (SameTrace.seq (zero_trace X₃.C₁.S.ws X₃.C₂.S.ws (by omega) (by omega)
-      (ok _ (by omega)) (ptrEq_local X₃.C₁.S.ws X₃.C₂.S.ws _) true)
-    (zero_ok X₃.C₁.S.ws (by omega) X.C₁.S.wq
-      (localReady (o := Impl.Dsa.Layout.r) (len := qLen) X₃.C₁.S.ws (by omega) (by omega) (by omega)) true)
-    (zero_ok X₃.C₂.S.ws (by omega) X.C₁.S.wq
-      (localReady (o := Impl.Dsa.Layout.r) (len := qLen) X₃.C₂.S.ws (by omega) (by omega) (by omega)) true)
+  refine SameTrace.assoc_left (SameTrace.seq (zero_trace X₃.C₁.S.ws X₃.C₂.S.ws (by omega_arith) (by omega_arith)
+      (ok _ (by omega_arith)) (ptrEq_local X₃.C₁.S.ws X₃.C₂.S.ws _) true)
+    (zero_ok X₃.C₁.S.ws (by omega_arith) X.C₁.S.wq
+      (localReady (o := Impl.Dsa.Layout.r) (len := qLen) X₃.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) true)
+    (zero_ok X₃.C₂.S.ws (by omega_arith) X.C₁.S.wq
+      (localReady (o := Impl.Dsa.Layout.r) (len := qLen) X₃.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) true)
     fun u₁ u₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
   have w₁ := St₁.ws X₃.C₁.S.ws
   have w₂ := St₂.ws X₃.C₂.S.ws
-  exact SameTrace.seq (zero_trace w₁ w₂ (by omega) (by omega) (ok _ (by omega)) (ptrEq_local w₁ w₂ _) true)
+  exact SameTrace.seq (zero_trace w₁ w₂ (by omega_arith) (by omega_arith) (ok _ (by omega_arith)) (ptrEq_local w₁ w₂ _) true)
     (F₁ := fun _ => True) (F₂ := fun _ => True)
-    (WP.mono (zero_ok w₁ (by omega) X.C₁.S.wq
-      (localReady (o := Impl.Dsa.Layout.s) (len := qLen) w₁ (by omega) (by omega) (by omega)) true) fun _ _ => trivial)
-    (WP.mono (zero_ok w₂ (by omega) X.C₁.S.wq
-      (localReady (o := Impl.Dsa.Layout.s) (len := qLen) w₂ (by omega) (by omega) (by omega)) true) fun _ _ => trivial)
+    (WP.mono (zero_ok w₁ (by omega_arith) X.C₁.S.wq
+      (localReady (o := Impl.Dsa.Layout.s) (len := qLen) w₁ (by omega_arith) (by omega_arith) (by omega_arith)) true) fun _ _ => trivial)
+    (WP.mono (zero_ok w₂ (by omega_arith) X.C₁.S.wq
+      (localReady (o := Impl.Dsa.Layout.s) (len := qLen) w₂ (by omega_arith) (by omega_arith) (by omega_arith)) true) fun _ _ => trivial)
     fun _ _ _ _ => SameTrace.block_nil
 
 theorem verifyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins : List (Pointer × Nat)}
@@ -103,28 +103,28 @@ theorem verifyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : N
     (PublicValidation.call_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
     fun u₁ u₂ ⟨_, L₁, A₁⟩ ⟨_, L₂, A₂⟩ => ?_
   have X₁ := X.run A₁ A₂
-  refine SameTrace.assoc_left (SameTrace.seq (range_trace X₁.C₁.S.ws X₁.C₂.S.ws (by omega) (by omega) X.C₁.S.wq
+  refine SameTrace.assoc_left (SameTrace.seq (range_trace X₁.C₁.S.ws X₁.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq
       (X₁.C₁.inp mq).toReady (X₁.C₂.inp mq).toReady (X₁.C₁.inp mr).toReady (X₁.E _ mq) (X₁.E _ mr) false)
-    (range_ok X₁.C₁.S.ws (by omega) X.C₁.S.wq (X₁.C₁.inp mq).toReady (X₁.C₁.inp mr).toReady false)
-    (range_ok X₁.C₂.S.ws (by omega) X.C₁.S.wq (X₁.C₂.inp mq).toReady (X₁.C₂.inp mr).toReady false)
+    (range_ok X₁.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₁.C₁.inp mq).toReady (X₁.C₁.inp mr).toReady false)
+    (range_ok X₁.C₂.S.ws (by omega_arith) X.C₁.S.wq (X₁.C₂.inp mq).toReady (X₁.C₂.inp mr).toReady false)
     fun v₁ v₂ ⟨_, Sa₁⟩ ⟨_, Sa₂⟩ => ?_)
   have R₁ := Sa₁.run (.inl ⟨rfl, rfl⟩)
   have R₂ := Sa₂.run (.inl ⟨rfl, rfl⟩)
   have X₂ := X₁.run R₁ R₂
-  refine SameTrace.seq (range_trace X₂.C₁.S.ws X₂.C₂.S.ws (by omega) (by omega) X.C₁.S.wq
+  refine SameTrace.seq (range_trace X₂.C₁.S.ws X₂.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq
       (X₂.C₁.inp mq).toReady (X₂.C₂.inp mq).toReady (X₂.C₁.inp ms).toReady (X₂.E _ mq) (X₂.E _ ms) false)
-    (range_ok X₂.C₁.S.ws (by omega) X.C₁.S.wq (X₂.C₁.inp mq).toReady (X₂.C₁.inp ms).toReady false)
-    (range_ok X₂.C₂.S.ws (by omega) X.C₁.S.wq (X₂.C₂.inp mq).toReady (X₂.C₂.inp ms).toReady false)
+    (range_ok X₂.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₂.C₁.inp mq).toReady (X₂.C₁.inp ms).toReady false)
+    (range_ok X₂.C₂.S.ws (by omega_arith) X.C₁.S.wq (X₂.C₂.inp mq).toReady (X₂.C₂.inp ms).toReady false)
     fun w₁ w₂ ⟨_, Sb₁⟩ ⟨_, Sb₂⟩ => ?_
   have R₁' := Sb₁.run (.inl ⟨rfl, rfl⟩)
   have R₂' := Sb₂.run (.inl ⟨rfl, rfl⟩)
   have X₃ := X₂.run R₁' R₂'
   have M₁ : localVal base w₁ Impl.Dsa.Layout.qMinusTwo qLen = val₁ (.input .q) - 2 := by
-    rw [Sb₁.localVal_eq (by decide) (by omega) (by omega) (by omega),
-      Sa₁.localVal_eq (by decide) (by omega) (by omega) (by omega), L₁]
+    rw [Sb₁.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith),
+      Sa₁.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith), L₁]
   have M₂ : localVal base w₂ Impl.Dsa.Layout.qMinusTwo qLen = val₂ (.input .q) - 2 := by
-    rw [Sb₂.localVal_eq (by decide) (by omega) (by omega) (by omega),
-      Sa₂.localVal_eq (by decide) (by omega) (by omega) (by omega), L₂]
+    rw [Sb₂.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith),
+      Sa₂.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith), L₂]
   have c₁ := ((countValue_run R₁').trans (countValue_run R₁)).trans ((countValue_run A₁).trans hc₁)
   have c₂ := ((countValue_run R₂').trans (countValue_run R₂)).trans ((countValue_run A₂).trans hc₂)
   refine SameTrace.seq (verify_trace X₃ mp mq mg my mr ms md c₁ c₂ D₁ D₂)
@@ -134,16 +134,16 @@ theorem verifyCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : N
       (X₃.C₂.inp ms) (X₃.C₂.inp md) c₂ M₂ D₂.hP D₂.hPo D₂.hQ D₂.hQo)
     fun u₁ u₂ ⟨_, _, B₁⟩ ⟨_, _, B₂⟩ => ?_
   have X₄ := X₃.run B₁ B₂
-  exact SameTrace.seq (equalValues_trace X₄.C₁.S.ws X₄.C₂.S.ws (by omega) (by omega) X.C₁.S.wq
-      (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega) (by omega) (by omega))
-      (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega) (by omega) (by omega))
+  exact SameTrace.seq (equalValues_trace X₄.C₁.S.ws X₄.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq
+      (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₄.C₁.inp mr).toReady (ptrEq_local X₄.C₁.S.ws X₄.C₂.S.ws _) (X₄.E _ mr))
     (F₁ := fun _ => True) (F₂ := fun _ => True)
-    (WP.mono (equalValues_ok X₄.C₁.S.ws (by omega) X.C₁.S.wq
-      (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega) (by omega) (by omega)) (X₄.C₁.inp mr).toReady)
+    (WP.mono (equalValues_ok X₄.C₁.S.ws (by omega_arith) X.C₁.S.wq
+      (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) (X₄.C₁.inp mr).toReady)
       fun _ _ => trivial)
-    (WP.mono (equalValues_ok X₄.C₂.S.ws (by omega) X.C₁.S.wq
-      (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega) (by omega) (by omega)) (X₄.C₂.inp mr).toReady)
+    (WP.mono (equalValues_ok X₄.C₂.S.ws (by omega_arith) X.C₁.S.wq
+      (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) (X₄.C₂.inp mr).toReady)
       fun _ _ => trivial)
     fun _ _ _ _ => SameTrace.block_nil
 
@@ -161,13 +161,13 @@ theorem outBlock_ok {u : State} {base : Addr} {size qLen : Nat} (wu : Ws u base 
   have w₁s := wu.of_rest R₁ (by decide)
   cases second
   · simp only [Bool.false_eq_true, ↓reduceIte, List.nil_append]
-    exact wp_ldr (by decide) (w₁s.ea12 (by omega)) (w₁s.read (by omega)) fun w u₂ => WP.block_nil
+    exact wp_ldr (by decide) (w₁s.ea12 (by omega_arith)) (w₁s.read (by omega_arith)) fun w u₂ => WP.block_nil
       ⟨by rw [u₂.other .r11 (by decide), P₁]; exact (BitVec.add_zero _).symm,
         (R₁.mono (by decide)).trans (u₂.rest (by decide)), by rw [u₂.mem, M₁]⟩
   · simp only [↓reduceIte, List.cons_append, List.nil_append]
     refine wp_movw fun w₂ u₂ => wp_dp (op2_reg _ _) fun w₃ u₃ => ?_
     have w₃s := (w₁s.of_upd u₂ (by decide)).of_upd u₃ (by decide)
-    exact wp_ldr (by decide) (w₃s.ea12 (by omega)) (w₃s.read (by omega)) fun w u₄ => WP.block_nil
+    exact wp_ldr (by decide) (w₃s.ea12 (by omega_arith)) (w₃s.read (by omega_arith)) fun w u₄ => WP.block_nil
       ⟨by rw [u₄.other .r11 (by decide), u₃.gpr, dpVal, u₂.other .r11 (by decide), u₂.gpr, P₁, movw_ofNat hq],
         (((R₁.mono (by decide)).trans (u₂.rest (by decide))).trans (u₃.rest (by decide))).trans (u₄.rest (by decide)),
         by rw [u₄.mem, u₃.mem, u₂.mem, M₁]⟩
@@ -181,13 +181,13 @@ theorem writeScalar_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ qLe
   unfold SignVerify.writeScalar
   dsimp only
   rw [← wq.n_eq]
-  refine SameTrace.seq (load_trace hs₁ hs₂ (by omega) (by omega) (local_ptrOk _ h16) (ptrEq_local hs₁ hs₂ _))
-    (loadSlot_ok (i := 8) hs₁ hz₁ wq (by decide) (localReady (o := input) (len := qLen) hs₁ hin (by omega) (by omega)))
-    (loadSlot_ok (i := 8) hs₂ hz₂ wq (by decide) (localReady (o := input) (len := qLen) hs₂ hin (by omega) (by omega)))
+  refine SameTrace.seq (load_trace hs₁ hs₂ (by omega_arith) (by omega_arith) (local_ptrOk _ h16) (ptrEq_local hs₁ hs₂ _))
+    (loadSlot_ok (i := 8) hs₁ hz₁ wq (by decide) (localReady (o := input) (len := qLen) hs₁ hin (by omega_arith) (by omega_arith)))
+    (loadSlot_ok (i := 8) hs₂ hz₂ wq (by decide) (localReady (o := input) (len := qLen) hs₂ hin (by omega_arith) (by omega_arith)))
     fun u₁ u₂ ⟨wu₁, _, Ru₁, Ou₁⟩ ⟨wu₂, _, Ru₂, Ou₂⟩ => ?_
   have pe := ptrEq_slot (p := .input .out) (by decide : Impl.Dsa.Layout.Field.out ≠ .mask) heo (by decide) n48 Ru₁ Ou₁ Ru₂ Ou₂
   refine SameTrace.seq (SameTrace.of_relCT (outBlock_relCT qLen second) (agree0 wu₁ wu₂))
-    (outBlock_ok wu₁ (by omega) (by omega) second) (outBlock_ok wu₂ (by omega) (by omega) second)
+    (outBlock_ok wu₁ (by omega_arith) (by omega_arith) second) (outBlock_ok wu₂ (by omega_arith) (by omega_arith) second)
     fun w₁ w₂ ⟨P₁, R₁, _⟩ ⟨P₂, R₂, _⟩ => ?_
   exact SameTrace.of_relCT (storeComponent_relCT qLen (baseS nQ))
     (agreeWs true false (wu₁.of_rest R₁ (by decide)) (wu₂.of_rest R₂ (by decide)) (fun _ => by rw [P₁, P₂, pe])
@@ -233,26 +233,26 @@ theorem signBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {
   have mu₂ : maskW base u₂ = mask32 (signChecks (val₂ (.input .p)) (val₂ (.input .q)) (val₂ (.input .g))
       (val₂ (.input .y)) (val₂ (.input .x)) (val₂ (.input .nonce)) (val₂ (.input .digest))) := by
     rw [F₂, hm₂, BitVec.allOnes_and]
-  have qlt₁ : ∀ x, x % val₁ (.input .q) < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega)) Q₁
-  have qlt₂ : ∀ x, x % val₂ (.input .q) < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega)) Q₂
-  refine SameTrace.seq (writeScalar_trace X₁.C₁.S.ws X₁.C₂.S.ws (by omega) (by omega) X.C₁.S.wq q32 (by omega)
-      (by omega) (by omega) (by omega) pe false)
-    (writeScalar_ok X₁.C₁.S.ws b₁ X.C₁.S.wq q32 (by omega) (by omega) Ru₁ (by simp only [rValue]; exact qlt₁ _)
+  have qlt₁ : ∀ x, x % val₁ (.input .q) < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Q₁
+  have qlt₂ : ∀ x, x % val₂ (.input .q) < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Q₂
+  refine SameTrace.seq (writeScalar_trace X₁.C₁.S.ws X₁.C₂.S.ws (by omega_arith) (by omega_arith) X.C₁.S.wq q32 (by omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith) pe false)
+    (writeScalar_ok X₁.C₁.S.ws b₁ X.C₁.S.wq q32 (by omega_arith) (by omega_arith) Ru₁ (by simp only [rValue]; exact qlt₁ _)
       _ mu₁ (O₁.run A₁) false)
-    (writeScalar_ok X₁.C₂.S.ws b₂ X.C₁.S.wq q32 (by omega) (by omega) Ru₂ (by simp only [rValue]; exact qlt₂ _)
+    (writeScalar_ok X₁.C₂.S.ws b₂ X.C₁.S.wq q32 (by omega_arith) (by omega_arith) Ru₂ (by simp only [rValue]; exact qlt₂ _)
       _ mu₂ (O₂.run A₂) false)
     fun v₁ v₂ ⟨_, mv₁, Pv₁, Wv₁, Kv₁, _, Bdv₁⟩ ⟨_, mv₂, Pv₂, Wv₂, Kv₂, _, Bdv₂⟩ => ?_
   have wv₁ := X₁.C₁.S.ws.of_rest Bdv₁.rest (by decide)
   have wv₂ := X₁.C₂.S.ws.of_rest Bdv₂.rest (by decide)
-  refine SameTrace.seq (writeScalar_trace wv₁ wv₂ (by omega) (by omega) X.C₁.S.wq q32 (by omega)
-      (by omega) (by omega) (by omega) (by unfold PtrEq; rw [Pv₁, Pv₂]; exact pe) true)
+  refine SameTrace.seq (writeScalar_trace wv₁ wv₂ (by omega_arith) (by omega_arith) X.C₁.S.wq q32 (by omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith) (by unfold PtrEq; rw [Pv₁, Pv₂]; exact pe) true)
     (writeScalar_ok (v := sValue (val₁ (.input .p)) (val₁ (.input .q)) (val₁ (.input .g)) (val₁ (.input .x))
-      (val₁ (.input .nonce)) (val₁ (.input .digest))) wv₁ b₁ X.C₁.S.wq q32 (by omega) (by omega)
-      (by rw [Kv₁ _ _ (by omega) (by omega)]; exact Su₁) (by simp only [sValue]; exact qlt₁ _) _ (mv₁.trans mu₁)
+      (val₁ (.input .nonce)) (val₁ (.input .digest))) wv₁ b₁ X.C₁.S.wq q32 (by omega_arith) (by omega_arith)
+      (by rw [Kv₁ _ _ (by omega_arith) (by omega_arith)]; exact Su₁) (by simp only [sValue]; exact qlt₁ _) _ (mv₁.trans mu₁)
       ((O₁.run A₁).keep Pv₁ Wv₁) true)
     (writeScalar_ok (v := sValue (val₂ (.input .p)) (val₂ (.input .q)) (val₂ (.input .g)) (val₂ (.input .x))
-      (val₂ (.input .nonce)) (val₂ (.input .digest))) wv₂ b₂ X.C₁.S.wq q32 (by omega) (by omega)
-      (by rw [Kv₂ _ _ (by omega) (by omega)]; exact Su₂) (by simp only [sValue]; exact qlt₂ _) _ (mv₂.trans mu₂)
+      (val₂ (.input .nonce)) (val₂ (.input .digest))) wv₂ b₂ X.C₁.S.wq q32 (by omega_arith) (by omega_arith)
+      (by rw [Kv₂ _ _ (by omega_arith) (by omega_arith)]; exact Su₂) (by simp only [sValue]; exact qlt₂ _) _ (mv₂.trans mu₂)
       ((O₂.run A₂).keep Pv₂ Wv₂) true)
     fun w₁ w₂ ⟨_, _, _, _, _, _, Bdw₁⟩ ⟨_, _, _, _, _, _, Bdw₂⟩ => ?_
   exact SameTrace.of_relCT result_relCT

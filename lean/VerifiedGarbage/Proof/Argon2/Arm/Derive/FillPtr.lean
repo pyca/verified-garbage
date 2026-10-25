@@ -46,7 +46,7 @@ theorem relative_ok {s : State} {pass slice lane index ctr : Nat} {st : FillStat
     WP isa (.block (Impl.Argon2.Arm.Derive.relative ++ is)) s Q := by
   have jb := J1.isLt
   have x32 := Proof.Argon2.reference_scaled_bound J1.toNat jb
-  have lt := Proof.Argon2.reference_scale_lt_count cnt J1.toNat (by omega) jb
+  have lt := Proof.Argon2.reference_scale_lt_count cnt J1.toNat (by omega_arith) jb
   unfold Impl.Argon2.Arm.Derive.relative
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_ldloc hp h.fs.inv (d := j1Off) (by decide) fun s₁ u₁ =>
@@ -61,7 +61,7 @@ theorem relative_ok {s : State} {pass slice lane index ctr : Nat} {st : FillStat
     have c₄ : s₄.gpr .r5 = BitVec.ofNat 32 cnt := by
       rw [u₄.other _ (by decide), u₃.gpr, lw_mem O₂.mem, hcnt]
     rw [u.gpr, u₆.gpr, u₆.other .r2 (by decide), o₅.gpr .r5 (by decide), p₅, x₄, c₄, mulHiV_eq,
-      toNat32 hc', toNat32 x32, ofNat_pred hc rfl, MdStream.Arm.sub_ofNat (by omega), relV]
+      toNat32 hc', toNat32 x32, ofNat_pred hc rfl, MdStream.Arm.sub_ofNat (by omega_arith), relV]
   · exact ((((O₂.trans (Only.of_upd u₃)).trans (Only.of_upd u₄)).trans o₅).trans
       ((Only.of_upd u₆).trans (Only.of_upd u))).mono (by simp)
 
@@ -77,7 +77,7 @@ theorem wrap_ok {s : State} {pass slice lane index ctr : Nat} {st : FillState} {
     have := Nat.le_mul_of_pos_left (prm s₀).laneLen (show 0 < lanesN s₀ from hp.lanes_pos)
     have e := hp.blocks_eq
     have := hp.blocks_lt
-    omega
+    omega_arith
   unfold Impl.Argon2.Arm.Derive.wrap
   simp only [List.cons_append, List.nil_append]
   refine wp_ldloc hp h.fs.inv (d := startOff) (by decide) fun s₁ u₁ => wp_add (op2_reg _ _) fun s₂ u₂ => ?_
@@ -93,16 +93,16 @@ theorem wrap_ok {s : State} {pass slice lane index ctr : Nat} {st : FillState} {
         BitVec.ofNat_add_ofNat, Nat.add_comm]
     have l₄ : s₄.gpr .r2 = BitVec.ofNat 32 (prm s₀).laneLen := by
       rw [u₄.other _ (by decide), u₃.gpr, L₂]
-    rw [x₄, l₄, toNat32 (by omega), toNat32 (by omega)] at c₅
+    rw [x₄, l₄, toNat32 (by omega_arith), toNat32 (by omega_arith)] at c₅
     simp only [upd_get u, upd_get u₈, upd_get u₇, upd_get u₆, upd_get u₅, ↓reduceIte, reduceCtorEq, c₅, x₄, l₄,
       u₄.gpr]
-    rw [Proof.Argon2.reference_wrap (stt + rel) (prm s₀).laneLen (by omega)]
+    rw [Proof.Argon2.reference_wrap (stt + rel) (prm s₀).laneLen (by omega_arith)]
     by_cases c : stt + rel < (prm s₀).laneLen
-    · have c' : ¬(prm s₀).laneLen ≤ stt + rel := by omega
+    · have c' : ¬(prm s₀).laneLen ≤ stt + rel := by omega_arith
       simp only [c, c', decide_false, ite_true, Bool.false_eq_true, ite_false]
       rw [show (0 : BitVec 32) + 0 + 0 - 1 = BitVec.allOnes 32 by decide, BitVec.allOnes_and,
         BitVec.sub_add_cancel]
-    · have c' : (prm s₀).laneLen ≤ stt + rel := by omega
+    · have c' : (prm s₀).laneLen ≤ stt + rel := by omega_arith
       simp only [c, c', decide_true, ite_true, ite_false]
       rw [show (0 : BitVec 32) + 0 + 1 - 1 = 0 by decide,
         show (0 : BitVec 32) &&& BitVec.ofNat 32 (prm s₀).laneLen = 0 from BitVec.zero_and]
@@ -207,7 +207,7 @@ theorem reference_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
     have := Nat.le_mul_of_pos_left (prm s₀).laneLen (show 0 < lanesN s₀ from hp.lanes_pos)
     have e := hp.blocks_eq
     have := hp.blocks_lt
-    omega
+    omega_arith
   have ll := hp.laneLen_eq
   have s2 := hp.segLen_two
   have hl1 := hp.lanes_pos
@@ -217,18 +217,18 @@ theorem reference_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
   have rl_lt : RL < lanesN s₀ := by
     rw [← hRL', refLaneV]; split
     · exact hl
-    · exact Nat.mod_lt _ (by omega)
+    · exact Nat.mod_lt _ (by omega_arith)
   have first : pass = 0 → slice = 0 → RL = lane := fun a b => by rw [← hRL', refLaneV, ite_eq_left ⟨a, b⟩]
   generalize hB : baseV (prm s₀).segmentLen (prm s₀).laneLen pass slice = B
   have b_le : B ≤ (prm s₀).laneLen := by
     rw [← hB, baseV]; split
-    · exact Nat.le_of_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul_right _ (show slice ≤ 3 by omega)) (by omega))
-    · omega
+    · exact Nat.le_of_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul_right _ (show slice ≤ 3 by omega_arith)) (by omega_arith))
+    · omega_arith
   generalize hST : startV (prm s₀).segmentLen (prm s₀).laneLen pass slice = ST
   have st_lt : ST < (prm s₀).laneLen := by
     rw [← hST, startV]; split
-    · omega
-    · exact Nat.mod_lt _ (by omega)
+    · omega_arith
+    · exact Nat.mod_lt _ (by omega_arith)
   have cpos := Proof.Argon2.reference_count_positive (prm s₀) hp.lanes_pos hp.memory_ge pass slice index
     (RL == lane) active fun a b => by simp [first a b]
   have clt := Proof.Argon2.reference_count_lt_lane (prm s₀) hp.lanes_pos hp.memory_ge pass slice index
@@ -244,27 +244,27 @@ theorem reference_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
   have h₃ := h₂.of_only k₃ (by decide)
   simp only [List.append_assoc]
   rw [← List.append_nil Impl.Argon2.Arm.Derive.curPointer]
-  refine countSelect_ok hp h₃ (base := B) (rl := RL) (by omega) hi hl rl_lt a₃
+  refine countSelect_ok hp h₃ (base := B) (rl := RL) (by omega_arith) hi hl rl_lt a₃
     (by rw [lw_mem k₃.mem, r₂, r₁]) (fun e => ?_) (fun e e0 => ?_) fun t₄ h₄ a₄ c₄ o₄ g₄ => ?_
   · rw [← hB, baseV]; split
     · rename_i hp0
       by_cases hs0 : slice = 0
-      · omega
-      · have := Nat.mul_le_mul_right (prm s₀).segmentLen (show 1 ≤ slice by omega); omega
-    · omega
+      · omega_arith
+      · have := Nat.mul_le_mul_right (prm s₀).segmentLen (show 1 ≤ slice by omega_arith); omega_arith
+    · omega_arith
   · have : ¬(pass = 0 ∧ slice = 0) := fun ⟨a, b⟩ => e (first a b)
     rw [← hB, baseV]; split
     · rename_i hp0
-      have := Nat.mul_le_mul_right (prm s₀).segmentLen (show 1 ≤ slice by omega); omega
-    · omega
-  refine relative_ok hp h₄ (cnt := countV B index (RL == lane)) cpos (by omega) c₄ fun t₅ a₅ k₅ => ?_
+      have := Nat.mul_le_mul_right (prm s₀).segmentLen (show 1 ≤ slice by omega_arith); omega_arith
+    · omega_arith
+  refine relative_ok hp h₄ (cnt := countV B index (RL == lane)) cpos (by omega_arith) c₄ fun t₅ a₅ k₅ => ?_
   have h₅ := h₄.of_only k₅ (by decide)
   have rel_lt : relV (countV B index (RL == lane)) J1.toNat < (prm s₀).laneLen := by
-    unfold relV; omega
+    unfold relV; omega_arith
   refine wrap_ok hp h₅ rel_lt st_lt a₅ (by
       rw [lw_mem k₅.mem, o₄ _ (by decide) (by decide), lw_mem k₃.mem, st₂]) fun t₆ a₆ k₆ => ?_
   have h₆ := h₅.of_only k₆ (by decide)
-  refine refPointer_ok hp h₆ (Nat.mod_lt _ (by omega)) rl_lt a₆ (by
+  refine refPointer_ok hp h₆ (Nat.mod_lt _ (by omega_arith)) rl_lt a₆ (by
       rw [lw_mem k₆.mem, lw_mem k₅.mem, o₄ _ (by decide) (by decide), lw_mem k₃.mem, r₂, r₁])
     fun t₇ h₇ p₇ o₇ _ => ?_
   refine curPointer_ok hp h₇ hl hs hi fun t h' c' o' _ => WP.block_nil ⟨h', ?_, c'⟩

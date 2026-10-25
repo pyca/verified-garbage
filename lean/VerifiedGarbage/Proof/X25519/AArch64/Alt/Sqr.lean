@@ -32,15 +32,15 @@ abbrev sqrCross (a : Nat) : List Instr :=
 
 theorem hi_le {L H P : Nat} (m : L + 2 ^ 64 * H = P) (p : P ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) :
     H ≤ 2 ^ 64 - 2 := by
-  omega
+  omega_arith
 
 theorem carry_le {R C a b c : Nat} (f : R + 2 ^ 64 * C = a + b + c) (ha : a < 2 ^ 64)
     (hb : b < 2 ^ 64) (hc : c ≤ 1) : C ≤ 1 := by
-  omega
+  omega_arith
 
 theorem no_carry {R D H c : Nat} (f : R + 2 ^ 64 * D = H + 0 + c) (h : H ≤ 2 ^ 64 - 2)
     (hc : c ≤ 1) (hr : R < 2 ^ 64) : D = 0 := by
-  omega
+  omega_arith
 
 /-- The carry chains of `sqrCross`, on natural numbers: `L` and `H` the low
 and high halves of the products `P`. -/
@@ -63,15 +63,15 @@ theorem cross_arith {L01 H01 L02 H02 L03 H03 L12 H12 L13 H13 L23 H23
       P01 + 2 ^ 64 * P02 + 2 ^ 128 * (P03 + P12) + 2 ^ 192 * P13 + 2 ^ 256 * P23 := by
   have h02 := hi_le m02 p02
   have h03 := hi_le m03 p03
-  have c2 := carry_le f2 l03 (by omega) c1
+  have c2 := carry_le f2 l03 (by omega_arith) c1
   have d3 := no_carry f3 (hi_le m12 p12) c2 x6a
-  have c4 := carry_le f5 (by omega) x6a c3
+  have c4 := carry_le f5 (by omega_arith) x6a c3
   have d6 := no_carry f6 (hi_le m13 p13) c4 x6b
   have c6 := carry_le f8 l23 x6b c5
   have d9 := no_carry f9 (hi_le m23 p23) c6 r5
   subst d3 d6 d9
   clear h02 h03 c1 c2 c3 c4 c5 c6 p02 p03 p12 p13 p23 l03 l23 x6a x6b r5
-  omega
+  omega_arith
 
 /-- What `sqrCross` computes, word by word. -/
 theorem cross_value (a0 a1 a2 a3 : Word) :
@@ -121,22 +121,22 @@ theorem sqrCross_ok {s : State} {base : Addr} (hs : Scr s base large) {a : Nat}
       Keeps [.x2, .x3, .x4, .x5, .x6, .x7, .x9, .x10, .x11, .x12, .x13, .x14] s t := by
   have _hcap := workSize_le large
   obtain ⟨aa, ab, ac⟩ := ha
-  have a16 : (a + 16) % 8 = 0 := by omega
+  have a16 : (a + 16) % 8 = 0 := by omega_arith
   have w2 : Reg.x2 ≠ .x0 := by decide
   have w3 : Reg.x3 ≠ .x0 := by decide
   have w9 : Reg.x9 ≠ .x0 := by decide
   have w10 : Reg.x10 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    ldp_sc hs aa (by omega) (by omega) (by decide : Reg.x2 ≠ .x3),
-    ldp_sc ((((hs.write w2 _).write w3 _).write w9 _).write w10 _) a16 (by omega) (by omega)
+    ldp_sc hs aa (by omega_arith) (by omega_arith) (by decide : Reg.x2 ≠ .x3),
+    ldp_sc ((((hs.write w2 _).write w3 _).write w9 _).write w10 _) a16 (by omega_arith) (by omega_arith)
       (by decide : Reg.x4 ≠ .x5),
     exec_mul_x, exec_umulh_x, exec_adds_x, exec_adcs_x, exec_adc_x,
     Option.some.injEq, exists_eq_left']
   simp only [RegUpd.mem_write, RegUpd.gpr_write, RegUpd.gpr_addWithCarry,
     RegUpd.c_addWithCarry, RegUpd.c_write, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq,
     hz]
-  rw [show a + 16 + 8 = a + 24 by omega]
+  rw [show a + 16 + 8 = a + 24 by omega_arith]
   refine ⟨trivial, trivial, trivial, trivial, ?_, ⟨?_, by simp only [RegUpd.mem_write,
       RegUpd.mem_addWithCarry], by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
       by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
@@ -170,10 +170,10 @@ theorem dbl_arith {D9 D10 D11 D12 D13 D14 G9 G10 G11 G12 G13 G14 G6 K1 K2 K3 K4 
     (f7 : G6 + 2 ^ 64 * K7 = 0 + 0 + K6) (k6 : K6 ≤ 1) :
     G9 + 2 ^ 64 * G10 + 2 ^ 128 * G11 + 2 ^ 192 * G12 + 2 ^ 256 * (G13 + 2 ^ 64 * G14 + 2 ^ 128 * G6) =
       2 * (D9 + 2 ^ 64 * D10 + 2 ^ 128 * D11 + 2 ^ 192 * D12 + 2 ^ 256 * (D13 + 2 ^ 64 * D14)) := by
-  have k7 : K7 = 0 := by omega
+  have k7 : K7 = 0 := by omega_arith
   subst k7
   clear k6
-  omega
+  omega_arith
 
 /-- The squares of `sqrDiag`, on natural numbers. -/
 theorem sq_arith {G9 G10 G11 G12 G13 G14 G6 L0 H0 L1 H1 L2 H2 L3 H3 P0 P1 P2 P3
@@ -189,7 +189,7 @@ theorem sq_arith {G9 G10 G11 G12 G13 G14 G6 L0 H0 L1 H1 L2 H2 L3 H3 P0 P1 P2 P3
       2 ^ 64 * (G9 + 2 ^ 64 * G10 + 2 ^ 128 * G11 + 2 ^ 192 * G12 +
           2 ^ 256 * (G13 + 2 ^ 64 * G14 + 2 ^ 128 * G6)) +
         P0 + 2 ^ 128 * P1 + 2 ^ 256 * (P2 + 2 ^ 128 * P3) := by
-  omega
+  omega_arith
 
 /-- What `sqrDiag` computes, word by word. -/
 theorem diag_value (a0 a1 a2 a3 d9 d10 d11 d12 d13 d14 : Word) :
@@ -330,7 +330,7 @@ theorem sqrFold19_ok (s : State) (hz : s.gpr .x17 = 0) (h16 : (s.gpr .x12).toNat
     (s.gpr .x4) (s.gpr .x13) 0 false
   dsimp only [addCarry, carryOut] at h
   have hU := fold_lo (s.gpr .x11)
-  have hM := fold_hi19 (s.gpr .x11) (s.gpr .x12) (by omega)
+  have hM := fold_hi19 (s.gpr .x11) (s.gpr .x12) (by omega_arith)
   have z : (0 : BitVec 64).toNat = 0 := rfl
   have := (s.gpr .x8).isLt
   have := (s.gpr .x9).isLt
@@ -342,8 +342,8 @@ theorem sqrFold19_ok (s : State) (hz : s.gpr .x17 = 0) (h16 : (s.gpr .x12).toNat
       by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
       by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
       by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
-  · omega
-  · omega
+  · omega_arith
+  · omega_arith
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
@@ -385,7 +385,7 @@ theorem sqr4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
   subst t
   have m4 : s₄.mem = s.mem := by rw [k4.mem, k3.mem, k2.mem, k1.mem]
   have _ho := ho.2.2
-  have hf := fe_st4 s₄.mem base (o := o) (by omega) (s₄.gpr .x8) (s₄.gpr .x9) (s₄.gpr .x10)
+  have hf := fe_st4 s₄.mem base (o := o) (by omega_arith) (s₄.gpr .x8) (s₄.gpr .x9) (s₄.gpr .x10)
     (s₄.gpr .x11)
   rw [x2, x3, x4, x5] at e2
   have hA : fe s.mem base a * fe s.mem base a = _ := sq_expand (word s.mem base a).toNat
@@ -393,7 +393,7 @@ theorem sqr4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
   have hlt := val4_lt (word s.mem base a) (word s.mem base (a + 8)) (word s.mem base (a + 16))
     (word s.mem base (a + 24))
   have hsq : fe s.mem base a * fe s.mem base a ≤ (2 ^ 256 - 1) * (2 ^ 256 - 1) :=
-    Nat.mul_le_mul (by simp only [fe]; omega) (by simp only [fe]; omega)
+    Nat.mul_le_mul (by simp only [fe]; omega_arith) (by simp only [fe]; omega_arith)
   refine ⟨⟨fun r hr => ?_, by rw [rd_withMem, k4.rd, k3.rd, k2.rd, k1.rd],
     by rw [wr_withMem, k4.wr, k3.wr, k2.wr, k1.wr], by rw [sp_withMem, k4.sp, k3.sp, k2.sp, k1.sp],
     ?_⟩, by rw [mem_withMem, hf]; exact l4,
@@ -405,10 +405,10 @@ theorem sqr4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
       not_false_eq_true]), k1.gpr _ (by simp only [List.mem_cons, List.not_mem_nil, or_false, hr,
       not_false_eq_true])]
   · rw [mem_withMem, ← m4]
-    exact st4_outside _ _ (by omega) _ _ _ _
+    exact st4_outside _ _ (by omega_arith) _ _ _ _
   · rw [mem_withMem, hf]
     rw [e1] at e2
     simp only [val4] at e3 e4 ⊢
-    omega
+    omega_arith
 
 end VG.Proof.X25519.AArch64.Alt

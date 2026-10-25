@@ -31,9 +31,9 @@ theorem exponentRanges_slot {n expWords i k : Nat} {base : Addr} {s t : State}
     (O : Outs base (exponentRanges n expWords) s.mem t.mem) (hi : i = 0 ∨ i = 6 ∨ i = 7) (hk : k ≤ 2 * n)
     (hn : base.toNat + contextBytes n ≤ 2 ^ 32) :
     val32 t.mem base (slot n i) k = val32 s.mem base (slot n i) k := by
-  have e6 : slot n 6 = slot n 2 + 4 * stride n := by simp only [slot]; omega
-  have e7 : slot n 7 = slot n 6 + stride n := by simp only [slot]; omega
-  have e8 : slot n 8 = slot n 7 + stride n := by simp only [slot]; omega
+  have e6 : slot n 6 = slot n 2 + 4 * stride n := by simp only [slot]; omega_arith
+  have e7 : slot n 7 = slot n 6 + stride n := by simp only [slot]; omega_arith
+  have e8 : slot n 8 = slot n 7 + stride n := by simp only [slot]; omega_arith
   have l89 := slot_le (n := n) (i := 8) (j := 9) (by decide)
   have l910 := slot_le (n := n) (i := 9) (j := 10) (by decide)
   have l1011 := slot_le (n := n) (i := 10) (j := 11) (by decide)
@@ -46,8 +46,8 @@ theorem exponentRanges_slot {n expWords i k : Nat} {base : Addr} {s t : State}
   · intro r hr
     simp only [exponentRanges, productRanges, maskO, List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
       at hr
-    rcases hi with rfl | rfl | rfl <;> rcases hr with (rfl | rfl | rfl | rfl | rfl) | (rfl | rfl) <;> omega
-  · rcases hi with rfl | rfl | rfl <;> omega
+    rcases hi with rfl | rfl | rfl <;> rcases hr with (rfl | rfl | rfl | rfl | rfl) | (rfl | rfl) <;> omega_arith
+  · rcases hi with rfl | rfl | rfl <;> omega_arith
 
 theorem exponentBody_ok {n size m y b expWords : Nat} {base : Addr} {s : State} (h : Context n m base size s)
     (he : 0 < expWords) (hen : expWords ≤ 2 * n) (hew : expWords ≤ 1024)
@@ -62,21 +62,21 @@ theorem exponentBody_ok {n size m y b expWords : Nat} {base : Addr} {s : State} 
   have sz := h.size_le
   have sm := h.small
   have nw := h.ws.nowrap
-  have hm0 : 0 < m := by have := h.gt_one; omega
-  have nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by omega
+  have hm0 : 0 < m := by have := h.gt_one; omega_arith
+  have nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by omega_arith
   have b11 := slot_bound (n := n) (i := 11) (by decide)
   have h0 := slot_header n 0
   have l811 := slot_le (n := n) (i := 8) (j := 11) (by decide)
   have l911 := slot_le (n := n) (i := 9) (j := 11) (by decide)
   have l1011 := slot_le (n := n) (i := 10) (j := 11) (by decide)
   have l111 := slot_le (n := n) (i := 1) (j := 11) (by decide)
-  have e6 : slot n 6 = slot n 2 + 4 * stride n := by simp only [slot]; omega
+  have e6 : slot n 6 = slot n 2 + 4 * stride n := by simp only [slot]; omega_arith
   have l611 := slot_le (n := n) (i := 6) (j := 11) (by decide)
   unfold exponentBody
   refine WP.seq (WP.mono (exponentProduct_ok h hy hb) fun s₁ ⟨c₁, Y₁, O₁, R₁⟩ => ?_)
   have B₁ : val32 s₁.mem base (slot n 8) (2 * n) = b * 2 ^ (64 * n) % m := by
     rw [← hb]
-    refine O₁.val32 (fun r hr => ?_) (by simp only [stride] at *; omega)
+    refine O₁.val32 (fun r hr => ?_) (by simp only [stride] at *; omega_arith)
     simp only [productRanges, maskO, List.mem_cons, List.not_mem_nil, or_false] at hr
     have l89 := slot_le (n := n) (i := 8) (j := 9) (by decide)
     have l810 := slot_le (n := n) (i := 8) (j := 10) (by decide)
@@ -84,13 +84,13 @@ theorem exponentBody_ok {n size m y b expWords : Nat} {base : Addr} {s : State} 
     have l18 := slot_le (n := n) (i := 1) (j := 8) (by decide)
     have h1 := slot_header n 1
     simp only [stride] at *
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> omega
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> omega_arith
   have E₁ : val32 s₁.mem base (slot n 11) expWords = val32 s.mem base (slot n 11) expWords := by
-    refine O₁.val32 (fun r hr => ?_) (by simp only [stride] at *; omega)
+    refine O₁.val32 (fun r hr => ?_) (by simp only [stride] at *; omega_arith)
     simp only [productRanges, maskO, List.mem_cons, List.not_mem_nil, or_false] at hr
     have h1 := slot_header n 1
     simp only [stride] at *
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> omega
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> omega_arith
   have hb₁ : val32 s₁.mem base (slot n 8) (2 * n) < m := by rw [B₁]; exact Nat.mod_lt _ hm0
   refine WP.seq (WP.mono (context_mul_ok c₁ (o := 8) (a := 8) (b := 8) (by decide) (by decide) (by decide) hb₁)
     fun s₂ ⟨c₂, K₂, lt₂, V₂⟩ => ?_)
@@ -99,7 +99,7 @@ theorem exponentBody_ok {n size m y b expWords : Nat} {base : Addr} {s : State} 
   have Y₂ : val32 s₂.mem base (slot n 9) (2 * n) =
       (if val32 s.mem base (slot n 11) expWords % 2 = 1 then y * b else y) * 2 ^ (64 * n) % m := by
     rw [K₂.val32 (by decide) (Nat.le_refl _) (by decide) (by decide) (.inl (by decide)) nw', Y₁]
-    obtain ⟨k, rfl⟩ : ∃ k, expWords = k + 1 := ⟨expWords - 1, by omega⟩
+    obtain ⟨k, rfl⟩ : ∃ k, expWords = k + 1 := ⟨expWords - 1, by omega_arith⟩
     rw [val32_parity]
   -- The shift.
   have l011 := slot_le (n := n) (i := 0) (j := 11) (by decide)
@@ -152,9 +152,9 @@ theorem exponentStep_ok {n size m y b expWords k : Nat} {base : Addr} {s : State
     by rw [u.mem]; exact c₁.modulus, c₁.gt_one, by rw [u.mem]; exact c₁.inverse⟩, by rw [u.mem]; exact Y,
     by rw [u.mem]; exact B, by rw [u.mem]; exact E, by rw [u.mem]; exact O,
     (R.mono (by decide)).trans (u.rest (by decide))⟩
-  rw [z, l₁, ofNat_sub_one hk hk32, VG.Proof.X25519.Arm.ofNat_beq_zero (by omega)]
+  rw [z, l₁, ofNat_sub_one hk hk32, VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_arith)]
   simp only [decide_eq_decide]
-  omega
+  omega_arith
 
 /-- The invariant of the exponentiation's loop after `i` of its `steps` steps. -/
 structure ExponentInv (n size m expWords target steps i : Nat) (base : Addr) (s t : State) : Prop where
@@ -178,7 +178,7 @@ theorem exponentLoop_ok {n size m expWords a : Nat} {base : Addr} {s : State}
         (32 * expWords) (32 * expWords) base s) := by
   let steps := 32 * expWords
   let target := a ^ val32 s.mem base (slot n 11) expWords % m
-  have hspos : 0 < steps := by dsimp [steps]; omega
+  have hspos : 0 < steps := by dsimp [steps]; omega_arith
   have init : ExponentInv n size m expWords target steps 0 base s s := by
     refine ⟨h, ?_, ?_, ⟨1, a, ?_, hb, ?_⟩, Outs.refl _ _ _, Rest.refl _ _⟩
     · simpa only [Nat.sub_zero] using hc
@@ -190,34 +190,34 @@ theorem exponentLoop_ok {n size m expWords a : Nat} {base : Addr} {s : State}
     ?_ steps s ⟨0, rfl, hspos, init⟩
   rintro k t ⟨i, rfl, hi, I⟩
   obtain ⟨y, b, Y, B, V⟩ := I.value
-  refine WP.mono (exponentStep_ok I.context he hen hew Y B (by omega) (by dsimp [steps] at *; omega) I.counter)
+  refine WP.mono (exponentStep_ok I.context he hen hew Y B (by omega_arith) (by dsimp [steps] at *; omega_arith) I.counter)
     fun u ⟨count, zf, C, Y', B', E', O, K⟩ => ?_
   have next : ExponentInv n size m expWords target steps (i + 1) base s u := by
     refine ⟨C, ?_, ?_, ⟨_, _, Y', B', ?_⟩, I.mem.trans O, I.rest.trans K⟩
-    · rw [count, show steps - i - 1 = steps - (i + 1) by omega]
+    · rw [count, show steps - i - 1 = steps - (i + 1) by omega_arith]
     · rw [E']
       have hp : 2 ^ (steps - i) = 2 ^ (steps - (i + 1)) * 2 := by
-        rw [show steps - i = steps - (i + 1) + 1 by omega, Nat.pow_succ]
+        rw [show steps - i = steps - (i + 1) + 1 by omega_arith, Nat.pow_succ]
       have bound := I.bound
       rw [hp] at bound
-      omega
+      omega_arith
     · rw [E', exponent_step_value]
       exact V
   by_cases hdone : i + 1 = steps
   · refine .inl ⟨?_, ?_⟩
-    · rw [VG.Proof.X25519.Arm.eval_ne, zf, decide_eq_true (by omega)]; rfl
+    · rw [VG.Proof.X25519.Arm.eval_ne, zf, decide_eq_true (by omega_arith)]; rfl
     · change ExponentInv n size m expWords target steps steps base s u
       rw [hdone] at next
       exact next
-  · refine .inr ⟨?_, steps - (i + 1), by omega, i + 1, rfl, by omega, next⟩
-    rw [VG.Proof.X25519.Arm.eval_ne, zf, decide_eq_false (by omega)]; rfl
+  · refine .inr ⟨?_, steps - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, next⟩
+    rw [VG.Proof.X25519.Arm.eval_ne, zf, decide_eq_false (by omega_arith)]; rfl
 
 theorem ExponentInv.finished {n size m expWords target steps : Nat} {base : Addr} {s t : State}
     (I : ExponentInv n size m expWords target steps steps base s t) :
     val32 t.mem base (slot n 9) (2 * n) = target * 2 ^ (64 * n) % m := by
   have bound := I.bound
   simp only [Nat.sub_self, Nat.pow_zero] at bound
-  have ez : val32 t.mem base (slot n 11) expWords = 0 := by omega
+  have ez : val32 t.mem base (slot n 11) expWords = 0 := by omega_arith
   obtain ⟨y, b, Y, _, V⟩ := I.value
   rw [ez, Nat.pow_zero, Nat.mul_one] at V
   rw [Y, Nat.mul_mod y, V, Nat.mul_mod_mod]
@@ -240,8 +240,8 @@ theorem exponentiate_ok {n size m expWords : Nat} {base : Addr} {s : State}
       val32 t.mem base (slot n 9) (2 * n) =
         val32 s.mem base (slot n 8) (2 * n) ^ val32 s.mem base (slot n 11) expWords % m ∧
       Outs base (exponentRanges n expWords) s.mem t.mem ∧ Rest (.lr :: dclob) s t := by
-  have hm0 : 0 < m := by have := h.gt_one; omega
-  have nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by have := h.ws.nowrap; have := h.size_le; omega
+  have hm0 : 0 < m := by have := h.gt_one; omega_arith
+  have nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by have := h.ws.nowrap; have := h.size_le; omega_arith
   unfold exponentiate
   refine WP.seq (WP.mono (context_mul_ok h (o := 9) (a := 7) (b := 6) (by decide) (by decide) (by decide)
     (by rw [hone]; exact h.gt_one)) fun s₁ ⟨c₁, K₁, lt₁, V₁⟩ => ?_)
@@ -267,7 +267,7 @@ theorem exponentiate_ok {n size m expWords : Nat} {base : Addr} {s : State}
   have c₃ : Context n m base size s₃ := ⟨c₂.ws.of_upd u₃ (by decide), c₂.size_le, c₂.small, c₂.n0,
     u₃.mem ▸ c₂.modulus, c₂.gt_one, u₃.mem ▸ c₂.inverse⟩
   refine WP.seq (WP.mono (exponentLoop_ok c₃ he hen hew (u₃.mem ▸ Y₂) (u₃.mem ▸ B₂)
-    (by rw [u₃.gpr, movw_ofNat (by have := c₂.small; simp only [contextBytes, slot, stride] at this; omega)]))
+    (by rw [u₃.gpr, movw_ofNat (by have := c₂.small; simp only [contextBytes, slot, stride] at this; omega_arith)]))
     fun s₄ I => ?_)
   have O₄ : val32 s₄.mem base (slot n 6) (2 * n) = 1 := by
     rw [exponentRanges_slot I.mem (.inr (.inl rfl)) (Nat.le_refl _) nw', u₃.mem, O₂]

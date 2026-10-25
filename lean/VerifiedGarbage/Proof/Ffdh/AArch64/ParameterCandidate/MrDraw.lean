@@ -132,12 +132,12 @@ theorem drawHead_ok {p : PP} {w N mb K i u : Nat} {s : State} (d : MrDims p w N 
   have hw : w = mW mb := d.hw
   have hmb1 := d.mb1
   have hmb2 := d.mb2
-  have hw8 : 8 ≤ w := by rw [hw]; simp only [mW]; omega
-  have hw128 : w ≤ 128 := by rw [hw]; simp only [mW]; omega
-  have hlw : mLen mb ≤ 8 * w := by rw [hw]; simp only [mLen, mW]; omega
-  have hl1 : 1 ≤ mLen mb := by simp only [mLen]; omega
-  have hk : mK mb ≤ 64 := by simp only [mK, mW]; omega
-  have hcut : 64 * (w - 1) + mK mb = mb := by rw [hw]; simp only [mK, mW]; omega
+  have hw8 : 8 ≤ w := by rw [hw]; simp only [mW]; omega_arith
+  have hw128 : w ≤ 128 := by rw [hw]; simp only [mW]; omega_arith
+  have hlw : mLen mb ≤ 8 * w := by rw [hw]; simp only [mLen, mW]; omega_arith
+  have hl1 : 1 ≤ mLen mb := by simp only [mLen]; omega_arith
+  have hk : mK mb ≤ 64 := by simp only [mK, mW]; omega_arith
+  have hcut : 64 * (w - 1) + mK mb = mb := by rw [hw]; simp only [mK, mW]; omega_arith
   have sX : slot w aX + 8 * (w + 2) ≤ p.Z := by
     have := VG.Proof.Rsa.slot_lt (w := w) (show aX < 16 by decide); omega_using [hZ, this]
   unfold drawHead
@@ -145,25 +145,25 @@ theorem drawHead_ok {p : PP} {w N mb K i u : Nat} {s : State} (d : MrDims p w N 
   -- The octets.
   have hsrc := src_take (src_drop h.st.src u) (mLen mb)
   refine WP.mono (drawLoad_ok hws h.st.args.rand hU h.len hl1 hlw hsrc (by
-    simp only [List.length_take, List.length_drop]; omega)) fun s₁ ⟨hx₁, hu₁, f₁, ws₁, k₁⟩ => ?_
+    simp only [List.length_take, List.length_drop]; omega_arith)) fun s₁ ⟨hx₁, hu₁, f₁, ws₁, k₁⟩ => ?_
   have h₁ : MrFix p w N mb K s₁ := h.of_frm hEZ f₁ (by kmut)
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact PMut.ofSlot _ _ _
-      · exact PMut.hdr (by simp only [kUsed, sFn]; omega))
+      · exact PMut.hdr (by simp only [kUsed, sFn]; omega_arith))
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact sX
-      · simp only [kUsed, sFn]; have := hws.h256; omega)
+      · simp only [kUsed, sFn]; have := hws.h256; omega_arith)
     k₁ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     (VG.Proof.RsaKeyGen.SlotShapeC.apartW1 rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)
     (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)
   have hI₁ : word s₁.mem p.B (8 * fIdx) = BitVec.ofNat 64 i := by
-    rw [f₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [fIdx]; omega)]; exact hI
+    rw [f₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [fIdx]; omega_arith)]; exact hI
   -- The cut.
   refine wp_seqs_append (a := [_]) (by simp) (by simp) ?_
   rw [seqs_one]
@@ -178,9 +178,9 @@ theorem drawHead_ok {p : PP} {w N mb K i u : Nat} {s : State} (d : MrDims p w N 
     (VG.Proof.RsaKeyGen.SlotShapeC.apartW1 rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)
     (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)
   have hI₂ : word s₂.mem p.B (8 * fIdx) = BitVec.ofNat 64 i := by
-    rw [f₂.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [fIdx]; omega)]; exact hI₁
+    rw [f₂.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [fIdx]; omega_arith)]; exact hI₁
   have hu₂ : word s₂.mem p.B (8 * kUsed) = BitVec.ofNat 64 (u + mLen mb) := by
-    rw [f₂.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega)]; exact hu₁
+    rw [f₂.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega_arith)]; exact hu₁
   -- The range.
   obtain ⟨bm₂, hc₂⟩ := h₂.ctx
   refine WP.mono (drawRange_ok h₂.st.ws hx₂) fun s₃ ⟨h9₃, hm₃, k₃⟩ => ?_
@@ -193,7 +193,7 @@ theorem drawHead_ok {p : PP} {w N mb K i u : Nat} {s : State} (d : MrDims p w N 
   have hacc : ∀ a, (decide (2 ≤ a) && decide (a + (1 - a % 2) < N)) = decide (2 ≤ a ∧ a < N - 1) := fun a => by
     rw [← Bool.decide_and]; exact decide_eq_decide.mpr (and_congr Iff.rfl (or1_lt_iff d.odd))
   rw [hacc] at h9₃
-  have hU256 : 8 * kUsed + 8 ≤ p.Z := by simp only [kUsed, sFn]; have := hws.h256; omega
+  have hU256 : 8 * kUsed + 8 ≤ p.Z := by simp only [kUsed, sFn]; have := hws.h256; omega_arith
   have hS₃ : InScr p.B p.Z s.mem s₃.mem := by
     rw [hm₃]
     refine (InScr.of_frm f₁ fun r hr => ?_).trans (InScr.of_frm f₂ fun r hr => ?_)
@@ -219,8 +219,8 @@ theorem draw_ok (M : Mont) (R : Kernel) {p : PP} {w N mb K i u : Nat} {s : State
   have hw : w = mW mb := d.hw
   have hmb1 := d.mb1
   have hmb2 := d.mb2
-  have hw8 : 8 ≤ w := by rw [hw]; simp only [mW]; omega
-  have hw128 : w ≤ 128 := by rw [hw]; simp only [mW]; omega
+  have hw8 : 8 ≤ w := by rw [hw]; simp only [mW]; omega_arith
+  have hw128 : w ≤ 128 := by rw [hw]; simp only [mW]; omega_arith
   have hle : ∀ r ∈ rdRanges w, r.1 + r.2 ≤ p.Z := fun r hr => by
     have := rdRanges_lt w r hr; omega_using [this, hEZ]
   rw [draw_eq]
@@ -243,38 +243,38 @@ theorem draw_ok (M : Mont) (R : Kernel) {p : PP} {w N mb K i u : Nat} {s : State
     simp only [Bool.not_eq_true', decide_eq_false_iff_not] at hb
     refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s₃.mem.writeW (off p.B (8 * kStat)) (BitVec.ofNat 64 4)) (by
       have h256 := h₃.st.ws.h256
-      brun [h0₃, hdr_enc (show kStat < 32 by decide), hs₃.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega)]
+      brun [h0₃, hdr_enc (show kStat < 32 by decide), hs₃.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega_arith)]
       rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ => ?_
     have ft : Frm p.B [(8 * kStat, 8)] s₃.mem t.mem := by
       rw [hm]; exact Frm.of_outside (writeW_outside _ _ _ (by decide)) (by simp)
     refine ⟨h₃.of_frm hEZ ft (by kmut) (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.hdr (by decide))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [kStat, sFn]; have := h₃.st.ws.h256; omega)
+      (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [kStat, sFn]; have := h₃.st.ws.h256; omega_arith)
       k (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
       (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
       (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
       (VG.Proof.RsaKeyGen.SlotShapeC.apartW1 rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)
       (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl), ?_, ?_, ?_,
       hS₃.trans (InScr.of_frm ft fun r hr => by
-        rw [List.mem_singleton.mp hr]; simp only [kStat, sFn]; have := h₃.st.ws.h256; omega),
+        rw [List.mem_singleton.mp hr]; simp only [kStat, sFn]; have := h₃.st.ws.h256; omega_arith),
       (k₁₃.trans k).mono (by decide)⟩
-    · rw [ft.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega)]; exact hu₂
+    · rw [ft.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega_arith)]; exact hu₂
     · rw [hm, word_writeW_self]; simp only [dStat, hb, ↓reduceIte]
-    · rw [ft.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [fIdx]; omega), hI₃]
+    · rw [ft.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [fIdx]; omega_arith), hI₃]
       have hnot : ¬(2 ≤ a ∧ a < N - 1 ∧ Spec.Ffdh.mrRound N a = true) := fun h' => hb ⟨h'.1, h'.2.1⟩
       simp only [dIdx, hnot, ↓reduceIte]
   · -- The round.
     simp only [Bool.not_eq_false', decide_eq_true_eq] at hb
     obtain ⟨bm₃, hc₃⟩ := h₃.ctx
     have hn3 := d.n3
-    have hw4 : 4 ≤ w := by omega
-    have haN : a < N := by omega
+    have hw4 : 4 ≤ w := by omega_arith
+    have haN : a < N := by omega_arith
     refine WP.mono (round_ok (a := a) (i := i) (K := K) M R hw4 hw128 hEZ hc₃ h₃.ex h₃.r2 d.odd d.n3 hx₃
       haN hI₃ h₃.chk hi d.k) fun t ⟨⟨bm', hct⟩, het, hst, hix, ft, k⟩ => ?_
     rw [mr_round_eq a d.n3 d.odd] at hst hix
     have hn' := hct.ws.scr.nowrap
     have hr2 : wv t.mem p.B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % N := by
       have := VG.Proof.Rsa.slot_lt (w := w) (show aR2 < 16 by decide)
-      rw [ft.wv_eq (fun r hr => by have := rdRanges_arr w (j := aR2) (by decide) r hr; omega)
+      rw [ft.wv_eq (fun r hr => by have := rdRanges_arr w (j := aR2) (by decide) r hr; omega_arith)
         (by omega_using [hn', hZ, this])]
       exact h₃.r2
     have hw' : ∀ {j : Nat}, j ∈ [0, 2, 16, 17, 18, 19, 20, 21, 22, 24, 25, 27] →

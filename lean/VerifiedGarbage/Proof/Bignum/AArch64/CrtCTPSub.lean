@@ -148,7 +148,7 @@ theorem pins_sm3 : Pins Sm3 [.x0, .x5, .x8, .x10, .x14] := by
 theorem sm1_ok {L : Ws} {s : State} (h : SmPre L s) : WP isa (.block (smBlk1 Public.aY aXc)) s (Sm1 L) := by
   obtain ⟨⟨minv, hg, hZ⟩, hw, hw'⟩ := h
   have hl := GoodW.hl ⟨minv, hg, hZ⟩
-  have sa : ∀ j < 8, sArr j < 32 := fun j hj => by unfold sArr; omega
+  have sa : ∀ j < 8, sArr j < 32 := fun j hj => by unfold sArr; omega_arith
   refine WP.mono (WP.keep [.x3, .x7, .x12, .x13, .x14, .x16, .x17] (Q := fun t =>
       t.gpr .x16 = off L.B (slot L.w Public.aY) ∧ t.gpr .x17 = off L.B (slot L.w aXc) ∧
       t.gpr .x13 = off L.B (slot L.w Public.aAcc) ∧ t.gpr .x12 = BitVec.ofNat 64 L.w ∧ t.gpr .x7 = 0 ∧
@@ -170,23 +170,23 @@ theorem smMid_ok {L : Ws} {t : State} (h : Sm1 L t) :
   have hs := hg.scr
   have hn := hs.nowrap
   have sl : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
-  have sa : ∀ j < 8, sArr j < 32 := fun j hj => by unfold sArr; omega
+  have sa : ∀ j < 8, sArr j < 32 := fun j hj => by unfold sArr; omega_arith
   have h0' : SubInv t L.B L.Z (slot L.w Public.aY) (slot L.w aXc) (slot L.w Public.aAcc) 0 t :=
     ⟨hs, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl, by rw [h13]; rfl, Outside.refl _ _ _ _,
       by rw [hc₁]; rfl⟩
-  refine WP.seq (WP.mono (wp_countdown (N := L.w) (by omega) (by omega)
+  refine WP.seq (WP.mono (wp_countdown (N := L.w) (by omega_arith) (by omega_arith)
     (SubInv t L.B L.Z (slot L.w Public.aY) (slot L.w aXc) (slot L.w Public.aAcc))
-    (fun j hj u hI _ => subStep_ok (by have := sl _ (show Public.aY < 8 by decide); omega)
-      (by have := sl _ (show aXc < 8 by decide); omega) (by have := sl _ (show Public.aAcc < 8 by decide); omega)
-      (by have := arr_sep (w := L.w) (show Public.aY ≠ Public.aAcc by decide); omega)
-      (by have := arr_sep (w := L.w) (show aXc ≠ Public.aAcc by decide); omega) hj hI) h0' h14) fun s₂ hI => ?_)
+    (fun j hj u hI _ => subStep_ok (by have := sl _ (show Public.aY < 8 by decide); omega_arith)
+      (by have := sl _ (show aXc < 8 by decide); omega_arith) (by have := sl _ (show Public.aAcc < 8 by decide); omega_arith)
+      (by have := arr_sep (w := L.w) (show Public.aY ≠ Public.aAcc by decide); omega_arith)
+      (by have := arr_sep (w := L.w) (show aXc ≠ Public.aAcc by decide); omega_arith) hj hI) h0' h14) fun s₂ hI => ?_)
   have s₂0 : s₂.gpr .x0 = L.B := (hI.keep.gpr .x0 (by decide)).trans hg.x0
   have s₂7 : s₂.gpr .x7 = 0 := (hI.keep.gpr .x7 (by decide)).trans h7
   have s₂12 : s₂.gpr .x12 = BitVec.ofNat 64 L.w := (hI.keep.gpr .x12 (by decide)).trans h12
   have hl₂ : ∀ i < 32, InRegions (s₂.rd ++ s₂.wr) (off L.B (8 * i)) 8 := fun i hi =>
-    hI.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega)
+    hI.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega_arith)
   have fh : ∀ i < 32, word s₂.mem L.B (8 * i) = word t.mem L.B (8 * i) := fun i hi =>
-    hI.out.word (Or.inl (by have := hdr_lt_slot L.w Public.aAcc hi; omega)) (by have := hdr_lt_slot L.w 8 hi; omega)
+    hI.out.word (Or.inl (by have := hdr_lt_slot L.w Public.aAcc hi; omega_arith)) (by have := hdr_lt_slot L.w 8 hi; omega_arith)
   have aN : word s₂.mem L.B (8 * sArr Public.aN) = off L.B (slot L.w Public.aN) :=
     (fh _ (sa _ (show Public.aN < 8 by decide))).trans (hg.hdr.harr _ (show Public.aN < 8 by decide))
   have aA : word s₂.mem L.B (8 * sArr Public.aAcc) = off L.B (slot L.w Public.aAcc) :=

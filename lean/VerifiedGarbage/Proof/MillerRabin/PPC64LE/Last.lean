@@ -49,7 +49,7 @@ theorem nz64_mask (x : BitVec 64) :
   have ht : (x >>> 1 ||| x &&& BitVec.ofNat 64 1).toNat < 2 ^ 63 := by
     rw [BitVec.toNat_or]
     apply Nat.or_lt_two_pow
-    · rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := x.isLt; omega
+    · rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := x.isLt; omega_arith
     · rw [BitVec.toNat_and]; exact Nat.lt_of_le_of_lt (Nat.and_le_right) (by decide)
   have hz : (x >>> 1 ||| x &&& BitVec.ofNat 64 1) = 0 ↔ x = 0 := by
     rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.or_eq_zero_iff]
@@ -61,7 +61,7 @@ theorem nz64_mask (x : BitVec 64) :
       simp only [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_and, BitVec.toNat_ofNat,
         Nat.reducePow, Nat.reduceMod, Nat.and_one_is_mod] at a b
       simp only [BitVec.toNat_ofNat]
-      omega
+      omega_arith
     · rintro rfl; decide
   by_cases e : x = 0
   · subst e; decide
@@ -70,7 +70,7 @@ theorem nz64_mask (x : BitVec 64) :
     have hs : (BitVec.ofNat 64 0 - (x >>> 1 ||| x &&& BitVec.ofNat 64 1)) >>> 63 = BitVec.ofNat 64 1 := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      omega
+      omega_arith
     rw [hs, show decide (x ≠ 0) = true from decide_eq_true e]
     rfl
 
@@ -93,14 +93,14 @@ theorem last_ok {rs : List Reg} {s₀ s : State} {B : Addr} {Z w c b Y : Nat} {P
       arr t.mem B w aY = (wSq c (decide (j < mrSig c)) (Y, P)).1 * 2 ^ (64 * w) % c ∧
       (wSq c (decide (j < mrSig c)) (Y, P)).1 < c ∧ t.gpr .r23 = mask (wSq c (decide (j < mrSig c)) (Y, P)).2 := by
   have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
-  have hn : slot w 28 ≤ 2 ^ 64 := by have := h.ctx.hs.nowrap; have := h.ctx.hZ; omega
+  have hn : slot w 28 ≤ 2 ^ 64 := by have := h.ctx.hs.nowrap; have := h.ctx.hZ; omega_arith
   have hcc := h.consts.cand
   have hw' := h.ctx.hw'
   have hZ := h.ctx.hZ
   have hE := slot_lt (w := w) (show aE < 28 by decide)
   unfold last
   refine WP.seq (WP.mono (mont_ok h.ctx (o := 6) (a := 6) (b := 6) (by simp) (by simp) (by simp)
-    (by rw [show (6 : Nat) = aY from rfl, hy, hcc]; exact Nat.mod_lt _ (by omega)))
+    (by rw [show (6 : Nat) = aY from rfl, hy, hcc]; exact Nat.mod_lt _ (by omega_arith)))
     fun u ⟨⟨hlt, heq, hout, h0⟩, ku⟩ => ?_)
   have fu := h.stepW (montRanges_win hout (by simp)) ku (by simp [Pub.montRegs, tailRegs, winRegs, tabRegs]) h0
   rw [hcc] at hlt heq
@@ -119,18 +119,18 @@ theorem last_ok {rs : List Reg} {s₀ s : State} {B : Addr} {Z w c b Y : Nat} {P
         .logic .and .r20 .r20 .r3, .logic .or .r23 .r23 .r20]))) x fun t =>
       (t.gpr .r23 = x.gpr .r23 ||| (x.gpr .r20 &&& mask (decide (BitVec.twoPow 64 (mrA c % 64) &&& sigK64 j ≠ 0))) ∧
         t.mem = x.mem) ∧ Keep [.r0, .r3, .r4, .r20, .r23] x t := by
-    refine WP.keep _ ?_ (by simp [writesOnly, instrs, dstOf, Instr.writesLr, repeat16])
+    refine WP.keep _ ?_ (by rfl)
     unfold repeat16
-    prun [fx.ctx.h11, shr1_ofNat w hw', shl3_ofNat w, x3, fx.ctx.hs.ld (show slot w aE + 8 * w + 8 ≤ Z by omega),
+    prun [fx.ctx.h11, shr1_ofNat w hw', shl3_ofNat w, x3, fx.ctx.hs.ld (show slot w aE + 8 * w + 8 ≤ Z by omega_arith),
       hl, exec_lis, exec_ori, exec_oris, repeat16_val j hj, nz64_mask]
   refine WP.mono hblk fun t ⟨⟨t23, tm⟩, kt⟩ => ⟨fx.stepW (by rw [tm]; exact Outs.refl _ _ _) kt (by decide)
-    (by rw [tm]), ?_, Nat.mod_lt _ (by omega), ?_⟩
+    (by rw [tm]), ?_, Nat.mod_lt _ (by omega_arith), ?_⟩
   · rw [tm, xm, vm, uy]; rfl
   · have e : decide (arr u.mem B w aY = arr u.mem B w aMinus) = decide (Y * Y % c = c - 1) := by
       have u10 : arr u.mem B w aMinus = c - 2 ^ (64 * w) % c := by
         rw [Outs.arrEq_mont hout (by decide) (by decide) (by decide) (by decide) hn]; exact h.consts.minus
       rw [uy, u10]
-      exact decide_eq_decide.mpr (VG.Proof.RsaKeyGen.mont_eq_m1 hR (by omega) (Nat.mod_lt _ (by omega)))
+      exact decide_eq_decide.mpr (VG.Proof.RsaKeyGen.mont_eq_m1 hR (by omega_arith) (Nat.mod_lt _ (by omega_arith)))
     rw [t23, kx.gpr .r23 (by decide), kv.gpr .r23 (by decide), ku.gpr .r23 (by simp [Pub.montRegs, tailRegs]),
       h23, kx.gpr .r20 (by decide), v20, e, sig_word hj, mask_and, mask_or]
     simp only [wSq, Bool.and_comm]

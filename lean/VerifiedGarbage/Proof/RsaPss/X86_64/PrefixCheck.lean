@@ -36,20 +36,20 @@ def ZeroUpTo (V : Nat → Byte) (e n : Nat) : Prop := ∀ i < n, V (e + i) = 0
 theorem zeroUpTo_succ (V : Nat → Byte) (e n : Nat) :
     ZeroUpTo V e (n + 1) ↔ ZeroUpTo V e n ∧ V (e + n) = 0 := by
   constructor
-  · intro h; exact ⟨fun i hi => h i (by omega), h n (by omega)⟩
+  · intro h; exact ⟨fun i hi => h i (by omega_arith), h n (by omega_arith)⟩
   · intro ⟨h, h'⟩ i hi
     by_cases hl : i < n
     · exact h i hl
-    · rwa [show i = n by omega]
+    · rwa [show i = n by omega_arith]
 
 theorem zeroUpTo_add8 (V : Nat → Byte) (e n : Nat) :
     ZeroUpTo V e (n + 8) ↔ ZeroUpTo V e n ∧ ∀ i < 8, V (e + n + i) = 0 := by
   constructor
-  · intro h; exact ⟨fun i hi => h i (by omega), fun i hi => by rw [Nat.add_assoc]; exact h _ (by omega)⟩
+  · intro h; exact ⟨fun i hi => h i (by omega_arith), fun i hi => by rw [Nat.add_assoc]; exact h _ (by omega_arith)⟩
   · intro ⟨h, h'⟩ i hi
     by_cases hl : i < n
     · exact h i hl
-    · have := h' (i - n) (by omega); rwa [Nat.add_assoc, Nat.add_sub_cancel' (by omega)] at this
+    · have := h' (i - n) (by omega_arith); rwa [Nat.add_assoc, Nat.add_sub_cancel' (by omega_arith)] at this
 
 theorem readW64_eq_zero (m : Mem) (a : Addr) :
     m.readW a 64 = 0 ↔ ∀ i < 8, m (a + BitVec.ofNat 64 i) = 0 := by
@@ -87,10 +87,10 @@ theorem pfxHead_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       u'.gpr .rcx = BitVec.ofNat 64 (8 * ((db - sl - 1) / 8)) ∧ u'.gpr .rax = W 33 ∧
       u'.gpr .r8 = BitVec.ofNat 64 0 ∧ u'.zf = some (decide (8 * ((db - sl - 1) / 8) = 0)) := by
   have hsub : BitVec.ofNat 64 db - BitVec.ofNat 64 sl - 1 = BitVec.ofNat 64 (db - sl - 1) := by
-    rw [VG.Offset.ofNat_sub_ofNat (show sl ≤ db by omega), show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
-      VG.Offset.ofNat_sub_ofNat (show 1 ≤ db - sl by omega)]
+    rw [VG.Offset.ofNat_sub_ofNat (show sl ≤ db by omega_arith), show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
+      VG.Offset.ofNat_sub_ofNat (show 1 ≤ db - sl by omega_arith)]
   have hsh : BitVec.ofNat 64 (db - sl - 1) >>> 3 <<< 3 = BitVec.ofNat 64 (8 * ((db - sl - 1) / 8)) := by
-    rw [shr_ofNat 3 (by omega), shl_ofNat 3 (by omega), Nat.mul_comm]
+    rw [shr_ofNat 3 (by omega_arith), shl_ofNat 3 (by omega_arith), Nat.mul_comm]
   refine WP.mono (WP.keep [.rdi, .rsi, .rdx, .rcx, .rax, .r8] (Q := fun u' => u'.mem = u.mem ∧
       u'.gpr .rdi = off S e ∧ u'.gpr .rsi = BitVec.ofNat 64 (db - sl - 1) ∧
       u'.gpr .rcx = BitVec.ofNat 64 (8 * ((db - sl - 1) / 8)) ∧ u'.gpr .rax = W 33 ∧
@@ -100,7 +100,7 @@ theorem pfxHead_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     L.ld (d := sAcc) (by decide), R.rd (d := sEb) 23 rfl (by decide), R.rd (d := sDb) 24 rfl (by decide),
     R.rd (d := sSlen) 36 rfl (by decide), R.rd (d := sAcc) 33 rfl (by decide), he, hdb, hsl, hsub, hsh]
   rw [BitVec.and_self]
-  have hlt : 8 * ((db - sl - 1) / 8) < 2 ^ 64 := by omega
+  have hlt : 8 * ((db - sl - 1) / 8) < 2 ^ 64 := by omega_arith
   by_cases h0 : 8 * ((db - sl - 1) / 8) = 0
   · rw [h0]; rfl
   · rw [decide_eq_false h0, beq_eq_false_iff_ne]
@@ -119,25 +119,25 @@ theorem pfxWords_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
   refine wp_upto (a := 0) (N := n) hn (fun j v => Keep [.rax, .r8] u v ∧ v.mem = u.mem ∧
       v.gpr .r8 = BitVec.ofNat 64 (8 * j) ∧ (v.gpr .rax = 0 ↔ a = 0 ∧ ZeroUpTo V e (8 * j)))
     (fun j _ hj v ⟨k, hm, hv8, hva⟩ => ?_) (fun v h => h)
-    ⟨Keep.refl _ _, rfl, h8, by rw [hax]; exact ⟨fun h => ⟨h, fun i hi => absurd hi (by omega)⟩, fun h => h.1⟩⟩
+    ⟨Keep.refl _ _, rfl, h8, by rw [hax]; exact ⟨fun h => ⟨h, fun i hi => absurd hi (by omega_arith)⟩, fun h => h.1⟩⟩
   have Lv := L.congr (k.gpr (by decide)) k.2.2 (by rw [hm])
   have hdv : v.gpr .rdi = off S e := (k.gpr (by decide)).trans hdi
   have hcv : v.gpr .rcx = BitVec.ofNat 64 (8 * n) := (k.gpr (by decide)).trans hcx
   have hea : v.gpr .rdi + v.gpr .r8 = off S (e + 8 * j) := by rw [hdv, hv8, off_plus]
-  have hld := Lv.sld (d := e + 8 * j) (by omega)
+  have hld := Lv.sld (d := e + 8 * j) (by omega_arith)
   refine WP.mono (WP.keep [.rax, .r8] (Q := fun v' => v'.zf = some (decide (j + 1 = n)) ∧ v'.mem = v.mem ∧
       v'.gpr .r8 = BitVec.ofNat 64 (8 * (j + 1)) ∧
       v'.gpr .rax = v.gpr .rax ||| v.mem.readW (off S (e + 8 * j)) 64) ?_ rfl)
     fun v' ⟨⟨hz, hm', h8', hax'⟩, k'⟩ => ⟨hz, (k.trans k').mono (by decide), hm'.trans hm, h8', ?_⟩
   · xrun [prefixWords, ea_ix0, hdv, hv8, off_plus, hld, hcv, VG.Proof.MlKem.X86_64.sx_ofNat (show 8 < 2 ^ 31 by decide),
-      ofNat_sub_beq (show 8 * j + 8 < 2 ^ 64 by omega) (show 8 * n < 2 ^ 64 by omega)]
+      ofNat_sub_beq (show 8 * j + 8 < 2 ^ 64 by omega_arith) (show 8 * n < 2 ^ 64 by omega_arith)]
     have hadd : BitVec.ofNat 64 (8 * j) + 8 = BitVec.ofNat 64 (8 * (j + 1)) := by
       rw [Nat.mul_succ, BitVec.ofNat_add]; rfl
-    rw [hadd, ofNat_sub_beq (show 8 * (j + 1) < 2 ^ 64 by omega) (show 8 * n < 2 ^ 64 by omega)]
-    exact ⟨by simp only [decide_eq_decide]; omega, rfl⟩
-  · rw [hax', or_eq_zero64, hva, readW64_eq_zero, show 8 * (j + 1) = 8 * j + 8 by omega, zeroUpTo_add8, and_assoc]
+    rw [hadd, ofNat_sub_beq (show 8 * (j + 1) < 2 ^ 64 by omega_arith) (show 8 * n < 2 ^ 64 by omega_arith)]
+    exact ⟨by simp only [decide_eq_decide]; omega_arith, rfl⟩
+  · rw [hax', or_eq_zero64, hva, readW64_eq_zero, show 8 * (j + 1) = 8 * j + 8 by omega_arith, zeroUpTo_add8, and_assoc]
     refine and_congr_right fun _ => and_congr_right fun _ => forall_congr' fun i => imp_congr_right fun hi => ?_
-    rw [hm, off_plus, R.scr _ (by omega)]
+    rw [hm, off_plus, R.scr _ (by omega_arith)]
 
 theorem pfxBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {e m n : Nat} {a : BitVec 64} (hmn : m < n) (hfit : e + n ≤ oRsa)
@@ -153,21 +153,21 @@ theorem pfxBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
   have hdv : v.gpr .rdi = off S e := (k.gpr (by decide)).trans hdi
   have hsv : v.gpr .rsi = BitVec.ofNat 64 n := (k.gpr (by decide)).trans hsi
   have hea : v.gpr .rdi + v.gpr .r8 = off S (e + j) := by rw [hdv, hv8, off_plus]
-  have hld := Lv.sld8 (d := e + j) (by omega)
-  have hval : v.mem (off S (e + j)) = V (e + j) := by rw [hm]; exact R.scr _ (by omega)
+  have hld := Lv.sld8 (d := e + j) (by omega_arith)
+  have hval : v.mem (off S (e + j)) = V (e + j) := by rw [hm]; exact R.scr _ (by omega_arith)
   refine WP.mono (WP.keep [.rax, .r8, .rdx] (Q := fun v' => v'.zf = some (decide (j + 1 = n)) ∧ v'.mem = v.mem ∧
       v'.gpr .r8 = BitVec.ofNat 64 (j + 1) ∧
       v'.gpr .rax = v.gpr .rax ||| BitVec.setWidth 64 (V (e + j))) ?_ rfl)
     fun v' ⟨⟨hz, hm', h8', hax'⟩, k'⟩ => ⟨hz, (k.trans k').mono (by decide), hm'.trans hm, h8', ?_⟩
   · xrun [prefixBytes, ea_ix0, hdv, hv8, off_plus, hld, hval, hsv, ofNat_add_lit,
-      ofNat_sub_beq (show j + 1 < 2 ^ 64 by omega) (show n < 2 ^ 64 by omega)]
+      ofNat_sub_beq (show j + 1 < 2 ^ 64 by omega_arith) (show n < 2 ^ 64 by omega_arith)]
   · rw [hax', or_eq_zero64, hva, zext_eq_zero, zeroUpTo_succ, and_assoc]
 
 /-- `lz` from its characterization below the length. -/
 theorem lz_eq_of {l : List Byte} {n : Nat} (hz : ∀ j < n, l.getD j 0 = 0) (hn : n < l.length)
     (hne : l.getD n 0 ≠ 0) : lz l = n := by
   rcases Nat.lt_trichotomy (lz l) n with h | h | h
-  · exact absurd (hz _ h) (getD_lz_ne (by omega))
+  · exact absurd (hz _ h) (getD_lz_ne (by omega_arith))
   · exact h
   · exact absurd (getD_lt_lz h) hne
 
@@ -178,11 +178,11 @@ theorem fixed_cond (dbL : List Byte) {L sl : Nat} (hlen : dbL.length = L) (hs : 
       (lz dbL < L ∧ dbL.getD (lz dbL) 0 = 1 ∧ L - lz dbL - 1 = sl) := by
   constructor
   · intro ⟨hz, h1⟩
-    have hl := lz_eq_of hz (by omega) (by rw [h1]; decide)
+    have hl := lz_eq_of hz (by omega_arith) (by rw [h1]; decide)
     rw [hl]
-    exact ⟨by omega, h1, by omega⟩
+    exact ⟨by omega_arith, h1, by omega_arith⟩
   · intro ⟨hl, h1, hsl⟩
-    have hp : L - sl - 1 = lz dbL := by omega
+    have hp : L - sl - 1 = lz dbL := by omega_arith
     rw [hp]
     exact ⟨fun i hi => getD_lt_lz hi, h1⟩
 
@@ -217,15 +217,15 @@ theorem pfxTail_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       BitVec.ofNat 64 sl := by
     rw [R2.rd (d := sSlen) 36 rfl (by decide)]; simp [upd, hsl]
   have hea : u.gpr .rdi + u.gpr .rsi = off S (e + p) := by rw [hdi, hsi, off_plus]
-  have hld := L.sld8 (d := e + p) (by omega)
-  have hval : u.mem (off S (e + p)) = V (e + p) := R.scr _ (by omega)
+  have hld := L.sld8 (d := e + p) (by omega_arith)
+  have hval : u.mem (off S (e + p)) = V (e + p) := R.scr _ (by omega_arith)
   refine WP.mono (WP.keep [.rdx, .rax] (Q := fun u' => u'.mem =
       ((u.mem.writeW (off F sPos) (BitVec.ofNat 64 p)).writeW (off F sAcc) a).writeW (off F sL)
         (BitVec.ofNat 64 (sl + (8 + H.D)))) ?_ rfl)
     fun u' ⟨hm, k⟩ => ⟨L.of_rep' R (hm ▸ R3) (by simp [upd]) (k.gpr (by decide)) k.2.2, k, hm ▸ R3⟩
   xrun [pfxTail, ea_ix0, ea_sp, L.rsp, hdi, hsi, off_plus, hld, hval, hax, L.st (d := sAcc) (by decide),
     L.st (d := sPos) (by decide), L.ld (d := sSlen) (by decide), L.st (d := sL) (by decide), e36,
-    VG.Proof.MlKem.X86_64.sx_ofNat (show 8 + H.D < 2 ^ 31 by omega)]
+    VG.Proof.MlKem.X86_64.sx_ofNat (show 8 + H.D < 2 ^ 31 by omega_arith)]
   rw [← ha, e36, BitVec.ofNat_add_ofNat]
 
 include hH in
@@ -253,9 +253,9 @@ theorem prefixCheck_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byt
       (fun h => ?_) (fun h => ?_)
     · rw [decide_eq_true_eq] at h
       refine WP.block_nil ⟨Keep.refl _ _, rfl, by rw [h81, h], by
-        rw [hax1, h]; exact ⟨fun h' => ⟨h', fun i hi => absurd hi (by omega)⟩, fun h' => h'.1⟩⟩
+        rw [hax1, h]; exact ⟨fun h' => ⟨h', fun i hi => absurd hi (by omega_arith)⟩, fun h' => h'.1⟩⟩
     · rw [decide_eq_false_iff_not] at h
-      exact pfxWords_ok L1 R1 (n := (db - sl - 1) / 8) (by omega) (by omega) hdi1 hcx1 h81 hax1
+      exact pfxWords_ok L1 R1 (n := (db - sl - 1) / 8) (by omega_arith) (by omega_arith) hdi1 hcx1 h81 hax1
   refine WP.seq (WP.mono hw fun u2 ⟨k2, hm2, h82, hax2⟩ => ?_)
   have L2 := L1.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2])
   have R2 : Rep u2.mem F S V W := hm2.trans hm1 ▸ R
@@ -264,8 +264,8 @@ theorem prefixCheck_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byt
   -- The comparison.
   refine WP.seq (WP.mono (WP.keep [.r8] (Q := fun v => v.mem = u2.mem ∧ v.gpr .r8 = u2.gpr .r8 ∧
       v.zf = some (decide (8 * ((db - sl - 1) / 8) = db - sl - 1))) ?_ rfl) fun u3 ⟨⟨hm3, h83, hz3⟩, k3⟩ => ?_)
-  · xrun [h82, hsi2, ofNat_sub_beq (show 8 * ((db - sl - 1) / 8) < 2 ^ 64 by omega)
-      (show db - sl - 1 < 2 ^ 64 by omega)]
+  · xrun [h82, hsi2, ofNat_sub_beq (show 8 * ((db - sl - 1) / 8) < 2 ^ 64 by omega_arith)
+      (show db - sl - 1 < 2 ^ 64 by omega_arith)]
   have L3 := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep u3.mem F S V W := hm3 ▸ R2
   -- The bytes.
@@ -277,13 +277,13 @@ theorem prefixCheck_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byt
       refine WP.block_nil ⟨Keep.refl _ _, rfl, ?_⟩
       rw [k3.gpr (by decide), hax2, h]
     · rw [decide_eq_false_iff_not] at h
-      exact pfxBytes_ok L3 R3 (m := 8 * ((db - sl - 1) / 8)) (by omega) (by omega)
+      exact pfxBytes_ok L3 R3 (m := 8 * ((db - sl - 1) / 8)) (by omega_arith) (by omega_arith)
         ((k3.gpr (by decide)).trans hdi2) ((k3.gpr (by decide)).trans hsi2) (h83.trans h82)
         (by rw [k3.gpr (by decide)]; exact hax2)
   refine WP.seq (WP.mono hb fun u4 ⟨k4, hm4, hax4⟩ => ?_)
   have L4 := L3.congr (k4.gpr (by decide)) k4.2.2 (by rw [hm4])
   have R4 : Rep u4.mem F S V W := hm4 ▸ R3
-  refine WP.mono (pfxTail_ok hH L4 R4 (e := e) (p := db - sl - 1) (sl := sl) (r := u4.gpr .rax) (by omega) hsl
+  refine WP.mono (pfxTail_ok hH L4 R4 (e := e) (p := db - sl - 1) (sl := sl) (r := u4.gpr .rax) (by omega_arith) hsl
     ((k4.gpr (by decide)).trans ((k3.gpr (by decide)).trans hdi2))
     ((k4.gpr (by decide)).trans ((k3.gpr (by decide)).trans hsi2)) rfl) fun u5 ⟨L5, k5, R5⟩ => ?_
   refine ⟨L5, ((((k1.trans k2).trans k3).trans k4).trans k5).mono (by decide), _, ?_, R5⟩

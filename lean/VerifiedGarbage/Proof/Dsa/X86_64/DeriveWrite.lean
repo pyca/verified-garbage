@@ -93,7 +93,7 @@ theorem keyHead_ok {s : State} {B O P Y X : Addr} {Z p q : Nat} {valid : Bool}
   refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
   simp only [BitVec.ofNat_add_ofNat]
   congr 1
-  omega
+  omega_arith
 
 theorem keyHead₂_ok {s : State} {O Y X : Addr} {p q : Nat} {valid : Bool}
     (hr : KeyRegs s O Y X p q) (h8 : s.gpr .r8 = mask valid) :
@@ -108,7 +108,7 @@ theorem keyHead₂_ok {s : State} {O Y X : Addr} {p q : Nat} {valid : Bool}
   xrun [hr.out, hr.publicValue, hr.pLen, hr.qLen, h8]
   simp only [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   congr 2
-  omega
+  omega_arith
 
 theorem keyHead₃_ok {s : State} {O Y X : Addr} {p q : Nat} {valid : Bool}
     (hr : KeyRegs s O Y X p q) (h8 : s.gpr .r8 = mask valid) :
@@ -123,7 +123,7 @@ theorem keyHead₃_ok {s : State} {O Y X : Addr} {p q : Nat} {valid : Bool}
   xrun [hr.out, hr.scalar, hr.pLen, hr.qLen, h8]
   simp only [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   congr 2
-  omega
+  omega_arith
 
 /-- A source of `n` bytes the copies may read: readable, and apart from the
 output. -/
@@ -149,11 +149,11 @@ theorem writeKey_ok {s : State} {B O P Y X : Addr} {Z p q : Nat} {valid : Bool}
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   have hrange (d n : Nat) (hd : d + n ≤ 3 * p + 2 * q) :
       ∀ i < n, InRegions s.wr (O + BitVec.ofNat 64 d + BitVec.ofNat 64 i) 1 :=
-    fun i hi => by rw [shift]; exact hw _ (by omega)
+    fun i hi => by rw [shift]; exact hw _ (by omega_arith)
   have hapart (src : Addr) (n d m : Nat) (hd : d + m ≤ 3 * p + 2 * q)
       (h : ∀ i < n, ∀ j < 3 * p + 2 * q, src + BitVec.ofNat 64 i ≠ O + BitVec.ofNat 64 j) :
       ∀ i < n, ∀ j < m, src + BitVec.ofNat 64 i ≠ O + BitVec.ofNat 64 d + BitVec.ofNat 64 j :=
-    fun i hi j hj => by rw [shift]; exact h i hi _ (by omega)
+    fun i hi j hj => by rw [shift]; exact h i hi _ (by omega_arith)
   have hregs : ∀ r ∈ [Reg.rsi, .rdx, .rcx, .rax], r ≠ .r9 ∧ r ≠ .r10 ∧ r ≠ .r11 ∧ r ≠ .r12 ∧ r ≠ .r13 := by
     decide
   unfold Generate.writeKey seqs
@@ -162,40 +162,40 @@ theorem writeKey_ok {s : State} {B O P Y X : Addr} {Z p q : Nat} {valid : Bool}
   -- p||q||g
   apply WP.assoc
   refine WP.seq (WP.mono (copyPiece_ok (n := 2 * p + q) (rs := keyRegs) hRk (keyHead_ok hs hdi hZ hf)
-    (by omega) (by omega)
-    hP.1 (fun i hi => by simpa using hrange 0 (2 * p + q) (by omega) i hi)
-    (fun i hi j hj => by simpa using hapart P _ 0 (2 * p + q) (by omega) hP.2 i hi j hj)) fun s₁ h₁ => ?_)
+    (by omega_arith) (by omega_arith)
+    hP.1 (fun i hi => by simpa using hrange 0 (2 * p + q) (by omega_arith) i hi)
+    (fun i hi j hj => by simpa using hapart P _ 0 (2 * p + q) (by omega_arith) hP.2 i hi j hj)) fun s₁ h₁ => ?_)
   obtain ⟨hb₁, hfr₁, h8₁, hR₁, k₁⟩ := h₁
   have hfr₁' : ∀ x, (∀ i < 3 * p + 2 * q, x ≠ O + BitVec.ofNat 64 i) → s₁.mem x = s.mem x :=
-    fun x hx => hfr₁ x fun i hi => hx i (by omega)
+    fun x hx => hfr₁ x fun i hi => hx i (by omega_arith)
   -- y
   apply WP.assoc
-  refine WP.seq (WP.mono (copyPiece_ok (n := p) (rs := [.rsi, .rdx, .rcx]) hRk (keyHead₂_ok hR₁ h8₁) hp (by omega)
+  refine WP.seq (WP.mono (copyPiece_ok (n := p) (rs := [.rsi, .rdx, .rcx]) hRk (keyHead₂_ok hR₁ h8₁) hp (by omega_arith)
     (fun i hi => by rw [k₁.2.1, k₁.2.2]; exact hY.1 i hi)
-    (fun i hi => by rw [k₁.2.2]; exact hrange (2 * p + q) p (by omega) i hi)
-    (hapart Y p (2 * p + q) p (by omega) hY.2)) fun s₂ h₂ => ?_)
+    (fun i hi => by rw [k₁.2.2]; exact hrange (2 * p + q) p (by omega_arith) i hi)
+    (hapart Y p (2 * p + q) p (by omega_arith) hY.2)) fun s₂ h₂ => ?_)
   obtain ⟨hb₂, hfr₂, h8₂, hR₂, k₂⟩ := h₂
   have hfr₂' : ∀ x, (∀ i < 3 * p + 2 * q, x ≠ O + BitVec.ofNat 64 i) → s₂.mem x = s.mem x :=
-    fun x hx => (hfr₂ x fun i hi => by rw [shift]; exact hx _ (by omega)).trans (hfr₁' x hx)
+    fun x hx => (hfr₂ x fun i hi => by rw [shift]; exact hx _ (by omega_arith)).trans (hfr₁' x hx)
   have k₁₂ := k₁.trans k₂
   -- x
-  refine WP.mono (copyPiece_ok (n := q) (rs := [.rsi, .rdx, .rcx]) hRk (keyHead₃_ok hR₂ h8₂) hq (by omega)
+  refine WP.mono (copyPiece_ok (n := q) (rs := [.rsi, .rdx, .rcx]) hRk (keyHead₃_ok hR₂ h8₂) hq (by omega_arith)
     (fun i hi => by rw [k₁₂.2.1, k₁₂.2.2]; exact hX.1 i hi)
-    (fun i hi => by rw [k₁₂.2.2]; exact hrange (3 * p + q) q (by omega) i hi)
-    (hapart X q (3 * p + q) q (by omega) hX.2)) fun t ⟨hb₃, hfr₃, _, _, k₃⟩ => ?_
+    (fun i hi => by rw [k₁₂.2.2]; exact hrange (3 * p + q) q (by omega_arith) i hi)
+    (hapart X q (3 * p + q) q (by omega_arith) hX.2)) fun t ⟨hb₃, hfr₃, _, _, k₃⟩ => ?_
   have hne (a b : Nat) (ha : a < 3 * p + 2 * q) (hb : b < 3 * p + 2 * q) (h : a ≠ b) :
-      O + BitVec.ofNat 64 a ≠ O + BitVec.ofNat 64 b := out_ne (by omega) (by omega) h
+      O + BitVec.ofNat 64 a ≠ O + BitVec.ofNat 64 b := out_ne (by omega_arith) (by omega_arith) h
   refine ⟨?_, ?_, ?_, ?_, ((k₁₂.trans k₃).mono (by decide))⟩
   · intro i hi
-    rw [hfr₃ _ fun j hj => by rw [shift]; exact hne _ _ (by omega) (by omega) (by omega),
-      hfr₂ _ fun j hj => by rw [shift]; exact hne _ _ (by omega) (by omega) (by omega)]
+    rw [hfr₃ _ fun j hj => by rw [shift]; exact hne _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      hfr₂ _ fun j hj => by rw [shift]; exact hne _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
     simpa using hb₁ i hi
   · intro i hi
-    rw [hfr₃ _ fun j hj => by rw [shift]; exact hne _ _ (by omega) (by omega) (by omega), ← shift, hb₂ i hi,
+    rw [hfr₃ _ fun j hj => by rw [shift]; exact hne _ _ (by omega_arith) (by omega_arith) (by omega_arith), ← shift, hb₂ i hi,
       hfr₁' _ fun j hj => hY.2 i hi j hj]
   · intro i hi
     rw [← shift, hb₃ i hi, hfr₂' _ fun j hj => hX.2 i hi j hj]
   · intro x hx
-    exact (hfr₃ x fun i hi => by rw [shift]; exact hx _ (by omega)).trans (hfr₂' x hx)
+    exact (hfr₃ x fun i hi => by rw [shift]; exact hx _ (by omega_arith)).trans (hfr₂' x hx)
 
 end VG.Proof.Dsa.X86_64

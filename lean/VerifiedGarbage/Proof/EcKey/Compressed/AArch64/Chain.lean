@@ -50,7 +50,7 @@ structure Backend (P : ChainCfg) : Prop where
       rcases hslots x h with rfl | rfl | h
       · exact hl.1
       · exact hl.2.1
-      · omega
+      · omega_arith
     exact Mont.mulCall_ok hs hM (B.sound _ _ hc) ht (hx _ (by simp))
       (hx _ (by simp)) (hx _ (by simp)) hB
 
@@ -63,7 +63,7 @@ structure Backend (P : ChainCfg) : Prop where
   | zero => exact fun _ h => WP.block_nil h
   | succ n ih =>
     intro s hs
-    exact WP.seq (WP.mono (ih (by omega) s hs) fun t ht => hstep n t (by omega) ht)
+    exact WP.seq (WP.mono (ih (by omega_arith) s hs) fun t ht => hstep n t (by omega_arith) ht)
 
 theorem table_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) {s₀ s : State} (h : ChainSt P base size m s₀ s)
@@ -112,7 +112,7 @@ theorem table_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : Ch
     (hle 8 (Nat.le_refl _)) (h8 _) (h8 _) (h8 _) Tt.2.1 (by
       intro x hx
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl <;> exact .inr (.inr (hin _ (by omega))))) fun u ⟨ku, ltu, eu⟩ => ?_
+      rcases hx with rfl | rfl | rfl <;> exact .inr (.inr (hin _ (by omega_arith))))) fun u ⟨ku, ltu, eu⟩ => ?_
   refine ⟨St.op hL (Or.inr (hin (k + 1) (by omega_arith))) ku, ?_⟩
   have e : ∀ j ≤ 8, j ≠ k + 1 →
       wordsVal u.mem base (P.slot j) P.M.n = wordsVal t.mem base (P.slot j) P.M.n := fun j hj hne =>
@@ -212,7 +212,7 @@ theorem step_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : Cha
         rcases hx with rfl | rfl | rfl
         · exact .inl rfl
         · exact .inl rfl
-        · exact .inr (.inr (slot_le P (by omega))))) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
+        · exact .inr (.inr (slot_le P (by omega_arith))))) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
     refine ⟨S₁.op hL (Or.inl rfl) k₂, T₁.acc hL hn (Nat.le_refl _) k₂.unch, lt₂, ?_⟩
     rw [toM_mul hm e₂, v₁, Ti.2, ← Lean.Grind.Semiring.pow_add]
     congr 1

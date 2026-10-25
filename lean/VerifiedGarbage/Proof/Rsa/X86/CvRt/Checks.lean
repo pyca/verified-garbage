@@ -153,7 +153,7 @@ theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
   · rw [K1 _ (by decide) (by decide), h.p]
   · rw [K1 _ (by decide) (by decide), h.q]
   · rw [K1 _ (by decide) (by decide), h.d]
-  · rw [K.word (by simp only [S]; omega) (by decide) (by decide) (fit _ (by decide)), h.ddTop]
+  · rw [K.word (by simp only [S]; omega_arith) (by decide) (by decide) (fit _ (by decide)), h.ddTop]
   · rw [k9.num (by decide) (by simp) (fit _ (by decide)), k8.num (by decide) (by simp) (fit _ (by decide)),
       k8'.num (by decide) (by simp) (fit _ (by decide)), k7.num (by decide) (by simp) (fit _ (by decide)),
       k6.num (by decide) (by simp) (fit _ (by decide)), k5.num (by decide) (by simp) (fit _ (by decide)), e4,
@@ -169,9 +169,9 @@ theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
   · rw [K1 _ (by decide) (by decide)]; exact z0 _ (by decide)
   · rw [k9.num (by decide) (by simp) (fit _ (by decide)), M8]
   · rw [Z8, M8] at e9
-    have : 0 < g.M := by unfold Geometry.M; omega
+    have : 0 < g.M := by unfold Geometry.M; omega_arith
     have l := val32_lt t.mem g.base (arr (kw len) aNM) (kw len)
-    rcases (by omega : (t.gpr .ebx).toNat = 0 ∨ (t.gpr .ebx).toNat = 1) with e | e <;> rw [e] at e9 <;> omega
+    rcases (by omega_arith : (t.gpr .ebx).toNat = 0 ∨ (t.gpr .ebx).toNat = 1) with e | e <;> rw [e] at e9 <;> omega_arith
   · rw [K1 _ (by decide) (by decide)]; exact z0 _ (by decide)
   · rw [k9.num (by decide) (by simp) (fit _ (by decide)), e8, k8'.num (by decide) (by simp) (fit _ (by decide)),
       k7.num (by decide) (by simp) (fit _ (by decide)), k6.num (by decide) (by simp) (fit _ (by decide)),

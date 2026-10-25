@@ -39,11 +39,7 @@ theorem scanRead_ok (s : State) {base src : BitVec 32} {len : Nat} {bs : List By
     rw [BitVec.add_zero] at byte
     simpa only [List.getD_eq_getElem?_getD,
       List.getElem?_eq_getElem positive, Option.getD_some] using byte
-  refine withRest [.r3] ?_ (by
-    intro r hr i hi
-    simp only [instrs, List.mem_cons, List.not_mem_nil, or_false] at hi
-    have ne : r ≠ .r3 := by simpa only [List.mem_singleton] using hr
-    rcases hi with rfl | rfl <;> simp [clobbers, dstOf, Ne.symm ne]) (by rfl)
+  refine withRest_all [.r3] ?_ (by rfl) (by rfl)
   refine wp_ldrb (a := State.addr src) (by decide) (by rw [ptr, BitVec.add_zero]) read fun u loaded => ?_
   ffrun [loaded.gpr, value, loaded.mem]
   exact byteZero32 _
@@ -51,21 +47,13 @@ theorem scanRead_ok (s : State) {base src : BitVec 32} {len : Nat} {bs : List By
 theorem scanCount_ok (s : State) {n : Nat} (positive : 0 < n) (fits : n < 2 ^ 32)
     (count : s.gpr .r6 = BitVec.ofNat 32 n) :
     WP isa (.block [.cmp .r6 (.imm 1)]) s fun t => (t.z = decide (n = 1) ∧ t.mem = s.mem) ∧ Rest [] s t := by
-  refine withRest [] ?_ (by
-    intro r _ i hi
-    simp only [instrs, List.mem_singleton] at hi
-    subst i
-    rfl) (by rfl)
+  refine withRest_all [] ?_ (by rfl) (by rfl)
   ffrun [count]
   exact countOne32 positive fits
 
 theorem scanStop_ok (s : State) : WP isa VG.Impl.Ffdh.Arm.Domain.GenerateKey.stop s fun t =>
     (t.z = true ∧ t.mem = s.mem) ∧ Rest [.r11] s t := by
-  refine withRest [.r11] ?_ (by
-    intro r hr i hi
-    simp only [instrs, VG.Impl.Ffdh.Arm.Domain.GenerateKey.stop, VG.Impl.Ffdh.Arm.PublicScan.stop, List.mem_cons, List.not_mem_nil, or_false] at hi
-    have ne : r ≠ .r11 := by simpa only [List.mem_singleton] using hr
-    rcases hi with rfl | rfl <;> simp [clobbers, dstOf, Ne.symm ne]) (by rfl)
+  refine withRest_all [.r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.stop VG.Impl.Ffdh.Arm.PublicScan.stop
   ffrun []
 
@@ -74,13 +62,7 @@ theorem scanAdvance_ok (s : State) {n : Nat} (positive : 0 < n)
     WP isa VG.Impl.Ffdh.Arm.Domain.GenerateKey.advance s fun t =>
       (t.gpr .r4 = s.gpr .r4 + 1 ∧ t.gpr .r6 = BitVec.ofNat 32 (n - 1) ∧ t.z = false ∧ t.mem = s.mem) ∧
       Rest [.r4, .r6, .r11] s t := by
-  refine withRest [.r4, .r6, .r11] ?_ (by
-    intro r hr i hi
-    have checked : (instrs VG.Impl.Ffdh.Arm.Domain.GenerateKey.advance).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r4, .r6, .r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.advance VG.Impl.Ffdh.Arm.PublicScan.advance
   ffrun [count]
   exact Offset.ofNat_sub_ofNat (by omega : 1 ≤ n)

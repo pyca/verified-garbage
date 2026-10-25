@@ -64,8 +64,8 @@ theorem lay (len B : Nat) (hB : len * B = 128) (hBp : 0 < B) (hk : B + 1 ≤ 256
     Piece Pre Pub (fun s₀ s => LB s₀ montNegZetaTable (P s₀) (kf len 0) s)
       (fun s₀ s => LB s₀ montNegZetaTable (layerN bflyInv (P s₀) len (zf zv kf len) B) (kf len B) s)
       (layerCode ibflyBody zDown len) :=
-  layer_piece bf montNegZetaTable zv kf P tab false len B hB hBp (fun c _ => by simp only [kf]; simp; omega)
-    (fun c hc => by simp only [kf]; omega) (fun _ c hc => by simp only [kf]; omega) t₁ t₂ t₃ t₄
+  layer_piece bf montNegZetaTable zv kf P tab false len B hB hBp (fun c _ => by simp only [kf]; simp; omega_arith)
+    (fun c hc => by simp only [kf]; omega_arith) (fun _ c hc => by simp only [kf]; omega_arith) t₁ t₂ t₃ t₄
 
 /-- The input polynomial. -/
 abbrev F (s₀ : State) : Poly := polyAt s₀.mem (fA s₀)
@@ -175,11 +175,11 @@ theorem scale_step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 256) {s : 
   · dsimp only
     rw [coeffAt_writeW _ _ (show i < n from hi) hk', m₂]
     by_cases e : k = i
-    · subst e; rw [ite_eq_left rfl, ite_eq_left (by omega), hv]
+    · subst e; rw [ite_eq_left rfl, ite_eq_left (by omega_arith), hv]
     · rw [ite_eq_right e, h.f i hi]
       by_cases hik : i < k
-      · rw [ite_eq_left hik, ite_eq_left (by omega)]
-      · rw [ite_eq_right hik, ite_eq_right (by omega)]
+      · rw [ite_eq_left hik, ite_eq_left (by omega_arith)]
+      · rw [ite_eq_right hik, ite_eq_right (by omega_arith)]
   · simp only [eval, ecx₂, h.ecx]
     exact cnt_ne hk (by decide)
 
@@ -228,7 +228,7 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) (SI · 256)
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (SI s₀ 256) s₀ s')
     Impl.MlDsa.X86.Arith.nttInv :=
-  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_arith⟩)
     (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
     (body_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
@@ -255,7 +255,7 @@ theorem verified : Verified X86.target Impl.MlDsa.X86.Arith.nttInv (nttInvContra
         | (rw [show BitVec.setWidth 64 (arg st 0) = BitVec.ofNat 64 0 by decide]
            refine reduced_below (fun a ha => ?_) 0 (by decide)
            simp only [satMem]
-           rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)])
+           rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_arith)])
         | decide +kernel
 
 end VG.Proof.MlDsa.X86.Arith.NttInvP

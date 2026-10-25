@@ -187,19 +187,19 @@ theorem derive_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E�
         by simp [gpr_write]⟩
   refine rel_seq (rel_env E₁ E₂ [] (by simp) der0_check) (w0 E₁) (w0 E₂) fun τ₁ τ₂ D₁ D₂ => ?_
   refine rel_loop (fun m t₁ t₂ => ∃ i, m = (p.R / 2 - 1) - i ∧ i < p.R / 2 - 1 ∧ DC p i t₁ ∧ DC p i t₂)
-    (fun m t₁ t₂ ⟨i, hm, hi, I₁, I₂⟩ => ?_) ((p.R / 2 - 1) - 0) ⟨0, rfl, by omega, D₁, D₂⟩
+    (fun m t₁ t₂ ⟨i, hm, hi, I₁, I₂⟩ => ?_) ((p.R / 2 - 1) - 0) ⟨0, rfl, by omega_arith, D₁, D₂⟩
   refine rel_seqQ (rel_env I₁.env I₂.env [.x27] (by simp [I₁.x27, I₂.x27]) derA_check) (derA_wp L I₁)
     (derA_wp L I₂) fun u₁ u₂ A₁ A₂ => ?_
   refine rel_seqQ (rel_ctr v.ctr A₁.1 A₂.1 (A₁.2.env.sp_eq A₂.2.env)) (derC_wp v A₁) (derC_wp v A₂)
     fun a b J₁ J₂ => ?_
   refine rel_wpQ (rel_env J₁.env J₂.env [.x27] (by simp [J₁.x27, J₂.x27]) derP_check) (derP_wp L hi J₁)
     (derP_wp L hi J₂) fun a' b' ⟨K₁, x10₁⟩ ⟨K₂, x10₂⟩ => ?_
-  have ev₁ := eval_nonzero x10₁ (by omega)
-  have ev₂ := eval_nonzero x10₂ (by omega)
+  have ev₁ := eval_nonzero x10₁ (by omega_arith)
+  have ev₂ := eval_nonzero x10₂ (by omega_arith)
   refine ⟨by rw [ev₁, ev₂], fun hc => ?_⟩
   rw [ev₁] at hc
-  have he : i + 1 ≠ p.R / 2 - 1 := by simp at hc; omega
-  exact ⟨(p.R / 2 - 1) - (i + 1), by omega, i + 1, rfl, by omega, K₁, K₂⟩
+  have he : i + 1 ≠ p.R / 2 - 1 := by simp at hc; omega_arith
+  exact ⟨(p.R / 2 - 1) - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, K₁, K₂⟩
 
 theorem expA_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs [])) (.block expandArgs) h).isSome = true :=
   ⟨_, by taint_decide⟩
@@ -272,18 +272,18 @@ theorem chunks_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} {Q 
     RelCT isa (Eq2 τ₁ τ₂) (.loop (chunk v.callees) (.nonzero .x .x9)) TT := by
   refine rel_loop (fun k t₁ t₂ => ∃ d, k = m / 16 - d ∧ d < m / 16 ∧ CInv p σ₁ Q m d t₁ ∧ CInv p σ₂ Q m d t₂)
     (fun k t₁ t₂ ⟨d, hk, hd, J₁, J₂⟩ => ?_) (m / 16 - d) ⟨d, rfl, hd, I₁, I₂⟩
-  refine rel_wpQ (chunk_rel v L J₁.abs.env J₂.abs.env (by omega) (by omega) (J₁.src hQ₁ hd) (J₂.src hQ₂ hd)
+  refine rel_wpQ (chunk_rel v L J₁.abs.env J₂.abs.env (by omega_arith) (by omega_arith) (J₁.src hQ₁ hd) (J₂.src hQ₂ hd)
       J₁.x27 J₂.x27 J₁.x28 J₂.x28)
-    (chunk_ok v L J₁.abs.env (by omega) (by omega) (J₁.src hQ₁ hd) J₁.x27 J₁.x28)
-    (chunk_ok v L J₂.abs.env (by omega) (by omega) (J₂.src hQ₂ hd) J₂.x27 J₂.x28) fun a b C₁ C₂ => ?_
+    (chunk_ok v L J₁.abs.env (by omega_arith) (by omega_arith) (J₁.src hQ₁ hd) J₁.x27 J₁.x28)
+    (chunk_ok v L J₂.abs.env (by omega_arith) (by omega_arith) (J₂.src hQ₂ hd) J₂.x27 J₂.x28) fun a b C₁ C₂ => ?_
   obtain ⟨K₁, x9₁⟩ := J₁.step L hm hQ₁ hd C₁
   obtain ⟨K₂, x9₂⟩ := J₂.step L hm hQ₂ hd C₂
-  have ev₁ := eval_nonzero x9₁ (by omega)
-  have ev₂ := eval_nonzero x9₂ (by omega)
+  have ev₁ := eval_nonzero x9₁ (by omega_arith)
+  have ev₂ := eval_nonzero x9₂ (by omega_arith)
   refine ⟨by rw [ev₁, ev₂], fun hc => ?_⟩
   rw [ev₁] at hc
-  have he : d + min (m / 16 - d) 64 ≠ m / 16 := by simp at hc; omega
-  exact ⟨m / 16 - (d + min (m / 16 - d) 64), by omega, d + min (m / 16 - d) 64, rfl, by omega, K₁, K₂⟩
+  have he : d + min (m / 16 - d) 64 ≠ m / 16 := by simp at hc; omega_arith
+  exact ⟨m / 16 - (d + min (m / 16 - d) 64), by omega_arith, d + min (m / 16 - d) 64, rfl, by omega_arith, K₁, K₂⟩
 
 theorem absHead_check :
     ∃ h, (taint.check (Taint.ofRegs (pubRegs [.x27, .x28])) (.block [.lsr .x .x9 .x28 4]) h).isSome = true :=
@@ -323,24 +323,24 @@ theorem absorb_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E�
   have hQ₁' := hQ₁.of_eq rd₁ wr₁
   have hQ₂' := hQ₂.of_eq rd₂ wr₂
   -- The whole blocks.
-  refine rel_seq (rel_ite (eval_zero x9₁ (by omega)) (eval_zero x9₂ (by omega))
+  refine rel_seq (rel_ite (eval_zero x9₁ (by omega_arith)) (eval_zero x9₂ (by omega_arith))
       (fun _ => RelCT.block_nil fun _ _ _ => trivial) (fun hf => ?_))
     (absMid_ok v L F₁ hm hQ₁' u27₁ u28₁ x9₁) (absMid_ok v L F₂ hm hQ₂' u27₂ u28₂ x9₂)
     fun w₁ w₂ ⟨A₁, x27₁, x28₁⟩ ⟨A₂, x27₂, x28₂⟩ => ?_
   · have h0 : m / 16 ≠ 0 := by simpa using hf
-    exact chunks_rel v L hm (by omega) (hQ₁'.take (by omega)) (hQ₂'.take (by omega)) (d := 0) (by omega)
+    exact chunks_rel v L hm (by omega_arith) (hQ₁'.take (by omega_arith)) (hQ₂'.take (by omega_arith)) (d := 0) (by omega_arith)
       (CInv.zero F₁ u27₁ u28₁) (CInv.zero F₂ u27₂ u28₂)
   -- The last bytes.
-  refine rel_ite (eval_zero x28₁ (by omega)) (eval_zero x28₂ (by omega))
+  refine rel_ite (eval_zero x28₁ (by omega_arith)) (eval_zero x28₂ (by omega_arith))
     (fun _ => RelCT.block_nil fun _ _ _ => trivial) (fun hf => ?_)
   have h0 : m % 16 ≠ 0 := by simpa using hf
   have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
-    hd.sub_left (Offset.sub_base Q (by omega))
-  have hs₁ := (hQ₁'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega)).of_eq A₁.rd A₁.wr
-  have hs₂ := (hQ₂'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega)).of_eq A₂.rd A₂.wr
+    hd.sub_left (Offset.sub_base Q (by omega_arith))
+  have hs₁ := (hQ₁'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith)).of_eq A₁.rd A₁.wr
+  have hs₂ := (hQ₂'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith)).of_eq A₂.rd A₂.wr
   refine rel_seq (rel_env A₁.env A₂.env [.x27, .x28] (by simp [x27₁, x27₂, x28₁, x28₂]) absTailPre_check)
-    (absTailPre_ok L A₁.env (by omega) (by omega) hs₁.rd dT x27₁ x28₁)
-    (absTailPre_ok L A₂.env (by omega) (by omega) hs₂.rd dT x27₂ x28₂) fun z₁ z₂ T₁ T₂ => ?_
+    (absTailPre_ok L A₁.env (by omega_arith) (by omega_arith) hs₁.rd dT x27₁ x28₁)
+    (absTailPre_ok L A₂.env (by omega_arith) (by omega_arith) hs₂.rd dT x27₂ x28₂) fun z₁ z₂ T₁ T₂ => ?_
   exact chunkB_rel v L T₁.env T₂.env T₁.x27 T₂.x27 T₁.x28 T₂.x28
 
 theorem lensBlock_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs [])) (.block lensBlock) h).isSome = true :=

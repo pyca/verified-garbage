@@ -41,10 +41,10 @@ theorem getD_encode (M PS : List Byte) (i : Nat) :
       else if i = PS.length + 2 then 0 else M.getD (i - PS.length - 3) 0 := by
   simp only [Spec.RsaPkcs1Enc.encode, getD_app, List.length_append, List.length_cons, List.length_nil]
   split_ifs <;> first
-    | omega
+    | omega_arith
     | exact getD_zero _
     | (subst_vars; rfl)
-    | (congr 1; omega)
+    | (congr 1; omega_arith)
 
 /-- `EM` in memory, from its bytes. -/
 theorem em_eq {m : Mem} {base : Addr} {M PS : List Byte} {k : Nat} (hk : k = PS.length + M.length + 3)
@@ -52,7 +52,7 @@ theorem em_eq {m : Mem} {base : Addr} {M PS : List Byte} {k : Nat} (hk : k = PS.
     (bp : ∀ i < PS.length, m (off base (2 + i)) = PS.getD i 0) (bs : m (off base (2 + PS.length)) = 0)
     (bm : ∀ j < M.length, m (off base (3 + PS.length + j)) = M.getD j 0) :
     Spec.Rsa.bytesAt m base k = Spec.RsaPkcs1Enc.encode M PS := by
-  have hl : (Spec.RsaPkcs1Enc.encode M PS).length = k := by simp [Spec.RsaPkcs1Enc.encode, hk]; omega
+  have hl : (Spec.RsaPkcs1Enc.encode M PS).length = k := by simp [Spec.RsaPkcs1Enc.encode, hk]; omega_arith
   rw [← map_getD_range (Spec.RsaPkcs1Enc.encode M PS), hl, Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
@@ -62,13 +62,13 @@ theorem em_eq {m : Mem} {base : Addr} {M PS : List Byte} {k : Nat} (hk : k = PS.
   split
   · subst_vars; exact b1
   split
-  · rw [show i = 2 + (i - 2) by omega]
-    rw [show 2 + (i - 2) - 2 = i - 2 by omega]
-    exact bp _ (by omega)
+  · rw [show i = 2 + (i - 2) by omega_arith]
+    rw [show 2 + (i - 2) - 2 = i - 2 by omega_arith]
+    exact bp _ (by omega_arith)
   split
   · subst_vars; rw [Nat.add_comm]; exact bs
-  · rw [show i = 3 + PS.length + (i - PS.length - 3) by omega, show 3 + PS.length + (i - PS.length - 3) - PS.length - 3 = i - PS.length - 3 by omega]
-    exact bm _ (by omega)
+  · rw [show i = 3 + PS.length + (i - PS.length - 3) by omega_arith, show 3 + PS.length + (i - PS.length - 3) - PS.length - 3 = i - PS.length - 3 by omega_arith]
+    exact bm _ (by omega_arith)
 
 /-! ## The separator -/
 
@@ -90,10 +90,10 @@ theorem sep_run {s t : State} (hp : EPre s) (hsp : t.gpr .rsp = fb s) (hrd : t.r
   have hP := hp.psLen
   have hk2 := hp.k2
   have hs : Scr t (fb s) frameBytes := Scr.of_mem (by rw [hwr]; exact List.mem_cons_self ..)
-    (by have := hF.1; omega)
+    (by have := hF.1; omega_arith)
   have hcx' : t.gpr .rcx = BitVec.ofNat 64 (stackArg s 3).toNat := by rw [hcx]; simp
   have hst : InRegions t.wr (off (fb s) (oEM + 2 + (stackArg s 3).toNat)) 1 :=
-    hs.st8 (by unfold frameBytes oEM; omega)
+    hs.st8 (by unfold frameBytes oEM; omega_arith)
   refine WP.mono (WP.keep [.rax, .rdi, .rsi, .rcx, .r10, .r11] (c := .block sep) (Q := fun t' =>
       t'.mem = (t.mem.writeW (off (fb s) (oEM + 2 + (stackArg s 3).toNat)) (0 : Byte)).writeW (off (fb s) oZ)
         (t.gpr .rdx) ∧
@@ -128,10 +128,10 @@ theorem msgLoop_ok {s t₀ : State} (hp : EPre s) {o : Nat} (ho' : oEM + 3 ≤ o
   have hF := fb_toNat hp
   have hk2 := hp.k2
   have hs : Scr t₀ (fb s) frameBytes := Scr.of_mem (by rw [hwr]; exact List.mem_cons_self ..)
-    (by have := hF.1; omega)
+    (by have := hF.1; omega_arith)
   have hcx' : t₀.gpr .rcx = BitVec.ofNat 64 (stackArg s 1).toNat := by rw [hcx]; simp
   refine wp_upto (a := 0) (N := (stackArg s 1).toNat) hm0 (MsgInv s t₀ o) ?_ (fun _ h => h)
-    ⟨Keep.refl _ _, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), h10⟩
+    ⟨Keep.refl _ _, Outside.refl _ _ _ _, fun _ h => absurd h (by omega_arith), h10⟩
   intro j _ hj u hI
   have hdi' : u.gpr .rdi = off (fb s) o := (hI.keep.gpr (by decide)).trans hdi
   have hsi' : u.gpr .rsi = stackArg s 0 := (hI.keep.gpr (by decide)).trans hsi
@@ -139,30 +139,30 @@ theorem msgLoop_ok {s t₀ : State} (hp : EPre s) {o : Nat} (ho' : oEM + 3 ≤ o
   have hin : InRegions (u.rd ++ u.wr) (off (stackArg s 0) j) 1 := by
     rw [hI.keep.2.1, hrd]
     exact hp.hrd.left _ _ ⟨⟨stackArg s 0, (stackArg s 1).toNat⟩, by simp,
-      Offset.contains_base _ (by omega) (by have := hp.wM; omega)⟩
+      Offset.contains_base _ (by omega_arith) (by have := hp.wM; omega_arith)⟩
   have hst : InRegions u.wr (off (fb s) (o + j)) 1 :=
-    (hs.congr (hI.keep.2.2)).st8 (by unfold frameBytes oEM at *; omega)
+    (hs.congr (hI.keep.2.2)).st8 (by unfold frameBytes oEM at *; omega_arith)
   have hb : u.mem (off (stackArg s 0) j) = s.mem (stackArg s 0 + BitVec.ofNat 64 j) := by
     have hd : (stkR s).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat⟩ := hp.dKm
     rw [hI.out _ (.inr ?_)]
-    · exact byte_outside ho hd (by have := hp.wM; omega) hj
+    · exact byte_outside ho hd (by have := hp.wM; omega_arith) hj
     · have := outside_frame s (x := off (stackArg s 0) j) fun hc =>
-        hd _ hc (Offset.contains_base _ (by omega) (by have := hp.wM; omega))
-      unfold frameBytes oEM at *; omega
+        hd _ hc (Offset.contains_base _ (by omega_arith) (by have := hp.wM; omega_arith))
+      unfold frameBytes oEM at *; omega_arith
   refine WP.mono (WP.keep [.rax, .r10] (Q := fun u' =>
       u'.mem = u.mem.writeW (off (fb s) (o + j)) (s.mem (stackArg s 0 + BitVec.ofNat 64 j)) ∧
       u'.gpr .r10 = BitVec.ofNat 64 (j + 1) ∧ u'.zf = some (decide (j + 1 = (stackArg s 1).toNat))) (by
     xrun [msgLoop, ea_bx (j := j) (p := stackArg s 0), ea_bx (j := j) (p := off (fb s) o), hsi', hdi',
       hin, hst, hb, hI.r10, hcx'', ofNat_add_one, trunc_zext, off_off, Nat.zero_add,
-      ofNat_sub_beq (show j + 1 < 2 ^ 64 by omega) (show (stackArg s 1).toNat < 2 ^ 64 by omega)]
+      ofNat_sub_beq (show j + 1 < 2 ^ 64 by omega_arith) (show (stackArg s 1).toNat < 2 ^ 64 by omega_arith)]
     done) rfl) fun u' ⟨⟨hm, h10', hz⟩, k'⟩ => ⟨hz, (hI.keep.trans k').mono (by decide), ?_, ?_, h10'⟩
   · rw [hm]
-    exact Outside.wb (Outside.mono hI.out (by omega) (by omega)) _ (by omega) (by omega)
-      (by unfold frameBytes oEM at *; omega)
+    exact Outside.wb (Outside.mono hI.out (by omega_arith) (by omega_arith)) _ (by omega_arith) (by omega_arith)
+      (by unfold frameBytes oEM at *; omega_arith)
   · intro i hi
     rw [hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [byte_wb _ _ _ (by omega) (by unfold frameBytes oEM at *; omega) (by unfold frameBytes oEM at *; omega)]
+    · rw [byte_wb _ _ _ (by omega_arith) (by unfold frameBytes oEM at *; omega_arith) (by unfold frameBytes oEM at *; omega_arith)]
       exact hI.msg i hi
     · exact byte_wb_self _ _ _ _
 

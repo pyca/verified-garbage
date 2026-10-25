@@ -78,7 +78,7 @@ abbrev FinishStart (P : RP) (E : State → Prop) (F : FinishInputs P) : State �
 /-- Decode any bounded saved root and preserve its success mask. -/
 theorem finYWith_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) {E : State → Prop} (F : FinishInputs P) :
     VP (FinishStart P E F) finY (Fy (F := F) P E) := by
-  have hn0 : 0 < P.n := by omega
+  have hn0 : 0 < P.n := by omega_arith
   simp only [finY, seqs]
   refine VP.seq (St.pokMask (by decide)) ?_
   refine VP.seq (St.pcopy xmOne_taint (o := mXm) (a := aOne) (by decide) (by decide) (by decide) (by decide)
@@ -91,11 +91,11 @@ theorem finYWith_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) {E : State → Prop} (F : Fin
     have e2 : upd (finishA P F σ) mXm (finishA P F σ aOne) (mBase + iXm) = 1 := by
       simp [finishA, AM, upd, mXm, mY, mBase, iXm, aOne, aNg, aO, mR2]
     rw [e1, e2]
-    exact ⟨Nat.mod_lt _ hn0, by omega, F.bounded σ hn0,
+    exact ⟨Nat.mod_lt _ hn0, by omega_arith, F.bounded σ hn0,
       by rw [Nat.mul_one, Nat.mod_mod]⟩
   · intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    refine ⟨by simp only [Lq, liveM, List.mem_cons, List.not_mem_nil, or_false]; omega, ?_⟩
+    refine ⟨by simp only [Lq, liveM, List.mem_cons, List.not_mem_nil, or_false]; omega_arith, ?_⟩
     rcases hx with rfl | rfl | rfl | rfl <;>
       simp [AY, finishA, AM, upd, mXm, mY, mBase, iY, aOne, aNg, aO, mR2, aZ, aN, yF]
   · intro x hx; simp at hx

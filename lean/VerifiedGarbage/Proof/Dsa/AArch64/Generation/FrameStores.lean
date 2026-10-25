@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 import VerifiedGarbage.Proof.Framework.AArch64.StackStore
 import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Save a list of argument registers into the persistent frame -/
 

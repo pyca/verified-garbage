@@ -57,14 +57,14 @@ theorem AbsPost.trans {c : Cx} (L : Lay c) {xs ys : List Spec.GcmSiv.Elem} {t t�
 /-- The last bytes copied over a zeroed block. -/
 theorem pad_bytes (m : Mem) (c : Addr) (xs : List Byte) (hx : xs.length < 16) :
     bytesAt (writeBytes (Proof.Cmac.zero2 m c) c xs) c 16 = xs ++ Spec.GcmSiv.zeros (16 - xs.length) := by
-  rw [Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by omega) (by decide), Proof.Cmac.zero2_bytes]
+  rw [Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by omega_arith) (by decide), Proof.Cmac.zero2_bytes]
   simp only [Spec.Cmac.zeros, Spec.GcmSiv.zeros, List.drop_replicate]
 
 /-- The block at `W + 240` as a chunk's source. -/
 theorem srcB {c : Cx} (L : Lay c) {s : State} (P : Perm c s) : Src c s (c.W + BitVec.ofNat 64 240) 16 where
   rd := P.wCR (by decide)
   lt := by decide
-  wrap := by rw [L.wrapW (by decide)]; have := L.ww; omega
+  wrap := by rw [L.wrapW (by decide)]; have := L.ww; omega_arith
   y := L.w_w (.inr (by decide)) (by decide) (by decide)
   rev := L.w_w (.inl (by decide)) (by decide) (by decide)
 
@@ -106,7 +106,7 @@ theorem absTailPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} 
   have hm₆ : t₆.mem = Proof.Cmac.zero2 t.mem (c.W + BitVec.ofNat 64 240) := by
     rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₂.mem, u₁.gpr, u₁.mem]; rfl
   have dB : (⟨P, r⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 240, r⟩ :=
-    (hd.sub_right (Lay.wSub (show 240 + 16 ≤ 3824 by decide))).sub_right (Region.sub_prefix (by omega))
+    (hd.sub_right (Lay.wSub (show 240 + 16 ≤ 3824 by decide))).sub_right (Region.sub_prefix (by omega_arith))
   have lp : LoopPre t₆ P (c.W + BitVec.ofNat 64 240) r :=
     { r3 := by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.gpr,
           u₁.other _ (by decide), h23]
@@ -115,9 +115,9 @@ theorem absTailPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} 
       r5 := by rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.gpr,
           u₁.other _ (by decide), h24]
       pos := hr1
-      lt := by omega
+      lt := by omega_arith
       rd := by rw [pk₆.rd, pk₆.wr]; exact hc
-      wr := VG.Proof.Gather.PPC64LE.covers_prefix (E₆.perm.wC (show 240 + 16 ≤ 3824 by decide)) (by omega)
+      wr := VG.Proof.Gather.PPC64LE.covers_prefix (E₆.perm.wC (show 240 + 16 ≤ 3824 by decide)) (by omega_arith)
       disj := dB }
   refine WP.seq (WP.mono (copyLoop_ok t₆ lp) fun t₇ ⟨hm₇, O⟩ => ?_)
   have pk₇ : PK t₆ t₇ := PK.ofLoop O
@@ -127,17 +127,17 @@ theorem absTailPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} 
     exact Proof.Cmac.bytesAt_frame (Proof.Cmac.frame_store2 _ _ _)
       (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact hd.sub_right (Lay.wSub (by decide)))
-      (by omega)
+      (by omega_arith)
   have hb₇ : bytesAt t₇.mem (c.W + BitVec.ofNat 64 240) 16 = bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r) := by
     have hl := Proof.AesCcm.length_bytesAt t.mem P r
-    rw [hm₇, hd₆, hm₆, pad_bytes _ _ _ (by omega), hl]
+    rw [hm₇, hd₆, hm₆, pad_bytes _ _ _ (by omega_arith), hl]
   have f₇ : Frame [⟨c.W + BitVec.ofNat 64 240, 16⟩] t.mem t₇.mem := by
     rw [hm₇, hm₆]
     exact (Proof.Cmac.frame_store2 _ _ _).trans
       ((VG.WriteBytes.writeBytes_frame _ _ _ (by
         rw [Proof.AesCcm.length_bytesAt]; exact Region.contains_self _ _)).sub fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq
-        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩)
   refine wp_addi (by decide) (by decide) fun t₈ u₈ => wp_li (by decide) fun t₉ u₉ => WP.block_nil
     ⟨pk₆.trans (pk₇.trans ((PK.ofUpd u₈).trans (PK.ofUpd u₉))), ?_, u₉.gpr, by rw [u₉.mem, u₈.mem]; exact f₇,
       by rw [u₉.mem, u₈.mem]; exact hb₇⟩
@@ -155,7 +155,7 @@ theorem absTail_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} {r 
   rw [T.bytes] at C
   have dHY : ∀ q ∈ [(⟨c.W + BitVec.ofNat 64 240, 16⟩ : Region)], ∀ d, d + 16 ≤ 240 →
       (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint q := fun q hq d hd => by
-    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl hd) (by omega) (by decide)
+    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl hd) (by omega_arith) (by decide)
   refine ⟨T.pk.trans C.pk,
     (T.frame.mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self).trans
       (C.frame.mono fun q hq => List.mem_cons_of_mem _ hq), ?_⟩
@@ -171,7 +171,7 @@ theorem elems_pad16_bytesAt (m : Mem) (Q : Addr) (n : Nat) :
         [Spec.GcmSiv.ofBytes (bytesAt m (Q + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) ++
           Spec.GcmSiv.zeros (16 - n % 16))] := by
   have hs := Proof.Cmac.bytesAt_add m Q (16 * (n / 16)) (n % 16)
-  rw [show 16 * (n / 16) + n % 16 = n by omega] at hs
+  rw [show 16 * (n / 16) + n % 16 = n by omega_arith] at hs
   have hl := Proof.AesCcm.length_bytesAt m Q (16 * (n / 16))
   rw [GcmSiv.elems_pad16, Proof.AesCcm.length_bytesAt, hs, List.take_left' hl, List.drop_left' hl,
     GcmSiv.elems_bytesAt]
@@ -183,13 +183,13 @@ theorem absMid_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m :
     WP isa (.ite (.zero .d .r11) (.block []) (.loop chunk (.nonzero .d .r11))) t fun t₂ =>
       Absorbed c (absR c.W) (elemsAt t.mem Q (m / 16)) t t₂ ∧
         t₂.gpr .r23 = Q + BitVec.ofNat 64 (16 * (m / 16)) ∧ t₂.gpr .r24 = BitVec.ofNat 64 (m % 16) := by
-  refine WP.ite (decide (m / 16 = 0)) (VG.Proof.Gather.PPC64LE.eval_zero h11 (by omega)) (fun ht => ?_)
+  refine WP.ite (decide (m / 16 = 0)) (VG.Proof.Gather.PPC64LE.eval_zero h11 (by omega_arith)) (fun ht => ?_)
     (fun hf => ?_)
   · have h0 : m / 16 = 0 := by simpa using ht
     refine WP.block_nil ⟨⟨PK.refl _, Frame.refl _ _, by simp [h0, elemsAt, Proof.Gcm.ghashFrom_nil]⟩,
-      by rw [h23, h0, Nat.mul_zero, BitVec.add_zero], by rw [h24]; congr 1; omega⟩
+      by rw [h23, h0, Nat.mul_zero, BitVec.add_zero], by rw [h24]; congr 1; omega_arith⟩
   · have h0 : m / 16 ≠ 0 := by simpa using hf
-    exact chunks_wp L E hm (by omega) (hQ.take (by omega)) h23 h24
+    exact chunks_wp L E hm (by omega_arith) (hQ.take (by omega_arith)) h23 h24
 
 theorem absorb_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat} (hm : m < 2 ^ 64)
     (hQ : Src c t Q m) (hd : (⟨Q, m⟩ : Region).Disjoint ⟨c.W, 3824⟩) (h23 : t.gpr .r23 = Q)
@@ -204,19 +204,19 @@ theorem absorb_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m :
   rw [u₁.mem] at P₂
   have P₂' := P₂.of_eq pk₁ u₁.mem
   rw [elems_pad16_bytesAt]
-  refine WP.ite (decide (m % 16 = 0)) (VG.Proof.Gather.PPC64LE.eval_zero r24₂ (by omega)) (fun ht => ?_)
+  refine WP.ite (decide (m % 16 = 0)) (VG.Proof.Gather.PPC64LE.eval_zero r24₂ (by omega_arith)) (fun ht => ?_)
     (fun hf => ?_)
   · have h0 : m % 16 = 0 := by simpa using ht
     simp only [h0, ite_true, List.append_nil]
     exact WP.block_nil (P₂'.sub (absR_sub c.W))
   · have h0 : m % 16 ≠ 0 := by simpa using hf
     simp only [h0, ite_false]
-    have hs := hQ.slice (a := 16 * (m / 16)) (k := m % 16) (by omega) (by omega)
+    have hs := hQ.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith) (by omega_arith)
     have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨c.W, 3824⟩ :=
-      hd.sub_left (Offset.sub_base Q (by omega))
-    refine WP.mono (absTail_wp L (E.of_pk P₂'.pk) (by omega) (by omega)
+      hd.sub_left (Offset.sub_base Q (by omega_arith))
+    refine WP.mono (absTail_wp L (E.of_pk P₂'.pk) (by omega_arith) (by omega_arith)
       (by rw [P₂'.pk.rd, P₂'.pk.wr]; exact hs.rd) dT r23₂ r24₂) fun t₃ T => ?_
-    have e := Proof.Cmac.bytesAt_frame P₂'.frame (fun r hr => dT.sub_right ?_) (by omega)
+    have e := Proof.Cmac.bytesAt_frame P₂'.frame (fun r hr => dT.sub_right ?_) (by omega_arith)
     · rw [e] at T
       exact AbsPost.trans L (P₂'.sub (absR_sub c.W)) T
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -259,7 +259,7 @@ theorem lens_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
   rw [hb] at C
   have dHY : ∀ d, d + 16 ≤ 240 → ∀ q ∈ [(⟨c.W + BitVec.ofNat 64 240, 16⟩ : Region)],
       (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint q := fun d hd q hq => by
-    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl hd) (by omega) (by decide)
+    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl hd) (by omega_arith) (by decide)
   refine ⟨pk₆.trans C.pk,
     (f₆.mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self).trans
       (C.frame.mono fun q hq => List.mem_cons_of_mem _ hq), ?_⟩
@@ -371,7 +371,7 @@ theorem polyval_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t)
   refine WP.seq (WP.mono (absorb_wp L (E₃.of_pk pk₅) L.n_lt ((srcD L E₃.perm).of_eq pk₅.rd pk₅.wr) L.d_w
     (by rw [u₅.other _ (by decide), u₄.gpr, E₃.r20]) (by rw [u₅.gpr, u₄.other _ (by decide), E₃.r21]))
     fun t₆ P₆ => ?_)
-  rw [m₅, Proof.Cmac.bytesAt_frame P₃'.frame (absorbR_buf L.d_w) (by have := L.n_lt; omega)] at P₆
+  rw [m₅, Proof.Cmac.bytesAt_frame P₃'.frame (absorbR_buf L.d_w) (by have := L.n_lt; omega_arith)] at P₆
   have P₃₆ := AbsPost.trans L P₃' (P₆.of_eq pk₅ m₅)
   -- The lengths.
   refine WP.seq (WP.mono (lens_wp L (E.of_pk P₃₆.pk)) fun t₇ P₇ => ?_)
@@ -383,7 +383,7 @@ theorem polyval_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t)
     exact (tagInMem_frame _ _ _).mono fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self
   · have hp : ∀ xs ys : List Byte, (Spec.GcmSiv.pad16 xs ++ Spec.GcmSiv.pad16 ys).length % 16 = 0 := fun xs ys => by
-      rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega
+      rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega_arith
     have nN : bytesAt t₇.mem c.N 12 = bytesAt t.mem c.N 12 :=
       Proof.Cmac.bytesAt_frame P₃₇.frame (absorbR_buf L.n_w) (by decide)
     rw [hm₈, tagInMem_bytes, nN, P₃₇.out, hG, hY, tagInputG, Proof.AesCcm.length_bytesAt,

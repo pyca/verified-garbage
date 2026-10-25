@@ -35,7 +35,7 @@ theorem nafMask (x : BitVec 32) : x &&& 31=BitVec.ofNat 32 (x.toNat%32) := by
   simp only [BitVec.toNat_and,BitVec.toNat_ofNat]
   change x.toNat &&& (2^5-1) = (x.toNat%32)%2^32
   rw [Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_arith
 
 theorem nafParity (x : BitVec 32) : x &&& 1=0 ↔ x.toNat%2=0 := by
   rw [←BitVec.toNat_inj]
@@ -49,8 +49,8 @@ theorem nafRaw_eq {x : BitVec 32} {k j : Nat}
         BitVec.ofNat 32 r.val-32) =
       BitVec.ofInt 32 (if r.val%2=0 then 0 else if r.val<16 then (r.val:Int) else (r.val:Int)-32) := by decide
   simp only [nafRaw,nafOdd,nafParity,nafMask,BitVec.toNat_ofNat,hx,Naf5.digit_mod32]
-  have hp : x.toNat%2=Naf5.residual k j%32%2 := by omega
-  rw [hp,Nat.mod_eq_of_lt (show Naf5.residual k j%32<2^32 from by omega)]
+  have hp : x.toNat%2=Naf5.residual k j%32%2 := by omega_arith
+  rw [hp,Nat.mod_eq_of_lt (show Naf5.residual k j%32<2^32 from by omega_arith)]
   exact H ⟨Naf5.residual k j%32,Nat.mod_lt _ (by decide)⟩
 
 theorem nafOdd_ok (s : State) :
@@ -120,7 +120,7 @@ theorem nafCopyPiece_ok {s : State} {base : Addr} {size a o : Nat} {src dst : Me
     ea,hr,ite_true,Option.map_some,RegUpd.wr_setXmm,ea_congr (RegUpd.gpr_setXmm ..),eo,hw,
     RegUpd.xmm_setXmm_self,RegUpd.mem_setXmm,Option.some.injEq,exists_eq_left']
   exact ⟨Mem.readW_writeW_self (n:=16) _ _ _ (by decide),
-    writeW128_out s.mem base (s.mem.readW (off base a) 128) (by have:=hs.nowrap; omega),rfl,rfl,trivial⟩
+    writeW128_out s.mem base (s.mem.readW (off base a) 128) (by have:=hs.nowrap; omega_arith),rfl,rfl,trivial⟩
 
 theorem nafCopyPieces_ok {base : Addr} {size a o : Nat} {src dst : Nat → MemOp} :
     ∀ n (s : State), Scr s base size → a+16*n≤size → o+16*n≤size →
@@ -134,42 +134,42 @@ theorem nafCopyPieces_ok {base : Addr} {size a o : Nat} {src dst : Nat → MemOp
       Outside.refl _ _ _ _,rfl,rfl,rfl⟩
   | n+1,s,hs,ha,ho,hd,ea,eo => by
     rw [Naf.copyPieces,List.range_succ,List.flatMap_append,List.flatMap_singleton,WP.block_append_iff]
-    refine WP.mono (nafCopyPieces_ok n s hs (by omega) (by omega) (by omega)
-      (fun i hi => ea i (by omega)) (fun i hi => eo i (by omega))) fun u ⟨eu,ou,gu,ru,wu⟩ => ?_
+    refine WP.mono (nafCopyPieces_ok n s hs (by omega_arith) (by omega_arith) (by omega_arith)
+      (fun i hi => ea i (by omega_arith)) (fun i hi => eo i (by omega_arith))) fun u ⟨eu,ou,gu,ru,wu⟩ => ?_
     have su : Scr u base size := hs.of_eq (congrFun gu .edi) (congrFun gu .esp) wu
-    refine WP.mono (nafCopyPiece_ok su (a:=a+16*n) (o:=o+16*n) (by omega) (by omega)
-      (by rw [ea_congr gu]; exact ea n (by omega))
-      (by rw [ea_congr gu]; exact eo n (by omega)) (selAcc n)) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
-    refine ⟨fun i hi => ?_,(ou.mono (Nat.le_refl _) (by omega)).trans (ot.mono (by omega) (by omega)),
+    refine WP.mono (nafCopyPiece_ok su (a:=a+16*n) (o:=o+16*n) (by omega_arith) (by omega_arith)
+      (by rw [ea_congr gu]; exact ea n (by omega_arith))
+      (by rw [ea_congr gu]; exact eo n (by omega_arith)) (selAcc n)) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
+    refine ⟨fun i hi => ?_,(ou.mono (Nat.le_refl _) (by omega_arith)).trans (ot.mono (by omega_arith) (by omega_arith)),
       gt.trans gu,rt.trans ru,wt.trans wu⟩
     by_cases he : i=n
     · subst i
-      rw [et,ou.read128 (by omega) (by have:=hs.nowrap; omega)]
-    · rw [ot.read128 (by omega) (by have:=hs.nowrap; omega),eu i (by omega)]
+      rw [et,ou.read128 (by omega_arith) (by have:=hs.nowrap; omega_arith)]
+    · rw [ot.read128 (by omega_arith) (by have:=hs.nowrap; omega_arith),eu i (by omega_arith)]
 
 theorem nafCopy_words {mem mem' : Mem} {base : Addr} {n a o : Nat}
     (h : ∀ c<n,mem'.readW (off base (o+16*c)) 128=mem.readW (off base (a+16*c)) 128) :
     ∀ i<2*n,word mem' base (o+8*i)=word mem base (a+8*i) := by
   intro i hi
   obtain ⟨c,q,hq,rfl⟩ : ∃ c q,q<2 ∧ i=2*c+q :=
-    ⟨i/2,i%2,Nat.mod_lt _ (by decide),by omega⟩
-  have e := readW_extract mem' (off base (o+16*c)) (w:=128) (k:=8*q) (n:=8) (by omega)
+    ⟨i/2,i%2,Nat.mod_lt _ (by decide),by omega_arith⟩
+  have e := readW_extract mem' (off base (o+16*c)) (w:=128) (k:=8*q) (n:=8) (by omega_arith)
   rw [show 8*8=64 from rfl,off,Offset.add_add,
-    show o+16*c+8*q=o+8*(2*c+q) from by omega] at e
-  rw [VG.Proof.Mont.word,off,←e,h c (by omega)]
-  have e2 := readW_extract mem (off base (a+16*c)) (w:=128) (k:=8*q) (n:=8) (by omega)
+    show o+16*c+8*q=o+8*(2*c+q) from by omega_arith] at e
+  rw [VG.Proof.Mont.word,off,←e,h c (by omega_arith)]
+  have e2 := readW_extract mem (off base (a+16*c)) (w:=128) (k:=8*q) (n:=8) (by omega_arith)
   rw [show 8*8=64 from rfl,off,Offset.add_add] at e2
-  rw [e2,VG.Proof.Mont.word,off,show a+16*c+8*q=a+8*(2*c+q) from by omega]
+  rw [e2,VG.Proof.Mont.word,off,show a+16*c+8*q=a+8*(2*c+q) from by omega_arith]
 
 private theorem words_eq_of_words {m m' : Mem} {base : Addr} : ∀ n a o,
     (∀ i<n,word m' base (o+8*i)=word m base (a+8*i)) →
     wordsVal m' base o n=wordsVal m base a n
   | 0,_,_,_ => rfl
   | n+1,a,o,h => by
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_arith)
     simp only [Nat.mul_zero,Nat.add_zero] at h0
     rw [wordsVal,wordsVal,h0,words_eq_of_words n (a+8) (o+8) (fun i hi => ?_)]
-    have he := h (i+1) (by omega)
+    have he := h (i+1) (by omega_arith)
     simpa only [Nat.mul_add,Nat.mul_one,Nat.add_assoc,Nat.add_comm 8] using he
 
 theorem nafCopy_field {mem mem' : Mem} {base : Addr} {n a o j : Nat}
@@ -177,14 +177,14 @@ theorem nafCopy_field {mem mem' : Mem} {base : Addr} {n a o j : Nat}
     (hj : 2*j+2≤n) : wordsVal mem' base (o+32*j) 4=wordsVal mem base (a+32*j) 4 := by
   apply words_eq_of_words
   intro i hi
-  rw [show o+32*j+8*i=o+8*(4*j+i) from by omega,
-    show a+32*j+8*i=a+8*(4*j+i) from by omega]
-  exact nafCopy_words h _ (by omega)
+  rw [show o+32*j+8*i=o+8*(4*j+i) from by omega_arith,
+    show a+32*j+8*i=a+8*(4*j+i) from by omega_arith]
+  exact nafCopy_words h _ (by omega_arith)
 
 theorem nafCopy_coord {mem mem' : Mem} {base : Addr} {a o j : Nat}
     (h : ∀ c<6,mem'.readW (off base (o+16*c)) 128=mem.readW (off base (a+16*c)) 128)
     (hj : j<3) : wordsVal mem' base (o+32*j) 4=wordsVal mem base (a+32*j) 4 :=
-  nafCopy_field h (by omega)
+  nafCopy_field h (by omega_arith)
 
 end VG.Proof.Weierstrass.X86
 
@@ -236,7 +236,7 @@ theorem nafIndex_ok (s : State) {a : Nat} (ha : 1≤a) (ha' : a≤15)
     rw [BitVec.ofNat_sub_ofNat_of_le a 1 (by decide) ha]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,BitVec.toNat_ofNat]
-    omega
+    omega_arith
   · simp only [List.mem_singleton] at h
     simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,RegUpd.gpr_setFlags,h,ite_false]
 
@@ -265,7 +265,7 @@ theorem Inv.of_progKeep {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Ad
   have hM := hI.mod
   refine ⟨hk.scr hI.scr,⟨hM.n0,hM.mo,hM.tmp,hM.sep,?_,hM.inv,hM.red⟩,?_,?_,fun _ _ => rfl⟩
   · rw [hk.wordsVal hI.scr.nowrap hM.mo (fun w hw => (hL.mo w (hW w hw)).symm)
-      hM.sep hAcc.mo (by have := hAcc.toCallCfg.own_le; have := hAcc.mo; omega)]
+      hM.sep hAcc.mo (by have := hAcc.toCallCfg.own_le; have := hAcc.mo; omega_arith)]
     exact hM.val
   · intro x hx
     rcases List.mem_append.mp hx with hx | hx
@@ -278,7 +278,7 @@ theorem Inv.of_progKeep {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Ad
       have sl := hI.sl x hv
       rw [hk.wordsVal hI.scr.nowrap (hL.le x sl)
         (fun y hy => hL.apart x y sl (hW y hy) (fun he => hw (he ▸ hy)))
-        (hL.tmp x sl) (hAcc.sl x sl) (by have := hAcc.toCallCfg.own_le; have := hAcc.sl x sl; omega)]
+        (hL.tmp x sl) (hAcc.sl x sl) (by have := hAcc.toCallCfg.own_le; have := hAcc.sl x sl; omega_arith)]
       exact hI.lt x hv
 
 
@@ -290,7 +290,7 @@ theorem ProgKeep.slot {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr
     (hx : Sl x) (hn : x∉W) : VG.Proof.Mont.wordsVal t.mem base x M.n=VG.Proof.Mont.wordsVal s.mem base x M.n := by
   exact hk.wordsVal hs.nowrap (hL.le x hx)
     (fun y hy => hL.apart x y hx (hW y hy) (fun he => hn (he ▸ hy)))
-    (hL.tmp x hx) (hAcc.sl x hx) (by have := hAcc.toCallCfg.own_le; have := hAcc.sl x hx; omega)
+    (hL.tmp x hx) (hAcc.sl x hx) (by have := hAcc.toCallCfg.own_le; have := hAcc.sl x hx; omega_arith)
 
 /-- An initialized environment can always be represented by the current
 memory function, avoiding artificial relationships between temporary environments. -/
@@ -378,11 +378,11 @@ theorem nafWord_toNat (k j : Nat) :
   cases hn : Naf5.negative k j
   · simp only [Bool.false_eq_true,ite_false]
     change ((Naf5.magnitude k j:Int)%4294967296).toNat=_
-    omega
+    omega_arith
   · have hp := Naf5.negative_magnitude_pos k j hn
     simp only [ite_true]
     change ((-(Naf5.magnitude k j:Int))%4294967296).toNat=_
-    omega
+    omega_arith
 
 theorem nafSign_toNat (k j : Nat) :
     (0#32-(BitVec.ofInt 32 (Naf5.digit k j)>>>31)).toNat =
@@ -391,9 +391,9 @@ theorem nafSign_toNat (k j : Nat) :
   have hp := Naf5.negative_magnitude_pos k j
   simp only [BitVec.toNat_sub,BitVec.toNat_zero,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,nafWord_toNat]
   cases hn : Naf5.negative k j
-  · simp only [Bool.false_eq_true,ite_false]; omega
+  · simp only [Bool.false_eq_true,ite_false]; omega_arith
   · have hp := hp hn
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_arith
 
 theorem nafDigitVal9 (k j : Nat) :
     nafDigitVal (BitVec.ofInt 32 (Naf5.digit k j))
@@ -401,7 +401,7 @@ theorem nafDigitVal9 (k j : Nat) :
       if Naf5.negative k j then 2^288-Naf5.magnitude k j else Naf5.magnitude k j := by
   simp only [nafDigitVal,nafWord_toNat,nafSign_toNat]
   have := Naf5.magnitude_le k j
-  cases hn : Naf5.negative k j <;> simp only [Bool.false_eq_true,ite_false,ite_true] <;> omega
+  cases hn : Naf5.negative k j <;> simp only [Bool.false_eq_true,ite_false,ite_true] <;> omega_arith
 
 theorem nafSubtract_next {v v' : Nat} {c : Bool} (k j : Nat)
     (hv : v=Naf5.residual k j) (hb : v≤2^256) (hlt : v'<2^288)
@@ -413,7 +413,7 @@ theorem nafSubtract_next {v v' : Nat} {c : Bool} (k j : Nat)
   have hm := Naf5.magnitude_le k j
   cases hn : Naf5.negative k j <;>
     simp only [hn,Bool.false_eq_true,ite_false,ite_true] at he hr <;>
-    cases c <;> simp only [Bool.toNat_false,Bool.toNat_true] at he <;> omega
+    cases c <;> simp only [Bool.toNat_false,Bool.toNat_true] at he <;> omega_arith
 
 theorem nafSign_ok (s : State) :
     WP isa (.block Naf.sign) s fun t =>
@@ -453,7 +453,7 @@ theorem nafSubtract_ok {s : State} {base : Addr} {size work k j : Nat}
         (0#32-(BitVec.ofInt 32 (Naf5.digit k j)>>>31)) 8 =
         val32 s.mem base work 9 + 2^288*c.toNat := by
       simpa only [Nat.reduceAdd,Nat.reduceMul,radix] using vt
-    exact nafSubtract_next (c := c) k j hv (by omega) hlt ve
+    exact nafSubtract_next (c := c) k j hv (by omega_arith) hlt ve
   · rw [ka.2.1] at ot
     exact ot
 
@@ -479,7 +479,7 @@ theorem nafAdjust_ok {s : State} {base : Addr} {size work k j : Nat}
       val32 t.mem base work 9=2*Naf5.residual k (j+1) ∧
       Keeps [.eax,.ecx,.edx] s t ∧ Outside base work 36 s.mem t.mem := by
   rw [Naf.adjust]
-  refine WP.seq (wp_movS (readSrc_sc hs (by omega)) fun a ua _ => ?_)
+  refine WP.seq (wp_movS (readSrc_sc hs (by omega_arith)) fun a ua _ => ?_)
   refine WP.mono (nafParity_ok a) fun b ⟨vb,zb,kb⟩ => ?_
   have sa := hs.of_keeps ua.keeps (by decide)
   have sb := sa.of_keeps kb.keeps (by decide)
@@ -489,17 +489,17 @@ theorem nafAdjust_ok {s : State} {base : Addr} {size work k j : Nat}
     have he : val32 s.mem base work 9 =
         w32 s.mem base work+2^32*val32 s.mem base (work+4) 8 := rfl
     change w32 s.mem base work%32=_
-    omega
+    omega_arith
   have hd := nafRaw_eq low
   have K : Keeps [.eax,.ecx,.edx] s b :=
     (ua.keeps.mono (by decide)).trans (kb.keeps.mono (by decide))
   refine WP.ite (decide (a.gpr .eax &&& 1=0)) zb (fun h => ?_) (fun h => ?_)
   · have h0 := of_decide_eq_true h
     have hp := (nafParity _).mp h0
-    have he : Naf5.residual k j%2=0 := by omega
+    have he : Naf5.residual k j%2=0 := by omega_arith
     have hn : Naf5.residual k j=2*Naf5.residual k (j+1) := by
       simp only [Naf5.residual_succ,Naf5.next,he,ite_true]
-      omega
+      omega_arith
     apply WP.block_nil
     refine ⟨?_,?_,K,?_⟩
     · rw [vb,h0]

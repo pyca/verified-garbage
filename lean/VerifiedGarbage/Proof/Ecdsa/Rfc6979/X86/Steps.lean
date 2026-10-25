@@ -48,9 +48,9 @@ theorem done_kvw {dst : Nat} (h : dst + P.F.H.D ≤ 128) :
   kvw_of fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inl (Region.sub_prefix (by omega))
-    · exact .inr (Region.sub_prefix (by omega))
-    · exact .inr (Offset.sub_base _ (by omega))
+    · exact .inl (Region.sub_prefix (by omega_arith))
+    · exact .inr (Region.sub_prefix (by omega_arith))
+    · exact .inr (Offset.sub_base _ (by omega_arith))
 
 /-- `V = HMAC_K(V)`. -/
 theorem hmacV_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hh : L.hHigh = P.R.hHigh) {t : State} (hc : Ctx L g m₀ t) :
@@ -63,10 +63,10 @@ theorem hmacV_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hh : L.hHigh = P.R.hHigh)
     ⟨h.ctx, h.frame.sub (done_kvw (by nums)), bytesAt_frame h.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact hL.stk_scr0 (by nums) (by omega)
-      · exact Offset.disjoint_base _ (by omega) (by nums)
+      · exact hL.stk_scr0 (by nums) (by omega_arith)
+      · exact Offset.disjoint_base _ (by omega_arith) (by nums)
       · exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums), by
-      have m := h.mac; rw [hL.frv (by omega)] at m; exact m⟩
+      have m := h.mac; rw [hL.frv (by omega_arith)] at m; exact m⟩
 
 /-- `K = HMAC_K(m)`, for the message `m` of `len` bytes at `scratch + 2256`. -/
 theorem hmacK_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hh : L.hHigh = P.R.hHigh) {t : State} (hc : Ctx L g m₀ t) {len : Nat}
@@ -77,14 +77,14 @@ theorem hmacK_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hh : L.hHigh = P.R.hHigh)
   have nB := hL.nB
   refine WP.mono (hmac_ok (P := P) hL hw hh hc (dv := L.a3 + BitVec.ofNat 32 2256) (len := len) (dst := 0)
     (fun u hu => hh ▸ hw ▸ scr_ok hL hu (d := .edx) (by decide) 2256)
-    (.inr ⟨2256, rfl, by omega, by omega⟩) hlen (by nums)) fun t' h =>
+    (.inr ⟨2256, rfl, by omega_arith, by omega_arith⟩) hlen (by nums)) fun t' h =>
     ⟨h.ctx, h.frame.sub (done_kvw (by nums)), bytesAt_frame h.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact hL.stk_scr0 (by nums) (by omega)
-      · exact Offset.disjoint_base _ (by omega) (by nums)
+      · exact hL.stk_scr0 (by nums) (by omega_arith)
+      · exact Offset.disjoint_base _ (by omega_arith) (by nums)
       · exact Offset.disjoint _ (by nums) (by nums) (by nums)) (by nums), by
-      have m := h.mac; rw [hL.scrv (by omega)] at m; exact m⟩
+      have m := h.mac; rw [hL.scrv (by omega_arith)] at m; exact m⟩
 
 /-- What the message's `h` needs of the layout: unless two `V`s make a
 candidate, `h` in the frame (at its top for 64-byte scalars); if they do,
@@ -118,16 +118,16 @@ theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {
       rw [hho hf]
       simp only [RfcHash.k] at this hk hb₂ ⊢
       generalize P.hB = hb at hb₁ hb₂ ⊢
-      exact ⟨by rw [this.1]; omega, by omega, by omega⟩)
+      exact ⟨by rw [this.1]; omega_arith, by omega_arith, by omega_arith⟩)
     (fun hf hwt => by
       have hW : P.R.wide = true := by rw [hwd, hf] at hwt; exact hwt
-      have := P.sizesW hW; exact ⟨by omega, by omega, hdn hW⟩)
+      have := P.sizesW hW; exact ⟨by omega_arith, by omega_arith, hdn hW⟩)
   have hhp : (if full then Spec.Sha256.bytesAt p.mem L.d P.Q ++ hPart wd P.Q P.F.H.D (76 + ho) L p.mem else []) =
       (if full then Spec.Sha256.bytesAt p.mem L.d P.Q ++ hOf P L p.mem else []) := by
     cases full
     · rfl
     · have := hB_ge P
-      rw [hwd, hho rfl, show 76 + (P.hB - 76) = P.hB by omega]; rfl
+      rw [hwd, hho rfl, show 76 + (P.hB - 76) = P.hB by omega_arith]; rfl
   rw [hhp] at hmsg
   refine WP.seq (WP.mono hmsg fun u ⟨hcu, hfu, hbu⟩ => ?_)
   refine WP.seq (WP.mono (hmacK_ok (P := P) hL hw hh hcu (len := len)

@@ -7,6 +7,9 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 
 /-! A complete five-bit iteration of the public Jacobian loop. -/
 

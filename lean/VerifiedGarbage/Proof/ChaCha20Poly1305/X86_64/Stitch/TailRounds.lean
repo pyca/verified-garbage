@@ -85,7 +85,7 @@ theorem schedOk_pre (pre : Bool) : SchedOk (blocks pre) (firstBlock pre) (total 
   cases n _ := blocks_cases pre n
   four n _ := by
     unfold firstBlock blocks; cases pre <;> simp only [Bool.false_eq_true, ite_true, ite_false] <;>
-      split <;> (try split) <;> omega
+      split <;> (try split) <;> omega_arith
 
 /-- A double round with the blocks between its parts. -/
 theorem troundG_eq (two : Bool) (bl fb : Nat → Nat) (n : Nat) (h0 : bl n ≠ 0) :
@@ -160,12 +160,12 @@ theorem piece_tw {j : Nat} (hj : 16 * j + 16 ≤ N) {ws : Nat → W} {s : State}
     WP isa (.block (piece j)) s (TW s₁ ws (AccTo q R0 R1 X s₁ (j + 1))) := by
   unfold piece
   refine WP.block_append (WP.mono (addProd_ok hk h.poly (p := q) (by rw [h.gpr _ (by decide), hrsi]) (j := j)
-    fun e he => by rw [h.rd, h.wr]; exact hin _ _ (by omega)) fun s' ⟨a, k, x, y⟩ => ?_)
+    fun e he => by rw [h.rd, h.wr]; exact hin _ _ (by omega_arith)) fun s' ⟨a, k, x, y⟩ => ?_)
   have a' : HalfTo q R0 R1 X s₁ j s' := by
     show Half R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * (j + 1)))) s'
     rw [h.mem] at a
     rw [Nat.mul_add, Nat.mul_one, VG.Proof.Poly1305.bytesAt_add,
-      VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega)]
+      VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega_arith)]
     exact a
   exact WP.mono (carry1_ok hk a') fun s'' ⟨a₂, k₂, x₂, y₂⟩ =>
     (h.piece a' k x y).piece a₂ k₂ x₂ y₂
@@ -179,7 +179,7 @@ theorem troundG_ok {two : Bool} {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk 
     WP isa (.block (troundG two bl fb n)) s
       (TB s₁ S (fun j => innerBlock (vs j)) (AccTo q R0 R1 X s₁ (fb (n + 1)))) := by
   have hb32 : fb n + bl n ≤ tot := by
-    rw [← sc.succ n hn]; exact sc.le _ (by omega)
+    rw [← sc.succ n hn]; exact sc.le _ (by omega_arith)
   have hfb : bl n ≠ 0 → 4 ≤ fb n + bl n := sc.four n hn
   -- The parts, as steps of `TW`.
   have tw : TW s₁ (wordsOf s) (AccTo q R0 R1 X s₁ (fb n)) s :=
@@ -192,7 +192,7 @@ theorem troundG_ok {two : Bool} {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk 
       h'.poly⟩
     cases two
     · simp only [Bool.false_eq_true, ite_false] at hS; subst hS
-      obtain rfl : k = 0 := by omega
+      obtain rfl : k = 0 := by omega_arith
       simp only [drH, Bool.false_eq_true, ite_false]
       rw [dr1_words, blk_wordsOf h.hb hk hl]
     · simp only [ite_true] at hS; subst hS
@@ -214,38 +214,38 @@ theorem troundG_ok {two : Bool} {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk 
   have hfin : ∀ {s' : State}, TW s₁ (fun l => (drH two).foldl hstep (wordsOf s l))
       (AccTo q R0 R1 X s₁ (j + 3 + 1)) s' →
       TB s₁ S (fun j => innerBlock (vs j)) (AccTo q R0 R1 X s₁ (fb (n + 1))) s' := fun h' =>
-    hwords (by rw [sc.succ n hn, show fb n + bl n = j + 3 + 1 by omega]; exact h')
+    hwords (by rw [sc.succ n hn, show fb n + bl n = j + 3 + 1 by omega_arith]; exact h')
   rw [troundG_eq two bl fb n e0, ← hj]
   simp only [drH_eq, List.foldl_append] at hfin
   rcases sc.cases n hn with e4 | e3 | e0'
   rotate_left 2
   · exact absurd e0' e0
   · -- Four blocks: one after each half.
-    have ej : fb n = j := by omega
+    have ej : fb n = j := by omega_arith
     rw [ite_eq_left e4]
     refine WP.block_append (WP.mono (seg_tw (trH_ok two 0) acc_gpr tw) fun t₁ h₁ => ?_)
     rw [ej] at h₁
-    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega) h₁) fun t₂ h₂ => ?_)
+    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega_arith) h₁) fun t₂ h₂ => ?_)
     refine WP.block_append (WP.mono (seg_tw (trH_ok two 1) acc_gpr h₂) fun t₃ h₃ => ?_)
-    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega) h₃) fun t₄ h₄ => ?_)
+    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega_arith) h₃) fun t₄ h₄ => ?_)
     refine WP.block_append (WP.mono (seg_tw (trH_ok two 2) acc_gpr h₄) fun t₅ h₅ => ?_)
     refine WP.block_append (WP.mono (seg_tw (trH_ok two 3) acc_gpr h₅) fun t₆ h₆ => ?_)
-    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega) h₆) fun t₇ h₇ => ?_)
+    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega_arith) h₆) fun t₇ h₇ => ?_)
     refine WP.block_append (WP.mono (seg_tw (trH_ok two 4) acc_gpr h₇) fun t₈ h₈ => ?_)
-    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega) h₈) fun t₉ h₉ => ?_)
+    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega_arith) h₈) fun t₉ h₉ => ?_)
     exact WP.mono (seg_tw (trH_ok two 5) acc_gpr h₉) fun _ h' => hfin h'
   · -- Three blocks: none after the first half.
-    have ej : fb n = j + 1 := by omega
-    rw [ite_eq_right (by omega), List.nil_append]
+    have ej : fb n = j + 1 := by omega_arith
+    rw [ite_eq_right (by omega_arith), List.nil_append]
     refine WP.block_append (WP.mono (seg_tw (trH_ok two 0) acc_gpr tw) fun t₁ h₁ => ?_)
     rw [ej] at h₁
     refine WP.block_append (WP.mono (seg_tw (trH_ok two 1) acc_gpr h₁) fun t₃ h₃ => ?_)
-    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega) h₃) fun t₄ h₄ => ?_)
+    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega_arith) h₃) fun t₄ h₄ => ?_)
     refine WP.block_append (WP.mono (seg_tw (trH_ok two 2) acc_gpr h₄) fun t₅ h₅ => ?_)
     refine WP.block_append (WP.mono (seg_tw (trH_ok two 3) acc_gpr h₅) fun t₆ h₆ => ?_)
-    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega) h₆) fun t₇ h₇ => ?_)
+    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega_arith) h₆) fun t₇ h₇ => ?_)
     refine WP.block_append (WP.mono (seg_tw (trH_ok two 4) acc_gpr h₇) fun t₈ h₈ => ?_)
-    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega) h₈) fun t₉ h₉ => ?_)
+    refine WP.block_append (WP.mono (piece_tw hk hrsi hin (by omega_arith) h₈) fun t₉ h₉ => ?_)
     exact WP.mono (seg_tw (trH_ok two 5) acc_gpr h₉) fun _ h' => hfin h'
 
 /-- The ten double rounds, absorbing the `tot` blocks of the schedule. -/
@@ -255,8 +255,8 @@ theorem troundsG_ok {two : Bool} {bl fb : Nat → Nat} {tot : Nat} (sc : SchedOk
     ∀ n, n ≤ 10 → WP isa (troundsG two bl fb n) s₁
       (TB s₁ S (fun j => Nat.repeat innerBlock n (vs j)) (AccTo q R0 R1 X s₁ (fb n)))
   | 0, _ => WP.block_nil (by rw [sc.first0]; exact h)
-  | n + 1, hn => WP.seq (WP.mono (troundsG_ok sc hN hS h n (by omega)) fun _ h' =>
-      troundG_ok hk hrsi hin sc hN hS (by omega) h')
+  | n + 1, hn => WP.seq (WP.mono (troundsG_ok sc hN hS h n (by omega_arith)) fun _ h' =>
+      troundG_ok hk hrsi hin sc hN hS (by omega_arith) h')
 
 /-- The ten double rounds of a chunk's schedule, absorbing its `total pre` blocks. -/
 theorem trounds_ok {two pre : Bool} (hN : 16 * total pre ≤ N) {S : Nat} (hS : S = if two then 2 else 1)

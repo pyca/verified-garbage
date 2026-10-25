@@ -35,8 +35,8 @@ theorem isZero_shift {z : Nat} (hz : z < 2 ^ 32) :
     ((BitVec.ofNat 64 z - BitVec.ofNat 64 1) >>> 63).toNat = if z = 0 then 1 else 0 := by
   by_cases h : z = 0
   · subst h; decide
-  · rw [ofNat_sub_one (by omega) (by omega), BitVec.toNat_ushiftRight, toNat_imm (by omega),
-      Nat.shiftRight_eq_div_pow, Nat.div_eq_of_lt (by omega), ite_eq_right h]
+  · rw [ofNat_sub_one (by omega_arith) (by omega_arith), BitVec.toNat_ushiftRight, toNat_imm (by omega_arith),
+      Nat.shiftRight_eq_div_pow, Nat.div_eq_of_lt (by omega_arith), ite_eq_right h]
 
 /-- An element is 0 exactly when the words of its full reduction are. -/
 theorem fs_zero {m : Mem} {b : Addr} {o : Nat} {w : Nat → Nat} (hw : val32 w 14 = V m b o % P) :
@@ -90,19 +90,19 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
     have hu' : FS s.mem b 392 = u := hu
     simp only [upd, runOps, FOp.out, FOp.val, X2, DTMP, DXX, DV, DU, Nat.reduceEqDiff, ↓reduceIte, hx', hv', hu']
   -- Its full reduction, checked to be 0.
-  refine WP.append (freeze_ok hc2.ctx hc2.r3 (fun k hk => by rw [Offset.add_add]; exact hc2.inW (by omega))
-    ((Offset.disjoint_base b (d := OUT) (n := 56) (k := 4096) (by omega) (by omega)).symm))
+  refine WP.append (freeze_ok hc2.ctx hc2.r3 (fun k hk => by rw [Offset.add_add]; exact hc2.inW (by omega_arith))
+    ((Offset.disjoint_base b (d := OUT) (n := 56) (k := 4096) (by omega_arith) (by omega_arith)).symm))
     fun s3 ⟨_, hr3, hf3, hw3⟩ => ?_
   have hc3 : VCtx b s3 := hc2.of_rest hr3 (by decide) (by decide)
   have hdo : Region.Disjoint ⟨b, 4096⟩ ⟨b + BitVec.ofNat 64 OUT, 56⟩ :=
-    (Offset.disjoint_base b (d := OUT) (n := 56) (k := 4096) (by omega) (by omega)).symm
+    (Offset.disjoint_base b (d := OUT) (n := 56) (k := 4096) (by omega_arith) (by omega_arith)).symm
   have hS3 := slots_freeze hf3 hdo hS2 (by decide)
   refine WP.append (outOr_ok hc3) fun s4 ⟨hr4, hm4, hv4⟩ => ?_
   have hc4 : VCtx b s4 := hc3.of_rest hr4 (by decide) (by decide)
   refine WP.append (orBad_ok hc4 (r := .r10) (by decide)) fun s5 ⟨hr5, hf5, hb5⟩ => ?_
   have hc5 : VCtx b s5 := hc4.of_rest hr5 (by decide) (by decide)
   have hS5 := SlotsOk.lo (m := s3.mem) (m' := s5.mem) (by rw [← hm4]; exact hf5) (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact disj_hi (by omega) (by omega)) hS3 (by decide)
+    rw [List.mem_singleton.mp hr]; exact disj_hi (by omega_arith) (by omega_arith)) hS3 (by decide)
   -- `x` into `X2`, and its full reduction.
   refine wp_li (by decide) fun s6 u6 => ?_
   have hc6 : VCtx b s6 := hc5.of_rest (u6.rest (ws := [.r11]) (by decide)) (by decide) (by decide)
@@ -110,16 +110,16 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
     (by decide) (by decide) hc6.ctx (sw := 0) (by decide) (by rw [u6.gpr]; rfl)) fun s7 h7 => ?_
   have hc7 : VCtx b s7 := hc6.of_rest h7.rest (by decide) (by decide)
   have e7 : V s7.mem b X2 = V s6.mem b DXX := val32_congr fun j hj => h7.lo j hj
-  refine WP.append (freeze_ok hc7.ctx hc7.r3 (fun k hk => by rw [Offset.add_add]; exact hc7.inW (by omega))
+  refine WP.append (freeze_ok hc7.ctx hc7.r3 (fun k hk => by rw [Offset.add_add]; exact hc7.inW (by omega_arith))
     hdo) fun s8 ⟨hb8, hr8, hf8, hw8⟩ => ?_
   have hc8 : VCtx b s8 := hc7.of_rest hr8 (by decide) (by decide)
   refine WP.append (outOr_ok hc8) fun s9 ⟨hr9, hm9, hv9⟩ => ?_
   have hc9 : VCtx b s9 := hc8.of_rest hr9 (by decide) (by decide)
   -- Zero with the sign 1.
   refine wp_subi (by decide) (by decide) fun s10 u10 => wp_lsr (by decide) fun s11 u11 => ?_
-  refine wp_lbz (a := b + BitVec.ofNat 64 SIGN) (by decide) (by omega)
+  refine wp_lbz (a := b + BitVec.ofNat 64 SIGN) (by decide) (by omega_arith)
     (by rw [u11.other _ (by decide), u10.other _ (by decide), hc9.ctx.r6]) (by
-      rw [u11.rd, u11.wr, u10.rd, u10.wr]; exact hc9.inR (by omega)) fun s12 u12 => wp_and fun s13 u13 => ?_
+      rw [u11.rd, u11.wr, u10.rd, u10.wr]; exact hc9.inR (by omega_arith)) fun s12 u12 => wp_and fun s13 u13 => ?_
   have hr13 : Rest [.r7, .r8, .r10] s9 s13 := (u10.rest (by decide)).trans ((u11.rest (by decide)).trans
     ((u12.rest (by decide)).trans (u13.rest (by decide))))
   have hm13 : s13.mem = s9.mem := by rw [u13.mem, u12.mem, u11.mem, u10.mem]
@@ -137,19 +137,19 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
   let L2 : List Region := [FA b, ⟨b + BitVec.ofNat 64 OUT, 56⟩, ⟨b + BitVec.ofNat 64 BAD, 8⟩]
   have sFA : ∀ {m m' : Mem} {o n : Nat}, o + n ≤ 1064 → Frame [⟨b + BitVec.ofNat 64 o, n⟩] m m' → Frame L2 m m' :=
     fun ho hf => hf.sub fun r hr => ⟨_, List.mem_cons_self .., by
-      rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)⟩
+      rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)⟩
   have sYO : ∀ {m m' : Mem}, Frame [⟨b + BitVec.ofNat 64 Y, 56⟩, ⟨b + BitVec.ofNat 64 OUT, 56⟩] m m' →
       Frame L2 m m' := fun hf => hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by omega)⟩
+    · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by omega_arith)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.sub_prefix (Nat.le_refl _)⟩
   have sB : ∀ {m m' : Mem}, Frame [⟨b + BitVec.ofNat 64 BAD, 8⟩] m m' → Frame L2 m m' :=
     fun hf => hf.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [L2]
   have fs3 : Frame L2 s.mem s3.mem :=
     (h1.stp.frame.mono (by simp [L2])).trans ((hf2.mono (by simp [L2])).trans (sYO hf3))
   have f58 : Frame L2 s5.mem s8.mem := by
-    rw [← u6.mem]; exact (sFA (o := X2) (n := 4 * 14) (by omega) h7.frame).trans (sYO hf8)
+    rw [← u6.mem]; exact (sFA (o := X2) (n := 4 * 14) (by omega_arith) h7.frame).trans (sYO hf8)
   have f8t : Frame L2 s8.mem t.mem := by rw [← hm9, ← hm13]; exact sB hft
   have fst : Frame L2 s.mem t.mem := fs3.trans ((by rw [← hm4]; exact sB hf5 : Frame L2 s3.mem s5.mem).trans
     (f58.trans f8t))
@@ -172,7 +172,7 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
       · rw [← hm9, ← hm13]; exact hft.mono (by simp)
     have e := limb_frame (o := q) f fun r hr k hk => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      rcases hr with rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
     rw [FS, V, val32_congr e]; rfl
   have hxv : V s7.mem b X2 % P = x.val := by
     rw [e7, ← VG.Proof.X448.toFe_val, ← FS, show FS s6.mem b DXX = FS s5.mem b DXX by rw [u6.mem], k5 _ (by simp),
@@ -183,9 +183,9 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
     exact fst _ fun r hr => by
       simp only [L2, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact fun h => Offset.disjoint_base b (d := SIGN) (n := 1) (k := ACC + 112) (by omega)
-          (by omega) _ (Region.contains_self _ _) h
-      all_goals exact fun h => Offset.disjoint b (d := SIGN) (n := 1) (by omega) (by omega) (by omega) _ (Region.contains_self _ _) h
+      · exact fun h => Offset.disjoint_base b (d := SIGN) (n := 1) (k := ACC + 112) (by omega_arith)
+          (by omega_arith) _ (Region.contains_self _ _) h
+      all_goals exact fun h => Offset.disjoint b (d := SIGN) (n := 1) (by omega_arith) (by omega_arith) (by omega_arith) _ (Region.contains_self _ _) h
   · -- `x` at `OUT`.
     rw [← hxv, ← hb8]
     simp only [VG.Spec.X448.bytesAt]
@@ -193,7 +193,7 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
     have hi := List.mem_range.mp hi
     rw [Offset.add_add, hft _ fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact fun h => Offset.disjoint b (d := OUT + i) (n := 1) (e := BAD) (k := 8) (by omega) (by omega) (by omega) _
+      exact fun h => Offset.disjoint b (d := OUT + i) (n := 1) (e := BAD) (k := 8) (by omega_arith) (by omega_arith) (by omega_arith) _
         (Region.contains_self _ _) h, hm13, hm9]
   · -- The checks.
     have rB : ∀ {m m' : Mem} {rs : List Region}, Frame rs m m' →
@@ -202,16 +202,16 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
     have b3 : bad s3.mem b = bad s.mem b := by
       rw [rB hf3 (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega) (by omega) (by omega)),
-        rB hf2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega) (by omega)),
-        rB h1.stp.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega) (by omega))]
+          rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)),
+        rB hf2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)),
+        rB h1.stp.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega_arith) (by omega_arith))]
     have b13 : bad s13.mem b = bad s5.mem b := by
       have e1 : bad s13.mem b = bad s8.mem b := by rw [bad, bad, hm13, hm9]
       have e2 : bad s8.mem b = bad s7.mem b := rB hf8 (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega) (by omega) (by omega))
+        rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
       have e3 : bad s7.mem b = bad s6.mem b :=
-        rB h7.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega) (by omega) (by omega))
+        rB h7.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
       have e4 : bad s6.mem b = bad s5.mem b := by rw [bad, bad, u6.mem]
       rw [e1, e2, e3, e4]
     have fs8 : Frame L2 s.mem s8.mem :=
@@ -222,16 +222,16 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
         refine fs8 _ fun r hr => ?_
         simp only [L2, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
-        · exact fun h => Offset.disjoint_base b (d := SIGN) (n := 1) (k := ACC + 112) (by omega)
-            (by omega) _ (Region.contains_self _ _) h
-        all_goals exact fun h => Offset.disjoint b (d := SIGN) (n := 1) (by omega) (by omega) (by omega) _ (Region.contains_self _ _) h
-      rw [this, hs, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        · exact fun h => Offset.disjoint_base b (d := SIGN) (n := 1) (k := ACC + 112) (by omega_arith)
+            (by omega_arith) _ (Region.contains_self _ _) h
+        all_goals exact fun h => Offset.disjoint b (d := SIGN) (n := 1) (by omega_arith) (by omega_arith) (by omega_arith) _ (Region.contains_self _ _) h
+      rw [this, hs, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
     have hz := orw_lt (f := fun k => wd s8.mem (b + BitVec.ofNat 64 OUT) (4 * k)) (n := 14) fun k _ => wd_lt _ _ _
     have hz12 : (s12.gpr .r10).toNat =
         if orw (fun k => wd s8.mem (b + BitVec.ofNat 64 OUT) (4 * k)) 14 = 0 then 1 else 0 := by
       rw [u12.other _ (by decide), u11.gpr, u10.gpr, ← isZero_shift hz]
       congr 3
-      exact BitVec.eq_of_toNat_eq (by rw [hv9, toNat_imm (by omega)])
+      exact BitVec.eq_of_toNat_eq (by rw [hv9, toNat_imm (by omega_arith)])
     have hx7 : FS s7.mem b X2 = x := by
       rw [FS, e7, ← FS, show FS s6.mem b DXX = FS s5.mem b DXX by rw [u6.mem], k5 _ (by simp), hx]
     rw [hbt, b13, hb5, hm4, b3, hv4, u13.gpr, BitVec.toNat_and, hz12, hsg12, Nat.or_eq_zero_iff, Nat.or_eq_zero_iff,

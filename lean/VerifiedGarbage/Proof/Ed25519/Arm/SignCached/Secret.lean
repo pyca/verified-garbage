@@ -57,7 +57,7 @@ theorem message_input (hL : L.Ok) : Input L L.msg L.len :=
 theorem point_input (hL : L.Ok) : Input L L.out 32 :=
   ⟨.inr (output_covered (baseWithin L)), hL.oc.sub_left (baseWithin L).sub,
     (hL.ko.sub_right (baseWithin L).sub).symm.sub_right (Region.sub_prefix (by decide)),
-    by have := hL.no; change L.out.toNat + 32 ≤ 2 ^ 32; omega⟩
+    by have := hL.no; change L.out.toNat + 32 ≤ 2 ^ 32; omega_arith⟩
 
 theorem prefix_input (hL : L.Ok) : Input L (L.E + 56) 32 := by
   have ae : State.addr (L.E + 56) = State.addr L.E + 56 := frame_addr hL (d := 56) (by decide)
@@ -81,7 +81,7 @@ theorem shaWithin (L : Lay) : Whole.Within (Whole.SHA L.scr) L.SCR :=
 theorem workWithin (L : Lay) : Whole.Within (Whole.WORK L.scr) L.SCR :=
   ⟨192, rfl, by change 192 + 272 ≤ 8192; decide⟩
 theorem argsWithin (L : Lay) {n : Nat} (hn : n ≤ 248) :
-    Whole.Within (Whole.CALLARGS L.E n) L.FR := ⟨0, by simp, by change 0 + n ≤ 248; omega⟩
+    Whole.Within (Whole.CALLARGS L.E n) L.FR := ⟨0, by simp, by change 0 + n ≤ 248; omega_arith⟩
 
 theorem init_frame {m n : Mem} (hf : Frame (Whole.initWr L.scr) m n) : Frame (hashWrites L) m n := by
   apply hash_frame hf
@@ -150,14 +150,14 @@ theorem update_pre {t : State} (hL : L.Ok) (he : t.sp = L.E)
     {count p n : BitVec 32} (ha : UpdateArgs L count p n t) (hi : Input L p n) :
     Proof.Sha512.updateArm.pre (t.callEntry.withRegions (Whole.updateRd L.E p n) (Whole.hashWr L.scr)) :=
   Whole.update_pre he ha.1 ha.2.2.2.1 ha.2.2.2.2.1 ha.2.2.2.2.2 hi.scratch
-    (hL.kc.sub_left (Region.sub_prefix (by decide))) hL.nc hi.fit (by have := hL.top; omega)
+    (hL.kc.sub_left (Region.sub_prefix (by decide))) hL.nc hi.fit (by have := hL.top; omega_arith)
 
 theorem finalize_pre {t : State} (hL : L.Ok) (he : t.sp = L.E)
     {count : BitVec 32} (ha : FinalArgs L count t) :
     Proof.Sha512.finalizeArm.pre (t.callEntry.withRegions (Whole.finalizeRd L.E) (Whole.finalizeWr L.scr (L.E + 184))) := by
   refine Whole.finalize_pre he ha.1 ha.2.2.2.1 ha.2.2.2.2 ?_
     (hL.kc.sub_left (Region.sub_prefix (by decide))) ?_ hL.nc
-    (frame_fit hL (d := 184) (by decide)) (by have := hL.top; omega)
+    (frame_fit hL (d := 184) (by decide)) (by have := hL.top; omega_arith)
   · rw [final_addr hL]
     exact hL.kc.sub_left (digestWithin L).sub
   · rw [final_addr hL]
@@ -169,7 +169,7 @@ theorem count_zero_high (x : BitVec 32) : (0#32) ++ x = BitVec.ofNat 64 x.toNat 
   have hx := x.isLt
   simp only [BitVec.toNat_ofNat]
   change 0 * 2 ^ 32 + x.toNat = x.toNat % 2 ^ 64
-  omega
+  omega_arith
 
 end VG.Proof.Ed25519.Arm.SignCached
 end
@@ -223,13 +223,13 @@ theorem update_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     unfold Proof.Sha512.countArm
     rw [a3,a2,count_zero_high]
     change BitVec.ofNat 64 (count % 2^32) = _
-    rw [Nat.mod_eq_of_lt (by omega),hcount]
+    rw [Nat.mod_eq_of_lt (by omega_arith),hcount]
   have huRepr := setup_repr hL hf hr
   have heq : Spec.Ed25519.bytesAt u.mem (State.addr (value L p)) (value L n).toNat =
       Spec.Ed25519.bytesAt s.mem (State.addr (value L p)) (value L n).toNat :=
     frame_bytes hf ⟨State.addr (value L p), (value L n).toNat⟩
       (by simp only [List.mem_singleton]; intro r he; subst r; exact hi.args)
-      (by have := (value L n).isLt; change (value L n).toNat ≤ 2^64; omega)
+      (by have := (value L n).isLt; change (value L n).toNat ≤ 2^64; omega_arith)
   have hw := Whole.hash_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
   refine WP.mono (Whole.update_call hu (update_pre hL hu.sp args hi) (update_covers hi) hw
     a0 d0 d1 ce huRepr) fun t ⟨ht, hf', hrepr⟩ => ⟨ht, (setup_frame hf).trans (update_frame hf'), ?_⟩
@@ -253,7 +253,7 @@ theorem finalize_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro x (rfl | rfl | rfl)
     · simp [Whole.valid]
-    · cases b <;> simp [Whole.valid] <;> omega
+    · cases b <;> simp [Whole.valid] <;> omega_arith
     · simp [Whole.valid]
   refine WP.seq (WP.mono (args_ok hc hL ha (by simp) hv (by simp)
     (by simp [Whole.valid]) (by simp [preserved])) fun u ⟨hu,hf,hs,hstack⟩ => ?_)
@@ -272,7 +272,7 @@ theorem finalize_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     change BitVec.ofNat 64 (msg.length % 2^32) = _
     rw [Nat.mod_eq_of_lt hlen]
   refine WP.mono (Whole.finalize_call hu (finalize_pre hL hu.sp args) (finalize_covers hL)
-    (final_writes hL) a0 d0 ce (setup_repr hL hf hr) (by omega))
+    (final_writes hL) a0 d0 ce (setup_repr hL hf hr) (by omega_arith))
     fun t ⟨ht,hf',hh⟩ => ⟨ht,(setup_frame hf).trans (finalize_frame hL hf'),?_⟩
   change Spec.Ed25519.bytesAt t.mem (State.addr (L.E + 184)) 64 = _ at hh
   rw [final_addr hL] at hh
@@ -330,7 +330,7 @@ theorem update_message (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.mono (update_step hc hL ha count (.caller 3 0) (.caller 4 0) hc16
     (by simp [Whole.valid]) (by simp [Whole.valid]) inp hcount hr) fun t ⟨ht, hf, hh⟩ => ⟨ht, hf, ?_⟩
   simp only [value, Lay.value, BitVec.add_zero] at hh
-  rw [hc.input_bytes hL (r := L.MSG) (by simp [Lay.inputs]) (by have := L.len.isLt; change L.len.toNat ≤ 2^64; omega)] at hh
+  rw [hc.input_bytes hL (r := L.MSG) (by simp [Lay.inputs]) (by have := L.len.isLt; change L.len.toNat ≤ 2^64; omega_arith)] at hh
   exact hh
 
 end VG.Proof.Ed25519.Arm.SignCached
@@ -371,9 +371,9 @@ theorem hashNonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
   refine WP.mono (finalize_step hw hL ha 32 (by decide) true ?_ ?_ rw')
     fun t ⟨ht, ft, hd⟩ => ⟨ht, fu.trans (fv.trans (fw.trans ft)), hd⟩
   · rw [List.length_append, bytes_length, bytes_length]
-    have := hL.message_bound; omega
+    have := hL.message_bound; omega_arith
   · rw [List.length_append, bytes_length, bytes_length]
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_arith
 
 theorem hashChallenge_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa (hashChallenge) s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
@@ -397,9 +397,9 @@ theorem hashChallenge_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m�
   refine WP.mono (finalize_step hz hL ha 64 (by decide) true ?_ ?_ rz)
     fun t ⟨ht, ft, hd⟩ => ⟨ht, fu.trans (fv.trans (fw.trans (fz.trans ft))), hd⟩
   · rw [List.length_append, List.length_append, bytes_length, bytes_length, bytes_length]
-    have := hL.message_bound; omega
+    have := hL.message_bound; omega_arith
   · rw [List.length_append, List.length_append, bytes_length, bytes_length, bytes_length]
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_arith
 
 end VG.Proof.Ed25519.Arm.SignCached
 end
@@ -416,7 +416,7 @@ theorem single_frame_bytes {d e k : Nat} (hf : Frame [⟨State.addr L.E + BitVec
       Spec.Ed25519.bytesAt m (State.addr L.E + BitVec.ofNat 64 d) 32 := by
   apply frame_bytes hf (field L d) _ (by change 32 ≤ 2 ^ 64; decide)
   rintro r hr; rw [List.mem_singleton.mp hr]
-  exact Offset.disjoint _ hs (by omega) (by omega)
+  exact Offset.disjoint _ hs (by omega_arith) (by omega_arith)
 
 theorem reduce_field_bytes (hL : L.Ok) {d out : Nat} (hf : Frame (reduceWr L out) m n)
     (hd : d + 32 ≤ 248) (ho : out + 32 ≤ 248) (hs : d + 32 ≤ out ∨ out + 32 ≤ d) :
@@ -425,7 +425,7 @@ theorem reduce_field_bytes (hL : L.Ok) {d out : Nat} (hf : Frame (reduceWr L out
   apply frame_bytes hf (field L d) _ (by change 32 ≤ 2 ^ 64; decide)
   simp only [reduceWr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact Offset.disjoint _ hs (by omega) (by omega)
+  · exact Offset.disjoint _ hs (by omega_arith) (by omega_arith)
   · exact field_scr hL hd
 
 theorem base_field_bytes (hL : L.Ok) (hf : Frame (baseWr L) m n) {d : Nat} (hd : d + 32 ≤ 248) :
@@ -477,22 +477,22 @@ theorem copyWord_ok {s : State} {E : BitVec 32} (he : s.sp = E)
       t.mem = s.mem.writeW (State.addr E + BitVec.ofNat 64 (56 + 4 * k))
         (s.mem.readW (State.addr E + BitVec.ofNat 64 (216 + 4 * k)) 32) := by
   have ae : State.addr (E + BitVec.ofNat 32 (216 + 4 * k)) = State.addr E + BitVec.ofNat 64 (216 + 4 * k) :=
-    addr_add (by omega)
+    addr_add (by omega_arith)
   have ad : State.addr (E + BitVec.ofNat 32 (56 + 4 * k)) = State.addr E + BitVec.ofNat 64 (56 + 4 * k) :=
-    addr_add (by omega)
+    addr_add (by omega_arith)
   have source : InRegions (s.rd ++ s.wr) (State.addr E + BitVec.ofNat 64 (216 + 4 * k)) 4 :=
-    ⟨⟨State.addr E, 248⟩, List.mem_append_right _ hr, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨State.addr E, 248⟩, List.mem_append_right _ hr, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have dest : InRegions s.wr (State.addr E + BitVec.ofNat 64 (56 + 4 * k)) 4 :=
-    ⟨⟨State.addr E, 248⟩, hr, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨State.addr E, 248⟩, hr, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hl : exec (.ldrSp .r0 (216 + 4 * k)) s =
       some (s.setReg .r0 (s.mem.readW (State.addr E + BitVec.ofNat 64 (216 + 4 * k)) 32)) := by
-    simp only [exec, show 216 + 4 * k < 4096 from by omega, ite_true,
+    simp only [exec, show 216 + 4 * k < 4096 from by omega_arith, ite_true,
       State.load32, he, ae, source, Option.map_some]
   have ha {t : State} : exec (.addSp .r12 0) t = some (t.setReg .r12 t.sp) := by
     simp only [exec, show 0 < 256 from by decide, ite_true, BitVec.add_zero]
   apply WP.of_runBlock
   simp only [copyWord, runBlock_cons, runStep_some, hl, ha, RegUpd.sp_setReg]
-  rw [exec_str (by omega) (by
+  rw [exec_str (by omega_arith) (by
     simpa only [RegUpd.wr_setReg, RegUpd.gpr_setReg_self, he, ad] using dest)]
   simp only [runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
   refine ⟨⟨rfl, rfl, rfl, ?_⟩, ?_⟩
@@ -509,30 +509,30 @@ structure PrefixInv (E : BitVec 32) (s : State) (n : Nat) (t : State) : Prop whe
 theorem copyPrefix_ok {s : State} {E : BitVec 32} (he : s.sp = E)
     (hf : E.toNat + 248 ≤ 2 ^ 32) (hw : (⟨State.addr E, 248⟩ : Region) ∈ s.wr) :
     ∀ n ≤ 8, WP isa (.block ((List.range n).flatMap copyWord)) s (PrefixInv E s n)
-  | 0, _ => WP.block_nil ⟨⟨rfl, rfl, rfl, fun _ _ _ => rfl⟩, Frame.refl _ _, fun _ h => by omega⟩
+  | 0, _ => WP.block_nil ⟨⟨rfl, rfl, rfl, fun _ _ _ => rfl⟩, Frame.refl _ _, fun _ h => by omega_arith⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (copyPrefix_ok he hf hw n (by omega)) fun u hu => ?_
-    refine WP.mono (copyWord_ok (hu.step.sp.trans he) hf (hu.step.wr ▸ hw) (by omega : n < 8))
+    refine WP.mono (copyPrefix_ok he hf hw n (by omega_arith)) fun u hu => ?_
+    refine WP.mono (copyWord_ok (hu.step.sp.trans he) hf (hu.step.wr ▸ hw) (by omega_arith : n < 8))
       fun t ⟨kt, mt⟩ => ?_
     have same : u.mem.readW (State.addr E + BitVec.ofNat 64 (216 + 4 * n)) 32 =
         s.mem.readW (State.addr E + BitVec.ofNat 64 (216 + 4 * n)) 32 := by
       apply hu.frame.readW (Region.contains_self _ _) _ (by decide)
       simp only [List.mem_singleton]
       rintro r rfl
-      exact Offset.disjoint _ (by omega) (by omega) (by decide)
+      exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by decide)
     rw [same] at mt
     refine ⟨hu.step.trans kt, ?_, fun j hj => ?_⟩
     · rw [mt]
       exact hu.frame.writeW (List.mem_singleton_self _) _
-        (Offset.contains _ (by omega) (by omega) (by decide))
+        (Offset.contains _ (by omega_arith) (by omega_arith) (by decide))
     · rw [mt]
       by_cases hjn : j = n
       · subst j; exact Mem.readW_writeW_self32 _ _ _
       · rw [Mem.readW_writeW_sep (a := State.addr E + BitVec.ofNat 64 (56 + 4 * j))
           (b := State.addr E + BitVec.ofNat 64 (56 + 4 * n)) ?_ (by decide)]
-        · exact hu.words j (by omega)
-        · exact Offset.sep _ (by omega) (by omega) (by omega)
+        · exact hu.words j (by omega_arith)
+        · exact Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem prefix_ok {s : State} {E : BitVec 32} (he : s.sp = E)
     (hf : E.toNat + 248 ≤ 2 ^ 32) (hw : (⟨State.addr E, 248⟩ : Region) ∈ s.wr) :
@@ -549,14 +549,14 @@ theorem prefix_ok {s : State} {E : BitVec 32} (he : s.sp = E)
       (State.addr E + BitVec.ofNat 64 (56 + 4 * (i / 4))) + BitVec.ofNat 64 (i % 4) := by
     change State.addr E + BitVec.ofNat 64 56 + BitVec.ofNat 64 i = _
     rw [Offset.add_add, Offset.add_add]
-    exact congrArg (fun n => State.addr E + BitVec.ofNat 64 n) (by omega)
+    exact congrArg (fun n => State.addr E + BitVec.ofNat 64 n) (by omega_arith)
   have es : State.addr E + 216 + BitVec.ofNat 64 i =
       (State.addr E + BitVec.ofNat 64 (216 + 4 * (i / 4))) + BitVec.ofNat 64 (i % 4) := by
     change State.addr E + BitVec.ofNat 64 216 + BitVec.ofNat 64 i = _
     rw [Offset.add_add, Offset.add_add]
-    exact congrArg (fun n => State.addr E + BitVec.ofNat 64 n) (by omega)
+    exact congrArg (fun n => State.addr E + BitVec.ofNat 64 n) (by omega_arith)
   rw [ed, es, Mem.readW_byte t.mem _ (i := i % 4) (Nat.mod_lt _ (by decide)),
-    Mem.readW_byte s.mem _ (i := i % 4) (Nat.mod_lt _ (by decide)), ht.words (i / 4) (by omega)]
+    Mem.readW_byte s.mem _ (i := i % 4) (Nat.mod_lt _ (by decide)), ht.words (i / 4) (by omega_arith)]
 
 end VG.Proof.Ed25519.Arm.SignCached
 end
@@ -589,7 +589,7 @@ theorem saveSecret_ok (hc : Ctx L g m₀ s) (hL : L.Ok) {expanded : List Byte}
       Spec.Ed25519.bytesAt t.mem (State.addr L.E + 56) 32 = expanded.drop 32 := by
   rw [saveSecret, WP.block_append_iff]
   have fr : (⟨State.addr L.E, 248⟩ : Region) ∈ s.wr := by rw [hc.wr]; exact List.mem_cons_self
-  have fit : L.E.toNat + 248 ≤ 2 ^ 32 := by have := hL.top; omega
+  have fit : L.E.toNat + 248 ≤ 2 ^ 32 := by have := hL.top; omega_arith
   refine WP.mono (PublicKey.prune_ok hc.sp fit fr he) fun u ⟨hu, hf, hs⟩ => ?_
   have hcu := prune_ctx hc hu hf
   refine WP.mono (prefix_ok hcu.sp fit (by rw [hcu.wr]; exact List.mem_cons_self))

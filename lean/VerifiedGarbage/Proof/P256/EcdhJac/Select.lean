@@ -32,13 +32,13 @@ theorem loads_ok (n : Nat) (loads : Nat → VReg) (hinj : ∀ i<n,∀ j<n,i≠j�
   | k + 1, hk => by
     simp only [List.range_succ, List.map_append, List.map_cons, List.map_nil]
     rw [WP.block_append_iff]
-    refine WP.mono (loads_ok n loads hinj ho ho16 hr k (by omega)) fun s₁ ⟨v₁, k₁⟩ => ?_
-    refine wp_ldrq (by omega) (by rw [k₁.rd, k₁.wr, k₁.gpr _ List.not_mem_nil]; exact hr k (by omega))
+    refine WP.mono (loads_ok n loads hinj ho ho16 hr k (by omega_arith)) fun s₁ ⟨v₁, k₁⟩ => ?_
+    refine wp_ldrq (by omega_arith) (by rw [k₁.rd, k₁.wr, k₁.gpr _ List.not_mem_nil]; exact hr k (by omega_arith))
       (WP.block_nil ⟨fun i hi => ?_, (k₁.mono (fun _ h => h) fun _ h => List.mem_append_left _ h).trans
         ((VKeep.setV _ _ _).mono (fun _ h => h) fun _ h => List.mem_append_right _ h)⟩)
     rcases Nat.lt_or_ge i k with h | h
-    · rw [RegUpd.v_setV_of_ne _ _ (hinj i (by omega) k (by omega) (by omega)), v₁ i h]
-    · obtain rfl : i = k := by omega
+    · rw [RegUpd.v_setV_of_ne _ _ (hinj i (by omega_arith) k (by omega_arith) (by omega_arith)), v₁ i h]
+    · obtain rfl : i = k := by omega_arith
       rw [RegUpd.v_setV_self, k₁.mem, k₁.gpr _ List.not_mem_nil]
 
 /-- `BIT` of `k` pairs into the accumulators, under the mask. -/
@@ -54,20 +54,20 @@ theorem selects_ok (n : Nat) (acc loads : Nat → VReg) (mask : VReg)
   | k + 1, hk => by
     simp only [List.range_succ, List.map_append, List.map_cons, List.map_nil]
     rw [WP.block_append_iff]
-    refine WP.mono (selects_ok n acc loads mask hinj hal ham k (by omega)) fun s₁ ⟨v₁, k₁⟩ => ?_
+    refine WP.mono (selects_ok n acc loads mask hinj hal ham k (by omega_arith)) fun s₁ ⟨v₁, k₁⟩ => ?_
     have e1 : s₁.v (acc k) = s.v (acc k) :=
-      k₁.v _ (not_mem_map_range fun i hi => hinj i (by omega) k (by omega) (by omega))
+      k₁.v _ (not_mem_map_range fun i hi => hinj i (by omega_arith) k (by omega_arith) (by omega_arith))
     have e2 : s₁.v (loads k) = s.v (loads k) :=
-      k₁.v _ (not_mem_map_range fun i hi => hal i (by omega) k (by omega))
+      k₁.v _ (not_mem_map_range fun i hi => hal i (by omega_arith) k (by omega_arith))
     have e3 : s₁.v mask = s.v mask :=
-      k₁.v _ (not_mem_map_range fun i hi e => ham i (by omega) e)
+      k₁.v _ (not_mem_map_range fun i hi e => ham i (by omega_arith) e)
     refine wp_vop (d := acc k) (x := VSelOp.bit.eval (s.v (acc k)) (s.v (loads k)) (s.v mask))
       (by simp only [VOp.eval, e1, e2, e3]) (WP.block_nil ⟨fun i hi => ?_,
         (k₁.mono (fun _ h => h) fun _ h => List.mem_append_left _ h).trans
         ((VKeep.setV _ _ _).mono (fun _ h => h) fun _ h => List.mem_append_right _ h)⟩)
     rcases Nat.lt_or_ge i k with h | h
-    · rw [RegUpd.v_setV_of_ne _ _ (hinj i (by omega) k (by omega) (by omega)), v₁ i h]
-    · obtain rfl : i = k := by omega
+    · rw [RegUpd.v_setV_of_ne _ _ (hinj i (by omega_arith) k (by omega_arith) (by omega_arith)), v₁ i h]
+    · obtain rfl : i = k := by omega_arith
       rw [RegUpd.v_setV_self]
 
 
@@ -109,8 +109,8 @@ theorem row_ok {s : State} {tbl r a : Nat} (ha : a<2^64) (hr : r+1<2^64)
   rw [WP.block_append_iff]
   refine WP.mono (loads_ok 10 load load_inj (o:=tbl+160*r)
     (s:=(s.setV .v28 (dup2 (BitVec.ofNat 64 (r+1)))).setV .v29 (if a=r+1 then BitVec.allOnes 128 else 0))
-    (by omega) (by omega) (fun i hi=>hread i hi) 10 (by omega)) fun s₃ ⟨l₃,k₃⟩ => ?_
-  refine WP.mono (selects_ok 10 acc load .v29 acc_inj acc_load acc_mask (s:=s₃) 10 (by omega))
+    (by omega_arith) (by omega_arith) (fun i hi=>hread i hi) 10 (by omega_arith)) fun s₃ ⟨l₃,k₃⟩ => ?_
+  refine WP.mono (selects_ok 10 acc load .v29 acc_inj acc_load acc_mask (s:=s₃) 10 (by omega_arith))
     fun t ⟨b₄,k₄⟩ => ?_
   refine ⟨?_,fun i hi=>?_,?_⟩
   · rw [k₄.v _ (not_mem_map_range acc_idx),k₃.v _ (not_mem_map_range load_idx),
@@ -150,25 +150,25 @@ theorem scan_ok {s : State} {tbl a : Nat} (ha : a<2^64)
       t.v .v28=dup2 (BitVec.ofNat 64 k) ∧
       (∀ i<10,t.v (acc i)=if 0<a ∧ a≤k then picked s tbl a i else 0) ∧
       VKeep [] written s t
-  | 0,_ => WP.block_nil ⟨hidx,fun i hi=>by rw [ite_eq_right (by omega)]; exact hz i hi,VKeep.refl _ _ _⟩
+  | 0,_ => WP.block_nil ⟨hidx,fun i hi=>by rw [ite_eq_right (by omega_arith)]; exact hz i hi,VKeep.refl _ _ _⟩
   | k+1,hk => by
     simp only [scan,List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil]
     rw [WP.block_append_iff]
-    refine WP.mono (scan_ok ha hidx hinc hmag hz hbound halign hread k (by omega))
+    refine WP.mono (scan_ok ha hidx hinc hmag hz hbound halign hread k (by omega_arith))
       fun s₁ ⟨idx₁,acc₁,keep₁⟩=>?_
-    refine WP.mono (row_ok ha (by omega) idx₁
+    refine WP.mono (row_ok ha (by omega_arith) idx₁
       ((keep₁.v _ v31_not_written).trans hinc) ((keep₁.v _ v30_not_written).trans hmag)
-      (by omega) halign (fun i hi=>by
+      (by omega_arith) halign (fun i hi=>by
         rw [keep₁.rd,keep₁.wr,keep₁.gpr _ List.not_mem_nil]
-        exact hread k (by omega) i hi)) fun t ⟨idx₂,acc₂,keep₂⟩=>?_
+        exact hread k (by omega_arith) i hi)) fun t ⟨idx₂,acc₂,keep₂⟩=>?_
     refine ⟨idx₂,fun i hi=>?_,keep₁.trans keep₂⟩
     rw [acc₂ i hi,keep₁.mem,keep₁.gpr _ List.not_mem_nil,acc₁ i hi]
     by_cases h : a=k+1
     · subst a
-      simp only [ite_true,show 0<k+1 ∧ k+1≤k+1 by omega]
+      simp only [ite_true,show 0<k+1 ∧ k+1≤k+1 by omega_arith]
       rfl
     · rw [ite_eq_right h]
-      have he : (0<a ∧ a≤k)↔(0<a ∧ a≤k+1) := by omega
+      have he : (0<a ∧ a≤k)↔(0<a ∧ a≤k+1) := by omega_arith
       simp only [he]
 
 /-- Stores of `k` vector registers `f i` at `o + 16 i` of the working space. -/
@@ -184,27 +184,27 @@ theorem storesReg_ok {size : Nat} (f : Nat → VReg) (reg : Reg) {s : State} {ba
     have he := hs.enc
     simp only [List.range_succ, List.map_append, List.map_cons, List.map_nil]
     rw [WP.block_append_iff]
-    refine WP.mono (storesReg_ok f reg hs hreg k (by omega)) fun s₁ ⟨w₁, k₁, v₁, O₁⟩ => ?_
+    refine WP.mono (storesReg_ok f reg hs hreg k (by omega_arith)) fun s₁ ⟨w₁, k₁, v₁, O₁⟩ => ?_
     have hx0 : s₁.gpr reg = off base o := by rw [k₁.gpr _ List.not_mem_nil,hreg]
     have haddr : s₁.gpr reg+BitVec.ofNat 64 (16*k)=off base (o+16*k) := by
       rw [hx0]; exact (BitVec.add_assoc _ _ _).trans (congrArg (base + ·) (BitVec.ofNat_add_ofNat ..))
-    refine wp_strq (by omega) (by rw [haddr, k₁.wr]; exact ⟨_, hs.wr, hs.contains (by omega) (by decide)⟩) ?_
+    refine wp_strq (by omega_arith) (by rw [haddr, k₁.wr]; exact ⟨_, hs.wr, hs.contains (by omega_arith) (by decide)⟩) ?_
     rw [haddr, v₁, ← ofVDwords_vdword (s.v (f k)), write16_dwords, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    have Oa := writeW_outside s₁.mem base (d := o + 16 * k) (vdword (s.v (f k)) 0) (by omega)
+    have Oa := writeW_outside s₁.mem base (d := o + 16 * k) (vdword (s.v (f k)) 0) (by omega_arith)
     have Ob := writeW_outside (s₁.mem.writeW (off base (o + 16 * k)) (vdword (s.v (f k)) 0)) base
-      (d := o + 16 * k + 8) (vdword (s.v (f k)) 1) (by omega)
+      (d := o + 16 * k + 8) (vdword (s.v (f k)) 1) (by omega_arith)
     refine ⟨fun j hj => ?_, k₁.trans ⟨fun _ _ => rfl, rfl, rfl, rfl⟩, rfl, ?_⟩
     · rcases Nat.lt_or_ge j (2 * k) with h | h
-      · rw [Ob.word (by omega) (by omega), Oa.word (by omega) (by omega), w₁ j h]
+      · rw [Ob.word (by omega_arith) (by omega_arith), Oa.word (by omega_arith) (by omega_arith), w₁ j h]
       · rcases Nat.lt_or_ge j (2 * k + 1) with h' | h'
-        · obtain rfl : j = 2 * k := by omega
-          rw [Ob.word (by omega) (by omega), show o + 8 * (2 * k) = o + 16 * k by omega, word_writeW_self,
-            show 2 * k / 2 = k by omega, show 2 * k % 2 = 0 by omega]
-        · obtain rfl : j = 2 * k + 1 := by omega
-          rw [show o + 8 * (2 * k + 1) = o + 16 * k + 8 by omega, word_writeW_self,
-            show (2 * k + 1) / 2 = k by omega, show (2 * k + 1) % 2 = 1 by omega]
-    · exact (O₁.mono (Nat.le_refl _) (by omega)).trans
-        ((Oa.mono (by omega) (by omega)).trans (Ob.mono (by omega) (by omega)))
+        · obtain rfl : j = 2 * k := by omega_arith
+          rw [Ob.word (by omega_arith) (by omega_arith), show o + 8 * (2 * k) = o + 16 * k by omega_arith, word_writeW_self,
+            show 2 * k / 2 = k by omega_arith, show 2 * k % 2 = 0 by omega_arith]
+        · obtain rfl : j = 2 * k + 1 := by omega_arith
+          rw [show o + 8 * (2 * k + 1) = o + 16 * k + 8 by omega_arith, word_writeW_self,
+            show (2 * k + 1) / 2 = k by omega_arith, show (2 * k + 1) % 2 = 1 by omega_arith]
+    · exact (O₁.mono (Nat.le_refl _) (by omega_arith)).trans
+        ((Oa.mono (by omega_arith) (by omega_arith)).trans (Ob.mono (by omega_arith) (by omega_arith)))
 
 
 def setup : List Instr :=
@@ -281,10 +281,10 @@ theorem stores_ok {s : State} {base : Addr} (hs : Scr s base 8192) :
     fun t ⟨w₃,k₃,v₃,o₃⟩=>?_
   refine ⟨fun j hj=>?_,?_,?_⟩
   · by_cases h : j<12
-    · rw [output,ite_eq_left h,o₃.word (by omega) (by omega),k₂.mem,w₁ j h]
-    · have hw := w₃ (j-12) (by omega)
-      have he : (j-12)/2+6=j/2 := by omega
-      have hr : (j-12)%2=j%2 := by omega
+    · rw [output,ite_eq_left h,o₃.word (by omega_arith) (by omega_arith),k₂.mem,w₁ j h]
+    · have hw := w₃ (j-12) (by omega_arith)
+      have he : (j-12)/2+6=j/2 := by omega_arith
+      have hr : (j-12)%2=j%2 := by omega_arith
       simpa only [output,ite_eq_right h,he,hr,k₂.v _ List.not_mem_nil,v₁] using hw
   · exact ((k₁.mono (by regions_sub)).trans (VG.Proof.Mont.AArch64.Keeps.regs k₂.keeps)).trans (k₃.mono (by regions_sub))
   · have om : Unch base [(704,96)] s.mem s₂.mem := by
@@ -306,23 +306,23 @@ theorem scanStore_ok {s : State} {base : Addr} {a : Nat} (hs : Scr s base 8192) 
         word s.mem base (2816+160*(a-1)+8*j)) ∧
       KeepRegs [.x17] s t ∧ Unch base outputRanges s.mem t.mem := by
   rw [WP.block_append_iff]
-  refine WP.mono (scan_ok (by omega) hidx hinc hmag hz
+  refine WP.mono (scan_ok (by omega_arith) hidx hinc hmag hz
     (by decide : 2816+2560≤65536) (by decide)
     (fun r hr i hi=>by
       rw [hs.x0]
-      exact ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩)
+      exact ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_arith) (by decide)⟩)
     16 (by decide)) fun s₂ ⟨_,acc₂,k₂⟩=>?_
   have hs₂ : Scr s₂ base 8192 := ⟨(k₂.gpr _ List.not_mem_nil).trans hs.x0,
     by simpa only [k₂.wr] using hs.wr,hs.nowrap,hs.enc⟩
   refine WP.mono (stores_ok hs₂) fun t ⟨wt,kt,ot⟩=>?_
   refine ⟨fun j hj=>?_,?_,?_⟩
-  · rw [wt j hj,acc₂ (j/2) (by omega)]
+  · rw [wt j hj,acc₂ (j/2) (by omega_arith)]
     by_cases hz : a=0
     · simp only [hz,Nat.lt_irrefl,false_and,ite_false,ite_true,vdword_zero]
-    · rw [ite_eq_left (by omega : 0<a ∧ a≤16),ite_eq_right hz]
+    · rw [ite_eq_left (by omega_arith : 0<a ∧ a≤16),ite_eq_right hz]
       unfold picked
-      rw [hs.x0,vdword_read16 _ _ (by omega : j%2<2),BitVec.add_assoc,BitVec.ofNat_add_ofNat]
-      rw [show 2816+160*(a-1)+16*(j/2)+8*(j%2)=2816+160*(a-1)+8*j by omega]
+      rw [hs.x0,vdword_read16 _ _ (by omega_arith : j%2<2),BitVec.add_assoc,BitVec.ofNat_add_ofNat]
+      rw [show 2816+160*(a-1)+16*(j/2)+8*(j%2)=2816+160*(a-1)+8*j by omega_arith]
   · exact ((VG.Proof.Mont.AArch64.Keeps.regs k₂.keeps).mono (by regions_sub)).trans
       (kt.mono (by regions_sub))
   · simpa only [k₂.mem] using ot

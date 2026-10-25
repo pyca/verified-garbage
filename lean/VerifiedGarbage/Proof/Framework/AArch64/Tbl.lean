@@ -40,9 +40,9 @@ theorem treg_ne : ∀ a < 16, treg a ≠ .v0 ∧ treg a ≠ .v1 ∧ treg a ≠ .
 /-- The table byte that a quarter's `tbl` reads, for an index in the quarter. -/
 theorem tableByte_quarter (v : VReg → BitVec 128) {q : Nat} (hq : q < 4) {idx : Nat}
     (hi : idx < 64) : tableByte v (quarter q) idx = tbyte v (64 * q + idx) := by
-  simp only [tableByte, tbyte, treg_quarter q hq _ (by omega : idx / 16 < 4)]
-  rw [show (64 * q + idx) / 16 = 4 * q + idx / 16 by omega,
-    show (64 * q + idx) % 16 = idx % 16 by omega]
+  simp only [tableByte, tbyte, treg_quarter q hq _ (by omega_arith : idx / 16 < 4)]
+  rw [show (64 * q + idx) / 16 = 4 * q + idx / 16 by omega_arith,
+    show (64 * q + idx) % 16 = idx % 16 by omega_arith]
 
 /-- The quarter of each byte, and its index there. -/
 theorem xor_quarter : ∀ x < 256, ∀ q < 4,
@@ -57,9 +57,9 @@ def bc (b : BitVec 8) : BitVec 128 := ofVBytes fun _ => b
 theorem vbyte_ext {x y : BitVec 128} (h : ∀ e < 16, vbyte x e = vbyte y e) : x = y := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have e := congrArg (fun z => z.getLsbD (i % 8)) (h (i / 8) (by omega))
-  simp only [vbyte, BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega, decide_true,
-    Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega] at e
+  have e := congrArg (fun z => z.getLsbD (i % 8)) (h (i / 8) (by omega_arith))
+  simp only [vbyte, BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega_arith, decide_true,
+    Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega_arith] at e
   exact e
 
 theorem vbyte_bc (b : BitVec 8) {e : Nat} (he : e < 16) : vbyte (bc b) e = b :=
@@ -104,13 +104,13 @@ theorem VOnly.wr {ds : List VReg} {s s' : State} (h : VOnly ds s s') : s'.wr = s
 theorem tbyte_congr {v w : VReg → BitVec 128}
     (h : ∀ r, r ≠ .v0 → r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → r ≠ .v4 → r ≠ .v5 → w r = v r)
     (k : Nat) (hk : k < 256) : tbyte w k = tbyte v k := by
-  have hn := treg_ne (k / 16) (by omega)
+  have hn := treg_ne (k / 16) (by omega_arith)
   simp only [tbyte, h _ hn.1 hn.2.1 hn.2.2.1 hn.2.2.2.1 hn.2.2.2.2.1 hn.2.2.2.2.2]
 
 /-- The table is in the table registers. -/
 theorem tbyte_congr' {v w : VReg → BitVec 128} (h : ∀ a < 16, w (treg a) = v (treg a))
     (k : Nat) (hk : k < 256) : tbyte w k = tbyte v k := by
-  simp only [tbyte, h _ (by omega : k / 16 < 16)]
+  simp only [tbyte, h _ (by omega_arith : k / 16 < 16)]
 
 /-- The table registers are `v16`–`v31`. -/
 theorem treg_ne8 : ∀ a < 16, treg a ≠ .v0 ∧ treg a ≠ .v1 ∧ treg a ≠ .v2 ∧ treg a ≠ .v3 ∧
@@ -129,7 +129,7 @@ theorem vbyte_tbl (v : VReg → BitVec 128) {q : Nat} (hq : q < 4) (m : BitVec 1
       qbyte (tbyte v) q (vbyte m e).toNat := by
   rw [vbyte_ofVBytes _ he, qbyte]
   split
-  · rename_i h; rw [tableByte_quarter _ hq (by omega)]
+  · rename_i h; rw [tableByte_quarter _ hq (by omega_arith)]
   · rfl
 
 theorem or_zero8 (y : BitVec 8) : y ||| 0 = y := by simp
@@ -154,22 +154,22 @@ theorem quarters_byte (T : Nat → BitVec 8) (X : BitVec 8) :
   have n1 : X.toNat / 64 ≠ 1 → ¬ (X.toNat ^^^ 64 < 64) := fun h h' => h (h1.mp h')
   have n2 : X.toNat / 64 ≠ 2 → ¬ (X.toNat ^^^ 128 < 64) := fun h h' => h (h2.mp h')
   have n3 : X.toNat / 64 ≠ 3 → ¬ (X.toNat ^^^ 192 < 64) := fun h h' => h (h3.mp h')
-  rcases (by omega : X.toNat / 64 = 0 ∨ X.toNat / 64 = 1 ∨ X.toNat / 64 = 2 ∨ X.toNat / 64 = 3)
+  rcases (by omega_arith : X.toNat / 64 = 0 ∨ X.toNat / 64 = 1 ∨ X.toNat / 64 = 2 ∨ X.toNat / 64 = 3)
     with h | h | h | h
-  · simp only [show X.toNat < 64 by omega, n1 (by omega), n2 (by omega), n3 (by omega), ite_true,
+  · simp only [show X.toNat < 64 by omega_arith, n1 (by omega_arith), n2 (by omega_arith), n3 (by omega_arith), ite_true,
       ite_false, Nat.mul_zero, Nat.zero_add, or_zero8]
-  · simp only [show ¬ X.toNat < 64 by omega, h1.mpr h, n2 (by omega), n3 (by omega), ite_true,
+  · simp only [show ¬ X.toNat < 64 by omega_arith, h1.mpr h, n2 (by omega_arith), n3 (by omega_arith), ite_true,
       ite_false, zero_or8, or_zero8]
     rw [e1 h]
-    exact congrArg T (by omega)
-  · simp only [show ¬ X.toNat < 64 by omega, n1 (by omega), h2.mpr h, n3 (by omega), ite_true,
+    exact congrArg T (by omega_arith)
+  · simp only [show ¬ X.toNat < 64 by omega_arith, n1 (by omega_arith), h2.mpr h, n3 (by omega_arith), ite_true,
       ite_false, zero_or8, or_zero8]
     rw [e2 h]
-    exact congrArg T (by omega)
-  · simp only [show ¬ X.toNat < 64 by omega, n1 (by omega), n2 (by omega), h3.mpr h, ite_true,
+    exact congrArg T (by omega_arith)
+  · simp only [show ¬ X.toNat < 64 by omega_arith, n1 (by omega_arith), n2 (by omega_arith), h3.mpr h, ite_true,
       ite_false, zero_or8]
     rw [e3 h]
-    exact congrArg T (by omega)
+    exact congrArg T (by omega_arith)
 
 /-- The two halves' bytes, for an index below 128. -/
 theorem halves_byte (T : Nat → BitVec 8) (X : BitVec 8) (hX : X.toNat < 128) :
@@ -178,13 +178,13 @@ theorem halves_byte (T : Nat → BitVec 8) (X : BitVec 8) (hX : X.toNat < 128) :
   obtain ⟨h1, e1⟩ := q 1 (by decide)
   simp only [Nat.mul_one] at h1 e1
   simp only [qbyte]
-  rcases (by omega : X.toNat / 64 = 0 ∨ X.toNat / 64 = 1) with h | h
-  · have n1 : ¬ (X.toNat ^^^ 64 < 64) := fun h' => by have := h1.mp h'; omega
-    simp only [show X.toNat < 64 by omega, n1, ite_true, ite_false, Nat.mul_zero, Nat.zero_add,
+  rcases (by omega_arith : X.toNat / 64 = 0 ∨ X.toNat / 64 = 1) with h | h
+  · have n1 : ¬ (X.toNat ^^^ 64 < 64) := fun h' => by have := h1.mp h'; omega_arith
+    simp only [show X.toNat < 64 by omega_arith, n1, ite_true, ite_false, Nat.mul_zero, Nat.zero_add,
       or_zero8]
-  · simp only [show ¬ X.toNat < 64 by omega, h1.mpr h, ite_true, ite_false, zero_or8]
+  · simp only [show ¬ X.toNat < 64 by omega_arith, h1.mpr h, ite_true, ite_false, zero_or8]
     rw [e1 h]
-    exact congrArg T (by omega)
+    exact congrArg T (by omega_arith)
 
 /-- `select true`: the table byte at each lane's index. -/
 theorem select_full_run {s : State} (I : Nat → BitVec 8)
@@ -220,10 +220,10 @@ theorem select_full_run {s : State} (I : Nat → BitVec 8)
       ∀ e < 16, vbyte m e = X ^^^ BitVec.ofNat 8 (64 * q) →
       vbyte (f q m st) e = qbyte T q (X.toNat ^^^ 64 * q) := by
     intro q st hq ho X m e he hm
-    rw [vbyte_tbl st.v hq m he, hm, toNat_xor_lit _ _ (by omega)]
+    rw [vbyte_tbl st.v hq m he, hm, toNat_xor_lit _ _ (by omega_arith)]
     simp only [qbyte]
     split
-    · exact tab st ho _ (by omega)
+    · exact tab st ho _ (by omega_arith)
     · rfl
   have y₁ : ∀ e < 16, vbyte (s₁.v .v0) e = qbyte T 0 (I e).toNat := by
     intro e he
@@ -305,10 +305,10 @@ theorem select_half_run {s : State} (I : Nat → BitVec 8) (hI : ∀ e < 16, (I 
       ∀ e < 16, vbyte m e = X ^^^ BitVec.ofNat 8 (64 * q) →
       vbyte (f q m st) e = qbyte T q (X.toNat ^^^ 64 * q) := by
     intro q st hq ho X m e he hm
-    rw [vbyte_tbl st.v hq m he, hm, toNat_xor_lit _ _ (by omega)]
+    rw [vbyte_tbl st.v hq m he, hm, toNat_xor_lit _ _ (by omega_arith)]
     simp only [qbyte]
     split
-    · exact tab st ho _ (by omega)
+    · exact tab st ho _ (by omega_arith)
     · rfl
   have y₁ : ∀ e < 16, vbyte (s₁.v .v0) e = qbyte T 0 (I e).toNat := by
     intro e he
@@ -384,8 +384,8 @@ theorem ofVDwords_halves (x : BitVec 128) : ofVDwords (x.extractLsb' 0 64) (x.ex
   simp only [ofVDwords, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 64
   · simp [h]
-  · simp only [h, ite_false, show i - 64 < 64 by omega, decide_true, Bool.true_and]
-    congr 1; omega
+  · simp only [h, ite_false, show i - 64 < 64 by omega_arith, decide_true, Bool.true_and]
+    congr 1; omega_arith
 
 theorem exec_eorv (s : State) (d n m : VReg) :
     exec (.vop (.logic .eor d n m)) s = some (s.setV d (s.v n ^^^ s.v m)) := rfl
@@ -436,21 +436,21 @@ theorem loadTable_ok (s : State) (t : Nat → BitVec 8) :
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp by
     refine WP.mono (h 16 (Nat.le_refl _)) fun s' ⟨hr, hv, hg, hm, hrd, hwr, hsp⟩ =>
       ⟨fun k hk => ?_, hv, hg, hm, hrd, hwr, hsp⟩
-    rw [tbyte, hr _ (by omega), vbyte_ofVBytes _ (by omega)]
-    congr 1; omega
+    rw [tbyte, hr _ (by omega_arith), vbyte_ofVBytes _ (by omega_arith)]
+    congr 1; omega_arith
   intro n hn
   induction n with
-  | zero => exact WP.block_nil ⟨fun _ h => absurd h (by omega), fun _ _ => rfl, fun _ _ _ => rfl,
+  | zero => exact WP.block_nil ⟨fun _ h => absurd h (by omega_arith), fun _ _ => rfl, fun _ _ _ => rfl,
       rfl, rfl, rfl, rfl⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun a ⟨arow, av, ag, am, ard, awr, asp⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun a ⟨arow, av, ag, am, ard, awr, asp⟩ => ?_
     refine WP.mono (const128_ok a (treg n) _) fun b ⟨brow, bv, bg, bm, brd, bwr, bsp⟩ =>
       ⟨fun r hr => ?_, fun w hw => ?_, fun g h6 h7 => (bg g h6 h7).trans (ag g h6 h7),
         bm.trans am, brd.trans ard, bwr.trans awr, bsp.trans asp⟩
     · by_cases he : r = n
       · subst he; exact brow
-      · rw [bv _ (fun e => he (treg_inj r (by omega) n (by omega) e)), arow r (by omega)]
-    · rw [bv _ (hw n (by omega)), av w (fun r hr => hw r (by omega))]
+      · rw [bv _ (fun e => he (treg_inj r (by omega_arith) n (by omega_arith) e)), arow r (by omega_arith)]
+    · rw [bv _ (hw n (by omega_arith)), av w (fun r hr => hw r (by omega_arith))]
 
 end VG.AArch64.Tbl

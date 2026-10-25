@@ -96,7 +96,7 @@ theorem pushRegs_mem (s : State) (rs : List Reg) (hrs : .rsp ∉ rs)
     have hg₁ : ∀ r, r ≠ .rsp → s₁.gpr r = s.gpr r := fun r h => by simp [hs₁, State.setReg, h]
     have hm₁ : s₁.mem = s.mem.writeW (s.gpr .rsp - 8) (s.gpr x) := rfl
     have e₁ : (s₁.gpr .rsp).toNat = (s.gpr .rsp).toNat - 8 := by
-      rw [hsp₁]; have := (s.gpr .rsp).isLt; bv_omega
+      rw [hsp₁]; have := (s.gpr .rsp).isLt; bv_omega_arith
     obtain ⟨ih₁, ih₂⟩ := ih s₁ hrs.2 (by omega)
     have hp : pushRegs s (x :: xs) = pushRegs s₁ xs := rfl
     generalize hS : s.gpr .rsp = S at *
@@ -108,9 +108,9 @@ theorem pushRegs_mem (s : State) (rs : List Reg) (hrs : .rsp ∉ rs)
       simp only [Region.Contains] at hy'
       rw [hp, ih₁ y (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        simp only [Region.Contains]; bv_omega), hm₁]
+        simp only [Region.Contains]; bv_omega_arith), hm₁]
       apply Mem.write_apply
-      bv_omega
+      bv_omega_arith
     · rw [hp]
       cases j with
       | zero =>
@@ -121,14 +121,14 @@ theorem pushRegs_mem (s : State) (rs : List Reg) (hrs : .rsp ∉ rs)
         simp only [List.mem_singleton] at hr; subst hr
         simp only [Region.Contains]
         simp only [Nat.reduceDiv] at ht
-        bv_omega
+        bv_omega_arith
       | succ j =>
         simp only [List.getElem_cons_succ]
         have := ih₂ j (by omega)
         rw [hg₁ _ (fun h => hrs.2 (h ▸ List.getElem_mem _))] at this
         rw [← this]
         congr 1
-        bv_omega
+        bv_omega_arith
 
 /-- A frame: its body runs from `pushed rs s`, ends with `rsp` and the
 writable regions as the push left them, and the pop of the `rs.length`

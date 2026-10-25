@@ -246,7 +246,7 @@ theorem sqrCore_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ :
       rw [show (fnMod true).tmp = (fnMod true).tmp + 8 * 0 from rfl, wordsVal_hval]
       exact hval_congr fun c _ h2 => by simp only [sqWord, show c ≤ 8 by omega_using [h2], ↓reduceIte]
     have h2 : hval (sqWord (fnMod true) base s₆) 9 9 = hval (xg s₆) 9 9 :=
-      hval_congr fun c h1 _ => by simp only [sqWord, show ¬ c ≤ 8 by omega, ↓reduceIte]
+      hval_congr fun c h1 _ => by simp only [sqWord, show ¬ c ≤ 8 by omega_arith, ↓reduceIte]
     rw [show (18 : Nat) = 9 + 9 from rfl, hval_add, Nat.zero_add, h1, h2]
   have e₆' : wordsVal s₆.mem base (fnMod true).tmp 9 + (2 ^ 64) ^ 9 * hval (xg s₆) 9 9 =
       wordsVal s.mem base a 9 * wordsVal s.mem base a 9 := by
@@ -255,7 +255,7 @@ theorem sqrCore_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ :
       rw [show (18 : Nat) = 9 + 9 from rfl, Nat.pow_add]; exact Nat.mul_lt_mul'' hAl hAl
     have : (2 ^ 64) ^ 18 * (c₆.toNat + o₆.toNat) < (2 ^ 64) ^ 18 * 1 := by omega_using [e₆, hAA]
     have := Nat.lt_of_mul_lt_mul_left this
-    omega
+    omega_arith
   refine WP.mono (xRed_ok hs₆ (M := fnMod true) (by omega_using [htmp])) fun s₇ ⟨acc, e₇, k₇, O₇⟩ => ?_
   rw [e₆'] at e₇
   have hU : wordsVal s₇.mem base (fnMod true).tmp 9 < (2 ^ 64) ^ 9 := by
@@ -338,7 +338,7 @@ theorem copyW_ok {base : Addr} {Z : Nat} (hZ : 4096 ≤ Z) {a : Nat} (ha : a + 7
       k₃.wr.trans (wr₂.trans k₁.2.2.2)⟩, fun x hx => ?_⟩
     · rcases Nat.eq_or_lt_of_le h1 with rfl | h1
       · rw [O₃.word (by omega_using []) (by omega_using [hk, hft]), m₂, word_writeW_self, v₁]
-      · rw [w₃ j (by omega) (by omega_using [h2]), O₂.word (by omega_using [ha, hk, hft, h2]) (by omega_using [ha, hk, h2])]
+      · rw [w₃ j (by omega_arith) (by omega_using [h2]), O₂.word (by omega_using [ha, hk, hft, h2]) (by omega_using [ha, hk, h2])]
     · rw [k₃.gpr r hr, g₂, k₁.1 r (by simpa using hr)]
     · rw [O₃ x (by omega_using [hx]), O₂ x (by omega_using [hx])]
 

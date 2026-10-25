@@ -127,10 +127,10 @@ theorem drawLoad_ok {s : State} {B : Addr} {Z w len : Nat} (h : Ws s B Z w) {rp 
   · -- The words above the loaded ones are still zero.
     have hz' : ∀ q < w + 2, word s₁.mem B (slot w aX + 8 * q) = 0 := (wv_eq_zero_iff _ _ _ _).mp hz₁
     have e := wv_add t.mem B (slot w aX) ((len + 7) / 8) (w - (len + 7) / 8)
-    rw [show (len + 7) / 8 + (w - (len + 7) / 8) = w by omega] at e
+    rw [show (len + 7) / 8 + (w - (len + 7) / 8) = w by omega_arith] at e
     rw [e, hv, wv_zero (n := w - (len + 7) / 8) fun q hq => by
-        rw [o.word (by omega) (by omega), Nat.add_assoc, ← Nat.mul_add,
-          oU.word (by omega) (by omega)]; exact hz' _ (by omega)]
+        rw [o.word (by omega_arith) (by omega_arith), Nat.add_assoc, ← Nat.mul_add,
+          oU.word (by omega_arith) (by omega_arith)]; exact hz' _ (by omega_arith)]
     simp
   · rw [o.word (Or.inl (by omega_using [hUs])) (by omega_using [hn, sj, hUs]), m₄, word_writeW_self]
 
@@ -159,17 +159,17 @@ theorem drawCut_ok {s : State} {B : Addr} {Z w k : Nat} (h : Ws s B Z w) (hk : k
   generalize ht : word s.mem B (slot w aX + 8 * (w - 1)) = top
   refine WP.mono (WP.keep [.x3, .x4, .x5] (Q := fun t => t.mem =
       s.mem.writeW (off B (slot w aX + 8 * (w - 1))) (top &&& BitVec.ofNat 64 (2 ^ k - 1))) (by
-    brun [hm₂, h16, e12, h0₂, ht, hT, top_addr B (d := slot w aX) (w := w) (by omega) (by omega),
-      hs₂.ld (d := slot w aX + 8 * (w - 1)) (by omega), hs₂.st (d := slot w aX + 8 * (w - 1)) (by omega),
-      hdr_enc (show fTop < 32 by decide), hs₂.ld (d := 8 * fTop) (by omega)])
+    brun [hm₂, h16, e12, h0₂, ht, hT, top_addr B (d := slot w aX) (w := w) (by omega_arith) (by omega_arith),
+      hs₂.ld (d := slot w aX + 8 * (w - 1)) (by omega_arith), hs₂.st (d := slot w aX + 8 * (w - 1)) (by omega_arith),
+      hdr_enc (show fTop < 32 by decide), hs₂.ld (d := 8 * fTop) (by omega_arith)])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k₃⟩ => ⟨?_, ?_, (k12.trans k₃).mono (by decide)⟩
   · rw [hm]
-    refine VG.Proof.Ffdh.ParameterCandidate.wv_cut (by omega) hk ?_ ?_
+    refine VG.Proof.Ffdh.ParameterCandidate.wv_cut (by omega_arith) hk ?_ ?_
     · rw [word_writeW_self, ht]
     · intro j hj
-      rw [(writeW_outside _ _ _ (by omega)).word (by omega) (by omega)]
+      rw [(writeW_outside _ _ _ (by omega_arith)).word (by omega_arith) (by omega_arith)]
   · intro x hx
-    rw [hm, writeW_outside _ B _ (by omega) x (by have := hx (slot w aX, 8 * (w + 2)) (by simp); omega)]
+    rw [hm, writeW_outside _ B _ (by omega_arith) x (by have := hx (slot w aX, 8 * (w + 2)) (by simp); omega_arith)]
 
 /-- The range: `x9 := ` the mask of `2 ≤ x` and `(x | 1) < N`. -/
 theorem drawRange_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {X : Nat}
@@ -211,6 +211,6 @@ theorem drawRange_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {X : Na
     ⟨h9, by rw [hm, hm₂, hm₁], ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-- For an odd `N`: `(x | 1) < N` iff `x < N − 1`. -/
-theorem or1_lt_iff {X N : Nat} (hN : N % 2 = 1) : X + (1 - X % 2) < N ↔ X < N - 1 := by omega
+theorem or1_lt_iff {X N : Nat} (hN : N % 2 = 1) : X + (1 - X % 2) < N ↔ X < N - 1 := by omega_arith
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate

@@ -64,7 +64,7 @@ theorem r7_sub (m : Nat) (h : 1 ≤ m) (h' : m ≤ 16) :
     BitVec.ofNat 64 m - 1 = BitVec.ofNat 64 (m - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-  omega
+  omega_arith
 
 theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysOk d s (s.gpr .r3)) :
     WP isa (rounds d) s (fun s' =>
@@ -80,7 +80,7 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysO
   refine WP.seq (WP.of_runBlock ⟨s1, e1, ?_⟩)
   refine WP.seq (WP.loop (M := isa) (fun m t => RoundsInv d s m t) ?_ 16 s1 ?_)
   · intro m t inv
-    have hi : 16 - m < 16 := by have := inv.le; omega
+    have hi : 16 - m < 16 := by have := inv.le; omega_arith
     obtain ⟨hk0, hk1, hdis⟩ := hk (16 - m) hi
     have hk0' : InRegions (t.rd ++ t.wr) (t.gpr .r3) 4 := by rw [inv.rd, inv.wr, inv.r3]; exact hk0
     have hk1' : InRegions (t.rd ++ t.wr) (t.gpr .r3 + 4) 4 := by rw [inv.rd, inv.wr, inv.r3]; exact hk1
@@ -92,16 +92,16 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysO
       simp only [keysAt, inv.r3]
       have hd : ∀ r ∈ [workR s], Region.Disjoint ⟨kp d (s.gpr .r3) (16 - m), 8⟩ r := by
         intro r hr; simp only [List.mem_singleton] at hr; subst hr
-        exact hdis.sub_right (Region.sub_prefix (by unfold scratchSlots; omega))
+        exact hdis.sub_right (Region.sub_prefix (by unfold scratchSlots; omega_arith))
       congr 1
       · exact inv.frame.readW (contains_prefix (by decide)) hd (by decide)
       · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
-        exact inv.frame.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega) (by omega))
+        exact inv.frame.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_arith) (by omega_arith))
           hd (by decide)
     refine WP.of_runBlock ⟨t', ht', ?_⟩
     have hquads : ∀ b < 16, quad t' b = roundsN (keysAt d s.mem (s.gpr .r3)) (16 - (m - 1)) (quad s b) := by
       intro b hb
-      rw [hq b hb, hkey, inv.quads b hb, show 16 - (m - 1) = 16 - m + 1 by have := inv.le; omega,
+      rw [hq b hb, hkey, inv.quads b hb, show 16 - (m - 1) = 16 - m + 1 by have := inv.le; omega_arith,
         roundsN_succ]
     have hr7' : t'.gpr .r7 = BitVec.ofNat 64 (m - 1) := by
       rw [hr7, inv.r7, r7_sub m inv.le.1 inv.le.2]
@@ -138,20 +138,20 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysO
         · rw [gpr_write_of_ne _ _ (by rcases hr with rfl | rfl | rfl | rfl <;> decide)]
           exact hregs _ (by simp only [List.mem_cons, List.mem_nil_iff, or_false]; exact .inr hr)
     · right
-      refine ⟨?_, m - 1, by omega, ⟨by have := inv.le; omega, hquads, hroom, by rw [hrd, inv.rd],
+      refine ⟨?_, m - 1, by omega_arith, ⟨by have := inv.le; omega_arith, hquads, hroom, by rw [hrd, inv.rd],
         by rw [hwr, inv.wr], by rw [hsp, inv.sp], ?_, hr7', hregs, hframe⟩⟩
       · rw [hc]
         have : (BitVec.ofNat 64 (m - 1) != 0) = true := by
           simp only [bne_iff_ne, ne_eq]
           intro h0
-          have hm2 : 2 ≤ m := by have := inv.le; omega
+          have hm2 : 2 ≤ m := by have := inv.le; omega_arith
           have hm16 := inv.le.2
           have := congrArg BitVec.toNat h0
-          rw [BitVec.toNat_ofNat, show (0 : BitVec 64).toNat = 0 from rfl, Nat.mod_eq_of_lt (by omega)] at this
-          omega
+          rw [BitVec.toNat_ofNat, show (0 : BitVec 64).toNat = 0 from rfl, Nat.mod_eq_of_lt (by omega_arith)] at this
+          omega_arith
         rw [this]
-      · rw [hr3, inv.r3, kp_succ, show 16 - m + 1 = 16 - (m - 1) by have := inv.le; omega]
-  · refine ⟨by omega, fun b _ => by rw [q1]; rfl, room_congr h rfl rfl, rfl, rfl, rfl,
+      · rw [hr3, inv.r3, kp_succ, show 16 - m + 1 = 16 - (m - 1) by have := inv.le; omega_arith]
+  · refine ⟨by omega_arith, fun b _ => by rw [q1]; rfl, room_congr h rfl rfl, rfl, rfl, rfl,
       by simp [s1, kp, gpr_write], rfl, fun r hr => ?_, Frame.refl _ _⟩
     simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> rfl

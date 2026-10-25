@@ -71,8 +71,8 @@ theorem Lay.fit_off {L : Lay} (hL : L.Ok) {i o l : Nat} (hi : i < L.sizes.length
     (hl : 0 < l) : (L.ptr i + BitVec.ofNat 64 o).toNat + l ≤ 2 ^ 64 := by
   have := hL.fit i hi
   have := (L.ptr i).isLt
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 theorem Lay.R_zero (L : Lay) (i l : Nat) : (⟨L.ptr i, l⟩ : Region) = L.R i 0 l := by
   simp only [Lay.R, BitVec.add_zero]
@@ -83,18 +83,18 @@ theorem Ctx.sep00 {L : Lay} {s : State} (hc : Ctx L s) {o l o' l' : Nat} (h₁ :
   simp only [sepB, Lay.size] at this ⊢
   simp only [Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq, not_true_eq_false,
     false_or]
-  omega
+  omega_arith
 
 theorem Ctx.sep01 {L : Lay} {s : State} (hc : Ctx L s) {o l o' l' : Nat} (h₁ : o + l ≤ 32768)
     (h₂ : o' + l' ≤ 48) : sepB L.sizes (0, o, l) (1, o', l') = true := by
   have h0 := hc.len; have h1 := hc.sz0; have h2 := hc.sz1
   simp only [Lay.size] at h1 h2
   simp only [sepB, h2, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq]
-  omega
+  omega_arith
 
 theorem sepB_symm {sz : List Nat} {a b : Nat × Nat × Nat} (h : sepB sz a b = true) : sepB sz b a = true := by
   simp only [sepB, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq] at h ⊢
-  omega
+  omega_arith
 
 /-- The regions of the sponge functions: the state, the working space and the stack below. -/
 abbrev kRegs : List (Nat × Nat × Nat) := [(0, 0, 200), (0, 200, 640), (1, 0, 48)]
@@ -157,10 +157,10 @@ theorem pos_r5 (first : Bool) (s : State) :
   · rfl
 
 theorem rate_pos {rate : Nat} (h : rate ∈ rates) : 0 < rate := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_arith
 
 theorem rates_lt {rate : Nat} (h : rate ∈ rates) : rate ≤ 168 := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_arith
 
 /-- The registers and permissions of `s₀`. -/
 structure Rg (s₀ s : State) : Prop where
@@ -213,7 +213,7 @@ theorem absorbArgs_of {L : Lay} {idx : Reg → Nat} {rate : Nat} (hrate : rate �
       rate pos p.len := by
   have hL := hc₁.ok
   obtain ⟨e0, e2⟩ := hc₁.kregs
-  refine ⟨g3, g4, g5, g6, g7, g8, hrate, hpos, by have := hp.lenc; omega, hc₁.sp48, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨g3, g4, g5, g6, g7, g8, hrate, hpos, by have := hp.lenc; omega_arith, hc₁.sp48, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [e0]; exact Lay.disj hL (hc₁.sep00 (by decide) (by decide) (by decide))
   · rw [e0]; exact Lay.disj hL hp.sepK.1
   · exact Lay.disj hL hp.sepK.2.1
@@ -230,7 +230,7 @@ theorem squeezeArgs_of {L : Lay} {idx : Reg → Nat} {rate : Nat} (hrate : rate 
       rate pos p.len := by
   have hL := hc₁.ok
   obtain ⟨e0, e2⟩ := hc₁.kregs
-  refine ⟨g3, g4, g5, g6, g7, g8, hrate, hpos, by have := hp.lenc; omega, hc₁.sp48, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨g3, g4, g5, g6, g7, g8, hrate, hpos, by have := hp.lenc; omega_arith, hc₁.sp48, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [e0]; exact Lay.disj hL (sepB_symm hp.sepK.1)
   · rw [e0]; exact Lay.disj hL (hc₁.sep00 (by decide) (by decide) (by decide))
   · exact Lay.disj hL hp.sepK.2.1
@@ -251,7 +251,7 @@ theorem padArgs_of {L : Lay} {rate : Nat} (hrate : rate ∈ rates) {s₁ : State
 
 /-! ## The absorbs -/
 
-theorem rate_imm {rate : Nat} (h : rate ∈ rates) : rate < 32768 := by have := rates_lt h; omega
+theorem rate_imm {rate : Nat} (h : rate ∈ rates) : rate < 32768 := by have := rates_lt h; omega_arith
 
 theorem absorbs_ok {L : Lay} {idx : Reg → Nat} {rate : Nat} (hrate : rate ∈ rates) {s₀ : State}
     (hc : Ctx L s₀) :
@@ -289,7 +289,7 @@ theorem absorbs_ok {L : Lay} {idx : Reg → Nat} {rate : Nat} (hrate : rate ∈ 
     have hk₂ : Kept (L.RL kRegs) s₀ s₂ := hk.trans ((o₁.kept _).trans k₂)
     have eb : bytesAt s₁.mem (L.ptr (idx p.base) + BitVec.ofNat 64 p.off) p.len = L.pb idx s₀.mem p := by
       rw [o₁.mem]
-      exact Lay.bytes_keep hL hk.frame hp.sep (by have := hp.lenc; omega)
+      exact Lay.bytes_keep hL hk.frame hp.sep (by have := hp.lenc; omega_arith)
     have rep := r₂ msg (by rw [o₁.mem]; exact hr) hpos
     rw [eb] at rep
     refine WP.mono (ih false s₂ (msg ++ L.pb idx s₀.mem p) (fun q hq => hps q (List.mem_cons_of_mem _ hq)) hk₂ rep
@@ -359,7 +359,7 @@ theorem squeezes_ok {L : Lay} {idx : Reg → Nat} {rate : Nat} (hrate : rate ∈
     have cont₂ : ∀ d, squeezeFrom rate (stateAt s₂.mem (L.ptr 0)) (Pos false s₂) d =
         squeezeFrom rate P (c + p.len) d := fun d => by
       rw [show Pos false s₂ = (s₂.gpr .r3).toNat from rfl, n₂, o₁.mem]
-      exact squeezeFrom_shift rpos (by omega) hcont p.len d
+      exact squeezeFrom_shift rpos (by omega_arith) hcont p.len d
     have pw := List.pairwise_cons.mp hpw
     have hg₂ : Rg s₀ s₂ := hg₁.kept k₂
     refine WP.mono (ih false s₂ (c + p.len) (fun q hq => hps q (List.mem_cons_of_mem _ hq)) pw.2 hg₂ r₂ cont₂)
@@ -373,7 +373,7 @@ theorem squeezes_ok {L : Lay} {idx : Reg → Nat} {rate : Nat} (hrate : rate ∈
         · exact .inl hw
         · exact .inr (.inr ⟨q, hq, rfl⟩)
     · rw [← out₂]
-      exact Lay.bytes_keep hL k'.frame (sepAll_append hp.sep (sepAll_map pw.1)) (by have := hp.lenc; omega)
+      exact Lay.bytes_keep hL k'.frame (sepAll_append hp.sep (sepAll_map pw.1)) (by have := hp.lenc; omega_arith)
 
 /-! ## The whole hash -/
 
@@ -390,7 +390,7 @@ theorem zeroState_ok {L : Lay} {s : State} (hc : Ctx L s) :
   refine WP.mono (Sample.zeroLanes_ok .r31 (by decide) (s₁ := s.write .r0 (BitVec.ofNat 64 0))
     (by rw [RegUpd.gpr_write_self]; rfl) fun k hk => by
       rw [e31, RegUpd.wr_write]
-      exact hc.cs (o := 8 * k) (l := 8) (by omega) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
+      exact hc.cs (o := 8 * k) (l := 8) (by omega_arith) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
     fun s₂ h₂ => ?_
   have hf := h₂.frame
   have hz := h₂.zero
@@ -405,7 +405,7 @@ theorem zeroState_ok {L : Lay} {s : State} (hc : Ctx L s) :
 
 theorem sfx8 {sfx : Nat} (h : sfx < 256) : (BitVec.ofNat 64 sfx).setWidth 8 = BitVec.ofNat 8 sfx := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : sfx < 2 ^ 64)]
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : sfx < 2 ^ 64)]
 
 /-- `hash`: the sponge of the pieces `ins`, output into the pieces `outs`. -/
 theorem hash_ok {L : Lay} {idx : Reg → Nat} {rate sfx : Nat} (hrate : rate ∈ rates)
@@ -424,7 +424,7 @@ theorem hash_ok {L : Lay} {idx : Reg → Nat} {rate sfx : Nat} (hrate : rate ∈
   rw [hie, Bool.and_false] at p₂
   rw [List.nil_append] at r₂ p₂
   have hc₂ := k₂.rg.ctx hc
-  refine WP.seq (WP.mono (pargs_ok (rate_imm hrate) (by omega : sfx < 32768))
+  refine WP.seq (WP.mono (pargs_ok (rate_imm hrate) (by omega_arith : sfx < 32768))
     fun s₃ ⟨o₃, g3, g4, g5, g6, g7⟩ => ?_)
   have hc₃ := hc₂.only o₃
   rw [hc₂.r31] at g3 g7

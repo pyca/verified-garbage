@@ -14,8 +14,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
 import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Tactic.Set
 import Mathlib.Data.Int.GCD
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 
 /-!
 # RSASSA-PSS verification on x86-64: after the checks

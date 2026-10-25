@@ -51,33 +51,33 @@ theorem immStores_ok (vs : List Nat) : ∀ (d : Nat) (f : State), (f.gpr .esp).s
     refine wp_movS rfl fun f₁ u₁ _ => ?_
     obtain ⟨a₁, w₁⟩ := VG.Proof.Bignum.X86.PublicRt.frame_store (t := f₁) (P := P) (k := d)
       (by rw [u₁.other _ (by decide)]; exact hP) (by rw [u₁.other _ (by decide)]; exact hesp)
-      (by rw [u₁.wr]; exact hfr) (by omega)
+      (by rw [u₁.wr]; exact hfr) (by omega_arith)
     refine wp_storeS a₁ w₁ fun f₂ m₂ => ?_
     have K₂ : Keeps [.eax] f f₂ := u₁.keeps.trans (m₂.keeps _)
     refine ih (d + 4) f₂ (by rw [K₂.1 _ (by decide)]; exact hP) (by rw [K₂.1 _ (by decide)]; exact hesp)
-      (by rw [K₂.2.2]; exact hfr) (by omega) fun g K F L R => k g (K₂.trans K) ?_ ?_ ?_
+      (by rw [K₂.2.2]; exact hfr) (by omega_arith) fun g K F L R => k g (K₂.trans K) ?_ ?_ ?_
     · have F₂ : Frame [⟨P, 36⟩] f.mem f₂.mem := by
         rw [m₂.mem, u₁.mem]
         exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
-          (Offset.contains_base P (by omega) (by omega))
+          (Offset.contains_base P (by omega_arith) (by omega_arith))
       exact F₂.trans F
     · intro j hj
-      rw [L j (by omega), m₂.mem, u₁.mem]
-      exact Mem.readW_writeW_sep (Offset.sep P (Or.inl hj) (by omega) (by omega)) (by decide)
+      rw [L j (by omega_arith), m₂.mem, u₁.mem]
+      exact Mem.readW_writeW_sep (Offset.sep P (Or.inl hj) (by omega_arith) (by omega_arith)) (by decide)
     · intro i hi
       cases i with
       | zero =>
-        rw [Nat.mul_zero, Nat.add_zero, L d (by omega), m₂.mem, u₁.gpr, Mem.readW_writeW_self32]
+        rw [Nat.mul_zero, Nat.add_zero, L d (by omega_arith), m₂.mem, u₁.gpr, Mem.readW_writeW_self32]
         rfl
       | succ i =>
         have := R i (by simpa using hi)
-        rw [show d + 4 * (i + 1) = d + 4 + 4 * i by omega, this]
+        rw [show d + 4 * (i + 1) = d + 4 + 4 * i by omega_arith, this]
         rfl
 
 end
 
 theorem contextBytes_div (n : Nat) : contextBytes n / 8 * 8 = contextBytes n := by
-  simp only [contextBytes, slot, stride]; omega
+  simp only [contextBytes, slot, stride]; omega_arith
 
 /-- The callee's offsets for slots `o`, `a` and `b` (4 to 7) of a context. -/
 theorem offs {n o a b : Nat} (hn : 2 ≤ n) (ho : 4 ≤ o) (ho7 : o ≤ 7) (ha : 4 ≤ a) (ha7 : a ≤ 7)
@@ -91,8 +91,8 @@ theorem offs {n o a b : Nat} (hn : 2 ≤ n) (ho : 4 ≤ o) (ho7 : o ≤ 7) (ha :
   have sb := Nat.mul_le_mul_right (stride n) hb
   have sb7 := Nat.mul_le_mul_right (stride n) hb7
   simp only [stride] at so so7 sa sa7 sb sb7
-  refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [contextBytes, calleeScratch, slot, stride, scratchBytes, VG.Spec.Rsa.MontMul.Apart] <;> omega
+  refine ⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [contextBytes, calleeScratch, slot, stride, scratchBytes, VG.Spec.Rsa.MontMul.Apart] <;> omega_arith
 
 theorem mulBody_noSp (n o a b : Nat) :
     NoSp (.seq (.block (mulArgs n o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody) : Prog isa) := by
@@ -148,13 +148,13 @@ theorem mulArgs_ok {f : State} {n o a b : Nat} (hesp : (f.gpr .esp).toNat + 36 �
       rw [Nat.mul_zero, L 0 (by decide), m₁.mem, Mem.readW_writeW_self32]
       rfl
     | i + 1, hi =>
-      rw [show 4 * (i + 1) = 4 + 4 * i by omega, R i (by simp; omega)]
+      rw [show 4 * (i + 1) = 4 + 4 * i by omega_arith, R i (by simp; omega_arith)]
       match i with
       | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 => rfl
 
 /-- `StkOk` for a working space within another. -/
 theorem stkOk_mono {sp : BitVec 32} {base : Addr} {size k : Nat} (h : StkOk sp base size) (hk : k ≤ size) :
-    StkOk sp base k := ⟨h.1, h.2.imp id fun h' => by omega⟩
+    StkOk sp base k := ⟨h.1, h.2.imp id fun h' => by omega_arith⟩
 
 /-- A multiplication of slots of a context, by a call. -/
 theorem mul_ok {s : State} {base : Addr} {size n m o a b : Nat}
@@ -175,22 +175,22 @@ theorem mul_ok {s : State} {base : Addr} {size n m o a b : Nat}
     Covers.of_sub fun r hr => ⟨⟨base, size⟩, h.scr.wr, 0, by
       rw [List.mem_singleton.mp hr]; simp, by rw [List.mem_singleton.mp hr]; simpa using cb⟩
   have hscr : Scr (s.withRegions s.rd [⟨base, contextBytes n⟩]) base (contextBytes n) :=
-    ⟨h.scr.edi, List.mem_singleton_self _, by omega, stkOk_mono h.scr.stk cb⟩
+    ⟨h.scr.edi, List.mem_singleton_self _, by omega_arith, stkOk_mono h.scr.stk cb⟩
   have R' : CallRoom ((s.withRegions s.rd [⟨base, contextBytes n⟩]).gpr .esp) base (contextBytes n) :=
-    ⟨low, fun x h₁ h₂ => R.apart x h₁ (by simp only [Region.Contains] at h₂ ⊢; omega)⟩
+    ⟨low, fun x h₁ h₂ => R.apart x h₁ (by simp only [Region.Contains] at h₂ ⊢; omega_arith)⟩
   have hv : VG.Proof.Mont.wordsVal s.mem base (slot n 0) n = m := h.modulus.val
   have hinv : (VG.Proof.Mont.val32 s.mem base (slot n 0) (2 * n) * w32 s.mem base 0 + 1) % 2 ^ 32 = 0 := by
     rw [← wordsVal_eq_val32, hv]; exact h.inverse
   have hB' : VG.Proof.Mont.val32 s.mem base (slot n b) (2 * n) < VG.Proof.Mont.val32 s.mem base (slot n 0) (2 * n) := by
     rw [← wordsVal_eq_val32, ← wordsVal_eq_val32, hv]; exact hB
   have fEsp := allocFrame_esp 36 (s.withRegions s.rd [⟨base, contextBytes n⟩])
-  have l36 : 36 ≤ ((s.withRegions s.rd [⟨base, contextBytes n⟩]).gpr .esp).toNat := by simp; omega
+  have l36 : 36 ≤ ((s.withRegions s.rd [⟨base, contextBytes n⟩]).gpr .esp).toNat := by simp; omega_arith
   have hlen : contextBytes n = (BitVec.ofNat 32 (contextBytes n / 8)).toNat * 8 := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), contextBytes_div]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), contextBytes_div]
   have C := VG.Proof.Bignum.X86.RtCall.call_ok (is := mulArgs n o a b) hscr hlen R'
     (offs hn ho ho7 ha ha7 hb hb7) hinv hB' (mulBody_noSp n o a b)
     (by
-      refine WP.mono (mulArgs_ok (by rw [fEsp, VG.X86.sub_toNat l36]; simp; omega)
+      refine WP.mono (mulArgs_ok (by rw [fEsp, VG.X86.sub_toNat l36]; simp; omega_arith)
         (by rw [allocFrame_wr]; exact List.mem_cons_self ..)) fun g ⟨K, F, Rd⟩ => ⟨K, F, ?_⟩
       rwa [show (allocFrame 36 (s.withRegions s.rd [⟨base, contextBytes n⟩])).gpr .edi =
         (s.withRegions s.rd [⟨base, contextBytes n⟩]).gpr .edi from allocFrame_gpr _ _ (by decide)] at Rd)
@@ -210,8 +210,8 @@ theorem mul_ok {s : State} {base : Addr} {size n m o a b : Nat}
   refine F' x fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact not_contains_of_ofs (by simp only [contextBytes, slot, stride] at cb ⊢; omega) (hx _ (List.mem_cons_self ..))
-  · exact not_contains_of_ofs (by simp only [contextBytes, calleeScratch, slot, stride, scratchBytes] at cb ⊢; omega)
+  · exact not_contains_of_ofs (by simp only [contextBytes, slot, stride] at cb ⊢; omega_arith) (hx _ (List.mem_cons_self ..))
+  · exact not_contains_of_ofs (by simp only [contextBytes, calleeScratch, slot, stride, scratchBytes] at cb ⊢; omega_arith)
       (hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
   · exact hz
 

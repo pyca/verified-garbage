@@ -29,14 +29,7 @@ private theorem drawArgs_ok {s : State} {p : WitnessParams} {used passed : Nat}
     simpa only [witnessValues] using h.saved.saved 40 (by simp [witnessSlots])
   have width : s.mem.readW (State.addr (s.sp + 48#32)) 32 = BitVec.ofNat 32 ((p.bits + 7) / 8) := by
     simpa only [witnessValues] using h.saved.saved 48 (by simp [witnessSlots])
-  refine withRest [.r0, .r1, .r4, .r6] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.drawArgs : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r4, .r6] ?_ (by rfl) (by rfl)
   have read0 : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4 := by
     simpa only [BitVec.add_zero] using h.saved.read (d := 0) (by decide)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.drawArgs

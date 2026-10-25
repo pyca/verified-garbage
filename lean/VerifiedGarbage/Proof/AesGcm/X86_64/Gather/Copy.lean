@@ -57,8 +57,8 @@ theorem chunks_wp {body : List Instr} {c b : Nat} {P : Nat → State → Prop}
   rintro k t ⟨j, rfl, hj, hd, hP⟩
   have hjc : j + c ≤ b := by
     rcases Nat.lt_or_ge (b - j) c with h | h
-    · rw [Nat.mod_eq_of_lt h] at hd; omega
-    · omega
+    · rw [Nat.mod_eq_of_lt h] at hd; omega_arith
+    · omega_arith
   obtain ⟨t', run', hP', hz⟩ := hstep j t hP hjc
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have ev : isa.eval .ne t' = some !decide (j + c = b) := by show t'.zf.map (!·) = _; rw [hz]; rfl
@@ -66,8 +66,8 @@ theorem chunks_wp {body : List Instr} {c b : Nat} {P : Nat → State → Prop}
   · left
     exact ⟨by rw [ev]; simp [he], he ▸ hP'⟩
   · right
-    refine ⟨by rw [ev]; simp [he], b - (j + c), by omega, j + c, rfl, by omega, ?_, hP'⟩
-    rw [show b - (j + c) = (b - j) - c by omega]
+    refine ⟨by rw [ev]; simp [he], b - (j + c), by omega_arith, j + c, rfl, by omega_arith, ?_, hP'⟩
+    rw [show b - (j + c) = (b - j) - c by omega_arith]
     exact Nat.mod_eq_zero_of_dvd (Nat.dvd_sub (Nat.dvd_of_mod_eq_zero hd) (Nat.dvd_refl c))
 
 /-! ## The bodies -/
@@ -79,7 +79,7 @@ theorem writeBytes_over (m : Mem) (q : Addr) {xs ys : List Byte} (h : xs.length 
   simp only [writeBytes]
   by_cases h₁ : (a - q).toNat < ys.length
   · simp only [h₁, ite_true]
-  · simp only [h₁, ite_false, show ¬ (a - q).toNat < xs.length by omega]
+  · simp only [h₁, ite_false, show ¬ (a - q).toNat < xs.length by omega_arith]
 
 theorem ea_disp (s : State) (b : Reg) {B : Addr} (hb : s.gpr b = B) {j : Nat}
     (hi : s.gpr .r10 = BitVec.ofNat 64 j) (d : Nat) :
@@ -130,8 +130,8 @@ theorem CInv.readW {j k : Nat} {t : State} (ht : CInv s S D j t) (hk : j + k + 1
     (by rw [length_bytesAt]; exact Region.contains_self _ _)) _ fun r hr hcon => ?_
   simp only [List.mem_singleton] at hr; subst hr
   simp only [Offset.add_add] at hcon
-  exact h.disj _ (Offset.contains_base S (show j + k + i + 1 ≤ n by simp at hi; omega) (by omega))
-    (Region.sub_prefix (show j ≤ n by omega) _ hcon)
+  exact h.disj _ (Offset.contains_base S (show j + k + i + 1 ≤ n by simp at hi; omega_arith) (by omega_arith))
+    (Region.sub_prefix (show j ≤ n by omega_arith) _ hcon)
 
 /-- A block of the source anywhere in it, which the copy so far has left as
 it was. -/
@@ -144,7 +144,7 @@ theorem CInv.readW' {j i : Nat} {t : State} (ht : CInv s S D j t) (hj : j ≤ n)
     (by rw [length_bytesAt]; exact Region.contains_self _ _)) _ fun r hr hcon => ?_
   simp only [List.mem_singleton] at hr; subst hr
   simp only [Offset.add_add] at hcon
-  exact h.disj _ (Offset.contains_base S (show i + k + 1 ≤ n by simp at hk; omega) (by omega))
+  exact h.disj _ (Offset.contains_base S (show i + k + 1 ≤ n by simp at hk; omega_arith) (by omega_arith))
     (Region.sub_prefix hj _ hcon)
 
 /-- `k` more bytes copied, from the source as it was. -/
@@ -155,19 +155,19 @@ theorem CInv.mem_add {j k : Nat} {t : State} (ht : CInv s S D j t) (hk : j + k �
   rw [hm, ht.mem, bytesAt_add]
   conv => lhs; rw [show D + BitVec.ofNat 64 j = D + BitVec.ofNat 64 (bytesAt s.mem S j).length by
     rw [length_bytesAt]]
-  exact writeBytes_append _ _ _ _ (by rw [length_bytesAt, length_bytesAt]; omega)
+  exact writeBytes_append _ _ _ _ (by rw [length_bytesAt, length_bytesAt]; omega_arith)
 
 theorem in_rd {j : Nat} {t : State} (ht : CInv s S D j t) {i k : Nat} (hik : i + k ≤ n) :
     InRegions (t.rd ++ t.wr) (S + BitVec.ofNat 64 i) k := by
   have hn := h.lt
   rw [ht.rd, ht.wr]
-  exact h.rd _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base S hik (by omega)⟩
+  exact h.rd _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base S hik (by omega_arith)⟩
 
 theorem in_wr {j : Nat} {t : State} (ht : CInv s S D j t) {i k : Nat} (hik : i + k ≤ n) :
     InRegions t.wr (D + BitVec.ofNat 64 i) k := by
   have hn := h.lt
   rw [ht.wr]
-  exact h.wr _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base D hik (by omega)⟩
+  exact h.wr _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base D hik (by omega_arith)⟩
 
 /-- The 64-byte loop's body. -/
 theorem copy64Step_ok {j b : Nat} {t : State} (ht : CInv s S D j t) (hb : t.gpr .r8 = BitVec.ofNat 64 b)
@@ -179,14 +179,14 @@ theorem copy64Step_ok {j b : Nat} {t : State} (ht : CInv s S D j t) (hb : t.gpr 
   have hd : t.gpr .rdi = D := by rw [ht.keep _ (by decide) (by decide) (by decide), h.rdi]
   have es := ea_disp t .rsi hs ht.r10
   have ed := ea_disp t .rdi hd ht.r10
-  have r₀ := in_rd h ht (i := j + 0) (k := 16) (by omega)
-  have r₁ := in_rd h ht (i := j + 16) (k := 16) (by omega)
-  have r₂ := in_rd h ht (i := j + 32) (k := 16) (by omega)
-  have r₃ := in_rd h ht (i := j + 48) (k := 16) (by omega)
-  have w₀ := in_wr h ht (i := j + 0) (k := 16) (by omega)
-  have w₁ := in_wr h ht (i := j + 16) (k := 16) (by omega)
-  have w₂ := in_wr h ht (i := j + 32) (k := 16) (by omega)
-  have w₃ := in_wr h ht (i := j + 48) (k := 16) (by omega)
+  have r₀ := in_rd h ht (i := j + 0) (k := 16) (by omega_arith)
+  have r₁ := in_rd h ht (i := j + 16) (k := 16) (by omega_arith)
+  have r₂ := in_rd h ht (i := j + 32) (k := 16) (by omega_arith)
+  have r₃ := in_rd h ht (i := j + 48) (k := 16) (by omega_arith)
+  have w₀ := in_wr h ht (i := j + 0) (k := 16) (by omega_arith)
+  have w₁ := in_wr h ht (i := j + 16) (k := 16) (by omega_arith)
+  have w₂ := in_wr h ht (i := j + 32) (k := 16) (by omega_arith)
+  have w₃ := in_wr h ht (i := j + 48) (k := 16) (by omega_arith)
   have i64 := imm_eq (n := 64) (by decide)
   refine ⟨_, by
     simp only [copy64Body, srcD, dstD]
@@ -194,8 +194,8 @@ theorem copy64Step_ok {j b : Nat} {t : State} (ht : CInv s S D j t) (hb : t.gpr 
   refine ⟨⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩, ?_⟩
   · simp [gpr_setReg, gpr_arithFlags, ht.r10, ofNat_add_ofNat]
   · simp only [mem_setReg, mem_arithFlags, mem_setXmm, xmm_setXmm', reduceCtorEq, ↓reduceIte]
-    rw [ht.readW h (k := 0) (by omega), ht.readW h (k := 16) (by omega), ht.readW h (k := 32) (by omega),
-      ht.readW h (k := 48) (by omega), writeW_readW128, writeW_readW128, writeW_readW128, writeW_readW128,
+    rw [ht.readW h (k := 0) (by omega_arith), ht.readW h (k := 16) (by omega_arith), ht.readW h (k := 32) (by omega_arith),
+      ht.readW h (k := 48) (by omega_arith), writeW_readW128, writeW_readW128, writeW_readW128, writeW_readW128,
       writeBytes_four]
     exact ht.mem_add h hj rfl
   · intro r a b c; simp [gpr_setReg, gpr_arithFlags, c]; exact ht.keep r a b c
@@ -203,7 +203,7 @@ theorem copy64Step_ok {j b : Nat} {t : State} (ht : CInv s S D j t) (hb : t.gpr 
   · simp [wr_setReg, wr_arithFlags, wr_setXmm, ht.wr]
   · simp [gpr_setReg, gpr_arithFlags, hb]
   · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ↓reduceIte, ht.r10, hb]
-    rw [show (64#64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, ofNat_add_ofNat, sub_beq (by omega) (by omega)]
+    rw [show (64#64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, ofNat_add_ofNat, sub_beq (by omega_arith) (by omega_arith)]
 
 /-- The 16-byte loop's body. -/
 theorem copy16Step_ok {j b : Nat} {t : State} (ht : CInv s S D j t) (hb : t.gpr .r8 = BitVec.ofNat 64 b)
@@ -215,8 +215,8 @@ theorem copy16Step_ok {j b : Nat} {t : State} (ht : CInv s S D j t) (hb : t.gpr 
   have hd : t.gpr .rdi = D := by rw [ht.keep _ (by decide) (by decide) (by decide), h.rdi]
   have es := ea_disp t .rsi hs ht.r10
   have ed := ea_disp t .rdi hd ht.r10
-  have r₀ := in_rd h ht (i := j + 0) (k := 16) (by omega)
-  have w₀ := in_wr h ht (i := j + 0) (k := 16) (by omega)
+  have r₀ := in_rd h ht (i := j + 0) (k := 16) (by omega_arith)
+  have w₀ := in_wr h ht (i := j + 0) (k := 16) (by omega_arith)
   have i16 := imm_eq (n := 16) (by decide)
   refine ⟨_, by
     simp only [copy16Body, srcD, dstD]
@@ -224,14 +224,14 @@ theorem copy16Step_ok {j b : Nat} {t : State} (ht : CInv s S D j t) (hb : t.gpr 
   refine ⟨⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩, ?_⟩
   · simp [gpr_setReg, gpr_arithFlags, ht.r10, ofNat_add_ofNat]
   · simp only [mem_setReg, mem_arithFlags, mem_setXmm, xmm_setXmm', reduceCtorEq, ↓reduceIte]
-    rw [ht.readW h (k := 0) (by omega), writeW_readW128, Nat.add_zero]
+    rw [ht.readW h (k := 0) (by omega_arith), writeW_readW128, Nat.add_zero]
     exact ht.mem_add h hj rfl
   · intro r a b c; simp [gpr_setReg, gpr_arithFlags, c]; exact ht.keep r a b c
   · simp [rd_setReg, rd_arithFlags, rd_setXmm, ht.rd]
   · simp [wr_setReg, wr_arithFlags, wr_setXmm, ht.wr]
   · simp [gpr_setReg, gpr_arithFlags, hb]
   · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ↓reduceIte, ht.r10, hb]
-    rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ofNat_add_ofNat, sub_beq (by omega) (by omega)]
+    rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ofNat_add_ofNat, sub_beq (by omega_arith) (by omega_arith)]
 
 /-- The byte loop's body, which keeps `r8`. -/
 theorem copy1Step_ok8 {j : Nat} {t : State} (ht : CInv s S D j t) (hj : j + 1 ≤ n) :
@@ -244,8 +244,8 @@ theorem copy1Step_ok8 {j : Nat} {t : State} (ht : CInv s S D j t) (hj : j + 1 �
   have es := ea_disp t .rsi hs ht.r10 0
   have ed := ea_disp t .rdi hd ht.r10 0
   rw [Nat.add_zero] at es ed
-  have r₀ := in_rd h ht (i := j) (k := 1) (by omega)
-  have w₀ := in_wr h ht (i := j) (k := 1) (by omega)
+  have r₀ := in_rd h ht (i := j) (k := 1) (by omega_arith)
+  have w₀ := in_wr h ht (i := j) (k := 1) (by omega_arith)
   have i1 := imm_eq (n := 1) (by decide)
   refine ⟨_, by
     simp only [copy1Body, srcD, dstD]
@@ -255,13 +255,13 @@ theorem copy1Step_ok8 {j : Nat} {t : State} (ht : CInv s S D j t) (hj : j + 1 �
   · have hlen : (bytesAt s.mem S j).length = j := length_bytesAt _ _ _
     simp only [mem_setReg, mem_arithFlags, BitVec.setWidth_setWidth_of_le _ (show 8 ≤ 64 by decide),
       BitVec.setWidth_eq]
-    rw [ht.mem, src_kept h.disj (by omega) h.lt _ hlen, bytesAt_succ,
-      writeBytes_snoc s.mem D (bytesAt s.mem S j) _ (by rw [hlen]; omega), hlen]
+    rw [ht.mem, src_kept h.disj (by omega_arith) h.lt _ hlen, bytesAt_succ,
+      writeBytes_snoc s.mem D (bytesAt s.mem S j) _ (by rw [hlen]; omega_arith), hlen]
   · intro r a b c; simp [gpr_setReg, gpr_arithFlags, a, c]; exact ht.keep r a b c
   · simp [rd_setReg, rd_arithFlags, ht.rd]
   · simp [wr_setReg, wr_arithFlags, ht.wr]
   · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ↓reduceIte, reduceCtorEq, ht.r10, hc]
-    rw [show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_add_ofNat, sub_beq (by omega) (by omega)]
+    rw [show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_add_ofNat, sub_beq (by omega_arith) (by omega_arith)]
 
 /-- The byte loop's body. -/
 theorem copy1Step_ok {j : Nat} {t : State} (ht : CInv s S D j t) (hj : j + 1 ≤ n) :
@@ -278,9 +278,9 @@ theorem copyLast_ok {j : Nat} {t : State} (ht : CInv s S D j t) (hj : n - 16 ≤
   have hc : t.gpr .rcx = BitVec.ofNat 64 n := by rw [ht.keep _ (by decide) (by decide) (by decide), h.rcx]
   have hsub : BitVec.ofNat 64 n - BitVec.ofNat 64 16 = BitVec.ofNat 64 (n - 16) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub, toNat_ofNat_of_lt (show n < 2 ^ 64 by omega), toNat_ofNat_of_lt (show 16 < 2 ^ 64 by decide),
-      toNat_ofNat_of_lt (show n - 16 < 2 ^ 64 by omega)]
-    omega
+    rw [BitVec.toNat_sub, toNat_ofNat_of_lt (show n < 2 ^ 64 by omega_arith), toNat_ofNat_of_lt (show 16 < 2 ^ 64 by decide),
+      toNat_ofNat_of_lt (show n - 16 < 2 ^ 64 by omega_arith)]
+    omega_arith
   have i16 := imm_eq (n := 16) (by decide)
   rw [show copyLast = [.mov .r10 (.reg .rcx), .alu .sub .r10 (imm 16)] ++
     ([.movdquLoad .xmm0 (srcD 0), .movdquStore (dstD 0) .xmm0] : List Instr) from rfl, WP.block_append_iff]
@@ -295,25 +295,25 @@ theorem copyLast_ok {j : Nat} {t : State} (ht : CInv s S D j t) (hj : n - 16 ≤
   have ed := ea_disp t₁ .rdi (by rw [g₁ _ (by decide), hd]) r10₁ 0
   rw [Nat.add_zero] at es ed
   have r₀ : InRegions (t₁.rd ++ t₁.wr) (S + BitVec.ofNat 64 (n - 16)) 16 := by
-    rw [rd₁, wr₁]; exact in_rd h ht (by omega)
-  have w₀ : InRegions t₁.wr (D + BitVec.ofNat 64 (n - 16)) 16 := by rw [wr₁]; exact in_wr h ht (by omega)
+    rw [rd₁, wr₁]; exact in_rd h ht (by omega_arith)
+  have w₀ : InRegions t₁.wr (D + BitVec.ofNat 64 (n - 16)) 16 := by rw [wr₁]; exact in_wr h ht (by omega_arith)
   apply WP.of_runBlock
   refine ⟨_, by
     simp only [srcD, dstD]
     mrun [es, ed, r₀, w₀], ?_⟩
   refine ⟨?_, ?_, ?_, ?_⟩
   · simp only [mem_setXmm, xmm_setXmm', ↓reduceIte, m₁]
-    rw [ht.readW' h hjn (i := n - 16) (by omega), writeW_readW128, ht.mem]
+    rw [ht.readW' h hjn (i := n - 16) (by omega_arith), writeW_readW128, ht.mem]
     -- The first `j` bytes, then the last 16 over the `j - (n - 16)` of them before the rest.
     have a₁ := bytesAt_add s.mem S (n - 16) (j - (n - 16))
     have a₂ := bytesAt_add s.mem S (n - 16) 16
-    rw [show n - 16 + (j - (n - 16)) = j by omega] at a₁
-    rw [show n - 16 + 16 = n by omega] at a₂
+    rw [show n - 16 + (j - (n - 16)) = j by omega_arith] at a₁
+    rw [show n - 16 + 16 = n by omega_arith] at a₂
     have hA : (bytesAt s.mem S (n - 16)).length = n - 16 := length_bytesAt _ _ _
-    rw [a₁, ← writeBytes_append _ _ _ _ (by rw [length_bytesAt, length_bytesAt]; omega), hA,
-      writeBytes_over _ _ (by rw [length_bytesAt, length_bytesAt]; omega),
+    rw [a₁, ← writeBytes_append _ _ _ _ (by rw [length_bytesAt, length_bytesAt]; omega_arith), hA,
+      writeBytes_over _ _ (by rw [length_bytesAt, length_bytesAt]; omega_arith),
       show D + BitVec.ofNat 64 (n - 16) = D + BitVec.ofNat 64 (bytesAt s.mem S (n - 16)).length by rw [hA],
-      writeBytes_append _ _ _ _ (by rw [length_bytesAt, length_bytesAt]; omega), ← a₂]
+      writeBytes_append _ _ _ _ (by rw [length_bytesAt, length_bytesAt]; omega_arith), ← a₂]
   · intro r a b c; simp only [gpr_setXmm]; rw [g₁ r c]; exact ht.keep r a b c
   · simp [rd_setXmm, rd₁, ht.rd]
   · simp [wr_setXmm, wr₁, ht.wr]
@@ -328,16 +328,16 @@ theorem shr_ofNat (n k : Nat) (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> k = BitV
 /-- `r8 := c ⌊n / c⌋` for `c = 2 ^ k`, by shifts. -/
 theorem round_ofNat (n k : Nat) (hn : n < 2 ^ 63) :
     BitVec.ofNat 64 n >>> k <<< k = BitVec.ofNat 64 (2 ^ k * (n / 2 ^ k)) := by
-  rw [shr_ofNat n k (by omega), shl_ofNat (by
+  rw [shr_ofNat n k (by omega_arith), shl_ofNat (by
     have : n / 2 ^ k * 2 ^ k ≤ n := Nat.div_mul_le_self n _
-    omega), Nat.mul_comm]
+    omega_arith), Nat.mul_comm]
 
 /-- `16 ⌊n / 16⌋`, by shifts, for any `n` that fits. -/
 theorem round16 {n : Nat} (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 4 <<< 4 = BitVec.ofNat 64 (16 * (n / 16)) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (by omega),
-    Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (by omega_arith),
+    Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 section
 variable {s : State} {S D : Addr} {n : Nat} (h : CopyPre s S D n)
@@ -358,7 +358,7 @@ theorem setup64_ok : WP isa (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), 
       by simp [rd_setReg, rd_setFlags, rd_arithFlags], by simp [wr_setReg, wr_setFlags, wr_arithFlags]⟩,
     by simp [gpr_setReg, gpr_setFlags, gpr_arithFlags, e]⟩, ?_⟩
   simp only [zf_arithFlags, gpr_setReg, gpr_setFlags, ↓reduceIte, e]
-  rw [show (0#64 : BitVec 64) = BitVec.ofNat 64 0 from rfl, sub_beq (by omega) (by decide)]
+  rw [show (0#64 : BitVec 64) = BitVec.ofNat 64 0 from rfl, sub_beq (by omega_arith) (by decide)]
 
 /-- The second setup: `r8 = 16 ⌊n / 16⌋`, `ZF` if the first loop reached it. -/
 theorem setup16_ok {t : State} (ht : CInv s S D (64 * (n / 64)) t) :
@@ -376,7 +376,7 @@ theorem setup16_ok {t : State} (ht : CInv s S D (64 * (n / 64)) t) :
       by simp [rd_setReg, rd_setFlags, rd_arithFlags, ht.rd], by simp [wr_setReg, wr_setFlags, wr_arithFlags, ht.wr]⟩,
     by simp [gpr_setReg, gpr_setFlags, gpr_arithFlags, e]⟩, ?_⟩
   simp only [zf_arithFlags, gpr_setReg, gpr_setFlags, ↓reduceIte, reduceCtorEq, e, ht.r10]
-  rw [sub_beq (by omega) (by omega)]
+  rw [sub_beq (by omega_arith) (by omega_arith)]
 
 /-- The third setup: `ZF` if the second loop reached `n`. -/
 theorem setup1_ok {t : State} (ht : CInv s S D (16 * (n / 16)) t) :
@@ -390,7 +390,7 @@ theorem setup1_ok {t : State} (ht : CInv s S D (16 * (n / 16)) t) :
     fun r a b c => by simp [gpr_arithFlags]; exact ht.keep r a b c, by simp [rd_arithFlags, ht.rd],
     by simp [wr_arithFlags, ht.wr]⟩, ?_⟩
   simp only [zf_arithFlags]
-  rw [sub_beq (by omega) (by omega)]
+  rw [sub_beq (by omega_arith) (by omega_arith)]
 
 /-- The fourth setup: `CF` if there are fewer than 16 bytes. -/
 theorem setupLast_ok {j : Nat} {t : State} (ht : CInv s S D j t) :
@@ -403,7 +403,7 @@ theorem setupLast_ok {j : Nat} {t : State} (ht : CInv s S D j t) :
   refine ⟨⟨by simp [gpr_arithFlags, ht.r10], by simp [mem_arithFlags, ht.mem],
     fun r a b c => by simp [gpr_arithFlags]; exact ht.keep r a b c, by simp [rd_arithFlags, ht.rd],
     by simp [wr_arithFlags, ht.wr]⟩, ?_⟩
-  simp only [cf_arithFlags, toNat_ofNat_of_lt (show n < 2 ^ 64 by omega), toNat_ofNat_of_lt (show 16 < 2 ^ 64 by decide)]
+  simp only [cf_arithFlags, toNat_ofNat_of_lt (show n < 2 ^ 64 by omega_arith), toNat_ofNat_of_lt (show 16 < 2 ^ 64 by decide)]
 
 /-- `copy`: the `n` bytes at `S` copied to `D`. -/
 theorem copy_ok : WP isa copy s (CopyPost s S D n) := by
@@ -415,30 +415,30 @@ theorem copy_ok : WP isa copy s (CopyPost s S D n) := by
   · refine WP.ite (decide (64 * (n / 64) = 0)) (by simp only [eval, z₁]) (fun e => ?_) (fun e => ?_)
     · exact WP.block_nil (by have : 64 * (n / 64) = 0 := by simpa using e
                              rw [this]; exact c₁)
-    · have hp : 0 < 64 * (n / 64) := by simp at e; omega
+    · have hp : 0 < 64 * (n / 64) := by simp at e; omega_arith
       exact WP.mono (chunks_wp (P := fun j t => CInv s S D j t ∧ t.gpr .r8 = BitVec.ofNat 64 (64 * (n / 64)))
-        (fun j t ⟨c, r8⟩ hj => copy64Step_ok h c r8 (by omega) (by omega)) (by decide)
-        (⟨c₁, r8₁⟩ : CInv s S D 0 t₁ ∧ _) hp (by omega)) fun _ h => h.1
+        (fun j t ⟨c, r8⟩ hj => copy64Step_ok h c r8 (by omega_arith) (by omega_arith)) (by decide)
+        (⟨c₁, r8₁⟩ : CInv s S D 0 t₁ ∧ _) hp (by omega_arith)) fun _ h => h.1
   refine WP.seq (WP.mono (setup16_ok h c₂) fun t₃ ⟨⟨c₃, r8₃⟩, z₃⟩ => ?_)
   refine WP.seq (WP.mono (Q := CInv s S D (16 * (n / 16))) ?_ fun t₄ c₄ => ?_)
   · refine WP.ite (decide (64 * (n / 64) = 16 * (n / 16))) (by simp only [eval, z₃]) (fun e => ?_) (fun e => ?_)
     · exact WP.block_nil (by have : 64 * (n / 64) = 16 * (n / 16) := by simpa using e
                              rw [← this]; exact c₃)
-    · have hp : 64 * (n / 64) < 16 * (n / 16) := by simp at e; omega
+    · have hp : 64 * (n / 64) < 16 * (n / 16) := by simp at e; omega_arith
       exact WP.mono (chunks_wp (P := fun j t => CInv s S D j t ∧ t.gpr .r8 = BitVec.ofNat 64 (16 * (n / 16)))
-        (fun j t ⟨c, r8⟩ hj => copy16Step_ok h c r8 (by omega) (by omega)) (by decide)
-        (⟨c₃, r8₃⟩ : CInv s S D (64 * (n / 64)) t₃ ∧ _) hp (by omega)) fun _ h => h.1
+        (fun j t ⟨c, r8⟩ hj => copy16Step_ok h c r8 (by omega_arith) (by omega_arith)) (by decide)
+        (⟨c₃, r8₃⟩ : CInv s S D (64 * (n / 64)) t₃ ∧ _) hp (by omega_arith)) fun _ h => h.1
   refine WP.seq (WP.mono (setup1_ok h c₄) fun t₅ ⟨c₅, z₅⟩ => ?_)
   refine WP.ite (decide (16 * (n / 16) = n)) (by simp only [eval, z₅]) (fun e => ?_) (fun e => ?_)
   · exact WP.block_nil (done (by have : 16 * (n / 16) = n := by simpa using e
                                  rw [← this]; exact c₅))
-  have hp : 16 * (n / 16) < n := by simp at e; omega
+  have hp : 16 * (n / 16) < n := by simp at e; omega_arith
   refine WP.seq (WP.mono (setupLast_ok h c₅) fun t₆ ⟨c₆, cf₆⟩ => ?_)
   refine WP.ite (decide (n < 16)) (by simp only [eval, cf₆]) (fun e₆ => ?_) (fun e₆ => ?_)
   · exact WP.mono (chunks_wp (P := fun j t => CInv s S D j t) (fun j t c hj => copy1Step_ok h c hj) (by decide)
-      c₆ hp (by omega)) fun _ h => done h
+      c₆ hp (by omega_arith)) fun _ h => done h
   · have h16 : 16 ≤ n := by simpa using e₆
-    exact copyLast_ok h c₆ (by omega) (by omega) h16
+    exact copyLast_ok h c₆ (by omega_arith) (by omega_arith) h16
 
 end
 

@@ -94,12 +94,12 @@ theorem sieve_ok {s : State} {p : PP} {w c : Nat} {v : BitVec 64} (h : PSt p w s
   have hc₁ : wv s₁.mem p.B (slot w aN) w = c := by rw [hm₁]; exact hc
   refine WP.seq (WP.mono (wp_countdown (N := 13) (by decide) (by decide) (fun k t => TLInv s₁ p.B p.Z w t ∧
       t.gpr .x9 = off p.B (slot w aTab + 8 * k) ∧ t.gpr .x1 = mask (anyPre c (4 * k)))
-    (fun k hk t ⟨hI, h9, hf⟩ _ => tlIter_ok hc₁ hT (by omega) htab₁ hI h9 hf)
+    (fun k hk t ⟨hI, h9, hf⟩ _ => tlIter_ok hc₁ hT (by omega_arith) htab₁ hI h9 hf)
     ⟨⟨hws₁, h7₁, h8₁, rfl, Keep.refl _ _⟩, h9₁, by rw [h1₁, Nat.mul_zero, anyPre_zero]; rfl⟩ h10₁)
     fun s₂ ⟨hI₂, h9₂, h1₂⟩ => ?_)
   refine (WP.mono (WP.keep (c := .block [ld .x17 .x9]) [.x17] (Q := fun t => t.gpr .x17 = BitVec.ofNat 64 (tabWord 13) ∧ t.mem = s₂.mem)
     (by
-      have hld : InRegions (s₂.rd ++ s₂.wr) (off p.B (slot w aTab + 8 * 13)) 8 := hI₂.ws.scr.ld (by omega)
+      have hld : InRegions (s₂.rd ++ s₂.wr) (off p.B (slot w aTab + 8 * 13)) 8 := hI₂.ws.scr.ld (by omega_arith)
       brun [h9₂, hld, hI₂.mem, htab₁ 13 (by decide)])
     (by decide) (by decide) (by decide +kernel)) fun s₃ ⟨⟨h17₃, hm₃⟩, k₃⟩ => ?_)
   have hI₃ : TLInv s₁ p.B p.Z w s₃ := ⟨hI₂.ws.congr' (rs := []) (by rw [hm₃]; exact Frm.refl _ _ _) (by simp) k₃
@@ -112,15 +112,15 @@ theorem sieve_ok {s : State} {p : PP} {w c : Nat} {v : BitVec 64} (h : PSt p w s
   have hv₄ : s₄.mem.readW (off p.B (8 * fBad)) 64 = v := by rw [hm₄]; exact hv
   refine WP.mono (WP.keep [.x5] (Q := fun t => t.mem = s₄.mem.writeW (off p.B (8 * fBad)) (v ||| mask (anyPre c 53)))
     (by
-      brun [hI₄.ws.x0, hdr_enc (show fBad < 32 by decide), hI₄.ws.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega),
-        hI₄.ws.scr.st (d := 8 * fBad) (by simp only [fBad]; omega), hv₄, h1₄])
+      brun [hI₄.ws.x0, hdr_enc (show fBad < 32 by decide), hI₄.ws.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega_arith),
+        hI₄.ws.scr.st (d := 8 * fBad) (by simp only [fBad]; omega_arith), hv₄, h1₄])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k₅⟩ => ?_
   have hf : Frm p.B [(8 * fBad, 8)] s.mem t.mem := by
-    rw [hm, hm₄]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [fBad]; omega)) (by simp)
+    rw [hm, hm₄]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [fBad]; omega_arith)) (by simp)
   have k15 := (k₁.trans hI₄.keep).trans k₅
   refine ⟨h.step (hws.congr' hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.hdr (by decide)) k15
     (by decide)) hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.hdr (by decide))
-    (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fBad]; omega) k15, by rw [hm, word_writeW_self], hf,
+    (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fBad]; omega_arith) k15, by rw [hm, word_writeW_self], hf,
     k15.mono (by decide)⟩
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate

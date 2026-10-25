@@ -95,15 +95,15 @@ theorem rowSetup_ok (h : In Ex base bytes len args s) {b : Loc} (hb : lo len b +
   have po : prodOff = 256 := rfl
   have ma : mulAOff = 2312 := rfl
   simp only [List.cons_append, List.append_assoc]
-  refine wp_movS (readSrc_ptr h.ws hp (d := mulAOff - prodOff) (by omega)) fun u₁ a₁ _ => ?_
+  refine wp_movS (readSrc_ptr h.ws hp (d := mulAOff - prodOff) (by omega_arith)) fun u₁ a₁ _ => ?_
   have h₁ := h.regs a₁.keeps a₁.mem
-  refine wp_storeS (h₁.scratch.ea (d := multOff) (by omega)) (h₁.scratch.write (d := multOff) (n := 4)
-    (by omega)) fun u₂ m₂ => ?_
+  refine wp_storeS (h₁.scratch.ea (d := multOff) (by omega_arith)) (h₁.scratch.write (d := multOff) (n := 4)
+    (by omega_arith)) fun u₂ m₂ => ?_
   have O₂ : Outside base multOff 4 s.mem u₂.mem := by
-    rw [m₂.mem, a₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    rw [m₂.mem, a₁.mem]; exact writeW32_outside _ _ _ (by omega_arith)
   have K₂ : Keeps [.eax] s u₂ := a₁.keeps.trans (m₂.keeps _)
-  have h₂ := h.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega))
-  refine ptrTo_ok (r := .ecx) (t := .edx) (x := b) (by decide) (by decide) h₂.edi h₂.width h.upper' (by omega)
+  have h₂ := h.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
+  refine ptrTo_ok (r := .ecx) (t := .edx) (x := b) (by decide) (by decide) h₂.edi h₂.width h.upper' (by omega_arith)
     fun u₃ K₃ m₃ p₃ => ?_
   have h₃ := h₂.regs K₃ m₃
   refine widthC_ok (k := 0) (c := .wide) (r := .esi) h₃.width h.upper' fun u₄ K₄ m₄ e₄ => ?_
@@ -112,9 +112,9 @@ theorem rowSetup_ok (h : In Ex base bytes len args s) {b : Loc} (hb : lo len b +
   refine k u₅ ((((K₂.mono (by decide)).trans (K₃.mono (by decide))).trans (K₄.mono (by decide))).trans
     (a₅.keeps.mono (by decide))) (by rw [mem₅]; exact O₂) ?_ ?_ ?_ (by rw [a₅.gpr])
   · rw [mem₅, m₂.mem, w32_write_self, a₁.gpr, show prodOff + 4 * i + (mulAOff - prodOff) =
-      mulAOff + 4 * i by omega]
+      mulAOff + 4 * i by omega_arith]
   · rw [PtrAt, a₅.other _ (by decide), K₄.1 _ (by decide)]; exact p₃
-  · rw [a₅.other _ (by decide), e₄, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), bw]
+  · rw [a₅.other _ (by decide), e₄, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), bw]
 
 /-- The end of a row: its carry word stored, `ebp` at the next row, and ZF after the last. -/
 theorem rowTail_ok (h : In Ex base bytes len args s) {i : Nat} (hi : i < cwc len .wide)
@@ -176,7 +176,7 @@ abbrev prodR (len : Nat) : List (Nat × Nat) := [(multOff, 4), (prodOff, 2 * bc 
 theorem prodR_fit (h : In Ex base bytes len args s) : ∀ p ∈ prodR len, p.1 + p.2 ≤ bytes := by
   have pf := h.prod_fit
   intro p hp; simp only [prodR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl <;> simp only [multOff, prodOff, mulAOff, numBase] at * <;> omega
+  rcases hp with rfl | rfl <;> simp only [multOff, prodOff, mulAOff, numBase] at * <;> omega_arith
 
 /-- A product keeps everything from the multiplicand up. -/
 theorem prodR_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
@@ -185,7 +185,7 @@ theorem prodR_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Me
   have pf := h.prod_fit
   refine frameR_val32 F R h.scratch.nowrap hk ?_ (prodR_fit h)
   intro p hp; simp only [prodR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl <;> simp only [multOff, prodOff, mulAOff, numBase] at * <;> omega
+  rcases hp with rfl | rfl <;> simp only [multOff, prodOff, mulAOff, numBase] at * <;> omega_arith
 
 /-- The product of the multiplicand at `mulAOff` and the number `b`, `B` bytes each, into the
 `2 B + 4` bytes at `prodOff`. -/

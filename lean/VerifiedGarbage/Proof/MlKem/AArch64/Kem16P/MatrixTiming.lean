@@ -91,7 +91,7 @@ theorem prfPair_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
     rw [Paired.seedState_eq _ _ (by lom) (by lom), Paired.seedState_eq _ _ (by lom) (by lom)]
     unfold Paired.seedBytes
     rw [h₁.b.rho, ba SB, h₂.b.rho]
-  have ct := pairPCode_relCT (w16 := true) P RB (TP P) (a := 2 * i) (m := m) (by omega) hbo h4 (by decide) (by decide)
+  have ct := pairPCode_relCT (w16 := true) P RB (TP P) (a := 2 * i) (m := m) (by omega_arith) hbo h4 (by decide) (by decide)
     (by decide) hoa hob ps hs pu hu rfl (by decide) (by decide) rfl (by rw [h₁.b.kb.sp, h₂.b.kb.sp, sm.sp]) (seeds _) (seeds _)
   have ht := exec_post (paired_stepP hp hk he hN hm h₁ t₁) et
   have hv := exec_post (paired_stepP hq hk' he hN hm h₂ t₂) eu
@@ -162,7 +162,7 @@ theorem lastPP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pr
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
   have hk1 : 0 < P.k := hf.1
   have hn : 0 < P.k * P.k := Nat.mul_pos hk1 hk1
-  have he : P.k * P.k - 1 < P.k * P.k := by omega
+  have he : P.k * P.k - 1 < P.k * P.k := by omega_arith
   have hoff : AH + 1024 * (P.k * P.k - 1) < 65536 := by simp only [KEM.AH]; omega_using [hkk]
   have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀ < 65536 := by
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; lom
@@ -180,8 +180,8 @@ theorem lastPP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pr
       Paired.seedBytes u.mem (sA L σ SB) (P.k * P.k - 1) P.k := by
     unfold Paired.seedBytes
     rw [h₁.b.rho, ba SB, h₂.b.rho]
-  have ct := lastCodeP_relCT P (w16 := true) (a := P.k * P.k - 1) (by omega) hbo h4 (by decide) (by decide)
-    (by decide) hoff hk1 (by omega) ps pu (sdisj hp (o₂ := AH + 1024 * (P.k * P.k - 1)) (l₂ := 1024)
+  have ct := lastCodeP_relCT P (w16 := true) (a := P.k * P.k - 1) (by omega_arith) hbo h4 (by decide) (by decide)
+    (by decide) hoff hk1 (by omega_arith) ps pu (sdisj hp (o₂ := AH + 1024 * (P.k * P.k - 1)) (l₂ := 1024)
       (by lom) (by lom) (by lom))
     ls lu (apart_of hp hN t₁) (e28 h₁.b.kb RB) (e28 h₁.b.kb _)
     (by rw [h₁.b.kb.sp, h₂.b.kb.sp, sm.sp]) (by rw [h₁.b.kb.x28, h₂.b.kb.x28, sm.base]) seed
@@ -220,12 +220,12 @@ theorem matrixP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
     intro i hi
     have := ho.part; have := ho.three
     simp only [Impl.MlKem.AArch64.Hybrid.hashPairs, Impl.MlKem.AArch64.Hybrid.blocks] at hi
-    omega
+    omega_arith
   generalize hH : Impl.MlKem.AArch64.Hybrid.hashPairs M.S = H at hP h9 hb hlen ⊢
   have hpairs : Impl.MlKem.AArch64.Kem16P.pairs P = P.k * P.k / 2 := rfl
   unfold Impl.MlKem.AArch64.Kem16P.matrixP
   simp only [hH, filter_lt_range, filter_ge_range, List.map_map]
-  rw [show min H (Impl.MlKem.AArch64.Kem16P.pairs P) = H by omega]
+  rw [show min H (Impl.MlKem.AArch64.Kem16P.pairs P) = H by omega_arith]
   apply RelCTs.seqs (by simp)
   refine RelCTs.append (R := PRel P L σ τ ρ (2 * (Impl.MlKem.AArch64.Kem16P.pairs P - H + H))
       (min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H))))
@@ -234,8 +234,8 @@ theorem matrixP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
   · have r := RelCTs.range (n := H) (f := fun i => Impl.MlKem.AArch64.Hybrid.pair3 P M.S (2 * i) i true)
       (I := fun i s u => HRel true P L M σ τ m n ρ Eσ Eτ (2 * i) i s u ∧ s.syms = s₀.syms ∧ u.syms = u₀.syms)
       fun i hi => by
-        rw [show 2 * (i + 1) = 2 * i + 2 by omega]
-        exact relCT_syms (hashPair_relCT hp hq hk hk' hM hM' sm (by omega) (hlen i hi) habs)
+        rw [show 2 * (i + 1) = 2 * i + 2 by omega_arith]
+        exact relCT_syms (hashPair_relCT hp hq hk hk' hM hM' sm (by omega_arith) (hlen i hi) habs)
     simpa only [Nat.mul_zero] using r
   -- The pairs computing PRF outputs.
   · have r := RelCTs.range (n := Impl.MlKem.AArch64.Kem16P.pairs P - H)
@@ -244,47 +244,47 @@ theorem matrixP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
         else Impl.MlKem.AArch64.Kem16P.pairP SB SS AH RB (TP P) P (2 * i) (3 * (i - H)) (Impl.MlKem.AArch64.Kem16P.pairCount P H i)) ∘
           (· + H))
       fun j hj => by
-        have he : 2 * (j + H) + 1 < P.k * P.k := by omega
+        have he : 2 * (j + H) + 1 < P.k * P.k := by omega_arith
         simp only [Function.comp]
-        rw [show 2 * (j + 1 + H) = 2 * (j + H) + 2 by omega]
+        rw [show 2 * (j + 1 + H) = 2 * (j + H) + 2 by omega_arith]
         by_cases hc : Impl.MlKem.AArch64.Kem16P.pairCount P H (j + H) = 0
         · rw [ite_eq_left hc]
           have hc' : Impl.MlKem.AArch64.Kem16P.placed P H ≤ 3 * j := by
-            simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega
+            simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega_arith
           rw [show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (j + 1)) =
-            min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) by omega]
-          exact plainPairP_relCT hp hq sm he (by omega)
+            min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) by omega_arith]
+          exact plainPairP_relCT hp hq sm he (by omega_arith)
         · rw [ite_eq_right hc]
           have hc' : 3 * j < Impl.MlKem.AArch64.Kem16P.placed P H := by
-            simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega
-          rw [show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) = 3 * (j + H - H) by omega,
+            simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega_arith
+          rw [show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) = 3 * (j + H - H) by omega_arith,
             show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (j + 1)) =
               3 * (j + H - H) + Impl.MlKem.AArch64.Kem16P.pairCount P H (j + H) by
-              simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega]
-          exact prfPair_relCT hp hq hk hk' sm he (by omega)
-            (by simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega)
+              simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega_arith]
+          exact prfPair_relCT hp hq hk hk' sm he (by omega_arith)
+            (by simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega_arith)
     simpa only [Nat.zero_add, Nat.mul_zero, Nat.min_zero] using r
   -- The singleton.
-  · rw [show Impl.MlKem.AArch64.Kem16P.pairs P - H + H = P.k * P.k / 2 by omega]
+  · rw [show Impl.MlKem.AArch64.Kem16P.pairs P - H + H = P.k * P.k / 2 by omega_arith]
     by_cases hodd : Impl.MlKem.AArch64.Kem16P.single P = true
     · rw [ite_eq_left hodd]
       have hodd' : P.k * P.k % 2 = 1 := by
         simpa [Impl.MlKem.AArch64.Kem16P.single] using hodd
-      rw [show 2 * (P.k * P.k / 2) = P.k * P.k - 1 by omega]
+      rw [show 2 * (P.k * P.k / 2) = P.k * P.k - 1 by omega_arith]
       by_cases hl : Impl.MlKem.AArch64.Kem16P.placed P H ≥ 3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H) + 3
       · rw [ite_eq_left hl, show min (Impl.MlKem.AArch64.Kem16P.placed P H)
-          (3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H)) = 3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H) by omega]
-        refine ⟨_, lastPP_relCT hp hq hk hk' sm (by omega), fun s u h => ?_⟩
+          (3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H)) = 3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H) by omega_arith]
+        refine ⟨_, lastPP_relCT hp hq hk hk' sm (by omega_arith), fun s u h => ?_⟩
         rw [Nat.sub_add_cancel hn] at h
         simpa only [finalCount, hodd, hl, and_self, ite_true] using h
       · rw [ite_eq_right hl, Paired.lastSample_eq]
-        refine ⟨_, lastQ_relCT hp hq sm (by omega : P.k * P.k - 1 < P.k * P.k) (by omega), fun s u h => ?_⟩
+        refine ⟨_, lastQ_relCT hp hq sm (by omega_arith : P.k * P.k - 1 < P.k * P.k) (by omega_arith), fun s u h => ?_⟩
         rw [Nat.sub_add_cancel hn] at h
         simpa only [finalCount, hodd, hl, and_false, ite_false, Bool.false_eq_true] using h
     · rw [ite_eq_right hodd]
       have hev : P.k * P.k % 2 = 0 := by
-        simp only [Impl.MlKem.AArch64.Kem16P.single, decide_eq_true_eq] at hodd; omega
-      rw [show 2 * (P.k * P.k / 2) = P.k * P.k by omega]
+        simp only [Impl.MlKem.AArch64.Kem16P.single, decide_eq_true_eq] at hodd; omega_arith
+      rw [show 2 * (P.k * P.k / 2) = P.k * P.k by omega_arith]
       intro s u h
       simpa only [finalCount, hodd, Bool.false_eq_true, false_and, ite_false] using h
 

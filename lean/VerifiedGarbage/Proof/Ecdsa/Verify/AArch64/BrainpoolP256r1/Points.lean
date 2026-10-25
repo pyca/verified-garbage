@@ -27,7 +27,7 @@ abbrev ptsW : List Nat := [EXPP, BM, K, EM, RX, RY, RZ, ACC, PT, T0, T1, T2, T3,
 
 /-- A slot apart from what the calls of `vg_brainpoolp256r1_mul` (`qW`) and the slots of `ptsW` write. -/
 theorem apart_pts {i : Nat} (hi : i < 45) (hl : i ∉ ptsW)
-    (hiA : i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 := by first | decide | exact ⟨by omega, by omega⟩) :
+    (hiA : i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 := by first | decide | exact ⟨by omega_arith, by omega_arith⟩) :
     ∀ w ∈ Proof.Ecdh.AArch64.BrainpoolP256r1.qW, brainpoolp256r1.sl i + 8 * brainpoolp256r1.n ≤ w.1 ∨ w.1 + w.2 ≤ brainpoolp256r1.sl i := by
   have s₁ : ∀ x ∈ [EXPP], x ∈ ptsW := by decide
   have s₂ : ∀ x ∈ [BM], x ∈ ptsW := by decide
@@ -51,11 +51,11 @@ theorem points_ok (hc : BaseCfgOk brainpoolp256r1) {s₀ : State} {base : Addr} 
   have hn := hM.scr.nowrap
   have hp3 := hc.p_ge
   have F := hM.fixed
-  have hmont : ∀ x, brainpoolp256r1.mont x < brainpoolp256r1.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, brainpoolp256r1.mont x < brainpoolp256r1.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have sz : ∀ {i}, i < 45 → brainpoolp256r1.sl i + 8 * brainpoolp256r1.n ≤ size := fun hi => sl_le brainpoolp256r1 h7 hi
   have m8 := sl_mod8 brainpoolp256r1
   have ap : ∀ {i j}, i ≠ j → brainpoolp256r1.sl i ≤ brainpoolp256r1.sl j ∨ brainpoolp256r1.sl j + 8 * brainpoolp256r1.n ≤ brainpoolp256r1.sl i := fun h => by
-    rcases sl_apart4 brainpoolp256r1 (by decide) h with h | h <;> omega
+    rcases sl_apart4 brainpoolp256r1 (by decide) h with h | h <;> omega_arith
   unfold Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.points
   refine WP.seq ?_
   -- `r` to `EM`, and `u` to `K`.
@@ -209,23 +209,23 @@ theorem points_ok (hc : BaseCfgOk brainpoolp256r1) {s₀ : State} {base : Addr} 
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]
       rfl⟩,
     ?_, v₇.trans (em₆.trans hM.k), by rw [r₇ (by decide) (by decide)]; exact rz₆.2⟩
-  · rw [UW.word (fun w hw => ?_) (by have := sl_le brainpoolp256r1 h7 (i := FLAG) (by decide); omega)]
+  · rw [UW.word (fun w hw => ?_) (by have := sl_le brainpoolp256r1 h7 (i := FLAG) (by decide); omega_arith)]
     · exact hM.flag
     · rcases List.mem_append.mp hw with hw | hw
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
         · have := sl_below_bits brainpoolp256r1 (i := FLAG) (by decide) 0 0
-          exact .inl (by dsimp only; omega)
+          exact .inl (by dsimp only; omega_arith)
         · decide
       · exact (apart_slW (c := brainpoolp256r1) (i := FLAG) (l := ptsW) (by decide)) w hw |>.elim
-          (fun h => Or.inl (by omega)) (fun h => Or.inr h)
+          (fun h => Or.inl (by omega_arith)) (fun h => Or.inr h)
   · refine unch_whole (hM.unch.trans UW) fun w hw => ?_
     rcases List.mem_append.mp hw with hw | hw
     · rw [List.mem_singleton.mp hw]; exact Nat.le_refl _
     rcases List.mem_append.mp hw with hw | hw
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
-      · have := bitsAt0_le brainpoolp256r1 h7; show _ ≤ 8192; dsimp only; omega
+      · have := bitsAt0_le brainpoolp256r1 h7; show _ ≤ 8192; dsimp only; omega_arith
       · show _ ≤ 8192; decide
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact sl_le brainpoolp256r1 h7 ((show ∀ i ∈ ptsW, i < 45 by decide) i hi)

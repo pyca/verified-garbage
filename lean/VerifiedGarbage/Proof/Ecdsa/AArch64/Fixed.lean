@@ -87,7 +87,7 @@ theorem fixedOk_whole (h7 : c.n < 10) : FixedOk c [(size, 2 ^ 64)] := by
   refine Or.inr ?_
   have := sl_le c (i := 12) h7 (by decide)
   show c.sl 12 ≤ size
-  omega
+  omega_arith
 
 /-- A constant's slot is apart from what a phase writes. -/
 theorem fixed_apart {W : List (Nat × Nat)} (hW : FixedOk c W) {i : Nat} (hi : i < 12) (hit : i ≠ TMP) :
@@ -101,7 +101,7 @@ theorem Fixed.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fixed
     (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {W : List (Nat × Nat)} (hW : FixedOk c W)
     (hu : Unch base W m m') : Fixed c base g m' := by
   have e : ∀ i, i < 12 → i ≠ TMP → wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n :=
-    fun i hi hit => hu.wordsVal (fixed_apart hW hi hit) (by have := sl_le c h7 (i := i) (by omega); omega)
+    fun i hi hit => hu.wordsVal (fixed_apart hW hi hit) (by have := sl_le c h7 (i := i) (by omega_arith); omega_arith)
   refine ⟨(e MP (by decide) (by decide)).trans h.mp, (e MN (by decide) (by decide)).trans h.mn,
     (e ZERO (by decide) (by decide)).trans h.zero, (e ONE (by decide) (by decide)).trans h.one,
     (e ONEP (by decide) (by decide)).trans h.onep, (e AP (by decide) (by decide)).trans h.ap,
@@ -109,14 +109,14 @@ theorem Fixed.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fixed
     (e GY (by decide) (by decide)).trans h.gy, (e R2N (by decide) (by decide)).trans h.r2n,
     (e ONEN (by decide) (by decide)).trans h.onen, fun p hp => ?_⟩
   have := setupSaved_lt p hp
-  refine (hu.word (d := p.2) (fun w hw => Or.inl ?_) (by omega)).trans (h.saved p hp)
+  refine (hu.word (d := p.2) (fun w hw => Or.inl ?_) (by omega_arith)).trans (h.saved p hp)
   rcases hW w hw with ⟨h1, -⟩ | h
-  · rw [h1]; simp only [slot]; omega
-  · simp (disch := decide) only [sl_eq] at h; omega
+  · rw [h1]; simp only [slot]; omega_arith
+  · simp (disch := decide) only [sl_eq] at h; omega_arith
 
 /-- A slot apart from the ranges of other numbered slots. -/
 theorem apart_slW {l : List Nat} {i : Nat} (hi : i ∉ l)
-    (hiA : i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 := by first | decide | exact ⟨by omega, by omega⟩)
+    (hiA : i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 := by first | decide | exact ⟨by omega_arith, by omega_arith⟩)
     (hl : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 := by decide) :
     ∀ w ∈ slW c l, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
@@ -132,7 +132,7 @@ theorem apart_tbl {i : Nat} (hi : i < 45) (j : Nat) (h7 : c.n < 10)
   · subst hT
     obtain rfl := hj0.resolve_right (fun h => h rfl)
     exact tmp_bits0 c h7
-  · exact Or.inl (by have := sl_below_bits c hi j 0 hT; omega)
+  · exact Or.inl (by have := sl_below_bits c hi j 0 hT; omega_arith)
 
 theorem apart_flag (h0 : 0 < c.n) {i : Nat} (hi : i ≠ FLAG) :
     ∀ w ∈ [(c.sl FLAG, 8)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
@@ -140,7 +140,7 @@ theorem apart_flag (h0 : 0 < c.n) {i : Nat} (hi : i ≠ FLAG) :
   rw [List.mem_singleton.mp hw]
   have := sl_apart c hi
   dsimp only
-  omega
+  omega_arith
 
 theorem apart_append {W W' : List (Nat × Nat)} {x k : Nat}
     (h : ∀ w ∈ W, x + k ≤ w.1 ∨ w.1 + w.2 ≤ x) (h' : ∀ w ∈ W', x + k ≤ w.1 ∨ w.1 + w.2 ≤ x) :
@@ -152,14 +152,14 @@ theorem sv_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch ba
     (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
     (hW : ∀ w ∈ W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n :=
-  hu.wordsVal hW (by have := sl_le c h7 hi; omega)
+  hu.wordsVal hW (by have := sl_le c h7 hi; omega_arith)
 
 /-- A byte of table `j` apart from what changed. -/
 theorem tbl_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch base W m m')
     (h7 : c.n < 10) {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n)
     (hW : ∀ w ∈ W, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t) :
     m' (off base (bitsAt c.n j + t)) = m (off base (bitsAt c.n j + t)) :=
-  hu.byte hW (by have := bitsAt_le c h7 hj; have : size = 8192 := rfl; omega)
+  hu.byte hW (by have := bitsAt_le c h7 hj; have : size = 8192 := rfl; omega_arith)
 
 theorem tbl_apart_slW {l : List Nat} (hl : ∀ i ∈ l, i < 45 ∧ i ≠ TMP) (j t : Nat) :
     ∀ w ∈ slW c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
@@ -172,7 +172,7 @@ theorem tbl_apart_flag (h0 : 0 < c.n) (j t : Nat) :
   intro w hw
   rw [List.mem_singleton.mp hw]
   have := sl_below_bits c (i := FLAG) (by decide) j t
-  exact Or.inr (by dsimp only; omega)
+  exact Or.inr (by dsimp only; omega_arith)
 
 /-- Tables `j ≠ j'` are apart. -/
 theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
@@ -183,10 +183,10 @@ theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
   rcases Nat.lt_or_gt_of_ne hjj with h | h
   · have := Nat.mul_le_mul_left (64 * c.n) h
     rw [Nat.mul_succ] at this
-    omega
+    omega_arith
   · have := Nat.mul_le_mul_left (64 * c.n) h
     rw [Nat.mul_succ] at this
-    omega
+    omega_arith
 
 /-- What a power writes: `ACC`, its table (and, for a function, where it
 keeps registers) and the temporary area. -/
@@ -199,7 +199,7 @@ theorem invW_cover {P : InvCfg} (ha : P.acc = c.sl ACC) (ht : P.tbl = c.invTbl) 
   simp only [invW, ha, ht, hn, hm, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_self .., Nat.le_refl _, Nat.le_refl _⟩
-  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Nat.le_refl _, by dsimp only; omega⟩
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Nat.le_refl _, by dsimp only; omega_arith⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), Nat.le_refl _,
       Nat.le_refl _⟩
 
@@ -211,7 +211,7 @@ theorem chainWN_cover (c : Cfg) :
   · exact ⟨_, List.mem_cons_self .., Nat.le_refl _, Nat.le_refl _⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Nat.le_refl _, by
       have : c.MN'.n = c.n := rfl
-      dsimp only; omega⟩
+      dsimp only; omega_arith⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), Nat.le_refl _,
       Nat.le_refl _⟩
 
@@ -228,7 +228,7 @@ theorem fixedOk_chainWc (hc : BaseCfgOk c) : FixedOk c (chainWc c) := by
       · exact Or.inl ⟨h'.1, rfl⟩
       · have := sl_invTbl hc (show 12 < 45 by decide) (by decide)
         have := sl_lt c (i := 12) (j := nslots) (by decide) (by decide) (by decide)
-        exact Or.inr (by rcases h'.1 with h'' | h'' <;> (dsimp only; omega))
+        exact Or.inr (by rcases h'.1 with h'' | h'' <;> (dsimp only; omega_arith))
 
 /-- A slot but `ACC` and `TMP` is apart from what a power writes. -/
 theorem apart_chainWc (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hl : i ∉ [ACC, TMP]) :
@@ -246,10 +246,10 @@ theorem flag_unch_cw (hc : BaseCfgOk c) {base : Addr} {l : List Nat} {m m' : Mem
     (hlA : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 := by decide) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine hu.word (fun w hw => ?_) (by omega)
+  refine hu.word (fun w hw => ?_) (by omega_arith)
   rcases apart_append (apart_chainWc hc (i := FLAG) (by decide) (by decide)) (apart_slW hl (hl := hlA)) w hw
     with h | h
-  · exact Or.inl (by omega)
+  · exact Or.inl (by omega_arith)
   · exact Or.inr h
 
 /-- The flag survives a power. -/
@@ -257,9 +257,9 @@ theorem flag_unch_chain (hc : BaseCfgOk c) {base : Addr} {m m' : Mem} (hu : Unch
     (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine hu.word (fun w hw => ?_) (by omega)
+  refine hu.word (fun w hw => ?_) (by omega_arith)
   rcases apart_chainWc hc (i := FLAG) (by decide) (by decide) w hw with h | h
-  · exact Or.inl (by omega)
+  · exact Or.inl (by omega_arith)
   · exact Or.inr h
 
 /-- The moduli, from their slots. -/
@@ -292,7 +292,7 @@ theorem modOkA_inv {M : Mod} (hc : BaseCfgOk c) {m : Nat} {base : Addr} {mem : M
     · exact hM.call f m' (hT (invTmp_none h))
     · rcases h.2.2.2 with h' | h'
       · have hn10 := hc.n10
-        have ht : slot c.n TMP ≠ Mont.moAt c.n := by simp only [slot, TMP, Mont.moAt]; omega
+        have ht : slot c.n TMP ≠ Mont.moAt c.n := by simp only [slot, TMP, Mont.moAt]; omega_arith
         simp only [Mont.callOf, hn, h'.1, ht, ite_false, reduceCtorEq] at e
       · simp only [Mont.callOf, hn, h'.2.2.2, ite_false, reduceCtorEq] at e
 
@@ -304,7 +304,7 @@ theorem pPowI_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base s
       toM c.C.p (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
         toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl RZ) c.n) ^ (c.C.p - 2) := by
   have := hc.p_ge
-  exact WP.mono (hc.sound_p (invLayP hc) (by omega) (unitMod_pow_two hc.p_odd _) hs
+  exact WP.mono (hc.sound_p (invLayP hc) (by omega_arith) (unitMod_pow_two hc.p_odd _) hs
       (modOkA_inv hc hM (.inl rfl) rfl rfl) hB hc.inv_p)
     fun s' ⟨K, U, lt, v⟩ => ⟨K, U.cover (invW_cover rfl rfl rfl rfl), lt, v⟩
 
@@ -320,7 +320,7 @@ theorem nPowI_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base s
   rw [Cfg.nPowI]
   split
   · rename_i h
-    exact WP.mono ((hc.inv_n h).1 (invLayN hc) (by omega) (unitMod_pow_two hc.n_odd _) hs hM' hB
+    exact WP.mono ((hc.inv_n h).1 (invLayN hc) (by omega_arith) (unitMod_pow_two hc.n_odd _) hs hM' hB
       (hc.inv_n h).2) fun s' ⟨K, U, lt, v⟩ => ⟨K, U.cover (invW_cover rfl rfl rfl rfl), lt, v⟩
   · rename_i h
     exact WP.mono (chainPow_ok (chainLayN hc) (unitMod_pow_two hc.n_odd _) hs hM' hB
@@ -336,12 +336,12 @@ theorem invSave_facts (hc : BaseCfgOk c) (hI : c.inverse ≠ none) :
   · have := h.2.1
     have := h.1
     have := h.2.2.1
-    refine ⟨?_, by unfold Cfg.invSave; omega, rfl, by unfold Cfg.invSave; omega⟩
+    refine ⟨?_, by unfold Cfg.invSave; omega_arith, rfl, by unfold Cfg.invSave; omega_arith⟩
     rcases h.2.2.2 with h' | h'
-    · exact Or.inr (by unfold Cfg.invSave; omega)
+    · exact Or.inr (by unfold Cfg.invSave; omega_arith)
     · rcases h'.1 with h'' | h''
-      · exact Or.inl (by unfold Cfg.invSave; omega)
-      · exact Or.inr (by unfold Cfg.invSave; omega)
+      · exact Or.inl (by unfold Cfg.invSave; omega_arith)
+      · exact Or.inr (by unfold Cfg.invSave; omega_arith)
 
 /-- The words from `d` hold `g` of the registers `rs`, in order. -/
 def SavedAt (m : Mem) (base : Addr) (g : Reg → BitVec 64) : Nat → List Reg → Prop
@@ -353,9 +353,9 @@ theorem SavedAt.congr {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} :
     (∀ e, d ≤ e → e + 8 ≤ d + 8 * rs.length → word m' base e = word m base e) → SavedAt m' base g d rs
   | _, [], _, _ => trivial
   | d, r :: rs, ⟨h₁, h₂⟩, hw => by
-    refine ⟨(hw d (Nat.le_refl _) (by simp only [List.length_cons]; omega)).trans h₁,
-      SavedAt.congr h₂ fun e h₁ h₂ => hw e (by omega) ?_⟩
-    simp only [List.length_cons]; omega
+    refine ⟨(hw d (Nat.le_refl _) (by simp only [List.length_cons]; omega_arith)).trans h₁,
+      SavedAt.congr h₂ fun e h₁ h₂ => hw e (by omega_arith) ?_⟩
+    simp only [List.length_cons]; omega_arith
 
 /-- Storing registers in consecutive words. -/
 theorem stAll_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) :
@@ -367,14 +367,14 @@ theorem stAll_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) :
     have hn := hs.nowrap
     simp only [List.length_cons] at hd
     rw [stAll, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (st_out hs (o := d) (by omega) h8 r) fun s₁ ⟨m₁, k₁, g₁⟩ => ?_
+    refine WP.mono (st_out hs (o := d) (by omega_arith) h8 r) fun s₁ ⟨m₁, k₁, g₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
-    have O₁ : Outside base d 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
-    refine WP.mono (stAll_ok hs₁ rs (d := d + 8) (by omega) (by omega)) fun s₂ ⟨k₂, g₂, O₂, S₂⟩ => ?_
+    have O₁ : Outside base d 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega_arith)
+    refine WP.mono (stAll_ok hs₁ rs (d := d + 8) (by omega_arith) (by omega_arith)) fun s₂ ⟨k₂, g₂, O₂, S₂⟩ => ?_
     refine ⟨k₁.trans k₂, g₂.trans g₁, fun x hx => ?_, ?_, ?_⟩
     · simp only [List.length_cons] at hx
-      rw [O₂ x (by omega), O₁ x (by omega)]
-    · rw [O₂.word (by omega) (by omega), m₁, word_writeW_self]
+      rw [O₂ x (by omega_arith), O₁ x (by omega_arith)]
+    · rw [O₂.word (by omega_arith) (by omega_arith), m₁, word_writeW_self]
     · rw [← g₁]; exact S₂
 
 /-- Loading registers from consecutive words. -/
@@ -386,9 +386,9 @@ theorem ldAll_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) :
   | r :: rs, d, hd, h8, h0 => by
     simp only [List.length_cons] at hd
     rw [ldAll, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (ld_ok hs (d := d) (by omega) h8 r) fun s₁ ⟨l₁, k₁, _⟩ => ?_
+    refine WP.mono (ld_ok hs (d := d) (by omega_arith) h8 r) fun s₁ ⟨l₁, k₁, _⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by simpa using (h0 r List.mem_cons_self).symm)
-    refine WP.mono (ldAll_ok hs₁ rs (d := d + 8) (by omega) (by omega)
+    refine WP.mono (ldAll_ok hs₁ rs (d := d + 8) (by omega_arith) (by omega_arith)
       fun r' hr' => h0 r' (List.mem_cons_of_mem _ hr')) fun s₂ ⟨K₂, m₂, V₂⟩ => ?_
     refine ⟨((Keeps.regs k₁).mono (by simp)).trans (K₂.mono (by simp_all)), m₂.trans k₁.mem,
       fun g ⟨w, S⟩ r' hr' => ?_⟩
@@ -418,15 +418,15 @@ theorem invFn_ok (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {body : Prog isa} 
   obtain ⟨-, hsv8, hsv3, hsv⟩ := invSave_facts hc hI
   have hl : c.invSaveLen = 8 * c.invKept.length := rfl
   rw [Cfg.invFn]
-  refine WP.seq (WP.mono (stAll_ok hs c.invKept (d := c.invSave) (by omega) hsv8)
+  refine WP.seq (WP.mono (stAll_ok hs c.invKept (d := c.invSave) (by omega_arith) hsv8)
     fun s₁ ⟨k₁, g₁, O₁, S₁⟩ => ?_)
   have hs₁ : Scr s₁ base size := hs.of_keepRegs k₁ (by decide)
   have U₁ : Unch base [(c.invSave, c.invSaveLen)] s.mem s₁.mem := by rw [hl]; exact O₁.unch
   refine WP.seq (WP.mono (hb s₁ hs₁ U₁) fun s₂ ⟨K₂, U₂, w₂, R₂⟩ => ?_)
   have hs₂ := hs₁.of_keepRegs K₂ (by simp [powClob, x0_not_clob])
   have S₂ : SavedAt s₂.mem base s.gpr c.invSave c.invKept :=
-    SavedAt.congr S₁ fun e h₁ h₂ => w₂ e h₁ (by omega)
-  refine WP.mono (ldAll_ok hs₂ c.invKept (d := c.invSave) (by omega) hsv8 (invKept_ne_x0 c))
+    SavedAt.congr S₁ fun e h₁ h₂ => w₂ e h₁ (by omega_arith)
+  refine WP.mono (ldAll_ok hs₂ c.invKept (d := c.invSave) (by omega_arith) hsv8 (invKept_ne_x0 c))
     fun s₃ ⟨K₃, m₃, V₃⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [K₃.rd, K₂.rd, k₁.rd], by rw [K₃.wr, K₂.wr, k₁.wr],
     by rw [K₃.sp, K₂.sp, k₁.sp]⟩, ?_, by rw [m₃]; exact R₂⟩
@@ -439,7 +439,7 @@ theorem invFn_ok (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {body : Prog isa} 
     refine (U₁.trans U₂).cover fun w hw => ?_
     simp only [List.mem_append, List.mem_singleton] at hw
     rcases hw with rfl | hw
-    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by omega, by dsimp only; omega⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by omega_arith, by dsimp only; omega_arith⟩
     · exact ⟨w, hw, Nat.le_refl _, Nat.le_refl _⟩
 
 /-- `x30` into lane 0 of `v29`. -/
@@ -481,7 +481,7 @@ theorem invCall_ok {name : String} {body : Prog isa} {s : State} {base : Addr}
   refine WP.seq (WP.mono (keepLr_ok s) fun s₁ ⟨k₁, m₁, l₁⟩ => ?_)
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   have hcov : Covers [⟨base, size⟩] s₁.wr := Covers.one ⟨_, hs₁.wr, by
-    have := hs.contains (d := 0) (n := size) (by omega) (by decide)
+    have := hs.contains (d := 0) (n := size) (by omega_arith) (by decide)
     simpa [off] using this⟩
   refine WP.seq (WP.callV (k := invK c base s.mem R)
     (fun t ⟨ht, hm⟩ => by
@@ -523,9 +523,9 @@ theorem invSave_apart (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {P : InvCfg} 
   intro w hw
   simp only [invW, ha, ht, hn, hm, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl
-  · exact Or.inr (by dsimp only; omega)
-  · exact Or.inr (by dsimp only; omega)
-  · dsimp only; omega
+  · exact Or.inr (by dsimp only; omega_arith)
+  · exact Or.inr (by dsimp only; omega_arith)
+  · dsimp only; omega_arith
 
 /-- A slot below the tables, but `TMP`, is apart from where a function keeps registers. -/
 theorem sl_invSave (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
@@ -534,7 +534,7 @@ theorem sl_invSave (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {i : Nat} (hi : 
   have := sl_invTbl hc hi hT
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inl (by dsimp only; omega)
+  exact Or.inl (by dsimp only; omega_arith)
 
 /-- What an inversion's function needs of its body: run from a state whose
 memory differs from `s`'s only where the function keeps registers. -/
@@ -557,7 +557,7 @@ theorem invBody_ok (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {P : InvCfg} {m 
   have hMt : ModOkA P.M size m t.mem base := hM.unch hU (by
     rw [hmo, hn]; exact sl_invSave hc hI hjm hjT) hnw
   have eB : wordsVal t.mem base P.base c.n = wordsVal s.mem base P.base c.n := by
-    rw [hb]; exact hU.wordsVal (sl_invSave hc hI hb45 hbT) (by omega)
+    rw [hb]; exact hU.wordsVal (sl_invSave hc hI hb45 hbT) (by omega_arith)
   have hn' := hn
   refine WP.mono (hS hL hm2 (by rw [hn]; exact hR) ht' hMt (by rw [hn, eB]; exact hB) hOk)
     fun t' ⟨K, U, lt, v⟩ => ?_
@@ -567,8 +567,8 @@ theorem invBody_ok (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {P : InvCfg} {m 
   obtain ⟨-, -, -, h4⟩ := invSave_facts hc hI
   refine ⟨K, U.cover (invW_cover ha ht hn htmp), fun e h₁ h₂ => U.word (fun w hw => by
     rcases invSave_apart hc hI ha ht hn htmp w hw with h | h
-    · exact Or.inl (by omega)
-    · exact Or.inr (by omega)) (by omega), lt, v⟩
+    · exact Or.inl (by omega_arith)
+    · exact Or.inr (by omega_arith)) (by omega_arith), lt, v⟩
 
 /-- `ACC = RZ^(p - 2)` (in Montgomery form), by divsteps: inline, or a call
 of `vg_<curve>_inv_mod_p`. -/
@@ -591,7 +591,7 @@ theorem pPow_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base si
       (fun t ht hm => WP.mono (invFn_ok hc hI ht (R := fun _ m' => wordsVal m' base (c.sl ACC) c.n < c.C.p ∧
           toM c.C.p (2 ^ (64 * c.n)) (wordsVal m' base (c.sl ACC) c.n) =
             toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl RZ) c.n) ^ (c.C.p - 2)) (fun u hu hU =>
-        invBody_ok hc hI hc.sound_p (invLayP hc) hc.inv_p (by omega) (unitMod_pow_two hc.p_odd _)
+        invBody_ok hc hI hc.sound_p (invLayP hc) hc.inv_p (by omega_arith) (unitMod_pow_two hc.p_odd _)
           rfl rfl rfl rfl (b := RZ) rfl (by decide) (by decide) (jm := MP) rfl (by decide) (by decide) hs hM' hB hu
           (by rw [hm] at hU; exact hU)))
       fun t' ⟨K, U, R⟩ => ⟨K, U, by rw [hm]; exact R⟩) hpres hvp hfp
@@ -623,7 +623,7 @@ theorem nPow_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base si
     rw [Cfg.nPowI]
     split
     · rename_i h
-      exact invBody_ok hc hI (hc.inv_n h).1 (invLayN hc) (hc.inv_n h).2 (by omega)
+      exact invBody_ok hc hI (hc.inv_n h).1 (invLayN hc) (hc.inv_n h).2 (by omega_arith)
         (unitMod_pow_two hc.n_odd _) rfl rfl rfl rfl (b := KM) rfl (by decide) (by decide) (jm := MN) rfl
         (by decide) (by decide) hs hM' hB hu hU
     · rename_i h
@@ -631,7 +631,7 @@ theorem nPow_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base si
       have hMt := hM'.unch hU (sl_invSave hc hI (i := MN) (by decide) (by decide)) hnw
       have eB : wordsVal u.mem base (c.sl KM) c.n = wordsVal s.mem base (c.sl KM) c.n :=
         hU.wordsVal (sl_invSave hc hI (i := KM) (by decide) (by decide))
-          (by have := sl_le c hc.n10 (i := KM) (by decide); omega)
+          (by have := sl_le c hc.n10 (i := KM) (by decide); omega_arith)
       refine WP.mono (chainPow_ok (chainLayN hc) (unitMod_pow_two hc.n_odd _) hu hMt
         (show wordsVal u.mem base (c.sl KM) c.n < c.C.n by rw [eB]; exact hB)
         (chainOkN hc (by simpa using h))) fun t' ⟨K, U, lt, v⟩ => ⟨K, U.cover (chainWN_cover c),
@@ -642,10 +642,10 @@ theorem nPow_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base si
             simp only [chainW, Cfg.powN, ChainCfg.ofExp, List.mem_cons, List.not_mem_nil, or_false] at hw
             have : c.MN'.n = c.n := rfl
             rcases hw with rfl | rfl | rfl
-            · exact Or.inr (by dsimp only; omega)
-            · exact Or.inr (by dsimp only; omega)
-            · dsimp only; omega)
-            (by obtain ⟨-, -, -, h4⟩ := invSave_facts hc hI; omega),
+            · exact Or.inr (by dsimp only; omega_arith)
+            · exact Or.inr (by dsimp only; omega_arith)
+            · dsimp only; omega_arith)
+            (by obtain ⟨-, -, -, h4⟩ := invSave_facts hc hI; omega_arith),
           lt, by
             have v' : toM c.C.n (2 ^ (64 * c.n)) (wordsVal t'.mem base (c.sl ACC) c.n) =
                 toM c.C.n (2 ^ (64 * c.n)) (wordsVal u.mem base (c.sl KM) c.n) ^ (c.C.n - 2) := v

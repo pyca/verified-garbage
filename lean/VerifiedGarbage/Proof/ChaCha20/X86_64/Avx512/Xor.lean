@@ -59,8 +59,8 @@ theorem ks_shift (S : CState) {L t k : Nat} (hk : k < L) (ht : 1024 * t ≤ k) :
     (keystream S L).getD k 0 =
       (serialize (Spec.ChaCha20.block (ctr (ctr S (16 * t)) ((k - 1024 * t) / 64)))).getD
         ((k - 1024 * t) % 64) 0 := by
-  rw [keystream_getD _ hk, Avx2.ctr_ctr, show 16 * t + (k - 1024 * t) / 64 = k / 64 by omega,
-    show (k - 1024 * t) % 64 = k % 64 by omega]
+  rw [keystream_getD _ hk, Avx2.ctr_ctr, show 16 * t + (k - 1024 * t) / 64 = k / 64 by omega_arith,
+    show (k - 1024 * t) % 64 = k % 64 by omega_arith]
 
 /-! ## The end of a chunk -/
 
@@ -76,7 +76,7 @@ theorem next_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 1024 ≤ eL s�
       Frame [Avx2.stR (est s₀)] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.cf = some (decide (eL s₀ - 1024 * (t + 1) < 1024)) := by
   have hL := eL_lt s₀
-  have c₁ : (Avx2.stR (est s₀)).Contains (Xor.off (est s₀) 48) 4 := contains_off (by omega) (by omega)
+  have c₁ : (Avx2.stR (est s₀)).Contains (Xor.off (est s₀) 48) 4 := contains_off (by omega_arith) (by omega_arith)
   have i₁ : InRegions (s.rd ++ s.wr) (Xor.off (est s₀) 48) 4 :=
     ⟨Avx2.stR (est s₀), by simp [hrd, hwr, hp.wr], c₁⟩
   have o₁ : InRegions s.wr (Xor.off (est s₀) 48) 4 := ⟨Avx2.stR (est s₀), by simp [hwr, hp.wr], c₁⟩
@@ -123,7 +123,7 @@ theorem out_win (hw : 1024 * t + 1024 ≤ eL s₀) {k : Nat} (hk : k < eL s₀)
   have hL := eL_lt s₀
   simp only [Region.Contains]; bv_omega
 
-theorem save_sub (s₀ : State) : Region.Sub (saveR s₀) (Avx2.bufR (ebp s₀)) := Region.sub_prefix (by omega)
+theorem save_sub (s₀ : State) : Region.Sub (saveR s₀) (Avx2.bufR (ebp s₀)) := Region.sub_prefix (by omega_arith)
 
 theorem inc_sub (s₀ : State) : Region.Sub (incR s₀) (Avx2.bufR (ebp s₀)) := by
   intro x hx; simp only [Region.Contains] at *; bv_omega
@@ -143,20 +143,20 @@ theorem ctx_of {s₀ : State} (hp : APre s₀) {t : Nat} (hw : 1024 * t + 1024 �
   have r2 : regn s 2 = wR s₀ t := by simp only [regn, baseR, bsize, hrsi]
   refine ⟨fun b i n hb h => ?_, fun b b' hb hb' ne => ?_⟩
   · rw [hwr, hp.wr]
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;> simp only [bsize] at h
+    rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;> simp only [bsize] at h
     · rw [r0]
       exact ⟨Avx2.stR (est s₀), by simp, by
-        simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega⟩
+        simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith⟩
     · rw [r1]
       exact ⟨Avx2.bufR (ebp s₀), by simp, by
-        simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega⟩
+        simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith⟩
     · rw [r2]
       exact ⟨edR s₀, by simp, by simp only [Region.Contains]; bv_omega⟩
   · have d01 := hp.st_b
     have d02 := hp.st_d.sub_right (win_sub hw)
     have d12 := hp.d_b.symm.sub_right (win_sub hw)
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;>
-      rcases (by omega : b' = 0 ∨ b' = 1 ∨ b' = 2) with rfl | rfl | rfl <;>
+    rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;>
+      rcases (by omega_arith : b' = 0 ∨ b' = 1 ∨ b' = 2) with rfl | rfl | rfl <;>
       simp only [r0, r1, r2] <;>
       first | exact absurd rfl ne | with_reducible assumption | exact d01.symm | exact d02.symm | exact d12.symm
 
@@ -177,7 +177,7 @@ theorem body_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 1024 ≤ eL s�
     WP isa body s fun s' =>
       LInv s₀ (t + 1) s' ∧ s'.cf = some (decide (eL s₀ - 1024 * (t + 1) < 1024)) := by
   have hL := eL_lt s₀
-  have hw : 1024 * t + 1024 ≤ eL s₀ := by omega
+  have hw : 1024 * t + 1024 ≤ eL s₀ := by omega_arith
   have sw := win_sub hw
   have dsd := hp.st_d.sub_right sw
   have dbd := hp.d_b.symm.sub_right sw
@@ -214,12 +214,12 @@ theorem body_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 1024 ≤ eL s�
   have gk : ∀ r, r ≠ .rax → r ≠ .rsi → r ≠ .rdx → s₄.gpr r = s.gpr r := fun r a b c => by
     rw [e₃ r a b c, g₃']
   refine ⟨by rw [gk _ (by decide) (by decide) (by decide)]; exact h.rdi,
-    by rw [gk _ (by decide) (by decide) (by decide)]; exact h.rcx, e₁, e₂, by omega,
+    by rw [gk _ (by decide) (by decide) (by decide)]; exact h.rcx, e₁, e₂, by omega_arith,
     fun r hr => ?_, by rw [rd₄, rd₃, rd₂, h.rd], by rw [wr₄, wr₃, wr₂, h.wr], ?_,
     fun k hk => ?_, ?_, ?_, ?_⟩
   · obtain ⟨a, b, c⟩ := calleeSaved_ne hr
     rw [gk r a b c]; exact h.keep r hr
-  · rw [e₄, hS₃, h.cnt, show 16 * (t + 1) = 16 * t + 16 by omega]
+  · rw [e₄, hS₃, h.cnt, show 16 * (t + 1) = 16 * t + 16 by omega_arith]
     exact Avx2.ctr_add _ _ 16
   · have n_st : ¬ (Avx2.stR (est s₀)).Contains (edp s₀ + BitVec.ofNat 64 k) 1 := fun hc =>
       hp.st_d _ hc (in_dR hk)
@@ -229,12 +229,12 @@ theorem body_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 1024 ≤ eL s�
     · have ea : edp s₀ + BitVec.ofNat 64 k =
           edp s₀ + BitVec.ofNat 64 (1024 * t) + BitVec.ofNat 64 (k - 1024 * t) := by
         rw [add_ofNat, Nat.add_sub_cancel' hin.1]
-      have x₃ := d₃ (k - 1024 * t) (by omega)
+      have x₃ := d₃ (k - 1024 * t) (by omega_arith)
       rw [← ea] at x₃
       rw [f₄ _ (by simpa using n_st), x₃, h.data k hk,
-        ite_eq_right (by omega : ¬ k < 1024 * t), ite_eq_left (by omega : k < 1024 * (t + 1)),
+        ite_eq_right (by omega_arith : ¬ k < 1024 * t), ite_eq_left (by omega_arith : k < 1024 * (t + 1)),
         Avx2.plus_block, h.cnt, ks_shift _ hk hin.1]
-    · have n_w := out_win hw hk (by omega)
+    · have n_w := out_win hw hk (by omega_arith)
       rw [FA _ (by
           intro r hr
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -243,8 +243,8 @@ theorem body_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 1024 ≤ eL s�
           · exact n_w
           · exact n_st), h.data k hk]
       by_cases hlt : k < 1024 * t
-      · rw [ite_eq_left hlt, ite_eq_left (by omega : k < 1024 * (t + 1))]
-      · rw [ite_eq_right hlt, ite_eq_right (by omega : ¬ k < 1024 * (t + 1))]
+      · rw [ite_eq_left hlt, ite_eq_left (by omega_arith : k < 1024 * (t + 1))]
+      · rw [ite_eq_right hlt, ite_eq_right (by omega_arith : ¬ k < 1024 * (t + 1))]
   · refine incs_frame h.incs FA ?_
     intro r hr'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -253,11 +253,11 @@ theorem body_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 1024 ≤ eL s�
     · exact dbd.sub_left (inc_sub _)
     · exact (hp.st_b.sub_right (inc_sub _)).symm
   · refine Avx512Tail.incs_frame h.tincs FA ?_
-    have ti : Region.Sub ⟨ebp s₀ + BitVec.ofNat 64 192, 128⟩ (Avx2.bufR (ebp s₀)) := Offset.sub_base _ (by omega)
+    have ti : Region.Sub ⟨ebp s₀ + BitVec.ofNat 64 192, 128⟩ (Avx2.bufR (ebp s₀)) := Offset.sub_base _ (by omega_arith)
     intro r hr'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl
-    · exact Offset.base_disjoint _ (by omega) (by omega) |>.symm
+    · exact Offset.base_disjoint _ (by omega_arith) (by omega_arith) |>.symm
     · exact dbd.sub_left ti
     · exact (hp.st_b.sub_right ti).symm
   · refine h.frame.trans (FA.sub fun r hr' => ?_)
@@ -348,7 +348,7 @@ theorem prologue_ok {s₀ : State} (hp : APre s₀) :
       (Avx2.storeAll_frame (List.mem_singleton_self _) _ incPairs_le _)
   have gk : ∀ r, r ≠ .rax → s₂.gpr r = s₀.gpr r := fun r hr => by rw [g₂, g₁ r hr, g₀ r hr]
   refine ⟨⟨gk _ (by decide), gk _ (by decide), by rw [gk _ (by decide)]; simp,
-    by rw [gk _ (by decide)]; simp, by omega, fun r hr => gk r (calleeSaved_ne hr).1,
+    by rw [gk _ (by decide)]; simp, by omega_arith, fun r hr => gk r (calleeSaved_ne hr).1,
     by rw [rd₂, rd₁, rd₀], by rw [wr₂, wr₁, wr₀], ?_, fun k hk => ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [Xor.stateAt_frame F (by simpa using hp.st_b), Nat.mul_zero, ctr_zero]
   · rw [F _ (by simpa using fun hc => hp.d_b _ (in_dR hk) hc)]
@@ -362,8 +362,8 @@ theorem prologue_ok {s₀ : State} (hp : APre s₀) :
 
 /-- The loop's invariant, as the tail's. -/
 theorem tinv_of {s₀ : State} {t : Nat} {s : State} (h : LInv s₀ t s) : Avx512Tail.TInv s₀ (1024 * t) s :=
-  ⟨h.rdi, h.rcx, h.rsi, h.rdx, h.le, ⟨16 * t, by omega⟩, h.keep, h.rd, h.wr,
-    by rw [h.cnt, show 1024 * t / 64 = 16 * t by omega], h.data, h.tincs, h.frame⟩
+  ⟨h.rdi, h.rcx, h.rsi, h.rdx, h.le, ⟨16 * t, by omega_arith⟩, h.keep, h.rd, h.wr,
+    by rw [h.cnt, show 1024 * t / 64 = 16 * t by omega_arith], h.data, h.tincs, h.frame⟩
 
 /-- The last 513 to 768 bytes, by twelve blocks. -/
 theorem last12_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hgt : 512 < eL s₀ - p) (hle : eL s₀ - p ≤ 768)
@@ -404,7 +404,7 @@ theorem rest_ok {s₀ : State} (hp : APre s₀) {t : Nat} (ht : eL s₀ - 1024 *
       by rw [m]; exact h.incs, by rw [m]; exact h.tincs, by rw [m]; exact h.frame⟩
   refine WP.seq (WP.mono (cmp513_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁, c₁⟩ => ?_)
   have h₁ : LInv s₀ t s₁ := cong h g₁ m₁ rd₁ wr₁
-  have hr : (s.gpr .rdx).toNat = eL s₀ - 1024 * t := by rw [h.rdx, toNat_ofNat_lt (by omega)]
+  have hr : (s.gpr .rdx).toNat = eL s₀ - 1024 * t := by rw [h.rdx, toNat_ofNat_lt (by omega_arith)]
   refine WP.ite (decide (eL s₀ - 1024 * t < 513)) (by simp [eval, c₁, hr]) (fun hs => ?_) (fun hs => ?_)
   · exact Avx512Tail.tail_ok hp ht (tinv_of h₁)
   · simp only [decide_eq_false_iff_not] at hs
@@ -413,9 +413,9 @@ theorem rest_ok {s₀ : State} (hp : APre s₀) {t : Nat} (ht : eL s₀ - 1024 *
     have hr₁ : (s₁.gpr .rdx).toNat = eL s₀ - 1024 * t := by rw [g₁]; exact hr
     refine WP.ite (decide (eL s₀ - 1024 * t < 769)) (by simp [eval, c₂, hr₁]) (fun hs' => ?_) (fun hs' => ?_)
     · simp only [decide_eq_true_eq] at hs'
-      exact last12_ok hp (by omega) (by omega) (tinv_of h₂)
+      exact last12_ok hp (by omega_arith) (by omega_arith) (tinv_of h₂)
     · simp only [decide_eq_false_iff_not] at hs'
-      exact Avx512Last.last16_ok hp (by omega) ht (tinv_of h₂) h₂.incs
+      exact Avx512Last.last16_ok hp (by omega_arith) ht (tinv_of h₂) h₂.incs
 
 theorem correct {s₀ : State} (hp : APre s₀) :
     WP isa Impl.ChaCha20.X86_64.Avx512.xor s₀ fun s' =>
@@ -426,7 +426,7 @@ theorem correct {s₀ : State} (hp : APre s₀) :
     fun s₂ ⟨t, ht, h₂⟩ => rest_ok hp ht h₂)
   refine WP.ite (decide (eL s₀ < 1024)) (by simp [eval, hc]) (fun h => ?_) (fun h => ?_)
   · simp only [decide_eq_true_eq] at h
-    exact WP.block_nil (M := isa) ⟨0, by omega, h₁⟩
+    exact WP.block_nil (M := isa) ⟨0, by omega_arith, h₁⟩
   · simp only [decide_eq_false_iff_not] at h
     let Inv : Nat → State → Prop := fun n s =>
       ∃ t, n = eL s₀ - 1024 * t ∧ 1024 ≤ eL s₀ - 1024 * t ∧ LInv s₀ t s
@@ -437,8 +437,8 @@ theorem correct {s₀ : State} (hp : APre s₀) :
       refine WP.mono (body_ok hp ht hI) fun s' ⟨h', hc'⟩ => ?_
       by_cases hl : eL s₀ - 1024 * (t + 1) < 1024
       · exact .inl ⟨by simp [eval, hc', hl], t + 1, hl, h'⟩
-      · exact .inr ⟨by simp [eval, hc', hl], eL s₀ - 1024 * (t + 1), by omega, t + 1, rfl, by omega, h'⟩
-    exact WP.loop (M := isa) Inv hstep (eL s₀ - 1024 * 0) s₁ ⟨0, rfl, by omega, h₁⟩
+      · exact .inr ⟨by simp [eval, hc', hl], eL s₀ - 1024 * (t + 1), by omega_arith, t + 1, rfl, by omega_arith, h'⟩
+    exact WP.loop (M := isa) Inv hstep (eL s₀ - 1024 * 0) s₁ ⟨0, rfl, by omega_arith, h₁⟩
 
 /-! ## Constant time and the contract -/
 

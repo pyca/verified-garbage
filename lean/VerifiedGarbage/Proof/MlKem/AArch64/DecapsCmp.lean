@@ -44,10 +44,10 @@ theorem mask_val (x : BitVec 64) :
       · exact h0
     have hx' := x.isLt
     have hn : ((0 : BitVec 64) - x).toNat = 2 ^ 64 - x.toNat := by
-      rw [BitVec.toNat_sub, show (0 : BitVec 64).toNat = 0 from rfl]; omega
+      rw [BitVec.toNat_sub, show (0 : BitVec 64).toNat = 0 from rfl]; omega_arith
     have hge : 2 ^ 63 ≤ (x ||| ((0 : BitVec 64) - x)).toNat := by
       rw [BitVec.toNat_or]
-      rcases (by omega : 2 ^ 63 ≤ x.toNat ∨ 2 ^ 63 ≤ ((0 : BitVec 64) - x).toNat) with h | h
+      rcases (by omega_arith : 2 ^ 63 ≤ x.toNat ∨ 2 ^ 63 ≤ ((0 : BitVec 64) - x).toNat) with h | h
       · exact Nat.le_trans h Nat.left_le_or
       · exact Nat.le_trans h Nat.right_le_or
     have hlt := (x ||| ((0 : BitVec 64) - x)).isLt
@@ -55,7 +55,7 @@ theorem mask_val (x : BitVec 64) :
       apply BitVec.eq_of_toNat_eq
       rw [toNat_lsr, BitVec.toNat_ofNat]
       show _ / 2 ^ 63 = 1 % 2 ^ 64
-      omega
+      omega_arith
     rw [this, BitVec.sub_self]; rfl
 
 /-- Two words of memory are equal exactly when their eight bytes are. -/
@@ -69,12 +69,12 @@ theorem readW64_eq_iff (m : Mem) (a b : Addr) :
     apply BitVec.eq_of_getLsbD_eq; intro j hj
     have e : ∀ c : Addr, (m.readW c 64).getLsbD j = ((m.readW c 64).extractLsb' (8 * (j / 8)) 8).getLsbD (j % 8) := by
       intro c; simp only [BitVec.getLsbD_extractLsb', show j % 8 < 8 from Nat.mod_lt _ (by decide), decide_true,
-        Bool.true_and]; congr 1; omega
+        Bool.true_and]; congr 1; omega_arith
     have hb := congrArg (fun l => l[j / 8]?) h
-    simp only [List.getElem?_eq_getElem (show j / 8 < (bytesAt m a 8).length by rw [bytesAt_length]; omega),
-      List.getElem?_eq_getElem (show j / 8 < (bytesAt m b 8).length by rw [bytesAt_length]; omega),
+    simp only [List.getElem?_eq_getElem (show j / 8 < (bytesAt m a 8).length by rw [bytesAt_length]; omega_arith),
+      List.getElem?_eq_getElem (show j / 8 < (bytesAt m b 8).length by rw [bytesAt_length]; omega_arith),
       Option.some.injEq, bytesAt_getElem] at hb
-    rw [e a, e b, KeyGen.readW64_byte m a (show j / 8 < 8 by omega), KeyGen.readW64_byte m b (show j / 8 < 8 by omega),
+    rw [e a, e b, KeyGen.readW64_byte m a (show j / 8 < 8 by omega_arith), KeyGen.readW64_byte m b (show j / 8 < 8 by omega_arith),
       hb]
 
 /-! ## `c = c'` -/
@@ -98,7 +98,7 @@ theorem cstep {s₀ : State} (hp : Pre P (deL P) s₀) {s : State} (hk : KB P (d
   have hsr := cov_sr hp hk (o := CB P) (l := P.ctLen) (by kom)
   have h8 : 8 * k + 8 ≤ P.ctLen := by
     have : P.ctLen = 32 * (P.du * P.k + P.dv) := rfl
-    omega
+    omega_arith
   have in₁ : InRegions (u.rd ++ u.wr) (kA s₀ 1 + BitVec.ofNat 64 (8 * k)) 8 := by
     rw [h.keep.rd, h.keep.wr]
     have := in_R hcr (k := 8 * k) (n := 8) h8 (by kom)
@@ -124,16 +124,16 @@ theorem cstep {s₀ : State} (hp : Pre P (deL P) s₀) {s : State} (hk : KB P (d
     rw [v₇, g₆.get .x2, g₅.get .x2, g₄.get .x2, g₃.get .x2, g₂.get .x2, g₁.get .x2]
   have hx2 : (u₇.gpr .x2).toNat = P.ctLen / 8 - (k + 1) := by
     rw [x2, toNat_sub_n (show (BitVec.ofNat 64 1).toNat ≤ (u.gpr .x2).toNat by
-      rw [h.x2, BitVec.toNat_ofNat]; omega), h.x2, BitVec.toNat_ofNat]
-    omega
-  refine ⟨⟨h.keep.trans o₇.keep |>.mono, by rw [o₇.mem, h.mem], ?_, ?_, hx2, ?_⟩, by rw [hx2]; omega⟩
+      rw [h.x2, BitVec.toNat_ofNat]; omega_arith), h.x2, BitVec.toNat_ofNat]
+    omega_arith
+  refine ⟨⟨h.keep.trans o₇.keep |>.mono, by rw [o₇.mem, h.mem], ?_, ?_, hx2, ?_⟩, by rw [hx2]; omega_arith⟩
   · rw [g₇.get .x0, g₆.get .x0, v₅, g₄.get .x0, g₃.get .x0, g₂.get .x0, g₁.get .x0, h.x0, ptr_add,
       Nat.mul_succ]
   · rw [g₇.get .x1, v₆, g₅.get .x1, g₄.get .x1, g₃.get .x1, g₂.get .x1, g₁.get .x1, h.x1, ptr_add,
       Nat.add_assoc, Nat.mul_succ]
   · have e1 : u.gpr .x10 ||| u₃.gpr .x9 = 0 ↔ u.gpr .x10 = 0 ∧ u₃.gpr .x9 = 0 := BitVec.or_eq_zero_iff
     have xz : ∀ a b : BitVec 64, a ^^^ b = 0 ↔ a = b := fun _ _ => BitVec.xor_eq_zero_iff
-    rw [x10, e1, h.eq, x9, xz, readW64_eq_iff, show 8 * (k + 1) = 8 * k + 8 by omega,
+    rw [x10, e1, h.eq, x9, xz, readW64_eq_iff, show 8 * (k + 1) = 8 * k + 8 by omega_arith,
       bytesAt_add, bytesAt_add, ptr_add]
     constructor
     · rintro ⟨h1, h2⟩; rw [h1, h2]
@@ -147,7 +147,7 @@ theorem cmp_ok {s₀ : State} (hp : Pre P (deL P) s₀) {s : State} (hk : KB P (
   have hw := hp.wf
   have h8 : P.ctLen % 8 = 0 := by
     have : P.ctLen = 32 * (P.du * P.k + P.dv) := rfl
-    omega
+    omega_arith
   refine WP.seq ?_
   rw [List.append_assoc]
   refine wp_ptrTo (by decide) (by decide) fun s₁ h₁ e₁ => wp_ptrTo (by decide) (by kom)
@@ -171,7 +171,7 @@ theorem cmp_ok {s₀ : State} (hp : Pre P (deL P) s₀) {s : State} (hk : KB P (
   rw [← ex, mask_val]
   have hcD : bytesAt s.mem (kA s₀ 1) P.ctLen = cD P s₀ := hk.ro (b := 1) (by dek)
   have he := h₅.eq
-  rw [show 8 * (P.ctLen / 8) = P.ctLen by omega, hcD,
+  rw [show 8 * (P.ctLen / 8) = P.ctLen by omega_arith, hcD,
     show kA s₀ 3 + BitVec.ofNat 64 (CB P) = sA (deL P) s₀ (CB P) from rfl, hc] at he
   by_cases e : cD P s₀ = c'
   · rw [ite_eq_left (he.mpr e), ite_eq_left e]
@@ -200,24 +200,24 @@ theorem sel_ok {s₀ : State} (hp : Pre P (deL P) s₀) {s : State} (hk : KB P (
       ∀ i < 8 * k, u.mem (kA s₀ 2 + BitVec.ofNat 64 i) =
         if e then s.mem (sA (deL P) s₀ KP + BitVec.ofNat 64 i) else s.mem (sA (deL P) s₀ JB + BitVec.ofNat 64 i))
     (fun k u hk' ⟨k₁, f₁, b₁⟩ => ?_) 4 (Nat.le_refl _) s
-    ⟨Keep.refl _ _, Frame.refl _ _, fun i hi => absurd hi (by omega)⟩) fun s' ⟨k', f', b'⟩ => ⟨k', f', ?_⟩
+    ⟨Keep.refl _ _, Frame.refl _ _, fun i hi => absurd hi (by omega_arith)⟩) fun s' ⟨k', f', b'⟩ => ⟨k', f', ?_⟩
   · have r₁ : ∀ {o : Nat}, o + 32 ≤ SV P + 48 → ∀ {j : Nat}, j < 32 →
         u.mem (sA (deL P) s₀ o + BitVec.ofNat 64 j) = s.mem (sA (deL P) s₀ o + BitVec.ofNat 64 j) :=
       fun {o} f {j} hj => f₁.bytes (R := R (kA s₀) (deL P).sc o 32) (sk f) (show 32 ≤ 2 ^ 64 by decide) hj
-    refine wp_ldrx (a := kA s₀ 3 + BitVec.ofNat 64 (KP + 8 * k)) ⟨by simp only [KP]; omega, by simp only [KP]; omega⟩
-      (by rw [k₁.get .x28, hk.x28]; rfl) (by rw [k₁.rd, k₁.wr]; exact in_R hkr (k := 8 * k) (by omega) (by decide))
+    refine wp_ldrx (a := kA s₀ 3 + BitVec.ofNat 64 (KP + 8 * k)) ⟨by simp only [KP]; omega_arith, by simp only [KP]; omega_arith⟩
+      (by rw [k₁.get .x28, hk.x28]; rfl) (by rw [k₁.rd, k₁.wr]; exact in_R hkr (k := 8 * k) (by omega_arith) (by decide))
       fun u₁ g₁ v₁ => ?_
-    refine wp_ldrx (a := kA s₀ 3 + BitVec.ofNat 64 (JB + 8 * k)) ⟨by simp only [JB]; omega, by simp only [JB]; omega⟩
+    refine wp_ldrx (a := kA s₀ 3 + BitVec.ofNat 64 (JB + 8 * k)) ⟨by simp only [JB]; omega_arith, by simp only [JB]; omega_arith⟩
       (by rw [g₁.get .x28, k₁.get .x28, hk.x28]; rfl)
-      (by rw [g₁.rd, g₁.wr, k₁.rd, k₁.wr]; exact in_R hjr (k := 8 * k) (by omega) (by decide))
+      (by rw [g₁.rd, g₁.wr, k₁.rd, k₁.wr]; exact in_R hjr (k := 8 * k) (by omega_arith) (by decide))
       fun u₂ g₂ v₂ => ?_
     refine wp_eor fun u₃ g₃ v₃ => wp_and fun u₄ g₄ v₄ => wp_eor fun u₅ g₅ v₅ => ?_
     have o₅ : Only [.x12, .x13] u u₅ := ((((g₁.trans g₂).trans g₃).trans g₄).trans g₅).mono
-    refine wp_strx (a := kA s₀ 2 + BitVec.ofNat 64 (8 * k)) ⟨by omega, by omega⟩
+    refine wp_strx (a := kA s₀ 2 + BitVec.ofNat 64 (8 * k)) ⟨by omega_arith, by omega_arith⟩
       (by rw [o₅.get .x27, k₁.get .x27, hk.x27]; rfl)
       (by
         rw [o₅.wr, k₁.wr]
-        have := in_R hw (k := 8 * k) (n := 8) (by omega) (by decide)
+        have := in_R hw (k := 8 * k) (n := 8) (by omega_arith) (by decide)
         rwa [Nat.zero_add] at this) fun u₆ g₆ => wp_nil ?_
     have mk : u₃.gpr .x10 = if e then (0 : BitVec 64) - 1 else 0 := by
       rw [g₃.get .x10, g₂.get .x10, g₁.get .x10, k₁.get .x10, hm]
@@ -235,34 +235,34 @@ theorem sel_ok {s₀ : State} (hp : Pre P (deL P) s₀) {s : State} (hk : KB P (
       exact f₁.writeW (List.mem_singleton_self _) _ (by
         rw [show kA s₀ 2 + BitVec.ofNat 64 (8 * k) = kA s₀ 2 + BitVec.ofNat 64 0 + BitVec.ofNat 64 (8 * k) by
           rw [ptr_add, Nat.zero_add]]
-        exact contains_off (by omega) (by decide))
+        exact contains_off (by omega_arith) (by decide))
     · rw [m₆]
-      rcases (by omega : i < 8 * k ∨ 8 * k ≤ i) with hi' | hi'
+      rcases (by omega_arith : i < 8 * k ∨ 8 * k ≤ i) with hi' | hi'
       · rw [writeW64_off _ _ _ _ (by
           rw [show kA s₀ 2 = kA s₀ 2 + BitVec.ofNat 64 0 from (ptr_zero _).symm, ptr_add, ptr_add]
-          exact sep_off _ (a := 0 + i) (n := 1) (b := 0 + 8 * k) (k := 8) (by omega) (by omega) (by omega) _
+          exact sep_off _ (a := 0 + i) (n := 1) (b := 0 + 8 * k) (k := 8) (by omega_arith) (by omega_arith) (by omega_arith) _
             (by rw [BitVec.sub_self]; decide))]
         exact b₁ i hi'
-      · have hj : i - 8 * k < 8 := by omega
+      · have hj : i - 8 * k < 8 := by omega_arith
         rw [show kA s₀ 2 + BitVec.ofNat 64 i = kA s₀ 2 + BitVec.ofNat 64 (8 * k) + BitVec.ofNat 64 (i - 8 * k) by
-          rw [ptr_add, show 8 * k + (i - 8 * k) = i by omega], writeW64_byte _ _ _ hj, val]
+          rw [ptr_add, show 8 * k + (i - 8 * k) = i by omega_arith], writeW64_byte _ _ _ hj, val]
         have e₁ : ∀ o, o + 32 ≤ SV P + 48 → kA s₀ 3 + BitVec.ofNat 64 (o + 8 * k) + BitVec.ofNat 64 (i - 8 * k) =
             sA (deL P) s₀ o + BitVec.ofNat 64 i := fun o _ => by
           rw [ptr_add, show sA (deL P) s₀ o = kA s₀ 3 + BitVec.ofNat 64 o from rfl, ptr_add,
-            show o + 8 * k + (i - 8 * k) = o + i by omega]
+            show o + 8 * k + (i - 8 * k) = o + i by omega_arith]
         cases e
         · simp only [Bool.false_eq_true, ↓reduceIte]
-          rw [readW64_byte _ _ hj, e₁ JB (by kom), r₁ (by kom) (by omega)]
+          rw [readW64_byte _ _ hj, e₁ JB (by kom), r₁ (by kom) (by omega_arith)]
         · simp only [↓reduceIte]
-          rw [readW64_byte _ _ hj, e₁ KP (by kom), r₁ (by kom) (by omega)]
+          rw [readW64_byte _ _ hj, e₁ KP (by kom), r₁ (by kom) (by omega_arith)]
   · cases e
     · simp only [Bool.false_eq_true, ↓reduceIte]
       refine bytesAt_eq (bytesAt_length _ _ _) fun i hi => ?_
-      rw [bytesAt_getElem, b' i (by omega)]
+      rw [bytesAt_getElem, b' i (by omega_arith)]
       simp only [Bool.false_eq_true, ↓reduceIte]
     · simp only [↓reduceIte]
       refine bytesAt_eq (bytesAt_length _ _ _) fun i hi => ?_
-      rw [bytesAt_getElem, b' i (by omega)]
+      rw [bytesAt_getElem, b' i (by omega_arith)]
       simp only [↓reduceIte]
 
 end VG.Proof.MlKem.AArch64.Decaps

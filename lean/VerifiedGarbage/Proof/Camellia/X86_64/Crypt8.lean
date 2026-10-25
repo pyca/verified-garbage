@@ -46,7 +46,7 @@ theorem slotW_of_data {s₀ s s' : State} {nk : Nat} {E : Nat → BitVec 64} (hp
   simp only [List.mem_singleton] at hr; subst hr
   rw [hc.rdx]
   refine (hp.sep.sub_right (VG.Offset.sub_base _ ?_)).symm
-  rw [tailSlot_eq]; omega
+  rw [tailSlot_eq]; omega_arith
 
 /-- A step that writes the blocks only. -/
 theorem Ctx.data {s₀ s s' : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s)
@@ -76,7 +76,7 @@ theorem loadWords_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp :
     (fun j i hji => by
       simp only [dataIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
       obtain ⟨j, hj, rfl, rfl⟩ := hji
-      exact ⟨by simp only [dataCfg]; omega, by omega, rfl⟩)
+      exact ⟨by simp only [dataCfg]; omega_arith, by omega_arith, rfl⟩)
     (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [dataCfg] at hj)
   simp only [dataCfg] at hb' hkp f'
@@ -117,7 +117,7 @@ theorem lin_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCt
     fun j hj p hp => ho (q j) (G j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩) p hp,
     fun j hj => hkp _ (List.mem_append_right _ (by
       simp only [bothIns, List.map_map, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩))
-      (by simp only [d1Slot, keySlot]; omega),
+      (by simp only [d1Slot, keySlot]; omega_arith),
     fun k hk => dataW_of_scr hp hc (hkeep _ (by decide)) f' hk⟩
   rw [hkp kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (mask_lt hkv)]
   exact hc.masks kv hkv
@@ -136,11 +136,11 @@ theorem storeWords_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp 
     (fun r i hri => by
       simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
       obtain ⟨i, hi, rfl, rfl⟩ := hri
-      exact ⟨by omega, by simp [W, hi]⟩)
+      exact ⟨by omega_arith, by simp [W, hi]⟩)
     (fun j i hji => by
       simp only [storeIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
       obtain ⟨j, hj, rfl, rfl⟩ := hji
-      exact ⟨by simp only [dataCfg]; omega, by omega, by simp only [W, show ¬ 8 + j < 8 by omega, ↓reduceIte, show 8 + j - 8 = j by omega]; rfl⟩)
+      exact ⟨by simp only [dataCfg]; omega_arith, by omega_arith, by simp only [W, show ¬ 8 + j < 8 by omega_arith, ↓reduceIte, show 8 + j - 8 = j by omega_arith]; rfl⟩)
     (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [dataCfg] at hj)
   simp only [dataCfg] at hb' hkp hso f'
@@ -154,11 +154,11 @@ theorem storeWords_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp 
   · refine BitVec.eq_of_getLsbD_eq fun p hp => ?_
     show (s'.mem.readW (wordAddr (s'.gpr .rdx) _) 64).getLsbD p = _
     rw [hg, hso (2 * b + h) (idG b) (by simp only [storeOuts, List.mem_map, List.mem_range]; exact ⟨b, hb, rfl⟩)
-      (by omega) p hp, idG, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp]
+      (by omega_arith) p hp, idG, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp]
     simp [W, hb]
   · show s'.mem.readW (wordAddr (s'.gpr .rdx) _) 64 = _
     rw [hg]
-    exact hkp _ (by simp only [otherWords, List.mem_map, List.mem_range]; exact ⟨b, hb, rfl⟩) (by omega)
+    exact hkp _ (by simp only [otherWords, List.mem_map, List.mem_range]; exact ⟨b, hb, rfl⟩) (by omega_arith)
 
 /-! ## Transposes -/
 
@@ -166,17 +166,17 @@ theorem toBs_rel {s s' : State} {d : Nat → BitVec 64}
     (h : ∀ j < 8, ∀ p < 64, (Qs s' j).getLsbD p = xorBits (bothW s) (toBsG j p)) (hw : WordRel (Qs s) d) :
     HalfRel (Qs s') d :=
   Camellia.half_of_words (fun j hj p hp => by
-    have := Camellia.pos_lt (show p / 8 < 8 by omega)
+    have := Camellia.pos_lt (show p / 8 < 8 by omega_arith)
     rw [h j hj p hp, toBsG, xorBits_cons, xorBits_nil, Bool.xor_false, Nat.add_assoc,
-      bitOf_word _ _ _ (by omega), bothW_q s (by omega)]) hw
+      bitOf_word _ _ _ (by omega_arith), bothW_q s (by omega_arith)]) hw
 
 theorem fromBs_rel {s s' : State} {d : Nat → BitVec 64}
     (h : ∀ j < 8, ∀ p < 64, (Qs s' j).getLsbD p = xorBits (bothW s) (fromBsG j p)) (hq : HalfRel (Qs s) d) :
     WordRel (Qs s') d :=
   Camellia.words_of_half (fun b hb t ht => by
-    have := Camellia.cpos_lt (show t / 8 < 8 by omega)
+    have := Camellia.cpos_lt (show t / 8 < 8 by omega_arith)
     rw [h b hb t ht, fromBsG, xorBits_cons, xorBits_nil, Bool.xor_false, Nat.add_assoc,
-      bitOf_word _ _ _ (by omega), bothW_q s (by omega)]) hq
+      bitOf_word _ _ _ (by omega_arith), bothW_q s (by omega_arith)]) hq
 
 /-- Block `b` at `rdx`. -/
 abbrev blk (s : State) (b : Nat) : Spec.Camellia.Block :=
@@ -186,7 +186,7 @@ theorem dataW_byte (s : State) {b i j : Nat} (h : Nat) (hi : i < 8) (hj : j < 8)
     (dataW s (2 * b + h)).getLsbD (8 * i + j) =
       (s.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * b) + BitVec.ofNat 64 (8 * h + i))).getLsbD j := by
   rw [readW64_bit _ _ hi hj, wordAddr, addr_add, addr_add,
-    show 8 * (2 * b + h) + i = 16 * b + (8 * h + i) by omega]
+    show 8 * (2 * b + h) + i = 16 * b + (8 * h + i) by omega_arith]
 
 theorem data_hi (s : State) : WordRel (fun b => dataW s (2 * b + 0))
     (fun b => (Spec.Camellia.decodeBlock (blk s b) >>> 64).setWidth 64) := fun b _ i hi j hj => by
@@ -199,12 +199,12 @@ theorem data_lo (s : State) : WordRel (fun b => dataW s (2 * b + 1))
   simp [Spec.Camellia.blockAt, Nat.add_comm]
 
 theorem bothW_key (s : State) (j : Nat) : bothW s (24 + j) = keyW s j := by
-  simp only [bothW, show ¬ 24 + j < 8 by omega, show ¬ 24 + j < 24 by omega, ↓reduceIte,
-    show 24 + j - 24 = j by omega]
+  simp only [bothW, show ¬ 24 + j < 8 by omega_arith, show ¬ 24 + j < 24 by omega_arith, ↓reduceIte,
+    show 24 + j - 24 = j by omega_arith]
 
 theorem bothW_d2 (s : State) {j : Nat} (hj : j < 8) : bothW s (16 + j) = slotW s (d2Slot + j) := by
-  simp only [bothW, show ¬ 16 + j < 8 by omega, show 16 + j < 24 by omega, ↓reduceIte,
-    show d1Slot + (16 + j - 8) = d2Slot + j by simp only [d1Slot, d2Slot]; omega]
+  simp only [bothW, show ¬ 16 + j < 8 by omega_arith, show 16 + j < 24 by omega_arith, ↓reduceIte,
+    show d1Slot + (16 + j - 8) = d2Slot + j by simp only [d1Slot, d2Slot]; omega_arith]
 
 /-- `mov kp, sb; add kp, 8 keySlot`. -/
 theorem setKp_ok (s : State) :
@@ -237,13 +237,13 @@ theorem whiten_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Ke
       keyXorG, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp,
       Nat.add_assoc, bitOf_word _ _ _ hp, bothW_q s hj, Nat.zero_add, bothW_key]
   · rw [hso (d1Slot + j) (keyXorG 0 j) (List.mem_append_left _ (by
-        simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)) (by simp only [d1Slot, keySlot]; omega) p hp,
+        simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)) (by simp only [d1Slot, keySlot]; omega_arith) p hp,
       keyXorG, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp,
       Nat.add_assoc, bitOf_word _ _ _ hp, bothW_q s hj, Nat.zero_add, bothW_key]
   · rw [hso (d2Slot + j) (whiten2G j) (List.mem_append_right _ (by
-        simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)) (by simp only [d2Slot, keySlot]; omega) p hp,
+        simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)) (by simp only [d2Slot, keySlot]; omega_arith) p hp,
       whiten2G, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp,
-      bitOf_word _ _ _ hp, bothW_d2 s hj, show 32 + j = 24 + (8 + j) by omega, bothW_key]
+      bitOf_word _ _ _ hp, bothW_d2 s hj, show 32 + j = 24 + (8 + j) by omega_arith, bothW_key]
 
 /-! ## The head -/
 
@@ -268,31 +268,31 @@ theorem head_ok {s₀ : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s
   -- `D2`.
   obtain ⟨s₂, e₂, c₂, k₂, -, q₂, -, d₂⟩ := loadWords_step hp.toKeyCtx hc₁ (Or.inr rfl) loadWords1_check
   have hk₂ : AtEntry s₂ b 0 := by rw [AtEntry, k₂]; exact hk₁
-  obtain ⟨s₃, e₃, c₃, k₃, -, q₃, -, d₃⟩ := lin_step hp.toKeyCtx c₂ hk₂ (by omega) toBs_check (by decide +kernel)
+  obtain ⟨s₃, e₃, c₃, k₃, -, q₃, -, d₃⟩ := lin_step hp.toKeyCtx c₂ hk₂ (by omega_arith) toBs_check (by decide +kernel)
   have hk₃ : AtEntry s₃ b 0 := by rw [AtEntry, k₃]; exact hk₂
   have hD2 : HalfRel (Qs s₃) (fun b => (Spec.Camellia.decodeBlock (blk s₀ b)).setWidth 64) :=
     toBs_rel q₃ fun b' hb i hi j hj => by rw [q₂ b' hb, hd₁]; exact data_lo s₀ b' hb i hi j hj
   obtain ⟨s₄, e₄, c₄, k₄, -, -, sl₄, hh₄, d₄⟩ :=
-    storeHalf_step hp.toKeyCtx c₃ (Or.inr rfl) storeHalf2_check hk₃ (by omega)
+    storeHalf_step hp.toKeyCtx c₃ (Or.inr rfl) storeHalf2_check hk₃ (by omega_arith)
   have hk₄ : AtEntry s₄ b 0 := by rw [AtEntry, k₄]; exact hk₃
   -- `D1`.
   obtain ⟨s₅, e₅, c₅, k₅, -, q₅, sw₅, -⟩ := loadWords_step hp.toKeyCtx c₄ (Or.inl rfl) loadWords0_check
   have hk₅ : AtEntry s₅ b 0 := by rw [AtEntry, k₅]; exact hk₄
-  obtain ⟨s₆, e₆, c₆, k₆, -, q₆, h₆, -⟩ := lin_step hp.toKeyCtx c₅ hk₅ (by omega) toBs_check (by decide +kernel)
+  obtain ⟨s₆, e₆, c₆, k₆, -, q₆, h₆, -⟩ := lin_step hp.toKeyCtx c₅ hk₅ (by omega_arith) toBs_check (by decide +kernel)
   have hk₆ : AtEntry s₆ b 0 := by rw [AtEntry, k₆]; exact hk₅
   have hD1 : HalfRel (Qs s₆) (fun b => (Spec.Camellia.decodeBlock (blk s₀ b) >>> 64).setWidth 64) :=
     toBs_rel q₆ fun b' hb i hi j hj => by
-      rw [q₅ b' hb, d₄ _ (by omega), d₃ _ (by omega), d₂ _ (by omega), hd₁]
+      rw [q₅ b' hb, d₄ _ (by omega_arith), d₃ _ (by omega_arith), d₂ _ (by omega_arith), hd₁]
       exact data_hi s₀ b' hb i hi j hj
   have hS₆ : HalfRel (fun j => slotW s₆ (d2Slot + j)) (fun b => (Spec.Camellia.decodeBlock (blk s₀ b)).setWidth 64) :=
     hD2.congr fun j hj => by
-      have h1 := h₆ (8 + j) (by omega)
-      rw [show d1Slot + (8 + j) = d2Slot + j by simp only [d1Slot, d2Slot]; omega] at h1
-      rw [h1, sw₅ _ (by simp only [tailSlot_eq, d2Slot]; omega), sl₄ j hj]
+      have h1 := h₆ (8 + j) (by omega_arith)
+      rw [show d1Slot + (8 + j) = d2Slot + j by simp only [d1Slot, d2Slot]; omega_arith] at h1
+      rw [h1, sw₅ _ (by simp only [tailSlot_eq, d2Slot]; omega_arith), sl₄ j hj]
   -- The whitening.
-  obtain ⟨s₇, e₇, c₇, k₇, wq, w1, w2⟩ := whiten_step hp.toKeyCtx c₆ hk₆ (by omega)
-  have hK0 := c₆.keyRel hp.toKeyCtx hk₆ (e := 0) (by omega)
-  have hK1 := c₆.keyRel hp.toKeyCtx hk₆ (e := 1) (by omega)
+  obtain ⟨s₇, e₇, c₇, k₇, wq, w1, w2⟩ := whiten_step hp.toKeyCtx c₆ hk₆ (by omega_arith)
+  have hK0 := c₆.keyRel hp.toKeyCtx hk₆ (e := 0) (by omega_arith)
+  have hK1 := c₆.keyRel hp.toKeyCtx hk₆ (e := 1) (by omega_arith)
   simp only [Nat.mul_zero, Nat.zero_add, Nat.mul_one] at hK0 hK1
   obtain ⟨s₈, e₈, kp₈, o₈, m₈, rd₈, wr₈⟩ := addKp_ok s₇ 128 (by decide)
   have hs₈ : ∀ k, slotW s₈ k = slotW s₇ k := fun k => by simp only [slotW, m₈, o₈ sb (by decide)]
@@ -325,33 +325,33 @@ theorem tail_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
   have hg : 8 * g + 2 ≤ 34 := hp.nk34
   let b := s₀.gpr sb
   obtain ⟨hq, -, h2⟩ := hS
-  have hK1 := hc.keyRel hp.toKeyCtx hk (e := 1) (by omega)
+  have hK1 := hc.keyRel hp.toKeyCtx hk (e := 1) (by omega_arith)
   simp only [Nat.mul_one] at hK1
   -- The right halves.
-  obtain ⟨s₁, e₁, c₁, k₁, -, q₁, h₁, -⟩ := lin_step hp.toKeyCtx hc hk (by omega) keyXor8_check (by decide +kernel)
+  obtain ⟨s₁, e₁, c₁, k₁, -, q₁, h₁, -⟩ := lin_step hp.toKeyCtx hc hk (by omega_arith) keyXor8_check (by decide +kernel)
   have hk₁ : AtEntry s₁ b (8 * g) := by rw [AtEntry, k₁]; exact hk
-  obtain ⟨s₂, e₂, c₂, k₂, -, q₂, h₂, -⟩ := lin_step hp.toKeyCtx c₁ hk₁ (by omega) fromBs_check (by decide +kernel)
+  obtain ⟨s₂, e₂, c₂, k₂, -, q₂, h₂, -⟩ := lin_step hp.toKeyCtx c₁ hk₁ (by omega_arith) fromBs_check (by decide +kernel)
   have hk₂ : AtEntry s₂ b (8 * g) := by rw [AtEntry, k₂]; exact hk₁
   have hW1 : WordRel (Qs s₂) (fun b => (S b).1 ^^^ E (8 * g + 1)) :=
     fromBs_rel q₂ (HalfRel.xor_key hq hK1 (keyXor_bits q₁))
   obtain ⟨s₃, e₃, c₃, g₃, w₃, -, sl₃⟩ := storeWords_step hp.toKeyCtx c₂ (Or.inr rfl) storeWords1_check
   have hk₃ : AtEntry s₃ b (8 * g) := by rw [AtEntry, g₃]; exact hk₂
   -- The left halves.
-  obtain ⟨s₄, e₄, c₄, k₄, -, q₄, -, d₄⟩ := lin_step hp.toKeyCtx c₃ hk₃ (by omega) loadHalf2_check (by decide +kernel)
+  obtain ⟨s₄, e₄, c₄, k₄, -, q₄, -, d₄⟩ := lin_step hp.toKeyCtx c₃ hk₃ (by omega_arith) loadHalf2_check (by decide +kernel)
   have hk₄ : AtEntry s₄ b (8 * g) := by rw [AtEntry, k₄]; exact hk₃
   have hD2 : HalfRel (Qs s₄) (fun b => (S b).2) := h2.congr fun j hj =>
     BitVec.eq_of_getLsbD_eq fun p hp => by
-      have e₂ := h₂ (8 + j) (by omega)
-      have e₁ := h₁ (8 + j) (by omega)
-      rw [show d1Slot + (8 + j) = d2Slot + j by simp only [d1Slot, d2Slot]; omega] at e₁ e₂
+      have e₂ := h₂ (8 + j) (by omega_arith)
+      have e₁ := h₁ (8 + j) (by omega_arith)
+      rw [show d1Slot + (8 + j) = d2Slot + j by simp only [d1Slot, d2Slot]; omega_arith] at e₁ e₂
       rw [q₄ j hj p hp, loadHalfG, xorBits_cons, xorBits_nil,
         Bool.xor_false, bitOf_word _ _ _ hp, bothW_half s₃ (Or.inr rfl) hj,
-        sl₃ _ (by simp only [tailSlot_eq, d2Slot]; omega), e₂, e₁]
-  obtain ⟨s₅, e₅, c₅, k₅, -, q₅, -, d₅⟩ := lin_step hp.toKeyCtx c₄ hk₄ (by omega) keyXor0_check (by decide +kernel)
+        sl₃ _ (by simp only [tailSlot_eq, d2Slot]; omega_arith), e₂, e₁]
+  obtain ⟨s₅, e₅, c₅, k₅, -, q₅, -, d₅⟩ := lin_step hp.toKeyCtx c₄ hk₄ (by omega_arith) keyXor0_check (by decide +kernel)
   have hk₅ : AtEntry s₅ b (8 * g) := by rw [AtEntry, k₅]; exact hk₄
-  have hK0' := c₄.keyRel hp.toKeyCtx hk₄ (e := 0) (by omega)
+  have hK0' := c₄.keyRel hp.toKeyCtx hk₄ (e := 0) (by omega_arith)
   simp only [Nat.mul_zero, Nat.add_zero] at hK0'
-  obtain ⟨s₆, e₆, c₆, -, -, q₆, -, d₆⟩ := lin_step hp.toKeyCtx c₅ hk₅ (by omega) fromBs_check (by decide +kernel)
+  obtain ⟨s₆, e₆, c₆, -, -, q₆, -, d₆⟩ := lin_step hp.toKeyCtx c₅ hk₅ (by omega_arith) fromBs_check (by decide +kernel)
   have hW0 : WordRel (Qs s₆) (fun b => (S b).2 ^^^ E (8 * g)) :=
     fromBs_rel q₆ (HalfRel.xor_key hD2 hK0' (by simpa only [Nat.zero_add] using keyXor_bits q₅))
   obtain ⟨s₇, e₇, c₇, -, w₇, o₇, -⟩ := storeWords_step hp.toKeyCtx c₆ (Or.inl rfl) storeWords0_check
@@ -365,7 +365,7 @@ theorem tail_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
   · have := o₇ b' hb
     simp only [Nat.sub_zero] at this
     show (dataW s₇ (2 * b' + 1)).getLsbD _ = _
-    rw [this, d₆ _ (by omega), d₅ _ (by omega), d₄ _ (by omega), w₃ b' hb]
+    rw [this, d₆ _ (by omega_arith), d₅ _ (by omega_arith), d₄ _ (by omega_arith), w₃ b' hb]
     exact hW1 b' hb i hi j hj
 
 /-! ## The groups -/
@@ -374,20 +374,20 @@ theorem groups_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CoreP
     (hk : AtEntry s (s₀.gpr sb) 2) {S : Nat → BitVec 64 × BitVec 64} (hS : Halves s S) :
     WP isa (.loop groupBody .ne) s fun s' => Ctx s₀ s' ∧ AtEntry s' (s₀.gpr sb) (8 * g) ∧
       Halves s' (fun b => groups g E (S b)) := by
-  have hg0 : 0 < g := by rcases hp.hg with h | h <;> omega
+  have hg0 : 0 < g := by rcases hp.hg with h | h <;> omega_arith
   let Inv : Nat → State → Prop := fun n s' => ∃ i, n = g - i ∧ i < g ∧ Ctx s₀ s' ∧
     AtEntry s' (s₀.gpr sb) (2 + 8 * i) ∧ Halves s' (fun b => groupsN g E i (S b))
-  refine WP.loop (M := isa) Inv (fun n s' hs' => ?_) g s ⟨0, by omega, hg0, hc, hk, by simpa [groupsN] using hS⟩
+  refine WP.loop (M := isa) Inv (fun n s' hs' => ?_) g s ⟨0, by omega_arith, hg0, hc, hk, by simpa [groupsN] using hS⟩
   obtain ⟨i, rfl, hi, hc', hk', hS'⟩ := hs'
   refine WP.mono (group_wp hp hc' hi hk' hS') fun s'' ⟨c'', S'', k'', z''⟩ => ?_
   simp only [← groupsN_succ] at S''
   by_cases he : i + 1 = g
   · refine .inl ⟨by simp [X86_64.eval, z'', he], c'', ?_, ?_⟩
-    · simpa only [show ¬ i + 1 < g by omega, ↓reduceIte] using k''
+    · simpa only [show ¬ i + 1 < g by omega_arith, ↓reduceIte] using k''
     · have hG : ∀ d, groupsN g E (i + 1) d = groups g E d := fun d => by rw [he]; rfl
       simpa only [hG] using S''
-  · refine .inr ⟨by simp [X86_64.eval, z'', he], g - (i + 1), by omega, i + 1, rfl, by omega, c'', ?_, S''⟩
-    simpa only [show i + 1 < g by omega, ↓reduceIte] using k''
+  · refine .inr ⟨by simp [X86_64.eval, z'', he], g - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, c'', ?_, S''⟩
+    simpa only [show i + 1 < g by omega_arith, ↓reduceIte] using k''
 
 /-! ## Eight blocks -/
 
@@ -403,11 +403,11 @@ theorem blk_of_words {s : State} {b : Nat} {hi lo : BitVec 64}
   · rename_i h8
     apply BitVec.eq_of_getLsbD_eq
     intro j hj
-    rw [← h0 i h8 j hj, dataW_byte s 0 h8 hj, show 8 * 0 + i = i by omega]
+    rw [← h0 i h8 j hj, dataW_byte s 0 h8 hj, show 8 * 0 + i = i by omega_arith]
   · rename_i h8
     apply BitVec.eq_of_getLsbD_eq
     intro j hj
-    rw [← h1 (i - 8) (by omega) j hj, dataW_byte s 1 (by omega) hj, show 8 * 1 + (i - 8) = i by omega]
+    rw [← h1 (i - 8) (by omega_arith) j hj, dataW_byte s 1 (by omega_arith) hj, show 8 * 1 + (i - 8) = i by omega_arith]
 
 /-- `crypt8`: each of the eight blocks at `rdx` becomes `cryptWords g E` of it. -/
 theorem crypt8_ok {s₀ : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) :

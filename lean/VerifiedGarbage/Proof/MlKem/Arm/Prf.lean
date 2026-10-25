@@ -98,8 +98,8 @@ theorem sepB_scr {r : List Nat} {s : Nat} {a b : Nat × Nat × Nat} (h : sepB (3
   simp only [sepB, List.length_cons, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
   obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := h
   refine ⟨⟨⟨⟨h1, h2⟩, ?_⟩, ?_⟩, h5⟩
-  · cases i <;> simp only [List.getD_cons_zero, List.getD_cons_succ] at h3 ⊢ <;> omega
-  · cases j <;> simp only [List.getD_cons_zero, List.getD_cons_succ] at h4 ⊢ <;> omega
+  · cases i <;> simp only [List.getD_cons_zero, List.getD_cons_succ] at h3 ⊢ <;> omega_arith
+  · cases j <;> simp only [List.getD_cons_zero, List.getD_cons_succ] at h4 ⊢ <;> omega_arith
 
 theorem sepAll_scr {r : List Nat} {s : Nat} {a : Nat × Nat × Nat} {W : List (Nat × Nat × Nat)}
     (h : sepAll (32768 :: r) a W = true) (hs : 32768 ≤ s) : sepAll (s :: r) a W = true :=
@@ -128,7 +128,7 @@ theorem Ctx.subL {L : Lay} {s : State} (hc : Ctx L s) {W W' : List (Nat × Nat �
   obtain ⟨⟨⟨e, h₁⟩, h₂⟩, h₃⟩ := hs
   subst e
   refine ⟨L.R i b l', List.mem_map.mpr ⟨_, hw', rfl⟩, Lay.R_sub_R hc.ok ?_ h₁ h₂ ?_⟩
-  · have := hc.len; rcases h₃ with ⟨e, -⟩ | ⟨e, -⟩ <;> subst e <;> omega
+  · have := hc.len; rcases h₃ with ⟨e, -⟩ | ⟨e, -⟩ <;> subst e <;> omega_arith
   · rcases h₃ with ⟨e, h⟩ | ⟨e, h⟩ <;> subst e
     · exact Nat.le_trans h hc.sz0
     · rw [hc.sz1]; exact h
@@ -153,7 +153,7 @@ tactic_template "offs" : tactic => `(tactic| (
                    (try simp only [oPoly, oPrf, KemLay.oNtt, oSeed, oSigma, KemLay.oAcc, KemLay.oTmp, KemLay.oAhat, KemLay.oSample,
                      oK, oKbar, oMsg, oHek, KemLay.oCt, oWork, oSave, oExtra, oG, oCin, KemLay.ekLen, KemLay.ctLen, KemLay.uLen,
                      KemLay.vLen])
-                   omega))
+                   omega_arith))
 
 theorem enc_le9 : ∀ n, n ≤ 9 → encodable (BitVec.ofNat 32 n) = true := by decide
 
@@ -162,8 +162,8 @@ or a count that depends on the parameter set, from the bounds of its
 `KemLay.WF`. -/
 tactic_template "kenc" : tactic => `(tactic| first
   | decide
-  | exact enc_le9 _ (by have := (‹KemLay.WF _›).k4; omega)
-  | exact (‹KemLay.WF _›).enc (by omega))
+  | exact enc_le9 _ (by have := (‹KemLay.WF _›).k4; omega_arith)
+  | exact (‹KemLay.WF _›).enc (by omega_arith))
 
 /-- Decides a fact about offsets and regions: by evaluation, or, for one that
 depends on the parameter set (of the `KemLay.WF` in the context), by `omega`
@@ -183,13 +183,13 @@ tactic_template "kdecide" : tactic => `(tactic| first
                      Bool.true_and, Bool.false_or, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, bne_iff_ne, ne_eq,
                      decide_eq_true_eq, true_and, and_true, not_true_eq_false, not_false_eq_true, false_or, or_false, true_or,
                      or_true])
-                   omega))
+                   omega_arith))
 
 theorem slot_eq (p : BitVec 32) {N off : Nat} (_h : off + 1024 * N < 2 ^ 32) :
     p + BitVec.ofNat 32 N <<< 10 + BitVec.ofNat 32 off = p + BitVec.ofNat 32 (off + 1024 * N) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem setWidth8_ofNat {N : Nat} (h : N < 2 ^ 32) : (BitVec.ofNat 32 N).setWidth 8 = BitVec.ofNat 8 N := by
   apply BitVec.eq_of_toNat_eq
@@ -249,7 +249,7 @@ theorem cbdArgs_ok {s : State} {P : BitVec 32} {N : Nat} (h7 : s.gpr .r7 = P) (h
     WP isa (.block (ptrTo .r0 .r7 oPrf :: slotAt .r1 .r9 (oPoly K.k))) s fun s' => Only s s' ∧
       s'.gpr .r0 = P + BitVec.ofNat 32 oPrf ∧ s'.gpr .r1 = P + BitVec.ofNat 32 N <<< 10 + BitVec.ofNat 32 (oPoly K.k) := by
   have e1 : encodable (BitVec.ofNat 32 oPrf) = true := by decide
-  have e2 := enc_poly K.k (by have := hK.k4; omega)
+  have e2 := enc_poly K.k (by have := hK.k4; omega_arith)
   run_block [ptrTo, slotAt, e1, e2, h7, h9]
   refine ⟨Only.of_gpr _ fun r hr hl => ?_, trivial⟩
   obtain ⟨m0, m1, -, -, -⟩ := pres_ne hr hl
@@ -259,8 +259,8 @@ theorem nttArgs_ok {s : State} {P : BitVec 32} {N : Nat} (h7 : s.gpr .r7 = P) (h
     WP isa (.block (slotAt .r0 .r9 (oPoly K.k) ++ [ptrTo .r1 .r7 K.oNtt])) s fun s' => Only s s' ∧
       s'.gpr .r0 = P + BitVec.ofNat 32 N <<< 10 + BitVec.ofNat 32 (oPoly K.k) ∧
       s'.gpr .r1 = P + BitVec.ofNat 32 K.oNtt := by
-  have e1 := enc_poly (3 * K.k + 7) (by have := hK.k4; omega)
-  have e2 := enc_poly K.k (by have := hK.k4; omega)
+  have e1 := enc_poly (3 * K.k + 7) (by have := hK.k4; omega_arith)
+  have e2 := enc_poly K.k (by have := hK.k4; omega_arith)
   run_block [ptrTo, slotAt, e1, e2, h7, h9]
   refine ⟨Only.of_gpr _ fun r hr hl => ?_, trivial⟩
   obtain ⟨m0, m1, -, -, -⟩ := pres_ne hr hl
@@ -274,8 +274,8 @@ theorem prfBody_ok {L : Lay} {s : State} (hc : Ctx L s) (withNtt : Bool) {N₁ N
       PolyIs s'.mem (L.A 0 (oPoly (K.k + N))) (prfOut withNtt σ N) := by
   have hL := hc.ok
   have k4 := hK.k4
-  have eo : oPoly (K.k + N) = oPoly K.k + 1024 * N := by unfold oPoly; omega
-  refine WP.seq (WP.mono (strb9_ok hc (by omega) h9) fun s₁ ⟨k₁, m₁⟩ => ?_)
+  have eo : oPoly (K.k + N) = oPoly K.k + 1024 * N := by unfold oPoly; omega_arith
+  refine WP.seq (WP.mono (strb9_ok hc (by omega_arith) h9) fun s₁ ⟨k₁, m₁⟩ => ?_)
   have hc₁ := k₁.ctx (by decide) hc
   have g9₁ : s₁.gpr .r9 = BitVec.ofNat 32 N := by rw [k₁.cs .r9 (by decide) (by decide) (by decide), h9]
   have bσ : bytesAt s₁.mem (L.A 0 920) 33 = σ ++ [BitVec.ofNat 8 N] := by
@@ -316,7 +316,7 @@ theorem prfBody_ok {L : Lay} {s : State} (hc : Ctx L s) (withNtt : Bool) {N₁ N
       WP isa (.block (count .r9 N₁)) s₅ fun s' => KeptX [.r9] (L.RL (prfW K N)) s s' ∧
         s'.gpr .r9 = BitVec.ofNat 32 (N + 1) ∧ s'.z = decide (N + 1 = N₁) ∧
         PolyIs s'.mem (L.A 0 (oPoly (K.k + N))) (prfOut withNtt σ N) := fun s₅ k₅ g9₅ p₅ =>
-    WP.mono (count_ok (by omega) (by omega) (enc_le9 _ (by omega)) g9₅) fun s' ⟨k', g', z'⟩ => ⟨by
+    WP.mono (count_ok (by omega_arith) (by omega_arith) (enc_le9 _ (by omega_arith)) g9₅) fun s' ⟨k', g', z'⟩ => ⟨by
       exact ((k₁.weaken (by simp)).monoL (W' := prfW K N) (by simp)).trans (((k₂.x _).monoL (by simp)).trans
         ((o₃.x _ _).trans (((k₄.x _).monoL (by simp)).trans ((k₅.monoL (by simp)).trans (k'.mono (fun _ h => absurd h List.not_mem_nil)))))),
       g', z', polyIs_frame k'.frame (fun _ h => absurd h List.not_mem_nil) p₅⟩
@@ -351,14 +351,14 @@ theorem prfW_sig {K : KemLay} (hK : K.WF) : ∀ N < 2 * K.k + 1, (prfW K N).all 
   intro N hN
   simp only [prfW, List.all_cons, List.all_nil, sep0, oPoly, KemLay.oNtt, oSigma, Bool.and_true, Bool.and_eq_true,
     Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq, true_and]
-  omega
+  omega_arith
 
 theorem prfW_slot {K : KemLay} (hK : K.WF) {N N' : Nat} (hN : N < 2 * K.k + 1) (hN' : N' < 2 * K.k + 1)
     (h : N' ≠ N) : (prfW K N).all (sep0 (oPoly (K.k + N')) 1024) = true := by
   have := hK.k4
   simp only [prfW, List.all_cons, List.all_nil, sep0, oPoly, KemLay.oNtt, Bool.and_true, Bool.and_eq_true,
     Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq, true_and]
-  omega
+  omega_arith
 
 theorem mov9_ok {s : State} {N : Nat} (he : encodable (BitVec.ofNat 32 N) = true) :
     WP isa (.block [.mov .r9 (.imm (BitVec.ofNat 32 N))]) s fun s' =>
@@ -380,7 +380,7 @@ theorem prfStep_ok {L : Lay} {s₀ : State} (hc : Ctx L s₀) (withNtt : Bool) {
   have hL := hc.ok
   have k4 := hK.k4
   have hcs := h.kx.ctx (by decide) hc
-  refine WP.mono (prfBody_ok hK hcs withNtt (N := N₀ + t) (by omega) hN₁ h.r9 h.sig) fun s' ⟨k', g', z', p'⟩ =>
+  refine WP.mono (prfBody_ok hK hcs withNtt (N := N₀ + t) (by omega_arith) hN₁ h.r9 h.sig) fun s' ⟨k', g', z', p'⟩ =>
     ⟨⟨h.kx.trans (k'.sub fun r hr => ?_), by rw [g', Nat.add_assoc], ?_, fun N h1 h2 => ?_⟩, ?_⟩
   · simp only [Lay.RL, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -392,24 +392,24 @@ theorem prfStep_ok {L : Lay} {s₀ : State} (hc : Ctx L s₀) (withNtt : Bool) {
     · exact ⟨L.R 0 (oPoly (K.k + N₀)) (1024 * (N₁ - N₀)), by simp, hc.sub0 (by offs) (by offs) (by offs)⟩
     · exact ⟨L.R 0 K.oNtt 1024, by simp, fun _ h => h⟩
   · rw [← h.sig]
-    exact Lay.bytes_keep hL k'.frame (hc.sepAll0 (by decide) (prfW_sig hK _ (by omega))) (by decide)
+    exact Lay.bytes_keep hL k'.frame (hc.sepAll0 (by decide) (prfW_sig hK _ (by omega_arith))) (by decide)
   · by_cases e : N = N₀ + t
     · subst e; exact p'
-    · exact Lay.polyIs_keep hL k'.frame (hc.sepAll0 (by offs) (prfW_slot hK (by omega) (by omega) e))
-        (h.slots N h1 (by omega))
-  · rw [z']; simp only [decide_eq_decide]; omega
+    · exact Lay.polyIs_keep hL k'.frame (hc.sepAll0 (by offs) (prfW_slot hK (by omega_arith) (by omega_arith) e))
+        (h.slots N h1 (by omega_arith))
+  · rw [z']; simp only [decide_eq_decide]; omega_arith
 
 theorem prfLoop_ok {L : Lay} {s₀ : State} (hc : Ctx L s₀) (withNtt : Bool) {N₀ N₁ : Nat} (h01 : N₀ < N₁)
     (hN₁ : N₁ ≤ 2 * K.k + 1) {σ : List Byte} (hσ : bytesAt s₀.mem (L.A 0 oSigma) 32 = σ) :
     WP isa (K.prfLoop withNtt N₀ N₁) s₀ fun s => KeptX [.r9] (L.RL (prfLW K N₀ N₁)) s₀ s ∧
       ∀ N, N₀ ≤ N → N < N₁ → PolyIs s.mem (L.A 0 (oPoly (K.k + N))) (prfOut withNtt σ N) := by
   have k4 := hK.k4
-  refine WP.seq (WP.mono (mov9_ok (enc_le9 _ (by omega))) fun s₁ ⟨k₁, g₁, m₁⟩ => ?_)
-  exact wp_loop_ne (PrfInv K L withNtt σ N₀ N₁ s₀) (N := N₁ - N₀) (by omega)
+  refine WP.seq (WP.mono (mov9_ok (enc_le9 _ (by omega_arith))) fun s₁ ⟨k₁, g₁, m₁⟩ => ?_)
+  exact wp_loop_ne (PrfInv K L withNtt σ N₀ N₁ s₀) (N := N₁ - N₀) (by omega_arith)
     (fun t ht s h => prfStep_ok hK hc withNtt hN₁ ht h)
-    (fun s h => ⟨h.kx, fun N h1 h2 => h.slots N h1 (by omega)⟩)
+    (fun s h => ⟨h.kx, fun N h1 h2 => h.slots N h1 (by omega_arith)⟩)
     ⟨k₁.mono (fun _ h => absurd h List.not_mem_nil), by rw [g₁, Nat.add_zero], by rw [m₁]; exact hσ,
-      fun N h1 h2 => absurd h2 (by omega)⟩
+      fun N h1 h2 => absurd h2 (by omega_arith)⟩
 
 end
 

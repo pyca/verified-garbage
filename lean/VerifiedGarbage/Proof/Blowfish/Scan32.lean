@@ -44,21 +44,21 @@ theorem byte_rotateRight (x : BitVec 32) {r c : Nat} (hr : r < 4) (hc : c < 4) :
     (x.rotateRight (8 * r)).extractLsb' (8 * c) 8 = x.extractLsb' (8 * ((c + r) % 4)) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and,
-    BitVec.getLsbD_rotateRight_of_lt (show 8 * r < 32 by omega)]
+    BitVec.getLsbD_rotateRight_of_lt (show 8 * r < 32 by omega_arith)]
   by_cases h : 8 * c + i < 32 - 8 * r
-  · rw [ite_eq_left h]; congr 1; omega
-  · rw [ite_eq_right h, show decide (8 * c + i < 32) = true by simp; omega, Bool.true_and]
-    congr 1; omega
+  · rw [ite_eq_left h]; congr 1; omega_arith
+  · rw [ite_eq_right h, show decide (8 * c + i < 32) = true by simp; omega_arith, Bool.true_and]
+    congr 1; omega_arith
 
 theorem byte_laneMask {L c : Nat} (hL : L < 4) (hc : c < 4) :
     (laneMask L).extractLsb' (8 * c) 8 = if c = L then 255#8 else 0#8 := by
-  rcases (by omega : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;>
-  rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by omega_arith : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;> decide
 
 theorem and_255 (b : Byte) : b &&& 255#8 = b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_and, show (255#8).getLsbD i = true by
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl, Bool.and_true]
 
 /-- Byte `c` of the row's word, rotated right by `8L`, is byte `L` of plane
@@ -81,8 +81,8 @@ theorem hitWord_byte (m : Mem) (p : Addr) (j : Nat) {x c : Nat} (hc : c < 4) :
   simp only [BitVec.extractLsb'_and]
   rw [byte_laneMask hL hm, byte_laneMask hL (Nat.mod_lt _ (by decide)),
     byte_laneMask hL (Nat.mod_lt _ (by decide)), byte_laneMask hL (Nat.mod_lt _ (by decide))]
-  rcases (by omega : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;>
-  rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_arith : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
   simp [and_255]
 
 /-- The row's word, rotated right by `8L`, is S-box `j`'s entry `x`. -/
@@ -92,7 +92,7 @@ theorem hitWord_ror (m : Mem) (p : Addr) {j : Nat} (hj : j < 4) (x : Byte) :
   rw [hitWord_byte m p j hc, sEntry_byte m p hj hc, planeWord, ← Mem.readW_byte _ _ (Nat.mod_lt _ (by decide)),
     Offset.add_add]
   congr 3
-  omega
+  omega_arith
 
 theorem scanAcc_zero (m : Mem) (p : Addr) (j x : Nat) : scanAcc m p j x 0 = 0 := by
   simp [scanAcc]
@@ -100,7 +100,7 @@ theorem scanAcc_zero (m : Mem) (p : Addr) (j x : Nat) : scanAcc m p j x 0 = 0 :=
 theorem scanAcc_all (m : Mem) (p : Addr) (j : Nat) (x : Byte) :
     scanAcc m p j x.toNat 64 = hitWord m p j x.toNat := by
   have := x.isLt
-  simp only [scanAcc, show x.toNat / 4 < 64 by omega, ite_true]
+  simp only [scanAcc, show x.toNat / 4 < 64 by omega_arith, ite_true]
 
 /-- A row: the words masked by `M`, the lane mask if the row holds `x`,
 else zero. -/
@@ -115,8 +115,8 @@ theorem scanAcc_succ (m : Mem) (p : Addr) (j x k : Nat) (M : BitVec 32)
   · subst h
     simp [hitWord]
   · by_cases h' : x / 4 < k
-    · simp [h, h', show x / 4 < k + 1 by omega]
-    · simp [h, h', show ¬ x / 4 < k + 1 by omega]
+    · simp [h, h', show x / 4 < k + 1 by omega_arith]
+    · simp [h, h', show ¬ x / 4 < k + 1 by omega_arith]
 
 /-! ## Masks -/
 
@@ -124,9 +124,9 @@ theorem scanAcc_succ (m : Mem) (p : Addr) (j x k : Nat) (M : BitVec 32)
 theorem row_hit (x : Byte) {k : Nat} (hk : k < 64) :
     (x.setWidth 32 - BitVec.ofNat 32 (4 * k)).toNat < 4 ↔ x.toNat / 4 = k := by
   have := x.isLt
-  rw [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show x.toNat < 2 ^ 32 by omega),
-    Nat.mod_eq_of_lt (show 4 * k < 2 ^ 32 by omega)]
-  omega
+  rw [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show x.toNat < 2 ^ 32 by omega_arith),
+    Nat.mod_eq_of_lt (show 4 * k < 2 ^ 32 by omega_arith)]
+  omega_arith
 
 /-- What `adc d, ones, #0` leaves after a comparison that set the carry to `c`:
 zero if `c`, else all ones. -/
@@ -154,20 +154,20 @@ theorem laneMask_rot {L : Nat} (hL : L < 4) :
         (if decide (L % 2 = 1) then (BitVec.ofNat 32 255).rotateRight 24 else BitVec.ofNat 32 255).rotateRight 16
       else if decide (L % 2 = 1) then (BitVec.ofNat 32 255).rotateRight 24 else BitVec.ofNat 32 255) =
       laneMask L := by
-  rcases (by omega : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by omega_arith : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;> decide
 
 theorem ror_ror (x : BitVec 32) {a b : Nat} (h : a + b < 32) :
     (x.rotateRight a).rotateRight b = x.rotateRight (a + b) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_rotateRight_of_lt (show b < 32 by omega),
-    BitVec.getLsbD_rotateRight_of_lt (show a < 32 by omega), BitVec.getLsbD_rotateRight_of_lt h]
+  simp only [BitVec.getLsbD_rotateRight_of_lt (show b < 32 by omega_arith),
+    BitVec.getLsbD_rotateRight_of_lt (show a < 32 by omega_arith), BitVec.getLsbD_rotateRight_of_lt h]
   have d : ∀ n, n < 32 → decide (n < 32) = true := fun n hn => decide_eq_true hn
   split <;> split <;> (try split) <;>
     first
-    | omega
-    | (congr 1; omega)
-    | (rw [d _ (by omega), Bool.true_and]; congr 1; omega)
-    | (rw [d _ (by omega), Bool.true_and, d _ (by omega), Bool.true_and]; congr 1; omega)
+    | omega_arith
+    | (congr 1; omega_arith)
+    | (rw [d _ (by omega_arith), Bool.true_and]; congr 1; omega_arith)
+    | (rw [d _ (by omega_arith), Bool.true_and, d _ (by omega_arith), Bool.true_and]; congr 1; omega_arith)
 
 set_option linter.unusedSimpArgs false in
 /-- The accumulator rotated right by the lane's bytes. -/
@@ -178,7 +178,7 @@ theorem acc_rot (x : BitVec 32) {L : Nat} (hL : L < 4) :
   have r0 : x.rotateRight 0 = x := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp [hi]
-  rcases (by omega : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_arith : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;>
     simp only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, decide_true, decide_false, ite_true,
       ite_false, Bool.false_eq_true, r0, ror_ror x (show 8 + 16 < 32 by decide)] <;> rfl
 
@@ -187,12 +187,12 @@ theorem mask_hit (idx : Byte) {k : Nat} (hk : k < 64) (lm : BitVec 32) :
       if idx.toNat / 4 = k then lm else 0 := by
   have h := row_hit idx hk
   by_cases e : idx.toNat / 4 = k
-  · rw [ite_eq_right (by omega), ite_eq_left e]
-  · rw [ite_eq_left (by omega), ite_eq_right e]
+  · rw [ite_eq_right (by omega_arith), ite_eq_left e]
+  · rw [ite_eq_left (by omega_arith), ite_eq_right e]
 
 theorem sub256_mod (idx : Byte) : (idx.setWidth 32 - BitVec.ofNat 32 (4 * 64)).toNat % 4 = idx.toNat % 4 := by
   have := idx.isLt
-  rw [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 32 by omega)]
-  omega
+  rw [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 32 by omega_arith)]
+  omega_arith
 
 end VG.Proof.Blowfish

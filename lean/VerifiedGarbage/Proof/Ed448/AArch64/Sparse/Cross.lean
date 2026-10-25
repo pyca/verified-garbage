@@ -56,13 +56,13 @@ theorem cross_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
   have hs5 := hs4.of_keeps k5 (by decide)
   -- `RX` and `RY`, kept by every step so far.
   have mR : ∀ o, o = RX ∨ o = RY → ∀ i < 8, limbs t5.mem base o i = limbs s.mem base o i := fun o ho i hi => by
-    have hn : o + 8 * i + 8 ≤ 8192 := by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega
+    have hn : o + 8 * i + 8 ≤ 8192 := by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega_arith
     refine congrArg BitVec.toNat ?_
-    rw [f5.word (Or.inr (by rcases ho with rfl | rfl <;> simp only [slot, RX, RY, CAN] <;> omega)) hn,
-      k4.mem.word (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega))
-        (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN, ACC] <;> omega)) hn,
-      k3.mem.word (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega))
-        (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN, ACC] <;> omega)) hn]
+    rw [f5.word (Or.inr (by rcases ho with rfl | rfl <;> simp only [slot, RX, RY, CAN] <;> omega_arith)) hn,
+      k4.mem.word (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega_arith))
+        (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN, ACC] <;> omega_arith)) hn,
+      k3.mem.word (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega_arith))
+        (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN, ACC] <;> omega_arith)) hn]
 
   refine WP.mono (copyS_ok hs5 (o := slot 3) (a := RX) (by decide) (by decide) (by decide) (by decide) (by decide))
     fun t6 ⟨v6, o6, k6⟩ => ?_
@@ -78,20 +78,20 @@ theorem cross_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
     have n3 : i.val ≠ 3 := fun e => h3 (Fin.ext e)
     have n4 : i.val ≠ 4 := fun e => h4 (Fin.ext e)
     have n5 : i.val ≠ 5 := fun e => h5 (Fin.ext e)
-    rw [o8.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega),
-      o7.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega),
-      o6.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega)]
+    rw [o8.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
+      o7.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
+      o6.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)]
   have l3 : ∀ j < 8, limbs t8.mem base (slot 3) j = limbs s.mem base RX j := fun j hj => by
-    rw [o8.limbs (by decide) (by decide) (by omega), o7.limbs (by decide) (by decide) (by omega), v6 j hj,
+    rw [o8.limbs (by decide) (by decide) (by omega_arith), o7.limbs (by decide) (by decide) (by omega_arith), v6 j hj,
       mR _ (.inl rfl) j hj]
   have l4 : ∀ j < 8, limbs t8.mem base (slot 4) j = limbs s.mem base RY j := fun j hj => by
-    rw [o8.limbs (by decide) (by decide) (by omega), v7 j hj,
-      o6.limbs (by simp only [RY, CAN]; decide) (by simp only [RY, CAN]; decide) (by omega), mR _ (.inr rfl) j hj]
+    rw [o8.limbs (by decide) (by decide) (by omega_arith), v7 j hj,
+      o6.limbs (by simp only [RY, CAN]; decide) (by simp only [RY, CAN]; decide) (by omega_arith), mR _ (.inr rfl) j hj]
   have l0 : ∀ c < 3, ∀ j < 8, limbs t8.mem base (slot (0 + c)) j = limbs t4.mem base (slot (3 + c)) j :=
     fun c hc j hj => by
-      rw [show limbs t8.mem base (slot (0 + c)) j = limbs t8.mem base (slot (⟨0 + c, by omega⟩ : Index).val) j
-        from rfl, keep8 _ (by intro h; simp [Fin.ext_iff] at h; omega) (by intro h; simp [Fin.ext_iff] at h; omega)
-        (by intro h; simp [Fin.ext_iff] at h; omega) j hj]
+      rw [show limbs t8.mem base (slot (0 + c)) j = limbs t8.mem base (slot (⟨0 + c, by omega_arith⟩ : Index).val) j
+        from rfl, keep8 _ (by intro h; simp [Fin.ext_iff] at h; omega_arith) (by intro h; simp [Fin.ext_iff] at h; omega_arith)
+        (by intro h; simp [Fin.ext_iff] at h; omega_arith) j hj]
       exact v5 c hc j hj
   have b8 : BEnv t8.mem base := by
     intro i
@@ -105,9 +105,9 @@ theorem cross_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
       rw [keep8 i h3 h4 h5 j hj]
       by_cases h : i.val < 0 ∨ 0 + 3 ≤ i.val
       · rw [o5 i h j hj]; exact b4 i j hj
-      · have : i.val = 0 + i.val := by omega
+      · have : i.val = 0 + i.val := by omega_arith
         show limbs t5.mem base (slot i.val) j < Ib
-        rw [this, v5 _ (by omega) j hj]; exact b4 ⟨3 + i.val, by omega⟩ j hj
+        rw [this, v5 _ (by omega_arith) j hj]; exact b4 ⟨3 + i.val, by omega_arith⟩ j hj
   have e8 : ∀ i : Index, i ≠ 3 → i ≠ 4 → i ≠ 5 → EV t8.mem base i = EV t5.mem base i := fun i h3 h4 h5 =>
     congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (keep8 i h3 h4 h5))
   have r8 : pt (EV t8.mem base) 3 4 5 = ⟨FV s.mem base RX, FV s.mem base RY, 1⟩ := by
@@ -163,8 +163,8 @@ theorem cross_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
     exact ((ka.trans kb).trans ((crossClob_ckeep k9).trans (crossClob_ckeep k10))).trans
       (kf.regs.mono (by intro r hr;exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ hr))))
   · have o58:Outside2 base 64 2816 ACC 1152 t4.mem t8.mem:=fun x a _ => by
-      rw [o8 x (by simp only [slot] at a ⊢;omega),o7 x (by simp only [slot] at a ⊢;omega),
-        o6 x (by simp only [slot] at a ⊢;omega),f5 x (by simp only [slot] at a ⊢;omega)]
+      rw [o8 x (by simp only [slot] at a ⊢;omega_arith),o7 x (by simp only [slot] at a ⊢;omega_arith),
+        o6 x (by simp only [slot] at a ⊢;omega_arith),f5 x (by simp only [slot] at a ⊢;omega_arith)]
     exact ((((k3.mem.trans k4.mem).trans o58).trans k9.mem).trans k10.mem).trans kf.mem
   · rw [Same.env s14 (i := 12) (by decide), Same.env s13 (i := 12) (by decide), Same.env s12 (i := 12) (by decide),
       e11, Function.update_self, qx, rz]
@@ -177,7 +177,7 @@ theorem cross_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
       Same.env s11 (i := 2) (by decide), ry, qz]
   · intro i h1 h2
     have hi : i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 := by
-      rcases i with ⟨i, hlt⟩; simp only [Fin.ext_iff] at h1 h2 ⊢; omega
+      rcases i with ⟨i, hlt⟩; simp only [Fin.ext_iff] at h1 h2 ⊢; omega_arith
     rcases hi with rfl | rfl | rfl | rfl
     · exact s14.bnd (by decide) (s13.bnd (by decide) (s12.bnd (by decide) m12))
     · exact s14.bnd (by decide) (s13.bnd (by decide) m13)

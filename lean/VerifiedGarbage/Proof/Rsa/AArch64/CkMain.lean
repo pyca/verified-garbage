@@ -39,7 +39,7 @@ theorem ck_final {k N E D P Q DP DQ QI : Nat} {dn pq gP gQ gQI : Bool} (hv : Spe
   by_cases hd : D < N
   · by_cases h : P * Q = N
     · obtain ⟨p1, p2, q1, q2⟩ := hf h
-      rw [hgP p1 p2 hd h, hgQ q1 q2 hd (by rw [Nat.mul_comm]; exact h), hgQI (by omega)]
+      rw [hgP p1 p2 hd h, hgQ q1 q2 hd (by rw [Nat.mul_comm]; exact h), hgQI (by omega_arith)]
       have hb : ∀ a b : Nat, (a == b) = decide (a = b) := fun a b => by
         cases h' : decide (a = b) <;> simp_all
       simp only [hb, h, hPn, hQn, decide_true, Bool.true_and, Bool.and_true, Bool.and_assoc]
@@ -88,11 +88,11 @@ theorem ckHeadS_ok {I : CkIn} {s : State} (h : CkPre I s) (hc : I.cap = I.k) :
   have k1 := L.k1
   have hi₁ : InScr I.B I.Z s.mem s₁.mem := InScr.of_frm f₁ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega)
+    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith)
   exact ⟨L.fit, hc ▸ hw₁, h.args.congr fun i hi => f₁.word_eq (fun r hr => by
       unfold ckSlot at hi
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by unfold ckSlot at hi; omega),
+      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by unfold ckSlot at hi; omega_arith),
     h.n.congrK hi₁ k₁, h.e.congrK hi₁ k₁, h.d.congrK hi₁ k₁, h.p.congrK hi₁ k₁, h.q.congrK hi₁ k₁,
     h.dp.congrK hi₁ k₁, h.dq.congrK hi₁ k₁, h.qi.congrK hi₁ k₁, hi₁, k₁.wr.trans h.wr⟩
 
@@ -119,12 +119,12 @@ theorem ckMain_ok {I : CkIn} {s : State} (h : CkPre I s) (hv : Spec.Rsa.modulusV
     omega
   have hPl : I.P < 256 ^ I.pl := by have := os2ip_lt I.pb; rw [L.pbl] at this; exact this
   have hQl : I.Q < 256 ^ I.ql := by have := os2ip_lt I.qb; rw [L.qbl] at this; exact this
-  have hPn : I.P < I.N := Nat.lt_of_lt_of_le hPl ((Nat.pow_le_pow_right (by decide) (by have := L.pl2; omega)).trans hlo)
-  have hQn : I.Q < I.N := Nat.lt_of_lt_of_le hQl ((Nat.pow_le_pow_right (by decide) (by have := L.ql2; omega)).trans hlo)
+  have hPn : I.P < I.N := Nat.lt_of_lt_of_le hPl ((Nat.pow_le_pow_right (by decide) (by have := L.pl2; omega_arith)).trans hlo)
+  have hQn : I.Q < I.N := Nat.lt_of_lt_of_le hQl ((Nat.pow_le_pow_right (by decide) (by have := L.ql2; omega_arith)).trans hlo)
   rw [ckMain_eq]
   refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (ckHeadS_ok h hc) fun s₁ ⟨h₁, m₁⟩ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp [loadA]) (WP.mono (ckLoad_ok h₁ (j := 0) (by decide) (by decide)
-    (by decide) h₁.args.n h₁.args.k h₁.n L.nl (by omega) (Nat.le_refl _)) fun s₂ ⟨h₂, m₂, v₂, o₂⟩ => ?_)
+    (by decide) h₁.args.n h₁.args.k h₁.n L.nl (by omega_arith) (Nat.le_refl _)) fun s₂ ⟨h₂, m₂, v₂, o₂⟩ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp) (WP.mono (ckLoad_ok h₂ (j := aE) (by decide) (by decide)
     (by decide) h₂.args.e h₂.args.el h₂.e L.ebl L.el1 L.el2) fun s₃ ⟨h₃, m₃, v₃, o₃⟩ => ?_)
   refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (ckOne_ok h₃) fun s₄ ⟨h₄, m₄, v₄, o₄⟩ => ?_)

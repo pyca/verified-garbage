@@ -86,9 +86,9 @@ theorem shiftAdd_ok {sh : Nat} (hsh : sh ≤ 31) (s : State)
     simp only [Nat.pow_zero, Nat.mul_one] at hs ⊢
     exact Nat.mod_eq_of_lt hs
   · simp only [shiftAdd, h, ite_false]
-    run_block [show 1 ≤ sh by omega, hsh, and_true]
+    run_block [show 1 ≤ sh by omega_arith, hsh, and_true]
     rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq,
-      Nat.mod_eq_of_lt (show (s.gpr .r12).toNat * 2 ^ sh < 2 ^ 32 by omega), Nat.mod_eq_of_lt hs]
+      Nat.mod_eq_of_lt (show (s.gpr .r12).toNat * 2 ^ sh < 2 ^ 32 by omega_arith), Nat.mod_eq_of_lt hs]
 
 /-! ## Packing -/
 
@@ -122,17 +122,17 @@ theorem flush_ok {k nf nb : Nat} {m₀ : Mem} {o : Addr} {y : BitVec 32} {V : Na
     fun s' ⟨hkp, hr', hw'⟩ => ⟨hw', hr', hkp⟩
   have h2' : s'.gpr .r2 = y := (hkp.gpr (by decide)).trans h2
   have ea : State.addr (s'.gpr .r2 + BitVec.ofNat 32 (k + u)) = o + BitVec.ofNat 64 (k + u) := by
-    rw [h2']; exact ho _ (by omega)
-  refine WP.mono (packByte_ok (by omega) s' (by rw [ea, hkp.2.2.1]; exact hout _ (by omega)))
+    rw [h2']; exact ho _ (by omega_arith)
+  refine WP.mono (packByte_ok (by omega_arith) s' (by rw [ea, hkp.2.2.1]; exact hout _ (by omega_arith)))
     fun s'' ⟨⟨hm, h3⟩, hk'⟩ => ⟨(hkp.trans hk').mono (by decide), ?_, ?_, ?_⟩
   · rw [h3, hr', Nat.div_div_eq_div_mul, ← Nat.pow_add, Nat.mul_succ]
   · rw [hm, ea]
-    exact hw'.1.writeW (List.mem_singleton_self _) _ (contains_off (by omega) (by omega))
+    exact hw'.1.writeW (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by omega_arith))
   · intro t ht
-    rw [hm, ea, byte_writeW8 _ _ (by omega) (by omega)]
+    rw [hm, ea, byte_writeW8 _ _ (by omega_arith) (by omega_arith)]
     by_cases e : t = k + u
     · rw [ite_eq_left e, hr', hX u hu, e]
-    · rw [ite_eq_right e]; exact hw'.2 t (by omega)
+    · rw [ite_eq_right e]; exact hw'.2 t (by omega_arith)
 
 /-- `ld j` loads into `r12` the value `V` of the word at `r0 + 4j`, and
 writes only `r4` and `r12`. -/
@@ -162,31 +162,31 @@ theorem packCoef_ok {ld : Nat → List Instr} {V : BitVec 32 → Nat} (hld : LdO
         Keep [.r3, .r4, .r12] s s' := by
   unfold packCoef
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (hld j s (by omega) hin) fun s₁ ⟨⟨ax₁, m₁⟩, k₁⟩ => ?_
+  refine WP.mono (hld j s (by omega_arith) hin) fun s₁ ⟨⟨ax₁, m₁⟩, k₁⟩ => ?_
   have hx : (s₁.gpr .r12).toNat < 2 ^ d := by rw [ax₁, hv]; exact Nat.mod_lt _ (Nat.two_pow_pos d)
   have hr₁ : (s₁.gpr .r3).toNat = G % 2 ^ (d * j) / 2 ^ (8 * (d * j / 8)) := by rw [k₁.gpr (by decide), hr]
   have hacc := pack_acc_lt G d j
   have hpd : 2 ^ d ≤ 2 ^ 20 := Nat.pow_le_pow_right (by decide) hd
-  have hp8 : 2 ^ (d * j % 8) ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
-  refine WP.mono (shiftAdd_ok (sh := d * j % 8) (by omega) s₁ (by
+  have hp8 : 2 ^ (d * j % 8) ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  refine WP.mono (shiftAdd_ok (sh := d * j % 8) (by omega_arith) s₁ (by
       rw [hr₁]
       have := Nat.mul_lt_mul_of_lt_of_le hx (Nat.le_refl (2 ^ (d * j % 8))) (Nat.two_pow_pos _)
       have : 2 ^ d * 2 ^ (d * j % 8) ≤ 2 ^ 20 * 2 ^ 7 := Nat.mul_le_mul hpd hp8
-      omega))
+      omega_arith))
     fun s₂ ⟨⟨r₂, m₂⟩, k₂⟩ => ?_
   have hX : (s₂.gpr .r3).toNat = G % 2 ^ (d * (j + 1)) / 2 ^ (8 * (d * j / 8)) := by
     rw [r₂, hr₁, ax₁, hv, pack_add]
   have h2₂ : s₂.gpr .r2 = y := by rw [k₂.gpr (by decide), k₁.gpr (by decide), h2]
-  have hle : d * j / 8 ≤ d * (j + 1) / 8 := Nat.div_le_div_right (by rw [Nat.mul_succ]; omega)
-  have hsum : d * j / 8 + (d * (j + 1) / 8 - d * j / 8) = d * (j + 1) / 8 := by omega
+  have hle : d * j / 8 ≤ d * (j + 1) / 8 := Nat.div_le_div_right (by rw [Nat.mul_succ]; omega_arith)
+  have hsum : d * j / 8 + (d * (j + 1) / 8 - d * j / 8) = d * (j + 1) / 8 := by omega_arith
   refine WP.mono (flush_ok (k := d * j / 8) (nf := d * (j + 1) / 8 - d * j / 8) (m₀ := m₀) (V := bytesOf G) _
-    (fun u hu => ?_) (by omega) hnb s₂ h2₂ ho (by rw [k₂.2.2.1, k₁.2.2.1]; exact hout)
+    (fun u hu => ?_) (by omega_arith) hnb s₂ h2₂ ho (by rw [k₂.2.2.1, k₁.2.2.1]; exact hout)
     (by rw [m₂, m₁]; exact hw) hX)
     fun s₃ ⟨hw₃, hr₃, k₃⟩ => ⟨by rwa [hsum] at hw₃, ?_, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   · refine ofNat8_eq ?_
     rw [show (256 : Nat) = 2 ^ 8 from rfl, pack_byte G _ _ _ (by
-      have : d * j / 8 + u < d * (j + 1) / 8 := by omega
-      omega)]
+      have : d * j / 8 + u < d * (j + 1) / 8 := by omega_arith
+      omega_arith)]
   · rw [hr₃, pack_shift, hsum]
 
 theorem zero_ok (s : State) :
@@ -226,10 +226,10 @@ theorem packBody_ok {ld : Nat → List Instr} {V : BitVec 32 → Nat} (hld : LdO
       V (s.mem.readW (State.addr (s.gpr .r0) + BitVec.ofNat 64 (4 * j)) 32) :=
     fun j hj => by rw [← hG]; exact digits_range_get hF hj
   have ea : ∀ j < c, State.addr (s.gpr .r0 + BitVec.ofNat 32 (4 * j)) =
-      State.addr (s.gpr .r0) + BitVec.ofNat 64 (4 * j) := fun j hj => addr_add (by omega)
+      State.addr (s.gpr .r0) + BitVec.ofNat 64 (4 * j) := fun j hj => addr_add (by omega_arith)
   have ho : ∀ t < nb, State.addr (s.gpr .r2 + BitVec.ofNat 32 t) = State.addr (s.gpr .r2) + BitVec.ofNat 64 t :=
-    fun t ht => addr_add (by omega)
-  have hnb : nb ≤ 20 := by have := Nat.mul_le_mul hd hc; omega
+    fun t ht => addr_add (by omega_arith)
+  have hnb : nb ≤ 20 := by have := Nat.mul_le_mul hd hc; omega_arith
   unfold packBody
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (zero_ok s) fun s₁ ⟨⟨z₁, m₁⟩, k₁⟩ => ?_
@@ -245,10 +245,10 @@ theorem packBody_ok {ld : Nat → List Instr} {V : BitVec 32 → Nat} (hld : LdO
   · have xj : s'.gpr .r0 = s.gpr .r0 := (hk.gpr (by decide)).trans x₁
     have yj : s'.gpr .r2 = s.gpr .r2 := (hk.gpr (by decide)).trans y₁
     have hj8 : d * (j + 1) / 8 ≤ nb := by
-      have := Nat.mul_le_mul_left d (show j + 1 ≤ c by omega); omega
+      have := Nat.mul_le_mul_left d (show j + 1 ≤ c by omega_arith); omega_arith
     have hA : State.addr (s'.gpr .r0 + BitVec.ofNat 32 (4 * j)) =
         State.addr (s.gpr .r0) + BitVec.ofNat 64 (4 * j) := by rw [xj]; exact ea j hj
-    refine WP.mono (packCoef_ok hld (G := G) (m₀ := s.mem) hd (by omega) (by omega) hj8 s' yj ho
+    refine WP.mono (packCoef_ok hld (G := G) (m₀ := s.mem) hd (by omega_arith) (by omega_arith) hj8 s' yj ho
       (by rw [hk.2.2.1, k₁.2.2.1]; exact hout) (by rw [hA, hk.2.1, hk.2.2.1, k₁.2.1, k₁.2.2.1]; exact hin j hj)
       ?_ hw hr)
       fun s'' ⟨hw', hr', hk'⟩ => ⟨(hk.trans hk').mono (by decide), hw', hr'⟩
@@ -256,8 +256,8 @@ theorem packBody_ok {ld : Nat → List Instr} {V : BitVec 32 → Nat} (hld : LdO
     rw [hA, hdig j hj]
     refine congrArg V (hw.1.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide))
     simp only [List.mem_singleton] at hr; subst hr
-    exact hsep.sub_left (Offset.sub_base _ (by omega))
-  · have hc8 : d * c / 8 = nb := by omega
+    exact hsep.sub_left (Offset.sub_base _ (by omega_arith))
+  · have hc8 : d * c / 8 = nb := by omega_arith
     rw [hc8] at hw₂
     refine WP.mono (packTail_ok e₁ e₂ s₂) fun s₃ ⟨⟨x₃, y₃, c₃, z₃, m₃⟩, k₃⟩ =>
       ⟨by rw [m₃]; exact hw₂, ?_, ?_, ?_, ?_, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
@@ -305,16 +305,16 @@ theorem loadBytes_ok {d j k nl : Nat} {x : BitVec 32} (H : Nat) (hd : d ≤ 20) 
   rw [← hm, ← x'] at hbu
   have hbl : (s'.mem (State.addr (s'.gpr .r0 + BitVec.ofNat 32 (k + u)))).toNat < 2 ^ 8 := by
     rw [hbu]; exact Nat.mod_lt _ (by decide)
-  have hsh : 8 * (k + u) - d * j ≤ 19 := by omega
+  have hsh : 8 * (k + u) - d * j ≤ 19 := by omega_arith
   have hp : 2 ^ (8 * (k + u) - d * j) ≤ 2 ^ 19 := Nat.pow_le_pow_right (by decide) hsh
-  refine WP.mono (unpackByte_ok (by omega) (by omega) s' (by rw [hkp.2.1, hkp.2.2.1, x']; exact hin u hu) (by
+  refine WP.mono (unpackByte_ok (by omega_arith) (by omega_arith) s' (by rw [hkp.2.1, hkp.2.2.1, x']; exact hin u hu) (by
       rw [hr']
       have := Nat.mul_lt_mul_of_lt_of_le hbl (Nat.le_refl (2 ^ (8 * (k + u) - d * j))) (Nat.two_pow_pos _)
       have : 2 ^ (8 * (k + u) - d * j) * 2 ^ 8 ≤ 2 ^ 19 * 2 ^ 8 := Nat.mul_le_mul_right _ hp
-      have : 2 ^ (8 * (k + u) - d * j) < 2 ^ 20 := by omega
-      omega))
+      have : 2 ^ (8 * (k + u) - d * j) < 2 ^ 20 := by omega_arith
+      omega_arith))
     fun s'' ⟨⟨r'', m''⟩, k''⟩ => ⟨(hkp.trans k'').mono (by decide), m''.trans hm, ?_⟩
-  rw [r'', hr', hbu, unpack_add H (k + u) (d * j) (by omega), Nat.add_assoc]
+  rw [r'', hr', hbu, unpack_add H (k + u) (d * j) (by omega_arith), Nat.add_assoc]
 
 /-- The low `d` bits of `r3` into `r12`, and `r3` shifted right by `d`. -/
 theorem extract_ok {d : Nat} (hd1 : 1 ≤ d) (hd : d ≤ 20) (s : State) :
@@ -323,10 +323,10 @@ theorem extract_ok {d : Nat} (hd1 : 1 ≤ d) (hd : d ≤ 20) (s : State) :
         s'.mem = s.mem) ∧ Keep [.r3, .r12] s s' := by
   refine WP.keep _ ?_ rfl
   unfold extract
-  run_block [show 1 ≤ 32 - d by omega, show 32 - d ≤ 31 by omega, hd1, show d ≤ 31 by omega, and_true]
+  run_block [show 1 ≤ 32 - d by omega_arith, show 32 - d ≤ 31 by omega_arith, hd1, show d ≤ 31 by omega_arith, and_true]
   refine ⟨?_, by rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]⟩
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
-    show 2 ^ 32 = 2 ^ d * 2 ^ (32 - d) by rw [← Nat.pow_add]; congr 1; omega, Nat.mul_mod_mul_right,
+    show 2 ^ 32 = 2 ^ d * 2 ^ (32 - d) by rw [← Nat.pow_add]; congr 1; omega_arith, Nat.mul_mod_mul_right,
     Nat.mul_div_cancel _ (Nat.two_pow_pos _)]
 
 /-- `fin j` stores the coefficient `W x` of the field `x < 2ᵈ` in `r12` to
@@ -350,20 +350,20 @@ theorem unpackCoef_ok {fin : Nat → List Instr} {d : Nat} {W : Nat → BitVec 3
       s'.mem = s.mem.writeW (State.addr (s.gpr .r1 + BitVec.ofNat 32 (4 * j))) (W (H / 2 ^ (d * j) % 2 ^ d)) ∧
         (s'.gpr .r3).toNat = H % 2 ^ (8 * need d (j + 1)) / 2 ^ (d * (j + 1)) ∧ Keep [.r3, .r4, .r12] s s' := by
   have hjs : d * (j + 1) = d * j + d := Nat.mul_succ d j
-  have hn : need d j ≤ need d (j + 1) := Nat.div_le_div_right (by omega)
-  have hn' : need d j + (need d (j + 1) - need d j) = need d (j + 1) := by omega
-  have hn8 : need d (j + 1) ≤ 20 := by unfold need; have := Nat.mul_le_mul hd (show j + 1 ≤ 8 by omega); omega
+  have hn : need d j ≤ need d (j + 1) := Nat.div_le_div_right (by omega_arith)
+  have hn' : need d j + (need d (j + 1) - need d j) = need d (j + 1) := by omega_arith
+  have hn8 : need d (j + 1) ≤ 20 := by unfold need; have := Nat.mul_le_mul hd (show j + 1 ≤ 8 by omega_arith); omega_arith
   unfold unpackCoef
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (loadBytes_ok (k := need d j) (nl := need d (j + 1) - need d j) H hd
-    (by unfold need; omega) (by rw [hn']; unfold need; omega) (by omega) s h0 (fun u hu => hin _ (by omega))
-    (fun u hu => hb _ (by omega)) hr) fun s₁ ⟨r₁, m₁, k₁⟩ => ?_
+    (by unfold need; omega_arith) (by rw [hn']; unfold need; omega_arith) (by omega_arith) s h0 (fun u hu => hin _ (by omega_arith))
+    (fun u hu => hb _ (by omega_arith)) hr) fun s₁ ⟨r₁, m₁, k₁⟩ => ?_
   rw [hn'] at r₁
   refine WP.mono (extract_ok hd1 hd s₁) fun s₂ ⟨⟨ax₂, r₂, m₂⟩, k₂⟩ => ?_
   have hv : (s₂.gpr .r12).toNat = H / 2 ^ (d * j) % 2 ^ d := by
-    rw [ax₂, r₁, unpack_field H _ d j (by unfold need; omega)]
+    rw [ax₂, r₁, unpack_field H _ d j (by unfold need; omega_arith)]
   have p₂ : s₂.gpr .r1 = s.gpr .r1 := by rw [k₂.gpr (by decide), k₁.gpr (by decide)]
-  refine WP.mono (hfin j s₂ (by omega) (by rw [k₂.2.2.1, k₁.2.2.1, p₂]; exact hout)
+  refine WP.mono (hfin j s₂ (by omega_arith) (by rw [k₂.2.2.1, k₁.2.2.1, p₂]; exact hout)
       (by rw [hv]; exact Nat.mod_lt _ (Nat.two_pow_pos d)))
     fun s₃ ⟨m₃, k₃⟩ => ⟨by rw [m₃, p₂, hv, m₂, m₁], ?_, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   rw [k₃.gpr (by decide), r₂, r₁, unpack_shift]
@@ -398,12 +398,12 @@ theorem unpackBody_ok {fin : Nat → List Instr} {d : Nat} {W : Nat → BitVec 3
   generalize hH : digits 8 ((List.range nb).map fun t =>
     (s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 t)).toNat) = H
   have ea : ∀ t < nb, State.addr (s.gpr .r0 + BitVec.ofNat 32 t) = State.addr (s.gpr .r0) + BitVec.ofNat 64 t :=
-    fun t ht => addr_add (by omega)
+    fun t ht => addr_add (by omega_arith)
   have ep : ∀ j < c, State.addr (s.gpr .r1 + BitVec.ofNat 32 (4 * j)) =
-      State.addr (s.gpr .r1) + BitVec.ofNat 64 (4 * j) := fun j hj => addr_add (by omega)
+      State.addr (s.gpr .r1) + BitVec.ofNat 64 (4 * j) := fun j hj => addr_add (by omega_arith)
   have hbyte : ∀ t < nb, H / 2 ^ (8 * t) % 2 ^ 8 = (s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 t)).toNat :=
     fun t ht => by rw [← hH]; exact digits_range_get (fun t _ => BitVec.isLt _) ht
-  have hneed : need d c = nb := by unfold need; omega
+  have hneed : need d c = nb := by unfold need; omega_arith
   have := Nat.mul_le_mul hd hc
   unfold unpackBody
   rw [WP.block_append_iff, WP.block_append_iff]
@@ -423,21 +423,21 @@ theorem unpackBody_ok {fin : Nat → List Instr} {d : Nat} {W : Nat → BitVec 3
     have pj : s'.gpr .r1 = s.gpr .r1 := (hk.gpr (by decide)).trans p₁
     have hnj : need d (j + 1) ≤ nb := by
       rw [← hneed]; exact Nat.div_le_div_right (Nat.add_le_add_right (Nat.mul_le_mul_left d hj) 7)
-    refine WP.mono (unpackCoef_ok hfin hd1 hd (H := H) (by omega) s' xj
-      (fun t ht => by rw [ea t (by omega), hk.2.1, hk.2.2.1, k₁.2.1, k₁.2.2.1]; exact hin t (by omega))
+    refine WP.mono (unpackCoef_ok hfin hd1 hd (H := H) (by omega_arith) s' xj
+      (fun t ht => by rw [ea t (by omega_arith), hk.2.1, hk.2.2.1, k₁.2.1, k₁.2.2.1]; exact hin t (by omega_arith))
       (fun t ht => by
-        rw [ea t (by omega), hbyte t (by omega)]
+        rw [ea t (by omega_arith), hbyte t (by omega_arith)]
         refine congrArg BitVec.toNat (hf _ fun r hr => ?_)
         simp only [List.mem_singleton] at hr; subst hr
-        exact hsep _ (Offset.contains_base _ (by omega) (by omega)))
+        exact hsep _ (Offset.contains_base _ (by omega_arith) (by omega_arith)))
       (by rw [pj, ep j hj, hk.2.2.1, k₁.2.2.1]; exact hout j hj) hr)
       fun s'' ⟨m'', r'', hk'⟩ => ⟨(hk.trans hk').mono (by decide), ?_, fun j' hj' => ?_, r''⟩
     · rw [m'', pj, ep j hj]
-      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
     · rw [m'', pj, ep j hj]
       by_cases e : j' = j
       · subst e; rw [Mem.readW_writeW_self32]
-      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide), hw j' (by omega)]
+      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), hw j' (by omega_arith)]
   · refine WP.mono (unpackTail_ok e₁ e₂ s₂)
       fun s₃ ⟨⟨x₃, p₃, c₃, z₃, m₃⟩, k₃⟩ => ⟨fun j hj => ?_, by rw [m₃]; exact hf₂, ?_, ?_, ?_, ?_, ?_⟩
     · rw [m₃, hw₂ j hj, ← hH]

@@ -29,12 +29,12 @@ theorem sel_ok (cs : List (List Instr)) (i : Nat) {s : State} {j : Nat} (hij : i
       u.syms = s.syms → WP isa (.block (cs.getD (j - i) [])) u Q) :
     WP isa (sel cs i) s Q := by
   induction cs generalizing i s with
-  | nil => simp at hj; omega
+  | nil => simp at hj; omega_arith
   | cons c cs ih =>
     unfold sel
-    have hiv := toNat_ofNat_lt (j := i) (by simp at hlen; omega)
-    have hj256 : j < 256 := by simp at hj hlen; omega
-    have hi256 : i < 256 := by simp at hlen; omega
+    have hiv := toNat_ofNat_lt (j := i) (by simp at hlen; omega_arith)
+    have hj256 : j < 256 := by simp at hj hlen; omega_arith
+    have hi256 : i < 256 := by simp at hlen; omega_arith
     refine WP.seq ?_
     crun [hiv]
     refine wp_ite_eq (fun hz => ?_) (fun hz => ?_)
@@ -44,7 +44,7 @@ theorem sel_ok (cs : List (List Instr)) (i : Nat) {s : State} {j : Nat} (hij : i
         have := congrArg BitVec.toNat h0
         simp at hlen
         rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (0 : BitVec 32).toNat = 0 from rfl] at this
-        omega
+        omega_arith
       subst hji
       have := hQ (putSub s (s.gpr .r2) (BitVec.ofNat 32 j)) (fun r => rfl) rfl rfl rfl rfl rfl
       rwa [Nat.sub_self, List.getD_cons_zero] at this
@@ -52,10 +52,10 @@ theorem sel_ok (cs : List (List Instr)) (i : Nat) {s : State} {j : Nat} (hij : i
         intro e; subst e
         rw [z_sub, h2] at hz
         simp at hz
-      refine ih (i + 1) (by omega) (by simp at hj; omega) (by simp at hlen ⊢; omega) (by rw [gpr_sub, h2])
+      refine ih (i + 1) (by omega_arith) (by simp at hj; omega_arith) (by simp at hlen ⊢; omega_arith) (by rw [gpr_sub, h2])
         fun u hg hm hrd hwr hsp hsy => ?_
       have := hQ u (fun r => (hg r).trans (gpr_sub _ _ _ _)) hm hrd hwr hsp hsy
-      rwa [show j - i = (j - (i + 1)) + 1 by omega, List.getD_cons_succ] at this
+      rwa [show j - i = (j - (i + 1)) + 1 by omega_arith, List.getD_cons_succ] at this
 
 /-! ## The state of key expansion -/
 
@@ -86,11 +86,11 @@ variable {m0 : Mem} {cb kb : BitVec 32} {s : State} {k : KSt} (h : KS m0 cb kb s
 include h
 
 theorem KS.inS {off w : Nat} (hw : off + w ≤ 256) : InRegions s.wr (State.addr cb + BitVec.ofNat 64 off) w :=
-  ⟨_, h.scr, Offset.contains_base _ hw (by omega)⟩
+  ⟨_, h.scr, Offset.contains_base _ hw (by omega_arith)⟩
 
 theorem KS.inS' {off w : Nat} (hw : off + w ≤ 256) :
     InRegions (s.rd ++ s.wr) (State.addr cb + BitVec.ofNat 64 off) w :=
-  ⟨_, List.mem_append_right _ h.scr, Offset.contains_base _ hw (by omega)⟩
+  ⟨_, List.mem_append_right _ h.scr, Offset.contains_base _ hw (by omega_arith)⟩
 
 theorem KS.dKS64 : Region.Disjoint ⟨State.addr kb, 128⟩ ⟨State.addr cb, 64⟩ :=
   h.dKS.sub_right (Region.sub_prefix (by decide))
@@ -119,7 +119,7 @@ theorem srcOff_lt {q : Pos} (hq : q.2 < 16) : srcOff q + 1 ≤ 48 := by
   obtain ⟨a, i⟩ := q
   have := off_lt a
   simp only [srcOff] at hq ⊢
-  omega
+  omega_arith
 
 /-! ## Gathering the bytes -/
 
@@ -130,29 +130,29 @@ theorem gather_ok {m0 : Mem} {cb kb : BitVec 32} {s : State} {k : KSt} (h : KS m
       u.gpr .r6 = (k.xz.get b).setWidth 32 ∧ u.gpr .r7 = (k.xz.get a).setWidth 32 ∧
       Keep [.r4, .r5, .r6, .r7] s u ∧ u.mem = s.mem := by
   have aS := addr_off h.cfit
-  have ia := h.inS' (off := srcOff a) (w := 1) (by have := srcOff_lt ha; omega)
-  have ib := h.inS' (off := srcOff b) (w := 1) (by have := srcOff_lt hb; omega)
-  have ic := h.inS' (off := srcOff c) (w := 1) (by have := srcOff_lt hc; omega)
-  have id := h.inS' (off := srcOff d) (w := 1) (by have := srcOff_lt hd; omega)
+  have ia := h.inS' (off := srcOff a) (w := 1) (by have := srcOff_lt ha; omega_arith)
+  have ib := h.inS' (off := srcOff b) (w := 1) (by have := srcOff_lt hb; omega_arith)
+  have ic := h.inS' (off := srcOff c) (w := 1) (by have := srcOff_lt hc; omega_arith)
+  have id := h.inS' (off := srcOff d) (w := 1) (by have := srcOff_lt hd; omega_arith)
   have xa := h.mem.xz.pos ha
   have xb := h.mem.xz.pos hb
   have xc := h.mem.xz.pos hc
   have xd := h.mem.xz.pos hd
-  have la : srcOff a < 256 := by have := srcOff_lt ha; omega
-  have lb : srcOff b < 256 := by have := srcOff_lt hb; omega
-  have lc : srcOff c < 256 := by have := srcOff_lt hc; omega
-  have ld : srcOff d < 256 := by have := srcOff_lt hd; omega
-  have oa : srcOff a < 4096 := by omega
-  have ob : srcOff b < 4096 := by omega
-  have oc : srcOff c < 4096 := by omega
-  have od : srcOff d < 4096 := by omega
+  have la : srcOff a < 256 := by have := srcOff_lt ha; omega_arith
+  have lb : srcOff b < 256 := by have := srcOff_lt hb; omega_arith
+  have lc : srcOff c < 256 := by have := srcOff_lt hc; omega_arith
+  have ld : srcOff d < 256 := by have := srcOff_lt hd; omega_arith
+  have oa : srcOff a < 4096 := by omega_arith
+  have ob : srcOff b < 4096 := by omega_arith
+  have oc : srcOff c < 4096 := by omega_arith
+  have od : srcOff d < 4096 := by omega_arith
   unfold gather
   crun [h.r12, aS _ la, aS _ lb, aS _ lc, aS _ ld, ia, ib, ic, id, xa, xb, xc, xd, oa, ob, oc, od]
   exact ⟨by keep_regs, rfl, rfl, rfl⟩
 
 /-! ## What a step does with the values -/
 
-theorem ex_off {i : Nat} (hi : i < 4) : extraOff + 4 * i + 4 ≤ 64 := by unfold extraOff; omega
+theorem ex_off {i : Nat} (hi : i < 4) : extraOff + 4 * i + 4 ≤ 64 := by unfold extraOff; omega_arith
 
 /-- The extra lookups of a group to their slots. -/
 theorem postE_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : KS m0 cb kb u k) (a b c d : Pos)
@@ -174,7 +174,7 @@ theorem postE_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : KS m0
   · exact (((h.mem.write dKS hl _ (by decide) (by decide)).write dKS hl _ (by decide) (by decide)).write dKS hl _
       (by decide) (by decide)).write dKS hl _ (by decide) (by decide)
   · simp only [extraOff]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_arith) with rfl | rfl | rfl | rfl <;>
     simp only [Nat.reduceMul, Nat.reduceAdd, Mem.readW_writeW_self32] <;>
     repeat (first
       | rw [Mem.readW_writeW_self32]
@@ -188,10 +188,10 @@ theorem lineHead_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : KS
       w.gpr .r0 = u.gpr .r8 ^^^ u.gpr .r9 ^^^ u.gpr .r10 ^^^ u.gpr .r11 ^^^ k.ex (8 - e) ∧
       Keep [.r0, .r1] u w ∧ w.mem = u.mem := by
   have aS := addr_off h.cfit
-  have ho : extraOff + 4 * (8 - e) < 256 := by unfold extraOff; omega
-  have ho' : extraOff + 4 * (8 - e) < 4096 := by omega
-  have hin := h.inS' (off := extraOff + 4 * (8 - e)) (w := 4) (by unfold extraOff; omega)
-  have hx := h.ex (8 - e) (by omega)
+  have ho : extraOff + 4 * (8 - e) < 256 := by unfold extraOff; omega_arith
+  have ho' : extraOff + 4 * (8 - e) < 4096 := by omega_arith
+  have hin := h.inS' (off := extraOff + 4 * (8 - e)) (w := 4) (by unfold extraOff; omega_arith)
+  have hx := h.ex (8 - e) (by omega_arith)
   crun [h.r12, aS _ ho, hin, hx, ho']
   exact ⟨by keep_regs, rfl, rfl, rfl⟩
 
@@ -217,9 +217,9 @@ theorem wordCode_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : KS
     have hq4 := hq a q rfl
     have := off_lt a
     have aS := addr_off h.cfit
-    have ho : off a + 4 * q < 256 := by omega
-    have ho' : off a + 4 * q < 4096 := by omega
-    have hin := h.inS' (off := off a + 4 * q) (w := 4) (by omega)
+    have ho : off a + 4 * q < 256 := by omega_arith
+    have ho' : off a + 4 * q < 4096 := by omega_arith
+    have hin := h.inS' (off := off a + 4 * q) (w := 4) (by omega_arith)
     have hx := h.mem.xz.quad a hq4
     unfold wordCode
     crun [h.r12, aS _ ho, hin, ho', rev_eq, hx]
@@ -244,15 +244,15 @@ theorem storeQuad_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : K
   have := off_lt a
   have := off_ge a
   have aS := addr_off h.cfit
-  have ho : off a + 4 * q < 256 := by omega
-  have ho' : off a + 4 * q < 4096 := by omega
-  have hin := h.inS (off := off a + 4 * q) (w := 4) (by omega)
+  have ho : off a + 4 * q < 256 := by omega_arith
+  have ho' : off a + 4 * q < 4096 := by omega_arith
+  have hin := h.inS (off := off a + 4 * q) (w := 4) (by omega_arith)
   unfold storeCode
   crun [h.r12, aS _ ho, hin, ho', h0, rev_eq]
   refine ⟨h.update rfl (h.mem.quad h.dKS64 h.len a hq v) (fun i hi => ?_) h.len rfl rfl rfl,
     ⟨by keep_regs, rfl, rfl, rfl⟩⟩
   rw [Mem.readW_writeW_sep (Offset.sep _ (d := extraOff + 4 * i) (n := 32 / 8) (e := off a + 4 * q) (k := 32 / 8)
-    (by unfold extraOff; omega) (by unfold extraOff; omega) (by omega)) (by decide)]
+    (by unfold extraOff; omega_arith) (by unfold extraOff; omega_arith) (by omega_arith)) (by decide)]
   exact h.ex i hi
 
 theorem storeKey_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : KS m0 cb kb u k) {j hh : Nat}
@@ -262,18 +262,18 @@ theorem storeKey_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : KS
       KS m0 cb kb w { k with ws := k.ws ++ [v] } ∧ Keep [] u w := by
   have hkf := h.kfit
   have ea : State.addr (u.gpr .lr + BitVec.ofNat 32 (4 * j)) = State.addr kb + BitVec.ofNat 64 (4 * k.ws.length) := by
-    rw [hlr, BitVec.add_assoc, ← BitVec.ofNat_add, addr_add (by omega), hlen]
-    congr 2; omega
+    rw [hlr, BitVec.add_assoc, ← BitVec.ofNat_add, addr_add (by omega_arith), hlen]
+    congr 2; omega_arith
   have hin : InRegions u.wr (State.addr kb + BitVec.ofNat 64 (4 * k.ws.length)) 4 :=
-    ⟨_, h.sch, Offset.contains_base _ (by omega) (by omega)⟩
-  have ho : 4 * j < 4096 := by omega
+    ⟨_, h.sch, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  have ho : 4 * j < 4096 := by omega_arith
   unfold storeCode
   crun [ea, hin, ho, h0]
-  refine ⟨h.update rfl (h.mem.key h.dKS64 hl v) (fun i hi => ?_) (by simp; omega) rfl rfl rfl,
+  refine ⟨h.update rfl (h.mem.key h.dKS64 hl v) (fun i hi => ?_) (by simp; omega_arith) rfl rfl rfl,
     ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
-  rw [Mem.readW_writeW_sep (h.dKS.symm.sep (Offset.contains_base _ (by have := ex_off hi; omega)
-      (by unfold extraOff; omega))
-    (Offset.contains_base _ (by omega) (by omega))) (by decide)]
+  rw [Mem.readW_writeW_sep (h.dKS.symm.sep (Offset.contains_base _ (by have := ex_off hi; omega_arith)
+      (by unfold extraOff; omega_arith))
+    (Offset.contains_base _ (by omega_arith) (by omega_arith))) (by decide)]
   exact h.ex i hi
 
 /-- What a step needs to be run by the code: bytes of `x` and `z`, a line

@@ -176,25 +176,25 @@ theorem loop_ok {s : State} {base : Addr} (hs : Scr s base large) {x : Nat} (hx 
     KeepRegs batchRegs s t) ?_ 10 s ⟨by decide, le_rfl, by exact h, hc, Outside.refl _ _ _ _,
       ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
   intro k t ⟨hk, hk10, ht, tc, tO, tk⟩
-  refine WP.mono (batch_ok (scr_of hs tk (by decide)) hx (i := 10 - k) (by omega) ht
-    (by rw [tc, show 10 - (10 - k) = k by omega])) fun u ⟨ui, uc, uO, uk⟩ => ?_
-  rw [show 10 - (10 - k + 1) = k - 1 by omega] at uc
+  refine WP.mono (batch_ok (scr_of hs tk (by decide)) hx (i := 10 - k) (by omega_arith) ht
+    (by rw [tc, show 10 - (10 - k) = k by omega_arith])) fun u ⟨ui, uc, uO, uk⟩ => ?_
+  rw [show 10 - (10 - k + 1) = k - 1 by omega_arith] at uc
   have hev : isa.eval (.nonzero .x .x20) u = some (BitVec.ofNat 64 (k - 1) != 0) := by
     simp [eval, read_x, uc]
   by_cases hk1 : k = 1
   · subst hk1
     refine .inl ⟨by rw [hev]; rfl, ?_, tO.trans uO, tk.trans uk⟩
     simpa using ui
-  · refine .inr ⟨?_, k - 1, by omega, by omega, by omega,
-      by rw [show 10 - (k - 1) = 10 - k + 1 by omega]; exact ui, uc, tO.trans uO, tk.trans uk⟩
+  · refine .inr ⟨?_, k - 1, by omega_arith, by omega_arith, by omega_arith,
+      by rw [show 10 - (k - 1) = 10 - k + 1 by omega_arith]; exact ui, uc, tO.trans uO, tk.trans uk⟩
     rw [hev]
     apply congrArg some
     apply bne_iff_ne.mpr
     intro he
     have := congrArg BitVec.toNat he
-    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : k - 1 < 2 ^ 64),
+    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : k - 1 < 2 ^ 64),
       show (0 : BitVec 64).toNat = 0 from rfl] at this
-    omega
+    omega_arith
 
 
 theorem toZ_toFe (n : Nat) : VG.Proof.Ed25519.toZ (VG.Proof.X25519.toFe n) = (n : ZMod P) := by
@@ -227,7 +227,7 @@ theorem sound_eq {x U R : Nat} (hx : x < P)
     rw [hs] at hcu hRz
     generalize (divsteps 590 (1, (P : Int), (x : Int))).2.1 = f at hdone hcu hRz
     rw [hcop] at hdone
-    have hf : f = 1 ∨ f = -1 := by omega
+    have hf : f = 1 ∨ f = -1 := by omega_arith
     have hv := v0_spec.trans (by decide : (1 : Int) = 1 % P)
     generalize (2 : Int) ^ 590 = Ki at hcu hv
     have hc := (ZMod.intCast_eq_intCast_iff _ _ _).2 hcu
@@ -257,7 +257,7 @@ theorem sound_eq {x U R : Nat} (hx : x < P)
       _ = (x : ZMod P) ^ (P - 2) := by rw [hxr, one_mul]
 
 theorem sv_neg {X : Nat} (h : X < 2 ^ 256) : sv X < 0 ↔ 2 ^ 255 ≤ X := by
-  unfold sv; split <;> omega
+  unfold sv; split <;> omega_arith
 
 /-- `[slot 15] = [slot 2]^(p - 2)`. -/
 theorem invert_proof {s : State} {base : Addr} (hs : Scr s base large) :

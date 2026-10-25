@@ -92,12 +92,12 @@ theorem xorData_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), r
     have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
     simp only [List.length_cons] at hin hsr hsep hw
     rw [xorData, WP.block_append_iff]
-    have hin0 := hin 0 (by omega)
+    have hin0 := hin 0 (by omega_arith)
     rw [Nat.add_zero] at hin0
     have hiw : InRegions s.wr (s.ea (at_ .rdx (16 * j))) 16 := by
       rwa [ea_at]
     have hir : InRegions (s.rd ++ s.wr) (s.ea (srcAt ix (16 * j))) 16 := by
-      rw [ea_srcAt]; simpa only [Nat.add_zero] using hsr 0 (by omega)
+      rw [ea_srcAt]; simpa only [Nat.add_zero] using hsr 0 (by omega_arith)
     refine WP.mono (xorData_one_ok ix s b j hir hiw) fun s₁ ⟨m₁, f₁⟩ => ?_
     have g₁ : s₁.gpr = s.gpr := f₁.gpr
     have rd₁ : s₁.rd = s.rd := f₁.rd
@@ -109,13 +109,13 @@ theorem xorData_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), r
     have hsa : ∀ d, srcAddr s₁ ix d = srcAddr s ix d := fun d => by simp only [srcAddr, g₁]
     have hrdx : s₁.gpr .rdx = s.gpr .rdx := by rw [g₁]
     refine WP.mono (xorData_ok ix bs (j + 1) s₁ (List.nodup_cons.mp hnd).2 (fun k hk => by
-        rw [wr₁, hrdx, show j + 1 + k = j + (k + 1) by omega]; exact hin (k + 1) (by omega))
+        rw [wr₁, hrdx, show j + 1 + k = j + (k + 1) by omega_arith]; exact hin (k + 1) (by omega_arith))
       (fun k hk => by
-        rw [rd₁, wr₁, hsa, show j + 1 + k = j + (k + 1) by omega]; exact hsr (k + 1) (by omega))
+        rw [rd₁, wr₁, hsa, show j + 1 + k = j + (k + 1) by omega_arith]; exact hsr (k + 1) (by omega_arith))
       (fun a c hac hc => by
-        rw [hrdx, hsa, show j + 1 + a = j + (a + 1) by omega, show j + 1 + c = j + (c + 1) by omega]
-        exact hsep (a + 1) (c + 1) (by omega) (by omega))
-      (by rw [hrdx]; omega)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
+        rw [hrdx, hsa, show j + 1 + a = j + (a + 1) by omega_arith, show j + 1 + c = j + (c + 1) by omega_arith]
+        exact hsep (a + 1) (c + 1) (by omega_arith) (by omega_arith))
+      (by rw [hrdx]; omega_arith)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
     rw [hrdx] at hb hf
     simp only [hsa] at hb
     have ofs : ∀ a : Nat, (s.gpr .rdx + BitVec.ofInt 64 (a : Int)) = s.gpr .rdx + BitVec.ofNat 64 a :=
@@ -127,9 +127,9 @@ theorem xorData_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), r
       simp only [List.mem_singleton, forall_eq]
       intro a h₁ h₂
       simp only [Region.Contains] at h₁ h₂
-      rw [off_toNat _ _ (by omega)] at h₁ h₂
+      rw [off_toNat _ _ (by omega_arith)] at h₁ h₂
       have := (a - s.gpr .rdx).isLt
-      omega
+      omega_arith
     refine ⟨fun k hk => ?_, ?_, g.trans g₁, rd.trans rd₁, wr.trans wr₁, fun r hr' l hl => ?_⟩
     · cases k with
       | zero =>
@@ -139,21 +139,21 @@ theorem xorData_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), r
       | succ k =>
         simp only [List.getElem_cons_succ]
         have hk' : k < bs.length := by simpa using hk
-        rw [show j + (k + 1) = j + 1 + k by omega, hb k hk', m₁, blockAt_writeW_sep _ _ (by
-            have hd := hsep 0 (k + 1) (by omega) (by omega)
-            rw [Nat.add_zero, show j + (k + 1) = j + 1 + k by omega] at hd
+        rw [show j + (k + 1) = j + 1 + k by omega_arith, hb k hk', m₁, blockAt_writeW_sep _ _ (by
+            have hd := hsep 0 (k + 1) (by omega_arith) (by omega_arith)
+            rw [Nat.add_zero, show j + (k + 1) = j + 1 + k by omega_arith] at hd
             exact hd.symm.sep (Region.contains_self _ _) (Region.contains_self _ _)),
           x₁ _ (fun h => hbs (h ▸ List.getElem_mem hk')) 0 (by decide)]
     · rw [m₁] at hf
       refine (Frame.writeW (Frame.refl [⟨s.gpr .rdx + BitVec.ofNat 64 (16 * j), 16 * (bs.length + 1)⟩]
-        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega)).trans
+        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega_arith)).trans
         (hf.sub fun r hr => ⟨_, List.mem_cons_self, fun a ha => ?_⟩)
       simp only [List.mem_singleton] at hr
       subst hr
       simp only [Region.Contains] at ha ⊢
-      rw [off_toNat _ _ (by omega)] at ha ⊢
+      rw [off_toNat _ _ (by omega_arith)] at ha ⊢
       have := (a - s.gpr .rdx).isLt
-      omega
+      omega_arith
     · simp only [List.mem_cons, not_or] at hr'
       rw [hx r hr'.2 l hl, x₁ r hr'.1 l hl]
 
@@ -163,6 +163,6 @@ theorem xorData_sep_inplace (s : State) (j n : Nat) (hw : (s.gpr .rdx).toNat + 1
       ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s false (16 * (j + b)), 16⟩ := by
   intro a b hab hb
   rw [srcAddr_false]
-  exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+  exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
 
 end VG.Proof.Gcm.X86_64.StitchAvx8

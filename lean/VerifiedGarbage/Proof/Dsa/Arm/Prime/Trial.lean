@@ -137,16 +137,16 @@ theorem trialLoop_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u₀ u : State}
     (h : TO B Z W m u₀ 0 u) (hW : 10 ≤ W) (hWe : W % 2 = 0) (hZ : arr W nArr ≤ Z)
     (tab : ∀ j < nT W, w32 m (State.addr B) (arr W aTab + 4 * j) = tabWord32 j) :
     WP isa (.loop trialStep .ne) u (TO B Z W m u₀ (nT W)) := by
-  have hT : 0 < nT W := by simp only [nT]; split <;> omega
+  have hT : 0 < nT W := by simp only [nT]; split <;> omega_arith
   refine WP.loop (M := isa) (fun n v => 0 < n ∧ n ≤ nT W ∧ TO B Z W m u₀ (nT W - n) v)
     (fun n v ⟨hn, hn2, hu⟩ => ?_) (nT W) u ⟨hT, Nat.le_refl _, by rw [Nat.sub_self]; exact h⟩
-  refine WP.mono (trialStep_ok hu (by omega) hW hWe hZ tab) fun u' ⟨hu', z⟩ => ?_
+  refine WP.mono (trialStep_ok hu (by omega_arith) hW hWe hZ tab) fun u' ⟨hu', z⟩ => ?_
   rw [isa_ne, z]
   by_cases h0 : n = 1
   · subst h0
-    refine .inl ⟨by simp; omega, ?_⟩
-    rwa [show nT W - 1 + 1 = nT W by omega] at hu'
-  · refine .inr ⟨by simp; omega, n - 1, by omega, by omega, by omega, ?_⟩
-    rwa [show nT W - n + 1 = nT W - (n - 1) by omega] at hu'
+    refine .inl ⟨by simp; omega_arith, ?_⟩
+    rwa [show nT W - 1 + 1 = nT W by omega_arith] at hu'
+  · refine .inr ⟨by simp; omega_arith, n - 1, by omega_arith, by omega_arith, by omega_arith, ?_⟩
+    rwa [show nT W - n + 1 = nT W - (n - 1) by omega_arith] at hu'
 
 end VG.Proof.Dsa.Arm.Prime

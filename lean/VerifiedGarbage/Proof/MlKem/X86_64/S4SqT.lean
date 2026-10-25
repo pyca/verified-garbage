@@ -43,7 +43,7 @@ structure SqTW (w16 : Bool) (σ : State) (t n : Nat) (s : State) : Prop where
 abbrev SqT := SqTW false
 
 theorem sqT_of {σ s : State} (h : SqInvW w16 σ 0 s) : SqTW w16 σ 0 0 s :=
-  ⟨h.env, h.r14, h.rc, h.lanes, fun _ _ p hp => absurd hp (by omega)⟩
+  ⟨h.env, h.r14, h.rc, h.lanes, fun _ _ p hp => absurd hp (by omega_arith)⟩
 
 /-- The low part of the scratch space, which the squeezes write. -/
 abbrev lowR (σ : State) : Region := ⟨scr σ, oSave⟩
@@ -66,8 +66,8 @@ theorem permT_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {t n : Nat} (hn :
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Region.sub_prefix (by simp only [oSave]; omega)
-    · exact Offset.sub_base _ (by simp only [oSave]; omega)
+    · exact Region.sub_prefix (by simp only [oSave]; omega_arith)
+    · exact Offset.sub_base _ (by simp only [oSave]; omega_arith)
   refine ⟨EnvW.low (h.env.keep hm k₁ (by decide)) hsub hf hrd₂ hwr₂ fun r hr => hg r
       (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
       (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
@@ -75,16 +75,16 @@ theorem permT_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {t n : Nat} (hn :
     by rw [← hm]; exact hf.sub fun r hr => ⟨lowR σ, List.mem_singleton_self _, hsub r hr⟩,
     by rw [hg _ (by decide) (by decide), k₁.gpr (by decide)], by rw [hg _ (by decide) (by decide), k₁.gpr (by decide)]⟩
   · rw [hf.readW (Region.contains_self _ _) (by
-        simpa using ⟨Offset.disjoint_base (scr σ) (k := 800) (d := 32 * (50 + r) + 8 * k) (n := 8) (by omega) (by omega),
-          Offset.disjoint (scr σ) (d := 32 * (50 + r) + 8 * k) (n := 8) (e := 800) (k := 800) (by omega) (by omega)
-            (by omega)⟩) (by decide), hm]
+        simpa using ⟨Offset.disjoint_base (scr σ) (k := 800) (d := 32 * (50 + r) + 8 * k) (n := 8) (by omega_arith) (by omega_arith),
+          Offset.disjoint (scr σ) (d := 32 * (50 + r) + 8 * k) (n := 8) (e := 800) (k := 800) (by omega_arith) (by omega_arith)
+            (by omega_arith)⟩) (by decide), hm]
     exact h.rc r hr k hk
   · intro i hi k hk
     rw [hl i hi k hk]
     rfl
   · rw [buf_frame (by simpa using ⟨Offset.disjoint_base (scr σ) (k := 800) (d := oBuf) (n := 2016)
-        (by simp only [oBuf]; omega) (by simp only [oBuf]; omega), Offset.disjoint (scr σ) (d := oBuf) (n := 2016)
-          (e := 800) (k := 800) (by simp only [oBuf]; omega) (by simp only [oBuf]; omega) (by omega)⟩) hf hk (by omega), hm]
+        (by simp only [oBuf]; omega_arith) (by simp only [oBuf]; omega_arith), Offset.disjoint (scr σ) (d := oBuf) (n := 2016)
+          (e := 800) (k := 800) (by simp only [oBuf]; omega_arith) (by simp only [oBuf]; omega_arith) (by omega_arith)⟩) hf hk (by omega_arith), hm]
     exact h.buf k hk p hp'
 
 /-- During the copy of block `n`: the first `I` lanes of state `K` copied,
@@ -108,15 +108,15 @@ theorem extT_step {σ : State} (hp : PreW w16 σ) {m₀ : Mem} {t n K I : Nat} (
     WP isa (.block [.mov .rax (.mem (at_ .rbx (32 * I + 8 * K))),
       .store (at_ .rbp (504 * K + 8 * I)) .rax]) s (EXTW w16 σ m₀ t n K (I + 1)) := by
   refine wp_movm (a := at' σ (32 * I + 8 * K)) (by rw [ea_at, h.env.rbx])
-    (in_scr' hp h.env.rd h.env.wr (by omega)) fun s₁ u₁ => wp_store (a := at' σ (oBuf + 504 * K + 168 * n + 8 * I))
+    (in_scr' hp h.env.rd h.env.wr (by omega_arith)) fun s₁ u₁ => wp_store (a := at' σ (oBuf + 504 * K + 168 * n + 8 * I))
       (by rw [ea_at, u₁.other _ (by decide), h.rbp, at', at', Offset.add_add,
-        show oBuf + 168 * n + (504 * K + 8 * I) = oBuf + 504 * K + 168 * n + 8 * I by omega])
-      (by rw [u₁.wr]; exact in_scr hp h.env.wr (by simp only [oBuf]; omega))
+        show oBuf + 168 * n + (504 * K + 8 * I) = oBuf + 504 * K + 168 * n + 8 * I by omega_arith])
+      (by rw [u₁.wr]; exact in_scr hp h.env.wr (by simp only [oBuf]; omega_arith))
       fun s₂ g₂ m₂ r₂ w₂ => wp_nil ?_
   have hm : s₂.mem = s.mem.writeW (at' σ (oBuf + 504 * K + 168 * n + 8 * I)) (s.mem.readW (at' σ (32 * I + 8 * K)) 64) := by
     rw [m₂, u₁.mem, u₁.gpr]
   have hsub : Region.Sub ⟨at' σ (oBuf + 504 * K + 168 * n + 8 * I), 8⟩ (lowR σ) :=
-    Offset.sub_base _ (by simp only [oBuf, oSave]; omega)
+    Offset.sub_base _ (by simp only [oBuf, oSave]; omega_arith)
   have hf : Frame [⟨at' σ (oBuf + 504 * K + 168 * n + 8 * I), 8⟩] s.mem s₂.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨EnvW.low h.env (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsub) hf
@@ -129,26 +129,26 @@ theorem extT_step {σ : State} (hp : PreW w16 σ) {m₀ : Mem} {t n K I : Nat} (
     h.fr.trans (hf.sub fun r hr => ⟨lowR σ, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr; exact hsub⟩), by rw [g₂, u₁.other _ (by decide), h.rbp]⟩
   · have e := readW_writeW_off s.mem (scr σ) (s.mem.readW (at' σ (32 * I + 8 * K)) 64) (d := 32 * (50 + r) + 8 * k)
-      (e := oBuf + 504 * K + 168 * n + 8 * I) (n := 8) (by omega) (by simp only [oBuf]; omega)
-      (by simp only [oBuf]; omega)
+      (e := oBuf + 504 * K + 168 * n + 8 * I) (n := 8) (by omega_arith) (by simp only [oBuf]; omega_arith)
+      (by simp only [oBuf]; omega_arith)
     rw [hm]; exact e.trans (h.rc r hr k hk)
   · have e := readW_writeW_off s.mem (scr σ) (s.mem.readW (at' σ (32 * I + 8 * K)) 64) (d := 32 * i + 8 * k)
-      (e := oBuf + 504 * K + 168 * n + 8 * I) (n := 8) (by omega) (by simp only [oBuf]; omega)
-      (by simp only [oBuf]; omega)
+      (e := oBuf + 504 * K + 168 * n + 8 * I) (n := 8) (by omega_arith) (by simp only [oBuf]; omega_arith)
+      (by simp only [oBuf]; omega_arith)
     rw [hm]; exact e.trans (h.lanes i hi k hk)
   · rw [hm]
     by_cases hw : k = K ∧ 168 * n + 8 * I ≤ p ∧ p < 168 * n + 8 * I + 8
     · obtain ⟨rfl, h₁, h₂⟩ := hw
-      rw [wb_in _ _ _ (by omega) (by simp only [oBuf]; omega) (by decide),
-        show 8 * (oBuf + 504 * k + p - (oBuf + 504 * k + 168 * n + 8 * I)) = 8 * (p - 168 * n - 8 * I) by omega,
-        byte_readW _ _ (by omega), at', Offset.add_add,
+      rw [wb_in _ _ _ (by omega_arith) (by simp only [oBuf]; omega_arith) (by decide),
+        show 8 * (oBuf + 504 * k + p - (oBuf + 504 * k + 168 * n + 8 * I)) = 8 * (p - 168 * n - 8 * I) by omega_arith,
+        byte_readW _ _ (by omega_arith), at', Offset.add_add,
         show 32 * I + 8 * k + (p - 168 * n - 8 * I) = 32 * ((8 * I + (p - 168 * n - 8 * I)) / 8) + 8 * k +
-          (8 * I + (p - 168 * n - 8 * I)) % 8 by omega,
-        byte_of_lanes4 h.lanes hk (by omega), show t + n + 1 = (t + n) + 1 from rfl,
-        ← xofByte_A0 (B_length σ k) (by omega),
-        show 168 * (t + n) + (8 * I + (p - 168 * n - 8 * I)) = 168 * t + p by omega]
-    · rw [wb_out _ _ _ (by simp only [oBuf]; omega) (by simp only [oBuf]; omega) (by simp only [oBuf]; omega)]
-      exact h.buf k hk p hp' (by omega)
+          (8 * I + (p - 168 * n - 8 * I)) % 8 by omega_arith,
+        byte_of_lanes4 h.lanes hk (by omega_arith), show t + n + 1 = (t + n) + 1 from rfl,
+        ← xofByte_A0 (B_length σ k) (by omega_arith),
+        show 168 * (t + n) + (8 * I + (p - 168 * n - 8 * I)) = 168 * t + p by omega_arith]
+    · rw [wb_out _ _ _ (by simp only [oBuf]; omega_arith) (by simp only [oBuf]; omega_arith) (by simp only [oBuf]; omega_arith)]
+      exact h.buf k hk p hp' (by omega_arith)
 
 /-- Block `n` of each state's output. -/
 theorem extractT_ok {σ : State} (hp : PreW w16 σ) {m₀ : Mem} {t n : Nat} (hn : n < 3) {s : State}
@@ -156,10 +156,10 @@ theorem extractT_ok {σ : State} (hp : PreW w16 σ) {m₀ : Mem} {t n : Nat} (hn
     WP isa (.block extract) s fun s' => SqTW w16 σ t (n + 1) s' ∧ Frame [lowR σ] m₀ s'.mem := by
   rw [extract_eq]
   refine WP.mono (wp_range_flatMap (M := isa) (fun K s => EXTW w16 σ m₀ t n K 0 s) (fun K s hK h => ?_) 4 (Nat.le_refl _)
-    s h) fun s' h' => ⟨⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' => h'.buf k hk p (by omega) (by omega)⟩, h'.fr⟩
+    s h) fun s' h' => ⟨⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' => h'.buf k hk p (by omega_arith) (by omega_arith)⟩, h'.fr⟩
   refine WP.mono (wp_range_flatMap (M := isa) (fun I s => EXTW w16 σ m₀ t n K I s) (fun I s hI h => extT_step hp hn hK hI h)
     21 (Nat.le_refl _) s h) fun s' h' =>
-      ⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' hc => h'.buf k hk p hp' (by omega), h'.fr, h'.rbp⟩
+      ⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' hc => h'.buf k hk p hp' (by omega_arith), h'.fr, h'.rbp⟩
 
 /-- `squeeze`, to block `n`: after `n + 1` squeezes, with `rbp` and `r10`
 kept; it writes only below the saved registers. -/
@@ -169,7 +169,7 @@ theorem sqT_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {t n : Nat} (hn : n
       s'.gpr .rbp = s.gpr .rbp ∧ s'.gpr .r10 = s.gpr .r10 := by
   unfold squeeze
   exact permT_ok (fast := fast) hp hn h fun s' ⟨he, h14, hrc, hl, hb, hf, h₁, h₂⟩ =>
-    WP.mono (WP.keep [.rax] (extractT_ok hp hn ⟨he, h14, hrc, hl, fun k hk p _ hc => hb k hk p (by omega), hf,
+    WP.mono (WP.keep [.rax] (extractT_ok hp hn ⟨he, h14, hrc, hl, fun k hk p _ hc => hb k hk p (by omega_arith), hf,
       by rw [h₁, hbp]⟩) (by decide)) fun s'' ⟨h', k⟩ =>
         ⟨h', by rw [k.gpr (by decide), h₁], by rw [k.gpr (by decide), h₂]⟩
 
@@ -187,10 +187,10 @@ theorem sqTs_ok {fast : Bool} {σ : State} (hp : PreW w16 σ) {t b n : Nat} (hn 
     (h : SqTW w16 σ t b s) :
     WP isa (squeezes b n fast) s fun s' => SqTW w16 σ t (b + n) s' ∧ Frame [lowR σ] s.mem s'.mem := by
   unfold squeezes
-  refine blocks_ok (P := fun i s' => SqTW w16 σ t i s' ∧ Frame [lowR σ] s.mem s'.mem) hn (by omega)
-    (by simp only [oBuf]; omega) (by decide)
+  refine blocks_ok (P := fun i s' => SqTW w16 σ t i s' ∧ Frame [lowR σ] s.mem s'.mem) hn (by omega_arith)
+    (by simp only [oBuf]; omega_arith) (by decide)
     (fun _ _ _ ⟨h', hf⟩ hm hrd hwr hg => ⟨h'.frame hm hrd hwr hg, by rw [hm]; exact hf⟩)
-    (fun i u hb hi ⟨hi', hf⟩ hbp => WP.mono (sqT_ok (fast := fast) hp (by omega) hi' ?_)
+    (fun i u hb hi ⟨hi', hf⟩ hbp => WP.mono (sqT_ok (fast := fast) hp (by omega_arith) hi' ?_)
       fun _ ⟨⟨h', hf'⟩, k⟩ => ⟨⟨h', hf.trans hf'⟩, k⟩) ⟨h, Frame.refl _ _⟩
   rw [hbp, h.env.rbx, Offset.add_add, at', show oBuf + 168 * b + 168 * (i - b) = oBuf + 168 * i by
     rw [Nat.add_assoc, ← Nat.mul_add, Nat.add_sub_cancel' hb]]
@@ -205,7 +205,7 @@ theorem EnvW.apart {σ s s' : State} (he : EnvW w16 σ s) {rs : List Region} (hf
     by rw [hg .r13 (by simp), he.r13], by rw [hg .rsp (by simp), he.rsp], by rw [hg .r15 (by simp), he.r15],
     fun i hi => ?_, he.frame.trans (hf.sub hsub)⟩
   rw [hf.readW (Region.contains_self _ _) (fun r hr => (hsv r hr).sub_left
-    (Offset.sub (scr σ) (d := oSave + 8 * i) (n := 8) (e := oSave) (k := 40) (by omega) (by omega))) (by decide)]
+    (Offset.sub (scr σ) (d := oSave + 8 * i) (n := 8) (e := oSave) (k := 40) (by omega_arith) (by omega_arith))) (by decide)]
   exact he.saved i hi
 
 /-- `SqT` after writes apart from the low scratch space and the saved registers. -/
@@ -218,14 +218,14 @@ theorem SqTW.apart {σ : State} {t n : Nat} (hn : n ≤ 3) {s s' : State} (h : S
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h <;> simp [h]),
     by rw [hg .r14 (by simp), h.r14], fun r hr k hk => ?_, fun i hi k hk => ?_, fun k hk p hp' => ?_⟩
   · rw [hf.readW (Region.contains_self _ _) (fun r' hr' => (hlow r' hr').sub_left
-      (Offset.sub_base (scr σ) (d := 32 * (50 + r) + 8 * k) (by simp only [oSave]; omega))) (by decide)]
+      (Offset.sub_base (scr σ) (d := 32 * (50 + r) + 8 * k) (by simp only [oSave]; omega_arith))) (by decide)]
     exact h.rc r hr k hk
   · rw [hf.readW (Region.contains_self _ _) (fun r' hr' => (hlow r' hr').sub_left
-      (Offset.sub_base (scr σ) (d := 32 * i + 8 * k) (by simp only [oSave]; omega))) (by decide)]
+      (Offset.sub_base (scr σ) (d := 32 * i + 8 * k) (by simp only [oSave]; omega_arith))) (by decide)]
     exact h.lanes i hi k hk
   · rw [hf (at' σ (oBuf + 504 * k + p)) fun r' hr' hc => (hlow r' hr').sub_left
-      (Offset.sub_base (scr σ) (d := oBuf + 504 * k + p) (n := 1) (by simp only [oBuf, oSave]; omega)) _
+      (Offset.sub_base (scr σ) (d := oBuf + 504 * k + p) (n := 1) (by simp only [oBuf, oSave]; omega_arith)) _
       (Region.contains_self _ _) hc]
-    exact h.buf k hk p (by omega)
+    exact h.buf k hk p (by omega_arith)
 
 end VG.Proof.MlKem.X86_64.S4

@@ -50,9 +50,9 @@ theorem tagOut_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (htw : Covers 
   unfold tagOut
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have ht := L.tl16
-  have lp : LoopPre s₁ p.W p.T p.tl := ⟨di₁, dx₁, cx₁, L.tl1, by omega, by have := L.ww; omega, L.tw,
-    by rw [rd₁, wr₁]; exact covers_prefix (covers_left E.perm.w) (by omega),
-    by rw [wr₁]; exact htw, (L.t_w.sub_right (Region.sub_prefix (by omega))).symm⟩
+  have lp : LoopPre s₁ p.W p.T p.tl := ⟨di₁, dx₁, cx₁, L.tl1, by omega_arith, by have := L.ww; omega_arith, L.tw,
+    by rw [rd₁, wr₁]; exact covers_prefix (covers_left E.perm.w) (by omega_arith),
+    by rw [wr₁]; exact htw, (L.t_w.sub_right (Region.sub_prefix (by omega_arith))).symm⟩
   refine WP.mono (copyLoop_ok s₁ lp) fun s' P => ⟨by rw [P.mem, m₁], fun r h₁ h₂ h₃ h₄ => by
     rw [P.other r h₁ h₄ h₃ h₂, g₁ r h₂ h₃ h₄], by rw [P.rd, rd₁], by rw [P.wr, wr₁]⟩
 
@@ -71,9 +71,9 @@ theorem recv_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
   unfold recv
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have ht := L.tl16
-  have lp : LoopPre s₁ p.T p.W p.tl := ⟨di₁, dx₁, cx₁, L.tl1, by omega, L.tw, by have := L.ww; omega,
-    by rw [rd₁, wr₁]; exact E.perm.t, by rw [wr₁]; exact covers_prefix E.perm.w (by omega),
-    L.t_w.sub_right (Region.sub_prefix (by omega))⟩
+  have lp : LoopPre s₁ p.T p.W p.tl := ⟨di₁, dx₁, cx₁, L.tl1, by omega_arith, L.tw, by have := L.ww; omega_arith,
+    by rw [rd₁, wr₁]; exact E.perm.t, by rw [wr₁]; exact covers_prefix E.perm.w (by omega_arith),
+    L.t_w.sub_right (Region.sub_prefix (by omega_arith))⟩
   refine WP.mono (copyLoop_ok s₁ lp) fun s' P => ⟨by rw [P.mem, m₁], fun r h₁ h₂ h₃ h₄ => by
     rw [P.other r h₁ h₄ h₃ h₂, g₁ r h₂ h₃ h₄], by rw [P.rd, rd₁], by rw [P.wr, wr₁]⟩
 
@@ -86,13 +86,13 @@ theorem setWidth_xor_eq_zero32 (a b : Byte) : (a.setWidth 32 ^^^ b.setWidth 32 =
     apply BitVec.eq_of_toNat_eq
     have := congrArg BitVec.toNat h
     simp only [BitVec.toNat_setWidth] at this
-    rwa [Nat.mod_eq_of_lt (a := a.toNat) (by have := a.isLt; omega),
-      Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega)] at this
+    rwa [Nat.mod_eq_of_lt (a := a.toNat) (by have := a.isLt; omega_arith),
+      Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega_arith)] at this
   · intro h; rw [h]
 
 theorem toNat_setWidth_xor32 (a b : Byte) : (a.setWidth 32 ^^^ b.setWidth 32).toNat < 256 := by
   simp only [BitVec.toNat_xor, BitVec.toNat_setWidth]
-  rw [Nat.mod_eq_of_lt (a := a.toNat) (by have := a.isLt; omega), Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega)]
+  rw [Nat.mod_eq_of_lt (a := a.toNat) (by have := a.isLt; omega_arith), Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega_arith)]
   exact Nat.xor_lt_two_pow (n := 8) a.isLt b.isLt
 
 /-- `(x − 1) >> 31` is 1 if `x` is 0 and 0 if `0 < x < 256`. -/
@@ -108,8 +108,8 @@ theorem okBit32 {x : BitVec 32} (h : x.toNat < 256) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
     simp only [BitVec.toNat_ofNat]
-    rw [show 2 ^ 32 - 1 % 2 ^ 32 + x.toNat = (x.toNat - 1) + 2 ^ 32 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega), Nat.div_eq_of_lt (by omega)]
+    rw [show 2 ^ 32 - 1 % 2 ^ 32 + x.toNat = (x.toNat - 1) + 2 ^ 32 by omega_arith, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_arith), Nat.div_eq_of_lt (by omega_arith)]
 
 /-- One step of `cmp`. -/
 theorem cmpStep_ok {p : Prm} (L : Lay p) {u : State} (E : Env p u) {j tl : Nat} (hj : j < tl) (ht : tl ≤ 16)
@@ -124,18 +124,18 @@ theorem cmpStep_ok {p : Prm} (L : Lay p) {u : State} (E : Env p u) {j tl : Nat} 
       (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → r ≠ .edi → u'.gpr r = u.gpr r) ∧ u'.rd = u.rd ∧
       u'.wr = u.wr := by
   have a0 : w64 (p.W + BitVec.ofNat 32 j + BitVec.ofNat 32 0) = w64 p.W + BitVec.ofNat 64 j := by
-    rw [add_ofNat_assoc32, Nat.add_zero]; exact L.aW (by omega)
+    rw [add_ofNat_assoc32, Nat.add_zero]; exact L.aW (by omega_arith)
   have a1 : w64 (p.W + BitVec.ofNat 32 j + BitVec.ofNat 32 t2O) = w64 p.W + BitVec.ofNat 64 (t2O + j) := by
-    rw [add_ofNat_assoc32, Nat.add_comm]; exact L.aW (by simp only [t2O]; omega)
-  have r0 : InRegions (u.rd ++ u.wr) (w64 p.W + BitVec.ofNat 64 j) 1 := E.perm.wR (by omega)
-  have r1 : InRegions (u.rd ++ u.wr) (w64 p.W + BitVec.ofNat 64 (t2O + j)) 1 := E.perm.wR (by simp only [t2O]; omega)
+    rw [add_ofNat_assoc32, Nat.add_comm]; exact L.aW (by simp only [t2O]; omega_arith)
+  have r0 : InRegions (u.rd ++ u.wr) (w64 p.W + BitVec.ofNat 64 j) 1 := E.perm.wR (by omega_arith)
+  have r1 : InRegions (u.rd ++ u.wr) (w64 p.W + BitVec.ofNat 64 (t2O + j)) 1 := E.perm.wR (by simp only [t2O]; omega_arith)
   refine ⟨_, by grun [hdi, a0, a1, r0, r1], by gmems [], by gregs [], ?_, ?_, ?_,
     fun r h₁ h₂ h₃ h₄ h₅ => by gregs [h₁, h₂, h₃, h₄, h₅], by gmems [], by gmems []⟩
   · gregs [hdi]; rw [add_ofNat_assoc32]
-  · gregs [hcx]; rw [sub1_32 (by omega) (by omega), show tl - j - 1 = tl - (j + 1) by omega]
+  · gregs [hcx]; rw [sub1_32 (by omega_arith) (by omega_arith), show tl - j - 1 = tl - (j + 1) by omega_arith]
   · gmems [hcx]
-    rw [sub1_32 (by omega) (by omega), beq_zero32 (by omega)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+    rw [sub1_32 (by omega_arith) (by omega_arith), beq_zero32 (by omega_arith)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_arith))
 
 /-- `cmp`: 1 at `W + okO` if the first `tl` bytes at `W` and `W + t2O` are equal, else 0. -/
 theorem cmp_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
@@ -166,7 +166,7 @@ theorem cmp_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       (u.gpr .edx = 0#32 ↔ bytesAt s.mem (w64 p.W) j = bytesAt s.mem (w64 p.W + BitVec.ofNat 64 t2O) j) ∧
       u.mem = s.mem ∧ (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → r ≠ .edi → u.gpr r = s.gpr r) ∧
       u.rd = s.rd ∧ u.wr = s.wr) ?_ (p.tl - 0) _
-    ⟨0, rfl, by omega, di₁, cx₁, by rw [dx₁]; decide, by rw [dx₁]; simp [bytesAt], m₁,
+    ⟨0, rfl, by omega_arith, di₁, cx₁, by rw [dx₁]; decide, by rw [dx₁]; simp [bytesAt], m₁,
       fun r _ _ h₃ h₄ h₅ => g₁ r h₃ h₄ h₅, rd₁, wr₁⟩) fun u hu => ?_)
   · rintro k u ⟨j, rfl, hj, di, cx, lt, iff, mem, g, rd, wr⟩
     have Eu : Env p u := E.keep (by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide)])
@@ -191,7 +191,7 @@ theorem cmp_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       refine ⟨(eval_ne zf').trans (by simp [he]), lt', ?_, by rw [mem', mem], gg, by rw [rd', rd], by rw [wr', wr]⟩
       rw [← he]; exact iff'
     · right
-      exact ⟨(eval_ne zf').trans (by simp [he]), p.tl - (j + 1), by omega, j + 1, rfl, by omega, di', cx', lt', iff',
+      exact ⟨(eval_ne zf').trans (by simp [he]), p.tl - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, di', cx', lt', iff',
         by rw [mem', mem], gg, by rw [rd', rd], by rw [wr', wr]⟩
   · obtain ⟨lt, iff, mem, g, rd, wr⟩ := hu
     have Eu : Env p u := E.keep (by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide)])
@@ -241,14 +241,14 @@ theorem maskStep_ok {p : Prm} (L : Lay p) {u : State} {j : Nat} {c : Bool} (hj :
       (∀ r, r ≠ .eax → r ≠ .edi → r ≠ .ecx → u'.gpr r = u.gpr r) ∧ u'.rd = u.rd ∧ u'.wr = u.wr := by
   have hn := L.n32
   have a0 : w64 (p.D + BitVec.ofNat 32 j + BitVec.ofNat 32 0) = w64 p.D + BitVec.ofNat 64 j := by
-    rw [add_ofNat_assoc32, Nat.add_zero]; exact w64_add (by have := L.dw; omega)
+    rw [add_ofNat_assoc32, Nat.add_zero]; exact w64_add (by have := L.dw; omega_arith)
   refine ⟨_, by grun [hdi, a0, r, w], by gmems [hdx, mask_byte32], ?_, ?_, ?_,
     fun r h₁ h₂ h₃ => by gregs [h₁, h₂, h₃], by gmems [], by gmems []⟩
   · gregs [hdi]; rw [add_ofNat_assoc32]
-  · gregs [hcx]; rw [sub1_32 (by omega) (by omega), show p.n - j - 1 = p.n - (j + 1) by omega]
+  · gregs [hcx]; rw [sub1_32 (by omega_arith) (by omega_arith), show p.n - j - 1 = p.n - (j + 1) by omega_arith]
   · gmems [hcx]
-    rw [sub1_32 (by omega) (by omega), beq_zero32 (by omega)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+    rw [sub1_32 (by omega_arith) (by omega_arith), beq_zero32 (by omega_arith)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_arith))
 
 /-- Every byte of the data ANDed with `0 − ok`, for `ok` (at `W + okO`) 1 or 0. -/
 theorem mask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
@@ -288,24 +288,24 @@ theorem mask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
       fun r _ h₂ h₃ h₄ => g₁ r h₂ h₃ h₄, rd₁, wr₁⟩
   rintro k t ⟨j, rfl, hj, di, cx, dx, mem, g, rd, wr⟩
   obtain ⟨t', run', mem', di', cx', zf', g', rd', wr'⟩ := maskStep_ok L (c := c) hj di cx dx
-    (by rw [rd, wr]; exact in_left (in_off E.perm.d (by omega) (by omega)))
-    (by rw [wr]; exact in_off E.perm.d (by omega) (by omega))
+    (by rw [rd, wr]; exact in_left (in_off E.perm.d (by omega_arith) (by omega_arith)))
+    (by rw [wr]; exact in_off E.perm.d (by omega_arith) (by omega_arith))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have fr : Frame [⟨w64 p.D, j⟩] s.mem t.mem := by
     rw [mem]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
   have hq : t.mem (w64 p.D + BitVec.ofNat 64 j) = s.mem (w64 p.D + BitVec.ofNat 64 j) :=
     fr _ fun r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      simp only [Region.Contains, Mem.sub_ofNat_toNat (w64 p.D) (show j < 2 ^ 64 by omega)] at hcon; omega
+      simp only [Region.Contains, Mem.sub_ofNat_toNat (w64 p.D) (show j < 2 ^ 64 by omega_arith)] at hcon; omega_arith
   have hmem : t'.mem = writeBytes s.mem (w64 p.D) (if c then bytesAt s.mem (w64 p.D) (j + 1) else zeros (j + 1)) := by
-    rw [mem', hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega), length_mask]
+    rw [mem', hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega_arith), length_mask]
   have gg : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ h₄ => by
     rw [g' r h₁ h₄ h₂, g r h₁ h₂ h₃ h₄]
   by_cases he : j + 1 = p.n
   · left
     exact ⟨(eval_ne zf').trans (by simp [he]), by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    exact ⟨(eval_ne zf').trans (by simp [he]), p.n - (j + 1), by omega, j + 1, rfl, by omega, di', cx',
+    exact ⟨(eval_ne zf').trans (by simp [he]), p.n - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, di', cx',
       by rw [g' _ (by decide) (by decide) (by decide), dx], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
 
 end VG.Proof.AesOcb.X86

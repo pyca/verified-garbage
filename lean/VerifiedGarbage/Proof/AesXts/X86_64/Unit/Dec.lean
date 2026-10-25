@@ -69,7 +69,7 @@ theorem argsHead_wp {s : State} (h : TwPost s₀ s) : WP isa (.block argsHead) s
     argsHead_ok s (by rw [h.inv.r13]; exact hm)
   have h₁ := TwPost.keep hp h cs₁ mem₁ rd₁ wr₁
   exact WP.of_runBlock ⟨s₁, run₁, h₁, xpre_blocks hp h₁.inv.rd h₁.inv.wr h₁.inv.rsp (N := M s₀ - 1)
-    (by rw [len_eq s₀]; omega) (by rw [rdi₁, h.inv.rbx]) (by rw [rsi₁, h.inv.rbp, rsi_ofNat])
+    (by rw [len_eq s₀]; omega_arith) (by rw [rdi₁, h.inv.rbx]) (by rw [rsi₁, h.inv.rbp, rsi_ofNat])
     (by rw [rdx₁, h.inv.r15]) (by rw [rcx₁, h.inv.r12]) (by rw [r8₁, h.inv.r13]) (by rw [r9₁, h.inv.r15])⟩
 
 /-- The tweak of block `M`, at `zO`, and the arguments of the call on the
@@ -108,7 +108,7 @@ theorem decL1_wp {s₂ : State} (h₂ : AllPost false s₀ (M s₀ - 1) s₂) :
       (by decide), inv₃.rbx]) (by rw [rsi₆, g₅ _ (by decide), g₄ _ (by decide) (by decide), inv₃.rbp, rsi_ofNat])
     (by rw [rdx₆, g₅ _ (by decide), g₄ _ (by decide) (by decide), inv₃.r15])
     (by rw [rcx₆, rdx₅, g₄ _ (by decide) (by decide), rax₄, inv₃.r12,
-      last_eq _ hm (by have := hp.m_lt; omega)]) r8₆
+      last_eq _ hm (by have := hp.m_lt; omega_arith)]) r8₆
     (by rw [r9₆, g₅ _ (by decide), g₄ _ (by decide) (by decide), inv₃.r15]),
     ⟨s₂.mem, h₂.mem, by rw [m₆]; exact f₃, by rw [m₆]; exact z₃⟩⟩
 
@@ -128,15 +128,15 @@ theorem decL2_wp (v : XtsImpl) {s : State} (h : DecL1 s₀ s) :
       Proof.Cmac.bytesAt_frame f₃ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (hp.data_scr.sub_left hp.l_sub).sub_right zL) (by decide)]
-  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (blocks_sub (by omega)) hp.hd_l zL h.inv.rsp c₇
-      (by dsimp only; have := hp.wrapD; omega)]
+  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (blocks_sub (by omega_arith)) hp.hd_l zL h.inv.rsp c₇
+      (by dsimp only; have := hp.wrapD; omega_arith)]
     exact Proof.Cmac.bytesAt_frame f₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hp.data_scr.sub_left (blocks_sub (by omega))).sub_right zL) (by dsimp only; have := hp.wrapD; omega)
-  · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l zL h.inv.rsp c₇ (by dsimp only; omega)]
+      exact (hp.data_scr.sub_left (blocks_sub (by omega_arith))).sub_right zL) (by dsimp only; have := hp.wrapD; omega_arith)
+  · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l zL h.inv.rsp c₇ (by dsimp only; omega_arith)]
     exact Proof.Cmac.bytesAt_frame f₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hp.data_scr.sub_left hp.tl_sub).sub_right zL) (by dsimp only; omega)
+      exact (hp.data_scr.sub_left hp.tl_sub).sub_right zL) (by dsimp only; omega_arith)
   · rw [Proof.Cmac.bytesAt_frame c₇.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
@@ -162,7 +162,7 @@ theorem decL3_wp {s : State} (h : DecL2 s₀ s) (hB : B s₀ ≠ 0) :
     (by rw [g₉ _ (by decide) (by decide), r8₈]) (fun i hi => by
       rw [wr₉']
       exact in_rw (r := dataR s₀) (by simp)
-        (hp.lb_sub _ (Offset.contains_base (L s₀) (d := i) (n := 1) (k := 16 + B s₀) (by omega) (by omega)))))
+        (hp.lb_sub _ (Offset.contains_base (L s₀) (d := i) (n := 1) (k := 16 + B s₀) (by omega_arith) (by omega_arith)))))
     fun s₁₀ ⟨mem₁₀, g₁₀, rd₁₀, wr₁₀⟩ => ?_
   obtain ⟨s₁₁, run₁₁, rdi₁₁, rsi₁₁, rdx₁₁, rcx₁₁, r8₁₁, r9₁₁, cs₁₁, mem₁₁, rd₁₁, wr₁₁⟩ := argsL_ok s₁₀ (o := tO) rfl
   refine WP.of_runBlock ⟨s₁₁, run₁₁, ?_⟩
@@ -207,22 +207,22 @@ theorem decLast_wp (v : XtsImpl) {s : State} (h : DecL3 s₀ s) (hB : B s₀ ≠
       rcases hr with rfl | rfl | rfl
       · exact hp.hd_tl.symm
       · exact hp.data_scr.sub_left hp.tl_sub
-      · exact hp.stk_data.symm.sub_left hp.tl_sub) (by omega)
+      · exact hp.stk_data.symm.sub_left hp.tl_sub) (by omega_arith)
   · rw [Proof.AesXts.Unit.crypt_one_of c₁₂.out, eW', m₁₀,
       Proof.Cmac.bytesAt_frame sw (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (hp.data_scr.symm.sub_left tL).sub_right hp.lb_sub) (by decide), tw₅]
-  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (blocks_sub (by omega)) hp.hd_l tL h.inv.rsp c₁₂
-      (by dsimp only; have := hp.wrapD; omega), m₁₀]
+  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (blocks_sub (by omega_arith)) hp.hd_l tL h.inv.rsp c₁₂
+      (by dsimp only; have := hp.wrapD; omega_arith), m₁₀]
     exact Proof.Cmac.bytesAt_frame sw (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.hd_lb) (by dsimp only; have := hp.wrapD; omega)
-  · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l tL h.inv.rsp c₁₂ (by dsimp only; omega), m₁₀]
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.hd_lb) (by dsimp only; have := hp.wrapD; omega_arith)
+  · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l tL h.inv.rsp c₁₂ (by dsimp only; omega_arith), m₁₀]
 
 /-- The steal of decryption, after the tweak. -/
 theorem decSteal_wp (v : XtsImpl) {s : State} (h : TwPost s₀ s) (hB : B s₀ ≠ 0) :
     WP isa (decSteal v.dec) s (Fin false s₀) := by
   refine WP.seq (WP.mono (argsHead_wp hp h) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (blocks_call hp false v.decOk v.decNosp v.decDepth (by rw [len_eq s₀]; omega) h₁.tw
+  refine WP.seq (WP.mono (blocks_call hp false v.decOk v.decNosp v.decDepth (by rw [len_eq s₀]; omega_arith) h₁.tw
     h₁.pre) fun s₂ h₂ => ?_)
   refine WP.seq (WP.mono (decL1_wp hp h₂) fun s₃ h₃ => ?_)
   refine WP.seq (WP.mono (decL2_wp hp v h₃) fun s₄ h₄ => ?_)
@@ -242,7 +242,7 @@ theorem decrypt_wp (v : XtsImpl) :
   refine WP.seq (WP.mono (WP.ite (decide (B s₀ = 0)) zf₂ (fun hb => ?_)
     (fun hb => decSteal_wp hp v h₂ (by simpa using hb))) fun s₅ h₅ => ?_)
   · refine WP.seq (WP.mono (argsAll_wp hp h₂) fun s₃ h₃ => ?_)
-    exact WP.mono (blocks_call hp false v.decOk v.decNosp v.decDepth (by rw [len_eq s₀]; omega) h₃.tw h₃.pre)
+    exact WP.mono (blocks_call hp false v.decOk v.decNosp v.decDepth (by rw [len_eq s₀]; omega_arith) h₃.tw h₃.pre)
       fun s₄ h₄ => whole_fin h₄ (by simpa using hb)
   · exact WP.mono (fin_wp hp h₅.inv) fun s' ⟨g, m⟩ => ⟨g, unit_post hp (by rw [m]; exact h₅.data)⟩
 

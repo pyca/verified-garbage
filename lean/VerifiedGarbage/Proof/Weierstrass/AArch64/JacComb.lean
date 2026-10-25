@@ -228,7 +228,7 @@ theorem jacComb_step_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} 
     have := hL.bits
     have := hL.kbytes
     unfold TCombCfg.zw at *
-    omega
+    omega_arith
   refine WP.mono_syms (digitW_ok K (hI.scr.of_keeps kd (by decide)) (k := k)
     (j := j-1) (N := K.w*K.J) (by have := hL.w; omega_using [this]) (by have := hL.w; omega_using [this])
     hwi hb (by have := hL.bitsw; omega_using [hwi, this]) bd (fun q hq => by rw [kd.mem]; exact hI.bits q hq))
@@ -389,7 +389,7 @@ theorem jacComb_step_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} 
       simpa only [decide_eq_false_iff_not, not_not] using hzero
     have hw0 : combWin K.w k (j-1) = K.H := by
       unfold magH at hm0
-      split at hm0 <;> omega
+      split at hm0 <;> omega_arith
     have he : combEW K.w k K.J (j-1) = combEW K.w k K.J j := by
       have he := combEW_step (w := K.w) (k := k) (J := K.J) (j := j-1) (by omega_using [hjn, hJ])
       rw [Nat.sub_add_cancel hj,hw0] at he

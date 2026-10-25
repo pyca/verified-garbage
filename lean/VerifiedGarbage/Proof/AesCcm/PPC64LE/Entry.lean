@@ -163,7 +163,7 @@ structure Entered (c : Cx) (N : Addr) (s s₁ : State) : Prop where
 
 theorem stackArgAddr_succ (s : State) (i : Nat) :
     stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (8 * i) := by
-  unfold stackArgAddr; rw [Offset.add_add]; congr 2; omega
+  unfold stackArgAddr; rw [Offset.add_add]; congr 2; omega_arith
 
 theorem saved_bound : ∀ p ∈ saved, 128 ≤ p.2 ∧ p.2 + 8 ≤ 128 + 80 := by decide
 
@@ -173,7 +173,7 @@ theorem entry_wp {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
   have hww := L.ww
   have inA : ∀ {t : State} {i : Nat}, t.rd = s.rd → t.wr = s.wr → i < 3 →
       InRegions (t.rd ++ t.wr) (stackArgAddr s i) 8 := fun hrd hwr hi => by
-    rw [hrd, hwr, stackArgAddr_succ]; exact in_off Ar.argsC (by omega) (by decide)
+    rw [hrd, hwr, stackArgAddr_succ]; exact in_off Ar.argsC (by omega_arith) (by decide)
   unfold entry
   change WP isa (.block ([.addSp .r12 0, .load .d .r11 .r12 112, .mflr .r0] ++ saveCode .r11 saved ++ _)) s _
   simp only [List.cons_append, List.nil_append]
@@ -185,12 +185,12 @@ theorem entry_wp {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
   have rd₃ : s₃.rd = s.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
   have wr₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
   refine save_ok (b := .r11) (by decide) (by decide) (fun p hp => by
-    rw [W₃, wr₃]; exact Ar.perm.wW (by have := saved_bound p hp; omega)) ?_
+    rw [W₃, wr₃]; exact Ar.perm.wW (by have := saved_bound p hp; omega_arith)) ?_
   rw [W₃]
   generalize hmS : saveMem s₃.mem c.W s₃.gpr saved = mS
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   have fS : Frame [⟨c.W + BitVec.ofNat 64 128, 80⟩] s.mem mS := by
-    rw [← hmS, m₃]; exact Spill.saveMem_frame saved_bound (by omega) _ _ _
+    rw [← hmS, m₃]; exact Spill.saveMem_frame saved_bound (by omega_arith) _ _ _
   have svS : Saved c.W s₃.gpr saved mS := by rw [← hmS]; exact saveMem_saved (by decide) _ _ _
   refine wp_std (a := c.W + BitVec.ofNat 64 208) (by decide) (by decide) (by show s₃.gpr .r11 + _ = _; rw [W₃]; rfl)
     (by show InRegions s₃.wr _ 8; rw [wr₃]; exact Ar.perm.wW (by decide)) fun s₅ u₅ => ?_
@@ -210,7 +210,7 @@ theorem entry_wp {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
     simp only [List.mem_singleton] at hr; subst hr
     exact Ar.argsW.sub_right (Offset.sub_base _ (by decide))
   have rdA : ∀ {i : Nat}, i < 3 → s₆.mem.readW (stackArgAddr s i) 64 = stackArg s i := fun hi => by
-    rw [f₆.readW (r := args s) (by rw [stackArgAddr_succ]; exact Offset.contains_base _ (by omega) (by omega))
+    rw [f₆.readW (r := args s) (by rw [stackArgAddr_succ]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
       hAW (by decide)]; rfl
   have rd₆ : s₆.rd = s.rd := by rw [u₆.rd, u₅.rd]; exact rd₃
   have wr₆ : s₆.wr = s.wr := by rw [u₆.wr, u₅.wr]; exact wr₃
@@ -273,7 +273,7 @@ theorem entry_wp {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
       g₁₀ .r6 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), Ar.r7, Ar.r8,
       Ar.r6, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]
   have cE : ∀ d, 128 ≤ d → d + 8 ≤ 248 → (entryR c.W).Contains (c.W + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ =>
-    Offset.contains c.W h₁ (by omega) (by omega)
+    Offset.contains c.W h₁ (by omega_arith) (by omega_arith)
   have fF : Frame [entryR c.W] s.mem s₁₆.mem := by
     rw [mF]
     exact (((f₆.writeW (List.mem_singleton_self _) _ (cE 216 (by decide) (by decide))).writeW
@@ -288,30 +288,30 @@ theorem entry_wp {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
       Ar.perm.of_eq ?_ ?_⟩, ⟨?_, ?_, ?_, ?_⟩, ?_, fF, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₁₆.rd, u₁₅.rd, u₁₄.rd, u₁₃.rd, u₁₂.rd, u₁₁.rd, u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, rd₆]
   · rw [u₁₆.wr, u₁₅.wr, u₁₄.wr, u₁₃.wr, u₁₂.wr, u₁₁.wr, wr₁₀]
-  · rw [mF, Mem.readW_writeW_sep (sep (a := 216) (b := 240) (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep (a := 216) (b := 232) (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep (a := 216) (b := 224) (by omega) (by omega) (by omega)) (by decide),
+  · rw [mF, Mem.readW_writeW_sep (sep (a := 216) (b := 240) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep (a := 216) (b := 232) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep (a := 216) (b := 224) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
-  · rw [mF, Mem.readW_writeW_sep (sep (a := 224) (b := 240) (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep (a := 224) (b := 232) (by omega) (by omega) (by omega)) (by decide),
+  · rw [mF, Mem.readW_writeW_sep (sep (a := 224) (b := 240) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep (a := 224) (b := 232) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
-  · rw [mF, Mem.readW_writeW_sep (sep (a := 232) (b := 240) (by omega) (by omega) (by omega)) (by decide),
+  · rw [mF, Mem.readW_writeW_sep (sep (a := 232) (b := 240) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       Mem.readW_writeW_self64]
   · rw [mF, Mem.readW_writeW_self64]
   · intro p hp
     rcases List.mem_cons.mp hp with rfl | hp
     · show s₁₆.mem.readW (c.W + BitVec.ofNat 64 208) 64 = _
-      rw [mF, Mem.readW_writeW_sep (sep (a := 208) (b := 240) (by omega) (by omega) (by omega)) (by decide),
-        Mem.readW_writeW_sep (sep (a := 208) (b := 232) (by omega) (by omega) (by omega)) (by decide),
-        Mem.readW_writeW_sep (sep (a := 208) (b := 224) (by omega) (by omega) (by omega)) (by decide),
-        Mem.readW_writeW_sep (sep (a := 208) (b := 216) (by omega) (by omega) (by omega)) (by decide), m₆,
+      rw [mF, Mem.readW_writeW_sep (sep (a := 208) (b := 240) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        Mem.readW_writeW_sep (sep (a := 208) (b := 232) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        Mem.readW_writeW_sep (sep (a := 208) (b := 224) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        Mem.readW_writeW_sep (sep (a := 208) (b := 216) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), m₆,
         Mem.readW_writeW_self64]
       simp [saveG, State.write]
     · have fT : Frame [⟨c.W + BitVec.ofNat 64 208, 40⟩] mS s₁₆.mem := by
         rw [mF, m₆]
         have c' : ∀ d, 208 ≤ d → d + 8 ≤ 248 →
             (⟨c.W + BitVec.ofNat 64 208, 40⟩ : Region).Contains (c.W + BitVec.ofNat 64 d) (64 / 8) :=
-          fun d h₁ h₂ => Offset.contains c.W h₁ (by omega) (by omega)
+          fun d h₁ h₂ => Offset.contains c.W h₁ (by omega_arith) (by omega_arith)
         exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c' 208 (by decide) (by decide))).writeW
           (List.mem_singleton_self _) _ (c' 216 (by decide) (by decide))).writeW
           (List.mem_singleton_self _) _ (c' 224 (by decide) (by decide))).writeW
@@ -320,7 +320,7 @@ theorem entry_wp {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
       have hv := (svS.frame fT fun q hq r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         have := saved_bound q hq
-        exact L.w_w (.inl (by omega)) (by omega) (by decide)) p hp
+        exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)) p hp
       rw [hv]
       have h1 : p.1 ≠ .r0 ∧ p.1 ≠ .r11 ∧ p.1 ≠ .r12 :=
         (show ∀ q ∈ saved, q.1 ≠ .r0 ∧ q.1 ≠ .r11 ∧ q.1 ≠ .r12 by decide) p hp

@@ -50,19 +50,19 @@ theorem minvBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
   have hs₂ := h.scr.congr (k₁.trans k₂).2.2
   refine WP.mono (WP.keep [.rbx] (Q := fun t => t.gpr .rbx = word s.mem B (slot w aN) ∧ t.mem = s.mem) (by
     xrun [State.ea, at0, h10, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
-      hs₂.ld (d := slot w aN) (by omega), m₂, m₁]) rfl) fun t₃ ⟨⟨hbx, m₃⟩, k₃⟩ => WP.block_append_iff.mpr ?_
+      hs₂.ld (d := slot w aN) (by omega_arith), m₂, m₁]) rfl) fun t₃ ⟨⟨hbx, m₃⟩, k₃⟩ => WP.block_append_iff.mpr ?_
   refine WP.mono (minv_ok t₃ (by rw [hbx]; exact hodd)) fun t₄ ⟨hi, k₄, m₄⟩ => ?_
   have k14 := ((k₁.trans k₂).trans k₃).trans k₄
   have hdi₄ : t₄.gpr .rdi = B := (k14.gpr (by decide)).trans h.rdi
   have hs₄ := h.scr.congr k14.2.2
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = t₄.mem.writeW (off B (8 * sMinv)) (t₄.gpr .r15)) (by
-    xrun [State.ea, hdr, hdi₄, hdrOff, hs₄.st (d := 8 * sMinv) (by simp only [sMinv]; omega)]) rfl)
+    xrun [State.ea, hdr, hdi₄, hdrOff, hs₄.st (d := 8 * sMinv) (by simp only [sMinv]; omega_arith)]) rfl)
     fun t ⟨mt, k₅⟩ => ?_
-  have o := writeW_outside t₄.mem B (t₄.gpr .r15) (d := 8 * sMinv) (by simp only [sMinv]; omega)
+  have o := writeW_outside t₄.mem B (t₄.gpr .r15) (d := 8 * sMinv) (by simp only [sMinv]; omega_arith)
   rw [← mt] at o
   have m4 : t₄.mem = s.mem := m₄.trans m₃
   refine ⟨?_, by rw [← m4]; exact Frm.rg_of_hdr o _ _ (List.mem_singleton_self _), (k14.trans k₅).mono (by decide)⟩
-  rw [o.word (Or.inr (by omega)) (by omega), mt, word_writeW_self, m4, ← hbx]
+  rw [o.word (Or.inr (by omega_arith)) (by omega_arith), mt, word_writeW_self, m4, ← hbx]
   exact hi
 
 /-- The bases of a subtraction `[c] := [a] - [b]`, `w` and no borrow. -/

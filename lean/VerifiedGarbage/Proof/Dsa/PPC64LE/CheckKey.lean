@@ -87,9 +87,9 @@ theorem key_kept {s : State} {L : Lay} {key : Addr} (hk : Src s L key (3 * L.pl 
     (h : Outside L.S 0 L.Z m m') :
     pOf m' L key = pOf m L key ∧ qOf m' L key = qOf m L key ∧ gOf m' L key = gOf m L key ∧
       yOf m' L key = yOf m L key := by
-  obtain ⟨a, b, c⟩ := params_kept (hk.take (by omega)) h
+  obtain ⟨a, b, c⟩ := params_kept (hk.take (by omega_arith)) h
   refine ⟨a, b, c, ?_⟩
-  simp only [yOf]; rw [(hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega)).kept h]
+  simp only [yOf]; rw [(hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega_arith)).kept h]
 
 /-- `p ≡ 1 (mod q)`, as the code checks it. -/
 theorem pmod_iff {p q : Nat} (hp : 1 ≤ p) (hq : 2 ≤ q) : (p - 1) % q = 0 ↔ p % q = 1 := by
@@ -255,7 +255,7 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q :
   have hg := r0₆.mp (by simpa using hb₆)
   -- `rest`.
   have hok : ParamsOk s.mem L key := hPar.mpr ⟨⟨hSz, hqo, hpo⟩, ⟨hg.1, hg.2.1⟩,
-    (pmod_iff (by omega) (by omega)).mpr pm, hg.2.2⟩
+    (pmod_iff (by omega_arith) (by omega_arith)).mpr pm, hg.2.2⟩
   rw [m₅] at pb₆
   have k₂₆ := ((((k₂.trans k₃).trans k₄).trans k₅).trans k₆)
   refine hrest t₆ hok ⟨ip₆, hs₆, hr₆, ?_, ptop₆, ?_, ?_, ?_, ?_⟩ K₆ (k₁₆.mono (by decide))
@@ -274,7 +274,7 @@ theorem checkKey_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : St
       Keep ckRegs s t → WP isa fail t Q) :
     WP isa (checkKey rest fail) s Q := by
   unfold checkKey
-  refine checkParams_ok hL hs hr h2 hd (hk.take (by omega)) (fun t hP hc hb kc => ?_)
+  refine checkParams_ok hL hs hr h2 hd (hk.take (by omega_arith)) (fun t hP hc hb kc => ?_)
     (fun t hn hb hrt hst kc => hfail t (fun hK => hn (keyOk_iff.mp hK).1) hb hrt hst kc)
   obtain ⟨ip, hst, hrt, p0, ptop, p8, q0, qtop, r2⟩ := hc
   have hpo : pOf s.mem L key % 2 = 1 := hP.1.2.2
@@ -283,8 +283,8 @@ theorem checkKey_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : St
   refine WP.seq (WP.seq (WP.mono (ptrY_ok hrt) fun t₇ ⟨⟨b12, b6, m₇⟩, k₇⟩ => ?_))
   have k₀₇ := kc.trans k₇
   have hk₇ := hk.keep k₀₇.rd k₀₇.wr
-  refine WP.mono (checkElem_ok hL (hrt.keep k₇) (ip.keep k₇ (by decide)) (hk₇.take (by omega))
-      (hk₇.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega)) b12 b6 (by rw [m₇]; exact p0)
+  refine WP.mono (checkElem_ok hL (hrt.keep k₇) (ip.keep k₇ (by decide)) (hk₇.take (by omega_arith))
+      (hk₇.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega_arith)) b12 b6 (by rw [m₇]; exact p0)
       (by rw [m₇]; exact ptop) hp2 hpo (by rw [m₇]; exact p8))
     fun t₈ ⟨⟨ip₈, p0₈, ptop₈, p8₈, r0₈, pb₈⟩, k₈⟩ => ?_
   have K₇ : Body L s.mem t₇.mem := by rw [m₇]; exact hb

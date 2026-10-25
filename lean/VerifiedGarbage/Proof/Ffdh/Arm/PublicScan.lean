@@ -21,13 +21,7 @@ theorem enter_ok (s : State) : WP isa (.block enter) s fun t =>
     (t.gpr .r4 = s.gpr .r1 ∧ t.gpr .r6 = s.gpr .r2 ∧
       t.gpr .r8 = s.gpr .r4 ∧ t.gpr .r9 = s.gpr .r6 ∧ t.mem = s.mem) ∧
     Rest [.r4,.r6,.r8,.r9] s t := by
-  refine withRest [.r4,.r6,.r8,.r9] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block enter : Prog isa)).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r4,.r6,.r8,.r9] ?_ (by rfl) (by rfl)
   unfold enter
   ffrun []
 
@@ -35,13 +29,7 @@ theorem leave_ok (s : State) : WP isa (.block leave) s fun t =>
     (t.gpr .r1 = s.gpr .r4 ∧ t.gpr .r2 = s.gpr .r6 ∧
       t.gpr .r4 = s.gpr .r8 ∧ t.gpr .r6 = s.gpr .r9 ∧ t.mem = s.mem) ∧
     Rest [.r1,.r2,.r4,.r6] s t := by
-  refine withRest [.r1,.r2,.r4,.r6] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block leave : Prog isa)).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r1,.r2,.r4,.r6] ?_ (by rfl) (by rfl)
   unfold leave
   ffrun []
 

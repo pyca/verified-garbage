@@ -135,7 +135,7 @@ theorem lay {s : State} (hs : gatherPre C s) : Lay C s := by
     have e := congrArg BitVec.toNat hB
     rw [BitVec.toNat_add, BitVec.toNat_ofNat] at e
     have := (Bs s).isLt
-    omega
+    omega_arith
   exact ⟨⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bk, bn, ba, bds, bl, barg, bd, bt,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩, hB, hBn, bk, bn, ba, bds, bl, bd, bt,
     by simp only [argR, stackArgAddr_eq s hB, Nat.mul_zero, Nat.add_zero], w₁, hR, hgl, ods⟩
@@ -161,14 +161,14 @@ theorem argIn : argR s ∈ s.rd := by rw [h.pre.1]; simp
 
 theorem inArg (d : Nat) (h₁ : 2592 ≤ d) (h₂ : d + 8 ≤ 2616) (rs : List Region) :
     InRegions (s.rd ++ rs) (Bs s + BitVec.ofNat 64 d) 8 :=
-  ⟨_, List.mem_append_left _ h.argIn, by rw [h.hargR]; exact contains_off _ h₁ (by omega) (by omega)⟩
+  ⟨_, List.mem_append_left _ h.argIn, by rw [h.hargR]; exact contains_off _ h₁ (by omega_arith) (by omega_arith)⟩
 
 theorem sa (i : Nat) : s.mem.read (Bs s + BitVec.ofNat 64 (2592 + 8 * i)) 8 = stackArg s i := by
   rw [← h.hA]; rfl
 
 theorem sep (d e : Nat) (h₁ : d + 8 ≤ e ∨ e + 8 ≤ d) (hd : d + 8 ≤ 2616) (he : e + 8 ≤ 2616) :
     Mem.Sep (Bs s + BitVec.ofNat 64 d) 8 (Bs s + BitVec.ofNat 64 e) 8 :=
-  Offset.sep _ h₁ (by have := h.hBn; omega) (by have := h.hBn; omega)
+  Offset.sep _ h₁ (by have := h.hBn; omega_arith) (by have := h.hBn; omega_arith)
 
 omit h in
 /-- The memory the entry left outside the frame. -/
@@ -179,8 +179,8 @@ theorem keepE {r : Region} (hr : r.Disjoint ⟨Bs s, 2592⟩) {x : Addr} (hx : r
     exact hr x hx (stk_sub s 2576 16 (by decide) x hc)
 
 theorem eArg (i : Nat) (hi : i < 3) : (eMem s).read (Bs s + BitVec.ofNat 64 (2592 + 8 * i)) 8 = stackArg s i := by
-  rw [Mem.read_write_sep (h.sep _ 2576 (by omega) (by omega) (by decide)) (by decide),
-    Mem.read_write_sep (h.sep _ 2584 (by omega) (by omega) (by decide)) (by decide)]
+  rw [Mem.read_write_sep (h.sep _ 2576 (by omega_arith) (by omega_arith) (by decide)) (by decide),
+    Mem.read_write_sep (h.sep _ 2584 (by omega_arith) (by omega_arith) (by decide)) (by decide)]
   exact h.sa i
 
 /-- The descriptors and the slices, after the entry. -/
@@ -201,12 +201,12 @@ theorem frame_gMem : Frame [dR s] (eMem s) (gMem s) := by
 
 theorem gArg (i : Nat) (hi : i < 3) : (gMem s).read (Bs s + BitVec.ofNat 64 (2592 + 8 * i)) 8 = stackArg s i := by
   rw [← h.eArg i hi]
-  refine Frame.read h.frame_gMem (contains_off _ (Nat.le_refl _) (Nat.le_refl _) (by omega)) (fun r hr => ?_)
+  refine Frame.read h.frame_gMem (contains_off _ (Nat.le_refl _) (Nat.le_refl _) (by omega_arith)) (fun r hr => ?_)
     (by decide)
   simp only [List.mem_singleton] at hr; subst hr
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, darg, -⟩ := h.pre
   rw [h.hargR] at darg
-  exact (darg.sub_right (Offset.sub _ (show 2592 ≤ 2592 + 8 * i by omega) (by omega))).symm
+  exact (darg.sub_right (Offset.sub _ (show 2592 ≤ 2592 + 8 * i by omega_arith) (by omega_arith))).symm
 
 /-- A doubleword of the frame, once the slices are gathered. -/
 theorem gFrame (d : Nat) (hd' : d + 8 ≤ 2592) :
@@ -343,7 +343,7 @@ theorem Ready.call {s c : State} (h : Lay C s) (hc : Ready s c) :
     simp [stackArgAddr, hc.sp]
   have hPn : (Bs s + BitVec.ofNat 64 2576).toNat = (Bs s).toNat + 2576 := by
     have := h.hBn
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
   refine ⟨?_, ?_, ?_⟩
   · simp only [callPre, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, State.withRegions_sp,
       State.callEntry_sp, c0, c1, c2, c3, c4, c5, c6, c7, sa0, sad0, hc.sp, BitVec.add_sub_cancel]
@@ -355,7 +355,7 @@ theorem Ready.call {s c : State} (h : Lay C s) (hc : Ready s c) :
       (h.bt.sub_left (stk_sub s 2576 8 (by decide))).symm, h.bk.sub_left (Region.sub_prefix (by decide)),
       h.bn.sub_left (Region.sub_prefix (by decide)), h.ba.sub_left (Region.sub_prefix (by decide)),
       h.bd.sub_left (Region.sub_prefix (by decide)), h.bt.sub_left (Region.sub_prefix (by decide)), stkArg,
-      ok, on, oa, od, ot, by omega, by have := h.hBn; omega, hR⟩
+      ok, on, oa, od, ot, by omega_arith, by have := h.hBn; omega_arith, hR⟩
   · have inRd {r : Region} (h' : r ∈ [kR C s, nR s, aR s]) : Covers [r] (c.rd ++ c.wr) := by
       refine covers_of_mem (List.mem_append_left _ ?_)
       rw [hc.rd, rd]; simp only [List.mem_cons, List.not_mem_nil, or_false] at h'
@@ -393,7 +393,7 @@ theorem inv_gMem {s : State} (h : Lay C s) (hi : C.inv s.mem (K s)) : C.inv (gMe
   obtain ⟨-, -, kd, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ok, -⟩ := h.pre
   refine C.congr (fun i hi' => frame_gMem' h _ fun r hr hcon => ?_) hi
   have hx : (kR C s).Contains (K s + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base _ (show i + 1 ≤ C.len by omega) (by omega)
+    Offset.contains_base _ (show i + 1 ≤ C.len by omega_arith) (by omega_arith)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact h.bk.sub_left (stk_sub s 2576 16 (by decide)) _ hcon hx
@@ -409,7 +409,7 @@ theorem called_wp (F : SealFn C) {s c : State} (h : Lay C s) (hi : C.inv s.mem (
     simp only [State.withRegions_mem, State.callEntry_mem, State.withRegions_gpr, c0, hc.mem]
     exact inv_gMem h hi
   refine WP.callFV (name := F.fn.name) F.verified.1 (F.pre _ hcp hinv) hcov hw
-    (fun s' rd' wr' sp' fr' pres' presV' post' => ?_) (by omega)
+    (fun s' rd' wr' sp' fr' pres' presV' post' => ?_) (by omega_arith)
   have hpost := F.post _ _ post' (by simp only [State.withRegions_gpr, c1]; exact h.hR)
   simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c0, c1, c2, c3, c4, c5, c6, c7,
     hc.stackArg0 h, hc.mem] at hpost
@@ -427,8 +427,8 @@ theorem called_wp (F : SealFn C) {s c : State} (h : Lay C s) (hi : C.inv s.mem (
     rcases hr with (rfl | rfl) | rfl
     · exact h.bd.symm.sub_right (stk_sub s 2584 8 (by decide)) |>.symm
     · exact h.bt.symm.sub_right (stk_sub s 2584 8 (by decide)) |>.symm
-    · simp only [below, hc.sp, add_ofNat_sub_ofNat _ (show 16 * F.fn.code.aarch64Depth ≤ 2576 by omega)]
-      exact Offset.disjoint _ (.inr (by omega)) (by decide) (by have := h.hBn; omega)
+    · simp only [below, hc.sp, add_ofNat_sub_ofNat _ (show 16 * F.fn.code.aarch64Depth ≤ 2576 by omega_arith)]
+      exact Offset.disjoint _ (.inr (by omega_arith)) (by decide) (by have := h.hBn; omega_arith)
   exact ⟨ra, hpost, fun r hr h30 => by
       obtain ⟨h₆, h₇, hg, h₁₁, h₁₆, h₁₇⟩ := hpres r hr h30
       rw [pres' r hr h30, hc.gpr r h₆ h₇ hg h₁₁ h₁₆ h₁₇],
@@ -469,9 +469,9 @@ theorem ret_wp {s s' : State} (h : Lay C s) (hc : Called s s') :
     have sub : Region.Sub ⟨K s, 256⟩ (kR C s) := Region.sub_prefix C.le
     obtain ⟨hc', hh⟩ := ctx_frame hfc (apart (h.bk.sub_right sub) (kd.sub_left sub)) hR
     have hn : bytesAt (gMem s) (Nn s) (NL s) = bytesAt s.mem (Nn s) (NL s) :=
-      bytesAt_frame hfc (apart h.bn nd) (by omega)
+      bytesAt_frame hfc (apart h.bn nd) (by omega_arith)
     have ha : bytesAt (gMem s) (Ad s) (AL s) = bytesAt s.mem (Ad s) (AL s) :=
-      bytesAt_frame hfc (apart h.ba ad) (by omega)
+      bytesAt_frame hfc (apart h.ba ad) (by omega_arith)
     have hd : bytesAt (gMem s) (Dst s) (L s) = pt s (Cnt s) := by
       rw [← h.hlen]
       exact bytesAt_writeBytes_self _ _ _ (by rw [h.hlen]; exact (stackArg s 1).isLt)
@@ -482,7 +482,7 @@ theorem ret_wp {s s' : State} (h : Lay C s) (hc : Called s s') :
 theorem sealGather_wp (F : SealFn C) {s : State} (hs : gatherPre C s) (hi : C.inv s.mem (K s)) :
     WP isa (sealGather F.fn) s fun z => abiPreserved s z ∧ gatherPost s z := by
   have h := lay hs
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.w₁; omega) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.w₁; omega_arith) ?_
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (gathered_wp h he) fun g hg => ?_)
   refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)

@@ -151,9 +151,9 @@ theorem toM_inj {m R x y : Nat} [NeZero m] (hR : UnitMod m R) (hx : x < m) (hy :
 theorem num_sl {C : Spec.Weierstrass.CheckPoint.Curve} (hk : C.k = c.n) (h7 : c.n < 10) {i : Nat}
     (hi : i < 45) (hT : i ≠ TMP) (m : Mem) (base : Addr) :
     C.num base m (C.slot i) = wordsVal m base (c.sl i) c.n := by
-  have hb : 8 * c.n * i ≤ 8 * 9 * 44 := Nat.mul_le_mul (Nat.mul_le_mul_left 8 (by omega)) (by omega)
+  have hb : 8 * c.n * i ≤ 8 * 9 * 44 := Nat.mul_le_mul (Nat.mul_le_mul_left 8 (by omega_arith)) (by omega_arith)
   unfold Spec.Weierstrass.CheckPoint.Curve.num Spec.Weierstrass.Mont.numAt Spec.Weierstrass.CheckPoint.Curve.slot
-  rw [hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), sl_eq c i hT]
+  rw [hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), sl_eq c i hT]
   exact read_eq_wordsVal m base c.n _
 
 /-- The flag's word is the one at the code's slot. -/
@@ -178,7 +178,7 @@ theorem keeps_of_unch {C : Spec.Weierstrass.CheckPoint.Curve} (hk : C.k = c.n) (
   have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   show (ws + BitVec.ofNat 64 i - ws).toNat < _ ∨ _ ≤ (ws + BitVec.ofNat 64 i - ws).toNat
-  rw [Mem.sub_ofNat_toNat ws (by omega)]
+  rw [Mem.sub_ofNat_toNat ws (by omega_arith)]
   simp only [Spec.Weierstrass.CheckPoint.Curve.Own, Spec.Weierstrass.CheckPoint.Curve.Out,
     Spec.Weierstrass.CheckPoint.Curve.slot, Spec.Weierstrass.CheckPoint.Curve.flagAt,
     Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes, hk, List.mem_cons, List.not_mem_nil,
@@ -193,7 +193,7 @@ theorem keeps_of_unch {C : Spec.Weierstrass.CheckPoint.Curve} (hk : C.k = c.n) (
     (try simp only [QXM, QYM, W0, W1, W2, W3, PY, XM, X, KM, TT, SM, RM, SS, FLAG,
       sl_eq c 34 (by decide), sl_eq c 35 (by decide), sl_eq c 37 (by decide), sl_eq c 41 (by decide),
       sl_eq c 42 (by decide), sl_eq c 38 (by decide), sl_eq c 43 (by decide), sl_eq c 44 (by decide)] at hT ⊢) <;>
-    first | (simp only [hown, hp]; done) | omega
+    first | (simp only [hown, hp]; done) | omega_arith
 
 /-- The contract's postcondition, from `checkBodyR_ok`'s facts. -/
 theorem post_of_raw (hc : BaseCfgOk c) {C : Spec.Weierstrass.CheckPoint.Curve} (hW : C.W = c.C)
@@ -253,9 +253,9 @@ theorem post_of_raw (hc : BaseCfgOk c) {C : Spec.Weierstrass.CheckPoint.Curve} (
   have hz : ∀ {Q : Prop} [Decidable Q], (mask Q = 0) ↔ ¬Q := fun {Q} _ => by
     by_cases h : Q <;> simp only [mask, h, ite_true, ite_false, not_true, not_false_eq_true]; decide
   have xm : sv c base t' QXM = sv c base t E * 2 ^ (64 * c.n) % c.C.p :=
-    toM_inj hpR x_lt (Nat.mod_lt _ (by have := hc.p_ge; omega)) (by rw [x, toM_mont hpR])
+    toM_inj hpR x_lt (Nat.mod_lt _ (by have := hc.p_ge; omega_arith)) (by rw [x, toM_mont hpR])
   have ym : sv c base t' QYM = sv c base t QY * 2 ^ (64 * c.n) % c.C.p :=
-    toM_inj hpR y_lt (Nat.mod_lt _ (by have := hc.p_ge; omega)) (by rw [y, toM_mont hpR])
+    toM_inj hpR y_lt (Nat.mod_lt _ (by have := hc.p_ge; omega_arith)) (by rw [y, toM_mont hpR])
   unfold Spec.Weierstrass.CheckPoint.Curve.post
   dsimp only
   rw [nE, nY, nXM, nYM, nPX, nPY, nGX, nGY, hR, hp, flag_sl hk, flag_sl hk, hfeq, f']

@@ -80,9 +80,9 @@ theorem packW_val (x : Nat → Nat) (hx : ∀ i < 5, x i ≤ 2 ^ 51 + 18) :
   have h3 := hx 3 (by decide); have h4 := hx 4 (by decide)
   simp only [packW, pre, Nat.and_two_pow_sub_one_eq_mod, Nat.mod_mod_of_dvd _ (by decide : 2 ^ 13 ∣ 2 ^ 51),
     Nat.mod_mod_of_dvd _ (by decide : 2 ^ 26 ∣ 2 ^ 51), Nat.mod_mod_of_dvd _ (by decide : 2 ^ 39 ∣ 2 ^ 51)]
-  rw [or_mul (by omega), or_mul (by omega), or_mul (by omega), or_mul (by omega)]
+  rw [or_mul (by omega_arith), or_mul (by omega_arith), or_mul (by omega_arith), or_mul (by omega_arith)]
   simp only [lv]
-  omega
+  omega_arith
 
 /-- A carry of limbs below `2⁵²` leaves limbs of at most `2⁵¹ + 18`. -/
 theorem carryNat_le (x : Nat → Nat) (hx : ∀ i < 5, x i < 2 ^ 52) :
@@ -90,17 +90,17 @@ theorem carryNat_le (x : Nat → Nat) (hx : ∀ i < 5, x i < 2 ^ 52) :
   have h0 := hx 0 (by decide); have h1 := hx 1 (by decide); have h2 := hx 2 (by decide)
   have h3 := hx 3 (by decide); have h4 := hx 4 (by decide)
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
   · simp only [carryNat, Nat.and_two_pow_sub_one_eq_mod]
-    rcases (by omega : x 4 / 2 ^ 51 = 0 ∨ x 4 / 2 ^ 51 = 1) with e | e <;> rw [e] <;> omega
-  all_goals simp only [carryNat, Nat.and_two_pow_sub_one_eq_mod]; omega
+    rcases (by omega_arith : x 4 / 2 ^ 51 = 0 ∨ x 4 / 2 ^ 51 = 1) with e | e <;> rw [e] <;> omega_arith
+  all_goals simp only [carryNat, Nat.and_two_pow_sub_one_eq_mod]; omega_arith
 
 theorem packB_env {s : State} {base : Addr} {x1 : Nat → Nat} (hs : s.gpr .rdi = base)
     (hk : Consts s.mem base x1) (hx : ∀ l < 4, ∀ i < 5, lanes s 0 l i ≤ 2 ^ 51 + 18) : EnvOK s packB := by
   refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun d l hl => ?_) (fun _ _ _ => Nat.zero_le _)
   · simp only [packB]
     split
-    · have := hx l hl r (by omega); simp only [lanes, Nat.zero_add] at this; exact this
+    · have := hx l hl r (by omega_arith); simp only [lanes, Nat.zero_add] at this; exact this
     · exact lt64 _
   · simp only [packB]
     split
@@ -122,12 +122,12 @@ theorem vfinish_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base
   have hr := hs.rdi
   simp only [vfinish, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (carryI_wp hr (scr_ctx hs) hk.c fun l hl i hi => by have := hy l hl i hi; omega)
+  refine WP.mono (carryI_wp hr (scr_ctx hs) hk.c fun l hl i hi => by have := hy l hl i hi; omega_arith)
     fun s₁ ⟨v₁, m₁, u₁, _⟩ => ?_
   have hs₁ := scr_of hs (vm_gpr v₁) (vm_wr v₁)
   have hk₁ : Consts s₁.mem base x1 := by rw [m₁]; exact hk
   rw [WP.block_append_iff]
-  refine WP.mono (carryI_wp hs₁.rdi (scr_ctx hs₁) hk₁.c fun l hl i hi => by have := (u₁ l hl i hi).2; omega)
+  refine WP.mono (carryI_wp hs₁.rdi (scr_ctx hs₁) hk₁.c fun l hl i hi => by have := (u₁ l hl i hi).2; omega_arith)
     fun s₂ ⟨v₂, m₂, u₂, _⟩ => ?_
   have hs₂ := scr_of hs₁ (vm_gpr v₂) (vm_wr v₂)
   have hk₂ : Consts s₂.mem base x1 := by rw [m₂]; exact hk₁
@@ -159,7 +159,7 @@ theorem vfinish_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base
     show toFe _ = _
     rw [fe]
     rw [show toFe (lv (lanes s₂ 0 m)) = fe5 (lanes s₂ 0 m) from rfl,
-      fe5_congr (fun i hi => (u₂ m hm i hi).1), fe5_carry _ (by have := (u₁ m hm 4 (by decide)).2; omega),
-      fe5_congr (fun i hi => (u₁ m hm i hi).1), fe5_carry _ (by have := hy m hm 4 (by decide); omega)]
+      fe5_congr (fun i hi => (u₂ m hm i hi).1), fe5_carry _ (by have := (u₁ m hm 4 (by decide)).2; omega_arith),
+      fe5_congr (fun i hi => (u₁ m hm i hi).1), fe5_carry _ (by have := hy m hm 4 (by decide); omega_arith)]
 
 end VG.Proof.X25519.X86_64.Ifma

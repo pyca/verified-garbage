@@ -200,11 +200,11 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
       (fun (w : Nat) (t : State) => ∃ i, w = c.n - i ∧ i < c.n ∧ t.gpr .r3 = c.D + BitVec.ofNat 64 i ∧
         t.gpr .r4 = BitVec.ofNat 64 (c.n - i) ∧ t.gpr .r9 = s₄.gpr .r9 ∧ t.gpr .r25 = s.gpr .r25 ∧
         t.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D i).map f) ∧ PK s t) ?_ (c.n - 0) _
-      ⟨0, rfl, by omega, by rw [r3₄]; exact (BitVec.add_zero _).symm, by rw [r4₄, Nat.sub_zero], rfl, r25₄,
+      ⟨0, rfl, by omega_arith, by rw [r3₄]; exact (BitVec.add_zero _).symm, by rw [r4₄, Nat.sub_zero], rfl, r25₄,
         by rw [m₄]; simp [bytesAt, writeBytes_nil], pk₄⟩
     rintro w t ⟨i, rfl, hi, r3, r4, r9, r25, mem, pk⟩
     have Et := E.of_pk pk
-    have hin : i + 1 ≤ c.n := by omega
+    have hin : i + 1 ≤ c.n := by omega_arith
     have hD : Covers [⟨c.D, c.n⟩] t.wr := Et.perm.d
     unfold maskBody
     refine wp_lbz (a := c.D + BitVec.ofNat 64 i) (by decide) (by decide)
@@ -221,30 +221,30 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
     have hlen : ((bytesAt s.mem c.D i).map f).length = i := by rw [List.length_map, length_bytesAt]
     have hb : t.mem (c.D + BitVec.ofNat 64 i) = s.mem (c.D + BitVec.ofNat 64 i) := by
       rw [mem]
-      have := writeBytes_end s.mem c.D ((bytesAt s.mem c.D i).map f) (by rw [hlen]; omega)
+      have := writeBytes_end s.mem c.D ((bytesAt s.mem c.D i).map f) (by rw [hlen]; omega_arith)
       rwa [hlen] at this
     have hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (i + 1)).map f) := by
       rw [u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₁.gpr, u₁.other .r9 (by decide), r9, r9₄, u₂.mem,
         u₁.mem, mask_byte, hb, mem, Proof.Cmac.Stream.bytesAt_append, VG.Proof.Gather.PPC64LE.bytesAt_one,
         List.map_append, List.map_singleton]
-      rw [writeBytes_snoc _ _ _ _ (by rw [hlen]; omega), hlen]
+      rw [writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_arith), hlen]
     have hstep : c.D + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = c.D + BitVec.ofNat 64 (i + 1) := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     have r3' : t₅.gpr .r3 = c.D + BitVec.ofNat 64 (i + 1) := by
       rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r3, hstep]
     have r4' : t₅.gpr .r4 = BitVec.ofNat 64 (c.n - (i + 1)) := by
       rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r4,
-        VG.Proof.Gather.PPC64LE.ofNat_sub_one (by omega), Nat.sub_sub]
+        VG.Proof.Gather.PPC64LE.ofNat_sub_one (by omega_arith), Nat.sub_sub]
     have r9' : t₅.gpr .r9 = s₄.gpr .r9 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r9]
     have r25' : t₅.gpr .r25 = s.gpr .r25 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide),
         r25]
-    have ev := eval_nonzero (r := .r4) (a := c.n - (i + 1)) r4' (by omega)
+    have ev := eval_nonzero (r := .r4) (a := c.n - (i + 1)) r4' (by omega_arith)
     by_cases he : i + 1 = c.n
     · left
       exact ⟨by rw [ev]; simp [he], pk₅, r25', by rw [hmem, he]⟩
     · right
-      exact ⟨by rw [ev]; simp; omega, c.n - (i + 1), by omega, i + 1, rfl, by omega, r3', r4', r9', r25', hmem, pk₅⟩
+      exact ⟨by rw [ev]; simp; omega_arith, c.n - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, r3', r4', r9', r25', hmem, pk₅⟩
 
 end VG.Proof.AesGcmSiv.PPC64LE

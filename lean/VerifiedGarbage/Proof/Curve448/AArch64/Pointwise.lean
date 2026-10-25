@@ -23,7 +23,7 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
   have fb : Within (radix * 6) f := by
     intro i hi; have h1 := ab i hi; have h2 := bb i hi
     change limbs s.mem base a i + limbs s.mem base b i < _
-    simp only [weakBound, radix] at h1 h2 ⊢; omega
+    simp only [weakBound, radix] at h1 h2 ⊢; omega_arith
   refine WP.mono (stage_point hs ho ho8 fb ?_) fun t ⟨op, tb, tv⟩ => ⟨op, tb, VG.Proof.X448.toFe_add ?_⟩
   · intro i hi t ts tm
     have ea := input_limb tm ha hi
@@ -43,7 +43,7 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
     intro i hi; have h := ab i hi
     change difference (limbs s.mem base a) (limbs s.mem base b) i < _
     simp only [difference, bias, weakBound, radix] at h ⊢
-    split <;> omega
+    split <;> omega_arith
   refine WP.mono (stage_point hs ho ho8 fb ?_) fun t ⟨op, tb, tv⟩ => ⟨op, tb, VG.Proof.X448.toFe_sub ?_⟩
   · intro i hi t ts tm
     have ea := input_limb tm ha hi

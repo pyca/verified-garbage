@@ -40,7 +40,7 @@ theorem writeW_byte {m : Mem} {a x : Addr} (v : BitVec 64) :
 /-- Byte `t < 8` of a word read from `b` and written at `a`. -/
 theorem writeW_readW_byte (m m' : Mem) (a b : Addr) {t : Nat} (ht : t < 8) :
     m.writeW a (m'.readW b 64) (a + BitVec.ofNat 64 t) = m' (b + BitVec.ofNat 64 t) := by
-  rw [writeW_byte, Mem.sub_ofNat_toNat a (by omega), ite_eq_left ht]
+  rw [writeW_byte, Mem.sub_ofNat_toNat a (by omega_arith), ite_eq_left ht]
   simp only [Mem.readW]
   exact Mem.extractLsb'_read m' b ht
 
@@ -53,7 +53,7 @@ theorem storeSc_ok {s : State} {base : Addr} (hs : Scratch s base) (d : Nat) (hd
     (r : Reg) :
     WP isa (.block [.store (sc d) r]) s fun t =>
       t.mem = s.mem.writeW (off base d) (s.gpr r) ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have hw : InRegions s.wr (off base d) 8 := ⟨_, hs.wr, Offset.contains_base _ hd (by omega)⟩
+  have hw : InRegions s.wr (off base d) 8 := ⟨_, hs.wr, Offset.contains_base _ hd (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64,
     VG.Proof.X25519.X86_64.ea_sc, hs.rdi, hw, ite_true, Option.some.injEq, exists_eq_left']
@@ -64,7 +64,7 @@ theorem zeroWord {m : Mem} {base : Addr} {d : Nat}
     (hd : d + 8 ≤ 8192) (x : Addr) :
     m.writeW (off base d) (0 : BitVec 64) x =
       if d ≤ ofs base x ∧ ofs base x < d + 8 then 0 else m x := by
-  have e := Offset.lt_iff x base (d := d) (n := 8) (by omega)
+  have e := Offset.lt_iff x base (d := d) (n := 8) (by omega_arith)
   rw [writeW_byte]
   by_cases h : (x - off base d).toNat < 8
   · rw [ite_eq_left h, ite_eq_left (e.mp h)]; simp
@@ -76,19 +76,19 @@ theorem zeroPrefix_ok {s : State} {base : Addr} (hs : Scratch s base) (hz : s.gp
       Holds base 2048 (8 * n) (fun _ => 0) s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧
         t.wr = s.wr := by
   induction n with
-  | zero => exact WP.block_nil ⟨⟨fun j hj => by omega, fun _ _ => rfl⟩, rfl, rfl, rfl⟩
+  | zero => exact WP.block_nil ⟨⟨fun j hj => by omega_arith, fun _ _ => rfl⟩, rfl, rfl, rfl⟩
   | succ n ih =>
     rw [List.range_succ, List.map_append, List.map_cons, List.map_nil, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun a ⟨⟨ah, ao⟩, ag, ar, aw⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun a ⟨⟨ah, ao⟩, ag, ar, aw⟩ => ?_
     have ha : Scratch a base := ⟨by rw [ag]; exact hs.rdi, aw ▸ hs.wr, hs.nowrap⟩
-    refine WP.mono (storeSc_ok ha (2048 + 8 * n) (by omega) .rax) fun t ⟨tm, tg, tr, tw⟩ => ?_
+    refine WP.mono (storeSc_ok ha (2048 + 8 * n) (by omega_arith) .rax) fun t ⟨tm, tg, tr, tw⟩ => ?_
     have hb := hs.nowrap
     refine ⟨⟨fun j hj => ?_, fun x hx => ?_⟩, tg.trans ag, tr.trans ar, tw.trans aw⟩
-    · rw [tm, ag, hz, zeroWord (by omega), VG.Proof.X25519.X86_64.ofs_off' base (by omega)]
+    · rw [tm, ag, hz, zeroWord (by omega_arith), VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)]
       split
       · rfl
-      · exact ah j (by omega)
-    · rw [tm, ag, hz, zeroWord (by omega), ite_eq_right (by omega), ao x (by omega)]
+      · exact ah j (by omega_arith)
+    · rw [tm, ag, hz, zeroWord (by omega_arith), ite_eq_right (by omega_arith), ao x (by omega_arith)]
 
 /-- The digits' array zeroed. -/
 theorem zeroDigits_ok {s : State} {base : Addr} (hs : Scratch s base) :
@@ -116,7 +116,7 @@ theorem copyPair_ok {s : State} {base P : Addr} (hs : Scratch s base) (hP : s.gp
     WP isa (.block [.mov .rax (.mem (at_ .rsi o)), .store (sc d) .rax]) s fun t =>
       t.mem = s.mem.writeW (off base d) (s.mem.readW (off P o) 64) ∧
         (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have hw : InRegions s.wr (off base d) 8 := ⟨_, hs.wr, Offset.contains_base _ hd (by omega)⟩
+  have hw : InRegions s.wr (off base d) 8 := ⟨_, hs.wr, Offset.contains_base _ hd (by omega_arith)⟩
   have hea : s.ea (at_ .rsi o) = off P o := by
     simp only [State.ea, at_, hP, BitVec.ofInt_natCast]
   apply WP.of_runBlock
@@ -136,40 +136,40 @@ theorem copyPrefix_ok {s : State} {base P : Addr} (hs : Scratch s base) (hP : s.
       Holds base d (8 * n) (fun j => s.mem (off P (o + j))) s.mem t.mem ∧
         (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   induction n with
-  | zero => exact WP.block_nil ⟨⟨fun j hj => by omega, fun _ _ => rfl⟩, fun _ _ => rfl, rfl, rfl⟩
+  | zero => exact WP.block_nil ⟨⟨fun j hj => by omega_arith, fun _ _ => rfl⟩, fun _ _ => rfl, rfl, rfl⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (ih (by omega) (fun j hj => hr j (by omega)) (fun j hj => hf j (by omega)))
+    refine WP.mono (ih (by omega_arith) (fun j hj => hr j (by omega_arith)) (fun j hj => hf j (by omega_arith)))
       fun a ⟨⟨ah, ao⟩, ag, ar, aw⟩ => ?_
     have ha : Scratch a base := ⟨by rw [ag _ (by decide)]; exact hs.rdi, aw ▸ hs.wr, hs.nowrap⟩
     have hsrc : ∀ t < 8, a.mem (off P (o + 8 * n) + BitVec.ofNat 64 t) = s.mem (off P (o + (8 * n + t))) := by
       intro t ht
-      have h1 := hf (8 * n + t) (by omega)
-      rw [Offset.add_add, show o + 8 * n + t = o + (8 * n + t) by omega]
-      exact ao _ (Or.inr (by simp only [off] at h1 ⊢; omega))
-    refine WP.mono (copyPair_ok ha (P := P) (by rw [ag _ (by decide)]; exact hP) (o + 8 * n) (d + 8 * n) (by omega)
-      (by rw [ar, aw]; exact hr n (by omega))) fun t ⟨tm, tg, tr, tw⟩ => ?_
+      have h1 := hf (8 * n + t) (by omega_arith)
+      rw [Offset.add_add, show o + 8 * n + t = o + (8 * n + t) by omega_arith]
+      exact ao _ (Or.inr (by simp only [off] at h1 ⊢; omega_arith))
+    refine WP.mono (copyPair_ok ha (P := P) (by rw [ag _ (by decide)]; exact hP) (o + 8 * n) (d + 8 * n) (by omega_arith)
+      (by rw [ar, aw]; exact hr n (by omega_arith))) fun t ⟨tm, tg, tr, tw⟩ => ?_
     have hb := hs.nowrap
     refine ⟨⟨fun j hj => ?_, fun x hx => ?_⟩, fun r hr' => (tg r hr').trans (ag r hr'), tr.trans ar, tw.trans aw⟩
     · rw [tm]
       by_cases hjn : j < 8 * n
       · rw [writeW_byte, ite_eq_right ?_, ah j hjn]
-        rw [Offset.lt_iff _ base (by omega), Mem.sub_ofNat_toNat base (by omega)]
-        omega
+        rw [Offset.lt_iff _ base (by omega_arith), Mem.sub_ofNat_toNat base (by omega_arith)]
+        omega_arith
       · have e : off base (d + j) = off base (d + 8 * n) + BitVec.ofNat 64 (j - 8 * n) := by
-          rw [Offset.add_add, show d + 8 * n + (j - 8 * n) = d + j by omega]
-        rw [e, writeW_readW_byte _ _ _ _ (by omega), hsrc _ (by omega)]
-        congr 2; omega
-    · rw [tm, writeW_byte, ite_eq_right ?_, ao x (by omega)]
-      rw [Offset.lt_iff x base (by omega)]
+          rw [Offset.add_add, show d + 8 * n + (j - 8 * n) = d + j by omega_arith]
+        rw [e, writeW_readW_byte _ _ _ _ (by omega_arith), hsrc _ (by omega_arith)]
+        congr 2; omega_arith
+    · rw [tm, writeW_byte, ite_eq_right ?_, ao x (by omega_arith)]
+      rw [Offset.lt_iff x base (by omega_arith)]
       simp only [ofs] at hx
-      omega
+      omega_arith
 
 theorem leNum_leBytes_mod (n x : Nat) :
     Proof.X25519.leNum (Proof.X25519.leBytes n x) = x % 256 ^ n := by
   induction n generalizing x with
-  | zero => simp [Proof.X25519.leBytes, Proof.X25519.leNum]; omega
+  | zero => simp [Proof.X25519.leBytes, Proof.X25519.leNum]; omega_arith
   | succ n ih =>
     rw [Proof.X25519.leBytes_succ, Proof.X25519.leNum, ih, BitVec.toNat_ofNat,
       show 256 ^ (n + 1) = 256 * 256 ^ n by rw [Nat.pow_succ, Nat.mul_comm], Nat.mod_mul]
@@ -185,7 +185,7 @@ theorem copied_of_bytes {m : Mem} {base : Addr} {src N X : Nat}
     apply List.map_congr_left
     intro i hi
     have hi8 := List.mem_range.mp hi
-    rw [Offset.add_add, show src + b + i = src + (b + i) by omega, h (b + i) (by omega),
+    rw [Offset.add_add, show src + b + i = src + (b + i) by omega_arith, h (b + i) (by omega_arith),
       Nat.div_div_eq_div_mul, ← Nat.pow_add]
   rw [e, leNum_leBytes_mod, show 256 ^ b = 2 ^ (8 * b) by rw [Nat.pow_mul],
     show (256 : Nat) ^ 8 = 2 ^ 64 from rfl]
@@ -209,7 +209,7 @@ theorem loadSc_ok {s : State} {base : Addr} (hs : Scratch s base) (r : Reg) (d :
     WP isa (.block [.mov r (.mem (sc d))]) s fun t =>
       t.gpr r = s.mem.readW (off base d) 64 ∧ Keeps [r] s t := by
   have hr : InRegions (s.rd ++ s.wr) (off base d) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64,
     VG.Proof.X25519.X86_64.ea_sc, hs.rdi, hr, ite_true, Option.map_some, Option.some.injEq,
@@ -252,9 +252,9 @@ theorem copyScalars_ok {s : State} {base kp sp : Addr} (hs : Scratch s base)
   have csp : c.gpr .rsi = sp := by
     rw [cp, ← hsp, ← ka.2.1]
     exact Mem.readW_congr fun i hi => bo _ (Or.inr (by
-      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega))
+      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith))
   have hfar : ∀ j < 32, b.mem (off sp (32 + j)) = s.mem (off sp (32 + j)) := fun j hj =>
-    (bo _ (Or.inr (by have := hsf j hj; omega))).trans (by rw [ka.2.1])
+    (bo _ (Or.inr (by have := hsf j hj; omega_arith))).trans (by rw [ka.2.1])
   rw [WP.block_append_iff]
   refine WP.mono (copyPrefix_ok hc (P := sp) csp 32 3176 4 (by decide)
     (fun j hj => by rw [kc.2.2.1, kc.2.2.2, br, bw, ka.2.2.1, ka.2.2.2]; exact hsr j hj)
@@ -285,23 +285,23 @@ theorem copyScalars_ok {s : State} {base kp sp : Addr} (hs : Scratch s base)
       if 3168 ≤ ofs base x ∧ ofs base x < 3176 then 0 else d.mem x := by
     intro x; rw [tm, z2, fm, z1, ke.2.1]
   refine ⟨fun j hj => ?_, fun j hj => ?_, fun x hx => ?_, fun r hr hs' => ?_, ?_, ?_⟩
-  · rw [hmem, VG.Proof.X25519.X86_64.ofs_off' base (by omega)]
+  · rw [hmem, VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)]
     by_cases h64 : j < 64
-    · rw [ite_eq_right (by omega), ite_eq_right (by omega),
-        d_o _ (Or.inl (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega)]; omega)), kc.2.1,
-        bh j (by omega)]
+    · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith),
+        d_o _ (Or.inl (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)]; omega_arith)), kc.2.1,
+        bh j (by omega_arith)]
       simp only [Nat.zero_add, ka.2.1]
       exact input_ofNat s.mem kp h64
-    · rw [ite_eq_right (by omega), ite_eq_left (by omega), past_ofNat s.mem kp (n := 64) (j := j) (by omega)]
-  · rw [hmem, VG.Proof.X25519.X86_64.ofs_off' base (by omega)]
+    · rw [ite_eq_right (by omega_arith), ite_eq_left (by omega_arith), past_ofNat s.mem kp (n := 64) (j := j) (by omega_arith)]
+  · rw [hmem, VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)]
     by_cases h32 : j < 32
-    · rw [ite_eq_right (by omega), ite_eq_right (by omega), dh j (by omega)]
+    · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), dh j (by omega_arith)]
       simp only [kc.2.1]
       rw [hfar j h32, show off sp (32 + j) = off (off sp 32) j from (Offset.add_add _ _ _).symm]
       exact input_ofNat s.mem (off sp 32) h32
-    · rw [ite_eq_left (by omega), past_ofNat s.mem (off sp 32) (n := 32) (j := j) (by omega)]
-  · rw [hmem, ite_eq_right (by omega), ite_eq_right (by omega), d_o x (by omega), kc.2.1,
-      bo x (by omega), ka.2.1]
+    · rw [ite_eq_left (by omega_arith), past_ofNat s.mem (off sp 32) (n := 32) (j := j) (by omega_arith)]
+  · rw [hmem, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), d_o x (by omega_arith), kc.2.1,
+      bo x (by omega_arith), ka.2.1]
   · rw [tg, fg, ke.1 r (by simpa using hr), dg r hr, kc.1 r (by simpa using hs'), bg r hr,
       ka.1 r (by simpa using hs')]
   · rw [tr, fr, ke.2.2.1, dr, kc.2.2.1, br, ka.2.2.1]
@@ -313,7 +313,7 @@ theorem boundS_spec (s₀ : State) (base : Addr) (dst : Nat) : BoundSpec s₀ ba
   intro t _ i hi hi1
   have hcf : (BitVec.ofNat 64 i).toNat < ((256 : BitVec 32).signExtend 64).toNat ↔ i < 8 * 32 := by
     rw [show (256 : BitVec 32).signExtend 64 = BitVec.ofNat 64 256 from rfl, BitVec.toNat_ofNat,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   apply WP.of_runBlock
   simp only [boundS, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
     RegUpd.cf_arithFlags, hi, Option.bind_some, Option.some.injEq, exists_eq_left']
@@ -328,15 +328,15 @@ theorem boundK_spec {s₀ : State} {base : Addr} (hs : Scratch s₀ base) {c : N
   have tc : t.mem.readW (off base 56) 64 = BitVec.ofNat 64 c := by
     rw [← hc]
     exact Mem.readW_congr fun j hj => kt.mem _ (Or.inl (by
-      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega))
+      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith))
   have hr : InRegions (t.rd ++ t.wr) (off base 56) 8 :=
-    ⟨_, List.mem_append_right _ ht.wr, Offset.contains_base _ (by decide) (by omega)⟩
+    ⟨_, List.mem_append_right _ ht.wr, Offset.contains_base _ (by decide) (by omega_arith)⟩
   have hshl : BitVec.ofNat 64 c <<< 3 = BitVec.ofNat 64 (8 * c) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_arith
   have hcf : (BitVec.ofNat 64 i).toNat < (BitVec.ofNat 64 (8 * c)).toNat ↔ i < 8 * c := by
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
   apply WP.of_runBlock
   simp only [boundK, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, execShift,
     State.load64, VG.Proof.X25519.X86_64.ea_sc, RegUpd.gpr_setReg, RegUpd.gpr_setFlags,
@@ -357,12 +357,12 @@ theorem setTop_ok {s : State} {base : Addr} (hs : Scratch s base) {c : Nat}
       (∀ x, (ofs base x < 56 ∨ 64 ≤ ofs base x) → t.mem x = s.mem x) ∧
       (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have hr : InRegions (s.rd ++ s.wr) (off base 56) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by decide) (by omega)⟩
-  have hw : InRegions s.wr (off base 56) 8 := ⟨_, hs.wr, Offset.contains_base _ (by decide) (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by decide) (by omega_arith)⟩
+  have hw : InRegions s.wr (off base 56) 8 := ⟨_, hs.wr, Offset.contains_base _ (by decide) (by omega_arith)⟩
   have hshl : BitVec.ofNat 64 c <<< 3 = BitVec.ofNat 64 (8 * c) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_arith
   have hadd : BitVec.ofNat 64 (8 * c) + (9 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (8 * c + 9) := by
     rw [show (9 : BitVec 32).signExtend 64 = BitVec.ofNat 64 9 from rfl, BitVec.ofNat_add]
   apply WP.of_runBlock
@@ -374,7 +374,7 @@ theorem setTop_ok {s : State} {base : Addr} (hs : Scratch s base) {c : Nat}
     reduceCtorEq, ite_true, ite_false, Option.map_some, Option.bind_some, Option.some.injEq,
     exists_eq_left']
   refine ⟨Mem.readW_writeW_self64 _ _ _, fun x hx => ?_, fun r hr => ?_, trivial⟩
-  · exact VG.Proof.X25519.X86_64.writeW_outside s.mem base _ (by decide) x (by omega)
+  · exact VG.Proof.X25519.X86_64.writeW_outside s.mem base _ (by decide) x (by omega_arith)
   · simp only [hr, ite_false]
 
 /-! ## Both scalars -/
@@ -413,12 +413,12 @@ theorem recodeCopy_ok {s : State} {base kp sp : Addr} (hs : Scratch s base) {c :
   have ha : Scratch a base := ⟨by rw [ag _ (by decide)]; exact hs.rdi, aw ▸ hs.wr, hb⟩
   have aread (d : Nat) (hd : d + 8 ≤ 2048) : a.mem.readW (off base d) 64 = s.mem.readW (off base d) 64 :=
     Mem.readW_congr fun i hi => ao _ (Or.inl (by
-      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega))
+      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith))
   have aread' (d : Nat) (hd : 3104 ≤ d) (hd' : d + 8 ≤ 8192) :
       a.mem.readW (off base d) 64 = s.mem.readW (off base d) 64 :=
     Mem.readW_congr fun i hi => ao _ (Or.inr (by
-      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega))
-  have afar (x : Addr) (hx : 8192 ≤ ofs base x) : a.mem x = s.mem x := ao x (Or.inr (by omega))
+      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith))
+  have afar (x : Addr) (hx : 8192 ≤ ofs base x) : a.mem x = s.mem x := ao x (Or.inr (by omega_arith))
   refine WP.mono (copyScalars_ok ha (by rw [aread' 7952 (by decide) (by decide)]; exact hkp)
     (by rw [aread' 7944 (by decide) (by decide)]; exact hsp)
     (fun j hj => by rw [ar, aw]; exact hkr j hj) (fun j hj => by rw [ar, aw]; exact hsr j hj)
@@ -438,15 +438,15 @@ theorem recodeCopy_ok {s : State} {base kp sp : Addr} (hs : Scratch s base) {c :
   have bc : b.mem.readW (off base 56) 64 = BitVec.ofNat 64 c := by
     rw [← hc, ← aread 56 (by decide)]
     exact Mem.readW_congr fun i hi => bo _ (Or.inl (by
-      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega))
+      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith))
   have bz : ∀ dst < 2, ∀ j < 528, dig b.mem base dst j = 0 := by
     intro dst hd j hj
     simp only [dig]
-    rw [bo _ (Or.inl (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega)]; omega)),
-      show 2048 + 2 * j + dst = 2048 + (2 * j + dst) by omega, ah _ (by omega)]
+    rw [bo _ (Or.inl (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)]; omega_arith)),
+      show 2048 + 2 * j + dst = 2048 + (2 * j + dst) by omega_arith, ah _ (by omega_arith)]
     rfl
-  refine ⟨⟨hsb, bc, copied_of_bytes bK (by omega), copied_of_bytes bS (by decide), bz⟩,
-    fun x hx => by rw [bo x (by omega), ao x (by omega)], fun r hr hs' => by rw [bg r hr hs', ag r hr],
+  refine ⟨⟨hsb, bc, copied_of_bytes bK (by omega_arith), copied_of_bytes bS (by decide), bz⟩,
+    fun x hx => by rw [bo x (by omega_arith), ao x (by omega_arith)], fun r hr hs' => by rw [bg r hr hs', ag r hr],
     by rw [br, ar], by rw [bw, aw]⟩
 
 theorem recodeAll_ok {s : State} {base kp sp : Addr} (hs : Scratch s base) {c : Nat}
@@ -468,35 +468,35 @@ theorem recodeAll_ok {s : State} {base kp sp : Addr} (hs : Scratch s base) {c : 
   generalize Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem kp 64) = K at cK ⊢
   generalize Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sp 32) 32) = S at cS ⊢
   -- `k`'s digits.
-  refine WP.seq (WP.mono (recode_ok hsb (by decide) (by decide) (by decide) (by omega) cK (by omega)
+  refine WP.seq (WP.mono (recode_ok hsb (by decide) (by decide) (by decide) (by omega_arith) cK (by omega_arith)
     (boundK_spec hsb hc64 bc 0) (bz 0 (by decide))) fun d ⟨dK, kd⟩ => ?_)
   have hsd := kd.scratch hsb
-  have cS' : Copied d.mem base 3176 32 S := cS.of_keep (by decide) (by decide) fun x hx => kd.mem x (by omega)
+  have cS' : Copied d.mem base 3176 32 S := cS.of_keep (by decide) (by decide) fun x hx => kd.mem x (by omega_arith)
   refine WP.seq (WP.mono (recode_ok hsd (by decide) (by decide) (by decide) (by decide) cS' (by decide)
     (boundS_spec d base 1) (fun j hj => by
       simp only [dig]
       rw [kd.mem _ (Or.inr (Or.inr (by
-        rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega)]; omega)))]
+        rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)]; omega_arith)))]
       exact bz 1 (by decide) j hj)) fun e ⟨eS', ke⟩ => ?_)
   have hse := ke.scratch hsd
   have ec : e.mem.readW (off base 56) 64 = BitVec.ofNat 64 c := by
     rw [← bc]
     exact Mem.readW_congr fun i hi => (ke.mem _ (Or.inl (by
-      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega))).trans (kd.mem _ (Or.inl (by
-      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega)))
+      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith))).trans (kd.mem _ (Or.inl (by
+      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith)))
   refine WP.mono (setTop_ok hse ec) fun t ⟨tc, tm, tg, tr, tw⟩ => ?_
   refine ⟨fun j hj => ?_, fun j hj => ?_, tc, ⟨fun r hr => ?_, ?_, ?_, fun x hx => ?_⟩⟩
   · simp only [dig]
-    rw [tm _ (Or.inr (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega)]; omega)),
-      ke.mem _ (Or.inr (Or.inr (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega)]; omega)))]
+    rw [tm _ (Or.inr (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)]; omega_arith)),
+      ke.mem _ (Or.inr (Or.inr (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)]; omega_arith)))]
     exact dK j hj
   · simp only [dig]
-    rw [tm _ (Or.inr (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega)]; omega))]
+    rw [tm _ (Or.inr (by rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)]; omega_arith))]
     exact eS' j hj
   · rw [tg r (fun e => hr (by rw [e]; decide)), ke.gpr r hr, kd.gpr r hr,
       bg r (fun e => hr (by rw [e]; decide)) (fun e => hr (by rw [e]; decide))]
   · rw [tr, ke.rd, kd.rd, br]
   · rw [tw, ke.wr, kd.wr, bw]
-  · rw [tm x (by omega), ke.mem x (by omega), kd.mem x (by omega), bo x (by omega)]
+  · rw [tm x (by omega_arith), ke.mem x (by omega_arith), kd.mem x (by omega_arith), bo x (by omega_arith)]
 
 end VG.Proof.Ed25519.X86_64

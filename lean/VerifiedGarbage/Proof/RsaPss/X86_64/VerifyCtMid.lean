@@ -7,8 +7,7 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.PrefixCheck
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 
 /-!
 # RSASSA-PSS verification on x86-64: `DB` in two runs
@@ -48,7 +47,7 @@ theorem jm_vs {X : State → (Nat → Byte) → (Nat → BitVec 64) → Prop} {a
     ∃ s X', VSib (extra := extra) G a s ∧ VS H s t ks [] X' :=
   let ⟨s, S, h⟩ := h; ⟨s, _, S, h.1.sub hks [] (fun _ hp => by cases hp) fun _ _ x => x⟩
 
-theorem vlo_le (s : State) : vlo s ≤ 1 := by unfold vlo loV; split <;> omega
+theorem vlo_le (s : State) : vlo s ≤ 1 := by unfold vlo loV; split <;> omega_arith
 
 theorem acc0_ct : RelCT isa (Two (VAt (extra := extra) G (JT H))) (.block acc0) (Two (VAt (extra := extra) G (JT H))) := by
   obtain ⟨_, hc⟩ := vFixed.acc0
@@ -62,7 +61,7 @@ theorem acc0_ct : RelCT isa (Two (VAt (extra := extra) G (JT H))) (.block acc0) 
   refine WP.mono (acc0_ok v.L R (c := (maskV (n0v s)).setWidth 8) (k := (s.gpr .rsi).toNat) (lo := vlo s)
     (by rw [hw 17 (by decide)]; show s.gpr .rsi = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
     (hw 23 (by decide)) (by rw [hw 25 (by decide)]; exact maskV_byte (BitVec.isLt _)) (hw 26 (by decide))
-    (by omega) hk2 (by omega)) fun u ⟨L', k', R'⟩ =>
+    (by omega_arith) hk2 (by omega_arith)) fun u ⟨L', k', R'⟩ =>
     ⟨s, S, v.next L' k'.2.2 R' (km_upd hw (by decide) _) trivial, k'.2.1.trans hrd, hok⟩
 
 /-- `MGF1`'s anchor: `DB`'s place and length. -/
@@ -74,9 +73,9 @@ theorem jt_me {a t : State} (h : VAt (extra := extra) G (JT H) a t) : ME H 1 (mg
   have hk1 := hp.k1; have hk2 := hp.k2
   have := vlo_le a
   rw [S.veml] at hok
-  refine ⟨⟨S.rest, ⟨by simp only [mgfA]; omega, by simp only [mgfA, vdb]; omega, ?_⟩⟩,
+  refine ⟨⟨S.rest, ⟨by simp only [mgfA]; omega_arith, by simp only [mgfA, vdb]; omega_arith, ?_⟩⟩,
     (vs_pub S v).sub (fun p hp => ?_) (fun _ h => h) fun _ _ _ => trivial⟩
-  · simp only [mgfA, vdb, veml] at hok ⊢; omega
+  · simp only [mgfA, vdb, veml] at hok ⊢; omega_arith
   · simp only [mgfA, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> simp [pw, KM, vw]
 
@@ -94,10 +93,10 @@ theorem mgf_ct (hc : HashChecks H.P H.D 1) :
   have hk1 := hp.k1; have hk2 := hp.k2
   have := vlo_le s
   refine WP.mono (mgfXor_ok hH K lk.hash lk.len hG v.L R (e := oEm + vlo s) (db := vdb H.D s)
-    ⟨by omega, by unfold vdb; omega, by unfold vdb veml at *; unfold oEm; omega⟩ (hw 23 (by decide))
+    ⟨by omega_arith, by unfold vdb; omega_arith, by unfold vdb veml at *; unfold oEm; omega_arith⟩ (hw 23 (by decide))
     (hw 24 (by decide))) fun u ⟨L', rd', wr', _, V', W', R', hW', _⟩ =>
     ⟨s, S, ⟨L', wr'.trans v.wr, ⟨V', W', R', fun k hk => (hW' k (km_lt hk) (by
-      simp only [KM, List.mem_cons, List.not_mem_nil, or_false] at hk; omega)).trans (hw k hk), trivial⟩,
+      simp only [KM, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_arith)).trans (hw k hk), trivial⟩,
       fun _ hp => by cases hp⟩, rd'.trans hrd, hok⟩
 
 theorem clearTop_ct : RelCT isa (Two (VAt (extra := extra) G (JT H))) (.block clearTop) (Two (VAt (extra := extra) G (JT H))) := by
@@ -108,7 +107,7 @@ theorem clearTop_ct : RelCT isa (Two (VAt (extra := extra) G (JT H))) (.block cl
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have := vlo_le s
   exact WP.mono (clearTop_ok v.L R (e := oEm + vlo s) (c := (maskV (n0v s)).setWidth 8) (hw 23 (by decide))
-    (by rw [hw 25 (by decide)]; exact maskV_byte (BitVec.isLt _)) (by unfold oEm oRsa; omega))
+    (by rw [hw 25 (by decide)]; exact maskV_byte (BitVec.isLt _)) (by unfold oEm oRsa; omega_arith))
     fun u ⟨L', k', R'⟩ => ⟨s, S, v.next L' k'.2.2 R' hw trivial, k'.2.1.trans hrd, hok⟩
 
 variable (H) in
@@ -127,9 +126,9 @@ theorem posScan_ct : RelCT isa (Two (VAt (extra := extra) G (JT H))) posScan (Tw
   have hp := S.ps
   have hk2 := hp.k2
   have := vlo_le s
-  have hdb1 : 1 ≤ vdb H.D s := by unfold vdb; omega
+  have hdb1 : 1 ≤ vdb H.D s := by unfold vdb; omega_arith
   exact WP.mono (posScan_ok v.L R (e := oEm + vlo s) (db := vdb H.D s) (hw 23 (by decide)) (hw 24 (by decide))
-    hdb1 (by unfold vdb veml oEm oRsa; omega)) fun u ⟨k', hm', hdx, hsi, h11⟩ =>
+    hdb1 (by unfold vdb veml oEm oRsa; omega_arith)) fun u ⟨k', hm', hdx, hsi, h11⟩ =>
     ⟨s, S, ⟨v.keep k' hm' (by decide) (fun _ hp => by cases hp), k'.2.1.trans hrd, hok⟩, _, _, _,
       fnz_getD_lt hdb1, hdx, hsi, h11⟩
 
@@ -187,7 +186,7 @@ theorem scanLen_ct : RelCT isa (Two (VAt (extra := extra) G (JT H)))
   · xrun [ea_sp, v.L.rsp, v.L.ld (d := sSlen) (by decide), v.L.ld (d := sDb) (by decide),
       R.rd (d := sSlen) 36 rfl (by decide), R.rd (d := sDb) 24 rfl (by decide),
       hw 36 (by decide), hw 24 (by decide)]
-    simp only [vw, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show vdb H.D s < 2 ^ 64 by unfold vdb veml; omega)]
+    simp only [vw, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show vdb H.D s < 2 ^ 64 by unfold vdb veml; omega_arith)]
   · refine ⟨⟨s, S, v.keep ku hm (by decide) (fun _ hp => by cases hp), ku.2.1.trans hrd, hok⟩, ?_⟩
     change u.cf = _
     rw [hz, S.arg1, S.vdb]
@@ -208,12 +207,12 @@ theorem prefixCheck_ct (hc : VerifyChecks H.P H.D) :
   have := vlo_le s
   refine WP.mono (prefixCheck_ok hH v.L R (e := oEm + vlo s) (db := vdb H.D s) (sl := (stackArg s 1).toNat)
     (hw 23 (by decide)) (hw 24 (by decide)) (by rw [hw 36 (by decide)]; simp [vw]) hlt
-    (by unfold vdb veml oEm oRsa; omega) (by unfold vdb veml; omega)) fun u ⟨L', k', a', _, R'⟩ =>
+    (by unfold vdb veml oEm oRsa; omega_arith) (by unfold vdb veml; omega_arith)) fun u ⟨L', k', a', _, R'⟩ =>
     ⟨s, S, v.next L' k'.2.2 R' (km_upd (km_upd (km_upd hw (by decide) _) (by decide) _) (by decide) _)
-      ⟨vdb H.D s - (stackArg s 1).toNat - 1, by omega, ?_, by simp [upd]⟩, k'.2.1.trans hrd, hok⟩
+      ⟨vdb H.D s - (stackArg s 1).toNat - 1, by omega_arith, ?_, by simp [upd]⟩, k'.2.1.trans hrd, hok⟩
   simp only [upd, Nat.reduceEqDiff, ite_true]
   congr 1
-  omega
+  omega_arith
 
 include hH in
 theorem scanCheck_ct (hc : VerifyChecks H.P H.D) :

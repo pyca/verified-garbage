@@ -155,18 +155,18 @@ theorem rb1_ok {j : Nat} {q : XPub × Nat} {t : State} (h : RBody j q t) :
     WP isa (zeroArr aChunk) t (RB1 j q) := by
   obtain ⟨hk, s, minv, X, hI, hf, -, -⟩ := h
   obtain ⟨hw2, hwx, hw30⟩ := id hf
-  have hkw : q.2 * q.1.wx < q.1.w := (lt_chunks (by omega)).mp hk
-  have hlw : lowW q.1.w q.1.wx q.2 = q.2 * q.1.wx := Nat.min_eq_right (by omega)
+  have hkw : q.2 * q.1.wx < q.1.w := (lt_chunks (by omega_arith)).mp hk
+  have hlw : lowW q.1.w q.1.wx q.2 = q.2 * q.1.wx := Nat.min_eq_right (by omega_arith)
   have hc := hI.ctx
   have hn := hc.scr.nowrap
   have hi := hc.hi
   have hC := slot_le (w := q.1.wx) (show aChunk < 8 by decide)
   have hC0 := hdr_lt_slot q.1.wx aChunk (show 31 < 32 by decide)
-  refine WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega) (show aChunk < 8 by decide))
+  refine WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega_arith) (show aChunk < 8 by decide))
     fun t₁ ⟨_, ho₁, k₁⟩ => ⟨minv, hc.of_frm (Frm.of_outside ho₁ (by simp [redcRanges])) (redcRanges_ok _) k₁.wr
       (k₁.gpr .x0 (by decide)), ?_, ?_, hf⟩
-  · rw [ho₁.word (by unfold sRem sFn; omega) (by unfold sRem sFn; omega), hI.rem, hlw]
-  · rw [ho₁.word (by unfold sSrc sFn; omega) (by unfold sSrc sFn; omega), hI.src, hlw]
+  · rw [ho₁.word (by unfold sRem sFn; omega_arith) (by unfold sRem sFn; omega_arith), hI.rem, hlw]
+  · rw [ho₁.word (by unfold sSrc sFn; omega_arith) (by unfold sSrc sFn; omega_arith), hI.src, hlw]
 
 /-- The chunk's length and pointers. -/
 def rbBlock : List Instr :=
@@ -184,7 +184,7 @@ theorem rb4_ok {j : Nat} {q : XPub × Nat} {t : State} (h : RB1 j q t) : WP isa 
       hdr_enc (show sSrc < 32 by decide), hdr_enc (sArr_lt (show aChunk < 8 by decide)),
       hc.ld' (show sRem < 32 by decide), hc.ld' (show sW < 32 by decide), hc.ld' (show sSrc < 32 by decide),
       hc.ld' (sArr_lt (show aChunk < 8 by decide)), hrem', hc.hw', hsrc', hc.harr' (show aChunk < 8 by decide),
-      csel_min (show q.1.w - q.2 * q.1.wx < 2 ^ 64 by omega) (show q.1.wx < 2 ^ 64 by omega)])
+      csel_min (show q.1.w - q.2 * q.1.wx < 2 ^ 64 by omega_arith) (show q.1.wx < 2 ^ 64 by omega_arith)])
     (by decide) (by decide) (by decide +kernel)) fun _ h => h.1
 
 theorem pins_subCtx {α : Type} {Φ : α → State → Prop} (f : α → XPub)
@@ -216,7 +216,7 @@ theorem ra0_ok {j : Nat} {q : XPub × Nat} {t : State} (h : RB5 j q t) : WP isa 
   obtain ⟨minv, X, hc, hv, hX1, h12, h16, hrem, hf⟩ := h
   obtain ⟨hw2, hwx, hw30⟩ := id hf
   have hcr : min (q.1.w - q.2 * q.1.wx) q.1.wx ≤ q.1.w - q.2 * q.1.wx := Nat.min_le_left _ _
-  have hr : q.1.w - q.2 * q.1.wx < 2 ^ 31 := by omega
+  have hr : q.1.w - q.2 * q.1.wx < 2 ^ 31 := by omega_arith
   generalize q.1.w - q.2 * q.1.wx = r at hrem h12 h16 hcr hr
   generalize min r q.1.wx = c at h12 h16 hcr
   have hn := hc.good.scr.nowrap
@@ -237,13 +237,13 @@ theorem ra0_ok {j : Nat} {q : XPub × Nat} {t : State} (h : RB5 j q t) : WP isa 
   rw [← hm₁] at o2
   have f₁ : Frm (off q.1.B q.1.o) (redcRanges q.1.wx) t.mem t₁.mem :=
     (Frm.of_outside o1 (by simp [redcRanges])).trans (Frm.of_outside o2 (by simp [redcRanges]))
-  exact ⟨minv, X, hc.of_frm f₁ rok k₁.wr (k₁.gpr .x0 (by decide)), hv.of_frm (by omega) (by omega) f₁, hX1, hf⟩
+  exact ⟨minv, X, hc.of_frm f₁ rok k₁.wr (k₁.gpr .x0 (by decide)), hv.of_frm (by omega_arith) (by omega_arith) f₁, hX1, hf⟩
 
 theorem ra1_ok (M : Mont) {p : XPub} {t : State} (h : RA0 p t) :
     WP isa (M.mm aXc aXc Public.aOne) t (RA1 p) := by
   obtain ⟨minv, X, hc, hv, hX1, hf⟩ := h
   obtain ⟨hw2, hwx, hw30⟩ := id hf
-  exact WP.mono (mmOne_ok M hc hv hw2 (by omega) hX1 (d := aXc) (a := aXc) (by decide) (by decide) (by decide)
+  exact WP.mono (mmOne_ok M hc hv hw2 (by omega_arith) hX1 (d := aXc) (a := aXc) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by simp [redcRanges]))
     fun t' ⟨hc', hv', hlt, _⟩ => ⟨minv, X, hc', hv', hX1, hlt, hf⟩
 
@@ -252,7 +252,7 @@ theorem ra2_ok (M : Mont) {p : XPub} {t : State} (h : RA1 p t) :
   obtain ⟨minv, X, hc, hv, hX1, hlt, hf⟩ := h
   obtain ⟨hw2, hwx, hw30⟩ := id hf
   have hn : (off p.B p.o).toNat + slot p.wx 8 ≤ 2 ^ 64 := hc.good.scr.nowrap
-  exact WP.mono (mmOne_ok M hc hv hw2 (by omega) hX1 (d := aT) (a := aChunk) (by decide) (by decide) (by decide)
+  exact WP.mono (mmOne_ok M hc hv hw2 (by omega_arith) hX1 (d := aT) (a := aChunk) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by simp [redcRanges]))
     fun t' ⟨hc', hv', hlt', _, ha, _⟩ =>
       ⟨minv, X, hc', hv', by rw [ha.wv_of_not_mem (by decide) (by decide) hn]; exact hlt, hlt', hf⟩
@@ -260,7 +260,7 @@ theorem ra2_ok (M : Mont) {p : XPub} {t : State} (h : RA1 p t) :
 theorem ra3_ok {p : XPub} {t : State} (h : RA2 p t) :
     WP isa (addMod aXc aXc aT) t fun t' => t'.gpr .x0 = off p.B p.o := by
   obtain ⟨minv, X, hc, hv, hlt, hlt', hw2, hwx, hw30⟩ := h
-  exact WP.mono (addMod_ok hc.good.scr hc.x0 hc.hdr (Nat.le_refl _) hw2 (by omega) (o := aXc) (a := aXc) (b := aT)
+  exact WP.mono (addMod_ok hc.good.scr hc.x0 hc.hdr (Nat.le_refl _) hw2 (by omega_arith) (o := aXc) (a := aXc) (b := aT)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [hv.n]; exact hlt) (by rw [hv.n]; exact hlt')) fun t' ⟨_, _, k⟩ => (k.gpr .x0 (by decide)).trans hc.x0
 
@@ -286,16 +286,16 @@ theorem redcBody_ct (M : Mont) (j : Nat) :
     (RelCT.seq (two_post (Ψ := RB5 j) (redcLoad_ct j) fun q t h => ?_) (redcAcc_ct M j))
   obtain ⟨hk, s, minv, X, hI, hf, hX1, hj⟩ := h
   obtain ⟨hw2, hwx, hw30⟩ := id hf
-  have hkw : q.2 * q.1.wx < q.1.w := (lt_chunks (by omega)).mp hk
-  have hlw : lowW q.1.w q.1.wx q.2 = q.2 * q.1.wx := Nat.min_eq_right (by omega)
+  have hkw : q.2 * q.1.wx < q.1.w := (lt_chunks (by omega_arith)).mp hk
+  have hlw : lowW q.1.w q.1.wx q.2 = q.2 * q.1.wx := Nat.min_eq_right (by omega_arith)
   have hsl := slot_le (w := q.1.w) hj
   have hrem0 := hI.rem
   have hsrc0 := hI.src
   rw [hlw] at hrem0 hsrc0
   exact WP.mono (redcLoad_ok hI.ctx hw2 hwx hw30 hj (r := q.1.w - q.2 * q.1.wx)
-    (e := slot q.1.w j + 8 * (q.2 * q.1.wx)) (by omega) (by omega) (by omega) hrem0 hsrc0)
+    (e := slot q.1.w j + 8 * (q.2 * q.1.wx)) (by omega_arith) (by omega_arith) (by omega_arith) hrem0 hsrc0)
     fun t₁ ⟨hc₁, h12₁, h16₁, _, hrem₁, _, _, f₁, _⟩ =>
-      ⟨minv, X, hc₁, hI.xv.of_frm (by have := hc₁.good.scr.nowrap; omega) (by omega) f₁, hX1, h12₁, h16₁, hrem₁, hf⟩
+      ⟨minv, X, hc₁, hI.xv.of_frm (by have := hc₁.good.scr.nowrap; omega_arith) (by omega_arith) f₁, hX1, h12₁, h16₁, hrem₁, hf⟩
 
 /-! ## `redc` -/
 
@@ -309,7 +309,7 @@ theorem rz_ok {j : Nat} {p : XPub} {s : State} (h : RPre j p s) : WP isa (zeroAr
   obtain ⟨minv, X, hc, _, hw2, hwx, hw30, _⟩ := h
   have hn := hc.scr.nowrap
   have hi := hc.hi
-  exact WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega) (show aXc < 8 by decide))
+  exact WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega_arith) (show aXc < 8 by decide))
     fun s₁ ⟨_, ho₁, k₁⟩ => ⟨minv, hc.of_frm (Frm.of_outside ho₁ (by simp [redcRanges])) (redcRanges_ok _) k₁.wr
       (k₁.gpr .x0 (by decide)), hw2, hwx, hw30⟩
 
@@ -351,11 +351,11 @@ theorem redc_ct_of (M : Mont) {j : Nat} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
       (fun p => (p.w + p.wx - 1) / p.wx) (redcBody_ct M j) ?_).mono (fun _ _ h => h) fun _ _ _ => trivial))
   · obtain ⟨minv, X, hc, hv, hw2, hwx, hw30, hX1, hj⟩ := h
     have hn := hc.good.scr.nowrap
-    have hK : 0 < (p.w + p.wx - 1) / p.wx := (lt_chunks (k := 0) (by omega)).mpr (by omega)
+    have hK : 0 < (p.w + p.wx - 1) / p.wx := (lt_chunks (k := 0) (by omega_arith)).mpr (by omega_arith)
     have hl0 : lowW p.w p.wx 0 = 0 := by simp [lowW]
     exact WP.mono (redcHead_ok hc hw2 hwx hw30 hj) fun t₁ ⟨hc₁, hz₁, hsrc₁, hrem₁, f₁, k₁⟩ =>
-      ⟨hK, s, minv, X, ⟨hc₁, hv.of_frm hn (by omega) f₁, by rw [hl0, Nat.sub_zero]; exact hrem₁,
-        by rw [hl0, Nat.mul_zero, Nat.add_zero]; exact hsrc₁, by rw [hz₁]; omega, by rw [hz₁, hl0]; rfl, f₁, k₁⟩,
+      ⟨hK, s, minv, X, ⟨hc₁, hv.of_frm hn (by omega_arith) f₁, by rw [hl0, Nat.sub_zero]; exact hrem₁,
+        by rw [hl0, Nat.mul_zero, Nat.add_zero]; exact hsrc₁, by rw [hz₁]; omega_arith, by rw [hz₁, hl0]; rfl, f₁, k₁⟩,
         ⟨hw2, hwx, hw30⟩, hX1, hj⟩
   · rintro p k t hk ⟨s, minv, X, hI, hf, hX1, hj⟩
     obtain ⟨hw2, hwx, hw30⟩ := id hf

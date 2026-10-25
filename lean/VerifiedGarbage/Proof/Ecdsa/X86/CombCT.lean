@@ -87,9 +87,9 @@ theorem combAgree {s t : State} (hs : VG.X86.Taint.Wf (combτAt scratchSecond) s
       intro u
       unfold VG.X86.Taint.byteAddr
       rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_of_le hk.2]
-    rw [e s, e t, Mem.readW_byte s.mem _ (by omega), Mem.readW_byte t.mem _ (by omega), hp]
+    rw [e s, e t, Mem.readW_byte s.mem _ (by omega_arith), Mem.readW_byte t.mem _ (by omega_arith), hp]
   · intro h; cases h
-  · intro k hlo hhi; have : k < 0 := hhi; omega
+  · intro k hlo hhi; have : k < 0 := hhi; omega_arith
 
 
 def combStartτAt (scratchSecond : Bool) : VG.X86.Taint.T :=
@@ -122,9 +122,9 @@ theorem combStartAgree {s t : State} (hs : VG.X86.Taint.Wf (combτAt scratchSeco
       intro u
       unfold VG.X86.Taint.byteAddr
       rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_of_le hk.2]
-    rw [e s, e t, Mem.readW_byte s.mem _ (by omega), Mem.readW_byte t.mem _ (by omega), hp]
+    rw [e s, e t, Mem.readW_byte s.mem _ (by omega_arith), Mem.readW_byte t.mem _ (by omega_arith), hp]
   · intro h; cases h
-  · intro k hlo hhi; have : k < 0 := hhi; omega
+  · intro k hlo hhi; have : k < 0 := hhi; omega_arith
 
 
 /-- Widening 32-bit words is injective. -/
@@ -195,8 +195,8 @@ theorem combLoop_rel (hL : TCombLay p256K size) (hC : Law p256Comb.C) (ham3 : AM
   have hj' : j - 1 ≠ 0 := by
     rw [ev₁] at ht
     have : p256K.J - j + 1 ≠ p256K.J := by simpa using ht
-    omega
-  exact ⟨j - 1, by omega, by dsimp only [I]; rw [show p256K.J - (j - 1) = p256K.J - j + 1 by omega]; exact ⟨by omega, by omega, i₁, i₂⟩⟩
+    omega_arith
+  exact ⟨j - 1, by omega_arith, by dsimp only [I]; rw [show p256K.J - (j - 1) = p256K.J - j + 1 by omega_arith]; exact ⟨by omega_arith, by omega_arith, i₁, i₂⟩⟩
 
 
 theorem combFirst_rel : RelCT isa (VG.X86.Taint.Agree (combStartτAt scratchSecond)) p256K.first

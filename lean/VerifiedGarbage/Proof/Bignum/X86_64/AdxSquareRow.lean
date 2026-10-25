@@ -51,13 +51,13 @@ theorem RowInv.step {s₀ t t' : State} {B : Addr} {Z e eb j n w : Nat}
     (hk : Keep [.rsi, .rax, .r11, .r12, .r13, .r15, .rcx, .r14, .rbx] t t') :
     RowInv s₀ B Z e eb (j + n) t' := by
   have hn := hI.scr.nowrap
-  have rT : wv t.mem B (e + 8 * j) n = wv s₀.mem B (e + 8 * j) n := hI.out.wv (by omega) (by omega)
-  have rB : wv t.mem B (eb + 8 * j) n = wv s₀.mem B (eb + 8 * j) n := hI.out.wv (by omega) (by omega)
-  have rL : wv t'.mem B e j = wv t.mem B e j := ho.wv (by omega) (by omega)
+  have rT : wv t.mem B (e + 8 * j) n = wv s₀.mem B (e + 8 * j) n := hI.out.wv (by omega_arith) (by omega_arith)
+  have rB : wv t.mem B (eb + 8 * j) n = wv s₀.mem B (eb + 8 * j) n := hI.out.wv (by omega_arith) (by omega_arith)
+  have rL : wv t'.mem B e j = wv t.mem B e j := ho.wv (by omega_arith) (by omega_arith)
   rw [rT, rB, hI.keep.gpr (by decide)] at hv
   refine ⟨hI.scr.congr hk.2.2, (hI.keep.trans hk).mono (by decide), h14, ?_, ?_⟩
-  · exact (hI.out.mono (o' := e) (n' := 8 * (j + n)) (Nat.le_refl _) (by omega)).trans
-      (ho.mono (o' := e) (n' := 8 * (j + n)) (by omega) (by omega))
+  · exact (hI.out.mono (o' := e) (n' := 8 * (j + n)) (Nat.le_refl _) (by omega_arith)).trans
+      (ho.mono (o' := e) (n' := 8 * (j + n)) (by omega_arith) (by omega_arith))
   · have hi := hI.val
     rw [wv_add, wv_add s₀.mem B e, wv_add s₀.mem B eb, rL, Nat.mul_add, Nat.pow_add]
     grind
@@ -71,19 +71,19 @@ theorem blocks_ok {s₀ s : State} {B : Addr} {Z e eb a w : Nat}
     (sb : eb + 8 * w ≤ e ∨ e + 8 * w ≤ eb)
     (hI : RowInv s₀ B Z e eb (4 * a) s) :
     WP isa (.loop (.block AdxSquare.mac4Store) .ne) s (RowInv s₀ B Z e eb w) := by
-  refine wp_upto (a := a) (N := w / 4) (by omega) (fun k t => RowInv s₀ B Z e eb (4 * k) t ∧ t.gpr .rbx = BitVec.ofNat 64 w) ?_ ?_ ⟨hI, hbx⟩
+  refine wp_upto (a := a) (N := w / 4) (by omega_arith) (fun k t => RowInv s₀ B Z e eb (4 * k) t ∧ t.gpr .rbx = BitVec.ofNat 64 w) ?_ ?_ ⟨hI, hbx⟩
   · intro k _ hk t h
     obtain ⟨h, hbx'⟩ := h
     have kp := h.keep
     refine WP.mono (mac4Store_ok h.scr ((kp.gpr (by decide)).trans h8)
       ((kp.gpr (by decide)).trans h9) h.r14 hbx'
-      (by omega) (by omega) (by omega) (by omega)) fun t' ⟨hv, ho, h14, hz, kt⟩ => ⟨?_, ?_, (kt.gpr (by decide)).trans hbx'⟩
-    · rw [hz]; congr 1; exact decide_eq_decide.mpr (by omega)
-    · have step := h.step (by omega : 4 * k + 4 ≤ w) hZ hZb sb hv ho h14 (kt.mono (by decide))
-      rw [show 4 * (k + 1) = 4 * k + 4 by omega]
+      (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun t' ⟨hv, ho, h14, hz, kt⟩ => ⟨?_, ?_, (kt.gpr (by decide)).trans hbx'⟩
+    · rw [hz]; congr 1; exact decide_eq_decide.mpr (by omega_arith)
+    · have step := h.step (by omega_arith : 4 * k + 4 ≤ w) hZ hZb sb hv ho h14 (kt.mono (by decide))
+      rw [show 4 * (k + 1) = 4 * k + 4 by omega_arith]
       exact step
   · intro t h
-    have he : 4 * (w / 4) = w := by omega
+    have he : 4 * (w / 4) = w := by omega_arith
     exact he ▸ h.1
 
 /-- The final zero to three words are handled by the same invariant. -/
@@ -101,8 +101,8 @@ theorem remainder_ok {s₀ s : State} {B : Addr} {Z e eb a w : Nat}
   have kp := h.keep
   refine WP.mono (mac1Store_ok h.scr ((kp.gpr (by decide)).trans h8)
     ((kp.gpr (by decide)).trans h9) h.r14 hbx'
-    (by omega) (by omega) (by omega) (by omega)) fun t' ⟨hv, ho, h14, hz, kt⟩ => ⟨hz, ?_, (kt.gpr (by decide)).trans hbx'⟩
-  exact h.step (by omega : j + 1 ≤ w) hZ hZb sb hv ho h14 (kt.mono (by decide))
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun t' ⟨hv, ho, h14, hz, kt⟩ => ⟨hz, ?_, (kt.gpr (by decide)).trans hbx'⟩
+  exact h.step (by omega_arith : j + 1 ≤ w) hZ hZb sb hv ho h14 (kt.mono (by decide))
 
 /-- Round a public word count down to a multiple of four. -/
 theorem round4 (w : Nat) (hw : w < 2 ^ 64) :
@@ -111,7 +111,7 @@ theorem round4 (w : Nat) (hw : w < 2 ^ 64) :
   dsimp only
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem rowStart_ok {s : State} {w : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 w) (hw : w < 2 ^ 64) :
     WP isa (.block AdxSquare.rowStart) s fun t =>
@@ -124,7 +124,7 @@ theorem rowStart_ok {s : State} {w : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 w)
   unfold AdxSquare.rowStart
   xrun [hbp, round4 w hw]
   change (BitVec.ofNat 64 (4 * (w / 4)) - BitVec.ofNat 64 0 == 0) = _
-  exact ofNat_sub_beq (by omega) (by decide)
+  exact ofNat_sub_beq (by omega_arith) (by decide)
 
 /-- A complete multiply-add row, including lengths below four. -/
 theorem macRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
@@ -138,7 +138,7 @@ theorem macRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
       Outside B e (8 * w) s.mem t.mem ∧ t.gpr .r14 = BitVec.ofNat 64 w ∧
       Keep [.rsi, .rax, .r11, .r12, .r13, .r15, .rcx, .r14, .rbx] s t := by
   unfold AdxSquare.macRow
-  refine WP.seq (WP.mono (rowStart_ok hbp (by omega)) fun s₁ ⟨hbx₁, hcx₁, h14₁, hz₁, hm₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (rowStart_ok hbp (by omega_arith)) fun s₁ ⟨hbx₁, hcx₁, h14₁, hz₁, hm₁, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   have h8₁ : s₁.gpr .r8 = off B e := (k₁.gpr (by decide)).trans h8
   have h9₁ : s₁.gpr .r9 = off B eb := (k₁.gpr (by decide)).trans h9
@@ -150,8 +150,8 @@ theorem macRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     · refine WP.ite false (by simp [eval, hz₁, h0]) (by simp) (fun _ => WP.block_nil ?_)
       rw [h0]; exact hi₁
     · refine WP.ite true (by simp [eval, hz₁, h0]) (fun _ => ?_) (by simp)
-      exact blocks_ok (a := 0) h8₁ h9₁ hbx₁ (by omega) (by omega) (by omega)
-        (by omega) (by omega) (by omega) hi₁
+      exact blocks_ok (a := 0) h8₁ h9₁ hbx₁ (by omega_arith) (by omega_arith) (by omega_arith)
+        (by omega_arith) (by omega_arith) (by omega_arith) hi₁
   refine WP.seq (WP.mono first fun s₂ hI₂ => ?_)
   have k12 := k₁.trans hI₂.keep
   have hbp₂ : s₂.gpr .rbp = BitVec.ofNat 64 w := (k12.gpr (by decide)).trans hbp
@@ -162,7 +162,7 @@ theorem macRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
       t.zf = some (decide (4 * (w / 4) = w)) ∧ t.mem = s₂.mem ∧ t.gpr .r14 = s₂.gpr .r14) ?_ rfl)
       fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, k⟩
     unfold AdxSquare.rowRemainder
-    xrun [hbp₂, hI₂.r14, ofNat_sub_beq (show 4 * (w / 4) < 2 ^ 64 by omega) (show w < 2 ^ 64 by omega)]
+    xrun [hbp₂, hI₂.r14, ofNat_sub_beq (show 4 * (w / 4) < 2 ^ 64 by omega_arith) (show w < 2 ^ 64 by omega_arith)]
   refine WP.seq (WP.mono mid fun s₃ ⟨hbx₃, hz₃, hm₃, h14₃, k₃⟩ => ?_)
   have hI₃ : RowInv s₁ B Z e eb (4 * (w / 4)) s₃ :=
     ⟨hI₂.scr.congr k₃.2.2, (hI₂.keep.trans k₃).mono (by decide),
@@ -174,7 +174,7 @@ theorem macRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     · refine WP.ite false (by simp [eval, hz₃, he]) (by simp) (fun _ => WP.block_nil ?_)
       exact he ▸ hI₃
     · refine WP.ite true (by simp [eval, hz₃, he]) (fun _ => ?_) (by simp)
-      exact remainder_ok h8₁ h9₁ hbx₃ (by omega) hw hZ hZb sb hI₃
+      exact remainder_ok h8₁ h9₁ hbx₃ (by omega_arith) hw hZ hZb sb hI₃
   refine WP.mono last fun t h => ⟨?_, ?_, h.r14, (k₁.trans h.keep).mono (by decide)⟩
   · have hv := h.val
     rw [hm₁, k₁.gpr (by decide), hcx₁] at hv

@@ -45,25 +45,25 @@ def shiftMem64 (m : Mem) (P : Addr) (c : Byte) : Mem :=
 
 theorem shiftMem64_apply (m : Mem) (P : Addr) (c : Byte) {i : Nat} (hi : i < 16) :
     shiftMem64 m P c (P + BitVec.ofNat 64 i) = if i = 15 then c else m (P + BitVec.ofNat 64 (i + 1)) := by
-  have h0 : (P + BitVec.ofNat 64 i - P).toNat = i := Mem.sub_ofNat_toNat P (by omega)
-  have h7 := Offset.sub_toNat' P (d := 7) (e := i) (by decide) (by omega)
-  have h15 := Offset.sub_toNat' P (d := 15) (e := i) (by decide) (by omega)
+  have h0 : (P + BitVec.ofNat 64 i - P).toNat = i := Mem.sub_ofNat_toNat P (by omega_arith)
+  have h7 := Offset.sub_toNat' P (d := 7) (e := i) (by decide) (by omega_arith)
+  have h15 := Offset.sub_toNat' P (d := 15) (e := i) (by decide) (by omega_arith)
   simp only [shiftMem64, writeW64_apply, writeW8_apply]
   by_cases e15 : i = 15
   · subst e15
     have t15 : (P + BitVec.ofNat 64 15 - (P + BitVec.ofNat 64 15)).toNat = 0 := by rw [h15]; decide
     simp only [t15, Nat.zero_lt_one, Nat.mul_zero, ↓reduceIte]
     exact BitVec.extractLsb'_eq_self
-  have t15 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 15)).toNat < 1 := by rw [h15]; split <;> omega
+  have t15 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 15)).toNat < 1 := by rw [h15]; split <;> omega_arith
   simp only [t15, e15, ↓reduceIte]
   by_cases e7 : 7 ≤ i
   · have t7 : (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 7)).toNat = i - 7 := by
       rw [h7]; simp only [e7, ↓reduceIte]
-    simp only [t7, show i - 7 < 8 by omega, ↓reduceIte]
-    rw [extractLsb'_readW64 _ _ (by omega), Offset.add_add_eq _ (c := i + 1) (by omega)]
-  · have t7 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 7)).toNat < 8 := by rw [h7]; split <;> omega
-    simp only [t7, h0, show i < 8 by omega, ↓reduceIte]
-    rw [extractLsb'_readW64 _ _ (by omega), Offset.add_add_eq _ (c := i + 1) (by omega)]
+    simp only [t7, show i - 7 < 8 by omega_arith, ↓reduceIte]
+    rw [extractLsb'_readW64 _ _ (by omega_arith), Offset.add_add_eq _ (c := i + 1) (by omega_arith)]
+  · have t7 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 7)).toNat < 8 := by rw [h7]; split <;> omega_arith
+    simp only [t7, h0, show i < 8 by omega_arith, ↓reduceIte]
+    rw [extractLsb'_readW64 _ _ (by omega_arith), Offset.add_add_eq _ (c := i + 1) (by omega_arith)]
 
 theorem shiftMem64_bytes (m : Mem) (P : Addr) (c : Byte) :
     bytesAt (shiftMem64 m P c) P 16 = (bytesAt m P 16).tail ++ [c] := by
@@ -74,7 +74,7 @@ theorem shiftMem64_bytes (m : Mem) (P : Addr) (c : Byte) :
   by_cases e : i = 15
   · subst e; simp
   · simp only [e, ↓reduceIte]
-    rw [List.getElem_append_left (by simp; omega)]
+    rw [List.getElem_append_left (by simp; omega_arith)]
     simp
 
 theorem shiftMem64_frame (m : Mem) (P : Addr) (c : Byte) : Frame [⟨P, 16⟩] m (shiftMem64 m P c) :=
@@ -104,41 +104,41 @@ def shiftMem32 (m : Mem) (P : Addr) (c : Byte) : Mem :=
 
 theorem shiftMem32_apply (m : Mem) (P : Addr) (c : Byte) {i : Nat} (hi : i < 16) :
     shiftMem32 m P c (P + BitVec.ofNat 64 i) = if i = 15 then c else m (P + BitVec.ofNat 64 (i + 1)) := by
-  have h0 : (P + BitVec.ofNat 64 i - P).toNat = i := Mem.sub_ofNat_toNat P (by omega)
-  have h4 := Offset.sub_toNat' P (d := 4) (e := i) (by decide) (by omega)
-  have h8 := Offset.sub_toNat' P (d := 8) (e := i) (by decide) (by omega)
-  have h11 := Offset.sub_toNat' P (d := 11) (e := i) (by decide) (by omega)
-  have h15 := Offset.sub_toNat' P (d := 15) (e := i) (by decide) (by omega)
+  have h0 : (P + BitVec.ofNat 64 i - P).toNat = i := Mem.sub_ofNat_toNat P (by omega_arith)
+  have h4 := Offset.sub_toNat' P (d := 4) (e := i) (by decide) (by omega_arith)
+  have h8 := Offset.sub_toNat' P (d := 8) (e := i) (by decide) (by omega_arith)
+  have h11 := Offset.sub_toNat' P (d := 11) (e := i) (by decide) (by omega_arith)
+  have h15 := Offset.sub_toNat' P (d := 15) (e := i) (by decide) (by omega_arith)
   simp only [shiftMem32, writeW32_apply, writeW8_apply]
   by_cases e15 : i = 15
   · subst e15
     have t15 : (P + BitVec.ofNat 64 15 - (P + BitVec.ofNat 64 15)).toNat = 0 := by rw [h15]; decide
     simp only [t15, Nat.zero_lt_one, Nat.mul_zero, ↓reduceIte]
     exact BitVec.extractLsb'_eq_self
-  have t15 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 15)).toNat < 1 := by rw [h15]; split <;> omega
+  have t15 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 15)).toNat < 1 := by rw [h15]; split <;> omega_arith
   simp only [t15, e15, ↓reduceIte]
   by_cases e11 : 11 ≤ i
   · have t11 : (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 11)).toNat = i - 11 := by
       rw [h11]; simp only [e11, ↓reduceIte]
-    simp only [t11, show i - 11 < 4 by omega, ↓reduceIte]
-    rw [extractLsb'_readW32 _ _ (by omega), Offset.add_add_eq _ (c := i + 1) (by omega)]
-  have t11 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 11)).toNat < 4 := by rw [h11]; split <;> omega
+    simp only [t11, show i - 11 < 4 by omega_arith, ↓reduceIte]
+    rw [extractLsb'_readW32 _ _ (by omega_arith), Offset.add_add_eq _ (c := i + 1) (by omega_arith)]
+  have t11 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 11)).toNat < 4 := by rw [h11]; split <;> omega_arith
   simp only [t11, ↓reduceIte]
   by_cases e8 : 8 ≤ i
   · have t8 : (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 8)).toNat = i - 8 := by
       rw [h8]; simp only [e8, ↓reduceIte]
-    simp only [t8, show i - 8 < 4 by omega, ↓reduceIte]
-    rw [extractLsb'_readW32 _ _ (by omega), Offset.add_add_eq _ (c := i + 1) (by omega)]
-  have t8 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 8)).toNat < 4 := by rw [h8]; split <;> omega
+    simp only [t8, show i - 8 < 4 by omega_arith, ↓reduceIte]
+    rw [extractLsb'_readW32 _ _ (by omega_arith), Offset.add_add_eq _ (c := i + 1) (by omega_arith)]
+  have t8 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 8)).toNat < 4 := by rw [h8]; split <;> omega_arith
   simp only [t8, ↓reduceIte]
   by_cases e4 : 4 ≤ i
   · have t4 : (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 4)).toNat = i - 4 := by
       rw [h4]; simp only [e4, ↓reduceIte]
-    simp only [t4, show i - 4 < 4 by omega, ↓reduceIte]
-    rw [extractLsb'_readW32 _ _ (by omega), Offset.add_add_eq _ (c := i + 1) (by omega)]
-  have t4 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 4)).toNat < 4 := by rw [h4]; split <;> omega
-  simp only [t4, h0, show i < 4 by omega, ↓reduceIte]
-  rw [extractLsb'_readW32 _ _ (by omega), Offset.add_add_eq _ (c := i + 1) (by omega)]
+    simp only [t4, show i - 4 < 4 by omega_arith, ↓reduceIte]
+    rw [extractLsb'_readW32 _ _ (by omega_arith), Offset.add_add_eq _ (c := i + 1) (by omega_arith)]
+  have t4 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 4)).toNat < 4 := by rw [h4]; split <;> omega_arith
+  simp only [t4, h0, show i < 4 by omega_arith, ↓reduceIte]
+  rw [extractLsb'_readW32 _ _ (by omega_arith), Offset.add_add_eq _ (c := i + 1) (by omega_arith)]
 
 theorem shiftMem32_bytes (m : Mem) (P : Addr) (c : Byte) :
     bytesAt (shiftMem32 m P c) P 16 = (bytesAt m P 16).tail ++ [c] := by
@@ -149,7 +149,7 @@ theorem shiftMem32_bytes (m : Mem) (P : Addr) (c : Byte) :
   by_cases e : i = 15
   · subst e; simp
   · simp only [e, ↓reduceIte]
-    rw [List.getElem_append_left (by simp; omega)]
+    rw [List.getElem_append_left (by simp; omega_arith)]
     simp
 
 theorem shiftMem32_frame (m : Mem) (P : Addr) (c : Byte) : Frame [⟨P, 16⟩] m (shiftMem32 m P c) :=
@@ -169,14 +169,14 @@ theorem extr_byte (x y : BitVec 64) {j : Nat} (hj : j < 8) :
   split
   · ext k hk
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]
-    simp only [show 8 * j + k < 64 by omega, decide_true, Bool.true_and, show 8 + (8 * j + k) < 64 by omega,
+    simp only [show 8 * j + k < 64 by omega_arith, decide_true, Bool.true_and, show 8 + (8 * j + k) < 64 by omega_arith,
       ↓reduceIte]
-    congr 1; omega
+    congr 1; omega_arith
   · ext k hk
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]
-    simp only [show 8 * j + k < 64 by omega, decide_true, Bool.true_and, show ¬ (8 + (8 * j + k) < 64) by omega,
+    simp only [show 8 * j + k < 64 by omega_arith, decide_true, Bool.true_and, show ¬ (8 + (8 * j + k) < 64) by omega_arith,
       ↓reduceIte]
-    congr 1; omega
+    congr 1; omega_arith
 
 /-- The block at `P` shifted left by a byte, with `c` shifted in, as `extr`
 of its two words loaded first: the high 64 bits of `w₁ : w₀` and of
@@ -187,29 +187,29 @@ def shiftMemX (m : Mem) (P : Addr) (c : Byte) : Mem :=
 
 theorem shiftMemX_apply (m : Mem) (P : Addr) (c : Byte) {i : Nat} (hi : i < 16) :
     shiftMemX m P c (P + BitVec.ofNat 64 i) = if i = 15 then c else m (P + BitVec.ofNat 64 (i + 1)) := by
-  have h0 : (P + BitVec.ofNat 64 i - P).toNat = i := Mem.sub_ofNat_toNat P (by omega)
-  have h8 := Offset.sub_toNat' P (d := 8) (e := i) (by decide) (by omega)
+  have h0 : (P + BitVec.ofNat 64 i - P).toNat = i := Mem.sub_ofNat_toNat P (by omega_arith)
+  have h8 := Offset.sub_toNat' P (d := 8) (e := i) (by decide) (by omega_arith)
   simp only [shiftMemX, writeW64_apply]
   by_cases e8 : 8 ≤ i
   · have t8 : (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 8)).toNat = i - 8 := by
       rw [h8]; simp only [e8, ↓reduceIte]
-    simp only [t8, show i - 8 < 8 by omega, ↓reduceIte, extr_byte _ _ (show i - 8 < 8 by omega)]
+    simp only [t8, show i - 8 < 8 by omega_arith, ↓reduceIte, extr_byte _ _ (show i - 8 < 8 by omega_arith)]
     by_cases e15 : i = 15
     · subst e15
       simp only [Nat.reduceSub, Nat.lt_irrefl, ↓reduceIte]
-      ext k hk; simp [hk]; omega
-    · simp only [show i - 8 < 7 by omega, e15, ↓reduceIte]
-      rw [extractLsb'_readW64 _ _ (by omega), Offset.add_add_eq _ (c := i + 1) (by omega)]
-  · have t8 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 8)).toNat < 8 := by rw [h8]; split <;> omega
-    simp only [t8, h0, show i < 8 by omega, ↓reduceIte, extr_byte _ _ (show i < 8 by omega),
-      show ¬ i = 15 by omega]
+      ext k hk; simp [hk]; omega_arith
+    · simp only [show i - 8 < 7 by omega_arith, e15, ↓reduceIte]
+      rw [extractLsb'_readW64 _ _ (by omega_arith), Offset.add_add_eq _ (c := i + 1) (by omega_arith)]
+  · have t8 : ¬ (P + BitVec.ofNat 64 i - (P + BitVec.ofNat 64 8)).toNat < 8 := by rw [h8]; split <;> omega_arith
+    simp only [t8, h0, show i < 8 by omega_arith, ↓reduceIte, extr_byte _ _ (show i < 8 by omega_arith),
+      show ¬ i = 15 by omega_arith]
     by_cases e7 : i < 7
     · simp only [e7, ↓reduceIte]
-      rw [extractLsb'_readW64 _ _ (by omega)]
+      rw [extractLsb'_readW64 _ _ (by omega_arith)]
     · simp only [e7, ↓reduceIte]
       have e := extractLsb'_readW64 m (P + BitVec.ofNat 64 8) (j := 0) (by decide)
       simp only [Nat.mul_zero, BitVec.add_zero] at e
-      rw [e, show i + 1 = 8 by omega]
+      rw [e, show i + 1 = 8 by omega_arith]
 
 theorem shiftMemX_bytes (m : Mem) (P : Addr) (c : Byte) :
     bytesAt (shiftMemX m P c) P 16 = (bytesAt m P 16).tail ++ [c] := by
@@ -220,7 +220,7 @@ theorem shiftMemX_bytes (m : Mem) (P : Addr) (c : Byte) :
   by_cases e : i = 15
   · subst e; simp
   · simp only [e, ↓reduceIte]
-    rw [List.getElem_append_left (by simp; omega)]
+    rw [List.getElem_append_left (by simp; omega_arith)]
     simp
 
 theorem shiftMemX_frame (m : Mem) (P : Addr) (c : Byte) : Frame [⟨P, 16⟩] m (shiftMemX m P c) :=

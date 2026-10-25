@@ -17,7 +17,7 @@ namespace VG.Proof.Rsa.X86.InvBatch
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Rsa.X86.InvBatch
  VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86.Inv
 
-local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
+local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega_arith))
 
  theorem coefficients_ok {s : State} {base : Addr} {size w n : Nat}
     (hs : Scr s base size) (_hn : 16≤n) (hw : w=2*n) (hz : offset w 15≤size) :
@@ -32,7 +32,7 @@ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
   refine WP.mono (setWord_ok (dst:=offset w 7) 1 ((hs.of_keeps K1 (by decide)).of_keeps K2 (by decide)) (by apart)) fun z ⟨V3,K3,O3⟩ => ?_
   refine ⟨?_,?_,(K1.trans K2).trans K3,?_⟩
   · rw [O3.val32 (by apart) (by apart),O2.val32 (by apart) (by apart),V1]
-  · have tail : val32 s2.mem base (offset w 7+4) n=0 := by rw [val32] at V2; omega
+  · have tail : val32 s2.mem base (offset w 7+4) n=0 := by rw [val32] at V2; omega_arith
     rw [val32,V3,O3.val32 (by apart) (by apart),tail]; rfl
   · intro x hx
     rw [O3 x (by apart),O2 x (by apart),O1 x (by apart)]
@@ -45,11 +45,11 @@ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
       Keeps [.eax,.ebx,.ecx,.edx,.ebp] s z ∧ Outside base (offset w 3+28) 4 s.mem z.mem := by
   have nw := hs.nowrap
   have low : p%2^32=w32 s.mem base (offset w 2) := by
-    have e : n=(n-1)+1 := by omega
+    have e : n=(n-1)+1 := by omega_arith
     have v := congrArg (fun k => k%2^32) hm
     rw [e,val32] at v
     have bound : w32 s.mem base (offset w 2)<2^32 := (s.mem.readW _ 32).isLt
-    omega
+    omega_arith
   unfold inverseSetup
   refine WP.block_append (WP.block_append ?_)
   refine wp_movS (readSrc_sc hs (by apart)) fun s1 U1 _ => WP.block_nil ?_

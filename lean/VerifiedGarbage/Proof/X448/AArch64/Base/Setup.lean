@@ -102,19 +102,19 @@ theorem prefix_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base) (hw : (⟨ba
     tw.trans kad.2.2⟩
   have od : Outside base 0 8192 s.mem d.mem := by
     have o1 : Outside base 0 8192 s.mem b.mem := by
-      rw [mb, ← ma]; exact (VG.Proof.X448.AArch64.writeW_outside _ _ _ (by decide)).mono (by omega) (by omega)
+      rw [mb, ← ma]; exact (VG.Proof.X448.AArch64.writeW_outside _ _ _ (by decide)).mono (by omega_arith) (by omega_arith)
     have o2 : Outside base 0 8192 b.mem c.mem := by
-      rw [mc]; exact (VG.Proof.X448.AArch64.writeW_outside _ _ _ (by decide)).mono (by omega) (by omega)
+      rw [mc]; exact (VG.Proof.X448.AArch64.writeW_outside _ _ _ (by decide)).mono (by omega_arith) (by omega_arith)
     rw [md]; exact o1.trans o2
   refine ⟨hsd.of_keeps (rs := []) ⟨fun r _ => congrFun tg r, tr, tw⟩ (by decide), ⟨?_, ?_⟩, ?_, ?_, kt,
-    od.trans (tOut.mono (by omega) (by simp only [Impl.X448.AArch64.Fast.SAVE]; omega))⟩
+    od.trans (tOut.mono (by omega_arith) (by simp only [Impl.X448.AArch64.Fast.SAVE]; omega_arith))⟩
   · rw [tOut.word (Or.inl (by decide)) (by decide), md]; exact c0
   · rw [tOut.word (Or.inl (by decide)) (by decide), md]; exact c8
   · rw [congrFun tg .x20, d20, kc.1 _ (by decide), kb.1 _ (by decide), ka.1 _ (by decide)]
   · intro k hk
     rw [tx k hk]
     have : VG.Impl.X448.AArch64.Fast.saved k ∉ [Reg.x3, .x12, .x20] := by
-      rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 by omega)
+      rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 by omega_arith)
         with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     exact kad.1 _ this
 
@@ -141,22 +141,22 @@ theorem block1_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base) (hw : (⟨ba
   have m : ∀ {d : Nat}, d + 8 ≤ 64 ∨ 2880 ≤ d → d + 8 ≤ 8192 →
       d + 8 ≤ VG.Impl.X448.AArch64.Fast.VSAVE ∨ VG.Impl.X448.AArch64.Fast.VSAVE + 128 ≤ d →
       word t.mem base d = word a.mem base d := fun h1 h2 h3 => by
-    rw [tOut.word (by simp only [slot]; omega) h2, mc, ob.word h3 h2]
+    rw [tOut.word (by simp only [slot]; omega_arith) h2, mc, ob.word h3 h2]
   have hxs : ∀ k < 8, word t.mem base (Impl.X448.AArch64.Fast.SAVE + 8 * k) = s.gpr (Impl.X448.AArch64.Fast.saved k) :=
     fun k hk => by
-      rw [m (by simp only [Impl.X448.AArch64.Fast.SAVE]; omega) (by simp only [Impl.X448.AArch64.Fast.SAVE]; omega)
-        (by simp only [Impl.X448.AArch64.Fast.SAVE, Impl.X448.AArch64.Fast.VSAVE]; omega)]
+      rw [m (by simp only [Impl.X448.AArch64.Fast.SAVE]; omega_arith) (by simp only [Impl.X448.AArch64.Fast.SAVE]; omega_arith)
+        (by simp only [Impl.X448.AArch64.Fast.SAVE, Impl.X448.AArch64.Fast.VSAVE]; omega_arith)]
       exact xa k hk
   have vt : SavedV base a.v t.mem := by
     have vc : SavedV base a.v c.mem := by rw [mc]; exact vb
-    exact vc.outside tOut (by simp only [slot, Impl.X448.AArch64.Fast.VSAVE]; omega)
+    exact vc.outside tOut (by simp only [slot, Impl.X448.AArch64.Fast.VSAVE]; omega_arith)
   refine ⟨hst, ⟨by rw [m (by decide) (by decide) (by decide)]; exact sa.1,
       by rw [m (by decide) (by decide) (by decide)]; exact sa.2⟩,
     by rw [kt.1 _ (by decide), kc.1 _ (by decide), congrFun gb .x20]; exact oa,
     hxs, fun k hk => ?_, ?_, tz, ?_⟩
   · rw [vt k hk]
     have hr : VG.Impl.Curve448.AArch64.Neon.V (8 + k) ∈ preservedV := by
-      rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 by omega)
+      rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 by omega_arith)
         with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     exact va _ hr
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
@@ -165,9 +165,9 @@ theorem block1_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base) (hw : (⟨ba
         ka.1 _ (by simp [hr.1, hr.2.1, hr.2.2.2])]
     · rw [kt.2.1, kc.2.1, rb, ka.2.1]
     · rw [kt.2.2, kc.2.2, wb, ka.2.2]
-  · refine (outa.trans (ob.mono (by simp only [Impl.X448.AArch64.Fast.VSAVE]; omega)
-      (by simp only [Impl.X448.AArch64.Fast.VSAVE]; omega))).trans ?_
-    rw [← mc]; exact tOut.mono (by simp only [slot]; omega) (by simp only [slot]; omega)
+  · refine (outa.trans (ob.mono (by simp only [Impl.X448.AArch64.Fast.VSAVE]; omega_arith)
+      (by simp only [Impl.X448.AArch64.Fast.VSAVE]; omega_arith))).trans ?_
+    rw [← mc]; exact tOut.mono (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith)
 
 /-- The constant slots: both accumulators at the affine point `g`, and the counter at 0. -/
 theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) (g : Spec.X448.Fe × Spec.X448.Fe) :
@@ -201,20 +201,20 @@ theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) (g : Spec.X448.Fe 
     simp only [AX, AY, AZ, BX, BY, BZ, slot] at v1 v2 v3 v4 v5 v6 o1 o2 o3 o4 o5 o6 ⊢
     rw [m]
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [o6.word (by omega) (by omega), o5.word (by omega) (by omega), o4.word (by omega) (by omega),
-        o3.word (by omega) (by omega), o2.word (by omega) (by omega)]; exact v1 w hw8
-    · rw [o6.word (by omega) (by omega), o5.word (by omega) (by omega), o4.word (by omega) (by omega),
-        o3.word (by omega) (by omega)]; exact v2 w hw8
-    · rw [o6.word (by omega) (by omega), o5.word (by omega) (by omega), o4.word (by omega) (by omega)]
+    · rw [o6.word (by omega_arith) (by omega_arith), o5.word (by omega_arith) (by omega_arith), o4.word (by omega_arith) (by omega_arith),
+        o3.word (by omega_arith) (by omega_arith), o2.word (by omega_arith) (by omega_arith)]; exact v1 w hw8
+    · rw [o6.word (by omega_arith) (by omega_arith), o5.word (by omega_arith) (by omega_arith), o4.word (by omega_arith) (by omega_arith),
+        o3.word (by omega_arith) (by omega_arith)]; exact v2 w hw8
+    · rw [o6.word (by omega_arith) (by omega_arith), o5.word (by omega_arith) (by omega_arith), o4.word (by omega_arith) (by omega_arith)]
       exact v3 w hw8
-    · rw [o6.word (by omega) (by omega), o5.word (by omega) (by omega)]; exact v4 w hw8
-    · rw [o6.word (by omega) (by omega)]; exact v5 w hw8
+    · rw [o6.word (by omega_arith) (by omega_arith), o5.word (by omega_arith) (by omega_arith)]; exact v4 w hw8
+    · rw [o6.word (by omega_arith) (by omega_arith)]; exact v5 w hw8
     · exact v6 w hw8
   · simp only [AX, AY, AZ, BX, BY, BZ, slot] at o1 o2 o3 o4 o5 o6
     rw [m]
-    exact (((((o1.mono (by omega) (by omega)).trans (o2.mono (by omega) (by omega))).trans
-      (o3.mono (by omega) (by omega))).trans (o4.mono (by omega) (by omega))).trans
-      (o5.mono (by omega) (by omega))).trans (o6.mono (by omega) (by omega))
+    exact (((((o1.mono (by omega_arith) (by omega_arith)).trans (o2.mono (by omega_arith) (by omega_arith))).trans
+      (o3.mono (by omega_arith) (by omega_arith))).trans (o4.mono (by omega_arith) (by omega_arith))).trans
+      (o5.mono (by omega_arith) (by omega_arith))).trans (o6.mono (by omega_arith) (by omega_arith))
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       rw [g r hr.2, k6.1 r (by simp [hr.1]), k5.1 r (by simp [hr.1]), k4.1 r (by simp [hr.1]),
@@ -259,7 +259,7 @@ theorem setup_ok {s : State} {base kp : Addr} (hb : s.gpr .x2 = base) (hw : (⟨
   have kb : Keeps bitRegs a t := ⟨gb, rdb, wrb⟩
   have hst : Scr t base := ha.of_keeps kb (by decide)
   rw [bytesAt_outside outa hkd] at bitsb
-  have mt : Outside base 0 8192 s.mem t.mem := outa.trans (ob.mono (by omega) (by simp only [BITS]; omega))
+  have mt : Outside base 0 8192 s.mem t.mem := outa.trans (ob.mono (by omega_arith) (by simp only [BITS]; omega_arith))
   have htt : TblAt t base (t.syms combSym) := by
     rw [syb, sya]
     exact htb.of_far (by rw [kb.2.1, ka.2.1, kb.2.2, ka.2.2]) fun x hx => mt x (Or.inr hx)
@@ -269,25 +269,25 @@ theorem setup_ok {s : State} {base kp : Addr} (hb : s.gpr .x2 = base) (hw : (⟨
   -- The slots `block1` zeroed.
   have zs : ∀ i : Index, ∀ w < 8, word a.mem base (slot i.val + 8 * w) = 0 := fun i w hw => by
     have := i.isLt
-    have hz := za (16 * i.val + w) (by omega)
-    have e : slot 0 + 8 * (16 * i.val + w) = slot i.val + 8 * w := by simp only [slot]; omega
+    have hz := za (16 * i.val + w) (by omega_arith)
+    have e : slot 0 + 8 * (16 * i.val + w) = slot i.val + 8 * w := by simp only [slot]; omega_arith
     rw [show VG.Proof.X448.AArch64.limbs a.mem base (slot 0) (16 * i.val + w) =
       (word a.mem base (slot i.val + 8 * w)).toNat by
         simp only [VG.Proof.X448.AArch64.limbs]; rw [e]] at hz
     exact BitVec.eq_of_toNat_eq hz
   have zt : ∀ i : Index, ∀ w < 8, word t.mem base (slot i.val + 8 * w) = 0 := fun i w hw => by
     have := i.isLt
-    rw [wt (by simp only [slot, BITS]; omega) (by simp only [slot]; omega)]
+    rw [wt (by simp only [slot, BITS]; omega_arith) (by simp only [slot]; omega_arith)]
     exact zs i w hw
   refine ⟨⟨hst, fun i w hw => ?_, fun w hw => ?_, fun q hq => ?_, htt⟩,
     ⟨by rw [wt (by decide) (by decide)]; exact sa.1,
       by rw [wt (by decide) (by decide)]; exact sa.2⟩,
     by rw [kb.1 _ (by decide)]; exact oa,
     fun k hk => by
-      rw [wt (by simp only [Impl.X448.AArch64.Fast.SAVE, BITS]; omega)
-        (by simp only [Impl.X448.AArch64.Fast.SAVE]; omega)]
+      rw [wt (by simp only [Impl.X448.AArch64.Fast.SAVE, BITS]; omega_arith)
+        (by simp only [Impl.X448.AArch64.Fast.SAVE]; omega_arith)]
       exact xa k hk,
-    va.outside ob (by simp only [BITS, Impl.X448.AArch64.Fast.VSAVE]; omega),
+    va.outside ob (by simp only [BITS, Impl.X448.AArch64.Fast.VSAVE]; omega_arith),
     by rw [kb.1 _ (by decide), ka.1 _ (by decide)],
     by rw [kb.2.1, ka.2.1], by rw [kb.2.2, ka.2.2], mt⟩
   · show (word t.mem base (slot i.val + 8 * w)).toNat < Ib

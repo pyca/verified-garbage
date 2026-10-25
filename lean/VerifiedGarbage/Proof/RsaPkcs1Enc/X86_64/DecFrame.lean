@@ -149,19 +149,19 @@ theorem fb_eq (s : State) : fb s = off (s.gpr .rsp - BitVec.ofNat 64 decStack) (
 theorem fb_toNat {s : State} (hp : DPre s) : (fb s).toNat + frameBytes + 8 + 136 ≤ 2 ^ 64 ∧
     (fb s).toNat + frameBytes = (s.gpr .rsp).toNat ∧ 8 + privStack ≤ (fb s).toNat := by
   have := hp.sp1; have := hp.sp2
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold decStack privStack frameBytes at *; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold decStack privStack frameBytes at *; omega_arith
 
 /-- Bytes of the frame are in the stack the function uses. -/
 theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) : Region.Sub ⟨off (fb s) d, n⟩ (stkR s) := by
   rw [fb_eq, off_off]
-  exact Offset.sub_base _ (by unfold frameBytes at h; unfold decStack privStack frameBytes; omega)
+  exact Offset.sub_base _ (by unfold frameBytes at h; unfold decStack privStack frameBytes; omega_arith)
 
 /-- The `n ≤ 8 + privStack` bytes below the frame are in the stack the
 function uses. -/
 theorem below_sub (s : State) {n : Nat} (hn : n ≤ 8 + privStack) : Region.Sub (below (fb s) n) (stkR s) := by
   rw [show below (fb s) n = ⟨s.gpr .rsp - BitVec.ofNat 64 (frameBytes + n), n⟩ by
     simp only [below, fb, BitVec.sub_sub, ← BitVec.ofNat_add]]
-  exact Offset.sub_below _ (by unfold decStack frameBytes; omega) (by unfold decStack frameBytes; omega)
+  exact Offset.sub_below _ (by unfold decStack frameBytes; omega_arith) (by unfold decStack frameBytes; omega_arith)
 
 /-- A byte outside the stack the function uses is outside the frame. -/
 theorem outside_frame (s : State) {x : Addr} (hx : ¬ (stkR s).Contains x 1) :
@@ -169,7 +169,7 @@ theorem outside_frame (s : State) {x : Addr} (hx : ¬ (stkR s).Contains x 1) :
   by_contra hlt
   apply hx
   have hc : (⟨fb s, frameBytes⟩ : Region).Contains x 1 := by
-    simp only [Region.Contains, ofs] at hlt ⊢; omega
+    simp only [Region.Contains, ofs] at hlt ⊢; omega_arith
   have := frame_sub s (d := 0) (n := frameBytes) (by decide)
   simp only [off, BitVec.add_zero] at this
   exact this x hc
@@ -184,13 +184,13 @@ theorem frame_of_outside {s : State} {m : Mem} (h : Outside (fb s) 0 frameBytes 
   fun x hx => h x (.inr (outside_frame s (hx _ (List.mem_cons_self ..))))
 
 theorem stackArgAddr_fb (s : State) (j : Nat) : stackArgAddr s j = off (fb s) (frameBytes + 8 + 8 * j) := by
-  rw [off, show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega, BitVec.ofNat_add,
+  rw [off, show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega_arith, BitVec.ofNat_add,
     ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rfl
 
 theorem stackArgAddr_eq (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega]
+  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega_arith]
 
 /-- A stack argument, past changes to the frame. -/
 theorem arg_outside {s : State} (hp : DPre s) {m : Mem} (h : Outside (fb s) 0 frameBytes s.mem m) {j : Nat}
@@ -198,14 +198,14 @@ theorem arg_outside {s : State} (hp : DPre s) {m : Mem} (h : Outside (fb s) 0 fr
   have := fb_toNat hp
   show m.readW _ 64 = s.mem.readW _ 64
   rw [stackArgAddr_fb]
-  exact h.word (.inr (by unfold frameBytes; omega)) (by unfold frameBytes at *; omega)
+  exact h.word (.inr (by unfold frameBytes; omega_arith)) (by unfold frameBytes at *; omega_arith)
 
 /-- A byte of a buffer apart from the stack the function uses, past changes
 to the frame. -/
 theorem byte_outside {s : State} {m : Mem} (h : Outside (fb s) 0 frameBytes s.mem m) {p : Addr} {n : Nat}
     (hd : (stkR s).Disjoint ⟨p, n⟩) (hn : n ≤ 2 ^ 64) {i : Nat} (hi : i < n) :
     m (p + BitVec.ofNat 64 i) = s.mem (p + BitVec.ofNat 64 i) :=
-  h _ (.inr (outside_frame s fun hc => hd _ hc (Offset.contains_base _ (by omega) (by omega))))
+  h _ (.inr (outside_frame s fun hc => hd _ hc (Offset.contains_base _ (by omega_arith) (by omega_arith))))
 
 /-! ## The first block -/
 
@@ -219,7 +219,7 @@ theorem ea_arg {t : State} {s : State} (h : t.gpr .rsp = fb s) (j : Nat) :
 theorem arg_in {s : State} (hp : DPre s) {rd : List Region} (hrd : rd = s.rd) (wr : List Region) {j : Nat}
     (hj : j < 17) : InRegions (rd ++ wr) (stackArgAddr s j) 8 :=
   ⟨⟨stackArgAddr s 0, 136⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp),
-    by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem allocState_gpr (bytes : Nat) (s : State) (r : Reg) :
     (allocState bytes s).gpr r = if r = .rsp then s.gpr .rsp - BitVec.ofNat 64 bytes else s.gpr r := rfl
@@ -232,7 +232,7 @@ theorem slotStores_run {s : State} (hp : DPre s) :
       Keep [] (allocState frameBytes s) t := by
   have hF := fb_toNat hp
   have hs : Scr (allocState frameBytes s) (fb s) frameBytes :=
-    Scr.of_mem (List.mem_cons_self ..) (by unfold frameBytes at *; omega)
+    Scr.of_mem (List.mem_cons_self ..) (by unfold frameBytes at *; omega_arith)
   have hsp : (allocState frameBytes s).gpr .rsp = fb s := rfl
   exact WP.keep [] (by
     xrun [slotStores, ea_sp, hsp, hs.st (d := oOut) (by decide), hs.st (d := oML) (by decide),
@@ -265,7 +265,7 @@ theorem mvArgs_run {s : State} (hp : DPre s) : ∀ (ps : List (Nat × Nat)),
     rw [List.flatMap_cons, WP.block_append_iff]
     refine WP.mono (mvArg_run hp hsp hs hrd ho hj hd) fun t₁ ⟨hm₁, k₁⟩ => ?_
     have ho₁ : Outside (fb s) 0 frameBytes s.mem t₁.mem := by
-      rw [hm₁]; exact Outside.ww ho _ (by omega) hd (by unfold frameBytes at *; omega)
+      rw [hm₁]; exact Outside.ww ho _ (by omega_arith) hd (by unfold frameBytes at *; omega_arith)
     have hnd' := List.nodup_cons.mp hnd
     refine WP.mono (mvArgs_run hp ps (fun q hq => hps q (List.mem_cons_of_mem _ hq)) hnd'.2 t₁
       ((k₁.gpr (by decide)).trans hsp) (hs.congr k₁.2.2) (k₁.2.1.trans hrd) ho₁)
@@ -274,8 +274,8 @@ theorem mvArgs_run {s : State} (hp : DPre s) : ∀ (ps : List (Nat × Nat)),
       · rw [hk' _ h8 hd fun q' hq' he => hnd'.1 (List.mem_map.mpr ⟨q', hq', he⟩), hm₁, word_writeW_self]
       · exact hw' q hq
     · rw [hk' d hd8 hdF fun q hq => hne q (List.mem_cons_of_mem _ hq), hm₁,
-        word_ww _ _ _ (by have := hne p (List.mem_cons_self ..); omega) (by unfold frameBytes at *; omega)
-          (by unfold frameBytes at *; omega)]
+        word_ww _ _ _ (by have := hne p (List.mem_cons_self ..); omega_arith) (by unfold frameBytes at *; omega_arith)
+          (by unfold frameBytes at *; omega_arith)]
 
 /-- The slots set by the first block, in memory `m`. -/
 structure Slots (s : State) (m : Mem) : Prop where
@@ -294,7 +294,7 @@ structure Slots (s : State) (m : Mem) : Prop where
 theorem Slots.outside {s : State} {m m' : Mem} (h : Slots s m) {o n : Nat} (ho : oR ≤ o)
     (h' : Outside (fb s) o n m m') : Slots s m' := by
   have w : ∀ {d : Nat}, d + 8 ≤ oR → word m' (fb s) d = word m (fb s) d := fun hd =>
-    h'.word (.inl (by omega)) (by unfold oR at hd; omega)
+    h'.word (.inl (by omega_arith)) (by unfold oR at hd; omega_arith)
   exact ⟨(w (by decide)).trans h.sOut, (w (by decide)).trans h.sML, (w (by decide)).trans h.sN,
     (w (by decide)).trans h.sK, (w (by decide)).trans h.sE, (w (by decide)).trans h.sEl,
     (w (by decide)).trans h.sD, (w (by decide)).trans h.sDl, (w (by decide)).trans h.sIn,
@@ -322,7 +322,7 @@ theorem argMoves_nodup : (argMoves.map (·.2)).Nodup := by decide
 theorem setup_run {s : State} (hp : DPre s) : WP isa (.block setup) (allocState frameBytes s) (Setup s) := by
   have hF := fb_toNat hp
   have hs : Scr (allocState frameBytes s) (fb s) frameBytes :=
-    Scr.of_mem (List.mem_cons_self ..) (by unfold frameBytes at *; omega)
+    Scr.of_mem (List.mem_cons_self ..) (by unfold frameBytes at *; omega_arith)
   rw [setup, WP.block_append_iff]
   refine WP.mono (slotStores_run hp) fun t₁ ⟨hm₁, k₁⟩ => ?_
   have ho₁ : Outside (fb s) 0 frameBytes s.mem t₁.mem := by

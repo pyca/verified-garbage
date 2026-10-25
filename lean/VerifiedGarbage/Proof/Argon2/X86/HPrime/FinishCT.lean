@@ -275,14 +275,14 @@ theorem chain_rel {e e' : BitVec 32} :
       (fun m => ?_) _ s₁ s₂ t₁ t₂ s₁' s₂' ⟨j, rfl, h65, h₁, h₂⟩ e₁ e₂
   refine RelCT.of_pre fun _ _ ⟨j, hm, h65, _, _⟩ => ?_
   subst hm
-  have it := (body_rel hp hp' q (j := j) (by omega) (e := e) (e' := e')).wp
+  have it := (body_rel hp hp' q (j := j) (by omega_arith) (e := e) (e' := e')).wp
     (F₁ := fun (t : State) => ChainAt s₀ e (j + 1) t ∧ t.cf = some (decide (ol s₀ - (32 + 32 * (j + 1)) < 65)))
     (F₂ := fun (t : State) => ChainAt s₀' e' (j + 1) t ∧ t.cf = some (decide (ol s₀' - (32 + 32 * (j + 1)) < 65)))
     fun t₁ t₂ ⟨⟨V, hV, i₁⟩, ⟨V', hV', i₂⟩⟩ =>
-      ⟨(iter_ok hp hV i₁ (by omega)).mono fun _ h => ⟨⟨V, hV, h.1⟩, h.2⟩,
-       (iter_ok hp' hV' i₂ (by omega)).mono fun _ h => ⟨⟨V', hV', h.1⟩, h.2⟩⟩
+      ⟨(iter_ok hp hV i₁ (by omega_arith)).mono fun _ h => ⟨⟨V, hV, h.1⟩, h.2⟩,
+       (iter_ok hp' hV' i₂ (by omega_arith)).mono fun _ h => ⟨⟨V', hV', h.1⟩, h.2⟩⟩
   refine it.mono (fun t₁ t₂ ⟨j', hj, _, a₁, a₂⟩ => ?_) fun t₁ t₂ ⟨_, ⟨c₁, f₁⟩, ⟨c₂, f₂⟩⟩ => ?_
-  · have : j' = j := by omega
+  · have : j' = j := by omega_arith
     subst this; exact ⟨a₁, a₂⟩
   · rw [ho] at f₂
     have ev : isa.eval .ae t₁ = isa.eval .ae t₂ := by
@@ -291,11 +291,11 @@ theorem chain_rel {e e' : BitVec 32} :
     · have : ol s₀ - (32 + 32 * (j + 1)) < 65 := by
         have hf' : t₁.cf.map (!·) = some false := hf
         rw [f₁] at hf'; simpa using hf'
-      exact ⟨j + 1, c₁, c₂, by omega, by omega, by omega⟩
+      exact ⟨j + 1, c₁, c₂, by omega_arith, by omega_arith, by omega_arith⟩
     · have : ¬ ol s₀ - (32 + 32 * (j + 1)) < 65 := by
         have ht' : t₁.cf.map (!·) = some true := ht
         rw [f₁] at ht'; simpa using ht'
-      exact ⟨_, by omega, j + 1, rfl, by omega, c₁, c₂⟩
+      exact ⟨_, by omega_arith, j + 1, rfl, by omega_arith, c₁, c₂⟩
 
 /-! ## Extending the digest -/
 
@@ -306,7 +306,7 @@ include hp in
 theorem ext_emit {s : State} (h : ExtIn s₀ s) (hol : 32 ≤ ol s₀) :
     WP isa emitPrefix s (ChainAt s₀ (s₀.gpr .ebp) 0) := by
   obtain ⟨b, o, e⟩ := h
-  refine (emit_ok hp b o (by simp only [List.length_nil]; omega)).mono fun t ⟨bt, et, ot, dt⟩ =>
+  refine (emit_ok hp b o (by simp only [List.length_nil]; omega_arith)).mono fun t ⟨bt, et, ot, dt⟩ =>
     ⟨digest s₀ s, by simp [digest, bytesAt], bt, et.trans e, ?_, ?_⟩
   · rw [List.nil_append] at ot
     simpa [chainOut, chainPrefixes] using ot
@@ -356,12 +356,12 @@ theorem last_rel {e e' : BitVec 32} :
         rw [i₁.body.ebx, i₂.body.ebx, q.scr_eq]) ⟨_, by taint_decide⟩
       (fun _ h => left_blk hp h)
       (fun _ h => (left_blk hp' h).mono fun _ h => ⟨by rw [← q.scr_eq, ← q.esp, ← ho]; exact h.1, h.2⟩))
-    (next_out_rel hp hp' q (n := ol s₀ - (32 + 32 * j)) (by omega) l₂)).mono ?_ ?_
+    (next_out_rel hp hp' q (n := ol s₀ - (32 + 32 * j)) (by omega_arith) l₂)).mono ?_ ?_
   · intro t₁ t₂ ⟨j', c₁, c₂, m₁, m₂, m₃⟩
-    have : j' = j := by omega
+    have : j' = j := by omega_arith
     subst this; exact ⟨c₁, c₂⟩
   · intro t₁ t₂ ⟨o₁, o₂⟩
-    exact ⟨_, o₁, o₂, by omega, by omega⟩
+    exact ⟨_, o₁, o₂, by omega_arith, by omega_arith⟩
 
 include hp hp' q in
 theorem extend_rel (hol : 65 ≤ ol s₀) :
@@ -369,16 +369,16 @@ theorem extend_rel (hol : 65 ≤ ol s₀) :
   have ho := q.ol_eq
   have hol' : 65 ≤ ol s₀' := by rw [ho]; exact hol
   unfold extendDigest
-  refine RelCT.seq (rel_wp ((emit_rel hp hp' q (L := 0) (by omega)).mono
+  refine RelCT.seq (rel_wp ((emit_rel hp hp' q (L := 0) (by omega_arith)).mono
       (fun _ _ ⟨⟨b₁, o₁, _⟩, ⟨b₂, o₂, _⟩⟩ => ⟨⟨b₁, [], o₁, rfl⟩, ⟨b₂, [], o₂, rfl⟩⟩) fun _ _ h => h)
-      (fun _ h => ext_emit hp h (by omega)) (fun _ h => ext_emit hp' h (by omega))) ?_
+      (fun _ h => ext_emit hp h (by omega_arith)) (fun _ h => ext_emit hp' h (by omega_arith))) ?_
   refine RelCT.seq (rel_taint [.esp, .ebx] (fun _ _ ⟨_, _, i₁⟩ ⟨_, _, i₂⟩ => agree_body q i₁.body i₂.body)
     ⟨_, by taint_decide⟩ (fun _ h => chain_cmp hp h) (fun _ h => chain_cmp hp' h)) ?_
   refine RelCT.seq (RelCT.ite (fun t₁ t₂ ⟨⟨_, f₁⟩, ⟨_, f₂⟩⟩ => by
       show t₁.cf = t₂.cf; rw [f₁, f₂, ho])
-    (RelCT.nil fun _ _ ⟨⟨⟨c₁, f₁⟩, ⟨c₂, _⟩⟩, ht⟩ => ⟨0, c₁, c₂, by have := cf_true f₁ ht; omega⟩)
+    (RelCT.nil fun _ _ ⟨⟨⟨c₁, f₁⟩, ⟨c₂, _⟩⟩, ht⟩ => ⟨0, c₁, c₂, by have := cf_true f₁ ht; omega_arith⟩)
     ((chain_rel hp hp' q).mono (fun _ _ ⟨⟨⟨c₁, f₁⟩, ⟨c₂, _⟩⟩, hf⟩ =>
-      ⟨0, by have := cf_false f₁ hf; omega, c₁, c₂⟩) fun _ _ h => h))
+      ⟨0, by have := cf_false f₁ hf; omega_arith, c₁, c₂⟩) fun _ _ h => h))
     (last_rel hp hp' q)
 
 
@@ -400,9 +400,9 @@ theorem finishOutput_rel :
   refine RelCT.seq (R := Last s₀ s₀') (RelCT.ite (fun t₁ t₂ ⟨⟨_, f₁⟩, ⟨_, f₂⟩⟩ => by
       show t₁.cf = t₂.cf; rw [f₁, f₂, ho])
     (RelCT.nil fun _ _ ⟨⟨⟨⟨b₁, o₁, _⟩, f₁⟩, ⟨⟨b₂, o₂, _⟩, _⟩⟩, ht⟩ =>
-      ⟨0, ⟨b₁, [], o₁, rfl⟩, ⟨b₂, [], o₂, rfl⟩, by have := cf_true f₁ ht; omega,
-        by have := cf_true f₁ ht; omega⟩)
-    (RelCT.of_pre fun _ _ ⟨⟨⟨_, f₁⟩, _⟩, hf⟩ => (extend_rel hp hp' q (by have := cf_false f₁ hf; omega)).mono
+      ⟨0, ⟨b₁, [], o₁, rfl⟩, ⟨b₂, [], o₂, rfl⟩, by have := cf_true f₁ ht; omega_arith,
+        by have := cf_true f₁ ht; omega_arith⟩)
+    (RelCT.of_pre fun _ _ ⟨⟨⟨_, f₁⟩, _⟩, hf⟩ => (extend_rel hp hp' q (by have := cf_false f₁ hf; omega_arith)).mono
       (fun _ _ ⟨⟨⟨e₁, _⟩, ⟨e₂, _⟩⟩, _⟩ => ⟨e₁, e₂⟩) fun _ _ h => h)) ?_
   exact RelCT.mono (RelCT.exists_ fun L => (copyRemaining_rel hp hp' q (L := L)).mono
     (fun _ _ h => ⟨h.1, h.2.1⟩) fun _ _ h => h) (fun _ _ ⟨L, h⟩ => ⟨L, h⟩) fun _ _ h => h

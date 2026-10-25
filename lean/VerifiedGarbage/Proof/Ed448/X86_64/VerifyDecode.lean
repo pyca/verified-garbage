@@ -48,19 +48,19 @@ theorem byteBlock_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .
   · congr 1
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
   · apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, show (BitVec.signExtend 64 (127 : BitVec 32)).toNat = 2 ^ 7 - 1 from rfl,
       Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : BitVec.toNat (s.mem (p + 56#64)) < 2 ^ 64),
-      Nat.mod_eq_of_lt (by omega : BitVec.toNat (s.mem (p + 56#64)) % 128 < 2 ^ 64)]
+      Nat.mod_eq_of_lt (by omega_arith : BitVec.toNat (s.mem (p + 56#64)) < 2 ^ 64),
+      Nat.mod_eq_of_lt (by omega_arith : BitVec.toNat (s.mem (p + 56#64)) % 128 < 2 ^ 64)]
 
 theorem E_outside2 {base : Addr} {m m' : Mem} {o : Nat} (h : Outside2 base o 56 BAD 80 m m') (i : Index)
     (hi : slot i.val + 56 ≤ o ∨ o + 56 ≤ slot i.val) : E m' base i = E m base i := by
   have := slot_lt i
   simp only [VG.Impl.X448.X86_64.ACC] at this
   show VG.Proof.X448.toFe (mv m' base (slot i.val) 7) = VG.Proof.X448.toFe (mv m base (slot i.val) 7)
-  rw [h.mv (by omega) (Or.inl (by simp only [BAD]; omega)) (by omega)]
+  rw [h.mv (by omega_arith) (Or.inl (by simp only [BAD]; omega_arith)) (by omega_arith)]
 
 theorem decodeY_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rsi = p) (yo : Index)
     (hr8 : ∀ i < 7, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (8 * i)) 8)
@@ -81,11 +81,11 @@ theorem decodeY_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rs
   refine WP.mono (loadsS_ok s hp hr8) fun s1 ⟨v1, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (stores_ok hs1 (slot yo.val) W (by rw [W_len]; omega)) fun s2 ⟨v2, o2, g2, rd2, wr2⟩ => ?_
+  refine WP.mono (stores_ok hs1 (slot yo.val) W (by rw [W_len]; omega_arith)) fun s2 ⟨v2, o2, g2, rd2, wr2⟩ => ?_
   rw [W_len] at v2 o2
   have hs2 : Scr s2 base := ⟨(g2 _).trans hs1.rdi, wr2 ▸ hs1.wr, hs1.nowrap⟩
   have b2 : s2.mem (p + BitVec.ofNat 64 56) = s.mem (p + BitVec.ofNat 64 56) := by
-    rw [o2 _ (Or.inr (by have := hfar 56 (by decide); omega)), k1.2.1]
+    rw [o2 _ (Or.inr (by have := hfar 56 (by decide); omega_arith)), k1.2.1]
   rw [WP.block_append_iff]
   refine WP.mono (byteBlock_ok hs2 ((g2 _).trans ((k1.1 _ (by decide)).trans hp))
     (by rw [rd2, wr2, k1.2.2.1, k1.2.2.2]; exact hr56)) fun s3 ⟨m3, d3, g3, rd3, wr3⟩ => ?_
@@ -97,7 +97,7 @@ theorem decodeY_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rs
   refine WP.mono (freeze_ok hs4 (a := slot yo.val) hy) fun s5 ⟨v5, k5⟩ => ?_
   have hs5 := hs4.of_keeps k5 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (diffWords_ok hs5 (o := slot yo.val) (by omega)) fun s6 ⟨d6, m6, g6, rd6, wr6⟩ => ?_
+  refine WP.mono (diffWords_ok hs5 (o := slot yo.val) (by omega_arith)) fun s6 ⟨d6, m6, g6, rd6, wr6⟩ => ?_
   have hs6 : Scr s6 base := ⟨(g6 _ (by decide) (by decide)).trans hs5.rdi, wr6 ▸ hs5.wr, hs5.nowrap⟩
   refine WP.mono (orBad_ok hs6) fun t ⟨mt, gt, rdt, wrt⟩ => ?_
   have hy0 : mv s.mem p 0 7 = Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem p 56) := by
@@ -108,21 +108,21 @@ theorem decodeY_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rs
   have O34 : Outside base BAD 8 s3.mem s4.mem := by rw [m4]; exact writeW_outside _ _ _ (by decide)
   have O6t : Outside base BAD 8 s6.mem t.mem := by rw [mt]; exact writeW_outside _ _ _ (by decide)
   have hY5 : mv s5.mem base (slot yo.val) 7 = mv s2.mem base (slot yo.val) 7 := by
-    rw [k5.2.1, O34.mv (Or.inl (by simp only [BAD]; omega)) (by omega),
-      O23.mv (Or.inl (by simp only [SIGN]; omega)) (by omega)]
+    rw [k5.2.1, O34.mv (Or.inl (by simp only [BAD]; omega_arith)) (by omega_arith),
+      O23.mv (Or.inl (by simp only [SIGN]; omega_arith)) (by omega_arith)]
   have hYt : mv t.mem base (slot yo.val) 7 = mv s5.mem base (slot yo.val) 7 := by
-    rw [O6t.mv (Or.inl (by simp only [BAD]; omega)) (by omega), m6]
+    rw [O6t.mv (Or.inl (by simp only [BAD]; omega_arith)) (by omega_arith), m6]
   have hYv : mv s5.mem base (slot yo.val) 7 = Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem p 56) := by
     rw [hY5, v2, v1, hy0]
   have F : Outside2 base (slot yo.val) 56 BAD 80 s.mem t.mem := by
     intro x h1 h2
     simp only [BAD] at h2 O6t O34
     simp only [SIGN] at O23
-    rw [O6t x (by omega), m6, k5.2.1, O34 x (by omega), O23 x (by omega), o2 x h1, k1.2.1]
+    rw [O6t x (by omega_arith), m6, k5.2.1, O34 x (by omega_arith), O23 x (by omega_arith), o2 x h1, k1.2.1]
   refine ⟨?_, ?_, ⟨BitVec.ofNat 64 ((s.mem (p + BitVec.ofNat 64 56)).toNat % 128) ||| s6.gpr .rdx, ?_, ?_⟩,
     fun i hi => E_outside2 F i (by
       have := Fin.val_ne_of_ne hi
-      simp only [slot]; omega), ?_, ?_, ?_, F⟩
+      simp only [slot]; omega_arith), ?_, ?_, ?_, F⟩
   · show VG.Proof.X448.toFe (mv t.mem base (slot yo.val) 7) = _
     rw [hYt, hYv]
   · rw [O6t.word (Or.inr (by decide)) (by decide), m6, k5.2.1, O34.word (Or.inr (by decide)) (by decide), m3,
@@ -133,7 +133,7 @@ theorem decodeY_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rs
       constructor
       · intro h
         have := congrArg BitVec.toNat h
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
         exact this
       · intro h; rw [h]; rfl
     have e2 : (∀ i < 7, word s5.mem base (slot yo.val + 8 * i) = s5.gpr (w i)) ↔
@@ -150,7 +150,7 @@ theorem decodeY_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rs
       rw [key, hv, eq_comm, Nat.mod_eq_iff_lt hP0]
     rw [e1, e2]
   · rw [mt, word_writeW_self, m6, k5.2.1, m4, word_writeW_self, d3, b2, BitVec.or_assoc,
-      O23.word (Or.inl (by decide)) (by decide), o2.word (Or.inr (by simp only [BAD]; omega)) (by decide),
+      O23.word (Or.inl (by decide)) (by decide), o2.word (Or.inr (by simp only [BAD]; omega_arith)) (by decide),
       k1.2.1]
   · intro r hr
     simp only [List.mem_cons, not_or] at hr
@@ -183,11 +183,11 @@ theorem negMask (x : BitVec 64) {sb : Nat} (hsb : sb < 2) :
   have ha : x &&& BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 (x.toNat % 2) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, show (BitVec.signExtend 64 (1 : BitVec 32)).toNat = 2 ^ 1 - 1 from rfl,
-      Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : x.toNat % 2 < 2 ^ 64)]
+      Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : x.toNat % 2 < 2 ^ 64)]
   rw [ha]
   have h2 : x.toNat % 2 < 2 := Nat.mod_lt _ (by decide)
   generalize x.toNat % 2 = a at *
-  rcases (by omega : a = 0 ∨ a = 1) with rfl | rfl <;> rcases (by omega : sb = 0 ∨ sb = 1) with rfl | rfl <;>
+  rcases (by omega_arith : a = 0 ∨ a = 1) with rfl | rfl <;> rcases (by omega_arith : sb = 0 ∨ sb = 1) with rfl | rfl <;>
     decide
 
 /-- The mask of `x`'s low bit differing from the sign bit, and the OR of `x`'s words. -/
@@ -214,7 +214,7 @@ theorem signA_ok {s : State} {base : Addr} (hs : Scr s base) {sb : Nat} (hsb : w
 open VG.Proof.X448.X86_64 (FieldOk Keep cswapE opSwap mask)
 
 theorem rvW_mod2 (s : State) : rv s W % 2 = (s.gpr .r8).toNat % 2 := by
-  simp only [rv, W]; omega
+  simp only [rv, W]; omega_arith
 
 theorem rvW_zero (s : State) : (∀ i < 7, s.gpr (w i) = 0) ↔ rv s W = 0 := by
   rw [rvW, show (0 : Nat) = val7 (fun _ => 0) from rfl,
@@ -240,12 +240,12 @@ theorem movNeg_ok {s : State} {base : Addr} (hs : Scr s base) :
 
 theorem sign_bit (a sb : Nat) (ha : a < 2) (hsb : sb < 2) :
     ((a == 1) == (sb == 1)) = !(decide (a ≠ sb)) := by
-  rcases (by omega : a = 0 ∨ a = 1) with rfl | rfl <;> rcases (by omega : sb = 0 ∨ sb = 1) with rfl | rfl <;>
+  rcases (by omega_arith : a = 0 ∨ a = 1) with rfl | rfl <;> rcases (by omega_arith : sb = 0 ∨ sb = 1) with rfl | rfl <;>
     decide
 
 theorem zeroSign (z : Bool) (sb : Nat) (hsb : sb < 2) :
     ((if z then (1 : BitVec 64) else 0) &&& BitVec.ofNat 64 sb = 0 ↔ ¬ (z = true ∧ sb = 1)) := by
-  rcases (by omega : sb = 0 ∨ sb = 1) with rfl | rfl <;> cases z <;> decide
+  rcases (by omega_arith : sb = 0 ∨ sb = 1) with rfl | rfl <;> cases z <;> decide
 
 variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
 
@@ -297,8 +297,8 @@ theorem decodeSign_ok {s : State} {base : Addr} (hs : Scr s base) (xo : Index) (
     rw [← rvW_mod2, hxv]
   have O5 : Outside base BAD 80 s.mem s5.mem := by
     intro x hx
-    rw [m5, writeW_outside s4.mem base _ (by decide) x (by simp only [BAD] at hx ⊢; omega), m4, m3, m2,
-      writeW_outside s1.mem base _ (by decide) x (by simp only [BAD, NEG] at hx ⊢; omega), k1.2.1]
+    rw [m5, writeW_outside s4.mem base _ (by decide) x (by simp only [BAD] at hx ⊢; omega_arith), m4, m3, m2,
+      writeW_outside s1.mem base _ (by decide) x (by simp only [BAD, NEG] at hx ⊢; omega_arith), k1.2.1]
   have e5 : E s5.mem base = E s.mem base := E_bad O5
   obtain ⟨n12, nk⟩ := subNeg_eval xo hx12 (E s5.mem base)
   have hneg : word s6.mem base NEG = mask (decide ((E s.mem base xo).val % 2 ≠ sb)) := by
@@ -429,7 +429,7 @@ theorem decode_ok (hR : RecoverOk) {rt : Prog isa} (hrt : RootOk rt) {s : State}
   refine WP.mono (decodeX_ok hf hs3 xo hxo) fun s4 ⟨x4, ⟨c2, hc2, b4⟩, e4, sg4, g4, rd4, wr4, o4⟩ => ?_
   have hs4 : Scr s4 base := ⟨(g4 _ (by decide)).trans hs3.rdi, wr4 ▸ hs3.wr, hs3.nowrap⟩
   have hb128 : (s.mem (p + BitVec.ofNat 64 56)).toNat / 128 < 2 := by
-    have := (s.mem (p + BitVec.ofNat 64 56)).isLt; omega
+    have := (s.mem (p + BitVec.ofNat 64 56)).isLt; omega_arith
   have sg : word s4.mem base SIGN = BitVec.ofNat 64 ((s.mem (p + BitVec.ofNat 64 56)).toNat / 128) := by
     rw [sg4, k3.mem.word (Or.inr (by decide)) (by decide), k2.mem.word (Or.inr (by decide)) (by decide), sg1]
   refine WP.mono (decodeSign_ok hf hs4 xo hxo sg hb128)
@@ -487,7 +487,7 @@ theorem decode_ok (hR : RecoverOk) {rt : Prog isa} (hrt : RootOk rt) {s : State}
       exact ⟨xt, kY, rfl⟩
     · rw [ite_eq_right hall] at hpt
       cases hpt
-  · have hi14 : i.val < 14 := by omega
+  · have hi14 : i.val < 14 := by omega_arith
     have h12 : i ≠ 12 := fun h => by rw [h] at hi; exact absurd hi (by decide)
     have h13 : i ≠ 13 := fun h => by rw [h] at hi; exact absurd hi (by decide)
     rw [et i hix h12, e4 i hix h12, r3k i hi14, k2' i h3 h4 h5 h12 h13 hix, e1 i hiy]
@@ -500,8 +500,8 @@ theorem decode_ok (hR : RecoverOk) {rt : Prog isa} (hrt : RootOk rt) {s : State}
   · intro z h1 h2
     have hy2 := o1 z (by
       rcases h1 with h | h
-      · left; have := slot_lt yo; simp only [slot] at *; omega
-      · right; simp only [slot] at *; omega) h2
-    rw [ot z h1 h2, o4 z h1 h2, k3.mem z (by omega), k2.mem z h1, hy2]
+      · left; have := slot_lt yo; simp only [slot] at *; omega_arith
+      · right; simp only [slot] at *; omega_arith) h2
+    rw [ot z h1 h2, o4 z h1 h2, k3.mem z (by omega_arith), k2.mem z h1, hy2]
 
 end VG.Proof.Ed448.X86_64

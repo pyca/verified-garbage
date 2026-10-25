@@ -100,7 +100,7 @@ theorem smallSteps_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha 
   have hp : ∀ x y z w v : Nat, v * (x + 2 ^ 64 * y + 2 ^ 128 * z + 2 ^ 192 * w) =
       v * x + 2 ^ 64 * (v * y) + 2 ^ 128 * (v * z) + 2 ^ 192 * (v * w) := by intros; grind
   rw [hp]
-  omega
+  omega_arith
 
 /-- `[o] = [b] + a24 · [a]`. -/
 theorem mulA24Add_ok {s : State} {base : Addr} (hs : Scr s base) {o b a : Nat} (ho : Slot o)
@@ -134,7 +134,7 @@ theorem mulA24Add_ok {s : State} {base : Addr} (hs : Scr s base) {o b a : Nat} (
     have h24 : a24.toNat = 121665 := rfl
     rw [h24] at e1
     simp only [val4] at e1
-    omega
+    omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (fold_ok s₂ c2 hc) fun s₃ ⟨e3, _, k3⟩ => ?_
   have hs₃ := hs₂.of_keeps k3 (by decide)

@@ -51,7 +51,7 @@ theorem TableKeep.high {b : BitVec 32} {s t : State} (h : TableKeep b 64 256 s t
     (i : Slot) (hi : 4 ≤ i.val) :
     VG.Proof.Ed25519.Arm.env t.mem b i = VG.Proof.Ed25519.Arm.env s.mem b i :=
   congrArg VG.Proof.X25519.toFe (val16_congr (h.slot (by decide) i
-    (.inr (by simp only [offset]; omega))))
+    (.inr (by simp only [offset]; omega_arith))))
 
 theorem point_congr {e f : Env} (x y z t : Slot) (hx : e x = f x) (hy : e y = f y)
     (hz : e z = f z) (ht : e t = f t) : point e x y z t = point f x y z t := by
@@ -85,11 +85,11 @@ theorem prepareAdd_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.
   refine WP.seq (WP.mono (fieldCode_ok savePointOps hc hl) fun a ⟨ka, la, ea⟩ => ?_)
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (tableAddr_ok (ka.ctx hc) 5728 j (by omega) (by omega)
+  refine WP.mono (tableAddr_ok (ka.ctx hc) 5728 j (by omega_arith) (by omega_arith)
     ((ka.rest.gpr _ (by decide)).trans h11)) fun a' ⟨hptr, hr, hm⟩ => ?_
   have ka' : AccKeep b a a' := AccKeep.of_rest hr (by decide) hm
   refine WP.mono (pointFromTable_ok (ka'.ctx (ka.ctx hc)) (by rw [hm]; exact la)
-    hptr (by omega) (by omega)) fun c ⟨pc, lc, kc⟩ => ?_
+    hptr (by omega_arith) (by omega_arith)) fun c ⟨pc, lc, kc⟩ => ?_
   have kc' : AccKeep b a' c := AccKeep.of_table kc (by decide) (by decide)
   have ks : AccKeep b s c := (AccKeep.of_keep ka).trans (ka'.trans kc')
   have savec : point (env c.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 := by
@@ -98,7 +98,7 @@ theorem prepareAdd_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.
   have dc : env c.mem b 16 = env s.mem b 16 := by rw [kc.high 16 (by decide), hm, ea, savePoint_d]
   have tc : tablePoint a'.mem b (5728 + 128 * j) = tablePoint s.mem b (5728 + 128 * j) := by
     rw [hm]
-    exact workspace_tablePoint ka.frame (by omega) (by omega)
+    exact workspace_tablePoint ka.frame (by omega_arith) (by omega_arith)
   refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps (ks.ctx hc) lc) fun d ⟨kd, ld, ed⟩ => ?_)
   refine WP.mono (fieldCode_ok restorePointOps (kd.ctx (ks.ctx hc)) ld) fun t ⟨kt, lt, et⟩ => ?_
   refine ⟨ks.trans ((AccKeep.of_keep kd).trans (AccKeep.of_keep kt)), lt, ?_, ?_, ?_, ?_⟩
@@ -121,7 +121,7 @@ theorem AccKeep.bit {b : BitVec 32} {s t : State} (h : AccKeep b s t) (j : Nat) 
   refine h.frame _ fun r hr => ?_
   rw [List.mem_singleton.mp hr]
   exact (Offset.disjoint (State.addr b) (d := 32 + j) (n := 1) (e := 64) (k := 1568)
-    (.inl (by omega)) (by omega) (by decide)) _ (Region.contains_self _ _)
+    (.inl (by omega_arith)) (by omega_arith) (by decide)) _ (Region.contains_self _ _)
 
 
 theorem scalarBitMask_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (j : Nat) (hj : j < 16)
@@ -135,8 +135,8 @@ theorem scalarBitMask_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (j : Nat) (h
     change s.gpr .r0 + s.gpr .r11 = _
     rw [hc.r0, h11]
   refine wp_ldrb (a := State.addr b + BitVec.ofNat 64 (32 + j)) (by decide)
-    (by rw [ep, Offset.add_add, addr_add (by have := hc.fit; omega)]; rw [Nat.add_comm j 32])
-    (by rw [u1.rd, u1.wr]; exact hc.inR (by omega)) fun s2 u2 =>
+    (by rw [ep, Offset.add_add, addr_add (by have := hc.fit; omega_arith)]; rw [Nat.add_comm j 32])
+    (by rw [u1.rd, u1.wr]; exact hc.inR (by omega_arith)) fun s2 u2 =>
     wp_dp (op2_imm (by decide)) fun s3 u3 => WP.block_nil ?_
   have hr : Rest [.r2, .r9] s s3 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide)))
@@ -175,7 +175,7 @@ theorem swapField_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllL
   have hb := slot_range b
   rw [ACC_eq] at ha hb
   have hne : a.val ≠ b.val := fun h => hab (Fin.ext h)
-  refine WP.mono (cswap_ok (by omega) (by omega) (by simp only [offset]; omega) hc
+  refine WP.mono (cswap_ok (by omega_arith) (by omega_arith) (by simp only [offset]; omega_arith) hc
     (show sw.toNat ≤ 1 by cases sw <;> decide) hm) fun t ht => ?_
   have he : ∀ (i : Slot) k, k < 16 → limb t.mem (State.addr base) (offset i) k =
       limb s.mem (State.addr base) (offset (swapSlot a b sw i)) k := by
@@ -195,13 +195,13 @@ theorem swapField_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllL
       refine limb_frame ht.frame (fun r hr j hj => ?_) k hk
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;>
-        exact Offset.disjoint _ (by simp only [offset]; omega) (by omega) (by omega)
+        exact Offset.disjoint _ (by simp only [offset]; omega_arith) (by omega_arith) (by omega_arith)
   refine ⟨⟨ht.rest.mono (by decide), ?_⟩,
     fun i k hk => by rw [he i k hk]; exact hl _ k hk,
     ht.rest.gpr _ (by decide), funext fun i => congrArg VG.Proof.X25519.toFe (val16_congr (he i))⟩
   refine ht.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega) (by omega)
+  rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega_arith) (by omega_arith)
 
 theorem swapFields_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base)
     (ops : List (Slot × Slot)) (hops : ∀ ab ∈ ops, ab.1 ≠ ab.2) {sw : Bool}
@@ -322,7 +322,7 @@ theorem LoopKeep.bit {b : BitVec 32} {s t : State} (h : LoopKeep b s t) (j : Nat
   refine h.frame _ fun r hr => ?_
   rw [List.mem_singleton.mp hr]
   exact (Offset.disjoint (State.addr b) (d := 32 + j) (n := 1) (e := 64) (k := 1568)
-    (.inl (by omega)) (by omega) (by decide)) _ (Region.contains_self _ _)
+    (.inl (by omega_arith)) (by omega_arith) (by decide)) _ (Region.contains_self _ _)
 
 theorem accumulateDec_ok (s : State) (n : Nat) (h11 : s.gpr .r11 = BitVec.ofNat 32 (n + 1)) :
     WP isa (.block [.dp .sub .r11 .r11 (.imm 1)]) s fun t =>
@@ -338,7 +338,7 @@ theorem accumulateTest_ok (s : State) (n : Nat) (hn : n < 16) (h11 : s.gpr .r11 
       Rest [] s t ∧ t.mem = s.mem := by
   refine wp_cmp (op2_imm (by decide)) fun t ht hz => WP.block_nil ⟨?_, ht.rest _, ht.mem⟩
   have he : BitVec.ofNat 32 n - (0 : BitVec 32) = BitVec.ofNat 32 n := BitVec.sub_zero _
-  rw [hz, h11, he, ofNat_beq_zero (by omega)]
+  rw [hz, h11, he, ofNat_beq_zero (by omega_arith)]
 
 theorem accumulateBody_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (n start scalar : Nat) (p : Spec.Ed25519.Point) (hn : n < 16)

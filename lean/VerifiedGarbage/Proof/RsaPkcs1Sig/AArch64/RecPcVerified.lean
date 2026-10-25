@@ -78,7 +78,7 @@ theorem pubPR_of {S : Nat} {s₁ s₂ : State} (h : (Spec.RsaPkcs1Sig.recoverPre
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h0.symm, h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h7.symm]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+  · rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm]
 
 /-! ## The points of the code -/
@@ -133,7 +133,7 @@ theorem call_ct (c : PdChecked) :
                 rcases hr with h | h | h | h | h | h <;> subst h <;> decide)
   have sa : ∀ {t u : State} {s : State}, Only [.x2, .x3] u t → AtCall s u → ∀ i < 2,
       stackArg t i = stackArg s (i + 1) := fun o b i hi => by
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+    rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl
     · rw [← b.a0]; simp only [stackArg, stackArgAddr, o.sp, o.mem]
     · rw [← b.a1]; simp only [stackArg, stackArgAddr, o.sp, o.mem]
   refine ⟨⟨?_, fun r hr => ?_, fun i hi => ?_⟩, ?_, ?_⟩
@@ -148,7 +148,7 @@ theorem call_ct (c : PdChecked) :
     · rw [g o₁ .x5 (by simp), g o₂ .x5 (by simp), b₁.x5, b₂.x5, e .x5 (by decide)]
     · rw [g o₁ .x6 (by simp), g o₂ .x6 (by simp), b₁.x6, b₂.x6, e .x7 (by decide)]
     · rw [g o₁ .x7 (by simp), g o₂ .x7 (by simp), b₁.x7, b₂.x7, e .x3 (by decide)]
-  · rw [sa o₁ b₁ i hi, sa o₂ b₂ i hi, h₁.2.r.args (i + 1) (by omega), h₂.2.r.args (i + 1) (by omega)]
+  · rw [sa o₁ b₁ i hi, sa o₂ b₂ i hi, h₁.2.r.args (i + 1) (by omega_arith), h₂.2.r.args (i + 1) (by omega_arith)]
   · have fr : ∀ {s t u : State}, PrePR c.stack s → AtCall s u → Only [.x2, .x3] u t →
         Frame [kR c.stack s, sR s] s.mem t.mem := fun hp b o => by
       rw [o.mem]
@@ -162,7 +162,7 @@ theorem call_ct (c : PdChecked) :
       rw [g o .x4 (by simp), g o .x5 (by simp), b.x4, b.x5, o.mem]
       exact bytes_of_frame (b.mem.sub fun r hr => by
         rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_sub0 c.stack _⟩) hp.r.ke
-        hp.r.es.symm (by have := hp.r.we; omega)
+        hp.r.es.symm (by have := hp.r.we; omega_arith)
     rw [b h₁.1 b₁ o₁, b h₂.1 b₂ o₂, h₁.2.r.be, h₂.2.r.be]
 
 /-! ## After the call -/
@@ -302,29 +302,29 @@ theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x10000 ∧
 theorem sat (K : Nat) (hK : K ≤ 2 ^ 20) :
     ∃ s, (Spec.RsaPkcs1Sig.recoverPrecomputedContract abi (stk K)).pre s := by
   refine ⟨satState, ?_⟩
-  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
+  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega_arith
   rw [e]
   sig_pre [Spec.RsaPkcs1Sig.recoverPrecomputedContract, Spec.RsaPkcs1Sig.recoverPrecomputedSig, abi, argRegs,
     stackArgs_five, List.append_eq]
   obtain ⟨a0, a1, a2, a3, a4⟩ := sat_args
-  have hS : frameBytes + K - 1 + 1 = 2128 + K := by unfold frameBytes; omega
+  have hS : frameBytes + K - 1 + 1 = 2128 + K := by unfold frameBytes; omega_arith
   have hsp : (0x10000000000 : BitVec 64).toNat = 2 ^ 40 := by decide
   have hkb : ((0x10000000000 : BitVec 64) - BitVec.ofNat 64 (2128 + K)).toNat = 2 ^ 40 - (2128 + K) := by
-    rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega_arith
   have ha : stackArgAddr satState 0 = 0x10000000000 := by decide
   simp only [a0, a1, a2, a3, a4, hS, ha]
   have kd : ∀ (b : BitVec 64) (n : Nat), b.toNat + n ≤ 2 ^ 20 →
       Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (2128 + K), 2128 + K⟩ ⟨b, n⟩ := fun b n h =>
-    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega)) (by dsimp only; rw [hkb]; omega)
-      (by dsimp only; omega)
-  refine ⟨by rw [hsp]; omega, by decide, by decide, by decide, Region.disjoint_of_sep (by decide),
+    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega_arith)) (by dsimp only; rw [hkb]; omega_arith)
+      (by dsimp only; omega_arith)
+  refine ⟨by rw [hsp]; omega_arith, by decide, by decide, by decide, Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), kd _ _ (by decide), kd _ _ (by decide), kd _ _ (by decide),
     kd _ _ (by decide), kd _ _ (by decide), kd _ _ (by decide),
-    Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; omega))
-      (by dsimp only; rw [hkb]; omega) (by dsimp only; rw [hsp]; omega),
+    Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; omega_arith))
+      (by dsimp only; rw [hkb]; omega_arith) (by dsimp only; rw [hsp]; omega_arith),
     by decide, by decide, by decide, by decide, by decide, by decide, ⟨by decide, by decide⟩, by decide,
     by decide, ⟨.sha256, by decide, by decide⟩, by decide, by decide⟩
 

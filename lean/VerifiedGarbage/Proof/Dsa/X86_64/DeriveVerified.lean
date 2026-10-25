@@ -76,7 +76,7 @@ theorem DeriveABI.used {s : State} (h : DeriveABI s) : deriveExtent ≤ (stackAr
   unfold Spec.Dsa.lengthsValid at hl
   unfold Spec.Dsa.scratchWords at hs
   change 16096 ≤ _
-  omega
+  omega_arith
 
 theorem DeriveABI.pre {s : State} (h : DeriveABI s) : DerivePre h.input s := by
   have hs : Scr s (stackArg s 1) ((stackArg s 2).toNat * 8) := Scr.of_mem (by rw [h.wr]; simp) h.scratchBound
@@ -89,10 +89,10 @@ theorem DeriveABI.pre {s : State} (h : DeriveABI s) : DerivePre h.input s := by
     source_shrink (src_of_region (p := s.gpr .r9) (by rw [h.rd]; simp) (Nat.le_of_lt (stackArg s 0).isLt)
       h.scalarScratch) h.used, ?_, ?_, ?_, ?_⟩
   · intro j hj hb
-    exact stackWord_read (count := 3) hargs hj (by omega) (by decide)
+    exact stackWord_read (count := 3) hargs hj (by omega_arith) (by decide)
   · intro j hj hb i hi
     exact Nat.le_trans (Nat.le_trans hu h.used)
-      (stackWord_separate (count := 3) h.scratchArgs hj (by omega) (by decide) i hi)
+      (stackWord_separate (count := 3) h.scratchArgs hj (by omega_arith) (by decide) i hi)
   · intro i hi
     rw [hol] at hi
     exact ⟨_, hout, contains_byte _ hi (Nat.le_of_lt (s.gpr .rsi).isLt)⟩

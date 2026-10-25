@@ -82,7 +82,7 @@ theorem bdisj (p : Addr) (c : Nat) {a n b k : Nat} (ha : a ≤ c) (hb : b ≤ c)
     (h : c - a + n ≤ c - b ∨ c - b + k ≤ c - a) (hn : c + n < 2 ^ 32) (hk : c + k < 2 ^ 32) :
     Region.Disjoint ⟨p - BitVec.ofNat 64 a, n⟩ ⟨p - BitVec.ofNat 64 b, k⟩ := by
   rw [Offset.sub_ofNat_eq p ha, Offset.sub_ofNat_eq p hb]
-  exact Offset.disjoint _ h (by omega) (by omega)
+  exact Offset.disjoint _ h (by omega_arith) (by omega_arith)
 
 section Frames
 variable {E : BitVec 32} (hE : 76 ≤ E.toNat) {n : Nat} (hn : n ≤ 6)
@@ -90,30 +90,30 @@ include hE hn
 
 /-- A frame of `n` words is in `stk`. -/
 theorem args_sub : Region.Sub ⟨(E - BitVec.ofNat 32 (4 * n)).setWidth 64, 4 * n⟩ (below E 76) := by
-  rw [below_eq hE, Taint.sub_setWidth (by omega)]
-  exact Offset.sub_below _ (by omega) (by omega)
+  rw [below_eq hE, Taint.sub_setWidth (by omega_arith)]
+  exact Offset.sub_below _ (by omega_arith) (by omega_arith)
 
 /-- So is the return address of the call in it. -/
 theorem ret_sub : Region.Sub ⟨(E - BitVec.ofNat 32 (4 * n + 4)).setWidth 64, 4⟩ (below E 76) := by
-  rw [below_eq hE, Taint.sub_setWidth (by omega)]
-  exact Offset.sub_below _ (by omega) (by omega)
+  rw [below_eq hE, Taint.sub_setWidth (by omega_arith)]
+  exact Offset.sub_below _ (by omega_arith) (by omega_arith)
 
 /-- And the 48 bytes below it, which the callee uses. -/
 theorem cstk_sub :
     Region.Sub ⟨(E - BitVec.ofNat 32 (4 * n + 4)).setWidth 64 - BitVec.ofNat 64 48, 48⟩ (below E 76) := by
-  rw [below_eq hE, Taint.sub_setWidth (by omega), Offset.sub_sub_ofNat]
-  exact Offset.sub_below _ (by omega) (by omega)
+  rw [below_eq hE, Taint.sub_setWidth (by omega_arith), Offset.sub_sub_ofNat]
+  exact Offset.sub_below _ (by omega_arith) (by omega_arith)
 
 theorem ret_args : Region.Disjoint ⟨(E - BitVec.ofNat 32 (4 * n + 4)).setWidth 64, 4⟩
     ⟨(E - BitVec.ofNat 32 (4 * n)).setWidth 64, 4 * n⟩ := by
-  rw [Taint.sub_setWidth (by omega), Taint.sub_setWidth (by omega)]
-  exact bdisj _ (4 * n + 4) (by omega) (by omega) (by omega) (by omega) (by omega)
+  rw [Taint.sub_setWidth (by omega_arith), Taint.sub_setWidth (by omega_arith)]
+  exact bdisj _ (4 * n + 4) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem cstk_args :
     Region.Disjoint ⟨(E - BitVec.ofNat 32 (4 * n + 4)).setWidth 64 - BitVec.ofNat 64 48, 48⟩
       ⟨(E - BitVec.ofNat 32 (4 * n)).setWidth 64, 4 * n⟩ := by
-  rw [Taint.sub_setWidth (by omega), Taint.sub_setWidth (by omega), Offset.sub_sub_ofNat]
-  exact bdisj _ (4 * n + 52) (by omega) (by omega) (by omega) (by omega) (by omega)
+  rw [Taint.sub_setWidth (by omega_arith), Taint.sub_setWidth (by omega_arith), Offset.sub_sub_ofNat]
+  exact bdisj _ (4 * n + 52) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
 
 end Frames
 
@@ -121,10 +121,10 @@ theorem argVal32 (s : State) (i : Nat) : argVal s 32 i = (arg s i).setWidth 64 :
 
 theorem toNat_setWidth64 (a : BitVec 32) : (a.setWidth 64).toNat = a.toNat := by
   simp only [BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_arith)
 
 theorem setWidth32_64 (a : BitVec 32) : (a.setWidth 64).setWidth 32 = a := by
-  apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth]; have := a.isLt; omega
+  apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth]; have := a.isLt; omega_arith
 
 theorem toNat_ofNat32 {k : Nat} (h : k < 2 ^ 32) : (BitVec.ofNat 32 k).toNat = k := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
@@ -132,9 +132,9 @@ theorem toNat_ofNat32 {k : Nat} (h : k < 2 ^ 32) : (BitVec.ofNat 32 k).toNat = k
 /-- The callee's memory on entry is ours outside `stk`. -/
 theorem entry_frame {rs : List Reg} {s : State} (hrs : Reg.esp ∉ rs) (hn : rs.length ≤ 6)
     (h76 : 76 ≤ (s.gpr .esp).toNat) : Frame [stk s] s.mem (pushed rs s).callEntry.mem :=
-  (callEntry_frame (by omega) hrs).sub fun q hq => by
+  (callEntry_frame (by omega_arith) hrs).sub fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq
-    exact ⟨_, List.mem_singleton_self _, below_sub (by omega) h76⟩
+    exact ⟨_, List.mem_singleton_self _, below_sub (by omega_arith) h76⟩
 
 theorem entry_bytes {rs : List Reg} {s : State} (hrs : Reg.esp ∉ rs) (hn : rs.length ≤ 6)
     (h76 : 76 ≤ (s.gpr .esp).toNat) {p : Addr} {k : Nat} (hd : (stk s).Disjoint ⟨p, k⟩) (hk : k ≤ 2 ^ 64) :
@@ -210,7 +210,7 @@ theorem HiArgs.pre_of {S : StreamingHash} {Wi : Nat} {s : State} {inn out k sc :
   have rA := ret_args (E := s.gpr .esp) e (n := 5) (by decide)
   have kA := cstk_args (E := s.gpr .esp) e (n := 5) (by decide)
   simp only [Nat.reduceMul, Nat.reduceAdd] at sA sR sK rA kA
-  refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; omega, trivial, trivial,
+  refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; omega_arith, trivial, trivial,
     h.i_o, h.i_k, h.i_s, (h.b_i.sub_left sA).symm, h.o_k, h.o_s, (h.b_o.sub_left sA).symm, h.k_s,
     (h.b_k.sub_left sA).symm, (h.b_s.sub_left sA).symm,
     h.b_i.sub_left sR, h.b_o.sub_left sR, h.b_k.sub_left sR, h.b_s.sub_left sR, rA,
@@ -238,7 +238,7 @@ variable {S : StreamingHash} {Wi : Nat} {s : State} {inn out k sc : BitVec 32} {
   (h : HiArgs S Wi s inn out k sc kl)
 include h
 
-theorem fit : 4 * hi5.length + 4 ≤ (s.gpr .esp).toNat := by have := h.sp; simp only [List.length_cons, List.length_nil]; omega
+theorem fit : 4 * hi5.length + 4 ≤ (s.gpr .esp).toNat := by have := h.sp; simp only [List.length_cons, List.length_nil]; omega_arith
 
 omit h in
 theorem nesp : Reg.esp ∉ hi5 := by decide
@@ -289,7 +289,7 @@ theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
       S.Repr s'.mem (out.setWidth 64) (xorPad (blockKey S.H (bytesAt s.mem (k.setWidth 64) kl)) opad) → Q s') :
     WP isa (.frame (.push hi5) (.call n c) (.pop .eax hi5.length)) s Q := by
   have e := h.sp
-  refine WP.callWith hv.ok hsp (by simp) HiArgs.nesp (by simp only [List.length_cons, List.length_nil]; omega)
+  refine WP.callWith hv.ok hsp (by simp) HiArgs.nesp (by simp only [List.length_cons, List.length_nil]; omega_arith)
     h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   have f'' : Frame ([⟨inn.setWidth 64, S.stateBytes⟩, ⟨out.setWidth 64, S.stateBytes⟩, ⟨sc.setWidth 64, Wi * 8⟩] ++
       [below (s.gpr .esp) 76]) s.mem s'.mem := by
@@ -300,12 +300,12 @@ theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
     · exact ⟨_, by simp, args_sub e (n := 5) (by decide)⟩
-    · exact ⟨_, by simp, below_sub (by simp only [List.length_cons, List.length_nil]; omega) e⟩
+    · exact ⟨_, by simp, below_sub (by simp only [List.length_cons, List.length_nil]; omega_arith) e⟩
   have post' := init_post h.kl32 (t := (pushed hi5 s).callEntry.withRegions (HiArgs.rd k kl)
     (HiArgs.wr S Wi (s.gpr .esp) inn out sc)) (by rw [arg_withRegions, h.a0]) (by rw [arg_withRegions, h.a1])
     (by rw [arg_withRegions, h.a2]) (by rw [arg_withRegions, h.a3]) post
   have ek : bytesAt (pushed hi5 s).callEntry.mem (k.setWidth 64) kl = bytesAt s.mem (k.setWidth 64) kl :=
-    entry_bytes HiArgs.nesp (by decide) e h.b_k (by have := h.kl32; omega)
+    entry_bytes HiArgs.nesp (by decide) e h.b_k (by have := h.kl32; omega_arith)
   rw [State.withRegions_mem, ek, m₂] at post'
   exact hQ s' ⟨rd', wr', cs', f''⟩ post'.1 post'.2
 
@@ -393,7 +393,7 @@ theorem HfArgs.pre_of {S : StreamingHash} {Wf : Nat} {s : State} {inn ou lo hi o
   have rA := ret_args (E := s.gpr .esp) e (n := 6) (by decide)
   have kA := cstk_args (E := s.gpr .esp) e (n := 6) (by decide)
   simp only [Nat.reduceMul, Nat.reduceAdd] at sA sR sK rA kA
-  refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; omega, trivial, trivial,
+  refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; omega_arith, trivial, trivial,
     h.i_u, h.i_o, h.i_s, (h.b_i.sub_left sA).symm, h.u_o, h.u_s, (h.b_u.sub_left sA).symm, h.o_s,
     (h.b_o.sub_left sA).symm, (h.b_s.sub_left sA).symm,
     h.b_i.sub_left sR, h.b_u.sub_left sR, h.b_o.sub_left sR, h.b_s.sub_left sR, rA,
@@ -424,7 +424,7 @@ variable {S : StreamingHash} {Wf : Nat} {s : State} {inn ou lo hi o sc : BitVec 
   (h : HfArgs S Wf s inn ou lo hi o sc)
 include h
 
-theorem fit : 4 * hf6.length + 4 ≤ (s.gpr .esp).toNat := by have := h.sp; simp only [List.length_cons, List.length_nil]; omega
+theorem fit : 4 * hf6.length + 4 ≤ (s.gpr .esp).toNat := by have := h.sp; simp only [List.length_cons, List.length_nil]; omega_arith
 
 omit h in
 theorem nesp : Reg.esp ∉ hf6 := by decide
@@ -479,7 +479,7 @@ theorem hf_frame {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa} (hR 
         bytesAt s'.mem (o.setWidth 64) S.digestBytes = hmacBlockKey S.H k0 text) → Q s') :
     WP isa (.frame (.push hf6) (.call n c) (.pop .eax hf6.length)) s Q := by
   have e := h.sp
-  refine WP.callWith hv.ok hsp (by simp) HfArgs.nesp (by simp only [List.length_cons, List.length_nil]; omega)
+  refine WP.callWith hv.ok hsp (by simp) HfArgs.nesp (by simp only [List.length_cons, List.length_nil]; omega_arith)
     h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   have f'' : Frame ([⟨inn.setWidth 64, S.stateBytes⟩, ⟨o.setWidth 64, S.digestBytes⟩, ⟨sc.setWidth 64, Wf * 8⟩] ++
       [below (s.gpr .esp) 76]) s.mem s'.mem := by
@@ -490,7 +490,7 @@ theorem hf_frame {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa} (hR 
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
     · exact ⟨_, by simp, args_sub e (n := 6) (by decide)⟩
-    · exact ⟨_, by simp, below_sub (by simp only [List.length_cons, List.length_nil]; omega) e⟩
+    · exact ⟨_, by simp, below_sub (by simp only [List.length_cons, List.length_nil]; omega_arith) e⟩
   have post' := fin_post (t := (pushed hf6 s).callEntry.withRegions (HfArgs.rd S ou)
     (HfArgs.wr S Wf (s.gpr .esp) inn o sc)) (by rw [arg_withRegions, h.a0]) (by rw [arg_withRegions, h.a1])
     (by rw [arg_withRegions, h.a2]) (by rw [arg_withRegions, h.a3]) (by rw [arg_withRegions, h.a4]) post
@@ -568,7 +568,7 @@ theorem ItArgs.pre_of {S : StreamingHash} {Wt : Nat} {s : State} {key u n tt sc 
   have rA := ret_args (E := s.gpr .esp) e (n := 5) (by decide)
   have kA := cstk_args (E := s.gpr .esp) e (n := 5) (by decide)
   simp only [Nat.reduceMul, Nat.reduceAdd] at sA sR sK rA kA
-  refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; omega, trivial, trivial,
+  refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; omega_arith, trivial, trivial,
     h.k_t, h.k_s, (h.b_k.sub_left sA).symm, h.u_t, h.u_s, (h.b_u.sub_left sA).symm, h.t_s,
     (h.b_t.sub_left sA).symm, (h.b_s.sub_left sA).symm,
     h.b_k.sub_left sR, h.b_u.sub_left sR, h.b_t.sub_left sR, h.b_s.sub_left sR, rA,
@@ -599,7 +599,7 @@ variable {S : StreamingHash} {Wt : Nat} {s : State} {key u n tt sc : BitVec 32}
   (h : ItArgs S Wt s key u n tt sc)
 include h
 
-theorem fit : 4 * it5.length + 4 ≤ (s.gpr .esp).toNat := by have := h.sp; simp only [List.length_cons, List.length_nil]; omega
+theorem fit : 4 * it5.length + 4 ≤ (s.gpr .esp).toNat := by have := h.sp; simp only [List.length_cons, List.length_nil]; omega_arith
 
 omit h in
 theorem nesp : Reg.esp ∉ it5 := by decide
@@ -654,7 +654,7 @@ theorem it_frame {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa} (hR
             (bytesAt s.mem (tt.setWidth 64) S.digestBytes)) → Q s') :
     WP isa (.frame (.push it5) (.call nm c) (.pop .eax it5.length)) s Q := by
   have e := h.sp
-  refine WP.callWith hv.ok hsp (by simp) ItArgs.nesp (by simp only [List.length_cons, List.length_nil]; omega)
+  refine WP.callWith hv.ok hsp (by simp) ItArgs.nesp (by simp only [List.length_cons, List.length_nil]; omega_arith)
     h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   have f'' : Frame ([⟨tt.setWidth 64, S.digestBytes⟩, ⟨sc.setWidth 64, Wt * 8⟩] ++ [below (s.gpr .esp) 76])
       s.mem s'.mem := by
@@ -664,17 +664,17 @@ theorem it_frame {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa} (hR
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
     · exact ⟨_, by simp, args_sub e (n := 5) (by decide)⟩
-    · exact ⟨_, by simp, below_sub (by simp only [List.length_cons, List.length_nil]; omega) e⟩
+    · exact ⟨_, by simp, below_sub (by simp only [List.length_cons, List.length_nil]; omega_arith) e⟩
   have post' := it_post (t := (pushed it5 s).callEntry.withRegions (ItArgs.rd S key u)
     (ItArgs.wr S Wt (s.gpr .esp) tt sc)) (by rw [arg_withRegions, h.a0]) (by rw [arg_withRegions, h.a1])
     (by rw [arg_withRegions, h.a2]) (by rw [arg_withRegions, h.a3]) post
-  rw [State.withRegions_mem, m₂, entry_bytes ItArgs.nesp (by decide) e h.b_u (by omega),
-    entry_bytes ItArgs.nesp (by decide) e h.b_t (by omega)] at post'
+  rw [State.withRegions_mem, m₂, entry_bytes ItArgs.nesp (by decide) e h.b_u (by omega_arith),
+    entry_bytes ItArgs.nesp (by decide) e h.b_t (by omega_arith)] at post'
   refine hQ s' ⟨rd', wr', cs', f''⟩ fun k0 hk hi ho => post' k0 hk ?_ ?_
-  · exact entry_repr hR (by omega) ItArgs.nesp (by decide) e
-      (h.b_k.sub_right (Region.sub_prefix (by omega))) hi
-  · exact entry_repr hR (by omega) ItArgs.nesp (by decide) e
-      (h.b_k.sub_right (Offset.sub_base _ (by omega))) ho
+  · exact entry_repr hR (by omega_arith) ItArgs.nesp (by decide) e
+      (h.b_k.sub_right (Region.sub_prefix (by omega_arith))) hi
+  · exact entry_repr hR (by omega_arith) ItArgs.nesp (by decide) e
+      (h.b_k.sub_right (Offset.sub_base _ (by omega_arith))) ho
 
 theorem it_rel {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa}
     (hv : Sound c (Spec.Pbkdf2.iterateContract S Wt X86.abi 48)) {P : State → State → Prop}

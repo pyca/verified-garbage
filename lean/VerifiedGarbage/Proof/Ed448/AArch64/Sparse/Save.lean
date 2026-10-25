@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
 public import VerifiedGarbage.Spec.Ed448
 public import VerifiedGarbage.Spec.X448

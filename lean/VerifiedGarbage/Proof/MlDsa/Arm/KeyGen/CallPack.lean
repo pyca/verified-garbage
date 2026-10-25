@@ -87,7 +87,7 @@ theorem p2r_ok {c : Prog isa} (hc : Callee c (fun stk => power2RoundContract Arm
   obtain ⟨stk, hstk, hver⟩ := hc.verified
   obtain ⟨c1, c2⟩ := p2r_cov hs m
   refine callV hver.1 m.hg (p2r_preS hs (Nat.le_trans hstk hS) m hr) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [tri t1 1024, tri t0 1024] (Nat.le_trans hc.stack hS) hk) ?_ ?_
   all_goals
     obtain ⟨g0, g1, g2⟩ := p2rG hs m (p2rRd L t) (p2rWr L t1 t0)
@@ -183,7 +183,7 @@ theorem sbp_ok {c : Prog isa} (hc : Callee c (fun stk => simpleBitPackContract A
   obtain ⟨c1, c2⟩ := sbp_cov hs m
   obtain ⟨lb, l0, ll⟩ := m.lt
   refine callV hver.1 m.hg (sbp_preS hs (Nat.le_trans hstk hS) m hcf) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [tri o l] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g0, g1, g2, g3⟩ := sbpG hs m (sbpRd L f) (sbpWr L o l)
   have := sbp_post hp
@@ -294,7 +294,7 @@ theorem bp_preS {s : State} (hs : Site L Wb STK s) {stk : Nat} (hstk : 4 + stk �
   refine bp_pre g0 g1 g2 g3 ga
     (by rw [State.withRegions_rd, hs.regE m.pf (by decide), push_argAddr _ e1]; rfl)
     (by rw [State.withRegions_wr, imm_toNat ll, hs.regE m.po l0])
-    (by rw [push_spN _ e1 _ _ h4]; have := hs.spk; omega) (push_fit _ _ _ h4 e1)
+    (by rw [push_spN _ e1 _ _ h4]; have := hs.spk; omega_arith) (push_fit _ _ _ h4 e1)
     ?_ ?_ ?_ ?_ ?_ (hs.fitE m.pf (by decide)) (by rw [imm_toNat ll]; exact hs.fitE m.po l0)
     (by rw [imm_toNat la, imm_toNat lb]; exact m.hab) (by rw [imm_toNat la, imm_toNat lb, imm_toNat ll]; exact m.hl)
     (by rw [hs.addrE m.pf (by decide), push_reduced hs e1 hm _ _ m.pf]; exact hr) ?_
@@ -320,9 +320,9 @@ theorem bp_ok {c : Prog isa} (hc : Callee c (fun stk => bitPackContract Arm.abi 
   obtain ⟨la, lb, l0, ll⟩ := m.lt
   have e1 := glueSt_sp s (bpAll f a b o l)
   have hm := glueSt_mem s (bpAll f a b o l)
-  refine callVS hver.1 m.hg (bp_preS hs (by omega) m hr hcf) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk h3 =>
-      hQ s' (hs.keptW [tri o l] (by have := hc.stack; omega) hk) ?_
+  refine callVS hver.1 m.hg (bp_preS hs (by omega_arith) m hr hcf) c1 c2
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk h3 =>
+      hQ s' (hs.keptW [tri o l] (by have := hc.stack; omega_arith) hk) ?_
   obtain ⟨s₃, hm₃, -, hp⟩ := h3
   obtain ⟨g0, g1, g2, g3, ga⟩ := bpG hs m (sbpRd L f ++ [argR s]) (sbpWr L o l)
   have := bp_post hp
@@ -345,11 +345,11 @@ theorem bp_tr {c : Prog isa} (hc : Callee c (fun stk => bitPackContract Arm.abi 
   obtain ⟨gx0, gx1, gx2, gx3, gxa⟩ := bpG hx m (sbpRd L f ++ [argR x]) (sbpWr L o l)
   obtain ⟨gy0, gy1, gy2, gy3, gya⟩ := bpG hy m (sbpRd L f ++ [argR x]) (sbpWr L o l)
   have ex : argR y = argR x := by simp only [argR, hsp]
-  refine ⟨sbpRd L f ++ [argR x], sbpWr L o l, bp_preS hx (by omega) m rx cx, ?_,
+  refine ⟨sbpRd L f ++ [argR x], sbpWr L o l, bp_preS hx (by omega_arith) m rx cx, ?_,
     bp_pub (by simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp, glueSt_sp, hsp])
       (by rw [gx0, gy0]) (by rw [gx1, gy1]) (by rw [gx2, gy2]) (by rw [gx3, gy3]) (by rw [gxa, gya]),
     ?_, ?_, ?_, ?_⟩
-  · rw [← ex]; exact bp_preS hy (by omega) m ry cy
+  · rw [← ex]; exact bp_preS hy (by omega_arith) m ry cy
   · exact (push_cov _ (bp_cov hx m).1 (bp_cov hx m).2).1
   · exact (push_cov _ (bp_cov hx m).1 (bp_cov hx m).2).2
   · rw [← ex]; exact (push_cov _ (bp_cov hy m).1 (bp_cov hy m).2).1

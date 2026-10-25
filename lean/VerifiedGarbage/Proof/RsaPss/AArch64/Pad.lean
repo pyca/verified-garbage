@@ -29,7 +29,7 @@ def v80 (V : Nat → Byte) (ℓ j : Nat) (o : Nat) : Byte :=
   if oY ≤ o ∧ o < oY + j then V o ||| (if o - oY = ℓ then 0x80 else 0) else V o
 
 theorem v80_zero (V : Nat → Byte) (ℓ : Nat) : v80 V ℓ 0 = V := by
-  funext o; simp only [v80]; split <;> first | omega | rfl
+  funext o; simp only [v80]; split <;> first | omega_arith | rfl
 
 theorem v80_succ (V : Nat → Byte) (ℓ i : Nat) (b : Byte) (hb : b = V (oY + i) ||| (if i = ℓ then 0x80 else 0)) :
     upd (v80 V ℓ i) (oY + i) b = v80 V ℓ (i + 1) := by
@@ -37,13 +37,13 @@ theorem v80_succ (V : Nat → Byte) (ℓ i : Nat) (b : Byte) (hb : b = V (oY + i
   simp only [upd, v80]
   by_cases h : o = oY + i
   · subst h
-    have h1 : oY ≤ oY + i ∧ oY + i < oY + (i + 1) := ⟨by omega, by omega⟩
+    have h1 : oY ≤ oY + i ∧ oY + i < oY + (i + 1) := ⟨by omega_arith, by omega_arith⟩
     simp only [ite_true, hb, h1, Nat.add_sub_cancel_left, and_self]
   · simp only [h, ite_false]
     by_cases h' : oY ≤ o ∧ o < oY + i
-    · have h2 : oY ≤ o ∧ o < oY + (i + 1) := ⟨h'.1, by omega⟩
+    · have h2 : oY ≤ o ∧ o < oY + (i + 1) := ⟨h'.1, by omega_arith⟩
       simp only [h', h2]
-    · have h2 : ¬ (oY ≤ o ∧ o < oY + (i + 1)) := by omega
+    · have h2 : ¬ (oY ≤ o ∧ o < oY + (i + 1)) := by omega_arith
       simp only [h', h2, ite_false]
 
 theorem mask80 (b : Byte) (c : Bool) :
@@ -71,14 +71,14 @@ theorem pad80_ok (H : Hash) {t : State} {F S : Addr} (L : Lay t F S) {V : Nat �
   refine wp_lsl hlg fun u₄ o₄ e₄ => wp_nil ?_
   rw [o₂.sp, o₁.sp, L.sp, o₂.mem, o₁.mem, hNb] at e₃
   have O₄ : Only [.x10, .x11, .x12] t u₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  have hn : nbm * H.P.B < 2 ^ 64 := by omega
+  have hn : nbm * H.P.B < 2 ^ 64 := by omega_arith
   have hnb' : nbm ≤ nbm * H.P.B := Nat.le_mul_of_pos_right _ (Nat.pos_of_mul_pos_left hnb0)
   have c12 : u₄.gpr .x12 = BitVec.ofNat 64 (nbm * H.P.B) := by
     rw [e₄, e₃, BitVec.shiftLeft_eq_mul_twoPow]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_twoPow, hB]
     have hB' : H.P.B ≤ nbm * H.P.B := Nat.le_mul_of_pos_left _ (Nat.pos_of_mul_pos_right hnb0)
-    rw [Nat.mod_eq_of_lt (show nbm < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show H.P.B < 2 ^ 64 by omega)]
+    rw [Nat.mod_eq_of_lt (show nbm < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show H.P.B < 2 ^ 64 by omega_arith)]
   refine WP.mono (wp_countdown (cnt := .x12) hn hnb0 (fun i u => Keep [.x10, .x11, .x12, .x13, .x14] t u ∧
       u.gpr .x10 = off S (oY + i) ∧ u.gpr .x11 = BitVec.ofNat 64 i ∧
       Frame [⟨S, oRsa⟩] t.mem u.mem ∧ Rep u.mem S (v80 V ℓ i))
@@ -86,7 +86,7 @@ theorem pad80_ok (H : Hash) {t : State} {F S : Addr} (L : Lay t F S) {V : Nat �
     ⟨O₄.keep.mono, by rw [Nat.add_zero, o₄.get .x10, o₃.get .x10, o₂.get .x10, e₁, L.x20],
       by rw [o₄.get .x11, o₃.get .x11, e₂]; rfl, by rw [O₄.mem]; exact Frame.refl _ _,
       by rw [v80_zero, O₄.mem]; exact R⟩ c12) fun u h => ⟨h.1, h.2.2.2⟩
-  have hiY : oY + i + 1 ≤ oRsa := by unfold oY oRsa; omega
+  have hiY : oY + i + 1 ≤ oRsa := by unfold oY oRsa; omega_arith
   refine wp_ldrb (by decide) (by rw [h10, BitVec.add_zero]) (by rw [hK.rd, hK.wr]; exact L.ld hiY)
     fun v₁ p₁ f₁ => ?_
   refine wp_eor fun v₂ p₂ f₂ => wp_subImm (by decide) fun v₃ p₃ f₃ => wp_lsr (by decide) fun v₄ p₄ f₄ => ?_
@@ -99,12 +99,12 @@ theorem pad80_ok (H : Hash) {t : State} {F S : Addr} (L : Lay t F S) {V : Nat �
   have hb : (v₆.gpr .x13).setWidth 8 = V (oY + i) ||| (if i = ℓ then 0x80 else 0) := by
     have e14 : v₄.gpr .x14 = if i = ℓ then 1 else 0 := by
       rw [f₄, f₃, f₂, p₁.get .x11, p₁.get .x22, h11, hK.get .x22, h22,
-        eq1_val (by simp; omega) (by simp; omega)]
+        eq1_val (by simp; omega_arith) (by simp; omega_arith)]
       by_cases e : i = ℓ
-      · rw [ite_eq_left ((ofNat_eq_iff (by omega) (by omega)).mpr e), ite_eq_left e]
-      · rw [ite_eq_right fun h' => e ((ofNat_eq_iff (by omega) (by omega)).mp h'), ite_eq_right e]
-    rw [f₆, f₅, p₅.get .x13, p₄.get .x13, p₃.get .x13, p₂.get .x13, f₁, e14, hR _ (by omega)]
-    have : v80 V ℓ i (oY + i) = V (oY + i) := by simp only [v80]; split <;> first | omega | rfl
+      · rw [ite_eq_left ((ofNat_eq_iff (by omega_arith) (by omega_arith)).mpr e), ite_eq_left e]
+      · rw [ite_eq_right fun h' => e ((ofNat_eq_iff (by omega_arith) (by omega_arith)).mp h'), ite_eq_right e]
+    rw [f₆, f₅, p₅.get .x13, p₄.get .x13, p₃.get .x13, p₂.get .x13, f₁, e14, hR _ (by omega_arith)]
+    have : v80 V ℓ i (oY + i) = V (oY + i) := by simp only [v80]; split <;> first | omega_arith | rfl
     rw [this]
     by_cases e : i = ℓ
     · simp only [e, ite_true]; exact mask80 _ true
@@ -115,9 +115,9 @@ theorem pad80_ok (H : Hash) {t : State} {F S : Addr} (L : Lay t F S) {V : Nat �
     ?_, ?_⟩, ?_⟩
   · rw [p₁₀.get .x10, p₉.get .x10, f₈, m₇.gpr, P₆.get .x10, h10, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_assoc]
   · rw [p₁₀.get .x11, f₉, p₈.get .x11, m₇.gpr, P₆.get .x11, h11, BitVec.ofNat_add_ofNat]
-  · rw [hm]; exact hF.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by unfold oY oRsa at *; omega)
-      (by unfold oY oRsa at *; omega))
-  · rw [hm, ← v80_succ V ℓ i _ hb]; exact hR.wb (by omega) _
+  · rw [hm]; exact hF.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by unfold oY oRsa at *; omega_arith)
+      (by unfold oY oRsa at *; omega_arith))
+  · rw [hm, ← v80_succ V ℓ i _ hb]; exact hR.wb (by omega_arith) _
   · rw [f₁₀, p₉.get .x12, p₈.get .x12, m₇.gpr, P₆.get .x12]
 
 end VG.Proof.RsaPss.AArch64

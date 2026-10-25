@@ -1,17 +1,16 @@
 module
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedExp
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpCand
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedExp
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCand
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
 
-import VerifiedGarbage.Proof.Rsa.X86_64.RpSq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
-import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowLoop
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpBase
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedLoop
 
 /-! # Folded prime recovery for one candidate -/
 

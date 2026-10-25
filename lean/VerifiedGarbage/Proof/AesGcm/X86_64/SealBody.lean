@@ -35,10 +35,10 @@ theorem st_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk (W + BitVec.ofN
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (hd.st.sub_right (Lay.stSub (by omega))).symm
-  · exact L.st_st (.inl (by omega)) (by omega) (by decide)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact (L.stk_st (by omega)).symm
+  · exact (hd.st.sub_right (Lay.stSub (by omega_arith))).symm
+  · exact L.st_st (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
+  · exact (L.stk_st (by omega_arith)).symm
 
 omit L in
 /-- A prefix of the data is outside `crypt`'s frame over the rest. -/
@@ -50,7 +50,7 @@ theorem pre_crFrame {s : State} {D : Addr} {n k : Nat} (hd : DataOk (W + BitVec.
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · simpa using Offset.disjoint D (d := 0) (n := k) (e := k) (k := n - k) (.inl (by omega)) (by omega) (by omega)
+  · simpa using Offset.disjoint D (d := 0) (n := k) (e := k) (k := n - k) (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
   · exact (hd.st.sub_left hs).sub_right (Lay.stSub (by decide))
   · exact (hd.w.sub_left hs).sub_right (Lay.wSub (by decide))
   · exact (hd.stk.sub_right hs).symm
@@ -80,13 +80,13 @@ theorem sealBody_ok {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List 
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
   refine WP.seq (WP.seq (WP.mono (oneBlocksE_ok L B h) fun s₃ ⟨P, o₁, o₂, o₃⟩ => ?_))
   obtain ⟨f₃, hR₃, hH₃, hc₃, hJ₃, hw₃, ct₃, ab₃, ht₃⟩ := ob_facts L h P.frame hH hcb habs hxa o₁ o₂
-    (Z := bytesAt s₃.mem D (16 * (n / 16))) (by rw [length_bytesAt]; omega)
+    (Z := bytesAt s₃.mem D (16 * (n / 16))) (by rw [length_bytesAt]; omega_arith)
     (by rw [o₃, show (Ctx + 240 : Addr) = Ctx + BitVec.ofNat 64 240 from rfl, hH, Proof.Gcm.blocksAt_eq])
-  have hP : 16 * (n / 16) % 16 = 0 := by omega
+  have hP : 16 * (n / 16) % 16 = 0 := by omega_arith
   have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W SP s₃ (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) :=
-    (h.data.of_eq P.rd P.wr).drop (by omega)
+    (h.data.of_eq P.rd P.wr).drop (by omega_arith)
   have hlen₃ : s₃.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (n - 16 * (n / 16)) := by
-    rw [P.len]; congr 1; omega
+    rw [P.len]; congr 1; omega_arith
   have hal₃ : s₃.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
     rw [f₃.readW (r := ⟨W + BitVec.ofNat 64 184, 8⟩) (Region.contains_self _ _)
       (kept_oneFrameB L hD h.t_w (.inl ⟨by decide, by decide⟩)) (by decide), hal]
@@ -105,9 +105,9 @@ theorem sealBody_ok {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List 
     have hl := Nat.mod_lt (a ++ zeros (padLen a.length) ++ bytesAt s₃.mem D (16 * (n / 16))).length
       (show 16 > 0 by decide)
     exact ab₃.congr (blockAt_frame co.frame (st_crFrame L hdw.ok (d := 16) (k := 16) (by decide)))
-      (bytesAt_frame co.frame (st_crFrame L hdw.ok (d := 32) (by omega)) (by omega))
+      (bytesAt_frame co.frame (st_crFrame L hdw.ok (d := 32) (by omega_arith)) (by omega_arith))
   have hX : (a ++ zeros (padLen a.length) ++ bytesAt s₃.mem D (16 * (n / 16))).length % 16 = 0 := by
-    rw [List.length_append, length_bytesAt]; omega
+    rw [List.length_append, length_bytesAt]; omega_arith
   refine WP.mono (oneTag_ok v L (o := 0) (al := al) (.inl rfl) hX co.env hH₄ co.rounds
     (by rw [kp 200 (.inl ⟨by decide, by decide⟩)]; exact P.dat)
     (by rw [kp 208 (.inl ⟨by decide, by decide⟩)]; exact hlen₃)
@@ -117,7 +117,7 @@ theorem sealBody_ok {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List 
   have T := hq abs₄
   have split : ∀ m : Mem, bytesAt m D n =
       bytesAt m D (16 * (n / 16)) ++ bytesAt m (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) :=
-    fun m => by rw [← bytesAt_add, Nat.add_sub_cancel' (by omega)]
+    fun m => by rw [← bytesAt_add, Nat.add_sub_cancel' (by omega_arith)]
   have dDw : ∀ r ∈ (⟨W + BitVec.ofNat 64 0, 16⟩ :: wFrame W SP), (⟨D, n⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -127,9 +127,9 @@ theorem sealBody_ok {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List 
     · exact hD.sub_right (Lay.wSub (by decide))
     · exact hD.sub_right (Lay.wSub (by decide))
     · exact h.data.ok.stk.symm
-  have hd₅ : bytesAt s₅.mem D n = bytesAt s₄.mem D n := bytesAt_frame f₅ dDw (by omega)
+  have hd₅ : bytesAt s₅.mem D n = bytesAt s₄.mem D n := bytesAt_frame f₅ dDw (by omega_arith)
   have hp₄ : bytesAt s₄.mem D (16 * (n / 16)) = bytesAt s₃.mem D (16 * (n / 16)) :=
-    bytesAt_frame co.frame (pre_crFrame (h.data.ok.of_eq P.rd P.wr) (by omega)) (by omega)
+    bytesAt_frame co.frame (pre_crFrame (h.data.ok.of_eq P.rd P.wr) (by omega_arith)) (by omega_arith)
   have hc₄ : ciphOf s₄.mem Ctx R = ciphOf s.mem Ctx R := by rw [ciph_frame co.frame (ctx_crFrame L hdw) hR, hc₃]
   have hJ₄ : blockAt s₄.mem (W + BitVec.ofNat 64 16) = blockAt s.mem (W + BitVec.ofNat 64 16) := by
     rw [← hJ₃]; simpa using blockAt_frame co.frame (st_crFrame L hdw.ok (d := 0) (k := 16) (by decide))
@@ -141,8 +141,8 @@ theorem sealBody_ok {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List 
     rw [hd₅, split, hp₄, List.append_assoc]
   rw [eX, padded_eq, hc₄, hJ₄, show W + BitVec.ofNat 64 0 = W from BitVec.add_zero W] at T
   exact ⟨he₅, rd₅.trans (rd₄.trans P.rd), wr₅.trans (wr₄.trans P.wr),
-    oneB_trans f₃ (oneB_trans (oneFrame_B (by omega) g₄)
-      (oneFrame_B (k := 16 * (n / 16)) (by omega) (wFrame_one (o := 0) (.inl rfl) f₅))), hC, T⟩
+    oneB_trans f₃ (oneB_trans (oneFrame_B (by omega_arith) g₄)
+      (oneFrame_B (k := 16 * (n / 16)) (by omega_arith) (wFrame_one (o := 0) (.inl rfl) f₅))), hC, T⟩
 
 end
 

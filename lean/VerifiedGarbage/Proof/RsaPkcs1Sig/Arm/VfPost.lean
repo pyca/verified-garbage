@@ -153,11 +153,11 @@ theorem slot_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {d : Nat
 
 theorem CR.frame {σ : State} {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {r : BitVec 32}
     (hd : ∀ x ∈ rs, Region.Disjoint ⟨P.lay.fr oEM1, P.K⟩ x) (hK : P.K ≤ 1024) (h : CR P σ m r) : CR P σ m' r :=
-  fun nB hn hp => written_congr (bytesAt_frame hf hd (by omega)) (h nB hn hp)
+  fun nB hn hp => written_congr (bytesAt_frame hf hd (by omega_arith)) (h nB hn hp)
 
 theorem ER.frame {σ : State} {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {ok : BitVec 32}
     (hd : ∀ x ∈ rs, Region.Disjoint ⟨P.lay.fr oEM2, P.K⟩ x) (hK : P.K ≤ 1024) (h : ER P σ m ok) : ER P σ m' ok :=
-  EncR.congr (bytesAt_frame hf hd (by omega)) h
+  EncR.congr (bytesAt_frame hf hd (by omega_arith)) h
 
 /-- A store to a word of the frame below `EM₁`. -/
 theorem St1.frame {σ : State} {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hK : P.K ≤ 1024)
@@ -198,7 +198,7 @@ theorem encArgs_wp {σ s : State} (h : C2 P σ s) : WP isa (.block encArgs) s (C
   · rw [mm, u1.mem]
     refine cr.frame frame1 (fun x hx => ?_) hK
     simp only [List.mem_singleton] at hx; subst hx
-    exact Lay.fr_sep (by simp only [oEM1, oSt]; omega) (by simp only [oEM1]; omega) (by simp only [oSt]; omega)
+    exact Lay.fr_sep (by simp only [oEM1, oSt]; omega_arith) (by simp only [oEM1]; omega_arith) (by simp only [oSt]; omega_arith)
   · rw [Slot, mm, Mem.readW_writeW_self32, u1.other _ (by decide)]
   · rw [u7.other _ (by decide), u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.gpr,
       dpVal, m2.gpr, u1.gpr, hs.2.sp, BitVec.add_zero]
@@ -220,23 +220,23 @@ theorem encode_wp {σ s : State} (h : C3 P σ s) : WP isa Impl.RsaPkcs1Sig.Arm.e
     { r0 := r0, r1 := r1, r2 := r2, r3 := r3, lr := lr
       k64 := hs.1.k64, k1024 := hK, dl32 := hs.1.dl32
       dstFit := by
-        rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat]; simp only [oEM2, frameBytes] at fit ⊢; omega),
+        rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat]; simp only [oEM2, frameBytes] at fit ⊢; omega_arith),
           BitVec.toNat_ofNat]
-        simp only [oEM2, frameBytes] at fit ⊢; omega
+        simp only [oEM2, frameBytes] at fit ⊢; omega_arith
       srcFit := hfd
-      write := by rw [e2]; exact hs.2.inFr (by show oEM2 + P.K ≤ frameBytes; simp only [oEM2, frameBytes]; omega)
+      write := by rw [e2]; exact hs.2.inFr (by show oEM2 + P.K ≤ frameBytes; simp only [oEM2, frameBytes]; omega_arith)
       read := ⟨P.DIG, List.mem_append_left _ (by rw [hs.2.rd, ok.rd]; simp), Region.contains_self _ _⟩
       sep := by
         rw [e2]
-        exact (ok.stk_fr (R := P.DIG) (.inl (by simp)) (by simp only [oEM2, frameBytes]; omega)).symm }
+        exact (ok.stk_fr (R := P.DIG) (.inl (by simp)) (by simp only [oEM2, frameBytes]; omega_arith)).symm }
   refine WP.mono (encode_ok hin) fun t ⟨fr, rest, res⟩ => ?_
   rw [e2] at fr
-  have st' : P.lay.St σ t := hs.2.frameW (by show oEM2 + P.K ≤ frameBytes; simp only [oEM2, frameBytes]; omega)
+  have st' : P.lay.St σ t := hs.2.frameW (by show oEM2 + P.K ≤ frameBytes; simp only [oEM2, frameBytes]; omega_arith)
     fr rest.rd rest.wr rest.sp
   refine ⟨⟨⟨hs.1, st'⟩, hgl⟩, st.frame fr hK fun x hx => ?_, ?_⟩
   · simp only [List.mem_singleton] at hx; subst hx
-    exact ⟨Lay.fr_sep (by simp only [oEM1, oEM2]; omega) (by simp only [oEM1]; omega) (by simp only [oEM2]; omega),
-      Lay.fr_sep (by simp only [oSt, oEM2]; omega) (by simp only [oSt]; omega) (by simp only [oEM2]; omega)⟩
+    exact ⟨Lay.fr_sep (by simp only [oEM1, oEM2]; omega_arith) (by simp only [oEM1]; omega_arith) (by simp only [oEM2]; omega_arith),
+      Lay.fr_sep (by simp only [oSt, oEM2]; omega_arith) (by simp only [oSt]; omega_arith) (by simp only [oEM2]; omega_arith)⟩
   · have hd : Spec.Rsa.bytesAt s.mem (State.addr P.dig) P.dl = digB P σ := hs.2.ro (R := P.DIG) (by simp)
     rw [hd, e2] at res
     unfold ER EncR
@@ -267,12 +267,12 @@ theorem cmpArgs_wp {σ s : State} (h : C4 P σ s) : WP isa (.block cmpArgs) s (C
   · rw [mm, u1.mem]
     refine st.frame frame1 hK fun x hx => ?_
     simp only [List.mem_singleton] at hx; subst hx
-    exact ⟨Lay.fr_sep (by simp only [oEM1, oOk]; omega) (by simp only [oEM1]; omega) (by simp only [oOk]; omega),
-      Lay.fr_sep (by simp only [oSt, oOk]; omega) (by simp only [oSt]; omega) (by simp only [oOk]; omega)⟩
+    exact ⟨Lay.fr_sep (by simp only [oEM1, oOk]; omega_arith) (by simp only [oEM1]; omega_arith) (by simp only [oOk]; omega_arith),
+      Lay.fr_sep (by simp only [oSt, oOk]; omega_arith) (by simp only [oSt]; omega_arith) (by simp only [oOk]; omega_arith)⟩
   · rw [mm, u1.mem]
     refine er.frame frame1 (fun x hx => ?_) hK
     simp only [List.mem_singleton] at hx; subst hx
-    exact Lay.fr_sep (by simp only [oEM2, oOk]; omega) (by simp only [oEM2]; omega) (by simp only [oOk]; omega)
+    exact Lay.fr_sep (by simp only [oEM2, oOk]; omega_arith) (by simp only [oEM2]; omega_arith) (by simp only [oOk]; omega_arith)
   · rw [Slot, mm, Mem.readW_writeW_self32, u1.other _ (by decide)]
   · rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.gpr, dpVal, r12]
   · rw [u6.other _ (by decide), u5.other _ (by decide), u4.gpr, dpVal, u3.other _ (by decide), r12]
@@ -289,14 +289,14 @@ theorem compare_wp {σ s : State} (h : C5 P σ s) : WP isa Impl.Bignum.Arm.compa
     ok.addrB (by show oEM2 < frameBytes + 56 + 36; decide)
   have f : ∀ d, d < 2 ^ 32 → d + P.K ≤ frameBytes → (P.B + BitVec.ofNat 32 d).toNat + P.K ≤ 2 ^ 32 := by
     intro d hd hdK
-    rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat]; simp only [frameBytes] at fit hdK ⊢; omega),
+    rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat]; simp only [frameBytes] at fit hdK ⊢; omega_arith),
       BitVec.toNat_ofNat]
-    simp only [frameBytes] at fit hdK ⊢; omega
+    simp only [frameBytes] at fit hdK ⊢; omega_arith
   refine WP.mono (Bignum.Arm.compareBuffer_ok s (a := P.B + BitVec.ofNat 32 oEM1) (b := P.B + BitVec.ofNat 32 oEM2)
-    (n := P.K) (by have := hs.1.k64; omega) (by omega) (f _ (by decide) (by simp only [oEM1, frameBytes]; omega))
-    (f _ (by decide) (by simp only [oEM2, frameBytes]; omega))
-    (by rw [e1]; exact hs.2.inFrR (by show oEM1 + P.K ≤ frameBytes; simp only [oEM1, frameBytes]; omega))
-    (by rw [e2]; exact hs.2.inFrR (by show oEM2 + P.K ≤ frameBytes; simp only [oEM2, frameBytes]; omega))
+    (n := P.K) (by have := hs.1.k64; omega_arith) (by omega_arith) (f _ (by decide) (by simp only [oEM1, frameBytes]; omega_arith))
+    (f _ (by decide) (by simp only [oEM2, frameBytes]; omega_arith))
+    (by rw [e1]; exact hs.2.inFrR (by show oEM1 + P.K ≤ frameBytes; simp only [oEM1, frameBytes]; omega_arith))
+    (by rw [e2]; exact hs.2.inFrR (by show oEM2 + P.K ≤ frameBytes; simp only [oEM2, frameBytes]; omega_arith))
     r0 r1 lr r2) fun t ⟨eq, mem, rest⟩ => ?_
   refine ⟨⟨⟨hs.1, hs.2.of_rest rest mem⟩, hgl⟩, by rw [mem]; exact st, by rw [mem]; exact ok1, ?_⟩
   rw [mem, ← e1, ← e2]

@@ -78,7 +78,7 @@ theorem dividesFront_ok (h : In Ex base bytes len args s) {p q : Nat}
   have S₁ : Step Ex base bytes len args s u₁ := Step.slot h (by decide) O₁ K₁
   have k₁ := kept_slot h (a := 0) O₁
   refine WP.seq (WP.mono (prepCtx_ok S₁.inp .wide) fun u₂ ⟨C₂, one₂, _, F₂, K₂⟩ => ?_)
-  rw [V₁, h11, safeM_of (by omega) qodd] at C₂
+  rw [V₁, h11, safeM_of (by omega_arith) qodd] at C₂
   have S₂ : Step Ex base bytes len args u₁ u₂ := Step.ops S₁.inp (stR_widen F₂ (prepR_in S₁.inp .wide 0)) K₂
   have k₂ := kept_ops S₁.inp (stR_widen F₂ (prepR_in S₁.inp .wide 0)) S₁.inp.room
   -- `p − 1` in slot 5, and its Montgomery reduction modulo q in slot 6.
@@ -94,13 +94,13 @@ theorem dividesFront_ok (h : In Ex base bytes len args s) {p q : Nat}
   have nb : numBase = 3336 := rfl
   have C₃ : CtxOk Ex base bytes len args .wide q u₃ :=
     C₂.keepF K₃ (by decide) (by decide) (ws := [(lo len (.slot .wide 5), bc len .wide)])
-      (frameR_of_outside O₃ (by omega) (by simp)) (by intro r hr; rw [List.mem_singleton.mp hr]; dsimp only; omega)
-      (by intro r hr; rw [List.mem_singleton.mp hr]; dsimp only; omega)
+      (frameR_of_outside O₃ (by omega_arith) (by simp)) (by intro r hr; rw [List.mem_singleton.mp hr]; dsimp only; omega_arith)
+      (by intro r hr; rw [List.mem_singleton.mp hr]; dsimp only; omega_arith)
   have one₃ : sv u₃.mem base len .wide 3 = 1 := by rw [slotKeep C₂.inp (by decide) (by decide) O₃, one₂]
   have five₃ : sv u₃.mem base len .wide 5 = p - 1 := by
     rw [V₃, k₂.slot_eq, k₁.slot_eq, h15]
   refine WP.seq (WP.mono (cmul_ok C₃ (o := 6) (a := 5) (b := 3) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [one₃]; omega)) fun u₄ ⟨C₄, K₄, F₄, L₄, V₄⟩ => ?_)
+    (by decide) (by decide) (by rw [one₃]; omega_arith)) fun u₄ ⟨C₄, K₄, F₄, L₄, V₄⟩ => ?_)
   rw [five₃, one₃, Nat.mul_one] at V₄
   have S₄ : Step Ex base bytes len args u₃ u₄ :=
     Step.ops C₃.inp (stR_widen F₄ (mulR_in C₃.inp .wide (j := 6) (by decide) 0)) K₄
@@ -122,9 +122,9 @@ theorem dividesFront_ok (h : In Ex base bytes len args s) {p q : Nat}
   · simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not]
     exact not_congr red
   · have hj' : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ ([] : List Nat) := ⟨h9, h19, by simp⟩
-    have hj5 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [5] := ⟨h9, h19, by simp; omega⟩
-    have hj0 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [0] := ⟨h9, h19, by simp; omega⟩
-    have hj17 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [17] := ⟨h9, h19, by simp; omega⟩
+    have hj5 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [5] := ⟨h9, h19, by simp; omega_arith⟩
+    have hj0 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [0] := ⟨h9, h19, by simp; omega_arith⟩
+    have hj17 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [17] := ⟨h9, h19, by simp; omega_arith⟩
     rw [m₇, m₆, k₅.slot_eq hj17, k₄.slot_eq hj', k₃.slot_eq hj5, k₂.slot_eq hj', k₁.slot_eq hj0]
 
 theorem divides_ok (h : In Ex base bytes len args s) {p g q : Nat} (h9 : sv s.mem base len .wide 9 = p)
@@ -160,7 +160,7 @@ theorem withQFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base by
   generalize hq : comp s.mem args len 2 = q
   have mo : maskOff = 12 := rfl
   have nb : numBase = 3336 := rfl
-  refine WP.seq (WP.mono (loadComp_ok h G (k := 2) (j := 11) (by decide) (by omega) (by decide))
+  refine WP.seq (WP.mono (loadComp_ok h G (k := 2) (j := 11) (by decide) (by omega_arith) (by decide))
     fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
   rw [hq] at V₁
   have S₁ : Step Ex base bytes len args s u₁ := Step.slot h (by decide) O₁ K₁
@@ -172,9 +172,9 @@ theorem withQFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base by
   refine WP.seq (WP.mono (lessW_ok S₂.inp (a := 16) (b := 11) (by decide) (by decide)) fun u₃ ⟨m₃, e₃, K₃⟩ => ?_)
   rw [V₂, q₂] at e₃
   have S₃ : Step Ex base bytes len args u₂ u₃ := Step.regs S₂.inp m₃ K₃
-  refine WP.seq (WP.mono (storeMask_ok S₃.inp (d := maskOff) (by omega) e₃) fun u₄ ⟨_, O₄, W₄, _, K₄⟩ => ?_)
-  have S₄ : Step Ex base bytes len args u₃ u₄ := Step.word S₃.inp (by omega) O₄ K₄
-  have k₄ := kept_word S₃.inp (d := maskOff) (by omega) (by decide) O₄
+  refine WP.seq (WP.mono (storeMask_ok S₃.inp (d := maskOff) (by omega_arith) e₃) fun u₄ ⟨_, O₄, W₄, _, K₄⟩ => ?_)
+  have S₄ : Step Ex base bytes len args u₃ u₄ := Step.word S₃.inp (by omega_arith) O₄ K₄
+  have k₄ := kept_word S₃.inp (d := maskOff) (by omega_arith) (by decide) O₄
   have q₄ : sv u₄.mem base len .wide 11 = q := by rw [k₄.slot_eq, m₃, q₂]
   have p₄ : sv u₄.mem base len .wide 15 = p - 1 := by
     rw [k₄.slot_eq, m₃, k₂.slot_eq, k₁.slot_eq, h15]
@@ -182,7 +182,7 @@ theorem withQFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base by
   rw [q₄, p₄] at e₅
   have S₅ : Step Ex base bytes len args u₄ u₅ := Step.regs S₄.inp m₅ K₅
   have W₅ : w32 u₅.mem base maskOff = (cmask (decide (2 < q))).toNat := by rw [m₅]; exact W₄
-  refine WP.seq (WP.block_append (WP.mono (andMask_ok S₅.inp (d := maskOff) (by omega) e₅ W₅)
+  refine WP.seq (WP.block_append (WP.mono (andMask_ok S₅.inp (d := maskOff) (by omega_arith) e₅ W₅)
     fun u₆ ⟨e₆, m₆, K₆⟩ => WP.mono (oddMask_ok (S₅.inp.regs K₆ m₆) e₆) fun u₇ ⟨e₇, m₇, K₇⟩ => ?_))
   have S₆ : Step Ex base bytes len args u₅ u₆ := Step.regs S₅.inp m₆ K₆
   have S₇ : Step Ex base bytes len args u₆ u₇ := Step.regs S₆.inp m₇ K₇
@@ -192,8 +192,8 @@ theorem withQFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base by
   have S := ((((((S₁.trans S₂).trans S₃).trans S₄).trans S₅).trans S₆).trans S₇).trans S₈
   refine ⟨S, Gate.of_eval z₈ ?_, by rw [m₈, m₇, m₆, m₅, q₄], fun j h9 h19 h11 h16 => ?_⟩
   · by_cases a : q % 2 = 1 <;> by_cases b : 2 < q <;> by_cases c : q < p - 1 <;> simp [a, b, c]
-  · have h16' : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [16] := ⟨h9, h19, by simp; omega⟩
-    have h11' : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [11] := ⟨h9, h19, by simp; omega⟩
+  · have h16' : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [16] := ⟨h9, h19, by simp; omega_arith⟩
+    have h11' : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [11] := ⟨h9, h19, by simp; omega_arith⟩
     have h0 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ ([] : List Nat) := ⟨h9, h19, by simp⟩
     rw [m₈, m₇, m₆, m₅, k₄.slot_eq h0, m₃, k₂.slot_eq h16', k₁.slot_eq h11']
 
@@ -249,18 +249,18 @@ theorem checkedFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base 
   unfold Spec.Rsa.modulusValid at mv
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
   -- p, one and `p − 1`.
-  refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega)
-    (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+  refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega_arith)
+    (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega_arith) (by omega_arith)
         rwa [BitVec.add_zero] at this)
-    (G.apart.sub_left (Region.sub_prefix (by omega))))
+    (G.apart.sub_left (Region.sub_prefix (by omega_arith))))
     fun u₁ ⟨I₁, F₁, k₁, V9, V14, V15, K₁⟩ => ?_)
   rw [argNum_comp, hP] at V9 V15
-  rw [pm1_of (by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega)] at V15
+  rw [pm1_of (by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega_arith)] at V15
   have S₁ : Step Ex base bytes len args s u₁ := ⟨I₁, F₁, K₁⟩
   -- g, and its range.
-  refine WP.seq (WP.mono (loadComp_ok I₁ (G.keep ⟨rfl, rfl⟩ K₁) (k := 1) (j := 10) (by decide) (by omega)
+  refine WP.seq (WP.mono (loadComp_ok I₁ (G.keep ⟨rfl, rfl⟩ K₁) (k := 1) (j := 10) (by decide) (by omega_arith)
     (by decide)) fun u₂ ⟨V₂, O₂, K₂⟩ => ?_)
-  rw [comp_keep h G hb40 F₁ (by omega), hG] at V₂
+  rw [comp_keep h G hb40 F₁ (by omega_arith), hG] at V₂
   have S₂ : Step Ex base bytes len args u₁ u₂ := Step.slot I₁ (by decide) O₂ K₂
   have k₂ := kept_slot I₁ (a := 10) O₂
   refine WP.seq (WP.mono (rangeMask_ok S₂.inp (a := 10) (by decide)) fun u₃ ⟨I₃, e₃, O₃, K₃⟩ => ?_)
@@ -284,7 +284,7 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
   have dl := G.dl
   have fit := G.fit
   have lw := G.lower
-  have h2 : 2 * len ≤ dlen := by omega
+  have h2 : 2 * len ≤ dlen := by omega_arith
   have hp := comp_p s.mem args h2
   have hg := comp_g s.mem args h2
   rw [checked_eq]
@@ -295,7 +295,7 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
   unfold Spec.Rsa.modulusValid at mv
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
   have podd : p % 2 = 1 := mv.1.1.1
-  have pgt : 1 < p := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega
+  have pgt : 1 < p := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega_arith
   have iff := VG.Proof.Ffdh.domainValid_iff len (domBytes s.mem args dlen)
   rw [← hp, ← hg] at iff
   refine WP.gate Gt (fun bad => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun grange => ?_)
@@ -312,18 +312,18 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
   refine WP.ite _ z₅ (fun hb => WP.mono (ret_res (base := base) (len := len)) fun t R => S'.res ?_) (fun hb => ?_)
   · have e2 : dlen = 2 * len := by simpa using hb
     have nq : (Spec.Ffdh.domainOf len (domBytes s.mem args dlen)).q = none := by
-      rw [domBytes, e2]; exact VG.Proof.Ffdh.domainOf_q2 _ _ (by omega)
+      rw [domBytes, e2]; exact VG.Proof.Ffdh.domainOf_q2 _ _ (by omega_arith)
     have vv : Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true :=
       iff.mpr ⟨valid, grange, fun q hq => by rw [nq] at hq; cases hq⟩
     simp only [vv, ↓reduceIte]; exact R
   · have e3 : dlen = 3 * len := by
       have : ¬ dlen = 2 * len := by simpa using hb
-      omega
+      omega_arith
     subst e3
     have hq := comp_q (len := len) s.mem args
     refine WP.mono (withQ_ok S₅.inp (G.keep ⟨rfl, rfl⟩ S'.keeps) (p := p) (g := g) (by rw [m₅, V9])
       (by rw [m₅, V10]) (by rw [m₅, V15]) pgt podd) fun t R => S'.res ?_
-    rw [comp_keep h G hb40 S'.frame (by omega)] at R
+    rw [comp_keep h G hb40 S'.frame (by omega_arith)] at R
     generalize hQ : comp s.mem args len 2 = Q at R hq
     have key : Spec.Ffdh.domainValid len (domBytes s.mem args (3 * len)) = true ↔
         ((Q % 2 = 1 ∧ 2 < Q ∧ Q < p - 1) ∧ ((p - 1) % Q = 0 ∧ g ^ Q % p = 1)) := by
@@ -331,12 +331,12 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
       constructor
       · rintro ⟨_, _, hc⟩
         obtain ⟨⟨a, b, c⟩, d, e⟩ := hc _ hq
-        exact ⟨⟨a, by omega, c⟩, d, e⟩
+        exact ⟨⟨a, by omega_arith, c⟩, d, e⟩
       · rintro ⟨⟨a, b, c⟩, d, e⟩
         refine ⟨valid, grange, fun q' hq' => ?_⟩
         rw [hq] at hq'
         cases hq'
-        exact ⟨⟨a, by omega, c⟩, d, e⟩
+        exact ⟨⟨a, by omega_arith, c⟩, d, e⟩
     by_cases hc : (Q % 2 = 1 ∧ 2 < Q ∧ Q < p - 1) ∧ ((p - 1) % Q = 0 ∧ g ^ Q % p = 1)
     · have v := key.mpr hc
       simp only [v, ↓reduceIte]
@@ -363,9 +363,9 @@ theorem bodyFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base byt
   have S₁ : Step Ex base bytes len args s u := Step.regs h M K
   have rd : InRegions (u.rd ++ u.wr) (byteAddr (u.gpr .esi)) len := by
     rw [P, K.2.1, K.2.2]
-    have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+    have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
-  refine WP.mono (modulusCheck_ok u (k := len) h.lower' h.upper' (by rw [P]; omega) rd (by rw [C, G.e3]))
+  refine WP.mono (modulusCheck_ok u (k := len) h.lower' h.upper' (by rw [P]; omega_arith) rd (by rw [C, G.e3]))
     fun v ⟨Z, Mv, Kv⟩ => ?_
   rw [P, M, show Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len) = comp s.mem args len 0 from
     argNum_comp s.mem args len] at Z
@@ -385,9 +385,9 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have S₁ : Step Ex base bytes len args s u := Step.regs h M K
   have rd : InRegions (u.rd ++ u.wr) (byteAddr (u.gpr .esi)) len := by
     rw [P, K.2.1, K.2.2]
-    have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+    have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
-  refine WP.seq (WP.mono (modulusCheck_ok u (k := len) h.lower' h.upper' (by rw [P]; omega) rd (by rw [C, G.e3]))
+  refine WP.seq (WP.mono (modulusCheck_ok u (k := len) h.lower' h.upper' (by rw [P]; omega_arith) rd (by rw [C, G.e3]))
     fun v ⟨Z, Mv, Kv⟩ => ?_)
   rw [P, M] at Z
   have S₂ : Step Ex base bytes len args u v := Step.regs S₁.inp Mv Kv
@@ -405,7 +405,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
       cases e : Spec.Ffdh.domainValid len (domBytes s.mem args dlen)
       · rfl
       · have := VG.Proof.Ffdh.domainValid_mod e
-        rw [← comp_p s.mem args (by omega), invalid] at this
+        rw [← comp_p s.mem args (by omega_arith), invalid] at this
         cases this
     simp only [nv, Bool.false_eq_true, ↓reduceIte]; exact R
 

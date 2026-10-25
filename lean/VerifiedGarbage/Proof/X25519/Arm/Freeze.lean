@@ -52,7 +52,7 @@ theorem bytesAt_limbs {m : Mem} {O : Addr} {r : Nat → Nat} (hr : ∀ k < 16, r
   simp only [bytesAt, leBytes]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  have hk : i / 2 < 16 := by omega
+  have hk : i / 2 < 16 := by omega_arith
   obtain ⟨b0, b1⟩ := bytes_of_limbs hr hk
   rcases Nat.mod_two_eq_zero_or_one i with he | ho
   · rw [show i = 2 * (i / 2) by omega_using [he], h0 _ hk]
@@ -225,11 +225,11 @@ theorem out_ok {s0 : State} (hc : Ctx b s0) {o : BitVec 32} (h12 : s0.gpr .r12 =
   · rw [hm8, VG.WriteBytes.writeW8_apply, VG.WriteBytes.writeW8_apply,
       iteF (ne _ _ (by omega_using [hk, hi]) (by omega_using [hk]) (by omega_using []))]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [iteF (ne _ _ (by omega) (by omega_using [hk]) (by omega))]; exact h.b0 i hi
+    · rw [iteF (ne _ _ (by omega_arith) (by omega_using [hk]) (by omega_arith))]; exact h.b0 i hi
     · rw [iteT rfl]; exact byte_eq ev
   · rw [hm8, VG.WriteBytes.writeW8_apply, VG.WriteBytes.writeW8_apply]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [iteF (ne _ _ (by omega) (by omega_using [hk]) (by omega)), iteF (ne _ _ (by omega) (by omega_using [hk]) (by omega_using []))]
+    · rw [iteF (ne _ _ (by omega_arith) (by omega_using [hk]) (by omega_arith)), iteF (ne _ _ (by omega_arith) (by omega_using [hk]) (by omega_using []))]
       exact h.b1 i hi
     · rw [iteT rfl]
       exact byte_eq (by rw [toNat_shr, ev])

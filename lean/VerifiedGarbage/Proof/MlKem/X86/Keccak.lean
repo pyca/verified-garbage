@@ -58,20 +58,20 @@ theorem stack_parts {E : BitVec 32} (hE : 40 ≤ E.toNat) :
       Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64 - 12, 12⟩ (below E 40) := by
   have r1 : ∀ k, k + 4 ≤ 40 → Region.Sub ⟨(E - BitVec.ofNat 32 (k + 4)).setWidth 64, 4⟩ (below E 40) :=
     fun k hk => by
-      have := below_inner (sp := E) (a := 4) (b := 40) (k := k) (by omega) hE
+      have := below_inner (sp := E) (a := 4) (b := 40) (k := k) (by omega_arith) hE
       have e : (⟨(E - BitVec.ofNat 32 (k + 4)).setWidth 64, 4⟩ : Region) = below (E - BitVec.ofNat 32 k) 4 := by
         simp only [below]; congr 2; bv_omega
       rw [e]; exact this
   have r2 : ∀ k, k + 12 ≤ 40 → Region.Sub ⟨(E - BitVec.ofNat 32 k).setWidth 64 - 12, 12⟩ (below E 40) :=
     fun k hk => by
-      have := below_inner (sp := E) (a := 12) (b := 40) (k := k) (by omega) hE
+      have := below_inner (sp := E) (a := 12) (b := 40) (k := k) (by omega_arith) hE
       have e : (⟨(E - BitVec.ofNat 32 k).setWidth 64 - 12, 12⟩ : Region) = below (E - BitVec.ofNat 32 k) 12 := by
         simp only [below]
-        rw [Taint.sub_setWidth (show 12 ≤ (E - BitVec.ofNat 32 k).toNat by rw [sub_toNat (by omega)]; omega)]
+        rw [Taint.sub_setWidth (show 12 ≤ (E - BitVec.ofNat 32 k).toNat by rw [sub_toNat (by omega_arith)]; omega_arith)]
         rfl
       rw [e]; exact this
-  exact ⟨below_sub (by omega) hE, r1 24 (by omega), r2 28 (by omega), below_sub (by omega) hE, r1 20 (by omega),
-    r2 24 (by omega)⟩
+  exact ⟨below_sub (by omega_arith) hE, r1 24 (by omega_arith), r2 28 (by omega_arith), below_sub (by omega_arith) hE, r1 20 (by omega_arith),
+    r2 24 (by omega_arith)⟩
 
 /-- Where the state `S` and working space `W` of a Keccak call are, with `esp = E`. -/
 structure KBufs (E S W : BitVec 32) : Prop where
@@ -89,9 +89,9 @@ def Within (r : Region) (rs : List Region) : Prop :=
 theorem entry_frame {s : State} {E : BitVec 32} (hesp : s.gpr .esp = E) (hE : 40 ≤ E.toNat) {rs : List Reg}
     (hrs : Reg.esp ∉ rs) (hl : rs.length ≤ 6) :
     Frame [below E 40] s.mem (pushed rs s).callEntry.mem :=
-  (callEntry_frame (by rw [hesp]; omega) hrs).sub fun r hr => by
+  (callEntry_frame (by rw [hesp]; omega_arith) hrs).sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_singleton_self _, by rw [hesp]; exact below_sub (by omega) hE⟩
+    exact ⟨_, List.mem_singleton_self _, by rw [hesp]; exact below_sub (by omega_arith) hE⟩
 
 /-! ## `vg_keccak_absorb` -/
 
@@ -113,8 +113,8 @@ theorem absorb_pre {s : State} {E S D W : BitVec 32} {rate pos len : Nat} (hesp 
     CallPre Proof.Sha3.absorbX86 rs6 [reg32 D len] [reg32 S 200, reg32 W 640, below E 24] s := by
   have hE := hk.hE
   have fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega
-  have hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
+  have hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega_arith
   have a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
   have a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
@@ -128,7 +128,7 @@ theorem absorb_pre {s : State} {E S D W : BitVec 32} {rate pos len : Nat} (hesp 
     rw [callEntry_argAddr0, hesp]; rfl
   have eSp : (pushed rs6 s).callEntry.gpr .esp = E - BitVec.ofNat 32 28 := by rw [callEntry_esp', hesp]; rfl
   have t1 : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 hrate
-  have t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega)
+  have t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega_arith)
   have t4 : (BitVec.ofNat 32 len).toNat = len := toNat_ofNat32 hlen
   obtain ⟨p24, pr, pst, -, -, -⟩ := stack_parts hE
   refine ⟨?_, ?_, ?_⟩
@@ -136,8 +136,8 @@ theorem absorb_pre {s : State} {E S D W : BitVec 32} {rate pos len : Nat} (hesp 
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, eA, eSp, t1, t2, t4]
     refine ⟨trivial, trivial, hk.dSW, dDS, dDW, hk.bS.sub_left p24, bD.sub_left p24, hk.bW.sub_left p24,
       hk.bS.sub_left pr, bD.sub_left pr, hk.bW.sub_left pr, hk.bS.sub_left pst, bD.sub_left pst,
-      hk.bW.sub_left pst, hk.fS, fD, hk.fW, by rw [sub_toNat (by omega)]; omega,
-      by rw [sub_toNat (by omega)]; have := E.isLt; omega, hr, hp⟩
+      hk.bW.sub_left pst, hk.fS, fD, hk.fW, by rw [sub_toNat (by omega_arith)]; omega_arith,
+      by rw [sub_toNat (by omega_arith)]; have := E.isLt; omega_arith, hr, hp⟩
   · refine Covers.of_sub fun r hr' => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl
@@ -170,7 +170,7 @@ theorem absorb_post {s s' : State} {E S D W : BitVec 32} {rate pos len : Nat} (h
       Repr s'.mem (S.setWidth 64) rate (msg ++ bytesAt s.mem (D.setWidth 64) len) := by
   obtain ⟨s₂, m₂, post, -⟩ := h
   have fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
   have a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
   have a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
@@ -186,7 +186,7 @@ theorem absorb_post {s s' : State} {E S D W : BitVec 32} {rate pos len : Nat} (h
   have eS : stateAt (pushed rs6 s).callEntry.mem (S.setWidth 64) = stateAt s.mem (S.setWidth 64) :=
     Proof.Sha3.stateAt_congr fun i hi => fr.bytes (R := reg32 S 200) (by simpa using bS.symm) (by simp) hi
   have eD : bytesAt (pushed rs6 s).callEntry.mem (D.setWidth 64) len = bytesAt s.mem (D.setWidth 64) len :=
-    bytesAt_frame fr (by simpa using bD.symm) (by omega)
+    bytesAt_frame fr (by simpa using bD.symm) (by omega_arith)
   have := post msg (by unfold Spec.Sha3.Repr; rw [eS]; exact hm) hp
   rwa [eD] at this
 
@@ -206,8 +206,8 @@ theorem pad_pre {s : State} {E S W : BitVec 32} {rate pos sfx : Nat} (hesp : s.g
     CallPre Proof.Sha3.padX86 rs5 [] [reg32 S 200, reg32 W 640, below E 20] s := by
   have hE := hk.hE
   have fit : 4 * rs5.length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega
-  have hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
+  have hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega_arith
   have a0 : arg (pushed rs5 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
   have a1 : arg (pushed rs5 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
@@ -218,14 +218,14 @@ theorem pad_pre {s : State} {E S W : BitVec 32} {rate pos sfx : Nat} (hesp : s.g
     rw [callEntry_argAddr0, hesp]; rfl
   have eSp : (pushed rs5 s).callEntry.gpr .esp = E - BitVec.ofNat 32 24 := by rw [callEntry_esp', hesp]; rfl
   have t1 : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 hrate
-  have t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega)
+  have t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega_arith)
   obtain ⟨-, -, -, p20, pr, pst⟩ := stack_parts hE
   refine ⟨?_, ?_, ?_⟩
   · simp only [Proof.Sha3.padX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a4, eA, eSp, t1, t2]
     refine ⟨trivial, trivial, hk.dSW, hk.bS.sub_left p20, hk.bW.sub_left p20, hk.bS.sub_left pr,
       hk.bW.sub_left pr, hk.bS.sub_left pst, hk.bW.sub_left pst, hk.fS, hk.fW,
-      by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := E.isLt; omega, hr, hp⟩
+      by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := E.isLt; omega_arith, hr, hp⟩
   · refine Covers.of_sub fun r hr' => ?_
     simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl
@@ -252,7 +252,7 @@ theorem pad_post {s s' : State} {E S W : BitVec 32} {rate pos sfx : Nat} (hesp :
       stateAt s'.mem (S.setWidth 64) = absorb rate (pad rate ((BitVec.ofNat 32 sfx).setWidth 8) msg) := by
   obtain ⟨s₂, m₂, post⟩ := h
   have fit : 4 * rs5.length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
   have a0 : arg (pushed rs5 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
   have a1 : arg (pushed rs5 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
@@ -278,8 +278,8 @@ theorem squeeze_pre {s : State} {E S O W : BitVec 32} {rate pos len : Nat} (hesp
     CallPre Proof.Sha3.squeezeX86 rs6 [] [reg32 S 200, reg32 O len, reg32 W 640, below E 24] s := by
   have hE := hk.hE
   have fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega
-  have hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
+  have hrate : rate < 2 ^ 32 := by simp [rates] at hr; omega_arith
   have a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
   have a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
@@ -293,7 +293,7 @@ theorem squeeze_pre {s : State} {E S O W : BitVec 32} {rate pos len : Nat} (hesp
     rw [callEntry_argAddr0, hesp]; rfl
   have eSp : (pushed rs6 s).callEntry.gpr .esp = E - BitVec.ofNat 32 28 := by rw [callEntry_esp', hesp]; rfl
   have t1 : (BitVec.ofNat 32 rate).toNat = rate := toNat_ofNat32 hrate
-  have t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega)
+  have t2 : (BitVec.ofNat 32 pos).toNat = pos := toNat_ofNat32 (by omega_arith)
   have t4 : (BitVec.ofNat 32 len).toNat = len := toNat_ofNat32 hlen
   obtain ⟨p24, pr, pst, -, -, -⟩ := stack_parts hE
   refine ⟨?_, ?_, ?_⟩
@@ -301,8 +301,8 @@ theorem squeeze_pre {s : State} {E S O W : BitVec 32} {rate pos len : Nat} (hesp
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, eA, eSp, t1, t2, t4]
     refine ⟨trivial, trivial, dSO, hk.dSW, dOW, hk.bS.sub_left p24, bO.sub_left p24, hk.bW.sub_left p24,
       hk.bS.sub_left pr, bO.sub_left pr, hk.bW.sub_left pr, hk.bS.sub_left pst, bO.sub_left pst,
-      hk.bW.sub_left pst, hk.fS, fO, hk.fW, by rw [sub_toNat (by omega)]; omega,
-      by rw [sub_toNat (by omega)]; have := E.isLt; omega, hr, hp⟩
+      hk.bW.sub_left pst, hk.fS, fO, hk.fW, by rw [sub_toNat (by omega_arith)]; omega_arith,
+      by rw [sub_toNat (by omega_arith)]; have := E.isLt; omega_arith, hr, hp⟩
   · refine Covers.of_sub fun r hr' => ?_
     simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl
@@ -334,7 +334,7 @@ theorem squeeze_post {s s' : State} {E S O W : BitVec 32} {rate pos len : Nat} (
         squeezeFrom rate (stateAt s.mem (S.setWidth 64)) (pos + len) d := by
   obtain ⟨s₂, m₂, post⟩ := h
   have fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
   have a0 : arg (pushed rs6 s).callEntry 0 = S := by rw [callEntry_arg fit (by decide) (by decide)]; exact ha.eax
   have a1 : arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 rate := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
@@ -353,7 +353,7 @@ theorem squeeze_post {s s' : State} {E S O W : BitVec 32} {rate pos len : Nat} (
 
 /-! ## The calls, as pieces -/
 
-theorem rate_lt {rate : Nat} (hr : rate ∈ rates) : rate < 2 ^ 32 := by simp [rates] at hr; omega
+theorem rate_lt {rate : Nat} (hr : rate ∈ rates) : rate < 2 ^ 32 := by simp [rates] at hr; omega_arith
 
 /-- Everything a call of `vg_keccak_absorb` needs of the state it is made from. -/
 structure AbsorbAt (s : State) (E S D W : BitVec 32) (rate pos len : Nat) : Prop where
@@ -397,7 +397,7 @@ theorem args6_eq {s s' : State} (hE : 40 ≤ (s.gpr .esp).toNat) (hsp : s.gpr .e
         arg ((pushed rs6 s').callEntry.withRegions rd wr) i := by
   refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', hsp], fun i hi => ?_⟩
   simp only [arg_withRegions]
-  exact callEntry_arg_eq (by decide) (by simp only [List.length_cons, List.length_nil]; omega) hsp hr
+  exact callEntry_arg_eq (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith) hsp hr
     (by simpa using hi)
 
 /-- Two runs that push the same five registers pass the same arguments. -/
@@ -408,7 +408,7 @@ theorem args5_eq {s s' : State} (hE : 40 ≤ (s.gpr .esp).toNat) (hsp : s.gpr .e
         arg ((pushed rs5 s').callEntry.withRegions rd wr) i := by
   refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', hsp], fun i hi => ?_⟩
   simp only [arg_withRegions]
-  exact callEntry_arg_eq (by decide) (by simp only [List.length_cons, List.length_nil]; omega) hsp hr
+  exact callEntry_arg_eq (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith) hsp hr
     (by simpa using hi)
 
 theorem absArgs_eq {s s' : State} {S D W : BitVec 32} {rate pos len : Nat} (h : AbsArgs s S D W rate pos len)
@@ -455,7 +455,7 @@ theorem absorb_piece (E S D W : State → BitVec 32) (rate pos len : Nat) (hr : 
     (fun s₀ s s' h₀ ha e₁ e₂ e₃ fr post => ?_)
   · have h := hA s₀ s h₀ ha
     have := h.bufs.hE
-    rw [absorb_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [absorb_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega_arith
   · have h := hA s₀ s h₀ ha
     exact absorb_pre h.esp h.args h.bufs h.fD h.dDS h.dDW h.bD hr hp hlen h.cD h.cS h.cW
   · obtain ⟨e₁, e₂, e₃, e₄⟩ := hpub s₀ s₀' h₀ h₀' hq
@@ -468,13 +468,13 @@ theorem absorb_piece (E S D W : State → BitVec 32) (rate pos len : Nat) (hr : 
   · have h := hA s₀ s h₀ ha
     have hE := h.bufs.hE
     refine hQ s₀ s s' h₀ ha e₁ e₂ e₃ (fr.sub fun r hr' => ?_)
-      (absorb_post h.esp h.args hE hlen (rate_lt hr) (by have := rate_lt hr; omega) h.bufs.bS h.bD post)
+      (absorb_post h.esp h.args hE hlen (rate_lt hr) (by have := rate_lt hr; omega_arith) h.bufs.bS h.bD post)
     rw [absorb_stack, h.esp] at hr'
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨_, by simp, below_sub (by omega) hE⟩
+    · exact ⟨_, by simp, below_sub (by omega_arith) hE⟩
     · exact ⟨_, by simp, below_sub (by simp) hE⟩
 
 /-- A call of `vg_keccak_pad`. -/
@@ -495,7 +495,7 @@ theorem pad_piece (E S W : State → BitVec 32) (rate pos sfx : Nat) (hr : rate 
     (fun s₀ s s' h₀ ha e₁ e₂ e₃ fr post => ?_)
   · have h := hA s₀ s h₀ ha
     have := h.bufs.hE
-    rw [pad_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [pad_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega_arith
   · have h := hA s₀ s h₀ ha
     exact pad_pre h.esp h.args h.bufs hr hp h.cS h.cW
   · obtain ⟨e₁, e₂, e₃⟩ := hpub s₀ s₀' h₀ h₀' hq
@@ -508,13 +508,13 @@ theorem pad_piece (E S W : State → BitVec 32) (rate pos sfx : Nat) (hr : rate 
   · have h := hA s₀ s h₀ ha
     have hE := h.bufs.hE
     refine hQ s₀ s s' h₀ ha e₁ e₂ e₃ (fr.sub fun r hr' => ?_)
-      (pad_post h.esp h.args hE (rate_lt hr) (by have := rate_lt hr; omega) h.bufs.bS post)
+      (pad_post h.esp h.args hE (rate_lt hr) (by have := rate_lt hr; omega_arith) h.bufs.bS post)
     rw [pad_stack, h.esp] at hr'
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-    · exact ⟨_, by simp, below_sub (by omega) hE⟩
+    · exact ⟨_, by simp, below_sub (by omega_arith) hE⟩
     · exact ⟨_, by simp, below_sub (by simp) hE⟩
 
 /-- A call of `vg_keccak_squeeze`. -/
@@ -536,7 +536,7 @@ theorem squeeze_piece (E S O W : State → BitVec 32) (rate pos len : Nat) (hr :
     (fun s₀ s s' h₀ ha e₁ e₂ e₃ fr post => ?_)
   · have h := hA s₀ s h₀ ha
     have := h.bufs.hE
-    rw [squeeze_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [squeeze_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega_arith
   · have h := hA s₀ s h₀ ha
     exact squeeze_pre h.esp h.args h.bufs h.fO h.dSO h.dOW h.bO hr hp hlen h.cS h.cO h.cW
   · obtain ⟨e₁, e₂, e₃, e₄⟩ := hpub s₀ s₀' h₀ h₀' hq
@@ -548,7 +548,7 @@ theorem squeeze_piece (E S O W : State → BitVec 32) (rate pos len : Nat) (hr :
       args6_eq (by rw [h.esp]; exact h.bufs.hE) hsp (absArgs_eq h.args h'.args) _ _⟩
   · have h := hA s₀ s h₀ ha
     have hE := h.bufs.hE
-    obtain ⟨r₁, r₂⟩ := squeeze_post h.esp h.args hE hlen (rate_lt hr) (by have := rate_lt hr; omega)
+    obtain ⟨r₁, r₂⟩ := squeeze_post h.esp h.args hE hlen (rate_lt hr) (by have := rate_lt hr; omega_arith)
       h.bufs.bS post
     refine hQ s₀ s s' h₀ ha e₁ e₂ e₃ (fr.sub fun r hr' => ?_) r₁ r₂
     rw [squeeze_stack, h.esp] at hr'
@@ -557,7 +557,7 @@ theorem squeeze_piece (E S O W : State → BitVec 32) (rate pos len : Nat) (hr :
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, below_sub (by omega) hE⟩
+    · exact ⟨_, by simp, below_sub (by omega_arith) hE⟩
     · exact ⟨_, by simp, below_sub (by simp) hE⟩
 
 end

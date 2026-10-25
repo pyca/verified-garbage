@@ -71,13 +71,13 @@ structure CallFacts (p : SPub) (used : Nat) : Prop where
 
 private theorem nowrap_tape {r : Addr} {n used len : Nat} (hn : r.toNat + n ≤ 2 ^ 64)
     (hu : used + len ≤ n) : (r + BitVec.ofNat 64 used).toNat + len ≤ 2 ^ 64 := by
-  have hul : used < 2 ^ 64 ∨ len = 0 := by omega
+  have hul : used < 2 ^ 64 ∨ len = 0 := by omega_arith
   rcases hul with hul | hz
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hul]
     have := Nat.mod_le (r.toNat + used) (2 ^ 64)
     by_cases hz : r.toNat + used < 2 ^ 64
-    · rw [Nat.mod_eq_of_lt hz]; omega
-    · omega
+    · rw [Nat.mod_eq_of_lt hz]; omega_arith
+    · omega_arith
   · subst hz; simp only [Nat.add_zero]; exact Nat.le_of_lt (BitVec.isLt _)
 
 theorem rA_sub (p : SPub) : Region.Sub (rA p) (below p.sp stackUse) := by
@@ -86,7 +86,7 @@ theorem rA_sub (p : SPub) : Region.Sub (rA p) (below p.sp stackUse) := by
 theorem SLive.callFacts {p : SPub} {original s : State} {used k : Nat}
     (h : SLive p original used k s) : CallFacts p used := by
   have hi := h.input
-  have hroom : used + (p.randLen - used) ≤ p.randLen := by have := h.used_le; omega
+  have hroom : used + (p.randLen - used) ≤ p.randLen := by have := h.used_le; omega_arith
   obtain ⟨_, hsp, _, _, hnw, hpw, hwr, hstk, hb1, hb2, hl, hg, hscr, -, -, -, -⟩ := hi.1
   cases hi.2
   simp only [inWrites, inReads, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
@@ -185,7 +185,7 @@ theorem call_arg {p : SPub} {u : State} {m : Mem} (hu : u.sp = callSp p)
   exact writeController_word _ _ _ (callValues_bound p) 0 (by decide)
 
 theorem callSp_toNat {p : SPub} (hf : 32 ≤ p.sp.toNat) : (callSp p).toNat = p.sp.toNat - 32 := by
-  rw [callSp_eq, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega)]
+  rw [callSp_eq, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_arith)]
   simp only [BitVec.toNat_ofNat]
 
 theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
@@ -201,12 +201,12 @@ theorem call_candidate_pre {p : SPub} {used : Nat} {u : State} {m : Mem} (hf : C
   have h0 := call_arg hu hm
   obtain ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩ := ha
   have hb := hf.bits
-  have hlen : (BitVec.ofNat 64 p.len).toNat = p.len := toNat_ofNat_lt (by have := hf.len; omega)
-  have hbits : (BitVec.ofNat 64 p.bits).toNat = p.bits := toNat_ofNat_lt (by omega)
+  have hlen : (BitVec.ofNat 64 p.len).toNat = p.len := toNat_ofNat_lt (by have := hf.len; omega_arith)
+  have hbits : (BitVec.ofNat 64 p.bits).toNat = p.bits := toNat_ofNat_lt (by omega_arith)
   have hrl : (BitVec.ofNat 64 (p.randLen - used)).toNat = p.randLen - used :=
-    toNat_ofNat_lt (by have := hf.randLen; omega)
+    toNat_ofNat_lt (by have := hf.randLen; omega_arith)
   have hzw : (BitVec.ofNat 64 (p.Z / 8)).toNat = p.Z / 8 :=
-    toNat_ofNat_lt (by have := hf.ns; omega)
+    toNat_ofNat_lt (by have := hf.ns; omega_arith)
   have hsp := callSp_toNat hf.room
   have hlt := p.sp.isLt
   unfold pcPre
@@ -217,7 +217,7 @@ theorem call_candidate_pre {p : SPub} {used : Nat} {u : State} {m : Mem} (hf : C
     call_stackArg, h0, r0, r1, r2, r3, r4, r5, r6, r7, hlen, hbits, hrl, hzw, hf.z8,
     gen_setWidth hf.gen, State.withRegions_rd, State.withRegions_wr, stackArgAddr, State.withRegions_sp,
     State.callEntry_sp, hu, Nat.mul_zero, BitVec.add_zero]
-  exact ⟨by omega, rfl, rfl, hf.ou, hf.or, hf.os, hf.oa, hf.ur, hf.us, hf.ua, hf.rs, hf.sa, hf.no, hf.nu,
+  exact ⟨by omega_arith, rfl, rfl, hf.ou, hf.or, hf.os, hf.oa, hf.ur, hf.us, hf.ua, hf.rs, hf.sa, hf.no, hf.nu,
     hf.nr, hf.ns, hb.1, hb.2, hf.len, hf.gen, hf.scratch⟩
 
 /-- What the candidate at `used` leaves: its status, p or zeros at `out`,
@@ -258,7 +258,7 @@ theorem call_covers_reads (h : SLive p original used k s)
   apply Covers.of_sub
   have hi := h.input
   obtain ⟨-, -, hrd', -⟩ := hi.1
-  have hroom : used + (p.randLen - used) ≤ p.randLen := by have := h.used_le; omega
+  have hroom : used + (p.randLen - used) ≤ p.randLen := by have := h.used_le; omega_arith
   intro r hr
   simp only [callRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -307,13 +307,13 @@ theorem call_rand (h : SLive p original used k s) {u : State}
   have hfr : Frame (SInput.changes original) s.mem u.mem :=
     frame_of_callChanges original (candidate_frame (t := u) h hm (fun _ _ => rfl))
   have hrl : (BitVec.ofNat 64 (p.randLen - used)).toNat = p.randLen - used :=
-    toNat_ofNat_lt (by have := h.input.randLen_lt; omega)
+    toNat_ofNat_lt (by have := h.input.randLen_lt; omega_arith)
   simp only [pcRand, call_gpr (by decide : Reg.x5 ∉ linkRegs), call_gpr (by decide : Reg.x6 ∉ linkRegs),
     ha.2.2.2.2.2.1, ha.2.2.2.2.2.2.1, hrl, State.withRegions_mem, State.callEntry_mem]
   have hr := (h.input.random_frame hfr).trans h.random
   have hl := h.rand_length
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ (show used + (p.randLen - used) ≤ p.randLen by
-    have := h.used_le; omega), hr, List.take_of_length_le (by simp only [List.length_drop, hl]; omega)]
+    have := h.used_le; omega_arith), hr, List.take_of_length_le (by simp only [List.length_drop, hl]; omega_arith)]
 
 theorem search_candidate_run (c : Cand) (h : SLive p original used k s) :
     WP isa (candidateRun c.call) s fun t => SLive p original used k t ∧ CandPost p used t := by
@@ -321,10 +321,10 @@ theorem search_candidate_run (c : Cand) (h : SLive p original used k s) :
   have hroom' : 16 ≤ s.sp.toNat := by
     have := hf.room
     have h16 : (p.sp - BitVec.ofNat 64 16).toNat = p.sp.toNat - 16 := by
-      rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega)]
+      rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_arith)]
       simp only [BitVec.toNat_ofNat]
     rw [h.sp, show (p.sp - 16 : Addr) = p.sp - BitVec.ofNat 64 16 from rfl, h16]
-    omega
+    omega_arith
   unfold candidateRun
   refine WP.alloc (by decide) hroom' ?_
   refine WP.seq (WP.mono (search_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)
@@ -348,10 +348,10 @@ theorem search_candidate_run (c : Cand) (h : SLive p original used k s) :
     have hrand := call_rand h hm ha
     obtain ⟨r0, r1, r2, r3, r4, -, r6, -⟩ := ha
     have hb := hf.bits
-    have hlen : (BitVec.ofNat 64 p.len).toNat = p.len := toNat_ofNat_lt (by have := hf.len; omega)
-    have hbits : (BitVec.ofNat 64 p.bits).toNat = p.bits := toNat_ofNat_lt (by omega)
+    have hlen : (BitVec.ofNat 64 p.len).toNat = p.len := toNat_ofNat_lt (by have := hf.len; omega_arith)
+    have hbits : (BitVec.ofNat 64 p.bits).toNat = p.bits := toNat_ofNat_lt (by omega_arith)
     have hrl : (BitVec.ofNat 64 (p.randLen - used)).toNat = p.randLen - used :=
-      toNat_ofNat_lt (by have := hf.randLen; omega)
+      toNat_ofNat_lt (by have := hf.randLen; omega_arith)
     have hp := hpost
     simp only [ParameterCandidate.pcContract, pcPost, pcResult, hrand, call_gpr (by decide : Reg.x0 ∉ linkRegs),
       call_gpr (by decide : Reg.x1 ∉ linkRegs), call_gpr (by decide : Reg.x2 ∉ linkRegs),

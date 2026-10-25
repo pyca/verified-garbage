@@ -60,7 +60,7 @@ theorem magnitudeO_ok (s : State) {v : Nat} (hv : v < 32) (hx : s.gpr .rax = Bit
     ite_false]
 
 theorem magO_pos {v : Nat} (hv : v < 32) : 1 ≤ magO v ∧ magO v ≤ 16 := by
-  unfold magO; split <;> omega
+  unfold magO; split <;> omega_arith
 
 /-- The entry `magO e` of digit `rbx = j` into `rax` and `r8`, from window `j`
 of `k` in its table of bits at `K.bits`. -/
@@ -72,7 +72,7 @@ theorem digitO_ok (K : JacWinCfg) {s : State} {base : Addr} {size : Nat} (hs : S
       t.gpr .rax = BitVec.ofNat 64 (magO (Window5.nib k j)) ∧
       t.gpr .r8 = BitVec.ofNat 64 (magO (Window5.nib k j)) ∧ Keeps [.rax, .rcx, .rdx, .r8] s t := by
   have hn := hs.nowrap
-  have hj32 : j < 2 ^ 64 := by omega
+  have hj32 : j < 2 ^ 64 := by omega_arith
   rw [JacWinCfg.digitO, List.append_assoc, WP.block_append_iff]
   refine WP.mono (winIndex_ok s (by decide) hj32 hx) fun a ⟨a1, ka⟩ => ?_
   rw [WP.block_append_iff]
@@ -81,15 +81,15 @@ theorem digitO_ok (K : JacWinCfg) {s : State} {base : Addr} {size : Nat} (hs : S
     fun b ⟨b2, kb⟩ => ?_
   · have he : a.ea (winByte (K.bits + i)) = off base (K.bits + (5 * j + i)) := by
       rw [ea_winByte ((ka.1 .rdi (by decide)).trans hs.rdi) a1]
-      exact congrArg (off base) (by omega)
-    refine ⟨by rw [he]; exact ⟨_, List.mem_append_right _ (ka.2.2.2 ▸ hs.wr), hs.contains (by omega) (by decide)⟩, ?_⟩
-    rw [he, ka.2.1, hbits _ (by omega), show K.bits + i - K.bits = i by omega]
+      exact congrArg (off base) (by omega_arith)
+    refine ⟨by rw [he]; exact ⟨_, List.mem_append_right _ (ka.2.2.2 ▸ hs.wr), hs.contains (by omega_arith) (by decide)⟩, ?_⟩
+    rw [he, ka.2.1, hbits _ (by omega_arith), show K.bits + i - K.bits = i by omega_arith]
     cases k.testBit (5 * j + i) <;> rfl
   · have hw' : hornerVal (fun t => (k.testBit (5 * j + (t - K.bits))).toNat) K.bits 5 = Window5.nib k j := by
       have := hornerVal_eq k 5 j 5 (Nat.le_refl _)
       rw [Nat.sub_self, Nat.add_zero] at this
       rw [← Window5.combWin_five, combWin, ← this]
-      exact hornerVal_congr fun i _ => by simp only [show K.bits + i - K.bits = i by omega]
+      exact hornerVal_congr fun i _ => by simp only [show K.bits + i - K.bits = i by omega_arith]
     refine WP.mono (magnitudeO_ok b (Window5.nib_lt k j) (by rw [b2, hw'])) fun t ⟨t1, t2, kt⟩ =>
       ⟨t1, t2, ((ka.mono (by decide)).trans (kb.mono (by decide))).trans (kt.mono (by decide))⟩
 
@@ -100,7 +100,7 @@ theorem JFrame.bitsO (hL : JacWinLay K size) {base : Addr} {s₀ s : State} {P :
   intro t ht
   have hb := hL.bits
   have hn := hf.scr.nowrap
-  rw [hf.unch.byte (fun w hw => by have := hL.bits_w w hw; omega) (by omega)]
+  rw [hf.unch.byte (fun w hw => by have := hL.bits_w w hw; omega_arith) (by omega_arith)]
   exact hF.bits t ht
 
 /-- What `T` holds after the selection and the negation, from `s`: digit
@@ -260,11 +260,11 @@ theorem jentryO_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : S
   have hs := hf.scr
   have hn := hs.nowrap
   have hbits := hf.bitsO hL hF
-  have hwj : 5 * j + 5 ≤ 5 * K.J := by omega
+  have hwj : 5 * j + 5 ≤ 5 * K.J := by omega_arith
   have hbl := hL.bits
   rw [WP.block_append_iff]
   refine WP.mono (digitO_ok K hs (k := OddWin.oq K.J k) (j := j) (N := 5 * K.J) hwj
-    (by omega) hb hbits) fun s₁ ⟨_, r₁, k₁⟩ => ?_
+    (by omega_arith) hb hbits) fun s₁ ⟨_, r₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have ha16 := magO_pos (Window5.nib_lt (OddWin.oq K.J k) j)
   refine WP.mono (jselect_ok hL hs₁ r₁ ha16.2) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_

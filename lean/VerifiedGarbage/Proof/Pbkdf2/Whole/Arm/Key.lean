@@ -46,19 +46,19 @@ theorem save_ok (H : Hash) {s : State} {sc : BitVec 32} {L : Nat} (h12 : s.gpr .
   refine saveList_ok H.saved s Q (fun p hp => ?_) fun s' g rd wr sp m => k s' g rd wr sp ?_ ?_
   · obtain ⟨h₁, h₂⟩ := saved_mem H hp
     rw [h12]
-    exact ⟨by omega, by omega, ⟨_, hsc, contains_offset (by omega) (by omega)⟩⟩
+    exact ⟨by omega_arith, by omega_arith, ⟨_, hsc, contains_offset (by omega_arith) (by omega_arith)⟩⟩
   · rw [m, h12]
-    exact saveMem_frameR _ _ _ _ (by omega) _ _ fun p hp => saved_mem H hp
+    exact saveMem_frameR _ _ _ _ (by omega_arith) _ _ fun p hp => saved_mem H hp
   · intro p hp
     rw [m, h12]
-    exact saveMem_read _ _ _ _ (saved_pairwise H) (fun q hq => by have := saved_mem H hq; omega) p hp
+    exact saveMem_read _ _ _ _ (saved_pairwise H) (fun q hq => by have := saved_mem H hq; omega_arith) p hp
 
 theorem zero_append (x : BitVec 32) : (0 : BitVec 32) ++ x = BitVec.ofNat 64 x.toNat := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_append, BitVec.toNat_ofNat]
   have := x.isLt
   simp only [show (0 : BitVec 32).toNat = 0 from rfl, Nat.zero_shiftLeft, Nat.zero_or]
-  omega
+  omega_arith
 
 theorem ofNat_toNat32 (x : BitVec 32) : BitVec.ofNat 32 x.toNat = x := by
   rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
@@ -83,12 +83,12 @@ theorem prologue_ok : WP isa (.block F.prologue) s₀ (KK F s₀) := by
       rw [hp.rd, hp.wr]
       exact ⟨argR s₀, by simp, argR_sub hp (i := 3) (by decide) |> fun h => by
         have e : stackArgAddr s₀ 3 = State.addr s₀.sp + BitVec.ofNat 64 12 :=
-          addr_add (by have := hp.spf; omega)
+          addr_add (by have := hp.spf; omega_arith)
         have e0 : stackArgAddr s₀ 0 = State.addr s₀.sp := by simp [stackArgAddr]
         show Region.Contains ⟨stackArgAddr s₀ 0, 16⟩ _ 4
-        rw [e, e0]; exact Offset.contains_base _ (by omega) (by omega)⟩) fun s₁ u₁ => ?_
-  refine save_ok F.L (sc := scr s₀) (L := F.L8) u₁.gpr (by simp only [Fns.L]; omega) (by rw [u₁.wr]; exact hsc)
-    (by show 8 * F.W + 36 ≤ F.L8; omega) hp.nsc fun s₂ g₂ rd₂ wr₂ sp₂ f₂ sv₂ => ?_
+        rw [e, e0]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) fun s₁ u₁ => ?_
+  refine save_ok F.L (sc := scr s₀) (L := F.L8) u₁.gpr (by simp only [Fns.L]; omega_arith) (by rw [u₁.wr]; exact hsc)
+    (by show 8 * F.W + 36 ≤ F.L8; omega_arith) hp.nsc fun s₂ g₂ rd₂ wr₂ sp₂ f₂ sv₂ => ?_
   refine wp_mov (op2_reg _ _) fun s₃ u₃ => wp_mov (op2_reg _ _) fun s₄ u₄ => wp_mov (op2_reg _ _) fun s₅ u₅ =>
     wp_mov (op2_reg _ _) fun s₆ u₆ => wp_mov (op2_reg _ _) fun s₇ u₇ => WP.block_nil ?_
   have e₂ : ∀ r, r ≠ .r12 → s₂.gpr r = s₀.gpr r := fun r hr => by rw [g₂, u₁.other r hr]
@@ -181,12 +181,12 @@ theorem hk2b_ok {s : State} (hk : KK F s₀ s) (h4 : s.gpr .r4 = dO s₀ F.stWO)
     rw [ea]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp hk.kr hz.stWO_S
-  refine init_call hH (st := dO s₀ F.stWO) h0 (by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega)
+  refine init_call hH (st := dO s₀ F.stWO) h0 (by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega_arith)
     cw fun s' a r => ?_
   have a' := After.of_hmac a
   refine ⟨⟨hk.kr.call hp hz a' fun r hr => ?_, ?_, ?_⟩, by rw [← ea]; exact r, ?_⟩
   · simp only [List.mem_singleton] at hr; subst hr
-    exact .inr ⟨_, _, by rw [ea], by omega, by omega⟩
+    exact .inr ⟨_, _, by rw [ea], by omega_arith, by omega_arith⟩
   · rw [a.cs _ (by decide) (by decide), hk.r8]
   · rw [a.cs _ (by decide) (by decide), hk.r9]
   · rw [a.cs _ (by decide) (by decide), h4]
@@ -240,7 +240,7 @@ theorem hk4_args {s : State} (hk : KK F s₀ s) (h0 : s.gpr .r0 = dO s₀ F.stWO
       r7 := by rw [h7, ofNat_toNat32]
       r10 := h10
       hlen := (s₀.gpr .r1).isLt
-      sp16 := by rw [k.sp]; have := hp.sp24; omega
+      sp16 := by rw [k.sp]; have := hp.sp24; omega_arith
       cd := cov_pw hp k
       cw := by
         rw [ea]
@@ -248,16 +248,16 @@ theorem hk4_args {s : State} (hk : KK F s₀ s) (h0 : s.gpr .r0 = dO s₀ F.stWO
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
           · exact cov_part hp k hz.stWO_S
-          · exact cov_low hp k (by omega)
-      st_sc := by rw [ea]; exact (low_disj hz (k := hH.Wb) (by omega) hz.stWO_S).symm
+          · exact cov_low hp k (by omega_arith)
+      st_sc := by rw [ea]; exact (low_disj hz (k := hH.Wb) (by omega_arith) hz.stWO_S).symm
       d_st := by rw [ea]; exact hp.pw_s.sub_right (part_sub hz.stWO_S)
-      d_sc := hp.pw_s.sub_right (low_sub (by omega))
+      d_sc := hp.pw_s.sub_right (low_sub (by omega_arith))
       b_st := by rw [ea]; exact b16 hp k (part_sub hz.stWO_S)
       b_d := hp.b_pw.sub_left (below_sub k)
-      b_sc := b16 hp k (low_sub (by omega))
-      nst := by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega
+      b_sc := b16 hp k (low_sub (by omega_arith))
+      nst := by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega_arith
       nd := hp.npw
-      nsc := by have := hp.nsc; omega }
+      nsc := by have := hp.nsc; omega_arith }
 
 theorem hk4_ok {s : State} (hk : KK F s₀ s) (h4 : s.gpr .r4 = dO s₀ F.stWO) (h0 : s.gpr .r0 = dO s₀ F.stWO)
     (h1 : s.gpr .r1 = pw s₀) (h7 : s.gpr .r7 = s₀.gpr .r1) (h10 : s.gpr .r10 = scr s₀)
@@ -273,8 +273,8 @@ theorem hk4_ok {s : State} (hk : KK F s₀ s) (h4 : s.gpr .r4 = dO s₀ F.stWO) 
     by rw [a.cs _ (by decide) (by decide), h4], ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact .inr ⟨_, _, by rw [ea], by omega, by omega⟩
-    · exact .inl ⟨_, rfl, by omega⟩
+    · exact .inr ⟨_, _, by rw [ea], by omega_arith, by omega_arith⟩
+    · exact .inl ⟨_, rfl, by omega_arith⟩
   · have := r [] (by rw [ea]; exact hr) hc
     rwa [List.nil_append, ea, hk.kr.pwBytes hp] at this
 
@@ -315,7 +315,7 @@ theorem hk6_args {s : State} (hk : KK F s₀ s) (h0 : s.gpr .r0 = dO s₀ F.stWO
     { r0 := h0
       r1 := h1
       r12 := h12
-      sp16 := by rw [k.sp]; have := hp.sp24; omega
+      sp16 := by rw [k.sp]; have := hp.sp24; omega_arith
       cw := by
         rw [ea, eh]
         exact Covers.of_sub fun r hr => by
@@ -323,16 +323,16 @@ theorem hk6_args {s : State} (hk : KK F s₀ s) (h0 : s.gpr .r0 = dO s₀ F.stWO
           rcases hr with rfl | rfl | rfl
           · exact cov_part hp k hz.stWO_S
           · exact cov_part hp k hz.hkO_F
-          · exact cov_low hp k (by omega)
-      st_o := by rw [ea, eh]; exact part_disj hz (Or.inl (by omega)) hz.stWO_S hz.hkO_F
-      st_sc := by rw [ea]; exact (low_disj hz (k := hH.Wb) (by omega) hz.stWO_S).symm
-      o_sc := by rw [eh]; exact (low_disj hz (k := hH.Wb) (by omega) hz.hkO_F).symm
+          · exact cov_low hp k (by omega_arith)
+      st_o := by rw [ea, eh]; exact part_disj hz (Or.inl (by omega_arith)) hz.stWO_S hz.hkO_F
+      st_sc := by rw [ea]; exact (low_disj hz (k := hH.Wb) (by omega_arith) hz.stWO_S).symm
+      o_sc := by rw [eh]; exact (low_disj hz (k := hH.Wb) (by omega_arith) hz.hkO_F).symm
       b_st := by rw [ea]; exact b16 hp k (part_sub hz.stWO_S)
       b_o := by rw [eh]; exact b16 hp k (part_sub hz.hkO_F)
-      b_sc := b16 hp k (low_sub (by omega))
-      nst := by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega
-      no := by rw [dO_toNat hp hz.hkO_lt]; have := hp.nsc; omega
-      nsc := by have := hp.nsc; omega }
+      b_sc := b16 hp k (low_sub (by omega_arith))
+      nst := by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega_arith
+      no := by rw [dO_toNat hp hz.hkO_lt]; have := hp.nsc; omega_arith
+      nsc := by have := hp.nsc; omega_arith }
 
 theorem hk6_ok {s : State} (hk : KK F s₀ s) (h0 : s.gpr .r0 = dO s₀ F.stWO) (h1 : s.gpr .r1 = dO s₀ F.hkO)
     (h12 : s.gpr .r12 = scr s₀) (hc : count s = BitVec.ofNat 64 (pwl s₀))
@@ -348,9 +348,9 @@ theorem hk6_ok {s : State} (hk : KK F s₀ s) (h0 : s.gpr .r0 = dO s₀ F.stWO) 
     fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inr ⟨_, _, by rw [ea], by omega, by omega⟩
-    · exact .inr ⟨_, _, by rw [eh], by omega, by omega⟩
-    · exact .inl ⟨_, rfl, by omega⟩
+    · exact .inr ⟨_, _, by rw [ea], by omega_arith, by omega_arith⟩
+    · exact .inr ⟨_, _, by rw [eh], by omega_arith, by omega_arith⟩
+    · exact .inl ⟨_, rfl, by omega_arith⟩
   · rw [bytesAt_take _ _ hz.D.2.1, ← eh]
     exact r _ (by rw [ea]; exact hr) (by rw [bytesAt_length]; exact Nat.lt_trans (s₀.gpr .r1).isLt (by decide))
       (by rw [bytesAt_length]; exact hc)
@@ -394,7 +394,7 @@ theorem cmp_ok {s : State} (hk : KK F s₀ s) :
   refine wp_lt hz.encB1 fun s' g m rd wr sp z => WP.block_nil ⟨⟨hk.kr.same rd wr sp (fun r hr => g r (by
     simp only [kregs, List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide)) m,
     by rw [g _ (by decide), hk.r8], by rw [g _ (by decide), hk.r9]⟩, ?_, m⟩
-  rw [z, hk.r9, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := F.H.B + 1) (by omega)]
+  rw [z, hk.r9, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := F.H.B + 1) (by omega_arith)]
 
 omit hp hz in
 include hH in
@@ -409,7 +409,7 @@ theorem blockKey_hash {k : List Byte} (hk : F.H.B < k.length) (hl : (hH.SH.H.has
     blockKey hH.SH.H (hH.SH.H.hash k) = blockKey hH.SH.H k := by
   have hB := hH.hB; have := hz.DB
   simp only [blockKey, hB, hl, ite_eq_left_of_eq_true _ _ (eq_true hk),
-    ite_eq_right_of_eq_false _ _ (eq_false (show ¬ F.H.B < F.H.D by omega))]
+    ite_eq_right_of_eq_false _ _ (eq_false (show ¬ F.H.B < F.H.D by omega_arith))]
 
 end
 
@@ -439,23 +439,23 @@ theorem key_ok {s : State} (hk : KK F s₀ s) :
     simp only [kp, kl, hlt, ↓reduceIte]
     refine WP.mono (hashKey_ok hp hz hH k₁) fun t ⟨k, d, c, b⟩ => ⟨k, d, c, ?_⟩
     have := hz.D; have := hz.reach
-    rw [dO_addr hp (by have := end_le hz; have := layout (F := F); omega),
-      b, blockKey_hash hz hH (by rw [bytesAt_length]; omega) (hash_len hH b)]
+    rw [dO_addr hp (by have := end_le hz; have := layout (F := F); omega_arith),
+      b, blockKey_hash hz hH (by rw [bytesAt_length]; omega_arith) (hash_len hH b)]
 
 omit hH in
 /-- The key's region is the password, or the hashed password in `scratch`. -/
 theorem key_cases : (kp F s₀ = pw s₀ ∧ kl F s₀ = pwl s₀ ∧ pwl s₀ ≤ F.H.B) ∨
     (State.addr (kp F s₀) = A s₀ F.hkO ∧ kl F s₀ = F.H.D) := by
   by_cases h : pwl s₀ < F.H.B + 1
-  · exact .inl ⟨by simp [kp, h], by simp [kl, h], by omega⟩
+  · exact .inl ⟨by simp [kp, h], by simp [kl, h], by omega_arith⟩
   · refine .inr ⟨?_, by simp [kl, h]⟩
     simp only [kp, h, ↓reduceIte]
-    exact dO_addr hp (by have := end_le hz; have := layout (F := F); have := hz.D; omega)
+    exact dO_addr hp (by have := end_le hz; have := layout (F := F); have := hz.D; omega_arith)
 
 omit hH in
 theorem kl_le : kl F s₀ ≤ F.H.B := by
   have := hz.DB
-  rcases key_cases hp hz with ⟨-, h, h'⟩ | ⟨-, h⟩ <;> omega
+  rcases key_cases hp hz with ⟨-, h, h'⟩ | ⟨-, h⟩ <;> omega_arith
 
 omit hH in
 theorem key_toNat : (kp F s₀).toNat + kl F s₀ ≤ 2 ^ 32 := by
@@ -464,7 +464,7 @@ theorem key_toNat : (kp F s₀).toNat + kl F s₀ ≤ 2 ^ 32 := by
   · simp only [kp, kl, h, ↓reduceIte]
     have := end_le hz; have := layout (F := F); have := hz.D
     rw [dO_toNat hp hz.hkO_lt]
-    have := hp.nsc; omega
+    have := hp.nsc; omega_arith
 
 omit hH in
 /-- The key is apart from the parts of `scratch` after the hashed password,
@@ -480,7 +480,7 @@ theorem key_stk {s : State} (hk : KR F s₀ s) : (stk s).Disjoint ⟨State.addr 
   rw [hk.stkE]
   rcases key_cases hp hz with ⟨h, h', -⟩ | ⟨h, h'⟩
   · rw [h, h']; exact hp.b_pw
-  · rw [h, h']; exact hp.b_s.sub_right (part_sub (by have := end_le hz; have := layout (F := F); have := hz.D; omega))
+  · rw [h, h']; exact hp.b_s.sub_right (part_sub (by have := end_le hz; have := layout (F := F); have := hz.D; omega_arith))
 
 omit hH in
 theorem key_cov {s : State} (hk : KR F s₀ s) : Covers [⟨State.addr (kp F s₀), kl F s₀⟩] (s.rd ++ s.wr) := by
@@ -490,7 +490,7 @@ theorem key_cov {s : State} (hk : KR F s₀ s) : Covers [⟨State.addr (kp F s�
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       obtain ⟨r', hr', off, e, l⟩ := cov_part hp hk (o := F.hkO) (n := F.H.D)
-        (by have := end_le hz; have := layout (F := F); have := hz.D; omega)
+        (by have := end_le hz; have := layout (F := F); have := hz.D; omega_arith)
       exact ⟨r', List.mem_append_right _ hr', off, e, l⟩
 
 end

@@ -42,7 +42,7 @@ theorem word0_ok (s : State) {k : Nat} {hi prev col : Reg} {v : BitVec 64} {c : 
   rw [pa] at et
   refine ⟨ct, hct, ?_, (ka.trans kt).mono (by simp)⟩
   rw [hiT]
-  omega
+  omega_arith
 
 theorem last0_ok (s : State) {col prev : Reg} {c : Bool} (hc : s.cf = some c) (hne : prev ≠ col)
     (hb : (s.gpr prev).toNat + c.toNat < 2^64) :
@@ -56,7 +56,7 @@ theorem last0_ok (s : State) {col prev : Reg} {c : Bool} (hc : s.cf = some c) (h
   have pa : a.gpr prev = s.gpr prev := ka.gpr (by simp [hne])
   rw [za, pa] at et
   simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.zero_add] at et
-  exact ⟨by omega, (ka.trans kt).mono (by simp)⟩
+  exact ⟨by omega_arith, (ka.trans kt).mono (by simp)⟩
 
 private theorem comb {L R H C X V P Ci W T : Nat}
     (hw : L + R*(H + C) = X*V + P + Ci) (ht : T = H + C + X*W) :
@@ -68,8 +68,8 @@ private theorem comb2 {L R H X V W : Nat} (hw : L + R*H = X*V) : L + R*(H + X*W)
 private theorem hi_bound {L R H C X V P Ci : Nat} (hR : R = 2^64) (hX : X < R) (hV : V < R)
     (hP : P + Ci < R) (hw : L + R*(H + C) = X*V + P + Ci) : H + C < R := by
   subst hR
-  have m : X*V ≤ (2^64-1)*(2^64-1) := Nat.mul_le_mul (by omega) (by omega)
-  have : 2^64*(H + C) ≤ 2^64*(2^64-1) := by omega
+  have m : X*V ≤ (2^64-1)*(2^64-1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  have : 2^64*(H + C) ≤ 2^64*(2^64-1) := by omega_arith
   exact Nat.lt_of_le_of_lt (Nat.le_of_mul_le_mul_left this (by decide)) (by decide)
 
 theorem chain0_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
@@ -101,7 +101,7 @@ theorem chain0_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
       rw [WP.block_append_iff]
       have hcol := hrs col (by simp)
       have hm := readSrc_word hs (AdxRotate8.ea_at hp (8*k))
-        (show e + 8*k + 8 ≤ Z by simp only [List.length_cons] at hZ; omega)
+        (show e + 8*k + 8 ≤ Z by simp only [List.length_cons] at hZ; omega_arith)
       refine WP.mono (word0_ok s hm hc (Ne.symm hcol.1) hph (Ne.symm hcol.2.2.1))
         fun a ⟨ca, hca, ea, ka⟩ => ?_
       have hda := List.nodup_cons.mp hd
@@ -115,7 +115,7 @@ theorem chain0_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
         hi_bound rfl (s.gpr .rdx).isLt (word s.mem B (e + 8*k)).isLt hb ea
       refine WP.mono (ih (s := a) (k := k+1) (hi := other) (other := hi) (prev := hi) (c := ca)
         (hs.congr ka.2.2.2) (rbpA.trans hp)
-        (by simp only [List.length_cons] at hZ ⊢; omega) (by simp) hda.2 (Ne.symm hh) hh ⟨hx.2.2.1, hx.2.2.2, hx.1, hx.2.1⟩
+        (by simp only [List.length_cons] at hZ ⊢; omega_arith) (by simp) hda.2 (Ne.symm hh) hh ⟨hx.2.2.1, hx.2.2.2, hx.1, hx.2.1⟩
         (fun r hr => let q := hrs r (List.mem_cons_of_mem _ hr); ⟨q.2.1, q.1, q.1, q.2.2.2.1, q.2.2.2.2⟩)
         hca bnd) fun t ⟨et, kt⟩ => ?_
       have colT : t.gpr col = a.gpr col := kt.gpr (by
@@ -127,9 +127,9 @@ theorem chain0_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
       simp only [value, colT, List.length_cons, Nat.add_sub_cancel] at et ⊢
       have wsplit : wv s.mem B (e + 8*k) (rest.length + 1) =
           (word s.mem B (e + 8*k)).toNat + 2^64*wv s.mem B (e + 8*(k+1)) rest.length := by
-        rw [show rest.length + 1 = 1 + rest.length by omega, wv_add]
+        rw [show rest.length + 1 = 1 + rest.length by omega_arith, wv_add]
         simp only [wv, Nat.pow_zero, Nat.mul_zero, Nat.zero_add, Nat.one_mul, Nat.add_zero, Nat.mul_one]
-        rw [show e + 8*k + 8 = e + 8*(k+1) by omega]
+        rw [show e + 8*k + 8 = e + 8*(k+1) by omega_arith]
       rw [wsplit]
       exact comb ea et
 
@@ -149,14 +149,14 @@ theorem row0Core_ok (rs : List Reg) {s : State} {B : Addr} {Z e : Nat}
       ((([.alu32 .xor .rax (.reg .rax)] : List Instr) ++ [.mulx .rbx col (.mem (at_ .rbp 8))]) ++
         AdxTri8.chain0 2 .rax .rbx .rbx rest))) s _
     rw [WP.block_append_iff]
-    have h0 := readSrc_word hs (AdxRotate8.ea_at hp (8*0)) (show e + 8*0 + 8 ≤ Z by omega)
+    have h0 := readSrc_word hs (AdxRotate8.ea_at hp (8*0)) (show e + 8*0 + 8 ≤ Z by omega_arith)
     refine WP.mono (movMem_ok s h0) fun a ⟨pa, _, _, ka⟩ => ?_
     rw [WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (xorRax_ok a) fun b ⟨zb, cb, _, kb⟩ => ?_
     have kab := ka.trans kb
     have rbpB : b.gpr .rbp = off B e := (kab.gpr (by decide)).trans hp
     have h1 := readSrc_word (hs.congr kab.2.2.2) (AdxRotate8.ea_at rbpB 8)
-      (show e + 8 + 8 ≤ Z by omega)
+      (show e + 8 + 8 ≤ Z by omega_arith)
     rw [kab.2.1] at h1
     refine WP.mono (mulx_ok b h1 (fun _ h => nomatch h) (Ne.symm hcol.2.2.1))
       fun c' ⟨ec, cc, _, kc⟩ => ?_
@@ -168,7 +168,7 @@ theorem row0Core_ok (rs : List Reg) {s : State} {B : Addr} {Z e : Nat}
       intro h; subst h; simp at hlen
     refine WP.mono (chain0_ok rest (k := 2) (hi := .rax) (other := .rbx) (prev := .rbx) (c := false)
       (hs.congr (kab.trans kc).2.2.2) rbpC
-      (by omega) hrest hda.2 (by decide) (by decide)
+      (by omega_arith) hrest hda.2 (by decide) (by decide)
       ⟨by decide, by decide, by decide, by decide⟩
       (fun r hr => let q := hrs r (List.mem_cons_of_mem _ hr); ⟨q.2.1, q.2.2.1, q.2.2.1, q.1.2.2.1, q.1.2.1⟩)
       (cc.trans cb) (by simp only [Bool.toNat_false, Nat.add_zero]; exact (c'.gpr .rbx).isLt))
@@ -187,13 +187,13 @@ theorem row0Core_ok (rs : List Reg) {s : State} {B : Addr} {Z e : Nat}
     refine ⟨?_, ((kab.trans kc).trans kt).mono sub⟩
     have wsplit : wv s.mem B (e + 8*(0+1)) rest.length =
         (word s.mem B (e + 8)).toNat + 2^64*wv s.mem B (e + 8*2) (rest.length - 1) := by
-      obtain ⟨n, hn⟩ : ∃ n, rest.length = n + 1 := ⟨rest.length - 1, by omega⟩
-      rw [hn, Nat.add_sub_cancel, show n + 1 = 1 + n by omega, wv_add]
+      obtain ⟨n, hn⟩ : ∃ n, rest.length = n + 1 := ⟨rest.length - 1, by omega_arith⟩
+      rw [hn, Nat.add_sub_cancel, show n + 1 = 1 + n by omega_arith, wv_add]
       simp only [wv, Nat.pow_zero, Nat.mul_zero, Nat.zero_add, Nat.one_mul, Nat.add_zero, Nat.mul_one]
     show (t.gpr col).toNat + 2^64*value t rest = _
     rw [colT, et, List.length_cons, Nat.add_sub_cancel, wsplit]
     simp only [Bool.toNat_false, Nat.add_zero]
-    exact comb2 (by simpa only [show e + 8 = e + 8 * 1 by omega] using ec)
+    exact comb2 (by simpa only [show e + 8 = e + 8 * 1 by omega_arith] using ec)
 
 private theorem split_arith0 {A B R T V : Nat} (h : A+R*(B+R*T)=V) :
     (A+R*B)+(R*R)*T=V := by grind

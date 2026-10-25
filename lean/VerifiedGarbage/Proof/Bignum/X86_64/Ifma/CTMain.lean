@@ -155,7 +155,7 @@ theorem prePre_of (hl : LayOk l) {s t₀ : State} {B : Addr} {Z k : Nat} {op np 
   have qxv := hr.qxv
   rw [hpl] at pws pxv
   rw [hql] at qws qxv
-  exact ⟨mp, mq, _, _, C, hr.good, by omega, le_refl _, by rw [hoq]; rfl, by omega, by omega, by omega,
+  exact ⟨mp, mq, _, _, C, hr.good, by omega_arith, le_refl _, by rw [hoq]; rfl, by omega_arith, by omega_arith, by omega_arith,
     hr.wsP, hr.wsQ, pws, qws, hr.nv, hr.xm, pxv, hP'.1, hP'.2, qxv, hQ'.1, hQ'.2⟩
 
 /-- `ifma`'s hypotheses, after `pre` (as `branchA2_ok` runs it). -/
@@ -189,11 +189,11 @@ theorem ifPre_of (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op
   have hn := hr.good.scr.nowrap
   have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
   have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
-  have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega
+  have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_arith
   obtain ⟨hW1, hW2⟩ := W_bounds hl
   have hEW : l.E = 8 * l.W := rfl
-  have hpl' : pl ≤ l.E := by unfold wsWords at hpl; omega
-  have hql' : ql ≤ l.E := by unfold wsWords at hql; omega
+  have hpl' : pl ≤ l.E := by unfold wsWords at hpl; omega_arith
+  have hql' : ql ≤ l.E := by unfold wsWords at hql; omega_arith
   have hop : offP ((k + 7) / 8) = slot ((k + 7) / 8) 8 := rfl
   have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot l.W 8 + wsTab l.W := by
     unfold offQ; rw [hpl]
@@ -201,16 +201,16 @@ theorem ifPre_of (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
   obtain ⟨hg₁, hN₁, rp, rq, f₁, k₁, mk₁⟩ := hA
   have ns₁ := preRanges_nsafe (w := (k + 7) / 8) (wp := l.W) (wq := l.W) (le_refl (offP ((k + 7) / 8)))
-    (show slot ((k + 7) / 8) 8 ≤ offQ ((k + 7) / 8) pl by rw [hoq]; omega)
+    (show slot ((k + 7) / 8) 8 ≤ offQ ((k + 7) / 8) pl by rw [hoq]; omega_arith)
   have hpr : ∀ r ∈ preRanges ((k + 7) / 8) (offP ((k + 7) / 8)) l.W (offQ ((k + 7) / 8) pl) l.W,
       r.1 + r.2 ≤ offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W := fun r hr => by
     simp only [preRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with hr | rfl | rfl | rfl
-    · have := (gRanges_lt _ r hr).2; rw [hoq]; omega
-    · have := slot_le (w := (k + 7) / 8) (show Public.aX < 8 by decide); rw [hoq]; simp only; omega
-    · simp only [xRange]; omega
-    · simp only [xRange]; rw [hoq, hop]; omega
-  have i₀₁ : InScr B Z t₀.mem s₁.mem := InScr.of_frm f₁ fun r hr => by have := hpr r hr; omega
+    · have := (gRanges_lt _ r hr).2; rw [hoq]; omega_arith
+    · have := slot_le (w := (k + 7) / 8) (show Public.aX < 8 by decide); rw [hoq]; simp only; omega_arith
+    · simp only [xRange]; omega_arith
+    · simp only [xRange]; rw [hoq, hop]; omega_arith
+  have i₀₁ : InScr B Z t₀.mem s₁.mem := InScr.of_frm f₁ fun r hr => by have := hpr r hr; omega_arith
   have hb₁ : ∀ i < 32, i ≠ Crt.sD → i ≠ Public.sCnt → word s₁.mem B (8 * i) = word t₀.mem B (8 * i) :=
     fun i hi h1 h2 => nsafe_word f₁ ns₁ hi h1 h2
   have hf₁ : ∀ i < 32, hFixed i = true → word s₁.mem B (8 * i) = word s.mem B (8 * i) := fun i hi hf => by
@@ -226,7 +226,7 @@ theorem ifPre_of (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op
       by rw [hf₁ _ (by decide) (by decide), h.dpl]; exact h.hPl, by rw [hf₁ _ (by decide) (by decide)]; exact h.hDq,
       by rw [hf₁ _ (by decide) (by decide), h.dql]; exact h.hQl⟩
   exact ⟨minv, mp, mq, mask Mk, _, _, dpb, dqb, hg₁.scr, hg₁.rdi, ip, le_refl _, by rw [hoq, hop], rfl,
-    by omega, hP'.2, hQ'.2, rp.ylt, rq.ylt, rp.clt, rq.clt, h.dp.congrK (hr.iscr.trans i₀₁) kk₁,
+    by omega_arith, hP'.2, hQ'.2, rp.ylt, rq.ylt, rp.clt, rq.clt, h.dp.congrK (hr.iscr.trans i₀₁) kk₁,
     h.dq.congrK (hr.iscr.trans i₀₁) kk₁, by rw [h.dpl]; exact hpl1, by rw [h.dpl]; exact hpl',
     by rw [h.dql]; exact hql1, by rw [h.dql]; exact hql', h.dpl, h.dql⟩
 
@@ -257,16 +257,16 @@ theorem postPre_of (hl : LayOk l) {s t₁ : State} {B : Addr} {Z k : Nat} {op np
   obtain ⟨hMk', hP', hQ'⟩ := mask_facts hMk hodd hPN hQN
   have hn := hd.good.scr.nowrap
   have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
-  have hpl' : (pl + 7) / 8 ≤ l.W := by unfold wsWords at hpl; omega
+  have hpl' : (pl + 7) / 8 ≤ l.W := by unfold wsWords at hpl; omega_arith
   have hop : offP ((k + 7) / 8) = slot ((k + 7) / 8) 8 := rfl
   have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot (wsWords pl) 8 + wsTab (wsWords pl) := rfl
-  have hW8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega
+  have hW8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega_arith
   have hm := hd.im
-  exact ⟨minv, mp, mq, _, qib, Mk, hd.good, by omega, by rw [hpl]; omega, hm.wsQ, by rw [hpl]; exact hm.qws,
-    by have := hZq; rw [hql] at this; rw [hpl]; exact this, le_refl _, by rw [hoq, hop], by rw [hpl]; omega,
+  exact ⟨minv, mp, mq, _, qib, Mk, hd.good, by omega_arith, by rw [hpl]; omega_arith, hm.wsQ, by rw [hpl]; exact hm.qws,
+    by have := hZq; rw [hql] at this; rw [hpl]; exact this, le_refl _, by rw [hoq, hop], by rw [hpl]; omega_arith,
     hm.wsP, by rw [hpl]; exact hm.pws, by rw [hpl]; exact ⟨hm.pn, hm.pinv, hm.pone⟩, hP'.1,
     by rw [hpl]; exact hd.plt, hm.pmk, hd.qi, by rw [hqil]; exact hm.pl, h.qi.congrK hd.iscr hd.keep,
-    by rw [hqil]; exact hpl1, by rw [hqil]; omega, by rw [hqil, hpl]; omega,
+    by rw [hqil]; exact hpl1, by rw [hqil]; omega_arith, by rw [hqil, hpl]; omega_arith,
     fun hm' => by obtain ⟨_, _, hqi⟩ := hMk' hm'; simp only [hm', ↓reduceIte, hQIe]; exact hqi, hqil⟩
 
 /-- `pre`, from the checks: what `pre_ok` leaves. -/
@@ -304,8 +304,8 @@ theorem pre_apost (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : N
   have qxv := hr.qxv
   rw [hpl] at pws pxv
   rw [hql] at qws qxv
-  exact pre_ok M (wp := l.W) hr.good (by omega) (le_refl _) (by rw [hoq]; exact Nat.le_refl _) (by omega)
-    (by omega) (by omega) hr.wsP hr.wsQ pws qws hr.nv hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2
+  exact pre_ok M (wp := l.W) hr.good (by omega_arith) (le_refl _) (by rw [hoq]; exact Nat.le_refl _) (by omega_arith)
+    (by omega_arith) (by omega_arith) hr.wsP hr.wsQ pws qws hr.nv hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2
 
 /-! ## The stages of the IFMA branch -/
 
@@ -378,7 +378,7 @@ theorem sizesS_ct (hl : LayOk l) : RelCT isa (Two (Stage R3)) (.block (sizes l))
   have hql2 := h.ql2
   exact WP.mono (sizes_ok hl (pl := p.pl) (ql := p.ql) hr.good
     (by rw [hr.hfix _ (by decide) (by decide)]; exact h.hPl) (by rw [hr.hfix _ (by decide) (by decide)]; exact h.hQl)
-    (by unfold offQ at hZq; omega) (show (p.k + 7) / 8 < 2 ^ 64 by omega) (by omega) (by omega))
+    (by unfold offQ at hZq; omega_arith) (show (p.k + 7) / 8 < 2 ^ 64 by omega_arith) (by omega_arith) (by omega_arith))
     fun t' ⟨zf, me, k⟩ => ⟨⟨minv, mp, mq, hr.of_regs me k⟩, zf⟩
 
 local notation "CLay" => VG.Impl.Rsa.X86_64.CrtIfma.Lay
@@ -472,7 +472,7 @@ theorem sizes_of_rap {p : CrtPub} {σ : State} {xb pb qb dpb dqb qib : List Byte
   obtain ⟨_, _, _, _, _, hw, hp, hq, _⟩ := h
   obtain ⟨hW1, -⟩ := W_bounds (layOf_ok p.w)
   unfold wsWords at hp hq
-  exact ⟨hw, by omega, by omega⟩
+  exact ⟨hw, by omega_arith, by omega_arith⟩
 
 /-- The vector code of `l`, for the states where the sizes are `l`'s. -/
 theorem ifmaL_ct (hl : LayOk l) (X : CrtPub → Prop)

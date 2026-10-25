@@ -36,7 +36,7 @@ def groupHead : Prog isa := .seq BatchCtr.count (.seq BatchCtr32.fill BatchCtr.c
 
 theorem head_wp {s : State} {B : BitVec 32} {n : Nat} (hn : 1 ≤ n) (hn32 : n < 2 ^ 32)
     (h : HeadPre B n s) : WP isa groupHead s (HeadPost s n) := by
-  have hg : 1 ≤ min n 8 := by omega
+  have hg : 1 ≤ min n 8 := by omega_arith
   have hg8 : min n 8 ≤ 8 := Nat.min_le_right _ _
   obtain ⟨K, hH⟩ := h.table
   refine WP.seq (WP.mono (count_wp h.left hn32) fun s₁ ⟨g₁, o₁, m₁, _, wr₁, _⟩ => ?_)
@@ -49,15 +49,15 @@ theorem head_wp {s : State} {B : BitVec 32} {n : Nat} (hn : 1 ≤ n) (hn32 : n <
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · apply Offset.disjoint (State.addr B)
-      · right; change 4 * tailSlot + 16 * 0 + 16 * min n 8 ≤ 384; rw [tailSlot]; omega
+      · right; change 4 * tailSlot + 16 * 0 + 16 * min n 8 ≤ 384; rw [tailSlot]; omega_arith
       · decide
-      · change 4 * tailSlot + 16 * 0 + 16 * min n 8 ≤ 2 ^ 64; rw [tailSlot]; omega
+      · change 4 * tailSlot + 16 * 0 + 16 * min n 8 ≤ 2 ^ 64; rw [tailSlot]; omega_arith
     · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
   have wc : Covers [⟨State.addr B, 4 * slots⟩] s₂.wr := by
     rw [f.wr, wr₁]
     simpa only [BitVec.add_zero] using workspace_part h.writable 0 (4 * slots)
       (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; decide)
-  refine WP.mono (BatchCalls.crypt_wp b₂ (by have := h.fit; change B.toNat + 1456 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega) wc table₂)
+  refine WP.mono (BatchCalls.crypt_wp b₂ (by have := h.fit; change B.toNat + 1456 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega_arith) wc table₂)
     fun s₃ ⟨c, _, _⟩ => ?_
   refine ⟨fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -120,7 +120,7 @@ theorem loop_ct (m : Nat) :
     by rw [l.wr]; exact hw, K, l.table⟩
   have p' : HeadPre B (n - i) b := ⟨(l'.regs _ (by simp [sb])).trans hB', l'.left, fitB,
     by rw [l'.wr]; exact hw', K', l'.table⟩
-  have eqtr := group_ct (by omega) (by omega) p p' (by rw [l.data, l'.data]) ea eb
+  have eqtr := group_ct (by omega_arith) (by omega_arith) p p' (by rw [l.data, l'.data]) ea eb
   obtain ⟨la, za⟩ := result (loopInv_step hn32 hi hB fitB fitD hw wd sep l) ea
   obtain ⟨lb, zb⟩ := result (loopInv_step hn32 hi hB' fitB fitD hw' wd' sep l') eb
   have evA : isa.eval .ne a' = some !decide (i + min (n - i) 8 = n) := by
@@ -136,9 +136,9 @@ theorem loop_ct (m : Nat) :
   · intro h
     rw [evA] at h
     have he : i + min (n - i) 8 ≠ n := by simpa using h
-    refine ⟨n - (i + min (n - i) 8), by omega, i + min (n - i) 8, rfl, ?_, la, lb⟩
+    refine ⟨n - (i + min (n - i) 8), by omega_arith, i + min (n - i) 8, rfl, ?_, la, lb⟩
     have := la.bound
-    omega
+    omega_arith
 
 include hn32 hB hB' fitB fitD hw hw' wd wd' sep in
 theorem dataLoop_ct :
@@ -154,8 +154,8 @@ theorem dataLoop_ct :
     rw [ev h.1.2.2.1] at he
     have hn : 0 < n := by
       have : n ≠ 0 := by simpa using he
-      omega
-    exact ⟨0, by omega, hn, h.1.1, h.1.2.1⟩
+      omega_arith
+    exact ⟨0, by omega_arith, hn, h.1.1, h.1.2.1⟩
 
 end
 
@@ -164,8 +164,8 @@ theorem initial {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {t : List 
     (hH : Spec.Sm4.Prepared.Holds layout s.mem (State.addr B) K .encrypt)
     (hC : Spec.Aes.bytesAt s.mem (counterAddr B) 16 = t) : LoopInv s B D K t n 0 s :=
   ⟨fun _ _ => rfl, by simpa only [Nat.mul_zero, BitVec.add_zero] using hD,
-    by simpa only [Nat.sub_zero] using hN, by omega, rfl, rfl, rfl, Frame.refl _ _, hH,
-    by change Spec.Aes.bytesAt s.mem (counterAddr B) 16 = t; exact hC, fun _ h => by omega⟩
+    by simpa only [Nat.sub_zero] using hN, by omega_arith, rfl, rfl, rfl, Frame.refl _ _, hH,
+    by change Spec.Aes.bytesAt s.mem (counterAddr B) 16 = t; exact hC, fun _ h => by omega_arith⟩
 
 theorem ctr32_ct : ConstantTime isa Pre Pub BatchCtr32.ctr32 := by
   intro s₁ s₂ tr₁ tr₂ s₁' s₂' hp₁ hp₂ hq e₁ e₂

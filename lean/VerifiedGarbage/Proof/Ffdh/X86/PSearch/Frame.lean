@@ -30,7 +30,7 @@ theorem low_toNat {o : State} (A : PSearchABI o) : (low o).toNat = (o.gpr .esp).
   have : 212 ≤ (o.gpr .esp).toNat := A.stackLow
   have := (o.gpr .esp).isLt
   simp only [low, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- A stack pointer `k ≤ 212` bytes below the entry's, at its offset from `low o`. -/
 theorem sw_sub {o : State} (A : PSearchABI o) {k : Nat} (hk : k ≤ 212) :
@@ -40,7 +40,7 @@ theorem sw_sub {o : State} (A : PSearchABI o) {k : Nat} (hk : k ≤ 212) :
   have hl := low_toNat A
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, hl]
-  omega
+  omega_arith
 
 /-- A word at `d` above a stack pointer `k` bytes below the entry's. -/
 theorem addr_sub {o : State} (A : PSearchABI o) {k d : Nat} (hk : k ≤ 212) (hd : d ≤ k) :
@@ -50,7 +50,7 @@ theorem addr_sub {o : State} (A : PSearchABI o) {k d : Nat} (hk : k ≤ 212) (hd
   have hl := low_toNat A
   apply BitVec.eq_of_toNat_eq
   simp only [addr, BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, hl]
-  omega
+  omega_arith
 
 theorem lowR_eq {o : State} : lowR o = ⟨low o, 212⟩ := rfl
 
@@ -61,7 +61,7 @@ theorem low_sub {o : State} {d n : Nat} (h : d + n ≤ 212) : Region.Sub ⟨low 
 theorem low_contains {o : State} (A : PSearchABI o) {d n : Nat} (h : d + n ≤ 212) :
     (lowR o).Contains (low o + BitVec.ofNat 64 d) n := by
   have : 212 ≤ (o.gpr .esp).toNat := A.stackLow
-  exact Offset.contains_base _ h (by omega)
+  exact Offset.contains_base _ h (by omega_arith)
 
 /-- The frame's region. -/
 abbrev frR (o : State) : Region := ⟨low o + BitVec.ofNat 64 176, 36⟩
@@ -116,13 +116,13 @@ theorem storeArg_ok {o s : State} {ds : List Nat} {f : Nat → BitVec 32} {used 
   have A := h.abi
   have hS := A.sBound
   have ea : addr (s.gpr .esp) (4 * j) = low o + BitVec.ofNat 64 (176 + 4 * j) := by
-    rw [h.esp, addr_sub A (by decide) (by unfold argsBytes; omega)]; rfl
+    rw [h.esp, addr_sub A (by decide) (by unfold argsBytes; omega_arith)]; rfl
   have win : (frR o).Contains (low o + BitVec.ofNat 64 (176 + 4 * j)) 4 := by
     have : 212 ≤ (o.gpr .esp).toNat := A.stackLow
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
   refine wp_storeS (show s.ea ⟨.esp, 4 * j⟩ = _ by rw [ea_mk, ea])
     (by rw [h.wr]; exact ⟨_, List.mem_cons_self .., win⟩) fun t' M => k t' ?_ ?_
-  · have lc := low_contains A (d := 176 + 4 * j) (n := 4) (by omega)
+  · have lc := low_contains A (d := 176 + 4 * j) (n := 4) (by omega_arith)
     have fr : Frame [lowR o] s.mem t'.mem := by
       rw [M.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ lc
     refine ⟨A, M.rd.trans h.rd, M.wr.trans h.wr, M.syms.trans h.syms, ?_, ?_, fun r hr hne hsp => ?_,
@@ -138,8 +138,8 @@ theorem storeArg_ok {o s : State} {ds : List Nat} {f : Nat → BitVec 32} {used 
     rw [M.mem]
     by_cases hij : i = j
     · subst hij; rw [Mem.readW_writeW_self32, hv]
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact ha i (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+      exact ha i (by omega_arith)
 
 /-- `pass d j`: the state's word at `d`, argument `j`, to the frame. -/
 theorem pass_ok {o s : State} {ds : List Nat} {f : Nat → BitVec 32} {used : Nat} (h : Fr o ds f s)

@@ -81,11 +81,11 @@ theorem sp_in {rs : List Region} {sP : Addr} (hw : pR sP ∈ rs) {j : Nat} (hj :
     InRegions rs (wAddr (spW sP) j) 16 := by
   refine ⟨_, hw, ?_⟩
   rw [wAddr, spW, Offset.add_add]
-  exact Offset.contains_base sP (by omega) (by omega)
+  exact Offset.contains_base sP (by omega_arith) (by omega_arith)
 
 theorem tab_in {rs : List Region} {sP : Addr} (hw : pR sP ∈ rs) {k : Nat} (hk : 2 * k + 16 ≤ 1024) :
     InRegions rs (wAddr sP k) 16 :=
-  ⟨_, hw, Offset.contains_base sP (by omega) (by omega)⟩
+  ⟨_, hw, Offset.contains_base sP (by omega_arith) (by omega_arith)⟩
 
 theorem sel_zero (j : Nat) : sel 0 j = 0 := by simp [sel]
 
@@ -123,8 +123,8 @@ theorem wp_rcxLoop {body : List Instr} {N : Nat} (hN : 0 < N) (hN' : N < 2 ^ 31)
   refine WP.seq (WP.mono (Q := fun (s : State) => GOnly [.rcx] s₀ s ∧ s.gpr .rcx = BitVec.ofNat 64 N)
     (by vrunm; exact ⟨by gonly, by
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega⟩) fun s ⟨o, hc⟩ => ?_)
-  exact wp_countdown (by omega) hN Inv (fun i hi s hI _ => hbody i hi s hI) (fun _ h => h) (h0 s o hc) hc
+      rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_arith⟩) fun s ⟨o, hc⟩ => ?_)
+  exact wp_countdown (by omega_arith) hN Inv (fun i hi s hI _ => hbody i hi s hI) (fun _ h => h) (h0 s o hc) hc
 
 /-- The first `b` blocks of the layer with `len`, block `c` with the zeta
 `zeta (zi c)`. -/
@@ -163,8 +163,8 @@ theorem vstep {Sp : Addr} {len st u k : Nat} (hl : 0 < len) (hs : st + 2 * len �
       S16R R s'.mem Sp (blk G len k st (8 * (u + 1))) ∧ s'.gpr .rdx = wAddr Sp (st + 8 * (u + 1)) ∧
         Frame [sR Sp] s.mem s'.mem ∧ VConsts s' ∧ s'.xmm .xmm13 = s.xmm .xmm13 ∧ Keep [.rdx, .rcx] s s' ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) ∧ s'.mxcsr = s.mxcsr := by
-  have j0 : st + 8 * u + 8 ≤ 256 := by omega
-  have j1 : st + 8 * u + len + 8 ≤ 256 := by omega
+  have j0 : st + 8 * u + 8 ≤ 256 := by omega_arith
+  have j1 : st + 8 * u + len + 8 ≤ 256 := by omega_arith
   have a1 : wAddr Sp (st + 8 * u) + BitVec.ofNat 64 (2 * len) = wAddr Sp (st + 8 * u + len) := wAddr_add _ _ _
   have r0 : InRegions (s.rd ++ s.wr) (wAddr Sp (st + 8 * u)) 16 := by
     obtain ⟨r, hr, hc⟩ := hin _ j0; exact ⟨r, List.mem_append_right _ hr, hc⟩
@@ -190,21 +190,21 @@ theorem vstep {Sp : Addr} {len st u k : Nat} (hl : 0 < len) (hs : st + 2 * len �
   have z2 : s2.xmm .xmm13 = s.xmm .xmm13 := by rw [o2.xmm _ (by decide), xmm_setXmm, xmm_setXmm]; rfl
   vrunm [g2, m2, e2.1, e2.2, hdx, a1, w0, w1, x2]
   refine ⟨?_, ?_, ?_, ⟨c2.q, c2.qinv⟩, z2, ⟨fun r hr => ?_, rfl, rfl⟩⟩
-  · refine s16_write2R hS j0 j1 (by omega) l0 l3 fun i hi => ?_
-    rw [show 8 * (u + 1) = 8 * u + 8 by omega, hblk.add, hblk.get _ _ _ _ _ hl (by omega)
-      (by rw [n_eq]; omega) _ (by rw [n_eq]; exact hi)]
+  · refine s16_write2R hS j0 j1 (by omega_arith) l0 l3 fun i hi => ?_
+    rw [show 8 * (u + 1) = 8 * u + 8 by omega_arith, hblk.add, hblk.get _ _ _ _ _ hl (by omega_arith)
+      (by rw [n_eq]; omega_arith) _ (by rw [n_eq]; exact hi)]
     by_cases c1 : st + 8 * u ≤ i ∧ i < st + 8 * u + 8
     · rw [ite_eq_left_of_eq_true _ _ (eq_true c1), ite_eq_left_of_eq_true _ _ (eq_true c1),
-        show st + 8 * u + (i - (st + 8 * u)) = i by omega,
-        show st + 8 * u + len + (i - (st + 8 * u)) = i + len by omega]
+        show st + 8 * u + (i - (st + 8 * u)) = i by omega_arith,
+        show st + 8 * u + len + (i - (st + 8 * u)) = i + len by omega_arith]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false c1), ite_eq_right_of_eq_false _ _ (eq_false c1)]
       by_cases c2 : st + 8 * u + len ≤ i ∧ i < st + 8 * u + len + 8
-      · rw [ite_eq_left_of_eq_true _ _ (eq_true c2), ite_eq_left_of_eq_true _ _ (eq_true (by omega)),
-          show st + 8 * u + (i - (st + 8 * u + len)) = i - len by omega,
-          show st + 8 * u + len + (i - (st + 8 * u + len)) = i by omega]
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false c2), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+      · rw [ite_eq_left_of_eq_true _ _ (eq_true c2), ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)),
+          show st + 8 * u + (i - (st + 8 * u + len)) = i - len by omega_arith,
+          show st + 8 * u + len + (i - (st + 8 * u + len)) = i by omega_arith]
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false c2), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
   · rw [show (16 : BitVec 64) = BitVec.ofNat 64 (2 * 8) from rfl, wAddr_add,
-      show st + 8 * u + 8 = st + 8 * (u + 1) by omega]
+      show st + 8 * u + 8 = st + 8 * (u + 1) by omega_arith]
   · exact frame_write2 (Frame.refl _ _) j0 j1 _ _
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr.1, hr.2, ite_false]
@@ -219,8 +219,8 @@ theorem vblock_ok {sP : Addr} {len st kz : Nat} (h8 : 8 ≤ len) (hl8 : len % 8 
   -- the zeta
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (vzeta_ok 0 (k := kz) (fun j _ => by rw [sel_zero]; omega) h8r
-    (tab_in (List.mem_append_right _ hw) (by omega)) hT) fun s1 ⟨z1, o1⟩ => ?_
+  refine WP.mono (vzeta_ok 0 (k := kz) (fun j _ => by rw [sel_zero]; omega_arith) h8r
+    (tab_in (List.mem_append_right _ hw) (by omega_arith)) hT) fun s1 ⟨z1, o1⟩ => ?_
   have g1 : s1.gpr = s.gpr := o1.gpr
   refine WP.mono (Q := fun (s2 : State) => s2.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧
       GOnly [.r8] s1 s2)
@@ -232,14 +232,14 @@ theorem vblock_ok {sP : Addr} {len st kz : Nat} (h8 : 8 ≤ len) (hl8 : len % 8 
   have dx2 : s2.gpr .rdx = wAddr (spW sP) st := by rw [o2.keep.gpr (by decide), g1, hdx]
   have hw2 : pR sP ∈ s2.wr := by rw [o2.keep.2.2, o1.wr]; exact hw
   have m2 : s2.mem = s.mem := by rw [o2.mem, o1.mem]
-  refine WP.seq (WP.mono (wp_rcxLoop (N := len / 8) (by omega) (by omega)
+  refine WP.seq (WP.mono (wp_rcxLoop (N := len / 8) (by omega_arith) (by omega_arith)
     (fun u w => S16R R w.mem (spW sP) (blk G len kz st (8 * u)) ∧ w.gpr .rdx = wAddr (spW sP) (st + 8 * u) ∧
       VConsts w ∧ w.xmm .xmm13 = s2.xmm .xmm13 ∧ Keep [.rcx, .rdx] s2 w ∧ Frame [sR (spW sP)] s2.mem w.mem ∧
       w.mxcsr = s2.mxcsr)
     (fun w o hc => ⟨by rw [hblk.zero, o.mem, m2]; exact hS, by rw [o.keep.gpr (by decide), dx2]; rfl,
       o.consts c2, by rw [o.xmm], o.keep.mono (by simp), by rw [o.mem]; exact Frame.refl _ _, o.mxcsr⟩)
-    (fun u hu w ⟨hS', hdx', hc', hz', hk', hf', hx'⟩ => WP.mono (vstep hbf hblk (by omega) hs (by
-        have := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero hl8); omega) hc' (by rw [hz']; exact z2) hdx' hS'
+    (fun u hu w ⟨hS', hdx', hc', hz', hk', hf', hx'⟩ => WP.mono (vstep hbf hblk (by omega_arith) hs (by
+        have := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero hl8); omega_arith) hc' (by rw [hz']; exact z2) hdx' hS'
         (fun j hj => sp_in (by rw [hk'.2.2]; exact hw2) hj))
       fun w' ⟨hS'', hdx'', hf'', hc'', hz'', hk'', hcx, hzf, hx''⟩ =>
         ⟨⟨hS'', hdx'', hc'', by rw [hz'', hz'], (hk'.trans hk'').mono (by simp), hf'.trans hf'', by rw [hx'', hx']⟩,
@@ -247,8 +247,8 @@ theorem vblock_ok {sP : Addr} {len st kz : Nat} (h8 : 8 ≤ len) (hl8 : len % 8 
   rw [show 8 * (len / 8) = len from Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hl8)] at hS3 hdx3
   have hax : w.gpr .rax = s.gpr .rax := by rw [hk3.gpr (by decide), o2.keep.gpr (by decide), g1]
   have h8w : w.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz := by rw [hk3.gpr (by decide), h82]
-  vrunm [hdx3, sx_ofNat (show 2 * len < 2 ^ 31 by omega), hax, h8w]
-  refine ⟨hS3, by rw [wAddr_add, show st + len + len = st + 2 * len by omega], ?_⟩
+  vrunm [hdx3, sx_ofNat (show 2 * len < 2 ^ 31 by omega_arith), hax, h8w]
+  refine ⟨hS3, by rw [wAddr_add, show st + len + len = st + 2 * len by omega_arith], ?_⟩
   have k1 : Keep [.r8, .rcx, .rdx, .rax] s w :=
     (Keep.trans (⟨fun r _ => by rw [g1], o1.rd, o1.wr⟩ : Keep [] s s1) (o2.keep.trans hk3)).mono (by simp)
   refine ⟨⟨fun r hr => ?_, k1.2.1, k1.2.2⟩, by rw [← m2]; exact hf3,
@@ -278,13 +278,13 @@ theorem vlay_ok {sP : Addr} {len k : Nat} (hlen : len ∈ [8, 16, 32, 64, 128]) 
       w.gpr .rax = BitVec.ofNat 64 (128 / len) ∧ GOnly [.rdx, .r8, .rax] s w)
     (by
       simp only [leaR, oS]
-      vrunm [sx_ofNat (show 256 < 2 ^ 31 by decide), sx_ofNat (show 2 * k < 2 ^ 31 by omega), hsi]
+      vrunm [sx_ofNat (show 256 < 2 ^ 31 by decide), sx_ofNat (show 2 * k < 2 ^ 31 by omega_arith), hsi]
       refine ⟨?_, by gonly⟩
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega) fun w ⟨hdx, h8r, hax, o⟩ => ?_)
+      omega_arith) fun w ⟨hdx, h8r, hax, o⟩ => ?_)
   have hw' : pR sP ∈ w.wr := by rw [o.keep.2.2]; exact hw
-  refine WP.mono (wp_countdown (cnt := .rax) (N := 128 / len) (by omega) hpos
+  refine WP.mono (wp_countdown (cnt := .rax) (N := 128 / len) (by omega_arith) hpos
     (fun c u => S16R R u.mem (spW sP) (layF blk F len zi c) ∧ u.gpr .rdx = wAddr (spW sP) (2 * len * c) ∧
       u.gpr .r8 = wAddr sP (zi c) ∧ BInv sP w u ∧ T16 u.mem sP)
     (fun c hc u ⟨hS', hdx', h8', hb', hT'⟩ _ => ?_) (fun u h => h)
@@ -293,8 +293,8 @@ theorem vlay_ok {sP : Addr} {len k : Nat} (hlen : len ∈ [8, 16, 32, 64, 128]) 
     fun u ⟨hS', _, _, hb', _⟩ => ⟨hS', ⟨(o.keep.trans hb'.keep).mono (by simp),
       by rw [← o.mem]; exact hb'.frame, hb'.consts, by rw [hb'.mxcsr, o.mxcsr]⟩⟩
   have hs : 2 * len * c + 2 * len ≤ 256 := by
-    have : 2 * len * (c + 1) ≤ 2 * len * (128 / len) := Nat.mul_le_mul_left _ (by omega)
-    rw [Nat.mul_succ] at this; omega
+    have : 2 * len * (c + 1) ≤ 2 * len * (128 / len) := Nat.mul_le_mul_left _ (by omega_arith)
+    rw [Nat.mul_succ] at this; omega_arith
   refine WP.mono (vblock_ok hbf hblk h8 hl8 hl128 hs (hzi c hc) dz hb'.consts hdx' h8' hS' hT'
     (by rw [hb'.keep.2.2]; exact hw')) fun u' ⟨hS'', hdx'', h8'', hax'', hzf'', hb''⟩ =>
       ⟨⟨by rw [layF, foldl_range_succ]; exact hS'', by rw [hdx'', Nat.mul_succ],

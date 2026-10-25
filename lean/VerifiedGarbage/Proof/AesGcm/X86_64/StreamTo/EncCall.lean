@@ -63,7 +63,7 @@ theorem encPre {o n : Nat} (hn : o + n ≤ L s) {u : State}
     (encK M).pre u := by
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
   have hnn : (BitVec.ofNat 64 n).toNat = n := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   have wt := hp.w_t
   have wsp := hp.w_sp
   have ds := dq_sub (s := s) hn
@@ -77,13 +77,13 @@ theorem encPre {o n : Nat} (hn : o + n ≤ L s) {u : State}
   have tA : Region.Sub ⟨SP s - BitVec.ofNat 64 8, 8⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
   have tR' : Region.Sub ⟨SP s - BitVec.ofNat 64 16, 8⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
   have tS : Region.Sub ⟨SP s - BitVec.ofNat 64 2624, 2608⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
-  have hsp16 : (SP s - BitVec.ofNat 64 16).toNat = (SP s).toNat - 16 := toNat_sub_ofNat (by omega)
-  have hsp8 : (SP s - BitVec.ofNat 64 8).toNat = (SP s).toNat - 8 := toNat_sub_ofNat (by omega)
-  have hsp2624 : (SP s - BitVec.ofNat 64 2624).toNat = (SP s).toNat - 2624 := toNat_sub_ofNat (by omega)
+  have hsp16 : (SP s - BitVec.ofNat 64 16).toNat = (SP s).toNat - 16 := toNat_sub_ofNat (by omega_arith)
+  have hsp8 : (SP s - BitVec.ofNat 64 8).toNat = (SP s).toNat - 8 := toNat_sub_ofNat (by omega_arith)
+  have hsp2624 : (SP s - BitVec.ofNat 64 2624).toNat = (SP s).toNat - 2624 := toNat_sub_ofNat (by omega_arith)
   have d₁ : (⟨SP s - BitVec.ofNat 64 16, 8⟩ : Region).Disjoint ⟨SP s - BitVec.ofNat 64 8, 8⟩ :=
-    Offset.disjoint_of_le (by simp only [hsp16, hsp8]; omega) (by simp only [hsp8]; omega)
+    Offset.disjoint_of_le (by simp only [hsp16, hsp8]; omega_arith) (by simp only [hsp8]; omega_arith)
   have d₂ : (⟨SP s - BitVec.ofNat 64 2624, 2608⟩ : Region).Disjoint ⟨SP s - BitVec.ofNat 64 8, 8⟩ :=
-    Offset.disjoint_of_le (by simp only [hsp2624, hsp8]; omega) (by simp only [hsp8]; omega)
+    Offset.disjoint_of_le (by simp only [hsp2624, hsp8]; omega_arith) (by simp only [hsp8]; omega_arith)
   simp only [encK, encCallPre, Proof.AesGcm.arg, hargs, hret, hrd, hwr, h_di, h_si, h_dx, h_9, a0, hnn,
     hrsp, Proof.AesGcm.rounds, hstk]
   refine ⟨trivial, trivial, hp.k_st, hp.k_d.sub_right ds, hp.st_d.sub_right ds, hp.b_st.symm.sub_right tA,
@@ -92,7 +92,7 @@ theorem encPre {o n : Nat} (hn : o + n ≤ L s) {u : State}
     d₁,
     hp.b_k.sub_left tS, hp.b_st.sub_left tS, (hp.b_d.sub_left tS).sub_right ds,
     d₂,
-    hp.w_k, hp.w_st, off_bound hp.w_d hn, by rw [hsp16]; omega, by rw [hsp16]; omega, hp.rounds,
+    hp.w_k, hp.w_st, off_bound hp.w_d hn, by rw [hsp16]; omega_arith, by rw [hsp16]; omega_arith, hp.rounds,
     hok⟩
 
 end
@@ -115,7 +115,7 @@ theorem encEntry {o n : Nat} (hn : o + n ≤ L s) {st : State}
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
   have wt := hp.w_t
   have wsp := hp.w_sp
-  have hn8 : 8 * [Reg.r10].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega
+  have hn8 : 8 * [Reg.r10].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega_arith
   obtain ⟨hpf, hpj⟩ := pushRegs_mem st [.r10] (by decide) hn8
   have hP : (pushed [.r10] st).gpr .rsp = SP s - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
   have hpf' : Frame [⟨SP s - BitVec.ofNat 64 8, 8⟩] st.mem (pushed [.r10] st).mem := by
@@ -126,10 +126,10 @@ theorem encEntry {o n : Nat} (hn : o + n ≤ L s) {st : State}
     simpa only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add] using this
   have fU : Frame (wR s ++ [tR s]) s.mem (pushed [.r10] st).callEntry.mem :=
     (hf.trans (frame_stk (s := s) (by decide) (by decide) hpf')).trans (frame_stk (s := s) (by decide) (by decide) hE)
-  have hPsp8 : 8 ≤ (SP s - BitVec.ofNat 64 8).toNat := by rw [toNat_sub_ofNat (by omega)]; omega
-  have hPt : (SP s - BitVec.ofNat 64 8).toNat = (SP s).toNat - 8 := toNat_sub_ofNat (by omega)
+  have hPsp8 : 8 ≤ (SP s - BitVec.ofNat 64 8).toNat := by rw [toNat_sub_ofNat (by omega_arith)]; omega_arith
+  have hPt : (SP s - BitVec.ofNat 64 8).toNat = (SP s).toNat - 8 := toNat_sub_ofNat (by omega_arith)
   have a0 : stackArg ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o n)) 0 = BitVec.ofNat 64 (n) := by
-    rw [stackArg_entry hP hPsp8 _ _ (by rw [hPt]; omega), show SP s - BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * 0) =
+    rw [stackArg_entry hP hPsp8 _ _ (by rw [hPt]; omega_arith), show SP s - BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * 0) =
       SP s - BitVec.ofNat 64 (8 * (0 + 1)) by simp, ← hsp]
     exact (hpj 0 (by decide)).trans h_10
   have gU : ∀ r, r ≠ .rsp → ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o n)).gpr r = st.gpr r :=
@@ -144,7 +144,7 @@ theorem encEntry {o n : Nat} (hn : o + n ≤ L s) {st : State}
     rw [pushed_wr, hsp, hwr, hp.wr]; rfl
   have hPr : (pushed [.r10] st).rd = [kR M s, srcR s, aR s] := by rw [pushed_rd, hrd, hp.rd]
   have cDq : ∀ {ts : List Region}, dR s ∈ ts → Covers [dqR s o n] ts := fun h =>
-    covers_off (k := L s) (d := o) (m := n) h (by omega) (by omega)
+    covers_off (k := L s) (d := o) (m := n) h (by omega_arith) (by omega_arith)
   have cw : Covers (encWr s o n) (pushed [.r10] st).wr := by
     rw [hPw]; exact covers_cons' (covers_of_mem (by simp)) (covers_cons' (cDq (by simp)) covers_nil')
   have cr : Covers (encRd s M ++ encWr s o n) ((pushed [.r10] st).rd ++ (pushed [.r10] st).wr) := by
@@ -173,7 +173,7 @@ theorem encCall_ok (E : EncFn M) {o n : Nat} (hn : o + n ≤ L s) {st : State}
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
   have wt := hp.w_t
   have wsp := hp.w_sp
-  have hn8 : 8 * [Reg.r10].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega
+  have hn8 : 8 * [Reg.r10].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega_arith
   obtain ⟨hpf, hpj⟩ := pushRegs_mem st [.r10] (by decide) hn8
   have hP : (pushed [.r10] st).gpr .rsp = SP s - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
   have hpf' : Frame [⟨SP s - BitVec.ofNat 64 8, 8⟩] st.mem (pushed [.r10] st).mem := by
@@ -184,10 +184,10 @@ theorem encCall_ok (E : EncFn M) {o n : Nat} (hn : o + n ≤ L s) {st : State}
     simpa only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add] using this
   have fU : Frame (wR s ++ [tR s]) s.mem (pushed [.r10] st).callEntry.mem :=
     (hf.trans (frame_stk (s := s) (by decide) (by decide) hpf')).trans (frame_stk (s := s) (by decide) (by decide) hE)
-  have hPsp8 : 8 ≤ (SP s - BitVec.ofNat 64 8).toNat := by rw [toNat_sub_ofNat (by omega)]; omega
-  have hPt : (SP s - BitVec.ofNat 64 8).toNat = (SP s).toNat - 8 := toNat_sub_ofNat (by omega)
+  have hPsp8 : 8 ≤ (SP s - BitVec.ofNat 64 8).toNat := by rw [toNat_sub_ofNat (by omega_arith)]; omega_arith
+  have hPt : (SP s - BitVec.ofNat 64 8).toNat = (SP s).toNat - 8 := toNat_sub_ofNat (by omega_arith)
   have a0 : stackArg ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o n)) 0 = BitVec.ofNat 64 (n) := by
-    rw [stackArg_entry hP hPsp8 _ _ (by rw [hPt]; omega), show SP s - BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * 0) =
+    rw [stackArg_entry hP hPsp8 _ _ (by rw [hPt]; omega_arith), show SP s - BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * 0) =
       SP s - BitVec.ofNat 64 (8 * (0 + 1)) by simp, ← hsp]
     exact (hpj 0 (by decide)).trans h_10
   have gU : ∀ r, r ≠ .rsp → ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o n)).gpr r = st.gpr r :=
@@ -210,16 +210,16 @@ theorem encCall_ok (E : EncFn M) {o n : Nat} (hn : o + n ≤ L s) {st : State}
   have dsq := dq_sub (s := s) hn
   have eD : bytesAt (pushed [.r10] st).callEntry.mem (Dst s + BitVec.ofNat 64 o) (n) =
       bytesAt st.mem (Dst s + BitVec.ofNat 64 o) (n) :=
-    bytesAt_frame fS (outT (hp.b_d.symm.sub_left dsq)) (by omega)
+    bytesAt_frame fS (outT (hp.b_d.symm.sub_left dsq)) (by omega_arith)
   refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := encK M)
-    E.ok E.sp (by have := E.xd; omega) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
+    E.ok E.sp (by have := E.xd; omega_arith) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
   have r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)
   simp only [encK, Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.arg, a0, State.withRegions_mem,
     gU _ (by decide : Reg.rdi ≠ .rsp), gU _ (by decide : Reg.rsi ≠ .rsp), gU _ (by decide : Reg.rdx ≠ .rsp),
     gU _ (by decide : Reg.rcx ≠ .rsp), gU _ (by decide : Reg.r8 ≠ .rsp), gU _ (by decide : Reg.r9 ≠ .rsp),
     h_di, h_si, h_dx, h_cx, h_8, h_9, hm₂, ciph_eq hp fU, hk_eq hp fU, eD] at hpost
   have hnn : (BitVec.ofNat 64 n).toNat = n := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   rw [hnn] at hpost
   refine ⟨r₃, hwr', fun r hr => ?_, by rw [popped_rd, hrd', pushed_rd], by rw [popped_wr, hwr', pushed_wr]; rfl,
     ?_, fun iv a p hr hal hpl => ?_⟩
@@ -231,7 +231,7 @@ theorem encCall_ok (E : EncFn M) {o n : Nat} (hn : o + n ≤ L s) {st : State}
   · rw [popped_mem]
     have b2616 : Region.Sub (below ((pushed [.r10] st).gpr .rsp) (E.fn.code.x86_64Depth + 8)) (tR s) := by
       have h₁ := below_sub (sp := (pushed [.r10] st).gpr .rsp) (a := E.fn.code.x86_64Depth + 8) (b := 2616)
-        (by have := E.xd; omega) (by decide)
+        (by have := E.xd; omega_arith) (by decide)
       have e : below (SP s - BitVec.ofNat 64 8) 2616 = ⟨SP s - BitVec.ofNat 64 2624, 2616⟩ := by
         simp only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add]
       rw [hP] at h₁ ⊢

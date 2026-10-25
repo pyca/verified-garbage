@@ -47,7 +47,7 @@ theorem sub_offset {base : Addr} {off len len' : Nat} (h : off + len ≤ len') (
         rw [VG.Offset.sub_add_eq, BitVec.sub_add_cancel],
       BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ho]
     exact Nat.mod_le _ _
-  omega
+  omega_arith
 
 theorem frame_bytes {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Region}
     (hd : ∀ r ∈ rs, R.Disjoint r) (hR : R.len ≤ 2 ^ 64) {i : Nat} (hi : i < R.len) :
@@ -55,18 +55,18 @@ theorem frame_bytes {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Re
   refine hf _ fun r hr hc => hd r hr _ ?_ hc
   simp only [Region.Contains]
   rw [VG.Offset.add_sub_cancel_left,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 theorem addr_toNat (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_arith)
 
 /-- `[x + d]`, for a word within a region at `x` inside the 32-bit address space. -/
 theorem contains_addr {x : BitVec 32} {d n len : Nat} (h : d + n ≤ len) (hn : 0 < n)
     (hx : x.toNat + len ≤ 2 ^ 32) :
     (⟨x.setWidth 64, len⟩ : Region).Contains (addr x d) n := by
-  rw [addr_eq (by omega)]
-  exact contains_offset h (by omega)
+  rw [addr_eq (by omega_arith)]
+  exact contains_offset h (by omega_arith)
 
 /-- `[(x + k) + d]`, where nothing wraps around the 32-bit address space. -/
 theorem addr_add_ofNat {x : BitVec 32} {k d : Nat} (h : x.toNat + k + d < 2 ^ 32) :
@@ -75,11 +75,11 @@ theorem addr_add_ofNat {x : BitVec 32} {k d : Nat} (h : x.toNat + k + d < 2 ^ 32
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (a := x.toNat + k) (by omega), Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega),
-    Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega), Nat.mod_eq_of_lt (a := x.toNat) (by omega),
-    Nat.mod_eq_of_lt (a := k + d) (by omega), Nat.mod_eq_of_lt (a := x.toNat + (k + d)) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := k) (by omega_arith), Nat.mod_eq_of_lt (a := d) (by omega_arith),
+    Nat.mod_eq_of_lt (a := x.toNat + k) (by omega_arith), Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega_arith),
+    Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega_arith), Nat.mod_eq_of_lt (a := x.toNat) (by omega_arith),
+    Nat.mod_eq_of_lt (a := k + d) (by omega_arith), Nat.mod_eq_of_lt (a := x.toNat + (k + d)) (by omega_arith)]
+  omega_arith
 
 /-- Two accesses `[x + d]` and `[x + e]` of `n` and `k` bytes that do not overlap. -/
 theorem addr_sep {x : BitVec 32} {d e n k : Nat} (hd : x.toNat + d + n ≤ 2 ^ 32) (he : x.toNat + e + k ≤ 2 ^ 32)
@@ -88,8 +88,8 @@ theorem addr_sep {x : BitVec 32} {d e n k : Nat} (hd : x.toNat + d + n ≤ 2 ^ 3
   · exact fun _ h₁ => absurd h₁ (Nat.not_lt_zero _)
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · exact fun _ _ h₂ => absurd h₂ (Nat.not_lt_zero _)
-  rw [addr_eq (by omega), addr_eq (by omega)]
-  exact Offset.sep _ h (by omega) (by omega)
+  rw [addr_eq (by omega_arith), addr_eq (by omega_arith)]
+  exact Offset.sep _ h (by omega_arith) (by omega_arith)
 
 theorem readW_writeW_addr (m : Mem) {x : BitVec 32} (v : BitVec 32) {d e : Nat}
     (hd : x.toNat + d + 4 ≤ 2 ^ 32) (he : x.toNat + e + 4 ≤ 2 ^ 32) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
@@ -119,7 +119,7 @@ theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 32) : (BitVec.ofNat 32 k == 0) = d
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 32 a - BitVec.ofNat 32 b = BitVec.ofNat 32 (a - b) := by
-  conv_lhs => rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
+  conv_lhs => rw [show a = (a - b) + b by omega_arith, BitVec.ofNat_add]
   rw [BitVec.add_sub_cancel]
 
 theorem sub_beq {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
@@ -133,13 +133,13 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     change _ = 0 at this
-    omega
+    omega_arith
 
 theorem ofNat_succ (k : Nat) : BitVec.ofNat 32 (k + 1) = BitVec.ofNat 32 k + 1 := by
   rw [BitVec.ofNat_add]; rfl
 
 theorem ofNat_pred {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 32 k - 1 = BitVec.ofNat 32 (k - 1) := by
-  rw [show k = (k - 1) + 1 by omega, ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
+  rw [show k = (k - 1) + 1 by omega_arith, ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
 
 theorem ofNat_add_add (x : BitVec 32) (a b : Nat) :
     x + BitVec.ofNat 32 a + BitVec.ofNat 32 b = x + BitVec.ofNat 32 (a + b) := by
@@ -313,27 +313,27 @@ section
 variable {P : Params} {S : Nat} (hd : Dims P S)
 include hd
 
-theorem Dims.pos : 0 < P.B := by rcases hd.B with h | h <;> omega
+theorem Dims.pos : 0 < P.B := by rcases hd.B with h | h <;> omega_arith
 
-theorem Dims.le : P.B ≤ 128 := by rcases hd.B with h | h <;> omega
+theorem Dims.le : P.B ≤ 128 := by rcases hd.B with h | h <;> omega_arith
 
-theorem Dims.ge : 64 ≤ P.B := by rcases hd.B with h | h <;> omega
+theorem Dims.ge : 64 ≤ P.B := by rcases hd.B with h | h <;> omega_arith
 
 theorem Dims.mod (n : Nat) : n % 2 ^ 64 % P.B = n % P.B := by
-  rcases hd.B with h | h <;> rw [h] <;> omega
+  rcases hd.B with h | h <;> rw [h] <;> omega_arith
 
 /-- A byte count modulo `B`, from its low word. -/
 theorem Dims.mod_append (hi lo : BitVec 32) : (hi ++ lo).toNat % P.B = lo.toNat % P.B := by
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt lo.isLt, Nat.shiftLeft_eq]
-  rcases hd.B with h | h <;> rw [h] <;> omega
+  rcases hd.B with h | h <;> rw [h] <;> omega_arith
 
 /-- `x mod B`, as `direct`, `update` and `finalize` compute it. -/
 theorem Dims.and (x : BitVec 32) : x &&& BitVec.ofNat 32 (P.B - 1) = BitVec.ofNat 32 (x.toNat % P.B) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
   rcases hd.B with h | h <;> rw [h]
-  · rw [show (64 - 1) % 2 ^ 32 = 2 ^ 6 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; omega
-  · rw [show (128 - 1) % 2 ^ 32 = 2 ^ 7 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; omega
+  · rw [show (64 - 1) % 2 ^ 32 = 2 ^ 6 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; omega_arith
+  · rw [show (128 - 1) % 2 ^ 32 = 2 ^ 7 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; omega_arith
 
 /-- The shift count of `direct`. -/
 theorem Dims.lg : 1 ≤ Nat.log2 P.B ∧ Nat.log2 P.B ≤ 31 := by
@@ -368,7 +368,7 @@ theorem save_eq (P : Params) (b : Reg) : save P b = [
 compression function uses, before `count` and `out`. -/
 theorem saved_offset {P : Params} {p : Reg × Nat} (hp : p ∈ saved P) : P.so ≤ p.2 ∧ p.2 + 4 ≤ P.so + 16 := by
   simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hp with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
 
 /-! ## The contracts
 
@@ -598,7 +598,7 @@ theorem compressFrame_ok {name : String} {code : Prog isa} (hf : CalleeOk H code
         H.compressBlocks (H.stateAt s.mem (st.setWidth 64)) s.mem (blk.setWidth 64) k → Q s') :
     WP isa (.frame (.push [cr, .ecx, .eax, sr]) (.call name code) (.pop .eax 4)) s Q := by
   have fit : 4 * [cr, Reg.ecx, .eax, sr].length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
   have hrs : Reg.esp ∉ [cr, Reg.ecx, .eax, sr] := by simp [Ne.symm hsr, Ne.symm hcr]
   set sE := (pushed [cr, Reg.ecx, .eax, sr] s).callEntry with hsE
   have a0 : arg sE 0 = st := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hS]
@@ -609,14 +609,14 @@ theorem compressFrame_ok {name : String} {code : Prog isa} (hf : CalleeOk H code
     rw [hsE, callEntry_argAddr0, hesp]; rfl
   have eSp : sE.gpr .esp = E - BitVec.ofNat 32 20 := by
     rw [hsE, callEntry_esp', hesp]; rfl
-  have b16 : Region.Sub (below E 16) (below E 20) := below_sub (by omega) hE
+  have b16 : Region.Sub (below E 16) (below E 20) := below_sub (by omega_arith) hE
   have r4 : Region.Sub ⟨(E - BitVec.ofNat 32 20).setWidth 64, 4⟩ (below E 20) := by
-    have := below_inner (sp := E) (a := 4) (b := 20) (k := 16) (by omega) hE
+    have := below_inner (sp := E) (a := 4) (b := 20) (k := 16) (by omega_arith) hE
     rw [show E - BitVec.ofNat 32 20 = E - BitVec.ofNat 32 16 - BitVec.ofNat 32 4 by
       rw [← VG.Offset.sub_add_eq]; rfl]
     exact this
   refine WP.callWith (k := compressK H) hf.verified hf.nosp (by simp) hrs
-    (by rw [hf.stack, hesp]; simp only [List.length_cons, List.length_nil]; omega)
+    (by rw [hf.stack, hesp]; simp only [List.length_cons, List.length_nil]; omega_arith)
     (rd := [⟨blk.setWidth 64, P.B * k⟩, ⟨argAddr sE 0, 16⟩])
     (wr := [⟨st.setWidth 64, P.N⟩, ⟨scr.setWidth 64, P.so⟩])
     ⟨?_, ?_, ?_⟩ fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
@@ -625,7 +625,7 @@ theorem compressFrame_ok {name : String} {code : Prog isa} (hf : CalleeOk H code
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp]
     refine ⟨trivial, trivial, d₁, d₂, d₃, dS.sub_left b16, dC.sub_left b16,
       dS.sub_left r4, dC.sub_left r4, f₀, f₁, f₃, ?_⟩
-    rw [sub_toNat hE]; have := E.isLt; omega
+    rw [sub_toNat hE]; have := E.isLt; omega_arith
   · rw [hesp]
     intro a n ⟨r, hr, hcn⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -653,11 +653,11 @@ theorem compressFrame_ok {name : String} {code : Prog isa} (hf : CalleeOk H code
     refine hQ s' rd' wr' cs' f' ?_
     have e₁ : H.stateAt sE.mem (st.setWidth 64) = H.stateAt s.mem (st.setWidth 64) :=
       H.stateAt_congr fun i hi =>
-        hsE'.bytes (R := ⟨st.setWidth 64, P.N⟩) (by simpa using dS.symm) (by simp; omega) hi
+        hsE'.bytes (R := ⟨st.setWidth 64, P.N⟩) (by simpa using dS.symm) (by simp; omega_arith) hi
     have e₂ : H.compressBlocks (H.stateAt s.mem (st.setWidth 64)) sE.mem (blk.setWidth 64) k =
         H.compressBlocks (H.stateAt s.mem (st.setWidth 64)) s.mem (blk.setWidth 64) k :=
       H.compressBlocks_congr fun j hj =>
-        hsE'.bytes (R := ⟨blk.setWidth 64, P.B * k⟩) (by simpa using dB.symm) (by simp; omega) hj
+        hsE'.bytes (R := ⟨blk.setWidth 64, P.B * k⟩) (by simpa using dB.symm) (by simp; omega_arith) hj
     rw [post, e₁, e₂]
 
 /-- Compressing the block at `eax` (`blk`) into the hash value at `st` (in

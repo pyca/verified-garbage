@@ -135,7 +135,7 @@ theorem subLoopR_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {S mo
   have I₀ : I 0 t₀ := ⟨Keeps.refl _ _, by simpa using hebp, by simpa using hesi, by simpa using hebx,
     by simpa using hedi, Outside.refl _ _ _ _, false, hc, by simp [val32, rvalT]⟩
   refine WP.mono (WP.loop (M := isa) (Q := I N) (fun m t => ∃ j, m = N - j ∧ j < N ∧ I j t) ?_ N t₀
-    ⟨0, by omega, hN, I₀⟩) fun u ⟨K, _, _, _, _, O, V⟩ => ⟨O, V, K⟩
+    ⟨0, by omega_arith, hN, I₀⟩) fun u ⟨K, _, _, _, _, O, V⟩ => ⟨O, V, K⟩
   rintro m t ⟨j, rfl, hj, K, ebp, esi, ebx, edi, O, c, ec, V⟩
   have ht' := hw.of_keeps K
   refine WP.mono (subStepR_ok ht' ebp esi ebx edi hj ec hs (by omega_using [hm, hj]) (by omega_using [ht, hj]))

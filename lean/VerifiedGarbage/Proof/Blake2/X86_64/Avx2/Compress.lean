@@ -322,7 +322,7 @@ theorem init_ok {s : State} {st : Addr} {T : Nat} {f : Bool} (hdi : s.gpr .rdi =
       ifp rfl, VG.Proof.Argon2.X86_64.Avx2.qword256_readW _ _ hq, Offset.add_add, Nat.zero_add]
   · rw [(initOps_qw _ hq).2.1, VG.Proof.Argon2.X86_64.Avx2.qw_set256 _ _ _ _ hq, ifp rfl,
       VG.Proof.Argon2.X86_64.Avx2.qword256_readW _ _ hq, Offset.add_add,
-      show 32 + 8 * q = 8 * (4 + q) by omega]
+      show 32 + 8 * q = 8 * (4 + q) by omega_arith]
   · rw [(initOps_qw _ hq).2.2.1, VG.Proof.Argon2.X86_64.Avx2.qw_set256 _ _ _ _ hq, ifn (by decide), VG.Proof.Argon2.X86_64.Avx2.qw_set256 _ _ _ _ hq,
       ifn (by decide)]
     exact hc.iv0 q hq
@@ -358,17 +358,17 @@ theorem words_init {t : State} {m : Mem} {st : Addr} {T : Nat} {f : Bool}
   rw [words_get _ _ hj, V0_get _ _ _ _ _ hj]
   have hq : j % 4 < 4 := Nat.mod_lt _ (by decide)
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;> simp only [Impl.Argon2.X86_64.Avx2.vreg]
-  · rw [h0 _ hq, dite_eq_left_of_eq_true (eq_true (by omega)), Spec.Blake2.stateAt,
+  · rw [h0 _ hq, dite_eq_left_of_eq_true (eq_true (by omega_arith)), Spec.Blake2.stateAt,
       Vector.getElem_ofFn]
-    exact congrArg (fun x => m.readW (st + BitVec.ofNat 64 x) 64) (by dsimp only; omega)
-  · rw [h1 _ hq, dite_eq_left_of_eq_true (eq_true (by omega)), Spec.Blake2.stateAt,
+    exact congrArg (fun x => m.readW (st + BitVec.ofNat 64 x) 64) (by dsimp only; omega_arith)
+  · rw [h1 _ hq, dite_eq_left_of_eq_true (eq_true (by omega_arith)), Spec.Blake2.stateAt,
       Vector.getElem_ofFn]
-    exact congrArg (fun x => m.readW (st + BitVec.ofNat 64 x) 64) (by dsimp only; omega)
-  · rw [h2 _ hq, dite_eq_right_of_eq_false (eq_false (by omega)), ifn (by omega), ifn (by omega),
-      ifn (by omega), ivAt, dite_eq_left_of_eq_true (eq_true (by omega))]
-    simp only [show j % 4 = j - 8 by omega]
-  · rw [h3 _ hq, dite_eq_right_of_eq_false (eq_false (by omega))]
-    have : j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 := by omega
+    exact congrArg (fun x => m.readW (st + BitVec.ofNat 64 x) 64) (by dsimp only; omega_arith)
+  · rw [h2 _ hq, dite_eq_right_of_eq_false (eq_false (by omega_arith)), ifn (by omega_arith), ifn (by omega_arith),
+      ifn (by omega_arith), ivAt, dite_eq_left_of_eq_true (eq_true (by omega_arith))]
+    simp only [show j % 4 = j - 8 by omega_arith]
+  · rw [h3 _ hq, dite_eq_right_of_eq_false (eq_false (by omega_arith))]
+    have : j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 := by omega_arith
     rcases this with rfl | rfl | rfl | rfl <;>
       simp only [ivAt, ctr, Nat.reduceMod, Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, ↓reduceDIte,
         ↓reduceIte, Nat.reduceEqDiff]
@@ -457,24 +457,24 @@ theorem finish_ok {s : State} {st : Addr} (hdi : s.gpr .rdi = st)
     (by rw [wru]; exact hout1)).mono fun t ⟨y1, hy1, m1, gt, rdt, wrt, lt⟩ => ?_
   have u32 : ∀ q < 4, u.mem.readW (st + BitVec.ofNat 64 32 + BitVec.ofNat 64 (8 * q)) 64 =
       s.mem.readW (st + BitVec.ofNat 64 (8 * (4 + q))) 64 := fun q hq => by
-    rw [Offset.add_add, m0, show 32 + 8 * q = 8 * (4 + q) by omega,
-      read_write256 _ st (d := 8 * (4 + q)) (e := 0) (by omega) (by omega) (by omega) (by omega),
-      ifn (by omega)]
+    rw [Offset.add_add, m0, show 32 + 8 * q = 8 * (4 + q) by omega_arith,
+      read_write256 _ st (d := 8 * (4 + q)) (e := 0) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+      ifn (by omega_arith)]
   refine ⟨fun j hj => ?_, ?_, gt.trans gu, rdt.trans rdu, wrt.trans wru, fun r h0 h1 h4 l =>
     (lt r h1 h4 l).trans (lu r h0 h1 h4 l)⟩
-  · rw [m1, read_write256 _ st (d := 8 * j) (e := 32) (by omega) (by omega) (by omega) (by omega)]
+  · rw [m1, read_write256 _ st (d := 8 * j) (e := 32) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
     by_cases hj4 : j < 4
-    · rw [ifn (by omega), m0,
-        read_write256 _ st (d := 8 * j) (e := 0) (by omega) (by omega) (by omega) (by omega), ifp (by omega),
-        Nat.sub_zero, show 8 * j / 8 = j by omega, hy0 j hj4, Offset.add_add, Nat.zero_add,
-        words_get _ _ (by omega), words_get _ _ (by omega), show j / 4 = 0 by omega,
-        show (j + 8) / 4 = 2 by omega, show j % 4 = j by omega, show (j + 8) % 4 = j by omega]
+    · rw [ifn (by omega_arith), m0,
+        read_write256 _ st (d := 8 * j) (e := 0) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), ifp (by omega_arith),
+        Nat.sub_zero, show 8 * j / 8 = j by omega_arith, hy0 j hj4, Offset.add_add, Nat.zero_add,
+        words_get _ _ (by omega_arith), words_get _ _ (by omega_arith), show j / 4 = 0 by omega_arith,
+        show (j + 8) / 4 = 2 by omega_arith, show j % 4 = j by omega_arith, show (j + 8) % 4 = j by omega_arith]
       simp only [Impl.Argon2.X86_64.Avx2.vreg]
       rw [BitVec.xor_comm _ (s.mem.readW _ 64), BitVec.xor_assoc]
-    · rw [ifp (by omega), show (8 * j - 32) / 8 = j - 4 by omega, hy1 _ (by omega), x1u _ (by omega),
-        u32 _ (by omega), show 4 + (j - 4) = j by omega,
-        words_get _ _ (by omega), words_get _ _ (by omega), show j / 4 = 1 by omega,
-        show (j + 8) / 4 = 3 by omega, show j % 4 = j - 4 by omega, show (j + 8) % 4 = j - 4 by omega]
+    · rw [ifp (by omega_arith), show (8 * j - 32) / 8 = j - 4 by omega_arith, hy1 _ (by omega_arith), x1u _ (by omega_arith),
+        u32 _ (by omega_arith), show 4 + (j - 4) = j by omega_arith,
+        words_get _ _ (by omega_arith), words_get _ _ (by omega_arith), show j / 4 = 1 by omega_arith,
+        show (j + 8) / 4 = 3 by omega_arith, show j % 4 = j - 4 by omega_arith, show (j + 8) % 4 = j - 4 by omega_arith]
       simp only [Impl.Argon2.X86_64.Avx2.vreg]
       rw [BitVec.xor_comm _ (s.mem.readW _ 64), BitVec.xor_assoc]
   · rw [m1, m0]
@@ -527,10 +527,10 @@ include hp
 
 theorem st_in {d : Nat} (hd : d + 32 ≤ 64) :
     InRegions (s₀.rd ++ s₀.wr) (stA s₀ + BitVec.ofNat 64 d) 32 :=
-  ⟨stR 64 s₀, by simp [hp.wr], Offset.contains_base _ (by simpa using hd) (by omega)⟩
+  ⟨stR 64 s₀, by simp [hp.wr], Offset.contains_base _ (by simpa using hd) (by omega_arith)⟩
 
 theorem st_out {d : Nat} (hd : d + 32 ≤ 64) : InRegions s₀.wr (stA s₀ + BitVec.ofNat 64 d) 32 :=
-  ⟨stR 64 s₀, by simp [hp.wr], Offset.contains_base _ (by simpa using hd) (by omega)⟩
+  ⟨stR 64 s₀, by simp [hp.wr], Offset.contains_base _ (by simpa using hd) (by omega_arith)⟩
 
 theorem blk_in {i : Nat} (hi : i < nb s₀) {k : Nat} (hk : k ≤ 14) :
     InRegions (s₀.rd ++ s₀.wr) (blkAddr 64 s₀ i + BitVec.ofNat 64 (8 * k)) 16 := by
@@ -539,7 +539,7 @@ theorem blk_in {i : Nat} (hi : i < nb s₀) {k : Nat} (hk : k ≤ 14) :
   rw [blkAddr, Offset.add_add]
   have hb : Spec.Blake2.blockBytes 64 = 128 := rfl
   rw [hb] at this ⊢
-  exact Offset.contains_base _ (by rw [hb]; omega) (by omega)
+  exact Offset.contains_base _ (by rw [hb]; omega_arith) (by omega_arith)
 
 /-- The block is not in the state. -/
 theorem blk_frame {i : Nat} (hi : i < nb s₀) {m : Mem} (hf : Frame [stR 64 s₀] s₀.mem m) :
@@ -552,7 +552,7 @@ theorem blk_frame {i : Nat} (hi : i < nb s₀) {m : Mem} (hf : Frame [stR 64 s�
   · rw [blkAddr, Offset.add_add]
     have hb : Spec.Blake2.blockBytes 64 = 128 := rfl
     rw [hb] at this ⊢
-    exact Offset.contains_base _ (by rw [hb]; omega) (by omega)
+    exact Offset.contains_base _ (by rw [hb]; omega_arith) (by omega_arith)
   · simp only [List.mem_singleton] at hr
     subst hr; exact hp.bl_st
 
@@ -591,8 +591,8 @@ theorem body_ok {s₀ : State} (hp : Pre 64 s₀) {i : Nat} (hi : i < nb s₀) {
   have mem2 : t2.mem = s.mem := f2.mem.trans f1.mem
   refine ⟨⟨?_, dx, ?_, ?_, ?_, fun r h1 h2 h3 h4 h5 => ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [si4, gs, hc.rsi]; exact Proof.Blake2.X86_64.blkAddr_succ (w := 64) s₀ i
-  · rw [cx4, hb]; congr 1; omega
-  · rw [ax4, hb, show t₀ s₀ + i * 128 + 128 = t₀ s₀ + (i + 1) * 128 by omega]
+  · rw [cx4, hb]; congr 1; omega_arith
+  · rw [ax4, hb, show t₀ s₀ + i * 128 + 128 = t₀ s₀ + (i + 1) * 128 by omega_arith]
   · rw [g4 _ (by decide) (by decide) (by decide) (by decide), gs]; exact hc.r8
   · rw [g4 _ h1 h2 h3 h4, gs]; exact hc.keep r h1 h2 h3 h4 h5
   · rw [gf4.rd, rd3, f2.rd, f1.rd, hc.rd]
@@ -658,8 +658,8 @@ theorem correct {s₀ : State} (hp : Pre 64 s₀) :
           refine ⟨?_, hlast ▸ hc'⟩
           simp only [eval, hz, ← hlast, Nat.sub_self, Option.map_some]; rfl
         · right
-          have hne : nb s₀ - (i + 1) ≠ 0 := by omega
-          refine ⟨?_, nb s₀ - (i + 1), by omega, i + 1, rfl, by omega, hc'⟩
+          have hne : nb s₀ - (i + 1) ≠ 0 := by omega_arith
+          refine ⟨?_, nb s₀ - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, hc'⟩
           have h0 : (BitVec.ofNat 64 (nb s₀ - (i + 1)) == 0) = false := by
             rw [beq_eq_false_iff_ne]
             intro h'

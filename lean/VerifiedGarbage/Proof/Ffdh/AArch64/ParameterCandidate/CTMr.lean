@@ -90,7 +90,7 @@ theorem shortEnd_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
   have hs := h.scr
   have h256 := h.h256
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s.mem.writeW (off B (8 * kStat)) (BitVec.ofNat 64 0)) (by
-    brun [h.x0, hdr_enc (show kStat < 32 by decide), hs.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega)]
+    brun [h.x0, hdr_enc (show kStat < 32 by decide), hs.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega_arith)]
     rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ => ?_
   have ft : Frm B [(8 * kStat, 8)] s.mem t.mem := by
     rw [hm]; exact Frm.of_outside (writeW_outside _ _ _ (by decide)) (by simp)
@@ -115,7 +115,7 @@ theorem mrBody_ct (M : Mont) (R : Kernel) : RelCT isa (Two fun (a : TQ × Nat) s
   · rintro ⟨q, j⟩ s ⟨hj, hd, s₀, i, hs, hit⟩
     have hEZ := hd.eZ
     have hmb2 : q.mb ≤ 8192 := hd.mb2
-    exact WP.mono (roomHead_ok (len := mLen q.mb) hs.fix.st.ws (by simp only [mLen]; omega)
+    exact WP.mono (roomHead_ok (len := mLen q.mb) hs.fix.st.ws (by simp only [mLen]; omega_arith)
       hs.fix.st.dims.rl hs.ul hs.fix.len hs.fix.st.args.rlen hs.used)
       fun t ⟨hz, hm, k⟩ => ⟨⟨hd, s₀, i, hs.same hEZ hm k (by decide), hit⟩, hz⟩
   · rintro ⟨q, j⟩ s ⟨⟨⟨hd, s₀, i, hs, hit⟩, hz⟩, hb⟩
@@ -123,21 +123,21 @@ theorem mrBody_ct (M : Mont) (R : Kernel) : RelCT isa (Two fun (a : TQ × Nat) s
       intro h'; rw [hz] at hb; simp only [h', decide_true, Option.some.injEq] at hb; cases hb
     have hK : q.K < 2 ^ 62 := hd.k
     have hik : i < q.K := hs.ik
-    exact ⟨hd, hs.fix, hs.used, ⟨i, hs.idx, (by omega : i < 2 ^ 62)⟩,
-      (by omega : q.uj j + mLen q.mb ≤ q.p.r.length)⟩
+    exact ⟨hd, hs.fix, hs.used, ⟨i, hs.idx, (by omega_arith : i < 2 ^ 62)⟩,
+      (by omega_arith : q.uj j + mLen q.mb ≤ q.p.r.length)⟩
   · rintro ⟨q, j⟩ s ⟨⟨⟨hd, s₀, i, hs, hit⟩, hz⟩, hb⟩
     have hb' : ¬ q.p.r.length < q.uj j + mLen q.mb := by
       intro h'; rw [hz] at hb; simp only [h', decide_true, Option.some.injEq] at hb; cases hb
     have hK : q.K < 2 ^ 62 := hd.k
     have hik : i < q.K := hs.ik
-    exact WP.mono (draw_ok (i := i) (u := q.uj j) M R hd hs.fix hs.used hs.idx (by omega : i < 2 ^ 62)
-      (by omega : q.uj j + mLen q.mb ≤ q.p.r.length))
+    exact WP.mono (draw_ok (i := i) (u := q.uj j) M R hd hs.fix hs.used hs.idx (by omega_arith : i < 2 ^ 62)
+      (by omega_arith : q.uj j + mLen q.mb ≤ q.p.r.length))
       fun t ⟨hf, _⟩ => hf.st.ws
 
 theorem mrIters_pos (N K mb : Nat) (r : List Byte) (f i u : Nat) : 1 ≤ mrIters N K mb r f i u := by
   cases f with
-  | zero => simp only [mrIters]; omega
-  | succ f => simp only [mrIters]; split <;> (try split) <;> (try split) <;> omega
+  | zero => simp only [mrIters]; omega_arith
+  | succ f => simp only [mrIters]; split <;> (try split) <;> (try split) <;> omega_arith
 
 /-- The loop leaks the same in runs with the same public data. -/
 theorem mrLoop_ct (M : Mont) (R : Kernel) : RelCT isa (Two fun (q : TQ) s => 0 < q.n ∧ TL q 0 s)
@@ -148,28 +148,28 @@ theorem mrLoop_ct (M : Mont) (R : Kernel) : RelCT isa (Two fun (q : TQ) s => 0 <
   refine two_loop (Φ := TL) TQ.n (mrBody_ct M R) ?_
   rintro q j s hj ⟨hd, s₀, i, hs, hit⟩
   have hul : q.u + j * mLen q.mb ≤ q.p.r.length := hs.ul
-  have hl1 : 1 ≤ mLen q.mb := by have : 511 ≤ q.mb := hd.mb1; simp only [mLen]; omega
+  have hl1 : 1 ≤ mLen q.mb := by have : 511 ≤ q.mb := hd.mb1; simp only [mLen]; omega_arith
   have hjl : j ≤ q.p.r.length := by
     have : j * 1 ≤ j * mLen q.mb := Nat.mul_le_mul_left _ hl1
-    omega
-  obtain ⟨f, hf⟩ : ∃ f, q.p.r.length + 1 - j = f + 1 := ⟨q.p.r.length - j, by omega⟩
+    omega_arith
+  obtain ⟨f, hf⟩ : ∃ f, q.p.r.length + 1 - j = f + 1 := ⟨q.p.r.length - j, by omega_arith⟩
   rw [hf] at hit
   refine WP.mono (mrIter_ok M R hd hs) fun t ht => ?_
   rcases ht with ⟨he, hend, h1⟩ | ⟨he, i', hs', hstep⟩
   · rw [h1 f] at hit
-    have hn1 : ¬ j + 1 < q.n := by omega
+    have hn1 : ¬ j + 1 < q.n := by omega_arith
     refine ⟨by rw [he]; exact congrArg some (decide_eq_false hn1).symm, fun h => absurd h hn1,
       fun _ => ⟨hd, s₀, hend⟩⟩
   · rw [hstep f] at hit
     have hpos := mrIters_pos q.N q.K q.mb q.p.r f i' (q.uj j + mLen q.mb)
-    have hn1 : j + 1 < q.n := by omega
+    have hn1 : j + 1 < q.n := by omega_arith
     refine ⟨by rw [he]; exact congrArg some (decide_eq_true hn1).symm, fun _ => ?_,
-      fun h => absurd h (by omega)⟩
+      fun h => absurd h (by omega_arith)⟩
     have hu : q.uj j + mLen q.mb = q.uj (j + 1) := by simp only [TQ.uj, Nat.add_mul, Nat.one_mul, Nat.add_assoc]
     rw [hu] at hs'
     refine ⟨hd, s₀, i', hs', ?_⟩
-    rw [show q.p.r.length + 1 - (j + 1) = f by omega, ← hu]
-    omega
+    rw [show q.p.r.length + 1 - (j + 1) = f by omega_arith, ← hu]
+    omega_arith
 
 /-- Before `millerRabin`. -/
 def TP (q : TQ) (s : State) : Prop :=
@@ -189,13 +189,13 @@ theorem millerRabin_ct (M : Mont) (R : Kernel) :
   have h256 := h.st.ws.h256
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s.mem.writeW (off q.p.B (8 * fIdx)) (BitVec.ofNat 64 0))
     (by
-      brun [h.st.ws.x0, hdr_enc (show fIdx < 32 by decide), hs.st (d := 8 * fIdx) (by simp only [fIdx]; omega)]
+      brun [h.st.ws.x0, hdr_enc (show fIdx < 32 by decide), hs.st (d := 8 * fIdx) (by simp only [fIdx]; omega_arith)]
       rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ => ?_
   have ft : Frm q.p.B [(8 * fIdx, 8)] s.mem t.mem := by
     rw [hm]; exact Frm.of_outside (writeW_outside _ _ _ (by decide)) (by simp)
   have ht : MrFix q.p q.w q.N q.mb q.K t := h.of_frm hEZ ft (by kmut)
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.hdr (by decide))
-    (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fIdx]; omega)
+    (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fIdx]; omega_arith)
     k (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
@@ -204,16 +204,16 @@ theorem millerRabin_ct (M : Mont) (R : Kernel) :
     (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)
   have hst : MrSt q.p q.w q.N q.mb q.K s q.res 0 (q.uj 0) t :=
     ⟨ht, by
-      rw [ft.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega)]
+      rw [ft.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega_arith)]
       simpa only [TQ.uj, Nat.zero_mul, Nat.add_zero] using hU,
-      by rw [hm, word_writeW_self], by simpa only [TQ.uj, Nat.zero_mul, Nat.add_zero] using hul, by omega,
+      by rw [hm, word_writeW_self], by simpa only [TQ.uj, Nat.zero_mul, Nat.add_zero] using hul, by omega_arith,
       by simp only [TQ.res, TQ.uj, Nat.sub_zero, Nat.zero_mul, Nat.add_zero],
-      InScr.of_frm ft fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fIdx]; omega, k.mono (by decide)⟩
+      InScr.of_frm ft fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fIdx]; omega_arith, k.mono (by decide)⟩
   have hn : 0 < q.n := by
     simp only [TQ.n]
     cases q.p.r.length + 1 with
-    | zero => simp only [mrIters]; omega
-    | succ f => simp only [mrIters]; split <;> (try split) <;> (try split) <;> omega
+    | zero => simp only [mrIters]; omega_arith
+    | succ f => simp only [mrIters]; split <;> (try split) <;> (try split) <;> omega_arith
   exact ⟨hn, hd, s, 0, hst, by simp only [TQ.uj, Nat.sub_zero, Nat.zero_mul, Nat.add_zero]⟩
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate

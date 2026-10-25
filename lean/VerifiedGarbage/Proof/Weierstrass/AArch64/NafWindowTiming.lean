@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 @[expose] public section
 

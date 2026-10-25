@@ -37,7 +37,7 @@ theorem saved_read {m m' : Mem} (p sp : Addr)
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (Offset.base_disjoint p lo (by omega)).symm
+    · exact (Offset.base_disjoint p lo (by omega_arith)).symm
     · exact (stack.sub_right (Offset.sub_base p hi)).symm
 
 theorem restore_ok (original s : State) (base : s.gpr .x24 = original.gpr .x4)
@@ -50,7 +50,7 @@ theorem restore_ok (original s : State) (base : s.gpr .x24 = original.gpr .x4)
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have read (d : Nat) (h : d + 8 ≤ 16384) :
       InRegions (s.rd ++ s.wr) (original.gpr .x4 + BitVec.ofNat 64 d) 8 :=
-    ⟨_, readable, Offset.contains_base _ h (by omega)⟩
+    ⟨_, readable, Offset.contains_base _ h (by omega_arith)⟩
   have r840 := read 840 (by decide)
   have r848 := read 848 (by decide)
   have r856 := read 856 (by decide)
@@ -126,7 +126,7 @@ theorem finishInput_ok (v : Backend) (s : State)
   have count : u.gpr .x1 = BitVec.ofNat 64 d.length := by
     rw [hu.gpr, ha.gpr, length, BitVec.ofNat_add, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     exact BitVec.add_comm _ _
-  have len : d.length < 2 ^ 64 := by rw [length]; omega
+  have len : d.length < 2 ^ 64 := by rw [length]; omega_arith
   have wr : (⟨u.gpr .x24, 16384⟩ : Region) ∈ u.wr := by rw [ku.x24, ku.wr]; exact hwr
   have sw : (below u.sp 16).Disjoint ⟨u.gpr .x24, 16384⟩ := by
     rw [ku.x24, ku.sp]; exact stackWork
@@ -164,11 +164,11 @@ theorem first_ok (v : Backend) (s : State)
   refine WP.seq ((chooseLength_ok s hlen.2).mono ?_)
   rintro a ⟨lengthA, ka⟩
   have na : (a.gpr .x1).toNat = min (s.gpr .x23).toNat 64 := by
-    rw [lengthA, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [lengthA, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have wrA : (⟨a.gpr .x24, 16384⟩ : Region) ∈ a.wr := by rw [ka.x24, ka.wr]; exact hwr
   have swA : (below a.sp 16).Disjoint ⟨a.gpr .x24, 16384⟩ := by
     rw [ka.x24, ka.sp]; exact stackWork
-  have lenA : 1 ≤ (a.gpr .x1).toNat ∧ (a.gpr .x1).toNat ≤ 64 := by rw [na]; omega
+  have lenA : 1 ≤ (a.gpr .x1).toNat ∧ (a.gpr .x1).toNat ≤ 64 := by rw [na]; omega_arith
   refine WP.seq ((init_ok v a lenA wrA).mono ?_)
   rintro u ⟨reprU, regsU, rdU, wrU, spU, frameU⟩
   have ku : Keeps a u := ⟨regsU, rdU, wrU, spU, init_frame _ _ frameU⟩
@@ -203,7 +203,7 @@ theorem first_ok (v : Backend) (s : State)
   have inputW : bytesAt w.mem (w.gpr .x20) (w.gpr .x21).toNat =
       bytesAt s.mem (s.gpr .x20) (s.gpr .x21).toNat := by
     rw [r12, r13]
-    exact ksw.bytes _ (show (s.gpr .x21).toNat ≤ 2 ^ 64 by omega)
+    exact ksw.bytes _ (show (s.gpr .x21).toNat ≤ 2 ^ 64 by omega_arith)
       (dataWork.sub_right (Region.sub_prefix (by decide))) stackData.symm
   refine WP.seq ((absorbInput_ok v w _ _ headLen reprW' (by rw [r13]; exact len)
     (by rw [ksw.sp]; exact hsp) wrW dataW dwW swW sdW).mono ?_)
@@ -251,12 +251,12 @@ theorem maybeChain_ok (v : Backend) (n lastLen : Nat) (s : State)
   refine WP.ite (decide (32 * n + lastLen < 65)) (by by_cases h : 32 * n + lastLen < 65 <;>
     simp [eval, State.read, comparison, h]) ?_ ?_
   · intro h
-    have hn : n = 0 := by have := of_decide_eq_true h; omega
+    have hn : n = 0 := by have := of_decide_eq_true h; omega_arith
     subst n
     exact WP.block_nil (ChainResult.refl s)
   · intro h
-    have hn : 1 ≤ n := by have := of_decide_eq_false h; omega
-    have p := space.prefix (show 32 * n ≤ 32 * n + lastLen by omega)
+    have hn : 1 ≤ n := by have := of_decide_eq_false h; omega_arith
+    have p := space.prefix (show 32 * n ≤ 32 * n + lastLen by omega_arith)
     exact chain_ok v n lastLen s hn last space.bound space.spBound count p.work p.out p.sep p.stackWork p.stackOut
 
 theorem extendDigest_ok (v : Backend) (n lastLen : Nat) (s : State)
@@ -269,27 +269,27 @@ theorem extendDigest_ok (v : Backend) (n lastLen : Nat) (s : State)
         Spec.Argon2.H lastLen (chainDigest n (bytesAt s.mem (s.gpr .x24 + 768) 64)) ∧
       t.gpr .x23 = BitVec.ofNat 64 lastLen := by
   unfold extendDigest
-  have short := space.prefix (show 32 ≤ 32 * (n + 1) + lastLen by omega)
+  have short := space.prefix (show 32 ≤ 32 * (n + 1) + lastLen by omega_arith)
   have sep32 := short.sep.sub_left (Offset.sub_base _ (by decide : 768 + 32 ≤ 16384))
   refine WP.seq ((emitPrefix_ok s short.work short.out sep32).mono ?_)
   intro a ha
   have wa := Written.of_emitted ha
   have lenA : (bytesAt s.mem (s.gpr .x24 + 768) 32).length = 32 := by
     simp only [bytesAt, List.length_map, List.length_range]
-  have spaceA : Space a (32 * n + lastLen) := space.advance wa (by rw [lenA]; omega)
+  have spaceA : Space a (32 * n + lastLen) := space.advance wa (by rw [lenA]; omega_arith)
   have countA : a.gpr .x23 = BitVec.ofNat 64 (32 * n + lastLen) := by
     rw [ha.remaining, count, show (32 : Addr) = BitVec.ofNat 64 32 from rfl,
-      Offset.ofNat_sub_ofNat (by omega : 32 ≤ 32 * (n + 1) + lastLen)]
-    rw [show 32 * (n + 1) + lastLen - 32 = 32 * n + lastLen by omega]
+      Offset.ofNat_sub_ofNat (by omega_arith : 32 ≤ 32 * (n + 1) + lastLen)]
+    rw [show 32 * (n + 1) + lastLen - 32 = 32 * n + lastLen by omega_arith]
   have digestA : bytesAt a.mem (a.gpr .x24 + 768) 64 = bytesAt s.mem (s.gpr .x24 + 768) 64 := by
     rw [wa.x24]; exact ha.digest short.sep
   refine WP.seq ((compare_ok a (by rw [countA, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by have := spaceA.bound; omega)]; exact spaceA.bound)).mono fun u compared => ?_)
+    Nat.mod_eq_of_lt (by have := spaceA.bound; omega_arith)]; exact spaceA.bound)).mono fun u compared => ?_)
   have ku := compared.keeps
   have countU : u.gpr .x23 = BitVec.ofNat 64 (32 * n + lastLen) :=
     (compared.other _ (by decide)).trans countA
   have compareU : u.gpr .x9 = if 32 * n + lastLen < 65 then 1 else 0 := by
-    rw [compared.value, countA, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := spaceA.bound; omega)]
+    rw [compared.value, countA, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := spaceA.bound; omega_arith)]
   refine WP.seq ((maybeChain_ok v n lastLen u (spaceA.keeps ku) last countU compareU).mono ?_)
   intro w hw
   have ww := (Written.of_chain hw).before_keeps ku
@@ -297,13 +297,13 @@ theorem extendDigest_ok (v : Backend) (n lastLen : Nat) (s : State)
     rw [compared.mem, ku.x24]; exact digestA
   have ww' : Written a (chainPrefixes n (bytesAt s.mem (s.gpr .x24 + 768) 64)) w := by
     simpa only [digestU] using ww
-  have wsw := space.join wa ww' (by rw [lenA, Proof.Argon2.chainPrefixes_length]; omega)
+  have wsw := space.join wa ww' (by rw [lenA, Proof.Argon2.chainPrefixes_length]; omega_arith)
   have produced : ((bytesAt s.mem (s.gpr .x24 + 768) 32) ++
       chainPrefixes n (bytesAt s.mem (s.gpr .x24 + 768) 64)).length = 32 * (n + 1) := by
-    rw [List.length_append, lenA, Proof.Argon2.chainPrefixes_length]; omega
+    rw [List.length_append, lenA, Proof.Argon2.chainPrefixes_length]; omega_arith
   have spaceW : Space w lastLen := space.advance wsw (by rw [produced])
   have countW : w.gpr .x23 = BitVec.ofNat 64 lastLen := by
-    rw [hw.remaining, countU, Offset.ofNat_sub_ofNat (by omega : 32 * n ≤ 32 * n + lastLen)]
+    rw [hw.remaining, countU, Offset.ofNat_sub_ofNat (by omega_arith : 32 * n ≤ 32 * n + lastLen)]
     rw [Nat.add_sub_cancel_left]
   have digestW : bytesAt w.mem (w.gpr .x24 + 768) 64 =
       chainDigest n (bytesAt s.mem (s.gpr .x24 + 768) 64) := by
@@ -312,11 +312,11 @@ theorem extendDigest_ok (v : Backend) (n lastLen : Nat) (s : State)
   have kx : Keeps w x := Keeps.of_upd hx (by decide)
   have spaceX := spaceW.keeps kx
   have lenX : (x.gpr .x1).toNat = lastLen := by
-    rw [hx.gpr, countW, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := spaceW.bound; omega)]
-  refine (next_ok v x (by rw [lenX]; omega) spaceX.spBound spaceX.work spaceX.stackWork).mono ?_
+    rw [hx.gpr, countW, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := spaceW.bound; omega_arith)]
+  refine (next_ok v x (by rw [lenX]; omega_arith) spaceX.spBound spaceX.work spaceX.stackWork).mono ?_
   rintro t ⟨dt, kt⟩
   have wwt := Written.of_keeps (kx.trans kt)
-  have written := space.join wsw wwt (by rw [produced, List.length_nil]; omega)
+  have written := space.join wsw wwt (by rw [produced, List.length_nil]; omega_arith)
   refine ⟨?_, ?_, ?_⟩
   · simpa only [List.append_nil, bytesAt_take _ _ 32 64 (by decide)] using written
   · rw [lenX, kx.x24, hx.mem, digestW, wsw.x24] at dt
@@ -334,9 +334,9 @@ theorem longOutput_ok (v : Backend) (n lastLen : Nat) (s : State)
       chainPrefixes n (bytesAt s.mem (s.gpr .x24 + 768) 64)).length = 32 * (n + 1) := by
     simp only [List.length_append, List.length_take, bytesAt, List.length_map,
       List.length_range, Proof.Argon2.chainPrefixes_length]
-    omega
+    omega_arith
   have spaceU : Space u lastLen := space.advance written (by rw [len])
-  refine (copyRemaining_ok u lastLen spaceU (by omega) last.2 remaining).mono ?_
+  refine (copyRemaining_ok u lastLen spaceU (by omega_arith) last.2 remaining).mono ?_
   intro t copied
   have out : bytesAt u.mem (u.gpr .x24 + 768) lastLen =
       Spec.Argon2.H lastLen (chainDigest n (bytesAt s.mem (s.gpr .x24 + 768) 64)) := by
@@ -363,15 +363,15 @@ theorem finishOutput_ok (v : Backend) (s : State) (n : Nat) (input : List Byte)
     WP isa (finishOutput v.hash) s (Written s (Spec.Argon2.hPrime n input)) := by
   unfold finishOutput
   refine WP.seq ((compare_ok s (by rw [count, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by have := space.bound; omega)]; exact space.bound)).mono fun u compared => ?_)
+    Nat.mod_eq_of_lt (by have := space.bound; omega_arith)]; exact space.bound)).mono fun u compared => ?_)
   have ku := compared.keeps
   have countU : u.gpr .x23 = BitVec.ofNat 64 n := (compared.other _ (by decide)).trans count
   have compareU : u.gpr .x9 = if n < 65 then 1 else 0 := by
-    rw [compared.value, count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := space.bound; omega)]
+    rw [compared.value, count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := space.bound; omega_arith)]
   apply WP.seq
   refine WP.ite (decide (n < 65)) (by by_cases h : n < 65 <;> simp [eval, State.read, compareU, h]) ?_ ?_
   · intro h
-    have short : n ≤ 64 := by have := of_decide_eq_true h; omega
+    have short : n ≤ 64 := by have := of_decide_eq_true h; omega_arith
     apply WP.block_nil
     refine (copyRemaining_ok u n (space.keeps ku) positive short countU).mono ?_
     intro t ht
@@ -382,12 +382,12 @@ theorem finishOutput_ok (v : Backend) (s : State) (n : Nat) (input : List Byte)
     rw [value] at result
     exact result
   · intro h
-    have long : 64 < n := by have := of_decide_eq_false h; omega
+    have long : 64 < n := by have := of_decide_eq_false h; omega_arith
     let r := (n + 31) / 32 - 2
     let lastLen := n - 32 * r
     have bounds : 1 ≤ r ∧ 33 ≤ lastLen ∧ lastLen ≤ 64 ∧ 32 * r + lastLen = n :=
       Proof.Argon2.longHash_bounds n long
-    obtain ⟨q, hq⟩ := Nat.exists_eq_succ_of_ne_zero (show r ≠ 0 by omega)
+    obtain ⟨q, hq⟩ := Nat.exists_eq_succ_of_ne_zero (show r ≠ 0 by omega_arith)
     change r = q + 1 at hq
     have size : 32 * (q + 1) + lastLen = n := by rw [← hq]; exact bounds.2.2.2
     have spaceU : Space u (32 * (q + 1) + lastLen) := by rw [size]; exact space.keeps ku
@@ -399,10 +399,10 @@ theorem finishOutput_ok (v : Backend) (s : State) (n : Nat) (input : List Byte)
     have digestU : bytesAt u.mem (u.gpr .x24 + 768) 64 =
         Spec.Argon2.H 64 (Spec.Argon2.le32 n ++ input) := by
       rw [compared.mem, ku.x24]
-      simpa only [Nat.min_eq_right (show 64 ≤ n by omega), bytesAt_take _ _ 64 64 (by decide)] using digest
+      simpa only [Nat.min_eq_right (show 64 ≤ n by omega_arith), bytesAt_take _ _ 64 64 (by decide)] using digest
     have value : Spec.Argon2.longHash lastLen (q + 1) (bytesAt u.mem (u.gpr .x24 + 768) 64) =
         Spec.Argon2.hPrime n input := by
-      rw [digestU, ← hq, Spec.Argon2.hPrime, ite_eq_right (show ¬ n ≤ 64 by omega)]
+      rw [digestU, ← hq, Spec.Argon2.hPrime, ite_eq_right (show ¬ n ≤ 64 by omega_arith)]
     rw [value] at result
     exact result
 
@@ -443,7 +443,7 @@ theorem code_wp (v : Backend) (s : State) (pre : localContract.pre s) :
     rw [ha.input, ha.length, ha.mem]
     apply Proof.Blake2.bytesAt_congr
     intro i hi'
-    apply (setupMem_frame s).bytes (R := inputR s) _ (show (s.gpr .x1).toNat ≤ 2 ^ 64 by omega) hi'
+    apply (setupMem_frame s).bytes (R := inputR s) _ (show (s.gpr .x1).toNat ≤ 2 ^ 64 by omega_arith) hi'
     intro r hr
     simp only [List.mem_singleton] at hr; subst r
     exact dw.sub_right (Offset.sub_base _ (by decide : 832 + 64 ≤ 16384))
@@ -453,7 +453,7 @@ theorem code_wp (v : Backend) (s : State) (pre : localContract.pre s) :
     refine ⟨hi, by rw [sp]; exact hsp, workA, ?_, ?_, swA, ?_⟩
     · intro i hi'
       rw [ha.wr, ha.output, wr]
-      exact ⟨outputR s, List.mem_cons_self .., Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨outputR s, List.mem_cons_self .., Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     · rw [ha.workspace, ha.output]; exact ow.symm
     · rw [sp, ha.output]; exact so
   refine WP.seq ((first_ok v a (by rw [ha.remaining]; exact ⟨lo, hi⟩)
@@ -492,7 +492,7 @@ theorem code_wp (v : Backend) (s : State) (pre : localContract.pre s) :
       intro q hq
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl
-      · exact (Offset.base_disjoint _ dlo (by omega)).symm
+      · exact (Offset.base_disjoint _ dlo (by omega_arith)).symm
       · exact (sw.sub_right (Offset.sub_base _ dhi)).symm
       · exact (ow.sub_right (Offset.sub_base _ dhi)).symm
     rw [keep, ha.mem]; exact setupMem_saved s r d hr

@@ -66,8 +66,8 @@ theorem InputEq.candidate {σ τ : State} {b : Addr} {n j : Nat}
     (h : InputEq σ τ b n) (hj : j<n) :
     candidate σ.mem (b+BitVec.ofNat 64 (3*j))=candidate τ.mem (b+BitVec.ofNat 64 (3*j)) := by
   unfold ResidentRej.candidate
-  have h1 : b+BitVec.ofNat 64 (3*j)+1=b+BitVec.ofNat 64 (3*j+1) := by bv_omega
-  have h2 : b+BitVec.ofNat 64 (3*j)+2=b+BitVec.ofNat 64 (3*j+2) := by bv_omega
+  have h1 : b+BitVec.ofNat 64 (3*j)+1=b+BitVec.ofNat 64 (3*j+1) := by bv_omega_arith
+  have h2 : b+BitVec.ofNat 64 (3*j)+2=b+BitVec.ofNat 64 (3*j+2) := by bv_omega_arith
   rw [h1,h2,h _ (by omega),h _ (by omega),h _ (by omega)]
 
 theorem ParseInv.candidates_eq {σ τ s t : State} {b p : Addr} {n d k : Nat}

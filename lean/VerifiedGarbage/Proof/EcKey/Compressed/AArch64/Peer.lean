@@ -5,11 +5,9 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.TagCheck
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 public import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 
 /-! # Compressed tag, canonical x and curve constants -/

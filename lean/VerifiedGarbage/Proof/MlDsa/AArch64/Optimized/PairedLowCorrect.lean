@@ -615,8 +615,8 @@ theorem pairedLowAt_pre {s s1 : State} {c secret out low work : Ptr} {g B : Nat}
   have h6 : s1.gpr .x6=BitVec.ofNat 64 B := h1.imm (by simp [pairedLowArgs])
   simp only [hy,Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r3 h1,Args.r4 h1,h5,h6,
     Args.mem h1,Arg.val]
-  have hg : ((BitVec.ofNat 64 g).setWidth 32).toNat=g := by have := h.gamma_lt; bv_omega
-  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega
+  have hg : ((BitVec.ofNat 64 g).setWidth 32).toNat=g := by have := h.gamma_lt; bv_omega_arith
+  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega_arith
   rw [hg,hB]
   exact ⟨trivial,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),h.tableApart _ (by simp),
     trivial,trivial,h.cOut,h.cLow,h.cWork,h.secretOut,h.secretLow,h.secretWork,h.outLow,h.outWork,h.lowWork,
@@ -658,8 +658,8 @@ theorem pairedLowAt_ok {S : Nat} (hS : S<2^64) {nm : String} {s : State}
   have h5 : s1.gpr .x5=BitVec.ofNat 64 g := h1.imm (by simp [pairedLowArgs])
   have h6 : s1.gpr .x6=BitVec.ofNat 64 B := h1.imm (by simp [pairedLowArgs])
   rw [Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r3 h1,h5,h6,Args.mem h1] at hq
-  have hg : ((BitVec.ofNat 64 g).setWidth 32).toNat=g := by have := h.gamma_lt; bv_omega
-  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega
+  have hg : ((BitVec.ofNat 64 g).setWidth 32).toNat=g := by have := h.gamma_lt; bv_omega_arith
+  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega_arith
   simpa only [PairedLowPost,Arg.val,hg,hB] using And.intro hP hq
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired

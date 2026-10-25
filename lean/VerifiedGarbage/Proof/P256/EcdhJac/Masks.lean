@@ -33,14 +33,14 @@ theorem doubleCounter_ok (s : State) {q j : Nat} (hq : 1≤q) (hq5 : q≤5) (hj 
       t.gpr .x19=BitVec.ofNat 64 (2048*(q-1)+j) ∧ t.gpr .x4=BitVec.ofNat 64 (q-1) ∧
       Keeps [.x4,.x19] s t := by
   have he : BitVec.ofNat 64 (2048*q+j)-2048=BitVec.ofNat 64 (2048*(q-1)+j) := by
-    have hn : 2048*q+j=2048*(q-1)+j+2048 := by omega
+    have hn : 2048*q+j=2048*(q-1)+j+2048 := by omega_arith
     change BitVec.ofNat 64 (2048*q+j)-BitVec.ofNat 64 2048=_
     rw [hn,←BitVec.ofNat_add_ofNat]
     exact BitVec.add_sub_cancel _ _
   have hs : (BitVec.ofNat 64 (2048*(q-1)+j) >>> 11)=BitVec.ofNat 64 (q-1) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow]
-    omega
+    omega_arith
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,read_x,Size.bits,
     show 2048<4096 by decide,show 11<64 by decide,ite_true,RegUpd.gpr_write,BitVec.setWidth_eq,
@@ -79,13 +79,13 @@ theorem countRegLoop_ok (r : Reg) {body : Prog isa} {Inv : Nat → State → Pro
     · rw [decide_eq_true hj, bne_iff_ne, ne_eq]
       intro he
       have := congrArg BitVec.toNat he
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
       exact hj this
   by_cases hj : j - 1 = 0
   · refine Or.inl ⟨?_, hQ s' (by rw [hj] at hi'; exact hi')⟩
     show some (s'.read .x r != 0) = some false
     rw [hx, hj]; rfl
-  · refine Or.inr ⟨?_, j - 1, by omega, by omega, by omega, hi'⟩
+  · refine Or.inr ⟨?_, j - 1, by omega_arith, by omega_arith, by omega_arith, hi'⟩
     show some (s'.read .x r != 0) = some true
     rw [hx, decide_eq_true hj]
 
@@ -170,9 +170,9 @@ theorem buildStep_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
   refine WP.seq (WP.mono (EcdhTable.zaddu_ok hC ha hO hP hm2 hm15 fa pa la da) fun b ⟨kb,fb,pb,lb,db,cb⟩ => ?_)
   have ta : TblOk base P m a := by
     intro j hj hjm; apply (hi.inv.table j hj hjm).congr; intro i hi; rw [ka.mem]
-  have tb := table_keep ta (by omega) kb
+  have tb := table_keep ta (by omega_arith) kb
   rw [WP.block_append_iff]
-  refine WP.mono (storeCoZ_ok (m:=m+1) (by omega) (by omega) fb (by simpa using tb) pb lb db (cb.trans ca)) fun d ⟨kd,id⟩ => ?_
+  refine WP.mono (storeCoZ_ok (m:=m+1) (by omega_arith) (by omega_arith) fb (by simpa using tb) pb lb db (cb.trans ca)) fun d ⟨kd,id⟩ => ?_
   refine WP.mono (buildTest_ok d) fun t ⟨ct,kt⟩ => ?_
   refine ⟨(frame_build ((AllocatedFrame.of_keeps ka).widenRegs (by decide))).trans
     ((frame_build kb).trans (kd.trans ((AllocatedFrame.of_keeps kt).widenRegs (by decide)))),
@@ -200,8 +200,8 @@ theorem buildLoop_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
   refine WP.loop (M:=isa)
     (fun j t => 1≤j ∧ j≤14 ∧ Frame base buildWork s t ∧ CoZInv base P k (16-j) t)
     (fun j a ⟨hj,hj14,hf,hi⟩ => ?_) 14 s ⟨by decide,by decide,AllocatedFrame.refl _ _ _ _,hi⟩
-  refine WP.mono (buildStep_ok hC ha hO hP (by omega) (by omega) hi) fun t ⟨kt,it,ct⟩ => ?_
-  have hn : 16-j+1=16-(j-1) := by omega
+  refine WP.mono (buildStep_ok hC ha hO hP (by omega_arith) (by omega_arith) hi) fun t ⟨kt,it,ct⟩ => ?_
+  have hn : 16-j+1=16-(j-1) := by omega_arith
   rw [hn] at it ct
   have hz : (t.read .x .x4 != 0)=decide (j-1≠0) := by
     rw [read_x,ct]
@@ -209,17 +209,17 @@ theorem buildLoop_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     · rw [h]; rfl
     · rw [decide_eq_true h,bne_iff_ne,ne_eq]
       intro he
-      have hh : BitVec.ofNat 64 (16-(j-1)) = (16 : BitVec 64) := by bv_omega
+      have hh : BitVec.ofNat 64 (16-(j-1)) = (16 : BitVec 64) := by bv_omega_arith
       have he' := congrArg BitVec.toNat hh
       simp only [BitVec.toNat_ofNat,show (16 : BitVec 64).toNat=16 from rfl,
-        Nat.mod_eq_of_lt (show 16-(j-1)<2^64 by omega)] at he'
-      omega
+        Nat.mod_eq_of_lt (show 16-(j-1)<2^64 by omega_arith)] at he'
+      omega_arith
   by_cases h : j-1=0
   · refine Or.inl ⟨?_,hf.trans kt,?_⟩
     · show some (t.read .x .x4 != 0)=some false
       rw [hz,h]; rfl
     · simpa only [h,Nat.sub_zero] using it
-  · refine Or.inr ⟨?_,j-1,by omega,by omega,by omega,hf.trans kt,it⟩
+  · refine Or.inr ⟨?_,j-1,by omega_arith,by omega_arith,by omega_arith,hf.trans kt,it⟩
     show some (t.read .x .x4 != 0)=some true
     rw [hz,decide_eq_true h]
 
@@ -278,13 +278,13 @@ private theorem infinityMask_ok {base : Addr} {s : State} (hs : Scr s base 8192)
     intro i hi
     rw [ud.wordsVal (by
       have hh : ∀ i<3,∀ w∈[(608,32),(640,32),(672,32)],512+32*i+32≤w.1 ∨ w.1+w.2≤512+32*i := by decide
-      exact hh i hi) (by omega),ka.mem]
+      exact hh i hi) (by omega_arith),ka.mem]
   have sameD : ∀ i<3,wordsVal b.mem base (608+32*i) 4=
       if wordsVal s.mem base 576 4=0 then wordsVal s.mem base (704+32*i) 4
       else wordsVal s.mem base (608+32*i) 4 := by
     simp only [ka.mem,decide_eq_true_eq] at bx by' bz
     intro i hi
-    rcases (by omega : i=0 ∨ i=1 ∨ i=2) with rfl|rfl|rfl
+    rcases (by omega_arith : i=0 ∨ i=1 ∨ i=2) with rfl|rfl|rfl
     all_goals simp only [Nat.mul_zero,Nat.add_zero,Nat.reduceMul,Nat.reduceAdd]
     · change wordsVal b.mem base 608 4=(if _ then wordsVal s.mem base 608 4 else wordsVal s.mem base 704 4) at bx
       simpa only [ne_eq,ite_not] using bx
@@ -303,7 +303,7 @@ private theorem magnitude_zero (a : Nat) (ha : a≤16) :
   · intro h
     have hh := congrArg BitVec.toNat h
     change a%2^64=0 at hh
-    omega
+    omega_arith
   · intro h; rw [h]; rfl
 
 private theorem zeroSelect_ok {base : Addr} {c : State} {a : Nat}
@@ -327,7 +327,7 @@ private theorem zeroSelect_ok {base : Addr} {c : State} {a : Nat}
   intro i hi
   have e : wordsVal t.mem base (512+32*i) 4=
       if a=0 then wordsVal c.mem base (512+32*i) 4 else wordsVal c.mem base (608+32*i) 4 := by
-    rcases (by omega : i=0 ∨ i=1 ∨ i=2) with rfl|rfl|rfl
+    rcases (by omega_arith : i=0 ∨ i=1 ∨ i=2) with rfl|rfl|rfl
     · exact tx
     · exact ty
     · exact tz
@@ -342,7 +342,7 @@ private theorem digitMask_ok {base : Addr} {P : Point C} {k j : Nat} {b : State}
         else wordsVal b.mem base (608+32*i) 4 := by
   rw [digitMaskCode,List.append_assoc,WP.block_append_iff]
   refine WP.mono (digitW_ok tc fxb.field.scr (k:=k+offset) (j:=j) (N:=260)
-    (by decide) (by decide) (by change 5*j+5≤260; omega) (by decide) (by decide) h19 fxb.bits)
+    (by decide) (by decide) (by change 5*j+5≤260; omega_arith) (by decide) (by decide) h19 fxb.bits)
     fun c ⟨c2,kc⟩ => ?_
   have c2' : c.gpr .x2=BitVec.ofNat 64 (digitMagnitude k j) := by
     change c.gpr .x2=BitVec.ofNat 64 (magH 16 (combWin 5 (k+offset) j)) at c2

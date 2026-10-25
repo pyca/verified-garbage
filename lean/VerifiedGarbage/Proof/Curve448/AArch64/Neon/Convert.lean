@@ -40,7 +40,7 @@ theorem lo28 (x m : BitVec 128) (hm : ∀ e < 2, (vdword m e).toNat = 2 ^ 28 - 1
 
 theorem ushr28 (y x : BitVec 128) (e : Nat) (he : e < 2) :
     (vdword (VArr.d2.map2 (fun w a b => VShiftOp.eval .ushr 28 w a b) y x) e).toNat = (vdword x e).toNat / 2 ^ 28 := by
-  rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+  rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl
   · rw [map2_0]; simp [VShiftOp.eval, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   · rw [map2_1]; simp [VShiftOp.eval, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
 
@@ -52,7 +52,7 @@ theorem uzp_words (lo hi : BitVec 128) (c : Nat) (hc : c < 4) :
     (vword (VPermOp.eval .uzp1 .s4 lo hi) c).toNat =
       if c = 0 then (vdword lo 0).toNat % 2 ^ 32 else if c = 1 then (vdword lo 1).toNat % 2 ^ 32
       else if c = 2 then (vdword hi 0).toNat % 2 ^ 32 else (vdword hi 1).toNat % 2 ^ 32 := by
-  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl
+  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_arith) with rfl | rfl | rfl | rfl
   · rw [uzp1_0, vword_0]; rfl
   · rw [uzp1_1, vword_2]; rfl
   · rw [uzp1_2, vword_0]; rfl
@@ -93,10 +93,10 @@ theorem split_words {lo hi : BitVec 128} {a b : Nat}
       if c = 0 then a % 2 ^ 28 else if c = 1 then b % 2 ^ 28 else if c = 2 then a / 2 ^ 28 else b / 2 ^ 28 := by
   rw [uzp_words lo hi c hc, hlo 0 (by decide), hlo 1 (by decide), hhi 0 (by decide), hhi 1 (by decide)]
   simp only [ite_true, show (1 : Nat) ≠ 0 by decide, ite_false]
-  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_arith) with rfl | rfl | rfl | rfl <;>
     simp only [ite_true, ite_false, show (1 : Nat) ≠ 0 by decide, show (2 : Nat) ≠ 0 by decide,
       show (2 : Nat) ≠ 1 by decide, show (3 : Nat) ≠ 0 by decide, show (3 : Nat) ≠ 1 by decide,
-      show (3 : Nat) ≠ 2 by decide] <;> omega
+      show (3 : Nat) ≠ 2 by decide] <;> omega_arith
 
 
 theorem limb_ld (m : Mem) (base : Addr) (x k : Nat) (e : Nat) (he : e < 2) :
@@ -104,7 +104,7 @@ theorem limb_ld (m : Mem) (base : Addr) (x k : Nat) (e : Nat) (he : e < 2) :
   rw [vdword_read16 _ _ he, off_add]
   simp only [limbs, word]
   congr 3
-  omega
+  omega_arith
 
 /-- What one step of `convert` does. -/
 theorem convChunk_ok {s : State} {base : Addr} (hs : Scr s base) {x₁ x₂ dst X Y P Q k : Nat} (hk : k < 4)
@@ -121,14 +121,14 @@ theorem convChunk_ok {s : State} {base : Addr} (hs : Scr s base) {x₁ x₂ dst 
         split (limbs s.mem base x₁) (limbs s.mem base x₂) (2 * k + 1) c) ∧
       Outside base (dst + 32 * k) 32 s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r : VReg, r ∉ [V X, V Y, V P, V Q] → t.v r = s.v r) := by
-  have e1 : x₁ + 16 * k + 16 ≤ 8192 := by omega
-  have e2 : x₂ + 16 * k + 16 ≤ 8192 := by omega
-  have a1 : (x₁ + 16 * k) % 16 = 0 := by omega
-  have a2 : (x₂ + 16 * k) % 16 = 0 := by omega
-  have dP : (dst + 16 * (2 * k)) % 16 = 0 := by omega
-  have dQ : (dst + 16 * (2 * k + 1)) % 16 = 0 := by omega
-  have dP' : dst + 16 * (2 * k) + 16 ≤ 8192 := by omega
-  have dQ' : dst + 16 * (2 * k + 1) + 16 ≤ 8192 := by omega
+  have e1 : x₁ + 16 * k + 16 ≤ 8192 := by omega_arith
+  have e2 : x₂ + 16 * k + 16 ≤ 8192 := by omega_arith
+  have a1 : (x₁ + 16 * k) % 16 = 0 := by omega_arith
+  have a2 : (x₂ + 16 * k) % 16 = 0 := by omega_arith
+  have dP : (dst + 16 * (2 * k)) % 16 = 0 := by omega_arith
+  have dQ : (dst + 16 * (2 * k + 1)) % 16 = 0 := by omega_arith
+  have dP' : dst + 16 * (2 * k) + 16 ≤ 8192 := by omega_arith
+  have dQ' : dst + 16 * (2 * k + 1) + 16 ≤ 8192 := by omega_arith
   simp only [convChunk]
   -- the loads
   refine WP.block_cons_iff.mpr ⟨_, exec_ldq hs X a1 e1, ?_⟩
@@ -188,36 +188,36 @@ theorem convChunk_ok {s : State} {base : Addr} (hs : Scr s base) {x₁ x₂ dst 
     rw [← hvP, split_words (a := limbs s.mem base x₁ (2 * k)) (b := limbs s.mem base x₂ (2 * k))
       (fun e he => by
         rw [lo28 _ _ hM e he, ← hT1]
-        rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+        rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl
         · rw [trn1_0, lA 0 (by decide)]; rfl
         · rw [trn1_1, lB 0 (by decide)]; rfl)
       (fun e he => by
         rw [← hH1, ushr28 _ _ e he, ← hT1]
-        rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+        rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl
         · rw [trn1_0, lA 0 (by decide)]; rfl
         · rw [trn1_1, lB 0 (by decide)]; rfl)
-      (hl₁ _ (by omega)) (hl₂ _ (by omega)) c hc]
+      (hl₁ _ (by omega_arith)) (hl₂ _ (by omega_arith)) c hc]
     rfl
   have wQ : ∀ c < 4, (vword vQ c).toNat = split (limbs s.mem base x₁) (limbs s.mem base x₂) (2 * k + 1) c := by
     intro c hc
     rw [← hvQ, split_words (a := limbs s.mem base x₁ (2 * k + 1)) (b := limbs s.mem base x₂ (2 * k + 1))
       (fun e he => by
         rw [lo28 _ _ hM e he, ← hT2]
-        rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+        rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl
         · rw [trn2_0, lA 1 (by decide)]; rfl
         · rw [trn2_1, lB 1 (by decide)]; rfl)
       (fun e he => by
         rw [ushr28 _ _ e he, ← hT2]
-        rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+        rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl
         · rw [trn2_0, lA 1 (by decide)]; rfl
         · rw [trn2_1, lB 1 (by decide)]; rfl)
-      (hl₁ _ (by omega)) (hl₂ _ (by omega)) c hc]
+      (hl₁ _ (by omega_arith)) (hl₂ _ (by omega_arith)) c hc]
     rfl
   refine ⟨fun c hc => ?_, fun c hc => ?_, ?_, trivial, trivial, trivial, fun r hr => ?_⟩
-  · rw [nw_st_other _ _ _ dQ' (by omega) (by omega), nw_st _ _ _ _ hc, wP c hc]
+  · rw [nw_st_other _ _ _ dQ' (by omega_arith) (by omega_arith), nw_st _ _ _ _ hc, wP c hc]
   · rw [nw_st _ _ _ _ hc, wQ c hc]
-  · exact ((st_outside _ base _ dP').mono (by omega) (by omega)).trans
-      ((st_outside _ base _ dQ').mono (by omega) (by omega))
+  · exact ((st_outside _ base _ dP').mono (by omega_arith) (by omega_arith)).trans
+      ((st_outside _ base _ dQ').mono (by omega_arith) (by omega_arith))
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨r1, r2, r3, r4⟩ := hr
     simp only [RegUpd.v_setV_of_ne _ _ r1, RegUpd.v_setV_of_ne _ _ r2, RegUpd.v_setV_of_ne _ _ r3,
@@ -231,7 +231,7 @@ theorem split_congr {f₁ f₂ g₁ g₂ : Nat → Nat} {i : Nat} (h₁ : f₁ i
 theorem limbs_outside {base : Addr} {m m' : Mem} {o n x : Nat} (h : Outside base o n m m')
     (hx : x + 64 ≤ o ∨ o + n ≤ x) (hx' : x + 64 ≤ 8192) {i : Nat} (hi : i < 8) :
     limbs m' base x i = limbs m base x i :=
-  congrArg BitVec.toNat (h.word (by omega) (by omega))
+  congrArg BitVec.toNat (h.word (by omega_arith) (by omega_arith))
 
 /-- `convert x₁ x₂ dst`: the radix-2²⁸ vectors of `[x₁]` and `[x₂]` at `dst`. -/
 theorem convert_ok {s : State} {base : Addr} (hs : Scr s base) {x₁ x₂ dst X Y P Q : Nat}
@@ -254,8 +254,8 @@ theorem convert_ok {s : State} {base : Addr} (hs : Scr s base) {x₁ x₂ dst X 
     Outside base dst 128 s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
     (∀ r : VReg, r ∉ [V X, V Y, V P, V Q] → t.v r = s.v r)
   refine WP.mono (wp_range_flatMap (M := isa) (N := 4) inv (fun n t hn ⟨tw, tO, tg, tr, twr, tv⟩ => ?_) 4
-    (by decide) s ⟨fun _ h => absurd h (by omega), Outside.refl _ _ _ _, rfl, rfl, rfl, fun _ _ => rfl⟩)
-    fun t ht => ⟨fun i hi => ht.1 i (by omega), ht.2⟩
+    (by decide) s ⟨fun _ h => absurd h (by omega_arith), Outside.refl _ _ _ _, rfl, rfl, rfl, fun _ _ => rfl⟩)
+    fun t ht => ⟨fun i hi => ht.1 i (by omega_arith), ht.2⟩
   have ht : Scr t base := scr_of hs tg twr
   have t30 : t.v (V 30) = s.v (V 30) := tv _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
@@ -264,12 +264,12 @@ theorem convert_ok {s : State} {base : Addr} (hs : Scr s base) {x₁ x₂ dst X 
   have l₂ : ∀ i < 8, limbs t.mem base x₂ i = limbs s.mem base x₂ i := fun i hi => limbs_outside tO s₂ h₂' hi
   refine WP.mono (convChunk_ok ht hn h₁ h₁' h₂ h₂' hd hd' (by rw [t30]; exact hM) nXY nXP nXQ nYP nYQ nPQ n30
     (fun i hi => by rw [l₁ i hi]; exact hl₁ i hi) (fun i hi => by rw [l₂ i hi]; exact hl₂ i hi))
-    fun u ⟨uP, uQ, uo, ug, ur, uw, uv⟩ => ⟨fun i hi c hc => ?_, tO.trans (uo.mono (by omega) (by omega)),
+    fun u ⟨uP, uQ, uo, ug, ur, uw, uv⟩ => ⟨fun i hi c hc => ?_, tO.trans (uo.mono (by omega_arith) (by omega_arith)),
       ug.trans tg, ur.trans tr, uw.trans twr, fun r hr => (uv r hr).trans (tv r hr)⟩
-  rcases (show i < 2 * n ∨ i = 2 * n ∨ i = 2 * n + 1 by omega) with h | rfl | rfl
-  · rw [VG.Proof.Curve448.AArch64.Neon.Outside.nw uo (by omega) (by omega)]
+  rcases (show i < 2 * n ∨ i = 2 * n ∨ i = 2 * n + 1 by omega_arith) with h | rfl | rfl
+  · rw [VG.Proof.Curve448.AArch64.Neon.Outside.nw uo (by omega_arith) (by omega_arith)]
     exact tw i h c hc
-  · rw [uP c hc]; exact split_congr (l₁ _ (by omega)) (l₂ _ (by omega)) c
-  · rw [uQ c hc]; exact split_congr (l₁ _ (by omega)) (l₂ _ (by omega)) c
+  · rw [uP c hc]; exact split_congr (l₁ _ (by omega_arith)) (l₂ _ (by omega_arith)) c
+  · rw [uQ c hc]; exact split_congr (l₁ _ (by omega_arith)) (l₂ _ (by omega_arith)) c
 
 end VG.Proof.Curve448.AArch64.Neon

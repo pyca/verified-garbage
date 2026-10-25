@@ -31,13 +31,13 @@ abbrev kbD (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 decStack
 theorem fb_eqD (s : State) : fb s = off (kbD s) (8 + privStack) := Offset.sub_ofNat_eq _ (by decide)
 
 theorem fb_sub8D (s : State) : fb s - 8 = off (kbD s) privStack := by
-  rw [fb_eqD, off, off, show 8 + privStack = privStack + 8 by omega, BitVec.ofNat_add, ← BitVec.add_assoc]
+  rw [fb_eqD, off, off, show 8 + privStack = privStack + 8 by omega_arith, BitVec.ofNat_add, ← BitVec.add_assoc]
   exact BitVec.add_sub_cancel _ _
 
 theorem kbD_toNat {s : State} (hp : DPre s) : (kbD s).toNat + decStack + 144 ≤ 2 ^ 64 ∧
     (kbD s).toNat + decStack = (s.gpr .rsp).toNat := by
   have := hp.sp1; have := hp.sp2
-  simp only [kbD, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold decStack privStack frameBytes at *; omega
+  simp only [kbD, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold decStack privStack frameBytes at *; omega_arith
 
 /-- What `vg_rsa_private_checked` reads: `n`, `e`, the ciphertext, the
 private key and its stack arguments. -/
@@ -58,26 +58,26 @@ theorem rsaD_toNat {s : State} (hp : DPre s) :
       (off (stackArg s 15) oRsa).toNat = (stackArg s 15).toNat + oRsa := by
   have := hp.hsl; have := hp.wS; have := hp.lv.1
   constructor
-  · rw [BitVec.toNat_sub, show (1024 : BitVec 64).toNat = 1024 from rfl]; omega
-  · simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oRsa at *; omega
+  · rw [BitVec.toNat_sub, show (1024 : BitVec 64).toNat = 1024 from rfl]; omega_arith
+  · simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oRsa at *; omega_arith
 
 theorem rsaD_sub {s : State} (hp : DPre s) : Region.Sub (rsaD s) (scrD s) := by
   have := hp.hsl
   have ⟨r1, _⟩ := rsaD_toNat hp
   simp only [rsaD, scrD]; rw [r1]
-  exact Offset.sub_base _ (by unfold oRsa; omega)
+  exact Offset.sub_base _ (by unfold oRsa; omega_arith)
 
 theorem emD_sub {s : State} (hp : DPre s) : Region.Sub ⟨off (stackArg s 15) oEm, (s.gpr .r8).toNat⟩ (scrD s) := by
   have := hp.hsl; have := hp.lv.2
-  exact Offset.sub_base _ (by unfold oEm; omega)
+  exact Offset.sub_base _ (by unfold oEm; omega_arith)
 
 /-- The entry state's stack arguments: the frame's words. -/
 theorem privD_args {s t : State} (hp : DPre s) (h : DSet s t) (rd wr : List Region) {i : Nat} (hi : i < 14) :
     stackArg (t.callEntry.withRegions rd wr) i = privW s i := by
   have hF := fb_toNatD hp
-  rw [stackArg_entry h.he.rsp (by have := hp.sp1; unfold decStack privStack frameBytes at *; omega) _ _
-    (by have := hp.sp2; unfold frameBytes at *; omega)]
-  exact h.R.rd i rfl (by unfold nW frameBytes; omega)
+  rw [stackArg_entry h.he.rsp (by have := hp.sp1; unfold decStack privStack frameBytes at *; omega_arith) _ _
+    (by have := hp.sp2; unfold frameBytes at *; omega_arith)]
+  exact h.R.rd i rfl (by unfold nW frameBytes; omega_arith)
 
 theorem stackArgAddr_entryD {s t : State} (hsp : t.gpr .rsp = fb s) (rd wr : List Region) :
     stackArgAddr (t.callEntry.withRegions rd wr) 0 = fb s := by
@@ -107,15 +107,15 @@ theorem privD_pre {s t : State} (hp : DPre s) (h : DSet s t) :
   have e6 : privStack = 3256 := rfl
   have e7 : frameBytes = 296 := rfl
   have hfb : fb s = off (kbD s) (8 + privStack) := fb_eqD s
-  have sK : Region.Sub ⟨kbD s, privStack⟩ (stkD s) := Region.sub_prefix (by omega)
-  have sR : Region.Sub ⟨off (kbD s) privStack, 8⟩ (stkD s) := Offset.sub_base _ (by omega)
-  have sA : Region.Sub ⟨fb s, 112⟩ (stkD s) := by rw [hfb]; exact Offset.sub_base _ (by omega)
+  have sK : Region.Sub ⟨kbD s, privStack⟩ (stkD s) := Region.sub_prefix (by omega_arith)
+  have sR : Region.Sub ⟨off (kbD s) privStack, 8⟩ (stkD s) := Offset.sub_base _ (by omega_arith)
+  have sA : Region.Sub ⟨fb s, 112⟩ (stkD s) := by rw [hfb]; exact Offset.sub_base _ (by omega_arith)
   have dRA : (⟨off (kbD s) privStack, 8⟩ : Region).Disjoint ⟨fb s, 112⟩ := by
-    rw [hfb]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    rw [hfb]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
   have dKA : (⟨kbD s, privStack⟩ : Region).Disjoint ⟨fb s, 112⟩ := by
-    rw [hfb]; exact Offset.base_disjoint _ (by omega) (by omega)
+    rw [hfb]; exact Offset.base_disjoint _ (by omega_arith) (by omega_arith)
   have hoff : (off (kbD s) privStack).toNat = (kbD s).toNat + privStack := by
-    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
   have kbsub : kbD s = off (kbD s) privStack - BitVec.ofNat 64 privStack := by
     rw [off, BitVec.add_sub_cancel]
   rw [← kbsub]
@@ -123,7 +123,7 @@ theorem privD_pre {s t : State} (hp : DPre s) (h : DSet s t) :
   have rs := rsaD_sub hp
   have dEmR : Region.Disjoint ⟨off (stackArg s 15) oEm, (s.gpr .r8).toNat⟩ (rsaD s) := by
     simp only [rsaD]; rw [r1]
-    exact Offset.disjoint _ (.inl (by unfold oEm oRsa; omega)) (by unfold oEm; omega) (by unfold oRsa; omega)
+    exact Offset.disjoint _ (.inl (by unfold oEm oRsa; omega_arith)) (by unfold oEm; omega_arith) (by unfold oRsa; omega_arith)
   have dSK : (scrD s).Disjoint (stkD s) := hp.dKs.symm
   -- Regions apart from the working space are apart from `EM` and the call's working space.
   have dE : ∀ {r : Region}, (r).Disjoint (scrD s) →
@@ -132,7 +132,7 @@ theorem privD_pre {s t : State} (hp : DPre s) (h : DSet s t) :
   have dcts : (⟨stackArg s 13, (s.gpr .r8).toNat⟩ : Region).Disjoint (scrD s) := by
     have := hp.dcts; rwa [hp.hcl] at this
   have dKct : (stkD s).Disjoint ⟨stackArg s 13, (s.gpr .r8).toNat⟩ := by have := hp.dKct; rwa [hp.hcl] at this
-  refine ⟨by omega, by omega, rfl, rfl, (dE hp.dns).1, (dE hp.des).1, (dE dcts).1, (dE hp.dps).1,
+  refine ⟨by omega_arith, by omega_arith, rfl, rfl, (dE hp.dns).1, (dE hp.des).1, (dE dcts).1, (dE hp.dps).1,
     (dE hp.dqs).1, (dE hp.ddps).1, (dE hp.ddqs).1, (dE hp.dqis).1, dEmR,
     ((dSK.sub_right sA).sub_left em), (dE hp.dns).2, (dE hp.des).2, (dE dcts).2, (dE hp.dps).2,
     (dE hp.dqs).2, (dE hp.ddps).2, (dE hp.ddqs).2, (dE hp.dqis).2, ((dSK.sub_right sA).sub_left rs),
@@ -141,10 +141,10 @@ theorem privD_pre {s t : State} (hp : DPre s) (h : DSet s t) :
     ((dSK.symm.sub_left sR).sub_right rs), dRA, ((dSK.symm.sub_left sK).sub_right em), hp.dKn.sub_left sK,
     hp.dKe.sub_left sK, dKct.sub_left sK, hp.dKp.sub_left sK, hp.dKq.sub_left sK, hp.dKdp.sub_left sK,
     hp.dKdq.sub_left sK, hp.dKqi.sub_left sK, ((dSK.symm.sub_left sK).sub_right rs), dKA,
-    by simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEm; omega, hp.wN, hp.wE,
+    by simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEm; omega_arith, hp.wN, hp.wE,
     by have := hp.wC; rw [hp.hcl] at this; exact this, hp.wP, hp.wQ, hp.wDp, hp.wDq, hp.wQi,
-    by rw [r1, r2]; unfold oRsa; omega, hp.lv, trivial, trivial, hp.el1, hp.el2, hp.pl1, hp.pl2, hp.ql1, hp.ql2,
-    hp.hdpl, hp.hqil, hp.hdql, by rw [r1]; unfold Spec.Rsa.scratchWords; omega⟩
+    by rw [r1, r2]; unfold oRsa; omega_arith, hp.lv, trivial, trivial, hp.el1, hp.el2, hp.pl1, hp.pl2, hp.ql1, hp.ql2,
+    hp.hdpl, hp.hqil, hp.hdql, by rw [r1]; unfold Spec.Rsa.scratchWords; omega_arith⟩
 
 theorem privD_covers {s t : State} (hp : DPre s) (h : DSet s t) :
     Covers (privRdD s ++ privWrD s) (t.rd ++ t.wr) ∧ Covers (privWrD s) t.wr := by
@@ -156,20 +156,20 @@ theorem privD_covers {s t : State} (hp : DPre s) (h : DSet s t) :
     simp only [privWrD, rsaD, List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [hwr]
     rcases hr with rfl | rfl
-    · exact ⟨scrD s, by simp, oEm, rfl, by simp only [scrD]; unfold oEm; omega⟩
-    · exact ⟨scrD s, by simp, oRsa, rfl, by simp only [scrD]; rw [r1]; unfold oRsa; omega⟩
+    · exact ⟨scrD s, by simp, oEm, rfl, by simp only [scrD]; unfold oEm; omega_arith⟩
+    · exact ⟨scrD s, by simp, oRsa, rfl, by simp only [scrD]; rw [r1]; unfold oRsa; omega_arith⟩
   refine ⟨Covers.append_left (Covers.of_sub fun r hr => ?_) cw.right, cw⟩
   have hrd : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [h.he.rd]; exact hx)
   simp only [privRdD, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨_, hrd ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨s.gpr .r9, (stackArg s 0).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 13, (stackArg s 14).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 1, (stackArg s 2).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 3, (stackArg s 4).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 5, (stackArg s 6).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 7, (stackArg s 8).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 9, (stackArg s 10).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
+  · exact ⟨_, hrd ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨s.gpr .r9, (stackArg s 0).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 13, (stackArg s 14).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 1, (stackArg s 2).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 3, (stackArg s 4).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 5, (stackArg s 6).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 7, (stackArg s 8).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
+  · exact ⟨_, hrd ⟨stackArg s 9, (stackArg s 10).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_arith⟩
   · exact ⟨frR s, List.mem_append_right _ (by rw [hwr]; exact List.mem_cons_self ..), 0, z _,
       by show 0 + 112 ≤ frameBytes; decide⟩
 
@@ -193,13 +193,13 @@ theorem frame_apartD {s : State} (hp : DPre s) {k : Nat} (hk : k < nW) :
   have hF := fb_toNatD hp
   have := hp.sp2
   have sF : Region.Sub ⟨off (fb s) (8 * k), 8⟩ (stkD s) :=
-    fun x h => frame_subD s x (Offset.sub_base _ (by unfold nW frameBytes at *; omega) x h)
+    fun x h => frame_subD s x (Offset.sub_base _ (by unfold nW frameBytes at *; omega_arith) x h)
   intro r hr
   simp only [privWrD, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact (hp.dKs.sub_left sF).sub_right (emD_sub hp)
   · exact (hp.dKs.sub_left sF).sub_right (rsaD_sub hp)
-  · exact Offset.disjoint_below _ (by unfold nW frameBytes privStack at *; omega)
+  · exact Offset.disjoint_below _ (by unfold nW frameBytes privStack at *; omega_arith)
 
 theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
     WP isa (.call v.name v.code) t fun t' => EnvD s t' ∧ Lay t' (fb s) (stackArg s 15) ∧
@@ -210,11 +210,11 @@ theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
   have hdp := v.depth
   have e2 : privStack = 3256 := rfl
   have hF := fb_toNatD hp
-  refine WP.call_sp_mx (k := privK) v.ok (SpSafe.of_all v.spSafe) (by omega) (privD_pre hp h) hc hw ?_
+  refine WP.call_sp_mx (k := privK) v.ok (SpSafe.of_all v.spSafe) (by omega_arith) (privD_pre hp h) hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [h.he.rsp] at hf
   have hf' : Frame (privWrD s ++ [below (fb s) (8 + privStack)]) t.mem s'.mem :=
-    Frame.below_mono hf (by omega) (by have := hp.sp2; unfold frameBytes at *; omega)
+    Frame.below_mono hf (by omega_arith) (by have := hp.sp2; unfold frameBytes at *; omega_arith)
   have hfe : Frame [below (fb s) 8] t.mem t.callEntry.mem := by
     rw [State.callEntry_mem, h.he.rsp]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by decide) (by decide))
@@ -240,17 +240,17 @@ theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
   have dKct : (stkD s).Disjoint ⟨stackArg s 13, (s.gpr .r8).toNat⟩ := by have := hp.dKct; rwa [hcl] at this
   have dOct : (outR s).Disjoint ⟨stackArg s 13, (s.gpr .r8).toNat⟩ := by have := hp.dOct; rwa [hcl] at this
   have dMct : (mlR s).Disjoint ⟨stackArg s 13, (s.gpr .r8).toNat⟩ := by have := hp.dMct; rwa [hcl] at this
-  rw [bo hp.dKn hp.dOn hp.dMn hp.dns (by have := hp.wN; omega),
-    bo hp.dKe hp.dOe hp.dMe hp.des (by have := hp.wE; omega),
-    bo dKct dOct dMct dcts (by have := hp.wC; omega),
-    bo hp.dKp hp.dOp hp.dMp hp.dps (by have := hp.wP; omega),
-    bo hp.dKq hp.dOq hp.dMq hp.dqs (by have := hp.wQ; omega),
+  rw [bo hp.dKn hp.dOn hp.dMn hp.dns (by have := hp.wN; omega_arith),
+    bo hp.dKe hp.dOe hp.dMe hp.des (by have := hp.wE; omega_arith),
+    bo dKct dOct dMct dcts (by have := hp.wC; omega_arith),
+    bo hp.dKp hp.dOp hp.dMp hp.dps (by have := hp.wP; omega_arith),
+    bo hp.dKq hp.dOq hp.dMq hp.dqs (by have := hp.wQ; omega_arith),
     show (stackArg s 2).toNat = (stackArg s 6).toNat from hp.hdpl.symm,
-    bo hp.dKdp hp.dOdp hp.dMdp hp.ddps (by have := hp.wDp; omega),
+    bo hp.dKdp hp.dOdp hp.dMdp hp.ddps (by have := hp.wDp; omega_arith),
     show (stackArg s 4).toNat = (stackArg s 8).toNat from hp.hdql.symm,
-    bo hp.dKdq hp.dOdq hp.dMdq hp.ddqs (by have := hp.wDq; omega),
+    bo hp.dKdq hp.dOdq hp.dMdq hp.ddqs (by have := hp.wDq; omega_arith),
     show (stackArg s 6).toNat = (stackArg s 10).toNat by rw [hp.hdpl, hp.hqil],
-    bo hp.dKqi hp.dOqi hp.dMqi hp.dqis (by have := hp.wQi; omega)] at hpost
+    bo hp.dKqi hp.dOqi hp.dMqi hp.dqis (by have := hp.wQi; omega_arith)] at hpost
   have hkeep : ∀ {k : Nat}, k < nW → word s'.mem (fb s) (8 * k) = word t.mem (fb s) (8 * k) := fun hk =>
     hf'.readW (Region.contains_self _ _) (frame_apartD hp hk) (by decide)
   have hsp' : s'.gpr .rsp = fb s := (hcs .rsp (by decide)).trans h.he.rsp

@@ -129,7 +129,7 @@ theorem ni1_ok {p : NIPub} {s : State} (h : NIPre p s) :
 
 theorem ni2_ok {p : NIPub} {s : State} (h : NI1 p s) : WP isa loadBE s (NIG p) := by
   obtain ⟨⟨minv, xb, hg, hZ, hk1, hk2, -, -, hx, hxl⟩, h1, h2, h8⟩ := h
-  refine WP.mono (loadArr_ok hg.scr (show aX < 8 by decide) hZ hx hxl (by omega) (by omega) h1 h2 h8)
+  refine WP.mono (loadArr_ok hg.scr (show aX < 8 by decide) hZ hx hxl (by omega_arith) (by omega_arith) h1 h2 h8)
     fun t ⟨_, ha, k⟩ => ⟨minv, ⟨hg.scr.congr k.wr, (k.gpr .x0 (by decide)).trans hg.x0,
       ⟨by rw [ha.hslot (by decide)]; exact hg.hdr.hw, by rw [ha.hslot (by decide)]; exact hg.hdr.hminv,
         fun j hj => by rw [ha.hslot (sArr_lt hj)]; exact hg.hdr.harr j hj⟩⟩, hZ, hk1, hk2⟩
@@ -163,17 +163,17 @@ theorem ni5_ok {p : NIPub} {s : State} (h : NI3 p s) : WP isa (.seq cmpLoop (.bl
   have eW : sW = 6 := rfl
   have eMi : sMinv = 7 := rfl
   have hw : p.w = (p.k + 7) / 8 := rfl
-  refine WP.seq (WP.mono (cmpLoop_ok hs h16 h17 h14 hc (by omega) (by omega) (by omega) (by omega))
+  refine WP.seq (WP.mono (cmpLoop_ok hs h16 h17 h14 hc (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₄ ⟨_, hm₄, k₄⟩ => ?_)
   have h0₄ : s₄.gpr .x0 = p.B := (k₄.gpr .x0 (by decide)).trans hg.x0
   have h7₄ : s₄.gpr .x7 = 0 := (k₄.gpr .x7 (by decide)).trans h7
   have hs₄ := hs.congr k₄.wr
   have hW' : ∀ v : BitVec 64, word (s₄.mem.writeW (off p.B (8 * sMask)) v) p.B (8 * sW) =
       BitVec.ofNat 64 p.w := fun v => by
-    rw [(writeW_outside s₄.mem p.B v (by omega)).word (by rw [eM]; unfold sW; omega) (by omega), hm₄]
+    rw [(writeW_outside s₄.mem p.B v (by omega_arith)).word (by rw [eM]; unfold sW; omega_arith) (by omega_arith), hm₄]
     exact hg.hdr.hw
-  have st := hs₄.st (show 8 * sMask + 8 ≤ p.Z by rw [eM]; omega)
-  have ld := hs₄.ld (show 8 * sW + 8 ≤ p.Z by have := hdr_lt_slot p.w 8 (show sW < 32 by decide); omega)
+  have st := hs₄.st (show 8 * sMask + 8 ≤ p.Z by rw [eM]; omega_arith)
+  have ld := hs₄.ld (show 8 * sW + 8 ≤ p.Z by have := hdr_lt_slot p.w 8 (show sW < 32 by decide); omega_arith)
   have e1 := hdr_enc (show sMask < 32 by decide)
   have e2 := hdr_enc (show sW < 32 by decide)
   have hb : WP isa (.block niTail) s₄ fun t => (∃ v : BitVec 64, t.mem = s₄.mem.writeW (off p.B (8 * sMask)) v) ∧
@@ -183,11 +183,11 @@ theorem ni5_ok {p : NIPub} {s : State} (h : NI3 p s) : WP isa (.seq cmpLoop (.bl
   refine WP.mono (WP.keep [.x4, .x9, .x12, .x13, .x15] hb (by decide) (by decide) (by decide +kernel))
     fun t ⟨⟨⟨v, hm⟩, h12, h13⟩, k⟩ => ⟨⟨minv, ⟨hs₄.congr k.wr, (k.gpr .x0 (by decide)).trans h0₄, ?_⟩, hZ, hk1, hk2⟩,
       h12, h13⟩
-  have hwo : Outside p.B (8 * sMask) 8 s₄.mem t.mem := by rw [hm]; exact writeW_outside _ p.B _ (by omega)
+  have hwo : Outside p.B (8 * sMask) 8 s₄.mem t.mem := by rw [hm]; exact writeW_outside _ p.B _ (by omega_arith)
   have hh : ∀ i < 16, word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi => by
-    rw [hwo.word (by rw [eM]; omega) (by omega), hm₄]
+    rw [hwo.word (by rw [eM]; omega_arith) (by omega_arith), hm₄]
   exact ⟨(hh _ (by decide)).trans hg.hdr.hw, (hh _ (by decide)).trans hg.hdr.hminv,
-    fun j hj => (hh _ (by unfold sArr; omega)).trans (hg.hdr.harr j hj)⟩
+    fun j hj => (hh _ (by unfold sArr; omega_arith)).trans (hg.hdr.harr j hj)⟩
 
 /-- `nInput` leaks the same in runs with the same working space, `k` and
 input pointer. -/

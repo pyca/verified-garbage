@@ -44,7 +44,7 @@ theorem em_bytes {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → Bi
     (h : MsgInv L g vv m₀ L.ml.toNat t) :
     Spec.Rsa.bytesAt t.mem (L.Q + BitVec.ofNat 64 oEM) L.k.toNat =
       Spec.RsaPkcs1Enc.encode (Spec.Rsa.bytesAt m₀ L.msg L.ml.toNat) (Spec.Rsa.bytesAt m₀ L.ps L.pl.toNat) := by
-  rw [← hL.em_len, show L.pl.toNat + L.ml.toNat + 3 = ((2 + L.pl.toNat) + 1) + L.ml.toNat by omega,
+  rw [← hL.em_len, show L.pl.toNat + L.ml.toNat + 3 = ((2 + L.pl.toNat) + 1) + L.ml.toNat by omega_arith,
     bytesAt_add, bytesAt_add, bytesAt_add, Spec.RsaPkcs1Enc.encode]
   have e2 : Spec.Rsa.bytesAt t.mem (L.Q + BitVec.ofNat 64 oEM) 2 = [0x00, 0x02] := by
     simp only [Spec.Rsa.bytesAt, List.range_succ, List.range_zero, List.nil_append, List.map_cons,
@@ -58,7 +58,7 @@ theorem em_bytes {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → Bi
   have eM : Spec.Rsa.bytesAt t.mem (L.Q + BitVec.ofNat 64 oEM + BitVec.ofNat 64 (2 + L.pl.toNat + 1)) L.ml.toNat =
       Spec.Rsa.bytesAt m₀ L.msg L.ml.toNat :=
     bytesAt_eq fun i hi => by
-      rw [add_add, add_add, show oEM + (2 + L.pl.toNat + 1 + i) = oEM + 3 + L.pl.toNat + i by omega]
+      rw [add_add, add_add, show oEM + (2 + L.pl.toNat + 1 + i) = oEM + 3 + L.pl.toNat + i by omega_arith]
       exact h.msg i hi
   rw [e2, eP, eS, eM]
 
@@ -123,7 +123,7 @@ theorem pub_pre' {L : Lay} (hL : L.Ok) {S : Nat} (hP : L.P = S + 1) {g : Reg →
   have hlow : (⟨L.Q - BitVec.ofNat 64 (S + 1), S + 1⟩ : Region) = L.LOW := by
     show _ = (⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩ : Region); rw [hP]
   have hQ40 : (L.Q + BitVec.ofNat 64 oEM).toNat = L.Q.toNat + oEM := by
-    rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by unfold oEM; omega), Nat.mod_eq_of_lt (by unfold oEM; omega)]
+    rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by unfold oEM; omega_arith), Nat.mod_eq_of_lt (by unfold oEM; omega_arith)]
   -- The call's stack arguments are the frame's first two words.
   have a0 : stackArg (t.callEntry.withRegions (pubRd L) (pubWr L)) 0 = L.scr := by
     rw [stackArg_ce, hc.sp]; exact hc.kept.scr
@@ -131,24 +131,24 @@ theorem pub_pre' {L : Lay} (hL : L.Ok) {S : Nat} (hP : L.P = S + 1) {g : Reg →
     rw [stackArg_ce, hc.sp]; exact hc.kept.sl
   have aa : stackArgAddr (t.callEntry.withRegions (pubRd L) (pubWr L)) 0 = L.Q + BitVec.ofNat 64 0 := by
     simp only [stackArgAddr, State.withRegions_sp, State.callEntry_sp, hc.sp]
-  have emS : Region.Sub L.EM L.STK := Lay.Ok.sub_stk (by unfold oEM; omega)
-  have arS : Region.Sub ⟨L.Q + BitVec.ofNat 64 0, 16⟩ L.STK := Lay.Ok.sub_stk (by omega)
+  have emS : Region.Sub L.EM L.STK := Lay.Ok.sub_stk (by unfold oEM; omega_arith)
+  have arS : Region.Sub ⟨L.Q + BitVec.ofNat 64 0, 16⟩ L.STK := Lay.Ok.sub_stk (by omega_arith)
   simp only [pubK, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, State.callEntry_sp,
     hc.sp, gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x1 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x5 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x7 ∉ linkRegs),
     h.x0, h.x1, h.x2, h.x3, h.x4, h.x5, h.x6, h.x7, a0, a1, aa, hlow, olk]
-  refine ⟨by omega, by omega, trivial, by rw [pubWr, olk], hL.oN, hL.oE, hL.kO.symm.sub_right emS, hL.oS,
+  refine ⟨by omega_arith, by omega_arith, trivial, by rw [pubWr, olk], hL.oN, hL.oE, hL.kO.symm.sub_right emS, hL.oS,
     hL.kO.symm.sub_right arS, hL.nS, hL.eS, hL.kS.sub_left emS,
-    (hL.kS.sub_left arS).symm, ?_, ?_, ?_, ?_, ?_, ?_, hL.bO, hL.bN, hL.bE, by rw [hQ40]; unfold oEM; omega,
+    (hL.kS.sub_left arS).symm, ?_, ?_, ?_, ?_, ?_, ?_, hL.bO, hL.bN, hL.bE, by rw [hQ40]; unfold oEM; omega_arith,
     hL.bS, hL.kv, trivial, trivial, hL.el1, hL.elk, hL.slk⟩
   · exact hL.kO.sub_left (Lay.Ok.low_stk (L := L))
   · exact hL.kN.sub_left (Lay.Ok.low_stk (L := L))
   · exact hL.kE.sub_left (Lay.Ok.low_stk (L := L))
-  · exact (hL.fr_low (by unfold oEM; omega)).symm
+  · exact (hL.fr_low (by unfold oEM; omega_arith)).symm
   · exact hL.kS.sub_left (Lay.Ok.low_stk (L := L))
-  · exact (hL.fr_low (by omega)).symm
+  · exact (hL.fr_low (by omega_arith)).symm
 
 theorem covers_pub {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
     (hc : Ctx L g vv m₀ t) :
@@ -162,7 +162,7 @@ theorem covers_pub {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → 
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     · exact ⟨L.N, by simp, 0, z _, by simp⟩
     · exact ⟨L.E, by simp, 0, z _, by simp⟩
-    · exact ⟨L.FR, by simp, oEM, rfl, by show oEM + L.k.toNat ≤ frameBytes; unfold oEM frameBytes; omega⟩
+    · exact ⟨L.FR, by simp, oEM, rfl, by show oEM + L.k.toNat ≤ frameBytes; unfold oEM frameBytes; omega_arith⟩
     · exact ⟨L.FR, by simp, 0, rfl, by show 0 + 16 ≤ frameBytes; decide⟩
     · exact ⟨L.OUT, by simp, 0, z _, by simp [olk]⟩
     · exact ⟨L.SCR, by simp, 0, z _, by simp⟩
@@ -194,12 +194,12 @@ theorem pub_call (v : PubImpl) {L : Lay} (hL : L.Ok) (hP : L.P = v.S + 1) {g : R
   rw [hP] at hpQ
   obtain ⟨hcov, hcovw⟩ := covers_pub hL hc
   refine WP.callFV v.correct (pub_pre' hL hP h) hcov hcovw
-    (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega)
+    (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega_arith)
   -- What the call may change: `out`, `scratch` and the stack below the frame.
   have hlow : Region.Sub (below t.sp (16 * v.code.aarch64Depth)) L.LOW := by
     rw [hc.sp]
     show Region.Sub _ ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
-    rw [hP]; exact Offset.sub_below _ hdp (by omega)
+    rw [hP]; exact Offset.sub_below _ hdp (by omega_arith)
   have hws : ∀ r ∈ pubWr L ++ [below t.sp (16 * v.code.aarch64Depth)],
       (Region.Sub r L.OUT ∨ Region.Sub r L.SCR) ∨ Region.Sub r L.LOW := fun r hr => by
     simp only [pubWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -211,7 +211,7 @@ theorem pub_call (v : PubImpl) {L : Lay} (hL : L.Ok) (hP : L.P = v.S + 1) {g : R
       Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ R := fun d hd R hR => by
     rcases hws R hR with hs | hs
     · exact hL.kept_buf hd hs
-    · exact (hL.fr_low (by unfold keptOff at hd; omega)).sub_right hs
+    · exact (hL.fr_low (by unfold keptOff at hd; omega_arith)).sub_right hs
   have hzr : ∀ R ∈ pubWr L ++ [below t.sp (16 * v.code.aarch64Depth)],
       Region.Disjoint ⟨L.Q + BitVec.ofNat 64 oZ, 8⟩ R := fun R hR => by
     rcases hws R hR with hs | hs

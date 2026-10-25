@@ -32,18 +32,18 @@ theorem random_rangeByte_ok {s : State} {p q : Addr} {a b : Byte} {n c : Nat}
       t.zf = some (decide (n = 1)) ∧ t.mem = s.mem ∧
       Keep [.rax, .rcx, .rdx, .r8, .r9, .r10, .r11] s t := by
   have hac : (a.setWidth 64).toNat = a.toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := a.isLt; omega)]
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := a.isLt; omega_arith)]
   have hbc : (b.setWidth 64).toNat = b.toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
-  have hcc : (BitVec.ofNat 64 c).toNat = c := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_arith)]
+  have hcc : (BitVec.ofNat 64 c).toNat = c := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have hadd : (b.setWidth 64 + BitVec.ofNat 64 c).toNat = b.toNat + c := by
-    rw [BitVec.toNat_add, hbc, hcc, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+    rw [BitVec.toNat_add, hbc, hcc, Nat.mod_eq_of_lt (by have := b.isLt; omega_arith)]
   have hborrow := random_byte_borrow (a.setWidth 64) (b.setWidth 64 + BitVec.ofNat 64 c)
-    (by rw [hac]; have := a.isLt; omega) (by rw [hadd]; have := b.isLt; omega)
+    (by rw [hac]; have := a.isLt; omega_arith) (by rw [hadd]; have := b.isLt; omega_arith)
   rw [hac, hadd] at hborrow
   have he : (BitVec.ofNat 64 (n - 1) == 0) = decide (n = 1) := by
-    rw [ofNat64_beq_zero (by omega)]
-    exact decide_eq_decide.mpr (by omega)
+    rw [ofNat64_beq_zero (by omega_arith)]
+    exact decide_eq_decide.mpr (by omega_arith)
   refine WP.mono (WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r10, .r11] (Q := fun t =>
       t.gpr .rdx = p ∧ t.gpr .r10 = q ∧ t.gpr .r11 = BitVec.ofNat 64 (n - 1) ∧
       (t.gpr .r8).toNat = (if a.toNat < b.toNat + c then 1 else 0) ∧
@@ -84,9 +84,9 @@ theorem random_rangeLoop_ok {s : State} {p q : Addr} {as bs : List Byte}
       (fun _ h => h) ?_) fun t ht => ?_
   · intro j _ hj t ht
     let i := as.length - (j + 1)
-    have hi : i < as.length := by dsimp only [i]; omega
-    have hib : i < bs.length := by omega
-    have hij : i + 1 = as.length - j := by dsimp only [i]; omega
+    have hi : i < as.length := by dsimp only [i]; omega_arith
+    have hib : i < bs.length := by omega_arith
+    have hij : i + 1 = as.length - j := by dsimp only [i]; omega_arith
     have hpa : t.gpr .rdx = (p + BitVec.ofNat 64 i) + 1 := by
       rw [ht.ptrA, BitVec.add_assoc, ofNat_add_one, hij]
     have hpb : t.gpr .r10 = (q + BitVec.ofNat 64 i) + 1 := by
@@ -95,7 +95,7 @@ theorem random_rangeLoop_ok {s : State} {p q : Addr} {as bs : List Byte}
         (VG.Proof.Dsa.randomBorrow (as.drop (as.length - j)) (bs.drop (as.length - j))) := by
       rw [← ht.borrow, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     refine WP.mono (random_rangeByte_ok (a := as[i]) (b := bs[i]) hpa hpb ht.count ht8 (VG.Proof.Dsa.randomBorrow_le _ _)
-      (by omega) (by omega)
+      (by omega_arith) (by omega_arith)
       (by rw [ht.keep.2.1, ht.keep.2.2]; exact hra i hi)
       (by rw [ht.keep.2.1, ht.keep.2.2]; exact hrb i hi)
       (by rw [ht.mem]; exact hva i hi) (by rw [ht.mem]; exact hvb i hib))
@@ -103,8 +103,8 @@ theorem random_rangeLoop_ok {s : State} {p q : Addr} {as bs : List Byte}
     refine ⟨?_, (ht.keep.trans hku).mono (by decide), hup, huq, ?_, ?_, ?_, hum.trans ht.mem⟩
     · rw [huz]
       congr 1
-      exact decide_eq_decide.mpr (by omega)
-    · rw [hun, show as.length - j - 1 = as.length - (j + 1) by omega]
+      exact decide_eq_decide.mpr (by omega_arith)
+    · rw [hun, show as.length - j - 1 = as.length - (j + 1) by omega_arith]
     · change (u.gpr .r8).toNat = VG.Proof.Dsa.randomBorrow (as.drop i) (bs.drop i)
       rw [List.drop_eq_getElem_cons hi, List.drop_eq_getElem_cons hib, VG.Proof.Dsa.randomBorrow, hij]
       exact hub
@@ -130,10 +130,10 @@ theorem random_rangeFinish_ok {s : State} {a b : Nat}
     fun _ ⟨h, hk⟩ => ⟨h.1, h.2, hk⟩
   unfold Random.rangeFinish
   by_cases hz : a = 0
-  · have he : ¬ 0 < a := by omega
+  · have he : ¬ 0 < a := by omega_arith
     by_cases hl : a < b <;> xrun [execCmov, eval, show BitVec.signExtend 64 (0 : BitVec 32) = 0 from rfl,
       BitVec.and_self, h8, h9, hz, he, hl] <;> simp
-  · have he : 0 < a := by omega
+  · have he : 0 < a := by omega_arith
     by_cases hl : a < b <;> xrun [execCmov, eval, show BitVec.signExtend 64 (0 : BitVec 32) = 0 from rfl,
       BitVec.and_self, h8, h9, hz, he, hl] <;> simp
 

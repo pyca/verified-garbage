@@ -85,7 +85,7 @@ open VG.Spec.ChaCha20 (keyAt restAt keystreamOf bytesAt leftAt wordLE)
 /-- The number of bytes left for the initial block counter `c`. -/
 abbrev V (c : BitVec 32) : Nat := 64 * (2 ^ 32 - c.toNat)
 
-theorem V_lt (c : BitVec 32) : V c < 2 ^ 39 := by have := c.isLt; simp only [V]; omega
+theorem V_lt (c : BitVec 32) : V c < 2 ^ 39 := by have := c.isLt; simp only [V]; omega_arith
 
 /-- `x` in `edx:ecx`. -/
 abbrev Pair (s : State) (x : Nat) : Prop := (s.gpr .ecx).toNat + 2 ^ 32 * (s.gpr .edx).toNat = x
@@ -120,8 +120,8 @@ theorem dbl_ok {s : State} {x : Nat} (h : Pair s x) (hx : 2 * x < 2 ^ 64) :
   generalize s.gpr .edx = b at *
   rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofBool]
   by_cases hc : 2 ^ 32 ≤ a.toNat + a.toNat
-  · simp only [hc, decide_true, Bool.toNat_true]; omega
-  · simp only [hc, decide_false, Bool.toNat_false]; omega
+  · simp only [hc, decide_true, Bool.toNat_true]; omega_arith
+  · simp only [hc, decide_false, Bool.toNat_false]; omega_arith
 
 def nonceLoad1 : List Instr :=
   [.movdquLoad .xmm0 (at_ .edx 0), .mov .ecx (.imm 0), .alu .sub .ecx (.mem (at_ .edx 0)),
@@ -144,8 +144,8 @@ theorem nonceLoad1_ok {s : State} {np : Addr} (hen : (s.gpr .edx + BitVec.ofNat 
   generalize s.mem.readW np 32 = c at *
   rw [BitVec.toNat_sub, BitVec.toNat_sub, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofBool]
   by_cases h0 : (0 : BitVec 32).toNat < c.toNat
-  · simp only [h0, decide_true, Bool.toNat_true]; simp at h0 ⊢; omega
-  · simp only [h0, decide_false, Bool.toNat_false]; simp at h0 ⊢; omega
+  · simp only [h0, decide_true, Bool.toNat_true]; simp at h0 ⊢; omega_arith
+  · simp only [h0, decide_false, Bool.toNat_false]; simp at h0 ⊢; omega_arith
 
 theorem nonceLoads_eq : nonceLoads = nonceLoad1 ++ (dbl ++ (dbl ++ (dbl ++ (dbl ++ (dbl ++ dbl))))) := rfl
 
@@ -159,7 +159,7 @@ theorem pair_eq {s : State} {v : Nat} (h : Pair s v) (hv : v < 2 ^ 64) :
   have ha := (s.gpr .ecx).isLt
   have hb := (s.gpr .edx).isLt
   simp only [Pair] at h
-  constructor <;> apply BitVec.eq_of_toNat_eq <;> rw [BitVec.toNat_ofNat] <;> omega
+  constructor <;> apply BitVec.eq_of_toNat_eq <;> rw [BitVec.toNat_ofNat] <;> omega_arith
 
 /-- What the loads of `set_nonce` leave: the nonce in `xmm0`, and the number
 of bytes left in `edx:ecx`. -/
@@ -179,15 +179,15 @@ theorem nonceLoads_ok {s : State} {np : Addr} (hen : (s.gpr .edx + BitVec.ofNat 
   have hc := (s.mem.readW np 32).isLt
   rw [nonceLoads_eq]
   refine WP.block_append_iff.mpr (WP.mono (nonceLoad1_ok hen h16 h4) fun s₁ ⟨p₁, x₁, xs₁, g₁, m₁, r₁, w₁⟩ => ?_)
-  refine dbl_then p₁ (by omega) fun s₂ p₂ k₂ => dbl_then p₂ (by omega) fun s₃ p₃ k₃ =>
-    dbl_then p₃ (by omega) fun s₄ p₄ k₄ => dbl_then p₄ (by omega) fun s₅ p₅ k₅ =>
-    dbl_then p₅ (by omega) fun s₆ p₆ k₆ => ?_
-  refine WP.mono (dbl_ok p₆ (by omega)) fun s₇ ⟨p₇, k₇⟩ => ?_
+  refine dbl_then p₁ (by omega_arith) fun s₂ p₂ k₂ => dbl_then p₂ (by omega_arith) fun s₃ p₃ k₃ =>
+    dbl_then p₃ (by omega_arith) fun s₄ p₄ k₄ => dbl_then p₄ (by omega_arith) fun s₅ p₅ k₅ =>
+    dbl_then p₅ (by omega_arith) fun s₆ p₆ k₆ => ?_
+  refine WP.mono (dbl_ok p₆ (by omega_arith)) fun s₇ ⟨p₇, k₇⟩ => ?_
   have k := ((((k₂.trans k₃).trans k₄).trans k₅).trans k₆).trans k₇
   have e : 2 * (2 * (2 * (2 * (2 * (2 * (2 ^ 32 - (s.mem.readW np 32).toNat)))))) = V (s.mem.readW np 32) := by
-    simp only [V]; omega
+    simp only [V]; omega_arith
   rw [e] at p₇
-  have ⟨hecx, hedx⟩ := pair_eq p₇ (by have := V_lt (s.mem.readW np 32); omega)
+  have ⟨hecx, hedx⟩ := pair_eq p₇ (by have := V_lt (s.mem.readW np 32); omega_arith)
   exact ⟨by rw [k.xmm, x₁], hecx, hedx, fun x hx => by rw [k.xmm, xs₁ x hx],
     fun r a b => by rw [k.gpr r a b, g₁ r a b], by rw [k.mem, m₁], by rw [k.rd, r₁], by rw [k.wr, w₁]⟩
 
@@ -214,7 +214,7 @@ structure SPre (s : State) (ST : BitVec 32) : Prop where
 
 theorem SPre.ea {s : State} {ST : BitVec 32} (h : SPre s ST) {d : Nat} (hd : d < 768) :
     (ST + BitVec.ofNat 32 d).setWidth 64 = ST.setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by have := h.fit; omega)
+  addr_eq (by have := h.fit; omega_arith)
 
 set_option simprocs false in
 theorem nonceStores_ok {s : State} {ST : BitVec 32} (hp : SPre s ST) :
@@ -243,7 +243,7 @@ offsets from `p`. -/
 theorem readW_ofNat32 (m : Mem) (p : Addr) {w : Nat} (v : BitVec 32) {d e : Nat}
     (h : d + w / 8 ≤ e ∨ e + 4 ≤ d) (hd : d < 2 ^ 32) (he : e < 2 ^ 32) (hw : w ≤ 64) :
     (m.writeW (p + BitVec.ofNat 64 e) v).readW (p + BitVec.ofNat 64 d) w = m.readW (p + BitVec.ofNat 64 d) w :=
-  readW_writeW_ofNat m p v h (by omega) (by omega) (by omega)
+  readW_writeW_ofNat m p v h (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem k_bytes : ∀ j < 16, ([k0, k1, k2, k3].getD (j / 4) 0).extractLsb' (8 * (j % 4)) 8 = sigma.getD j 0 := by
   decide
@@ -253,7 +253,7 @@ set_option simprocs false in
 theorem nonceMem_k (m : Mem) (st : Addr) (n : BitVec 128) (lo hi : BitVec 32) {k : Nat} (hk : k < 4) :
     (nonceMem m st n lo hi).readW (st + BitVec.ofNat 64 (4 * k)) 32 = [k0, k1, k2, k3].getD k 0 := by
   simp only [nonceMem]
-  obtain rfl | rfl | rfl | rfl : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega
+  obtain rfl | rfl | rfl | rfl : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega_arith
   all_goals simp (config := {decide := true}) only [Mem.readW_writeW_self32, readW_ofNat32,
     List.getD_cons_zero, List.getD_cons_succ]
 
@@ -268,33 +268,33 @@ theorem nonceMem_post (m : Mem) (st : Addr) {N : List Byte} {n : BitVec 128}
   have hv := V_lt (wordLE N 0)
   refine stream_of_parts (by simp [keyAt, length_bytesAt]) (fun i hi => ?_) (fun i hi => ?_) (fun i hi => ?_) ?_
   · rw [byte_of_words32 (a := 0) (b := 4) (W := fun k => [k0, k1, k2, k3].getD k 0)
-      (fun k _ hk => nonceMem_k m st n _ _ hk) (Nat.zero_le _) (by omega)]
+      (fun k _ hk => nonceMem_k m st n _ _ hk) (Nat.zero_le _) (by omega_arith)]
     exact k_bytes i hi
   · simp only [nonceMem]
-    rw [byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega), byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega),
-      byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega), byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega),
-      byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega), byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega),
-      byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega), keyAt,
+    rw [byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), keyAt,
       show (st + 16 : Addr) = st + BitVec.ofNat 64 16 from rfl, bytesAt_getD _ _ hi, Offset.add_add]
   · simp only [nonceMem]
-    rw [byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega), byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega),
-      byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega), byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega),
-      byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega), byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega),
-      ← Offset.add_add st 48 i, byte_writeW_self _ _ _ (by omega) (by omega), hN i hi]
+    rw [byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      ← Offset.add_add st 48 i, byte_writeW_self _ _ _ (by omega_arith) (by omega_arith), hN i hi]
   · simp only [leftAt, nonceMem]
     rw [show (st + 128 : Addr) = st + BitVec.ofNat 64 128 from rfl,
-      readW_ofNat32 _ _ _ (by omega) (by omega) (by omega) (by omega),
-      readW_ofNat32 _ _ _ (by omega) (by omega) (by omega) (by omega),
-      readW_ofNat32 _ _ _ (by omega) (by omega) (by omega) (by omega),
-      readW_ofNat32 _ _ _ (by omega) (by omega) (by omega) (by omega),
+      readW_ofNat32 _ _ _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+      readW_ofNat32 _ _ _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+      readW_ofNat32 _ _ _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+      readW_ofNat32 _ _ _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
       show (132 : Nat) = 128 + 4 from rfl, readW64_halves _ _ _ (by decide), BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- The stores of `set_nonce` write only the state. -/
 theorem nonceMem_frame (m : Mem) (st : Addr) (n : BitVec 128) (lo hi : BitVec 32) :
     Frame [⟨st, 768⟩] m (nonceMem m st n lo hi) := by
   have c : ∀ d w, d + w / 8 ≤ 768 → (⟨st, 768⟩ : Region).Contains (st + BitVec.ofNat 64 d) (w / 8) :=
-    fun d w hd => contains_off hd (by omega)
+    fun d w hd => contains_off hd (by omega_arith)
   simp only [nonceMem]
   exact ((((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 48 128 (by decide))).writeW
     (List.mem_singleton_self _) _ (c 128 32 (by decide))).writeW (List.mem_singleton_self _) _
@@ -308,10 +308,10 @@ theorem nonceMem_frame (m : Mem) (st : Addr) (n : BitVec 128) (lo hi : BitVec 32
 theorem arg_in (s : State) {n : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4 * n ≤ 2 ^ 32) {i : Nat} (hi : i < n) :
     (⟨argAddr s 0, 4 * n⟩ : Region).Contains (argAddr s i) 4 := by
   have e : ∀ d, d < 4 + 4 * n → addr (s.gpr .esp) d = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 d :=
-    fun d hd => addr_eq (by omega)
-  rw [show argAddr s i = addr (s.gpr .esp) (4 + 4 * i) from rfl, e _ (by omega),
-    show argAddr s 0 = addr (s.gpr .esp) 4 from rfl, e _ (by omega)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+    fun d hd => addr_eq (by omega_arith)
+  rw [show argAddr s i = addr (s.gpr .esp) (4 + 4 * i) from rfl, e _ (by omega_arith),
+    show argAddr s 0 = addr (s.gpr .esp) 4 from rfl, e _ (by omega_arith)]
+  exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 /-! ## `set_nonce` -/
 
@@ -347,9 +347,9 @@ theorem setNonceArgs_ok {s : State} (hp : NPre s) :
       s'.gpr .eax = ST s ∧ s'.gpr .edx = arg s 1 ∧ (∀ r, r ≠ .eax → r ≠ .edx → s'.gpr r = s.gpr r) ∧
       s'.xmm = s.xmm ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have i₀ : InRegions (s.rd ++ s.wr) ((s.gpr .esp + BitVec.ofNat 32 4).setWidth 64) 4 :=
-    ⟨_, by rw [hp.rd]; simp, arg_in s (n := 2) (by have := hp.sp_hi; omega) (i := 0) (by decide)⟩
+    ⟨_, by rw [hp.rd]; simp, arg_in s (n := 2) (by have := hp.sp_hi; omega_arith) (i := 0) (by decide)⟩
   have i₁ : InRegions (s.rd ++ s.wr) ((s.gpr .esp + BitVec.ofNat 32 8).setWidth 64) 4 :=
-    ⟨_, by rw [hp.rd]; simp, arg_in s (n := 2) (by have := hp.sp_hi; omega) (i := 1) (by decide)⟩
+    ⟨_, by rw [hp.rd]; simp, arg_in s (n := 2) (by have := hp.sp_hi; omega_arith) (i := 1) (by decide)⟩
   have v₀ : s.mem.readW ((s.gpr .esp + BitVec.ofNat 32 4).setWidth 64) 32 = arg s 0 := rfl
   have v₁ : s.mem.readW ((s.gpr .esp + BitVec.ofNat 32 8).setWidth 64) 32 = arg s 1 := rfl
   apply WP.of_runBlock
@@ -365,13 +365,13 @@ theorem setNonce_exec {s : State} (hp : NPre s) :
     WP isa setNonce s fun s' => s'.mem = setNonceMem s.mem (st s) ((arg s 1).setWidth 64) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r) := by
   have hn : ∀ n, n ≤ 16 → InRegions (s.rd ++ s.wr) ((arg s 1).setWidth 64) n := fun n hn =>
-    ⟨⟨(arg s 1).setWidth 64, 16⟩, by rw [hp.rd]; simp, by simp [Region.Contains]; omega⟩
+    ⟨⟨(arg s 1).setWidth 64, 16⟩, by rw [hp.rd]; simp, by simp [Region.Contains]; omega_arith⟩
   rw [setNonce_eq, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (setNonceArgs_ok hp) fun s₁ ⟨a₁, d₁, g₁, x₁, m₁, r₁, w₁⟩ => ?_
   refine WP.mono (nonceLoads_ok (np := (arg s 1).setWidth 64) (by rw [d₁]; simp)
     (by rw [r₁, w₁]; exact hn 16 (by decide)) (by rw [r₁, w₁]; exact hn 4 (by decide))) fun s₂ h₂ => ?_
   have hS : SPre s₂ (ST s) := ⟨by rw [h₂.gpr _ (by decide) (by decide), a₁], hp.st_fit, fun d n hd => by
-    rw [h₂.wr, w₁, hp.wr]; exact ⟨_, List.mem_singleton_self _, contains_off hd (by omega)⟩⟩
+    rw [h₂.wr, w₁, hp.wr]; exact ⟨_, List.mem_singleton_self _, contains_off hd (by omega_arith)⟩⟩
   refine WP.mono (nonceStores_ok hS) fun s₃ ⟨m₃, g₃, _, _, _⟩ => ⟨?_, fun r a c d => ?_⟩
   · rw [m₃, h₂.mem, h₂.xmm0, h₂.ecx, h₂.edx, m₁]
   · rw [g₃ r c, h₂.gpr r c d, g₁ r a d]
@@ -412,7 +412,7 @@ theorem wfN {s : State} (hp : NPre s) : VG.X86.Taint.Wf τN s := by
     fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hs, ?_⟩, fun _ h => (List.not_mem_nil h).elim⟩
   simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r rfl
-  exact VG.X86.Taint.frame_disjoint (n := 8) (by omega) (by simpa using hp.ret_st)
+  exact VG.X86.Taint.frame_disjoint (n := 8) (by omega_arith) (by simpa using hp.ret_st)
     (by simpa [argAddr, addr] using hp.a_st)
 
 theorem agreeN {s₁ s₂ : State} (h₁ : Proof.ChaCha20.setNonceX86.pre s₁)
@@ -430,8 +430,8 @@ theorem agreeN {s₁ s₂ : State} (h₁ : Proof.ChaCha20.setNonceX86.pre s₁)
   · simp only [τN] at hk
     rw [show VG.X86.Taint.depth τN.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 := by omega
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_arith)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_arith))]
+    have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 := by omega_arith
     rcases this with h | h <;> rw [h]
     · exact congrArg _ a0
     · exact congrArg _ a1
@@ -500,7 +500,7 @@ theorem initLoads_ok {s : State} (hp : IPre s) :
       s'.xmm .xmm2 = s.mem.readW ((arg s 1).setWidth 64 + BitVec.ofNat 64 16) 128 ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hf : (s.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_hi; omega
+  have hf : (s.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_hi; omega_arith
   have i₀ : InRegions (s.rd ++ s.wr) ((s.gpr .esp + BitVec.ofNat 32 4).setWidth 64) 4 :=
     ⟨_, by rw [hp.rd]; simp, arg_in s (n := 3) hf (i := 0) (by decide)⟩
   have i₁ : InRegions (s.rd ++ s.wr) ((s.gpr .esp + BitVec.ofNat 32 8).setWidth 64) 4 :=
@@ -512,7 +512,7 @@ theorem initLoads_ok {s : State} (hp : IPre s) :
   have v₂ : s.mem.readW ((s.gpr .esp + BitVec.ofNat 32 12).setWidth 64) 32 = arg s 2 := rfl
   have k₀ : (arg s 1 + BitVec.ofNat 32 0).setWidth 64 = (arg s 1).setWidth 64 := by simp
   have k₁₆ : (arg s 1 + BitVec.ofNat 32 16).setWidth 64 = (arg s 1).setWidth 64 + BitVec.ofNat 64 16 :=
-    addr_eq (by have := hp.k_fit; omega)
+    addr_eq (by have := hp.k_fit; omega_arith)
   have j₀ : InRegions (s.rd ++ s.wr) ((arg s 1).setWidth 64) 16 :=
     ⟨⟨(arg s 1).setWidth 64, 32⟩, by rw [hp.rd]; simp, by
       simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide⟩
@@ -555,11 +555,11 @@ theorem keyMem_key (m : Mem) (st kp : Addr) :
       bytesAt_getD _ _ h₁, bytesAt_getD _ _ h₁, keyMem]
     rw [Offset.add_add]
     by_cases h : i < 16
-    · rw [byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega), ← Offset.add_add st 16 i,
-        byte_writeW_self _ _ _ (by omega) (by omega), readW128_byte _ _ h]
-    · rw [show 16 + i = 32 + (i - 16) by omega, ← Offset.add_add st 32 (i - 16),
-        byte_writeW_self _ _ _ (by omega) (by omega), readW128_byte _ _ (by omega), Offset.add_add,
-        show 16 + (i - 16) = i by omega]
+    · rw [byte_writeW_ofNat _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), ← Offset.add_add st 16 i,
+        byte_writeW_self _ _ _ (by omega_arith) (by omega_arith), readW128_byte _ _ h]
+    · rw [show 16 + i = 32 + (i - 16) by omega_arith, ← Offset.add_add st 32 (i - 16),
+        byte_writeW_self _ _ _ (by omega_arith) (by omega_arith), readW128_byte _ _ (by omega_arith), Offset.add_add,
+        show 16 + (i - 16) = i by omega_arith]
 
 /-- The memory `init` leaves, from `m`, for the state at `st`, the key at
 `kp` and the nonce at `np`. -/
@@ -571,9 +571,9 @@ theorem init_exec {s : State} (hp : IPre s) :
     WP isa init s fun s' => s'.mem = initMem s.mem (st s) ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r) := by
   have hn : ∀ n, n ≤ 16 → InRegions (s.rd ++ s.wr) ((arg s 2).setWidth 64) n := fun n hn =>
-    ⟨⟨(arg s 2).setWidth 64, 16⟩, by rw [hp.rd]; simp, by simp [Region.Contains]; omega⟩
+    ⟨⟨(arg s 2).setWidth 64, 16⟩, by rw [hp.rd]; simp, by simp [Region.Contains]; omega_arith⟩
   have hw : ∀ d n, d + n ≤ 768 → InRegions s.wr ((ST s).setWidth 64 + BitVec.ofNat 64 d) n := fun d n hd => by
-    rw [hp.wr]; exact ⟨_, List.mem_singleton_self _, contains_off hd (by omega)⟩
+    rw [hp.wr]; exact ⟨_, List.mem_singleton_self _, contains_off hd (by omega_arith)⟩
   rw [init_eq, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (initLoads_ok hp) fun s₁ ⟨a₁, d₁, x₁, y₁, g₁, m₁, r₁, w₁⟩ => ?_
   refine WP.mono (nonceLoads_ok (np := (arg s 2).setWidth 64) (by rw [d₁]; simp)
@@ -611,7 +611,7 @@ theorem wfI {s : State} (hp : IPre s) : VG.X86.Taint.Wf τI s := by
     fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hs, ?_⟩, fun _ h => (List.not_mem_nil h).elim⟩
   simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r rfl
-  exact VG.X86.Taint.frame_disjoint (n := 12) (by omega) (by simpa using hp.ret_st)
+  exact VG.X86.Taint.frame_disjoint (n := 12) (by omega_arith) (by simpa using hp.ret_st)
     (by simpa [argAddr, addr] using hp.a_st)
 
 theorem agreeI {s₁ s₂ : State} (h₁ : Proof.ChaCha20.initX86.pre s₁)
@@ -629,8 +629,8 @@ theorem agreeI {s₁ s₂ : State} (h₁ : Proof.ChaCha20.initX86.pre s₁)
   · simp only [τI] at hk
     rw [show VG.X86.Taint.depth τI.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 ∨ (k - 4) / 4 = 2 := by omega
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_arith)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_arith))]
+    have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 ∨ (k - 4) / 4 = 2 := by omega_arith
     rcases this with h | h | h <;> rw [h]
     · exact congrArg _ a0
     · exact congrArg _ a1

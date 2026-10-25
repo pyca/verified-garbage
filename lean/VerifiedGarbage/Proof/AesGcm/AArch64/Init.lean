@@ -116,7 +116,7 @@ theorem initWith_wp (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl)
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Lay.wSub he)
   have dK0 : (⟨Ctx, 240⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
-    Offset.base_disjoint Ctx (by decide) (by omega)
+    Offset.base_disjoint Ctx (by decide) (by omega_arith)
   have e248 : Ctx + BitVec.ofNat 64 248 = Ctx + BitVec.ofNat 64 240 + BitVec.ofNat 64 8 :=
     (add_ofNat_assoc _ 240 8).symm
   have e104 : W + BitVec.ofNat 64 104 = W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 :=
@@ -138,7 +138,7 @@ theorem initWith_wp (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl)
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact dK0.sub_left (Region.sub_prefix hRb)
-        · exact (d_cs.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide))) (by omega),
+        · exact (d_cs.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Lay.wSub (by decide))) (by omega_arith),
       ← hRd, g.out, m₂, bytesAt_frame fsv (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact d_ks.sub_right (Lay.wSub (by decide)))
         (by rcases hL with rfl | rfl | rfl <;> decide)]
@@ -146,7 +146,7 @@ theorem initWith_wp (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl)
   have pW' : Covers [⟨W, 2560⟩] s₄.wr := by rw [wr₄']; exact pW
   have cc : CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) (W + BitVec.ofNat 64 512) R 1 := by
     refine ⟨x0₄, x1₄, x2₄, x3₄, x4₄, x5₄, hR', ?_, by decide, ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega
+    · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_arith
     · simpa using dCW 0 240 (by decide) 96 16 (by decide)
     · simpa using dCW 0 240 (by decide) 512 2048 (by decide)
     · exact (dCW 240 16 (by decide) 96 16 (by decide)).symm
@@ -187,12 +187,12 @@ theorem initWith_wp (v : GcmImpl) (fin : Prog isa) {cl : Nat} (hcl : 256 ≤ cl)
     (((hsv₁.frame (by rw [← m₂]; exact g.frame) dSv).frame f₄ dSv₄).frame c.frame dSv₅)
   have c21 : s₅.gpr .x21 = Ctx := by rw [c.saved .x21 (by decide) (by decide), og₄ _ (by decide), g21]
   refine hfin s₅ c19 c21 (by rw [c.sp, sp₄, g.sp, sp₂, sp₁]) (by rw [c.rd, rd₄']) (by rw [c.wr, wr₄']) hsv₅ ⟨?_, ?_⟩
-  · rw [length_bytesAt, hRd, bytesAt_frame c.frame (fun r hr => ?_) (by omega), hk₄]
+  · rw [length_bytesAt, hRd, bytesAt_frame c.frame (fun r hr => ?_) (by omega_arith), hk₄]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact (d_cs.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide))
+    · exact (d_cs.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Lay.wSub (by decide))
     · exact dK0.sub_left (Region.sub_prefix hRb)
-    · exact (d_cs.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide))
+    · exact (d_cs.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Lay.wSub (by decide))
   · show blockAt s₅.mem (Ctx + BitVec.ofNat 64 240) = _
     rw [gout.1, Spec.Gcm.aes, length_bytesAt, hRd]
     simp

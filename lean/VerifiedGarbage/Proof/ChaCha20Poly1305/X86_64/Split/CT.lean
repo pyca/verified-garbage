@@ -87,7 +87,7 @@ theorem sealMidS_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hT : SPre 
     h₁.inv.rsp h₁.inv.rd h₁.inv.wr h₁.rbx (by rw [h₁.rbp]; exact hRDX s₀))
     fun s₂ ⟨cs₂, rd₂, wr₂, f₂, _⟩ => ?_)
   have i₂ := mac_inv hp h₁.inv cs₂ rd₂ wr₂ f₂
-  refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by simp [calleeSaved]), h₁.rbp]))
+  refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by decide), h₁.rbp]))
     fun s₃ ⟨i₃, _, f₃, _⟩ => ?_)
   refine WP.mono (cmpFold_ok (fold := 960) (by lit_omega) i₃.r13) fun s₄ ⟨g₄, rd₄, wr₄, m₄, c₄⟩ => ?_
   have a₄ : AtIte 960 1024 s₀ s₄ :=
@@ -126,7 +126,7 @@ theorem cryptPre_big {s₀ : State} (hT : SPre s₀) {s : State} (h : AtIteS s�
   have harg : ∀ r ∈ [sub s₀ 64 64], (arg2R s₀).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hT.g_c.sub_right (sub_ctx s₀ (by lit_omega))
-  exact ⟨a₁, by rw [rd₁, h.at_.inv.rd], by rw [cs₁ _ (by simp [calleeSaved]), h.at_.inv.r15],
+  exact ⟨a₁, by rw [rd₁, h.at_.inv.rd], by rw [cs₁ _ (by decide), h.at_.inv.r15],
     by rw [arg_frame (.inl rfl) fw harg, arg_frame (.inl rfl) fx hpre, h.s2],
     by rw [arg_frame (.inr rfl) fw harg, arg_frame (.inr rfl) fx hpre, h.s3]⟩
 
@@ -144,9 +144,9 @@ structure ArgsS (s₀ s : State) : Prop where
 theorem splitArgs_args {s₀ : State} (hT : SPre s₀) {s : State} (h : BigPre s₀ s) :
     WP isa (.block splitArgs) s (ArgsS s₀) :=
   WP.mono (splitArgs_ok hT h.args h.rd h.s2 h.s3) fun _ ⟨sa, cs, rd, wr, _⟩ =>
-    ⟨sa, by rw [cs _ calleeSaved_rsp, h.args.rsp], by rw [cs _ (by simp [calleeSaved]), h.r15],
-      by rw [cs _ (by simp [calleeSaved]), h.args.r14], by rw [cs _ (by simp [calleeSaved]), h.args.r13],
-      by rw [cs _ (by simp [calleeSaved]), h.args.r12], by rw [rd, h.rd], by rw [wr, h.args.wr]⟩
+    ⟨sa, by rw [cs _ calleeSaved_rsp, h.args.rsp], by rw [cs _ (by decide), h.r15],
+      by rw [cs _ (by decide), h.args.r14], by rw [cs _ (by decide), h.args.r13],
+      by rw [cs _ (by decide), h.args.r12], by rw [rd, h.rd], by rw [wr, h.args.wr]⟩
 
 /-- After the inline code: what the last block needs. -/
 structure InlS (s₀ s : State) : Prop where
@@ -160,9 +160,9 @@ structure InlS (s₀ s : State) : Prop where
 theorem inline_inl {s₀ : State} (hT : SPre s₀) {s : State} (h : ArgsS s₀ s) :
     WP isa Impl.ChaCha20.X86_64.Avx512.xorSplit s (InlS s₀) :=
   h.sa.inline hT (mOf_le_len 960 1024 (L s₀)) h.rsp h.rd h.wr fun _ _ wr abi _ _ =>
-    ⟨by rw [abi.1 _ calleeSaved_rsp, h.rsp], by rw [abi.1 _ (by simp [calleeSaved]), h.r15],
-      by rw [abi.1 _ (by simp [calleeSaved]), h.r14], by rw [abi.1 _ (by simp [calleeSaved]), h.r13],
-      by rw [abi.1 _ (by simp [calleeSaved]), h.r12], by rw [wr, h.wr]⟩
+    ⟨by rw [abi.1 _ calleeSaved_rsp, h.rsp], by rw [abi.1 _ (by decide), h.r15],
+      by rw [abi.1 _ (by decide), h.r14], by rw [abi.1 _ (by decide), h.r13],
+      by rw [abi.1 _ (by decide), h.r12], by rw [wr, h.wr]⟩
 
 theorem ptr_after {s₀ : State} {s : State} (h : InlS s₀ s) :
     WP isa (.block (ptr .rsi .r15 128)) s (After s₀) :=

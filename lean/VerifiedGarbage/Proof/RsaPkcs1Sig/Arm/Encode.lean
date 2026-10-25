@@ -72,11 +72,11 @@ theorem Bytes.store {m : Mem} {a : Addr} {xs : List Byte} {n : Nat} (h : Bytes m
   rw [WriteBytes.writeW8_apply]
   by_cases e : i = n
   · subst e; simp
-  · simp only [Offset.add_ofNat_ne a (by omega) hn e, ↓reduceIte]
-    exact h i (by omega)
+  · simp only [Offset.add_ofNat_ne a (by omega_arith) hn e, ↓reduceIte]
+    exact h i (by omega_arith)
 
 theorem Bytes.mono {m : Mem} {a : Addr} {xs : List Byte} {n n' : Nat} (h : Bytes m a xs n) (hn : n' ≤ n) :
-    Bytes m a xs n' := fun i hi => h i (by omega)
+    Bytes m a xs n' := fun i hi => h i (by omega_arith)
 
 /-- The encoding, once its checks pass. -/
 def encList (h : Hash) (D : List Byte) (k : Nat) : List Byte :=
@@ -85,44 +85,44 @@ def encList (h : Hash) (D : List Byte) (k : Nat) : List Byte :=
 theorem encList_length {h : Hash} {D : List Byte} {k : Nat} (hD : D.length = h.len) (hk : tLen h + 11 ≤ k) :
     (encList h D k).length = k := by
   simp only [encList, tLen, List.length_append, List.length_cons, List.length_nil, List.length_replicate, hD] at *
-  omega
+  omega_arith
 
 theorem encList_ps {h : Hash} {D : List Byte} {k i : Nat} (hi : i < k - tLen h - 3) :
     (encList h D k).getD (2 + i) 0 = 0xff := by
   simp only [encList, List.append_assoc]
-  rw [getD_append_right _ _ _ (by simp), getD_append_left _ _ _ (by simp; omega)]
+  rw [getD_append_right _ _ _ (by simp), getD_append_left _ _ _ (by simp; omega_arith)]
   simp [List.getD_eq_getElem?_getD, show i < k - tLen h - 3 from hi]
 
 theorem encList_mid {h : Hash} {D : List Byte} {k i : Nat} (hi : i < h.prefix.length + 1) :
     (encList h D k).getD (2 + (k - tLen h - 3) + i) 0 = (0 :: h.prefix).getD i 0 := by
   simp only [encList, List.append_assoc]
-  rw [getD_append_right _ _ _ (by simp only [List.length_cons, List.length_nil]; omega),
-    getD_append_right _ _ _ (by simp only [List.length_cons, List.length_nil, List.length_replicate]; omega)]
+  rw [getD_append_right _ _ _ (by simp only [List.length_cons, List.length_nil]; omega_arith),
+    getD_append_right _ _ _ (by simp only [List.length_cons, List.length_nil, List.length_replicate]; omega_arith)]
   simp only [List.length_cons, List.length_nil, List.length_replicate]
-  rw [show 2 + (k - tLen h - 3) + i - (0 + 1 + 1) - (k - tLen h - 3) = i by omega]
+  rw [show 2 + (k - tLen h - 3) + i - (0 + 1 + 1) - (k - tLen h - 3) = i by omega_arith]
   rcases i with _ | i
   · rfl
   · simp only [List.cons_append, List.getD_cons_succ, List.nil_append]
-    rw [getD_append_left _ _ _ (by omega)]
+    rw [getD_append_left _ _ _ (by omega_arith)]
 
 theorem encList_D {h : Hash} {D : List Byte} {k i : Nat} :
     (encList h D k).getD (2 + (k - tLen h - 3) + (h.prefix.length + 1) + i) 0 = D.getD i 0 := by
   simp only [encList, List.append_assoc]
-  rw [getD_append_right _ _ _ (by simp only [List.length_cons, List.length_nil]; omega),
-    getD_append_right _ _ _ (by simp only [List.length_cons, List.length_nil, List.length_replicate]; omega)]
+  rw [getD_append_right _ _ _ (by simp only [List.length_cons, List.length_nil]; omega_arith),
+    getD_append_right _ _ _ (by simp only [List.length_cons, List.length_nil, List.length_replicate]; omega_arith)]
   simp only [List.length_cons, List.length_nil, List.length_replicate]
   rw [show 2 + (k - tLen h - 3) + (h.prefix.length + 1) + i - (0 + 1 + 1) - (k - tLen h - 3) =
-    (h.prefix.length + i) + 1 by omega]
+    (h.prefix.length + i) + 1 by omega_arith]
   simp only [List.cons_append, List.getD_cons_succ, List.nil_append]
-  rw [getD_append_right _ _ _ (by omega)]
-  congr 1; omega
+  rw [getD_append_right _ _ _ (by omega_arith)]
+  congr 1; omega_arith
 
 theorem encode_eq {h : Hash} {D : List Byte} {k : Nat} :
     Spec.RsaPkcs1Sig.encode h D k =
       if D.length = h.len ∧ tLen h + 11 ≤ k then some (encList h D k) else none := by
   unfold Spec.RsaPkcs1Sig.encode encList
   simp only [digestInfo, List.length_append, tLen]
-  by_cases h1 : D.length = h.len <;> by_cases h2 : h.prefix.length + h.len + 11 ≤ k <;> simp [h1, h2] <;> omega
+  by_cases h1 : D.length = h.len <;> by_cases h2 : h.prefix.length + h.len + 11 ≤ k <;> simp [h1, h2] <;> omega_arith
 
 /-! ## Writing the encoding -/
 
@@ -156,23 +156,23 @@ theorem Wr.strb (h : Wr s0 dst src k L n t) (hin : EncIn s0 dst src id k dl) (hn
     WP isa (.block (.strb .r2 .r0 off :: is)) t Q := by
   have hk := hin.k1024
   have ha : State.addr (dst + BitVec.ofNat 32 n) = State.addr dst + BitVec.ofNat 64 n :=
-    addr_add (by have := hin.dstFit; omega)
+    addr_add (by have := hin.dstFit; omega_arith)
   refine wp_strb hoff (a := State.addr dst + BitVec.ofNat 64 n) (by rw [hr0, ha]) ?_ fun t' u => kk t' ?_ u.gpr
   · rw [h.rest.wr]
     obtain ⟨r, hr, hc⟩ := hin.write
-    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)⟩
+    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith)⟩
   · refine ⟨?_, ⟨fun r hr => by rw [u.gpr]; exact h.rest.gpr r hr, u.rd.trans h.rest.rd, u.wr.trans h.rest.wr,
       u.sp.trans h.rest.sp⟩, by rw [u.gpr]; exact h.r1, ?_⟩
     · rw [u.mem]
-      exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
     · rw [u.mem, hb]
-      exact h.bytes.store (by omega)
+      exact h.bytes.store (by omega_arith)
 
 theorem setWidth_byte (b : Byte) : (b.setWidth 32).setWidth 8 = b := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := b.isLt
-  omega
+  omega_arith
 
 /-- The bytes `bs` at `r0 + o`, … -/
 theorem putBytes_ok (hin : EncIn s0 dst src id k dl) {b0 : Nat} :
@@ -188,15 +188,15 @@ theorem putBytes_ok (hin : EncIn s0 dst src id k dl) {b0 : Nat} :
     exact kk t (by simpa using h) fun _ _ => rfl
   | b :: bs, o, n, t, h, r0, hn, hk, hL, ho, _, _, kk => by
     simp only [putBytes, List.cons_append]
-    refine wp_mov (op2_imm (encodable_of_lt (by rw [BitVec.toNat_setWidth]; have := b.isLt; omega)))
+    refine wp_mov (op2_imm (encodable_of_lt (by rw [BitVec.toNat_setWidth]; have := b.isLt; omega_arith)))
       fun t1 u1 => ?_
     have h1 := h.upd u1 (by simp)
-    refine h1.strb hin (by simp at hk; omega) (by rw [u1.gpr, setWidth_byte]; exact (hL 0 (by simp)).symm)
-      (by simp at ho; omega) (by rw [u1.other _ (by decide), r0, BitVec.add_assoc, BitVec.ofNat_add_ofNat, hn])
+    refine h1.strb hin (by simp at hk; omega_arith) (by rw [u1.gpr, setWidth_byte]; exact (hL 0 (by simp)).symm)
+      (by simp at ho; omega_arith) (by rw [u1.other _ (by decide), r0, BitVec.add_assoc, BitVec.ofNat_add_ofNat, hn])
       fun t2 h2 g2 => ?_
-    refine putBytes_ok hin bs (o + 1) h2 (by rw [g2, u1.other _ (by decide), r0]) (by omega)
-      (by simp at hk; omega) (fun i hi => by rw [show n + 1 + i = n + (i + 1) by omega, hL (i + 1) (by simp; omega)]; rfl)
-      (by simp at ho; omega) fun t3 h3 g3 => kk t3 (by simpa [Nat.add_assoc, Nat.add_comm 1] using h3)
+    refine putBytes_ok hin bs (o + 1) h2 (by rw [g2, u1.other _ (by decide), r0]) (by omega_arith)
+      (by simp at hk; omega_arith) (fun i hi => by rw [show n + 1 + i = n + (i + 1) by omega_arith, hL (i + 1) (by simp; omega_arith)]; rfl)
+      (by simp at ho; omega_arith) fun t3 h3 g3 => kk t3 (by simpa [Nat.add_assoc, Nat.add_comm 1] using h3)
         fun r hr => by rw [g3 r hr, g2, u1.other r hr]
 
 theorem Wr.start (hin : EncIn s0 dst src id k dl) : Wr s0 dst src k L 0 s0 :=
@@ -339,16 +339,16 @@ theorem top_sub {k x : Nat} (hk : k < 2 ^ 31) (hx : x < 2 ^ 31) :
     (BitVec.ofNat 32 k - BitVec.ofNat 32 x) >>> 31 = if k < x then 1 else 0 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := x) (by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_arith), Nat.mod_eq_of_lt (a := x) (by omega_arith)]
   by_cases h : k < x
   · simp only [h, ↓reduceIte]
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_arith)]
     show _ = 1
-    exact Nat.div_eq_of_lt_le (by omega) (by omega)
+    exact Nat.div_eq_of_lt_le (by omega_arith) (by omega_arith)
   · simp only [h, ↓reduceIte]
-    rw [show 2 ^ 32 - x + k = (k - x) + 2 ^ 32 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    rw [show 2 ^ 32 - x + k = (k - x) + 2 ^ 32 by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
     show _ = 0
-    exact Nat.div_eq_of_lt (by omega)
+    exact Nat.div_eq_of_lt (by omega_arith)
 
 theorem cmp_eq {x y : Nat} (hx : x < 2 ^ 32) (hy : y < 2 ^ 32) :
     (BitVec.ofNat 32 x - BitVec.ofNat 32 y == 0) = decide (x = y) := by
@@ -360,7 +360,7 @@ theorem cmp_eq {x y : Nat} (hx : x < 2 ^ 32) (hy : y < 2 ^ 32) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt hy] at this
     have z : (0 : BitVec 32).toNat = 0 := rfl
     rw [z] at this
-    omega
+    omega_arith
 
 theorem fail_post {s : State}
     (hn : encOut id.toNat (Spec.Rsa.bytesAt s.mem (State.addr src) dl) k = none) {t : State}
@@ -378,29 +378,29 @@ theorem encodeH_ok {h : Hash} {s : State} (hin : EncIn s dst src id k dl) (hh : 
       Spec.RsaPkcs1Sig.encode h (Spec.Rsa.bytesAt s.mem (State.addr src) dl) k := by simp only [encOut, hh]
   unfold encodeH
   rw [WP.seq_iff]
-  refine wp_cmp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega))) fun t1 u1 z1 => WP.block_nil ?_
+  refine wp_cmp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith))) fun t1 u1 z1 => WP.block_nil ?_
   refine WP.ite _ (by rw [eval_ne]) (fun hb => ?_) (fun hb => ?_)
   · have hne : dl ≠ h.len := by
-      rw [z1, hin.lr, cmp_eq hin.dl32 (by omega)] at hb; simpa using hb
+      rw [z1, hin.lr, cmp_eq hin.dl32 (by omega_arith)] at hb; simpa using hb
     refine WP.mono fail_ok fun t ht => fail_post ?_ ⟨by rw [ht.1, u1.mem], (u1.rest _).trans ht.2.1, ht.2.2⟩
     rw [he, encode_eq, bytesAt_length]; simp [hne]
   · have heq : dl = h.len := by
-      rw [z1, hin.lr, cmp_eq hin.dl32 (by omega)] at hb; simpa using hb
+      rw [z1, hin.lr, cmp_eq hin.dl32 (by omega_arith)] at hb; simpa using hb
     rw [WP.seq_iff]
-    refine wp_dp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; simp only [tLen]; omega))) fun t2 u2 => ?_
+    refine wp_dp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; simp only [tLen]; omega_arith))) fun t2 u2 => ?_
     refine wp_mov (op2_lsr (by decide)) fun t3 u3 => ?_
     refine wp_cmp (op2_imm (by decide)) fun t4 u4 z4 => WP.block_nil ?_
     have r2 : t3.gpr .r2 = if k < tLen h + 11 then 1 else 0 := by
       rw [u3.gpr, u2.gpr, dpVal, u1.gpr, hin.r3]
-      exact top_sub (by omega) (by simp only [tLen]; omega)
+      exact top_sub (by omega_arith) (by simp only [tLen]; omega_arith)
     refine WP.ite _ (by rw [eval_ne]) (fun hb' => ?_) (fun hb' => ?_)
     · have hlt : k < tLen h + 11 := by
         rw [z4, r2] at hb'; by_contra hc; simp [hc] at hb'
       refine WP.mono fail_ok fun t ht => fail_post ?_ ⟨by rw [ht.1, u4.mem, u3.mem, u2.mem, u1.mem],
         ((((u1.rest _).trans (u2.rest (by simp))).trans (u3.rest (by simp))).trans (u4.rest _)).trans ht.2.1, ht.2.2⟩
-      rw [he, encode_eq]; simp; omega
+      rw [he, encode_eq]; simp; omega_arith
     · have hge : tLen h + 11 ≤ k := by
-        rw [z4, r2] at hb'; by_contra hc; simp [show k < tLen h + 11 by omega] at hb'
+        rw [z4, r2] at hb'; by_contra hc; simp [show k < tLen h + 11 by omega_arith] at hb'
       have rest := (((u1.rest (ws := [.r2]) ).trans (u2.rest (by simp))).trans (u3.rest (by simp))).trans (u4.rest _)
       have mm : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
       have hin4 : EncIn t4 dst src (t4.gpr .r2) k dl :=
@@ -446,7 +446,7 @@ theorem dispatch_ok {s : State} (hin : EncIn s dst src id k dl) :
       simp only [List.length_drop, List.length_nil] at this
       exact Nat.le_of_sub_eq_zero this
     have hn : Hash.ofId id.toNat = none := by
-      rw [show id.toNat = (id.toNat - 12) + 12 by omega]; exact ofId_ge _
+      rw [show id.toNat = (id.toNat - 12) + 12 by omega_arith]; exact ofId_ge _
     unfold dispatch
     exact WP.mono fail_ok fun t ht => fail_post (by simp only [encOut, hn]) ht
   | h :: hs, i, hd, hi => by
@@ -454,21 +454,21 @@ theorem dispatch_ok {s : State} (hin : EncIn s dst src id k dl) :
       have := congrArg List.length hd
       simp only [List.length_drop, List.length_cons] at this
       have : hashes.length = 12 := rfl
-      omega
+      omega_arith
     unfold dispatch
     rw [WP.seq_iff]
-    refine wp_cmp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega))) fun t1 u1 z1 => WP.block_nil ?_
+    refine wp_cmp (op2_imm (encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_arith))) fun t1 u1 z1 => WP.block_nil ?_
     have hin1 := hin.fupd u1
     have hid : id = BitVec.ofNat 32 id.toNat := by simp
     refine WP.ite _ (eval_eq _) (fun hb => ?_) (fun hb => ?_)
     · have he : id.toNat = i := by
-        rw [z1, hin.r2, hid, cmp_eq id.isLt (by omega)] at hb; simpa using hb
+        rw [z1, hin.r2, hid, cmp_eq id.isLt (by omega_arith)] at hb; simpa using hb
       have hh : Hash.ofId id.toNat = some h := by
         rw [he, ofId_hashes i h12, ← Nat.add_zero i, ← List.getElem?_drop, hd]; rfl
       exact WP.mono (encodeH_ok hin1 hh) fun t ht => ht.fupd u1
     · have he : id.toNat ≠ i := by
-        rw [z1, hin.r2, hid, cmp_eq id.isLt (by omega)] at hb; simpa using hb
-      refine WP.mono (dispatch_ok hin1 hs (i + 1) ?_ (by omega)) fun t ht => ht.fupd u1
+        rw [z1, hin.r2, hid, cmp_eq id.isLt (by omega_arith)] at hb; simpa using hb
+      refine WP.mono (dispatch_ok hin1 hs (i + 1) ?_ (by omega_arith)) fun t ht => ht.fupd u1
       rw [← List.drop_drop, hd]; rfl
 
 /-- EMSA-PKCS1-v1_5-ENCODE to the buffer. -/

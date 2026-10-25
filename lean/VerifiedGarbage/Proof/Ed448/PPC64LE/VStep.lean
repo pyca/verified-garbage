@@ -65,7 +65,7 @@ theorem bit1_shift (x : Nat) (hx : x < 2 ^ 64) :
   apply BitVec.eq_of_toNat_eq
   have := bit_shift (BitVec.ofNat 64 x) (j := 1) (by decide)
   rw [toNat_imm hx, Nat.and_one_is_mod, Nat.shiftRight_eq_div_pow, Nat.pow_one] at this
-  rw [this, toNat_imm (by omega)]
+  rw [this, toNat_imm (by omega_arith)]
 
 theorem vhead_ok (hP : PtsOk b sL.mem a r) {c : Nat} (hc1 : 1 ≤ c) (hc2 : c ≤ 1832) {q : Point}
     {a0 : BitVec 64} {s : State} (h : Cur b sL a0 (BitVec.ofNat 64 c) RQ (ptV q q) s) :
@@ -73,17 +73,17 @@ theorem vhead_ok (hP : PtsOk b sL.mem a r) {c : Nat} (hc1 : 1 ≤ c) (hc2 : c �
       (Cur b sL a0 (BitVec.ofNat 64 (c - 1)) SQ (ptV q (selP (c - 1) a r q))) := by
   have hc := h.ctx
   have hA := X448.PPC64LE.ACC_eq
-  have hb0 : (c - 1) % 2 ≤ 1 := by omega
-  have hb1 : (c - 1) / 2 % 2 ≤ 1 := by omega
+  have hb0 : (c - 1) % 2 ≤ 1 := by omega_arith
+  have hb1 : (c - 1) / 2 % 2 ≤ 1 := by omega_arith
   have hPs := hP.frame h.stp.frame
   simp only [vSelect, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_subi (by decide) (by decide) fun s1 u1 => ?_
   have e12 : s1.gpr .r12 = BitVec.ofNat 64 (c - 1) := by
-    rw [u1.gpr, h.r12, ofNat_sub_one hc1 (by omega)]
+    rw [u1.gpr, h.r12, ofNat_sub_one hc1 (by omega_arith)]
   refine wp_lsl (by decide) fun s2 u2 => wp_lsr (by decide) fun s3 u3 => ?_
   refine wp_li (by decide) fun s4 u4 => wp_sub fun s5 u5 => ?_
   have e11 : s5.gpr .r11 = 0 - BitVec.ofNat 64 ((c - 1) % 2) := by
-    rw [u5.gpr, u4.gpr, u4.other _ (by decide), u3.gpr, u2.gpr, e12, par_shift _ (by omega)]; rfl
+    rw [u5.gpr, u4.gpr, u4.other _ (by decide), u3.gpr, u2.gpr, e12, par_shift _ (by omega_arith)]; rfl
   have hr5 : Rest [.r4, .r11, .r12] s s5 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans (u5.rest (by decide)))))
@@ -125,7 +125,7 @@ theorem vhead_ok (hP : PtsOk b sL.mem a r) {c : Nat} (hc1 : 1 ≤ c) (hc2 : c �
   have e11b : s14.gpr .r11 = 0 - BitVec.ofNat 64 ((c - 1) / 2 % 2) := by
     rw [u14.gpr, u13.gpr, u13.other _ (by decide), u12.gpr, u11.gpr, hr10'.gpr _ (by decide),
       u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), e12,
-      bit1_shift _ (by omega)]; rfl
+      bit1_shift _ (by omega_arith)]; rfl
   have hr14 : Rest [.r4, .r11] s10 s14 := (u11.rest (by decide)).trans ((u12.rest (by decide)).trans
     ((u13.rest (by decide)).trans (u14.rest (by decide))))
   have hm14 : s14.mem = s10.mem := by rw [u14.mem, u13.mem, u12.mem, u11.mem]
@@ -178,10 +178,10 @@ theorem vswap_ok {S K : Nat} (hT : TabIs b sL.mem (tabV S K)) {h : Nat} (hh : h 
   refine wp_add fun s1 u1 => ?_
   refine wp_lbz (a := b + BitVec.ofNat 64 (TAB + h)) (by decide) (by decide)
     (by rw [u1.gpr, hc.r6, hcur.r12, Offset.add_add, Nat.add_comm])
-    (by rw [u1.rd, u1.wr]; exact hc.inR (by omega)) fun s2 u2 => ?_
+    (by rw [u1.rd, u1.wr]; exact hc.inR (by omega_arith)) fun s2 u2 => ?_
   have e4 : s2.gpr .r4 = BitVec.ofNat 64 (tabV S K h) := by
-    rw [u2.gpr, u1.mem, byte_above hcur.stp.frame (by unfold ACC; omega) (by omega), hT h hh,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [u2.gpr, u1.mem, byte_above hcur.stp.frame (by unfold ACC; omega_arith) (by omega_arith), hT h hh,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   refine wp_li (by decide) fun s3 u3 => wp_sub fun s4 u4 => ?_
   have e11 : s4.gpr .r11 = 0 - BitVec.ofNat 64 (tabV S K h) := by
     rw [u4.gpr, u3.gpr, u3.other _ (by decide), e4]; rfl
@@ -222,7 +222,7 @@ theorem vstep_ok {S K : Nat} (hT : TabIs b sL.mem (tabV S K)) (hP : PtsOk b sL.m
   refine WP.seq (WP.mono (vhead_ok hP hc1 hc2 h.cur) fun s1 h1 => WP.seq
     (ops_ok addOps SQ _ s1 addOps_ok h1 fun s2 h2 => WP.mono (op_ok (.mul TZ TF TG) o1 o2 o3 o4 h2)
       fun s3 h3 => WP.mono (vswap_ok (S := S) (K := K) (q := Qv (4 * S) (4 * K) a r c)
-        (p := selP (c - 1) a r (Qv (4 * S) (4 * K) a r c)) hT (by omega) h3) fun s4 h4 => ?_))
+        (p := selP (c - 1) a r (Qv (4 * S) (4 * K) a r c)) hT (by omega_arith) h3) fun s4 h4 => ?_))
   refine ⟨⟨⟨h4.ctx, h4.stp, rfl, h4.r12, ?_⟩⟩, ?_⟩
   · refine (h4.slots.mono (by decide)).congr fun q hq => ?_
     obtain ⟨v1, v2, v3, v4, v5, v6, v7⟩ := addV_vals (Qv (4 * S) (4 * K) a r c)
@@ -233,7 +233,7 @@ theorem vstep_ok {S K : Nat} (hT : TabIs b sL.mem (tabV S K)) (hP : PtsOk b sL.m
       simp only [swapV, ptV, pick_X, pick_Y, pick_Z, RX, RY, RZ, PX, PY, PZ, DK, TX, TY, TZ, X2, Z2,
         Nat.reduceEqDiff, ↓reduceIte] at v1 v2 v3 v4 v5 v6 v7 ⊢ <;>
       simp only [v1, v2, v3, v4, v5, v6, v7, pick]
-  · rw [h4.r12, ofNat_ne_zero (by omega)]
+  · rw [h4.r12, ofNat_ne_zero (by omega_arith)]
 
 /-- The loop, from `Q` the neutral point: `Q = [4S]B + [4K]a + [4]r`. -/
 theorem vloop_ok {S K : Nat} {s : State} (hc : Ctx b s) (hT : TabIs b s.mem (tabV S K)) (hP : PtsOk b s.mem a r)
@@ -255,12 +255,12 @@ theorem vloop_ok {S K : Nat} {s : State} (hc : Ctx b s) (hT : TabIs b s.mem (tab
   have hc4 : Ctx b s4 := hc.of_rest hr4 (by decide)
   have fFA : ∀ {m m' : Mem} {o : Nat}, o + 56 ≤ ACC → Frame [⟨b + BitVec.ofNat 64 o, 56⟩] m m' →
       Frame [FA b] m m' := fun ho hf => hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-    rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)⟩
+    rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)⟩
   have f4 : Frame [FA b] s.mem s4.mem := by
     rw [u4.mem]; exact (fFA (by decide) f1).trans ((fFA (by decide) f2).trans (fFA (by decide) f3))
   have hst : Stp b s s4 := ⟨hr4.mono (by decide), f4⟩
   have hT4 : TabIs b s4.mem (tabV S K) := fun h hh => by
-    rw [byte_above f4 (by omega) (by omega)]; exact hT h hh
+    rw [byte_above f4 (by omega_arith) (by omega_arith)]; exact hT h hh
   have hP4 := hP.frame f4
   have hS4 : SlotsOk s4.mem b RQ (ptV (Qv (4 * S) (4 * K) a r 1832) (Qv (4 * S) (4 * K) a r 1832)) := by
     rw [qv_1832]
@@ -284,7 +284,7 @@ theorem vloop_ok {S K : Nat} {s : State} (hc : Ctx b s) (hT : TabIs b s.mem (tab
   refine WP.mono (vstep_ok hT4 hP4 h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
   by_cases hm : m - 1 = 0
   · exact .inl ⟨by rw [eval_nonzero, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
-  · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega, by omega, by omega, hl'⟩
+  · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega_arith, by omega_arith, by omega_arith, hl'⟩
 
 end
 

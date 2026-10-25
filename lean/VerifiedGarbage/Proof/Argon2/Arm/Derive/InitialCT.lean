@@ -101,7 +101,7 @@ theorem start_rel :
     (fun s h => (header_ok T.hp₁ h.1 h.2.1 h.2.2.1 h.2.2.2).mono fun t ⟨i, p, e, r, d, _⟩ => ⟨i, p, e, r, d⟩)
     (fun s h => (header_ok T.hp₂ h.1 h.2.1 h.2.2.1 h.2.2.2).mono fun t ⟨i, p, e, r, d, _⟩ => ⟨i, p, e, r, d⟩) ?_
   refine RelCT.seqW ((HPrime.absorbFixed_rel (B := scrP s₀₁) (SP := E s₀₁) (offset := 768) (size := 24)
-      (by decide) (by decide) (by omega) (by decide) (by decide) (stk_scr T.hp₁ (by decide) (by decide))
+      (by decide) (by decide) (by omega_arith) (by decide) (by decide) (stk_scr T.hp₁ (by decide) (by decide))
       ⟨_, by taint_decide⟩).mono
       (fun s₁ s₂ h => ⟨⟨ctx T.hp₁ h.1.1 h.1.2.2.1, scr_cov T.hp₁ h.1.1 (by decide)⟩,
         ⟨T.ctx₂ h.2.1 h.2.2.2.1, by rw [T.pb.scrP_eq]; exact scr_cov T.hp₂ h.2.1 (by decide)⟩⟩) fun _ _ h => h)
@@ -159,18 +159,18 @@ theorem absorb_rel {ptr len : Nat} (hptr : ptr < 18) (hlen : len < 18)
     (fun s h => absA_ok T.hp₁ hlen h.hc) (fun s h => absA_ok T.hp₂ hlen h.hc) ?_
   refine RelCT.seqW ((HPrime.update_rel (B := scrP s₀₁) (SP := E s₀₁) (D := scrP s₀₁ + 792) (L := 4)
       (lo := BitVec.ofNat 32 data₁.length) (hi := BitVec.ofNat 32 (data₁.length / 2 ^ 32))
-      (by have : (scrP s₀₁ + 792).toNat = (scrP s₀₁).toNat + 792 := add_nat (k := 792) (by omega)
-          omega)
+      (by have : (scrP s₀₁ + 792).toNat = (scrP s₀₁).toNat + 792 := add_nat (k := 792) (by omega_arith)
+          omega_arith)
       (by rw [e792]; exact Offset.disjoint_base _ (by decide) (by decide))
       (by rw [e792]; exact stk_scr T.hp₁ (by decide) (by decide))).mono
       (fun s₁ s₂ ⟨⟨g₁, e₁, d₁, c₁, x₁, _⟩, ⟨g₂, e₂, d₂, c₂, x₂, _⟩⟩ =>
         ⟨⟨ctx T.hp₁ g₁.inv g₁.r4, e₁, d₁, c₁, x₁, cov792 T.hp₁ g₁.inv⟩,
          ⟨T.ctx₂ g₂.inv g₂.r4, by rw [e₂, T.pb.scrP_eq], d₂, by rw [c₂, heq], by rw [x₂, heq],
            by rw [T.pb.scrP_eq]; exact cov792 T.hp₂ g₂.inv⟩⟩) fun _ _ h => h)
-    (fun s h => absU1_ok T.hp₁ h.1 rfl (by omega) h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
-    (fun s h => absU1_ok T.hp₂ h.1 rfl (by omega) h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2) ?_
+    (fun s h => absU1_ok T.hp₁ h.1 rfl (by omega_arith) h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
+    (fun s h => absU1_ok T.hp₂ h.1 rfl (by omega_arith) h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2) ?_
   refine RelCT.seqW (T.leafI [] (fun s₁ s₂ h => ⟨h.1.inv, h.2.inv, by simp⟩) hcB)
-    (fun s h => absB_ok T.hp₁ hptr hlen (by omega) h) (fun s h => absB_ok T.hp₂ hptr hlen (by omega) h) ?_
+    (fun s h => absB_ok T.hp₁ hptr hlen (by omega_arith) h) (fun s h => absB_ok T.hp₂ hptr hlen (by omega_arith) h) ?_
   refine RelCT.seqW ((HPrime.update_rel (B := scrP s₀₁) (SP := E s₀₁) (D := arg s₀₁ ptr)
       (L := (arg s₀₁ len).toNat) (lo := BitVec.ofNat 32 (data₁.length + 4))
       (hi := BitVec.ofNat 32 ((data₁.length + 4) / 2 ^ 32))
@@ -180,9 +180,9 @@ theorem absorb_rel {ptr len : Nat} (hptr : ptr < 18) (hlen : len < 18)
         ⟨⟨ctx T.hp₁ g₁.inv g₁.r4, e₁, d₁, c₁, x₁, covIn T.hp₁ g₁.inv hR₁⟩,
          ⟨T.ctx₂ g₂.inv g₂.r4, by rw [e₂, ep], by rw [d₂, el], by rw [c₂, heq], by rw [x₂, heq],
            by rw [ep, el]; exact covIn T.hp₂ g₂.inv hR₂⟩⟩) fun _ _ h => h)
-    (fun s h => absU2_ok T.hp₁ hR₁ hfit₁ h.1 (by simp [Proof.Argon2.le32_length]) (by omega)
+    (fun s h => absU2_ok T.hp₁ hR₁ hfit₁ h.1 (by simp [Proof.Argon2.le32_length]) (by omega_arith)
       h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2)
-    (fun s h => absU2_ok T.hp₂ hR₂ hfit₂ h.1 (by simp [Proof.Argon2.le32_length]) (by omega)
+    (fun s h => absU2_ok T.hp₂ hR₂ hfit₂ h.1 (by simp [Proof.Argon2.le32_length]) (by omega_arith)
       h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2) ?_
   exact T.leafI [] (fun s₁ s₂ h => ⟨h.1.inv, h.2.inv, by simp⟩) hcC
 
@@ -218,44 +218,44 @@ theorem code_rel :
   unfold Impl.Argon2.Arm.Derive.code
   refine RelCT.seqW T.start_rel (fun s h => start_ok T.hp₁ h.1 h.2) (fun s h => start_ok T.hp₂ h.1 h.2) ?_
   refine RelCT.seqW (T.absorb_rel (ptr := 1) (len := 2) (by decide) (by decide) (by simp) (by simp)
-      T.hp₁.pw_fits T.hp₂.pw_fits (by rw [Proof.Argon2.initialHeader_length]; omega)
+      T.hp₁.pw_fits T.hp₂.pw_fits (by rw [Proof.Argon2.initialHeader_length]; omega_arith)
       (by rw [Proof.Argon2.initialHeader_length, Proof.Argon2.initialHeader_length])
       ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
     (fun s h => absorb_ok T.hp₁ (ptr := 1) (len := 2) (by decide) (by decide) (by simp) T.hp₁.pw_fits
-      (by rw [Proof.Argon2.initialHeader_length]; omega) h)
+      (by rw [Proof.Argon2.initialHeader_length]; omega_arith) h)
     (fun s h => absorb_ok T.hp₂ (ptr := 1) (len := 2) (by decide) (by decide) (by simp) T.hp₂.pw_fits
-      (by rw [Proof.Argon2.initialHeader_length]; omega) h) ?_
+      (by rw [Proof.Argon2.initialHeader_length]; omega_arith) h) ?_
   refine RelCT.seqW (T.absorb_rel (ptr := 3) (len := 4) (by decide) (by decide) (by simp) (by simp)
       T.hp₁.salt_fits T.hp₂.salt_fits
-      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega)
+      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega_arith)
       (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length, a2])
       ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
     (fun s h => absorb_ok T.hp₁ (ptr := 3) (len := 4) (by decide) (by decide) (by simp) T.hp₁.salt_fits
-      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega) h)
+      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega_arith) h)
     (fun s h => absorb_ok T.hp₂ (ptr := 3) (len := 4) (by decide) (by decide) (by simp) T.hp₂.salt_fits
       (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]
-          have := (arg s₀₂ 2).isLt; omega) h) ?_
+          have := (arg s₀₂ 2).isLt; omega_arith) h) ?_
   refine RelCT.seqW (T.absorb_rel (ptr := 9) (len := 10) (by decide) (by decide) (by simp) (by simp)
       T.hp₁.sec_fits T.hp₂.sec_fits
-      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega)
+      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega_arith)
       (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length, a2, a4])
       ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
     (fun s h => absorb_ok T.hp₁ (ptr := 9) (len := 10) (by decide) (by decide) (by simp) T.hp₁.sec_fits
-      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega) h)
+      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega_arith) h)
     (fun s h => absorb_ok T.hp₂ (ptr := 9) (len := 10) (by decide) (by decide) (by simp) T.hp₂.sec_fits
       (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]
-          have := (arg s₀₂ 2).isLt; have := (arg s₀₂ 4).isLt; omega) h) ?_
+          have := (arg s₀₂ 2).isLt; have := (arg s₀₂ 4).isLt; omega_arith) h) ?_
   refine RelCT.seqW (T.absorb_rel (ptr := 11) (len := 12) (by decide) (by decide) (by simp) (by simp)
       T.hp₁.ad_fits T.hp₂.ad_fits
-      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega)
+      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega_arith)
       (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length, a2, a4,
         a10])
       ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
     (fun s h => absorb_ok T.hp₁ (ptr := 11) (len := 12) (by decide) (by decide) (by simp) T.hp₁.ad_fits
-      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega) h)
+      (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]; omega_arith) h)
     (fun s h => absorb_ok T.hp₂ (ptr := 11) (len := 12) (by decide) (by decide) (by simp) T.hp₂.ad_fits
       (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length, bytesAt_length]
-          have := (arg s₀₂ 2).isLt; have := (arg s₀₂ 4).isLt; have := (arg s₀₂ 10).isLt; omega) h) ?_
+          have := (arg s₀₂ 2).isLt; have := (arg s₀₂ 4).isLt; have := (arg s₀₂ 10).isLt; omega_arith) h) ?_
   exact T.finish_rel (by simp only [Proof.Argon2.appendInput_length, Proof.Argon2.initialHeader_length,
     bytesAt_length, a2, a4, a10, a12])
 

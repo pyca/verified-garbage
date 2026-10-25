@@ -95,7 +95,7 @@ theorem xorOut_base {ac : State × Nat} {t : State} (h : MgfR S vf Pre Pub G.D s
   have hdc := Nat.min_le_left G.D (dstLen - ac.2 * G.D)
   have hn0 : 0 < min G.D (dstLen - ac.2 * G.D) := by omega_arith
   refine WP.seq (WP.mono (xorHead_ok (G := G) (S := S s) (dst := dst) (dstLen := dstLen) (done := ac.2 * G.D)
-    (by omega) b.r14 (by rw [h26, (X.S p)]) h27 h29 hc (by omega)) fun t₁ ⟨k₁, x11, x12, x9⟩ => ?_)
+    (by omega_arith) b.r14 (by rw [h26, (X.S p)]) h27 h29 hc (by omega_arith)) fun t₁ ⟨k₁, x11, x12, x9⟩ => ?_)
   have b₁ := b.only (X.fits P) k₁
   refine WP.mono (xorLoop_ok (p := off (S s) (dst + ac.2 * G.D)) (q := off (S s) oDig) hn0 (by omega_arith) x11 x12 x9
     (fun j hj => by
@@ -150,8 +150,8 @@ theorem round_ct :
       ∃ s, Pre s ∧ UpdArgs S vf G s t (off (S s) src) srcLen ∧ Pub ac.1 s := fun {ac t} h => by
     obtain ⟨hm, h3, -, h5, h6, h7⟩ := h
     obtain ⟨s, P, p, b⟩ := hm.1
-    exact ⟨s, P, ⟨X.fits P, b, by rw [h3, (X.S p)], by rw [h5, (X.S p)], by rw [h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)],
-      by rw [h7, (X.S p)], Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) (by omega)),
+    exact ⟨s, P, ⟨X.fits P, b, by rw [h3, (X.S p)], by rw [h5, (X.S p)], by rw [h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)],
+      by rw [h7, (X.S p)], Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) (by omega_arith)),
       sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith), sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith),
       cR_dis (X.fits P) (by omega_arith)⟩, p⟩
   refine two_seq (Ψ := M) (upd_ct (S := S) (vf := vf) cG fun t₁ t₂ ⟨ac, h₁, h₂⟩ => ?_) (fun ac t h => ?_) ?_

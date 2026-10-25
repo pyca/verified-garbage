@@ -53,13 +53,13 @@ theorem sel' (x y : BitVec 32) (c : Bool) : x ^^^ ((y ^^^ x) &&& cmask c) = if c
 theorem carry_ne (b : Byte) :
     decide (2 ^ 32 ≤ (b.setWidth 32).toNat + (0xFFFFFFFF : BitVec 32).toNat) = (b != 0) := by
   have hb := b.isLt
-  have e : (b.setWidth 32).toNat = b.toNat := by simp [BitVec.toNat_setWidth]; omega
+  have e : (b.setWidth 32).toNat = b.toNat := by simp [BitVec.toNat_setWidth]; omega_arith
   rw [e]
   by_cases h : b = 0
   · subst h; decide
   · have : b.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
     rw [show (b != 0) = true from bne_iff_ne.mpr h]
-    exact decide_eq_true (by change 2 ^ 32 ≤ b.toNat + 4294967295; omega)
+    exact decide_eq_true (by change 2 ^ 32 ≤ b.toNat + 4294967295; omega_arith)
 
 /-! ## One octet -/
 
@@ -99,7 +99,7 @@ theorem word_room (h : In Ex base bytes len args s) {d : Nat} (hd : d + 4 ≤ 32
   have := h.need
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
   have nb : numBase = 3336 := rfl
-  omega
+  omega_arith
 
 /-- `movzx d, byte [m]`. -/
 theorem wp_movzx8 {is : List Instr} {Q : State → Prop} {d : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
@@ -129,7 +129,7 @@ theorem partA_ok (h : In Ex base bytes len args s) {a : Addr} (ha : s.ea ⟨.esi
   have s7 : Scr u7 base bytes := h.scratch.of_keeps k7 (by decide)
   refine wp_orS (readSrc_sc s7 (d := foundOff) r) fun u8 a8 => ?_
   have s8 : Scr u8 base bytes := s7.of_keeps a8.keeps (by decide)
-  refine wp_storeS (s8.ea (d := foundOff) (by omega)) (s8.write (d := foundOff) (n := 4) r) fun t m9 => WP.block_nil ?_
+  refine wp_storeS (s8.ea (d := foundOff) (by omega_arith)) (s8.write (d := foundOff) (n := 4) r) fun t m9 => WP.block_nil ?_
   have M : u8.mem = s.mem := by rw [a8.mem, a7.mem, a6.mem, a5.mem, a4.mem, a3.mem, a2.mem, a1.mem]
   have F : u4.mem.readW (off base foundOff) 32 = cmask f := by rw [a4.mem, a3.mem, a2.mem, a1.mem, hf]
   have E4 : u4.gpr .edx = cmask (s.mem a != 0) := by
@@ -169,7 +169,7 @@ theorem partC_ok (h : In Ex base bytes len args s) {c : Bool} (hp : s.gpr .ebp =
   have k1 : Keeps [.eax, .edx] s u1 := a1.keeps.mono (by decide)
   have k4 := ((k1.widen a2.keeps).widen a3.keeps).widen a4.keeps
   have s4 : Scr u4 base bytes := h.scratch.of_keeps k4 (by decide)
-  refine wp_storeS (s4.ea (d := tbOff) (by omega)) (s4.write (d := tbOff) (n := 4) r) fun t m5 => WP.block_nil ?_
+  refine wp_storeS (s4.ea (d := tbOff) (by omega_arith)) (s4.write (d := tbOff) (n := 4) r) fun t m5 => WP.block_nil ?_
   refine ⟨?_, k4.widen (m5.keeps [])⟩
   rw [m5.mem, a4.mem, a3.mem, a2.mem, a1.mem]
   simp only [upd_get a4, upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false, hp, sel']
@@ -233,7 +233,7 @@ theorem bytes_keep (h : In Ex base bytes len args s) {p : Addr} {n : Nat}
   rcases hr with rfl | ⟨q, hq, rfl⟩
   · exact hb40
   · have := fit q hq
-    exact apart.sub_right (Offset.sub_base _ (by omega))
+    exact apart.sub_right (Offset.sub_base _ (by omega_arith))
 
 theorem scanStep_ok {s₀ t : State} {bp : BitVec 32} {bs : List Byte} {j : Nat} (hj : j < len)
     (B : BGeo base bytes len bp (s₀.gpr .esp) s₀.rd s₀.wr) (hbs : Spec.Rsa.bytesAt s₀.mem (byteAddr bp) len = bs)
@@ -248,13 +248,13 @@ theorem scanStep_ok {s₀ t : State} {bp : BitVec 32} {bs : List Byte} {j : Nat}
   -- The octet.
   have ea : t.ea ⟨.esi, 0⟩ = byteAddr bp + BitVec.ofNat 64 j := by
     change addr (t.gpr .esi) 0 = _
-    rw [I.esi, addr_eq (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega), BitVec.add_zero]
-    exact addr_eq (by omega)
+    rw [I.esi, addr_eq (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith), BitVec.add_zero]
+    exact addr_eq (by omega_arith)
   have rdB : InRegions (t.rd ++ t.wr) (byteAddr bp + BitVec.ofNat 64 j) 1 := by
     rw [I.step.keeps.2.1, I.step.keeps.2.2]
-    exact VG.CallLay.inRegions_sub B.rd (by omega) (by omega)
+    exact VG.CallLay.inRegions_sub B.rd (by omega_arith) (by omega_arith)
   have byte : t.mem (byteAddr bp + BitVec.ofNat 64 j) = bs.getD j 0 := by
-    rw [← hbs, ← bytes_keep h B.apart (by omega) B.below I.step.frame, bytesAt_getD _ _ hj]
+    rw [← hbs, ← bytes_keep h B.apart (by omega_arith) B.below I.step.frame, bytesAt_getD _ _ hj]
   generalize hb : bs.getD j 0 = b at byte
   generalize hf : (scanAt bs j).1 = f
   have F1 : (scanAt bs (j + 1)).1 = (b != 0 || f) := by
@@ -280,7 +280,7 @@ theorem scanStep_ok {s₀ t : State} {bp : BitVec 32} {bs : List Byte} {j : Nat}
   have SD : Step Ex base bytes len args uC uD := Step.regs SC.inp mD kD
   have cC : uC.gpr .ecx = BitVec.ofNat 32 j := by
     rw [kC.1 _ (by decide), kB.1 _ (by decide), kA.1 _ (by decide), I.ecx]
-  have hj32 : j + 1 < 2 ^ 32 := by omega
+  have hj32 : j + 1 < 2 ^ 32 := by omega_arith
   refine ⟨⟨I.step.trans (((SA.trans SB).trans SC).trans SD), ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · have kA' := kept_word h (d := foundOff) (by decide) (by decide) OA
     have kC' := kept_word SB.inp (d := tbOff) (by decide) (by decide) OC
@@ -289,8 +289,8 @@ theorem scanStep_ok {s₀ t : State} {bp : BitVec 32} {bs : List Byte} {j : Nat}
     refine Kept.trans ?_ kC'.mono
     rw [mB]; exact (Kept.refl _).mono
   · rw [eD1, kC.1 _ (by decide), kB.1 _ (by decide), kA.1 _ (by decide), I.esi]
-    bv_omega
-  · rw [eD2, cC]; bv_omega
+    bv_omega_arith
+  · rw [eD2, cC]; bv_omega_arith
   · rw [kD.1 _ (by decide), kC.1 _ (by decide), eB, kA.1 _ (by decide), kA.1 _ (by decide), I.ecx, I.ebx, F2]
     split <;> rfl
   · rw [mD, mC, mB, mA, found_tb_sep, Mem.readW_writeW_self32, F1]
@@ -306,21 +306,21 @@ theorem scanStep_ok {s₀ t : State} {bp : BitVec 32} {bs : List Byte} {j : Nat}
         have := BitVec.sub_eq_iff_eq_add.mp z; simpa using this
       have := congrArg BitVec.toNat z'
       simp only [BitVec.toNat_ofNat] at this
-      omega
+      omega_arith
 
 /-- A do-while loop over `ne` that runs its body `n > 0` times, with ZF set exactly on the last
 iteration. -/
 theorem count_loop {body : Prog isa} {n : Nat} (hn : 0 < n) (I : Nat → State → Prop)
     (hstep : ∀ k < n, ∀ s, I k s → WP isa body s fun s' => I (k + 1) s' ∧ s'.zf = some (decide (k + 1 = n)))
     {s : State} (h0 : I 0 s) : WP isa (.loop body .ne) s (I n) := by
-  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega, hn, h0⟩
+  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega_arith, hn, h0⟩
   rintro m s ⟨k, rfl, hk, hi⟩
   refine WP.mono (hstep k hk s hi) fun s' ⟨hi', hz⟩ => ?_
   have he : isa.eval .ne s' = some (!decide (k + 1 = n)) := by
     show s'.zf.map (!·) = _; rw [hz]; rfl
   by_cases hl : k + 1 = n
   · exact .inl ⟨by rw [he]; simp [hl], hl ▸ hi'⟩
-  · exact .inr ⟨by rw [he]; simp [hl], n - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
+  · exact .inr ⟨by rw [he]; simp [hl], n - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, hi'⟩
 
 /-- The bound's pointer: the domain's, plus twice its length beyond p and g. -/
 abbrev boundAt (args : Nat → BitVec 32) : BitVec 32 :=
@@ -355,9 +355,9 @@ theorem init_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32
   have k11 := (((k7.widen a8.keeps).widen a9.keeps).widen a10.keeps).widen a11.keeps
   have m11 : u11.mem = s.mem := by rw [a11.mem, a10.mem, a9.mem, a8.mem, m7]
   have s11 : Scr u11 base bytes := h.scratch.of_keeps k11 (by decide)
-  refine wp_storeS (s11.ea (d := tbOff) (by omega)) (s11.write (d := tbOff) (n := 4) r16) fun u12 m12 => ?_
+  refine wp_storeS (s11.ea (d := tbOff) (by omega_arith)) (s11.write (d := tbOff) (n := 4) r16) fun u12 m12 => ?_
   have s12 : Scr u12 base bytes := s11.of_keeps (m12.keeps []) (by decide)
-  refine wp_storeS (s12.ea (d := foundOff) (by omega)) (s12.write (d := foundOff) (n := 4) r20) fun t m13 =>
+  refine wp_storeS (s12.ea (d := foundOff) (by omega_arith)) (s12.write (d := foundOff) (n := 4) r20) fun t m13 =>
     WP.block_nil ?_
   have e0 : u11.gpr .eax = 0 := a11.gpr
   have O12 : Outside base tbOff 4 u11.mem u12.mem := by rw [m12.mem]; exact writeW32_outside _ _ _ (by decide)
@@ -375,7 +375,7 @@ theorem init_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32
   · simp only [m13.gpr, m12.gpr, upd_get a11, upd_get a10, reduceCtorEq, ite_true, ite_false]; rfl
   · simp only [m13.gpr, m12.gpr, upd_get a11, upd_get a10, upd_get a9, upd_get a8, reduceCtorEq, ite_true,
       ite_false, scanAt, hl, h3]
-    rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
   · rw [m13.mem, Mem.readW_writeW_self32, m12.gpr, e0]; rfl
   · rw [m13.mem, tb_found_sep, m12.mem, Mem.readW_writeW_self32, e0]; rfl
 
@@ -388,7 +388,7 @@ def smear32 (x : BitVec 32) : BitVec 32 :=
 theorem smear32_toNat (b : Byte) : (smear32 (b.setWidth 32)).toNat = KeyScalar.smearN b.toNat := by
   have hb := b.isLt
   simp only [smear32, KeyScalar.smearN, BitVec.toNat_or, BitVec.toNat_ushiftRight, BitVec.toNat_setWidth,
-    Nat.mod_eq_of_lt (show b.toNat < 2 ^ 32 by omega)]
+    Nat.mod_eq_of_lt (show b.toNat < 2 ^ 32 by omega_arith)]
 
 theorem scanEnd_ok (h : In Ex base bytes len args s) :
     WP isa (.block GenerateKey.scanEnd) s fun u =>
@@ -397,7 +397,7 @@ theorem scanEnd_ok (h : In Ex base bytes len args s) :
   have r24 := word_room h (d := ldOff) (by decide)
   have r28 := word_room h (d := tOff) (by decide)
   have r16 := word_room h (d := tbOff) (by decide)
-  refine wp_storeS (h.scratch.ea (d := ldOff) (by omega)) (h.scratch.write (d := ldOff) (n := 4) r24)
+  refine wp_storeS (h.scratch.ea (d := ldOff) (by omega_arith)) (h.scratch.write (d := ldOff) (n := 4) r24)
     fun u1 m1 => ?_
   have s1 : Scr u1 base bytes := h.scratch.of_keeps (m1.keeps []) (by decide)
   refine wp_movS (readSrc_sc s1 (d := tbOff) r16) fun u2 a2 _ => ?_
@@ -414,7 +414,7 @@ theorem scanEnd_ok (h : In Ex base bytes len args s) :
   have k11 := ((((((((k2.widen a3.keeps).widen a4.keeps).widen a5.keeps).widen a6.keeps).widen a7.keeps).widen
     a8.keeps).widen a9.keeps).widen a10.keeps).widen a11.keeps
   have s11 : Scr u11 base bytes := s1.of_keeps k11 (by decide)
-  refine wp_storeS (s11.ea (d := tOff) (by omega)) (s11.write (d := tOff) (n := 4) r28) fun t m12 =>
+  refine wp_storeS (s11.ea (d := tOff) (by omega_arith)) (s11.write (d := tOff) (n := 4) r28) fun t m12 =>
     WP.block_nil ⟨?_, ((m1.keeps [.eax, .edx]).widen k11).widen (m12.keeps [])⟩
   have M : u11.mem = u1.mem := by
     rw [a11.mem, a10.mem, a9.mem, a8.mem, a7.mem, a6.mem, a5.mem, a4.mem, a3.mem, a2.mem]
@@ -439,10 +439,10 @@ theorem scan_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32
   generalize hbs : Spec.Rsa.bytesAt s.mem (byteAddr (boundAt args)) len = bs
   have hl : bs.length = len := by rw [← hbs]; simp [Spec.Rsa.bytesAt]
   have lw := h.lower
-  have ne : bs ≠ [] := by intro e; rw [e] at hl; simp at hl; omega
+  have ne : bs ≠ [] := by intro e; rw [e] at hl; simp at hl; omega_arith
   unfold GenerateKey.scan
   refine WP.seq (WP.mono (init_ok h h3 hl) fun u I => ?_)
-  refine WP.seq (WP.mono (count_loop (n := len) (by omega) (ScanInv Ex base bytes len args s (boundAt args) bs)
+  refine WP.seq (WP.mono (count_loop (n := len) (by omega_arith) (ScanInv Ex base bytes len args s (boundAt args) bs)
     (fun k hk v Iv => scanStep_ok hk B hbs h3 Iv) I) fun v Iv => ?_)
   refine WP.mono (scanEnd_ok Iv.step.inp) fun t ⟨mt, kt⟩ => ?_
   have O1 : Outside base ldOff 4 v.mem (v.mem.writeW (off base ldOff) (v.gpr .ebx)) :=
@@ -459,8 +459,8 @@ theorem scan_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32
     have nb : numBase = 3336 := rfl
     have l24 : ldOff = 24 := rfl
     have t28 : tOff = 28 := rfl
-    exact ⟨hv.keep kt (by decide) (by decide) ((O1.mono (Nat.zero_le _) (by omega)).trans
-      (O2.mono (Nat.zero_le _) (by omega))), (wordF hv (by decide) O1).trans (wordF hv (by decide) O2),
+    exact ⟨hv.keep kt (by decide) (by decide) ((O1.mono (Nat.zero_le _) (by omega_arith)).trans
+      (O2.mono (Nat.zero_le _) (by omega_arith))), (wordF hv (by decide) O1).trans (wordF hv (by decide) O2),
       kt.mono (by decide)⟩
   have sc := scanAt_length ne
   rw [hl] at sc
@@ -471,7 +471,7 @@ theorem scan_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32
     simp only [BitVec.toNat_ofNat]
     have := lead_lt ne
     have := h.upper
-    omega
+    omega_arith
   · show (t.mem.readW (off base tOff) 32).toNat = _
     rw [mt, Mem.readW_writeW_self32, Iv.tb, sc, smear32_toNat]
 

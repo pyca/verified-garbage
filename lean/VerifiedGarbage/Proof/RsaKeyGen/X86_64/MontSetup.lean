@@ -44,14 +44,14 @@ theorem msHead_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good
       Keep [.rax, .rbx, .rcx, .rdx, .rsi, .r10, .r12, .r15] s t := by
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
   have sN := Nat.le_trans (slot_le (w := w) (show aN < 8 by decide)) hZ
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.r10, .r12, .rbx] (Q := fun t => t.gpr .r10 = off B (slot w aN) ∧
       t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .rbx = word s.mem B (slot w aN) ∧ t.mem = s.mem) (by
     xrun [State.ea, hdr, at0, hg.rdi, hdrOff, hl sW (by decide), hl (sArr aN) (by decide), hg.hdr.hw,
       hg.hdr.harr aN (by decide), show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
-      hg.scr.ld (d := slot w aN) (by omega)]) rfl) fun s₁ ⟨⟨h10, h12, hbx, hm₁⟩, k₁⟩ => ?_
+      hg.scr.ld (d := slot w aN) (by omega_arith)]) rfl) fun s₁ ⟨⟨h10, h12, hbx, hm₁⟩, k₁⟩ => ?_
   refine WP.mono (minv_ok s₁ (by rw [hbx]; exact hodd)) fun s₂ ⟨hinv, k₂, hm₂⟩ => ?_
   rw [hbx] at hinv
   have hs₂ := (hg.scr.congr k₁.2.2).congr k₂.2.2
@@ -59,7 +59,7 @@ theorem msHead_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good
   refine WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = 1 ∧ t.gpr .rcx = BitVec.ofNat 64 0 ∧
       t.mem = s₂.mem.writeW (off B (8 * sMinv)) (s₂.gpr .r15)) (by
     xrun [State.ea, hdr, hdi₂, hdrOff, hs₂.st (d := 8 * sMinv) (by
-      have := hdr_lt_slot w 8 (show sMinv < 32 by decide); omega)]) rfl)
+      have := hdr_lt_slot w 8 (show sMinv < 32 by decide); omega_arith)]) rfl)
     fun t ⟨⟨hdx, hcx, hm⟩, k⟩ => ?_
   have h15 : t.gpr .r15 = s₂.gpr .r15 := k.gpr (by decide)
   have hm' : t.mem = s.mem.writeW (off B (8 * sMinv)) (t.gpr .r15) := by rw [hm, hm₂, hm₁, h15]
@@ -67,7 +67,7 @@ theorem msHead_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good
     (k.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h12), hm', ((k₁.trans k₂).trans k).mono (by decide)⟩
   rw [hm']
   exact ⟨by rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact hg.hdr.hw, word_writeW_self _ _ _ _,
-    fun j hj => (hdrStore_hdr _ _ _ (by decide) (by unfold sArr; omega) (by unfold sArr sMinv; omega)).trans
+    fun j hj => (hdrStore_hdr _ _ _ (by decide) (by unfold sArr; omega_arith) (by unfold sArr sMinv; omega_arith)).trans
       (hg.hdr.harr j hj)⟩
 
 /-- The steps of `R² mod c`. -/

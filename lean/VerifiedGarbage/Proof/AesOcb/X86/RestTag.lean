@@ -72,10 +72,10 @@ theorem xorPad_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {P : BitVec 32
       fun r h₁ h₂ h₃ => by gregs [h₁, h₂, h₃], by gmems [], by gmems [], by gmems []⟩
   have aT : w64 (p.W + BitVec.ofNat 32 tmpO) = w64 p.W + BitVec.ofNat 64 tmpO := L.aW (by decide)
   have xp : XorPre s₁ (p.W + BitVec.ofNat 32 tmpO) P r := by
-    refine ⟨dx₁, di₁, cx₁, hr, by omega, ?_, hP.fit, ?_, by rw [wr₁]; exact hP.wr, ?_⟩
-    · rw [L.nW (by decide)]; have := L.ww; simp only [tmpO]; omega
-    · rw [aT, rd₁, wr₁]; exact E.perm.wCR (d := tmpO) (n := r) (by simp only [tmpO]; omega)
-    · rw [aT]; exact (hP.w.sub_right (Lay.wSub (by simp only [tmpO]; omega))).symm
+    refine ⟨dx₁, di₁, cx₁, hr, by omega_arith, ?_, hP.fit, ?_, by rw [wr₁]; exact hP.wr, ?_⟩
+    · rw [L.nW (by decide)]; have := L.ww; simp only [tmpO]; omega_arith
+    · rw [aT, rd₁, wr₁]; exact E.perm.wCR (d := tmpO) (n := r) (by simp only [tmpO]; omega_arith)
+    · rw [aT]; exact (hP.w.sub_right (Lay.wSub (by simp only [tmpO]; omega_arith))).symm
   unfold xorPad
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.mono (xorLoop_ok s₁ xp) fun t P' => ⟨by rw [P'.mem, m₁, aT]; rfl, fun r h₁ h₂ h₃ h₄ h₅ => by
@@ -242,10 +242,10 @@ theorem rest_ok (v : BlocksImpl) (enc : Bool) {p : Prm} (L : Lay p) {t : State} 
     · exact Lay.w_w h₁ h (by decide)
     · exact Lay.w_w h₂ h (by decide)
   have pP₃ : bytesAt t₃.mem (w64 P) r = bytesAt t.mem (w64 P) r :=
-    Proof.AesGcm.X86.bytesAt_frame H.frame dH (by omega)
+    Proof.AesGcm.X86.bytesAt_frame H.frame dH (by omega_arith)
   have hl : (bytesAt t.mem (w64 P) r).length = r := length_bytesAt _ _ _
   have hlx : ∀ ys, (Spec.Ocb.xor (bytesAt t.mem (w64 P) r) (Spec.Ocb.toBytes ys)).length = r := fun ys => by
-    simp [Spec.Ocb.xor, length_bytesAt, Proof.Ocb.toBytes_length]; omega
+    simp [Spec.Ocb.xor, length_bytesAt, Proof.Ocb.toBytes_length]; omega_arith
   have fP : ∀ (m : Mem) (xs : List Byte), xs.length = r → Frame [⟨w64 P, r⟩] m (writeBytes m (w64 P) xs) :=
     fun m xs h => writeBytes_frame _ _ _ (by rw [h]; exact Region.contains_self _ _)
   have cnt₃ : slotv t₃.mem p.W restO = BitVec.ofNat 32 r := by
@@ -265,8 +265,8 @@ theorem rest_ok (v : BlocksImpl) (enc : Bool) {p : Prm} (L : Lay p) {t : State} 
         Spec.Ocb.xor (bytesAt t.mem (w64 P) r) (Spec.Ocb.toBytes (ctxCiph t.mem (w64 p.K) p.R
           (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO) ^^^ ctxLstar t.mem (w64 p.K)))) := by
     intro u hu ht
-    rw [hu, Proof.Ocb.xor_bytesAt_block _ _ _ hl (by omega), ht, H.tmp,
-      Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by rw [hlx]) (by omega), hlx, List.drop_of_length_le
+    rw [hu, Proof.Ocb.xor_bytesAt_block _ _ _ hl (by omega_arith), ht, H.tmp,
+      Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by rw [hlx]) (by omega_arith), hlx, List.drop_of_length_le
         (by rw [length_bytesAt]), List.append_nil]
   have ck₃ : blockAtMem t₃.mem (w64 p.W + BitVec.ofNat 64 ckO) = blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ckO) :=
     Proof.Ocb.blockAtMem_frame H.frame fun q hq => by
@@ -305,7 +305,7 @@ theorem rest_ok (v : BlocksImpl) (enc : Bool) {p : Prm} (L : Lay p) {t : State} 
     refine WP.mono (padCk_ok L E₄ hr hr' (by rw [g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide), si₃])
       cnt₄ (hP₃.of_eq wr₄).sbuf) fun t₅ ⟨fr₅, ck₅, g₅, rd₅, wr₅⟩ => ?_
     have p₅ : bytesAt t₅.mem (w64 P) r = bytesAt t₄.mem (w64 P) r :=
-      Proof.AesGcm.X86.bytesAt_frame fr₅ dT (by omega)
+      Proof.AesGcm.X86.bytesAt_frame fr₅ dT (by omega_arith)
     refine ⟨E₄.mut L (by rw [g₅ _ (by decide) (by decide) (by decide) (by decide), E₄.ebp])
       (by rw [g₅ _ (by decide) (by decide) (by decide) (by decide), E₄.esp]) rd₅ wr₅ (frame_toMut fr₅ mT),
       fR H.frame (rs := [⟨w64 P, r⟩, ⟨w64 p.W + BitVec.ofNat 64 t2O, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 ckO, 16⟩])
@@ -321,7 +321,7 @@ theorem rest_ok (v : BlocksImpl) (enc : Bool) {p : Prm} (L : Lay p) {t : State} 
     refine WP.seq (WP.mono (padCk_ok L H.env hr hr' si₃ cnt₃ hP₃.sbuf) fun t₄ ⟨fr₄, ck₄, g₄, rd₄, wr₄⟩ => ?_)
     have E₄ : Env p t₄ := H.env.mut L (by rw [g₄ _ (by decide) (by decide) (by decide) (by decide), H.env.ebp])
       (by rw [g₄ _ (by decide) (by decide) (by decide) (by decide), H.env.esp]) rd₄ wr₄ (frame_toMut fr₄ mT)
-    have p₄ : bytesAt t₄.mem (w64 P) r = bytesAt t₃.mem (w64 P) r := Proof.AesGcm.X86.bytesAt_frame fr₄ dT (by omega)
+    have p₄ : bytesAt t₄.mem (w64 P) r = bytesAt t₃.mem (w64 P) r := Proof.AesGcm.X86.bytesAt_frame fr₄ dT (by omega_arith)
     have cnt₄ : slotv t₄.mem p.W restO = BitVec.ofNat 32 r := by
       rw [← cnt₃]
       exact fr₄.readW (r := ⟨w64 p.W + BitVec.ofNat 64 restO, 4⟩) (Region.contains_self _ _) (fun q hq => by
@@ -405,14 +405,14 @@ theorem tag_ok (v : BlocksImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) 
     rw [aT, show w64 p.W + BitVec.ofNat 64 tmpO + BitVec.ofNat 64 (16 * 0) = w64 p.W + BitVec.ofNat 64 tmpO from
       BitVec.add_zero _] at this
     rw [this, tmp₃, cK]
-  have mD : d + 16 ≤ 128 ∨ 144 ≤ d ∧ d + 16 ≤ 176 := by omega
-  have dT : (d + 16 ≤ tmpO ∨ tmpO + 16 ≤ d) := by simp only [tmpO]; omega
-  obtain ⟨t₅, run₅, m₅, g₅, rd₅, wr₅⟩ := copy16_ok L P₄.env (s := tmpO) (d := d) (by decide) (by omega)
-    (by simp only [tmpO]; omega)
+  have mD : d + 16 ≤ 128 ∨ 144 ≤ d ∧ d + 16 ≤ 176 := by omega_arith
+  have dT : (d + 16 ≤ tmpO ∨ tmpO + 16 ≤ d) := by simp only [tmpO]; omega_arith
+  obtain ⟨t₅, run₅, m₅, g₅, rd₅, wr₅⟩ := copy16_ok L P₄.env (s := tmpO) (d := d) (by decide) (by omega_arith)
+    (by simp only [tmpO]; omega_arith)
   have f₅ : Frame [⟨w64 p.W + BitVec.ofNat 64 d, 16⟩] t₄.mem t₅.mem := by rw [m₅]; exact copyMem16_frame _ _ _ _ _
   have E₅ := step P₄.env mD f₅ g₅ rd₅ wr₅
-  obtain ⟨t₆, run₆, m₆, g₆, rd₆, wr₆⟩ := xor16W_ok L E₅ (s := sumO) (d := d) (by decide) (by omega)
-    (by simp only [sumO]; omega)
+  obtain ⟨t₆, run₆, m₆, g₆, rd₆, wr₆⟩ := xor16W_ok L E₅ (s := sumO) (d := d) (by decide) (by omega_arith)
+    (by simp only [sumO]; omega_arith)
   have f₆ : Frame [⟨w64 p.W + BitVec.ofNat 64 d, 16⟩] t₅.mem t₆.mem := by rw [m₆]; exact xorMem16_frame _ _ _ _ _
   refine WP.of_runBlock ⟨t₆, runBlock_app_of run₅ run₆, step E₅ mD f₆ g₆ rd₆ wr₆, ?_, ?_,
     fun r h₁ h₂ h₃ h₄ => by rw [g₆ r h₁, g₅ r h₁, P₄.gpr r h₁ h₂ h₃ h₄, g₃ r h₁, g₂ r h₁, g₁ r h₁],
@@ -430,7 +430,7 @@ theorem tag_ok (v : BlocksImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) 
         · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
         · exact (L.bw' (by decide)).symm), Proof.Ocb.blockAtMem_frame fr₃ (tW (.inl (by decide)) (by decide))]
     rw [m₆, xorMem16_block, m₅, copyMem16_block, Proof.Ocb.blockAtMem_frame (copyMem16_frame _ _ _ _ _) (fun q hq => by
-      simp only [List.mem_singleton] at hq; subst hq; exact Lay.w_w (by simp only [sumO]; omega) (by decide) (by omega)),
+      simp only [List.mem_singleton] at hq; subst hq; exact Lay.w_w (by simp only [sumO]; omega_arith) (by decide) (by omega_arith)),
       tmp₄, sum₄]
 
 end VG.Proof.AesOcb.X86

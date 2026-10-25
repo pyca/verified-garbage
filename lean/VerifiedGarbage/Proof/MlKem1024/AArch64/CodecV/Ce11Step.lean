@@ -64,24 +64,24 @@ theorem L11 (s₀ : State) {g b : Nat} (hg : g < 32) (hb : b < 11) :
     acc_succ, acc, List.range_zero, List.map_nil, digits_nil]
   simp only [show width11.d = 11 from rfl, show width11.c = 8 from rfl, Nat.add_zero, grp11, w11, z11,
     Nat.reduceMul, Nat.reducePow]
-  rw [show 2 * (2 * (2 * g) + 1) + 1 = 8 * g + 3 by omega, show 2 * (2 * (2 * g) + 1) = 8 * g + 2 by omega,
-    show 2 * (2 * (2 * g + 1)) + 1 = 8 * g + 5 by omega, show 2 * (2 * (2 * g + 1)) = 8 * g + 4 by omega,
-    show 2 * (2 * (2 * g + 1) + 1) + 1 = 8 * g + 7 by omega,
-    show 2 * (2 * (2 * g + 1) + 1) = 8 * g + 6 by omega, show 2 * (2 * (2 * g)) + 1 = 8 * g + 1 by omega,
-    show 2 * (2 * (2 * g)) = 8 * g by omega]
-  omega
+  rw [show 2 * (2 * (2 * g) + 1) + 1 = 8 * g + 3 by omega_arith, show 2 * (2 * (2 * g) + 1) = 8 * g + 2 by omega_arith,
+    show 2 * (2 * (2 * g + 1)) + 1 = 8 * g + 5 by omega_arith, show 2 * (2 * (2 * g + 1)) = 8 * g + 4 by omega_arith,
+    show 2 * (2 * (2 * g + 1) + 1) + 1 = 8 * g + 7 by omega_arith,
+    show 2 * (2 * (2 * g + 1) + 1) = 8 * g + 6 by omega_arith, show 2 * (2 * (2 * g)) + 1 = 8 * g + 1 by omega_arith,
+    show 2 * (2 * (2 * g)) = 8 * g by omega_arith]
+  omega_arith
 
 /-- The groups of coefficients from `32 k` are the groups from `4 k`. -/
 theorem grp11_shift (F : Nat → Nat) (k l : Nat) : grp11 (fun i => F (32 * k + i)) l = grp11 F (4 * k + l) := by
   simp only [grp11, w11, z11]
-  rw [show 32 * k + 2 * (2 * (2 * l)) = 2 * (2 * (2 * (4 * k + l))) by omega,
-    show 32 * k + (2 * (2 * (2 * l)) + 1) = 2 * (2 * (2 * (4 * k + l))) + 1 by omega,
-    show 32 * k + 2 * (2 * (2 * l) + 1) = 2 * (2 * (2 * (4 * k + l)) + 1) by omega,
-    show 32 * k + (2 * (2 * (2 * l) + 1) + 1) = 2 * (2 * (2 * (4 * k + l)) + 1) + 1 by omega,
-    show 32 * k + 2 * (2 * (2 * l + 1)) = 2 * (2 * (2 * (4 * k + l) + 1)) by omega,
-    show 32 * k + (2 * (2 * (2 * l + 1)) + 1) = 2 * (2 * (2 * (4 * k + l) + 1)) + 1 by omega,
-    show 32 * k + 2 * (2 * (2 * l + 1) + 1) = 2 * (2 * (2 * (4 * k + l) + 1) + 1) by omega,
-    show 32 * k + (2 * (2 * (2 * l + 1) + 1) + 1) = 2 * (2 * (2 * (4 * k + l) + 1) + 1) + 1 by omega]
+  rw [show 32 * k + 2 * (2 * (2 * l)) = 2 * (2 * (2 * (4 * k + l))) by omega_arith,
+    show 32 * k + (2 * (2 * (2 * l)) + 1) = 2 * (2 * (2 * (4 * k + l))) + 1 by omega_arith,
+    show 32 * k + 2 * (2 * (2 * l) + 1) = 2 * (2 * (2 * (4 * k + l)) + 1) by omega_arith,
+    show 32 * k + (2 * (2 * (2 * l) + 1) + 1) = 2 * (2 * (2 * (4 * k + l)) + 1) + 1 by omega_arith,
+    show 32 * k + 2 * (2 * (2 * l + 1)) = 2 * (2 * (2 * (4 * k + l) + 1)) by omega_arith,
+    show 32 * k + (2 * (2 * (2 * l + 1)) + 1) = 2 * (2 * (2 * (4 * k + l) + 1)) + 1 by omega_arith,
+    show 32 * k + 2 * (2 * (2 * l + 1) + 1) = 2 * (2 * (2 * (4 * k + l) + 1) + 1) by omega_arith,
+    show 32 * k + (2 * (2 * (2 * l + 1) + 1) + 1) = 2 * (2 * (2 * (4 * k + l) + 1) + 1) + 1 by omega_arith]
 
 theorem step11 {s₀ : State} (hp : Pre width11 s₀) {k : Nat} (hk : k < 8) {s : State}
     (h : VInv width11 4 K11 s₀ k s) :
@@ -94,10 +94,10 @@ theorem step11 {s₀ : State} (hp : Pre width11 s₀) {k : Nat} (hk : k < 8) {s 
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (ld4_ok src .v0 .v1 .v2 .v3 (o := 0) (j := 32 * k) (by decide)
-    (by rw [ptr_zero, e0]) (by omega)) fun s1 ⟨c1, l0, l1, l2, l3⟩ => ?_
+    (by rw [ptr_zero, e0]) (by omega_arith)) fun s1 ⟨c1, l0, l1, l2, l3⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (ld4_ok (src.chg c1) .v4 .v5 .v6 .v7 (o := 64) (j := 32 * k + 16) (by decide)
-    (by rw [c1.gpr, e0]; exact coeffAddr_off _ _ 16) (by omega))
+    (by rw [c1.gpr, e0]; exact coeffAddr_off _ _ 16) (by omega_arith))
     fun s2 ⟨c2, l4, l5, l6, l7⟩ => ?_
   rw [WP.block_append_iff]
   have cs2 : CConsts width11 s2 := (h.cs.chg c1).chg c2
@@ -105,19 +105,19 @@ theorem step11 {s₀ : State} (hp : Pre width11 s₀) {k : Nat} (hk : k < 8) {s 
     (by rw [c2.get .v21, c1.get .v21]; exact h.K.2.1) (by rw [c2.get .v22, c1.get .v22]; exact h.K.2.2)
     (X := X) (fun i _ => val_lt _)
     (Lanes.chg c2 (by decide) l0)
-    ((Lanes.chg c2 (by decide) l1).congr fun e _ => by show _ = X (4 + e); congr 2; omega)
-    ((Lanes.chg c2 (by decide) l2).congr fun e _ => by show _ = X (8 + e); congr 2; omega)
-    ((Lanes.chg c2 (by decide) l3).congr fun e _ => by show _ = X (12 + e); congr 2; omega)
-    (l4.congr fun e _ => by show _ = X (16 + e); congr 2; omega)
-    (l5.congr fun e _ => by show _ = X (20 + e); congr 2; omega)
-    (l6.congr fun e _ => by show _ = X (24 + e); congr 2; omega)
-    (l7.congr fun e _ => by show _ = X (28 + e); congr 2; omega)) fun s3 ⟨c3, b4, b5, b6⟩ => ?_
+    ((Lanes.chg c2 (by decide) l1).congr fun e _ => by show _ = X (4 + e); congr 2; omega_arith)
+    ((Lanes.chg c2 (by decide) l2).congr fun e _ => by show _ = X (8 + e); congr 2; omega_arith)
+    ((Lanes.chg c2 (by decide) l3).congr fun e _ => by show _ = X (12 + e); congr 2; omega_arith)
+    (l4.congr fun e _ => by show _ = X (16 + e); congr 2; omega_arith)
+    (l5.congr fun e _ => by show _ = X (20 + e); congr 2; omega_arith)
+    (l6.congr fun e _ => by show _ = X (24 + e); congr 2; omega_arith)
+    (l7.congr fun e _ => by show _ = X (28 + e); congr 2; omega_arith)) fun s3 ⟨c3, b4, b5, b6⟩ => ?_
   have g3 : s3.gpr = s.gpr := by rw [c3.gpr, c2.gpr, c1.gpr]
   have m3 : s3.mem = s.mem := by rw [c3.mem, c2.mem, c1.mem]
   have w3 : s3.wr = s.wr := by rw [c3.wr, c2.wr, c1.wr]
   have inO : ∀ o n, o + n ≤ 44 → InRegions s.wr (oP s₀ + BitVec.ofNat 64 (44 * k + o)) n := fun o n hon => by
     rw [h.wr, hp.wr]
-    exact in_regions (List.mem_singleton_self _) (contains_off (by simp [width11]; omega) (by decide))
+    exact in_regions (List.mem_singleton_self _) (contains_off (by simp [width11]; omega_arith) (by decide))
   refine wp_strq (a := oP s₀ + BitVec.ofNat 64 (44 * k)) (by decide) (by rw [g3, ptr_zero, h.x2]; rfl)
     (by rw [w3]; exact inO 0 16 (by decide)) fun s4 h4 => ?_
   refine wp_strq (a := oP s₀ + BitVec.ofNat 64 (44 * k + 16)) (by decide)
@@ -130,7 +130,7 @@ theorem step11 {s₀ : State} (hp : Pre width11 s₀) {k : Nat} (hk : k < 8) {s 
   refine wp_strw' (a := oP s₀ + BitVec.ofNat 64 (44 * k + 40)) (by decide)
     (by rw [o8.get .x2, h7.gpr, o6.get .x2, h5.gpr, h4.gpr, g3, h.x2, ptr_add]; rfl)
     (by rw [o8.wr, h7.wr, o6.wr, h5.wr, h4.wr, w3]; exact inO 40 4 (by decide)) fun s9 h9 v9 => ?_
-  have k4 : k < 256 / (width11.c * 4) := by simp [width11]; omega
+  have k4 : k < 256 / (width11.c * 4) := by simp [width11]; omega_arith
   have gs : ∀ r, r ≠ .x9 → s9.gpr r = s.gpr r := fun r hr => by
     rw [h9.gpr, o8.gpr r (by simpa using hr), h7.gpr, o6.gpr r (by simpa using hr), h5.gpr, h4.gpr, g3]
   refine WP.mono (tail_ok (w := width11) (G := 4) (s₀ := s₀) k4 (by rw [gs .x0 (by decide), h.x0])
@@ -155,39 +155,39 @@ theorem step11 {s₀ : State} (hp : Pre width11 s₀) {k : Nat} (hk : k < 8) {s 
     have byte : ∀ m < 44, ∀ x : BitVec 8,
         x.toNat = grp11 (fun i => cf width11 (X i)) (m / 11) / 2 ^ (8 * (m % 11)) % 2 ^ 8 →
         x = L width11 s₀ (44 * k + m) := fun m hm x hx => by
-      rw [show 44 * k + m = 11 * (4 * k + m / 11) + m % 11 by omega, L11 s₀ (by omega) (by omega)]
+      rw [show 44 * k + m = 11 * (4 * k + m / 11) + m % 11 by omega_arith, L11 s₀ (by omega_arith) (by omega_arith)]
       apply BitVec.eq_of_toNat_eq
       rw [hx, BitVec.toNat_ofNat, sh]
     rw [o.mem, h9.mem, o8.mem, h7.mem, o6.mem, h5.mem, h4.mem, m3, x8, v7, v6, x6, h5.v, h4.v,
-      show width11.nb * 4 * (k + 1) = 44 * k + 16 + 16 + 64 / 8 + 32 / 8 by simp [width11]; omega,
-      show 44 * k + 32 = 44 * k + 16 + 16 by omega, show 44 * k + 40 = 44 * k + 16 + 16 + 64 / 8 by omega]
+      show width11.nb * 4 * (k + 1) = 44 * k + 16 + 16 + 64 / 8 + 32 / 8 by simp [width11]; omega_arith,
+      show 44 * k + 32 = 44 * k + 16 + 16 by omega_arith, show 44 * k + 40 = 44 * k + 16 + 16 + 64 / 8 by omega_arith]
     simp only [Mem.writeW]
     refine bytes_write (n := 32 / 8) (bytes_write (n := 64 / 8) (bytes_write (n := 16)
-      (bytes_write (n := 16) out (by decide) (by simp [width11]; omega) fun j hj => byte j (by omega) _ (b4 j hj))
-      (by decide) (by simp [width11]; omega) fun j hj => by
-        rw [show 44 * k + 16 + j = 44 * k + (16 + j) by omega]; exact byte _ (by omega) _ (b5 j hj))
-      (by decide) (by simp [width11]; omega) fun j hj => ?_) (by decide) (by simp [width11]; omega) fun j hj => ?_
-    · rw [show 44 * k + 16 + 16 + j = 44 * k + (32 + j) by omega]
-      refine byte _ (by omega) _ ?_
+      (bytes_write (n := 16) out (by decide) (by simp [width11]; omega_arith) fun j hj => byte j (by omega_arith) _ (b4 j hj))
+      (by decide) (by simp [width11]; omega_arith) fun j hj => by
+        rw [show 44 * k + 16 + j = 44 * k + (16 + j) by omega_arith]; exact byte _ (by omega_arith) _ (b5 j hj))
+      (by decide) (by simp [width11]; omega_arith) fun j hj => ?_) (by decide) (by simp [width11]; omega_arith) fun j hj => ?_
+    · rw [show 44 * k + 16 + 16 + j = 44 * k + (32 + j) by omega_arith]
+      refine byte _ (by omega_arith) _ ?_
       have e : BitVec.extractLsb' (8 * j) 8 (((((s3.v .v6).extractLsb' (Size.x.bits * 0) Size.x.bits).setWidth 64).setWidth 64).setWidth
           (8 * (64 / 8))) = vbyte (s3.v .v6) j := by
         apply BitVec.eq_of_getLsbD_eq; intro i hi
-        simp [vbyte, hi, Size.bits, show 8 * j + i < 64 by omega]
+        simp [vbyte, hi, Size.bits, show 8 * j + i < 64 by omega_arith]
       rw [e]
-      exact b6 j (by omega)
-    · rw [show 44 * k + 16 + 16 + 64 / 8 + j = 44 * k + (32 + (8 + j)) by omega]
-      refine byte _ (by omega) _ ?_
+      exact b6 j (by omega_arith)
+    · rw [show 44 * k + 16 + 16 + 64 / 8 + j = 44 * k + (32 + (8 + j)) by omega_arith]
+      refine byte _ (by omega_arith) _ ?_
       have e : BitVec.extractLsb' (8 * j) 8 (((((s3.v .v6).extractLsb' (Size.w.bits * 2) Size.w.bits).setWidth 64).setWidth 32).setWidth
           (8 * (32 / 8))) = vbyte (s3.v .v6) (8 + j) := by
         apply BitVec.eq_of_getLsbD_eq; intro i hi
-        simp [vbyte, hi, Size.bits, show 8 * j + i < 32 by omega, show 32 * 2 + (8 * j + i) = 8 * (8 + j) + i by omega]
+        simp [vbyte, hi, Size.bits, show 8 * j + i < 32 by omega_arith, show 32 * 2 + (8 * j + i) = 8 * (8 + j) + i by omega_arith]
       rw [e]
-      exact b6 (8 + j) (by omega)
+      exact b6 (8 + j) (by omega_arith)
   · rw [o.mem, h9.mem, o8.mem, h7.mem, o6.mem, h5.mem, h4.mem, m3]
     exact (((h.frame.write (n := 16) (List.mem_singleton_self _) _
-      (contains_off (by simp [width11]; omega) (by decide))).write (n := 16) (List.mem_singleton_self _) _
-      (contains_off (by simp [width11]; omega) (by decide))).write (n := 64 / 8) (List.mem_singleton_self _) _
-      (contains_off (by simp [width11]; omega) (by decide))).write (n := 32 / 8) (List.mem_singleton_self _) _
-      (contains_off (by simp [width11]; omega) (by decide))
+      (contains_off (by simp [width11]; omega_arith) (by decide))).write (n := 16) (List.mem_singleton_self _) _
+      (contains_off (by simp [width11]; omega_arith) (by decide))).write (n := 64 / 8) (List.mem_singleton_self _) _
+      (contains_off (by simp [width11]; omega_arith) (by decide))).write (n := 32 / 8) (List.mem_singleton_self _) _
+      (contains_off (by simp [width11]; omega_arith) (by decide))
 
 end VG.Proof.MlKem1024.AArch64.CE

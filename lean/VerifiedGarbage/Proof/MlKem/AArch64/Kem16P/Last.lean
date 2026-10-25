@@ -58,7 +58,7 @@ theorem LayB.frame {p R B₀ : Addr} {s t : State} (h : LayB p R B₀ s)
 def lastWrites (p B₀ : Addr) : List Region := [pairR p, streamR (p + 400), callR (p + 1536), bufR B₀]
 
 theorem buf21_sub (B₀ : Addr) {k : Nat} (hk : k < 3) : Region.Sub (rateR21 (bufAt B₀ k)) (bufR B₀) :=
-  Offset.sub_base B₀ (by omega)
+  Offset.sub_base B₀ (by omega_arith)
 
 /-- After `k` of the singleton's three main squeezes. -/
 structure BInv (initial : State) (p R B₀ : Addr) (A : Spec.Sha3.State) (N₀ k : Nat) (s : State) : Prop where
@@ -87,7 +87,7 @@ theorem stepB_ok {initial s : State} {p R B₀ : Addr} {A : Spec.Sha3.State} {N�
   have ea : blockAt (p + 400) k = p + BitVec.ofNat 64 (400 + 168 * k) := blockAt_eq p 400 k
   have cP : Covers [pairR p] s.wr := by
     simpa only [BitVec.add_zero, pairR] using cov_scratch (o := 0) (n := 400) hls.scratch (by decide)
-  refine WP.seq (WP.mono (reinitB_ok (N := N₀ + k) (by omega) h.ptr
+  refine WP.seq (WP.mono (reinitB_ok (N := N₀ + k) (by omega_arith) h.ptr
     (by rw [h.keep.get .x28]; exact hR) pair cP (hl.dPR.sub_left subP) hls.rin)
     fun u ⟨ku, fu, pu⟩ => ?_)
   have u19 : u.gpr .x19 = p := (ku.get .x19).trans h.ptr
@@ -100,16 +100,16 @@ theorem stepB_ok {initial s : State} {p R B₀ : Addr} {A : Spec.Sha3.State} {N�
     (by decide) (by decide) (by decide) pu
     (fun i hi => by
       rw [ku.rd, uwr]
-      exact Covers.right (cov_scratch hls.scratch (o := 16 * i) (n := 16) (by omega)) _ _
+      exact Covers.right (cov_scratch hls.scratch (o := 16 * i) (n := 16) (by omega_arith)) _ _
         ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
-    (fun i hi => by rw [uwr, ea, outAddr_eq]; exact in_scratch hls.scratch (by omega))
+    (fun i hi => by rw [uwr, ea, outAddr_eq]; exact in_scratch hls.scratch (by omega_arith))
     (fun i hi => by
       rw [uwr]
       show InRegions s.wr (B₀ + BitVec.ofNat 64 (168 * k) + BitVec.ofNat 64 (8 * i)) 8
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact Hybrid.covers_in hls.bout (by omega : 168 * k + 8 * i + 8 ≤ 504) (by decide))
-    (by rw [ea]; exact (hl.dPF.sub_left (sub (by omega))).sub_right bs)
-    (by rw [ea]; exact Offset.base_disjoint p (by omega) (by omega))
+      exact Hybrid.covers_in hls.bout (by omega_arith : 168 * k + 8 * i + 8 ≤ 504) (by decide))
+    (by rw [ea]; exact (hl.dPF.sub_left (sub (by omega_arith))).sub_right bs)
+    (by rw [ea]; exact Offset.base_disjoint p (by omega_arith) (by omega_arith))
     ((hl.dPF.sub_left subP).sub_right bs)
     (Offset.base_disjoint p (e := 1536) (n := 136) (by decide) (by decide))
     (by
@@ -149,42 +149,42 @@ theorem stepB_ok {initial s : State} {p R B₀ : Addr} {A : Spec.Sha3.State} {N�
   · rw [ot.get .x19 (by decide), kw.gpr .x19 (by decide), u19]
   · rw [h2.get .x20 (by decide), e1, kw.gpr .x20 (by decide), u20]
     show (p + 400 + BitVec.ofNat 64 (168 * k)) + BitVec.ofNat 64 168 = p + 400 + BitVec.ofNat 64 (168 * (k + 1))
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega_arith]
   · rw [e2, h1.get .x21 (by decide), kw.gpr .x21 (by decide), u21]
     show (B₀ + BitVec.ofNat 64 (168 * k)) + BitVec.ofNat 64 168 = B₀ + BitVec.ofNat 64 (168 * (k + 1))
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega_arith]
   · intro j hj
     by_cases he : j = k
     · subst j; rw [hm]; simpa only [iterF_succ] using aw
-    · have hjk : j < k := by omega
+    · have hjk : j < k := by omega_arith
       intro i hi
       have hc : (rateR21 (blockAt (p + 400) j)).Contains (outAddr (blockAt (p + 400) j) i) 8 :=
-        Offset.contains_base _ (by omega) (by omega)
+        Offset.contains_base _ (by omega_arith) (by omega_arith)
       rw [fstep.readW hc (by
           intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl
           · exact (Offset.base_disjoint p (by decide) (by decide) |>.sub_right
-              (block_sub (p + 400) (by omega))).symm
-          · exact Offset.disjoint (p + 400) (Or.inl (by omega)) (by omega) (by omega)
+              (block_sub (p + 400) (by omega_arith))).symm
+          · exact Offset.disjoint (p + 400) (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
           · exact ((hl.dPF.sub_left (sub (o := 400) (n := 504) (by decide))).sub_left
-              (block_sub (p + 400) (by omega))).sub_right bs
+              (block_sub (p + 400) (by omega_arith))).sub_right bs
           · exact ((Offset.disjoint p (d := 1536) (n := 136) (e := 400) (k := 504) (by decide) (by decide)
-              (by decide)).sub_right (block_sub (p + 400) (by omega))).symm) (by decide)]
+              (by decide)).sub_right (block_sub (p + 400) (by omega_arith))).symm) (by decide)]
       exact h.oa j hjk i hi
   · by_cases he : j = k
     · subst j
       have e := seedState_frame (N := N₀ + k) h.frame dW
       intro i hi
       rw [hm, ← e]
-      exact bw i (by omega)
-    · have hjk : j < k := by omega
-      have bj := buf_sub B₀ (k := j) (by omega)
+      exact bw i (by omega_arith)
+    · have hjk : j < k := by omega_arith
+      have bj := buf_sub B₀ (k := j) (by omega_arith)
       refine rate128_frame (h.prf j hjk) fstep fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact (hl.dPF.symm.sub_left bj).sub_right subP
-      · rw [ea]; exact (hl.dPF.symm.sub_left bj).sub_right (sub (by omega))
-      · exact Offset.disjoint B₀ (Or.inl (by omega)) (by omega) (by omega)
+      · rw [ea]; exact (hl.dPF.symm.sub_left bj).sub_right (sub (by omega_arith))
+      · exact Offset.disjoint B₀ (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
       · exact (hl.dPF.symm.sub_left bj).sub_right (sub (o := 1536) (n := 136) (by decide))
 
 /-- The registers the singleton's start changes. -/
@@ -213,7 +213,7 @@ theorem startB_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p seed R B₀ : A
   apply WP.seq
   rw [WP.block_append_iff]
   refine (WP.mono (Paired.init_ok hss hsb h8 hp ha hin
-    (fun j hj => iw (by omega)) (fun j hj => iw (by omega))
+    (fun j hj => iw (by omega_arith)) (fun j hj => iw (by omega_arith))
     (hsep.sub_right (Offset.sub_base p (by decide)))
     (hsep.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048)))
     (Offset.disjoint_base p (by decide) (by decide)))
@@ -438,7 +438,7 @@ theorem lastCodeP_ok (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s : State}
     rcases hr with rfl | rfl
     · exact ap.lay.symm
     · exact ap.out
-  have combined := WP.mono_syms (lastStartP_ok L (w16 := w16) (a := a) hN hbo (by omega) hsb h8 hoff
+  have combined := WP.mono_syms (lastStartP_ok L (w16 := w16) (a := a) hN hbo (by omega_arith) hsb h8 hoff
       hk hk256 hp hseed hout hin hsep ctx ht hl ap hR hB)
     (R := fun u => WP isa (.seq (.ite (.zero .x .x22) (Paired.fullSampleCode sb ss off a L.k w16) (.block []))
       (.block (Impl.MlKem.AArch64.Paired.saved.zipIdx.reverse.map fun (r, i) => .ldr .x r .x19 (1800 + 8 * i)))) u

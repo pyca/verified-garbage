@@ -99,19 +99,19 @@ theorem Ctx.regs {s₀ s s' : State} (hc : Ctx s₀ s) (hg : ∀ r, r ≠ kp →
 /-! ## Addresses -/
 
 theorem setWidth_toNat (b : BitVec 32) : (b.setWidth 64).toNat = b.toNat := by
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_arith)]
 
 /-- Slot `k` of the scratch buffer at `b`, as a 64-bit offset. -/
 theorem slot_addr {b : BitVec 32} {k : Nat} (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) :
-    wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega)
+    wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega_arith)
 
 /-- Slot `k` is in the scratch buffer. -/
 theorem slot_in {rs : List Region} {b : BitVec 32} {n k : Nat} (hr : (⟨b.setWidth 64, 4 * n⟩ : Region) ∈ rs)
     (hfit : b.toNat + 4 * n ≤ 2 ^ 32) (hk : k < n) : InRegions rs (wordAddr b k) 4 :=
   ⟨_, hr, by
-    rw [slot_addr (by omega)]
+    rw [slot_addr (by omega_arith)]
     have := setWidth_toNat b
-    exact VG.Offset.contains_base _ (by omega) (by omega)⟩
+    exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 /-- A scratch buffer of exactly `slots` slots. -/
 theorem ScrIn.exact {rs : List Region} {b : BitVec 32} (hr : (⟨b.setWidth 64, 4 * slots⟩ : Region) ∈ rs)
@@ -134,29 +134,29 @@ theorem wordAddr_entry {s : State} {b : BitVec 32} {m : Nat} (hk : AtEntry s b m
     wordAddr (s.gpr kp) j = wordAddr b (keySlot + 16 * m + j) := by
   simp only [wordAddr, addr]
   rw [show s.gpr kp = _ from hk, VG.Offset.add_add,
-    show 4 * keySlot + 64 * m + 4 * j = 4 * (keySlot + 16 * m + j) by omega]
+    show 4 * keySlot + 64 * m + 4 * j = 4 * (keySlot + 16 * m + j) by omega_arith]
 
 theorem keyW_entry {s : State} {b : BitVec 32} {m : Nat} (hk : AtEntry s b m) (e j : Nat) :
     keyW s (16 * e + j) = entryW s.mem b (m + e) j := by
   simp only [keyW, entryW, wordAddr_entry hk,
-    show keySlot + 16 * m + (16 * e + j) = keySlot + 16 * (m + e) + j by omega]
+    show keySlot + 16 * m + (16 * e + j) = keySlot + 16 * (m + e) + j by omega_arith]
 
 theorem ok_layer {s : State} {b : BitVec 32} {m : Nat} (hscr : ScrIn s.wr b) (hb : s.gpr sb = b)
     (hk : AtEntry s b m) (hm : m + 2 ≤ 34) : Ok layerCfg s where
   slotIn k hk' := by
     simp only [layerCfg, tailSlot_eq] at hk' ⊢
-    rw [hb]; exact hscr.slot (by rw [slots_eq]; omega)
+    rw [hb]; exact hscr.slot (by rw [slots_eq]; omega_arith)
   extIn j hj := by
     simp only [layerCfg] at hj ⊢
     rw [wordAddr_entry hk]
-    exact hscr.slot_rd (by rw [slots_eq, keySlot_eq]; omega)
-  fit := by have := hscr.fit; simp only [layerCfg, tailSlot_eq]; rw [hb]; rw [slots_eq] at this; omega
+    exact hscr.slot_rd (by rw [slots_eq, keySlot_eq]; omega_arith)
+  fit := by have := hscr.fit; simp only [layerCfg, tailSlot_eq]; rw [hb]; rw [slots_eq] at this; omega_arith
   sep k hk' j hj := by
     have := hscr.fit
     simp only [layerCfg, tailSlot_eq] at hk' hj ⊢
     rw [wordAddr_entry hk, hb]
     rw [slots_eq] at this
-    exact slot_sep b (by omega) (by rw [keySlot_eq]; omega) (by rw [keySlot_eq]; omega)
+    exact slot_sep b (by omega_arith) (by rw [keySlot_eq]; omega_arith) (by rw [keySlot_eq]; omega_arith)
 
 /-- Slots outside `ctxRegions` are kept. -/
 theorem Ctx.slot {s₀ s : State} (hc : Ctx s₀ s) (hfit : (s₀.gpr sb).toNat + 4 * slots ≤ 2 ^ 32) {k : Nat}
@@ -164,20 +164,20 @@ theorem Ctx.slot {s₀ s : State} (hc : Ctx s₀ s) (hfit : (s₀.gpr sb).toNat 
   simp only [slotW, hc.base]
   rw [slots_eq] at hfit hk
   have hb := setWidth_toNat (s₀.gpr sb)
-  rw [slot_addr (by omega)]
+  rw [slot_addr (by omega_arith)]
   refine hc.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [ctxRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact VG.Offset.disjoint_base _ (by rw [keySlot_eq] at h1 ⊢; omega) (by omega)
-  · rw [slot_addr (by rw [grpSlot_eq]; omega)]
+  · exact VG.Offset.disjoint_base _ (by rw [keySlot_eq] at h1 ⊢; omega_arith) (by omega_arith)
+  · rw [slot_addr (by rw [grpSlot_eq]; omega_arith)]
     rw [grpSlot_eq] at h2 ⊢
-    exact VG.Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact VG.Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem Ctx.entry {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s)
     {i j : Nat} (hi : i < 34) (hj : j < 16) :
     entryW s.mem (s₀.gpr sb) i j = entryW s₀.mem (s₀.gpr sb) i j := by
-  have := hc.slot hp.scr.fit (k := keySlot + 16 * i + j) (by rw [slots_eq, keySlot_eq]; omega)
-    (by omega) (by rw [grpSlot_eq, keySlot_eq]; omega)
+  have := hc.slot hp.scr.fit (k := keySlot + 16 * i + j) (by rw [slots_eq, keySlot_eq]; omega_arith)
+    (by omega_arith) (by rw [grpSlot_eq, keySlot_eq]; omega_arith)
   simp only [slotW, hc.base] at this
   exact this
 
@@ -186,7 +186,7 @@ theorem Ctx.keyRel {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Key
     W32.HalfRel (fun j => keyW s (16 * e + j)) fun _ => E (m + e) := by
   have hg := hp.nk34
   refine (hp.keys _ hme).congr fun j hj => ?_
-  rw [keyW_entry hk, hc.entry hp (by omega) hj]
+  rw [keyW_entry hk, hc.entry hp (by omega_arith) hj]
 
 theorem Ctx.ok {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s)
     {m : Nat} (hk : AtEntry s (s₀.gpr sb) m) (hm : m + 2 ≤ 34) : Ok layerCfg s :=
@@ -283,7 +283,7 @@ theorem eval_b (s : State) : isa.eval .b s = s.cf := rfl
 /-- `kp` stepped by `n` entries. -/
 theorem AtEntry.add {s s' : State} {b : BitVec 32} {m n : Nat} (hk : AtEntry s b m)
     (h : s'.gpr kp = s.gpr kp + BitVec.ofNat 32 (64 * n)) : AtEntry s' b (m + n) := by
-  rw [AtEntry, h, show s.gpr kp = _ from hk, VG.Offset.add_add]; congr 2; omega
+  rw [AtEntry, h, show s.gpr kp = _ from hk, VG.Offset.add_add]; congr 2; omega_arith
 
 /-! ## Rounds -/
 
@@ -293,8 +293,8 @@ def Halves (s : State) (S : Nat → BitVec 64 × BitVec 64) : Prop :=
 
 theorem Halves.congr {s s' : State} {S : Nat → BitVec 64 × BitVec 64} (h : Halves s S)
     (hs : ∀ k, d1Slot ≤ k → k < tailSlot → slotW s' k = slotW s k) : Halves s' S :=
-  ⟨h.1.congr fun i hi => hs _ (by omega) (by rw [d1Slot_eq, tailSlot_eq] at *; omega),
-   h.2.congr fun i hi => hs _ (by rw [d1Slot_eq, d2Slot_eq]; omega) (by rw [d2Slot_eq, tailSlot_eq]; omega)⟩
+  ⟨h.1.congr fun i hi => hs _ (by omega_arith) (by rw [d1Slot_eq, tailSlot_eq] at *; omega_arith),
+   h.2.congr fun i hi => hs _ (by rw [d1Slot_eq, d2Slot_eq]; omega_arith) (by rw [d2Slot_eq, tailSlot_eq]; omega_arith)⟩
 
 /-- A frame of the slots below the tail buffer keeps the slots from the tail buffer on. -/
 theorem slot_above_frame {s s' : State} (hfit : (s.gpr sb).toNat + 4 * slots ≤ 2 ^ 32)
@@ -302,7 +302,7 @@ theorem slot_above_frame {s s' : State} (hfit : (s.gpr sb).toNat + 4 * slots ≤
     (h1 : tailSlot ≤ k) (h2 : k < slots) : slotW s' k = slotW s k := by
   simp only [slotW, hb]
   exact slot_above (n := tailSlot) (by simpa [slotRegion, layerCfg] using hf) h1
-    (by rw [slots_eq] at hfit h2; omega)
+    (by rw [slots_eq] at hfit h2; omega_arith)
 
 /-- A round, under `Ctx`, with the subkey at entry `m + off / 16`. -/
 theorem round_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s)
@@ -341,11 +341,11 @@ theorem pair_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyC
       (∀ k, tailSlot ≤ k → k < slots → slotW s' k = slotW s k) := by
   obtain ⟨h1, h2⟩ := hS
   obtain ⟨s₁, e₁, c₁, k₁, d₁, o₁, a₁⟩ := round_step hp hc (off := 0) (src := d1Slot) (dst := d2Slot)
-    preL0_check mid0_check post2_check (by decide +kernel) (.inl ⟨rfl, rfl, rfl⟩) hk (by omega) hm34 h1 h2
+    preL0_check mid0_check post2_check (by decide +kernel) (.inl ⟨rfl, rfl, rfl⟩) hk (by omega_arith) hm34 h1 h2
   have hk₁ : AtEntry s₁ (s₀.gpr sb) m := by rw [AtEntry, k₁]; exact hk
   have h1' : W32.HalfRel (half s₁ d1Slot) (fun b => (S b).1) := h1.congr fun i hi => o₁ i hi
   obtain ⟨s₂, e₂, c₂, k₂, d₂, o₂, a₂⟩ := round_step hp c₁ (off := 16) (src := d2Slot) (dst := d1Slot)
-    preL16_check mid16_check post1_check (by decide +kernel) (.inr ⟨rfl, rfl, rfl⟩) hk₁ (by omega) hm34 d₁ h1'
+    preL16_check mid16_check post1_check (by decide +kernel) (.inr ⟨rfl, rfl, rfl⟩) hk₁ (by omega_arith) hm34 d₁ h1'
   have d₂' : W32.HalfRel (half s₂ d2Slot) (fun b => (S b).2 ^^^ Spec.Camellia.f (S b).1 (E (m + 0 / 16))) :=
     d₁.congr fun i hi => o₂ i hi
   obtain ⟨s₃, e₃, kp₃, -, o₃, m₃, rd₃, wr₃⟩ := addI_ok s₂ kp 128
@@ -382,14 +382,14 @@ theorem fl_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
   have hok := hc.ok hp hk hm34
   have hfit : (s.gpr sb).toNat + 4 * slots ≤ 2 ^ 32 := by rw [hc.base]; exact hp.scr.fit
   have hK1 : W32.HalfRel (fun j => keyW s (16 + j)) fun _ => E (m + 1) := by
-    simpa using hc.keyRel hp hk (e := 1) (by omega)
+    simpa using hc.keyRel hp hk (e := 1) (by omega_arith)
   obtain ⟨s₁, e₁, d₁, p₁⟩ := flinv_ok hok (d := d2Slot) (off := 16) (by decide) (by decide) h2 hK1
   have hK0 : W32.HalfRel (fun j => keyW s₁ (0 + j)) fun _ => E m := by
-    have := hc.keyRel hp hk (e := 0) (by omega)
+    have := hc.keyRel hp hk (e := 0) (by omega_arith)
     refine (this.congr fun j hj => ?_).congr_right fun _ _ => by simp
-    rw [p₁.keys _ (by omega)]
+    rw [p₁.keys _ (by omega_arith)]
   have h1' : W32.HalfRel (half s₁ d1Slot) (fun b => (S b).1) :=
-    h1.congr fun i hi => p₁.slots _ (by rw [d1Slot_eq, tailSlot_eq]; omega) (.inl (by rw [d1Slot_eq, d2Slot_eq]; omega))
+    h1.congr fun i hi => p₁.slots _ (by rw [d1Slot_eq, tailSlot_eq]; omega_arith) (.inl (by rw [d1Slot_eq, d2Slot_eq]; omega_arith))
   obtain ⟨s₂, e₂, d₂, p₂⟩ := fl_ok p₁.ok (d := d1Slot) (off := 0) (by decide) (by decide) h1' hK0
   have b₁ : s₁.gpr sb = s.gpr sb := p₁.gpr _ (by decide)
   obtain ⟨s₃, e₃, kp₃, -, o₃, m₃, rd₃, wr₃⟩ := addI_ok s₂ kp 128
@@ -404,7 +404,7 @@ theorem fl_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
   · exact d₂.congr fun i _ => by simp only [half]; rw [hs₃]
   · refine d₁.congr fun i hi => ?_
     simp only [half]
-    rw [hs₃, p₂.slots _ (by rw [d2Slot_eq, tailSlot_eq]; omega) (.inr (by rw [d1Slot_eq, d2Slot_eq]; omega))]
+    rw [hs₃, p₂.slots _ (by rw [d2Slot_eq, tailSlot_eq]; omega_arith) (.inr (by rw [d1Slot_eq, d2Slot_eq]; omega_arith))]
   · rw [hs₃, slot_above_frame (by rw [b₁]; exact hfit) (by rw [p₂.gpr _ (by decide)]) p₂.frame k1 k2,
       slot_above_frame hfit b₁ p₁.frame k1 k2]
 
@@ -447,20 +447,20 @@ theorem setGrp_ok {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyC
     rw [Mem.readW_writeW_self32, r₂, r₁]; rfl
   · rw [slots_eq] at hk
     show (s₂.mem.writeW (wordAddr (s₂.gpr sb) grpSlot) (s₂.gpr .eax)).readW (wordAddr (s₂.gpr sb) k) 32 = _
-    rw [Mem.readW_writeW_sep (slot_sep _ (by rw [b₂]; omega) (by rw [b₂, grpSlot_eq]; omega) hne) (by decide), b₂, hm]
+    rw [Mem.readW_writeW_sep (slot_sep _ (by rw [b₂]; omega_arith) (by rw [b₂, grpSlot_eq]; omega_arith) hne) (by decide), b₂, hm]
 
 /-- Whether `kp` is at the postwhitening's entry. -/
 theorem atEnd_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
     {m : Nat} (hk : AtEntry s (s₀.gpr sb) m) (hm : m ≤ 8 * g + 2) :
     ∃ s', runBlock isa (atEnd g) s = some s' ∧ Ctx s₀ s' ∧ AtEntry s' (s₀.gpr sb) m ∧
       s'.zf = some (decide (m = 8 * g)) ∧ (∀ k, slotW s' k = slotW s k) := by
-  have hg4 : g ≤ 4 := by rcases hp.hg with h | h <;> omega
+  have hg4 : g ≤ 4 := by rcases hp.hg with h | h <;> omega_arith
   obtain ⟨s', e', z', o', m', rd', wr'⟩ := endTest_ok s (BitVec.ofNat 32 (4 * keySlot + 512 * g))
   refine ⟨s', e', hc.regs (fun r _ h => o' r h) m' rd' wr', by rw [AtEntry, o' _ (by decide)]; exact hk, ?_,
     fun k => by simp only [slotW, m', o' sb (by decide)]⟩
   rw [z', show s.gpr kp = _ from hk, show s.gpr .edi = s₀.gpr sb from hc.base,
-    VG.Offset.add_sub_cancel_left, ofNat32_sub_beq (by rw [keySlot_eq]; omega) (by rw [keySlot_eq]; omega)]
-  simp only [Option.some.injEq, decide_eq_decide]; omega
+    VG.Offset.add_sub_cancel_left, ofNat32_sub_beq (by rw [keySlot_eq]; omega_arith) (by rw [keySlot_eq]; omega_arith)]
+  simp only [Option.some.injEq, decide_eq_decide]; omega_arith
 
 /-- A group of six rounds, then FL and FLINV unless it is the last. -/
 theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
@@ -469,15 +469,15 @@ theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePr
     WP isa (groupBody g) s fun s' => Ctx s₀ s' ∧ Halves s' (fun b => group g E (S b) i) ∧
       AtEntry s' (s₀.gpr sb) (if i + 1 < g then 2 + 8 * (i + 1) else 8 * g) ∧
       s'.zf = some (decide (i + 1 = g)) := by
-  have hg4 : g ≤ 4 := by rcases hp.hg with h | h <;> omega
+  have hg4 : g ≤ 4 := by rcases hp.hg with h | h <;> omega_arith
   let b := s₀.gpr sb
   -- The end of the pairs.
   obtain ⟨s₁, e₁, c₁, k₁, v₁, o₁⟩ := setGrp_ok hp.toKeyCtx hc
   have hk₁ : AtEntry s₁ b (2 + 8 * i) := by rw [AtEntry, k₁]; exact hk
   have hv₁ : slotW s₁ grpSlot = b + BitVec.ofNat 32 (4 * keySlot + 64 * (8 + 8 * i)) := by
-    rw [v₁, show s.gpr kp = _ from hk, VG.Offset.add_add]; congr 2; omega
+    rw [v₁, show s.gpr kp = _ from hk, VG.Offset.add_add]; congr 2; omega_arith
   have hS₁ : Halves s₁ S := hS.congr fun k h1 h2 =>
-    o₁ k (by rw [slots_eq]; rw [tailSlot_eq] at h2; omega) (by rw [grpSlot_eq]; rw [tailSlot_eq] at h2; omega)
+    o₁ k (by rw [slots_eq]; rw [tailSlot_eq] at h2; omega_arith) (by rw [grpSlot_eq]; rw [tailSlot_eq] at h2; omega_arith)
   unfold groupBody
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   -- The pairs.
@@ -487,56 +487,56 @@ theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePr
   let Mid : State → Prop := fun s' => Ctx s₀ s' ∧ AtEntry s' b (8 + 8 * i) ∧
     Halves s' (fun b => pairsN E i 3 (S b))
   refine WP.seq (WP.mono (Q := Mid) (WP.loop Inv (fun n s' hs' => ?_) 3 s₁
-    ⟨0, rfl, by omega, c₁, by simpa using hk₁, rfl, by simpa [pairsN] using hS₁⟩) fun s₂ h₂ => ?_)
+    ⟨0, rfl, by omega_arith, c₁, by simpa using hk₁, rfl, by simpa [pairsN] using hS₁⟩) fun s₂ h₂ => ?_)
   · obtain ⟨p, rfl, hp3, hc', hk', hg', hS'⟩ := hs'
-    obtain ⟨s'', e'', c'', k'', S'', z'', a''⟩ := pair_step hp.toKeyCtx hc' hk' (by omega) (by omega) hS'
+    obtain ⟨s'', e'', c'', k'', S'', z'', a''⟩ := pair_step hp.toKeyCtx hc' hk' (by omega_arith) (by omega_arith) hS'
     refine WP.of_runBlock ⟨s'', e'', ?_⟩
     have hz : s''.zf = some (decide (p + 1 = 3)) := by
-      rw [z'', show s''.gpr kp = _ from k'', hg', hv₁, entry_beq b (by rw [keySlot_eq]; omega)
-        (by rw [keySlot_eq]; omega)]
-      simp only [Option.some.injEq, decide_eq_decide]; omega
+      rw [z'', show s''.gpr kp = _ from k'', hg', hv₁, entry_beq b (by rw [keySlot_eq]; omega_arith)
+        (by rw [keySlot_eq]; omega_arith)]
+      simp only [Option.some.injEq, decide_eq_decide]; omega_arith
     have hS'' : Halves s'' (fun b => pairsN E i (p + 1) (S b)) := by
-      simpa only [pairsN_succ, show 2 + 8 * i + 2 * p + 1 = 3 + 8 * i + 2 * p by omega] using S''
+      simpa only [pairsN_succ, show 2 + 8 * i + 2 * p + 1 = 3 + 8 * i + 2 * p by omega_arith] using S''
     by_cases hp2 : p + 1 = 3
     · refine .inl ⟨(eval_ne s'').trans (by rw [hz]; simp [hp2]), c'', ?_, by rw [← hp2]; exact hS''⟩
-      rw [AtEntry, show s''.gpr kp = _ from k'', show 2 + 8 * i + 2 * p + 2 = 8 + 8 * i by omega]
-    · refine .inr ⟨(eval_ne s'').trans (by rw [hz]; simp [hp2]), 3 - (p + 1), by omega, p + 1, rfl, by omega, c'',
-        by rw [AtEntry, show s''.gpr kp = _ from k'', show 2 + 8 * i + 2 * p + 2 = 2 + 8 * i + 2 * (p + 1) by omega],
+      rw [AtEntry, show s''.gpr kp = _ from k'', show 2 + 8 * i + 2 * p + 2 = 8 + 8 * i by omega_arith]
+    · refine .inr ⟨(eval_ne s'').trans (by rw [hz]; simp [hp2]), 3 - (p + 1), by omega_arith, p + 1, rfl, by omega_arith, c'',
+        by rw [AtEntry, show s''.gpr kp = _ from k'', show 2 + 8 * i + 2 * p + 2 = 2 + 8 * i + 2 * (p + 1) by omega_arith],
         by rw [a'' _ (by rw [grpSlot_eq, tailSlot_eq]; decide) (by rw [grpSlot_eq, slots_eq]; decide), hg'], hS''⟩
   · obtain ⟨hc₂, hk₂, hS₂⟩ := h₂
-    obtain ⟨s₃, e₃, hc₃, hk₃, hz₃, sl₃⟩ := atEnd_ok hp hc₂ hk₂ (by omega)
+    obtain ⟨s₃, e₃, hc₃, hk₃, hz₃, sl₃⟩ := atEnd_ok hp hc₂ hk₂ (by omega_arith)
     have hS₃ : Halves s₃ (fun b => pairsN E i 3 (S b)) := hS₂.congr fun k _ _ => sl₃ k
     refine WP.seq (WP.of_runBlock ⟨s₃, e₃, ?_⟩)
     refine WP.seq (WP.ite (!decide (8 + 8 * i = 8 * g)) ((eval_ne s₃).trans (by rw [hz₃]; rfl)) (fun ht => ?_)
       (fun hf => ?_))
     · have hlt : i + 1 < g := by
-        simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not] at ht; omega
-      obtain ⟨s₄, e₄, c₄, k₄, S₄, -⟩ := fl_step hp.toKeyCtx hc₃ hk₃ (by omega) (by omega) hS₃
+        simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not] at ht; omega_arith
+      obtain ⟨s₄, e₄, c₄, k₄, S₄, -⟩ := fl_step hp.toKeyCtx hc₃ hk₃ (by omega_arith) (by omega_arith) hS₃
       refine WP.of_runBlock ⟨s₄, e₄, ?_⟩
       have hk₄ : AtEntry s₄ b (2 + 8 * (i + 1)) := by
-        rw [AtEntry, show s₄.gpr kp = _ from k₄, show 8 + 8 * i + 2 = 2 + 8 * (i + 1) by omega]
-      obtain ⟨s₅, e₅, c₅, k₅, z₅, sl₅⟩ := atEnd_ok hp c₄ hk₄ (by omega)
+        rw [AtEntry, show s₄.gpr kp = _ from k₄, show 8 + 8 * i + 2 = 2 + 8 * (i + 1) by omega_arith]
+      obtain ⟨s₅, e₅, c₅, k₅, z₅, sl₅⟩ := atEnd_ok hp c₄ hk₄ (by omega_arith)
       refine WP.of_runBlock ⟨s₅, e₅, c₅, ?_, ?_, ?_⟩
       · have hG : (fun b => group g E (S b) i) = fun b =>
             (Spec.Camellia.fl (pairsN E i 3 (S b)).1 (E (8 + 8 * i)),
               Spec.Camellia.flinv (pairsN E i 3 (S b)).2 (E (8 + 8 * i + 1))) :=
           funext fun b => by
-            rw [group_eq, show 8 + 8 * i + 1 = 9 + 8 * i by omega]; simp only [hlt, ↓reduceIte]
+            rw [group_eq, show 8 + 8 * i + 1 = 9 + 8 * i by omega_arith]; simp only [hlt, ↓reduceIte]
         rw [hG]
         exact S₄.congr fun k _ _ => sl₅ k
       · simp only [hlt, ↓reduceIte]; exact k₅
-      · rw [z₅]; simp only [Option.some.injEq, decide_eq_decide]; omega
+      · rw [z₅]; simp only [Option.some.injEq, decide_eq_decide]; omega_arith
     · have heq : i + 1 = g := by
-        simp only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq] at hf; omega
+        simp only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq] at hf; omega_arith
       refine WP.of_runBlock ⟨s₃, rfl, ?_⟩
-      obtain ⟨s₅, e₅, c₅, k₅, z₅, sl₅⟩ := atEnd_ok hp hc₃ hk₃ (by omega)
+      obtain ⟨s₅, e₅, c₅, k₅, z₅, sl₅⟩ := atEnd_ok hp hc₃ hk₃ (by omega_arith)
       refine WP.of_runBlock ⟨s₅, e₅, c₅, ?_, ?_, ?_⟩
       · have hG : (fun b => group g E (S b) i) = fun b => pairsN E i 3 (S b) :=
-          funext fun b => by rw [group_eq]; simp only [show ¬ i + 1 < g by omega, ↓reduceIte]
+          funext fun b => by rw [group_eq]; simp only [show ¬ i + 1 < g by omega_arith, ↓reduceIte]
         rw [hG]
         exact hS₃.congr fun k _ _ => sl₅ k
-      · simp only [show ¬ i + 1 < g by omega, ↓reduceIte]
-        rw [show 8 * g = 8 + 8 * i by omega]; exact k₅
-      · rw [z₅]; simp only [Option.some.injEq, decide_eq_decide]; omega
+      · simp only [show ¬ i + 1 < g by omega_arith, ↓reduceIte]
+        rw [show 8 * g = 8 + 8 * i by omega_arith]; exact k₅
+      · rw [z₅]; simp only [Option.some.injEq, decide_eq_decide]; omega_arith
 
 end VG.Proof.Camellia.X86

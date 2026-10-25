@@ -29,7 +29,7 @@ abbrev mask (b : Bool) : BitVec 64 := BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b 
 /-- Two numbers of 64-bit words are equal exactly when their words are. -/
 theorem wordsVal_eq_iff (m : Mem) (B : Addr) (da db : Nat) :
     ∀ n, wordsVal m B da n = wordsVal m B db n ↔ ∀ k < n, word m B (da + 8 * k) = word m B (db + 8 * k)
-  | 0 => ⟨fun _ _ h => absurd h (by omega), fun _ => rfl⟩
+  | 0 => ⟨fun _ _ h => absurd h (by omega_arith), fun _ => rfl⟩
   | n + 1 => by
     rw [wordsVal_succ_top, wordsVal_succ_top]
     have ha := wordsVal_lt m B da n
@@ -46,7 +46,7 @@ theorem wordsVal_eq_iff (m : Mem) (B : Addr) (da db : Nat) :
       · exact (wordsVal_eq_iff m B da db n).mp h k hk
       · exact BitVec.eq_of_toNat_eq hd
     · intro h
-      rw [(wordsVal_eq_iff m B da db n).mpr fun k hk => h k (by omega), h n (by omega)]
+      rw [(wordsVal_eq_iff m B da db n).mpr fun k hk => h k (by omega_arith), h n (by omega_arith)]
 
 /-- `(x | (a ⊕ b))` is zero exactly when `x` is and `a = b`. -/
 theorem or_xor_zero (x a b : BitVec 64) : (x ||| (b ^^^ a) = 0) ↔ (x = 0 ∧ a = b) := by
@@ -61,7 +61,7 @@ theorem zero_mask (x : BitVec 64) :
   have hx := x.isLt
   have hd : decide (18446744073709551615 ≤ (0#64).toNat + (18446744073709551616 - 1 - x.toNat)) =
       decide (x = 0) := by
-    simp only [BitVec.toNat_zero, decide_eq_decide, e]; omega
+    simp only [BitVec.toNat_zero, decide_eq_decide, e]; omega_arith
   rw [hd]
   cases decide (x = 0) <;> rfl
 
@@ -74,7 +74,7 @@ theorem sub1_sign {x : BitVec 64} (hx : x.toNat < 2 ^ 32) :
   have : x = 0 ↔ x.toNat = 0 := ⟨fun h => by rw [h]; rfl, fun h => BitVec.eq_of_toNat_eq h⟩
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     this]
-  split <;> omega
+  split <;> omega_arith
 
 theorem eqMask_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (d : Reg) {a b : Nat} (ha : a < 28) (hb : b < 28) :
     WP isa (eqMask d a b) s fun t =>
@@ -97,7 +97,7 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (d : Reg)
   have hpre : WP isa (.block [.lsr .d .r17 .r11 1, .li .r3 0]) t₂ fun t₃ =>
       (t₃.gpr .r17 = BitVec.ofNat 64 w ∧ t₃.gpr .r3 = 0 ∧ t₃.mem = t₂.mem) ∧ Keep [.r17, .r3] t₂ t₃ := by
     refine WP.keep _ ?_ (by decide)
-    prun [e2.h11, mont_ofNat_shr1 (show w < 2 ^ 63 by omega)]
+    prun [e2.h11, mont_ofNat_shr1 (show w < 2 ^ 63 by omega_arith)]
     rfl
   refine WP.mono hpre fun t₃ ⟨⟨a17, a3, m3⟩, k3⟩ => ?_
   have k13 := ((k1.trans k2).trans k3)
@@ -108,10 +108,10 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (d : Reg)
       t.mem = s.mem ∧ Keep [.r0, .r3, .r4, .r14, .r15, .r17] s t
   refine WP.seq (WP.mono (wp_countdown (body := .block ([.load .d .r0 .r14 0, .load .d .r4 .r15 0,
       .logic .xor .r0 .r0 .r4, .logic .or .r3 .r3 .r0, .addi .r14 .r14 8, .addi .r15 .r15 8] ++
-      ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := w) (by omega) (by omega) Inv
+      ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := w) (by omega_arith) (by omega_arith) Inv
     (fun i hi t ⟨j14, j15, j3, jm, jk⟩ _ => ?_)
     ⟨by rw [k3.gpr .r14 (by decide), k2.gpr .r14 (by decide), a14]; rfl, by rw [k3.gpr .r15 (by decide), a15]; rfl,
-      ⟨fun _ _ hk => absurd hk (by omega), fun _ => a3⟩, hm3, k13.mono (by decide)⟩ a17)
+      ⟨fun _ _ hk => absurd hk (by omega_arith), fun _ => a3⟩, hm3, k13.mono (by decide)⟩ a17)
     fun t hI => ?_)
   · have hs := h.hs.congr jk.wr
     have hst : WP isa (.block [.load .d .r0 .r14 0, .load .d .r4 .r15 0, .logic .xor .r0 .r0 .r4,
@@ -121,13 +121,13 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (d : Reg)
           t'.gpr .r17 = t.gpr .r17 - BitVec.ofNat 64 1 ∧ t'.mem = t.mem) ∧
         Keep [.r0, .r3, .r4, .r14, .r15, .r17] t t' := by
       refine WP.keep _ ?_ (by decide)
-      prun [j14, j15, hs.ld (show slot w a + 8 * i + 8 ≤ Z by omega),
-        hs.ld (show slot w b + 8 * i + 8 ≤ Z by omega)]
+      prun [j14, j15, hs.ld (show slot w a + 8 * i + 8 ≤ Z by omega_arith),
+        hs.ld (show slot w b + 8 * i + 8 ≤ Z by omega_arith)]
       rw [BitVec.xor_comm]
     refine WP.mono hst fun t' ⟨⟨l14, l15, l3, l17, lm⟩, lk⟩ => ⟨⟨?_, ?_, ?_, lm.trans jm, (jk.trans lk).mono
       (by decide)⟩, l17⟩
-    · rw [l14, show slot w a + 8 * i + 8 = slot w a + 8 * (i + 1) by omega]
-    · rw [l15, show slot w b + 8 * i + 8 = slot w b + 8 * (i + 1) by omega]
+    · rw [l14, show slot w a + 8 * i + 8 = slot w a + 8 * (i + 1) by omega_arith]
+    · rw [l15, show slot w b + 8 * i + 8 = slot w b + 8 * (i + 1) by omega_arith]
     · rw [l3, or_xor_zero, j3, jm]
       constructor
       · rintro ⟨hk, he⟩ k hk'
@@ -135,7 +135,7 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (d : Reg)
         · exact hk k hk'
         · exact he
       · intro hk
-        exact ⟨fun k hk' => hk k (by omega), hk i (by omega)⟩
+        exact ⟨fun k hk' => hk k (by omega_arith), hk i (by omega_arith)⟩
   · obtain ⟨_, _, j3, jm, jk⟩ := hI
     refine WP.mono (WP.keep [.r0, .r3, d] (Q := fun t' => t'.gpr d = mask (decide (val32 s.mem B (slot w a) (2 * w) =
         val32 s.mem B (slot w b) (2 * w))) ∧ t'.mem = t.mem) ?_ (by simp [writesOnly, instrs, dstOf, Instr.writesLr]))

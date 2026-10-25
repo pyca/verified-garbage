@@ -26,14 +26,7 @@ theorem pairAdvanceCount_ok {s : State} {count : Nat} (positive : 0 < count) (bo
   have zero : (BitVec.ofNat 32 (count - 1) == (0 : BitVec 32)) = decide (count = 1) := by
     rw [ofNat_beq_zero (by omega : count - 1 < 2 ^ 32)]
     exact decide_eq_decide.mpr (by omega)
-  refine withRest [.r10, .r11] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.pairAdvance ++ VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount) : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r10, .r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.pairAdvance VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount
   ffrun [List.cons_append, List.nil_append, saved, subtract, zero]
 

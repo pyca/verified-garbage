@@ -142,7 +142,7 @@ theorem sealCore {s : State} (hs : sealPre s) : oneCore 1 0 s := by
   clear hs
   exact ⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hwr]; simp,
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, kc, kn, ka, kd, kw, wc, wn, wa, wd, ww,
-    by omega, hsp⟩
+    by omega_arith, hsp⟩
 
 /-- What `sealPre` gives. -/
 theorem sealLay {s : State} (hs : sealPre s) :
@@ -177,12 +177,12 @@ theorem sealEntry_ok {s : State} (hs : sealPre s) :
     WP isa (.block (oneEntry 0 ++ ([.str .x .x7 .x19 tlO, mov .x28 .x7] : List Instr))) s (SealEntry s) := by
   obtain ⟨ol, -, -, -⟩ := sealLay hs
   have hW0 : s.mem.readW (s.sp + BitVec.ofNat 64 0) 64 = stackArg s 0 := rfl
-  refine WP.block_append (WP.mono (oneEntry_ok (by decide) hW0 (ol.hsp 0 (by omega)) rfl ol.perm)
+  refine WP.block_append (WP.mono (oneEntry_ok (by decide) hW0 (ol.hsp 0 (by omega_arith)) rfl ol.perm)
     fun s₁ ⟨he₁, x23₁, x24₁, x26₁, x27₁, x7₁, sl₁, sl₂, sl₃, sl₄, f₁, sv₁, rd₁, wr₁⟩ =>
       WP.mono (stash7_ok he₁.x19 he₁.perm.w) fun s₂ ⟨x28₂, m₂, og₂, sp₂, rd₂, wr₂⟩ => ?_)
   have so (d : Nat) (hd : d + 8 ≤ 248) : s₂.mem.readW (stackArg s 0 + BitVec.ofNat 64 d) 64 =
       s₁.mem.readW (stackArg s 0 + BitVec.ofNat 64 d) 64 := by
-    rw [m₂, readW_writeW_other _ _ _ (.inl hd) (by omega) (by decide)]
+    rw [m₂, readW_writeW_other _ _ _ (.inl hd) (by omega_arith) (by decide)]
   have g₂ : ∀ r ∈ [Reg.x7, .x23, .x24, .x26, .x27], s₂.gpr r = s₁.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     exact og₂ r (by rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -233,9 +233,9 @@ theorem sealRest_ok (v : GcmImpl) {s s₁ : State} (hs : sealPre s) (h₁ : Seal
   have haad : DataOk (W + BitVec.ofNat 64 16) W s₁ A al :=
     ⟨by rw [rd₁, wr₁]; exact aR, hal ▸ (s.gpr .x4).isLt, wa, daW.sub_right sub16, daW⟩
   have iv₁ : bytesAt s₁.mem Np nl = bytesAt s.mem Np nl :=
-    bytesAt_frame f₁ (keep_of_sub (entryR_work W) dnW) (by omega)
+    bytesAt_frame f₁ (keep_of_sub (entryR_work W) dnW) (by omega_arith)
   have a₁ : bytesAt s₁.mem A al = bytesAt s.mem A al :=
-    bytesAt_frame f₁ (keep_of_sub (entryR_work W) daW) (by omega)
+    bytesAt_frame f₁ (keep_of_sub (entryR_work W) daW) (by omega_arith)
   refine front_ok L v he₁ (fun _ _ => rfl : Kept s₁.gpr s₁) x23₁ (by rw [x24₁, ← h2])
     (by rw [x26₁, ← h2]) x27₁ hnon haad hH₁ sl₁ sl₂ sl₃ sl₄ fun s₂ h₂ => ?_
   rw [iv₁, a₁] at h₂
@@ -266,8 +266,8 @@ theorem sealRest_ok (v : GcmImpl) {s s₁ : State} (hs : sealPre s) (h₁ : Seal
     rw [ciph_frame h₃.frame kcd, ciph_frame h₂.frame (keep_of_sub (frontFrame_work W) dcW),
       ciph_frame f₁ (keep_of_sub (entryR_work W) dcW)]
   have hD₂ : bytesAt s₂.mem D n = bytesAt s.mem D n := by
-    rw [bytesAt_frame h₂.frame (keep_of_sub (frontFrame_work W) ddW) (by omega),
-      bytesAt_frame f₁ (keep_of_sub (entryR_work W) ddW) (by omega)]
+    rw [bytesAt_frame h₂.frame (keep_of_sub (frontFrame_work W) ddW) (by omega_arith),
+      bytesAt_frame f₁ (keep_of_sub (entryR_work W) ddW) (by omega_arith)]
   have hc₂ : ciphOf s₂.mem Ctx = ciphOf s.mem Ctx := by
     rw [ciph_frame h₂.frame (keep_of_sub (frontFrame_work W) dcW),
       ciph_frame f₁ (keep_of_sub (entryR_work W) dcW)]
@@ -300,8 +300,8 @@ theorem sealRest_ok (v : GcmImpl) {s s₁ : State} (hs : sealPre s) (h₁ : Seal
   rw [hm]
   have hdata : bytesAt s₆.mem D n = gctr (ctxCiph s.mem Ctx)
       (inc32 (Spec.Gcm.j0 (ctxH s.mem Ctx) (bytesAt s.mem Np nl))) (bytesAt s.mem D n) := by
-    rw [bytesAt_frame f₆ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ddt) (by omega),
-      bytesAt_frame f₅ (keep_fin (.inl rfl) ddW kd.symm) (by omega), m₄, o₃, hc₂, hD₂,
+    rw [bytesAt_frame f₆ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ddt) (by omega_arith),
+      bytesAt_frame f₅ (keep_fin (.inl rfl) ddW kd.symm) (by omega_arith), m₄, o₃, hc₂, hD₂,
       Proof.Gcm.gctr_eq]
     rfl
   have hj₄ : blockAt s₄'.mem (W + BitVec.ofNat 64 16) = Spec.Gcm.j0 (ctxH s.mem Ctx) (bytesAt s.mem Np nl) := by

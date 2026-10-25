@@ -86,12 +86,12 @@ theorem storeLoop_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (ar
     WP isa (.block (.store (Impl.X25519.X86.sc d) r :: is)) s Q := by
   have cs := hs.ctx hp.scratch.fit hp.scratch.wr hp.scratch.stk
   simp only [DPTR] at hd hd'
-  refine Wp.wp_stm hs.edi (cs.inW (d := d) (n := 4) (by omega) (by decide)) fun t ht => k t ?_ ht.mem ht.gpr ht.zf
+  refine Wp.wp_stm hs.edi (cs.inW (d := d) (n := 4) (by omega_arith) (by decide)) fun t ht => k t ?_ ht.mem ht.gpr ht.zf
   refine hs.of_offset hp.scratch.fit ⟨by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr⟩ (o := DPTR) (n := 16)
     ?_ (by decide) (by decide) (by decide)
   rw [ht.mem]
-  exact frame_write1 (Frame.refl _ _) hp.scratch.fit (by decide) (by simp only [DPTR]; omega)
-    (by simp only [DPTR]; omega) _
+  exact frame_write1 (Frame.refl _ _) hp.scratch.fit (by decide) (by simp only [DPTR]; omega_arith)
+    (by simp only [DPTR]; omega_arith) _
 
 /-- A load of a word of the working space. -/
 theorem loadWd_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s) {d : Nat}
@@ -115,8 +115,8 @@ theorem wd_store {x : BitVec 32} (hx : x.toNat + 8192 ≤ 2 ^ 32) (m : Mem) (w :
     wd (m.writeW (addr x e) w) x d = if d = e then w else wd m x d := by
   rcases h with rfl | h
   · rw [ite_eq_left rfl]; exact wd_write_self m x w d
-  · rw [ite_eq_right (by omega)]
-    exact wd_write_ne m w (by omega) (by omega) h
+  · rw [ite_eq_right (by omega_arith)]
+    exact wd_write_ne m w (by omega_arith) (by omega_arith) h
 
 theorem decodeStart_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s) :
     WP isa (.block decodeStart) s (DecAt s₀ 0) := by
@@ -242,12 +242,12 @@ theorem decodeNext_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (a
   have ec3 : u3.gpr .ecx = signWord p.isSome := by
     rw [h3.other _ (by decide), g2 _ (by decide), h1.gpr, eax0]
   rw [WP.block_append_iff]
-  refine WP.mono (pointToTable_ok (hs3.ctx hx hp.scratch.wr hp.scratch.stk) ed3 (by omega) (by omega)) fun u4 ⟨k4, t4⟩ => ?_
+  refine WP.mono (pointToTable_ok (hs3.ctx hx hp.scratch.wr hp.scratch.stk) ed3 (by omega_arith) (by omega_arith)) fun u4 ⟨k4, t4⟩ => ?_
   have hs4 : Saved s₀ (arg s₀ 3) u4 :=
-    hs3.of_offset hx ⟨k4.gpr _ (by decide), k4.gpr _ (by decide), k4.rd, k4.wr⟩ k4.frame (by omega) (by omega)
-      (by omega)
+    hs3.of_offset hx ⟨k4.gpr _ (by decide), k4.gpr _ (by decide), k4.rd, k4.wr⟩ k4.frame (by omega_arith) (by omega_arith)
+      (by omega_arith)
   have w4 : ∀ d, 7936 ≤ d → d + 4 ≤ 8192 → wd u4.mem (arg s₀ 3) d = wd s.mem (arg s₀ 3) d := fun d h1 h2 => by
-    rw [wd_frame1 k4.frame hx (by omega) h2 (Or.inr (by omega)), m3]
+    rw [wd_frame1 k4.frame hx (by omega_arith) h2 (Or.inr (by omega_arith)), m3]
   have ec4 : u4.gpr .ecx = signWord p.isSome := (k4.gpr _ (by decide)).trans ec3
   refine loadWd_ok hp hs4 (d := DOK) (by decide) .edx (by decide) fun u5 hs5 e5 g5 m5 => ?_
   refine Wp.wp_and fun u6 h6 => ?_
@@ -273,7 +273,7 @@ theorem decodeNext_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (a
     rw [g12, h11.gpr, e10, m9, wd_store hx _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide), m8,
       m7, wd_store hx _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide), h6.mem, m5,
       w4 DTAB (by decide) (by decide), htab]
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;> decide
+    rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl <;> decide
   have frm : Frame [sub (arg s₀ 3) DPTR 16] u4.mem t.mem := by
     rw [mt]
     exact frame_write1 (frame_write1 (frame_write1 (Frame.refl _ _) hx (by decide) (by decide) (by decide) _) hx
@@ -290,12 +290,12 @@ theorem decodeNext_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (a
       wd_store hx _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide),
       wd_store hx _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide), w4 DNEXT (by decide) (by decide)]
   · rw [mt, wd_store hx _ _ (by decide) (by decide) (by decide), ite_eq_left rfl, tab12]
-  · rw [tablePoint_frame hx frm (by decide) (by omega) (Or.inl (by simp only [DPTR]; omega)), t4, m3]
+  · rw [tablePoint_frame hx frm (by decide) (by omega_arith) (Or.inl (by simp only [DPTR]; omega_arith)), t4, m3]
     exact hpt q hq
-  · rw [tablePoint_frame hx frm (by decide) (by omega) (Or.inl (by simp only [DPTR]; omega)),
-      tablePoint_frame hx k4.frame (by omega) (by omega) (Or.inl ho), m3]
+  · rw [tablePoint_frame hx frm (by decide) (by omega_arith) (Or.inl (by simp only [DPTR]; omega_arith)),
+      tablePoint_frame hx k4.frame (by omega_arith) (by omega_arith) (Or.inl ho), m3]
   · rw [zt, tab12]
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;> decide
+    rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl <;> decide
 
 /-- One iteration: the input `k` decoded, its result ANDed into `DOK`, and its point in the
 table. -/
@@ -303,7 +303,7 @@ theorem decodeBody_ok {s₀ s : State} (hp : VerifyPre s₀) {k : Nat} (hk : k <
     WP isa decodeBody s fun t => DecAt s₀ (k + 1) t ∧ t.zf = some (decide (k = 1)) := by
   have hx := hp.scratch.fit
   have hi : SlicePre s₀ 3 (arg s₀ k + BitVec.ofNat 32 0) 32 := by
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl
     exacts [hp.pk, hp.r]
   rw [decodeBody]
   apply WP.assoc
@@ -312,7 +312,7 @@ theorem decodeBody_ok {s₀ s : State} (hp : VerifyPre s₀) {k : Nat} (hk : k <
   have fa := hd.2.1
   have cs := hs.saved.ctx hx hp.scratch.wr hp.scratch.stk
   have wa : ∀ d, 7168 ≤ d → d + 4 ≤ 8192 → wd a.mem (arg s₀ 3) d = wd s.mem (arg s₀ 3) d :=
-    fun d h1 h2 => wd_frame1s cs fa (by decide) h2 (Or.inr (by omega))
+    fun d h1 h2 => wd_frame1s cs fa (by decide) h2 (Or.inr (by omega_arith))
   refine WP.mono (decodeNext_ok hp ha hk hd.2.2.1 hd.2.2.2 (by rw [wa DTAB (by decide) (by decide)]; exact hs.tab))
     fun t hn => ?_
   have ok := hn.2.1
@@ -320,14 +320,14 @@ theorem decodeBody_ok {s₀ s : State} (hp : VerifyPre s₀) {k : Nat} (hk : k <
   have nx := hn.2.2.2.1
   have old := hn.2.2.2.2.2.2.1
   refine ⟨⟨hn.1, fun hk1 => ?_, ?_, hn.2.2.2.2.1, ?_, fun j hj q hq => ?_⟩, hn.2.2.2.2.2.2.2⟩
-  · obtain rfl : k = 0 := by omega
+  · obtain rfl : k = 0 := by omega_arith
     rw [ptr, wa DNEXT (by decide) (by decide)]; exact hs.next
   · rw [nx, wa DNEXT (by decide) (by decide)]; exact hs.next
   · rw [ok, wa DOK (by decide) (by decide), hs.ok, signWord_and, decOk_succ]
-  · rcases (by omega : j = k ∨ j < k) with rfl | hj'
+  · rcases (by omega_arith : j = k ∨ j < k) with rfl | hj'
     · exact hn.2.2.2.2.2.1 q hq
-    · rw [old _ (by omega), table_point_of_words fun i hi =>
-        wd_frame1s cs fa (by decide) (by omega) (Or.inr (by omega))]
+    · rw [old _ (by omega_arith), table_point_of_words fun i hi =>
+        wd_frame1s cs fa (by decide) (by omega_arith) (Or.inr (by omega_arith))]
       exact hs.pts j hj' q hq
 
 /-- `A` and `R` decoded, by the loop. -/
@@ -339,8 +339,8 @@ theorem decodeBoth_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (a
     ⟨0, rfl, by decide, ha⟩
   intro m u ⟨k, hkm, hk, hu⟩
   refine WP.mono (decodeBody_ok hp hk hu) fun t ⟨ht, zt⟩ => ?_
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
-  · exact .inr ⟨by show t.zf.map (!·) = _; rw [zt]; rfl, 1, by omega, 1, rfl, by decide, ht⟩
+  rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl
+  · exact .inr ⟨by show t.zf.map (!·) = _; rw [zt]; rfl, 1, by omega_arith, 1, rfl, by decide, ht⟩
   · exact .inl ⟨by show t.zf.map (!·) = _; rw [zt]; rfl, ht⟩
 
 theorem decOk_two (s : State) :

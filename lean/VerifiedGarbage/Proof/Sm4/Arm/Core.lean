@@ -80,46 +80,46 @@ theorem keyW_entry {s : State} {b : BitVec 32} {m : Nat} (hk : AtEntry s b m) (e
     keyW s (8 * e + j) = entryW s.mem b (m + e) j := by
   simp only [keyW, wordAddr, entryW]
   rw [hk, add_ofNat_ofNat,
-    show 4 * tableSlot + 32 * m + 4 * (8 * e + j) = 4 * (tableSlot + 8 * (m + e) + j) by omega]
+    show 4 * tableSlot + 32 * m + 4 * (8 * e + j) = 4 * (tableSlot + 8 * (m + e) + j) by omega_arith]
 
 /-- Slot `k` of the scratch buffer at `b`, as a 64-bit offset. -/
 theorem slot_addr {b : BitVec 32} {k : Nat} (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) :
-    wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := addr_add (by omega)
+    wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := addr_add (by omega_arith)
 
 theorem addr_toNat (b : BitVec 32) : (State.addr b).toNat = b.toNat := by
-  have := b.isLt; simp [State.addr]; omega
+  have := b.isLt; simp [State.addr]; omega_arith
 
 /-- Slot `k` is in the scratch buffer. -/
 theorem slot_in {rs : List Region} {b : BitVec 32} {n k : Nat} (hr : (⟨State.addr b, 4 * n⟩ : Region) ∈ rs)
     (hfit : b.toNat + 4 * n ≤ 2 ^ 32) (hk : k < n) : InRegions rs (wordAddr b k) 4 :=
   ⟨_, hr, by
-    rw [slot_addr (by omega)]
+    rw [slot_addr (by omega_arith)]
     have := addr_toNat b
-    exact VG.Offset.contains_base _ (by omega) (by omega)⟩
+    exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem ok_layer {s : State} {b : BitVec 32} {m : Nat} (hscr : (⟨State.addr b, 4 * slots⟩ : Region) ∈ s.wr)
     (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) (hb : s.gpr sb = b) (hk : AtEntry s b m) (hm : m + 4 ≤ 32) :
     Ok layerCfg s where
   slotIn k hk' := by
     simp only [layerCfg, tableSlot_eq] at hk' ⊢
-    rw [hb]; exact slot_in hscr hfit (by rw [slots_eq]; omega)
+    rw [hb]; exact slot_in hscr hfit (by rw [slots_eq]; omega_arith)
   extIn j hj := by
     simp only [layerCfg] at hj ⊢
     have e : wordAddr (s.gpr kp) j = wordAddr b (tableSlot + 8 * m + j) := by
       simp only [wordAddr]; rw [show s.gpr kp = _ from hk, add_ofNat_ofNat]
-      rw [show 4 * tableSlot + 32 * m + 4 * j = 4 * (tableSlot + 8 * m + j) by omega]
+      rw [show 4 * tableSlot + 32 * m + 4 * j = 4 * (tableSlot + 8 * m + j) by omega_arith]
     rw [e]
-    obtain ⟨r, hr, hc⟩ := slot_in hscr hfit (k := tableSlot + 8 * m + j) (by rw [slots_eq, tableSlot_eq]; omega)
+    obtain ⟨r, hr, hc⟩ := slot_in hscr hfit (k := tableSlot + 8 * m + j) (by rw [slots_eq, tableSlot_eq]; omega_arith)
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  slots := by simp only [layerCfg, tableSlot_eq]; rw [hb]; rw [slots_eq] at hfit; omega
+  slots := by simp only [layerCfg, tableSlot_eq]; rw [hb]; rw [slots_eq] at hfit; omega_arith
   sep k hk' j hj := by
     simp only [layerCfg, tableSlot_eq] at hk' hj ⊢
     have e : wordAddr (s.gpr kp) j = wordAddr b (tableSlot + 8 * m + j) := by
       simp only [wordAddr]; rw [show s.gpr kp = _ from hk, add_ofNat_ofNat]
-      rw [show 4 * tableSlot + 32 * m + 4 * j = 4 * (tableSlot + 8 * m + j) by omega]
+      rw [show 4 * tableSlot + 32 * m + 4 * j = 4 * (tableSlot + 8 * m + j) by omega_arith]
     rw [e, hb]
     rw [slots_eq] at hfit
-    exact slot_sep b (by omega) (by rw [tableSlot_eq]; omega) (by rw [tableSlot_eq]; omega)
+    exact slot_sep b (by omega_arith) (by rw [tableSlot_eq]; omega_arith) (by rw [tableSlot_eq]; omega_arith)
 
 /-! ## Under `Ctx` -/
 
@@ -130,10 +130,10 @@ theorem Ctx.entry {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀
   rw [slots_eq] at hfit
   have hb := addr_toNat (s₀.gpr sb)
   simp only [entryW]
-  rw [slot_addr (by rw [tableSlot_eq]; omega)]
+  rw [slot_addr (by rw [tableSlot_eq]; omega_arith)]
   refine hc.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_singleton] at hr; subst hr
-  exact VG.Offset.disjoint_base _ (by rw [tableSlot_eq]; omega) (by rw [tableSlot_eq]; omega)
+  exact VG.Offset.disjoint_base _ (by rw [tableSlot_eq]; omega_arith) (by rw [tableSlot_eq]; omega_arith)
 
 theorem Ctx.keyRel {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E) (hc : Ctx s₀ s)
     {m e : Nat} (hk : AtEntry s (s₀.gpr sb) m) (hme : m + e < 32) :
@@ -157,7 +157,7 @@ theorem round_step (l : Lin) {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : 
     ∃ s', runBlock isa (round l a a b c d) s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kp = s.gpr kp ∧
       StRel s' (fun b' => sround l (E (m + a)) a (X b')) := by
   obtain ⟨s', h', hX', rd', wr', sp', o', f'⟩ :=
-    round_ok l ha hb hc' hd hpre hlin hall (hc.ok hp hk hm) hX (hc.keyRel hp hk (e := a) (by omega))
+    round_ok l ha hb hc' hd hpre hlin hall (hc.ok hp hk hm) hX (hc.keyRel hp hk (e := a) (by omega_arith))
   refine ⟨s', h', hc.step rd' wr' sp' (fun r hr _ => o' r hr) (f'.mono fun r hr => ?_), o' _ (by decide), hX'⟩
   simp only [List.mem_singleton] at hr; subst hr
   simp only [slotRegion, layerCfg, hc.base]; simp
@@ -168,7 +168,7 @@ theorem rounds4_ok (l : Lin) {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : 
     (hX : StRel s X) :
     ∃ s', runBlock isa (rounds4 l) s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kp = s.gpr kp ∧
       StRel s' (fun b => quad l E m (X b)) := by
-  have hm4 : 4 * m + 4 ≤ 32 := by omega
+  have hm4 : 4 * m + 4 ≤ 32 := by omega_arith
   obtain ⟨s₁, e₁, c₁, k₁, X₁⟩ := round_step l hp hc (a := 0) (by decide) rfl rfl rfl pre0_check
     (by cases l <;> [exact linE0_check; exact linK0_check]) (by cases l <;> decide +kernel) hk hm4 hX
   obtain ⟨s₂, e₂, c₂, k₂, X₂⟩ := round_step l hp c₁ (a := 1) (by decide) rfl rfl rfl pre1_check
@@ -253,7 +253,7 @@ theorem roundsBody_ok (l : Lin) {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp
   have hc₂ : Ctx s₀ s₂ := c₁.kp o₂ m₂ rd₂ wr₂ sp₂
   have hk₂ : AtEntry s₂ (s₀.gpr sb) (4 * (m + 1)) := by
     rw [AtEntry, kp₂, k₁, show s.gpr kp = _ from hk, show (128 : BitVec 32) = BitVec.ofNat 32 128 from rfl,
-      add_ofNat_ofNat, show 4 * tableSlot + 32 * (4 * m) + 128 = 4 * tableSlot + 32 * (4 * (m + 1)) by omega]
+      add_ofNat_ofNat, show 4 * tableSlot + 32 * (4 * m) + 128 = 4 * tableSlot + 32 * (4 * (m + 1)) by omega_arith]
   refine ⟨s₃, ?_, hc₂.t0 g₃ m₃ rd₃ wr₃ sp₃, by rw [AtEntry, g₃ _ (by decide)]; exact hk₂, ?_, ?_⟩
   · rw [roundsBody, runBlock_app, e₁, Option.bind_some,
       show ([.dp .add kp kp (.imm 128), .dp .sub t0 kp (.reg sb), .cmp t0 (.imm (BitVec.ofNat 32 (4 * tableEnd)))] :
@@ -262,8 +262,8 @@ theorem roundsBody_ok (l : Lin) {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp
       runBlock_app, e₂, Option.bind_some, e₃]
   · exact X₁.congr fun k => by simp only [slotW, m₃, g₃ sb (by decide), m₂, o₂ sb (by decide)]
   · rw [z₃, show s₂.gpr kp = _ from hk₂, hc₂.base, VG.Offset.add_sub_cancel_left, ofNat32_sub_beq
-      (by rw [tableSlot_eq]; omega) (by rw [tableEnd_eq]; omega), tableSlot_eq, tableEnd_eq]
-    simp only [decide_eq_decide]; omega
+      (by rw [tableSlot_eq]; omega_arith) (by rw [tableEnd_eq]; omega_arith), tableSlot_eq, tableEnd_eq]
+    simp only [decide_eq_decide]; omega_arith
 
 /-- `add kp, sb, #4 k`. -/
 theorem kpAt_ok (s : State) (k : Nat) (hv : encodable (BitVec.ofNat 32 (4 * k)) = true) :
@@ -281,7 +281,7 @@ theorem rounds_wp (l : Lin) {s₀ : State} {E : Nat → Spec.Sm4.Word} (hp : Key
   let Inv : Nat → State → Prop := fun n s' => ∃ m, n = 8 - m ∧ m < 8 ∧ Ctx s₀ s' ∧
     AtEntry s' (s₀.gpr sb) (4 * m) ∧ StRel s' (fun b => quads l E m (X b))
   refine WP.loop (M := isa) Inv (fun n s' hs' => ?_) 8 s₁
-    ⟨0, rfl, by omega, hc₁, by rw [AtEntry, k₁]; simp, hX.congr fun k => by simp only [slotW, m₁, o₁ sb (by decide)]⟩
+    ⟨0, rfl, by omega_arith, hc₁, by rw [AtEntry, k₁]; simp, hX.congr fun k => by simp only [slotW, m₁, o₁ sb (by decide)]⟩
   obtain ⟨m, rfl, hm8, hc', hk', hX'⟩ := hs'
   obtain ⟨s'', e'', c'', k'', X'', z''⟩ := roundsBody_ok l hp hc' hk' hm8 hX'
   have X3 : StRel s'' fun b => quads l E (m + 1) (X b) := X''
@@ -289,6 +289,6 @@ theorem rounds_wp (l : Lin) {s₀ : State} {E : Nat → Spec.Sm4.Word} (hp : Key
   by_cases h8 : m + 1 = 8
   · refine .inl ⟨by rw [eval_ne, z'', h8]; rfl, c'', ?_⟩
     rw [h8] at X3; exact X3
-  · exact .inr ⟨by rw [eval_ne, z'']; simp [h8], 8 - (m + 1), by omega, m + 1, rfl, by omega, c'', k'', X3⟩
+  · exact .inr ⟨by rw [eval_ne, z'']; simp [h8], 8 - (m + 1), by omega_arith, m + 1, rfl, by omega_arith, c'', k'', X3⟩
 
 end VG.Proof.Sm4.Arm

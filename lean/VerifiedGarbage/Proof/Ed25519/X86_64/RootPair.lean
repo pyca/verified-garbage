@@ -77,21 +77,21 @@ theorem sq2Loop_ok {s₀ : State} {base : Addr} (hs₀ : Scratch s₀ base) {o o
     env s.mem base = upd2 (env s₀.mem base) o o' (sqn x (n - m)) (sqn x' (n - m))) ?_ m s
     ⟨h1, h2, hk, hb, he⟩
   intro m s ⟨h1, h2, hk, hb, he⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_arith⟩
   rw [WP.block_append_iff]
   refine WP.mono (fieldCodeWide_ok (hk.scratch hs₀) [.sqr o o, .sqr o' o']) fun s1 ⟨k1, e1⟩ => ?_
-  refine WP.mono (decRbx_ok (by omega) ((k1.gpr _ (by decide)).trans hb))
+  refine WP.mono (decRbx_ok (by omega_arith) ((k1.gpr _ (by decide)).trans hb))
     fun s2 ⟨b2, g2, m2, rd2, wr2, z2⟩ => ?_
   have k2 : RbxKeep base s₀ s2 := hk.trans ((RbxKeep.of_keep k1).trans
     ⟨fun r _ hr => g2 r hr, rd2, wr2, by rw [m2]; exact Outside.refl _ _ _ _⟩)
   have e2 : env s2.mem base = upd2 (env s₀.mem base) o o' (sqn x (n - m)) (sqn x' (n - m)) := by
-    rw [m2, e1, he, sq2_eval _ ho, show n - m = (n - (m + 1)) + 1 by omega]
+    rw [m2, e1, he, sq2_eval _ ho, show n - m = (n - (m + 1)) + 1 by omega_arith]
     rfl
   simp only [eval, z2, Option.map_some]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, k2, by rw [e2, Nat.sub_zero]⟩
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬m = 0), Bool.not_false], m, by omega,
-      by omega, by omega, k2, b2, e2⟩
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬m = 0), Bool.not_false], m, by omega_arith,
+      by omega_arith, by omega_arith, k2, b2, e2⟩
 
 /-- `sqn2 o a o' a' n`: slots `o` and `o'` become slots `a` and `a'` squared `n` times. -/
 theorem sqn2_spec (base : Addr) {o a o' a' : Slot} (ho : o ≠ o') (ha : o ≠ a') (n : Nat)
@@ -101,12 +101,12 @@ theorem sqn2_spec (base : Addr) {o a o' a' : Slot} (ho : o ≠ o') (ha : o ≠ a
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (fieldCodeWide_ok hs [.sqr o a, .sqr o' a']) fun s1 ⟨k1, e1⟩ => ?_
-  refine WP.mono (setRbx_ok s1 (n - 1) (by omega)) fun s2 ⟨b2, g2, m2, rd2, wr2⟩ => ?_
+  refine WP.mono (setRbx_ok s1 (n - 1) (by omega_arith)) fun s2 ⟨b2, g2, m2, rd2, wr2⟩ => ?_
   have k2 : RbxKeep base s s2 := (RbxKeep.of_keep k1).trans
     ⟨fun r _ hr => g2 r hr, rd2, wr2, by rw [m2]; exact Outside.refl _ _ _ _⟩
-  refine sq2Loop_ok hs ho (env s.mem base a) (env s.mem base a') n hn' (n - 1) s2 (by omega)
-    (by omega) k2 b2 ?_
-  rw [m2, e1, show n - (n - 1) = 1 by omega, sq2_first _ ha]
+  refine sq2Loop_ok hs ho (env s.mem base a) (env s.mem base a') n hn' (n - 1) s2 (by omega_arith)
+    (by omega_arith) k2 b2 ?_
+  rw [m2, e1, show n - (n - 1) = 1 by omega_arith, sq2_first _ ha]
 
 /-! ## The chain's steps in a loop -/
 
@@ -127,23 +127,23 @@ theorem sqLoop_ok {s₀ : State} {base : Addr} (hs₀ : Scratch s₀ base) {o o'
     env s.mem base = upd2 (env s₀.mem base) o o' (sqn x (n - m)) (sqn x' (n - m))) ?_ m s
     ⟨h1, h2, hk, hb, hf, he⟩
   intro m s ⟨h1, h2, hk, hb, hf, he⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_arith⟩
   rw [WP.block_append_iff]
   refine WP.mono (fieldCodeWide_frame (hk.scratch hs₀) [.sqr o o, .sqr o' o']) fun s1 ⟨k1, e1, f1⟩ => ?_
-  refine WP.mono (decRbx_ok (by omega) ((k1.gpr _ (by decide)).trans hb))
+  refine WP.mono (decRbx_ok (by omega_arith) ((k1.gpr _ (by decide)).trans hb))
     fun s2 ⟨b2, g2, m2, rd2, wr2, z2⟩ => ?_
   have k2 : RbxKeep base s₀ s2 := hk.trans ((RbxKeep.of_keep k1).trans
     ⟨fun r _ hr => g2 r hr, rd2, wr2, by rw [m2]; exact Outside.refl _ _ _ _⟩)
   have f2 : ∀ y, Outs [.sqr o o, .sqr o' o'] base y → s2.mem y = s₀.mem y := fun y hy => by
     rw [m2, f1 y hy, hf y hy]
   have e2 : env s2.mem base = upd2 (env s₀.mem base) o o' (sqn x (n - m)) (sqn x' (n - m)) := by
-    rw [m2, e1, he, sq2_eval _ ho, show n - m = (n - (m + 1)) + 1 by omega]
+    rw [m2, e1, he, sq2_eval _ ho, show n - m = (n - (m + 1)) + 1 by omega_arith]
     rfl
   simp only [eval, z2, Option.map_some]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, k2, f2, by rw [e2, Nat.sub_zero]⟩
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬m = 0), Bool.not_false], m, by omega,
-      by omega, by omega, k2, b2, f2, e2⟩
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬m = 0), Bool.not_false], m, by omega_arith,
+      by omega_arith, by omega_arith, k2, b2, f2, e2⟩
 
 /-- A step of `rootSteps` on one lane's `W` and `S`. -/
 def stepVals (st : Nat × Bool × Bool) (p : Spec.X25519.Fe × Spec.X25519.Fe) :
@@ -204,7 +204,7 @@ theorem word14_of_outs {ops : List FieldOp} (hops : ∀ op ∈ ops, 520 ≤ offs
     X25519.X86_64.word m' base 512 = X25519.X86_64.word m base 512 :=
   Mem.readW_congr (w := 64) fun i hi => hf _ fun op hop => by
     have := hops op hop
-    rw [X25519.X86_64.ofs_off base (by omega)]; omega
+    rw [X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith
 
 /-- What the loop keeps of the state before it (`s₁`), and the chain after `j` of its steps. -/
 structure ChainInv (base : Addr) (s₁ s : State) (r₀ : BitVec 64) (a b a' b' : Spec.X25519.Fe)
@@ -363,7 +363,7 @@ theorem rootPowerLoop2_ok {s : State} {base : Addr} (hs : Scratch s base) :
   have hs₃ := hs₂.of_keep k₃
   -- `rsi` into slot 14, the steps into `rsi`.
   have hw : InRegions s₃.wr (X25519.X86_64.off base 512) 8 :=
-    ⟨_, hs₃.wr, Offset.contains_base base (show 512 + 8 ≤ 8192 by decide) (by omega)⟩
+    ⟨_, hs₃.wr, Offset.contains_base base (show 512 + 8 ≤ 8192 by decide) (by omega_arith)⟩
   refine WP.seq (WP.mono (show WP isa (.block [.store (Impl.X25519.X86_64.sc (offset 14)) .rsi,
       .movImm64 .rsi (BitVec.ofNat 64 rootStepsWord)]) s₃ fun t =>
       t.mem = s₃.mem.writeW (X25519.X86_64.off base 512) (s₃.gpr .rsi) ∧
@@ -376,11 +376,11 @@ theorem rootPowerLoop2_ok {s : State} {base : Addr} (hs : Scratch s base) :
     refine ⟨trivial, trivial, fun r hr => ?_, trivial, trivial⟩
     simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₄ ⟨m₄, rsi₄, g₄, rd₄, wr₄⟩ => ?_)
   have O₄ : Outside base 512 8 s₃.mem s₄.mem := by
-    rw [m₄]; exact X25519.X86_64.writeW_outside _ _ _ (by omega)
+    rw [m₄]; exact X25519.X86_64.writeW_outside _ _ _ (by omega_arith)
   have v₄ : ∀ i : Slot, i ≠ 14 → env s₄.mem base i = env s₃.mem base i := fun i hi => by
     have : i.val ≠ 14 := fun h => hi (Fin.ext h)
     simp only [env, X25519.X86_64.F]
-    rw [O₄.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
+    rw [O₄.fe (by simp only [offset]; omega_arith) (by simp only [offset]; omega_arith)]
   have I₀ : ChainInv base s₃ s₄ (s₃.gpr .rsi) (env s₃.mem base 15) (env s₃.mem base 17)
       (env s₃.mem base 19) (env s₃.mem base 21) 0 :=
     ⟨fun r _ _ hr => g₄ r hr, rd₄, wr₄, O₄.mono (by decide) (by decide),
@@ -396,7 +396,7 @@ theorem rootPowerLoop2_ok {s : State} {base : Addr} (hs : Scratch s base) :
       simp only [eval, z', Option.map_some]
       by_cases h7 : j + 1 = 7
       · exact .inl ⟨by simp [h7], h7 ▸ hI'⟩
-      · exact .inr ⟨by simp [h7], 7 - (j + 1), by omega, j + 1, by omega, rfl, hI'⟩)
+      · exact .inr ⟨by simp [h7], 7 - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, hI'⟩)
     7 s₄ ⟨0, by decide, rfl, I₀⟩) fun s₅ I₅ => ?_)
   have hs₅ := I₅.scratch hs₃
   -- `rsi` back.

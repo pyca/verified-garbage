@@ -4,10 +4,8 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignMain
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltBack
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
-import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Sha256.StateMem
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 
 /-! Public dispatch between fixed and inferred salt lengths. -/
 

@@ -18,13 +18,13 @@ theorem fastMagnitude_bound (w k j : Nat) : FastNaf.magnitude w k j≤255 := by
   by_cases h7 : w=7
   · have h := FastNaf7.magnitude_le k j
     simp only [FastNaf.magnitude,h7,ite_true]
-    omega
+    omega_arith
   by_cases h9 : w=9
   · subst h9
     simpa only [FastNaf.magnitude,FastNaf.ne_9_7,ite_true,ite_false] using FastNaf9.magnitude_le k j
   · have h := Naf5.magnitude_le k j
     simp only [FastNaf.magnitude,h7,h9,ite_false]
-    omega
+    omega_arith
 
 theorem fastDigit_eq (w k j : Nat) : FastNaf.digit w k j=
     if FastNaf.negative w k j then -(FastNaf.magnitude w k j:Int) else (FastNaf.magnitude w k j:Int) := by
@@ -44,11 +44,11 @@ theorem fastWord_toNat (w k j : Nat) :
   cases hn : FastNaf.negative w k j
   · simp only [Bool.false_eq_true,ite_false]
     change ((FastNaf.magnitude w k j:Int)%18446744073709551616).toNat=_
-    omega
+    omega_arith
   · have hp := FastNaf.negative_magnitude_pos w k j hn
     simp only [ite_true]
     change ((-(FastNaf.magnitude w k j:Int))%18446744073709551616).toNat=_
-    omega
+    omega_arith
 
 theorem fastSign_toNat (w k j : Nat) :
     (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63)).toNat =
@@ -57,9 +57,9 @@ theorem fastSign_toNat (w k j : Nat) :
   have hp := FastNaf.negative_magnitude_pos w k j
   simp only [BitVec.toNat_sub,BitVec.toNat_zero,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,fastWord_toNat]
   cases hn : FastNaf.negative w k j
-  · simp only [Bool.false_eq_true,ite_false]; omega
+  · simp only [Bool.false_eq_true,ite_false]; omega_arith
   · have hp := hp hn
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_arith
 
 theorem fastSub5_next (a b c d e : BitVec 64) (w k j : Nat)
     (hv : nafVal5 a b c d e=FastNaf.residual w k j) (hb : FastNaf.residual w k j≤2^256) :
@@ -84,12 +84,12 @@ theorem fastSub5_next (a b c d e : BitVec 64) (w k j : Nat)
       if FastNaf.negative w k j then 2^320-FastNaf.magnitude w k j else FastNaf.magnitude w k j := by
     simp only [nafVal5,fastWord_toNat,fastSign_toNat]
     cases hn : FastNaf.negative w k j <;> simp only [Bool.false_eq_true,ite_false,ite_true]
-    · omega
-    · have := fastMagnitude_bound w k j; omega
+    · omega_arith
+    · have := fastMagnitude_bound w k j; omega_arith
   rw [he] at hs
   have hr := FastNaf.recurrence w k j
   have hm := fastMagnitude_bound w k j
-  cases hn : FastNaf.negative w k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at hs hr <;> omega
+  cases hn : FastNaf.negative w k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at hs hr <;> omega_arith
 
 /-- Five adjacent extract-right instructions implement a whole-number shift. -/
 theorem fastShift5_value (a b c d e : BitVec 64) :
@@ -99,9 +99,9 @@ theorem fastShift5_value (a b c d e : BitVec 64) :
     rw [BitVec.extractLsb'_toNat,BitVec.toNat_append,←Nat.shiftLeft_add_eq_or_of_lt lo.isLt,
       Nat.shiftLeft_eq,Nat.shiftRight_eq_div_pow]
     have := hi.isLt; have := lo.isLt
-    omega
+    omega_arith
   simp only [nafVal5,extr,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 /-- Five adjacent extract-right instructions implement a whole-number shift. -/
 theorem fastShift7_value (a b c d e : BitVec 64) :
@@ -111,9 +111,9 @@ theorem fastShift7_value (a b c d e : BitVec 64) :
     rw [BitVec.extractLsb'_toNat,BitVec.toNat_append,←Nat.shiftLeft_add_eq_or_of_lt lo.isLt,
       Nat.shiftLeft_eq,Nat.shiftRight_eq_div_pow]
     have := hi.isLt; have := lo.isLt
-    omega
+    omega_arith
   simp only [nafVal5,extr,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 /-- Five adjacent extract-right instructions implement a whole-number shift. -/
 theorem fastShift9_value (a b c d e : BitVec 64) :
@@ -123,9 +123,9 @@ theorem fastShift9_value (a b c d e : BitVec 64) :
     rw [BitVec.extractLsb'_toNat,BitVec.toNat_append,←Nat.shiftLeft_add_eq_or_of_lt lo.isLt,
       Nat.shiftLeft_eq,Nat.shiftRight_eq_div_pow]
     have := hi.isLt; have := lo.isLt
-    omega
+    omega_arith
   simp only [nafVal5,extr,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem fastShift_value (w : Nat) (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) (a b c d e : BitVec 64) :
     nafVal5 ((b++a).extractLsb' w 64) ((c++b).extractLsb' w 64)

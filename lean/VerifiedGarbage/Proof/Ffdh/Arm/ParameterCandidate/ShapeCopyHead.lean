@@ -18,14 +18,7 @@ theorem shapeCopyHead_ok (s : State) {dst src : BitVec 32} {bs : List Byte} {bit
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.shapeCopyHead) s fun t =>
       (t.gpr .r0 = dst ∧ t.gpr .r1 = src ∧ t.gpr .lr = BitVec.ofNat 32 bs.length ∧ t.mem = s.mem) ∧
         Rest [.r0, .r1, .lr] s t := by
-  refine withRest [.r0, .r1, .lr] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.shapeCopyHead : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have checked' := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .lr] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.shapeCopyHead
   ffrun [h.frame.read (d := 4) (by decide), h.frame.read (d := 12) (by decide),
     h.frame.read (d := 16) (by decide), h.frame.saved 4 (by decide),

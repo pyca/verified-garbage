@@ -32,7 +32,7 @@ theorem toNat_two_sub_modEq (y : BitVec 64) :
   rw [BitVec.toNat_sub, show (BitVec.setWidth 64 (2 : BitVec 32)).toNat = 2 from rfl,
     Int.natCast_emod, show ((2 ^ 64 : Nat) : Int) = 2 ^ 64 from rfl, Int.emod_emod]
   have hy := y.isLt
-  omega
+  omega_arith
 
 /-- The value of a Newton step, modulo `2⁶⁴`. -/
 theorem newton_val (a x : BitVec 64) :
@@ -80,7 +80,7 @@ theorem minv_ok (s : State) (hodd : (s.gpr .rbx).toNat % 2 = 1) :
       simpa only [Int.natCast_mul, Int.natCast_emod, show ((8 : Nat) : Int) = 8 from rfl,
         show ((1 : Nat) : Int) = 1 from rfl] using congrArg (fun n : Nat => (n : Int)) h1
     show (((s.gpr .rbx).toNat : Int) * (s.gpr .rbx).toNat - 1) % 8 = 0
-    omega
+    omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (newton_step_ok t₀ (j := 3) (by decide) e₀) fun t₁ ⟨e₁, hb₁, hm₁, k₁⟩ => ?_
   rw [WP.block_append_iff]
@@ -109,8 +109,8 @@ theorem setBase_ok {t : State} {B : Addr} {Z w j : Nat} (hs : Scr t B Z) (hdi : 
     WP isa (.block (setBase j)) t fun t' =>
       t'.mem = t.mem.writeW (off B (8 * sArr j)) (off B (slot w j)) ∧
       t'.gpr .rdx = off B (slot w (j + 1)) ∧ Keep [.rdx] t t' := by
-  have h8 : 8 * sArr j + 8 ≤ 8 * sArr 8 := by unfold sArr; omega
-  have hst : InRegions t.wr (off B (8 * sArr j)) 8 := hs.st (by omega)
+  have h8 : 8 * sArr j + 8 ≤ 8 * sArr 8 := by unfold sArr; omega_arith
+  have hst : InRegions t.wr (off B (8 * sArr j)) 8 := hs.st (by omega_arith)
   refine WP.mono (WP.keep [.rdx] (c := .block (setBase j)) (Q := fun t' =>
       t'.mem = t.mem.writeW (off B (8 * sArr j)) (off B (slot w j)) ∧
       t'.gpr .rdx = off B (slot w (j + 1))) ?_ rfl) fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
@@ -118,7 +118,7 @@ theorem setBase_ok {t : State} {B : Addr} {Z w j : Nat} (hs : Scr t B Z) (hdi : 
   xrun [State.ea, hdr, hdi, hdrOff, hst, hdx, hax]
   rw [off, BitVec.add_assoc, ← BitVec.ofNat_add]
   congr 2
-  unfold slot; rw [Nat.add_mul, Nat.one_mul]; omega
+  unfold slot; rw [Nat.add_mul, Nat.one_mul]; omega_arith
 
 theorem setBasesN_ok {B : Addr} {Z w : Nat} (hZ : 8 * sArr 8 ≤ Z) :
     ∀ n ≤ 8, ∀ t : State, Scr t B Z → t.gpr .rdi = B → t.gpr .rdx = off B (slot w 0) →
@@ -130,25 +130,25 @@ theorem setBasesN_ok {B : Addr} {Z w : Nat} (hZ : 8 * sArr 8 ≤ Z) :
   induction n with
   | zero =>
     intro _ t _ _ hdx _
-    exact WP.block_nil ⟨fun j hj => absurd hj (by omega), hdx, Outside.refl _ _ _ _, Keep.refl _ _⟩
+    exact WP.block_nil ⟨fun j hj => absurd hj (by omega_arith), hdx, Outside.refl _ _ _ _, Keep.refl _ _⟩
   | succ n ih =>
     intro hn t hs hdi hdx hax
     have hnZ := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) t hs hdi hdx hax) fun t₁ ⟨hw₁, hdx₁, ho₁, k₁⟩ => ?_
-    refine WP.mono (setBase_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) (by omega) hZ hdx₁
+    refine WP.mono (ih (by omega_arith) t hs hdi hdx hax) fun t₁ ⟨hw₁, hdx₁, ho₁, k₁⟩ => ?_
+    refine WP.mono (setBase_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) (by omega_arith) hZ hdx₁
       ((k₁.gpr (by decide)).trans hax)) fun t' ⟨hm, hdx', k'⟩ => ⟨?_, hdx', ?_, k₁.trans k' |>.mono (by decide)⟩
     · intro j hj
       rw [hm]
       by_cases hjn : j = n
       · subst hjn; exact word_writeW_self _ _ _ _
-      · rw [(writeW_outside t₁.mem B _ (by unfold sArr at *; omega)).word
-          (by unfold sArr; omega) (by unfold sArr; omega)]
-        exact hw₁ j (by omega)
+      · rw [(writeW_outside t₁.mem B _ (by unfold sArr at *; omega_arith)).word
+          (by unfold sArr; omega_arith) (by unfold sArr; omega_arith)]
+        exact hw₁ j (by omega_arith)
     · rw [hm]
       intro x hx
-      rw [writeW_outside t₁.mem B _ (by unfold sArr; omega) x (by unfold sArr at *; omega)]
-      exact ho₁ x (by omega)
+      rw [writeW_outside t₁.mem B _ (by unfold sArr; omega_arith) x (by unfold sArr at *; omega_arith)]
+      exact ho₁ x (by omega_arith)
 
 /-- `setBases`: the arrays' bases into the header, for `w` in `r12`. -/
 theorem setBases_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
@@ -164,8 +164,8 @@ theorem setBases_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hdi : s
     refine ⟨?_, by simp [off, slot]⟩
     rw [show (2 : BitVec 64) = BitVec.ofNat 64 2 from rfl]
     simp only [← BitVec.ofNat_add]
-    congr 1; omega
-  refine WP.mono (setBasesN_ok hZ 8 (by omega) t (hs.congr k.2.2) ((k.gpr (by decide)).trans hdi) hdx hax)
+    congr 1; omega_arith
+  refine WP.mono (setBasesN_ok hZ 8 (by omega_arith) t (hs.congr k.2.2) ((k.gpr (by decide)).trans hdi) hdx hax)
     fun t' ⟨hw', _, ho, k'⟩ => ⟨hw', by rw [← hm]; exact ho, (k.trans k').mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64

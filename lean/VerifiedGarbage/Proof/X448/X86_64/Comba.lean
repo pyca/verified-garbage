@@ -34,8 +34,8 @@ theorem mul_halves (a b : BitVec 64) :
         2 ^ 64 * (BitVec.ofNat 64 (a.toNat * b.toNat / 2 ^ 64)).toNat = a.toNat * b.toNat := by
   have ha := a.isLt; have hb := b.isLt
   have hp : a.toNat * b.toNat < 2 ^ 64 * 2 ^ 64 := Nat.mul_lt_mul'' ha hb
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ / 2 ^ 64) (by omega)]
-  omega
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ / 2 ^ 64) (by omega_arith)]
+  omega_arith
 
 /-- `rax = x`, then `rdx:rax = x · y`. -/
 theorem mov_mul_ok (s : State) {x : Src} {y : Reg} {vx : BitVec 64} (hx : readSrc s x = some vx)
@@ -70,7 +70,7 @@ theorem acc_ok (s : State) {r0 r1 r2 : Reg} (hd : [r0, r1, r2, .rax, .rdx].Nodup
   rw [hl] at he
   simp only [wv, toNat_zero64] at he
   have := Bool.toNat_le c
-  rcases Nat.lt_or_ge c.toNat 1 with h | h <;> omega
+  rcases Nat.lt_or_ge c.toNat 1 with h | h <;> omega_arith
 
 /-- A term's weight: 2 if it is doubled. -/
 def termK (t : Term) : Nat := if t.dbl then 2 else 1
@@ -95,16 +95,16 @@ theorem term_ok (s : State) {x : Src} {y r0 r1 r2 : Reg} {vx : BitVec 64} (dbl :
   cases dbl with
   | false =>
     simp only [Bool.false_eq_true, ite_false, List.nil_append, Nat.one_mul] at hb ⊢
-    refine WP.mono (acc_ok s1 hd (by omega)) fun s2 ⟨e2, k2⟩ => ⟨by omega, ?_⟩
+    refine WP.mono (acc_ok s1 hd (by omega_arith)) fun s2 ⟨e2, k2⟩ => ⟨by omega_arith, ?_⟩
     exact (k1.mono (by simp)).trans (k2.mono (by simp))
   | true =>
     simp only [ite_true] at hb ⊢
     rw [WP.block_append_iff]
-    refine WP.mono (acc_ok s1 hd (by omega)) fun s2 ⟨e2, k2⟩ => ?_
+    refine WP.mono (acc_ok s1 hd (by omega_arith)) fun s2 ⟨e2, k2⟩ => ?_
     have a2 : s2.gpr .rax = s1.gpr .rax := k2.1 _ (by simp [Ne.symm h0a, Ne.symm h1a, Ne.symm h2a])
     have d2 : s2.gpr .rdx = s1.gpr .rdx := k2.1 _ (by simp [Ne.symm h0d, Ne.symm h1d, Ne.symm h2d])
-    refine WP.mono (acc_ok s2 hd (by rw [a2, d2]; omega)) fun s3 ⟨e3, k3⟩ => ⟨?_, ?_⟩
-    · rw [a2, d2] at e3; omega
+    refine WP.mono (acc_ok s2 hd (by rw [a2, d2]; omega_arith)) fun s3 ⟨e3, k3⟩ => ⟨?_, ?_⟩
+    · rw [a2, d2] at e3; omega_arith
     · exact ((k1.mono (by simp)).trans (k2.mono (by simp))).trans (k3.mono (by simp))
 
 /-- The sum of a column's terms. -/
@@ -132,7 +132,7 @@ theorem terms_ok (x : Nat → Src) (y : Nat → Reg) (xv : Nat → BitVec 64) {r
     rw [colSum_cons] at hb
     simp only [termK] at hb
     refine WP.mono (term_ok s t.dbl (hx t List.mem_cons_self).read
-      (fun e => hyt (by simp [e])) hd (by omega)) fun s1 ⟨e1, k1⟩ => ?_
+      (fun e => hyt (by simp [e])) hd (by omega_arith)) fun s1 ⟨e1, k1⟩ => ?_
     have gy : ∀ t' ∈ t :: ts, s1.gpr (y t'.j) = s.gpr (y t'.j) := fun t' ht' => k1.1 _ (hy t' ht')
     have cs : colSum (fun i => (xv i).toNat) (fun j => (s1.gpr (y j)).toNat) ts =
         colSum (fun i => (xv i).toNat) (fun j => (s.gpr (y j)).toNat) ts := by
@@ -141,11 +141,11 @@ theorem terms_ok (x : Nat → Src) (y : Nat → Reg) (xv : Nat → BitVec 64) {r
         simp only [tv, gy t' (List.mem_cons_of_mem _ ht')])
     refine WP.mono (terms_ok x y xv hd ts s1
       (fun t' ht' => (hx t' (List.mem_cons_of_mem _ ht')).of_keeps k1)
-      (fun t' ht' => hy t' (List.mem_cons_of_mem _ ht')) (by rw [cs, e1]; omega))
+      (fun t' ht' => hy t' (List.mem_cons_of_mem _ ht')) (by rw [cs, e1]; omega_arith))
       fun s2 ⟨e2, k2⟩ => ⟨?_, k1.trans k2⟩
     rw [e2, cs, e1, colSum_cons]
     simp only [termK]
-    omega
+    omega_arith
 
 /-! ## Columns -/
 
@@ -158,13 +158,13 @@ theorem acc_succ (k : Nat) : acc (k + 1) = [accR k 1, accR k 2, accR k 0] := by
   simp only [acc, accR_mod]
   refine List.cons_eq_cons.mpr ⟨by rw [Nat.add_right_comm], List.cons_eq_cons.mpr
     ⟨by rw [Nat.add_assoc], List.cons_eq_cons.mpr ⟨?_, rfl⟩⟩⟩
-  rw [show k + 1 + 2 = k + 3 by omega, Nat.add_mod_right, Nat.add_zero]
+  rw [show k + 1 + 2 = k + 3 by omega_arith, Nat.add_mod_right, Nat.add_zero]
 
 theorem acc_cases (k : Nat) :
     acc k = [.r15, .rcx, .rbp] ∨ acc k = [.rcx, .rbp, .r15] ∨ acc k = [.rbp, .r15, .rcx] := by
   simp only [acc, accR_mod]
   have h := Nat.mod_lt k (show 0 < 3 by decide)
-  rcases (by omega : k % 3 = 0 ∨ k % 3 = 1 ∨ k % 3 = 2) with h | h | h <;>
+  rcases (by omega_arith : k % 3 = 0 ∨ k % 3 = 1 ∨ k % 3 = 2) with h | h | h <;>
   simp only [Nat.add_mod k, h] <;> simp
 
 theorem acc_nodup (k : Nat) : [accR k 0, accR k 1, accR k 2, .rax, .rdx].Nodup := by
@@ -179,7 +179,7 @@ theorem acc_colX (k : Nat) : ∀ r ∈ [Reg.rax, .rdx, accR k 0, accR k 1, accR 
 
 theorem accR_colX (k n : Nat) (hn : n < 3) : accR k n ∈ colX := by
   have := acc_colX k
-  rcases (by omega : n = 0 ∨ n = 1 ∨ n = 2) with rfl | rfl | rfl <;> exact this _ (by simp)
+  rcases (by omega_arith : n = 0 ∨ n = 1 ∨ n = 2) with rfl | rfl | rfl <;> exact this _ (by simp)
 
 theorem rdi_colX : Reg.rdi ∉ colX := by decide
 
@@ -217,18 +217,18 @@ theorem column_ok {s : State} {base : Addr} (hs : Scr s base) (x : Nat → Src) 
     simp only [acc, rv] at e1 ⊢
     have z : (BitVec.setWidth 64 (0 : BitVec 32)).toNat = 0 := rfl
     rw [z]
-    omega
+    omega_arith
   · have hr0 : r ≠ accR k 0 := fun e => hr (e ▸ accR_colX k 0 (by decide))
     rw [RegUpd.gpr_setReg_of_ne _ _ hr0]
     exact k1.1 r (fun h => hr (hsub _ h))
-  · rw [← k1.2.1]; exact writeW_outside _ _ _ (by omega)
+  · rw [← k1.2.1]; exact writeW_outside _ _ _ (by omega_arith)
 
 theorem mv_succ_last (m : Mem) (base : Addr) :
     ∀ (o n : Nat), mv m base o (n + 1) = mv m base o n + 2 ^ (64 * n) * (word m base (o + 8 * n)).toNat
   | o, 0 => by simp [mv]
   | o, n + 1 => by
     rw [mv, mv_succ_last m base (o + 8) n, mv, pow64_succ,
-      show o + 8 + 8 * n = o + 8 * (n + 1) by omega]
+      show o + 8 + 8 * n = o + 8 * (n + 1) by omega_arith]
     generalize 2 ^ (64 * n) = Q
     grind
 
@@ -244,7 +244,7 @@ theorem colsVal_succ_last (xv yv : Nat → Nat) (cols : Nat → List Term) :
   | k, 0 => by simp [colsVal]
   | k, n + 1 => by
     rw [colsVal, colsVal_succ_last xv yv cols (k + 1) n, colsVal, pow64_succ,
-      show k + 1 + n = k + (n + 1) by omega]
+      show k + 1 + n = k + (n + 1) by omega_arith]
     generalize 2 ^ (64 * n) = Q
     grind
 
@@ -255,10 +255,10 @@ theorem colSum_le (xv yv : Nat → Nat) :
   | t :: ts, h => by
     rw [colSum_cons, List.map_cons, List.sum_cons, Nat.add_mul]
     have h1 := h t List.mem_cons_self
-    have hp : xv t.i * yv t.j ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
+    have hp : xv t.i * yv t.j ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
     have := Nat.mul_le_mul_left (termK t) hp
     have := colSum_le xv yv ts fun t' ht' => h t' (List.mem_cons_of_mem _ ht')
-    omega
+    omega_arith
 
 theorem colSum_congr (xv yv yv' : Nat → Nat) (ts : List Term) (h : ∀ t ∈ ts, yv t.j = yv' t.j) :
     colSum xv yv ts = colSum xv yv' ts := by
@@ -282,25 +282,25 @@ theorem columns_ok {s₀ : State} {base : Addr} (hs : Scr s₀ base) (x : Nat �
       by rw [h0]; decide⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (columns_ok hs x y xv cols hx hy hc hw h0 n (by omega))
+    refine WP.mono (columns_ok hs x y xv cols hx hy hc hw h0 n (by omega_arith))
       fun s ⟨g, rd, wr, o, e, b⟩ => ?_
     have hsS : Scr s base := ⟨(g _ rdi_colX).trans hs.rdi, wr ▸ hs.wr, hs.nowrap⟩
-    have hxs := hx s g rd wr (o.mono (by omega) (by omega))
-    have hcn := hc n (by omega)
+    have hxs := hx s g rd wr (o.mono (by omega_arith) (by omega_arith))
+    have hcn := hc n (by omega_arith)
     have gy : ∀ t ∈ cols n, (s.gpr (y t.j)).toNat = (s₀.gpr (y t.j)).toNat :=
       fun t ht => by rw [g _ (hy _ (hcn t ht).2)]
     have cs := colSum_congr (fun i => (xv i).toNat) (fun j => (s.gpr (y j)).toNat)
       (fun j => (s₀.gpr (y j)).toNat) (cols n) gy
     have cb := colSum_le (fun i => (xv i).toNat) (fun j => (s.gpr (y j)).toNat) (cols n)
       fun t _ => ⟨(xv t.i).isLt, (s.gpr (y t.j)).isLt⟩
-    have hwn := Nat.mul_le_mul_right ((2 ^ 64 - 1) * (2 ^ 64 - 1)) (hw n (by omega))
+    have hwn := Nat.mul_le_mul_right ((2 ^ 64 - 1) * (2 ^ 64 - 1)) (hw n (by omega_arith))
     rw [List.flatMap_singleton]
-    refine WP.mono (column_ok hsS x y xv (cols n) n (by simp only [ACC]; omega)
-      (fun t ht => hxs t.i (hcn t ht).1) (fun t ht => hy _ (hcn t ht).2) (by omega))
+    refine WP.mono (column_ok hsS x y xv (cols n) n (by simp only [ACC]; omega_arith)
+      (fun t ht => hxs t.i (hcn t ht).1) (fun t ht => hy _ (hcn t ht).2) (by omega_arith))
       fun s' ⟨e', g', rd', wr', o'⟩ => ?_
     refine ⟨fun r hr => (g' r hr).trans (g r hr), rd'.trans rd, wr'.trans wr,
-      (o.mono (Nat.le_refl _) (by omega)).trans (o'.mono (by omega) (by omega)), ?_, ?_⟩
-    · rw [mv_succ_last, o'.mv (d := ACC) (k := n) (by omega) (by simp only [ACC]; omega),
+      (o.mono (Nat.le_refl _) (by omega_arith)).trans (o'.mono (by omega_arith) (by omega_arith)), ?_, ?_⟩
+    · rw [mv_succ_last, o'.mv (d := ACC) (k := n) (by omega_arith) (by simp only [ACC]; omega_arith),
         colsVal_succ_last, Nat.zero_add, pow64_succ, ← cs]
       rw [cs] at e'
       generalize 2 ^ (64 * n) = Q at e ⊢
@@ -311,7 +311,7 @@ theorem columns_ok {s₀ : State} {base : Addr} (hs : Scr s₀ base) (x : Nat �
         _ = mv s.mem base ACC n + Q * rv s (acc n) + Q * colSum (fun i => (xv i).toNat)
               (fun j => (s₀.gpr (y j)).toNat) (cols n) := by rw [e']; grind
         _ = _ := by rw [e, cs]
-    · omega
+    · omega_arith
 
 /-! ## The columns of `mul` and `sqr` -/
 

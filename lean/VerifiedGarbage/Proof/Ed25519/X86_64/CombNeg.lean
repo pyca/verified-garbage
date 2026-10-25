@@ -38,7 +38,7 @@ open VG.Impl.X25519.X86_64 (sc)
 /-- A read of `8 n` bits is the read of `n` bytes. -/
 private theorem readW_eq_read (m : Mem) (a : Addr) (n : Nat) : m.readW a (8 * n) = m.read a n := by
   show (m.read a (8 * n / 8)).setWidth (8 * n) = m.read a n
-  rw [show 8 * n / 8 = n by omega]
+  rw [show 8 * n / 8 = n by omega_arith]
   exact BitVec.setWidth_eq _
 
 /-- Byte `j` of the `n` bytes at `a`. -/
@@ -53,10 +53,10 @@ theorem read128_lo (m : Mem) (a : Addr) : (m.readW a 128).setWidth 64 = m.readW 
   show (m.read a 8).setWidth 64 = _
   rw [VG.Mem.read_eq_of_bytes (n := 8) (v := (m.readW a 128).setWidth 64) fun j hj => ?_]
   · exact BitVec.setWidth_eq _
-  · rw [← byte_readW m a (n := 16) (show j < 16 by omega)]
+  · rw [← byte_readW m a (n := 16) (show j < 16 by omega_arith)]
     ext i hi
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_setWidth]
-    rw [decide_eq_true (by omega : 8 * j + i < 64), Bool.true_and]
+    rw [decide_eq_true (by omega_arith : 8 * j + i < 64), Bool.true_and]
 
 /-- The high word of the 16 bytes at `a`. -/
 theorem read128_hi (m : Mem) (a : Addr) :
@@ -65,12 +65,12 @@ theorem read128_hi (m : Mem) (a : Addr) :
   show (m.read (a + BitVec.ofNat 64 8) 8).setWidth 64 = _
   rw [VG.Mem.read_eq_of_bytes (n := 8) (v := (m.readW a 128).extractLsb' 64 64) fun j hj => ?_]
   · exact BitVec.setWidth_eq _
-  · rw [Offset.add_add, ← byte_readW m a (n := 16) (show 8 + j < 16 by omega)]
+  · rw [Offset.add_add, ← byte_readW m a (n := 16) (show 8 + j < 16 by omega_arith)]
     ext i hi
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_extractLsb']
-    rw [decide_eq_true (by omega : 8 * j + i < 64), Bool.true_and]
+    rw [decide_eq_true (by omega_arith : 8 * j + i < 64), Bool.true_and]
     congr 1
-    omega
+    omega_arith
 
 /-- Two slots hold the same field element if their halves hold the same bytes. -/
 theorem fe_of_read128 {m m' : Mem} {base : Addr} {d d' : Nat}
@@ -85,7 +85,7 @@ theorem fe_of_read128 {m m' : Mem} {base : Addr} {d d' : Nat}
     rw [read128_hi, off, off, Offset.add_add]
   have e24 : ∀ (mm : Mem) (e : Nat), VG.Proof.X25519.X86_64.word mm base (e + 24) =
       (mm.readW (off base (e + 16)) 128).extractLsb' 64 64 := fun mm e => by
-    rw [show e + 24 = e + 16 + 8 by omega, hi mm (e + 16)]
+    rw [show e + 24 = e + 16 + 8 by omega_arith, hi mm (e + 16)]
   have e0 : VG.Proof.X25519.X86_64.word m' base d = VG.Proof.X25519.X86_64.word m base d' := by
     rw [lo m' d, lo m d', h₀]
   have e1 : VG.Proof.X25519.X86_64.word m' base (d + 8) =
@@ -121,17 +121,17 @@ private theorem sel_xor' (x y : BitVec 128) (sw : Bool) :
 
 /-- A 16-byte write read back. -/
 private theorem readW_writeW_self128 (m : Mem) (a : Addr) (v : BitVec 128) :
-    (m.writeW a v).readW a 128 = v := Mem.readW_writeW_self m a 16 v (by omega)
+    (m.writeW a v).readW a 128 = v := Mem.readW_writeW_self m a 16 v (by omega_arith)
 
 /-- The 16 bytes at `base + d` are readable. -/
 private theorem rd128 {s : State} {base : Addr} (hs : Scratch s base) {d : Nat}
     (hd : d + 16 ≤ 8192) : InRegions (s.rd ++ s.wr) (off base d) 16 :=
-  ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by have := hs.nowrap; omega)⟩
+  ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by have := hs.nowrap; omega_arith)⟩
 
 /-- The 16 bytes at `base + d` are writable. -/
 private theorem wr128 {s : State} {base : Addr} (hs : Scratch s base) {d : Nat}
     (hd : d + 16 ≤ 8192) : InRegions s.wr (off base d) 16 :=
-  ⟨_, hs.wr, Offset.contains_base _ hd (by have := hs.nowrap; omega)⟩
+  ⟨_, hs.wr, Offset.contains_base _ hd (by have := hs.nowrap; omega_arith)⟩
 
 /-- `setXmm` keeps the symbols. -/
 private theorem syms_setXmm (s : State) (r : XReg) (v : BitVec 128) :
@@ -201,7 +201,7 @@ theorem swapPieceX_ok {s : State} {base : Addr} (hs : Scratch s base) {d e : Nat
       t.syms = s.syms := by
   have hn := hs.nowrap
   have hsep : Mem.Sep (off base d) (128 / 8) (off base e) (128 / 8) :=
-    Offset.sep base (Or.inl (by omega)) (by omega) (by omega)
+    Offset.sep base (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
   rw [show swapPieceX d e = [.movdquLoad .xmm0 (sc d), .movdquLoad .xmm1 (sc e),
       .xop (.bin .movdqa .xmm2 .xmm0), .xop (.bin .pxor .xmm2 .xmm1),
       .xop (.bin .pand .xmm2 .xmm15), .xop (.bin .pxor .xmm0 .xmm2),
@@ -217,14 +217,14 @@ theorem swapPieceX_ok {s : State} {base : Addr} (hs : Scratch s base) {d e : Nat
   have hm : t.mem = (s.mem.writeW (off base d) (u.xmm .xmm0)).writeW (off base e) (u.xmm .xmm1) := by
     rw [tm, vm, um, vx]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hm, Mem.readW_writeW_sep hsep (by omega), readW_writeW_self128, u0]
+  · rw [hm, Mem.readW_writeW_sep hsep (by omega_arith), readW_writeW_self128, u0]
   · rw [hm, readW_writeW_self128, u1]
   · rw [hm]
-    exact ((writeW128_outside s.mem base _ (by omega)).mono (Nat.le_refl _) (by omega)).trans
-      ((writeW128_outside _ base _ (by omega)).mono (by omega) (by omega))
+    exact ((writeW128_outside s.mem base _ (by omega_arith)).mono (Nat.le_refl _) (by omega_arith)).trans
+      ((writeW128_outside _ base _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
   · intro k hk hsep'
-    rw [hm, Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by omega),
-      Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by omega)]
+    rw [hm, Mem.readW_writeW_sep (Offset.sep base (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith),
+      Mem.readW_writeW_sep (Offset.sep base (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith)]
   · rw [tg, vg, ug]
   · rw [trd, vrd, urd]
   · rw [twr, vwr, uwr]
@@ -239,26 +239,26 @@ theorem swapFieldX_ok {s : State} {base : Addr} (hs : Scratch s base) (a b : Slo
     WP isa (.block (swapFieldX (offset a))) s fun t =>
       Keep base s t ∧ t.gpr .rcx = s.gpr .rcx ∧ env t.mem base = swapEnv a b sw (env s.mem base) ∧
       Outside base (offset a) 64 s.mem t.mem := by
-  have hb : offset b = offset a + 32 := by simp only [offset, hab]; omega
-  have hne : a ≠ b := fun h => by rw [h] at hab; omega
+  have hb : offset b = offset a + 32 := by simp only [offset, hab]; omega_arith
+  have hne : a ≠ b := fun h => by rw [h] at hab; omega_arith
   rw [swapFieldX, List.append_assoc, WP.block_append_iff]
   refine WP.mono (combDupMask_ok s (b := sw) (by rw [hm, mask_eq_cmask])) fun u ⟨ux, uk⟩ => ?_
   have hsu : Scratch u base := ⟨(uk.gpr _ List.not_mem_nil).trans hs.rdi, uk.wr ▸ hs.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
   refine WP.mono (swapPieceX_ok hsu (sw := sw) (d := offset a) (e := offset a + 32)
-    (by omega) (by omega) (by omega) ux) fun v ⟨v0, v1, vO, vE, vg, vrd, vwr, vx, vsy⟩ => ?_
+    (by omega_arith) (by omega_arith) (by omega_arith) ux) fun v ⟨v0, v1, vO, vE, vg, vrd, vwr, vx, vsy⟩ => ?_
   rw [uk.mem] at v0 v1 vE
   have hsv : Scratch v base := ⟨by rw [vg]; exact hsu.rdi, vwr ▸ hsu.wr, hs.nowrap⟩
   refine WP.mono (swapPieceX_ok hsv (sw := sw) (d := offset a + 16) (e := offset a + 48)
-    (by omega) (by omega) (by omega) (by rw [vx]; exact ux)) fun t ⟨t0, t1, tO, tE, tg, trd, twr, _, tsy⟩ => ?_
+    (by omega_arith) (by omega_arith) (by omega_arith) (by rw [vx]; exact ux)) fun t ⟨t0, t1, tO, tE, tg, trd, twr, _, tsy⟩ => ?_
   -- the four halves of the two slots, and the memory outside them
   have hv64 : Outside base (offset a) 64 s.mem v.mem :=
-    fun x hx => (vO x (by omega)).trans (congrFun uk.mem x)
-  have ht64 : Outside base (offset a) 64 v.mem t.mem := fun x hx => tO x (by omega)
+    fun x hx => (vO x (by omega_arith)).trans (congrFun uk.mem x)
+  have ht64 : Outside base (offset a) 64 v.mem t.mem := fun x hx => tO x (by omega_arith)
   have hmem : Outside base (offset a) 64 s.mem t.mem := hv64.trans ht64
   have keep : Keep base s t := by
     refine ⟨fun r hr => ?_, ?_, ?_, fun x hx => hmem x (by
-      have := a.isLt; simp only [offset] at *; omega)⟩
+      have := a.isLt; simp only [offset] at *; omega_arith)⟩
     · rw [tg, vg, uk.gpr r (by simp)]
     · rw [trd, vrd, uk.rd]
     · rw [twr, vwr, uk.wr]
@@ -268,19 +268,19 @@ theorem swapFieldX_ok {s : State} {base : Addr} (hs : Scratch s base) (a b : Slo
     have ha0 : t.mem.readW (off base (offset a)) 128 =
         (if sw then s.mem.readW (off base (offset a + 32)) 128
         else s.mem.readW (off base (offset a)) 128) := by
-      rw [tE (offset a) (by omega) (by omega), v0]
+      rw [tE (offset a) (by omega_arith) (by omega_arith), v0]
     have ha1 : t.mem.readW (off base (offset a + 16)) 128 =
         (if sw then s.mem.readW (off base (offset a + 48)) 128
         else s.mem.readW (off base (offset a + 16)) 128) := by
-      rw [t0, vE (offset a + 48) (by omega) (by omega), vE (offset a + 16) (by omega) (by omega)]
+      rw [t0, vE (offset a + 48) (by omega_arith) (by omega_arith), vE (offset a + 16) (by omega_arith) (by omega_arith)]
     have hb0 : t.mem.readW (off base (offset a + 32)) 128 =
         (if sw then s.mem.readW (off base (offset a)) 128
         else s.mem.readW (off base (offset a + 32)) 128) := by
-      rw [tE (offset a + 32) (by omega) (by omega), v1]
+      rw [tE (offset a + 32) (by omega_arith) (by omega_arith), v1]
     have hb1 : t.mem.readW (off base (offset a + 48)) 128 =
         (if sw then s.mem.readW (off base (offset a + 16)) 128
         else s.mem.readW (off base (offset a + 48)) 128) := by
-      rw [t1, vE (offset a + 16) (by omega) (by omega), vE (offset a + 48) (by omega) (by omega)]
+      rw [t1, vE (offset a + 16) (by omega_arith) (by omega_arith), vE (offset a + 48) (by omega_arith) (by omega_arith)]
     funext i
     have hswa : swapEnv a b sw (env s.mem base) a =
         (if sw then env s.mem base b else env s.mem base a) := by simp [swapEnv, hne]
@@ -308,16 +308,16 @@ theorem swapFieldX_ok {s : State} {base : Addr} (hs : Scratch s base) (a b : Slo
           simp only [env, hb]
           exact congrArg toFe (fe_of_read128 hb0 hb1)
       · rw [hswo i hia hib]
-        refine congrArg toFe (hmem.fe ?_ (by simp only [offset]; have := i.isLt; omega))
+        refine congrArg toFe (hmem.fe ?_ (by simp only [offset]; have := i.isLt; omega_arith))
         have := i.isLt; have := a.isLt; have := b.isLt
         simp only [offset] at *
         rcases Nat.lt_trichotomy i.val a.val with h | h | h
-        · left; omega
+        · left; omega_arith
         · exact absurd (Fin.ext h) hia
         · rcases Nat.lt_trichotomy i.val b.val with h' | h' | h'
-          · omega
+          · omega_arith
           · exact absurd (Fin.ext h') hib
-          · right; omega
+          · right; omega_arith
 
 /-! ## The negation in one correction -/
 
@@ -388,7 +388,7 @@ theorem negWords_ok {s : State} {base : Addr} (hs : Scr s base) {x : Nat}
       have := (VG.Proof.X25519.X86_64.word s.mem base (x + 16)).isLt
       have := (VG.Proof.X25519.X86_64.word s.mem base (x + 24)).isLt
       simp only [VG.Proof.X25519.X86_64.fe, VG.Proof.X25519.X86_64.val4]
-      omega
+      omega_arith
     simp only [VG.Proof.X25519.X86_64.val4] at he he2 ⊢
     rw [hr] at he2
     -- `c = 0`: the difference stays above `38 β`
@@ -491,7 +491,7 @@ theorem negFieldWide_ok {s : State} {base : Addr} (hs : Scratch s base) {x : Nat
       Op base x s t ∧ t.gpr .rcx = s.gpr .rcx ∧
       F t.mem base x = (if sw then -(F s.mem base x) else F s.mem base x) := by
   let narrow := s.withRegions s.rd [⟨base, 4096⟩]
-  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega⟩
+  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega_arith⟩
   obtain ⟨tr, t, he, hop, hc, hv⟩ := negField_ok hn hx hm
   have cw : Covers [⟨base, 4096⟩] s.wr := by
     apply Covers.of_sub

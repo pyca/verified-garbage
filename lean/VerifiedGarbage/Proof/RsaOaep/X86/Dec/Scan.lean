@@ -85,22 +85,22 @@ theorem scan_step {n : Nat} {f : Nat → Byte} {j : Nat} (hj : j < n) (b : Byte)
   have hlt := lzS_le n f
   rcases Nat.lt_trichotomy (lzS n f) j with hl | hl | hl
   · have h8 : m = 0 := by simp only [m, nfS, ite_eq_left hl, az]
-    simp only [h8, az, oz, pzS, vzS, nfS, ite_eq_left hl, ite_eq_left (by omega : lzS n f < j + 1), za]
+    simp only [h8, az, oz, pzS, vzS, nfS, ite_eq_left hl, ite_eq_left (by omega_arith : lzS n f < j + 1), za]
     exact ⟨trivial, trivial, trivial⟩
   · have hne : b ≠ 0 := by
-      rw [hb, ← hl, ← sL_getD (n := n) (f := f) (by omega)]
-      exact RsaPss.getD_lz_ne (by rw [sL_length]; show lzS n f < n; omega)
+      rw [hb, ← hl, ← sL_getD (n := n) (f := f) (by omega_arith)]
+      exact RsaPss.getD_lz_ne (by rw [sL_length]; show lzS n f < n; omega_arith)
     have h8 : m = BitVec.allOnes 32 := by
-      simp only [m, hne, ite_false, nfS, ite_eq_right (show ¬ lzS n f < j by omega)]; decide
-    simp only [h8, BitVec.and_allOnes, pzS, vzS, nfS, ite_eq_right (show ¬ lzS n f < j by omega),
-      ite_eq_left (show lzS n f < j + 1 by omega)]
+      simp only [m, hne, ite_false, nfS, ite_eq_right (show ¬ lzS n f < j by omega_arith)]; decide
+    simp only [h8, BitVec.and_allOnes, pzS, vzS, nfS, ite_eq_right (show ¬ lzS n f < j by omega_arith),
+      ite_eq_left (show lzS n f < j + 1 by omega_arith)]
     have sz : (0 : Byte).setWidth 32 = 0 := rfl
     refine ⟨by rw [hl, BitVec.zero_or], by rw [hl, hb, sz, zo], by decide⟩
   · have hz : b = 0 := by rw [hb, ← sL_getD (n := n) (f := f) hj]; exact RsaPss.getD_lt_lz hl
     have h8 : m = 0 := by
       simp only [m, hz, ite_true]; rw [show BitVec.allOnes 32 ^^^ BitVec.allOnes 32 = 0 by decide, za]
-    simp only [h8, az, oz, pzS, vzS, nfS, ite_eq_right (show ¬ lzS n f < j by omega),
-      ite_eq_right (show ¬ lzS n f < j + 1 by omega)]
+    simp only [h8, az, oz, pzS, vzS, nfS, ite_eq_right (show ¬ lzS n f < j by omega_arith),
+      ite_eq_right (show ¬ lzS n f < j + 1 by omega_arith)]
     exact ⟨trivial, trivial, by decide⟩
 
 /-- The scan of the `n` bytes at `o`, keeping `X`, which writes to the
@@ -115,8 +115,8 @@ theorem scan_vp (hg : Geo L scr) {o n : Nat} (ho : o + n ≤ oRsa) (hn : 0 < n) 
   have hF := hg.F
   unfold oRsa at fit ho
   let I : Nat → State → State → Prop := fun k σ s => k ≤ n ∧ L.St σ s ∧ X σ s.mem ∧ SC L scr o n (f σ) (n - k) s
-  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, hs⟩ => ⟨by omega, hc, hx,
-    by rw [show n - (n - 1 + 1) = 0 by omega]; exact hs⟩) fun _ _ h => h
+  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, hs⟩ => ⟨by omega_arith, hc, hx,
+    by rw [show n - (n - 1 + 1) = 0 by omega_arith]; exact hs⟩) fun _ _ h => h
   refine VP.taint _ scanBody_taint (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hk, hs, hx, hp⟩ => ?_
   · obtain ⟨-, s₁, -, p₁⟩ := h₁
     obtain ⟨-, s₂, -, p₂⟩ := h₂
@@ -127,10 +127,10 @@ theorem scan_vp (hg : Geo L scr) {o n : Nat} (ho : o + n ≤ oRsa) (hn : 0 < n) 
     · rw [p₁.edi, p₂.edi]
     · rw [p₁.ecx, p₂.ecx]
   generalize hj : n - (k + 1) = j at hp
-  have hjn : j < n := by omega
+  have hjn : j < n := by omega_arith
   have ad : addr (scr + BitVec.ofNat 32 (o + j)) 0 = sa scr (o + j) := by
-    rw [hg.addrD (by unfold oRsa; omega), Nat.add_zero]
-  have rd : InRegions (s.rd ++ s.wr) (sa scr (o + j)) 1 := hg.rd hs (by unfold oRsa; omega)
+    rw [hg.addrD (by unfold oRsa; omega_arith), Nat.add_zero]
+  have rd : InRegions (s.rd ++ s.wr) (sa scr (o + j)) 1 := hg.rd hs (by unfold oRsa; omega_arith)
   have hb := hX σ s.mem hx j hjn
   simp only [scanBody, isZero, ld, st, addi, Impl.RsaPkcs1Sig.X86.at_, List.cons_append, List.nil_append]
   refine wp_movzx8 (a := sa scr (o + j)) (by rw [ea_at, hp.esi]; exact ad) rd fun t1 u1 => ?_
@@ -192,7 +192,7 @@ theorem scan_vp (hg : Geo L scr) {o n : Nat} (ho : o + n ≤ oRsa) (hn : 0 < n) 
         u13.other, u12.other, u11.other, m10.gpr, u9.other, u8.other, u7.other, u6.other, u5.other, u4.other,
         u3.other, u2.other, u1.other, hp.edi]
       rw [BitVec.ofNat_add_ofNat]
-    · rw [u20.gpr, c19, ofNat_pred (by omega), Nat.sub_sub]
+    · rw [u20.gpr, c19, ofNat_pred (by omega_arith), Nat.sub_sub]
     · have b9 : t9.gpr .ebx = nfS n (f σ) j := by
         simp (disch := decide) only [u9.other, u8.other, u7.other, u6.other, u5.other, u4.other, u3.other,
           u2.other, u1.other, hp.ebx]
@@ -206,12 +206,12 @@ theorem scan_vp (hg : Geo L scr) {o n : Nat} (ho : o + n ≤ oRsa) (hn : 0 < n) 
       exact stp.2.2
     · rw [mm15, Mem.readW_writeW_self32]
     · rw [mm15, Lay.readW_fr_other _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
-  rw [c19, ofNat_pred (by omega), Nat.sub_sub, ofNat_beq_zero (by omega), show n - (j + 1) = k by omega] at z20
-  refine ⟨?_, fun h0 => ⟨s20, kd, (show j + 1 = n by omega) ▸ sk⟩,
-    fun hpos => ⟨by omega, s20, kd, by rw [show n - k = j + 1 by omega]; exact sk⟩⟩
+  rw [c19, ofNat_pred (by omega_arith), Nat.sub_sub, ofNat_beq_zero (by omega_arith), show n - (j + 1) = k by omega_arith] at z20
+  refine ⟨?_, fun h0 => ⟨s20, kd, (show j + 1 = n by omega_arith) ▸ sk⟩,
+    fun hpos => ⟨by omega_arith, s20, kd, by rw [show n - k = j + 1 by omega_arith]; exact sk⟩⟩
   show eval .ne t20 = _
   simp only [eval, z20]
-  by_cases h0 : k = 0 <;> simp [h0] <;> omega
+  by_cases h0 : k = 0 <;> simp [h0] <;> omega_arith
 
 end Scan
 
@@ -261,12 +261,12 @@ theorem Y.slot {P : EP} {σ : State} {m : Mem} (hy : Y h g P σ m) {d : Nat} (hd
   have dS : ∀ {o n : Nat}, o + n ≤ oRsa → ∀ r ∈ [slotR P.lay d], (sR P.scr o n).Disjoint r :=
     fun hon r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hg.slot ok hon (by rw [hg.F]; unfold frameBytes at hd ⊢; omega)).symm
+      exact (hg.slot ok hon (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_arith)).symm
   refine ⟨⟨hy.1.1.keep h fr fun r hr => ?_, hy.1.2.1.keep h fr (dS (by oomega)), ?_⟩, hy.2.keep fr hK (dS (by oomega))⟩
-  · simp only [List.mem_singleton] at hr; subst hr; exact slotSep (by decide) hd (by omega)
+  · simp only [List.mem_singleton] at hr; subst hr; exact slotSep (by decide) hd (by omega_arith)
   · rw [← hy.1.2.2]
     exact sbytes_keep (o := oEm) (n := 1) fr (dS (by oomega)) (by oomega) (f := fun _ => m (sa P.scr (oEm + 0)))
-      (fun i hi => by rw [show i = 0 by omega]) 0 (by decide)
+      (fun i hi => by rw [show i = 0 by omega_arith]) 0 (by decide)
 
 theorem tscan_vp (P : EP) :
     VP (A1 h g P) (.seq (.block (scanSet h.H)) (.seq (countLoop scanBody) (.block scanEnd))) (A2 h g P) := by
@@ -289,9 +289,9 @@ theorem tscan_vp (P : EP) :
   refine VP.seq (G := fun σ s => P.lay.St σ s ∧ Xs h g P σ s.mem ∧
       SC P.lay P.scr (oEm + 1 + 2 * h.H.D) (tN h P) (T h g P σ) 0 s)
     (VP.taint [.esp, .ebp] h.certs.scanSet (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hy, ha⟩ => ?_)
-    (VP.seq (scan_vp hg (o := oEm + 1 + 2 * h.H.D) (n := tN h P) (by unfold tN; oomega) (by unfold tN; omega) (f := T h g P)
+    (VP.seq (scan_vp hg (o := oEm + 1 + 2 * h.H.D) (n := tN h P) (by unfold tN; oomega) (by unfold tN; omega_arith) (f := T h g P)
       (X := Xs h g P) (fun σ m hx i hi => by
-        rw [show oEm + 1 + 2 * h.H.D + i = oEm + (1 + 2 * h.H.D + i) by omega]; exact hx.1.2 _ (by unfold tN at hi; omega)) xs) ?_)
+        rw [show oEm + 1 + 2 * h.H.D + i = oEm + (1 + 2 * h.H.D + i) by omega_arith]; exact hx.1.2 _ (by unfold tN at hi; omega_arith)) xs) ?_)
   · simp only [scanSet, atS, addi, ld, st, mi, List.cons_append, List.nil_append]
     refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => ?_
     have c2 := (hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)
@@ -311,7 +311,7 @@ theorem tscan_vp (P : EP) :
     · simp (disch := decide) only [u10.other, u9.other, m8.gpr, m7.gpr, u6.other, u5.gpr]
     · simp (disch := decide) only [u10.other, u9.other, m8.gpr, m7.gpr, u6.other, u5.other, u4.gpr, u3.gpr]
       show BitVec.ofNat 32 P.K - BitVec.ofNat 32 (2 * h.H.D + 1) = _
-      rw [sub_ofNat (by omega)]; rfl
+      rw [sub_ofNat (by omega_arith)]; rfl
     · rw [u10.gpr, u9.gpr]; simp only [nfS, Nat.not_lt_zero, ite_false]; decide
     · rw [mem, Lay.readW_fr_other _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
       simp only [pzS, Nat.not_lt_zero, ite_false]; rfl

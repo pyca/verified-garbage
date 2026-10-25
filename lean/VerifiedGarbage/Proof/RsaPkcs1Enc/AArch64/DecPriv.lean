@@ -57,7 +57,7 @@ theorem byte_ro {R : Region} (hR : R ∈ L.ro) {i : Nat} (hi : i < R.len) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     exacts [(hL.oR R hR).symm, (hL.mR R hR).symm, (hL.sR R hR).symm, (hL.kR R hR).symm])
-    (by have := hL.bR R hR; omega) hi
+    (by have := hL.bR R hR; omega_arith) hi
 
 /-- The bytes of a buffer the function only reads, as on entry. -/
 theorem bytes_ro {R : Region} (hR : R ∈ L.ro) :
@@ -105,7 +105,7 @@ theorem priv_pre' (hL : L.Ok) {S : Nat} (hP : L.P = S + 1) (hc : Ctx L g vv m₀
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := priv_args hc (privRd L) (privWr L)
   have aa : stackArgAddr (t.callEntry.withRegions (privRd L) (privWr L)) 0 = L.Q + BitVec.ofNat 64 0 := by
     simp only [stackArgAddr, State.withRegions_sp, State.callEntry_sp, hc.sp]
-  have arS : Region.Sub ⟨L.Q + BitVec.ofNat 64 0, 96⟩ L.STK := Lay.Ok.sub_stk (by omega)
+  have arS : Region.Sub ⟨L.Q + BitVec.ofNat 64 0, 96⟩ L.STK := Lay.Ok.sub_stk (by omega_arith)
   have lS := Lay.Ok.low_stk (L := L)
   simp only [privK, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, State.callEntry_sp,
     hc.sp, gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x1 ∉ linkRegs),
@@ -114,7 +114,7 @@ theorem priv_pre' (hL : L.Ok) {S : Nat} (hP : L.P = S + 1) (hc : Ctx L g vv m₀
     gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x7 ∉ linkRegs),
     hr.x0, hr.x1, hr.x2, hr.x3, hr.x4, hr.x5, hr.x6, hr.x7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
     aa, hlow, hL.dpl, hL.qil, hL.dql]
-  refine ⟨by omega, by omega, trivial, trivial,
+  refine ⟨by omega_arith, by omega_arith, trivial, trivial,
     hL.oR _ (ro_N L), hL.oR _ (ro_E L), hL.oR _ (ro_INP L), hL.oR _ (ro_PP L), hL.oR _ (ro_QQ L),
     hL.oR _ (ro_DP L), hL.oR _ (ro_DQ L), hL.oR _ (ro_QI L), hL.oS, (hL.kO.sub_left arS).symm,
     (hL.sR _ (ro_N L)).symm, (hL.sR _ (ro_E L)).symm, (hL.sR _ (ro_INP L)).symm, (hL.sR _ (ro_PP L)).symm,
@@ -123,7 +123,7 @@ theorem priv_pre' (hL : L.Ok) {S : Nat} (hP : L.P = S + 1) (hc : Ctx L g vv m₀
     hL.kO.sub_left lS, (hL.kR _ (ro_N L)).sub_left lS, (hL.kR _ (ro_E L)).sub_left lS,
     (hL.kR _ (ro_INP L)).sub_left lS, (hL.kR _ (ro_PP L)).sub_left lS, (hL.kR _ (ro_QQ L)).sub_left lS,
     (hL.kR _ (ro_DP L)).sub_left lS, (hL.kR _ (ro_DQ L)).sub_left lS, (hL.kR _ (ro_QI L)).sub_left lS,
-    hL.kS.sub_left lS, (hL.fr_low (by omega)).symm,
+    hL.kS.sub_left lS, (hL.fr_low (by omega_arith)).symm,
     hL.bO, hL.bR _ (ro_N L), hL.bR _ (ro_E L), hL.bR _ (ro_INP L), hL.bR _ (ro_PP L), hL.bR _ (ro_QQ L),
     hL.bR _ (ro_DP L), hL.bR _ (ro_DQ L), hL.bR _ (ro_QI L), hL.bS,
     hL.kv, trivial, trivial, hL.el1, hL.elk, hL.pl1, hL.plk, hL.ql1, hL.qlk, trivial, trivial, trivial, hL.slk⟩
@@ -165,12 +165,12 @@ theorem priv_call (v : PrivImpl) (hL : L.Ok) (hP : L.P = v.S + 1) (hc : Ctx L g 
   rw [hP] at hpQ
   obtain ⟨hcov, hcovw⟩ := covers_priv hc
   refine WP.callFV v.correct (priv_pre' hL hP hc hr) hcov hcovw
-    (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega)
+    (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega_arith)
   -- What the call may change: `out`, `scratch` and the stack below the frame.
   have hlow : Region.Sub (below t.sp (16 * v.code.aarch64Depth)) L.LOW := by
     rw [hc.sp]
     show Region.Sub _ ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
-    rw [hP]; exact Offset.sub_below _ hdp (by omega)
+    rw [hP]; exact Offset.sub_below _ hdp (by omega_arith)
   have hws : ∀ r ∈ privWr L ++ [below t.sp (16 * v.code.aarch64Depth)],
       (Region.Sub r L.OUT ∨ Region.Sub r L.SCR) ∨ Region.Sub r L.LOW := fun r hr => by
     simp only [privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -183,7 +183,7 @@ theorem priv_call (v : PrivImpl) (hL : L.Ok) (hP : L.P = v.S + 1) (hc : Ctx L g 
     rcases hws R hR with (hs | hs) | hs
     · exact hL.kept_buf hd (.inl hs)
     · exact hL.kept_buf hd (.inr (.inr hs))
-    · exact (hL.fr_low (by unfold keptOff at hd; omega)).sub_right hs
+    · exact (hL.fr_low (by unfold keptOff at hd; omega_arith)).sub_right hs
   have hc' : Ctx L g vv m₀ s' :=
     ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr h30 => (hcs r hr h30).trans (hc.cs r hr h30),
       fun r hr => (hvs r hr).trans (hc.vs r hr), hc.kept.frame hf hkept, hc.frame.trans (hf.sub fun r hr => by

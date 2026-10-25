@@ -100,7 +100,7 @@ theorem traceTry {h1 : VG.Taint.Hint X86_64.Taint.T}
     (taintRel [] nil_regs c3)
 
 theorem ofNat64_toNat' {j : Nat} (h : j ≤ 256) : (BitVec.ofNat 64 j).toNat = j := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem mid_ct : RelCT isa R1 (.ite .b rnTry (.block []))
     fun s₁ s₂ => s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsi = s₂.gpr .rsi := by
@@ -208,13 +208,13 @@ def LI (n : Nat) (s₁ s₂ : State) : Prop :=
 theorem bpre {σ : State} (hp : rnK.pre σ) {t : Nat} (ht : t < 336) {s : State} (h : LAt σ t s) :
     BPre s (σ.gpr .rsi) (Lt σ t) :=
   ⟨h.env.rbp, h.rdi, Lt_length_le t, .of_mem (by rw [h.env.wr, hp.2.1]; simp), h.stored,
-    by simpa using lat_regions hp h (k := 0) (by omega), lat_regions hp h (by omega), lat_regions hp h (by omega)⟩
+    by simpa using lat_regions hp h (k := 0) (by omega_arith), lat_regions hp h (by omega_arith), lat_regions hp h (by omega_arith)⟩
 
 theorem li_brel {n : Nat} {s₁ s₂ : State} (h : LI n s₁ s₂) : BRel s₁ s₂ := by
   obtain ⟨σ₁, σ₂, t, p₁, p₂, hq, _, ht, l₁, l₂⟩ := h
   refine ⟨σ₁.gpr .rsi, Lt σ₁ t, bpre p₁ ht l₁, by rw [pub_aP hq, pub_Lt hq]; exact bpre p₂ ht l₂,
     by rw [l₁.rsi, l₂.rsi, pub_sp hq], by rw [l₁.rcx, l₂.rcx], fun k hk => ?_⟩
-  rw [out_byte l₁ (by omega), out_byte l₂ (by omega), pub_X hq]
+  rw [out_byte l₁ (by omega_arith), out_byte l₂ (by omega_arith), pub_X hq]
 
 theorem loop_ct (n : Nat) :
     RelCT isa (LI n) (.loop rnBody .ne) (Rel2 rnK.pre rnK.pub fun σ s => LAt σ 336 s) := by
@@ -229,8 +229,8 @@ theorem loop_ct (n : Nat) :
     obtain ⟨l₁', z₁⟩ := f₁ (σ₁, t) ⟨p₁, ht, l₁⟩
     obtain ⟨l₂', z₂⟩ := f₂ (σ₂, t) ⟨p₂, ht, l₂⟩
     have ez : (BitVec.ofNat 64 (336 - t) - 1 == 0) = decide (t + 1 = 336) := by
-      rw [ofNat64_pred (by omega) (by omega), ofNat64_beq_zero (by omega)]
-      exact decide_eq_decide.mpr (by omega)
+      rw [ofNat64_pred (by omega_arith) (by omega_arith), ofNat64_beq_zero (by omega_arith)]
+      exact decide_eq_decide.mpr (by omega_arith)
     rw [ez] at z₁ z₂
     refine ⟨by show x'.zf.map _ = y'.zf.map _; rw [z₁, z₂], fun hf => ?_, fun ht' => ?_⟩
     · have : t + 1 = 336 := by
@@ -241,7 +241,7 @@ theorem loop_ct (n : Nat) :
     · have : t + 1 ≠ 336 := by
         have : x'.zf.map (!·) = some true := ht'
         rw [z₁] at this; simpa using this
-      exact ⟨336 - (t + 1), by omega, σ₁, σ₂, t + 1, p₁, p₂, hq, rfl, by omega, l₁', l₂'⟩
+      exact ⟨336 - (t + 1), by omega_arith, σ₁, σ₂, t + 1, p₁, p₂, hq, rfl, by omega_arith, l₁', l₂'⟩
 
 /-- After the first block of the loop's setup. -/
 def IA (σ s : State) : Prop :=
@@ -267,7 +267,7 @@ theorem tail_ct : RelCT isa (Rel2 rnK.pre rnK.pub fun σ => J6 168 1008 (spOf σ
     (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => LAt σ 0 s) (fun σ s _ h => latB h)
         (taintSp hpub (J := fun P σ s => Env P σ s ∧ bytesAt s.mem ((spOf σ).at' 840) 1008 = X σ ∧
           s.gpr .rsi = (spOf σ).at' 840 ∧ s.gpr .rdi = 0) (fun _ _ h => h.1) [] nil_regs (by taint_decide)))
-      (fun _ _ h => h) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, l₁, l₂⟩ => ⟨σ₁, σ₂, 0, p₁, p₂, hq, rfl, by omega, l₁, l₂⟩)
+      (fun _ _ h => h) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, l₁, l₂⟩ => ⟨σ₁, σ₂, 0, p₁, p₂, hq, rfl, by omega_arith, l₁, l₂⟩)
       (loop_ct 336))) ?_
   exact taintSp hpub (J := fun P σ s => LAt σ 336 s) (fun _ _ h => h.env) [] nil_regs (by taint_decide)
 

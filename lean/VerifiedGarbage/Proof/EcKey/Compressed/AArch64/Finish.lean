@@ -4,11 +4,11 @@ import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Tag
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-! # Write a compressed point or a completely cleared output -/
 

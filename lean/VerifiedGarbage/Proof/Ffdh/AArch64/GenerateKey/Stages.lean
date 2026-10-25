@@ -107,7 +107,7 @@ theorem Dst.wr {p : GkP} {t u : State} (h : Dst p t) (hw : u.wr = t.wr) : Dst p 
 /-- Bytes of regions apart are apart. -/
 theorem ne_of_disj {a b : Addr} {n m i j : Nat} (hd : (⟨a, n⟩ : Region).Disjoint ⟨b, m⟩) (ha : a.toNat + n ≤ 2 ^ 64)
     (hb : b.toNat + m ≤ 2 ^ 64) (hi : i < n) (hj : j < m) : a + BitVec.ofNat 64 i ≠ b + BitVec.ofNat 64 j :=
-  fun he => hd _ (contains_byte a hi (by omega)) (he ▸ contains_byte b hj (by omega))
+  fun he => hd _ (contains_byte a hi (by omega_arith)) (he ▸ contains_byte b hj (by omega_arith))
 
 /-- What the code uses of the precondition. -/
 structure GkCtx (s : State) : Prop where
@@ -138,17 +138,17 @@ theorem gkCtx_of {s : State} (h : gkPre s) : GkCtx s := by
     hdl, hxl, hyl, hrl, hsl⟩ := h
   unfold Spec.Rsa.scratchWords at hsl
   have hs : Scr s (stackArg s 1) ((stackArg s 2).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
-  refine ⟨hk1, hk2, hdl, hxl, hyl, hrl, by omega, hs,
+  refine ⟨hk1, hk2, hdl, hxl, hyl, hrl, by omega_arith, hs,
     ⟨⟨stackArgAddr s 0, 24⟩, by rw [hrd]; simp, by
       rw [show stackArgAddr s 1 = stackArgAddr s 0 + BitVec.ofNat 64 8 by
         simp only [stackArgAddr, Nat.mul_zero, Nat.mul_one, BitVec.add_zero]]
-      exact Offset.contains_base _ (by omega) (by omega)⟩,
-    src_of_region (by rw [hrd]; simp) (by omega) dDS,
-    src_of_region (by rw [hrd]; simp) (by omega) dRS,
-    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega) (by omega)⟩,
-    fun j hj => out_scr dXS (contains_byte _ (by omega) (by omega)),
-    fun j hj => ⟨⟨s.gpr .x2, (s.gpr .x3).toNat⟩, by rw [hwr]; simp, contains_byte _ (by omega) (by omega)⟩,
-    fun j hj => out_scr dYS (contains_byte _ (by omega) (by omega)), ?_⟩
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dDS,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dRS,
+    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega_arith) (by omega_arith)⟩,
+    fun j hj => out_scr dXS (contains_byte _ (by omega_arith) (by omega_arith)),
+    fun j hj => ⟨⟨s.gpr .x2, (s.gpr .x3).toNat⟩, by rw [hwr]; simp, contains_byte _ (by omega_arith) (by omega_arith)⟩,
+    fun j hj => out_scr dYS (contains_byte _ (by omega_arith) (by omega_arith)), ?_⟩
   rw [hxl, hyl] at dXY
   rw [hxl] at dXD wX
   rw [hxl, hrl] at dXR
@@ -221,7 +221,7 @@ theorem gkEntry_ok {s : State} {B : Addr} (hB : stackArg s 1 = B)
   rw [hm]
   intro x hx
   have e : ∀ i, i < 32 → ∀ (m : Mem) (v : BitVec 64), (m.writeW (off B (8 * i)) v) x = m x := fun i hi m v =>
-    writeW_outside m B v (d := 8 * i) (by omega) x (by omega)
+    writeW_outside m B v (d := 8 * i) (by omega_arith) x (by omega_arith)
   rw [e sRand (by decide), e sK (by decide), e sDomLen (by decide), e sDom (by decide), e sY (by decide),
     e sX (by decide)]
 
@@ -238,9 +238,9 @@ theorem cr_g1 (p : GkP) (rb : List Byte) (s : State) (h : CR p rb s) :
   have hZ : 128 * p.k + 256 ≤ p.Z := hb.hZ
   have hs : Scr s p.B p.Z := hb.scr
   obtain ⟨-, -, hB, hZ', hk, hdl, hdp, -, hxp, hyp, hrp, -⟩ := h
-  have hw : ∀ i < 32, InRegions s.wr (off p.B (8 * i)) 8 := fun i hi => hs.st (by omega)
+  have hw : ∀ i < 32, InRegions s.wr (off p.B (8 * i)) 8 := fun i hi => hs.st (by omega_arith)
   refine WP.mono (gkEntry_ok hB hw c.ha1) fun t ⟨h0, hX, hY, hD, hL, hK, hR, ho', k⟩ => ?_
-  refine ⟨⟨⟨hb.keep (InScr.of_outside ho' (show 0 + 8 * 32 ≤ p.Z by omega)) k, h0, ?_⟩, hd.keep k, ho⟩,
+  refine ⟨⟨⟨hb.keep (InScr.of_outside ho' (show 0 + 8 * 32 ≤ p.Z by omega_arith)) k, h0, ?_⟩, hd.keep k, ho⟩,
     k.mono (by decide)⟩
   intro q hq
   simp only [FD.hdr, GkP.D₀, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -297,7 +297,7 @@ theorem smear_ok {t : State} {c : Byte} (h3 : t.gpr .x3 = BitVec.ofNat 64 c.toNa
   have hs : KeyScalar.smearN c.toNat < 2 ^ 64 := Nat.lt_of_lt_of_le (KeyScalar.smearN_lt _ hc) (by decide)
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_or, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, KeyScalar.smearN] at hs ⊢
-  rw [Nat.mod_eq_of_lt (show c.toNat < 2 ^ 64 by omega), Nat.mod_eq_of_lt hs]
+  rw [Nat.mod_eq_of_lt (show c.toNat < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt hs]
 
 /-- The loop's registers. -/
 def GB (p : GkP) (rb : List Byte) (t : State) : Prop :=
@@ -322,7 +322,7 @@ theorem setBlk_ok {t : State} {B xp rp : Addr} {k bl : Nat} {msk : BitVec 64} (h
     hl sRand (by decide), hK, hL, hX, hR]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem gs_gb (p : GkP) (rb : List Byte) (t : State) (h : GS p rb t) :
     WP isa (.block (GenerateKey.smear ++ [mov .x12 .x3, ldh .x10 sK, ldh .x11 sEl, .sub .x .x11 .x10 .x11,
@@ -338,7 +338,7 @@ theorem gs_gb (p : GkP) (rb : List Byte) (t : State) (h : GS p rb t) :
   have hs := hP₁.2.2.2.2.1
   refine WP.mono (setBlk_ok (bl := (p.D₀ rb).bl) hO.x0 h3₁ (hs.get (i := sK) (v := BitVec.ofNat 64 (p.D₀ rb).k)
     (by simp)) (by rw [hm₁]; exact hL) (hs.get (i := sX) (v := p.xp) (by simp [GkP.D₀]))
-    (hs.get (i := sRand) (v := p.rp) (by simp [GkP.D₀])) (by omega) (by omega) fun i hi => hO.ld hi)
+    (hs.get (i := sRand) (v := p.rp) (by simp [GkP.D₀])) (by omega_arith) (by omega_arith) fun i hi => hO.ld hi)
     fun u ⟨⟨h1, h2, h10, h11, h12, h13, h7, h14, hm⟩, k⟩ =>
       ⟨⟨⟨mi, hP₁.keep hm k (by decide), h1, h2, h10, h11, h12, h13, h7, h14⟩, hd.keep (k₁.trans k), ho⟩,
         keep_trans (k₁.mono (by decide)) (k.mono (by decide))⟩
@@ -364,17 +364,17 @@ theorem gb_gx (p : GkP) (rb : List Byte) (t : State) (h : GB p rb t) :
   have hbl := hb.bl_lt
   simp only [GkP.D₀_k] at hbl
   have hr : Src t p.B p.Z p.rp rb := hb.srcs (p.rp, rb) (by simp [GkP.D₀])
-  refine WP.mono (cut_ok (k := p.k) (rb := rb) (by omega) (by omega) hbl h1 h2 h10 h11 h12 h13 h7 h14
-    (fun i hi => hr.rd i (by omega))
+  refine WP.mono (cut_ok (k := p.k) (rb := rb) (by omega_arith) (by omega_arith) hbl h1 h2 h10 h11 h12 h13 h7 h14
+    (fun i hi => hr.rd i (by omega_arith))
     (fun i hi => by
-      rw [hr.val i (by omega), List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some])
+      rw [hr.val i (by omega_arith), List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_arith), Option.getD_some])
     (fun i hi => (hd i hi).1.1)
     (fun i hi i' hi' => (ne_of_disj gXR nX nR hi' hi).symm)) fun u hI => ?_
   have k := hI.keep
   have hout : Outside p.B p.Z (2 ^ 64) t.mem u.mem := outside_of_frame (fun j hj => (hd j hj).1.2) hI.frame
   have hxl := xo_length p rb hb.bl_lt ho
   refine ⟨⟨⟨mi, hP.out (D := p.D₀ rb) hout k.rd k.wr ((k.gpr .x0 (by decide)).trans hP.2.2.2.2.2.2)
-    (fun i hi => hI.frame _ fun j hj => (ne_of_disj gXD nX nD hj (by have := hb.doml; simp only [GkP.D₀_dl, GkP.D₀_dom] at this hi; omega)).symm) ?_⟩,
+    (fun i hi => hI.frame _ fun j hj => (ne_of_disj gXD nX nD hj (by have := hb.doml; simp only [GkP.D₀_dl, GkP.D₀_dom] at this hi; omega_arith)).symm) ?_⟩,
     hd.keep k, ho⟩, k.mono (by decide)⟩
   intro e he
   simp only [List.mem_cons, List.not_mem_nil, or_false] at he
@@ -386,7 +386,7 @@ theorem gb_gx (p : GkP) (rb : List Byte) (t : State) (h : GB p rb t) :
     obtain ⟨r, hr', hc⟩ := this
     exact ⟨r, List.mem_append_right _ hr', hc⟩
   · rw [hxl] at hi
-    rw [hI.bytes i hi, cb_eq _ (by omega) (by omega)]
+    rw [hI.bytes i hi, cb_eq _ (by omega_arith) (by omega_arith)]
     rfl
   · rw [hxl] at hi
     exact (hd i hi).1.2
@@ -425,7 +425,7 @@ theorem g2_lpre (p : GkP) (rb : List Byte) (t : State) (h : G2 p rb t) :
   have hxl := xo_length p rb hb.bl_lt ho
   have := hb.k1
   have := hI.lpre (sp := sX) (sl := sK) (show aXm < 8 by decide) (by decide) (by decide) (hs.get (i := sX) (v := p.xp) (by simp [GkP.D₀]))
-    (by rw [hxl]; exact hs.get (i := sK) (by simp)) hx (by rw [hxl]; simp at this ⊢; omega) (by rw [hxl]; simp)
+    (by rw [hxl]; exact hs.get (i := sK) (by simp)) hx (by rw [hxl]; simp at this ⊢; omega_arith) (by rw [hxl]; simp)
   rw [hxl] at this
   exact this
 
@@ -439,7 +439,7 @@ theorem g2_g3 (p : GkP) (rb : List Byte) (t : State) (h : G2 p rb t) :
   have := hb.k1
   exact WP.mono (hI.load (show aXm < 8 by decide) (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sX) (v := p.xp) (by simp [GkP.D₀])) (by rw [hxl]; exact hs.get (i := sK) (by simp)) hx
-    (by rw [hxl]; simp at this ⊢; omega) (by rw [hxl]; simp)) fun u ⟨⟨hu, hv, _⟩, k⟩ =>
+    (by rw [hxl]; simp at this ⊢; omega_arith) (by rw [hxl]; simp)) fun u ⟨⟨hu, hv, _⟩, k⟩ =>
       ⟨⟨⟨mi, hu, hv⟩, ho⟩, k⟩
 
 end VG.Proof.Ffdh.AArch64.GenerateKey

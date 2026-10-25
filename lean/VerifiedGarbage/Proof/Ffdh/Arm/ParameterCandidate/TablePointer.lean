@@ -45,14 +45,7 @@ theorem tablePointer_ok (s : State) (base : BitVec 32) (n : Nat) (bound : n ≤ 
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.tablePointer) s fun t =>
       (t.gpr .r11 = base + BitVec.ofNat 32 (arrAt ((n + 7) / 8) 34) ∧ t.mem = s.mem) ∧
         Rest [.r0, .r7, .r11] s t := by
-  refine withRest [.r0, .r7, .r11] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.tablePointer : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r7, .r11] ?_ (by rfl) (by rfl)
   have enc256 : encodable (256 : BitVec 32) = true := by decide
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.tablePointer
   ffrun [BitVec.add_zero, readBase, readWidth, savedBase, savedWidth, enc256, tableStride n bound, tableAddress base n]

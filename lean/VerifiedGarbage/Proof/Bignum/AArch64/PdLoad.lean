@@ -33,14 +33,14 @@ theorem ne_sel (v : BitVec 64) :
     have h' : ¬ 2 ^ 64 ≤ (0 : BitVec 64).toNat + (2 ^ 64 - 2) + 1 := by decide
     simp only [h', decide_false, Bool.false_eq_true, ite_false, ne_eq, not_true_eq_false]; rfl
   · have h0 : v.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq e)
-    have h' : 2 ^ 64 ≤ v.toNat + (2 ^ 64 - 2) + 1 := by omega
+    have h' : 2 ^ 64 ≤ v.toNat + (2 ^ 64 - 2) + 1 := by omega_arith
     simp only [h', decide_true, ite_true, ne_eq, h, not_false_eq_true]; rfl
 
 theorem and1_mod2 (a : BitVec 64) : a &&& 1 = BitVec.ofNat 64 (a.toNat % 2) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (1 : BitVec 64).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
     BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem and_bits (a b : Bool) : BitVec.ofNat 64 a.toNat &&& BitVec.ofNat 64 b.toNat = BitVec.ofNat 64 (a && b).toNat := by
   cases a <;> cases b <;> decide
@@ -63,11 +63,11 @@ theorem pdCheck_ok {t : State} {B : Addr} {Z w : Nat} (hs : Scr t B Z) (h0 : t.g
   have hn := hs.nowrap
   have := slot_le (w := w) (show aN < 8 by decide)
   have hl : InRegions (t.rd ++ t.wr) (off B (8 * sArr aN)) 8 :=
-    hs.ld (by have := hdr_lt_slot w 8 (show sArr aN < 32 by decide); omega)
+    hs.ld (by have := hdr_lt_slot w 8 (show sArr aN < 32 by decide); omega_arith)
   have hw8 : (BitVec.ofNat 64 w - BitVec.ofNat 64 1) <<< 3 = BitVec.ofNat 64 (8 * (w - 1)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_arith
   rw [show ([movi .x8 1, .csel .x .x9 .x7 .x8, ldh .x17 (sArr aN), ld .x3 .x17, .logic .and .x .x3 .x3 .x8,
       .logic .and .x .x9 .x9 .x3, .subImm .x .x4 .x12 1, .lsl .x .x4 .x4 3, .add .x .x4 .x17 .x4, ld .x3 .x4,
       .subs .x .x3 .x3 .x8, .csel .x .x3 .x8 .x7, .logic .and .x .x9 .x9 .x3] : List Instr) =
@@ -79,7 +79,7 @@ theorem pdCheck_ok {t : State} {B : Addr} {Z w : Nat} (hs : Scr t B Z) (h0 : t.g
   refine WP.mono (WP.keep [.x3, .x8, .x9, .x17] (Q := fun t₁ =>
       t₁.gpr .x9 = BitVec.ofNat 64 (!c).toNat ∧ t₁.gpr .x8 = 1 ∧ t₁.gpr .x17 = off B (slot w aN) ∧
       t₁.gpr .x3 = BitVec.ofNat 64 ((word t.mem B (slot w aN)).toNat % 2) ∧ t₁.mem = t.mem) (by
-    brun [h7, hc, h0, hdr_enc (show sArr aN < 32 by decide), hl, hb, hs.ld (d := slot w aN) (by omega),
+    brun [h7, hc, h0, hdr_enc (show sArr aN < 32 by decide), hl, hb, hs.ld (d := slot w aN) (by omega_arith),
       show BitVec.setWidth 64 (1#16) = (1 : BitVec 64) from rfl, and1_mod2]
     cases c <;> rfl) (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨h9₁, h8₁, h17₁, h3₁, hm₁⟩, k₁⟩ => ?_
   refine WP.mono (WP.keep [.x9] (Q := fun t₂ => t₂.gpr .x9 = t₁.gpr .x9 &&& t₁.gpr .x3 ∧ t₂.mem = t₁.mem)
@@ -91,7 +91,7 @@ theorem pdCheck_ok {t : State} {B : Addr} {Z w : Nat} (hs : Scr t B Z) (h0 : t.g
     (by
       brun [(k₂.gpr .x7 (by decide)).trans ((k₁.gpr .x7 (by decide)).trans h7), (k₂.gpr .x8 (by decide)).trans h8₁,
         (k₂.gpr .x12 (by decide)).trans ((k₁.gpr .x12 (by decide)).trans h12), (k₂.gpr .x17 (by decide)).trans h17₁,
-        hw8, off_add, hm₂', hs₂.ld (d := slot w aN + 8 * (w - 1)) (by omega)]
+        hw8, off_add, hm₂', hs₂.ld (d := slot w aN + 8 * (w - 1)) (by omega_arith)]
       exact ne_sel _) (by decide) (by decide) (by decide +kernel)) fun t₃ ⟨⟨h3₃, hm₃⟩, k₃⟩ => ?_
   refine WP.mono (WP.keep [.x9] (Q := fun t₄ => t₄.gpr .x9 = t₃.gpr .x9 &&& t₃.gpr .x3 ∧ t₄.mem = t₃.mem)
     (by brun) (by decide) (by decide) (by decide +kernel)) fun t' ⟨⟨h9', hm'⟩, k₄⟩ => ?_
@@ -120,12 +120,12 @@ theorem pdHead_ok {s : State} {B : Addr} {Z k : Nat} {pp : Addr} (hs : Scr s B Z
   have hw₁ : ∀ i, 8 * i + 8 ≤ 8 * sW ∨ (16 ≤ i ∧ i < 32) → word t₁.mem B (8 * i) = word s.mem B (8 * i) :=
     fun i hi => hf₁.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro _ (rfl | rfl) <;> omega) (by omega)
+      rintro _ (rfl | rfl) <;> omega_arith) (by omega_arith)
   refine WP.mono (WP.keep [.x16, .x17] (Q := fun t => t.gpr .x16 = off pp 0 ∧
       t.gpr .x17 = off B (slot ((k + 7) / 8) aN) ∧ t.mem = t₁.mem) (by
     brun [(k₁.gpr .x0 (by decide)).trans h0, hdr_enc (show sN < 32 by decide),
-      hdr_enc (show sArr aN < 32 by decide), hs₁.ld (d := 8 * sN) (by omega),
-      hs₁.ld (d := 8 * sArr aN) (by omega), hw₁ sN (by omega), hN, hb₁ aN (by decide)])
+      hdr_enc (show sArr aN < 32 by decide), hs₁.ld (d := 8 * sN) (by omega_arith),
+      hs₁.ld (d := 8 * sArr aN) (by omega_arith), hw₁ sN (by omega_arith), hN, hb₁ aN (by decide)])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h16, h17, hm⟩, k₂⟩ => ?_
   exact ⟨h16, h17, (k₂.gpr .x12 (by decide)).trans h12, by rw [hm]; exact hW₁, fun j hj => by rw [hm]; exact hb₁ j hj,
     by rw [hm]; exact hf₁, (k₁.trans k₂).mono (by decide)⟩

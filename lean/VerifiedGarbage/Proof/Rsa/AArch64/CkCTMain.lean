@@ -76,16 +76,16 @@ theorem ckMod_ct {sX sXlen sDX sYlen : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (
       (fun p s h => by
         obtain ⟨I, m₀, c, rfl, hs, L, _⟩ := h
         obtain ⟨a, b⟩ := hY I m₀ s hs L
-        exact topD_ok hsY a (by have := L.cap2; have := L.k2; omega) hs.ws.h256)
+        exact topD_ok hsY a (by have := L.cap2; have := L.k2; omega_arith) hs.ws.h256)
       (fun p s h => by
         obtain ⟨I, m₀, c, rfl, hs, L, _⟩ := h
         have := (hY I m₀ s hs L).2
         have := L.cap1
         change 1 ≤ (yl I.pub + 7) / 8 + 1 ∧ (yl I.pub + 7) / 8 + 1 < wW I.cap
-        unfold wW wk; omega) tHi tLo tCnt
+        unfold wW wk; omega_arith) tHi tLo tCnt
   have rE : RelCT isa (Two GK) (seqs (CheckCrtKey.modOne CheckCrtKey.topE)) (Two GK) :=
     modOneTop_ckct (fun _ => 1) (fun p s _ => topE_ok p.B p.Z s.mem)
-      (fun p s h => by obtain ⟨I, m₀, c, rfl, hs, L, _⟩ := h; simp only [CkIn.pub, wW]; omega)
+      (fun p s h => by obtain ⟨I, m₀, c, rfl, hs, L, _⟩ := h; simp only [CkIn.pub, wW]; omega_arith)
       (by taint_decide) (by taint_decide) (by taint_decide)
   exact ct_app (by simp [loadA]) (by simp) ldX (ct_app (a := [.block (decA aM)]) (by simp) (by simp [loadA])
     (ct_one (decA_ckct (by decide) (by taint_decide)))
@@ -117,7 +117,7 @@ theorem ckMain_ct : RelCT isa (Two GKM) VG.Impl.Rsa.AArch64.CheckKey.main fun _ 
   rw [ckMain_eq]
   refine (ct_app (by simp) (by simp [loadA]) (ct_one ckHead_ct)
     (ct_app (by simp [loadA]) (by simp [loadA]) (toGK (ofGK (ldWide_ct (by decide) (by decide) (by decide) CkP.pN CkP.k
-      (by decide) (fun I m₀ s hs L => ⟨hs.args.n, hs.args.k, ⟨_, hs.n, L.nl⟩, show 1 ≤ I.k by have := L.k1; omega, Nat.le_refl _⟩)
+      (by decide) (fun I m₀ s hs L => ⟨hs.args.n, hs.args.k, ⟨_, hs.n, L.nl⟩, show 1 ≤ I.k by have := L.k1; omega_arith, Nat.le_refl _⟩)
       (by taint_decide) (by taint_decide) (by taint_decide))))
     (ct_app (by simp [loadA]) (by simp) (toGK (ofGK (ldWide_ct (by decide) (by decide) (by decide) CkP.pE CkP.el
       (by decide) (fun I m₀ s hs L => ⟨hs.args.e, hs.args.el, ⟨_, hs.e, L.ebl⟩, L.el1, L.el2⟩)

@@ -76,7 +76,7 @@ theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) (hiT : i ≠
   have := sl_lt c hi hiT
   rw [sl_eq c 45] at this
   rw [bitsAt_eq]
-  omega
+  omega_arith
 
 theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat}
     (hw : rcbW S o = lw.map c.sl) (hr : rcbR S p q = lr.map c.sl) (hnd : lw.Nodup)
@@ -86,20 +86,20 @@ theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat
 /-- The powers' table is in the working space, past the other slots. -/
 theorem ct_le (c : Cfg) (h7 : c.n < 10) : c.sl CT + 9 * (8 * c.n) ≤ size := by
   simp (disch := decide) only [sl_eq]; unfold CT
-  have : 8 * c.n * 69 ≤ 8 * 9 * 69 := Nat.mul_le_mul_right _ (by omega)
+  have : 8 * c.n * 69 ≤ 8 * 9 * 69 := Nat.mul_le_mul_right _ (by omega_arith)
   show _ ≤ 8192
-  omega
+  omega_arith
 
 /-- The powers' table is apart from the temporary area. -/
 theorem ct_tmp (c : Cfg) : c.sl CT + 9 * (8 * c.n) ≤ c.sl TMP ∨ c.sl TMP + 8 * c.n ≤ c.sl CT := by
   rw [sl_eq c CT]
   by_cases hr : c.n = 6 ∨ c.n = 8 ∨ c.n = 9
   · rw [sl_tmp c hr]; simp only [Mont.moAt, CT]
-    rcases hr with h | h | h <;> rw [h] <;> omega
+    rcases hr with h | h | h <;> rw [h] <;> omega_arith
   · rw [sl_aff c hr]; simp only [TMP, CT]; right
     have : 8 * c.n * 2 + 8 * c.n ≤ 8 * c.n * 69 := by
       rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by decide)
-    omega
+    omega_arith
 
 /-! ## The powers' working slots and temporary area -/
 
@@ -114,7 +114,7 @@ theorem invTbl_ge (hc : BaseCfgOk c) : c.sl CT ≤ c.invTbl := by
 theorem invTbl_le (hc : BaseCfgOk c) : c.invTbl + 9 * (8 * c.n) ≤ size := by
   rcases hc.inv_at with h | h
   · rw [invTbl_none h]; exact ct_le c hc.n10
-  · have := h.2.2.1; omega
+  · have := h.2.2.1; omega_arith
 
 theorem invSaveLen_le (c : Cfg) : c.invSaveLen ≤ 48 := by
   unfold Cfg.invSaveLen Cfg.invKept Cfg.invRegs
@@ -126,8 +126,8 @@ theorem invTbl_le8 (hc : BaseCfgOk c) : c.invTbl + (9 * (8 * c.n) + c.invSaveLen
     have := hc.n10
     have := invSaveLen_le c
     show 64 + 8 * c.n * 69 + (9 * (8 * c.n) + c.invSaveLen) ≤ 8192
-    omega
-  · have := h.2.2.1; omega
+    omega_arith
+  · have := h.2.2.1; omega_arith
 
 theorem invTmp_ge64 (hc : BaseCfgOk c) : 64 ≤ c.invTmp := by
   rcases hc.inv_at with h | h
@@ -136,7 +136,7 @@ theorem invTmp_ge64 (hc : BaseCfgOk c) : 64 ≤ c.invTmp := by
     · rw [h'.1]; exact Nat.le_add_right _ _
     · have := sl_ge64 c CT
       have := sl_ge64 c nslots
-      omega
+      omega_arith
 
 theorem invTbl8 (hc : BaseCfgOk c) : c.invTbl % 8 = 0 := by
   rcases hc.inv_at with h | h
@@ -147,14 +147,14 @@ theorem invTmp8 (hc : BaseCfgOk c) : c.invTmp % 8 = 0 := by
   rcases hc.inv_at with h | h
   · rw [invTmp_none h]; exact sl_mod8 c _
   · rcases h.2.2.2 with h' | h'
-    · rw [h'.1]; simp only [slot, Nat.mul_assoc]; omega
+    · rw [h'.1]; simp only [slot, Nat.mul_assoc]; omega_arith
     · exact h'.2.2.1
 
 theorem invTmp_le (hc : BaseCfgOk c) : c.invTmp + 8 * c.n ≤ size := by
   rcases hc.inv_at with h | h
   · rw [invTmp_none h]; exact sl_le c hc.n10 (by decide)
   · rcases h.2.2.2 with h' | h'
-    · rw [h'.1]; have := hc.n10; simp only [slot, TMP, size]; omega
+    · rw [h'.1]; have := hc.n10; simp only [slot, TMP, size]; omega_arith
     · exact h'.2.1
 
 theorem invTbl_tmp (hc : BaseCfgOk c) :
@@ -162,15 +162,15 @@ theorem invTbl_tmp (hc : BaseCfgOk c) :
   rcases hc.inv_at with h | h
   · rw [invTbl_none h, invTmp_none h]; exact ct_tmp c
   · rcases h.2.2.2 with h' | h'
-    · exact Or.inr (by omega)
+    · exact Or.inr (by omega_arith)
     · rcases h'.1 with h'' | h''
-      · exact Or.inl (by omega)
-      · exact Or.inr (by omega)
+      · exact Or.inl (by omega_arith)
+      · exact Or.inr (by omega_arith)
 
 /-- A numbered slot below the tables is below the powers' working slots. -/
 theorem sl_invTbl (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
     c.sl i + 8 * c.n ≤ c.invTbl :=
-  Nat.le_trans (sl_lt c (show i < CT by unfold CT; omega) hT) (invTbl_ge hc)
+  Nat.le_trans (sl_lt c (show i < CT by unfold CT; omega_arith) hT) (invTbl_ge hc)
 
 /-- A numbered slot below the tables, but `TMP`, is apart from the powers'
 temporary area. -/
@@ -182,9 +182,9 @@ theorem sl_invTmp (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
     · rw [h'.1]; exact sl_apart_raw_tmp c hT
     · rcases h'.1 with h'' | h''
       · have := sl_invTbl hc hi hT
-        exact Or.inl (by omega)
-      · have := sl_lt c (j := nslots) (by unfold nslots; omega) hT (by decide)
-        exact Or.inl (by omega)
+        exact Or.inl (by omega_arith)
+      · have := sl_lt c (j := nslots) (by unfold nslots; omega_arith) hT (by decide)
+        exact Or.inl (by omega_arith)
 
 theorem invMP_A (hc : BaseCfgOk c) : ModA { c.MP' with tmp := c.invTmp } := ⟨sl_mod8 c MP, invTmp8 hc⟩
 theorem invMN_A (hc : BaseCfgOk c) : ModA { c.MN' with tmp := c.invTmp } := ⟨sl_mod8 c MN, invTmp8 hc⟩
@@ -198,7 +198,7 @@ theorem chainLay_of (hc : BaseCfgOk c) {P : ChainCfg} (hn : P.M.n = c.n) (hacc :
   have h0 := hc.n0
   have h7 := hc.n10
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hbs hjm
-  refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, hA, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  refine ⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, hA, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp only [hn, hacc, htbl, hb, hmo, htmp]
   · exact sl_le c h7 (by decide)
   · exact sl_le c h7 hb45

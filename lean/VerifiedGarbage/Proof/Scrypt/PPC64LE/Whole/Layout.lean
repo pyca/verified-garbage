@@ -151,7 +151,7 @@ theorem stk_buf {d n : Nat} (h₁ : d + n ≤ 1120) {R : Region}
 theorem args_buf {d n : Nat} (h₁ : 1216 ≤ d) (h₂ : d + n ≤ 1256) {R : Region}
     (hR : R = L.BB ∨ R = L.VV ∨ R = L.SC ∨ R = L.OUT) {r : Region} (hr : Region.Sub r R) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
-  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega)
+  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega_arith)
   rcases hR with rfl | rfl | rfl | rfl
   · exact (h.ba.symm.sub_left hs).sub_right hr
   · exact (h.va.symm.sub_left hs).sub_right hr
@@ -245,7 +245,7 @@ theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 1008) :
     rw [Offset.sub_ofNat_eq (B + BitVec.ofNat 64 1008) (a := m) (b := 1008) hm, BitVec.add_sub_cancel]
   show Region.Sub ⟨B + BitVec.ofNat 64 1008 - BitVec.ofNat 64 m, m⟩ _
   rw [this]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_arith)
 
 /-- A call of verified code (see `WP.callAny`), which uses at most 1008 bytes
 of stack and is given regions within ours to read, and within the writable
@@ -264,7 +264,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {lr : BitVec 64} {
       k.post (t.callEntry.withRegions rd wr) (s'.withRegions rd wr) → Q s') :
     WP isa (.call n c) t Q := by
   obtain ⟨hcov, hcovw⟩ := covers hc hsub hwsub
-  refine WP.callAny hv hpre hcov hcovw (fun s' hrd hwr hsp hf hcs hpost => ?_) (by omega)
+  refine WP.callAny hv hpre hcov hcovw (fun s' hrd hwr hsp hf hcs hpost => ?_) (by omega_arith)
   have hf' : Frame (wr ++ [⟨L.B, 1008⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -281,8 +281,8 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {lr : BitVec 64} {
     rcases List.mem_append.mp hR with hR | hR
     · obtain ⟨R', hR', hs⟩ := (hwsub R hR).sub
       rcases hdd with hdd | hdd
-      · exact hL.stk_buf (by omega) hR' hs
-      · exact hL.args_buf (by omega) (by omega) hR' hs
+      · exact hL.stk_buf (by omega_arith) hR' hs
+      · exact hL.args_buf (by omega_arith) (by omega_arith) hR' hs
     · simp only [List.mem_singleton] at hR; subst hR
       exact Offset.disjoint_base _ (by omega) (by omega)
   refine hQ s' ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, (hcs _ (by decide)).trans hc.r30,
@@ -319,7 +319,7 @@ theorem lay_ok {s : State} (h : scryptPPC.pre s) : (lay s).Ok := by
     simp only [lay]
     simp only [stackBytes] at hst
     rw [Offset.toNat_sub_ofNat s.sp 1120]
-    omega
+    omega_arith
   exact ⟨pb, pv, pc, po, sb, sv, sc, so, bv, bc, bo, ea ▸ ba, vc, vo, ea ▸ va, co, ea ▸ ca, ea ▸ oa,
     kp, ks, kb, kv, kc, ko, np, ns, nb, nv, nc, no, nB, rpos, bmod, vmod, hval, olb, slen⟩
 

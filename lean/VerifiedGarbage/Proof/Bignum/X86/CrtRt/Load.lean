@@ -42,42 +42,42 @@ theorem reverseInto_ok {v : State} {base : Addr} {bytes len : Nat} {args : Nat �
   have nw' := h.scratch.nowrap
   have bl := h.bytes_lt
   have ce := cb_eq (len := len) N
-  have srcLen : L < 2 ^ 32 := by omega
+  have srcLen : L < 2 ^ 32 := by omega_arith
   let dst := v.gpr .ebx
-  have dstAddr : byteAddr dst = off base (lo len x) := byteAddr_ptr pv (by omega)
+  have dstAddr : byteAddr dst = off base (lo len x) := byteAddr_ptr pv (by omega_arith)
   have dstNat : dst.toNat = base.toNat + lo len x := by
-    show (v.gpr .ebx).toNat = _; rw [pv, Nat.mod_eq_of_lt (by omega)]
+    show (v.gpr .ebx).toNat = _; rw [pv, Nat.mod_eq_of_lt (by omega_arith)]
   have vw : InRegions v.wr (byteAddr dst) L := by
-    rw [dstAddr]; exact h.scratch.write (by omega)
+    rw [dstAddr]; exact h.scratch.write (by omega_arith)
   have hsub : Region.Sub ⟨off base (lo len x), L⟩ ⟨base, bytes⟩ := by
-    have := Offset.sub base (d := lo len x) (n := L) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    have := Offset.sub base (d := lo len x) (n := L) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_arith)
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   have hd : Region.Disjoint ⟨byteAddr P, L⟩ ⟨off base (lo len x), L⟩ := apart.sub_right hsub
-  have ctx := reverseCtx_of_regions v P dst srcLen fit (by omega) rd vw (by rw [dstAddr]; exact hd)
-  refine WP.mono (reverseBytes_ok v ctx (by omega) esi rfl ecx) fun t I => ?_
+  have ctx := reverseCtx_of_regions v P dst srcLen fit (by omega_arith) rd vw (by rw [dstAddr]; exact hd)
+  refine WP.mono (reverseBytes_ok v ctx (by omega_arith) esi rfl ecx) fun t I => ?_
   have Ot : Outside base (lo len x) (cb len n) v.mem t.mem := by
     intro a ha
     apply I.outside a
     intro k hk he
     have ek : ofs base a = lo len x + k := by
-      rw [he, byteAddr_add (by omega), dstAddr]
-      exact ofs_off base (by omega)
-    omega
+      rw [he, byteAddr_add (by omega_arith), dstAddr]
+      exact ofs_off base (by omega_arith)
+    omega_arith
   have padding : ∀ k, L ≤ k → k < cb len n → t.mem (off base (lo len x) + BitVec.ofNat 64 k) = 0 := by
     intro k hk hkn
     rw [I.outside _ ?_]
-    · exact byte_zero_of_val32 Z (by omega)
+    · exact byte_zero_of_val32 Z (by omega_arith)
     · intro i hi he
-      rw [byteAddr_add (by omega), dstAddr] at he
+      rw [byteAddr_add (by omega_arith), dstAddr] at he
       have e := congrArg (fun a => (a - off base (lo len x)).toNat) he
-      rw [Mem.sub_ofNat_toNat _ (by omega : k < 2 ^ 64), Mem.sub_ofNat_toNat _ (by omega : i < 2 ^ 64)] at e
-      omega
+      rw [Mem.sub_ofNat_toNat _ (by omega_arith : k < 2 ^ 64), Mem.sub_ofNat_toNat _ (by omega_arith : i < 2 ^ 64)] at e
+      omega_arith
   refine ⟨?_, Ot, I.rest.mono (by decide)⟩
-  have value := I.os2ip fit (by omega : dst.toNat + L ≤ 2 ^ 32)
+  have value := I.os2ip fit (by omega_arith : dst.toNat + L ≤ 2 ^ 32)
   rw [dstAddr] at value
   rw [← read_eq_val32]
-  have ext := val32_zero_extension t.mem (off base (lo len x)) (n := cw len n) (by omega : L ≤ 4 * cw len n)
-    (by intro k hk hkn; exact padding k hk (by omega))
+  have ext := val32_zero_extension t.mem (off base (lo len x)) (n := cw len n) (by omega_arith : L ≤ 4 * cw len n)
+    (by intro k hk hkn; exact padding k hk (by omega_arith))
   rw [← read_eq_val32] at ext
   simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using ext.trans value
 
@@ -95,9 +95,9 @@ theorem load_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
   have ce := cb_eq (len := len) N
   unfold load
   refine WP.seq (WP.mono (zero_ok h N hx) fun u ⟨O, Z, K⟩ => ?_)
-  have Ou : Outside base 0 bytes s.mem u.mem := O.mono (Nat.zero_le _) (by omega)
+  have Ou : Outside base 0 bytes s.mem u.mem := O.mono (Nat.zero_le _) (by omega_arith)
   have hu := h.keep K (by decide) (by decide) Ou
-  refine WP.seq (ptrTo_ok (r := .ebx) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega)
+  refine WP.seq (ptrTo_ok (r := .ebx) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega_arith)
     fun v Kv mv pv => ?_)
   have hv := hu.regs Kv mv
   refine wp_movS (hv.arg hp) fun v₁ u₁ _ => ?_
@@ -115,14 +115,14 @@ theorem load_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
   have esi₄ : v₄.gpr .esi = args p + BitVec.ofNat 32 (L - 1) := by
     rw [u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, hlen]
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
   have keep : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v₄ :=
     (K.mono (by decide)).trans ((Kv.mono (by decide)).trans (K₄.mono (by decide)))
   have hv₄ : In Ex base bytes len args v₄ := hv.regs K₄ (by rw [m₄, mv])
   have vr : InRegions (v₄.rd ++ v₄.wr) (byteAddr (args p)) L := by rw [keep.2.1, keep.2.2]; exact rd
   have Ov : Outside base (lo len x) (cb len n) s.mem v₄.mem := by rw [m₄]; exact O
   have input : Spec.Rsa.bytesAt v₄.mem (byteAddr (args p)) L = Spec.Rsa.bytesAt s.mem (byteAddr (args p)) L :=
-    VG.Proof.Bignum.scratch_bytes (Ou.trans (by rw [m₄]; exact Outside.refl _ _ _ _)) (by omega) apart
+    VG.Proof.Bignum.scratch_bytes (Ou.trans (by rw [m₄]; exact Outside.refl _ _ _ _)) (by omega_arith) apart
   refine WP.mono (reverseInto_ok hv₄ N hx (by rw [m₄]; exact Z) hL hLc fit vr apart
     (by rw [PtrAt, ebx₄]; exact pv) ecx₄ esi₄) fun t ⟨V, Ot, Kt⟩ => ⟨by rw [V, input], Ov.trans Ot, keep.trans Kt⟩
 
@@ -141,40 +141,40 @@ theorem reverseIntoTop_ok {v : State} {base : Addr} {bytes len : Nat} {args : Na
   have nw' := h.scratch.nowrap
   have bl := h.bytes_lt
   have ce := cb_eq (len := len) N
-  have srcLen : L < 2 ^ 32 := by omega
+  have srcLen : L < 2 ^ 32 := by omega_arith
   let dst := v.gpr .ebx
-  have dstAddr : byteAddr dst = off base (lo len x + d) := byteAddr_ptr pv (by omega)
+  have dstAddr : byteAddr dst = off base (lo len x + d) := byteAddr_ptr pv (by omega_arith)
   have dstNat : dst.toNat = base.toNat + (lo len x + d) := by
-    show (v.gpr .ebx).toNat = _; rw [pv, Nat.mod_eq_of_lt (by omega)]
+    show (v.gpr .ebx).toNat = _; rw [pv, Nat.mod_eq_of_lt (by omega_arith)]
   have vw : InRegions v.wr (byteAddr dst) L := by
-    rw [dstAddr]; exact h.scratch.write (by omega)
+    rw [dstAddr]; exact h.scratch.write (by omega_arith)
   have hsub : Region.Sub ⟨off base (lo len x + d), L⟩ ⟨base, bytes⟩ := by
-    have := Offset.sub base (d := lo len x + d) (n := L) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    have := Offset.sub base (d := lo len x + d) (n := L) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_arith)
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   have hdj : Region.Disjoint ⟨byteAddr P, L⟩ ⟨off base (lo len x + d), L⟩ := apart.sub_right hsub
-  have ctx := reverseCtx_of_regions v P dst srcLen fit (by omega) rd vw (by rw [dstAddr]; exact hdj)
-  refine WP.mono (reverseBytes_ok v ctx (by omega) esi rfl ecx) fun t I => ?_
+  have ctx := reverseCtx_of_regions v P dst srcLen fit (by omega_arith) rd vw (by rw [dstAddr]; exact hdj)
+  refine WP.mono (reverseBytes_ok v ctx (by omega_arith) esi rfl ecx) fun t I => ?_
   have Ot : Outside base (lo len x) (cb len n) v.mem t.mem := by
     intro a ha
     apply I.outside a
     intro k hk he
     have ek : ofs base a = lo len x + d + k := by
-      rw [he, byteAddr_add (by omega), dstAddr]
-      exact ofs_off base (by omega)
-    omega
+      rw [he, byteAddr_add (by omega_arith), dstAddr]
+      exact ofs_off base (by omega_arith)
+    omega_arith
   have low : ∀ k < d, t.mem (off base (lo len x) + BitVec.ofNat 64 k) = 0 := by
     intro k hk
     rw [I.outside _ ?_]
-    · exact byte_zero_of_val32 Z (by omega)
+    · exact byte_zero_of_val32 Z (by omega_arith)
     · intro i hi he
       have e2 : off base (lo len x + d) = off base (lo len x) + BitVec.ofNat 64 d := by
         simp only [off]; rw [Offset.add_add]
-      rw [byteAddr_add (by omega), dstAddr, e2, Offset.add_add (off base (lo len x)) d i] at he
+      rw [byteAddr_add (by omega_arith), dstAddr, e2, Offset.add_add (off base (lo len x)) d i] at he
       have e := congrArg (fun a => (a - off base (lo len x)).toNat) he
-      rw [Mem.sub_ofNat_toNat _ (by omega : k < 2 ^ 64), Mem.sub_ofNat_toNat _ (by omega : d + i < 2 ^ 64)] at e
-      omega
+      rw [Mem.sub_ofNat_toNat _ (by omega_arith : k < 2 ^ 64), Mem.sub_ofNat_toNat _ (by omega_arith : d + i < 2 ^ 64)] at e
+      omega_arith
   refine ⟨?_, Ot, I.rest.mono (by decide)⟩
-  have value := I.os2ip fit (by omega : dst.toNat + L ≤ 2 ^ 32)
+  have value := I.os2ip fit (by omega_arith : dst.toNat + L ≤ 2 ^ 32)
   rw [dstAddr] at value
   rw [← read_eq_val32, ← ce, ← hd, Nat.add_comm d L, read_toNat_add,
     read_zero_bytes _ _ _ low, Nat.zero_add, Offset.add_add, value]
@@ -194,10 +194,10 @@ theorem loadTop_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
   have ce := cb_eq (len := len) N
   unfold loadTop
   refine WP.seq (WP.mono (zero_ok h N hx) fun u ⟨O, Z, K⟩ => ?_)
-  have Ou : Outside base 0 bytes s.mem u.mem := O.mono (Nat.zero_le _) (by omega)
+  have Ou : Outside base 0 bytes s.mem u.mem := O.mono (Nat.zero_le _) (by omega_arith)
   have hu := h.keep K (by decide) (by decide) Ou
   simp only [List.append_assoc]
-  refine WP.seq (ptrTo_ok (r := .ebx) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega)
+  refine WP.seq (ptrTo_ok (r := .ebx) (t := .edx) (by decide) (by decide) hu.edi hu.width h.upper' (by omega_arith)
     fun v Kv mv pv => ?_)
   have hv := hu.regs Kv mv
   refine cntTo_ok (r := .edx) hv.width h.upper' N.extra fun w Kw mw ew => ?_
@@ -221,23 +221,23 @@ theorem loadTop_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
   have esi₄ : v₄.gpr .esi = args p + BitVec.ofNat 32 (L - 1) := by
     rw [u₄.gpr, u₃.gpr, u₁.gpr, u₁.other _ (by decide), ecx₃]
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
   have pv₄ : PtrAt v₄ base .ebx (lo len x + (cb len n - L)) := by
     rw [PtrAt, ebx₄]
     rw [PtrAt] at pv
     rw [BitVec.toNat_sub, BitVec.toNat_add, pv, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    have : cb len n < 2 ^ 32 := by omega
-    have : L < 2 ^ 32 := by omega
-    rw [Nat.mod_eq_of_lt (a := cb len n) (by omega), Nat.mod_eq_of_lt (a := L) (by omega)]
-    omega
+    have : cb len n < 2 ^ 32 := by omega_arith
+    have : L < 2 ^ 32 := by omega_arith
+    rw [Nat.mod_eq_of_lt (a := cb len n) (by omega_arith), Nat.mod_eq_of_lt (a := L) (by omega_arith)]
+    omega_arith
   have keep : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v₄ :=
     (K.mono (by decide)).trans ((Kv.mono (by decide)).trans (K₄.mono (by decide)))
   have hv₄ : In Ex base bytes len args v₄ := hv.regs K₄ (by rw [m₄, mv])
   have vr : InRegions (v₄.rd ++ v₄.wr) (byteAddr (args p)) L := by rw [keep.2.1, keep.2.2]; exact rd
   have Ov : Outside base (lo len x) (cb len n) s.mem v₄.mem := by rw [m₄]; exact O
   have input : Spec.Rsa.bytesAt v₄.mem (byteAddr (args p)) L = Spec.Rsa.bytesAt s.mem (byteAddr (args p)) L :=
-    VG.Proof.Bignum.scratch_bytes (Ou.trans (by rw [m₄]; exact Outside.refl _ _ _ _)) (by omega) apart
-  refine WP.mono (reverseIntoTop_ok hv₄ N hx (by rw [m₄]; exact Z) hL (d := cb len n - L) (by omega) fit vr apart
+    VG.Proof.Bignum.scratch_bytes (Ou.trans (by rw [m₄]; exact Outside.refl _ _ _ _)) (by omega_arith) apart
+  refine WP.mono (reverseIntoTop_ok hv₄ N hx (by rw [m₄]; exact Z) hL (d := cb len n - L) (by omega_arith) fit vr apart
     pv₄ ecx₄ esi₄) fun t ⟨V, Ot, Kt⟩ => ⟨by rw [V, input], Ov.trans Ot, keep.trans Kt⟩
 
 end VG.Proof.Bignum.X86.CrtRt

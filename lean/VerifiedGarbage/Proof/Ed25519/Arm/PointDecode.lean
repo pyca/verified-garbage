@@ -66,7 +66,7 @@ theorem splitYSign_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : All
   have ys : ∀ k < 16, limb s3.mem (State.addr base) (offset 1) k = f k :=
     limb_frame f3 fun r hr k hk => by
       rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint _ (.inr (by omega)) (by omega) (by decide)
+      exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by decide)
   have yt : ∀ k < 16, limb t.mem (State.addr base) (offset 1) k = mask15 f k := by
     intro k hk
     rw [limb, mt]
@@ -74,7 +74,7 @@ theorem splitYSign_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : All
     · subst hk15
       rw [wd_write_self, e5]
       rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]
+    · rw [wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
       change limb s3.mem (State.addr base) (offset 1) k = _
       rw [ys k hk]
       simp only [mask15, hk15, ite_false]
@@ -87,18 +87,18 @@ theorem splitYSign_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : All
   · rw [V, val16_congr yt]
     have hv : V s.mem (State.addr base) (offset 1) = val16 (mask15 f) 16 + 2 ^ 255 * (f 15 / 32768) := mf.1
     have hb : val16 (mask15 f) 16 < 2 ^ 255 := mf.2.1
-    omega
+    omega_arith
   · apply BitVec.eq_of_toNat_eq
     have hz : wd t.mem (State.addr base) 60 = (s2.gpr .r2).toNat := by
       rw [wd_frame ft (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)),
         wd, m3, Mem.readW_writeW_self32]
     change wd t.mem (State.addr base) 60 = _
-    rw [hz, e2, toNat_imm (by have := Bool.toNat_le (V s.mem (State.addr base) (offset 1) / 2 ^ 255 == 1); omega)]
+    rw [hz, e2, toNat_imm (by have := Bool.toNat_le (V s.mem (State.addr base) (offset 1) / 2 ^ 255 == 1); omega_arith)]
     have he : V s.mem (State.addr base) (offset 1) / 2 ^ 255 = f 15 / 32768 := by
       have hv : V s.mem (State.addr base) (offset 1) = val16 (mask15 f) 16 + 2 ^ 255 * (f 15 / 32768) := mf.1
       have hb : val16 (mask15 f) 16 < 2 ^ 255 := mf.2.1
-      omega
+      omega_arith
     rw [he, bitNat_eq mf.2.2.2]
 
 end VG.Proof.Ed25519.Arm
@@ -129,10 +129,10 @@ theorem equalLimbs_ok {base : BitVec 32} {s₀ : State} (hc : Ctx base s₀) (a 
     WP isa (.block ((List.range 16).flatMap (equalLimb a b))) s₀ fun t =>
       EqualInv base a b s₀ 16 t := by
   refine wp_range_flatMap (M := isa) (EqualInv base a b s₀) (fun k s hk h => ?_) 16 (Nat.le_refl _) s₀
-    ⟨Rest.refl _ _, rfl, ⟨fun _ _ h => by omega, fun _ => hz⟩⟩
+    ⟨Rest.refl _ _, rfl, ⟨fun _ _ h => by omega_arith, fun _ => hz⟩⟩
   have hcs := hc.of_rest h.rest (by decide)
-  refine ldr0_ok hcs (by omega) fun s1 u1 =>
-    ldr0_ok (hcs.of_rest (u1.rest (ws := [.r3]) (by decide)) (by decide)) (by omega) fun s2 u2 =>
+  refine ldr0_ok hcs (by omega_arith) fun s1 u1 =>
+    ldr0_ok (hcs.of_rest (u1.rest (ws := [.r3]) (by decide)) (by decide)) (by omega_arith) fun s2 u2 =>
     wp_dp (op2_reg _ _) fun s3 u3 => wp_dp (op2_reg _ _) fun t ht => WP.block_nil ?_
   have el : (s2.gpr .r3).toNat = limb s₀.mem (State.addr base) a k := by
     rw [u2.other _ (by decide), u1.gpr, h.mem]; rfl
@@ -155,7 +155,7 @@ theorem equalLimbs_ok {base : BitVec 32} {s₀ : State} (hc : Ctx base s₀) (a 
     · exact hpre i hi
     · exact hlast
   · intro h
-    exact ⟨fun i hi => h i (by omega), h k (by omega)⟩
+    exact ⟨fun i hi => h i (by omega_arith), h k (by omega_arith)⟩
 
 theorem wordsEqual_ok {base : BitVec 32} {s : State} (hc : Ctx base s) (a b : Nat)
     (ha : a + 64 ≤ 4096) (hb : b + 64 ≤ 4096)
@@ -230,7 +230,7 @@ theorem pointDecodeLoad_ok {s : State} {base ptr : BitVec 32} (hc : Ctx base s) 
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (unpackField_ok hc (o := offset 1) (src := 0) (by decide) (by decide) hp
-    (by omega) (by simpa only [Nat.zero_add] using hr) ?_) fun u ⟨ur, uf, ul, uv⟩ => ?_
+    (by omega_arith) (by simpa only [Nat.zero_add] using hr) ?_) fun u ⟨ur, uf, ul, uv⟩ => ?_
   · have hp0 : State.addr ptr + BitVec.ofNat 64 0 = State.addr ptr := BitVec.add_zero _
     rw [hp0]
     exact hsep.sub_right (Offset.sub_base _ (by decide))

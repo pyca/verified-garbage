@@ -55,7 +55,7 @@ theorem paddd_two (a b c d : BitVec 32) :
 theorem ctrX_two (icb : List Byte) (d : BitVec 128) (i : Nat) :
     XBinOp.eval .paddd (ctrX icb d i) two = ctrX icb d (i + 2) := by
   simp only [ctrX, paddd_two]
-  rw [show Spec.GcmSiv.leNat (icb.take 4) + (i + 2) = Spec.GcmSiv.leNat (icb.take 4) + i + 2 by omega,
+  rw [show Spec.GcmSiv.leNat (icb.take 4) + (i + 2) = Spec.GcmSiv.leNat (icb.take 4) + i + 2 by omega_arith,
     BitVec.ofNat_add (Spec.GcmSiv.leNat (icb.take 4) + i) 2]
 
 /-- One register's two counter blocks into `b`. -/
@@ -68,17 +68,17 @@ theorem ctr1R_ok (c i b : XReg) (s : State) (icb : List Byte) (d : BitVec 128) (
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
   refine ⟨fun l hl => ?_, fun l hl => ?_, ?_⟩
   · rw [← hc l hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;>
       simp [VOp.exec, State.lane_setV256, Ne.symm hbc, hbc]
   · have e : ((VOp.vmovdqa .l256 b c).exec s).lane c l = s.lane c l ∧
         ((VOp.vmovdqa .l256 b c).exec s).lane i l = s.lane i l := by
-      rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+      rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;>
         simp [VOp.exec, State.lane_setV256, Ne.symm hbc, Ne.symm hbi]
     simp only [lane_vbin256, ite_true, e.1, e.2, hc l hl, ht l hl, VBinOp.sse, ctrX_two]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_arith)
   · refine ⟨by simp [VOp.exec], by simp [VOp.exec], by simp [VOp.exec], by simp [VOp.exec], fun r hr l hl => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;>
       simp [VOp.exec, State.lane_setV256, hr.1, hr.2]
 
 theorem ctrsR_ok (c i : XReg) (hci : c ≠ i) (regs : List XReg) (s : State) (icb : List Byte) (d : BitVec 128)
@@ -106,9 +106,9 @@ theorem ctrsR_ok (c i : XReg) (hci : c ≠ i) (regs : List XReg) (s : State) (ic
         rw [f.lane _ (by simp [hbc, hbs]) l hl, e₁ l hl]
       | succ k =>
         simp only [List.getElem_cons_succ]
-        rw [e k (by simpa using hk) l hl, show j + 2 + 2 * k + l = j + 2 * (k + 1) + l by omega]
+        rw [e k (by simpa using hk) l hl, show j + 2 + 2 * k + l = j + 2 * (k + 1) + l by omega_arith]
     · intro l hl
-      rw [c' l hl, List.length_cons, show j + 2 + 2 * bs.length + l = j + 2 * (bs.length + 1) + l by omega]
+      rw [c' l hl, List.length_cons, show j + 2 + 2 * bs.length + l = j + 2 * (bs.length + 1) + l by omega_arith]
     · refine (f₁.comp f).mono fun r hr => ?_
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with (h | h) | h | h <;> simp [h]
@@ -196,12 +196,12 @@ theorem AInv.yframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (h 
 /-- The key schedule is not in the data or the working space. -/
 theorem sch_frame {s₀ : State} (hp : SPre s₀) {m : Mem} (hf : Frame [dR s₀, pR s₀] s₀.mem m) :
     bytesAt m (kp s₀) (16 * (nr s₀ + 1)) = sch s₀ := by
-  have hn : 16 * (nr s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
+  have hn : 16 * (nr s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_arith
   simp only [sch, bytesAt]
   refine List.map_congr_left fun i hi => ?_
   simp only [List.mem_range] at hi
   refine hf.bytes (R := ⟨kp s₀, 16 * (nr s₀ + 1)⟩) (fun r hr => ?_)
-    (by show 16 * (nr s₀ + 1) ≤ 2 ^ 64; omega) hi
+    (by show 16 * (nr s₀ + 1) ≤ 2 ^ 64; omega_arith) hi
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact hp.d_k.symm.sub_left (Region.sub_prefix hn)
@@ -209,10 +209,10 @@ theorem sch_frame {s₀ : State} (hp : SPre s₀) {m : Mem} (hf : Frame [dR s₀
 
 theorem AInv.keys {s₀ : State} (hp : SPre s₀) {c : Nat} {s : State} (hI : AInv s₀ c s) :
     Keys (nr s₀) (sch s₀) s :=
-  ⟨by rw [hI.rdi, sch_frame hp hI.frame], by rcases hp.rounds with h | h | h <;> omega,
+  ⟨by rw [hI.rdi, sch_frame hp hI.frame], by rcases hp.rounds with h | h | h <;> omega_arith,
     fun j hj => by
       rw [hI.rd, hI.wr, hI.rdi]
-      exact in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+      exact in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega_arith)⟩
 
 theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : List XReg)
     (hG : ∀ r ∈ G, r ≠ .xmm13 ∧ r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15)
@@ -249,28 +249,28 @@ theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : L
     exact (aesWith_le16 _ _ _ _ (e₂ _ (List.getElem_mem h) l hl)).symm
   have hrdx₂ : s₂.gpr .rdx = s.gpr .rdx := by rw [f₂.gpr, f₁.gpr]
   have addr : ∀ i, s.gpr .rdx + BitVec.ofNat 64 (32 * j + 16 * i) = bAddr s₀ (c + i) := fun i =>
-    addr_eq (by omega)
+    addr_eq (by omega_arith)
   refine WP.mono (xorData_ok .xmm13 .rdx aregs j s₂ hnd h13 (fun k hk => by
       rw [hrdx₂, f₂.wr, f₁.wr, hI.wr, show BitVec.ofInt 64 ((32 * (j + k) : Nat) : Int) =
-        BitVec.ofNat 64 (32 * j + 16 * (2 * k)) by rw [BitVec.ofInt_natCast]; congr 1; omega, addr]
-      exact in_sub hp.d_in (by simp [aregs] at hk; omega))
-      (by rw [hrdx₂]; simp [aregs]; omega))
+        BitVec.ofNat 64 (32 * j + 16 * (2 * k)) by rw [BitVec.ofInt_natCast]; congr 1; omega_arith, addr]
+      exact in_sub hp.d_in (by simp [aregs] at hk; omega_arith))
+      (by rw [hrdx₂]; simp [aregs]; omega_arith))
     fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃⟩ => ?_
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
   rw [hm₂, hrdx₂] at b₃ fr₃
-  rw [show 32 * j = 32 * j + 16 * 0 by omega, addr, Nat.add_zero] at fr₃
+  rw [show 32 * j = 32 * j + 16 * 0 by omega_arith, addr, Nat.add_zero] at fr₃
   have hb3 : ∀ k (h : k < aregs.length), ∀ l < 2,
       bytesAt s₃.mem (bAddr s₀ (c + (2 * k + l))) 16 =
         Spec.Cmac.xor (bytesAt s.mem (bAddr s₀ (c + (2 * k + l))) 16) (le16 (s₂.lane aregs[k] l)) :=
     fun k h l hl => by
       have := b₃ k h l hl
-      rw [show 16 * (2 * (j + k) + l) = 32 * j + 16 * (2 * k + l) by omega, addr] at this
+      rw [show 16 * (2 * (j + k) + l) = 32 * j + 16 * (2 * k + l) by omega_arith, addr] at this
       exact bytes_of_blockAt this
   have fr' : Frame [⟨bAddr s₀ c, 128⟩] s.mem s₃.mem := by simpa [aregs] using fr₃
   have kx : ∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 2, s₃.lane r l = s.lane r l :=
     fun r h13' h14 hr hg' l hl => by
       rw [x₃ r h13' hr l hl, f₂.lane r (by simp [h13', hr, hg']) l hl, f₁.lane r (by simp [h14, hr]) l hl]
-  refine ⟨⟨by omega, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [g₃, f₂.gpr, f₁.gpr, hI.rdi],
+  refine ⟨⟨by omega_arith, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, by rw [g₃, f₂.gpr, f₁.gpr, hI.rdi],
     by rw [g₃, f₂.gpr, f₁.gpr, hI.rsi], by rw [g₃, f₂.gpr, f₁.gpr, hI.r10], ?_, ?_,
     by rw [rd₃, f₂.rd, f₁.rd, hI.rd], by rw [wr₃, f₂.wr, f₁.wr, hI.wr]⟩,
     hqx s₂ s₃ hQ₂ g₃ rd₃ wr₃ (fun r h1 h2 l hl => x₃ r h1 h2 l hl) (by rw [hm₂]; exact fr'),
@@ -294,15 +294,15 @@ theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : L
         intro a h₁ h₂
         exact VG.Proof.Aes.X86_64.AesNi.run_sep hw hk hc hn h₁ h₂) (by decide)
     by_cases hlo : k < c
-    · rw [out (by omega), hI.blocks k hk]
-      simp only [hlo, show k < c + 8 by omega, ite_true]
+    · rw [out (by omega_arith), hI.blocks k hk]
+      simp only [hlo, show k < c + 8 by omega_arith, ite_true]
     · by_cases hhi : k < c + 8
-      · obtain ⟨i, rfl⟩ : ∃ i, k = c + (2 * (i / 2) + i % 2) := ⟨k - c, by omega⟩
-        have hj : i / 2 < aregs.length := by simp [aregs]; omega
-        rw [hb3 (i / 2) hj (i % 2) (by omega), hI.blocks _ hk, ks (i / 2) hj (i % 2) (by omega),
-          show c + 2 * (i / 2) + i % 2 = c + (2 * (i / 2) + i % 2) by omega]
+      · obtain ⟨i, rfl⟩ : ∃ i, k = c + (2 * (i / 2) + i % 2) := ⟨k - c, by omega_arith⟩
+        have hj : i / 2 < aregs.length := by simp [aregs]; omega_arith
+        rw [hb3 (i / 2) hj (i % 2) (by omega_arith), hI.blocks _ hk, ks (i / 2) hj (i % 2) (by omega_arith),
+          show c + 2 * (i / 2) + i % 2 = c + (2 * (i / 2) + i % 2) by omega_arith]
         simp only [hlo, hhi, ite_false, ite_true]
-      · rw [out (by omega), hI.blocks k hk]
+      · rw [out (by omega_arith), hI.blocks k hk]
         simp only [hlo, hhi, ite_false]
 
 end VG.Proof.AesGcmSiv.X86_64.Stitch

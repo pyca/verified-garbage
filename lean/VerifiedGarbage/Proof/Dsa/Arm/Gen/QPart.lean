@@ -63,13 +63,13 @@ theorem GI.seedSrc (h : GI G σ V LS s) {k : Nat} (hk : k + G.qLen ≤ G.seedsLe
       Region.Disjoint ⟨State.addr (G.seeds + BitVec.ofNat 32 k), G.qLen⟩ G.rScr ∧
       (G.seeds + BitVec.ofNat 32 k).toNat + G.qLen ≤ 2 ^ 32 := by
   have fit := h.seedsFit
-  have a : State.addr (G.seeds + BitVec.ofNat 32 k) = State.addr G.seeds + BitVec.ofNat 64 k := addr_add (by omega)
+  have a : State.addr (G.seeds + BitVec.ofNat 32 k) = State.addr G.seeds + BitVec.ofNat 64 k := addr_add (by omega_arith)
   have sub : Region.Sub ⟨State.addr G.seeds + BitVec.ofNat 64 k, G.qLen⟩ G.rSeeds := Offset.sub_base _ hk
   have sC := h.pre.sC; rw [h.hG] at sC
-  refine ⟨⟨G.rSeeds, ?_, a ▸ Offset.contains_base _ hk (by omega)⟩, a ▸ sC.sub_left sub, ?_⟩
+  refine ⟨⟨G.rSeeds, ?_, a ▸ Offset.contains_base _ hk (by omega_arith)⟩, a ▸ sC.sub_left sub, ?_⟩
   · rw [h.rd, h.pre.rd, h.hG]; simp
-  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 32 by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 32 by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
 
 end
 
@@ -80,7 +80,7 @@ theorem padTail_length {B N L : Nat} (md : MdStream.Md B N L) {n : Nat} (hn : n 
     (padTail md n).length = 64 - n := by
   simp only [padTail, List.length_append, List.length_cons, List.length_nil, List.length_replicate,
     md.lenBytes_length]
-  omega
+  omega_arith
 
 /-- The seed at `k` (at `fSeed`) to `sMsg`. -/
 theorem seedCopy_vp {L k : Nat} (hL : L = G.pLen) (hk : k + G.qLen ≤ G.seedsLen) (hq0 : 0 < G.qLen)
@@ -90,14 +90,14 @@ theorem seedCopy_vp {L k : Nat} (hL : L = G.pLen) (hk : k + G.qLen ≤ G.seedsLe
     VP (St G c X) (copyN (scr L .r0 sMsg) [ld .r1 fSeed] G.qLen)
       (St G { c with cl := (sMsg, seedAt G k) :: cl' } X) := by
   have hsl : (seedAt G k).length = G.qLen := by
-    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega
+    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega_arith
   refine copyR_vp (c := fun _ => c) (fun σ s h => h.1) hL (by decide) (by decide)
     (x := G.seeds + BitVec.ofNat 32 k) (fun σ s h => (h.1.slotV hS).trans hSv) hq0 hq16
-    (by subst hL; simp only [sMsg]; omega) (fun σ s h => h.1.gi.seedSrc hk hq0) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩
+    (by subst hL; simp only [sMsg]; omega_arith) (fun σ s h => h.1.gi.seedSrc hk hq0) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩
   rw [h.gi.seedBytes hk] at e
-  refine h.of_scr R (o := sMsg) (n := G.qLen) (by simp only [sMsg]; omega) (f.mono (by simp)) fun y hy => ?_
+  refine h.of_scr R (o := sMsg) (n := G.qLen) (by simp only [sMsg]; omega_arith) (f.mono (by simp)) fun y hy => ?_
   rcases List.mem_cons.mp hy with rfl | hy
-  · exact .inr ⟨by rw [hsl]; exact e, by simp only [sMsg, hsl]; omega⟩
+  · exact .inr ⟨by rw [hsl]; exact e, by simp only [sMsg, hsl]; omega_arith⟩
   · exact .inl (hcl y hy)
 
 /-- q from the seed at `k`, tested with the witnesses from `u`. -/

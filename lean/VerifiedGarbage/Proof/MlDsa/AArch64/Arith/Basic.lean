@@ -266,7 +266,7 @@ theorem imm16 {k : Nat} (h : k < 65536) : (BitVec.ofNat 16 k).setWidth 64 = BitV
 /-- `movW d v`: `d ← v`. -/
 theorem movW_ok (d : Reg) (v : BitVec 32) (s : State) :
     WP isa (.block (movW d v)) s fun s' => (s'.gpr d = v.setWidth 64 ∧ s'.mem = s.mem) ∧ Keep [d] s s' := by
-  refine WP.keep _ ?_ (by simp [writesOnly, Code.allInstrs, movW, dsts, dstOf, Option.toList]) (hv := by simp [Code.allInstrs, movW, keepsV, vdstOf])
+  refine WP.keep _ ?_ (by simp [writesOnly, Code.allInstrs, movW, dsts, dstOf, Option.toList]) (hv := by rfl)
   unfold movW
   arun
   exact congrArg (BitVec.setWidth 64) (movz_movk v)
@@ -275,7 +275,7 @@ theorem movW_ok (d : Reg) (v : BitVec 32) (s : State) :
 theorem movImm_ok (d : Reg) (v : BitVec 64) (s : State) :
     WP isa (.block (Impl.MlKem.AArch64.movImm d v)) s fun s' => (s'.gpr d = v ∧ s'.mem = s.mem) ∧
       Keep [d] s s' := by
-  refine WP.keep _ ?_ (by simp [writesOnly, Code.allInstrs, Impl.MlKem.AArch64.movImm, dsts, dstOf, Option.toList]) (hv := by simp [Code.allInstrs, Impl.MlKem.AArch64.movImm, keepsV, vdstOf])
+  refine WP.keep _ ?_ (by simp [writesOnly, Code.allInstrs, Impl.MlKem.AArch64.movImm, dsts, dstOf, Option.toList]) (hv := by rfl)
   unfold Impl.MlKem.AArch64.movImm
   arun
   have := movz_movk64' v

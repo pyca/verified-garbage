@@ -44,14 +44,14 @@ theorem spread_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Ke
   have hok : Ok (keyCfg 2) s :=
     { slotIn := fun k hk => ⟨_, hscr, by
         simp only [keyCfg, keySlot_eq] at hk ⊢
-        exact VG.Offset.contains_base _ (by rw [slots_eq]; omega) (by omega)⟩
+        exact VG.Offset.contains_base _ (by rw [slots_eq]; omega_arith) (by omega_arith)⟩
       extIn := fun k hk => ⟨_, List.mem_append_right _ hscr, by
         simp only [keyCfg] at hk ⊢
-        rw [hrw]; exact VG.Offset.contains_base _ (by rw [slots_eq, wSlot_eq]; omega) (by rw [wSlot_eq]; omega)⟩
+        rw [hrw]; exact VG.Offset.contains_base _ (by rw [slots_eq, wSlot_eq]; omega_arith) (by rw [wSlot_eq]; omega_arith)⟩
       slots := by simp [keyCfg, keySlot_eq]
       sep := fun k hk j hj => by
         simp only [keyCfg, keySlot_eq] at hk hj ⊢
-        rw [hrw]; exact slot_sep _ (by omega) (by rw [wSlot_eq]; omega) (by rw [wSlot_eq]; omega) }
+        rw [hrw]; exact slot_sep _ (by omega_arith) (by rw [wSlot_eq]; omega_arith) (by rw [wSlot_eq]; omega_arith) }
   have hchk : check (lanes 64 11) (keyCfg 2) (linExt 0) (spread d) kaEnv
       (linPostG 11 (qOuts (keyBsG d)) [] (maskSlots ++ kaIns.map (·.1)) kaEnv) = true := by
     rcases hd with rfl | rfl
@@ -65,10 +65,10 @@ theorem spread_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Ke
     (fun j i hji => by
       simp only [kaIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
       obtain ⟨j, hj, rfl, rfl⟩ := hji
-      refine ⟨by simp only [keyCfg, d1Slot, keySlot]; omega, by omega, ?_⟩
-      simp only [W, show ¬ 2 + j < 2 by omega, ↓reduceIte, show 2 + j - 2 = j by omega]; rfl)
+      refine ⟨by simp only [keyCfg, d1Slot, keySlot]; omega_arith, by omega_arith, ?_⟩
+      simp only [W, show ¬ 2 + j < 2 by omega_arith, ↓reduceIte, show 2 + j - 2 = j by omega_arith]; rfl)
     (fun kv hkv => ⟨by simp only [keyCfg]; exact mask_lt hkv, by simp only [keyCfg]; exact hc.masks kv hkv⟩)
-    (fun j hj => ⟨by simp only [keyCfg] at hj; omega, by
+    (fun j hj => ⟨by simp only [keyCfg] at hj; omega_arith, by
       simp only [keyCfg] at hj ⊢; simp only [W, Nat.zero_add, hj, ↓reduceIte]⟩)
   simp only [keyCfg] at hb' hkp f'
   have hall : ∀ r, r ∉ layerWrites → ((spread d).all fun i => !clobbers i r) = true := fun r hr => by
@@ -87,15 +87,15 @@ theorem spread_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Ke
     exact hc.masks kv hkv
   · refine Camellia.half_of_words (W := fun _ => slotW s (wSlot + d / 8)) (fun j hj p hp => ?_)
       (wordOf_iff_rel.mp hw)
-    have := Camellia.pos_lt (show p / 8 < 8 by omega)
+    have := Camellia.pos_lt (show p / 8 < 8 by omega_arith)
     rw [Qs, ho (q j) (keyBsG d j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
-      p hp, keyBsG, xorBits_cons, xorBits_nil, Bool.xor_false, Nat.add_assoc, bitOf_word _ _ _ (by omega)]
-    simp only [W, show d / 8 < 2 by omega, ↓reduceIte, hrw]
+      p hp, keyBsG, xorBits_cons, xorBits_nil, Bool.xor_false, Nat.add_assoc, bitOf_word _ _ _ (by omega_arith)]
+    simp only [W, show d / 8 < 2 by omega_arith, ↓reduceIte, hrw]
   · show s'.mem.readW (wordAddr (s'.gpr sb) _) 64 = _
     rw [hb']
     exact hkp _ (List.mem_append_right _ (by
       simp only [kaIns, List.map_map, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩))
-      (by simp only [d1Slot, keySlot]; omega)
+      (by simp only [d1Slot, keySlot]; omega_arith)
 
 /-! ## Slots of the key schedule -/
 
@@ -115,16 +115,16 @@ theorem readW_slot_write {m : Mem} {b : Addr} {j k : Nat} (v : BitVec 64) (hj : 
   rw [slots_eq] at hj hk
   split
   · rename_i h; subst h; exact Mem.readW_writeW_self64 _ _ _
-  · rename_i h; exact Mem.readW_writeW_sep (slot_sep b (by omega) (by omega) h) (by decide)
+  · rename_i h; exact Mem.readW_writeW_sep (slot_sep b (by omega_arith) (by omega_arith) h) (by decide)
 
 /-- A store above the table keeps its entries. -/
 theorem entryW_write {m : Mem} {b : Addr} {k : Nat} (v : BitVec 64) (hk : endSlot ≤ k) (hk2 : k < slots)
     {i j : Nat} (hi : i < 34) (hj : j < 8) :
     entryW (m.writeW (wordAddr b k) v) b i j = entryW m b i j := by
   have he : ∀ m : Mem, entryW m b i j = m.readW (wordAddr b (keySlot + 8 * i + j)) 64 := fun m => by
-    rw [entryW, wordAddr, show 8 * keySlot + 64 * i + 8 * j = 8 * (keySlot + 8 * i + j) by omega]
-  rw [he, he, readW_slot_write v (by rw [slots_eq, keySlot_eq]; omega) hk2,
-    ite_eq_right (show ¬ keySlot + 8 * i + j = k by rw [endSlot_eq] at hk; rw [keySlot_eq]; omega)]
+    rw [entryW, wordAddr, show 8 * keySlot + 64 * i + 8 * j = 8 * (keySlot + 8 * i + j) by omega_arith]
+  rw [he, he, readW_slot_write v (by rw [slots_eq, keySlot_eq]; omega_arith) hk2,
+    ite_eq_right (show ¬ keySlot + 8 * i + j = k by rw [endSlot_eq] at hk; rw [keySlot_eq]; omega_arith)]
 
 /-- The slots after a store to slot `k`. -/
 theorem slotW_store {s s' : State} {k : Nat} {v : BitVec 64}
@@ -138,11 +138,11 @@ theorem KeyCtx.store {s₀ s s' : State} {nk : Nat} {E : Nat → BitVec 64} (hp 
     (hwr : s'.wr = s.wr) (hk : endSlot ≤ k) (hk2 : k < slots) : KeyCtx s' nk E := by
   have h34 := hp.nk34
   refine (hp.transfer (s := s) hc.base hc.wr hc.masks
-    (fun i hi j hj => hc.entry hp (by omega) hj)).transfer (by rw [hg]) hwr (fun kv hkv => ?_)
-    (fun i hi j hj => by rw [hm]; exact entryW_write v hk hk2 (by omega) hj)
+    (fun i hi j hj => hc.entry hp (by omega_arith) hj)).transfer (by rw [hg]) hwr (fun kv hkv => ?_)
+    (fun i hi j hj => by rw [hm]; exact entryW_write v hk hk2 (by omega_arith) hj)
   have := mask_lt hkv
-  rw [slotW_store hm hg (by rw [slots_eq]; rw [keySlot_eq] at this; omega) hk2,
-    ite_eq_right (show ¬ kv.1 = k by rw [endSlot_eq] at hk; rw [keySlot_eq] at this; omega)]
+  rw [slotW_store hm hg (by rw [slots_eq]; rw [keySlot_eq] at this; omega_arith) hk2,
+    ite_eq_right (show ¬ kv.1 = k by rw [endSlot_eq] at hk; rw [keySlot_eq] at this; omega_arith)]
   exact hc.masks kv hkv
 
 /-- `str q0, [sb, #8 k]`, under `Ctx`, to a slot above the table. -/
@@ -151,7 +151,7 @@ theorem stQ_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCt
     ∃ s', runBlock isa [stS k (q 0)] s = some s' ∧
       s'.mem = s.mem.writeW (wordAddr (s.gpr sb) k) (s.gpr (q 0)) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ KeyCtx s' nk E :=
-  ⟨_, stS_ok s (q 0) (by rw [slots_eq] at hk2; omega) (hc.inWr hp hk2), rfl, rfl, rfl, rfl,
+  ⟨_, stS_ok s (q 0) (by rw [slots_eq] at hk2; omega_arith) (hc.inWr hp hk2), rfl, rfl, rfl, rfl,
     hp.store hc rfl rfl rfl hk hk2⟩
 
 /-! ## A pair of rounds -/
@@ -166,10 +166,10 @@ theorem pairPlain_ok {s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
       WordOf (slotW s' (wSlot + 1)) (pair (E m) (E (m + 1)) (H1, H2)).2 ∧
       (∀ k, keySlot ≤ k → k < slots → k ≠ wSlot → k ≠ wSlot + 1 → slotW s' k = slotW s k) ∧
       Frame [⟨s.gpr sb, 8 * slots⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hm34 : m + 2 ≤ 34 := by have := hp.nk34; omega
+  have hm34 : m + 2 ≤ 34 := by have := hp.nk34; omega_arith
   have hfit := hp.fit
   rw [slots_eq] at hfit
-  have h58 : ∀ k, k < slots → k < 2 ^ 58 := fun k hk => by rw [slots_eq] at hk; omega
+  have h58 : ∀ k, k < slots → k < 2 ^ 58 := fun k hk => by rw [slots_eq] at hk; omega_arith
   -- The value, bitsliced: `D2` from the second word, `D1` from the first.
   obtain ⟨s₁, e₁, c₁, kp₁, x₁, q₁, -, a₁⟩ := spread_step hp (Ctx.refl hp.masks) (d := 8) (Or.inr rfl) hx0 hw2
   have hk₁ : AtEntry s₁ (s.gpr sb) m := by rw [AtEntry, kp₁]; exact hk
@@ -182,22 +182,22 @@ theorem pairPlain_ok {s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
   obtain ⟨s₄, e₄, c₄, kp₄, x₄, q₄, h₄, o₄, a₄⟩ := storeHalf_step hp c₃ (Or.inl rfl) storeHalf1_check hk₃ hm34
   have hk₄ : AtEntry s₄ (s.gpr sb) m := by rw [AtEntry, kp₄]; exact hk₃
   have hd2 : ∀ j < 8, slotW s₄ (d2Slot + j) = slotW s₂ (d2Slot + j) := fun j hj => by
-    have a := o₄ (8 + j) (by omega) (Or.inr (by simp only [d1Slot]; omega))
-    have b := o₃ (8 + j) (by omega)
-    rw [show d1Slot + (8 + j) = d2Slot + j by simp only [d1Slot, d2Slot]; omega] at a b
+    have a := o₄ (8 + j) (by omega_arith) (Or.inr (by simp only [d1Slot]; omega_arith))
+    have b := o₃ (8 + j) (by omega_arith)
+    rw [show d1Slot + (8 + j) = d2Slot + j by simp only [d1Slot, d2Slot]; omega_arith] at a b
     rw [a, b]
   -- The two rounds.
   obtain ⟨s₅, e₅, c₅, k₅, r₅, q₅, d₅, o₅, a₅⟩ := round_step hp c₄ (off := 0) (d := d2Slot) keyIn0_check
-    feistel2_check (by decide) (by decide) hk₄ (by omega) hm34 (q₃.congr q₄) (hD2.congr hd2)
+    feistel2_check (by decide) (by decide) hk₄ (by omega_arith) hm34 (q₃.congr q₄) (hD2.congr hd2)
   have h1' : HalfRel (fun j => slotW s₅ (d1Slot + j)) (fun _ => H1) :=
-    (q₃.congr fun j hj => h₄ j hj).congr fun j hj => o₅ j (by omega) (Or.inl (by simp [d1Slot, d2Slot]; omega))
+    (q₃.congr fun j hj => h₄ j hj).congr fun j hj => o₅ j (by omega_arith) (Or.inl (by simp [d1Slot, d2Slot]; omega_arith))
   obtain ⟨s₆, e₆, c₆, k₆, r₆, q₆, d₆, o₆, a₆⟩ := round_step hp c₅ (off := 8) (d := d1Slot) keyIn8_check
-    feistel1_check (by decide) (by decide) (by rw [AtEntry, k₅]; exact hk₄) (by omega) hm34 q₅ h1'
+    feistel1_check (by decide) (by decide) (by rw [AtEntry, k₅]; exact hk₄) (by omega_arith) hm34 q₅ h1'
   have hk₆ : AtEntry s₆ (s.gpr sb) m := by rw [AtEntry, k₆, k₅]; exact hk₄
   have d₅' : HalfRel (fun j => slotW s₆ (d2Slot + j)) (fun _ => (pair (E m) (E (m + 1)) (H1, H2)).2) :=
     d₅.congr fun j hj => by
-      have := o₆ (8 + j) (by omega) (Or.inr (by simp only [d1Slot]; omega))
-      rw [show d1Slot + (8 + j) = d2Slot + j by simp [d1Slot, d2Slot]; omega] at this
+      have := o₆ (8 + j) (by omega_arith) (Or.inr (by simp only [d1Slot]; omega_arith))
+      rw [show d1Slot + (8 + j) = d2Slot + j by simp [d1Slot, d2Slot]; omega_arith] at this
       exact this
   -- The first word.
   obtain ⟨s₇, e₇, c₇, kp₇, x₇, q₇, d₇, -, a₇⟩ := lin_step hp c₆ hk₆ hm34 fromBs_check (by decide +kernel)
@@ -209,10 +209,10 @@ theorem pairPlain_ok {s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
   obtain ⟨s₉, e₉, c₉, kp₉, x₉, q₉, -, a₉⟩ := loadHalf_step hp₈ (Ctx.refl hp₈.masks) (Or.inr rfl)
     loadHalf2_check hk₈ hm34
   have hD2' : HalfRel (Qs s₉) (fun _ => (pair (E m) (E (m + 1)) (H1, H2)).2) := d₅'.congr fun j hj => by
-    have := d₇ (8 + j) (by omega)
-    rw [show d1Slot + (8 + j) = d2Slot + j by simp [d1Slot, d2Slot]; omega] at this
-    rw [q₉ j hj, slotW_store m₈ g₈ (by simp only [d2Slot, slots_eq]; omega) (by decide),
-      ite_eq_right (show ¬ d2Slot + j = wSlot by simp only [d2Slot, wSlot_eq]; omega), this]
+    have := d₇ (8 + j) (by omega_arith)
+    rw [show d1Slot + (8 + j) = d2Slot + j by simp [d1Slot, d2Slot]; omega_arith] at this
+    rw [q₉ j hj, slotW_store m₈ g₈ (by simp only [d2Slot, slots_eq]; omega_arith) (by decide),
+      ite_eq_right (show ¬ d2Slot + j = wSlot by simp only [d2Slot, wSlot_eq]; omega_arith), this]
   have hk₉ : AtEntry s₉ (s₈.gpr sb) m := by rw [AtEntry, kp₉]; exact hk₈
   obtain ⟨s₁₀, e₁₀, c₁₀, kp₁₀, x₁₀, q₁₀, -, -, a₁₀⟩ := lin_step hp₈ c₉ hk₉ hm34 fromBs_check (by decide +kernel)
   have hW2 : WordRel (Qs s₁₀) (fun _ => (pair (E m) (E (m + 1)) (H1, H2)).2) := fromBs_rel q₁₀ hD2'
@@ -241,7 +241,7 @@ theorem pairPlain_ok {s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
     show s₁₂.mem.readW (wordAddr (s₁₂.gpr sb) kv.1) 64 = kv.2
     rw [m₁₂, o₁₂ sb (by decide)]; exact hp₁₁.masks kv hkv
   · rw [AtEntry, kp₁₂, g₁₁, kp₁₀, kp₉, g₈, kp₇, k₆, k₅, show s₄.gpr kp = _ from hk₄, addr_add,
-      show 8 * keySlot + 64 * m + 128 = 8 * keySlot + 64 * (m + 2) by omega]
+      show 8 * keySlot + 64 * m + 128 = 8 * keySlot + 64 * (m + 2) by omega_arith]
   · rw [o₁₂ r h2, g₁₁, c₁₀.keep r h1 h2 h3, g₈, c₇.keep r h1 h2 h3]
   · rw [o₁₂ _ (by decide), g₁₁, x₁₀, x₉, g₈, x₇, r₆, r₅, x₄, x₃, x₂, x₁]
   · rw [hhi _ (by decide) (by decide) (by decide), slotW_store m₈ g₈ (by decide) (by decide), ite_eq_left rfl]
@@ -255,12 +255,12 @@ theorem pairPlain_ok {s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
       simp only [ctxRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
       refine ⟨_, List.mem_singleton_self _, ?_⟩
       rcases hr with rfl | rfl
-      · rw [hb]; exact Region.sub_prefix (by rw [slots_eq, keySlot_eq]; omega)
-      · rw [hb]; exact VG.Offset.sub_base _ (by rw [slots_eq, tailSlot_eq]; omega)
+      · rw [hb]; exact Region.sub_prefix (by rw [slots_eq, keySlot_eq]; omega_arith)
+      · rw [hb]; exact VG.Offset.sub_base _ (by rw [slots_eq, tailSlot_eq]; omega_arith)
     have hst : ∀ {t : State} (k : Nat), k < slots → t.gpr sb = s.gpr sb →
         (⟨s.gpr sb, 8 * slots⟩ : Region).Contains (wordAddr (t.gpr sb) k) (64 / 8) := fun k hk hb => by
       rw [hb, wordAddr]; rw [slots_eq] at hk
-      exact VG.Offset.contains_base _ (by rw [slots_eq]; omega) (by omega)
+      exact VG.Offset.contains_base _ (by rw [slots_eq]; omega_arith) (by omega_arith)
     have f₈ : Frame [⟨s.gpr sb, 8 * slots⟩] s.mem s₈.mem := by
       rw [m₈]; exact (c₇.frame.sub (hsub rfl)).writeW (List.mem_singleton_self _) _
         (hst _ (by decide) c₇.base)

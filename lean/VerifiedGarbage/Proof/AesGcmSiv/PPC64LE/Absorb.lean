@@ -88,21 +88,21 @@ theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Src c s' 
 
 theorem toNat_add {j : Nat} (hj : j < n) : (Q + BitVec.ofNat 64 j).toNat = Q.toNat + j := by
   have := h.wrap
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- The first `k` bytes. -/
 theorem take {k : Nat} (hk : k ≤ n) : Src c s Q k where
   rd := VG.Proof.Gather.PPC64LE.covers_prefix h.rd hk
-  lt := by have := h.lt; omega
-  wrap := by have := h.wrap; omega
+  lt := by have := h.lt; omega_arith
+  wrap := by have := h.wrap; omega_arith
   y := h.y.sub_left (Region.sub_prefix hk)
   rev := h.rev.sub_left (Region.sub_prefix hk)
 
 /-- Bytes `[a, a + k)`, for `a < n`. -/
 theorem slice {a k : Nat} (hk : a + k ≤ n) (ha : a < n) : Src c s (Q + BitVec.ofNat 64 a) k := by
   have hs : Region.Sub ⟨Q + BitVec.ofNat 64 a, k⟩ ⟨Q, n⟩ := Offset.sub_base _ hk
-  exact ⟨VG.Proof.Gather.PPC64LE.covers_off h.rd hk h.lt, by have := h.lt; omega,
-    by rw [h.toNat_add ha]; have := h.wrap; omega, h.y.sub_left hs, h.rev.sub_left hs⟩
+  exact ⟨VG.Proof.Gather.PPC64LE.covers_off h.rd hk h.lt, by have := h.lt; omega_arith,
+    by rw [h.toNat_add ha]; have := h.wrap; omega_arith, h.y.sub_left hs, h.rev.sub_left hs⟩
 
 end Src
 
@@ -132,13 +132,13 @@ theorem revLoop_wp {c : Cx} (L : Lay c) {t₀ : State} (E : Env c t₀) {Q : Add
   refine WP.loop (M := isa)
     (fun (w : Nat) (t : State) => ∃ j, w = k - j ∧ j < k ∧ RInv c Q k j t₀ t) ?_ (k - 0) t₀ ⟨0, rfl, hk1, I₀⟩
   rintro w t ⟨j, rfl, hj, I⟩
-  have hS := hQ.toNat_add (j := 16 * j) (by omega)
+  have hS := hQ.toNat_add (j := 16 * j) (by omega_arith)
   have r9 : t.gpr .r9 = BitVec.ofNat 64 8 := by rw [I.keep.gpr (by decide), h9]
   have r10 : t.gpr .r10 = BitVec.ofNat 64 0 := by rw [I.keep.gpr (by decide), h10]
   have hr : Covers [⟨Q + BitVec.ofNat 64 (16 * j), 16⟩] (t.rd ++ t.wr) := by
-    rw [I.keep.2.1, I.keep.2.2]; exact VG.Proof.Gather.PPC64LE.covers_off hQ.rd (by omega) hQ.lt
+    rw [I.keep.2.1, I.keep.2.2]; exact VG.Proof.Gather.PPC64LE.covers_off hQ.rd (by omega_arith) hQ.lt
   have hwr : Covers [⟨c.W + BitVec.ofNat 64 (496 + 16 * j), 16⟩] t.wr := by
-    rw [I.keep.2.2]; exact E.perm.wC (by omega)
+    rw [I.keep.2.2]; exact E.perm.wC (by omega_arith)
   have in8 (P : Addr) {rs : List Region} (h : Covers [⟨P, 16⟩] rs) (d : Nat) (hd : d + 8 ≤ 16) :
       InRegions rs (P + BitVec.ofNat 64 d) 8 := VG.Proof.Gather.PPC64LE.in_off h hd (by decide)
   refine wp_ldbrx (ea := Q + BitVec.ofNat 64 (16 * j) + BitVec.ofNat 64 8) (by decide) (by rw [I.r23, r9])
@@ -162,7 +162,7 @@ theorem revLoop_wp {c : Cx} (L : Lay c) {t₀ : State} (E : Env c t₀) {Q : Add
   have src : bytesAt t.mem (Q + BitVec.ofNat 64 (16 * j)) 16 = bytesAt t₀.mem (Q + BitVec.ofNat 64 (16 * j)) 16 :=
     Proof.Cmac.bytesAt_frame16 I.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hQ.rev.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub _ (by omega) (by omega)))
+      exact (hQ.rev.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub _ (by omega_arith) (by omega_arith)))
   have fr : Frame [⟨c.W + BitVec.ofNat 64 (496 + 16 * j), 16⟩] t.mem t₇.mem := by
     rw [hm]; exact revMem_frame _ _ _
   have kp : Keep [.r3, .r4, .r5, .r6, .r23] t t₇ :=
@@ -173,7 +173,7 @@ theorem revLoop_wp {c : Cx} (L : Lay c) {t₀ : State} (E : Env c t₀) {Q : Add
       by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd], by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
   have r3' : t₇.gpr .r3 = BitVec.ofNat 64 (k - (j + 1)) := by
     rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide),
-      u₁.other _ (by decide), I.r3, ofNat_sub (by omega) (by omega), Nat.sub_sub]
+      u₁.other _ (by decide), I.r3, ofNat_sub (by omega_arith) (by omega_arith), Nat.sub_sub]
   have I' : RInv c Q k (j + 1) t₀ t₇ := by
     refine ⟨?_, ?_, r3', ?_, ?_, (I.keep.trans kp).mono (by decide), ?_⟩
     · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr, u₃.gpr, u₂.other _ (by decide),
@@ -182,20 +182,20 @@ theorem revLoop_wp {c : Cx} (L : Lay c) {t₀ : State} (E : Env c t₀) {Q : Add
         u₁.other _ (by decide), I.r4, Offset.add_add, Nat.mul_succ, Nat.add_assoc]
     · exact I.frame.trans (fr.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega) (by omega)⟩)
+        exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega_arith) (by omega_arith)⟩)
     · rw [blocksAt_succ, blocksAt_frame fr (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)) (by omega), I.out]
+          exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by omega_arith), I.out]
       simp only [elemsAt, List.range_succ, List.map_append, List.map_cons, List.map_nil]
       rw [Offset.add_add, hm, revMem_block, src]
     · rw [u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp, I.sp]
-  have ev := VG.Proof.Gather.PPC64LE.eval_nonzero r3' (by omega)
+  have ev := VG.Proof.Gather.PPC64LE.eval_nonzero r3' (by omega_arith)
   by_cases he : j + 1 = k
   · left
     refine ⟨ev.trans (by simp [he]), ?_⟩
     exact ⟨I'.frame, he ▸ I'.out, he ▸ I'.r23, I'.keep, I'.sp⟩
   · right
-    exact ⟨ev.trans (by simp; omega), k - (j + 1), by omega, j + 1, rfl, by omega, I'⟩
+    exact ⟨ev.trans (by simp; omega_arith), k - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, I'⟩
 
 /-! ## A chunk -/
 
@@ -205,15 +205,15 @@ theorem chunkLen_wp {t : State} {m : Nat} (hm : m < 2 ^ 64) (h24 : t.gpr .r24 = 
   unfold chunkLen
   refine WP.seq (wp_lsr (by decide) fun t₁ u₁ => WP.block_nil ?_)
   have e1 : t₁.gpr .r25 = BitVec.ofNat 64 (m / 1024) := by rw [u₁.gpr, h24, ofNat_lsr 10 hm]
-  refine WP.ite (decide (m / 1024 = 0)) (VG.Proof.Gather.PPC64LE.eval_zero e1 (by omega)) (fun ht => ?_)
+  refine WP.ite (decide (m / 1024 = 0)) (VG.Proof.Gather.PPC64LE.eval_zero e1 (by omega_arith)) (fun ht => ?_)
     (fun hf => ?_)
   · have h0 : m / 1024 = 0 := by simpa using ht
     refine wp_lsr (by decide) fun t₂ u₂ => WP.block_nil (upd2 u₁ u₂ ?_)
     rw [u₁.other _ (by decide), h24, ofNat_lsr 4 hm]
-    exact congrArg (BitVec.ofNat 64) (by omega)
+    exact congrArg (BitVec.ofNat 64) (by omega_arith)
   · have h0 : m / 1024 ≠ 0 := by simpa using hf
     refine wp_li (by decide) fun t₂ u₂ => WP.block_nil (upd2 u₁ u₂ ?_)
-    exact congrArg (BitVec.ofNat 64) (by omega)
+    exact congrArg (BitVec.ofNat 64) (by omega_arith)
 
 /-- A chunk up to its call: up to 64 blocks reversed at `W + 496`, the
 pointer and the count past them, and the arguments of `vg_ghash`. -/
@@ -231,7 +231,7 @@ theorem chunkPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m
     (h16 : 16 ≤ m) (hQ : Src c t Q (16 * (m / 16))) (h23 : t.gpr .r23 = Q) (h24 : t.gpr .r24 = BitVec.ofNat 64 m) :
     WP isa chunkPre t (ChunkPre c Q m (min (m / 16) 64) t) := by
   have hw := L.ww
-  have hk1 : 1 ≤ min (m / 16) 64 := by omega
+  have hk1 : 1 ≤ min (m / 16) 64 := by omega_arith
   unfold chunkPre
   refine WP.seq (WP.mono (chunkLen_wp hm h24) fun t₁ u₁ => ?_)
   refine WP.seq (wp_addi (by decide) (by decide) fun t₂ u₂ => wp_mv fun t₃ u₃ => wp_li (by decide) fun t₄ u₄ =>
@@ -239,9 +239,9 @@ theorem chunkPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m
   have pk₅ : PK t t₅ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans
     (PK.ofUpd u₅))))
   have E₅ := E.of_pk pk₅
-  have hQ₅ : Src c t₅ Q (16 * min (m / 16) 64) := (hQ.take (by omega)).of_eq pk₅.rd pk₅.wr
+  have hQ₅ : Src c t₅ Q (16 * min (m / 16) 64) := (hQ.take (by omega_arith)).of_eq pk₅.rd pk₅.wr
   have m₅ : t₅.mem = t.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  refine WP.seq (WP.mono (revLoop_wp L E₅ hk1 (by omega) hQ₅
+  refine WP.seq (WP.mono (revLoop_wp L E₅ hk1 (by omega_arith) hQ₅
     (by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.other _ (by decide), h23])
     (by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide),
@@ -266,8 +266,8 @@ theorem chunkPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m
     ((PK.ofUpd u₁₁).trans ((PK.ofUpd u₁₂).trans (PK.ofUpd u₁₃))))))
   have E₁₃ := E₆.of_pk pk₁₃
   have w14 : ∀ {s : State}, Env c s → s.gpr .r14 = c.W := fun h => h.r14
-  have hk : 16 * min (m / 16) 64 ≤ 1024 := by omega
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, pk₅.trans (pk₆.trans pk₁₃), ?_, ?_,
+  have hk : 16 * min (m / 16) 64 ≤ 1024 := by omega_arith
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, pk₅.trans (pk₆.trans pk₁₃), ?_, ?_,
     by rw [u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]; exact fr₆,
     by rw [u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]; exact out₆⟩
   · rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
@@ -282,17 +282,17 @@ theorem chunkPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m
       u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), E₆.r14] <;> rfl
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by omega)) (by decide) (by omega)
+  · exact L.w_w (.inl (by omega_arith)) (by decide) (by omega_arith)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact Covers.append_left (Covers.cons (E₁₃.perm.wCR (by decide)) (Covers.cons (E₁₃.perm.wCR (by omega))
+  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact Covers.append_left (Covers.cons (E₁₃.perm.wCR (by decide)) (Covers.cons (E₁₃.perm.wCR (by omega_arith))
       Covers.nil)) (Covers.cons (E₁₃.perm.wCR (by decide)) (Covers.cons (E₁₃.perm.wCR (by decide)) Covers.nil))
   · exact Covers.cons (E₁₃.perm.wC (by decide)) (Covers.cons (E₁₃.perm.wC (by decide)) Covers.nil)
   · rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
       u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), r23₆]
   · rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
       u₉.other _ (by decide), u₈.gpr, u₇.gpr, u₇.other _ (by decide), r24₆, r25₆, ofNat_shl,
-      ofNat_sub (by omega) hm]
+      ofNat_sub (by omega_arith) hm]
 
 /-- What a chunk writes: GHASH's accumulator, the reversed blocks and
 `vg_ghash`'s working space. -/
@@ -315,7 +315,7 @@ theorem chunk_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : 
     (h24 : t.gpr .r24 = BitVec.ofNat 64 m) :
     WP isa chunk t (ChunkPost c Q m (min (m / 16) 64) t) := by
   have hw := L.ww
-  have hk : 16 * min (m / 16) 64 ≤ 1024 := by omega
+  have hk : 16 * min (m / 16) 64 ≤ 1024 := by omega_arith
   unfold chunk
   refine WP.seq (WP.mono (chunkPre_wp L E hm h16 hQ h23 h24) fun t₅ Pr => ?_)
   refine WP.seq (WP.mono (gh_call Pr.call) fun t₆ P => ?_)
@@ -324,21 +324,21 @@ theorem chunk_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : 
     rw [P.saved _ (by decide), Pr.r24]
   have dH : ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 496, 16 * min (m / 16) 64⟩ : Region)],
       (⟨c.W + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r := fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by decide) (by omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega_arith)) (by decide) (by omega_arith)
   have dY : ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 496, 16 * min (m / 16) 64⟩ : Region)],
       (⟨c.W + BitVec.ofNat 64 80, 16⟩ : Region).Disjoint r := fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by decide) (by omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega_arith)) (by decide) (by omega_arith)
   have out₆ := P.out
   rw [blockAt_frame Pr.frame dH, blockAt_frame Pr.frame dY, Pr.out] at out₆
   unfold wholeLeft
   refine wp_lsr (by decide) fun t₇ u₇ => WP.block_nil ⟨Pr.pk.trans (pk₆.trans (PK.ofUpd u₇)), ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₇.other _ (by decide), P.saved _ (by decide), Pr.r23]
   · rw [u₇.other _ (by decide), r24₆]
-  · rw [u₇.gpr, r24₆, ofNat_lsr 4 (by omega)]
+  · rw [u₇.gpr, r24₆, ofNat_lsr 4 (by omega_arith)]
   · rw [u₇.mem]
     refine (Pr.frame.sub fun r hr => ?_).trans (P.frame.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega)⟩
+      exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega_arith)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
@@ -419,17 +419,17 @@ theorem CInv.step {c : Cx} (L : Lay c) {σ t t' : State} {Q : Addr} {m d : Nat}
     (C : ChunkPost c (Q + BitVec.ofNat 64 (16 * d)) (m - 16 * d) (min ((m - 16 * d) / 16) 64) t t') :
     CInv c σ Q m (d + min (m / 16 - d) 64) t' ∧
       t'.gpr .r11 = BitVec.ofNat 64 (m / 16 - (d + min (m / 16 - d) 64)) := by
-  have hk : min ((m - 16 * d) / 16) 64 = min (m / 16 - d) 64 := by congr 1; omega
+  have hk : min ((m - 16 * d) / 16) 64 = min (m / 16 - d) 64 := by congr 1; omega_arith
   rw [hk] at C
-  have hs := hQ.slice (a := 16 * d) (k := 16 * min (m / 16 - d) 64) (by omega) (by omega)
+  have hs := hQ.slice (a := 16 * d) (k := 16 * min (m / 16 - d) 64) (by omega_arith) (by omega_arith)
   have C' := Absorbed.of_chunk C
   rw [elemsAt_frame I.abs.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hs.y
-      · exact hs.rev) (by omega)] at C'
+      · exact hs.rev) (by omega_arith)] at C'
   refine ⟨⟨by rw [elemsAt_add]; exact Absorbed.trans (absR_H L) I.abs C', by rw [C.r23, Offset.add_add, Nat.mul_add],
-    by rw [C.r24]; congr 1; omega⟩, by rw [C.r11]; congr 1; omega⟩
+    by rw [C.r24]; congr 1; omega_arith⟩, by rw [C.r11]; congr 1; omega_arith⟩
 
 /-- The whole blocks: chunks until fewer than 16 bytes are left. -/
 theorem chunks_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat}
@@ -440,18 +440,18 @@ theorem chunks_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m :
       t'.gpr .r23 = Q + BitVec.ofNat 64 (16 * (m / 16)) ∧ t'.gpr .r24 = BitVec.ofNat 64 (m % 16) := by
   refine WP.loop (M := isa)
     (fun (k : Nat) (t' : State) => ∃ d, k = m / 16 - d ∧ d < m / 16 ∧ CInv c t Q m d t') ?_
-    (m / 16 - 0) t ⟨0, rfl, by omega, ⟨⟨PK.refl _, Frame.refl _ _, by simp [elemsAt, Proof.Gcm.ghashFrom_nil]⟩,
+    (m / 16 - 0) t ⟨0, rfl, by omega_arith, ⟨⟨PK.refl _, Frame.refl _ _, by simp [elemsAt, Proof.Gcm.ghashFrom_nil]⟩,
       by rw [h23, Nat.mul_zero, BitVec.add_zero], by rw [h24, Nat.mul_zero, Nat.sub_zero]⟩⟩
   rintro k t' ⟨d, rfl, hd, I⟩
-  refine WP.mono (chunk_wp L (E.of_pk I.abs.pk) (by omega) (by omega)
-    ((hQ.slice (by omega) (by omega)).of_eq I.abs.pk.rd I.abs.pk.wr) I.r23 I.r24) fun t'' C => ?_
+  refine WP.mono (chunk_wp L (E.of_pk I.abs.pk) (by omega_arith) (by omega_arith)
+    ((hQ.slice (by omega_arith) (by omega_arith)).of_eq I.abs.pk.rd I.abs.pk.wr) I.r23 I.r24) fun t'' C => ?_
   obtain ⟨I', r11⟩ := I.step L hQ hd C
-  have ev := VG.Proof.Gather.PPC64LE.eval_nonzero r11 (by omega)
+  have ev := VG.Proof.Gather.PPC64LE.eval_nonzero r11 (by omega_arith)
   by_cases he : d + min (m / 16 - d) 64 = m / 16
   · left
-    refine ⟨ev.trans (by simp; omega), he ▸ I'.abs, by rw [I'.r23, he], by rw [I'.r24, he]; congr 1; omega⟩
+    refine ⟨ev.trans (by simp; omega_arith), he ▸ I'.abs, by rw [I'.r23, he], by rw [I'.r24, he]; congr 1; omega_arith⟩
   · right
-    exact ⟨ev.trans (by simp; omega), m / 16 - (d + min (m / 16 - d) 64), by omega, d + min (m / 16 - d) 64, rfl,
-      by omega, I'⟩
+    exact ⟨ev.trans (by simp; omega_arith), m / 16 - (d + min (m / 16 - d) 64), by omega_arith, d + min (m / 16 - d) 64, rfl,
+      by omega_arith, I'⟩
 
 end VG.Proof.AesGcmSiv.PPC64LE

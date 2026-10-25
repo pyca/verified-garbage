@@ -64,7 +64,7 @@ theorem keyK {p : Prm} {s : State} (L : Lay p) (P : Perm p s) : KeyOk p s p.K :=
 /-- The encryption key's schedule at `W + 512`. -/
 theorem keyS {p : Prm} {s : State} (L : Lay p) (P : Perm p s) : KeyOk p s (p.W + BitVec.ofNat 32 512) where
   rd := by rw [L.aW (by decide)]; exact P.wCR (by decide)
-  wrap := by rw [L.nW (by decide)]; have := L.ww; omega
+  wrap := by rw [L.nW (by decide)]; have := L.ww; omega_arith
   kc := by rw [L.aW (by decide)]; exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
   ks := by rw [L.aW (by decide)]; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   stk := by rw [L.aW (by decide)]; exact L.bw' (by decide)
@@ -89,12 +89,12 @@ theorem dstW {p : Prm} {s : State} (L : Lay p) (P : Perm p s) {Q : BitVec 32} {q
     (hq : q + 16 ≤ 128 ∧ (q + 16 ≤ 112 ∨ 128 ≤ q) ∨ 224 ≤ q ∧ q + 16 ≤ 256)
     (hk : (⟨w64 Q, 240⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 q, 16⟩) :
     Dst p s Q (p.W + BitVec.ofNat 32 q) 16 where
-  wr := by rw [L.aW (o := q) (by omega)]; exact P.wC (by omega)
-  wrap := by rw [L.nW (o := q) (by omega)]; have := L.ww; omega
-  dk := by rw [L.aW (o := q) (by omega)]; exact hk
-  dc := by rw [L.aW (o := q) (by omega)]; exact Lay.w_w (by omega) (by omega) (by decide)
-  ds := by rw [L.aW (o := q) (by omega)]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  stk := by rw [L.aW (o := q) (by omega)]; exact L.bw' (by omega)
+  wr := by rw [L.aW (o := q) (by omega_arith)]; exact P.wC (by omega_arith)
+  wrap := by rw [L.nW (o := q) (by omega_arith)]; have := L.ww; omega_arith
+  dk := by rw [L.aW (o := q) (by omega_arith)]; exact hk
+  dc := by rw [L.aW (o := q) (by omega_arith)]; exact Lay.w_w (by omega_arith) (by omega_arith) (by decide)
+  ds := by rw [L.aW (o := q) (by omega_arith)]; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  stk := by rw [L.aW (o := q) (by omega_arith)]; exact L.bw' (by omega_arith)
 
 /-- The arguments of `vg_aes_ctr32`: the key schedule at `Q`, the counter
 block's copy at `W + 112`, `n` blocks at `D`, and the working space at
@@ -106,7 +106,7 @@ theorem cargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : P
     (ebp : s.gpr .ebp = p.W + BitVec.ofNat 32 768) :
     CtrCall s Q (p.W + BitVec.ofNat 32 112) D (p.W + BitVec.ofNat 32 768) p.R n := by
   have hsp := L.sp
-  refine ⟨eax, ecx, edx, ebx, edi, ebp, L.rounds3, by rw [esp]; omega, ?_, hD.dk, ?_, ?_, ?_, hD.ds.sub_right ?_,
+  refine ⟨eax, ecx, edx, ebx, edi, ebp, L.rounds3, by rw [esp]; omega_arith, ?_, hD.dk, ?_, ?_, ?_, hD.ds.sub_right ?_,
     ?_, ?_, ?_, ?_, hQ.wrap, ?_, hD.wrap, ?_, hQ.rd, ?_⟩
   · rw [L.aW (by decide)]; exact hQ.kc
   · rw [L.aW (by decide)]; exact hQ.ks
@@ -117,8 +117,8 @@ theorem cargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : P
   · rw [esp, L.aW (by decide)]; exact L.bw' (by decide)
   · rw [esp]; exact hD.stk
   · rw [esp, L.aW (by decide)]; exact L.bw' (by decide)
-  · rw [L.nW (by decide)]; have := L.ww; omega
-  · rw [L.nW (by decide)]; have := L.ww; omega
+  · rw [L.nW (by decide)]; have := L.ww; omega_arith
+  · rw [L.nW (by decide)]; have := L.ww; omega_arith
   · rw [L.aW (by decide), L.aW (by decide)]
     exact covers_cons (P.wC (by decide)) (covers_cons hD.wr (covers_cons (P.wC (by decide)) covers_nil))
 
@@ -196,7 +196,7 @@ theorem callCtr_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q D : BitVec 32} {n : Na
     intro s hs s' run
     obtain ⟨E, hQ, hD, eax, ecx, edx, ebx, edi⟩ := hI s hs
     have e := run
-    simp (disch := first | decide | omega) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    simp (disch := first | decide | omega_arith) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
       imm, scrO, Option.bind_some, Option.some.injEq] at e
     subst e
     have e768 : s.gpr .ebp + BitVec.ofNat 32 768 = p.W + BitVec.ofNat 32 768 := by rw [E.ebp]
@@ -226,24 +226,24 @@ theorem gargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : P
   have hsp := L.sp
   have b24 := L.stkSub (k := 24) (by decide)
   have ww := L.ww
-  refine ⟨eax, edx, ebx, edi, ebp, by rw [esp]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  refine ⟨eax, edx, ebx, edi, ebp, by rw [esp]; omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp only [L.aW (show 64 < 2816 by decide), L.aW (show 80 < 2816 by decide), L.aW (show 768 < 2816 by decide),
       L.aW (show 1792 < 2816 by decide), L.nW (show 64 < 2816 by decide), L.nW (show 80 < 2816 by decide),
       L.nW (show 768 < 2816 by decide), L.nW (show 1792 < 2816 by decide), esp]
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by decide) (by omega)
+  · exact Lay.w_w (.inl (by omega_arith)) (by decide) (by omega_arith)
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+  · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   · exact (L.bw' (by decide)).sub_left b24
   · exact (L.bw' (by decide)).sub_left b24
-  · exact (L.bw' (by omega)).sub_left b24
+  · exact (L.bw' (by omega_arith)).sub_left b24
   · exact (L.bw' (by decide)).sub_left b24
-  · omega
-  · omega
-  · omega
-  · omega
-  · exact covers_cons (P.wCR (by decide)) (covers_cons (P.wCR (by omega)) covers_nil)
+  · omega_arith
+  · omega_arith
+  · omega_arith
+  · omega_arith
+  · exact covers_cons (P.wCR (by decide)) (covers_cons (P.wCR (by omega_arith)) covers_nil)
   · exact covers_cons (P.wC (by decide)) (covers_cons (P.wC (by decide)) covers_nil)
 
 /-- What a call of `vg_ghash` leaves. -/
@@ -310,7 +310,7 @@ theorem callGh_ct (v : GcmImpl) {p : Prm} (L : Lay p) {n : Nat} (hn : n ≤ 64) 
     intro s hs s' run
     obtain ⟨E, eax, edx, ebx, edi⟩ := hI s hs
     have e := run
-    simp (disch := first | decide | omega) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    simp (disch := first | decide | omega_arith) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
       imm, ghO, Option.bind_some, Option.some.injEq] at e
     subst e
     have e1792 : s.gpr .ebp + BitVec.ofNat 32 1792 = p.W + BitVec.ofNat 32 1792 := by rw [E.ebp]
@@ -347,20 +347,20 @@ theorem kargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : P
   have ww := L.ww
   have hk : Spec.GcmSiv.keyLen p.R = 16 ∨ Spec.GcmSiv.keyLen p.R = 32 := by
     rcases L.rounds with h | h <;> rw [h] <;> decide
-  have hk32 : Spec.GcmSiv.keyLen p.R ≤ 32 := by omega
-  refine ⟨eax, ecx, edx, ebp, by omega, by rw [esp]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  have hk32 : Spec.GcmSiv.keyLen p.R ≤ 32 := by omega_arith
+  refine ⟨eax, ecx, edx, ebp, by omega_arith, by rw [esp]; omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp only [L.aW (show 32 < 2816 by decide), L.aW (show 512 < 2816 by decide), L.aW (show 768 < 2816 by decide),
       L.nW (show 32 < 2816 by decide), L.nW (show 512 < 2816 by decide), L.nW (show 768 < 2816 by decide), esp]
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+  · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.bw' (by omega)).sub_left b20
+  · exact (L.bw' (by omega_arith)).sub_left b20
   · exact (L.bw' (by decide)).sub_left b20
   · exact (L.bw' (by decide)).sub_left b20
-  · omega
-  · omega
-  · omega
-  · exact covers_cons (P.wCR (by omega)) covers_nil
+  · omega_arith
+  · omega_arith
+  · omega_arith
+  · exact covers_cons (P.wCR (by omega_arith)) covers_nil
   · exact covers_cons (P.wC (by decide)) (covers_cons (P.wC (by decide)) covers_nil)
 
 /-- What a call of `vg_aes_expand_key` leaves. -/
@@ -426,7 +426,7 @@ theorem callKey_ct (v : GcmImpl) {p : Prm} (L : Lay p) {I : State → Prop}
     intro s hs s' run
     obtain ⟨E, eax, ecx, edx⟩ := hI s hs
     have e := run
-    simp (disch := first | decide | omega) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    simp (disch := first | decide | omega_arith) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
       imm, scrO, Option.bind_some, Option.some.injEq] at e
     subst e
     have e768 : s.gpr .ebp + BitVec.ofNat 32 768 = p.W + BitVec.ofNat 32 768 := by rw [E.ebp]

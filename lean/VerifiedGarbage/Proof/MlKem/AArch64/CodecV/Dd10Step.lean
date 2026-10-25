@@ -35,7 +35,7 @@ theorem vbyte_tbl2_out {s : State} {n m d : VReg} {i : Nat} (hi : i < 16) {k : N
     (hk : (vbyte (s.v m) i).toNat = k) (hk' : 32 ≤ k) :
     vbyte (ofVBytes fun i => if (vbyte (s.v m) i).toNat < 16 * 2 then tableByte s.v n (vbyte (s.v m) i).toNat
       else if false then vbyte (s.v d) i else 0) i = 0 := by
-  rw [vbyte_ofVBytes _ hi, hk, ite_eq_right (by omega)]; rfl
+  rw [vbyte_ofVBytes _ hi, hk, ite_eq_right (by omega_arith)]; rfl
 
 /-- A doubleword from its bytes. -/
 theorem dword_of_bytes (x : BitVec 128) (l : Nat) :
@@ -54,7 +54,7 @@ theorem dword_of_bytes (x : BitVec 128) (l : Nat) :
   simp only [Nat.add_zero, Nat.mul_zero, Nat.pow_zero, Nat.div_one] at h0 h1 h2 h3 h4 h5 h6 h7
   rw [h0, h1, h2, h3, h4, h5, h6, h7]
   have := (vdword x l).isLt
-  omega
+  omega_arith
 
 /-- A doubleword whose bytes are five values and three zeros. -/
 theorem dword5 (x : BitVec 128) (l : Nat) (F : Nat → Nat)
@@ -67,7 +67,7 @@ theorem dword5 (x : BitVec 128) (l : Nat) (F : Nat → Nat)
   rw [ite_eq_left (show 0 < 5 by decide), ite_eq_left (show 1 < 5 by decide), ite_eq_left (show 2 < 5 by decide),
     ite_eq_left (show 3 < 5 by decide), ite_eq_left (show 4 < 5 by decide), ite_eq_right (show ¬ 5 < 5 by decide),
     ite_eq_right (show ¬ 6 < 5 by decide), ite_eq_right (show ¬ 7 < 5 by decide)]
-  omega
+  omega_arith
 
 /-- The bytes of a group, from its five bytes and three zeros. -/
 theorem num5 (s₀ : State) (g : Nat) :
@@ -76,13 +76,13 @@ theorem num5 (s₀ : State) (g : Nat) :
       byte width10 s₀ (5 * g + 4) * 2 ^ 32 := by
   rw [num_succ, num_succ, num_succ, num_succ, num_succ, num, List.range_zero, List.map_nil, digits_nil]
   simp only [show width10.nb = 5 from rfl, Nat.add_zero]
-  omega
+  omega_arith
 
 /-- Coefficient `16 k + m` of the output for `d = 10`. -/
 theorem G10 (s₀ : State) {k m : Nat} (hk : k < 16) (hm : m < 16) :
     DD.G width10 s₀ (16 * k + m) = BitVec.ofNat 32 (df 10 (dig10 (fun l => num width10 s₀ (4 * k + l) 5) m)) := by
-  rw [show 16 * k + m = width10.c * (4 * k + m / 4) + m % 4 by simp [width10]; omega,
-    G_eq width10_ok s₀ (by simp [width10]; omega) (by simp [width10]; omega)]
+  rw [show 16 * k + m = width10.c * (4 * k + m / 4) + m % 4 by simp [width10]; omega_arith,
+    G_eq width10_ok s₀ (by simp [width10]; omega_arith) (by simp [width10]; omega_arith)]
   simp only [show width10.d = 10 from rfl, show width10.nb = 5 from rfl, df, dig10]
 
 theorem vbyte_setLane0 (x : BitVec 128) (w : BitVec 32) {j : Nat} (hj : j < 4) :
@@ -90,29 +90,29 @@ theorem vbyte_setLane0 (x : BitVec 128) (w : BitVec 32) {j : Nat} (hj : j < 4) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [setLane, vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_and,
     BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes,
-    hi, decide_true, Bool.true_and, Nat.mul_zero, Nat.sub_zero, show 8 * j + i < 128 by omega,
-    show 8 * j + i < 32 by omega, show ¬ 8 * j + i < 0 by omega]
+    hi, decide_true, Bool.true_and, Nat.mul_zero, Nat.sub_zero, show 8 * j + i < 128 by omega_arith,
+    show 8 * j + i < 32 by omega_arith, show ¬ 8 * j + i < 0 by omega_arith]
   simp
 
 theorem readW32_byte (m : Mem) (a : Addr) {j : Nat} (hj : j < 4) :
     (((m.readW a 32).setWidth 64).setWidth 32).extractLsb' (8 * j) 8 = m (a + BitVec.ofNat 64 j) := by
   rw [← Mem.extractLsb'_read m a (n := 4) hj]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp [Mem.readW, hi, show 8 * j + i < 32 by omega]
+  simp [Mem.readW, hi, show 8 * j + i < 32 by omega_arith]
 
 theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s : State}
     (h : DInv width10 4 K10 s₀ k s) :
     WP isa (.block dd10Body) s fun t =>
       DInv width10 4 K10 s₀ (k + 1) t ∧ ((t.gpr .x11).toNat ≠ 0 ↔ k + 1 ≠ 16) := by
   have x0 : s.gpr .x0 = bP s₀ + BitVec.ofNat 64 (20 * k) := by
-    rw [h.x0, show width10.nb * 4 * k = 20 * k by simp [width10]; try omega]
+    rw [h.x0, show width10.nb * 4 * k = 20 * k by simp [width10]; try omega_arith]
   unfold dd10Body
   simp only [List.cons_append, List.append_assoc]
-  refine wp_ldrq (by decide) (by rw [ptr_zero, x0]) (h.in16 width10_ok hp (by simp [width10]; omega))
+  refine wp_ldrq (by decide) (by rw [ptr_zero, x0]) (h.in16 width10_ok hp (by simp [width10]; omega_arith))
     fun s1 h1 => ?_
   have in4 : InRegions (s1.rd ++ s1.wr) (bP s₀ + BitVec.ofNat 64 (20 * k + 16)) 4 := by
     rw [h1.rd, h1.wr, h.rd, h.wr, hp.rd, hp.wr]
-    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by simp [width10]; omega) (by decide)))
+    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by simp [width10]; omega_arith) (by decide)))
   refine wp_scalar (is := [.ldr .w .x9 .x0 16]) (by decide) (wp_ldrw (a := bP s₀ + BitVec.ofNat 64 (20 * k + 16))
     (by decide) (by rw [h1.gpr, x0, ptr_add]) in4 fun t o e =>
       wp_nil (Q := fun t => Only [.x9] s1 t ∧ t.gpr .x9 = (s1.mem.readW (bP s₀ + BitVec.ofNat 64 (20 * k + 16)) 32).setWidth 64)
@@ -123,10 +123,10 @@ theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s
       byte width10 s₀ (20 * k + i) := fun i hi => by
     by_cases hi' : i < 16
     · rw [ite_eq_left hi', h3.get .v4 (by decide), v2, h1.v]
-      exact vbyte_input width10_ok hp h.frame (by simp [width10]; omega) hi'
-    · rw [ite_eq_right hi', h3.v, vbyte_setLane0 _ _ (by omega), e2, h1.mem, readW32_byte _ _ (by omega),
-        ptr_add, show 20 * k + 16 + (i - 16) = 20 * k + i by omega]
-      exact hp.byte_eq h.frame (by simp [width10]; omega) (by decide)
+      exact vbyte_input width10_ok hp h.frame (by simp [width10]; omega_arith) hi'
+    · rw [ite_eq_right hi', h3.v, vbyte_setLane0 _ _ (by omega_arith), e2, h1.mem, readW32_byte _ _ (by omega_arith),
+        ptr_add, show 20 * k + 16 + (i - 16) = 20 * k + i by omega_arith]
+      exact hp.byte_eq h.frame (by simp [width10]; omega_arith) (by decide)
   have k20 : s3.v .v20 = idxVec dd10Idx := by
     rw [h3.get .v20 (by decide), v2, h1.get .v20 (by decide)]; exact h.K.2.2.1
   have k21 : s4.v .v21 = idxVec dd10IdxHi := by
@@ -141,26 +141,26 @@ theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s
   have D6 : DLanes (s5.v .v6) Gv := fun l hl => lane _ l _ fun b hb => by
     rw [h5.get .v6 (by decide), h4.v]
     have hk : (vbyte (s3.v .v20) (8 * l + b)).toNat = dd10Idx.getD (8 * l + b) 255 := by
-      rw [k20, toNat_idxVec _ (by decide) (by omega)]
-    rw [dd10Idx_eq _ (by omega), show (8 * l + b) % 8 = b by omega, show (8 * l + b) / 8 = l by omega] at hk
+      rw [k20, toNat_idxVec _ (by decide) (by omega_arith)]
+    rw [dd10Idx_eq _ (by omega_arith), show (8 * l + b) % 8 = b by omega_arith, show (8 * l + b) / 8 = l by omega_arith] at hk
     by_cases h5' : b < 5
     · rw [ite_eq_left h5'] at hk ⊢
-      rw [vbyte_tbl2 (by omega) hk (by omega), show VReg.v4.succ = .v5 from rfl, tab _ (by omega)]
-      congr 1; omega
+      rw [vbyte_tbl2 (by omega_arith) hk (by omega_arith), show VReg.v4.succ = .v5 from rfl, tab _ (by omega_arith)]
+      congr 1; omega_arith
     · rw [ite_eq_right h5'] at hk ⊢
-      rw [vbyte_tbl2_out (by omega) hk (by omega)]; rfl
+      rw [vbyte_tbl2_out (by omega_arith) hk (by omega_arith)]; rfl
   have D7 : DLanes (s5.v .v7) fun l => Gv (2 + l) := fun l hl => lane _ l _ fun b hb => by
     rw [h5.v]
     have hk : (vbyte (s4.v .v21) (8 * l + b)).toNat = dd10IdxHi.getD (8 * l + b) 255 := by
-      rw [k21, toNat_idxVec _ (by decide) (by omega)]
-    rw [dd10IdxHi_eq _ (by omega), show (8 * l + b) % 8 = b by omega, show (8 * l + b) / 8 = l by omega] at hk
+      rw [k21, toNat_idxVec _ (by decide) (by omega_arith)]
+    rw [dd10IdxHi_eq _ (by omega_arith), show (8 * l + b) % 8 = b by omega_arith, show (8 * l + b) / 8 = l by omega_arith] at hk
     by_cases h5' : b < 5
     · rw [ite_eq_left h5'] at hk ⊢
-      rw [vbyte_tbl2 (by omega) hk (by omega), show VReg.v4.succ = .v5 from rfl, h4.get .v4 (by decide),
-        h4.get .v5 (by decide), tab _ (by omega)]
-      congr 1; omega
+      rw [vbyte_tbl2 (by omega_arith) hk (by omega_arith), show VReg.v4.succ = .v5 from rfl, h4.get .v4 (by decide),
+        h4.get .v5 (by decide), tab _ (by omega_arith)]
+      congr 1; omega_arith
     · rw [ite_eq_right h5'] at hk ⊢
-      rw [vbyte_tbl2_out (by omega) hk (by omega)]; rfl
+      rw [vbyte_tbl2_out (by omega_arith) hk (by omega_arith)]; rfl
   -- the frame so far
   have g5 : ∀ r, r ≠ .x9 → s5.gpr r = s.gpr r := fun r hr => by
     rw [h5.gpr, h4.gpr, h3.gpr, o2.gpr r (by simpa using hr), h1.gpr]
@@ -175,12 +175,12 @@ theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s
   have l19 : Lanes (s5.v .v19) fun _ => 2 ^ 10 - 1 := by
     rw [v5 .v19 (by decide) (by decide) (by decide) (by decide)]; exact h.K.2.1
   have x3 : s.gpr .x3 = coeffAddr (fP s₀) (16 * k) := by
-    rw [h.x3, show width10.c * 4 * k = 16 * k by simp [width10]; try omega]
+    rw [h.x3, show width10.c * 4 * k = 16 * k by simp [width10]; try omega_arith]
   have out : CoeffsUpTo s5.mem (fP s₀) (16 * k) (DD.G width10 s₀) (old s₀) := by
-    rw [m5, show 16 * k = width10.c * 4 * k by simp [width10]; try omega]; exact h.out
+    rw [m5, show 16 * k = width10.c * 4 * k by simp [width10]; try omega_arith]; exact h.out
   refine dd10Half_ok (Or.inl rfl) (o := 0) (by decide) cs5 l18 l19 D6
-    (fun i hi => by rw [wr5]; exact h.out16 hp hi) (by rw [g5 .x3 (by decide), x3, ptr_zero]) (by omega) out
-    (by rw [m5]; exact h.frame) (fun m hm => G10 s₀ hk (by omega)) fun s6 g6 rd6 wr6 sp6 v6 o6 f6 => ?_
+    (fun i hi => by rw [wr5]; exact h.out16 hp hi) (by rw [g5 .x3 (by decide), x3, ptr_zero]) (by omega_arith) out
+    (by rw [m5]; exact h.frame) (fun m hm => G10 s₀ hk (by omega_arith)) fun s6 g6 rd6 wr6 sp6 v6 o6 f6 => ?_
   refine dd10Half_ok (Or.inr rfl) (o := 32) (by decide)
     ⟨by rw [v6 .v16 (by decide) (by decide) (by decide) (by decide)]; exact cs5.q,
      by rw [v6 .v17 (by decide) (by decide) (by decide) (by decide)]; exact cs5.h⟩
@@ -188,13 +188,13 @@ theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s
     (by rw [v6 .v19 (by decide) (by decide) (by decide) (by decide)]; exact l19)
     (by rw [v6 .v7 (by decide) (by decide) (by decide) (by decide)]; exact D7)
     (fun i hi => by rw [wr6, wr5]; exact h.out16 hp hi)
-    (by rw [g6, g5 .x3 (by decide), x3]; exact coeffAddr_off _ _ 8) (by omega) o6 f6
+    (by rw [g6, g5 .x3 (by decide), x3]; exact coeffAddr_off _ _ 8) (by omega_arith) o6 f6
     (fun m hm => by
-      rw [show 16 * k + 8 + m = 16 * k + (8 + m) by omega, G10 s₀ hk (by omega)]
+      rw [show 16 * k + 8 + m = 16 * k + (8 + m) by omega_arith, G10 s₀ hk (by omega_arith)]
       simp only [dig10]
-      rw [show (8 + m) / 4 = 2 + m / 4 by omega, show (8 + m) % 4 = m % 4 by omega])
+      rw [show (8 + m) / 4 = 2 + m / 4 by omega_arith, show (8 + m) % 4 = m % 4 by omega_arith])
     fun s7 g7 rd7 wr7 sp7 v7 o7 f7 => ?_
-  have k4 : k < 256 / (width10.c * 4) := by simp [width10]; omega
+  have k4 : k < 256 / (width10.c * 4) := by simp [width10]; omega_arith
   have gg : ∀ r, r ≠ .x9 → s7.gpr r = s.gpr r := fun r hr => by rw [g7, g6, g5 r hr]
   refine WP.mono (dtail_ok (w := width10) (Ng := 4) (s₀ := s₀) k4 (by rw [gg .x0 (by decide), h.x0])
     (by rw [gg .x3 (by decide), h.x3]) (by rw [gg .x11 (by decide), h.x11]) (by decide) (by decide))
@@ -210,7 +210,7 @@ theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s
      by rw [hv .v20 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.K.2.2.1,
      by rw [hv .v21 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.K.2.2.2⟩,
     ?_, by rw [o.mem]; exact f7⟩, by rw [show 256 / (width10.c * 4) = 16 from rfl] at uc; exact uc⟩
-  rw [o.mem, show width10.c * 4 * (k + 1) = 16 * k + 8 + 8 by simp [width10]; omega]
+  rw [o.mem, show width10.c * 4 * (k + 1) = 16 * k + 8 + 8 by simp [width10]; omega_arith]
   exact o7
 
 

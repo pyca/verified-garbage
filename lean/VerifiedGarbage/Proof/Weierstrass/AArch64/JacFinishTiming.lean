@@ -30,7 +30,7 @@ theorem jacComb_finish_exact {K : TCombCfg} {C : Curve} {base : Addr} {size : Na
          if tmv C K.M.n base s K.A.z=0 then 1 else tmv C K.M.n base s K.A.y,
          tmv C K.M.n base s K.A.z * tmv C K.M.n base s K.A.z * tmv C K.M.n base s K.A.z) := by
   have hn := hs.nowrap
-  have hn0 : 0 < K.M.n := by omega
+  have hn0 : 0 < K.M.n := by omega_arith
   let W : WinCfg := {Jacobian.combWinCfg K with E := K.A}
   have hy : K.A.y ∈ combSlots K.toComb := by tcomb_mem
   have hz' : K.A.z ∈ combSlots K.toComb := by tcomb_mem
@@ -63,10 +63,10 @@ theorem jacComb_finish_exact {K : TCombCfg} {C : Curve} {base : Addr} {size : Na
   have zy := hL.apart₂ az ay (by grind)
   have ex : wordsVal t.mem base K.A.x K.M.n = wordsVal u.mem base K.A.x K.M.n :=
     uy.wordsVal (by simpa only [List.mem_singleton] using fun w (hw : w=(K.A.y,8*K.M.n)) => hw ▸ xy)
-      (by have hxl : K.A.x+8*K.M.n ≤ size := hL.lay.le _ (combWs_slots _ _ ax); omega)
+      (by have hxl : K.A.x+8*K.M.n ≤ size := hL.lay.le _ (combWs_slots _ _ ax); omega_arith)
   have ez : wordsVal t.mem base K.A.z K.M.n = wordsVal u.mem base K.A.z K.M.n :=
     uy.wordsVal (by simpa only [List.mem_singleton] using fun w (hw : w=(K.A.y,8*K.M.n)) => hw ▸ zy)
-      (by omega)
+      (by omega_arith)
   have uysub : Unch base (combW K.toComb) u.mem t.mem := uy.mono (by
     intro w hw
     rw [List.mem_singleton.mp hw]
@@ -79,7 +79,7 @@ theorem jacComb_finish_exact {K : TCombCfg} {C : Curve} {base : Addr} {size : Na
   refine ⟨?_,ut',hM.unch ut' (combW_mo hL hM) hn,?_,?_⟩
   · exact (hu.keep.mono (fun r hr => combClob_tcombClob _
       (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_right _ hr))))).trans
-      (ky.mono (fun r hr => tcombClob_sub K.M.n (by omega) r (by
+      (ky.mono (fun r hr => tcombClob_sub K.M.n (by omega_arith) r (by
         simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp)))
   · intro x hx
@@ -161,12 +161,12 @@ theorem jacCombFinish_relCT {K : TCombCfg} {C : Curve} {base : Addr} {size : Nat
     intro x hx
     exact us.wordsVal (combW_ro hL hx) (by
       have hb : x+8*K.M.n≤size := hL.lay.le x (combRo_slots x hx)
-      have := pair.left.scr.nowrap; omega)
+      have := pair.left.scr.nowrap; omega_arith)
   have rot : ∀ x∈combRo K.toComb,wordsVal t'.mem base x K.M.n=wordsVal t.mem base x K.M.n := by
     intro x hx
     exact ut.wordsVal (combW_ro hL hx) (by
       have hb : x+8*K.M.n≤size := hL.lay.le x (combRo_slots x hx)
-      have := pair.right.scr.nowrap; omega)
+      have := pair.right.scr.nowrap; omega_arith)
   have eqout : ∀ x∈jacFinishLive K,tmv C K.M.n base s' x=tmv C K.M.n base t' x := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx

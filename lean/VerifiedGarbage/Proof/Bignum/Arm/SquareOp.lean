@@ -35,10 +35,10 @@ theorem keeps_of_square {mem mem' : Mem} {base : BitVec 32} {len w o : Nat}
   intro r hr
   have ofsEq : ofs (State.addr base) (State.addr base + BitVec.ofNat 64 i) = i := by
     unfold ofs
-    rw [Mem.sub_ofNat_toNat _ (by omega)]
+    rw [Mem.sub_ofNat_toNat _ (by omega_arith)]
   rw [ofsEq]
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> simp only <;> omega
+  rcases hr with rfl | rfl <;> simp only <;> omega_arith
 
 theorem frame_of_square {mem mem' : Mem} {base : Addr} {size w o : Nat}
     (ho : o < 8) (fit : arrAt w 8 ≤ size)
@@ -53,7 +53,7 @@ theorem frame_of_square {mem mem' : Mem} {base : Addr} {size w o : Nat}
   apply outside
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> simp only [ofs] <;> omega
+  rcases hr with rfl | rfl <;> simp only [ofs] <;> omega_arith
 
 /-- The square's environment, from the RSA layout. -/
 theorem sqEnv_of_layout (s u : State) {base : BitVec 32} {len o a : Nat} {inv : BitVec 32} {rs : List Reg}
@@ -79,17 +79,17 @@ theorem sqEnv_of_layout (s u : State) {base : BitVec 32} {len o a : Nat} {inv : 
   change a ≠ 2 at ha2; change a ≠ 3 at ha3
   have f4 := array_end_le (w := w) (j := 3) (k := 4) (by decide)
   have e3 : arrAt w 3 = arrAt w 2 + 8 * (w + 2) := by simp only [arrAt]; rw [Nat.add_assoc, ← Nat.succ_mul]
-  have e4 : arrAt w 4 ≤ arrAt w 8 := by simp only [arrAt]; omega
+  have e4 : arrAt w 4 ≤ arrAt w 8 := by simp only [arrAt]; omega_arith
   have region (j : Nat) (hj : j < 8) (h2 : j ≠ 2) (h3 : j ≠ 3) :
       arrAt w 2 + 4 * (2 * (2 * w) + 8) ≤ arrAt w j ∨ arrAt w j + 4 * (2 * w) ≤ arrAt w 2 := by
     rcases Nat.lt_or_ge j 2 with h | h
-    · have := array_end_le (w := w) (j := j) (k := 2) h; right; omega
-    · have : 4 ≤ j := by omega
+    · have := array_end_le (w := w) (j := j) (k := 2) h; right; omega_arith
+    · have : 4 ≤ j := by omega_arith
       have := Nat.mul_le_mul_right (8 * (w + 2)) this
-      left; simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at *; omega
+      left; simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at *; omega_arith
   have fits (j : Nat) (hj : j < 8) : arrAt w j + 4 * (2 * w) ≤ 8 * len := by
-    have := array_end_le (w := w) (j := j) (k := 8) (by omega); omega
-  refine ⟨ws.congr rest.wr, by omega, by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega, by omega,
+    have := array_end_le (w := w) (j := j) (k := 8) (by omega_arith); omega_arith
+  refine ⟨ws.congr rest.wr, by omega_arith, by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith, by omega_arith,
     fits a ha8, fits 0 (by decide), fits o ho8, region a ha8 ha2 ha3, region 0 (by decide) (by decide) (by decide),
     region o ho8 ho2 ho3, Outs.refl _ _ _, by rw [rest.rd, rest.wr, rest.sp]; exact stackRead,
     by rw [rest.sp]; exact stackSep, by rw [rest.sp, mem]; exact saved, by rw [mem]; exact header.array 2 (by decide),
@@ -122,12 +122,12 @@ theorem squareBody_ok (s : State) {base : BitVec 32} {len o a : Nat}
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   have bound : 128 ≤ 8 * len := by
     simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_arith
   rw [squareBody, WP.seq_iff]
   refine WP.mono (bases_ok s ws bound header ho.1 ha.1 ha.1 ptr po pa pb) ?_
   rintro u ⟨regs, mem, keep⟩
   have envU := sqEnv_of_layout s u ws layout ho ha header
-    (native_inverse s.mem (State.addr base) (by omega) inverse) operand stackRead stackSep saved mem keep
+    (native_inverse s.mem (State.addr base) (by omega_arith) inverse) operand stackRead stackSep saved mem keep
   refine WP.mono (sqBody_ok u envU regs.accPtr regs.count regs.aPtr regs.outPtr) ?_
   rintro t ⟨lt, value, outside, rest⟩
   rw [mem] at lt value outside

@@ -24,7 +24,7 @@ theorem and255 (x : BitVec 64) : x &&& 255#64 = BitVec.ofNat 64 (x.toNat % 256) 
   have h1 : (255#64).toNat = 2 ^ 8 - 1 := rfl
   rw [BitVec.toNat_and, h1, Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
   have := x.isLt
-  omega
+  omega_arith
 
 /-- The row address of table register `r`, for the base `B`. -/
 def rowOff (B r : Nat) : Nat := (B + 16 * r) % 256
@@ -32,10 +32,10 @@ def rowOff (B r : Nat) : Nat := (B + 16 * r) % 256
 theorem hand (B r : Nat) : (BitVec.ofNat 64 B + BitVec.ofNat 64 (16 * r)) &&& 255#64 =
     BitVec.ofNat 64 (rowOff B r) := by
   rw [and255, BitVec.ofNat_add_ofNat, BitVec.toNat_ofNat, rowOff]
-  congr 1; omega
+  congr 1; omega_arith
 
 theorem rowOff_le {B : Nat} (r : Nat) (hB : B % 16 = 0) : rowOff B r + 16 ≤ 256 := by
-  simp only [rowOff]; omega
+  simp only [rowOff]; omega_arith
 
 theorem rowLoad_ok {s : State} {B r : Nat} (hr : r < 16) (hB : B % 16 = 0)
     (h8 : s.gpr .x8 = BitVec.ofNat 64 B) (h9 : s.gpr .x9 = 255#64)
@@ -44,10 +44,10 @@ theorem rowLoad_ok {s : State} {B r : Nat} (hr : r < 16) (hB : B % 16 = 0)
       t.v (treg r) = s.mem.read (s.gpr .x0 + BitVec.ofNat 64 (rowOff B r)) 16 ∧
       (∀ v, v ≠ treg r → t.v v = s.v v) ∧ (∀ g, g ≠ .x6 → g ≠ .x7 → t.gpr g = s.gpr g) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  have hrow := region_offset _ _ _ (rowOff B r) 16 (by simp only [rowOff]; omega)
+  have hrow := region_offset _ _ _ (rowOff B r) 16 (by simp only [rowOff]; omega_arith)
     (rowOff_le r hB) hp
   unfold rowAddr
-  have himm : 16 * r < 4096 := by omega
+  have himm : 16 * r < 4096 := by omega_arith
   rrun [List.cons_append, List.nil_append, himm, h8, h9, hand, hrow]
   exact ⟨fun v hv => by simp [hv], fun g h6 h7 => by simp [h6, h7], rfl⟩
 
@@ -65,23 +65,23 @@ theorem loadN_ok {s : State} {B : Nat} (hB : B % 16 = 0) (h8 : s.gpr .x8 = BitVe
       (∀ v, (∀ r < 16, v ≠ treg r) → t.v v = s.v v) ∧ (∀ g, g ≠ .x6 → g ≠ .x7 → t.gpr g = s.gpr g) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   induction n with
-  | zero => exact WP.block_nil ⟨fun r h => absurd h (by omega), fun _ _ => rfl, fun _ _ _ => rfl,
+  | zero => exact WP.block_nil ⟨fun r h => absurd h (by omega_arith), fun _ _ => rfl, fun _ _ _ => rfl,
       rfl, rfl, rfl, rfl⟩
   | succ n ih =>
     rw [loadN_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨rows, vk, gk, m, rd, wr, sp⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨rows, vk, gk, m, rd, wr, sp⟩ => ?_
     have t8 : t.gpr .x8 = BitVec.ofNat 64 B := by rw [gk _ (by decide) (by decide), h8]
     have t9 : t.gpr .x9 = 255#64 := by rw [gk _ (by decide) (by decide), h9]
     have t0 : t.gpr .x0 = s.gpr .x0 := gk _ (by decide) (by decide)
     have tp : InRegions (t.rd ++ t.wr) (t.gpr .x0) 256 := by rw [rd, wr, t0]; exact hp
-    refine WP.mono (rowLoad_ok (s := t) (B := B) (r := n) (by omega) hB t8 t9 tp)
+    refine WP.mono (rowLoad_ok (s := t) (B := B) (r := n) (by omega_arith) hB t8 t9 tp)
       fun u ⟨row, uv, ug, um, urd, uwr, usp⟩ => ?_
-    refine ⟨fun r hr => ?_, fun v hv => by rw [uv v (hv n (by omega)), vk v hv],
+    refine ⟨fun r hr => ?_, fun v hv => by rw [uv v (hv n (by omega_arith)), vk v hv],
       fun g a b => by rw [ug g a b, gk g a b], by rw [um, m], by rw [urd, rd], by rw [uwr, wr],
       by rw [usp, sp]⟩
     by_cases hrn : r = n
     · subst hrn; rw [row, m, t0]
-    · rw [uv _ (fun e => hrn (treg_inj _ (by omega) _ (by omega) e)), rows r (by omega)]
+    · rw [uv _ (fun e => hrn (treg_inj _ (by omega_arith) _ (by omega_arith) e)), rows r (by omega_arith)]
 
 theorem loadTable_eq : loadTable = loadN 16 := rfl
 
@@ -94,8 +94,8 @@ theorem rows_table {s : State} {m : Mem} {p : Addr} {B : Nat} (hB : B % 16 = 0)
     TableIn s B (contextAt m p).table := by
   intro k hk
   have hidx : rowOff B (k / 16) + k % 16 = (BitVec.ofNat 8 (B + k)).toNat := by
-    simp only [rowOff, BitVec.toNat_ofNat]; omega
-  rw [table_get, tbyte, h _ (by omega), vbyte_read _ _ (by omega), BitVec.add_assoc,
+    simp only [rowOff, BitVec.toNat_ofNat]; omega_arith
+  rw [table_get, tbyte, h _ (by omega_arith), vbyte_read _ _ (by omega_arith), BitVec.add_assoc,
     BitVec.ofNat_add_ofNat, hidx]
 
 /-! ## Storing the table -/
@@ -107,9 +107,9 @@ theorem rowStore_ok {s : State} {B r : Nat} (hr : r < 16) (hB : B % 16 = 0)
       t.mem = s.mem.write (s.gpr .x0 + BitVec.ofNat 64 (rowOff B r)) 16 (s.v (treg r)) ∧
       t.v = s.v ∧ (∀ g, g ≠ .x6 → g ≠ .x7 → t.gpr g = s.gpr g) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  have hrow := region_offset _ _ _ (rowOff B r) 16 (by simp only [rowOff]; omega)
+  have hrow := region_offset _ _ _ (rowOff B r) 16 (by simp only [rowOff]; omega_arith)
     (rowOff_le r hB) hp
-  have himm : 16 * r < 4096 := by omega
+  have himm : 16 * r < 4096 := by omega_arith
   unfold rowAddr
   rrun [List.cons_append, List.nil_append, himm, h8, h9, hand, hrow, State.store]
   exact ⟨fun g h6 h7 => by simp [h6, h7], rfl⟩
@@ -129,7 +129,7 @@ theorem row_apart {p : Addr} {B r n e : Nat} (hB : B % 16 = 0) (hr : r < 16) (hn
     ¬ (p + BitVec.ofNat 64 (rowOff B r + e) - (p + BitVec.ofNat 64 (rowOff B n))).toNat < 16 := by
   rw [Offset.add_sub_add_left, Offset.toNat_sub_ofNat, BitVec.toNat_ofNat]
   simp only [rowOff]
-  omega
+  omega_arith
 
 theorem storeN_ok {s : State} {B : Nat} (hB : B % 16 = 0) (h8 : s.gpr .x8 = BitVec.ofNat 64 B)
     (h9 : s.gpr .x9 = 255#64) (hp : InRegions s.wr (s.gpr .x0) 256) {n : Nat} (hn : n ≤ 16) :
@@ -141,16 +141,16 @@ theorem storeN_ok {s : State} {B : Nat} (hB : B % 16 = 0) (h8 : s.gpr .x8 = BitV
       t.v = s.v ∧ (∀ g, g ≠ .x6 → g ≠ .x7 → t.gpr g = s.gpr g) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   induction n with
-  | zero => exact WP.block_nil ⟨fun r h => absurd h (by omega), fun _ _ => rfl, rfl,
+  | zero => exact WP.block_nil ⟨fun r h => absurd h (by omega_arith), fun _ _ => rfl, rfl,
       fun _ _ _ => rfl, rfl, rfl, rfl⟩
   | succ n ih =>
     rw [storeN_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨rows, fr, tv, gk, rd, wr, sp⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨rows, fr, tv, gk, rd, wr, sp⟩ => ?_
     have t8 : t.gpr .x8 = BitVec.ofNat 64 B := by rw [gk _ (by decide) (by decide), h8]
     have t9 : t.gpr .x9 = 255#64 := by rw [gk _ (by decide) (by decide), h9]
     have t0 : t.gpr .x0 = s.gpr .x0 := gk _ (by decide) (by decide)
     have tp : InRegions t.wr (t.gpr .x0) 256 := by rw [wr, t0]; exact hp
-    refine WP.mono (rowStore_ok (s := t) (B := B) (r := n) (by omega) hB t8 t9 tp)
+    refine WP.mono (rowStore_ok (s := t) (B := B) (r := n) (by omega_arith) hB t8 t9 tp)
       fun u ⟨um, uv, ug, urd, uwr, usp⟩ => ?_
     refine ⟨fun r hr e he => ?_, fun y hy => ?_, by rw [uv, tv], fun g a b => by rw [ug g a b, gk g a b],
       by rw [urd, rd], by rw [uwr, wr], by rw [usp, sp]⟩
@@ -161,11 +161,11 @@ theorem storeN_ok {s : State} {B : Nat} (hB : B % 16 = 0) (h8 : s.gpr .x8 = BitV
             (s.gpr .x0 + BitVec.ofNat 64 (rowOff B r))).toNat = e := by
           rw [Offset.add_sub_add_left, Offset.toNat_sub_ofNat]
           simp only [rowOff, BitVec.toNat_ofNat]
-          omega
+          omega_arith
         rw [d, ite_eq_left he, tv]
         rfl
-      · rw [ite_eq_right (row_apart hB (by omega) (by omega) hrn he), rows r (by omega) e he]
-    · rw [um, t0, Mem.write, ite_eq_right (hy n (by omega)), fr y fun r hr => hy r (by omega)]
+      · rw [ite_eq_right (row_apart hB (by omega_arith) (by omega_arith) hrn he), rows r (by omega_arith) e he]
+    · rw [um, t0, Mem.write, ite_eq_right (hy n (by omega_arith)), fr y fun r hr => hy r (by omega_arith)]
 
 /-- The rows stored are the table from `B`. -/
 theorem stored_table {s : State} {m : Mem} {p : Addr} {B : Nat} (hB : B % 16 = 0) {T : Table}
@@ -176,17 +176,17 @@ theorem stored_table {s : State} {m : Mem} {p : Addr} {B : Nat} (hB : B % 16 = 0
   intro k hk
   have hx := (BitVec.ofNat 8 k).isLt
   let r := (k + 256 - B % 256) % 256 / 16
-  have hr : r < 16 := by omega
-  have hrow : rowOff B r + k % 16 = k := by simp only [rowOff, r]; omega
+  have hr : r < 16 := by omega_arith
+  have hrow : rowOff B r + k % 16 = k := by simp only [rowOff, r]; omega_arith
   have e1 : (contextAt m p).table[k] = m (p + BitVec.ofNat 64 k) := by
     simp only [contextAt, Vector.getElem_ofFn]
   have e2 : m (p + BitVec.ofNat 64 k) = vbyte (s.v (treg r)) (k % 16) := by
-    rw [← h r hr _ (by omega), hrow]
+    rw [← h r hr _ (by omega_arith), hrow]
   rw [e1, e2]
-  have := hT (16 * r + k % 16) (by omega)
-  simp only [tbyte, show (16 * r + k % 16) / 16 = r by omega, show (16 * r + k % 16) % 16 = k % 16 by omega] at this
+  have := hT (16 * r + k % 16) (by omega_arith)
+  simp only [tbyte, show (16 * r + k % 16) / 16 = r by omega_arith, show (16 * r + k % 16) % 16 = k % 16 by omega_arith] at this
   have hk' : (BitVec.ofNat 8 (B + (16 * r + k % 16))).toNat = k := by
-    simp only [BitVec.toNat_ofNat, r]; omega
+    simp only [BitVec.toNat_ofNat, r]; omega_arith
   rw [this, hk']
   simp [Vector.getD, Array.getD, hk]
 

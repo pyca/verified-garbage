@@ -62,7 +62,7 @@ theorem colEnd_ok {s : State} {base : Addr} (hs : Scr s base) (t : Reg) (a : Acc
         [Instr.logic .and .x t a.lo MASK, .str .x t ro (D + 8 * k), .extr .x c a.hi a.lo 56] from rfl,
       WP.block_append_iff]
     have hc' := hc rfl
-    refine WP.mono (carryIn_ok s a c h₄ h₅ hz (by rw [hV, hc']; omega)) fun u ⟨uv, um, uk⟩ => ?_
+    refine WP.mono (carryIn_ok s a c h₄ h₅ hz (by rw [hV, hc']; omega_arith)) fun u ⟨uv, um, uk⟩ => ?_
     have us : Scr u base := hs.of_keeps uk (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨⟨Ne.symm h₇, Ne.symm h₈⟩, ⟨Ne.symm h₉, Ne.symm h₁₀⟩⟩)
@@ -70,8 +70,8 @@ theorem colEnd_ok {s : State} {base : Addr} (hs : Scr s base) (t : Reg) (a : Acc
     have up : PtrOk u base ro D o := hpo.of_keeps uk (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨Ne.symm h₁₁, Ne.symm h₁₂⟩)
-    refine WP.mono (stage_ok us t a c (up.ptr (8 * k)) (by omega) (by omega) (by omega) h₁ h₂ h₃ um'
-      (by rw [uv, hV, hc']; omega))
+    refine WP.mono (stage_ok us t a c (up.ptr (8 * k)) (by omega_arith) (by omega_arith) (by omega_arith) h₁ h₂ h₃ um'
+      (by rw [uv, hV, hc']; omega_arith))
       fun w ⟨wm, wc, wk⟩ => ⟨?_, ?_, ?_⟩
     · rw [wm, uv, um, hV, hc']
     · rw [wc, uv, hV, hc']
@@ -81,8 +81,8 @@ theorem colEnd_ok {s : State} {base : Addr} (hs : Scr s base) (t : Reg) (a : Acc
   · simp only [colEnd, ite_true, List.nil_append]
     have hc' := h0 rfl
     subst hc'
-    refine WP.mono (stage_ok hs t a c (hpo.ptr (8 * k)) (by omega) (by omega) (by omega) h₁ h₂ h₃ hm
-      (by rw [hV]; omega))
+    refine WP.mono (stage_ok hs t a c (hpo.ptr (8 * k)) (by omega_arith) (by omega_arith) (by omega_arith) h₁ h₂ h₃ hm
+      (by rw [hV]; omega_arith))
       fun w ⟨wm, wc, wk⟩ => ⟨?_, ?_, ?_⟩
     · rw [wm, hV, Nat.add_zero]
     · rw [wc, hV, Nat.add_zero]
@@ -100,14 +100,14 @@ theorem word_stage {m : Mem} {base : Addr} {o k j : Nat} (ho : o + 64 ≤ 8192) 
     (hj : j < 8) (v : BitVec 64) :
     word (m.writeW (off base (o + 8 * k)) v) base (o + 8 * j) =
       if j = k then v else word m base (o + 8 * j) := by
-  rw [VG.Proof.Curve448.AArch64.Fast.word_writeW m base (by omega) (by omega) (by omega)]
+  rw [VG.Proof.Curve448.AArch64.Fast.word_writeW m base (by omega_arith) (by omega_arith) (by omega_arith)]
   by_cases h : j = k
-  · rw [ite_eq_left (by omega), ite_eq_left h]
-  · rw [ite_eq_right (by omega), ite_eq_right h]
+  · rw [ite_eq_left (by omega_arith), ite_eq_left h]
+  · rw [ite_eq_right (by omega_arith), ite_eq_right h]
 
 theorem stage_outside (m : Mem) (base : Addr) {o k : Nat} (ho : o + 64 ≤ 8192) (hk : k < 8)
     (v : BitVec 64) : Outside base o 64 m (m.writeW (off base (o + 8 * k)) v) := by
-  exact (writeW_outside m base v (by omega)).mono (by omega) (by omega)
+  exact (writeW_outside m base v (by omega_arith)).mono (by omega_arith) (by omega_arith)
 
 section
 variable {R : Regs} {accs : List Acc} {L H : Acc} {col : Nat → List MOp} {rb ro : Reg} {db b od o : Nat}
@@ -138,9 +138,9 @@ theorem column_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH
   have us : Scr u base := hG.scr hi.scr uk (fun _ h => h)
   obtain ⟨sL, sH⟩ := hsem (fun a => (accVal t a : Int))
   have rL : accVal u L = r d := exact_of_emod (uv L hL) sL (by
-    have := hfit.low d hd; simp only [M]; omega)
+    have := hfit.low d hd; simp only [M]; omega_arith)
   have rH : accVal u H = r (4 + d) := exact_of_emod (uv H hH) (by rw [sH, Nat.add_comm]) (by
-    have := hfit.high d hd; simp only [M]; omega)
+    have := hfit.high d hd; simp only [M]; omega_arith)
   have um' : u.gpr MASK = BitVec.ofNat 64 (2 ^ 56 - 1) := by rw [uk.1 _ nM, hi.mask]
   have uz : u.gpr ZERO = 0 := by rw [uk.1 _ nZ, hi.zero]
   have tne : ∀ a ∈ accs, R.t ≠ a.lo ∧ R.t ≠ a.hi := fun a ha => by
@@ -156,10 +156,10 @@ theorem column_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH
     · exact hq (h ▸ hi_mem ha)
   rw [WP.block_append_iff]
   have hcL : (d == 0) = false → (u.gpr CL).toNat = chain r 0 d := fun h => by
-    rw [uk.1 _ hCL]; exact hi.cl (by simp at h; omega)
+    rw [uk.1 _ hCL]; exact hi.cl (by simp at h; omega_arith)
   have h0L : (d == 0) = true → chain r 0 d = 0 := fun h => by
     simp at h; subst h; rfl
-  refine WP.mono (colEnd_ok us R.t L CL (d == 0) (k := d) up (by omega) (tne L hL).1 (tne L hL).2 t3 Llh
+  refine WP.mono (colEnd_ok us R.t L CL (d == 0) (k := d) up (by omega_arith) (tne L hL).1 (tne L hL).2 t3 Llh
     (fun e => nZ (e ▸ lo_mem hL)) (nmem hL nM) (fun e => x3w (e ▸ lo_mem hL))
     (fun e => x3w (e ▸ hi_mem hL)) (fun e => x12w (e ▸ lo_mem hL)) (fun e => x12w (e ▸ hi_mem hL))
     (fun e => hrow (e ▸ lo_mem hL)) (fun e => hrow (e ▸ hi_mem hL))
@@ -196,10 +196,10 @@ theorem column_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH
         · exact hCL (e ▸ hi_mem hH)), rH]
   have wp : PtrOk w base ro od o := up.of_keeps wk (lnot hrow (fun e => hro (by simp [colWrites, e])))
   have hcH : (d == 0) = false → (w.gpr CH).toNat = chain r 4 d := fun h => by
-    rw [wk.1 _ (lnot hCH (Ne.symm hCC)), uk.1 _ hCH]; exact hi.ch (by simp at h; omega)
+    rw [wk.1 _ (lnot hCH (Ne.symm hCC)), uk.1 _ hCH]; exact hi.ch (by simp at h; omega_arith)
   have h0H : (d == 0) = true → chain r 4 d = 0 := fun h => by
     simp at h; subst h; rfl
-  refine WP.mono (colEnd_ok ws R.t H CH (d == 0) (k := d + 4) wp (by omega) (tne H hH).1 (tne H hH).2 t3
+  refine WP.mono (colEnd_ok ws R.t H CH (d == 0) (k := d + 4) wp (by omega_arith) (tne H hH).1 (tne H hH).2 t3
     Hlh (fun e => nZ (e ▸ lo_mem hH)) (nmem hH nM) (fun e => x3w (e ▸ lo_mem hH))
     (fun e => x3w (e ▸ hi_mem hH)) (fun e => x12w (e ▸ lo_mem hH)) (fun e => x12w (e ▸ hi_mem hH))
     (fun e => hrow (e ▸ lo_mem hH)) (fun e => hrow (e ▸ hi_mem hH))
@@ -215,25 +215,25 @@ theorem column_ok (hG : Good R accs) (hC : ColRegs R accs) (hL : L ∈ accs) (hH
   have rad : ∀ n, n % radix < 2 ^ 64 := fun n => Nat.lt_trans (Nat.mod_lt _ (by decide)) (by decide)
   have tw : Outside base o 64 t.mem x.mem := by
     rw [xm, wm, um]
-    exact (stage_outside _ _ ho (by omega) _).trans (stage_outside _ _ ho (by omega) _)
+    exact (stage_outside _ _ ho (by omega_arith) _).trans (stage_outside _ _ ho (by omega_arith) _)
   have sub : ∀ q ∈ writes R accs, q ∈ colWrites R accs := fun q h => List.mem_append_left _ h
   refine ⟨⟨ws.of_keeps xk ⟨hnot x3w (fun e => h3 (by simp [e])), hnot x12w (fun e => h12 (by simp [e]))⟩,
     by rw [xk.1 _ (hnot nM (fun e => hM (by simp [colWrites, e]))), wM],
     by rw [xk.1 _ (hnot nZ (fun e => hZ (by simp [colWrites, e]))), wZ],
     hi.out.trans tw, fun k hk => ?_, fun k hk => ?_, fun _ => ?_, fun _ => ?_⟩,
     (uk.mono sub).trans ((wk.mono ?_).trans (xk.mono ?_)), tw⟩
-  · rw [xm, word_stage ho (by omega) (by omega), ite_eq_right (by omega), wm, word_stage ho (by omega) (by omega)]
+  · rw [xm, word_stage ho (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), wm, word_stage ho (by omega_arith) (by omega_arith)]
     by_cases h : k = d
     · rw [ite_eq_left h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (rad _), h]
       simp only [chainLimb, Nat.zero_add]
-    · rw [ite_eq_right h, um]; exact hi.lo k (by omega)
-  · rw [xm, show 4 + k = k + 4 by omega, word_stage ho (by omega) (by omega)]
+    · rw [ite_eq_right h, um]; exact hi.lo k (by omega_arith)
+  · rw [xm, show 4 + k = k + 4 by omega_arith, word_stage ho (by omega_arith) (by omega_arith)]
     by_cases h : k + 4 = d + 4
-    · rw [ite_eq_left h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (rad _), show k = d by omega]
+    · rw [ite_eq_left h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (rad _), show k = d by omega_arith]
       simp only [chainLimb]
-    · rw [ite_eq_right h, wm, word_stage ho (by omega) (by omega), ite_eq_right (by omega), um,
-        show k + 4 = 4 + k by omega]
-      exact hi.hi k (by omega)
+    · rw [ite_eq_right h, wm, word_stage ho (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), um,
+        show k + 4 = 4 + k by omega_arith]
+      exact hi.hi k (by omega_arith)
   · rw [xk.1 _ (hnot hCL hCC), wc]
     simp only [chain, Nat.zero_add]
   · rw [xc]

@@ -64,10 +64,10 @@ theorem seedAddStep_ok {s : State} {rp op : Addr} {i carry : Nat} {b : Byte}
       t.mem = s.mem.writeW (off op i) (BitVec.ofNat 8 (b.toNat + carry))) ?_ rfl)
     fun _ ⟨⟨hv, hd, hz, hm⟩, hk⟩ => ⟨hv, hd, hz, hm, hk⟩
   have hsub : BitVec.ofNat 64 (i + 1) - 1 = BitVec.ofNat 64 i := by
-    rw [BitVec.ofNat_add]; bv_omega
+    rw [BitVec.ofNat_add]; bv_omega_arith
   have hindex (a : Addr) : a + BitVec.ofNat 64 (i + 1) * (1#64) + BitVec.ofInt 64 (-1) = off a i := by
     simp only [off, BitVec.ofNat_add, BitVec.mul_one]
-    bv_omega
+    bv_omega_arith
   xrun [Impl.Dsa.X86_64.Generation.seedAddStep, State.ea, hrp, hop, hcarry, hcount,
     hindex, hsub, hrd, hwr, hb, byte_add carry b]
   constructor

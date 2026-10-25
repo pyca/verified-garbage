@@ -46,7 +46,7 @@ theorem add_ofNat_sub_ofNat (B : Addr) {a b : Nat} (h : b ≤ a) :
   rw [← Offset.ofNat_sub_ofNat h, BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg, BitVec.add_assoc]
 
 theorem covers_mem {rs rs' : List Region} (h : ∀ r ∈ rs, r ∈ rs') : Covers rs rs' :=
-  Covers.of_sub fun r hr => ⟨r, h r hr, 0, (BitVec.add_zero _).symm, by omega⟩
+  Covers.of_sub fun r hr => ⟨r, h r hr, 0, (BitVec.add_zero _).symm, by omega_arith⟩
 
 theorem wp_addSp {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {imm : Nat} (h : imm < 2 ^ 15)
     (k : ∀ s', Upd s s' d (s.sp + BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
@@ -111,7 +111,7 @@ theorem lay {s : State} (hs : gatherPre s) : Lay s := by
     have e := congrArg BitVec.toNat hB
     rw [BitVec.toNat_add, BitVec.toNat_ofNat] at e
     have := (Bs s).isLt
-    omega
+    omega_arith
   refine ⟨⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bk, bn, ba, bds, bl, barg, bd, bt,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hgl, hpm⟩, hB, hBn, bk, bn, ba, bds, bl, bd, bt, ?_, w₁, hgl, ods⟩
   show (⟨s.sp + BitVec.ofNat 64 (32 + 8 * (8 + 0)), 8⟩ : Region) =
@@ -125,26 +125,26 @@ theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 928) :
 
 theorem slot_eq (s : State) (k : Nat) : slot s k = Bs s + BitVec.ofNat 64 (880 + 8 * k) := by
   show Bs s + BitVec.ofNat 64 848 + BitVec.ofNat 64 (32 + 8 * k) = _
-  rw [Offset.add_ofNat_add_ofNat, show 848 + (32 + 8 * k) = 880 + 8 * k by omega]
+  rw [Offset.add_ofNat_add_ofNat, show 848 + (32 + 8 * k) = 880 + 8 * k by omega_arith]
 
 /-- A slot, in the stack below the stack pointer. -/
 theorem slot_sub (s : State) {k : Nat} (hk : k < 6) : (⟨slot s k, 8⟩ : Region).Sub ⟨Bs s, 928⟩ := by
-  rw [slot_eq]; exact stk_sub s _ _ (by omega)
+  rw [slot_eq]; exact stk_sub s _ _ (by omega_arith)
 
 theorem slot_in (s : State) {k : Nat} (hk : k < 6) (wr : List Region) : InRegions (FR s :: wr) (slot s k) 8 :=
   ⟨_, List.mem_cons_self .., by
     show (⟨Pf s + BitVec.ofNat 64 32, 48⟩ : Region).Contains (Pf s + BitVec.ofNat 64 (32 + 8 * k)) 8
     rw [← Offset.add_ofNat_add_ofNat]
-    exact Offset.contains_base _ (by omega) (by omega)⟩
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 /-- A slot, after a write to another. -/
 theorem rd_sep (s : State) (m : Mem) (v : BitVec 64) {i j : Nat} (h : i ≠ j) (hi : i < 6) (hj : j < 6) :
     (m.writeW (slot s j) v).readW (slot s i) 64 = m.readW (slot s i) 64 :=
-  Mem.readW_writeW_sep (Offset.sep (Pf s) (by omega) (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep (Pf s) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
 
 theorem frame_eMem (s : State) : Frame [FA s] s.mem (eMem s) := by
   have c (k : Nat) (hk : k < 6) : (FA s).Contains (slot s k) (64 / 8) :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have m := List.mem_singleton_self (FA s)
   exact ((((((Frame.refl _ _).write m _ (Region.contains_self' (by decide))).writeW m _ (c 0 (by decide))).writeW
     m _ (c 1 (by decide))).writeW m _ (c 2 (by decide))).writeW m _ (c 3 (by decide))).writeW m _ (c 4 (by decide))
@@ -188,7 +188,7 @@ theorem pf_eq : s.sp - BitVec.ofNat 64 80 = Pf s := by
 
 theorem pf_toNat : (Pf s).toNat = (Bs s).toNat + 848 := by
   have := h.hBn
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
 
 theorem argIn : argR s ∈ s.rd := by rw [h.pre.1]; simp
 
@@ -443,7 +443,7 @@ theorem Ready.call {s c : State} (h : Lay s) (hc : Ready s c) :
     exact ⟨trivial, trivial, kd, kt, nd, nt, ad, at_, dt, h.bk.sub_left (Region.sub_prefix (by decide)),
       h.bn.sub_left (Region.sub_prefix (by decide)), h.ba.sub_left (Region.sub_prefix (by decide)),
       h.bd.sub_left (Region.sub_prefix (by decide)), h.bt.sub_left (Region.sub_prefix (by decide)),
-      ok, on, oa, od, ot, by omega⟩
+      ok, on, oa, od, ot, by omega_arith⟩
   · refine covers_mem fun r hr => ?_
     simp only [rdC, wrC, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [hc.rd, hc.wr, rd, wr]
@@ -480,7 +480,7 @@ theorem called_wp (hv : SealOk) {s c : State} (h : Lay s) (hc : Ready s c) :
     · exact h.bd.sub_left (slot_sub s (by decide))
     · exact h.bt.sub_left (slot_sub s (by decide))
     · simp only [below, hc.sp, seal_sdepth, pf_sub, slot_eq]
-      exact Offset.disjoint_base _ (by decide) (by have := h.hBn; omega)
+      exact Offset.disjoint_base _ (by decide) (by have := h.hBn; omega_arith)
   exact ⟨ra, hpost, fun r hr => by rw [pres' r hr, hc.pres r hr], sp'.trans hc.sp, rd'.trans hc.rd,
     wr'.trans hc.wr⟩
 
@@ -520,11 +520,11 @@ theorem ret_wp {s z : State} (h : Lay s) (hz : Called s z) :
       · exact h₁.symm.sub_right (stk_sub s 848 80 (by decide))
       · exact h₂
     have hk : bytesAt (gMem s) (K s) 32 = bytesAt s.mem (K s) 32 :=
-      Proof.ChaCha20Poly1305.bytesAt_frame hfc (apart h.bk kd) (by omega)
+      Proof.ChaCha20Poly1305.bytesAt_frame hfc (apart h.bk kd) (by omega_arith)
     have hn : bytesAt (gMem s) (Nn s) 12 = bytesAt s.mem (Nn s) 12 :=
-      Proof.ChaCha20Poly1305.bytesAt_frame hfc (apart h.bn nd) (by omega)
+      Proof.ChaCha20Poly1305.bytesAt_frame hfc (apart h.bn nd) (by omega_arith)
     have ha : bytesAt (gMem s) (Ad s) (AL s) = bytesAt s.mem (Ad s) (AL s) :=
-      Proof.ChaCha20Poly1305.bytesAt_frame hfc (apart h.ba ad) (by omega)
+      Proof.ChaCha20Poly1305.bytesAt_frame hfc (apart h.ba ad) (by omega_arith)
     have hd : bytesAt (gMem s) (Dst s) (L s) = pt s (Cnt s) := by
       rw [← h.hlen]
       exact Proof.ChaCha20Poly1305.bytesAt_writeBytes_self _ _ _ (by rw [h.hlen]; exact (s.gpr .r10).isLt)
@@ -535,7 +535,7 @@ theorem ret_wp {s z : State} (h : Lay s) (hz : Called s z) :
 theorem sealGather_wp (hv : SealOk) {s : State} (hs : gatherPre s) :
     WP isa sealGather s fun z => abiPreserved s z ∧ gatherPost s z := by
   have h := lay hs
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.w₁; omega) ?_
+  refine WP.alloc ⟨by decide, by decide, by decide⟩ (by have := h.w₁; omega_arith) ?_
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (gathered_wp h he) fun g hg => ?_)
   refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)

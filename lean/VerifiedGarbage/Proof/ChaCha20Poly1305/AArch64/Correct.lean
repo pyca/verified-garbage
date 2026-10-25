@@ -88,13 +88,13 @@ variable {e : Bool}
 at different offsets, the additional data, the data and the tag. (Matching
 only reducibly, so that a lemma that does not apply fails fast.) -/
 tactic_template "rdisj" : tactic => `(tactic| first
-  | with_reducible exact sub_disj _ (by lit_omega) (by lit_omega) (by lit_omega)
-  | with_reducible exact (‹APre _ _›).c_d.sub_left (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_d.symm.sub_right (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_a.symm.sub_right (sub_ctx _ (by lit_omega))
+  | (with_reducible refine sub_disj _ ?_ ?_ ?_ <;> lit_omega)
+  | (with_reducible refine (‹APre _ _›).c_d.sub_left (sub_ctx _ ?_) <;> lit_omega)
+  | (with_reducible refine (‹APre _ _›).c_d.symm.sub_right (sub_ctx _ ?_) <;> lit_omega)
+  | (with_reducible refine (‹APre _ _›).c_a.symm.sub_right (sub_ctx _ ?_) <;> lit_omega)
   | with_reducible exact (‹APre _ _›).a_d
-  | with_reducible exact (‹APre _ _›).c_t.sub_left (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_t.symm.sub_right (sub_ctx _ (by lit_omega))
+  | (with_reducible refine (‹APre _ _›).c_t.sub_left (sub_ctx _ ?_) <;> lit_omega)
+  | (with_reducible refine (‹APre _ _›).c_t.symm.sub_right (sub_ctx _ ?_) <;> lit_omega)
   | with_reducible exact (‹APre _ _›).d_t
   | with_reducible exact (‹APre _ _›).d_t.symm)
 
@@ -188,7 +188,7 @@ theorem ftptrs_ok (s : State) :
         by rw [u₃.other _ (by decide), u₂.gpr]; rfl,
         by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)],
         by rw [u₃.rd, u₂.rd, u₁.rd], by rw [u₃.wr, u₂.wr, u₁.wr], by rw [u₃.mem, u₂.mem, u₁.mem]⟩
-  exact WP.mono (WP.kept h (by simp [clobbers, dstOf, preserved]))
+  exact WP.mono (WP.kept h (by rfl))
     fun s' ⟨⟨h0, h1, h2, hrd, hwr, hm⟩, hg, hsp⟩ =>
       ⟨h0, h1, h2, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 

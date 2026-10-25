@@ -40,7 +40,7 @@ theorem slot_outs {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B r
   Mem.readW_congr fun i hi => h _ fun r hr => by
     have := hd r hr
     have hi' : i < 4 := hi
-    rw [ofs_off B (show d + i < 2 ^ 64 by omega)]; omega
+    rw [ofs_off B (show d + i < 2 ^ 64 by omega_arith)]; omega_arith
 
 /-- The slots and bytes the sampler changes. -/
 abbrev drawRanges (s₀ : State) : List (Nat × Nat) :=
@@ -59,21 +59,21 @@ theorem Smp.of {s₀ t u : State} (A : RandomSignABI s₀) {used draws used' dra
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       unfold oDraws oStatus at *
       rcases hr with rfl | rfl | rfl | rfl
-      · right; unfold oUsed; omega
-      · right; omega
-      · left; omega
-      · left; unfold drawPlace oNonce; omega) (by unfold oStatus at h₂; omega)
+      · right; unfold oUsed; omega_arith
+      · right; omega_arith
+      · left; omega_arith
+      · left; unfold drawPlace oNonce; omega_arith) (by unfold oStatus at h₂; omega_arith)
   refine ⟨hr, (hd _ (by decide) (by decide)).trans S.q, (hd _ (by decide) (by decide)).trans S.width,
     (hd _ (by decide) (by decide)).trans S.mask, hu, hdw, fun i hi => ?_, hub⟩
   rw [hm _ fun r hr => ?_]
   · exact S.pad i hi
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rw [ofs_off0 _ (by unfold oNonce; omega)]
+  rw [ofs_off0 _ (by unfold oNonce; omega_arith)]
   rcases hr with rfl | rfl | rfl | rfl
-  · right; unfold oUsed oNonce; omega
-  · right; unfold oDraws oNonce; omega
-  · right; unfold oStatus oNonce; omega
-  · left; unfold drawPlace; omega
+  · right; unfold oUsed oNonce; omega_arith
+  · right; unfold oDraws oNonce; omega_arith
+  · right; unfold oStatus oNonce; omega_arith
+  · left; unfold drawPlace; omega_arith
 
 theorem Smp.congr {s₀ t u : State} (A : RandomSignABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
     (hr : Ready s₀ u) (hm : Outs (rBase s₀) (drawRanges s₀) t.mem u.mem)
@@ -105,8 +105,8 @@ theorem drawDec_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} 
     rw [m₃, u₂.mem, u₁.mem]
   have h₃ : Ready s₀ t₃ := h.congr k₃ (by rw [hm₃]; exact frame_store s₀ _ (by decide) _)
   have z₃ : t₃.zf = some (decide (draws - 1 = 0)) := by
-    rw [zf₃, z₂, u₁.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega) (by decide)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+    rw [zf₃, z₂, u₁.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega_arith) (by decide)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_arith))
   have S₃ : Smp s₀ used (draws - 1) t₃ :=
     S.of A h₃ (by rw [hm₃]; exact store_outs _ _ _ (by simp only [drawRanges, List.mem_cons, true_or, or_true]))
       (by rw [hm₃, slot_write_ne _ _ _ (by decide) (by decide) (by decide)]; exact S.usedW)
@@ -222,8 +222,8 @@ theorem drawHead_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat}
   have m₃ : t₃.mem = t.mem := by rw [f₃.mem, u₂.mem, u₁.mem]
   have e10 : X86.arg s₀ 10 = BitVec.ofNat 32 (rInput s₀).rand.length := by
     rw [hrl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  rw [u₂.gpr, u₁.gpr, e10, sub_ofNat hub, toNat_ofNat_lt (by have := (X86.arg s₀ 10).isLt; omega),
-    toNat_ofNat_lt (by omega)] at c₃
+  rw [u₂.gpr, u₁.gpr, e10, sub_ofNat hub, toNat_ofNat_lt (by have := (X86.arg s₀ 10).isLt; omega_arith),
+    toNat_ofNat_lt (by omega_arith)] at c₃
   exact ⟨S.congr A h₃ (by rw [m₃]; exact Outs.refl _ _ _) (by rw [m₃]) (by rw [m₃]), m₃, k₃, c₃⟩
 
 /-- Consume a complete draw. -/
@@ -267,7 +267,7 @@ theorem drawCopy_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat}
     Outs.of_outside ho₄ (by simp only [drawRanges, List.mem_cons, true_or, or_true])
   have sl₄ : ∀ d, d + 4 ≤ oNonce → slot t₄.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd' =>
     slot_outs (Outs.of_outside ho₄ (List.mem_singleton_self _)) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; left; unfold drawPlace; omega) (by unfold oNonce at hd'; omega)
+      simp only [List.mem_singleton] at hr; subst hr; left; unfold drawPlace; omega_arith) (by unfold oNonce at hd'; omega_arith)
   exact ⟨S.congr A h₄ o₄ (sl₄ _ (by decide)) (sl₄ _ (by decide)), hc₄, ho₄, k₄⟩
 
 /-- The nonce's bytes survive the store of `used`. -/
@@ -282,7 +282,7 @@ theorem drawUsed_bytes {s₀ : State} (A : RandomSignABI s₀) {t u : State} {us
   have o₇ : Outs (rBase s₀) [(oUsed, 4)] t.mem u.mem := by rw [hm]; exact store_outs _ _ _ (by decide)
   rw [o₇ _ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    rw [ofs_off0 _ (by unfold drawPlace oNonce; omega)]; right; unfold drawPlace oNonce oUsed; omega]
+    rw [ofs_off0 _ (by unfold drawPlace oNonce; omega_arith)]; right; unfold drawPlace oNonce oUsed; omega_arith]
   exact hc i hi
 
 theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S : Smp s₀ used draws t)
@@ -303,7 +303,7 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
   have h := S.ready
   have hrl : (rInput s₀).rand.length = (X86.arg s₀ 10).toNat := by simp only [rInput, rBytes_length]
   have hub := S.usedBound
-  obtain ⟨d', rfl⟩ : ∃ d', draws = d' + 1 := ⟨draws - 1, by omega⟩
+  obtain ⟨d', rfl⟩ : ∃ d', draws = d' + 1 := ⟨draws - 1, by omega_arith⟩
   have hdw : Spec.Dsa.Random.drawBytes (rq s₀) = rWidth s₀ := rWidth_eq s₀
   have hrlen : ((rInput s₀).rand.drop used).length = (rInput s₀).rand.length - used := List.length_drop
   unfold draw
@@ -331,11 +331,11 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
     · intro k hk; rw [R.scalarEq, hspl] at hk; simp at hk
   · -- A complete draw.
     refine WP.ite false (by simp only [eval, c₃, hshort, decide_false]) (fun e => Bool.noConfusion e) (fun _ => ?_)
-    have hfull : used + rWidth s₀ ≤ (rInput s₀).rand.length := by omega
+    have hfull : used + rWidth s₀ ≤ (rInput s₀).rand.length := by omega_arith
     have hdl : (drawBytes s₀ used).length = rWidth s₀ := by
-      simp only [drawBytes, List.length_take, List.length_drop]; omega
+      simp only [drawBytes, List.length_take, List.length_drop]; omega_arith
     have hnp : ∀ i, i < rWidth s₀ → oNonce ≤ drawPlace s₀ + i ∧ drawPlace s₀ + i < oNonce + 32 := by
-      intro i hi; unfold drawPlace; omega
+      intro i hi; unfold drawPlace; omega_arith
     -- The copy.
     refine WP.seq (WP.mono (drawCopy_ok A S₃ hfull hw1) fun t₄ ⟨S₄, hc₄, ho₄, k₄⟩ => ?_)
     -- The consumption.
@@ -353,13 +353,13 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
         Spec.Dsa.Random.candidate (rq s₀) (drawBytes s₀ used) < rq s₀) := accepts_candidate s₀ hdl hw1
     have htake : ((rInput s₀).rand.drop used).take (Spec.Dsa.Random.drawBytes (rq s₀)) = drawBytes s₀ used := by
       rw [hdw]
-    refine WP.mono (drawFinish_ok A S₈ (by omega) hdb z₈) fun u ⟨k₉, h₉, o₉, hT, hF'⟩ => ?_
+    refine WP.mono (drawFinish_ok A S₈ (by omega_arith) hdb z₈) fun u ⟨k₉, h₉, o₉, hT, hF'⟩ => ?_
     have outs : Outs (rBase s₀) sampleRanges t.mem u.mem := by
       have e₁ : Outs (rBase s₀) sampleRanges t.mem t₃.mem := by rw [m₃]; exact Outs.refl _ _ _
       have e₂ : Outs (rBase s₀) sampleRanges t₃.mem t₄.mem := fun x hx => ho₄ x (by
         have := hx (oNonce, 32) (by decide)
         rw [Nat.lt_iff_add_one_le] at this ⊢
-        unfold drawPlace oNonce at *; omega)
+        unfold drawPlace oNonce at *; omega_arith)
       have e₃ : Outs (rBase s₀) sampleRanges t₄.mem t₇.mem := o₇.mono (by decide)
       have e₄ : Outs (rBase s₀) sampleRanges t₇.mem t₈.mem := by rw [m₈]; exact Outs.refl _ _ _
       exact (((e₁.trans e₂).trans e₃).trans e₄).trans (o₉.mono (by decide))
@@ -371,13 +371,13 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
       have hle : ∀ r ∈ ([(oDraws, 4), (oStatus, 4)] : List (Nat × Nat)), r.1 + r.2 ≤ oNonce := by decide
       rw [o₉ _ fun r hr => by
         have := hle r hr
-        rw [ofs_off0 _ (by unfold drawPlace oNonce; omega)]
-        right; unfold drawPlace oNonce at *; omega, m₈]
+        rw [ofs_off0 _ (by unfold drawPlace oNonce; omega_arith)]
+        right; unfold drawPlace oNonce at *; omega_arith, m₈]
       exact hc₇ i hi
     have st₈ : slot t₈.mem (rBase s₀) oStatus = 4 := by
       rw [m₈, hm₇, slot_write_ne _ _ _ (by decide) (by decide) (by decide),
         slot_outs (Outs.of_outside ho₄ (List.mem_singleton_self _)) (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; left; unfold drawPlace oNonce oStatus; omega) (by decide),
+          simp only [List.mem_singleton] at hr; subst hr; left; unfold drawPlace oNonce oStatus; omega_arith) (by decide),
         m₃, hst]
     cases ha : accepts s₀ cs with
     | true =>
@@ -387,7 +387,7 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
         rw [hacc] at ha; exact of_decide_eq_true ha
       have hspl : spl s₀ (d' + 1) used =
           ⟨some (Spec.Dsa.Random.candidate (rq s₀) (drawBytes s₀ used)), rWidth s₀, [1]⟩ := by
-        rw [spl, VG.Proof.Dsa.Random.sample_accept _ _ _ hq (by rw [hdw, hrlen]; omega) (by rw [htake]; exact hk),
+        rw [spl, VG.Proof.Dsa.Random.sample_accept _ _ _ hq (by rw [hdw, hrlen]; omega_arith) (by rw [htake]; exact hk),
           htake, hdw]
       refine ⟨h₉, outs, keeps, .inr ⟨by rw [st₉]; decide, fun S' base R => ⟨?_, ?_, ?_⟩,
         .inl (by rw [hspl]; simp)⟩⟩
@@ -409,13 +409,13 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
           { spl s₀ d' (used + rWidth s₀) with
             used := rWidth s₀ + (spl s₀ d' (used + rWidth s₀)).used,
             trace := 0 :: (spl s₀ d' (used + rWidth s₀)).trace } := by
-        rw [spl, VG.Proof.Dsa.Random.sample_reject _ _ _ hq (by rw [hdw, hrlen]; omega) (by rw [htake]; exact hk),
+        rw [spl, VG.Proof.Dsa.Random.sample_reject _ _ _ hq (by rw [hdw, hrlen]; omega_arith) (by rw [htake]; exact hk),
           hnext, hdw]
       have hstatus : VG.Proof.Dsa.Random.sampleStatus (spl s₀ (d' + 1) used) =
           VG.Proof.Dsa.Random.sampleStatus (spl s₀ d' (used + rWidth s₀)) := by
         rw [hspl]; exact VG.Proof.Dsa.Random.sampleStatus_reject _ _ _ _
       have rel : ∀ S' base, SampleRel s₀ S' base used (d' + 1) → SampleRel s₀ S' base (used + rWidth s₀) d' :=
-        fun S' base R => ⟨by rw [R.scalarEq, hspl], by rw [R.usedEq, hspl]; dsimp only; omega,
+        fun S' base R => ⟨by rw [R.scalarEq, hspl], by rw [R.usedEq, hspl]; dsimp only; omega_arith,
           R.statusEq.trans hstatus⟩
       by_cases h0 : d' = 0
       · subst h0
@@ -426,7 +426,7 @@ theorem draw_ok {s₀ t : State} (A : RandomSignABI s₀) {used draws : Nat} (S 
         refine ⟨⟨0, by rw [R'.usedEq, h0s]; exact S₉⟩, ?_, ?_⟩
         · rw [st₉, R'.statusEq, h0s]; simp only [Nat.add_sub_cancel, ↓reduceIte]; rfl
         · intro k hk'; rw [R'.scalarEq, h0s] at hk'; simp at hk'
-      · refine ⟨h₉, outs, keeps, .inl ⟨?_, by omega, by simpa using S₉, fun S' base R => by simpa using rel S' base R,
+      · refine ⟨h₉, outs, keeps, .inl ⟨?_, by omega_arith, by simpa using S₉, fun S' base R => by simpa using rel S' base R,
           by rw [hspl, Nat.add_sub_cancel]⟩⟩
         rw [st₉]; simp only [Nat.add_sub_cancel, h0, ↓reduceIte]; exact st₈
 

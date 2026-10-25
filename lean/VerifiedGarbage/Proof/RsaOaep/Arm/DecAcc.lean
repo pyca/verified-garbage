@@ -56,8 +56,8 @@ open VG.Proof.X25519.Arm (dpVal)
 theorem or_xor_lt {x : BitVec 32} (hx : x.toNat < 256) (a b : Byte) :
     (x ||| (a.setWidth 32 ^^^ b.setWidth 32)).toNat < 256 := by
   rw [BitVec.toNat_or, BitVec.toNat_xor, BitVec.toNat_setWidth, BitVec.toNat_setWidth]
-  have ha : a.toNat % 2 ^ 32 < 2 ^ 8 := by have := a.isLt; omega
-  have hb : b.toNat % 2 ^ 32 < 2 ^ 8 := by have := b.isLt; omega
+  have ha : a.toNat % 2 ^ 32 < 2 ^ 8 := by have := a.isLt; omega_arith
+  have hb : b.toNat % 2 ^ 32 < 2 ^ 8 := by have := b.isLt; omega_arith
   exact Nat.or_lt_two_pow (n := 8) hx (Nat.xor_lt_two_pow ha hb)
 
 /-- `compareBytes`, with `r2` a byte. -/
@@ -69,10 +69,10 @@ theorem cmp_ok (s : State) {a b : BitVec 32} {n : Nat} (ctx : CompareCtx s a b n
   refine WP.loop (M := isa) inv ?_ n s ?_
   · intro k t h
     obtain ⟨i, hik, hk, hi, hr⟩ := h
-    have ra := ctx.readA i (by omega)
-    have rb := ctx.readB i (by omega)
+    have ra := ctx.readA i (by omega_arith)
+    have rb := ctx.readB i (by omega_arith)
     rw [← hi.rest.rd, ← hi.rest.wr] at ra rb
-    refine WP.mono (WP.and (compareBody_ok ctx hi (by omega))
+    refine WP.mono (WP.and (compareBody_ok ctx hi (by omega_arith))
       (VG.Proof.Bignum.Arm.compareByteStep_ok t _ _ (by rw [hi.first]; simp) (by rw [hi.second]; simp) ra rb)) ?_
     rintro u ⟨⟨hu, zero⟩, ⟨-, -, -, acc, -⟩⟩
     have hb' : (u.gpr .r2).toNat < 256 := by rw [acc]; exact or_xor_lt hr _ _
@@ -82,11 +82,11 @@ theorem cmp_ok (s : State) {a b : BitVec 32} {n : Nat} (ctx : CompareCtx s a b n
       change some (!u.z) = some false
       simp only [zero, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, hu, hb'⟩
+      refine ⟨?_, k - 1, by omega_arith, i + 1, by omega_arith, by omega_arith, hu, hb'⟩
       change some (!u.z) = some true
       simp only [zero, he, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, hn, ?_, by rw [hz]; decide⟩
-    exact ⟨by omega, by simpa using ha, by simpa using hb, by simpa using hc,
+  · refine ⟨0, by omega_arith, hn, ?_, by rw [hz]; decide⟩
+    exact ⟨by omega_arith, by simpa using ha, by simpa using hb, by simpa using hc,
       by simp [hz], rfl, VG.Proof.X25519.Arm.Rest.refl _ _⟩
 
 variable {L : Lay} {scr : BitVec 32}
@@ -106,14 +106,14 @@ theorem cmpS_vp (hg : Geo L scr) {a b n : Nat} (ha : a + n ≤ oRsa) (hb : b + n
     by rw [h₁.2.2.2.1, h₂.2.2.2.1], by rw [h₁.2.2.2.2.1, h₂.2.2.2.2.1]⟩)
     fun σ s ⟨hc, hx, r0, r1, lr, r2, hf, hf'⟩ => ?_
   have ctx : CompareCtx s (scr + BitVec.ofNat 32 a) (scr + BitVec.ofNat 32 b) n :=
-    ⟨by unfold oRsa at ha; omega,
-      fun i hi => by rw [byte32 fa hi, hg.byteAt_scr (by omega)]; exact hg.rd hc.st (by omega),
-      fun i hi => by rw [byte32 fb hi, hg.byteAt_scr (by omega)]; exact hg.rd hc.st (by omega)⟩
+    ⟨by unfold oRsa at ha; omega_arith,
+      fun i hi => by rw [byte32 fa hi, hg.byteAt_scr (by omega_arith)]; exact hg.rd hc.st (by omega_arith),
+      fun i hi => by rw [byte32 fb hi, hg.byteAt_scr (by omega_arith)]; exact hg.rd hc.st (by omega_arith)⟩
   refine WP.mono (cmp_ok s ctx hn r0 r1 lr r2) fun t ⟨inv, bnd⟩ => ?_
   refine ⟨hc.regs inv.rest.rd inv.rest.wr inv.rest.sp inv.mem, by rw [inv.mem]; exact hx, bnd, ?_⟩
   rw [inv.equal]
   refine forall_congr' fun i => imp_congr_right fun hi' => ?_
-  rw [byte32 fa hi', byte32 fb hi', hg.byteAt_scr (by omega), hg.byteAt_scr (by omega), hf i hi', hf' i hi']
+  rw [byte32 fa hi', byte32 fb hi', hg.byteAt_scr (by omega_arith), hg.byteAt_scr (by omega_arith), hf i hi', hf' i hi']
 
 variable (h g : OHash)
 
@@ -134,7 +134,7 @@ theorem accPut_cert : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0]) 
 
 theorem byte_or_lt {x : BitVec 32} (hx : x.toNat < 256) (b : Byte) : (x ||| b.setWidth 32).toNat < 256 := by
   rw [BitVec.toNat_or, BitVec.toNat_setWidth]
-  exact Nat.or_lt_two_pow (n := 8) hx (by have := b.isLt; omega)
+  exact Nat.or_lt_two_pow (n := 8) hx (by have := b.isLt; omega_arith)
 
 theorem setWidth_byte_eq_zero (b : Byte) : b.setWidth 32 = 0 ↔ b = 0 := by
   constructor
@@ -167,10 +167,10 @@ theorem acc_vp (P : EP) :
         t.gpr .r1 = P.scr + BitVec.ofNat 32 oLh ∧ t.gpr .lr = BitVec.ofNat 32 h.H.D ∧ t.gpr .r2 = 0 := by
       prun [cmpSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS,
         movw_val (show oEm + 1 + h.H.D < 2 ^ 16 by oomega), movw_val (show oLh < 2 ^ 16 by decide),
-        movw_val (show h.H.D < 2 ^ 16 by omega)]
+        movw_val (show h.H.D < 2 ^ 16 by omega_arith)]
     refine WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr, r2⟩ => ⟨hc.regs rd wr sp m, m ▸ ⟨hx, he⟩, r0, r1, lr, r2,
       fun i hi => ?_, fun i hi => by rw [m]; exact hx.2.1 i hi⟩
-    rw [m, show oEm + 1 + h.H.D + i = 1 + h.H.D + i by oomega]; exact he _ (by omega)
+    rw [m, show oEm + 1 + h.H.D + i = 1 + h.H.D + i by oomega]; exact he _ (by omega_arith)
   refine VP.seq (cmpS_vp hg (a := oEm + 1 + h.H.D) (b := oLh) (n := h.H.D) (by oomega) (by oomega) hD0
     (X := Y h g P) (f := fun σ i => V5 h g P σ (1 + h.H.D + i)) (f' := fun σ i => (lhB h P σ).getD i 0)) ?_
   -- `EM`'s first byte.
@@ -210,7 +210,7 @@ theorem acc_vp (P : EP) :
   refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
   have fr : Frame [slotR P.lay sAcc] s.mem t.mem := by rw [m]; exact slot_frame _ _ _ _
   refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, ⟨⟨hy.1.1.keep h fr fun r hr => ?_,
-    hy.1.2.1.keep h fr fun r hr => ?_, ?_⟩, em_keep fr (fun r hr => ?_) (by omega) hy.2⟩,
+    hy.1.2.1.keep h fr fun r hr => ?_, ?_⟩, em_keep fr (fun r hr => ?_) (by omega_arith) hy.2⟩,
     s.gpr .r2, by rw [m, Mem.readW_writeW_self32], hb, he⟩
   · simp only [List.mem_singleton] at hr; subst hr; exact slotW hg (by decide)
   · simp only [List.mem_singleton] at hr; subst hr; exact slotSep (by decide) (by decide) (by decide)
@@ -221,7 +221,7 @@ theorem acc_vp (P : EP) :
     have e := em_keep (n := 1) fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm) (by decide)
-      (f := fun _ => s.mem (sa P.scr 0)) (fun i hi => by rw [show i = 0 by omega]) 0 (by decide)
+      (f := fun _ => s.mem (sa P.scr 0)) (fun i hi => by rw [show i = 0 by omega_arith]) 0 (by decide)
     exact e
   · simp only [List.mem_singleton] at hr; subst hr
     exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm

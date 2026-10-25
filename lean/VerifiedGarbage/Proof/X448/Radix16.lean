@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.X448
 import Batteries.Tactic.Init
 import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X448: radix-2¹⁶ arithmetic
@@ -37,13 +38,13 @@ theorem valN_congr {f g : Nat → Nat} {n : Nat}
     (h : ∀ i < n, f i = g i) : valN f n = valN g n := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [valN, valN, ih (fun i hi => h i (by omega)), h n (by omega)]
+  | succ n ih => rw [valN, valN, ih (fun i hi => h i (by omega_arith)), h n (by omega_arith)]
 
 theorem valN_add (f g : Nat → Nat) (n : Nat) :
     valN (fun i => f i + g i) n = valN f n + valN g n := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [valN, valN, valN, ih, Nat.mul_add]; omega
+  | succ n ih => rw [valN, valN, valN, ih, Nat.mul_add]; omega_arith
 
 theorem valN_scale (c : Nat) (f : Nat → Nat) (n : Nat) :
     valN (fun i => c * f i) n = c * valN f n := by
@@ -62,12 +63,12 @@ theorem valN_lt {f : Nat → Nat} {n : Nat} (h : ∀ i < n, f i < radix) :
   induction n with
   | zero => simp only [valN, Nat.pow_zero]; decide
   | succ n ih =>
-    have hn := h n (by omega)
-    have hp := ih fun i hi => h i (by omega)
+    have hn := h n (by omega_arith)
+    have hp := ih fun i hi => h i (by omega_arith)
     have hm := Nat.mul_le_mul_left (radix ^ n) hn
     rw [Nat.mul_succ] at hm
     rw [valN, Nat.pow_succ]
-    omega
+    omega_arith
 
 theorem valN_zero (n : Nat) : valN (fun _ => 0) n = 0 := by
   induction n with
@@ -79,17 +80,17 @@ theorem valN_update {f g : Nat → Nat} {n k v : Nat} (hk : k < n)
     (h : ∀ i < n, g i = if i = k then f i + v else f i) :
     valN g n = valN f n + radix ^ k * v := by
   induction n with
-  | zero => omega
+  | zero => omega_arith
   | succ n ih =>
     by_cases hn : k = n
     · subst k
       have he : valN g n = valN f n := valN_congr fun i hi => by
-        rw [h i (by omega), ite_eq_right (by omega)]
-      rw [valN, valN, he, h n (by omega), ite_eq_left rfl, Nat.mul_add]
-      omega
-    · rw [valN, valN, ih (by omega) (fun i hi => h i (by omega)),
-        h n (by omega), ite_eq_right (Ne.symm hn)]
-      omega
+        rw [h i (by omega_arith), ite_eq_right (by omega_arith)]
+      rw [valN, valN, he, h n (by omega_arith), ite_eq_left rfl, Nat.mul_add]
+      omega_arith
+    · rw [valN, valN, ih (by omega_arith) (fun i hi => h i (by omega_arith)),
+        h n (by omega_arith), ite_eq_right (Ne.symm hn)]
+      omega_arith
 
 /-- The incoming carry at position `n`. -/
 def carry (f : Nat → Nat) : Nat → Nat
@@ -110,18 +111,18 @@ theorem pass_eq (f : Nat → Nat) (n : Nat) :
     change digit f n + radix * carry f (n + 1) = f n + carry f n at hd
     rw [valN, valN, Nat.pow_succ, Nat.mul_assoc, Nat.add_assoc, ← Nat.mul_add, hd,
       Nat.mul_add]
-    omega
+    omega_arith
 
 theorem carry_bound {f : Nat → Nat} {n : Nat} (h : ∀ i < n, f i ≤ 2 ^ 32 - radix) :
     carry f n < 2 ^ 16 := by
   induction n with
   | zero => simp only [carry]; decide
   | succ n ih =>
-    have hi := ih fun i hi => h i (by omega)
-    have hn := h n (by omega)
+    have hi := ih fun i hi => h i (by omega_arith)
+    have hn := h n (by omega_arith)
     simp only [radix] at hn hi ⊢
     simp only [carry, radix]
-    omega
+    omega_arith
 
 /-- The carry-out folded into the normalized limbs at positions 0 and 14. -/
 def folded (f : Nat → Nat) (i : Nat) : Nat :=
@@ -151,7 +152,7 @@ theorem folded_bound {f : Nat → Nat} (h : ∀ i < 28, f i ≤ 2 ^ 32 - radix) 
   intro i _
   have hd := digit_lt f i
   simp only [folded]
-  split <;> simp only [radix] at hd ⊢ <;> omega
+  split <;> simp only [radix] at hd ⊢ <;> omega_arith
 
 /-- After two folds, no carry remains beyond the 448-bit field width. -/
 theorem final_carry {f : Nat → Nat} (h : ∀ i < 28, f i ≤ 2 ^ 32 - radix) :
@@ -172,17 +173,17 @@ theorem final_carry {f : Nat → Nat} (h : ∀ i < 28, f i ≤ 2 ^ 32 - radix) :
   have c1 : carry (folded f) 28 ≤ 1 := by
     by_contra hc
     have hb := Nat.mul_le_mul_left (half + 1) (Nat.le_of_lt c0)
-    have hp := Nat.mul_le_mul_left full (show 2 ≤ carry (folded f) 28 from by omega)
-    omega
+    have hp := Nat.mul_le_mul_left full (show 2 ≤ carry (folded f) 28 from by omega_arith)
+    omega_arith
   rcases Nat.eq_zero_or_pos (carry (folded f) 28) with hc | hc
   · rw [hc, Nat.mul_zero, Nat.add_zero] at e2
     have hp := Nat.mul_le_mul_left full hn
-    omega
-  · have hc : carry (folded f) 28 = 1 := by omega
+    omega_arith
+  · have hc : carry (folded f) 28 = 1 := by omega_arith
     rw [hc, Nat.mul_one] at e1 e2
     have hb := Nat.mul_le_mul_left (half + 1) (Nat.le_of_lt c0)
     have hp := Nat.mul_le_mul_left full hn
-    omega
+    omega_arith
 
 def normalized (f : Nat → Nat) : Nat → Nat := digit (folded (folded f))
 
@@ -210,7 +211,7 @@ theorem difference_bound {f g : Nat → Nat} (hf : ∀ i < 28, f i < radix) :
   have h2 := (bias_bound i).2
   have hr : 3 * radix < 2 ^ 32 - radix := by decide
   simp only [difference]
-  omega
+  omega_arith
 
 theorem difference_val {f g : Nat → Nat} (hg : ∀ i < 28, g i < radix) :
     valN (difference f g) 28 + valN g 28 = valN f 28 + 2 * P := by
@@ -221,7 +222,7 @@ theorem difference_val {f g : Nat → Nat} (hg : ∀ i < 28, g i < radix) :
     have h1 := hg i hi
     have h2 := (bias_bound i).1
     simp only [difference]
-    omega
+    omega_arith
   rw [he, valN_add, bias_val]
 
 
@@ -238,7 +239,7 @@ theorem freezeCoeff_bound {f : Nat → Nat} (hf : ∀ i < 28, f i < radix) :
   have h := hf i hi
   have hr : radix + 1 < 2 ^ 32 - radix := by decide
   simp only [freezeCoeff]
-  split <;> omega
+  split <;> omega_arith
 
 theorem freeze_carry {f : Nat → Nat} (hf : ∀ i < 28, f i < radix) :
     carry (freezeCoeff f) 28 = if P ≤ valN f 28 then 1 else 0 := by
@@ -253,14 +254,14 @@ theorem freeze_carry {f : Nat → Nat} (hf : ∀ i < 28, f i < radix) :
   have he := full_eq
   have hq : carry (freezeCoeff f) 28 ≤ 1 := by
     by_contra h
-    have hmul := Nat.mul_le_mul_left full (show 2 ≤ carry (freezeCoeff f) 28 by omega)
-    omega
+    have hmul := Nat.mul_le_mul_left full (show 2 ≤ carry (freezeCoeff f) 28 by omega_arith)
+    omega_arith
   rcases Nat.eq_zero_or_pos (carry (freezeCoeff f) 28) with h | h
   · rw [h, Nat.mul_zero, Nat.add_zero] at e
-    rw [ite_eq_right (by omega), h]
-  · have h : carry (freezeCoeff f) 28 = 1 := by omega
+    rw [ite_eq_right (by omega_arith), h]
+  · have h : carry (freezeCoeff f) 28 = 1 := by omega_arith
     rw [h, Nat.mul_one] at e
-    rw [ite_eq_left (by omega), h]
+    rw [ite_eq_left (by omega_arith), h]
 
 theorem freeze_value {f : Nat → Nat} (hf : ∀ i < 28, f i < radix) :
     (if carry (freezeCoeff f) 28 = 1 then valN (digit (freezeCoeff f)) 28 else valN f 28) =
@@ -275,10 +276,10 @@ theorem freeze_value {f : Nat → Nat} (hf : ∀ i < 28, f i < radix) :
   by_cases h : P ≤ valN f 28
   · rw [ite_eq_left h, ite_eq_left rfl]
     rw [ite_eq_left h, Nat.mul_one] at e
-    rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega : valN f 28 - P < P)]
+    rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega_arith : valN f 28 - P < P)]
     change valN (digit (freezeCoeff f)) 28 + full = _ at e
-    omega
-  · rw [ite_eq_right h, ite_eq_right (by decide), Nat.mod_eq_of_lt (by omega)]
+    omega_arith
+  · rw [ite_eq_right h, ite_eq_right (by decide), Nat.mod_eq_of_lt (by omega_arith)]
 
 
 
@@ -299,21 +300,21 @@ theorem row_val {acc a b : Nat → Nat} {i : Nat}
   have e2 : valN (fun k => rowAcc acc a b i (i + k)) 29 =
       valN (digit (rowC acc a b i)) 28 + radix ^ 28 * carry (rowC acc a b i) 28 := by
     rw [valN_succ, valN_congr (g := digit (rowC acc a b i)) fun k hk => by
-      simp only [rowAcc, show ¬ i + k < i by omega, show i + k < i + 28 by omega,
+      simp only [rowAcc, show ¬ i + k < i by omega_arith, show i + k < i + 28 by omega_arith,
         ite_false, ite_true, Nat.add_sub_cancel_left]]
-    simp only [rowAcc, show ¬ i + 28 < i by omega, Nat.lt_irrefl, ite_false]
+    simp only [rowAcc, show ¬ i + 28 < i by omega_arith, Nat.lt_irrefl, ite_false]
   have e3 : valN (rowC acc a b i) 28 = a i * valN b 28 + valN (fun k => acc (i + k)) 28 := by
     rw [← valN_scale, ← valN_add]; rfl
   rw [valN_split _ i 29, e1, e2, pass_eq, e3, valN_succ a i, Nat.add_mul, ← hv,
     valN_split acc i 28, Nat.mul_add, Nat.mul_assoc]
-  omega
+  omega_arith
 
 theorem rowC_bound {acc a b : Nat → Nat} {i j : Nat} (ha : a i < radix) (hb : b j < radix)
     (hacc : acc (i + j) < radix) : rowC acc a b i j ≤ 2 ^ 32 - radix := by
   simp only [radix] at ha hb hacc ⊢
-  have : a i * b j ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
+  have : a i * b j ≤ 65535 * 65535 := Nat.mul_le_mul (by omega_arith) (by omega_arith)
   simp only [rowC]
-  omega
+  omega_arith
 
 theorem rowAcc_lt {acc a b : Nat → Nat} {i : Nat} (hacc : ∀ k < i, acc k < radix)
     (hc : ∀ j < 28, rowC acc a b i j ≤ 2 ^ 32 - radix) :
@@ -321,7 +322,7 @@ theorem rowAcc_lt {acc a b : Nat → Nat} {i : Nat} (hacc : ∀ k < i, acc k < r
   intro k _
   simp only [rowAcc]
   split
-  · exact hacc k (by omega)
+  · exact hacc k (by omega_arith)
   · split
     · exact digit_lt _ _
     · exact carry_bound hc
@@ -345,10 +346,10 @@ theorem reduced_val (f : Nat → Nat) :
     rw [← valN_add, ← valN_add, ← valN_add]
     apply valN_congr
     intro i _
-    simp only [reduced, ite_eq_right (by omega : ¬ 14 + i < 14)]
-    rw [show 14 + i + 28 = 42 + i by omega, show 14 + i + 14 = 28 + i by omega]
+    simp only [reduced, ite_eq_right (by omega_arith : ¬ 14 + i < 14)]
+    rw [show 14 + i + 28 = 42 + i by omega_arith, show 14 + i + 14 = 28 + i by omega_arith]
     simp only [Nat.reduceAdd]
-    omega
+    omega_arith
 
 theorem reduced_mod (f : Nat → Nat) : valN (reduced f) 28 % P = valN f 56 % P := by
   have hp : P = full - half - 1 := by decide +kernel
@@ -358,19 +359,19 @@ theorem reduced_mod (f : Nat → Nat) : valN (reduced f) 28 % P = valN f 56 % P 
       show 28 = 14 + 14 from rfl, valN_split, valN_split]
     simp only [← Nat.add_assoc, Nat.reduceAdd]
     simp only [hp, full, half, radix, Nat.reducePow]
-    omega
+    omega_arith
   rw [he, Nat.add_mul_mod_self_left]
 
 theorem reduced_bound {f : Nat → Nat} (h : ∀ i < 56, f i < radix) :
     ∀ i < 28, reduced f i ≤ 2 ^ 32 - radix := by
   intro i hi
-  have h0 := h i (by omega)
-  have h1 := h (i + 28) (by omega)
+  have h0 := h i (by omega_arith)
+  have h1 := h (i + 28) (by omega_arith)
   simp only [radix] at h0 h1 ⊢
   simp only [reduced]
   split
-  · have h2 := h (i + 42) (by omega); simp only [radix] at h2; omega
-  · have h2 := h (i + 14) (by omega); simp only [radix] at h2; omega
+  · have h2 := h (i + 42) (by omega_arith); simp only [radix] at h2; omega_arith
+  · have h2 := h (i + 14) (by omega_arith); simp only [radix] at h2; omega_arith
 
 
 end VG.Proof.X448.Radix16

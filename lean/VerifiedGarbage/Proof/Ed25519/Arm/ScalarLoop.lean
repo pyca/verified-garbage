@@ -43,7 +43,7 @@ theorem scalarBitSource_eval {s : State} {j : Nat} (hj : j < 8) :
   by_cases hz : j = 0
   · subst hz; simp only [ite_true, BitVec.ushiftRight_zero]; rfl
   · rw [ite_eq_right_iff.mpr (fun h => False.elim (hz h))]
-    exact op2_lsr (by omega)
+    exact op2_lsr (by omega_arith)
 
 theorem scalarBitHead_ok {s : State} {j : Nat} (hj : j < 8) :
     WP isa (.block [.mov .r5 (scalarBitSource j), .dp .and .r5 .r5 (.imm 1), .movw .r6 65535]) s
@@ -92,13 +92,13 @@ theorem scalarBit_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {j : Nat} (hj : 
   refine WP.append (scalarSubtractPass_ok hc3 (u3.mem ▸ l2) (by rw [u3.gpr]; rfl)
     (by rw [u3.other _ (by decide), h2.rest.gpr _ (by decide), h6])) fun s4 h4 => ?_
   have subf := scalarSubtract_facts (f := limb s3.mem (State.addr b) SR)
-    (by change V s3.mem (State.addr b) SR < _; rw [u3.mem, v2]; omega)
+    (by change V s3.mem (State.addr b) SR < _; rw [u3.mem, v2]; omega_arith)
   have hc4 := hc3.of_rest h4.rest (by decide)
   have f4 : Frame [⟨State.addr b + BitVec.ofNat 64 SD, 64⟩] s3.mem s4.mem := by
     have hf := h4.frame; rwa [hc3.r0] at hf
   have lr4 : ∀ k < 16, limb s4.mem (State.addr b) SR k = limb s3.mem (State.addr b) SR k :=
     limb_frame f4 fun r hr k hk => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
   have ld4 : ∀ k < 16, limb s4.mem (State.addr b) SD k =
       out (fun k => limb s3.mem (State.addr b) SR k + scalarComplement k) 1 k := by
     intro k hk; have he := h4.outs k hk; rwa [hc3.r0] at he
@@ -113,7 +113,7 @@ theorem scalarBit_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {j : Nat} (hj : 
     rw [u5.gpr, u5.other _ (by decide)]
     apply congrArg (fun x : BitVec 32 => 0 - x)
     apply BitVec.eq_of_toNat_eq
-    rw [toNat_imm (by have := subf.1; omega), h4.r5]
+    rw [toNat_imm (by have := subf.1; omega_arith), h4.r5]
   refine WP.mono (cswap_ok (by decide) (by decide) (Or.inl (by decide))
     (hc.of_rest k6 (by decide)) subf.1 mask6) fun t ht => ?_
   have ltout : ∀ k < 16, limb t.mem (State.addr b) SR k =
@@ -197,7 +197,7 @@ theorem scalarRead_ok {s : State} {p : BitVec 32} {n : Nat} (hn : n < 64)
     rw [hv.gpr]; change u.gpr .r12 + u.gpr .r10 = _
     rw [hu.other _ (by decide), hp, he]
   refine wp_ldrb (a := State.addr p + BitVec.ofNat 64 n) (by decide)
-    (by rw [hpv, BitVec.add_zero]; exact addr_add (by omega))
+    (by rw [hpv, BitVec.add_zero]; exact addr_add (by omega_arith))
     (by rw [hv.rd, hv.wr, hu.rd, hu.wr]; exact hr) fun w hw => WP.block_nil ?_
   refine ⟨(hu.rest (by decide)).trans ((hv.rest (by decide)).trans (hw.rest (by decide))),
     by rw [hw.mem, hv.mem, hu.mem], by rw [hw.other _ (by decide), hv.other _ (by decide), he], ?_⟩
@@ -239,7 +239,7 @@ theorem scalarByte_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
   · rw [hw.mem, vv, mu, bu]
   · rw [hz, ev]
     have he : BitVec.ofNat 32 n - (0 : BitVec 32) = BitVec.ofNat 32 n := BitVec.sub_zero _
-    rw [he, ofNat_beq_zero (by omega)]
+    rw [he, ofNat_beq_zero (by omega_arith)]
 
 end VG.Proof.Ed25519.Arm
 end
@@ -278,8 +278,8 @@ theorem scalarLoop_ok {b p : BitVec 32} {s0 : State} (hc : Ctx b s0)
       V t.mem (State.addr b) SR = decodeLE (bytesAt s0.mem (State.addr p) 64) % L := by
   apply WP.loop (ScalarInv b (State.addr p) s0) (n := 64)
   · intro n s hi
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.positive; omega : n ≠ 0)
-    have hk : k < 64 := by have := hi.bound; omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.positive; omega_arith : n ≠ 0)
+    have hk : k < 64 := by have := hi.bound; omega_arith
     have hps : s.gpr .r12 = p := (hi.keeps.rest.gpr _ (by decide)).trans hp
     have hrs : InRegions (s.rd ++ s.wr) (State.addr p + BitVec.ofNat 64 k) 1 := by
       rw [hi.keeps.rest.rd, hi.keeps.rest.wr]; exact hread k hk
@@ -295,8 +295,8 @@ theorem scalarLoop_ok {b p : BitVec 32} {s0 : State} (hc : Ctx b s0)
       refine .inl ⟨by rw [eval_ne, zt]; rfl, km, lt, ?_⟩
       simpa only [List.drop_zero] using val
     · refine .inr ⟨by rw [eval_ne, zt]; simp only [hk0, decide_false, Bool.not_false],
-        k, by omega, ?_⟩
-      exact ⟨by omega, by omega, et, lt, val, km⟩
+        k, by omega_arith, ?_⟩
+      exact ⟨by omega_arith, by omega_arith, et, lt, val, km⟩
   · refine ⟨by decide, by decide, h10, hl, ?_, ⟨Rest.refl _ _, Frame.refl _ _⟩⟩
     rw [hz, List.drop_eq_nil_of_le (by rw [scalar_bytesAt_length])]
     rfl

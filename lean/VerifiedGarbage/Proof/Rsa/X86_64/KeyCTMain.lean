@@ -60,22 +60,22 @@ theorem modChecks_ct {sX sXlen sDX sYlen : Nat} (hsXl : sXlen < 32) (nXl : sXlen
   unfold modChecks
   have hR : RelCT isa (Two KK) (seqs (Impl.Rsa.X86_64.CheckCrtKey.reduceTop sXlen
       Impl.Rsa.X86_64.CheckCrtKey.topE)) (Two KK) :=
-    reduceTopK_ct fl (fun _ => 1) hsXl nXl hX (fun p s h => by have := (hX p s h).2.2; omega) (fun _ t _ => topE_ok t)
+    reduceTopK_ct fl (fun _ => 1) hsXl nXl hX (fun p s h => by have := (hX p s h).2.2; omega_arith) (fun _ t _ => topE_ok t)
       (fun p s h => by
         obtain ⟨s₀, minv, N, c, hs⟩ := h
         obtain ⟨a, c1, c2⟩ := hX p s₀ hs
         have := c.w2
-        exact WP.mono (reduceTopK c (Nx := p.w + 2) hsXl nXl a c1 c2 (fun t _ _ => topE_ok t) (Nat.le_refl _) (by omega)
-          (by omega)) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) hT
+        exact WP.mono (reduceTopK c (Nx := p.w + 2) hsXl nXl a c1 c2 (fun t _ _ => topE_ok t) (Nat.le_refl _) (by omega_arith)
+          (by omega_arith)) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) hT
   have hD : RelCT isa (Two KK) (seqs (Impl.Rsa.X86_64.CheckCrtKey.reduceTop sXlen
       (topD sYlen))) (Two KK) :=
     reduceTopK_ct fl (fun p => (fy p + 7) / 8 + 1) hsXl nXl hX
-      (fun p s h => by have := (hX p s h).2.2; have := (hY p s h).2; omega)
+      (fun p s h => by have := (hX p s h).2.2; have := (hY p s h).2; omega_arith)
       (fun p s h => by
         obtain ⟨s₀, minv, N, c, hs⟩ := h
         have := c.w2
         obtain ⟨hL, hLw⟩ := hY p s₀ hs
-        exact topD_ok c.good c.hZ hsYl (by rw [c.hdr _ hsYl nYl]; exact hL) (by omega))
+        exact topD_ok c.good c.hZ hsYl (by rw [c.hdr _ hsYl nYl]; exact hL) (by omega_arith))
       (fun p s h => by
         obtain ⟨s₀, minv, N, c, hs⟩ := h
         obtain ⟨a, c1, c2⟩ := hX p s₀ hs
@@ -83,8 +83,8 @@ theorem modChecks_ct {sX sXlen sDX sYlen : Nat} (hsXl : sXlen < 32) (nXl : sXlen
         have := c.w2
         exact WP.mono (reduceTopK c (top := topD sYlen) (c := (fy p + 7) / 8 + 1) (Nx := 2 * p.w + 4) hsXl nXl a c1 c2
           (fun t hg hh => topD_ok hg c.hZ hsYl
-            (by rw [hh _ hsYl, c.hdr _ hsYl nYl]; exact y) (by omega))
-          (by omega) (by omega) (by omega)) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) hTD
+            (by rw [hh _ hsYl, c.hdr _ hsYl nYl]; exact y) (by omega_arith))
+          (by omega_arith) (by omega_arith) (by omega_arith)) fun t ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩) hTD
   refine kk_app (by simp [loadNum]) (by simp [eqOne]) (kk_app (by simp [loadNum]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
     (kk_app (by simp [loadNum]) (by simp [mulE]) (kk_app (by simp [loadNum]) (by simp [loadNum])
     (kk_app (by simp [loadNum]) (by simp [eqOne]) (kk_app (by simp [loadNum]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])

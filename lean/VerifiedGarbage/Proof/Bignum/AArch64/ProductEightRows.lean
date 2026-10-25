@@ -54,51 +54,51 @@ theorem productRow_ok {s t : State} {B : Addr} {Z k a b i : Nat} {minv : BitVec 
   have hn := hI.scr.nowrap
   have hP : productBase k + 8 * (16 * k + 2) ≤ Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_arith
   have haZ : slot (8 * k) a + 64 * k ≤ Z := by
     have := slot_le (w := 8 * k) ha
-    omega
+    omega_arith
   have hbZ : slot (8 * k) b + 64 * k ≤ Z := by
     have := slot_le (w := 8 * k) hb
-    omega
+    omega_arith
   have hHt : Hdr t.mem B (8 * k) minv :=
-    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega] using hI.frame)).hdr hH
+    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega_arith] using hI.frame)).hdr hH
   refine WP.seq (WP.mono (rowSetup_ok hI.scr
     ((hI.keep.gpr .x0 (by decide)).trans h0) hHt hZ ha hb hk hI.ptr)
     fun v ⟨⟨hv16, hv17, hv15, hv10, hvm⟩, kv⟩ => ?_)
   have hv8 := (kv.gpr .x8 (by decide)).trans hI.ptr
   have hv7 := (kv.gpr .x7 (by decide)).trans ((hI.keep.gpr .x7 (by decide)).trans h7)
-  have hq := hI.frame.wv (d := slot (8 * k) a + 64 * i) (k := 8) (by omega) (by omega)
-  have hbv := hI.frame.wv (d := slot (8 * k) b) (k := 8 * k) (by omega) (by omega)
+  have hq := hI.frame.wv (d := slot (8 * k) a + 64 * i) (k := 8) (by omega_arith) (by omega_arith)
+  have hbv := hI.frame.wv (d := slot (8 * k) b) (k := 8 * k) (by omega_arith) (by omega_arith)
   have hbSlice : wv v.mem B (productBase k + 64 * i) (8 * (k + 1)) ≤
       wv v.mem B (slot (8 * k) b) (8 * k) := by
-    have hw := wv_window_le t.mem B (productBase k) (16 * k + 2) (8 * i) (8 * (k + 1)) (by omega)
+    have hw := wv_window_le t.mem B (productBase k) (16 * k + 2) (8 * i) (8 * (k + 1)) (by omega_arith)
     rw [hI.value] at hw
     have hbnd := row_window_bound (by exact Nat.two_pow_pos _)
       (wv_lt s.mem B (slot (8 * k) a) (8 * i)) hw
-    simpa only [hvm, hbv, show 8 * (8 * i) = 64 * i by omega] using hbnd
+    simpa only [hvm, hbv, show 8 * (8 * i) = 64 * i by omega_arith] using hbnd
   refine WP.seq (WP.mono (productColumns_bounded (eT := productBase k + 64 * i) (hI.scr.congr kv.wr) hv8 hv7 hv10 hv16 hv17 hv15
-    (by omega) (by omega) hbZ (by omega) (by omega) (by omega) (by omega) hbSlice)
+    (by omega_arith) (by omega_arith) hbZ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hbSlice)
     fun v' ⟨hC, _, hcv⟩ => ?_)
   have hv'8 := (hC.keep.gpr .x8 (by decide)).trans hv8
   refine WP.mono (rowEnd_ok hv'8) fun u ⟨⟨hu8, hu12, hum⟩, ku⟩ => ?_
   have hframe := wv_window_delta (n := 16 * k + 2) (j := 8 * i) (k := 8 * (k + 1))
-    (by omega : productBase k + 8 * (16 * k + 2) ≤ 2 ^ 64) (by omega)
-    (by simpa only [show 8 * (8 * i) = 64 * i by omega,
-      show 8 * (8 * (k + 1)) = 64 * (k + 1) by omega] using hC.frame)
+    (by omega_arith : productBase k + 8 * (16 * k + 2) ≤ 2 ^ 64) (by omega_arith)
+    (by simpa only [show 8 * (8 * i) = 64 * i by omega_arith,
+      show 8 * (8 * (k + 1)) = 64 * (k + 1) by omega_arith] using hC.frame)
   have hcv' := hcv
   rewrite [hvm, hq, hbv] at hcv'
   have hh := hframe
-  rewrite [show 8 * (8 * i) = 64 * i by omega, hvm] at hh
+  rewrite [show 8 * (8 * i) = 64 * i by omega_arith, hvm] at hh
   have he := row_value hh hcv' hI.value
   refine ⟨⟨hI.scr.congr (ku.wr.trans (hC.keep.wr.trans kv.wr)),
     (((hI.keep.trans kv).trans hC.keep).trans ku).mono (by decide),
-    hu8.trans (congrArg (off B) (by omega)), ?_, ?_⟩, ?_⟩
+    hu8.trans (congrArg (off B) (by omega_arith)), ?_, ?_⟩, ?_⟩
   · have ho : Outside B (productBase k + 64 * i) (64 * (k + 1)) t.mem u.mem := by
       intro x hx
       exact (congrArg (fun m : Mem => m x) hum).trans
         ((hC.frame x hx).trans (congrArg (fun m : Mem => m x) hvm))
-    exact hI.frame.trans (ho.mono (by omega) (by omega))
+    exact hI.frame.trans (ho.mono (by omega_arith) (by omega_arith))
   · rewrite [hum, wv_blocks_succ]
     exact he
   · exact hu12.trans (congrArg (· - BitVec.ofNat 64 1)
@@ -127,7 +127,7 @@ theorem productRows_ok {s : State} {B : Addr} {Z k a b : Nat} {minv : BitVec 64}
     simpa only [Nat.mul_zero, wv, Nat.zero_mul] using hz
   have hp : WP isa (VG.Impl.Bignum.AArch64.ProductEight.rows a b) s
       (ProductRowsInv s B Z k a b k) :=
-    wp_countdown (by omega) hk (ProductRowsInv s B Z k a b)
+    wp_countdown (by omega_arith) hk (ProductRowsInv s B Z k a b)
       (fun i hi t hI _ => productRow_ok h0 h7 hH hZ ha hb hk' hi hA hB hI) hinit h12
   obtain ⟨tr, t, he, ht⟩ := hp
   refine ⟨tr, t, he, ht, fun v => Exec.vec ?_ he⟩

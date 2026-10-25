@@ -34,7 +34,7 @@ theorem x_eq {p : GkP} {rb : List Byte} {t : State} (hb : Base (p.D₁ rb) t) (h
   have hk1 : 64 ≤ p.k := hb.k1
   have hdl := hb.doml
   have hl := hb.bb_length
-  have hne : (p.D₁ rb).bb ≠ [] := by intro he; rw [he] at hl; simp at hl; omega
+  have hne : (p.D₁ rb).bb ≠ [] := by intro he; rw [he] at hl; simp at hl; omega_arith
   have hL := lead_lt hne
   obtain ⟨hodd, h1, -⟩ := valid_facts hm hb.k1
   have hc : (p.D₁ rb).bc = (p.D₁ rb).bb[(p.D₁ rb).bl]'hL := by
@@ -43,7 +43,7 @@ theorem x_eq {p : GkP} {rb : List Byte} {t : State} (hb : Base (p.D₁ rb) t) (h
   unfold GkP.X GkP.xo
   have hdl' : p.dom.length = p.dl := hdl
   have hd : p.dom.length = 2 * p.k ∨ p.dom.length = 3 * p.k := by rw [hdl']; exact hb.dl
-  refine KeyScalar.cut_eq (k := p.k) (dom := p.dom) (by omega) hd (fun _ => ⟨hodd, h1⟩) ho.1 ?_
+  refine KeyScalar.cut_eq (k := p.k) (dom := p.dom) (by omega_arith) hd (fun _ => ⟨hodd, h1⟩) ho.1 ?_
   show ((BitVec.ofNat 64 (KeyScalar.smearN (p.D₁ rb).bc.toNat)).setWidth 8).toNat = _
   have key : ∀ n : Nat, n = (p.D₁ rb).bc.toNat →
       (2 ^ Spec.RsaKeyGen.bitLength (p.D₁ rb).bc.toNat - 1) % 2 ^ 64 % 2 ^ 8 = 2 ^ Spec.RsaKeyGen.bitLength n - 1 := by
@@ -51,7 +51,7 @@ theorem x_eq {p : GkP} {rb : List Byte} {t : State} (hb : Base (p.D₁ rb) t) (h
     subst hn
     have := KeyScalar.smearN_lt _ hc8
     rw [KeyScalar.smearN_eq _ hc8] at this
-    omega
+    omega_arith
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, KeyScalar.smearN_eq _ hc8]
   exact key _ (congrArg BitVec.toNat hc).symm
 
@@ -73,8 +73,8 @@ theorem g3_g4 (p : GkP) (rb : List Byte) (t : State) (h : G3 p rb t) :
   have ew := hb.ew
   have := hb.k1
   have := hb.k2
-  exact WP.mono (geArr_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D₁ rb).w by omega)
-    (show (p.D₁ rb).w < 2 ^ 31 by omega) (show aXm < 8 by decide) (show aOne < 8 by decide))
+  exact WP.mono (geArr_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D₁ rb).w by omega_arith)
+    (show (p.D₁ rb).w < 2 ^ 31 by omega_arith) (show aXm < 8 by decide) (show aOne < 8 by decide))
     fun u ⟨h9, hm, k⟩ => ⟨⟨⟨mi, hI.keep hm k (by decide), by rw [hm]; exact hx, by rw [h9, hx, hI.2.2.1.one]⟩, ho⟩,
       k.mono (by decide)⟩
 
@@ -89,7 +89,7 @@ theorem g4_g5 (p : GkP) (rb : List Byte) (t : State) (h : G4 p rb t) :
   have hG := hI.2.1.good.scr.nowrap
   have sX := slot_le (w := (p.D₁ rb).w) (show aXm < 8 by decide)
   have hX0 := hdr_lt_slot (p.D₁ rb).w aXm (show sF < 32 by decide)
-  exact WP.mono hI.stLeave fun u ⟨⟨hP, hF, o⟩, k⟩ => ⟨⟨⟨mi, hP, by rw [o.wv (Or.inr (by omega)) (by omega)]; exact hx,
+  exact WP.mono hI.stLeave fun u ⟨⟨hP, hF, o⟩, k⟩ => ⟨⟨⟨mi, hP, by rw [o.wv (Or.inr (by omega_arith)) (by omega_arith)]; exact hx,
     by rw [hF, h9]⟩, ho⟩, k⟩
 
 /-- After the test of the domain's length. -/
@@ -101,7 +101,7 @@ theorem g5_g6 (p : GkP) (rb : List Byte) (t : State) (h : G5 p rb t) :
     WP isa (.block qTest) t fun u => G6 p rb u ∧ KX t u := by
   obtain ⟨⟨mi, hP, hx, hF⟩, ho⟩ := h
   exact WP.mono hP.qtest fun u ⟨⟨h3, hm⟩, k⟩ => ⟨⟨⟨mi, hP.outside (o := 256) (n := 0) (by decide)
-    (by simp only [inner, slot, hdrBytes]; omega) (fun x _ => by rw [hm]) k.rd k.wr ((k.gpr .x0 (by decide)).trans
+    (by simp only [inner, slot, hdrBytes]; omega_arith) (fun x _ => by rw [hm]) k.rd k.wr ((k.gpr .x0 (by decide)).trans
       hP.2.2.2.2.2.2), by rw [hm]; exact hx, by rw [hm]; exact hF, h3⟩, ho⟩, k.mono (by decide)⟩
 
 theorem g6_eval {p : GkP} {rb : List Byte} {t : State} (h : G6 p rb t) :
@@ -133,21 +133,21 @@ theorem e_g7n (p : GkP) (rb : List Byte) (t : State) (h : G6e p rb t) (h2 : p.dl
   have := hb.k2
   have hT0 := hdr_lt_slot (p.D₁ rb).w aTmp (show sF < 32 by decide)
   have hG := hI.2.1.good.scr.nowrap
-  refine WP.mono (ltP_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D₁ rb).w by omega)
-    (show (p.D₁ rb).w < 2 ^ 31 by omega) (show aXm < 8 by decide) (by decide)) fun v ⟨h9, o, k'⟩ => ?_
+  refine WP.mono (ltP_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D₁ rb).w by omega_arith)
+    (show (p.D₁ rb).w < 2 ^ 31 by omega_arith) (show aXm < 8 by decide) (by decide)) fun v ⟨h9, o, k'⟩ => ?_
   have hT := hdr_lt_slot (p.D₁ rb).w aTmp (show 31 < 32 by decide)
   refine ⟨⟨⟨mi, hI.step (rs := [(slot (p.D₁ rb).w aTmp, 8 * (p.D₁ rb).w)]) (Frm.of_outside o (by simp)) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       have := slot_le (w := (p.D₁ rb).w) (show aTmp < 8 by decide)
       have s1 := slot_sep (w := (p.D₁ rb).w) (show aTmp ≠ aN by decide)
       have s2 := slot_sep (w := (p.D₁ rb).w) (show aTmp ≠ aOne by decide)
-      refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only <;> omega) k'.rd k'.wr (k'.gpr .x0 (by decide)),
+      refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only <;> omega_arith) k'.rd k'.wr (k'.gpr .x0 (by decide)),
     by rw [o.word (Or.inl hT0) (show 8 * sF + 8 ≤ 2 ^ 64 by decide), hF], ?_⟩, ho⟩, k'.mono (by decide)⟩
   rw [h9, hx, hI.2.2.1.n]
   refine bit_iff ?_
   unfold xr
   have hk1 : 64 ≤ p.k := hb.k1
-  rw [ite_eq_right (by omega)]
+  rw [ite_eq_right (by omega_arith)]
 
 /-- With q in `aY`. -/
 def G6q (p : GkP) (rb : List Byte) (t : State) : Prop :=
@@ -164,7 +164,7 @@ theorem e_lpreQ (p : GkP) (rb : List Byte) (t : State) (h : G6e p rb t) (hq : p.
   have := hb.k1
   have := hI.lpre (sp := sQ) (sl := sK) (show aY < 8 by decide) (by decide) (by decide)
     (hs.get (i := sQ) (v := (p.D₁ rb).dp + BitVec.ofNat 64 (2 * (p.D₁ rb).k)) (by simp))
-    (by rw [hl]; exact hs.get (i := sK) (by simp)) hb.qsrc (by rw [hl]; simp at this ⊢; omega) (by rw [hl])
+    (by rw [hl]; exact hs.get (i := sK) (by simp)) hb.qsrc (by rw [hl]; simp at this ⊢; omega_arith) (by rw [hl])
   rw [hl] at this
   exact this
 
@@ -177,14 +177,14 @@ theorem e_q (p : GkP) (rb : List Byte) (t : State) (h : G6e p rb t) (hq : p.dl =
   have := hb.k1
   refine WP.mono (hI.load (show aY < 8 by decide) (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sQ) (v := (p.D₁ rb).dp + BitVec.ofNat 64 (2 * (p.D₁ rb).k)) (by simp))
-    (by rw [hl]; exact hs.get (i := sK) (by simp)) hb.qsrc (by rw [hl]; simp at this ⊢; omega) (by rw [hl]))
+    (by rw [hl]; exact hs.get (i := sK) (by simp)) hb.qsrc (by rw [hl]; simp at this ⊢; omega_arith) (by rw [hl]))
     fun v ⟨⟨hv, hQ, o⟩, k'⟩ => ?_
   have hG := hI.2.1.good.scr.nowrap
   have sY := slot_le (w := (p.D₁ rb).w) (show aY < 8 by decide)
   have sYX := slot_sep (w := (p.D₁ rb).w) (show aY ≠ aXm by decide)
   have hY0 := hdr_lt_slot (p.D₁ rb).w aY (show sF < 32 by decide)
   have sX := slot_le (w := (p.D₁ rb).w) (show aXm < 8 by decide)
-  exact ⟨⟨⟨mi, hv, by rw [o.wv (by omega) (by omega), hx],
+  exact ⟨⟨⟨mi, hv, by rw [o.wv (by omega_arith) (by omega_arith), hx],
     by rw [o.word (Or.inl hY0) (show 8 * sF + 8 ≤ 2 ^ 64 by decide), hF], hQ⟩, ho, hq⟩, k'⟩
 
 theorem q_g7 (p : GkP) (rb : List Byte) (t : State) (h : G6q p rb t) :
@@ -194,8 +194,8 @@ theorem q_g7 (p : GkP) (rb : List Byte) (t : State) (h : G6q p rb t) :
   have ew := hb.ew
   have := hb.k1
   have := hb.k2
-  refine WP.mono (ltArr_ok hv.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D₁ rb).w by omega)
-    (show (p.D₁ rb).w < 2 ^ 31 by omega) (show aXm < 8 by decide) (show aY < 8 by decide)) fun w' ⟨h9, hm', k''⟩ =>
+  refine WP.mono (ltArr_ok hv.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D₁ rb).w by omega_arith)
+    (show (p.D₁ rb).w < 2 ^ 31 by omega_arith) (show aXm < 8 by decide) (show aY < 8 by decide)) fun w' ⟨h9, hm', k''⟩ =>
       ⟨⟨⟨mi, hv.keep hm' k'' (by decide), by rw [hm']; exact hF, ?_⟩, ho⟩, k''.mono (by decide)⟩
   rw [h9, hx, hQ]
   refine bit_iff ?_
@@ -230,13 +230,13 @@ theorem xr_iff {p : GkP} {rb : List Byte} {t : State} (hb : Base (p.D₁ rb) t) 
   · rw [ite_eq_left hq, ite_eq_left hq]
     simp only [Option.getD_some]
     have e : Spec.Rsa.os2ip (p.D₁ rb).qb = Spec.Rsa.os2ip (List.take p.k (List.drop (2 * p.k) p.dom)) := rfl
-    omega
+    omega_arith
   · rw [ite_eq_right hq, ite_eq_right hq]
     simp only [Option.getD_none]
     have := (lt_pm1 hodd (p.X rb))
     constructor
-    · rintro ⟨a, b⟩; exact ⟨by omega, this.mp a⟩
-    · rintro ⟨a, b⟩; exact ⟨this.mpr b, by omega⟩
+    · rintro ⟨a, b⟩; exact ⟨by omega_arith, this.mp a⟩
+    · rintro ⟨a, b⟩; exact ⟨this.mpr b, by omega_arith⟩
 
 /-- After the test of x's range. -/
 def G8 (p : GkP) (rb : List Byte) (t : State) : Prop :=

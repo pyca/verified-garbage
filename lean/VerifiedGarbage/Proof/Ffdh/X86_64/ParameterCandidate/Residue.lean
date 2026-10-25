@@ -28,11 +28,11 @@ theorem residue_ok {s : State} {B : Addr} {Z w divisor : Nat} {minv : BitVec 64}
       (t.gpr .rsi).toNat = wv s.mem B (slot w aN) w % divisor ∧ t.mem = s.mem ∧
       Keep [.rbx, .r12, .r8, .rsi, .r14, .rax, .rcx, .rdx, .rbp, .r13] s t := by
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
   have hb : (BitVec.ofNat 32 divisor).setWidth 64 = BitVec.ofNat 64 divisor := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   unfold residue
   refine WP.seq (WP.mono (WP.keep [.rbx, .r12, .r8, .rsi, .r14]
     (Q := fun t => t.gpr .rbx = BitVec.ofNat 64 divisor ∧ t.gpr .r12 = BitVec.ofNat 64 w ∧
@@ -40,10 +40,10 @@ theorem residue_ok {s : State} {B : Addr} {Z w divisor : Nat} {minv : BitVec 64}
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hl (sArr aN) (by decide), hg.hdr.hw,
       hg.hdr.harr aN (by decide), hb]) rfl) fun u ⟨⟨hbx, h12, h8, hsi, h14, hm⟩, k⟩ => ?_)
   refine WP.mono (modWords_ok (hg.scr.congr k.2.2) h8 h12 h14 hw hw'
-    (by have := slot_le (w := w) (show aN < 8 by decide); omega) hsi
-    (by rw [hbx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hd))
+    (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith) hsi
+    (by rw [hbx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; exact hd))
     fun t ⟨hv, hm', k'⟩ => ?_
-  exact ⟨by simpa only [hm, hbx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show divisor < 2 ^ 64 by omega)] using hv,
+  exact ⟨by simpa only [hm, hbx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show divisor < 2 ^ 64 by omega_arith)] using hv,
     hm'.trans hm, (k.trans k').mono (by decide)⟩
 
 private theorem mod10_test {s : State} {r : Nat} (hr : r < 10) (hsi : s.gpr .rsi = BitVec.ofNat 64 r) :
@@ -51,7 +51,7 @@ private theorem mod10_test {s : State} {r : Nat} (hr : r < 10) (hsi : s.gpr .rsi
       t.zf = some (decide (r = 3 ∨ r = 7)) ∧ t.mem = s.mem ∧ Keep [.rsi] s t := by
   refine WP.mono (WP.keep [.rsi] (Q := fun t => t.zf = some (decide (r = 3 ∨ r = 7)) ∧ t.mem = s.mem)
     ?_ rfl) fun t ⟨⟨hz, hm⟩, k⟩ => ⟨hz, hm, k⟩
-  rcases (show r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3 ∨ r = 4 ∨ r = 5 ∨ r = 6 ∨ r = 7 ∨ r = 8 ∨ r = 9 by omega) with
+  rcases (show r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3 ∨ r = 4 ∨ r = 5 ∨ r = 6 ∨ r = 7 ∨ r = 8 ∨ r = 9 by omega_arith) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> xrun [hsi]
 
 theorem generator2_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
@@ -67,7 +67,7 @@ theorem generator2_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     t.zf = some (decide (wv s.mem B (slot w aN) w % 24 = 11)) ∧ t.mem = u.mem)
     (by
       xrun [hsi, show BitVec.signExtend 64 (11 : BitVec 32) = BitVec.ofNat 64 11 from by decide]
-      exact ofNat_sub_beq (by omega) (by decide)) rfl)
+      exact ofNat_sub_beq (by omega_arith) (by decide)) rfl)
     fun t ⟨⟨hz, hm'⟩, k'⟩ => ⟨hz, hm'.trans hm, (k.trans k').mono (by decide)⟩
 
 theorem generator5_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}

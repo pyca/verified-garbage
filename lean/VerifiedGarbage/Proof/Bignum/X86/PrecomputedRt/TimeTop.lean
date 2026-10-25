@@ -87,18 +87,18 @@ theorem valid_relCT (sp : BitVec 32) :
     | seq F1 F2 =>
       have T1 := (RelCT.taint (A := taint) argumentTaint (fun _ _ h => h) (hc := .block []) (by taint_decide)
         _ _ _ _ _ _ (S₁.pair S₂).agree E1 F1).1
-      obtain ⟨Xs, Os, Ks⟩ := wp_result (saveExponent_ok S₁.1.scratch (by omega) V₁.bound V₁.2.1 V₁.2.2) E1
-      obtain ⟨Xt, Ot, Kt⟩ := wp_result (saveExponent_ok S₂.1.scratch (by omega) V₂.bound V₂.2.1 V₂.2.2) F1
-      have Os' : Outside base 0 bytes s.mem _ := Os.mono (by omega) (by omega)
-      have Ot' : Outside base 0 bytes t.mem _ := Ot.mono (by omega) (by omega)
+      obtain ⟨Xs, Os, Ks⟩ := wp_result (saveExponent_ok S₁.1.scratch (by omega_arith) V₁.bound V₁.2.1 V₁.2.2) E1
+      obtain ⟨Xt, Ot, Kt⟩ := wp_result (saveExponent_ok S₂.1.scratch (by omega_arith) V₂.bound V₂.2.1 V₂.2.2) F1
+      have Os' : Outside base 0 bytes s.mem _ := Os.mono (by omega_arith) (by omega_arith)
+      have Ot' : Outside base 0 bytes t.mem _ := Ot.mono (by omega_arith) (by omega_arith)
       have U₁ := S₁.keep Ks (by decide) (by decide) Os'
       have U₂ := S₂.keep Kt (by decide) (by decide) Ot'
-      have es := scratch_bytes Os' (by have := S₁.1.eBound; have := S₁.1.upper; omega) S₁.1.eApart
-      have et := scratch_bytes Ot' (by have := S₁.1.eBound; have := S₁.1.upper; omega) S₁.1.eApart
-      have ms := val32_apart (d := 0) (k := nw len) Os (by omega) P₁.apart (by simp only [nw, wb]; omega)
-      have mt := val32_apart (d := 0) (k := nw len) Ot (by omega) P₂.apart (by simp only [nw, wb]; omega)
-      have ts := val32_apart (d := wb len) (k := nw len) Os (by omega) P₁.apart (by simp only [nw, wb]; omega)
-      have tt := val32_apart (d := wb len) (k := nw len) Ot (by omega) P₂.apart (by simp only [nw, wb]; omega)
+      have es := scratch_bytes Os' (by have := S₁.1.eBound; have := S₁.1.upper; omega_arith) S₁.1.eApart
+      have et := scratch_bytes Ot' (by have := S₁.1.eBound; have := S₁.1.upper; omega_arith) S₁.1.eApart
+      have ms := val32_apart (d := 0) (k := nw len) Os (by omega_arith) P₁.apart (by simp only [nw, wb]; omega_arith)
+      have mt := val32_apart (d := 0) (k := nw len) Ot (by omega_arith) P₂.apart (by simp only [nw, wb]; omega_arith)
+      have ts := val32_apart (d := wb len) (k := nw len) Os (by omega_arith) P₁.apart (by simp only [nw, wb]; omega_arith)
+      have tt := val32_apart (d := wb len) (k := nw len) Ot (by omega_arith) P₂.apart (by simp only [nw, wb]; omega_arith)
       have T2 := (sizedNarrow_relCT S₁.2.1.hbytes sp _ _ _ _ _ _
         ⟨⟨U₁.1, U₁.2.1, U₁.2.2.1, ⟨by rw [Xs, es], by rw [es]; exact V₁.1⟩, U₁.2.2.2⟩,
           ⟨U₂.1, U₂.2.1, U₂.2.2.1, ⟨by rw [Xt, et], by rw [et]; exact V₂.1⟩, U₂.2.2.2⟩,
@@ -175,7 +175,7 @@ end
 theorem args_apart {s : State} (A : TopABI s) {r : Region}
     (hret : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r) (hargs : Region.Disjoint ⟨argAddr s 0, 40⟩ r) :
     Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 44⟩ r :=
-  VG.X86.Taint.frame_disjoint (n := 40) (by have := A.abi.stackBound; omega) hret hargs
+  VG.X86.Taint.frame_disjoint (n := 40) (by have := A.abi.stackBound; omega_arith) hret hargs
 
 theorem operation_trace {s t : State} (A : TopABI s) (B : TopABI t)
     (args : ∀ i < 10, arg s i = arg t i) (SP : s.gpr .esp = t.gpr .esp)
@@ -228,16 +228,16 @@ theorem operation_trace {s t : State} (A : TopABI s) (B : TopABI t)
           have D := args_apart B B.abi.retScratch B.abi.scratchArgs.symm
           simp only [argumentPointer, ← A8, ← A9, ← SP] at D
           exact D
-      have Ns := scratch_words Os (by have := A.abi.scratchBound; omega)
-        (n := 2 * Spec.Rsa.modulusWords (arg s 1).toNat) (by have := Is.rt.dimensions; omega)
+      have Ns := scratch_words Os (by have := A.abi.scratchBound; omega_arith)
+        (n := 2 * Spec.Rsa.modulusWords (arg s 1).toNat) (by have := Is.rt.dimensions; omega_arith)
         (by simpa only [show 8 * (2 * Spec.Rsa.modulusWords (arg s 1).toNat) =
-          16 * Spec.Rsa.modulusWords (arg s 1).toNat by omega] using Is.preApart)
-      have Nt := scratch_words Ov (by have := A.abi.scratchBound; omega)
-        (n := 2 * Spec.Rsa.modulusWords (arg s 1).toNat) (by have := Iv.rt.dimensions; omega)
+          16 * Spec.Rsa.modulusWords (arg s 1).toNat by omega_arith] using Is.preApart)
+      have Nt := scratch_words Ov (by have := A.abi.scratchBound; omega_arith)
+        (n := 2 * Spec.Rsa.modulusWords (arg s 1).toNat) (by have := Iv.rt.dimensions; omega_arith)
         (by simpa only [show 8 * (2 * Spec.Rsa.modulusWords (arg s 1).toNat) =
-          16 * Spec.Rsa.modulusWords (arg s 1).toNat by omega] using Iv.preApart)
-      have Es := scratch_bytes Os (by have := (arg s 5).isLt; omega) Is.eApart
-      have Et := scratch_bytes Ov (by have := (arg s 5).isLt; omega) Iv.eApart
+          16 * Spec.Rsa.modulusWords (arg s 1).toNat by omega_arith] using Iv.preApart)
+      have Es := scratch_bytes Os (by have := (arg s 5).isLt; omega_arith) Is.eApart
+      have Et := scratch_bytes Ov (by have := (arg s 5).isLt; omega_arith) Iv.eApart
       have NN : Spec.Rsa.wordsAt u.mem (byteAddr (arg s 2)) (2 * Spec.Rsa.modulusWords (arg s 1).toNat) =
           Spec.Rsa.wordsAt v.mem (byteAddr (arg s 2)) (2 * Spec.Rsa.modulusWords (arg s 1).toNat) := by
         rw [Ns, Nt]
@@ -250,11 +250,11 @@ theorem operation_trace {s t : State} (A : TopABI s) (B : TopABI t)
         simp only [preM, nw]
         rw [val32_eq_wv, val32_eq_wv]
         simpa only [Nat.mul_zero] using
-          VG.Proof.Bignum.wv_of_wordsAt NN (c := 0) (w := Spec.Rsa.modulusWords (arg s 1).toNat) (by omega)
+          VG.Proof.Bignum.wv_of_wordsAt NN (c := 0) (w := Spec.Rsa.modulusWords (arg s 1).toNat) (by omega_arith)
       have PT : preT (arg s 1).toNat (arg s) u = preT (arg s 1).toNat (arg s) v := by
         simp only [preT, nw, wb]
         rw [val32_eq_wv, val32_eq_wv]
-        exact VG.Proof.Bignum.wv_of_wordsAt NN (by omega)
+        exact VG.Proof.Bignum.wv_of_wordsAt NN (by omega_arith)
       cases Erest with
       | @seq _ _ _ w _ _ _ E2 E3 =>
         cases Frest with
@@ -279,7 +279,7 @@ theorem publicArgs {s t : State} (H : (Spec.Rsa.publicPrecomputedCheckedContract
   constructor
   · with_reducible assumption
   · intro i hi
-    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 := by omega
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 := by omega_arith
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem keyLeak {s t : State} (H : (Spec.Rsa.publicPrecomputedCheckedContract abi 96).pub s t) :

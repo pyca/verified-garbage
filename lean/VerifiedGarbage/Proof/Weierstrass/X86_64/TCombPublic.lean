@@ -22,15 +22,15 @@ theorem publicAddress_ok (K : TCombCfg) (s : State) {j a : Nat} {T : Addr}
     WP isa (.block K.publicAddress) s fun t =>
       t.gpr .rdx = T + BitVec.ofNat 64 (j * K.tblBytes + 16 * K.M.n * (a - 1)) ∧
       Keeps [.rax, .rcx, .rdx] s t ∧ t.xmm = s.xmm ∧ t.syms = s.syms := by
-  have hn' : 16 * K.M.n < 2 ^ 31 := by omega
+  have hn' : 16 * K.M.n < 2 ^ 31 := by omega_arith
   subst hT
   crun [TCombCfg.publicAddress, hb, h8, imm32_eq hH, imm32_eq hn', RegUpd.cf_setReg, RegUpd.cf_setFlags]
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl⟩, rfl, rfl⟩
   · congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ofNat, BitVec.toNat_add, BitVec.toNat_sub]
-    rw [Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show K.H < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show 16 * K.M.n < 2 ^ 64 by omega)]
+    rw [Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show K.H < 2 ^ 64 by omega_arith),
+      Nat.mod_eq_of_lt (show 16 * K.M.n < 2 ^ 64 by omega_arith)]
     simp only [TCombCfg.tblBytes]
     simp only [show (BitVec.signExtend 64 (1 : BitVec 32)).toNat = 1 from rfl,
       show (BitVec.signExtend 64 (0 : BitVec 32)).toNat = 0 from rfl, Nat.add_zero, Nat.mod_mod]
@@ -38,10 +38,10 @@ theorem publicAddress_ok (K : TCombCfg) (s : State) {j a : Nat} {T : Addr}
         (BitVec.setWidth 64 (BitVec.ofBool (decide (a < 1)))).toNat) % 2 ^ 64 = a - 1 := by
       by_cases h : a = 0
       · subst a; decide
-      · have h' : ¬ a < 1 := by omega
+      · have h' : ¬ a < 1 := by omega_arith
         simp only [decide_eq_false h']
         change ((2 ^ 64 - 1 + a) % 2 ^ 64 + 0) % 2 ^ 64 = a - 1
-        omega
+        omega_arith
     rw [sat]
     have he : (j * K.H + (a - 1)) * (16 * K.M.n) =
         j * (16 * K.M.n * K.H) + 16 * K.M.n * (a - 1) := by grind
@@ -77,19 +77,19 @@ theorem publicLoadSteps_ok {n : Nat} (hn : n ≤ 14) {X : Addr} :
   | 0, _, s, _, _ => WP.block_nil ⟨fun _ _ => by simp, XKeep.refl _ _ _⟩
   | k + 1, hk, s, hx, hr => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (publicLoadSteps_ok hn k (by omega) s hx hr) fun s₁ ⟨a₁,k₁⟩ => ?_
+    refine WP.mono (publicLoadSteps_ok hn k (by omega_arith) s hx hr) fun s₁ ⟨a₁,k₁⟩ => ?_
     have h15 : s₁.xmm .xmm15 = s.xmm .xmm15 := k₁.xmm _ (by
-      rintro ⟨c,hc,h⟩; exact (selAcc_ne c (by omega)).2 h.symm)
-    refine WP.mono (publicLoadStep_ok s₁ ((k₁.gpr _ List.not_mem_nil).trans hx) (c := k) (by omega)
-      (by rw [k₁.rd, k₁.wr]; exact hr k (by omega))) fun t ⟨a₂,k₂⟩ => ⟨fun c hc => ?_, ?_⟩
+      rintro ⟨c,hc,h⟩; exact (selAcc_ne c (by omega_arith)).2 h.symm)
+    refine WP.mono (publicLoadStep_ok s₁ ((k₁.gpr _ List.not_mem_nil).trans hx) (c := k) (by omega_arith)
+      (by rw [k₁.rd, k₁.wr]; exact hr k (by omega_arith))) fun t ⟨a₂,k₂⟩ => ⟨fun c hc => ?_, ?_⟩
     · by_cases hck : c = k
       · subst hck
         rw [a₂, h15, k₁.mem, ite_eq_left (Nat.lt_succ_self _)]
-      · rw [k₂.xmm _ (fun h => hck (selAcc_inj c hc k (by omega) h)), a₁ c hc]
+      · rw [k₂.xmm _ (fun h => hck (selAcc_inj c hc k (by omega_arith) h)), a₁ c hc]
         by_cases hlt : c < k
-        · simp only [hlt, show c < k + 1 by omega, ↓reduceIte]
-        · simp only [hlt, show ¬ c < k + 1 by omega, ↓reduceIte]
-    · exact k₁.trans (k₂.mono (fun _ h => h) fun r h => ⟨k, by omega, h⟩)
+        · simp only [hlt, show c < k + 1 by omega_arith, ↓reduceIte]
+        · simp only [hlt, show ¬ c < k + 1 by omega_arith, ↓reduceIte]
+    · exact k₁.trans (k₂.mono (fun _ h => h) fun r h => ⟨k, by omega_arith, h⟩)
 
 theorem publicLoad_ok (K : TCombCfg) {s : State} {base X : Addr} {size : Nat}
     (hs : Scr s base size) (hn : K.M.n ≤ 14) (hx : s.gpr .rdx = X)
@@ -103,7 +103,7 @@ theorem publicLoad_ok (K : TCombCfg) {s : State} {base X : Addr} {size : Nat}
   refine WP.mono (publicLoadSteps_ok hn K.M.n (Nat.le_refl _) s hx hr) fun s₁ ⟨a₁,k₁⟩ => ?_
   refine WP.mono (storeAcc_ok (o := K.E.x) K.M.n s₁ (hs.of_keepRegs
     ⟨k₁.gpr,k₁.rd,k₁.wr⟩ (by decide)) hE) fun t ⟨a₂,O₂,g₂,r₂,w₂,_⟩ => ?_
-  exact ⟨fun c hc => by rw [a₂ c hc, a₁ c (by omega), ite_eq_left hc],
+  exact ⟨fun c hc => by rw [a₂ c hc, a₁ c (by omega_arith), ite_eq_left hc],
     by rw [← k₁.mem]; exact O₂,
     ⟨fun r hr => by rw [g₂, k₁.gpr r hr], by rw [r₂,k₁.rd], by rw [w₂,k₁.wr]⟩⟩
 
@@ -136,22 +136,22 @@ theorem publicPrefix_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat}
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (publicAddress_ok K s hb h8 hT hH hn ha) fun s₁ ⟨x₁,k₁,_,_⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (publicMask_ok (by omega) ((k₁.1 _ (by decide)).trans h8)) fun s₂ ⟨m₂,k₂⟩ => ?_
+  refine WP.mono (publicMask_ok (by omega_arith) ((k₁.1 _ (by decide)).trans h8)) fun s₂ ⟨m₂,k₂⟩ => ?_
   have hx₂ := (k₂.1 .rdx (by decide)).trans x₁
   have h0 : 0 < K.H := Nat.two_pow_pos _
-  have ha' : a - 1 < K.H := by omega
+  have ha' : a - 1 < K.H := by omega_arith
   have htb : K.tblBytes ≤ 224 * 2 ^ 31 :=
-    Nat.mul_le_mul (show 16 * K.M.n ≤ 224 by omega) (Nat.le_of_lt hH)
+    Nat.mul_le_mul (show 16 * K.M.n ≤ 224 by omega_arith) (Nat.le_of_lt hH)
   have hr : ∀ c < K.M.n, InRegions (s₂.rd ++ s₂.wr)
       (T + BitVec.ofNat 64 (j * K.tblBytes + 16 * K.M.n * (a - 1)) + BitVec.ofNat 64 (16 * c)) 16 := by
     intro c hc
     rw [k₂.2.2.1,k₂.2.2.2,k₁.2.2.1,k₁.2.2.2,
       BitVec.ofNat_add, BitVec.add_assoc, Offset.add_add, ← BitVec.add_assoc]
-    refine VG.CallLay.inRegions_sub hreg ?_ (by omega)
-    have := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ K.H by omega)
+    refine VG.CallLay.inRegions_sub hreg ?_ (by omega_arith)
+    have := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ K.H by omega_arith)
     simp only [Nat.mul_add, Nat.mul_one] at this
     change _ ≤ 16 * K.M.n * K.H
-    omega
+    omega_arith
   refine WP.mono (publicLoad_ok K ((hs.of_keeps k₁ (by decide)).of_keeps k₂ (by decide)) hn hx₂ hr hE)
     fun t ⟨v₃,O₃,k₃⟩ => ?_
   refine ⟨fun c hc => ?_, ?_, ((Keeps.regs k₁).trans ((Keeps.regs k₂).mono (by decide))).trans
@@ -159,7 +159,7 @@ theorem publicPrefix_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat}
   · rw [v₃ c hc,m₂,k₂.2.1,k₁.2.1]
     by_cases hz : a = 0
     · subst a; simp [bmask128,accVal]
-    · have h1 : 1 ≤ a := by omega
+    · have h1 : 1 ≤ a := by omega_arith
       simp only [hz, decide_false, Bool.not_false, bmask128, ite_true, BitVec.and_allOnes,
         accVal, h1, ha, and_self]
       rw [BitVec.ofNat_add, BitVec.add_assoc, Offset.add_add, BitVec.add_assoc]
@@ -175,48 +175,48 @@ theorem selectPublic_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (h
     WP isa (.block K.selectPublic) s (SelPost K base s a (T + BitVec.ofNat 64 (j * K.tblBytes))) := by
   have hnw := hs.nowrap
   rw [TCombCfg.selectPublic, WP.block_append_iff]
-  refine WP.mono (publicPrefix_ok K hs hn.2 hH hb h8 ha hT hreg (by omega))
+  refine WP.mono (publicPrefix_ok K hs hn.2 hH hb h8 ha hT hreg (by omega_arith))
     fun s₂ ⟨a₂,O₂,k₂⟩ => ?_
   have hs₂ := hs.of_keepRegs k₂ (by decide)
   have h8₂ : s₂.gpr .r8 = BitVec.ofNat 64 a := by rw [k₂.gpr _ (by decide), h8]
-  refine WP.mono (selOne_ok K hs₂ (by omega) h8₂ hy hz (by omega)) fun t ⟨ey, ez, k₃, U₃, _⟩ => ?_
+  refine WP.mono (selOne_ok K hs₂ (by omega_arith) h8₂ hy hz (by omega_arith)) fun t ⟨ey, ez, k₃, U₃, _⟩ => ?_
   have W := accVal_word a₂
   have hxw : ∀ i < K.M.n, word t.mem base (K.E.x + 8 * i) = word s₂.mem base (K.E.x + 8 * i) := fun i hi =>
     U₃.word (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> dsimp only <;> omega) (by omega)
+      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · by_cases h1 : 1 ≤ a
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
       exact wordsVal_congr₂ _ _ _ fun i hi => by
-        rw [hxw i hi, W i (by omega), ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩)]
+        rw [hxw i hi, W i (by omega_arith), ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩)]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact wordsVal_zeros fun i hi => by
-        rw [hxw i hi, W i (by omega), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+        rw [hxw i hi, W i (by omega_arith), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
   · have hyw : ∀ i < K.M.n, word s₂.mem base (K.E.y + 8 * i) =
         if 1 ≤ a ∧ a ≤ K.H then word s.mem (T + BitVec.ofNat 64 (j * K.tblBytes))
           (16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i) else 0 := fun i hi => by
-      rw [hexy, show K.E.x + 8 * K.M.n + 8 * i = K.E.x + 8 * (K.M.n + i) by omega, W _ (by omega),
-        show 16 * K.M.n * (a - 1) + 8 * (K.M.n + i) = 16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i by omega]
+      rw [hexy, show K.E.x + 8 * K.M.n + 8 * i = K.E.x + 8 * (K.M.n + i) by omega_arith, W _ (by omega_arith),
+        show 16 * K.M.n * (a - 1) + 8 * (K.M.n + i) = 16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i by omega_arith]
     by_cases h1 : 1 ≤ a
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
       exact wordsVal_congr₂ _ _ _ fun i hi => by
         rw [ey i hi, hyw i hi, ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩),
-          decide_eq_false (show ¬ a = 0 by omega), bv_and_or_false]
+          decide_eq_false (show ¬ a = 0 by omega_arith), bv_and_or_false]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact wordsVal_wordOf hone fun i hi => by
-        rw [ey i hi, hyw i hi, ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
-          decide_eq_true (show a = 0 by omega), bv_and_or_true, bv_or_zero]
+        rw [ey i hi, hyw i hi, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)),
+          decide_eq_true (show a = 0 by omega_arith), bv_and_or_true, bv_or_zero]
   · by_cases h1 : 1 ≤ a
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
       exact wordsVal_wordOf hone fun i hi => by
-        rw [ez i hi, decide_eq_false (show ¬ a = 0 by omega), Bool.not_false, bv_and_true]
+        rw [ez i hi, decide_eq_false (show ¬ a = 0 by omega_arith), Bool.not_false, bv_and_true]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact wordsVal_zeros fun i hi => by
-        rw [ez i hi, decide_eq_true (show a = 0 by omega), Bool.not_true, bv_and_false]
+        rw [ez i hi, decide_eq_true (show a = 0 by omega_arith), Bool.not_true, bv_and_false]
   · exact k₂.trans (k₃.mono (by decide))
   · have U₂ : Unch base [(K.E.x, 8 * K.M.n), (K.E.x + 8 * K.M.n, 8 * K.M.n)] s.mem s₂.mem := by
-      exact Unch.split (by rw [show 2 * (8 * K.M.n) = 16 * K.M.n by omega]; exact O₂.unch)
+      exact Unch.split (by rw [show 2 * (8 * K.M.n) = 16 * K.M.n by omega_arith]; exact O₂.unch)
     rw [← hexy] at U₂
     exact (U₂.trans U₃).mono fun w hw => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢

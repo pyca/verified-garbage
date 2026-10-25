@@ -37,20 +37,20 @@ def held (n : Nat) : Nat := n - chainedLen 16 n
 theorem held_zero : held 0 = 0 := rfl
 
 theorem held_pos {n : Nat} (h : 0 < n) : held n = (n - 1) % 16 + 1 := by
-  unfold held chainedLen; omega
+  unfold held chainedLen; omega_arith
 
-theorem held_le (n : Nat) : held n ≤ 16 := by unfold held chainedLen; omega
+theorem held_le (n : Nat) : held n ≤ 16 := by unfold held chainedLen; omega_arith
 
 theorem chainedLen_add_held (n : Nat) : chainedLen 16 n + held n = n := by
-  unfold held chainedLen; omega
+  unfold held chainedLen; omega_arith
 
-theorem chainedLen_mod (n : Nat) : chainedLen 16 n % 16 = 0 := by unfold chainedLen; omega
+theorem chainedLen_mod (n : Nat) : chainedLen 16 n % 16 = 0 := by unfold chainedLen; omega_arith
 
 theorem chainedLen_fill {n l : Nat} (h : l ≤ 16 - held n) : chainedLen 16 (n + l) = chainedLen 16 n := by
-  unfold held chainedLen at *; omega
+  unfold held chainedLen at *; omega_arith
 
 theorem held_fill {n l : Nat} (h : l ≤ 16 - held n) : held (n + l) = held n + l := by
-  unfold held chainedLen at *; omega
+  unfold held chainedLen at *; omega_arith
 
 /-- The number of whole blocks of `d` chained after the block held back is
 completed with the first `16 - held n` bytes of `d`. -/
@@ -58,33 +58,33 @@ def nblocks (n l : Nat) : Nat := (l - (16 - held n) - 1) / 16
 
 theorem chainedLen_chain {n l : Nat} (h : 16 - held n < l) :
     chainedLen 16 (n + l) = chainedLen 16 n + 16 + 16 * nblocks n l := by
-  unfold nblocks held chainedLen at *; omega
+  unfold nblocks held chainedLen at *; omega_arith
 
 theorem held_chain {n l : Nat} (h : 16 - held n < l) :
     held (n + l) = l - (16 - held n) - 16 * nblocks n l := by
-  unfold nblocks held chainedLen at *; omega
+  unfold nblocks held chainedLen at *; omega_arith
 
 theorem held_chain_pos {n l : Nat} (h : 16 - held n < l) :
     0 < l - (16 - held n) - 16 * nblocks n l ∧ l - (16 - held n) - 16 * nblocks n l ≤ 16 := by
-  unfold nblocks; omega
+  unfold nblocks; omega_arith
 
 /-! ## Blocks -/
 
 theorem blocks_append {xs ys : List Byte} (hx : xs.length % 16 = 0) :
     blocks 16 (xs ++ ys) = blocks 16 xs ++ blocks 16 ys := by
-  obtain ⟨q, hq⟩ : ∃ q, xs.length = 16 * q := ⟨xs.length / 16, by omega⟩
+  obtain ⟨q, hq⟩ : ∃ q, xs.length = 16 * q := ⟨xs.length / 16, by omega_arith⟩
   simp only [blocks, List.length_append, hq,
-    show (16 * q + ys.length) / 16 = q + ys.length / 16 by omega,
+    show (16 * q + ys.length) / 16 = q + ys.length / 16 by omega_arith,
     Nat.mul_div_cancel_left _ (by decide : 0 < 16), List.range_add, List.map_append, List.map_map]
   congr 1
   · apply List.map_congr_left
     intro i hi
     rw [List.mem_range] at hi
-    rw [List.drop_append_of_le_length (by omega), List.take_append_of_le_length (by simp; omega)]
+    rw [List.drop_append_of_le_length (by omega_arith), List.take_append_of_le_length (by simp; omega_arith)]
   · apply List.map_congr_left
     intro i _
     simp only [Function.comp, Nat.mul_add, List.drop_append, hq]
-    rw [List.drop_eq_nil_of_le (by omega), List.nil_append, Nat.add_sub_cancel_left]
+    rw [List.drop_eq_nil_of_le (by omega_arith), List.nil_append, Nat.add_sub_cancel_left]
 
 theorem blocks_single {x : List Byte} (hx : x.length = 16) : blocks 16 x = [x] := by
   simp [blocks, hx, List.take_of_length_le]
@@ -95,7 +95,7 @@ theorem blocksAt_eq (m : Mem) (p : Addr) (n : Nat) :
   apply List.map_congr_left
   intro i hi
   rw [List.mem_range] at hi
-  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega)
+  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega_arith)
   intro k h₁ h₂
   simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h₁
   simp [Spec.Aes.bytesAt, BitVec.add_assoc, BitVec.ofNat_add]
@@ -103,7 +103,7 @@ theorem blocksAt_eq (m : Mem) (p : Addr) (n : Nat) :
 /-- The bytes at `p + a` are those at `p` from the `a`-th on. -/
 theorem bytesAt_offset (m : Mem) (p : Addr) {a b n : Nat} (h : a + b ≤ n) :
     Spec.Aes.bytesAt m (p + BitVec.ofNat 64 a) b = ((Spec.Aes.bytesAt m p n).drop a).take b := by
-  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega)
+  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega_arith)
   intro k h₁ h₂
   simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h₁
   simp [Spec.Aes.bytesAt, BitVec.add_assoc, BitVec.ofNat_add]
@@ -129,7 +129,7 @@ def KeyAt (mem : Mem) (p : Addr) (key : List Byte) : Prop :=
 
 theorem rounds_le {key : List Byte} (h : key.length = 16 ∨ key.length = 24 ∨ key.length = 32) :
     16 * (Spec.Aes.rounds (key.length / 4) + 1) ≤ 240 := by
-  simp only [Spec.Aes.rounds]; omega
+  simp only [Spec.Aes.rounds]; omega_arith
 
 theorem bytesAt_congr {m m' : Mem} {p : Addr} {n : Nat}
     (h : ∀ i < n, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
@@ -143,10 +143,10 @@ theorem KeyAt.congr {m m' : Mem} {p : Addr} {key : List Byte} (hk : KeyAt m p ke
   obtain ⟨hl, hs, hsk⟩ := hk
   have hR := rounds_le hl
   refine ⟨hl, ?_, ?_⟩
-  · rw [bytesAt_congr fun i hi => h i (by omega), hs]
+  · rw [bytesAt_congr fun i hi => h i (by omega_arith), hs]
   · rw [show p + 240 = p + BitVec.ofNat 64 240 from rfl,
       bytesAt_congr (m := m) fun i hi => by
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact h _ (by omega)]
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact h _ (by omega_arith)]
     exact hsk
 
 theorem repr_iff (mem : Mem) (p : Addr) (key msg : List Byte) :
@@ -159,7 +159,7 @@ theorem repr_iff (mem : Mem) (p : Addr) (key msg : List Byte) :
 theorem length_take_chained (msg : List Byte) :
     (msg.take (chainedLen 16 msg.length)).length = chainedLen 16 msg.length := by
   have := chainedLen_add_held msg.length
-  simp only [List.length_take]; omega
+  simp only [List.length_take]; omega_arith
 
 /-- Absorbing `d` that fits in the block held back. -/
 theorem repr_fill {m m' : Mem} {p : Addr} {key msg d : List Byte} (hr : Spec.Cmac.Repr m p key msg)
@@ -174,8 +174,8 @@ theorem repr_fill {m m' : Mem} {p : Addr} {key msg d : List Byte} (hr : Spec.Cma
   have hn := chainedLen_add_held msg.length
   rw [List.length_append, chainedLen_fill hl, held_fill hl]
   refine ⟨hk'.congr hk, ?_, ?_⟩
-  · rw [hc, hc', List.take_append_of_le_length (by omega)]
-  · rw [hh, hh', List.drop_append_of_le_length (by omega)]
+  · rw [hc, hc', List.take_append_of_le_length (by omega_arith)]
+  · rw [hh, hh', List.drop_append_of_le_length (by omega_arith)]
 
 /-- Absorbing `d` that does not fit in the block held back. -/
 theorem repr_chain {m m' : Mem} {p : Addr} {key msg d : List Byte} (hr : Spec.Cmac.Repr m p key msg)
@@ -198,20 +198,20 @@ theorem repr_chain {m m' : Mem} {p : Addr} {key msg d : List Byte} (hr : Spec.Cm
   generalize hcd : chainedLen 16 msg.length = c at *
   generalize hhd : held msg.length = h at *
   generalize hnb : nblocks msg.length d.length = nb at *
-  have hdc : (msg.drop c).length = h := by simp; omega
+  have hdc : (msg.drop c).length = h := by simp; omega_arith
   refine ⟨hk'.congr hk, ?_, ?_⟩
   · have e : (msg ++ d).take (c + 16 + 16 * nb) =
         msg.take c ++ ((msg.drop c ++ d.take (16 - h)) ++ (d.drop (16 - h)).take (16 * nb)) := by
-      rw [List.take_append, List.take_of_length_le (by omega),
-        show c + 16 + 16 * nb - msg.length = (16 - h) + 16 * nb by omega, List.take_add]
+      rw [List.take_append, List.take_of_length_le (by omega_arith),
+        show c + 16 + 16 * nb - msg.length = (16 - h) + 16 * nb by omega_arith, List.take_add]
       simp only [List.append_assoc]
       rw [← List.append_assoc (List.take c msg), List.take_append_drop]
-    have hx : (msg.drop c ++ d.take (16 - h)).length = 16 := by simp; omega
-    rw [hc, hc', hh', e, blocks_append (by rw [List.length_take]; omega),
+    have hx : (msg.drop c ++ d.take (16 - h)).length = 16 := by simp; omega_arith
+    rw [hc, hc', hh', e, blocks_append (by rw [List.length_take]; omega_arith),
       blocks_append (by rw [hx]), blocks_single hx, chain_append, chain_append, chain_append]
   · have e : (msg ++ d).drop (c + 16 + 16 * nb) = (d.drop (16 - h)).drop (16 * nb) := by
-      rw [List.drop_append, List.drop_eq_nil_of_le (by omega), List.nil_append, List.drop_drop]
-      congr 1; omega
+      rw [List.drop_append, List.drop_eq_nil_of_le (by omega_arith), List.nil_append, List.drop_drop]
+      congr 1; omega_arith
     rw [hh, e]
 
 /-- The MAC is `macFull`'s, which has 16 bytes. -/
@@ -232,6 +232,6 @@ theorem repr_finish {m : Mem} {p : Addr} {key msg : List Byte} (hr : Spec.Cmac.R
   refine ⟨by rw [length_take_chained]; exact chainedLen_mod _, ?_, hc, by rw [hh, List.take_append_drop]⟩
   by_cases h0 : msg.length = 0
   · exact .inl (by simp [List.eq_nil_of_length_eq_zero h0])
-  · exact .inr (by rw [held_pos (by omega)]; omega)
+  · exact .inr (by rw [held_pos (by omega_arith)]; omega_arith)
 
 end VG.Proof.Cmac.Stream

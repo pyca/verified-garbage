@@ -25,15 +25,15 @@ open VG VG.AArch64 VG.Impl.X25519.AArch64 VG.Spec.X25519 VG.Proof.X25519
 
 theorem maskB_of {x : Nat} (hx : x ≤ 1) :
     (0 : BitVec 64) - BitVec.ofNat 64 x = maskB (x == 1) := by
-  rcases (by omega : x = 0 ∨ x = 1) with rfl | rfl <;> decide
+  rcases (by omega_arith : x = 0 ∨ x = 1) with rfl | rfl <;> decide
 
 theorem xor_le {a c : Nat} (ha : a ≤ 1) (hc : c ≤ 1) : a ^^^ c ≤ 1 := by
-  rcases (by omega : a = 0 ∨ a = 1) with rfl | rfl <;> rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;>
+  rcases (by omega_arith : a = 0 ∨ a = 1) with rfl | rfl <;> rcases (by omega_arith : c = 0 ∨ c = 1) with rfl | rfl <;>
     decide
 
 theorem ofNat_xor {a c : Nat} (ha : a ≤ 1) (hc : c ≤ 1) :
     BitVec.ofNat 64 a ^^^ BitVec.ofNat 64 c = BitVec.ofNat 64 (a ^^^ c) := by
-  rcases (by omega : a = 0 ∨ a = 1) with rfl | rfl <;> rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;>
+  rcases (by omega_arith : a = 0 ∨ a = 1) with rfl | rfl <;> rcases (by omega_arith : c = 0 ∨ c = 1) with rfl | rfl <;>
     decide
 
 /-- The address of bit `t`. -/
@@ -43,8 +43,8 @@ theorem bit_addr (b : Addr) (t : Nat) :
 
 theorem bit_in {b : Addr} {s : State} (hs : Sc b s) {t : Nat} (ht : t < 255) :
     InRegions (s.rd ++ s.wr) (b + BitVec.ofNat 64 (BITS + t)) 1 :=
-  ⟨scR b, List.mem_append_right _ hs.wr, Offset.contains_base b (by simp only [BITS, slot, NSLOT]; omega)
-    (by simp only [BITS, slot, NSLOT]; omega)⟩
+  ⟨scR b, List.mem_append_right _ hs.wr, Offset.contains_base b (by simp only [BITS, slot, NSLOT]; omega_arith)
+    (by simp only [BITS, slot, NSLOT]; omega_arith)⟩
 
 /-- The start of an iteration: the bit `k_t` from `BITS`, `swap ^ k_t` into
 `x20`, its mask into `x22`, and `swap = k_t`. -/
@@ -57,7 +57,7 @@ theorem head_ok {b : Addr} {s : State} (hs : Sc b s) {t sw kt : Nat} (ht : t < 2
       s'.gpr .x22 = maskB ((sw ^^^ kt) == 1) ∧ Kp [.x23, .x17, .x19, .x20, .x24, .x22] s s' ∧
       s'.mem = s.mem := by
   have e23 : s.gpr .x23 - BitVec.ofNat 64 1 = BitVec.ofNat 64 t := by
-    rw [h23, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), Nat.add_sub_cancel]
+    rw [h23, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith) (by omega_arith), Nat.add_sub_cancel]
   have h1 : WP isa (.block [.subImm .x .x23 .x23 1, .add .x .x17 .x3 .x23]) s fun s₁ =>
       s₁.gpr .x23 = BitVec.ofNat 64 t ∧ s₁.gpr .x17 = b + BitVec.ofNat 64 t ∧ Kp [.x23, .x17] s s₁ ∧
         s₁.mem = s.mem := by
@@ -78,7 +78,7 @@ theorem head_ok {b : Addr} {s : State} (hs : Sc b s) {t sw kt : Nat} (ht : t < 2
   rw [runBlock_cons, exec_ldrb (by decide) (by rw [f₁, bit_addr]; exact bit_in hs₁ ht), runStep_some]
   have hk : ((s₁.mem.read (b + BitVec.ofNat 64 (BITS + t)) 1).setWidth 32).setWidth 64 = BitVec.ofNat 64 kt := by
     rw [read1_toNat, m₁, hbit]
-    rcases (by omega : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
+    rcases (by omega_arith : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
   simp only [runBlock_cons, runStep_some, exec_eor_x, exec_addImm_x (show 0 < 4096 by decide), exec_movz,
     exec_sub_x, read_x, runBlock_nil, Option.some.injEq, exists_eq_left', f₁, bit_addr, gpr_wx_self,
     gpr_ww_self, gpr_wx_ne _ _ (show Reg.x23 ≠ .x22 by decide), gpr_wx_ne _ _ (show Reg.x24 ≠ .x22 by decide),
@@ -208,7 +208,7 @@ theorem ops_ok {b : Addr} {s₀ s : State} {x1 : Fe} {st : Ladder} (h : Inv b s�
   split at hj
   · rename_i h5
     cases hj
-    rcases (by omega : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 ∨ n = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_arith : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 ∨ n = 4) with rfl | rfl | rfl | rfl | rfl <;>
       refine ⟨rfl, ?_⟩ <;> simp only [Function.update_apply, lvals, ite_true, ite_false,
         Nat.reduceEqDiff]
   · cases hj
@@ -233,7 +233,7 @@ theorem bits_frame {b : Addr} {m m' : Mem} (hf : Frame [slotArea b] m m') {t : N
   rw [List.mem_singleton.mp hr]
   intro hc
   have := Offset.sep b (d := 64) (n := 1920) (e := BITS + t) (k := 1)
-    (by simp only [BITS, slot, NSLOT]; omega) (by decide) (by simp only [BITS, slot, NSLOT]; omega)
+    (by simp only [BITS, slot, NSLOT]; omega_arith) (by decide) (by simp only [BITS, slot, NSLOT]; omega_arith)
   exact this _ hc (by simp only [BitVec.sub_self, BitVec.toNat_zero, Nat.lt_one_iff])
 
 /-- One iteration of the ladder, for the bit `t`. -/
@@ -246,7 +246,7 @@ theorem step_ok {b : Addr} {s : State} {k : Nat} {x1 : Fe} {t : Nat} (ht : t < 2
       Sc b s' ∧ Sl s'.mem b (lvals x1 (ladderAfter k x1 t)) lbnds ∧
       s'.gpr .x23 = BitVec.ofNat 64 t ∧ s'.gpr .x24 = BitVec.ofNat 64 (ladderAfter k x1 t).swap ∧
       Kp loopRegs s s' ∧ Frame [slotArea b] s.mem s'.mem := by
-  have hsw := ladderAfter_swap_le k x1 (n := t + 1) (by omega)
+  have hsw := ladderAfter_swap_le k x1 (n := t + 1) (by omega_arith)
   have hkt := bit_le k t
   have e : step = ([.subImm .x .x23 .x23 1, .add .x .x17 .x3 .x23, .ldrb .x19 .x17 BITS,
       .logic .eor .x .x20 .x24 .x19, .addImm .x .x24 .x19 0] ++ maskOf) ++ (cswap X2 X3 ++ cswap Z2 Z3 ++
@@ -284,9 +284,9 @@ theorem loop_ok {b : Addr} {s₀ : State} {k : Nat} {x1 : Fe}
       s.gpr .x23 = BitVec.ofNat 64 n ∧ s.gpr .x24 = BitVec.ofNat 64 (ladderAfter k x1 n).swap ∧
       Kp loopRegs s₀ s ∧ Frame [slotArea b] s₀.mem s.mem) ?_
   rintro n s ⟨h1, h255, hsc, hsl, h23, h24, hkp, hfr⟩
-  obtain ⟨t, rfl⟩ : ∃ t, n = t + 1 := ⟨n - 1, by omega⟩
-  refine WP.mono (step_ok (t := t) (by omega) hsc hsl h23 h24
-    (by rw [bits_frame hfr (by omega)]; exact hbits t (by omega))) fun s' ⟨sc', sl', e23, e24, kp', fr'⟩ => ?_
+  obtain ⟨t, rfl⟩ : ∃ t, n = t + 1 := ⟨n - 1, by omega_arith⟩
+  refine WP.mono (step_ok (t := t) (by omega_arith) hsc hsl h23 h24
+    (by rw [bits_frame hfr (by omega_arith)]; exact hbits t (by omega_arith))) fun s' ⟨sc', sl', e23, e24, kp', fr'⟩ => ?_
   have hev : isa.eval (.nonzero .x .x23) s' = some (BitVec.ofNat 64 t != 0) := by
     simp only [eval, read_x, e23]
   have hkp : Kp loopRegs s₀ s' := (hkp.trans kp').sub (List.append_subset.mpr
@@ -295,11 +295,11 @@ theorem loop_ok {b : Addr} {s₀ : State} {k : Nat} {x1 : Fe}
   by_cases ht : t = 0
   · subst ht
     exact .inl ⟨by rw [hev]; rfl, sc', sl', e24, hkp, hfr'⟩
-  · refine .inr ⟨?_, t, by omega, by omega, by omega, sc', sl', e23, e24, hkp, hfr'⟩
+  · refine .inr ⟨?_, t, by omega_arith, by omega_arith, by omega_arith, sc', sl', e23, e24, hkp, hfr'⟩
     rw [hev]
     have : BitVec.ofNat 64 t ≠ 0 := fun h => ht (by
       have := congrArg BitVec.toNat h
-      rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this)
+      rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this)
     simpa using this
 
 /-- The ladder, from its initial state in the slots. -/

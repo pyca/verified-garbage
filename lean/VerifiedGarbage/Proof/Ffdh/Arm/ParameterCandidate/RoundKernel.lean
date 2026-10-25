@@ -29,14 +29,7 @@ theorem roundArgs_ok {s : State} {base : BitVec 32} {capacity w : Nat}
   have read36 : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 36#32)) 4 := by
     rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
     exact stack.read (by decide)
-  refine withRest [.r0, .r1] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block [.ldrSp .r0 0, .ldrSp .r1 36] : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, ready.stackRead, ready.saved, read36, saved]
 
 theorem roundKernel_ok (v : RoundImpl) {s : State} {base : BitVec 32} {capacity w n witness : Nat}

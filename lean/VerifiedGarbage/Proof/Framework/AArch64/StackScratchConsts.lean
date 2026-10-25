@@ -147,9 +147,9 @@ theorem reserved_below (hS : 0 < stack + bytes) (s : State) :
 theorem sp_of_preK (hk : (sig.words abi.ptrBits).length < 8) (hb : 0 < bytes) {s : State}
     (hs : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes)).pre s) :
     stack + bytes ≤ s.sp.toNat := by
-  have hwf := ((pre_regs (by omega)).mp (pre_consts.mp hs).1).1
+  have hwf := ((pre_regs (by omega_arith)).mp (pre_consts.mp hs).1).1
   simp only [stripConsts_sp] at hwf
-  rcases hwf with h | h <;> omega
+  rcases hwf with h | h <;> omega_arith
 
 /-- The precondition under `abi.withConsts` gives the one with the buffer in
 `narrow`. -/
@@ -160,13 +160,13 @@ theorem narrowK_pre (hk : (sig.words abi.ptrBits).length < 8)
   have hsb := sp_of_preK hk hb.1 hs
   obtain ⟨hs', hd, hh, ht⟩ := pre_consts.mp hs
   have hn := narrow_pre (nm := nm) hk hb hs'
-  have hR := reserved_below (stack := stack) (bytes := bytes) (by omega) s
+  have hR := reserved_below (stack := stack) (bytes := bytes) (by omega_arith) s
   refine pre_consts.mpr ⟨by rw [stripConsts_narrow]; exact hn, hd, hh, fun t ht' => ⟨(ht t ht').1, ?_, ?_⟩⟩
   · intro r hr
     rcases List.mem_append.mp hr with hr | hr
     · exact (ht t ht').2.1 r hr
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ((ht t ht').2.2 _ hR).sub_right (Offset.sub_below _ (by omega) (by have := hb.2.2.2; omega))
+      exact ((ht t ht').2.2 _ hR).sub_right (Offset.sub_below _ (by omega_arith) (by have := hb.2.2.2; omega_arith))
   · intro r hr
     have hr' : r ∈ stackBelow (s.sp - BitVec.ofNat 64 bytes) stack := hr
     rcases Nat.eq_zero_or_pos stack with h0 | h0
@@ -188,7 +188,7 @@ theorem withStackScratchK_run {c : Prog isa} (hk : (sig.words abi.ptrBits).lengt
   obtain ⟨hr2, -⟩ := argRegs_scratch _ hk
   have hpush : isa.push (.alloc bytes) s = some (allocated bytes s) := by
     simp only [isa, push, allocated]
-    exact ite_eq_left ⟨hb0, hb1, hb2, by omega⟩
+    exact ite_eq_left ⟨hb0, hb1, hb2, by omega_arith⟩
   have hblk : Exec isa (.block [.addSp (argRegs.getD (sig.words abi.ptrBits).length .x0) 0])
       (allocated bytes s) [] (scratchState sig bytes s) :=
     .block (by simp only [execBlock, isa, exec, show (0 : Nat) < 4096 by decide, ite_true,
@@ -196,7 +196,7 @@ theorem withStackScratchK_run {c : Prog isa} (hk : (sig.words abi.ptrBits).lengt
   have hcov : Covers (s.wr ++ [⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩])
       (⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr) :=
     Covers.append_left (Covers.of_mem fun r hr => List.mem_cons_of_mem _ hr)
-      (Covers.one ⟨_, List.mem_cons_self .., Region.contains_self' (by omega)⟩)
+      (Covers.one ⟨_, List.mem_cons_self .., Region.contains_self' (by omega_arith)⟩)
   have hw := Exec.widen he (rd := s.rd) (wr := ⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr)
     (by simpa using Covers.append (Covers.refl s.rd) hcov) (by simpa using hcov)
   rw [show (narrow sig e n bytes s).withRegions s.rd (⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr) =
@@ -245,13 +245,13 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
         b.1.Disjoint ⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩ := by
     intro s hs b hb'
     have h0 := sp_of_preK hk hb.1 hs
-    have hs' := (pre_regs (by omega)).mp (pre_consts.mp hs).1
+    have hs' := (pre_regs (by omega_arith)).mp (pre_consts.mp hs).1
     obtain ⟨-, -, -, -, hres, -, -⟩ := hs'
     simp only [stripConsts_sp] at hres
     have hbelow : below s.sp (stack + bytes) ∈ stackBelow s.sp (stack + bytes) := by
-      rw [stackBelow_pos _ (by omega)]; simp
+      rw [stackBelow_pos _ (by omega_arith)]; simp
     have hscrSub : Region.Sub ⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩ (below s.sp (stack + bytes)) :=
-      Offset.sub_below _ (by omega) (by have := hb.2.2.2; omega)
+      Offset.sub_below _ (by omega_arith) (by have := hb.2.2.2; omega_arith)
     exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right hscrSub
   -- Every run is the code's run from `narrow`, then the wipe.
   have hrun : ∀ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes)).pre s → ∃ t s₃ s₄,
@@ -270,9 +270,9 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
     have hwr₃ : s₃.wr = (narrow sig e n bytes s).wr := (Exec.rdwr he).2.1
     have h0 := sp_of_preK hk hb.1 hs
     obtain ⟨u', hblk, ⟨g, m', rfl, hg⟩, hfr⟩ := wipe_run ⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩ s₃ words
-      (by rw [hwr₃, narrow_wr]; simp) (by have := hb.2.2.2; omega)
+      (by rw [hwr₃, narrow_wr]; simp) (by have := hb.2.2.2; omega_arith)
       (fun k hk' => by
-        rw [hsp₃]; exact Offset.contains_base _ (by omega) (by have := hb.2.2.2; omega))
+        rw [hsp₃]; exact Offset.contains_base _ (by omega_arith) (by have := hb.2.2.2; omega_arith))
     have he' := Exec.seq he (Exec.block hblk)
     have ha' : abiPreserved (narrow sig e n bytes s) { s₃ with gpr := g, mem := m' } := by
       refine ⟨fun q hq => ?_, ha.2.1, ha.2.2⟩
@@ -285,16 +285,16 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, s₄, -, hq, hfr, -, hex, ha, hm, hx0⟩ := hrun s hs
     refine ⟨_, _, hex, ha, ?_⟩
-    refine post_consts.mpr ((post_regs (by omega)).mpr ?_)
+    refine post_consts.mpr ((post_regs (by omega_arith)).mpr ?_)
     have hq' := (post_regs (sig := sig.withScratch nm e n)
       (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
-      (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega)).mp (post_consts.mp hq)
+      (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_arith)).mp (post_consts.mp hq)
     rw [narrow_regArgs hk] at hq'
     rw [hm, hx0]
     have h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
-      post _ _ (hlen s (by omega))) s.mem) s₃.mem) _) hq'
-    refine hpost _ _ _ _ _ (hlen s (by omega)) (fun b hb' a ha' => ?_) h₃
+      post _ _ (hlen s (by omega_arith))) s.mem) s₃.mem) _) hq'
+    refine hpost _ _ _ _ _ (hlen s (by omega_arith)) (fun b hb' a ha' => ?_) h₃
     exact (hfr a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hdisj s hs b hb' a ha').symm
@@ -302,7 +302,7 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂]
     obtain ⟨hp', hsy⟩ := pub_consts.mp hp
-    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_regs (by omega)).mp hp').1.1
+    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_regs (by omega_arith)).mp hp').1.1
     rw [hct _ _ _ _ _ _ (narrowK_pre hk hb h₁) (narrowK_pre hk hb h₂)
       (pub_consts.mpr ⟨narrow_pub hk hp', fun c hc => hsy c hc⟩) f₁ f₂, hsp₁₂]
 

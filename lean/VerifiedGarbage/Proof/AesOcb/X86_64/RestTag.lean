@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
 import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-OCB on x86-64: the rest of the data and the tag (`rest`, `tag`)
@@ -97,7 +96,7 @@ theorem restHead_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {t : State
     rw [bytesAt_frame fr₂ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact (L.k_w.sub_left (Region.sub_prefix hRb)).sub_right (Lay.wSub (by decide)))
-      (by omega)]
+      (by omega_arith)]
   refine WP.seq (WP.of_runBlock ⟨t₂, by rw [runBlock_append, run₁, Option.bind_some, run₂], ?_⟩)
   refine WP.mono (callBlocks_ok (f := Spec.Aes.cipher) (b := v.enc) v.encOk v.encNosp v.encDepth L E₂ hR hrnd₂
     (oneBlock_ok E₂.r15 tmpO (by decide)) (dstW L E₂.perm (d := tmpO) (n := 1) (by decide))) fun t₃ P₃ => ?_
@@ -133,7 +132,7 @@ theorem xor_append_right (xs ys zs : List Byte) (h : xs.length = ys.length) :
 /-- `r` bytes XORed with the first `r` bytes of a block. -/
 theorem xor_bytesAt_block (xs : List Byte) (m : Mem) (Q : Addr) {r : Nat} (hl : xs.length = r) (hr : r ≤ 16) :
     Spec.Ocb.xor xs (bytesAt m Q r) = Spec.Ocb.xor xs (Spec.Ocb.toBytes (blockAtMem m Q)) := by
-  rw [blockAtMem, Proof.Ocb.toBytes_ofBytes (length_bytesAt _ _ _), show (16 : Nat) = r + (16 - r) by omega,
+  rw [blockAtMem, Proof.Ocb.toBytes_ofBytes (length_bytesAt _ _ _), show (16 : Nat) = r + (16 - r) by omega_arith,
     Proof.Ocb.bytesAt_append, xor_append_right _ _ _ (by rw [hl, length_bytesAt])]
 
 /-- What `rest` leaves: `Offset_*`, the data XORed with `Pad`, and the
@@ -193,10 +192,10 @@ theorem rest_ok (v : BlocksImpl) (enc : Bool) {K W SP : Addr} (L : Lay K W SP) {
     intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl <;> exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  have pP₃ : bytesAt t₃.mem P r = bytesAt t.mem P r := bytesAt_frame H.frame dH (by omega)
+  have pP₃ : bytesAt t₃.mem P r = bytesAt t.mem P r := bytesAt_frame H.frame dH (by omega_arith)
   have hl : (bytesAt t.mem P r).length = r := length_bytesAt _ _ _
   have hlx : ∀ ys, (Spec.Ocb.xor (bytesAt t.mem P r) (Spec.Ocb.toBytes ys)).length = r := fun ys => by
-    simp [Spec.Ocb.xor, length_bytesAt, Proof.Ocb.toBytes_length]; omega
+    simp [Spec.Ocb.xor, length_bytesAt, Proof.Ocb.toBytes_length]; omega_arith
   have fP : ∀ (m : Mem) (xs : List Byte), xs.length = r → Frame [⟨P, r⟩] m (writeBytes m P xs) :=
     fun m xs h => writeBytes_frame _ _ _ (by rw [h]; exact Region.contains_self _ _)
   -- What `xorPad` writes, from the state it starts in.
@@ -206,8 +205,8 @@ theorem rest_ok (v : BlocksImpl) (enc : Bool) {K W SP : Addr} (L : Lay K W SP) {
         Spec.Ocb.xor (bytesAt t.mem P r) (Spec.Ocb.toBytes
           (ctxCiph t.mem K R (blockAtMem t.mem (W + BitVec.ofNat 64 ofsO) ^^^ Spec.Ocb.ctxLstar t.mem K))) := by
     intro u hu ht
-    rw [hu, xor_bytesAt_block _ _ _ hl (by omega), show (112 : Nat) = tmpO from rfl, ht, H.tmp,
-      Proof.AesCcm.X86_64.bytesAt_writeBytes_base _ _ _ (by rw [hlx]) (by omega), hlx, List.drop_of_length_le
+    rw [hu, xor_bytesAt_block _ _ _ hl (by omega_arith), show (112 : Nat) = tmpO from rfl, ht, H.tmp,
+      Proof.AesCcm.X86_64.bytesAt_writeBytes_base _ _ _ (by rw [hlx]) (by omega_arith), hlx, List.drop_of_length_le
         (by rw [length_bytesAt]), List.append_nil]
   have dCk : ∀ q ∈ [(⟨W + BitVec.ofNat 64 ofsO, 16⟩ : Region), ⟨W + BitVec.ofNat 64 tmpO, 16⟩, wC W, below SP 8],
       (⟨W + BitVec.ofNat 64 ckO, 16⟩ : Region).Disjoint q := by
@@ -240,7 +239,7 @@ theorem rest_ok (v : BlocksImpl) (enc : Bool) {K W SP : Addr} (L : Lay K W SP) {
       (by rw [rd₄, wr₄]; exact hS₃) hP.w) fun t₅ ⟨fr₅, ck₅, g₅, rd₅, wr₅⟩ => ?_
     have s₅ : ∀ r ∈ calleeSaved, t₅.gpr r = t₄.gpr r :=
       g7 .rax .rcx .rsi .rdx g₅ (by decide) (by decide) (by decide) (by decide)
-    have p₅ : bytesAt t₅.mem P r = bytesAt t₄.mem P r := bytesAt_frame fr₅ dT (by omega)
+    have p₅ : bytesAt t₅.mem P r = bytesAt t₄.mem P r := bytesAt_frame fr₅ dT (by omega_arith)
     refine ⟨E' (fun r hr => by rw [s₅ r hr, s₄ r hr]) (by rw [rd₅, rd₄]) (by rw [wr₅, wr₄]),
       ((H.frame.mono (by simp)).trans (fr₄.mono (by simp))).trans (fr₅.mono (by simp)), ?_, ?_, ?_,
       fun r hr => by rw [s₅ r hr, s₄ r hr, H.saved r hr], by rw [rd₅, rd₄, H.rd], by rw [wr₅, wr₄, H.wr]⟩
@@ -253,7 +252,7 @@ theorem rest_ok (v : BlocksImpl) (enc : Bool) {K W SP : Addr} (L : Lay K W SP) {
     have s₄ : ∀ r ∈ calleeSaved, t₄.gpr r = t₃.gpr r :=
       g7 .rax .rcx .rsi .rdx g₄ (by decide) (by decide) (by decide) (by decide)
     have E₄ : Env K W SP t₄ := E' s₄ rd₄ wr₄
-    have p₄ : bytesAt t₄.mem P r = bytesAt t₃.mem P r := bytesAt_frame fr₄ dT (by omega)
+    have p₄ : bytesAt t₄.mem P r = bytesAt t₃.mem P r := bytesAt_frame fr₄ dT (by omega_arith)
     refine WP.mono (xorPad_ok E₄ hr hr' (by rw [s₄ _ (by decide), h3₃]) (by rw [s₄ _ (by decide), h12₃])
       (hP₃.of_eq rd₄ wr₄)) fun t₅ ⟨m₅, g₅, rd₅, wr₅⟩ => ?_
     have s₅ : ∀ r ∈ calleeSaved, t₅.gpr r = t₄.gpr r :=
@@ -313,7 +312,7 @@ theorem tag_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E 
     unfold ctxCiph
     rw [bytesAt_frame fr₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (L.k_w.sub_left (Region.sub_prefix hRb)).sub_right (Lay.wSub (by decide))) (by omega)]
+      exact (L.k_w.sub_left (Region.sub_prefix hRb)).sub_right (Lay.wSub (by decide))) (by omega_arith)]
   unfold tag
   refine WP.seq (WP.of_runBlock ⟨t₃, by rw [runBlock_append, runBlock_append, run₁, Option.bind_some, run₂,
     Option.bind_some, run₃], ?_⟩)
@@ -327,14 +326,14 @@ theorem tag_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E 
     rw [show 16 * 0 = 0 from rfl, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] at this
     rw [this, tmp₃, ← cK]; rfl
   obtain ⟨t₅, run₅, B₅⟩ := copy16_ok (s := t₄) (a := tmpO) (d := d) E₄.r15
-    (E₄.perm.wR (by decide)) (E₄.perm.wR (by decide)) (E₄.perm.wW (by omega)) (E₄.perm.wW (by omega))
+    (E₄.perm.wR (by decide)) (E₄.perm.wR (by decide)) (E₄.perm.wW (by omega_arith)) (E₄.perm.wW (by omega_arith))
   have E₅ : Env K W SP t₅ := E₄.keep (fun r hr => B₅.gpr r (nE r hr)) B₅.rd B₅.wr
   obtain ⟨t₆, run₆, B₆⟩ := xor16_ok (s := t₅) (b := .r15) (a := sumO) (d := d) E₅.r15 E₅.r15 (by decide) (by decide)
-    (E₅.perm.wR (by decide)) (E₅.perm.wR (by decide)) (E₅.perm.wW (by omega)) (E₅.perm.wW (by omega))
+    (E₅.perm.wR (by decide)) (E₅.perm.wR (by decide)) (E₅.perm.wW (by omega_arith)) (E₅.perm.wW (by omega_arith))
   refine WP.of_runBlock ⟨t₆, by rw [runBlock_append, run₅, Option.bind_some, run₆], ?_⟩
   have dD : ∀ {a : Nat}, (a + 16 ≤ d ∨ d + 16 ≤ a) → a + 16 ≤ 3584 →
       ∀ q ∈ [(⟨W + BitVec.ofNat 64 d, 16⟩ : Region)], (⟨W + BitVec.ofNat 64 a, 16⟩ : Region).Disjoint q :=
-    fun h h' q hq => by simp only [List.mem_singleton] at hq; subst hq; exact L.w_w h h' (by omega)
+    fun h h' q hq => by simp only [List.mem_singleton] at hq; subst hq; exact L.w_w h h' (by omega_arith)
   have dCall : ∀ q ∈ [(⟨W + BitVec.ofNat 64 tmpO, 16 * 1⟩ : Region), ⟨W + BitVec.ofNat 64 512, 2048⟩,
       below (t₃.gpr .rsp) 8], (⟨W + BitVec.ofNat 64 sumO, 16⟩ : Region).Disjoint q := by
     intro q hq
@@ -354,7 +353,7 @@ theorem tag_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E 
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
     · exact ⟨_, by simp, sub_wC (by decide) (by decide)⟩
     · rw [E₃.rsp]; exact ⟨_, by simp, fun _ h => h⟩
-  · rw [B₆.val, B₅.val, tmp₄, blockAtMem_frame B₅.frame (dD (by simp only [sumO]; omega) (by decide)),
+  · rw [B₆.val, B₅.val, tmp₄, blockAtMem_frame B₅.frame (dD (by simp only [sumO]; omega_arith) (by decide)),
       blockAtMem_frame P₄.frame dCall, blockAtMem_frame fr₃ (tW (by decide) (by decide))]
 
 end VG.Proof.AesOcb.X86_64

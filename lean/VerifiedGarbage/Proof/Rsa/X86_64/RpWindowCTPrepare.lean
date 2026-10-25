@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTLoop
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTLoop
 import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTLoop
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
 
 /-! # Recovery windows: constant-time table preparation -/
 

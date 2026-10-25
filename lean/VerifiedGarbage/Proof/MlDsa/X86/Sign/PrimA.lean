@@ -70,7 +70,7 @@ theorem inPlace_piece {t : Poly → Poly} {nm : String} {c : Prog isa}
     sig_pre [inPlaceContract, inPlaceSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, eA, eSp]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, Buf.disj hp hF' hS' dFS, rF₁, rS₁, rF₂, rS₂, rA₂, rF₃, rS₃, rA₃, Buf.fit hp hF', Buf.fit hp hS', ?_⟩
     exact reduced_congr (ent_bytes hp h (n := 2) (by decide) hF') (m ▸ (hA s₀ s hp ha).2)
   · have e₁ : f.ptr s₀ = f.ptr s₀' := hq.t.ptr hF'
@@ -104,7 +104,7 @@ theorem inPlace_piece {t : Poly → Poly} {nm : String} {c : Prog isa}
     subst he
     simp only [arg_withRegions, a0, m₂] at post
     rw [polyAt_congr (ent_bytes hp h (n := 2) (by decide) hF'), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 end VG.Proof.MlDsa.X86.Sign
 
@@ -167,7 +167,7 @@ theorem mul_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mulC
     sig_pre [mulContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, eA, eSp]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hH' hF dHF, Buf.disj hp hH' hG dHG, rH₁, rF₁, rG₁, rH₂, rF₂, rG₂, rA₂, rH₃, rF₃, rG₃, rA₃,
       Buf.fit hp hH', Buf.fit hp hF, Buf.fit hp hG, ?_, ?_⟩
     · exact reduced_congr (ent_bytes hp h (n := 3) (by decide) hF) (m ▸ (hA s₀ s hp ha).2.1)
@@ -202,7 +202,7 @@ theorem mul_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mulC
     simp only [arg_withRegions, a0, a1, a2, m₂] at post
     rw [polyAt_congr (ent_bytes hp h (n := 3) (by decide) hF), polyAt_congr (ent_bytes hp h (n := 3) (by decide) hG),
       m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 /-- `h ← h + MultiplyNTT(f, g)`. -/
 theorem mulAdd_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mulAddContract X86.abi 16))
@@ -250,7 +250,7 @@ theorem mulAdd_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (m
     sig_pre [mulAddContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, eA, eSp]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hH' hF dHF, Buf.disj hp hH' hG dHG, rH₁, rF₁, rG₁, rH₂, rF₂, rG₂, rA₂, rH₃, rF₃, rG₃, rA₃,
       Buf.fit hp hH', Buf.fit hp hF, Buf.fit hp hG, ?_, ?_, ?_⟩
     · exact reduced_congr (ent_bytes hp h (n := 3) (by decide) hH') (m ▸ (hA s₀ s hp ha).2.1)
@@ -286,7 +286,7 @@ theorem mulAdd_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (m
     simp only [arg_withRegions, a0, a1, a2, m₂] at post
     rw [polyAt_congr (ent_bytes hp h (n := 3) (by decide) hH'), polyAt_congr (ent_bytes hp h (n := 3) (by decide) hF), polyAt_congr (ent_bytes hp h (n := 3) (by decide) hG),
       m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 /-- `f ← op(f, g)` (`vg_mldsa_add`, `vg_mldsa_sub`). -/
 theorem acc_piece {op : Poly → Poly → Poly} {nm : String} {c : Prog isa}
@@ -330,7 +330,7 @@ theorem acc_piece {op : Poly → Poly → Poly} {nm : String} {c : Prog isa}
     sig_pre [accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, eA, eSp]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hF' hG dFG, rF₁, rG₁, rF₂, rG₂, rA₂, rF₃, rG₃, rA₃,
       Buf.fit hp hF', Buf.fit hp hG, ?_, ?_⟩
     · exact reduced_congr (ent_bytes hp h (n := 2) (by decide) hF') (m ▸ (hA s₀ s hp ha).2.1)
@@ -361,6 +361,6 @@ theorem acc_piece {op : Poly → Poly → Poly} {nm : String} {c : Prog isa}
     simp only [arg_withRegions, a0, a1, m₂] at post
     rw [polyAt_congr (ent_bytes hp h (n := 2) (by decide) hF'), polyAt_congr (ent_bytes hp h (n := 2) (by decide) hG),
       m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 end VG.Proof.MlDsa.X86.Sign

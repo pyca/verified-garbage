@@ -10,6 +10,7 @@ public import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 
 /-! Preserve signature digits while the challenge reuses the bit buffer. -/
 

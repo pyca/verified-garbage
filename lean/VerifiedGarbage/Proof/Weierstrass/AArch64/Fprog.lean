@@ -34,9 +34,9 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 /-- Products of at most four words are never calls. -/
 theorem callOf_small {M : Mod} (h : M.n ≤ 4) : Mont.callOf M = none := by
   unfold Mont.callOf; split
-  · have h6 : (6 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
-    have h8 : (8 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
-    have h9 : (9 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
+  · have h6 : (6 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega_arith
+    have h8 : (8 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega_arith
+    have h9 : (9 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega_arith
     simp only [Mont.fns, List.find?_cons, List.find?_nil, Spec.Weierstrass.Mont.p384p,
       Spec.Weierstrass.Mont.p521p, Spec.Weierstrass.Mont.p384n, Spec.Weierstrass.Mont.p521n,
       Spec.Weierstrass.Mont.brainpoolp512r1p, Spec.Weierstrass.Mont.brainpoolp512r1n, h6, h8, h9,
@@ -120,9 +120,9 @@ theorem opKeep_wordsVal {M : Mod} {base : Addr} {o : Nat} {s s' : State}
   | k + 1, y, ho, ht, hy => by
     simp only [wordsVal]
     have hw : word s'.mem base y = word s.mem base y :=
-      Mem.readW_congr fun i hi => h.mem _ (by rw [ofs_off base (by omega)]; omega)
-        (by rw [ofs_off base (by omega)]; omega)
-    rw [opKeep_wordsVal h (k := k) (y := y + 8) (by omega) (by omega) (by omega), hw]
+      Mem.readW_congr fun i hi => h.mem _ (by rw [ofs_off base (by omega_arith)]; omega_arith)
+        (by rw [ofs_off base (by omega_arith)]; omega_arith)
+    rw [opKeep_wordsVal h (k := k) (y := y + 8) (by omega_arith) (by omega_arith) (by omega_arith), hw]
 
 /-- An operation writing `o`, which then holds `v`, keeps the invariant. -/
 theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
@@ -140,12 +140,12 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       have := hL.apart x o hx ho hxo
       have := hL.tmp x hx
       have := hL.le x hx
-      exact opKeep_wordsVal hk (by omega) (by omega) (by omega)
+      exact opKeep_wordsVal hk (by omega_arith) (by omega_arith) (by omega_arith)
   refine ⟨⟨(hk.gpr _ (x0_not_clob' _)).trans hI.scr.x0, hk.wr ▸ hI.scr.wr, hn, hI.scr.enc⟩,
     ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red, hM.call⟩, ?_, ?_, ?_⟩
   · have := hM.mo
     have := hM.sep
-    rw [opKeep_wordsVal hk (by omega) (by omega) (by omega)]
+    rw [opKeep_wordsVal hk (by omega_arith) (by omega_arith) (by omega_arith)]
     exact hM.val
   · intro x hx
     rcases List.mem_cons.mp hx with rfl | hx
@@ -204,8 +204,8 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (add_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
-      (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) (by omega)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
+      (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) (by omega_arith)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
+    · rw [heq]; exact Nat.mod_lt _ (by omega_arith)
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
@@ -215,8 +215,8 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     refine WP.mono (sub_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
       (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) hA hB)
       fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
-    · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
+    · rw [heq]; exact Nat.mod_lt _ (by omega_arith)
+    · rw [heq, toM_sub (by omega_arith), hI.val a hR.1, hI.val b hR.2]
 
 theorem fprog_cons (M : Mod) (op : FOp) (ops : List FOp) :
     fprog M (op :: ops) = opCode M op ++ fprog M ops := rfl

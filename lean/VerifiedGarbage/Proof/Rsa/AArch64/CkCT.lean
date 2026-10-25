@@ -106,9 +106,9 @@ theorem GK.word {p : CkP} {s t : State} (h : GK p s) {j : Nat} (hj : j < 16) {v 
     (hm : t.mem = s.mem.writeW (off p.B (slot (wW p.cap) j)) v) {regs : List Reg} (k : Keep regs s t)
     (hr : .x0 ∉ regs) : GK p t := by
   have hw := h.ws
-  have o := writeW_outside s.mem p.B v (d := slot (wW p.cap) j) (by have := hw.sl hj; have := hw.scr.nowrap; omega)
+  have o := writeW_outside s.mem p.B v (d := slot (wW p.cap) j) (by have := hw.sl hj; have := hw.scr.nowrap; omega_arith)
   rw [← hm] at o
-  exact h.arr hj (by omega) o k hr
+  exact h.arr hj (by omega_arith) o k hr
 
 /-! ## The pieces -/
 
@@ -206,12 +206,12 @@ theorem loadA_ckct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen
   · obtain ⟨hp, hl, ⟨bs, hsrc, hbl⟩, hl1, hlk⟩ := hA p s h.1
     have hn := h.ws.scr.nowrap
     have hZ := h.ws.hZ
-    exact WP.assoc' (WP.mono (loadA_ok h.ws hj hP hL hp hl hsrc hbl hl1 (by simp only [wW, wk]; omega))
+    exact WP.assoc' (WP.mono (loadA_ok h.ws hj hP hL hp hl hsrc hbl hl1 (by simp only [wW, wk]; omega_arith))
       fun _ ⟨hv, o, _, _, k⟩ => ⟨h.1.arr hj (Nat.le_refl _) o k (by decide), fun i hi => by
         rcases List.mem_cons.mp hi with rfl | hi
         · rw [hv]; exact lt_w (by rw [hbl]; exact hlk)
         · obtain ⟨hij, hi16⟩ := hjs i hi
-          rw [outside_arr o (Nat.le_refl _) hij (by omega) hi16 hZ hn]; exact h.2 i hi⟩)
+          rw [outside_arr o (Nat.le_refl _) hij (by omega_arith) hi16 hZ hn]; exact h.2 i hi⟩)
 
 theorem loadA_wide_ckct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen < 32) {js : List Nat}
     (hjs : ∀ i ∈ js, i ≠ j ∧ i < 16) (ptr : CkP → Addr) (len : CkP → Nat)
@@ -241,7 +241,7 @@ theorem loadA_wide_ckct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL :
       have := hi.fit; exact Nat.le_trans hlk this))
       fun _ ⟨hv, o, _, _, k⟩ => ⟨h.1.arr hj (Nat.le_refl _) o k (by decide), fun i hi => by
         obtain ⟨hij, hi16⟩ := hjs i hi
-        rw [outside_arr o (Nat.le_refl _) hij (by omega) hi16 hZ hn]; exact h.2 i hi⟩)
+        rw [outside_arr o (Nat.le_refl _) hij (by omega_arith) hi16 hZ hn]; exact h.2 i hi⟩)
 
 theorem ltA_ckct {a b : Nat} (ha : a < 16) (hb : b < 16) {js : List Nat} (hjs : ∀ j ∈ js, j < 16)
     {hc : VG.Taint.Hint VG.AArch64.Taint.T}
@@ -275,7 +275,7 @@ theorem zeroA_okb {j : Nat} (hj : j < 16) {js : List Nat} (hjs : ∀ i ∈ js, i
   exact WP.mono (zeroA_ok h.ws hj) fun _ ⟨_, o, _, _, _, k⟩ => ⟨h.1.arr hj (Nat.le_refl _) o k (by decide),
     fun i hi => by
       obtain ⟨hij, hi16⟩ := hjs i hi
-      rw [outside_arr o (Nat.le_refl _) hij (by omega) hi16 hZ hn]; exact h.2 i hi⟩
+      rw [outside_arr o (Nat.le_refl _) hij (by omega_arith) hi16 hZ hn]; exact h.2 i hi⟩
 
 theorem mulE_ckct {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base aA .x8 ++ [movi .x7 0])) zeroAcc)

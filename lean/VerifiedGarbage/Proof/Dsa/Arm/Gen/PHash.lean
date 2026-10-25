@@ -45,8 +45,8 @@ theorem seedAdd_vp {L j off : Nat} (hL : L = G.pLen) (hq : G.qLen = 20 ∨ G.qLe
       (St G { c with cl := (sMsg, seedPlus G sd (off + j)) :: cl' } X) := by
   subst hL
   unfold seedAdd
-  have hq0 : 0 < G.qLen := by omega
-  have e0 : sMsg + G.qLen - 1 = G.qLen - 1 := by simp only [sMsg]; omega
+  have hq0 : 0 < G.qLen := by omega_arith
+  have e0 : sMsg + G.qLen - 1 = G.qLen - 1 := by simp only [sMsg]; omega_arith
   refine VP.seq (G := fun σ s => St G c X σ s ∧ s.gpr .r0 = G.scr + BitVec.ofNat 32 (G.qLen - 1)) ?_
     (VP.seq (G := fun σ s => (St G c X σ s ∧ s.gpr .r0 = G.scr + BitVec.ofNat 32 (G.qLen - 1)) ∧
       s.gpr .r1 = BitVec.ofNat 32 off) ?_
@@ -57,7 +57,7 @@ theorem seedAdd_vp {L j off : Nat} (hL : L = G.pLen) (hq : G.qLen = 20 ∨ G.qLe
         simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.r8, h₂.1.r8]) fun σ s ⟨h, x⟩ => ?_
     rw [← List.append_nil (scr _ _ _)]
     have := h.gi.scrBig
-    exact scr_ok h.r8 rfl h.lens (by simp only [sK, sA, sMsg]; omega) fun t v R M => WP.block_nil
+    exact scr_ok h.r8 rfl h.lens (by simp only [sK, sA, sMsg]; omega_arith) fun t v R M => WP.block_nil
       ⟨⟨h.of_rest R M, x⟩, by rw [v, e0]⟩
   · exact ld_vp (c := fun _ => c) (fun σ s h => h.1.1) (by decide) (by decide) (x := BitVec.ofNat 32 off)
       (fun σ s h => (h.1.1.slotV hO).trans hOv) fun σ s t ⟨⟨h, x⟩, r0⟩ u =>
@@ -75,19 +75,19 @@ theorem seedAdd_vp {L j off : Nat} (hL : L = G.pLen) (hq : G.qLen = 20 ∨ G.qLe
     have gi := h.gi
     have big := gi.scrBig
     have fit := gi.scrFit
-    have hsK : 4096 ≤ sK G.pLen := by simp only [sK, sA]; omega
-    have hq32 : G.qLen ≤ 32 := by omega
+    have hsK : 4096 ≤ sK G.pLen := by simp only [sK, sA]; omega_arith
+    have hq32 : G.qLen ≤ 32 := by omega_arith
     have a0 : G.sa sMsg = State.addr G.scr := by simp only [GP.sa, sMsg]; rw [BitVec.add_zero]
-    have hw : InRegions s.wr (State.addr G.scr) G.qLen := a0 ▸ gi.inScr (o := sMsg) (by simp only [sMsg]; omega)
-    refine (addBE_ok (base := G.scr) hq0 (by omega) (by omega) hoff hw r0 r1).mono fun t ⟨e, f, R⟩ => ⟨?_, x⟩
+    have hw : InRegions s.wr (State.addr G.scr) G.qLen := a0 ▸ gi.inScr (o := sMsg) (by simp only [sMsg]; omega_arith)
+    refine (addBE_ok (base := G.scr) hq0 (by omega_arith) (by omega_arith) hoff hw r0 r1).mono fun t ⟨e, f, R⟩ => ⟨?_, x⟩
     rw [← a0] at e f
     have b := h.sb (sMsg, sd) hsd
     rw [hsl] at b
     rw [b] at e
-    refine h.of_scr R (o := sMsg) (n := G.qLen) (by simp only [sMsg]; omega) (f.mono (by simp)) fun y hy => ?_
+    refine h.of_scr R (o := sMsg) (n := G.qLen) (by simp only [sMsg]; omega_arith) (f.mono (by simp)) fun y hy => ?_
     rcases List.mem_cons.mp hy with rfl | hy
     · exact .inr ⟨by rw [VG.Proof.Dsa.encodeBE_length]; exact e,
-        by simp only [sMsg, VG.Proof.Dsa.encodeBE_length]; omega⟩
+        by simp only [sMsg, VG.Proof.Dsa.encodeBE_length]; omega_arith⟩
     · exact .inl (hcl y hy)
 
 /-- The block at `sMsg`: a message of `qLen` bytes and its padding. -/
@@ -98,7 +98,7 @@ theorem SS.blk_bytes {σ s : State} (h : SS G σ c s) {B N L : Nat} {md : MdStre
   have b1 := h.sb _ hm
   have b2 := h.sb _ hpad
   have pl := padTail_length md hq56 hL
-  rw [show (64 : Nat) = m.length + (padTail md G.qLen).length by omega, VG.Proof.Dsa.Generation.bytesAt_append,
+  rw [show (64 : Nat) = m.length + (padTail md G.qLen).length by omega_arith, VG.Proof.Dsa.Generation.bytesAt_append,
     b1]
   have a : VG.Proof.Bignum.off (G.sa sMsg) m.length = G.sa G.qLen := by
     simp only [VG.Proof.Bignum.off, GP.sa, sMsg, hml]; rw [BitVec.add_zero]
@@ -119,50 +119,50 @@ theorem pHash_vp {g : Geo} (HO : HashOk g.G) {j : Nat}
     VP (St G c X) (g.pHash j)
       (St G { c with cl := (G.qLen, padTail HO.md G.qLen) :: (sX + G.pLen - (j + 1) * G.qLen,
         HO.H (seedPlus G (seedAt G k) (off + j))) :: cl' } X) := by
-  have hq0 : 0 < G.qLen := by omega
-  have hq56 : G.qLen < 56 := by omega
+  have hq0 : 0 < G.qLen := by omega_arith
+  have hq56 : G.qLen < 56 := by omega_arith
   have hXv : sX = 192 := rfl
   have hAv : sA = 4096 := rfl
-  have hsK : 4096 + 17024 ≤ sK G.pLen := by simp only [sK, sA, wa]; omega
+  have hsK : 4096 + 17024 ≤ sK G.pLen := by simp only [sK, sA, wa]; omega_arith
   have pl := padTail_length HO.md hq56 HO.hL
   have hsl : (seedAt G k).length = G.qLen := by
-    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega
+    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega_arith
   have spl : (seedPlus G (seedAt G k) (off + j)).length = G.qLen := VG.Proof.Dsa.encodeBE_length _ _
   have hHl : (HO.H (seedPlus G (seedAt G k) (off + j))).length = G.qLen := by
-    rw [HO.hash _ (by omega), HO.md.digest_length, HO.hN, hk4]
+    rw [HO.hash _ (by omega_arith), HO.md.digest_length, HO.hN, hk4]
   generalize hpd : padTail HO.md G.qLen = pad at hpad pl
   unfold Geo.pHash
   rw [hq, hp]
   let c1 : Cfg := { c with cl := (sMsg, seedAt G k) :: (G.qLen, pad) :: cl' }
   let c2 : Cfg := { c with cl := (sMsg, seedPlus G (seedAt G k) (off + j)) :: (G.qLen, pad) :: cl' }
   refine VP.seq (G := St G c1 X) ?_ (VP.seq (G := St G c2 X) ?_ ?_)
-  · exact seedCopy_vp rfl hk hq0 (by omega) (by omega) hsb hS hSv fun y hy => by
+  · exact seedCopy_vp rfl hk hq0 (by omega_arith) (by omega_arith) hsb hS hSv fun y hy => by
       rcases List.mem_cons.mp hy with rfl | hy
-      · exact ⟨hpad, .inr (by simp only [sMsg]; omega)⟩
-      · obtain ⟨m, a, _⟩ := hcl y hy; exact ⟨m, by simp only [Apart, sMsg] at a ⊢; omega⟩
-  · exact seedAdd_vp (c := c1) rfl (by omega) hO hOv hj hoff (by simp [c1]) hsl fun y hy => by
+      · exact ⟨hpad, .inr (by simp only [sMsg]; omega_arith)⟩
+      · obtain ⟨m, a, _⟩ := hcl y hy; exact ⟨m, by simp only [Apart, sMsg] at a ⊢; omega_arith⟩
+  · exact seedAdd_vp (c := c1) rfl (by omega_arith) hO hOv hj hoff (by simp [c1]) hsl fun y hy => by
       rcases List.mem_cons.mp hy with rfl | hy
-      · exact ⟨by simp [c1], .inr (by simp only [sMsg]; omega)⟩
-      · obtain ⟨m, a, _⟩ := hcl y hy; exact ⟨by simp [c1, hy], by simp only [Apart, sMsg] at a ⊢; omega⟩
+      · exact ⟨by simp [c1], .inr (by simp only [sMsg]; omega_arith)⟩
+      · obtain ⟨m, a, _⟩ := hcl y hy; exact ⟨by simp [c1, hy], by simp only [Apart, sMsg] at a ⊢; omega_arith⟩
   · refine hash_vp HO (c := fun _ => c2) (fun σ s h => h.1) rfl (msg := fun _ => seedPlus G (seedAt G k) (off + j))
-      (dst := sX + G.pLen - (j + 1) * G.qLen) (fun σ s ⟨h, _⟩ => ⟨by omega, ?_⟩) (by simp only [sState]; omega)
-      (by rw [hk4]; omega) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩
+      (dst := sX + G.pLen - (j + 1) * G.qLen) (fun σ s ⟨h, _⟩ => ⟨by omega_arith, ?_⟩) (by simp only [sState]; omega_arith)
+      (by rw [hk4]; omega_arith) fun σ s t ⟨h, x⟩ R f e => ⟨?_, x⟩
     · exact h.blk_bytes HO.hL hq56 (by simp [c2]) spl (by rw [hpd]; simp [c2])
     refine h.of_scrs R (os := [(sState, 32), (sA, 112), (sX + G.pLen - (j + 1) * G.qLen, 4 * g.G.k)]) (fun p hp => ?_)
       (f.mono fun r hr => List.mem_append_left _ (by simpa [GP.rss] using hr)) fun y hy => ?_
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl | rfl <;> simp only [sState, sA, hk4] <;> omega
+      rcases hp with rfl | rfl | rfl <;> simp only [sState, sA, hk4] <;> omega_arith
     rcases List.mem_cons.mp hy with rfl | hy
     · refine .inl ⟨by simp [c2], fun p hp => ?_⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl | rfl <;> simp only [Apart, pl, sState, sA] <;> omega
+      rcases hp with rfl | rfl | rfl <;> simp only [Apart, pl, sState, sA] <;> omega_arith
     rcases List.mem_cons.mp hy with rfl | hy
     · rw [hk4] at e
-      exact .inr ⟨by rw [hHl]; exact e, by simp only [hHl]; omega⟩
+      exact .inr ⟨by rw [hHl]; exact e, by simp only [hHl]; omega_arith⟩
     · obtain ⟨m, a, b, d⟩ := hcl y hy
       refine .inl ⟨by simp [c2, hy], fun p hp => ?_⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl | rfl <;> simp only [Apart, sState, sA, hk4] at a b d ⊢ <;> omega
+      rcases hp with rfl | rfl | rfl <;> simp only [Apart, sState, sA, hk4] at a b d ⊢ <;> omega_arith
 
 end
 

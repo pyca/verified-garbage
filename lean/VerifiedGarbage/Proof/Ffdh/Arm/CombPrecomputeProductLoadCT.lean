@@ -57,8 +57,8 @@ private theorem loadEntry_ct {p : Inputs} {sp : BitVec 32} {digit o : Nat} (ho :
   have load : RelCT isa (fun s t => s.gpr .r0=t.gpr .r0 ∧ s.sp=t.sp)
       (.block [.ldrSp .r4 4]) (fun s t => s.gpr .r0=t.gpr .r0) := by
     intro s t tr1 tr2 u v h e1 e2
-    have ku : u.gpr .r0=s.gpr .r0 := Exec.gpr (h:=e1) (hn:=Or.inl rfl) (by simp [instrs,clobbers,dstOf])
-    have kv : v.gpr .r0=t.gpr .r0 := Exec.gpr (h:=e2) (hn:=Or.inl rfl) (by simp [instrs,clobbers,dstOf])
+    have ku : u.gpr .r0=s.gpr .r0 := Exec.gpr (h:=e1) (hn:=Or.inl rfl) (by decide)
+    have kv : v.gpr .r0=t.gpr .r0 := Exec.gpr (h:=e2) (hn:=Or.inl rfl) (by decide)
     exact ⟨(loadStack_ct .r4 4 _ _ _ _ _ _ h.2 e1 e2).1,ku.trans (h.1.trans kv.symm)⟩
   have restTrace : RelCT isa (fun s t => s.gpr .r0=t.gpr .r0)
       (.block ([.ldr .r1 .r0 48, .mov .r1 (.shifted .r1 .lsl 3),

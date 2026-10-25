@@ -71,7 +71,7 @@ theorem wp_ptrTo {d b : Reg} {off : Nat} (hd : d ≠ b) (ho : off < 65536) {is :
     congr 1
     apply BitVec.eq_of_toNat_eq
     rw [toNat_imm, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_arith
 
 /-- `ptrTo` at the end of a block. -/
 theorem wp_ptrTo' {d b : Reg} {off : Nat} (hd : d ≠ b) (ho : off < 65536) {s : State} {Q : State → Prop}
@@ -89,7 +89,7 @@ theorem wp_pos (first : Bool) {is : List Instr} {s : State} {Q : State → Prop}
   · exact wp_movz fun s' h e => k s' h (by rw [e]; rfl)
 
 theorem imm16 {v : Nat} (h : v < 65536) : ((BitVec.ofNat 16 v).setWidth 64).toNat = v := by
-  rw [toNat_imm, BitVec.toNat_ofNat]; omega
+  rw [toNat_imm, BitVec.toNat_ofNat]; omega_arith
 
 /-! ## The setting -/
 
@@ -136,7 +136,7 @@ def Pos (first : Bool) (s : State) : Nat := if first then 0 else (s.gpr .x0).toN
 
 theorem rate_bounds {r : Nat} (h : r ∈ rates) : 0 < r ∧ r ≤ 168 := by
   simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h
-  omega
+  omega_arith
 
 theorem stk_sp {s s' : State} (h : s.sp = s'.sp) : stk s = stk s' := by
   unfold stk; rw [h]
@@ -243,7 +243,7 @@ theorem absorbsWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk ra
         h₃.get p.base (by simpa using nb.2.1), h₂.get p.base (by simpa using nb.1),
         h₁.get p.base (by simpa using nb.2.2.1), gb]
     refine WP.seq <| absorb_callWith v (rate := rate) (pos := Pos first s) (len := p.len) c0
-      (by rw [h₆.get .x1, h₅.get .x1, h₄.get .x1, e₃]; exact imm16 (by have := (rate_bounds hS.hrate).2; omega))
+      (by rw [h₆.get .x1, h₅.get .x1, h₄.get .x1, e₃]; exact imm16 (by have := (rate_bounds hS.hrate).2; omega_arith))
       (by rw [h₆.get .x2, h₅.get .x2, h₄.get .x2, h₃.get .x2, h₂.get .x2, e₁]; cases first <;> rfl)
       c3 (by rw [e₆]; exact imm16 hp.len) c5 hS.hrate hpos' hS.d hp.dst hp.dwk (by rw [sp₆]; exact hS.sp16)
       (by rw [stk_sp sp₆]; exact hS.kst) (by rw [stk_sp sp₆]; exact hp.stk) (by rw [stk_sp sp₆]; exact hS.kwk)
@@ -256,7 +256,7 @@ theorem absorbsWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk ra
         rcases mem3 hr with rfl | rfl | rfl
         · exact hp.dst
         · exact hp.dwk
-        · rw [below16]; exact hp.stk.symm) (by have := hp.len; omega)
+        · rw [below16]; exact hp.stk.symm) (by have := hp.len; omega_arith)
     have rep := r₇ msg (by rw [m₆]; exact hr) hpos
     rw [eb] at rep
     refine WP.mono (ih false s₇ (msg ++ pbytes s₀ p)
@@ -330,7 +330,7 @@ theorem squeezesWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk r
         h₃.get p.base (by simpa using nb.2.1), h₂.get p.base (by simpa using nb.1),
         h₁.get p.base (by simpa using nb.2.2.1), gb]
     refine WP.seq <| squeeze_callWith v (rate := rate) (pos := Pos first s) (len := p.len) c0
-      (by rw [h₆.get .x1, h₅.get .x1, h₄.get .x1, e₃]; exact imm16 (by omega))
+      (by rw [h₆.get .x1, h₅.get .x1, h₄.get .x1, e₃]; exact imm16 (by omega_arith))
       (by rw [h₆.get .x2, h₅.get .x2, h₄.get .x2, h₃.get .x2, h₂.get .x2, e₁]; cases first <;> rfl)
       c3 (by rw [e₆]; exact imm16 hp.len) c5 hS.hrate hple hp.dst.symm hS.d hp.dwk
       (by rw [sp₆]; exact hS.sp16) (by rw [stk_sp sp₆]; exact hS.kst) (by rw [stk_sp sp₆]; exact hp.stk)
@@ -345,7 +345,7 @@ theorem squeezesWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk r
     have cont₇ : ∀ d, squeezeFrom rate (stateAt s₇.mem (s₀.gpr sc + BitVec.ofNat 64 st)) (Pos false s₇) d =
         squeezeFrom rate P (c + p.len) d := fun d => by
       rw [show Pos false s₇ = (s₇.gpr .x0).toNat from rfl, n₇, m₆]
-      exact squeezeFrom_shift rpos (by omega) hcont p.len d
+      exact squeezeFrom_shift rpos (by omega_arith) hcont p.len d
     have pw := List.pairwise_cons.mp hpw
     refine WP.mono (ih false s₇ (c + p.len) (fun q hq => hps q (List.mem_cons_of_mem _ hq)) pw.2 hg₇ r₇ cont₇)
       fun s' ⟨k', o', g'⟩ => ⟨?_, ⟨?_, o'⟩, g'⟩
@@ -365,7 +365,7 @@ theorem squeezesWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk r
         · simp
         · simp [hr]
     · rw [← out₇]
-      refine bytesAt_frame k'.frame (fun r hr => ?_) (by have := hp.len; omega)
+      refine bytesAt_frame k'.frame (fun r hr => ?_) (by have := hp.len; omega_arith)
       rcases List.mem_cons.mp hr with rfl | hr
       · exact hp.dst
       rcases List.mem_cons.mp hr with rfl | hr
@@ -390,18 +390,18 @@ theorem zstores_ok (B : Addr) :
   | succ n ih =>
     intro hn s h9 h0 hin
     rw [List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega) h9 h0 hin) fun s₁ ⟨g₁, r₁, w₁, p₁, z₁, f₁⟩ => ?_
-    refine wp_strx (a := B + BitVec.ofNat 64 (8 * n)) (by constructor <;> omega) (by rw [g₁, h0])
-      (by rw [w₁]; exact hin n (by omega)) fun s₂ h₂ => wp_nil ?_
+    refine WP.mono (ih (by omega_arith) h9 h0 hin) fun s₁ ⟨g₁, r₁, w₁, p₁, z₁, f₁⟩ => ?_
+    refine wp_strx (a := B + BitVec.ofNat 64 (8 * n)) (by constructor <;> omega_arith) (by rw [g₁, h0])
+      (by rw [w₁]; exact hin n (by omega_arith)) fun s₂ h₂ => wp_nil ?_
     refine ⟨by rw [h₂.gpr, g₁], by rw [h₂.rd, r₁], by rw [h₂.wr, w₁], by rw [h₂.sp, p₁],
       fun k hk => ?_, ?_⟩
     · rw [h₂.mem, g₁, h9]
       by_cases e : k = n
       · subst e; exact Mem.readW_writeW_self64 _ _ _
-      · rw [Mem.readW_writeW_sep (sep_off _ (by omega) (by omega) (by omega)) (by decide)]
-        exact z₁ k (by omega)
+      · rw [Mem.readW_writeW_sep (sep_off _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+        exact z₁ k (by omega_arith)
     · rw [h₂.mem]
-      exact f₁.writeW (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))
+      exact f₁.writeW (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by decide))
 
 theorem stateAt_zero' {m : Mem} {p : Addr}
     (h : ∀ k < 25, m.readW (p + BitVec.ofNat 64 (8 * k)) 64 = 0) : stateAt m p = Spec.Sha3.zero := by
@@ -419,7 +419,7 @@ theorem zeroState_ok {sc : Reg} {st wk rate : Nat} {s₀ : State} (hS : HSetup s
     fun k hk => by
       rw [h₂.wr, h₁.wr, hg.wr]
       obtain ⟨r, hr, hc⟩ := Covers.head hS.cov (s₀.gpr sc + BitVec.ofNat 64 st + BitVec.ofNat 64 (8 * k)) 8
-        ⟨_, List.mem_singleton_self _, contains_off (by omega) (by decide)⟩
+        ⟨_, List.mem_singleton_self _, contains_off (by omega_arith) (by decide)⟩
       exact ⟨r, hr, hc⟩
   refine WP.mono (WP.preservedV (zstores_ok _ 25 (by decide) (by rw [e₂]; rfl)
     (by rw [h₂.get .x0, e₁, hg.cs sc hS.hsc.1 hS.hsc.2]) hin) (hc := by lit_decide)) fun s' ⟨⟨g', r', w', p', z', f'⟩, hv⟩ => ?_
@@ -433,7 +433,7 @@ theorem zeroState_ok {sc : Reg} {st wk rate : Nat} {s₀ : State} (hS : HSetup s
 theorem sfx8 {sfx : Nat} (h : sfx < 256) :
     ((BitVec.ofNat 16 sfx).setWidth 64).setWidth 8 = BitVec.ofNat 8 sfx := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, imm16 (by omega), BitVec.toNat_ofNat]
+  rw [BitVec.toNat_setWidth, imm16 (by omega_arith), BitVec.toNat_ofNat]
 
 /-- `hash`: the sponge of the pieces `ins`, output into the pieces `outs`. -/
 theorem hashWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk rate : Nat} {s₀ : State} (hS : HSetup sc st wk rate s₀) {sfx : Nat}
@@ -466,7 +466,7 @@ theorem hashWith_ok (v : Proof.Sha3.AArch64.Permutation) {sc : Reg} {st wk rate 
   refine WP.seq <| pad_callWith v (st := s₀.gpr sc + BitVec.ofNat 64 st) (sc := s₀.gpr sc + BitVec.ofNat 64 wk)
     (rate := rate) (pos := (s₂.gpr .x0).toNat)
     (by rw [h₇.get .x0, h₆.get .x0, h₅.get .x0, e₄, h₃.get sc (by simpa using nsc.2.2.1), gsc])
-    (by rw [h₇.get .x1, h₆.get .x1, e₅]; exact imm16 (by omega))
+    (by rw [h₇.get .x1, h₆.get .x1, e₅]; exact imm16 (by omega_arith))
     (by rw [h₇.get .x2, h₆.get .x2, h₅.get .x2, h₄.get .x2, e₃]; rfl)
     (by rw [h₇.get .x4, e₆, h₅.get sc (by simpa using nsc.2.1), h₄.get sc (by simpa using nsc.1),
       h₃.get sc (by simpa using nsc.2.2.1), gsc])

@@ -35,7 +35,7 @@ theorem stack_addr {sp : BitVec 32} (hlo : 56 ≤ sp.toNat) (hhi : sp.toNat + 24
   have := sp.isLt
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
   rw [show (56 : BitVec 64).toNat = 56 from rfl]
-  omega
+  omega_arith
 
 /-- The values the kernel's frame of parameters holds, from the registers. -/
 def vals (t : State) (i : Nat) : BitVec 32 := t.gpr (([.ebp, .edi, .esi, .edx, .ecx, .ebx, .eax] : List Reg).getD i .eax)
@@ -59,12 +59,12 @@ theorem params_pushed {t : State} {W : Addr} {L : Nat} {sp : BitVec 32} (hlo : 5
   have ea : ∀ i < 7, (pushed rs7 t).ea (prm 0 i) = sp.setWidth 64 - 56 + BitVec.ofNat 64 (12 + 4 * i) := by
     intro i hi
     simp only [State.ea, prm, at_, e7, Nat.zero_add]
-    rw [show sp - 16 - 28 = sp - BitVec.ofNat 32 44 by rw [BitVec.sub_sub]; rfl, stack_addr hlo hhi (by decide) (by omega)]
+    rw [show sp - 16 - 28 = sp - BitVec.ofNat 32 44 by rw [BitVec.sub_sub]; rfl, stack_addr hlo hhi (by decide) (by omega_arith)]
   refine ⟨fun i hi => ?_, fun i hi j hj => ?_⟩
   · show (pushed rs7 t).load32 ((pushed rs7 t).ea (prm 0 i)) = _
     have hs16 : (sp - 16).toNat = sp.toNat - 16 := by
-      rw [BitVec.toNat_sub, show (16 : BitVec 32).toNat = 16 from rfl]; omega
-    have hn7 : 4 * rs7.length ≤ (t.gpr .esp).toNat := by rw [hesp, hs16]; simp only [List.length_cons, List.length_nil]; omega
+      rw [BitVec.toNat_sub, show (16 : BitVec 32).toNat = 16 from rfl]; omega_arith
+    have hn7 : 4 * rs7.length ≤ (t.gpr .esp).toNat := by rw [hesp, hs16]; simp only [List.length_cons, List.length_nil]; omega_arith
     have w := pushed_word (rs := rs7) (s := t) (by decide) hn7 (i := i) (by simpa using hi)
     rw [State.load32, ite_eq_left_iff.mpr fun h => absurd ?_ h, vals_eq t hi]
     · simp only [State.ea, prm, at_, Nat.zero_add]; rw [w]
@@ -74,8 +74,8 @@ theorem params_pushed {t : State} {W : Addr} {L : Nat} {sp : BitVec 32} (hlo : 5
       have := sp.isLt
       simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
       rw [show (56 : BitVec 64).toNat = 56 from rfl, show (16 : BitVec 32).toNat = 16 from rfl]
-      omega
-  · rw [ea i hi, add_ofNat64]; exact far _ (by omega)
+      omega_arith
+  · rw [ea i hi, add_ofNat64]; exact far _ (by omega_arith)
 
 /-- A byte of a frame within the 56 bytes below the entry's `esp` lies past the working space. -/
 theorem below_far {s : State} {W : Addr} {L : Nat} (E : Entry s W L) {c n : Nat} (hc : c + n ≤ 56) (hn : 0 < n)
@@ -90,10 +90,10 @@ theorem below_far {s : State} {W : Addr} {L : Nat} (E : Entry s W L) {c n : Nat}
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at hx ⊢
     rw [show (56 : BitVec 64).toNat = 56 from rfl]
     have := x.isLt
-    omega
+    omega_arith
   rw [e]
   simp only [Region.Contains] at hx
-  exact E.far _ (by omega)
+  exact E.far _ (by omega_arith)
 
 /-- The working space's bytes past the frames' pushes. -/
 theorem frame_ws {s : State} {W : Addr} {L : Nat} (E : Entry s W L) {c n : Nat} (hc : c + n ≤ 56) (hn : 0 < n)
@@ -104,7 +104,7 @@ theorem frame_ws {s : State} {W : Addr} {L : Nat} (E : Entry s W L) {c n : Nat} 
     have := below_far E hc hn h
     have := hx _ (List.mem_singleton_self _)
     have : ofs W x < 2 ^ 64 := (x - W).isLt
-    simp only at *; omega
+    simp only at *; omega_arith
 
 theorem kernel_noSp : NoSp kernel := NoSp.of_all (by decide +kernel)
 
@@ -121,7 +121,7 @@ theorem below_contains {sp base : BitVec 32} (hlo : 56 ≤ sp.toNat) (hhi : sp.t
   simp only [Region.Contains, stk, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth,
     BitVec.toNat_ofNat]
   rw [show (56 : BitVec 64).toNat = 56 from rfl]
-  omega
+  omega_arith
 
 theorem stk_inj {sp : BitVec 32} {d e : Nat} (hd : d < 60) (he : e < 60)
     (h : stk sp d = stk sp e) : d = e := by
@@ -130,7 +130,7 @@ theorem stk_inj {sp : BitVec 32} {d e : Nat} (hd : d < 60) (he : e < 60)
   have := sp.isLt
   simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at h'
   rw [show (56 : BitVec 64).toNat = 56 from rfl] at h'
-  omega
+  omega_arith
 
 /-- A byte of a frame below `sp - c` is among the 56 bytes below `sp`. -/
 theorem below_sub {sp base : BitVec 32} (hlo : 56 ≤ sp.toNat) {c n : Nat} (hb : base = sp - BitVec.ofNat 32 c)
@@ -139,7 +139,7 @@ theorem below_sub {sp base : BitVec 32} (hlo : 56 ≤ sp.toNat) {c n : Nat} (hb 
   have := sp.isLt
   have := x.isLt
   simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at h ⊢
-  omega
+  omega_arith
 
 /-- `pop r` `k + 1` times leaves in `r` the frame's last word. -/
 theorem popReg_last (s : State) {d : Reg} (hd : d ≠ .esp) (k : Nat) :
@@ -150,7 +150,7 @@ theorem popReg_last (s : State) {d : Reg} (hd : d ≠ .esp) (k : Nat) :
     rw [popReg, ih]
     simp only [State.setReg, ite_true, Ne.symm hd, ite_false, BitVec.add_assoc]
     congr 3
-    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ← BitVec.ofNat_add]; congr 1; omega
+    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ← BitVec.ofNat_add]; congr 1; omega_arith
 
 /-- What `params` leaves, from the state `s` before the callee-saved
 registers' push: the kernel's parameters in registers. -/
@@ -169,10 +169,10 @@ theorem kernel_ready {s t1 : State} {W : Addr} {L N S mo inv o a b : Nat}
   have hhi := E.hi
   have hn := E.ws.nowrap
   have hs16 : (s.gpr .esp - 16).toNat = (s.gpr .esp).toNat - 16 := by
-    rw [BitVec.toNat_sub, show (16 : BitVec 32).toNat = 16 from rfl]; omega
+    rw [BitVec.toNat_sub, show (16 : BitVec 32).toNat = 16 from rfl]; omega_arith
   have hn7 : 4 * rs7.length ≤ (t1.gpr .esp).toNat := by
-    rw [esp1, hs16]; simp only [List.length_cons, List.length_nil]; omega
-  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega
+    rw [esp1, hs16]; simp only [List.length_cons, List.length_nil]; omega_arith
+  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega_arith
   have F1 := pushed_frame (rs := rs4) (s := s) (by decide) h16
   rw [show 4 * rs4.length = 16 from rfl, ← m1] at F1
   have F2 := pushed_frame (rs := rs7) (s := t1) (by decide) hn7
@@ -183,20 +183,20 @@ theorem kernel_ready {s t1 : State} {W : Addr} {L N S mo inv o a b : Nat}
     refine (frame_ws E (c := 0) (n := 16) (by decide) (by decide) (by simpa using F1)).trans
       (frame_ws E (c := 16) (n := 28) (by decide) (by decide) (by rw [esp1] at F2; exact F2))
   have ws2 : ∀ {d k : Nat}, d + 4 * k ≤ L → val32 (pushed rs7 t1).mem W d k = val32 s.mem W d k := fun hd =>
-    O2.val32 (by simp only [List.mem_singleton, forall_eq]; omega) (by omega)
+    O2.val32 (by simp only [List.mem_singleton, forall_eq]; omega_arith) (by omega_arith)
   have w2 : ∀ {d : Nat}, d + 4 ≤ L → w32 (pushed rs7 t1).mem W d = w32 s.mem W d := fun {d} hd => by
-    have := ws2 (d := d) (k := 1) (by omega)
+    have := ws2 (d := d) (k := 1) (by omega_arith)
     simpa only [val32, Nat.mul_zero, Nat.add_zero] using this
   have hs44 : (s.gpr .esp - 44).toNat = (s.gpr .esp).toNat - 44 := by
-    rw [BitVec.toNat_sub, show (44 : BitVec 32).toNat = 44 from rfl]; omega
+    rw [BitVec.toNat_sub, show (44 : BitVec 32).toNat = 44 from rfl]; omega_arith
   have hm2 : (pushed rs7 t1).gpr .esp - 12 = s.gpr .esp - BitVec.ofNat 32 56 + BitVec.ofNat 32 0 := by
     rw [esp2, BitVec.sub_sub, BitVec.add_zero]; rfl
   refine ⟨Ly, PV, ⟨by rw [pushed_wr, wr1, pushed_wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ E.ws.wr), hn⟩,
-    params_pushed hlo hhi esp1 E.far, by rw [esp2, hs44]; omega, by rw [esp2, hs44]; omega, fun j hj => ?_,
-    by rw [w2 (by have := Ly.mo_le; have := Ly.hN; omega), w2 Ly.inv_le]; exact hinv,
+    params_pushed hlo hhi esp1 E.far, by rw [esp2, hs44]; omega_arith, by rw [esp2, hs44]; omega_arith, fun j hj => ?_,
+    by rw [w2 (by have := Ly.mo_le; have := Ly.hN; omega_arith), w2 Ly.inv_le]; exact hinv,
     by rw [ws2 Ly.b_le, ws2 Ly.mo_le]; exact hB⟩
-  rw [hm2, stack_addr hlo hhi (c := 56) (k := 0) (by decide) (by omega), add_ofNat64]
-  exact E.far _ (by omega)
+  rw [hm2, stack_addr hlo hhi (c := 56) (k := 0) (by decide) (by omega_arith), add_ofNat64]
+  exact E.far _ (by omega_arith)
 
 /-- What `body params` leaves, for `params` setting the parameters from the
 state after the callee-saved registers' push. -/

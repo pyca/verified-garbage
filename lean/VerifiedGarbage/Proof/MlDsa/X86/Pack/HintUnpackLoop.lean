@@ -58,7 +58,7 @@ theorem G_idx (s₀ : State) (i : Nat) : ∀ {t : Nat} {st : Array (Vector Bool 
     | none => rw [e] at h; cases h
     | some st' =>
       rw [e, Option.bind_some] at h
-      rw [huStep_idx h, G_idx s₀ i e]; omega
+      rw [huStep_idx h, G_idx s₀ i e]; omega_arith
 
 theorem idxOf_G {s₀ : State} {i t : Nat} (h : idxOf (G s₀ i t) < 256) : ∃ st, G s₀ i t = some st ∧
     idxOf (G s₀ i t) = fst s₀ i + t := by
@@ -102,8 +102,8 @@ theorem PS_ok {s₀ : State} {i : Nat} (h₁ : ¬ bnd s₀ i < idxOf (PS s₀ i)
     have eb : bnd s₀ i = ((Y s₀).getD (ω s₀ + i) 0).toNat := rfl
     rw [e] at h₁
     simp only [idxOf] at h₁
-    refine ⟨by rw [ec], by omega, ?_⟩
-    rw [PS_succ, e, Option.bind_some, huPoly, ite_neg' (by omega), G]
+    refine ⟨by rw [ec], by omega_arith, ?_⟩
+    rw [PS_succ, e, Option.bind_some, huPoly, ite_neg' (by omega_arith), G]
     show _ = optFold (huStep (Y s₀) i (cur s₀ i).2) (List.range (bnd s₀ i - (cur s₀ i).2)) (cur s₀ i)
     rw [ec]
 
@@ -131,12 +131,12 @@ theorem IM.keep {s₀ s s' : State} {i : Nat} {o : Option (Array (Vector Bool n)
 
 theorem idx_lt_yL {s₀ : State} (hp : Pre s₀) {i : Nat} {o : Option (Array (Vector Bool n) × Nat)} {s : State}
     (h : IM s₀ i o s) {t : Nat} (ht : t < bnd s₀ i) : t < yL s₀ := by
-  have := hp.facts; have := h.bw; omega
+  have := hp.facts; have := h.bw; omega_arith
 
 /-- The `SR` of `G`, from that of the state before. -/
 theorem SR_G {s₀ : State} {i t : Nat} {m : Mem} (hfb : fst s₀ i + t ≤ bnd s₀ i) (hbw : bnd s₀ i ≤ ω s₀)
     (h : ∀ st, G s₀ i t = some st → HArr m (wA s₀) (K s₀) st.1) : SR s₀ (G s₀ i t) m :=
-  fun st e => ⟨by rw [G_idx s₀ i e]; omega, h st e⟩
+  fun st e => ⟨by rw [G_idx s₀ i e]; omega_arith, h st e⟩
 
 /-! ## Setting a coefficient -/
 
@@ -145,8 +145,8 @@ theorem setAddr {x : BitVec 32} {i b : Nat} (hx : x.toNat + 1024 * i + 4 * b + 4
     addr (BitVec.ofNat 32 b + BitVec.ofNat 32 b + (BitVec.ofNat 32 b + BitVec.ofNat 32 b) +
       (x + BitVec.ofNat 32 (1024 * i))) 0 = x.setWidth 64 + BitVec.ofNat 64 (4 * (256 * i + b)) := by
   rw [ofNat_add_ofNat, ofNat_add_ofNat, BitVec.add_comm, BitVec.add_assoc, ofNat_add_ofNat,
-    addr_add (by omega)]
-  congr 2; omega
+    addr_add (by omega_arith)]
+  congr 2; omega_arith
 
 theorem set_wp {s₀ s : State} (hp : Pre s₀) {i b : Nat} (h : Ptr s₀ i s) (hi : i < K s₀) (hb : b < 256)
     (hebp : s.gpr .ebp = BitVec.ofNat 32 b) :
@@ -154,10 +154,10 @@ theorem set_wp {s₀ s : State} (hp : Pre s₀) {i b : Nat} (h : Ptr s₀ i s) (
       s'.mem = s.mem.writeW (coeffAddr (wA s₀) (256 * i + b)) (1 : BitVec 32)) ∧ Keep [.ebp, .eax] s s' := by
   have hf := hp.facts
   have hw := hp.w_fit
-  have ht : 256 * i + b < 256 * K s₀ := by omega
+  have ht : 256 * i + b < 256 * K s₀ := by omega_arith
   have ea : addr (s.gpr .ebp + s.gpr .ebp + (s.gpr .ebp + s.gpr .ebp) + s.gpr .ecx) 0 =
       coeffAddr (wA s₀) (256 * i + b) := by
-    rw [hebp, h.ecx]; exact setAddr (by omega)
+    rw [hebp, h.ecx]; exact setAddr (by omega_arith)
   have hin := h.inH hp ht
   refine WP.keep _ ?_ (by decide)
   hrun [hbuSet, ea, hin, h.esi]
@@ -167,27 +167,27 @@ theorem sr_set {s₀ : State} (hp : Pre s₀) {i b : Nat} (hi : i < K s₀) (hb 
     {hA : Array (Vector Bool n)} (hh : HArr m (wA s₀) (K s₀) hA) :
     HArr (m.writeW (coeffAddr (wA s₀) (256 * i + b)) (1 : BitVec 32)) (wA s₀) (K s₀) (huSet i b hA) := by
   have := hp.facts
-  exact harr_set (by omega) hh hi hb
+  exact harr_set (by omega_arith) hh hi hb
 
 /-- The frame of the write. -/
 theorem ptr_set {s₀ s s' : State} (hp : Pre s₀) {i b : Nat} (h : Ptr s₀ i s) (hi : i < K s₀) (hb : b < 256)
     (k : Keep [.ebp, .eax] s s') (hm : s'.mem = s.mem.writeW (coeffAddr (wA s₀) (256 * i + b)) (1 : BitVec 32)) :
     Ptr s₀ i s' := by
   have hf := hp.facts
-  have ht : 256 * i + b < 256 * K s₀ := by omega
+  have ht : 256 * i + b < 256 * K s₀ := by omega_arith
   have g : ∀ r, r ≠ .eax → r ≠ .ebp → s'.gpr r = s.gpr r := fun r a c =>
     k.gpr (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun hh => hh.elim c a)
   exact ⟨h.toBase.keep k (by decide) (by rw [hm]; exact frame_coeff hp ht _),
     by rw [g _ (by decide) (by decide), h.edi], by rw [g _ (by decide) (by decide), h.esi],
     by rw [g _ (by decide) (by decide), h.ecx],
-    by rw [hm, Mem.readW_writeW_sep (hp.slot_coeff ht (by omega)) (by decide), h.cnt],
-    by rw [hm, Mem.readW_writeW_sep (hp.slot_coeff ht (by omega)) (by decide), h.ptr]⟩
+    by rw [hm, Mem.readW_writeW_sep (hp.slot_coeff ht (by omega_arith)) (by decide), h.cnt],
+    by rw [hm, Mem.readW_writeW_sep (hp.slot_coeff ht (by omega_arith)) (by decide), h.ptr]⟩
 
 theorem idxOf_le {s₀ : State} (hp : Pre s₀) {o : Option (Array (Vector Bool n) × Nat)} {m : Mem}
     (h : SR s₀ o m) : idxOf o ≤ 256 := by
   cases o with
   | none => exact Nat.le_refl _
-  | some st => have := (h st rfl).1; have := hp.facts; show st.2 ≤ 256; omega
+  | some st => have := (h st rfl).1; have := hp.facts; show st.2 ≤ 256; omega_arith
 
 theorem G_next {s₀ : State} {i t : Nat} {st : Array (Vector Bool n) × Nat} (e : G s₀ i t = some st) :
     G s₀ i (t + 1) = if st.2 > fst s₀ i ∧ yb s₀ (st.2 - 1) ≥ yb s₀ st.2 then none
@@ -213,7 +213,7 @@ theorem cmp_piece (i : Nat) (o : State → Option (Array (Vector Bool n) × Nat)
   refine (WP.keep [.eax] hb (by decide)).mono fun s' ⟨⟨c, ea, m⟩, k⟩ =>
     ⟨⟨h.keep ⟨fun r _ => (k.drop ea).gpr (by simp), k.2⟩ m, hx⟩, ?_⟩
   show s'.cf = _
-  rw [c, h.eax, h.ebx, toNat_ofNat32 (by omega), toNat_ofNat32 (by omega)]
+  rw [c, h.eax, h.ebx, toNat_ofNat32 (by omega_arith), toNat_ofNat32 (by omega_arith)]
 
 /-- The first coefficient: `ebp = y[index]`. -/
 theorem first_piece (i : Nat) : Piece Pre Pub (fun s₀ s => IM s₀ i (G s₀ i 0) s ∧ fst s₀ i < bnd s₀ i)
@@ -256,7 +256,7 @@ theorem set1_piece (i : Nat) : Piece Pre Pub
     · rw [k.gpr (by simp), k1.gpr (by decide), h.ebx]
     · rw [k.gpr (by simp), e1, h.eax, G_one]; simp only [idxOf]; rw [ofNat_add_one]; rfl
     · rw [m, m1]
-      refine SR_G (t := 1) (by omega) hbw fun st e => ?_
+      refine SR_G (t := 1) (by omega_arith) hbw fun st e => ?_
       rw [G_one, Option.some.injEq] at e
       subst e
       obtain ⟨-, hh⟩ := h.sr (cur s₀ i) (by rw [G]; rfl)
@@ -265,7 +265,7 @@ theorem set1_piece (i : Nat) : Piece Pre Pub
       rw [c, e1, h.eax, k1.gpr (by decide), h.ebx]
       simp only [G, List.range_zero, optFold, idxOf]
       have : fst s₀ i = (cur s₀ i).2 := rfl
-      rw [ofNat_add_one, toNat_ofNat32 (by omega), toNat_ofNat32 (by omega)]
+      rw [ofNat_add_one, toNat_ofNat32 (by omega_arith), toNat_ofNat32 (by omega_arith)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rw [he, he']
@@ -293,11 +293,11 @@ theorem loads_piece (i k : Nat) : Piece Pre Pub (NI i k)
     have ea1 : addr (s.gpr .edi + s.gpr .eax) 0 = rA s₀ + BitVec.ofNat 64 (fst s₀ i + k + 1) := by
       rw [hI.edi, hax]; exact yAddr hp hy
     have ea2 : addr (s.gpr .edi + s.gpr .eax - 1) 0 = rA s₀ + BitVec.ofNat 64 (fst s₀ i + k) := by
-      rw [hI.edi, hax, add_sub_one' _ (by omega)]; exact yAddr hp (by omega)
+      rw [hI.edi, hax, add_sub_one' _ (by omega_arith)]; exact yAddr hp (by omega_arith)
     have i1 := hI.inY hp hy
-    have i2 := hI.inY hp (t := fst s₀ i + k) (by omega)
+    have i2 := hI.inY hp (t := fst s₀ i + k) (by omega_arith)
     have v1 := hI.ybyte hp hy
-    have v2 := hI.ybyte hp (t := fst s₀ i + k) (by omega)
+    have v2 := hI.ybyte hp (t := fst s₀ i + k) (by omega_arith)
     have hb : WP isa (.block hbuLoads) s fun s' =>
         s'.gpr .ebp = BitVec.setWidth 32 ((Y s₀).getD (fst s₀ i + k + 1) 0) ∧
         s'.cf = some (decide ((BitVec.setWidth 32 ((Y s₀).getD (fst s₀ i + k) 0)).toNat <
@@ -314,7 +314,7 @@ theorem loads_piece (i k : Nat) : Piece Pre Pub (NI i k)
 
 theorem G_some {s₀ : State} {i k : Nat} (h : idxOf (G s₀ i (k + 1)) = fst s₀ i + k + 1) (hl : fst s₀ i + k + 1 < 256) :
     ∃ st, G s₀ i (k + 1) = some st ∧ st.2 = fst s₀ i + k + 1 := by
-  obtain ⟨st, e, -⟩ := idxOf_G (s₀ := s₀) (i := i) (t := k + 1) (by omega)
+  obtain ⟨st, e, -⟩ := idxOf_G (s₀ := s₀) (i := i) (t := k + 1) (by omega_arith)
   exact ⟨st, e, by rw [e] at h; exact h⟩
 
 /-- A coefficient greater than the previous one: set it. -/
@@ -327,16 +327,16 @@ theorem set2_piece (i k : Nat) : Piece Pre Pub
     (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨hn, he⟩, _⟩, _⟩ ⟨⟨⟨hn', he'⟩, _⟩, _⟩ r hr => ?_) (by native_taint_decide)
   · have hlt := of_decide_eq_true hb
     have hb' := bnd_lt s₀ i
-    obtain ⟨st, e, est⟩ := G_some hx (by omega)
+    obtain ⟨st, e, est⟩ := G_some hx (by omega_arith)
     have hG : G s₀ i (k + 2) = some (huSet i (yb s₀ (fst s₀ i + k + 1)) st.1, fst s₀ i + k + 1 + 1) := by
       rw [G_next e, est, ite_neg' (fun h => by
-        rw [show fst s₀ i + k + 1 - 1 = fst s₀ i + k by omega] at h; omega)]
+        rw [show fst s₀ i + k + 1 - 1 = fst s₀ i + k by omega_arith] at h; omega_arith)]
     refine (set_wp hp hI.toPtr hI.hi (yb_lt s₀ _) he).mono fun s' ⟨⟨e1, m1⟩, k1⟩ =>
       ⟨⟨ptr_set hp hI.toPtr hI.hi (yb_lt s₀ _) k1 m1, by rw [k1.gpr (by decide), hI.ebx], ?_, ?_, hI.hi, hI.some,
         hI.fb, hI.bw⟩, hl⟩
     · rw [e1, hI.eax, hx, hG]; simp only [idxOf]; rw [ofNat_add_one]
     · rw [m1]
-      refine SR_G (t := k + 2) (by omega) hI.bw fun st' e' => ?_
+      refine SR_G (t := k + 2) (by omega_arith) hI.bw fun st' e' => ?_
       rw [hG, Option.some.injEq] at e'
       subst e'
       exact sr_set hp hI.hi (yb_lt s₀ _) (hI.sr st e).2
@@ -357,9 +357,9 @@ theorem fail2_piece (i k : Nat) : Piece Pre Pub
     (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)
   have hge := of_decide_eq_false hb
   have hb' := bnd_lt s₀ i
-  obtain ⟨st, e, est⟩ := G_some hx (by omega)
+  obtain ⟨st, e, est⟩ := G_some hx (by omega_arith)
   have hG : G s₀ i (k + 2) = none := by
-    rw [G_next e, est, ite_pos' ⟨by omega, by rw [show fst s₀ i + k + 1 - 1 = fst s₀ i + k by omega]; omega⟩]
+    rw [G_next e, est, ite_pos' ⟨by omega_arith, by rw [show fst s₀ i + k + 1 - 1 = fst s₀ i + k by omega_arith]; omega_arith⟩]
   have hbk : WP isa hbuFail s fun s' => s'.gpr .eax = 256 ∧ s'.mem = s.mem := by hrun [hbuFail]
   exact (WP.keep [.eax] hbk (by decide)).mono fun s' ⟨⟨e1, m⟩, k'⟩ =>
     ⟨⟨hI.toPtr.keep k' (fun r hr => by simp at hr; simp [hr]) m, by rw [k'.gpr (by decide), hI.ebx],
@@ -373,8 +373,8 @@ theorem loop_piece (i : Nat) : Piece Pre Pub (fun s₀ s => IM s₀ i (G s₀ i 
     (fun s₀ s _ ⟨h, hl⟩ => ⟨h, by rw [G_one]; rfl, hl⟩) fun _ _ _ h => h
   · have hc := of_decide_eq_true hc
     have := bnd_lt s₀ i
-    obtain ⟨st, e, hx⟩ := idxOf_G (s₀ := s₀) (i := i) (t := k + 2) (by omega)
-    omega
+    obtain ⟨st, e, hx⟩ := idxOf_G (s₀ := s₀) (i := i) (t := k + 2) (by omega_arith)
+    omega_arith
   refine Piece.seq (loads_piece i k) (Piece.seq (Piece.ite
     (fun s₀ => decide (yb s₀ (fst s₀ i + k) < yb s₀ (fst s₀ i + k + 1))) (fun _ _ _ h => h.2)
     (fun s₀ s₀' _ _ hq => by simp only [fst, hq.ecur, hq.eyb]) (set2_piece i k) (fail2_piece i k))
@@ -382,18 +382,18 @@ theorem loop_piece (i : Nat) : Piece Pre Pub (fun s₀ s => IM s₀ i (G s₀ i 
       fun s₀ s _ ⟨⟨h, hl⟩, hc⟩ => ⟨hc, fun hc' => ?_, fun hc' => ?_⟩))
   · have hc' := of_decide_eq_true hc'
     have := bnd_lt s₀ i
-    obtain ⟨st, e, hx⟩ := idxOf_G (s₀ := s₀) (i := i) (t := k + 2) (by omega)
-    exact ⟨h, by omega, by omega⟩
+    obtain ⟨st, e, hx⟩ := idxOf_G (s₀ := s₀) (i := i) (t := k + 2) (by omega_arith)
+    exact ⟨h, by omega_arith, by omega_arith⟩
   · have hc' := of_decide_eq_false hc'
     cases e : G s₀ i (k + 2) with
     | none =>
-      have : G s₀ i (bnd s₀ i - fst s₀ i) = none := optFold_range_none _ (show k + 2 ≤ _ by omega) e
+      have : G s₀ i (bnd s₀ i - fst s₀ i) = none := optFold_range_none _ (show k + 2 ≤ _ by omega_arith) e
       rw [this]; rw [e] at h; exact h
     | some st =>
       have hx := G_idx s₀ i e
       rw [e] at hc'
       simp only [idxOf] at hc'
-      rw [show bnd s₀ i - fst s₀ i = k + 2 by omega]; exact h
+      rw [show bnd s₀ i - fst s₀ i = k + 2 by omega_arith]; exact h
 
 /-- The coefficients of polynomial `i`. -/
 theorem coefs_piece (i : Nat) : Piece Pre Pub (fun s₀ s => IM s₀ i (G s₀ i 0) s)
@@ -410,12 +410,12 @@ theorem coefs_piece (i : Nat) : Piece Pre Pub (fun s₀ s => IM s₀ i (G s₀ i
     · exact (loop_piece i).mono (fun _ _ _ ⟨⟨⟨h, _⟩, _⟩, hb⟩ => ⟨h, of_decide_eq_true hb⟩) fun _ _ _ h => h
     · exact nil_piece fun s₀ s _ ⟨⟨⟨h, _⟩, hl⟩, hb⟩ => by
         have := of_decide_eq_false hb
-        rw [show bnd s₀ i - fst s₀ i = 1 by omega]; exact h
+        rw [show bnd s₀ i - fst s₀ i = 1 by omega_arith]; exact h
   · exact nil_piece fun s₀ s _ ⟨⟨⟨h, _⟩, _⟩, hb⟩ => by
       have := of_decide_eq_false hb
       rw [e0] at this
       have := h.fb
-      rw [show bnd s₀ i - fst s₀ i = 0 by omega]; exact h
+      rw [show bnd s₀ i - fst s₀ i = 0 by omega_arith]; exact h
 
 end Up
 

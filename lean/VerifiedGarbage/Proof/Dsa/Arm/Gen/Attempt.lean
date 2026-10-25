@@ -191,11 +191,11 @@ theorem pCand_spec (HO : HashOk Gh) {k : Nat}
     Spec.Dsa.pCandidate (8 * G.pLen) (8 * G.qLen) (Spec.Dsa.decodeBE (qBytes G k)) (seedAt G k)
       (1 + j * ((8 * G.pLen - 1) / (8 * G.qLen) + 1)) = pCand HO G k j := by
   have hsl : (seedAt G k).length = G.qLen := by
-    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega
+    simp only [seedAt, List.length_take, List.length_drop, hsb]; omega_arith
   have hc : G.pLen ≤ (cnt G + 1) * G.qLen := by
     rcases hlq with ⟨e1, e2⟩ | ⟨e1, e2⟩ | ⟨e1, e2⟩ <;> simp only [cnt, e1, e2] <;> decide
-  refine VG.Proof.Dsa.Arm.Gen.pCandidate_xBytes HO (fun i => ?_) hH hsl hlen (by omega) hc _
-  rw [hX, HO.hash _ (by rw [VG.Proof.Dsa.encodeBE_length]; omega), HO.md.digest_length, HO.hN, hk4]
+  refine VG.Proof.Dsa.Arm.Gen.pCandidate_xBytes HO (fun i => ?_) hH hsl hlen (by omega_arith) hc _
+  rw [hX, HO.hash _ (by rw [VG.Proof.Dsa.encodeBE_length]; omega_arith), HO.md.digest_length, HO.hN, hk4]
 
 /-- The search for p, then g and the check, after q. -/
 theorem attemptP_vp {g : Geo} {n : Nat} (HO : HashOk g.G) (okp : PrimeOk (8 * G.pLen) g.pCode)
@@ -221,11 +221,11 @@ theorem attemptP_vp {g : Geo} {n : Nat} (HO : HashOk g.G) (okp : PrimeOk (8 * G.
       (St G (aOut G HO k (VG.Proof.Dsa.Generation.primeResult (8 * G.pLen) (8 * G.qLen)
         (Spec.Dsa.decodeBE (qBytes G k)) (seedAt G k) (hsL G) r)) X) := by
   have hlq' : Spec.Dsa.generationLengthsValid G.pLen G.qLen := hlq
-  have hw : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384 := by omega
-  have pl := padTail_length HO.md (n := G.qLen) (by omega) HO.hL
+  have hw : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384 := by omega_arith
+  have pl := padTail_length HO.md (n := G.qLen) (by omega_arith) HO.hL
   refine VP.seq (pPart_vp (c := aBase G HO k) (u0 := G.witLen - r.length) (d := aQCfg G HO k u r) HO okp certs hlq
     hp hq hk4 hsb hH hwl hsize (aBase_pnot G HO k) hk (by simp) (by simp [upd, fSeed, fStatus, fSeedLeft])
-    (by omega) (pCand_spec HO hlq hk4 hsb hk hH hlen) (by simp [testCfg])
+    (by omega_arith) (pCand_spec HO hlq hk4 hsb hk hH hlen) (by simp [testCfg])
     (by simp [testCfg, upd]) (fun o ho => ⟨by simp [testCfg, ho], by
       change o ∈ [fStatus, fSeedLeft, fSeed] at ho
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
@@ -308,16 +308,16 @@ theorem attempt_vp {g : Geo} {n : Nat} (HO : HashOk g.G) (okq : PrimeOk (8 * G.q
     VP (St G ((aBase G HO k).setV fUsed (BitVec.ofNat 32 u)) X) g.attempt
       (St G (aOut G HO k (VG.Proof.Dsa.Generation.seedResult (8 * G.pLen) (8 * G.qLen) (seedAt G k) (hsL G)
         (G.witB.drop u))) X) := by
-  have hHq : (Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k)).length = G.qLen := by have := hlen (seedAt G k); omega
-  have hne : Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k) ≠ [] := fun e => by rw [e] at hHq; simp at hHq; omega
+  have hHq : (Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k)).length = G.qLen := by have := hlen (seedAt G k); omega_arith
+  have hne : Spec.Dsa.seedHash (8 * G.qLen) (seedAt G k) ≠ [] := fun e => by rw [e] at hHq; simp at hHq; omega_arith
   have ql : (qBytes G k).length = G.qLen := by
     rw [qBytes, VG.Proof.Ffdh.ParameterCandidate.shapedOctets, VG.Proof.Ffdh.ParameterCandidate.lastOne_length
-      (by rw [← List.length_pos_iff, VG.Proof.Ffdh.ParameterCandidate.topCut_length hne]; omega),
+      (by rw [← List.length_pos_iff, VG.Proof.Ffdh.ParameterCandidate.topCut_length hne]; omega_arith),
       VG.Proof.Ffdh.ParameterCandidate.topCut_length hne, hHq]
   have hqv : Spec.Dsa.decodeBE (qBytes G k) = Spec.Dsa.qCandidate (8 * G.qLen) (seedAt G k) :=
-    VG.Proof.Dsa.Generation.qCandidate_octets (by omega) _ (by rw [hHq])
+    VG.Proof.Dsa.Generation.qCandidate_octets (by omega_arith) _ (by rw [hHq])
   have hqlo : 2 ^ (8 * G.qLen - 1) ≤ Spec.Dsa.decodeBE (qBytes G k) := by
-    rw [hqv]; exact (VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega) (seedAt G k)).2.1
+    rw [hqv]; exact (VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * G.qLen) (by omega_arith) (seedAt G k)).2.1
   unfold Geo.attempt
   refine VP.seq (qPart_vp (c := (aBase G HO k).setV fUsed (BitVec.ofNat 32 u)) HO okq hlq hp hq hk4 hH hwl hsb
     hsizeq hb8 hk hu (by simp) (by simp [upd, fUsed, fSeed, fStatus, fSeedLeft]) (by simp)

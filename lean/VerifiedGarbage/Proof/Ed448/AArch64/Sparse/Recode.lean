@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Init
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Init
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Step
 
 /-! Complete full-width signed recoding, framed to its 464-byte digit buffer. -/
 

@@ -91,15 +91,15 @@ theorem restWith_ok (Es : List (Prog isa)) (hEs : Es ≠ []) {s : State} {B : Ad
   have fixed := Fixed.of_frm fac (pdAll_fixed _)
   have keep := ka.trans kd
   have maskD : word d.mem B (8*sMask) = mask (decide (Spec.Rsa.os2ip xb < N)) := by
-    rw [fd.word_eq (mask_not_expAll _) (by unfold sMask sFn; omega)]
+    rw [fd.word_eq (mask_not_expAll _) (by unfold sMask sFn; omega_arith)]
     exact so.mask
-  refine WP.mono_mx (by decide +kernel) (wordOutPhase_ok gd hZ (by omega) (by omega) yd
+  refine WP.mono_mx (by decide +kernel) (wordOutPhase_ok gd hZ (by omega_arith) (by omega_arith) yd
     (by rw [fixed sOut (by decide)]; exact h.hO)
     (by rw [fixed sK (by decide)]; exact h.hK) maskD
     (by rw [keep.2.2]; exact h.outSpan) h.outSep)
     fun t ⟨bytes,rax,saved,frame,kt⟩ mxt =>
       ⟨if Spec.Rsa.os2ip xb < N then y else Spec.Rsa.os2ip xb ^ Spec.Rsa.os2ip eb % N, ?_, ⟨?_,rax,
-      fun i hi => by rw [saved i hi]; exact fixed i (by omega),
+      fun i hi => by rw [saved i hi]; exact fixed i (by omega_arith),
       fun y hy hy' => by rw [frame y hy',InScr.of_frm fac hle y hy],
       (keep.trans kt).mono (by decide)⟩, by rw [mxt, mxd, mxa]⟩
   · intro hRR
@@ -128,15 +128,15 @@ theorem phasesCore_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : 
   have hL2 := h.L2
   have hZ := h.z
   have hn := h.scr.nowrap
-  have hb : B.toNat + slot ((k+7)/8) 8 ≤ 2^64 := by omega
-  have hw : 2 ≤ (k+7)/8 := by omega
+  have hb : B.toNat + slot ((k+7)/8) 8 ≤ 2^64 := by omega_arith
+  have hw : 2 ≤ (k+7)/8 := by omega_arith
   have hR := VG.Proof.Bignum.coprime_pow2 h.odd (64*((k+7)/8))
   have hle : ∀ r ∈ pdAll ((k+7)/8), r.1+r.2 ≤ Z :=
     fun r hr => (pdAll_le _ r hr).trans hZ
   unfold phases
   -- `X = input R`.
   refine WP.seq (WP.mono (mmN_ok M (o := aXm) (a := aX) (b := aR2) hg hZ hw
-    (by omega) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by omega_arith) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) hN hinv (by rw [rra]; exact h.rlt))
     fun b ⟨gb,nb,ib,lb,mb,ab,kb⟩ => ?_)
   rw [hX,rra] at mb
@@ -151,15 +151,15 @@ theorem phasesCore_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : 
   have inputB : wv b.mem B (slot ((k+7)/8) aX) ((k+7)/8) = Spec.Rsa.os2ip xb := by
     rw [ab.wv_of_not_mem (by decide) (by decide) hb]; exact hX
   -- The exponentiation, by `e - 1`.
-  refine WP.seq (WP.mono (exp_ok M (x := x) ⟨gb,nb,ib,rfl⟩ hZ hw (by omega) hR lb hx
-    (by rw [xab sE (by decide)]; exact h.hE) (by rw [xab sElen (by decide)]; exact h.hL) heb h.el h.L1 (by omega)
+  refine WP.seq (WP.mono (exp_ok M (x := x) ⟨gb,nb,ib,rfl⟩ hZ hw (by omega_arith) hR lb hx
+    (by rw [xab sE (by decide)]; exact h.hE) (by rw [xab sElen (by decide)]; exact h.hL) heb h.el h.L1 (by omega_arith)
     h.eodd h.e3)
     fun c ⟨cc,hYN,hYc,fc,kc⟩ => ?_)
   have inputC : wv c.mem B (slot ((k+7)/8) aX) ((k+7)/8) = Spec.Rsa.os2ip xb :=
     (input_preserved fc hb).trans inputB
   -- The last multiplication, by the input.
   rw [seqs_one]
-  refine WP.mono (final_factor_ok M (x := x) (e := Spec.Rsa.os2ip (evenLast eb)) cc.good hZ hw (by omega)
+  refine WP.mono (final_factor_ok M (x := x) (e := Spec.Rsa.os2ip (evenLast eb)) cc.good hZ hw (by omega_arith)
     cc.n cc.inv hR inputC hYN hYc)
     fun d ⟨gd,yd,ad,kd⟩ => ?_
   have fd : Frm B (expAll ((k+7)/8)) c.mem d.mem :=

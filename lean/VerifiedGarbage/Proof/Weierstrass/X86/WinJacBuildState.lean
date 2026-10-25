@@ -50,13 +50,13 @@ structure Layout (K : JacWinCfg) (size wk : Nat) : Prop where
 theorem entry_bounds {K : JacWinCfg} {m c : Nat} (hm : m<16) (hc : c<5) :
     K.tbl≤K.entry m c ∧ K.entry m c+32≤K.tbl+2560 := by
   unfold JacWinCfg.entry
-  split <;> omega
+  split <;> omega_arith
 
 theorem entry_apart {K : JacWinCfg} {m n c d : Nat} (hm : m<16) (hn : n<16)
     (hc : c<5) (hd : d<5) (hne : m≠n ∨ c≠d) :
     K.entry m c+32≤K.entry n d ∨ K.entry n d+32≤K.entry m c := by
   unfold JacWinCfg.entry
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 /-- A field program cannot modify a cached table coordinate above its workspace. -/
 theorem field_keep_entry {K : JacWinCfg} {base : Addr} {size wk : Nat} (hL : Layout K size wk)
@@ -66,24 +66,24 @@ theorem field_keep_entry {K : JacWinCfg} {base : Addr} {size wk : Nat} (hL : Lay
   have he := entry_bounds (K:=K) hm hc
   have ht := hL.table
   have hn := hs.nowrap
-  apply hk.unch.wordsVal (d:=K.entry m c) (k:=4) (fun w hw => ?_) (by omega)
+  apply hk.unch.wordsVal (d:=K.entry m c) (k:=4) (fun w hw => ?_) (by omega_arith)
   simp only [progW,List.mem_append,List.mem_map,List.mem_cons,List.not_mem_nil,or_false] at hw
   rcases hw with ⟨x,hx,rfl⟩ | rfl | rfl | rfl
   · have := hL.low x (List.mem_append_right _ (hW x hx))
     dsimp only
     rw [hL.n]
-    omega
+    omega_arith
   · have := hL.tmp
     dsimp only
     rw [hL.n]
-    omega
+    omega_arith
   · have := hL.wk_end
     dsimp only
     rw [hL.n]
-    omega
+    omega_arith
   · have := hL.size_le
     change _≤8192 ∨ _
-    omega
+    omega_arith
 
 end VG.Proof.Weierstrass.X86.JWin
 
@@ -120,7 +120,7 @@ theorem scanPart_ok (K : TCombCfg) {s : State} {base : Addr} {size tbl a : Nat}
         accVal s.mem (off base tbl) K.M.n a 16 c) ∧
       Outside base K.E.x (16*K.M.n) s.mem t.mem ∧ KeepRegs [.ecx,.edx] s t := by
   rw [WP.block_append_iff]
-  refine WP.mono (tablePtr_ok hs (by omega)) fun u ⟨pu,ku⟩ => ?_
+  refine WP.mono (tablePtr_ok hs (by omega_arith)) fun u ⟨pu,ku⟩ => ?_
   have hu := hs.of_keeps ku.keeps (by decide)
   have hb' : u.gpr .ebx=BitVec.ofNat 32 a := (ku.1 _ (by decide)).trans hb
   have hr : ∀ e<K.H,∀ c<K.M.n,InRegions (u.rd++u.wr)
@@ -129,15 +129,15 @@ theorem scanPart_ok (K : TCombCfg) {s : State} {base : Addr} {size tbl a : Nat}
     rw [off,Offset.add_add]
     apply hu.read
     rw [hH] at he
-    have hm := Nat.mul_le_mul_left (16*K.M.n) (show e+1≤16 by omega)
+    have hm := Nat.mul_le_mul_left (16*K.M.n) (show e+1≤16 by omega_arith)
     rw [Nat.mul_add,Nat.mul_one] at hm
-    omega
+    omega_arith
   have hnw := hs.nowrap
   have hbNat : (off base tbl).toNat=base.toNat+tbl := by
     simp only [off,BitVec.toNat_add,BitVec.toNat_ofNat]
-    omega
-  refine WP.mono (selPass_ok K hu hn.2 (by rw [hH]; decide) (by omega) hb' pu hr
-    (by rw [hbNat,hH]; omega) ho) fun t ⟨et,ot,kt⟩ => ?_
+    omega_arith
+  refine WP.mono (selPass_ok K hu hn.2 (by rw [hH]; decide) (by omega_arith) hb' pu hr
+    (by rw [hbNat,hH]; omega_arith) ho) fun t ⟨et,ot,kt⟩ => ?_
   refine ⟨?_,?_,⟨fun r h => ?_,kt.rd.trans ku.2.2.1,kt.wr.trans ku.2.2.2⟩⟩
   · intro c hc
     rw [et c hc,ku.2.1,hH]
@@ -157,18 +157,18 @@ theorem scan_coord {mem mem' : Mem} {base : Addr} {tbl o n a c : Nat} (ha : a≤
   · rw [ite_eq_left h1]
     apply wordsVal_congr₂
     intro i hi
-    have e := hw (4*c+i) (by omega)
+    have e := hw (4*c+i) (by omega_arith)
     simp only [h1,ha,and_self,ite_true] at e
-    rw [show o+8*(4*c+i)=o+32*c+8*i by omega] at e
+    rw [show o+8*(4*c+i)=o+32*c+8*i by omega_arith] at e
     rw [e]
     simp only [VG.Proof.Mont.word,off,Offset.add_add]
-    congr 3 <;> omega
+    congr 3 <;> omega_arith
   · rw [ite_eq_right h1]
     apply wordsVal_zeros
     intro i hi
-    have e := hw (4*c+i) (by omega)
+    have e := hw (4*c+i) (by omega_arith)
     simp only [h1,false_and,ite_false] at e
-    simpa only [show o+8*(4*c+i)=o+32*c+8*i by omega] using e
+    simpa only [show o+8*(4*c+i)=o+32*c+8*i by omega_arith] using e
 
 /-- A packed part of the table, as 256-bit coordinates. -/
 theorem selectPart_ok {K : JacWinCfg} {s : State} {base : Addr} {size a : Nat} (cache : Bool)
@@ -186,12 +186,12 @@ theorem selectPart_ok {K : JacWinCfg} {s : State} {base : Addr} {size a : Nat} (
     cases cache <;> simp [JacWinCfg.scan]
   have hH : (K.scan cache).H=16 := by cases cache <;> rfl
   refine WP.mono (scanPart_ok (K.scan cache) hs hn hH ha hb
-    (by cases cache <;> simp only [JacWinCfg.scan,Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] <;> omega)
-    (by cases cache <;> simp only [JacWinCfg.scan,Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] <;> omega))
+    (by cases cache <;> simp only [JacWinCfg.scan,Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] <;> omega_arith)
+    (by cases cache <;> simp only [JacWinCfg.scan,Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] <;> omega_arith))
     fun t ⟨et,ot,kt⟩ => ⟨?_,?_,kt⟩
   · intro c hc
     have h := scan_coord ha (n:=(K.scan cache).M.n) (c:=c)
-      (by cases cache <;> simp only [JacWinCfg.scan,Bool.false_eq_true,ite_false,ite_true] at hc ⊢ <;> omega) et
+      (by cases cache <;> simp only [JacWinCfg.scan,Bool.false_eq_true,ite_false,ite_true] at hc ⊢ <;> omega_arith) et
     cases cache <;> simpa only [JacWinCfg.scan,Bool.false_eq_true,ite_false,ite_true,Nat.reduceMul] using h
   · cases cache <;> simpa only [JacWinCfg.scan,Bool.false_eq_true,ite_false,ite_true,Nat.reduceMul] using ot
 
@@ -224,17 +224,17 @@ theorem select_ok {K : JacWinCfg} {s : State} {base : Addr} {size a : Nat}
   simp only [ite_true] at et ot
   have hn := hs.nowrap
   refine ⟨fun c hc => ?_,
-    (ou.mono (Nat.le_refl _) (by omega)).trans (ot.mono (by omega) (by omega)),
+    (ou.mono (Nat.le_refl _) (by omega_arith)).trans (ot.mono (by omega_arith) (by omega_arith)),
     ⟨fun r hr => (kt.gpr r hr).trans (ku.gpr r hr),kt.rd.trans ku.rd,kt.wr.trans ku.wr⟩⟩
   by_cases h3 : c<3
-  · rw [ot.wordsVal (by omega) (by omega),eu c h3]
+  · rw [ot.wordsVal (by omega_arith) (by omega_arith),eu c h3]
     simp only [JacWinCfg.entry,h3,ite_true]
-  · have e := et (c-3) (by omega)
-    rw [show K.T+96+32*(c-3)=K.T+32*c by omega] at e
+  · have e := et (c-3) (by omega_arith)
+    rw [show K.T+96+32*(c-3)=K.T+32*c by omega_arith] at e
     rw [e]
     by_cases h1 : 1≤a
     · simp only [h1,ite_true,JacWinCfg.entry,h3,ite_false]
-      exact ou.wordsVal (by omega) (by omega)
+      exact ou.wordsVal (by omega_arith) (by omega_arith)
     · simp only [h1,ite_false]
 
 end VG.Proof.Weierstrass.X86.JWin
@@ -299,7 +299,7 @@ theorem Table.field_keep {K : JacWinCfg} {C : Curve} {base : Addr} {size wk M : 
     (hk : ProgKeep K.M base wk W s t) (hW : ∀ x∈W,x∈work K)
     {P : Point C} (hT : Table K C base P M s) (hM : M≤16) : Table K C base P M t := by
   intro m h1 hm
-  exact (hT m h1 hm).congr fun c hc => field_keep_entry hL hs hk hW (by omega) hc
+  exact (hT m h1 hm).congr fun c hc => field_keep_entry hL hs hk hW (by omega_arith) hc
 
 /-- The selected nonzero magnitude represents the corresponding point,
 with both cached powers carried along by the two scans. -/
@@ -344,11 +344,11 @@ theorem entryAddr_ok {K : JacWinCfg} {s : State} {base : Addr} {size j : Nat} (c
   · cases cache <;>
       simp only [Bool.false_eq_true,ite_false,ite_true,BitVec.toNat_ofNat,Nat.add_zero]
     · rw [show (96 : BitVec 32).toNat=96 from rfl,
-        Nat.mod_eq_of_lt (show j-1<2^32 by omega),Nat.mul_comm (j-1),Offset.add_add]
-      exact hs.ea (by omega)
+        Nat.mod_eq_of_lt (show j-1<2^32 by omega_arith),Nat.mul_comm (j-1),Offset.add_add]
+      exact hs.ea (by omega_arith)
     · rw [show (64 : BitVec 32).toNat=64 from rfl,
-        Nat.mod_eq_of_lt (show j-1<2^32 by omega),Nat.mul_comm (j-1),Offset.add_add]
-      exact hs.ea (by omega)
+        Nat.mod_eq_of_lt (show j-1<2^32 by omega_arith),Nat.mul_comm (j-1),Offset.add_add]
+      exact hs.ea (by omega_arith)
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
     simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,RegUpd.gpr_setFlags,
       hr.1,hr.2.1,hr.2.2,ite_false]
@@ -370,18 +370,18 @@ theorem storePart_ok {K : JacWinCfg} {s : State} {base : Addr} {size j : Nat} (c
     (a:=K.T+(if cache then 96 else 0))
     (o:=K.tbl+(if cache then 1536 else 0)+(if cache then 64 else 96)*(j-1))
     (if cache then 4 else 6) u hu
-    (by cases cache <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] <;> omega)
-    (by cases cache <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] <;> omega)
-    (by cases cache <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] <;> omega)
+    (by cases cache <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] <;> omega_arith)
+    (by cases cache <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] <;> omega_arith)
+    (by cases cache <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] <;> omega_arith)
     (fun i hi => hu.ea (by cases cache <;>
-      simp only [Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] at hi ⊢ <;> omega))
+      simp only [Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] at hi ⊢ <;> omega_arith))
     (fun i hi => nafTable_ea hu pu (by cases cache <;>
-      simp only [Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] at hi ⊢ <;> omega)))
+      simp only [Bool.false_eq_true,ite_false,ite_true,Nat.add_zero] at hi ⊢ <;> omega_arith)))
     fun t ⟨et,ot,gt,rt,wt⟩ => ?_
   refine ⟨fun c hc => ?_,?_,⟨fun r hr => (congrFun gt r).trans (ku.1 r hr),
     rt.trans ku.2.2.1,wt.trans ku.2.2.2⟩⟩
   · rw [nafCopy_field et (by cases cache <;>
-      simp only [Bool.false_eq_true,ite_false,ite_true] at hc ⊢ <;> omega),ku.2.1]
+      simp only [Bool.false_eq_true,ite_false,ite_true] at hc ⊢ <;> omega_arith),ku.2.1]
   · rw [ku.2.1] at ot
     cases cache <;> exact ot
 
@@ -406,11 +406,11 @@ theorem storeEntry_ok {K : JacWinCfg} {s : State} {base : Addr} {size j : Nat}
     ⟨fun r hr => (kt.gpr r hr).trans (ku.gpr r hr),kt.rd.trans ku.rd,kt.wr.trans ku.wr⟩⟩
   by_cases h3 : c<3
   · simp only [JacWinCfg.entry,h3,ite_true]
-    rw [ot.wordsVal (by omega) (by omega),eu c h3]
-  · have e := et (c-3) (by omega)
-    rw [show K.T+96+32*(c-3)=K.T+32*c by omega] at e
+    rw [ot.wordsVal (by omega_arith) (by omega_arith),eu c h3]
+  · have e := et (c-3) (by omega_arith)
+    rw [show K.T+96+32*(c-3)=K.T+32*c by omega_arith] at e
     simp only [JacWinCfg.entry,h3,ite_false]
-    rw [e,ou.wordsVal (by omega) (by omega)]
+    rw [e,ou.wordsVal (by omega_arith) (by omega_arith)]
 
 end VG.Proof.Weierstrass.X86.JWin
 
@@ -429,7 +429,7 @@ theorem store_apart {K : JacWinCfg} {i j c : Nat} (hi : i<16) (hj : j<16) (hc : 
     (hne : i≠j) : ∀ w∈storeW K j,K.entry i c+32≤w.1 ∨ w.1+w.2≤K.entry i c := by
   intro w hw
   simp only [storeW,List.mem_cons,List.not_mem_nil,or_false] at hw
-  rcases hw with rfl|rfl <;> dsimp only <;> unfold JacWinCfg.entry <;> split <;> omega
+  rcases hw with rfl|rfl <;> dsimp only <;> unfold JacWinCfg.entry <;> split <;> omega_arith
 
 theorem store_table_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size M : Nat}
     {s : State} (hs : Scr s base size) (hM : M<16)
@@ -438,19 +438,19 @@ theorem store_table_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size M : Nat}
     (hNew : Cached C base s (fun c => K.T+32*c) (mul (M+1) P)) :
     WP isa (.block K.storeEntry) s fun t => Table K C base P (M+1) t ∧
       Unch base (storeW K M) s.mem t.mem ∧ KeepRegs [.eax,.ecx,.edx] s t := by
-  refine WP.mono (storeEntry_ok hs (by omega) (by omega) hb ht hT) fun t ⟨et,ot,kt⟩ => ?_
+  refine WP.mono (storeEntry_ok hs (by omega_arith) (by omega_arith) hb ht hT) fun t ⟨et,ot,kt⟩ => ?_
   simp only [Nat.add_sub_cancel] at et ot
   refine ⟨fun m h1 hm => ?_,ot,kt⟩
   by_cases he : m=M+1
   · subst m
     simp only [Nat.add_sub_cancel]
     exact hNew.congr et
-  · have hOld' := hOld m h1 (by omega)
+  · have hOld' := hOld m h1 (by omega_arith)
     apply hOld'.congr
     intro c hc
-    have eb := entry_bounds (K:=K) (m:=m-1) (by omega) hc
+    have eb := entry_bounds (K:=K) (m:=m-1) (by omega_arith) hc
     have hn := hs.nowrap
-    exact ot.wordsVal (store_apart (by omega) hM hc (by omega)) (by omega)
+    exact ot.wordsVal (store_apart (by omega_arith) hM hc (by omega_arith)) (by omega_arith)
 
 end VG.Proof.Weierstrass.X86.JWin
 
@@ -486,18 +486,18 @@ theorem ro_apart {K : JacWinCfg} {size wk m : Nat} (hL : Layout K size wk)
   · have := hL.lay.le x hxs
     have := hL.size_le
     change _≤8192 ∨ _
-    omega
+    omega_arith
   · have := hL.low x hxs
     dsimp only
     rw [hL.n]
-    omega
+    omega_arith
 
 theorem mod_unch {K : JacWinCfg} {base : Addr} {size wk m : Nat} (hL : Layout K size wk)
     (hW : WkOk K.F K.M m size wk (·∈slots K)) {s t : State}
     (hs : Scr s base size) (hM : ModOkW K.M size m s.mem base)
     (hu : Unch base (allW K wk) s.mem t.mem) : ModOkW K.M size m t.mem base := by
   refine ⟨hM.n0,hM.mo,hM.tmp,hM.sep,?_,hM.inv,hM.red⟩
-  rw [hu.wordsVal (fun w hw => ?_) (by have := hs.nowrap; have := hM.mo; omega),hM.val]
+  rw [hu.wordsVal (fun w hw => ?_) (by have := hs.nowrap; have := hM.mo; omega_arith),hM.val]
   simp only [allW,loopW,progW,List.mem_append,List.mem_map,List.mem_cons,List.not_mem_nil,or_false] at hw
   rcases hw with (⟨x,hx,rfl⟩ | rfl | rfl | rfl) | rfl
   · exact (hL.lay.mo x (List.mem_append_right _ hx)).symm
@@ -506,12 +506,12 @@ theorem mod_unch {K : JacWinCfg} {base : Addr} {size wk m : Nat} (hL : Layout K 
   · have := hM.mo
     have := hL.size_le
     change _≤8192 ∨ _
-    omega
+    omega_arith
   · have := hW.mo
     have := hL.wk_end
     dsimp only
     rw [hL.n] at *
-    omega
+    omega_arith
 
 theorem Frame.refl {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat} {s : State}
     (hs : Scr s base size) (hm : ModOkW K.M size C.p s.mem base) : Frame K C base size wk s s :=
@@ -532,7 +532,7 @@ theorem Frame.ro {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat}
   h.unch.wordsVal (ro_apart hL hW hx) (by
     have := h.scr.nowrap
     have := hL.lay.le x (List.mem_append_left _ hx)
-    omega)
+    omega_arith)
 
 theorem Frame.bits {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat}
     (hL : Layout K size wk) {s₀ s : State} (h : Frame K C base size wk s₀ s) {i : Nat} (hi : i<260) :
@@ -540,26 +540,26 @@ theorem Frame.bits {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat}
   have ht := hL.table
   have hb := hL.bits
   have hn := h.scr.nowrap
-  apply h.unch.byte (fun w hw => ?_) (by omega)
+  apply h.unch.byte (fun w hw => ?_) (by omega_arith)
   simp only [allW,loopW,progW,List.mem_append,List.mem_map,List.mem_cons,List.not_mem_nil,or_false] at hw
   rcases hw with (⟨x,hx,rfl⟩ | rfl | rfl | rfl) | rfl
   · have := hL.bits_low x hx
     dsimp only
     rw [hL.n]
-    omega
+    omega_arith
   · have := hL.bits_tmp
     dsimp only
     rw [hL.n]
-    omega
+    omega_arith
   · have := hL.bits_wk
     dsimp only
     rw [hL.n]
-    omega
+    omega_arith
   · have := hL.size_le
     change _<8192 ∨ _
-    omega
+    omega_arith
   · dsimp only
-    omega
+    omega_arith
 
 theorem field_allW {K : JacWinCfg} {base : Addr} {wk : Nat} {W : List Nat} {s t : State}
     (hk : ProgKeep K.M base wk W s t) (hw : ∀ x∈W,x∈work K) :
@@ -600,7 +600,7 @@ theorem store_allW {K : JacWinCfg} {base : Addr} {wk m : Nat} {s t : State}
   intro w hw
   refine ⟨(K.tbl,2560),List.mem_append_right _ (List.mem_singleton_self _),?_⟩
   simp only [storeW,List.mem_cons,List.not_mem_nil,or_false] at hw
-  rcases hw with rfl|rfl <;> dsimp only <;> constructor <;> omega
+  rcases hw with rfl|rfl <;> dsimp only <;> constructor <;> omega_arith
 
 theorem Frame.store {K : JacWinCfg} {C : Curve} {base : Addr} {size wk m : Nat}
     (hL : Layout K size wk) (hW : WkOk K.F K.M C.p size wk (·∈slots K))
@@ -627,7 +627,7 @@ theorem store_framed_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk M : N
   have hT : K.T+160≤K.tbl := by
     have := hL.low K.z3 (by simp [slots,work,JacWinCfg.z3])
     simp only [JacWinCfg.z3] at this
-    omega
+    omega_arith
   refine WP.mono (store_table_ok h.scr hM hb hL.table hT hOld hNew)
     fun t ⟨ht,hu,hk⟩ => ⟨ht,h.store hL hW hM hu hk,(hk.gpr _ (by decide)).trans hb⟩
 
@@ -661,9 +661,9 @@ theorem store_slot {K : JacWinCfg} {base : Addr} {size wk m x : Nat} {s t : Stat
   have hl := hL.low x hx
   have hb := hL.lay.le x hx
   have hn := hs.nowrap
-  apply hu.wordsVal (fun w hw => ?_) (by omega)
+  apply hu.wordsVal (fun w hw => ?_) (by omega_arith)
   simp only [storeW,List.mem_cons,List.not_mem_nil,or_false] at hw
-  rcases hw with rfl|rfl <;> dsimp only <;> rw [hL.n] <;> omega
+  rcases hw with rfl|rfl <;> dsimp only <;> rw [hL.n] <;> omega_arith
 
 theorem Cached.store {K : JacWinCfg} {C : Curve} {base : Addr} {size wk m : Nat} {s t : State}
     (hL : Layout K size wk) (hs : Scr s base size) (hu : Unch base (storeW K m) s.mem t.mem)
@@ -672,7 +672,7 @@ theorem Cached.store {K : JacWinCfg} {C : Curve} {base : Addr} {size wk m : Nat}
   apply h.congr
   intro c hc
   have hx : K.T+32*c∈slots K := by
-    have : c=0 ∨ c=1 ∨ c=2 ∨ c=3 ∨ c=4 := by omega
+    have : c=0 ∨ c=1 ∨ c=2 ∨ c=3 ∨ c=4 := by omega_arith
     rcases this with rfl|rfl|rfl|rfl|rfl <;> simp [slots,work,JacWinCfg.E,JacWinCfg.z2,JacWinCfg.z3]
   simpa only [hL.n] using store_slot hL hs hx hu
 
@@ -713,7 +713,7 @@ theorem build_store_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk m : Na
   have hT : K.T+160≤K.tbl := by
     have := hL.low K.z3 (by simp [slots,work])
     simp only [JacWinCfg.z3] at this
-    omega
+    omega_arith
   refine WP.mono (store_table_ok h.scr hm hb hL.table hT ht hp)
     fun t ⟨ht,hu,hk⟩ => ⟨h.store hL hW hm hu hk,ht,hp.store hL h.scr hu,
       (hk.gpr _ (by decide)).trans hb⟩

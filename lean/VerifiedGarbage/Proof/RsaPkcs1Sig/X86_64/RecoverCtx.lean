@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.TCB.X86_64.State
 import VerifiedGarbage.TCB.X86_64.Target

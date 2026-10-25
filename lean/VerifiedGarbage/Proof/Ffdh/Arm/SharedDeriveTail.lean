@@ -29,12 +29,7 @@ def gOctets (p : Inputs) : List Byte := (p.dom.drop p.k).take p.k
 theorem status_ok (s : State) (b : Bool) (flag : s.gpr .r0 = if b then 1 else 0) :
     WP isa (.block VG.Impl.Ffdh.Arm.SharedDerive.status) s fun t =>
       (t.gpr .r0 = (if b then 1 else 3) ∧ t.mem = s.mem) ∧ Rest [.r0, .r3] s t := by
-  refine withRest [.r0, .r3] ?_ (by
-    intro r hr i hi
-    simp only [instrs, VG.Impl.Ffdh.Arm.SharedDerive.status, List.mem_cons, List.not_mem_nil,
-      or_false] at hi
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rcases hi with rfl | rfl | rfl <;> simp [clobbers, dstOf, Ne.symm hr.1, Ne.symm hr.2]) (by rfl)
+  refine withRest_all [.r0, .r3] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.SharedDerive.status
   ffrun [flag]
   cases b <;> rfl

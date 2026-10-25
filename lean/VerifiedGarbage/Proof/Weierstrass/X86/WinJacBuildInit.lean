@@ -12,7 +12,7 @@ open VG VG.X86 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86 VG.Impl.Mont
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 
 private theorem coord_mem (K : JacWinCfg) {c : Nat} (hc : c<5) : K.T+32*c∈work K := by
-  have : c=0 ∨ c=1 ∨ c=2 ∨ c=3 ∨ c=4 := by omega
+  have : c=0 ∨ c=1 ∨ c=2 ∨ c=3 ∨ c=4 := by omega_arith
   rcases this with rfl|rfl|rfl|rfl|rfl <;> simp [work,JacWinCfg.E,JacWinCfg.z2,JacWinCfg.z3]
 
 /-- Copy affine XYZ and use its unit Z for both cached powers. -/
@@ -67,12 +67,12 @@ theorem build_copy_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat}
   refine ⟨?_,(Frame.refl hI.scr hI.mod).field hL hW kk hs⟩
   apply Cached.of_inv hL.n it
   · intro c hc
-    have : c=0 ∨ c=1 ∨ c=2 ∨ c=3 ∨ c=4 := by omega
+    have : c=0 ∨ c=1 ∨ c=2 ∨ c=3 ∨ c=4 := by omega_arith
     rcases this with rfl|rfl|rfl|rfl|rfl <;> simp
   all_goals
     simp only [JacWinCfg.E,JacWinCfg.z2,JacWinCfg.z3,Function.update_apply]
     simp only [spy,spz0,spz 1 (by decide),spz 2 (by decide),spz 3 (by decide),ite_false]
-    simp (disch := omega) only [ite_eq_right,ite_true]
+    simp (disch := omega_arith) only [ite_eq_right,ite_true]
   · exact hJ
   · rw [hz]; exact hC.one_ne_zero
   · rw [hz]; grind
@@ -90,7 +90,7 @@ theorem build_init_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat}
   refine WP.mono (build_copy_ok hL hW hI hJ hz hC) fun a ⟨pa,fa⟩ => ?_
   refine WP.mono (mov_counter_ok a 1) fun b ⟨cb,kb⟩ => ?_
   apply build_store_ok hL hW (fa.keeps kb) (m:=0) (by decide) cb
-  · intro m h1 hm; omega
+  · intro m h1 hm; omega_arith
   · rw [show 0+1=1 from rfl,mul_one_pt]
     exact pa.congr fun _ _ => by rw [kb.2.1]
 

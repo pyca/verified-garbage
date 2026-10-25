@@ -3,12 +3,13 @@ module
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Poly1305.Horner
-public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.TCB.X86_64.Gpr
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # Poly1305 on x86-64 with AVX2: the integer instructions

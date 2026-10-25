@@ -214,13 +214,13 @@ structure LInv (c : Core) (S : CoreSpec c) (M : Mode) (s₀ : State) (k : Nat) (
 
 /-! ## Facts of the layout -/
 
-theorem CoreSpec.bs_pos {c : Core} (S : CoreSpec c) : 0 < c.bs := by have := S.bw_pos; unfold Core.bs; omega
+theorem CoreSpec.bs_pos {c : Core} (S : CoreSpec c) : 0 < c.bs := by have := S.bw_pos; unfold Core.bs; omega_arith
 
 theorem CoreSpec.ds_pos {c : Core} (S : CoreSpec c) (M : Mode) : 0 < c.ds M := by
-  have := S.bs_pos; unfold Core.ds; split <;> omega
+  have := S.bs_pos; unfold Core.ds; split <;> omega_arith
 
 theorem CoreSpec.ds_le {c : Core} (S : CoreSpec c) (M : Mode) : c.ds M ≤ c.bs := by
-  have := S.bs_pos; unfold Core.ds; split <;> omega
+  have := S.bs_pos; unfold Core.ds; split <;> omega_arith
 
 theorem CoreSpec.ds_enc {c : Core} (S : CoreSpec c) (M : Mode) : encodable (BitVec.ofNat 32 (c.ds M)) = true := by
   unfold Core.ds; split
@@ -245,19 +245,19 @@ omit hp in
 theorem UPre.scrB : c.scratchBytes = oOff + 2 * c.bs + c.stackScratch := rfl
 
 omit hp in
-theorem UPre.blk_sub : Region.Sub (blkR c s₀) (scrR c s₀) := VG.Offset.sub_base _ (by unfold Core.scratchBytes Core.csOff; omega)
+theorem UPre.blk_sub : Region.Sub (blkR c s₀) (scrR c s₀) := VG.Offset.sub_base _ (by unfold Core.scratchBytes Core.csOff; omega_arith)
 
 omit hp in
 /-- The chaining and spare blocks, within the scratch buffer. -/
 theorem UPre.blk2_sub : Region.Sub ⟨State.addr (Sc c s₀) + BitVec.ofNat 64 oOff, 2 * c.bs⟩ (scrR c s₀) :=
-  VG.Offset.sub_base _ (by unfold Core.scratchBytes Core.csOff; omega)
+  VG.Offset.sub_base _ (by unfold Core.scratchBytes Core.csOff; omega_arith)
 
 theorem UPre.slots_disj_blk : Region.Disjoint ⟨State.addr (Sc c s₀) + BitVec.ofNat 64 0, 36⟩ (blkR c s₀) :=
-  VG.Offset.disjoint _ (.inl (by unfold oOff; omega)) (by omega) (by have := hp.fS; unfold Core.scratchBytes Core.csOff at this; omega)
+  VG.Offset.disjoint _ (.inl (by unfold oOff; omega_arith)) (by omega_arith) (by have := hp.fS; unfold Core.scratchBytes Core.csOff at this; omega_arith)
 
 omit hp in
 theorem UPre.slots_sub : Region.Sub ⟨State.addr (Sc c s₀) + BitVec.ofNat 64 0, 36⟩ (scrR c s₀) :=
-  VG.Offset.sub_base _ (by unfold Core.scratchBytes Core.csOff oOff; omega)
+  VG.Offset.sub_base _ (by unfold Core.scratchBytes Core.csOff oOff; omega_arith)
 
 omit hp in
 /-- Saving the registers changes only the slots. -/
@@ -270,7 +270,7 @@ theorem UPre.ciph_eq {m : Mem}
     (hf : Frame [dataR c s₀ M, scrR c s₀, belowR S s₀] s₀.mem m) :
     S.ciphAt m (State.addr (Kp s₀)) (Rp s₀) = ciph S s₀ := by
   refine (S.ciphAt_congr fun i hi => ?_).symm
-  refine (hf.bytes (R := keyR S s₀) (fun r hr => ?_) (by show S.keyLen ≤ 2 ^ 64; have := hp.fK; omega) hi).symm
+  refine (hf.bytes (R := keyR S s₀) (fun r hr => ?_) (by show S.keyLen ≤ 2 ^ 64; have := hp.fK; omega_arith) hi).symm
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.key_data
@@ -301,7 +301,7 @@ theorem prologue_mem {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} (hp :
   have slotsDisj : ∀ {R : Region}, R.Disjoint (scrR c s₀) →
       ∀ r ∈ [(⟨State.addr (Sc c s₀) + BitVec.ofNat 64 0, 36⟩ : Region)], R.Disjoint r := fun h r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact h.sub_right (UPre.slots_sub (c := c) (s₀ := s₀))
-  have oSub : Region.Sub ⟨oA c s₀, 4 * c.bw⟩ (blkR c s₀) := Region.sub_prefix (by omega)
+  have oSub : Region.Sub ⟨oA c s₀, 4 * c.bw⟩ (blkR c s₀) := Region.sub_prefix (by omega_arith)
   refine ⟨(over_frame _ _ _ _).sub fun r hr => ?_, ?_, ?_, ?_⟩
   · simp only [List.mem_singleton] at hr; subst hr
     exact ⟨blkR c s₀, by simp, oSub⟩
@@ -309,19 +309,19 @@ theorem prologue_mem {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} (hp :
     refine List.map_congr_left fun j hj => ?_
     have hj := List.mem_range.mp hj
     have hsub : Region.Sub ⟨State.addr (Dp c s₀) + BitVec.ofNat 64 (c.ds M * j), c.ds M⟩ (dataR c s₀ M) :=
-      VG.Offset.sub_base _ (by have := VG.Proof.Modes.idx_lt (L := c.ds M) hj; rw [Nat.mul_comm (N c s₀)]; omega)
+      VG.Offset.sub_base _ (by have := VG.Proof.Modes.idx_lt (L := c.ds M) hj; rw [Nat.mul_comm (N c s₀)]; omega_arith)
     rw [bytesAt_over_other _ _ ((hp.data_scr.sub_left hsub).sub_right (fun a h => UPre.blk_sub a (oSub a h))).symm
-      (by have := S.ds_le M; omega)]
-    exact VG.Proof.Modes.bytesAt_frame fs (slotsDisj (hp.data_scr.sub_left hsub)) (by have := S.ds_le M; omega)
-  · have e := VG.Proof.Modes.bytesAt_frame fs (slotsDisj hp.iv_scr) (by show c.bs ≤ 2 ^ 64; omega)
+      (by have := S.ds_le M; omega_arith)]
+    exact VG.Proof.Modes.bytesAt_frame fs (slotsDisj (hp.data_scr.sub_left hsub)) (by have := S.ds_le M; omega_arith)
+  · have e := VG.Proof.Modes.bytesAt_frame fs (slotsDisj hp.iv_scr) (by show c.bs ≤ 2 ^ 64; omega_arith)
     rw [hbs] at e ⊢
-    rw [bytesAt_over_self _ _ _ (by omega), ← e]
+    rw [bytesAt_over_self _ _ _ (by omega_arith), ← e]
     simp only [bytesAt, add0]
-  · rw [bytesAt_over_other _ _ (VG.Offset.disjoint _ (.inl (by omega)) (by omega) (by omega))
-      (by omega)]
+  · rw [bytesAt_over_other _ _ (VG.Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith))
+      (by omega_arith)]
     exact VG.Proof.Modes.bytesAt_frame fs (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (VG.Offset.disjoint _ (.inr (by unfold oOff; omega)) (by omega) (by omega))) (by omega)
+      exact (VG.Offset.disjoint _ (.inr (by unfold oOff; omega_arith)) (by omega_arith) (by omega_arith))) (by omega_arith)
 
 end VG.Proof.Modes.Arm
 
@@ -353,20 +353,20 @@ theorem UPre.npreIv {s : State} (h8 : s.gpr .r8 = Sc c s₀) (h5 : s.gpr .r5 = I
   have hbs : c.bs = 4 * c.bw := rfl
   have hb := S.bw_le
   have ho : oOff = 40 := rfl
-  refine ⟨by rw [h8], by rw [h5], by rw [h8]; omega, by rw [h5]; omega, by omega, by omega, by decide,
+  refine ⟨by rw [h8], by rw [h5], by rw [h8]; omega_arith, by rw [h5]; omega_arith, by omega_arith, by omega_arith, by decide,
     by decide, by decide, by decide, ?_, ?_, ?_⟩
-  · rw [hwr]; exact cov_off (R := scrR c s₀) hp.scr_in (by show oOff + 4 * c.bw ≤ c.scratchBytes; omega)
-  · rw [hrd, hwr]; exact cov_off (R := ivR c s₀) hp.iv_in (by show 0 + 4 * c.bw ≤ c.bs; omega)
-  · refine (hp.iv_scr.symm.sub_left (VG.Offset.sub_base _ (by omega))).sub_right ?_
-    rw [add0]; exact Region.sub_prefix (by omega)
+  · rw [hwr]; exact cov_off (R := scrR c s₀) hp.scr_in (by show oOff + 4 * c.bw ≤ c.scratchBytes; omega_arith)
+  · rw [hrd, hwr]; exact cov_off (R := ivR c s₀) hp.iv_in (by show 0 + 4 * c.bw ≤ c.bs; omega_arith)
+  · refine (hp.iv_scr.symm.sub_left (VG.Offset.sub_base _ (by omega_arith))).sub_right ?_
+    rw [add0]; exact Region.sub_prefix (by omega_arith)
 
 omit hp in
 /-- A stack argument, within the arguments' region. -/
 theorem argR_contains (hF : s₀.sp.toNat + argBytes c ≤ 2 ^ 32) {i : Nat} (hi : 4 * i + 4 ≤ argBytes c) :
     (argR c s₀).Contains (stackArgAddr s₀ i) 4 := by
   have e : stackArgAddr s₀ i = stackArgAddr s₀ 0 + BitVec.ofNat 64 (4 * i) := by
-    simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]; exact addr_add (by omega)
-  rw [e]; exact VG.Offset.contains_base _ hi (by omega)
+    simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]; exact addr_add (by omega_arith)
+  rw [e]; exact VG.Offset.contains_base _ hi (by omega_arith)
 
 /-- The rest of the prologue: the IV to the chaining block, and Z. -/
 theorem prologue_tail {s₇ : State} (r4 : s₇.gpr .r4 = Kp s₀) (r5 : s₇.gpr .r5 = Ivp c s₀)
@@ -412,7 +412,7 @@ theorem prologue_wp :
   refine Spill.saveList_ok saved s₁ _ (fun p hp' => ?_) fun s₂ g₂ rd₂ wr₂ sp₂ m₂ => ?_
   · have hb := saved_bound p hp'
     rw [h12, u₁.wr]
-    exact ⟨by omega, by omega, ⟨scrR c s₀, hp.scr_in, VG.Offset.contains_base _ (by omega) (by omega)⟩⟩
+    exact ⟨by omega_arith, by omega_arith, ⟨scrR c s₀, hp.scr_in, VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩⟩
   have hm₂ : s₂.mem = savedMem c s₀ := by
     rw [m₂, u₁.mem, h12, savedMem]
     exact Spill.saveMem_congr _ _ _ fun p hp' => u₁.other _ (by revert p; decide)

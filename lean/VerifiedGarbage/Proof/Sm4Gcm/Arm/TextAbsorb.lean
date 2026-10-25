@@ -33,7 +33,7 @@ abbrev taFrame (st w sp : BitVec 32) : List Region :=
     ⟨State.addr w + BitVec.ofNat 64 96, 16⟩, ⟨State.addr w + BitVec.ofNat 64 512, 256⟩, below sp]
 
 theorem lowTo_mod16 {hi lo : BitVec 32} {P : Nat} (h : (hi ++ lo).toNat = P) : lo.toNat % 16 = P % 16 := by
-  rw [Proof.Gcm.toNat_append] at h; omega
+  rw [Proof.Gcm.toNat_append] at h; omega_arith
 
 theorem z_sub0 (x : BitVec 32) : (x - 0#32 == 0) = decide (x.toNat = 0) := by
   by_cases h : x.toNat = 0 <;> simp [BitVec.toNat_eq, h]
@@ -46,8 +46,8 @@ theorem or_zero_iff (lo hi : BitVec 32) : (lo ||| hi).toNat = 0 ↔ (hi ++ lo).t
     obtain ⟨rfl, rfl⟩ := this; rfl
   · intro h
     rw [Proof.Gcm.toNat_append] at h
-    have h1 : lo = 0#32 := BitVec.eq_of_toNat_eq (by simp; omega)
-    have h2 : hi = 0#32 := BitVec.eq_of_toNat_eq (by simp; omega)
+    have h1 : lo = 0#32 := BitVec.eq_of_toNat_eq (by simp; omega_arith)
+    have h2 : hi = 0#32 := BitVec.eq_of_toNat_eq (by simp; omega_arith)
     subst h1 h2; rfl
 
 /-- After `textAbsorb`, from `m₀`: GHASH has absorbed `x`. -/
@@ -130,7 +130,7 @@ theorem textAbsorb_ok {s₀ s : State} {H : Block} {a ct : List Byte} (he : Env 
     · subst hc; simp only [x', ite_true, List.length_append, Proof.Gcm.length_zeros, List.length_nil]
       exact Proof.Gcm.length_pad_mod _
     · simp only [x', hc, ite_false, Proof.Gcm.ghashInput_of_ne hc, List.length_append, Proof.Gcm.length_zeros]
-      have := Proof.Gcm.length_pad_mod a.length; omega
+      have := Proof.Gcm.length_pad_mod a.length; omega_arith
   have hlt := Nat.mod_lt a.length (show 16 > 0 by decide)
   have mid : WP isa (.ite .eq firstFlush (.block [])) s₂ fun s₄ => Env c st w sp k7 k8 s₄ ∧ ArgsKeep 5 s₀ s₄ ∧
       blockAt s₄.mem (State.addr c + BitVec.ofNat 64 240) = H ∧
@@ -200,7 +200,7 @@ theorem textAbsorb_ok {s₀ s : State} {H : Block} {a ct : List Byte} (he : Env 
       · exact hd.st.sub_right (Lay.stSub (by decide))
       · exact hd.w.sub_right (Lay.wSub (by decide))
       · exact hd.w.sub_right (Lay.wSub (by decide))
-      · exact hd.stk.symm) (by have := hd.lt; omega)
+      · exact hd.stk.symm) (by have := hd.lt; omega_arith)
   have hne : bytesAt s.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat ≠ [] := by
     intro e; have := congrArg List.length e; rw [length_bytesAt] at this; exact h0 (by simpa using this)
   refine ⟨ho.env, hk₅.frame hf ho.frame (fun r hr => hA r (by

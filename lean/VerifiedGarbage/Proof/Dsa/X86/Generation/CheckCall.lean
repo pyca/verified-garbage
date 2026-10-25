@@ -169,21 +169,21 @@ theorem chk_callPre {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen
   have bd := G.bounds
   have room : 512 * g.pLen + 8192 ≤ E.size := hp ▸ v.room
   have subP : Region.Sub ⟨off E.base sPk, E.outLen⟩ E.scratchRegion :=
-    Offset.sub_base _ (by simp only [Env.outLen, sPk, hp, hq]; omega)
+    Offset.sub_base _ (by simp only [Env.outLen, sPk, hp, hq]; omega_arith)
   refine ⟨check_pre G v hp hq B A, ?_, ?_⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [chkRd, chkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨E.scratchRegion, List.mem_append_right _ (.tail _ (A.wr ▸ B.scr.wr)), sPk, rfl,
-        by simp only [Env.scratchRegion, Env.outLen, sPk, hp, hq]; omega⟩
+        by simp only [Env.scratchRegion, Env.outLen, sPk, hp, hq]; omega_arith⟩
     · exact ⟨E.scratchRegion, List.mem_append_right _ (.tail _ (A.wr ▸ B.scr.wr)), sChk, rfl,
-        by simp only [Env.scratchRegion, sChk]; omega⟩
+        by simp only [Env.scratchRegion, sChk]; omega_arith⟩
     · exact ⟨below (t.gpr .esp) (4 * chkRegs.length), List.mem_append_right _ (.head _), 0, by simp, by simp⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [chkWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨E.scratchRegion, .tail _ (A.wr ▸ B.scr.wr), sChk, rfl, by simp only [Env.scratchRegion, sChk]; omega⟩
+    · exact ⟨E.scratchRegion, .tail _ (A.wr ▸ B.scr.wr), sChk, rfl, by simp only [Env.scratchRegion, sChk]; omega_arith⟩
     · exact ⟨below (t.gpr .esp) (4 * chkRegs.length), .head _, 0, by simp, by simp⟩
 
 /-- After the domain check's call and its comparison: ZF set exactly when
@@ -222,24 +222,24 @@ theorem checkMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen
   have hsT : Scr t E.base E.size := Scr.of_eq B.scr (A.other _ (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide)) (by rw [spT, B.sp]) A.wr
   have cp := chk_callPre G v hp hq B A
-  have fitT : 28 ≤ (t.gpr .esp).toNat := by rw [spT]; omega
+  have fitT : 28 ≤ (t.gpr .esp).toNat := by rw [spT]; omega_arith
   obtain ⟨e0, e1, e2, e3, e4, e5⟩ := chkEntry_arg (E := E) (s := t) fitT
   have Fm := chkEntry_mem (E := E) (s := t) fitT
   simp only [chkEntry] at e0 e1 e2 e3 e4 e5 Fm
   rw [A.eax] at e0; rw [A.ecx] at e1; rw [A.edx] at e2; rw [A.ebx] at e3; rw [A.esi] at e4; rw [A.ebp] at e5
   refine WP.seq (WP.of_syms (WP.callWithReturn G.cv.1 G.cNoSp (by decide) (by decide)
-    (by rw [spT]; simp only [List.length_cons, List.length_nil]; omega) cp fun u rdu wru csu Fu post usy => ?_))
+    (by rw [spT]; simp only [List.length_cons, List.length_nil]; omega_arith) cp fun u rdu wru csu Fu post usy => ?_))
   obtain ⟨s₂, m₂, ax₂, post⟩ := post
   generalize ew : (pushed chkRegs t).callEntry.withRegions (chkRd E) (chkWr E t) = w at e0 e1 e2 e3 e4 e5 Fm post
   sig_post [chkContract, Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argSlots, argVal,
     argBytes, stackBelow] at post
   simp only [e0, e1, ret32] at post
   have hs := B.scr
-  have pW := Scr.wide hs (d := sPk) (by simp only [sPk]; omega)
+  have pW := Scr.wide hs (d := sPk) (by simp only [sPk]; omega_arith)
   have l1 : (BitVec.ofNat 32 (2 * g.pLen + g.qLen)).toNat = 2 * g.pLen + g.qLen := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have l2 : (BitVec.ofNat 32 g.pLen).toNat = g.pLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have l3 : (BitVec.ofNat 32 g.qLen).toNat = g.qLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  have l2 : (BitVec.ofNat 32 g.pLen).toNat = g.pLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  have l3 : (BitVec.ofNat 32 g.qLen).toNat = g.qLen := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   rw [spT] at Fm
   have bytesW : Spec.Rsa.bytesAt w.mem (off E.base sPk) (2 * g.pLen + g.qLen) =
       Spec.Rsa.bytesAt s.mem (off E.base sPk) (2 * g.pLen + g.qLen) := by
@@ -247,10 +247,10 @@ theorem checkMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     simp only [List.mem_range] at hi
-    refine Frame.bytes Fm (R := ⟨off E.base sPk, 2 * g.pLen + g.qLen⟩) ?_ (by show 2 * g.pLen + g.qLen ≤ 2 ^ 64; omega) hi
+    refine Frame.bytes Fm (R := ⟨off E.base sPk, 2 * g.pLen + g.qLen⟩) ?_ (by show 2 * g.pLen + g.qLen ≤ 2 ^ 64; omega_arith) hi
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact (v.scratchStack.sub_left (Offset.sub_base _ (by simp only [sPk]; omega))).sub_right
-      (below_sub (by decide) (by omega))
+    exact (v.scratchStack.sub_left (Offset.sub_base _ (by simp only [sPk]; omega_arith))).sub_right
+      (below_sub (by decide) (by omega_arith))
   simp only [pW, l1, l2, l3, e2, e3, bytesW] at post
   generalize hc : Spec.Dsa.checkParametersBytes g.pLen g.qLen
     (Spec.Rsa.bytesAt s.mem (off E.base sPk) (2 * g.pLen + g.qLen)) = c at post k ⊢
@@ -264,15 +264,15 @@ theorem checkMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen
   have Ac : E.Apart [(sChk, 16 * g.pLen * 8), (fStatus, 4)] := by
     intro o ho
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-    rcases ho with rfl | rfl <;> simp only [sChk, fStatus, fOut, fWitLen, hdr] <;> omega
+    rcases ho with rfl | rfl <;> simp only [sChk, fStatus, fOut, fWitLen, hdr] <;> omega_arith
   have CH0 : E.Chg [(sChk, 16 * g.pLen * 8)] s.mem u.mem := by
     rw [← A.mem]
     refine Env.Chg.of_frame Fu fun r hr => ?_
     simp only [chkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · rw [← hp]; exact Env.in_range (List.mem_cons_self ..) (Nat.le_refl _) (by rw [hp])
-    · rw [spT]; exact Env.in_stack (below_sub (by decide) (by omega))
-    · rw [spT]; exact Env.in_stack (below_sub (by simp only [List.length_cons, List.length_nil]; omega) (by omega))
+    · rw [spT]; exact Env.in_stack (below_sub (by decide) (by omega_arith))
+    · rw [spT]; exact Env.in_stack (below_sub (by simp only [List.length_cons, List.length_nil]; omega_arith) (by omega_arith))
   have CH : E.Chg [(sChk, 16 * g.pLen * 8), (fStatus, 4)] s.mem u.mem :=
     Env.Chg.widen CH0 fun o ho => ⟨o, by simp only [List.mem_singleton] at ho; rw [ho]; exact List.mem_cons_self ..,
       Nat.le_refl _, Nat.le_refl _⟩
@@ -280,9 +280,9 @@ theorem checkMid_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen
   have uwr : u.wr = s.wr := by rw [wru, A.wr]
   have usy' : u.syms = s.syms := by rw [usy, A.syms]
   have stU : u.mem.readW (off E.base fStatus) 32 = s.mem.readW (off E.base fStatus) 32 := by
-    refine Env.Chg.word v CH0 (by simp only [fStatus, hdr]; omega) fun o ho => ?_
+    refine Env.Chg.word v CH0 (by simp only [fStatus, hdr]; omega_arith) fun o ho => ?_
     simp only [List.mem_singleton] at ho; subst ho
-    simp only [sChk, fStatus, hdr]; omega
+    simp only [sChk, fStatus, hdr]; omega_arith
   refine WP.seq (wp_cmpi fun x₁ f₁ _ z₁ => WP.block_nil ?_)
   have zf₁ : isa.eval .e x₁ = some c := by
     show x₁.zf = _
@@ -309,13 +309,13 @@ theorem check_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   have Ac : E.Apart [(sChk, 16 * g.pLen * 8), (fStatus, 4)] := by
     intro o ho
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-    rcases ho with rfl | rfl <;> simp only [sChk, fStatus, fOut, fWitLen, hdr] <;> omega
+    rcases ho with rfl | rfl <;> simp only [sChk, fStatus, fOut, fWitLen, hdr] <;> omega_arith
   unfold check
   show WP isa (Prog.chain [_, _, _] (.ite .e _ _)) s _
   refine checkMid_ok G v hp hq B fun x₁ M => ?_
   generalize Spec.Dsa.checkParametersBytes g.pLen g.qLen
     (Spec.Rsa.bytesAt s.mem (off E.base sPk) (2 * g.pLen + g.qLen)) = c at M ⊢
-  refine WP.ite c M.zf (fun h1 => stImm_end M.base.scr (o := fStatus) (v := 1) (by simp only [fStatus, hdr]; omega)
+  refine WP.ite c M.zf (fun h1 => stImm_end M.base.scr (o := fStatus) (v := 1) (by simp only [fStatus, hdr]; omega_arith)
     fun x₂ g₂ m₂' rd₂ wr₂ sy₂ => ?_) (fun h1 => WP.block_nil ?_)
   · have C₂ : E.Chg [(sChk, 16 * g.pLen * 8), (fStatus, 4)] s.mem x₂.mem := by
       rw [m₂']; exact M.chg.store (.tail _ (.head _)) (by decide) _

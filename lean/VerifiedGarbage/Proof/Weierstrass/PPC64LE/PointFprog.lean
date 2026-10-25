@@ -90,7 +90,7 @@ theorem InvR.update {k N : Nat} {σ : Nat → Nat} {base : Addr} {m : Nat} [NeZe
     have hxN := hI.ids x hx
     have h1 := hL.le x hxN
     have h2 := hL.apart o hoW x hxN hxo
-    refine outs_wordsVal hk.mem (fun r hr => ?_) (by omega)
+    refine outs_wordsVal hk.mem (fun r hr => ?_) (by omega_arith)
     simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -135,10 +135,10 @@ theorem fopR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstra
       forall_eq_or_imp, forall_eq] at hW hN hR
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
-    refine WP.mono (addCall_ok hM hI.ws (hL.le o hN.1) (hL.le a hN.2.1) (hL.le b hN.2.2) (by omega))
+    refine WP.mono (addCall_ok hM hI.ws (hL.le o hN.1) (hL.le a hN.2.1) (hL.le b hN.2.2) (by omega_arith))
       fun s' ⟨K, heq⟩ => ?_
     refine ⟨.of_call K, hI.update hL hW hN.1 (.of_call K) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
+    · rw [heq]; exact Nat.mod_lt _ (by omega_arith)
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
@@ -148,8 +148,8 @@ theorem fopR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstra
     refine WP.mono (subCall_ok hM hI.ws (hL.le o hN.1) (hL.le a hN.2.1) (hL.le b hN.2.2) hA hB)
       fun s' ⟨K, heq⟩ => ?_
     refine ⟨.of_call K, hI.update hL hW hN.1 (.of_call K) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
-    · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
+    · rw [heq]; exact Nat.mod_lt _ (by omega_arith)
+    · rw [heq, toM_sub (by omega_arith), hI.val a hR.1, hI.val b hR.2]
 
 theorem progs_wp (p : Prog isa) (ps : List (Prog isa)) {s : State} {Q : State → Prop}
     (h : WP isa p s fun s' => WP isa (progs ps) s' Q) : WP isa (progs (p :: ps)) s Q := by

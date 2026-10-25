@@ -183,13 +183,13 @@ theorem extract20a_ok (s : State) (a b : Nat) (m : MSt)
   have hf : m.f=(m.u*((a:Int)-2^41)+m.v*((b:Int)-2^62))/2^20 := by
     obtain ⟨hf,_⟩ := hm
     norm_num at hf ⊢
-    omega
+    omega_arith
   have hg : m.g=(m.q*((a:Int)-2^41)+m.r*((b:Int)-2^62))/2^20 := by
     obtain ⟨_,hg⟩ := hm
     norm_num at hg ⊢
-    omega
-  have hu : -(2:Int)^(20-1)≤m.u := by have := hlo.1; norm_num at this ⊢; omega
-  have hq : -(2:Int)^(20-1)≤m.q := by have := hlo.2.2.1; norm_num at this ⊢; omega
+    omega_arith
+  have hu : -(2:Int)^(20-1)≤m.u := by have := hlo.1; norm_num at this ⊢; omega_arith
+  have hq : -(2:Int)^(20-1)≤m.q := by have := hlo.2.2.1; norm_num at this ⊢; omega_arith
   refine WP.mono (extract20a_run s h27) fun t ⟨tu,tv,tq,tr,kt⟩ => ?_
   refine ⟨?_,?_,?_,?_,kt⟩
   · rw [tu,h4]
@@ -223,13 +223,13 @@ theorem extract20b_ok (s : State) (a b : Nat) (m : MSt)
   have hf : m.f=(m.u*((a:Int)-2^41)+m.v*((b:Int)-2^62))/2^20 := by
     obtain ⟨hf,_⟩ := hm
     norm_num at hf ⊢
-    omega
+    omega_arith
   have hg : m.g=(m.q*((a:Int)-2^41)+m.r*((b:Int)-2^62))/2^20 := by
     obtain ⟨_,hg⟩ := hm
     norm_num at hg ⊢
-    omega
-  have hu : -(2:Int)^(20-1)≤m.u := by have := hlo.1; norm_num at this ⊢; omega
-  have hq : -(2:Int)^(20-1)≤m.q := by have := hlo.2.2.1; norm_num at this ⊢; omega
+    omega_arith
+  have hu : -(2:Int)^(20-1)≤m.u := by have := hlo.1; norm_num at this ⊢; omega_arith
+  have hq : -(2:Int)^(20-1)≤m.q := by have := hlo.2.2.1; norm_num at this ⊢; omega_arith
   refine WP.mono (extract20b_run s h27) fun t ⟨tu,tv,tq,tr,kt⟩ => ?_
   refine ⟨?_,?_,?_,?_,kt⟩
   · rw [tu,h4]
@@ -263,13 +263,13 @@ theorem extract19_ok (s : State) (a b : Nat) (m : MSt)
   have hf : m.f=(m.u*((a:Int)-2^41)+m.v*((b:Int)-2^62))/2^19 := by
     obtain ⟨hf,_⟩ := hm
     norm_num at hf ⊢
-    omega
+    omega_arith
   have hg : m.g=(m.q*((a:Int)-2^41)+m.r*((b:Int)-2^62))/2^19 := by
     obtain ⟨_,hg⟩ := hm
     norm_num at hg ⊢
-    omega
-  have hu : -(2:Int)^(19-1)≤m.u := by have := hlo.1; norm_num at this ⊢; omega
-  have hq : -(2:Int)^(19-1)≤m.q := by have := hlo.2.2.1; norm_num at this ⊢; omega
+    omega_arith
+  have hu : -(2:Int)^(19-1)≤m.u := by have := hlo.1; norm_num at this ⊢; omega_arith
+  have hq : -(2:Int)^(19-1)≤m.q := by have := hlo.2.2.1; norm_num at this ⊢; omega_arith
   refine WP.mono (extract19_run s h27) fun t ⟨tu,tv,tq,tr,kt⟩ => ?_
   refine ⟨?_,?_,?_,?_,kt⟩
   · rw [tu,h4]

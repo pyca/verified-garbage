@@ -40,10 +40,10 @@ theorem sub_one_zero (n : Nat) (hn : 1 ≤ n) (hn8 : n ≤ 8) :
   constructor
   · intro h
     have hnat := congrArg BitVec.toNat h
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at hnat
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at hnat
     have : (0 : BitVec 32).toNat = 0 := rfl
     rw [this] at hnat
-    omega
+    omega_arith
   · intro h; subst h; rfl
 
 structure XorStepPost (s : State) (B D : BitVec 32) (j n : Nat) (s' : State) : Prop where
@@ -68,19 +68,19 @@ theorem xorStep_wp {s : State} {B D : BitVec 32} {g j n : Nat}
     (wd : Covers [⟨State.addr D, 16 * g⟩] s.wr)
     (sep : Region.Disjoint ⟨State.addr D, 16 * g⟩ ⟨State.addr B, 4 * BatchCtr.totalSlots⟩) :
     WP isa (.block BatchCtr.xorBody) s (XorStepPost s B D j n) := by
-  have sd : Region.Sub ⟨dataAddr D j, 16⟩ ⟨State.addr D, 16 * g⟩ := Offset.sub_base _ (by omega)
+  have sd : Region.Sub ⟨dataAddr D j, 16⟩ ⟨State.addr D, 16 * g⟩ := Offset.sub_base _ (by omega_arith)
   have sbuf : Region.Sub ⟨bufferAddr B j, 16⟩ ⟨State.addr B, 4 * BatchCtr.totalSlots⟩ :=
-    Offset.sub_base _ (by rw [tailSlot, total_eq]; omega)
+    Offset.sub_base _ (by rw [tailSlot, total_eq]; omega_arith)
   have wdest : Covers [⟨dataAddr D j, 16⟩] s.wr :=
     (Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨State.addr D, 16 * g⟩, List.mem_singleton_self _, 16 * j, rfl, by change 16 * j + 16 ≤ 16 * g; omega⟩).trans wd
-  have wbuf := workspace_part hw (4 * tailSlot + 16 * j) 16 (by rw [tailSlot, total_eq]; omega)
+      exact ⟨⟨State.addr D, 16 * g⟩, List.mem_singleton_self _, 16 * j, rfl, by change 16 * j + 16 ≤ 16 * g; omega_arith⟩).trans wd
+  have wbuf := workspace_part hw (4 * tailSlot + 16 * j) 16 (by rw [tailSlot, total_eq]; omega_arith)
   have np : NPre 4 s .r6 .r0 0 0 (dataAddr D j) (bufferAddr B j) :=
-    ⟨by rw [BitVec.add_zero, hD, addr_add (by omega)],
-      by rw [BitVec.add_zero, hp, addr_add (by rw [tailSlot, total_eq] at *; omega)],
-      by rw [hD, offset_nat _ _ (by omega)]; omega,
-      by rw [hp, offset_nat _ _ (by rw [tailSlot, total_eq] at *; omega)]; rw [tailSlot, total_eq] at *; omega,
+    ⟨by rw [BitVec.add_zero, hD, addr_add (by omega_arith)],
+      by rw [BitVec.add_zero, hp, addr_add (by rw [tailSlot, total_eq] at *; omega_arith)],
+      by rw [hD, offset_nat _ _ (by omega_arith)]; omega_arith,
+      by rw [hp, offset_nat _ _ (by rw [tailSlot, total_eq] at *; omega_arith)]; rw [tailSlot, total_eq] at *; omega_arith,
       by decide, by decide, by decide, by decide, by decide, by decide,
       wdest, Covers.right wbuf, (sep.sub_left sd).sub_right sbuf⟩
   apply WP.block_append_iff.mpr
@@ -131,39 +131,39 @@ theorem xorInv_step {s₀ s : State} {B D : BitVec 32} {g j : Nat}
     (sep : Region.Disjoint ⟨State.addr D, 16 * g⟩ ⟨State.addr B, 4 * BatchCtr.totalSlots⟩)
     (h : XorInv s₀ B D g j s) :
     WP isa (.block BatchCtr.xorBody) s fun s' => XorInv s₀ B D g (j + 1) s' ∧ s'.z = decide (j + 1 = g) := by
-  refine WP.mono (xorStep_wp hj hg (by omega) (by omega) h.ptr h.data h.left fitB fitD
+  refine WP.mono (xorStep_wp hj hg (by omega_arith) (by omega_arith) h.ptr h.data h.left fitB fitD
     (by rw [h.wr]; exact hw) (by rw [h.wr]; exact wd) sep) fun s' hs => ?_
   refine ⟨⟨fun r h9 h10 h0 h1 h6 => (hs.regs r h9 h10 h0 h1 h6).trans (h.regs r h9 h10 h0 h1 h6),
-    hs.ptr, hs.data, by rw [hs.left, show g - j - 1 = g - (j + 1) by omega], by omega,
+    hs.ptr, hs.data, by rw [hs.left, show g - j - 1 = g - (j + 1) by omega_arith], by omega_arith,
     hs.rd.trans h.rd, hs.wr.trans h.wr, hs.sp.trans h.sp, ?_, ?_⟩, ?_⟩
   · have fOld : Frame [⟨State.addr D, 16 * (j + 1)⟩] s₀.mem s.mem :=
       h.frame.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨State.addr D, 16 * (j + 1)⟩, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩
+        exact ⟨⟨State.addr D, 16 * (j + 1)⟩, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩
     exact fOld.trans (hs.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨State.addr D, 16 * (j + 1)⟩, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩)
+      exact ⟨⟨State.addr D, 16 * (j + 1)⟩, List.mem_singleton_self _, Offset.sub_base _ (by omega_arith)⟩)
   · intro k hk
     by_cases he : k = j
     · subst k
       have sameData : bytesAt s.mem (dataAddr D j) 16 = bytesAt s₀.mem (dataAddr D j) 16 :=
         bytes_frame h.frame fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.disjoint_base (State.addr D) (by omega) (by omega)
+          exact Offset.disjoint_base (State.addr D) (by omega_arith) (by omega_arith)
       have sameBuf : bytesAt s.mem (bufferAddr B j) 16 = bytesAt s₀.mem (bufferAddr B j) 16 :=
         bytes_frame h.frame fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           have subB : Region.Sub ⟨bufferAddr B j, 16⟩ ⟨State.addr B, 4 * BatchCtr.totalSlots⟩ :=
-            Offset.sub_base _ (by rw [tailSlot, total_eq]; omega)
-          exact (sep.symm.sub_left subB).sub_right (Region.sub_prefix (by omega))
+            Offset.sub_base _ (by rw [tailSlot, total_eq]; omega_arith)
+          exact (sep.symm.sub_left subB).sub_right (Region.sub_prefix (by omega_arith))
       rw [hs.block, sameData, sameBuf]
-    · have hk' : k < j := by omega
+    · have hk' : k < j := by omega_arith
       rw [bytes_frame (P := dataAddr D k) hs.frame (fun r hr => ?_), h.blocks k hk']
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+      exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
   · rw [hs.z, Bool.eq_iff_iff]
     simp only [decide_eq_true_iff]
-    omega
+    omega_arith
 
 theorem xorLoop_wp {s₀ : State} {B D : BitVec 32} {g : Nat} (hg : 1 ≤ g) (hg8 : g ≤ 8)
     (hp : s₀.gpr .r0 = B + BitVec.ofNat 32 (4 * tailSlot)) (hD : s₀.gpr .r6 = D)
@@ -176,16 +176,16 @@ theorem xorLoop_wp {s₀ : State} {B D : BitVec 32} {g : Nat} (hg : 1 ≤ g) (hg
   have hi : XorInv s₀ B D g 0 s₀ :=
     ⟨fun _ _ _ _ _ _ => rfl, by simpa only [Nat.mul_zero, Nat.add_zero] using hp,
       by simpa only [Nat.mul_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hD,
-      by simpa only [Nat.sub_zero] using hN, by omega, rfl, rfl, rfl, Frame.refl _ _, fun _ h => by omega⟩
+      by simpa only [Nat.sub_zero] using hN, by omega_arith, rfl, rfl, rfl, Frame.refl _ _, fun _ h => by omega_arith⟩
   refine WP.loop (M := isa)
     (fun m s => ∃ j, m = g - j ∧ j < g ∧ XorInv s₀ B D g j s)
-    (fun m s hs => ?_) g s₀ ⟨0, by omega, by omega, hi⟩
+    (fun m s hs => ?_) g s₀ ⟨0, by omega_arith, by omega_arith, hi⟩
   obtain ⟨j, rfl, hj, hs⟩ := hs
   refine WP.mono (xorInv_step hg8 hj fitB fitD hw wd sep hs) fun s' ⟨h', hz⟩ => ?_
   by_cases he : j + 1 = g
   · exact .inl ⟨by rw [fill_eval_ne, hz]; simp [he], by rw [he] at h'; exact h'⟩
   · exact .inr ⟨by rw [fill_eval_ne, hz]; simp only [he, decide_false, Bool.not_false],
-      g - (j + 1), by omega, j + 1, rfl, by omega, h'⟩
+      g - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, h'⟩
 
 structure XorPost (s : State) (B D : BitVec 32) (g : Nat) (s' : State) : Prop where
   regs : ∀ r, r ≠ .r9 → r ≠ .r10 → r ≠ .r0 → r ≠ .r1 → r ≠ .r6 → s'.gpr r = s.gpr r

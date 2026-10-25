@@ -28,8 +28,8 @@ theorem copy_tail_wp {S T : Addr} {n : Nat} {s : State}
     WP isa (.ite (.zero .x .x17) (.block []) c.copyBlocks) s fun s' =>
       CopyInv c S T n s n s' ∧ s'.gpr .x15 = S + BitVec.ofNat 64 (8*c.bw*n) := by
   have hn : n < 2^64 := by
-    have := Nat.le_mul_of_pos_left n (show 0 < 8*c.bw by omega)
-    omega
+    have := Nat.le_mul_of_pos_left n (show 0 < 8*c.bw by omega_arith)
+    omega_arith
   have hz : isa.eval (.zero .x .x17) s = some (decide (n = 0)) := by
     rw [eval_zero, hc, ofNat_beq_zero hn]
   refine WP.ite (decide (n=0)) hz (fun h => ?_) (fun h => ?_)
@@ -38,7 +38,7 @@ theorem copy_tail_wp {S T : Addr} {n : Nat} {s : State}
     refine WP.of_runBlock ⟨s,rfl,⟨?_,Frame.refl _ _,fun _ _ _ _ _ => rfl,rfl,rfl⟩,?_⟩
     · intro t ht; simp at ht
     · simpa using hb
-  · exact copyBlocks_wp hbw hbw2 (by have := of_decide_eq_false h; omega) hfit hS hT hsep ha hb hc
+  · exact copyBlocks_wp hbw hbw2 (by have := of_decide_eq_false h; omega_arith) hfit hS hT hsep ha hb hc
 
 /-- Point past the first gathered block and count only the ciphertext copies. -/
 theorem gatherArgs_ok (hbI : 8*c.buf < 4096) (hd14 : c.dataReg ≠ .x14)
@@ -94,15 +94,15 @@ theorem gather_wp {B A : Addr} {n : Nat} {s : State}
   let T := B + BitVec.ofNat 64 (8*c.buf)
   let H := B + BitVec.ofNat 64 (8*c.hiSlot)
   let U := T + BitVec.ofNat 64 16
-  have h16 : 16 ≤ 16*n := by omega
+  have h16 : 16 ≤ 16*n := by omega_arith
   have subT : Region.Sub ⟨T,16⟩ ⟨T,16*n⟩ := Region.sub_prefix h16
-  have subU : Region.Sub ⟨U,16*(n-1)⟩ ⟨T,16*n⟩ := VG.Offset.sub_base T (by omega)
-  have subA : Region.Sub ⟨A,16*(n-1)⟩ ⟨A,16*n⟩ := Region.sub_prefix (by omega)
+  have subU : Region.Sub ⟨U,16*(n-1)⟩ ⟨T,16*n⟩ := VG.Offset.sub_base T (by omega_arith)
+  have subA : Region.Sub ⟨A,16*(n-1)⟩ ⟨A,16*n⟩ := Region.sub_prefix (by omega_arith)
   unfold Core.cfbDecGather
   refine WP.seq (WP.block_append (WP.mono (copyN_wp (k:=2) (P:=T) (Q:=H) (u:=.x8)
     ⟨by rw [hB],by rw [hB],by decide,by decide,by decide,by decide,
-      by omega,by omega,by omega, hhi,
-      fun w hw => inT w (by omega),fun w hw => inRd (inH w hw),dTH.sub_left subT,by decide⟩) fun s₁ h₁ => ?_))
+      by omega_arith,by omega_arith,by omega_arith, hhi,
+      fun w hw => inT w (by omega_arith),fun w hw => inRd (inH w hw),dTH.sub_left subT,by decide⟩) fun s₁ h₁ => ?_))
   obtain ⟨s₂,e₂,a₂,b₂,c₂,o₂,m₂,rd₂,wr₂⟩ := gatherArgs_ok hbuf hd14 s₁
     (by rw [h₁.regs _ (by decide) (by decide),hB])
   refine WP.of_runBlock ⟨s₂,e₂,?_⟩
@@ -110,36 +110,36 @@ theorem gather_wp {B A : Addr} {n : Nat} {s : State}
   have rd₂' : s₂.rd = s.rd := by rw [rd₂,h₁.rd]
   have wr₂' : s₂.wr = s.wr := by rw [wr₂,h₁.wr]
   refine WP.seq (WP.mono (copy_tail_wp (c:=c) (S:=A) (T:=U) (n:=n-1)
-    (by omega) (by omega) (by rw [hbw]; omega)
-    (fun w hw => by rw [rd₂',wr₂']; exact inA w (by rw [hbw] at hw; omega))
+    (by omega_arith) (by omega_arith) (by rw [hbw]; omega_arith)
+    (fun w hw => by rw [rd₂',wr₂']; exact inA w (by rw [hbw] at hw; omega_arith))
     (fun w hw => by
-      rw [wr₂',addr_add,show 16+8*w = 8*(2+w) by omega]
-      exact inT (2+w) (by rw [hbw] at hw; omega))
+      rw [wr₂',addr_add,show 16+8*w = 8*(2+w) by omega_arith]
+      exact inT (2+w) (by rw [hbw] at hw; omega_arith))
     (by simpa [hbw] using (dTA.symm.sub_left subA).sub_right subU)
     (by rw [a₂]; exact (addr_add B (8*c.buf) 16).symm)
     (by rw [b₂,h₁.regs _ hd8 hd8,hA])
-    (by rw [c₂,h₁.regs _ (by decide) (by decide),hc,VG.Offset.ofNat_sub_ofNat (by omega)]))
+    (by rw [c₂,h₁.regs _ (by decide) (by decide),hc,VG.Offset.ofNat_sub_ofNat (by omega_arith)]))
     fun s₃ ⟨h₃,p₃⟩ => ?_)
   have base₃ : s₃.gpr sb = B := by
     rw [h₃.regs _ (by decide) (by decide) (by decide) (by decide),o₂ _ (by decide) (by decide) (by decide),h₁.regs _ (by decide) (by decide),hB]
   have A₂ : ∀ t < 16*n, s₂.mem (A+BitVec.ofNat 64 t) = s.mem (A+BitVec.ofNat 64 t) := by
-    intro t ht; rw [cm₂]; exact over_sep (dTA.sub_left subT) ht (by omega)
+    intro t ht; rw [cm₂]; exact over_sep (dTA.sub_left subT) ht (by omega_arith)
   have A₃ : ∀ t < 16*n, s₃.mem (A+BitVec.ofNat 64 t) = s.mem (A+BitVec.ofNat 64 t) := by
     intro t ht
     have fr := h₃.frame
     rw [hbw] at fr
     exact (fr.bytes (R:=⟨A,16*n⟩) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dTA.symm.sub_right subU) (by simp only; omega) ht).trans (A₂ t ht)
+      simp only [List.mem_singleton] at hr; subst hr; exact dTA.symm.sub_right subU) (by simp only; omega_arith) ht).trans (A₂ t ht)
   refine WP.mono (copyN_wp (k:=2) (P:=H) (Q:=A+BitVec.ofNat 64 (16*(n-1))) (u:=.x8)
     ⟨by rw [base₃],by rw [p₃,hbw]; simp,
-      by decide,by decide,by decide,by decide,by omega,by decide,hhi,by decide,
+      by decide,by decide,by decide,by decide,by omega_arith,by decide,hhi,by decide,
       fun w hw => by rw [h₃.wr,wr₂']; exact inH w hw,
       fun w hw => by
-        rw [h₃.rd,h₃.wr,rd₂',wr₂',addr_add,show 16*(n-1)+8*w=8*(2*(n-1)+w) by omega]
-        exact inA _ (by omega),
-      dHA.sub_right (VG.Offset.sub_base A (by omega)),by decide⟩) fun s₄ h₄ => ?_
+        rw [h₃.rd,h₃.wr,rd₂',wr₂',addr_add,show 16*(n-1)+8*w=8*(2*(n-1)+w) by omega_arith]
+        exact inA _ (by omega_arith),
+      dHA.sub_right (VG.Offset.sub_base A (by omega_arith)),by decide⟩) fun s₄ h₄ => ?_
   have T₄ : ∀ t < 16*n, s₄.mem (T+BitVec.ofNat 64 t) = s₃.mem (T+BitVec.ofNat 64 t) := by
-    intro t ht; rw [h₄.mem]; exact over_sep dTH.symm ht (by omega)
+    intro t ht; rw [h₄.mem]; exact over_sep dTH.symm ht (by omega_arith)
   refine ⟨?_,?_,?_,fun r h8 h14 h15 h17 => by
     rw [h₄.regs r h8 h8,h₃.regs r h8 h14 h15 h17,o₂ r h14 h15 h17,h₁.regs r h8 h8],
     by rw [h₄.rd,h₃.rd,rd₂'],by rw [h₄.wr,h₃.wr,wr₂']⟩
@@ -151,17 +151,17 @@ theorem gather_wp {B A : Addr} {n : Nat} {s : State}
       rw [hbw] at fr
       have keep := fr.bytes (R:=⟨T,16⟩) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact VG.Offset.base_disjoint T (e:=16) (n:=16*(n-1)) (by decide) (by omega))
+        exact VG.Offset.base_disjoint T (e:=16) (n:=16*(n-1)) (by decide) (by omega_arith))
         (by simp only; decide) h
       rw [keep,cm₂,over_at h (by decide)]
     · rw [ite_eq_right h,show T+BitVec.ofNat 64 t=U+BitVec.ofNat 64 (t-16) by
         change T+BitVec.ofNat 64 t=(T+BitVec.ofNat 64 16)+BitVec.ofNat 64 (t-16)
         have e := addr_add T 16 (t-16)
-        rw [show 16+(t-16)=t by omega] at e
+        rw [show 16+(t-16)=t by omega_arith] at e
         exact e.symm,
-        h₃.copied _ (by rw [hbw]; omega),A₂ _ (by omega)]
+        h₃.copied _ (by rw [hbw]; omega_arith),A₂ _ (by omega_arith)]
   · intro u hu
-    rw [h₄.mem,over_at hu (by decide),addr_add,A₃ _ (by omega)]
+    rw [h₄.mem,over_at hu (by decide),addr_add,A₃ _ (by omega_arith)]
   · have f₁ : Frame [⟨T,16⟩] s.mem s₁.mem := by rw [h₁.mem]; exact over_frame _ _ _ _
     have f₂ : Frame [⟨T,16⟩] s.mem s₂.mem := by rw [m₂]; exact f₁
     have f₃ := h₃.frame

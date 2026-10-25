@@ -62,8 +62,8 @@ theorem clearMem_block (m : Mem) (p : Addr) (blocks k : Nat)
   intro j hj
   simp only [blockAt, zeroBlock, Vector.getElem_ofFn, Vector.getElem_replicate]
   rw [BitVec.add_assoc, ← BitVec.ofNat_add,
-    show 1024 * k + 8 * j = 8 * (128 * k + j) by omega]
-  exact clearMem_word m p (128 * blocks) (128 * k + j) (by omega) (by omega)
+    show 1024 * k + 8 * j = 8 * (128 * k + j) by omega_arith]
+  exact clearMem_word m p (128 * blocks) (128 * k + j) (by omega_arith) (by omega_arith)
 
 theorem blockAt_frame {m m' : Mem} {rs : List Region} (frame : Frame rs m m')
     (p : Addr) (sep : ∀ r ∈ rs, (⟨p, 1024⟩ : Region).Disjoint r) :
@@ -263,7 +263,7 @@ theorem lane_ok (v : HPrime.Backend) (name : String)
     (s : State) (memory : Addr) (bytes d : Nat) (space : Space s memory bytes)
     (dst : s.gpr .x22 = memory + BitVec.ofNat 64 d) (bound : d + 2048 ≤ bytes) :
     WP isa (lane name v.hash) s (LaneDone s) := by
-  have ready := space.blockReady dst (by omega)
+  have ready := space.blockReady dst (by omega_arith)
   unfold lane
   refine WP.seq ((block_ok v name s 0 (by decide) ready).mono ?_)
   intro a ha
@@ -282,7 +282,7 @@ theorem lane_ok (v : HPrime.Backend) (name : String)
   have remainingB : b.gpr .x23 = s.gpr .x23 := (hb.other _ (by decide) (by decide) (by decide)).trans (ha.regs _ (by decide))
   have dstB : b.gpr .x22 = memory + BitVec.ofNat 64 (d + 1024) := by
     rw [base, dst, BitVec.ofNat_add, BitVec.add_assoc]; rfl
-  have readyB := spaceB.blockReady dstB (by omega)
+  have readyB := spaceB.blockReady dstB (by omega_arith)
   refine WP.seq ((block_ok v name b 1 (by decide) readyB).mono ?_)
   intro c hc
   refine (laneEnd_ok c).mono ?_
@@ -298,9 +298,9 @@ theorem lane_ok (v : HPrime.Backend) (name : String)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact Offset.base_disjoint _ (by decide) (by decide)
-    · rw [dst]; exact space.matrixWork.sub_left (Offset.sub_base _ (by omega))
-    · rw [dst]; exact space.stackMatrix.symm.sub_left (Offset.sub_base _ (by omega))
-    · rw [dst]; exact space.frameMatrix.symm.sub_left (Offset.sub_base _ (by omega)) |>.sub_right
+    · rw [dst]; exact space.matrixWork.sub_left (Offset.sub_base _ (by omega_arith))
+    · rw [dst]; exact space.stackMatrix.symm.sub_left (Offset.sub_base _ (by omega_arith))
+    · rw [dst]; exact space.frameMatrix.symm.sub_left (Offset.sub_base _ (by omega_arith)) |>.sub_right
         (Offset.sub_base _ (by decide : 64 + 8 ≤ 272))
   have h0B : bytesAt b.mem (b.gpr .x19) 64 = bytesAt s.mem (s.gpr .x19) 64 := by
     rw [hb.mem, bp]; exact ha.h0 ready
@@ -354,26 +354,26 @@ def Initialized (m : Mem) (base : Addr) (lanes q done : Nat) (h0 : List Byte) : 
 
 theorem cell_bound (lanes q lane column : Nat) (hl : lane < lanes) (hc : column < q) :
     lane * q + column < lanes * q := by
-  have mul := Nat.mul_le_mul_right q (show lane + 1 ≤ lanes by omega)
+  have mul := Nat.mul_le_mul_right q (show lane + 1 ≤ lanes by omega_arith)
   rw [Nat.add_mul, Nat.one_mul] at mul
-  omega
+  omega_arith
 
 theorem cell_sep (q j lane column : Nat) (hq : 2 ≤ q) (hc : column < q)
     (other : lane ≠ j ∨ 2 ≤ column) :
     1024 * (lane * q + column) + 1024 ≤ 1024 * (j * q) ∨
       1024 * (j * q) + 2048 ≤ 1024 * (lane * q + column) := by
   by_cases lt : lane < j
-  · have mul := Nat.mul_le_mul_right q (show lane + 1 ≤ j by omega)
+  · have mul := Nat.mul_le_mul_right q (show lane + 1 ≤ j by omega_arith)
     rw [Nat.add_mul, Nat.one_mul] at mul
-    omega
+    omega_arith
   · by_cases gt : j < lane
-    · have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lane by omega)
+    · have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lane by omega_arith)
       rw [Nat.add_mul, Nat.one_mul] at mul
-      omega
-    · have eq : lane = j := by omega
+      omega_arith
+    · have eq : lane = j := by omega_arith
       subst lane
       have large : 2 ≤ column := other.elim (fun h => False.elim (h rfl)) id
-      omega
+      omega_arith
 
 theorem initialized_zero (m : Mem) (base : Addr) (lanes q : Nat)
     (bound : 1024 * (lanes * q) < 2 ^ 64) (h0 : List Byte) :
@@ -391,37 +391,37 @@ theorem initialized_lane {s t : State} (memory : Addr) (lanes q j : Nat)
     (initialized : Initialized s.mem memory lanes q j h0) (done : LaneDone s t) :
     Initialized t.mem memory lanes q (j + 1) h0 := by
   have laneValue : (s.gpr .x20).toNat = j := by
-    rw [laneReg, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [laneReg, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have currentEnd : 1024 * (j * q) + 2048 ≤ 2 ^ 64 := by
-    have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega)
+    have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega_arith)
     rw [Nat.add_mul, Nat.one_mul] at mul
     have b := space.bound
-    omega
+    omega_arith
   have cellEnd (lane column : Nat) (hl : lane < lanes) (hc : column < q) :
       1024 * (lane * q + column) + 1024 ≤ 2 ^ 64 := by
     have cell := cell_bound lanes q lane column hl hc
     have b := space.bound
-    omega
+    omega_arith
   intro lane hl column hc
   by_cases same : lane = j
   · subst lane
     by_cases first : column = 0
     · subst column
-      rw [ite_eq_left (by omega)]
+      rw [ite_eq_left (by omega_arith)]
       apply Proof.Argon2.blockAt_of_initialBytes
       have eq := done.first
       rw [hash, laneValue, dst] at eq
       simpa only [Nat.add_zero] using eq
     · by_cases second : column = 1
       · subst column
-        rw [ite_eq_left (by omega)]
+        rw [ite_eq_left (by omega_arith)]
         apply Proof.Argon2.blockAt_of_initialBytes
         have eq := done.second
         rw [hash, laneValue, dst, BitVec.add_assoc,
           show (1024 : Addr) = BitVec.ofNat 64 1024 from rfl, ← BitVec.ofNat_add] at eq
         rw [Nat.mul_add, Nat.mul_one]
         exact eq
-      · have large : 2 ≤ column := by omega
+      · have large : 2 ≤ column := by omega_arith
         have sep := cell_sep q j j column hq hc (Or.inr large)
         have kept : blockAt t.mem (memory + BitVec.ofNat 64 (1024 * (j * q + column))) =
             blockAt s.mem (memory + BitVec.ofNat 64 (1024 * (j * q + column))) := by
@@ -431,14 +431,14 @@ theorem initialized_lane {s t : State} (memory : Addr) (lanes q j : Nat)
           rcases hr with rfl | rfl | rfl | rfl
           · rw [dst]; exact Offset.disjoint _ sep (cellEnd j column hj hc) currentEnd
           · exact space.matrixWork.sub_left (Offset.sub_base _
-              (by have := cell_bound lanes q j column hj hc; omega))
+              (by have := cell_bound lanes q j column hj hc; omega_arith))
           · exact space.stackMatrix.symm.sub_left (Offset.sub_base _
-              (by have := cell_bound lanes q j column hj hc; omega))
+              (by have := cell_bound lanes q j column hj hc; omega_arith))
           · exact space.frameMatrix.symm.sub_left (Offset.sub_base _
-              (by have := cell_bound lanes q j column hj hc; omega)) |>.sub_right
+              (by have := cell_bound lanes q j column hj hc; omega_arith)) |>.sub_right
               (Offset.sub_base _ (by decide : 64 + 8 ≤ 272))
         rw [kept, initialized j hj column hc]
-        simp only [Nat.lt_irrefl, false_and, ite_false, ite_eq_right (by omega : ¬ (j < j + 1 ∧ column < 2))]
+        simp only [Nat.lt_irrefl, false_and, ite_false, ite_eq_right (by omega_arith : ¬ (j < j + 1 ∧ column < 2))]
   · have kept : blockAt t.mem (memory + BitVec.ofNat 64 (1024 * (lane * q + column))) =
         blockAt s.mem (memory + BitVec.ofNat 64 (1024 * (lane * q + column))) := by
       apply blockAt_frame done.frame
@@ -449,15 +449,15 @@ theorem initialized_lane {s t : State} (memory : Addr) (lanes q j : Nat)
         exact Offset.disjoint _ (cell_sep q j lane column hq hc (Or.inl same))
           (cellEnd lane column hl hc) currentEnd
       · exact space.matrixWork.sub_left (Offset.sub_base _
-          (by have := cell_bound lanes q lane column hl hc; omega))
+          (by have := cell_bound lanes q lane column hl hc; omega_arith))
       · exact space.stackMatrix.symm.sub_left (Offset.sub_base _
-          (by have := cell_bound lanes q lane column hl hc; omega))
+          (by have := cell_bound lanes q lane column hl hc; omega_arith))
       · exact space.frameMatrix.symm.sub_left (Offset.sub_base _
-          (by have := cell_bound lanes q lane column hl hc; omega)) |>.sub_right
+          (by have := cell_bound lanes q lane column hl hc; omega_arith)) |>.sub_right
           (Offset.sub_base _ (by decide : 64 + 8 ≤ 272))
     rw [kept, initialized lane hl column hc]
     by_cases before : lane < j ∧ column < 2 <;>
-      simp (disch := omega) only [ite_eq_left, ite_eq_right]
+      simp (disch := omega_arith) only [ite_eq_left, ite_eq_right]
 
 end VG.Proof.Argon2.AArch64.MemoryInit
 end
@@ -544,7 +544,7 @@ theorem clearLoop_ok (s₀ : State) (p : Addr) (n : Nat) (lo : 1 ≤ n)
     (write : ∀ j < n, InRegions s₀.wr (p + BitVec.ofNat 64 (8 * j)) 8) :
     WP isa (.loop (.block clearWord) (.nonzero .x .x15)) s₀ (ClearI s₀ p n n) := by
   refine WP.loop (M := isa) (fun k s => ∃ j, k = n - j ∧ j < n ∧ ClearI s₀ p n j s)
-    ?_ n s₀ ⟨0, by omega, lo, by omega, by simpa using dst, by simpa only [Nat.sub_zero] using count,
+    ?_ n s₀ ⟨0, by omega_arith, lo, by omega_arith, by simpa using dst, by simpa only [Nat.sub_zero] using count,
       zero, fun _ _ _ _ _ => rfl, rfl, rfl, rfl, rfl⟩
   rintro k s ⟨j, rfl, hj, h⟩
   have hw : InRegions s.wr (s.gpr .x22) 8 := by
@@ -552,10 +552,10 @@ theorem clearLoop_ok (s₀ : State) (p : Addr) (n : Nat) (lo : 1 ≤ n)
   refine (clearWord_ok s hw).mono ?_
   rintro t ⟨memT, dstT, countT, zfT, otherT, rdT, wrT, spT⟩
   have nextCount : BitVec.ofNat 64 (n - j) - 1 = BitVec.ofNat 64 (n - (j + 1)) := by
-    rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]
+    rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith)]
     congr 1
   have next : ClearI s₀ p n (j + 1) t := by
-    refine ⟨by omega, ?_, ?_, (otherT _ (by decide) (by decide) (by decide) (by decide)).trans h.zero,
+    refine ⟨by omega_arith, ?_, ?_, (otherT _ (by decide) (by decide) (by decide) (by decide)).trans h.zero,
       fun r h1 h2 h3 h4 => (otherT r h1 h2 h3 h4).trans (h.other r h1 h2 h3 h4),
       rdT.trans h.rd, wrT.trans h.wr, spT.trans h.sp, ?_⟩
     · rw [dstT, h.destination, BitVec.add_assoc, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, ← BitVec.ofNat_add]
@@ -566,7 +566,7 @@ theorem clearLoop_ok (s₀ : State) (p : Addr) (n : Nat) (lo : 1 ≤ n)
     constructor
     · intro eq
       have num := congrArg BitVec.toNat eq
-      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : n - (j + 1) < 2 ^ 64),
+      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : n - (j + 1) < 2 ^ 64),
         show (0 : Addr).toNat = 0 from rfl] using num
     · intro eq; rw [eq]; rfl
   have flag : eval (.nonzero .x .x15) t = some (decide (n - (j + 1) ≠ 0)) := by
@@ -576,11 +576,11 @@ theorem clearLoop_ok (s₀ : State) (p : Addr) (n : Nat) (lo : 1 ≤ n)
     exact not_congr eqzero
   by_cases done : j + 1 = n
   · refine .inl ⟨?_, done ▸ next⟩
-    simpa only [show n - (j + 1) = 0 by omega, ne_eq, not_true_eq_false, decide_false] using flag
-  · refine .inr ⟨?_, n - (j + 1), by omega, j + 1, rfl, by omega, next⟩
+    simpa only [show n - (j + 1) = 0 by omega_arith, ne_eq, not_true_eq_false, decide_false] using flag
+  · refine .inr ⟨?_, n - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, next⟩
     change eval (.nonzero .x .x15) t = some true
     rw [flag]
-    exact congrArg some (decide_eq_true (by omega : n - (j + 1) ≠ 0))
+    exact congrArg some (decide_eq_true (by omega_arith : n - (j + 1) ≠ 0))
 
 end VG.Proof.Argon2.AArch64.MemoryInit
 end
@@ -683,14 +683,14 @@ theorem clear_ok (s : State) (memory : Addr) (blocks : Nat) (lo : 1 ≤ blocks)
   have wr := hb.wr
   have other := hb.other
   have sp := hb.sp
-  refine (clearLoop_ok b memory (128 * blocks) (by omega) (by omega) dst count zero ?_).mono ?_
+  refine (clearLoop_ok b memory (128 * blocks) (by omega_arith) (by omega_arith) dst count zero ?_).mono ?_
   · intro j hj
     rw [wr]
-    exact cover _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+    exact cover _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   · intro t ht
     refine ⟨?_, fun r h1 h2 h3 h4 h5 => (ht.other r h2 h1 h4 h5).trans (other r h1 h2 h3 h4 h5), ?_,
       ht.rd.trans rd, ht.wr.trans wr, ht.sp.trans sp⟩
-    · rw [ht.destination, show 8 * (128 * blocks) = 1024 * blocks by omega]
+    · rw [ht.destination, show 8 * (128 * blocks) = 1024 * blocks by omega_arith]
     · rw [ht.mem, mem]
 
 end VG.Proof.Argon2.AArch64.MemoryInit
@@ -876,18 +876,18 @@ theorem lane_step (v : HPrime.Backend) (name : String)
       eval (.nonzero .x .x15) t = some (decide (lanes - (j + 1) ≠ 0)) := by
   have spaceS := space.keeps h.keeps
   have endBound : 1024 * (j * q) + 2048 ≤ 1024 * (lanes * q) := by
-    have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega)
+    have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega_arith)
     rw [Nat.add_mul, Nat.one_mul] at mul
-    omega
+    omega_arith
   refine (lane_ok v name s memory (1024 * (lanes * q)) (1024 * (j * q))
     spaceS h.destination endBound).mono ?_
   intro t ht
   have kt := ht.keeps memory _ _ h.destination endBound
   have nextCount : BitVec.ofNat 64 (lanes - j) - 1 = BitVec.ofNat 64 (lanes - (j + 1)) := by
-    rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]
+    rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith)]
     congr 1
   have next : LoopI s₀ memory lanes q (j + 1) h0 t := by
-    refine ⟨by omega, ?_, ?_, ?_, ?_, h.keeps.trans kt,
+    refine ⟨by omega_arith, ?_, ?_, ?_, ?_, h.keeps.trans kt,
       initialized_lane memory lanes q j h0 spaceS hq hj lanesBound h.destination h.lane
         h.hash h.initialized ht, (kt.h0 spaceS).trans h.hash⟩
     · rw [ht.destination, h.destination, h.stride, BitVec.add_assoc, ← BitVec.ofNat_add,
@@ -899,7 +899,7 @@ theorem lane_step (v : HPrime.Backend) (name : String)
     constructor
     · intro eq
       have num := congrArg BitVec.toNat eq
-      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : lanes - (j + 1) < 2 ^ 64),
+      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : lanes - (j + 1) < 2 ^ 64),
         show (0 : Addr).toNat = 0 from rfl] using num
     · intro eq; rw [eq]; rfl
   have zf : eval (.nonzero .x .x15) t = some (decide (lanes - (j + 1) ≠ 0)) := by
@@ -922,18 +922,18 @@ theorem lanesLoop_ok (v : HPrime.Backend) (name : String)
     WP isa (.loop (lane name v.hash) (.nonzero .x .x15)) s₀ (LoopI s₀ memory lanes q lanes h0) := by
   refine WP.loop (M := isa)
     (fun n s => ∃ j, n = lanes - j ∧ j < lanes ∧ LoopI s₀ memory lanes q j h0 s)
-    ?_ lanes s₀ ⟨0, by omega, lo, by omega, by simpa using dst, laneReg,
+    ?_ lanes s₀ ⟨0, by omega_arith, lo, by omega_arith, by simpa using dst, laneReg,
       by simpa only [Nat.sub_zero] using remaining, stride, Keeps.refl _ _ _, initialized, hash⟩
   rintro n s ⟨j, rfl, hj, h⟩
   refine (lane_step v name s₀ s memory lanes q j h0 space hj lanesBound hq h).mono ?_
   intro t ⟨next, zf⟩
   by_cases done : j + 1 = lanes
   · refine .inl ⟨?_, done ▸ next⟩
-    simpa only [show lanes - (j + 1) = 0 by omega, ne_eq, not_true_eq_false, decide_false] using zf
-  · refine .inr ⟨?_, lanes - (j + 1), by omega, j + 1, rfl, by omega, next⟩
+    simpa only [show lanes - (j + 1) = 0 by omega_arith, ne_eq, not_true_eq_false, decide_false] using zf
+  · refine .inr ⟨?_, lanes - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, next⟩
     change eval (.nonzero .x .x15) t = some true
     rw [zf]
-    exact congrArg some (decide_eq_true (by omega : lanes - (j + 1) ≠ 0))
+    exact congrArg some (decide_eq_true (by omega_arith : lanes - (j + 1) ≠ 0))
 
 end VG.Proof.Argon2.AArch64.MemoryInit
 end
@@ -952,8 +952,8 @@ theorem Cleared.frame {s t : State} {memory : Addr} {blocks : Nat}
     (h : Cleared s t memory blocks) (bound : 1024 * blocks < 2 ^ 64) :
     Frame [⟨memory, 1024 * blocks⟩] s.mem t.mem := by
   rw [h.mem]
-  simpa only [show 8 * (128 * blocks) = 1024 * blocks by omega] using
-    clearMem_frame s.mem memory (128 * blocks) (by omega)
+  simpa only [show 8 * (128 * blocks) = 1024 * blocks by omega_arith] using
+    clearMem_frame s.mem memory (128 * blocks) (by omega_arith)
 
 theorem Cleared.word {s t : State} {memory : Addr} {blocks d : Nat}
     (h : Cleared s t memory blocks) (space : Space s memory (1024 * blocks))
@@ -961,7 +961,7 @@ theorem Cleared.word {s t : State} {memory : Addr} {blocks d : Nat}
   unfold wordAt
   rw [h.other .x19 (by decide) (by decide) (by decide) (by decide) (by decide)]
   apply (h.frame space.bound).readW (r := ⟨s.gpr .x19, 272⟩)
-    (Offset.contains_base _ offset (by omega)) ?_ (by decide)
+    (Offset.contains_base _ offset (by omega_arith)) ?_ (by decide)
   intro r hr; simp only [List.mem_singleton] at hr; subst r
   exact space.frameMatrix
 
@@ -985,7 +985,7 @@ theorem code_ok (v : HPrime.Backend) (name : String)
   unfold code lanesSetupCode
   have blocksPositive : 1 ≤ lanes * q := by
     have mul := Nat.mul_le_mul_right q lo
-    rw [Nat.one_mul] at mul; omega
+    rw [Nat.one_mul] at mul; omega_arith
   refine WP.seq ((clear_ok s memory (lanes * q) blocksPositive space.bound memoryRead
     blocksRead memoryWord blocksWord space.matrix).mono ?_)
   intro a ha
@@ -1258,9 +1258,9 @@ theorem laneEnd_rel : RelCT isa AgreeSaved
 theorem lane_rel (v : HPrime.Backend) (name : String)
     (memory : Addr) (bytes d : Nat) (bound : d + 2048 ≤ bytes) :
     RelCT isa (RelatedLane memory bytes d) (lane name v.hash) AgreeSaved := by
-  exact (block_lane_rel v name 0 (by decide) ⟨_, by taint_decide⟩ memory bytes d (by omega)).seq
+  exact (block_lane_rel v name 0 (by decide) ⟨_, by taint_decide⟩ memory bytes d (by omega_arith)).seq
     ((advance_lane_rel memory bytes d).seq
-    ((block_lane_rel v name 1 (by decide) ⟨_, by taint_decide⟩ memory bytes (d + 1024) (by omega)).seq
+    ((block_lane_rel v name 1 (by decide) ⟨_, by taint_decide⟩ memory bytes (d + 1024) (by omega_arith)).seq
       (laneEnd_rel.mono (fun _ _ h => h.2.2) (fun _ _ h => h))))
 
 end VG.Proof.Argon2.AArch64.MemoryInit
@@ -1289,9 +1289,9 @@ theorem lanesLoop_rel (v : HPrime.Backend) (name : String)
     intro n s t trace₁ trace₂ a b hp e₁ e₂
     obtain ⟨j, rfl, hj, hs, ht, pub⟩ := hp
     have bound : 1024 * (j * q) + 2048 ≤ 1024 * (lanes * q) := by
-      have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega)
+      have mul := Nat.mul_le_mul_right q (show j + 1 ≤ lanes by omega_arith)
       rw [Nat.add_mul, Nat.one_mul] at mul
-      omega
+      omega_arith
     have related : RelatedLane memory (1024 * (lanes * q)) (1024 * (j * q)) s t :=
       ⟨⟨space₁.keeps hs.keeps, hs.destination⟩,
         ⟨space₂.keeps ht.keeps, ht.destination⟩, pub⟩
@@ -1311,9 +1311,9 @@ theorem lanesLoop_rel (v : HPrime.Backend) (name : String)
         change eval (.nonzero .x .x15) a = some true at taken
         rw [taken] at flag
         simp only [zero, ne_eq, not_true_eq_false, decide_false, Option.some.injEq, Bool.true_eq_false] at flag
-      exact ⟨lanes - (j + 1), by omega, j + 1, rfl, by omega, ha.1, hb.1, pubNext⟩
+      exact ⟨lanes - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, ha.1, hb.1, pubNext⟩
   exact (RelCT.loop I steps lanes).mono (fun _ _ hp =>
-    ⟨0, by omega, lo, hp.1, hp.2.1, hp.2.2⟩) (fun _ _ h => h)
+    ⟨0, by omega_arith, lo, hp.1, hp.2.1, hp.2.2⟩) (fun _ _ h => h)
 
 end VG.Proof.Argon2.AArch64.MemoryInit
 end
@@ -1453,7 +1453,7 @@ theorem lanesLoop_ready_rel (v : HPrime.Backend) (name : String)
   intro s t ts tt a b hp es et
   have initial {s : State} (h : LoopReady memory lanes q s) :
       LoopI s memory lanes q 0 (bytesAt s.mem (s.gpr .x19) 64) s :=
-    ⟨by omega, by simpa using h.destination, h.lane,
+    ⟨by omega_arith, by simpa using h.destination, h.lane,
       by simpa only [Nat.sub_zero] using h.remaining, h.stride, Keeps.refl _ _ _,
       h.initialized, rfl⟩
   exact lanesLoop_rel v name s t memory lanes q _ _ hp.1.space hp.2.1.space lo
@@ -1466,7 +1466,7 @@ theorem code_ct (v : HPrime.Backend) (name : String)
   let P := fun s t => Ready memory lanes q s ∧ Ready memory lanes q t ∧ AgreeBases s t
   have blocksPositive : 1 ≤ lanes * q := by
     have mul := Nat.mul_le_mul_right q lo
-    rw [Nat.one_mul] at mul; omega
+    rw [Nat.one_mul] at mul; omega_arith
   have cleared := (clear_rel memory lanes q).wpDep (fun s t hp =>
     ⟨clear_ok s memory (lanes * q) blocksPositive hp.1.space.bound hp.1.memoryRead
         hp.1.blocksRead hp.1.memoryWord hp.1.blocksWord hp.1.space.matrix,
@@ -1537,7 +1537,7 @@ theorem Done.frame_word {s t : State} {memory : Addr} {lanes q : Nat}
     · exact space.frameMatrix.sub_left sub
     · exact space.frameWork.sub_left sub
     · exact space.stackFrame.symm.sub_left sub
-    · exact Offset.disjoint (s.gpr .x19) separate (by omega) (by decide)) (by decide)
+    · exact Offset.disjoint (s.gpr .x19) separate (by omega_arith) (by decide)) (by decide)
 
 end VG.Proof.Argon2.AArch64.MemoryInit
 end
@@ -1654,7 +1654,7 @@ theorem Reset.read {s t : State} (h : Reset s t) (d : Nat) (separate : 8 ≤ d) 
     t.mem.readW (off (t.gpr .x19) d) 64 = s.mem.readW (off (s.gpr .x19) d) 64 := by
   rw [h.mem, h.regs .x19 (by decide)]
   exact Mem.readW_writeW_sep (w := 64) (w' := 64)
-    (Offset.sep _ (d := d) (n := 8) (e := 0) (k := 8) (Or.inr (by omega)) (by omega) (by decide)) (by decide)
+    (Offset.sep _ (d := d) (n := 8) (e := 0) (k := 8) (Or.inr (by omega_arith)) (by omega_arith) (by decide)) (by decide)
 
 end VG.Proof.Argon2.AArch64.FillSetup
 end
@@ -1831,7 +1831,7 @@ theorem Prepared.finish_ready {s t : State} {p : Params} (ready : Ready p s) (do
       params.lanesBound, header.layout.frameRead 184 (by simp), header.lanesWord⟩
     have blocks := Proof.Argon2.blocks_le_memory p
     have memory := params.memoryBound
-    omega
+    omega_arith
   · refine ⟨?_, outputReady.positive, outputReady.bound, ?_,
       (done.words 264 (by decide) (by decide)).trans outputReady.tagWord, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [sp]; exact outputReady.stackMinimum
@@ -1909,7 +1909,7 @@ theorem initialized_setup {s t : State} {p : Params} (h : Ready p s)
   refine ⟨initialized_environment h done, ?_, done.stride⟩
   have bound := h.initializing.space.bound
   have bytes := Nat.mul_le_mul_left 1024 product
-  omega
+  omega_arith
 
 theorem initialized_represents {s t : State} {p : Params} (h : Ready p s)
     (done : MemoryInit.Done s t (FillKernel.matrix s) p.lanes p.laneLen) :
@@ -1919,7 +1919,7 @@ theorem initialized_represents {s t : State} {p : Params} (h : Ready p s)
   rw [base]
   have segments := Proof.Argon2.laneLen_segments p h.environment.parameters.lanesPositive
   have minimum := h.environment.parameters.segment_bound.1
-  exact done.initialized.represents h.environment.parameters.lanesPositive (by omega)
+  exact done.initialized.represents h.environment.parameters.lanesPositive (by omega_arith)
 
 end VG.Proof.Argon2.AArch64.InitFill
 end
@@ -1967,7 +1967,7 @@ theorem filling_frame {s t : State} {p : Params} (positive : 0 < p.blocks) (h : 
   · exact ⟨⟨FinalOutput.work s, 16384⟩, by simp [writes], Region.sub_prefix (by decide)⟩
   · exact ⟨below (s.sp) 16, by simp [writes], below_sub (by decide) (by decide)⟩
   · exact ⟨⟨s.gpr .x19, 72⟩, by simp [writes], Region.sub_prefix (by decide)⟩
-  · exact ⟨⟨FillKernel.matrix s, p.blocks * 1024⟩, by simp [writes], Region.sub_prefix (by omega)⟩
+  · exact ⟨⟨FillKernel.matrix s, p.blocks * 1024⟩, by simp [writes], Region.sub_prefix (by omega_arith)⟩
   · exact ⟨_, by simp [writes], fun _ h => h⟩
   · exact ⟨_, by simp [writes], fun _ h => h⟩
   · exact ⟨_, by simp [writes], fun _ h => h⟩
@@ -2006,7 +2006,7 @@ theorem code_ok (v : HPrime.Backend) (name : String) (s : State) (p : Params) (h
   have q : 2 ≤ p.laneLen := by
     have segments := Proof.Argon2.laneLen_segments p params.lanesPositive
     have minimum := params.segment_bound.1
-    omega
+    omega_arith
   have blocks := Proof.Argon2.lastIndex_bounds p params.lanesPositive params.segment_bound.1 0 params.lanesPositive
   unfold Impl.Argon2.AArch64.InitFill.code
   refine WP.seq ((MemoryInit.complete_ok v name s (FillKernel.matrix s) p.lanes p.laneLen h.initializing
@@ -2022,7 +2022,7 @@ theorem code_ok (v : HPrime.Backend) (name : String) (s : State) (p : Params) (h
   have rep : Proof.Argon2.Represents a.mem (FillKernel.matrix a) p.blocks
       (initMemory p (bytesAt s.mem (s.gpr .x19) 64)).memory := by
     rw [initializedBase]
-    exact initialized.initialized.represents params.lanesPositive (by omega)
+    exact initialized.initialized.represents params.lanesPositive (by omega_arith)
   refine WP.seq ((FillSetup.code_ok a p setupReady).mono ?_)
   intro b prepared
   refine (FillFinish.code_ok v name b p (prepared.finish_ready setupReady (initialized_output h initialized) h.positive)
@@ -2041,7 +2041,7 @@ theorem code_ok (v : HPrime.Backend) (name : String) (s : State) (p : Params) (h
   · have initialFrame := initialization_frame h initialized
     have setupFrame := setup_frame (p := p) prepared.frame
     rw [writes_eq s a p initialized.bp initialized.sp initializedBase initializedWork initializedOutput] at setupFrame
-    have fillFrame := filling_frame (by omega : 0 < p.blocks) filled.frame
+    have fillFrame := filling_frame (by omega_arith : 0 < p.blocks) filled.frame
     rw [writes_eq a b p bp sp prepared.matrix work output,
       writes_eq s a p initialized.bp initialized.sp initializedBase initializedWork initializedOutput] at fillFrame
     exact (initialFrame.trans setupFrame).trans fillFrame

@@ -83,7 +83,7 @@ theorem Lt_le (σ : State) (t : Nat) : (Lt σ t).length ≤ 256 := rbFold_length
 theorem Lt_succ {σ : State} {t : Nat} (ht : t < 544) :
     Lt σ (t + 1) = rbStep (etaOf σ) (Lt σ t) (Z σ t) := by
   simp only [Lt]
-  rw [Ball.take_succ'' _ (by rw [X_length]; omega), rbFold_snoc]
+  rw [Ball.take_succ'' _ (by rw [X_length]; omega_arith), rbFold_snoc]
 
 /-- What the loop keeps, and the bytes of the output and the coefficients
 stored, from the prologue on. -/
@@ -137,7 +137,7 @@ theorem Base.keepA {s s' : State} (h : Base σ s) {regs : List Reg} (hk : Keep r
     (hc : ∀ r ∈ regs, r ∉ [Reg.x9, .x10, .x11, .x15, .x16, .x17] := by decide) : Base σ s' :=
   ⟨h.env.keepA (spOk hp) hk hf hr, by
     rw [MlKem.bytesAt_frame hf (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact (a_scr' (spOk hp) (by omega)).symm) (by omega)]; exact h.out,
+      rw [List.mem_singleton.mp hr]; exact (a_scr' (spOk hp) (by omega_arith)).symm) (by omega_arith)]; exact h.out,
     h.cs.keep hk hc⟩
 
 omit hp in
@@ -151,7 +151,7 @@ theorem inA' {s : State} (h : Base σ s) {i : Nat} (hi : i < 256) :
 /-- The load of byte `t`. -/
 theorem load_ok {t : Nat} (ht : t < 544) {s : State} (h : LAt σ t s) : WP isa (.block rbLoad) s (LB σ t) := by
   refine wp_ldrb (a := (spOf σ).at' (840 + t)) (by decide) (by rw [h.x2, ptr_zero])
-    (inScrRd (spOk hp) h.base.env.rd h.base.env.wr (by omega)) fun s₁ o₁ e₁ => ?_
+    (inScrRd (spOk hp) h.base.env.rd h.base.env.wr (by omega_arith)) fun s₁ o₁ e₁ => ?_
   refine wp_addImm (by decide) fun s₂ o₂ e₂ => wp_subImm (by decide) fun s₃ o₃ e₃ => wp_and fun s₄ o₄ e₄ =>
     wp_nil ?_
   have k := ((o₁.keep.trans o₂.keep).trans o₃.keep).trans o₄.keep
@@ -161,19 +161,19 @@ theorem load_ok {t : Nat} (ht : t < 544) {s : State} (h : LAt σ t s) : WP isa (
   refine ⟨h.base.keepA hp k (by rw [m]; exact Frame.refl _ _), ?_, by rw [k.get .x3, h.x3],
     by rw [k.get .x4, h.x4], ?_, x6, ?_, by rw [m]; exact h.st⟩
   · rw [o₄.get .x2, o₃.get .x2, e₂, o₁.get .x2, h.x2, at_add, Nat.add_assoc]
-  · rw [o₄.get .x5, e₃, o₂.get .x5, o₁.get .x5, toNat_sub_n (by rw [h.x5]; simp; omega), h.x5]; simp; omega
+  · rw [o₄.get .x5, e₃, o₂.get .x5, o₁.get .x5, toNat_sub_n (by rw [h.x5]; simp; omega_arith), h.x5]; simp; omega_arith
   · apply BitVec.eq_of_toNat_eq
     rw [e₄, Proof.MlKem.AArch64.toNat_and_mask _ _ (k := 4) (by
         rw [o₃.get .x11, o₂.get .x11, o₁.get .x11, h.base.cs.x11]; rfl),
       o₃.get .x6, o₂.get .x6, e₁, toNat_byte, h.base.byte ht, BitVec.toNat_ofNat]
     have := (Z σ t).isLt
-    omega
+    omega_arith
 
 /-- The try of the low half-byte of byte `t`, when `j < 256`. -/
 theorem lo_ok {t : Nat} {s : State} (h : LB σ t s) (hl : (Lt σ t).length < 256) :
     WP isa (.block (rbTry (etaOf σ) ++ ([.lsr .x .x7 .x6 4] : List Instr))) s (LM σ t) := by
   rw [WP.block_append_iff]
-  refine WP.mono (try_ok (eta hp) (L := Lt σ t) (by omega) h.base.cs h.x7 h.x3 h.x4 hl h.st
+  refine WP.mono (try_ok (eta hp) (L := Lt σ t) (by omega_arith) h.base.cs h.x7 h.x3 h.x4 hl h.st
     (inA' hp h.base hl)) fun s₁ ⟨k₁, f₁, x3, x4, st⟩ => wp_lsr (by decide) fun s₂ o₂ e₂ => wp_nil ?_
   refine ⟨(h.base.keepA hp k₁ f₁).keepA hp o₂.keep (by rw [o₂.mem]; exact Frame.refl _ _),
     by rw [o₂.get .x2, k₁.get .x2, h.x2], by rw [o₂.get .x3, x3], by rw [o₂.get .x4, x4],
@@ -181,7 +181,7 @@ theorem lo_ok {t : Nat} {s : State} (h : LB σ t s) (hl : (Lt σ t).length < 256
   apply BitVec.eq_of_toNat_eq
   rw [e₂, toNat_lsr, k₁.get .x6, h.x6, toNat_byte, BitVec.toNat_ofNat]
   have := (Z σ t).isLt
-  omega
+  omega_arith
 
 /-- The try of the high half-byte of byte `t`, when `j < 256` still. -/
 theorem hi_ok {t : Nat} (ht : t < 544) {s : State} (h : LM σ t s) (hl : (Lm σ t).length < 256) :
@@ -189,10 +189,10 @@ theorem hi_ok {t : Nat} (ht : t < 544) {s : State} (h : LM σ t s) (hl : (Lm σ 
   have hl0 : (Lt σ t).length < n := by
     have := hbTry_length (etaOf σ) (Lt σ t) ((Z σ t).toNat % 16)
     simp only [Lm, n] at hl ⊢
-    omega
+    omega_arith
   have e : Lt σ (t + 1) = hbTry (etaOf σ) (Lm σ t) ((Z σ t).toNat / 16) := by
     rw [Lt_succ ht, rbStep, ifT hl0, ifT (show (Lm σ t).length < n from hl)]
-  refine WP.mono (try_ok (eta hp) (L := Lm σ t) (by have := (Z σ t).isLt; omega) h.base.cs h.x7 h.x3 h.x4 hl
+  refine WP.mono (try_ok (eta hp) (L := Lm σ t) (by have := (Z σ t).isLt; omega_arith) h.base.cs h.x7 h.x3 h.x4 hl
     h.st (inA' hp h.base hl)) fun s₁ ⟨k₁, f₁, x3, x4, st⟩ => ?_
   rw [← e] at x3 x4 st
   exact ⟨h.base.keepA hp k₁ f₁, by rw [k₁.get .x2, h.x2], x3, x4, by rw [k₁.get .x5, h.x5], st⟩
@@ -203,14 +203,14 @@ theorem lo_full {t : Nat} (ht : t < 544) {s : State} (h : LM σ t s) (hl' : (Lt 
     (hl : (Lm σ t).length = 256) : LAt σ (t + 1) s := by
   have e : Lt σ (t + 1) = Lm σ t := by
     rw [Lt_succ ht, rbStep, ifT (show (Lt σ t).length < n from hl'),
-      ifF (show ¬ (Lm σ t).length < n by simp only [n]; omega)]
+      ifF (show ¬ (Lm σ t).length < n by simp only [n]; omega_arith)]
   exact ⟨h.base, h.x2, by rw [e, h.x3], by rw [e, h.x4], h.x5, by rw [e]; exact h.st⟩
 
 omit hp in
 /-- `j = 256` before byte `t`: the iteration does nothing but its load. -/
 theorem full {t : Nat} (ht : t < 544) {s : State} (h : LB σ t s) (hl : (Lt σ t).length = 256) :
     LAt σ (t + 1) s := by
-  have e : Lt σ (t + 1) = Lt σ t := by rw [Lt_succ ht, rbStep, ifF (by simp only [n]; omega)]
+  have e : Lt σ (t + 1) = Lt σ t := by rw [Lt_succ ht, rbStep, ifF (by simp only [n]; omega_arith)]
   exact ⟨h.base, h.x2, by rw [e, h.x3], by rw [e, h.x4], h.x5, by rw [e]; exact h.st⟩
 
 omit hp in
@@ -218,29 +218,29 @@ theorem eval_x4 {s : State} {L : List Zq} (h : (s.gpr .x4).toNat = 256 - L.lengt
     isa.eval (.zero .x .x4) s = some (decide (L.length = 256)) := by
   rw [eval_zero, eq_zero_iff, h]
   congr 1
-  exact decide_eq_decide.mpr (by omega)
+  exact decide_eq_decide.mpr (by omega_arith)
 
 /-- An iteration. -/
 theorem step_ok {t : Nat} (ht : t < 544) {s : State} (h : LAt σ t s) :
     WP isa (rbBody (etaOf σ)) s fun s' => LAt σ (t + 1) s' ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ t + 1 ≠ 544) := by
   have c5 : ∀ {u : State}, (u.gpr .x5).toNat = 544 - (t + 1) → ((u.gpr .x5).toNat ≠ 0 ↔ t + 1 ≠ 544) :=
-    fun h5 => by rw [h5]; omega
+    fun h5 => by rw [h5]; omega_arith
   refine WP.seq (WP.mono (load_ok hp ht h) fun s₁ h₁ => ?_)
   by_cases hf : (Lt σ t).length = 256
   · exact WP.ite true (by rw [eval_x4 h₁.x4 (Lt_le σ t), decide_eq_true hf]) (fun _ =>
       wp_nil ⟨full ht h₁ hf, c5 h₁.x5⟩) (fun h => nomatch h)
   refine WP.ite false (by rw [eval_x4 h₁.x4 (Lt_le σ t), decide_eq_false hf]) (fun h => nomatch h) fun _ => ?_
-  refine WP.seq (WP.mono (lo_ok hp h₁ (by have := Lt_le σ t; omega)) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (lo_ok hp h₁ (by have := Lt_le σ t; omega_arith)) fun s₂ h₂ => ?_)
   have hml : (Lm σ t).length ≤ 256 := by
     have := hbTry_length (etaOf σ) (Lt σ t) ((Z σ t).toNat % 16)
     have := halfByteOk_le (etaOf σ) ((Z σ t).toNat % 16)
     have := Lt_le σ t
-    simp only [Lm]; omega
+    simp only [Lm]; omega_arith
   by_cases hf' : (Lm σ t).length = 256
   · exact WP.ite true (by rw [eval_x4 h₂.x4 hml, decide_eq_true hf']) (fun _ =>
-      wp_nil ⟨lo_full ht h₂ (by have := Lt_le σ t; omega) hf', c5 h₂.x5⟩) (fun h => nomatch h)
+      wp_nil ⟨lo_full ht h₂ (by have := Lt_le σ t; omega_arith) hf', c5 h₂.x5⟩) (fun h => nomatch h)
   · exact WP.ite false (by rw [eval_x4 h₂.x4 hml, decide_eq_false hf']) (fun h => nomatch h) fun _ =>
-      WP.mono (hi_ok hp ht h₂ (by omega)) fun s₃ h₃ => ⟨h₃, c5 (by rw [h₃.x5])⟩
+      WP.mono (hi_ok hp ht h₂ (by omega_arith)) fun s₃ h₃ => ⟨h₃, c5 (by rw [h₃.x5])⟩
 
 theorem movz_rbBound : ((BitVec.ofNat 16 (rbBound (etaOf σ))).setWidth 64) = BitVec.ofNat 64 (rbB (etaOf σ)) := by
   rcases eta hp with h | h <;> rw [h] <;> rfl
@@ -315,7 +315,7 @@ theorem end_ok {s : State} (h : LAt σ 544 s) :
     have one : (1#64 : BitVec 64).toNat = 1 := rfl
     rw [e₂, toNat_lsr, e₁, BitVec.toNat_sub, x4, one]
     simp only [Nat.reducePow]
-    split <;> omega
+    split <;> omega_arith
   refine WP.mono (epi_ok (spOk hp) (h.base.env.keep (h₁.keep.trans h₂.keep) (by rw [h₂.mem, h₁.mem])))
     fun s' ⟨abi, m, k⟩ => ⟨abi, ?_, fun hf => ?_⟩
   · rw [k.get .x0]

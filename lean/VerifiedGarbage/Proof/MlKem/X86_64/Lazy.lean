@@ -79,15 +79,15 @@ theorem wBlockN_get (op : α → α → Zq → α × α) (f : Vector α n) {len 
       else if start + len ≤ i ∧ i < start + len + t then (op f[i - len]! f[i]! (zeta k)).2
       else f[i]! := by
   induction t generalizing i with
-  | zero => rw [wBlockN, List.range'_zero, List.foldl_nil, ite_eq_right (by omega), ite_eq_right (by omega)]
+  | zero => rw [wBlockN, List.range'_zero, List.foldl_nil, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
   | succ t ih =>
-    rw [wBlockN, foldl_range'_succ, ← wBlockN, wbfly_get _ _ hlen (by omega) _ hi,
-      ih (by omega) (by omega) (i := start + t) (by omega), ih (by omega) (by omega) (i := start + t + len) (by omega),
-      ih (by omega) (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
+    rw [wBlockN, foldl_range'_succ, ← wBlockN, wbfly_get _ _ hlen (by omega_arith) _ hi,
+      ih (by omega_arith) (by omega_arith) (i := start + t) (by omega_arith), ih (by omega_arith) (by omega_arith) (i := start + t + len) (by omega_arith),
+      ih (by omega_arith) (by omega_arith) hi]
+    rcases (by omega_arith : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
+      simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 theorem wBlk_ok (op : α → α → Zq → α × α) : BlkOk (wBlockN op) op where
   zero _ _ _ _ := rfl
@@ -105,37 +105,37 @@ def Rep (b : Nat) (w : BitVec 16) (v : Zq) : Prop :=
 
 theorem Rep.mono {b b' : Nat} {w : BitVec 16} {v : Zq} (h : Rep b w v) (hb : b ≤ b') : Rep b' w v := by
   obtain ⟨h1, h2, h3⟩ := h
-  exact ⟨by have : (b : Int) ≤ b' := Int.ofNat_le.mpr hb; omega, by have : (b : Int) ≤ b' := Int.ofNat_le.mpr hb; omega, h3⟩
+  exact ⟨by have : (b : Int) ≤ b' := Int.ofNat_le.mpr hb; omega_arith, by have : (b : Int) ≤ b' := Int.ofNat_le.mpr hb; omega_arith, h3⟩
 
 /-- A canonical word represents its value. -/
 theorem Rep.of_can {w : BitVec 16} {v : Zq} (h : w.toNat = v.val) : Rep 1 w v := by
   have hv := val_lt v
   have hi := W.toInt_of_lt (a := w) (by rw [h]; exact hv)
   rw [h] at hi
-  refine ⟨by rw [hi]; omega, by rw [hi]; omega, by rw [hi, Int.sub_self]; rfl⟩
+  refine ⟨by rw [hi]; omega_arith, by rw [hi]; omega_arith, by rw [hi, Int.sub_self]; rfl⟩
 
 theorem zw_toNat (ζ : Zq) : (zw ζ).toNat = ζ.val * 65536 % 3329 := by
   rw [zw, BitVec.toNat_ofNat]
   have : ζ.val * 65536 % 3329 < 3329 := Nat.mod_lt _ (by decide)
-  omega
+  omega_arith
 
 theorem zw_toInt (ζ : Zq) : (zw ζ).toInt = (ζ.val : Int) * 65536 % 3329 := by
   rw [W.toInt_of_lt (by rw [zw_toNat]; exact Nat.mod_lt _ (by decide)), zw_toNat]
-  omega
+  omega_arith
 
 /-- `montW d (zw ζ)` represents `ζ · y` for any word `d ≡ y (mod q)`. -/
 theorem mont_rep {d : BitVec 16} {y : Zq} (ζ : Zq) (h : (d.toInt - (y.val : Int)) % 3329 = 0) :
     Rep 1 (montW d (zw ζ)) (ζ * y) := by
   have hz := zw_toInt ζ
-  have hz1 : 0 ≤ (zw ζ).toInt := by rw [hz]; omega
-  have hz2 : (zw ζ).toInt < 3329 := by rw [hz]; omega
+  have hz1 : 0 ≤ (zw ζ).toInt := by rw [hz]; omega_arith
+  have hz2 : (zw ζ).toInt < 3329 := by rw [hz]; omega_arith
   have hd := W.toInt16_bounds d
   have hn : (d.toInt * (zw ζ).toInt).natAbs ≤ 32768 * 3328 := by
-    rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by omega) (by omega)
+    rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by omega_arith) (by omega_arith)
   have h1 := Int.le_natAbs (a := d.toInt * (zw ζ).toInt)
   have h2 := Int.le_natAbs (a := -(d.toInt * (zw ζ).toInt))
   rw [Int.natAbs_neg] at h2
-  obtain ⟨m1, m2, m3⟩ := W.montW_spec (d := d) (z := zw ζ) (by omega) (by omega)
+  obtain ⟨m1, m2, m3⟩ := W.montW_spec (d := d) (z := zw ζ) (by omega_arith) (by omega_arith)
   have hm := W.mul_zm (ζ := (ζ.val : Int)) h hz
   have hc := W.cancel_R m3 hm
   have e1 : ((ζ * y).val : Int) = ((y.val : Int) * ζ.val) % 3329 := by
@@ -151,11 +151,11 @@ theorem red_rep {d : BitVec 16} {v : Zq} (h : (d.toInt - (v.val : Int)) % 3329 =
   have hc : rW.toInt = 2285 := by decide
   have hd := W.toInt16_bounds d
   have hn : (d.toInt * rW.toInt).natAbs ≤ 32768 * 2285 := by
-    rw [Int.natAbs_mul, hc]; exact Nat.mul_le_mul (by omega) (by decide)
+    rw [Int.natAbs_mul, hc]; exact Nat.mul_le_mul (by omega_arith) (by decide)
   have h1 := Int.le_natAbs (a := d.toInt * rW.toInt)
   have h2 := Int.le_natAbs (a := -(d.toInt * rW.toInt))
   rw [Int.natAbs_neg] at h2
-  obtain ⟨m1, m2, m3⟩ := W.montW_spec (d := d) (z := rW) (by omega) (by omega)
+  obtain ⟨m1, m2, m3⟩ := W.montW_spec (d := d) (z := rW) (by omega_arith) (by omega_arith)
   rw [hc] at m3
   have e := W.cancel_R (Y := (v.val : Int)) m3 (by omega_using [h])
   refine ⟨by omega_using [m1], by omega_using [m2], ?_⟩
@@ -186,9 +186,9 @@ theorem fwdW_rep {k : Nat} (hk : (k + 1) * 3329 ≤ 32768) {a b : BitVec 16} {x 
   have p := W.toInt_add16 (a := a) (b := t) (by omega_using [a1, t1', hk']) (by omega_using [a2, t2', hk'])
   have m := W.toInt_sub16 (a := a) (b := t) (by omega_using [a1, t2', hk']) (by omega_using [a2, t1', hk'])
   have v1 : ((x + ζ * y).val : Int) = ((x.val : Int) + ((ζ * y).val : Int)) % 3329 := by
-    rw [val_add']; simp only [q]; omega
+    rw [val_add']; simp only [q]; omega_arith
   have v2 : ((x - ζ * y).val : Int) = ((x.val : Int) + (3329 - ((ζ * y).val : Int))) % 3329 := by
-    rw [val_sub']; simp only [q]; omega
+    rw [val_sub']; simp only [q]; omega_arith
   rw [p, m, v1, v2]
   refine ⟨⟨?_, ?_, ?_⟩, ⟨?_, ?_, ?_⟩⟩ <;> omega_using [a1, a2, a3, t1', t2', t3, hk', hx, hz]
 
@@ -204,9 +204,9 @@ theorem invW_rep {k : Nat} (hk : 2 * k * 3329 ≤ 32768) {a b : BitVec 16} {x y 
   have p := W.toInt_add16 (a := a) (b := b) (by omega_using [a1, b1, hk']) (by omega_using [a2, b2, hk'])
   have m := W.toInt_sub16 (a := b) (b := a) (by omega_using [a2, b1, hk']) (by omega_using [a1, b2, hk'])
   have v1 : ((x + y).val : Int) = ((x.val : Int) + (y.val : Int)) % 3329 := by
-    rw [val_add']; simp only [q]; omega
+    rw [val_add']; simp only [q]; omega_arith
   have v2 : ((y - x).val : Int) = ((y.val : Int) + (3329 - (x.val : Int))) % 3329 := by
-    rw [val_sub']; simp only [q]; omega
+    rw [val_sub']; simp only [q]; omega_arith
   refine ⟨?_, mont_rep ζ ?_⟩
   · simp only [invW, Rep]
     rw [p, v1]
@@ -240,11 +240,11 @@ theorem layF_rep {wop : BitVec 16 → BitVec 16 → Zq → BitVec 16 × BitVec 1
     ite_eq_left_of_eq_true _ _ (eq_true hj'), ite_eq_left_of_eq_true _ _ (eq_true hj')]
   have hb : ∀ j < 256, (j % (2 * len) < len → j + len < 256) ∧ (¬ j % (2 * len) < len → len ≤ j) := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
-    rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> intro j hj <;> omega
+    rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> intro j hj <;> omega_arith
   by_cases c : j % (2 * len) < len
   · rw [ite_eq_left_of_eq_true _ _ (eq_true c), ite_eq_left_of_eq_true _ _ (eq_true c)]
     exact (hop _ _ _ _ _ (h j hj) (h _ ((hb j hj).1 c))).1
   · rw [ite_eq_right_of_eq_false _ _ (eq_false c), ite_eq_right_of_eq_false _ _ (eq_false c)]
-    exact (hop _ _ _ _ _ (h _ (by omega)) (h j hj)).2
+    exact (hop _ _ _ _ _ (h _ (by omega_arith)) (h j hj)).2
 
 end VG.Proof.MlKem.X86_64

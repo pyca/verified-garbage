@@ -35,14 +35,7 @@ theorem phaseBitHead_ok (q : Bool) (s : State) {bits : Nat} (positive : 0 < bits
       (t.gpr .r3 = BitVec.ofNat 32 (phaseBits q bits) ∧
         t.mem = s.mem.writeW (State.addr (s.sp + 44#32)) (BitVec.ofNat 32 (phaseBits q bits))) ∧
         Rest [.r3, .r12] s t := by
-  refine withRest [.r3, .r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.phaseBitHead q) : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases q <;> cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r12] ?_ (by cases q <;> rfl) (by rfl)
   have sub : BitVec.ofNat 32 bits - 1 = BitVec.ofNat 32 (bits - 1) := by
     change BitVec.ofNat 32 bits - BitVec.ofNat 32 1 = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) positive]
@@ -55,14 +48,7 @@ theorem phaseWidth_ok (s : State) {bits : Nat} (bound : bits ≤ 8192)
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.phaseWidth) s fun t =>
       (t.mem = s.mem.writeW (State.addr (s.sp + 48#32)) (BitVec.ofNat 32 ((bits + 7) / 8))) ∧
         Rest [.r4, .r12] s t := by
-  refine withRest [.r4, .r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.phaseWidth : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r4, .r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.phaseWidth VG.Impl.Ffdh.Arm.ParameterCandidate.save
   ffrun [List.cons_append, List.nil_append, BitVec.add_zero, value, write, witnessWidth_word bound]
 
@@ -72,14 +58,7 @@ theorem phaseChecks_ok (s : State) {bits : Nat} (positive : 0 < bits) (bound : b
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.phaseChecks) s fun t =>
       (t.mem = s.mem.writeW (State.addr (s.sp + 52#32)) (BitVec.ofNat 32 (VG.Spec.Ffdh.primeChecks bits))) ∧
         Rest [.r3, .r5, .r12] s t := by
-  refine withRest [.r3, .r5, .r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.phaseChecks : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r5, .r12] ?_ (by rfl) (by rfl)
   have count := checks_word positive bound
   simp only [show (0 : BitVec 32) = 0#32 from rfl, decide_eq_true_eq] at count
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.phaseChecks VG.Impl.Ffdh.Arm.ParameterCandidate.save
@@ -91,14 +70,7 @@ theorem phaseChecks_ok (s : State) {bits : Nat} (positive : 0 < bits) (bound : b
 theorem phasePassed_ok (s : State) (write : InRegions s.wr (State.addr (s.sp + 56#32)) 4) :
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.phasePassed) s fun t =>
       (t.mem = s.mem.writeW (State.addr (s.sp + 56#32)) (0#32)) ∧ Rest [.r1, .r12] s t := by
-  refine withRest [.r1, .r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.phasePassed : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1, .r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.phasePassed VG.Impl.Ffdh.Arm.ParameterCandidate.save
   ffrun [List.cons_append, List.nil_append, BitVec.add_zero, write,
     show (0 : BitVec 32) = 0#32 from rfl]

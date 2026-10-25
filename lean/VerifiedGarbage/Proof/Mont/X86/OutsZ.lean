@@ -95,7 +95,7 @@ theorem CallRoom.zone_ofs {sp : BitVec 32} {base : Addr} {size : Nat} (R : CallR
     rw [BitVec.toNat_setWidth, sub_toNat (by omega)]; exact Nat.mod_eq_of_lt (by omega)
   generalize ((sp - BitVec.ofNat 32 20).setWidth 64) = z at hx e20
   generalize ((sp - BitVec.ofNat 32 40).setWidth 64) = w at e40 ⊢
-  bv_omega
+  bv_omega_arith
 
 /-- A number in the working space keeps its value. -/
 theorem OutsZ.val32 {base : Addr} {sp : BitVec 32} {rs : List (Nat × Nat)} {m m' : Mem} {size : Nat}

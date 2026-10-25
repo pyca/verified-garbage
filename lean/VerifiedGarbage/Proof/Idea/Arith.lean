@@ -43,11 +43,11 @@ theorem prep_toNat (a m : BitVec 64) (hm : m.toNat = 65535) :
   split
   · rename_i h
     have h' : a.toNat % 65536 = 0 := by rw [← hs, h]; rfl
-    omega
+    omega_arith
   · rename_i h
     have h' : a.toNat % 65536 ≠ 0 := by
       intro h''; apply h; apply BitVec.eq_of_toNat_eq; rw [hs, h'']; rfl
-    rw [hs]; omega
+    rw [hs]; omega_arith
 
 theorem residue_le (a : Spec.Idea.Word) : Spec.Idea.residue a ≤ 2 ^ 16 := by
   unfold Spec.Idea.residue
@@ -121,7 +121,7 @@ theorem add_mask (x : BitVec 16) (y : BitVec 64) :
   apply BitVec.eq_of_toNat_eq
   rw [mask_toNat _ _ rfl]
   simp only [BitVec.toNat_add, BitVec.toNat_setWidth]
-  omega
+  omega_arith
 
 theorem add_setWidth (x y : BitVec 16) :
     (x.setWidth 64 + y.setWidth 64).setWidth 16 = x + y := by
@@ -138,9 +138,9 @@ theorem bytes16 (x y : BitVec 8) :
     Nat.shiftLeft_eq]
   have hx := x.isLt
   have hy := y.isLt
-  rw [Nat.mod_eq_of_lt (by omega : x.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega : y.toNat < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega : x.toNat * 2 ^ 8 < 2 ^ 64)]
-  exact (Nat.mod_eq_of_lt (Nat.or_lt_two_pow (by omega) (by omega))).symm
+  rw [Nat.mod_eq_of_lt (by omega_arith : x.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega_arith : y.toNat < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_arith : x.toNat * 2 ^ 8 < 2 ^ 64)]
+  exact (Nat.mod_eq_of_lt (Nat.or_lt_two_pow (by omega_arith) (by omega_arith))).symm
 
 theorem output_getD0 (a b c d : Spec.Idea.Word) (x : Spec.Idea.State) :
     (Spec.Idea.output a b c d x).getD 0 0 = Spec.Idea.mul (x.getD 0 0) a := rfl
@@ -161,7 +161,7 @@ theorem hi8 (x : BitVec 16) : ((x.setWidth 64) >>> 8).setWidth 8 = (x >>> 8).set
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (by omega : x.toNat < 2 ^ 64)]
+  rw [Nat.mod_eq_of_lt (by omega_arith : x.toNat < 2 ^ 64)]
 
 /-- The state after `n` rounds (`Spec.Idea.crypt` before the output transformation). -/
 def roundsSpec (z : Spec.Idea.Schedule) (n : Nat) (x : Spec.Idea.State) : Spec.Idea.State :=
@@ -185,26 +185,26 @@ theorem invertKey_getD (z : Spec.Idea.Schedule) {n : Nat} (hn : n < 52) :
   rw [getD_lt _ _ hn]
   simp only [Spec.Idea.invertKey, Vector.getElem_ofFn, invOp]
   obtain h | h | h | h | h | h : n % 6 = 0 ∨ n % 6 = 1 ∨ n % 6 = 2 ∨ n % 6 = 3 ∨ n % 6 = 4 ∨
-    n % 6 = 5 := by omega
+    n % 6 = 5 := by omega_arith
   all_goals simp only [h, applyOp]
 
 theorem invOp_lt {n : Nat} (hn : n < 52) : (invOp n).2 < 52 := by
   simp only [invOp]
   obtain h | h | h | h | h | h : n % 6 = 0 ∨ n % 6 = 1 ∨ n % 6 = 2 ∨ n % 6 = 3 ∨ n % 6 = 4 ∨
-    n % 6 = 5 := by omega
-  all_goals simp only [h]; first | omega | (split <;> omega)
+    n % 6 = 5 := by omega_arith
+  all_goals simp only [h]; first | omega_arith | (split <;> omega_arith)
 
 theorem mask_setWidth (x : BitVec 64) : x &&& 65535 = (x.setWidth 16).setWidth 64 := by
   apply BitVec.eq_of_toNat_eq
   rw [mask_toNat _ _ rfl]
   simp only [BitVec.toNat_setWidth]
-  omega
+  omega_arith
 
 theorem neg_mask (x : BitVec 64) : (0 - x) &&& 65535 = (-(x.setWidth 16)).setWidth 64 := by
   apply BitVec.eq_of_toNat_eq
   rw [mask_toNat _ _ rfl]
   simp only [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_neg, show (0 : BitVec 64).toNat = 0 from rfl]
-  omega
+  omega_arith
 
 theorem scheduleAt_congr {m m' : Mem} {p : Addr}
     (h : ∀ i < 104, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
@@ -212,7 +212,7 @@ theorem scheduleAt_congr {m m' : Mem} {p : Addr}
   simp only [Spec.Idea.scheduleAt]
   congr 1
   funext i
-  rw [h _ (by omega), h _ (by omega)]
+  rw [h _ (by omega_arith), h _ (by omega_arith)]
 
 theorem blockAt_congr {m m' : Mem} {p : Addr}
     (h : ∀ i < 8, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :

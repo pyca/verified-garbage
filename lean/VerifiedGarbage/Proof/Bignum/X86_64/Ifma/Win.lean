@@ -138,12 +138,12 @@ theorem lay_dAt (hl : LayOk l) {i : Nat} (hi : i < l.ND) : l.oE ≤ dAt l i ∧ 
     rcases hl with rfl | rfl | rfl
     · have h1 : lay2048.oK1 = lay2048.oE + 128 := rfl
       have h2 : lay2048.ND = 256 := rfl
-      omega
+      omega_arith
     · exact absurd hw (by decide)
     · exact absurd hw (by decide)
   · rename_i hw
     have := lay_oD l hw
-    omega
+    omega_arith
 
 /-- The padded exponent: `E ≤ P`, `P` in whole quadwords at most `XE` bytes. -/
 theorem lay_P (hl : LayOk l) : l.E ≤ l.P ∧ l.P ≤ 8 * ((l.P + 7) / 8) ∧ 8 * ((l.P + 7) / 8) ≤ l.XE ∧
@@ -190,7 +190,7 @@ theorem ea_idx8 (t : State) (d : Nat) :
 theorem ofNat_ushr1 {i : Nat} (hi : i < 2 ^ 64) : BitVec.ofNat 64 i >>> 1 = BitVec.ofNat 64 (i / 2) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hi,
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow, Nat.pow_one]
+    Nat.mod_eq_of_lt (by omega_arith), Nat.shiftRight_eq_div_pow, Nat.pow_one]
 
 /-- `nibSel`'s value: the nibble of the byte `b` that digit `i` is. -/
 theorem nib_val (hw : l.w = 4) (b : BitVec 8) (i : Nat) :
@@ -203,7 +203,7 @@ theorem nib_val (hw : l.w = 4) (b : BitVec 8) (i : Nat) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl,
       Nat.and_one_is_mod]
-    omega
+    omega_arith
   rw [h15, hi]
   simp only [nibOf, hw, ite_true]
   rcases Nat.mod_two_eq_zero_or_one i with h | h
@@ -212,13 +212,13 @@ theorem nib_val (hw : l.w = 4) (b : BitVec 8) (i : Nat) :
     simp only [ite_true]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_arith
   · rw [h, show BitVec.ofNat 64 1 - 1 = 0#64 by decide, BitVec.and_zero, BitVec.xor_zero]
     simp only [Nat.one_ne_zero, ite_false]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
       show (15 : BitVec 64).toNat = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-    omega
+    omega_arith
 
 /-- With windows of 4 bits: both primes' digits `i`, nibbles of byte `i / 2`
 of their padded exponents, into their quadwords `V`. -/
@@ -236,9 +236,9 @@ theorem digNib_ok (hl : LayOk l) (hw : l.w = 4) {s : State} {B : Addr} {i : Nat}
   have hND : l.ND < 2 ^ 31 := by rcases hl with rfl | rfl | rfl <;> decide
   have hsh : BitVec.ofNat 64 i >>> 1 = BitVec.ofNat 64 (i / 2) := ofNat_ushr1 (by omega_using [hi, hND])
   have e0 : B + BitVec.ofNat 64 (i / 2) + BitVec.ofNat 64 l.oE = off B (l.D * 0 + dAt l i) := by
-    rw [hdA, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
+    rw [hdA, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith
   have e1 : B + BitVec.ofNat 64 (i / 2) + BitVec.ofNat 64 (l.D + l.oE) = off B (l.D * 1 + dAt l i) := by
-    rw [hdA, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
+    rw [hdA, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith
   have r0 : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 (i / 2) + BitVec.ofNat 64 l.oE) 1 := by
     rw [e0]
     obtain ⟨r, h, c⟩ := hs.region (d := l.D * 0 + dAt l i) (n := 1) (by omega_using [a2, o7, o10, hD]) (by decide)
@@ -331,7 +331,7 @@ theorem r15Cmp_ok {s : State} {n : Nat} (hn : n ≤ 6) (h15 : s.gpr .r15 = BitVe
   refine WP.of_runBlock ⟨t, by rw [runBlock_cons]; rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · change t.zf = _
     simp only [t, VG.X86_64.RegUpd.zf_arithFlags, h15]
-    rcases n with _ | _ | _ | _ | _ | _ | _ | n <;> first | omega | decide
+    rcases n with _ | _ | _ | _ | _ | _ | _ | n <;> first | omega_arith | decide
   all_goals rfl
 
 /-- The loop of a window with `n` multiplications left, from `s₀`. -/
@@ -550,7 +550,7 @@ theorem winNorm_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
     · exact w₀
     · exact w₁
   have nv : ∀ p < 2, nib l s₂.mem B p = dig l s.mem B p i := fun p hp => by
-    unfold nib; rw [wv p hp, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hd p hp; have := hl.T_bounds; omega)]
+    unfold nib; rw [wv p hp, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hd p hp; have := hl.T_bounds; omega_arith)]
   have hB₂ : s₂.gpr .rbx = B := by rw [k₂.gpr (by decide)]; exact hB
   have hs₂ : Scr s₂ B (2 * l.D) := hs.congr k₂.2.2
   have st₂ : ExpSt l s₂.mem B M k x Q E :=

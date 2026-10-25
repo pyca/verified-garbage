@@ -38,14 +38,7 @@ theorem samplePowerArgs_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots 
   have vk := h.saved 32 h32
   change s.mem.readW (off (State.addr s.sp) 56) 32 = p.g at vb
   change s.mem.readW (off (State.addr s.sp) 32) 32 = BitVec.ofNat 32 p.k at vk
-  refine withRest [.r1, .r2, .r4, .r6] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block (VG.Impl.Ffdh.Arm.Domain.powerArgs 56 16 20) : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have flag := List.all_eq_true.mp checked i hi
-    cases hi' : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r1, .r2, .r4, .r6] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.powerArgs
   ffrun [addr 56 (by decide), addr 16 (by decide), addr 20 (by decide), addr 32 (by decide),
     rb, re, rc, rk, vb, ve, vc, vk, off]

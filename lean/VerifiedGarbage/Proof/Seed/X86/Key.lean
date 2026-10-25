@@ -57,8 +57,8 @@ open VG.X86.Straight (wordAddr slot_sep slot_contains)
 /-- A word of a buffer of `n` words is inside it. -/
 theorem word_sub {b : BitVec 32} {n k : Nat} (hfit : b.toNat + 4 * n ≤ 2 ^ 32) (hk : k < n) :
     Region.Sub ⟨wordAddr b k, 4⟩ ⟨b.setWidth 64, 4 * n⟩ := by
-  rw [slot_addr (by omega)]
-  exact Offset.sub_base _ (by omega)
+  rw [slot_addr (by omega_arith)]
+  exact Offset.sub_base _ (by omega_arith)
 
 /-! ## The schedule's words at `esi` -/
 
@@ -83,7 +83,7 @@ theorem OutPre.congr {s s' : State} {P : BitVec 32} {d : Nat} (h : OutPre s P d)
 /-- A word of the schedule is apart from every slot. -/
 theorem OutPre.word_sep {s : State} {P : BitVec 32} {d : Nat} (hs : OutPre s P d) {o : Nat} (ho : o < 32)
     {j : Nat} (hj : j < slots) : Mem.Sep (slotA s j) 4 (wordAddr P o) 4 := fun x h1 h2 =>
-  ((hs.sep.sub_left (word_sub (n := 32) (by have := hs.fit; omega) ho)).sub_right
+  ((hs.sep.sub_left (word_sub (n := 32) (by have := hs.fit; omega_arith) ho)).sub_right
     (slot_sub hs.room.fit hj)) x h2 h1
 
 /-- `mov eax, [edi + 4 a]; mov [esi + 4 o], eax` for each `(a, o)`. -/
@@ -105,7 +105,7 @@ theorem stores_ok {P : BitVec 32} {d : Nat} :
     have hp := hL p List.mem_cons_self
     have hP := hs.fit
     have hc : ∀ o < 32, (⟨P.setWidth 64, 128⟩ : Region).Contains (wordAddr P o) 4 :=
-      fun o ho => slot_contains P (n := 32) ho (by omega)
+      fun o ho => slot_contains P (n := 32) ho (by omega_arith)
     let s₁ := s.setReg .eax (slotW s p.1)
     let s₂ := setMem s₁ (s.mem.writeW (wordAddr P (d + p.2)) (slotW s p.1))
     have e₁ : runBlock isa [movS .eax p.1, .store (at_ .esi (4 * p.2)) .eax] s = some s₂ := by
@@ -136,7 +136,7 @@ theorem stores_ok {P : BitVec 32} {d : Nat} :
       split
       · rename_i e; subst e; exact Mem.readW_writeW_self32 _ _ _
       · rename_i e
-        exact Mem.readW_writeW_sep (slot_sep P (by omega) (by omega) e) (by decide)
+        exact Mem.readW_writeW_sep (slot_sep P (by omega_arith) (by omega_arith) e) (by decide)
     refine ⟨s', ?_, fun q hq => ?_, fun o ho hoL => ?_, fun j hj => by rw [sl' j hj, sl₂ j hj],
       fun r hr => ?_, by rw [rd']; rfl, by rw [wr']; rfl, ?_⟩
     · rw [storesCode, List.flatMap_cons, runBlock_append, e₁, Option.bind_some]; exact e'
@@ -175,7 +175,7 @@ theorem esiLoads_ok {P : BitVec 32} {d : Nat} :
       have hea : s.ea (at_ .esi (4 * p.1)) = wordAddr P (d + p.1) := by
         show addr (s.gpr .esi) (4 * p.1) = _; rw [hs.esi, esi_addr]
       have hin : InRegions (s.rd ++ s.wr) (wordAddr P (d + p.1)) 4 :=
-        ⟨_, List.mem_append_right _ hs.mem, slot_contains P (n := 32) hp.1 (by omega)⟩
+        ⟨_, List.mem_append_right _ hs.mem, slot_contains P (n := 32) hp.1 (by omega_arith)⟩
       rw [runBlock_cons, show exec (.mov .eax (.mem (at_ .esi (4 * p.1)))) s = some s₁ by
           simp only [exec, readSrc, hea, State.load32, hin, ↓reduceIte, Option.map_some]; rfl,
         runStep_some, runBlock_cons, exec_st h₁ hp.2, runStep_some, runBlock_nil]
@@ -203,7 +203,7 @@ theorem esiLoads_ok {P : BitVec 32} {d : Nat} :
         refine fr₂.readW (r := ⟨wordAddr P (d + q.1), 4⟩) (Region.contains_self _ _) ?_ (by decide)
         intro r hr
         simp only [List.mem_singleton] at hr; subst hr
-        exact hs.sep.sub_left (word_sub (n := 32) (by omega) hq'.1)
+        exact hs.sep.sub_left (word_sub (n := 32) (by omega_arith) hq'.1)
     · simp only [List.map_cons, List.mem_cons, not_or] at hjL
       rw [o' j hj hjL.2, sl₂ j hj, ite_eq_right hjL.1]
     · rw [g' r hr]
@@ -252,7 +252,7 @@ theorem end_ok {c : Nat} (hc : c < 4) {s : State} {P : BitVec 32} {a : Addr} (hO
   have e₄ : runBlock isa [.alu .cmp .esi (.reg .eax)] s₃ = some s₄ := rfl
   have esi₃ : s₃.gpr .esi = P + BitVec.ofNat 32 (4 * (8 * (c + 1))) := by
     rw [o₃ _ (by decide), o₂ _ (by decide), r₁, hO.esi, show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl,
-      Offset.add_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by omega]
+      Offset.add_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by omega_arith]
   have eax₃ : s₃.gpr .eax = P + BitVec.ofNat 32 128 := by
     rw [r₃, v₂, ea₁, m₁, hA.val]; rfl
   have g₄ : ∀ r, r ≠ .eax → s₄.gpr r = s₃.gpr r := fun r _ => by simp only [s₄, gpr_arithFlags]
@@ -268,8 +268,8 @@ theorem end_ok {c : Nat} (hc : c < 4) {s : State} {P : BitVec 32} {a : Addr} (hO
       runBlock_append, e₁, Option.bind_some, runBlock_append, e₂, Option.bind_some, runBlock_append, e₃,
       Option.bind_some, e₄]
   · simp only [s₄, zf_arithFlags]
-    rw [esi₃, eax₃, Offset.add_sub_add_left, ofNat32_sub_beq (by omega) (by omega)]
-    congr 1; exact decide_eq_decide.mpr (by omega)
+    rw [esi₃, eax₃, Offset.add_sub_add_left, ofNat32_sub_beq (by omega_arith) (by omega_arith)]
+    congr 1; exact decide_eq_decide.mpr (by omega_arith)
 
 theorem keyInputs_eq : keyInputs = storesCode ((List.range 32).map fun i => (uSlot i, i)) := by
   simp only [keyInputs, storesCode, List.flatMap_map]
@@ -291,7 +291,7 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} {P : BitVec 32} {a : Addr
   -- The words to `G`'s inputs.
   obtain ⟨s₁, e₁, v₁, o₁, g₁, rd₁, wr₁, f₁⟩ := esiLoads_ok chunkIn s hO
     (by intro p hp; simp only [chunkIn, List.mem_map, List.mem_range] at hp; obtain ⟨w, hw, rfl⟩ := hp
-        simp [tSlot, slots_eq]; omega)
+        simp [tSlot, slots_eq]; omega_arith)
     (by simp only [chunkIn, List.map_map]
         exact nodup_map_range (fun a b hab => by simpa [tSlot] using hab) 8)
   have sb₁ : s₁.gpr sb = s.gpr sb := g₁ _ (by decide)
@@ -299,7 +299,7 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} {P : BitVec 32} {a : Addr
   have h₁ : Room s₁ := hO.room.congr sb₁ wr₁
   have k₁ : ∀ j, 80 ≤ j → j < slots → slotW s₁ j = slotW s j := fun j h1 h2 => o₁ j h2 (by
     simp only [chunkIn, List.map_map, List.mem_map, List.mem_range, Function.comp, not_exists, not_and]
-    intro w hw he; simp [tSlot] at he; omega)
+    intro w hw he; simp [tSlot] at he; omega_arith)
   -- `G`.
   obtain ⟨s₂, e₂, gv₂, k₂, h₂, rd₂, wr₂, g₂, f₂⟩ := g8_lanes h₁
   have sb₂ : s₂.gpr sb = s.gpr sb := by rw [g₂ _ (by decide), sb₁]
@@ -307,7 +307,7 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} {P : BitVec 32} {a : Addr
   -- The stores.
   obtain ⟨s₃, e₃, v₃, o₃, sl₃, g₃, rd₃, wr₃, f₃⟩ := stores_ok chunkOut s₂ hO₂
     (by intro p hp; simp only [chunkOut, List.mem_map, List.mem_range] at hp; obtain ⟨w, hw, rfl⟩ := hp
-        simp [tSlot, slots_eq]; omega)
+        simp [tSlot, slots_eq]; omega_arith)
     (by simp only [chunkOut, List.map_map]
         exact nodup_map_range (fun a b hab => by simpa using hab) 8)
   have sb₃ : s₃.gpr sb = s.gpr sb := by rw [g₃ _ (by decide), sb₂]
@@ -330,7 +330,7 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} {P : BitVec 32} {a : Addr
   have sched₂ : ∀ o < 32, s₂.mem.readW (wordAddr P o) 32 = s.mem.readW (wordAddr P o) 32 := fun o ho =>
     fr₂.readW (r := ⟨wordAddr P o, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hO.sep.sub_left (word_sub (n := 32) (by omega) ho)) (by decide)
+      exact hO.sep.sub_left (word_sub (n := 32) (by omega_arith) ho)) (by decide)
   have sched' : ∀ o < 32, s'.mem.readW (wordAddr P o) 32 = s₃.mem.readW (wordAddr P o) 32 := fun o _ => by
     rw [m']
   refine ⟨s', ?_, fun w hw => ?_, fun o ho ho' => ?_, fun j h1 h2 => ?_, z', hO',
@@ -338,12 +338,12 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} {P : BitVec 32} {a : Addr
     fun r hr hr' => ?_, by rw [rd', rd₃, rd₂, rd₁], by rw [wr', wr₃, wr₂, wr₁], ?_⟩
   · rw [keyChunk_eq, runBlock_append, runBlock_append, runBlock_append, e₁, Option.bind_some, e₂,
       Option.bind_some, e₃, Option.bind_some, e']
-  · rw [sched' _ (by omega), v₃ (tSlot w, w) (by simp only [chunkOut, List.mem_map, List.mem_range]; exact ⟨w, hw, rfl⟩),
+  · rw [sched' _ (by omega_arith), v₃ (tSlot w, w) (by simp only [chunkOut, List.mem_map, List.mem_range]; exact ⟨w, hw, rfl⟩),
       tSlot_lane, show slotW s₂ (tSlot 0 + w) = lv s₂ (tSlot 0) w from rfl, gv₂ w hw, lv, ← tSlot_lane,
       v₁ (w, tSlot w) (by simp only [chunkIn, List.mem_map, List.mem_range]; exact ⟨w, hw, rfl⟩)]
   · rw [sched' o ho, o₃ o ho (by
       simp only [chunkOut, List.map_map, List.mem_map, List.mem_range, Function.comp, not_exists, not_and]
-      intro w hw he; omega), sched₂ o ho]
+      intro w hw he; omega_arith), sched₂ o ho]
   · rw [slotW, sb', m', ← slotW, sl₃ j h2, k₂ j h1 h2, k₁ j h1 h2]
   · have hr₁ : r ≠ .eax := fun h => hr (by subst h; decide)
     rw [g' r hr₁ hr', g₃ r hr₁, g₂ r hr, g₁ r hr₁]
@@ -368,7 +368,7 @@ theorem keyChunks_wp {s : State} {P : BitVec 32} {a : Addr} {U : Nat → BitVec 
     (∀ r, r ∉ VG.Impl.Aes.X86.tmpRegs → r ≠ .esi → t.gpr r = s.gpr r) ∧
     t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [scratchR s, ⟨P.setWidth 64, 128⟩] s.mem t.mem
   refine WP.loop (M := isa) Inv (fun n t ht => ?_) 4 s
-    ⟨0, by decide, rfl, hO, hA, fun o ho => by omega, fun o _ ho => hU o ho, fun _ _ _ => rfl, rfl,
+    ⟨0, by decide, rfl, hO, hA, fun o ho => by omega_arith, fun o _ ho => hU o ho, fun _ _ _ => rfl, rfl,
       fun _ _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
   obtain ⟨c, hc, rfl, hO₁, hA₁, done₁, todo₁, k₁, sb₁, g₁, rd₁, wr₁, f₁⟩ := ht
   obtain ⟨t', e', v', o', k', z', hO', hA', sb', g', rd', wr', f'⟩ := keyChunk_ok hc hO₁ hA₁
@@ -376,8 +376,8 @@ theorem keyChunks_wp {s : State} {P : BitVec 32} {a : Addr} {U : Nat → BitVec 
   have hP := hO.fit
   have done' : ∀ o < 8 * (c + 1), t'.mem.readW (wordAddr P o) 32 = Spec.Seed.g (U o) := fun o ho => by
     by_cases hlo : o < 8 * c
-    · rw [o' o (by omega) (.inl hlo), done₁ o hlo]
-    · rw [show o = 8 * c + (o - 8 * c) by omega, v' _ (by omega), todo₁ _ (by omega) (by omega)]
+    · rw [o' o (by omega_arith) (.inl hlo), done₁ o hlo]
+    · rw [show o = 8 * c + (o - 8 * c) by omega_arith, v' _ (by omega_arith), todo₁ _ (by omega_arith) (by omega_arith)]
   have k₂ : ∀ j, 80 ≤ j → j < slots → slotW t' j = slotW s j := fun j h1 h2 => by
     rw [k' j h1 h2, k₁ j h1 h2]
   have g₂ : ∀ r, r ∉ VG.Impl.Aes.X86.tmpRegs → r ≠ .esi → t'.gpr r = s.gpr r := fun r h1 h2 => by
@@ -388,8 +388,8 @@ theorem keyChunks_wp {s : State} {P : BitVec 32} {a : Addr} {U : Nat → BitVec 
   · subst h3
     exact .inl ⟨by rw [eval_ne, z']; rfl, hQ t' done' k₂ (by rw [sb', sb₁]) g₂ (by rw [rd', rd₁])
       (by rw [wr', wr₁]) f₂⟩
-  · refine .inr ⟨by rw [eval_ne, z']; simp; omega, 4 - (c + 1), by omega, c + 1, by omega, rfl, hO', hA', done',
-      fun o h1 h2 => by rw [o' o h2 (.inr (by omega)), todo₁ o (by omega) h2], k₂, by rw [sb', sb₁],
+  · refine .inr ⟨by rw [eval_ne, z']; simp; omega_arith, 4 - (c + 1), by omega_arith, c + 1, by omega_arith, rfl, hO', hA', done',
+      fun o h1 h2 => by rw [o' o h2 (.inr (by omega_arith)), todo₁ o (by omega_arith) h2], k₂, by rw [sb', sb₁],
       g₂, by rw [rd', rd₁], by rw [wr', wr₁], f₂⟩
 
 /-! ## The key's words -/
@@ -419,7 +419,7 @@ theorem ldKey_ok {w : Nat} (hw : w < 4) {s : State} {K : BitVec 32} (hs : KeyPre
   let v := s.mem.readW (wordAddr K w) 32
   have hea : s.ea (at_ .ecx (4 * w)) = wordAddr K w := by
     show addr (s.gpr .ecx) (4 * w) = _; rw [hs.ecx]
-  have hin : InRegions (s.rd ++ s.wr) (wordAddr K w) 4 := ⟨_, hs.mem, slot_contains K (n := 4) hw (by omega)⟩
+  have hin : InRegions (s.rd ++ s.wr) (wordAddr K w) 4 := ⟨_, hs.mem, slot_contains K (n := 4) hw (by omega_arith)⟩
   let s₁ := s.setReg .eax v
   let s₂ := s₁.setReg .eax (bswap v)
   have h₂ : Room s₂ := room_setReg (room_setReg hs.room (by decide) _) (by decide) _
@@ -449,29 +449,29 @@ theorem keyWords_ok {s : State} {K : BitVec 32} (hs : KeyPre s K) :
       Frame [scratchR s] s.mem s'.mem := by
   intro n hn
   induction n with
-  | zero => exact ⟨s, runBlock_nil, fun w hw => by omega, fun _ _ _ => rfl, fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
+  | zero => exact ⟨s, runBlock_nil, fun w hw => by omega_arith, fun _ _ _ => rfl, fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
   | succ n ih =>
-    obtain ⟨s₁, e₁, v₁, o₁, g₁, rd₁, wr₁, f₁⟩ := ih (by omega)
+    obtain ⟨s₁, e₁, v₁, o₁, g₁, rd₁, wr₁, f₁⟩ := ih (by omega_arith)
     have sb₁ : s₁.gpr sb = s.gpr sb := g₁ _ (by decide)
     have hs₁ : KeyPre s₁ K := ⟨hs.room.congr sb₁ wr₁, by rw [g₁ _ (by decide)]; exact hs.ecx,
       by rw [rd₁, wr₁]; exact hs.mem, hs.fit, by unfold scratchR; rw [sb₁]; exact hs.sep⟩
-    obtain ⟨s₂, e₂, v₂, g₂, rd₂, wr₂, f₂⟩ := ldKey_ok (w := n) (by omega) hs₁
+    obtain ⟨s₂, e₂, v₂, g₂, rd₂, wr₂, f₂⟩ := ldKey_ok (w := n) (by omega_arith) hs₁
     have hK := hs.fit
     have key₁ : s₁.mem.readW (wordAddr K n) 32 = s.mem.readW (wordAddr K n) 32 :=
       f₁.readW (r := ⟨wordAddr K n, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hs.sep.sub_left (word_sub (n := 4) (by omega) (by omega))) (by decide)
+        exact hs.sep.sub_left (word_sub (n := 4) (by omega_arith) (by omega_arith))) (by decide)
     refine ⟨s₂, ?_, fun w hw => ?_, fun j hj hj' => ?_, fun r hr => by rw [g₂ r hr, g₁ r hr],
       by rw [rd₂, rd₁], by rw [wr₂, wr₁], f₁.trans (by unfold scratchR at f₂ ⊢; rw [sb₁] at f₂; exact f₂)⟩
     · rw [keyWordsCode, List.range_succ, List.flatMap_append, runBlock_append]
       rw [keyWordsCode] at e₁
       rw [e₁, Option.bind_some, List.flatMap_singleton, e₂]
-    · rw [v₂ _ (keySlot_lt (by omega))]
+    · rw [v₂ _ (keySlot_lt (by omega_arith))]
       by_cases hwn : w = n
       · subst hwn; rw [ite_eq_left rfl, key₁]
-      · rw [ite_eq_right (by simp [keySlot]; omega), v₁ w (by omega)]
-    · rw [v₂ j hj, ite_eq_right (by simp [keySlot] at hj' ⊢; omega),
-        o₁ j hj (by simp [keySlot] at hj' ⊢; omega)]
+      · rw [ite_eq_right (by simp [keySlot]; omega_arith), v₁ w (by omega_arith)]
+    · rw [v₂ j hj, ite_eq_right (by simp [keySlot] at hj' ⊢; omega_arith),
+        o₁ j hj (by simp [keySlot] at hj' ⊢; omega_arith)]
 
 /-! ## The whole function -/
 
@@ -479,9 +479,9 @@ theorem keyWords_ok {s : State} {K : BitVec 32} (hs : KeyPre s K) :
 theorem arg_contains3 (s : State) (hfit : (s.gpr .esp).toNat + 16 ≤ 2 ^ 32) {i : Nat} (hi : i < 3) :
     (⟨argAddr s 0, 12⟩ : Region).Contains (argAddr s i) 4 := by
   have hs := toNat_addr (s.gpr .esp)
-  rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega),
-    show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega_arith),
+    show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega_arith)]
+  exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem slotW_of {s : State} {b : BitVec 32} (h : s.gpr sb = b) (j : Nat) :
     slotW s j = s.mem.readW (wordAddr b j) 32 := by
@@ -529,11 +529,11 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86.pre s₀) :
   have kw₃ : kwS s₃ = keyWords key 0 := by
     have hk : ∀ w < 4, s₂.mem.readW (wordAddr K w) 32 = s₀.mem.readW (K.setWidth 64 + BitVec.ofNat 64 (4 * w)) 32 :=
       fun w hw => by
-        rw [m₂, slot_addr (by omega)]
+        rw [m₂, slot_addr (by omega_arith)]
         exact f₁.readW (r := ⟨K.setWidth 64 + BitVec.ofNat 64 (4 * w), 4⟩) (Region.contains_self _ _)
           (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
-            exact dKB.sub_left (Offset.sub_base _ (by omega))) (by decide)
+            exact dKB.sub_left (Offset.sub_base _ (by omega_arith))) (by decide)
     simp only [kwS, keyWords]
     rw [v₃ 0 (by decide), v₃ 1 (by decide), v₃ 2 (by decide), v₃ 3 (by decide), hk 0 (by decide),
       hk 1 (by decide), hk 2 (by decide), hk 3 (by decide), Proof.Seed.wordAt_blockAt _ _ (by decide),
@@ -555,7 +555,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86.pre s₀) :
       fitS', by unfold scratchR; rw [sb₅]; exact dSB⟩
   obtain ⟨s₆, e₆, v₆, -, sl₆, g₆, rd₆, wr₆, f₆⟩ := stores_ok ((List.range 32).map fun i => (uSlot i, i)) s₅ hO
     (by intro p hp; simp only [List.mem_map, List.mem_range] at hp; obtain ⟨i, hi, rfl⟩ := hp
-        exact ⟨uSlot_lt hi, by omega⟩)
+        exact ⟨uSlot_lt hi, by omega_arith⟩)
     (by simp only [List.map_map]; exact nodup_map_range (fun a b hab => by simpa using hab) 32)
   have sb₆ : s₆.gpr sb = b := by rw [g₆ _ (by decide), sb₅]
   have hO₆ : OutPre s₆ P 0 := hO.congr (by rw [sb₆, sb₅]) (g₆ _ (by decide)) wr₆
@@ -591,10 +591,10 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86.pre s₀) :
   -- The epilogue.
   have sv₈ : Saved s₀ b s₈.mem := by
     intro i hi
-    have hs : savedSlot + i < slots := by rw [savedSlot_eq, slots_eq]; omega
-    rw [← slotW_of edi₈, k₈ _ (by rw [savedSlot_eq]; omega) hs, sl₆ _ hs,
-      o₅ _ hs (.inr (by simp [uSlot, aSlot, savedSlot_eq]; omega)) (.inr (by simp [keySlot, tailSlot, savedSlot_eq]; omega)),
-      slotW_of sb₄, m₄, ← slotW_of sb₃, o₃ _ hs (.inr (by simp [keySlot, tailSlot, savedSlot_eq]; omega)),
+    have hs : savedSlot + i < slots := by rw [savedSlot_eq, slots_eq]; omega_arith
+    rw [← slotW_of edi₈, k₈ _ (by rw [savedSlot_eq]; omega_arith) hs, sl₆ _ hs,
+      o₅ _ hs (.inr (by simp [uSlot, aSlot, savedSlot_eq]; omega_arith)) (.inr (by simp [keySlot, tailSlot, savedSlot_eq]; omega_arith)),
+      slotW_of sb₄, m₄, ← slotW_of sb₃, o₃ _ hs (.inr (by simp [keySlot, tailSlot, savedSlot_eq]; omega_arith)),
       slotW_of sb₂, m₂]
     exact sv₁ i hi
   obtain ⟨s₉, e₉, rg₉, o₉, m₉, -, -⟩ := restore_ok (s₀ := s₀) (b := b)
@@ -619,7 +619,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86.pre s₀) :
   · show Spec.Seed.scheduleAt s₉.mem (P.setWidth 64) = Spec.Seed.expandKey key
     rw [Proof.Seed.expandKey_eq]
     apply Vector.ext; intro i hi
-    rw [Proof.Seed.scheduleAt_readW _ _ i hi, Vector.getElem_ofFn, m₉, ← slot_addr (by omega), v₈ i (by omega),
-      v₅ i (by omega)]
+    rw [Proof.Seed.scheduleAt_readW _ _ i hi, Vector.getElem_ofFn, m₉, ← slot_addr (by omega_arith), v₈ i (by omega_arith),
+      v₅ i (by omega_arith)]
 
 end VG.Proof.Seed.X86

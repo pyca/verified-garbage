@@ -54,13 +54,13 @@ theorem powerTwo_ok (h : In Ex base bytes len args s) (c : Ctx) (hM : 1 < sv s.m
   have fit : ∀ p ∈ powR len c, p.1 + p.2 ≤ bytes := by
     intro p hp
     simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl <;> dsimp only <;> omega
+    rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
   unfold powerTwo
-  refine WP.seq (WP.mono (setSmall_ok (x := .slot c 4) h (one_ok c) (by rw [cb1]; omega) (v := 1) (by decide))
+  refine WP.seq (WP.mono (setSmall_ok (x := .slot c 4) h (one_ok c) (by rw [cb1]; omega_arith) (v := 1) (by decide))
     fun u₀ ⟨O₀, V₀, K₀⟩ => ?_)
   simp only [cb1, cw1] at O₀ V₀
-  have h₀ := h.keep K₀ (by decide) (by decide) (O₀.mono (Nat.zero_le _) (by omega))
-  have M₀ : sv u₀.mem base len c 0 = sv s.mem base len c 0 := O₀.val32 (by omega) (by omega)
+  have h₀ := h.keep K₀ (by decide) (by decide) (O₀.mono (Nat.zero_le _) (by omega_arith))
+  have M₀ : sv u₀.mem base len c 0 = sv s.mem base len c 0 := O₀.val32 (by omega_arith) (by omega_arith)
   refine WP.seq (widthC_ok (k := 0) (c := c) (r := .esi) h₀.width h.upper' fun u₁ K₁ m₁ e₁ => ?_)
   refine wp_movS rfl fun u₂ a₂ _ => wp_shr (by decide) fun u₃ a₃ _ => wp_addS rfl fun u₄ a₄ _ => ?_
   refine wp_addS rfl fun u₅' a₅' _ => wp_addS rfl fun u₆ a₆ _ => wp_addS rfl fun u₅ a₅ _ => WP.block_nil ?_
@@ -78,8 +78,8 @@ theorem powerTwo_ok (h : In Ex base bytes len args s) (c : Ctx) (hM : 1 < sv s.m
     rw [a₅.gpr, esi₆, eax₆, e₁]
     simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
     simp only [twoExp]
-    rw [Nat.mod_eq_of_lt (a := bc len c) (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := bc len c) (by omega_arith)]
+    omega_arith
   have h₅ := h₀.regs (K₅.mono (by decide) : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] u₀ u₅) m₅
   have sp₅ : u₅.gpr .esp = s.gpr .esp := by rw [K₅.1 _ (by decide), K₀.1 _ (by decide)]
   let M := sv s.mem base len c 0
@@ -89,16 +89,16 @@ theorem powerTwo_ok (h : In Ex base bytes len args s) (c : Ctx) (hM : 1 < sv s.m
       sv t.mem base len c 4 = 2 ^ j % M ∧ (t.gpr .esi).toNat = twoExp len c - j
   have I₀ : I 0 u₅ := ⟨Keeps.refl _ _, Frame.refl _ _,
     by rw [m₅]; simp only [sv] at V₀ ⊢; rw [V₀, Nat.pow_zero, Nat.mod_eq_of_lt hM], by rw [esi₅]; rfl⟩
-  refine WP.mono (countLoop (N := twoExp len c) (by simp only [twoExp]; omega) I ?_ I₀) fun t ⟨Kt, Ft, Vt, _⟩ => ?_
+  refine WP.mono (countLoop (N := twoExp len c) (by simp only [twoExp]; omega_arith) I ?_ I₀) fun t ⟨Kt, Ft, Vt, _⟩ => ?_
   · rintro j t hj ⟨Kt, Ft, Vt, esit⟩
     have ht := h₅.keepF Kt (by decide) (by decide) (by rw [sp₅]; exact Ft) fit
     have Mt : sv t.mem base len c 0 = M := by
-      have := frameR_val32 (d := lo len (.slot c 0)) (k := cwc len c) Ft h.room nw' (by omega) (by
+      have := frameR_val32 (d := lo len (.slot c 0)) (k := cwc len c) Ft h.room nw' (by omega_arith) (by
         intro p hp
         simp only [powR, List.mem_cons, List.not_mem_nil, or_false] at hp
-        rcases hp with rfl | rfl <;> dsimp only <;> omega) fit
+        rcases hp with rfl | rfl <;> dsimp only <;> omega_arith) fit
       simp only [sv]; rw [this, m₅]; exact M₀
-    have hM' : 0 < M := by omega
+    have hM' : 0 < M := by omega_arith
     refine WP.mono (doubleStep_ok ht c (by rw [Vt, Mt]; exact Nat.mod_lt _ hM'))
       fun u ⟨Fu, Vu, esiu, zu, Ku⟩ => ?_
     obtain ⟨c₁, c₂⟩ := count1_zf esit hj
@@ -108,14 +108,14 @@ theorem powerTwo_ok (h : In Ex base bytes len args s) (c : Ctx) (hM : 1 < sv s.m
   · have K₅s : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₅ := (K₀.mono (by decide)).trans (K₅.mono (by decide))
     refine ⟨?_, Vt, K₅s.trans Kt⟩
     rw [← m₅] at O₀
-    exact (frameR_of_outside O₀ (by omega) (by simp [powR])).trans Ft
+    exact (frameR_of_outside O₀ (by omega_arith) (by simp [powR])).trans Ft
 
 /-- The modulus a context runs with: the factor itself if it is an odd number above one, else three. -/
 def safeM (m : Nat) : Nat := if 1 < m ∧ m % 2 = 1 then m else 3
 
-theorem safeM_gt (m : Nat) : 1 < safeM m := by unfold safeM; split <;> omega
+theorem safeM_gt (m : Nat) : 1 < safeM m := by unfold safeM; split <;> omega_arith
 
-theorem safeM_odd (m : Nat) : safeM m % 2 = 1 := by unfold safeM; split <;> omega
+theorem safeM_odd (m : Nat) : safeM m % 2 = 1 := by unfold safeM; split <;> omega_arith
 
 theorem safeM_of {m : Nat} (gt : 1 < m) (odd : m % 2 = 1) : safeM m = m := by
   unfold safeM; simp [gt, odd]
@@ -141,7 +141,7 @@ theorem zero_sub_and_one (w : BitVec 32) : (0 : BitVec 32) - (w &&& 1) = cmask (
   have e : w &&& 1 = BitVec.ofNat 32 (w.toNat % 2) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod]
-    omega
+    omega_arith
   rw [e]
   rcases Nat.mod_two_eq_zero_or_one w.toNat with h | h <;> rw [h] <;> rfl
 

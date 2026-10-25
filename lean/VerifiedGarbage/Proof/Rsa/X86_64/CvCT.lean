@@ -84,8 +84,8 @@ theorem GA.ws {p : CvP} {s : State} (h : GA p s) : Ws s p.B p.Z (wk p.k) := by
 /-- The mask, after a piece that changes only an array. -/
 theorem mword_out {m m' : Mem} {B : Addr} {w j L : Nat} (o : Outside B (slot w j) L m m') :
     mword m' B = mword m B :=
-  o.word (Or.inl (by have := hdr_lt_slot w j (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega))
-    (by simp only [Impl.Bignum.X86_64.Public.sMask, sFn]; omega)
+  o.word (Or.inl (by have := hdr_lt_slot w j (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega_arith))
+    (by simp only [Impl.Bignum.X86_64.Public.sMask, sFn]; omega_arith)
 
 /-- `GA` after a piece that changes only array `j`'s first `n` bytes. -/
 theorem GA.arr {p : CvP} {s t : State} (h : GA p s) {j n : Nat} (hj : j < 16) (hn : n ≤ 8 * (wk p.k + 2))
@@ -109,14 +109,14 @@ theorem GA.frm {p : CvP} {s t : State} (h : GA p s) {rs : List (Nat × Nat)}
     · exact Mut.ofSlot _ _ _
     · exact Or.inr (Or.inr rfl)
   · rcases hm r hr with ⟨j, hj, rfl | rfl⟩ | rfl
-    · have := h.ws.sl hj; dsimp only; omega
-    · have := h.ws.sl hj; dsimp only; omega
-    · have := h.ws.h256; simp only [sMo, sFn]; omega
-  · refine (hf.word_eq (fun r hr => ?_) (by simp only [Impl.Bignum.X86_64.Public.sMask, sFn]; omega)).trans hmw
+    · have := h.ws.sl hj; dsimp only; omega_arith
+    · have := h.ws.sl hj; dsimp only; omega_arith
+    · have := h.ws.h256; simp only [sMo, sFn]; omega_arith
+  · refine (hf.word_eq (fun r hr => ?_) (by simp only [Impl.Bignum.X86_64.Public.sMask, sFn]; omega_arith)).trans hmw
     rcases hm r hr with ⟨j, hj, rfl | rfl⟩ | rfl
-    · have := hdr_lt_slot (wk I.k) j (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); dsimp only; omega
-    · have := hdr_lt_slot (wk I.k) j (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); dsimp only; omega
-    · simp only [Impl.Bignum.X86_64.Public.sMask, sMo, sFn]; omega
+    · have := hdr_lt_slot (wk I.k) j (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); dsimp only; omega_arith
+    · have := hdr_lt_slot (wk I.k) j (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); dsimp only; omega_arith
+    · simp only [Impl.Bignum.X86_64.Public.sMask, sMo, sFn]; omega_arith
 
 /-! ## The pieces -/
 
@@ -135,7 +135,7 @@ theorem copyA_ct {o a : Nat} (ho : o < 16) (ha : a < 16) (hoa : o ≠ a) {hc : V
   rw [e]
   exact ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun _ _ h => by
     rw [← e]
-    exact WP.mono (copyA_ok h.ws ho ha hoa) fun _ ⟨_, o', k⟩ => h.arr ho (by omega) o' k (by decide)
+    exact WP.mono (copyA_ok h.ws ho ha hoa) fun _ ⟨_, o', k⟩ => h.arr ho (by omega_arith) o' k (by decide)
 
 theorem divmod_ct {iQ iR iD iT : Nat} (hQ : iQ < 16) (hR : iR < 16) (hD : iD < 16) (hT : iT < 16)
     (dQR : iQ ≠ iR) (dQD : iQ ≠ iD) (dQT : iQ ≠ iT) (dRD : iR ≠ iD) (dRT : iR ≠ iT) (dDT : iD ≠ iT)
@@ -152,7 +152,7 @@ theorem divmod_ct {iQ iR iD iT : Nat} (hQ : iQ < 16) (hR : iR < 16) (hD : iD < 1
   exact ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.ws) ht fun _ _ h => by
     rw [← e]
     have hw := h.ws
-    exact WP.mono (divmod_ok hw.scr hw.rdi hw.hw hw.hS (by have := hw.w1; omega) hw.w2 hw.hZ hQ hR hD hT dQR dQD
+    exact WP.mono (divmod_ok hw.scr hw.rdi hw.hw hw.hS (by have := hw.w1; omega_arith) hw.w2 hw.hZ hQ hR hD hT dQR dQD
       dQT dRD dRT dDT) fun _ ⟨_, f, k, _⟩ => h.frm f (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
@@ -218,9 +218,9 @@ theorem GA.word {p : CvP} {s t : State} (h : GA p s) {j : Nat} (hj : j < 16) {v 
     (hm : t.mem = s.mem.writeW (off p.B (slot (wk p.k) j)) v) {regs : List Reg} (k : Keep regs s t)
     (hr : .rdi ∉ regs ∧ .rsp ∉ regs) : GA p t := by
   have hw := h.ws
-  have o := writeW_outside s.mem p.B v (d := slot (wk p.k) j) (by have := hw.sl hj; have := hw.scr.nowrap; omega)
+  have o := writeW_outside s.mem p.B v (d := slot (wk p.k) j) (by have := hw.sl hj; have := hw.scr.nowrap; omega_arith)
   rw [← hm] at o
-  exact h.arr hj (by omega) o k hr
+  exact h.arr hj (by omega_arith) o k hr
 
 theorem setOneA_ct {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.block (base j .rbx ++ ([.mov32 .rax (.imm 1),
@@ -264,7 +264,7 @@ theorem inverse_ct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   exact ws_ct CvP.B CvP.Z (fun p => wk p.k) (fun _ _ h => h.1.ws) ht fun _ _ ⟨h, u0, vm, x1, x2⟩ => by
     rw [← e]
     have hw := h.ws
-    exact WP.mono (inverse_ok hw.scr hw.rdi hw.hw hw.hS (by have := hw.w1; omega) hw.w2 hw.hZ
+    exact WP.mono (inverse_ok hw.scr hw.rdi hw.hw hw.hS (by have := hw.w1; omega_arith) hw.w2 hw.hZ
       (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -294,7 +294,7 @@ theorem loadBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr s
           have hdi₃ : s₃.gpr .rdi = B := ((k₂.trans k₃).gpr (by decide)).trans h.rdi
           have hs₃ := h.scr.congr (k₂.trans k₃).2.2
           have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
-            hs₃.ld (by have := h.h256; omega)
+            hs₃.ld (by have := h.h256; omega_arith)
           xrun [State.ea, hdr, hdi₃, hdrOff, m₃, m₂, hl₃ sPtr hP, hl₃ sLen hL, hp, hl]) rfl)
       fun t ⟨⟨hsi, hcx, m₄⟩, k₄⟩ => ⟨(k₄.gpr (by decide)).trans hbx, hsi, hcx,
         ((k₂.trans k₃).trans k₄ |>.gpr (by decide)).trans h.rdi, by rw [m₄, m₃, m₂],
@@ -339,9 +339,9 @@ theorem loadTail_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLe
       refine WP.seq (WP.mono (loadBlk_ok hw hP hL hp hl) fun t ⟨hbx, hsi, hcx, _, hm, k⟩ => ?_)
       have ht := h.same hm k (by decide)
       have hsrc' := hsrc.congrK (fun x _ => by rw [hm]) k
-      exact WP.mono (loadBE_ok (w := (len p + 7) / 8) ht.ws.scr hsi hcx hbx hbl hl1 (by omega) rfl (by omega)
-        (fun i hi => hsrc'.rd i (by omega)) (fun i hi => hsrc'.val i (by omega))
-        (fun i hi => Or.inr (by have := hsrc'.out i (by omega); omega))) fun t' ⟨_, o, k'⟩ =>
-          ht.arr hj (by omega) o k' (by decide)
+      exact WP.mono (loadBE_ok (w := (len p + 7) / 8) ht.ws.scr hsi hcx hbx hbl hl1 (by omega_arith) rfl (by omega_arith)
+        (fun i hi => hsrc'.rd i (by omega_arith)) (fun i hi => hsrc'.val i (by omega_arith))
+        (fun i hi => Or.inr (by have := hsrc'.out i (by omega_arith); omega_arith))) fun t' ⟨_, o, k'⟩ =>
+          ht.arr hj (by omega_arith) o k' (by decide)
 
 end VG.Proof.Rsa.X86_64

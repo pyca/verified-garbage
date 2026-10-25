@@ -63,13 +63,13 @@ theorem checks_run (s : State) :
   apply WP.seq
   refine WP.mono (WP.keep [.r10] (c := .block [.subi .r10 .r4 1, .lsr .d .r10 .r10 7]) (Q := fun t =>
       t.gpr .r10 = (s.gpr .r4 - 1#64) >>> 7 ∧ t.mem = s.mem) (by rrun)
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
+    (by rfl) rfl) fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
   have c₁ := range_bne (x := (s.gpr .r4).toNat) (b := 7) (s.gpr .r4).isLt (by decide)
   rw [e4] at c₁
   refine WP.ite _ (by rw [eval_nonzero, a₁, c₁]) (fun h => ?_) (fun h => ?_)
   · have hk : ¬(1 ≤ (s.gpr .r4).toNat ∧ (s.gpr .r4).toNat ≤ 128) := by simp at h; omega
     refine WP.mono (WP.keep [.r3] (c := .block [.li .r3 1]) (Q := fun t => t.gpr .r3 = 1#64 ∧ t.mem = t₁.mem)
-      (by rrun) (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun t ⟨⟨a, m⟩, k⟩ =>
+      (by rrun) (by rfl) rfl) fun t ⟨⟨a, m⟩, k⟩ =>
       ⟨by rw [m, m₁], (k₁.trans k).mono (by simp), ?_, fun _ => ?_, fun hv => absurd hv.1 hk⟩
     · rw [k.gpr (by decide), a₁, c₁]
       simp [valid, hk]
@@ -78,13 +78,13 @@ theorem checks_run (s : State) :
     apply WP.seq
     refine WP.mono (WP.keep [.r10] (c := .block [.subi .r10 .r5 1, .lsr .d .r10 .r10 10]) (Q := fun t =>
         t.gpr .r10 = (s.gpr .r5 - 1#64) >>> 10 ∧ t.mem = t₁.mem) (by rrun [k₁.gpr (show Reg.r5 ∉ [Reg.r10] by decide)])
-      (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun t₂ ⟨⟨a₂, m₂⟩, k₂⟩ => ?_
+      (by rfl) rfl) fun t₂ ⟨⟨a₂, m₂⟩, k₂⟩ => ?_
     have c₂ := range_bne (x := (s.gpr .r5).toNat) (b := 10) (s.gpr .r5).isLt (by decide)
     rw [e5] at c₂
     refine WP.ite _ (by rw [eval_nonzero, a₂, c₂]) (fun h => ?_) (fun h => ?_)
     · have hb : ¬(1 ≤ (s.gpr .r5).toNat ∧ (s.gpr .r5).toNat ≤ 1024) := by simp at h; omega
       refine WP.mono (WP.keep [.r3] (c := .block [.li .r3 2]) (Q := fun t => t.gpr .r3 = 2#64 ∧ t.mem = t₂.mem)
-        (by rrun) (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun t ⟨⟨a, m⟩, k⟩ =>
+        (by rrun) (by rfl) rfl) fun t ⟨⟨a, m⟩, k⟩ =>
         ⟨by rw [m, m₂, m₁], ((k₁.trans k₂).trans k).mono (by simp), ?_, fun _ => ?_, fun hv => absurd hv.2.1 hb⟩
       · rw [k.gpr (by decide), a₂, c₂]
         simp [valid, hb]
@@ -94,13 +94,13 @@ theorem checks_run (s : State) :
       refine WP.mono (WP.keep [.r10] (c := .block [.subi .r10 .r7 8]) (Q := fun t =>
           t.gpr .r10 = s.gpr .r7 - 8#64 ∧ t.mem = t₂.mem)
         (by rrun [k₂.gpr (show Reg.r7 ∉ [Reg.r10] by decide), k₁.gpr (show Reg.r7 ∉ [Reg.r10] by decide)])
-        (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun t₃ ⟨⟨a₃, m₃⟩, k₃⟩ => ?_
+        (by rfl) rfl) fun t₃ ⟨⟨a₃, m₃⟩, k₃⟩ => ?_
       have c₃ := sub_bne (x := (s.gpr .r7).toNat) (y := 8) (s.gpr .r7).isLt (by decide)
       rw [e7] at c₃
       refine WP.ite _ (by rw [eval_nonzero, a₃, c₃]) (fun h => ?_) (fun h => ?_)
       · have hi : (s.gpr .r7).toNat ≠ 8 := by simpa using h
         refine WP.mono (WP.keep [.r3] (c := .block [.li .r3 3]) (Q := fun t => t.gpr .r3 = 3#64 ∧ t.mem = t₃.mem)
-          (by rrun) (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun t ⟨⟨a, m⟩, k⟩ =>
+          (by rrun) (by rfl) rfl) fun t ⟨⟨a, m⟩, k⟩ =>
           ⟨by rw [m, m₃, m₂, m₁], (((k₁.trans k₂).trans k₃).trans k).mono (by simp), ?_, fun _ => ?_,
             fun hv => absurd hv.2.2 hi⟩
         · rw [k.gpr (by decide), a₃, c₃]

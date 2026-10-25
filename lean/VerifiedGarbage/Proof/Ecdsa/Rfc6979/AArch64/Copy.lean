@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Deterministic ECDSA on AArch64: copying words
@@ -64,39 +65,39 @@ theorem copyN_ok {src dst : Reg} {S D : Addr} {so d K : Nat} (hdr : dst ≠ .x11
   | 0, _, u, _, _, _, _ => WP.of_runBlock ⟨u, rfl, rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _, rfl⟩
   | k + 1, hk, u, hs, hd, hr, hw => by
     rw [Cfg.copyN, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (copyN_ok hdr hsr hsep hdn hso hdo k (by omega) u hs hd hr hw)
+    refine WP.mono (copyN_ok hdr hsr hsep hdn hso hdo k (by omega_arith) u hs hd hr hw)
       fun u₁ ⟨hrd₁, hwr₁, hsp₁, hg₁, hf₁, hb₁⟩ => ?_
-    refine WP.mono (copyW_ok (u := u₁) (hg₁ _ hsr ▸ hs) (hg₁ _ hdr ▸ hd) ⟨by omega, by omega⟩
-      ⟨by omega, by omega⟩ (hrd₁ ▸ hwr₁ ▸ hr k (by omega)) (hwr₁ ▸ hw k (by omega)) hdr)
+    refine WP.mono (copyW_ok (u := u₁) (hg₁ _ hsr ▸ hs) (hg₁ _ hdr ▸ hd) ⟨by omega_arith, by omega_arith⟩
+      ⟨by omega_arith, by omega_arith⟩ (hrd₁ ▸ hwr₁ ▸ hr k (by omega_arith)) (hwr₁ ▸ hw k (by omega_arith)) hdr)
       fun u₂ ⟨hrd₂, hwr₂, hsp₂, hg₂, hm₂⟩ => ?_
     -- The word written, within the destination.
     have hsub : Region.Sub ⟨D + BitVec.ofNat 64 (d + 8 * k), 8⟩ ⟨D + BitVec.ofNat 64 d, 8 * K⟩ :=
-      Offset.sub _ (by omega) (by omega)
+      Offset.sub _ (by omega_arith) (by omega_arith)
     have hf₂ : Frame [⟨D + BitVec.ofNat 64 (d + 8 * k), 8⟩] u₁.mem u₂.mem := by
       rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-        (Offset.contains _ (Nat.le_refl _) (by omega) (by omega))
+        (Offset.contains _ (Nat.le_refl _) (by omega_arith) (by omega_arith))
     -- The word read, unchanged by the earlier words.
     have hsrc : Spec.Sha256.bytesAt u₁.mem (S + BitVec.ofNat 64 (so + 8 * k)) 8 =
         Spec.Sha256.bytesAt u.mem (S + BitVec.ofNat 64 (so + 8 * k)) 8 :=
       bytesAt_frame hf₁ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hsep.sub_left (Offset.sub _ (by omega) (by omega))) (by omega)
+        exact hsep.sub_left (Offset.sub _ (by omega_arith) (by omega_arith))) (by omega_arith)
     refine ⟨hrd₂.trans hrd₁, hwr₂.trans hwr₁, hsp₂.trans hsp₁, fun r hr => (hg₂ r hr).trans (hg₁ r hr),
       hf₁.trans (hf₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr; subst hr; exact hsub⟩), ?_⟩
-    rw [show 8 * (k + 1) = 8 * k + 8 by omega, Proof.Hmac.Common.bytesAt_add, Proof.Hmac.Common.bytesAt_add,
+    rw [show 8 * (k + 1) = 8 * k + 8 by omega_arith, Proof.Hmac.Common.bytesAt_add, Proof.Hmac.Common.bytesAt_add,
       Offset.add_add, Offset.add_add, ← hsrc]
     congr 1
     · rw [← hb₁]
       exact bytesAt_frame hf₂ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega)
+        exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith)
     · rw [hm₂]; exact bytesAt_copied _ _ _
 
 /-- The first `n` of `k` bytes. -/
 theorem bytesAt_take (m : Mem) (p : Addr) {n k : Nat} (h : n ≤ k) :
     Spec.Sha256.bytesAt m p n = (Spec.Sha256.bytesAt m p k).take n := by
-  rw [show k = n + (k - n) by omega, Proof.Hmac.Common.bytesAt_add, List.take_left']
+  rw [show k = n + (k - n) by omega_arith, Proof.Hmac.Common.bytesAt_add, List.take_left']
   simp [Spec.Sha256.bytesAt]
 
 /-- `d ← src + k`. -/
@@ -142,41 +143,41 @@ theorem copyBytes_ok {src dst : Reg} {S D : Addr} {Q : Nat} (hdr : dst ≠ .x11)
   have hK : 8 * (Q / 8) ≤ Q := Nat.mul_div_le Q 8
   have z : ∀ p : Addr, p + BitVec.ofNat 64 0 = p := add_ofNat_zero
   refine WP.mono (copyN_ok (S := S) (D := D) (so := 0) (d := 0) (K := Q / 8) hdr hsr
-      (by rw [z, z]; exact (hsep.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by omega)))
-      (by omega) ⟨rfl, by omega⟩ ⟨rfl, by omega⟩ (Q / 8) (Nat.le_refl _) u hs hd
-      (fun j hj => by rw [Nat.zero_add]; exact hr (8 * j) (by omega))
-      fun j hj => by rw [Nat.zero_add]; exact hw (8 * j) (by omega))
+      (by rw [z, z]; exact (hsep.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Region.sub_prefix (by omega_arith)))
+      (by omega_arith) ⟨rfl, by omega_arith⟩ ⟨rfl, by omega_arith⟩ (Q / 8) (Nat.le_refl _) u hs hd
+      (fun j hj => by rw [Nat.zero_add]; exact hr (8 * j) (by omega_arith))
+      fun j hj => by rw [Nat.zero_add]; exact hw (8 * j) (by omega_arith))
     fun u₁ ⟨hrd₁, hwr₁, hsp₁, hg₁, hf₁, hb₁⟩ => ?_
   rw [z] at hf₁ hb₁
   rw [z] at hb₁
   have hf₁' : Frame [⟨D, Q⟩] u.mem u₁.mem :=
     hf₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_arith)⟩
   by_cases hm : Q % 8 = 0
   · simp only [hm, ite_true]
-    have e : 8 * (Q / 8) = Q := by omega
+    have e : 8 * (Q / 8) = Q := by omega_arith
     rw [e] at hb₁
     exact WP.block_nil ⟨hrd₁, hwr₁, hsp₁, fun r h _ _ => hg₁ r h, hf₁', hb₁⟩
   · simp only [hm, ite_false]
-    refine WP.mono (copyAt_ok (u := u₁) (k := Q - 8) (hg₁ _ hsr ▸ hs) (hg₁ _ hdr ▸ hd) hd13 (by omega)
-      (hrd₁ ▸ hwr₁ ▸ hr (Q - 8) (by omega)) (hwr₁ ▸ hw (Q - 8) (by omega)))
+    refine WP.mono (copyAt_ok (u := u₁) (k := Q - 8) (hg₁ _ hsr ▸ hs) (hg₁ _ hdr ▸ hd) hd13 (by omega_arith)
+      (hrd₁ ▸ hwr₁ ▸ hr (Q - 8) (by omega_arith)) (hwr₁ ▸ hw (Q - 8) (by omega_arith)))
       fun u₂ ⟨hrd₂, hwr₂, hsp₂, hg₂, hm₂⟩ => ?_
     have hf₂ : Frame [⟨D + BitVec.ofNat 64 (Q - 8), 8⟩] u₁.mem u₂.mem := by
       rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
     refine ⟨hrd₂.trans hrd₁, hwr₂.trans hwr₁, hsp₂.trans hsp₁,
       fun r h11 h13 h14 => (hg₂ r h11 h13 h14).trans (hg₁ r h11),
       hf₁'.trans (hf₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-        simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by omega)⟩), ?_⟩
-    rw [show Q = (Q - 8) + 8 by omega, Proof.Hmac.Common.bytesAt_add, Proof.Hmac.Common.bytesAt_add]
+        simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by omega_arith)⟩), ?_⟩
+    rw [show Q = (Q - 8) + 8 by omega_arith, Proof.Hmac.Common.bytesAt_add, Proof.Hmac.Common.bytesAt_add]
     congr 1
     · rw [bytesAt_frame hf₂ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.base_disjoint _ (by omega) (by omega)) (by omega),
-        bytesAt_take _ _ (k := 8 * (Q / 8)) (by omega), hb₁, ← bytesAt_take _ _ (by omega)]
+          exact Offset.base_disjoint _ (by omega_arith) (by omega_arith)) (by omega_arith),
+        bytesAt_take _ _ (k := 8 * (Q / 8)) (by omega_arith), hb₁, ← bytesAt_take _ _ (by omega_arith)]
     · rw [hm₂, bytesAt_copied]
       exact bytesAt_frame hf₁ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (hsep.sub_left (Offset.sub_base _ (by omega))).sub_right (Region.sub_prefix (by omega)))
-        (by omega)
+        exact (hsep.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Region.sub_prefix (by omega_arith)))
+        (by omega_arith)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

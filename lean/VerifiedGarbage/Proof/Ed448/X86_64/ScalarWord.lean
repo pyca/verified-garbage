@@ -38,17 +38,17 @@ abbrev rem (s : State) : Nat := rv s W
 theorem rem_eq (s : State) : rem s = (s.gpr .r8).toNat + 2 ^ 64 * ((s.gpr .r9).toNat + 2 ^ 64 *
     ((s.gpr .r10).toNat + 2 ^ 64 * ((s.gpr .r11).toNat + 2 ^ 64 * ((s.gpr .r12).toNat + 2 ^ 64 *
     ((s.gpr .r13).toNat + 2 ^ 64 * (s.gpr .r14).toNat))))) := by
-  simp only [rem, rv, W]; omega
+  simp only [rem, rv, W]; omega_arith
 
 theorem rem_split (s : State) : rem s = rv s [.r8, .r9, .r10, .r11] +
     2 ^ 64 * 2 ^ 64 * 2 ^ 64 * 2 ^ 64 * rv s [.r12, .r13, .r14] := by
-  simp only [rem, rv, W]; omega
+  simp only [rem, rv, W]; omega_arith
 
 theorem rotr62 (x : BitVec 64) (h : x.toNat < 2 ^ 62) : (x.rotateRight 62).toNat = 4 * x.toNat := by
   rw [BitVec.toNat_rotateRight]
   simp only [Nat.reduceMod, Nat.reduceSub, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-  rw [Nat.div_eq_of_lt h, Nat.zero_or, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.div_eq_of_lt h, Nat.zero_or, Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 theorem shr62 (x : BitVec 64) : (x >>> 62).toNat = x.toNat / 2 ^ 62 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
@@ -73,7 +73,7 @@ theorem foldPrep_ok (s : State) (h6 : (s.gpr .r14).toNat < 2 ^ 62) :
   refine ⟨?_, trivial, trivial, trivial, trivial, trivial, trivial, and62 _, rfl, fun r hr => ?_,
     rfl, rfl, rfl⟩
   · have := (s.gpr .r13).isLt
-    rw [BitVec.toNat_add, shr62, rotr62 _ h6, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, shr62, rotr62 _ h6, Nat.mod_eq_of_lt (by omega_arith)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hr.1, hr.2.1,
       hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1,
@@ -120,7 +120,7 @@ theorem foldMul_ok (s : State) (hb : s.gpr .rbp = 0)
   generalize (s.gpr .rcx).toNat * cL = H at *
   generalize (a.gpr .rbp).toNat = B at *
   generalize c.toNat = C at *
-  omega
+  omega_arith
 
 /-- The registers `wordFold` changes. -/
 def foldClob : List Reg := [.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14]
@@ -207,7 +207,7 @@ theorem csub_ok {s : State} {base : Addr} (hs : Scr s base) (hK : mv s.mem base 
   have hlt := Proof.X448.X86_64.rv_lt b W
   have hkv : wv (word a.mem base 128 :: kOffs.map fun d => word a.mem base d) = 2 ^ 448 - L := by
     have hmv : mv a.mem base KC 7 = mv s.mem base KC 7 :=
-      oa.mv (Or.inl (by decide)) (by simp only [KC]; omega)
+      oa.mv (Or.inl (by decide)) (by simp only [KC]; omega_arith)
     rw [← kWords_val, ← hK, ← hmv]
     rfl
   rw [hkv, len7, show rv a (Reg.r8 :: [.r9, .r10, .r11, .r12, .r13, .r14]) = rem a from rfl,

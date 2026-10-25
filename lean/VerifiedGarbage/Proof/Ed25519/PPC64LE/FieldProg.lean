@@ -72,12 +72,12 @@ theorem slot_frame {b : Addr} {m m' : Mem} {o i : Slot} (hne : i ≠ o)
   have hsep : offset i + 32 ≤ offset o ∨ offset o + 32 ≤ offset i := by
     have hv : i.val ≠ o.val := fun e => hne (Fin.ext e)
     simp only [offset]
-    omega
+    omega_arith
   refine congrArg Proof.X25519.toFe (val32_congr (limb_frame hf fun r hr k hk => ?_))
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+  · exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
 
 theorem field_update {b : Addr} {m m' : Mem} (o : Slot) (hf : Frame (opFrame b (offset o)) m m') :
     env m' b = Function.update (env m b) o (FS m' b (offset o)) := by
@@ -94,8 +94,8 @@ theorem frame_FA {b : Addr} {o : Slot} {m m' : Mem} (hf : Frame (opFrame b (offs
   refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.sub _ (by omega) (by omega)
-  · exact Offset.sub _ (by omega) (by omega)
+  · exact Offset.sub _ (by omega_arith) (by omega_arith)
+  · exact Offset.sub _ (by omega_arith) (by omega_arith)
 
 theorem frame_o {b : Addr} {o : Nat} {m m' : Mem} (hf : Frame [⟨b + BitVec.ofNat 64 o, 32⟩] m m') :
     Frame (opFrame b o) m m' :=
@@ -134,7 +134,7 @@ theorem mulK_ok {b : Addr} (o a c : Slot) :
 
 theorem offset_word (o : Slot) : (BitVec.ofNat 64 (offset o)).toNat % 2 ^ 32 = offset o := by
   have := slot_range o
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- **A call of `vg_gf25519_r32_mul`**, as the inlined product. -/
 theorem mulCall_ok {b : Addr} {s : State} (hc : Ctx b s) (o a c : Slot) :
@@ -145,8 +145,8 @@ theorem mulCall_ok {b : Addr} {s : State} (hc : Ctx b s) (o a c : Slot) :
   have hc' := slot_range c
   obtain ⟨n, hn, hw⟩ := hc.wr
   unfold mulCall
-  refine WP.seq (wp_addi (by decide) (by decide) fun s1 u1 => wp_li (by omega) fun s2 u2 =>
-    wp_li (by omega) fun s3 u3 => wp_li (by omega) fun s4 u4 => WP.block_nil ?_)
+  refine WP.seq (wp_addi (by decide) (by decide) fun s1 u1 => wp_li (by omega_arith) fun s2 u2 =>
+    wp_li (by omega_arith) fun s3 u3 => wp_li (by omega_arith) fun s4 u4 => WP.block_nil ?_)
   have hr4 : Rest [.r3, .r4, .r5, .r6] s s4 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans (u4.rest (by decide))))
   have hm4 : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
@@ -162,7 +162,7 @@ theorem mulCall_ok {b : Addr} {s : State} (hc : Ctx b s) (o a c : Slot) :
   have hsub : ∀ r ∈ ([⟨b, 4096⟩] : List Region), ∃ r' ∈ s4.wr, ∃ off,
       r.base = r'.base + BitVec.ofNat 64 off ∧ off + r.len ≤ r'.len := fun r hr => by
     rw [List.mem_singleton.mp hr, hr4.wr]
-    exact ⟨_, hw, 0, by simp, by simp only; omega⟩
+    exact ⟨_, hw, 0, by simp, by simp only; omega_arith⟩
   refine WP.seq (WP.call (k := mulK b o a c) (mulK_ok o a c) (rd := []) (wr := [⟨b, 4096⟩])
     ⟨rfl, rfl, ⟨by rw [g _ (by decide)]; exact e3, 4096, Nat.le_refl _, List.mem_singleton_self _⟩,
       by rw [g _ (by decide), e4]; exact offset_word o, by rw [g _ (by decide), e5]; exact offset_word a,
@@ -205,21 +205,21 @@ theorem fieldOp_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) :
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (mul_ok (by omega) (by omega) (by omega) (by omega) hc) fun t ⟨hr, hf, hv⟩ => ?_
+    refine WP.mono (mul_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hc) fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) hf (Proof.X25519.toFe_mul hv)
   | mulc o a c => exact mulCall_ok hc o a c
   | add o a c =>
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (add_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c) hc)
+    refine WP.mono (add_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c) hc)
       fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) (frame_o hf) (Proof.X25519.toFe_add hv)
   | sub o a c =>
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (sub_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c) hc)
+    refine WP.mono (sub_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c) hc)
       fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) (frame_o hf) (Proof.X25519.toFe_sub hv)
 
@@ -255,7 +255,7 @@ theorem fieldOpW_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) (hi : o
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (mul_ok (by omega) (by omega) (by omega) (by omega) hc) fun t ⟨hr, hf, hv⟩ =>
+    refine WP.mono (mul_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hc) fun t ⟨hr, hf, hv⟩ =>
       ⟨hr, hf, ?_⟩
     rw [field_update o hf]; exact congrArg _ (Proof.X25519.toFe_mul hv)
   | mulc => simp [FieldOp.inline] at hi
@@ -263,14 +263,14 @@ theorem fieldOpW_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) (hi : o
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (add_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c) hc)
+    refine WP.mono (add_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c) hc)
       fun t ⟨hr, hf, hv⟩ => ⟨hr, frame_o hf, ?_⟩
     rw [field_update o (frame_o hf)]; exact congrArg _ (Proof.X25519.toFe_add hv)
   | sub o a c =>
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (sub_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c) hc)
+    refine WP.mono (sub_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c) hc)
       fun t ⟨hr, hf, hv⟩ => ⟨hr, frame_o hf, ?_⟩
     rw [field_update o (frame_o hf)]; exact congrArg _ (Proof.X25519.toFe_sub hv)
 

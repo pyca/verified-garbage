@@ -11,23 +11,10 @@ meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-import VerifiedGarbage.Proof.MdStream.X86_64.Words
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 meta import Mathlib.Tactic.Set
@@ -133,20 +120,20 @@ def IA (F S : Addr) (u : State) : Prop := Lay u F S ∧ u.gpr .rdi = off S oSt
 include hH in
 theorem init_pre {F S : Addr} {u : State} (h : IA F S u) :
     (initK (H.P.N + H.P.B) hH.SH.Repr).pre (u.callEntry.withRegions [] [⟨off S oSt, H.P.N + H.P.B⟩]) := by
-  have hNB : H.P.N + H.P.B ≤ 192 := by have := hH.N_le; have := hH.B_le; omega
+  have hNB : H.P.N + H.P.B ≤ 192 := by have := hH.N_le; have := hH.B_le; omega_arith
   simp only [initK, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, State.callEntry_rsp,
     State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), h.2, h.1.rsp, true_and]
-  exact Region.Disjoint.sub_right h.1.dRS (Offset.sub_base S (by unfold oSt oRsa; omega))
+  exact Region.Disjoint.sub_right h.1.dRS (Offset.sub_base S (by unfold oSt oRsa; omega_arith))
 
 include hH in
 theorem init_rel {P : State → State → Prop} (h : ∀ s₁ s₂, P s₁ s₂ → ∃ F S, IA F S s₁ ∧ IA F S s₂) :
     RelCT isa P (.call H.initN H.initC) fun _ _ => True := by
-  have hNB : H.P.N + H.P.B ≤ 192 := by have := hH.N_le; have := hH.B_le; omega
+  have hNB : H.P.N + H.P.B ≤ 192 := by have := hH.N_le; have := hH.B_le; omega_arith
   refine RelCT.callEx hH.init.1 hH.init.2.1 fun s₁ s₂ hp => ?_
   obtain ⟨F, S, h₁, h₂⟩ := h s₁ s₂ hp
-  refine ⟨[], _, [], _, init_pre hH h₁, init_pre hH h₂, ?_, Covers.right (h₁.1.cov (by unfold oSt oRsa; omega)),
-    h₁.1.cov (by unfold oSt oRsa; omega), Covers.right (h₂.1.cov (by unfold oSt oRsa; omega)),
-    h₂.1.cov (by unfold oSt oRsa; omega), by rw [h₁.1.rsp, h₂.1.rsp]⟩
+  refine ⟨[], _, [], _, init_pre hH h₁, init_pre hH h₂, ?_, Covers.right (h₁.1.cov (by unfold oSt oRsa; omega_arith)),
+    h₁.1.cov (by unfold oSt oRsa; omega_arith), Covers.right (h₂.1.cov (by unfold oSt oRsa; omega_arith)),
+    h₂.1.cov (by unfold oSt oRsa; omega_arith), by rw [h₁.1.rsp, h₂.1.rsp]⟩
   simp only [initK, State.withRegions_gpr, State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), h₁.2, h₂.2]
 
 /-- Before the call of the compression function on block `b`. -/
@@ -166,11 +153,11 @@ theorem comp_pre {F S : Addr} {b : Nat} {u : State} (h : CA (H := H) F S b u) :
     State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
     hdi, hsi, hdx, hcx, L.rsp, show (1 : BitVec 64).toNat = 1 from rfl, true_and]
-  exact ⟨Offset.disjoint_base S (by unfold oSt; omega) (by unfold oSt; omega),
-    Offset.disjoint S (by unfold oY oSt; omega) (by unfold oY; omega) (by unfold oSt; omega),
-    Offset.disjoint_base S (by unfold oY; omega) (by unfold oY; omega),
-    Region.Disjoint.sub_right L.dRS (Offset.sub_base S (by unfold oSt oRsa; omega)),
-    Region.Disjoint.sub_right L.dRS (Region.sub_prefix (by unfold oRsa; omega))⟩
+  exact ⟨Offset.disjoint_base S (by unfold oSt; omega_arith) (by unfold oSt; omega_arith),
+    Offset.disjoint S (by unfold oY oSt; omega_arith) (by unfold oY; omega_arith) (by unfold oSt; omega_arith),
+    Offset.disjoint_base S (by unfold oY; omega_arith) (by unfold oY; omega_arith),
+    Region.Disjoint.sub_right L.dRS (Offset.sub_base S (by unfold oSt oRsa; omega_arith)),
+    Region.Disjoint.sub_right L.dRS (Region.sub_prefix (by unfold oRsa; omega_arith))⟩
 
 include hH in
 theorem comp_cov {F S : Addr} {b : Nat} {u : State} (h : CA (H := H) F S b u) :
@@ -180,10 +167,10 @@ theorem comp_cov {F S : Addr} {b : Nat} {u : State} (h : CA (H := H) F S b u) :
   have hN := hH.N_le
   have hso := hH.hso
   have hS0 : off S 0 = S := BitVec.add_zero S
-  have c₁ := L.cov (o := 0) (n := H.P.so) (by unfold oRsa; omega)
+  have c₁ := L.cov (o := 0) (n := H.P.so) (by unfold oRsa; omega_arith)
   rw [hS0] at c₁
-  exact ⟨Covers.right (Covers.append_left (L.cov (by unfold oY oRsa; omega))
-    (Covers.pair (L.cov (by unfold oSt oRsa; omega)) c₁)), Covers.pair (L.cov (by unfold oSt oRsa; omega)) c₁⟩
+  exact ⟨Covers.right (Covers.append_left (L.cov (by unfold oY oRsa; omega_arith))
+    (Covers.pair (L.cov (by unfold oSt oRsa; omega_arith)) c₁)), Covers.pair (L.cov (by unfold oSt oRsa; omega_arith)) c₁⟩
 
 include hH in
 theorem comp_rel {P : State → State → Prop}
@@ -208,7 +195,7 @@ theorem eval_ne_cnt {s : State} {j N : Nat} (hj : j < N) (hz : s.zf = some (deci
   simp only [eval, hz, Option.map_some, Option.some.injEq]
   by_cases h : j + 1 = N
   · simp [h]
-  · simp only [h, decide_false, Bool.not_false]; exact (decide_eq_true (by omega)).symm
+  · simp only [h, decide_false, Bool.not_false]; exact (decide_eq_true (by omega_arith)).symm
 
 /-- `Pub` after a piece that keeps the regions. -/
 theorem Pub.next {F S : Addr} {rest : List Region} {ws ws' : List (Nat × BitVec 64)} {rs : List (Reg × BitVec 64)}
@@ -267,7 +254,7 @@ theorem pad80_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (HE H n)) (pad80 H
     (fun a t h => h.1.1) (fun _ => rfl) (fun _ => rfl) (by decide) hp) fun a t h => ?_
   obtain ⟨V, W, R, hw, ℓ, hl, hfit⟩ := h.2.W
   obtain ⟨-, h1, hnb⟩ := h.1
-  exact WP.mono (pad80_ok hH h.2.L R hl (hws_w hw).2 h1 hnb (by omega)) fun u P =>
+  exact WP.mono (pad80_ok hH h.2.L R hl (hws_w hw).2 h1 hnb (by omega_arith)) fun u P =>
     ⟨h.1, h.2.next P.L P.keep.2.2 P.R hw ⟨ℓ, hl, hfit⟩⟩
 
 include hH in
@@ -280,9 +267,9 @@ theorem lenField_ct (hc : HashChecks H.P H.D n) :
   obtain ⟨V, W, R, hw, ℓ, hl, hfit⟩ := h.2.W
   obtain ⟨-, h1, hnb⟩ := h.1
   have hB0 := hH.B_pos
-  refine WP.mono (lenField_ok hH h.2.L R hl (by omega)) fun u ⟨L', hk, R'⟩ =>
+  refine WP.mono (lenField_ok hH h.2.L R hl (by omega_arith)) fun u ⟨L', hk, R'⟩ =>
     ⟨h.1, h.2.next L' hk.2.2 R' (ws_upd hw (by simp [hws]) _) ⟨RsaPss.lastBlk H.P.B H.P.L ℓ, by simp [upd], ?_⟩⟩
-  exact (Nat.div_lt_iff_lt_mul hB0).mpr (by omega)
+  exact (Nat.div_lt_iff_lt_mul hB0).mpr (by omega_arith)
 
 include hH in
 theorem lenLoop_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (HF H n)) (lenLoop H) (Two (HF H n)) := by
@@ -343,7 +330,7 @@ theorem compA_ct (hc : HashChecks H.P H.D n) :
     have L := h.2.2.L
     have hbB := hb_bound n h
     have := Nat.le_mul_of_pos_left p.2 hH.B_pos
-    exact WP.mono (compArgs_ok hH L R (b := p.2) (by omega) (hl_w hw).2.2) fun u ⟨h1, h2, h3, h4, hm, hk⟩ =>
+    exact WP.mono (compArgs_ok hH L R (b := p.2) (by omega_arith) (hl_w hw).2.2) fun u ⟨h1, h2, h3, h4, hm, hk⟩ =>
       ⟨L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm]), h1, h2, h3, h4, hbB⟩
   · obtain ⟨V, W, R, hw, hx⟩ := h.2.2.W
     exact WP.mono (compCall_ok hH h.2.2.L R (hb_bound n h) (hl_w hw).2.2) fun u ⟨L', _, hwr, _, R', _⟩ =>
@@ -377,8 +364,8 @@ theorem body_wp {a : HA} {j : Nat} {t : State} (hj : j < a.nbm) (h : HL H n a j 
   have hnbm : a.nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right a.nbm hH.B_pos) h.1.2.2
   refine WP.seq_assoc (WP.seq (WP.mono (compCall_ok hH h.2.L R hbB w29)
     fun v ⟨Lv, _, hwrv, _, Rv, _⟩ => ?_))
-  refine WP.seq (WP.mono (select_ok hH Lv Rv (b := j) (fb := fb) w29 hf (by omega) (by omega)) fun w Sw => ?_)
-  refine WP.mono (nextBlock_ok Sw.L Sw.R (b := j) (nbm := a.nbm) w29 w28 (by omega) (by omega))
+  refine WP.seq (WP.mono (select_ok hH Lv Rv (b := j) (fb := fb) w29 hf (by omega_arith) (by omega_arith)) fun w Sw => ?_)
+  refine WP.mono (nextBlock_ok Sw.L Sw.R (b := j) (nbm := a.nbm) w29 w28 (by omega_arith) (by omega_arith))
     fun u' ⟨hz, Lu', hk', Ru'⟩ => ⟨eval_ne_cnt hj hz, fun _ => ⟨h.1, Lu', hk'.2.2.trans (Sw.keep.2.2.trans
       (hwrv.trans h.2.wr)), ⟨_, _, Ru', fun q hq => ?_, fb, by simp [upd, hf], hfb⟩, fun _ hp => by cases hp⟩,
       fun _ => ⟨h.1, Lu', hk'.2.2.trans (Sw.keep.2.2.trans (hwrv.trans h.2.wr)),

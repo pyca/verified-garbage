@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
 
 /-!
 # AES-OCB on x86-64: relating two runs

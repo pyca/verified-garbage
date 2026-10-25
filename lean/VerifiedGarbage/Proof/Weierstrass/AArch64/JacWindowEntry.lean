@@ -1,134 +1,44 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
-public import VerifiedGarbage.Proof.Mont.AArch64.RowInit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFive
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStore
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-public import VerifiedGarbage.Proof.Weierstrass.Pow
-public import VerifiedGarbage.Proof.Weierstrass.TCombWords
-public import VerifiedGarbage.Proof.Weierstrass.Window
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 import VerifiedGarbage.Proof.Weierstrass.Window5
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Weierstrass.Window5
-public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-public import VerifiedGarbage.Proof.Framework.BitByte
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
-public import VerifiedGarbage.Spec.Weierstrass.Mul
-import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-import VerifiedGarbage.Proof.Weierstrass.JacMul
+public import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! A signed public lookup into the Jacobian window table. -/
 
@@ -155,7 +65,7 @@ theorem jacSignedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k e j : N
       InvJ C (tmv C K.M.n base t K.E.x) (tmv C K.M.n base t K.E.y)
         (tmv C K.M.n base t K.E.z) (Window5.winPt C P k j) := by
   let a := magH 16 (Window5.nib k j)
-  have ha : 1≤a := by dsimp [a]; omega
+  have ha : 1≤a := by dsimp [a]; omega_arith
   have h16 : a≤16 := magH_le (by
     have hl : Window5.nib k j<32 := Nat.mod_lt _ (by decide)
     exact hl)
@@ -179,7 +89,7 @@ theorem jacSignedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k e j : N
     have hz := hL.tbl K.E.z (by jmem)
     rw [hL.exy] at hy
     rw [hL.exz] at hz
-    omega
+    omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (jacPublicPoint_ok hL.lay hAl hL.n hL.exy hL.exz h.field h2 ha hTbl
     hD hT hap (h.stable.table a ha h16)) fun s₁ ⟨k₁,i₁,j₁⟩ => ?_
@@ -203,7 +113,7 @@ theorem jacSignedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k e j : N
   have hbt' : K.bits+260 ≤ K.M.tmp ∨ K.M.tmp+8*K.M.n ≤ K.bits := by rw [hL.n]; exact hbt
   have h19' : s₁.gpr .x19=BitVec.ofNat 64 j := by rw [k₁.gpr _ (x19_not_clob _),h19]
   refine WP.mono (negFieldWindow_ok hL.lay hAl hm i₁' (by jmem) (by jmem) (by jmem)
-    hny hzero (by decide) (by decide) (by omega) hL.bits (by omega) h19' hs₁.bits hbn' hbt')
+    hny hzero (by decide) (by decide) (by omega_arith) hL.bits (by omega_arith) h19' hs₁.bits hbn' hbt')
     fun t ⟨k₂,i₂⟩ => ?_
   have ks₂ : ProgKeep K.M base (winOther K) s₁ t := k₂.mono (by
     intro x hx; simp only [List.mem_cons,List.not_mem_nil,or_false] at hx

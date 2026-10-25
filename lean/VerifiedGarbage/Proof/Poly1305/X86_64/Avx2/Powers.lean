@@ -35,7 +35,7 @@ theorem pick2_toNat (a b : BitVec 64) (l h : Bool) :
   cases l <;> cases h <;>
     simp only [pick2, BitVec.toNat_append, BitVec.extractLsb'_toNat, Nat.shiftLeft_eq,
       Nat.shiftRight_eq_div_pow, Bool.false_eq_true, ite_false, ite_true, Nat.pow_zero, Nat.div_one] <;>
-    rw [or_lo (Nat.mod_lt _ (by decide))] <;> omega
+    rw [or_lo (Nat.mod_lt _ (by decide))] <;> omega_arith
 
 /-- What `blendY sel lo` writes into `Y_i`: `H_i << 32`, or with `lo`
 `H_i << 32 | H_i`. -/
@@ -52,8 +52,8 @@ theorem blT_toNat {s : State} {lo : Bool} {i k : Nat} (hh : hv s k i < 2 ^ 32) :
   rw [natw_ok]
   simp only [hv] at hh ⊢
   cases lo <;> simp only [blT, Bool.false_eq_true, ite_false, ite_true, Q.natw, envOf_v]
-  · omega
-  · rw [show (qw s (hreg i) k).toNat * 2 ^ 32 % 2 ^ 64 = (qw s (hreg i) k).toNat * 2 ^ 32 by omega,
+  · omega_arith
+  · rw [show (qw s (hreg i) k).toNat * 2 ^ 32 % 2 ^ 64 = (qw s (hreg i) k).toNat * 2 ^ 32 by omega_arith,
       or_lo hh]
 
 /-- `blendY`: the doublewords of `Y` that `sel` selects replaced. -/
@@ -71,11 +71,11 @@ theorem blend_ok {σ : Sym} {sel : Nat} {lo : Bool} (hσ : BlendShape σ sel lo)
   · simp only [yl]; rw [ey, pick2_toNat, hT]
     have := (qw s (yreg i) k).isLt
     cases sel.testBit (2 * k) <;> cases sel.testBit (2 * k + 1) <;> cases lo <;>
-      simp only [ite_true, ite_false, Bool.false_eq_true] <;> omega
+      simp only [ite_true, ite_false, Bool.false_eq_true] <;> omega_arith
   · simp only [yh]; rw [ey, pick2_toNat, hT]
     have := (qw s (yreg i) k).isLt
     cases sel.testBit (2 * k) <;> cases sel.testBit (2 * k + 1) <;> cases lo <;>
-      simp only [ite_true, ite_false, Bool.false_eq_true] <;> omega
+      simp only [ite_true, ite_false, Bool.false_eq_true] <;> omega_arith
 
 /-- Limb functions that agree below 5 and repeat limb 4 above it are equal. -/
 theorem ext5 {f g : Nat → Nat} (hf : ∀ j, 4 ≤ j → f j = f 4) (hg : ∀ j, 4 ≤ j → g j = g 4)
@@ -83,7 +83,7 @@ theorem ext5 {f g : Nat → Nat} (hf : ∀ j, 4 ≤ j → f j = f 4) (hg : ∀ j
   funext j
   by_cases hj : j < 5
   · exact h j hj
-  · rw [hf j (by omega), hg j (by omega)]; exact h 4 (by decide)
+  · rw [hf j (by omega_arith), hg j (by omega_arith)]; exact h 4 (by decide)
 
 theorem yh_ge (s : State) (k : Nat) {j : Nat} (h : 4 ≤ j) : yh s k j = yh s k 4 := by
   simp only [yh, yreg_ge h]
@@ -108,13 +108,13 @@ theorem initY_ok {s : State} (hh : ∀ k < 4, ∀ i < 5, hv s k i < 2 ^ 32) :
     rw [h.natw _ hk, (initS_shape i hi).1]
     have := hh k hk i hi
     simp only [Q.natw, envOf_v, hv] at this ⊢
-    rw [show (qw s (hreg i) k).toNat * 2 ^ 32 % 2 ^ 64 = (qw s (hreg i) k).toNat * 2 ^ 32 by omega,
+    rw [show (qw s (hreg i) k).toNat * 2 ^ 32 % 2 ^ 64 = (qw s (hreg i) k).toNat * 2 ^ 32 by omega_arith,
       Nat.or_comm, or_lo this]
   have := hh k hk i hi
   refine ⟨?_, ?_, ?_⟩
   · simp only [hv]; rw [h.reg _ k hk, (initS_shape i hi).2]; simp only [Q.eval, xr_xi]
-  · simp only [yl]; rw [e]; omega
-  · simp only [yh]; rw [e]; omega
+  · simp only [yl]; rw [e]; omega_arith
+  · simp only [yh]; rw [e]; omega_arith
 
 /-! ## `blendY` -/
 
@@ -175,7 +175,7 @@ theorem loadRv_ok (s : State) :
   have e₀ := e 0 (by decide)
   refine ⟨h.eq, fun k hk i hi => ?_, ?_, fun k hk i hi => ?_⟩
   · obtain ⟨a0, a1, a2, a3, a4⟩ := e k hk
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · rw [a0, e₀.1]
     · rw [a1, e₀.2.1]
     · rw [a2, e₀.2.2.1]
@@ -185,12 +185,12 @@ theorem loadRv_ok (s : State) :
     exact Limbs26.split_val l _
   · obtain ⟨a0, a1, a2, a3, a4⟩ := e k hk
     rw [Limbs26.split_or l] at a2
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
-    · rw [a0]; omega
-    · rw [a1]; omega
-    · rw [a2]; omega
-    · rw [a3]; omega
-    · rw [a4]; omega
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    · rw [a0]; omega_arith
+    · rw [a1]; omega_arith
+    · rw [a2]; omega_arith
+    · rw [a3]; omega_arith
+    · rw [a4]; omega_arith
 
 /-! ## The powers -/
 
@@ -230,7 +230,7 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) :
     WP isa (.block powersV) s fun s' => vec s s' = s' ∧ YInv s' (rN s) := by
   refine WP.block_append (WP.mono (loadRv_ok s) fun s₁ ⟨v₁, U₁, V₁, B₁⟩ => ?_)
   have LL : ∀ j, 4 ≤ j → hv s₁ 0 j = hv s₁ 0 4 := fun j h => hv_ge s₁ 0 h
-  refine WP.block_append (WP.mono (initY_ok fun k hk i hi => by have := B₁ k hk i hi; omega)
+  refine WP.block_append (WP.mono (initY_ok fun k hk i hi => by have := B₁ k hk i hi; omega_arith)
     fun s₂ ⟨v₂, I₂⟩ => ?_)
   have h₂ : ∀ k < 4, ∀ i < 5, hv s₂ k i = hv s₁ 0 i ∧ yl s₂ k i = hv s₁ 0 i ∧ yh s₂ k i = hv s₁ 0 i := by
     intro k hk i hi; obtain ⟨a, b, c⟩ := I₂ k hk i hi; rw [U₁ k hk i hi] at a b c; exact ⟨a, b, c⟩
@@ -239,8 +239,8 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) :
   have v₂' := vec_trans v₁ v₂
   refine WP.block_append (WP.mono (mul_ok ⟨r8 v₂', fun k hk i hi => ?_, fun k hk i hi => ?_⟩)
     fun s₃ M₃ => ?_)
-  · rw [(h₂ k hk i hi).1]; have := hb₁ i hi; omega
-  · rw [(h₂ k hk i hi).2.1]; have := hb₁ i hi; omega
+  · rw [(h₂ k hk i hi).1]; have := hb₁ i hi; omega_arith
+  · rw [(h₂ k hk i hi).2.1]; have := hb₁ i hi; omega_arith
   have m₃ := mul_step M₃ LL LL (fun k hk i hi => (h₂ k hk i hi).1) (fun k hk i hi => (h₂ k hk i hi).2.1)
   -- `r²` in `H`; `Y` = `r` in both doublewords.
   refine WP.block_append (WP.mono (run_ok (by intro h; cases h) bl1_eq) fun s₄ h₄ => ?_)
@@ -249,15 +249,15 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) :
     intro k hk i hi
     obtain ⟨a₃, b₃, c₃⟩ := m₃ k hk i hi
     have := M₃.hb k hk i hi
-    obtain ⟨a, b, c⟩ := blend_ok bl1_shape h₄ hk hi (by omega)
+    obtain ⟨a, b, c⟩ := blend_ok bl1_shape h₄ hk hi (by omega_arith)
     rw [a, b, c, a₃, b₃, c₃, (h₂ k hk i hi).2.1, (h₂ k hk i hi).2.2]
     refine ⟨rfl, ?_⟩
     rcases cases4 hk with rfl | rfl | rfl | rfl <;> simp (config := { decide := true }) only [ite_true, ite_false]
   have v₄ := vec_trans (vec_trans v₂' M₃.vec) h₄.eq
   refine WP.block_append (WP.mono (mul_ok ⟨r8 v₄, fun k hk i hi => ?_, fun k hk i hi => ?_⟩)
     fun s₅ M₅ => ?_)
-  · rw [(e₄ k hk i hi).1, ← (m₃ k hk i hi).1]; have := M₃.hb k hk i hi; omega
-  · rw [(e₄ k hk i hi).2.1]; have := hb₁ i hi; omega
+  · rw [(e₄ k hk i hi).1, ← (m₃ k hk i hi).1]; have := M₃.hb k hk i hi; omega_arith
+  · rw [(e₄ k hk i hi).2.1]; have := hb₁ i hi; omega_arith
   have m₅ := mul_step (A := Limbs26.mul (hv s₁ 0) (hv s₁ 0)) M₅ (fun _ h => mul_ge _ _ h) LL (fun k hk i hi => (e₄ k hk i hi).1)
     (fun k hk i hi => (e₄ k hk i hi).2.1)
   -- `r³` in `H`; `r³` into the high doublewords of lanes 0 and 1.
@@ -269,15 +269,15 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) :
     intro k hk i hi
     obtain ⟨a₅, b₅, c₅⟩ := m₅ k hk i hi
     have := M₅.hb k hk i hi
-    obtain ⟨a, b, c⟩ := blend_ok bl2_shape h₆ hk hi (by omega)
+    obtain ⟨a, b, c⟩ := blend_ok bl2_shape h₆ hk hi (by omega_arith)
     rw [a, b, c, a₅, b₅, c₅, (e₄ k hk i hi).2.1, (e₄ k hk i hi).2.2]
     refine ⟨rfl, ?_⟩
     rcases cases4 hk with rfl | rfl | rfl | rfl <;> simp (config := { decide := true }) only [ite_true, ite_false]
   have v₆ := vec_trans (vec_trans v₄ M₅.vec) h₆.eq
   refine WP.block_append (WP.mono (mul_ok ⟨r8 v₆, fun k hk i hi => ?_, fun k hk i hi => ?_⟩)
     fun s₇ M₇ => ?_)
-  · rw [(e₆ k hk i hi).1, ← (m₅ k hk i hi).1]; have := M₅.hb k hk i hi; omega
-  · rw [(e₆ k hk i hi).2.1]; have := hb₁ i hi; omega
+  · rw [(e₆ k hk i hi).1, ← (m₅ k hk i hi).1]; have := M₅.hb k hk i hi; omega_arith
+  · rw [(e₆ k hk i hi).2.1]; have := hb₁ i hi; omega_arith
   have m₇ := mul_step (A := Limbs26.mul (Limbs26.mul (hv s₁ 0) (hv s₁ 0)) (hv s₁ 0)) M₇
     (fun _ h => mul_ge _ _ h) LL (fun k hk i hi => (e₆ k hk i hi).1)
     (fun k hk i hi => (e₆ k hk i hi).2.1)
@@ -291,7 +291,7 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) :
     intro k hk i hi
     obtain ⟨_, b₇, c₇⟩ := m₇ k hk i hi
     have := M₇.hb k hk i hi
-    obtain ⟨_, b, c⟩ := blend_ok bl3_shape h₈ hk hi (by omega)
+    obtain ⟨_, b, c⟩ := blend_ok bl3_shape h₈ hk hi (by omega_arith)
     rw [b, c, b₇, c₇, (e₆ k hk i hi).2.2, (m₇ k hk i hi).1, (m₇ 0 (by decide) i hi).1]
     rcases cases4 hk with rfl | rfl | rfl | rfl <;> simp (config := { decide := true }) only [ite_true, ite_false]
   refine ⟨vec_trans (vec_trans v₆ M₇.vec) h₈.eq, ?_⟩
@@ -323,6 +323,6 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) :
   · rw [(e₈ k hk i hi).1]; exact b₄ i hi
   · rw [(e₈ k hk i hi).2]
     have := hb₁ i hi; have := b₂ i hi; have := b₃ i hi; have := b₄ i hi
-    split <;> [omega; split <;> [omega; split <;> omega]]
+    split <;> [omega_arith; split <;> [omega_arith; split <;> omega_arith]]
 
 end VG.Proof.Poly1305.X86_64.Avx2

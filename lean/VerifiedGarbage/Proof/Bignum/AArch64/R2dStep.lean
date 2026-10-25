@@ -35,17 +35,17 @@ open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 theorem wv_split2 (m : Mem) (B : Addr) (e : Nat) {w : Nat} (hw : 2 ≤ w) :
     wv m B e w = (word m B (e + 8 * (w - 1))).toNat * 2 ^ (64 * (w - 1)) +
       (word m B (e + 8 * (w - 2))).toNat * 2 ^ (64 * (w - 2)) + wv m B e (w - 2) := by
-  obtain ⟨k, rfl⟩ : ∃ k, w = k + 2 := ⟨w - 2, by omega⟩
-  rw [show k + 2 - 1 = k + 1 by omega, show k + 2 - 2 = k by omega, wv, wv]
+  obtain ⟨k, rfl⟩ : ∃ k, w = k + 2 := ⟨w - 2, by omega_arith⟩
+  rw [show k + 2 - 1 = k + 1 by omega_arith, show k + 2 - 2 = k by omega_arith, wv, wv]
   rw [Nat.mul_comm (2 ^ (64 * (k + 1))), Nat.mul_comm (2 ^ (64 * k))]
-  omega
+  omega_arith
 
 /-- A number of `w ≥ 1` words: its top word and the rest. -/
 theorem wv_split1 (m : Mem) (B : Addr) (e : Nat) {w : Nat} (hw : 1 ≤ w) :
     wv m B e w = (word m B (e + 8 * (w - 1))).toNat * 2 ^ (64 * (w - 1)) + wv m B e (w - 1) := by
-  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega⟩
-  rw [show k + 1 - 1 = k by omega, wv, Nat.mul_comm]
-  omega
+  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega_arith⟩
+  rw [show k + 1 - 1 = k by omega_arith, wv, Nat.mul_comm]
+  omega_arith
 
 /-- The low `n` words are the number, if it is below `2^(64 n)`. -/
 theorem wv_low_top (m : Mem) (B : Addr) (e n : Nat) (h : wv m B e (n + 1) < 2 ^ (64 * n)) :
@@ -54,7 +54,7 @@ theorem wv_low_top (m : Mem) (B : Addr) (e n : Nat) (h : wv m B e (n + 1) < 2 ^ 
   rcases Nat.eq_zero_or_pos (word m B (e + 8 * n)).toNat with h0 | h0
   · rw [e1, h0, Nat.mul_zero, Nat.add_zero]
   · have := Nat.mul_le_mul_left (2 ^ (64 * n)) h0
-    omega
+    omega_arith
 
 /-- The top word of `x < m` is at most that of `m`. -/
 theorem r2d_top_le {m : Mem} {B : Addr} {eX eM w : Nat} (hw : 1 ≤ w)
@@ -103,7 +103,7 @@ theorem r2dHead_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
   have hs := hg.scr
   have hn := hs.nowrap
   have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi =>
-    hs.ld (by have := hdr_lt_slot w 8 hi; have := slot_le (w := w) (show 7 < 8 by decide); omega)
+    hs.ld (by have := hdr_lt_slot w 8 hi; have := slot_le (w := w) (show 7 < 8 by decide); omega_arith)
   have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x6, .x7, .x8, .x9, .x11, .x12] (Q := fun t' => StepRegs t' B w ∧ t'.mem = t.mem)
@@ -120,8 +120,8 @@ theorem r2dHead_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
     (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨hr, hm₁⟩, k₁⟩ => ?_
   have hs₁ := hs.congr k₁.wr
   rw [← hm₁] at hu hd hv
-  refine WP.mono (r2dQuot_ok hs₁ hr.x11 hr.x9 hr.x12 hr.x6 hr.x7 hw hw' (by have := sl aR2 (by decide); omega)
-    (by have := sl aN (by decide); omega) (by have := sl aTmp (by decide); omega) hu hd hv)
+  refine WP.mono (r2dQuot_ok hs₁ hr.x11 hr.x9 hr.x12 hr.x6 hr.x7 hw hw' (by have := sl aR2 (by decide); omega_arith)
+    (by have := sl aN (by decide); omega_arith) (by have := sl aTmp (by decide); omega_arith) hu hd hv)
     fun t' ⟨h1, hm, k⟩ => ⟨hr.keep k, by rw [h1, hm₁], by rw [hm, hm₁], (k₁.trans k).mono (by decide)⟩
 
 /-! ## Adding `m` back -/
@@ -151,7 +151,7 @@ theorem signTest_ok {s : State} {B : Addr} {Z w eA : Nat} (hs : Scr s B Z) (h8 :
     ?_ (by decide) (by decide) (by decide +kernel)
   refine WP.mono (Q := fun (t : State) => t.gpr .x3 = word s.mem B (eA + 8 * w) >>> 63 ∧ t.mem = s.mem) ?_
     fun t ⟨h3, hm⟩ => ⟨by rw [h3, shr63_toNat], hm⟩
-  brun [signTest, h8, h12, r2d_ofNat_shl3 (show w < 2 ^ 61 by omega), hs.ld (show eA + 8 * w + 8 ≤ Z by omega)]
+  brun [signTest, h8, h12, r2d_ofNat_shl3 (show w < 2 ^ 61 by omega_arith), hs.ld (show eA + 8 * w + 8 ≤ Z by omega_arith)]
 
 /-- `addBackPub` does what `addBack` does: when `t` is not negative, `addBack`
 adds nothing, and `addBackPub` skips it. -/
@@ -199,7 +199,7 @@ theorem r2dStepPre_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D
   have lX := sl aR2 (by decide)
   have sAM := slot_sep (w := w) (show aAcc ≠ aN by decide)
   have sAX := slot_sep (w := w) (show aAcc ≠ aR2 by decide)
-  have hu := r2d_top_le (m := t.mem) (B := B) (by omega : 1 ≤ w) (hM ▸ hX)
+  have hu := r2d_top_le (m := t.mem) (B := B) (by omega_arith : 1 ≤ w) (hM ▸ hX)
   simp only [seqs]
   refine WP.seq (WP.mono (r2dHead_ok hg hZ hw hw' hu (by rw [hD]; exact hd) (by rw [hv, hD]))
     fun t₁ ⟨r₁, h1, hm₁, k₁⟩ => ?_)
@@ -217,16 +217,16 @@ theorem r2dStepPre_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D
   have r₂ := r₁.keep k₂
   have hs₂ := hs₁.congr k₂.wr
   have M₂ : wv t₂.mem B (slot w aN) w = M := by
-    rw [o₂.wv (by omega) (by omega), hm₁, hM]
+    rw [o₂.wv (by omega_arith) (by omega_arith), hm₁, hM]
   have X₂ : wv t₂.mem B (slot w aR2) w = X := by
-    rw [o₂.wv (by omega) (by omega), hm₁, hXv]
+    rw [o₂.wv (by omega_arith) (by omega_arith), hm₁, hXv]
   -- `[acc] := q̂ m`.
   have hqM : q * M < 2 ^ (64 * (w + 1)) := by
     rw [pow64_succ, Nat.mul_comm (2 ^ (64 * w))]
-    exact Nat.mul_lt_mul_of_lt_of_le hqB (Nat.le_of_lt hMB) (by omega)
-  refine WP.seq (WP.mono (mulAddRow_ok hs₂ r₂.x8 r₂.x9 r₂.x12 r₂.x7 (by omega) hw' lA (by omega) (by omega)
+    exact Nat.mul_lt_mul_of_lt_of_le hqB (Nat.le_of_lt hMB) (by omega_arith)
+  refine WP.seq (WP.mono (mulAddRow_ok hs₂ r₂.x8 r₂.x9 r₂.x12 r₂.x7 (by omega_arith) hw' lA (by omega_arith) (by omega_arith)
     (by rw [hz₂, M₂, (k₂.gpr .x1 (by decide)).trans h1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hqB, Nat.zero_add]
-        exact Nat.lt_of_lt_of_le hqM (Nat.pow_le_pow_right (by decide) (by omega))))
+        exact Nat.lt_of_lt_of_le hqM (Nat.pow_le_pow_right (by decide) (by omega_arith))))
     fun t₃ ⟨hv₃, o₃, k₃⟩ => ?_)
   rw [hz₂, M₂, (k₂.gpr .x1 (by decide)).trans h1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hqB, Nat.zero_add]
     at hv₃
@@ -234,11 +234,11 @@ theorem r2dStepPre_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D
   have hs₃ := hs₂.congr k₃.wr
   have P₃ : wv t₃.mem B (slot w aAcc) (w + 1) = q * M := by
     rw [wv_low_top t₃.mem B (slot w aAcc) (w + 1) (by rw [hv₃]; exact hqM), hv₃]
-  have X₃ : wv t₃.mem B (slot w aR2) w = X := by rw [o₃.wv (by omega) (by omega), X₂]
-  have M₃ : wv t₃.mem B (slot w aN) w = M := by rw [o₃.wv (by omega) (by omega), M₂]
+  have X₃ : wv t₃.mem B (slot w aR2) w = X := by rw [o₃.wv (by omega_arith) (by omega_arith), X₂]
+  have M₃ : wv t₃.mem B (slot w aN) w = M := by rw [o₃.wv (by omega_arith) (by omega_arith), M₂]
   -- `t := x 2^64 - q̂ m`.
-  refine WP.mono (subPass_ok hs₃ r₃.x8 r₃.x11 r₃.x12 r₃.x7 (by omega) hw' (by omega) (by omega)
-    (by omega)) fun t₄ ⟨b, hv₄, o₄, k₄⟩ => ?_
+  refine WP.mono (subPass_ok hs₃ r₃.x8 r₃.x11 r₃.x12 r₃.x7 (by omega_arith) hw' (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun t₄ ⟨b, hv₄, o₄, k₄⟩ => ?_
   rw [P₃, X₃] at hv₄
   have r₄ := r₃.keep k₄
   have hs₄ := hs₃.congr k₄.wr
@@ -248,9 +248,9 @@ theorem r2dStepPre_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D
     rw [← hm₁]
     exact ((Arrays.of_outside mA o₂ (Nat.le_refl _) (Nat.le_refl _)).trans
       (Arrays.of_outside mA o₃ (Nat.le_refl _) (Nat.le_refl _))).trans
-      (Arrays.of_outside mA o₄ (Nat.le_refl _) (by omega))
+      (Arrays.of_outside mA o₄ (Nat.le_refl _) (by omega_arith))
   exact ⟨⟨hs₄, (kk.gpr .x0 (by decide)).trans hg.x0, ha.hdr hg.hdr⟩, r₄,
-    by rw [o₄.wv (by omega) (by omega), M₃], ⟨b, by omega⟩, ha, kk⟩
+    by rw [o₄.wv (by omega_arith) (by omega_arith), M₃], ⟨b, by omega_arith⟩, ha, kk⟩
 
 /-- `x := x 2^64 mod m` by a step whose `ab` does what `addBack` does: `x < m`
 (array `aR2`) for `m` (array `aN`) of `w ≥ 2` words, its top word

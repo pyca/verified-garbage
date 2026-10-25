@@ -59,7 +59,7 @@ theorem s2v_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a D 
     WP isa encS2v s fun s' => ∃ mₛ, S2vOut c w sp a D R N n s mₛ s' := by
   have hR := h.rounds
   have hRb := rounds_le hR
-  have hN : N < 2 ^ 32 := by have := h.ads.fit; omega
+  have hN : N < 2 ^ 32 := by have := h.ads.fit; omega_arith
   have st := WP.seq_iff.mp (start_ok L h)
   refine WP.seq (WP.mono st fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono h₁ fun s₂ ⟨mₛ, fs, sv, I₀⟩ => ?_)
@@ -83,10 +83,10 @@ theorem s2v_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a D 
       (fun r hr => (dA r hr).sub_left (Offset.sub_base _ (by decide))) (by decide), h.a1]
   have hsp₃ : s₃.sp = sp := I.env.sp
   refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 0) (by decide)
-    (by rw [hsp₃]; exact addr_add (by have := h.afit; omega))
+    (by rw [hsp₃]; exact addr_add (by have := h.afit; omega_arith))
     (by rw [I.rd, I.wr]; exact in_off h.args (by decide) (by decide)) fun s₄ u₄ => ?_
   refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 4) (by decide)
-    (by rw [u₄.sp, hsp₃]; exact addr_add (by have := h.afit; omega))
+    (by rw [u₄.sp, hsp₃]; exact addr_add (by have := h.afit; omega_arith))
     (by rw [u₄.rd, u₄.wr, I.rd, I.wr]; exact in_off h.args (by decide) (by decide)) fun s₅ u₅ => WP.block_nil ?_
   have dc : ∀ r ∈ [savedR w], (⟨State.addr c, 512⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact L.c0_w' (by decide) (by decide)
@@ -116,7 +116,7 @@ theorem sivOut_ok {s : State} (he : Env c w sp R s) {T : BitVec 32}
   have eW : ∀ d, d < 2576 → State.addr (w + BitVec.ofNat 32 d) = State.addr w + BitVec.ofNat 64 d :=
     fun d hd => L.wA hd
   have eT : ∀ d, d < 16 → State.addr (T + BitVec.ofNat 32 d) = State.addr T + BitVec.ofNat 64 d :=
-    fun d hd => addr_add (by omega)
+    fun d hd => addr_add (by omega_arith)
   have r₀ := he.perm.wR (show 0 + 4 ≤ 2576 by decide)
   have r₁ := he.perm.wR (show 4 + 4 ≤ 2576 by decide)
   have r₂ := he.perm.wR (show 8 + 4 ≤ 2576 by decide)
@@ -162,7 +162,7 @@ theorem sivIn_ok {s : State} (he : Env c w sp R s) {T : BitVec 32}
   have eW : ∀ d, d < 2576 → State.addr (w + BitVec.ofNat 32 d) = State.addr w + BitVec.ofNat 64 d :=
     fun d hd => L.wA hd
   have eT : ∀ d, d < 16 → State.addr (T + BitVec.ofNat 32 d) = State.addr T + BitVec.ofNat 64 d :=
-    fun d hd => addr_add (by omega)
+    fun d hd => addr_add (by omega_arith)
   have r₀ := in_off hTr (show 0 + 4 ≤ 16 by decide) (by decide)
   have r₁ := in_off hTr (show 4 + 4 ≤ 16 by decide) (by decide)
   have r₂ := in_off hTr (show 8 + 4 ≤ 16 by decide) (by decide)
@@ -273,7 +273,7 @@ theorem encrypt_wp {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp 
     · exact Offset.base_disjoint_below (State.addr sp) (n := 16) (k := 16) (by decide)
     · exact h.args_d
   have a8 : State.addr (s₃.sp + BitVec.ofNat 32 8) = State.addr sp + BitVec.ofNat 64 8 := by
-    rw [he₃.sp]; exact addr_add (by have := h.afit; omega)
+    rw [he₃.sp]; exact addr_add (by have := h.afit; omega_arith)
   have v8 : s₃.mem.readW (State.addr (s₃.sp + BitVec.ofNat 32 8)) 32 = T := by
     rw [a8, f₃.readW (r := ⟨State.addr sp + BitVec.ofNat 64 8, 4⟩) (Region.contains_self _ _)
       (fun r hr => (eA r hr).sub_left (Offset.sub_base _ (by decide))) (by decide),
@@ -290,12 +290,12 @@ theorem encrypt_wp {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp 
     rcases hr with rfl | rfl | rfl <;> exact g₄ _ (by decide) (by decide)) sp₄ rd₄ wr₄
   have sv₄ : SavedAt s₄.mem w s := sv₃.frame fo₄ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (h.t_w.sub_right (Lay.wSub (by decide))).symm
-  refine WP.mono (restore_ok (s₀ := s) he₄.r11 (by omega)
+  refine WP.mono (restore_ok (s₀ := s) he₄.r11 (by omega_arith)
     (by rw [rd₄, wr₄, rd₃, wr₃, rd₂, wr₂, O.rd, O.wr]; exact covers_left (covers_prefix h.perm.w (by decide)))
     sv₄ (by rw [he₄.sp, h.hsp])) fun s₅ ⟨ab, m₅, _, _, _⟩ => ⟨ab, ?_⟩
   have pD : bytesAt s₄.mem (State.addr D) n = bytesAt s₃.mem (State.addr D) n :=
     bytesAt_frame fo₄ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hTd.symm)
-      (by have := h.data.buf.lt; omega)
+      (by have := h.data.buf.lt; omega_arith)
   -- The values.
   have dW : ∀ r ∈ ctrR w sp D n, (⟨State.addr w, 16⟩ : Region).Disjoint r := by
     intro r hr
@@ -313,9 +313,9 @@ theorem encrypt_wp {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp 
     ctxCiph_frame f₀₂ dc hRb
   have p₁ : bytesAt s₁.mem (State.addr D) n = bytesAt s.mem (State.addr D) n :=
     bytesAt_frame f₀₁ dD
-      (by have := h.data.buf.lt; omega)
+      (by have := h.data.buf.lt; omega_arith)
   have p₂ : bytesAt s₂.mem (State.addr D) n = bytesAt s.mem (State.addr D) n :=
-    bytesAt_frame f₀₂ dD (by have := h.data.buf.lt; omega)
+    bytesAt_frame f₀₂ dD (by have := h.data.buf.lt; omega_arith)
   rw [BitVec.add_zero] at o₂
   rw [m₅, iv₄, pD, Spec.Siv.encryptWith_eq, Spec.Siv.sealWith, d₃, iv, o₂, mac₁, O.acc, p₁, ciph₂, p₂]
 

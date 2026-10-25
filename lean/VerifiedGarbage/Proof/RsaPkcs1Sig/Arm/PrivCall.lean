@@ -33,7 +33,7 @@ theorem privCode_stack (v : Proof.Rsa.Arm.CrtImpl) :
     Impl.Rsa.Arm.PrivChecked.check, Impl.Rsa.Arm.PrivChecked.tail, Impl.Rsa.Arm.PrivChecked.releaseTail,
     Impl.Rsa.Arm.PrivChecked.release, Impl.Bignum.Arm.compareBytes, FrameStack.armStack, List.length_cons,
     List.length_nil, Impl.Rsa.Arm.PrivChecked.frameBytes, Proof.Rsa.Arm.stackBytes]
-  omega
+  omega_arith
 
 section
 
@@ -85,7 +85,7 @@ abbrev privBufs (out n e inp p q dp dq qinv scr : BitVec 32) (K el pl ql sl : Na
     ⟨State.addr scr, sl * 8⟩]
 
 theorem PrivArgs.k32 (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl) : K < 2 ^ 32 := by
-  have := h.kv.2; omega
+  have := h.kv.2; omega_arith
 
 theorem priv_pre {sp : BitVec 32} (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl) (hspE : s.sp = sp)
     (hsp : 3440 ≤ sp.toNat) (hsa : sp.toNat + 64 ≤ 2 ^ 32)
@@ -98,9 +98,9 @@ theorem priv_pre {sp : BitVec 32} (h : PrivArgs s out n e inp p q dp dq qinv scr
       (s.callEntry.withRegions (privRd sp n e inp p q dp dq qinv K el pl ql) (privWr out scr K sl)) := by
   subst hspE
   have k32 := h.k32
-  have el32 : el < 2 ^ 32 := by have := h.elK; omega
-  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega
-  have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega
+  have el32 : el < 2 ^ 32 := by have := h.elK; omega_arith
+  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega_arith
+  have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega_arith
   sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs,
     reduceClassify, Loc.val]
   simp only [stackArg_call, stackArgAddr_call, h.r0, h.r1, h.r2, h.r3, h.a0, h.a1, h.a2, h.a3, h.a4, h.a5,
@@ -133,7 +133,7 @@ theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq
     (Spec.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pub (s₁.callEntry.withRegions rd wr)
       (s₂.callEntry.withRegions rd wr) := by
   have k32 := h₁.k32
-  have el32 : el < 2 ^ 32 := by have := h₁.elK; omega
+  have el32 : el < 2 ^ 32 := by have := h₁.elK; omega_arith
   sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs,
     reduceClassify, Loc.val]
   simp only [stackArg_call, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₁.a0, h₁.a1, h₁.a2, h₁.a3, h₁.a4, h₁.a5, h₁.a6, h₁.a7,
@@ -159,9 +159,9 @@ theorem priv_post {s t : State} (h : PrivArgs s out n e inp p q dp dq qinv scr K
         (Spec.Rsa.bytesAt s.mem (State.addr dp) pl) (Spec.Rsa.bytesAt s.mem (State.addr dq) ql)
         (Spec.Rsa.bytesAt s.mem (State.addr qinv) pl)) := by
   have k32 := h.k32
-  have el32 : el < 2 ^ 32 := by have := h.elK; omega
-  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega
-  have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega
+  have el32 : el < 2 ^ 32 := by have := h.elK; omega_arith
+  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega_arith
+  have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega_arith
   sig_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs,
     reduceClassify, Loc.val] at hp
   simp only [stackArg_call, h.r0, h.r2, h.r3, h.a0, h.a1, h.a2, h.a4, h.a5, h.a6, h.a7, h.a8,

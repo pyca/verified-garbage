@@ -25,7 +25,7 @@ theorem Outside.word_sep {B P : Addr} {Z Zp o n : Nat} {m m' : Mem} (h : Outside
     (hsep : ∀ x, ofs B x < Z → Zp ≤ ofs P x) (hn : o + n ≤ Zp) {d : Nat} (hd : d + 8 ≤ Z)
     (hB : B.toNat + Z ≤ 2 ^ 64) : word m' B d = word m B d :=
   Mem.readW_congr fun i hi => h _ (Or.inr (Nat.le_trans hn
-    (hsep _ (by rw [ofs_off B (d := d) (i := i) (by omega)]; omega))))
+    (hsep _ (by rw [ofs_off B (d := d) (i := i) (by omega_arith)]; omega_arith))))
 
 /-- `copyWords`, `w` words from `dS` of the working space (`r15`) to `dD` of
 `pre` (`r14`), with `2 w` in `r11`. -/
@@ -46,37 +46,37 @@ theorem copyWords_ok {s : State} {B P : Addr} {Z Zp dS dD w : Nat} (hs : Scr s B
     prun [h11]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_arith
   refine WP.mono hpre fun s₁ ⟨⟨i17, im⟩, k₁⟩ => ?_
   let Inv : Nat → State → Prop := fun i t =>
     t.gpr .r14 = off P (dD + 8 * i) ∧ t.gpr .r15 = off B (dS + 8 * i) ∧ Outside P dD (8 * i) s.mem t.mem ∧
       (∀ k < i, word t.mem P (dD + 8 * k) = word s.mem B (dS + 8 * k)) ∧ Keep [.r0, .r14, .r15, .r17] s t
   refine WP.mono (wp_countdown (body := .block ([.load .d .r0 .r15 0, .store .d .r0 .r14 0, .addi .r14 .r14 8,
-      .addi .r15 .r15 8] ++ ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := w) (by omega) (by omega) Inv
+      .addi .r15 .r15 8] ++ ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := w) (by omega_arith) (by omega_arith) Inv
     (fun i hi t ⟨j14, j15, jout, jc, jk⟩ hc => ?_)
     ⟨by rw [k₁.gpr .r14 (by decide), h14]; rfl, by rw [k₁.gpr .r15 (by decide), h15]; rfl,
-      by rw [← im]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega), k₁.mono⟩ i17)
+      by rw [← im]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega_arith), k₁.mono⟩ i17)
     fun t ⟨t14, _, tout, tc, tk⟩ => ⟨⟨t14, tc, tout⟩, tk⟩
   have hsrc : word t.mem B (dS + 8 * i) = word s.mem B (dS + 8 * i) :=
-    Outside.word_sep jout hsep (by omega) (by omega) hnw
+    Outside.word_sep jout hsep (by omega_arith) (by omega_arith) hnw
   have hst : WP isa (.block [.load .d .r0 .r15 0, .store .d .r0 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8,
       .subi .r17 .r17 1]) t
       fun t' => t' = ((({ (t.write .r0 (word t.mem B (dS + 8 * i))) with
         mem := t.mem.writeW (off P (dD + 8 * i)) (word t.mem B (dS + 8 * i)) } :
         State).write .r14 (off P (dD + 8 * i + 8))).write .r15
           (off B (dS + 8 * i + 8))).write .r17 (t.gpr .r17 - BitVec.ofNat 64 1) := by
-    prun [j14, j15, (hs.congr jk.wr).ld (show dS + 8 * i + 8 ≤ Z by omega),
-      (hp.congr jk.wr).st (show dD + 8 * i + 8 ≤ Zp by omega)]
+    prun [j14, j15, (hs.congr jk.wr).ld (show dS + 8 * i + 8 ≤ Z by omega_arith),
+      (hp.congr jk.wr).st (show dD + 8 * i + 8 ≤ Zp by omega_arith)]
   refine WP.mono hst fun t' e => ?_
   subst e
-  have hw := writeW_outside t.mem P (d := dD + 8 * i) (word t.mem B (dS + 8 * i)) (by omega)
-  refine ⟨⟨by gsimp; rw [show dD + 8 * i + 8 = dD + 8 * (i + 1) by omega],
-    by gsimp; rw [show dS + 8 * i + 8 = dS + 8 * (i + 1) by omega], ?_, ?_, ?_⟩, by gsimp⟩
-  · gsimp; exact (jout.mono (Nat.le_refl _) (by omega)).trans (hw.mono (by omega) (by omega))
+  have hw := writeW_outside t.mem P (d := dD + 8 * i) (word t.mem B (dS + 8 * i)) (by omega_arith)
+  refine ⟨⟨by gsimp; rw [show dD + 8 * i + 8 = dD + 8 * (i + 1) by omega_arith],
+    by gsimp; rw [show dS + 8 * i + 8 = dS + 8 * (i + 1) by omega_arith], ?_, ?_, ?_⟩, by gsimp⟩
+  · gsimp; exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans (hw.mono (by omega_arith) (by omega_arith))
   · intro k hk
     gsimp
     rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk | rfl
-    · rw [hw.word (by omega) (by omega)]; exact jc k hk
+    · rw [hw.word (by omega_arith) (by omega_arith)]; exact jc k hk
     · rw [word_writeW_self, hsrc]
   · exact jk.trans' (((((Keep.write _ _ _).trans (Keep.mem _ _)).trans (Keep.write _ _ _)).trans
       (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono
@@ -101,7 +101,7 @@ theorem write_ok {s : State} {B P : Addr} {Z Zp dN dX w : Nat} (hs : Scr s B Z) 
     prun [h19, h10, BitVec.add_zero]
   refine WP.mono hpre fun s₁ ⟨⟨i14, i15, im⟩, k₁⟩ => ?_
   refine WP.seq (WP.mono (copyWords_ok (dD := 0) (hs.congr k₁.wr) (hp.congr k₁.wr) i15 i14
-    ((k₁.gpr _ (by decide)).trans h11) hw hw' hN (by omega) hsep) fun s₂ ⟨⟨j14, jc, jout⟩, k₂⟩ => ?_)
+    ((k₁.gpr _ (by decide)).trans h11) hw hw' hN (by omega_arith) hsep) fun s₂ ⟨⟨j14, jc, jout⟩, k₂⟩ => ?_)
   have k12 := k₁.trans k₂
   refine WP.seq ?_
   have hmid : WP isa (.block [.addi .r15 .r5 0]) s₂ fun s₃ =>
@@ -111,16 +111,16 @@ theorem write_ok {s : State} {B P : Addr} {Z Zp dN dX w : Nat} (hs : Scr s B Z) 
   refine WP.mono hmid fun s₃ ⟨⟨l15, lm⟩, k₃⟩ => ?_
   have k13 := k12.trans k₃
   refine WP.mono (copyWords_ok (dD := 0 + 8 * w) (hs.congr k13.wr) (hp.congr k13.wr) l15
-    ((k₃.gpr _ (by decide)).trans j14) ((k13.gpr _ (by decide)).trans h11) hw hw' hX (by omega) hsep)
+    ((k₃.gpr _ (by decide)).trans j14) ((k13.gpr _ (by decide)).trans h11) hw hw' hX (by omega_arith) hsep)
     fun t ⟨⟨_, tc, tout⟩, k₄⟩ => ⟨⟨fun i hi => ?_, fun i hi => ?_, ?_⟩, (k13.trans k₄).mono⟩
-  · rw [tout.word (by omega) (by omega), lm]
+  · rw [tout.word (by omega_arith) (by omega_arith), lm]
     have := jc i hi
     rwa [Nat.zero_add, im] at this
-  · rw [show 8 * w + 8 * i = 0 + 8 * w + 8 * i by omega, tc i hi, lm,
-      Outside.word_sep jout hsep (by omega) (by omega) hnw, im]
+  · rw [show 8 * w + 8 * i = 0 + 8 * w + 8 * i by omega_arith, tc i hi, lm,
+      Outside.word_sep jout hsep (by omega_arith) (by omega_arith) hnw, im]
   · rw [im] at jout
     rw [lm] at tout
-    exact (jout.mono (by omega) (by omega)).trans (tout.mono (by omega) (by omega))
+    exact (jout.mono (by omega_arith) (by omega_arith)).trans (tout.mono (by omega_arith) (by omega_arith))
 
 /-- `zeroPre`: `pre`'s (`r19`) `2 w` words := 0. -/
 theorem zeroPre_ok {s : State} {P : Addr} {Zp w : Nat} (hp : Scr s P Zp)
@@ -138,17 +138,17 @@ theorem zeroPre_ok {s : State} {P : Addr} {Zp w : Nat} (hp : Scr s P Zp)
     prun [h19, BitVec.add_zero]
   refine WP.mono hpre fun s₁ ⟨⟨i14, im⟩, k₁⟩ => ?_
   refine WP.seq (WP.mono (zeroWords_ok (hp.congr k₁.wr) i14 ((k₁.gpr _ (by decide)).trans h11) hw hw'
-    (by omega)) fun s₂ ⟨⟨j14, jz, jout⟩, k₂⟩ => ?_)
+    (by omega_arith)) fun s₂ ⟨⟨j14, jz, jout⟩, k₂⟩ => ?_)
   have k12 := k₁.trans k₂
   refine WP.mono (zeroWords_ok (hp.congr k12.wr) j14 ((k12.gpr _ (by decide)).trans h11) hw hw'
-    (by omega)) fun t ⟨⟨_, tz, tout⟩, k₃⟩ => ⟨⟨fun i hi => ?_, ?_⟩, (k12.trans k₃).mono⟩
+    (by omega_arith)) fun t ⟨⟨_, tz, tout⟩, k₃⟩ => ⟨⟨fun i hi => ?_, ?_⟩, (k12.trans k₃).mono⟩
   · rcases Nat.lt_or_ge i w with h | h
     · have := jz i h
       rw [Nat.zero_add] at this
-      exact (tout.word (d := 8 * i) (by omega) (by omega)).trans this
-    · have := tz (i - w) (by omega)
-      rwa [show 0 + 8 * w + 8 * (i - w) = 8 * i by omega] at this
+      exact (tout.word (d := 8 * i) (by omega_arith) (by omega_arith)).trans this
+    · have := tz (i - w) (by omega_arith)
+      rwa [show 0 + 8 * w + 8 * (i - w) = 8 * i by omega_arith] at this
   · rw [im] at jout
-    exact (jout.mono (by omega) (by omega)).trans (tout.mono (by omega) (by omega))
+    exact (jout.mono (by omega_arith) (by omega_arith)).trans (tout.mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Bignum.PPC64LE

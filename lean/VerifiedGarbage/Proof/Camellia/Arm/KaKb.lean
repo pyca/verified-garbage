@@ -41,9 +41,9 @@ def OpOk (op : Nat → List Instr) (F : BitVec 32 → BitVec 32 → BitVec 32) (
 theorem copy_op (w x : Nat) (hw : w + 4 ≤ slots) (hx : x + 4 ≤ slots) :
     OpOk (fun k => [ldS t0 (x + k), stS (w + k) t0]) (fun a _ => a) w x := by
   intro k hk s b hb hs
-  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := ldSlot_ok s t0 sb (k := x + k) hb (by omega) hs
+  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := ldSlot_ok s t0 sb (k := x + k) hb (by omega_arith) hs
   obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂, sp₂, -, -⟩ := stSlot_ok s₁ t0 sb (k := w + k) (by rw [o₁ _ (by decide), hb])
-    (by omega) (by rw [wr₁]; exact hs)
+    (by omega_arith) (by rw [wr₁]; exact hs)
   refine ⟨s₂, ?_, by rw [m₂, v₁, m₁], fun r h0 _ => by rw [g₂, o₁ r h0], by rw [rd₂, rd₁], by rw [wr₂, wr₁],
     by rw [sp₂, sp₁]⟩
   show runBlock isa [ldS t0 (x + k), stS (w + k) t0] s = _
@@ -53,16 +53,16 @@ theorem copy_op (w x : Nat) (hw : w + 4 ≤ slots) (hx : x + 4 ≤ slots) :
 theorem xor_op (w x : Nat) (hw : w + 4 ≤ slots) (hx : x + 4 ≤ slots) :
     OpOk (fun k => [ldS t0 (x + k), ldS t1 (w + k), eorR t0 t0 t1, stS (w + k) t0]) (fun a c => a ^^^ c) w x := by
   intro k hk s b hb hs
-  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := ldSlot_ok s t0 sb (k := x + k) hb (by omega) hs
+  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁, sp₁⟩ := ldSlot_ok s t0 sb (k := x + k) hb (by omega_arith) hs
   obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂, sp₂⟩ := ldSlot_ok s₁ t1 sb (k := w + k) (by rw [o₁ _ (by decide), hb])
-    (by omega) (by rw [wr₁]; exact hs)
+    (by omega_arith) (by rw [wr₁]; exact hs)
   let s₃ := s₂.setReg t0 (s₂.gpr t0 ^^^ s₂.gpr t1)
   have e₃ : runBlock isa [eorR t0 t0 t1] s₂ = some s₃ := by
     rw [runBlock_cons, show exec (eorR t0 t0 t1) s₂ = some s₃ by simp only [eorR, exec, Op2.eval, Option.map_some]; rfl,
       runStep_some, runBlock_nil]
   obtain ⟨s₄, e₄, m₄, g₄, rd₄, wr₄, sp₄, -, -⟩ := stSlot_ok s₃ t0 sb (k := w + k)
     (by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), o₂ _ (by decide), o₁ _ (by decide), hb])
-    (by omega) (by rw [RegUpd.wr_setReg, wr₂, wr₁]; exact hs)
+    (by omega_arith) (by rw [RegUpd.wr_setReg, wr₂, wr₁]; exact hs)
   refine ⟨s₄, ?_, ?_, fun r h0 h1 => by rw [g₄, RegUpd.gpr_setReg_of_ne _ _ h0, o₂ r h1, o₁ r h0],
     by rw [rd₄, RegUpd.rd_setReg, rd₂, rd₁], by rw [wr₄, RegUpd.wr_setReg, wr₂, wr₁],
     by rw [sp₄, RegUpd.sp_setReg, sp₂, sp₁]⟩
@@ -88,26 +88,26 @@ theorem wordsOp_ok {op : Nat → List Instr} {F : BitVec 32 → BitVec 32 → Bi
       rfl, Frame.refl _ _⟩
   | n + 1, hn, s, hb, hs => by
     have hfit := hs.fit
-    obtain ⟨s₁, e₁, v₁, o₁, g₁, rd₁, wr₁, sp₁, f₁⟩ := wordsOp_ok hop hsep hw hx n (by omega) s hb hs
-    obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂, sp₂⟩ := hop n (by omega) s₁ b (by rw [g₁ _ (by decide) (by decide), hb])
+    obtain ⟨s₁, e₁, v₁, o₁, g₁, rd₁, wr₁, sp₁, f₁⟩ := wordsOp_ok hop hsep hw hx n (by omega_arith) s hb hs
+    obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂, sp₂⟩ := hop n (by omega_arith) s₁ b (by rw [g₁ _ (by decide) (by decide), hb])
       (by rw [wr₁]; exact hs)
     have hfw : (s.gpr sb).toNat + 4 * slots ≤ 2 ^ 32 := by rw [hb]; exact hfit
     refine ⟨s₂, by rw [List.range_succ, List.flatMap_append, runBlock_app, e₁, Option.bind_some,
         List.flatMap_singleton]; exact e₂, fun k hk => ?_, fun j hj h => ?_,
       fun r h0 h1 => by rw [g₂ r h0 h1, g₁ r h0 h1], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [sp₂, sp₁], ?_⟩
-    · rw [m₂, readW_slot_write hfit _ (by omega) (by omega)]
+    · rw [m₂, readW_slot_write hfit _ (by omega_arith) (by omega_arith)]
       by_cases hkn : k = n
       · subst hkn
-        rw [ite_eq_left rfl, o₁ _ (by omega) (by omega), o₁ _ (by omega) (by omega)]
-      · rw [ite_eq_right (by omega), v₁ k (by omega)]
-    · rw [m₂, readW_slot_write hfit _ hj (by omega), ite_eq_right (by omega), o₁ j hj (by omega)]
+        rw [ite_eq_left rfl, o₁ _ (by omega_arith) (by omega_arith), o₁ _ (by omega_arith) (by omega_arith)]
+      · rw [ite_eq_right (by omega_arith), v₁ k (by omega_arith)]
+    · rw [m₂, readW_slot_write hfit _ hj (by omega_arith), ite_eq_right (by omega_arith), o₁ j hj (by omega_arith)]
     · have hf2 := hfit
       rw [slots_eq] at hf2 hw
-      have hsub1 : Region.Sub ⟨wordAddr b w, 4 * n⟩ ⟨wordAddr b w, 4 * (n + 1)⟩ := Region.sub_prefix (by omega)
+      have hsub1 : Region.Sub ⟨wordAddr b w, 4 * n⟩ ⟨wordAddr b w, 4 * (n + 1)⟩ := Region.sub_prefix (by omega_arith)
       have hsub2 : Region.Sub ⟨wordAddr b (w + n), 4⟩ ⟨wordAddr b w, 4 * (n + 1)⟩ := by
         simp only [wordAddr]
-        rw [VG.Arm.addr_add (by omega), VG.Arm.addr_add (by omega)]
-        exact VG.Offset.sub _ (by omega) (by omega)
+        rw [VG.Arm.addr_add (by omega_arith), VG.Arm.addr_add (by omega_arith)]
+        exact VG.Offset.sub _ (by omega_arith) (by omega_arith)
       rw [m₂]
       exact (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by
           simp only [List.mem_singleton] at hr; subst hr; exact hsub1⟩).trans
@@ -119,12 +119,12 @@ theorem wordsOp_ok {op : Nat → List Instr} {F : BitVec 32 → BitVec 32 → Bi
 
 theorem VW_copy {s s' : State} {w x : Nat} {v : BitVec 64 × BitVec 64} (hv : VW s x v)
     (h : ∀ k < 4, slotW s' (w + k) = slotW s (x + k)) : VW s' w v := fun c hc j hj => by
-  rw [h _ (by omega)]; exact hv c hc j hj
+  rw [h _ (by omega_arith)]; exact hv c hc j hj
 
 theorem VW_xor {s s' : State} {w x : Nat} {v u : BitVec 64 × BitVec 64} (hv : VW s x v) (hu : VW s w u)
     (h : ∀ k < 4, slotW s' (w + k) = slotW s (x + k) ^^^ slotW s (w + k)) :
     VW s' w (v.1 ^^^ u.1, v.2 ^^^ u.2) := fun c hc j hj => by
-  rw [h _ (by omega), BitVec.getLsbD_xor, hv c hc j hj, hu c hc j hj]
+  rw [h _ (by omega_arith), BitVec.getLsbD_xor, hv c hc j hj, hu c hc j hj]
   by_cases h8 : c < 8
   · simp only [itePos h8, byteOf_xor, BitVec.getLsbD_xor]
   · simp only [iteNeg h8, byteOf_xor, BitVec.getLsbD_xor]
@@ -145,7 +145,7 @@ theorem words_ctx {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyC
   have hs := hc.scr hp
   have hfit := hs.fit
   rw [tailSlot_eq] at hw1 hw2
-  have hw : w + 4 ≤ slots := by rw [slots_eq]; omega
+  have hw : w + 4 ≤ slots := by rw [slots_eq]; omega_arith
   obtain ⟨s', e', v', o', g', rd', wr', -, f'⟩ := wordsOp_ok hop hsep hw hx 4 (Nat.le_refl _) s rfl ⟨hs.wr, hfit⟩
   have hb : s'.gpr sb = s.gpr sb := g' _ (by decide) (by decide)
   refine ⟨s', e', hc.step rd' wr' (fun r h1 _ => g' r (fun h => h1 (h ▸ by decide)) (fun h => h1 (h ▸ by decide)))
@@ -155,8 +155,8 @@ theorem words_ctx {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyC
   simp only [List.mem_singleton] at hr; subst hr
   rw [slots_eq] at hfit
   simp only [wordAddr, hc.base]
-  rw [← hc.base, VG.Arm.addr_add (by omega), VG.Arm.addr_add (by rw [tailSlot_eq]; omega)]
-  exact VG.Offset.sub _ (by rw [tailSlot_eq]; omega) (by rw [tailSlot_eq]; omega)
+  rw [← hc.base, VG.Arm.addr_add (by omega_arith), VG.Arm.addr_add (by rw [tailSlot_eq]; omega_arith)]
+  exact VG.Offset.sub _ (by rw [tailSlot_eq]; omega_arith) (by rw [tailSlot_eq]; omega_arith)
 
 /-- `KA` and `KB`, from `KL` and `KR`. -/
 structure KaPost (s₀ : State) (KL KR : BitVec 64 × BitVec 64) (s : State) : Prop where
@@ -181,7 +181,7 @@ structure KaInv (s₀ : State) (KL KR : BitVec 64 × BitVec 64) (i : Nat) (s : S
 theorem pair_kaW (KL KR : BitVec 64 × BitVec 64) {i : Nat} (hi : i < 3) :
     pair (sigE (2 * i)) (sigE (2 * i + 1)) (kaW KL KR i) =
       (if i = 0 then kaD1 KL KR else if i = 1 then kaD2 KL KR else kaD3 KL KR) := by
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl <;> rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega_arith) with rfl | rfl | rfl <;> rfl
 
 /-- After pair `i` and the operations, before the count's step. -/
 structure KaMid (s₀ : State) (KL KR : BitVec 64 × BitVec 64) (i : Nat) (s : State) : Prop where
@@ -197,7 +197,7 @@ structure KaMid (s₀ : State) (KL KR : BitVec 64 × BitVec 64) (i : Nat) (s : S
 theorem VW.keep {s s' : State} {a : Nat} {v : BitVec 64 × BitVec 64} (h : VW s a v)
     (hk : ∀ j < slots, j < wSlot ∨ wSlot + 4 ≤ j → slotW s' j = slotW s j)
     (ha : a + 4 ≤ wSlot ∨ wSlot + 4 ≤ a) (has : a + 4 ≤ slots) : VW s' a v :=
-  h.congr fun i hi => hk _ (by omega) (by omega)
+  h.congr fun i hi => hk _ (by omega_arith) (by omega_arith)
 
 /-- `cmp r, #v`. -/
 theorem cmpImm_ok (s : State) (r : Reg) {v : BitVec 32} (hv : encodable v = true) :
@@ -225,13 +225,13 @@ theorem kaStep_wp {s₀ : State} {KL KR : BitVec 64 × BitVec 64} (hp : KeyCtx s
               (.block (copyWords kaSlot wSlot ++ xorWords wSlot krSlot))))
           (.block (copyWords kbSlot wSlot))) c)) s Q := by
   have hi := h.lt
-  obtain ⟨s₁, e₁, c₁, k₁, w₁, o₁⟩ := pairPlain_step hp h.ctx h.kp (by omega) (by omega) h.w
+  obtain ⟨s₁, e₁, c₁, k₁, w₁, o₁⟩ := pairPlain_step hp h.ctx h.kp (by omega_arith) (by omega_arith) h.w
   rw [pair_kaW KL KR hi] at w₁
   have hs₁ := c₁.scr hp
   have hb₁ := c₁.base
   have keep₁ : ∀ a, keySlot ≤ a → a + 4 ≤ wSlot ∨ wSlot + 4 ≤ a → a + 4 ≤ slots →
       ∀ v, VW s a v → VW s₁ a v := fun a h1 ha has v hv =>
-    hv.congr fun j hj => o₁ _ (by omega) (by omega) (by omega)
+    hv.congr fun j hj => o₁ _ (by omega_arith) (by omega_arith) (by omega_arith)
   have kl₁ := keep₁ klSlot (by decide) (by decide) (by decide) _ h.kl
   have kr₁ := keep₁ krSlot (by decide) (by decide) (by decide) _ h.kr
   have cnt₁ : slotW s₁ cntSlot = BitVec.ofNat 32 (3 - i) := by
@@ -246,7 +246,7 @@ theorem kaStep_wp {s₀ : State} {KL KR : BitVec 64 × BitVec 64} (hp : KeyCtx s
     rw [z₄, v₂]
     change (slotW s₁ cntSlot >>> 1 - 0 == 0) = _
     rw [cnt₁]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl <;> decide
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega_arith) with rfl | rfl | rfl <;> decide
   have c₄ : Ctx s₀ s₄ := c₁.step (by rw [rd₄, rd₂]) (by rw [wr₄, wr₂])
     (fun r h1 _ => by rw [g₄ r (fun e => h1 (by rw [e]; decide)), g₂ r (fun e => h1 (by rw [e]; decide))])
     (by rw [m₄, m₂]; exact Frame.refl _ _)
@@ -271,7 +271,7 @@ theorem kaStep_wp {s₀ : State} {KL KR : BitVec 64 × BitVec 64} (hp : KeyCtx s
     have e₅ : runBlock isa [.cmp t0 (.imm 3)] s₄ = some s₅ := cmpImm_ok s₄ t0 (by decide)
     have hz₅ : s₅.z = decide (i = 0) := by
       rw [subFlags_z, ht0]
-      rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl <;> decide
+      rcases (show i = 0 ∨ i = 1 by omega_arith) with rfl | rfl <;> decide
     have c₅ : Ctx s₀ s₅ := c₄.step rfl rfl (fun _ _ _ => rfl) (Frame.refl _ _)
     have hs₅ : ∀ j, slotW s₅ j = slotW s₄ j := fun _ => rfl
     have w₅ := w₄.congr fun j _ => hs₅ _
@@ -284,15 +284,15 @@ theorem kaStep_wp {s₀ : State} {KL KR : BitVec 64 × BitVec 64} (hp : KeyCtx s
       subst hi0
       obtain ⟨s₆, e₆, c₆, k₆, v₆, o₆⟩ := words_ctx hp c₅ (xor_op wSlot klSlot (by decide) (by decide))
         (by decide) (by decide) (by decide) (by decide)
-      refine WP.of_runBlock ⟨s₆, e₆, ⟨c₆, by rw [AtEntry, k₆]; exact hk₄, ?_, ?_, ?_, fun h => by omega,
-        fun h => by omega, by rw [o₆ _ (by decide) (by decide), hs₅, cnt₄]⟩⟩
+      refine WP.of_runBlock ⟨s₆, e₆, ⟨c₆, by rw [AtEntry, k₆]; exact hk₄, ?_, ?_, ?_, fun h => by omega_arith,
+        fun h => by omega_arith, by rw [o₆ _ (by decide) (by decide), hs₅, cnt₄]⟩⟩
       · have := VW_xor (s := s₅) (s' := s₆) (x := klSlot) (w := wSlot) kl₅ w₅ fun k hk => by
           rw [v₆ k hk]
         simpa [kaW, BitVec.xor_comm] using this
       · exact kl₅.congr fun j hj => o₆ _ (by decide +revert) (by decide +revert)
       · exact kr₅.congr fun j hj => o₆ _ (by decide +revert) (by decide +revert)
     · -- After the second: it is `KA`, and `KR` is XORed in.
-      have hi1 : i = 1 := by simp at h0; omega
+      have hi1 : i = 1 := by simp at h0; omega_arith
       subst hi1
       obtain ⟨s₆, e₆, c₆, k₆, v₆, o₆⟩ := words_ctx hp c₅ (copy_op kaSlot wSlot (by decide) (by decide))
         (by decide) (by decide) (by decide) (by decide)
@@ -304,7 +304,7 @@ theorem kaStep_wp {s₀ : State} {KL KR : BitVec 64 × BitVec 64} (hp : KeyCtx s
       refine WP.of_runBlock ⟨s₇, by
         rw [runBlock_app, show runBlock isa (copyWords kaSlot wSlot) s₅ = some s₆ from e₆, Option.bind_some]
         exact e₇,
-        ⟨c₇, by rw [AtEntry, k₇, k₆]; exact hk₄, ?_, ?_, ?_, fun _ => ?_, fun h => by omega, ?_⟩⟩
+        ⟨c₇, by rw [AtEntry, k₇, k₆]; exact hk₄, ?_, ?_, ?_, fun _ => ?_, fun h => by omega_arith, ?_⟩⟩
       · have := VW_xor (s := s₆) (s' := s₇) (x := krSlot) (w := wSlot) kr₆ w₆ fun k hk => by rw [v₇ k hk]
         simpa [kaW, BitVec.xor_comm] using this
       · exact (kl₅.congr fun j hj => o₆ _ (by decide +revert) (by decide +revert)).congr fun j hj =>
@@ -346,7 +346,7 @@ theorem cntStep_ok {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Key
   have ht : s₂.gpr t0 = BitVec.ofNat 32 (c - 1) := by
     rw [RegUpd.gpr_setReg_self, v₁]
     change slotW s cntSlot - 1 = _
-    rw [hcnt, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega)]
+    rw [hcnt, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega_arith)]
   have hb₃ : s₃.gpr sb = s.gpr sb := by rw [g₃, hb₂]
   have hfit' := hfit
   rw [slots_eq] at hfit'
@@ -365,7 +365,7 @@ theorem cntStep_ok {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Key
     exact fun _ h => h
   · rw [z₃, RegUpd.z_setReg, subFlags_z, v₁]
     change (slotW s cntSlot - 1 == 0) = _
-    rw [hcnt, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, ofNat32_sub_beq (by omega) (by omega)]
+    rw [hcnt, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, ofNat32_sub_beq (by omega_arith) (by omega_arith)]
   · rw [slotW, hb₃, m₃, ← hb₂, Mem.readW_writeW_self32, ht]
   · rw [slotW, hb₃, m₃, readW_slot_write hfit _ hj (by decide), ite_eq_right hne,
       RegUpd.mem_setReg, subFlags_mem, m₁]
@@ -402,7 +402,7 @@ theorem kaStart_ok {s₀ : State} {KL KR : BitVec 64 × BitVec 64} (hp : KeyCtx 
       hs₄ _ (by decide +revert) (by decide +revert),
     (kr₁.congr fun j hj => o₂ _ (by decide +revert) (by decide +revert)).congr fun j hj =>
       hs₄ _ (by decide +revert) (by decide +revert),
-    fun h => by omega, ?_⟩⟩
+    fun h => by omega_arith, ?_⟩⟩
   · rw [runBlock_app, runBlock_app, show runBlock isa (copyWords wSlot klSlot) s₀ = some s₁ from e₁,
       Option.bind_some, show runBlock isa (xorWords wSlot krSlot) s₁ = some s₂ from e₂, Option.bind_some,
       runBlock_cons, show exec (.mov t0 (.imm 3)) s₂ = some s₃ by
@@ -426,19 +426,19 @@ theorem kaKb_wp {s₀ : State} {KL KR : BitVec 64 × BitVec 64} (hp : KeyCtx s�
     ⟨0, rfl, h₁⟩
   obtain ⟨i, rfl, hi⟩ := hs
   refine kaStep_wp hp hi fun s₂ h₂ => ?_
-  obtain ⟨s₃, e₃, c₃, z₃, k₃, n₃, o₃⟩ := cntStep_ok hp h₂.ctx (c := 3 - i) (by have := hi.lt; omega) h₂.cnt
+  obtain ⟨s₃, e₃, c₃, z₃, k₃, n₃, o₃⟩ := cntStep_ok hp h₂.ctx (c := 3 - i) (by have := hi.lt; omega_arith) h₂.cnt
   refine WP.of_runBlock ⟨s₃, e₃, ?_⟩
   have keep : ∀ a, a + 4 ≤ cntSlot ∨ cntSlot + 1 ≤ a → a + 4 ≤ slots → ∀ v, VW s₂ a v → VW s₃ a v :=
-    fun a ha has v h => h.congr fun j hj => o₃ _ (by omega) (by omega)
+    fun a ha has v h => h.congr fun j hj => o₃ _ (by omega_arith) (by omega_arith)
   by_cases h2 : i = 2
   · subst h2
     refine .inl ⟨(eval_ne s₃).trans (by rw [z₃]; rfl), ⟨c₃, keep _ (by decide) (by decide) _ h₂.kl,
       keep _ (by decide) (by decide) _ h₂.kr, keep _ (by decide) (by decide) _ (h₂.ka (by decide)),
       keep _ (by decide) (by decide) _ (h₂.kb rfl)⟩⟩
   · have hi3 := hi.lt
-    refine .inr ⟨(eval_ne s₃).trans (by rw [z₃]; simp; omega), 3 - (i + 1), by omega, i + 1, rfl,
-      ⟨by omega, c₃, by rw [AtEntry, k₃]; exact h₂.kp, keep _ (by decide) (by decide) _ h₂.w,
+    refine .inr ⟨(eval_ne s₃).trans (by rw [z₃]; simp; omega_arith), 3 - (i + 1), by omega_arith, i + 1, rfl,
+      ⟨by omega_arith, c₃, by rw [AtEntry, k₃]; exact h₂.kp, keep _ (by decide) (by decide) _ h₂.w,
         keep _ (by decide) (by decide) _ h₂.kl, keep _ (by decide) (by decide) _ h₂.kr,
-        fun h => keep _ (by decide) (by decide) _ (h₂.ka (by omega)), by rw [n₃]; congr 1⟩⟩
+        fun h => keep _ (by decide) (by decide) _ (h₂.ka (by omega_arith)), by rw [n₃]; congr 1⟩⟩
 
 end VG.Proof.Camellia.Arm

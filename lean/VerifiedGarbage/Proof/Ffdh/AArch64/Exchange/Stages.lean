@@ -91,16 +91,16 @@ theorem exCtx_of {s : State} (h : exPre s) : ExCtx s := by
     hyl, hxl1, hxl2, hsl⟩ := h
   unfold Spec.Rsa.scratchWords at hsl
   have hs : Scr s (stackArg s 1) ((stackArg s 2).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
-  refine ⟨hk1, hk2, hdl, hol, hyl, hxl1, hxl2, by omega, hs,
+  refine ⟨hk1, hk2, hdl, hol, hyl, hxl1, hxl2, by omega_arith, hs,
     ⟨⟨stackArgAddr s 0, 24⟩, by rw [hrd]; simp, by
       rw [show stackArgAddr s 1 = stackArgAddr s 0 + BitVec.ofNat 64 8 by
         simp only [stackArgAddr, Nat.mul_zero, Nat.mul_one, BitVec.add_zero]]
-      exact Offset.contains_base _ (by omega) (by omega)⟩,
-    src_of_region (by rw [hrd]; simp) (by omega) dds,
-    src_of_region (by rw [hrd]; simp) (by omega) dys,
-    src_of_region (by rw [hrd]; simp) (by omega) dxs,
-    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega) (by omega)⟩,
-    fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega))⟩
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dds,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dys,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dxs,
+    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega_arith) (by omega_arith)⟩,
+    fun j hj => out_scr dOs (contains_byte _ (by omega_arith) (by omega_arith))⟩
 
 theorem cr_base (p : ExP) (xb : List Byte) (s : State) (h : CR p xb s) : Base (p.D xb) s := by
   have c := exCtx_of h.1
@@ -165,7 +165,7 @@ theorem exEntry_ok {s : State} {B : Addr} (hB : stackArg s 1 = B)
   rw [hm]
   intro x hx
   have e : ∀ i, i < 23 → ∀ (m : Mem) (v : BitVec 64), (m.writeW (off B (8 * i)) v) x = m x := fun i hi m v =>
-    writeW_outside m B v (d := 8 * i) (by omega) x (by omega)
+    writeW_outside m B v (d := 8 * i) (by omega_arith) x (by omega_arith)
   rw [e sY (by decide), e sXl (by decide), e sX (by decide), e sK (by decide), e sDomLen (by decide),
     e sDom (by decide), e VG.Impl.Ffdh.AArch64.Domain.sOut (by decide)]
 
@@ -185,9 +185,9 @@ theorem cr_e1 (p : ExP) (xb : List Byte) (s : State) (h : CR p xb s) :
   have hZ : 128 * p.k + 256 ≤ p.Z := hb.hZ
   have hs : Scr s p.B p.Z := hb.scr
   obtain ⟨-, -, hB, hZ', hk, hdl, hdp, -, hop, hxp, hxl, hyp, -⟩ := h
-  have hw : ∀ i < 23, InRegions s.wr (off p.B (8 * i)) 8 := fun i hi => hs.st (by omega)
+  have hw : ∀ i < 23, InRegions s.wr (off p.B (8 * i)) 8 := fun i hi => hs.st (by omega_arith)
   refine WP.mono (exEntry_ok hB hw c.ha1) fun t ⟨h0, hO, hD, hL, hK, hX, hXl, hY, ho, k⟩ => ?_
-  refine ⟨⟨⟨hb.keep (InScr.of_outside ho (show 0 + 8 * 23 ≤ p.Z by omega)) k, h0, ?_⟩, hd.keep k⟩, k.mono (by decide)⟩
+  refine ⟨⟨⟨hb.keep (InScr.of_outside ho (show 0 + 8 * 23 ≤ p.Z by omega_arith)) k, h0, ?_⟩, hd.keep k⟩, k.mono (by decide)⟩
   intro q hq
   simp only [FD.hdr, ExP.D, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -242,9 +242,9 @@ theorem x2_x3 (W : Window) (M : Mont) (S : Selector) (p : ExP) (xb : List Byte) 
   have hx : Src t p.B p.Z p.xp xb := hb.srcs (p.xp, xb) (by simp [ExP.D])
   exact WP.mono (hM.pow W M S (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sY) (v := p.yp) (by simp [ExP.D])) (by rw [hyl]; exact hs.get (i := sK) (by simp))
-    hy (by rw [hyl]; have := hb.k1; simp; omega) (by rw [hyl]; simp)
+    hy (by rw [hyl]; have := hb.k1; simp; omega_arith) (by rw [hyl]; simp)
     (hs.get (i := sX) (v := p.xp) (by simp [ExP.D])) (by rw [hxl]; exact hs.get (i := sXl) (by simp [ExP.D]))
-    hx (by omega) (by have := hb.k2; simp at this; omega)) fun u ⟨hu, hY, _, k⟩ =>
+    hx (by omega_arith) (by have := hb.k2; simp at this; omega_arith)) fun u ⟨hu, hY, _, k⟩ =>
       ⟨⟨⟨mi, hu, hY⟩, hd.keep k, ho⟩, k⟩
 
 /-- `pow`'s public data. -/
@@ -260,9 +260,9 @@ theorem x2_ps0 (p : ExP) (xb : List Byte) (t : State) (h : X2 p xb t) : PS0 sY s
   have hx : Src t p.B p.Z p.xp xb := hb.srcs (p.xp, xb) (by simp [ExP.D])
   have := hM.ps0 (bp := sY) (bl := sK) (ep := sX) (el := sXl) (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sY) (v := p.yp) (by simp [ExP.D])) (by rw [hyl]; exact hs.get (i := sK) (by simp))
-    hy (by rw [hyl]; have := hb.k1; simp; omega) (by rw [hyl]; simp)
+    hy (by rw [hyl]; have := hb.k1; simp; omega_arith) (by rw [hyl]; simp)
     (hs.get (i := sX) (v := p.xp) (by simp [ExP.D])) (by rw [hxl]; exact hs.get (i := sXl) (by simp [ExP.D]))
-    hx (by omega) (by have := hb.k2; simp at this; omega)
+    hx (by omega_arith) (by have := hb.k2; simp at this; omega_arith)
   rw [hyl, hxl] at this
   exact this
 

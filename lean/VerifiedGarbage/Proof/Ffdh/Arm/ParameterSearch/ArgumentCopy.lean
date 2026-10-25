@@ -30,14 +30,7 @@ theorem argumentCopy_ok (s : State) {p : SearchParams} {used j d : Nat}
   unfold VG.Proof.Ffdh.Arm.KeySearch.lowWord at value
   have raw : WP isa (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r9 j, .str .r9 .r12 d]) s fun t =>
       t.mem = s.mem.writeW (off (State.addr s.sp) d) (searchValues p used j) ∧ Rest [.r9] s t := by
-    refine withRest [.r9] ?_ (by
-      intro r hr i hi
-      have checked : (instrs (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r9 j, .str .r9 .r12 d] : Prog isa)).all
-          (fun i => !(clobbers i r)) = true := by
-        cases r <;> try rfl
-        exact False.elim (hr (by decide))
-      have f := List.all_eq_true.mp checked i hi
-      cases hc : clobbers i r <;> simp_all) (by rfl)
+    refine withRest_all [.r9] ?_ (by rfl) (by rfl)
     unfold VG.Impl.Ffdh.Arm.ParameterSearch.ldf
     ffrun [controllerAddr h.controller (8 * j) (by omega), h.controller.space.read (off := 8 * j) (by omega),
       address, h.stack.write fit, value, show 8 * j < 4096 by omega, show d < 4096 by omega]

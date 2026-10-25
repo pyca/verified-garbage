@@ -74,7 +74,7 @@ def temps : List VReg := [.v0,.v1,.v2,.v3,.v4,.v5,.v6,.v7,.v26]
     (by rw [k2.rd,k2.wr,k2.gpr]; exact hh 3 (by decide)) fun t h3 w3=>?_
   refine k t ((k2.trans h3).mono (by decide)) (c2.chg h3 (by decide)) ?_
   intro j hj e he
-  rcases (show j=0∨j=1∨j=2∨j=3 by omega) with rfl|rfl|rfl|rfl
+  rcases (show j=0∨j=1∨j=2∨j=3 by omega_arith) with rfl|rfl|rfl|rfl
   · change vword (t.v .v0) e=_
     rw [h3.get .v0 (by decide),h2.get .v0 (by decide),h1.get .v0 (by decide),w0 e he]
   · change vword (t.v .v1) e=_
@@ -325,10 +325,10 @@ theorem loop_step_ok {s₀ s : State} {b a o : Addr} {g j : Nat}
     simpa only [h.output] using ht.frame
   have full : (2*packWidth g)*j+2*packWidth g≤32*packWidth g := by
     rcases hg with rfl | rfl
-    · change 8*j+8≤128; omega
-    · change 12*j+12≤192; omega
+    · change 8*j+8≤128; omega_arith
+    · change 12*j+12≤192; omega_arith
   have small : 32*packWidth g<2^64 := by rcases hg with rfl | rfl <;> decide
-  refine ⟨by omega,ht.ready,?_,?_,?_,?_,?_,?_,?_,?_,ht.rd.trans h.rd,ht.wr.trans h.wr,ht.sp.trans h.sp⟩
+  refine ⟨by omega_arith,ht.ready,?_,?_,?_,?_,?_,?_,?_,?_,ht.rd.trans h.rd,ht.wr.trans h.wr,ht.sp.trans h.sp⟩
   · intro i hi
     rw [Nat.mul_succ] at hi
     by_cases old : i<(2*packWidth g)*j
@@ -337,10 +337,10 @@ theorem loop_step_ok {s₀ s : State} {b a o : Addr} {g j : Nat}
         simpa only [BitVec.add_zero] using
           (Offset.disjoint o (d := 0) (n := (2*packWidth g)*j)
             (e := (2*packWidth g)*j) (k := 2*packWidth g)
-            (Or.inl (by omega)) (by omega) (by omega))) (by dsimp; omega) old]
+            (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith))) (by dsimp; omega_arith) old]
       exact h.values i old
-    · have hb := ht.bytes (i-(2*packWidth g)*j) (by omega)
-      rw [h.output,Offset.add_add,show (2*packWidth g)*j+(i-(2*packWidth g)*j)=i by omega,poly] at hb
+    · have hb := ht.bytes (i-(2*packWidth g)*j) (by omega_arith)
+      rw [h.output,Offset.add_add,show (2*packWidth g)*j+(i-(2*packWidth g)*j)=i by omega_arith,poly] at hb
       exact hb
   · exact h.frame.trans (hf.sub (by
       intro r hr; simp only [List.mem_singleton] at hr; subst r
@@ -383,7 +383,7 @@ theorem loop_ok {s₀ s : State} {b a o : Addr} {g start : Nat}
     simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hu.count,hend,Nat.sub_self]
     rfl
   · right
-    refine ⟨?_,16-(j+1),by omega,j+1,by omega,rfl,hu⟩
+    refine ⟨?_,16-(j+1),by omega_arith,j+1,by omega_arith,rfl,hu⟩
     simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hu.count,Option.some.injEq,bne_iff_ne]
     bv_omega
 
@@ -400,8 +400,8 @@ theorem LoopState.output_bytes {s₀ s : State} {b a o : Addr} {g : Nat}
     apply h.values
     have hh : i<32*packWidth g := by
       simpa only [VG.Spec.Sha3.bytesAt,List.length_map,List.length_range] using hi
-    have he : 2*packWidth g*16=32*packWidth g := by omega
-    omega
+    have he : 2*packWidth g*16=32*packWidth g := by omega_arith
+    omega_arith
 
 end VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
 

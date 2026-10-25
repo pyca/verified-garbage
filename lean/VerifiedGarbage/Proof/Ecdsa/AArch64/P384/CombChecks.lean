@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJP2
-import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 public import VerifiedGarbage.Impl.P384.CombArithmetic
 
 /-!

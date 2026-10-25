@@ -200,7 +200,7 @@ theorem row_step {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx :
     fun b hb => by rw [addr_row fit hj hb hk, hrd]; exact E.rd _ (by omega)
   have h8 : u.gpr .r8 = BitVec.allOnes 32 := by rw [I.keep.gpr (by decide)]; exact E.ones
   refine WP.mono (WP.keep [.r4, .r5, .r6, .r9, .r10, .r11]
-    (row_run u hj I.q I.acc I.lane h8 I.rp I.cnt hr) (by simp [writesOnly, row, plane, dsts, dstOf, mReg, qReg, tmp, acc, rowPtr, rows])) fun u' ⟨⟨a5, a4, a10, a11, az, am⟩, ak⟩ => ?_
+    (row_run u hj I.q I.acc I.lane h8 I.rp I.cnt hr) (by rfl)) fun u' ⟨⟨a5, a4, a10, a11, az, am⟩, ak⟩ => ?_
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, I.keep.trans_sub ak (by decide), am.trans I.mem⟩, ?_⟩
   · rw [a4, BitVec.sub_sub, ← BitVec.ofNat_add]; congr 2
   · dsimp only at a5
@@ -240,11 +240,11 @@ theorem lookup_run {s : State} (E : LookEnv s) {j : Nat} (hj : j < 4) :
   apply WP.seq
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r4] (index_run s hj) (by
-    unfold index; split <;> (try split) <;> simp [writesOnly, dsts, dstOf, qReg])) fun t ⟨⟨t4, tm⟩, tk⟩ => ?_
+    unfold index; split <;> (try split) <;> rfl)) fun t ⟨⟨t4, tm⟩, tk⟩ => ?_
   have hL : (t.gpr .r4).toNat % 4 = idx.toNat % 4 := by rw [t4, BitVec.toNat_setWidth]; simp [idx]
   refine WP.mono (WP.keep [.r5, .r6, .r7, .r9, .r10, .r11]
     (start_run t (by rw [tk.gpr (by decide)]; exact E.ones) hL) (by
-      simp [writesOnly, lookupStart, condRot, dsts, dstOf, lane, mReg, tmp, acc, rowPtr, rows]))
+      rfl))
     fun u ⟨⟨u7, u5, u10, u11, um⟩, uk⟩ => ?_
   have K0 : Keep lookRegs s u := (tk.trans uk).mono (by decide)
   have I0 : RowInv s j idx 0 u := by

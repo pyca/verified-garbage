@@ -59,14 +59,14 @@ theorem loadCtx_ok {M : Nat} (C : CtxOk Ex base bytes len args .wide M s) {d p l
   have e8 : lo len (.slot .wide 8) = numBase + 8 * st len .wide := rfl
   have d8 := Nat.mul_le_mul_right (st len .wide) hd
   have d1 := Nat.mul_le_mul_right (st len .wide) hd1
-  refine WP.mono (load_ok h (one_ok .wide) (slot_fit1 h (j := d) (by omega)) (p := p) (l := l) (L := L) hp hl hlen hL
-    (by rw [cb1]; omega) fit rd apart) fun u ⟨V, O, K⟩ => ?_
+  refine WP.mono (load_ok h (one_ok .wide) (slot_fit1 h (j := d) (by omega_arith)) (p := p) (l := l) (L := L) hp hl hlen hL
+    (by rw [cb1]; omega_arith) fit rd apart) fun u ⟨V, O, K⟩ => ?_
   rw [cb1] at O
   rw [cw1] at V
   exact ⟨C.keepF K (by decide) (by decide) (ws := [(lo len (.slot .wide d), bc len .wide)])
-      (frameR_of_outside O (by omega) (by simp))
-      (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega)
-      (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega), V, O, K⟩
+      (frameR_of_outside O (by omega_arith) (by simp))
+      (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega_arith)
+      (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega_arith), V, O, K⟩
 
 /-- The body up to the power. -/
 abbrev exFront : List (Prog isa) :=
@@ -100,10 +100,10 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   have xle := X.le
   generalize hP : comp s.mem args len 0 = p
   -- p, one and `p − 1`.
-  refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega)
-    (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+  refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega_arith)
+    (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega_arith) (by omega_arith)
         rwa [BitVec.add_zero] at this)
-    (G.apart.sub_left (Region.sub_prefix (by omega))))
+    (G.apart.sub_left (Region.sub_prefix (by omega_arith))))
     fun u₁ ⟨I₁, F₁, k₁, V9, V14, V15, K₁⟩ => ?_)
   rw [argNum_comp, hP] at V9 V15
   have S₁ : Step Ex base bytes len args s u₁ := ⟨I₁, F₁, K₁⟩
@@ -114,14 +114,14 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   -- y and x.
   have Y₂ := Y.keep ⟨rfl, rfl⟩ S₁₂.keeps
   refine WP.seq (WP.mono (loadCtx_ok C₂ (d := 5) (p := 8) (l := 9) (L := len) (by decide) (by decide) (by decide)
-    (by decide) Y₂.e9 (by omega) (Nat.le_refl _) Y₂.fit Y₂.rd Y₂.apart) fun u₃ ⟨C₃, V₃, O₃, K₃⟩ => ?_)
-  rw [bytes_keep h Y.apart (by omega) hy40 S₁₂.frame] at V₃
+    (by decide) Y₂.e9 (by omega_arith) (Nat.le_refl _) Y₂.fit Y₂.rd Y₂.apart) fun u₃ ⟨C₃, V₃, O₃, K₃⟩ => ?_)
+  rw [bytes_keep h Y.apart (by omega_arith) hy40 S₁₂.frame] at V₃
   have S₃ : Step Ex base bytes len args u₂ u₃ := Step.slot C₂.inp (by decide) O₃ K₃
   have S₁₃ := S₁₂.trans S₃
   have X₃ := X.keep ⟨rfl, rfl⟩ S₁₃.keeps
   refine WP.seq (WP.mono (loadTopCtx_ok C₃ (d := 8) (p := 10) (l := 11) (L := xl) (by decide) (by decide) (by decide)
     (by decide) X₃.e11 X₃.pos X₃.le X₃.fit X₃.rd X₃.apart) fun u₄ ⟨C₄, V₄, O₄, K₄⟩ => WP.block_nil ?_)
-  rw [bytes_keep h X.apart (by omega) hx40 S₁₃.frame] at V₄
+  rw [bytes_keep h X.apart (by omega_arith) hx40 S₁₃.frame] at V₄
   have S₄ : Step Ex base bytes len args u₃ u₄ := Step.slot C₃.inp (by decide) O₄ K₄
   have k₃ := kept_slot C₂.inp (a := 5) O₃
   have k₄ := kept_slot C₃.inp (a := 8) O₄
@@ -178,9 +178,9 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
       unfold safeM
       split
       · exact plt
-      · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 8 ≤ 8 * len by omega)
+      · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 8 ≤ 8 * len by omega_arith)
         have : (2 : Nat) ^ 8 = 256 := rfl
-        omega
+        omega_arith
     exact Nat.lt_trans zm mlt
   generalize hz : zv s.mem args len xl = z at zlt
   generalize hc : acc s.mem args len xl = c
@@ -191,11 +191,11 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have xle := X.le
   have lb := len_le_bc len
   have bw := bc_eq_cwc len .wide
-  refine WP.seq (WP.mono (windowPowerWith_ok C one R2 (N := 2 * xl) (by omega) (by omega) fun t Ct =>
+  refine WP.seq (WP.mono (windowPowerWith_ok C one R2 (N := 2 * xl) (by omega_arith) (by omega_arith) fun t Ct =>
     wp_movS (Ct.inp.arg (i := 11) (by decide)) fun t₁ a₁ _ => wp_addS rfl fun t₂ a₂ _ => WP.block_nil
       ⟨a₁.keeps.trans (a₂.keeps.mono (by decide)), by rw [a₂.mem, a₁.mem], by
-        rw [a₂.gpr, a₁.gpr, X.e11, BitVec.ofNat_add_ofNat]; congr 1; omega⟩) fun u₅ ⟨C₅, F₅, K₅, Y₅⟩ => ?_)
-  rw [V8, show 32 * cwc len .wide = 8 * bc len .wide by omega, top_windows (by omega)] at Y₅
+        rw [a₂.gpr, a₁.gpr, X.e11, BitVec.ofNat_add_ofNat]; congr 1; omega_arith⟩) fun u₅ ⟨C₅, F₅, K₅, Y₅⟩ => ?_)
+  rw [V8, show 32 * cwc len .wide = 8 * bc len .wide by omega_arith, top_windows (by omega_arith)] at Y₅
   rw [V5, show yv s.mem args len ^ xv s.mem args xl % safeM (comp s.mem args len 0) = z from hz] at Y₅
   have G₅ := stR_widen F₅ (pwR_in C.inp .wide 0)
   have S₅ : Step Ex base bytes len args u u₅ := Step.ops C.inp G₅ K₅
@@ -207,12 +207,12 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
     rw [e₆, ← hc, acc, hz]
   have S₆ : Step Ex base bytes len args u₅ u₆ := Step.word C₅.inp (by decide) O₆ K₆
   have k₆ := kept_word C₅.inp (d := maskOff) (by decide) (by decide) O₆
-  refine WP.seq (WP.mono (storeMask_ok I₆ (d := accOff) (by omega) e₆) fun u₇ ⟨I₇, O₇, W₇, _, K₇⟩ => ?_)
-  have S₇ : Step Ex base bytes len args u₆ u₇ := Step.word I₆ (by omega) O₇ K₇
-  have k₇ := kept_word I₆ (d := accOff) (by omega) (by decide) O₇
+  refine WP.seq (WP.mono (storeMask_ok I₆ (d := accOff) (by omega_arith) e₆) fun u₇ ⟨I₇, O₇, W₇, _, K₇⟩ => ?_)
+  have S₇ : Step Ex base bytes len args u₆ u₇ := Step.word I₆ (by omega_arith) O₇ K₇
+  have k₇ := kept_word I₆ (d := accOff) (by omega_arith) (by decide) O₇
   -- z into slot 19.
   refine WP.seq (WP.mono (copy_ok I₇ (x := .slot .wide 6) (d := .slot .wide 19) (one_ok .wide)
-    (slot_fit1 I₇ (by decide)) (slot_fit1 I₇ (by decide)) (by rw [cb1]; exact .inr (by omega)))
+    (slot_fit1 I₇ (by decide)) (slot_fit1 I₇ (by decide)) (by rw [cb1]; exact .inr (by omega_arith)))
     fun u₈ ⟨O₈, V₈, K₈⟩ => ?_)
   rw [cb1] at O₈
   rw [cw1] at V₈
@@ -222,7 +222,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   have f6 := slot_fit1 I₇ (j := 6) (by decide)
   rw [cb1] at f6
   have z₈ : val32 u₈.mem base (lo len (.slot .wide 19)) (cwc len .wide) = z := by
-    rw [V₈, Outside.val32 O₇ (.inr (by omega)) (by omega), Outside.val32 O₆ (.inr (by omega)) (by omega)]
+    rw [V₈, Outside.val32 O₇ (.inr (by omega_arith)) (by omega_arith), Outside.val32 O₆ (.inr (by omega_arith)) (by omega_arith)]
     exact Y₅
   have hm : u₈.mem.readW (off base accOff) 32 = cmask c :=
     BitVec.eq_of_toNat_eq ((k₈.word_eq (d := accOff)).trans W₇)
@@ -235,7 +235,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
     ⟨?_, ?_, ?_, Sall.keeps.trans (Kt.mono (by decide))⟩
   · have a₉ : u₉.mem.readW (off base accOff) 32 = cmask c := by
       rw [show u₉.mem.readW (off base accOff) 32 = u₈.mem.readW (off base accOff) 32 from
-        BitVec.eq_of_toNat_eq (O₉.w32 (d := accOff) (.inl (by omega)) (by omega)), hm]
+        BitVec.eq_of_toNat_eq (O₉.w32 (d := accOff) (.inl (by omega_arith)) (by omega_arith)), hm]
     rw [A, a₉, cmask_and_one]
   · rw [V₉, z₈] at B
     cases c

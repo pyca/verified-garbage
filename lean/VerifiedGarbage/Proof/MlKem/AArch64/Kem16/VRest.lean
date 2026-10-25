@@ -49,9 +49,9 @@ theorem VInvW.frame {s₀ : State} (hp : Pre P L s₀) {kC co : Nat} {mE mB : Me
   · rw [bytesAt_frame hf (fun r hr => (hW r hr).1) (by decide)]; exact h.r
   · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.1) (by decide)]; exact h.m
   · exact polyIsW_frame_poly (w16 := true) hf (fun r hr => (hW r hr).2.2.1.sub_left
-      (R.sub2 (by simp only [yOff]; omega) (by simp only [yOff]; omega))) (h.y j hj)
+      (R.sub2 (by simp only [yOff]; omega_arith) (by simp only [yOff]; omega_arith))) (h.y j hj)
   · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.1.sub_left
-      (R.sub2 (by omega) (by have := mul_succ_le (a := 32 * P.du) hi; omega))) (by kom)]
+      (R.sub2 (by omega_arith) (by have := mul_succ_le (a := 32 * P.du) hi; omega_arith))) (by kom)]
     exact h.u i hi
 
 theorem VInvW.frame_far {s₀ : State} (hp : Pre P L s₀) {kC co : Nat} {mE mB : Mem} {v : BitVec 64}
@@ -82,17 +82,17 @@ theorem decode_stepW {s₀ s : State} (hp : Pre P L s₀) {kE eo : Nat}
     WP isa (Kem16.dec12WAt (slotReg kE) (eo+384*j) (aOff P 0 j)) s (DecodeInvW P L s₀ mD T Y v (j+1)) := by
   have hw := hp.wf
   have h0 : 0<P.k := hw.facts.1
-  have hs : L.slot kE ≠ L.sc := by have := hp.scw; omega
+  have hs : L.slot kE ≠ L.sc := by have := hp.scw; omega_arith
   have hmul := mul_succ_le (a := 384) hj
-  refine WP.mono (dec12W_ok hp (k := kE) (o := eo+384*j) hkE (by omega)
+  refine WP.mono (dec12W_ok hp (k := kE) (o := eo+384*j) hkE (by omega_arith)
     (po_a hw h0 hj) (.inl hs) h.kb) fun t ⟨kt,ft,pt,xt⟩ => ?_
-  rw [h.kb.ro_bytes hread (by omega),ht j hj] at pt
+  rw [h.kb.ro_bytes hread (by omega_arith),ht j hj] at pt
   refine ⟨kt,xt.trans h.x24,?_,?_,?_⟩
   · intro i hi
-    rcases (by omega : i<j ∨ i=j) with hi | rfl
+    rcases (by omega_arith : i<j ∨ i=j) with hi | rfl
     · exact polyIsW_frame_poly (w16 := true) ft (fun r hh => by
         rw [List.mem_singleton.mp hh]
-        exact papart hp (po_a hw h0 (by omega)) (po_a hw h0 hj) (.inl (by lom))) (h.decoded i hi)
+        exact papart hp (po_a hw h0 (by omega_arith)) (po_a hw h0 hj) (.inl (by lom))) (h.decoded i hi)
     · exact pt
   · intro i hi
     exact polyIsW_frame_poly (w16 := true) ft (fun r hh => by
@@ -102,10 +102,10 @@ theorem decode_stepW {s₀ s : State} (hp : Pre P L s₀) {kE eo : Nat}
         lom))) (h.y i hi)
   · exact (h.frame.sub (fun r hh => by
       rw [List.mem_singleton.mp hh]
-      exact ⟨_,List.mem_singleton_self _,R.sub2 (by omega) (by omega)⟩)).trans
+      exact ⟨_,List.mem_singleton_self _,R.sub2 (by omega_arith) (by omega_arith)⟩)).trans
       (ft.sub (fun r hh => by
         rw [List.mem_singleton.mp hh]
-        exact ⟨_,List.mem_singleton_self _,R.sub2 (by simp [aOff]) (by simp [aOff]; omega)⟩))
+        exact ⟨_,List.mem_singleton_self _,R.sub2 (by simp [aOff]) (by simp [aOff]; omega_arith)⟩))
 
 theorem v_decodeW {s₀ s : State} (hp : Pre P L s₀) {kE eo kC co : Nat}
     (A : EncArgs P L kE eo kC co) {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte} {T : Nat → Poly}
@@ -115,7 +115,7 @@ theorem v_decodeW {s₀ s : State} (hp : Pre P L s₀) {kE eo kC co : Nat}
       VInvW P L s₀ kC co mE mB v rv mv P.k P.k t ∧
       DecodeInvW P L s₀ s.mem T (encY rv) v P.k t := by
   have hd : DecodeInvW P L s₀ s.mem T (encY rv) v 0 s :=
-    ⟨h.kb,h.x24,fun _ hj => by omega,h.y,Frame.refl _ _⟩
+    ⟨h.kb,h.x24,fun _ hj => by omega_arith,h.y,Frame.refl _ _⟩
   exact WPs.mono (WPs.range (fun _ hj _ h => decode_stepW hp A.hkE A.rE A.fE hj ht h) hd) fun t dt =>
     ⟨h.frame hp dt.kb (dt.x24.trans h.x24.symm) dt.frame (fun r hh => by
       rw [List.mem_singleton.mp hh]; exact firstRow_vfar hp A),dt⟩

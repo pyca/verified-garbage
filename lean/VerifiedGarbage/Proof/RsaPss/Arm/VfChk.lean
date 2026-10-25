@@ -79,22 +79,22 @@ abbrev Res (P : EP) (σ : State) (r : BitVec 32) : Prop :=
 abbrev Fin (P : EP) (σ s : State) : Prop := S h P σ s ∧ Res h P σ (s.gpr .r0)
 
 theorem arg_lt {j : Nat} (hj : j < 13) : arg j < 4096 := by
-  unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega
+  unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith
 
 /-- An argument: its place, readable, and its value. -/
 theorem argAt {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D).St σ s) {j : Nat} (hj : j < 13) :
     State.addr (P.B + BitVec.ofNat 32 (arg j)) = (P.lay D).fr (arg j) ∧
     InRegions (s.rd ++ s.wr) ((P.lay D).fr (arg j)) 4 ∧
     s.mem.readW ((P.lay D).fr (arg j)) 32 = P.argv.getD j 0 := by
-  have hl : j < (P.lay D).argv.length := by simp only [EP.argv, List.length_cons, List.length_nil]; omega
+  have hl : j < (P.lay D).argv.length := by simp only [EP.argv, List.length_cons, List.length_nil]; omega_arith
   exact ⟨hi.ok.addrB (by
-      show arg j < frameBytes + 56 + 36; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega),
+      show arg j < frameBytes + 56 + 36; unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith),
     by rw [hs.rd, hs.wr]; exact hi.ok.arg_read hl, hs.arg hl⟩
 
 /-- A slot, written with `r12 = sp`. -/
 theorem slotAt {D : Nat} {P : EP} {σ : State} (hi : In D P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     State.addr (P.B + BitVec.ofNat 32 d) = (P.lay D).fr d :=
-  hi.ok.addrB (by show d < frameBytes + 56 + 36; unfold frameBytes at hd ⊢; omega)
+  hi.ok.addrB (by show d < frameBytes + 56 + 36; unfold frameBytes at hd ⊢; omega_arith)
 
 /-- After `verifyChk`. -/
 abbrev C0 (P : EP) (σ s : State) : Prop :=
@@ -104,7 +104,7 @@ abbrev C0 (P : EP) (σ s : State) : Prop :=
 
 theorem chk_vp (P : EP) : VP (S h P) (.block (verifyChk h.H)) (C0 h P) := by
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.2.sp.trans h₂.2.sp.symm) fun σ s ⟨hi, hs⟩ => ?_
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   obtain ⟨a9, r9, v9⟩ := argAt hi hs (j := 9) (by decide)
   obtain ⟨a0, r0, v0⟩ := argAt hi hs (j := 0) (by decide)
   obtain ⟨a1, r1, v1⟩ := argAt hi hs (j := 1) (by decide)
@@ -113,8 +113,8 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (verifyChk h.H)) (C0 h P) := by
   have k : ∀ (j : Nat) (v : BitVec 32), j < 13 →
       (s.mem.writeW ((P.lay h.D).fr sS) v).readW ((P.lay h.D).fr (arg j)) 32 = s.mem.readW ((P.lay h.D).fr (arg j)) 32 :=
     fun j v hj => Lay.readW_fr_other _ _ _ (by
-      unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes sS; split <;> omega) (by
-      unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega) (by decide)
+      unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes sS; split <;> omega_arith) (by
+      unfold arg Impl.RsaPkcs1Sig.Arm.argOff frameBytes; split <;> omega_arith) (by decide)
   have hw : WP isa (.block (verifyChk h.H)) s fun t => t.mem = s.mem.writeW ((P.lay h.D).fr sS) P.scr ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.gpr .r0 = P.n ∧ t.gpr .r1 = BitVec.ofNat 32 P.K ∧
       t.gpr .r2 = BitVec.ofNat 32 P.slt ∧ t.gpr .r10 = P.any ∧ t.gpr .r11 = BitVec.ofNat 32 (h.D + 1) ∧
@@ -122,7 +122,7 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (verifyChk h.H)) (C0 h P) := by
     prun [verifyChk, sp0, ld, st, mw, hs.sp, a9, r9, v9, a0, r0, v0, a1, r1, v1, a7, r7, v7, a8, r8, v8,
       k 0 _ (by decide), k 1 _ (by decide), k 7 _ (by decide), k 8 _ (by decide),
       slotAt hi (d := sS) (by decide), hs.inFr (d := sS) (n := 4) (by show sS + 4 ≤ frameBytes; decide), arg_lt,
-      movw_val (show dig h.H + 1 < 2 ^ 16 by show h.D + 1 < 2 ^ 16; omega)]
+      movw_val (show dig h.H + 1 < 2 ^ 16 by show h.D + 1 < 2 ^ 16; omega_arith)]
     exact ⟨rfl, rfl, rfl, rfl, rfl⟩
   refine WP.mono hw fun t ⟨m, rd, wr, sp, t0, t1, t2, t10, t11, t12⟩ => ⟨⟨?_, ?_⟩, hi, t0, t1, t2, t10, t11, t12⟩
   · exact hs.frameW (d := sS) (n := 4) (by show sS + 4 ≤ frameBytes; decide) (by
@@ -146,10 +146,10 @@ theorem n0_at {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D)
     s.mem (State.addr P.n) = n0 P ∧ InRegions (s.rd ++ s.wr) (State.addr P.n) 1 := by
   have hK := hi.k64
   refine ⟨?_, ⟨P.N, by rw [hs.rd, hi.ok.rd]; simp, by
-    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩⟩
+    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩⟩
   have e : Spec.Rsa.bytesAt s.mem (State.addr P.n) P.K = P.nB := (hs.ro (R := P.N) (by simp)).trans hi.nB
   show s.mem (State.addr P.n) = P.nB.getD 0 0
-  rw [← e, RsaPkcs1Sig.Arm.bytesAt_getD (by omega), BitVec.add_zero]
+  rw [← e, RsaPkcs1Sig.Arm.bytesAt_getD (by omega_arith), BitVec.add_zero]
 
 theorem par_vp (P : EP) : VP (C0 h P) (.block (params ++ expLen ++ saltFits)) (C1 h P) := by
   refine VP.taint _ par_cert (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hc, hi, r0, r1, r2, r10, r11, r12⟩ => ?_
@@ -165,7 +165,7 @@ theorem par_vp (P : EP) : VP (C0 h P) (.block (params ++ expLen ++ saltFits)) (C
     · rw [a12, b12]
   have hg := hi.geo
   have hK := hi.k1024
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   obtain ⟨nb, hn⟩ := n0_at hi hc.st
   rw [List.append_assoc]
   refine WP.block_append (WP.mono (params_wp hg hc (K := P.K) (D := h.D) r0 hn r1 r11 r12)
@@ -202,7 +202,7 @@ theorem par_vp (P : EP) : VP (C0 h P) (.block (params ++ expLen ++ saltFits)) (C
       unfold eLen
       split <;> rfl
     rw [e2, t8, t9, dbW_byte, setWidth_byte]
-    exact fits_z (n0 P).isLt hK hD (by unfold eLen; have := hi.slt32; split <;> omega) (by split <;> omega)
+    exact fits_z (n0 P).isLt hK hD (by unfold eLen; have := hi.slt32; split <;> omega_arith) (by split <;> omega_arith)
 
 /-! ## When something does not fit -/
 
@@ -218,8 +218,8 @@ theorem emLen_eq {P : EP} {b : Byte} {rest : List Byte} (hbr : P.nB = b :: rest)
   have hn0 : n0 P = b := by simp [n0, hbr]
   unfold lo; rw [hn0]
   by_cases hb1 : b.toNat = 1
-  · rw [ite_eq_left hb1] at e2; rw [ite_eq_left (by omega)]; all_goals omega
-  · rw [ite_eq_right hb1] at e2; rw [ite_eq_right (by have := b.isLt; omega)]; all_goals omega
+  · rw [ite_eq_left hb1] at e2; rw [ite_eq_left (by omega_arith)]; all_goals omega_arith
+  · rw [ite_eq_right hb1] at e2; rw [ite_eq_right (by have := b.isLt; omega_arith)]; all_goals omega_arith
 
 /-- The specification refuses what does not fit. -/
 theorem verify_false {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P) :
@@ -228,7 +228,7 @@ theorem verify_false {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P)
   have hK := hi.k64
   obtain ⟨b, rest, hbr⟩ : ∃ b rest, P.nB = b :: rest := by
     cases e : P.nB with
-    | nil => rw [e] at hl; simp at hl; omega
+    | nil => rw [e] at hl; simp at hl; omega_arith
     | cons b rest => exact ⟨b, rest, rfl⟩
   have hn0 : n0 P = b := by simp [n0, hbr]
   rw [hbr]
@@ -244,8 +244,8 @@ theorem verify_false {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P)
     rw [hem, gl, hs]
     unfold fits at hf
     rw [hn0] at hf
-    have : lo P ≤ 1 := by unfold lo; split <;> omega
-    omega
+    have : lo P ≤ 1 := by unfold lo; split <;> omega_arith
+    omega_arith
 
 theorem ret0_cert : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [])
     (.block [mw .r0 0]) hc).isSome = true := ⟨_, by taint_decide⟩

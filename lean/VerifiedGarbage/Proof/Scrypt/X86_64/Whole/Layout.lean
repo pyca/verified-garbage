@@ -204,7 +204,7 @@ theorem within_base (p : Addr) {n k : Nat} (h : n ≤ k) : Within ⟨p, n⟩ ⟨
 
 theorem within_fr (B : Addr) {d n : Nat} (h₁ : 32 ≤ d) (h₂ : d + n ≤ 88) :
     Within ⟨B + BitVec.ofNat 64 d, n⟩ ⟨B + BitVec.ofNat 64 32, 56⟩ :=
-  ⟨d - 32, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega⟩
+  ⟨d - 32, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega_arith⟩
 
 namespace Lay.Ok
 
@@ -229,7 +229,7 @@ theorem stk_buf {d n : Nat} (h₁ : d + n ≤ 88) {R : Region}
 theorem args_buf {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 152) {R : Region}
     (hR : R = L.BB ∨ R = L.VV ∨ R = L.SC ∨ R = L.OUT) {r : Region} (hr : Region.Sub r R) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
-  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega)
+  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega_arith)
   rcases hR with rfl | rfl | rfl | rfl
   · exact (h.ba.symm.sub_left hs).sub_right hr
   · exact (h.va.symm.sub_left hs).sub_right hr
@@ -261,10 +261,10 @@ theorem Kept.frame {L : Lay} {m m' : Mem} {rs : List Region} (hk : Kept L m) (hf
   have k : ∀ d, (56 ≤ d ∧ d + 8 ≤ 88) ∨ (96 ≤ d ∧ d + 8 ≤ 152) →
       m'.readW (L.B + BitVec.ofNat 64 d) 64 = m.readW (L.B + BitVec.ofNat 64 d) 64 :=
     fun d hdd => hf.readW (Region.contains_self _ _) (hd d hdd) (by decide)
-  exact ⟨(k 56 (by omega)).trans hk.pw, (k 64 (by omega)).trans hk.pwl, (k 72 (by omega)).trans hk.r,
-    (k 80 (by omega)).trans hk.b, (k 96 (by omega)).trans hk.blen, (k 104 (by omega)).trans hk.v,
-    (k 112 (by omega)).trans hk.vlen, (k 120 (by omega)).trans hk.scr,
-    (k 136 (by omega)).trans hk.out, (k 144 (by omega)).trans hk.ol⟩
+  exact ⟨(k 56 (by omega_arith)).trans hk.pw, (k 64 (by omega_arith)).trans hk.pwl, (k 72 (by omega_arith)).trans hk.r,
+    (k 80 (by omega_arith)).trans hk.b, (k 96 (by omega_arith)).trans hk.blen, (k 104 (by omega_arith)).trans hk.v,
+    (k 112 (by omega_arith)).trans hk.vlen, (k 120 (by omega_arith)).trans hk.scr,
+    (k 136 (by omega_arith)).trans hk.out, (k 144 (by omega_arith)).trans hk.ol⟩
 
 /-! ## Between the frame's push and pop -/
 
@@ -289,7 +289,7 @@ theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 32) :
     rw [Offset.sub_ofNat_eq (B + BitVec.ofNat 64 32) (a := m) (b := 32) hm, BitVec.add_sub_cancel]
   show Region.Sub ⟨B + BitVec.ofNat 64 32 - BitVec.ofNat 64 m, m⟩ _
   rw [this]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_arith)
 
 /-- The regions a callee may be given. -/
 abbrev Lay.regions (L : Lay) : List Region := [L.PW, L.SALT, L.ARGS, L.FR, L.BB, L.VV, L.SC, L.OUT]
@@ -338,7 +338,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {m₀ : Mem}
         k.post (t.callEntry.withRegions rd wr) s₂) → Q s') :
     WP isa (.call n c) t Q := by
   obtain ⟨hcov, hcovw⟩ := covers hc hsub hwsub
-  refine WP.call hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost => ?_
+  refine WP.call hv hsp (by omega_arith) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost => ?_
   have hf' : Frame (wr ++ [⟨L.B, 32⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -346,7 +346,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {m₀ : Mem}
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
       rw [hc.rsp]
-      exact below_call_sub _ (by omega)
+      exact below_call_sub _ (by omega_arith)
   have hnB := hL.nB
   -- The regions the call may change miss the kept words.
   have hdisj : ∀ d, (56 ≤ d ∧ d + 8 ≤ 88) ∨ (96 ≤ d ∧ d + 8 ≤ 152) → ∀ R ∈ wr ++ [⟨L.B, 32⟩],
@@ -355,10 +355,10 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {m₀ : Mem}
     rcases List.mem_append.mp hR with hR | hR
     · obtain ⟨R', hR', hs⟩ := (hwsub R hR).sub
       rcases hdd with hdd | hdd
-      · exact hL.stk_buf (by omega) hR' hs
-      · exact hL.args_buf (by omega) (by omega) hR' hs
+      · exact hL.stk_buf (by omega_arith) hR' hs
+      · exact hL.args_buf (by omega_arith) (by omega_arith) hR' hs
     · simp only [List.mem_singleton] at hR; subst hR
-      exact Offset.disjoint_base _ (by omega) (by omega)
+      exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
   refine hQ s' ⟨hrd.trans hc.rd, hwr.trans hc.wr, ?_, fun r hr hr' => (hcs r hr).trans (hc.cs r hr hr'),
     hc.kept.frame hf' hdisj, hc.frame.trans (Frame.sub hf' fun r hr => ?_)⟩ hf' hg hpost
   · rw [hcs .rsp (by simp [calleeSaved]), hc.rsp]
@@ -371,7 +371,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {m₀ : Mem}
       · exact ⟨_, by simp, hs⟩
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨L.STK, by simp, ?_⟩
-      have := Offset.sub_base L.B (d := 0) (n := 32) (k := 88) (by omega)
+      have := Offset.sub_base L.B (d := 0) (n := 32) (k := 88) (by omega_arith)
       simpa using this
 
 /-! ## The layout of a call -/
@@ -396,7 +396,7 @@ theorem lay_ok {s : State} (h : Proof.Scrypt.scryptX86_64.pre s) : (lay s).Ok :=
   have nB : (lay s).B.toNat + 152 ≤ 2 ^ 64 := by
     simp only [lay]
     rw [Offset.toNat_sub_ofNat (s.gpr .rsp) 88]
-    omega
+    omega_arith
   exact ⟨pb, pv, pc, po, sb, sv, sc, so, bv, bc, bo, ea ▸ ba, vc, vo, ea ▸ va, co, ea ▸ ca, ea ▸ oa,
     e ▸ rp, e ▸ rs, e ▸ rb, e ▸ rv, e ▸ rc, e ▸ ro, kp, ks, kb, kv, kc, ko, np, ns, nb, nv, nc, no, nB,
     rpos, bmod, vmod, hval, olb, slen⟩
@@ -411,24 +411,24 @@ theorem push_base (sp : Addr) :
 
 theorem push_slot (sp : Addr) (j : Nat) (hj : j < 4) :
     sp - BitVec.ofNat 64 (8 * (j + 1)) = sp - BitVec.ofNat 64 88 + BitVec.ofNat 64 (80 - 8 * j) := by
-  have : 8 * (j + 1) < 2 ^ 64 := by omega
+  have : 8 * (j + 1) < 2 ^ 64 := by omega_arith
   bv_omega
 
 theorem arg_slot (s : State) (i : Nat) (hi : i < 7) :
     stackArgAddr s i = (lay s).B + BitVec.ofNat 64 (96 + 8 * i) := by
   simp only [stackArgAddr, lay]
-  have : 8 * (i + 1) < 2 ^ 64 := by omega
+  have : 8 * (i + 1) < 2 ^ 64 := by omega_arith
   bv_omega
 
 theorem push_ctx {s : State} (h : Proof.Scrypt.scryptX86_64.pre s) :
     Ctx (lay s) s.gpr s.mem (pushed pushRs s) := by
-  have hn : 8 * pushRs.length ≤ (s.gpr .rsp).toNat := by show 8 * 7 ≤ _; have := h.1; omega
+  have hn : 8 * pushRs.length ≤ (s.gpr .rsp).toNat := by show 8 * 7 ≤ _; have := h.1; omega_arith
   have hL := lay_ok h
   have hnB := hL.nB
   obtain ⟨hf, hw⟩ := pushRegs_mem s pushRs (by decide) hn
   have hw' : ∀ j (hj : j < 4), (pushed pushRs s).mem.readW ((lay s).B + BitVec.ofNat 64 (80 - 8 * j)) 64 =
-      s.gpr (pushRs[j]'(by show j < 7; omega)) := fun j hj => by
-    rw [← hw j (by show j < 7; omega)]; simp only [lay]; rw [push_slot _ j hj]; rfl
+      s.gpr (pushRs[j]'(by show j < 7; omega_arith)) := fun j hj => by
+    rw [← hw j (by show j < 7; omega_arith)]; simp only [lay]; rw [push_slot _ j hj]; rfl
   have hfr : (⟨s.gpr .rsp - BitVec.ofNat 64 (8 * pushRs.length), 8 * pushRs.length⟩ : Region) =
       (lay s).FR := by
     simp only [List.length_cons, List.length_nil, Lay.FR, lay]; rw [push_base]
@@ -438,15 +438,15 @@ theorem push_ctx {s : State} (h : Proof.Scrypt.scryptX86_64.pre s) :
     rw [stackArg, arg_slot s i hi]
     refine hf.readW (Region.contains_self _ _) (fun R hR => ?_) (by decide)
     simp only [List.mem_singleton] at hR; subst hR
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
   refine ⟨by rw [pushed_rd, h.2.2.1, ← lay_args]; rfl, ?_, ?_, fun r _ hr => pushed_gpr _ _ hr,
-    ⟨hw' 3 (by omega), hw' 2 (by omega), hw' 1 (by omega), hw' 0 (by omega),
-      ha 0 (by omega), ha 1 (by omega), ha 2 (by omega), ha 3 (by omega), ha 5 (by omega),
-      ha 6 (by omega)⟩, ?_⟩
+    ⟨hw' 3 (by omega_arith), hw' 2 (by omega_arith), hw' 1 (by omega_arith), hw' 0 (by omega_arith),
+      ha 0 (by omega_arith), ha 1 (by omega_arith), ha 2 (by omega_arith), ha 3 (by omega_arith), ha 5 (by omega_arith),
+      ha 6 (by omega_arith)⟩, ?_⟩
   · rw [pushed_wr, hfr, h.2.2.2.1]; rfl
   · rw [pushed_rsp]; simp only [List.length_cons, List.length_nil, lay]; rw [push_base]
   · refine Frame.sub hf fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨(lay s).STK, by simp, Offset.sub_base _ (by omega)⟩
+    exact ⟨(lay s).STK, by simp, Offset.sub_base _ (by omega_arith)⟩
 
 end VG.Proof.Scrypt.X86_64.Whole

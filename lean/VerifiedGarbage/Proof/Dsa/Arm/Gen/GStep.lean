@@ -44,14 +44,14 @@ theorem GI.hSrc (h : GI G σ V LS s) {i : Nat} (hi : i + G.pLen ≤ G.hsLen) (hp
       (G.hs + BitVec.ofNat 32 i).toNat + G.pLen ≤ 2 ^ 32 ∧
       Spec.Rsa.bytesAt s.mem (State.addr (G.hs + BitVec.ofNat 32 i)) G.pLen = hAt G i := by
   have fit := h.hsFit
-  have a : State.addr (G.hs + BitVec.ofNat 32 i) = State.addr G.hs + BitVec.ofNat 64 i := addr_add (by omega)
+  have a : State.addr (G.hs + BitVec.ofNat 32 i) = State.addr G.hs + BitVec.ofNat 64 i := addr_add (by omega_arith)
   have sub : Region.Sub ⟨State.addr G.hs + BitVec.ofNat 64 i, G.pLen⟩ G.rHs := Offset.sub_base _ hi
   have hC := h.pre.hC; rw [h.hG] at hC
   have e : G.hsB = Spec.Rsa.bytesAt σ.mem (State.addr G.hs) G.hsLen := by rw [← h.hG]; rfl
   refine ⟨Covers.left (Covers.one ⟨G.rHs, by rw [h.rd, h.pre.rd, h.hG]; simp, a ▸ Offset.contains_base _ hi
-    (by omega)⟩), a ▸ (hC.sub_left sub).sub_right h.kSub, ?_, ?_⟩
-  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 32 by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    (by omega_arith)⟩), a ▸ (hC.sub_left sub).sub_right h.kSub, ?_, ?_⟩
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 32 by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   · rw [h.keeps fit h.hs_apart hi, hAt, e]
 
 end
@@ -83,7 +83,7 @@ macro_rules
 abbrev Fit (G : GP) : Prop := sK G.pLen ≤ 2 ^ 32
 
 theorem SS.fit {σ s : State} (h : SS G σ c s) : Fit G := by
-  have := h.gi.scrBig; have := h.gi.scrFit; simp only [Fit]; omega
+  have := h.gi.scrBig; have := h.gi.scrFit; simp only [Fit]; omega_arith
 
 /-- A range of `scratch` through a copy to another. -/
 theorem scr_keep {m m' : Mem} {a n b k : Nat} (fit : Fit G) (f : Frame [G.rs a n] m m')
@@ -93,7 +93,7 @@ theorem scr_keep {m m' : Mem} {a n b k : Nat} (fit : Fit G) (f : Frame [G.rs a n
   exact f.read (r := G.rs b k) (Region.contains_self _ _)
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ hs (by omega) (by omega)) (by omega)
+      exact Offset.disjoint _ hs (by omega_arith) (by omega_arith)) (by omega_arith)
 
 /-- `g` from `h` (`hv`) in range: `h ^ ((p − 1) / q) mod p`, stored if it is
 above 1. The stage `c` is `c0`'s with more arrays and header words. -/
@@ -125,44 +125,44 @@ theorem gPow_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.p
   rw [hp] at cm cb ce cr cs
   rw [hpm] at cm; rw [hpb] at cb; rw [hpe] at ce; rw [hpr] at cr
   rw [hpm, hpb, hpe, hpr]
-  have w4 : 4 * G.w = G.pLen := by simp only [GP.w]; omega
-  have hpL : 0 < G.pLen := by omega
+  have w4 : 4 * G.w = G.pLen := by simp only [GP.w]; omega_arith
+  have hpL : 0 < G.pLen := by omega_arith
   have sz : ∀ i, i ≤ 11 → sA + VG.Impl.Mont.Arm.Dynamic.slot n i + G.pLen ≤ sK G.pLen := fun i hi => by
-    have := Nat.mul_le_mul_right (8 * n + 8) (show i + 1 ≤ 12 by omega)
+    have := Nat.mul_le_mul_right (8 * n + 8) (show i + 1 ≤ 12 by omega_arith)
     simp only [Nat.add_mul, Nat.one_mul] at this
-    simp only [contextBytes, VG.Impl.Mont.Arm.Dynamic.slot, VG.Impl.Mont.Arm.Dynamic.stride, sK, wa] at hctx ⊢; omega
-  have hsK : sA ≤ sK G.pLen := by simp only [sK]; omega
+    simp only [contextBytes, VG.Impl.Mont.Arm.Dynamic.slot, VG.Impl.Mont.Arm.Dynamic.stride, sK, wa] at hctx ⊢; omega_arith
+  have hsK : sA ≤ sK G.pLen := by simp only [sK]; omega_arith
   have ap : ∀ o k, sA ≤ o → ∀ x ∈ c.cl, x ∈ c.cl ∧ Apart o k x := fun o k ho x hx =>
-    ⟨hx, .inl (by have := hcl x hx; simp only [sG, sA] at *; omega)⟩
+    ⟨hx, .inl (by have := hcl x hx; simp only [sG, sA] at *; omega_arith)⟩
   generalize hr : hv ^ ev % pv = r
-  have rlt : r < pv := hr ▸ Nat.mod_lt _ (by omega)
+  have rlt : r < pv := hr ▸ Nat.mod_lt _ (by omega_arith)
   -- The modulus, the base and the exponent.
-  refine VP.seq ((copyOut_vp (E := fun _ => True) cm rfl hP hpL (by omega) (by simpa [modS] using sz 0 (by omega))
-    (ap _ _ (by simp only [modS, VG.Impl.Mont.Arm.Dynamic.slot]; omega)) fun _ _ _ _ => trivial).mono (fun σ s h => ⟨h, trivial⟩) fun σ t h => h)
+  refine VP.seq ((copyOut_vp (E := fun _ => True) cm rfl hP hpL (by omega_arith) (by simpa [modS] using sz 0 (by omega_arith))
+    (ap _ _ (by simp only [modS, VG.Impl.Mont.Arm.Dynamic.slot]; omega_arith)) fun _ _ _ _ => trivial).mono (fun σ s h => ⟨h, trivial⟩) fun σ t h => h)
     ?_
   refine VP.seq ((copyOut_vp (E := fun m => Fit G → (m.read (G.sa (sA + modS n)) (8 * n)).toNat = pv) cb rfl hHm hpL
-    (by omega) (by simpa [baseS] using sz 8 (by omega)) (ap _ _ (by simp only [baseS, VG.Impl.Mont.Arm.Dynamic.slot]; omega))
+    (by omega_arith) (by simpa [baseS] using sz 8 (by omega_arith)) (ap _ _ (by simp only [baseS, VG.Impl.Mont.Arm.Dynamic.slot]; omega_arith))
     fun m m' e f fit => by
-      rw [scr_keep fit f (by simp only [modS, baseS, VG.Impl.Mont.Arm.Dynamic.slot, VG.Impl.Mont.Arm.Dynamic.stride]; omega) (by simpa [baseS] using sz 8 (by omega))
-        (by rw [hn]; simpa [modS] using sz 0 (by omega))]; exact e fit).mono
+      rw [scr_keep fit f (by simp only [modS, baseS, VG.Impl.Mont.Arm.Dynamic.slot, VG.Impl.Mont.Arm.Dynamic.stride]; omega_arith) (by simpa [baseS] using sz 8 (by omega_arith))
+        (by rw [hn]; simpa [modS] using sz 0 (by omega_arith))]; exact e fit).mono
     (fun σ s ⟨h, _, e⟩ => ⟨h, fun _ => by rw [hn, e, hPv, Nat.mod_eq_of_lt hplt]⟩) fun σ t h => h) ?_
   refine VP.seq ((copyOut_vp (E := fun m => Fit G → (m.read (G.sa (sA + modS n)) (8 * n)).toNat = pv ∧
-      (m.read (G.sa (sA + baseS n)) (8 * n)).toNat = hv) ce rfl hE (by omega)
-    (by omega) (by have := sz 11 (by omega); simp only [expS] at *; omega) (ap _ _ (by simp only [expS, VG.Impl.Mont.Arm.Dynamic.slot]; omega))
+      (m.read (G.sa (sA + baseS n)) (8 * n)).toNat = hv) ce rfl hE (by omega_arith)
+    (by omega_arith) (by have := sz 11 (by omega_arith); simp only [expS] at *; omega_arith) (ap _ _ (by simp only [expS, VG.Impl.Mont.Arm.Dynamic.slot]; omega_arith))
     fun m m' e f fit => by
-      rw [scr_keep fit f (by simp only [modS, expS, VG.Impl.Mont.Arm.Dynamic.slot, VG.Impl.Mont.Arm.Dynamic.stride]; omega)
-          (by have := sz 11 (by omega); simp only [expS] at *; omega) (by rw [hn]; simpa [modS] using sz 0 (by omega)),
-        scr_keep fit f (by simp only [baseS, expS, VG.Impl.Mont.Arm.Dynamic.slot, VG.Impl.Mont.Arm.Dynamic.stride]; omega)
-          (by have := sz 11 (by omega); simp only [expS] at *; omega) (by rw [hn]; simpa [baseS] using sz 8 (by omega))]
+      rw [scr_keep fit f (by simp only [modS, expS, VG.Impl.Mont.Arm.Dynamic.slot, VG.Impl.Mont.Arm.Dynamic.stride]; omega_arith)
+          (by have := sz 11 (by omega_arith); simp only [expS] at *; omega_arith) (by rw [hn]; simpa [modS] using sz 0 (by omega_arith)),
+        scr_keep fit f (by simp only [baseS, expS, VG.Impl.Mont.Arm.Dynamic.slot, VG.Impl.Mont.Arm.Dynamic.stride]; omega_arith)
+          (by have := sz 11 (by omega_arith); simp only [expS] at *; omega_arith) (by rw [hn]; simpa [baseS] using sz 8 (by omega_arith))]
       exact e fit).mono
     (fun σ s ⟨h, e1, e⟩ => ⟨h, fun fit => ⟨e1 fit, by rw [hn, e, hHv, Nat.mod_eq_of_lt hvlt]⟩⟩) fun σ t h => h) ?_
   -- The exponentiation.
   refine VP.assoc (VP.seq ((powCall_vp (X := X) (hv := hv) (cl' := c.cl) ok rfl hctx hpodd hp1
     (fun x hx => ap _ _ (Nat.le_refl _) x hx)).mono (fun σ s ⟨h, e1, e⟩ =>
       ⟨h, (e1 h.1.fit).1, (e1 h.1.fit).2, by
-        rw [e, hEv, Nat.mod_eq_of_lt (by rwa [show 8 * (4 * g.e) = 32 * g.e by omega])]⟩) fun σ t h => h) ?_)
+        rw [e, hEv, Nat.mod_eq_of_lt (by rwa [show 8 * (4 * g.e) = 32 * g.e by omega_arith])]⟩) fun σ t h => h) ?_)
   -- g into its array.
-  refine VP.seq ((copyIn_vp (v := r) cr rfl (by decide) (by omega) (by simpa [resS] using sz 9 (by omega))).mono
+  refine VP.seq ((copyIn_vp (v := r) cr rfl (by decide) (by omega_arith) (by simpa [resS] using sz 9 (by omega_arith))).mono
     (fun σ s ⟨h, e⟩ => ⟨h, by rw [← hn, e, hr]⟩) fun σ t h => h) ?_
   -- 1 < g.
   have b2le : ∀ b : Bool, b2n b ≤ 1 := fun b => by cases b <;> decide
@@ -196,8 +196,8 @@ theorem gPow_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.p
     · refine VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => ?_
       rw [e] at z; simp only [Option.some.injEq, decide_eq_false_iff_not] at z
       kv_simp at z hOv; simp [hOv, b2n, hr1] at z
-    refine VP.seq ((storeBE_vp (cl' := c.cl) cs rfl (by simp) hpL (by omega)
-      (by simp only [sG, sK, sA, wa]; omega) fun x hx => ⟨by exact hx, .inl (hcl x hx)⟩).mono
+    refine VP.seq ((storeBE_vp (cl' := c.cl) cs rfl (by simp) hpL (by omega_arith)
+      (by simp only [sG, sK, sA, wa]; omega_arith) fun x hx => ⟨by exact hx, .inl (hcl x hx)⟩).mono
       (fun σ s h => h.1.1) fun σ t h => h) ?_
     simp only [hr1, ↓reduceIte]
     refine stImm_vp (fun σ s h => h.1) (by decide) (varOk_of (by decide)) fun σ s t h h' _ => ⟨?_, h.2⟩
@@ -209,7 +209,7 @@ theorem gPow_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.p
       · rw [eV]
     · simp only [List.mem_cons] at hy ⊢
       rcases hy with rfl | hy
-      · left; rw [vG, Nat.mod_eq_of_lt (by omega)]
+      · left; rw [vG, Nat.mod_eq_of_lt (by omega_arith)]
       · right; exact ecl ▸ hy
 
 theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.powCode) (hp : g.pLen = G.pLen)
@@ -224,13 +224,13 @@ theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
     (hH : fH ∈ c.LS) (hHv : c.V fH = G.hs + BitVec.ofNat 32 i) (hi : i + G.pLen ≤ G.hsLen)
     (hhsb : G.hsB.length = G.hsLen) :
     VP (St G c X) g.gStep (St G (gOut c G (Spec.Dsa.decodeBE (hAt G i)) pv ev) X) := by
-  have w4 : 4 * G.w = G.pLen := by simp only [GP.w]; omega
+  have w4 : 4 * G.w = G.pLen := by simp only [GP.w]; omega_arith
   have hsG : sG = 1728 := rfl
   have hAv : sA = 4096 := rfl
-  have hpL : 0 < G.pLen := by omega
+  have hpL : 0 < G.pLen := by omega_arith
   generalize hhv : Spec.Dsa.decodeBE (hAt G i) = hv
   have hal : (hAt G i).length = G.pLen := by
-    simp only [hAt, List.length_take, List.length_drop, hhsb]; omega
+    simp only [hAt, List.length_take, List.length_drop, hhsb]; omega_arith
   have hvlt : hv < 2 ^ (8 * G.pLen) := by
     rw [← hhv]; have := VG.Proof.Dsa.decodeBE_lt (hAt G i)
     rwa [hal, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
@@ -249,10 +249,10 @@ theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
     (VP.taint [] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs []) (.block [.movw .r6 (BitVec.ofNat 16 1)]),
       rfl⟩ (fun _ _ _ _ _ _ r hr => absurd hr (by simp)) fun σ s ⟨⟨h, x⟩, r4⟩ => wp_movw fun t u => WP.block_nil
         ⟨⟨⟨h.of_rest (u.rest (ws := [.r6]) (by simp)) u.mem, x⟩, by rw [u.other _ (by decide), r4]⟩,
-          by rw [u.gpr, setWidth_ofNat16 (by omega)]⟩) ?_
+          by rw [u.gpr, setWidth_ofNat16 (by omega_arith)]⟩) ?_
   refine VP.seq ((loadAt_vp (c := c) (X := X) (src := G.hs + BitVec.ofNat 32 i) (bs := hAt G i)
     ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
-      (VG.Impl.Rsa.Arm.CrtValues.load aH), rfl⟩ (by decide) hal hpL (by omega)
+      (VG.Impl.Rsa.Arm.CrtValues.load aH), rfl⟩ (by decide) hal hpL (by omega_arith)
     fun σ s ⟨h, _⟩ => h.gi.hSrc hi hpL).mono (fun σ s ⟨⟨h, r4⟩, r6⟩ => ⟨h, r4, r6⟩) fun _ _ h => h.1) ?_
   rw [hhv]
   -- 1 < h, h < p − 1 and both.

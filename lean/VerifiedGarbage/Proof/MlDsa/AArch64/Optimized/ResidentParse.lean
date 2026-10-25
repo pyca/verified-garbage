@@ -48,26 +48,26 @@ theorem parser_step_ok {s₀ s : State} {a o : Addr} {d j : Nat}
   intro t ht
   have hf : Frame [⟨o+BitVec.ofNat 64 (64*j),64⟩] s.mem t.mem := by
     simpa only [h.output] using ht.frame
-  have old : Parsed t.mem o s₀.mem a d (16*j) := h.values.keep (by omega) hf (by
+  have old : Parsed t.mem o s₀.mem a d (16*j) := h.values.keep (by omega_arith) hf (by
     intro r hr
     simp only [List.mem_singleton] at hr
     subst r
     have hs := Offset.disjoint o (d := 0) (n := 4*(16*j)) (e := 64*j) (k := 64)
-      (Or.inl (by omega)) (by omega) (by omega)
+      (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
     simpa only [BitVec.add_zero] using hs)
-  refine ⟨by omega,ht.ready,?_,?_,?_,?_,?_,?_,?_,ht.rd.trans h.rd,ht.wr.trans h.wr,ht.sp.trans h.sp⟩
+  refine ⟨by omega_arith,ht.ready,?_,?_,?_,?_,?_,?_,?_,ht.rd.trans h.rd,ht.wr.trans h.wr,ht.sp.trans h.sp⟩
   · intro i hi
     by_cases he : i<16*j
     · exact old i he
-    · have hv := ht.words (i-16*j) (by omega)
+    · have hv := ht.words (i-16*j) (by omega_arith)
       rw [h.output,h.input,Offset.add_add,fieldValue_shift _ _ hd] at hv
-      rw [show 64*j+4*(i-16*j)=4*i by omega,show 16*j+(i-16*j)=i by omega] at hv
-      rw [fieldValue_keep hd (by omega) h.frame (by
+      rw [show 64*j+4*(i-16*j)=4*i by omega_arith,show 16*j+(i-16*j)=i by omega_arith] at hv
+      rw [fieldValue_keep hd (by omega_arith) h.frame (by
         intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hsep)] at hv
       exact hv
   · exact h.frame.trans (hf.sub (by
       intro r hr; simp only [List.mem_singleton] at hr; subst r
-      exact ⟨⟨o,1024⟩,by simp,Offset.sub_base o (by omega)⟩))
+      exact ⟨⟨o,1024⟩,by simp,Offset.sub_base o (by omega_arith)⟩))
   · rw [ht.input,h.input,Offset.add_add,Nat.mul_succ]
   · rw [ht.output,h.output]
     change (o+BitVec.ofNat 64 (64*j))+BitVec.ofNat 64 64=o+BitVec.ofNat 64 (64*(j+1))
@@ -98,7 +98,7 @@ theorem parser_loop_ok {s₀ s : State} {a o : Addr} {d start : Nat}
     simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hu.count,hend,Nat.sub_self]
     rfl
   · right
-    refine ⟨?_,16-(j+1),by omega,j+1,by omega,rfl,hu⟩
+    refine ⟨?_,16-(j+1),by omega_arith,j+1,by omega_arith,rfl,hu⟩
     simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hu.count,Option.some.injEq,bne_iff_ne]
     bv_omega
 
@@ -135,7 +135,7 @@ theorem parse_ok (s : State) {d off : Nat} {p : Reg} (hd : d=18 ∨ d=20)
   refine parser_loop_ok hd (by decide) (s := t) (start := 0) ?_ hsep h0 h1 h2 hw
   refine ⟨by decide,hr.keep (fun _ _ => rfl),?_,Frame.refl _ _,?_,?_,rfl,?_,
     (fun _ _ => rfl),rfl,rfl,rfl⟩
-  · intro i hi; omega
+  · intro i hi; omega_arith
   · simp only [t,b,a,RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,Nat.mul_zero,BitVec.add_zero]
     rfl
   · simp only [t,b,a,RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,Nat.mul_zero,BitVec.add_zero,hp,ite_false]

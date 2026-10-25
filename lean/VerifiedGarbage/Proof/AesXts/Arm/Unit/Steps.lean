@@ -64,11 +64,11 @@ theorem zero4_bytes (m : Mem) (c : Addr) : bytesAt (zero4 m c) c 16 = List.repli
 theorem addrs_of {s : State} {b : Reg} {e : Nat} {Q : Addr} (hq : State.addr (s.gpr b) + BitVec.ofNat 64 e = Q)
     (hf : (s.gpr b).toNat + e + 16 ≤ 2 ^ 32) (k : Nat) (hk : k < 16) :
     State.addr (s.gpr b + BitVec.ofNat 32 (e + k)) = Q + BitVec.ofNat 64 k := by
-  rw [addr_add (by omega), ← Offset.add_add, hq]
+  rw [addr_add (by omega_arith), ← Offset.add_add, hq]
 
 theorem addr0_of {s : State} {b : Reg} {e : Nat} {Q : Addr} (hq : State.addr (s.gpr b) + BitVec.ofNat 64 e = Q)
     (hf : (s.gpr b).toNat + e + 16 ≤ 2 ^ 32) : State.addr (s.gpr b + BitVec.ofNat 32 e) = Q := by
-  rw [addr_add (by omega), hq]
+  rw [addr_add (by omega_arith), hq]
 
 /-- `i` copied to the tweak. -/
 theorem copyI_ok (s : State) {P Q : Addr} (hq : State.addr (s.gpr .r3) + BitVec.ofNat 64 0 = Q)
@@ -165,16 +165,16 @@ theorem tArgs_ok (s : State) :
 theorem shr4 (x : BitVec 32) : x >>> 4 = BitVec.ofNat 32 (x.toNat / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by have := x.isLt; omega)]
+    Nat.mod_eq_of_lt (by have := x.isLt; omega_arith)]
 
 theorem shr4_shl4 (x : BitVec 32) : (x >>> 4) <<< 4 = BitVec.ofNat 32 (16 * (x.toNat / 16)) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
     BitVec.toNat_ofNat]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
   simp only [Nat.reducePow]
-  omega
+  omega_arith
 
 theorem argsAll_ok (s : State) :
     ∃ s', runBlock isa argsAll s = some s' ∧
@@ -226,9 +226,9 @@ theorem split_ok (s : State) :
       BitVec.ofNat 32 ((s.gpr .r7).toNat % 16) := by
     apply BitVec.eq_of_toNat_eq
     have := (s.gpr .r7).isLt
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * _) (by omega),
-      Nat.mod_eq_of_lt (a := _ % 16) (by omega)]
-    omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * _) (by omega_arith),
+      Nat.mod_eq_of_lt (a := _ % 16) (by omega_arith)]
+    omega_arith
   have l4 (t : State) : (Op2.shifted .r7 .lsr 4).eval t = some (t.gpr .r7 >>> 4) := op2_lsr (by decide)
   have k4 (t : State) : (Op2.shifted .r0 .lsl 4).eval t = some (t.gpr .r0 <<< 4) := op2_lsl (by decide)
   refine ⟨_, by
@@ -238,7 +238,7 @@ theorem split_ok (s : State) :
   · simp [gpr_setReg, subFlags, shr4_shl4]
   · simp only [gpr_setReg, subFlags, reduceCtorEq, ↓reduceIte, shr4_shl4, e]
   · simp only [z_setReg, subFlags, gpr_setReg, reduceCtorEq, ↓reduceIte, shr4_shl4, e]
-    exact Proof.MdStream.Arm.ofNat_beq_zero (by omega)
+    exact Proof.MdStream.Arm.ofNat_beq_zero (by omega_arith)
   · simp [gpr_setReg, subFlags, h₁, h₂]
 
 theorem lastAddr_ok (s : State) :
@@ -253,7 +253,7 @@ theorem lastAddr_ok (s : State) :
 /-- The last whole block, from the bytes of the whole blocks. -/
 theorem last_eq (p : BitVec 32) {m : Nat} (hm : 1 ≤ m) :
     p + BitVec.ofNat 32 (16 * m) - 16 = p + BitVec.ofNat 32 (16 * (m - 1)) := by
-  rw [show 16 * m = 16 * (m - 1) + 16 by omega, BitVec.ofNat_add, ← BitVec.add_assoc]
+  rw [show 16 * m = 16 * (m - 1) + 16 by omega_arith, BitVec.ofNat_add, ← BitVec.add_assoc]
   exact BitVec.add_sub_cancel _ _
 
 theorem argsL_ok (s : State) {o : Nat} (ho : encodable (BitVec.ofNat 32 o) = true) :
@@ -280,7 +280,7 @@ theorem byte_rt (b : Byte) : BitVec.setWidth 8 (BitVec.setWidth 32 b) = b := by
   apply BitVec.eq_of_toNat_eq
   have := b.isLt
   simp only [BitVec.toNat_setWidth]
-  omega
+  omega_arith
 
 theorem swapStep_ok (s : State) {L : Addr} {k b : Nat} (hx : State.addr (s.gpr .r2) = L + BitVec.ofNat 64 k)
     (hxf : (s.gpr .r2).toNat + 17 ≤ 2 ^ 32) (hc : s.gpr .r1 = BitVec.ofNat 32 b) (hb : 1 ≤ b) (hb' : b < 16)
@@ -298,7 +298,7 @@ theorem swapStep_ok (s : State) {L : Addr} {k b : Nat} (hx : State.addr (s.gpr .
   have a0 : State.addr (s.gpr .r2 + BitVec.ofNat 32 0) = L + BitVec.ofNat 64 k := by
     rw [BitVec.add_zero]; exact hx
   have a16 : State.addr (s.gpr .r2 + BitVec.ofNat 32 16) = L + BitVec.ofNat 64 (16 + k) := by
-    rw [addr_add (by omega), hx, Offset.add_add, Nat.add_comm]
+    rw [addr_add (by omega_arith), hx, Offset.add_add, Nat.add_comm]
   have i1 (t : State) : (Op2.imm 1).eval t = some 1 := op2_imm (by decide)
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, swapBody, runBlock_cons, runStep_some, runBlock_nil, exec, i1,
@@ -312,7 +312,7 @@ theorem swapStep_ok (s : State) {L : Addr} {k b : Nat} (hx : State.addr (s.gpr .
     exact Proof.MdStream.Arm.sub_ofNat hb
   · have e1 : BitVec.ofNat 32 b - 1 = BitVec.ofNat 32 (b - 1) := Proof.MdStream.Arm.sub_ofNat hb
     simp only [z_setReg, subFlags, hc, e1]
-    exact Proof.MdStream.Arm.ofNat_beq_zero (by omega)
+    exact Proof.MdStream.Arm.ofNat_beq_zero (by omega_arith)
 
 theorem swap_ok (s : State) {L : Addr} {b : Nat} (hb₀ : 0 < b) (hb : b < 16) (hx : State.addr (s.gpr .r2) = L)
     (hxf : (s.gpr .r2).toNat + 16 + b ≤ 2 ^ 32) (hc : s.gpr .r1 = BitVec.ofNat 32 b)
@@ -328,27 +328,27 @@ theorem swap_ok (s : State) {L : Addr} {b : Nat} (hb₀ : 0 < b) (hb : b < 16) (
     ⟨0, rfl, hb₀, by rw [BitVec.add_zero], hc, (Proof.AesXts.Unit.swapMem_zero _ _).symm,
       fun _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
   rintro n t ⟨k, rfl, hk, r2, r1, mem, g, sp, rd, wr⟩
-  have hx' : State.addr (t.gpr .r2) = L + BitVec.ofNat 64 k := by rw [r2, addr_add (by omega), hx]
+  have hx' : State.addr (t.gpr .r2) = L + BitVec.ofNat 64 k := by rw [r2, addr_add (by omega_arith), hx]
   have hxf' : (t.gpr .r2).toNat + 17 ≤ 2 ^ 32 := by
-    rw [r2, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [r2, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   obtain ⟨t', run', mem', r2', r1', z', g', sp', rd', wr'⟩ := swapStep_ok t (k := k) (b := b - k) hx' hxf' r1
-    (by omega) (by omega) (by rw [wr]; exact hw k (by omega)) (by rw [wr]; exact hw (16 + k) (by omega))
+    (by omega_arith) (by omega_arith) (by rw [wr]; exact hw k (by omega_arith)) (by rw [wr]; exact hw (16 + k) (by omega_arith))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have hmem : t'.mem = swapMem s.mem L (k + 1) := by
-    rw [mem', mem, swapMem_lo _ _ (Nat.le_refl k) (by omega), swapMem_hi _ _ (Nat.le_refl k) (by omega),
-      swapMem_step _ _ (by omega)]
+    rw [mem', mem, swapMem_lo _ _ (Nat.le_refl k) (by omega_arith), swapMem_hi _ _ (Nat.le_refl k) (by omega_arith),
+      swapMem_step _ _ (by omega_arith)]
   have hz : isa.eval .ne t' = some !decide (b - k - 1 = 0) := by
     show VG.Arm.eval .ne t' = _; rw [Proof.MdStream.Arm.eval_ne, z']
   have gg : ∀ r, r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ h₄ => by
     rw [g' r h₁ h₂ h₃ h₄, g r h₁ h₂ h₃ h₄]
   by_cases he : k + 1 = b
   · left
-    refine ⟨by rw [hz]; simp [show b - k - 1 = 0 by omega], by rw [hmem, he], gg, by rw [sp', sp],
+    refine ⟨by rw [hz]; simp [show b - k - 1 = 0 by omega_arith], by rw [hmem, he], gg, by rw [sp', sp],
       by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    refine ⟨by rw [hz]; simp [show b - k - 1 ≠ 0 by omega], b - (k + 1), by omega, k + 1, rfl, by omega, ?_,
-      by rw [r1', show b - k - 1 = b - (k + 1) by omega], hmem, gg, by rw [sp', sp], by rw [rd', rd],
+    refine ⟨by rw [hz]; simp [show b - k - 1 ≠ 0 by omega_arith], b - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, ?_,
+      by rw [r1', show b - k - 1 = b - (k + 1) by omega_arith], hmem, gg, by rw [sp', sp], by rw [rd', rd],
       by rw [wr', wr]⟩
     rw [r2', r2, BitVec.add_assoc, show BitVec.ofNat 32 k + 1 = BitVec.ofNat 32 (k + 1) from
       (BitVec.ofNat_add k 1).symm]
@@ -372,15 +372,15 @@ theorem nextT_ok (s : State) {T Z : Addr} (ht : State.addr (s.gpr .r8) + BitVec.
   have g8 : (s.setReg .r6 (s.gpr .r8 + BitVec.ofNat 32 zO)).gpr .r8 = s.gpr .r8 :=
     gpr_setReg_of_ne _ _ (by decide)
   obtain ⟨s₂, run₂, g₂, sp₂, mem₂, rd₂, wr₂⟩ := copyT_ok (s.setReg .r6 (s.gpr .r8 + BitVec.ofNat 32 zO))
-    (P := Z) (Q := T) (by rw [g8, ht]) (by rw [g8]; simp only [tO]; omega) (by rw [g8, hz])
-    (by rw [g8]; simp only [zO]; omega) hr hw
+    (P := Z) (Q := T) (by rw [g8, ht]) (by rw [g8]; simp only [tO]; omega_arith) (by rw [g8, hz])
+    (by rw [g8]; simp only [zO]; omega_arith) hr hw
   have r6₂ : State.addr (s₂.gpr .r6) = Z := by
-    rw [g₂ _ (by decide) (by decide) (by decide) (by decide), gpr_setReg_self, addr_add (by simp only [zO]; omega),
+    rw [g₂ _ (by decide) (by decide) (by decide) (by decide), gpr_setReg_self, addr_add (by simp only [zO]; omega_arith),
       hz]
   have r6f : (s₂.gpr .r6).toNat + 16 ≤ 2 ^ 32 := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide), gpr_setReg_self, BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (a := zO) (by simp only [zO]; omega), Nat.mod_eq_of_lt (by simp only [zO]; omega)]
-    simp only [zO]; omega
+      Nat.mod_eq_of_lt (a := zO) (by simp only [zO]; omega_arith), Nat.mod_eq_of_lt (by simp only [zO]; omega_arith)]
+    simp only [zO]; omega_arith
   obtain ⟨s₃, run₃, g₃, sp₃, mem₃, rd₃, wr₃⟩ := Proof.AesXts.Arm.mulA_ok s₂ (Q := Z) r6₂ r6f
     (fun d n h => by
       rw [rd₂, wr₂]

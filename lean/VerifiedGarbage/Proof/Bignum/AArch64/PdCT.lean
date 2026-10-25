@@ -87,16 +87,16 @@ theorem ldCopy_ok {p : CPubD} {t : State} (h : LW p t) {c j : Nat} (hc : c ≤ (
   have hn := hs.nowrap
   have hsl := slot_le (w := (p.d.k + 7) / 8) hj
   have hge := hdr_lt_slot ((p.d.k + 7) / 8) j (show 31 < 32 by decide)
-  refine WP.mono (copyWords_ok (S := p.pp) (eS := 8 * c) h16 h17 h12 (by omega) (by omega) (by omega)
-    (fun i hi => by rw [show 8 * c + 8 * i = 8 * (c + i) by omega]; exact hpr _ (by omega))
-    (fun i hi => hs.st (by omega))
+  refine WP.mono (copyWords_ok (S := p.pp) (eS := 8 * c) h16 h17 h12 (by omega_arith) (by omega_arith) (by omega_arith)
+    (fun i hi => by rw [show 8 * c + 8 * i = 8 * (c + i) by omega_arith]; exact hpr _ (by omega_arith))
+    (fun i hi => hs.st (by omega_arith))
     (fun i hi b hb => Or.inr (by
-      have := hps (8 * c + 8 * i + b) (by omega)
-      rw [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; omega))) fun t' ⟨_, _, ho, h16', _, k⟩ => ?_
+      have := hps (8 * c + 8 * i + b) (by omega_arith)
+      rw [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; omega_arith))) fun t' ⟨_, _, ho, h16', _, k⟩ => ?_
   refine ⟨⟨h₀.congr (Frm.of_outside ho (List.mem_singleton_self _))
-    (fun r hr => by rw [List.mem_singleton.mp hr]; left; omega) k (by decide),
-    by rw [ho.word (by unfold sW; omega) (by unfold sW; omega)]; exact hW,
-    fun i hi => by rw [ho.word (d := 8 * sArr i) (by unfold sArr; omega) (by unfold sArr; omega)]; exact hb i hi⟩,
+    (fun r hr => by rw [List.mem_singleton.mp hr]; left; omega_arith) k (by decide),
+    by rw [ho.word (by unfold sW; omega_arith) (by unfold sW; omega_arith)]; exact hW,
+    fun i hi => by rw [ho.word (d := 8 * sArr i) (by unfold sArr; omega_arith) (by unfold sArr; omega_arith)]; exact hb i hi⟩,
     h16', k⟩
 
 /-- The load and the checks leak the same in runs with the same public data. -/
@@ -109,10 +109,10 @@ theorem pdLoad_ct : RelCT isa (Two LH) (seqs Precomputed.load) fun _ _ => True :
   · intro p t h
     have h' := h
     obtain ⟨hs, h0, hZ, hk1, hk2, hK, hN, -⟩ := h'
-    refine WP.mono (pdHead_ok hs h0 hZ (by omega) hK hN) fun t' ⟨h16, h17, h12, hW, hb, hf, k⟩ =>
+    refine WP.mono (pdHead_ok hs h0 hZ (by omega_arith) hK hN) fun t' ⟨h16, h17, h12, hW, hb, hf, k⟩ =>
       ⟨⟨h.congr hf (fun r hr => ?_) k (by decide), hW, hb⟩, h16, h17, h12⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega
+    rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega_arith
   -- `m`.
   refine RelCT.seq (two_piece (Ψ := fun p t => LW p t ∧ t.gpr .x16 = off p.pp (8 * ((p.d.k + 7) / 8)) ∧
       t.gpr .x12 = BitVec.ofNat 64 ((p.d.k + 7) / 8)) [.x16, .x17, .x12] (fun p s₁ s₂ h₁ h₂ r hr => by
@@ -135,7 +135,7 @@ theorem pdLoad_ct : RelCT isa (Two LH) (seqs Precomputed.load) fun _ _ => True :
     obtain ⟨g0, g8⟩ := slot0_ge ((p.d.k + 7) / 8)
     refine WP.mono (WP.keep [.x17] (Q := fun t' => t'.gpr .x17 = off p.d.B (slot ((p.d.k + 7) / 8) aR2) ∧
         t'.mem = t.mem) (by
-      brun [h.1.2.1, hdr_enc (show sArr aR2 < 32 by decide), hs.ld (d := 8 * sArr aR2) (by unfold sArr aR2; omega),
+      brun [h.1.2.1, hdr_enc (show sArr aR2 < 32 by decide), hs.ld (d := 8 * sArr aR2) (by unfold sArr aR2; omega_arith),
         h.2.2 aR2 (by decide)]) (by decide) (by decide) (by decide +kernel))
       fun t' ⟨⟨h17, hm⟩, k⟩ => ⟨h.mem hm k (by decide), (k.gpr .x16 (by decide)).trans h16, h17,
         (k.gpr .x12 (by decide)).trans h12⟩
@@ -167,7 +167,7 @@ theorem pdLoad_ct : RelCT isa (Two LH) (seqs Precomputed.load) fun _ _ => True :
         t'.gpr .x16 = off p.d.B (slot ((p.d.k + 7) / 8) aR2) ∧ t'.gpr .x17 = off p.d.B (slot ((p.d.k + 7) / 8) aN) ∧
         t'.gpr .x14 = BitVec.ofNat 64 ((p.d.k + 7) / 8) ∧ t'.c = true ∧ t'.mem = t.mem) (by
       brun [h.1.2.1, hdr_enc (show sArr aR2 < 32 by decide), hdr_enc (show sArr aN < 32 by decide),
-        hs.ld (d := 8 * sArr aR2) (by unfold sArr aR2; omega), hs.ld (d := 8 * sArr aN) (by unfold sArr aN; omega),
+        hs.ld (d := 8 * sArr aR2) (by unfold sArr aR2; omega_arith), hs.ld (d := 8 * sArr aN) (by unfold sArr aN; omega_arith),
         h.2.2 aR2 (by decide), h.2.2 aN (by decide), h12]) (by decide) (by decide) (by decide +kernel))
       fun t' ⟨⟨h16, h17, h14, hc, hm⟩, k⟩ => ⟨h.mem hm k (by decide), h16, h17, h14, hc,
         (k.gpr .x12 (by decide)).trans h12⟩
@@ -183,9 +183,9 @@ theorem pdLoad_ct : RelCT isa (Two LH) (seqs Precomputed.load) fun _ _ => True :
     have hZ := h.1.2.2.1
     have hk1 := h.1.2.2.2.1
     have hk2 := h.1.2.2.2.2.1
-    exact WP.mono (cmpLoop_ok h.1.1 h16 h17 h14 hc (by omega) (by omega)
-      (by have := slot_le (w := (p.d.k + 7) / 8) (show aR2 < 8 by decide); omega)
-      (by have := slot_le (w := (p.d.k + 7) / 8) (show aN < 8 by decide); omega)) fun t' ⟨_, hm, k⟩ =>
+    exact WP.mono (cmpLoop_ok h.1.1 h16 h17 h14 hc (by omega_arith) (by omega_arith)
+      (by have := slot_le (w := (p.d.k + 7) / 8) (show aR2 < 8 by decide); omega_arith)
+      (by have := slot_le (w := (p.d.k + 7) / 8) (show aN < 8 by decide); omega_arith)) fun t' ⟨_, hm, k⟩ =>
       ⟨h.mem hm k (by decide), (k.gpr .x12 (by decide)).trans h12⟩
   -- The checks: `m`'s base, then its words.
   refine RelCT.block_append (l₁ := ([movi .x8 1, .csel .x .x9 .x7 .x8, ldh .x17 (sArr aN)] : List Instr))
@@ -208,7 +208,7 @@ theorem pdLoad_ct : RelCT isa (Two LH) (seqs Precomputed.load) fun _ _ => True :
   obtain ⟨g0, g8⟩ := slot0_ge ((p.d.k + 7) / 8)
   refine WP.mono (WP.keep [.x8, .x9, .x17] (Q := fun t' =>
       t'.gpr .x17 = off p.d.B (slot ((p.d.k + 7) / 8) aN)) (by
-    brun [h.1.2.1, hdr_enc (show sArr aN < 32 by decide), hs.ld (d := 8 * sArr aN) (by unfold sArr aN; omega),
+    brun [h.1.2.1, hdr_enc (show sArr aN < 32 by decide), hs.ld (d := 8 * sArr aN) (by unfold sArr aN; omega_arith),
       h.2.2 aN (by decide)]) (by decide) (by decide) (by decide +kernel))
     fun t' ⟨h17, k⟩ => ⟨h17, (k.gpr .x12 (by decide)).trans h12⟩
 
@@ -259,7 +259,7 @@ theorem ce2_lh {p : CPubD} {t : State} (h : CE2 p t) : LH p t := by
   have := c.hk1
   have := c.hk2
   subst hB hZ hk hpp
-  exact ⟨c.hs.congr kk.wr, h0, by dsimp only; unfold slot hdrBytes; omega, c.hk1, c.hk2,
+  exact ⟨c.hs.congr kk.wr, h0, by dsimp only; unfold slot hdrBytes; omega_arith, c.hk1, c.hk2,
     by rw [hK, ofNat_toNat64], hN, fun i hi => by rw [kk.rd, kk.wr]; exact c.hpr i hi, c.hps⟩
 
 /-- The load's post, from `entry`'s. -/
@@ -275,13 +275,13 @@ theorem ce2_load {p : CPubD} {t : State} (h : CE2 p t) : WP isa (seqs Precompute
   have := c.hk1
   have := c.hk2
   have hn := c.hs.nowrap
-  have i₁ : InScr (stackArg s 0) ((stackArg s 1).toNat * 8) s.mem t.mem := InScr.of_outside ho₁ (by omega)
-  have hz : slot (((s.gpr .x1).toNat + 7) / 8) 8 ≤ (stackArg s 1).toNat * 8 := by unfold slot hdrBytes; omega
-  refine WP.mono (pdLoad_ok (c.hs.congr k₁.wr) h0 hz (by omega) (by omega) (by rw [hK, ofNat_toNat64])
+  have i₁ : InScr (stackArg s 0) ((stackArg s 1).toNat * 8) s.mem t.mem := InScr.of_outside ho₁ (by omega_arith)
+  have hz : slot (((s.gpr .x1).toNat + 7) / 8) 8 ≤ (stackArg s 1).toNat * 8 := by unfold slot hdrBytes; omega_arith
+  refine WP.mono (pdLoad_ok (c.hs.congr k₁.wr) h0 hz (by omega_arith) (by omega_arith) (by rw [hK, ofNat_toNat64])
     hN (fun i hi => by rw [k₁.rd, k₁.wr]; exact c.hpr i hi) c.hps) fun t' ⟨hN₂, hR₂, hW₂, hb₂, hz₂, f₂, k₂⟩ => ?_
-  rw [Bool.and_comm (decide (wv _ _ _ _ < _)), chk_eq (by omega)] at hz₂
-  rw [pre_wv_entry c i₁ (by omega), hNv] at hN₂
-  rw [pre_wv_entry c i₁ (by omega), hRv] at hR₂
+  rw [Bool.and_comm (decide (wv _ _ _ _ < _)), chk_eq (by omega_arith)] at hz₂
+  rw [pre_wv_entry c i₁ (by omega_arith), hNv] at hN₂
+  rw [pre_wv_entry c i₁ (by omega_arith), hRv] at hR₂
   rw [hN₂, hR₂] at hz₂
   subst hB hZ hk hpp
   exact ⟨s, t, hs', he, hN₂, hR₂, hW₂, hb₂, hz₂, f₂, k₂⟩
@@ -299,7 +299,7 @@ theorem cl_fail {p : CPubD} {t : State} (h : CL p t) :
   have := c.hk2
   subst hB hZ hk hop
   have x := Fixed.of_frm f (pdLoadRanges_fixed _)
-  exact ⟨c.hs.congr (k₁.trans k).wr, (k.gpr .x0 (by decide)).trans h0, by dsimp only; omega, c.hk1, c.hk2,
+  exact ⟨c.hs.congr (k₁.trans k).wr, (k.gpr .x0 (by decide)).trans h0, by dsimp only; omega_arith, c.hk1, c.hk2,
     (x sOut (by decide)).trans hO, by rw [x sK (by decide), hK, ofNat_toNat64]⟩
 
 /-- `rest`'s hypotheses after the load, for values that pass the checks. -/
@@ -317,8 +317,8 @@ theorem cl_rest {p : CPubD} {t : State} (h : CL p t) (he : isa.eval (.zero .x .x
     cases hv : chkv (((s.gpr .x1).toNat + 7) / 8) N R
     · rw [hv] at he; simp at he
     · rfl
-  rw [← hN, ← hR, ← chk_eq (by omega)] at hchk
-  obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega) hchk
+  rw [← hN, ← hR, ← chk_eq (by omega_arith)] at hchk
+  obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega_arith) hchk
   have hp := pdPre_of c h0 hO hK hE hL hIn ho₁ k₁ hW hb f k₂ hodd hN1 hRN
   rw [hN, hR] at hp
   exact ⟨_, hp⟩
@@ -340,7 +340,7 @@ theorem pdCodeWith_ct (rest : Prog isa)
     have c := pdCtx_of hs.1
     have hZ := c.hZ
     have hk1 := c.hk1
-    have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 0) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+    have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 0) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
     have hh : WP isa (.block (([.ldrSp .x8 0] : List Instr) ++ (Precomputed.entry false).drop 1)) s
         (PdEnt s) := by
       rw [← pdEntry_split]; exact pdEntry_ok rfl hw c.ha0
@@ -368,7 +368,7 @@ theorem pdCodeWith_ct (rest : Prog isa)
     rintro p t ⟨h, -⟩
     obtain ⟨hs, h0, hZ, hk1, hk2, hO, hK⟩ := cl_fail h
     have hn := hs.nowrap
-    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.d.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.d.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
     refine WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t' => t'.gpr .x1 = p.d.op + BitVec.ofNat 64 0 ∧
         t'.gpr .x2 = BitVec.ofNat 64 p.d.k) (by
       brun [h0, hdr_enc (show sOut < 32 by decide), hdr_enc (show sK < 32 by decide), hl sOut (by decide),
@@ -402,9 +402,9 @@ theorem pdCodeWith_constantTime (c : Prog isa)
     refine ⟨h₂, hsp.symm, s0.symm, by rw [← s1]; rfl, by rw [← a1]; rfl, a0.symm, a2.symm, a4.symm, a6.symm,
       by rw [← a5]; rfl, he.symm, ?_, ?_⟩
     · rw [← a2, ← a1, show (0 : Nat) = 8 * 0 from rfl]
-      exact (wv_of_wordsAt hw (by omega)).symm
+      exact (wv_of_wordsAt hw (by omega_arith)).symm
     · rw [← a2, ← a1]
-      exact (wv_of_wordsAt hw (by omega)).symm
+      exact (wv_of_wordsAt hw (by omega_arith)).symm
 
 theorem pdCode_constantTime : ConstantTime isa pdContract.pre pdContract.pub (Precomputed.code M.mm) :=
   pdCodeWith_constantTime (Precomputed.code M.mm) pdCode_ct

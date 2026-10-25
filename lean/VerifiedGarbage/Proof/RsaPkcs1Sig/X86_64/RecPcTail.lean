@@ -41,7 +41,7 @@ theorem lt1_eq {n : Nat} (x : BitVec n) : decide (x.toNat < 1) = (x == 0) := by
   · subst h; simp
   · have : x.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq (by simp [h']))
     rw [show (x == 0) = false from beq_eq_false_iff_ne.mpr h]
-    exact decide_eq_false (by omega)
+    exact decide_eq_false (by omega_arith)
 
 theorem maskM_val (d st : BitVec 64) :
     (0#64 - BitVec.setWidth 64 (BitVec.ofBool (decide (d.toNat < 1)))) &&&
@@ -74,10 +74,10 @@ theorem Env.low {s t u : State} (he : Env s t) {d : Nat} (hd : d + 8 ≤ 32) {v 
   have hf : Frame [⟨off (fb s) d, 8⟩] t.mem u.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have hw : ∀ {d'}, 32 ≤ d' → d' + 8 ≤ 4096 → Bignum.word u.mem (fb s) d' = Bignum.word t.mem (fb s) d' :=
-    fun h₁ h₂ => by rw [hm]; exact word_wo _ _ _ (.inl (by omega)) (by omega) h₂
+    fun h₁ h₂ => by rw [hm]; exact word_wo _ _ _ (.inl (by omega_arith)) (by omega_arith) h₂
   exact ⟨hsp.trans he.rsp, hrd.trans he.rd, hwr.trans he.wr,
     frame_call he.mem hf fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact .inl (frame_sub s (by unfold frameBytes; omega)),
+      rw [List.mem_singleton.mp hr]; exact .inl (frame_sub s (by unfold frameBytes; omega_arith)),
     (hw (by decide) (by decide)).trans he.sOut, (hw (by decide) (by decide)).trans he.sOl,
     (hw (by decide) (by decide)).trans he.sN, (hw (by decide) (by decide)).trans he.sK,
     (hw (by decide) (by decide)).trans he.sE, (hw (by decide) (by decide)).trans he.sEl⟩
@@ -90,9 +90,9 @@ theorem bytes_low {s : State} {m : Mem} {d : Nat} (hd : d + 8 ≤ 32) (v : BitVe
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => hf.bytes (R := ⟨off (fb s) e, n⟩) (fun r hr => ?_)
-    (by show n ≤ 2 ^ 64; unfold frameBytes at hn; omega) (List.mem_range.mp hi)
+    (by show n ≤ 2 ^ 64; unfold frameBytes at hn; omega_arith) (List.mem_range.mp hi)
   rw [List.mem_singleton.mp hr]
-  exact Offset.disjoint _ (.inr (by unfold oEM1 at he; omega)) (by unfold frameBytes at hn; omega) (by omega)
+  exact Offset.disjoint _ (.inr (by unfold oEM1 at he; omega_arith)) (by unfold frameBytes at hn; omega_arith) (by omega_arith)
 
 theorem maskArgs_ok {s t : State} (hp : PreR s) (he : Env s t) :
     WP isa (.block maskArgs) t fun u => Keep [.rdi, .rcx, .rdx, .r10] t u ∧ u.mem = t.mem ∧
@@ -129,21 +129,21 @@ theorem release_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx 
   have he₁ : Env s t₁ := Env.low he (d := 8) (by decide) (k₁.gpr (by decide)) k₁.2.1 k₁.2.2 hm₁
   have hv₁ : Spec.Rsa.bytesAt t₁.mem (valA s) n = Spec.Rsa.bytesAt t.mem (valA s) n := by
     rw [hm₁]
-    exact bytes_low (s := s) (d := 8) (by decide) _ (e := oEM1 + ((s.gpr .rcx).toNat - n)) (by omega) (by omega)
+    exact bytes_low (s := s) (d := 8) (by decide) _ (e := oEM1 + ((s.gpr .rcx).toNat - n)) (by omega_arith) (by omega_arith)
   refine WP.seq (WP.mono (copyOut_ok hp he₁ (by rw [k₁.gpr (by decide), hcx])) fun t₂ ⟨he₂, _, hout₂, hm₂⟩ => ?_)
   have hw8 : Bignum.word t₂.mem (fb s) 8 = pmask ok := by
     rw [hm₂, slot_keep (frame_writeBytes _ _ _) (fun r hr => ?_), hm₁, word_writeW_self]
     rw [List.mem_singleton.mp hr, bytesAt_length]
-    exact (hp.dKo.sub_left (frame_sub s (by unfold frameBytes; omega)))
+    exact (hp.dKo.sub_left (frame_sub s (by unfold frameBytes; omega_arith)))
   refine WP.seq (WP.mono (maskArgs_ok hp he₂) fun t₃ ⟨k₃, hm₃, hdi₃, hcx₃, hdx₃, h10₃⟩ => ?_)
   have he₃ : Env s t₃ := he₂.regs (k₃.gpr (by decide)) hm₃ k₃.2.1 k₃.2.2
   have hwr : outR s ∈ t₃.wr := by rw [he₃.wr, hp.hwr]; simp [outR]
   have hdK : (⟨off (fb s) Impl.RsaPkcs1Enc.X86_64.Encrypt.oEM, n⟩ : Region).Disjoint (outR s) :=
-    hp.dKo.sub_left (frame_sub s (by unfold frameBytes; omega))
-  refine WP.seq (WP.mono (maskLoop_ok (k := n) (S := fb s) (op := s.gpr .rdi) (ok := ok) (by omega)
-    (by omega) he₃.rsp hdi₃ (by rw [hdx₃, hw8]) (by rw [hcx₃, hn]; simp) h10₃ (out_wr hwr)
-    (fun i hi => by rw [he₃.wr]; exact frame_bytes' hp (by unfold frameBytes; omega) i hi)
-    (fun i hi i' hi' => ne_of_disjoint hdK.symm (by omega) (by omega) hi hi')) fun t₄ hR => ?_)
+    hp.dKo.sub_left (frame_sub s (by unfold frameBytes; omega_arith))
+  refine WP.seq (WP.mono (maskLoop_ok (k := n) (S := fb s) (op := s.gpr .rdi) (ok := ok) (by omega_arith)
+    (by omega_arith) he₃.rsp hdi₃ (by rw [hdx₃, hw8]) (by rw [hcx₃, hn]; simp) h10₃ (out_wr hwr)
+    (fun i hi => by rw [he₃.wr]; exact frame_bytes' hp (by unfold frameBytes; omega_arith) i hi)
+    (fun i hi i' hi' => ne_of_disjoint hdK.symm (by omega_arith) (by omega_arith) hi hi')) fun t₄ hR => ?_)
   refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t₄.mem ∧ u.gpr .rax = t₄.gpr .rdx &&& 1#64) (by
     xrun [fin]; rfl) rfl) fun u ⟨⟨hm, hax⟩, k⟩ => ⟨?_, ?_⟩
   · have hrdx : t₄.gpr .rdx = pmask ok := by rw [hR.keep.gpr (by decide), hdx₃, hw8]
@@ -151,13 +151,13 @@ theorem release_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx 
       (k.2.1.trans (hR.keep.2.1.trans k₃.2.1)) (k.2.2.trans (hR.keep.2.2.trans k₃.2.2))
       (rs := [outR s, ⟨off (fb s) 80, n⟩]) (fun x hx => ?_) fun r hr => ?_
     · rw [hm, hR.frame x (fun i hi he' => hx _ (List.mem_cons_self ..) (by
-          rw [he']; exact contains_of_byte rfl (by omega) hi))
+          rw [he']; exact contains_of_byte rfl (by omega_arith) hi))
         (fun i hi he' => hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)) (by
-          rw [he']; exact contains_of_byte rfl (by omega) hi)), hm₃]
+          rw [he']; exact contains_of_byte rfl (by omega_arith) hi)), hm₃]
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact .inr rfl
-      · exact .inl ⟨80, n, rfl, le_refl _, by omega⟩
+      · exact .inl ⟨80, n, rfl, le_refl _, by omega_arith⟩
   · have hrdx : t₄.gpr .rdx = pmask ok := by rw [hR.keep.gpr (by decide), hdx₃, hw8]
     rw [hax, hrdx, pmask_and1]
     have hb : Spec.Rsa.bytesAt u.mem (s.gpr .rdi) n =
@@ -304,7 +304,7 @@ theorem afterPub_ok {s t : State} (hp : PreR s) (he : Env s t) {h : Spec.RsaPkcs
   refine WP.mono (encArgs_ok hp he₁) fun t₂ ⟨hK₂, hm₂, h8₂, hcx₂, hdx₂, h9₂, hsi₂⟩ => ?_
   have he₂ : Env s t₂ := he₁.regs (hK₂.gpr (by decide)) hm₂ hK₂.2.1 hK₂.2.2
   have hem : Spec.Rsa.bytesAt t₂.mem (off (fb s) oEM1) k = em := by
-    rw [hm₂, hm₁]; exact bytes_low (by decide) _ (le_refl _) (by unfold oEM1 frameBytes; omega)
+    rw [hm₂, hm₁]; exact bytes_low (by decide) _ (le_refl _) (by unfold oEM1 frameBytes; omega_arith)
   have hst : Bignum.word t₂.mem (fb s) 0 = t.gpr .rax := by
     rw [hm₂, hm₁]; exact word_writeW_self _ _ _ _
   have hval : Spec.Rsa.bytesAt t₂.mem (valA s) (s.gpr .rsi).toNat = em.drop (k - (s.gpr .rsi).toNat) := by

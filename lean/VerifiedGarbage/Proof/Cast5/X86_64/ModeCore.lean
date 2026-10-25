@@ -48,7 +48,7 @@ theorem scheduleAt_congr_at {m m' : Mem} {p q : Addr}
   apply Vector.ext
   intro i hi
   simp only [Spec.Cast5.scheduleAt, Vector.getElem_ofFn]
-  rw [h _ (by omega), h _ (by omega), h _ (by omega), h _ (by omega)]
+  rw [h _ (by omega_arith), h _ (by omega_arith), h _ (by omega_arith), h _ (by omega_arith)]
 
 theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, 128⟩ r) : Spec.Cast5.scheduleAt m' p = Spec.Cast5.scheduleAt m p :=
@@ -59,11 +59,11 @@ theorem held_frame {rs : List Region} {m m' : Mem} {T : Addr} (h : Held m T s123
   intro i hi
   rw [s1234_length] at hi
   rw [← h i (by rw [s1234_length]; exact hi)]
-  exact hf.readW (r := ⟨T, 4096⟩) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)
+  exact hf.readW (r := ⟨T, 4096⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith)) hd (by decide)
 
 theorem toNat_add {B : Addr} {d : Nat} (h : B.toNat + d < 2 ^ 64) :
     (B + BitVec.ofNat 64 d).toNat = B.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 64), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : d < 2 ^ 64), Nat.mod_eq_of_lt h]
 
 /-! ## The key -/
 
@@ -160,15 +160,15 @@ theorem prepare_wp {up : Bool} {s : State} {B : Addr} {rs : List Region} {kn : S
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, sched_sub B⟩
   refine WP.mono_syms (copyN_wp (k := 16) (P := schedAddr B) (Q := p) ⟨by rw [hB], by rw [hp]; simp,
     by decide, by decide, fun w hw => ⟨_, hs.wr, by
-      rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot]; omega)
-        (by simp only [schedSlot]; omega)⟩,
-    fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega) (by omega)⟩,
-    (hsep.sub_right (sched_sub B)).symm, by omega⟩) fun s' h hsy => ?_
+      rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot]; omega_arith)
+        (by simp only [schedSlot]; omega_arith)⟩,
+    fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega_arith) (by omega_arith)⟩,
+    (hsep.sub_right (sched_sub B)).symm, by omega_arith⟩) fun s' h hsy => ?_
   refine ⟨⟨?_, by rw [h.regs _ (by decide), hsi], hn, hT.frame h.rd h.wr hsy (by rw [h.mem]; exact hcore)
       fun r hr => ?_⟩, by rw [h.regs _ (by decide), hB], h.regs _ (by decide), h.regs _ (by decide),
     h.regs _ (by decide), by rw [h.mem]; exact hcore, h.rd, h.wr⟩
   · rw [h.mem, hkk]
-    exact scheduleAt_congr_at fun i hi => over_at hi (by omega)
+    exact scheduleAt_congr_at fun i hi => over_at hi (by omega_arith)
   · simp only [List.mem_singleton] at hr; subst hr
     rw [core_eq]
     exact (hT.sep _ hs.wr).sub_right (Region.sub_prefix (by rw [total_eq]; decide))
@@ -199,9 +199,9 @@ theorem setup_run {s : State} {B : Addr} (hB : s.gpr sb = B) (hw : (⟨B, 8 * 29
         (s.gpr .r13) ∧ u.rd = s.rd ∧ u.wr = s.wr := by
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s .r8 sb
   obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂⟩ := stM_ok s₁ .r8 .r12 24
-    ⟨_, by rw [wr₁]; exact hw, by rw [r₁, hB]; exact Offset.contains_base B (by omega) (by omega)⟩
+    ⟨_, by rw [wr₁]; exact hw, by rw [r₁, hB]; exact Offset.contains_base B (by omega_arith) (by omega_arith)⟩
   obtain ⟨s₃, e₃, m₃, g₃, rd₃, wr₃⟩ := stM_ok s₂ .r8 .r13 32
-    ⟨_, by rw [wr₂, wr₁]; exact hw, by rw [g₂, r₁, hB]; exact Offset.contains_base B (by omega) (by omega)⟩
+    ⟨_, by rw [wr₂, wr₁]; exact hw, by rw [g₂, r₁, hB]; exact Offset.contains_base B (by omega_arith) (by omega_arith)⟩
   obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := movR_ok s₃ .rdx sb
   obtain ⟨s₅, e₅, r₅, o₅, m₅, rd₅, wr₅⟩ := addImm_ok s₄ .rdx (BitVec.ofNat 32 (8 * bufSlot))
   obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆⟩ := movR_ok s₅ .rdi sb
@@ -230,10 +230,10 @@ theorem finish_run {v : State} {B : Addr} (h8 : v.gpr .r8 = B) (hw : (⟨B, 8 * 
       (∀ x, x ≠ .r12 → x ≠ .r13 → x ≠ sb → s'.gpr x = v.gpr x) ∧ s'.mem = v.mem ∧ s'.rd = v.rd ∧
       s'.wr = v.wr := by
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := ld_ok v .r12 .r8 24
-    ⟨_, List.mem_append_right _ hw, by rw [h8]; exact Offset.contains_base B (by omega) (by omega)⟩
+    ⟨_, List.mem_append_right _ hw, by rw [h8]; exact Offset.contains_base B (by omega_arith) (by omega_arith)⟩
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := ld_ok s₁ .r13 .r8 32
     ⟨_, List.mem_append_right _ (by rw [wr₁]; exact hw), by
-      rw [o₁ _ (by decide), h8]; exact Offset.contains_base B (by omega) (by omega)⟩
+      rw [o₁ _ (by decide), h8]; exact Offset.contains_base B (by omega_arith) (by omega_arith)⟩
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := movR_ok s₂ sb .r8
   refine ⟨s₃, ?_, ?_, ?_, ?_, fun x h1 h2 h3 => ?_, by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁],
     by rw [wr₃, wr₂, wr₁]⟩
@@ -314,7 +314,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule ×
     rwa [BitVec.add_zero] at this
   have dBufKeep : Region.Disjoint ⟨B + BitVec.ofNat 64 16, 8⟩ ⟨B + BitVec.ofNat 64 24, 16⟩ := dKeepBuf.symm
   have inW : ∀ {t l}, t + l ≤ 8 * 29 → InRegions s.wr (B + BitVec.ofNat 64 t) l := fun ht =>
-    ⟨_, hw, Offset.contains_base B ht (by omega)⟩
+    ⟨_, hw, Offset.contains_base B ht (by omega_arith)⟩
   -- The setup.
   obtain ⟨u, eu, u8, udx, udi, ug, um, urd, uwr⟩ := setupIv_run hB hw
   have usy : u.syms = s.syms := runBlock_syms eu
@@ -338,7 +338,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule ×
     · exact ⟨_, List.mem_append_left _ uT.rd, Region.contains_self _ _⟩
     · rw [udi, u8]; exact dSchedWs
     · rw [usy, u8]; exact dT.sub_right sWs
-    · rw [udi, toNat_add (by simp only [schedSlot]; omega)]; simp only [schedSlot]; omega
+    · rw [udi, toNat_add (by simp only [schedSlot]; omega_arith)]; simp only [schedSlot]; omega_arith
     · rw [udx, uwr]; exact inW (by decide)
   show WP isa (cryptCode up) s _
   refine WP.seq (WP.of_runBlock ⟨u, eu, ?_⟩)
@@ -355,7 +355,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule ×
   -- The block and the working space, apart from the kept registers' slots.
   have keepV : ∀ d, 24 ≤ d → d + 8 ≤ 40 → v.mem.readW (B + BitVec.ofNat 64 d) 64 =
       u.mem.readW (B + BitVec.ofNat 64 d) 64 := fun d h1 h2 => by
-    have sd : Region.Sub ⟨B + BitVec.ofNat 64 d, 8⟩ ⟨B + BitVec.ofNat 64 24, 16⟩ := Offset.sub B h1 (by omega)
+    have sd : Region.Sub ⟨B + BitVec.ofNat 64 d, 8⟩ ⟨B + BitVec.ofNat 64 24, 16⟩ := Offset.sub B h1 (by omega_arith)
     refine vf.readW (r := ⟨B + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -390,7 +390,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule ×
       ug _ (by decide) (by decide) (by decide) (by decide), hsi]
   · simp only [List.mem_singleton] at hr; subst hr
     rw [core_eq]; exact dT.sub_right (Region.sub_prefix (by decide))
-  · have hj0 : j = 0 := by simp only [dirCore] at hj; omega
+  · have hj0 : j = 0 := by simp only [dirCore] at hj; omega_arith
     subst hj0
     have ea : blkAddr (dirCore up) B 0 = B + BitVec.ofNat 64 16 := rfl
     have hbu : Spec.Cast5.blockAt u.mem (B + BitVec.ofNat 64 16) = Spec.Cast5.blockAt s.mem (B + BitVec.ofNat 64 16) :=

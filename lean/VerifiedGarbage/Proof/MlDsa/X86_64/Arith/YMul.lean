@@ -88,13 +88,13 @@ include hwh hrf hrg hdf hdg hF hG hcore hY hH hlane
 theorem step {i : Nat} (hi : i < 31) {s : State} (hI : Inv h f g s₀ R i s) :
     WP isa (.block (ymulLoads ++ toY core ++ ymulTail ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
       Inv h f g s₀ R (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have j0 : 8 * i + 8 ≤ 256 := by omega
+  have j0 : 8 * i + 8 ≤ 256 := by omega_arith
   have e1 : s.gpr .rsi + BitVec.ofNat 64 0 = coeffAddr f (8 * i) := by
-    rw [add_ofNat_zero, hI.rsi]; congr 2; omega
+    rw [add_ofNat_zero, hI.rsi]; congr 2; omega_arith
   have e2 : s.gpr .rdx + BitVec.ofNat 64 0 = coeffAddr g (8 * i) := by
-    rw [add_ofNat_zero, hI.rdx]; congr 2; omega
+    rw [add_ofNat_zero, hI.rdx]; congr 2; omega_arith
   have e3 : s.gpr .rdi + BitVec.ofNat 64 0 = coeffAddr h (8 * i) := by
-    rw [add_ofNat_zero, hI.rdi]; congr 2; omega
+    rw [add_ofNat_zero, hI.rdi]; congr 2; omega_arith
   have mf : ∀ k < 256, coeffAt s.mem f k = coeffAt s₀.mem f k := fun k hk =>
     coeffAt_frame hI.frame (by simpa using hdf.symm) (by rw [n_eq]; exact hk)
   have mg : ∀ k < 256, coeffAt s.mem g k = coeffAt s₀.mem g k := fun k hk =>
@@ -127,14 +127,14 @@ theorem step {i : Nat} (hi : i < 31) {s : State} (hI : Inv h f g s₀ R i s) :
     rw [← State.proj_xmm, B4 l hl, State.proj_xmm, State.proj_xmm, State.proj_xmm,
       o3.lane _ (by decide) l hl, o2.lane _ (by decide) l hl, o3.lane _ (by decide) l hl, L1 l hl,
       L2 l hl, L3 l hl, o1.gpr, o1.mem, o2.gpr, o2.mem, o1.gpr, o1.mem, e1, e2, e3,
-      show 8 * i + 4 * l + e = 4 * (2 * i + l) + e by omega]
-    refine hlane (2 * i + l) (by omega) _ _ _ (fun e he => ?_) (fun e he => ?_) (fun e he => ?_) e he
-    · rw [dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, mf _ (by omega), hF _ (by omega),
-        show 8 * i + 4 * l + e = 4 * (2 * i + l) + e by omega]
-    · rw [dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, mg _ (by omega), hG _ (by omega),
-        show 8 * i + 4 * l + e = 4 * (2 * i + l) + e by omega]
-    · rw [dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, hI.rest _ (by omega) (by omega),
-        hH _ (by omega), show 8 * i + 4 * l + e = 4 * (2 * i + l) + e by omega]
+      show 8 * i + 4 * l + e = 4 * (2 * i + l) + e by omega_arith]
+    refine hlane (2 * i + l) (by omega_arith) _ _ _ (fun e he => ?_) (fun e he => ?_) (fun e he => ?_) e he
+    · rw [dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, mf _ (by omega_arith), hF _ (by omega_arith),
+        show 8 * i + 4 * l + e = 4 * (2 * i + l) + e by omega_arith]
+    · rw [dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, mg _ (by omega_arith), hG _ (by omega_arith),
+        show 8 * i + 4 * l + e = 4 * (2 * i + l) + e by omega_arith]
+    · rw [dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, hI.rest _ (by omega_arith) (by omega_arith),
+        hH _ (by omega_arith), show 8 * i + 4 * l + e = 4 * (2 * i + l) + e by omega_arith]
   simp only [ymulTail]
   vrund [State.store256_eq, State.setMem_gpr, State.setMem_wr, State.setMem_mem, State.setMem_rd,
     State.setMem_ymm, w0, sx32]
@@ -157,23 +157,23 @@ theorem step {i : Nat} (hi : i < 31) {s : State} (hI : Inv h f g s₀ R i s) :
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, State.setMem_mem]
     rw [g4, o14.mem]; exact hI.frame.writeW (List.mem_singleton_self _) _ (pR_contains32 _ j0)
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, State.setMem_mem]
-    rw [g4, o14.mem, coeffAt_write256 _ _ j0 _ (by omega)]
+    rw [g4, o14.mem, coeffAt_write256 _ _ j0 _ (by omega_arith)]
     split
     · rename_i hk'
-      rw [State.ymm, extract_ymm _ _ (by omega)]
+      rw [State.ymm, extract_ymm _ _ (by omega_arith)]
       split
       · rename_i h4
         have := hl 0 (by decide) (k - 8 * i) h4
-        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega] at this
+        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega_arith] at this
         exact this
       · rename_i h4
-        have := hl 1 (by decide) (k - 8 * i - 4) (by omega)
-        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega] at this
+        have := hl 1 (by decide) (k - 8 * i - 4) (by omega_arith)
+        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega_arith] at this
         exact this
-    · exact hI.done k (by omega)
+    · exact hI.done k (by omega_arith)
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, State.setMem_mem]
-    rw [g4, o14.mem, coeffAt_write256 _ _ j0 _ hk, ifn (by omega)]
-    exact hI.rest k hk (by omega)
+    rw [g4, o14.mem, coeffAt_write256 _ _ j0 _ hk, ifn (by omega_arith)]
+    exact hI.rest k hk (by omega_arith)
   · exact ⟨by rw [o14.gpr], by rw [o14.gpr]⟩
 
 theorem loop_ok (hdi : s₀.gpr .rdi = h) (hsi : s₀.gpr .rsi = f) (hdx : s₀.gpr .rdx = g) (hc : YConsts s₀)
@@ -186,7 +186,7 @@ theorem loop_ok (hdi : s₀.gpr .rdi = h) (hsi : s₀.gpr .rsi = f) (hdx : s₀.
       by rw [o.keep.gpr (by decide), hdx, Nat.mul_zero, add_ofNat_zero], o.keep.2.1, o.keep.2.2,
       fun l hl => ⟨by rw [State.proj_xmm, lu]; exact (hc l hl).q, by rw [State.proj_xmm, lu]; exact (hc l hl).qinv⟩,
       fun l hl => by rw [lu]; exact h11 l hl, fun l _ => lu _ l,
-      by rw [o.mem]; exact Frame.refl _ _, fun k hk => absurd hk (by omega), fun k _ _ => by rw [o.mem]⟩)
+      by rw [o.mem]; exact Frame.refl _ _, fun k hk => absurd hk (by omega_arith), fun k _ _ => by rw [o.mem]⟩)
     fun i hi u hI => step hwh hrf hrg hdf hdg hF hG hcore hY hH hlane hi hI
 
 omit hwh hH in
@@ -229,13 +229,13 @@ theorem last {s : State} (hI : Inv h f g s₀ R 31 s)
       rw [xmm_setXmm, ifn (by simpa using hr)]
   · rw [← State.proj_xmm, B3 l hl, State.proj_xmm, State.proj_xmm, State.proj_xmm,
       o2.lane _ (by decide) l hl, L1 l hl, L2 l hl, o1.gpr, o1.mem, e1, e2,
-      o12.lane _ (by decide) l hl, hI.x6 l hl, show 248 + 4 * l + e = 4 * (62 + l) + e by omega]
-    refine hlane (62 + l) (by omega) _ _ _ (fun e he => ?_) (fun e he => ?_) (fun e he => ?_) e he
-    · rw [dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, mf _ (by omega), hF _ (by omega),
-        show 248 + 4 * l + e = 4 * (62 + l) + e by omega]
-    · rw [dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, mg _ (by omega), hG _ (by omega),
-        show 248 + 4 * l + e = 4 * (62 + l) + e by omega]
-    · rw [hz l hl e he, show 248 + 4 * l + e = 4 * (62 + l) + e by omega]
+      o12.lane _ (by decide) l hl, hI.x6 l hl, show 248 + 4 * l + e = 4 * (62 + l) + e by omega_arith]
+    refine hlane (62 + l) (by omega_arith) _ _ _ (fun e he => ?_) (fun e he => ?_) (fun e he => ?_) e he
+    · rw [dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, mf _ (by omega_arith), hF _ (by omega_arith),
+        show 248 + 4 * l + e = 4 * (62 + l) + e by omega_arith]
+    · rw [dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, mg _ (by omega_arith), hG _ (by omega_arith),
+        show 248 + 4 * l + e = 4 * (62 + l) + e by omega_arith]
+    · rw [hz l hl e he, show 248 + 4 * l + e = 4 * (62 + l) + e by omega_arith]
 
 end
 
@@ -275,7 +275,7 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
       fun s0 ⟨h80, hd0, o0, y0⟩ => ?_
     refine WP.mono (yld_ok (by
       rw [hd0, o0.keep.2.1, o0.keep.2.2]
-      exact ⟨_, List.mem_append_right _ hwh, Offset.contains_base h (by omega) (by omega)⟩))
+      exact ⟨_, List.mem_append_right _ hwh, Offset.contains_base h (by omega_arith) (by omega_arith)⟩))
       fun s1 ⟨L1, o1⟩ => ⟨by rw [o1.gpr, h80], fun l hl => by rw [L1 l hl, hd0, o0.mem],
         ⟨fun r hr => by rw [o1.gpr, o0.keep.gpr hr], by rw [o1.rd, o0.keep.2.1], by rw [o1.wr, o0.keep.2.2]⟩,
         by rw [o1.mem, o0.mem]⟩
@@ -310,7 +310,7 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
       (fun k hk => by
         rw [coeffAt_frame fσw' (by simpa using hdg.symm) (by rw [n_eq]; exact hk),
           polyAt_val redg (by rw [n_eq]; exact hk)])
-      hcore hY (fun k hk => Mul.coeffAt_mxH fσw (by omega)) hlane
+      hcore hY (fun k hk => Mul.coeffAt_mxH fσw (by omega_arith)) hlane
       (by rw [gw _ (by decide) (by decide) (by decide), eh]) (by rw [gw _ (by decide) (by decide) (by decide), ef])
       (by rw [gw _ (by decide) (by decide) (by decide), eg]) cw xw) fun s hI => ?_)
     refine WP.mono (last (s₀ := w) (h := h) (f := f) (g := g) (R := R) (F := polyAt σ.mem f)
@@ -325,13 +325,13 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
       hcore hY hlane hI (fun l hl e he => by
         rw [x6 l hl, l2, h6 l hl, dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq]))
       fun s3 ⟨ln, g3, m3, _, _⟩ => ?_
-    refine ⟨by rw [g3, hI.rdi], ?_, fun k hk => by rw [m3]; exact hI.done k (by omega), ln⟩
+    refine ⟨by rw [g3, hI.rdi], ?_, fun k hk => by rw [m3]; exact hI.done k (by omega_arith), ln⟩
     rw [m3]
     exact Frame.trans fσw' hI.frame
   · have k14 := (k1.trans kk).trans k4
     have hdi4 : s4.gpr .rdi = coeffAddr h 248 := by rw [k4.gpr (by simp), hdi]
     have wh4 : InRegions s4.wr (s4.gpr .rdi) 32 := by
-      rw [hdi4, k14.2.2]; exact f_in32 hwh (by omega)
+      rw [hdi4, k14.2.2]; exact f_in32 hwh (by omega_arith)
     have l4 : ∀ r l, s4.lane r l = s3.lane r l := fun r l => by simp only [State.lane]; rw [x4, y4]
     simp only [yepi, List.singleton_append]
     vrund [State.store256_eq, State.setMem_gpr, State.setMem_wr, State.setMem_mem, State.setMem_rd,
@@ -339,25 +339,25 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
     have f4' : Frame [pR h] s3.mem s4.mem := Frame.sub f4 fun r hr => ⟨pR h, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr; exact mxH_sub h⟩
     refine ⟨k14.mono (by simp), (fr.trans f4').writeW (List.mem_singleton_self _) _
-      (by rw [hdi4]; exact pR_contains32 h (by omega)), ?_⟩
+      (by rw [hdi4]; exact pR_contains32 h (by omega_arith)), ?_⟩
     dsimp only [mulK]
     rw [eh, ef, eg, show ∀ s : State, (VOp.vzeroupper.exec s).mem = s.mem from fun _ => rfl, State.setMem_mem]
     refine polyIs_of_toNat fun k hk => ?_
     rw [n_eq] at hk
     rw [hdi4, coeffAt_write256 _ _ (j := 248) (by decide) _ hk]
     split
-    · rw [State.ymm, extract_ymm _ _ (by omega)]
+    · rw [State.ymm, extract_ymm _ _ (by omega_arith)]
       split
       · rename_i h1 h4
         have := ln 0 (by decide) (k - 248) h4
-        rw [show 248 + 4 * 0 + (k - 248) = k by omega, ← l4] at this
+        rw [show 248 + 4 * 0 + (k - 248) = k by omega_arith, ← l4] at this
         exact this
       · rename_i h1 h4
-        have := ln 1 (by decide) (k - 248 - 4) (by omega)
-        rw [show 248 + 4 * 1 + (k - 248 - 4) = k by omega, ← l4] at this
+        have := ln 1 (by decide) (k - 248 - 4) (by omega_arith)
+        rw [show 248 + 4 * 1 + (k - 248 - 4) = k by omega_arith, ← l4] at this
         exact this
-    · rw [Mul.coeffAt_mxH f4 (by omega)]
-      exact dn k (by omega)
+    · rw [Mul.coeffAt_mxH f4 (by omega_arith)]
+      exact dn k (by omega_arith)
 
 end YMul
 
@@ -368,7 +368,7 @@ theorem mulY_correct (s : State) (hs : mulK'.pre s) :
   obtain ⟨t, s', he, hk, hf, hq⟩ := YMul.fn_ok hs (core := mulCore) (Fv := fun x y _ => mulV x y)
     (fun s hc h11 => mulCore_ok hc h11) lane_mulCore
     (fun i hi x y z hx hy _ e he => by
-      rw [mul_get _ _ (by rw [n_eq]; omega)]
+      rw [mul_get _ _ (by rw [n_eq]; omega_arith)]
       exact mul_lane hx hy he)
     (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_ctl (by decide +kernel) he (gprPreserved_of hk (by decide) hf
@@ -379,9 +379,9 @@ theorem mulAddY_correct (s : State) (hs : mulAddK.pre s) :
   obtain ⟨t, s', he, hk, hf, hq⟩ := YMul.fn_ok hs (core := mulAddCore) (Fv := mulAddV)
     (fun s hc h11 => mulAddCore_ok hc h11) lane_mulAddCore
     (fun i hi x y z hx hy hz e he => by
-      rw [add_get _ _ (by rw [n_eq]; omega), mul_get _ _ (by rw [n_eq]; omega)]
+      rw [add_get _ _ (by rw [n_eq]; omega_arith), mul_get _ _ (by rw [n_eq]; omega_arith)]
       exact mulAdd_lane hx hy (c := fun e => (polyAt s.mem (s.gpr .rdi))[4 * i + e]!)
-        (fun e he => by rw [hz e he, polyAt_val hs.2.2.2.2.2.2.2.1 (by rw [n_eq]; omega)]) he)
+        (fun e he => by rw [hz e he, polyAt_val hs.2.2.2.2.2.2.2.1 (by rw [n_eq]; omega_arith)]) he)
     (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_ctl (by decide +kernel) he (gprPreserved_of hk (by decide) hf
     (by simpa using hs.2.2.2.2.1)), hq⟩

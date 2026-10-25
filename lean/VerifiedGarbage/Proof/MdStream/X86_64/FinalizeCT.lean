@@ -231,7 +231,7 @@ theorem zero_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (
     WP isa (.ite .e (.block []) (zeroLoop P)) s (Zero P s₀ sI n lim (lim - n)) := by
   refine WP.ite (decide (lim - n - j₀ = 0)) hz (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
-    exact WP.block_nil (by rwa [show lim - n = j₀ by omega])
+    exact WP.block_nil (by rwa [show lim - n = j₀ by omega_arith])
   · simp only [decide_eq_false_iff_not] at hb
     refine WP.loop (M := isa) (fun k s => ∃ j, k = lim - n - j ∧ j < lim - n ∧ Zero P s₀ sI n lim j s)
       ?_ (lim - n - j₀) s ⟨j₀, rfl, by omega_arith, h⟩
@@ -254,7 +254,7 @@ theorem zero_word_step (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : S
   have hout : InRegions s.wr (buf P s₀ + BitVec.ofNat 64 n + BitVec.ofNat 64 j) 8 := by
     refine ⟨stR P s₀, by simp [h.wr, hC.wr, hp.wr], ?_⟩
     rw [add_ofNat, buf_add]
-    exact contains_offset (by omega) (by omega)
+    exact contains_offset (by omega_arith) (by omega_arith)
   refine wp_store (r := .r9) (a := buf P s₀ + BitVec.ofNat 64 n + BitVec.ofNat 64 j) ?_ hout
     fun s₁ g₁ m₁ rd₁ wr₁ => ?_
   · simp only [State.ea, bufByte, buf, hrbx, h.r13, BitVec.ofNat_add, BitVec.mul_one, ofInt_natCast]
@@ -262,8 +262,8 @@ theorem zero_word_step (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : S
   refine wp_addi fun s₂ u₂ => wp_subi fun s₃ u₃ _ => wp_cmpi fun s₄ g₄ m₄ rd₄ wr₄ cf₄ _ =>
     WP.block_nil ?_
   have hrax₃ : s₃.gpr .rax = BitVec.ofNat 64 (lim - n - (j + 8)) := by
-    rw [u₃.gpr, u₂.other _ (by decide), g₁, h.rax, sx8, sub_ofNat (by omega), Nat.sub_sub]
-  refine ⟨⟨by omega, fun r hr => ?_, by rw [rd₄, u₃.rd, u₂.rd, rd₁, h.rd], by rw [wr₄, u₃.wr, u₂.wr, wr₁, h.wr],
+    rw [u₃.gpr, u₂.other _ (by decide), g₁, h.rax, sx8, sub_ofNat (by omega_arith), Nat.sub_sub]
+  refine ⟨⟨by omega_arith, fun r hr => ?_, by rw [rd₄, u₃.rd, u₂.rd, rd₁, h.rd], by rw [wr₄, u₃.wr, u₂.wr, wr₁, h.wr],
     ?_, ?_, by rw [g₄, hrax₃], ?_⟩, ?_⟩
   · have : r ≠ .rax ∧ r ≠ .r13 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -277,8 +277,8 @@ theorem zero_word_step (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : S
       show buf P s₀ + BitVec.ofNat 64 n + BitVec.ofNat 64 j =
         buf P s₀ + BitVec.ofNat 64 n + BitVec.ofNat 64 (List.replicate j (0 : Byte)).length by
         rw [List.length_replicate],
-      writeBytes_append _ _ _ _ (by simp only [List.length_replicate]; omega), List.replicate_append_replicate]
-  · rw [cf₄, hrax₃, sx8, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by omega)]
+      writeBytes_append _ _ _ _ (by simp only [List.length_replicate]; omega_arith), List.replicate_append_replicate]
+  · rw [cf₄, hrax₃, sx8, toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt (by omega_arith)]
 
 /-- Eight bytes at a time, while at least eight are left. -/
 theorem zero_words_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (hC : Common P s₀ sI)
@@ -287,18 +287,18 @@ theorem zero_words_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : St
     WP isa (.ite .b (.block []) (zeroWords P)) s (Zero P s₀ sI n lim (8 * ((lim - n) / 8))) := by
   refine WP.ite (decide (lim - n < 8)) (by simp [eval, hcf]) (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
-    exact WP.block_nil (by rw [show (lim - n) / 8 = 0 by omega]; exact h)
+    exact WP.block_nil (by rw [show (lim - n) / 8 = 0 by omega_arith]; exact h)
   · simp only [decide_eq_false_iff_not] at hb
     refine WP.loop (M := isa)
       (fun k s => ∃ i, k = (lim - n) / 8 - i ∧ i < (lim - n) / 8 ∧ Zero P s₀ sI n lim (8 * i) s)
-      ?_ ((lim - n) / 8) s ⟨0, rfl, by omega, h⟩
+      ?_ ((lim - n) / 8) s ⟨0, rfl, by omega_arith, h⟩
     rintro k s ⟨i, rfl, hi, hZ⟩
-    refine WP.mono (zero_word_step hd hp hC hlim (by omega) hZ) fun s' ⟨hZ', hcf'⟩ => ?_
-    rw [show 8 * i + 8 = 8 * (i + 1) by omega] at hZ' hcf'
+    refine WP.mono (zero_word_step hd hp hC hlim (by omega_arith) hZ) fun s' ⟨hZ', hcf'⟩ => ?_
+    rw [show 8 * i + 8 = 8 * (i + 1) by omega_arith] at hZ' hcf'
     by_cases hl : (lim - n) / 8 - (i + 1) = 0
-    · refine .inl ⟨by simp [eval, hcf']; omega, ?_⟩
-      rwa [show i + 1 = (lim - n) / 8 by omega] at hZ'
-    · exact .inr ⟨by simp [eval, hcf']; omega, _, by omega, i + 1, rfl, by omega, hZ'⟩
+    · refine .inl ⟨by simp [eval, hcf']; omega_arith, ?_⟩
+      rwa [show i + 1 = (lim - n) / 8 by omega_arith] at hZ'
+    · exact .inr ⟨by simp [eval, hcf']; omega_arith, _, by omega_arith, i + 1, rfl, by omega_arith, hZ'⟩
 
 /-- All `lim - n` bytes: eight at a time, then one at a time. -/
 theorem zero_all_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (hC : Common P s₀ sI)
@@ -312,12 +312,12 @@ theorem zero_all_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : Stat
     ⟨h.j_le, fun r hr => by rw [g, h.keep r hr], by rw [rd, h.rd], by rw [wr, h.wr], by rw [g, h.r9],
       by rw [g, h.r13], by rw [g, h.rax], by rw [m, h.mem]⟩
   have hcf₁ : s₁.cf = some (decide (lim - n < 8)) := by
-    rw [cf₁, h.rax, Nat.sub_zero, sx8, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by omega)]
+    rw [cf₁, h.rax, Nat.sub_zero, sx8, toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt (by omega_arith)]
   refine WP.seq (WP.mono (zero_words_ok hd hp hC hlim (keep h g₁ m₁ rd₁ wr₁) hcf₁) fun s₂ hZ₂ => ?_)
   refine WP.seq (wp_test fun s₃ g₃ m₃ rd₃ wr₃ z₃ => WP.block_nil ?_)
   have hz₃ : s₃.zf = some (decide (lim - n - 8 * ((lim - n) / 8) = 0)) := by
-    rw [z₃, hZ₂.rax, BitVec.and_self, ofNat_beq_zero (by omega)]
-  exact zero_ok hd hp hC hlim (by omega) (keep hZ₂ g₃ m₃ rd₃ wr₃) hz₃
+    rw [z₃, hZ₂.rax, BitVec.and_self, ofNat_beq_zero (by omega_arith)]
+  exact zero_ok hd hp hC hlim (by omega_arith) (keep hZ₂ g₃ m₃ rd₃ wr₃) hz₃
 
 /-! ## One block -/
 
@@ -399,12 +399,12 @@ theorem wb_at (m : Mem) (p : Addr) (xs : List Byte) {a i : Nat} (ha : a + xs.len
     rw [show p + BitVec.ofNat 64 i = p + BitVec.ofNat 64 a + BitVec.ofNat 64 (i - a) by
       rw [add_ofNat, Nat.add_sub_cancel' h.1]]
     simp only [VG.WriteBytes.writeBytes, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show i - a < 2 ^ 64 by omega), show i - a < xs.length by omega, ite_true]
+      Nat.mod_eq_of_lt (show i - a < 2 ^ 64 by omega_arith), show i - a < xs.length by omega_arith, ite_true]
   · rename_i h
     simp only [VG.WriteBytes.writeBytes]
     rw [ite_f]
-    rw [Offset.sub_toNat' p (by omega) (by omega)]
-    split <;> omega
+    rw [Offset.sub_toNat' p (by omega_arith) (by omega_arith)]
+    split <;> omega_arith
 
 theorem lenPart_high (P : Params) (lv : List Byte) (hlv : lv.length = P.L) (hL : P.L ≤ 16) {j : Nat}
     (hj : 16 - P.L ≤ j) : lenPart P 0 lv j = lv.getD (j - (16 - P.L)) 0 := by
@@ -441,7 +441,7 @@ theorem byte_exec (hd : Dims P) (hs : ShapeD H D) {s₀ : State} (hp : PreD P D 
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   obtain ⟨_, fA₁, sv₁⟩ := Common.writeBuf hd hp hC (n := n) (xs := [BitVec.ofNat 8 mk]) (by simp; omega_arith)
   have hC₁ : Common P s₀ s₁ := ⟨rd₁.trans hC.rd, wr₁.trans hC.wr, by rw [g₁, hC.rbx], by rw [g₁, hC.r15],
     by rw [g₁, hC.rbp], by rw [g₁, hC.r12], by rw [g₁, hC.rsp], by rw [em₁]; exact fA₁, by rw [em₁]; exact sv₁⟩
@@ -508,18 +508,18 @@ theorem byte_exec (hd : Dims P) (hs : ShapeD H D) {s₀ : State} (hp : PreD P D 
       wb_at _ _ _ (by simp; omega_arith) (by omega_arith)]
     simp only [List.length_replicate, List.length_singleton]
     by_cases h1 : i < n
-    · rw [ite_f (by omega), ite_f (by omega), ite_t h1]
+    · rw [ite_f (by omega_arith), ite_f (by omega_arith), ite_t h1]
     · rw [ite_f h1]
       by_cases h2 : i = n
       · subst h2
-        rw [ite_f (by omega), ite_t (by omega), ite_t rfl]
+        rw [ite_f (by omega_arith), ite_t (by omega_arith), ite_t rfl]
         simp
       · rw [ite_f h2]
         by_cases h3 : i < lim P k
-        · rw [ite_t (by omega), ite_t h3]
+        · rw [ite_t (by omega_arith), ite_t h3]
           simp only [List.getD_eq_getElem?_getD, List.getElem?_replicate]
           split <;> rfl
-        · rw [ite_f (by omega), ite_f (by omega), ite_f h3]
+        · rw [ite_f (by omega_arith), ite_f (by omega_arith), ite_f h3]
   refine kont s₁₀ (fun r hr => ?_) ?_ ?_ ?_ fun i hi => ?_
   · have : r ≠ .rax ∧ r ≠ .r9 ∧ r ≠ .r13 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -548,16 +548,16 @@ theorem byte_exec (hd : Dims P) (hs : ShapeD H D) {s₀ : State} (hp : PreD P D 
       rw [ite_t rfl, show P.N + P.B - P.L = P.N + (P.B - P.L) by omega_arith,
         wb_at _ _ _ (by rw [hlv]; omega_arith) (by omega_arith), hlv]
       by_cases hl : P.B - P.L ≤ i
-      · rw [ite_t ⟨by omega, by omega⟩, ite_f (by omega_arith), ite_f (by omega_arith), ite_t (by omega_arith),
+      · rw [ite_t ⟨by omega_arith, by omega_arith⟩, ite_f (by omega_arith), ite_f (by omega_arith), ite_t (by omega_arith),
           lenPart_high P _ hlv hd.L.2 (by omega_arith), show P.N + i - (P.N + (P.B - P.L)) = i - (P.B - 16) - (16 - P.L) by
             omega_arith]
-      · rw [ite_f (by omega), hM i hi, hlim0]
+      · rw [ite_f (by omega_arith), hM i hi, hlim0]
         by_cases h1 : i < n
         · rw [ite_t h1, ite_t h1]
         · rw [ite_f h1, ite_f h1]
           by_cases h2 : i = n
           · rw [ite_t h2, ite_t h2]
-          · rw [ite_f h2, ite_f h2, ite_t (by omega)]
+          · rw [ite_f h2, ite_f h2, ite_t (by omega_arith)]
             split
             · exact (lenPart_low P 0 _ (by omega_arith)).symm
             · rfl

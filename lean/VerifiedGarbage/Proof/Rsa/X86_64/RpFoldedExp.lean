@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedLoop
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedSquare
 
 /-! # The folded scan, its fixed suffix, and root extraction -/
 
@@ -30,22 +30,22 @@ theorem zeroRoot_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       wv u.mem B (slot w aY) w = 2 ^ (64 * w) % N ∧
       Frm B (rg w [aRoot] []) s.mem u.mem ∧ Keep mmRegs s u := by
   have hz := hc.hZ16
-  have hN : 0 < N := by have := hc.n1; omega
+  have hN : 0 < N := by have := hc.n1; omega_arith
   refine WP.mono (zeroA_ok hc.ws (j := aRoot) (by decide)) fun s₁ ⟨hzero, o₁, k₁⟩ => ?_
-  have f₁ : Frm B (rg w [aRoot] []) s.mem s₁.mem := Frm.rg_of_out o₁ (by omega) _ _ (by decide)
+  have f₁ : Frm B (rg w [aRoot] []) s.mem s₁.mem := Frm.rg_of_out o₁ (by omega_arith) _ _ (by decide)
   have hc₁ := hc.congr f₁ (by decide) (by simp) k₁ (by decide)
   have hp₁ := hp.congr f₁ hz (by simp) (by decide) (by decide) (by decide)
   have hzw := (wv_eq_zero_iff _ _ _ _).mp hzero
   have hv : TrackRep s₁.mem B w N initial := by
     refine ⟨?_, hN, ?_, ?_⟩
     · change wv s₁.mem B (slot w aRoot) w = 0 * 2 ^ (64 * w) % N
-      rw [Nat.zero_mul, Nat.zero_mod]; exact wv_zero fun q hq => hzw q (by omega)
-    · exact hzw w (by omega)
-    · have he : flagsAt w + 8 = slot w aRoot + 8 * (w + 1) := by unfold flagsAt; omega
+      rw [Nat.zero_mul, Nat.zero_mod]; exact wv_zero fun q hq => hzw q (by omega_arith)
+    · exact hzw w (by omega_arith)
+    · have he : flagsAt w + 8 = slot w aRoot + 8 * (w + 1) := by unfold flagsAt; omega_arith
       change word s₁.mem B (flagsAt w + 8) = 0
-      rw [he]; exact hzw (w + 1) (by omega)
+      rw [he]; exact hzw (w + 1) (by omega_arith)
   have hY₁ : wv s₁.mem B (slot w aY) w = 2 ^ (64 * w) % N := by
-    rw [f₁.rg_wv hz (by simp) (by decide) (by decide) (by omega)]; exact hY
+    rw [f₁.rg_wv hz (by simp) (by decide) (by decide) (by omega_arith)]; exact hY
   exact ⟨hc₁, hp₁, hv, hY₁, f₁, k₁.mono (by decide)⟩
 
 theorem windows_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
@@ -56,23 +56,23 @@ theorem windows_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 
     (hY : wv s.mem B (slot w aY) w = 2 ^ (64 * w) % N) :
     WP isa (windows M.mm) s fun u => ScanInv s B Z w minv N el E sigma g 0 R u := by
   have hz := hc.hZ16
-  have hN : 0 < N := by have := hc.n1; omega
+  have hN : 0 < N := by have := hc.n1; omega_arith
   unfold windows
   refine WP.seq (WP.mono (zeroA_ok hc.ws (j := aRoot) (by decide)) fun s₁ ⟨hzero, o₁, k₁⟩ => ?_)
-  have f₁ : Frm B (rg w [aRoot] []) s.mem s₁.mem := Frm.rg_of_out o₁ (by omega) _ _ (by decide)
+  have f₁ : Frm B (rg w [aRoot] []) s.mem s₁.mem := Frm.rg_of_out o₁ (by omega_arith) _ _ (by decide)
   have hc₁ := hc.congr f₁ (by decide) (by simp) k₁ (by decide)
   have hp₁ := hp.congr f₁ hz (by simp) (by decide) (by decide) (by decide)
   have hzw := (wv_eq_zero_iff _ _ _ _).mp hzero
   have hv : TrackRep s₁.mem B w N initial := by
     refine ⟨?_, hN, ?_, ?_⟩
     · change wv s₁.mem B (slot w aRoot) w = 0 * 2 ^ (64 * w) % N
-      rw [Nat.zero_mul, Nat.zero_mod]; exact wv_zero fun q hq => hzw q (by omega)
-    · exact hzw w (by omega)
-    · have he : flagsAt w + 8 = slot w aRoot + 8 * (w + 1) := by unfold flagsAt; omega
+      rw [Nat.zero_mul, Nat.zero_mod]; exact wv_zero fun q hq => hzw q (by omega_arith)
+    · exact hzw w (by omega_arith)
+    · have he : flagsAt w + 8 = slot w aRoot + 8 * (w + 1) := by unfold flagsAt; omega_arith
       change word s₁.mem B (flagsAt w + 8) = 0
-      rw [he]; exact hzw (w + 1) (by omega)
+      rw [he]; exact hzw (w + 1) (by omega_arith)
   have hY₁ : wv s₁.mem B (slot w aY) w = 2 ^ (64 * w) % N := by
-    rw [f₁.rg_wv hz (by simp) (by decide) (by decide) (by omega)]; exact hY
+    rw [f₁.rg_wv hz (by simp) (by decide) (by decide) (by omega_arith)]; exact hY
   refine WP.mono (loop_ok M hc₁ hp₁ hv hcont hY₁) fun u hu => ?_
   exact ⟨hu.cst, hu.powers, (f₁.rg_trans hu.frm).rg_mono (by decide) (by decide),
     (k₁.trans hu.keep).mono (by decide), hu.y, hu.track⟩
@@ -87,14 +87,14 @@ theorem suffix_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 6
       Cst u B Z w minv N el E sigma ∧
       TrackRep u.mem B w N (VG.Proof.Rsa.RecoveryFolded.run N sigma y v) ∧
       Frm B (rg w [aAcc, aTmp, aX, aRoot, aY] [sMask]) s.mem u.mem ∧ Keep mmRegs s u := by
-  have hN : 0 < N := by have := hc.n1; omega
+  have hN : 0 < N := by have := hc.n1; omega_arith
   refine WP.seq (WP.mono (square_ok M hc (j := none) (Or.inl rfl) hv hy hY)
     fun s₁ ⟨hc₁, ht₁, hy₁, f₁, k₁⟩ => ?_)
   refine WP.mono (square_ok M hc₁ (j := some 1) (Or.inr rfl) ht₁ (Nat.mod_lt _ hN) hy₁)
     fun u ⟨hcu, htu, _, f₂, k₂⟩ => ?_
   refine ⟨hcu, ?_, (f₁.rg_trans f₂).rg_mono (by decide) (by decide), (k₁.trans k₂).mono (by decide)⟩
   have ht := hc.t1
-  rcases (by omega : sigma = 1 ∨ sigma = 2) with rfl | rfl <;> exact htu
+  rcases (by omega_arith : sigma = 1 ∨ sigma = 2) with rfl | rfl <;> exact htu
 
 /-- Root extraction exposes only the found mask and the captured Montgomery root. -/
 theorem finish_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
@@ -109,7 +109,7 @@ theorem finish_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   unfold finish
   refine WP.seq (WP.mono (copyA_ok hc.ws (o := aY) (a := aRoot) (by decide) (by decide) (by decide))
     fun s₁ ⟨hy₁, o₁, k₁⟩ => ?_)
-  have f₁ : Frm B (rg w [aY] []) s.mem s₁.mem := Frm.rg_of_out o₁ (by omega) _ _ (by decide)
+  have f₁ : Frm B (rg w [aY] []) s.mem s₁.mem := Frm.rg_of_out o₁ (by omega_arith) _ _ (by decide)
   have hc₁ := hc.congr f₁ (by decide) (by simp) k₁ (by decide)
   have hv₁ := hv.congr f₁ hz (by simp) (by decide)
   rw [List.append_assoc, WP.block_append_iff]
@@ -125,15 +125,15 @@ theorem finish_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
 
   have h256 := hc₁.ws.h256
   refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = s₁.mem.writeW (off B (8 * sC3)) (mask v.found)) (by
-    xrun [found, ix, h8, h12', show BitVec.ofInt 64 8 = 8#64 from rfl, haddr, hs.ld (d := flagsAt w + 8) (by unfold flagsAt at *; have hZ := hc₁.ws.hZ; unfold slot aRoot at *; omega),
-      State.ea, hdr, hdi, hdrOff, hs.st (d := 8 * sC3) (by simp only [sC3, sFn]; omega),
+    xrun [found, ix, h8, h12', show BitVec.ofInt 64 8 = 8#64 from rfl, haddr, hs.ld (d := flagsAt w + 8) (by unfold flagsAt at *; have hZ := hc₁.ws.hZ; unfold slot aRoot at *; omega_arith),
+      State.ea, hdr, hdi, hdrOff, hs.st (d := 8 * sC3) (by simp only [sC3, sFn]; omega_arith),
       m₃, m₂, hv₁.found]) rfl) fun u ⟨mu, k₄⟩ => ?_
   have f₂ : Frm B (rg w [] [sC3]) s₁.mem u.mem := by
-    rw [mu]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC3, sFn]; omega)) _ _ (by decide)
+    rw [mu]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC3, sFn]; omega_arith)) _ _ (by decide)
   have kk := ((k₂.trans k₃).trans k₄).mono (show ∀ r ∈ [.r12, .r9] ++ [.r8] ++ [.rax], r ∈ mmRegs by decide)
   refine ⟨hc₁.congr f₂ (by decide) (by decide) kk (by decide), by rw [mu, word_writeW_self], ?_,
     (f₁.rg_trans f₂).rg_mono (by decide) (by decide), (k₁.trans kk).mono (by decide)⟩
-  rw [f₂.rg_wv hz (by decide) (by decide) (by decide) (by omega), hy₁, hv.root]
+  rw [f₂.rg_wv hz (by decide) (by decide) (by decide) (by omega_arith), hy₁, hv.root]
 
 /-- Folded exponentiation has exactly the existing root-search result. -/
 theorem exp_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
@@ -148,18 +148,18 @@ theorem exp_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       (∀ y, VG.Spec.Rsa.recoverStep N (2 * a + sigma) r g = some y →
         wv u.mem B (slot w aY) w = y * 2 ^ (64 * w) % N ∧ y < N) ∧
       Frm B (rg w [aE, aD, aXm, aAcc, aTmp, aX, aRoot, aY] scanHeaders) s.mem u.mem ∧ Keep mmRegs s u := by
-  have hN : 0 < N := by have := hc.n1; omega
+  have hN : 0 < N := by have := hc.n1; omega_arith
   have hEbound : E < 4 ^ (32 * (w + (el + 7) / 8)) := by
     rw [show 4 ^ (32 * (w + (el + 7) / 8)) = 2 ^ (64 * (w + (el + 7) / 8)) by
-      rw [show 4 = 2 ^ 2 from rfl, ← Nat.pow_mul]; congr 1; omega]
+      rw [show 4 = 2 ^ 2 from rfl, ← Nat.pow_mul]; congr 1; omega_arith]
     exact hc.hm ▸ wv_lt _ _ _ _
   have ha : a < 32 * (w + (el + 7) / 8) := by
-    have hle : 4 ^ a ≤ E := by rw [hE]; exact Nat.le_mul_of_pos_left _ (by omega)
+    have hle : 4 ^ a ≤ E := by rw [hE]; exact Nat.le_mul_of_pos_left _ (by omega_arith)
     exact (Nat.pow_lt_pow_iff_right (by decide)).mp (Nat.lt_of_le_of_lt hle hEbound)
   have hcont : VG.Proof.Rsa.RecoveryFolded.result (VG.Proof.Rsa.RecoveryFolded.run N sigma (powMod g E N)
       (VG.Proof.Rsa.RecoveryFolded.scan N g E (32 * (w + (el + 7) / 8)) initial)) =
         VG.Spec.Rsa.recoverStep N (2 * a + sigma) r g := by
-    rw [hE, VG.Proof.Rsa.RecoveryFolded.powMod_four N g r a (by omega)]
+    rw [hE, VG.Proof.Rsa.RecoveryFolded.powMod_four N g r a (by omega_arith)]
     exact VG.Proof.Rsa.RecoveryFolded.scan_result hr ha hc.t1 initial
   simp only [exponentiate, seqs]
   refine WP.seq (WP.mono (RecoveryWindow.powers_ok M hc hGlt hG)

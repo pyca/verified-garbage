@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.CombTable
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Merged from `Proof.Ed25519.CombConstants`. -/
 
@@ -60,7 +61,7 @@ theorem checkRow_ok (b p : Point) (c a : EPoint dZ) (hb : Rep b c) (h : Rep p a)
     cases i with
     | zero => simpa using hq
     | succ i =>
-      have := ih _ _ (pointAdd_rep hq hb) hrest i (by simp only [List.length_cons] at hi; omega)
+      have := ih _ _ (pointAdd_rep hq hb) hrest i (by simp only [List.length_cons] at hi; omega_arith)
       rw [List.getD_cons_succ]
       rw [succ_nsmul, add_assoc, add_comm c a]
       exact this
@@ -87,7 +88,7 @@ theorem checkTables_ok (b : Point) (c : EPoint dZ) (hb : Rep b c)
     | succ j =>
       rw [List.getD_cons_succ] at hk ⊢
       have := ih (pointMul 256 b) ((256 : Nat) • c) (pointMul_rep 256 hb) hc.2 j
-        (by simp only [List.length_cons] at hj; omega) hk
+        (by simp only [List.length_cons] at hj; omega_arith) hk
       rw [smul_smul, smul_smul] at this
       rw [smul_smul, pow_succ, ← Nat.mul_assoc]
       exact this
@@ -129,7 +130,7 @@ theorem cachedOf_ok (tbl : List (List (Fe × Fe × Fe))) (b : Point) (c : EPoint
     have hl8 : (tbl.getD j []).length = 8 :=
       beq_iff_eq.mp (List.all_eq_true.mp hlen.2 _ hrow)
     have hmem : (tbl.getD j []).getD k (1, 1, 0) ∈ tbl.getD j [] := by
-      have hk' : k < (tbl.getD j []).length := by rw [hl8]; omega
+      have hk' : k < (tbl.getD j []).length := by rw [hl8]; omega_arith
       rw [List.getD_eq_getElem?_getD (l := tbl.getD j []), List.getElem?_eq_getElem hk']
       exact List.getElem_mem _
     have hre := of_decide_eq_true
@@ -145,7 +146,7 @@ theorem cachedOf_ok (tbl : List (List (Fe × Fe × Fe))) (b : Point) (c : EPoint
         rw [show ([] : List (Fe × Fe)) = ([] : List (Fe × Fe × Fe)).map uncache from rfl, getD_map']
       have hr := checkTables_ok b c hb _ hchk j
         (by rw [List.length_map, hlen.1]; exact hj) k
-        (by rw [hgj, List.length_map, hl8]; omega)
+        (by rw [hgj, List.length_map, hl8]; omega_arith)
       rw [hgj, ← uncache_default, getD_map', smul_smul] at hr
       exact hr
 
@@ -224,7 +225,7 @@ theorem comb_partial (S : Nat) : ∀ n, 16 * oddSum S n + evenSum S n = S % 256 
     rw [hm, ← ih, hd, h16]
     generalize S / 16 ^ (2 * n) = x
     generalize 16 ^ (2 * n) = y
-    have : x % 256 = x % 16 + 16 * (x / 16 % 16) := by omega
+    have : x % 256 = x % 16 + 16 * (x / 16 % 16) := by omega_arith
     rw [this]; ring
 
 /-- `Σ_{j < c} 256^j`. -/
@@ -279,14 +280,14 @@ theorem nib_bits (S i : Nat) :
     rw [h16, Nat.div_div_eq_div_mul, ← pow_add]
   rw [nib, e 3, e 2, e 1, ← Nat.add_zero (4 * i), e 0]
   simp only [pow_zero, Nat.div_one, Nat.reducePow]
-  omega
+  omega_arith
 
 theorem nib_lt (S i : Nat) : nib S i < 16 := Nat.mod_lt _ (by decide)
 
 /-- The magnitude of the digit `n - 8`. -/
 def mag (n : Nat) : Nat := if n < 8 then 8 - n else n - 8
 
-theorem mag_lt {n : Nat} (hn : n < 16) : mag n < 9 := by unfold mag; split <;> omega
+theorem mag_lt {n : Nat} (hn : n < 16) : mag n < 9 := by unfold mag; split <;> omega_arith
 
 /-- The cached point `c` negated: `[Y + X, Y - X, -2dT, 2Z]` for `[Y - X, Y + X, 2dT, 2Z]`. -/
 def negCached (c : Spec.Ed25519.Point) : Spec.Ed25519.Point := ⟨c.Y, c.X, 0 - c.Z, c.T⟩
@@ -305,12 +306,12 @@ theorem combEntry_ok (j n : Nat) (hj : j < 32) (hn : n < 16) :
   by_cases hlt : n < 8
   · refine ⟨negPoint q₀, by simp only [hlt, ↓reduceIte]; rw [hq₀, negCached_cache], hz, ?_⟩
     have e : ((n : ℤ) - 8) * 256 ^ j = -(((mag n * 256 ^ j : Nat) : ℤ)) := by
-      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : n ≤ 8)]; ring
+      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega_arith : n ≤ 8)]; ring
     rw [e, neg_smul, natCast_zsmul]
     exact hr.neg
   · refine ⟨q₀, by simp only [hlt, ↓reduceIte]; exact hq₀, hz, ?_⟩
     have e : ((n : ℤ) - 8) * 256 ^ j = (((mag n * 256 ^ j : Nat) : ℤ)) := by
-      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : 8 ≤ n)]; ring
+      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega_arith : 8 ≤ n)]; ring
     rw [e, natCast_zsmul]
     exact hr
 

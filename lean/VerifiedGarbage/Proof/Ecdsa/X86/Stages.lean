@@ -75,7 +75,7 @@ theorem Keep.ladArg {s₀ s : State} (K : Keep c s₀ (ptr s₀ A.sc) s) (hp : S
     have := congrArg (BitVec.setWidth 32) K.scr.edi
     simpa only [ptr, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64), BitVec.setWidth_eq] using this
   refine Point.LadArg.of h28 (by rw [K.esp]; exact hp.sp_lo)
-    (by rw [K.esp]; have := hp.sp_fit _ hsc; simp only [Args.ao]; omega) K.scr.nowrap
+    (by rw [K.esp]; have := hp.sp_fit _ hsc; simp only [Args.ao]; omega_arith) K.scr.nowrap
     (by rw [K.esp]; exact hp.stk_sc) (by rw [K.esp, K.rd, K.wr]; exact hp.arg_in _ hsc)
     (by rw [K.esp, he]; exact hv) (by rw [K.esp]; exact hp.arg_sc _ hsc)
 
@@ -83,7 +83,7 @@ theorem Keep.ladArg {s₀ s : State} (K : Keep c s₀ (ptr s₀ A.sc) s) (hp : S
 theorem frame_of_outside {L : List Region} {q : Addr} {n : Nat} {m m' : Mem}
     (ho : Outside q 0 n m m') (hin : (⟨q, n⟩ : Region) ∈ L) : Frame L m m' := fun x hx => by
   have := hx _ hin; simp only [Region.Contains] at this
-  exact ho x (Or.inr (by simp only [ofs]; omega))
+  exact ho x (Or.inr (by simp only [ofs]; omega_arith))
 
 /-- Numbered slots are in the working space. -/
 theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
@@ -96,7 +96,7 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 4)], w.1
   rw [List.mem_singleton.mp hw]
   have := sl_le c h7 (i := FLAG) (by decide)
   dsimp only
-  omega
+  omega_arith
 
 /-- After the setup and the tables. -/
 structure St₁ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
@@ -137,7 +137,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
       hc' (R2N, c.R * c.R % c.C.n) (by simp [Cfg.consts]), hc' (ONEN, c.R % c.C.n) (by simp [Cfg.consts]),
       P.saved, P.table⟩
   have hsep : ∀ {i : Nat}, i < 45 → ∀ j, c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
-    fun hi j => Or.inl (by have := sl_below_bits c hi j 0; omega)
+    fun hi j => Or.inl (by have := sl_below_bits c hi j 0; omega_arith)
   have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
   -- The table of `k`.
   refine WP.seq (WP.mono (bits_ok P.scr h0 (sl_le c h7 (i := K) (by decide)) (hsz (j := 0) (by decide))
@@ -165,10 +165,10 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
   have K₄ : Keeps [.eax, .ebx, .edx, .esi, .edi] s₀ s₄ :=
     (((P.keep.mono (by decide)).widen k₂).widen k₃).widen k₄
   have hws : Outside (ptr s₀ A.sc) 0 size s₀.mem s₄.mem := fun x hx => by
-    rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega)),
-      O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega)),
-      O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega)),
-      P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by omega)]
+    rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega_arith)),
+      O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega_arith)),
+      O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega_arith)),
+      P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by omega_arith)]
   refine ⟨⟨hs₃.of_keeps k₄ (by decide), K₄.1 _ (by decide), K₄.2.1, K₄.2.2, ?_,
     frame_of_outside hws (List.mem_append_left _ hp.wr), hp.sp_lo⟩,
     by rw [v₄ (by decide), P.k], by rw [v₄ (by decide), P.d], by rw [v₄ (by decide), P.e],
@@ -181,9 +181,9 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
       fun j w hw => by
         rw [List.mem_singleton.mp hw]
         have := sl_below_bits c (i := FLAG) (by decide) j 0
-        exact Or.inl (by dsimp only; omega)
-    rw [flagW, Unch.readW32 u₄ (ap 2) (by omega), Unch.readW32 u₃ (ap 1) (by omega),
-      Unch.readW32 u₂ (ap 0) (by omega), ← flagW, P.flag]
+        exact Or.inl (by dsimp only; omega_arith)
+    rw [flagW, Unch.readW32 u₄ (ap 2) (by omega_arith), Unch.readW32 u₃ (ap 1) (by omega_arith),
+      Unch.readW32 u₂ (ap 0) (by omega_arith), ← flagW, P.flag]
   · intro t ht
     rw [tbl_unch u₄ h7 (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht),
       tbl_unch u₃ h7 (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht), b₂ t ht, hk]
@@ -203,7 +203,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
       have := congrArg (BitVec.setWidth 32) hs₄.edi
       simpa only [ptr, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64), BitVec.setWidth_eq] using this
     refine Point.LadArg.of h28 (by rw [esp₄]; exact hp.sp_lo)
-      (by rw [esp₄]; have := hp.sp_fit _ hsc; simp only [Args.ao]; omega) hn (by rw [esp₄]; exact hp.stk_sc)
+      (by rw [esp₄]; have := hp.sp_fit _ hsc; simp only [Args.ao]; omega_arith) hn (by rw [esp₄]; exact hp.stk_sc)
       (by rw [esp₄, K₄.2.1, K₄.2.2]; exact hp.arg_in _ hsc) (by rw [esp₄, he]; exact hv)
       (by rw [esp₄]; exact hp.arg_sc _ hsc)
 
@@ -228,13 +228,13 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
     m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine Unch.readW32 hu (fun w hw => ?_) (by omega)
+  refine Unch.readW32 hu (fun w hw => ?_) (by omega_arith)
   rcases List.mem_append.mp hw with hw | hw
   · rcases apart_slW (c := c) hl w hw with h | h
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_arith)
     · exact Or.inr h
   · rcases apart_wk (c := c) (i := FLAG) (by decide) (hn := h7) w hw with h | h
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_arith)
     · exact Or.inr h
 
 /-- A change within the working space, one of the regions `L`. -/
@@ -242,8 +242,8 @@ theorem frame_of_unch {L : List Region} {base : Addr} {W : List (Nat × Nat)} {m
     (hu : Unch base W m m') (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) (hin : (⟨base, size⟩ : Region) ∈ L) :
     Frame L m m' := fun x hx => by
   have hx' : size ≤ ofs base x := by
-    have := hx _ hin; simp only [Region.Contains] at this; simp only [ofs]; omega
-  exact hu x (fun w hw => Or.inr (by have := hW w hw; omega))
+    have := hx _ hin; simp only [Region.Contains] at this; simp only [ofs]; omega_arith
+  exact hu x (fun w hw => Or.inr (by have := hW w hw; omega_arith))
 
 /-- A stage writes in the working space only. -/
 theorem whole_of {L : List Region} {base : Addr} {W : List (Nat × Nat)} {m₀ m m' : Mem} (h₀ : Frame L m₀ m)
@@ -258,7 +258,7 @@ theorem hashToInt_eq (c : Cfg) (m : Mem) (q : Addr) :
       ofBytes (Spec.Ecdsa.bytesAt m q c.C.len) >>> c.sh := by
   simp only [Spec.Ecdsa.hashToInt, length_bytesAt, Cfg.sh]
   split
-  · rw [show 8 * c.C.len - Spec.Ecdsa.nBits c.C = 0 by omega, Nat.shiftRight_zero]
+  · rw [show 8 * c.C.len - Spec.Ecdsa.nBits c.C = 0 by omega_arith, Nat.shiftRight_zero]
   · rfl
 
 end VG.Proof.Ecdsa.X86

@@ -57,10 +57,10 @@ theorem bm_toNat {b x : BitVec 32} (hb : b.toNat ≤ 2 ^ 19) (hx : x.toNat < q) 
   unfold bm
   by_cases h : x.toNat ≤ b.toNat
   · have e : (b - x) >>> 31 = 0#32 := by bv_omega
-    rw [e, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [e, Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
     bv_omega
   · have e : (b - x) >>> 31 = 1#32 := by bv_omega
-    rw [e, Nat.mod_eq_of_lt (by omega)]
+    rw [e, Nat.mod_eq_of_lt (by omega_arith)]
     bv_omega
 
 /-- The value `bpLd B` loads of a word. -/
@@ -77,14 +77,14 @@ theorem bitPack_vals {m : Mem} {f : Addr} (hr : Reduced m f) {b : Nat} (hb : b �
     (hle : ∀ i < n, modPm (coeffAt m f i).toNat q ≤ b) :
     ((polyAt m f).map fun c => modPm c.val q).toList.map (fun wi => ((b : Int) - wi).toNat) =
       vals (bpVal b) m f := by
-  have hbq : (BitVec.ofNat 32 b).toNat = b := by rw [BitVec.toNat_ofNat]; omega
+  have hbq : (BitVec.ofNat 32 b).toNat = b := by rw [BitVec.toNat_ofNat]; omega_arith
   rw [Vector.toList_map, polyAt, toList_ofFn (fun i => Fin.ofNat q (coeffAt m f i).toNat), List.map_map,
     List.map_map]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
   have hx := hr i hi
   simp only [Function.comp_apply, Fin.val_ofNat, Nat.mod_eq_of_lt hx]
-  rw [bpVal, bm_toNat (by omega) hx, hbq, sub_modPm hx (by rw [q_eq]; omega) (hle i hi)]
+  rw [bpVal, bm_toNat (by omega_arith) hx, hbq, sub_modPm hx (by rw [q_eq]; omega_arith) (hle i hi)]
 
 /-! ## The function -/
 
@@ -120,7 +120,7 @@ theorem bp_wp {s₀ : State} (hp : BpPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitP
     intro d c nb B hs hB hB19 hBe hd s hS
     have hlen := hp.len
     rw [hB, hd] at hlen
-    have hBq : (BitVec.ofNat 32 B).toNat = B := by rw [BitVec.toNat_ofNat]; omega
+    have hBq : (BitVec.ofNat 32 B).toNat = B := by rw [BitVec.toNat_ofNat]; omega_arith
     refine WP.mono (packLoop_ok (bpLd_ok hBe) hs (pf := s₀.gpr .r0) (po := s₀.gpr .r3)
       (m₀ := (pushed [.r4] s₀).mem) (rd := s₀.rd) (wr := (pushed [.r4] s₀).wr)
       (by rw [hp.rd]; exact List.mem_append_left _ (List.mem_cons_self ..))
@@ -132,7 +132,7 @@ theorem bp_wp {s₀ : State} (hp : BpPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitP
     · obtain ⟨h₁, h₂⟩ := hp.bnd i hi
       rw [hB] at h₂
       have hx := hp.red i hi
-      rw [hco i hi, bpVal, bm_toNat (by omega) hx, hBq, ← sub_modPm hx (by rw [q_eq]; omega) h₂, ← hd, ← hB]
+      rw [hco i hi, bpVal, bm_toNat (by omega_arith) hx, hBq, ← sub_modPm hx (by rw [q_eq]; omega_arith) h₂, ← hd, ← hB]
       exact lt_bitlen (sub_modPm_le h₁ (by rw [hB]; exact h₂))
     · rw [popped_mem, hlen, hbytes, bitPack_eq, ← hB, ← hd, hB]
       rw [bitPack_vals hp.red hB19 (fun i hi => by rw [← hB]; exact (hp.bnd i hi).2)]
@@ -158,26 +158,26 @@ theorem bp_wp {s₀ : State} (hp : BpPre s₀) : WP isa Impl.MlDsa.Arm.Pack.bitP
   refine sel_ok .r12 2 (by decide) (by decide) _ _ s₁ (fun s₂ h₂ e => ?_) (fun s₂ h₂ n2 => ?_)
   · rw [e12 s₁ ⟨rfl, rfl, rfl, rfl, rfl⟩] at e
     exact go (d := 3) (c := 8) (nb := 3) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show (s₀.gpr .r1).toNat = 2 by omega]; decide) s₂ h₂
+      (by rw [show (s₀.gpr .r1).toNat = 2 by omega_arith]; decide) s₂ h₂
   rw [e12 s₁ ⟨rfl, rfl, rfl, rfl, rfl⟩] at n2
   refine sel_ok .r12 4 (by decide) (by decide) _ _ s₂ (fun s₃ h₃ e => ?_) (fun s₃ h₃ n4 => ?_)
   · rw [e12 s₂ h₂] at e
     exact go (d := 4) (c := 2) (nb := 1) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show (s₀.gpr .r1).toNat = 4 by omega]; decide) s₃ (h₂.trans h₃)
+      (by rw [show (s₀.gpr .r1).toNat = 4 by omega_arith]; decide) s₃ (h₂.trans h₃)
   rw [e12 s₂ h₂] at n4
   refine sel_ok .r12 4096 (by decide) (by decide) _ _ s₃ (fun s₄ h₄ e => ?_) (fun s₄ h₄ n4096 => ?_)
   · rw [e12 s₃ (h₂.trans h₃)] at e
     exact go (d := 13) (c := 8) (nb := 13) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show (s₀.gpr .r1).toNat = 4095 by omega]; decide) s₄ ((h₂.trans h₃).trans h₄)
+      (by rw [show (s₀.gpr .r1).toNat = 4095 by omega_arith]; decide) s₄ ((h₂.trans h₃).trans h₄)
   rw [e12 s₃ (h₂.trans h₃)] at n4096
   refine sel_ok .r12 131072 (by decide) (by decide) _ _ s₄ (fun s₅ h₅ e => ?_) (fun s₅ h₅ n17 => ?_)
   · rw [e12 s₄ ((h₂.trans h₃).trans h₄)] at e
     exact go (d := 18) (c := 4) (nb := 9) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show (s₀.gpr .r1).toNat = 131071 by omega]; decide) s₅ (((h₂.trans h₃).trans h₄).trans h₅)
+      (by rw [show (s₀.gpr .r1).toNat = 131071 by omega_arith]; decide) s₅ (((h₂.trans h₃).trans h₄).trans h₅)
   · rw [e12 s₄ ((h₂.trans h₃).trans h₄)] at n17
-    have e : (s₀.gpr .r2).toNat = 524288 := by omega
+    have e : (s₀.gpr .r2).toNat = 524288 := by omega_arith
     exact go (d := 20) (c := 2) (nb := 5) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show (s₀.gpr .r1).toNat = 524287 by omega]; decide) s₅ (((h₂.trans h₃).trans h₄).trans h₅)
+      (by rw [show (s₀.gpr .r1).toNat = 524287 by omega_arith]; decide) s₅ (((h₂.trans h₃).trans h₄).trans h₅)
 
 /-! ## Constant time -/
 

@@ -54,7 +54,7 @@ theorem sc_bases (ws : List (Ptr × Nat)) (h : ∀ w ∈ ws, w.1.1 = .x28) : ∀
 
 /-! ## The prologue -/
 
-theorem scr_ge {p : Params} (hF : PFacts p) : 1024 * 32 ≤ scrLen p := by rw [scr_eq]; have := hF.k; omega
+theorem scr_ge {p : Params} (hF : PFacts p) : 1024 * 32 ≤ scrLen p := by rw [scr_eq]; have := hF.k; omega_arith
 
 theorem pro_piece {p : Params} (hF : PFacts p) {S : Nat} :
     Piece p S (fun σ s => s = σ) (fun σ s => KC p σ s ∧ s.gpr .x24 = 1) (.block pro) := by
@@ -66,12 +66,12 @@ theorem pro_piece {p : Params} (hF : PFacts p) {S : Nat} :
     obtain ⟨_, hwr, _, _, d03, _⟩ := hp'
     have hsc : 1024 * 32 ≤ Spec.MlDsa.scratchWords p * 8 := scr_ge hF
     have hin : ∀ k < 6, InRegions s.wr (s.gpr .x3 + BitVec.ofNat 64 (SV + 8 * k)) 8 := fun k hk =>
-      ⟨⟨s.gpr .x3, Spec.MlDsa.scratchWords p * 8⟩, by rw [hwr]; simp, Offset.contains_base _ (by simp only [SV]; omega) (by simp only [SV]; omega)⟩
+      ⟨⟨s.gpr .x3, Spec.MlDsa.scratchWords p * 8⟩, by rw [hwr]; simp, Offset.contains_base _ (by simp only [SV]; omega_arith) (by simp only [SV]; omega_arith)⟩
     refine WP.mono (pro_ok hin) fun s' ⟨ht, h24, hf⟩ => ⟨⟨ht, ?_⟩, h24⟩
     rw [pa, ht.x25, BitVec.add_zero]
     exact Proof.MlKem.bytesAt_frame hf (fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact d03.sub_right (Offset.sub_base _ (by simp only [SV]; omega))) (by decide)
+      exact d03.sub_right (Offset.sub_base _ (by simp only [SV]; omega_arith))) (by decide)
   · subst h₁ h₂
     obtain ⟨esp, _, e0, e1, e2, e3⟩ := kgPub_eq pub
     refine ⟨esp, fun r hr => ?_⟩
@@ -125,7 +125,7 @@ theorem setTwo_ok {p : Params} {S : Nat} {s : State} (L : Lay S kgR (kgW p) s) {
       PPostB S s s' [(sc o, 1), (sc (o + 1), 1)] ∧ Keep [.x9] s s' ∧
       bytesAt s'.mem (pa s (sc o)) 2 = [BitVec.ofNat 8 a, BitVec.ofNat 8 b] := by
   rw [WP.block_append_iff]
-  refine WP.mono (setB_ok L (p := sc o) (v := a) (by simp only; omega) h1 (show Reg.x28 ∈ keptRegs by decide))
+  refine WP.mono (setB_ok L (p := sc o) (v := a) (by simp only; omega_arith) h1 (show Reg.x28 ∈ keptRegs by decide))
     fun s₁ ⟨hP₁, k₁, m₁⟩ => WP.mono (setB_ok (L.post hP₁) (p := sc (o + 1)) (v := b) ho h2 (show Reg.x28 ∈ keptRegs by decide))
       fun s₂ ⟨hP₂, k₂, m₂⟩ => ⟨PPostB.app hP₁ hP₂ (sc_bases _ (by simp)), (k₁.trans k₂).mono (by simp), ?_⟩
   have e : pa s₁ (sc (o + 1)) = pa s (sc o) + BitVec.ofNat 64 1 := by
@@ -206,7 +206,7 @@ theorem seeds_tr {p : Params} (hF : PFacts p) {S : Nat} (h16 : 16 ≤ S) (hSl : 
     RelCT isa (Two p S) ((seedsWith keccak.callee) p) fun _ _ => True := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl; have hsc := scr_eq p
   unfold seedsWith
-  refine RelCT.seq (Two.step (taintRel [.x28] (fun x y h => h.x28) (setKL_taint p.k (by omega) p.ℓ (by omega)))
+  refine RelCT.seq (Two.step (taintRel [.x28] (fun x y h => h.x28) (setKL_taint p.k (by omega_arith) p.ℓ (by omega_arith)))
     fun x L => WP.mono (setTwo_ok L (o := oKL) (a := p.k) (b := p.ℓ) (by decide) (by layd) (by layd))
       fun _ h => ⟨_, h.1⟩) ?_
   refine RelCT.seq (Two.step (VectorTaint.relRegs [.x25, .x26, .x27, .x28] (fun x y h => h.bases) keccak.mldsaSeedsTaint.choose_spec)

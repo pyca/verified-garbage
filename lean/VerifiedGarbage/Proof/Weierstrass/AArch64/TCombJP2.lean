@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV2
 public import VerifiedGarbage.Proof.Framework.AArch64.InterleaveTable
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
-import VerifiedGarbage.Proof.Weierstrass.CombFrame
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJFirst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

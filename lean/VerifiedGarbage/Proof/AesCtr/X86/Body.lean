@@ -48,9 +48,9 @@ include hp
 
 theorem UPre.scrN {d : Nat} (hd : d < 2176) : (S s₀ + BitVec.ofNat 32 d).toNat = (S s₀).toNat + d := by
   have := hp.scr_fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
-theorem UPre.sv : (Sv32 s₀).setWidth 64 = Sv s₀ := addr_eq (by have := hp.scr_fit; omega)
+theorem UPre.sv : (Sv32 s₀).setWidth 64 = Sv s₀ := addr_eq (by have := hp.scr_fit; omega_arith)
 
 /-- The arguments of a call on the copy of the counter block, with the
 working space at the start of the scratch buffer. -/
@@ -64,11 +64,11 @@ theorem UPre.blkPreSv {s : State}
   refine ⟨eax, by rw [ecx]; exact arg_ofNat s₀ 1, ebx, edi, ebp, hp.rounds, by rw [esp]; exact hp.esp24,
     ?_, hp.sch_scr.sub_right (Region.sub_prefix (by decide)), ?_, by rw [hb]; exact hp.b_sch, ?_,
     by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), hp.sch_fit, ?_,
-    by have := hp.scr_fit; omega, ?_, ?_⟩
+    by have := hp.scr_fit; omega_arith, ?_, ?_⟩
   · rw [hd]; exact hp.sch_scr.sub_right (UPre.scr_sub (by decide))
   · rw [hd]; exact hp.sv_scr
   · rw [hb, hd]; exact hp.b_scr.sub_right (UPre.scr_sub (by decide))
-  · rw [UPre.scrN hp (by decide)]; have := hp.scr_fit; omega
+  · rw [UPre.scrN hp (by decide)]; have := hp.scr_fit; omega_arith
   · rw [hrd, hwr, hp.rd, hp.wr]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -112,14 +112,14 @@ theorem pre_wp {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv A
   have p₂ : s₂.gpr .ebp = S s₀ := by rw [u₂.other _ (by decide), u₁.gpr]
   have b₂ : s₂.gpr .ebx = Iv s₀ := u₂.gpr
   have w₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₂.wr, u₁.wr, h.wr, hp.wr]
-  refine zero4_ok (by decide) (by rw [p₂]; unfold cOff; omega) (by rw [p₂, w₂]; exact covSv (by simp))
+  refine zero4_ok (by decide) (by rw [p₂]; unfold cOff; omega_arith) (by rw [p₂, w₂]; exact covSv (by simp))
     fun s₃ g₃ m₃ rd₃ wr₃ => ?_
   have p₃ : s₃.gpr .ebp = S s₀ := by rw [g₃ _ (by decide), p₂]
   have b₃ : s₃.gpr .ebx = Iv s₀ := by rw [g₃ _ (by decide), b₂]
   have rw₃ : s₃.rd ++ s₃.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rd₃, wr₃, u₂.rd, u₂.wr, u₁.rd, u₁.wr, h.rd, h.wr, hp.rd, hp.wr]; rfl
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [p₃]; unfold cOff; omega) (by rw [b₃]; omega) (by rw [p₃]; unfold cOff; omega)
+    (by rw [p₃]; unfold cOff; omega_arith) (by rw [b₃]; omega_arith) (by rw [p₃]; unfold cOff; omega_arith)
     (by rw [p₃, rw₃]; exact covSv (by simp))
     (by rw [b₃, add0, rw₃]; exact covIv (by simp))
     (by rw [p₃, wr₃, w₂]; exact covSv (by simp)) fun s₄ g₄ => ?_
@@ -212,7 +212,7 @@ theorem body_ok (v : BlocksImpl) : BodyOk AesCtr.ctrMode (body v.enc) := by
   have p₃ : s₃.gpr .ebp = S s₀ := u₃.gpr
   have i₃ : s₃.gpr .esi = D32 s₀ k := by rw [u₃.other _ (by decide), esi₂]
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [i₃, qN]; omega) (by rw [p₃]; unfold cOff; omega) (by rw [i₃, qN]; omega)
+    (by rw [i₃, qN]; omega_arith) (by rw [p₃]; unfold cOff; omega_arith) (by rw [i₃, qN]; omega_arith)
     (by rw [i₃, add0, hd, u₃.rd, u₃.wr, rwl]; exact covBlk hk (by simp))
     (by rw [p₃, u₃.rd, u₃.wr, rwl]; exact covSv (by simp))
     (by rw [i₃, add0, hd, u₃.wr, w₂]; exact covBlk hk (by simp)) fun s₄ g₄ => ?_
@@ -230,9 +230,9 @@ theorem body_ok (v : BlocksImpl) : BodyOk AesCtr.ctrMode (body v.enc) := by
   have rwl₅ : s₅.rd ++ s₅.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [u₅.rd, u₅.wr, rw₄, hp.rd, hp.wr]; rfl
   have wl₅ : s₅.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₅.wr, g₄.wr, u₃.wr, w₂]
-  obtain ⟨s₆, run₆, g₆, mem₆, rd₆, wr₆⟩ := incr_ok s₅ (Q := (Iv s₀).setWidth 64) (by rw [b₅]) (by rw [b₅]; omega)
-    (fun d n hdn => by rw [rwl₅]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega)⟩)
-    (fun d n hdn => by rw [wl₅]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega)⟩)
+  obtain ⟨s₆, run₆, g₆, mem₆, rd₆, wr₆⟩ := incr_ok s₅ (Q := (Iv s₀).setWidth 64) (by rw [b₅]) (by rw [b₅]; omega_arith)
+    (fun d n hdn => by rw [rwl₅]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega_arith)⟩)
+    (fun d n hdn => by rw [wl₅]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega_arith)⟩)
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨s₆, run₆, ?_⟩
   have f₆ : Frame [ivR s₀] s₅.mem s₆.mem := by rw [mem₆]; exact incMem_frame _ _
@@ -281,8 +281,8 @@ theorem body_ok (v : BlocksImpl) : BodyOk AesCtr.ctrMode (body v.enc) := by
   have newIv : bytesAt s₈.mem ((Iv s₀).setWidth 64) 16 = Spec.Ctr.inc (chainK AesCtr.ctrMode s₀ k) := by
     rw [mem₈, mem₆, incMem_bytes, ivIn]
   have hl : (outK AesCtr.ctrMode s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
-  have hlt : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_arith
+  have hlt : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega_arith
   have outSucc :
       outK AesCtr.ctrMode s₀ (k + 1) = outK AesCtr.ctrMode s₀ k ++ [bytesAt s₈.mem (blk s₀ k) 16] := by
     rw [newBlk]

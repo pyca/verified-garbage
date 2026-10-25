@@ -38,12 +38,12 @@ def vstepEnv (sw₁ sw₂ : Bool) (e : Env) : Env :=
 
 theorem swapEnv_keep (sw : Bool) (e : Env) (i : Index) (hi : 6 ≤ i.val ∧ i.val < 12) :
     swapEnv sw e i = e i := by
-  have h0 : i ≠ 0 := fun h => by subst h; omega
-  have h2 : i ≠ 2 := fun h => by subst h; omega
-  have h3 : i ≠ 3 := fun h => by subst h; omega
-  have h4 : i ≠ 4 := fun h => by subst h; omega
-  have h5 : i ≠ 5 := fun h => by subst h; omega
-  have h21 : i ≠ 21 := fun h => by subst h; omega
+  have h0 : i ≠ 0 := fun h => by subst h; omega_arith
+  have h2 : i ≠ 2 := fun h => by subst h; omega_arith
+  have h3 : i ≠ 3 := fun h => by subst h; omega_arith
+  have h4 : i ≠ 4 := fun h => by subst h; omega_arith
+  have h5 : i ≠ 5 := fun h => by subst h; omega_arith
+  have h21 : i ≠ 21 := fun h => by subst h; omega_arith
   simp only [swapEnv, opSwap, Function.update_of_ne h0, Function.update_of_ne h2, Function.update_of_ne h3,
     Function.update_of_ne h4, Function.update_of_ne h5, Function.update_of_ne h21]
 
@@ -93,7 +93,7 @@ theorem vstepEnv_keep (sw₁ sw₂ : Bool) (e : Env) (i : Index) (hi : 6 ≤ i.v
     vstepEnv sw₁ sw₂ e i = e i := by
   rw [vstepEnv, swapEnv_keep _ _ _ hi, addF_keep _ 6 7 (Or.inl ⟨rfl, rfl⟩) _ (Or.inr (Or.inl hi)),
     swapEnv_keep _ _ _ hi, addF_keep _ 8 9 (Or.inr ⟨rfl, rfl⟩) _ (Or.inr (Or.inl hi)),
-    doubleF_keep0 _ _ (Or.inl ⟨by omega, hi.2⟩)]
+    doubleF_keep0 _ _ (Or.inl ⟨by omega_arith, hi.2⟩)]
 
 /-- One bit of both scalars: the reference ladder's point after the bits above
 `t`, then after bit `t`. -/
@@ -123,9 +123,9 @@ theorem vmask_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t <
   have ba : State.addr (u1.gpr .r7 + BitVec.ofNat 32 VBITS) = off base (VBITS + t) := by
     rw [v1.gpr]; change State.addr (s.gpr .r0 + s.gpr .r11 + BitVec.ofNat 32 VBITS) = _
     rw [hb, Offset.add_add, Nat.add_comm t VBITS]
-    exact hs.ea (by omega)
-  refine VG.Proof.X25519.Arm.wp_ldrb (by omega) ba
-    (by rw [v1.rd, v1.wr]; exact hs.read (by omega)) fun u2 v2 => ?_
+    exact hs.ea (by omega_arith)
+  refine VG.Proof.X25519.Arm.wp_ldrb (by omega_arith) ba
+    (by rw [v1.rd, v1.wr]; exact hs.read (by omega_arith)) fun u2 v2 => ?_
   have e2 : u2.gpr .r3 = (BitVec.ofNat 8 (a + 2 * b)).setWidth 32 := by rw [v2.gpr, v1.mem, hbit]
   have pm := pair_mask a ha b hb2
   cases hi
@@ -194,7 +194,7 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Poin
   have ha2 : (S >>> n) &&& 1 < 2 := bit_lt S n
   have hb2 : (K >>> n) &&& 1 < 2 := bit_lt K n
   have bitval : s.mem (off base (VBITS + n)) = BitVec.ofNat 8 (((S >>> n) &&& 1) + 2 * ((K >>> n) &&& 1)) := by
-    rw [hi.mem _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)]
+    rw [hi.mem _ (by rw [ofs_off' base (by omega_arith)]; omega_arith) (by rw [ofs_off' base (by omega_arith)]; omega_arith)]
     exact hbits n hn
   unfold vstep
   refine WP.seq (WP.mono (decR11_ok hi.r11) fun s₁ ⟨b₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
@@ -208,8 +208,8 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Poin
   have b₃ : s₃.gpr .r11 = BitVec.ofNat 32 n := by
     rw [k₃.regs.1 _ (by decide), k₂.regs.1 _ (by decide), b₁]
   have bit₃ : s₃.mem (off base (VBITS + n)) = BitVec.ofNat 8 (((S >>> n) &&& 1) + 2 * ((K >>> n) &&& 1)) := by
-    rw [(k₂.trans k₃).mem _ (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega), m₁, bitval]
+    rw [(k₂.trans k₃).mem _ (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+      (by rw [ofs_off' base (by omega_arith)]; omega_arith), m₁, bitval]
   refine WP.seq (WP.mono (vmaskSwap_ok hs₃ bb₃ hn b₃ ha2 hb2 bit₃ false) fun s₄ ⟨k₄, bb₄, e₄⟩ => ?_)
   have hs₄ := k₄.scr hs₃
   rw [show addAt 6 7 = (addF 6 7).map FieldOp.impl from rfl]
@@ -218,8 +218,8 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Poin
   have core4 := k₂.trans (k₃.trans (k₄.trans k₅))
   have b₅ : s₅.gpr .r11 = BitVec.ofNat 32 n := by rw [core4.regs.1 _ (by decide), b₁]
   have bit₅ : s₅.mem (off base (VBITS + n)) = BitVec.ofNat 8 (((S >>> n) &&& 1) + 2 * ((K >>> n) &&& 1)) := by
-    rw [core4.mem _ (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega), m₁, bitval]
+    rw [core4.mem _ (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+      (by rw [ofs_off' base (by omega_arith)]; omega_arith), m₁, bitval]
   refine VG.Proof.X25519.Arm.WP.append (vmaskSwap_ok hs₅ bb₅ hn b₅ ha2 hb2 bit₅ true)
     fun s₆ ⟨k₆, bb₆, e₆⟩ => ?_
   refine VG.Proof.X25519.Arm.wp_cmp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun t vt hz =>
@@ -248,7 +248,7 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Poin
   · rw [hz, b₆]
     change (BitVec.ofNat 32 n - BitVec.ofNat 32 0 == 0) = _
     rw [BitVec.sub_zero]
-    exact VG.Proof.X25519.Arm.ofNat_beq_zero (by omega)
+    exact VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_arith)
 
 theorem vloop_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point}
     (hbits : ∀ t < 456, s₀.mem (off base (VBITS + t)) = BitVec.ofNat 8 (pair2 S K t))
@@ -261,12 +261,12 @@ theorem vloop_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Poin
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 456 ∧ VInv base S K A s₀ s m) ?_ 456 s'
     ⟨by decide, by decide, hi s' h1 h2 h3 h4 h5⟩
   intro m s ⟨h1, h2, hi⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (vstep_ok (by omega) hbits hi) fun s' ⟨hi', hz⟩ => ?_
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_arith⟩
+  refine WP.mono (vstep_ok (by omega_arith) hbits hi) fun s' ⟨hi', hz⟩ => ?_
   simp only [eval, hz]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, hi'⟩
-  · refine .inr ⟨by simp only [decide_eq_false (by omega : ¬m = 0), Bool.not_false], m, by omega,
-      by omega, by omega, hi'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬m = 0), Bool.not_false], m, by omega_arith,
+      by omega_arith, by omega_arith, hi'⟩
 
 end VG.Proof.Ed448.Arm

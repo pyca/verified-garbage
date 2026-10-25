@@ -60,7 +60,7 @@ theorem low_bit (x : Nat) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat, Nat.and_one_is_mod, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem byte0 {m : Mem} {o : Addr} {x : Nat} (h : VG.Spec.X448.bytesAt m o 56 = Proof.X25519.leBytes 56 x) :
     m o = BitVec.ofNat 8 x := by
@@ -88,7 +88,7 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
   have hc2 : Ctx b s2 := hc1.of_rest hr2 (by decide)
   have h32 : s2.gpr .r3 = o := by rw [hr2'.gpr _ (by decide), h3]
   refine WP.seq (WP.append (freeze_ok hc2 h32
-    (fun k hk => in_base (len := 57) (by rw [hr2'.wr]; exact hout) (by omega) (by omega)) hd56)
+    (fun k hk => in_base (len := 57) (by rw [hr2'.wr]; exact hout) (by omega_arith) (by omega_arith)) hd56)
     fun s3 ⟨hb3, hr3, hf3, _⟩ => ?_)
   have hS3 := slots_freeze hf3 hd56 hS2 (by decide)
   have h33 : s3.gpr .r3 = o := by rw [hr3.gpr _ (by decide), h32]
@@ -119,7 +119,7 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
   have h38 : s8.gpr .r3 = o := by rw [hr8.gpr _ (by decide), hr7.gpr _ (by decide), h33]
   have hw8 : s8.wr = s.wr := by rw [hr8.wr, hr7.wr, hw3]
   refine WP.append (freeze_ok hc8 h38
-    (fun k hk => in_base (len := 57) (by rw [hw8]; exact hout) (by omega) (by omega)) hd56)
+    (fun k hk => in_base (len := 57) (by rw [hw8]; exact hout) (by omega_arith) (by omega_arith)) hd56)
     fun s9 ⟨hb9, hr9, _, _⟩ => ?_
   refine wp_stb (a := o + BitVec.ofNat 64 56) (by decide) (by decide)
     (by rw [hr9.gpr _ (by decide), h38])
@@ -144,14 +144,14 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
       have hi := List.mem_range.mp hi
       exact f _ fun r hr hc => by
         rw [List.mem_singleton.mp hr] at hc
-        exact Offset.disjoint o (d := i) (n := 1) (e := 56) (k := 1) (.inl (by omega)) (by omega) (by omega)
+        exact Offset.disjoint o (d := i) (n := 1) (e := 56) (k := 1) (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
           _ (Region.contains_self _ _) hc
     rw [e]
     refine hb9.trans (congrArg (Proof.X25519.leBytes 56) ?_)
     rw [← VG.Proof.X448.toFe_val, ← ey]; rfl
   · show [s10.mem (o + BitVec.ofNat 64 56 + BitVec.ofNat 64 0)] = _
     rw [hm10, BitVec.add_zero, VG.WriteBytes.writeW8_apply, ite_eq_left (by simp), e12', e12]
-    exact congrArg (· :: []) (stb_byte (toNat_imm (by omega)))
+    exact congrArg (· :: []) (stb_byte (toNat_imm (by omega_arith)))
 
 end
 

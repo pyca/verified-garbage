@@ -88,9 +88,9 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   have cSt : oSt = 3072 := rfl
   have cR : oRsa = 8192 := rfl
   have f4 : MFit 1 Hl.D (1 + Hl.D) (e.L.k.toNat - Hl.D - 1) :=
-    ⟨by rw [cSt]; omega, by rw [cSt]; omega, by omega, by omega, by omega⟩
+    ⟨by rw [cSt]; omega_arith, by rw [cSt]; omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
   have f2 : MFit (1 + Hl.D) (e.L.k.toNat - Hl.D - 1) 1 Hl.D :=
-    ⟨by rw [cSt]; omega, by rw [cSt]; omega, by omega, by omega, by omega⟩
+    ⟨by rw [cSt]; omega_arith, by rw [cSt]; omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
   have ly : ∀ {g vv m₀} {t : State} {V W}, Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W → Slots e.L W →
       Lay t e.L.Q e.L.scr := fun hc R hS => hc.lay hL hP16 R hS.scr
   have hk3 : ∀ {W : Nat → BitVec 64}, Slots e.L W → W 21 = BitVec.ofNat 64 e.L.k.toNat := fun hS => by
@@ -100,14 +100,14 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   -- The seed's and the message's bytes are apart from our working space.
   have hsdS : ∀ i < Hl.D, ∀ j < oRsa, off e.L.sd i ≠ off e.L.scr j := fun i hi j hj
       (h' : e.L.sd + BitVec.ofNat 64 i = e.L.scr + BitVec.ofNat 64 j) =>
-    (hL.sR _ (ro_SD e.L)) _ (hL.ours_scr _ (Offset.contains_base e.L.scr (d := j) (n := 1) (by omega) (by omega)))
-      (h' ▸ Offset.contains_base e.L.sd (d := i) (n := 1) (k := e.L.D) (by omega)
-        (by have := hL.bR _ (ro_SD e.L); simp only at this; omega))
+    (hL.sR _ (ro_SD e.L)) _ (hL.ours_scr _ (Offset.contains_base e.L.scr (d := j) (n := 1) (by omega_arith) (by omega_arith)))
+      (h' ▸ Offset.contains_base e.L.sd (d := i) (n := 1) (k := e.L.D) (by omega_arith)
+        (by have := hL.bR _ (ro_SD e.L); simp only at this; omega_arith))
   have hmsS : ∀ i < e.L.ml.toNat, ∀ j < oRsa, off e.L.msg i ≠ off e.L.scr j := fun i hi j hj
       (h' : e.L.msg + BitVec.ofNat 64 i = e.L.scr + BitVec.ofNat 64 j) =>
-    (hL.sR _ (ro_MSG e.L)) _ (hL.ours_scr _ (Offset.contains_base e.L.scr (d := j) (n := 1) (by omega) (by omega)))
-      (h' ▸ Offset.contains_base e.L.msg (d := i) (n := 1) (k := e.L.ml.toNat) (by omega)
-        (by have := hL.bR _ (ro_MSG e.L); simp only at this; omega))
+    (hL.sR _ (ro_MSG e.L)) _ (hL.ours_scr _ (Offset.contains_base e.L.scr (d := j) (n := 1) (by omega_arith) (by omega_arith)))
+      (h' ▸ Offset.contains_base e.L.msg (d := i) (n := 1) (k := e.L.ml.toNat) (by omega_arith)
+        (by have := hL.bR _ (ro_MSG e.L); simp only at this; omega_arith))
   have inRd : ∀ {g vv m₀} {u : State} {R : Region}, Ctx e.L g vv m₀ u →
       R ∈ [e.L.N, e.L.E, e.L.LAB, e.L.MSG, e.L.SD] ++ e.L.X ++ [e.L.ARGS] →
       ∀ {a : Addr} {n : Nat}, R.Contains a n → InRegions (u.rd ++ u.wr) a n := fun hcu hR _ _ h3 =>
@@ -126,9 +126,9 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
           scr .x12 (oEm + 1) ++ ([.movz .x .x13 (BitVec.ofNat 16 gH.D) 0] : List Instr))) (by rfl) (by taint_decide))
         (by taint_decide) fun _ _ _ _ _ _ _ _ hc R hS _ => seedE_pin (ly hc R hS) R hS.sd hD64)
       fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (copySeed_ok (ly hc R hS) R (H := Hl) hS.sd hD0 hD64
-        (fun i hi => inRd hc (by simp) (Offset.contains_base e.L.sd (d := i) (n := 1) (k := e.L.D) (by omega)
-          (by have := hL.bR _ (ro_SD e.L); simp only at this; omega)))
-        (fun i hi j hj => hsdS i hi _ (by unfold oEm; omega)))
+        (fun i hi => inRd hc (by simp) (Offset.contains_base e.L.sd (d := i) (n := 1) (k := e.L.D) (by omega_arith)
+          (by have := hL.bR _ (ro_SD e.L); simp only at this; omega_arith)))
+        (fun i hi j hj => hsdS i hi _ (by unfold oEm; omega_arith)))
         fun _ ⟨_, Su, Ru⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS trivial) ?_
     -- The label's hash.
     refine RelCT.seq (pw_wp (X' := fun _ _ => True)
@@ -154,38 +154,38 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
           (fun r => ([(Reg.x11, e.L.msg), (.x12, off e.L.scr (e.L.k.toNat - e.L.ml.toNat - 1)),
             (.x13, BitVec.ofNat 64 e.L.ml.toNat)].lookup r).getD 0)
           (by taint_decide) (by taint_decide)
-          fun _ _ _ _ _ _ _ _ hc R hS _ => msgE_pin (ly hc R hS) R (hk3 hS) (hm3 hS) hS.msg (by omega)))
-      fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (putMsg_ok (ly hc R hS) R (hk3 hS) (hm3 hS) hS.msg (by omega)
+          fun _ _ _ _ _ _ _ _ hc R hS _ => msgE_pin (ly hc R hS) R (hk3 hS) (hm3 hS) hS.msg (by omega_arith)))
+      fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (putMsg_ok (ly hc R hS) R (hk3 hS) (hm3 hS) hS.msg (by omega_arith)
         hk1024 (fun i hi => inRd hc (by simp) (Offset.contains_base e.L.msg (d := i) (n := 1) (k := e.L.ml.toNat)
-          (by omega) (by have := hL.bR _ (ro_MSG e.L); simp only at this; omega))) hmsS)
+          (by omega_arith) (by have := hL.bR _ (ro_MSG e.L); simp only at this; omega_arith))) hmsS)
         fun _ ⟨_, Su, Ru⟩ => In.of_step hL hP16 hc Su nil_ws Ru hS trivial
   -- `DB` masked.
   refine RelCT.seq (pw_blk (X' := fun W _ => MArgs W e.L.scr 1 Hl.D (1 + Hl.D) (e.L.k.toNat - Hl.D - 1)) []
     (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (dbArgs gH)) (by rfl) (by taint_decide)) nopin
-    fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (dbArgs_ok (ly hc R hS) R (hk3 hS) (by omega) (by omega) hk1024 [])
+    fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (dbArgs_ok (ly hc R hS) R (hk3 hS) (by omega_arith) (by omega_arith) hk1024 [])
       fun _ ⟨_, Su, Ru⟩ => In.of_step hL hP16 hc Su nil_ws Ru
-        (hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega)) (mW_args _ _ _ _ _ _)) ?_
+        (hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega_arith)) (mW_args _ _ _ _ _ _)) ?_
   refine RelCT.seq (pw_wp (X' := fun _ _ => True) (pw_lr hP16 (mgfXor_tr hG f4 fun _ _ h => h)
       fun _ _ _ _ _ _ _ _ x => x)
     fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (mgfXor_ok hG hGh hGl hGv (ly hc R hS) R f4 hx)
       fun _ ⟨_, Su, _, W', Ru, hW', _⟩ => In.of_step hL hP16 hc Su nil_ws Ru
-        (hS.of fun j _ h2 h3 => hW' j (by unfold nW frameBytes; omega) (by omega) (by omega)) trivial) ?_
+        (hS.of fun j _ h2 h3 => hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)) trivial) ?_
   -- The seed masked.
   refine RelCT.seq (pw_blk (X' := fun W _ => MArgs W e.L.scr (1 + Hl.D) (e.L.k.toNat - Hl.D - 1) 1 Hl.D) []
     (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (seedArgs gH)) (by rfl) (by taint_decide)) nopin
-    fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (seedArgs_ok (ly hc R hS) R (hk3 hS) (by omega) (by omega) hk1024 [])
+    fun _ _ _ _ _ _ _ _ hc R hS _ => WP.mono (seedArgs_ok (ly hc R hS) R (hk3 hS) (by omega_arith) (by omega_arith) hk1024 [])
       fun _ ⟨_, Su, Ru⟩ => In.of_step hL hP16 hc Su nil_ws Ru
-        (hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega)) (mW_args _ _ _ _ _ _)) ?_
+        (hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega_arith)) (mW_args _ _ _ _ _ _)) ?_
   refine RelCT.seq (pw_wp (X' := fun _ _ => True) (pw_lr hP16 (mgfXor_tr hG f2 fun _ _ h => h)
       fun _ _ _ _ _ _ _ _ x => x)
     fun _ _ _ _ _ _ _ _ hc R hS hx => WP.mono (mgfXor_ok hG hGh hGl hGv (ly hc R hS) R f2 hx)
       fun _ ⟨_, Su, _, W', Ru, hW', _⟩ => In.of_step hL hP16 hc Su nil_ws Ru
-        (hS.of fun j _ h2 h3 => hW' j (by unfold nW frameBytes; omega) (by omega) (by omega)) trivial) ?_
+        (hS.of fun j _ h2 h3 => hW' j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)) trivial) ?_
   -- The call.
   refine RelCT.seq (pw_wpQ (X' := fun W t => PReadyP e.L e.m₁ t ∧ CallArgs e.L W) (Q := PreOk e.L) q₁ q₂
     (pw_taint [] (by taint_decide) nopin) fun _ _ _ t V W hq _ _ hc R hS _ => ?_) ?_
   · have hS10 : Slots e.L (pubW e.L W) := hS.of fun j h1 _ _ => by
-      simp only [pubW, upd]; rw [ifn (by omega), ifn (by omega)]
+      simp only [pubW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]
     rw [Impl.RsaOaep.AArch64.Precomputed.pubArgs, pubArgs_eq, WP.block_append_iff, WP.block_append_iff]
     exact WP.mono (pubW_ok hL hP16 hc R hS) fun _ ⟨hc10, R10⟩ =>
       WP.mono (pubR_ok hL hP16 hc10 R10 hS10) fun _ ⟨hc11, hm11, hr11⟩ =>
@@ -196,15 +196,15 @@ theorem encMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   obtain ⟨w, wl⟩ := pre_eq q₁ q₂
   have sa : ∀ {g vv m₀} {t : State} {V W}, Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W → CallArgs e.L W →
       stackArg t 0 = e.L.scr + BitVec.ofNat 64 8192 ∧ stackArg t 1 = e.L.sl - BitVec.ofNat 64 1024 :=
-    fun hc R hA => ⟨by rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 0 (by unfold nW frameBytes; omega)).trans hA.s0,
-      by rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 1 (by unfold nW frameBytes; omega)).trans hA.s1⟩
+    fun hc R hA => ⟨by rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 0 (by unfold nW frameBytes; omega_arith)).trans hA.s0,
+      by rw [stackArg, stackArgAddr, hc.sp]; exact (R.fr 1 (by unfold nW frameBytes; omega_arith)).trans hA.s1⟩
   refine ⟨pd_ok hL hP c₁ q₁ r₁ R₁ A₁, pd_ok hL hP c₂ q₂ r₂' R₂ A₂,
     ⟨c₁.sp.trans c₂.sp.symm, fun r hr => ?_, fun i hi => ?_⟩, ?_, ?_⟩
   · simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [r₁.x0.trans r₂.x0.symm, r₁.x1.trans r₂.x1.symm, r₁.x2.trans r₂.x2.symm, r₁.x3.trans r₂.x3.symm,
       r₁.x4.trans r₂.x4.symm, r₁.x5.trans r₂.x5.symm, r₁.x6.trans r₂.x6.symm, r₁.x7.trans r₂.x7.symm]
-  · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  · rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl
     · rw [(sa c₁ R₁ A₁).1, (sa c₂ R₂ A₂).1]
     · rw [(sa c₁ R₁ A₁).2, (sa c₂ R₂ A₂).2]
   · have hx := hl.2.2 (PRE e.L e.m₁) (by rw [q₁.hx]; exact List.mem_singleton_self _)

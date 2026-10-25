@@ -31,14 +31,7 @@ theorem importArgs_ok (s : State) {p : Inputs} {slots : List Nat} (slot countSlo
   have rc := h.locals.read (bounds countSlot hc)
   have vs := h.saved slot hs
   have vc := h.saved countSlot hc
-  refine withRest [.r4, .r6] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block (VG.Impl.Ffdh.Arm.Domain.importArgs slot countSlot) : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have flag := List.all_eq_true.mp checked i hi
-    cases hi' : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r4, .r6] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.importArgs
   ffrun [small slot hs, small countSlot hc, addr slot hs, addr countSlot hc, rs, rc, vs, vc, off]
 

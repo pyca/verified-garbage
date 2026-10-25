@@ -54,12 +54,12 @@ theorem rowS0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   obtain ⟨z₁, cf₁, of₁, k₁⟩ := h₁
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mulx_ok s₁ (readSrc_sc hs₁ (d := b) (by omega)) (fun _ h => nomatch h) (by decide))
+  refine WP.mono (mulx_ok s₁ (readSrc_sc hs₁ (d := b) (by omega_arith)) (fun _ h => nomatch h) (by decide))
     fun s₂ h₂ => ?_
   obtain ⟨e₂, cf₂, of₂, k₂⟩ := h₂
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (accRowS_ok 5 .r9 [.r10, .r11, .r12, .r13, .r14] hs₂ (d := b + 8) (by omega) rfl
+  refine WP.mono (accRowS_ok 5 .r9 [.r10, .r11, .r12, .r13, .r14] hs₂ (d := b + 8) (by omega_arith) rfl
     ⟨by decide, by decide⟩ (cf₂.trans cf₁)) fun s₃ h₃ => ?_
   obtain ⟨c₃, cf₃, -, e₃, k₃⟩ := h₃
   have z₃ : s₃.gpr .rbp = 0 := by rw [k₃.1 _ (by decide), k₂.1 _ (by decide), z₁]
@@ -127,7 +127,7 @@ theorem rounds1_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
   | 0, _, s, _, _, _, _, h1, hT1 => WP.block_nil ⟨by simpa using h1, hT1, fun _ _ => rfl, rfl, rfl, rfl⟩
   | k + 1, hk, s, base, hs, hm, hB, h1, hT1 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (rounds1_ok hn ha hb hmo hinv hok k (by omega) hs hm hB h1 hT1)
+    refine WP.mono (rounds1_ok hn ha hb hmo hinv hok k (by omega_arith) hs hm hB h1 hT1)
       fun s₁ ⟨⟨U, eU⟩, hT, k₁⟩ => ?_
     have hmem : s₁.mem = s.mem := k₁.2.1
     have hs₁ := hs.of_keeps k₁ (by
@@ -139,7 +139,7 @@ theorem rounds1_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
       · exact absurd h (by decide)
       · exact absurd h (by decide)
       · exact (acc_regs_lt _ hn _ h).2.2.2.2 rfl)
-    refine WP.mono (round_ok hs₁ hn (i := k + 1) (by omega) hb hmo (fun h => by rw [hmem]; exact hm h) hinv hok
+    refine WP.mono (round_ok hs₁ hn (i := k + 1) (by omega_arith) hb hmo (fun h => by rw [hmem]; exact hm h) hinv hok
       (by rw [hmem]; exact hB) hT) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
     rw [hmem] at eu
     refine ⟨⟨U + 2 ^ (64 * (k + 1)) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_)⟩
@@ -151,7 +151,7 @@ theorem rounds1_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
             2 ^ (64 * (k + 1)) * u * m := by rw [eu]; simp only [Nat.mul_add, Nat.mul_assoc]
         _ = (wordsVal s.mem base a (k + 1) + 2 ^ (64 * (k + 1)) * (word s.mem base (a + 8 * (k + 1))).toNat) *
             wordsVal s.mem base b M.n + (U + 2 ^ (64 * (k + 1)) * u) * m := by
-            rw [eU, Nat.add_mul, Nat.add_mul]; omega
+            rw [eU, Nat.add_mul, Nat.add_mul]; omega_arith
         _ = _ := by rw [wordsVal_succ_top _ _ _ (k + 1)]
     · simp only [List.mem_cons] at hq ⊢
       rcases hq with h | h | h | h | h
@@ -185,24 +185,24 @@ theorem mulRounds_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
     have hb6 : b + 48 ≤ size := by rw [h6] at hb; exact hb
     have hB6 : wordsVal s.mem base b 6 < m := by rw [h6] at hB; exact hB
     rw [WP.block_append_iff, WP.block_append_iff]
-    refine WP.mono (mulRow0_ok hs (a := a) (b := b) (by rw [h6] at ha; omega) hb6) fun s₁ ⟨e₁, k₁⟩ => ?_
+    refine WP.mono (mulRow0_ok hs (a := a) (b := b) (by rw [h6] at ha; omega_arith) hb6) fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by decide)
     have hA := (word s.mem base a).isLt
     have hAB : (word s.mem base a).toNat * wordsVal s.mem base b 6 ≤ (2 ^ 64 - 1) * m :=
-      Nat.mul_le_mul (by omega) (by omega)
-    refine WP.mono (redSX_ok (n := 6) (i := 0) rfl hm6 (by rw [e₁]; omega)) fun s₂ ⟨⟨u, hu, eu⟩, k₂⟩ => ?_
+      Nat.mul_le_mul (by omega_arith) (by omega_arith)
+    refine WP.mono (redSX_ok (n := 6) (i := 0) rfl hm6 (by rw [e₁]; omega_arith)) fun s₂ ⟨⟨u, hu, eu⟩, k₂⟩ => ?_
     have hs₂ := hs₁.of_keeps k₂ (by decide)
     have hmem : s₂.mem = s.mem := by rw [k₂.2.1, k₁.2.1]
-    have hum : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega) (Nat.le_refl _)
+    have hum : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega_arith) (Nat.le_refl _)
     have h1 : wordsVal s.mem base a 1 = (word s.mem base a).toNat := by simp [wordsVal]
     have hT1 : regsVal s₂ (wins 6 1) < 2 * m := by
       refine Nat.lt_of_mul_lt_mul_left (a := 2 ^ 64) ?_
-      rw [eu, e₁]; omega
+      rw [eu, e₁]; omega_arith
     have hU1 : 2 ^ 64 * regsVal s₂ (wins 6 1) =
         wordsVal s₂.mem base a 1 * wordsVal s₂.mem base b 6 + u * m := by
       rw [hmem, h1, ← e₁]; exact eu
     rw [← h6] at hT1 hU1
-    refine WP.mono (rounds1_ok (M := M) hM.n7 ha hb hM.mo hM.inv hM.red 5 (by omega) hs₂
+    refine WP.mono (rounds1_ok (M := M) hM.n7 ha hb hM.mo hM.inv hM.red 5 (by omega_arith) hs₂
       (fun h => by rw [hmem]; exact hM.val h) (by rw [hmem]; exact hB) ⟨u, hU1⟩ hT1)
       fun s₃ ⟨⟨U, eU⟩, hT, k₃⟩ => ?_
     rw [hmem] at eU

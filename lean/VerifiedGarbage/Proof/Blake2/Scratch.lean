@@ -28,16 +28,16 @@ theorem repr_congr' {w : Nat} (hw : 8 ≤ w) {P : Params w} {h0 : HashValue w} {
     {p : Addr} {d : List Byte}
     (h : ∀ i < bufOff w + blockBytes w, mem' (p + BitVec.ofNat 64 i) = mem (p + BitVec.ofNat 64 i))
     (hr : Repr P h0 mem p d) : Repr P h0 mem' p d := by
-  refine ⟨by rw [stateAt_congr fun i hi => h i (by omega)]; exact hr.1, ?_⟩
+  refine ⟨by rw [stateAt_congr fun i hi => h i (by omega_arith)]; exact hr.1, ?_⟩
   rw [← hr.2]
   apply bytesAt_congr
   intro i hi
   have hb : d.length - blockBytes w * compressed w d ≤ blockBytes w := by
     simp only [compressed]
     have := Nat.div_add_mod (d.length - 1) (blockBytes w)
-    have := Nat.mod_lt (d.length - 1) (show 0 < blockBytes w by simp only [blockBytes]; omega)
-    omega
-  have := h (bufOff w + i) (by omega)
+    have := Nat.mod_lt (d.length - 1) (show 0 < blockBytes w by simp only [blockBytes]; omega_arith)
+    omega_arith
+  have := h (bufOff w + i) (by omega_arith)
   rwa [BitVec.add_assoc, ← BitVec.ofNat_add]
 
 theorem updateBPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (updateBSig.words pb).length →
@@ -48,18 +48,18 @@ theorem updateBPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (updat
     simp only [updateBSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 192, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
     have hd : ∀ i < (ln.setWidth pb).toNat, m₂ (dt + BitVec.ofNat 64 i) = m₁ (dt + BitVec.ofNat 64 i) :=
       fun i hi => by
         have := Nat.mod_le ln.toNat (2 ^ pb)
         have := ln.isLt
         rw [BitVec.toNat_setWidth] at hi
-        exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+        exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
     intro h0 d hr hc hl
     rw [show bytesAt m₂ (ArgWord.addr.ofRaw dt) ((ArgWord.int pb).ofRaw ln).toNat =
       bytesAt m₁ dt (ln.setWidth pb).toNat from bytesAt_congr hd]
     exact h h0 d (repr_congr' (by decide)
-      (fun i hi => (hs i (by simp only [bufOff, blockBytes] at hi; omega)).symm) hr) hc hl
+      (fun i hi => (hs i (by simp only [bufOff, blockBytes] at hi; omega_arith)).symm) hr) hc hl
 
 theorem finalizeBPost_local (pb : Nat) :
     ∀ vs m₁ m₂ m' r, vs.length = (finalizeBSig.words pb).length →
@@ -70,10 +70,10 @@ theorem finalizeBPost_local (pb : Nat) :
     simp only [finalizeBSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 192, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
     intro h0 d hr hl hc
     exact h h0 d (repr_congr' (by decide)
-      (fun i hi => (hs i (by simp only [bufOff, blockBytes] at hi; omega)).symm) hr) hl hc
+      (fun i hi => (hs i (by simp only [bufOff, blockBytes] at hi; omega_arith)).symm) hr) hl hc
 
 theorem updateSPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (updateSSig.words pb).length →
     (∀ b ∈ Sig.bufs updateSSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -83,18 +83,18 @@ theorem updateSPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (updat
     simp only [updateSSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
     have hd : ∀ i < (ln.setWidth pb).toNat, m₂ (dt + BitVec.ofNat 64 i) = m₁ (dt + BitVec.ofNat 64 i) :=
       fun i hi => by
         have := Nat.mod_le ln.toNat (2 ^ pb)
         have := ln.isLt
         rw [BitVec.toNat_setWidth] at hi
-        exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+        exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
     intro h0 d hr hc hl
     rw [show bytesAt m₂ (ArgWord.addr.ofRaw dt) ((ArgWord.int pb).ofRaw ln).toNat =
       bytesAt m₁ dt (ln.setWidth pb).toNat from bytesAt_congr hd]
     exact h h0 d (repr_congr' (by decide)
-      (fun i hi => (hs i (by simp only [bufOff, blockBytes] at hi; omega)).symm) hr) hc hl
+      (fun i hi => (hs i (by simp only [bufOff, blockBytes] at hi; omega_arith)).symm) hr) hc hl
 
 theorem finalizeSPost_local (pb : Nat) :
     ∀ vs m₁ m₂ m' r, vs.length = (finalizeSSig.words pb).length →
@@ -105,9 +105,9 @@ theorem finalizeSPost_local (pb : Nat) :
     simp only [finalizeSSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
     intro h0 d hr hl hc
     exact h h0 d (repr_congr' (by decide)
-      (fun i hi => (hs i (by simp only [bufOff, blockBytes] at hi; omega)).symm) hr) hl hc
+      (fun i hi => (hs i (by simp only [bufOff, blockBytes] at hi; omega_arith)).symm) hr) hl hc
 
 end VG.Proof.Blake2

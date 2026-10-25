@@ -89,8 +89,8 @@ theorem fitB {P : EP} {σ : State} (hi : In h.D P σ) (hf : fits h P) :
   have := h.D_le
   have := h.N_le
   have := h.D_pos
-  have : lo P ≤ 1 := by unfold lo; split <;> omega
-  refine ⟨this, ?_, ?_, hi.k1024, by omega, h.D_pos, hi.k64⟩ <;> unfold dbN <;> omega
+  have : lo P ≤ 1 := by unfold lo; split <;> omega_arith
+  refine ⟨this, ?_, ?_, hi.k1024, by omega_arith, h.D_pos, hi.k64⟩ <;> unfold dbN <;> omega_arith
 
 /-- `acc`, to its slot. -/
 theorem acc_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
@@ -119,7 +119,7 @@ theorem acc_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
         t.gpr .r5 = cW ((n0 P).setWidth 32) ∧ t.gpr .r12 = P.B := by
       prun [accSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, a1, ra1, va1, arg_lt, hb.1, hb.2.1,
         movw_val (show oEm < 2 ^ 16 by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat,
-        add_ofNat_sub_one (x := P.scr) (a := oEm + P.K) (by omega)]
+        add_ofNat_sub_one (x := P.scr) (a := oEm + P.K) (by omega_arith)]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, t0, t7, t4, t6, t5, t12⟩ =>
       ⟨⟨hc.regs rd wr sp m, hi, hf', m ▸ hb, m ▸ he⟩, t0, t7, t4, t6, t5, t12⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -131,16 +131,16 @@ theorem acc_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     · rw [h₁.2.2.1, h₂.2.2.1]
     · rw [h₁.2.2.2.2.2.2, h₂.2.2.2.2.2.2]
   · have aK : State.addr (P.scr + BitVec.ofNat 32 (oEm + P.K - 1)) = sa P.scr (oEm + (P.K - 1)) := by
-      rw [hg.addr (by omega)]; congr 2; omega
-    have a0 : State.addr (P.scr + BitVec.ofNat 32 oEm) = sa P.scr (oEm + 0) := hg.addr (by omega)
-    have al : State.addr (P.scr + BitVec.ofNat 32 (oEm + lo P)) = sa P.scr (oEm + lo P) := hg.addr (by omega)
-    have rK : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + (P.K - 1))) 1 := hg.rd hc.st (by omega)
-    have r0' : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + 0)) 1 := hg.rd hc.st (by omega)
-    have rl : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + lo P)) 1 := hg.rd hc.st (by omega)
+      rw [hg.addr (by omega_arith)]; congr 2; omega_arith
+    have a0 : State.addr (P.scr + BitVec.ofNat 32 oEm) = sa P.scr (oEm + 0) := hg.addr (by omega_arith)
+    have al : State.addr (P.scr + BitVec.ofNat 32 (oEm + lo P)) = sa P.scr (oEm + lo P) := hg.addr (by omega_arith)
+    have rK : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + (P.K - 1))) 1 := hg.rd hc.st (by omega_arith)
+    have r0' : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + 0)) 1 := hg.rd hc.st (by omega_arith)
+    have rl : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + lo P)) 1 := hg.rd hc.st (by omega_arith)
     have hw : WP isa (.block acc0) s fun t => t.mem = s.mem.writeW ((P.lay h.D).fr sAcc) (accW P τ) ∧
         t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-      prun [acc0, mw, st, r0, r7, r4, r6, r5, r12, aK, a0, al, rK, r0', rl, he _ (show P.K - 1 < P.K by omega),
-        he 0 (by omega), he (lo P) (by omega), slotAt hi (d := sAcc) (by decide),
+      prun [acc0, mw, st, r0, r7, r4, r6, r5, r12, aK, a0, al, rK, r0', rl, he _ (show P.K - 1 < P.K by omega_arith),
+        he 0 (by omega_arith), he (lo P) (by omega_arith), slotAt hi (d := sAcc) (by decide),
         hc.st.inFr (d := sAcc) (n := 4) (by show sAcc + 4 ≤ frameBytes; decide), dpVal]
     refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
     have fr : Frame [slotR (P.lay h.D) sAcc] s.mem t.mem := by rw [m]; exact slot_frame _ _ _ _
@@ -157,7 +157,7 @@ theorem acc_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     · rw [← he i hi']
       exact fr _ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (hg.slot ok (o := oEm + i) (n := 1) (d := sAcc) (k := 4) (by omega) (by rw [hg.F]; decide)).symm _
+        exact (hg.slot ok (o := oEm + i) (n := 1) (d := sAcc) (k := 4) (by omega_arith) (by rw [hg.F]; decide)).symm _
           (Region.contains_self _ _)
 
 /-- `H`, as the call leaves it. -/
@@ -194,18 +194,18 @@ theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   have fit := hg.fit
   have hB := h.B_le
   have mp : MP h (P.lay h.D) P.scr (lo P) (dbN h P) (seedV h P) (Ka h P) := by
-    refine ⟨hg, by omega, by omega, fun τ => by simp, fun τ m m' ⟨hi, hf', hb, ha⟩ hf'' => ⟨hi, hf', ?_⟩,
+    refine ⟨hg, by omega_arith, by omega_arith, fun τ => by simp, fun τ m m' ⟨hi, hf', hb, ha⟩ hf'' => ⟨hi, hf', ?_⟩,
       fun τ m hk => hk.2.2.1.2.1, fun τ m hk => hk.2.2.1.2.2.1⟩
     have away : ∀ r ∈ mgfW h (P.lay h.D) P.scr (lo P) (dbN h P), Away3 (P.lay h.D) r ∧
         (slotR (P.lay h.D) sAny).Disjoint r ∧ (slotR (P.lay h.D) sAcc).Disjoint r := by
       intro r hr
       rcases List.mem_append.mp hr with hr | hr
-      · exact ⟨away3_ctW h hg (by omega) r hr, ctW_slot h hg (by omega) (by decide) (by decide) r hr,
-          ctW_slot h hg (by omega) (by decide) (by decide) r hr⟩
+      · exact ⟨away3_ctW h hg (by omega_arith) r hr, ctW_slot h hg (by omega_arith) (by decide) (by decide) r hr,
+          ctW_slot h hg (by omega_arith) (by decide) (by decide) r hr⟩
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl
-        · exact ⟨away3_scr hg (by omega), hg.slot ok (by omega) (by rw [hg.F]; decide),
-            hg.slot ok (by omega) (by rw [hg.F]; decide)⟩
+        · exact ⟨away3_scr hg (by omega_arith), hg.slot ok (by omega_arith) (by rw [hg.F]; decide),
+            hg.slot ok (by omega_arith) (by rw [hg.F]; decide)⟩
         all_goals exact ⟨away3_slot (by decide) (by decide), slotSep (by decide) (by decide) (by decide),
           slotSep (by decide) (by decide) (by decide)⟩
     refine ⟨⟨slot_keep hf'' (fun r hr => (away r hr).1.1) hb.1, slot_keep hf'' (fun r hr => (away r hr).1.2.1) hb.2.1,
@@ -216,8 +216,8 @@ theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
         ∀ i < h.D, s.mem (sa P.scr (oEm + lo P + dbN h P + i)) = (seedV h P τ).getD i 0) ∧
       s.gpr .r0 = P.scr + BitVec.ofNat 32 (oEm + lo P) ∧ s.gpr .r1 = cW ((n0 P).setWidth 32))
     ((mgf_vp h mp (dbv := fun τ i => emv P τ (lo P + i))).mono (fun τ s ⟨hc, hk, he⟩ => ⟨hc, hk,
-      fun i hi => by rw [Nat.add_assoc]; exact he _ (by omega),
-      fun i hi => by rw [Nat.add_assoc, Nat.add_assoc, he _ (by omega)]; simp [hi, Nat.add_assoc]⟩)
+      fun i hi => by rw [Nat.add_assoc]; exact he _ (by omega_arith),
+      fun i hi => by rw [Nat.add_assoc, Nat.add_assoc, he _ (by omega_arith)]; simp [hi, Nat.add_assoc]⟩)
       (fun _ _ h => h) |>.seq
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hd, hh⟩ => ?_))
     (VP.taint _ Sg.topAnd_cert (fun _ _ _ _ h₁ h₂ r hr => ?_) fun τ s ⟨⟨hc, hk, hd, hh⟩, r0, r1⟩ => ?_)
@@ -227,9 +227,9 @@ theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
         hk.2.2.1.2.1, movw_val (show oEm < 2 ^ 16 by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk, m ▸ hd, m ▸ hh⟩, r0, r1⟩
   · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]
-  · have ad : State.addr (P.scr + BitVec.ofNat 32 (oEm + lo P)) = sa P.scr (oEm + lo P) := hg.addr (by omega)
-    have rd : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + lo P)) 1 := hg.rd hc.st (by omega)
-    have wd : InRegions s.wr (sa P.scr (oEm + lo P)) 1 := hg.wr hc.st (by omega)
+  · have ad : State.addr (P.scr + BitVec.ofNat 32 (oEm + lo P)) = sa P.scr (oEm + lo P) := hg.addr (by omega_arith)
+    have rd : InRegions (s.rd ++ s.wr) (sa P.scr (oEm + lo P)) 1 := hg.rd hc.st (by omega_arith)
+    have wd : InRegions s.wr (sa P.scr (oEm + lo P)) 1 := hg.wr hc.st (by omega_arith)
     have hw : WP isa (.block topAnd) s fun t =>
         t.mem = s.mem.writeW (sa P.scr (oEm + lo P))
           (s.mem (sa P.scr (oEm + lo P)) &&& (cW ((n0 P).setWidth 32)).setWidth 8) ∧
@@ -237,26 +237,26 @@ theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       prun [topAnd, r0, r1, ad, rd, wd, dpVal, andByte]
     refine WP.mono hw fun t ⟨m, rd', wr', sp'⟩ => ?_
     have fr : Frame [sR P.scr (oEm + lo P) 1] s.mem t.mem := by
-      rw [m]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega) (by omega)
+      rw [m]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega_arith) (by omega_arith)
     have kk : ∀ d, d + 4 ≤ frameBytes → t.mem.readW ((P.lay h.D).fr d) 32 = s.mem.readW ((P.lay h.D).fr d) 32 :=
       fun d hd => by
         rw [slot_keep (v := s.mem.readW ((P.lay h.D).fr d) 32) fr (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by omega)
-            (by rw [hg.F]; unfold frameBytes at hd ⊢; omega)) rfl]
+          simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by omega_arith)
+            (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_arith)) rfl]
     have hb' : Bm h P t.mem := ⟨by rw [kk _ (by decide)]; exact hk.2.2.1.1, by rw [kk _ (by decide)]; exact hk.2.2.1.2.1,
       by rw [kk _ (by decide)]; exact hk.2.2.1.2.2.1, by rw [kk _ (by decide)]; exact hk.2.2.1.2.2.2⟩
     have ha' : t.mem.readW ((P.lay h.D).fr sAcc) 32 = accW P τ := by rw [kk _ (by decide)]; exact hk.2.2.2
     refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd' wr' sp', ⟨hk.1, hk.2.1, hb', ha'⟩,
       fun i hi => ?_, fun i hi => ?_⟩
-    · simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega)
-    · simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by omega) (by rw [hg.F]; decide)
-    · rw [m, sa_write P.scr _ _ (by omega) (by omega)]
+    · simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega_arith)
+    · simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by omega_arith) (by rw [hg.F]; decide)
+    · rw [m, sa_write P.scr _ _ (by omega_arith) (by omega_arith)]
       unfold dbF
       by_cases e : i = 0
       · subst e
-        rw [ite_eq_left (by omega), ite_eq_left rfl, show oEm + lo P = oEm + lo P + 0 from rfl, hd 0 (by omega),
+        rw [ite_eq_left (by omega_arith), ite_eq_left rfl, show oEm + lo P = oEm + lo P + 0 from rfl, hd 0 (by omega_arith),
           Nat.add_zero]
-      · rw [ite_eq_right (by omega), ite_eq_right e, hd i hi]
-    · rw [m, sa_write P.scr _ _ (by omega) (by omega), ite_eq_right (by omega), hh i hi]
+      · rw [ite_eq_right (by omega_arith), ite_eq_right e, hd i hi]
+    · rw [m, sa_write P.scr _ _ (by omega_arith) (by omega_arith), ite_eq_right (by omega_arith), hh i hi]
 
 end VG.Proof.RsaPss.Arm.Vf

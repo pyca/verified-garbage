@@ -37,8 +37,8 @@ variable {P : RP}
 theorem gcdSet_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E : State → Prop} (F : FinishInputs P := legacyFinish P) :
     VP (Fy (F := F) P E) gcdSet (Sk P E (AG (F := F) P) LG (fun _ _ => 0) [] (fun σ => upd (fun _ => 0) sMask (b2n (okF (F := F) P σ))) [sMask]
       P.w nArr) := by
-  have hn0 : 0 < P.n := by omega
-  have w1 : 1 < 2 ^ (32 * P.w) := Nat.one_lt_two_pow (by simp only [RP.w]; omega)
+  have hn0 : 0 < P.n := by omega_arith
+  have w1 : 1 < 2 ^ (32 * P.w) := Nat.one_lt_two_pow (by simp only [RP.w]; omega_arith)
   simp only [gcdSet, seqs]
   refine VP.seq ((Sk.psub3 ym1_taint (o := 0) (a := mY) (b := aOne) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) fun σ _ => ⟨?_, ?_⟩).mono (fun _ _ h => h) fun _ _ h => h.1) ?_
@@ -58,7 +58,7 @@ theorem gcdSet_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E 
   · exact Nat.lt_of_le_of_lt (Nat.le_of_eq (by simp [upd, aZero, aZ, aM, aOne])) (Nat.two_pow_pos _)
   · exact Nat.lt_of_le_of_lt (Nat.le_of_eq (by simp [upd, aZero, aZ, aM, aN, aOne, AY, mY])) nl
   · intro x hx
-    refine ⟨by simp only [LG, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; omega, ?_⟩
+    refine ⟨by simp only [LG, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; omega_arith, ?_⟩
     simp only [LG, List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp [AG, AY, upd, aNM, aZero, aM, aZ, aOne, aN, mY, sub32]
@@ -83,7 +83,7 @@ theorem inverse_vp (hn : P.n % 2 = 1 ∧ 1 < P.n) (nl : P.n < 2 ^ (32 * P.w)) {E
   have v1 : num s.mem P.B P.w 1 = P.n := by rw [g 1 (by simp)]; simp [AG, upd, aZero, aNM, aM]
   have v2 : num s.mem P.B P.w 2 = 1 := by rw [g 2 (by simp)]; simp [AG, upd, aZero, aNM]
   have v3 : num s.mem P.B P.w 3 = 0 := by rw [g 3 (by simp)]; simp [AG, upd, aZero, aNM]
-  have hp := (f (by rw [vNM, vM]; unfold sub32; rw [Nat.zero_add, Nat.mod_eq_of_lt (by omega)]; omega) vZ
+  have hp := (f (by rw [vNM, vM]; unfold sub32; rw [Nat.zero_add, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith) vZ
     (by rw [vM]; exact hn.1) (by rw [vM]; exact hn.2) (by simp only [bank, v0, v1, v2, v3, vM])).1
   rw [v0, vM] at hp
   have fitI : ∀ j ∈ invArrs, arr P.w j + S P.w ≤ P.Z := fun j hj => by

@@ -44,7 +44,7 @@ theorem addNormAt_pre {s s1 : State} {y cs : Ptr} {B : Nat}
       (s1.callEntry.withRegions [polyRegion (pa s cs)] [polyRegion (pa s y)]) := by
   sig_pre [addNormContract,addNormSig,abi,argRegs]
   simp only [Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.mem h1,Arg.val]
-  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega
+  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega_arith
   rw [hB]
   exact ⟨trivial,trivial,h.apart,h.yFit,h.csFit,h.canonical,h.raw,h.boundPos,h.boundMax⟩
 
@@ -68,7 +68,7 @@ theorem addNormAt_ok {S : Nat} (hS : S<2^64) {nm : String} {s : State} {y cs : P
     (fun s1 h1 _=>addNormAt_pre h h1) h.readable h.writable) fun t ⟨hP,s1,h1,hq⟩ => ?_
   sig_post [addNormContract,addNormSig,abi,argRegs] at hq
   rw [Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.mem h1] at hq
-  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega
+  have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega_arith
   simpa only [Arg.val,hB] using And.intro hP hq
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response

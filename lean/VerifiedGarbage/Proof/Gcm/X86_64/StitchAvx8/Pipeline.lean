@@ -40,12 +40,12 @@ theorem advanceCounter_ok (m : Mem) (p : Addr) (n : Nat) :
   apply VG.Proof.Aes.X86_64.ctr_after
   intro k hk
   simp only [advanceCounter, VG.Proof.Aes.X86_64.writeW_apply,
-    VG.Proof.Aes.X86_64.off_toNat p (i := k) (j := 12) (by omega) (by omega)]
+    VG.Proof.Aes.X86_64.off_toNat p (i := k) (j := 12) (by omega_arith) (by omega_arith)]
   by_cases h : k < 12
-  · simp only [ite_eq_right (show ¬ 12 ≤ k by omega),
-      ite_eq_right (show ¬ 2 ^ 64 + k - 12 < 32 / 8 by omega), ite_eq_left h]
-  · simp only [ite_eq_left (show 12 ≤ k by omega),
-      ite_eq_left (show k - 12 < 32 / 8 by omega), ite_eq_right h, BitVec.setWidth_eq]
+  · simp only [ite_eq_right (show ¬ 12 ≤ k by omega_arith),
+      ite_eq_right (show ¬ 2 ^ 64 + k - 12 < 32 / 8 by omega_arith), ite_eq_left h]
+  · simp only [ite_eq_left (show 12 ≤ k by omega_arith),
+      ite_eq_left (show k - 12 < 32 / 8 by omega_arith), ite_eq_right h, BitVec.setWidth_eq]
     rw [BitVec.setWidth_ofNat_of_le (by decide)]
 
 /-- Copying all sixteen bytes keeps the counter's big-endian value. -/
@@ -119,7 +119,7 @@ theorem Templates.frame {s₀ : State} {c n : Nat} {m m' : Mem} {rs : List Regio
   intro i hi
   exact (VG.Proof.Aes.X86_64.AesNi.blockAt_frame hf (fun r hr =>
     (hd r hr).sub_left (Offset.sub (pp s₀) (d := 640 + 16 * i) (e := 640)
-      (n := 16) (k := 128) (by omega) (by omega)))).trans (h i hi)
+      (n := 16) (k := 128) (by omega_arith) (by omega_arith)))).trans (h i hi)
 
 theorem Templates.next {s₀ : State} {c : Nat} {m : Mem} (h : Templates s₀ c 8 m) :
     Templates s₀ (c + 8) 0 m := by
@@ -127,14 +127,14 @@ theorem Templates.next {s₀ : State} {c : Nat} {m : Mem} (h : Templates s₀ c 
   have ht := h i hi
   simp only [hi, ite_true] at ht
   simp only [Nat.not_lt_zero, ite_false, Nat.add_zero]
-  rw [show c + 8 + i = c + i + 8 by omega]
+  rw [show c + 8 + i = c + i + 8 by omega_arith]
   exact ht
 
 theorem templateWord (s₀ : State) (i : Nat) :
     templateAddr s₀ i + BitVec.ofNat 64 12 = pp s₀ + BitVec.ofNat 64 (652 + 16 * i) := by
   rw [templateAddr, Offset.add_add]
   congr 2
-  omega
+  omega_arith
 
 theorem prepTemplate_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPre s₀ lo)
     (hE : Env s₀ P s) (c n : Nat) (hn : n < 8) (hT : Templates s₀ c n s.mem)
@@ -143,11 +143,11 @@ theorem prepTemplate_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SP
       Env s₀ P t ∧ Templates s₀ c (n + 1) t.mem ∧ BufferFrame s t ∧
       Frame [⟨pp s₀ + BitVec.ofNat 64 (652 + 16 * n), 4⟩] s.mem t.mem := by
   refine WP.mono (prepCounter_ok s n (by
-    rw [hE.wr, hE.r11]; exact in_sub hp.p_in (by omega))) fun t ⟨hm, hf⟩ => ?_
+    rw [hE.wr, hE.r11]; exact in_sub hp.p_in (by omega_arith))) fun t ⟨hm, hf⟩ => ?_
   rw [hE.r11, hv, BitVec.add_assoc, ← BitVec.ofNat_add] at hm
   have hm' : t.mem = s.mem.writeW (templateAddr s₀ n + BitVec.ofNat 64 12)
       (bswap32 ((cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + n + 8))) := by
-    rw [templateWord, show c + n + 8 = c + 8 + n by omega]
+    rw [templateWord, show c + n + 8 = c + 8 + n by omega_arith]
     exact hm
   have hF : Frame [⟨pp s₀ + BitVec.ofNat 64 (652 + 16 * n), 4⟩] s.mem t.mem := by
     rw [hm]
@@ -156,7 +156,7 @@ theorem prepTemplate_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SP
   have hW : Frame [workR s₀] s.mem t.mem := hF.sub fun r hr => by
     simp only [List.mem_singleton] at hr
     subst r
-    exact ⟨workR s₀, List.mem_singleton_self _, Offset.sub (pp s₀) (d := 652 + 16 * n) (e := 512) (n := 4) (k := 256) (by omega) (by omega)⟩
+    exact ⟨workR s₀, List.mem_singleton_self _, Offset.sub (pp s₀) (d := 652 + 16 * n) (e := 512) (n := 4) (k := 256) (by omega_arith) (by omega_arith)⟩
   refine ⟨hE.buffer hf hW, ?_, hf, hF⟩
   intro i hi
   by_cases he : i = n
@@ -166,11 +166,11 @@ theorem prepTemplate_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SP
     simpa only [Templates, Nat.lt_add_one, Nat.le_refl, ite_true] using
       (hm' ▸ refreshCounter_ok s.mem (templateAddr s₀ n) (cb s₀) (c + n) 8 ht)
   · have hk : (if i < n + 1 then 8 else 0) = (if i < n then 8 else 0) := by
-      split_ifs <;> omega
+      split_ifs <;> omega_arith
     rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hF (fun r hr => by
       simp only [List.mem_singleton] at hr
       subst r
-      exact Offset.disjoint (pp s₀) (by omega) (by omega) (by omega)), hk]
+      exact Offset.disjoint (pp s₀) (by omega_arith) (by omega_arith) (by omega_arith)), hk]
     exact hT i hi
 
 /-- Prepare a consecutive portion of the next batch. The AES rounds use
@@ -186,9 +186,9 @@ theorem prepTemplates_ok {s₀ : State} {lo : Nat} {P : Nat → Block} (hp : SPr
   | zero => exact WP.block_nil ⟨hE, hT, BufferFrame.refl _, Frame.refl _ _⟩
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨hEt, hTt, hf, hm⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨hEt, hTt, hf, hm⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    refine WP.mono (prepTemplate_ok hp hEt c (n + k) (by omega) hTt (by
+    refine WP.mono (prepTemplate_ok hp hEt c (n + k) (by omega_arith) hTt (by
       rw [hf.gpr .r8 (by decide)]; exact hv)) fun u ⟨hEu, hTu, hf', hm'⟩ => ?_
     refine ⟨hEu, ?_, hf.trans hf', hm.trans (hm'.sub fun r hr => ?_)⟩
     · simpa only [Nat.add_assoc] using hTu
@@ -196,7 +196,7 @@ theorem prepTemplates_ok {s₀ : State} {lo : Nat} {P : Nat → Block} (hp : SPr
       subst r
       exact ⟨counterR s₀, List.mem_singleton_self _,
         Offset.sub (pp s₀) (d := 652 + 16 * (n + k)) (e := 640) (n := 4) (k := 128)
-          (by omega) (by omega)⟩
+          (by omega_arith) (by omega_arith)⟩
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -243,14 +243,14 @@ theorem hashStep_ok {s₀ s : State} {P X : Nat → Block} {y : Block}
   have hk : (n + 1) % 8 < 8 := Nat.mod_lt _ (by decide)
   have hpow : power s ((n + 1) % 8) = P ((n + 1) % 8) := by
     simp only [power, ea_at, ofInt_natCast, hE.r11, Nat.mod_mod]
-    rw [show 16 * (8 + (n + 1) % 8) = 128 + 16 * ((n + 1) % 8) by omega]
+    rw [show 16 * (8 + (n + 1) % 8) = 128 + 16 * ((n + 1) % 8) by omega_arith]
     exact hE.powers _ hk
   have hin : input s 0 ((n + 1) % 8) = hashInput X y ((n + 1) % 8) := by
     rw [input, dataIn_eq hE, Nat.mod_mod, Nat.zero_add, hX, hy]
     rfl
   refine WP.mono (gh8_ok s 0 ((n + 1) % 8) (by
     simp only [ea_at, ofInt_natCast, hE.rd, hE.wr, hE.r11, Nat.mod_mod]
-    exact in_rdwr (in_sub hp.p_in (by omega))) (by
+    exact in_rdwr (in_sub hp.p_in (by omega_arith))) (by
     simpa only [ea_at, ofInt_natCast, Nat.mod_mod, Nat.zero_add] using hR) (by
     simp only [ea_at, ofInt_natCast, hE.rd, hE.wr, hE.r11]
     exact in_rdwr (in_sub hp.p_in (off := 768) (by decide)))) fun t ⟨hv, hf⟩ => ?_
@@ -259,7 +259,7 @@ theorem hashStep_ok {s₀ s : State} {P X : Nat → Block} {y : Block}
   by_cases hz : n = 0
   · subst n
     simp only [Nat.zero_add, Nat.reduceMod, ite_true, accN, List.range_zero, List.foldl_nil]
-  · rw [ite_eq_right (by omega : (n + 1) % 8 ≠ 1), ha hz]
+  · rw [ite_eq_right (by omega_arith : (n + 1) % 8 ≠ 1), ha hz]
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -386,12 +386,12 @@ theorem data_read {s₀ : State} {m m' : Mem} (hp : SPre s₀)
     m'.readW (pp s₀ + BitVec.ofNat 64 d) (8 * n) =
       m.readW (pp s₀ + BitVec.ofNat 64 d) (8 * n) := by
   apply h.readW (r := pR s₀)
-  · exact Offset.contains_base _ (by omega) (by omega)
+  · exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   · intro r hr
     simp only [List.mem_singleton] at hr
     subst r
     exact hp.d_p.symm
-  · omega
+  · omega_arith
 
 theorem Env.writeData {s₀ s t : State} {P : Nat → Block} (hp : SPre s₀)
     (h : Env s₀ P s) (hg : t.gpr = s.gpr) (hr : t.rd = s.rd) (hw : t.wr = s.wr)
@@ -405,7 +405,7 @@ theorem Env.writeData {s₀ s t : State} {P : Nat → Block} (hp : SPre s₀)
   · intro r h1 h2 h3 h4 h5 h6; rw [hg]; exact h.other r h1 h2 h3 h4 h5 h6
   · exact h.frame.trans (hm.mono (by simp))
   · intro k hk
-    exact (data_read hp hm (128 + 16 * k) 16 (by omega)).trans (h.powers k hk)
+    exact (data_read hp hm (128 + 16 * k) 16 (by omega_arith)).trans (h.powers k hk)
   · exact (data_read hp hm 768 16 (by decide)).trans h.mask
   · exact (data_read hp hm 784 16 (by decide)).trans h.poly
   · exact (data_read hp hm 800 8 (by decide)).trans h.rounds

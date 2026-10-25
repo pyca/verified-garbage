@@ -88,7 +88,7 @@ theorem blockAtMem_ofs_ck {W : Addr} {m m' : Mem}
     blockAtMem m' (W + BitVec.ofNat 64 ofsO) = blockAtMem m (W + BitVec.ofNat 64 ofsO) :=
   blockAtMem_frame h fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint W (d := 16) (n := 16) (e := 32) (k := 16) (.inl (by decide)) (by omega) (by omega)
+    exact Offset.disjoint W (d := 16) (n := 16) (e := 32) (k := 16) (.inl (by decide)) (by omega_arith) (by omega_arith)
 
 /-- `seal`'s first pass: the checksum of the block, then the block XORed with the offset. -/
 theorem sealPre_ok {W : Addr} :
@@ -152,7 +152,7 @@ theorem pass_step_with {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {m :
     WP isa (.seq (.seq offset (.block (xor16 .x19 lO ofsO))) (.block (body ++ nextBlock))) t fun t' =>
       PassInv K W D R n SP m O0 l X fB ckF t₀ t' (i + 1) := by
   have hDt : DBuf K W t D (16 * m) := hD.of_eq P.rd P.wr
-  have hBi := hDt.slice (a := 16 * i) (k := 16) (by omega)
+  have hBi := hDt.slice (a := 16 * i) (k := 16) (by omega_arith)
   have E := P.env
   refine WP.seq (WP.seq (WP.mono ho fun t₁ P₁ => ?_))
   have h19₁ : t₁.gpr .x19 = W := by rw [P₁.gpr _ (by decide), E.x19]
@@ -230,15 +230,15 @@ theorem pass_step_with {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {m :
   · exact P.frame.trans ((fW₂.mono (by simp)).trans (fr₃.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨⟨D, 16 * m⟩, by simp, Offset.sub_base D (by omega)⟩
+      · exact ⟨⟨D, 16 * m⟩, by simp, Offset.sub_base D (by omega_arith)⟩
       · exact ⟨⟨W + BitVec.ofNat 64 ckO, 16⟩, by simp, fun _ h => h⟩))
   · rw [rd₃, rd₂, P.rd]
   · rw [wr₃, wr₂, P.wr]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, x23₃, Offset.add_add]
-    rw [show 16 * i + 16 = 16 * (i + 1) by omega]
+    rw [show 16 * i + 16 = 16 * (i + 1) by omega_arith]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, x25₃, ← BitVec.ofNat_add]
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, x24₃]
-    rw [Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+    rw [Offset.ofNat_sub_ofNat (by omega_arith), Nat.sub_sub]
   · rw [blockAtMem_frame fr₃ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -248,11 +248,11 @@ theorem pass_step_with {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {m :
   · by_cases hki : k = i
     · subst hki
       rw [blk₃, Bi₂, ofs₂]; simp
-    · have hBk := hDt.slice (a := 16 * k) (k := 16) (by omega)
-      rw [kB₃ (Offset.disjoint D (by omega) (by omega) (by omega)) hBk.w, P.blk k hk]
+    · have hBk := hDt.slice (a := 16 * k) (k := 16) (by omega_arith)
+      rw [kB₃ (Offset.disjoint D (by omega_arith) (by omega_arith) (by omega_arith)) hBk.w, P.blk k hk]
       by_cases hk' : k < i
-      · simp [hk', show k < i + 1 by omega]
-      · simp [hk', show ¬ k < i + 1 by omega]
+      · simp [hk', show k < i + 1 by omega_arith]
+      · simp [hk', show ¬ k < i + 1 by omega_arith]
   · rw [blockAtMem_frame fr₃ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -279,12 +279,12 @@ theorem passScalar_ok {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {m : 
     (m - j) _ ⟨j, rfl, hj, P⟩
   rintro k u ⟨i, rfl, hi, P⟩
   refine WP.mono (pass_step_with L hB hckF hD hm hi P
-    (lNtz_ok P.env.x19 P.env.perm.w (by omega) (by omega) P.x25 P.l0)) fun u' P' => ?_
-  have ev := eval_nonzero P'.x24 (by omega)
+    (lNtz_ok P.env.x19 P.env.perm.w (by omega_arith) (by omega_arith) P.x25 P.l0)) fun u' P' => ?_
+  have ev := eval_nonzero P'.x24 (by omega_arith)
   by_cases he : m - (i + 1) = 0
   · left
-    exact ⟨ev.trans (by simp [he]), (show i + 1 = m by omega) ▸ P'⟩
+    exact ⟨ev.trans (by simp [he]), (show i + 1 = m by omega_arith) ▸ P'⟩
   · right
-    exact ⟨ev.trans (by simp [he]), m - (i + 1), by omega, i + 1, rfl, by omega, P'⟩
+    exact ⟨ev.trans (by simp [he]), m - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, P'⟩
 
 end VG.Proof.AesOcb.AArch64

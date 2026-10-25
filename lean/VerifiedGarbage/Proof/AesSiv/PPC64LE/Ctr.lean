@@ -78,7 +78,7 @@ theorem CntAt.frame {m m' : Mem} {W : Addr} {q : List Byte} {i : Nat} (h : CntAt
 theorem toNat_append_lo (hi lo : BitVec 64) : (hi ++ lo : BitVec 128).toNat % 2 ^ 64 = lo.toNat := by
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt lo.isLt, Nat.shiftLeft_eq]
   have := lo.isLt
-  omega
+  omega_arith
 
 /-- The bytes `q` at `W + 64`: the counter `q + 0`. -/
 theorem cnt_init {m : Mem} {W : Addr} {q : List Byte} (h : bytesAt m (W + BitVec.ofNat 64 cntO) 16 = q) :
@@ -109,9 +109,9 @@ theorem cnt_add {m : Mem} {W : Addr} {q : List Byte} {i k : Nat} {hi lo : BitVec
   refine ⟨hi, lo + BitVec.ofNat 64 k, ?_, Mem.readW_writeW_self64 _ _ _, ?_, ?_⟩
   · rw [Mem.readW_writeW_sep (Offset.sep W (d := cntO) (n := 8) (e := cntO + 8) (k := 8) (by decide) (by decide)
       (by decide)) (by decide), h0]
-  · rw [add_lo hi lo (by omega), happ, BitVec.add_assoc, BitVec.ofNat_add]
-  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega), hlo, Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [add_lo hi lo (by omega_arith), happ, BitVec.add_assoc, BitVec.ofNat_add]
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_arith), hlo, Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
 
 /-! ## Copies within `W` -/
 
@@ -133,21 +133,21 @@ theorem copy16_wp {c : Cx} {s : State} (E : Env c s) {a b : Nat} (ha : a + 16 �
       WP isa (.block is) s' Q) :
     WP isa (.block (copy16 a b ++ is)) s Q := by
   simp only [copy16, List.cons_append, List.nil_append]
-  refine wp_ld (a := c.W + BitVec.ofNat 64 a) (by decide) ⟨by omega, by omega⟩ (by rw [E.r14])
-    (E.perm.wR (by omega)) fun s₁ u₁ => ?_
-  refine wp_std (a := c.W + BitVec.ofNat 64 b) (by decide) ⟨by omega, by omega⟩
-    (by rw [u₁.other _ (by decide), E.r14]) (by rw [u₁.wr]; exact E.perm.wW (by omega)) fun s₂ u₂ => ?_
-  refine wp_ld (a := c.W + BitVec.ofNat 64 a + BitVec.ofNat 64 8) (by decide) ⟨by omega, by omega⟩
+  refine wp_ld (a := c.W + BitVec.ofNat 64 a) (by decide) ⟨by omega_arith, by omega_arith⟩ (by rw [E.r14])
+    (E.perm.wR (by omega_arith)) fun s₁ u₁ => ?_
+  refine wp_std (a := c.W + BitVec.ofNat 64 b) (by decide) ⟨by omega_arith, by omega_arith⟩
+    (by rw [u₁.other _ (by decide), E.r14]) (by rw [u₁.wr]; exact E.perm.wW (by omega_arith)) fun s₂ u₂ => ?_
+  refine wp_ld (a := c.W + BitVec.ofNat 64 a + BitVec.ofNat 64 8) (by decide) ⟨by omega_arith, by omega_arith⟩
     (by rw [u₂.gpr, u₁.other _ (by decide), E.r14, Offset.add_add])
-    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr, Offset.add_add]; exact E.perm.wR (by omega)) fun s₃ u₃ => ?_
-  refine wp_std (a := c.W + BitVec.ofNat 64 b + BitVec.ofNat 64 8) (by decide) ⟨by omega, by omega⟩
+    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr, Offset.add_add]; exact E.perm.wR (by omega_arith)) fun s₃ u₃ => ?_
+  refine wp_std (a := c.W + BitVec.ofNat 64 b + BitVec.ofNat 64 8) (by decide) ⟨by omega_arith, by omega_arith⟩
     (by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), E.r14, Offset.add_add])
-    (by rw [u₃.wr, u₂.wr, u₁.wr, Offset.add_add]; exact E.perm.wW (by omega)) fun s₄ u₄ => ?_
+    (by rw [u₃.wr, u₂.wr, u₁.wr, Offset.add_add]; exact E.perm.wW (by omega_arith)) fun s₄ u₄ => ?_
   refine k s₄ ((PK.ofUpd u₁).trans ((PK.ofMupd u₂).trans ((PK.ofUpd u₃).trans (PK.ofMupd u₄))))
     (fun r hr => by rw [u₄.gpr, u₃.other _ hr, u₂.gpr, u₁.other _ hr]) ?_
   have sep : Mem.Sep (c.W + BitVec.ofNat 64 a + BitVec.ofNat 64 8) (64 / 8) (c.W + BitVec.ofNat 64 b) (64 / 8) := by
     rw [Offset.add_add]
-    exact Offset.sep c.W (d := a + 8) (n := 8) (e := b) (k := 8) (by omega) (by omega) (by omega)
+    exact Offset.sep c.W (d := a + 8) (n := 8) (e := b) (k := 8) (by omega_arith) (by omega_arith) (by omega_arith)
   rw [u₄.mem, u₃.gpr, u₃.mem, u₂.mem, u₁.gpr, u₁.mem, Mem.readW_writeW_sep sep (by decide)]
 
 /-! ## The counter `Q` -/
@@ -162,13 +162,13 @@ theorem counter_wp {c : Cx} {s : State} (E : Env c s) {src : Nat} (hsrc : src + 
         Spec.Siv.counter (bytesAt s.mem (c.W + BitVec.ofNat 64 src) 16) → WP isa (.block is) s' Q) :
     WP isa (.block (counter src ++ is)) s Q := by
   simp only [counter, List.cons_append, List.nil_append]
-  refine wp_ld (a := c.W + BitVec.ofNat 64 src) (by decide) ⟨by simp only [cntO] at hsrc; omega, by omega⟩
-    (by rw [E.r14]) (E.perm.wR (by simp only [cntO] at hsrc; omega)) fun s₁ u₁ => ?_
+  refine wp_ld (a := c.W + BitVec.ofNat 64 src) (by decide) ⟨by simp only [cntO] at hsrc; omega_arith, by omega_arith⟩
+    (by rw [E.r14]) (E.perm.wR (by simp only [cntO] at hsrc; omega_arith)) fun s₁ u₁ => ?_
   refine wp_std (a := c.W + BitVec.ofNat 64 cntO) (by decide) ⟨by decide, by decide⟩
     (by rw [u₁.other _ (by decide), E.r14]) (by rw [u₁.wr]; exact E.perm.wW (by decide)) fun s₂ u₂ => ?_
-  refine wp_ld (a := c.W + BitVec.ofNat 64 (src + 8)) (by decide) ⟨by simp only [cntO] at hsrc; omega, by omega⟩
+  refine wp_ld (a := c.W + BitVec.ofNat 64 (src + 8)) (by decide) ⟨by simp only [cntO] at hsrc; omega_arith, by omega_arith⟩
     (by rw [u₂.gpr, u₁.other _ (by decide), E.r14])
-    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact E.perm.wR (by simp only [cntO] at hsrc; omega)) fun s₃ u₃ => ?_
+    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact E.perm.wR (by simp only [cntO] at hsrc; omega_arith)) fun s₃ u₃ => ?_
   refine wp_li (by decide) fun s₄ u₄ => wp_lsl (by decide) fun s₅ u₅ => wp_or fun s₆ u₆ => wp_or fun s₇ u₇ =>
     wp_xor fun s₈ u₈ => ?_
   refine wp_std (a := c.W + BitVec.ofNat 64 (cntO + 8)) (by decide) ⟨by decide, by decide⟩
@@ -184,7 +184,7 @@ theorem counter_wp {c : Cx} {s : State} (E : Env c s) {src : Nat} (hsrc : src + 
   have r9 : s₈.gpr .r9 = s.mem.readW (c.W + BitVec.ofNat 64 (src + 8)) 64 &&& qmask := by
     rw [u₈.gpr, r10₇, u₇.gpr, r10₆, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr,
       orr_eor, u₂.mem, u₁.mem, Mem.readW_writeW_sep (Offset.sep c.W (d := src + 8) (n := 8) (e := cntO) (k := 8)
-        (by simp only [cntO] at hsrc ⊢; omega) (by simp only [cntO] at hsrc ⊢; omega) (by decide)) (by decide)]
+        (by simp only [cntO] at hsrc ⊢; omega_arith) (by simp only [cntO] at hsrc ⊢; omega_arith) (by decide)) (by decide)]
   have m₉ : s₉.mem = (s.mem.writeW (c.W + BitVec.ofNat 64 cntO) (s.mem.readW (c.W + BitVec.ofNat 64 src) 64)).writeW
       (c.W + BitVec.ofNat 64 (cntO + 8)) (s.mem.readW (c.W + BitVec.ofNat 64 (src + 8)) 64 &&& qmask) := by
     rw [u₉.mem, r9, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem]
@@ -235,10 +235,10 @@ theorem count_eq {left : Nat} (hl : left < 2 ^ 64) :
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt hl, Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow,
     Nat.shiftLeft_eq, show (2 : Nat) ^ 64 = 2 ^ 31 * 2 ^ 33 from rfl, Nat.mul_mod_mul_right,
-    Nat.mul_div_cancel _ (by decide), Nat.mod_eq_of_lt (a := left / 2 ^ 4 % 2 ^ 31) (by omega)]
+    Nat.mul_div_cancel _ (by decide), Nat.mod_eq_of_lt (a := left / 2 ^ 4 % 2 ^ 31) (by omega_arith)]
 
 theorem wholeOf_le (left : Nat) : 16 * wholeOf left ≤ left := by
-  show 16 * (left / 16 % 2 ^ 31) ≤ left; omega
+  show 16 * (left / 16 % 2 ^ 31) ≤ left; omega_arith
 
 theorem wholeOf_lt (left : Nat) : wholeOf left < 2 ^ 31 := Nat.mod_lt _ (by decide)
 
@@ -295,7 +295,7 @@ theorem wholePre_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
     by rw [u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, m₃, u₂.mem, u₁.mem], ?_⟩
   have hd := L.d_w' (d := cbO) (k := 16) (by decide)
   have hs := L.d_w' (d := scrO) (k := 2048) (by decide)
-  exact cargs L E₉ (Proof.Gather.PPC64LE.covers_prefix E₉.perm.d hk) (by have := L.dw; omega)
+  exact cargs L E₉ (Proof.Gather.PPC64LE.covers_prefix E₉.perm.d hk) (by have := L.dw; omega_arith)
     ((L.c_d.sub_left (Lay.cSub (d := 272) (n := 240) (by decide))).sub_right (Region.sub_prefix hk))
     (hd.symm.sub_right (Region.sub_prefix hk)) (hs.sub_left (Region.sub_prefix hk))
     (by simp (disch := decide) only [u₉.other, u₈.other, u₇.other, u₆.other, u₅.gpr, u₄.other, g₃, u₂.other,
@@ -376,7 +376,7 @@ theorem ctrPart_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {C : 
     Spec.Siv.schedCiph m' (C + BitVec.ofNat 64 272) R = Spec.Siv.ctxCiph m C R := by
   unfold Spec.Siv.ctxCiph Spec.Siv.schedCiph
   rw [Proof.Cmac.bytesAt_frame hf (p := C + BitVec.ofNat 64 272)
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 272) (n := 16 * (R + 1)) (by omega))) (by omega)]
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 272) (n := 16 * (R + 1)) (by omega_arith))) (by omega_arith)]
   rfl
 
 /-- `ctrWhole`: the first `wholeOf L` blocks of the data by one call of
@@ -410,13 +410,13 @@ theorem ctrWhole_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {q : List Byt
   unfold wholePost
   refine wholeCount_wp .r9 r20₂ hn fun s₃ u₃ => ?_
   have E₃ := E₂.of_pk (PK.ofUpd u₃)
-  refine bump_wp E₃ (by rw [u₃.mem]; exact hc₂) (by omega) u₃.gpr fun s₄ pk₄ g₄ f₄ hc₄ => ?_
+  refine bump_wp E₃ (by rw [u₃.mem]; exact hc₂) (by omega_arith) u₃.gpr fun s₄ pk₄ g₄ f₄ hc₄ => ?_
   refine wp_lsl (by decide) fun s₅ u₅ => wp_add fun s₆ u₆ => wp_sub fun s₇ u₇ => WP.block_nil ?_
   have pk₇ : PK s s₇ := pk₁.trans (pk₂.trans ((PK.ofUpd u₃).trans (pk₄.trans ((PK.ofUpd u₅).trans
     ((PK.ofUpd u₆).trans (PK.ofUpd u₇))))))
   have m₇ : s₇.mem = s₄.mem := by rw [u₇.mem, u₆.mem, u₅.mem]
   have r9₅ : s₅.gpr .r9 = BitVec.ofNat 64 (16 * wholeOf c.n) := by
-    rw [u₅.gpr, g₄ _ (by decide) (by decide), u₃.gpr, ofNat_shl4 (by omega)]
+    rw [u₅.gpr, g₄ _ (by decide) (by decide), u₃.gpr, ofNat_shl4 (by omega_arith)]
   -- The data: the first `16 k` bytes are CTR's output, the rest as it was.
   have dC : ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 cbO, 16⟩ : Region)], (⟨c.C, 512⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.c0_w' (by decide) (by decide)
@@ -428,34 +428,34 @@ theorem ctrWhole_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {q : List Byt
     rw [Spec.Gcm.blockAt, m₁, copyMem_bytes, hc.bytes, Nat.add_zero, ofBytes_be128, ← beNat_eq]
   have hd₂ := ctr32_ctrPart (m := s₁.mem) (m' := s₂.mem) (K := c.C + BitVec.ofNat 64 272)
     (C := c.W + BitVec.ofNat 64 cbO) (D := c.D) (R := c.R) (q := q) (k := wholeOf c.n)
-    (fun i hi => by rw [hcb]; exact repeat_inc32 hq (k := wholeOf c.n) (by omega) i hi) h₂.out
+    (fun i hi => by rw [hcb]; exact repeat_inc32 hq (k := wholeOf c.n) (by omega_arith) i hi) h₂.out
   rw [ctrPart_frame f₁ dC hRb] at hd₂
   have pd₁ : bytesAt s₁.mem c.D (16 * wholeOf c.n) = bytesAt s.mem c.D (16 * wholeOf c.n) := by
-    have := Proof.Cmac.bytesAt_frame f₁ (dP (a := 0) (l := 16 * wholeOf c.n) (by omega)) (by omega)
+    have := Proof.Cmac.bytesAt_frame f₁ (dP (a := 0) (l := 16 * wholeOf c.n) (by omega_arith)) (by omega_arith)
     rwa [BitVec.add_zero] at this
   rw [pd₁] at hd₂
   have rest : bytesAt s₂.mem (c.D + BitVec.ofNat 64 (16 * wholeOf c.n)) (c.n - 16 * wholeOf c.n) =
       bytesAt s.mem (c.D + BitVec.ofNat 64 (16 * wholeOf c.n)) (c.n - 16 * wholeOf c.n) := by
     have hsub : Region.Sub ⟨c.D + BitVec.ofNat 64 (16 * wholeOf c.n), c.n - 16 * wholeOf c.n⟩ ⟨c.D, c.n⟩ :=
-      Offset.sub_base _ (by omega)
-    rw [Proof.Cmac.bytesAt_frame f₂ (fun r hr => ?_) (by omega),
-      Proof.Cmac.bytesAt_frame f₁ (dP (by omega)) (by omega)]
+      Offset.sub_base _ (by omega_arith)
+    rw [Proof.Cmac.bytesAt_frame f₂ (fun r hr => ?_) (by omega_arith),
+      Proof.Cmac.bytesAt_frame f₁ (dP (by omega_arith)) (by omega_arith)]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact (L.d_w' (d := cbO) (k := 16) (by decide)).sub_left hsub
     · exact (Offset.base_disjoint c.D (e := 16 * wholeOf c.n) (n := c.n - 16 * wholeOf c.n)
-        (k := 16 * wholeOf c.n) (by omega) (by omega)).symm
+        (k := 16 * wholeOf c.n) (by omega_arith) (by omega_arith)).symm
     · exact (L.d_w' (d := scrO) (k := 2048) (by decide)).sub_left hsub
   have e := Proof.Cmac.Stream.bytesAt_append s₂.mem c.D (16 * wholeOf c.n) (c.n - 16 * wholeOf c.n)
-  rw [show 16 * wholeOf c.n + (c.n - 16 * wholeOf c.n) = c.n by omega] at e
+  rw [show 16 * wholeOf c.n + (c.n - 16 * wholeOf c.n) = c.n by omega_arith] at e
   have e₀ := Proof.Cmac.Stream.bytesAt_append s.mem c.D (16 * wholeOf c.n) (c.n - 16 * wholeOf c.n)
-  rw [show 16 * wholeOf c.n + (c.n - 16 * wholeOf c.n) = c.n by omega] at e₀
+  rw [show 16 * wholeOf c.n + (c.n - 16 * wholeOf c.n) = c.n by omega_arith] at e₀
   have hpa := ctrPart_append (Spec.Siv.ctxCiph s.mem c.C c.R) q (bytesAt s.mem c.D (16 * wholeOf c.n))
     (bytesAt s.mem (c.D + BitVec.ofNat 64 (16 * wholeOf c.n)) (c.n - 16 * wholeOf c.n))
   rw [Proof.Cmac.bytesAt_length] at hpa
   have d₄ : bytesAt s₄.mem c.D c.n = bytesAt s₂.mem c.D c.n := by
     rw [Proof.Cmac.bytesAt_frame f₄ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by omega), u₃.mem]
+      simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by omega_arith), u₃.mem]
   -- The frame.
   have s96 : Region.Sub ⟨c.W + BitVec.ofNat 64 cbO, 16⟩ ⟨c.W + BitVec.ofNat 64 64, 48⟩ :=
     Offset.sub _ (by decide) (by decide)

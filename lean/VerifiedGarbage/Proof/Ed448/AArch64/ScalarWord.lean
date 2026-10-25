@@ -65,11 +65,11 @@ theorem extr62 (lo hi : BitVec 64) (h : hi.toNat < 2 ^ 62) :
   have := lo.isLt
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt lo.isLt,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem shl_shr2 (x : BitVec 64) : ((x <<< 2) >>> 2).toNat = x.toNat % 2 ^ 62 := by
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 /-- `foldSplit`: `h` into `x11`, `r₅ mod 2^62` into `x10`. -/
 theorem foldSplit_ok (s : State) (h6 : (s.gpr .x11).toNat < 2 ^ 62) :
@@ -89,8 +89,8 @@ theorem mul_halves (a b : BitVec 64) :
     (a * b).toNat + 2 ^ 64 * (BitVec.ofNat 64 (a.toNat * b.toNat / 2 ^ 64)).toNat =
       a.toNat * b.toNat := by
   have hp : a.toNat * b.toNat < 2 ^ 64 * 2 ^ 64 := Nat.mul_lt_mul'' a.isLt b.isLt
-  rw [BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ / 2 ^ 64) (by omega)]
-  omega
+  rw [BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ / 2 ^ 64) (by omega_arith)]
+  omega_arith
 
 /-- `foldMul`: the products of `h` by the words of `c`. -/
 theorem foldMul_ok (s : State) :
@@ -142,7 +142,7 @@ theorem foldMul_prod_ok (s : State) (hc : Consts s) :
     have : (s.gpr .x11).toNat * c3.toNat < 2 ^ 64 * 2 ^ 32 :=
       Nat.mul_lt_mul'' (s.gpr .x11).isLt (by decide)
     have := (a.gpr .x15).isLt
-    omega
+    omega_arith
   refine ⟨?_, (ka.mono (by decide)).trans (kt.mono (by decide))⟩
   have hc' := Bool.toNat_le t.c
   generalize (s.gpr .x11).toNat * c0.toNat = P0 at *
@@ -152,7 +152,7 @@ theorem foldMul_prod_ok (s : State) (hc : Consts s) :
   generalize (s.gpr .x11).toNat * cL = P at *
   have := (t.gpr .x13).isLt; have := (t.gpr .x14).isLt; have := (t.gpr .x15).isLt
   have := (t.gpr .x20).isLt
-  omega
+  omega_arith
 
 theorem foldAdd_eq : foldAdd = .adds .x .x4 .x4 .x12 ::
     adcsOf [(.x5, .x5, .x13), (.x6, .x6, .x14), (.x7, .x7, .x15), (.x8, .x8, .x20),
@@ -178,11 +178,11 @@ theorem foldAdd_ok (s : State) (hz : s.gpr Z = 0)
   generalize rv s [.x4, .x5, .x6, .x7, .x8, .x9, .x10] + ((s.gpr .x12).toNat + 2 ^ 64 * rv s [.x13, .x14, .x15, .x20]) = A at et hlt ⊢
   generalize (2 : Nat) ^ 448 = M at et hlt
   rcases Nat.lt_or_ge t.c.toNat 1 with h | h
-  · obtain h0 : t.c.toNat = 0 := by omega
+  · obtain h0 : t.c.toNat = 0 := by omega_arith
     rw [h0, Nat.mul_zero, Nat.add_zero] at et
     exact et
   · have := Nat.mul_le_mul_left M h
-    omega
+    omega_arith
 
 /-- The registers `wordFold` changes. -/
 def foldClob : List Reg :=

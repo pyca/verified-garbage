@@ -82,7 +82,7 @@ theorem upLoad_ok {s : State} {q : FPub} (h : EndQ q s) {l : List Instr} (hl : l
   obtain ⟨hw, -, -, hU, -⟩ := h
   have hn := hw.scr.nowrap
   have h256 := hw.h256
-  have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.B (8 * i)) 8 := fun i hi => hw.scr.ld (by omega)
+  have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.B (8 * i)) 8 := fun i hi => hw.scr.ld (by omega_arith)
   refine WP.mono (Q := fun (t : State) => t.gpr .x2 = q.up) ?_ fun t h r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact h
   rcases hl with rfl | rfl
@@ -121,7 +121,7 @@ theorem storeBlk_ok' {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr
           have h0₃ : s₃.gpr .x0 = B := ((k₂.trans k₃).gpr .x0 (by decide)).trans h.x0
           have hs₃ := h.scr.congr (k₂.trans k₃).wr
           have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
-            hs₃.ld (by have := h.h256; omega)
+            hs₃.ld (by have := h.h256; omega_arith)
           brun [h0₃, hdr_enc hP, hdr_enc hL, hdr_enc (show Public.sMask < 32 by decide), m₃, m₂, hl₃ sPtr hP,
             hl₃ sLen hL, hl₃ Public.sMask (by decide), hp, hl])
         rfl rfl rfl)
@@ -159,8 +159,8 @@ theorem finPrime_ct {Φ : FPub → State → Prop} (hE : ∀ q s, Φ q s → End
         have hn := hw.scr.nowrap
         have h256 := hw.h256
         brun [hw.x0, hdr_enc (show kUsedP < 32 by decide), hdr_enc (show kUsed < 32 by decide),
-          hw.scr.ld (d := 8 * kUsedP) (by simp only [kUsedP, sFn]; omega),
-          hw.scr.ld (d := 8 * kUsed) (by simp only [kUsed, sFn]; omega)]))
+          hw.scr.ld (d := 8 * kUsedP) (by simp only [kUsedP, sFn]; omega_arith),
+          hw.scr.ld (d := 8 * kUsed) (by simp only [kUsed, sFn]; omega_arith)]))
       (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h2, hm⟩, k⟩ => ⟨?_, h2⟩
     obtain ⟨hw, hO, hK, hU, ho, hS⟩ := he
     exact ⟨hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide), by rw [hm]; exact hO,
@@ -172,7 +172,7 @@ theorem finPrime_ct {Φ : FPub → State → Prop} (hE : ∀ q s, Φ q s → End
       brun [h2, hup, ho.upw]) (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ => ?_
     have f : Frm q.B [(q.Z, 2 ^ 64)] s.mem t.mem := by rw [hm]; exact frm_up ho.upZ _ _
     have hw' : ∀ i < 32, word t.mem q.B (8 * i) = word s.mem q.B (8 * i) := fun i hi =>
-      f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+      f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega_arith)) (by omega_arith)
     exact ⟨hw.congr' f (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.past h256 _) k (by decide),
       (hw' _ (by decide)).trans hO, (hw' _ (by decide)).trans hK⟩
 
@@ -196,7 +196,7 @@ theorem mrResult_ct : RelCT isa (Two EndQ) mrResult fun _ _ => True := by
     have hn := hw.scr.nowrap
     have h256 := hw.h256
     refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 (statOf q.sch.mr) ∧ t.mem = s.mem)
-      (by brun [hw.x0, hdr_enc (show kStat < 32 by decide), hw.scr.ld (d := 8 * kStat) (by simp only [kStat, sFn]; omega),
+      (by brun [hw.x0, hdr_enc (show kStat < 32 by decide), hw.scr.ld (d := 8 * kStat) (by simp only [kStat, sFn]; omega_arith),
         hS]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h3, hm⟩, k⟩ =>
       ⟨⟨hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide), by rw [hm]; exact hO,
         by rw [hm]; exact hK, by rw [hm]; exact hU, ho.congr k.wr, by rw [hm]; exact hS⟩, h3⟩
@@ -211,7 +211,7 @@ theorem mrResult_ct : RelCT isa (Two EndQ) mrResult fun _ _ => True := by
 theorem ts_ms0 {q : FPub} {s : State} (h : TS q s) : MS0 q.L s := by
   obtain ⟨⟨-, hdm, hws, -, -, pB, r, hc, -⟩, -⟩ := h
   exact ⟨hws, hdm.w4, hdm.w64, _, hc,
-    VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * q.w) (by have := hdm.w4; omega) _⟩
+    VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * q.w) (by have := hdm.w4; omega_arith) _⟩
 
 /-- What Miller–Rabin needs but its exponent. -/
 def MrPre0 (q : FPub) (s : State) : Prop :=
@@ -229,17 +229,17 @@ theorem ms_mrpre (M : Mont) {q : FPub} {s : State} (h : TS q s) : WP isa (seqs (
   obtain ⟨⟨hwr, hdm, hws, hh, ho, pB, r, hc, -, -, hsrc, -, hrl, hS⟩, hcl, hco, hgb⟩ := h
   have hw4 := hdm.w4
   have hw64 := hdm.w64
-  have h64 : 8 * (8 * q.w) = 64 * q.w := by omega
+  have h64 : 8 * (8 * q.w) = 64 * q.w := by omega_arith
   generalize hcd : Spec.RsaKeyGen.candidate (64 * q.w) (Spec.Rsa.os2ip (r.take (8 * q.w))) = c at hc
-  have hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * q.w) c := hcd ▸ VG.Proof.RsaKeyGen.candidate_shape (by omega) _
+  have hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * q.w) c := hcd ▸ VG.Proof.RsaKeyGen.candidate_shape (by omega_arith) _
   obtain ⟨hodd, hlo, hhi⟩ := hsh
   have htop : 2 ^ (64 * q.w - 1) ≤ c := by
-    have : 2 ^ (64 * q.w - 1) = 2 ^ (64 * q.w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega
-    omega
+    have : 2 ^ (64 * q.w - 1) = 2 ^ (64 * q.w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_arith
+    omega_arith
   have hc1 : 1 < c := by
     have : 2 ≤ 2 ^ (64 * q.w - 1) :=
-      Nat.le_trans (by decide) (Nat.pow_le_pow_right (by decide) (show 1 ≤ 64 * q.w - 1 by omega))
-    omega
+      Nat.le_trans (by decide) (Nat.pow_le_pow_right (by decide) (show 1 ≤ 64 * q.w - 1 by omega_arith))
+    omega_arith
   -- The shape of the test's result.
   have e1 := VG.Proof.RsaKeyGen.sched_close (8 * q.w) (Spec.Rsa.os2ip q.eB) (Spec.RsaKeyGen.otherPrime pB) r
   rw [hS, hcl, h64, hcd] at e1
@@ -252,8 +252,8 @@ theorem ms_mrpre (M : Mont) {q : FPub} {s : State} (h : TS q s) : WP isa (seqs (
     (by rw [h64, hcd]; exact e2.symm) (by rw [h64, hcd]; exact e3.symm)
   rw [hS, h64, hcd] at e4
   have hres : mrRest c (checksW q.w) r 1 0 (8 * q.w) = Spec.RsaKeyGen.primalityTest c (r.drop (8 * q.w)) := by
-    rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega) ⟨hodd, hlo, hhi⟩,
-      VG.Proof.RsaKeyGen.checksW_eq q.w (by omega) hw4]
+    rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) ⟨hodd, hlo, hhi⟩,
+      VG.Proof.RsaKeyGen.checksW_eq q.w (by omega_arith) hw4]
   have hnw := hws.scr.nowrap
   have hZ := hws.hZ
   have hZ' : 256 + 16 * (8 * (q.w + 2)) ≤ q.Z := by simpa only [slot, hdrBytes] using hZ
@@ -261,12 +261,12 @@ theorem ms_mrpre (M : Mont) {q : FPub} {s : State} (h : TS q s) : WP isa (seqs (
     fun t ⟨h₁, hinv₁, hn₁, hr2₁, hr1₁, hrm₁, hch₁, f₁, k₁⟩ => ?_
   have hW : ∀ {i : Nat}, i < 32 → (∀ r ∈ msRanges q.w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i) →
       word t.mem q.B (8 * i) = word s.mem q.B (8 * i) :=
-    fun _ hd => f₁.word_eq hd (by have := hws.h256; omega)
+    fun _ hd => f₁.word_eq hd (by have := hws.h256; omega_arith)
   have hsl₁ : ∀ r ∈ msRanges q.w, r.1 + r.2 ≤ q.Z := by kt_disj
-  have hin₁ : InScr q.B q.Z s.mem t.mem := InScr.of_frm f₁ (fun r hr => by have := hsl₁ r hr; omega)
+  have hin₁ : InScr q.B q.Z s.mem t.mem := InScr.of_frm f₁ (fun r hr => by have := hsl₁ r hr; omega_arith)
   have hEZ : slot q.w aE + 8 * (q.w + 2) ≤ q.Z := by
     have e : slot q.w aE = 256 + 27 * (8 * (q.w + 2)) := rfl
-    have := hdm.z; omega
+    have := hdm.z; omega_arith
   refine ⟨hw4, hw64, hEZ, hdm.rl, c, _, r,
     ⟨h₁, hinv₁, hn₁, rfl, hr1₁, hrm₁⟩, hr2₁, hc1, ⟨hodd, hlo, hhi⟩,
     (hW (by decide) (by kt_disj)).trans hh.rand, by rw [(hW (by decide) (by kt_disj)).trans hh.rlen, hrl], hrl, hch₁,
@@ -286,9 +286,9 @@ theorem expSetup_mrpre {q : FPub} {s : State} (h : MrPre0 q s) : WP isa (seqs ex
   have hW : ∀ {i : Nat}, i < 32 → word t.mem q.B (8 * i) = word s.mem q.B (8 * i) := fun hi =>
     hf.word_eq (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      have := hdr_lt_slot q.w aE hi; exact Or.inl (by simp only; omega)) (by omega)
+      have := hdr_lt_slot q.w aE hi; exact Or.inl (by simp only; omega_arith)) (by omega_arith)
   have hin : InScr q.B q.Z s.mem t.mem := InScr.of_frm hf (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; simp only; omega)
+    simp only [List.mem_singleton] at hr; subst hr; simp only; omega_arith)
   refine ⟨h4, by omega_arith, hEZ, hrl, c, bm, r, hc.of_frm hf (by w_mut) k (by decide) (VG.Proof.RsaKeyGen.past_hdrW rfl) (VG.Proof.RsaKeyGen.apart_one VG.Proof.RsaKeyGen.mul_le_w1 rfl) (VG.Proof.RsaKeyGen.apart_one VG.Proof.RsaKeyGen.mul_le_w1 rfl)
       (VG.Proof.RsaKeyGen.apart_one VG.Proof.RsaKeyGen.mul_le_w1 rfl) (VG.Proof.RsaKeyGen.apart_one VG.Proof.RsaKeyGen.mul_le_w1 rfl), hE, ?_, hc1, hsh, by rw [hW (by decide)]; exact hR,
     by rw [hW (by decide)]; exact hRL, hrlen, by rw [hW (by decide)]; exact hC, hsrc.congrK hin k,
@@ -296,8 +296,8 @@ theorem expSetup_mrpre {q : FPub} {s : State} (h : MrPre0 q s) : WP isa (seqs ex
     by rw [hW (by decide)]; exact hK, ho.congr k.wr⟩
   rw [hf.wv_eq (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Or.inl (by have := VG.Proof.Rsa.slot_lt (w := q.w) (show aR2 < aE by decide); simp only; omega))
-    (by omega)]
+    exact Or.inl (by have := VG.Proof.Rsa.slot_lt (w := q.w) (show aR2 < aE by decide); simp only; omega_arith))
+    (by omega_arith)]
   exact hr2
 
 /-- `lowWord`'s registers. -/

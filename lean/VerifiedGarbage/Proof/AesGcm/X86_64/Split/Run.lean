@@ -39,7 +39,7 @@ theorem padLen_mod {n : Nat} (h : n % 16 = 0) : padLen n = 0 := by simp [padLen,
 /-- Whole blocks after the padded additional data are text. -/
 theorem padded_whole {a A c d : List Byte} (hA : a ++ zeros (padLen a.length) = A) (hAl : A.length % 16 = 0)
     (hc : c.length % 16 = 0) : padded (A ++ c) d = padded a (c ++ d) := by
-  have z0 : padLen (A ++ c).length = 0 := padLen_mod (by simp only [List.length_append]; omega)
+  have z0 : padLen (A ++ c).length = 0 := padLen_mod (by simp only [List.length_append]; omega_arith)
   have zA : padLen A.length = 0 := padLen_mod hAl
   unfold padded Spec.Gcm.ghashInput
   by_cases hd : d = []
@@ -59,7 +59,7 @@ theorem xorKs_shift' (ciph : Block → Block) (icb : Block) (q k : Nat) (d : Lis
   simp only [xorKs]
   refine List.map_congr_left fun i _ => ?_
   simp only [Proof.Gcm.ksByte]
-  rw [show (16 * q + k + i) / 16 = (k + i) / 16 + q by omega, show (16 * q + k + i) % 16 = (k + i) % 16 by omega,
+  rw [show (16 * q + k + i) / 16 = (k + i) / 16 + q by omega_arith, show (16 * q + k + i) % 16 = (k + i) % 16 by omega_arith,
     Proof.Gcm.repeat_add]
 
 /-- A region apart from `W`, the data from byte `k` on and the 56 bytes below
@@ -183,10 +183,10 @@ theorem splitRun_of_pre {M : CtxMode} {pre : Prog isa} {qf : Nat → Nat → Nat
     fQ.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
       (pp_wG L C.dE C.kw (.inr (.inl ⟨h₁, h₂⟩))) (by decide)
   have sD' : Region.Sub ⟨D + BitVec.ofNat 64 (16 * q), n - 16 * q⟩ ⟨D, n⟩ :=
-    Offset.sub_base D (by omega)
+    Offset.sub_base D (by omega_arith)
   have X₃ : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP (D + BitVec.ofNat 64 (16 * q))
       (n - 16 * q) s₃ := (X₂.keep Q.rd Q.wr fQ (pp_outG X.cw X.cd kM.symm)).sub sD'
-  have s240 : Region.Sub ⟨Ctx + BitVec.ofNat 64 240, 16⟩ ⟨Ctx, M.len⟩ := Offset.sub_base Ctx (by have := M.ge; omega)
+  have s240 : Region.Sub ⟨Ctx + BitVec.ofNat 64 240, 16⟩ ⟨Ctx, M.len⟩ := Offset.sub_base Ctx (by have := M.ge; omega_arith)
   have hH₃ : blockAt s₃.mem (Ctx + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame fQ (pp_outG (X.cw.sub_left s240) (X.cd.sub_left s240) (kM.symm.sub_left s240)), M₂.hH]
   have hcb₃ : blockAt s₃.mem (cbA W) = Nat.repeat inc32 q (inc32 (Spec.Gcm.j0 H iv)) := by
@@ -198,18 +198,18 @@ theorem splitRun_of_pre {M : CtxMode} {pre : Prog isa} {qf : Nat → Nat → Nat
     rw [Q.y, ← Proof.Gcm.blocksAt_eq, ctxH_eq, M₂.hH]
   have hAl : (a ++ zeros (padLen a.length)).length % 16 = 0 := by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
-  have hC1l : (bytesAt s₃.mem D (16 * q)).length % 16 = 0 := by rw [length_bytesAt]; omega
+  have hC1l : (bytesAt s₃.mem D (16 * q)).length % 16 = 0 := by rw [length_bytesAt]; omega_arith
   have habs₃ := Proof.Gcm.absorb_whole M₂.abs hAl hC1l hy₃
   have ez : a ++ zeros (padLen a.length) ++ bytesAt s₃.mem D (16 * q) ++
       zeros (padLen (a ++ zeros (padLen a.length) ++ bytesAt s₃.mem D (16 * q)).length) =
       a ++ zeros (padLen a.length) ++ bytesAt s₃.mem D (16 * q) := by
     have h3 : (a ++ zeros (padLen a.length) ++ bytesAt s₃.mem D (16 * q)).length % 16 = 0 := by
-      rw [List.length_append]; omega
+      rw [List.length_append]; omega_arith
     rw [padLen_mod h3]; simp [zeros]
   rw [← ez] at habs₃
   have hR₃ : RoundsAt s₃.mem W R := ⟨by rw [wsl 176 (by decide) (by decide)]; exact hRo.1, hRo.2⟩
   refine WP.mono (hbody L (R := R) (al := al) (N := n) Q.env hR₃ Q.dat Q.len ((C.data.of_eq rd₃ wr₃).drop hq) C.kw (C.kd.sub_right sD') kM C.sp56 X₃ hH₃
-    hcb₃ hal₃ habs₃ Q.aux (by have := C.data.ok.lt; omega)) fun s₄ ⟨e₄, rd₄, wr₄, f₄, hC₄, hT₄⟩ => ?_
+    hcb₃ hal₃ habs₃ Q.aux (by have := C.data.ok.lt; omega_arith)) fun s₄ ⟨e₄, rd₄, wr₄, f₄, hC₄, hT₄⟩ => ?_
   -- The cipher, kept.
   have kc : (below SP 56).Disjoint ⟨Ctx, 256⟩ := kM.sub_right (Region.sub_prefix M.ge)
   have hc₂ : ciphOf s₂.mem Ctx R = ciphOf s₀.mem Ctx R := ciph_frame M₂.frame (dM L.cw' L.kc) hR'
@@ -218,14 +218,14 @@ theorem splitRun_of_pre {M : CtxMode} {pre : Prog isa} {qf : Nat → Nat → Nat
   -- The plaintext, kept by `aadP`.
   have hpt : splitPt s₂.mem D S n sl = splitPt s₀.mem D S n sl := by
     simp only [splitPt]
-    rw [bytesAt_frame M₂.frame (dM C.sW (C.ks.sub_left b8)) (by omega),
-      bytesAt_frame M₂.frame (dM C.dE C.data.ok.stk) (by omega)]
+    rw [bytesAt_frame M₂.frame (dM C.sW (C.ks.sub_left b8)) (by omega_arith),
+      bytesAt_frame M₂.frame (dM C.dE C.data.ok.stk) (by omega_arith)]
   have hC1 : bytesAt s₃.mem D (16 * q) =
       xorKs (ciphOf s₀.mem Ctx R) (inc32 (Spec.Gcm.j0 H iv)) 0 ((splitPt s₀.mem D S n sl).take (16 * q)) := by
     rw [Q.enc, hc₂, hpt, M₂.cb]
   have hC1₄ : bytesAt s₄.mem D (16 * q) = bytesAt s₃.mem D (16 * q) :=
-    bytesAt_frame f₄ (sf_out (C.dE.sub_left (Region.sub_prefix hq)) (Offset.base_disjoint D (Nat.le_refl _) (by omega))
-      ((C.kd.sub_right (Region.sub_prefix hq)).symm)) (by omega)
+    bytesAt_frame f₄ (sf_out (C.dE.sub_left (Region.sub_prefix hq)) (Offset.base_disjoint D (Nat.le_refl _) (by omega_arith))
+      ((C.kd.sub_right (Region.sub_prefix hq)).symm)) (by omega_arith)
   have hD₄ : bytesAt s₄.mem D n = bytesAt s₃.mem D (16 * q) ++
       bytesAt s₄.mem (D + BitVec.ofNat 64 (16 * q)) (n - 16 * q) := by
     have e := bytesAt_add s₄.mem D (16 * q) (n - 16 * q)
@@ -258,7 +258,7 @@ theorem splitRun_of_pre {M : CtxMode} {pre : Prog isa} {qf : Nat → Nat → Nat
   · rw [hD₄, hC₄, hc₃, hC1, Q.tail, hpt, Proof.Gcm.gctr_eq, ← xorKs_shift' _ _ q 0, Nat.add_zero]
     have e := Proof.Gcm.xorKs_append (ciphOf s₀.mem Ctx R) (inc32 (Spec.Gcm.j0 H iv)) 0
       ((splitPt s₀.mem D S n sl).take (16 * q)) ((splitPt s₀.mem D S n sl).drop (16 * q))
-    rw [List.take_append_drop, List.length_take, Nat.min_eq_left (by simp only [List.length_append, List.length_drop, length_bytesAt]; omega), Nat.zero_add] at e
+    rw [List.take_append_drop, List.length_take, Nat.min_eq_left (by simp only [List.length_append, List.length_drop, length_bytesAt]; omega_arith), Nat.zero_add] at e
     exact e.symm
   · rw [hT₄, hc₃, hJ, padded_whole rfl hAl hC1l, ← hD₄]
     rfl
@@ -345,7 +345,7 @@ theorem sealSplitM_wp {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) {s : S
   -- The tag copied to `tag`.
   have dA : ∀ r ∈ [(⟨W, 2560⟩ : Region), ⟨D, n⟩, below SP 56], (⟨SP + BitVec.ofNat 64 40, 8⟩ : Region).Disjoint r := by
     have hs : Region.Sub ⟨SP + BitVec.ofNat 64 40, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 6⟩ := by
-      rw [show (40 : Nat) = 8 + 32 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega)
+      rw [show (40 : Nat) = 8 + 32 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_arith)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -374,7 +374,7 @@ theorem sealSplitM_wp {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) {s : S
   refine WP.mono (exit_ok he₅.r15 (by rw [he₅.rsp, hSP]) (covers_left he₅.perm.w) hsv₅ (by rw [hSP, hret]))
     fun s' ⟨hg, hm, _⟩ => ⟨hg, fun _ => ?_⟩
   have hd₅ : bytesAt s₅.mem D n = bytesAt s₄.mem D n := bytesAt_frame f₅ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact C.tD.symm) (by have := C.data.ok.lt; omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact C.tD.symm) (by have := C.data.ok.lt; omega_arith)
   simp only [Proof.AesGcm.sealSplitX86_64M, Proof.AesGcm.arg]
   rw [hCtx, hNp, hnl, hA, hal, hS, hsl, hD, hn, hT, Spec.Gcm.encryptWith, hm, hb₅, hT₄, hd₅, hC,
     Proof.Gcm.fullTag_eq, Proof.Gcm.length_gctr]

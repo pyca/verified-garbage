@@ -157,9 +157,9 @@ theorem InRegions.offset {rs : List Region} {a : Addr} {n off m : Nat} (h : InRe
   simp only [Region.Contains] at *
   have : (a + BitVec.ofNat 64 off - R.base).toNat ≤ (a - R.base).toNat + off := by
     rw [Offset.add_sub_comm,
-      BitVec.toNat_add, toNat_ofNat_lt (by omega)]
+      BitVec.toNat_add, toNat_ofNat_lt (by omega_arith)]
     exact Nat.mod_le _ _
-  omega
+  omega_arith
 
 /-! ## The length field -/
 
@@ -197,7 +197,7 @@ theorem len64_ok {d : Nat} {be : Bool} {s : State} (hd : d < 4096)
     have h19 : t.gpr .x19 = s.gpr .x19 := g _ (by decide)
     by_cases hd8 : d % 8 = 0
     · simp only [hd8, ite_true]
-      refine wp_str (a := s.gpr .x19 + BitVec.ofNat 64 d) ⟨hd8, by omega⟩ (by rw [h19])
+      refine wp_str (a := s.gpr .x19 + BitVec.ofNat 64 d) ⟨hd8, by omega_arith⟩ (by rw [h19])
         (by rw [wr]; exact hout) fun s' g' => WP.block_nil ⟨fun r h h' => by rw [g'.gpr, g r h],
           g'.rd.trans rd, g'.wr.trans wr, g'.sp.trans sp, ?_⟩
       rw [g'.mem, m, v, writeW64]
@@ -227,19 +227,19 @@ theorem len128_ok {d : Nat} (hd : d % 8 = 0 ∧ d + 8 < 4096) {s : State}
   unfold len128
   simp only [List.cons_append, List.nil_append]
   refine wp_lsr (by decide) fun s₁ u₁ => wp_rev fun s₂ u₂ => wp_str (a := s.gpr .x19 + BitVec.ofNat 64 d)
-    ⟨hd.1, by omega⟩ (by rw [u₂.other _ (by decide), u₁.other _ (by decide)])
-    (by rw [u₂.wr, u₁.wr]; simpa using InRegions.offset (off := 0) (m := 8) hout (by omega) (by omega))
+    ⟨hd.1, by omega_arith⟩ (by rw [u₂.other _ (by decide), u₁.other _ (by decide)])
+    (by rw [u₂.wr, u₁.wr]; simpa using InRegions.offset (off := 0) (m := 8) hout (by omega_arith) (by omega_arith))
     fun s₃ g₃ => ?_
   have h19 : s₃.gpr .x19 = s.gpr .x19 := by rw [g₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)]
   have h22 : s₃.gpr .x22 = s.gpr .x22 := by rw [g₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)]
   refine (len64_ok (d := d + 8) (be := true) hd.2 (by
-    rw [h19, g₃.wr, u₂.wr, u₁.wr, ← e8]; exact InRegions.offset hout (by omega) (by omega))).mono
+    rw [h19, g₃.wr, u₂.wr, u₁.wr, ← e8]; exact InRegions.offset hout (by omega_arith) (by omega_arith))).mono
     fun s' ⟨g, rd, wr, sp, m⟩ => ⟨fun r h h' => by rw [g r h h', g₃.gpr, u₂.other r h, u₁.other r h],
       by rw [rd, g₃.rd, u₂.rd, u₁.rd], by rw [wr, g₃.wr, u₂.wr, u₁.wr], by rw [sp, g₃.sp, u₂.sp, u₁.sp], ?_⟩
   rw [m, h19, h22, g₃.mem, u₂.mem, u₁.mem, u₂.gpr, u₁.gpr,
     show rev64 (s.gpr .x22 >>> 61) = (if true then rev64 (s.gpr .x22 >>> 61) else s.gpr .x22 >>> 61) from rfl,
     writeW64, ← e8, show (8 : Nat) = (bytes64 true (s.gpr .x22 >>> 61)).length from rfl,
-    writeBytes_append _ _ _ _ (by rw [bytes64_length, bytes64_length]; omega)]
+    writeBytes_append _ _ _ _ (by rw [bytes64_length, bytes64_length]; omega_arith)]
 
 /-! ## The digest -/
 
@@ -277,11 +277,11 @@ theorem out32_ok {n : Nat} (be : Bool) (hn : 4 * n ≤ 64) {s₀ : State}
     exact WP.block_nil ⟨g, rd, wr, sp, m⟩
   | succ j ih =>
     intro hj s g rd wr sp m
-    have hk : n - (j + 1) < n := by omega
-    rw [List.drop_eq_getElem_cons (by simp; omega), List.flatMap_cons, List.getElem_range,
+    have hk : n - (j + 1) < n := by omega_arith
+    rw [List.drop_eq_getElem_cons (by simp; omega_arith), List.flatMap_cons, List.getElem_range,
       List.append_assoc, List.append_assoc]
-    rw [show n - (j + 1) + 1 = n - j by omega]
-    have hoff : 4 * (n - (j + 1)) + 4 ≤ 4 * n := by omega
+    rw [show n - (j + 1) + 1 = n - j by omega_arith]
+    have hoff : 4 * (n - (j + 1)) + 4 ≤ 4 * n := by omega_arith
     -- The word read is not yet overwritten.
     have hread : s.mem.readW (s₀.gpr .x19 + BitVec.ofNat 64 (4 * (n - (j + 1)))) 32 =
         s₀.mem.readW (s₀.gpr .x19 + BitVec.ofNat 64 (4 * (n - (j + 1)))) 32 := by
@@ -290,38 +290,38 @@ theorem out32_ok {n : Nat} (be : Bool) (hn : 4 * n ≤ 64) {s₀ : State}
         (r := ⟨s₀.gpr .x19 + BitVec.ofNat 64 (4 * (n - (j + 1))), 4⟩) (Region.contains_self _ _) ?_ (by decide)
       · rw [hflat]
         simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]
-        omega
+        omega_arith
       · intro r' hr'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         subst hr'
-        exact hd.sub_left (sub_offset hoff (by omega))
+        exact hd.sub_left (sub_offset hoff (by omega_arith))
     have hmem : ∀ (t : State), t.mem = s.mem →
         t.mem.writeW (s₀.gpr .x21 + BitVec.ofNat 64 (4 * (n - (j + 1))))
           (if be then rev32 (s.mem.readW (s₀.gpr .x19 + BitVec.ofNat 64 (4 * (n - (j + 1)))) 32)
             else s.mem.readW (s₀.gpr .x19 + BitVec.ofNat 64 (4 * (n - (j + 1)))) 32) =
         writeBytes s₀.mem (s₀.gpr .x21) ((List.range (n - j)).flatMap f) := by
       intro t ht
-      rw [ht, writeW32, hread, m, show n - j = n - (j + 1) + 1 by omega, List.range_succ,
+      rw [ht, writeW32, hread, m, show n - j = n - (j + 1) + 1 by omega_arith, List.range_succ,
         List.flatMap_append, List.flatMap_singleton,
-        ← writeBytes_append _ _ _ _ (by rw [hflat, bytes32_length]; omega), hflat]
-    refine wp_ldr32 (a := s₀.gpr .x19 + BitVec.ofNat 64 (4 * (n - (j + 1)))) (by omega)
-      (by rw [g _ (by decide)]) (by rw [rd, wr]; exact InRegions.offset hin hoff (by omega)) fun s₁ u₁ => ?_
+        ← writeBytes_append _ _ _ _ (by rw [hflat, bytes32_length]; omega_arith), hflat]
+    refine wp_ldr32 (a := s₀.gpr .x19 + BitVec.ofNat 64 (4 * (n - (j + 1)))) (by omega_arith)
+      (by rw [g _ (by decide)]) (by rw [rd, wr]; exact InRegions.offset hin hoff (by omega_arith)) fun s₁ u₁ => ?_
     have ea : ∀ t : State, t.gpr .x21 = s.gpr .x21 →
         t.gpr .x21 + BitVec.ofNat 64 (4 * (n - (j + 1))) = s₀.gpr .x21 + BitVec.ofNat 64 (4 * (n - (j + 1))) :=
       fun t ht => by rw [ht, g _ (by decide)]
     cases be
     · simp only [Bool.false_eq_true, ite_false, List.nil_append, List.cons_append]
-      refine wp_str32 (by omega) (ea s₁ (u₁.other _ (by decide)))
-        (by rw [u₁.wr, wr]; exact InRegions.offset hout hoff (by omega)) fun s₂ g₂ => ?_
-      refine ih (by omega) s₂ (fun r h => by rw [g₂.gpr, u₁.other r h, g r h]) (by rw [g₂.rd, u₁.rd, rd])
+      refine wp_str32 (by omega_arith) (ea s₁ (u₁.other _ (by decide)))
+        (by rw [u₁.wr, wr]; exact InRegions.offset hout hoff (by omega_arith)) fun s₂ g₂ => ?_
+      refine ih (by omega_arith) s₂ (fun r h => by rw [g₂.gpr, u₁.other r h, g r h]) (by rw [g₂.rd, u₁.rd, rd])
         (by rw [g₂.wr, u₁.wr, wr]) (by rw [g₂.sp, u₁.sp, sp]) ?_
       rw [g₂.mem, u₁.gpr, setWidth32]
       exact hmem s₁ u₁.mem
     · simp only [ite_true, List.cons_append, List.nil_append]
-      refine wp_rev32 fun s₂ u₂ => wp_str32 (by omega) (ea s₂ (by rw [u₂.other _ (by decide),
-        u₁.other _ (by decide)])) (by rw [u₂.wr, u₁.wr, wr]; exact InRegions.offset hout hoff (by omega))
+      refine wp_rev32 fun s₂ u₂ => wp_str32 (by omega_arith) (ea s₂ (by rw [u₂.other _ (by decide),
+        u₁.other _ (by decide)])) (by rw [u₂.wr, u₁.wr, wr]; exact InRegions.offset hout hoff (by omega_arith))
         fun s₃ g₃ => ?_
-      refine ih (by omega) s₃ (fun r h => by rw [g₃.gpr, u₂.other r h, u₁.other r h, g r h])
+      refine ih (by omega_arith) s₃ (fun r h => by rw [g₃.gpr, u₂.other r h, u₁.other r h, g r h])
         (by rw [g₃.rd, u₂.rd, u₁.rd, rd]) (by rw [g₃.wr, u₂.wr, u₁.wr, wr]) (by rw [g₃.sp, u₂.sp, u₁.sp, sp]) ?_
       rw [g₃.mem, u₂.mem, u₂.gpr, u₁.gpr, setWidth32, setWidth32]
       exact hmem s₁ u₁.mem
@@ -357,9 +357,9 @@ theorem out64_ok {n : Nat} (hn : 8 * n ≤ 64) {s₀ : State}
     exact WP.block_nil ⟨g, rd, wr, sp, m⟩
   | succ j ih =>
     intro hj s g rd wr sp m
-    rw [List.drop_eq_getElem_cons (by simp; omega), List.flatMap_cons, List.getElem_range]
-    rw [show n - (j + 1) + 1 = n - j by omega]
-    have hoff : 8 * (n - (j + 1)) + 8 ≤ 8 * n := by omega
+    rw [List.drop_eq_getElem_cons (by simp; omega_arith), List.flatMap_cons, List.getElem_range]
+    rw [show n - (j + 1) + 1 = n - j by omega_arith]
+    have hoff : 8 * (n - (j + 1)) + 8 ≤ 8 * n := by omega_arith
     -- The word read is not yet overwritten.
     have hread : s.mem.readW (s₀.gpr .x19 + BitVec.ofNat 64 (8 * (n - (j + 1)))) 64 =
         s₀.mem.readW (s₀.gpr .x19 + BitVec.ofNat 64 (8 * (n - (j + 1)))) 64 := by
@@ -368,25 +368,25 @@ theorem out64_ok {n : Nat} (hn : 8 * n ≤ 64) {s₀ : State}
         (r := ⟨s₀.gpr .x19 + BitVec.ofNat 64 (8 * (n - (j + 1))), 8⟩) (Region.contains_self _ _) ?_ (by decide)
       · rw [hflat]
         simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]
-        omega
+        omega_arith
       · intro r' hr'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         subst hr'
-        exact hd.sub_left (sub_offset hoff (by omega))
+        exact hd.sub_left (sub_offset hoff (by omega_arith))
     simp only [List.cons_append, List.nil_append]
-    refine wp_ldr (a := s₀.gpr .x19 + BitVec.ofNat 64 (8 * (n - (j + 1)))) ⟨by omega, by omega⟩
-      (by rw [g _ (by decide)]) (by rw [rd, wr]; exact InRegions.offset hin hoff (by omega)) fun s₁ u₁ => ?_
+    refine wp_ldr (a := s₀.gpr .x19 + BitVec.ofNat 64 (8 * (n - (j + 1)))) ⟨by omega_arith, by omega_arith⟩
+      (by rw [g _ (by decide)]) (by rw [rd, wr]; exact InRegions.offset hin hoff (by omega_arith)) fun s₁ u₁ => ?_
     refine wp_rev fun s₂ u₂ => wp_str (a := s₀.gpr .x21 + BitVec.ofNat 64 (8 * (n - (j + 1))))
-      ⟨by omega, by omega⟩ (by rw [u₂.other _ (by decide), u₁.other _ (by decide), g _ (by decide)])
-      (by rw [u₂.wr, u₁.wr, wr]; exact InRegions.offset hout hoff (by omega)) fun s₃ g₃ => ?_
-    refine ih (by omega) s₃ (fun r h => by rw [g₃.gpr, u₂.other r h, u₁.other r h, g r h])
+      ⟨by omega_arith, by omega_arith⟩ (by rw [u₂.other _ (by decide), u₁.other _ (by decide), g _ (by decide)])
+      (by rw [u₂.wr, u₁.wr, wr]; exact InRegions.offset hout hoff (by omega_arith)) fun s₃ g₃ => ?_
+    refine ih (by omega_arith) s₃ (fun r h => by rw [g₃.gpr, u₂.other r h, u₁.other r h, g r h])
       (by rw [g₃.rd, u₂.rd, u₁.rd, rd]) (by rw [g₃.wr, u₂.wr, u₁.wr, wr]) (by rw [g₃.sp, u₂.sp, u₁.sp, sp]) ?_
     rw [g₃.mem, u₂.mem, u₂.gpr, u₁.gpr, u₁.mem, hread,
       show rev64 (s₀.mem.readW (s₀.gpr .x19 + BitVec.ofNat 64 (8 * (n - (j + 1)))) 64) =
         (if true then rev64 (s₀.mem.readW (s₀.gpr .x19 + BitVec.ofNat 64 (8 * (n - (j + 1)))) 64) else
           s₀.mem.readW (s₀.gpr .x19 + BitVec.ofNat 64 (8 * (n - (j + 1)))) 64) from rfl,
-      writeW64, m, show n - j = n - (j + 1) + 1 by omega, List.range_succ,
+      writeW64, m, show n - j = n - (j + 1) + 1 by omega_arith, List.range_succ,
       List.flatMap_append, List.flatMap_singleton,
-      ← writeBytes_append _ _ _ _ (by simp only [hflat, f, bytes64_length]; omega), hflat]
+      ← writeBytes_append _ _ _ _ (by simp only [hflat, f, bytes64_length]; omega_arith), hflat]
 
 end VG.Proof.MdStream.AArch64

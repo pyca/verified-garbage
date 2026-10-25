@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCompare
 import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverFolded
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst

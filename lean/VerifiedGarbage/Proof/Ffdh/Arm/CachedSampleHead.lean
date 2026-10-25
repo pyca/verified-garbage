@@ -44,14 +44,7 @@ theorem head_ok (s : State) {p : Inputs} {slots : List Nat}
   simp only [List.getD_cons_zero, BitVec.ofNat_eq_ofNat, Nat.mul_zero, BitVec.add_zero] at n
   change s.mem.readW (off (State.addr p.cachedContext) 8) 32 =
     BitVec.ofNat 32 ((bits p + 7) / 8) at width
-  refine withRest [.r3, .r6, .r9, .r10] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.CachedSample.head : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r6, .r9, .r10] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.CachedSample.head
   ffrun [addr52, addr8, h.locals.read (d := 52) (by decide), h.saved 52 h52,
     Inputs.slotValue, BitVec.add_zero, read0, read8, n, width, bits, shiftCount]

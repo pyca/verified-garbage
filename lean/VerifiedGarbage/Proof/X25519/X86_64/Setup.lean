@@ -33,7 +33,7 @@ theorem loadU_ok (s : State) {p : Addr} (hp : s.gpr .rdx = p)
       Keeps [.r8, .r9, .r10, .r11, .rax] s s' := by
   apply WP.of_runBlock
   simp only [loadU, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, State.load64,
-    ea_at, hp, hr 0 (by omega), hr 8 (by omega), hr 16 (by omega), hr 24 (by omega),
+    ea_at, hp, hr 0 (by omega_arith), hr 8 (by omega_arith), hr 16 (by omega_arith), hr 24 (by omega_arith),
     RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq,
     exists_eq_left']
@@ -43,7 +43,7 @@ theorem loadU_ok (s : State) {p : Addr} (hp : s.gpr .rdx = p)
       show p + 16 = off p 16 from rfl, show p + 24 = off p 24 from rfl]
     have := and_low63 ((s.mem.readW (off p 24) 64))
     simp only [val4]
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
       hr.2.2.2.2, ite_false]
@@ -72,7 +72,7 @@ theorem saved_lt : ∀ rd ∈ saved, rd.2 + 8 ≤ 48 := by decide
 theorem Saved.outside {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Saved base g m)
     {o n : Nat} (ho : Outside base o n m m') (h48 : 48 ≤ o) : Saved base g m' := fun rd hrd => by
   have := saved_lt rd hrd
-  exact (ho.word (by omega) (by omega)).trans (h rd hrd)
+  exact (ho.word (by omega_arith) (by omega_arith)).trans (h rd hrd)
 
 theorem save_ok {s : State} {base : Addr} (hc : s.gpr .rcx = base)
     (hw : (⟨base, 4096⟩ : Region) ∈ s.wr) :
@@ -81,13 +81,13 @@ theorem save_ok {s : State} {base : Addr} (hc : s.gpr .rcx = base)
       Saved base s.gpr s'.mem := by
   refine WP.mono (Spill.save_ok .rcx saved s fun p hp => ?_) fun s' ⟨hg, hrd, hwr, hm⟩ =>
     ⟨hg, hrd, hwr, ?_, ?_⟩
-  · have := saved_lt p hp; rw [hc]; exact ⟨_, hw, contains_sc (by omega)⟩
+  · have := saved_lt p hp; rw [hc]; exact ⟨_, hw, contains_sc (by omega_arith)⟩
   · rw [hm, hc]
     intro x hx
     refine Spill.saveMem_frame_base _ _ _ _ saved_lt (by decide) x fun r hr hx' => ?_
     rw [List.mem_singleton.mp hr] at hx'
     simp only [Region.Contains, ofs] at hx hx'
-    omega
+    omega_arith
   · rw [hm, hc]; exact Spill.saveMem_saved _ _ _ _ (by decide)
 
 /-! ## The initial values -/
@@ -96,7 +96,7 @@ theorem E_st4 (m : Mem) (base : Addr) {o : Nat} (i : Fin 128) (hi : o = 32 * i.v
     (w0 w1 w2 w3 : BitVec 64) :
     E (st4 m base o w0 w1 w2 w3) base = Function.update (E m base) i (toFe (val4 w0 w1 w2 w3)) := by
   subst hi
-  rw [E_update (st4_outside _ _ (by omega) _ _ _ _), F, fe_st4 _ _ (by omega)]
+  rw [E_update (st4_outside _ _ (by omega_arith) _ _ _ _), F, fe_st4 _ _ (by omega_arith)]
 
 theorem movs_ok (s : State) :
     WP isa (.block ([.mov .r12 (.reg .rdi), .mov .rdi (.reg .rcx)] : List Instr)) s fun s' =>
@@ -201,7 +201,7 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
   have r₈ : s₈.gpr .rdx = 1 ∧ s₈.gpr .rax = 0 := ⟨by rw [g₈, g₇, rdx₆], by rw [g₈, g₇, rax₆]⟩
   have r₇ : s₇.gpr .rax = 0 := by rw [g₇, rax₆]
   have o₃ : Outside base 0 4096 s.mem s₃.mem := by
-    rw [k₃.2.1]; exact fun x hx => (o₂.mono (by omega) (by omega) x hx).trans (by rw [k₁.2.1])
+    rw [k₃.2.1]; exact fun x hx => (o₂.mono (by omega_arith) (by omega_arith) x hx).trans (by rw [k₁.2.1])
   have o' : Outside base 64 4032 s₃.mem s'.mem := by
     rw [m', m₉, m₈, m₇, k₆.2.1, m₅, m₄]
     exact (((((st4_outside _ _ (by decide) _ _ _ _).mono (by decide) (by decide)).trans
@@ -211,7 +211,7 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
       ((st4_outside _ _ (by decide) _ _ _ _).mono (by decide) (by decide)) |>.trans
       ((writeW_outside _ _ _ (by decide)).mono (by decide) (by decide))
   refine ⟨⟨by rw [g']; exact hs₉.rdi, wr' ▸ hs₉.wr, hn⟩, ?_, fun r hr => ?_, ?_, ?_,
-    o₃.trans (o'.mono (by omega) (by omega)), ?_, ?_⟩
+    o₃.trans (o'.mono (by omega_arith) (by omega_arith)), ?_, ?_⟩
   · rw [G _ (by decide), r12₃, G₁ _ (by decide)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [G r (by simp [hr.1, hr.2.2.1]), k₃.1 r (by simp [hr.2.2.2.1, hr.2.2.2.2.2.2.2.2]),
@@ -223,7 +223,7 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
       rw [sv₂ rd hrd]
       simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hrd
       rcases hrd with rfl | rfl | rfl | rfl | rfl | rfl <;> exact k₁.1 _ (by decide)
-    exact sv.outside o' (by omega)
+    exact sv.outside o' (by omega_arith)
   · rw [e', e₉, e₈, e₇, k₆.2.1, e₅, e₄]
     simp (config := {decide := true}) only [Function.update_apply, ite_true, ite_false]
     rw [hu s₄ (fun r _ => g₄ r), hu s₃ (fun _ _ => rfl), r₈.1, r₈.2, r₇, rdx₆, rax₆, one, zero]

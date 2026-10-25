@@ -41,20 +41,20 @@ theorem nPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {w : Nat} (hW : I.W
 theorem top_bit_k {m : Mem} {B : Addr} {d W : Nat} (hW : 1 ≤ W) :
     (word m B (d + 8 * (W - 1))).toNat / 2 ^ 63 = if 2 ^ (64 * W - 1) ≤ wv m B d W then 1 else 0 := by
   have e : wv m B d W = wv m B d (W - 1) + 2 ^ (64 * (W - 1)) * (word m B (d + 8 * (W - 1))).toNat := by
-    rw [show W = W - 1 + 1 from by omega, wv]; simp
+    rw [show W = W - 1 + 1 from by omega_arith, wv]; simp
   have ha := wv_lt m B d (W - 1)
   have ht := (word m B (d + 8 * (W - 1))).isLt
   generalize wv m B d (W - 1) = a at e ha
   generalize (word m B (d + 8 * (W - 1))).toNat = t at e ht
-  have hp : 2 ^ (64 * W - 1) = 2 ^ (64 * (W - 1)) * 2 ^ 63 := by rw [← Nat.pow_add]; congr 1; omega
+  have hp : 2 ^ (64 * W - 1) = 2 ^ (64 * (W - 1)) * 2 ^ 63 := by rw [← Nat.pow_add]; congr 1; omega_arith
   generalize 2 ^ (64 * (W - 1)) = R at e ha hp
   rw [e, hp]
   by_cases h63 : 2 ^ 63 ≤ t
   · have : R * 2 ^ 63 ≤ R * t := Nat.mul_le_mul_left _ h63
-    rw [ite_eq_left (show R * 2 ^ 63 ≤ a + R * t by omega)]; omega
+    rw [ite_eq_left (show R * 2 ^ 63 ≤ a + R * t by omega_arith)]; omega_arith
   · have : R * t + R ≤ R * 2 ^ 63 := by
-      rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega)
-    rw [ite_eq_right (show ¬ R * 2 ^ 63 ≤ a + R * t by omega)]; omega
+      rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega_arith)
+    rw [ite_eq_right (show ¬ R * 2 ^ 63 ≤ a + R * t by omega_arith)]; omega_arith
 
 /-- The mask of a word's top bit. -/
 theorem shr63_mask_k (x : BitVec 64) :
@@ -62,10 +62,10 @@ theorem shr63_mask_k (x : BitVec 64) :
   have h : x >>> 63 = BitVec.ofNat 64 (x.toNat / 2 ^ 63) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
-    have := x.isLt; omega
+    have := x.isLt; omega_arith
   rw [h]
   have := x.isLt
-  rcases (show x.toNat / 2 ^ 63 = 0 ∨ x.toNat / 2 ^ 63 = 1 by omega) with e | e <;> rw [e] <;> decide
+  rcases (show x.toNat / 2 ^ 63 = 0 ∨ x.toNat / 2 ^ 63 = 1 by omega_arith) with e | e <;> rw [e] <;> decide
 
 theorem ite_mask_k (c : Bool) : (if c = true then mask true else mask false) = mask c := by cases c <;> rfl
 
@@ -99,7 +99,7 @@ theorem finalMask_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {n P Q e : Nat}
     WP isa (.block finalMask) s fun t => KS I s₀ t ∧ KF I.B I.W [.hdr kOk] s.mem t.mem ∧
       word t.mem I.B (8 * kOk) = mask (finalOk I.W n P Q e ok) := by
   have hnw := h.ws.scr.nowrap
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_arith
   have hw2 := h.ws.w2
   have sN := h.ws.sl (j := aQt) (by decide)
   have h256 := h.ws.h256
@@ -113,9 +113,9 @@ theorem finalMask_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {n P Q e : Nat}
   -- `x10 := ` the masks of the top bit and `ok`.
   refine WP.mono (WP.keep [.x3, .x7, .x10, .x16] (Q := fun t =>
       t.gpr .x10 = mask (decide (2 ^ (64 * I.W - 1) ≤ n) && ok) ∧ t.mem = s.mem) (by
-    brun [finTop, h16, h12, h0₁, m₁, top_addr I.B (d := slot I.W aQt) (w := I.W) hw1 (by omega),
-      hs₁.ld (d := slot I.W aQt + 8 * (I.W - 1)) (by omega), hdr_enc (show kOk < 32 by decide),
-      hs₁.ld (d := 8 * kOk) (by unfold kOk sFn; omega), shr63_mask_k, hok', mask_and', decide_eq_decide.mpr htop])
+    brun [finTop, h16, h12, h0₁, m₁, top_addr I.B (d := slot I.W aQt) (w := I.W) hw1 (by omega_arith),
+      hs₁.ld (d := slot I.W aQt + 8 * (I.W - 1)) (by omega_arith), hdr_enc (show kOk < 32 by decide),
+      hs₁.ld (d := 8 * kOk) (by unfold kOk sFn; omega_arith), shr63_mask_k, hok', mask_and', decide_eq_decide.mpr htop])
     (by decide) (by decide) (by decide +kernel)) fun s₂ ⟨⟨h10₂, m₂⟩, k₂⟩ => WP.block_append_iff.mpr ?_
   have h₂ := h.regs m₂ (k₁.trans k₂)
   -- `p` odd.
@@ -151,16 +151,16 @@ theorem finalMask_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {n P Q e : Nat}
       mask (decide (2 ^ (64 * I.W - 1) ≤ n) && ok && decide (P % 2 = 1) && decide (Q % 2 = 1) &&
         decide (e % 2 = 1)) ∧ t.mem = s₆.mem ∧ t.gpr .x7 = 0) (by
     brun [finE1, oddMask, finAnd, h0₆, h7₆, hdr_enc (show kEv < 32 by decide),
-      hs₆.ld (d := 8 * kEv) (by unfold kEv sFn; omega), hev₆, h10₆, mask_low, mask_low', hte, mask_and'])
+      hs₆.ld (d := 8 * kEv) (by unfold kEv sFn; omega_arith), hev₆, h10₆, mask_low, mask_low', hte, mask_and'])
     (by decide) (by decide) (by decide +kernel)) fun s₇ ⟨⟨h10₇, m₇, h7₇⟩, k₇⟩ => WP.block_append_iff.mpr ?_
   have hev₇ : s₇.mem.readW (off I.B (8 * kEv)) 64 = BitVec.ofNat 64 e := by rw [m₇]; exact hev₆
   have h0₇ : s₇.gpr .x0 = I.B := (k₇.gpr .x0 (by decide)).trans h0₆
   have hs₇ := hs₆.congr k₇.wr
   -- `e ≥ 3`: the carry, its mask, and'ed.
   refine WP.mono (WP.keep [.x3, .x4] (Q := fun t => t.c = decide (3 ≤ e) ∧ t.mem = s₇.mem) (by
-    brun [finE2, h0₇, hdr_enc (show kEv < 32 by decide), hs₇.ld (d := 8 * kEv) (by unfold kEv sFn; omega), hev₇]
+    brun [finE2, h0₇, hdr_enc (show kEv < 32 by decide), hs₇.ld (d := 8 * kEv) (by unfold kEv sFn; omega_arith), hev₇]
     rw [BitVec.toNat_not, show (BitVec.setWidth 64 3#16 : BitVec 64).toNat = 3 from rfl, Bool.toNat_true, hte]
-    exact decide_eq_decide.mpr (by omega))
+    exact decide_eq_decide.mpr (by omega_arith))
     (by decide) (by decide) (by decide +kernel)) fun s₈ ⟨⟨c₈, m₈⟩, k₈⟩ => WP.block_append_iff.mpr ?_
   have h10₈ := (k₈.gpr .x10 (by decide)).trans h10₇
   have h7₈ := (k₈.gpr .x7 (by decide)).trans h7₇
@@ -176,12 +176,12 @@ theorem finalMask_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {n P Q e : Nat}
   have hs₉ := hs₇.congr (k₈.trans k₉).wr
   -- `e < 2^33`: the borrow of `(e >> 33) − 1`.
   refine WP.mono (WP.keep [.x3, .x4] (Q := fun t => t.c = !decide (e < 2 ^ 33) ∧ t.mem = s₉.mem) (by
-    brun [finE3, h0₉, hdr_enc (show kEv < 32 by decide), hs₉.ld (d := 8 * kEv) (by unfold kEv sFn; omega), hev₉]
+    brun [finE3, h0₉, hdr_enc (show kEv < 32 by decide), hs₉.ld (d := 8 * kEv) (by unfold kEv sFn; omega_arith), hev₉]
     rw [BitVec.toNat_not, show (BitVec.setWidth 64 1#16 : BitVec 64).toNat = 1 from rfl, Bool.toNat_true,
       BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hte]
     rw [Bool.eq_iff_iff]
     simp only [decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not]
-    omega)
+    omega_arith)
     (by decide) (by decide) (by decide +kernel)) fun s₁₀ ⟨⟨c₁₀, m₁₀⟩, k₁₀⟩ => ?_
   have h10₁₀ := (k₁₀.gpr .x10 (by decide)).trans h10₉
   have h7₁₀ := (((k₈.trans k₉).trans k₁₀).gpr .x7 (by decide)).trans h7₇
@@ -197,13 +197,13 @@ theorem finalMask_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {n P Q e : Nat}
   refine WP.mono (WP.keep [.x4, .x10, .x15] (Q := fun t => t.mem = s₁₀.mem.writeW (off I.B (8 * kOk))
       (mask (finalOk I.W n P Q e ok))) (by
     brun [borrowMask, finSt, h7₁₀, h10₁₀, c₁₀, h0₁₀, hdr_enc (show kOk < 32 by decide),
-      hs₁₀.st (d := 8 * kOk) (by unfold kOk sFn; omega)]
+      hs₁₀.st (d := 8 * kOk) (by unfold kOk sFn; omega_arith)]
     rw [show (0 : BitVec 64) - 1#64 = mask true from rfl, show (0 : BitVec 64) = mask false from rfl, ite_mask_not_k,
       mask_and', hfin])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨mt, kt⟩ => ?_
   have hm₁₀ : s₁₀.mem = s₅.mem := by rw [m₁₀, m₉, m₈, m₇, m₆]
   rw [hm₁₀] at mt
-  obtain ⟨ht, ft, okt⟩ := h₅.hdrW (i := kOk) (by unfold kOk sFn; omega) mt
+  obtain ⟨ht, ft, okt⟩ := h₅.hdrW (i := kOk) (by unfold kOk sFn; omega_arith) mt
     (((((k₆.trans k₇).trans k₈).trans k₉).trans k₁₀).trans kt)
   exact ⟨ht, by rw [← hm₅]; exact ft, okt⟩
 

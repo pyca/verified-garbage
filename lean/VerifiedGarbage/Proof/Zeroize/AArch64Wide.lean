@@ -34,14 +34,14 @@ theorem wideStore_ok (s₀ s : State) (hp : contract.pre s₀) (i off : Nat)
   have hn := (s₀.gpr .x1).isLt
   have hc : (⟨s₀.gpr .x0, (s₀.gpr .x1).toNat⟩ : Region).Contains
       (s₀.gpr .x0 + BitVec.ofNat 64 (i + off)) 16 :=
-    Offset.contains_base _ hi (by omega)
+    Offset.contains_base _ hi (by omega_arith)
   have hm := List.mem_singleton_self (⟨s₀.gpr .x0, (s₀.gpr .x1).toNat⟩ : Region)
   rw [← hp.2] at hm
   have hs : InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 (i + off)) 16 := ⟨_, hm, hc⟩
   have ha : s₀.gpr .x0 + BitVec.ofNat 64 i + BitVec.ofNat 64 off =
       s₀.gpr .x0 + BitVec.ofNat 64 (i + off) := by rw [BitVec.add_assoc, BitVec.ofNat_add]
   crun [hd, hv, hw, ha, hs, hoff, State.store]
-  exact ⟨prefix_write hz (by omega), hf.write hm _ hc⟩
+  exact ⟨prefix_write hz (by omega_arith), hf.write hm _ hc⟩
 
 theorem wideStep_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
     (hi : i + 128 ≤ (s₀.gpr .x1).toNat) (h : InvV s₀ i s) :
@@ -51,7 +51,7 @@ theorem wideStep_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
   have hn := (s₀.gpr .x1).isLt
   have hc : ∀ k, k ≤ 112 → (⟨s₀.gpr .x0, (s₀.gpr .x1).toNat⟩ : Region).Contains
       (s₀.gpr .x0 + BitVec.ofNat 64 (i + k)) 16 :=
-    fun k hk => Offset.contains_base _ (by omega) (by omega)
+    fun k hk => Offset.contains_base _ (by omega_arith) (by omega_arith)
   have hm := List.mem_singleton_self (⟨s₀.gpr .x0, (s₀.gpr .x1).toNat⟩ : Region)
   rw [← hp.2] at hm
   have hs : ∀ k, k ≤ 112 → InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 (i + k)) 16 :=
@@ -72,14 +72,14 @@ theorem wideStep_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
     InvV, Inv, State.store, Nat.add_zero]
   refine ⟨⟨?_, ?_⟩, ?_⟩
   ·
-    have h1 := prefix_write (k := 16) hz (by omega)
-    have h2 := prefix_write (k := 16) h1 (by omega)
-    have h3 := prefix_write (k := 16) h2 (by omega)
-    have h4 := prefix_write (k := 16) h3 (by omega)
-    have h5 := prefix_write (k := 16) h4 (by omega)
-    have h6 := prefix_write (k := 16) h5 (by omega)
-    have h7 := prefix_write (k := 16) h6 (by omega)
-    have h8 := prefix_write (k := 16) h7 (by omega)
+    have h1 := prefix_write (k := 16) hz (by omega_arith)
+    have h2 := prefix_write (k := 16) h1 (by omega_arith)
+    have h3 := prefix_write (k := 16) h2 (by omega_arith)
+    have h4 := prefix_write (k := 16) h3 (by omega_arith)
+    have h5 := prefix_write (k := 16) h4 (by omega_arith)
+    have h6 := prefix_write (k := 16) h5 (by omega_arith)
+    have h7 := prefix_write (k := 16) h6 (by omega_arith)
+    have h8 := prefix_write (k := 16) h7 (by omega_arith)
     simpa only [Nat.add_assoc, Nat.reduceAdd, BitVec.ofNat_eq_ofNat] using h8
   ·
     have f1 := hf.write hm 0 (hc 0 (by decide))
@@ -100,7 +100,7 @@ theorem wideLoop_ok (s₀ s : State) (hp : contract.pre s₀) (i n : Nat)
       InvV s₀ (i + 128 * n) t ∧ t.gpr .x1 = s.gpr .x1 := by
   have hlt : n < 2 ^ 64 := by
     have := (s₀.gpr .x1).isLt
-    omega
+    omega_arith
   unfold wideLoop
   by_cases he : n = 0
   · subst n
@@ -113,7 +113,7 @@ theorem wideLoop_ok (s₀ s : State) (hp : contract.pre s₀) (i n : Nat)
       t.gpr .x1 = s.gpr .x1) ?_ n s ?_
     · intro rem t ⟨j, hj, hr, ht, hct, hst⟩
       refine WP.mono (wideStep_ok s₀ t hp _ ?_ ht) fun u ⟨hu, hcu, hsu⟩ => ?_
-      · omega
+      · omega_arith
       have hpred : BitVec.ofNat 64 (n-j) - 1 = BitVec.ofNat 64 (n-(j+1)) := by bv_omega
       rw [hct, hpred] at hcu
       have hoff : i + 128 * j + 128 =
@@ -126,9 +126,9 @@ theorem wideLoop_ok (s₀ s : State) (hp : contract.pre s₀) (i n : Nat)
         exact ⟨hu, hsu.trans hst⟩
       · right
         have hnz : BitVec.ofNat 64 (n-(j+1)) ≠ (0 : BitVec 64) := by bv_omega
-        refine ⟨by simp only [eval, State.read, BitVec.setWidth_eq, hcu, bne, beq_eq_false_iff_ne.mpr hnz]; rfl, n-(j+1), by omega,
-          j+1, by omega, rfl, hu, hcu, hsu.trans hst⟩
-    · exact ⟨0, by omega, by omega, by simpa using h, by simpa using hc, rfl⟩
+        refine ⟨by simp only [eval, State.read, BitVec.setWidth_eq, hcu, bne, beq_eq_false_iff_ne.mpr hnz]; rfl, n-(j+1), by omega_arith,
+          j+1, by omega_arith, rfl, hu, hcu, hsu.trans hst⟩
+    · exact ⟨0, by omega_arith, by omega_arith, by simpa using h, by simpa using hc, rfl⟩
 
 
 theorem tail128 (x : BitVec 64) : x &&& 127 = BitVec.ofNat 64 (x.toNat % 128) := by
@@ -136,7 +136,7 @@ theorem tail128 (x : BitVec 64) : x &&& 127 = BitVec.ofNat 64 (x.toNat % 128) :=
   rw [BitVec.toNat_and, show (127 : BitVec 64).toNat = 2 ^ 7 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem wideCorrect (s₀ : State) (hp : contract.pre s₀) :
     WP isa zeroizeWide s₀ fun t => contract.post s₀ t ∧ Frame s₀.wr s₀.mem t.mem := by
@@ -147,10 +147,10 @@ theorem wideCorrect (s₀ : State) (hp : contract.pre s₀) :
       t.gpr .x1 = BitVec.ofNat 64 (n % 128) := by
     crun [InvV, Inv, Prefix, shr64, tail128, VOp.eval, State.setV, ofVDwords,
       (show BitVec.setWidth 64 (127#16) = (127 : BitVec 64) from rfl)]
-    exact ⟨⟨by omega, Frame.refl _ _⟩, rfl, tail128 _⟩
+    exact ⟨⟨by omega_arith, Frame.refl _ _⟩, rfl, tail128 _⟩
   unfold zeroizeWide
   refine WP.seq (WP.mono start fun t ⟨ht, hc, hs⟩ => ?_)
-  refine WP.seq (WP.mono (wideLoop_ok s₀ t hp 0 (n / 128) (by dsimp [n]; omega) ht hc)
+  refine WP.seq (WP.mono (wideLoop_ok s₀ t hp 0 (n / 128) (by dsimp [n]; omega_arith) ht hc)
     fun u ⟨hu, hsu⟩ => ?_)
   have mid : WP isa (.block [.lsr .x .x3 .x1 3, .movz .x .x4 7 0,
       .logic .and .x .x1 .x1 .x4]) u fun v =>
@@ -158,27 +158,27 @@ theorem wideCorrect (s₀ : State) (hp : contract.pre s₀) :
       v.gpr .x3 = BitVec.ofNat 64 ((n % 128) / 8) ∧
       v.gpr .x1 = BitVec.ofNat 64 (n % 8) := by
     have hu' : Inv s₀ (128 * (n / 128)) u := by simpa using hu.1
-    have hsmall : (BitVec.ofNat 64 (n % 128)).toNat = n % 128 := by simp; omega
+    have hsmall : (BitVec.ofNat 64 (n % 128)).toNat = n % 128 := by simp; omega_arith
     crun [Inv, hsu, hs, count, tail, hsmall,
       (show BitVec.setWidth 64 (7#16) = (7 : BitVec 64) from rfl)]
     refine ⟨hu', ?_⟩
     have hh := tail (BitVec.ofNat 64 (n % 128))
     rw [hsmall] at hh
-    have he : n % 128 % 8 = n % 8 := by omega
+    have he : n % 128 % 8 = n % 8 := by omega_arith
     simpa only [he, BitVec.ofNat_eq_ofNat] using hh
   refine WP.seq (WP.mono mid fun v ⟨hv, hcv, hsv⟩ => ?_)
   refine WP.seq (WP.mono (loop_ok true s₀ v hp (128 * (n / 128)) ((n % 128) / 8)
-    (by dsimp [n]; omega) hv hcv) fun w ⟨hw, hsw⟩ => ?_)
+    (by dsimp [n]; omega_arith) hv hcv) fun w ⟨hw, hsw⟩ => ?_)
   have last : WP isa (.block [.addImm .x .x3 .x1 0]) w fun z =>
       Inv s₀ (128 * (n / 128) + 8 * ((n % 128) / 8)) z ∧
       z.gpr .x3 = BitVec.ofNat 64 (n % 8) := by
     crun [Inv, hsw, hsv]
     exact hw
   refine WP.seq (WP.mono last fun z ⟨hz, hcz⟩ => ?_)
-  refine WP.mono (loop_ok false s₀ z hp _ (n % 8) (by dsimp [n]; omega) hz hcz)
+  refine WP.mono (loop_ok false s₀ z hp _ (n % 8) (by dsimp [n]; omega_arith) hz hcz)
     fun w ⟨hw, _⟩ => ?_
   have hn : 128 * (n / 128) + 8 * ((n % 128) / 8) + (if false then 8 else 1) * (n % 8) = n := by
-    simp; omega
+    simp; omega_arith
   rw [hn] at hw
   exact ⟨prefix_spec hw.2.2.2.1, hw.2.2.2.2⟩
 

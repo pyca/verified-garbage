@@ -32,12 +32,12 @@ open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sK sCnt)
 theorem wv_low {m : Mem} {B : Addr} {o w k v : Nat} (h : wv m B o w = v) (hk : k ≤ w)
     (hv : v < 2 ^ (64 * k)) : wv m B o k = v := by
   have e := wv_add m B o k (w - k)
-  rw [show k + (w - k) = w by omega, h] at e
+  rw [show k + (w - k) = w by omega_arith, h] at e
   generalize 2 ^ (64 * k) = P at e hv
   generalize wv m B (o + 8 * k) (w - k) = hi at e
   rcases Nat.eq_zero_or_pos hi with h0 | hpos
   · rw [h0, Nat.mul_zero, Nat.add_zero] at e; exact e.symm
-  · have := Nat.le_mul_of_pos_right P hpos; omega
+  · have := Nat.le_mul_of_pos_right P hpos; omega_arith
 
 theorem test_true (M : Mont) (R : Kernel) :
     test true M.mm R.run = phase true ++
@@ -61,11 +61,11 @@ theorem qPhase_ok {p : PP} {s : State} {c u : Nat} (h : PSt p (mW p.bits) s)
   have hws := h.ws
   have hn := hws.scr.nowrap
   have sN := hws.sl (show aN < 16 by decide)
-  obtain ⟨hpo, hl, hu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega)
+  obtain ⟨hpo, hl, hu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L))
   rw [← hc] at hpo hl hu
-  obtain ⟨hql, hqu⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega) hpo hl hu
-  have hbl := VG.Proof.Ffdh.ParameterCandidate.half_pred_bitLength (bits := p.bits) (by omega)
+  obtain ⟨hql, hqu⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega_arith) hpo hl hu
+  have hbl := VG.Proof.Ffdh.ParameterCandidate.half_pred_bitLength (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L)) (by rw [← hc]; exact hqo)
   rw [← hc] at hbl
   refine WP.mono (phase_ok h.ph true) fun t ht => ?_
@@ -74,25 +74,25 @@ theorem qPhase_ok {p : PP} {s : State} {c u : Nat} (h : PSt p (mW p.bits) s)
   rw [hmb] at st
   have hEZ := h.dims.eZ true
   rw [hmb] at hEZ
-  have hwq : mW (p.bits - 1) ≤ mW p.bits := by simp only [mW]; omega
+  have hwq : mW (p.bits - 1) ≤ mW p.bits := by simp only [mW]; omega_arith
   have iq : InScr p.B p.Z s.mem t.mem := InScr.of_frm ht.frm fun r hr => by
-    have := phaseRanges_kmut r hr; have := hws.h256; omega
-  refine ⟨⟨st, by omega, by omega, hEZ, by rw [← hmb]; exact ht.len, by rw [← hmb]; exact ht.top,
-    by rw [← hmb]; exact ht.checks, ht.mask, ?_, hqo, ?_, hbl, ?_, hul, hL, by omega⟩, iq, ht.keep⟩
+    have := phaseRanges_kmut r hr; have := hws.h256; omega_arith
+  refine ⟨⟨st, by omega_arith, by omega_arith, hEZ, by rw [← hmb]; exact ht.len, by rw [← hmb]; exact ht.top,
+    by rw [← hmb]; exact ht.checks, ht.mask, ?_, hqo, ?_, hbl, ?_, hul, hL, by omega_arith⟩, iq, ht.keep⟩
   · refine wv_low (w := mW p.bits) ?_ hwq (Nat.lt_of_lt_of_le hqu (Nat.pow_le_pow_right (by decide) (by
-      simp only [mW]; omega)))
+      simp only [mW]; omega_arith)))
     rw [show slot (mW (p.bits - 1)) aN = slot (mW p.bits) aN by simp only [slot, aN, Nat.zero_mul]]
     rw [ht.frm.wv_eq (fun r hr => .inr (Nat.le_trans (phaseRanges_kmut r hr)
-      (by simp only [slot, hdrBytes, aN]; omega))) (by omega)]
+      (by simp only [slot, hdrBytes, aN]; omega_arith))) (by omega_arith)]
     exact hq
-  · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show p.bits - 1 - 1 ≤ p.bits - 2 by omega)
-    omega
+  · have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show p.bits - 1 - 1 ≤ p.bits - 2 by omega_arith)
+    omega_arith
   · rw [ht.frm.word_eq (fun r hr => by
       have := phaseRanges_kmut r hr
       simp only [phaseRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [kUsed, sK, fChecks, sW, sArr, sStride, Public.sMask, fTop, sFn] <;> omega)
-      (by simp only [kUsed, sFn]; have := hws.h256; omega)]
+        simp only [kUsed, sK, fChecks, sW, sArr, sStride, Public.sMask, fTop, sFn] <;> omega_arith)
+      (by simp only [kUsed, sFn]; have := hws.h256; omega_arith)]
     exact hU
 
 /-- The test of `p`, loaded again. -/
@@ -103,10 +103,10 @@ theorem pPhase_ok {p : PP} {s : State} {c u : Nat} (h : PH p s)
       TT p p.bits c u t ∧ InScr p.B p.Z s.mem t.mem ∧ Keep mmRegs s t := by
   have hb1 := h.dims.b1
   have hb2 := h.dims.b2
-  have h256 : 8 * 32 ≤ p.Z := by have := h.dims.z; omega
-  obtain ⟨hpo, hl, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega)
+  have h256 : 8 * 32 ≤ p.Z := by have := h.dims.z; omega_arith
+  obtain ⟨hpo, hl, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L))
-  have hbl := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := p.bits) (by omega)
+  have hbl := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L))).2
   rw [← hc] at hpo hl hbl
   refine wp_seqs_append (by simp [phase]) (by simp [shapeP, loadA]) ?_
@@ -123,18 +123,18 @@ theorem pPhase_ok {p : PP} {s : State} {c u : Nat} (h : PH p s)
     rw [ht.frm.word_eq (fun r hr => by
       simp only [phaseRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [kUsed, sK, fChecks, sW, sArr, sStride, Public.sMask, fTop, sFn] <;> omega)
-      (by simp only [kUsed, sFn]; have := st.ws.scr.nowrap; omega)]
+        simp only [kUsed, sK, fChecks, sW, sArr, sStride, Public.sMask, fTop, sFn] <;> omega_arith)
+      (by simp only [kUsed, sFn]; have := st.ws.scr.nowrap; omega_arith)]
     exact hU
   refine WP.mono (shapeP_ok st hlen htop hL) fun t₂ ⟨st₂, hn₂, f₂, k₂⟩ => ?_
   have hn := st₂.ws.scr.nowrap
   have hH : ∀ {k : Nat}, k < 32 → word t₂.mem p.B (8 * k) = word t.mem p.B (8 * k) := fun {k} hk =>
     f₂.word_eq (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact .inl (by simp only [slot, hdrBytes, aN]; omega)) (by omega)
+      rw [List.mem_singleton.mp hr]; exact .inl (by simp only [slot, hdrBytes, aN]; omega_arith)) (by omega_arith)
   have ip : InScr p.B p.Z s.mem t₂.mem := (InScr.of_frm ht.frm fun r hr => by
-    have := phaseRanges_kmut r hr; omega).trans (InScr.of_frm f₂ fun r hr => by
+    have := phaseRanges_kmut r hr; omega_arith).trans (InScr.of_frm f₂ fun r hr => by
       rw [List.mem_singleton.mp hr]; exact st₂.ws.sl (show aN < 16 by decide))
-  exact ⟨⟨st₂, by omega, by omega, hEZ, by rw [hH (by decide)]; exact hlen,
+  exact ⟨⟨st₂, by omega_arith, by omega_arith, hEZ, by rw [hH (by decide)]; exact hlen,
     by rw [hH (by decide)]; exact htop, by rw [hH (by decide)]; have := ht.checks; rw [hmb] at this; exact this,
     by rw [hH (by decide)]; exact ht.mask, by rw [hn₂, hc], hpo, hl, hbl, by rw [hH (by decide)]; exact hUt, hul, hL, Nat.le_refl _⟩,
     ip, (ht.keep.trans k₂).mono (by decide)⟩

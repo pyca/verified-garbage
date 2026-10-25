@@ -104,33 +104,33 @@ theorem tagArgs_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env c st
       (∀ r, r ≠ .r0 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   have h9 := he.r9; have h10 := he.r10; have h11 := he.r11
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega_arith
   have r₀ := he.perm.stR (show 16 + 4 ≤ 80 by decide)
   have r₁ := he.perm.stR (show 20 + 4 ≤ 80 by decide)
   have r₂ := he.perm.stR (show 24 + 4 ≤ 80 by decide)
   have r₃ := he.perm.stR (show 28 + 4 ≤ 80 by decide)
-  have w₀ := he.perm.wW (show o + 4 ≤ 768 by omega)
-  have w₁ := he.perm.wW (show o + 4 + 4 ≤ 768 by omega)
-  have w₂ := he.perm.wW (show o + 8 + 4 ≤ 768 by omega)
-  have w₃ := he.perm.wW (show o + 12 + 4 ≤ 768 by omega)
+  have w₀ := he.perm.wW (show o + 4 ≤ 768 by omega_arith)
+  have w₁ := he.perm.wW (show o + 4 + 4 ≤ 768 by omega_arith)
+  have w₂ := he.perm.wW (show o + 8 + 4 ≤ 768 by omega_arith)
+  have w₃ := he.perm.wW (show o + 12 + 4 ≤ 768 by omega_arith)
   have q : ∀ a d, a + 4 ≤ 80 → d + 4 ≤ o + 16 → o ≤ d →
       (⟨State.addr st + BitVec.ofNat 64 a, 4⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, 4⟩ :=
-    fun a d h₁ h₂ h₃ => L.st_w h₁ (by omega)
-  have o₀ : o < 4096 := by omega
-  have o₁ : o + 4 < 4096 := by omega
-  have o₂ : o + 8 < 4096 := by omega
-  have o₃ : o + 12 < 4096 := by omega
+    fun a d h₁ h₂ h₃ => L.st_w h₁ (by omega_arith)
+  have o₀ : o < 4096 := by omega_arith
+  have o₁ : o + 4 < 4096 := by omega_arith
+  have o₂ : o + 8 < 4096 := by omega_arith
+  have o₃ : o + 12 < 4096 := by omega_arith
   have eo : encodable (BitVec.ofNat 32 o) = true := by rcases ho with rfl | rfl <;> decide
-  have e₁ := L.wA (d := o) (by omega)
-  have e₂ := L.wA (d := o + 4) (by omega)
-  have e₃ := L.wA (d := o + 8) (by omega)
-  have e₄ := L.wA (d := o + 12) (by omega)
-  have p₁ := fun m v => sepW (m := m) (v := v) (q 20 o (by decide) (by omega) (by omega))
-  have p₂ := fun m v => sepW (m := m) (v := v) (q 24 o (by decide) (by omega) (by omega))
-  have p₃ := fun m v => sepW (m := m) (v := v) (q 24 (o + 4) (by decide) (by omega) (by omega))
-  have p₄ := fun m v => sepW (m := m) (v := v) (q 28 o (by decide) (by omega) (by omega))
-  have p₅ := fun m v => sepW (m := m) (v := v) (q 28 (o + 4) (by decide) (by omega) (by omega))
-  have p₆ := fun m v => sepW (m := m) (v := v) (q 28 (o + 8) (by decide) (by omega) (by omega))
+  have e₁ := L.wA (d := o) (by omega_arith)
+  have e₂ := L.wA (d := o + 4) (by omega_arith)
+  have e₃ := L.wA (d := o + 8) (by omega_arith)
+  have e₄ := L.wA (d := o + 12) (by omega_arith)
+  have p₁ := fun m v => sepW (m := m) (v := v) (q 20 o (by decide) (by omega_arith) (by omega_arith))
+  have p₂ := fun m v => sepW (m := m) (v := v) (q 24 o (by decide) (by omega_arith) (by omega_arith))
+  have p₃ := fun m v => sepW (m := m) (v := v) (q 24 (o + 4) (by decide) (by omega_arith) (by omega_arith))
+  have p₄ := fun m v => sepW (m := m) (v := v) (q 28 o (by decide) (by omega_arith) (by omega_arith))
+  have p₅ := fun m v => sepW (m := m) (v := v) (q 28 (o + 4) (by decide) (by omega_arith) (by omega_arith))
+  have p₆ := fun m v => sepW (m := m) (v := v) (q 28 (o + 8) (by decide) (by omega_arith) (by omega_arith))
   refine ⟨_, by simp only [tagArgs]; arun [h10, h11, L.stA, e₁, e₂, e₃, e₄, r₀, r₁, r₂, r₃, w₀, w₁, w₂, w₃, o₀, o₁, o₂,
     o₃, eo, p₁, p₂, p₃, p₄, p₅, p₆], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_store, store4_eq, add_ofNat_assoc]
@@ -146,30 +146,30 @@ theorem ctrTag_mk {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env c st 
     (h0 : s.gpr .r0 = c) (h2 : s.gpr .r2 = st)
     (h3 : s.gpr .r3 = w + BitVec.ofNat 32 o) (h12 : s.gpr .r12 = BitVec.ofNat 32 1) :
     CtrCall s c st (w + BitVec.ofNat 32 o) 1 := by
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega_arith
   have hk := he.sp
-  have eT := L.wA (d := o) (by omega)
+  have eT := L.wA (d := o) (by omega_arith)
   have dJo : (⟨State.addr st, 16⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 o, 16⟩ := by
     simpa using L.st_w (a := 0) (n := 16) (by decide) hoW
-  refine ⟨h0, h2, h3, h12, by rw [hk]; exact L.sp8, by have := L.cw; omega,
-    by have := L.sw; omega, by rw [L.wN (by omega)]; have := L.ww; omega,
+  refine ⟨h0, h2, h3, h12, by rw [hk]; exact L.sp8, by have := L.cw; omega_arith,
+    by have := L.sw; omega_arith, by rw [L.wN (by omega_arith)]; have := L.ww; omega_arith,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals try simp only [eT, hk, Nat.mul_one]
   · exact L.cs.sub_left (Region.sub_prefix (by decide)) |>.sub_right (Region.sub_prefix (by decide))
-  · exact (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega))
+  · exact (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega_arith))
   · exact dJo
   · exact L.kc.sub_right (Region.sub_prefix (by decide))
   · simpa using L.stk_st (a := 0) (n := 16) (by decide)
-  · simpa using L.stk_w (a := o) (n := 16) (by omega)
+  · simpa using L.stk_w (a := o) (n := 16) (by omega_arith)
   · exact covers_prefix he.perm.ctx (by decide)
-  · exact covers_cons (covers_prefix he.perm.st (by decide)) (he.perm.wC (by omega))
+  · exact covers_cons (covers_prefix he.perm.st (by decide)) (he.perm.wC (by omega_arith))
 
 /-- The copy and the call of `vg_sm4_ctr32` on it. -/
 theorem tagCall_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cLen : Nat} {m₀ : Mem} {s : State}
     (h : TagMid c st w sp k7 k8 H Y J aLen cLen m₀ s) :
     WP isa (.seq (.block (tagArgs o)) ctrCall) s (TagOut c st w sp k7 k8 o H Y J aLen cLen m₀) := by
   have he := h.env
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega_arith
   obtain ⟨s₂, run₂, hm₂, h0, h2, h3, h12, hg₂, hrd₂, hwr₂, hsp₂⟩ := tagArgs_ok L ho he
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
   have he₂ : Env c st w sp k7 k8 s₂ := he.keep (fun r hr => by
@@ -177,7 +177,7 @@ theorem tagCall_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cLen
     rcases hr with rfl | rfl | rfl | rfl | rfl <;>
       exact hg₂ _ (by decide) (by decide) (by decide) (by decide)) hsp₂ hrd₂ hwr₂
   have hk := he₂.sp
-  have eT := L.wA (d := o) (by omega)
+  have eT := L.wA (d := o) (by omega_arith)
   have f₂ : Frame [⟨State.addr w + BitVec.ofNat 64 o, 16⟩] s.mem s₂.mem := by rw [hm₂]; exact Cmac.frame_store4 _ _ _ _ _
   have hT : bytesAt s₂.mem (State.addr w + BitVec.ofNat 64 o) 16 = bytesAt s.mem (State.addr st + BitVec.ofNat 64 16) 16 := by
     rw [hm₂, bytesAt_copy4]
@@ -187,7 +187,7 @@ theorem tagCall_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cLen
     rw [blockAt_frame f₂ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dJo, h.hJ]
   have hc₂ : ciphOf s₂.mem (State.addr c) = ciphOf m₀ (State.addr c) := by
     rw [ciph_frame f₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega))), h.hc]
+      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega_arith))), h.hc]
   have hcall : CtrCall s₂ c st (w + BitVec.ofNat 32 o) 1 := ctrTag_mk L ho he₂ h0 h2 h3 h12
   refine WP.mono (ctr_call hcall) fun s₃ g => ?_
   have gout := g.out; have gframe := g.frame

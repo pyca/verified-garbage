@@ -55,17 +55,17 @@ def cv (L : List Zq) (i : Nat) : BitVec 32 := BitVec.ofNat 32 (L.getD i 0).val
 theorem d₁_lt (B : List Byte) (t : Nat) : d₁ B t < 2 ^ 12 := by
   have := (xofByte B (3 * t)).isLt
   have := Nat.mod_lt (xofByte B (3 * t + 1)).toNat (show 16 > 0 by decide)
-  simp only [d₁]; omega
+  simp only [d₁]; omega_arith
 
 theorem d₂_lt (B : List Byte) (t : Nat) : d₂ B t < 2 ^ 12 := by
   have := (xofByte B (3 * t + 1)).isLt
   have := (xofByte B (3 * t + 2)).isLt
-  simp only [d₂]; omega
+  simp only [d₂]; omega_arith
 
 theorem LA_else {B : List Byte} {t : Nat} (h : ¬ (LA B t).length < 256) : LA B t = LA B (t + 1) := by
   have := sampleAfter_length_le (a := []) (Nat.zero_le _) (xofByte B) t
   simp only [LA] at h ⊢
-  rw [sampleAfter_succ, sampleStepCap_full (by rw [n_eq] at this ⊢; omega)]
+  rw [sampleAfter_succ, sampleStepCap_full (by rw [n_eq] at this ⊢; omega_arith)]
 
 theorem step_eq (L : List Zq) (c₀ c₁ c₂ : Byte) :
     sampleStep L c₀ c₁ c₂ = (let L₁ := acc L (c₀.toNat + 256 * (c₁.toNat % 16))
@@ -117,8 +117,8 @@ theorem linit_piece : Piece Pre Pub Out (fun s₀ s => Loop s₀ 0 (LA (Bs s₀)
   refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_)
     (by taint_decide)
   · have a₁ := h.argEa (i := 1)
-    have i₁ := h.argIn hp (i := 1) (by omega)
-    have v₁ := h.argw hp (i := 1) (by omega)
+    have i₁ := h.argIn hp (i := 1) (by omega_arith)
+    have v₁ := h.argw hp (i := 1) (by omega_arith)
     simp only [Nat.mul_one, Nat.reduceAdd] at a₁
     apply WP.of_runBlock
     simp only [↓reduceIte, smpLoopInit, at_, runBlock_cons, runStep_some, runBlock_nil,
@@ -139,18 +139,18 @@ theorem chunk_ok {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 280) {s : St
       eval .b s' = some (decide ((LA (Bs s₀) t).length < 256)) := by
   have hs := hp.s_fit
   have eb : ∀ o < 3, (sP s₀ + BitVec.ofNat 32 (3 * t) + BitVec.ofNat 32 o).setWidth 64 =
-      sA s₀ + BitVec.ofNat 64 (3 * t + o) := fun o ho => ea_add (by omega)
-  have e0 := eb 0 (by omega)
-  have e1 := eb 1 (by omega)
-  have e2 := eb 2 (by omega)
+      sA s₀ + BitVec.ofNat 64 (3 * t + o) := fun o ho => ea_add (by omega_arith)
+  have e0 := eb 0 (by omega_arith)
+  have e1 := eb 1 (by omega_arith)
+  have e2 := eb 2 (by omega_arith)
   have inS : ∀ o < 3, InRegions (s.rd ++ s.wr) (sA s₀ + BitVec.ofNat 64 (3 * t + o)) 1 := fun o ho =>
-    ⟨sR s₀, List.mem_append_right _ (by rw [h.wr, P0_wr, hp.wr]; simp), contains_at (by omega) hs⟩
-  have i0 := inS 0 (by omega)
-  have i1 := inS 1 (by omega)
-  have i2 := inS 2 (by omega)
-  have v0 := h.out (3 * t + 0) (by omega)
-  have v1 := h.out (3 * t + 1) (by omega)
-  have v2 := h.out (3 * t + 2) (by omega)
+    ⟨sR s₀, List.mem_append_right _ (by rw [h.wr, P0_wr, hp.wr]; simp), contains_at (by omega_arith) hs⟩
+  have i0 := inS 0 (by omega_arith)
+  have i1 := inS 1 (by omega_arith)
+  have i2 := inS 2 (by omega_arith)
+  have v0 := h.out (3 * t + 0) (by omega_arith)
+  have v1 := h.out (3 * t + 1) (by omega_arith)
+  have v2 := h.out (3 * t + 2) (by omega_arith)
   simp only [Nat.add_zero] at e0 i0 v0
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, smpChunk, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
@@ -165,22 +165,22 @@ theorem chunk_ok {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 280) {s : St
         (xofByte (Bs s₀) (3 * t + 1)).toNat % 16 := by
       rw [show (15 : BitVec 32) = BitVec.ofNat 32 (2 ^ 4 - 1) from rfl, toNat_and_mask _ _ (by decide),
         toNat_byte32]
-    rw [BitVec.toNat_add, rotr_small _ (by decide) (by decide) (by rw [hm]; omega), hm, toNat_byte32,
-      Nat.mod_eq_of_lt (by omega), d₁]
-    omega
+    rw [BitVec.toNat_add, rotr_small _ (by decide) (by decide) (by rw [hm]; omega_arith), hm, toNat_byte32,
+      Nat.mod_eq_of_lt (by omega_arith), d₁]
+    omega_arith
   have x1 : (BitVec.setWidth 32 (xofByte (Bs s₀) (3 * t + 1)) >>> 4 +
       (BitVec.setWidth 32 (xofByte (Bs s₀) (3 * t + 2))).rotateRight 28).toNat = d₂ (Bs s₀) t := by
     have l1 := (xofByte (Bs s₀) (3 * t + 1)).isLt
     have l2 := (xofByte (Bs s₀) (3 * t + 2)).isLt
-    rw [BitVec.toNat_add, rotr_small _ (by decide) (by decide) (by rw [toNat_byte32]; omega), toNat_shr,
-      toNat_byte32, toNat_byte32, Nat.mod_eq_of_lt (by omega), d₂]
-    omega
+    rw [BitVec.toNat_add, rotr_small _ (by decide) (by decide) (by rw [toNat_byte32]; omega_arith), toNat_shr,
+      toNat_byte32, toNat_byte32, Nat.mod_eq_of_lt (by omega_arith), d₂]
+    omega_arith
   have hl := h.len
   refine ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.out, by simp [h.esi], by simp [h.ebp], h.len,
     by simp [h.edi], by simp [h.ecx], h.coef⟩, ?_⟩, ?_, ?_⟩
   · exact eq_ofNat_of_toNat x1
   · exact eq_ofNat_of_toNat x0
-  · simp only [eval, h.ecx, toNat_ofNat32 (show (LA (Bs s₀) t).length < 2 ^ 32 by omega)]
+  · simp only [eval, h.ecx, toNat_ofNat32 (show (LA (Bs s₀) t).length < 2 ^ 32 by omega_arith)]
     rfl
 
 theorem chunk_piece (t : Nat) (ht : t < 280) :
@@ -210,7 +210,7 @@ theorem store_ok {s₀ : State} (hp : Pre s₀) {t : Nat} {L : List Zq} {r : Reg
   have hn : L.length < n := by rw [n_eq]; exact hl
   have ea : (aP s₀ + BitVec.ofNat 32 (4 * L.length) + BitVec.ofNat 32 0).setWidth 64 =
       coeffAddr (aA s₀) L.length := by
-    rw [ea_add (by omega)]; rfl
+    rw [ea_add (by omega_arith)]; rfl
   have hin : InRegions s.wr (coeffAddr (aA s₀) L.length) 4 :=
     ⟨polyRegion (aA s₀), by rw [h.wr, P0_wr, hp.wr]; simp, coeff_contains _ hn⟩
   have fa : Frame [polyRegion (aA s₀)] s.mem (s.mem.writeW (coeffAddr (aA s₀) L.length) (BitVec.ofNat 32 v)) :=
@@ -221,7 +221,7 @@ theorem store_ok {s₀ : State} (hp : Pre s₀) {t : Nat} {L : List Zq} {r : Reg
     hrv, Option.some.injEq, exists_eq_left']
   refine ⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame.writeW (r := polyRegion (aA s₀)) (by simp) _
     (coeff_contains _ hn)⟩, fun p hp' => ?_, by simp [h.esi], by simp [h.ebp],
-    (by simp only [List.length_append, List.length_singleton]; omega), ?_, ?_, fun i hi => ?_⟩, by simp [h.ebx]⟩
+    (by simp only [List.length_append, List.length_singleton]; omega_arith), ?_, ?_, fun i hi => ?_⟩, by simp [h.ebx]⟩
   · exact (fa.bytes (R := ⟨sA s₀, 840⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.a_s.symm.sub_left (Region.sub_prefix (by decide))) (show 840 ≤ 2 ^ 64 by decide) hp').trans (h.out p hp')
@@ -231,8 +231,8 @@ theorem store_ok {s₀ : State} (hp : Pre s₀) {t : Nat} {L : List Zq} {r : Reg
     rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, ofNat_add_ofNat]
   · simp only [List.length_append, List.length_singleton] at hi
     by_cases e : i < L.length
-    · rw [coeffAt_writeW_ne _ _ (by rw [n_eq]; omega) hn (by omega), cv_append _ _ e]; exact h.coef i e
-    · rw [show i = L.length by omega, coeffAt_writeW_self, cv_last _ hv]
+    · rw [coeffAt_writeW_ne _ _ (by rw [n_eq]; omega_arith) hn (by omega_arith), cv_append _ _ e]; exact h.coef i e
+    · rw [show i = L.length by omega_arith, coeffAt_writeW_self, cv_last _ hv]
 
 /-- Accepting the candidate `v` in `r`: the coefficients `L` become `L' = acc L v`. -/
 theorem accept_piece (t : Nat) (r : Reg) {A : State → State → Prop} (X : State → Prop)
@@ -256,7 +256,7 @@ theorem accept_piece (t : Nat) (r : Reg) {A : State → State → Prop} (X : Sta
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
       Option.bind_some, Option.some.injEq, exists_eq_left']
     refine ⟨h.flags rfl rfl rfl rfl, hv, hl, he, hx, ?_⟩
-    simp only [eval, hv, toNat_ofNat32 (show v (Bs s₀) < 2 ^ 32 by omega)]
+    simp only [eval, hv, toNat_ofNat32 (show v (Bs s₀) < 2 ^ 32 by omega_arith)]
     rfl
   · refine Piece.taint [.edi] (fun s₀ s hp ⟨⟨h, hv, hl, he, hx, _⟩, hb⟩ => ?_)
       (fun s₀ s₀' s s' _ _ hq ⟨⟨h, _⟩, _⟩ ⟨⟨h', _⟩, _⟩ r hr => ?_) t₂
@@ -283,7 +283,7 @@ theorem cmp_piece (t : Nat) (X : State → Prop) (L : List Byte → List Zq) :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨h.flags rfl rfl rfl rfl, hx⟩, ?_⟩
-  simp only [eval, h.ecx, toNat_ofNat32 (show (L (Bs s₀)).length < 2 ^ 32 by omega)]
+  simp only [eval, h.ecx, toNat_ofNat32 (show (L (Bs s₀)).length < 2 ^ 32 by omega_arith)]
   rfl
 
 theorem end_ok {s₀ : State} {t : Nat} (ht : t < 280) {L : List Zq} {s : State} (h : Mid s₀ t L s) :
@@ -299,7 +299,7 @@ theorem end_ok {s₀ : State} {t : Nat} (ht : t < 280) {L : List Zq} {s : State}
   · simp only [ite_true, h.ebp]
     exact cnt_next ht
   · simp only [eval, h.ebp]
-    exact cnt_ne ht (by omega)
+    exact cnt_ne ht (by omega_arith)
 
 theorem nil_piece {A B : State → State → Prop} (h : ∀ s₀ s, Pre s₀ → A s₀ s → B s₀ s) :
     Piece Pre Pub A B (.block []) :=
@@ -351,6 +351,6 @@ theorem fin_piece : Piece Pre Pub (fun s₀ s => Loop s₀ 280 (LA (Bs s₀) 280
     by rw [g _ (by decide), h.edi], by rw [g _ (by decide), h.ecx], by rw [o.mem]; exact h.coef⟩, ?_⟩
   rw [e]
   simp only [State.setReg, ite_true, h.ecx]
-  exact eq_ofNat_of_toNat (by rw [toNat_shr, toNat_ofNat32 (show (LA (Bs s₀) 280).length < 2 ^ 32 by omega)])
+  exact eq_ofNat_of_toNat (by rw [toNat_shr, toNat_ofNat32 (show (LA (Bs s₀) 280).length < 2 ^ 32 by omega_arith)])
 
 end VG.Proof.MlKem.X86.Sample

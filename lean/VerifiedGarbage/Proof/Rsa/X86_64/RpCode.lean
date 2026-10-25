@@ -168,7 +168,7 @@ theorem rpEntry_ok {s : State} {B : Addr} (hB : stackArg s 4 = B)
       (s.gpr .r15) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8) (s.gpr .r9) (stackArg s 0) (stackArg s 1)
       (stackArg s 2) (stackArg s 3)
   refine ⟨hdi, fun i hi => ?_, hP, hQ, hN, hK, hE, hEl, hD, hDl, ho, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2
@@ -259,22 +259,22 @@ theorem rpCtx_of {s : State} (h : rpContract.pre s) : RpCtx s := by
   rw [hsi] at dpq dpn dpe dpd dps dpa dRp wP
   rw [hcx] at dpq dqn dqe dqd dqs dqa dRq wQ
   refine ⟨⟨hk1, hk2, hel1, hel2, hdl1, hdl2, bytesAt_length _ _ _, bytesAt_length _ _ _,
-      bytesAt_length _ _ _, by simp only [rpIn]; omega⟩, hsi, hcx, hs,
-    fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
+      bytesAt_length _ _ _, by simp only [rpIn]; omega_arith⟩, hsi, hcx, hs,
+    fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 48) (by omega) (by omega))
-      rw [← stkAddr_add s j b] at this; omega)),
-    src_of_region (by rw [hrd]; simp) (by omega) dns,
-    src_of_region (by rw [hrd]; simp) (by omega) des,
-    src_of_region (by rw [hrd]; simp) (by omega) dds,
-    ⟨fun j hj => ⟨_, by rw [hwr, hsi]; simp, contains_byte _ hj (by omega)⟩,
-      fun j hj => out_scr dps (contains_byte _ hj (by omega))⟩,
-    ⟨fun j hj => ⟨_, by rw [hwr, hcx]; simp, contains_byte _ hj (by omega)⟩,
-      fun j hj => out_scr dqs (contains_byte _ hj (by omega))⟩,
-    apart_of dpq (by omega) (by omega), fun b hb => ?_⟩
-  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega) (by omega)
-  exact ⟨out_scr dRs hc, fun j hj he => dRp _ hc (by rw [he]; exact contains_byte _ hj (by omega)),
-    fun j hj he => dRq _ hc (by rw [he]; exact contains_byte _ hj (by omega))⟩
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 48) (by omega_arith) (by omega_arith))
+      rw [← stkAddr_add s j b] at this; omega_arith)),
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) des,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dds,
+    ⟨fun j hj => ⟨_, by rw [hwr, hsi]; simp, contains_byte _ hj (by omega_arith)⟩,
+      fun j hj => out_scr dps (contains_byte _ hj (by omega_arith))⟩,
+    ⟨fun j hj => ⟨_, by rw [hwr, hcx]; simp, contains_byte _ hj (by omega_arith)⟩,
+      fun j hj => out_scr dqs (contains_byte _ hj (by omega_arith))⟩,
+    apart_of dpq (by omega_arith) (by omega_arith), fun b hb => ?_⟩
+  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_arith) (by omega_arith)
+  exact ⟨out_scr dRs hc, fun j hj he => dRp _ hc (by rw [he]; exact contains_byte _ hj (by omega_arith)),
+    fun j hj he => dRq _ hc (by rw [he]; exact contains_byte _ hj (by omega_arith))⟩
 
 /-- After `entry` and the reloads of `n` and `k`, from `s`. -/
 structure RpHeadPost (s t : State) : Prop where
@@ -294,7 +294,7 @@ theorem rpHead_ok' {s : State} (c : RpCtx s) :
   have hn := c.hs.nowrap
   have hZ : 128 * (s.gpr .r9).toNat ≤ (stackArg s 5).toNat * 8 := c.L.z
   have hk1 : 64 ≤ (s.gpr .r9).toNat := c.L.k1
-  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 4) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 4) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
   rw [WP.block_append_iff]
   refine WP.mono (rpEntry_ok rfl hw c.ha c.hsep) fun t₀ ⟨hdi, hsv, hP, hQ, hN, hK, hE, hEl, hD, hDl, ho₀, k₀⟩ => ?_
   have hs₀ := c.hs.congr k₀.2.2
@@ -302,8 +302,8 @@ theorem rpHead_ok' {s : State} (c : RpCtx s) :
   have eK : Impl.Bignum.X86_64.Public.sK = 18 := rfl
   refine WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = s.gpr .r8 ∧
       t.gpr .rcx = s.gpr .r9 ∧ t.mem = t₀.mem) (by
-    xrun [State.ea, hdr, hdi, hdrOff, hs₀.ld (d := 8 * Impl.Bignum.X86_64.Public.sN) (by omega),
-      hs₀.ld (d := 8 * Impl.Bignum.X86_64.Public.sK) (by omega), hN, hK]) rfl)
+    xrun [State.ea, hdr, hdi, hdrOff, hs₀.ld (d := 8 * Impl.Bignum.X86_64.Public.sN) (by omega_arith),
+      hs₀.ld (d := 8 * Impl.Bignum.X86_64.Public.sK) (by omega_arith), hN, hK]) rfl)
     fun t₁ ⟨⟨hdx, hcx, hm⟩, k₁⟩ => ?_
   rw [← hm] at hsv hP hQ hN hK hE hEl hD hDl
   refine ⟨hs₀.congr k₁.2.2, (k₁.gpr (by decide)).trans hdi, hdx, by rw [hcx, ofNat_toNat64],
@@ -314,7 +314,7 @@ theorem rpHead_ok' {s : State} (c : RpCtx s) :
       hD,
       show Bignum.word _ (stackArg s 4) _ = BitVec.ofNat 64 (stackArg s 3).toNat by rw [hDl, ofNat_toNat64],
       hsv⟩,
-    by rw [hm]; exact InScr.of_outside ho₀ (by omega), (k₀.trans k₁).mono (by decide)⟩
+    by rw [hm]; exact InScr.of_outside ho₀ (by omega_arith), (k₀.trans k₁).mono (by decide)⟩
 
 /-- `main`'s hypotheses after the head and the modulus' check. -/
 theorem rpPre_of {s t₁ t : State} (c : RpCtx s) (h : RpHeadPost s t₁) (hm : t.mem = t₁.mem)
@@ -375,8 +375,8 @@ theorem rpCode_correct (M : Mont) (hmx : (code M.mm).allInstrs (fun i => !loadsM
     (fun hb => ?_)
   · have hv : Spec.Rsa.modulusValid (rpIn s).N (s.gpr .r9).toNat = false := by simpa using hb
     have z : 128 * (s.gpr .r9).toNat ≤ (stackArg s 5).toNat * 8 := c.L.z
-    exact WP.mono (rpFail_ok hpre.scr hpre.rdi (show 8 * 32 ≤ (stackArg s 5).toNat * 8 by omega) hpre.args
-      (show 1 ≤ (s.gpr .r9).toNat by omega) (show (s.gpr .r9).toNat < 2 ^ 31 by omega) hpre.oP hpre.oQ hpre.a)
+    exact WP.mono (rpFail_ok hpre.scr hpre.rdi (show 8 * 32 ≤ (stackArg s 5).toNat * 8 by omega_arith) hpre.args
+      (show 1 ≤ (s.gpr .r9).toNat by omega_arith) (show (s.gpr .r9).toNat < 2 ^ 31 by omega_arith) hpre.oP hpre.oQ hpre.a)
       fun t ⟨z1, z2, hax, hsv, hfr, hsp⟩ => ⟨rpGpr_of c hsv hsp hsp₂ fun x hx n1 n2 => by
         rw [hfr x n1 n2, hm₂]; exact h₁.inScr x hx, by
         show Spec.Rsa.writtenAll _ _ _ _

@@ -69,11 +69,11 @@ theorem verifyScalar_ok {s : State} (h : VCtx b pk sig ch s) :
     (by rw [u1.gpr, h.r30]) (by decide) (by decide)
     (fun k hk => by
       rw [u1.rd, u1.wr, Offset.add_add]
-      exact in_base (List.mem_append_left _ h.sigR) (by omega) (by omega))
+      exact in_base (List.mem_append_left _ h.sigR) (by omega_arith) (by omega_arith))
     (by
       rw [BitVec.add_zero]
       exact (h.sigD.sub_left (Offset.sub_base sig (d := 32) (n := 32) (by decide))).sub_right
-        (Offset.sub_base b (by omega))))
+        (Offset.sub_base b (by omega_arith))))
     fun s2 ⟨r2, f2, l2⟩ => ?_
   have hv : decodeLE (bytesAt s.mem (sig + BitVec.ofNat 64 32) 32) = V s2.mem b SR :=
     bytes_of_words fun j hj => by rw [l2 j hj, Nat.zero_add, ← u1.mem]
@@ -84,19 +84,19 @@ theorem verifyScalar_ok {s : State} (h : VCtx b pk sig ch s) :
   · exact (u1.rest (by decide)).trans ((r2.mono (by decide)).trans ((u3.rest (by decide)).trans (r4.mono (by decide))))
   · rw [← u1.mem]
     have fa : Frame [FA b] s1.mem s2.mem := f2.sub fun r hr => ⟨FA b, by simp, by
-      rw [List.mem_singleton.mp hr]; exact Offset.sub b (by omega) (by omega)⟩
+      rw [List.mem_singleton.mp hr]; exact Offset.sub b (by omega_arith) (by omega_arith)⟩
     have fb : Frame [FA b] s2.mem t.mem := by
       rw [← u3.mem]
       exact f4.sub fun r hr => ⟨FA b, by simp, by
-        rw [List.mem_singleton.mp hr]; exact Offset.sub b (by omega) (by omega)⟩
+        rw [List.mem_singleton.mp hr]; exact Offset.sub b (by omega_arith) (by omega_arith)⟩
     exact fa.trans fb
   · have hz : t.gpr .r8 = 0 ↔ (t.gpr .r8).toNat = 0 :=
       ⟨fun h => by rw [h]; rfl, fun h => BitVec.eq_of_toNat_eq (by rw [h]; rfl)⟩
     have hv3 : V s3.mem b SR = V s2.mem b SR := by rw [u3.mem]
     rw [hz, e8, hv, ← hv3]
     by_cases hL : Spec.Ed25519.L ≤ V s3.mem b SR
-    · rw [iteT hL]; exact ⟨fun h => absurd h (by decide), fun h => absurd hL (by omega)⟩
-    · rw [iteF hL]; exact ⟨fun _ => by omega, fun _ => rfl⟩
+    · rw [iteT hL]; exact ⟨fun h => absurd h (by decide), fun h => absurd hL (by omega_arith)⟩
+    · rw [iteF hL]; exact ⟨fun _ => by omega_arith, fun _ => rfl⟩
 
 /-! ## Decoding `A` and `R` -/
 
@@ -129,9 +129,9 @@ theorem decW_sub : ∀ r ∈ decW b, Region.Sub r ⟨b, 8192⟩ := by
   have hS : SIGN = 24 := rfl
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact Offset.sub_base _ (by omega)
-  · exact Offset.sub_base _ (by omega)
-  · exact Offset.sub_base _ (by omega)
+  · exact Offset.sub_base _ (by omega_arith)
+  · exact Offset.sub_base _ (by omega_arith)
+  · exact Offset.sub_base _ (by omega_arith)
 
 theorem and_flag (x y : Bool) :
     (if x then (1 : BitVec 64) else 0) &&& (if y then 1 else 0) = if x && y then 1 else 0 := by
@@ -153,7 +153,7 @@ theorem decodeNext_ok {s0 t u : State} {k : Nat} (hk : k < 2) (h : DecInv s0 b p
   have e14' : u2'.gpr .r14 = b + BitVec.ofNat 64 (7776 + 128 * k) := by
     rw [v2.gpr, v1.other _ (by decide), hvu.ctx.r6, v1.other _ (by decide), hRt.gpr _ (by decide), h.r28]
   have hv2 : VCtx b pk sig ch u2' := hvu.of_rest hR2 (by decide)
-  refine WP.append (pointToTable_ok hv2.ctx e14' (by omega) (by omega)) fun w ⟨rw', fw, tw⟩ => ?_
+  refine WP.append (pointToTable_ok hv2.ctx e14' (by omega_arith) (by omega_arith)) fun w ⟨rw', fw, tw⟩ => ?_
   refine wp_addi (by decide) (by decide) fun w1 x1 => wp_addi (by decide) (by decide) fun w2 x2 =>
     wp_subi (by decide) (by decide) fun w3 x3 => WP.block_nil ⟨?_, ?_⟩
   · have hRw : Rest decR u w3 := (hR2.mono (by decide)).trans ((rw'.mono (by decide)).trans
@@ -169,11 +169,11 @@ theorem decodeNext_ok {s0 t u : State} {k : Nat} (hk : k < 2) (h : DecInv s0 b p
         rw [hm3, ← hmu]
         exact fw.sub fun r hr => by
           rw [List.mem_singleton.mp hr]
-          exact ⟨⟨b + BitVec.ofNat 64 7776, 256⟩, by simp, Offset.sub b (by omega) (by omega)⟩
+          exact ⟨⟨b + BitVec.ofNat 64 7776, 256⟩, by simp, Offset.sub b (by omega_arith) (by omega_arith)⟩
       exact h.frame.trans (f1.trans f2)
     · rw [x3.other _ (by decide), x2.other _ (by decide), x1.gpr, BitVec.add_zero, rw'.gpr _ (by decide),
         hR2.gpr _ (by decide), hvu.r30]
-      unfold inPtr; rw [iteF (by omega)]
+      unfold inPtr; rw [iteF (by omega_arith)]
     · rw [x3.other _ (by decide), x2.gpr, e28, BitVec.ofNat_add_ofNat]
       congr 1
     · rw [x3.other _ (by decide), x2.other _ (by decide), x1.other _ (by decide), rw'.gpr _ (by decide),
@@ -185,13 +185,13 @@ theorem decodeNext_ok {s0 t u : State} {k : Nat} (hk : k < 2) (h : DecInv s0 b p
       rw [e17, and_flag, decOk, ← hq, ho]
     · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
       · rw [hm3, tableAt_keep fw (fun r hr => by
-            rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)),
+            rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)),
           hmu, tableAt_keep hfu (fun r hr => by
             have hS : SIGN = 24 := rfl
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl
-            · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-            · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega))]
+            · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+            · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith))]
         exact h.tables j hj p hp
       · rw [← hq, ho] at hp
         subst hp
@@ -217,15 +217,15 @@ theorem decodeBody_ok {s0 t : State} {k : Nat} (hk : k < 2) (h : DecInv s0 b pk 
     rw [hq]; unfold inPtr
     by_cases h0 : k = 0
     · rw [iteT h0]
-      exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.pkR) (by omega) (by omega), hv1.pkD⟩
+      exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.pkR) (by omega_arith) (by omega_arith), hv1.pkD⟩
     · rw [iteF h0]
-      exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.sigR) (by omega) (by omega),
+      exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.sigR) (by omega_arith) (by omega_arith),
         hv1.sigD.sub_left (Region.sub_prefix (by decide))⟩
   obtain ⟨hr4, hdq⟩ := hqR
   have hb : bytesAt t1.mem q 32 = bytesAt s0.mem q 32 := by
     rw [u1.mem]; exact bytesAt_ws h.frame decW_sub hdq (by decide)
   refine WP.seq (WP.mono (pointDecode_ok hv1.ctx e14 hr4 (by
-    rw [BitVec.add_zero]; exact hdq.sub_right (Offset.sub_base b (by omega)))) fun u ⟨ku, o, ho, du⟩ =>
+    rw [BitVec.add_zero]; exact hdq.sub_right (Offset.sub_base b (by omega_arith)))) fun u ⟨ku, o, ho, du⟩ =>
       decodeNext_ok hk h hq ((u1.rest (by decide)).trans (ku.rest.mono (by decide)))
         (by rw [← u1.mem]; exact ku.frame) (hv1.of_rest ku.rest (by decide)) (by rw [← hb]; exact ho) du)
 
@@ -238,7 +238,7 @@ theorem decodeStart_ok {s : State} (h : VCtx b pk sig ch s) :
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide)))
   exact ⟨h.of_rest hr3 (by decide), hr3.mono (by decide), by rw [u3.mem, u2.mem, u1.mem]; exact Frame.refl _ _,
     by rw [u3.other _ (by decide), u2.other _ (by decide), u1.gpr, BitVec.add_zero, h.r29]; rfl,
-    by rw [u3.other _ (by decide), u2.gpr], by rw [u3.gpr]; rfl, fun j hj => absurd hj (by omega)⟩
+    by rw [u3.other _ (by decide), u2.gpr], by rw [u3.gpr]; rfl, fun j hj => absurd hj (by omega_arith)⟩
 
 /-- **`A` and `R` decoded**, into the tables at 7776 and 7904. -/
 theorem decodeBoth_ok {s : State} (h : VCtx b pk sig ch s) : WP isa decodeBoth s (DecInv s b pk sig ch 2) := by
@@ -247,9 +247,9 @@ theorem decodeBoth_ok {s : State} (h : VCtx b pk sig ch s) : WP isa decodeBoth s
   refine WP.loop (M := isa) (fun n t => 1 ≤ n ∧ n ≤ 2 ∧ DecInv s b pk sig ch (2 - n) t) ?_ 2 s3
     ⟨by decide, Nat.le_refl _, show DecInv s b pk sig ch (2 - 2) s3 from hd0⟩
   rintro n t ⟨h1, h2, hi⟩
-  refine WP.mono (decodeBody_ok (k := 2 - n) (by omega) hi) fun u ⟨hu, e7⟩ => ?_
+  refine WP.mono (decodeBody_ok (k := 2 - n) (by omega_arith) hi) fun u ⟨hu, e7⟩ => ?_
   rw [eval_nonzero, e7]
-  rcases (by omega : n = 1 ∨ n = 2) with rfl | rfl
+  rcases (by omega_arith : n = 1 ∨ n = 2) with rfl | rfl
   · exact .inl ⟨by decide, hu⟩
   · exact .inr ⟨by decide, 1, by decide, by decide, by decide, hu⟩
 
@@ -263,9 +263,9 @@ theorem verW_sub : ∀ r ∈ verW b, Region.Sub r ⟨b, 8192⟩ := by
   intro r hr
   have hS : SIGN = 24 := rfl
   rcases List.mem_cons.mp hr with rfl | hr
-  · exact Offset.sub_base _ (by omega)
+  · exact Offset.sub_base _ (by omega_arith)
   rcases List.mem_cons.mp hr with rfl | hr
-  · exact Offset.sub_base _ (by omega)
+  · exact Offset.sub_base _ (by omega_arith)
   exact sideW_sub (by decide) r hr
 
 theorem eqResult_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hs : ∀ r ∈ rs, Region.Sub r ⟨b, 8192⟩)
@@ -305,11 +305,11 @@ theorem verifyDecode_ok {s : State} (h : VCtx b pk sig ch s) :
           have hB : BITSB = 32 := rfl
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl | rfl
-          · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-          · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-          · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-          · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-          · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+          · exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
+          · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+          · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+          · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+          · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
       rw [et, t2, hk2 7904 (by decide) (by decide), hk2 7776 (by decide) (by decide), ta, tr,
         bytesAt_ws f2 (sideW_sub (by decide)) h1.ctx.chD (by decide),
         bytesAt_ws h1.frame decW_sub h.chD (by decide),
@@ -352,7 +352,7 @@ theorem verifyBody_ok {s : State} (h : VCtx b pk sig ch s) :
     · exact (r1.mono (by decide)).trans ((r2.mono (by decide)).trans rt)
     · exact (f1.mono hF).trans ((f2.mono hF).trans ft)
     · rw [et, eqResult_frame (f1.trans f2) (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)) h, decide_eq_true hlt, Bool.true_and]
+        rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)) h, decide_eq_true hlt, Bool.true_and]
   · have hge : ¬ decodeLE (bytesAt s.mem (sig + BitVec.ofNat 64 32) 32) < Spec.Ed25519.L :=
       fun hl => absurd (beq_iff_eq.mpr (h8.mpr hl)) (by simpa using hz)
     refine WP.mono (recoverInvalid_ok (b := b) s1) fun t ⟨kt, mt, dt⟩ => ⟨?_, ?_, ?_⟩

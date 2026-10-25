@@ -86,9 +86,9 @@ theorem slot_ksFrame (hK : K = 1536) {o : Nat} (h₁ : 240 ≤ o) (h₂ : o + 4 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (L.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact (L.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact (L.stk_w (by omega)).symm
+  · exact (L.st_w (by decide) (.inr ⟨by omega_arith, by omega_arith⟩)).symm
+  · exact (L.st_w (by decide) (.inr ⟨by omega_arith, by omega_arith⟩)).symm
+  · exact (L.stk_w (by omega_arith)).symm
 
 variable {icb : Block} {D : BitVec 32} {n P : Nat}
 
@@ -196,11 +196,11 @@ theorem tail2 (hK : K = 1536) {j : Nat} (hlt : n - j < 16) (hnz : n - j ≠ 0) {
       slot_frame fz (zW (by decide) (by decide))]; exact h.nO
   · rw [hks, hcb]; simp [Nat.repeat]
   · rw [gc, hcb]; rfl
-  · have := data_ksFrame L hK hd (a := 0) (l := j) (by have := ha.le; omega)
-    have z := zD (a := 0) (l := j) (by have := ha.le; omega)
+  · have := data_ksFrame L hK hd (a := 0) (l := j) (by have := ha.le; omega_arith)
+    have z := zD (a := 0) (l := j) (by have := ha.le; omega_arith)
     simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at this z
-    rw [bytesAt_frame gf this (by omega), bytesAt_frame fz z (by omega)]; exact ha.done hc₀
-  · rw [bytesAt_frame gf (data_ksFrame L hK hd (by omega)) (by omega), bytesAt_frame fz (zD (by omega)) (by omega)]
+    rw [bytesAt_frame gf this (by omega_arith), bytesAt_frame fz z (by omega_arith)]; exact ha.done hc₀
+  · rw [bytesAt_frame gf (data_ksFrame L hK hd (by omega_arith)) (by omega_arith), bytesAt_frame fz (zD (by omega_arith)) (by omega_arith)]
     exact ha.rest
 
 theorem tail3 {j : Nat} {m₀ : Mem} {s : State}
@@ -209,7 +209,7 @@ theorem tail3 {j : Nat} {m₀ : Mem} {s : State}
     (hx : XorPost s (St + BitVec.ofNat 32 64) (D + BitVec.ofNat 32 j) (n - j) s') :
     CrOut Ctx St W SP K icb D n P m₀ s' := by
   have hd := h.data
-  have hjn : j < n := by have := h.nz; omega
+  have hjn : j < n := by have := h.nz; omega_arith
   have eP := hd.ok.ptr hjn
   have eK := L.aS (o := 64) (by decide)
   have cm := hx.mem
@@ -217,13 +217,13 @@ theorem tail3 {j : Nat} {m₀ : Mem} {s : State}
   have hn := hd.ok.n_lt
   have hxl := length_xorBytes s.mem (w64 D + BitVec.ofNat 64 j) (w64 St + BitVec.ofNat 64 64) (n - j)
   have fw : Frame [⟨w64 D + BitVec.ofNat 64 j, n - j⟩] s.mem s'.mem := by rw [cm]; exact writeBytes_frame' _ hxl
-  have hf₁ : Frame (crFrame St W SP K D n) s.mem s'.mem := part_crFrame (by omega) fw
+  have hf₁ : Frame (crFrame St W SP K D n) s.mem s'.mem := part_crFrame (by omega_arith) fw
   have dS : ∀ {a l : Nat}, a + l ≤ 80 → ∀ r ∈ [(⟨w64 D + BitVec.ofNat 64 j, n - j⟩ : Region)],
       (⟨w64 St + BitVec.ofNat 64 a, l⟩ : Region).Disjoint r := fun hal r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hd.ok.st.sub_left (Offset.sub_base _ (by omega))).sub_right (Lay.stSub hal) |>.symm
+    exact (hd.ok.st.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Lay.stSub hal) |>.symm
   have e := bytesAt_writeBytes_self s.mem (w64 D + BitVec.ofNat 64 j)
-    (xorBytes s.mem (w64 D + BitVec.ofNat 64 j) (w64 St + BitVec.ofNat 64 64) (n - j)) (by rw [hxl]; omega)
+    (xorBytes s.mem (w64 D + BitVec.ofNat 64 j) (w64 St + BitVec.ofNat 64 64) (n - j)) (by rw [hxl]; omega_arith)
   rw [hxl] at e
   refine ⟨env_crFrame L hd h.env hf₁ (hx.other _ (by decide) (by decide) (by decide) (by decide) (by decide))
       (hx.other _ (by decide) (by decide) (by decide) (by decide) (by decide))
@@ -231,17 +231,17 @@ theorem tail3 {j : Nat} {m₀ : Mem} {s : State}
   · obtain ⟨m, hm, hk, hc⟩ := h.ks hc₀
     have t := (Proof.Gcm.ctr_tail hm h.whole hk hc (d := bytesAt s.mem (w64 D + BitVec.ofNat 64 j) (n - j))
       (by rw [length_bytesAt]; exact h.hlt) (by rw [length_bytesAt]; exact h.nz)).2
-    rw [length_bytesAt, show P + j + (n - j) = P + n by omega] at t
+    rw [length_bytesAt, show P + j + (n - j) = P + n by omega_arith] at t
     exact t.congr (blockAt_frame fw (dS (by decide))) (blockAt_frame fw (dS (by decide)))
   · obtain ⟨m, hm, hk, hc⟩ := h.ks hc₀
     have t := (Proof.Gcm.ctr_tail hm h.whole hk hc (d := bytesAt s.mem (w64 D + BitVec.ofNat 64 j) (n - j))
       (by rw [length_bytesAt]; exact h.hlt) (by rw [length_bytesAt]; exact h.nz)).1
     rw [length_bytesAt, h.rest] at t
-    rw [show n = j + (n - j) by omega]
+    rw [show n = j + (n - j) by omega_arith]
     refine done_append ?_ ?_
-    · have := split_disj (D := w64 D) (j := j) (l := n - j) (by omega)
+    · have := split_disj (D := w64 D) (j := j) (l := n - j) (by omega_arith)
       rw [bytesAt_frame fw (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact this) (by omega)]
+        simp only [List.mem_singleton] at hr; subst hr; exact this) (by omega_arith)]
       exact h.done hc₀
     · rw [cm, e, xorBytes, h.rest]; exact t
 
@@ -249,7 +249,7 @@ theorem cryptTail_pc (hK : K = 1536) {j : Nat} (hlt : n - j < 16) :
     Pc (CrMid Ctx St W SP K icb D n P · j) cryptTail (CrOut Ctx St W SP K icb D n P ·) := by
   refine Pc.seq (Q := fun m₀ s => CrMid Ctx St W SP K icb D n P m₀ j s ∧ s.zf = some (decide (n - j = 0)))
     (Pc.taint [.ebp] (fun m₀ s h => WP.mono (test_ok L.lay h.at_.env .eax nO (by decide) h.nO
-        (by have := h.at_.nlt; omega))
+        (by have := h.at_.nlt; omega_arith))
         fun s' ⟨zf, _, g, m, rd, wr⟩ => ⟨⟨h.at_.pslot L (by rw [m]; exact Frame.refl _ _) (g _ (by decide))
           (g _ (by decide)) (g _ (by decide)) rd wr, by rw [m]; exact h.dO, by rw [m]; exact h.nO⟩, zf⟩)
       (fun _ _ s₁ s₂ h₁ h₂ r hr => by
@@ -258,7 +258,7 @@ theorem cryptTail_pc (hK : K = 1536) {j : Nat} (hlt : n - j < 16) :
   · have h0 : n - j = 0 := by simpa using ht
     refine Pc.mono Pc.nil (fun _ _ h => h) fun m₀ s ⟨h, _⟩ => ?_
     have ha := h.at_
-    have e : j = n := by have := ha.le; omega
+    have e : j = n := by have := ha.le; omega_arith
     subst e
     exact ⟨ha.env, ha.ctr, ha.done, ha.frame⟩
   have hnz : n - j ≠ 0 := by simpa using hf
@@ -278,8 +278,8 @@ theorem cryptTail_pc (hK : K = 1536) {j : Nat} (hlt : n - j < 16) :
     have eK := L.aS (o := 64) (by decide)
     have fz : Frame [⟨w64 St + BitVec.ofNat 64 64, 16⟩] s.mem s'.mem := by rw [m]; exact Cmac.frame_store4 _ _ _ _ _
     refine ⟨ax, dx, bx, di, bp, si, sp, by rw [rd, wr]; exact he.ctxR, by rw [wr]; exact he.stW,
-      by rw [wr]; exact he.wW, ?_, by rw [L.nS (by decide)]; have := L.fs; omega,
-      by rw [L.nS (by decide)]; have := L.fs; omega, by rw [wr, eC]; exact he.stC (by decide),
+      by rw [wr]; exact he.wW, ?_, by rw [L.nS (by decide)]; have := L.fs; omega_arith,
+      by rw [L.nS (by decide)]; have := L.fs; omega_arith, by rw [wr, eC]; exact he.stC (by decide),
       by rw [wr, eK]; exact he.stC (by decide), by rw [eC, eK]; exact Lay.st_st (.inl (by decide)) (by decide) (by decide),
       by rw [eC]; exact L.cs.sub_right (Lay.stSub (by decide)), by rw [eK]; exact L.cs.sub_right (Lay.stSub (by decide)),
       by rw [eC]; exact L.stk_st (by decide), by rw [eK]; exact L.stk_st (by decide),
@@ -322,15 +322,15 @@ theorem cryptTail_pc (hK : K = 1536) {j : Nat} (hlt : n - j < 16) :
       · rw [h₁.2.2.2, h₂.2.2.2]) (by taint_decide)
   have he := h.env
   have hdd := h.data
-  have hjn : j < n := by have := h.nz; omega
+  have hjn : j < n := by have := h.nz; omega_arith
   have eP := hdd.ok.ptr hjn
   have eK := L.aS (o := 64) (by decide)
-  obtain ⟨dwr, -⟩ := hdd.part (j := j) (k := n - j) (by omega)
-  obtain ⟨-, dst, -, -⟩ := hdd.ok.part (j := j) (k := n - j) (by omega)
+  obtain ⟨dwr, -⟩ := hdd.part (j := j) (k := n - j) (by omega_arith)
+  obtain ⟨-, dst, -, -⟩ := hdd.ok.part (j := j) (k := n - j) (by omega_arith)
   have xp : XorPre s (St + BitVec.ofNat 32 64) (D + BitVec.ofNat 32 j) (n - j) := by
-    refine ⟨dx, di, cx, by omega, by have := h.nlt; omega, by rw [L.nS (by decide)]; have := L.fs; omega,
-      by rw [hdd.ok.ptrN hjn]; have := hdd.ok.fit; omega, by rw [eK]; exact covers_left (he.stC (by omega)),
-      by rw [eP]; exact dwr, by rw [eK, eP]; exact (dst.sub_right (Lay.stSub (by omega))).symm⟩
+    refine ⟨dx, di, cx, by omega_arith, by have := h.nlt; omega_arith, by rw [L.nS (by decide)]; have := L.fs; omega_arith,
+      by rw [hdd.ok.ptrN hjn]; have := hdd.ok.fit; omega_arith, by rw [eK]; exact covers_left (he.stC (by omega_arith)),
+      by rw [eP]; exact dwr, by rw [eK, eP]; exact (dst.sub_right (Lay.stSub (by omega_arith))).symm⟩
   exact WP.mono (xorLoop_ok s xp) fun s' x => tail3 L h x
 
 omit L in
@@ -359,21 +359,21 @@ theorem crypt_pc (hK : K = 1536) :
     · rw [hm]; rfl
   have hn0 : n ≠ 0 := by simpa using hf
   refine Pc.seq (Q := fun m₀ s => (CrIn Ctx St W SP K D n P s ∧ s.mem = m₀) ∧ s.zf = some (decide (P % 16 = 0)))
-    (Pc.taint [.ebp] (fun m₀ s ⟨⟨h, hm⟩, _⟩ => WP.mono (test_ok L.lay h.env .eax bO (by decide) h.bO (by omega))
+    (Pc.taint [.ebp] (fun m₀ s ⟨⟨h, hm⟩, _⟩ => WP.mono (test_ok L.lay h.env .eax bO (by decide) h.bO (by omega_arith))
         fun s' ⟨zf, _, g, m, rd, wr⟩ => ⟨⟨h.keep (g _ (by decide)) (g _ (by decide)) (g _ (by decide)) m rd wr,
           by rw [m, hm]⟩, zf⟩)
       (fun _ _ s₁ s₂ h₁ h₂ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.1.env.ebp, h₂.1.1.env.ebp]) (by taint_decide)) ?_
   generalize hj₀ : (if P % 16 = 0 then 0 else min (16 - P % 16) n) = j₀
-  have hj₀n : j₀ ≤ n := by rw [← hj₀]; split <;> omega
+  have hj₀n : j₀ ≤ n := by rw [← hj₀]; split <;> omega_arith
   refine Pc.seq (Q := (CrMid Ctx St W SP K icb D n P · j₀)) ?_
-    (Pc.seq (cryptWhole_pc L hK) (cryptTail_pc L hK (by omega)))
+    (Pc.seq (cryptWhole_pc L hK) (cryptTail_pc L hK (by omega_arith)))
   refine Pc.ite (decide (P % 16 = 0)) (fun _ _ h => h.2) (fun ht => ?_) (fun hf => ?_)
   · have h0 : P % 16 = 0 := by simpa using ht
     simp only [h0, ↓reduceIte] at hj₀
     subst hj₀
     refine Pc.mono Pc.nil (fun _ _ h => h) fun m₀ s ⟨⟨h, hm⟩, _⟩ => ⟨⟨h.env, Nat.zero_le _, h.nlt, h.data,
-      fun hc => by rw [hm]; exact hc, fun _ => by rw [hm]; rfl, by rw [hm], .inr (by omega),
+      fun hc => by rw [hm]; exact hc, fun _ => by rw [hm]; rfl, by rw [hm], .inr (by omega_arith),
       by rw [hm]; exact Frame.refl _ _⟩, by rw [h.dO]; exact (BitVec.add_zero D).symm, by rw [h.nO, Nat.sub_zero]⟩
   · have h0 : P % 16 ≠ 0 := by simpa using hf
     simp only [h0, ↓reduceIte] at hj₀

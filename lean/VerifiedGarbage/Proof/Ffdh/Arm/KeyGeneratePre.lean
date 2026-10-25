@@ -28,7 +28,7 @@ theorem keyGenerate_pre128 (s : State) (pre : (Spec.Ffdh.generateKeyContract abi
   have inner : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 128, 128⟩
       ⟨State.addr s.sp - BitVec.ofNat 64 176, 176⟩ :=
     Offset.below_mono _ (by decide) (by decide)
-  exact ⟨by omega, argFit, rd, wr, xY, xDom, xRand, xS, xArgs, yDom, yRand, yS, yArgs,
+  exact ⟨by omega_arith, argFit, rd, wr, xY, xDom, xRand, xS, xArgs, yDom, yRand, yS, yArgs,
     domS, randS, sArgs, stackX.sub_left inner, stackY.sub_left inner, stackDom.sub_left inner,
     stackRand.sub_left inner, stackS.sub_left inner, stackArgs.sub_left inner,
     xFit, yFit, domFit, randFit, sFit, bounds, domainLen, xLen, yLen, rLen, space⟩
@@ -64,7 +64,7 @@ theorem keyGenerate_input (s : State) (pre : (Spec.Ffdh.generateKeyContract abi 
   refine ⟨old, calls, ?_⟩
   have shifted : (pcPushed s).sp = (entered s).sp + BitVec.ofNat 32 72 := (BitVec.sub_add_cancel _ _).symm
   have fit : (entered s).sp.toNat + 72 < 2 ^ 32 := by
-    rw [entered_nat s (by omega)]; have := s.sp.isLt; omega
+    rw [entered_nat s (by omega_arith)]; have := s.sp.isLt; omega_arith
   rw [shifted, VG.Arm.addr_add fit, belowA, addr_sub' calls.stack.fit]
   exact (Offset.disjoint_below_above _ (m := 48) (a := 72) (l := 56) (by decide)).symm
 

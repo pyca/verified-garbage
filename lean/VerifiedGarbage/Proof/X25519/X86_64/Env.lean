@@ -29,7 +29,7 @@ def E (m : Mem) (base : Addr) (i : Fin 128) : Spec.X25519.Fe := F m base (32 * i
 
 theorem Outside.mono {base : Addr} {o n o' n' : Nat} {m m' : Mem} (h : Outside base o n m m')
     (h₁ : o' ≤ o) (h₂ : o + n ≤ o' + n') : Outside base o' n' m m' :=
-  fun x hx => h x (by omega)
+  fun x hx => h x (by omega_arith)
 
 theorem E_update {base : Addr} {m m' : Mem} {o : Fin 128}
     (h : Outside base (32 * o.val) 32 m m') :
@@ -40,7 +40,7 @@ theorem E_update {base : Addr} {m m' : Mem} {o : Fin 128}
   · rw [Function.update_of_ne hi]
     simp only [E, F]
     have : i.val ≠ o.val := fun h' => hi (Fin.ext h')
-    rw [h.fe (by omega) (by omega)]
+    rw [h.fe (by omega_arith) (by omega_arith)]
 
 /-- What the field operations keep: the registers but `clob`, the regions,
 and the memory outside `[64, 640)`. -/
@@ -63,7 +63,7 @@ theorem Keep.scr {base : Addr} {s s' : State} (h : Keep base s s') (hs : Scr s b
 
 theorem Op.keep {base : Addr} {o : Nat} {s s' : State} (h : Op base o s s') (h₁ : 64 ≤ o)
     (h₂ : o + 32 ≤ 640) : Keep base s s' :=
-  ⟨h.gpr, h.rd, h.wr, h.mem.mono h₁ (by omega)⟩
+  ⟨h.gpr, h.rd, h.wr, h.mem.mono h₁ (by omega_arith)⟩
 
 /-! ## The field multiplications -/
 
@@ -144,26 +144,26 @@ include hf in
 theorem mulE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o) :
     WP isa (.block (fld.mul (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
       Keep base s s' ∧ E s'.mem base = opMul o a b (E s.mem base) :=
-  WP.mono (hf.mul hs (by omega) (by omega) (by omega)) fun _ ⟨h, e⟩ =>
+  WP.mono (hf.mul hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl⟩
 
 include hf in
 theorem sqrE {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : LSlot o) :
     WP isa (.block (fld.sqr (32 * o.val) (32 * a.val))) s fun s' =>
       Keep base s s' ∧ E s'.mem base = opMul o a a (E s.mem base) :=
-  WP.mono (hf.sqr hs (by omega) (by omega)) fun _ ⟨h, e⟩ =>
+  WP.mono (hf.sqr hs (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl⟩
 
 theorem addE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o) :
     WP isa (.block (add (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
       Keep base s s' ∧ E s'.mem base = opAdd o a b (E s.mem base) :=
-  WP.mono (add_ok hs (by omega) (by omega) (by omega)) fun _ ⟨h, e⟩ =>
+  WP.mono (add_ok hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl⟩
 
 theorem subE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o) :
     WP isa (.block (sub (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
       Keep base s s' ∧ E s'.mem base = opSub o a b (E s.mem base) :=
-  WP.mono (sub_ok hs (by omega) (by omega) (by omega)) fun _ ⟨h, e⟩ =>
+  WP.mono (sub_ok hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl⟩
 
 theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx : LSlot x)
@@ -171,7 +171,7 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx :
     WP isa (.block (cswap (32 * x.val) (32 * y.val))) s fun s' =>
       Keep base s s' ∧ s'.gpr .rcx = s.gpr .rcx ∧ E s'.mem base = opSwap x y sw (E s.mem base) := by
   have hne : x.val ≠ y.val := fun h => hxy (Fin.ext h)
-  refine WP.mono (cswap_ok hs (by omega) (by omega) (by omega) hm)
+  refine WP.mono (cswap_ok hs (by omega_arith) (by omega_arith) (by omega_arith) hm)
     fun s' ⟨g, gc, rd, wr, ⟨m₁, o₁, o₂, f₁⟩, fx, fy⟩ => ?_
   refine ⟨⟨g, rd, wr, (o₁.mono (by omega) (by omega)).trans (o₂.mono (by omega) (by omega))⟩, gc, ?_⟩
   rw [E_update o₂, E_update o₁]
@@ -189,7 +189,7 @@ theorem mulEB {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho 
     WP isa (.block (fld.mul (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
       Keep base s s' ∧ E s'.mem base = opMul o a b (E s.mem base) ∧
         Outside base (32 * o.val) 32 s.mem s'.mem ∧ fe s'.mem base (32 * o.val) ≤ 2 * Spec.X25519.P :=
-  WP.mono (hf.mulB hs (by omega) (by omega) (by omega)) fun _ ⟨h, e, hb⟩ =>
+  WP.mono (hf.mulB hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e, hb⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem, hb⟩
 
 include hf in
@@ -197,7 +197,7 @@ theorem sqrEB {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : 
     WP isa (.block (fld.sqr (32 * o.val) (32 * a.val))) s fun s' =>
       Keep base s s' ∧ E s'.mem base = opMul o a a (E s.mem base) ∧
         Outside base (32 * o.val) 32 s.mem s'.mem ∧ fe s'.mem base (32 * o.val) ≤ 2 * Spec.X25519.P :=
-  WP.mono (hf.sqrB hs (by omega) (by omega)) fun _ ⟨h, e, hb⟩ =>
+  WP.mono (hf.sqrB hs (by omega_arith) (by omega_arith)) fun _ ⟨h, e, hb⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem, hb⟩
 
 theorem addCmovE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o)
@@ -206,7 +206,7 @@ theorem addCmovE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (
     WP isa (.block (addCmov (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
       Keep base s s' ∧ E s'.mem base = opAdd o a b (E s.mem base) ∧
         Outside base (32 * o.val) 32 s.mem s'.mem :=
-  WP.mono (addCmov_ok hs (by omega) (by omega) (by omega) hab) fun _ ⟨h, e⟩ =>
+  WP.mono (addCmov_ok hs (by omega_arith) (by omega_arith) (by omega_arith) hab) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
 
 theorem subCmovE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o)
@@ -214,7 +214,7 @@ theorem subCmovE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (
     WP isa (.block (subCmov (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
       Keep base s s' ∧ E s'.mem base = opSub o a b (E s.mem base) ∧
         Outside base (32 * o.val) 32 s.mem s'.mem :=
-  WP.mono (subCmov_ok hs (by omega) (by omega) (by omega) hb2) fun _ ⟨h, e⟩ =>
+  WP.mono (subCmov_ok hs (by omega_arith) (by omega_arith) (by omega_arith) hb2) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
 
 include hf in
@@ -222,7 +222,7 @@ theorem a24AddEB {s : State} {base : Addr} (hs : Scr s base) (o b a : Fin 128) (
     WP isa (.block (fld.a24add (32 * o.val) (32 * b.val) (32 * a.val))) s fun s' =>
       Keep base s s' ∧ E s'.mem base = opA24Add o b a (E s.mem base) ∧
         Outside base (32 * o.val) 32 s.mem s'.mem :=
-  WP.mono (hf.a24add hs (by omega) (by omega) (by omega)) fun _ ⟨h, e⟩ =>
+  WP.mono (hf.a24add hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
 
 theorem cswapEB {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx : LSlot x)
@@ -236,10 +236,10 @@ theorem cswapEB {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx 
         fe s'.mem base (32 * y.val) =
           (if sw then fe s.mem base (32 * x.val) else fe s.mem base (32 * y.val)) := by
   have hne : x.val ≠ y.val := fun h => hxy (Fin.ext h)
-  refine WP.mono (cswap_ok hs (by omega) (by omega) (by omega) hm)
+  refine WP.mono (cswap_ok hs (by omega_arith) (by omega_arith) (by omega_arith) hm)
     fun s' ⟨g, gc, rd, wr, ⟨m₁, o₁, o₂, f₁⟩, fx, fy⟩ => ?_
   refine ⟨⟨g, rd, wr, (o₁.mono (by omega) (by omega)).trans (o₂.mono (by omega) (by omega))⟩, gc, ?_,
-    fun d hd h1 h2 => by rw [o₂.fe h2 (by omega), o₁.fe h1 (by omega)], fx, fy⟩
+    fun d hd h1 h2 => by rw [o₂.fe h2 (by omega_arith), o₁.fe h1 (by omega_arith)], fx, fy⟩
   rw [E_update o₂, E_update o₁]
   simp only [F, f₁, fy]
   cases sw <;> rfl
@@ -252,7 +252,7 @@ theorem muxEB {s : State} {base : Addr} (hs : Scr s base) (o x y : Fin 128) (ho 
         fe s'.mem base (32 * o.val) =
           (if zf then fe s.mem base (32 * y.val) else fe s.mem base (32 * x.val)) ∧
         s'.zf = s.zf :=
-  WP.mono (mux_ok hs (by omega) (by omega) (by omega) hz) fun _ ⟨h, f, z⟩ =>
+  WP.mono (mux_ok hs (by omega_arith) (by omega_arith) (by omega_arith) hz) fun _ ⟨h, f, z⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem]; simp only [F, f]; cases zf <;> rfl,
       h.mem, f, z⟩
 

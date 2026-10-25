@@ -41,7 +41,7 @@ theorem Ctx.spA (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) : State.addr t.sp 
 
 theorem Ctx.sp24 (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) : 24 ≤ t.sp.toNat := by
   rw [← toNat_addr, hc.spA hL, Offset.toNat_add_ofNat]
-  have := hL.B_fit; rw [Nat.mod_eq_of_lt (by omega)]; omega
+  have := hL.B_fit; rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
 
 /-- The 24 bytes below the frame, where the calls' frames go. -/
 theorem Ctx.stk_eq (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) : stk t = ⟨L.B, 24⟩ := by
@@ -66,7 +66,7 @@ theorem Ctx.after (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List Re
       · exact hs r hr
       · simp only [List.mem_singleton] at hr; subst hr
         rw [hc.stk_eq hL]
-        exact .inr (.inr (.inl (Region.sub_prefix (by omega))))) sy
+        exact .inr (.inr (.inl (Region.sub_prefix (by omega_arith))))) sy
 
 /-- The same, for `update`, which may use the 16 bytes below the stack pointer. -/
 theorem Ctx.afterU (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List Region}
@@ -77,32 +77,32 @@ theorem Ctx.afterU (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List R
       · exact hs r hr
       · simp only [List.mem_singleton] at hr; subst hr
         rw [hc.below_eq hL]
-        exact safe_low L (by omega)) sy
+        exact safe_low L (by omega_arith)) sy
 
 /-! ## Addresses -/
 
 theorem scr_toNat (hL : L.Ok) {o : Nat} (ho : o < 8192) : (L.scr + BitVec.ofNat 32 o).toNat = L.scr.toNat + o := by
   have := hL.nc
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : o < 2 ^ 32)]
-  exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : o < 2 ^ 32)]
+  exact Nat.mod_eq_of_lt (by omega_arith)
 
 theorem fp_toNat (hL : L.Ok) {o : Nat} (ho : o ≤ 216 + 4 * L.e) :
     (L.fp + BitVec.ofNat 32 o).toNat = L.sp.toNat - (216 + 4 * L.e) + o := by
   have := hL.nB; have := L.sp.isLt; have := L.he
-  have hfp : L.fp.toNat = L.sp.toNat - (216 + 4 * L.e) := VG.Arm.FrameStack.sub_toNat' (by omega)
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : o < 2 ^ 32), hfp]
-  exact Nat.mod_eq_of_lt (by omega)
+  have hfp : L.fp.toNat = L.sp.toNat - (216 + 4 * L.e) := VG.Arm.FrameStack.sub_toNat' (by omega_arith)
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : o < 2 ^ 32), hfp]
+  exact Nat.mod_eq_of_lt (by omega_arith)
 
 /-- The stack below the frame and parts of it are apart from `scratch`. -/
 theorem low_scr (hL : L.Ok) {n e k : Nat} (hn : n ≤ 240) (h : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, n⟩ ⟨State.addr L.scr + BitVec.ofNat 64 e, k⟩ :=
-  (hL.kc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h)
+  (hL.kc.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Offset.sub_base _ h)
 
 /-- The part of `scratch` HMAC's functions use: its states and working space. -/
 abbrev WK {dn : Nat} (L : Lay dn) : Region := ⟨State.addr L.scr, 2256⟩
 
 theorem wk_safe {r : Region} (h : Region.Sub r (WK L)) : Safe L r :=
-  .inr (.inl (sub_trans h (Region.sub_prefix (by omega))))
+  .inr (.inl (sub_trans h (Region.sub_prefix (by omega_arith))))
 
 theorem scr_wk (hL : L.Ok) {o n : Nat} (ho : o < 8192) (h : o + n ≤ 2256) :
     Region.Sub ⟨State.addr (L.scr + BitVec.ofNat 32 o), n⟩ (WK L) := by
@@ -124,7 +124,7 @@ theorem after_frameU (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨WK L, by simp, hs r hr⟩
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨L.B, 24⟩, by simp, by rw [hc.below_eq hL]; exact Offset.sub_base _ (by omega)⟩
+      exact ⟨⟨L.B, 24⟩, by simp, by rw [hc.below_eq hL]; exact Offset.sub_base _ (by omega_arith)⟩
 
 /-! ## HMAC's `init` -/
 
@@ -176,7 +176,7 @@ theorem initA (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h0 : u.gpr .r0 = L.
   have e0 := scrA hL (o := 0) (by decide)
   have e1 := scrA hL (o := 192) (by decide)
   have e3 := scrA hL (o := 384) (by decide)
-  have ek := hL.fpA (o := 0) (by omega)
+  have ek := hL.fpA (o := 0) (by omega_arith)
   have hst := hc.stk_eq hL
   have := hL.nc; have := hL.nB; have := L.sp.isLt
   obtain ⟨_, _, _, _, _, _, _, _, _, hS, _, hB⟩ := P.sizes
@@ -187,7 +187,7 @@ theorem initA (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h0 : u.gpr .r0 = L.
       sp := hc.sp24 hL
       cr := hc.covers fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        rw [ek]; exact ⟨L.FR, by simp, within_fr _ (by omega) (by anums)⟩
+        rw [ek]; exact ⟨L.FR, by simp, within_fr _ (by omega_arith) (by anums)⟩
       cw := hc.coversW fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
@@ -200,13 +200,13 @@ theorem initA (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h0 : u.gpr .r0 = L.
       o_k := by rw [e1, ek]; exact (hL.stk_scr (by anums) (by anums)).symm
       o_s := by rw [e1, e3]; exact Offset.disjoint _ (by anums) (by anums) (by anums)
       k_s := by rw [ek, e3]; exact hL.stk_scr (by anums) (by anums)
-      b_i := by rw [hst, e0]; exact low_scr hL (by omega) (by anums)
-      b_o := by rw [hst, e1]; exact low_scr hL (by omega) (by anums)
-      b_k := by rw [hst, ek]; exact Offset.base_disjoint _ (by omega) (by anums)
-      b_s := by rw [hst, e3]; exact low_scr hL (by omega) (by anums)
+      b_i := by rw [hst, e0]; exact low_scr hL (by omega_arith) (by anums)
+      b_o := by rw [hst, e1]; exact low_scr hL (by omega_arith) (by anums)
+      b_k := by rw [hst, ek]; exact Offset.base_disjoint _ (by omega_arith) (by anums)
+      b_s := by rw [hst, e3]; exact low_scr hL (by omega_arith) (by anums)
       ni := by rw [scr_toNat hL (by decide)]; anums
       no := by rw [scr_toNat hL (by decide)]; anums
-      nk := by rw [fp_toNat hL (by omega)]; anums
+      nk := by rw [fp_toNat hL (by omega_arith)]; anums
       nsc := by rw [scr_toNat hL (by decide)]; anums }
 
 theorem init_step (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
@@ -216,7 +216,7 @@ theorem init_step (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   apply WP.of_syms
   refine hi_frame P.ok.hi P.ok.hiSt (initA hL hcu h0 h1 h2 h3 h12) fun u' ha hi ho sy => ?_
   have ek : Spec.Sha256.bytesAt u.mem (State.addr (L.fp + BitVec.ofNat 32 0)) P.F.H.D = keyOf P L t.mem := by
-    rw [hL.fpA (by omega), hmu]
+    rw [hL.fpA (by omega_arith), hmu]
   have hws : ∀ r ∈ HiArgs.wr P.ok.hH.SH P.ok.Wi (L.scr + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 192)
       (L.scr + BitVec.ofNat 32 384), Region.Sub r (WK L) := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -247,31 +247,31 @@ theorem addr (hd : DataOk L da len) (hL : L.Ok) :
     (∃ o, State.addr da = L.B + BitVec.ofNat 64 o ∧ 24 ≤ o ∧ o + len ≤ 200) ∨
       (∃ o, State.addr da = State.addr L.scr + BitVec.ofNat 64 o ∧ 2256 ≤ o ∧ o + len ≤ 8192) := by
   rcases hd with ⟨o, rfl, h⟩ | ⟨o, rfl, h₁, h₂⟩
-  · exact .inl ⟨24 + o, hL.fpA (by omega), by omega, by omega⟩
-  · exact .inr ⟨o, scrA hL (by omega), h₁, by omega⟩
+  · exact .inl ⟨24 + o, hL.fpA (by omega_arith), by omega_arith, by omega_arith⟩
+  · exact .inr ⟨o, scrA hL (by omega_arith), h₁, by omega_arith⟩
 
 theorem nowrap (hd : DataOk L da len) (hL : L.Ok) : da.toNat + len ≤ 2 ^ 32 := by
   have := hL.nc; have := hL.nB; have := L.sp.isLt
   rcases hd with ⟨o, rfl, h⟩ | ⟨o, rfl, h₁, h₂⟩
-  · rw [fp_toNat hL (by omega)]; omega
-  · rw [scr_toNat hL (by omega)]; omega
+  · rw [fp_toNat hL (by omega_arith)]; omega_arith
+  · rw [scr_toNat hL (by omega_arith)]; omega_arith
 
 theorem low (hd : DataOk L da len) (hL : L.Ok) : Region.Disjoint ⟨L.B, 24⟩ ⟨State.addr da, len⟩ := by
   rcases hd.addr hL with ⟨o, e, h₁, h₂⟩ | ⟨o, e, h₁, h₂⟩ <;> rw [e]
-  · exact Offset.base_disjoint _ h₁ (by omega)
-  · exact low_scr hL (by omega) h₂
+  · exact Offset.base_disjoint _ h₁ (by omega_arith)
+  · exact low_scr hL (by omega_arith) h₂
 
 /-- The data is apart from HMAC's states and working space. -/
 theorem work (hd : DataOk L da len) (hL : L.Ok) {e k : Nat} (h : e + k ≤ 2256) :
     Region.Disjoint ⟨State.addr da, len⟩ ⟨State.addr L.scr + BitVec.ofNat 64 e, k⟩ := by
   rcases hd.addr hL with ⟨o, e', h₁, h₂⟩ | ⟨o, e', h₁, h₂⟩ <;> rw [e']
-  · exact hL.stk_scr (by omega) (by omega)
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  · exact hL.stk_scr (by omega_arith) (by omega_arith)
+  · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem within (hd : DataOk L da len) (hL : L.Ok) :
     ∃ R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR], Within ⟨State.addr da, len⟩ R := by
   rcases hd.addr hL with ⟨o, e, h₁, h₂⟩ | ⟨o, e, h₁, h₂⟩ <;> rw [e]
-  · exact ⟨L.FR, by simp, within_fr _ h₁ (by omega)⟩
+  · exact ⟨L.FR, by simp, within_fr _ h₁ (by omega_arith)⟩
   · exact ⟨L.SCR, by simp, within_off _ h₂⟩
 
 end DataOk
@@ -282,9 +282,9 @@ theorem xorPad_length (k : List Byte) (p : Byte) : (Spec.Hmac.xorPad k p).length
 theorem blockKey_length {k : List Byte} (hk : k.length = P.F.H.D) :
     (Spec.Hmac.blockKey P.ok.hH.SH.H k).length = P.F.H.B := by
   obtain ⟨_, _, _, _, _, _, _, hDB, _, _, _, hB⟩ := P.sizes
-  simp only [Spec.Hmac.blockKey, hk, hB, show ¬ P.F.H.B < P.F.H.D by omega, ite_false, List.length_append,
+  simp only [Spec.Hmac.blockKey, hk, hB, show ¬ P.F.H.B < P.F.H.D by omega_arith, ite_false, List.length_append,
     List.length_replicate]
-  omega
+  omega_arith
 
 theorem keyOf_length (m : Mem) : (keyOf P L m).length = P.F.H.D := by simp [keyOf, Spec.Sha256.bytesAt]
 
@@ -292,7 +292,7 @@ theorem append_zero {k : Nat} (hk : k < 2 ^ 32) : (0 : BitVec 32) ++ BitVec.ofNa
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_append, BitVec.toNat_ofNat, show (0 : BitVec 32).toNat = 0 from rfl,
     Nat.zero_shiftLeft, Nat.zero_or]
-  omega
+  omega_arith
 
 theorem updArgs_ok {u : State} (hc : Ctx L g m₀ u) {dataA : List Instr} {da : BitVec 32}
     (hdA : DataA L g m₀ dataA da) {B : Nat} (hB : B < 2 ^ 16) {len : Nat} (hlen : len < 2 ^ 16) :
@@ -343,11 +343,11 @@ theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : BitVec 32} {le
   have hn := hd.nowrap hL
   have := hL.nc
   obtain ⟨_, _, _, _, _, _, _, _, _, hS, _, hB⟩ := P.sizes
-  have bsub : Region.Sub ⟨L.B + BitVec.ofNat 64 8, 16⟩ ⟨L.B, 24⟩ := Offset.sub_base _ (by omega)
+  have bsub : Region.Sub ⟨L.B + BitVec.ofNat 64 8, 16⟩ ⟨L.B, 24⟩ := Offset.sub_base _ (by omega_arith)
   exact
     { r0 := h0, r1 := h1, r7 := h7, r10 := h10
-      hlen := by omega
-      sp16 := by have := hcw.sp24 hL; omega
+      hlen := by omega_arith
+      sp16 := by have := hcw.sp24 hL; omega_arith
       cd := hcw.covers fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hd.within hL
       cw := hcw.coversW fun r hr => by
@@ -358,9 +358,9 @@ theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : BitVec 32} {le
       st_sc := by rw [e0, e3]; exact Offset.disjoint _ (by anums) (by anums) (by anums)
       d_st := by rw [e0]; exact hd.work hL (by anums)
       d_sc := by rw [e3]; exact hd.work hL (by anums)
-      b_st := by rw [hb, e0]; exact (low_scr hL (by omega) (by anums)).sub_left bsub
+      b_st := by rw [hb, e0]; exact (low_scr hL (by omega_arith) (by anums)).sub_left bsub
       b_d := by rw [hb]; exact (hd.low hL).sub_left bsub
-      b_sc := by rw [hb, e3]; exact (low_scr hL (by omega) (by anums)).sub_left bsub
+      b_sc := by rw [hb, e3]; exact (low_scr hL (by omega_arith) (by anums)).sub_left bsub
       nst := by rw [scr_toNat hL (by decide)]; anums
       nd := hn
       nsc := by rw [scr_toNat hL (by decide)]; anums }
@@ -370,7 +370,7 @@ theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA :
     WP isa (.seq (.block (Cfg.hmacArgs₂ P.F.H.B dataA len))
       (.frame (.push [.r1, .r7, .r10, .r12]) (.call P.F.H.updN P.F.H.updC) (.pop .r1 16))) u
       (Updated P L g m₀ t da len) := by
-  refine WP.seq (WP.mono (updArgs_ok hu.ctx hdA (B := P.F.H.B) (by anums) (len := len) (by omega))
+  refine WP.seq (WP.mono (updArgs_ok hu.ctx hdA (B := P.F.H.B) (by anums) (len := len) (by omega_arith))
     fun w ⟨hcw, hmw, h0, h1, h2, h3, h7, h10, h9⟩ => ?_)
   apply WP.of_syms
   refine upd_frame P.ok.hH (updA hL hcw hd hlen h0 h1 h7 h10) fun w' af hr sy => ?_
@@ -380,10 +380,10 @@ theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA :
     rintro r (rfl | rfl) <;> exact scr_wk hL (by decide) (by anums)
   have hdata : Spec.Sha256.bytesAt w.mem (State.addr da) len = Spec.Sha256.bytesAt t.mem (State.addr da) len := by
     rw [hmw]
-    refine bytesAt_frame hu.frame (fun r hr => ?_) (by omega)
+    refine bytesAt_frame hu.frame (fun r hr => ?_) (by omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · simpa using hd.work hL (e := 0) (k := 2256) (by omega)
+    · simpa using hd.work hL (e := 0) (k := 2256) (by omega_arith)
     · exact (hd.low hL).symm
   have hcount : Pbkdf2.Stream.Arm.count w = BitVec.ofNat 64
       (Spec.Hmac.xorPad (Spec.Hmac.blockKey P.ok.hH.SH.H (keyOf P L t.mem)) Spec.Hmac.ipad).length := by
@@ -405,7 +405,7 @@ theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA :
       · rw [scrA hL (by decide)]; exact Offset.disjoint _ (by anums) (by anums) (by anums)
     · simp only [List.mem_singleton] at hr; subst hr
       rw [hcw.below_eq hL]
-      exact ((low_scr hL (n := 24) (by omega) (by anums)).sub_left (Offset.sub_base _ (by omega))).symm
+      exact ((low_scr hL (n := 24) (by omega_arith) (by anums)).sub_left (Offset.sub_base _ (by omega_arith))).symm
 
 /-! ## HMAC's `finalize` -/
 
@@ -453,7 +453,7 @@ theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {dst : Nat} (hdst : 
   have e0 := scrA hL (o := 0) (by decide)
   have e1 := scrA hL (o := 192) (by decide)
   have e3 := scrA hL (o := 384) (by decide)
-  have eo := hL.fpA (o := dst) (by omega)
+  have eo := hL.fpA (o := dst) (by omega_arith)
   have hst := hcw.stk_eq hL
   have := hL.nc; have := hL.nB; have := L.sp.isLt
   obtain ⟨_, _, _, _, _, _, _, _, _, hS, hD, hB⟩ := P.sizes
@@ -467,7 +467,7 @@ theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {dst : Nat} (hdst : 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · rw [e0]; exact ⟨L.SCR, by simp, within_off _ (by anums)⟩
-        · rw [eo]; exact ⟨L.FR, by simp, within_fr _ (by omega) (by anums)⟩
+        · rw [eo]; exact ⟨L.FR, by simp, within_fr _ (by omega_arith) (by anums)⟩
         · rw [e3]; exact ⟨L.SCR, by simp, within_off _ (by anums)⟩
       i_u := by rw [e0, e1]; exact Offset.disjoint _ (by anums) (by anums) (by anums)
       i_o := by rw [e0, eo]; exact (hL.stk_scr (by anums) (by anums)).symm
@@ -475,13 +475,13 @@ theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {dst : Nat} (hdst : 
       u_o := by rw [e1, eo]; exact (hL.stk_scr (by anums) (by anums)).symm
       u_s := by rw [e1, e3]; exact Offset.disjoint _ (by anums) (by anums) (by anums)
       o_s := by rw [eo, e3]; exact hL.stk_scr (by anums) (by anums)
-      b_i := by rw [hst, e0]; exact low_scr hL (by omega) (by anums)
-      b_u := by rw [hst, e1]; exact low_scr hL (by omega) (by anums)
-      b_o := by rw [hst, eo]; exact Offset.base_disjoint _ (by omega) (by anums)
-      b_s := by rw [hst, e3]; exact low_scr hL (by omega) (by anums)
+      b_i := by rw [hst, e0]; exact low_scr hL (by omega_arith) (by anums)
+      b_u := by rw [hst, e1]; exact low_scr hL (by omega_arith) (by anums)
+      b_o := by rw [hst, eo]; exact Offset.base_disjoint _ (by omega_arith) (by anums)
+      b_s := by rw [hst, e3]; exact low_scr hL (by omega_arith) (by anums)
       ni := by rw [scr_toNat hL (by decide)]; anums
       nu := by rw [scr_toNat hL (by decide)]; anums
-      no := by rw [fp_toNat hL (by omega)]; anums
+      no := by rw [fp_toNat hL (by omega_arith)]; anums
       nsc := by rw [scr_toNat hL (by decide)]; anums }
 
 theorem reprOK : Proof.Pbkdf2.Whole.Arm.ReprOK P.ok.hH.SH := fun m m' p q msg hb =>
@@ -496,7 +496,7 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : BitVec 32} {len dst : Nat} (hu 
   apply WP.of_syms
   refine hf_frame reprOK (by anums) P.ok.hf P.ok.hfSt (finA hL hcw hdst h0 h1 h10 h12) fun w' ha hpost sy => ?_
   obtain ⟨_, _, _, _, _, _, _, _, _, hS, hD, hB⟩ := P.sizes
-  have eo := hL.fpA (o := dst) (by omega)
+  have eo := hL.fpA (o := dst) (by omega_arith)
   have hk := blockKey_length (P := P) (keyOf_length (L := L) t.mem)
   have hl : (Spec.Sha256.bytesAt t.mem (State.addr da) len).length = len := by simp [Spec.Sha256.bytesAt]
   have hm := hpost _ (Spec.Sha256.bytesAt t.mem (State.addr da) len) (by rw [hk, hB])
@@ -521,7 +521,7 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : BitVec 32} {len dst : Nat} (hu 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
   rcases hr' with rfl | rfl | rfl
   · exact wk_safe hs
-  · exact .inr (.inr (.inl (sub_trans hs (Region.sub_prefix (by omega)))))
+  · exact .inr (.inr (.inl (sub_trans hs (Region.sub_prefix (by omega_arith)))))
   · exact .inr (.inr (.inl (sub_trans hs (Offset.sub_base _ (by anums)))))
 
 /-! ## The whole HMAC -/

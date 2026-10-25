@@ -46,7 +46,7 @@ theorem blockAt_store4 (m : Mem) (p : Addr) (a b c d : BitVec 32) :
     Spec.Gcm.blockAt (Proof.Cmac.store4 m p a b c d) p = Proof.Gcm.Arm.w4 (rev a) (rev b) (rev c) (rev d) := by
   have dj : ∀ {x y : Nat}, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 16 → y + 4 ≤ 16 →
       (⟨p + BitVec.ofNat 64 x, 4⟩ : Region).Disjoint ⟨p + BitVec.ofNat 64 y, 4⟩ :=
-    fun h hx hy => Offset.disjoint p h (by omega) (by omega)
+    fun h hx hy => Offset.disjoint p h (by omega_arith) (by omega_arith)
   have d₀ : (⟨p, 4⟩ : Region).Disjoint ⟨p + BitVec.ofNat 64 4, 4⟩ := by
     simpa using dj (x := 0) (y := 4) (.inl (by decide)) (by decide) (by decide)
   have d₀' : (⟨p, 4⟩ : Region).Disjoint ⟨p + BitVec.ofNat 64 8, 4⟩ := by
@@ -72,8 +72,8 @@ structure ExpPost (p : Prm) (t t' : State) : Prop where
 
 theorem keyLen_lsl {R : Nat} (hR : R = 10 ∨ R = 14) :
     (BitVec.ofNat 32 R - BitVec.ofNat 32 6) <<< 2 = BitVec.ofNat 32 (Spec.GcmSiv.keyLen R) := by
-  rw [ofNat_sub32 (by omega) (by omega), ofNat_lsl32]
-  congr 1; unfold Spec.GcmSiv.keyLen; omega
+  rw [ofNat_sub32 (by omega_arith) (by omega_arith), ofNat_lsl32]
+  congr 1; unfold Spec.GcmSiv.keyLen; omega_arith
 
 /-- The arguments of `expand`'s call. -/
 theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
@@ -93,14 +93,14 @@ theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
   case r1 => simp [gpr_setReg, E.r8, keyLen_lsl hR]
   case r2 => simp [gpr_setReg, E.r11]
   case r3 => simp [gpr_setReg, E.r11]
-  case len => omega
-  case fK => rw [L.wN (by decide)]; omega
-  case fC => rw [L.wN (by decide)]; omega
-  case fS => rw [L.wN (by decide)]; omega
-  case kc => rw [L.wA (by decide), L.wA (by decide)]; exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  case ks => rw [L.wA (by decide), L.wA (by decide)]; exact L.w_w (.inl (by omega)) (by omega) (by decide)
+  case len => omega_arith
+  case fK => rw [L.wN (by decide)]; omega_arith
+  case fC => rw [L.wN (by decide)]; omega_arith
+  case fS => rw [L.wN (by decide)]; omega_arith
+  case kc => rw [L.wA (by decide), L.wA (by decide)]; exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  case ks => rw [L.wA (by decide), L.wA (by decide)]; exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   case cs => rw [L.wA (by decide), L.wA (by decide)]; exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  case rd => rw [L.wA (by decide)]; exact E.perm.wCR (by omega)
+  case rd => rw [L.wA (by decide)]; exact E.perm.wCR (by omega_arith)
   case wr =>
     rw [L.wA (by decide), L.wA (by decide)]
     exact covers_cons (E.perm.wC (by decide)) (covers_cons (E.perm.wC (by decide)) covers_nil)
@@ -223,7 +223,7 @@ theorem keys_ok {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) : WP isa keys 
       ⟨State.addr p.W + BitVec.ofNat 64 1712, 512⟩],
       (⟨State.addr p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega)) (by omega) (by decide)
+    rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   have f₃ : Frame (keyR (State.addr p.W) p.SP) t₂.mem t₃.mem := X.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact ⟨_, k2, Offset.sub _ (by decide) (by decide)⟩
@@ -233,7 +233,7 @@ theorem keys_ok {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) : WP isa keys 
       exact ⟨_, k0, Offset.sub _ (by decide) (by decide)⟩
   have dH : ∀ {d k : Nat}, d + k ≤ 64 → ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 64, 32⟩ : Region)],
       (⟨State.addr p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl h) (by omega) (by decide)
+    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl h) (by omega_arith) (by decide)
   have dH' : ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 64, 32⟩ : Region)],
       (⟨State.addr p.W + BitVec.ofNat 64 192, 240⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)
@@ -251,7 +251,7 @@ theorem keys_ok {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) : WP isa keys 
     rw [hk.2, ← X.ciph]
     unfold Spec.GcmSiv.ctxCiph
     rw [hm₄, Proof.AesGcm.Arm.bytesAt_frame (hkeyMem_frame _ _) (fun r hr =>
-      (dH' r hr).sub_left (Region.sub_prefix L.rounds_le)) (by omega)]
+      (dH' r hr).sub_left (Region.sub_prefix L.rounds_le)) (by omega_arith)]
   · rw [hm₄, hkeyMem_key, ← hm₄, a₄]
   · rw [hm₄]; exact hkeyMem_acc _ _
 

@@ -63,12 +63,12 @@ theorem maskWord (x : Byte) {j : Nat} (hj : j < 64) :
         ((x.setWidth 32 ^^^ BitVec.ofNat 32 (4 * j)) - 4) >>> 8 <<< 8 =
       if x.toNat / 4 = j then BitVec.allOnes 32 else 0 := by
   have hx : (x.setWidth 32).toNat = x.toNat := by
-    rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+    rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_arith)
   obtain ⟨z, hz⟩ : ∃ z, x.setWidth 32 ^^^ BitVec.ofNat 32 (4 * j) = z := ⟨_, rfl⟩
   have hzt : z.toNat = x.toNat ^^^ (4 * j) := by
-    rw [← hz, BitVec.toNat_xor, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), hx]
+    rw [← hz, BitVec.toNat_xor, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), hx]
   have hzl : z.toNat < 256 := by
-    rw [hzt]; exact Nat.xor_lt_two_pow (n := 8) x.isLt (by omega)
+    rw [hzt]; exact Nat.xor_lt_two_pow (n := 8) x.isLt (by omega_arith)
   have hdiv : z.toNat / 4 = x.toNat / 4 ^^^ j := by
     have e : z.toNat / 2 ^ 2 = x.toNat / 2 ^ 2 ^^^ (4 * j) / 2 ^ 2 := by
       rw [hzt]; exact Nat.xor_div_two_pow
@@ -76,8 +76,8 @@ theorem maskWord (x : Byte) {j : Nat} (hj : j < 64) :
     exact e
   have key : z.toNat < 4 ↔ x.toNat / 4 = j := by
     constructor
-    · intro h; exact nat_eq_of_xor_eq_zero (by rw [← hdiv]; omega)
-    · intro h; rw [h, Nat.xor_self] at hdiv; omega
+    · intro h; exact nat_eq_of_xor_eq_zero (by rw [← hdiv]; omega_arith)
+    · intro h; rw [h, Nat.xor_self] at hdiv; omega_arith
   rw [hz]
   by_cases h : x.toNat / 4 = j
   · rw [ite_eq_left h]
@@ -86,7 +86,7 @@ theorem maskWord (x : Byte) {j : Nat} (hj : j < 64) :
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow,
         show (4 : BitVec 32).toNat = 4 from rfl, show (0x00FFFFFF : BitVec 32).toNat = 16777215 from rfl]
-      omega
+      omega_arith
     rw [hy]
     decide
   · rw [ite_eq_right h]
@@ -95,7 +95,7 @@ theorem maskWord (x : Byte) {j : Nat} (hj : j < 64) :
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow,
         show (4 : BitVec 32).toNat = 4 from rfl, show (0 : BitVec 32).toNat = 0 from rfl]
-      omega
+      omega_arith
     rw [hy]
     decide
 
@@ -123,7 +123,7 @@ theorem piBody_ok (s : State) (x : Byte) {j : Nat} (hj : j < 64)
     · rw [and_zero32]
   · simp only [gpr_setReg, gpr_subFlags, reduceCtorEq, ite_true, ite_false]
     rw [h9, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ← BitVec.ofNat_add,
-      show 4 * j + 4 = 4 * (j + 1) by omega]
+      show 4 * j + 4 = 4 * (j + 1) by omega_arith]
   · simp only [gpr_setReg, gpr_subFlags, reduceCtorEq, ite_true, ite_false]
   · simp only [z_setReg, gpr_setReg, reduceCtorEq, ite_false]
     rw [h9]; rfl
@@ -147,12 +147,12 @@ theorem wAcc_succ (m : Mem) (T : BitVec 32) (x : Byte) {j : Nat} :
     (wAcc m T x j ||| if x.toNat / 4 = j then tw m T j else 0) = wAcc m T x (j + 1) := by
   unfold wAcc
   by_cases h : x.toNat / 4 = j
-  · rw [ite_eq_left h, ite_eq_right (by omega), ite_eq_left (by omega), ← h]
+  · rw [ite_eq_left h, ite_eq_right (by omega_arith), ite_eq_left (by omega_arith), ← h]
     exact BitVec.eq_of_getLsbD_eq (by simp)
   · rw [ite_eq_right h, or_zero32]
     by_cases h2 : x.toNat / 4 < j
-    · rw [ite_eq_left h2, ite_eq_left (by omega)]
-    · rw [ite_eq_right h2, ite_eq_right (by omega)]
+    · rw [ite_eq_left h2, ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right h2, ite_eq_right (by omega_arith)]
 
 /-- The state of the scan from `s₀` with words `0 … j - 1` visited. -/
 structure PiScanAt (s₀ : State) (T : BitVec 32) (x : Byte) (j : Nat) (s : State) : Prop where
@@ -167,17 +167,17 @@ theorem piScan_step {s₀ s : State} {T : BitVec 32} {x : Byte} {j : Nat} (hj : 
     WP isa (.block piBody) s fun t => PiScanAt s₀ T x (j + 1) t ∧ t.z = decide (j = 63) := by
   have fit := hT.fit
   have ea : State.addr (s.gpr .lr + BitVec.ofNat 32 0) = State.addr T + BitVec.ofNat 64 (4 * j) := by
-    rw [h.lr, BitVec.add_zero, addr_add (by omega)]
+    rw [h.lr, BitVec.add_zero, addr_add (by omega_arith)]
   have hin : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .lr + BitVec.ofNat 32 0)) 4 := by
     rw [h.keep.rd, h.keep.wr, ea]
-    exact ⟨_, List.mem_append_left _ hT.rd, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_left _ hT.rd, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hw : s.mem.readW (State.addr (s.gpr .lr + BitVec.ofNat 32 0)) 32 = tw s₀.mem T j := by
     rw [ea, h.keep.mem]; rfl
   obtain ⟨t, run, t3, t9, tl, tz, tk⟩ := piBody_ok s x hj h.r12 h.r9 hin
   refine WP.of_runBlock ⟨t, run, ⟨?_, t9, ?_, ?_, h.keep.trans tk⟩, ?_⟩
   · rw [tk.reg .r12 (by decide), h.r12]
   · rw [tl, h.lr, BitVec.add_assoc, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ← BitVec.ofNat_add,
-      show 4 * j + 4 = 4 * (j + 1) by omega]
+      show 4 * j + 4 = 4 * (j + 1) by omega_arith]
   · rw [t3, h.r3, hw, wAcc_succ]
   · rw [tz]
     by_cases he : j = 63
@@ -186,7 +186,7 @@ theorem piScan_step {s₀ s : State} {T : BitVec 32} {x : Byte} {j : Nat} (hj : 
       have : BitVec.ofNat 32 (4 * j) - 252 ≠ 0 := fun e => by
         have := congrArg BitVec.toNat e
         rw [BitVec.toNat_sub, BitVec.toNat_ofNat] at this
-        simp at this; omega
+        simp at this; omega_arith
       simpa using this
 
 /-- `0x00ffffff` keeps the low byte. -/
@@ -213,7 +213,7 @@ theorem select_eq (w : BitVec 32) {k : Nat} (hk : k < 4) :
     decide
   obtain ⟨h0, h1, h2, h3⟩ := hm k hk
   rw [h0, h1, h2, h3]
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_arith) with rfl | rfl | rfl | rfl <;>
     simp only [Nat.reduceEqDiff, ite_true, ite_false, BitVec.zero_and, BitVec.or_zero, BitVec.zero_or,
       Nat.reduceMul, BitVec.ushiftRight_zero, m24_and]
 
@@ -227,9 +227,9 @@ theorem shift_and_255 (w : BitVec 32) (k : Nat) : w >>> k &&& 255 = (w.extractLs
 /-- The index's low two bits. -/
 theorem low2 (x : Byte) : x.setWidth 32 &&& 3 = BitVec.ofNat 32 (x.toNat % 4) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := x.isLt; omega),
+  rw [BitVec.toNat_and, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := x.isLt; omega_arith),
     show (3 : BitVec 32).toNat = 2 ^ 2 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
-  exact (Nat.mod_eq_of_lt (by omega)).symm
+  exact (Nat.mod_eq_of_lt (by omega_arith)).symm
 
 /-- The lookup: `r12 := PITABLE[r12 & 255]`; only `piRegs` are written. -/
 theorem piLookup_ok (s : State) {T : BitVec 32} (hT : PiAt T s) :
@@ -267,8 +267,8 @@ theorem piLookup_ok (s : State) {T : BitVec 32} (hT : PiAt T s) :
     by_cases he : j = 63
     · subst he
       exact .inl ⟨by show some (!w.z) = _; rw [wz]; rfl, hw⟩
-    · exact .inr ⟨by show some (!w.z) = _; rw [wz, decide_eq_false he]; rfl, 64 - (j + 1), by omega, j + 1, rfl,
-        by omega, hw⟩
+    · exact .inr ⟨by show some (!w.z) = _; rw [wz, decide_eq_false he]; rfl, 64 - (j + 1), by omega_arith, j + 1, rfl,
+        by omega_arith, hw⟩
   have e1 : encodable (1 : BitVec 32) = true := by decide
   have e2 : encodable (2 : BitVec 32) = true := by decide
   have e3 : encodable (3 : BitVec 32) = true := by decide
@@ -277,7 +277,7 @@ theorem piLookup_ok (s : State) {T : BitVec 32} (hT : PiAt T s) :
     simp only [piSelect, runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some,
       e1, e2, e3, e255, Nat.reduceLeDiff, and_self, ite_true]
     rfl, ?_⟩)
-  have hq : x.toNat / 4 < 64 := by have := x.isLt; omega
+  have hq : x.toNat / 4 < 64 := by have := x.isLt; omega_arith
   have hk : x.toNat % 4 < 4 := Nat.mod_lt _ (by decide)
   refine ⟨?_, ?_⟩
   · simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false]

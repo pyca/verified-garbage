@@ -6,6 +6,8 @@ meta import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBack
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCT
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! Constant-time public dispatch for PSS salt verification. -/
 

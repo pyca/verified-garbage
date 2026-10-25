@@ -94,9 +94,9 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   have hsz : size = 8192 := rfl
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge
-  have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
-  have hl : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ size := fun hi => by have := sl_le c h7 hi; omega
-  have hr2lt : 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n < c.C.n := Nat.mod_lt _ (by omega)
+  have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
+  have hl : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ size := fun hi => by have := sl_le c h7 hi; omega_arith
+  have hr2lt : 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n < c.C.n := Nat.mod_lt _ (by omega_arith)
   rw [scalars_eq]
   -- The checks.
   refine WP.seq (WP.seq ?_)
@@ -135,7 +135,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
       show s₃.mem (off base (bitsAt c.n 2 + t)) = _
       rw [t₃ (j := 2) (by decide) t ht, t₂ (j := 2) (by decide) t ht]
       exact hF.t₂ t ht)
-    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega)) fun s₄ ⟨k₄, U₄, lt₄, w₄⟩ => ?_)
+    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega_arith)) fun s₄ ⟨k₄, U₄, lt₄, w₄⟩ => ?_)
   rw [powWxN_eq] at U₄
   have K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_powWx h7) (hWs := powWx_le h7)
   have e₄ : ∀ {i}, i < 45 → i ∉ [ACC, PT] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
@@ -144,8 +144,8 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     simp only [flagW]
     exact U₄.word (fun w hw => by
       rcases apart_powWx h7 (i := FLAG) (by decide) (by decide) w hw with h | h
-      · exact Or.inl (by omega)
-      · exact Or.inr h) (by have := sl_le c h7 (i := FLAG) (by decide); omega)
+      · exact Or.inl (by omega_arith)
+      · exact Or.inr h) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)
   have t₄ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
       s₄.mem (off base (bitsAt c.n j + t)) = s₃.mem (off base (bitsAt c.n j + t)) := fun hj t ht =>
     tbl_unch U₄ h7 hj ht (tbl_apart_powWx h7 _ t)
@@ -168,10 +168,10 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   refine WP.seq (WP.mono (mulN_ok hc K₇ (o := VM) (a := RM') (b := ACC) (by decide) (by decide) (by decide)
     (by decide) (by decide) (acc₇ ▸ lt₄)) fun s₈ ⟨K₈, f₈, t₈, v₈, lt₈, e₈⟩ => ?_)
   refine WP.seq (WP.mono (mulN_ok hc K₈ (o := U) (a := UM) (b := ONE) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from K₈.fixed.one]; omega))
+    (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from K₈.fixed.one]; omega_arith))
     fun s₉ ⟨K₉, f₉, t₉, v₉, lt₉, e₉⟩ => ?_)
   refine WP.mono (mulN_ok hc K₉ (o := V) (a := VM) (b := ONE) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from K₉.fixed.one]; omega))
+    (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from K₉.fixed.one]; omega_arith))
     fun s₁₀ ⟨K₁₀, f₁₀, t₁₀, v₁₀, lt₁₀, e₁₀⟩ => h s₁₀ ?_
   -- What reaches `s₁₀` from `s`.
   have a : ∀ {i}, i < 45 → i ∉ midW → i ≠ FLAG → sv c base s₁₀ i = sv c base s i := fun hi hl hf => by

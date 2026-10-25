@@ -139,14 +139,14 @@ theorem maskWord_ok (s : State) {A : Addr} {c : Bool} (ha : s.gpr .x6 + BitVec.o
 theorem shr3 {c : Nat} (hc : c < 2 ^ 64) : BitVec.ofNat 64 c >>> 3 = BitVec.ofNat 64 (c / 8) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc,
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+    Nat.mod_eq_of_lt (by omega_arith), Nat.shiftRight_eq_div_pow]
 
 theorem low3 {c : Nat} (hc : c < 2 ^ 64) : BitVec.ofNat 64 c <<< 61 >>> 61 = BitVec.ofNat 64 (c % 8) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt hc, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
     show (2 : Nat) ^ 64 = 2 ^ 3 * 2 ^ 61 from rfl, Nat.mul_mod_mul_right, Nat.mul_div_cancel _ (by decide),
-    Nat.mod_eq_of_lt (a := c % 2 ^ 3) (by omega)]
+    Nat.mod_eq_of_lt (a := c % 2 ^ 3) (by omega_arith)]
 
 /-- The data from `P + j` on, where the bytes before are done. -/
 structure MaskInv (s : State) (P : Addr) (c : Bool) (j : Nat) (t : State) : Prop where
@@ -193,16 +193,16 @@ theorem maskData_wp (s : State) {P : Addr} {L : Nat} {c : Bool} (hL : L < 2 ^ 64
   -- The words.
   have words : WP isa (.ite (.zero .x .x8) (.block [])
       (.loop (.block maskWordBody) (.nonzero .x .x8))) s₁ (MaskInv s P c (8 * (L / 8))) := by
-    refine WP.ite (decide (L / 8 = 0)) (eval_zero (by omega) x8₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+    refine WP.ite (decide (L / 8 = 0)) (eval_zero (by omega_arith) x8₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
     · rw [of_decide_eq_true hb]; exact inv₁
     have hn0 : L / 8 ≠ 0 := of_decide_eq_false hb
     refine WP.loop (M := isa) (c := .nonzero .x .x8)
       (fun (k : Nat) (t : State) => ∃ j, k = L / 8 - j ∧ j < L / 8 ∧ t.gpr .x8 = BitVec.ofNat 64 (L / 8 - j) ∧
-        MaskInv s P c (8 * j) t) ?_ (L / 8 - 0) _ ⟨0, rfl, by omega, x8₁, inv₁⟩
+        MaskInv s P c (8 * j) t) ?_ (L / 8 - 0) _ ⟨0, rfl, by omega_arith, x8₁, inv₁⟩
     rintro k t ⟨j, rfl, hj, x8, it⟩
     obtain ⟨t', run', mem', x6', x8', g', sp', rd', wr'⟩ := maskWord_ok t (A := P + BitVec.ofNat 64 (8 * j)) (c := c)
-      (by rw [it.x6, BitVec.add_zero]) (g11 it.other) (by rw [it.rd, it.wr]; exact hr _ _ (by omega))
-      (by rw [it.wr]; exact hw _ _ (by omega))
+      (by rw [it.x6, BitVec.add_zero]) (g11 it.other) (by rw [it.rd, it.wr]; exact hr _ _ (by omega_arith))
+      (by rw [it.wr]; exact hw _ _ (by omega_arith))
     refine WP.of_runBlock ⟨t', run', ?_⟩
     have hlen := length_mask s.mem P c (8 * j)
     have hmem : t'.mem = writeBytes s.mem P
@@ -210,31 +210,31 @@ theorem maskData_wp (s : State) {P : Addr} {L : Nat} {c : Bool} (hL : L < 2 ^ 64
       have hv : t.mem.readW (P + BitVec.ofNat 64 (8 * j)) 64 = s.mem.readW (P + BitVec.ofNat 64 (8 * j)) 64 :=
         (fP it.mem).readW (w := 64) (Region.contains_self _ _) (fun r hr' => by
           simp only [List.mem_singleton] at hr'; subst hr'
-          exact (Offset.base_disjoint P (e := 8 * j) (n := 8) (k := 8 * j) (by omega) (by omega)).symm) (by decide)
+          exact (Offset.base_disjoint P (e := 8 * j) (n := 8) (k := 8 * j) (by omega_arith) (by omega_arith)).symm) (by decide)
       have hwa := writeBytes_append s.mem P (if c then Spec.Aes.bytesAt s.mem P (8 * j) else Spec.Siv.zeros (8 * j))
         (Proof.Cmac.le8 (s.mem.readW (P + BitVec.ofNat 64 (8 * j)) 64 &&& (0 - if c then 1 else 0)))
-        (by rw [Proof.Cmac.length_le8, hlen]; omega)
+        (by rw [Proof.Cmac.length_le8, hlen]; omega_arith)
       rw [hlen] at hwa
-      rw [mem', hv, it.mem, writeW_le8, hwa, ← mask_word, show 8 * (j + 1) = 8 * j + 8 by omega]
+      rw [mem', hv, it.mem, writeW_le8, hwa, ← mask_word, show 8 * (j + 1) = 8 * j + 8 by omega_arith]
     have x8'' : t'.gpr .x8 = BitVec.ofNat 64 (L / 8 - (j + 1)) := by
-      rw [x8', x8, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]; rfl
-    have ev' := eval_nonzero (s := t') (x := L / 8 - (j + 1)) (by omega) x8''
+      rw [x8', x8, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith)]; rfl
+    have ev' := eval_nonzero (s := t') (x := L / 8 - (j + 1)) (by omega_arith) x8''
     have gg : ∀ r, r ≠ .x6 → r ≠ .x8 → r ≠ .x9 → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ => by
       rw [g' r h₁ h₂ h₃, it.other r h₁ h₂ h₃]
     have x6'' : t'.gpr .x6 = P + BitVec.ofNat 64 (8 * (j + 1)) := by
       rw [x6', it.x6, BitVec.add_assoc, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, ← BitVec.ofNat_add,
-        show 8 * j + 8 = 8 * (j + 1) by omega]
+        show 8 * j + 8 = 8 * (j + 1) by omega_arith]
     by_cases he : j + 1 = L / 8
     · left
       refine ⟨by rw [ev']; simp [he], ⟨by rw [x6'', he], ?_, gg, by rw [sp', it.sp], by rw [rd', it.rd],
         by rw [wr', it.wr]⟩⟩
       rw [hmem, he]
     · right
-      refine ⟨by rw [ev']; simp; omega, L / 8 - (j + 1), by omega, j + 1, rfl, by omega, x8'',
+      refine ⟨by rw [ev']; simp; omega_arith, L / 8 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, x8'',
         ⟨x6'', hmem, gg, by rw [sp', it.sp], by rw [rd', it.rd], by rw [wr', it.wr]⟩⟩
   refine WP.seq (WP.mono words fun t it => ?_)
   -- The bytes.
-  have hj₀ : 8 * (L / 8) ≤ L := by omega
+  have hj₀ : 8 * (L / 8) ≤ L := by omega_arith
   obtain ⟨t₁, run₁', x8₁', g₁', sp₁', m₁', rd₁', wr₁'⟩ : ∃ t₁, runBlock isa [.lsl .x .x8 .x27 61, .lsr .x .x8 .x8 61] t =
       some t₁ ∧ t₁.gpr .x8 = BitVec.ofNat 64 (L - 8 * (L / 8)) ∧ (∀ r, r ≠ .x8 → t₁.gpr r = t.gpr r) ∧
       t₁.sp = t.sp ∧ t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
@@ -242,7 +242,7 @@ theorem maskData_wp (s : State) {P : Addr} {L : Nat} {c : Bool} (hL : L < 2 ^ 64
       simp only [↓reduceIte, Nat.reduceLT, runBlock_cons, runStep_some, runBlock_nil, exec, Size.bits]
       rfl, ?_, fun r a => ?_, ?_, ?_, ?_, ?_⟩
     · simp only [gpr_write, State.read, BitVec.setWidth_eq, ↓reduceIte, g27 it.other, low3 hL]
-      rw [show L % 8 = L - 8 * (L / 8) by omega]
+      rw [show L % 8 = L - 8 * (L / 8) by omega_arith]
     · simp [gpr_write, a]
     all_goals rfl
   have it₁ : MaskInv s P c (8 * (L / 8)) t₁ :=
@@ -250,29 +250,29 @@ theorem maskData_wp (s : State) {P : Addr} {L : Nat} {c : Bool} (hL : L < 2 ^ 64
       fun r h₁ h₂ h₃ => by rw [g₁' r h₂, it.other r h₁ h₂ h₃], by rw [sp₁', it.sp], by rw [rd₁', it.rd],
       by rw [wr₁', it.wr]⟩
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁', ?_⟩)
-  refine WP.ite (decide (L - 8 * (L / 8) = 0)) (eval_zero (by omega) x8₁') (fun hb => WP.block_nil ?_)
+  refine WP.ite (decide (L - 8 * (L / 8) = 0)) (eval_zero (by omega_arith) x8₁') (fun hb => WP.block_nil ?_)
     (fun hb => ?_)
-  · have he : 8 * (L / 8) = L := by have := of_decide_eq_true hb; omega
+  · have he : 8 * (L / 8) = L := by have := of_decide_eq_true hb; omega_arith
     rw [he] at it₁
     exact ⟨it₁.mem, it₁.other, it₁.sp, it₁.rd, it₁.wr⟩
-  have hlt₀ : 8 * (L / 8) < L := by have := of_decide_eq_false hb; omega
+  have hlt₀ : 8 * (L / 8) < L := by have := of_decide_eq_false hb; omega_arith
   refine WP.loop (M := isa) (body := .block maskBody) (c := .nonzero .x .x8)
     (fun (k : Nat) (t : State) => ∃ j, k = L - j ∧ j < L ∧ t.gpr .x8 = BitVec.ofNat 64 (L - j) ∧
       MaskInv s P c j t) ?_ (L - 8 * (L / 8)) _ ⟨8 * (L / 8), rfl, hlt₀, x8₁', it₁⟩
   rintro k t ⟨j, rfl, hj, x8, it⟩
   obtain ⟨t', run', mem', x6', x8', g', sp', rd', wr'⟩ := maskStep_ok t (A := P + BitVec.ofNat 64 j) (c := c)
-    (by rw [it.x6, BitVec.add_zero]) (g11 it.other) (by rw [it.rd, it.wr]; exact hr j 1 (by omega))
-    (by rw [it.wr]; exact hw j 1 (by omega))
+    (by rw [it.x6, BitVec.add_zero]) (g11 it.other) (by rw [it.rd, it.wr]; exact hr j 1 (by omega_arith))
+    (by rw [it.wr]; exact hw j 1 (by omega_arith))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have hq : t.mem (P + BitVec.ofNat 64 j) = s.mem (P + BitVec.ofNat 64 j) :=
     fP it.mem _ fun r hr' hcon => by
       simp only [List.mem_singleton] at hr'; subst hr'
-      simp only [Region.Contains, Mem.sub_ofNat_toNat P (show j < 2 ^ 64 by omega)] at hcon; omega
+      simp only [Region.Contains, Mem.sub_ofNat_toNat P (show j < 2 ^ 64 by omega_arith)] at hcon; omega_arith
   have hmem : t'.mem = writeBytes s.mem P (if c then Spec.Aes.bytesAt s.mem P (j + 1) else Spec.Siv.zeros (j + 1)) := by
-    rw [mem', hq, it.mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega), length_mask]
+    rw [mem', hq, it.mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega_arith), length_mask]
   have x8'' : t'.gpr .x8 = BitVec.ofNat 64 (L - (j + 1)) := by
-    rw [x8', x8, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]; rfl
-  have ev' := eval_nonzero (s := t') (x := L - (j + 1)) (by omega) x8''
+    rw [x8', x8, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith)]; rfl
+  have ev' := eval_nonzero (s := t') (x := L - (j + 1)) (by omega_arith) x8''
   have gg : ∀ r, r ≠ .x6 → r ≠ .x8 → r ≠ .x9 → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ => by
     rw [g' r h₁ h₂ h₃, it.other r h₁ h₂ h₃]
   by_cases he : j + 1 = L
@@ -280,7 +280,7 @@ theorem maskData_wp (s : State) {P : Addr} {L : Nat} {c : Bool} (hL : L < 2 ^ 64
     exact ⟨by rw [ev']; simp [he], by rw [hmem, he], gg, by rw [sp', it.sp], by rw [rd', it.rd],
       by rw [wr', it.wr]⟩
   · right
-    refine ⟨by rw [ev']; simp; omega, L - (j + 1), by omega, j + 1, rfl, by omega, x8'',
+    refine ⟨by rw [ev']; simp; omega_arith, L - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, x8'',
       ⟨by rw [x6', it.x6, BitVec.add_assoc, succ_ofNat], hmem, gg, by rw [sp', it.sp], by rw [rd', it.rd],
         by rw [wr', it.wr]⟩⟩
 
@@ -297,8 +297,8 @@ theorem openTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
             (Spec.Aes.bytesAt s.mem D 16) (Spec.Aes.bytesAt s.mem W 16) (Spec.Aes.bytesAt s.mem P L) with
         | some pt => (s'.gpr .x0).setWidth 32 = 1 ∧ Spec.Aes.bytesAt s'.mem P L = pt
         | none => (s'.gpr .x0).setWidth 32 = 0 ∧ Spec.Aes.bytesAt s'.mem P L = Spec.Siv.zeros L := by
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
-  have hL : L ≤ 2 ^ 64 := by have := h.lt; omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
+  have hL : L ≤ 2 ^ 64 := by have := h.lt; omega_arith
   -- The counter.
   obtain ⟨s₁, run₁, m₁, g₁, sp₁, rd₁, wr₁⟩ := counter_ok h hs.regs.x19 hs.regs.rd hs.regs.wr
   have hr₁ : Regs s₀ C D P W R L s₁ := hs.regs.keep' (fun r hr => g₁ r (by rintro rfl; revert hr; decide)
@@ -337,12 +337,12 @@ theorem openTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
     have hb := saved_bound
     refine (((hsv.frame fc fun p hp => ?_).frame f₂ fun p hp => ?_).frame f₃ fun p hp => ?_).frame
       (m' := s₅.mem) (by rw [← m₄]; exact f₅) fun p hp => ?_
-    · have := hb p hp; exact cnt_dis (by omega) (by omega)
-    · have := hb p hp; exact ctr_dis h (by omega) (by omega)
+    · have := hb p hp; exact cnt_dis (by omega_arith) (by omega_arith)
+    · have := hb p hp; exact ctr_dis h (by omega_arith) (by omega_arith)
     · have := hb p hp
-      exact fin_dis h (by decide) (by omega) (by simp only [tOff]; omega) (by omega) (by omega) (by omega)
+      exact fin_dis h (by decide) (by omega_arith) (by simp only [tOff]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     · have := hb p hp
-      exact one_out (h.p_w.sub_right (h.sW (d := p.2) (n := 8) (by omega))).symm
+      exact one_out (h.p_w.sub_right (h.sW (d := p.2) (n := 8) (by omega_arith))).symm
   refine WP.mono (restore_wp h hr₅.x19 hr₅.rd hr₅.wr hsv₅) fun s₇ ⟨h₇a, h₇b, sp₇, m₇⟩ => ?_
   have x0₇ : s₇.gpr .x0 = s₄.gpr .x0 := by
     rw [h₇b _ (by decide), h₅.other _ (by decide) (by decide) (by decide)]

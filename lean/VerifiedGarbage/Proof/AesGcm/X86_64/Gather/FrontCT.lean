@@ -200,11 +200,11 @@ theorem frontFast_eq2 (S : SplitFn M) {long : Bool} (hg : frontGo long s₀ = tr
   · refine rel_ite (b := decide (Cnt s₀ = 1)) (by simp only [eval, zf₁]) (by simp only [eval, zf₂, ec])
       (fun _ => rel_skip) fun e => ?_
     have hc : Cnt s₀ = 2 := by have : Cnt s₀ ≠ 1 := by simpa using e
-                               omega
+                               omega_arith
     have hc' : Cnt s₀' = 2 := by rw [ec]; exact hc
     refine rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.r10] (by simp [r10₁, r10₂, pb.src]) fastLen2_check)
       (fastLen2_ok hp hc F₁ r10₁) (fastLen2_ok hp' hc' F₂ r10₂) fun ω₁ ω₂ ⟨H₁, r10₁', cx₁, zf₁'⟩ ⟨H₂, r10₂', cx₂, zf₂'⟩ => ?_
-    have esl : sl s₀' 1 = sl s₀ 1 := pb.sl (by omega)
+    have esl : sl s₀' 1 = sl s₀ 1 := pb.sl (by omega_arith)
     refine rel_ite (b := decide (sl s₀ 1 = 0)) (by simp only [eval, zf₁']) (by simp only [eval, zf₂', esl])
       (fun _ => rel_skip) fun e => ?_
     have hgl := gl_two hp hc
@@ -212,12 +212,12 @@ theorem frontFast_eq2 (S : SplitFn M) {long : Bool} (hg : frontGo long s₀ = tr
     have hfl := fl_le hp
     refine rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.r10, .rsp]
         (by simp [r10₁', r10₂', pb.src, H₁.rsp, H₂.rsp, SP, pb.rsp]) fastCopy_check)
-      (fastCopy_ok hp hc (by omega) H₁ r10₁' cx₁) (fastCopy_ok hp' hc' (by rw [esl]; omega) H₂ r10₂' cx₂)
+      (fastCopy_ok hp hc (by omega_arith) H₁ r10₁' cx₁) (fastCopy_ok hp' hc' (by rw [esl]; omega_arith) H₂ r10₂' cx₂)
       fun ξ₁ ξ₂ ⟨_, P₁, i₁⟩ ⟨_, P₂, i₂⟩ => ?_
     exact ChaCha20Poly1305.X86_64.Gather.rel_regs [.rsi, .rdi, .rcx, .r10]
-      (by simp [P₁.rsi, P₂.rsi, P₁.rdi, P₂.rdi, P₁.rcx, P₂.rcx, i₁, i₂, pb.sb (show 1 < Cnt s₀ by omega), pb.dst,
+      (by simp [P₁.rsi, P₂.rsi, P₁.rdi, P₂.rdi, P₁.rcx, P₂.rcx, i₁, i₂, pb.sb (show 1 < Cnt s₀ by omega_arith), pb.dst,
         pb.eFl, esl]) copy1_check
-  refine rel_seq ?_ (fastArgs_ok hp hn (by omega) G₁ O₁) (fastArgs_ok hp' hn' (by omega) G₂ O₂)
+  refine rel_seq ?_ (fastArgs_ok hp hn (by omega_arith) G₁ O₁) (fastArgs_ok hp' hn' (by omega_arith) G₂ O₂)
     fun ω₁ ω₂ ⟨B₁, R₁⟩ ⟨B₂, R₂⟩ => splitCall_rel hp hp' pb S B₁ R₁ B₂ R₂
   rw [show fastArgs = [.mov32 .rcx (imm 12), .mov .r10 (.mem (at_ .rsp 8))] ++ fastArgs.tail.tail from rfl]
   refine rel_block_split (rel_seq (ChaCha20Poly1305.X86_64.Gather.rel_regs [.rsp]

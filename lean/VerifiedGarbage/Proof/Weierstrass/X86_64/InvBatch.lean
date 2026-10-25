@@ -133,11 +133,11 @@ theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     Divstep.toInt_small (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv), Divstep.cong_comb ha hb] at e₁
   have hM₁ := modOk_out hM O₁ (by
     have := hM.mo
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] <;> omega) hn
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] <;> omega_arith) hn
   have hT' : |u * a + v * b| ≤ 2 ^ 63 * (p : Int) := by
     have := Divstep.comb_le huv ha0 hb0
     have hp0 : (0 : Int) ≤ p := Int.natCast_nonneg _
-    exact le_trans this (by omega)
+    exact le_trans this (by omega_arith)
   have O₁' : Unch base [(T, 8 * (M.n + 2)), (U, 8 * M.n)] s.mem s₁.mem := fun z hz => O₁ z (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hz ⊢
     omega_using [hz])
@@ -234,7 +234,7 @@ theorem low_cong {P : InvCfg} {m : Mem} {base : Addr} {d : Nat} {x : Int}
 
 theorem msteps_d15 {T : Divstep.MSt} {k : Nat} (h : |T.d| + 2 * k ≤ 2 ^ 31) :
     |(Divstep.msteps 15 T).d| + 2 * k ≤ 2 ^ 31 + 30 := by
-  have := Divstep.msteps_d T 15; push_cast at this; omega
+  have := Divstep.msteps_d T 15; push_cast at this; omega_arith
 
 /-- A batch's words: `59` divsteps from the low words of `f`, `g`, in chunks,
 leave `d` and the matrix in `rbx`, `r9`–`r12`. -/
@@ -256,7 +256,7 @@ theorem words_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) {s
   have dd : ∀ k, |(Divstep.msteps k T0).d| ≤ 2 ^ 30 + 2 * k := fun k => by
     have := Divstep.msteps_d T0 k
     rw [show T0.d = I.d from rfl] at this
-    omega
+    omega_arith
   have hT : P.sT + 24 ≤ size := by omega_using [eT, htbl, n4]
   rw [InvCfg.words]
   simp only [List.append_assoc]
@@ -269,13 +269,13 @@ theorem words_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) {s
       fun _ => ⟨rfl, rfl, rfl, rfl⟩, fun h => absurd h (by decide)⟩
   rw [WP.block_append_iff]
   refine WP.mono (pchunk_ok hs₁ (n := 15) (K := 64) (last := false) ⟨by decide, by decide⟩
-    ⟨by decide, by decide⟩ hT f0 (by rw [show T0.d = I.d from rfl]; push_cast; omega) c₁)
+    ⟨by decide, by decide⟩ hT f0 (by rw [show T0.d = I.d from rfl]; push_cast; omega_arith) c₁)
     fun s₂ ⟨d₂, u₂, v₂, q₂, r₂, w₂, k₂, o₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   obtain ⟨f₂, g₂⟩ := w₂ rfl
   rw [WP.block_append_iff]
   refine WP.mono (pchunk_ok hs₂ (n := 15) (K := 49) (first := false) (last := false) ⟨by decide, by decide⟩
-    ⟨by decide, by decide⟩ hT (odd 15) (by have := dd 15; norm_num at this ⊢; omega)
+    ⟨by decide, by decide⟩ hT (odd 15) (by have := dd 15; norm_num at this ⊢; omega_arith)
     ⟨d₂, f₂, g₂, fun h => absurd h (by decide), fun _ => ⟨u₂, v₂, q₂, r₂⟩⟩)
     fun s₃ ⟨d₃, u₃, v₃, q₃, r₃, w₃, k₃, o₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
@@ -283,7 +283,7 @@ theorem words_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) {s
   rw [← Divstep.msteps_add] at d₃ u₃ v₃ q₃ r₃ f₃ g₃
   rw [WP.block_append_iff]
   refine WP.mono (pchunk_ok hs₃ (n := 15) (K := 34) (first := false) (last := false) ⟨by decide, by decide⟩
-    ⟨by decide, by decide⟩ hT (odd 30) (by have := dd 30; norm_num at this ⊢; omega)
+    ⟨by decide, by decide⟩ hT (odd 30) (by have := dd 30; norm_num at this ⊢; omega_arith)
     ⟨d₃, f₃, g₃, fun h => absurd h (by decide), fun _ => ⟨u₃, v₃, q₃, r₃⟩⟩)
     fun s₄ ⟨d₄, u₄, v₄, q₄, r₄, w₄, k₄, o₄⟩ => ?_
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
@@ -291,7 +291,7 @@ theorem words_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) {s
   rw [← Divstep.msteps_add] at d₄ u₄ v₄ q₄ r₄ f₄ g₄
   rw [WP.block_append_iff]
   refine WP.mono (pchunk_ok hs₄ (n := 14) (K := 19) (first := false) (last := true) ⟨by decide, by decide⟩
-    ⟨by decide, by decide⟩ hT (odd 45) (by have := dd 45; norm_num at this ⊢; omega)
+    ⟨by decide, by decide⟩ hT (odd 45) (by have := dd 45; norm_num at this ⊢; omega_arith)
     ⟨d₄, f₄, g₄, fun h => absurd h (by decide), fun _ => ⟨u₄, v₄, q₄, r₄⟩⟩)
     fun s₅ ⟨d₅, u₅, v₅, q₅, r₅, _, k₅, o₅⟩ => ?_
   rw [← Divstep.msteps_add] at d₅ u₅ v₅ q₅ r₅

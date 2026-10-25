@@ -51,8 +51,8 @@ theorem env_keeps₂ {b : Addr} {m m' : Mem} (h : Spec.X25519.Field32.Keeps₂ b
   refine congrArg (fun v : BitVec (8 * 32) => Proof.X25519.toFe v.toNat) (Mem.read_congr fun j hj => ?_)
   have ho : offset i = 64 + 32 * i.val := rfl
   rw [Offset.add_add]
-  exact h (offset i + j) (by simp only [Spec.X25519.Field32.wsBytes]; omega)
-    (by simp only [Spec.X25519.Field32.eAt]; omega)
+  exact h (offset i + j) (by simp only [Spec.X25519.Field32.wsBytes]; omega_arith)
+    (by simp only [Spec.X25519.Field32.eAt]; omega_arith)
 
 /-- The registers `vg_gf25519_r32_pow250` never writes. -/
 def powKept : List Reg := [.r2, .r3, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23,
@@ -111,10 +111,10 @@ theorem power250_ok {b : Addr} {s : State} (hc : Ctx8 b s) :
         by_contra hc
         refine hnf ?_
         rw [hx']
-        exact Offset.contains _ (by omega) (by omega) (by omega)
+        exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
       rw [hx']
-      exact hks _ (by simp only [Spec.X25519.Field32.wsBytes]; omega)
-        (by simp only [Spec.X25519.Field32.eAt, Spec.X25519.Field32.ownEnd]; omega)
+      exact hks _ (by simp only [Spec.X25519.Field32.wsBytes]; omega_arith)
+        (by simp only [Spec.X25519.Field32.eAt, Spec.X25519.Field32.ownEnd]; omega_arith)
     · rw [← u1.mem]
       exact hfr x fun r hr => by rw [List.mem_singleton.mp hr]; exact hw
   · rw [v1.mem]
@@ -135,7 +135,7 @@ theorem sqnLoop_ok {b : Addr} {s : State} (hc : Ctx b s) (o : Slot) (ho : 14 ≤
       Rest (.r12 :: clob) s t ∧ Frame [PR b] s.mem t.mem ∧
       env t.mem b = Function.update (env s.mem b) o (sqn (env s.mem b o) n) := by
   unfold sqnLoop
-  refine WP.seq (wp_li (by omega) fun s1 u1 => WP.block_nil ?_)
+  refine WP.seq (wp_li (by omega_arith) fun s1 u1 => WP.block_nil ?_)
   refine sqLoop_ok hc o ho (env s.mem b o) n hn' n s1 hn (Nat.le_refl _) (u1.rest (by decide))
     (by rw [u1.mem]; exact Frame.refl _ _) u1.gpr ?_
   rw [u1.mem, Nat.sub_self]
@@ -156,7 +156,7 @@ theorem invert_ok {b : Addr} {s : State} (hc : Ctx8 b s) :
   have hc2 : Ctx8 b t2 := hc1.of_rest r2 (by decide)
   refine WP.mono (mulCall_ok hc2.ctx 15 15 14) fun t3 ⟨k3, e3⟩ => ⟨?_, ?_, fun i hi => ?_⟩
   · refine k1.trans (Keep.trans ⟨r2.mono (by decide), f2.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩⟩ k3)
-    rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_arith) (by omega_arith)
   · rw [e3, Function.update_self, e2, Function.update_self, Function.update_of_ne (by decide), e15, e14,
       Proof.X25519.sqn_pw, Proof.X25519.pw_mul, inv_exp, Proof.X25519.pow_pw]
   · have h15 : i ≠ 15 := fun h => by subst h; exact absurd hi (by decide)
@@ -196,7 +196,7 @@ theorem pointSign_ok {s : State} (hc : Ctx b s) :
       (t.gpr .r17).toNat = (V s.mem b FR % 2) * 2 ^ 31 := by
   have hF := FR_eq
   unfold pointSign
-  refine lw0_ok hc (d := FR) (by omega) fun s1 u1 => wp_lsl (by decide) fun s2 u2 => wp_lsr (by decide) fun s3 u3 =>
+  refine lw0_ok hc (d := FR) (by omega_arith) fun s1 u1 => wp_lsl (by decide) fun s2 u2 => wp_lsr (by decide) fun s3 u3 =>
     WP.block_nil ⟨(u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide))),
       by rw [u3.mem, u2.mem, u1.mem], ?_⟩
   have e7 : (s1.gpr .r7).toNat = limb s.mem b FR 0 := by rw [u1.gpr, toNat_ext32]; rfl
@@ -215,19 +215,19 @@ theorem encodeSign_ok {s : State} (hc : Ctx b s) {y x : Nat} (hy : y < 2 ^ 255) 
     have hv7 : val32 (limb s.mem b FR) 7 + 2 ^ 224 * limb s.mem b FR 7 = y := by rw [← hv]; rfl
     by_contra h
     have : 2 ^ 224 * 2 ^ 31 ≤ 2 ^ 224 * limb s.mem b FR 7 := Nat.mul_le_mul_left _ (by omega)
-    omega
+    omega_arith
   unfold encodeSign
-  refine lw0_ok hc (d := FR + 28) (by omega) fun s1 u1 => wp_add fun s2 u2 => ?_
+  refine lw0_ok hc (d := FR + 28) (by omega_arith) fun s1 u1 => wp_add fun s2 u2 => ?_
   have e2 : (s2.gpr .r7).toNat = limb s.mem b FR 7 + (x % 2) * 2 ^ 31 := by
     have e1 : (s1.gpr .r7).toNat = limb s.mem b FR 7 := by rw [u1.gpr, toNat_ext32]; rfl
     have hx := Nat.mod_lt x (show 0 < 2 by decide)
-    rw [u2.gpr, u1.other .r17 (by decide), toNat_add_lt (by rw [e1, hs]; omega), e1, hs]
+    rw [u2.gpr, u1.other .r17 (by decide), toNat_add_lt (by rw [e1, hs]; omega_arith), e1, hs]
   have hr2 : Rest [.r7] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
-  refine sw0_ok (hc.of_rest hr2 (by decide)) (d := FR + 28) (by omega) fun s3 u3 => WP.block_nil ⟨?_, ?_, ?_⟩
+  refine sw0_ok (hc.of_rest hr2 (by decide)) (d := FR + 28) (by omega_arith) fun s3 u3 => WP.block_nil ⟨?_, ?_, ?_⟩
   · exact hr2.trans (u3.rest _)
   · rw [u3.mem, u2.mem, u1.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (d := FR + 28) (n := 32 / 8) (Nat.le_refl _) (by omega) (by omega))
+      (Offset.contains _ (d := FR + 28) (n := 32 / 8) (Nat.le_refl _) (by omega_arith) (by omega_arith))
   · have hm : s3.mem = s.mem.writeW (b + BitVec.ofNat 64 (FR + 28)) ((s2.gpr .r7).setWidth 32) := by
       rw [u3.mem, u2.mem, u1.mem]
     have hl : ∀ k < 8, limb s3.mem b FR k = if k = 7 then limb s.mem b FR 7 + (x % 2) * 2 ^ 31 else limb s.mem b FR k := by
@@ -236,13 +236,13 @@ theorem encodeSign_ok {s : State} (hc : Ctx b s) {y x : Nat} (hy : y < 2 ^ 255) 
       by_cases h : k = 7
       · subst h
         have hx := Nat.mod_lt x (show 0 < 2 by decide)
-        rw [iteT rfl, wd_write_self, toNat_lo32, e2, Nat.mod_eq_of_lt (by omega)]
-      · rw [iteF h, wd_write_other _ _ _ (by omega) (by omega) (by omega)]; rfl
+        rw [iteT rfl, wd_write_self, toNat_lo32, e2, Nat.mod_eq_of_lt (by omega_arith)]
+      · rw [iteF h, wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; rfl
     rw [V, val32_congr hl, ← hv, V]
     simp only [val32, ite_true, show (0 : Nat) ≠ 7 by decide, show (1 : Nat) ≠ 7 by decide,
       show (2 : Nat) ≠ 7 by decide, show (3 : Nat) ≠ 7 by decide, show (4 : Nat) ≠ 7 by decide,
       show (5 : Nat) ≠ 7 by decide, show (6 : Nat) ≠ 7 by decide, ite_false]
-    omega
+    omega_arith
 
 /-- The number `encodePoint` encodes. -/
 def encodeNum (p : Spec.Ed25519.Point) : Nat :=
@@ -274,7 +274,7 @@ theorem pointEncode_ok {s : State} (hc : Ctx8 b s) :
     ⟨_, rfl⟩
   have hv4 : V t4.mem b FR = y.val := by
     rw [v4, m3, ← env_val, env_keep f2 1 fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by simp only [offset]; omega)) (by simp only [offset]; omega) (by omega),
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by simp only [offset]; omega_arith)) (by simp only [offset]; omega_arith) (by omega_arith),
       e1, hy]
     rfl
   have hs4 : (t4.gpr .r17).toNat = (x.val % 2) * 2 ^ 31 := by
@@ -285,10 +285,10 @@ theorem pointEncode_ok {s : State} (hc : Ctx8 b s) :
       ((r4.mono (by decide)).trans (r5.mono (by decide)))))
   · have hs : ∀ d n, d + n ≤ 1024 → 64 ≤ d → ∀ r ∈ ([⟨b + BitVec.ofNat 64 d, n⟩] : List Region),
         ∃ r' ∈ [FA b], r.Sub r' := fun d n h1 h2 r hr =>
-      ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega) (by omega)⟩
-    refine k1.frame.trans ((f2.sub (hs FR 64 (by omega) (by omega))).trans ?_)
+      ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_arith) (by omega_arith)⟩
+    refine k1.frame.trans ((f2.sub (hs FR 64 (by omega_arith) (by omega_arith))).trans ?_)
     rw [← m3]
-    exact (f4.sub (hs FR 64 (by omega) (by omega))).trans (f5.sub (hs (FR + 28) 4 (by omega) (by omega)))
+    exact (f4.sub (hs FR 64 (by omega_arith) (by omega_arith))).trans (f5.sub (hs (FR + 28) 4 (by omega_arith) (by omega_arith)))
   · rw [v5, encodeNum, ← hx, ← hy]
 
 end

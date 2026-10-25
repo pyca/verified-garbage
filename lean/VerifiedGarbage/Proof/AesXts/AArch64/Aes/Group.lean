@@ -81,17 +81,17 @@ theorem group_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
   have hsw := hp.scr_wrap
   have hW : s.wr = [Iv s₀ |> fun a => (⟨a, 16⟩ : Region), dataR s₀, scrR s₀] := by rw [hI.wr, hp.wr]
   have eb : ∀ k, blk s₀ c + BitVec.ofNat 64 (16 * (0 + k)) = blk s₀ (c + k) := fun k =>
-    Offset.add_add_eq _ (by omega)
+    Offset.add_add_eq _ (by omega_arith)
   have inD : ∀ k < rs.length, (dataR s₀).Contains (blk s₀ c + BitVec.ofNat 64 (16 * (0 + k))) 16 :=
-    fun k hk => by rw [eb]; exact Offset.contains_base _ (by omega) (by omega)
+    fun k hk => by rw [eb]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   have inS : ∀ k < rs.length, (scrR s₀).Contains (S s₀ + BitVec.ofNat 64 (16 * (0 + k))) 16 :=
-    fun k hk => Offset.contains_base _ (by omega) (by omega)
+    fun k hk => Offset.contains_base _ (by omega_arith) (by omega_arith)
   have dS : ∀ k < rs.length, Region.Disjoint ⟨blk s₀ c + BitVec.ofNat 64 (16 * (0 + k)), 16⟩ ⟨S s₀, 128⟩ :=
     fun k hk => by
       rw [eb]
-      exact (hp.data_scr.sub_left (UPre.data_sub (by omega))).sub_right (Region.sub_prefix (by decide))
+      exact (hp.data_scr.sub_left (UPre.data_sub (by omega_arith))).sub_right (Region.sub_prefix (by decide))
   -- The tweaks XORed in.
-  refine WP.seq (WP.mono (pre_ok (blk s₀ c) (S s₀) (by omega) rs 0 s hbr.1 h31 (by omega) hI.x2 hI.x5
+  refine WP.seq (WP.mono (pre_ok (blk s₀ c) (S s₀) (by omega_arith) rs 0 s hbr.1 h31 (by omega_arith) hI.x2 hI.x5
     (fun k hk => ⟨dataR s₀, by rw [hW]; simp, inD k hk⟩)
     (fun k hk => ⟨scrR s₀, by rw [hW]; simp, inS k hk⟩) dS)
     fun s₁ ⟨v₁, m₁, f₁, t₁, o₁, g₁, sp₁, rd₁, wr₁⟩ => ?_)
@@ -105,8 +105,8 @@ theorem group_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
   have g₂ : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x14 → r ≠ .x15 → s₂.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [f₂.gpr, g₁ r h1 h2 h3 h4]
   have hW₂ : s₂.wr = [Iv s₀ |> fun a => (⟨a, 16⟩ : Region), dataR s₀, scrR s₀] := by rw [f₂.wr, wr₁, hW]
-  refine WP.mono (post_ok .x5 (blk s₀ c) (S s₀) (by omega) rs 0 s₂ hbr.1 h31 (by omega)
-    (by rw [hp.blk_toNat (k := c) (by omega)]; omega)
+  refine WP.mono (post_ok .x5 (blk s₀ c) (S s₀) (by omega_arith) rs 0 s₂ hbr.1 h31 (by omega_arith)
+    (by rw [hp.blk_toNat (k := c) (by omega_arith)]; omega_arith)
     (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), hI.x2])
     (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), hI.x5])
     (fun k hk => ⟨scrR s₀, by rw [f₂.rd, rd₁, hI.rd, hp.rd, hW₂]; simp, inS k hk⟩)
@@ -118,11 +118,11 @@ theorem group_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
   have tw₃ : tweakOf s₃ = twW (tw0 s₀) (c + rs.length) := by
     rw [tweakOf, g₃, f₂.gpr, ← tweakOf, t₁, hI.tw, twW_add]
   have hsl : Region.Sub ⟨S s₀ + BitVec.ofNat 64 (16 * 0), 16 * rs.length⟩ (scrR s₀) :=
-    UPre.scr_sub (by omega)
+    UPre.scr_sub (by omega_arith)
   have hdl : Region.Sub ⟨blk s₀ c + BitVec.ofNat 64 (16 * 0), 16 * rs.length⟩ (dataR s₀) := by
     rw [Nat.mul_zero, BitVec.add_zero, blk]
-    exact Offset.sub_base _ (by omega)
-  refine ⟨by omega, ?_, by rw [g₃' _ (by decide) (by decide) (by decide) (by decide), hI.x2],
+    exact Offset.sub_base _ (by omega_arith)
+  refine ⟨by omega_arith, ?_, by rw [g₃' _ (by decide) (by decide) (by decide) (by decide), hI.x2],
     by rw [g₃' _ (by decide) (by decide) (by decide) (by decide), hI.x3],
     by rw [g₃' _ (by decide) (by decide) (by decide) (by decide), hI.x5],
     by rw [g₃' _ (by decide) (by decide) (by decide) (by decide), hI.x11], tw₃,
@@ -135,8 +135,8 @@ theorem group_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
     · rw [← m₂]
       exact f₃.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨dataR s₀, by simp, hdl⟩
   · by_cases hin : c ≤ k ∧ k < c + rs.length
-    · obtain ⟨i, rfl⟩ : ∃ i, k = c + i := ⟨k - c, by omega⟩
-      have hi : i < rs.length := by omega
+    · obtain ⟨i, rfl⟩ : ∃ i, k = c + i := ⟨k - c, by omega_arith⟩
+      have hi : i < rs.length := by omega_arith
       have e := d₃ i hi
       rw [eb] at e
       rw [bytesAt_b16, e, m₂]
@@ -149,18 +149,18 @@ theorem group_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
           (st (s.mem.readW (blk s₀ (c + i)) 128 ^^^ twW (tw0 s₀) (c + i))) := by
         rw [e₂ _ (List.getElem_mem hi), vi, hF]
       rw [xts_word enc (R s₀) (wK s₀) _ _ _ hc', b16_twW, ← iv0_b16, ← bytesAt_b16, hI.data _ hk]
-      simp only [show ¬ c + i < c by omega, ite_false, show c + i < c + rs.length by omega, ite_true]
+      simp only [show ¬ c + i < c by omega_arith, ite_false, show c + i < c + rs.length by omega_arith, ite_true]
     · have hk' : ¬ (c ≤ k ∧ k < c + rs.length) := hin
       rw [Proof.Cmac.bytesAt_frame16 f₃ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           rw [Nat.mul_zero, BitVec.add_zero, blk, blk]
-          exact Offset.disjoint _ (by omega) (by omega) (by omega)),
+          exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)),
         m₂, Proof.Cmac.bytesAt_frame16 f₁ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact (hp.data_scr.sub_left (UPre.data_sub hk)).sub_right hsl), hI.data k hk]
       by_cases hkc : k < c
-      · simp only [hkc, ite_true, show k < c + rs.length by omega]
-      · simp only [hkc, ite_false, show ¬ k < c + rs.length by omega]
+      · simp only [hkc, ite_true, show k < c + rs.length by omega_arith]
+      · simp only [hkc, ite_false, show ¬ k < c + rs.length by omega_arith]
 
 
 /-! ## The loops -/
@@ -187,9 +187,9 @@ theorem blk1_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (
   rw [WP.block_cons_iff]; refine ⟨_, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
   refine h₁.adv (c + 1) ?_ ?_ (fun r h2 h3 _ => by simp [State.write, h2, h3]) rfl rfl rfl rfl
   · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, h₁.x2]
-    exact Offset.add_add_eq _ (by omega)
+    exact Offset.add_add_eq _ (by omega_arith)
   · simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, h₁.x3]
-    rw [Offset.ofNat_sub_ofNat (by omega), show N s₀ - c - 1 = N s₀ - (c + 1) by omega]
+    rw [Offset.ofNat_sub_ofNat (by omega_arith), show N s₀ - c - 1 = N s₀ - (c + 1) by omega_arith]
 
 /-- The one-block loop, for the fewer than eight blocks left. -/
 theorem loop1_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} (hp : UPre s₀) {c : Nat}
@@ -197,8 +197,8 @@ theorem loop1_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
     WP isa (.ite (.zero .x .x3) (.block []) (.loop (blk1 B.f) (.nonzero .x .x3))) s₂
       (XInv B enc s₀ (N s₀) (N s₀)) := by
   have hn : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
-  refine WP.ite (decide (N s₀ - c = 0)) (eval_zero hI₂.x3 (by omega)) (fun h => ?_) (fun h => ?_)
-  · have : c = N s₀ := by have := hI₂.le; simp at h; omega
+  refine WP.ite (decide (N s₀ - c = 0)) (eval_zero hI₂.x3 (by omega_arith)) (fun h => ?_) (fun h => ?_)
+  · have : c = N s₀ := by have := hI₂.le; simp at h; omega_arith
     exact WP.block_nil (this ▸ hI₂)
   · let I1 : Nat → State → Prop := fun m s => ∃ c, m = N s₀ - c ∧ c < N s₀ ∧ XInv B enc s₀ c c s
     have hstep : ∀ m s, I1 m s → WP isa (blk1 B.f) s (fun s' =>
@@ -206,12 +206,12 @@ theorem loop1_ok (B : BlockFn) (enc : Bool) (hF : B.F = stF enc) {s₀ : State} 
         (AArch64.eval (.nonzero .x .x3) s' = some true ∧ ∃ m' < m, I1 m' s')) := by
       rintro m s ⟨c, rfl, hc, hI⟩
       refine WP.mono (blk1_ok B enc hF hp hc hI) fun s' hI' => ?_
-      rw [eval_nonzero hI'.x3 (by omega)]
+      rw [eval_nonzero hI'.x3 (by omega_arith)]
       by_cases hlast : N s₀ - (c + 1) = 0
-      · have : c + 1 = N s₀ := by omega
+      · have : c + 1 = N s₀ := by omega_arith
         exact .inl ⟨by simp [hlast], this ▸ hI'⟩
-      · exact .inr ⟨by simp [hlast], N s₀ - (c + 1), by omega, c + 1, rfl, by omega, hI'⟩
-    have hlt : c < N s₀ := by have := hI₂.le; simp at h; omega
+      · exact .inr ⟨by simp [hlast], N s₀ - (c + 1), by omega_arith, c + 1, rfl, by omega_arith, hI'⟩
+    have hlt : c < N s₀ := by have := hI₂.le; simp at h; omega_arith
     exact WP.loop (M := isa) I1 hstep (N s₀ - c) s₂ ⟨c, rfl, hlt, hI₂⟩
 
 end VG.Proof.AesXts.AArch64.Aes

@@ -41,15 +41,15 @@ theorem KR.nttS {p : Params} {A : Nat → Poly} {S : Nat → IPoly} {nr : Nat} {
 theorem t0_params : ((4095 : Nat), (4096 : Nat)) ∈ Spec.MlDsa.bitPackParams := by decide
 
 theorem power2Round_fst' (c : Spec.MlDsa.Zq) : (power2Round c).1.toNat ≤ 1023 := by
-  have := Proof.MlDsa.KeyGen.power2Round_fst c; omega
+  have := Proof.MlDsa.KeyGen.power2Round_fst c; omega_arith
 
 /-! ## `SafeR` of the buffers a row writes, once each -/
 
 theorem safe_poly {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) {j : Nat} (hj : j < 3) :
     SafeR p (p.ℓ + p.k) i [pB (p.k * p.ℓ + p.ℓ + p.k + j)] := by
   have := hF.k; have := hF.l; have := hF.kl
-  exact SafeR.sc hF (by omega) (by omega) (by decide) (.inr (by simp only [oACC, oP]; omega))
-    (.inr (.inr (by simp only [oP]; omega))) (by simp only [scrLen, hF.sw, oP]; omega)
+  exact SafeR.sc hF (by omega_arith) (by omega_arith) (by decide) (.inr (by simp only [oACC, oP]; omega_arith))
+    (.inr (.inr (by simp only [oP]; omega_arith))) (by simp only [scrLen, hF.sw, oP]; omega_arith)
 
 theorem safe_t {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) : SafeR p (p.ℓ + p.k) i [tB p] := by
   have := safe_poly hF hi (j := 0) (by decide); rwa [Nat.add_zero] at this
@@ -57,8 +57,8 @@ theorem safe_t {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) : SafeR p (
 theorem safe_inv {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     SafeR p (p.ℓ + p.k) i [tB p, ssB 1024] := by
   have := hF.k; have := hF.l; have := hF.kl
-  exact (safe_t hF hi).append (bs₁ := [_]) (SafeR.sc (o := oSS) (l := 1024) hF (by omega) (by omega) (by decide)
-    (.inr (by decide)) (.inl (by decide)) (by simp only [scrLen, hF.sw, oSS]; omega))
+  exact (safe_t hF hi).append (bs₁ := [_]) (SafeR.sc (o := oSS) (l := 1024) hF (by omega_arith) (by omega_arith) (by decide)
+    (.inr (by decide)) (.inl (by decide)) (by simp only [scrLen, hF.sw, oSS]; omega_arith))
 
 theorem safe_p2r {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     SafeR p (p.ℓ + p.k) i [t1B p, t0B p] :=
@@ -66,13 +66,13 @@ theorem safe_p2r {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
 
 theorem safe_sbp {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     SafeR p (p.ℓ + p.k) i [⟨1, 32 + 320 * i, 320⟩] :=
-  SafeR.pk hF (Nat.le_refl _) (Nat.le_of_lt hi) (by decide) (Nat.le_refl _) (by rw [hF.pk]; omega)
+  SafeR.pk hF (Nat.le_refl _) (Nat.le_of_lt hi) (by decide) (Nat.le_refl _) (by rw [hF.pk]; omega_arith)
 
 theorem safe_bp {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k) :
     SafeR p (p.ℓ + p.k) i [⟨2, oT0 p + 416 * i, 416⟩] := by
   have := hF.k; have := hF.l
-  exact SafeR.sk hF (Nat.le_refl _) (Nat.le_of_lt hi) (by decide) (by simp only [oT0]; omega)
-    (.inr (by simp only [oT0]; omega)) (.inr (Nat.le_refl _)) (by rw [hF.sk]; omega)
+  exact SafeR.sk hF (Nat.le_refl _) (Nat.le_of_lt hi) (by decide) (by simp only [oT0]; omega_arith)
+    (.inr (by simp only [oT0]; omega_arith)) (.inr (Nat.le_refl _)) (by rw [hF.sk]; omega_arith)
 
 section
 variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k)
@@ -82,26 +82,26 @@ theorem mul_row : KP p (KRx p (p.ℓ + p.k) p.ℓ i) (RowT p i fun A S => dotK p
     (callP kS "vg_mldsa_multiply_ntt" P.mul [.buf (tB p), .buf (aB (p.ℓ * i)), .buf (sB p 0)]) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   have he : p.ℓ * i < p.k * p.ℓ := by
-    have : p.ℓ * (i + 1) ≤ p.ℓ * p.k := Nat.mul_le_mul_left _ (by omega)
-    rw [Nat.mul_comm p.k]; rw [Nat.mul_succ] at this; omega
+    have : p.ℓ * (i + 1) ≤ p.ℓ * p.k := Nat.mul_le_mul_left _ (by omega_arith)
+    rw [Nat.mul_comm p.k]; rw [Nat.mul_succ] at this; omega_arith
   refine mul_piece (Y := YK p) _ _ _ _ _ _ hP.mul (by layd) (Nat.le_of_eq (YK_stk p).symm)
     (ht := .block []) (by kernel_rfl)
-    (fun s₀ s _ ⟨A, S, h⟩ => ⟨h.ctx, (h.aS _ he).1, (h.nttS (by omega)).1⟩)
-    fun s₀ s s' hp ⟨A, S, h⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega) (by exact safe_t hF hi)
+    (fun s₀ s _ ⟨A, S, h⟩ => ⟨h.ctx, (h.aS _ he).1, (h.nttS (by omega_arith)).1⟩)
+    fun s₀ s s' hp ⟨A, S, h⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega_arith) (by exact safe_t hF hi)
       (fun _ _ => by layd) fr h', ?_⟩
-  rw [(h.aS _ he).2, (h.nttS (by omega)).2, ← Proof.MlDsa.KeyGen.dotK_one] at out
+  rw [(h.aS _ he).2, (h.nttS (by omega_arith)).2, ← Proof.MlDsa.KeyGen.dotK_one] at out
   exact out
 
 theorem mulAdd_row {j : Nat} (_hj₁ : 1 ≤ j) (hj : j < p.ℓ) :
     KP p (RowT p i fun A S => dotK p A S i j) (RowT p i fun A S => dotK p A S i (j + 1)) (mulAddS P p i j) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   have he : p.ℓ * i + j < p.k * p.ℓ := by
-    have : p.ℓ * (i + 1) ≤ p.ℓ * p.k := Nat.mul_le_mul_left _ (by omega)
-    rw [Nat.mul_comm p.k]; rw [Nat.mul_succ] at this; omega
+    have : p.ℓ * (i + 1) ≤ p.ℓ * p.k := Nat.mul_le_mul_left _ (by omega_arith)
+    rw [Nat.mul_comm p.k]; rw [Nat.mul_succ] at this; omega_arith
   refine mulAdd_piece (Y := YK p) _ _ _ _ _ _ hP.mulAdd (by layd) (Nat.le_of_eq (YK_stk p).symm)
     (ht := .block []) (by kernel_rfl)
     (fun s₀ s _ ⟨A, S, h, ht⟩ => ⟨h.ctx, ht.1, (h.aS _ he).1, (h.nttS hj).1⟩)
-    fun s₀ s s' hp ⟨A, S, h, ht⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega) (by exact safe_t hF hi)
+    fun s₀ s s' hp ⟨A, S, h, ht⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega_arith) (by exact safe_t hF hi)
       (fun _ _ => by layd) fr h', ?_⟩
   rw [ht.2, (h.aS _ he).2, (h.nttS hj).2, ← Proof.MlDsa.KeyGen.dotK_succ] at out
   exact out
@@ -111,7 +111,7 @@ theorem inv_row : KP p (RowT p i fun A S => dotK p A S i p.ℓ) (RowT p i fun A 
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   refine inPlace_piece (Y := YK p) hP.invNtt _ _ _ _ (by layd) (Nat.le_of_eq (YK_stk p).symm)
     (ht := .block []) (by kernel_rfl) (fun s₀ s _ ⟨A, S, h, ht⟩ => ⟨h.ctx, ht.1⟩)
-    fun s₀ s s' hp ⟨A, S, h, ht⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega) (by exact safe_inv hF hi)
+    fun s₀ s s' hp ⟨A, S, h, ht⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega_arith) (by exact safe_inv hF hi)
       (fun _ _ => by layd) fr h', ?_⟩
   rw [ht.2] at out
   exact out
@@ -121,7 +121,7 @@ theorem add_row : KP p (RowT p i fun A S => nttInv (dotK p A S i p.ℓ)) (RowT p
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   refine acc_piece (Y := YK p) hP.add _ _ _ _ (by layd) (Nat.le_of_eq (YK_stk p).symm)
     (ht := .block []) (by kernel_rfl) (fun s₀ s _ ⟨A, S, h, ht⟩ => ⟨h.ctx, ht.1, (h.s2 i hi).1⟩)
-    fun s₀ s s' hp ⟨A, S, h, ht⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega) (by exact safe_t hF hi)
+    fun s₀ s s' hp ⟨A, S, h, ht⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega_arith) (by exact safe_t hF hi)
       (fun _ _ => by layd) fr h', ?_⟩
   rw [ht.2, (h.s2 i hi).2] at out
   exact out
@@ -136,7 +136,7 @@ theorem p2r_row : KP p (RowT p i fun A S => tK p A S i) (RowP p i)
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   refine p2r_piece (Y := YK p) _ _ _ _ _ _ hP.power2Round (by layd) (Nat.le_of_eq (YK_stk p).symm)
     (ht := .block []) (by kernel_rfl) (fun s₀ s _ ⟨A, S, h, ht⟩ => ⟨h.ctx, ht.1⟩)
-    fun s₀ s s' hp ⟨A, S, h, ht⟩ h' fr o₁ o₂ => ⟨A, S, h.keep hp (N := 80) (by omega) (by exact safe_p2r hF hi)
+    fun s₀ s s' hp ⟨A, S, h, ht⟩ h' fr o₁ o₂ => ⟨A, S, h.keep hp (N := 80) (by omega_arith) (by exact safe_p2r hF hi)
       (fun _ _ => by layd) fr h', ?_, ?_⟩
   · rw [ht.2] at o₁; exact o₁
   · rw [ht.2] at o₂; exact o₂
@@ -154,8 +154,8 @@ theorem sbp_row : KP p (RowP p i) (RowQ p i)
   refine sbp_piece (Y := YK p) hP.simpleBitPack _ _ 1023 _ _ 320 (by decide) (by decide) (by layd)
     (Nat.le_of_eq (YK_stk p).symm) (ht := .block []) (by kernel_rfl)
     (fun s₀ s _ ⟨A, S, h, h1, _⟩ => ⟨h.ctx, fun j hj => ?_⟩)
-    fun s₀ s s' hp ⟨A, S, h, h1, h0⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega) (by exact safe_sbp hF hi)
-      (fun _ _ => by layd) fr h', keepPolyD hp (stkN (by omega)) (by layd) fr h0, ?_⟩
+    fun s₀ s s' hp ⟨A, S, h, h1, h0⟩ h' fr out => ⟨A, S, h.keep hp (N := 80) (by omega_arith) (by exact safe_sbp hF hi)
+      (fun _ _ => by layd) fr h', keepPolyD hp (stkN (by omega_arith)) (by layd) fr h0, ?_⟩
   · have e := congrArg (fun v : Vector Nat 256 => v[j]'hj) h1
     simp only [Spec.MlDsa.natPolyAt, Vector.getElem_ofFn, t1K, Vector.getElem_map] at e
     rw [e]; exact power2Round_fst' _
@@ -172,18 +172,18 @@ theorem bp_row : KP p (RowQ p i) (KRx p (p.ℓ + p.k) p.ℓ (i + 1))
   · rw [coeff_val h0 hj]
     simp only [Vector.getElem_map]
     have := Proof.MlDsa.KeyGen.power2Round_snd ((tK p A S i)[j]'hj)
-    rw [Proof.MlDsa.KeyGen.modPm_ofInt (by omega) (by omega)]
-    omega
-  · have k := h.keep hp (N := 80) (by omega) (by exact safe_bp hF hi) (fun _ _ => by layd) fr h'
+    rw [Proof.MlDsa.KeyGen.modPm_ofInt (by omega_arith) (by omega_arith)]
+    omega_arith
+  · have k := h.keep hp (N := 80) (by omega_arith) (by exact safe_bp hF hi) (fun _ _ => by layd) fr h'
     refine { k with rows := fun i' hi' => ?_ }
-    rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+    rcases (by omega_arith : i' < i ∨ i' = i) with hi' | rfl
     · exact k.rows i' hi'
-    · refine ⟨by rw [keepBytes hp (stkN (by omega)) (by layd) fr]; exact hb, ?_⟩
+    · refine ⟨by rw [keepBytes hp (stkN (by omega_arith)) (by layd) fr]; exact hb, ?_⟩
       rw [out, h0.2, Vector.map_map]
       congr 1
       refine Vector.map_congr_left fun c _ => ?_
       have := Proof.MlDsa.KeyGen.power2Round_snd c
-      exact Proof.MlDsa.KeyGen.modPm_ofInt (by omega) (by omega)
+      exact Proof.MlDsa.KeyGen.modPm_ofInt (by omega_arith) (by omega_arith)
 
 theorem row_piece : KP p (KRx p (p.ℓ + p.k) p.ℓ i) (KRx p (p.ℓ + p.k) p.ℓ (i + 1)) (row P p i) := by
   have hl := hF.l
@@ -191,8 +191,8 @@ theorem row_piece : KP p (KRx p (p.ℓ + p.k) p.ℓ i) (KRx p (p.ℓ + p.k) p.�
   refine (mul_row hP hF hi).seq (Piece.seq ?_ ((inv_row hP hF hi).seq ((add_row hP hF hi).seq
     ((p2r_row hP hF hi).seq ((sbp_row hP hF hi).seq (bp_row hP hF hi))))))
   refine Piece.mono (seqR_piece (I := fun j => RowT p i fun A S => dotK p A S i j) (p.ℓ - 1) 1
-    fun j h1 h2 => mulAdd_row hP hF hi h1 (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
-  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h
+    fun j h1 h2 => mulAdd_row hP hF hi h1 (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega_arith] at h
 
 end
 

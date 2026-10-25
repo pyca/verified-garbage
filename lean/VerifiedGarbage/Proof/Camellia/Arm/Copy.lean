@@ -30,15 +30,15 @@ open VG.Proof.Camellia (off_sub_toNat off_sub_not)
 
 /-- Slot `k` of the scratch buffer at `b`, as a 64-bit offset. -/
 theorem slot_addr {b : BitVec 32} {k : Nat} (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) :
-    wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := VG.Arm.addr_add (by omega)
+    wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := VG.Arm.addr_add (by omega_arith)
 
 /-- Slot `k` is in the scratch buffer. -/
 theorem slot_inR {rs : List Region} {b : BitVec 32} {n k : Nat} (hr : (⟨State.addr b, 4 * n⟩ : Region) ∈ rs)
     (hfit : b.toNat + 4 * n ≤ 2 ^ 32) (hk : k < n) : InRegions rs (wordAddr b k) 4 :=
   ⟨_, hr, by
-    rw [slot_addr (by omega)]
+    rw [slot_addr (by omega_arith)]
     have := addr_toNat b
-    exact VG.Offset.contains_base _ (by omega) (by omega)⟩
+    exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 
 /-- `add d, n, #v` (`v` encodable). -/
@@ -134,13 +134,13 @@ theorem groupCount_wp {s : State} {v : Nat} (hn : s.gpr .r2 = BitVec.ofNat 32 v)
   unfold groupCount
   refine WP.seq (WP.of_runBlock ⟨s₃, e₂₃, ?_⟩)
   refine WP.ite (decide (8 ≤ v)) ((eval_ne s₃).trans (by
-      rw [z₃, lsr3_beq hv]; by_cases h : v < 8 <;> simp [h] <;> omega)) (fun h => ?_) (fun h => ?_)
+      rw [z₃, lsr3_beq hv]; by_cases h : v < 8 <;> simp [h] <;> omega_arith)) (fun h => ?_) (fun h => ?_)
   · obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄, sp₄⟩ := movImm_ok s₃ .r3 8 (by decide)
     refine WP.of_runBlock ⟨s₄, e₄, ?_, fun r h1 h2 => by rw [o₄ r h1, o₃ r h2], m₄, rd₄, wr₄, sp₄⟩
-    rw [r₄, Nat.min_eq_right (by simp at h; omega)]; rfl
+    rw [r₄, Nat.min_eq_right (by simp at h; omega_arith)]; rfl
   · obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄, sp₄⟩ := movR_ok s₃ .r3 .r2
     refine WP.of_runBlock ⟨s₄, e₄, ?_, fun r h1 h2 => by rw [o₄ r h1, o₃ r h2], m₄, rd₄, wr₄, sp₄⟩
-    rw [r₄, r2₃, Nat.min_eq_left (by simp at h; omega)]
+    rw [r₄, r2₃, Nat.min_eq_left (by simp at h; omega_arith)]
 
 /-- `subs d, n, m`. -/
 theorem subsR_ok (s : State) (d n m : Reg) :
@@ -155,7 +155,7 @@ theorem subsR_ok (s : State) (d n m : Reg) :
 
 theorem toNat_add32 (D : BitVec 32) {d : Nat} (h : D.toNat + d < 2 ^ 32) :
     (D + BitVec.ofNat 32 d).toNat = D.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 32), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : d < 2 ^ 32), Nat.mod_eq_of_lt h]
 
 
 /-- What a copy keeps, after its first `k` bytes. -/
@@ -175,34 +175,34 @@ theorem copyWord_ok {A B : BitVec 32} {c : Nat} {s₀ s : State} {j d : Nat} (hd
       Copied (State.addr A) (State.addr B) c s₀ (16 * j + d + 4) s' ∧
       (∀ r, r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   have eA : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = State.addr A + BitVec.ofNat 64 (16 * j + d) := by
-    rw [h0, add_ofNat_ofNat, VG.Arm.addr_add (by omega)]
+    rw [h0, add_ofNat_ofNat, VG.Arm.addr_add (by omega_arith)]
   have eB : State.addr (s.gpr .r12 + BitVec.ofNat 32 d) = State.addr B + BitVec.ofNat 64 (16 * j + d) := by
-    rw [h1, add_ofNat_ofNat, VG.Arm.addr_add (by omega)]
+    rw [h1, add_ofNat_ofNat, VG.Arm.addr_add (by omega_arith)]
   have h₁ : (s.setReg t0 (s.mem.readW (State.addr A + BitVec.ofNat 64 (16 * j + d)) 32)).gpr .r12 = s.gpr .r12 :=
     RegUpd.gpr_setReg_of_ne _ _ (by decide)
   refine ⟨{ s.setReg t0 (s.mem.readW (State.addr A + BitVec.ofNat 64 (16 * j + d)) 32) with
       mem := s.mem.writeW (State.addr B + BitVec.ofNat 64 (16 * j + d))
         (s.mem.readW (State.addr A + BitVec.ofNat 64 (16 * j + d)) 32) }, ?_,
     ⟨fun t ht' => ?_, hi.frame.trans fun x hx => ?_⟩, fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, rfl, rfl⟩
-  · rw [runBlock_cons, exec_ldr (by omega) (by rw [eA]; exact hr), eA, runStep_some, runBlock_cons,
-      exec_str (by omega) (by rw [h₁, eB]; exact hw), runStep_some, runBlock_nil, h₁, eB,
+  · rw [runBlock_cons, exec_ldr (by omega_arith) (by rw [eA]; exact hr), eA, runStep_some, runBlock_cons,
+      exec_str (by omega_arith) (by rw [h₁, eB]; exact hw), runStep_some, runBlock_nil, h₁, eB,
       RegUpd.gpr_setReg_self]
     rfl
-  · have hn : 16 * c < 2 ^ 64 := by omega
+  · have hn : 16 * c < 2 ^ 64 := by omega_arith
     have hAs : ∀ t < 16 * c, s.mem (State.addr A + BitVec.ofNat 64 t) = s₀.mem (State.addr A + BitVec.ofNat 64 t) :=
       fun t ht => hi.frame.bytes (R := ⟨State.addr A, 16 * c⟩)
-        (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep) (by simp only; omega) ht
+        (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep) (by simp only; omega_arith) ht
     show (s.mem.writeW _ _) _ = _
     rw [writeW_readW32_apply]
     by_cases h8 : 16 * j + d ≤ t
-    · rw [ite_eq_left (by rw [off_sub_toNat _ h8 (by omega)]; omega), off_sub_toNat _ h8 (by omega),
-        VG.Offset.add_add, show 16 * j + d + (t - (16 * j + d)) = t by omega, hAs t (by omega)]
-    · rw [ite_eq_right (off_sub_not _ (Or.inl (by omega)) (by omega) (by omega) (by omega))]
-      exact hi.copied t (by omega)
+    · rw [ite_eq_left (by rw [off_sub_toNat _ h8 (by omega_arith)]; omega_arith), off_sub_toNat _ h8 (by omega_arith),
+        VG.Offset.add_add, show 16 * j + d + (t - (16 * j + d)) = t by omega_arith, hAs t (by omega_arith)]
+    · rw [ite_eq_right (off_sub_not _ (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith) (by omega_arith))]
+      exact hi.copied t (by omega_arith)
   · show (s.mem.writeW _ _) x = s.mem x
     rw [writeW_readW32_apply, ite_eq_right fun h =>
-      hx _ (List.mem_singleton_self _) (VG.Offset.sub_base _ (show 16 * j + d + 4 ≤ 16 * c by omega) _
-        (by simp only [Region.Contains]; omega))]
+      hx _ (List.mem_singleton_self _) (VG.Offset.sub_base _ (show 16 * j + d + 4 ≤ 16 * c by omega_arith) _
+        (by simp only [Region.Contains]; omega_arith))]
 
 /-- Copying, after `j` of `c` blocks. -/
 structure CopyInv (A B : BitVec 32) (c : Nat) (s₀ : State) (j : Nat) (s : State) : Prop where
@@ -222,14 +222,14 @@ theorem copyBlocks_wp {A B : BitVec 32} {c : Nat} {s₀ : State} (hc : 0 < c) (h
     (hsep : Region.Disjoint ⟨State.addr A, 16 * c⟩ ⟨State.addr B, 16 * c⟩) (hs : CopyInv A B c s₀ 0 s₀) :
     WP isa copyBlocks s₀ (CopyInv A B c s₀ c) := by
   refine WP.loop (M := isa) (fun n s => ∃ j, n = c - j ∧ j < c ∧ CopyInv A B c s₀ j s)
-    (fun n s hs => ?_) c s₀ ⟨0, by omega, hc, hs⟩
+    (fun n s hs => ?_) c s₀ ⟨0, by omega_arith, hc, hs⟩
   obtain ⟨j, rfl, hj, hi⟩ := hs
   have rA : ∀ d < 16, d % 4 = 0 → ∀ s : State, s.rd = s₀.rd → s.wr = s₀.wr →
       InRegions (s.rd ++ s.wr) (State.addr A + BitVec.ofNat 64 (16 * j + d)) 4 := fun d hd hd4 s h1 h2 => by
-    rw [h1, h2]; exact hA _ (by omega) (by omega)
+    rw [h1, h2]; exact hA _ (by omega_arith) (by omega_arith)
   have rB : ∀ d < 16, d % 4 = 0 → ∀ s : State, s.wr = s₀.wr →
       InRegions s.wr (State.addr B + BitVec.ofNat 64 (16 * j + d)) 4 := fun d hd hd4 s h2 => by
-    rw [h2]; exact hB _ (by omega) (by omega)
+    rw [h2]; exact hB _ (by omega_arith) (by omega_arith)
   obtain ⟨s₁, e₁, c₁, g₁, rd₁, wr₁, sp₁⟩ := copyWord_ok (d := 0) (by decide) (by decide) hj hfA hfB hsep
     (rA 0 (by decide) (by decide) s hi.rd hi.wr) (rB 0 (by decide) (by decide) s hi.wr) hi.src hi.dst
     (by simpa using hi.cp)
@@ -264,8 +264,8 @@ theorem copyBlocks_wp {A B : BitVec 32} {c : Nat} {s₀ : State} (hc : 0 < c) (h
       runBlock_app, e₆, Option.bind_some, e₇], ?_⟩
   have hc₇ : s₇.gpr .r3 = BitVec.ofNat 32 (c - (j + 1)) := by
     rw [c₇, o₆ _ (by decide), o₅ _ (by decide), g₄' _ (by decide), hi.cnt,
-      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega),
-      show c - j - 1 = c - (j + 1) by omega]
+      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega_arith),
+      show c - j - 1 = c - (j + 1) by omega_arith]
   have hm : s₇.mem = s₄.mem := by rw [m₇, m₆, m₅]
   have hinv : CopyInv A B c s₀ (j + 1) s₇ := by
     refine ⟨?_, ?_, hc₇, ⟨fun t ht => ?_, by rw [hm]; exact c₄.frame⟩, fun r h1 h2 h3 h4 => ?_,
@@ -273,19 +273,19 @@ theorem copyBlocks_wp {A B : BitVec 32} {c : Nat} {s₀ : State} (hc : 0 < c) (h
       by rw [sp₇, sp₆, sp₅, sp₄, sp₃, sp₂, sp₁, hi.sp]⟩
     · rw [o₇ _ (by decide), o₆ _ (by decide), a₅, g₄' _ (by decide), hi.src,
         show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl, add_ofNat_ofNat,
-        show 16 * j + 16 = 16 * (j + 1) by omega]
+        show 16 * j + 16 = 16 * (j + 1) by omega_arith]
     · rw [o₇ _ (by decide), a₆, o₅ _ (by decide), g₄' _ (by decide), hi.dst,
         show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl, add_ofNat_ofNat,
-        show 16 * j + 16 = 16 * (j + 1) by omega]
-    · rw [hm]; exact c₄.copied t (by omega)
+        show 16 * j + 16 = 16 * (j + 1) by omega_arith]
+    · rw [hm]; exact c₄.copied t (by omega_arith)
     · rw [o₇ r h3, o₆ r h2, o₅ r h1, g₄' r h4, hi.regs r h1 h2 h3 h4]
   have hz : s₇.z = decide (c - (j + 1) = 0) := by
-    rw [z₇, ← c₇, hc₇, ofNat32_beq_zero (by omega)]
+    rw [z₇, ← c₇, hc₇, ofNat32_beq_zero (by omega_arith)]
   by_cases hl : j + 1 = c
-  · refine .inl ⟨(eval_ne s₇).trans (by rw [hz]; simp; omega),
+  · refine .inl ⟨(eval_ne s₇).trans (by rw [hz]; simp; omega_arith),
       by rw [show j + 1 = c from hl] at hinv; exact hinv⟩
-  · exact .inr ⟨(eval_ne s₇).trans (by rw [hz]; simp; omega), c - (j + 1), by omega, j + 1, rfl,
-      by omega, hinv⟩
+  · exact .inr ⟨(eval_ne s₇).trans (by rw [hz]; simp; omega_arith), c - (j + 1), by omega_arith, j + 1, rfl,
+      by omega_arith, hinv⟩
 
 
 end VG.Proof.Camellia.Arm

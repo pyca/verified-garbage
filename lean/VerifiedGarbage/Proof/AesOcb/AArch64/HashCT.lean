@@ -62,13 +62,13 @@ theorem hashRestPre_ok (C : HCtx K W D n R ciph₁ l₁ A a₁ s₁) {t : State}
     (by decide) (by decide) (by decide) (E.perm.kR (by decide)) (E.perm.kR (by decide)) (E.perm.wW (by decide))
     (E.perm.wW (by decide))
   have E₁ := E.others B₁.gpr B₁.sp B₁.rd B₁.wr
-  have hB := C.buf.slice (a := 16 * m) (k := a₁.length % 16) (by omega)
+  have hB := C.buf.slice (a := 16 * m) (k := a₁.length % 16) (by omega_arith)
   have hS : Covers [⟨A + BitVec.ofNat 64 (16 * m), a₁.length % 16⟩] (t₁.rd ++ t₁.wr) := by
     rw [B₁.rd, B₁.wr, H.rd, H.wr]; exact hB.rd
   have hSD : (⟨A + BitVec.ofNat 64 (16 * m), a₁.length % 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 bufO, 16⟩ :=
     hB.w.sub_right (Lay.wSub (by decide))
   refine WP.seq (WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩))
-  refine WP.mono (padTo_ok E₁.x19 E₁.perm.w hr (by omega) (by decide)
+  refine WP.mono (padTo_ok E₁.x19 E₁.perm.w hr (by omega_arith) (by decide)
     (by rw [B₁.gpr _ (by decide), H.x23]) (by rw [B₁.gpr _ (by decide), h24]) hS hSD)
     fun t₂ ⟨_, _, g₂, sp₂, rd₂, wr₂⟩ => ?_
   have E₂ := E₁.others g₂ sp₂ rd₂ wr₂
@@ -110,8 +110,8 @@ theorem chunk_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s�
   rw [hlen] at x26₂
   unfold hashChunk
   refine RelCT.assoc (rel_seq (rel_env H₁.env H₂.env [.x26] (by agree_tac [H₁.x26, x26₂]) ⟨_, by taint_decide⟩)
-    (chunkHead_ok (L := a₁.length / 16 - j) (by omega) H₁.x26)
-    (chunkHead_ok (L := a₁.length / 16 - j) (by omega) x26₂)
+    (chunkHead_ok (L := a₁.length / 16 - j) (by omega_arith) H₁.x26)
+    (chunkHead_ok (L := a₁.length / 16 - j) (by omega_arith) x26₂)
     fun t₁ t₂ ⟨h24₁, g₁, m₁, sp₁, rd₁, wr₁⟩ ⟨h24₂, g₂, m₂, sp₂, rd₂, wr₂⟩ => ?_)
   have H₁' := H₁.head g₁ m₁ sp₁ rd₁ wr₁
   have H₂' := H₂.head g₂ m₂ sp₂ rd₂ wr₂
@@ -126,18 +126,18 @@ theorem chunk_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s�
   refine rel_seq (rel_env F₁.env F₂.env [.x15, .x23, .x24, .x25, .x26, .x27]
       (by agree_tac [F₁.x15, F₂.x15, F₁.x23, F₂.x23, F₁.x24, F₂.x24, F₁.x25, F₂.x25, F₁.x26, x26f, F₁.x27, F₂.x27])
       ⟨_, by taint_decide⟩)
-    (fill_ok C₁ (by omega) (by omega) (by omega) F₁) (fill_ok C₂ (by omega) (by omega) (by omega) F₂)
+    (fill_ok C₁ (by omega_arith) (by omega_arith) (by omega_arith) F₁) (fill_ok C₂ (by omega_arith) (by omega_arith) (by omega_arith) F₂)
     fun w₁ w₂ G₁ G₂ => ?_
   have x26g := G₂.x26
   rw [hlen] at x26g
   refine rel_seq (callBlocks_rel v.encOk v.encCt L C₁.rounds G₁.env G₂.env [.x24] (by agree_tac [G₁.x24, G₂.x24])
       ⟨_, by taint_decide⟩ (bufArgs_ok G₁.env.x19 G₁.x24) (bufArgs_ok G₂.env.x19 G₂.x24)
-      (dstW L G₁.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega))
-      (dstW L G₂.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega)))
+      (dstW L G₁.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith))
+      (dstW L G₂.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith)))
     (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L G₁.env C₁.rounds (bufArgs_ok G₁.env.x19 G₁.x24)
-      (dstW L G₁.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega)))
+      (dstW L G₁.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith)))
     (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNoFrames L G₂.env C₁.rounds (bufArgs_ok G₂.env.x19 G₂.x24)
-      (dstW L G₂.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega))) fun y₁ y₂ P₁ P₂ => ?_
+      (dstW L G₂.env.perm (d := 384) (n := min 8 (a₁.length / 16 - j)) (by omega_arith))) fun y₁ y₂ P₁ P₂ => ?_
   have a₁ : y₁.gpr .x24 = w₁.gpr .x24 := P₁.saved _ (by decide) (by decide)
   have a₂ : y₂.gpr .x24 = w₂.gpr .x24 := P₂.saved _ (by decide) (by decide)
   have b₁ : y₁.gpr .x26 = w₁.gpr .x26 := P₁.saved _ (by decide) (by decide)
@@ -165,14 +165,14 @@ theorem hashLoop_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁
       exact ⟨hashChunk_ok v C₁ G₁ hj, hashChunk_ok v C₂ G₂ (by rw [hlen]; exact hj)⟩).mono (fun _ _ h => h)
     fun u₁ u₂ ⟨_, F₁, F₂⟩ => ?_
   rw [hlen] at F₂
-  have ev₁ := eval_nonzero F₁.x26 (by omega)
-  have ev₂ := eval_nonzero F₂.x26 (by rw [hlen]; omega)
+  have ev₁ := eval_nonzero F₁.x26 (by omega_arith)
+  have ev₂ := eval_nonzero F₂.x26 (by rw [hlen]; omega_arith)
   rw [hlen] at ev₂
   refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun h => ?_⟩
   rw [ev₁] at h
   have he : ¬ a₁.length / 16 - (j + min 8 (a₁.length / 16 - j)) = 0 := by simpa using h
-  exact ⟨a₁.length / 16 - (j + min 8 (a₁.length / 16 - j)), by omega, j + min 8 (a₁.length / 16 - j), rfl,
-    by omega, F₁, F₂⟩
+  exact ⟨a₁.length / 16 - (j + min 8 (a₁.length / 16 - j)), by omega_arith, j + min 8 (a₁.length / 16 - j), rfl,
+    by omega_arith, F₁, F₂⟩
 
 /-- `HASH`, in two runs. -/
 theorem hash_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s₁) (C₂ : HCtx K W D n R ciph₂ l₂ A a₂ s₂)
@@ -190,7 +190,7 @@ theorem hash_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s�
     (hashHead_ok C₁ E₁ haad₁ halen₁ hl0₁) (hashHead_ok C₂ E₂ haad₂ halen₂ hl0₂) fun t₁ t₂ H₁ H₂ => ?_)
   have x26₂ := H₂.x26
   rw [hlen] at x26₂
-  refine rel_seq (rel_ite (eval_zero H₁.x26 (by omega)) (eval_zero x26₂ (by omega))
+  refine rel_seq (rel_ite (eval_zero H₁.x26 (by omega_arith)) (eval_zero x26₂ (by omega_arith))
       (fun _ => RelCT.block_nil fun _ _ _ => trivial)
       (fun hb => hashLoop_rel v C₁ C₂ hlen H₁ H₂ (Nat.pos_of_ne_zero (of_decide_eq_false hb))))
     (hashBody_ok v C₁ H₁) (hashBody_ok v C₂ H₂) fun u₁ u₂ G₁ G₂ => ?_
@@ -198,9 +198,9 @@ theorem hash_rel (v : BlocksImpl) (C₁ : HCtx K W D n R ciph₁ l₁ A a₁ s�
     (tailHead_ok C₁ halen₁ G₁) (tailHead_ok C₂ halen₂ G₂) fun w₁ w₂ ⟨T₁, h24₁⟩ ⟨T₂, h24₂⟩ => ?_
   have h24₂' := h24₂
   rw [hlen] at h24₂'
-  exact rel_ite (eval_zero h24₁ (by omega)) (eval_zero h24₂' (by omega))
+  exact rel_ite (eval_zero h24₁ (by omega_arith)) (eval_zero h24₂' (by omega_arith))
     (fun _ => RelCT.block_nil fun _ _ _ => trivial)
-    (fun hb => hashRest_rel v C₁ C₂ hlen T₁ T₂ (by have := of_decide_eq_false hb; omega) h24₁ h24₂)
+    (fun hb => hashRest_rel v C₁ C₂ hlen T₁ T₂ (by have := of_decide_eq_false hb; omega_arith) h24₁ h24₂)
 
 end
 

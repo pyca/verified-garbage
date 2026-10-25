@@ -75,7 +75,7 @@ theorem loadNumK_ct {j sp sl : Nat} (hj : j < 8) (hjN : j ≠ aN) (hj1 : j ≠ a
     rw [← c.hdr sl hsl hsl'] at hpl
     exact WP.mono (WP.keep [.rsi, .rcx, .rbx] (Q := fun t => t.gpr .rsi = fp p ∧ t.gpr .rcx = BitVec.ofNat 64 (fl p) ∧
         t.gpr .rbx = kb p j)
-      (by xrun [State.ea, hdr, hdi, hdrOff, hl sp hsp, hl sl hsl, hl (sArr j) (by unfold sArr; omega), hp, hpl,
+      (by xrun [State.ea, hdr, hdi, hdrOff, hl sp hsp, hl sl hsl, hl (sArr j) (by unfold sArr; omega_arith), hp, hpl,
         hb j hj]) rfl)
       fun t ⟨⟨a, b, c⟩, _⟩ => regsAre_cons a (regsAre_cons b (regsAre_cons c regsAre_nil))
   · obtain ⟨s₀, minv, N, c, hs⟩ := h
@@ -96,8 +96,8 @@ theorem ltMaskK_ct {a b : Nat} (ha : a < 8) (hb : b < 8) {hc : VG.Taint.Hint VG.
     obtain ⟨hdi, hl, hw, hb'⟩ := h.lds
     exact WP.mono (WP.keep [.r12, .rbx, .r10, .rbp] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 p.w ∧
         t.gpr .rbx = kb p a ∧ t.gpr .r10 = kb p b)
-      (by xrun [State.ea, hdr, hdi, hdrOff, hl sW (by decide), hl (sArr a) (by unfold sArr; omega),
-        hl (sArr b) (by unfold sArr; omega), hw, hb' a ha, hb' b hb]) rfl)
+      (by xrun [State.ea, hdr, hdi, hdrOff, hl sW (by decide), hl (sArr a) (by unfold sArr; omega_arith),
+        hl (sArr b) (by unfold sArr; omega_arith), hw, hb' a ha, hb' b hb]) rfl)
       fun t ⟨⟨x, y, z⟩, k⟩ => regsAre_cons ((k.gpr (by decide)).trans hdi)
         (regsAre_cons x (regsAre_cons y (regsAre_cons z regsAre_nil)))
   · obtain ⟨s₀, minv, N, c, hs⟩ := h
@@ -172,10 +172,10 @@ theorem zeroAccsK_ok {p : KPub} {s : State} (h : KK p s) : WP isa (seqs VG.Impl.
   have hn := c.good.scr.nowrap
   have := c.w2
   have sl := slot_eq p.w
-  refine WP.mono (zeroAccs_ok c.good c.hZ (by omega)) fun t ⟨_, ho, k⟩ => ⟨s₀, minv, N, c.arr (js := [aAcc, aTmp])
+  refine WP.mono (zeroAccs_ok c.good c.hZ (by omega_arith)) fun t ⟨_, ho, k⟩ => ⟨s₀, minv, N, c.arr (js := [aAcc, aTmp])
     (fun x hx => ho x (by
       have h1 := hx aAcc (by simp); have h2 := hx aTmp (by simp)
-      rw [sl] at h1 h2; simp only [aAcc, aTmp] at h1 h2; rw [sl]; simp only [aAcc]; omega))
+      rw [sl] at h1 h2; simp only [aAcc, aTmp] at h1 h2; rw [sl]; simp only [aAcc]; omega_arith))
     (by decide) (by decide) (by decide) k, hs⟩
 
 theorem mulXRK_ct : RelCT isa (Two KK) (seqs mulXR) (Two KK) := by

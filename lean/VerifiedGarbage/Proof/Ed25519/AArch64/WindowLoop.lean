@@ -67,7 +67,7 @@ theorem digitK {base : Addr} {K S : Nat} {A : EPoint dZ} {s : State} (h : WinCtx
     DigitSpec base s (digitAt 768) (K / 16 ^ i % 16) := by
   intro t kt
   have ht := h.of_keep kt
-  refine WP.mono (digitAt_ok ht.scratch (by decide) (by omega) (kt.counter.trans hc))
+  refine WP.mono (digitAt_ok ht.scratch (by decide) (by omega_arith) (kt.counter.trans hc))
     fun u ⟨uv, ku⟩ => ?_
   rw [ht.kNib i hi] at uv
   exact ⟨uv, ku.mono (by decide)⟩
@@ -77,7 +77,7 @@ theorem digitS {base : Addr} {K S : Nat} {A : EPoint dZ} {s : State} (h : WinCtx
     DigitSpec base s (digitAt 896) (S / 16 ^ i % 16) := by
   intro t kt
   have ht := h.of_keep kt
-  refine WP.mono (digitAt_ok ht.scratch (by decide) (by omega) (kt.counter.trans hc))
+  refine WP.mono (digitAt_ok ht.scratch (by decide) (by omega_arith) (kt.counter.trans hc))
     fun u ⟨uv, ku⟩ => ?_
   rw [ht.sNib i hi] at uv
   exact ⟨uv, ku.mono (by decide)⟩
@@ -100,7 +100,7 @@ theorem aboveLow_ok {s : State} {base : Addr} (hs : Scr s base) (i : Nat) (hi : 
   refine ⟨?_, ⟨fun r hr => ?_, by simp only [RegUpd.mem_write, ka.mem],
     by simp only [RegUpd.rd_write, ka.rd], by simp only [RegUpd.wr_write, ka.wr],
     by simp only [RegUpd.sp_write, ka.sp]⟩⟩
-  · simp only [eval, read_x, RegUpd.gpr_write_self, BitVec.setWidth_eq, av, hc, above_cmp i (by omega)]
+  · simp only [eval, read_x, RegUpd.gpr_write_self, BitVec.setWidth_eq, av, hc, above_cmp i (by omega_arith)]
   · have h : r ≠ .x19 := by simpa only [List.mem_singleton] using hr
     rw [RegUpd.gpr_write_of_ne _ _ _ h, ka.gpr r hr]
 
@@ -122,7 +122,7 @@ theorem nibStepA_ok {s : State} {base : Addr} {K S : Nat} {A : EPoint dZ} (h : W
     ha' (by rw [ae]; exact hd) (by rw [ae]; exact ha) (Nat.mod_lt _ (by decide)) (digitK ha' hi av))
     fun b ⟨br, bd, kb⟩ => ?_)
   have hb' := ha'.of_keep kb
-  refine WP.mono (aboveLow_ok hb'.scratch i (by omega) (kb.counter.trans av)) fun t ⟨tz, kt⟩ => ?_
+  refine WP.mono (aboveLow_ok hb'.scratch i (by omega_arith) (kb.counter.trans av)) fun t ⟨tz, kt⟩ => ?_
   refine ⟨tz, ?_, by rw [kt.mem]; exact bd, ?_, (ka.trans (ByteKeep.of_win kb)).trans
     (ByteKeep.of_keeps kt (by decide))⟩
   · rw [kt.mem]; exact kb.counter.trans av
@@ -146,7 +146,7 @@ theorem nibStepAB_ok {s : State} {base : Addr} {K S : Nat} {A : EPoint dZ} (h : 
   have ha' := h.of_byte ka
   refine WP.seq (WP.mono (windowAB_ok (a := (K / 16 ^ (i + 1)) • A + (S / 16 ^ (i + 1)) • (-baseAff))
     ha' (by rw [ae]; exact hd) (by rw [ae]; exact ha) (Nat.mod_lt _ (by decide))
-    (Nat.mod_lt _ (by decide)) (digitK ha' (by omega) av) (digitS ha' hi av)) fun b ⟨br, bd, kb⟩ => ?_)
+    (Nat.mod_lt _ (by decide)) (digitK ha' (by omega_arith) av) (digitS ha' hi av)) fun b ⟨br, bd, kb⟩ => ?_)
   have hb' := ha'.of_keep kb
   refine WP.mono (batchTest_ok hb'.scratch i (kb.counter.trans av)) fun t ⟨tz, kt⟩ => ?_
   refine ⟨tz, ?_, by rw [kt.mem]; exact bd, ?_, (ka.trans (ByteKeep.of_win kb)).trans
@@ -192,7 +192,7 @@ theorem stepA_ok {s₀ t : State} {base : Addr} {A : EPoint dZ} {K S j : Nat} (h
     (ht : WinLoop s₀ base A K S (64 + (j + 1)) t) :
     WP isa nibStepA t fun u => eval (.nonzero .x .x19) u = some (decide (j ≠ 0)) ∧
       WinLoop s₀ base A K S (64 + j) u := by
-  refine WP.mono (nibStepA_ok (i := 64 + j) ht.ctx ht.d (by omega) (by omega)
+  refine WP.mono (nibStepA_ok (i := 64 + j) ht.ctx ht.d (by omega_arith) (by omega_arith)
     (by rw [ht.counter]; rfl) ht.sLt ht.value) fun u ⟨uz, uc, ud, uv, uk⟩ => ?_
   exact ⟨by rw [uz]; simp, ht.ctx.of_byte uk, ud, uc, ht.kLt, ht.sLt, uv, ht.keep.trans uk⟩
 
@@ -203,7 +203,7 @@ theorem stepB_ok {s₀ t : State} {base : Addr} {A : EPoint dZ} {K S j : Nat} (h
       WinLoop s₀ base A K S j u := by
   refine WP.mono (nibStepAB_ok (i := j) ht.ctx ht.d hj ht.counter ht.value)
     fun u ⟨uz, uc, ud, uv, uk⟩ => ?_
-  exact ⟨by simp only [eval, read_x, uz, counter_nonzero (by omega : j < 2 ^ 64)], ht.ctx.of_byte uk,
+  exact ⟨by simp only [eval, read_x, uz, counter_nonzero (by omega_arith : j < 2 ^ 64)], ht.ctx.of_byte uk,
     ud, uc, ht.kLt, ht.sLt, uv, ht.keep.trans uk⟩
 
 theorem loopA_ok {s₀ s : State} {base : Addr} {A : EPoint dZ} {K S : Nat} (n : Nat)
@@ -212,23 +212,23 @@ theorem loopA_ok {s₀ s : State} {base : Addr} {A : EPoint dZ} {K S : Nat} (n :
   apply WP.loop (fun (n : Nat) (t : State) => WinLoop s₀ base A K S (64 + n) t ∧ 0 < n ∧ n ≤ 64)
     (n := n)
   · intro n t ⟨ht, hn0, hn⟩
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
-    refine WP.mono (stepA_ok (by omega) ht) fun u ⟨uz, hu⟩ => ?_
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega_arith : n ≠ 0)
+    refine WP.mono (stepA_ok (by omega_arith) ht) fun u ⟨uz, hu⟩ => ?_
     by_cases hj : j = 0
     · subst hj
       exact Or.inl ⟨uz.trans rfl, hu⟩
-    · exact Or.inr ⟨uz.trans (by rw [decide_eq_true hj]), j, by omega, hu, by omega, by omega⟩
+    · exact Or.inr ⟨uz.trans (by rw [decide_eq_true hj]), j, by omega_arith, hu, by omega_arith, by omega_arith⟩
   · exact ⟨h, hn0, hn⟩
 
 theorem windowsA_ok {s₀ s : State} {base : Addr} {A : EPoint dZ} {K S c : Nat}
     (hc64 : 64 ≤ c) (hc128 : c ≤ 128) (h : WinLoop s₀ base A K S c s) :
     WP isa windowsA s (WinLoop s₀ base A K S 64) := by
   rw [windowsA]
-  refine WP.seq (WP.mono (aboveLow_ok h.ctx.scratch c (by omega) h.counter) fun a ⟨az, ka⟩ => ?_)
+  refine WP.seq (WP.mono (aboveLow_ok h.ctx.scratch c (by omega_arith) h.counter) fun a ⟨az, ka⟩ => ?_)
   have ha := h.of_keeps ka (by decide)
   refine WP.ite (decide (c ≠ 64)) az (fun hy => ?_) (fun hn => ?_)
-  · obtain ⟨n, rfl⟩ : ∃ n, c = 64 + n := ⟨c - 64, by omega⟩
-    exact loopA_ok n (by have := of_decide_eq_true hy; omega) (by omega) ha
+  · obtain ⟨n, rfl⟩ : ∃ n, c = 64 + n := ⟨c - 64, by omega_arith⟩
+    exact loopA_ok n (by have := of_decide_eq_true hy; omega_arith) (by omega_arith) ha
   · have : c = 64 := by simpa using hn
     subst this
     exact WP.block_nil ha
@@ -239,12 +239,12 @@ theorem loopB_ok {s₀ s : State} {base : Addr} {A : EPoint dZ} {K S : Nat}
   apply WP.loop (fun (n : Nat) (t : State) => WinLoop s₀ base A K S n t ∧ 0 < n ∧ n ≤ 64)
     (n := 64)
   · intro n t ⟨ht, hn0, hn⟩
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
-    refine WP.mono (stepB_ok (by omega) ht) fun u ⟨uz, hu⟩ => ?_
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega_arith : n ≠ 0)
+    refine WP.mono (stepB_ok (by omega_arith) ht) fun u ⟨uz, hu⟩ => ?_
     by_cases hj : j = 0
     · subst hj
       exact Or.inl ⟨uz.trans rfl, hu⟩
-    · exact Or.inr ⟨uz.trans (by rw [decide_eq_true hj]), j, by omega, hu, by omega, by omega⟩
+    · exact Or.inr ⟨uz.trans (by rw [decide_eq_true hj]), j, by omega_arith, hu, by omega_arith, by omega_arith⟩
   · exact ⟨h, by decide, by decide⟩
 
 /-! ## Skipping the leading zero nibbles of `k` -/
@@ -276,7 +276,7 @@ theorem skipLoad_ok {s : State} {base : Addr} (hs : Scr s base) (j : Nat) (hj : 
   have hea : base + BitVec.ofNat 64 j + BitVec.ofNat 64 768 = off base (768 + j) := by
     rw [Offset.add_add, Nat.add_comm]
   have hr : InRegions (b.rd ++ b.wr) (off base (768 + j)) 1 :=
-    ⟨_, List.mem_append_right _ (by rw [kb.wr, ka.wr]; exact hs.wr), contains_sc (by omega)⟩
+    ⟨_, List.mem_append_right _ (by rw [kb.wr, ka.wr]; exact hs.wr), contains_sc (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, addr, State.load,
     RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.mem_write, BitVec.setWidth_eq,
@@ -333,11 +333,11 @@ theorem skipBody_ok {s₀ t : State} {base : Addr} {A : EPoint dZ} {K S j : Nat}
       (skipOn K j = true → SkipInv s₀ base A K S j u) := by
   obtain ⟨hl, hz, _, hn⟩ := h
   rw [skipBody]
-  refine WP.seq (WP.mono (skipLoad_ok hl.ctx.scratch (64 + j) (by omega)
+  refine WP.seq (WP.mono (skipLoad_ok hl.ctx.scratch (64 + j) (by omega_arith)
     (by rw [hl.counter]; rfl)) fun a ⟨a8, av, ka⟩ => ?_)
   have ha := hl.of_keeps ka (by decide)
   have hb : (t.mem (off base (768 + (64 + j)))).toNat = K / 16 ^ (64 + j) % 16 :=
-    hl.ctx.kNib _ (by omega)
+    hl.ctx.kNib _ (by omega_arith)
   refine WP.ite (decide ((t.mem (off base (768 + (64 + j)))).toNat ≠ 0))
     (by simp only [eval, read_x, av, byte_nonzero]) (fun hy => ?_) (fun hy => ?_)
   · have h0 : K / 16 ^ (64 + j) % 16 ≠ 0 := by rw [← hb]; simpa using hy
@@ -352,19 +352,19 @@ theorem skipBody_ok {s₀ t : State} {base : Addr} {A : EPoint dZ} {K S j : Nat}
     have ku : ByteKeep base a u := ByteKeep.of_counter ug ur uw usp um
     have hK : K / 16 ^ (64 + j) = 0 := by
       have := nibble_split K (64 + j)
-      rw [show 64 + j + 1 = 64 + (j + 1) by omega, hz] at this
-      omega
+      rw [show 64 + j + 1 = 64 + (j + 1) by omega_arith, hz] at this
+      omega_arith
     have hw : WinLoop s₀ base A K S (64 + j) u := by
       refine ⟨ha.ctx.of_byte ku, by rw [header_env um]; exact ha.d, uc, ha.kLt, ha.sLt, ?_,
         ha.keep.trans ku⟩
       have v := ha.value
-      rw [hz, nibble_high_zero ha.sLt (by omega)] at v
-      rw [header_env um, hK, nibble_high_zero ha.sLt (by omega)]
+      rw [hz, nibble_high_zero ha.sLt (by omega_arith)] at v
+      rw [header_env um, hK, nibble_high_zero ha.sLt (by omega_arith)]
       exact v
     have he : skipOn K j = decide (j ≠ 0) := by simp only [skipOn, h0, true_and]
-    have hj64 : j < 64 := by omega
-    refine ⟨by simp only [eval, read_x, uv]; rw [counter_nonzero (by omega : j < 2 ^ 64), he], fun hf => ?_,
-      fun ht => ⟨hw, hK, by rw [he] at ht; have := of_decide_eq_true ht; omega, by omega⟩⟩
+    have hj64 : j < 64 := by omega_arith
+    refine ⟨by simp only [eval, read_x, uv]; rw [counter_nonzero (by omega_arith : j < 2 ^ 64), he], fun hf => ?_,
+      fun ht => ⟨hw, hK, by rw [he] at ht; have := of_decide_eq_true ht; omega_arith, by omega_arith⟩⟩
     have hj : j = 0 := by rw [he] at hf; simpa using hf
     subst hj
     have e : skipEnd K 0 = 64 := by simp only [skipEnd, h0, ↓reduceIte]
@@ -372,7 +372,7 @@ theorem skipBody_ok {s₀ t : State} {base : Addr} {A : EPoint dZ} {K S j : Nat}
     exact hw
 
 theorem skipEnd_range (K j : Nat) (hj : j < 64) : 64 ≤ skipEnd K j ∧ skipEnd K j ≤ 128 := by
-  unfold skipEnd; split <;> omega
+  unfold skipEnd; split <;> omega_arith
 
 theorem skipZero_ok {s₀ s : State} {base : Addr} {A : EPoint dZ} {K S : Nat}
     (h : WinLoop s₀ base A K S 128 s) :
@@ -381,13 +381,13 @@ theorem skipZero_ok {s₀ s : State} {base : Addr} {A : EPoint dZ} {K S : Nat}
   rw [skipZero]
   apply WP.loop (SkipInv s₀ base A K S) (n := 64)
   · intro n t ht
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := ht.2.2.1; omega : n ≠ 0)
-    have hj : j < 64 := by have := ht.2.2.2; omega
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := ht.2.2.1; omega_arith : n ≠ 0)
+    have hj : j < 64 := by have := ht.2.2.2; omega_arith
     refine WP.mono (skipBody_ok ht) fun u ⟨uz, uf, ut⟩ => ?_
     cases hs : skipOn K j
     · exact Or.inl ⟨uz.trans (by rw [hs]), skipEnd K j, (skipEnd_range K j hj).1, (skipEnd_range K j hj).2,
         uf hs⟩
-    · exact Or.inr ⟨uz.trans (by rw [hs]), j, by omega, ut hs⟩
+    · exact Or.inr ⟨uz.trans (by rw [hs]), j, by omega_arith, ut hs⟩
   · exact ⟨h, hK, by decide, by decide⟩
 
 end VG.Proof.Ed25519.AArch64

@@ -58,8 +58,8 @@ theorem canonF_ok {s : State} {base : Addr} (hs : Scr s base) (a : Fin 22) (ha :
   have hne : a.val ≠ 1 := fun e => ha (Fin.ext e)
   rw [canon, WP.block_append_iff]
   refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hs (o := X2) (a := slot a.val) (by decide)
-    (by simp only [slot]; omega) (by decide) (by simp only [slot]; omega)
-    (Or.inr (by simp only [X2, slot]; omega))) fun u ⟨ul, uo, uk⟩ => ?_
+    (by simp only [slot]; omega_arith) (by decide) (by simp only [slot]; omega_arith)
+    (Or.inr (by simp only [X2, slot]; omega_arith))) fun u ⟨ul, uo, uk⟩ => ?_
   refine WP.mono (reduceX2_ok (hs.of_keeps uk (by decide)) a ul hca) fun t ⟨tb, tv, tm, tk⟩ =>
     ⟨tb, tv, (FieldMem.output uo).trans tm, (uk.mono (fun r hr => List.mem_cons_of_mem _ hr)).trans tk⟩
 
@@ -69,13 +69,13 @@ theorem copy_x8 (o a : Nat) : ∀ i ∈ VG.Impl.Curve448.AArch64.copy o a, clobb
   intro i hi
   simp only [VG.Impl.Curve448.AArch64.copy, List.mem_flatMap, List.mem_cons, List.not_mem_nil,
     or_false] at hi
-  obtain ⟨_, _, rfl | rfl⟩ := hi <;> simp [ld, st, clobbers, dstOf]
+  obtain ⟨_, _, rfl | rfl⟩ := hi <;> rfl
 
 theorem copy16_x8 (o a : Nat) : ∀ i ∈ VG.Impl.X448.AArch64.copy o a, clobbers i .x8 = false := by
   intro i hi
   simp only [VG.Impl.X448.AArch64.copy, List.mem_flatMap, List.mem_cons, List.not_mem_nil,
     or_false] at hi
-  obtain ⟨_, _, rfl | rfl⟩ := hi <;> simp [ld, st, clobbers, dstOf]
+  obtain ⟨_, _, rfl | rfl⟩ := hi <;> rfl
 
 theorem reduceX2_x8 : ∀ i ∈ reduceX2, clobbers i .x8 = false := by
   have h := instrs_keeps (c := (.block reduceX2 : Prog isa)) (rs := [.x8]) (by decide +kernel)
@@ -109,7 +109,7 @@ theorem dec8_ok (s : State) {n : Nat} (hn : n < 2) (hc : s.gpr .x8 = BitVec.ofNa
     WP isa (.block [.subImm .x .x8 .x8 1]) s fun t =>
       t.gpr .x8 = BitVec.ofNat 64 n ∧ Keeps [.x8] s t ∧ t.mem = s.mem := by
   have e : BitVec.ofNat 64 (n + 1) - BitVec.ofNat 64 1 = BitVec.ofNat 64 n := by
-    rcases (by omega : n = 0 ∨ n = 1) with rfl | rfl <;> decide
+    rcases (by omega_arith : n = 0 ∨ n = 1) with rfl | rfl <;> decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     show (1 : Nat) < 4096 from by decide, ite_true, RegUpd.gpr_write_self, BitVec.setWidth_eq, hc,
@@ -120,10 +120,10 @@ theorem dec8_ok (s : State) {n : Nat} (hn : n < 2) (hc : s.gpr .x8 = BitVec.ofNa
 theorem fieldMem_can {base : Addr} {m m' : Mem} (h : FieldMem base X2 m m') {j : Nat} (hj : j < 16) :
     limbs m' base CAN j = limbs m base CAN j :=
   congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ (by
-        simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by simp only [CAN]; omega)]
-        simp only [X2, slot, CAN]; omega)
-      (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by simp only [CAN]; omega)]
-          simp only [CAN, ACC]; omega))
+        simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by simp only [CAN]; omega_arith)]
+        simp only [X2, slot, CAN]; omega_arith)
+      (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by simp only [CAN]; omega_arith)]
+          simp only [CAN, ACC]; omega_arith))
 
 /-- The two passes of `eqSlots`, from `x8 = 2`: slot `b` fully reduced into `X2`, and slot `a`
 into `CAN`. -/
@@ -146,12 +146,12 @@ theorem eqLoop_ok {s : State} {base : Addr} (hs : Scr s base) (a b : Fin 22)
     ⟨.inr rfl, h8, Keeps.refl _ _, CFrame.refl _ _, fun h => absurd h (by decide)⟩
   intro n t ⟨hn, ct, kt, ft, e1⟩
   have ht : Scr t base := hs.of_keeps kt (by decide)
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-  refine WP.seq (WP.mono (dec8_ok t (n := k) (by omega) ct) fun u ⟨cu, ku, mu⟩ => ?_)
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_arith⟩
+  refine WP.seq (WP.mono (dec8_ok t (n := k) (by omega_arith) ct) fun u ⟨cu, ku, mu⟩ => ?_)
   have hu : Scr u base := ht.of_keeps ku (by decide)
   have kU : Keeps workRegs s u := kt.trans (ku.mono (by decide))
   have fU : CFrame base s.mem u.mem := by rw [mu]; exact ft
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl
   · -- The second pass: slot `a`'s result into `CAN`, slot `b` reduced, and done.
     obtain ⟨bt, et⟩ := e1 rfl
     refine WP.mono (WP.gpr (r := .x8) (Q := fun w => Keeps workRegs s w ∧ CFrame base s.mem w.mem ∧
@@ -166,11 +166,11 @@ theorem eqLoop_ok {s : State} {base : Addr} (hs : Scr s base) (a b : Fin 22)
       (by decide) (Or.inr (Or.inr (by decide)))) fun v ⟨lv, ov, kv⟩ => ?_
     have hv : Scr v base := hu.of_keeps kv (by decide)
     refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hv (o := X2) (a := slot b.val) (by decide)
-      (by simp only [slot]; omega) (by decide) (by simp only [slot]; omega)
-      (Or.inr (by simp only [X2, slot]; omega))) fun v' ⟨lv', ov', kv'⟩ => ?_
+      (by simp only [slot]; omega_arith) (by decide) (by simp only [slot]; omega_arith)
+      (Or.inr (by simp only [X2, slot]; omega_arith))) fun v' ⟨lv', ov', kv'⟩ => ?_
     have fV : CFrame base s.mem v.mem := fU.trans (CFrame.of_can ov)
     have hl : ∀ j < 8, limbs v'.mem base X2 j = limbs s.mem base (slot b.val) j := fun j hj => by
-      rw [lv' j hj, fV.limbs hb1 (by omega)]
+      rw [lv' j hj, fV.limbs hb1 (by omega_arith)]
     refine WP.mono (reduceX2_ok (hv.of_keeps kv' (by decide)) b hl hcb) fun w ⟨wb, wf, wm, wk⟩ => ?_
     have cw : ∀ j < 16, limbs w.mem base CAN j = limbs u.mem base X2 j := fun j hj => by
       rw [fieldMem_can wm hj, ov'.limbs (by decide) (by decide) hj, lv j hj]
@@ -185,14 +185,14 @@ theorem eqLoop_ok {s : State} {base : Addr} (hs : Scr s base) (a b : Fin 22)
         VG.Proof.X448.AArch64.Bounded w.mem base X2 ∧ VG.Proof.X448.AArch64.fe w.mem base X2 = (E s.mem base a).val)
         ?_ (passRest_x8 a.val b.val))
       fun w ⟨⟨kw, fw, bw, ew⟩, w8⟩ => .inr ⟨by simp only [eval, State.read, BitVec.setWidth_eq, w8, cu]; decide,
-        1, by omega, .inl rfl, by rw [w8, cu], kw, fw, fun _ => ⟨bw, ew⟩⟩
+        1, by omega_arith, .inl rfl, by rw [w8, cu], kw, fw, fun _ => ⟨bw, ew⟩⟩
     refine WP.seq (WP.ite true (by simp only [eval, State.read, BitVec.setWidth_eq, cu]; decide)
       (fun _ => ?_) fun h => absurd h (by decide))
     refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hu (o := X2) (a := slot a.val) (by decide)
-      (by simp only [slot]; omega) (by decide) (by simp only [slot]; omega)
-      (Or.inr (by simp only [X2, slot]; omega))) fun v ⟨lv, ov, kv⟩ => ?_
+      (by simp only [slot]; omega_arith) (by decide) (by simp only [slot]; omega_arith)
+      (Or.inr (by simp only [X2, slot]; omega_arith))) fun v ⟨lv, ov, kv⟩ => ?_
     have hl : ∀ j < 8, limbs v.mem base X2 j = limbs s.mem base (slot a.val) j := fun j hj => by
-      rw [lv j hj, fU.limbs ha (by omega)]
+      rw [lv j hj, fU.limbs ha (by omega_arith)]
     refine WP.mono (reduceX2_ok (hu.of_keeps kv (by decide)) a hl hca) fun w ⟨wb, wf, wm, wk⟩ =>
       ⟨(kU.trans (kv.mono (fun r hr => List.mem_cons_of_mem _ hr))).trans wk,
         (fU.trans (CFrame.of_field (FieldMem.output ov))).trans (CFrame.of_field wm), wb, wf⟩

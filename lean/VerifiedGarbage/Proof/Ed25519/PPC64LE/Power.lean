@@ -50,12 +50,12 @@ theorem frame_PR {b : Addr} {o : Slot} (ho : 14 ≤ o.val) {m m' : Mem}
     (hf : Frame (opFrame b (offset o)) m m') : Frame [PR b] m m' := by
   have hs := slot_range o
   have hA := ACC_eq
-  have ho' : 512 ≤ offset o := by simp only [offset]; omega
+  have ho' : 512 ≤ offset o := by simp only [offset]; omega_arith
   refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.sub _ (by omega) (by omega)
-  · exact Offset.sub _ (by omega) (by omega)
+  · exact Offset.sub _ (by omega_arith) (by omega_arith)
+  · exact Offset.sub _ (by omega_arith) (by omega_arith)
 
 theorem mulP_ok {b : Addr} {s : State} (hc : Ctx b s) (o x y : Slot) (ho : 14 ≤ o.val) :
     WP isa (mulP o x y) s fun t =>
@@ -64,7 +64,7 @@ theorem mulP_ok {b : Addr} {s : State} (hc : Ctx b s) (o x y : Slot) (ho : 14 �
   have h1 := slot_range o
   have h2 := slot_range x
   have h3 := slot_range y
-  refine WP.mono (mul_ok (by omega) (by omega) (by omega) (by omega) hc) fun t ⟨hr, hf, hv⟩ =>
+  refine WP.mono (mul_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hc) fun t ⟨hr, hf, hv⟩ =>
     ⟨hr, frame_PR ho hf, ?_⟩
   rw [field_update o hf]
   exact congrArg _ (Proof.X25519.toFe_mul hv)
@@ -91,29 +91,29 @@ theorem sqLoop_ok {s₀ : State} {b : Addr} (hc : Ctx b s₀) (o : Slot) (ho : 1
   refine WP.seq (WP.mono (mulP_ok hcs o o o ho) fun s1 ⟨r1, f1, e1⟩ => ?_)
   refine wp_subi (by decide) (by decide) fun s2 u2 => WP.block_nil ?_
   have b2 : s2.gpr .r12 = BitVec.ofNat 64 (m - 1) := by
-    rw [u2.gpr, r1.gpr _ (by decide), hb, ofNat_sub_one h1 (by omega)]
+    rw [u2.gpr, r1.gpr _ (by decide), hb, ofNat_sub_one h1 (by omega_arith)]
   have k2 : Rest (.r12 :: clob) s₀ s2 := hr.trans ((r1.mono (by decide)).trans (u2.rest (by decide)))
   have f2 : Frame [PR b] s₀.mem s2.mem := by rw [u2.mem]; exact hf.trans f1
   have e2 : env s2.mem b = Function.update (env s₀.mem b) o (sqn x (n - (m - 1))) := by
     rw [u2.mem, e1, he, opMul_update]
     apply congrArg (Function.update (env s₀.mem b) o)
-    rw [show n - (m - 1) = (n - m) + 1 by omega]
+    rw [show n - (m - 1) = (n - m) + 1 by omega_arith]
     rfl
-  have hz : (s2.gpr .r12 != 0) = decide (m - 1 ≠ 0) := by rw [b2, ofNat_ne_zero (by omega)]
+  have hz : (s2.gpr .r12 != 0) = decide (m - 1 ≠ 0) := by rw [b2, ofNat_ne_zero (by omega_arith)]
   rw [eval_nonzero, hz]
   by_cases hm : m - 1 = 0
   · exact .inl ⟨by simp [hm], k2, f2, by rw [e2, hm, Nat.sub_zero]⟩
-  · exact .inr ⟨by simp [hm], m - 1, by omega, by omega, by omega, k2, f2, b2, e2⟩
+  · exact .inr ⟨by simp [hm], m - 1, by omega_arith, by omega_arith, by omega_arith, k2, f2, b2, e2⟩
 
 theorem sqnS (b : Addr) (o a : Slot) (n : Nat) (ho : 14 ≤ o.val) (hn : 2 ≤ n) (hn' : n < 2 ^ 15) :
     PSpec b (Impl.Ed25519.PPC64LE.sqn o a n) (opSqn o a n) := by
   intro s hc
   refine WP.seq (WP.mono (mulP_ok hc o a a ho) fun s1 ⟨r1, f1, e1⟩ => ?_)
-  refine WP.seq (wp_li (by omega) fun s2 u2 => WP.block_nil ?_)
+  refine WP.seq (wp_li (by omega_arith) fun s2 u2 => WP.block_nil ?_)
   have k2 : Rest (.r12 :: clob) s s2 := (r1.mono (by decide)).trans (u2.rest (by decide))
-  refine sqLoop_ok hc o ho (env s.mem b a) n hn' (n - 1) s2 (by omega) (by omega) k2
+  refine sqLoop_ok hc o ho (env s.mem b a) n hn' (n - 1) s2 (by omega_arith) (by omega_arith) k2
     (by rw [u2.mem]; exact f1) u2.gpr ?_
-  rw [u2.mem, e1, show n - (n - 1) = 1 by omega]
+  rw [u2.mem, e1, show n - (n - 1) = 1 by omega_arith]
   rfl
 
 def power250Env (e : Env) : Env :=

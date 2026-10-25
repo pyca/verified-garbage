@@ -56,9 +56,9 @@ theorem fourBody_ok {s : State} {m : Mem} {input high low : Addr} {u : Nat}
     · simpa only [hk.keep.wr,hk.keep.get .x2] using hl i hi
     · refine ⟨(hk.trans hv).mono (by decide),hrv,?_⟩
       change v.mem=roundRun m input high low (4*u+(i+1))
-      rw [show 4*u+(i+1)=4*u+i+1 by omega,roundRun_next,←hmem]
+      rw [show 4*u+(i+1)=4*u+i+1 by omega_arith,roundRun_next,←hmem]
       exact hmv
-  simpa only [I,fourBody,show 4*u+4=4*(u+1) by omega] using fourGroups_ok body I hinit hstep
+  simpa only [I,fourBody,show 4*u+4=4*(u+1) by omega_arith] using fourGroups_ok body I hinit hstep
 
 theorem roundLoop_ok {s : State} (hr : Ready s) (hc : s.gpr .x10=16)
     (ha : ∀off,off+16≤1024 → InRegions (s.rd++s.wr) (s.gpr .x0+BitVec.ofNat 64 off) 16)
@@ -79,19 +79,19 @@ theorem roundLoop_ok {s : State} (hr : Ready s) (hc : s.gpr .x10=16)
     refine WP.mono (fourBody_ok hready hm h0 h1 h2 ?_ ?_ ?_) fun v ⟨hv,hrv,hmv⟩ => ?_
     · intro i hi
       simp only [hk.rd,hk.wr,h0,BitVec.add_assoc,←BitVec.ofNat_add]
-      exact ha _ (by omega)
+      exact ha _ (by omega_arith)
     · intro i hi
       simp only [hk.wr,h1,BitVec.add_assoc,←BitVec.ofNat_add]
-      exact hh _ (by omega)
+      exact hh _ (by omega_arith)
     · intro i hi
       simp only [hk.wr,h2,BitVec.add_assoc,←BitVec.ofNat_add]
-      exact hl _ (by omega)
+      exact hl _ (by omega_arith)
     · refine WP.mono (advance3_ok v) fun w ⟨⟨⟨hw0,hw1,hw2,hw10,hwm⟩,hkw⟩,hvw⟩ => ?_
       refine ⟨⟨((hk.trans hv.keep).trans hkw).mono,?_,?_,?_,?_,hwm.trans hmv⟩,?_⟩
       · exact ⟨by rw [hvw]; exact hrv.q,by rw [hvw]; exact hrv.bias⟩
-      · rw [hw0,hv.keep.get .x0,h0,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hw1,hv.keep.get .x1,h1,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hw2,hv.keep.get .x2,h2,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw0,hv.keep.get .x0,h0,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw1,hv.keep.get .x1,h1,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw2,hv.keep.get .x2,h2,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hw10,hv.keep.get .x10]; rfl
   · exact ⟨Keep.refl _ _,hr,by simp,by simp,by simp,rfl⟩
 
@@ -157,19 +157,19 @@ theorem correct (s : State) (hp : power2RoundK.pre s) :
     ∃tr t, Exec isa VG.Impl.MlDsa.AArch64.Optimized.KeygenRound.power2Round s tr t ∧
       abiPreserved s t ∧ power2RoundK.post s t := by
   obtain ⟨tr,t,he,hm⟩ := run_ok s (fun off ho =>
-    ⟨pR (s.gpr .x0),by rw [hp.1]; simp,Offset.contains_base _ ho (by omega)⟩)
-    (fun off ho => ⟨pR (s.gpr .x1),by rw [hp.2.1]; simp,Offset.contains_base _ ho (by omega)⟩)
-    (fun off ho => ⟨pR (s.gpr .x2),by rw [hp.2.1]; simp,Offset.contains_base _ ho (by omega)⟩)
+    ⟨pR (s.gpr .x0),by rw [hp.1]; simp,Offset.contains_base _ ho (by omega_arith)⟩)
+    (fun off ho => ⟨pR (s.gpr .x1),by rw [hp.2.1]; simp,Offset.contains_base _ ho (by omega_arith)⟩)
+    (fun off ho => ⟨pR (s.gpr .x2),by rw [hp.2.1]; simp,Offset.contains_base _ ho (by omega_arith)⟩)
   have hfield := roundRun_prefix s.mem (s.gpr .x0) (s.gpr .x1) (s.gpr .x2)
     hp.2.2.1 hp.2.2.2.1 hp.2.2.2.2.1 (by decide : 64≤64)
   have hr := hp.2.2.2.2.2
   refine ⟨tr,t,he,VG.Proof.MlKem.AArch64.abi_of rfl (by decide +kernel) he,?_,?_⟩
   · refine natPolyIs_of_toNat fun k hk => ?_
-    rw [hm,(hfield k hk).1,ite_eq_left (by omega),highWord_eq (hr k hk),map_get _ _ hk,
+    rw [hm,(hfield k hk).1,ite_eq_left (by omega_arith),highWord_eq (hr k hk),map_get _ _ hk,
       Round.t1V_toNat (hr k hk),VG.Proof.MlDsa.Round.power2Round_eq,←polyAt_val hr hk]
     exact (Int.toNat_natCast _).symm
   · refine polyIs_of_toNat fun k hk => ?_
-    rw [hm,(hfield k hk).2,ite_eq_left (by omega),lowWord_eq (hr k hk),map_get _ _ hk,
+    rw [hm,(hfield k hk).2,ite_eq_left (by omega_arith),lowWord_eq (hr k hk),map_get _ _ hk,
       Round.t0V_toNat (hr k hk),VG.Proof.MlDsa.Round.power2Round_t0,polyAt_val hr hk]
 
 theorem constantTime : ConstantTime isa power2RoundK.pre power2RoundK.pub

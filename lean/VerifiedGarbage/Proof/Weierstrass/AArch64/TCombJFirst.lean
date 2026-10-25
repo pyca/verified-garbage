@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 
@@ -37,7 +36,7 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
   have hsl : ∀ x ∈ combSlots K.toComb, K.bits + K.kbytes + 8 * K.zw ≤ x ∨ x + 8 * K.M.n ≤ K.bits + K.kbytes :=
     fun x hx => hL.bits_sl x (List.mem_cons_of_mem _ hx)
   have hbz := hL.bits
-  have hzw : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega
+  have hzw : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_arith
   have hk : k < 2 ^ (K.w * K.J) :=
     Nat.lt_of_lt_of_le hF.k_lt (Nat.pow_le_pow_right (by decide) hL.kbytes)
   have hmo : ∀ w ∈ tcombW K, K.M.mo + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ K.M.mo := by
@@ -45,7 +44,7 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     rcases List.mem_append.mp hw with hw | hw
     · exact combW_mo hL.comb hM w hw
     · simp only [List.mem_singleton] at hw; subst hw
-      have := hL.bits_sl K.M.mo (List.mem_cons_self ..); dsimp only; omega
+      have := hL.bits_sl K.M.mo (List.mem_cons_self ..); dsimp only; omega_arith
   -- `A`, apart from the cleared words.
   refine WP.of_syms ?_
   unfold TCombCfg.first
@@ -70,26 +69,26 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     rw [m₃, ← k₁.mem]; exact O₂.unch
   have U₃' : Unch base (tcombW K) s.mem s₃.mem := U₃.mono fun w hw => List.mem_append_right _ hw
   have hro : ∀ x ∈ combSlots K.toComb, wordsVal s₃.mem base x K.M.n = wordsVal s.mem base x K.M.n :=
-    fun x hx => by rw [m₃, O₂.wordsVal (by have := hsl x hx; omega) (b64 x hx), k₁.mem]
+    fun x hx => by rw [m₃, O₂.wordsVal (by have := hsl x hx; omega_arith) (b64 x hx), k₁.mem]
   have hM₃ : ModOkA K.M size C.p s₃.mem base := hM.unch U₃' hmo hn
   have hz₃ : wordsVal s₃.mem base K.zero K.M.n = 0 := by rw [hro _ (by tcomb_mem)]; exact hF.zero
   have hbits₃ : ∀ t < K.w * K.J, s₃.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 := by
     intro t ht
     by_cases htk : t < K.kbytes
     · rw [U₃.byte (fun w hw => by
-        simp only [List.mem_singleton] at hw; subst hw; dsimp only; omega)
+        simp only [List.mem_singleton] at hw; subst hw; dsimp only; omega_arith)
         (by omega_using [hbz, hzw, ht, hn])]
       exact hF.bits t htk
-    · have := z₂ (t - K.kbytes) (by omega)
-      rw [show K.bits + K.kbytes + (t - K.kbytes) = K.bits + t by omega] at this
+    · have := z₂ (t - K.kbytes) (by omega_arith)
+      rw [show K.bits + K.kbytes + (t - K.kbytes) = K.bits + t by omega_arith] at this
       rw [m₃, this, Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hF.k_lt
-        (Nat.pow_le_pow_right (by decide) (by omega)))]
+        (Nat.pow_le_pow_right (by decide) (by omega_arith)))]
       rfl
   have hT₃ : s₃.syms K.tsym = T := by rw [sy₃, sy₂, sy₁]; exact hF.tsym
   have hTM₃ : TblMem s₃ T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) :=
     TblMem.of_unch hF.tbl (by rw [k₃.rd, k₃.wr, k₂.rd, k₂.wr, k₁.rd, k₁.wr]) U₃'
       (tcombW_size hL hM) hF.out
-  refine tentryJ_ok hL hA hC hV hpn hs₃ hM₃ (i := 0) (by omega) b₃ hb1 (c := false)
+  refine tentryJ_ok hL hA hC hV hpn hs₃ hM₃ (i := 0) (by omega_arith) b₃ hb1 (c := false)
     (Or.inr ⟨rfl, rfl⟩) hbits₃ hz₃ hT₃ hTM₃ hF.out fun s₅ E₅ _ => ?_
   rw [WP.block_append_iff]
   have hAE : ∀ x ∈ [K.A.x, K.A.y, K.A.z, K.E.x, K.E.y, K.E.z], x ∈ combWs K.toComb := by
@@ -150,7 +149,7 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
   · have e : ∀ {x y : Nat}, wordsVal s₇.mem base x K.M.n = wordsVal s₅.mem base y K.M.n →
         tmv C K.M.n base s₇ x = tmv C K.M.n base s₅ y := fun h => by show toM _ _ _ = toM _ _ _; rw [h]
     rw [e (by rw [m₇, ex₆]), e (by rw [m₇, ey₆]), e (by rw [m₇, ez₆])]
-    rw [show (1 : Nat) = 0 + 1 from rfl, bpart_succ_pt hC hG (by omega), bpart_zero,
+    rw [show (1 : Nat) = 0 + 1 from rfl, bpart_succ_pt hC hG (by omega_arith), bpart_zero,
       show zmul (0 : Int) (G C) = .infinity by simp [zmul, Spec.Weierstrass.mul], infinity_add']
     refine InvJ.of_rep01 E₅.rep ?_
     change toM _ _ (wordsVal s₅.mem base K.E.z K.M.n)=1 ∨ toM _ _ (wordsVal s₅.mem base K.E.z K.M.n)=0

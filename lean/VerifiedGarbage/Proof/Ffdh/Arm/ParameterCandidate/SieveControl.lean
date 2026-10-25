@@ -23,14 +23,7 @@ theorem sieveInitTail_ok (s : State) (stack : Workspace s s.sp 72) {n : Nat} (bo
   have write : InRegions s.wr (State.addr (s.sp + 64#32)) 4 := by
     rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
     exact stack.write (by decide)
-  refine withRest [.r1, .r10, .r11, .r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveInitTail : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1, .r10, .r11, .r12] ?_ (by rfl) (by rfl)
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 12#32)) 4 := by
     rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
     exact stack.read (by decide)
@@ -53,14 +46,7 @@ theorem sieveCount_ok {s : State} {count : Nat} (positive : 0 < count) (bound : 
   have zero : (BitVec.ofNat 32 (count - 1) == (0 : BitVec 32)) = decide (count = 1) := by
     rw [ofNat_beq_zero (by omega : count - 1 < 2 ^ 32)]
     exact decide_eq_decide.mpr (by omega)
-  refine withRest [.r11] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount
   ffrun [saved, subtract, zero]
 
@@ -68,14 +54,7 @@ theorem sieveSkip_ok (s : State) :
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveSkip) s fun t =>
       (t.gpr .r10 = s.gpr .r10 + (s.gpr .r11 <<< 2) ∧ t.gpr .r11 = 0 ∧
         t.z = true ∧ t.mem = s.mem) ∧ Rest [.r10, .r11] s t := by
-  refine withRest [.r10, .r11] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveSkip : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r10, .r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveSkip
   ffrun [BitVec.sub_self]
 
@@ -108,14 +87,7 @@ theorem sieveFinish_ok {s : State} {bad : Bool} (stack : Workspace s s.sp 72)
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 64#32)) 4 := by
     rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
     exact stack.read (by decide)
-  refine withRest [.r1] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFinish : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFinish
   cases bad <;> ffrun [BitVec.add_zero, read, saved] <;> rfl
 

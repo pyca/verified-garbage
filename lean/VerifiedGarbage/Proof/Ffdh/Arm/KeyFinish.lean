@@ -29,14 +29,7 @@ theorem keyFinishStatus_ok (s : State) {p : Inputs} {slots : List Nat} (accepted
       (t.gpr .r0 = (if accepted then 1 else 3) ∧ t.mem = s.mem) ∧ Rest [.r0, .r3] s t := by
   have addr : State.addr (s.sp + BitVec.ofNat 32 64) = off (State.addr s.sp) 64 :=
     VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
-  refine withRest [.r0, .r3] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [.ldrSp .r3 64, .mov .r0 (.imm 3),
-      .dp .sub .r0 .r0 (.shifted .r3 .lsl 1)] : Prog isa)).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r3] ?_ (by rfl) (by rfl)
   cases accepted <;> ffrun [addr, h.locals.read (d := 64) (by decide), result]
 
 theorem keyFinish_ok (s : State) {p : Inputs} {slots : List Nat} (accepted : Bool)

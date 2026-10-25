@@ -31,12 +31,12 @@ theorem mul_val {s s' : State} (hp : MulPre s) (h : MulPost s s') {k : Nat} (hk 
     hval s' k ≡ hval s k * yval s k [MOD P] := by
   have e : hv s' k = Limbs44.mul (hv s k) (yv s k) (sv s k) := by
     funext i
-    rcases (by omega : i < 3 ∨ 3 ≤ i) with hi | hi
+    rcases (by omega_arith : i < 3 ∨ 3 ≤ i) with hi | hi
     · exact h.h k hk i hi
     · have e : ∀ {j}, 2 ≤ j → hreg j = hreg 2 := fun {j} hj => by match j, hj with | _ + 2, _ => rfl
       have e2 := h.h k hk 2 (by decide)
       simp only [hv] at e2 ⊢
-      rw [e (by omega), e2]
+      rw [e (by omega_arith), e2]
       show Limbs44.carry _ _ 2 = Limbs44.carry _ _ i
       match i, hi with | _ + 3, _ => rfl
   simp only [hval, yval]
@@ -74,32 +74,32 @@ theorem MemR.consts {p : Addr} {R : Nat} {s : State} (h : MemR p R s.mem) (hp : 
 theorem hMem_frame {p : Addr} {d : Nat} (h₁ : 56 ≤ d) (h₂ : d + 24 ≤ 128) (x : XReg → BitVec 128) :
     ∀ {m m' : Mem}, Frame [wR p] m m' → Frame [wR p] m (hMem m' p d x) := by
   intro m m' hf
-  exact ((hf.writeW (List.mem_singleton_self _) _ (wR_contains p h₁ (by omega))).writeW
-    (List.mem_singleton_self _) _ (wR_contains p (by omega) (by omega))).writeW
-    (List.mem_singleton_self _) _ (wR_contains p (by omega) (by omega))
+  exact ((hf.writeW (List.mem_singleton_self _) _ (wR_contains p h₁ (by omega_arith))).writeW
+    (List.mem_singleton_self _) _ (wR_contains p (by omega_arith) (by omega_arith))).writeW
+    (List.mem_singleton_self _) _ (wR_contains p (by omega_arith) (by omega_arith))
 
 theorem hMem_self (m : Mem) (p : Addr) {d : Nat} (hd : d + 24 < 2 ^ 32) (x : XReg → BitVec 128) :
     ∀ i < 3, (hMem m p d x).readW (off p (d + 8 * i)) 64 = (x (hreg i)).extractLsb' 0 64 := by
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;> simp only [hMem]
-  · rw [readW_writeW_off _ _ _ (by omega) (by omega) (by omega),
-      readW_writeW_off _ _ _ (by omega) (by omega) (by omega), Nat.mul_zero, Nat.add_zero,
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;> simp only [hMem]
+  · rw [readW_writeW_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      readW_writeW_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), Nat.mul_zero, Nat.add_zero,
       Mem.readW_writeW_self64]
-  · rw [readW_writeW_off _ _ _ (by omega) (by omega) (by omega), Mem.readW_writeW_self64]
+  · rw [readW_writeW_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), Mem.readW_writeW_self64]
   · rw [Mem.readW_writeW_self64]
 
 theorem rd_sep (m : Mem) (p : Addr) {w n : Nat} (v : BitVec w) {d e : Nat} (hd : d < 2 ^ 32)
     (he : e < 2 ^ 32) (hn : n / 8 ≤ 16) (hk : w / 8 ≤ 16) (h : d + n / 8 ≤ e ∨ e + w / 8 ≤ d) :
     (m.writeW (off p e) v).readW (off p d) n = m.readW (off p d) n :=
-  Mem.readW_writeW_sep (sep_off p hd he hn hk h) (by omega)
+  Mem.readW_writeW_sep (sep_off p hd he hn hk h) (by omega_arith)
 
 theorem hMem_other (m : Mem) (p : Addr) {d e n : Nat} (hd : d + 24 < 2 ^ 32) (he : e < 2 ^ 32) (hn : n / 8 ≤ 8)
     (h : e + n / 8 ≤ d ∨ d + 24 ≤ e) (x : XReg → BitVec 128) :
     (hMem m p d x).readW (off p e) n = m.readW (off p e) n := by
   simp only [hMem]
-  rw [rd_sep _ _ _ he (by omega) (by omega) (by decide) (by omega),
-    rd_sep _ _ _ he (by omega) (by omega) (by decide) (by omega),
-    rd_sep _ _ _ he (by omega) (by omega) (by decide) (by omega)]
+  rw [rd_sep _ _ _ he (by omega_arith) (by omega_arith) (by decide) (by omega_arith),
+    rd_sep _ _ _ he (by omega_arith) (by omega_arith) (by decide) (by omega_arith),
+    rd_sep _ _ _ he (by omega_arith) (by omega_arith) (by decide) (by omega_arith)]
 
 /-! ## `r` into `Y` -/
 
@@ -122,11 +122,11 @@ theorem split_limbs {s s' : State} (hm : s.gpr .r8 = 0xfffffffffff)
     rw [h₃, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   refine ⟨?_, fun i hi => ?_⟩
   · show (s'.gpr .rax).toNat + 2 ^ 44 * (s'.gpr .rcx).toNat + 2 ^ 88 * (s'.gpr .r9).toNat = _
-    rw [e₀, e₁, e₂]; omega
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
-    · show (s'.gpr .rax).toNat ≤ _; rw [e₀]; omega
-    · show (s'.gpr .rcx).toNat ≤ _; rw [e₁]; omega
-    · show (s'.gpr .r9).toNat ≤ _; rw [e₂]; omega
+    rw [e₀, e₁, e₂]; omega_arith
+  · rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    · show (s'.gpr .rax).toNat ≤ _; rw [e₀]; omega_arith
+    · show (s'.gpr .rcx).toNat ≤ _; rw [e₁]; omega_arith
+    · show (s'.gpr .r9).toNat ≤ _; rw [e₂]; omega_arith
 
 /-! ## `powers` -/
 
@@ -167,7 +167,7 @@ theorem hv_of {s s' : State} (h : ∀ i < 3, ∀ k < 8, qz s' (hreg i) k = qz s 
     ∀ k < 8, hv s' k = hv s k := by
   intro k hk; funext i
   simp only [hv]
-  rcases (by omega : i < 3 ∨ 2 ≤ i) with hi | hi
+  rcases (by omega_arith : i < 3 ∨ 2 ≤ i) with hi | hi
   · rw [h i hi k hk]
   · rw [hreg_ge hi, h 2 (by decide) k hk]
 
@@ -175,7 +175,7 @@ theorem yv_of {s s' : State} (h : ∀ i < 3, ∀ k < 8, qz s' (yreg i) k = qz s 
     ∀ k < 8, yv s' k = yv s k := by
   intro k hk; funext i
   simp only [yv]
-  rcases (by omega : i < 3 ∨ 2 ≤ i) with hi | hi
+  rcases (by omega_arith : i < 3 ∨ 2 ≤ i) with hi | hi
   · rw [h i hi k hk]
   · rw [yreg_ge hi, h 2 (by decide) k hk]
 
@@ -183,7 +183,7 @@ theorem sv_of {s s' : State} (h : ∀ i < 3, ∀ k < 8, qz s' (sreg i) k = qz s 
     ∀ k < 8, sv s' k = sv s k := by
   intro k hk; funext i
   simp only [sv]
-  rcases (by omega : i = 1 ∨ i ≠ 1) with rfl | hi
+  rcases (by omega_arith : i = 1 ∨ i ≠ 1) with rfl | hi
   · rw [h 1 (by decide) k hk]
   · rw [sreg_ge hi, h 2 (by decide) k hk]
 
@@ -230,9 +230,9 @@ theorem sq_mod {a b R : Nat} {n : Nat} (h₁ : a ≡ b * b [MOD P]) (h₂ : b �
 theorem powers_ok {s : State} (hc : Ctx s) (hw : VG.Proof.Poly1305.X86_64.sR (s.gpr .rdi) ∈ s.wr) :
     WP isa (.block powers) s (PowPost s) := by
   have o : ∀ d, d + 8 ≤ 128 → InRegions s.wr (off (s.gpr .rdi) d) 8 :=
-    fun d hd => ⟨_, hw, VG.Proof.Poly1305.X86_64.contains_off hd (by omega)⟩
+    fun d hd => ⟨_, hw, VG.Proof.Poly1305.X86_64.contains_off hd (by omega_arith)⟩
   have i : ∀ d, d + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) d) 8 :=
-    fun d hd => ⟨_, List.mem_append_right _ hw, VG.Proof.Poly1305.X86_64.contains_off hd (by omega)⟩
+    fun d hd => ⟨_, List.mem_append_right _ hw, VG.Proof.Poly1305.X86_64.contains_off hd (by omega_arith)⟩
   rw [powers_eq]
   -- `r` and the constants.
   refine WP.block_append (WP.mono (loadR_ok s (i 24 (by decide)) (i 32 (by decide)) (o 104 (by decide))
@@ -261,7 +261,7 @@ theorem powers_ok {s : State} (hc : Ctx s) (hw : VG.Proof.Poly1305.X86_64.sR (s.
   -- `r` in every quadword of `H` and `Y`.
   have y₃ : ∀ k < 8, yv s₃ k = fun i => (s₂.gpr (lg i)).toNat := by
     intro k hk; funext i
-    rcases (by omega : i < 3 ∨ 2 ≤ i) with hi | hi
+    rcases (by omega_arith : i < 3 ∨ 2 ≤ i) with hi | hi
     · rw [Y₃.y i hi k hk]; rfl
     · have e := Y₃.y 2 (by decide) k hk
       simp only [yv] at e ⊢
@@ -270,7 +270,7 @@ theorem powers_ok {s : State} (hc : Ctx s) (hw : VG.Proof.Poly1305.X86_64.sR (s.
   have h₄ : ∀ k < 8, hv s₄ k = yv s₃ k := by
     intro k hk; funext i
     simp only [hv, yv]
-    rcases (by omega : i < 3 ∨ 2 ≤ i) with hi | hi
+    rcases (by omega_arith : i < 3 ∨ 2 ≤ i) with hi | hi
     · rw [(e₄ i hi k hk).1]
     · rw [hreg_ge hi, yreg_ge hi, (e₄ 2 (by decide) k hk).1]
   have yy₄ := yv_of fun i hi k hk => (e₄ i hi k hk).2.1
@@ -290,7 +290,7 @@ theorem powers_ok {s : State} (hc : Ctx s) (hw : VG.Proof.Poly1305.X86_64.sR (s.
   have rdi₅ : s₅.gpr .rdi = s.gpr .rdi := by rw [gv v₅, rdi₄]
   have wr₅ : s₅.wr = s.wr := by rw [vec_wr v₅, wr₄]
   refine WP.block_append (WP.mono (storeH_ok s₅ 56 fun j hj => by
-    rw [wr₅, rdi₅]; exact o _ (by omega)) fun s₆ ⟨g₆, m₆, k₆⟩ => ?_)
+    rw [wr₅, rdi₅]; exact o _ (by omega_arith)) fun s₆ ⟨g₆, m₆, k₆⟩ => ?_)
   have hv₆ := VKeep.hv k₆
   have rdi₆ : s₆.gpr .rdi = s.gpr .rdi := by rw [g₆ _ (by decide), rdi₅]
   have hc₆ : Ctx s₆ := Ctx.of_eq hc (by rw [g₆ _ (by decide), gv v₅, rsi₄]) rdi₆
@@ -307,7 +307,7 @@ theorem powers_ok {s : State} (hc : Ctx s) (hw : VG.Proof.Poly1305.X86_64.sR (s.
   have rdi₇ : s₇.gpr .rdi = s.gpr .rdi := by rw [gv v₇, rdi₆]
   have wr₇ : s₇.wr = s.wr := by rw [vec_wr v₇, k₆.wr, wr₅]
   refine WP.block_append (WP.mono (storeH_ok s₇ 80 fun j hj => by
-    rw [wr₇, rdi₇]; exact o _ (by omega)) fun s₈ ⟨g₈, m₈, k₈⟩ => ?_)
+    rw [wr₇, rdi₇]; exact o _ (by omega_arith)) fun s₈ ⟨g₈, m₈, k₈⟩ => ?_)
   have hv₈ := VKeep.hv k₈
   have rdi₈ : s₈.gpr .rdi = s.gpr .rdi := by rw [g₈ _ (by decide), rdi₇]
   have hc₈ : Ctx s₈ := Ctx.of_eq hc (by rw [g₈ _ (by decide), gv v₇, g₆ _ (by decide), gv v₅, rsi₄]) rdi₈
@@ -338,7 +338,7 @@ theorem powers_ok {s : State} (hc : Ctx s) (hw : VG.Proof.Poly1305.X86_64.sR (s.
   have M2 : ∀ j < 3, ((hMem (hMem s₁.mem (s.gpr .rdi) 56 s₅.xmm) (s.gpr .rdi) 80 s₇.xmm).readW
       (off (s.gpr .rdi) (56 + 8 * j)) 64).toNat = hv s₅ 0 j := by
     intro j hj
-    rw [hMem_other _ _ (by decide) (by omega) (by decide) (by omega), hMem_self _ _ (by decide) _ j hj]
+    rw [hMem_other _ _ (by decide) (by omega_arith) (by decide) (by omega_arith), hMem_self _ _ (by decide) _ j hj]
     rfl
   have M4 : ∀ j < 3, ((hMem (hMem s₁.mem (s.gpr .rdi) 56 s₅.xmm) (s.gpr .rdi) 80 s₇.xmm).readW
       (off (s.gpr .rdi) (80 + 8 * j)) 64).toNat = hv s₇ 0 j := by

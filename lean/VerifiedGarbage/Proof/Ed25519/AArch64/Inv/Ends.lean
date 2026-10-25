@@ -39,7 +39,7 @@ theorem fold_ok (s : State) (hz : s.gpr .x12 = 0) (h19 : s.gpr .x6 = 19)
   have hm (x : Word) : ((x >>> 63) * 19).toNat = 19 * (x.toNat / 2 ^ 63) := by
     rw [BitVec.toNat_mul, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
       show (19 : Word).toNat = 19 from rfl, Nat.mul_comm]
-    exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+    exact Nat.mod_eq_of_lt (by have := x.isLt; omega_arith)
   apply WP.of_runBlock
   simp only [fold, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
@@ -121,9 +121,9 @@ theorem freeze_ok (s : State) (hz : s.gpr .x12 = 0) (h19 : s.gpr .x6 = 19)
   · simp only [decide_eq_true h, ite_true]
     rw [av h]
     simp only [P] at h hx ⊢
-    omega
+    omega_arith
   · simp only [decide_eq_false h, Bool.false_eq_true, ite_false]
-    exact (Nat.mod_eq_of_lt (by omega)).symm
+    exact (Nat.mod_eq_of_lt (by omega_arith)).symm
 
 /-- `[o] = v` (four words), through `x2`. -/
 theorem storeConst_ok {s : State} {base : Addr} (hs : Scr s base large) {o : Nat}
@@ -142,15 +142,15 @@ theorem storeConst_ok {s : State} {base : Addr} (hs : Scr s base large) {o : Nat
     rw [WP.block_append_iff]
     refine WP.mono (const64_ok t .x2 _) fun a ⟨a2, ka⟩ => ?_
     have as := ts.of_keeps ka (by decide)
-    refine WP.mono (st_ok as (d := o + 8 * n) (by omega) (by omega) .x2) fun b ⟨mb, kb⟩ => ?_
+    refine WP.mono (st_ok as (d := o + 8 * n) (by omega_arith) (by omega_arith) .x2) fun b ⟨mb, kb⟩ => ?_
     refine ⟨fun j hj => ?_, ?_, ?_⟩
     · by_cases h : j = n
       · subst h; rw [mb, word_writeW_self, a2]
-      · rw [mb, (writeW_outside a.mem base (a.gpr .x2) (d := o + 8 * n) (by omega)).word (by omega)
-          (by omega), ka.mem]
-        exact tw j (by omega)
+      · rw [mb, (writeW_outside a.mem base (a.gpr .x2) (d := o + 8 * n) (by omega_arith)).word (by omega_arith)
+          (by omega_arith), ka.mem]
+        exact tw j (by omega_arith)
     · rw [mb, ka.mem]
-      exact tO.trans ((writeW_outside _ base _ (by omega)).mono (by omega) (by omega))
+      exact tO.trans ((writeW_outside _ base _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
     · exact (tk.trans (Keeps.regs ka)).trans (kb.mono (by simp))
   · have w0 := tw 0 (by decide); have w1 := tw 1 (by decide)
     have w2 := tw 2 (by decide); have w3 := tw 3 (by decide)
@@ -160,7 +160,7 @@ theorem storeConst_ok {s : State} {base : Addr} (hs : Scr s base large) {o : Nat
     simp only [AArch64.fe, val4]
     rw [w0, w1, w2, w3]
     simp only [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_arith
 
 theorem v0_spec : (2 ^ 590 * (v0 : Int)) % (P : Int) = 1 := by decide +kernel
 
@@ -203,7 +203,7 @@ theorem last_ok {s : State} {base : Addr} (hs : Scr s base large) :
   refine WP.mono (movz_ok s .x1 1) fun a ⟨a1, ka⟩ => ?_
   have hsa := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (st_ok hsa (by decide) (by simp only [DSAVE]; omega) .x1) fun b ⟨mb, kb⟩ => ?_
+  refine WP.mono (st_ok hsa (by decide) (by simp only [DSAVE]; omega_arith) .x1) fun b ⟨mb, kb⟩ => ?_
   refine WP.mono (movz_ok b .x20 10) fun t ⟨t20, kt⟩ => ?_
   refine ⟨by rw [kt.mem, mb, a1, ka.mem]; rfl, by rw [t20]; rfl, ?_⟩
   exact (((Keeps.regs ka).mono (by decide)).trans (kb.mono (by simp))).trans
@@ -230,7 +230,7 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
   refine WP.mono (const64_ok a .x7 0x7fffffffffffffff) fun b ⟨b7, kb⟩ => ?_
   have hsb := hsa.of_keeps kb (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (loads_ok hsb (o := offset 2) ⟨by decide, by simp only [offset]; omega⟩ (by decide))
+  refine WP.mono (loads_ok hsb (o := offset 2) ⟨by decide, by simp only [offset]; omega_arith⟩ (by decide))
     fun c ⟨c2, c3, c4, c5, kc⟩ => ?_
   have hsc := hsb.of_keeps kc (by decide)
   rw [WP.block_append_iff]
@@ -255,22 +255,22 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
     rw [c2, c3, c4, c5, ← oc.fe (d := 128) (by decide) (by decide), kc.mem]
     rfl
   rw [WP.block_append_iff]
-  refine WP.mono (stores_ok hse (o := G) ⟨by decide, by simp only [G]; omega⟩ .x2 .x3 .x4 .x5)
+  refine WP.mono (stores_ok hse (o := G) ⟨by decide, by simp only [G]; omega_arith⟩ .x2 .x3 .x4 .x5)
     fun f hf => ?_
   subst hf
   have hsf : Scr { e with mem := st4 e.mem base G (e.gpr .x2) (e.gpr .x3) (e.gpr .x4) (e.gpr .x5) }
     base large := hse.setMem _
   rw [WP.block_append_iff]
-  refine WP.mono (storeConst_ok hsf (o := F) ⟨by decide, by simp only [F]; omega⟩ P (by decide))
+  refine WP.mono (storeConst_ok hsf (o := F) ⟨by decide, by simp only [F]; omega_arith⟩ P (by decide))
     fun g ⟨gF, og, kg⟩ => ?_
   have hsg := scr_of hsf kg (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (stores_ok hsg (o := U) ⟨by decide, by simp only [U]; omega⟩ .x12 .x12 .x12 .x12)
+  refine WP.mono (stores_ok hsg (o := U) ⟨by decide, by simp only [U]; omega_arith⟩ .x12 .x12 .x12 .x12)
     fun h hh => ?_
   subst hh
   have g12 : g.gpr .x12 = 0 := by rw [kg.gpr _ (by decide)]; exact z12
   rw [WP.block_append_iff]
-  refine WP.mono (storeConst_ok (hsg.setMem _) (o := V) ⟨by decide, by simp only [V]; omega⟩ v0
+  refine WP.mono (storeConst_ok (hsg.setMem _) (o := V) ⟨by decide, by simp only [V]; omega_arith⟩ v0
     (by decide)) fun i ⟨iV, oi, ki⟩ => ?_
   have hsi := scr_of (hsg.setMem _) ki (by decide)
   refine WP.mono (last_ok hsi) fun t ⟨mt, t20, kt⟩ => ?_
@@ -302,9 +302,9 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, t20, ?_, ?_, ?_⟩
   · rw [wD, dsI_init]; rfl
   · rw [fF, dsI_init, sv_small (by decide)]
-  · rw [fG, dsI_init, sv_small (by simp only [P] at hx ⊢; omega)]
+  · rw [fG, dsI_init, sv_small (by simp only [P] at hx ⊢; omega_arith)]
   · rw [fF]; decide
-  · rw [fG]; simp only [P] at hx ⊢; omega
+  · rw [fG]; simp only [P] at hx ⊢; omega_arith
   · rw [fU]; decide
   · rw [fV]; decide
   · rw [fU, dsI_init]
@@ -368,7 +368,7 @@ theorem neg_ok (s : State) (h9 : s.gpr .x9 = BitVec.ofNat 64 (2 ^ 64 - 38))
     simp only [r4] at hu ⊢
     have key : ∀ (b : Bool) (W R : Nat), W + R + (1 - true.toNat) = 2 ^ 256 - 38 + 2 ^ 256 * (1 - b.toNat) →
         W < 2 ^ 256 → R ≤ 2 ^ 256 - 38 → W = 2 ^ 256 - 38 - R := by
-      intro b W R h1 h2 h3; cases b <;> simp only [Bool.toNat_true, Bool.toNat_false] at h1 <;> omega
+      intro b W R h1 h2 h3; cases b <;> simp only [Bool.toNat_true, Bool.toNat_false] at h1 <;> omega_arith
     exact key _ _ _ h hl hu
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
@@ -381,7 +381,7 @@ theorem sgn_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x1
   change WP isa (.block (([ld .x13 (F + 24)] : List Instr) ++
     ([.lsr .x .x13 .x13 63, .sub .x .x13 .x12 .x13] : List Instr))) s _
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok hs (by decide) (by simp only [F]; omega) .x13) fun a ⟨a13, ka⟩ => ?_
+  refine WP.mono (ld_ok hs (by decide) (by simp only [F]; omega_arith) .x13) fun a ⟨a13, ka⟩ => ?_
   have az : a.gpr .x12 = 0 := (ka.gpr _ (by decide)).trans hz
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, VG.Proof.X25519.AArch64.exec_lsr
@@ -397,7 +397,7 @@ theorem sgn_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x1
     congr 1
     apply propext
     simp only [decide_eq_true_eq]
-    omega
+    omega_arith
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_write, hr, ite_false]
     exact ka.gpr r (by simpa using hr)
@@ -421,7 +421,7 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base large) :
   refine WP.mono (const64_ok b .x7 0x7fffffffffffffff) fun c ⟨c7, kc⟩ => ?_
   have hsc := ((hs.of_keeps ka (by decide)).of_keeps kb (by decide)).of_keeps kc (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (loads_ok hsc (o := U) ⟨by decide, by simp only [U]; omega⟩ (by decide))
+  refine WP.mono (loads_ok hsc (o := U) ⟨by decide, by simp only [U]; omega_arith⟩ (by decide))
     fun d ⟨d2, d3, d4, d5, kd⟩ => ?_
   have hsd := hsc.of_keeps kd (by decide)
   have z12 : d.gpr .x12 = 0 := by
@@ -442,7 +442,7 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base large) :
       kf.gpr _ (by decide), kf.gpr _ (by decide), kf.gpr _ (by decide), kf.gpr _ (by decide)]
   rw [WP.block_append_iff]
   refine WP.mono (neg_ok g (by rw [kg.gpr _ (by decide), f9]) g10
-    (by rw [rg]; omega)) fun h ⟨hv, kh⟩ => ?_
+    (by rw [rg]; omega_arith)) fun h ⟨hv, kh⟩ => ?_
   have hsh := hsg.of_keeps kh (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (sgn_ok hsh (by rw [kh.gpr _ (by decide), kg.gpr _ (by decide), kf.gpr _ (by decide),
@@ -452,7 +452,7 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base large) :
   refine WP.mono (sel_ok i i13 .x8 .x9 .x11 .x10 (by decide)) fun j ⟨jv, kj⟩ => ?_
   have hsj := hsi.of_keeps kj (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (stores_ok hsj (o := offset 15) ⟨by decide, by simp only [offset]; omega⟩
+  refine WP.mono (stores_ok hsj (o := offset 15) ⟨by decide, by simp only [offset]; omega_arith⟩
     .x2 .x3 .x4 .x5) fun k hk => ?_
   subst hk
   refine WP.mono (mov_ok _ .x1 .x19) fun t ⟨t1, kt⟩ => ?_
@@ -487,9 +487,9 @@ theorem finish_ok {s : State} {base : Addr} (hs : Scr s base large) :
     rw [hP]
     by_cases hc : 2 ^ 255 ≤ fe s.mem base F
     · simp only [hc, decide_true, ite_true]
-      omega
+      omega_arith
     · simp only [hc, decide_false, Bool.false_eq_true, ite_false]
-      omega
+      omega_arith
   · exact t1.trans ((kj.gpr .x19 (by decide)).trans
       ((ki.gpr .x19 (by decide)).trans
       ((kh.gpr .x19 (by decide)).trans

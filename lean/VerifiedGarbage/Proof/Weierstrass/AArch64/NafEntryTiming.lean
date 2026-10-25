@@ -1,128 +1,40 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoadTiming
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoadTiming
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
-public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-public import VerifiedGarbage.Proof.Framework.BitByte
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
-public import VerifiedGarbage.Proof.Weierstrass.Window5
-public import VerifiedGarbage.Spec.Weierstrass.Mul
-import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntry
+public import VerifiedGarbage.Spec.Weierstrass.Mul
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-import VerifiedGarbage.Proof.Weierstrass.JacMul
-import VerifiedGarbage.Proof.Weierstrass.Window5
 import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Impl.Mont.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section
 
@@ -153,8 +65,8 @@ theorem nafEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size j : Nat}
       (Naf.signedEntry K)
       (fun s t => ∃ E', FieldPair K.M base size C.p (·∈jacWinSlots K) (jacCoords K.E++nafLive K) E' s t) := by
   let a := (nafMagnitude (β j)+1)/2
-  have ha : 1≤a := by dsimp [a]; omega
-  have ha8 : a≤8 := by dsimp [a]; omega
+  have ha : 1≤a := by dsimp [a]; omega_arith
+  have ha8 : a≤8 := by dsimp [a]; omega_arith
   have hD : ∀ x∈jacCoords K.E, x∈jacWinSlots K := by
     intro x hx; simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl <;> jmem
@@ -163,16 +75,16 @@ theorem nafEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size j : Nat}
     apply List.mem_append_right
     simp only [jacCoords,Jacobian.tablePt,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl
-    · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega),by omega⟩
-    · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega),by omega⟩
-    · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega),by omega⟩
+    · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega_arith),by omega_arith⟩
+    · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega_arith),by omega_arith⟩
+    · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega_arith),by omega_arith⟩
   have hap : K.E.x+96≤K.tbl+96*(a-1) ∨ K.tbl+96*(a-1)+96≤K.E.x := by
     have hx := hL.tbl K.E.x (by jmem)
     have hy := hL.tbl K.E.y (by jmem)
     have hz := hL.tbl K.E.z (by jmem)
     rw [hL.exy] at hy
     rw [hL.exz] at hz
-    omega
+    omega_arith
   have load := nafPublic_relCT (base:=base) (E:=E) (b:=β j) hL.lay hAl hL.n hL.exy hL.exz hD hT hap ha hTbl hc.lookup
   have load' : RelCT isa (fun s t => FieldPair K.M base size C.p (·∈jacWinSlots K) (nafLive K) E s t ∧
       NafStable K C base P β s ∧ NafStable K C base P β t ∧
@@ -207,8 +119,8 @@ theorem nafEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size j : Nat}
         s.gpr .x3=BitVec.ofNat 64 (nafNegative (β j)).toNat ∧
         t.gpr .x3=BitVec.ofNat 64 (nafNegative (β j)).toNat) := by
     intro s t ts tt s' t' ⟨hp,ss,st,s19,t19⟩ es et
-    obtain ⟨_,_,xs,vs,ks⟩ := nafSignRead_ok hp.left.scr hBits (by have := hL.bits; omega) s19 (ss.bits j hj)
-    obtain ⟨_,_,xt,vt,kt⟩ := nafSignRead_ok hp.right.scr hBits (by have := hL.bits; omega) t19 (st.bits j hj)
+    obtain ⟨_,_,xs,vs,ks⟩ := nafSignRead_ok hp.left.scr hBits (by have := hL.bits; omega_arith) s19 (ss.bits j hj)
+    obtain ⟨_,_,xt,vt,kt⟩ := nafSignRead_ok hp.right.scr hBits (by have := hL.bits; omega_arith) t19 (st.bits j hj)
     obtain ⟨_,rfl⟩ := Exec.det es xs
     obtain ⟨_,rfl⟩ := Exec.det et xt
     have pub : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]) s t := by

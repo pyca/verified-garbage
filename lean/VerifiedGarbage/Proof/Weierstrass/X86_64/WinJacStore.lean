@@ -40,13 +40,13 @@ theorem entryAddr_ok (K : JacWinCfg) (s : State) {base : Addr} {m : Nat} (hb : s
     have hs : BitVec.ofNat 64 m - BitVec.ofNat 64 1 = BitVec.ofNat 64 (m - 1) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      omega
+      omega_arith
     have hmul : BitVec.ofNat 64 ((BitVec.ofNat 64 (m - 1)).toNat *
         ((BitVec.ofNat 32 K.st).setWidth 64).toNat) = BitVec.ofNat 64 (K.st * (m - 1)) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth]
-      rw [Nat.mod_eq_of_lt (show K.st < 2 ^ 32 by omega), Nat.mod_eq_of_lt (show m - 1 < 2 ^ 64 by omega),
-        Nat.mod_eq_of_lt (show K.st < 2 ^ 64 by omega), Nat.mul_comm]
+      rw [Nat.mod_eq_of_lt (show K.st < 2 ^ 32 by omega_arith), Nat.mod_eq_of_lt (show m - 1 < 2 ^ 64 by omega_arith),
+        Nat.mod_eq_of_lt (show K.st < 2 ^ 64 by omega_arith), Nat.mul_comm]
     rw [e1, hs, hmul, Offset.add_add]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1, hr.2.2,
@@ -64,24 +64,24 @@ theorem storeWords_ok {base : Addr} {size A src : Nat} : ∀ (m : Nat) (s : Stat
   | m + 1, s, hs, hx, hA, hsrc, hsep => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (storeWords_ok m s hs hx (by omega) (by omega) (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    refine WP.mono (storeWords_ok m s hs hx (by omega_arith) (by omega_arith) (by omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
     have hx₁ : s₁.gpr .rdx = off base A := by rw [k₁.gpr _ (by decide), hx]
     have hea : off base A + BitVec.ofNat 64 (8 * m) = off base (A + 8 * m) := by
       unfold off; rw [Offset.add_add]
-    have hw : InRegions s₁.wr (off base (A + 8 * m)) 8 := st_sc hs₁ (by omega)
+    have hw : InRegions s₁.wr (off base (A + 8 * m)) 8 := st_sc hs₁ (by omega_arith)
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some,
       State.load64, State.store64, ea_sc, ea_tblAt, hx₁, hea, hw, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-      RegUpd.mem_setReg, reduceCtorEq, ite_true, ite_false, hs₁.rdi, ld_sc hs₁ (d := src + 8 * m) (by omega),
+      RegUpd.mem_setReg, reduceCtorEq, ite_true, ite_false, hs₁.rdi, ld_sc hs₁ (d := src + 8 * m) (by omega_arith),
       Option.some.injEq, exists_eq_left']
-    have O₂ := writeW_outside s₁.mem base (word s₁.mem base (src + 8 * m)) (d := A + 8 * m) (by omega)
+    have O₂ := writeW_outside s₁.mem base (word s₁.mem base (src + 8 * m)) (d := A + 8 * m) (by omega_arith)
     refine ⟨fun i hi => ?_, ⟨fun r hr => ?_, k₁.rd, k₁.wr⟩, fun x h => by
-      rw [O₂ x (by omega), O₁ x (by omega)]⟩
+      rw [O₂ x (by omega_arith), O₁ x (by omega_arith)]⟩
     · by_cases him : i = m
       · subst him
-        rw [word_writeW_self]; exact O₁.word (by omega) (by omega)
-      · rw [O₂.word (by omega) (by omega), e₁ i (by omega)]
+        rw [word_writeW_self]; exact O₁.word (by omega_arith) (by omega_arith)
+      · rw [O₂.word (by omega_arith) (by omega_arith), e₁ i (by omega_arith)]
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       simp only [RegUpd.gpr_setReg, hr, ite_false]
       exact k₁.gpr r (by simp [hr])
@@ -98,7 +98,7 @@ theorem jstoreEntry_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s :
   have hg := hL.grid_le
   have ht := hL.tbl31
   rw [JacWinCfg.storeEntry, WP.block_append_iff]
-  refine WP.mono (entryAddr_ok K s hs.rdi hm h1 (by omega) ht (by unfold JacWinCfg.st; omega))
+  refine WP.mono (entryAddr_ok K s hs.rdi hm h1 (by omega_arith) ht (by unfold JacWinCfg.st; omega_arith))
     fun s₁ ⟨x₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hA : K.tbl + K.st * (m - 1) = jg K (5 * (m - 1)) := by
@@ -106,24 +106,24 @@ theorem jstoreEntry_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s :
   rw [hA] at x₁
   have hT : K.T = jg K 80 := hL.T80
   have hgl : jg K (5 * (m - 1)) + 8 * (5 * K.M.n) ≤ jg K 80 := by
-    unfold jg; have := Nat.mul_le_mul_left (8 * K.M.n) (show 5 * (m - 1) + 5 ≤ 80 by omega)
-    rw [Nat.mul_add] at this; omega
-  have hTl : jg K 80 + 8 * (5 * K.M.n) ≤ size := by unfold jg; omega
+    unfold jg; have := Nat.mul_le_mul_left (8 * K.M.n) (show 5 * (m - 1) + 5 ≤ 80 by omega_arith)
+    rw [Nat.mul_add] at this; omega_arith
+  have hTl : jg K 80 + 8 * (5 * K.M.n) ≤ size := by unfold jg; omega_arith
   rw [hT]
   refine WP.mono (storeWords_ok (A := jg K (5 * (m - 1))) (src := jg K 80) (5 * K.M.n) s₁ hs₁ x₁
-    (by omega) hTl (Or.inl hgl)) fun t ⟨e, k₂, O⟩ => ⟨fun c hc => ?_, ?_, ?_⟩
+    (by omega_arith) hTl (Or.inl hgl)) fun t ⟨e, k₂, O⟩ => ⟨fun c hc => ?_, ?_, ?_⟩
   · rw [← k₁.2.1]
     refine wordsVal_congr₂ _ _ _ fun i hi => ?_
     have e1 : jg K (5 * (m - 1) + c) + 8 * i = jg K (5 * (m - 1)) + 8 * (K.M.n * c + i) := by
-      unfold jg; rw [Nat.mul_add, Nat.mul_add, Nat.mul_assoc 8 K.M.n c]; omega
+      unfold jg; rw [Nat.mul_add, Nat.mul_add, Nat.mul_assoc 8 K.M.n c]; omega_arith
     have e2 : jg K (80 + c) + 8 * i = jg K 80 + 8 * (K.M.n * c + i) := by
-      unfold jg; rw [Nat.mul_add, Nat.mul_add, Nat.mul_assoc 8 K.M.n c]; omega
-    have hc5 := Nat.mul_le_mul_left K.M.n (show c + 1 ≤ 5 by omega)
+      unfold jg; rw [Nat.mul_add, Nat.mul_add, Nat.mul_assoc 8 K.M.n c]; omega_arith
+    have hc5 := Nat.mul_le_mul_left K.M.n (show c + 1 ≤ 5 by omega_arith)
     rw [Nat.mul_add] at hc5
-    rw [e1, e2, e _ (by omega)]
+    rw [e1, e2, e _ (by omega_arith)]
   · exact ((Keeps.regs k₁).mono (by decide)).trans (k₂.mono (by decide))
   · rw [k₁.2.1] at O
-    rw [show 40 * K.M.n = 8 * (5 * K.M.n) by omega]
+    rw [show 40 * K.M.n = 8 * (5 * K.M.n) by omega_arith]
     exact O
 
 end VG.Proof.Weierstrass.X86_64

@@ -113,9 +113,9 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
   have hdr56 : 56 + 4 ≤ slot w 2 := by have := hdr_lt_slot w 2 (i := 7) (by decide); omega_arith
-  have s0 := sl 0 (by omega)
-  have s2 := sl 2 (by omega)
-  have s3 := sl 3 (by omega)
+  have s0 := sl 0 (by omega_arith)
+  have s2 := sl 2 (by omega_arith)
+  have s3 := sl 3 (by omega_arith)
   have sa := sl a ha
   have sb := sl b hb
   have so := sl o ho
@@ -163,7 +163,7 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     (by rw [g₃ .r11 (by decide), i11]) (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith)
     (by omega_arith) (by omega_arith))
     fun s₄ ⟨⟨c, hc, hD, h20⟩, out₄, k₄⟩ => ?_)
-  rw [v₃ (by omega) (by decide)] at hD
+  rw [v₃ (by omega_arith) (by decide)] at hD
   have hs₄ := hs₃.congr k₄.wr
   have g₄ : ∀ r ∈ [Reg.r5, .r8, .r9, .r11], s₄.gpr r = s.gpr r := fun r hr => by
     rw [k₄.gpr r (by revert r hr; decide), g₃ r (by revert r hr; decide)]

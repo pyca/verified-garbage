@@ -26,7 +26,7 @@ theorem squeezeLayout_covers (c : SqueezeCfg) {j : Nat} (hj : j<2) :
   intro r hr
   simp only [SqueezeCfg.stepWrites,pairWrites,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
   have hout (i : Nat) : Region.Sub (rateR (c.at i j)) ⟨c.out i,272⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_arith)
   rcases hr with ((rfl|rfl|rfl)|(rfl|rfl|rfl))|rfl
   · exact ⟨pairR c.p,by simp [SqueezeCfg.writes],fun _ h=>h⟩
   · exact ⟨⟨c.out 0,272⟩,by simp [SqueezeCfg.out,SqueezeCfg.writes],hout 0⟩
@@ -42,7 +42,7 @@ theorem squeezeLayout_call {s : State} {b : Addr} {off d : Nat} (hd : d+400≤30
   refine Covers.of_forall fun r hr => ?_
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl
-  · exact Covers.one (hw d 400 (by omega))
+  · exact Covers.one (hw d 400 (by omega_arith))
   · exact Covers.one (hw 3024 136 (by decide))
 
 theorem squeezeLayout_ok {s : State} {b : Addr} {off : Nat} (ho : off≤272) (hb : s.gpr .x19=b)
@@ -76,7 +76,7 @@ theorem sampler_work_read {σ s : State} (hp : SamplerPre σ) (hw : s.wr=σ.wr)
 
 theorem inputAt_sub (b : Addr) {i off : Nat} (hi : i<4) (ho : off≤272) :
     Region.Sub (⟨inputAt b i off,274⟩ : Region) ⟨b,8192⟩ :=
-  Offset.sub_base b (d := 840+544*i+off) (n := 274) (k := 8192) (by omega)
+  Offset.sub_base b (d := 840+544*i+off) (n := 274) (k := 8192) (by omega_arith)
 
 theorem samplerBatchLayout_ok {σ s : State} (hp : SamplerPre σ) (hw : s.wr=σ.wr)
     {off : Nat} (ho : off≤272) {X : Nat→List Byte}
@@ -99,7 +99,7 @@ theorem samplerBatchLayout_ok {σ s : State} (hp : SamplerPre σ) (hw : s.wr=σ.
     refine ⟨samplerOutput σ,by simp,?_⟩
     change Region.Contains ⟨p,4096⟩ ((p+BitVec.ofNat 64 (1024*i))+BitVec.ofNat 64 (4*j)) n
     rw [Offset.add_add]
-    exact Offset.contains_base p (by omega) (by omega)
+    exact Offset.contains_base p (by omega_arith) (by omega_arith)
   constructor
   · exact hlen
   · intro i hi
@@ -109,41 +109,41 @@ theorem samplerBatchLayout_ok {σ s : State} (hp : SamplerPre σ) (hw : s.wr=σ.
       rw [hlen i hi] at hd
       change InRegions (s.rd++s.wr) ((b+BitVec.ofNat 64 (840+544*i+off))+BitVec.ofNat 64 d) 4
       rw [Offset.add_add]
-      exact sampler_work_read hp hw (by omega)
+      exact sampler_work_read hp hw (by omega_arith)
     · intro m hm
       constructor
       · change InRegions (s.rd++s.wr) ((b+BitVec.ofNat 64 6000)+BitVec.ofNat 64 (64*m)) 16
         rw [Offset.add_add]
-        exact sampler_work_read hp hw (by omega)
+        exact sampler_work_read hp hw (by omega_arith)
       · change InRegions (s.rd++s.wr) (((b+BitVec.ofNat 64 6000)+BitVec.ofNat 64 (64*m))+BitVec.ofNat 64 32) 8
         rw [Offset.add_add,Offset.add_add]
-        exact sampler_work_read hp hw (by omega)
-    · intro j hj; exact hout i hi j 16 (by omega)
+        exact sampler_work_read hp hw (by omega_arith)
+    · intro j hj; exact hout i hi j 16 (by omega_arith)
   · intro i hi
     refine ⟨by rw [hlen i hi],?_,?_,?_,?_⟩
     · intro j hj; exact hbytes i hi j (by simpa only [hlen i hi] using hj)
-    · exact (hstream i hi).sub_left (Region.sub_prefix (by omega))
+    · exact (hstream i hi).sub_left (Region.sub_prefix (by omega_arith))
     · intro d hd
       rw [hlen i hi] at hd
       change InRegions (s.rd++s.wr) ((b+BitVec.ofNat 64 (840+544*i+off))+BitVec.ofNat 64 d) 1
       rw [Offset.add_add]
-      exact sampler_work_read hp hw (by omega)
-    · intro j hj; exact hout i hi j 4 (by omega)
+      exact sampler_work_read hp hw (by omega_arith)
+    · intro j hj; exact hout i hi j 4 (by omega_arith)
   · intro i hi r hr
     rw [hlen i hi]
     rcases (show r=⟨p,4096⟩∨r=⟨b+7904#64,32⟩ by simpa [batchWrites] using hr) with rfl|rfl
     · exact hp.output_work.symm.sub_left (inputAt_sub _ hi ho)
     · exact Offset.disjoint b (d := 840+544*i+off) (e := 7904) (n := 274) (k := 32)
-        (by omega) (by omega) (by decide)
+        (by omega_arith) (by omega_arith) (by decide)
   · intro r hr
     rcases (show r=⟨p,4096⟩∨r=⟨b+7904#64,32⟩ by simpa [batchWrites] using hr) with rfl|rfl
     · exact hp.output_work.symm.sub_left (Offset.sub_base b (d := 6000) (n := 1024) (k := 8192) (by decide))
     · exact Offset.disjoint b (d := 6000) (e := 7904) (n := 1024) (k := 32) (by decide) (by decide) (by decide)
   · intro i hi j hj
     exact (hp.output_work.sub_left (outputAt_sub _ hi)).sub_right
-      (Offset.sub_base b (d := 7904+8*j) (n := 8) (k := 8192) (by omega))
-  · intro i hi; exact sampler_work_read hp hw (by omega)
-  · intro i hi; exact sampler_in_work hp hw (by omega)
+      (Offset.sub_base b (d := 7904+8*j) (n := 8) (k := 8192) (by omega_arith))
+  · intro i hi; exact sampler_work_read hp hw (by omega_arith)
+  · intro i hi; exact sampler_in_work hp hw (by omega_arith)
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 
@@ -233,10 +233,10 @@ theorem squeezeWrites_sub {b : Addr} {off : Nat} (ho : off≤272) {r : Region}
   rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl
   · exact Region.sub_prefix (by decide)
   · exact Offset.sub_base b (d := 400) (n := 400) (k := 4096) (by decide)
-  · exact Offset.sub_base b (d := 840+off) (n := 272) (k := 4096) (by omega)
-  · exact Offset.sub_base b (d := 1384+off) (n := 272) (k := 4096) (by omega)
-  · exact Offset.sub_base b (d := 1928+off) (n := 272) (k := 4096) (by omega)
-  · exact Offset.sub_base b (d := 2472+off) (n := 272) (k := 4096) (by omega)
+  · exact Offset.sub_base b (d := 840+off) (n := 272) (k := 4096) (by omega_arith)
+  · exact Offset.sub_base b (d := 1384+off) (n := 272) (k := 4096) (by omega_arith)
+  · exact Offset.sub_base b (d := 1928+off) (n := 272) (k := 4096) (by omega_arith)
+  · exact Offset.sub_base b (d := 2472+off) (n := 272) (k := 4096) (by omega_arith)
   · exact Offset.sub_base b (d := 3024) (n := 136) (k := 4096) (by decide)
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
@@ -282,7 +282,7 @@ theorem squeezeStage_ok (sha3 : Bool) {σ s : State} (hp : SamplerPre σ)
     · intro i hi
       have hc : (⟨countAt (samplerScratch σ) i,8⟩ : Region).Disjoint ⟨samplerScratch σ,4096⟩ := by
         have hh := (Offset.disjoint (samplerScratch σ)
-          (d := 7904+8*i) (e := 0) (n := 8) (k := 4096) (by omega) (by omega) (by decide))
+          (d := 7904+8*i) (e := 0) (n := 8) (k := 4096) (by omega_arith) (by omega_arith) (by decide))
         simp only [BitVec.add_zero] at hh
         exact hh
       rw [ht.frame.readW (Region.contains_self _ _) (fun r hr=>hc.sub_right (hlow r hr)) (by decide)]
@@ -321,7 +321,7 @@ theorem batchStage_ok {η : Nat} (hη : η=2∨η=4) {σ s : State} (hp : Sample
     Offset.disjoint _ (d := 7968) (e := 7904) (n := 144) (k := 32) (by decide) (by decide) (by decide)
   have hpair (p : Nat) (hpn : p<2) :
       (pairR (ResidentRej.stateP σ p)).Disjoint (samplerOutput σ) :=
-    (hp.output_work.sub_right (Offset.sub_base _ (d := 400*p) (n := 400) (k := 8192) (by omega))).symm
+    (hp.output_work.sub_right (Offset.sub_base _ (d := 400*p) (n := 400) (k := 8192) (by omega_arith))).symm
   have pairKeep (p : Nat) (hpn : p<2) (a b : Spec.Sha3.State)
       (hh : PairAt s.mem (ResidentRej.stateP σ p) a b) :
       PairAt t.mem (ResidentRej.stateP σ p) a b := by
@@ -329,7 +329,7 @@ theorem batchStage_ok {η : Nat} (hη : η=2∨η=4) {σ s : State} (hp : Sample
     rw [ht.frame.read (pair_contains _ hii) (fun r hr=>by
       rcases (show r=samplerOutput σ∨r=⟨samplerScratch σ+7904#64,32⟩ by simpa [batchWrites,samplerOutput] using hr) with rfl|rfl
       · exact hpair p hpn
-      · exact Offset.disjoint _ (d := 400*p) (e := 7904) (n := 400) (k := 32) (by omega) (by omega) (by decide)) (by decide)]
+      · exact Offset.disjoint _ (d := 400*p) (e := 7904) (n := 400) (k := 32) (by omega_arith) (by omega_arith) (by decide)) (by decide)]
     exact hh i hii
   refine ⟨?_,?_,?_,ht.table,ht.fields⟩
   · exact hs.env.frameStep ht.frame (fun r hr=>by
@@ -380,7 +380,7 @@ theorem sampleRound_ok (sha3 : Bool) {η : Nat} (hη : η=2∨η=4) {σ s : Stat
   have hl : BatchLayout t (samplerScratch σ) (samplerOut σ) off (fun i=>chunkBytes (A i)) :=
     samplerBatchLayout_ok hp ht.env.wr ho (fun _ _=>chunkBytes_length _) (fun i hi j hj=>by
       rw [chunkBytes_get _ hj]
-      exact stream136_byte (hstreams i hi) (by omega))
+      exact stream136_byte (hstreams i hi) (by omega_arith))
   exact batchStage_ok hη hp ht ho hl
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour

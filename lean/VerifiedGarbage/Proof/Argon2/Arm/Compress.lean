@@ -29,8 +29,8 @@ open VG.Proof.Sha512.Arm (wp_eor)
 theorem readW_writeW_A (m : Mem) (v : BitVec 32) {B : BitVec 32} {d e : Nat}
     (hd : B.toNat + d + 4 ≤ 2 ^ 32) (he : B.toNat + e + 4 ≤ 2 ^ 32) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
     (m.writeW (A B e) v).readW (A B d) 32 = m.readW (A B d) 32 := by
-  rw [A_eq (by omega), A_eq (by omega)]
-  exact readW_writeW_save m _ v (by omega) (by omega) h
+  rw [A_eq (by omega_arith), A_eq (by omega_arith)]
+  exact readW_writeW_save m _ v (by omega_arith) (by omega_arith) h
 
 theorem spill_slots : Spill.Slots 2048 2088 spill := by decide
 
@@ -61,13 +61,13 @@ theorem prologue_ok {rest : List Instr} {Q : State → Prop} (k : ∀ s, InitInv
     WP isa (.block (prologue ++ rest)) s₀ Q := by
   have fits := hp.scr_fits
   unfold prologue
-  refine Spill.save_slots_ok spill_slots (by show (scr s₀).toNat + 2088 ≤ _; omega) (fun d h₁ h₂ => ?_) (k _ ⟨fun _ _ _ => rfl, rfl, rfl, rfl,
+  refine Spill.save_slots_ok spill_slots (by show (scr s₀).toNat + 2088 ≤ _; omega_arith) (fun d h₁ h₂ => ?_) (k _ ⟨fun _ _ _ => rfl, rfl, rfl, rfl,
     ?_, Spill.saveMem_saved _ _ _ _ spill_slots, fun i hi => absurd hi (Nat.not_lt_zero _),
     fun i hi => absurd hi (Nat.not_lt_zero _)⟩)
-  · exact ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ (by omega) (by omega)⟩
+  · exact ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   · exact Spill.saveMem_frame_of _ _ (List.mem_singleton_self _) _ _ fun p hpm => by
       have := spill_slots.bound hpm
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- One word of the initialization. -/
 theorem initWord_ok {s : State} {n : Nat} (hn : n < 256) (h : InitInv s₀ s n) :
@@ -75,44 +75,44 @@ theorem initWord_ok {s : State} {n : Nat} (hn : n < 256) (h : InitInv s₀ s n) 
   have hm : scrR s₀ ∈ [scrR s₀] := List.mem_singleton_self _
   have fits := hp.scr_fits
   unfold initWord
-  refine wp_ldr (by omega) (by rw [h.regs _ (by decide) (by decide)]) (hp.in_x h.rd (by omega)) fun s₁ u₁ => ?_
-  refine wp_ldr (by omega) (by rw [u₁.other _ (by decide), h.regs _ (by decide) (by decide)])
-    (by rw [u₁.rd, u₁.wr]; exact hp.in_y h.rd (by omega)) fun s₂ u₂ => ?_
+  refine wp_ldr (by omega_arith) (by rw [h.regs _ (by decide) (by decide)]) (hp.in_x h.rd (by omega_arith)) fun s₁ u₁ => ?_
+  refine wp_ldr (by omega_arith) (by rw [u₁.other _ (by decide), h.regs _ (by decide) (by decide)])
+    (by rw [u₁.rd, u₁.wr]; exact hp.in_y h.rd (by omega_arith)) fun s₂ u₂ => ?_
   refine wp_eor (op2_reg _ _) fun s₃ u₃ => ?_
   have v₃ : s₃.gpr .r4 = xy s₀ n := by
     rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem,
-      hp.x_frame (h.frame.mono (by simp)) (by omega), hp.y_frame (h.frame.mono (by simp)) (by omega)]; rfl
+      hp.x_frame (h.frame.mono (by simp)) (by omega_arith), hp.y_frame (h.frame.mono (by simp)) (by omega_arith)]; rfl
   have r3 : s₃.gpr .r3 = scr s₀ := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.regs _ (by decide) (by decide)]
-  refine wp_str (by omega) (by rw [r3]) (by rw [u₃.wr, u₂.wr, u₁.wr, h.wr]; exact hp.scr_wr rfl (by omega))
+  refine wp_str (by omega_arith) (by rw [r3]) (by rw [u₃.wr, u₂.wr, u₁.wr, h.wr]; exact hp.scr_wr rfl (by omega_arith))
     fun s₄ u₄ => ?_
-  refine wp_str (by omega) (by rw [u₄.gpr, r3])
-    (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]; exact hp.scr_wr rfl (by omega)) fun s₅ u₅ => WP.block_nil ?_
+  refine wp_str (by omega_arith) (by rw [u₄.gpr, r3])
+    (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]; exact hp.scr_wr rfl (by omega_arith)) fun s₅ u₅ => WP.block_nil ?_
   have m₅ : s₅.mem = (s.mem.writeW (A (scr s₀) (4 * n)) (xy s₀ n)).writeW (A (scr s₀) (1024 + 4 * n)) (xy s₀ n) := by
     rw [u₅.mem, u₄.gpr, u₄.mem, u₃.mem, u₂.mem, u₁.mem, v₃]
   have r₅ : ∀ e, e + 4 ≤ 4096 → (e + 4 ≤ 4 * n ∨ 4 * n + 4 ≤ e) →
       (e + 4 ≤ 1024 + 4 * n ∨ 1024 + 4 * n + 4 ≤ e) →
       s₅.mem.readW (A (scr s₀) e) 32 = s.mem.readW (A (scr s₀) e) 32 := by
     intro e he h1 h2
-    rw [m₅, readW_writeW_A _ _ (by omega) (by omega) h2, readW_writeW_A _ _ (by omega) (by omega) h1]
+    rw [m₅, readW_writeW_A _ _ (by omega_arith) (by omega_arith) h2, readW_writeW_A _ _ (by omega_arith) (by omega_arith) h1]
   refine ⟨fun r h4 h5 => ?_, ?_, ?_, ?_, ?_, fun p hpm => ?_, fun i hi => ?_, fun i hi => ?_⟩
   · rw [u₅.gpr, u₄.gpr, u₃.other _ h4, u₂.other _ h5, u₁.other _ h4, h.regs r h4 h5]
   · rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd]
   · rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]
   · rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp, h.sp]
   · rw [m₅]
-    exact (h.frame.writeW hm _ (hp.scr_contains (by omega))).writeW hm _ (hp.scr_contains (by omega))
+    exact (h.frame.writeW hm _ (hp.scr_contains (by omega_arith))).writeW hm _ (hp.scr_contains (by omega_arith))
   · have := spill_slots.bound hpm
-    have e := r₅ p.2 (by omega) (by omega) (by omega)
-    rw [A_eq (by omega)] at e
+    have e := r₅ p.2 (by omega_arith) (by omega_arith) (by omega_arith)
+    rw [A_eq (by omega_arith)] at e
     rw [e]; exact h.saved p hpm
   · by_cases e : i = n
     · subst e
-      rw [m₅, readW_writeW_A _ _ (by omega) (by omega) (by omega), Nat.zero_add, Mem.readW_writeW_self32]
-    · rw [r₅ _ (by omega) (by omega) (by omega)]; exact h.low i (by omega)
+      rw [m₅, readW_writeW_A _ _ (by omega_arith) (by omega_arith) (by omega_arith), Nat.zero_add, Mem.readW_writeW_self32]
+    · rw [r₅ _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact h.low i (by omega_arith)
   · by_cases e : i = n
     · subst e; rw [m₅, Mem.readW_writeW_self32]
-    · rw [r₅ _ (by omega) (by omega) (by omega)]; exact h.high i (by omega)
+    · rw [r₅ _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact h.high i (by omega_arith)
 
 theorem init_ok {s : State} (h : InitInv s₀ s 0) (n : Nat) (hn : n ≤ 256) :
     WP isa (.block ((List.range n).flatMap initWord)) s (InitInv s₀ · n) := by
@@ -121,7 +121,7 @@ theorem init_ok {s : State} (h : InitInv s₀ s 0) (n : Nat) (hn : n ≤ 256) :
   | succ n ih =>
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil]
-    exact WP.block_append ((ih (by omega)).mono fun t ht => initWord_ok hp (by omega) ht)
+    exact WP.block_append ((ih (by omega_arith)).mono fun t ht => initWord_ok hp (by omega_arith) ht)
 
 end
 
@@ -152,15 +152,15 @@ theorem finishWord_ok {s₄ s : State} {n : Nat} (hn : n < 256) (h : FinInv s₀
   have fits := hp.out_fits
   have sfits := hp.scr_fits
   unfold finishWord
-  refine wp_ldr (by omega) (by rw [h.r3]) (hp.in_scr h.wr (by omega)) fun s₁ u₁ => ?_
-  refine wp_ldr (by omega) (by rw [u₁.other .r3 (by decide), h.r3])
-    (by rw [u₁.rd, u₁.wr]; exact hp.in_scr h.wr (by omega)) fun s₂ u₂ => ?_
+  refine wp_ldr (by omega_arith) (by rw [h.r3]) (hp.in_scr h.wr (by omega_arith)) fun s₁ u₁ => ?_
+  refine wp_ldr (by omega_arith) (by rw [u₁.other .r3 (by decide), h.r3])
+    (by rw [u₁.rd, u₁.wr]; exact hp.in_scr h.wr (by omega_arith)) fun s₂ u₂ => ?_
   refine wp_eor (op2_reg _ _) fun s₃ u₃ => ?_
   have v₃ : s₃.gpr .r4 = outWord (scr s₀) s₄.mem n := by
-    rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem, hp.scr_frame h.frame (by omega),
-      hp.scr_frame h.frame (by omega)]; rfl
-  refine wp_str (by omega) (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.r2])
-    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hp.out_wr h.wr (by omega)) fun s₄' u₄ => WP.block_nil ?_
+    rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem, hp.scr_frame h.frame (by omega_arith),
+      hp.scr_frame h.frame (by omega_arith)]; rfl
+  refine wp_str (by omega_arith) (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.r2])
+    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hp.out_wr h.wr (by omega_arith)) fun s₄' u₄ => WP.block_nil ?_
   have m₄ : s₄'.mem = s.mem.writeW (A (op s₀) (4 * n)) (outWord (scr s₀) s₄.mem n) := by
     rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem, v₃]
   refine ⟨?_, ?_, fun r h4 h5 h2 => ?_, ?_, ?_, ?_, ?_, fun i hi => ?_⟩
@@ -170,12 +170,12 @@ theorem finishWord_ok {s₄ s : State} {n : Nat} (hn : n < 256) (h : FinInv s₀
   · rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd]
   · rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]
   · rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp, h.sp]
-  · rw [m₄]; exact h.frame.writeW hm _ (contains_A fits (by omega))
+  · rw [m₄]; exact h.frame.writeW hm _ (contains_A fits (by omega_arith))
   · rw [m₄]
     by_cases e : i = n
     · subst e; rw [Nat.zero_add, Mem.readW_writeW_self32]
-    · rw [readW_writeW_A _ _ (by omega) (by omega) (by omega)]
-      exact h.out i (by omega)
+    · rw [readW_writeW_A _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
+      exact h.out i (by omega_arith)
 
 theorem finish_ok {s₄ s : State} (h : FinInv s₀ s₄ s 0) (n : Nat) (hn : n ≤ 256) :
     WP isa (.block ((List.range n).flatMap finishWord)) s (FinInv s₀ s₄ · n) := by
@@ -184,7 +184,7 @@ theorem finish_ok {s₄ s : State} (h : FinInv s₀ s₄ s 0) (n : Nat) (hn : n 
   | succ n ih =>
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil]
-    exact WP.block_append ((ih (by omega)).mono fun t ht => finishWord_ok hp (by omega) ht)
+    exact WP.block_append ((ih (by omega_arith)).mono fun t ht => finishWord_ok hp (by omega_arith) ht)
 
 end
 
@@ -201,15 +201,15 @@ theorem outside_perm {m m' : Mem} (hf : Frame [permR B] m m') {d : Nat} (hd : d 
     (ho : d + 4 ≤ 1024 ∨ 2048 ≤ d) : m'.readW (A B d) 32 = m.readW (A B d) 32 := by
   refine hf.readW (r := ⟨A B d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
   simp only [List.mem_singleton, forall_eq]
-  rw [A_eq (by omega)]
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  rw [A_eq (by omega_arith)]
+  exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem low_perm {m m' : Mem} (hf : Frame [permR B] m m') :
     VG.Proof.Argon2.Arm.blk m' B 0 = VG.Proof.Argon2.Arm.blk m B 0 := by
   apply Vector.ext
   intro j hj
   simp only [blk, Vector.getElem_ofFn, rd64]
-  rw [outside_perm hfit hf (by omega) (by omega), outside_perm hfit hf (by omega) (by omega)]
+  rw [outside_perm hfit hf (by omega_arith) (by omega_arith), outside_perm hfit hf (by omega_arith) (by omega_arith)]
 
 end
 
@@ -223,7 +223,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   unfold Impl.Argon2.Arm.compress Impl.Argon2.Arm.rounds
   refine WP.seq (prologue_ok hp fun s₁ h₁ => (init_ok hp h₁ 256 (Nat.le_refl _)).mono fun s₂ h₂ => ?_)
   have A₂ : At (scr s₀) s₂ := ⟨by rw [h₂.regs _ (by decide) (by decide)], fun o ho => by
-    rw [h₂.wr]; exact ⟨hp.scr_wr rfl (by omega), hp.scr_wr rfl (by omega)⟩⟩
+    rw [h₂.wr]; exact ⟨hp.scr_wr rfl (by omega_arith), hp.scr_wr rfl (by omega_arith)⟩⟩
   refine WP.seq (WP.seq ((rounds_ok fits rowIndex Proof.Argon2.rowIndex_injective (List.finRange 8)
     A₂).mono fun s₃ st₃ => (rounds_ok fits colIndex Proof.Argon2.colIndex_injective
       (List.finRange 8) (A₂.of_step st₃)).mono fun s₄ st₄ => ?_))
@@ -233,7 +233,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   have sv₄ : Spill.Saved s₄.mem (State.addr (scr s₀)) s₀.gpr spill :=
     h₂.saved.frame spill_slots pf fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
   unfold Impl.Argon2.Arm.epilogue
   simp only [List.cons_append]
   have i₄ : InRegions (s₄.rd ++ s₄.wr) (A (scr s₀) outOff) 4 := by
@@ -242,7 +242,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   have e₅ : s₅.gpr .r2 = op s₀ := by
     rw [u₅.gpr]
     have := sv₄ (.r2, outOff) (by decide)
-    rw [A_eq (by simp only [outOff]; omega)]; exact this
+    rw [A_eq (by simp only [outOff]; omega_arith)]; exact this
   have h₅ : FinInv s₀ s₄ s₅ 0 :=
     ⟨by rw [u₅.other _ (by decide), r3₄], e₅, fun r _ _ h2 => u₅.other r h2,
       by rw [u₅.rd, k₄.rd, h₂.rd], by rw [u₅.wr, k₄.wr, h₂.wr], by rw [u₅.sp, k₄.sp, h₂.sp],
@@ -252,11 +252,11 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     h₆.frame.readW (r := ⟨State.addr (scr s₀) + BitVec.ofNat 64 p.2, 4⟩) (Region.contains_self _ _) (by
       have := saved_slots.bound hpm
       simp only [List.mem_singleton, forall_eq]
-      exact (hp.out_scr.sub_right (Offset.sub_base _ (by omega))).symm) (by decide) |>.trans
+      exact (hp.out_scr.sub_right (Offset.sub_base _ (by omega_arith))).symm) (by decide) |>.trans
       (sv₄ p (List.mem_append_left _ hpm))
   rw [← List.append_nil (List.map _ saved)]
-  refine Spill.restore_slots_ok saved_slots saved_restorable (g := s₀.gpr) (by rw [h₆.r3]; omega)
-    (fun d h₁ h₂ => by rw [h₆.r3, h₆.rd, h₆.wr, ← A_eq (by omega)]; exact hp.in_scr rfl (by omega))
+  refine Spill.restore_slots_ok saved_slots saved_restorable (g := s₀.gpr) (by rw [h₆.r3]; omega_arith)
+    (fun d h₁ h₂ => by rw [h₆.r3, h₆.rd, h₆.wr, ← A_eq (by omega_arith)]; exact hp.in_scr rfl (by omega_arith))
     (by rw [h₆.r3]; exact sv₆) fun t ht ho hm hrd hwr hsp => WP.block_nil ⟨?_, ?_⟩
   · intro r hr
     exact Spill.restored_of ht (by decide) r hr

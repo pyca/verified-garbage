@@ -47,13 +47,13 @@ theorem addBody_ok {s : State} {m : Mem} {p a : Addr} {B : BitVec 32} {u : Nat}
     · simpa only [hk.keep.wr,hk.keep.get .x0] using hw i hi
     · refine ⟨(hk.trans hv).mono (by decide),hrv,?_,?_⟩
       · change v.mem=(zRun m p a B (4*u+(i+1))).mem
-        rw [show 4*u+(i+1)=4*u+i+1 by omega,zRun_next]
+        rw [show 4*u+(i+1)=4*u+i+1 by omega_arith,zRun_next]
         exact hmv
       · change v.v .v31=(zRun m p a B (4*u+(i+1))).flags
-        rw [show 4*u+(i+1)=4*u+i+1 by omega,zRun_next]
+        rw [show 4*u+(i+1)=4*u+i+1 by omega_arith,zRun_next]
         exact hfv
   have h := fourGroups_ok addGroup I hinit hstep
-  simpa only [I,addBody,show 4*u+4=4*(u+1) by omega] using h
+  simpa only [I,addBody,show 4*u+4=4*(u+1) by omega_arith] using h
 
 theorem addLoop_ok {s : State} (hr : ZReady ((s.gpr .x2).setWidth 32) s)
     (hc : s.gpr .x10=16) (hf : s.v .v31=0)
@@ -76,18 +76,18 @@ theorem addLoop_ok {s : State} (hr : ZReady ((s.gpr .x2).setWidth 32) s)
     refine WP.mono (addBody_ok hready hm hf h0 h1 ?_ ?_ ?_) fun v ⟨hv,hrv,hmv,hfv⟩ => ?_
     · intro i hi
       simp only [hk.rd,hk.wr,h0,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact ha _ (by omega)
+      exact ha _ (by omega_arith)
     · intro i hi
       simp only [hk.rd,hk.wr,h1,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hb _ (by omega)
+      exact hb _ (by omega_arith)
     · intro i hi
       simp only [hk.wr,h0,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hw _ (by omega)
+      exact hw _ (by omega_arith)
     · refine WP.mono (advance2_ok v) fun w ⟨⟨⟨hw0,hw1,hw10,hwm⟩,hkw⟩,hvw⟩ => ?_
       refine ⟨⟨((hk.trans hv.keep).trans hkw).mono,?_,?_,?_,hwm.trans hmv,?_⟩,?_⟩
       · exact hrv.frame (rs := []) (by simp) (by intro r _; exact congrFun hvw r)
-      · rw [hw0,hv.keep.get .x0,h0,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hw1,hv.keep.get .x1,h1,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw0,hv.keep.get .x0,h0,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw1,hv.keep.get .x1,h1,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hvw,hfv]
       · rw [hw10,hv.keep.get .x10]; rfl
   · exact ⟨Keep.refl _ _,hr,by simp,by simp,rfl,hf⟩
@@ -170,9 +170,9 @@ theorem zRun_centered (m : Mem) (p a : Addr) (B : BitVec 32)
   have hak : (coeffAt m p k).toNat<8380417 := ha k hk
   have hbk : -8380417<(coeffAt m a k).toInt ∧ (coeffAt m a k).toInt<16760834 := hb k hk
   have := reduce32_bounds (x := ((coeffAt m p k).toNat:Int)+(coeffAt m a k).toInt)
-    (by omega) (by omega)
+    (by omega_arith) (by omega_arith)
   change -8380417<_ ∧ _<8380417
-  omega
+  omega_arith
 
 theorem zRun_poly (m : Mem) (p a : Addr) (B : BitVec 32)
     (hd : (pR p).Disjoint (pR a)) (ha : Reduced m p) (hb : RawReduced m a) :
@@ -198,14 +198,14 @@ theorem zRun_finish (m : Mem) (p a : Addr) (B : Nat)
     rw [VG.Proof.MlDsa.Round.normRq_lt]
     constructor
     · intro h k hk
-      have hg := h (k/4) (by change k<256 at hk; omega) (k%4) (by omega)
+      have hg := h (k/4) (by change k<256 at hk; omega_arith) (k%4) (by omega_arith)
       simp only [zBad,decide_eq_false_iff_not,Nat.not_le] at hg
-      rw [show 4*(k/4)+k%4=k by omega] at hg
+      rw [show 4*(k/4)+k%4=k by omega_arith] at hg
       rw [zSum_coeff _ _ _ hk]
       exact hg
     · intro h i hi e he
       simp only [zBad,decide_eq_false_iff_not,Nat.not_le]
-      have hk : 4*i+e<n := by rw [n_eq]; omega
+      have hk : 4*i+e<n := by rw [n_eq]; omega_arith
       rw [← zSum_coeff _ _ _ hk]
       exact h _ hk
   rw [hn] at he
@@ -266,7 +266,7 @@ theorem addNorm_correct (s : State) (hp : addNormK.pre s) :
   have hwrite : ∀off,off+16≤1024 → InRegions s.wr (s.gpr .x0+BitVec.ofNat 64 off) 16 := by
     intro off ho
     rw [hw]
-    exact ⟨polyRegion (s.gpr .x0),List.mem_singleton_self _,Offset.contains_base _ ho (by omega)⟩
+    exact ⟨polyRegion (s.gpr .x0),List.mem_singleton_self _,Offset.contains_base _ ho (by omega_arith)⟩
   have hread : ∀off,off+16≤1024 → InRegions (s.rd++s.wr) (s.gpr .x0+BitVec.ofNat 64 off) 16 := by
     intro off ho
     obtain ⟨r,hr,hc⟩ := hwrite off ho
@@ -274,7 +274,7 @@ theorem addNorm_correct (s : State) (hp : addNormK.pre s) :
   have hinput : ∀off,off+16≤1024 → InRegions (s.rd++s.wr) (s.gpr .x1+BitVec.ofNat 64 off) 16 := by
     intro off ho
     rw [hr]
-    exact ⟨polyRegion (s.gpr .x1),by simp,Offset.contains_base _ ho (by omega)⟩
+    exact ⟨polyRegion (s.gpr .x1),by simp,Offset.contains_base _ ho (by omega_arith)⟩
   obtain ⟨tr,t,he,hk,hcenter,hpoly,hret⟩ := addNorm_ok s hd ha hb hB hB' hread hinput hwrite
   refine ⟨tr,t,he,⟨?_,hk.sp,hk.vcs⟩,hcenter,hpoly,?_⟩
   · intro r hr

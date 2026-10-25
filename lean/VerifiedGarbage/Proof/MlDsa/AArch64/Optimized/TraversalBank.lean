@@ -63,7 +63,7 @@ theorem groupFacts {gap g : Nat} (hg : ValidGroup gap g) : (entries (groupSteps 
   · exact h (4,0) (by simp)
   · exact h (2,0) (by simp)
   · exact h (2,1) (by simp)
-  · rcases (show g=0 ∨ g=1 ∨ g=2 ∨ g=3 by omega) with rfl|rfl|rfl|rfl
+  · rcases (show g=0 ∨ g=1 ∨ g=2 ∨ g=3 by omega_arith) with rfl|rfl|rfl|rfl
     · exact h (1,0) (by simp)
     · exact h (1,1) (by simp)
     · exact h (1,2) (by simp)
@@ -89,7 +89,7 @@ theorem coreValues_word (v : Vector (BitVec 128) 8) {gap g : Nat} (hg : ValidGro
   · simp only [h1, ite_false]
     by_cases h2 : 2*gap*g+gap≤i.val ∧ i.val<2*gap*g+2*gap
     · obtain ⟨hp, hle, hne, hni, hj⟩ := hR i h2
-      have hlt : i.val-gap<8 := by omega
+      have hlt : i.val-gap<8 := by omega_arith
       simp only [Nat.mod_eq_of_lt hlt] at hp hne hni
       rw [hp]
       simp only [h2, and_self, hne, ite_false, productValues, Vector.getElem_ofFn, hni, hj, ite_true, vword_map2 _ _ _ he,
@@ -103,7 +103,7 @@ theorem ValidGroup.bounds {gap g : Nat} (hg : ValidGroup gap g) :
   rcases hg with ⟨rfl,rfl⟩ | ⟨rfl,hg⟩ | ⟨rfl,hg⟩
   · decide
   · rcases hg with rfl | rfl <;> decide
-  · omega
+  · omega_arith
 
 /-- The coarse group bound keeps every scalar addition exact as a signed word. -/
 theorem coreValues_int (v : Vector (BitVec 128) 8) {gap g : Nat} (hg : ValidGroup gap g)
@@ -121,16 +121,16 @@ theorem coreValues_int (v : Vector (BitVec 128) 8) {gap g : Nat} (hg : ValidGrou
     have ha := hv i e he
     have hm := fastMul_bounds (z := z e) (BitVec.le_toInt (vword v[i.val+gap]! e))
       (BitVec.toInt_lt (x := vword v[i.val+gap]! e))
-    rw [addWord_int _ _ (by rw [fastMulWord_int]; omega) (by rw [fastMulWord_int]; omega), fastMulWord_int]
+    rw [addWord_int _ _ (by rw [fastMulWord_int]; omega_arith) (by rw [fastMulWord_int]; omega_arith), fastMulWord_int]
   · split
     · rename_i hi
-      have hidx : i.val-gap<8 := by omega
+      have hidx : i.val-gap<8 := by omega_arith
       have ha := hv ⟨i.val-gap,hidx⟩ e he
       have hae : v[i.val-gap]! = v[i.val-gap] := getElem!_pos v _ hidx
       rw [← hae] at ha
       have hm := fastMul_bounds (z := z e) (BitVec.le_toInt (vword v[i.val] e))
         (BitVec.toInt_lt (x := vword v[i.val] e))
-      rw [subWord_int _ _ (by rw [fastMulWord_int]; omega) (by rw [fastMulWord_int]; omega), fastMulWord_int]
+      rw [subWord_int _ _ (by rw [fastMulWord_int]; omega_arith) (by rw [fastMulWord_int]; omega_arith), fastMulWord_int]
     · rfl
 
 theorem coreValues_bound (v : Vector (BitVec 128) 8) {gap g : Nat} (hg : ValidGroup gap g)
@@ -142,16 +142,16 @@ theorem coreValues_bound (v : Vector (BitVec 128) 8) {gap g : Nat} (hg : ValidGr
   · have ha := hv i e he
     have hm := fastMul_bounds (z := z e) (BitVec.le_toInt (vword v[i.val+gap]! e))
       (BitVec.toInt_lt (x := vword v[i.val+gap]! e))
-    omega
+    omega_arith
   · split
-    · have hidx : i.val-gap<8 := by omega
+    · have hidx : i.val-gap<8 := by omega_arith
       have ha := hv ⟨i.val-gap,hidx⟩ e he
       have hae : v[i.val-gap]! = v[i.val-gap] := getElem!_pos v _ hidx
       rw [← hae] at ha
       have hm := fastMul_bounds (z := z e) (BitVec.le_toInt (vword v[i.val] e))
         (BitVec.toInt_lt (x := vword v[i.val] e))
-      omega
-    · have ha := hv i e he; omega
+      omega_arith
+    · have ha := hv i e he; omega_arith
 
 open VG.Spec.MlDsa VG.Proof.MlDsa.Arith
 
@@ -167,16 +167,16 @@ theorem coreValues_field (v : Vector (BitVec 128) 8) (w : Poly) {gap g u : Nat}
   intro i e he
   rw [coreValues_int v hg _ hb hs hv i he,Traversal.run_regGroup,
     Traversal.regBlock_get _ hg.bounds.1 hg.bounds.2 hu (Nat.le_refl _) _ i.isLt he,
-    show 2*gap*g+gap+gap=2*gap*g+2*gap by omega]
+    show 2*gap*g+gap+gap=2*gap*g+2*gap by omega_arith]
   by_cases hl : 2*gap*g≤i.val ∧ i.val<2*gap*g+gap
   · rw [ite_eq_left hl,ite_eq_left hl,ofInt_add,fastMul_field,Traversal.ofInt_zetaNat,hf i e he]
-    have hidx : i.val+gap<8 := by have := hg.bounds.2; omega
+    have hidx : i.val+gap<8 := by have := hg.bounds.2; omega_arith
     have hae : v[i.val+gap]! = v[i.val+gap] := getElem!_pos v _ hidx
     rw [hae,hf ⟨i.val+gap,hidx⟩ e he,Fin.mul_comm]
   · rw [ite_eq_right hl,ite_eq_right hl]
     by_cases hr : 2*gap*g+gap≤i.val ∧ i.val<2*gap*g+2*gap
     · rw [ite_eq_left hr,ite_eq_left hr,ofInt_sub,fastMul_field,Traversal.ofInt_zetaNat,hf i e he]
-      have hidx : i.val-gap<8 := by omega
+      have hidx : i.val-gap<8 := by omega_arith
       have hae : v[i.val-gap]! = v[i.val-gap] := getElem!_pos v _ hidx
       rw [hae,hf ⟨i.val-gap,hidx⟩ e he,Fin.mul_comm]
     · rw [ite_eq_right hr,ite_eq_right hr,hf i e he]
@@ -197,17 +197,17 @@ theorem outerValues_field (v : Vector (BitVec 128) 8) (w : Poly) (ps : List (Nat
   | cons p ps ih =>
     have hp := hps p (by simp)
     have hs' : b+16760834<2147483648 := by
-      simp only [List.length_cons,Int.natCast_add,Int.natCast_one] at hs; omega
+      simp only [List.length_cons,Int.natCast_add,Int.natCast_one] at hs; omega_arith
     have hb' := coreValues_bound v hp (fun _ => (zetaNat (4/p.1+p.2) : Int)) hb hs' hv
     have hf' := coreValues_field v w hp hu (4/p.1+p.2) hb hs' hv hf
     have hh := ih (coreValues v p.1 p.2 (fun _ => (zetaNat (4/p.1+p.2) : Int)))
       (Traversal.run (outerGroupSchedule u p) w) (fun a ha => hps a (by simp [ha]))
-      (b := b+16760834) (by omega) (by
+      (b := b+16760834) (by omega_arith) (by
         simp only [List.length_cons,Int.natCast_add,Int.natCast_one] at hs
-        omega) hb' hf'
+        omega_arith) hb' hf'
     simpa only [outerValues,List.length_cons,Int.natCast_add,Int.natCast_one,List.flatMap_cons,
       Traversal.run_append,show b+16760834*((ps.length : Int)+1)=
-        (b+16760834)+16760834*(ps.length : Int) by omega] using hh
+        (b+16760834)+16760834*(ps.length : Int) by omega_arith] using hh
 
 theorem outerGroupSchedule_eq (u : Nat) :
     outerSteps.flatMap (outerGroupSchedule u)=Traversal.outerSlice u := by

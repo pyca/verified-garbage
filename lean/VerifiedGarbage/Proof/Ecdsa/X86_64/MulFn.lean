@@ -52,7 +52,7 @@ theorem ladLayM (hc : BaseCfgOk c) : LadLay c.mulLadder size := by
     ⟨fun h => by have := sl_inj c hn (i := RX) (j := RY) h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn (i := RX) (j := RZ) h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn (i := RY) (j := RZ) h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩, bitsAt_le c h7 (by decide), ?_⟩
+    ⟨show 1 ≤ 64 * c.n by omega_arith, show 64 * c.n < 2 ^ 16 by omega_arith⟩, bitsAt_le c h7 (by decide), ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, B3P, ACC, PT, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
       DX, DY, DZ, TX, TY, TZ]) (by decide)
   · exact map_sl_disj hn (l₁ := [AP, B3P, ACC, PT, ONEP])
@@ -68,7 +68,7 @@ theorem ladLayM (hc : BaseCfgOk c) : LadLay c.mulLadder size := by
       have hl : ∀ i ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
           TY, TZ], i < 45 := by decide
       exact Or.inr (sl_below_bits c (hl i hi) 0 0 (.inl fun h => by subst h; exact absurd hi (by decide)))
-    · rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n) (by omega) with h | h
+    · rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n) (by omega_arith) with h | h
       · exact Or.inr (by show c.sl TMP + 8 * c.n ≤ bitsAt c.n 0; exact h)
       · exact Or.inl (by show bitsAt c.n 0 + 64 * c.n ≤ c.sl TMP; exact h)
 
@@ -99,22 +99,22 @@ theorem mulBody_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have hsz : bitsAt c.n 0 + 64 * c.n ≤ size := bitsAt_le c h7 (j := 0) (by decide)
   have sz : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ size := fun hi => sl_le c h7 hi
   have ap : ∀ {i j}, i ≠ j → c.sl i ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := fun h => by
-    rcases sl_apart c h with h | h <;> omega
+    rcases sl_apart c h with h | h <;> omega_arith
   show WP isa (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl PT) (c.sl RY) ++
       copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO)))
       (ladder c.mulLadder).inline)) s _
   -- The table of `k`'s bits.
-  refine WP.seq (WP.mono (bits_ok hs h0 (by omega) (sz (i := K) (by decide)) hsz
-    (Or.inl (by have := sl_below_bits c (i := K) (by decide) 0 0 (.inl (by decide)); omega)))
+  refine WP.seq (WP.mono (bits_ok hs h0 (by omega_arith) (sz (i := K) (by decide)) hsz
+    (Or.inl (by have := sl_below_bits c (i := K) (by decide) 0 0 (.inl (by decide)); omega_arith)))
     fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n + 8)] s.mem s₁.mem := fun x hx =>
-    O₁ x (by have := hx _ (List.mem_singleton_self _); dsimp only at this; omega)
+    O₁ x (by have := hx _ (List.mem_singleton_self _); dsimp only at this; omega_arith)
   -- `Q` to `ACC` and `PT`, and `R` the point at infinity.
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
@@ -189,10 +189,10 @@ theorem mulBody_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (
     · exact lt_of_eq_of_lt b3₆ (hmont _)
     · rw [acc₆]; exact hqx
     · rw [pt₆]; exact hqy
-    · exact lt_of_eq_of_lt one₆ (Nat.mod_lt _ (by omega))
-    · exact lt_of_eq_of_lt rx₆ (by omega)
+    · exact lt_of_eq_of_lt one₆ (Nat.mod_lt _ (by omega_arith))
+    · exact lt_of_eq_of_lt rx₆ (by omega_arith)
     · exact lt_of_eq_of_lt ry₆ (hmont _)
-    · exact lt_of_eq_of_lt rz₆ (by omega)
+    · exact lt_of_eq_of_lt rz₆ (by omega_arith)
   have hG : Rep c.C (tmv c.C c.n base s₆ (c.sl ACC)) (tmv c.C c.n base s₆ (c.sl PT))
       (tmv c.C c.n base s₆ (c.sl ONEP)) (ptQ c base s) := by
     show Rep c.C (toM _ _ (sv c base s₆ ACC)) (toM _ _ (sv c base s₆ PT)) (toM _ _ (sv c base s₆ ONEP))
@@ -324,18 +324,18 @@ theorem gMulKC_ok (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : Co
       have h7 := hc.n10
       have hn := hs.nowrap
       have hp3 := hc.p_ge
-      have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+      have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
       have sz : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ size := fun hi => sl_le c h7 hi
       show WP isa (.seq (.block (copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY))) c.mulFn) s _
       rw [← Code.inline_of_noCalls hnc]
       refine WP.seq ?_
       rw [WP.block_append_iff]
       refine WP.mono (copy_ok (size := size) c.n hs (o := c.sl RX) (a := c.sl GX)
-        (sz (by decide)) (sz (by decide)) (by rcases sl_apart c (i := RX) (j := GX) (by decide) with h | h <;> omega))
+        (sz (by decide)) (sz (by decide)) (by rcases sl_apart c (i := RX) (j := GX) (by decide) with h | h <;> omega_arith))
         fun s₁ ⟨v₁, k₁, O₁⟩ => ?_
       have hs₁ := hs.of_keepRegs k₁ (by decide)
       refine WP.mono (copy_ok (size := size) c.n hs₁ (o := c.sl RY) (a := c.sl GY)
-        (sz (by decide)) (sz (by decide)) (by rcases sl_apart c (i := RY) (j := GY) (by decide) with h | h <;> omega))
+        (sz (by decide)) (sz (by decide)) (by rcases sl_apart c (i := RY) (j := GY) (by decide) with h | h <;> omega_arith))
         fun s₂ ⟨v₂, k₂, O₂⟩ => ?_
       have hs₂ := hs₁.of_keepRegs k₂ (by decide)
       have U₂ : Unch (s₀.gpr .r8) (slW c [RX, RY]) s.mem s₂.mem := O₁.unch.trans O₂.unch

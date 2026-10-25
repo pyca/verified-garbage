@@ -60,10 +60,10 @@ theorem read_shift {m m' : Mem} {a b : Addr} {n : Nat}
   | zero => rfl
   | succ n ih =>
     simp only [Mem.read]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_arith)
     simp only [BitVec.add_zero] at h0
     rw [h0, ih fun i hi => ?_]
-    have := h (i + 1) (by omega)
+    have := h (i + 1) (by omega_arith)
     rwa [Offset.add_ofNat_succ, Offset.add_ofNat_succ] at this
 
 /-- Lane `l` of the view's group `j`: lane `(l + 2) % 4` of the context's. -/
@@ -75,17 +75,17 @@ theorem tabView_readW (Ctx W : Addr) (m : Mem) {j l : Nat} (hj : j < 8) (hl : l 
   have e : (W + BitVec.ofNat 64 1536 + BitVec.ofNat 64 (64 * j + 16 * l) + BitVec.ofNat 64 i -
       (W + BitVec.ofNat 64 1536)).toNat = 64 * j + 16 * l + i := by
     rw [BitVec.add_assoc (W + _), BitVec.ofNat_add_ofNat, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
-  simp only [tabView, e, show 64 * j + 16 * l + i < 512 by omega, ite_true]
+      Nat.mod_eq_of_lt (by omega_arith)]
+  simp only [tabView, e, show 64 * j + 16 * l + i < 512 by omega_arith, ite_true]
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact congrArg (fun k => m (Ctx + BitVec.ofNat 64 k)) (by omega)
+  exact congrArg (fun k => m (Ctx + BitVec.ofNat 64 k)) (by omega_arith)
 
 /-- The view is `m` outside the table. -/
 theorem tabView_out (Ctx W : Addr) (m : Mem) : Frame [⟨W + BitVec.ofNat 64 1536, 512⟩] m (tabView Ctx W m) :=
   fun x hx => by
     have h := hx _ (List.mem_singleton_self _)
     simp only [Region.Contains] at h
-    simp only [tabView, show ¬ (x - (W + BitVec.ofNat 64 1536)).toNat < 512 by omega, ite_false]
+    simp only [tabView, show ¬ (x - (W + BitVec.ofNat 64 1536)).toNat < 512 by omega_arith, ite_false]
 
 /-- The view of a context disjoint from `W` and the data. -/
 theorem tabView_view {Ctx W D : Addr} {n : Nat} (hcw : (⟨Ctx, 1024⟩ : Region).Disjoint ⟨W, 2560⟩)
@@ -93,7 +93,7 @@ theorem tabView_view {Ctx W D : Addr} {n : Nat} (hcw : (⟨Ctx, 1024⟩ : Region
   keep f hd j hj l hl := by
     rw [tabView_readW _ _ _ hj hl, tabView_readW _ _ _ hj hl]
     have hs : Region.Sub ⟨Ctx + BitVec.ofNat 64 (256 + 64 * j + 16 * ((l + 2) % 4)), 16⟩ ⟨Ctx, 1024⟩ :=
-      Offset.sub_base Ctx (by omega)
+      Offset.sub_base Ctx (by omega_arith)
     refine f.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     rcases (hd r hr).2 with h | h
     · exact (hcw.sub_left hs).sub_right fun a ha => Region.sub_prefix (by decide) a (h a ha)
@@ -103,24 +103,24 @@ theorem tabView_view {Ctx W D : Addr} {n : Nat} (hcw : (⟨Ctx, 1024⟩ : Region
 /-- With a prepared key context, the view holds what `powers` computes. -/
 theorem tabView_ok {m : Mem} {Ctx W : Addr} (hok : Spec.Gcm.PreparedPowersRepr m Ctx) {g : Nat} (hg : g ≤ 8) :
     TabOk (tabView Ctx W m) (W + BitVec.ofNat 64 1536) (ctxH m Ctx) g := fun j hj l hl => by
-  rw [tabView_readW _ _ _ (by omega) hl]
-  have h2 := hok (2 * j) (by omega)
-  have h3 := hok (2 * j + 1) (by omega)
-  rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
-  · rw [show 256 + 64 * j + 16 * ((0 + 2) % 4) = 256 + 32 * (2 * j + 1) by omega, h3.1,
-      show 2 * (2 * j + 1) + 2 = 4 * j + 4 - 0 by omega]; rfl
-  · rw [show 256 + 64 * j + 16 * ((1 + 2) % 4) = 272 + 32 * (2 * j + 1) by omega, h3.2,
-      show 2 * (2 * j + 1) + 1 = 4 * j + 4 - 1 by omega]; rfl
-  · rw [show 256 + 64 * j + 16 * ((2 + 2) % 4) = 256 + 32 * (2 * j) by omega, h2.1,
-      show 2 * (2 * j) + 2 = 4 * j + 4 - 2 by omega]; rfl
-  · rw [show 256 + 64 * j + 16 * ((3 + 2) % 4) = 272 + 32 * (2 * j) by omega, h2.2,
-      show 2 * (2 * j) + 1 = 4 * j + 4 - 3 by omega]; rfl
+  rw [tabView_readW _ _ _ (by omega_arith) hl]
+  have h2 := hok (2 * j) (by omega_arith)
+  have h3 := hok (2 * j + 1) (by omega_arith)
+  rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+  · rw [show 256 + 64 * j + 16 * ((0 + 2) % 4) = 256 + 32 * (2 * j + 1) by omega_arith, h3.1,
+      show 2 * (2 * j + 1) + 2 = 4 * j + 4 - 0 by omega_arith]; rfl
+  · rw [show 256 + 64 * j + 16 * ((1 + 2) % 4) = 272 + 32 * (2 * j + 1) by omega_arith, h3.2,
+      show 2 * (2 * j + 1) + 1 = 4 * j + 4 - 1 by omega_arith]; rfl
+  · rw [show 256 + 64 * j + 16 * ((2 + 2) % 4) = 256 + 32 * (2 * j) by omega_arith, h2.1,
+      show 2 * (2 * j) + 2 = 4 * j + 4 - 2 by omega_arith]; rfl
+  · rw [show 256 + 64 * j + 16 * ((3 + 2) % 4) = 272 + 32 * (2 * j) by omega_arith, h2.2,
+      show 2 * (2 * j) + 1 = 4 * j + 4 - 3 by omega_arith]; rfl
 
 /-! ## `powersP` -/
 
 /-- `vshufi32x4` with `0x4E`: the two halves swapped. -/
 theorem shuf4E (a : Nat → BitVec 128) {l : Nat} (hl : l < 4) : shuf4Lanes a a 0x4E l = a ((l + 2) % 4) := by
-  rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- `powersP`: the constants in every lane of `zmm0` and `zmm1`. -/
 theorem powersP_run (s : State) :
@@ -154,9 +154,9 @@ theorem ghSetupP_ok {Ctx W : Addr} {g : Nat} (s : State) (h13 : s.gpr .r13 = Ctx
       .mov .r11 (.reg .r9), .shift .shl .r11 6, .alu .add .r11 (.reg .r13), .alu .add .r11 (imm 64)]) ++
       [.zop (.zbin .vpxord .xmm8 .xmm8 .xmm8), .zop (.zbin .vpxord .xmm9 .xmm9 .xmm9),
        .zop (.zbin .vpxord .xmm10 .xmm10 .xmm10)] from rfl, WP.block_append_iff]
-  have e₁ : BitVec.ofNat 64 (4 * g) >>> 2 = BitVec.ofNat 64 g := by rw [shr2 _ (by omega)]; congr 1; omega
+  have e₁ : BitVec.ofNat 64 (4 * g) >>> 2 = BitVec.ofNat 64 g := by rw [shr2 _ (by omega_arith)]; congr 1; omega_arith
   have e₂ : BitVec.ofNat 64 g <<< 6 = BitVec.ofNat 64 (64 * g) := by
-    rw [shl_ofNat (by omega)]; congr 1; omega
+    rw [shl_ofNat (by omega_arith)]; congr 1; omega_arith
   apply WP.of_runBlock
   refine ⟨_, by xrun [execShift, h15, hmp, r288, mpO, gO, e₁, e₂], ?_⟩
   refine WP.mono (clear3_ok _) fun t ⟨p, f⟩ => ⟨?_, ?_, ?_, p, fun r h₁ h₂ h₃ => ?_, f.mem, f.rd, f.wr,
@@ -204,7 +204,7 @@ theorem ghLoadP_ok (t : State) (h0 : ∀ l < 4, t.zlane .xmm0 l = revMask)
       simp only [t₂]
       rw [State.zlane_setZ_ne _ (by decide) _ _ _ _ hl, zlane_vshufi32x4 _ _ _ _ _ _ hl]
       simp only [ite_true, shuf4E _ hl]
-      exact zlane_load t .xmm12 ap (by omega)
+      exact zlane_load t .xmm12 ap (by omega_arith)
   have l7 : ∀ l < 4, t₂.zlane .xmm7 l = t.mem.readW (ad + BitVec.ofNat 64 (16 * l)) 128 := fun l hl =>
     zlane_load t₁' .xmm7 ad hl
   refine WP.mono (WP.zlanes (lane_ld (k := 2) (by decide)) fun l _ => lane_ld_ok (k := 2) (t₂.zproj l))
@@ -241,9 +241,9 @@ theorem ghStepP_ok {Ctx W : Addr} {g j : Nat} {m : Mem} (t : State) (hj : j < g)
       t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       ZKeep [.xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11] t t' := by
   have ea₁ : t.gpr .rdx + BitVec.ofInt 64 ((128 : Nat) : Int) = W + BitVec.ofNat 64 (512 + 64 * j) := by
-    rw [hrdx, BitVec.ofInt_natCast, add_ofNat_ofNat, show 384 + 64 * j + 128 = 512 + 64 * j by omega]
+    rw [hrdx, BitVec.ofInt_natCast, add_ofNat_ofNat, show 384 + 64 * j + 128 = 512 + 64 * j by omega_arith]
   have ea₂ : t.gpr .r11 + BitVec.ofInt 64 ((128 : Nat) : Int) = Ctx + BitVec.ofNat 64 (192 + 64 * (g - j)) := by
-    rw [hr11, BitVec.ofInt_natCast, add_ofNat_ofNat, show 64 + 64 * (g - j) + 128 = 192 + 64 * (g - j) by omega]
+    rw [hr11, BitVec.ofInt_natCast, add_ofNat_ofNat, show 64 + 64 * (g - j) + 128 = 192 + 64 * (g - j) by omega_arith]
   rw [ghBodyP, WP.block_append_iff]
   refine WP.mono (ghLoadP_ok t h0 (by rw [ea₁]; exact hin) (by rw [ea₂]; exact hpin)) fun t₁ ⟨p₁, f₁⟩ => ?_
   apply WP.of_runBlock
@@ -251,19 +251,19 @@ theorem ghStepP_ok {Ctx W : Addr} {g j : Nat} {m : Mem} (t : State) (hj : j < g)
   refine ⟨fun l hl => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · show prod (t₁.zproj l) = _
     rw [p₁ l hl, gacc_succ, ← hp l hl, ea₁, ea₂, add_ofNat_ofNat, add_ofNat_ofNat,
-      tabView_readW _ _ _ (by omega) hl, ← hm]
+      tabView_readW _ _ _ (by omega_arith) hl, ← hm]
     have hb : blockAt (tabView Ctx W t.mem) (W + BitVec.ofNat 64 512 + BitVec.ofNat 64 (64 * j + 16 * l)) =
         blockAt t.mem (W + BitVec.ofNat 64 (512 + 64 * j + 16 * l)) := by
-      rw [add_ofNat_ofNat, show 512 + (64 * j + 16 * l) = 512 + 64 * j + 16 * l by omega, blockAt_eq, blockAt_eq,
+      rw [add_ofNat_ofNat, show 512 + (64 * j + 16 * l) = 512 + 64 * j + 16 * l by omega_arith, blockAt_eq, blockAt_eq,
         (tabView_out Ctx W t.mem).readW
           (r := ⟨W + BitVec.ofNat 64 (512 + 64 * j + 16 * l), 16⟩) (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
-            exact Offset.disjoint W (by omega) (by omega) (by omega)) (by decide)]
-    rw [hb, show 192 + 64 * (g - j) + 16 * ((l + 2) % 4) = 256 + 64 * (g - 1 - j) + 16 * ((l + 2) % 4) by omega]
+            exact Offset.disjoint W (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+    rw [hb, show 192 + 64 * (g - j) + 16 * ((l + 2) % 4) = 256 + 64 * (g - 1 - j) + 16 * ((l + 2) % 4) by omega_arith]
   · simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ite_false, ite_true]
     rw [f₁.gpr, hrdx, add_ofNat_ofNat]; congr 1
   · simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ite_false, ite_true]
-    rw [f₁.gpr, hr11, show 64 + 64 * (g - j) = (64 + 64 * (g - (j + 1))) + 64 by omega, ← add_ofNat_ofNat]
+    rw [f₁.gpr, hr11, show 64 + 64 * (g - j) = (64 + 64 * (g - (j + 1))) + 64 by omega_arith, ← add_ofNat_ofNat]
     exact BitVec.add_sub_cancel _ _
   · simp [gpr_setReg, gpr_arithFlags, f₁.gpr]
   · simp [gpr_setReg, gpr_arithFlags, zf_arithFlags, f₁.gpr]
@@ -301,22 +301,22 @@ theorem ghashP_ok {s₀ : State} {Ctx W SP : Addr} (hcov : Covers [⟨Ctx, 1024�
         fun l hl => by rw [p₁ l hl]; rfl, g₁, m₁, rd₁, wr₁, z₁.mono (by simp)⟩
     rintro n t ⟨j, rfl, hj, dxt, r11t, r9t, pt, gt, mt, rdt, wrt, zt⟩
     have h0t : ∀ l < 4, t.zlane .xmm0 l = revMask := fun l hl => by rw [zt _ (by decide) l hl, h0 l hl]
-    refine WP.mono (ghStepP_ok t hj hg mt h0t dxt r11t (by rw [rdt, wrt]; exact wR (by omega))
-      (by rw [rdt, wrt]; exact cR (by omega)) pt)
+    refine WP.mono (ghStepP_ok t hj hg mt h0t dxt r11t (by rw [rdt, wrt]; exact wR (by omega_arith))
+      (by rw [rdt, wrt]; exact cR (by omega_arith)) pt)
       fun t' ⟨p', dx', r11', r9', zf', g', m', rd', wr', z'⟩ => ?_
     have hz : t'.zf = some (decide (g - j = 1)) := by
-      rw [zf', r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, sub_beq (a := g - j) (b := 1) (by omega)
-        (by omega)]
+      rw [zf', r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, sub_beq (a := g - j) (b := 1) (by omega_arith)
+        (by omega_arith)]
     have gg : ∀ r, r ≠ .rdx → r ≠ .r9 → r ≠ .r11 → t'.gpr r = s.gpr r := fun r a b c => by
       rw [g' r a b c, gt r a b c]
     by_cases he : j + 1 = g
     · left
-      exact ⟨by simp [eval, hz]; omega, fun l hl => by rw [p' l hl, he], gg, by rw [m', mt], by rw [rd', rdt],
+      exact ⟨by simp [eval, hz]; omega_arith, fun l hl => by rw [p' l hl, he], gg, by rw [m', mt], by rw [rd', rdt],
         by rw [wr', wrt], zt.trans (z'.mono (by simp))⟩
     · right
-      refine ⟨by simp [eval, hz]; omega, g - (j + 1), by omega, j + 1, rfl, by omega, dx', r11', ?_, p', gg,
+      refine ⟨by simp [eval, hz]; omega_arith, g - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, dx', r11', ?_, p', gg,
         by rw [m', mt], by rw [rd', rdt], by rw [wr', wrt], zt.trans (z'.mono (by simp))⟩
-      rw [r9', r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_sub (by omega) (by omega)]; congr 1
+      rw [r9', r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_sub (by omega_arith) (by omega_arith)]; congr 1
   · have h1t : ∀ l < 4, t.zlane .xmm1 l = poly := fun l hl => by rw [zt _ (by decide) l hl, h1 l hl]
     refine WP.mono (VG.Proof.Gcm.X86_64.StitchZ.fin_ok t h1t) fun t' ⟨y0, y1, f'⟩ => ⟨?_, y1, ?_, ?_, ?_, ?_, ?_⟩
     · rw [y0, pt 0 (by decide), pt 1 (by decide), pt 2 (by decide), pt 3 (by decide)]
@@ -353,7 +353,7 @@ theorem ghashP_taint : GhTaint ghashP := by
   intro s₀ s₀' Ctx W SP A D R al n J J' tl tl' h32
   have h32' := h32
   simp only [nb16] at h32'
-  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
+  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega_arith
   have hw : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
       WP isa (.block ghSetupP) s fun t => t.gpr .rdx = W + BitVec.ofNat 64 384 ∧
         t.gpr .r9 = BitVec.ofNat 64 (grp al n) ∧ t.gpr .r11 = Ctx + BitVec.ofNat 64 (64 + 64 * grp al n) :=

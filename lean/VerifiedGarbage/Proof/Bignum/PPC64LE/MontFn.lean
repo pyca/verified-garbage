@@ -76,7 +76,7 @@ theorem frame_outside {m m' : Mem} {B S : Addr} {Z : Nat} (hf : Frame [savR S] m
   simp only [List.mem_singleton] at hr
   subst hr
   have := (x - B).isLt
-  exact hd x (by simp only [Region.Contains]; omega) hc
+  exact hd x (by simp only [Region.Contains]; omega_arith) hc
 
 /-- The arithmetic leaves the scratch buffer. -/
 theorem outs_scratch {m m' : Mem} {B S : Addr} {Z : Nat} {rs : List (Nat × Nat)} (h : Outs B rs m m')
@@ -151,7 +151,7 @@ theorem pre_saved {s₀ s₁ : State} (h : fnContract.pre s₀) (hS : Saved s₀
     P1 (dataOf s₀) s₁ ∧ Mont.Outside (s₀.gpr .r3) ((s₀.gpr .r4).toNat * 8) (2 ^ 64) s₀.mem s₁.mem := by
   obtain ⟨-, hwr, hdis, hnw, ⟨hw2, hw', h8, harr⟩, ⟨ho, ho2, ho3⟩, ⟨ha, ha2, -⟩, ⟨hb, hb2, -⟩, hinv, hB⟩ := h
   have hs : Scr s₀ (s₀.gpr .r3) ((s₀.gpr .r4).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) hnw
-  have hZ : slot (wOf s₀.mem (s₀.gpr .r3)) 8 ≤ (s₀.gpr .r4).toNat * 8 := by rw [← slot_eq]; omega
+  have hZ : slot (wOf s₀.mem (s₀.gpr .r3)) 8 ≤ (s₀.gpr .r4).toNat * 8 := by rw [← slot_eq]; omega_arith
   have hsin : savR (s₀.gpr .r8) ∈ s₀.wr := by rw [hwr]; simp
   have hout₁ := frame_outside hS.frame hdis
   simp only [dataOf]
@@ -164,10 +164,10 @@ theorem pre_saved {s₀ s₁ : State} (h : fnContract.pre s₀) (hS : Saved s₀
     hS.keep.gpr r (by revert r hr; decide)
   have rd₁ : ∀ {d k}, d + k ≤ Z → s₁.mem.readW (off B d) (8 * k) = s₀.mem.readW (off B d) (8 * k) :=
     fun {d k} hk => Mem.readW_congr fun i hi => (hout₁ _ (by
-      rw [Mont.ofs_off B (show d + i < 2 ^ 64 by omega)]; omega))
+      rw [Mont.ofs_off B (show d + i < 2 ^ 64 by omega_arith)]; omega_arith))
   have v₁ : ∀ {j}, j < 8 → val32 s₁.mem B (slot w j) (2 * w) = val32 s₀.mem B (slot w j) (2 * w) :=
-    fun hj => hout₁.val32 (by have := sl _ hj; omega) (by have := sl _ hj; omega)
-  have w₁ : ∀ {d}, d + 4 ≤ Z → w32 s₁.mem B d = w32 s₀.mem B d := fun hd => hout₁.w32 (by omega) (by omega)
+    fun hj => hout₁.val32 (by have := sl _ hj; omega_arith) (by have := sl _ hj; omega_arith)
+  have w₁ : ∀ {d}, d + 4 ≤ Z → w32 s₁.mem B d = w32 s₀.mem B d := fun hd => hout₁.w32 (by omega_arith) (by omega_arith)
   have s0 := sl 0 (by decide)
   have h56 := hdr_lt_slot w 0 (i := 7) (by decide)
   refine ⟨⟨?_, by rw [g₁ .r3 (by decide), hBd], by rw [g₁ .r5 (by decide)]; exact idx_eq s₀ .r5,
@@ -175,13 +175,13 @@ theorem pre_saved {s₀ s₁ : State} (h : fnContract.pre s₀) (hS : Saved s₀
     hS.r21⟩, hout₁⟩
   refine ⟨hs.congr hS.keep.wr, by rw [hS.keep.wr]; exact hsin, hw2, hw', hZ, ho, ha, hb, ho2, ho3, ha2, hb2,
     fun j hj => ?_, ?_, ?_, ?_⟩
-  · have := hdr_lt_slot w 0 (i := 8 + j) (by omega)
-    exact (rd₁ (k := 8) (by omega)).trans (by rw [show 8 * j + 64 = 8 * (8 + j) by omega]; exact harr j hj)
+  · have := hdr_lt_slot w 0 (i := 8 + j) (by omega_arith)
+    exact (rd₁ (k := 8) (by omega_arith)).trans (by rw [show 8 * j + 64 = 8 * (8 + j) by omega_arith]; exact harr j hj)
   · have := hdr_lt_slot w 0 (i := 6) (by decide)
-    refine (rd₁ (k := 8) (by omega)).trans ?_
+    refine (rd₁ (k := 8) (by omega_arith)).trans ?_
     rw [← hwd, ← hBd]
     simp only [wOf, wordAt, Spec.Rsa.Mont.wWord, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · rw [w₁ (d := slot w 0) (by omega), w₁ (d := 56) (by omega), w32_eq_mod, w32_eq_mod]
+  · rw [w₁ (d := slot w 0) (by omega_arith), w₁ (d := 56) (by omega_arith), w32_eq_mod, w32_eq_mod]
     exact Minv32.minv_low hinv
   · rw [v₁ hb, v₁ (by decide)]; rw [numAt_eq, numAt_eq] at hB; exact hB
 
@@ -196,7 +196,7 @@ theorem loads_P {d : FnData} {s : State} (h : P2 d s) :
     WP isa (.block loads) s fun t => P3 d t ∧ t.mem = s.mem ∧ Keep basesRegs s t := by
   obtain ⟨hm, h3, h5, h6, h7, h21⟩ := h
   refine WP.mono (loads_ok hm.scr h3 hm.ho hm.ha hm.hb h5 h6 h7
-    (by have := hm.hZ; unfold slot hdrBytes at this; omega) hm.harr hm.hw)
+    (by have := hm.hZ; unfold slot hdrBytes at this; omega_arith) hm.harr hm.hw)
     fun t ⟨⟨t5, t6, t7, t8, t9, t10, t11, t4, t12, tm⟩, k⟩ =>
     ⟨⟨hm.congr tm k.wr, t5, t6, t7, t8, t9, t10, t11, t4, by rw [tm]; exact t12,
       by rw [k.gpr _ (by decide), h21]⟩, tm, k⟩
@@ -239,7 +239,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
   generalize hwd : wOf s.mem B = w at hlt heq hout hm
   have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hm.hZ
   have v₁ : ∀ {j}, j < 8 → val32 s₁.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) :=
-    fun hj => hout₁.val32 (by have := sl _ hj; omega) (by have := sl _ hj; omega)
+    fun hj => hout₁.val32 (by have := sl _ hj; omega_arith) (by have := sl _ hj; omega_arith)
   have kt' := (k₂.trans k₃).trans kt
   -- The registers are restored.
   have hsav : ∀ i < 9, t.mem.readW (off (s.gpr .r8) (8 * i)) 64 = s.gpr (saved i) := fun i hi => by
@@ -250,7 +250,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
       · exact sl 2 (by decide)
       · exact sl 3 (by decide)
       · exact sl _ hm.ho) hdis (Region.Contains.byte (sav_contains _ hi) (by
-          rw [Mem.sub_ofNat_toNat _ (by omega)]; omega))
+          rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith))
   refine WP.mono (restore_ok t (kt'.gpr .r21 (by decide) |>.trans hS.r21)
     (by rw [kt'.wr, hS.keep.wr]; exact hsin) hsav) fun u ⟨urs, uot, um, _, _, usp, ulr⟩ => ?_
   have hpost : numAt u.mem B w (idx s .r5) < numAt s.mem B w aM ∧
@@ -261,11 +261,11 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
     · rw [um, numAt_eq, numAt_eq, ← v₁ (by decide)]; exact hlt
     · rw [um, numAt_eq, numAt_eq, numAt_eq, numAt_eq, ← v₁ (by decide), ← v₁ hm.ha, ← v₁ hm.hb]; exact heq
     · intro i hi hj
-      have hi' : i < Z := by omega
+      have hi' : i < Z := by omega_arith
       have hofs : Mont.ofs B (B + BitVec.ofNat 64 i) = i := by
         show (B + BitVec.ofNat 64 i - B).toNat = i
-        rw [Mem.sub_ofNat_toNat _ (by omega)]
-      rw [um, hout _ fun r hr => ?_, hout₁ _ (by rw [hofs]; omega)]
+        rw [Mem.sub_ofNat_toNat _ (by omega_arith)]
+      rw [um, hout _ fun r hr => ?_, hout₁ _ (by rw [hofs]; omega_arith)]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [hofs]
       rcases hr with rfl | rfl | rfl

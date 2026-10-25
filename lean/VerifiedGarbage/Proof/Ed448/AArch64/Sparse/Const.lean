@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+public import VerifiedGarbage.Impl.X448.AArch64.Base
 
 /-! Lift existing constant-slot stores into the bounded field environment. -/
 

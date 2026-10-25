@@ -30,14 +30,7 @@ theorem shapeMaskHead_ok (s : State) {bits : Nat} (positive : 0 < bits) (fits : 
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.shapeMaskHead) s fun t =>
       (t.gpr .r6 = BitVec.ofNat 32 ((bits - 1) % 8 + 1) ∧ t.gpr .r7 = 0 ∧ t.mem = s.mem) ∧
         Rest [.r6, .r7] s t := by
-  refine withRest [.r6, .r7] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.shapeMaskHead : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r6, .r7] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.shapeMaskHead
   ffrun [show (24#32) = (24 : BitVec 32) from rfl, read, value, maskCount bits positive fits]
 

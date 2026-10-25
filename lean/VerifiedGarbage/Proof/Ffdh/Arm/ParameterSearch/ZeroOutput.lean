@@ -27,15 +27,7 @@ theorem zeroOutArgs_ok (s : State) {base dst : BitVec 32} {j n : Nat}
       VG.Impl.Ffdh.Arm.ParameterSearch.ldf .lr 1, .mov .r2 (.imm 0)]) s fun t =>
       (t.gpr .r0 = dst ∧ t.gpr .lr = BitVec.ofNat 32 n ∧ t.gpr .r2 = 0 ∧ t.mem = s.mem) ∧
       Rest [.r0, .r2, .lr] s t := by
-  refine withRest [.r0, .r2, .lr] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r0 j,
-        VG.Impl.Ffdh.Arm.ParameterSearch.ldf .lr 1, .mov .r2 (.imm 0)] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r2, .lr] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.ldf lowWord at *
   ffrun [(by omega : 8 * j < 4096), h.addr slot, h.read slot,
     h.addr (by decide : 1 < 16), h.read (by decide : 1 < 16), pointer, length]

@@ -36,7 +36,7 @@ theorem dinit_eq : dinit = freeze Z2 ++ (store4 dsG ++ dinitB) := by
 /-- A word written in the working area. -/
 theorem Outside.writeW_in {base : Addr} {m₀ m : Mem} (h : Outside base 512 256 m₀ m) {d : Nat} {v : BitVec 64}
     (hd : 512 ≤ d) (hd' : d + 8 ≤ 768) : Outside base 512 256 m₀ (m.writeW (off base d) v) :=
-  fun x hx => (writeW_outside m base v (by omega) x (by omega)).trans (h x hx)
+  fun x hx => (writeW_outside m base v (by omega_arith) x (by omega_arith)).trans (h x hx)
 
 theorem z2560 : (2560 : BitVec 32).setWidth 64 = BitVec.ofNat 64 (256 * 10) := by decide
 
@@ -59,11 +59,11 @@ theorem dinitB_ok {s : State} {base : Addr} (hs : Scr s base) :
     inW hs (show 536 + 8 ≤ 4096 by decide), inW hs (show 704 + 8 ≤ 4096 by decide), z1, zs0, z2560,
     RegUpd.gpr_setReg_self]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, fun r hr hr' => ?_⟩
-  all_goals try simp (disch := omega) only [X86_64.fe, val4, dword_writeW_ne, dword_writeW_self]
+  all_goals try simp (disch := omega_arith) only [X86_64.fe, val4, dword_writeW_ne, dword_writeW_self]
   · simp only [pNat]; decide
   · rfl
   · rfl
-  · repeat refine Outside.writeW_in ?_ (by omega) (by omega)
+  · repeat refine Outside.writeW_in ?_ (by omega_arith) (by omega_arith)
     exact Outside.refl _ _ _ _
   · simp only [hr, hr', ↓reduceIte]
 
@@ -108,7 +108,7 @@ theorem dloops_ok {s : State} {base : Addr} (hs : Scr s base) {x : Nat} (hm : DM
   have ht : Scr t base := ⟨(gt _ (by decide)).trans hs.rdi, wt ▸ hs.wr, hs.nowrap⟩
   refine WP.mono (dbatch_ok ht mt hj1 hjN ct) fun u ⟨mu, cu, zu, Ou, gu, ru, wu⟩ =>
     ⟨⟨?_, cu, Ot.trans Ou, fun r hr => (gu r hr).trans (gt r hr), ru.trans rt, wu.trans wt⟩, zu⟩
-  rw [show 10 - (j - 1) = (10 - j) + 1 by omega]
+  rw [show 10 - (j - 1) = (10 - j) + 1 by omega_arith]
   exact mu
 
 theorem sel_mask (a b m : BitVec 64) (hm : m = 0 ∨ m = BitVec.allOnes 64) :
@@ -143,12 +143,12 @@ theorem dsel_ok {s : State} {base : Addr} (hs : Scr s base) :
     split <;> simp
   simp only [sel_mask _ _ _ (hm _)]
   refine ⟨?_, ?_, fun r hr => ?_⟩
-  · simp (disch := omega) only [X86_64.fe, val4, dword_writeW_ne, dword_writeW_self]
+  · simp (disch := omega_arith) only [X86_64.fe, val4, dword_writeW_ne, dword_writeW_self]
     have h3 := (word s.mem base 600).isLt
     have e : (fe s.mem base 576 < 2 ^ 255) = ¬ 2 ^ 63 ≤ (word s.mem base 600).toNat := by
       simp only [X86_64.fe, val4, Nat.reduceAdd]
       have := (word s.mem base 576).isLt; have := (word s.mem base 584).isLt; have := (word s.mem base 592).isLt
-      apply propext; omega
+      apply propext; omega_arith
     unfold kSel
     rw [show (576 : Nat) = dsF from rfl] at e
     simp only [dsF] at e ⊢
@@ -161,10 +161,10 @@ theorem dsel_ok {s : State} {base : Addr} (hs : Scr s base) :
       simp only [h, hn, ↓reduceIte]
       decide
   · intro x hx
-    rw [writeW_outside _ _ _ (by omega) x (by omega),
-      writeW_outside _ _ _ (by omega) x (by omega),
-      writeW_outside _ _ _ (by omega) x (by omega),
-      writeW_outside _ _ _ (by omega) x (by omega)]
+    rw [writeW_outside _ _ _ (by omega_arith) x (by omega_arith),
+      writeW_outside _ _ _ (by omega_arith) x (by omega_arith),
+      writeW_outside _ _ _ (by omega_arith) x (by omega_arith),
+      writeW_outside _ _ _ (by omega_arith) x (by omega_arith)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.1, hr.2.1, hr.2.2, ↓reduceIte]
 

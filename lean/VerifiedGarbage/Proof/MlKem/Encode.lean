@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.MlKem.Compress
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM: encoding, decoding and sampling byte by byte, for every target
@@ -51,7 +52,7 @@ theorem map_toList_lt (f : Poly) {g : Zq → Nat} {d : Nat} (hg : ∀ x, g x < 2
   obtain ⟨x, _, rfl⟩ := List.mem_map.mp ha
   exact hg x
 
-theorem val_lt_4096 (x : Zq) : x.val < 2 ^ 12 := by have := val_lt x; omega
+theorem val_lt_4096 (x : Zq) : x.val < 2 ^ 12 := by have := val_lt x; omega_arith
 
 theorem bytes_map_take_drop (B : List Byte) {s c : Nat} (h : s + c ≤ B.length) :
     ((B.drop s).take c).map (·.toNat) = (List.range c).map fun j => (B.getD (s + j) 0).toNat := by
@@ -85,8 +86,8 @@ tactic_template "win_eval" : tactic => `(tactic| (
                    simp only [win, Nat.reduceMul, Nat.reduceLeDiff, Nat.reduceLT, Nat.reduceSub, Nat.reducePow, ↓reduceIte,
                      Nat.pow_zero, Nat.div_one, Nat.mod_one, Nat.add_zero, Nat.zero_add, Nat.mul_zero]
                    try first
-                     | exact congrArg (BitVec.ofNat 8) (by omega)
-                     | exact congrArg (decompress _) (by omega)))
+                     | exact congrArg (BitVec.ofNat 8) (by omega_arith)
+                     | exact congrArg (decompress _) (by omega_arith)))
 
 /-- The digits of an explicit list. -/
 theorem digits_map_range {w c : Nat} (g : Nat → Nat) :
@@ -105,9 +106,9 @@ theorem encode12_group (f : Poly) {i j : Nat} (hi : i < 128) (hj : j < 3) :
     (encode12 f)[3 * i + j]! =
       BitVec.ofNat 8 (((f[2 * i]!).val + 4096 * (f[2 * i + 1]!).val) / 2 ^ (8 * j)) := by
   rw [encode12, byteEncode_group (d := 12) (c := 2) (b := 3) (by decide) (by decide) (map_toList_lt f val_lt_4096) hj
-    (by omega), take_drop_eq _ 0 (by rw [map_toList_length]; omega)]
+    (by omega_arith), take_drop_eq _ 0 (by rw [map_toList_length]; omega_arith)]
   simp only [range2, List.map_cons, List.map_nil, digits_cons, digits_nil, Nat.add_zero,
-    map_toList_getD f _ (show 2 * i < 256 by omega), map_toList_getD f _ (show 2 * i + 1 < 256 by omega)]
+    map_toList_getD f _ (show 2 * i < 256 by omega_arith), map_toList_getD f _ (show 2 * i + 1 < 256 by omega_arith)]
   rfl
 
 theorem encode12_byte0 (f : Poly) {i : Nat} (hi : i < 128) :
@@ -116,18 +117,18 @@ theorem encode12_byte0 (f : Poly) {i : Nat} (hi : i < 128) :
   rw [Nat.add_zero] at h
   rw [h]
   clear h
-  exact ofNat8_eq (by have := val_lt f[2 * i]!; have := val_lt f[2 * i + 1]!; omega)
+  exact ofNat8_eq (by have := val_lt f[2 * i]!; have := val_lt f[2 * i + 1]!; omega_arith)
 
 theorem encode12_byte1 (f : Poly) {i : Nat} (hi : i < 128) :
     (encode12 f)[3 * i + 1]! =
       BitVec.ofNat 8 ((f[2 * i]!).val / 256 + 16 * ((f[2 * i + 1]!).val % 16)) := by
   rw [encode12_group f hi (by decide)]
-  exact ofNat8_eq (by have := val_lt f[2 * i]!; have := val_lt f[2 * i + 1]!; omega)
+  exact ofNat8_eq (by have := val_lt f[2 * i]!; have := val_lt f[2 * i + 1]!; omega_arith)
 
 theorem encode12_byte2 (f : Poly) {i : Nat} (hi : i < 128) :
     (encode12 f)[3 * i + 2]! = BitVec.ofNat 8 ((f[2 * i + 1]!).val / 16) := by
   rw [encode12_group f hi (by decide)]
-  exact ofNat8_eq (by have := val_lt f[2 * i]!; have := val_lt f[2 * i + 1]!; omega)
+  exact ofNat8_eq (by have := val_lt f[2 * i]!; have := val_lt f[2 * i + 1]!; omega_arith)
 
 /-- `ByteEncode₁₂(f)`, 3 bytes per pair of coefficients. -/
 theorem encode12_eq (f : Poly) :
@@ -136,7 +137,7 @@ theorem encode12_eq (f : Poly) :
         BitVec.ofNat 8 ((f[2 * i]!).val / 256 + 16 * ((f[2 * i + 1]!).val % 16)),
         BitVec.ofNat 8 ((f[2 * i + 1]!).val / 16)] := by
   refine eq_flatMap (c := 3) (N := 128) (by decide) (fun _ _ => rfl) (encode12_length f) fun i hi j hj => ?_
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl
   · rw [Nat.add_zero, encode12_byte0 f hi]; rfl
   · rw [encode12_byte1 f hi]; rfl
   · rw [encode12_byte2 f hi]; rfl
@@ -152,12 +153,12 @@ private theorem decode12_group (B : List Byte) (hB : B.length = 384) {i e : Nat}
     (he : e < 2) :
     (decode12 B)[2 * i + e]! = ofNat (((B.getD (3 * i) 0).toNat + 256 * (B.getD (3 * i + 1) 0).toNat +
       65536 * (B.getD (3 * i + 2) 0).toNat) / 2 ^ (12 * e) % 4096) := by
-  rw [decode12_get B (by rw [n_eq]; omega), byteDecode_group (c := 2) (b := 3) (by decide) B he
-    (by rw [n_eq]; omega), bytes_map_take_drop B (by omega)]
+  rw [decode12_get B (by rw [n_eq]; omega_arith), byteDecode_group (c := 2) (b := 3) (by decide) B he
+    (by rw [n_eq]; omega_arith), bytes_map_take_drop B (by omega_arith)]
   simp only [range3, List.map_cons, List.map_nil, digits_cons, digits_nil, Nat.add_zero,
     Nat.lt_irrefl, ↓reduceIte, ofNat_mod]
   refine congrArg ofNat (congrArg (· % 4096) (congrArg (· / 2 ^ (12 * e)) ?_))
-  omega
+  omega_arith
 
 /-- Coefficient `2i` of `ByteDecode₁₂(B)`: `B[3i] + 256 · (B[3i + 1] mod 16)`,
 modulo `q`. -/
@@ -171,7 +172,7 @@ theorem decode12_even (B : List Byte) (hB : B.length = 384) {i : Nat} (hi : i < 
   refine congrArg ofNat ?_
   have := byte_lt (B.getD (3 * i) 0); have := byte_lt (B.getD (3 * i + 1) 0)
   have := byte_lt (B.getD (3 * i + 2) 0)
-  omega
+  omega_arith
 
 /-- Coefficient `2i + 1` of `ByteDecode₁₂(B)`: `⌊B[3i + 1] / 16⌋ + 16 · B[3i + 2]`,
 modulo `q`. -/
@@ -182,7 +183,7 @@ theorem decode12_odd (B : List Byte) (hB : B.length = 384) {i : Nat} (hi : i < 1
   refine congrArg ofNat ?_
   have := byte_lt (B.getD (3 * i) 0); have := byte_lt (B.getD (3 * i + 1) 0)
   have := byte_lt (B.getD (3 * i + 2) 0)
-  omega
+  omega_arith
 
 /-! ## ByteEncode_d ∘ Compress_d -/
 
@@ -198,10 +199,10 @@ theorem compressEncode_group {d c b : Nat} (hd : 0 < d) (hdc : d * c = 8 * b) (f
       BitVec.ofNat 8 (digits d ((List.range c).map fun i => compress d f[c * g + i]!) / 2 ^ (8 * j)) := by
   have h₁ : d * (c * (g + 1)) ≤ d * 256 := Nat.mul_le_mul_left d (by rw [Nat.mul_succ]; exact hg)
   have h₂ : d * (c * (g + 1)) = 8 * (b * g + b) := by rw [← Nat.mul_assoc, hdc, Nat.mul_assoc, Nat.mul_succ]
-  rw [compressEncode, byteEncode_group hd hdc (map_toList_lt f (compress_lt d)) hj (by omega),
-    take_drop_eq _ 0 (by rw [map_toList_length]; omega)]
+  rw [compressEncode, byteEncode_group hd hdc (map_toList_lt f (compress_lt d)) hj (by omega_arith),
+    take_drop_eq _ 0 (by rw [map_toList_length]; omega_arith)]
   refine congrArg (fun L => BitVec.ofNat 8 (digits d L / 2 ^ (8 * j))) (List.map_congr_left fun i hi => ?_)
-  exact map_toList_getD f _ (by have := List.mem_range.mp hi; omega)
+  exact map_toList_getD f _ (by have := List.mem_range.mp hi; omega_arith)
 
 /-- Byte `k` of `ByteEncode₁(Compress₁(f))`: the compressed coefficients
 `8k … 8k + 7` as its bits. -/
@@ -210,23 +211,23 @@ theorem compressEncode1 (f : Poly) {k : Nat} (hk : k < 32) :
       4 * compress 1 f[8 * k + 2]! + 8 * compress 1 f[8 * k + 3]! + 16 * compress 1 f[8 * k + 4]! +
       32 * compress 1 f[8 * k + 5]! + 64 * compress 1 f[8 * k + 6]! +
       128 * compress 1 f[8 * k + 7]!) := by
-  have h := compressEncode_group (d := 1) (c := 8) (b := 1) (g := k) (j := 0) (by decide) (by decide) f (by omega)
+  have h := compressEncode_group (d := 1) (c := 8) (b := 1) (g := k) (j := 0) (by decide) (by decide) f (by omega_arith)
     (by decide)
-  rw [show 1 * k + 0 = k by omega] at h
+  rw [show 1 * k + 0 = k by omega_arith] at h
   rw [h]
   clear h
   simp only [range8, List.map_cons, List.map_nil, digits_cons, digits_nil, Nat.add_zero,
     Nat.mul_zero, Nat.pow_zero, Nat.div_one]
   refine congrArg (BitVec.ofNat 8) ?_
-  omega
+  omega_arith
 
 /-- Byte `k` of `ByteEncode₄(Compress₄(f))`: compressed coefficients `2k`
 and `2k + 1`. -/
 theorem compressEncode4 (f : Poly) {k : Nat} (hk : k < 128) :
     (compressEncode 4 f)[k]! = BitVec.ofNat 8 (compress 4 f[2 * k]! + 16 * compress 4 f[2 * k + 1]!) := by
-  have h := compressEncode_group (d := 4) (c := 2) (b := 1) (g := k) (j := 0) (by decide) (by decide) f (by omega)
+  have h := compressEncode_group (d := 4) (c := 2) (b := 1) (g := k) (j := 0) (by decide) (by decide) f (by omega_arith)
     (by decide)
-  rw [show 1 * k + 0 = k by omega] at h
+  rw [show 1 * k + 0 = k by omega_arith] at h
   rw [h]
   clear h
   simp only [range2, List.map_cons, List.map_nil, digits_cons, digits_nil, Nat.add_zero,
@@ -238,7 +239,7 @@ include hg
 
 theorem compressEncode10_0 :
     (compressEncode 10 f)[5 * g]! = BitVec.ofNat 8 (compress 10 f[4 * g]! % 256) := by
-  have h := compressEncode_group (d := 10) (c := 4) (b := 5) (g := g) (j := 0) (by decide) (by decide) f (by omega) (by decide)
+  have h := compressEncode_group (d := 10) (c := 4) (b := 5) (g := g) (j := 0) (by decide) (by decide) f (by omega_arith) (by decide)
   rw [Nat.add_zero] at h
   rw [h, ofNat8_digits (map_compress_lt f _ _ _)]
   simp only [range4, List.map_cons, List.map_nil]
@@ -247,7 +248,7 @@ theorem compressEncode10_0 :
 theorem compressEncode10_1 :
     (compressEncode 10 f)[5 * g + 1]! =
       BitVec.ofNat 8 (compress 10 f[4 * g]! / 256 + 4 * (compress 10 f[4 * g + 1]! % 64)) := by
-  rw [compressEncode_group (d := 10) (c := 4) (b := 5) (g := g) (j := 1) (by decide) (by decide) f (by omega) (by decide),
+  rw [compressEncode_group (d := 10) (c := 4) (b := 5) (g := g) (j := 1) (by decide) (by decide) f (by omega_arith) (by decide),
     ofNat8_digits (map_compress_lt f _ _ _)]
   simp only [range4, List.map_cons, List.map_nil]
   win_eval
@@ -255,7 +256,7 @@ theorem compressEncode10_1 :
 theorem compressEncode10_2 :
     (compressEncode 10 f)[5 * g + 2]! =
       BitVec.ofNat 8 (compress 10 f[4 * g + 1]! / 64 + 16 * (compress 10 f[4 * g + 2]! % 16)) := by
-  rw [compressEncode_group (d := 10) (c := 4) (b := 5) (g := g) (j := 2) (by decide) (by decide) f (by omega) (by decide),
+  rw [compressEncode_group (d := 10) (c := 4) (b := 5) (g := g) (j := 2) (by decide) (by decide) f (by omega_arith) (by decide),
     ofNat8_digits (map_compress_lt f _ _ _)]
   simp only [range4, List.map_cons, List.map_nil]
   win_eval
@@ -263,14 +264,14 @@ theorem compressEncode10_2 :
 theorem compressEncode10_3 :
     (compressEncode 10 f)[5 * g + 3]! =
       BitVec.ofNat 8 (compress 10 f[4 * g + 2]! / 16 + 64 * (compress 10 f[4 * g + 3]! % 4)) := by
-  rw [compressEncode_group (d := 10) (c := 4) (b := 5) (g := g) (j := 3) (by decide) (by decide) f (by omega) (by decide),
+  rw [compressEncode_group (d := 10) (c := 4) (b := 5) (g := g) (j := 3) (by decide) (by decide) f (by omega_arith) (by decide),
     ofNat8_digits (map_compress_lt f _ _ _)]
   simp only [range4, List.map_cons, List.map_nil]
   win_eval
 
 theorem compressEncode10_4 :
     (compressEncode 10 f)[5 * g + 4]! = BitVec.ofNat 8 (compress 10 f[4 * g + 3]! / 4) := by
-  rw [compressEncode_group (d := 10) (c := 4) (b := 5) (g := g) (j := 4) (by decide) (by decide) f (by omega) (by decide),
+  rw [compressEncode_group (d := 10) (c := 4) (b := 5) (g := g) (j := 4) (by decide) (by decide) f (by omega_arith) (by decide),
     ofNat8_digits (map_compress_lt f _ _ _)]
   simp only [range4, List.map_cons, List.map_nil]
   win_eval
@@ -307,7 +308,7 @@ theorem decodeDecompress1 (B : List Byte) {i : Nat} (hi : i < n) :
 private theorem decodeDecompress4_group (B : List Byte) (hB : B.length = 128) {i e : Nat}
     (hi : i < 128) (he : e < 2) :
     (decodeDecompress 4 B)[2 * i + e]! = decompress 4 ((B.getD i 0).toNat / 2 ^ (4 * e) % 16) := by
-  rw [decodeDecompress_group (c := 2) (b := 1) (by decide) (by decide) B (by omega) he (by rw [n_eq]; omega)]
+  rw [decodeDecompress_group (c := 2) (b := 1) (by decide) (by decide) B (by omega_arith) he (by rw [n_eq]; omega_arith)]
   simp only [List.range_one, List.map_cons, List.map_nil, digits_cons, digits_nil, Nat.add_zero,
     Nat.mul_zero, Nat.one_mul]
 
@@ -326,7 +327,7 @@ theorem decodeDecompress4_odd (B : List Byte) (hB : B.length = 128) {i : Nat} (h
   rw [decodeDecompress4_group B hB hi (by decide)]
   refine congrArg (decompress 4) ?_
   have := byte_lt (B.getD i 0)
-  omega
+  omega_arith
 
 section
 variable (B : List Byte) (hB : B.length = 320) {g : Nat} (hg : g < 64)
@@ -336,8 +337,8 @@ include hB hg
 theorem decodeDecompress10_0 :
     (decodeDecompress 10 B)[4 * g]! = decompress 10 ((B.getD (5 * g) 0).toNat +
       256 * ((B.getD (5 * g + 1) 0).toNat % 4)) := by
-  have h := decodeDecompress_group (d := 10) (c := 4) (b := 5) (g := g) (e := 0) (by decide) (by decide) B (by omega) (by decide)
-    (by rw [n_eq]; omega)
+  have h := decodeDecompress_group (d := 10) (c := 4) (b := 5) (g := g) (e := 0) (by decide) (by decide) B (by omega_arith) (by decide)
+    (by rw [n_eq]; omega_arith)
   rw [Nat.add_zero] at h
   rw [h, digits_window (map_getD_lt B _ _)]
   simp only [range5, List.map_cons, List.map_nil]
@@ -347,8 +348,8 @@ theorem decodeDecompress10_0 :
 theorem decodeDecompress10_1 :
     (decodeDecompress 10 B)[4 * g + 1]! = decompress 10 ((B.getD (5 * g + 1) 0).toNat / 4 +
       64 * ((B.getD (5 * g + 2) 0).toNat % 16)) := by
-  rw [decodeDecompress_group (d := 10) (c := 4) (b := 5) (g := g) (e := 1) (by decide) (by decide) B (by omega) (by decide)
-    (by rw [n_eq]; omega),
+  rw [decodeDecompress_group (d := 10) (c := 4) (b := 5) (g := g) (e := 1) (by decide) (by decide) B (by omega_arith) (by decide)
+    (by rw [n_eq]; omega_arith),
     digits_window (map_getD_lt B _ _)]
   simp only [range5, List.map_cons, List.map_nil]
   win_eval
@@ -357,8 +358,8 @@ theorem decodeDecompress10_1 :
 theorem decodeDecompress10_2 :
     (decodeDecompress 10 B)[4 * g + 2]! = decompress 10 ((B.getD (5 * g + 2) 0).toNat / 16 +
       16 * ((B.getD (5 * g + 3) 0).toNat % 64)) := by
-  rw [decodeDecompress_group (d := 10) (c := 4) (b := 5) (g := g) (e := 2) (by decide) (by decide) B (by omega) (by decide)
-    (by rw [n_eq]; omega),
+  rw [decodeDecompress_group (d := 10) (c := 4) (b := 5) (g := g) (e := 2) (by decide) (by decide) B (by omega_arith) (by decide)
+    (by rw [n_eq]; omega_arith),
     digits_window (map_getD_lt B _ _)]
   simp only [range5, List.map_cons, List.map_nil]
   win_eval
@@ -367,8 +368,8 @@ theorem decodeDecompress10_2 :
 theorem decodeDecompress10_3 :
     (decodeDecompress 10 B)[4 * g + 3]! = decompress 10 ((B.getD (5 * g + 3) 0).toNat / 64 +
       4 * (B.getD (5 * g + 4) 0).toNat) := by
-  rw [decodeDecompress_group (d := 10) (c := 4) (b := 5) (g := g) (e := 3) (by decide) (by decide) B (by omega) (by decide)
-    (by rw [n_eq]; omega),
+  rw [decodeDecompress_group (d := 10) (c := 4) (b := 5) (g := g) (e := 3) (by decide) (by decide) B (by omega_arith) (by decide)
+    (by rw [n_eq]; omega_arith),
     digits_window (map_getD_lt B _ _)]
   simp only [range5, List.map_cons, List.map_nil]
   win_eval
@@ -389,8 +390,8 @@ def nibble (B : List Byte) (i : Nat) : Nat := (B.getD (i / 2) 0).toNat / 16 ^ (i
 
 private theorem cbd_bit (B : List Byte) (i j : Nat) (hj : j < 4) :
     ((bytesToBits B).getD (2 * i * 2 + j) false).toNat = nibble B i / 2 ^ j % 2 := by
-  rw [bytesToBits_getD, nibble, show (2 * i * 2 + j) / 8 = i / 2 by omega,
-    show (2 * i * 2 + j) % 8 = 4 * (i % 2) + j by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul,
+  rw [bytesToBits_getD, nibble, show (2 * i * 2 + j) / 8 = i / 2 by omega_arith,
+    show (2 * i * 2 + j) % 8 = 4 * (i % 2) + j by omega_arith, Nat.pow_add, ← Nat.div_div_eq_div_mul,
     Nat.pow_mul]
 
 /-- Coefficient `i` of `SamplePolyCBD₂(B)`: `x - y` for the bits `x` and `y`
@@ -402,20 +403,20 @@ theorem samplePolyCBD2_get (B : List Byte) {i : Nat} (hi : i < n) :
     List.sum_cons, List.sum_nil, Nat.add_zero]
   have h0 := cbd_bit B i 0 (by decide)
   rw [Nat.add_zero, Nat.pow_zero, Nat.div_one] at h0
-  rw [h0, cbd_bit B i 1 (by decide), show 2 * i * 2 + 2 + 1 = 2 * i * 2 + 3 by omega,
+  rw [h0, cbd_bit B i 1 (by decide), show 2 * i * 2 + 2 + 1 = 2 * i * 2 + 3 by omega_arith,
     cbd_bit B i 2 (by decide), cbd_bit B i 3 (by decide)]
   simp only [cbdX, cbdY, Nat.reducePow]
 
-theorem cbdX_le (v : Nat) : cbdX v ≤ 2 := by unfold cbdX; omega
+theorem cbdX_le (v : Nat) : cbdX v ≤ 2 := by unfold cbdX; omega_arith
 
-theorem cbdY_le (v : Nat) : cbdY v ≤ 2 := by unfold cbdY; omega
+theorem cbdY_le (v : Nat) : cbdY v ≤ 2 := by unfold cbdY; omega_arith
 
 /-- Coefficient `i` of `SamplePolyCBD₂(B)`, as an integer: `x + q - y`,
 reduced. -/
 theorem samplePolyCBD2_val (B : List Byte) {i : Nat} (hi : i < n) :
     ((samplePolyCBD 2 B)[i]!).val = (cbdX (nibble B i) + q - cbdY (nibble B i)) % q := by
   have := cbdX_le (nibble B i); have := cbdY_le (nibble B i)
-  rw [samplePolyCBD2_get B hi, val_sub', ofNat_of_lt (by rw [q_eq]; omega),
-    ofNat_of_lt (by rw [q_eq]; omega), Nat.add_sub_assoc (by rw [q_eq]; omega)]
+  rw [samplePolyCBD2_get B hi, val_sub', ofNat_of_lt (by rw [q_eq]; omega_arith),
+    ofNat_of_lt (by rw [q_eq]; omega_arith), Nat.add_sub_assoc (by rw [q_eq]; omega_arith)]
 
 end VG.Proof.MlKem

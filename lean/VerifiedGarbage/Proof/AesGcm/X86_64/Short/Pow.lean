@@ -113,7 +113,7 @@ theorem pow4a_ok (s : State) :
   rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil fun l hl => ?_⟩
   simp only [VOp.exec]
-  rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
   all_goals simp (disch := decide) only [zlane_vshufi32x4, VG.Proof.Gcm.X86_64.StitchZ.shuf44_0, VG.Proof.Gcm.X86_64.StitchZ.shuf44_1,
     VG.Proof.Gcm.X86_64.StitchZ.shuf44_2, VG.Proof.Gcm.X86_64.StitchZ.shuf44_3, VG.Proof.Gcm.X86_64.StitchZ.State.zlane_setV256, State.zlane_setV_ne,
     reduceCtorEq, ↓reduceIte, Nat.one_ne_zero, BitVec.getLsbD_ofNat]
@@ -129,7 +129,7 @@ theorem GrpOk.keep {m m' : Mem} {T : Addr} {H : Block} {i j : Nat} (h : GrpOk m 
     GrpOk m' T H j := fun l hl => by
   rw [f.readW (r := ⟨T + BitVec.ofNat 64 (64 * j + 16 * l), 16⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint T (by omega) (by omega) (by omega)) (by decide)]
+    exact Offset.disjoint T (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
   exact h l hl
 
 /-- `powLoad d k`: group `k + d / 64` from group `k`, times `zmm12`, whose
@@ -145,18 +145,18 @@ theorem powLoadG_ok {T : Addr} {H : Block} {d k e : Nat} (hd : d = 64 * (e / 4))
       (∀ r, r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm11 → ∀ l < 4, t.zlane r l = s.zlane r l) := by
   have ea : ∀ n : Nat, s.gpr .r11 + BitVec.ofInt 64 ((n : Nat) : Int) = T + BitVec.ofNat 64 n := fun n => by
     rw [hr11, BitVec.ofInt_natCast]
-  have hdk : d + 64 * k = 64 * (k + d / 64) := by omega
+  have hdk : d + 64 * k = 64 * (k + d / 64) := by omega_arith
   refine WP.mono (VG.Proof.Gcm.X86_64.StitchZ.powLoad_ok d k s h1 (by rw [ea]; exact hin) (by rw [ea]; exact hout))
     fun t ⟨⟨v, mt, hv⟩, gt, rdt, wrt, zt⟩ => ⟨fun l hl => ?_, ?_, gt, rdt, wrt, zt⟩
   · have ha : T + BitVec.ofNat 64 (64 * (k + d / 64) + 16 * l) =
         T + BitVec.ofNat 64 (d + 64 * k) + BitVec.ofNat 64 (16 * l) := by
-      rw [add_ofNat_ofNat, show d + 64 * k + 16 * l = 64 * (k + d / 64) + 16 * l by omega]
+      rw [add_ofNat_ofNat, show d + 64 * k + 16 * l = 64 * (k + d / 64) + 16 * l by omega_arith]
     rw [mt, ea, ha]
     have e := readW_writeW_inside s.mem (T + BitVec.ofNat 64 (d + 64 * k)) v (k := 16 * l) (n := 16)
-      (by omega) (by decide)
-    rw [show 8 * 16 = 128 from rfl, show 8 * (16 * l) = 128 * l by omega] at e
+      (by omega_arith) (by decide)
+    rw [show 8 * 16 = 128 from rfl, show 8 * (16 * l) = 128 * l by omega_arith] at e
     rw [e, hv l hl, ea, add_ofNat_ofNat, VG.Proof.Gcm.X86_64.StitchZ.φ_lanemul (hG l hl) (hB l hl)]
-    congr 1; omega
+    congr 1; omega_arith
   · rw [mt, ea, hdk]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) v (Region.contains_self _ _)
 
@@ -179,18 +179,18 @@ theorem powLoadT_ok {s₀ : State} {T : Addr} {H : Block} {d k e n : Nat} (hd : 
     WP isa (.block (VG.Impl.Gcm.X86_64.StitchZ.powLoad d k)) t fun t' =>
       PI s₀ T H (n + 1) t' ∧ ∀ l < 4, t'.zlane .xmm12 l = t.zlane .xmm12 l := by
   have hwt : Covers [⟨T, 512⟩] t.wr := by rw [hI.wr]; exact hw
-  refine WP.mono (powLoadG_ok hd he (by omega) t hr11 (fun l hl => by rw [hI.z1 l hl, h1 l hl]) hB
-    (hI.tab k hkn) (in_left (in_off hwt (by omega) (by decide)))
-    (in_off hwt (by omega) (by decide))) fun t' ⟨g', f', gp', rd', wr', z'⟩ => ⟨⟨fun j hj => ?_, ?_,
+  refine WP.mono (powLoadG_ok hd he (by omega_arith) t hr11 (fun l hl => by rw [hI.z1 l hl, h1 l hl]) hB
+    (hI.tab k hkn) (in_left (in_off hwt (by omega_arith) (by decide)))
+    (in_off hwt (by omega_arith) (by decide))) fun t' ⟨g', f', gp', rd', wr', z'⟩ => ⟨⟨fun j hj => ?_, ?_,
       by rw [gp', hI.gpr], by rw [rd', hI.rd], by rw [wr', hI.wr], fun l hl => by rw [z' _ (by decide) (by decide)
       (by decide) (by decide) (by decide) l hl, hI.z0 l hl], fun l hl => by rw [z' _ (by decide) (by decide)
       (by decide) (by decide) (by decide) l hl, hI.z1 l hl]⟩,
     fun l hl => z' _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl⟩
   · by_cases hjn : j = n
     · subst hjn; rw [hn]; exact g'
-    · exact GrpOk.keep (hI.tab j (by omega)) (i := n) (by rw [hn]; exact f') (by omega) (by omega) (by omega)
+    · exact GrpOk.keep (hI.tab j (by omega_arith)) (i := n) (by rw [hn]; exact f') (by omega_arith) (by omega_arith) (by omega_arith)
   · exact hI.frame.trans (f'.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base T (by omega)⟩)
+      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base T (by omega_arith)⟩)
 
 /-- The broadcast of a power from the table into `zmm12`. -/
 theorem bcastT_ok {s₀ : State} {T : Addr} {H : Block} {n j : Nat} (hj : j < n) (t : State)
@@ -198,7 +198,7 @@ theorem bcastT_ok {s₀ : State} {T : Addr} {H : Block} {n j : Nat} (hj : j < n)
     WP isa (.block [.vbroadcasti32x4 .xmm12 (at_ .r11 (64 * j))]) t fun t' =>
       PI s₀ T H n t' ∧ (∀ l < 4, x * φ (t'.zlane .xmm12 l) = φ H ^ (4 * j + 4)) := by
   have hin : InRegions (t.rd ++ t.wr) (t.gpr .r11 + BitVec.ofNat 64 (64 * j)) 16 := by
-    rw [hr11, hI.rd, hI.wr]; exact in_left (in_off hw (by omega) (by decide))
+    rw [hr11, hI.rd, hI.wr]; exact in_left (in_off hw (by omega_arith) (by decide))
   rw [WP.block_cons_iff]
   refine ⟨_, VG.Proof.Gcm.X86_64.StitchZ.bcast_exec .xmm12 .r11 (64 * j) t hin, WP.block_nil ⟨?_, fun l hl => ?_⟩⟩
   · exact ⟨hI.tab, hI.frame, hI.gpr, hI.rd, hI.wr,
@@ -210,7 +210,7 @@ theorem bcastT_ok {s₀ : State} {T : Addr} {H : Block} {n j : Nat} (hj : j < n)
 
 theorem PI.mono {s₀ : State} {T : Addr} {H : Block} {n m : Nat} {t : State} (h : PI s₀ T H n t) (hm : m ≤ n) :
     PI s₀ T H m t :=
-  ⟨fun j hj => h.tab j (by omega), h.frame, h.gpr, h.rd, h.wr, h.z0, h.z1⟩
+  ⟨fun j hj => h.tab j (by omega_arith), h.frame, h.gpr, h.rd, h.wr, h.z0, h.z1⟩
 
 /-- `cmp rax, k` in `powMore`. -/
 theorem cmpRax_ok {s₀ : State} {T : Addr} {H : Block} {n g k : Nat} (t : State) (hI : PI s₀ T H n t)
@@ -220,7 +220,7 @@ theorem cmpRax_ok {s₀ : State} {T : Addr} {H : Block} {n g k : Nat} (t : State
   apply WP.of_runBlock
   refine ⟨_, by simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, imm]; rfl,
     ?_, ?_, ?_⟩
-  · rw [cf_arithFlags, hrax, imm_eq hk, toNat_ofNat_of_lt (by omega), toNat_ofNat_of_lt (by omega)]
+  · rw [cf_arithFlags, hrax, imm_eq hk, toNat_ofNat_of_lt (by omega_arith), toNat_ofNat_of_lt (by omega_arith)]
   · exact ⟨hI.tab, hI.frame, hI.gpr, hI.rd, hI.wr, hI.z0, hI.z1⟩
   · exact fun _ _ => rfl
 
@@ -234,8 +234,8 @@ theorem powMore_ok {s₀ : State} {T : Addr} {H : Block} {g : Nat} (hg1 : 1 ≤ 
     rw [h.gpr, ← hI.gpr, hrax]
   refine WP.seq (WP.mono (cmpRax_ok t hI hrax hg (by decide)) fun t₁ ⟨c₁, I₁, _⟩ => ?_)
   refine WP.ite (decide (4 * g < 5)) (by simp only [eval, c₁]) (fun h => WP.block_nil (I₁.mono ?_)) fun h => ?_
-  · have := of_decide_eq_true h; omega
-  have h₁ : 2 ≤ g := by have := of_decide_eq_false h; omega
+  · have := of_decide_eq_true h; omega_arith
+  have h₁ : 2 ≤ g := by have := of_decide_eq_false h; omega_arith
   -- `H'⁸`–`H'⁵`.
   rw [show ([.vbroadcasti32x4 .xmm12 (at_ .r11 0)] ++ VG.Impl.Gcm.X86_64.StitchZ.powLoad 64 0 ++
       [.alu .cmp .rax (imm 9)] : List Instr) = [.vbroadcasti32x4 .xmm12 (at_ .r11 (64 * 0))] ++
@@ -248,8 +248,8 @@ theorem powMore_ok {s₀ : State} {T : Addr} {H : Block} {g : Nat} (hg1 : 1 ≤ 
     fun t₃ ⟨I₃, _⟩ => ?_
   refine WP.mono (cmpRax_ok t₃ I₃ (rax I₃) hg (by decide)) fun t₄ ⟨c₄, I₄, _⟩ => ?_
   refine WP.ite (decide (4 * g < 9)) (by simp only [eval, c₄]) (fun h => WP.block_nil (I₄.mono ?_)) fun h => ?_
-  · have := of_decide_eq_true h; omega
-  have h₂ : 3 ≤ g := by have := of_decide_eq_false h; omega
+  · have := of_decide_eq_true h; omega_arith
+  have h₂ : 3 ≤ g := by have := of_decide_eq_false h; omega_arith
   -- `H'¹⁶`–`H'⁹`.
   rw [show ([.vbroadcasti32x4 .xmm12 (at_ .r11 64)] ++
       (List.range 2).flatMap (VG.Impl.Gcm.X86_64.StitchZ.powLoad 128) ++ [.alu .cmp .rax (imm 17)] : List Instr) =
@@ -266,7 +266,7 @@ theorem powMore_ok {s₀ : State} {T : Addr} {H : Block} {g : Nat} (hg1 : 1 ≤ 
     (fun l hl => by rw [z₆ l hl]; exact b₅ l hl) h1 hw) fun t₇ ⟨I₇, _⟩ => ?_
   refine WP.mono (cmpRax_ok t₇ I₇ (rax I₇) hg (by decide)) fun t₈ ⟨c₈, I₈, _⟩ => ?_
   refine WP.ite (decide (4 * g < 17)) (by simp only [eval, c₈]) (fun h => WP.block_nil (I₈.mono ?_)) fun h => ?_
-  · have := of_decide_eq_true h; omega
+  · have := of_decide_eq_true h; omega_arith
   -- `H'³²`–`H'¹⁷`.
   rw [show (.vbroadcasti32x4 .xmm12 (at_ .r11 192) ::
       (List.range 4).flatMap (VG.Impl.Gcm.X86_64.StitchZ.powLoad 256) : List Instr) =
@@ -362,13 +362,13 @@ theorem powers_ok {Ctx W SP : Addr} {g : Nat} (s : State) (he : Env Ctx (W + Bit
   have x2 : ∀ r, s₂.xmm r = s₁.xmm r := fun r => x₂ r 0
   have I₆ : PI s₆ (W + BitVec.ofNat 64 1536) (Spec.Gcm.ctxH s.mem Ctx) 1 s₆ := by
     refine ⟨fun j hj l hl => ?_, Frame.refl _ _, rfl, rfl, rfl, fun _ _ => rfl, fun _ _ => rfl⟩
-    have hj0 : j = 0 := by omega
+    have hj0 : j = 0 := by omega_arith
     subst hj0
     have e := readW_writeW_inside s₃.mem (W + BitVec.ofNat 64 1536) (s₃.zmm .xmm8) (k := 16 * l) (n := 16)
-      (by omega) (by decide)
-    rw [show 8 * 16 = 128 from rfl, show 8 * (16 * l) = 128 * l by omega] at e
+      (by omega_arith) (by decide)
+    rw [show 8 * 16 = 128 from rfl, show 8 * (16 * l) = 128 * l by omega_arith] at e
     rw [m₆, f₅.mem, m₄, Nat.mul_zero, Nat.zero_add, e, VG.Proof.Aes.X86_64.VaesZ.zmm_lane _ _ hl, z8 l hl, x2]
-    rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
     · exact H4
     · exact H3
     · exact H2

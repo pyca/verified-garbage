@@ -105,10 +105,10 @@ def Kept (n : Nat) (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
     (ofs base x < moAt n ∨ moAt n + 8 * n ≤ ofs base x) → m' x = m x
 
 theorem own_eq {n : Nat} (h : n ≤ 9) : own n + 64 * n = 4096 := by
-  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega
+  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega_arith
 
-theorem ModOkS.n9 {n m : Nat} (h : ModOkS n m) : n ≤ 9 := by rcases h.hn with h | h <;> omega
-theorem ModOkS.n4 {n m : Nat} (h : ModOkS n m) : 4 ≤ n := by rcases h.hn with h | h <;> omega
+theorem ModOkS.n9 {n m : Nat} (h : ModOkS n m) : n ≤ 9 := by rcases h.hn with h | h <;> omega_arith
+theorem ModOkS.n4 {n m : Nat} (h : ModOkS n m) : 4 ≤ n := by rcases h.hn with h | h <;> omega_arith
 theorem ModOkS.hn' {n m : Nat} (h : ModOkS n m) : n = 4 ∨ n = 6 ∨ n = 9 := .inr h.hn
 
 theorem minv_lt (m : Nat) : minv m < 2 ^ 64 := Nat.mod_lt _ (by decide)
@@ -164,13 +164,13 @@ theorem ofs_off_sub (p x : Addr) (e : Nat) (he : e < 2 ^ 64) :
 /-- The changes at `[off p e]`, `len` bytes, are at `[e, e + len)` of `p`. -/
 theorem Outside.of_off {p : Addr} {e len : Nat} {m m' : Mem} (h : Outside (off p e) 0 len m m')
     (he : e + len < 2 ^ 64) : Outside p e len m m' := fun x hx => h x (Or.inr (by
-  rw [ofs_off_sub p x e (by omega)]
+  rw [ofs_off_sub p x e (by omega_arith)]
   have := (x - p).isLt
   simp only [ofs] at hx ⊢
   rcases hx with hx | hx
-  · rw [Nat.mod_eq_of_lt (by omega)]; omega
-  · rw [show 2 ^ 64 - e + (x - p).toNat = ((x - p).toNat - e) + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]; omega))
+  · rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
+  · rw [show 2 ^ 64 - e + (x - p).toNat = ((x - p).toNat - e) + 2 ^ 64 by omega_arith, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_arith)]; omega_arith))
 
 /-! ## The entry -/
 
@@ -230,7 +230,7 @@ theorem regsVal_of_loads {s : State} {mem : Mem} {p : Addr} : ∀ (ts : List Reg
     have h0 := h 0 t rfl
     rw [Nat.mul_zero, Nat.add_zero] at h0
     have hr := regsVal_of_loads ts (a + 8) fun j r hr => by
-      rw [h (j + 1) r (by rw [List.getElem?_cons_succ]; exact hr), show a + 8 * (j + 1) = a + 8 + 8 * j by omega]
+      rw [h (j + 1) r (by rw [List.getElem?_cons_succ]; exact hr), show a + 8 * (j + 1) = a + 8 + 8 * j by omega_arith]
     rw [List.length_cons, regsVal, wordsVal, h0, hr]
 
 theorem mLoads_fst {n m : Nat} {p : Reg × BitVec 64} (hp : p ∈ mLoads n m) : p.1 ∈ mPool n :=
@@ -354,7 +354,7 @@ theorem bodyF_ok {n m : Nat} (hM : ModOkS n m) {s : State} {base : Addr} {size :
   have x0W : Reg.x0 ∉ bodyW n := (R.keep0 .x0 (by simp)).1
   rw [bodyCode, WP.block_append_iff]
   -- `[b]` into its registers.
-  refine WP.mono (loadsEach_ok (bRegsF n) hpb (a := 0) (by rw [R.blen]; omega) rfl R.bnd R.b3)
+  refine WP.mono (loadsEach_ok (bRegsF n) hpb (a := 0) (by rw [R.blen]; omega_arith) rfl R.bnd R.b3)
     fun s₁ ⟨e₁, k₁⟩ => ?_
   have hB₁ : regsVal s₁ (bRegsF n) = wordsVal s.mem pb 0 n := by
     rw [regsVal_of_loads _ 0 e₁, R.blen]
@@ -472,11 +472,11 @@ theorem bodyF_ok {n m : Nat} (hM : ModOkS n m) {s : State} {base : Addr} {size :
       by_contra hne
       have : 2 ^ (64 * n) * 2 ^ 64 ≤ 2 ^ (64 * n) * ((s₇.gpr (win n n n)).toNat +
           2 ^ 64 * (s₇.gpr (win n n (n + 1))).toNat) :=
-        Nat.mul_le_mul_left _ (by omega)
+        Nat.mul_le_mul_left _ (by omega_arith)
       have : m < 2 ^ (64 * n) := hmX
       have : 2 ^ (64 * n) * 2 ^ 64 ≥ 2 * 2 ^ (64 * n) := by
         rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by decide)
-      omega
+      omega_arith
     rw [this, Nat.mul_zero, Nat.add_zero]
     rfl
   rw [WP.block_append_iff]
@@ -496,7 +496,7 @@ theorem bodyF_ok {n m : Nat} (hM : ModOkS n m) {s : State} {base : Addr} {size :
   have hpo₈ : PtrW s₈ (roF n) po (8 * n) :=
     ⟨(kr _ nro).trans hpo.reg, by rw [k₈.wr, k₇.wr, k₆.wr, hwr₅]; exact hpo.st,
       hpo.enc, hpo.nowrap⟩
-  refine WP.mono (storesR_ok _ hpo₈ (o := 0) (by rw [hlowlen]; omega) rfl (fresh_low' n hn).1)
+  refine WP.mono (storesR_ok _ hpo₈ (o := 0) (by rw [hlowlen]; omega_arith) rfl (fresh_low' n hn).1)
     fun s₉ ⟨e₉, k₉, O₉⟩ => ?_
   rw [hlowlen] at e₉ O₉
   refine ⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -513,7 +513,7 @@ theorem bodyF_ok {n m : Nat} (hM : ModOkS n m) {s : State} {base : Addr} {size :
 
 theorem moAt_facts {n : Nat} (h : n ≤ 9) (h4 : 4 ≤ n) :
     own n ≤ moAt n ∧ moAt n + 16 * n = 4096 ∧ moAt n % 8 = 0 := by
-  simp only [own, moAt, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega
+  simp only [own, moAt, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega_arith
 
 theorem mulFnS_wp (n m : Nat) {s : State} {Q : State → Prop} : WP isa (mulFnS n m) s Q ↔
     WP isa (.block (zextCode ++ (saveCode n ++ (ptrsCode n ++ (bodyCode n m ++ restoreCode n))))) s Q := by
@@ -557,7 +557,7 @@ theorem mulFnOf_ok {n m W : Nat} (hn : n = 6 ∨ n = 9) {body : List Instr} (pre
   rw [WP.block_append_iff]
   refine WP.mono (zext_ok s) fun s₁ ⟨g1, g2, g3, K₁, V₁⟩ => ?_
   rw [WP.block_append_iff, saveCode_eq]
-  refine WP.mono (saves_ok (saved n) 0 (s := s₁) (by have := R.slen; omega)) fun s₂ ⟨K₂, L₂, _, V₂⟩ => ?_
+  refine WP.mono (saves_ok (saved n) 0 (s := s₁) (by have := R.slen; omega_arith)) fun s₂ ⟨K₂, L₂, _, V₂⟩ => ?_
   rw [WP.block_append_iff, ptrsCode]
   obtain ⟨r3a, r3o, rao, ra0, ro0, ra1, ra2, ro1, ro2⟩ := R.ra3
   refine WP.mono (ptrsF_ok s₂ (ra := raF n) (ro := roF n) (by simp [ra0, ra1, ra2, r3a]) (by simp [ro0, ro1, ro2, r3o])
@@ -565,28 +565,28 @@ theorem mulFnOf_ok {n m W : Nat} (hn : n = 6 ∨ n = 9) {body : List Instr} (pre
   have x0₂ : s₂.gpr .x0 = s.gpr .x0 := by rw [K₂.gpr, K₁.gpr _ (by decide)]
   have x0₃ : s₃.gpr .x0 = s.gpr .x0 := by
     rw [K₃.gpr _ (by simp [Ne.symm ra0, Ne.symm ro0]), x0₂]
-  have hs₃ : Scr s₃ (s.gpr .x0) W := ⟨x0₃, by rw [K₃.wr, K₂.wr, K₁.wr, hp.wr]; simp, hfit, by omega⟩
+  have hs₃ : Scr s₃ (s.gpr .x0) W := ⟨x0₃, by rw [K₃.wr, K₂.wr, K₁.wr, hp.wr]; simp, hfit, by omega_arith⟩
   have off0 : ∀ x : Reg, s₂.gpr x = s₁.gpr x := fun x => by rw [K₂.gpr]
   have hP : ∀ (d e : Nat), d + 8 ≤ 8 * n → e + 8 * n ≤ own n →
       InRegions (s₃.rd ++ s₃.wr) (off (s.gpr .x0) e + BitVec.ofNat 64 d) 8 := by
     intro d e hd he
     show InRegions _ (off (off (s.gpr .x0) e) d) 8
     rw [off_off]
-    have := hs₃.ld (d := e + d) (by have := hd; have := he; omega)
+    have := hs₃.ld (d := e + d) (by have := hd; have := he; omega_arith)
     rwa [hs₃.x0] at this
   have hpa : Ptr s₃ (raF n) (off (s.gpr .x0) (arg s .x2)) (8 * n) :=
-    ⟨by rw [ga, x0₂, off0, g2], fun d hd => hP d _ hd ha, by omega⟩
+    ⟨by rw [ga, x0₂, off0, g2], fun d hd => hP d _ hd ha, by omega_arith⟩
   have hpb : Ptr s₃ .x3 (off (s.gpr .x0) (arg s .x3)) (8 * n) :=
-    ⟨by rw [gb, x0₂, off0, g3], fun d hd => hP d _ hd hb', by omega⟩
+    ⟨by rw [gb, x0₂, off0, g3], fun d hd => hP d _ hd hb', by omega_arith⟩
   have hpo : PtrW s₃ (roF n) (off (s.gpr .x0) (arg s .x1)) (8 * n) := by
-    refine ⟨by rw [go, x0₂, off0, g1], fun d hd => ?_, by omega, ?_⟩
+    refine ⟨by rw [go, x0₂, off0, g1], fun d hd => ?_, by omega_arith, ?_⟩
     · show InRegions _ (off (off (s.gpr .x0) (arg s .x1)) d) 8
       rw [off_off]
-      have := hs₃.st (d := arg s .x1 + d) (by omega)
+      have := hs₃.st (d := arg s .x1 + d) (by omega_arith)
       rwa [hs₃.x0] at this
     · have := hp.fit; simp only [off, Nat.add_comm]
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := arg s .x1) (by omega),
-        Nat.mod_eq_of_lt (by omega)]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := arg s .x1) (by omega_arith),
+        Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   have hmem₃ : s₃.mem = s.mem := by rw [K₃.mem, K₂.mem, K₁.mem]
   have hB : pre (wordsVal s₃.mem (off (s.gpr .x0) (arg s .x2)) 0 n)
       (wordsVal s₃.mem (off (s.gpr .x0) (arg s .x3)) 0 n) := by
@@ -594,7 +594,7 @@ theorem mulFnOf_ok {n m W : Nat} (hn : n = 6 ∨ n = 9) {body : List Instr} (pre
   rw [WP.block_append_iff]
   refine WP.mono (WP.block_novec hnv (hbody hs₃ hpa hpb hpo hB)) fun s₄ ⟨⟨G₄, rd₄, wr₄, sp₄, O₄, V, C⟩, Vv⟩ => ?_
   rw [restoreCode_eq]
-  refine WP.mono (restores_ok (saved n) 0 (by have := R.slen; omega) R.snd) fun s₅ ⟨K₅, V₅, R₅⟩ => ?_
+  refine WP.mono (restores_ok (saved n) 0 (by have := R.slen; omega_arith) R.snd) fun s₅ ⟨K₅, V₅, R₅⟩ => ?_
   have mem₅ : s₅.mem = s₄.mem := K₅.mem
   -- The registers kept by everything but the saves and restores.
   have keep : ∀ r, r ∉ saved n → r ∉ bodyW n → r ∉ [Reg.x1, .x2, .x3] → r ≠ roF n → r ≠ raF n →
@@ -625,7 +625,7 @@ theorem mulFnOf_ok {n m W : Nat} (hn : n = 6 ∨ n = 9) {body : List Instr} (pre
       exact this d hd
     rw [V₅, Vv, V₃, V₂ d hd', V₁]
   · rw [mem₅]
-    have := Outside.of_off O₄ (by have := (s.gpr .x0).isLt; omega)
+    have := Outside.of_off O₄ (by have := (s.gpr .x0).isLt; omega_arith)
     rw [this x hx, hmem₃]
   · have e := wordsVal_off s₄.mem (s.gpr .x0) (arg s .x1) 0 n
     rw [Nat.add_zero] at e

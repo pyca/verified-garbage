@@ -47,11 +47,11 @@ theorem subModQ_toNat {b x : BitVec 32} (hb : b.toNat < q) (hx : x.toNat < q) :
   by_cases h : b.toNat < x.toNat
   · have e : (0#32 - BitVec.setWidth 32 (BitVec.ofBool (decide (b.toNat < x.toNat))) &&& qImm) = 8380417#32 := by
       rw [decide_eq_true h]; decide
-    rw [e, Nat.mod_eq_of_lt (by omega)]
+    rw [e, Nat.mod_eq_of_lt (by omega_arith)]
     bv_omega
   · have e : (0#32 - BitVec.setWidth 32 (BitVec.ofBool (decide (b.toNat < x.toNat))) &&& qImm) = 0#32 := by
       rw [decide_eq_false h]; decide
-    rw [e, show (b.toNat + 8380417 - x.toNat) % 8380417 = b.toNat - x.toNat by omega]
+    rw [e, show (b.toNat + 8380417 - x.toNat) % 8380417 = b.toNat - x.toNat by omega_arith]
     bv_omega
 
 /-- The value `bpLd B` loads of a word. -/
@@ -80,14 +80,14 @@ theorem mem_bitPackParams {a b : Nat} (h : (a, b) ∈ bitPackParams) :
 theorem bitPack_vals {m : Mem} {f : Addr} (hr : Reduced m f) {b : Nat} (hb : b ≤ q / 2)
     (hle : ∀ i < n, modPm (coeffAt m f i).toNat q ≤ b) :
     ((polyAt m f).map fun c => modPm c.val q).toList.map (fun wi => ((b : Int) - wi).toNat) = vals (bpVal b) m f := by
-  have hbq : (BitVec.ofNat 32 b).toNat = b := by rw [BitVec.toNat_ofNat]; have : q = 8380417 := rfl; omega
+  have hbq : (BitVec.ofNat 32 b).toNat = b := by rw [BitVec.toNat_ofNat]; have : q = 8380417 := rfl; omega_arith
   rw [Vector.toList_map, polyAt, toList_ofFn (fun i => Fin.ofNat q (coeffAt m f i).toNat), List.map_map,
     List.map_map]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
   have hx := hr i hi
   simp only [Function.comp_apply, Fin.val_ofNat, Nat.mod_eq_of_lt hx]
-  rw [bpVal, subModQ_toNat (by omega) hx, hbq, sub_modPm hx hb (hle i hi)]
+  rw [bpVal, subModQ_toNat (by omega_arith) hx, hbq, sub_modPm hx hb (hle i hi)]
 
 theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
     WP isa Impl.MlDsa.X86_64.Pack.bitPack s₀ fun s' =>
@@ -101,7 +101,7 @@ theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
     intro d c nb B hs hB hB19 hd s h1 h2 h3 h4 h5
     rw [hB, hd] at hlen
     have hq : q = 8380417 := rfl
-    have hBq : (BitVec.ofNat 32 B).toNat = B := by rw [BitVec.toNat_ofNat]; omega
+    have hBq : (BitVec.ofNat 32 B).toNat = B := by rw [BitVec.toNat_ofNat]; omega_arith
     refine WP.mono (packLoop_ok (bpLd_ok B) hs (f := s₀.gpr .rdi) (o := s₀.gpr .rcx) (s₀ := s₀)
       (by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _))
       (by rw [hwr, hlen]; exact List.mem_singleton_self _) (by rw [← hlen]; exact hsep)
@@ -110,10 +110,10 @@ theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
     · obtain ⟨h₁, h₂⟩ := hbnd i hi
       rw [hB] at h₂
       have hx := hred i hi
-      rw [bpVal, subModQ_toNat (by omega) hx, hBq, ← sub_modPm hx (by omega) h₂, ← hd, ← hB]
+      rw [bpVal, subModQ_toNat (by omega_arith) hx, hBq, ← sub_modPm hx (by omega_arith) h₂, ← hd, ← hB]
       exact lt_bitlen (sub_modPm_le h₁ (by rw [hB]; exact h₂))
     · show bytesAt s'.mem (s₀.gpr .rcx) (s₀.gpr .r8).toNat = bitPack _ _ _
-      rw [hlen, hB', bitPack_eq, bitPack_vals hred (by omega) (fun i hi => (hbnd i hi).2),
+      rw [hlen, hB', bitPack_eq, bitPack_vals hred (by omega_arith) (fun i hi => (hbnd i hi).2),
         hB, hd]
   unfold Impl.MlDsa.X86_64.Pack.bitPack
   refine WP.seq (WP.mono (bpPro_ok s₀) fun s₁ ⟨⟨dx₁, r8₁, m₁⟩, k₁⟩ => ?_)
@@ -121,7 +121,7 @@ theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
   have cases := mem_bitPackParams hab
   refine sel_ok .rdx 2 _ _ s₁ (fun s₂ ⟨g₂, m₂, rd₂, wr₂⟩ h => ?_) (fun s₂ ⟨g₂, m₂, rd₂, wr₂⟩ h => ?_)
   · have e : dArg s₀ .rdx = 2 := by rw [← dx₁, lo_of_eq h]
-    have ea : dArg s₀ .rsi = 2 := by omega
+    have ea : dArg s₀ .rsi = 2 := by omega_arith
     exact go (d := 3) (c := 8) (nb := 3) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
       (by decide) (by rw [ea]; decide) s₂ (by rw [g₂, di₁]) (by rw [g₂, r8₁]) (by rw [rd₂, k₁.2.1])
       (by rw [wr₂, k₁.2.2]) (by rw [m₂, m₁])
@@ -129,7 +129,7 @@ theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
   have ds₂ : dArg s₂ .rdx = dArg s₀ .rdx := by unfold dArg; rw [g₂]; exact dx₁
   refine sel_ok .rdx 4 _ _ s₂ (fun s₃ ⟨g₃, m₃, rd₃, wr₃⟩ h => ?_) (fun s₃ ⟨g₃, m₃, rd₃, wr₃⟩ h => ?_)
   · have e : dArg s₀ .rdx = 4 := by rw [← ds₂, lo_of_eq h]
-    have ea : dArg s₀ .rsi = 4 := by omega
+    have ea : dArg s₀ .rsi = 4 := by omega_arith
     exact go (d := 4) (c := 2) (nb := 1) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
       (by decide) (by rw [ea]; decide) s₃ (by rw [g₃, g₂, di₁]) (by rw [g₃, g₂, r8₁])
       (by rw [rd₃, rd₂, k₁.2.1]) (by rw [wr₃, wr₂, k₁.2.2]) (by rw [m₃, m₂, m₁])
@@ -137,7 +137,7 @@ theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
   have ds₃ : dArg s₃ .rdx = dArg s₀ .rdx := by unfold dArg; rw [g₃]; exact ds₂
   refine sel_ok .rdx 4096 _ _ s₃ (fun s₄ ⟨g₄, m₄, rd₄, wr₄⟩ h => ?_) (fun s₄ ⟨g₄, m₄, rd₄, wr₄⟩ h => ?_)
   · have e : dArg s₀ .rdx = 4096 := by rw [← ds₃, lo_of_eq h]
-    have ea : dArg s₀ .rsi = 4095 := by omega
+    have ea : dArg s₀ .rsi = 4095 := by omega_arith
     exact go (d := 13) (c := 8) (nb := 13) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
       (by decide) (by rw [ea]; decide) s₄ (by rw [g₄, g₃, g₂, di₁]) (by rw [g₄, g₃, g₂, r8₁])
       (by rw [rd₄, rd₃, rd₂, k₁.2.1]) (by rw [wr₄, wr₃, wr₂, k₁.2.2]) (by rw [m₄, m₃, m₂, m₁])
@@ -145,13 +145,13 @@ theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
   have ds₄ : dArg s₄ .rdx = dArg s₀ .rdx := by unfold dArg; rw [g₄]; exact ds₃
   refine sel_ok .rdx 131072 _ _ s₄ (fun s₅ ⟨g₅, m₅, rd₅, wr₅⟩ h => ?_) (fun s₅ ⟨g₅, m₅, rd₅, wr₅⟩ h => ?_)
   · have e : dArg s₀ .rdx = 131072 := by rw [← ds₄, lo_of_eq h]
-    have ea : dArg s₀ .rsi = 131071 := by omega
+    have ea : dArg s₀ .rsi = 131071 := by omega_arith
     exact go (d := 18) (c := 4) (nb := 9) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
       (by decide) (by rw [ea]; decide) s₅ (by rw [g₅, g₄, g₃, g₂, di₁]) (by rw [g₅, g₄, g₃, g₂, r8₁])
       (by rw [rd₅, rd₄, rd₃, rd₂, k₁.2.1]) (by rw [wr₅, wr₄, wr₃, wr₂, k₁.2.2]) (by rw [m₅, m₄, m₃, m₂, m₁])
   · have n131072 : dArg s₀ .rdx ≠ 131072 := by rw [← ds₄]; exact lo_ne h
-    have e : dArg s₀ .rdx = 524288 := by omega
-    have ea : dArg s₀ .rsi = 524287 := by omega
+    have e : dArg s₀ .rdx = 524288 := by omega_arith
+    have ea : dArg s₀ .rsi = 524287 := by omega_arith
     exact go (d := 20) (c := 2) (nb := 5) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
       (by decide) (by rw [ea]; decide) s₅ (by rw [g₅, g₄, g₃, g₂, di₁]) (by rw [g₅, g₄, g₃, g₂, r8₁])
       (by rw [rd₅, rd₄, rd₃, rd₂, k₁.2.1]) (by rw [wr₅, wr₄, wr₃, wr₂, k₁.2.2]) (by rw [m₅, m₄, m₃, m₂, m₁])

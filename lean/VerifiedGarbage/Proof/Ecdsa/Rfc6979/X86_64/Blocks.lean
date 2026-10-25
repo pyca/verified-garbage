@@ -29,9 +29,9 @@ theorem bytesAt_of_readW (m : Mem) (q : Addr) (w : BitVec 64) {k : Nat}
   simp only [Spec.Sha256.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  rw [show i = 8 * (i / 8) + i % 8 by omega, Proof.Weierstrass.byte_word m q (i / 8) (Nat.mod_lt _ (by decide)),
-    h _ (by omega)]
-  congr 2; omega
+  rw [show i = 8 * (i / 8) + i % 8 by omega_arith, Proof.Weierstrass.byte_word m q (i / 8) (Nat.mod_lt _ (by decide)),
+    h _ (by omega_arith)]
+  congr 2; omega_arith
 
 /-! ## `V` and `K` -/
 
@@ -45,26 +45,26 @@ theorem kvN_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {a b : BitVec 64} (
   | 0, _ => WP.of_runBlock ⟨u, rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | k + 1, hk => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (kvN_ok hL hc ha hb k (by omega)) fun u₁ ⟨hrd, hwr, hg, hf, hv⟩ => ?_
-    have w₁ := hc.inFrW (d := 88 + 8 * k) (n := 8) (by omega) (by omega)
-    have w₂ := hc.inFrW (d := 24 + 8 * k) (n := 8) (by omega) (by omega)
+    refine WP.mono (kvN_ok hL hc ha hb k (by omega_arith)) fun u₁ ⟨hrd, hwr, hg, hf, hv⟩ => ?_
+    have w₁ := hc.inFrW (d := 88 + 8 * k) (n := 8) (by omega_arith) (by omega_arith)
+    have w₂ := hc.inFrW (d := 24 + 8 * k) (n := 8) (by omega_arith) (by omega_arith)
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64, ea_stk, hg, hc.rsp,
-      Offset.add_add, fV, fK, Nat.zero_add, show 24 + (64 + 8 * k) = 88 + 8 * k by omega, hwr, w₁, w₂, ite_true,
+      Offset.add_add, fV, fK, Nat.zero_add, show 24 + (64 + 8 * k) = 88 + 8 * k by omega_arith, hwr, w₁, w₂, ite_true,
       Option.some.injEq, exists_eq_left', ha, hb]
     have sep : ∀ x y, x + 8 ≤ y ∨ y + 8 ≤ x → x + 8 ≤ 240 → y + 8 ≤ 240 →
         Mem.Sep (L.B + BitVec.ofNat 64 x) (64 / 8) (L.B + BitVec.ofNat 64 y) (64 / 8) :=
-      fun x y h h₁ h₂ => Offset.sep _ h (by omega) (by omega)
+      fun x y h h₁ h₂ => Offset.sep _ h (by omega_arith) (by omega_arith)
     refine ⟨hrd, trivial, trivial, hf.trans ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by omega) (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by omega) (by omega) (by omega)))), fun j hj => ?_⟩
+      (Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _
+      (Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)))), fun j hj => ?_⟩
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [Mem.readW_writeW_sep (sep _ _ (by omega) (by omega) (by omega)) (by decide),
-        Mem.readW_writeW_sep (sep _ _ (by omega) (by omega) (by omega)) (by decide),
-        Mem.readW_writeW_sep (sep _ _ (by omega) (by omega) (by omega)) (by decide),
-        Mem.readW_writeW_sep (sep _ _ (by omega) (by omega) (by omega)) (by decide)]
+    · rw [Mem.readW_writeW_sep (sep _ _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        Mem.readW_writeW_sep (sep _ _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        Mem.readW_writeW_sep (sep _ _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        Mem.readW_writeW_sep (sep _ _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
       exact hv j hj
-    · rw [Mem.readW_writeW_sep (sep _ _ (by omega) (by omega) (by omega)) (by decide),
+    · rw [Mem.readW_writeW_sep (sep _ _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
         Mem.readW_writeW_self64, Mem.readW_writeW_self64]
       exact ⟨rfl, rfl⟩
 
@@ -85,7 +85,7 @@ theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       (∀ n ≤ 64, Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 88) n = List.replicate n 1) ∧
       ∀ n ≤ 64, Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 24) n = List.replicate n 0 := by
   refine Ctx.of_keep hL hc ?_ (by rfl) fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega_arith)
   rw [Cfg.initKV, WP.block_append_iff]
   have h₁ : WP isa (.block [.movImm64 .rax (BitVec.ofNat 64 0x0101010101010101), .alu32 .xor .rcx (.reg .rcx)]) t
       fun u => Ctx L g m₀ u ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ u.mem = t.mem ∧
@@ -95,7 +95,7 @@ theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false, ite_true,
       Option.some.injEq, exists_eq_left', xor_self_zx]
     exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv, by triv⟩
-  refine WP.mono h₁ fun u ⟨hcu, hrd, hwr, hm, ha, hb⟩ => WP.mono (kvN_ok hL hcu ha hb 8 (by omega))
+  refine WP.mono h₁ fun u ⟨hcu, hrd, hwr, hm, ha, hb⟩ => WP.mono (kvN_ok hL hcu ha hb 8 (by omega_arith))
     fun u' ⟨hrd', hwr', _, hf, hv⟩ => ⟨hrd'.trans hrd, hwr'.trans hwr, hm ▸ hf, fun n hn => ?_, fun n hn => ?_⟩
   · rw [bytesAt_take _ _ (k := 64) hn, show (88 : Nat) = 88 + 0 from rfl,
       kv_bytes _ _ _ _ fun j hj => (hv j hj).1, show (List.range 64).map
@@ -114,9 +114,9 @@ abbrev cnt {dn : Nat} (L : Lay dn) (m : Mem) : BitVec 64 := m.readW (L.B + BitVe
 theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧
       Frame [⟨L.B + BitVec.ofNat 64 200, 8⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 64 P.I.tries := by
-  have w := hc.inFrW (d := 200) (n := 8) (by omega) (by omega)
+  have w := hc.inFrW (d := 200) (n := 8) (by omega_arith) (by omega_arith)
   refine Ctx.of_keep hL hc ?_ (by rfl) fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega_arith)
   apply WP.of_runBlock
   simp only [Cfg.initCnt, cfgOf, fCnt, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
     State.store64, ea_stk, Option.map_some, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg, reduceCtorEq, ite_false,
@@ -124,7 +124,7 @@ theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     Option.some.injEq, exists_eq_left']
   refine ⟨by triv, by triv, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _), ?_⟩
   simp only [cnt, Mem.readW_writeW_self64]
-  exact BitVec.setWidth_ofNat_of_le_of_lt (by omega) P.tries_lt
+  exact BitVec.setWidth_ofNat_of_le_of_lt (by omega_arith) P.tries_lt
 
 /-! ## `core`'s arguments -/
 
@@ -138,10 +138,10 @@ abbrev kArg (P : RfcHash) {dn : Nat} (L : Lay dn) : Addr :=
 theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).coreArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .rdi = L.out ∧
       t'.gpr .rsi = L.d ∧ t'.gpr .rdx = dgArg P L ∧ t'.gpr .rcx = kArg P L ∧ t'.gpr .r8 = L.scr := by
-  have p0 := hc.inFr (d := 232) (by omega) (by omega)
-  have p1 := hc.inFr (d := 224) (by omega) (by omega)
-  have p2 := hc.inFr (d := 216) (by omega) (by omega)
-  have p3 := hc.inFr (d := 208) (by omega) (by omega)
+  have p0 := hc.inFr (d := 232) (by omega_arith) (by omega_arith)
+  have p1 := hc.inFr (d := 224) (by omega_arith) (by omega_arith)
+  have p2 := hc.inFr (d := 216) (by omega_arith) (by omega_arith)
+  have p3 := hc.inFr (d := 208) (by omega_arith) (by omega_arith)
   apply WP.of_runBlock
   simp only [dgArg, kArg]
   cases hw : P.R.wide
@@ -178,7 +178,7 @@ theorem goOn_flag (a : BitVec 32) (c : BitVec 64) (x : BitVec 64) :
     · subst ha; rfl
     · have : ¬ a.toNat < (1 : BitVec 32).toNat := fun h => ha (BitVec.eq_of_toNat_eq (by
         have : (1 : BitVec 32).toNat = 1 := rfl
-        show a.toNat = 0; omega))
+        show a.toNat = 0; omega_arith))
       rw [decide_eq_false this, decide_eq_false ha]
   rw [hb, BitVec.and_self]
   by_cases ha : a = 0
@@ -195,10 +195,10 @@ theorem goOn_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       Frame [⟨L.B + BitVec.ofNat 64 200, 8⟩] t.mem t'.mem ∧ cnt L t'.mem = cnt L t.mem - 1 ∧
       t'.gpr .rax = t.gpr .rax ∧
       t'.zf = some (!decide ((t.gpr .rax).setWidth 32 = 0 ∧ cnt L t.mem - 1 ≠ 0)) := by
-  have r := hc.inFr (d := 200) (by omega) (by omega)
-  have w := hc.inFrW (d := 200) (n := 8) (by omega) (by omega)
+  have r := hc.inFr (d := 200) (by omega_arith) (by omega_arith)
+  have w := hc.inFrW (d := 200) (n := 8) (by omega_arith) (by omega_arith)
   refine Ctx.of_keep hL hc ?_ (by rfl) fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega_arith)
   apply WP.of_runBlock
   simp only [Cfg.goOn, fCnt, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execAlu32, readSrc, readSrc32,
     State.load64, State.store64, ea_stk, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
@@ -236,13 +236,13 @@ theorem zeroN_ok {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ 22,
   | 0, _ => WP.of_runBlock ⟨u, rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | k + 1, hk => by
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (zeroN_ok hc k (by omega)) fun u₁ ⟨hrd, hwr, hg, hf⟩ => ?_
-    have w := hc.inFrW (d := 24 + 8 * k) (n := 8) (by omega) (by omega)
+    refine WP.mono (zeroN_ok hc k (by omega_arith)) fun u₁ ⟨hrd, hwr, hg, hf⟩ => ?_
+    have w := hc.inFrW (d := 24 + 8 * k) (n := 8) (by omega_arith) (by omega_arith)
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64, ea_stk, hg, hc.rsp,
       Offset.add_add, hwr, w, ite_true, Option.some.injEq, exists_eq_left']
     exact ⟨hrd, trivial, trivial, hf.trans ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by omega) (by omega) (by omega)))⟩
+      (Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)))⟩
 
 theorem zeroH_ok {t : State} (hc : Ctx L g m₀ t) {K : Nat} (hK : K ≤ L.e) : ∀ k ≤ K, ∀ u : State,
     u.wr = t.wr → u.gpr .rsp = t.gpr .rsp →
@@ -252,15 +252,15 @@ theorem zeroH_ok {t : State} (hc : Ctx L g m₀ t) {K : Nat} (hK : K ≤ L.e) : 
   | k + 1, hk, u, hwu, hsu => by
     have he := L.he
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (zeroH_ok hc hK k (by omega) u hwu hsu) fun u₁ ⟨hrd, hwr, hg, hf⟩ => ?_
-    have w := hc.inFrW (d := 240 + 8 * k) (n := 8) (by omega) (by omega)
+    refine WP.mono (zeroH_ok hc hK k (by omega_arith) u hwu hsu) fun u₁ ⟨hrd, hwr, hg, hf⟩ => ?_
+    have w := hc.inFrW (d := 240 + 8 * k) (n := 8) (by omega_arith) (by omega_arith)
     rw [← hwu, ← hwr] at w
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64, ea_stk, hg, hsu, hc.rsp, fX,
-      Offset.add_add, show 24 + (216 + 8 * k) = 240 + 8 * k by omega, w, ite_true, Option.some.injEq,
+      Offset.add_add, show 24 + (216 + 8 * k) = 240 + 8 * k by omega_arith, w, ite_true, Option.some.injEq,
       exists_eq_left']
     exact ⟨hrd, hwr, trivial, hf.trans ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by omega) (by omega) (by omega)))⟩
+      (Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)))⟩
 
 /-- `K`, `V`, `h` and the count cleared, and the words above the pointers,
 keeping `rax`. -/
@@ -272,8 +272,8 @@ theorem wipe_ok (hL : L.Ok) (hLe : L.e = P.e) {t : State} (hc : Ctx L g m₀ t) 
     (ws := [⟨L.B + BitVec.ofNat 64 24, 176⟩, ⟨L.B + BitVec.ofNat 64 240, 8 * L.e⟩]) ?_ ?_ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact safe_low L (by omega)
-      · exact safe_high L (by omega) (by omega)
+      · exact safe_low L (by omega_arith)
+      · exact safe_high L (by omega_arith) (by omega_arith)
   · exact WP.mono h fun _ ⟨hc', hf, ha⟩ => ⟨hc', ha, hf⟩
   · rw [Cfg.wipe, WP.block_append_iff, WP.block_append_iff, hx]
     have h₁ : WP isa (.block [.alu32 .xor .rcx (.reg .rcx)]) t fun u => Ctx L g m₀ u ∧ u.rd = t.rd ∧
@@ -283,7 +283,7 @@ theorem wipe_ok (hL : L.Ok) (hLe : L.e = P.e) {t : State} (hc : Ctx L g m₀ t) 
         Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false,
         Option.some.injEq, exists_eq_left']
       exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv⟩
-    refine WP.mono h₁ fun u ⟨hcu, hrd, hwr, hm, ha⟩ => WP.mono (zeroN_ok hcu 22 (by omega))
+    refine WP.mono h₁ fun u ⟨hcu, hrd, hwr, hm, ha⟩ => WP.mono (zeroN_ok hcu 22 (by omega_arith))
       fun u' ⟨hrd', hwr', hg, hf⟩ => WP.mono (zeroH_ok hcu (Nat.le_refl _) L.e (Nat.le_refl _) u' hwr'
         (by rw [hg]))
         fun u'' ⟨hrd'', hwr'', hg'', hf''⟩ => ⟨hrd''.trans (hrd'.trans hrd), hwr''.trans (hwr'.trans hwr), ?_,

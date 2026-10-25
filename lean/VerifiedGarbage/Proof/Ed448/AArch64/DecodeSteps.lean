@@ -48,24 +48,24 @@ theorem DFrame.trans {base : Addr} {m₁ m₂ m₃ : Mem} (h₁ : DFrame base m�
     DFrame base m₁ m₃ := fun x a b c => (h₂ x a b c).trans (h₁ x a b c)
 
 theorem DFrame.of_outside2 {base : Addr} {m m' : Mem} {n : Nat} (hn : n ≤ 2816)
-    (h : Outside2 base 64 n ACC 1152 m m') : DFrame base m m' := fun x a b _ => h x (by omega) b
+    (h : Outside2 base 64 n ACC 1152 m m') : DFrame base m m' := fun x a b _ => h x (by omega_arith) b
 
 theorem DFrame.of_outside {base : Addr} {m m' : Mem} {o n : Nat} (h : Outside base o n m m')
-    (ho : 16 ≤ o ∧ o + n ≤ 2880) : DFrame base m m' := fun x a _ _ => h x (by omega)
+    (ho : 16 ≤ o ∧ o + n ≤ 2880) : DFrame base m m' := fun x a _ _ => h x (by omega_arith)
 
 theorem DFrame.whole {base : Addr} {m m' : Mem} (h : DFrame base m m') : Outside base 0 8192 m m' :=
-  fun x hx => h x (by omega) (by simp only [ACC]; omega) (by simp only [CAN]; omega)
+  fun x hx => h x (by omega_arith) (by simp only [ACC]; omega_arith) (by simp only [CAN]; omega_arith)
 
 theorem DFrame.word {base : Addr} {m m' : Mem} (h : DFrame base m m') {d : Nat}
     (h1 : d + 8 ≤ 16 ∨ 2880 ≤ d) (h2 : d + 8 ≤ ACC ∨ ACC + 1152 ≤ d) (h3 : d + 8 ≤ CAN ∨ CAN + 128 ≤ d)
     (hd : d + 8 ≤ 8192) : word m' base d = word m base d :=
   Mem.readW_congr fun i hi => h _ (by
-      simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
-    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
-    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
+      simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega_arith)]; omega_arith)
+    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega_arith)]; omega_arith)
+    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega_arith)]; omega_arith)
 
 theorem cframe_dframe {base : Addr} {m m' : Mem} (h : CFrame base m m') : DFrame base m m' :=
-  fun x h1 h2 h3 => h x (by simp only [X2, slot] at *; omega) h3 (by simp only [ACC] at *; omega)
+  fun x h1 h2 h3 => h x (by simp only [X2, slot] at *; omega_arith) h3 (by simp only [ACC] at *; omega_arith)
 
 theorem fkeep_dframe {base : Addr} {s t : State} (h : FKeep base s t) : DFrame base s.mem t.mem :=
   DFrame.of_outside2 (Nat.le_refl _) h.mem
@@ -88,7 +88,7 @@ theorem bnd_check {base : Addr} {m m' : Mem} (hb : BEnv m base) (h : CFrame base
   intro i j hj
   by_cases hi : i = 1
   · subst hi; exact weakB_ib (bounded_of_legacy h2) j hj
-  · rw [show limbs m' base (slot i.val) j = _ from h.limbs hi (by omega)]
+  · rw [show limbs m' base (slot i.val) j = _ from h.limbs hi (by omega_arith)]
     exact hb i j hj
 
 theorem lt118 {m : Mem} {base : Addr} (hb : BEnv m base) (i : Fin 22) :
@@ -130,9 +130,9 @@ theorem head_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
     fun i hi j hj => by
       have := i.isLt
       have hs10 : slot i.val + 128 ≤ slot 10 ∨ slot 10 + 64 ≤ slot i.val := by
-        have := VG.Proof.X448.AArch64.Weak.slot_sep hi; simp only [slot] at *; omega
-      rw [ot.limbs hs10 (by simp only [slot]; omega) (by omega),
-        ob.limbs (Or.inr (by simp only [SIGN, slot]; omega)) (by simp only [slot]; omega) (by omega)]
+        have := VG.Proof.X448.AArch64.Weak.slot_sep hi; simp only [slot] at *; omega_arith
+      rw [ot.limbs hs10 (by simp only [slot]; omega_arith) (by omega_arith),
+        ob.limbs (Or.inr (by simp only [SIGN, slot]; omega_arith)) (by simp only [slot]; omega_arith) (by omega_arith)]
   have Eab : ∀ i : Fin 22, i ≠ 10 → E t.mem base i = E a.mem base i := fun i hi =>
     congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (lab i hi))
   have w10 : ∀ j < 8, limbs t.mem base (slot 10) j < 2 ^ 56 := fun j hj => by
@@ -140,7 +140,7 @@ theorem head_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
     rw [wt j hj]; exact VG.Proof.X448.AArch64.Base.limb_lt _ _
   refine ⟨by rw [Eab yo hy10]; exact ya, ?_, ?_, fun i hi h10 => by rw [Eab i h10, ea i hi], ?_, ?_,
     fun j hj => Nat.lt_trans (w10 j hj) (by decide), ?_, ?_⟩
-  · rw [ot.word (Or.inl (by simp only [SIGN, slot]; omega)) (by decide), mb,
+  · rw [ot.word (Or.inl (by simp only [SIGN, slot]; omega_arith)) (by decide), mb,
       VG.Proof.X448.AArch64.word_write_aligned _ _ (by decide) (by decide) (by decide) (by decide), ite_eq_left rfl]
     exact sa
   · obtain ⟨c, hc, h20⟩ := ca
@@ -152,13 +152,13 @@ theorem head_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
     · rw [lab i h10 j hj]
       by_cases hiy : i = yo
       · subst hiy; exact Nat.lt_trans (ba j hj) (by decide)
-      · rw [oa.limbs (by have := VG.Proof.X448.AArch64.Weak.slot_sep hiy; have := i.isLt; simp only [slot] at *; omega)
-          (by have := i.isLt; simp only [slot]; omega) (by omega)]
+      · rw [oa.limbs (by have := VG.Proof.X448.AArch64.Weak.slot_sep hiy; have := i.isLt; simp only [slot] at *; omega_arith)
+          (by have := i.isLt; simp only [slot]; omega_arith) (by omega_arith)]
         exact hb i j hj
   · exact (ka.trans (kb.mono (by simp))).trans (kt.mono (by decide))
-  · exact ((DFrame.of_outside oa (by simp only [slot]; omega)).trans
-      (fun x h1 _ _ => ob x (by simp only [SIGN]; omega))).trans
-      (DFrame.of_outside ot (by simp only [slot]; omega))
+  · exact ((DFrame.of_outside oa (by simp only [slot]; omega_arith)).trans
+      (fun x h1 _ _ => ob x (by simp only [SIGN]; omega_arith))).trans
+      (DFrame.of_outside ot (by simp only [slot]; omega_arith))
 
 /-- The sign bit read back into `x17`. -/
 theorem signLoad_ok {s : State} {base : Addr} (hs : Scr s base) :

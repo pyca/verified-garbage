@@ -33,14 +33,14 @@ theorem cols_lt (s : State) : cols s < 2 ^ 512 := by
   have h10 := (s.gpr .r10).isLt; have h11 := (s.gpr .r11).isLt
   have h12 := (s.gpr .r12).isLt; have h13 := (s.gpr .r13).isLt
   have h14 := (s.gpr .r14).isLt; have h15 := (s.gpr .r15).isLt
-  unfold cols; omega
+  unfold cols; omega_arith
 
 theorem number_lt (v : Nat → BitVec 64) : number v < 2 ^ 512 := by
   have h0 := (v 0).isLt; have h1 := (v 1).isLt
   have h2 := (v 2).isLt; have h3 := (v 3).isLt
   have h4 := (v 4).isLt; have h5 := (v 5).isLt
   have h6 := (v 6).isLt; have h7 := (v 7).isLt
-  unfold number; omega
+  unfold number; omega_arith
 
 theorem head_ok (s : State) :
     WP isa (.block [.mov .rbx (.reg .r8), .alu32 .xor .rax (.reg .rax)]) s fun t =>
@@ -71,7 +71,7 @@ theorem last_ok (s : State) {v : BitVec 64} {c o : Bool}
   refine ⟨ct, hct, hot.trans (oa.trans ho), ?_, (ka.trans kt).mono (by decide)⟩
   rw [ka.gpr (by decide)] at et
   rw [kt.gpr (r := .r15) (by decide)]
-  omega
+  omega_arith
 
 theorem core_ok (s : State) (v : Nat → BitVec 64)
     (hm : ∀ k < 8, readSrc s (.mem (at_ .rbp (8 * k))) = some (v k)) :
@@ -160,9 +160,9 @@ theorem core_ok (s : State) (v : Nat → BitVec 64)
     have a := cols_lt s
     have b := number_lt v
     have d := (s.gpr .rdx).isLt
-    have m := Nat.mul_le_mul (show (s.gpr .rdx).toNat ≤ 2 ^ 64 - 1 by omega)
-      (show number v ≤ 2 ^ 512 - 1 by omega)
-    omega
+    have m := Nat.mul_le_mul (show (s.gpr .rdx).toNat ≤ 2 ^ 64 - 1 by omega_arith)
+      (show number v ≤ 2 ^ 512 - 1 by omega_arith)
+    omega_arith
   have z : ct = false ∧ ot = false := by
     have z : ct.toNat + ot.toNat = 0 := by omega_using [eq, bound]
     exact ⟨Bool.toNat_eq_zero.mp (by omega_using [z]),

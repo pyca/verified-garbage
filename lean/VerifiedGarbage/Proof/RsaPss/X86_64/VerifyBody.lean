@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 
 /-!
 # RSASSA-PSS verification on x86-64: the checks and the calling convention

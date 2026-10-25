@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the last 257 to 511 bytes of `open`
@@ -83,7 +84,7 @@ theorem K3.round4 {k : Nat} (hk : Key R0 R1)
       InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 (16 * j) + BitVec.ofNat 64 off) n' := by
     intro off n' hn
     rw [h.rd, h.wr, Offset.add_add]
-    exact hin _ _ (by omega)
+    exact hin _ _ (by omega_arith)
   have i₀ : TB3 s (fun l => Nat.repeat innerBlock n (V l))
       (AccTo (q + BitVec.ofNat 64 (16 * j)) R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * j))) s
         (ofirst 4 0)) s :=
@@ -184,13 +185,13 @@ theorem ctx96 {s : State} (hrdi : s.gpr .rdi = stA c) (hr9 : s.gpr .r9 = bfA c)
   have d12 : (regn 96 s 1).Disjoint (regn 96 s 2) := by
     rw [r1, r2]; exact Offset.disjoint c (Or.inl (by decide)) (by decide) (by decide)
   refine ⟨fun b i n hb3 h hn => ?_, fun b b' hb hb' ne => ?_, by decide⟩
-  · rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;> simp only [bsize] at h
-    · rw [r0]; exact ⟨_, hst, Offset.contains_base _ (by omega) (by lit_omega)⟩
-    · rw [r1]; exact ⟨_, hb, Offset.contains_base _ (by omega) (by lit_omega)⟩
+  · rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;> simp only [bsize] at h
+    · rw [r0]; exact ⟨_, hst, Offset.contains_base _ (by omega_arith) (by lit_omega)⟩
+    · rw [r1]; exact ⟨_, hb, Offset.contains_base _ (by omega_arith) (by lit_omega)⟩
     · rw [r2]; refine ⟨_, hk, ?_⟩; rw [kc, Offset.add_add]
-      exact Offset.contains c (by omega) (by omega) (by decide)
-  · rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;>
-      rcases (by omega : b' = 0 ∨ b' = 1 ∨ b' = 2) with rfl | rfl | rfl
+      exact Offset.contains c (by omega_arith) (by omega_arith) (by decide)
+  · rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;>
+      rcases (by omega_arith : b' = 0 ∨ b' = 1 ∨ b' = 2) with rfl | rfl | rfl
     · exact absurd rfl ne
     · exact d01
     · exact d02
@@ -354,13 +355,13 @@ theorem tail3Og_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64}
     intro off n' hn
     refine ⟨_, List.mem_append_right _ (by rw [wr₁]; exact h.dw), ?_⟩
     rw [Offset.add_add]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   -- The rounds.
   have k₁ : K3 (dp + BitVec.ofNat 64 o) R0 R1 X (fun j => ctr (stateAt s.mem (stA c)) j) s₁ 0 0 s₁ :=
     ⟨tb₁.hb, tb₁.ym, rfl, fun _ _ _ _ => rfl, rfl, rfl, tb₁.poly⟩
   refine WP.seq (WP.mono (roundsL_ok (K3 (dp + BitVec.ofNat 64 o) R0 R1 X _ s₁) (k := 16) (by decide) (by decide)
     (by decide) (by decide) (fun _ _ _ _ h' g x y m rd wr => h'.keep g x y m rd wr)
-    (fun n s hn h' hr => K3.round4 hk hin (j := 4 * n) (show 4 * n + 4 ≤ 16 by omega) h' hr)
+    (fun n s hn h' hr => K3.round4 hk hin (j := 4 * n) (show 4 * n + 4 ≤ 16 by omega_arith) h' hr)
     (fun n s _ _ h' hr => K3.round0 hk hin h' hr) k₁ hrsi₁) fun s₂ ⟨tb₂, r₂, d₂⟩ => ?_)
   have hrcx₂ : s₂.gpr .rcx = bfA c := by
     rw [tb₂.gpr _ (by decide) (by decide) (by decide), gk₁ _ (by decide) (by decide), h.rcx]
@@ -379,27 +380,27 @@ theorem tail3Og_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64}
     rw [m₂]
     refine (tMem_frame _).readW (r := ⟨c + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint c (Or.inr (by omega)) (by omega) (by decide)
+    exact Offset.disjoint c (Or.inr (by omega_arith)) (by omega_arith) (by decide)
   have hslot : s₂.mem.readW (c + BitVec.ofNat 64 544) 64 = BitVec.ofNat 64 n := by
     rw [ctxk 544 (by decide) (by decide), ← slot_eq, h.left]
   have S₂ : stateAt s₂.mem (stA c) = stateAt s.mem (stA c) := by
     rw [m₂]
     exact Proof.ChaCha20.X86_64.Xor.stateAt_frame (tMem_frame _) (by simpa using st_bf)
   refine ⟨fun i hi => ?_, ?_, ?_, by rw [rbx₃, hrsi₂, Offset.add_add],
-    by rw [rbp₃, hslot, Offset.ofNat_sub_ofNat (by omega)],
+    by rw [rbp₃, hslot, Offset.ofNat_sub_ofNat (by omega_arith)],
     by rw [r12₃, ctxk 520 (by decide) (by decide)], by rw [r13₃, ctxk 528 (by decide) (by decide)],
     by rw [r14₃, ctxk 536 (by decide) (by decide)], r15₃,
     by rw [rsp₃, tb₂.gpr _ (by decide) (by decide) (by decide), gk₁ _ (by decide) (by decide), h.rsp],
     by rw [rd₃, tb₂.rd, rd₁],
     by rw [wr₃, wr₂]⟩
-  · rw [ks₃ i (by omega), S₂, Proof.ChaCha20.X86_64.Avx2.plus_block, VG.Proof.ChaCha20.keystream_getD _ hi]
+  · rw [ks₃ i (by omega_arith), S₂, Proof.ChaCha20.X86_64.Avx2.plus_block, VG.Proof.ChaCha20.keystream_getD _ hi]
   · -- The accumulator: the first 16 blocks absorbed.
     have hb1 : bytesAt s₁.mem (dp + BitVec.ofNat 64 o) (16 * 16) =
         bytesAt s.mem (dp + BitVec.ofNat 64 o) (16 * 16) := by
       rw [m₁]
-      refine bytesAt_frame (tMem_frame _) (fun r hr => ?_) (by omega)
+      refine bytesAt_frame (tMem_frame _) (fun r hr => ?_) (by omega_arith)
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hl.bf_d.symm.sub_left (Offset.sub_base _ (by omega)))
+      exact (hl.bf_d.symm.sub_left (Offset.sub_base _ (by omega_arith)))
     have v := tb₂.acc.val
     rw [hb1] at v
     rw [acc₃, v]
@@ -421,13 +422,13 @@ theorem tailKOg_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 
   have dak : (accR c).Disjoint (kR (bfA c)) := by
     rw [kc]; exact Offset.disjoint c (Or.inl (by decide)) (by decide) (by decide)
   have dqs : (⟨dp + BitVec.ofNat 64 o, 16 * 24⟩ : Region).Disjoint (slotsR (bfA c)) :=
-    ((hl.cd (d := 128) (n := 128) (by decide)).sub_right (Offset.sub_base _ (by omega))).symm
+    ((hl.cd (d := 128) (n := 128) (by decide)).sub_right (Offset.sub_base _ (by omega_arith))).symm
   have hin : ∀ off n', off + n' ≤ 16 * 24 →
       InRegions (s.rd ++ s.wr) (dp + BitVec.ofNat 64 o + BitVec.ofNat 64 off) n' := by
     intro off n' hn
     refine ⟨_, List.mem_append_right _ h.dw, ?_⟩
     rw [Offset.add_add]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   unfold tailKO
   refine WP.seq (WP.mono (tailKL_ok vl (k := 24) (by decide) (by decide) (by decide) (by decide) (by decide) hk
     h.rdi h.rcx h.rsi bf_sub64 h.st h.bf hkr hin
@@ -460,14 +461,14 @@ theorem tailKOg_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 
     rw [rd₂' 544 (by decide) (by decide), ← slot_eq, h.left]
   refine ⟨fun i hi => ?_, ?_, (f₂'.mono (by simp)).trans (fa.mono (by simp)),
     by rw [g₅, rbx₄, gs _ (.inl rfl), h.rsi, Offset.add_add],
-    by rw [g₅, rbp₄, hslot, Offset.ofNat_sub_ofNat (by omega)],
+    by rw [g₅, rbp₄, hslot, Offset.ofNat_sub_ofNat (by omega_arith)],
     by rw [g₅, r12₄, rd₂' 520 (by decide) (by decide)], by rw [g₅, r13₄, rd₂' 528 (by decide) (by decide)],
     by rw [g₅, r14₄, rd₂' 536 (by decide) (by decide)], by rw [g₅, r15₄],
     by rw [g₅, g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), gs _ (.inr rfl), h.rsp],
     by rw [rd₅, rd₄, k₃.2.2.1, rd₂], by rw [wr₅, wr₄, k₃.2.2.2, wr₂]⟩
   · rw [fa _ (fun r hr hc => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact dak _ hc (kR_contains _ (by omega))), d₂ i (by omega),
+      exact dak _ hc (kR_contains _ (by omega_arith))), d₂ i (by omega_arith),
       Proof.ChaCha20.X86_64.Avx2.plus_block, VG.Proof.ChaCha20.keystream_getD _ hi]
   · rw [mA, accMem_acc]
     show hval s₃ = _

@@ -26,14 +26,7 @@ theorem keyClearArgs_ok (s : State) {p : Inputs} {slots : List Nat} (slot : Nat)
   have addr (d : Nat) (hd : d + 4 ≤ 72) :
       State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
     VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
-  refine withRest [.r0, .r2, .lr] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [.ldrSp .r0 slot, .ldrSp .lr 32, .mov .r2 (.imm 0)] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r2, .lr] ?_ (by rfl) (by rfl)
   ffrun [(by omega : slot < 4096), addr slot fit, addr 32 (by decide), h.locals.read fit, h.locals.read (d := 32) (by decide),
     h.saved slot hs, h.saved 32 hk, Inputs.slotValue]
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Ed25519.AArch64.Step

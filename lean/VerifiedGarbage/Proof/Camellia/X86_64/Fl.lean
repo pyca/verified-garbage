@@ -120,32 +120,32 @@ theorem flRotDesc_ok {off K} : ∀ n ≤ 7, ∀ s : State, FlMem s off K →
       (∀ i < 8, s'.gpr (q i) = if 1 ≤ i ∧ i ≤ n then rotUpd (fun i => s.gpr (q i)) K i else s.gpr (q i)) ∧
       (∀ r, (∀ i < 8, r ≠ q i) → r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr
-  | 0, _, s, _ => ⟨s, runBlock_nil, fun i _ => by simp only [show ¬ (1 ≤ i ∧ i ≤ 0) by omega, ↓reduceIte],
+  | 0, _, s, _ => ⟨s, runBlock_nil, fun i _ => by simp only [show ¬ (1 ≤ i ∧ i ≤ 0) by omega_arith, ↓reduceIte],
       fun _ _ _ => rfl, rfl, rfl, rfl⟩
   | n + 1, hn, s, hf => by
-    obtain ⟨hk, hkv⟩ := hf.key n (by omega)
+    obtain ⟨hk, hkv⟩ := hf.key n (by omega_arith)
     obtain ⟨s₁, h₁, g₁, o₁, m₁, rd₁, wr₁⟩ :=
-      flRotStep_ok (j := n + 1) (src := q n) (q_ne_t0 _ (by omega)) hk hkv hf.odd.1 hf.odd.2
+      flRotStep_ok (j := n + 1) (src := q n) (q_ne_t0 _ (by omega_arith)) hk hkv hf.odd.1 hf.odd.2
         (by decide : 1 ≤ 56 ∧ 56 ≤ 63)
-    have hf₁ : FlMem s₁ off K := hf.congr m₁ rd₁ wr₁ (o₁ _ (fun h => q_ne_kp _ (by omega) h.symm)
-      (by decide)) (o₁ _ (fun h => q_ne_sb _ (by omega) h.symm) (by decide))
-    obtain ⟨s', h', g', o', m', rd', wr'⟩ := flRotDesc_ok n (by omega) s₁ hf₁
+    have hf₁ : FlMem s₁ off K := hf.congr m₁ rd₁ wr₁ (o₁ _ (fun h => q_ne_kp _ (by omega_arith) h.symm)
+      (by decide)) (o₁ _ (fun h => q_ne_sb _ (by omega_arith) h.symm) (by decide))
+    obtain ⟨s', h', g', o', m', rd', wr'⟩ := flRotDesc_ok n (by omega_arith) s₁ hf₁
     refine ⟨s', by rw [flRotDesc, runBlock_append', h₁]; exact h', fun i hi => ?_,
-      fun r h1 h2 => by rw [o' r h1 h2, o₁ r (h1 _ (by omega)) h2], by rw [m', m₁],
+      fun r h1 h2 => by rw [o' r h1 h2, o₁ r (h1 _ (by omega_arith)) h2], by rw [m', m₁],
       by rw [rd', rd₁], by rw [wr', wr₁]⟩
     have hs₁ : ∀ i' < 8, i' ≠ n + 1 → s₁.gpr (q i') = s.gpr (q i') := fun i' hi' hne =>
-      o₁ _ (fun h => hne (q_inj _ hi' _ (by omega) h)) (q_ne_t0 _ hi')
+      o₁ _ (fun h => hne (q_inj _ hi' _ (by omega_arith) h)) (q_ne_t0 _ hi')
     rw [g' i hi]
     by_cases hin : 1 ≤ i ∧ i ≤ n
-    · simp only [hin, show 1 ≤ i ∧ i ≤ n + 1 by omega, and_self, ↓reduceIte]
+    · simp only [hin, show 1 ≤ i ∧ i ≤ n + 1 by omega_arith, and_self, ↓reduceIte]
       simp only [rotUpd]
-      rw [hs₁ _ hi (by omega), hs₁ _ (Nat.mod_lt _ (by omega)) (by omega)]
+      rw [hs₁ _ hi (by omega_arith), hs₁ _ (Nat.mod_lt _ (by omega_arith)) (by omega_arith)]
     · simp only [hin, ↓reduceIte]
       by_cases hi1 : i = n + 1
       · subst hi1
-        simp only [g₁, show 1 ≤ n + 1 ∧ n + 1 ≤ n + 1 by omega, and_self, ↓reduceIte]
-        simp only [rotUpd, show (n + 1 + 7) % 8 = n by omega, show ¬ n + 1 = 0 by omega, ite_false]
-      · rw [hs₁ _ hi hi1]; simp only [show ¬ (1 ≤ i ∧ i ≤ n + 1) by omega, ↓reduceIte]
+        simp only [g₁, show 1 ≤ n + 1 ∧ n + 1 ≤ n + 1 by omega_arith, and_self, ↓reduceIte]
+        simp only [rotUpd, show (n + 1 + 7) % 8 = n by omega_arith, show ¬ n + 1 = 0 by omega_arith, ite_false]
+      · rw [hs₁ _ hi hi1]; simp only [show ¬ (1 ≤ i ∧ i ≤ n + 1) by omega_arith, ↓reduceIte]
 
 /-- The OR step's update of plane `j`. -/
 def orUpd (X K : Nat → BitVec 64) (j : Nat) : BitVec 64 :=
@@ -156,36 +156,36 @@ theorem flOrDesc_ok {off K} : ∀ n ≤ 8, ∀ s : State, FlMem s off K →
       (∀ i < 8, s'.gpr (q i) = if i < n then orUpd (fun i => s.gpr (q i)) K i else s.gpr (q i)) ∧
       (∀ r, (∀ i < 8, r ≠ q i) → r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr
-  | 0, _, s, _ => ⟨s, runBlock_nil, fun i _ => by simp only [show ¬ i < 0 by omega, ↓reduceIte],
+  | 0, _, s, _ => ⟨s, runBlock_nil, fun i _ => by simp only [show ¬ i < 0 by omega_arith, ↓reduceIte],
       fun _ _ _ => rfl, rfl, rfl, rfl⟩
   | n + 1, hn, s, hf => by
-    obtain ⟨hk, hkv⟩ := hf.key n (by omega)
+    obtain ⟨hk, hkv⟩ := hf.key n (by omega_arith)
     obtain ⟨s₁, h₁, g₁, o₁, m₁, rd₁, wr₁⟩ :=
-      flOrStep_ok (j := n) (q_ne_t0 _ (by omega)) hk hkv hf.even.1 hf.even.2
-    have hf₁ : FlMem s₁ off K := hf.congr m₁ rd₁ wr₁ (o₁ _ (fun h => q_ne_kp _ (by omega) h.symm)
-      (by decide)) (o₁ _ (fun h => q_ne_sb _ (by omega) h.symm) (by decide))
-    obtain ⟨s', h', g', o', m', rd', wr'⟩ := flOrDesc_ok n (by omega) s₁ hf₁
+      flOrStep_ok (j := n) (q_ne_t0 _ (by omega_arith)) hk hkv hf.even.1 hf.even.2
+    have hf₁ : FlMem s₁ off K := hf.congr m₁ rd₁ wr₁ (o₁ _ (fun h => q_ne_kp _ (by omega_arith) h.symm)
+      (by decide)) (o₁ _ (fun h => q_ne_sb _ (by omega_arith) h.symm) (by decide))
+    obtain ⟨s', h', g', o', m', rd', wr'⟩ := flOrDesc_ok n (by omega_arith) s₁ hf₁
     refine ⟨s', by rw [flOrDesc, runBlock_append', h₁]; exact h', fun i hi => ?_,
-      fun r h1 h2 => by rw [o' r h1 h2, o₁ r (h1 _ (by omega)) h2], by rw [m', m₁],
+      fun r h1 h2 => by rw [o' r h1 h2, o₁ r (h1 _ (by omega_arith)) h2], by rw [m', m₁],
       by rw [rd', rd₁], by rw [wr', wr₁]⟩
     have hs₁ : ∀ i' < 8, i' ≠ n → s₁.gpr (q i') = s.gpr (q i') := fun i' hi' hne =>
-      o₁ _ (fun h => hne (q_inj _ hi' _ (by omega) h)) (q_ne_t0 _ hi')
+      o₁ _ (fun h => hne (q_inj _ hi' _ (by omega_arith) h)) (q_ne_t0 _ hi')
     rw [g' i hi]
     by_cases hin : i < n
-    · simp only [hin, show i < n + 1 by omega, ↓reduceIte, orUpd]
-      rw [hs₁ _ hi (by omega)]
+    · simp only [hin, show i < n + 1 by omega_arith, ↓reduceIte, orUpd]
+      rw [hs₁ _ hi (by omega_arith)]
     · simp only [hin, ↓reduceIte]
       by_cases hi1 : i = n
       · subst hi1
-        simp only [g₁, show i < i + 1 by omega, ↓reduceIte, orUpd]
-      · rw [hs₁ _ hi hi1]; simp only [show ¬ i < n + 1 by omega, ↓reduceIte]
+        simp only [g₁, show i < i + 1 by omega_arith, ↓reduceIte, orUpd]
+      · rw [hs₁ _ hi hi1]; simp only [show ¬ i < n + 1 by omega_arith, ↓reduceIte]
 
 theorem flOr_ok {off K} {s : State} (hf : FlMem s off K) :
     ∃ s', runBlock isa (flOr off) s = some s' ∧
       (∀ i < 8, s'.gpr (q i) = orUpd (fun i => s.gpr (q i)) K i) ∧
       (∀ r, (∀ i < 8, r ≠ q i) → r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
-  obtain ⟨s', h', g', rest⟩ := flOrDesc_ok 8 (by omega) s hf
+  obtain ⟨s', h', g', rest⟩ := flOrDesc_ok 8 (by omega_arith) s hf
   exact ⟨s', h', fun i hi => by rw [g' i hi]; simp only [hi, ↓reduceIte], rest⟩
 
 theorem flRot_ok {off K} {s : State} (hf : FlMem s off K) :
@@ -199,12 +199,12 @@ theorem flRot_ok {off K} {s : State} (hf : FlMem s off K) :
     simp only [movR, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some]; rfl
   have g₀ : ∀ r, r ≠ t1 → s₀.gpr r = s.gpr r := fun r h => RegUpd.gpr_setReg_of_ne _ _ h
   have hf₀ : FlMem s₀ off K := hf.congr rfl rfl rfl (g₀ _ (by decide)) (g₀ _ (by decide))
-  obtain ⟨s₁, h₁, g₁, o₁, m₁, rd₁, wr₁⟩ := flRotDesc_ok 7 (by omega) s₀ hf₀
+  obtain ⟨s₁, h₁, g₁, o₁, m₁, rd₁, wr₁⟩ := flRotDesc_ok 7 (by omega_arith) s₀ hf₀
   have hf₁ : FlMem s₁ off K := hf₀.congr m₁ rd₁ wr₁ (o₁ _ (fun i hi h => q_ne_kp _ hi h.symm)
     (by decide)) (o₁ _ (fun i hi h => q_ne_sb _ hi h.symm) (by decide))
-  obtain ⟨hk, hkv⟩ := hf₁.key 7 (by omega)
+  obtain ⟨hk, hkv⟩ := hf₁.key 7 (by omega_arith)
   obtain ⟨s₂, h₂, g₂, o₂, m₂, rd₂, wr₂⟩ :=
-    flRotStep_ok (j := 0) (src := t1) (q_ne_t0 _ (by omega)) hk hkv hf₁.odd.1 hf₁.odd.2
+    flRotStep_ok (j := 0) (src := t1) (q_ne_t0 _ (by omega_arith)) hk hkv hf₁.odd.1 hf₁.odd.2
       (by decide : 1 ≤ 8 ∧ 8 ≤ 63)
   have hq₀ : ∀ i < 8, s₀.gpr (q i) = s.gpr (q i) := fun i hi => g₀ _ (q_ne_t1 i hi)
   refine ⟨s₂, by rw [flRot, runBlock_append', runBlock_append', h₀, Option.bind_some, h₁,
@@ -213,17 +213,17 @@ theorem flRot_ok {off K} {s : State} (hf : FlMem s off K) :
   · have hrot : ∀ j < 8, rotUpd (fun i => s₀.gpr (q i)) K j = rotUpd (fun i => s.gpr (q i)) K j := by
       intro j hj
       simp only [rotUpd]
-      rw [hq₀ _ hj, hq₀ _ (Nat.mod_lt _ (by omega))]
+      rw [hq₀ _ hj, hq₀ _ (Nat.mod_lt _ (by omega_arith))]
     by_cases hi0 : i = 0
     · subst hi0
       have ht1 : s₁.gpr t1 = s.gpr (q 7) := by
         rw [o₁ _ (fun i hi h => q_ne_t1 i hi h.symm) (by decide)]; exact RegUpd.gpr_setReg_self _ _ _
-      rw [g₂, g₁ 0 (by omega), ht1, hq₀ 0 (by omega)]
-      simp only [show ¬ (1 ≤ 0 ∧ 0 ≤ 7) by omega, ↓reduceIte, rotUpd]
-    · rw [o₂ _ (fun h => hi0 (q_inj _ hi _ (by omega) h)) (q_ne_t0 _ hi), g₁ i hi]
-      simp only [show 1 ≤ i ∧ i ≤ 7 by omega, and_self, ↓reduceIte]
+      rw [g₂, g₁ 0 (by omega_arith), ht1, hq₀ 0 (by omega_arith)]
+      simp only [show ¬ (1 ≤ 0 ∧ 0 ≤ 7) by omega_arith, ↓reduceIte, rotUpd]
+    · rw [o₂ _ (fun h => hi0 (q_inj _ hi _ (by omega_arith) h)) (q_ne_t0 _ hi), g₁ i hi]
+      simp only [show 1 ≤ i ∧ i ≤ 7 by omega_arith, and_self, ↓reduceIte]
       exact hrot i hi
-  · rw [o₂ r (h1 0 (by omega)) h2, o₁ r h1 h2, g₀ r h3]
+  · rw [o₂ r (h1 0 (by omega_arith)) h2, o₁ r h1 h2, g₀ r h3]
 
 theorem odd_mask_bit : ∀ p < 64, (0xFF00FF00FF00FF00 : BitVec 64).getLsbD p = oddAt p := by decide
 theorem even_mask_bit : ∀ p < 64, (0x00FF00FF00FF00FF : BitVec 64).getLsbD p = !oddAt p := by decide

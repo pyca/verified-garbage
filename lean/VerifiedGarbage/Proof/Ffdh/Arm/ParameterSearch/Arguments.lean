@@ -30,14 +30,7 @@ theorem arguments_ok (s : State) {p : SearchParams} {used : Nat}
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterSearch.arguments) s fun t =>
       (ArgumentContext p used t ∧ t.mem = callMem p used s.mem s.sp) ∧
       Rest [.r0, .r1, .r2, .r3, .r9, .r12] s t := by
-  refine withRest [.r0, .r1, .r2, .r3, .r9, .r12] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterSearch.arguments : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r2, .r3, .r9, .r12] ?_ (by rfl) (by rfl)
   change WP isa (.block ([VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r0 5, VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r1 1,
     .dp .add .r2 .r4 (.imm 112), VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r3 7, .addSp .r12 0] ++ _)) s _
   rw [WP.block_append_iff]

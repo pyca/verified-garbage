@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafPrep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! ## `ArithmeticTableChecks` -/
 

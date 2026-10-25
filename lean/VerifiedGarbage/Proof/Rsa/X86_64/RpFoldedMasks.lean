@@ -54,14 +54,14 @@ theorem captureCore_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
         (off B (flagsAt w)) (mask (alive && !(enable && (e1 || em)))) ∧
       Keep [.rcx, .r15, .rax, .rbp, .r11, .rdx] s t := by
   have hz := h.hZ
-  have hZ16 : slot w 16 ≤ 2 ^ 64 := by have := h.scr.nowrap; omega
+  have hZ16 : slot w 16 ≤ 2 ^ 64 := by have := h.scr.nowrap; omega_arith
   have haZ : flagsAt w + 16 ≤ Z := by
     unfold flagsAt slot aRoot at *
-    omega
+    omega_arith
   have hmZ : 8 * sMask + 8 ≤ Z := by
     unfold slot at hz
     dsimp only [sMask, sFn]
-    omega
+    omega_arith
   have hea := active_ea h8 h12
   have heo := found_ea h8 h12
   have haddr : off B (slot w aRoot) + BitVec.ofNat 64 w * 8#64 = off B (flagsAt w) := by
@@ -76,9 +76,9 @@ theorem captureCore_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
         (off B (flagsAt w)) (mask (alive && !(enable && (e1 || em))))) (by
     xrun [active, found, ix, h8, h12, haddr, haddr8, State.ea, hdr, h.rdi, hdrOff, h15, hdx, ha, ho, he,
       show BitVec.ofInt 64 0 = 0#64 from rfl, show BitVec.ofInt 64 8 = 8#64 from rfl,
-      h.scr.ld (d := flagsAt w) (by omega), h.scr.ld (d := flagsAt w + 8) (by omega),
-      h.scr.st (d := flagsAt w) (by omega), h.scr.st (d := flagsAt w + 8) (by omega),
-      h.scr.ld (d := 8 * sMask) (by omega), mask_and', mask_or, mask_not]
+      h.scr.ld (d := flagsAt w) (by omega_arith), h.scr.ld (d := flagsAt w + 8) (by omega_arith),
+      h.scr.st (d := flagsAt w) (by omega_arith), h.scr.st (d := flagsAt w + 8) (by omega_arith),
+      h.scr.ld (d := 8 * sMask) (by omega_arith), mask_and', mask_or, mask_not]
     cases alive <;> cases enable <;> cases ok <;> cases e1 <;> cases em <;> exact ⟨rfl, rfl⟩) rfl)
     fun t ⟨⟨hr, hm⟩, hk⟩ => ⟨hr, hm, hk⟩
 
@@ -89,7 +89,7 @@ theorem enabled_ok {s : State} {B : Addr} {Z w sigma : Nat} (h : Ws s B Z w)
       u.gpr .r15 = mask (permit j sigma) ∧ u.mem = s.mem ∧ Keep [.rax, .r15] s u := by
   have h256 := h.ws_ok
   have hZ := h.hZ
-  have hdrZ : 8 * sT + 8 ≤ Z := by unfold slot at hZ; dsimp only [sT, sFn]; omega
+  have hdrZ : 8 * sT + 8 ≤ Z := by unfold slot at hZ; dsimp only [sT, sFn]; omega_arith
   rcases hj with rfl | rfl
   · refine WP.mono (WP.keep [.rax, .r15] (Q := fun u =>
         u.gpr .r15 = mask true ∧ u.mem = s.mem) (by
@@ -98,7 +98,7 @@ theorem enabled_ok {s : State} {B : Addr} {Z w sigma : Nat} (h : Ws s B Z w)
   · refine WP.mono (WP.keep [.rax, .r15] (Q := fun u =>
         u.gpr .r15 = mask (decide (1 < sigma)) ∧ u.mem = s.mem) (by
       simp only [enabled]
-      xrun [State.ea, hdr, h.rdi, hdrOff, hT, h.scr.ld (d := 8 * sT) (by omega),
+      xrun [State.ea, hdr, h.rdi, hdrOff, hT, h.scr.ld (d := 8 * sT) (by omega_arith),
         BitVec.toNat_ofNat, Nat.mod_eq_of_lt hsigma, sbb_mask]
       rfl) (by decide)) fun u ⟨⟨h15, hm⟩, hk⟩ => ⟨h15, hm, hk⟩
 

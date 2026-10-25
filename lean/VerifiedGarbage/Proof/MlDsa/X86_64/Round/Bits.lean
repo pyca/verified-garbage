@@ -73,7 +73,7 @@ theorem hbS_toNat {g : Nat} (h : g ∈ gamma2s) {x : BitVec 32} (hx : x.toNat < 
   have hM : Proof.MlDsa.Round.hbM g ≤ 44 := by rcases mem_gamma2s h with rfl | rfl <;> decide
   have := Nat.mod_lt (hbF g x.toNat) (show Proof.MlDsa.Round.hbM g > 0 by rcases mem_gamma2s h with rfl | rfl <;> decide)
   rw [hbS, BitVec.toNat_setWidth, hbV_toNat h hx', setWidth64_toNat]
-  omega
+  omega_arith
 
 theorem lbS_toNat {g : Nat} (h : g ∈ gamma2s) {x : BitVec 32} (hx : x.toNat < q) :
     (lbS g x).toNat = (ofInt (lowBits g (Fin.ofNat q x.toNat))).val := by
@@ -93,14 +93,14 @@ theorem lbS_toNat {g : Nat} (h : g ∈ gamma2s) {x : BitVec 32} (hx : x.toNat < 
       (BitVec.setWidth 64 (BitVec.ofNat 32 (2 * g))).toNat)).toNat =
       hbF g x.toNat % Proof.MlDsa.Round.hbM g * (2 * g) := by
     rw [BitVec.toNat_ofNat, hbV_toNat h hx', setWidth64_toNat, setWidth64_toNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show 2 * g < 2 ^ 32 by omega)]
+      Nat.mod_eq_of_lt (show 2 * g < 2 ^ 32 by omega_arith)]
     rw [q_eq] at hle
-    omega
+    omega_arith
   have hq : qImm.toNat = q := rfl
-  rw [lbS, BitVec.toNat_setWidth, condAddV_toNat (by decide) (by rw [e1, hq, setWidth64_toNat]; omega), e1, hq,
+  rw [lbS, BitVec.toNat_setWidth, condAddV_toNat (by decide) (by rw [e1, hq, setWidth64_toNat]; omega_arith), e1, hq,
     setWidth64_toNat]
   rw [q_eq] at hx hle ⊢
-  split <;> omega
+  split <;> omega_arith
 
 /-! ## The functions -/
 

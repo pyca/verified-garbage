@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedMasks
 public import VerifiedGarbage.Proof.Rsa.RecoverFolded
 public import VerifiedGarbage.Proof.Rsa.Ranges
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 
 /-! # The captured root and its flags in the recovery workspace -/
 

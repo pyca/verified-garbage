@@ -49,11 +49,11 @@ theorem chainStep_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hrb
   have hs15 := hs.small
   simp only [chainStep]
-  refine wp_step (ld_ok hs ha hra (by omega) hda) ?_
-  refine wp_step (ld_ok (hs.write _ _) (hb.write _ hrb.2) hrb.1 (by omega) hdb) ?_
+  refine wp_step (ld_ok hs ha hra (by omega_arith) hda) ?_
+  refine wp_step (ld_ok (hs.write _ _) (hb.write _ hrb.2) hrb.1 (by omega_arith) hdb) ?_
   refine wp_step (exec_carryOp _ _ _ _ _ _) ?_
   refine wp_step (std_ok (((hs.write _ _).write _ _).writeCarry _ _) (((h3.write _).write _).writeCarry _)
-    (by decide) (by omega) (d := dd + 8 * j) (by omega)) (WP.block_nil ?_)
+    (by decide) (by omega_arith) (d := dd + 8 * j) (by omega_arith)) (WP.block_nil ?_)
   simp only [write_gpr, writeCarry_gpr, write_mem, RegUpd.mem_writeCarry, RegUpd.ca_write,
     reduceCtorEq, ite_false, ite_true, Nat.zero_add]
   refine ⟨_, rfl, ?_, ?_⟩
@@ -63,13 +63,13 @@ theorem chainStep_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
     have e := RegUpd.toNat_add_ca (((s.write .r11 (word s.mem base (Ka + (da + 8 * j)))).write .r12
       (word s.mem base (Kb + (db + 8 * j))))) (r := .r11) (v := (word s.mem base (Ka + (da + 8 * j))).toNat +
         (if sub then 2 ^ 64 - 1 - (word s.mem base (Kb + (db + 8 * j))).toNat else
-          (word s.mem base (Kb + (db + 8 * j))).toNat) + cOf sub j s.ca) (by split <;> omega)
+          (word s.mem base (Kb + (db + 8 * j))).toNat) + cOf sub j s.ca) (by split <;> omega_arith)
     rw [RegUpd.gpr_writeCarry_self] at e
     rw [show ({ ((s.write .r11 (word s.mem base (Ka + (da + 8 * j)))).write .r12
       (word s.mem base (Kb + (db + 8 * j)))).writeCarry .r11 _ with mem := _ } : State).ca =
       (((s.write .r11 (word s.mem base (Ka + (da + 8 * j)))).write .r12
       (word s.mem base (Kb + (db + 8 * j)))).writeCarry .r11 _).ca from rfl]
-    cases sub <;> simp only [ite_true, ite_false, Bool.false_eq_true] at e ⊢ <;> omega
+    cases sub <;> simp only [ite_true, ite_false, Bool.false_eq_true] at e ⊢ <;> omega_arith
   · refine ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [write_gpr, writeCarry_gpr, hr.1, hr.2, ite_false]
@@ -98,20 +98,20 @@ theorem chain_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {s
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [chain_succ]
-    refine wp_append (WP.mono (chain_ok hs ha hb h3 hra hrb hda4 hdb4 hdd4 hda hdb hdd sa sb (k := k) (by omega))
+    refine wp_append (WP.mono (chain_ok hs ha hb h3 hra hrb hda4 hdb4 hdd4 hda hdb hdd sa sb (k := k) (by omega_arith))
       fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
     refine WP.mono (chainStep_ok (sub := sub) (K₁.ws hs) (K₁.at ha (not_mem_sub hra)) (K₁.at hb (not_mem_sub hrb))
-      (K₁.at h3) (ne_of_not_mem hra) (not_mem_sub hrb) hda4 hdb4 hdd4 (j := k) (by omega) (by omega) (by omega))
+      (K₁.at h3) (ne_of_not_mem hra) (not_mem_sub hrb) hda4 hdb4 hdd4 (j := k) (by omega_arith) (by omega_arith) (by omega_arith))
       fun u ⟨lo, m₂, c₂, K₂⟩ => ?_
     have xk : word s₁.mem base (Ka + (da + 8 * k)) = word s.mem base (Ka + da + 8 * k) := by
-      rw [← Nat.add_assoc]; exact O₁.word (by omega) (by omega)
+      rw [← Nat.add_assoc]; exact O₁.word (by omega_arith) (by omega_arith)
     have yk : word s₁.mem base (Kb + (db + 8 * k)) = word s.mem base (Kb + db + 8 * k) := by
-      rw [← Nat.add_assoc]; exact O₁.word (by omega) (by omega)
+      rw [← Nat.add_assoc]; exact O₁.word (by omega_arith) (by omega_arith)
     rw [xk, yk] at c₂
-    have W := writeW_outside s₁.mem base (d := dd + 8 * k) lo (by omega)
+    have W := writeW_outside s₁.mem base (d := dd + 8 * k) lo (by omega_arith)
     rw [← m₂] at W
-    refine ⟨(O₁.mono (Nat.le_refl _) (by omega)).trans (W.mono (by omega) (by omega)), ?_, K₁.trans K₂⟩
-    rw [wordsVal_succ_top, wordsVal_succ_top, wordsVal_succ_top, W.wordsVal (by omega) (by omega), m₂,
+    refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (W.mono (by omega_arith) (by omega_arith)), ?_, K₁.trans K₂⟩
+    rw [wordsVal_succ_top, wordsVal_succ_top, wordsVal_succ_top, W.wordsVal (by omega_arith) (by omega_arith), m₂,
       word_writeW_self, pow64_succ, show cOf sub (k + 1) u.ca = u.ca.toNat from rfl]
     have hP : 1 ≤ 2 ^ (64 * k) := Nat.one_le_two_pow
     generalize 2 ^ (64 * k) = P at *

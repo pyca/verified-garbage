@@ -31,8 +31,8 @@ theorem lowOutput_current (m : Mem) (g B : Nat) (p a l : Addr)
     lowOutput g (lowRun m g B p a l j).mem p a j e=lowSigned m g p a (4*j+e) := by
   rw [lowOutput_coeff _ _ _ _ _ he]
   simp only [lowSigned,lowHigh,lowCanonical]
-  rw [(lowRun_prefix m g B p a l hpl hap hal (by omega)).1 _ (by omega),ite_eq_right (by omega),
-    lowRun_input (by omega) (by omega) hap hal]
+  rw [(lowRun_prefix m g B p a l hpl hap hal (by omega_arith)).1 _ (by omega_arith),ite_eq_right (by omega_arith),
+    lowRun_input (by omega_arith) (by omega_arith) hap hal]
 
 theorem lowSigned_mask {g B : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g)
     (m : Mem) (p a : Addr) (i : Nat) (ha : (coeffAt m p i).toNat<8380417)
@@ -43,8 +43,8 @@ theorem lowSigned_mask {g B : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g)
   rw [lowSigned,lowHigh,lowCanonical,subLow_norm hg ha hb.1 hb.2 hB hB']
   unfold maskWord
   split <;> rename_i h
-  · rw [decide_eq_false (by omega)]; rfl
-  · rw [decide_eq_true (by omega)]; rfl
+  · rw [decide_eq_false (by omega_arith)]; rfl
+  · rw [decide_eq_true (by omega_arith)]; rfl
 
 theorem lowRun_flags (m : Mem) (g B : Nat) (p a l : Addr)
     (hg : VG.Proof.MlDsa.AArch64.Round.IsG g)
@@ -61,8 +61,8 @@ theorem lowRun_flags (m : Mem) (g B : Nat) (p a l : Addr)
     intro e he
     rw [lowRun]
     simp only [lowStep,laneVector_word _ he]
-    rw [ih (by omega) e he,lowOutput_current m g B p a l hpl hap hal (by omega) he,
-      lowSigned_mask hg m p a _ (ha _ (by omega)) (hb _ (by omega)) hB hB',maskWord_or]
+    rw [ih (by omega_arith) e he,lowOutput_current m g B p a l hpl hap hal (by omega_arith) he,
+      lowSigned_mask hg m p a _ (ha _ (by omega_arith)) (hb _ (by omega_arith)) hB hB',maskWord_or]
     rfl
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response
@@ -102,12 +102,12 @@ theorem lowBody_ok {g B : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g) {s : St
     · simpa only [hk.keep.wr,hk.keep.get .x0] using hw i hi
     · simpa only [hk.keep.wr,hk.keep.get .x2] using hl i hi
     · refine ⟨(hk.trans hv).mono (by decide),hrv,?_,?_⟩
-      · rw [show 4*u+(i+1)=4*u+i+1 by omega,lowRun]
+      · rw [show 4*u+(i+1)=4*u+i+1 by omega_arith,lowRun]
         with_reducible exact hmv
-      · rw [show 4*u+(i+1)=4*u+i+1 by omega,lowRun]
+      · rw [show 4*u+(i+1)=4*u+i+1 by omega_arith,lowRun]
         with_reducible exact hfv
   have h := fourGroups_ok (subGroup g) I hinit hstep
-  simpa only [I,lowBody,show 4*u+4=4*(u+1) by omega] using h
+  simpa only [I,lowBody,show 4*u+4=4*(u+1) by omega_arith] using h
 
 theorem lowLoop_ok {g B : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g) {s : State} (hr : LowReady g B s)
     (hc : s.gpr .x10=16) (hf : s.v .v31=0)
@@ -131,22 +131,22 @@ theorem lowLoop_ok {g B : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g) {s : St
     refine WP.mono (lowBody_ok hg hready hm hf h0 h1 h2 ?_ ?_ ?_ ?_) fun v ⟨hv,hrv,hmv,hfv⟩ => ?_
     · intro i hi
       simp only [hk.rd,hk.wr,h0,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact ha _ (by omega)
+      exact ha _ (by omega_arith)
     · intro i hi
       simp only [hk.rd,hk.wr,h1,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hb _ (by omega)
+      exact hb _ (by omega_arith)
     · intro i hi
       simp only [hk.wr,h0,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hw _ (by omega)
+      exact hw _ (by omega_arith)
     · intro i hi
       simp only [hk.wr,h2,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hl _ (by omega)
+      exact hl _ (by omega_arith)
     · refine WP.mono (advance3_ok v) fun w ⟨⟨⟨hw0,hw1,hw2,hw10,hwm⟩,hkw⟩,hvw⟩ => ?_
       refine ⟨⟨((hk.trans hv.keep).trans hkw).mono,?_,?_,?_,?_,hwm.trans hmv,?_⟩,?_⟩
       · exact hrv.frame (rs := []) (by intro r _; exact congrFun hvw r) (by simp)
-      · rw [hw0,hv.keep.get .x0,h0,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hw1,hv.keep.get .x1,h1,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hw2,hv.keep.get .x2,h2,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw0,hv.keep.get .x0,h0,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw1,hv.keep.get .x1,h1,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hw2,hv.keep.get .x2,h2,show 64*(u+1)=64*u+64 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hvw,hfv]
       · rw [hw10,hv.keep.get .x10]; rfl
   · exact ⟨Keep.refl _ _,hr,by simp,by simp,by simp,rfl,hf⟩

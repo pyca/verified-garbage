@@ -82,8 +82,8 @@ theorem phi_ct : RelCT isa (Two (KG PF)) (seqs phi) (Two (KG (TopZ aL))) :=
     have hQw := lt_pow_half L.Q_lt 1
     have hW := L.W
     refine WP.mono (phi_k h hW hPm hQm hPw hQw) fun t ⟨ht, _, v⟩ => ⟨ht, lcm_topZero ?_⟩
-    rw [v, hW, show 64 * (2 * (I.pl / 8)) = 64 * (I.pl / 8) + 64 * (I.pl / 8) by omega, Nat.pow_add]
-    exact Nat.mul_lt_mul_of_lt_of_le hPw (by omega) (Nat.two_pow_pos _)
+    rw [v, hW, show 64 * (2 * (I.pl / 8)) = 64 * (I.pl / 8) + 64 * (I.pl / 8) by omega_arith, Nat.pow_add]
+    exact Nat.mul_lt_mul_of_lt_of_le hPw (by omega_arith) (Nat.two_pow_pos _)
 
 /-! ## The halving -/
 
@@ -103,7 +103,7 @@ theorem shrHalf_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {j : Nat} (hj : j
   have sj := h.ws.sl hj
   have sT := h.ws.sl (j := aT) (by decide)
   have sp := slot_sep (w := I.W) hjT
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_arith
   have hw2 := h.ws.w2
   rw [← List.append_assoc]
   refine WP.seq (WP.block_append_iff.mpr (WP.mono (wsMov_ok h.ws) fun s₁ ⟨⟨_, h11, h14, m₁, _⟩, k₁⟩ =>
@@ -111,9 +111,9 @@ theorem shrHalf_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {j : Nat} (hj : j
       fun s₂ ⟨⟨h16, h17, m₂, _⟩, k₂⟩ => ?_))
   have k12 := k₁.trans k₂
   refine WP.mono (shr_ok (h.ws.scr.congr k12.wr) h16 h17 ((k₂.gpr .x14 (by decide)).trans h14) hw1
-    (by omega) (by omega) (by omega) (by omega)) fun s₃ ⟨_, _, o₃, k₃⟩ => ?_
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun s₃ ⟨_, _, o₃, k₃⟩ => ?_
   rw [m₂, m₁] at o₃
-  have f₃ := KF.arr1 (B := I.B) (W := I.W) (j := aT) o₃ (Nat.le_refl _) (by omega)
+  have f₃ := KF.arr1 (B := I.B) (W := I.W) (j := aT) o₃ (Nat.le_refl _) (by omega_arith)
   exact h.step f₃ (all_mut_arr (by decide)) (k12.trans k₃)
 
 theorem halfIf_ct0 {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hjT : j ≠ aT)
@@ -197,8 +197,8 @@ theorem ofNat_sub_one_k {p : Nat} (hp : 1 ≤ p) (hp' : p < 2 ^ 64) :
     BitVec.ofNat 64 p - BitVec.ofNat 64 1 = BitVec.ofNat 64 (p - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hp',
-    Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide), Nat.mod_eq_of_lt (show p - 1 < 2 ^ 64 by omega)]
-  omega
+    Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide), Nat.mod_eq_of_lt (show p - 1 < 2 ^ 64 by omega_arith)]
+  omega_arith
 
 /-- The halving's loop: `64 W` steps, a public count. -/
 theorem twosLoop_ct : RelCT isa (Two (KG (TwX 0))) (.loop twoStep (.nonzero .x .x6)) (Two (KG (TopZ aU))) := by
@@ -209,16 +209,16 @@ theorem twosLoop_ct : RelCT isa (Two (KG (TwX 0))) (.loop twoStep (.nonzero .x .
     have hw2 := hk.ws.w2
     refine WP.mono (twoStep_k hk tU tV tL) fun t ⟨⟨ht, _, tU', tV', tL'⟩, h6', _⟩ => ?_
     have e6 : t.gpr .x6 = BitVec.ofNat 64 (64 * I.W - (j + 1)) := by
-      rw [h6', h6, ofNat_sub_one_k (by omega) (by omega), Nat.sub_sub]
+      rw [h6', h6, ofNat_sub_one_k (by omega_arith) (by omega_arith), Nat.sub_sub]
     refine ⟨?_, fun _ => ⟨I, s₀, he, hst, ht, L, O, ⟨tU', tV', tL'⟩, e6⟩,
       fun _ => ⟨I, s₀, he, hst, ht, L, O, tU'⟩⟩
-    rw [eval_nonzero, e6, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+    rw [eval_nonzero, e6, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+    exact congrArg some (decide_eq_decide.mpr (by omega_arith))
   · intro s₁ s₂ h
     refine two_mono (fun p s h => ⟨?_, h⟩) h
     obtain ⟨I, _, he, -, hk, -⟩ := h
     have := hk.ws.w1
-    rw [← KIn.pub_W he]; omega
+    rw [← KIn.pub_W he]; omega_arith
 
 /-- The halving: `x6 := 64 W`, then the loop. -/
 theorem twos_ct : RelCT isa (Two (KG TwB)) (seqs twos) (Two (KG (TopZ aU))) := by
@@ -233,10 +233,10 @@ theorem twos_ct : RelCT isa (Two (KG TwB)) (seqs twos) (Two (KG (TopZ aU))) := b
 theorem stOk_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {c : Bool} (h15 : s.gpr .x15 = mask c) :
     WP isa (.block [sth .x15 kOk]) s fun t => KS I s₀ t ∧ KF I.B I.W [.hdr kOk] s.mem t.mem ∧
       word t.mem I.B (8 * kOk) = mask c ∧ Keep [] s t := by
-  have hst := h.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+  have hst := h.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_arith)
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = s.mem.writeW (off I.B (8 * kOk)) (mask c))
     (by brun [h.ws.x0, hdr_enc (show kOk < 32 by decide), hst, h15]) rfl rfl rfl) fun t ⟨hm, k⟩ => ?_
-  obtain ⟨ht, f, hw⟩ := h.hdrW (i := kOk) (by unfold kOk sFn; omega) hm k
+  obtain ⟨ht, f, hw⟩ := h.hdrW (i := kOk) (by unfold kOk sFn; omega_arith) hm k
   exact ⟨ht, f, hw, k⟩
 
 /-- `stOk_k`, for facts `F` that survive it. -/

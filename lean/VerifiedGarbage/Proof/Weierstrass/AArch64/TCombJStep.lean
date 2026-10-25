@@ -8,7 +8,6 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 import VerifiedGarbage.Proof.Weierstrass.CombFrame
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

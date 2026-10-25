@@ -158,19 +158,19 @@ theorem BInvW.pairedK {s₀ s t : State} (hp : Pre P s₀) (hk : Stk128K P s₀)
   · have hall : allOk P s₀ (e + 2) ↔ (allOk P s₀ e ∧
         (sampleNTT 280 (matSeed (rhoK P s₀) (e / P.k) (e % P.k))).isSome) ∧
         (sampleNTT 280 (matSeed (rhoK P s₀) ((e + 1) / P.k) ((e + 1) % P.k))).isSome := by
-      rw [show e + 2 = (e + 1) + 1 by omega, allOk_succ, allOk_succ]
+      rw [show e + 2 = (e + 1) + 1 by omega_arith, allOk_succ, allOk_succ]
     rw [ht.status, h.acc]
     by_cases ha : allOk P s₀ e <;>
       by_cases hb : (sampleNTT 280 (matSeed (rhoK P s₀) (e / P.k) (e % P.k))).isSome <;>
       by_cases hc : (sampleNTT 280 (matSeed (rhoK P s₀) ((e + 1) / P.k) ((e + 1) % P.k))).isSome <;>
       simp [hall, ha, hb, hc]
   · intro i hi
-    rcases (by omega : i < e ∨ i = e ∨ i = e + 1) with hi | rfl | rfl
+    rcases (by omega_arith : i < e ∨ i = e ∨ i = e + 1) with hi | rfl | rfl
     · exact reducedW_frame fr (old hi) (h.red i hi)
     · exact ht.reducedLeft
     · exact ht.reducedRight
   · intro i hi
-    rcases (by omega : i < e ∨ i = e ∨ i = e + 1) with hi | rfl | rfl
+    rcases (by omega_arith : i < e ∨ i = e ∨ i = e + 1) with hi | rfl | rfl
     · rw [aAtW, polyAtW_frame fr (old hi)]; exact h.res i hi
     · exact ht.left
     · exact ht.right
@@ -184,23 +184,23 @@ theorem first_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {p :
   have hf := hw.facts
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
   have he : 2 * p + 1 < P.k * P.k := by
-    have := Nat.mul_le_mul hk3 hk3; omega
-  have hN : 3 * p + 3 ≤ 6 := by omega
-  have hoa : AH + 1024 * (2 * p) < 65536 := by simp only [KG.AH]; omega
-  have hob : AH + 1024 * (2 * p + 1) < 65536 := by simp only [KG.AH]; omega
+    have := Nat.mul_le_mul hk3 hk3; omega_arith
+  have hN : 3 * p + 3 ≤ 6 := by omega_arith
+  have hoa : AH + 1024 * (2 * p) < 65536 := by simp only [KG.AH]; omega_arith
+  have hob : AH + 1024 * (2 * p + 1) < 65536 := by simp only [KG.AH]; omega_arith
   have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) (3 * p + 2) < 65536 := by
     have h3 := kL_le hw 3
     have hsv := hp.sv
     have sv : SV P = TP P + 2048 := rfl
     simp only [Impl.MlKem.AArch64.Kem16P.bufOff]; omega_using [h3, hsv, sv, hp2]
-  have hk1 : 0 < P.k := by omega
-  have hk2 : P.k ≤ 256 := by omega
+  have hk1 : 0 < P.k := by omega_arith
+  have hk2 : P.k ≤ 256 := by omega_arith
   have mt := matrixTable_of hp kb H.tables
   have pin := pair_input hp he kb mt
   have hin := prf_inputK hp hk he hN kb H.tstk mt
   unfold Impl.MlKem.AArch64.Kem16P.kgPairP
   rw [Kem16P.pairP_iff]
-  refine WP.mono_syms (Kem16P.pairPCode_ok P SG (TP P) (a := 2 * p) (N₀ := 3 * p) (m := 3) (by omega) hbo
+  refine WP.mono_syms (Kem16P.pairPCode_ok P SG (TP P) (a := 2 * p) (N₀ := 3 * p) (m := 3) (by omega_arith) hbo
     (by decide) (by decide) (by decide) hoa hob pin hin rfl (by decide) (by decide) rfl
     (by rw [H.b.acc]; split; exacts [Or.inr rfl, Or.inl rfl])) fun t ht sy => ?_
   have post := ht.outcome hk1 hk2
@@ -212,18 +212,18 @@ theorem first_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {p :
   · by_cases hlt : N < 3 * p
     · unfold PrfK
       rw [bytesAt_frame fr (pairK_far hp hk he hN (b := 3) (o := TP P + 168 * N) (l := 128) (by decide) (by kl)
-        (.inr ⟨.inr (by lom), .inr (by lom), by lom, .inl (by omega)⟩)) (by decide)]
+        (.inr ⟨.inr (by lom), .inr (by lom), by lom, .inl (by omega_arith)⟩)) (by decide)]
       exact H.prf N hlt
-    · have hk' : N - 3 * p < min 3 3 := by omega
+    · have hk' : N - 3 * p < min 3 3 := by omega_arith
       have pr := post.prf (N - 3 * p) hk'
-      rw [show 3 * p + (N - 3 * p) = N by omega] at pr
-      have ob := Noise.output_prf (by omega) pr
+      rw [show 3 * p + (N - 3 * p) = N by omega_arith] at pr
+      have ob := Noise.output_prf (by omega_arith) pr
       rw [H.b.sig] at ob
       unfold PrfK
       refine Eq.trans (congrArg (fun a => bytesAt t.mem a 128) ?_) ob
       simp only [bufAt, Impl.MlKem.AArch64.Kem16P.bufOff]
       rw [BitVec.add_assoc, ← BitVec.ofNat_add,
-        show TP P + 168 * (3 * p) + 168 * (N - 3 * p) = TP P + 168 * N by omega]
+        show TP P + 168 * (3 * p) + 168 * (N - 3 * p) = TP P + 168 * N by omega_arith]
   · exact Hybrid.tables_frame128 H.tables H.tstk sy post.keep.rd post.keep.wr post.keep.sp
       (fr.sub (pairK_wr hp kb he hN))
 
