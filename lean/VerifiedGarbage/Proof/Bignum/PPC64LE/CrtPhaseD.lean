@@ -40,8 +40,8 @@ at `off BX oQ` (its registers set, `m₂` below `256^qL` in array 4) and `p`'s
 at `off BX oP` (`P` in array 0, `m₁ < P` in array 4), `qInv < P` in `X`'s
 array 7: `h` into `p`'s array 4. -/
 theorem phaseD_ok {s : State} {BX : Addr} {Z oP oQ wX pL qL Pv m1 M2 QI : Nat}
-    (hs : Scr s BX Z) (hPZ : oP + slot (wsWords pL) 8 ≤ Z) (hXP : slot wX 8 ≤ oP)
-    (hQZ : oQ + slot (wsWords qL) 8 ≤ Z) (hXQ : slot wX 8 ≤ oQ) (hPQ : oP + slot (wsWords pL) 8 ≤ oQ)
+    (hs : Scr s BX Z) (hPZ : oP + slot (wsWords pL) 24 ≤ Z) (hXP : slot wX 8 ≤ oP)
+    (hQZ : oQ + slot (wsWords qL) 24 ≤ Z) (hXQ : slot wX 8 ≤ oQ) (hPQ : oP + slot (wsWords pL) 24 ≤ oQ)
     (hwP : wsWords pL ≤ wX) (hwQ : wsWords qL ≤ wX) (hwX : wX < 2 ^ 31)
     (h10 : s.gpr .r10 = off (off BX oQ) (slot (wsWords qL) 0))
     (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wsWords qL + 2))) (h23 : s.gpr .r23 = BX)
@@ -57,14 +57,14 @@ theorem phaseD_ok {s : State} {BX : Addr} {Z oP oQ wX pL qL Pv m1 M2 QI : Nat}
     WP isa (.seq exportM2 (.seq (.block (setupP oBP oPLen)) recombineP)) s fun t =>
       (Mont.val32 t.mem (off BX oP) (slot (wsWords pL) 4) (2 * wsWords pL) =
           (m1 + Pv - M2 % Pv) % Pv * QI % Pv ∧
-        Mont.Outs BX [(slot wX 1, qL), (oP, slot (wsWords pL) 8)] s.mem t.mem) ∧
+        Mont.Outs BX [(slot wX 1, qL), (oP, slot (wsWords pL) 24)] s.mem t.mem) ∧
       Keep (([.r0, .r15, .r16, .r17, .r3, .r4, .r11, .r21, .r29] : List Reg) ++ recRegs) s t := by
   have hn := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
   have eX1 := e wX 1; have eX2 := e wX 2; have eX7 := e wX 7; have eX8 := e wX 8
-  have eP0 := e (wsWords pL) 0; have eP4 := e (wsWords pL) 4; have eP8 := e (wsWords pL) 8
-  have eQ8 := e (wsWords qL) 8
+  have eP0 := e (wsWords pL) 0; have eP4 := e (wsWords pL) 4; have eP8 := e (wsWords pL) 24
+  have eQ8 := e (wsWords qL) 24
   have hqw : qL ≤ 8 * wsWords qL := by unfold wsWords; omega_arith
   have hw2 : 2 ≤ wsWords pL := by unfold wsWords; omega_arith
   refine WP.seq (WP.mono (exportM2_ok (L := qL) (hs.sub hQZ) (Scr.le hs (show slot wX 8 ≤ Z by omega_arith)) h10 h29
@@ -91,7 +91,7 @@ theorem phaseD_ok {s : State} {BX : Addr} {Z oP oQ wX pL qL Pv m1 M2 QI : Nat}
   have h2 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
   simp only at h1 h2
   have h1' : ofs BX x < slot wX 1 ∨ slot wX 1 + qL ≤ ofs BX x := h1
-  have h2' : ofs BX x < oP ∨ oP + slot (wsWords pL) 8 ≤ ofs BX x := h2
+  have h2' : ofs BX x < oP ∨ oP + slot (wsWords pL) 24 ≤ ofs BX x := h2
   rw [m2] at o2
   rw [o2 x h2', o1 x h1']
 

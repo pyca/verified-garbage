@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFrame
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
+import VerifiedGarbage.Proof.Rsa.PPC64LE.RvSlots
 
 /-!
 # `vg_rsa_recover_primes` on PPC64LE: the factors written out

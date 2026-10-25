@@ -4,6 +4,7 @@ import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.TCB.PPC64LE.Print
+import VerifiedGarbage.TCB.RISCV64.Print
 
 /-!
 # Golden tests for the trusted printers
@@ -525,6 +526,98 @@ def samplePPC : Prog PPC64LE.isa :=
   ["%r0", "%r2", "%r3", "%r4", "%r5", "%r6", "%r7", "%r8", "%r9", "%r10", "%r11", "%r12",
    "%r14", "%r15", "%r16", "%r17", "%r18", "%r19", "%r20", "%r21", "%r22", "%r23", "%r24",
    "%r25", "%r26", "%r27", "%r28", "%r29", "%r30", "%r31"]
+
+/-- Every RISC-V instruction form, and every condition. -/
+def sampleRV : Prog RISCV64.isa :=
+  .seq (.ite (.zero .a5) (.block []) (.block []))
+  (.seq (.ite (.eq .a0 .a1) (.block []) (.block []))
+  (.seq (.ite (.ne .a2 .a3) (.block []) (.block []))
+  (.seq (.ite (.geu .a4 .a5) (.block []) (.block []))
+  (.ite (.ltu .t0 .t1) (.block [])
+    (.loop (.block [
+      .add .a0 .a1 .a2, .sub .a3 .a4 .a5, .addw .a6 .a7 .t0, .subw .t1 .t2 .t3,
+      .sltu .t4 .t5 .t6, .logic .and .s0 .s1 .s2, .logic .or .s3 .s4 .s5,
+      .logic .xor .s6 .s7 .s8, .addi .s9 .s10 2047, .addi .s11 .ra (-2048), .addiw .a0 .a0 (-1),
+      .logicImm .and .a1 .a1 255, .logicImm .or .a2 .a2 (-2048), .logicImm .xor .a3 .a3 (-1),
+      .li .a4 (-1), .li .a4 2047, .lui .a5 0x6a09e, .lui .a5 0xfffff,
+      .shift .sll .d .a6 .a6 63, .shift .srl .d .a6 .a6 1, .shift .sra .d .a6 .a6 0,
+      .shift .sll .w .a7 .a7 31, .shift .srl .w .a7 .a7 7, .shift .sra .w .a7 .a7 0,
+      .load .b .t0 .a0 0, .load .h .t0 .a0 2046, .load .w .t1 .a1 4, .load .d .t2 .a2 2040,
+      .store .b .t0 .a0 2047, .store .h .t0 .a0 0, .store .w .t1 .a1 4, .store .d .t2 .a2 8,
+      .addSp .a0 2047]) (.nonzero .t6))))))
+
+#guard text (RISCV64.printer.function sampleRV) == [
+  "beqz a5, 20f",
+  "j 21f",
+  "20:",
+  "21:",
+  "beq a0, a1, 22f",
+  "j 23f",
+  "22:",
+  "23:",
+  "bne a2, a3, 24f",
+  "j 25f",
+  "24:",
+  "25:",
+  "bgeu a4, a5, 26f",
+  "j 27f",
+  "26:",
+  "27:",
+  "bltu t0, t1, 28f",
+  "210:",
+  "add a0, a1, a2",
+  "sub a3, a4, a5",
+  "addw a6, a7, t0",
+  "subw t1, t2, t3",
+  "sltu t4, t5, t6",
+  "and s0, s1, s2",
+  "or s3, s4, s5",
+  "xor s6, s7, s8",
+  "addi s9, s10, 2047",
+  "addi s11, ra, -2048",
+  "addiw a0, a0, -1",
+  "andi a1, a1, 255",
+  "ori a2, a2, -2048",
+  "xori a3, a3, -1",
+  "addi a4, zero, -1",
+  "addi a4, zero, 2047",
+  "lui a5, 434334",
+  "lui a5, 1048575",
+  "slli a6, a6, 63",
+  "srli a6, a6, 1",
+  "srai a6, a6, 0",
+  "slliw a7, a7, 31",
+  "srliw a7, a7, 7",
+  "sraiw a7, a7, 0",
+  "lbu t0, 0(a0)",
+  "lhu t0, 2046(a0)",
+  "lwu t1, 4(a1)",
+  "ld t2, 2040(a2)",
+  "sb t0, 2047(a0)",
+  "sh t0, 0(a0)",
+  "sw t1, 4(a1)",
+  "sd t2, 8(a2)",
+  "addi a0, sp, 2047",
+  "bnez t6, 210b",
+  "j 29f",
+  "28:",
+  "29:",
+  "ret"
+]
+
+-- Every register name.
+#guard ([RISCV64.Reg.ra, .t0, .t1, .t2, .s0, .s1, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .s2,
+    .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11, .t3, .t4, .t5, .t6].map RISCV64.Reg.name) ==
+  ["ra", "t0", "t1", "t2", "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "s2",
+   "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"]
+
+-- Frames: the push and pop of one register, and of a buffer, around a call.
+#guard text (RISCV64.printer.function
+    (.frame (.push .ra) (.frame (.alloc 2032) (.call "vg_f" (.block [])) (.free 2032))
+      (.pop .ra) : Prog RISCV64.isa)) == [
+  "addi sp, sp, -16", "sd ra, 8(sp)", "addi sp, sp, -2032", "<call vg_f>",
+  "addi sp, sp, 2032", "ld ra, 8(sp)", "addi sp, sp, 16", "ret"]
+#guard Rust.line RISCV64.printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
 
 #guard Arm.encodable 0xff000000 && Arm.encodable 0x3fc && !Arm.encodable 0x101 && !Arm.encodable 0x1fe00
 

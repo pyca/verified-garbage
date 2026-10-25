@@ -18,15 +18,15 @@ keeps, on the key arrays.
 namespace VG.Proof.Rsa.PPC64LE.Recover
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys VG.Proof.Rsa
-open VG.Impl.Rsa.PPC64LE.Recover (mBase mR2 aN aOne aZ aO aNg nArr sTc sK sDone sOk sBit sLive sE1 sE2 sMask wR)
+open VG.Impl.Rsa.PPC64LE.Recover (mBase mR2 aN aOne aZ aO aNg nArr sWord sDone sOk sBit sLive sE1 sE2 sMask wM)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
-/-- The candidates' working arrays: Montgomery arrays 2–7, `r`'s copy (in
-the `W` view) and the copy of `y`. -/
-abbrev wrJ : List Nat := [22, 23, 24, 25, 26, 27, 30, 31, 38]
+/-- The candidates' working arrays: Montgomery arrays 2–7, the new `y`, the
+root, and `addMod`'s temporaries. -/
+abbrev wrJ : List Nat := [22, 23, 24, 25, 26, 27, 28, 29, 37, 38, 39]
 
-/-- The slots of the candidates, and the mask. -/
-abbrev wrD : List Nat := [sK, sDone, sOk, sBit, sLive, sE1, sE2, sMask]
+/-- The slots of the candidates, `addMod`'s, and the mask. -/
+abbrev wrD : List Nat := [sWord, sDone, sOk, sBit, sLive, sE1, sE2, sMask, VG.Impl.Rsa.PPC64LE.Keys.sC]
 
 /-- What the candidates keep. -/
 structure CF (s0 t : State) : Prop where
@@ -45,14 +45,13 @@ structure CF (s0 t : State) : Prop where
   vNg : num t.mem (rvB s0) (ww (kK s0)) aNg = nV s0 - RR s0 % nV s0
   vOne : num t.mem (rvB s0) (ww (kK s0)) aOne = 1
   zZ : ∀ i < ww (kK s0) + 2, w32 t.mem (rvB s0) (arr (ww (kK s0)) aZ + 4 * i) = 0
-  vR : num t.mem (rvB s0) (wW (kK s0)) wR = (Spec.Rsa.splitTwos (mV s0)).2
-  vT : slot t.mem (rvB s0) sTc = (Spec.Rsa.splitTwos (mV s0)).1
+  vM : num t.mem (rvB s0) (wW (kK s0)) wM = mV s0
   odd : dV s0 * eV s0 % 2 = 1
   two : 2 ≤ dV s0 * eV s0
 
 theorem MontS.cf {s0 t : State} (h : MontS s0 t) : CF s0 t :=
-  ⟨h.base, h.ws, h.r21, h.r23, h.r25, h.r26, h.r12, h.inv, h.vN, h.vMN, h.vR2, h.vO, h.vNg, h.vOne, h.zZ, h.vR,
-    h.vT, h.odd, h.two⟩
+  ⟨h.base, h.ws, h.r21, h.r23, h.r25, h.r26, h.r12, h.inv, h.vN, h.vMN, h.vR2, h.vO, h.vNg, h.vOne, h.zZ, h.vM,
+    h.odd, h.two⟩
 
 /-- Digits of one array, kept by a step on other arrays and slots. -/
 theorem keep_in' {B : Addr} {v : Nat} {js ds : List Nat} {m m' : Mem}
@@ -78,7 +77,7 @@ theorem CF.of_keep {s0 u v : State} (h : CF s0 u) {js ds : List Nat}
   have fit : ∀ j < nArr, arr (ww (kK s0)) j + S (ww (kK s0)) ≤ 2 ^ 64 := fun j hj => h.ws.fit64 hj
   have hd4 : ∀ d ∈ ds, d + 4 ≤ 160 := fun d hd' => by
     have := hd d hd'; simp only [List.mem_cons, List.not_mem_nil, or_false] at this
-    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   have nj : ∀ j, j ∉ wrJ → ∀ k ∈ js, k ≠ j := fun j hj' k hk e => hj' (e ▸ hj k hk)
   have g : ∀ r, r ∈ [.r12, .r21, .r23, .r25, .r26, .r31] → v.gpr r = u.gpr r := fun r hr' =>
     k.gpr r fun hm => hr r hm hr'
@@ -93,11 +92,11 @@ theorem CF.of_keep {s0 u v : State} (h : CF s0 u) {js ds : List Nat}
     by rw [nm aN (by decide) (by decide)]; exact h.vN, by rw [low mBase (by decide) (by decide)]; exact h.vMN,
     by rw [low mR2 (by decide) (by decide)]; exact h.vR2, by rw [nm aO (by decide) (by decide)]; exact h.vO,
     by rw [nm aNg (by decide) (by decide)]; exact h.vNg, by rw [nm aOne (by decide) (by decide)]; exact h.vOne,
-    fun i hi => ?_, ?_, ?_, h.odd, h.two⟩
+    fun i hi => ?_, ?_, h.odd, h.two⟩
   · have := hj j hj'
     have : j < nArr := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at this
-      rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+      rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     rw [svw]; exact VG.Proof.Rsa.KeyWorkspace.arr_end this
   · rw [g _ (by simp)]
     have := keep_in' kk (nj mBase (by decide)) hd4 (i := 0) (n := 1) (by omega_arith) (fit mBase (by decide))
@@ -107,25 +106,20 @@ theorem CF.of_keep {s0 u v : State} (h : CF s0 u) {js ds : List Nat}
     simp only [val32, Nat.mul_zero, Nat.add_zero] at this
     rw [this]; exact h.zZ i hi
   · have hW : wW (kK s0) = 2 * ww (kK s0) + 2 := rfl
-    have e1 := arrW14 (ww (kK s0)); have e2 := arrW14_end (ww (kK s0))
-    have e3 := VG.Proof.Rsa.KeyWorkspace.arr_end (w := ww (kK s0)) (show 30 < 31 by decide)
-    have f31 := fit 31 (by decide)
-    have hjs : ∀ j ∈ js, j < 28 ∨ 30 ≤ j := fun j hj' => by
+    have e1 := arrW3 (ww (kK s0)); have e2 := arrW3_end (ww (kK s0))
+    have f8 := VG.Proof.Rsa.KeyWorkspace.arr_mono (w := ww (kK s0)) (show 8 ≤ 22 by decide)
+    have f22 := fit 22 (by decide)
+    have hjs : ∀ j ∈ js, j < 6 ∨ 8 ≤ j := fun j hj' => by
       have := hj j hj'; simp only [List.mem_cons, List.not_mem_nil, or_false] at this
-      rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    have := h.vR
-    change val32 v.mem (rvB s0) (arr (wW (kK s0)) 14) (wW (kK s0)) = _
-    change val32 u.mem (rvB s0) (arr (wW (kK s0)) 14) (wW (kK s0)) = _ at this
+      rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    have := h.vM
+    change val32 v.mem (rvB s0) (arr (wW (kK s0)) 3) (wW (kK s0)) = _
+    change val32 u.mem (rvB s0) (arr (wW (kK s0)) 3) (wW (kK s0)) = _ at this
     rw [hW, e1] at this ⊢
     rw [keep_apart kk (fun j hj' => arr_apart (hjs j hj') (Nat.le_refl _) e2)
       (fun e he => .inl (Nat.le_trans (hd4 e he) (Nat.le_add_right _ _)))
-      (Nat.le_trans e2 (Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) e3) (Nat.le_trans (Nat.le_add_right _ _) f31)))]
+      (Nat.le_trans e2 (Nat.le_trans f8 (Nat.le_trans (Nat.le_add_right _ _) f22)))]
     exact this
-  · have := hd4
-    rw [kk.slot (e := sTc) (by decide) fun d hd' => .inl (by
-      have := hd d hd'; simp only [List.mem_cons, List.not_mem_nil, or_false] at this
-      rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
-    exact h.vT
 
 /-- What a step on the `W` view keeps, on the key arrays. -/
 theorem keepW_key {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}

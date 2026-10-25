@@ -13,21 +13,18 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFail
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFin
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvMont
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvRest
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RvSqStart
 import VerifiedGarbage.Proof.Rsa.RecoverExp
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCF
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCand
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCandSet
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFail
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFin
-meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvHalving
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvMont
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvNumbers
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvRest
 meta import VerifiedGarbage.Proof.Rsa.RecoverMath
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCand
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCandSet
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvHalving
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvNumbers
 
 /-!
@@ -44,7 +41,7 @@ namespace VG.Proof.Rsa.PPC64LE.Recover
 
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys VG.Proof.Rsa
 open VG.Spec.Rsa (recoverPrimes recoverTries primesKey splitTwos)
-open VG.Impl.Rsa.PPC64LE.Recover (code valid numbers rest fail halving mont candLoop fin restore)
+open VG.Impl.Rsa.PPC64LE.Recover (code valid numbers rest fail mont candLoop fin restore)
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 
 /-- For a valid `n`, whether a candidate is tried at all. -/
@@ -64,11 +61,6 @@ theorem skip_iff {s0 : State} (hmv : Spec.Rsa.modulusValid (nV s0) (kK s0) = tru
 def R5 (d : RvD) (u : State) : Prop :=
   ∃ s0, R0 d s0 ∧ Spec.Rsa.modulusValid (nV s0) (kK s0) = true ∧ NumS s0 u
 
-/-- After the halvings. -/
-def R6 (d : RvD) (u : State) : Prop :=
-  ∃ s0, R0 d s0 ∧ Spec.Rsa.modulusValid (nV s0) (kK s0) = true ∧ NOk s0 ∧ Par s0 ∧
-    (primesKey (nB s0) (eB s0) (dB s0)).2 = nt s0 ∧ HalvS s0 u
-
 /-- Before the restore. -/
 def RD (d : RvD) (u : State) : Prop := ∃ s0, R0 d s0 ∧ RFin s0 u
 
@@ -78,19 +70,6 @@ theorem pins_R4 : Pins R4 [.r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29,
 
 theorem pins_R5 : Pins R5 [.r21, .r23, .r24, .r25, .r26, .r29, .r30, .r31] := by
   rintro d s₁ s₂ ⟨a, ha, -, n₁⟩ ⟨b, hb, -, n₂⟩ r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · rw [n₁.r21, n₂.r21]; exact ha.reg hb (by decide)
-  · rw [n₁.r23, n₂.r23]; exact ha.reg hb (by decide)
-  · rw [n₁.r24, n₂.r24]; exact ha.reg hb (by decide)
-  · rw [n₁.r25, n₂.r25]; exact ha.reg hb (by decide)
-  · rw [n₁.r26, n₂.r26, ha.cB hb]
-  · rw [n₁.ws.r29, n₂.ws.r29, ha.k hb]
-  · rw [n₁.ws.r30, n₂.ws.r30, ha.k hb]
-  · rw [n₁.ws.r31, n₂.ws.r31]; exact ha.arg hb (by decide)
-
-theorem pins_R6 : Pins R6 [.r21, .r23, .r24, .r25, .r26, .r29, .r30, .r31] := by
-  rintro d s₁ s₂ ⟨a, ha, -, -, -, -, n₁⟩ ⟨b, hb, -, -, -, -, n₂⟩ r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rw [n₁.r21, n₂.r21]; exact ha.reg hb (by decide)
@@ -127,17 +106,14 @@ theorem R5_of {d : RvD} {s : State} (h : R4 d s ∧ isa.eval (.zero .d .r0) s = 
   have hmv := hv.mp (beq_iff_eq.mp (Option.some.inj hc))
   exact WP.mono (numbers_ok e) fun u nu => ⟨s0, hs, hmv, nu⟩
 
-theorem R6_of {d : RvD} {s : State} (h : R5 d s ∧ isa.eval (.zero .d .r0) s = some true) : WP isa halving s (R6 d) := by
+theorem CL0_of {d : RvD} {s : State} (h : R5 d s ∧ isa.eval (.zero .d .r0) s = some true) :
+    WP isa mont s (CL0 d) := by
   obtain ⟨⟨s0, hs, hmv, ns⟩, hc⟩ := h
   rw [eval_zero] at hc
   have hgo := beq_iff_eq.mp (Option.some.inj hc)
   obtain ⟨odd, two⟩ := ns.go.mp hgo
-  exact WP.mono (halving_ok ns hgo) fun u hu =>
-    ⟨s0, hs, hmv, NOk.of_valid hmv, par_of ns.base.pre odd two, nt_eq hmv odd two, hu⟩
-
-theorem CL0_of {d : RvD} {s : State} (h : R6 d s) : WP isa mont s (CL0 d) := by
-  obtain ⟨s0, hs, hmv, hn, hp, ht, hh⟩ := h
-  exact WP.mono (mont_ok hh hmv) fun u hu => ⟨s0, hs, hn, hp, ht, hu.cf⟩
+  exact WP.mono (mont_ok ns hgo hmv) fun u hu =>
+    ⟨s0, hs, NOk.of_valid hmv, par_of ns.base.pre odd two, nt_eq hmv odd two, hu.cf⟩
 
 theorem RD_fin {d : RvD} {s : State} (h : CE d s) : WP isa fin s (RD d) := by
   obtain ⟨s0, hs, hn, cp, -⟩ := h
@@ -154,8 +130,7 @@ theorem RD_fail {d : RvD} {s : State} (h : R4 d s ∧ isa.eval (.zero .d .r0) s 
 theorem rest_ct : RelCT isa (Two fun d s => R5 d s ∧ isa.eval (.zero .d .r0) s = some true) rest (Two RD) := by
   unfold rest
   refine RelCT.seq (two_post (two_taint _ (fun d s₁ s₂ h₁ h₂ => pins_R5 d s₁ s₂ h₁.1 h₂.1) (by taint_decide))
-    fun _ _ h => R6_of h) (RelCT.seq (two_post (two_taint _ pins_R6 (by taint_decide)) fun _ _ h => CL0_of h)
-    (RelCT.seq cand_ct (two_post (two_taint _ pins_CE (by taint_decide)) fun _ _ h => RD_fin h)))
+    fun _ _ h => CL0_of h) (RelCT.seq cand_ct (two_post (two_taint _ pins_CE (by taint_decide)) fun _ _ h => RD_fin h))
 
 theorem skip_eq {d : RvD} {s₁ s₂ : State} (h₁ : R5 d s₁) (h₂ : R5 d s₂) :
     isa.eval (.zero .d .r0) s₁ = isa.eval (.zero .d .r0) s₂ := by

@@ -44,7 +44,7 @@ theorem bytesAt_below {B : Addr} {o n d k : Nat} {m m' : Mem} (h : Outside B o n
 array 0, `m₁` in array 4), `m₂` the `qL` bytes of `X`'s array 1 (`qL` in the
 header). -/
 theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Prog isa} {Q : State → Prop}
-    (hs : Scr s BX Z) (hA : oA + slot wP 8 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wP) (hw' : wP < 2 ^ 31)
+    (hs : Scr s BX Z) (hA : oA + slot wP 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wP) (hw' : wP < 2 ^ 31)
     (h10 : s.gpr .r10 = off (off BX oA) (slot wP 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wP + 2)))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wP))
     (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
@@ -57,7 +57,7 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
       val32 t.mem (off BX oA) (slot wP 4) (2 * wP) = m1 →
       val32 t.mem (off BX oA) (slot wP 7) (2 * wP) = 2 ^ (64 * wP) * 2 ^ (64 * wP) % Pv →
       (t.gpr .r12).toNat < 2 ^ 32 → (w32 t.mem (off BX oA) (slot wP 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 →
-      Outside BX oA (slot wP 8) s.mem t.mem → Keep powerRegs s t → WP isa c t Q) :
+      Outside BX oA (slot wP 24) s.mem t.mem → Keep powerRegs s t → WP isa c t Q) :
     WP isa (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
       PublicChecked.base .r9 3)) (.seq Precompute.r2
       (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
@@ -65,7 +65,7 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
   have hn := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
-  have eA0 := e wP 0; have eA1 := e wP 1; have eA4 := e wP 4; have eA7 := e wP 7; have eA8 := e wP 8
+  have eA0 := e wP 0; have eA1 := e wP 1; have eA4 := e wP 4; have eA7 := e wP 7; have eA8 := e wP 24
   have eX1 := e wX 1; have eX8 := e wX 8
   have hsA := hs.sub hA
   have hnA := hsA.nowrap
@@ -108,7 +108,7 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
     fun s₈ ⟨⟨hw8, out8⟩, k8⟩ => ?_)
   have k18 := k17.trans k8
   rw [m7, m6] at hw8 out8
-  have outB : Outside BX oA (slot wP 8) s.mem s₈.mem :=
+  have outB : Outside BX oA (slot wP 24) s.mem s₈.mem :=
     (out_sub (fun y hy => out5 y hy) (by omega_arith) (by omega_arith) (by omega_arith)).trans (out_sub out8 (by omega_arith) (by omega_arith) (by omega_arith))
   refine WP.seq (WP.mono (xb_ok (rd := .r30) (by decide) (by decide) ((k18.gpr _ (by decide)).trans h27)
     ((k18.gpr _ (by decide)).trans h28) 1) fun s₁₀ ⟨⟨a30, m10⟩, k10⟩ => ?_)
@@ -150,7 +150,7 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
 
 /-- `recombineP`'s first part, `q_len` (`qL`, in the header) first. -/
 theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Prog isa} {Q : State → Prop}
-    (hs : Scr s BX Z) (hA : oA + slot wP 8 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wP) (hw' : wP < 2 ^ 31)
+    (hs : Scr s BX Z) (hA : oA + slot wP 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wP) (hw' : wP < 2 ^ 31)
     (h10 : s.gpr .r10 = off (off BX oA) (slot wP 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wP + 2)))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wP)) (h23 : s.gpr .r23 = BX)
     (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
@@ -163,7 +163,7 @@ theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pro
       val32 t.mem (off BX oA) (slot wP 4) (2 * wP) = m1 →
       val32 t.mem (off BX oA) (slot wP 7) (2 * wP) = 2 ^ (64 * wP) * 2 ^ (64 * wP) % Pv →
       (t.gpr .r12).toNat < 2 ^ 32 → (w32 t.mem (off BX oA) (slot wP 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 →
-      Outside BX oA (slot wP 8) s.mem t.mem → Keep powerRegs s t → WP isa c t Q) :
+      Outside BX oA (slot wP 24) s.mem t.mem → Keep powerRegs s t → WP isa c t Q) :
     WP isa (.seq (.block [.load .d .r31 .r23 oQLen]) (.seq (.block (PublicChecked.minv ++
       PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq Precompute.r2
       (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN

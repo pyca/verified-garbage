@@ -50,7 +50,7 @@ abbrev mQI (s₀ : State) : Nat := if cb s₀ then vQI s₀ else 0
 abbrev cwP (s₀ : State) : Nat := wsWords (cpL s₀)
 abbrev cwQ (s₀ : State) : Nat := wsWords (cqL s₀)
 abbrev oPa (s₀ : State) : Nat := slot (cwX s₀) 8
-abbrev oQa (s₀ : State) : Nat := slot (cwX s₀) 8 + slot (cwP s₀) 8
+abbrev oQa (s₀ : State) : Nat := slot (cwX s₀) 8 + slot (cwP s₀) 24
 
 /-- What the masked numbers satisfy. -/
 theorem masked_facts {s₀ : State} (hP : PF s₀) :
@@ -105,8 +105,8 @@ theorem mid1A_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s
   have qk := hP.qk
   have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
   have eX0 := e (cwX s₀) 0; have eX5 := e (cwX s₀) 5; have eX7 := e (cwX s₀) 7; have eX8 := e (cwX s₀) 8
-  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP8 := e (cwP s₀) 8
-  have eQ4 := e (cwQ s₀) 4; have eQ8 := e (cwQ s₀) 8; have eQ0 := e (cwQ s₀) 0
+  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP8 := e (cwP s₀) 24
+  have eQ4 := e (cwQ s₀) 4; have eQ8 := e (cwQ s₀) 24; have eQ0 := e (cwQ s₀) 0
   have dZ : cZ s₀ = (stackArg s₀ 9).toNat * 8 := rfl
   have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
   have dk : ck s₀ = (s₀.gpr .r6).toNat := rfl
@@ -115,9 +115,9 @@ theorem mid1A_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s
   have dP : cwP s₀ = wsWords (cpL s₀) := rfl
   have dQ : cwQ s₀ = wsWords (cqL s₀) := rfl
   have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
-  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 8 := rfl
+  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 24 := rfl
   have dS : cS s₀ = stackArg s₀ 8 := rfl
-  have fP8 := e (wsWords (cpL s₀)) 8; have fQ8 := e (wsWords (cqL s₀)) 8
+  have fP8 := e (wsWords (cpL s₀)) 24; have fQ8 := e (wsWords (cqL s₀)) 24
   have fX8 := e (2 * ((ck s₀ + 7) / 8)) 8
   have hwX : cwX s₀ < 2 ^ 31 := by unfold cwX ck; omega_arith
   have k0 := hF.keep
@@ -151,8 +151,8 @@ theorem mid1B_ok {s₀ s t₁ : State} {c : Prog isa} {Q : State → Prop} (hP :
   have qk := hP.qk
   have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
   have eX0 := e (cwX s₀) 0; have eX5 := e (cwX s₀) 5; have eX7 := e (cwX s₀) 7; have eX8 := e (cwX s₀) 8
-  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP8 := e (cwP s₀) 8
-  have eQ4 := e (cwQ s₀) 4; have eQ8 := e (cwQ s₀) 8; have eQ0 := e (cwQ s₀) 0
+  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP8 := e (cwP s₀) 24
+  have eQ4 := e (cwQ s₀) 4; have eQ8 := e (cwQ s₀) 24; have eQ0 := e (cwQ s₀) 0
   have dZ : cZ s₀ = (stackArg s₀ 9).toNat * 8 := rfl
   have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
   have dk : ck s₀ = (s₀.gpr .r6).toNat := rfl
@@ -161,9 +161,9 @@ theorem mid1B_ok {s₀ s t₁ : State} {c : Prog isa} {Q : State → Prop} (hP :
   have dP : cwP s₀ = wsWords (cpL s₀) := rfl
   have dQ : cwQ s₀ = wsWords (cqL s₀) := rfl
   have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
-  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 8 := rfl
+  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 24 := rfl
   have dS : cS s₀ = stackArg s₀ 8 := rfl
-  have fP8 := e (wsWords (cpL s₀)) 8; have fQ8 := e (wsWords (cqL s₀)) 8
+  have fP8 := e (wsWords (cpL s₀)) 24; have fQ8 := e (wsWords (cqL s₀)) 24
   have fX8 := e (2 * ((ck s₀ + 7) / 8)) 8
   have hwX : cwX s₀ < 2 ^ 31 := by unfold cwX ck; omega_arith
   have k0 := hF.keep
@@ -218,8 +218,8 @@ theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s�
   have qk := hP.qk
   have e : ∀ w j, slot w j = 256 + j * (8 * (w + 2)) := fun _ _ => rfl
   have eX0 := e (cwX s₀) 0; have eX5 := e (cwX s₀) 5; have eX7 := e (cwX s₀) 7; have eX8 := e (cwX s₀) 8
-  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP8 := e (cwP s₀) 8
-  have eQ4 := e (cwQ s₀) 4; have eQ8 := e (cwQ s₀) 8; have eQ0 := e (cwQ s₀) 0
+  have eP0 := e (cwP s₀) 0; have eP4 := e (cwP s₀) 4; have eP8 := e (cwP s₀) 24
+  have eQ4 := e (cwQ s₀) 4; have eQ8 := e (cwQ s₀) 24; have eQ0 := e (cwQ s₀) 0
   have dZ : cZ s₀ = (stackArg s₀ 9).toNat * 8 := rfl
   have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl
   have dk : ck s₀ = (s₀.gpr .r6).toNat := rfl
@@ -228,9 +228,9 @@ theorem mid1_ok {s₀ s : State} {c : Prog isa} {Q : State → Prop} (hP : PF s�
   have dP : cwP s₀ = wsWords (cpL s₀) := rfl
   have dQ : cwQ s₀ = wsWords (cqL s₀) := rfl
   have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
-  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 8 := rfl
+  have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 24 := rfl
   have dS : cS s₀ = stackArg s₀ 8 := rfl
-  have fP8 := e (wsWords (cpL s₀)) 8; have fQ8 := e (wsWords (cqL s₀)) 8
+  have fP8 := e (wsWords (cpL s₀)) 24; have fQ8 := e (wsWords (cqL s₀)) 24
   have fX8 := e (2 * ((ck s₀ + 7) / 8)) 8
   have hwX : cwX s₀ < 2 ^ 31 := by unfold cwX ck; omega_arith
   have k0 := hF.keep

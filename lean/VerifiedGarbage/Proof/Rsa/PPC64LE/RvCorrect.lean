@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCand
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFF
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RvHalving
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvLoads
 
 /-!

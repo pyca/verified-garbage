@@ -3,9 +3,11 @@ module
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFF
 import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 import VerifiedGarbage.Proof.Rsa.RecoverExp
+import VerifiedGarbage.Proof.Rsa.RecoverFusedBounds
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Rsa.PPC64LE.RvSlots
 
 /-!
 # `vg_rsa_recover_primes` on PPC64LE: `y` out of Montgomery form
@@ -24,7 +26,7 @@ open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
 theorem yV_lt {s0 : State} (hn : NOk s0) : yV s0 < nV s0 := by
   have hn0 : 0 < nV s0 := by have := hn.big; omega
-  exact sqIter_lt hn0 _ _ (by rw [y0, VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ hn0)
+  exact Fused.root_getD_lt hn0 (Fused.bounded_eval (by have := hn.big; omega))
 
 /-- `finY`. -/
 theorem finY_ok {s0 u : State} (hn : NOk s0) (h : CP s0 (jL s0) u) :

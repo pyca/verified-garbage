@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Rsa.RecoverMath
 import VerifiedGarbage.Proof.Rsa.RecoverTries
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCorrect
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RvHalving
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvRest
 import VerifiedGarbage.Proof.Rsa.RecoverExp
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCF
@@ -17,14 +16,14 @@ meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCandSet
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCorrect
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFF
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvRest
-meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvSqStart
 meta import VerifiedGarbage.Proof.Rsa.RecoverExp
 meta import VerifiedGarbage.Proof.Rsa.RecoverMath
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCF
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCand
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCandSet
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFF
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvSqStart
+meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvSlots
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvSlots
 
 /-!
 # `vg_rsa_recover_primes` on PPC64LE: constant time of the candidates
@@ -112,7 +111,7 @@ theorem CI0_of {d : RvD} {u : State} (h : CL0 d u) : WP isa (.block [.li .r24 0]
 def CG (j : Nat) (d : RvD) (t : State) : Prop :=
   ∃ s0, R0 d s0 ∧ NOk s0 ∧ Par s0 ∧ (primesKey (nB s0) (eB s0) (dB s0)).2 = nt s0 ∧ j < nt s0 ∧
     gos s0 recoverTries = gos s0 (recoverTries - j) ∧ CP s0 j t ∧
-    t.gpr .r0 = b64 (decide (j + 1 < 100) && !(sqst s0 j (cB s0)).2.2)
+    t.gpr .r0 = b64 (decide (j + 1 < 100) && !(fres s0 j).isSome)
 
 theorem CG_of {d : RvD} {j : Nat} {u : State} (h : CI d j u) : WP isa candBody u (CG j d) := by
   obtain ⟨s0, hs, hn, hp, ht, c, h24, hj, hg⟩ := h
@@ -122,28 +121,28 @@ theorem CG_of {d : RvD} {j : Nat} {u : State} (h : CI d j u) : WP isa candBody u
 /-- The loop's condition after the candidate `j`: whether `j + 1` are fewer than the tries. -/
 theorem CG.cond {d : RvD} {j : Nat} {t : State} (h : CG j d t) :
     isa.eval (.nonzero .d .r0) t = some (decide (j + 1 < d.tries)) := by
-  obtain ⟨s0, hs, -, hp, ht, hj, hg, -, r0⟩ := h
+  obtain ⟨s0, hs, hn, hp, ht, hj, hg, -, r0⟩ := h
   have cc := VG.Proof.Rsa.cand_cond (nV s0) (tT s0) (rR s0) (j := j) hj hg
-  rw [← ok_eq hp] at cc
-  rw [eval_nonzero_ofNat' t .r0 (by have := b2n_le (decide (j + 1 < 100) && !(sqst s0 j (cB s0)).2.2); omega) r0]
+  rw [← ok_eq hn hp] at cc
+  rw [eval_nonzero_ofNat' t .r0 (by have := b2n_le (decide (j + 1 < 100) && !(fres s0 j).isSome); omega) r0]
   rw [show d.tries = nt s0 by rw [← ht, ← hs.2]; rfl]
   rw [← cc, Bool.not_not]
-  cases (decide (j + 1 < 100) && !(sqst s0 j (cB s0)).2.2) <;> rfl
+  cases (decide (j + 1 < 100) && !(fres s0 j).isSome) <;> rfl
 
 theorem CG.next {d : RvD} {j : Nat} {t : State} (h : CG j d t) (hl : j + 1 < d.tries) : CI d (j + 1) t := by
   obtain ⟨s0, hs, hn, hp, ht, hj, hg, cp, r0⟩ := h
   have dt : d.tries = nt s0 := by rw [← ht, ← hs.2]; rfl
   have hl' : j + 1 < nt s0 := dt ▸ hl
   have cc := VG.Proof.Rsa.cand_cond (nV s0) (tT s0) (rR s0) (j := j) hj hg
-  rw [← ok_eq hp] at cc
+  rw [← ok_eq hn hp] at cc
   refine ⟨s0, hs, hn, hp, ht, cp.cf, cp.r24, hl', ?_⟩
-  have hok : (sqst s0 j (cB s0)).2.2 = false := by
-    have : (decide (j + 1 < 100) && !(sqst s0 j (cB s0)).2.2) = true := by
+  have hok : (fres s0 j).isSome = false := by
+    have : (decide (j + 1 < 100) && !(fres s0 j).isSome) = true := by
       rw [← Bool.not_not (decide _ && _), cc]; simpa using hl'
     simp only [Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at this
     exact this.2
   have hs' : Spec.Rsa.recoverStep (nV s0) (tT s0) (rR s0) (j + 2) = none := by
-    rw [ok_eq hp] at hok
+    rw [ok_eq hn hp] at hok
     exact Option.not_isSome_iff_eq_none.mp (by rw [hok]; decide)
   have n2 := nt_le s0
   rw [hg]; show recoverPrimes.go _ _ _ _ = recoverPrimes.go _ _ _ _

@@ -3,6 +3,7 @@ import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.TCB.RISCV64.Isa
 
 /-!
 # Golden tests for the push and pop of frames
@@ -195,5 +196,64 @@ def ppcAlloc : Option PPC64LE.State := PPC64LE.push (.alloc 112) ppc
 #guard (PPC64LE.push (.alloc 112) { ppc with sp := 96 }).isNone
 -- Neither is an instruction of a block.
 #guard (PPC64LE.exec (.alloc 112) ppc).isNone && (PPC64LE.exec (.free 112) ppc).isNone
+
+/-! ## RISC-V -/
+
+def rv : RISCV64.State :=
+  { gpr := fun r => if r = .ra then 0x1122334455667788 else 0, sp := 0x1000,
+    mem := fun _ => 0, rd := [], wr := [⟨0x8000, 8⟩] }
+
+def rvPush : Option RISCV64.State := RISCV64.push (.push .ra) rv
+
+-- `addi sp, sp, -16` then `sd ra, 8(sp)`: the 16 bytes of the frame become a writable
+-- region at the head of `wr`, of which the push writes only the upper 8.
+#guard (rvPush.map fun s => (s.sp, s.mem.read 0xff8 8, s.mem.read 0xff0 8,
+    s.wr.map (·.base), s.wr.map (·.len))) ==
+  some (0xff0, 0x1122334455667788, 0, [0xff0, 0x8000], [16, 8])
+
+-- The pop loads its register from the frame, moves `sp` back and removes the region.
+#guard (rvPush.bind fun s₁ => (RISCV64.pop (.pop .s1) s₁ s₁).map fun s =>
+    (s.sp, s.gpr .s1, s.wr.map (·.base))) == some (0x1000, 0x1122334455667788, [0x8000])
+
+-- It faults if the stack pointer or the regions are not those the push left.
+#guard (rvPush.bind fun s₁ => RISCV64.pop (.pop .s1) s₁ { s₁ with sp := s₁.sp + 16 }).isNone
+#guard (rvPush.bind fun s₁ => RISCV64.pop (.pop .s1) s₁ { s₁ with wr := s₁.wr.tail }).isNone
+#guard (RISCV64.pop (.pop .s1) rv rv).isNone
+-- The push faults if the frame would wrap around the address space.
+#guard (RISCV64.push (.push .ra) { rv with sp := 8 }).isNone
+-- Neither is an instruction of a block.
+#guard (RISCV64.exec (.push .ra) rv).isNone && (RISCV64.exec (.pop .ra) rv).isNone
+
+def rvAlloc : Option RISCV64.State := RISCV64.push (.alloc 112) rv
+
+-- `addi sp, sp, -112`: the 112 bytes become a writable region at the head of `wr`,
+-- unwritten.
+#guard (rvAlloc.map fun s => (s.sp, s.mem.read 0xf90 112 == 0, s.wr.map (·.base),
+    s.wr.map (·.len))) ==
+  some (0xf90, true, [0xf90, 0x8000], [112, 8])
+-- `addi s1, sp, 32` points into that region.
+#guard (rvAlloc.bind fun s => (RISCV64.exec (.addSp .s1 32) s).map (·.gpr .s1)) == some 0xfb0
+#guard (RISCV64.exec (.addSp .s1 2048) rv).isNone
+
+-- `addi sp, sp, 112` moves `sp` back and removes the region, changing no register.
+#guard (rvAlloc.bind fun s₁ => (RISCV64.pop (.free 112) s₁ s₁).map fun s =>
+    (s.sp, s.gpr .ra, s.wr.map (·.base))) == some (0x1000, 0x1122334455667788, [0x8000])
+-- It faults unless the frame has the size released and `sp` and the regions are those the
+-- push left.
+#guard (rvAlloc.bind fun s₁ => RISCV64.pop (.free 96) s₁ s₁).isNone
+#guard (rvAlloc.bind fun s₁ => RISCV64.pop (.free 112) s₁ { s₁ with sp := s₁.sp + 16 }).isNone
+#guard (rvAlloc.bind fun s₁ => RISCV64.pop (.free 112) s₁ { s₁ with wr := s₁.wr.tail }).isNone
+-- A `push` frame has the shape of an `alloc 16` frame, so `free 16` releases it too, as on
+-- hardware (`addi sp, sp, 16`), without reloading the register.
+#guard (rvPush.bind fun s₁ => (RISCV64.pop (.free 16) s₁ s₁).map fun s =>
+    (s.sp, s.gpr .s1, s.wr.map (·.base))) == some (0x1000, 0, [0x8000])
+-- The allocation faults unless its size is a multiple of 16 below 2048, which `addi`
+-- encodes, or if it would wrap around the address space.
+#guard (RISCV64.push (.alloc 0) rv).isNone && (RISCV64.push (.alloc 120) rv).isNone
+#guard (RISCV64.push (.alloc 2048) rv).isNone
+#guard (RISCV64.push (.alloc 2032) rv).isSome
+#guard (RISCV64.push (.alloc 112) { rv with sp := 96 }).isNone
+-- Neither is an instruction of a block.
+#guard (RISCV64.exec (.alloc 112) rv).isNone && (RISCV64.exec (.free 112) rv).isNone
 
 end VG.Test.Frames
