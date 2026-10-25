@@ -10,8 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # Montgomery multiplication on PPC64LE: zeroing, and the final subtraction
 
-`zeroAcc_ok`: `-m⁻¹ mod 2⁶⁴` by a step of Newton's iteration (`mont_newton64`),
-`w`, and the accumulator's first `w + 1` words := 0. `subMod_ok`: `T -
+`mont_newton64`: `-m⁻¹ mod 2⁶⁴` by a step of Newton's iteration. `subMod_ok`: `T -
 m` into the temporary, with the borrow out of the top digit as a mask.
 `selectAcc_ok`: the result, `T` or `T - m` by the mask.
 -/
@@ -51,67 +50,6 @@ theorem mont_ofNat_shr1 {n : Nat} (hn : n < 2 ^ 63) : BitVec.ofNat 64 (2 * n) >>
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   omega_arith
-
-/-- `zeroAcc`, with `m₀` at `dM`, `n = 2 w` in `r11`, `r12 = -m⁻¹ mod 2³²` and
-the accumulator at `dA`: `-m⁻¹ mod 2⁶⁴` in `r0`, `w` in `r3` and `r4`, and the
-accumulator's first `w + 1` words, the `n + 2` digits, 0. -/
-theorem zeroAcc_ok {s : State} {B : Addr} {Z dA dM w : Nat} (hs : Scr s B Z)
-    (h8 : s.gpr .r8 = off B dA) (h10 : s.gpr .r10 = off B dM) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
-    (hw : w < 2 ^ 31) (hA : dA + 8 * (w + 1) ≤ Z) (hM : dM + 8 ≤ Z)
-    (hinv : ((Mont.word s.mem B dM).toNat % 2 ^ 32 * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0) :
-    WP isa zeroAcc s fun s' =>
-      (∀ j < 2 * w + 2, w32 s'.mem B (dA + 4 * j) = 0) ∧ Outside B dA (8 * (w + 1)) s.mem s'.mem ∧
-        ((Mont.word s.mem B dM).toNat * (s'.gpr .r0).toNat + 1) % 2 ^ 64 = 0 ∧
-        s'.gpr .r3 = BitVec.ofNat 64 w ∧ s'.gpr .r4 = BitVec.ofNat 64 w ∧
-        Keep [.r0, .r3, .r4, .r14, .r17, .r22] s s' := by
-  have hnw := hs.nowrap
-  unfold zeroAcc
-  refine WP.seq ?_
-  have hpre : WP isa (.block [.load .d .r3 .r10 0, .mul .r3 .r3 .r12, .addi .r3 .r3 2, .mul .r0 .r3 .r12,
-      .lsr .d .r3 .r11 1, .addi .r4 .r3 0, .addi .r14 .r8 0, .addi .r17 .r3 1, .li .r22 0]) s
-      fun s₁ => (((Mont.word s.mem B dM).toNat * (s₁.gpr .r0).toNat + 1) % 2 ^ 64 = 0 ∧
-        s₁.gpr .r3 = BitVec.ofNat 64 w ∧ s₁.gpr .r4 = BitVec.ofNat 64 w ∧
-        s₁.gpr .r14 = off B dA ∧ s₁.gpr .r17 = BitVec.ofNat 64 (w + 1) ∧ s₁.gpr .r22 = 0 ∧
-        s₁.mem = s.mem) ∧ Keep [.r0, .r3, .r4, .r14, .r17, .r22] s s₁ := by
-    refine WP.keep _ ?_ (by decide)
-    prun [h8, h10, h11, hs.ld hM, BitVec.add_zero, mont_ofNat_shr1 (show w < 2 ^ 63 by omega_arith)]
-    refine ⟨mont_newton64 _ _ hinv, ?_, rfl⟩
-    rw [BitVec.ofNat_add]
-  refine WP.mono hpre fun s₁ ⟨⟨i0, i3, i4, i14, i17, i22, im⟩, k₁⟩ => ?_
-  let Inv : Nat → State → Prop := fun i t =>
-    t.gpr .r14 = off B (dA + 8 * i) ∧ t.gpr .r22 = 0 ∧ Outside B dA (8 * i) s.mem t.mem ∧
-      (∀ k < i, Mont.word t.mem B (dA + 8 * k) = 0) ∧ Keep [.r14, .r17] s₁ t
-  refine WP.mono (wp_countdown (body := .block ([.store .d .r22 .r14 0, .addi .r14 .r14 8] ++
-      ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := w + 1) (by omega_arith) (by omega_arith) Inv
-    (fun i hi t ⟨j14, j0, jout, jz, jk⟩ hc => ?_)
-    ⟨by rw [i14]; rfl, i22, by rw [← im]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega_arith),
-      Keep.refl _ _⟩ i17) fun t ⟨_, _, tout, tz, tk⟩ => ⟨fun j hj => ?_, tout, ?_, ?_, ?_, ?_⟩
-  · have hst : WP isa (.block [.store .d .r22 .r14 0, .addi .r14 .r14 8, .subi .r17 .r17 1]) t
-        fun t' => t' = ((({ t with mem := t.mem.writeW (off B (dA + 8 * i)) (0 : BitVec 64) } : State).write
-          .r14 (off B (dA + 8 * i + 8))).write .r17 (t.gpr .r17 - BitVec.ofNat 64 1)) := by
-      prun [j14, j0, (hs.congr (k₁.trans jk).wr).st (show dA + 8 * i + 8 ≤ Z by omega_arith)]
-    refine WP.mono hst fun t' e => ?_
-    subst e
-    have hw := writeW_outside t.mem B (d := dA + 8 * i) 0 (by omega_arith)
-    refine ⟨⟨by gsimp; rw [show dA + 8 * i + 8 = dA + 8 * (i + 1) by omega_arith], by gsimp; exact j0, ?_, ?_, ?_⟩, by gsimp⟩
-    · gsimp; exact (jout.mono (Nat.le_refl _) (by omega_arith)).trans (hw.mono (by omega_arith) (by omega_arith))
-    · intro k hk
-      gsimp
-      rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk | rfl
-      · rw [hw.word (by omega_arith) (by omega_arith)]; exact jz k hk
-      · exact word_writeW_self _ _ _ _
-    · exact jk.trans' ((((Keep.mem _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono)
-  · have hword := word_eq_w32 t.mem B (dA + 8 * (j / 2))
-    rw [tz (j / 2) (by omega_arith)] at hword
-    have : w32 t.mem B (dA + 8 * (j / 2)) = 0 ∧ w32 t.mem B (dA + 8 * (j / 2) + 4) = 0 := by
-      rw [show (0 : BitVec 64).toNat = 0 from rfl] at hword; omega_arith
-    rcases Nat.mod_two_eq_zero_or_one j with h | h
-    · rw [show dA + 4 * j = dA + 8 * (j / 2) by omega_arith]; exact this.1
-    · rw [show dA + 4 * j = dA + 8 * (j / 2) + 4 by omega_arith]; exact this.2
-  · rw [tk.gpr _ (by decide)]; exact i0
-  · rw [tk.gpr _ (by decide)]; exact i3
-  · rw [tk.gpr _ (by decide)]; exact i4
-  · exact (k₁.trans tk).mono
 
 /-! ## The subtraction of `m` -/
 

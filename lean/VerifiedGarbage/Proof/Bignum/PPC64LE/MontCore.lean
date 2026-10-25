@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRounds
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish64
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontStep
 public import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Offset
@@ -128,73 +129,67 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have hM := val32_lt s.mem B (slot w 0) (2 * w)
   have pw : 2 ^ (32 * (2 * w)) = 2 ^ (64 * w) := by rw [← Nat.mul_assoc]
   unfold tail
-  -- `-m⁻¹ mod 2⁶⁴`, `w`, the rounds' count, and the accumulator := 0.
-  refine WP.seq (WP.mono (zeroAcc_ok (dM := slot w 0) hs i8 i10 i11 hw' (by omega_arith) (by omega_arith)
-    (by rw [w32_eq_mod] at hinv; exact hinv)) fun s₂' ⟨hz, out₂, jinv, j3, j4, k₂'⟩ => ?_)
+  -- The accumulator := 0, and the rounds' count.
+  refine WP.seq (WP.mono (zeroAcc_ok (w := w) hs i8 i11 hw' (by omega_arith)) fun s₂' ⟨hz, out₂, j4, k₂'⟩ => ?_)
   have hs₂' := hs.congr k₂'.wr
   have g₂' : ∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], s₂'.gpr r = s.gpr r := fun r hr =>
     k₂'.gpr r (by revert r hr; decide)
-  have v₂ : ∀ {j}, j < n → j ≠ 2 → val32 s₂'.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) :=
-    fun hj hne => out₂.val32 (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)
-  have m0₂ : Mont.word s₂'.mem B (slot w 0) = Mont.word s.mem B (slot w 0) :=
-    out₂.word (by omega_arith) (by omega_arith)
-  -- The rounds, on the numbers as 64-bit words.
   have wv : ∀ (m : Mem) (j : Nat), wordsVal m B (slot w j) w = val32 m B (slot w j) (2 * w) :=
     fun m j => wordsVal_eq_val32 m B _ w
+  have v₂ : ∀ {j}, j < n → j ≠ 2 → wordsVal s₂'.mem B (slot w j) w = wordsVal s.mem B (slot w j) w :=
+    fun hj hne => out₂.wordsVal (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)
+  have m0₂ : Mont.word s₂'.mem B (slot w 0) = Mont.word s.mem B (slot w 0) :=
+    out₂.word (by omega_arith) (by omega_arith)
+  -- The rounds.
   refine WP.seq (WP.mono (rounds_ok (w := w) (da := slot w a) (dA := slot w 2) (dB := slot w b) (dM := slot w 0) hs₂'
     (by rw [g₂' .r6 (by decide), i6]) (by rw [g₂' .r8 (by decide), i8]) (by rw [g₂' .r7 (by decide), i7])
-    (by rw [g₂' .r10 (by decide), i10]) j3 j4 (by rw [m0₂]; exact jinv) hw2 hw' (by omega_arith) (by omega_arith)
-    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-    (by rw [wordsVal_eq_val32]; exact val32_zero fun j hj => hz j (by omega_arith))
-    (by rw [wv, wv, v₂ hb hb2, v₂ (by omega) (by decide)]; exact hB))
+    (by rw [g₂' .r10 (by decide), i10]) (by rw [g₂' .r11 (by decide), i11]) j4
+    (by rw [m0₂, g₂' .r12 (by decide)]; rw [w32_eq_mod] at hinv; exact hinv) hw2 hw' (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hz
+    (by rw [v₂ hb hb2, v₂ (by omega) (by decide), wv, wv]; exact hB))
     fun s₃ ⟨⟨tlt, teq, out₃⟩, k₃⟩ => ?_)
-  rw [wv, v₂ (by omega) (by decide)] at tlt teq
-  rw [wv, wv, v₂ ha ha2, v₂ hb hb2] at teq
-  -- `T < 2 m` fits in `2 w + 1` digits.
-  rw [wordsVal_eq_val32, show 2 * (w + 1) = 2 * w + 1 + 1 by omega_arith, val32_succ] at tlt teq
-  have htop : w32 s₃.mem B (slot w 2 + 4 * (2 * w + 1)) = 0 := by
-    have h2 : 2 * val32 s.mem B (slot w 0) (2 * w) ≤ 2 ^ (32 * (2 * w + 1)) * 1 := by
-      have := Nat.mul_le_mul_left (2 ^ (32 * (2 * w))) (show 2 ≤ 2 ^ 32 by decide)
-      rw [show 32 * (2 * w + 1) = 32 * (2 * w) + 32 by omega_arith, Nat.pow_add]
-      omega_using [hM, this]
-    exact Nat.lt_one_iff.mp (Nat.lt_of_mul_lt_mul_left (a := 2 ^ (32 * (2 * w + 1))) (by omega_using [tlt, h2]))
-  rw [htop, Nat.mul_zero, Nat.add_zero] at tlt teq
-  rw [← pw] at teq
-  rw [val32_succ] at tlt teq
+  rw [v₂ (by omega) (by decide)] at tlt teq
+  rw [v₂ ha ha2, v₂ hb hb2] at teq
+  rw [wordsVal_succ_top] at tlt teq
   have hs₃ := hs₂'.congr k₃.wr
   have g₃ : ∀ r ∈ [Reg.r5, .r8, .r9, .r10, .r11], s₃.gpr r = s.gpr r := fun r hr => by
     rw [k₃.gpr r (by revert r hr; decide), g₂' r (by revert r hr; decide)]
-  have v₃ : ∀ {j}, j < n → j ≠ 2 → val32 s₃.mem B (slot w j) (2 * w) = val32 s.mem B (slot w j) (2 * w) :=
-    fun hj hne => (out₃.val32 (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)).trans
+  have v₃ : ∀ {j}, j < n → j ≠ 2 → wordsVal s₃.mem B (slot w j) w = wordsVal s.mem B (slot w j) w :=
+    fun hj hne => (out₃.wordsVal (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)).trans
       (v₂ hj hne)
   -- `T - m`.
-  refine WP.seq (WP.mono (subMod_ok (n := 2 * w) (dA := slot w 2) (dT := slot w 3) (dM := slot w 0) hs₃ (by rw [g₃ .r8 (by decide), i8])
-    (by rw [g₃ .r9 (by decide), i9]) (by rw [g₃ .r10 (by decide), i10]) (by rw [g₃ .r11 (by decide), i11])
-    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
+  refine WP.seq (WP.mono (subMod64_ok (w := w) (dA := slot w 2) (dT := slot w 3) (dM := slot w 0) hs₃
+    (by rw [g₃ .r8 (by decide), i8]) (by rw [g₃ .r9 (by decide), i9]) (by rw [g₃ .r10 (by decide), i10])
+    (by rw [g₃ .r11 (by decide), i11]) (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith))
     fun s₄ ⟨⟨c, hc, hD, h20⟩, out₄, k₄⟩ => ?_)
   rw [v₃ (by omega) (by decide)] at hD
   have hs₄ := hs₃.congr k₄.wr
   have g₄ : ∀ r ∈ [Reg.r5, .r8, .r9, .r11], s₄.gpr r = s.gpr r := fun r hr => by
     rw [k₄.gpr r (by revert r hr; decide), g₃ r (by revert r hr; decide)]
-  have accA : val32 s₄.mem B (slot w 2) (2 * w) = val32 s₃.mem B (slot w 2) (2 * w) :=
-    out₄.val32 (by omega_arith) (by omega_arith)
+  have accA : wordsVal s₄.mem B (slot w 2) w = wordsVal s₃.mem B (slot w 2) w :=
+    out₄.wordsVal (by omega_arith) (by omega_arith)
   -- The selection.
-  refine WP.mono (selectAcc_ok (n := 2 * w) (dA := slot w 2) (dT := slot w 3) (dO := slot w o) (b := decide (w32 s₃.mem B (slot w 2 + 4 * (2 * w)) < c)) hs₄
+  refine WP.mono (selectAcc64_ok (w := w) (dA := slot w 2) (dT := slot w 3) (dO := slot w o)
+    (b := decide ((Mont.word s₃.mem B (slot w 2 + 8 * w)).toNat < c)) hs₄
     (by rw [g₄ .r8 (by decide), i8]) (by rw [g₄ .r9 (by decide), i9]) (by rw [g₄ .r5 (by decide), i5])
-    (by rw [g₄ .r11 (by decide), i11]) (by rw [h20]; simp only [decide_eq_true_eq])
-    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
+    (by rw [g₄ .r11 (by decide), i11]) (by rw [h20]; simp only [decide_eq_true_eq]) (by omega_arith) hw'
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t ⟨hv, out₅, k₅⟩ => ?_
   rw [accA] at hv
-  have hM0 : 0 < val32 s.mem B (slot w 0) (2 * w) := by omega_arith
-  have hres : val32 t.mem B (slot w o) (2 * w) =
-      (val32 s₃.mem B (slot w 2) (2 * w) + 2 ^ (32 * (2 * w)) * (w32 s₃.mem B (slot w 2 + 4 * (2 * w)) +
-        2 ^ 64 * 0)) % val32 s.mem B (slot w 0) (2 * w) := by
-    rw [hv, ← VG.Proof.Bignum.csub_result hM (val32_lt _ _ _ _) hc (val32_lt _ _ _ _) (by omega_arith) hD]
-    by_cases h : w32 s₃.mem B (slot w 2 + 4 * (2 * w)) < c <;> simp [h]
+  have hM := wordsVal_lt s.mem B (slot w 0) w
+  have hM0 : 0 < wordsVal s.mem B (slot w 0) w := by omega_arith
+  have hres : wordsVal t.mem B (slot w o) w =
+      (wordsVal s₃.mem B (slot w 2) w + 2 ^ (64 * w) * ((Mont.word s₃.mem B (slot w 2 + 8 * w)).toNat +
+        2 ^ 64 * 0)) % wordsVal s.mem B (slot w 0) w := by
+    rw [hv, ← VG.Proof.Bignum.csub_result hM (wordsVal_lt _ _ _ _) hc (wordsVal_lt _ _ _ _)
+      (by rw [Nat.mul_zero, Nat.add_zero]; exact tlt) hD]
+    by_cases h : (Mont.word s₃.mem B (slot w 2 + 8 * w)).toNat < c <;> simp [h]
   rw [Nat.mul_zero, Nat.add_zero] at hres
+  rw [← wv, ← wv, ← wv, ← wv]
   refine ⟨⟨?_, ?_, ?_⟩, ?_⟩
   · rw [hres]; exact Nat.mod_lt _ hM0
-  · rw [hres, ← pw, Nat.mod_mul_mod, Nat.mul_comm, teq]
+  · rw [hres, Nat.mod_mul_mod, Nat.mul_comm, teq]
   · refine Outs.trans (Outs.of_outside (o := slot w 2) (n := 8 * (w + 2))
       (out₂.mono (Nat.le_refl _) (by omega_arith)) (by simp)) ?_
     refine Outs.trans (Outs.of_outside (o := slot w 2) (n := 8 * (w + 2))

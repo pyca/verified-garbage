@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontPass
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFios
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
@@ -10,10 +10,10 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # Montgomery multiplication on PPC64LE: the rounds
 
-A round (`round_ok`) replaces the accumulator `T` (`w +
-1` words) with `(T + aᵢ b + u m) / 2⁶⁴`, for the word `aᵢ` at the pointer
-`r6`, which it advances; the `w` rounds (`rounds_ok`) leave `T < 2m` with `T
-2^(64 w) ≡ a b (mod m)`.
+A round (`round_ok`, `MontFios.lean`) replaces the accumulator `T` (`w + 1`
+words) with `(T + aᵢ b + u m) / 2⁶⁴`, for the word `aᵢ` at the pointer `r6`,
+which it advances; the `w` rounds (`rounds_ok`) leave `T < 2m` with `T 2^(64
+w) ≡ a b (mod m)`.
 -/
 
 @[expose] public section
@@ -23,55 +23,15 @@ namespace VG.Proof.Bignum.PPC64LE
 open VG VG.PPC64LE VG.Proof.Mont VG.Impl.Bignum.PPC64LE
 open VG.Proof.Bignum (round_lt round_step round_sum_lt)
 
-/-! ## A round -/
-
-theorem round_ok {s : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s B Z)
-    (h6 : s.gpr .r6 = off B da) (h8 : s.gpr .r8 = off B dA) (h7 : s.gpr .r7 = off B dB)
-    (h10 : s.gpr .r10 = off B dM) (h3 : s.gpr .r3 = BitVec.ofNat 64 w)
-    (hinv : ((word s.mem B dM).toNat * (s.gpr .r0).toNat + 1) % 2 ^ 64 = 0)
-    (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
-    (ha : da + 8 ≤ Z) (hA : dA + 8 * (w + 2) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
-    (dBA : dB + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ dB) (dMA : dM + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ dM)
-    (hT : wordsVal s.mem B dA (w + 1) < 2 * wordsVal s.mem B dM w)
-    (hb : wordsVal s.mem B dB w < wordsVal s.mem B dM w) :
-    WP isa round s fun s' =>
-      (s'.gpr .r6 = off B (da + 8) ∧ Outside B dA (8 * (w + 2)) s.mem s'.mem ∧
-        ∃ u < 2 ^ 64, 2 ^ 64 * wordsVal s'.mem B dA (w + 1) =
-          wordsVal s.mem B dA (w + 1) + (word s.mem B da).toNat * wordsVal s.mem B dB w +
-            u * wordsVal s.mem B dM w) ∧
-      Keep montPassRegs s s' := by
-  have hnw := hs.nowrap
-  unfold round
-  refine WP.seq (WP.mono (montMulPass_ok hs h6 h8 h7 h3 (by omega_arith) hw' ha hA hB (by omega_arith))
-    fun s₁ ⟨⟨i6, iout, ieq⟩, k₁⟩ => ?_)
-  have g : ∀ r ∈ [Reg.r0, .r3, .r8, .r10], s₁.gpr r = s.gpr r := fun r hr => k₁.gpr r (by revert r hr; decide)
-  have vM : wordsVal s₁.mem B dM w = wordsVal s.mem B dM w := iout.wordsVal (by omega_arith) (by omega_arith)
-  have wM : word s₁.mem B dM = word s.mem B dM := iout.word (by omega_arith) (by omega_arith)
-  have hM0 := wordsVal_lt s.mem B dM w
-  refine WP.mono (montRedPass_ok (hs.congr k₁.wr) (by rw [g .r8 (by decide), h8]) (by rw [g .r10 (by decide), h10])
-    (by rw [g .r3 (by decide), h3]) hw hw' hA hM dMA (by rw [wM, g .r0 (by decide)]; exact hinv)
-    (fun u hu => ?_)) fun s₂ ⟨⟨jout, jeq⟩, k₂⟩ => ?_
-  · rw [ieq, vM]
-    have h1 := round_sum_lt hT (word s.mem B da).isLt hb hu
-    have h2 : 2 ^ 65 * wordsVal s.mem B dM w < 2 ^ (64 * (w + 2)) :=
-      calc 2 ^ 65 * wordsVal s.mem B dM w < 2 ^ 65 * 2 ^ (64 * w) := Nat.mul_lt_mul_of_pos_left hM0 (by decide)
-        _ = 2 ^ (65 + 64 * w) := (Nat.pow_add _ _ _).symm
-        _ ≤ 2 ^ (64 * (w + 2)) := Nat.pow_le_pow_right (by decide) (by omega_arith)
-    omega_using [h1, h2]
-  refine ⟨⟨by rw [k₂.gpr _ (by decide), i6], iout.trans jout,
-    (word s₁.mem B dA).toNat * (s₁.gpr .r0).toNat % 2 ^ 64, Nat.mod_lt _ (by decide), ?_⟩,
-    (k₁.trans k₂).mono (by decide)⟩
-  rw [jeq, ieq, vM]
-
 /-- The `w` rounds (`rounds`), counted by `r4` from `w`, over the words of
 `a` (at `da` of `B`, pointed to by `r6`), from the accumulator 0: `T < 2m`
 and `T 2^(64 w) ≡ a b (mod m)`, for `b < m` (`w` words each, at `dB` and
 `dM`), only the accumulator's `w + 2` words changed. -/
 theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s₀ B Z)
     (h6 : s₀.gpr .r6 = off B da) (h8 : s₀.gpr .r8 = off B dA) (h7 : s₀.gpr .r7 = off B dB)
-    (h10 : s₀.gpr .r10 = off B dM) (h3 : s₀.gpr .r3 = BitVec.ofNat 64 w)
+    (h10 : s₀.gpr .r10 = off B dM) (h11 : s₀.gpr .r11 = BitVec.ofNat 64 (2 * w))
     (h4 : s₀.gpr .r4 = BitVec.ofNat 64 w)
-    (hinv : ((word s₀.mem B dM).toNat * (s₀.gpr .r0).toNat + 1) % 2 ^ 64 = 0)
+    (hinv : ((word s₀.mem B dM).toNat % 2 ^ 32 * (s₀.gpr .r12).toNat + 1) % 2 ^ 32 = 0)
     (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     (ha : da + 8 * w ≤ Z) (hA : dA + 8 * (w + 2) ≤ Z) (hB : dB + 8 * w ≤ Z) (hM : dM + 8 * w ≤ Z)
     (daA : da + 8 * w ≤ dA ∨ dA + 8 * (w + 2) ≤ da)
@@ -81,7 +41,7 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
       (wordsVal s.mem B dA (w + 1) < 2 * wordsVal s₀.mem B dM w ∧
         2 ^ (64 * w) * wordsVal s.mem B dA (w + 1) % wordsVal s₀.mem B dM w =
           wordsVal s₀.mem B da w * wordsVal s₀.mem B dB w % wordsVal s₀.mem B dM w ∧
-        Outside B dA (8 * (w + 2)) s₀.mem s.mem) ∧ Keep (montPassRegs ++ ([.r4] : List Reg)) s₀ s := by
+        Outside B dA (8 * (w + 2)) s₀.mem s.mem) ∧ Keep (roundRegs ++ ([.r4] : List Reg)) s₀ s := by
   have hnw := hs.nowrap
   let M := wordsVal s₀.mem B dM w
   let Bv := wordsVal s₀.mem B dB w
@@ -89,7 +49,7 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
     s.gpr .r6 = off B (da + 8 * i) ∧ Outside B dA (8 * (w + 2)) s₀.mem s.mem ∧
     wordsVal s.mem B dA (w + 1) < 2 * M ∧
     2 ^ (64 * i) * wordsVal s.mem B dA (w + 1) % M = wordsVal s₀.mem B da i * Bv % M ∧
-    Keep (montPassRegs ++ ([.r4] : List Reg)) s₀ s
+    Keep (roundRegs ++ ([.r4] : List Reg)) s₀ s
   have hJ0 : J 0 s₀ := by
     refine ⟨by rw [h6]; rfl, Outside.refl _ _ _ _, by rw [hz]; omega_arith, by rw [hz]; simp [wordsVal],
       Keep.refl _ _⟩
@@ -97,24 +57,24 @@ theorem rounds_ok {s₀ : State} {B : Addr} {Z da dA dB dM w : Nat} (hs : Scr s�
     (by omega_arith) (by omega_arith) J (fun i hi s hJ hc => ?_) hJ0 h4 |>.mono
     fun s ⟨_, jout, jlt, jeq, jk⟩ => ⟨⟨jlt, jeq, jout⟩, jk⟩
   obtain ⟨j6, jout, jlt, jeq, jk⟩ := hJ
-  have keep : ∀ r ∈ [Reg.r0, .r3, .r7, .r8, .r10], s.gpr r = s₀.gpr r := fun r hr =>
+  have keep : ∀ r ∈ [Reg.r7, .r8, .r10, .r11, .r12], s.gpr r = s₀.gpr r := fun r hr =>
     jk.gpr r (by revert r hr; decide)
   have vM : wordsVal s.mem B dM w = M := jout.wordsVal (by omega_arith) (by omega_arith)
   have vB : wordsVal s.mem B dB w = Bv := jout.wordsVal (by omega_arith) (by omega_arith)
   have wM : word s.mem B dM = word s₀.mem B dM := jout.word (by omega_arith) (by omega_arith)
   have wa : word s.mem B (da + 8 * i) = word s₀.mem B (da + 8 * i) := jout.word (by omega_arith) (by omega_arith)
-  refine WP.seq (WP.mono (round_ok (hs.congr jk.wr) j6
-    (by rw [keep .r8 (by decide), h8]) (by rw [keep .r7 (by decide), h7])
-    (by rw [keep .r10 (by decide), h10]) (by rw [keep .r3 (by decide), h3])
-    (by rw [keep .r0 (by decide), wM]; exact hinv)
-    hw hw' (by omega_arith) hA hB hM dBA dMA (by rw [vM]; exact jlt) (by rw [vM, vB]; exact hb))
+  refine WP.seq (WP.mono (round_ok (dA := dA) (dB := dB) (dM := dM) (hs.congr jk.wr) j6
+    (by rw [keep .r7 (by decide), h7]) (by rw [keep .r8 (by decide), h8])
+    (by rw [keep .r10 (by decide), h10]) (by rw [keep .r11 (by decide), h11])
+    (by rw [keep .r12 (by decide), wM]; exact hinv)
+    (by omega_arith) hw' (by omega_arith) (by omega_arith) hB hM (by omega_arith) (by omega_arith))
     fun s₁ ⟨⟨k6, kout, u, hu, keq⟩, k₁⟩ => ?_)
   refine WP.mono (subi_ok s₁ .r4 (by decide)) fun s₂ e => ?_
   subst e
   rw [vM, vB, wa] at keq
   have hM0 : 0 < M := by omega_arith
   refine ⟨⟨by gsimp; rw [k6, Nat.mul_succ, Nat.add_assoc], ?_, ?_, ?_, ?_⟩, ?_⟩
-  · gsimp; exact jout.trans kout
+  · gsimp; exact jout.trans (kout.mono (Nat.le_refl _) (by omega_arith))
   · gsimp; exact round_lt keq jlt (s₀.mem.readW _ 64).isLt hb hu
   · gsimp
     rw [wordsVal_succ_top s₀.mem B da i, Nat.mul_succ, Nat.pow_add]
