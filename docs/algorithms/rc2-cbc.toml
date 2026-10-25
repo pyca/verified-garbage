@@ -3,3 +3,4 @@ family = "Ciphers"
 specs = ["Rc2"]
 modules = ["src/rc2_cbc.rs"]
 asm = ["rc2"]
+optimized = { x86_64 = "SSE2 scans returning results directly from registers" }

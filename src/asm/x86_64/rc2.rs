@@ -577,7 +577,7 @@ ret
 ///
 /// Contract: `VG.Spec.Rc2.expandKeyContract`. Constant time: only pointers, `key_len` and `effective_bits` may affect timing, not the key.
 ///
-/// Baseline x86-64 SSE2. PITABLE selection scans all 256 candidates in a fixed order, eight candidates per vector.
+/// Baseline x86-64 SSE2. PITABLE selection scans all 256 candidates in a fixed order, eight candidates per vector, returning the selected word directly from SSE2 registers.
 ///
 /// # Safety
 ///
@@ -619,7 +619,6 @@ mov r9, rbx
 sub r9, r13
 movzx ecx, BYTE PTR [r14+r9*1]
 add rax, rcx
-movdqu xmm8, XMMWORD PTR [r8+64]
 and rax, 255
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -1033,10 +1032,8 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [r8+64], xmm1
-mov rax, QWORD PTR [r8+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [r8+64], xmm8
 mov BYTE PTR [r14+rbx*1], al
 add rbx, 1
 cmp rbx, 128
@@ -1094,7 +1091,6 @@ mov rdx, 127
 217:
 movzx eax, BYTE PTR [r14+rbx*1]
 and rax, rdx
-movdqu xmm8, XMMWORD PTR [r8+64]
 and rax, 255
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -1508,10 +1504,8 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [r8+64], xmm1
-mov rax, QWORD PTR [r8+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [r8+64], xmm8
 mov BYTE PTR [r14+rbx*1], al
 cmp rbx, 0
 jne 218f
@@ -1524,7 +1518,6 @@ mov r9, rbx
 add r9, rbp
 movzx ecx, BYTE PTR [r14+r9*1]
 xor rax, rcx
-movdqu xmm8, XMMWORD PTR [r8+64]
 and rax, 255
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -1938,10 +1931,8 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [r8+64], xmm1
-mov rax, QWORD PTR [r8+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [r8+64], xmm8
 mov BYTE PTR [r14+rbx*1], al
 cmp rbx, 0
 jne 220b
@@ -1961,7 +1952,7 @@ ret
 ///
 /// Contract: `VG.Spec.Rc2.encryptBlockContract`. Constant time: only pointers may affect timing, not the key schedule or data, including the mashing indices.
 ///
-/// Baseline x86-64 SSE2. Mashing scans all 64 schedule words in a fixed order, eight words per vector.
+/// Baseline x86-64 SSE2. Mashing scans all 64 schedule words in a fixed order, eight words per vector, returning the selected word directly from SSE2 registers.
 ///
 /// # Safety
 ///
@@ -2351,7 +2342,6 @@ ror r15, 59
 or r15, rax
 and r15, 65535
 mov rax, r15
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -2445,14 +2435,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 add r12, rax
 and r12, 65535
 mov rax, r12
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -2546,14 +2533,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 add r13, rax
 and r13, 65535
 mov rax, r13
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -2647,14 +2631,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 add r14, rax
 and r14, 65535
 mov rax, r14
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -2748,10 +2729,8 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 add r15, rax
 and r15, 65535
 mov r10, r15
@@ -3187,7 +3166,6 @@ ror r15, 59
 or r15, rax
 and r15, 65535
 mov rax, r15
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -3281,14 +3259,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 add r12, rax
 and r12, 65535
 mov rax, r12
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -3382,14 +3357,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 add r13, rax
 and r13, 65535
 mov rax, r13
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -3483,14 +3455,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 add r14, rax
 and r14, 65535
 mov rax, r14
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -3584,10 +3553,8 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 add r15, rax
 and r15, 65535
 mov r10, r15
@@ -3974,7 +3941,7 @@ ret
 ///
 /// Contract: `VG.Spec.Rc2.decryptBlockContract`. Constant time: only pointers may affect timing, not the key schedule or data, including the reverse-mashing indices.
 ///
-/// Baseline x86-64 SSE2. Reverse mashing scans all 64 schedule words in a fixed order, eight words per vector.
+/// Baseline x86-64 SSE2. Reverse mashing scans all 64 schedule words in a fixed order, eight words per vector, returning the selected word directly from SSE2 registers.
 ///
 /// # Safety
 ///
@@ -4364,7 +4331,6 @@ sub r12, r8
 sub r12, r10
 and r12, 65535
 mov rax, r14
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -4458,14 +4424,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 sub r15, rax
 and r15, 65535
 mov rax, r13
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -4559,14 +4522,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 sub r14, rax
 and r14, 65535
 mov rax, r12
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -4660,14 +4620,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 sub r13, rax
 and r13, 65535
 mov rax, r15
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -4761,10 +4718,8 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 sub r12, rax
 and r12, 65535
 mov rax, r15
@@ -5200,7 +5155,6 @@ sub r12, r8
 sub r12, r10
 and r12, 65535
 mov rax, r14
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -5294,14 +5248,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 sub r15, rax
 and r15, 65535
 mov rax, r13
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -5395,14 +5346,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 sub r14, rax
 and r14, 65535
 mov rax, r12
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -5496,14 +5444,11 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 sub r13, rax
 and r13, 65535
 mov rax, r15
-movdqu xmm8, XMMWORD PTR [rdx+64]
 and rax, 63
 movq xmm0, rax
 punpcklwd xmm0, xmm0
@@ -5597,10 +5542,8 @@ por xmm1, xmm3
 movdqa xmm3, xmm1
 psrldq xmm3, 2
 por xmm1, xmm3
-movdqu XMMWORD PTR [rdx+64], xmm1
-mov rax, QWORD PTR [rdx+64]
+movq rax, xmm1
 and rax, 65535
-movdqu XMMWORD PTR [rdx+64], xmm8
 sub r12, rax
 and r12, 65535
 mov rax, r15

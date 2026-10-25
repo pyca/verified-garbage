@@ -34,7 +34,7 @@ def piStepLit (n : Nat) : List Instr := loadConst .xmm4 (piValuesLit n) ++ selec
 
 /-- `piLookup`, reading PITABLE from its packed table. -/
 def piLookupLit : List Instr :=
-  start .r8 255 ++ (List.range 32).flatMap piStepLit ++ finish .r8
+  start 255 ++ (List.range 32).flatMap piStepLit ++ finish
 
 materialize_value piLookupLit
 
