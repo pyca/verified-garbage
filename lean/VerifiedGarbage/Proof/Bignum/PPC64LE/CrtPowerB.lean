@@ -162,15 +162,13 @@ theorem power_ok {s : State} {BX I D : Addr} {Z oA wA wX xj k L Pv oD oLen : Nat
   have eX8 : slot wX 8 = hdrBytes + 8 * (8 * (wX + 2)) := rfl
   have hh : hdrBytes = 256 := rfl
   unfold power
-  have hA8 : oA + slot wA 8 ≤ Z := Nat.le_trans (by unfold slot; omega_arith) hA
-  refine powerA_ok hs hA8 hXA hw2 hw' hwx hxj h10 h29 h11 h23 h27 h28 hoD hoL hI hK hDp hLw hk hk' hrdI hsepI hP
+  refine powerA_ok hs hA hXA hw2 hw' hwx hxj h10 h29 h11 h23 h27 h28 hoD hoL hI hK hDp hLw hk hk' hrdI hsepI hP
     (by omega_arith) fun t v0 v1 out t18 t19 k => ?_
-  have hb : Spec.Rsa.bytesAt t.mem D L = Spec.Rsa.bytesAt s.mem D L := bytesAt_out out hA8 hsepD
+  have hb : Spec.Rsa.bytesAt t.mem D L = Spec.Rsa.bytesAt s.mem D L := bytesAt_out out hA hsepD
   refine WP.mono (powerB_ok (hs.congr k.wr) hA hw2 hw' ((k.gpr _ (by decide)).trans h10)
     ((k.gpr _ (by decide)).trans h29) ((k.gpr _ (by decide)).trans h11) t18 t19 hL hL'
     (fun i hi => by rw [k.rd, k.wr]; exact hrdD i hi) hsepD v0 hP2 hPodd v1)
-    fun u ⟨⟨u0, u4, uo⟩, ku⟩ => ⟨⟨u0, ?_, (out.mono (Nat.le_refl _) (by unfold slot; omega_arith)).trans uo⟩,
-      (k.trans ku).mono⟩
+    fun u ⟨⟨u0, u4, uo⟩, ku⟩ => ⟨⟨u0, ?_, out.trans uo⟩, (k.trans ku).mono⟩
   rw [u4, hb, ← Nat.pow_mod]
 
 end VG.Proof.Bignum.PPC64LE.Crt
