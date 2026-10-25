@@ -1,5 +1,6 @@
-# The Linux userspaces CI runs its 32-bit, PPC64LE and RISC-V jobs in, built by
-# .github/workflows/runner-images.yml, each natively on a 64-bit runner:
+# The Linux userspaces CI runs its 32-bit, PPC64LE and RISC-V jobs and its
+# lints in, built by .github/workflows/runner-images.yml, each natively on a
+# 64-bit runner:
 # * linux/386 (i686), on an x86-64 runner: x86's tests, natively;
 # * linux/arm64 (armv7-cross), on an ARM64 runner: ARMv7's and Thumb's tests,
 #   cross-compiled for armhf and run by ci/arm32-run, natively when the CPU
@@ -7,7 +8,11 @@
 #   none, and can start no 32-bit container at all), and ARMv7's
 #   benchmarks, cross-compiled and run natively;
 # * linux/ppc64le (ppc64le), on a ppc64le runner: PPC64LE's tests, natively;
-# * linux/riscv64 (riscv64), on a riscv64 runner: RISC-V's tests, natively.
+# * linux/riscv64 (riscv64), on a riscv64 runner: RISC-V's tests, natively;
+# * linux/amd64 (lint), on an x86-64 runner: rustfmt and Clippy for every
+#   target the other jobs build (`rust-lint`, ci/rust_lint.py), with each
+#   Linux target's C cross compiler and OpenSSL, which the benchmarks' build
+#   scripts compile and read.
 ARG TARGETARCH
 ARG TARGETVARIANT
 
@@ -30,6 +35,7 @@ RUN printf '%s\n' \
     'path-exclude=/usr/lib/*/libcrypto.a' \
     'path-exclude=/usr/lib/*/libssl.a' \
     'path-exclude=/usr/libexec/gcc/*/*/lto1' \
+    'path-exclude=/usr/libexec/gcc-cross/*/*/lto1' \
     'path-exclude=/usr/bin/*-lto-dump-*' \
     'path-exclude=/usr/lib/*/libasan*' \
     'path-exclude=/usr/lib/*/libhwasan*' \
@@ -49,6 +55,8 @@ RUN printf '%s\n' \
 #   can run;
 # * in armv7-cross, the armhf cross-compiler, libc and OpenSSL, and qemu-arm
 #   (see ci/arm32-run);
+# * in lint, the cross-compiler, libc and OpenSSL of each other Linux
+#   target's architecture;
 # * gcc and libc6-dev, rustc's linker (with binutils' readelf);
 # * git and ca-certificates, for actions/checkout;
 # * python3, for the coverage export and the benchmark comparison;
@@ -60,9 +68,12 @@ RUN case "$(dpkg --print-architecture)" in \
         arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
         ppc64el) foreign=; packages= ;; \
         riscv64) foreign=; packages= ;; \
+        amd64) foreign="i386 arm64 armhf ppc64el riscv64"; \
+            packages="gcc-i686-linux-gnu gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu"; \
+            for a in $foreign; do packages="$packages libc6-dev:$a libssl-dev:$a"; done ;; \
         *) echo "unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;; \
     esac && \
-    if [ -n "$foreign" ]; then dpkg --add-architecture "$foreign"; fi && \
+    for a in $foreign; do dpkg --add-architecture "$a"; done && \
     apt-get -qq update && apt-get install -qq -y --no-install-recommends \
         $packages \
         gcc \
@@ -84,11 +95,12 @@ RUN case "$(dpkg --print-architecture)" in \
 # download nothing until stable changes. Deduplicate libLLVM and strip the
 # big binaries (with llvm-strip; GNU strip breaks them), as the other runner
 # images do. Of llvm-tools, CI runs only llvm-cov and llvm-profdata, and
-# rustc links with the C compiler on these hosts, never rust-lld: empty the
-# others, which were half of the compressed image (RISE's riscv64 runners,
-# which keep no images, pull it for every job at a few MB/s). Keep all files
-# recorded in rustup's component manifests, though: deleting even unused
-# files prevents rustup from uninstalling or updating the toolchain.
+# rustc links with the C compiler, but for x86-64 Linux, the lint image's
+# host, with rust-lld (through gcc-ld/ld.lld): empty the others, which were
+# half of the compressed image (RISE's riscv64 runners, which keep no images,
+# pull it for every job at a few MB/s). Keep all files recorded in rustup's
+# component manifests, though: deleting even unused files prevents rustup
+# from uninstalling or updating the toolchain.
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
@@ -97,6 +109,8 @@ RUN case "$(dpkg --print-architecture)" in \
         arm64) host=aarch64-unknown-linux-gnu; targets=armv7-unknown-linux-gnueabihf,thumbv7neon-unknown-linux-gnueabihf ;; \
         ppc64el) host=powerpc64le-unknown-linux-gnu; targets= ;; \
         riscv64) host=riscv64gc-unknown-linux-gnu; targets= ;; \
+        amd64) host=x86_64-unknown-linux-gnu; \
+            targets=i686-unknown-linux-gnu,aarch64-unknown-linux-gnu,armv7-unknown-linux-gnueabihf,thumbv7neon-unknown-linux-gnueabihf,powerpc64le-unknown-linux-gnu,riscv64gc-unknown-linux-gnu,aarch64-apple-darwin,x86_64-pc-windows-msvc ;; \
     esac && \
     url="https://static.rust-lang.org/rustup/dist/$host/rustup-init" && \
     python3 -c 'import sys, urllib.request; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' "$url" /tmp/rustup-init && \
@@ -118,12 +132,13 @@ RUN case "$(dpkg --print-architecture)" in \
              "$sysroot/bin/rustfmt" "$sysroot/bin/cargo-fmt" \
              "$sysroot"/lib/librustc_driver-*.so "$sysroot"/lib/libLLVM.so.* \
              "$CARGO_HOME/bin/rustup" \
-             bin/llvm-cov bin/llvm-profdata; do \
+             bin/rust-lld bin/llvm-cov bin/llvm-profdata; do \
         if [ -f "$f" ]; then bin/llvm-strip --strip-all "$f"; fi; \
     done && \
     for f in bin/*; do \
         case "${f#bin/}" in \
             llvm-cov|llvm-profdata) ;; \
+            rust-lld) if [ "$host" != x86_64-unknown-linux-gnu ]; then : > "$f"; fi ;; \
             *) if [ -f "$f" ]; then : > "$f"; fi ;; \
         esac; \
     done && \
@@ -133,7 +148,9 @@ RUN case "$(dpkg --print-architecture)" in \
 # TARGETARCH and TARGETVARIANT): armv7-cross's Cargo builds for ARMv7 unless
 # told otherwise (the Thumb job sets CARGO_BUILD_TARGET), links with the
 # cross-compiler, and runs the 32-bit programs through ci/arm32-run;
-# pkg-config finds the armhf OpenSSL for openssl-sys (the benchmarks).
+# pkg-config finds the armhf OpenSSL for openssl-sys (the benchmarks). In
+# lint, pkg-config finds each Linux target's OpenSSL, for openssl-sys's
+# build script, which only reads its headers there: Clippy links nothing.
 FROM base AS image-386
 FROM base AS image-ppc64le
 FROM base AS image-riscv64
@@ -146,5 +163,12 @@ ENV CARGO_BUILD_TARGET=armv7-unknown-linux-gnueabihf \
     CARGO_TARGET_THUMBV7NEON_UNKNOWN_LINUX_GNUEABIHF_RUNNER=/usr/local/bin/arm32-run \
     PKG_CONFIG_ALLOW_CROSS=1 \
     PKG_CONFIG_LIBDIR_armv7_unknown_linux_gnueabihf=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig
+FROM base AS image-amd64
+ENV PKG_CONFIG_ALLOW_CROSS=1 \
+    PKG_CONFIG_LIBDIR_i686_unknown_linux_gnu=/usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig \
+    PKG_CONFIG_LIBDIR_aarch64_unknown_linux_gnu=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig \
+    PKG_CONFIG_LIBDIR_armv7_unknown_linux_gnueabihf=/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig \
+    PKG_CONFIG_LIBDIR_powerpc64le_unknown_linux_gnu=/usr/lib/powerpc64le-linux-gnu/pkgconfig:/usr/share/pkgconfig \
+    PKG_CONFIG_LIBDIR_riscv64gc_unknown_linux_gnu=/usr/lib/riscv64-linux-gnu/pkgconfig:/usr/share/pkgconfig
 
 FROM image-${TARGETARCH}${TARGETVARIANT}
