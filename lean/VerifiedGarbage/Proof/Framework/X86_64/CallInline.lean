@@ -618,7 +618,7 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     cases len
     · simp only [exec, ea_setRsp hi, store128_setRsp]; rfl
     · simp only [exec, ea_setRsp hi, store256_setRsp]; rfl
-  | _ => simp [Instr.rspFree] at hi
+  | _ => cases hi
 
 theorem srcAddrs_setRsp {src : Src} (h : src.noRsp = true) : srcAddrs (s.setReg .rsp x) src = srcAddrs s src := by
   cases src with
@@ -626,17 +626,16 @@ theorem srcAddrs_setRsp {src : Src} (h : src.noRsp = true) : srcAddrs (s.setReg 
   | _ => rfl
 
 theorem addrs_setRsp {i : Instr} (hi : i.rspFree = true) : addrs i (s.setReg .rsp x) = addrs i s := by
-  cases i <;> simp only [Instr.rspFree, Bool.and_eq_true] at hi
-  case mov | mov32 | alu | alu32 | adcx | adox | cmov => simp only [addrs]; rw [srcAddrs_setRsp hi.2]
-  case mulx => simp only [addrs]; rw [srcAddrs_setRsp hi.2]
-  case store => simp only [addrs]; rw [ea_setRsp hi.1]
-  case movdquLoad | movdquStore | vbinLoad | vmovdquStore => simp only [addrs]; rw [ea_setRsp hi]
-  case movzx8 | movzx16 => simp only [addrs]; rw [ea_setRsp hi.2]
-  case store8 | store16 => simp only [addrs]; rw [ea_setRsp hi.1]
-  all_goals first | rfl | simp at hi
-
-theorem rspFree_clobbers {i : Instr} (hi : i.rspFree = true) : Taint.clobbers i .rsp = false := by
-  cases i <;> simp_all [Instr.rspFree, Taint.clobbers, Taint.dstOf] <;> grind
+  cases i
+  case mov | mov32 | alu | alu32 | adcx | adox | cmov | mulx =>
+    simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [srcAddrs_setRsp hi.2]
+  case store | store8 | store16 =>
+    simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.1]
+  case movdquLoad | movdquStore | vbinLoad | vmovdquStore =>
+    simp only [Instr.rspFree] at hi; simp only [addrs]; rw [ea_setRsp hi]
+  case movzx8 | movzx16 =>
+    simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.2]
+  all_goals first | rfl | cases hi
 
 end
 
@@ -709,7 +708,7 @@ theorem _root_.VG.Code.noCalls_inline {c : Prog isa} (h : c.InlineOk = true) : c
 /-- An instruction that neither reads nor writes `rsp` does not write it. -/
 theorem _root_.VG.X86_64.Instr.clobbers_rsp_of_rspFree {i : Instr} (h : i.rspFree = true) :
     Taint.clobbers i .rsp = false := by
-  cases i <;> simp_all [Instr.rspFree, Taint.clobbers, Taint.dstOf, @eq_comm _ Reg.rsp]
+  cases i <;> (try cases h) <;> simp_all [Instr.rspFree, Taint.clobbers, Taint.dstOf, @eq_comm _ Reg.rsp]
 
 /-- No instruction of inlined code writes `rsp`: what `Code.InlineOk` checks
 of the code outside the calls, and of the calls' instructions (`rspFree`). -/
@@ -1008,7 +1007,7 @@ theorem Exec.uninline {c : Prog isa} (hc : c.InlineOk = true) {sp : Addr} {b b' 
       rw [Code.allInstrs_eq, List.all_eq_true] at hr; exact hr
     simp only [Code.inline] at h
     have hrsp : b'.gpr .rsp = sp := by
-      rw [Exec.gpr (fun i hi => rspFree_clobbers (hr' i hi)) h, hsp]
+      rw [Exec.gpr (fun i hi => Instr.clobbers_rsp_of_rspFree (hr' i hi)) h, hsp]
     -- After the call: `rsp` 8 lower and the return address in the hole.
     let hv₁ : Mem := hv.writeW (sp - 8) (u 0)
     let u₁ : Nat → BitVec 64 := fun n => u (n + 1)
