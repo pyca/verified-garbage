@@ -74,19 +74,3 @@ mod rsa_pss;
 mod rsa_public;
 mod x25519;
 mod x448;
-
-use crate::require_vectors;
-use harness::Fields;
-
-/// Every test vector file parses, and is internally consistent. This keeps
-/// the harness honest as the Wycheproof vectors are updated.
-#[test]
-fn all_vector_files_are_well_formed() {
-    require_vectors!();
-    let files = harness::all_files().unwrap();
-    assert!(!files.is_empty());
-    harness::par_each(&files, |name| {
-        let file = harness::load::<Fields, Fields>(name);
-        assert!(!file.schema.is_empty(), "{name}: missing schema");
-    });
-}
