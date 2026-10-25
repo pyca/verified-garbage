@@ -66,7 +66,11 @@ mod tests {
     #[cfg(target_arch = "riscv64")]
     #[test]
     fn errors_display() {
-        check!(crate::rc4::Error::InvalidKeyLength);
+        check!(
+            crate::aes_ecb::Error::IncompleteBlock,
+            crate::aes_ecb::Error::InvalidKeyLength,
+            crate::rc4::Error::InvalidKeyLength,
+        );
     }
 
     /// Every error value of every module has a message.

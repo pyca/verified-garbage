@@ -27,7 +27,10 @@ word, and an `or` or `xor` of a word shifted right by `k` and the same word
 shifted left by `64 - k` is its rotation right by `k`. That needs the
 relation of abstract and concrete words to be a function (`run`'s `hR`),
 so that the two shifted words are of the same concrete word. A right shift
-of a word is the domain's (`Dom.shr`) when it has one.
+of a word is the domain's (`Dom.shr`) when it has one, and a word shifted
+left by `k` that is combined with a word is the domain's rotation right by
+`64 - k` masked by its constant of the high `64 - k` bits (`shlD`), when it
+has those.
 
 The evaluator rejects (`none`) any other instruction, any other memory
 operand, any write of the two base registers and any use of an unknown
@@ -91,13 +94,23 @@ def binop : LogicOp → α → α → Option α
   | .and => D.and
   | .or => D.or
 
-/-- `or` or `xor` of two register values: of abstract words, or of a word
+/-- A word shifted left by `0 < k < 64`, in the domain: its rotation right
+by `64 - k`, masked by the constant of the `64 - k` high bits. -/
+def shlD (k : Nat) (a : α) : Option α :=
+  if 0 < k ∧ k < 64 then
+    (D.ror (64 - k) a).bind fun r => (D.const (BitVec.allOnes 64 <<< k)).bind (D.and r)
+  else none
+
+/-- A logical operation on two register values: of abstract words, of an
+abstract word and one shifted left (`shlD`), or (`or` or `xor`) of a word
 shifted right by `k` and the same word shifted left by `64 - k` (its
 rotation right by `k`, whose two parts do not overlap). -/
 def combine [DecidableEq α] (op : LogicOp) : Val α → Val α → Option α
   | .v a, .v b => binop D op a b
   | .shr a k, .shl b k' => if op ≠ .and ∧ a = b ∧ 0 < k ∧ k < 64 ∧ k' = 64 - k then D.ror k a else none
   | .shl b k', .shr a k => if op ≠ .and ∧ a = b ∧ 0 < k ∧ k < 64 ∧ k' = 64 - k then D.ror k a else none
+  | .v a, .shl b k => (shlD D k b).bind (binop D op a)
+  | .shl b k, .v a => (shlD D k b).bind fun c => binop D op c a
   | _, _ => none
 
 /-- A shift of a register value by `0 < k < 64`. -/
@@ -335,11 +348,40 @@ theorem lop_comm {op : LogicOp} (hop : op ≠ .and) (x y : BitVec 64) : lop op x
   · exact BitVec.or_comm _ _
   · exact BitVec.xor_comm _ _
 
+/-- A left shift is a rotation masked by the high bits. -/
+theorem ror_and_shl (y : BitVec 64) {k : Nat} (hk : 0 < k) (hk' : k < 64) :
+    y.rotateRight (64 - k) &&& BitVec.allOnes 64 <<< k = y <<< k := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [BitVec.getLsbD_and, BitVec.getLsbD_rotateRight, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_allOnes, Nat.mod_eq_of_lt (show 64 - k < 64 by omega)]
+  by_cases h : i < k
+  · simp [h]
+  · have e : i - (64 - (64 - k)) = i - k := by omega
+    simp [h, hi, show ¬ i < 64 - (64 - k) by omega, e, show i - k < 64 by omega]
+
+omit [DecidableEq α] in
+theorem shlD_sound (hD : D.Sound R) {k : Nat} {b r : α} {y : BitVec 64} (hb : R b y)
+    (h : shlD D k b = some r) : R r (y <<< k) := by
+  unfold shlD at h
+  split at h
+  · rename_i hk
+    obtain ⟨r₁, h₁, h⟩ := Option.bind_eq_some_iff.mp h
+    obtain ⟨c, h₂, h⟩ := Option.bind_eq_some_iff.mp h
+    rw [← ror_and_shl y hk.1 hk.2]
+    exact hD.and (hD.ror hb h₁) (hD.const h₂) h
+  · cases h
+
 theorem combine_sound (hD : D.Sound R) (hR : ∀ a x y, R a x → R a y → x = y) {op : LogicOp}
     {a b : Val α} {r : α} {x y : BitVec 64} (ha : ValRel R a x) (hb : ValRel R b y)
     (h : combine D op a b = some r) : R r (lop op x y) := by
   cases a <;> cases b <;> simp only [combine, reduceCtorEq] at h
   · exact binop_sound hD ha hb h
+  · obtain ⟨c, h₁, h⟩ := Option.bind_eq_some_iff.mp h
+    obtain ⟨y₁, h₂, rfl⟩ := hb
+    exact binop_sound hD ha (shlD_sound hD h₂ h₁) h
+  · obtain ⟨c, h₁, h⟩ := Option.bind_eq_some_iff.mp h
+    obtain ⟨y₁, h₂, rfl⟩ := ha
+    exact binop_sound hD (shlD_sound hD h₂ h₁) hb h
   · split at h
     · rename_i hc
       obtain ⟨hop, rfl, hk, hk', rfl⟩ := hc
