@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cast5.cfbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time, through the generic CFB of `Impl/Modes/X86_64/` over CAST5's ECB block code (inlined): each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, so no secret is an address. The subkeys are copied into the working space once per call; the number of rounds stays in `rsi`; the 240-byte working space on the stack is zeroed on return.
+/// Baseline x86-64: one block at a time, through the generic CFB of `Impl/Modes/X86_64/` over CAST5's ECB block code (inlined): each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, combining adjacent entries before updating the running result, so no secret is an address. The subkeys are copied into the working space once per call; the number of rounds stays in `rsi`; the 240-byte working space on the stack is zeroed on return.
 ///
 /// # Safety
 ///
@@ -156,31 +156,33 @@ lea r10, [rip + {VG_CAST5_S1234}]
 mov r11d, 64
 pxor xmm1, xmm1
 pxor xmm2, xmm2
-pcmpeqd xmm3, xmm3
-psrld xmm3, 31
+pcmpeqd xmm6, xmm6
+psrld xmm6, 31
+movdqa xmm3, xmm6
+paddd xmm3, xmm3
 24:
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+16]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10+32]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+48]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 add r10, 64
@@ -263,31 +265,33 @@ lea r10, [rip + {VG_CAST5_S1234}]
 mov r11d, 64
 pxor xmm1, xmm1
 pxor xmm2, xmm2
-pcmpeqd xmm3, xmm3
-psrld xmm3, 31
+pcmpeqd xmm6, xmm6
+psrld xmm6, 31
+movdqa xmm3, xmm6
+paddd xmm3, xmm3
 25:
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+16]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10+32]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+48]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 add r10, 64
@@ -370,31 +374,33 @@ lea r10, [rip + {VG_CAST5_S1234}]
 mov r11d, 64
 pxor xmm1, xmm1
 pxor xmm2, xmm2
-pcmpeqd xmm3, xmm3
-psrld xmm3, 31
+pcmpeqd xmm6, xmm6
+psrld xmm6, 31
+movdqa xmm3, xmm6
+paddd xmm3, xmm3
 26:
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+16]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10+32]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+48]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 add r10, 64
@@ -483,31 +489,33 @@ lea r10, [rip + {VG_CAST5_S1234}]
 mov r11d, 64
 pxor xmm1, xmm1
 pxor xmm2, xmm2
-pcmpeqd xmm3, xmm3
-psrld xmm3, 31
+pcmpeqd xmm6, xmm6
+psrld xmm6, 31
+movdqa xmm3, xmm6
+paddd xmm3, xmm3
 29:
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+16]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10+32]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+48]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 add r10, 64
@@ -595,7 +603,7 @@ ret
 ///
 /// Contract: `VG.Spec.Cast5.cfbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time, through the generic CFB of `Impl/Modes/X86_64/` over CAST5's ECB block code (inlined): each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, so no secret is an address. The subkeys are copied into the working space once per call; the number of rounds stays in `rsi`; the 240-byte working space on the stack is zeroed on return.
+/// Baseline x86-64: one block at a time, through the generic CFB of `Impl/Modes/X86_64/` over CAST5's ECB block code (inlined): each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, combining adjacent entries before updating the running result, so no secret is an address. The subkeys are copied into the working space once per call; the number of rounds stays in `rsi`; the 240-byte working space on the stack is zeroed on return.
 ///
 /// # Safety
 ///
@@ -745,31 +753,33 @@ lea r10, [rip + {VG_CAST5_S1234}]
 mov r11d, 64
 pxor xmm1, xmm1
 pxor xmm2, xmm2
-pcmpeqd xmm3, xmm3
-psrld xmm3, 31
+pcmpeqd xmm6, xmm6
+psrld xmm6, 31
+movdqa xmm3, xmm6
+paddd xmm3, xmm3
 24:
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+16]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10+32]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+48]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 add r10, 64
@@ -852,31 +862,33 @@ lea r10, [rip + {VG_CAST5_S1234}]
 mov r11d, 64
 pxor xmm1, xmm1
 pxor xmm2, xmm2
-pcmpeqd xmm3, xmm3
-psrld xmm3, 31
+pcmpeqd xmm6, xmm6
+psrld xmm6, 31
+movdqa xmm3, xmm6
+paddd xmm3, xmm3
 25:
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+16]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10+32]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+48]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 add r10, 64
@@ -959,31 +971,33 @@ lea r10, [rip + {VG_CAST5_S1234}]
 mov r11d, 64
 pxor xmm1, xmm1
 pxor xmm2, xmm2
-pcmpeqd xmm3, xmm3
-psrld xmm3, 31
+pcmpeqd xmm6, xmm6
+psrld xmm6, 31
+movdqa xmm3, xmm6
+paddd xmm3, xmm3
 26:
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+16]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10+32]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+48]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 add r10, 64
@@ -1072,31 +1086,33 @@ lea r10, [rip + {VG_CAST5_S1234}]
 mov r11d, 64
 pxor xmm1, xmm1
 pxor xmm2, xmm2
-pcmpeqd xmm3, xmm3
-psrld xmm3, 31
+pcmpeqd xmm6, xmm6
+psrld xmm6, 31
+movdqa xmm3, xmm6
+paddd xmm3, xmm3
 29:
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+16]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 movdqa xmm4, xmm0
 pcmpeqd xmm4, xmm2
 movdqu xmm5, XMMWORD PTR [r10+32]
 pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
+movdqa xmm4, xmm2
+paddd xmm4, xmm6
+pcmpeqd xmm4, xmm0
+movdqu xmm7, XMMWORD PTR [r10+48]
+pand xmm7, xmm4
+por xmm5, xmm7
 por xmm1, xmm5
 paddd xmm2, xmm3
 add r10, 64

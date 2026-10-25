@@ -103,19 +103,19 @@ theorem acc_succ (m : Mem) (T : Addr) (idx : Nat → BitVec 32) {j : Nat} (hj : 
     · rw [ite_eq_right h2, ite_eq_right (by omega)]
 
 /-- What the scan keeps of a state: everything but `r10`, `r11`, the flags and
-`xmm1`–`xmm5`. -/
+`xmm1`–`xmm7`. -/
 structure ScanKeep (s t : State) : Prop where
   gpr : ∀ r, r ≠ .r10 → r ≠ .r11 → t.gpr r = s.gpr r
-  xmm : ∀ x, x ≠ .xmm1 → x ≠ .xmm2 → x ≠ .xmm3 → x ≠ .xmm4 → x ≠ .xmm5 → t.xmm x = s.xmm x
+  xmm : ∀ x, x ≠ .xmm1 → x ≠ .xmm2 → x ≠ .xmm3 → x ≠ .xmm4 → x ≠ .xmm5 → x ≠ .xmm6 → x ≠ .xmm7 → t.xmm x = s.xmm x
   mem : t.mem = s.mem
   rd : t.rd = s.rd
   wr : t.wr = s.wr
 
-theorem ScanKeep.refl (s : State) : ScanKeep s s := ⟨fun _ _ _ => rfl, fun _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
+theorem ScanKeep.refl (s : State) : ScanKeep s s := ⟨fun _ _ _ => rfl, fun _ _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
 
 theorem ScanKeep.trans {s t u : State} (h : ScanKeep s t) (h' : ScanKeep t u) : ScanKeep s u :=
   ⟨fun r a b => (h'.gpr r a b).trans (h.gpr r a b),
-   fun x a b c d e => (h'.xmm x a b c d e).trans (h.xmm x a b c d e),
+   fun x a b c d e f g => (h'.xmm x a b c d e f g).trans (h.xmm x a b c d e f g),
    h'.mem.trans h.mem, h'.rd.trans h.rd, h'.wr.trans h.wr⟩
 
 /-- The state of the scan with entries `0 … j - 1` visited, from `s₀`. -/
@@ -123,76 +123,90 @@ structure ScanAt (s₀ : State) (T : Addr) (idx : Nat → BitVec 32) (j : Nat) (
   x0 : s.xmm .xmm0 = L idx
   x1 : s.xmm .xmm1 = L (acc s₀.mem T idx j)
   x2 : s.xmm .xmm2 = L (splat j)
-  x3 : s.xmm .xmm3 = L (splat 1)
+  x3 : s.xmm .xmm3 = L (splat 2)
+  x6 : s.xmm .xmm6 = L (splat 1)
   keep : ScanKeep s₀ s
 
 theorem ScanAt.setReg {s₀ t : State} {T : Addr} {idx : Nat → BitVec 32} {j : Nat}
     (h : ScanAt s₀ T idx j t) {r : Reg} (hr : r = .r10 ∨ r = .r11) (v : BitVec 64) :
     ScanAt s₀ T idx j (t.setReg r v) :=
-  ⟨h.x0, h.x1, h.x2, h.x3, h.keep.trans ⟨fun r' a b => by
-    rw [gpr_setReg_of_ne t v (by rcases hr with rfl | rfl; exacts [a, b])], fun _ _ _ _ _ _ => rfl,
+  ⟨h.x0, h.x1, h.x2, h.x3, h.x6, h.keep.trans ⟨fun r' a b => by
+    rw [gpr_setReg_of_ne t v (by rcases hr with rfl | rfl; exacts [a, b])], fun _ _ _ _ _ _ _ _ => rfl,
     rfl, rfl, rfl⟩⟩
 
 theorem ScanAt.setFlags {s₀ t : State} {T : Addr} {idx : Nat → BitVec 32} {j : Nat}
     (h : ScanAt s₀ T idx j t) (a b c d : Option Bool) : ScanAt s₀ T idx j (t.setFlags a b c d) :=
-  ⟨h.x0, h.x1, h.x2, h.x3, h.keep.trans ⟨fun _ _ _ => rfl, fun _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩⟩
+  ⟨h.x0, h.x1, h.x2, h.x3, h.x6, h.keep.trans ⟨fun _ _ _ => rfl, fun _ _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩⟩
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = s.gpr b + BitVec.ofNat 64 d := by
   simp only [State.ea, at_]
   congr 1
 
-theorem entry_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {j : Nat} (e : Nat)
-    (hj : j < 256) (h : ScanAt s₀ T idx j s)
-    (ha : s.gpr .r10 + BitVec.ofNat 64 (16 * e) = T + BitVec.ofNat 64 (16 * j))
-    (hr : InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (16 * j)) 16) :
-    WP isa (.block (scanEntry e)) s fun t => ScanAt s₀ T idx (j + 1) t ∧ t.gpr = s.gpr := by
-  obtain ⟨h0, h1, h2, h3, hk⟩ := h
+theorem pair_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {j : Nat} (e : Nat)
+    (hj : j + 1 < 256) (h : ScanAt s₀ T idx j s)
+    (ha : s.gpr .r10 + BitVec.ofNat 64 (32 * e) = T + BitVec.ofNat 64 (16 * j))
+    (hb : s.gpr .r10 + BitVec.ofNat 64 (32 * e + 16) = T + BitVec.ofNat 64 (16 * (j + 1)))
+    (hr : InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (16 * j)) 16)
+    (hs : InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (16 * (j + 1))) 16) :
+    WP isa (.block (scanPair e)) s fun t => ScanAt s₀ T idx (j + 2) t ∧ t.gpr = s.gpr := by
+  obtain ⟨h0, h1, h2, h3, h6, hk⟩ := h
   apply WP.of_runBlock
   refine ⟨_, by
-    simp only [scanEntry, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, State.load128,
-      ea_at, gpr_setXmm, rd_setXmm, wr_setXmm, ha, hr, ite_true, Option.map_some]
+    simp only [scanPair, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, State.load128,
+      ea_at, gpr_setXmm, rd_setXmm, wr_setXmm, ha, hb, hr, hs, ite_true, Option.map_some]
     rfl, ?_⟩
   simp only [mem_setXmm, gpr_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne,
-    reduceCtorEq, not_false_eq_true, h0, h1, h2, h3, and_true]
+    reduceCtorEq, not_false_eq_true, h0, h1, h2, h3, h6, and_true]
   have hm : s.mem = s₀.mem := hk.mem
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, h0]
-  · rw [xmm_setXmm_of_ne _ _ (by decide), xmm_setXmm_self, movdqa_L, pcmpeqd_L, readW128_L,
-      pand_L, por_L, hm]
+  · simp only [xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, xmm_setXmm_self,
+      movdqa_L, pcmpeqd_L, readW128_L, paddd_L, pand_L, por_L, hm]
     refine L_congr fun k hk => ?_
-    rw [← acc_succ _ _ _ (by omega)]
-    unfold ent splat
-    rw [Offset.add_add, BitVec.and_comm]
+    rw [show j + 2 = (j + 1) + 1 by omega, ← acc_succ _ _ _ (by omega) k,
+      ← acc_succ _ _ _ (show j < 2 ^ 32 by omega) k]
+    simp only [ent, splat, Offset.add_add, ← BitVec.ofNat_add]
+    simp only [BitVec.or_assoc, eq_comm]
+    rfl
   · rw [xmm_setXmm_self, paddd_L]
-    refine L_congr fun k _ => ?_
-    simp only [splat, BitVec.ofNat_add]
+    exact L_congr fun k _ => by simp only [splat, BitVec.ofNat_add]
   · simp only [xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, h3]
-  · refine hk.trans ⟨fun _ _ _ => by simp only [gpr_setXmm], fun x a b c d e => ?_, by simp only [mem_setXmm],
-      by simp only [rd_setXmm], by simp only [wr_setXmm]⟩
+  · simp only [xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, h6]
+  · refine hk.trans ⟨fun _ _ _ => by simp only [gpr_setXmm], fun x a b c d e f g => ?_,
+      by simp only [mem_setXmm], by simp only [rd_setXmm], by simp only [wr_setXmm]⟩
     simp only [xmm_setXmm_of_ne _ _ a, xmm_setXmm_of_ne _ _ b, xmm_setXmm_of_ne _ _ d,
-      xmm_setXmm_of_ne _ _ e]
+      xmm_setXmm_of_ne _ _ e, xmm_setXmm_of_ne _ _ g]
 
 /-- The table at `T` is readable. -/
 def Readable (s : State) (T : Addr) : Prop := InRegions (s.rd ++ s.wr) T 4096
 
 theorem entries_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {q : Nat} (hq : q < 64)
     (hT : Readable s₀ T) (hr10 : s.gpr .r10 = T + BitVec.ofNat 64 (64 * q)) :
-    ∀ e ≤ 4, ScanAt s₀ T idx (4 * q) s →
-      WP isa (.block ((List.range e).flatMap scanEntry)) s
-        fun t => ScanAt s₀ T idx (4 * q + e) t ∧ t.gpr = s.gpr := by
+    ∀ e ≤ 2, ScanAt s₀ T idx (4 * q) s →
+      WP isa (.block ((List.range e).flatMap scanPair)) s
+        fun t => ScanAt s₀ T idx (4 * q + 2 * e) t ∧ t.gpr = s.gpr := by
   intro e he h
   induction e with
   | zero => exact WP.block_nil ⟨h, rfl⟩
   | succ e ih =>
     rw [flatMap_range_succ, WP.block_append_iff]
     refine WP.mono (ih (by omega)) fun t ⟨ht, hg⟩ => ?_
-    have hr : InRegions (t.rd ++ t.wr) (T + BitVec.ofNat 64 (16 * (4 * q + e))) 16 := by
+    have hr : InRegions (t.rd ++ t.wr) (T + BitVec.ofNat 64 (16 * (4 * q + 2 * e))) 16 := by
       rw [ht.keep.rd, ht.keep.wr]
       exact CallLay.inRegions_sub hT (by omega) (by decide)
-    refine WP.mono (entry_ok e (by omega) ht ?_ hr) fun u ⟨hu, hug⟩ => ⟨hu, hug.trans hg⟩
-    rw [hg, hr10, BitVec.add_assoc, ← BitVec.ofNat_add]
-    congr 2
-    omega
+    have hs : InRegions (t.rd ++ t.wr) (T + BitVec.ofNat 64 (16 * (4 * q + 2 * e + 1))) 16 := by
+      rw [ht.keep.rd, ht.keep.wr]
+      exact CallLay.inRegions_sub hT (by omega) (by decide)
+    refine WP.mono (pair_ok e (by omega) ht ?_ ?_ hr hs) fun u ⟨hu, hug⟩ => ?_
+    · rw [hg, hr10, BitVec.add_assoc, ← BitVec.ofNat_add]
+      congr 2
+      omega
+    · rw [hg, hr10, BitVec.add_assoc, ← BitVec.ofNat_add]
+      congr 2
+      omega
+    · refine ⟨?_, hug.trans hg⟩
+      rw [show 4 * q + 2 * (e + 1) = (4 * q + 2 * e) + 2 by omega]
+      exact hu
 
 theorem body_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {q : Nat} (hq : q < 64)
     (hT : Readable s₀ T) (hr10 : s.gpr .r10 = T + BitVec.ofNat 64 (64 * q))
@@ -202,7 +216,7 @@ theorem body_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {q : Nat} 
       t.zf = some (s.gpr .r11 - 1 == 0) := by
   unfold scanBody
   rw [WP.block_append_iff]
-  refine WP.mono (entries_ok hq hT hr10 4 (Nat.le_refl _) h) fun t ⟨ht, hg⟩ => ?_
+  refine WP.mono (entries_ok hq hT hr10 2 (Nat.le_refl _) h) fun t ⟨ht, hg⟩ => ?_
   open VG.Proof.MlKem.X86_64 in xrun [imm, sx_ofNat (show 64 < 2 ^ 31 by decide)]
   rw [hg, hr10, BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * q + 64 = 64 * (q + 1) by omega]
   exact ⟨(((ht.setFlags _ _ _ _).setReg (.inl rfl) _).setFlags _ _ _ _).setReg (.inr rfl) _,
@@ -225,28 +239,29 @@ theorem ones_L (x : BitVec 128) :
 `r11`, nothing found yet, entry 0 next, and ones. -/
 theorem start_ok (s : State) (sym : String) {idx : Nat → BitVec 32} (h0 : s.xmm .xmm0 = L idx) :
     WP isa (.block [.leaSym .r10 sym, .mov32 .r11 (imm 64), .xop (.bin .pxor .xmm1 .xmm1),
-      .xop (.bin .pxor .xmm2 .xmm2), .xop (.bin .pcmpeqd .xmm3 .xmm3), .xop (.shift .psrld .xmm3 31)]) s
+      .xop (.bin .pxor .xmm2 .xmm2), .xop (.bin .pcmpeqd .xmm6 .xmm6), .xop (.shift .psrld .xmm6 31),
+      .xop (.bin .movdqa .xmm3 .xmm6), .xop (.bin .paddd .xmm3 .xmm3)]) s
       fun t => ScanAt s (s.syms sym) idx 0 t ∧ t.gpr .r10 = s.syms sym ∧ t.gpr .r11 = 64 := by
   apply WP.of_runBlock
   refine ⟨_, by
     simp only [runBlock_cons, runStep_some, exec, readSrc32, imm]
     rfl, ?_⟩
   simp only [XOp.exec]
-  refine ⟨⟨?_, ?_, ?_, ?_, ⟨fun r a b => ?_, fun x a b c d e => ?_, rfl, rfl, rfl⟩⟩, ?_, ?_⟩
-  · simp only [xmm_setXmm_of_ne _ _ (show XReg.xmm0 ≠ .xmm3 by decide),
-      xmm_setXmm_of_ne _ _ (show XReg.xmm0 ≠ .xmm2 by decide),
-      xmm_setXmm_of_ne _ _ (show XReg.xmm0 ≠ .xmm1 by decide), State.setReg32, xmm_setReg, h0]
-  · simp only [xmm_setXmm_of_ne _ _ (show XReg.xmm1 ≠ .xmm3 by decide),
-      xmm_setXmm_of_ne _ _ (show XReg.xmm1 ≠ .xmm2 by decide), xmm_setXmm_self, acc_zero,
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ⟨fun r a b => ?_, fun x a b c d e f g => ?_, rfl, rfl, rfl⟩⟩, ?_, ?_⟩
+  · simp only [xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, State.setReg32, xmm_setReg, h0]
+  · simp only [xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, xmm_setXmm_self, acc_zero,
       XBinOp.eval, BitVec.xor_self]
     rfl
-  · simp only [xmm_setXmm_of_ne _ _ (show XReg.xmm2 ≠ .xmm3 by decide), xmm_setXmm_self,
+  · simp only [xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, xmm_setXmm_self,
       XBinOp.eval, BitVec.xor_self]
     decide
-  · simp only [xmm_setXmm_self, ones_L]
+  · simp only [xmm_setXmm_self, xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true,
+      movdqa_L, ones_L, paddd_L]
+    rfl
+  · simp only [xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, xmm_setXmm_self, ones_L]
   · simp only [gpr_setXmm, State.setReg32, gpr_setReg_of_ne _ _ a, gpr_setReg_of_ne _ _ b]
   · simp only [xmm_setXmm_of_ne _ _ a, xmm_setXmm_of_ne _ _ b, xmm_setXmm_of_ne _ _ c,
-      State.setReg32, xmm_setReg]
+      xmm_setXmm_of_ne _ _ f, State.setReg32, xmm_setReg]
   · simp only [gpr_setXmm, State.setReg32, gpr_setReg_of_ne _ _ (show Reg.r10 ≠ .r11 by decide),
       gpr_setReg_self]
   · simp only [gpr_setXmm, State.setReg32, gpr_setReg_self]

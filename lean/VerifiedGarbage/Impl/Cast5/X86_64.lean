@@ -20,8 +20,14 @@ entry `i` the dwords `S8[i], S7[i], S6[i], S5[i]`.
 The rotation by the secret amount `Kr` (§2.2) is five rotations by 1, 2, 4, 8
 and 16, each kept or not by a mask made from a bit of `Kr` (`rotate`).
 
+Adjacent entries are paired: `xmm2` holds the first index, `xmm6` holds
+ones and `xmm3` holds twos. The second index is formed in `xmm4` while the
+running index advances by two. The two masked table values are combined
+before updating `xmm1`, halving the updates of both loop-carried values.
+The four-entry loop and the order of its table reads are unchanged.
+
 Registers of the scan: the table in `r10`, the count of groups of four
-entries left in `r11`, `xmm0`–`xmm5`.
+entries left in `r11`, `xmm0`–`xmm7`.
 -/
 
 @[expose] public section
@@ -38,24 +44,28 @@ def imm (n : Nat) : Src := .imm (BitVec.ofNat 32 n)
 
 /-! ## The scan -/
 
-/-- Entry `e` of the four at `r10`: its mask, from the indices in `xmm0` and the
-entry's number in every lane of `xmm2`, ANDed with it and ORed into `xmm1`;
-then the next number. -/
-def scanEntry (e : Nat) : List Instr :=
+/-- Two adjacent entries, combined before updating the result. The second
+index is formed independently, so the running index advances only once. -/
+def scanPair (e : Nat) : List Instr :=
   [.xop (.bin .movdqa .xmm4 .xmm0), .xop (.bin .pcmpeqd .xmm4 .xmm2),
-   .movdquLoad .xmm5 (at_ .r10 (16 * e)), .xop (.bin .pand .xmm5 .xmm4),
-   .xop (.bin .por .xmm1 .xmm5), .xop (.bin .paddd .xmm2 .xmm3)]
+   .movdquLoad .xmm5 (at_ .r10 (32 * e)), .xop (.bin .pand .xmm5 .xmm4),
+   .xop (.bin .movdqa .xmm4 .xmm2), .xop (.bin .paddd .xmm4 .xmm6),
+   .xop (.bin .pcmpeqd .xmm4 .xmm0),
+   .movdquLoad .xmm7 (at_ .r10 (32 * e + 16)), .xop (.bin .pand .xmm7 .xmm4),
+   .xop (.bin .por .xmm5 .xmm7), .xop (.bin .por .xmm1 .xmm5),
+   .xop (.bin .paddd .xmm2 .xmm3)]
 
 /-- Four entries, then on to the next four (ZF is set after the last). -/
 def scanBody : List Instr :=
-  (List.range 4).flatMap scanEntry ++ ([.alu .add .r10 (imm 64), .alu .sub .r11 (imm 1)] : List Instr)
+  (List.range 2).flatMap scanPair ++ ([.alu .add .r10 (imm 64), .alu .sub .r11 (imm 1)] : List Instr)
 
 /-- The table `sym` at the indices in the lanes of `xmm0` (each less than
-256), into the lanes of `xmm1`. Clobbers `r10`, `r11`, `xmm1`–`xmm5` and the
+256), into the lanes of `xmm1`. Clobbers `r10`, `r11`, `xmm1`–`xmm7` and the
 flags. -/
 def scan (sym : String) : Prog isa :=
   .seq (.block [.leaSym .r10 sym, .mov32 .r11 (imm 64), .xop (.bin .pxor .xmm1 .xmm1),
-      .xop (.bin .pxor .xmm2 .xmm2), .xop (.bin .pcmpeqd .xmm3 .xmm3), .xop (.shift .psrld .xmm3 31)])
+      .xop (.bin .pxor .xmm2 .xmm2), .xop (.bin .pcmpeqd .xmm6 .xmm6), .xop (.shift .psrld .xmm6 31),
+      .xop (.bin .movdqa .xmm3 .xmm6), .xop (.bin .paddd .xmm3 .xmm3)])
     (.loop (.block scanBody) .ne)
 
 /-- `xmm0` := the dwords `lo₀, hi₀, lo₁, hi₁`, from the quadwords `lo₀ | hi₀ << 32`

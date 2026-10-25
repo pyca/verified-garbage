@@ -1003,7 +1003,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans with paired entries</td>
 
 <td>✅</td>
 
@@ -1023,7 +1023,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans with paired entries</td>
 
 <td>✅</td>
 
@@ -1043,7 +1043,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans with paired entries</td>
 
 <td>✅</td>
 
@@ -1063,7 +1063,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans with paired entries</td>
 
 <td>✅</td>
 
