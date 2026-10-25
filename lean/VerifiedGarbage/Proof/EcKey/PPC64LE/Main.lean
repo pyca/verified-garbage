@@ -80,7 +80,7 @@ theorem pkOps_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : Ke
     sv_unch U₁ h7 hn hi (apart_callW h7 hi h₁)
   -- `X = XM · 1`.
   refine WP.seq (WP.mono (slMul_ok hc.fp hc.fpk hc.fpm h7 K₁.ws (o := X) (a := XM) (b := ONE) (by decide) (by decide)
-    (by decide) (by rw [v₁ (by decide) (by decide), hone]; omega)) fun s₂ ⟨k₂, U₂, lt₂, e₂⟩ => ?_)
+    (by decide) (by rw [v₁ (by decide) (by decide), hone]; omega_arith)) fun s₂ ⟨k₂, U₂, lt₂, e₂⟩ => ?_)
   have K₂ := K₁.step h7 k₂ (hU := U₂) (hW := fixedOk_callW h7 (by decide)) (hWs := callW_le h7 (by decide))
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ X → sv c base s₂ i = sv c base s i := fun hi h₁ h₂ =>
     (sv_unch U₂ h7 hn hi (apart_callW h7 hi h₂)).trans (v₁ hi h₁)
@@ -95,7 +95,7 @@ theorem pkOps_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : Ke
     (sv_unch U₃ h7 hn hi (apart_callW h7 hi h₃)).trans (v₂ hi h₁ h₂)
   -- `Y = YM · 1`.
   refine WP.seq (WP.mono (slMul_ok hc.fp hc.fpk hc.fpm h7 K₃.ws (o := Y) (a := YM) (b := ONE) (by decide) (by decide)
-    (by decide) (by rw [v₃ (by decide) (by decide) (by decide) (by decide), hone]; omega))
+    (by decide) (by rw [v₃ (by decide) (by decide) (by decide) (by decide), hone]; omega_arith))
     fun s₄ ⟨k₄, U₄, lt₄, e₄⟩ => h s₄ ?_)
   have K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_callW h7 (by decide)) (hWs := callW_le h7 (by decide))
   have v₄ : ∀ {i}, i < 45 → i ∉ [XM, X, YM, Y] → sv c base s₄ i = sv c base s i := fun hi hl => by
@@ -141,17 +141,17 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
   have h7 := hc.n10
   have hn := K.ws.nowrap
   have hsz : size = 8192 := rfl
-  have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   rw [middle_eq]
   refine pkOps_ok hc K hacc fun s₄ Op => ?_
   rw [List.append_assoc]
   refine wp_append (WP.mono (checkRange_ok c Op.ws.ws Op.ws.at3 (sl_al c D) h0
-    (by have := sl_le c h7 (i := D) (by decide); omega) (by have := sl_le c h7 (i := MN) (by decide); omega) hfl)
+    (by have := sl_le c h7 (i := D) (by decide); omega_arith) (by have := sl_le c h7 (i := MN) (by decide); omega_arith) hfl)
     fun s₅ ⟨f₅, k₅, O₅⟩ => ?_)
   have K₅ := Op.toKeep.step h7 (k₅.rk (rs' := [.r0, .r4, .r5, .r6, .r7, .r8, .r9])) (hU := O₅.unch) (hW := fixedOk_flag) (hWs := by
     intro w hw; rw [List.mem_singleton.mp hw]; exact hfl)
   refine wp_append (WP.mono (checkNonzero_ok c K₅.ws.ws K₅.ws.at3 (sl_al c RZ) h0
-    (by have := sl_le c h7 (i := RZ) (by decide); omega) hfl) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_)
+    (by have := sl_le c h7 (i := RZ) (by decide); omega_arith) hfl) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_)
   have K₆ := K₅.step h7 (k₆.rk (rs' := [.r4, .r5])) (hU := O₆.unch) (hW := fixedOk_flag) (hWs := by
     intro w hw; rw [List.mem_singleton.mp hw]; exact hfl)
   have e₆ : ∀ {i}, i < 45 → i ≠ FLAG → sv c base s₆ i = sv c base s₄ i := fun hi hif =>
@@ -197,9 +197,9 @@ theorem PkPre.setup {s : State} {extra : List Region} (hp : PkPre c s extra) : S
   sc_reg := by decide
   wr := by show (⟨s.gpr .r5, size⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
   sc_fit := hp.sc_fit
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_arith)
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_arith)
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_arith)
   k_sc := hp.d_sc
   d_sc := hp.d_sc
   e_sc := hp.d_sc
@@ -240,7 +240,7 @@ theorem publicKey_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : Stat
     WP isa (Impl.EcKey.PPC64LE.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   rw [publicKey_eq']
   refine WP.seq (stage₁ hc hp.setup fun s₁ S₁ => ?_)
   have F := S₁.fixed
@@ -270,15 +270,15 @@ theorem publicKey_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : Stat
   by_cases hd : 1 ≤ dk c s₀ ∧ dk c s₀ < c.C.n
   · rw [ite_eq_left_of_eq_true _ _ (eq_true hd)]
     by_cases h0 : sv c (s₀.gpr .r5) s₂ RZ = 0
-    · have hok : ok c (s₀.gpr .r5) s₂ = false := decide_eq_false (by rw [hD]; omega)
+    · have hok : ok c (s₀.gpr .r5) s₂ = false := decide_eq_false (by rw [hD]; omega_arith)
       rw [ite_eq_left_of_eq_true _ _ (eq_true (hz.mpr h0))]
       exact ⟨by rw [r3, hok]; rfl, by rw [bytes, hok]; rfl⟩
-    · have hok : ok c (s₀.gpr .r5) s₂ = true := decide_eq_true (by rw [hD]; omega)
+    · have hok : ok c (s₀.gpr .r5) s₂ = true := decide_eq_true (by rw [hD]; omega_arith)
       rw [ite_eq_right_of_eq_false _ _ (eq_false (fun h => h0 (hz.mp h)))]
       refine ⟨by rw [r3, hok]; rfl, ?_⟩
       rw [bytes, hok]
       rfl
-  · have hok : ok c (s₀.gpr .r5) s₂ = false := decide_eq_false (by rw [hD]; omega)
+  · have hok : ok c (s₀.gpr .r5) s₂ = false := decide_eq_false (by rw [hD]; omega_arith)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [r3, hok]; rfl, by rw [bytes, hok]; rfl⟩
 

@@ -25,19 +25,19 @@ open VG.Proof.X25519.Arm (Rest wp_mov op2_imm)
     rw [whole] at bound
     exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_le_of_lt (Nat.le_add_left _ _) bound)
   simp only [val32, Nat.mul_zero, Nat.add_zero] at top
-  have hzero : w32 mem base (acc + 4 * n + 4) = 0 := by omega
-  have hlo : w32 mem base (acc + 4 * n) < 65536 := by omega
+  have hzero : w32 mem base (acc + 4 * n + 4) = 0 := by omega_arith
+  have hlo : w32 mem base (acc + 4 * n) < 65536 := by omega_arith
   rw [pval, pval_words, whole]
-  simp only [pdig, hdig, show (2 * n) / 2 = n by omega, show (2 * n) % 2 = 0 by omega,
+  simp only [pdig, hdig, show (2 * n) / 2 = n by omega_arith, show (2 * n) % 2 = 0 by omega_arith,
     Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.mod_eq_of_lt hlo,
-    show 16 * (2 * n) = 32 * n by omega, val32, hzero, Nat.add_zero]
+    show 16 * (2 * n) = 32 * n by omega_arith, val32, hzero, Nat.add_zero]
   rw [Nat.mul_comm]
 
  theorem val32_zeros {mem : Mem} {base : Addr} {acc : Nat} :
     ∀ k, (∀ j < k, w32 mem base (acc + 4 * j) = 0) → val32 mem base acc k = 0
   | 0, _ => rfl
   | k + 1, h => by
-    rw [val32_succ, val32_zeros k (fun j hj => h j (by omega)), h k (by omega), Nat.mul_zero, Nat.add_zero]
+    rw [val32_succ, val32_zeros k (fun j hj => h j (by omega_arith)), h k (by omega_arith), Nat.mul_zero, Nat.add_zero]
 
 /-- Packed rows and the expanded half-word reducer fit inside the original
 `32 * n + 8` byte accumulator. The word count must be a baseline immediate. -/
@@ -65,7 +65,7 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     rw [hMn, wordsVal_eq_val32] at hv
     exact hv
   have bval : val32 s.mem base b (2 * n) < m := by simpa only [wordsVal_eq_val32, hMn] using hB
-  have mpos : 0 < m := by omega
+  have mpos : 0 < m := by omega_arith
   unfold Impl.Mont.Arm.Packed.mulR
   simp only [hMn]
   refine WP.seq (zeros_ok hs (k := 2 * n + 2) (by omega) fun s1 out1 zero1 keep1 => ?_)
@@ -123,7 +123,7 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     exact reduced
   refine ⟨⟨keep14.trans (keep5.mono (by simp [clob])), ?_⟩, ?_, ?_⟩
   · have all : Outside base acc (32 * n + 8) s.mem s4.mem :=
-      (out.mono (Nat.le_refl _) (by omega)).trans (out4.mono (by omega) (by omega))
+      (out.mono (Nat.le_refl _) (by omega_arith)).trans (out4.mono (by omega_arith) (by omega_arith))
     exact (Outs.of_outside all (by simp [hacc])).trans (out5.mono (by simp [hMn, hacc, ← Nat.mul_assoc]))
   · rw [kval]; exact Nat.mod_lt _ mpos
   · rw [kval, wordsVal_eq_val32, wordsVal_eq_val32]

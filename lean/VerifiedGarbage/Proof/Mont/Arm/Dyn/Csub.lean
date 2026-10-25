@@ -36,7 +36,7 @@ theorem diffDigitD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base siz
       (u.gpr .r3).toNat = (u.gpr .r5).toNat / 2 ^ 16 ∧ u.mem = s.mem ∧ Rest [.r3, .r4, .r5] s u := by
   have hd := hdig_lt (s.gpr .r7).toNat h
   simp only [diffDigitD]
-  refine wp_ldr (by omega) (hs.ea h10 (by omega)) (hs.read hK) fun s₁ u₁ => ?_
+  refine wp_ldr (by omega_arith) (hs.ea h10 (by omega_arith)) (hs.read hK) fun s₁ u₁ => ?_
   refine wp_half hh (by rw [u₁.other _ (by decide)]; exact h6) fun s₂ u₂ => ?_
   refine wp_dp (op2_reg _ _) fun s₃ u₃ => wp_dp (op2_reg _ _) fun s₄ u₄ => wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
   refine wp_mov (op2_lsr (by decide)) fun s₆ u₆ => WP.block_nil ?_
@@ -48,9 +48,9 @@ theorem diffDigitD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base siz
     simp only [u₅.get, u₄.get, u₃.get, u₂.get, u₁.get, reduceCtorEq, ↓reduceIte, dpVal, h6]
     refine (toNat_add_eq (toNat_sub_eq (toNat_add_eq rfl r6 ?_) (toNat_ofNat_dig _ _) ?_) rfl ?_).trans ?_
     · exact Nat.lt_of_lt_of_le (Nat.add_lt_add_right hx _) (by decide)
-    · omega
-    · omega
-    · omega
+    · omega_arith
+    · omega_arith
+    · omega_arith
   refine ⟨by rw [u₆.other .r5 (by decide), v5], by rw [u₆.gpr, toNat_shr, u₆.other .r5 (by decide)],
     by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem], ?_⟩
   exact (((u₁.rest (by simp)).trans (u₂.rest (by simp))).trans ((u₃.rest (by simp)).trans (u₄.rest (by simp)))).trans
@@ -64,7 +64,7 @@ theorem diff_word {x0 x1 m0 m1 c Mw : Nat} (hm : Mw = m0 + m1 * 2 ^ 16) (hm0 : m
       2 ^ 32 * ((x1 + (2 ^ 16 - 1 - m1) + (x0 + (2 ^ 16 - 1 - m0) + c) / 2 ^ 16) / 2 ^ 16) + Mw =
     x0 + 2 ^ 16 * x1 + (2 ^ 32 - 1) + c := by
   subst hm
-  have h0 : (x0 + (2 ^ 16 - 1 - m0) + c) / 2 ^ 16 ≤ 1 := by omega
+  have h0 : (x0 + (2 ^ 16 - 1 - m0) + c) / 2 ^ 16 ≤ 1 := by omega_arith
   generalize hq : (x0 + (2 ^ 16 - 1 - m0) + c) / 2 ^ 16 = q at *
   have e0 := Nat.mod_add_div (x0 + (2 ^ 16 - 1 - m0) + c) (2 ^ 16)
   have e1 := Nat.mod_add_div (x1 + (2 ^ 16 - 1 - m1) + q) (2 ^ 16)
@@ -72,13 +72,13 @@ theorem diff_word {x0 x1 m0 m1 c Mw : Nat} (hm : Mw = m0 + m1 * 2 ^ 16) (hm0 : m
   generalize (x0 + (2 ^ 16 - 1 - m0) + c) % 2 ^ 16 = a0 at *
   generalize (x1 + (2 ^ 16 - 1 - m1) + q) % 2 ^ 16 = a1 at *
   generalize (x1 + (2 ^ 16 - 1 - m1) + q) / 2 ^ 16 = q1 at *
-  omega
+  omega_arith
 
 /-- An iteration of the difference, as numbers. -/
 theorem diff_step {T c P M D w c' Mw x0 x1 : Nat} (h : T + c * P + M = D + P)
     (hw : w + 2 ^ 32 * c' + Mw = x0 + 2 ^ 16 * x1 + (2 ^ 32 - 1) + c) :
     T + P * w + c' * (2 ^ 32 * P) + (M + P * Mw) = D + x0 * P + x1 * (2 ^ 16 * P) + 2 ^ 32 * P := by
-  have hw' : w + 2 ^ 32 * c' + Mw + 1 = x0 + 2 ^ 16 * x1 + 2 ^ 32 + c := by omega
+  have hw' : w + 2 ^ 32 * c' + Mw + 1 = x0 + 2 ^ 16 * x1 + 2 ^ 32 + c := by omega_arith
   have e : P * (w + 2 ^ 32 * c' + Mw + 1) = P * (x0 + 2 ^ 16 * x1 + 2 ^ 32 + c) := by rw [hw']
   grind
 
@@ -101,31 +101,31 @@ theorem diffBody_ok {u : State} {base : Addr} {size : Nat} (hs : Ws u base size)
         Rest [.r1, .r2, .r3, .r4, .r5, .r7, .r8, .r10] u v ∧ Ws v base size := by
   have hnw := hs.nowrap
   simp only [List.cons_append, List.append_assoc, List.nil_append]
-  refine wp_ldr (by decide) (hs.ea (K := Mo) (d := 0) h1 (by omega)) (hs.read (d := Mo + 0) (n := 4) (by omega))
+  refine wp_ldr (by decide) (hs.ea (K := Mo) (d := 0) h1 (by omega_arith)) (hs.read (d := Mo + 0) (n := 4) (by omega_arith))
     fun u₁ v₁ => ?_
   have w₁ := hs.of_upd v₁ (by decide)
   have e10 : u₁.gpr .r10 = u₁.gpr .r12 + BitVec.ofNat 32 S := by
     rw [v₁.other .r10 (by decide), v₁.other .r12 (by decide)]; exact h10
   refine VG.Proof.X25519.Arm.WP.append (diffDigitD_ok w₁ (h := 0) (by decide)
-    (by rw [v₁.other .r6 (by decide)]; exact h6) e10 (by omega) (by rw [v₁.mem, Nat.mul_zero, Nat.add_zero]; exact hx0)
+    (by rw [v₁.other .r6 (by decide)]; exact h6) e10 (by omega_arith) (by rw [v₁.mem, Nat.mul_zero, Nat.add_zero]; exact hx0)
     (by rw [v₁.other .r3 (by decide)]; exact hc)) fun u₂ ⟨E₂, C₂, M₂, R₂⟩ => ?_
   refine wp_dp (op2_reg _ _) fun u₃ v₃ => ?_
   have w₃ := (w₁.of_rest R₂ (by decide)).of_upd v₃ (by decide)
   rw [v₁.mem, v₁.other .r3 (by decide), Nat.mul_zero, Nat.add_zero] at E₂
   have hd0 := hdig_lt (u₁.gpr .r7).toNat 0
   have hd1 := hdig_lt (u₁.gpr .r7).toNat 1
-  have b₂ : (u₂.gpr .r5).toNat < 2 ^ 17 := by rw [E₂]; omega
+  have b₂ : (u₂.gpr .r5).toNat < 2 ^ 17 := by rw [E₂]; omega_arith
   refine VG.Proof.X25519.Arm.WP.append (diffDigitD_ok w₃ (K := S) (h := 1) (by decide)
     (by rw [v₃.other .r6 (by decide), R₂.gpr _ (by decide), v₁.other .r6 (by decide)]; exact h6)
     (by rw [v₃.other .r10 (by decide), v₃.other .r12 (by decide), R₂.gpr _ (by decide), R₂.gpr _ (by decide)]; exact e10)
-    (by omega) (by rw [v₃.mem, M₂, v₁.mem, Nat.mul_one]; exact hx1)
-    (by rw [v₃.other .r3 (by decide), C₂]; omega)) fun u₄ ⟨E₄, C₄, M₄, R₄⟩ => ?_
+    (by omega_arith) (by rw [v₃.mem, M₂, v₁.mem, Nat.mul_one]; exact hx1)
+    (by rw [v₃.other .r3 (by decide), C₂]; omega_arith)) fun u₄ ⟨E₄, C₄, M₄, R₄⟩ => ?_
   refine wp_dp (op2_lsl (by decide)) fun u₅ v₅ => ?_
   have w₅ := (w₃.of_rest R₄ (by decide)).of_upd v₅ (by decide)
   have e8 : u₅.gpr .r8 = u₅.gpr .r12 + BitVec.ofNat 32 Tp := by
     simp only [v₅.get, v₃.get, v₁.get, R₄.gpr .r8 (by decide), R₄.gpr .r12 (by decide), R₂.gpr .r8 (by decide),
       R₂.gpr .r12 (by decide), reduceCtorEq, ↓reduceIte]; exact h8
-  refine wp_str (by decide) (w₅.ea (d := 0) e8 (by omega)) (w₅.write (d := Tp + 0) (n := 4) (by omega))
+  refine wp_str (by decide) (w₅.ea (d := 0) e8 (by omega_arith)) (w₅.write (d := Tp + 0) (n := 4) (by omega_arith))
     fun u₆ m₆ => wp_bump (by decide) fun u₇ v₇ => wp_bump (by decide) fun u₈ v₈ => wp_bump (by decide) fun u₉ v₉ =>
       WP.block_nil ?_
   rw [v₃.mem, M₂, v₁.mem, v₃.other .r3 (by decide), C₂, Nat.mul_one] at E₄
@@ -133,7 +133,7 @@ theorem diffBody_ok {u : State} {base : Addr} {size : Nat} (hs : Ws u base size)
   have r2₄ : (u₄.gpr .r2).toNat = (u₂.gpr .r5).toNat % 2 ^ 16 := by
     rw [R₄.gpr _ (by decide), v₃.gpr, dpVal, toNat_and_r6 (by rw [R₂.gpr _ (by decide), v₁.other .r6 (by decide)]; exact h6)]
   have pk : (u₅.gpr .r2).toNat = (u₂.gpr .r5).toNat % 2 ^ 16 + (u₄.gpr .r5).toNat % 2 ^ 16 * 2 ^ 16 := by
-    rw [v₅.gpr, dpVal, pack_toNat _ _ (by rw [r2₄]; omega), r2₄]
+    rw [v₅.gpr, dpVal, pack_toNat _ _ (by rw [r2₄]; omega_arith), r2₄]
   have r7₁ : (u₁.gpr .r7).toNat = w32 u.mem base Mo := by rw [v₁.gpr, Nat.add_zero]
   have hm := word_digits (w32 u.mem base Mo) (BitVec.isLt _)
   rw [r7₁] at E₂ E₄ hd0 hd1
@@ -141,7 +141,7 @@ theorem diffBody_ok {u : State} {base : Addr} {size : Nat} (hs : Ws u base size)
     simp only [v₉.get, v₈.get, v₇.get, m₆.gpr, v₅.get, reduceCtorEq, ↓reduceIte]
   refine ⟨u₅.gpr .r2, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [v₉.mem, v₈.mem, v₇.mem, m₆.mem, v₅.mem, M₄, v₃.mem, M₂, v₁.mem, Nat.add_zero]
-  · rw [c₉, C₄, E₄, E₂]; omega
+  · rw [c₉, C₄, E₄, E₂]; omega_arith
   · rw [c₉, C₄, pk, E₄, E₂]
     exact diff_word hm hd0 hd1 hx0 hc
   · simp only [v₉.get, v₈.get, v₇.get, m₆.gpr, v₅.get, v₃.get, v₁.get, R₄.gpr .r10 (by decide),
@@ -174,20 +174,20 @@ theorem selBody_ok {u : State} {base : Addr} {size : Nat} (hs : Ws u base size) 
         v.gpr .r1 = u.gpr .r1 + BitVec.ofNat 32 4 ∧ v.gpr .r3 = u.gpr .r3 ∧ Rest [.r1, .r5, .r7, .r8, .r10] u v ∧
         Ws v base size := by
   have hnw := hs.nowrap
-  refine wp_ldr (by decide) (hs.ea (d := 0) h10 (by omega)) (hs.read (d := S + 0) (n := 4) (by omega)) fun u₁ v₁ => ?_
+  refine wp_ldr (by decide) (hs.ea (d := 0) h10 (by omega_arith)) (hs.read (d := S + 0) (n := 4) (by omega_arith)) fun u₁ v₁ => ?_
   have w₁ := hs.of_upd v₁ (by decide)
   refine wp_ldr (by decide) (w₁.ea (d := 4) (by rw [v₁.other .r10 (by decide), v₁.other .r12 (by decide)]; exact h10)
-    (by omega)) (w₁.read (d := S + 4) (n := 4) (by omega)) fun u₂ v₂ => ?_
+    (by omega_arith)) (w₁.read (d := S + 4) (n := 4) (by omega_arith)) fun u₂ v₂ => ?_
   have w₂ := w₁.of_upd v₂ (by decide)
   refine wp_dp (op2_lsl (by decide)) fun u₃ v₃ => ?_
   have w₃ := w₂.of_upd v₃ (by decide)
   refine wp_ldr (by decide) (w₃.ea (d := 0) (K := Tp) (by simp only [v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact h8)
-    (by omega)) (w₃.read (d := Tp + 0) (n := 4) (by omega)) fun u₄ v₄ => ?_
+    (by omega_arith)) (w₃.read (d := Tp + 0) (n := 4) (by omega_arith)) fun u₄ v₄ => ?_
   refine wp_dp (op2_reg _ _) fun u₅ v₅ => wp_dp (op2_reg _ _) fun u₆ v₆ => wp_dp (op2_reg _ _) fun u₇ v₇ => ?_
   have w₇ := (((w₃.of_upd v₄ (by decide)).of_upd v₅ (by decide)).of_upd v₆ (by decide)).of_upd v₇ (by decide)
   refine wp_str (by decide) (w₇.ea (d := 0) (K := O)
     (by simp only [v₇.get, v₆.get, v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact h1)
-    (by omega)) (w₇.write (d := O + 0) (n := 4) (by omega))
+    (by omega_arith)) (w₇.write (d := O + 0) (n := 4) (by omega_arith))
     fun u₈ m₈ => wp_bump (by decide) fun u₉ v₉ => wp_bump (by decide) fun u₁₀ v₁₀ => wp_bump (by decide) fun u₁₁ v₁₁ =>
       WP.block_nil ?_
   have m₇ : u₇.mem = u.mem := by rw [v₇.mem, v₆.mem, v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem]
@@ -222,15 +222,15 @@ theorem val32_pack {m m' : Mem} {base : Addr} {o src : Nat} :
       val32 m' base o W = dval m base src (2 * W)
   | 0, _ => rfl
   | W + 1, h => by
-    rw [val32_succ, show 2 * (W + 1) = 2 * W + 2 by omega, dval_two, val32_pack fun i hi => h i (by omega),
-      h W (by omega)]
+    rw [val32_succ, show 2 * (W + 1) = 2 * W + 2 by omega_arith, dval_two, val32_pack fun i hi => h i (by omega_arith),
+      h W (by omega_arith)]
     grind
 
 /-- Numbers whose words agree, at other offsets. -/
 theorem val32_move {m m' : Mem} {base : Addr} {o d : Nat} :
     ∀ {k : Nat}, (∀ i < k, w32 m' base (o + 4 * i) = w32 m base (d + 4 * i)) → val32 m' base o k = val32 m base d k
   | 0, _ => rfl
-  | k + 1, h => by rw [val32_succ, val32_succ, val32_move fun i hi => h i (by omega), h k (by omega)]
+  | k + 1, h => by rw [val32_succ, val32_succ, val32_move fun i hi => h i (by omega_arith), h k (by omega_arith)]
 
 /-- The invariant of the difference's loop after `j` words. -/
 structure DiffInv (s : State) (base : Addr) (size src tmp mo : Nat) (j : Nat) (u : State) : Prop where

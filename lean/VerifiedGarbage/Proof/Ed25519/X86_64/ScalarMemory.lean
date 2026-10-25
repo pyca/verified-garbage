@@ -35,7 +35,7 @@ theorem words_step (m : Mem) (p : Addr) (k : Nat) (hk : k < 8) :
     decodeLE (bytesAt m (p + BitVec.ofNat 64 (8 * k)) (64 - 8 * k)) =
       (m.readW (p + BitVec.ofNat 64 (8 * k)) 64).toNat +
         2 ^ 64 * decodeLE (bytesAt m (p + BitVec.ofNat 64 (8 * (k + 1))) (64 - 8 * (k + 1))) := by
-  have e : 64 - 8 * k = 8 + (64 - 8 * (k + 1)) := by omega
+  have e : 64 - 8 * k = 8 + (64 - 8 * (k + 1)) := by omega_arith
   have hs : bytesAt m (p + BitVec.ofNat 64 (8 * k)) (8 + (64 - 8 * (k + 1))) =
       bytesAt m (p + BitVec.ofNat 64 (8 * k)) 8 ++
         bytesAt m (p + BitVec.ofNat 64 (8 * k) + BitVec.ofNat 64 8) (64 - 8 * (k + 1)) :=
@@ -44,7 +44,7 @@ theorem words_step (m : Mem) (p : Addr) (k : Nat) (hk : k < 8) :
       (m.readW (p + BitVec.ofNat 64 (8 * k)) 64).toNat := by
     rw [decodeLE_eq]; exact Proof.X25519.leNum_bytesAt_64 m _
   have ha : p + BitVec.ofNat 64 (8 * k) + BitVec.ofNat 64 8 = p + BitVec.ofNat 64 (8 * (k + 1)) := by
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * k + 8 = 8 * (k + 1) by omega]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * k + 8 = 8 * (k + 1) by omega_arith]
   rw [e, hs, decodeLE_append, bytesAt_length, hw, ha]
 
 def wordRead : List Instr :=
@@ -58,7 +58,7 @@ theorem wordRead_ok (s : State) (k : Nat) (hb : s.gpr .rbx = BitVec.ofNat 64 (8 
       Keeps [.rbx, .rax] s t := by
   have hn : s.gpr .rbx - (8 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (8 * k) := by
     rw [hb, show (8 : BitVec 32).signExtend 64 = BitVec.ofNat 64 8 from rfl,
-      show 8 * (k + 1) = 8 * k + 8 by omega, BitVec.ofNat_add, BitVec.add_sub_cancel]
+      show 8 * (k + 1) = 8 * k + 8 by omega_arith, BitVec.ofNat_add, BitVec.add_sub_cancel]
   apply WP.of_runBlock
   simp only [wordRead, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
     State.ea, State.load64, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
@@ -112,14 +112,14 @@ theorem scalarWord_ok (s : State) (k : Nat) (hk : k < 8)
   refine WP.mono (scalarSelect_ok c _ cc) fun d ⟨dv, kd⟩ => ?_
   have hb' : d.gpr .rbx = BitVec.ofNat 64 (8 * k) := by
     rw [kd.1 .rbx (by decide), kc.1 .rbx (by decide), kb.1 .rbx (by decide)]; exact ab
-  refine WP.mono (scalarTest_ok d (8 * k) (by omega) hb') fun t ⟨tz, tv, kt⟩ => ?_
+  refine WP.mono (scalarTest_ok d (8 * k) (by omega_arith) hb') fun t ⟨tz, tv, kt⟩ => ?_
   have he := select_remainder (scalarValue b) (scalarValue c) b2 cu
   have k1 : Keeps scalarBodyClob s a := ka.mono (by simp [scalarBodyClob, foldClob])
   have k2 : Keeps scalarBodyClob a b := kb.mono (by simp [scalarBodyClob, foldClob])
   have k3 : Keeps scalarBodyClob b c := kc.mono (by simp [scalarBodyClob, foldClob])
   have k4 : Keeps scalarBodyClob c d := kd.mono (by simp [scalarBodyClob, foldClob])
   have k5 : Keeps scalarBodyClob d t := kt.mono (by simp)
-  refine ⟨(kt.1 .rbx (by decide)).trans hb', by rw [tz]; simp; omega, ?_,
+  refine ⟨(kt.1 .rbx (by decide)).trans hb', by rw [tz]; simp; omega_arith, ?_,
     k1.trans (k2.trans (k3.trans (k4.trans k5)))⟩
   simp only [decide_eq_true_eq] at dv
   rw [tv, dv, csaved, he, bm, av, ax]
@@ -149,8 +149,8 @@ theorem scalarLoop_ok (s₀ : State) (hb : s₀.gpr .rbx = 64) (hz : scalarValue
       Keeps scalarBodyClob s₀ t := by
   apply WP.loop (ScalarInv s₀) (n := 8)
   · intro n s hi
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.positive; omega : n ≠ 0)
-    have hk : k < 8 := by have := hi.bound; omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.positive; omega_arith : n ≠ 0)
+    have hk : k < 8 := by have := hi.bound; omega_arith
     have hp : s.gpr .rsi = s₀.gpr .rsi := hi.keeps.1 .rsi (by decide)
     have hread : InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 (8 * k)) 8 := by
       rw [hi.keeps.2.2.1, hi.keeps.2.2.2, hp]; exact hr k hk
@@ -165,7 +165,7 @@ theorem scalarLoop_ok (s₀ : State) (hb : s₀.gpr .rbx = 64) (hz : scalarValue
       refine Or.inl ⟨by simp only [eval, htz, decide_true, Option.map_some, Bool.not_true], ?_, kt⟩
       simpa only [Nat.mul_zero, BitVec.add_zero, Nat.sub_zero] using vt
     · exact Or.inr ⟨by simp only [eval, htz, decide_eq_false hk0, Option.map_some, Bool.not_false],
-        k, by omega, ⟨by omega, by omega, htb, vt, kt⟩⟩
+        k, by omega_arith, ⟨by omega_arith, by omega_arith, htb, vt, kt⟩⟩
   · refine ⟨by decide, by decide, hb, ?_, fun _ _ => rfl, rfl, rfl, rfl⟩
     rw [hz]
     rfl
@@ -193,17 +193,17 @@ theorem scalarSave_ok {s : State} {base : Addr} (hc : s.gpr .rdx = base)
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Outside base 0 48 s.mem s'.mem ∧
       Saved base s.gpr s'.mem := by
   have w : ∀ d, d + 8 ≤ 8192 → InRegions s.wr (off base d) 8 :=
-    fun d hd => ⟨_, hw, Offset.contains_base base hd (by omega)⟩
+    fun d hd => ⟨_, hw, Offset.contains_base base hd (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [scalarSave, saved, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil,
-    exec, ea_at, hc, State.store64, w 0 (by omega), w 8 (by omega), w 16 (by omega),
-    w 24 (by omega), w 32 (by omega), w 40 (by omega), ite_true, Option.some.injEq,
+    exec, ea_at, hc, State.store64, w 0 (by omega_arith), w 8 (by omega_arith), w 16 (by omega_arith),
+    w 24 (by omega_arith), w 32 (by omega_arith), w 40 (by omega_arith), ite_true, Option.some.injEq,
     exists_eq_left']
   refine ⟨trivial, trivial, trivial, ?_, fun rd hrd => ?_⟩
-  · exact ((((((Outside.refl base 0 48 s.mem).writeW (by omega) (by omega) (by omega) _).writeW
-      (by omega) (by omega) (by omega) _).writeW (by omega) (by omega) (by omega) _).writeW
-      (by omega) (by omega) (by omega) _).writeW (by omega) (by omega) (by omega) _).writeW
-      (by omega) (by omega) (by omega) _
+  · exact ((((((Outside.refl base 0 48 s.mem).writeW (by omega_arith) (by omega_arith) (by omega_arith) _).writeW
+      (by omega_arith) (by omega_arith) (by omega_arith) _).writeW (by omega_arith) (by omega_arith) (by omega_arith) _).writeW
+      (by omega_arith) (by omega_arith) (by omega_arith) _).writeW (by omega_arith) (by omega_arith) (by omega_arith) _).writeW
+      (by omega_arith) (by omega_arith) (by omega_arith) _
   · simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hrd
     rcases hrd with rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp (disch := decide) only [word_writeW_sep, word_writeW_self]
@@ -216,13 +216,13 @@ theorem scalarRestore_ok {s : State} {base : Addr} (hb : s.gpr .rdx = base)
       (∀ r, r ∉ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15] → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hr : ∀ d, d + 8 ≤ 8192 → InRegions (s.rd ++ s.wr) (off base d) 8 :=
-    fun d hd => ⟨_, List.mem_append_right _ hw, Offset.contains_base base hd (by omega)⟩
+    fun d hd => ⟨_, List.mem_append_right _ hw, Offset.contains_base base hd (by omega_arith)⟩
   have v : ∀ rd ∈ saved, s.mem.readW (off base rd.2) 64 = g rd.1 := hsv
   apply WP.of_runBlock
   simp only [scalarRestore, saved, List.map_cons, List.map_nil, runBlock_cons, runStep_some,
     runBlock_nil, exec, readSrc, State.load64, ea_at, RegUpd.gpr_setReg, RegUpd.mem_setReg,
-    RegUpd.rd_setReg, RegUpd.wr_setReg, hb, hr 0 (by omega), hr 8 (by omega),
-    hr 16 (by omega), hr 24 (by omega), hr 32 (by omega), hr 40 (by omega), ite_true, ite_false,
+    RegUpd.rd_setReg, RegUpd.wr_setReg, hb, hr 0 (by omega_arith), hr 8 (by omega_arith),
+    hr 16 (by omega_arith), hr 24 (by omega_arith), hr 32 (by omega_arith), hr 40 (by omega_arith), ite_true, ite_false,
     reduceCtorEq, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun rd hrd => ?_, fun r hr => ?_, trivial, trivial, trivial⟩
   · have e := v rd hrd
@@ -238,10 +238,10 @@ theorem scalarOut_ok {s : State} {q : Addr} (hq : s.gpr .rdi = q) (hw : (⟨q, 3
       s'.mem = st4 s.mem q 0 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have w : ∀ d, d + 8 ≤ 32 → InRegions s.wr (off q d) 8 :=
-    fun d hd => ⟨_, hw, Offset.contains_base q hd (by omega)⟩
+    fun d hd => ⟨_, hw, Offset.contains_base q hd (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, hq, State.store64,
-    w 0 (by omega), w 8 (by omega), w 16 (by omega), w 24 (by omega), ite_true, Option.some.injEq,
+    w 0 (by omega_arith), w 8 (by omega_arith), w 16 (by omega_arith), w 24 (by omega_arith), ite_true, Option.some.injEq,
     exists_eq_left']
   exact ⟨rfl, trivial, trivial, trivial⟩
 
@@ -263,7 +263,7 @@ theorem stashOut_ok {s : State} {base : Addr} (hb : s.gpr .rdx = base)
     WP isa (.block [.store (at_ .rdx 48) .rdi, .mov .rdi (.reg .rdx)]) s fun t =>
       t.mem = s.mem.writeW (off base 48) (s.gpr .rdi) ∧ t.gpr .rdi = base ∧
       (∀ r, r ≠ .rdi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have w : InRegions s.wr (off base 48) 8 := ⟨_, hw, Offset.contains_base base (by omega) (by omega)⟩
+  have w : InRegions s.wr (off base 48) 8 := ⟨_, hw, Offset.contains_base base (by omega_arith) (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, ea_at, hb, State.store64, w,
     ite_true, RegUpd.gpr_setReg, Option.map_some, Option.some.injEq, exists_eq_left']
@@ -276,7 +276,7 @@ theorem finishArgs_ok {s : State} {base : Addr} (hb : s.gpr .rdi = base)
       t.gpr .rdx = base ∧ t.gpr .rdi = s.mem.readW (off base 48) 64 ∧
       (∀ r, r ≠ .rdx → r ≠ .rdi → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have w : InRegions (s.rd ++ s.wr) (off base 48) 8 :=
-    ⟨_, List.mem_append_right _ hw, Offset.contains_base base (by omega) (by omega)⟩
+    ⟨_, List.mem_append_right _ hw, Offset.contains_base base (by omega_arith) (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [scalarFinishArgs, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, ea_at,
     State.load64, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, hb, w,
@@ -291,6 +291,6 @@ theorem scratchFrame {base : Addr} {o n : Nat} {m m' : Mem}
   have hn' := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hn'
   simp only [ofs]
-  omega
+  omega_arith
 
 end VG.Proof.Ed25519.X86_64

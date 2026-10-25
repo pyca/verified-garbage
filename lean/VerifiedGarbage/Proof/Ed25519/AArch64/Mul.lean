@@ -99,23 +99,23 @@ theorem rowR_ok {s : State} {base : Addr} (hs : Scr s base large) {a b i : Nat}
     ⟨h23, h24, h2a, h2d, h2c, h2b, h2i, h29, h2z⟩, ⟨h34, h3a, h3d, h3c, h3b, h3i, h39, h3z⟩,
     ⟨h4a, h4d, h4c, h4b, h4i, h49, h4z⟩, -⟩ := hd
   rw [rowR, WP.block_append_iff]
-  refine WP.mono (rowStart_ok hs (by omega) (by omega)) fun s₁ ⟨c1, b1, k1⟩ => ?_
+  refine WP.mono (rowStart_ok hs (by omega_arith) (by omega_arith)) fun s₁ ⟨c1, b1, k1⟩ => ?_
   have hs₁ := hs.of_keeps k1 (by decide)
   have hz1 := (k1.gpr .x10 (by decide)).trans hz
   rw [WP.block_append_iff]
-  refine WP.mono (mulLoad_ok hs₁ hz1 (by omega) (by omega) h0a h0d h0z h0b h09) fun s₂ ⟨e2, k2⟩ => ?_
+  refine WP.mono (mulLoad_ok hs₁ hz1 (by omega_arith) (by omega_arith) h0a h0d h0z h0b h09) fun s₂ ⟨e2, k2⟩ => ?_
   have hs₂ := hs₁.of_keeps k2 (by simp [Ne.symm h0i])
   have hz2 := (k2.gpr .x10 (by simp [Ne.symm h0z])).trans hz1
   rw [WP.block_append_iff]
-  refine WP.mono (mulLoad_ok hs₂ hz2 (by omega) (by omega) h1a h1d h1z h1b h19) fun s₃ ⟨e3, k3⟩ => ?_
+  refine WP.mono (mulLoad_ok hs₂ hz2 (by omega_arith) (by omega_arith) h1a h1d h1z h1b h19) fun s₃ ⟨e3, k3⟩ => ?_
   have hs₃ := hs₂.of_keeps k3 (by simp [Ne.symm h1i])
   have hz3 := (k3.gpr .x10 (by simp [Ne.symm h1z])).trans hz2
   rw [WP.block_append_iff]
-  refine WP.mono (mulLoad_ok hs₃ hz3 (by omega) (by omega) h2a h2d h2z h2b h29) fun s₄ ⟨e4, k4⟩ => ?_
+  refine WP.mono (mulLoad_ok hs₃ hz3 (by omega_arith) (by omega_arith) h2a h2d h2z h2b h29) fun s₄ ⟨e4, k4⟩ => ?_
   have hs₄ := hs₃.of_keeps k4 (by simp [Ne.symm h2i])
   have hz4 := (k4.gpr .x10 (by simp [Ne.symm h2z])).trans hz3
   rw [WP.block_append_iff]
-  refine WP.mono (mulLoad_ok hs₄ hz4 (by omega) (by omega) h3a h3d h3z h3b h39) fun s₅ ⟨e5, k5⟩ => ?_
+  refine WP.mono (mulLoad_ok hs₄ hz4 (by omega_arith) (by omega_arith) h3a h3d h3z h3b h39) fun s₅ ⟨e5, k5⟩ => ?_
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, mov, read_x, show (0 : Nat) < 4096 from by decide, ite_true,
     Option.some.injEq, exists_eq_left', RegUpd.gpr_write_self, BitVec.setWidth_eq, BitVec.add_zero]
@@ -195,13 +195,13 @@ theorem fold_ok (s : State) (hz : s.gpr .x10 = 0) (h38 : s.gpr .x11 = 38)
       RegUpd.gpr_write_self, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left', h38]
     refine ⟨?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
     · rw [BitVec.toNat_mul, show (38 : Word).toNat = 38 from rfl, Nat.mul_comm]
-      exact Nat.mod_eq_of_lt (by omega)
+      exact Nat.mod_eq_of_lt (by omega_arith)
     · intro r hr
       exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr))
     fun s₁ ⟨e1, k1⟩ => ?_
   have hz1 := (k1.gpr .x10 (by decide)).trans hz
   have h381 := (k1.gpr .x11 (by decide)).trans h38
-  have hx : (s₁.gpr .x8).toNat < 2 ^ 58 := by rw [e1]; omega
+  have hx : (s₁.gpr .x8).toNat < 2 ^ 58 := by rw [e1]; omega_arith
   refine WP.mono (carry38_ok s₁ hz1 h381 hx) fun s₂ ⟨e2, k2⟩ => ?_
   refine ⟨?_, (k1.mono (by decide)).trans k2⟩
   rw [e2, e1, k1.gpr .x4 (by decide), k1.gpr .x5 (by decide),
@@ -239,13 +239,13 @@ theorem fold255Pre_ok (s : State) (h20 : (s.gpr .x20).toNat < 2 ^ 8) :
     have hc : (decide (2 ^ 64 ≤ (s.gpr .x7).toNat + (s.gpr .x7).toNat + false.toNat)).toNat =
         (s.gpr .x7).toNat / 2 ^ 63 := by
       by_cases h : 2 ^ 63 ≤ (s.gpr .x7).toNat
-      · rw [decide_eq_true (by simp only [Bool.toNat_false]; omega)]; simp only [Bool.toNat_true]; omega
-      · rw [decide_eq_false (by simp only [Bool.toNat_false]; omega)]; simp only [Bool.toNat_false]; omega
+      · rw [decide_eq_true (by simp only [Bool.toNat_false]; omega_arith)]; simp only [Bool.toNat_true]; omega_arith
+      · rw [decide_eq_false (by simp only [Bool.toNat_false]; omega_arith)]; simp only [Bool.toNat_false]; omega_arith
     simp only [BitVec.toNat_mul, BitVec.toNat_add, BitVec.toNat_ofNat, hc, c19]
-    omega
+    omega_arith
   · simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Bool.toNat_false,
       Nat.shiftRight_eq_div_pow]
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2]
 
@@ -271,7 +271,7 @@ theorem fold255Chain_ok (s : State) (hz : s.gpr .x10 = 0) :
     dsimp only [addCarry, carryOut, Size.bits] at e0 e1 e2 e3 ⊢
     have z : (0 : BitVec 64).toNat = 0 := rfl
     simp only [val4, Bool.toNat_false, Nat.add_zero, z] at e0 e1 e2 e3 ⊢
-    omega
+    omega_arith
   · reg_keeps
 
 /-- `fold255`: the bits from 255 up folded into the low bits, times 19; the
@@ -300,7 +300,7 @@ theorem fold255_ok (s : State) (hz : s.gpr .x10 = 0) (h20 : (s.gpr .x20).toNat <
   have hc := Bool.toNat_le c
   simp only [val4, VG.Spec.X25519.P] at ec ⊢
   rw [e7] at ec
-  refine ⟨by omega, by omega, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
+  refine ⟨by omega_arith, by omega_arith, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
 
 /-- `reduceWide`: the eight words of a product, reduced modulo p into x4–x7. -/
 theorem reduceWide_ok (s : State) (hz : s.gpr .x10 = 0) :
@@ -314,16 +314,16 @@ theorem reduceWide_ok (s : State) (hz : s.gpr .x10 = 0) :
   have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
   have ha : (s₁.gpr .x11).toNat = 38 := by rw [h38]; rfl
   rw [WP.block_append_iff]
-  refine WP.mono (reduceLo_ok s₁ hz1 (by omega)) fun s₂ ⟨e2, x2, x8, k2⟩ => ?_
+  refine WP.mono (reduceLo_ok s₁ hz1 (by omega_arith)) fun s₂ ⟨e2, x2, x8, k2⟩ => ?_
   have hz2 : s₂.gpr .x10 = 0 := (k2.gpr _ (by decide)).trans hz1
   have b2 : (s₂.gpr .x2).toNat < 2 ^ 6 := by
     rw [x2, mulHi, BitVec.toNat_ofNat, ha]
     have := (s₁.gpr .x21).isLt
-    exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.div_lt_of_lt_mul (by omega))
+    exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.div_lt_of_lt_mul (by omega_arith))
   have b8 : (s₂.gpr .x8).toNat < 2 ^ 6 := by
     rw [x8, mulHi, BitVec.toNat_ofNat, ha]
     have := (s₁.gpr .x22).isLt
-    exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.div_lt_of_lt_mul (by omega))
+    exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.div_lt_of_lt_mul (by omega_arith))
   have b20 : (s₂.gpr .x20).toNat < 2 ^ 8 := by
     have hl := val4_lt (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6) (s₁.gpr .x7)
     have hh := val4_lt (s₁.gpr .x21) (s₁.gpr .x22) (s₁.gpr .x23) (s₁.gpr .x24)
@@ -379,19 +379,19 @@ theorem rowsAccumulate_ok {s : State} {base : Addr} (hs : Scr s base large) {a b
   have g : ∀ {x y : State} {rs : List Reg} (k : Keeps rs x y) (r : Reg), r ∉ rs → y.gpr r = x.gpr r :=
     fun k r h => k.gpr r h
   rw [WP.block_append_iff, row0]
-  refine WP.mono (rowR_ok hs (by omega) hb haa hba hz (by decide)) fun s₁ ⟨e1, k1⟩ => ?_
+  refine WP.mono (rowR_ok hs (by omega_arith) hb haa hba hz (by decide)) fun s₁ ⟨e1, k1⟩ => ?_
   have hs₁ := hs.of_keeps k1 (by decide)
   have hz1 := (g k1 .x10 (by decide)).trans hz
   rw [WP.block_append_iff, row1]
-  refine WP.mono (rowR_ok hs₁ (by omega) hb haa hba hz1 (by decide)) fun s₂ ⟨e2, k2⟩ => ?_
+  refine WP.mono (rowR_ok hs₁ (by omega_arith) hb haa hba hz1 (by decide)) fun s₂ ⟨e2, k2⟩ => ?_
   have hs₂ := hs₁.of_keeps k2 (by decide)
   have hz2 := (g k2 .x10 (by decide)).trans hz1
   rw [WP.block_append_iff, row2]
-  refine WP.mono (rowR_ok hs₂ (by omega) hb haa hba hz2 (by decide)) fun s₃ ⟨e3, k3⟩ => ?_
+  refine WP.mono (rowR_ok hs₂ (by omega_arith) hb haa hba hz2 (by decide)) fun s₃ ⟨e3, k3⟩ => ?_
   have hs₃ := hs₂.of_keeps k3 (by decide)
   have hz3 := (g k3 .x10 (by decide)).trans hz2
   rw [row3]
-  refine WP.mono (rowR_ok hs₃ (by omega) hb haa hba hz3 (by decide)) fun s₄ ⟨e4, k4⟩ => ?_
+  refine WP.mono (rowR_ok hs₃ (by omega_arith) hb haa hba hz3 (by decide)) fun s₄ ⟨e4, k4⟩ => ?_
   have K : Keeps wideClob s s₄ :=
     ((k1.mono (by decide)).trans (k2.mono (by decide))).trans
       (k3.mono (by decide)) |>.trans (k4.mono (by decide))
@@ -430,26 +430,26 @@ theorem mulRows_ok {s : State} {base : Addr} (hs : Scr s base large) {a B : Nat}
   obtain ⟨haa, ha'⟩ := ha
   simp only [mulRows, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok hs (by omega) (by omega) .x3) fun s₂ ⟨a0, k2⟩ => ?_
+  refine WP.mono (ld_ok hs (by omega_arith) (by omega_arith) .x3) fun s₂ ⟨a0, k2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (rowFirst_ok s₂ ((k2.gpr _ (by decide)).trans hz)) fun s₃ ⟨e0, k3⟩ => ?_
   have K3 : Keeps mulRowClob s s₃ := (k2.mono (by decide)).trans (k3.mono (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok (hs.of_keeps K3 (by decide)) (by omega) (by omega) .x3)
+  refine WP.mono (ld_ok (hs.of_keeps K3 (by decide)) (by omega_arith) (by omega_arith) .x3)
     fun s₄ ⟨a1, k4⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (rowAcc1_ok s₄ ((K3.trans (k4.mono (by decide))).gpr _ (by decide) |>.trans hz))
     fun s₅ ⟨e1, k5⟩ => ?_
   have K5 : Keeps mulRowClob s s₅ := (K3.trans (k4.mono (by decide))).trans (k5.mono (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok (hs.of_keeps K5 (by decide)) (by omega) (by omega) .x3)
+  refine WP.mono (ld_ok (hs.of_keeps K5 (by decide)) (by omega_arith) (by omega_arith) .x3)
     fun s₆ ⟨a2, k6⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (rowAcc2_ok s₆ ((K5.trans (k6.mono (by decide))).gpr _ (by decide) |>.trans hz))
     fun s₇ ⟨e2, k7⟩ => ?_
   have K7 : Keeps mulRowClob s s₇ := (K5.trans (k6.mono (by decide))).trans (k7.mono (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok (hs.of_keeps K7 (by decide)) (by omega) (by omega) .x3)
+  refine WP.mono (ld_ok (hs.of_keeps K7 (by decide)) (by omega_arith) (by omega_arith) .x3)
     fun s₈ ⟨a3, k8⟩ => ?_
   refine WP.mono (rowAcc3_ok s₈ ((K7.trans (k8.mono (by decide))).gpr _ (by decide) |>.trans hz))
     fun s₉ ⟨e3, k9⟩ => ?_
@@ -523,9 +523,9 @@ theorem fieldFinish_ok {s₀ s : State} {base : Addr} (hs : Scr s base large) {o
   subst s₂
   refine ⟨Op.of_store ho (k.trans (k1.mono (by decide))) _ _ _ _, ?_, ?_⟩
   · simp only [F]
-    rw [fe_st4 _ _ (by have := ho.2; omega)]
+    rw [fe_st4 _ _ (by have := ho.2; omega_arith)]
     exact e1
-  · rw [fe_st4 _ _ (by have := ho.2; omega)]
+  · rw [fe_st4 _ _ (by have := ho.2; omega_arith)]
     exact b1
 
 /-- Multiplication modulo p, allowing the output to alias either input; the

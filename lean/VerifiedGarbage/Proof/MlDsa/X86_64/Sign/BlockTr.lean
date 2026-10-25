@@ -177,7 +177,7 @@ theorem copy_tr {dst src : Ptr} {n : Nat} (h0 : 0 < n ∧ n % 8 = 0) (hn : n < 2
       fun s' => s'.gpr .rdi = pa s dst ∧ s'.gpr .rsi = pa s src ∧ s'.gpr .rcx = BitVec.ofNat 64 (n / 8) := fun s => by
     unfold lea
     xrun [sx_ofNat hd, sx_ofNat hs, hsr, List.cons_append, List.nil_append,
-      sw_ofNat (show n / 8 < 2 ^ 32 by omega)]
+      sw_ofNat (show n / 8 < 2 ^ 32 by omega_arith)]
   unfold copy
   refine RelCT.seq (R := I (n / 8 - 1)) (VG.Proof.MlKem.X86_64.RelCT.postDep (block_nomem_tr (nomem_append (nomem_append (lea_nomem _ _)
     (lea_nomem _ _)) fun i hi s => by simp only [List.mem_singleton] at hi; subst hi; rfl))
@@ -198,12 +198,12 @@ theorem copy_tr {dst src : Ptr} {n : Nat} (h0 : 0 < n ∧ n % 8 = 0) (hn : n < 2
     have h1 : (s₁.gpr .rcx - 1).toNat = m := by
       rw [BitVec.toNat_sub, hc]
       have : (1 : BitVec 64).toNat = 1 := rfl
-      rw [this]; omega
+      rw [this]; omega_arith
     refine ⟨m - 1, ?_, hr', ?_⟩
     · have : m ≠ 0 := fun h => hne (BitVec.eq_of_toNat_eq (by rw [h1, h]; rfl))
-      omega
+      omega_arith
     · have : m ≠ 0 := fun h => hne (BitVec.eq_of_toNat_eq (by rw [h1, h]; rfl))
-      rw [c₁, h1]; omega
+      rw [c₁, h1]; omega_arith
   · obtain ⟨e1, e2⟩ := hP x y hp
     refine ⟨fun r hr => ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -211,6 +211,6 @@ theorem copy_tr {dst src : Ptr} {n : Nat} (h0 : 0 < n ∧ n % 8 = 0) (hn : n < 2
       · rw [a1, b1, pa, pa, e1]
       · rw [a2, b2, pa, pa, e2]
       · rw [a3, b3]
-    · rw [a3, BitVec.toNat_ofNat]; omega
+    · rw [a3, BitVec.toNat_ofNat]; omega_arith
 
 end VG.Proof.MlDsa.X86_64.Sign

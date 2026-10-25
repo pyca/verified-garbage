@@ -55,13 +55,13 @@ theorem dword_movq {a : Nat} (ha : a < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   simp only [dword_eq, BitVec.extractLsb'_toNat, BitVec.toNat_append, BitVec.toNat_ofNat, Nat.mul_zero,
     Nat.shiftRight_zero, show (0 : BitVec 64).toNat = 0 from rfl, Nat.zero_shiftLeft, Nat.zero_or]
-  rw [Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega), Nat.mod_eq_of_lt ha]
+  rw [Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt ha]
 
 /-- Lane `l` of a 256-bit load. -/
 theorem lane_load256 (m : Mem) (a : Addr) {l : Nat} (hl : l < 2) :
     (if l = 0 then (m.readW a 256).extractLsb' 0 128 else (m.readW a 256).extractLsb' 128 128) =
       m.readW (a + BitVec.ofNat 64 (16 * l)) 128 := by
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
   · exact readW_extract m a (k := 0) (n := 16) (by decide)
   · exact readW_extract m a (k := 16) (n := 16) (by decide)
 
@@ -106,7 +106,7 @@ theorem selStepY_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc
     ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun l hl => ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr l => ?_⟩⟩
   · simp only [lane_vbin256, State.lane_setV256, ↓reduceIte, h11, VBinOp.sse, XBinOp.eval]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
     · simp only [↓reduceIte]
       rw [show (s.mem.readW (X + BitVec.ofNat 64 d) 256).extractLsb' 0 128 =
         s.mem.readW (X + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * 0)) 128 from lane_load256 _ _ (l := 0) hl,
@@ -134,27 +134,27 @@ theorem selStepsY_ok {np st m : Nat} {q : Nat → Nat} (hn : np ≤ 11) {X : Add
   | 0, _, s, _, _ => WP.block_nil ⟨fun c _ l _ => by simp, YKeep.refl _ _ _⟩
   | k + 1, hk, s, hx, hr => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (selStepsY_ok hn k (by omega) s hx hr) fun s₁ ⟨a₁, k₁⟩ => ?_
+    refine WP.mono (selStepsY_ok hn k (by omega_arith) s hx hr) fun s₁ ⟨a₁, k₁⟩ => ?_
     have h15 : ∀ l, s₁.lane .xmm15 l = s.lane .xmm15 l := k₁.lane _ (by
       rintro (⟨c, hc, h⟩ | h)
-      · exact (selAcc_neY c (by omega)).2.2.2.2 h.symm
+      · exact (selAcc_neY c (by omega_arith)).2.2.2.2 h.symm
       · exact absurd h (by decide))
-    refine WP.mono (selStepY_ok s₁ ((k₁.gpr _ List.not_mem_nil).trans hx) (c := k) (by omega)
-      (by rw [k₁.rd, k₁.wr]; exact hr k (by omega))) fun t ⟨a₂, k₂⟩ => ⟨fun c hc l hl => ?_, ?_⟩
+    refine WP.mono (selStepY_ok s₁ ((k₁.gpr _ List.not_mem_nil).trans hx) (c := k) (by omega_arith)
+      (by rw [k₁.rd, k₁.wr]; exact hr k (by omega_arith))) fun t ⟨a₂, k₂⟩ => ⟨fun c hc l hl => ?_, ?_⟩
     · by_cases hck : c = k
-      · rw [hck, a₂ l hl, a₁ k (by omega) l hl, h15, k₁.mem, BitVec.add_assoc, ← BitVec.ofNat_add,
-          show st * (m - 1) + 16 * q k + 16 * l = st * (m - 1) + 16 * (q k + l) by omega]
+      · rw [hck, a₂ l hl, a₁ k (by omega_arith) l hl, h15, k₁.mem, BitVec.add_assoc, ← BitVec.ofNat_add,
+          show st * (m - 1) + 16 * q k + 16 * l = st * (m - 1) + 16 * (q k + l) by omega_arith]
         simp only [Nat.lt_irrefl, ↓reduceIte, Nat.lt_succ_self]
       · rw [k₂.lane _ (by
           rintro (h | h)
-          · exact hck (selAcc_inj c (by omega) k (by omega) h)
+          · exact hck (selAcc_inj c (by omega_arith) k (by omega_arith) h)
           · exact (selAcc_neY c hc).1 h) l, a₁ c hc l hl]
         by_cases hlt : c < k
-        · simp only [hlt, show c < k + 1 by omega, ↓reduceIte]
-        · simp only [hlt, show ¬ c < k + 1 by omega, ↓reduceIte]
+        · simp only [hlt, show c < k + 1 by omega_arith, ↓reduceIte]
+        · simp only [hlt, show ¬ c < k + 1 by omega_arith, ↓reduceIte]
     · exact k₁.trans (k₂.mono (fun _ h => h) fun r h => by
         rcases h with h | h
-        · exact Or.inl ⟨k, by omega, h⟩
+        · exact Or.inl ⟨k, by omega_arith, h⟩
         · exact Or.inr h)
 
 theorem ofNat32_eq {a m : Nat} (ha : a < 2 ^ 32) (hm : m < 2 ^ 32) :
@@ -179,7 +179,7 @@ theorem selMaskY_ok (s : State) {a m : Nat} (ha : a < 2 ^ 31) (hm : m < 2 ^ 31)
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
   refine ⟨fun l hl => ?_, fun l hl => ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr l => ?_⟩⟩
   · simp only [lane_vbin256, ↓reduceIte, show XReg.xmm15 ≠ XReg.xmm14 from by decide, VBinOp.sse,
-      h14 l hl, h13 l hl, pcmpeqd_bcast, ofNat32_eq (show a < 2 ^ 32 by omega) (show m < 2 ^ 32 by omega)]
+      h14 l hl, h13 l hl, pcmpeqd_bcast, ofNat32_eq (show a < 2 ^ 32 by omega_arith) (show m < 2 ^ 32 by omega_arith)]
   · simp only [lane_vbin256, ↓reduceIte, show XReg.xmm14 ≠ XReg.xmm15 from by decide,
       show XReg.xmm12 ≠ XReg.xmm15 from by decide, VBinOp.sse, h14 l hl, h12 l hl, paddd_bcast,
       ← BitVec.ofNat_add]
@@ -207,13 +207,13 @@ theorem selEntryY_ok {st np : Nat} {q : Nat → Nat} {s : State} {X : Addr} {a m
   refine WP.mono (selMaskY_ok s ha hm h13 h12 h14) fun s₁ ⟨x₁, c₁, k₁⟩ => ?_
   refine WP.mono (selStepsY_ok (X := X) hn np (Nat.le_refl _) s₁ (by rw [k₁.gpr _ List.not_mem_nil, hx])
     (by rw [k₁.rd, k₁.wr]; exact hr)) fun t ⟨a₂, k₂⟩ => ⟨fun c hc l hl => ?_, fun l hl => ?_, ?_⟩
-  · obtain ⟨-, -, -, h14', h15'⟩ := selAcc_neY c (by omega)
-    rw [a₂ c (by omega) l hl, ite_eq_left_of_eq_true _ _ (eq_true hc), x₁ l hl, k₁.mem,
+  · obtain ⟨-, -, -, h14', h15'⟩ := selAcc_neY c (by omega_arith)
+    rw [a₂ c (by omega_arith) l hl, ite_eq_left_of_eq_true _ _ (eq_true hc), x₁ l hl, k₁.mem,
       k₁.lane _ (by rintro (h | h); exacts [h14' h, h15' h]) l, hacc c hc l hl]
     exact accVal_step _ _ _ (16 * ·) _ _ _ hm1
   · rw [k₂.lane _ (by
       rintro (⟨c, hc, h⟩ | h)
-      · exact (selAcc_neY c (by omega)).2.2.2.1 h.symm
+      · exact (selAcc_neY c (by omega_arith)).2.2.2.1 h.symm
       · exact absurd h (by decide)) l, c₁ l hl]
   · exact (k₁.mono (fun _ h => h) fun r h => by
       rcases h with h | h
@@ -236,25 +236,25 @@ theorem selEntriesY_ok {st np : Nat} {q : Nat → Nat} {X : Addr} {a : Nat} (hn 
       AccY t s.mem X st a h np q ∧ (∀ l < 2, t.lane .xmm14 l = bcast32 (BitVec.ofNat 32 (h + 1))) ∧
       YKeep [] (fun r => (∃ c < np, r = selAcc c) ∨ r = .xmm11 ∨ r = .xmm14 ∨ r = .xmm15) s t
   | 0, _, s, _, _, _, h14, _, h0 => WP.block_nil ⟨fun c hc l hl => by
-      rw [h0 c hc l hl, accVal, ite_eq_right_of_eq_false _ _ (eq_false (by omega))], h14, YKeep.refl _ _ _⟩
+      rw [h0 c hc l hl, accVal, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))], h14, YKeep.refl _ _ _⟩
   | h + 1, hh, s, hx, h13, h12, h14, hr, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (selEntriesY_ok hn ha h (by omega) s hx h13 h12 h14 (fun e he => hr e (by omega)) h0)
+    refine WP.mono (selEntriesY_ok hn ha h (by omega_arith) s hx h13 h12 h14 (fun e he => hr e (by omega_arith)) h0)
       fun s₁ ⟨a₁, c₁, k₁⟩ => ?_
     have n13 : ¬ ((∃ c < np, XReg.xmm13 = selAcc c) ∨ XReg.xmm13 = .xmm11 ∨ XReg.xmm13 = .xmm14 ∨
         XReg.xmm13 = .xmm15) := by
       rintro (⟨c, hc, h⟩ | h | h | h)
-      · exact (selAcc_neY c (by omega)).2.2.1 h.symm
+      · exact (selAcc_neY c (by omega_arith)).2.2.1 h.symm
       all_goals exact absurd h (by decide)
     have n12 : ¬ ((∃ c < np, XReg.xmm12 = selAcc c) ∨ XReg.xmm12 = .xmm11 ∨ XReg.xmm12 = .xmm14 ∨
         XReg.xmm12 = .xmm15) := by
       rintro (⟨c, hc, h⟩ | h | h | h)
-      · exact (selAcc_neY c (by omega)).2.1 h.symm
+      · exact (selAcc_neY c (by omega_arith)).2.1 h.symm
       all_goals exact absurd h (by decide)
-    refine WP.mono (selEntryY_ok (X := X) (m := h + 1) hn (by omega) hh ha
+    refine WP.mono (selEntryY_ok (X := X) (m := h + 1) hn (by omega_arith) hh ha
       (by rw [k₁.gpr _ (by decide), hx]) (fun l hl => by rw [k₁.lane _ n13 l, h13 l hl])
       (fun l hl => by rw [k₁.lane _ n12 l, h12 l hl]) c₁
-      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega) c hc)
+      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega_arith) c hc)
       (fun c hc l hl => by rw [a₁ c hc l hl, k₁.mem, Nat.add_sub_cancel])) fun t ⟨a₂, c₂, k₂⟩ =>
       ⟨fun c hc l hl => by rw [a₂ c hc l hl, k₁.mem], c₂, k₁.trans k₂⟩
 
@@ -312,7 +312,7 @@ theorem selSetY_ok (s : State) {a : Nat} (ha : a < 2 ^ 31) (h8 : s.gpr .r8 = Bit
     [.vop (.vmovq .xmm13 .r8), .vop (.vpbroadcastd .l256 .xmm13 .xmm13)] ++ ([.mov32 .rcx (.imm 1)] ++
       ([.vop (.vmovq .xmm12 .rcx), .vop (.vpbroadcastd .l256 .xmm12 .xmm12)] ++
         [.vop (.vmovdqa .l256 .xmm14 .xmm12)])) from rfl, WP.block_append_iff]
-  refine WP.mono (bcastY_ok s .xmm13 .r8 (by omega) h8) fun s₁ ⟨b₁, k₁⟩ => ?_
+  refine WP.mono (bcastY_ok s .xmm13 .r8 (by omega_arith) h8) fun s₁ ⟨b₁, k₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (show WP isa (.block [.mov32 .rcx (.imm 1)]) s₁ (fun s₂ =>
       s₂.gpr .rcx = BitVec.ofNat 64 1 ∧ YKeep [.rcx] (fun _ => False) s₁ s₂) by
@@ -344,7 +344,7 @@ theorem clearAccY_ok : ∀ k ≤ 11, ∀ (s : State),
   | 0, _, s => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), YKeep.refl _ _ _⟩
   | k + 1, hk, s => by
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (clearAccY_ok k (by omega) s) fun s₁ ⟨a₁, k₁⟩ => ?_
+    refine WP.mono (clearAccY_ok k (by omega_arith) s) fun s₁ ⟨a₁, k₁⟩ => ?_
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
     refine ⟨fun c hc l hl => ?_, ⟨fun r hr => by rw [VOp.exec_gpr, k₁.gpr r hr], by rw [VOp.exec_mem, k₁.mem],
@@ -354,9 +354,9 @@ theorem clearAccY_ok : ∀ k ≤ 11, ∀ (s : State),
       · rw [hck, ifT rfl]
         simp only [VBinOp.sse, XBinOp.eval, BitVec.xor_self]
         rfl
-      · rw [ifF (fun h => hck (selAcc_inj c (by omega) k (by omega) h)), a₁ c (by omega) l hl]
-    · rw [lane_vbin256, ifF (fun h => hr ⟨k, by omega, h⟩),
-        k₁.lane r (fun ⟨c, hc, h⟩ => hr ⟨c, by omega, h⟩) l]
+      · rw [ifF (fun h => hck (selAcc_inj c (by omega_arith) k (by omega_arith) h)), a₁ c (by omega_arith) l hl]
+    · rw [lane_vbin256, ifF (fun h => hr ⟨k, by omega_arith, h⟩),
+        k₁.lane r (fun ⟨c, hc, h⟩ => hr ⟨c, by omega_arith, h⟩) l]
 
 /-- A 32-byte write changes only its bytes. -/
 theorem writeW256_out (m : Mem) (base : Addr) {d : Nat} (v : BitVec 256) (h : d + 32 ≤ 2 ^ 64) :
@@ -364,9 +364,9 @@ theorem writeW256_out (m : Mem) (base : Addr) {d : Nat} (v : BitVec 256) (h : d 
   intro x hx
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
+  rw [Offset.lt_iff x base (by omega_arith)]
   simp only [ofs] at hx
-  omega
+  omega_arith
 
 /-- Lane `l` of a 256-bit register, as the bytes `16 l …` of its value. -/
 theorem extract_ymm_lane (s : State) (r : XReg) {l : Nat} (hl : l < 2) :
@@ -374,11 +374,11 @@ theorem extract_ymm_lane (s : State) (r : XReg) {l : Nat} (hl : l < 2) :
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [State.ymm, State.lane, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append,
     decide_eq_true hj, Bool.true_and]
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
-  · simp only [show 8 * (16 * 0) + j < 128 by omega, ↓reduceIte]
-    exact congrArg _ (by omega)
-  · simp only [show ¬ 8 * (16 * 1) + j < 128 by omega, ite_false, show (1 : Nat) ≠ 0 by omega]
-    exact congrArg _ (by omega)
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
+  · simp only [show 8 * (16 * 0) + j < 128 by omega_arith, ↓reduceIte]
+    exact congrArg _ (by omega_arith)
+  · simp only [show ¬ 8 * (16 * 1) + j < 128 by omega_arith, ite_false, show (1 : Nat) ≠ 0 by omega_arith]
+    exact congrArg _ (by omega_arith)
 
 /-- The 256-bit accumulators `c < k` stored to the 32 bytes at `o + 16 q c`,
 where lane `l` of accumulator `c` is `V (q c + l)`: the 16 bytes at
@@ -394,17 +394,17 @@ theorem storeAccY_ok {base : Addr} {size o n : Nat} {q : Nat → Nat} {V : Nat �
       rfl, fun _ _ => rfl⟩
   | k + 1, s, hs, hq, hV => by
     have hn := hs.nowrap
-    have hqk := hq k (by omega)
+    have hqk := hq k (by omega_arith)
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (storeAccY_ok hon k s hs (fun c hc => hq c (by omega)) (fun c hc => hV c (by omega)))
+    refine WP.mono (storeAccY_ok hon k s hs (fun c hc => hq c (by omega_arith)) (fun c hc => hV c (by omega_arith)))
       fun s₁ ⟨a₁, O₁, g₁, r₁, w₁, x₁⟩ => ?_
     have hw : InRegions s₁.wr (off base (o + 16 * q k)) 32 := by
-      rw [w₁]; exact ⟨_, hs.wr, hs.contains (by omega) (by decide)⟩
+      rw [w₁]; exact ⟨_, hs.wr, hs.contains (by omega_arith) (by decide)⟩
     have hd₁ : s₁.gpr .rdi = base := by rw [g₁]; exact hs.rdi
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_sc, hd₁, State.store256, hw,
       ite_true, Option.some.injEq, exists_eq_left']
-    have O₂ := writeW256_out s₁.mem base (s₁.ymm (selAcc k)) (d := o + 16 * q k) (by omega)
+    have O₂ := writeW256_out s₁.mem base (s₁.ymm (selAcc k)) (d := o + 16 * q k) (by omega_arith)
     -- The 16 bytes at piece `j` of the stored accumulator `k`.
     have inside : ∀ j, q k ≤ j → j < q k + 2 →
         (s₁.mem.writeW (off base (o + 16 * q k)) (s₁.ymm (selAcc k))).readW (off base (o + 16 * j)) 128 =
@@ -412,23 +412,23 @@ theorem storeAccY_ok {base : Addr} {size o n : Nat} {q : Nat → Nat} {V : Nat �
       intro j hj₁ hj₂
       have e : off base (o + 16 * j) = off base (o + 16 * q k) + BitVec.ofNat 64 (16 * (j - q k)) := by
         simp only [off]
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add, show o + 16 * q k + 16 * (j - q k) = o + 16 * j by omega]
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add, show o + 16 * q k + 16 * (j - q k) = o + 16 * j by omega_arith]
       have h := readW_writeW_inside s₁.mem (off base (o + 16 * q k)) (s₁.ymm (selAcc k))
-        (k := 16 * (j - q k)) (n := 16) (by omega) (by decide)
-      rw [extract_ymm_lane _ _ (by omega), x₁, hV k (by omega) _ (by omega),
-        show q k + (j - q k) = j by omega] at h
+        (k := 16 * (j - q k)) (n := 16) (by omega_arith) (by decide)
+      rw [extract_ymm_lane _ _ (by omega_arith), x₁, hV k (by omega_arith) _ (by omega_arith),
+        show q k + (j - q k) = j by omega_arith] at h
       rw [e]
       exact h
-    refine ⟨fun c hc l hl => ?_, (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega)),
+    refine ⟨fun c hc l hl => ?_, (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith)),
       g₁, r₁, w₁, fun r l => x₁ r l⟩
     by_cases hin : q k ≤ q c + l ∧ q c + l < q k + 2
     · exact inside _ hin.1 hin.2
     · have hck : c < k := by
-        refine Nat.lt_of_le_of_ne (by omega) fun h => hin ?_
+        refine Nat.lt_of_le_of_ne (by omega_arith) fun h => hin ?_
         subst h
-        exact ⟨by omega, by omega⟩
-      have := hq c (by omega)
-      rw [O₂.read128 (by omega) (by omega), a₁ c hck l hl]
+        exact ⟨by omega_arith, by omega_arith⟩
+      have := hq c (by omega_arith)
+      rw [O₂.read128 (by omega_arith) (by omega_arith), a₁ c hck l hl]
 
 theorem vzeroupper_ok (s : State) :
     WP isa (.block [.vop .vzeroupper]) s fun t =>
@@ -439,14 +439,14 @@ theorem vzeroupper_ok (s : State) :
   exact ⟨trivial, trivial, trivial, trivial⟩
 
 theorem qY_le {n : Nat} (c : Nat) (hn : 2 ≤ n) : qY n c + 2 ≤ n := by
-  unfold qY; split <;> omega
+  unfold qY; split <;> omega_arith
 
 /-- Every piece of an entry is in one of `qY`'s 32-byte pieces. -/
 theorem qY_cover {n j : Nat} (hn : 2 ≤ n) (hj : j < n) : ∃ c < (n + 1) / 2, ∃ l < 2, qY n c + l = j := by
   by_cases h : j / 2 + 1 < (n + 1) / 2
-  · exact ⟨j / 2, by omega, j % 2, by omega, by unfold qY; rw [ifT h]; omega⟩
-  · refine ⟨(n + 1) / 2 - 1, by omega, j - (n - 2), by omega, ?_⟩
-    unfold qY; rw [ifF (by omega)]; omega
+  · exact ⟨j / 2, by omega_arith, j % 2, by omega_arith, by unfold qY; rw [ifT h]; omega_arith⟩
+  · refine ⟨(n + 1) / 2 - 1, by omega_arith, j - (n - 2), by omega_arith, ?_⟩
+    unfold qY; rw [ifF (by omega_arith)]; omega_arith
 
 /-- `selPassY` of the first `16 n` bytes of entries `st` bytes apart:
 `selPassAt_ok`'s postcondition, 32 bytes at a time, from a table in one
@@ -458,7 +458,7 @@ theorem selPassYSt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
     WP isa (.block (selPassY o H st ((n + 1) / 2) (qY n))) s fun t =>
       (∀ c < n, t.mem.readW (off base (o + 16 * c)) 128 = accVal s.mem X st (16 * ·) a H c) ∧
       Outside base o (16 * n) s.mem t.mem ∧ KeepRegs [.rcx] s t := by
-  have hnp : (n + 1) / 2 ≤ 11 := by omega
+  have hnp : (n + 1) / 2 ≤ 11 := by omega_arith
   unfold selPassY
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -466,11 +466,11 @@ theorem selPassYSt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
   rw [WP.block_append_iff]
   refine WP.mono (clearAccY_ok ((n + 1) / 2) hnp s₁) fun s₂ ⟨z₂, k₂⟩ => ?_
   have n12 : ¬ ∃ c < (n + 1) / 2, XReg.xmm12 = selAcc c := fun ⟨c, hc, h⟩ =>
-    (selAcc_neY c (by omega)).2.1 h.symm
+    (selAcc_neY c (by omega_arith)).2.1 h.symm
   have n13 : ¬ ∃ c < (n + 1) / 2, XReg.xmm13 = selAcc c := fun ⟨c, hc, h⟩ =>
-    (selAcc_neY c (by omega)).2.2.1 h.symm
+    (selAcc_neY c (by omega_arith)).2.2.1 h.symm
   have n14 : ¬ ∃ c < (n + 1) / 2, XReg.xmm14 = selAcc c := fun ⟨c, hc, h⟩ =>
-    (selAcc_neY c (by omega)).2.2.2.1 h.symm
+    (selAcc_neY c (by omega_arith)).2.2.2.1 h.symm
   rw [WP.block_append_iff]
   refine WP.mono (selEntriesY_ok (X := X) (st := st) (q := qY n) hnp ha H hH s₂
     (by rw [k₂.gpr _ List.not_mem_nil, k₁.gpr _ (by decide), hx])
@@ -478,11 +478,11 @@ theorem selPassYSt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
     (fun l hl => by rw [k₂.lane _ n14 l, b14 l hl])
     (fun e he c hc => by
       rw [k₂.rd, k₂.wr, k₁.rd, k₁.wr]
-      refine VG.CallLay.inRegions_sub hreg ?_ (by omega)
-      have := Nat.mul_le_mul_left st (show e + 1 ≤ H by omega)
+      refine VG.CallLay.inRegions_sub hreg ?_ (by omega_arith)
+      have := Nat.mul_le_mul_left st (show e + 1 ≤ H by omega_arith)
       rw [Nat.mul_succ] at this
       have := qY_le c h2
-      omega)
+      omega_arith)
     z₂) fun s₃ ⟨a₃, _, k₃⟩ => ?_
   have hs₃ : Scr s₃ base size :=
     ⟨by rw [k₃.gpr _ List.not_mem_nil, k₂.gpr _ List.not_mem_nil, k₁.gpr _ (by decide)]; exact hs.rdi,
@@ -530,7 +530,7 @@ theorem selPassV_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : 
   split
   · next h =>
     simp only [Bool.and_eq_true, decide_eq_true_eq] at h
-    exact selPassY_ok K hs (by omega) h.2 hH ha htb h8 hx hreg hE
+    exact selPassY_ok K hs (by omega_arith) h.2 hH ha htb h8 hx hreg hE
   · exact selPass_ok K hs hn hH ha h8 hx hr hE
 
 end VG.Proof.Weierstrass.X86_64

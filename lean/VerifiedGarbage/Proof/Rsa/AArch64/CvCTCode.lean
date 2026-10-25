@@ -114,8 +114,8 @@ theorem zeroOut_ct {sPtr sLen : Nat} (hP : sPtr < 32) (hL : sLen < 32) (ptr : Cv
       obtain ⟨I, rfl, hs, h0, -, -, L, -⟩ := h
       dsimp only [CvIn.pub] at hp hl
       have hn := hs.nowrap
-      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
-      have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega_arith
+      have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
       refine WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t => t.gpr .x1 = ptr I.pub ∧
         t.gpr .x2 = BitVec.ofNat 64 (len I.pub)) (by
         brun [h0, hdr_enc hP, hdr_enc hL, hl' sPtr hP, hl' sLen hL]
@@ -130,14 +130,14 @@ theorem zeroOut_ct {sPtr sLen : Nat} (hP : sPtr < 32) (hL : sLen < 32) (ptr : Cv
       obtain ⟨I, rfl, hs, h0, ha, hW, L, O⟩ := h
       dsimp only [CvIn.pub] at hp hl hwr hsep hl1 hl2 ⊢
       have hn := hs.nowrap
-      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
+      have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega_arith
       refine WP.mono (zeroOut_ok hs h0 h256 hP hL hp hl hl1 hl2 ⟨fun i hi => by rw [hW]; exact hwr i hi, hsep⟩)
         fun t ⟨_, hx, k⟩ => ?_
       have fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) :=
-        fun i hi => (frm_scr hsep hx).word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega))
-          (by omega)
+        fun i hi => (frm_scr hsep hx).word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega_arith))
+          (by omega_arith)
       exact ⟨I, rfl, hs.congr k.wr, (k.gpr .x0 (by decide)).trans h0, ha.congr fun i hi => fw i (by
-        unfold argSlot at hi; omega), k.wr.trans hW, L, O⟩
+        unfold argSlot at hi; omega_arith), k.wr.trans hW, L, O⟩
 
 /-- `fail` leaks the same in two runs with the same public data. -/
 theorem fail_ct : RelCT isa (Two GF) fail fun _ _ => True := by
@@ -152,9 +152,9 @@ theorem fail_ct : RelCT isa (Two GF) fail fun _ _ => True := by
     obtain ⟨I, rfl, -, -, ha, -, L, O⟩ := h
     dsimp only [CvIn.pub]
     have := L.k2
-  · exact ⟨ha.dp, ha.pl, O.dp, O.sdp, L.pl1, by have := L.pl2; omega⟩
-  · exact ⟨ha.dq, ha.ql, O.dq, O.sdq, L.ql1, by have := L.ql2; omega⟩
-  · exact ⟨ha.qi, ha.pl, O.qi, O.sqi, L.pl1, by have := L.pl2; omega⟩
+  · exact ⟨ha.dp, ha.pl, O.dp, O.sdp, L.pl1, by have := L.pl2; omega_arith⟩
+  · exact ⟨ha.dq, ha.ql, O.dq, O.sdq, L.ql1, by have := L.ql2; omega_arith⟩
+  · exact ⟨ha.qi, ha.pl, O.qi, O.sqi, L.pl1, by have := L.pl2; omega_arith⟩
 
 /-! ## The code -/
 

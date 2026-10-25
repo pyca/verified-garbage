@@ -40,14 +40,7 @@ theorem smear32_eq (b : Byte) : smear32 b = BitVec.ofNat 32 (VG.Proof.Ffdh.KeySc
 theorem smear_ok (s : State) {b : Byte} (byte : s.gpr .r3 = b.setWidth 32) :
     WP isa (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.smear) s fun t =>
       (t.gpr .r3 = smear32 b ∧ t.mem = s.mem) ∧ VG.Proof.X25519.Arm.Rest [.r3, .r12] s t := by
-  refine withRest [.r3, .r12] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.smear : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.smear
   ffrun [byte, smear32]
 

@@ -28,7 +28,7 @@ theorem Copied.of_keep {m m' : Mem} {base : Addr} {src nb X : Nat} (h : Copied m
   rw [← h b hb]
   congr 1
   exact Mem.readW_congr fun i hi => k _ (Or.inr (by
-    rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega))
+    rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_arith)]; omega_arith))
 
 /-- The recoding's loop: the state `st`, reached from the start, in the registers and the array. -/
 structure RecInv (s₀ : State) (base : Addr) (nb X w dst : Nat) (st : St) (t : State) : Prop where
@@ -55,13 +55,13 @@ theorem recodeBody_ok {s₀ s : State} {base : Addr} (hs : Scratch s₀ base) {s
       RecInv s₀ base nb X w dst (step w X st) v ∧ v.cf = some (decide ((step w X st).i < 8 * nb)) := by
   have hst : Scratch s base := ht.keep.scratch hs
   have hX' : Copied s.mem base src nb X :=
-    hX.of_keep hsrc hfit fun x hx => ht.keep.mem x (by omega)
+    hX.of_keep hsrc hfit fun x hx => ht.keep.mem x (by omega_arith)
   refine WP.seq (WP.mono (recodeStep_ok hst hw hdst hfit hX' hi hnb ht.good.c ht.rsi ht.r8 ht.dig)
     fun u ⟨ursi, ur8, udig, ku⟩ => ?_)
   have kt := ht.keep.trans ku
-  have hsi := step_i (K := X) (by omega : 1 ≤ w) st
-  refine WP.mono (hb u kt _ ursi (by omega)) fun v ⟨vcf, kv⟩ => ?_
-  exact ⟨⟨reach_step (by omega) ht.reach hi, step_good hw.1 ht.good, by omega,
+  have hsi := step_i (K := X) (by omega_arith : 1 ≤ w) st
+  refine WP.mono (hb u kt _ ursi (by omega_arith)) fun v ⟨vcf, kv⟩ => ?_
+  exact ⟨⟨reach_step (by omega_arith) ht.reach hi, step_good hw.1 ht.good, by omega_arith,
     by rw [kv.1 _ (by decide)]; exact ursi, by rw [kv.1 _ (by decide)]; exact ur8,
     fun j hj => by rw [kv.2.1]; exact udig j hj, kt.trans (RecKeep.of_keeps kv (by decide))⟩, vcf⟩
 
@@ -75,12 +75,12 @@ theorem recodeLoop_ok {s₀ s : State} {base : Addr} (hs : Scratch s₀ base) {s
   apply WP.loop (fun m t => ∃ st, RecInv s₀ base nb X w dst st t ∧ st.i < 8 * nb ∧ m = 8 * nb - st.i)
     (n := 8 * nb - st.i)
   · rintro m t ⟨st, ht, hi, rfl⟩
-    have hsi := step_i (K := X) (by omega : 1 ≤ w) st
+    have hsi := step_i (K := X) (by omega_arith : 1 ≤ w) st
     refine WP.mono (recodeBody_ok hs hw hdst hsrc hfit hX hnb hb hi ht) fun v ⟨hv, vcf⟩ => ?_
     by_cases hlt : (step w X st).i < 8 * nb
-    · exact Or.inr ⟨by simp only [eval, vcf, decide_eq_true hlt], _, by omega, _, hv, hlt, rfl⟩
+    · exact Or.inr ⟨by simp only [eval, vcf, decide_eq_true hlt], _, by omega_arith, _, hv, hlt, rfl⟩
     · refine Or.inl ⟨by simp only [eval, vcf, decide_eq_false hlt], ?_⟩
-      rw [← reach_end (reach_step (by omega) ht.reach hi) (by omega)]
+      rw [← reach_end (reach_step (by omega_arith) ht.reach hi) (by omega_arith)]
       exact hv
   · exact ⟨st, h, hi, rfl⟩
 
@@ -105,9 +105,9 @@ theorem recodeLast_ok {s : State} {base : Addr} (hs : Scratch s base) {i dst : N
   have hea : base + (BitVec.ofNat 64 i + BitVec.ofNat 64 i) * BitVec.ofNat 64 1 +
       BitVec.ofInt 64 ((2048 + dst : Nat) : Int) = off base (2048 + 2 * i + dst) := by
     rw [BitVec.ofInt_natCast, BitVec.mul_one, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact congrArg (fun n => off base n) (by omega)
+    exact congrArg (fun n => off base n) (by omega_arith)
   have hrg : InRegions s.wr (off base (2048 + 2 * i + dst)) 1 :=
-    ⟨_, hs.wr, Offset.contains_base _ (show 2048 + 2 * i + dst + 1 ≤ 8192 by omega) (by omega)⟩
+    ⟨_, hs.wr, Offset.contains_base _ (show 2048 + 2 * i + dst + 1 ≤ 8192 by omega_arith) (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu, State.store8,
     State.ea, State.setReg32, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.wr_setReg,
@@ -124,7 +124,7 @@ theorem testR8_ok (s : State) {c : Nat} (hc : c ≤ 1) (h8 : s.gpr .r8 = BitVec.
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, RegUpd.zf_arithFlags,
     h8, BitVec.and_self, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun _ _ => rfl, rfl, rfl, rfl⟩
-  obtain h0 | h1 : c = 0 ∨ c = 1 := by omega
+  obtain h0 | h1 : c = 0 ∨ c = 1 := by omega_arith
   · rw [h0]; rfl
   · rw [h1]; rfl
 
@@ -138,12 +138,12 @@ theorem recode_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X w ds
   rw [recode]
   refine WP.seq (WP.mono (recodeStart_ok s) fun a ⟨arsi, ar8, ka⟩ => ?_)
   have ha : RecInv s base nb X w dst init a :=
-    ⟨reach_init w X _, init_good w X, by simp only [init]; omega, arsi, ar8,
+    ⟨reach_init w X _, init_good w X, by simp only [init]; omega_arith, arsi, ar8,
       fun j hj => by rw [ka.2.1]; exact hz j hj, RecKeep.of_keeps ka (by decide)⟩
-  refine WP.seq (WP.mono (recodeLoop_ok hs hw hdst hsrc hfit hX hnb.2 hb (by simp only [init]; omega) ha)
+  refine WP.seq (WP.mono (recodeLoop_ok hs hw hdst hsrc hfit hX hnb.2 hb (by simp only [init]; omega_arith) ha)
     fun b hb' => ?_)
   generalize hF : run w X (8 * nb) (8 * nb) init = F at hb'
-  have hFi : 8 * nb ≤ F.i := hF ▸ run_end (by omega) _ (by simp only [init]; omega)
+  have hFi : 8 * nb ≤ F.i := hF ▸ run_end (by omega_arith) _ (by simp only [init]; omega_arith)
   have hFl : F.i < 8 * nb + w := hb'.lt
   have hd : ∀ j, digits w X (8 * nb) j = fin F j := fun j => by rw [← hF]; rfl
   rw [recodeEnd]
@@ -151,12 +151,12 @@ theorem recode_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X w ds
   refine WP.seq (WP.mono (testR8_ok b hc hb'.r8) fun c ⟨cz, kc⟩ => ?_)
   refine WP.ite (!decide (F.c = 0)) (by simp only [eval, cz, Option.map_some]) (fun h => ?_) (fun h => ?_)
   · have hc1 : F.c ≠ 0 := by simpa using h
-    refine WP.mono (recodeLast_ok (hb'.keep.scratch hs |>.of_keeps kc (by decide)) (i := F.i) (by omega) hdst
+    refine WP.mono (recodeLast_ok (hb'.keep.scratch hs |>.of_keeps kc (by decide)) (i := F.i) (by omega_arith) hdst
       (by rw [kc.1 _ (by decide)]; exact hb'.rsi)) fun t ⟨tm, tg, trd, twr⟩ => ?_
     refine ⟨fun j hj => ?_, hb'.keep.trans (RecKeep.of_keeps kc (by decide)) |>.trans
       ⟨fun r hr => tg r (fun e => hr (by rw [e]; decide)) (fun e => hr (by rw [e]; decide)), trd, twr,
-        fun x hx => by rw [tm, keep_write (by omega) hdst _ x hx]⟩⟩
-    rw [tm, dig_write (by omega) hdst (by decide) hj, kc.2.1, hd, fin]
+        fun x hx => by rw [tm, keep_write (by omega_arith) hdst _ x hx]⟩⟩
+    rw [tm, dig_write (by omega_arith) hdst (by decide) hj, kc.2.1, hd, fin]
     by_cases hj' : j = F.i
     · rw [ite_eq_left hj', ite_eq_left ⟨hc1, hj'⟩]
     · rw [ite_eq_right hj', ite_eq_right (fun h => hj' h.2), hb'.dig j hj]

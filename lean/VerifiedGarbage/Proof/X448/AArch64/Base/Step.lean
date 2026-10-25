@@ -41,7 +41,7 @@ def entrySlots : List Index := [6, 7, 8, 9]
 theorem slot_entry (i : Index) : i ∈ entrySlots ↔ OX ≤ slot i.val ∧ slot i.val < OX + 512 := by
   have := i.isLt
   simp only [entrySlots, List.mem_cons, List.not_mem_nil, or_false, OX, slot, Fin.ext_iff]
-  omega
+  omega_arith
 
 /-- A selection, in the slot environment. -/
 theorem selected_env {s t : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) {j ao ae : Nat}
@@ -58,7 +58,7 @@ theorem selected_env {s t : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.
       have := i.isLt
       have hi' := (slot_entry i).not.mp hi
       simp only [OX, slot] at hi'
-      exact congrArg BitVec.toNat (hf.word (by simp only [OX, slot]; omega) (by simp only [slot]; omega))
+      exact congrArg BitVec.toNat (hf.word (by simp only [OX, slot]; omega_arith) (by simp only [slot]; omega_arith))
   -- The entries' limbs.
   have lv : ∀ (v : Spec.X448.Fe) (o : Nat), (∀ w < 8, word t.mem base (o + 8 * w) = limb v w) →
       (∀ w < 8, limbs t.mem base o w = (limb v w).toNat) := fun v o h w hw => by
@@ -156,7 +156,7 @@ theorem step_eq : VG.Impl.X448.AArch64.Base.stepR =
 /-- The selected scalar slots outside `entrySlots` are kept by a selection. -/
 theorem Selected.outside2 {base : Addr} {j ao ae : Nat} {s t : State} (h : Selected base j ao ae s t) :
     Outside2 base 64 2816 ACC 1152 s.mem t.mem := fun x h1 _ =>
-  h.2.1 x (by simp only [OX, slot] at h1 ⊢; omega)
+  h.2.1 x (by simp only [OX, slot] at h1 ⊢; omega_arith)
 
 /-- The entry for the digit `n - 8`, negated as `negate` does. -/
 theorem entry_eq (e : Spec.X448.Fe × Spec.X448.Fe) (z : Spec.X448.Fe) (hz : z = 0) (n : Nat) :
@@ -175,7 +175,7 @@ theorem acc_step (G : ℤ) (S : ℤ) (n j : Nat) :
 theorem TblAt.of_outside2 {s t : State} {base T : Addr} (h : TblAt s base T)
     (hrw : t.rd ++ t.wr = s.rd ++ s.wr) (hm : Outside2 base 64 2816 ACC 1152 s.mem t.mem) :
     TblAt t base T :=
-  h.of_far hrw fun x hx => hm x (by omega) (by simp only [ACC]; omega)
+  h.of_far hrw fun x hx => hm x (by omega_arith) (by simp only [ACC]; omega_arith)
 
 theorem notin_keep {l : List Reg} (h : ∀ q ∈ l, q ∈ .x1 :: .x19 :: VG.Proof.X448.AArch64.Fast.fclob)
     {r : Reg} (hr : r ∉ .x1 :: .x19 :: VG.Proof.X448.AArch64.Fast.fclob) : r ∉ l := fun e => hr (h r e)
@@ -198,22 +198,22 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
   -- The selection.
   have tb1 : TblAt t1 base (s₀.syms combSym) :=
     htbl.of_far (by rw [d1.keeps.2.1, d1.keeps.2.2]) fun x _ => by rw [m1]
-  refine WP.seq (WP.mono (select_ok hs1 tb1 (by rw [sy1, hsy]) (by omega) hc1 (mag_lt no) (mag_lt ne)
+  refine WP.seq (WP.mono (select_ok hs1 tb1 (by rw [sy1, hsy]) (by omega_arith) hc1 (mag_lt no) (mag_lt ne)
     hm1) fun t2 (h2 : Selected base j _ _ t1 t2) => ?_)
   obtain ⟨b2, s2, v6, v7, v8, v9, bnd2⟩ := selected_env hs1 hb1 h2
   have hs2 : Scr t2 base := hs1.of_keeps h2.2.2 (by decide)
   have hc2 : t2.gpr .x19 = BitVec.ofNat 64 j := by rw [h2.2.2.1 _ (by decide)]; exact hc1
   have bits2 : Bits n base k t2.mem := fun q hq => by
     have hn := hs.nowrap
-    rw [h2.2.1 _ (by rw [ofs_off0 base (by simp only [BITS]; omega)]; simp only [OX, BITS, slot]; omega), m1]
+    rw [h2.2.1 _ (by rw [ofs_off0 base (by simp only [BITS]; omega_arith)]; simp only [OX, BITS, slot]; omega_arith), m1]
     exact hbits q hq
   have z2 : ∀ w < 8, limbs t2.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
     rw [s2 19 (by decide) w hw]; rw [m1]; exact hz w hw
   have e1 : EV t1.mem base = EV s.mem base := by rw [m1]
   -- The odd digit's entry, negated, and added to `A`.
   rw [WP.block_append_iff]
-  refine WP.mono (negate_ok hs2 b2 (k := k) (i := 2 * j + 1) (o := BITS + 4) 6 (by decide) hn (by omega) (by omega)
-    (by simp only [BITS]; omega) (by simp only [BITS]; omega) hc2 bits2 (bnd2 6 (by decide))
+  refine WP.mono (negate_ok hs2 b2 (k := k) (i := 2 * j + 1) (o := BITS + 4) 6 (by decide) hn (by omega_arith) (by omega_arith)
+    (by simp only [BITS]; omega_arith) (by simp only [BITS]; omega_arith) hc2 bits2 (bnd2 6 (by decide))
     (zero_env z2).2) fun t3 ⟨k3, b3, s3, e3⟩ => ?_
   have hs3 := k3.scr hs2
   have z3 : ∀ w < 8, limbs t3.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
@@ -230,8 +230,8 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
     rw [k4.regs.1 .x19 (by decide), k3.regs.1 .x19 (by decide)]; exact hc2
   -- The even digit's entry, negated, and added to `B`.
   rw [WP.block_append_iff]
-  refine WP.mono (negate_ok hs4 b4 (k := k) (i := 2 * j) (o := BITS) 8 (by decide) hn (by omega) (by omega)
-    (by omega) (by simp only [BITS]; omega) hc4
+  refine WP.mono (negate_ok hs4 b4 (k := k) (i := 2 * j) (o := BITS) 8 (by decide) hn (by omega_arith) (by omega_arith)
+    (by omega_arith) (by simp only [BITS]; omega_arith) hc4
     (Bits.of_fkeep hn hs3 (Bits.of_fkeep hn hs2 bits2 k3) k4)
     (s4.bnd (by decide) (s3.bnd (by decide) (bnd2 8 (by decide)))) (zero_env z4).2)
     fun t5 ⟨k5, b5, s5, e5⟩ => ?_
@@ -296,15 +296,15 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
       Same.env s6 (i := 1) (by decide), Same.env s5 (i := 1) (by decide),
       Same.env s6 (i := 2) (by decide), Same.env s5 (i := 2) (by decide)]
   have p7B : pt (EV t7.mem base) 3 4 5 = pt (EV t6.mem base) 3 4 5 := by simp only [pt, m7]
-  refine ⟨by omega, hs7, by rw [m7]; exact b6, by rw [m7]; exact z6, c7,
+  refine ⟨by omega_arith, hs7, by rw [m7]; exact b6, by rw [m7]; exact z6, c7,
     by rw [m7]; exact Bits.of_fkeep hn hs5 (Bits.of_fkeep hn hs4 (Bits.of_fkeep hn hs3 (Bits.of_fkeep hn hs2 bits2 k3) k4) k5) k6,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [p7A, pA]
-    have := addPt_rep hodd (baseEntry_ok j (nib k (2 * j + 1)) (by omega) no)
+    have := addPt_rep hodd (baseEntry_ok j (nib k (2 * j + 1)) (by omega_arith) no)
     rw [acc_step] at this
     exact this
   · rw [p7B, pB]
-    have := addPt_rep heven (baseEntry_ok j (nib k (2 * j)) (by omega) ne)
+    have := addPt_rep heven (baseEntry_ok j (nib k (2 * j)) (by omega_arith) ne)
     rw [acc_step] at this
     exact this
   · rw [k7.1 .x30 (by decide), k6.regs.1 .x30 (by decide), k5.regs.1 .x30 (by decide),
@@ -344,15 +344,15 @@ theorem loop_ok {n : Nat} (hn : n ≤ 57) {s₀ : State} {base : Addr} {k : Nat}
     (fun m (s : State) => 1 ≤ m ∧ m ≤ n ∧ StepInv n s₀ base k (n - m) s ∧ s.syms = s₀.syms) ?_ m s
     ⟨h1, h2, hi, hsy⟩
   intro m s ⟨h1, h2, hi, hsy⟩
-  refine WP.mono_syms (step_ok hn hi (by omega) hsy h30) fun t ⟨hz, ht⟩ tsy => ?_
+  refine WP.mono_syms (step_ok hn hi (by omega_arith) hsy h30) fun t ⟨hz, ht⟩ tsy => ?_
   simp only [eval, State.read, BitVec.setWidth_eq, hz]
   by_cases hm : m = 1
   · subst hm
-    rw [show n - 1 + 1 = n by omega] at ht ⊢
+    rw [show n - 1 + 1 = n by omega_arith] at ht ⊢
     exact .inl ⟨by simp, ht⟩
-  · refine .inr ⟨congrArg some (decide_eq_true (by omega)), m - 1, by omega, by omega, by omega, ?_,
+  · refine .inr ⟨congrArg some (decide_eq_true (by omega_arith)), m - 1, by omega_arith, by omega_arith, by omega_arith, ?_,
       tsy.trans hsy⟩
-    rw [show n - (m - 1) = n - m + 1 by omega]
+    rw [show n - (m - 1) = n - m + 1 by omega_arith]
     exact ht
 
 end VG.Proof.X448.AArch64.Base

@@ -38,8 +38,8 @@ theorem sqAnchor_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s) :
   refine WP.mono (restoreBase_ok s h.stackRead h.savedNow) ?_
   rintro u ⟨p, mem, rest⟩
   have hu := h.of_mem mem rest
-  refine wp_ldr (a := off (State.addr base) 80) (by decide) (by rw [p]; exact VG.Arm.addr_add (by omega))
-    (hu.read (by omega)) fun t ut => WP.block_nil ?_
+  refine wp_ldr (a := off (State.addr base) 80) (by decide) (by rw [p]; exact VG.Arm.addr_add (by omega_arith))
+    (hu.read (by omega_arith)) fun t ut => WP.block_nil ?_
   exact ⟨ut.gpr.trans hu.metaNow, ut.mem.trans mem, rest.trans (ut.rest (by simp))⟩
 
 end
@@ -74,10 +74,10 @@ theorem sqMeta_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
   have ws := h.workspace
   have e (d : Nat) (hd : d + 4 ≤ 24) {u : State} (hu : u.gpr .r6 = s.gpr .r6) :
       State.addr (u.gpr .r6 + BitVec.ofNat 32 d) = off (State.addr base) (M + d) :=
-    sq_ea nowrap (hu.trans p6) (by omega)
+    sq_ea nowrap (hu.trans p6) (by omega_arith)
   have wr (d : Nat) (hd : d + 4 ≤ 24) {u : State} (hw : u.wr = s.wr) :
       InRegions u.wr (off (State.addr base) (M + d)) 4 := by
-    rw [hw]; exact h.write (by omega)
+    rw [hw]; exact h.write (by omega_arith)
   unfold sqMeta
   refine wp_str (by decide) (by simpa only [Nat.add_zero] using e 0 (by decide) rfl)
     (by simpa only [Nat.add_zero] using wr 0 (by decide) rfl) fun s1 u1 => ?_
@@ -99,7 +99,7 @@ theorem sqMeta_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
   have v1 : s5.gpr .r1 = BitVec.ofNat 32 (n - 1) := by
     rw [u5.gpr, dpVal, g7, p7]
     change BitVec.ofNat 32 n - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
   have v2 : s7.gpr .r1 = base + BitVec.ofNat 32 (M + 28) := by
     rw [u7.gpr, dpVal, g6, p6]
     change base + BitVec.ofNat 32 M + BitVec.ofNat 32 28 = _
@@ -117,19 +117,19 @@ theorem sqMeta_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
     rw [u8.mem, u7.mem, v2]
   have o (d : Nat) (hd : d + 4 ≤ 24) (v : BitVec 32) (mem : Mem) :
       Outside (State.addr base) M 24 mem (mem.writeW (off (State.addr base) (M + d)) v) :=
-    (writeW32_outside mem (State.addr base) v (by omega)).mono (by omega) (by omega)
+    (writeW32_outside mem (State.addr base) v (by omega_arith)).mono (by omega_arith) (by omega_arith)
   refine ⟨⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [m8, rd_other _ (by omega) (by omega) (by omega), m6, rd_other _ (by omega) (by omega) (by omega),
-      m4, rd_other _ (by omega) (by omega) (by omega), m3, rd_other _ (by omega) (by omega) (by omega),
-      m2, rd_other _ (by omega) (by omega) (by omega), m1, rd_self]
-  · rw [m8, rd_other _ (by omega) (by omega) (by omega), m6, rd_other _ (by omega) (by omega) (by omega),
-      m4, rd_other _ (by omega) (by omega) (by omega), m3, rd_other _ (by omega) (by omega) (by omega),
+  · rw [m8, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m6, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith),
+      m4, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m3, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith),
+      m2, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m1, rd_self]
+  · rw [m8, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m6, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith),
+      m4, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m3, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith),
       m2, rd_self]
-  · rw [m8, rd_other _ (by omega) (by omega) (by omega), m6, rd_other _ (by omega) (by omega) (by omega),
-      m4, rd_other _ (by omega) (by omega) (by omega), m3, rd_self]
-  · rw [m8, rd_other _ (by omega) (by omega) (by omega), m6, rd_other _ (by omega) (by omega) (by omega),
+  · rw [m8, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m6, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith),
+      m4, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m3, rd_self]
+  · rw [m8, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m6, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith),
       m4, rd_self]
-  · rw [m8, rd_other _ (by omega) (by omega) (by omega), m6, rd_self]
+  · rw [m8, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m6, rd_self]
   · rw [m8, rd_self]
   · have h0 : Outside (State.addr base) M 24 s.mem s1.mem := by
       rw [m1]; simpa only [Nat.add_zero] using o 0 (by decide) _ s.mem
@@ -159,9 +159,9 @@ theorem sqZeroArgs_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
     change base + BitVec.ofNat 32 M + BitVec.ofNat 32 24 = _
     rw [Offset.add_add]
   · rw [u4.other .lr (by decide), u3.gpr, dpVal, u2.gpr, u1.other .r7 (by decide), p7,
-      ofNat_shl (by omega)]
+      ofNat_shl (by omega_arith)]
     change BitVec.ofNat 32 (n * 2 ^ 1) + BitVec.ofNat 32 2 = _
-    rw [BitVec.ofNat_add_ofNat, show n * 2 ^ 1 + 2 = 2 * n + 2 by omega]
+    rw [BitVec.ofNat_add_ofNat, show n * 2 ^ 1 + 2 = 2 * n + 2 by omega_arith]
   · rw [u4.mem, u3.mem, u2.mem, u1.mem]
   · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest (by simp))))
 
@@ -174,30 +174,30 @@ theorem sqInit_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
   rw [sqInit, WP.seq_iff]
   refine WP.mono (sqMeta_ok s h p6 p7 p8 p10) ?_
   rintro u ⟨md, next, cnt, tptr, outU, restU⟩
-  have hu := h.next (Outs.of_outside (outU.mono (o' := M) (n' := 4 * (2 * n + 8)) (Nat.le_refl _) (by omega)) (by simp)) restU
+  have hu := h.next (Outs.of_outside (outU.mono (o' := M) (n' := 4 * (2 * n + 8)) (Nat.le_refl _) (by omega_arith)) (by simp)) restU
   rw [WP.seq_iff]
   refine WP.mono (sqZeroArgs_ok u hu ((restU.gpr .r6 (by simp)).trans p6)
     ((restU.gpr .r7 (by simp)).trans p7)) ?_
   rintro v ⟨p0, plr, p3, memV, restV⟩
   have hv := hu.of_mem memV restV
   have cv : ZeroCtx v base size (M + 24) (2 * n + 2) :=
-    ⟨nowrap, by omega, ⟨_, hv.workspace.writable, Region.contains_self _ _⟩⟩
-  refine WP.mono (zero_ok v cv (by omega) p0 plr p3) ?_
+    ⟨nowrap, by omega_arith, ⟨_, hv.workspace.writable, Region.contains_self _ _⟩⟩
+  refine WP.mono (zero_ok v cv (by omega_arith) p0 plr p3) ?_
   intro t zt
   have outT : Outs (State.addr base) [(M, 4 * (2 * n + 8))] v.mem t.mem :=
-    Outs.of_outside (zt.outside.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega) (by omega)) (by simp)
+    Outs.of_outside (zt.outside.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith)) (by simp)
   have ht := hv.next outT zt.rest
   have kept (d : Nat) (hd : d + 4 ≤ 24) :
       t.mem.readW (off (State.addr base) (M + d)) 32 = u.mem.readW (off (State.addr base) (M + d)) 32 := by
     rw [← memV]
-    exact outside_read32 zt.outside (by omega) (by omega)
-  refine ⟨⟨ht, by omega, md.congr fun d hd => kept d (by omega), ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+    exact outside_read32 zt.outside (by omega_arith) (by omega_arith)
+  refine ⟨⟨ht, by omega_arith, md.congr fun d hd => kept d (by omega_arith), ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [kept 12 (by decide), next, Nat.mul_zero, Nat.add_zero]
   · rw [kept 16 (by decide), cnt, Nat.sub_zero]
   · rw [kept 20 (by decide), tptr, Nat.mul_zero, Nat.add_zero]
   · rw [zt.value]; rfl
   · have z := zt.value
-    rw [show 2 * n + 2 = n + (n + 2) by omega] at z
+    rw [show 2 * n + 2 = n + (n + 2) by omega_arith] at z
     simpa only [Nat.zero_add, Nat.sub_zero] using val32_zero_tail z
   · exact (restU.mono (by simp [roundClobbers])).trans ((restV.mono (by simp [roundClobbers])).trans
       (zt.rest.mono (by simp [roundClobbers])))

@@ -25,28 +25,28 @@ theorem ks_shift (S : CState) {len n k : Nat} (hk : k < len) (ht : 64*n ≤ k) :
     (keystream S len).getD k 0 =
       (serialize (block (ctr (ctr S n) ((k-64*n)/64)))).getD ((k-64*n)%64) 0 := by
   rw [keystream_getD _ hk,Neon4.ctr_add,
-    show n+(k-64*n)/64=k/64 by omega,show (k-64*n)%64=k%64 by omega]
+    show n+(k-64*n)/64=k/64 by omega_arith,show (k-64*n)%64=k%64 by omega_arith]
 
 abbrev tailR (s₀ : State) (n : Nat) : Region :=
   ⟨dp s₀ + BitVec.ofNat 64 (64 * n), L s₀ - 64 * n⟩
 
 theorem tail_sub {s₀ : State} {n : Nat} (ht : 64 * n ≤ L s₀) :
-    Region.Sub (tailR s₀ n) (dR s₀) := Offset.sub_base _ (by omega)
+    Region.Sub (tailR s₀ n) (dR s₀) := Offset.sub_base _ (by omega_arith)
 
 theorem not_tail {s₀ : State} {n k : Nat} (hk : k < 64 * n) (ht : 64 * n ≤ L s₀) :
     ¬ (tailR s₀ n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 := by
   have hL := Xor.L_lt s₀
   simp only [Region.Contains]
-  rw [Offset.sub_toNat' _ (by omega) (by omega)]
-  split <;> omega
+  rw [Offset.sub_toNat' _ (by omega_arith) (by omega_arith)]
+  split <;> omega_arith
 
 theorem bytes_of_bytesAt {m m' : Mem} {p : Addr} {n : Nat} {ks : List Byte} (hks : ks.length = n)
     (h : bytesAt m' p n = List.zipWith (· ^^^ ·) (bytesAt m p n) ks) {k : Nat} (hk : k < n) :
     m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k) ^^^ ks.getD k 0 := by
   have e := congrArg (fun l => l[k]?) h
   simp only [bytesAt, List.getElem?_map, List.getElem?_range hk, Option.map_some,
-    List.getElem?_zipWith, List.getElem?_eq_getElem (show k < ks.length by omega)] at e
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show k < ks.length by omega),
+    List.getElem?_zipWith, List.getElem?_eq_getElem (show k < ks.length by omega_arith)] at e
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show k < ks.length by omega_arith),
     Option.getD_some]
   simpa using e
 
@@ -56,7 +56,7 @@ theorem tail_ok {s₀ : State} (hp : XPre s₀) {n : Nat} {s : State} (h : Prefi
       s'.gpr .x0 = s₀.gpr .x0 ∧ s'.gpr .x1 = s₀.gpr .x3 := by
   have hL := Xor.L_lt s₀
   have hn : (BitVec.ofNat 64 (L s₀ - 64 * n)).toNat = L s₀ - 64 * n :=
-    by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   let wr := [stR s₀, tailR s₀ n, bR s₀]
   have hs : xorAArch64.pre (s.withRegions [] wr) := by
     simp only [xorAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
@@ -65,14 +65,14 @@ theorem tail_ok {s₀ : State} (hp : XPre s₀) {n : Nat} {s : State} (h : Prefi
     exact ⟨trivial, rfl, hp.st_d.sub_right ts, hp.st_b, hp.d_b.sub_left ts, by
       have := hp.nowrap
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-      omega⟩
+      omega_arith⟩
   have hc : Covers wr s.wr := by
     rw [h.wr, hp.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [wr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
-    · exact ⟨dR s₀, by simp, 64 * n, rfl, by dsimp; omega⟩
+    · exact ⟨dR s₀, by simp, 64 * n, rfl, by dsimp; omega_arith⟩
     · exact ⟨bR s₀, by simp, 0, by simp, by simp⟩
   have hw : WP isa Impl.ChaCha20.AArch64.Xor.xor (s.withRegions [] wr) fun u =>
       abiPreserved (s.withRegions [] wr) u ∧ xorAArch64.post (s.withRegions [] wr) u ∧
@@ -103,10 +103,10 @@ theorem tail_ok {s₀ : State} (hp : XPre s₀) {n : Nat} {s : State} (h : Prefi
           · exact nb), h.data k hk, ite_eq_left hk']
       · have ea : dp s₀ + BitVec.ofNat 64 (64 * n) + BitVec.ofNat 64 (k - 64 * n) =
             dp s₀ + BitVec.ofNat 64 k := by
-          rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega)]
-        have x := bytes_of_bytesAt (length_keystream _ _) hpost (k := k - 64 * n) (by omega)
-        rw [ea, h.data k hk, ite_eq_right hk', keystream_getD _ (by omega)] at x
-        rw [x, ks_shift _ hk (n := n) (by omega)]
+          rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega_arith)]
+        have x := bytes_of_bytesAt (length_keystream _ _) hpost (k := k - 64 * n) (by omega_arith)
+        rw [ea, h.data k hk, ite_eq_right hk', keystream_getD _ (by omega_arith)] at x
+        rw [x, ks_shift _ hk (n := n) (by omega_arith)]
         simp
 
 
@@ -166,12 +166,12 @@ theorem check3_ok (s : State) (hl : L s < 256) :
     have he : s.gpr .x2 >>> 6 = BitVec.ofNat 64 (L s/64) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,BitVec.toNat_ofNat]
-      exact (Nat.mod_eq_of_lt (by omega)).symm
+      exact (Nat.mod_eq_of_lt (by omega_arith)).symm
     rw [he]
-    have hq : L s/64 < 4 := by omega
-    have hcases : L s/64=0 ∨ L s/64=1 ∨ L s/64=2 ∨ L s/64=3 := by omega
+    have hq : L s/64 < 4 := by omega_arith
+    have hcases : L s/64=0 ∨ L s/64=1 ∨ L s/64=2 ∨ L s/64=3 := by omega_arith
     rcases hcases with h|h|h|h <;>
-      simp only [show (L s < 192) ↔ (L s/64 < 3) by omega,h] <;> decide
+      simp only [show (L s < 192) ↔ (L s/64 < 3) by omega_arith,h] <;> decide
 
 theorem check3_nonzero {s : State} {n : Nat}
     (h : s.gpr .x5=BitVec.ofNat 64 (if n < 192 then 1 else 0)) :
@@ -197,7 +197,7 @@ theorem short_ok {sve : Bool} (s : State) (hp : xorAArch64.pre s) (hl : L s < 25
         Xor.xor_x1 BlockImpl.scalar a (ha.pre hp)
     exact hw.mono fun _ h => ha.finish ⟨⟨h.1.1,h.1.2.1⟩,h.2⟩
   · intro hshort
-    have hge : 128 ≤ L s := by have := of_decide_eq_false hshort;omega
+    have hge : 128 ≤ L s := by have := of_decide_eq_false hshort;omega_arith
     apply WP.seq
     apply WP.seq
     refine (check3_ok a (by simpa only [L,ha.gpr .x2 (by decide)] using hl)).mono fun b ⟨hb,hb5⟩ => ?_
@@ -209,7 +209,7 @@ theorem short_ok {sve : Bool} (s : State) (hp : xorAArch64.pre s) (hl : L s < 25
       exact ((step_ok (sve := sve) b (XPre.of b (hb.pre (ha.pre hp))) 2 (by decide) hlen).mono fun c hc =>
         (tail_ok (XPre.of b (hb.pre (ha.pre hp))) hc hlen).mono fun _ hu => ha.finish (hb.finish hu))
     · intro h192
-      have hge192 : 192 ≤ L s := by have := of_decide_eq_false h192;omega
+      have hge192 : 192 ≤ L s := by have := of_decide_eq_false h192;omega_arith
       have hlen : 192 ≤ L b := by simp only [L,hb.gpr .x2 (by decide),ha.gpr .x2 (by decide)];exact hge192
       exact ((step_ok (sve := sve) b (XPre.of b (hb.pre (ha.pre hp))) 3 (by decide) hlen).mono fun c hc =>
         (tail_ok (XPre.of b (hb.pre (ha.pre hp))) hc hlen).mono fun _ hu => ha.finish (hb.finish hu))
@@ -226,7 +226,7 @@ theorem tail_short {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat} {s : S
   have hL := Xor.L_lt s₀
   have hle := h.le
   have hn : (BitVec.ofNat 64 (L s₀ - 256 * t)).toNat = L s₀ - 256 * t :=
-    by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   let wr := [stR s₀, Neon4.tailR s₀ t, bR s₀]
   have hs : xorAArch64.pre (s.withRegions [] wr) := by
     simp only [xorAArch64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
@@ -235,14 +235,14 @@ theorem tail_short {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat} {s : S
     exact ⟨trivial, rfl, hp.st_d.sub_right ts, hp.st_b, hp.d_b.sub_left ts, by
       have := hp.nowrap
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-      omega⟩
+      omega_arith⟩
   have hc : Covers wr s.wr := by
     rw [h.wr, hp.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [wr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
-    · exact ⟨dR s₀, by simp, 256 * t, rfl, by dsimp; omega⟩
+    · exact ⟨dR s₀, by simp, 256 * t, rfl, by dsimp; omega_arith⟩
     · exact ⟨bR s₀, by simp, 0, by simp, by simp⟩
   have hw := short_ok (sve := sve) _ hs (by simp only [L, State.withRegions_gpr, h.x2, hn]; exact hlt)
   refine WP.narrow hw ?_ hc ?_ (short_noFrames sve)
@@ -271,10 +271,10 @@ theorem tail_short {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat} {s : S
           · exact nb), h.data k hk, ite_eq_left hk']
       · have ea : dp s₀ + BitVec.ofNat 64 (256 * t) + BitVec.ofNat 64 (k - 256 * t) =
             dp s₀ + BitVec.ofNat 64 k := by
-          rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega)]
-        have x := bytes_of_bytesAt (length_keystream _ _) hpost (k := k - 256 * t) (by omega)
-        rw [ea, h.data k hk, ite_eq_right hk', keystream_getD _ (by omega)] at x
-        rw [x, Neon4.ks_shift _ hk (t := t) (by omega)]
+          rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega_arith)]
+        have x := bytes_of_bytesAt (length_keystream _ _) hpost (k := k - 256 * t) (by omega_arith)
+        rw [ea, h.data k hk, ite_eq_right hk', keystream_getD _ (by omega_arith)] at x
+        rw [x, Neon4.ks_shift _ hk (t := t) (by omega_arith)]
 
 theorem correct {sve : Bool} (s : State) (hp : xorAArch64.pre s) :
     WP isa (Impl.ChaCha20.AArch64.Small.xor sve) s fun u =>

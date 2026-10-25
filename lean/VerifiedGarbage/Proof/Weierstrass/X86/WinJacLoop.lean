@@ -27,8 +27,8 @@ open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
 theorem first_value {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P=true)
     {v J : Nat} (hJ : 1≤J) (hlo : 16*Window5.geom J≤v) (hhi : v<32^J) :
     Window5.winPt C P v (J-1)=mul (Window5.winE v J (J-1)) P := by
-  have he := Window5.win_add hC hP hlo (show J-1<J by omega)
-  rw [show J-1+1=J by omega,Window5.winE_top hhi,Nat.mul_zero,Window5.mul_zero_pt] at he
+  have he := Window5.win_add hC hP hlo (show J-1<J by omega_arith)
+  rw [show J-1+1=J by omega_arith,Window5.winE_top hhi,Nat.mul_zero,Window5.mul_zero_pt] at he
   exact he
 
 theorem first_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k v : Nat}
@@ -47,7 +47,7 @@ theorem first_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k v : Nat}
   refine WP.mono (mov_counter_ok s (K.J-1)) fun a ⟨ca,ka⟩ => ?_
   have fa := hf.keeps ka
   have ta : Table K C base P 16 a := fun m h1 hm => (ht m h1 hm).congr fun _ _ => by rw [ka.2.1]
-  have hj : K.J-1<52 := by have := hL.J; omega
+  have hj : K.J-1<52 := by have := hL.J; omega_arith
   refine WP.mono (read_fields_ok hL hW fa ta hj ca hb) fun b ⟨pb,kb,cb⟩ => ?_
   have fb := fa.field hL hW kb (coords_work K)
   have tb := ta.field_keep hL fa.scr kb (coords_work K) (by decide)
@@ -91,7 +91,7 @@ theorem first_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k v : Nat}
   have he : (if Window5.nib v (K.J-1)<16 then negPt (mul (magH 16 (Window5.nib v (K.J-1))) P)
       else mul (magH 16 (Window5.nib v (K.J-1))) P)=Window5.winPt C P v (K.J-1) := by
     simpa using (Window5.winPt_mag P v (K.J-1)).symm
-  rw [he,first_value hC hP (by have := hL.J; omega) hlo hhi] at jp
+  rw [he,first_value hC hP (by have := hL.J; omega_arith) hlo hhi] at jp
   exact jp
 
 end VG.Proof.Weierstrass.X86.JWin
@@ -143,19 +143,19 @@ theorem repair_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk v j : Nat}
   have fb := (Frame.refl hi.scr hi.mod).field hL hW kab dw
   have bs : ∀ i<260,b.mem (off base (K.bits+i))=if v.testBit i then 1 else 0 := by
     intro i hi; rw [fb.bits hL hi]; exact hb i hi
-  have hbs : K.bits+260≤size := by have := hL.bits; have := hL.table; omega
+  have hbs : K.bits+260≤size := by have := hL.bits; have := hL.table; omega_arith
   have cb : b.gpr .esi=BitVec.ofNat 32 j := (kab.gpr _ (by decide)).trans hc
   have er (x : Nat) (hx : x∈jacCoords K.R) : eb x=E x :=
     value_after hL.lay hW hi ib kab (fun x hx => List.mem_append_right _ (dw x hx))
       (vr x hx) (List.mem_append_right _ (vr x hx)) (fun hd => (points_apart hL).2 x hx x hd rfl)
   rw [WP.block_append_iff]
   refine WP.mono (digit_ok K.tc ib.scr (k:=v) (N:=260) (by change 1≤5; decide) (by change 5<9; decide)
-    (by change 5*j+5≤260; omega) hbs cb bs) fun c ⟨_,mc,kc⟩ => ?_
+    (by change 5*j+5≤260; omega_arith) hbs cb bs) fun c ⟨_,mc,kc⟩ => ?_
   have cm : c.gpr .ebx=BitVec.ofNat 32 (magH 16 (Window5.nib v j)) := by
     simpa only [JacWinCfg.tc,TCombCfg.H,Window5.combWin_five] using mc
   have mag : magH 16 (Window5.nib v j)≤16 := magH_le (Nat.mod_lt _ (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (eqMask_ok c (by decide) (by omega) cm) fun d ⟨cd,kd,_⟩ => ?_
+  refine WP.mono (eqMask_ok c (by decide) (by omega_arith) cm) fun d ⟨cd,kd,_⟩ => ?_
   have kcd : CKeeps clob b d := (kc.mono (by decide)).trans (kd.mono (by decide))
   have id := ib.of_keeps kcd (by decide)
   refine WP.mono (choose_point_ok hL.lay hW id (point_nd hL (Or.inl rfl)) (points_apart hL).2
@@ -225,7 +225,7 @@ theorem add_step_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k j : Nat
     intro x hx
     simp only [jacCoords,coords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
     grind
-  refine WP.mono (repair_ok hL hW hm ia va (by have := hL.J; omega)
+  refine WP.mono (repair_ok hL hW hm ia va (by have := hL.J; omega_arith)
     ((ka.gpr _ (by decide)).trans hc) ba) fun t ⟨et,kt,it,vt⟩ => ?_
   have kw : ∀ x∈jacCoords K.D++jacCoords K.R,x∈work K := by
     intro x hx
@@ -276,7 +276,7 @@ theorem test_counter_ok {s : State} {j : Nat} (hj : j<52) (hc : s.gpr .esi=BitVe
     constructor
     · intro h; have := congrArg BitVec.toNat h; simp only [BitVec.toNat_ofNat] at this
       have hz : (0 : BitVec 32).toNat=0 := rfl
-      omega
+      omega_arith
     · intro h; subst j; rfl
   crun [hc,BitVec.and_self,RegUpd.zf_arithFlags,he]
   exact ⟨fun _ _ => rfl,rfl,rfl,rfl⟩
@@ -293,7 +293,7 @@ theorem step_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k j : Nat}
     (hb : ∀ i<260,s₀.mem (off base (K.bits+i))=if (k+16*Window5.geom K.J).testBit i then 1 else 0) :
     WP isa K.step s fun t => Accum K C base size wk P k s₀ (Window5.winE (k+16*Window5.geom K.J) K.J j) t ∧
       t.gpr .esi=BitVec.ofNat 32 j ∧ t.zf=some (decide (j=0)) := by
-  have hj52 : j<52 := by have := hL.J; omega
+  have hj52 : j<52 := by have := hL.J; omega_arith
   unfold JacWinCfg.step
   apply WP.seq
   refine WP.mono (dec_counter_ok hc) fun a ⟨ca,ka⟩ => ?_
@@ -351,11 +351,11 @@ theorem loop_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
     (fun j t => 1≤j ∧ j<K.J ∧ Accum K C base size wk P k s₀
       (Window5.winE (k+16*Window5.geom K.J) K.J j) t ∧ t.gpr .esi=BitVec.ofNat 32 j)
     (fun j u ⟨h1,hj,hu,cu⟩ => ?_) (K.J-1) s
-    ⟨by have := hL.J; omega,by have := hL.J; omega,h,hc⟩
-  have cu' : u.gpr .esi=BitVec.ofNat 32 (j-1+1) := by rw [show j-1+1=j by omega]; exact cu
+    ⟨by have := hL.J; omega_arith,by have := hL.J; omega_arith,h,hc⟩
+  have cu' : u.gpr .esi=BitVec.ofNat 32 (j-1+1) := by rw [show j-1+1=j by omega_arith]; exact cu
   have hu' : Accum K C base size wk P k s₀ (Window5.winE (k+16*Window5.geom K.J) K.J (j-1+1)) u := by
-    rw [show j-1+1=j by omega]; exact hu
-  refine WP.mono (step_ok hL hW hm hC ha hO hP hP0 hn17 hn64 hu' hro hz (by omega) cu' hb)
+    rw [show j-1+1=j by omega_arith]; exact hu
+  refine WP.mono (step_ok hL hW hm hC ha hO hP hP0 hn17 hn64 hu' hro hz (by omega_arith) cu' hb)
     fun t ⟨ht,ct,ft⟩ => ?_
   by_cases he : j=1
   · subst j
@@ -363,9 +363,9 @@ theorem loop_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
     · change Option.map Bool.not t.zf=some false
       rw [ft]; rfl
     · simpa only [Nat.sub_self,Window5.winE_zero,Nat.add_sub_cancel] using ht
-  · refine Or.inr ⟨?_,j-1,by omega,by omega,by omega,ht,ct⟩
+  · refine Or.inr ⟨?_,j-1,by omega_arith,by omega_arith,by omega_arith,ht,ct⟩
     change Option.map Bool.not t.zf=some true
-    rw [ft,decide_eq_false (by omega)]
+    rw [ft,decide_eq_false (by omega_arith)]
     rfl
 
 theorem window_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
@@ -385,7 +385,7 @@ theorem window_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k : Nat}
   have zero : tmv C K.M.n base s K.zero=0 := by unfold tmv; rw [h0,toM_zero]
   unfold JacWinCfg.window
   apply WP.seq
-  refine WP.mono (build_ok hL hW hm hC ha hO (by omega) hP hP0 hi hJ hz) fun a ba => ?_
+  refine WP.mono (build_ok hL hW hm hC ha hO (by omega_arith) hP hP0 hi hJ hz) fun a ba => ?_
   apply WP.seq
   refine WP.mono (first_ok (k:=k) hL hW hm hC hP ba.frame ba.table hi.lt zero hb (Nat.le_add_left _ _) hrec)
     fun b ⟨ab,cb⟩ => ?_

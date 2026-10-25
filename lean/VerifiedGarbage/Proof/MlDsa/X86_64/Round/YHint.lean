@@ -49,16 +49,16 @@ def mhL (g : Nat) (z r : BitVec 32) : BitVec 32 :=
 theorem mhL_toNat {g : Nat} (h : g ∈ gamma2s) {z r : BitVec 32} (hz : z.toNat < q) (hr : r.toNat < q) :
     (mhL g z r).toNat = (makeHint g (Fin.ofNat q z.toNat) (Fin.ofNat q r.toNat)).toNat := by
   have e1 : (r + z).toNat = r.toNat + z.toNat := by
-    rw [BitVec.toNat_add]; rw [q_eq] at hz hr; omega
+    rw [BitVec.toNat_add]; rw [q_eq] at hz hr; omega_arith
   have e2 : (csubL (r + z)).toNat = (r.toNat + z.toNat) % q := by
-    rw [csubL_toNat (by rw [e1]; omega), e1, VG.Proof.MlDsa.Arith.condSub]
-    split <;> rw [q_eq] at * <;> omega
+    rw [csubL_toNat (by rw [e1]; omega_arith), e1, VG.Proof.MlDsa.Arith.condSub]
+    split <;> rw [q_eq] at * <;> omega_arith
   have hs : (csubL (r + z)).toNat < q := by rw [e2]; exact Nat.mod_lt _ (by decide)
   have hM : hbM g ≤ 44 ∧ 0 < hbM g := by rcases mem_gamma2s h with rfl | rfl <;> decide
   have hu := Nat.mod_lt (hbF g ((r.toNat + z.toNat) % q)) hM.2
   have hv := Nat.mod_lt (hbF g r.toNat) hM.2
   have hx : hbF g ((r.toNat + z.toNat) % q) % hbM g ^^^ hbF g r.toNat % hbM g < 2 ^ 6 :=
-    Nat.xor_lt_two_pow (by omega) (by omega)
+    Nat.xor_lt_two_pow (by omega_arith) (by omega_arith)
   have hvz : (Fin.ofNat q z.toNat).val = z.toNat := Nat.mod_eq_of_lt hz
   have hvr : (Fin.ofNat q r.toNat).val = r.toNat := Nat.mod_eq_of_lt hr
   rw [makeHint_eq h, hvz, hvr, mhL, BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_xor,
@@ -69,7 +69,7 @@ theorem mhL_toNat {g : Nat} (h : g ∈ gamma2s) {z r : BitVec 32} (hz : z.toNat 
     have : hbF g ((r.toNat + z.toNat) % q) % hbM g ^^^ hbF g r.toNat % hbM g ≠ 0 :=
       fun h' => e (xor_eq_zero h').symm
     show _ = 1
-    omega
+    omega_arith
 
 theorem mhL_le {g : Nat} (h : g ∈ gamma2s) {z r : BitVec 32} (hz : z.toNat < q) (hr : r.toNat < q) :
     (mhL g z r).toNat ≤ 1 := by
@@ -164,12 +164,12 @@ theorem bsum_sp {f : Nat → Bool} {b : Nat → Bool} : ∀ k, (∀ j < 4 * k, f
     VG.Proof.MlKem.X86_64.S4.bsum f (4 * k) = sp b k
   | 0, _ => rfl
   | k + 1, h => by
-    have ih := bsum_sp k fun j hj => h j (by omega)
-    rw [show 4 * (k + 1) = 4 * k + 1 + 1 + 1 + 1 by omega]
+    have ih := bsum_sp k fun j hj => h j (by omega_arith)
+    rw [show 4 * (k + 1) = 4 * k + 1 + 1 + 1 + 1 by omega_arith]
     simp only [VG.Proof.MlKem.X86_64.S4.bsum, sp]
-    rw [ih, h _ (by omega), h _ (by omega), h _ (by omega), h _ (by omega)]
-    simp only [show (4 * k) % 4 = 0 by omega, show (4 * k + 1) % 4 = 1 by omega, show (4 * k + 2) % 4 = 2 by omega,
-      show (4 * k + 1 + 1 + 1) % 4 = 3 by omega, show 4 * k / 4 = k by omega,
+    rw [ih, h _ (by omega_arith), h _ (by omega_arith), h _ (by omega_arith), h _ (by omega_arith)]
+    simp only [show (4 * k) % 4 = 0 by omega_arith, show (4 * k + 1) % 4 = 1 by omega_arith, show (4 * k + 2) % 4 = 2 by omega_arith,
+      show (4 * k + 1 + 1 + 1) % 4 = 3 by omega_arith, show 4 * k / 4 = k by omega_arith,
       decide_true, decide_false, Bool.true_and, Bool.false_and, Bool.toNat_false, Nat.zero_mul, Nat.add_zero,
       show (1 : Nat) ≠ 0 by decide, show (2 : Nat) ≠ 0 by decide, show (3 : Nat) ≠ 0 by decide]
     rw [show 2 ^ (4 * k) = 16 ^ k by rw [Nat.pow_mul]]
@@ -237,23 +237,23 @@ theorem keep_consts {g : Nat} {s s' : State} (hyc : YC g s) (h11 : ∀ l < 2, s.
 theorem shl7_bit {v : BitVec 32} (hv : v.toNat ≤ 1) {m : Nat} (hm : m < 4) :
     (v <<< 7).getLsbD (8 * m + 7) = (decide (m = 0) && v.getLsbD 0) := by
   rw [BitVec.getLsbD_shiftLeft]
-  rcases (by omega : m = 0 ∨ 0 < m) with rfl | h
+  rcases (by omega_arith : m = 0 ∨ 0 < m) with rfl | h
   · simp
   · have : v.getLsbD (8 * m) = false := by
       rw [← BitVec.testBit_toNat, Nat.testBit_lt_two_pow (Nat.lt_of_le_of_lt hv
-        (Nat.one_lt_two_pow (by omega)))]
-    simp [show 8 * m + 7 - 7 = 8 * m by omega, this, show m ≠ 0 by omega]
+        (Nat.one_lt_two_pow (by omega_arith)))]
+    simp [show 8 * m + 7 - 7 = 8 * m by omega_arith, this, show m ≠ 0 by omega_arith]
 
 theorem bit0_toNat {v : BitVec 32} (hv : v.toNat ≤ 1) : (v.getLsbD 0).toNat = v.toNat := by
   rw [← BitVec.testBit_toNat, Nat.testBit_zero]
-  rcases (by omega : v.toNat = 0 ∨ v.toNat = 1) with h | h <;> rw [h] <;> rfl
+  rcases (by omega_arith : v.toNat = 0 ∨ v.toNat = 1) with h | h <;> rw [h] <;> rfl
 
 theorem csum_le {f : Nat → Nat} : ∀ {m : Nat}, (∀ k < m, f k ≤ 1) → csum f m ≤ m
   | 0, _ => Nat.le_refl _
   | m + 1, h => by
-    have := csum_le (m := m) fun k hk => h k (by omega)
-    have := h m (by omega)
-    simp only [csum]; omega
+    have := csum_le (m := m) fun k hk => h k (by omega_arith)
+    have := h m (by omega_arith)
+    simp only [csum]; omega_arith
 
 theorem csum8 (f : Nat → Nat) (b : Nat → Bool) (m : Nat) (h : ∀ d < 8, (b d).toNat = f (m + d)) :
     csum f (m + 8) = csum f m + cnt8 b 8 := by
@@ -264,7 +264,7 @@ theorem csum8 (f : Nat → Nat) (b : Nat → Bool) (m : Nat) (h : ∀ d < 8, (b 
     h 0 (by decide), h 1 (by decide), h 2 (by decide), h 3 (by decide), h 4 (by decide), h 5 (by decide),
     h 6 (by decide), h 7 (by decide)]
   simp only [Nat.add_zero]
-  omega
+  omega_arith
 
 section
 variable {s₀ : State} (hrd : s₀.rd = [pR (s₀.gpr .rdi), pR (s₀.gpr .rsi)]) (hwr : s₀.wr = [pR (s₀.gpr .rcx)])
@@ -276,15 +276,15 @@ theorem step {i : Nat} (hi : i < 32) {s : State} (hI : Inv s₀ g i s) :
     WP isa (.block (mhBodyY g ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
       Inv s₀ g (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
   have hg' : g ∈ gamma2s := by rcases hg with rfl | rfl <;> decide
-  have j0 : 8 * i + 8 ≤ 256 := by omega
+  have j0 : 8 * i + 8 ≤ 256 := by omega_arith
   have hw : pR (s₀.gpr .rcx) ∈ s.wr := by rw [hI.wr, hwr]; simp
   have hrz : pR (s₀.gpr .rdi) ∈ s.rd ++ s.wr := by rw [hI.rd, hrd]; simp
   have hrr : pR (s₀.gpr .rsi) ∈ s.rd ++ s.wr := by rw [hI.rd, hrd]; simp
   have e1 : s.gpr .rsi + BitVec.ofNat 64 0 = coeffAddr (s₀.gpr .rsi) (8 * i) := by
-    rw [add_ofNat_zero, hI.rsi]; congr 2; omega
+    rw [add_ofNat_zero, hI.rsi]; congr 2; omega_arith
   have e2 : s.gpr .rdi + BitVec.ofNat 64 0 = coeffAddr (s₀.gpr .rdi) (8 * i) := by
-    rw [add_ofNat_zero, hI.rdi]; congr 2; omega
-  have e3 : s.gpr .r10 = coeffAddr (s₀.gpr .rcx) (8 * i) := by rw [hI.r10]; congr 2; omega
+    rw [add_ofNat_zero, hI.rdi]; congr 2; omega_arith
+  have e3 : s.gpr .r10 = coeffAddr (s₀.gpr .rcx) (8 * i) := by rw [hI.r10]; congr 2; omega_arith
   rw [mhBodyY, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc,
     show ∀ a b : Instr, [a, b] = [a] ++ [b] from fun _ _ => rfl, List.append_assoc, WP.block_append_iff]
   refine WP.mono (yld_ok (by rw [e1]; exact f_in32 hrr j0)) fun s1 ⟨L1, o1⟩ => ?_
@@ -309,8 +309,8 @@ theorem step {i : Nat} (hi : i < 32) {s : State} (hI : Inv s₀ g i s) :
     fun l hl e he => by
       rw [State.proj_xmm, State.proj_xmm, L2 l hl, o2.lane _ (by decide) l hl, L1 l hl, o1.mem, o1.gpr, e1, e2,
         dword_readW _ _ he, dword_readW _ _ he, lane_load, lane_load, coeffAddr_add, coeffAddr_add, ← coeffAt_eq,
-        ← coeffAt_eq, coeffAt_frame hI.frame (by simpa using hdz) (by rw [n_eq]; omega),
-        coeffAt_frame hI.frame (by simpa using hdr) (by rw [n_eq]; omega)]
+        ← coeffAt_eq, coeffAt_frame hI.frame (by simpa using hdz) (by rw [n_eq]; omega_arith),
+        coeffAt_frame hI.frame (by simpa using hdr) (by rw [n_eq]; omega_arith)]
   have hle : ∀ k < 256, (mhL g (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffAt s₀.mem (s₀.gpr .rsi) k)).toNat ≤ 1 :=
     fun k hk => mhL_le hg' (hz k (by rw [n_eq]; exact hk)) (hr k (by rw [n_eq]; exact hk))
   rw [WP.block_append_iff]
@@ -328,11 +328,11 @@ theorem step {i : Nat} (hi : i < 32) {s : State} (hI : Inv s₀ g i s) :
   let b : Nat → Bool := fun d =>
     (mhL g (coeffAt s₀.mem (s₀.gpr .rdi) (8 * i + d)) (coeffAt s₀.mem (s₀.gpr .rsi) (8 * i + d))).getLsbD 0
   have hbits : ∀ j < 4 * 8, (s3.ymm .xmm1).getLsbD (8 * j + 7) = (decide (j % 4 = 0) && b (j / 4)) := fun j hj => by
-    have hl : j / 16 < 2 := by omega
-    have he : j % 16 / 4 < 4 := by omega
-    rw [ymm_bit _ _ (by omega), ← State.proj_xmm, (B3 _ hl _ he).2, hv _ hl _ he,
-      shl7_bit (hle _ (by omega)) (by omega)]
-    simp only [b, show 8 * i + 4 * (j / 16) + j % 16 / 4 = 8 * i + j / 4 by omega]
+    have hl : j / 16 < 2 := by omega_arith
+    have he : j % 16 / 4 < 4 := by omega_arith
+    rw [ymm_bit _ _ (by omega_arith), ← State.proj_xmm, (B3 _ hl _ he).2, hv _ hl _ he,
+      shl7_bit (hle _ (by omega_arith)) (by omega_arith)]
+    simp only [b, show 8 * i + 4 * (j / 16) + j % 16 / 4 = 8 * i + j / 4 by omega_arith]
   have hcnt : (BitVec.setWidth 64 (nib ((s4.gpr .rax).setWidth 32))).toNat = cnt8 b 8 := by
     rw [hax, VG.Proof.MlKem.X86_64.S4.byteMask_eq _ (by decide), BitVec.toNat_setWidth,
       show BitVec.setWidth 32 (BitVec.ofNat 64 (VG.Proof.MlKem.X86_64.S4.bsum
@@ -340,16 +340,16 @@ theorem step {i : Nat} (hi : i < 32) {s : State} (hI : Inv s₀ g i s) :
         BitVec.ofNat 32 (VG.Proof.MlKem.X86_64.S4.bsum (fun i => (s3.ymm .xmm1).getLsbD (8 * i + 7)) 32) by
       apply BitVec.eq_of_toNat_eq
       have := VG.Proof.MlKem.X86_64.S4.bsum_lt (fun i => (s3.ymm .xmm1).getLsbD (8 * i + 7)) 32
-      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega,
+      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_arith,
       (bsum_sp 8 hbits : VG.Proof.MlKem.X86_64.S4.bsum _ 32 = _), nib_sp]
     have : cnt8 b 8 ≤ 8 := by
       simp only [cnt8]
       have hb := fun d => Bool.toNat_le (b d)
       have := hb 0; have := hb 1; have := hb 2; have := hb 3; have := hb 4; have := hb 5
       have := hb 6; have := hb 7
-      omega
+      omega_arith
     have := (nib_sp b).symm ▸ this
-    omega
+    omega_arith
   simp only [List.cons_append, List.nil_append]
   xrun
   have G5 : ∀ r, r ∉ [Reg.rax, .rdx, .r9] → s5.gpr r = s.gpr r := fun r hr => by
@@ -371,34 +371,34 @@ theorem step {i : Nat} (hi : i < 32) {s : State} (hI : Inv s₀ g i s) :
     rw [m5, m4, g3, o13.mem, coeffAt_write256 _ _ j0 _ hk]
     split
     · rename_i h
-      rw [ifp (show k < 8 * (i + 1) by omega), State.ymm, extract_ymm _ _ (by omega)]
+      rw [ifp (show k < 8 * (i + 1) by omega_arith), State.ymm, extract_ymm _ _ (by omega_arith)]
       have hc : ∀ l < 2, ∀ e < 4, dword (s3.lane .xmm0 l) e =
           mhL g (coeffAt s₀.mem (s₀.gpr .rdi) (8 * i + 4 * l + e)) (coeffAt s₀.mem (s₀.gpr .rsi) (8 * i + 4 * l + e)) :=
         fun l hl e he => by rw [← State.proj_xmm, (B3 l hl e he).1, hv l hl e he]
       split
       · rename_i h4
         have := hc 0 (by decide) (k - 8 * i) h4
-        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega] at this
+        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega_arith] at this
         exact this
       · rename_i h4
-        have := hc 1 (by decide) (k - 8 * i - 4) (by omega)
-        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega] at this
+        have := hc 1 (by decide) (k - 8 * i - 4) (by omega_arith)
+        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega_arith] at this
         exact this
     · rename_i h
       rw [hI.coeff k hk]
       by_cases h' : k < 8 * i
-      · rw [ifp h', ifp (by omega)]
-      · rw [ifn h', ifn (by omega)]
+      · rw [ifp h', ifp (by omega_arith)]
+      · rw [ifn h', ifn (by omega_arith)]
   · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_false, reduceCtorEq]
     have h94 : s4.gpr .r9 = s.gpr .r9 := by
       rw [g4, RegUpd.gpr_setReg_of_ne _ _ (by decide), o13.gpr]
     have e8 := csum8 (fun k => (mhL g (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffAt s₀.mem (s₀.gpr .rsi) k)).toNat) b
-      (8 * i) fun d hd => bit0_toNat (hle _ (by omega))
+      (8 * i) fun d hd => bit0_toNat (hle _ (by omega_arith))
     have hb := csum_le (f := fun k => (mhL g (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffAt s₀.mem (s₀.gpr .rsi) k)).toNat)
-      (m := 8 * i + 8) fun k hk => hle k (by omega)
-    rw [h9, BitVec.toNat_add, hcnt, h94, hI.r9, show 8 * (i + 1) = 8 * i + 8 by omega, e8]
+      (m := 8 * i + 8) fun k hk => hle k (by omega_arith)
+    rw [h9, BitVec.toNat_add, hcnt, h94, hI.r9, show 8 * (i + 1) = 8 * i + 8 by omega_arith, e8]
     rw [e8] at hb
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_arith)
 
 /-- The constants and the loop: the hints at `h`, and their count in `r9`. -/
 theorem loop_ok {s : State} (hs0 : s.gpr .rdi = s₀.gpr .rdi) (hs1 : s.gpr .rsi = s₀.gpr .rsi)
@@ -425,10 +425,10 @@ theorem loop_ok {s : State} (hs0 : s.gpr .rdi = s₀.gpr .rdi) (hs1 : s.gpr .rsi
       by rw [o.keep.2.1, k2.2.1, k1.2.1, hsrd], by rw [o.keep.2.2, k2.2.2, k1.2.2, hswr],
       fun l hl => by simp only [State.lane]; rw [o.xmm, hy]; exact yc2 l hl,
       fun l hl => by simp only [State.lane]; rw [o.xmm, hy]; exact l2 l hl,
-      by rw [o.mem, m2, m1, hsm]; exact Frame.refl _ _, fun k _ => by rw [o.mem, m2, m1, hsm, ifn (by omega)],
+      by rw [o.mem, m2, m1, hsm]; exact Frame.refl _ _, fun k _ => by rw [o.mem, m2, m1, hsm, ifn (by omega_arith)],
       by rw [o.keep.gpr (by decide), k2.gpr (by decide), k1.gpr (by decide), hs9]; rfl⟩)
     fun i hi u hI => step hrd hwr hdz hdr hz hr hg hi hI) fun u hI => ⟨hI.frame, fun k hk => by
-      rw [hI.coeff k hk, ifp (by omega)], hI.r9⟩
+      rw [hI.coeff k hk, ifp (by omega_arith)], hI.r9⟩
 
 end
 
@@ -448,9 +448,9 @@ theorem csum_onesFrom (v : Vector Bool n) (f : Nat → Nat) (hf : ∀ k < 256, f
     ∀ m ≤ 256, csum f m + onesFrom v m = onesFrom v 0
   | 0, _ => Nat.zero_add _
   | m + 1, hm => by
-    have ih := csum_onesFrom v f hf m (by omega)
-    rw [onesFrom_step v (by rw [n_eq]; omega), ← hf m (by omega)] at ih
-    simp only [csum]; omega
+    have ih := csum_onesFrom v f hf m (by omega_arith)
+    rw [onesFrom_step v (by rw [n_eq]; omega_arith), ← hf m (by omega_arith)] at ih
+    simp only [csum]; omega_arith
 
 section
 variable {s₀ : State} (hp : makeHintK.pre s₀)
@@ -509,7 +509,7 @@ theorem makeHintY_correct : ∃ t s', Exec isa makeHintAvx2 s₀ t s' ∧ abiPre
       rw [hax]
       exact Arith.YHintL.csum_le fun k hk' => mhL_le hg (hz k (by rw [n_eq]; exact hk')) (hr k (by rw [n_eq]; exact hk'))
     rw [BitVec.toNat_setWidth, hintOnes_single]
-    omega
+    omega_arith
 
 end
 

@@ -38,25 +38,25 @@ theorem unpackField_ok {b p : BitVec 32} {o src : Nat} {s0 : State} (hc : Ctx b 
   have href : ∀ i < 32, s.mem (O + BitVec.ofNat 64 i) = s0.mem (O + BitVec.ofNat 64 i) :=
     fun i hi => h.frame.bytes (fun r hm => by
       rw [List.mem_singleton.mp hm]
-      exact hsep.sub_right (Region.sub_prefix (by omega))) (by decide : 32 ≤ 2 ^ 64) hi
+      exact hsep.sub_right (Region.sub_prefix (by omega_arith))) (by decide : 32 ≤ 2 ^ 64) hi
   unfold unpackSrc
-  refine wp_ldrb (a := O + BitVec.ofNat 64 (2 * k)) (by omega)
-    (by rw [hp', addr_add (by omega)]; simp only [O, Offset.add_add])
-    (by rw [h.rest.rd, h.rest.wr]; simpa only [O, Offset.add_add] using hr (2 * k) (by omega))
+  refine wp_ldrb (a := O + BitVec.ofNat 64 (2 * k)) (by omega_arith)
+    (by rw [hp', addr_add (by omega_arith)]; simp only [O, Offset.add_add])
+    (by rw [h.rest.rd, h.rest.wr]; simpa only [O, Offset.add_add] using hr (2 * k) (by omega_arith))
     fun s1 u1 => ?_
-  refine wp_ldrb (a := O + BitVec.ofNat 64 (2 * k + 1)) (by omega)
-    (by rw [u1.other _ (by decide), hp', addr_add (by omega)]; simp only [O, Offset.add_add, Nat.add_assoc])
+  refine wp_ldrb (a := O + BitVec.ofNat 64 (2 * k + 1)) (by omega_arith)
+    (by rw [u1.other _ (by decide), hp', addr_add (by omega_arith)]; simp only [O, Offset.add_add, Nat.add_assoc])
     (by rw [u1.rd, u1.wr, h.rest.rd, h.rest.wr]
-        simpa only [O, Offset.add_add, Nat.add_assoc] using hr (2 * k + 1) (by omega))
+        simpa only [O, Offset.add_add, Nat.add_assoc] using hr (2 * k + 1) (by omega_arith))
     fun s2 u2 => wp_dp (op2_lsl (by decide)) fun s3 u3 => WP.block_nil ?_
   have el : (s2.gpr .r3).toNat = byteN s0.mem O (2 * k) := by
-    rw [u2.other _ (by decide), u1.gpr, toNat_setWidth8, href _ (by omega)]
+    rw [u2.other _ (by decide), u1.gpr, toNat_setWidth8, href _ (by omega_arith)]
     rfl
   have eh : (s2.gpr .r2 <<< 8).toNat = 256 * byteN s0.mem O (2 * k + 1) := by
-    rw [u2.gpr, u1.mem, toNat_shl, toNat_setWidth8, href _ (by omega)]
+    rw [u2.gpr, u1.mem, toNat_shl, toNat_setWidth8, href _ (by omega_arith)]
     have := (s0.mem (O + BitVec.ofNat 64 (2 * k + 1))).isLt
     simp only [byteN]
-    omega
+    omega_arith
   refine ⟨?_, (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide))),
     by rw [u3.mem, u2.mem, u1.mem]⟩
   rw [u3.gpr]

@@ -285,9 +285,9 @@ theorem setOne_ct {F G : KIn → State → Prop} {j : Nat} (hj : j < 16)
   rw [setOneA_eq]
   exact kg_wsb ht fun I _ s h _ ⟨hf, hz⟩ => by
     rw [← setOneA_eq]
-    have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+    have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_arith
     exact WP.mono (setOne_k h hj hz) fun t ⟨ht, f, v, k⟩ =>
-      ⟨ht, hFG I s t h.hZ hw1 hf f k (av_of_full v (Nat.one_lt_two_pow (by omega)))⟩
+      ⟨ht, hFG I s t h.hZ hw1 hf f k (av_of_full v (Nat.one_lt_two_pow (by omega_arith)))⟩
 
 /-- `zeroA j` then `setOneA j`. -/
 theorem one_ct {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hF : Stab F [.arr j] allR)
@@ -358,10 +358,10 @@ theorem inverse_ct {F : KIn → State → Prop} {iU iV iX₁ iX₂ iM iT : Nat}
       KF.of_frm hf' fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl
-        · exact ⟨.arr iU, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
-        · exact ⟨.arr iV, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
-        · exact ⟨.arr iX₁, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
-        · exact ⟨.arr iX₂, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
+        · exact ⟨.arr iU, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+        · exact ⟨.arr iV, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+        · exact ⟨.arr iX₁, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
+        · exact ⟨.arr iX₂, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
         · exact ⟨.arr iT, by simp, by simp [Rc.range], by simp [Rc.range]⟩
     exact ⟨h.step f (all_mut_arrs (js := [iU, iV, iX₁, iX₂, iT]) (by simp [hU, hV, hX₁, hX₂, hT])) k,
       hF I s t h.hZ hf f k⟩

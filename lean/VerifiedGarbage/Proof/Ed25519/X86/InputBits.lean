@@ -140,7 +140,7 @@ theorem expandScalarBits_ok {x p : BitVec 32} {s : State} (hc : Ctx x s)
   unfold expandScalarBits
   refine WP.seq (Wp.wp_mov fun u₁ v₁ => Wp.wp_addi fun u₂ v₂ => Wp.wp_movi fun u₃ v₃ => WP.block_nil ?_)
   refine (WP.loop (M := isa) (Q := LI bytes) (fun m t => ∃ i, m = bytes - i ∧ i < bytes ∧ LI i t) ?_ bytes u₃
-    ⟨0, by omega, by omega, ⟨by rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide)],
+    ⟨0, by omega_arith, by omega_arith, ⟨by rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide)],
       by rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide)],
       by rw [v₃.rd, v₂.rd, v₁.rd], by rw [v₃.wr, v₂.wr, v₁.wr]⟩,
       by rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide), hp]; simp,
@@ -169,9 +169,9 @@ theorem expandScalarBits_ok {x p : BitVec 32} {s : State} (hc : Ctx x s)
           show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       · rw [y₃.other _ (by decide), y₂.gpr, y₁.other _ (by decide), gu _ (by decide), di,
           show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat,
-          show 7168 + 8 * i + 8 = 7168 + 8 * (i + 1) by omega]
+          show 7168 + 8 * i + 8 = 7168 + 8 * (i + 1) by omega_arith]
       · rw [y₃.gpr, y₂.other _ (by decide), y₁.other _ (by decide), gu _ (by decide), ci,
-          Wp.ofNat_pred (by omega)]
+          Wp.ofNat_pred (by omega_arith)]
         congr 1
       · rw [y₃.mem, y₂.mem, y₁.mem]
         exact ft.trans (fu.sub fun r hr => ⟨_, List.mem_singleton_self _, by
@@ -186,17 +186,17 @@ theorem expandScalarBits_ok {x p : BitVec 32} {s : State} (hc : Ctx x s)
             (by omega_using [hx, hk, hi, hb]) (by omega_using [hx, hi, hb]) (.inl (by omega_using [e])) _
             (Region.contains_self _ _)
         · have := bu (k - 8 * i) (by omega_using [hk, e])
-          rw [show 7168 + 8 * i + (k - 8 * i) = 7168 + k by omega] at this
-          rw [this, src, show k / 8 = i by omega, show k % 8 = k - 8 * i by omega]
+          rw [show 7168 + 8 * i + (k - 8 * i) = 7168 + k by omega_arith] at this
+          rw [this, src, show k / 8 = i by omega_arith, show k % 8 = k - 8 * i by omega_arith]
     have z : w₃.zf = some (decide (bytes - (i + 1) = 0)) := by
-      rw [z₃, y₂.other _ (by decide), y₁.other _ (by decide), gu _ (by decide), ci, Wp.ofNat_pred (by omega),
-        Wp.ofNat_beq_zero (by omega)]
+      rw [z₃, y₂.other _ (by decide), y₁.other _ (by decide), gu _ (by decide), ci, Wp.ofNat_pred (by omega_arith),
+        Wp.ofNat_beq_zero (by omega_arith)]
       rfl
     by_cases done : i + 1 = bytes
     · refine .inl ⟨?_, done ▸ next⟩
-      simp only [eval, z, show bytes - (i + 1) = 0 by omega, decide_true, Option.map_some, Bool.not_true]
-    · refine .inr ⟨?_, bytes - (i + 1), by omega, i + 1, rfl, by omega, next⟩
-      simp only [eval, z, show bytes - (i + 1) ≠ 0 by omega, decide_false, Option.map_some, Bool.not_false]
+      simp only [eval, z, show bytes - (i + 1) = 0 by omega_arith, decide_true, Option.map_some, Bool.not_true]
+    · refine .inr ⟨?_, bytes - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, next⟩
+      simp only [eval, z, show bytes - (i + 1) ≠ 0 by omega_arith, decide_false, Option.map_some, Bool.not_false]
   · rintro t ⟨kt, _, _, _, ft, bt⟩
     refine ⟨kt, ft, fun k hk => ?_⟩
     rw [bt k hk, expanded_scalar_bit s.mem hfit hk]

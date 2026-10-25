@@ -132,9 +132,9 @@ theorem fSlice_ok (long : Bool) (hc : Cnt s ≠ 0) {st : State} (hs : Same s st)
   obtain ⟨a₃, e₃⟩ := same_a hp hs (i := 3) (by decide)
   have d₈ : InRegions (st.rd ++ st.wr) (Src s + BitVec.ofNat 64 8) 8 := by
     rw [hs.rd, hs.wr, hp.rd]
-    exact ⟨dsR s, by simp, Offset.contains_base _ (by omega) (by have := hp.w_ds; omega)⟩
+    exact ⟨dsR s, by simp, Offset.contains_base _ (by omega_arith) (by have := hp.w_ds; omega_arith)⟩
   have v₈ : st.mem.readW (Src s + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 (fl s) := by
-    have := sl_eq hp (m := st.mem) (by rw [hs.mem]; exact Frame.refl _ _) (i := 0) (by omega)
+    have := sl_eq hp (m := st.mem) (by rw [hs.mem]; exact Frame.refl _ _) (i := 0) (by omega_arith)
     rw [show Src s + BitVec.ofNat 64 (16 * 0) = Src s by simp] at this
     rw [this, fl_eq]; simp [hc]
   cases long <;>
@@ -233,25 +233,25 @@ theorem front_facts {long : Bool} (h : frontGo long s = true) :
     have hn : s.gpr .rcx = 12#64 := by bv_omega
     have hcnt : Cnt s = 1 ∨ Cnt s = 2 := by
       have : (stackArg s 1).toNat ≠ 0 := hc0
-      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; simp; omega)] at hc
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; simp; omega_arith)] at hc
       simp at hc
       show (stackArg s 1).toNat = 1 ∨ (stackArg s 1).toNat = 2
-      omega
+      omega_arith
     refine ⟨hn, hcnt, ?_⟩
-    rw [round16 (by omega)] at hx
+    rw [round16 (by omega_arith)] at hx
     have hx16 : (BitVec.ofNat 64 (16 * (fl s / 16)) + 16#64).toNat = (16 * (fl s / 16) + 16) % 2 ^ 64 := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * (fl s / 16)) (by omega)]; rfl
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * (fl s / 16)) (by omega_arith)]; rfl
     have hL3 : (stackArg s 3).toNat = L s := rfl
     split at hx
     · next hn' =>
       simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Nat.not_lt, hx16, hL3] at hn'
       by_cases hw : 16 * (fl s / 16) + 16 < 2 ^ 64
-      · rw [Nat.mod_eq_of_lt hw] at hn'; omega
-      · omega
+      · rw [Nat.mod_eq_of_lt hw] at hn'; omega_arith
+      · omega_arith
     · have := congrArg BitVec.toNat hx
       rw [hx16] at this
       simp only [BitVec.toNat_ofNat, Nat.zero_mod] at this
-      omega
+      omega_arith
   · next hc =>
     unfold fA at h0
     simp only [hc, decide_false, Bool.not_false, ↓reduceIte] at h0

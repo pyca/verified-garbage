@@ -37,18 +37,18 @@ structure Shape (d c nb : Nat) : Prop where
   bN : nb * (256 / c) = 32 * d
 
 theorem Shape.nb20 {d c nb : Nat} (h : Shape d c nb) : nb ≤ 20 := by
-  have := Nat.mul_le_mul h.d20 h.c8; have := h.dc; omega
+  have := Nat.mul_le_mul h.d20 h.c8; have := h.dc; omega_arith
 
 theorem Shape.group {d c nb : Nat} (h : Shape d c nb) {i : Nat} (hi : i < 256 / c) :
     c * i + c ≤ 256 ∧ nb * i + nb ≤ 32 * d := by
-  have h1 := Nat.mul_le_mul_left c (show i + 1 ≤ 256 / c by omega)
-  have h2 := Nat.mul_le_mul_left nb (show i + 1 ≤ 256 / c by omega)
+  have h1 := Nat.mul_le_mul_left c (show i + 1 ≤ 256 / c by omega_arith)
+  have h2 := Nat.mul_le_mul_left nb (show i + 1 ≤ 256 / c by omega_arith)
   rw [Nat.mul_succ] at h1 h2
   have := h.cN; have := h.bN
-  omega
+  omega_arith
 
 theorem Shape.G {d c nb : Nat} (h : Shape d c nb) : 0 < 256 / c ∧ 256 / c ≤ 256 :=
-  ⟨Nat.div_pos (by have := h.c8; omega) h.c0, Nat.div_le_self _ _⟩
+  ⟨Nat.div_pos (by have := h.c8; omega_arith) h.c0, Nat.div_le_self _ _⟩
 
 /-- The registers the loops write. -/
 abbrev packRegs : List Reg := [.x0, .x2, .x9, .x10, .x11, .x14]
@@ -61,8 +61,8 @@ theorem movz_toNat {n : Nat} (h : n < 2 ^ 16) : ((BitVec.ofNat 16 n).setWidth 64
 /-- The counter after one more group. -/
 theorem count_step {x : BitVec 64} {N g : Nat} (h : x.toNat = N - g) (hg : g < N) :
     (x - BitVec.ofNat 64 1).toNat = N - (g + 1) := by
-  rw [toNat_sub_n (by rw [h, toNat_ofNat_lt (by decide)]; omega), h, toNat_ofNat_lt (by decide)]
-  omega
+  rw [toNat_sub_n (by rw [h, toNat_ofNat_lt (by decide)]; omega_arith), h, toNat_ofNat_lt (by decide)]
+  omega_arith
 
 /-! ## Packing -/
 
@@ -110,20 +110,20 @@ theorem packStep {g : Nat} (hg : g < 256 / c) {s : State}
   have ha : ∀ j, s.gpr .x0 + BitVec.ofNat 64 (4 * j) = coeffAddr f (c * g + j) := fun j => by
     rw [hI.x0, ptr_add, coeffAddr, Nat.mul_add, Nat.mul_assoc]
   refine WP.mono (packBody_ok hld (gb := nb * g) (N := 32 * d) (o := o) (m₀ := s₀.mem)
-    (V := fun j => F (coeffAt s₀.mem f (c * g + j))) hs.d20 hs.dc hs.c8 hbg (by omega)
-    (fun j hj => hF _ (by omega)) (fun t ht => ?_) s hI.x12 hI.x13
-    (fun j hj => by rw [ha j, hI.rd, hI.wr]; exact ⟨_, hin, coeff_contains f (by omega)⟩)
+    (V := fun j => F (coeffAt s₀.mem f (c * g + j))) hs.d20 hs.dc hs.c8 hbg (by omega_arith)
+    (fun j hj => hF _ (by omega_arith)) (fun t ht => ?_) s hI.x12 hI.x13
+    (fun j hj => by rw [ha j, hI.rd, hI.wr]; exact ⟨_, hin, coeff_contains f (by omega_arith)⟩)
     (fun j hj m hm => by
       rw [ha j, ← coeffAt_eq]
       exact congrArg F (coeffAt_frame hm (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact hsep) (by omega)))
+        simp only [List.mem_singleton] at hr; subst hr; exact hsep) (by omega_arith)))
     hI.x2 (by rw [hI.wr]; exact hout) hI.out hI.frame)
     fun s' ⟨hw', hf', x0', x2', x11', k'⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, hf', (hI.keep.trans k').mono, ?_, ?_⟩, ?_⟩
   · -- The bytes of the group.
-    rw [pack_group (c := c) (by have := hs.d1; omega) hs.dc (by simp) (vals_lt hF) ht (by omega),
-      take_drop_eq _ 0 (by simp; omega)]
+    rw [pack_group (c := c) (by have := hs.d1; omega_arith) hs.dc (by simp) (vals_lt hF) ht (by omega_arith),
+      take_drop_eq _ 0 (by simp; omega_arith)]
     refine congrArg (fun L => BitVec.ofNat 8 (digits d L / 2 ^ (8 * t))) (List.map_congr_left fun j hj => ?_)
-    exact vals_getD F s₀.mem f (by have := List.mem_range.mp hj; omega)
+    exact vals_getD F s₀.mem f (by have := List.mem_range.mp hj; omega_arith)
   · rw [x0', hI.x0, ptr_add, Nat.mul_succ]
   · rw [x2', hI.x2, ptr_next]
   · rw [x11']; exact count_step hI.x11 hg
@@ -132,7 +132,7 @@ theorem packStep {g : Nat} (hg : g < 256 / c) {s : State}
   · rw [Nat.mul_succ]; exact hw'
   · rw [k'.rd, hI.rd]
   · rw [k'.wr, hI.wr]
-  · rw [x11', count_step hI.x11 hg]; omega
+  · rw [x11', count_step hI.x11 hg]; omega_arith
 
 theorem packLoop_ok {s : State} (h0 : s.gpr .x0 = f) (h2 : s.gpr .x2 = o) (h12 : s.gpr .x12 = K12)
     (h13 : s.gpr .x13 = K13) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hm : s.mem = s₀.mem) :
@@ -146,7 +146,7 @@ theorem packLoop_ok {s : State} (h0 : s.gpr .x0 = f) (h2 : s.gpr .x2 = o) (h12 :
     (fun g hg s hI => packStep hld hs hin hout hsep hF hg hI) ?_)
     fun s' hI => ⟨?_, hI.frame, hI.keep⟩
   · refine ⟨by rw [o₁.get .x0, h0, Nat.mul_zero, ptr_zero], by rw [o₁.get .x2, h2, Nat.mul_zero, ptr_zero],
-      by rw [e₁, movz_toNat (by omega), Nat.sub_zero], by rw [o₁.get .x12, h12], by rw [o₁.get .x13, h13],
+      by rw [e₁, movz_toNat (by omega_arith), Nat.sub_zero], by rw [o₁.get .x12, h12], by rw [o₁.get .x13, h13],
       ?_, by rw [o₁.mem, hm]; exact Frame.refl _ _, o₁.keep.mono, by rw [o₁.rd, hrd], by rw [o₁.wr, hwr]⟩
     rw [o₁.mem, hm, Nat.mul_zero]; exact BytesUpTo.zero _
   · have hB : nb * (256 / c) = 32 * d := hs.bN
@@ -202,22 +202,22 @@ theorem unpackStep {g : Nat} (hg : g < 256 / c) {s : State}
   refine WP.mono (unpackBody_ok hfin (gc := c * g) (p := p) (m₀ := s₀.mem)
     (B := fun t => (s₀.mem (v + BitVec.ofNat 64 (nb * g + t))).toNat) hs.d20 hs.dc hs.c8 hcg
     (fun j hj => ?_) s hI.x12 hI.x13 hI.x15
-    (fun t ht => by rw [hb, hI.rd, hI.wr]; exact ⟨_, hin, Offset.contains_base v (by omega) (by omega)⟩)
+    (fun t ht => by rw [hb, hI.rd, hI.wr]; exact ⟨_, hin, Offset.contains_base v (by omega_arith) (by omega_arith)⟩)
     (fun t ht m hm => by
       rw [hb]
       refine congrArg BitVec.toNat (hm _ fun r hr => ?_)
       simp only [List.mem_singleton] at hr; subst hr
-      exact hsep _ (Offset.contains_base v (by omega) (by omega)))
+      exact hsep _ (Offset.contains_base v (by omega_arith) (by omega_arith)))
     hI.x4 (by rw [hI.wr]; exact hout) hI.out hI.frame)
     fun s' ⟨hw', hf', x0', x4', x11', k'⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, hf', (hI.keep.trans k').mono, ?_, ?_⟩, ?_⟩
   · -- The coefficients of the group.
     have e := digits_group (g := g) hs.dc hlt hj
-    rw [take_drop_eq _ 0 (by rw [List.length_map, Spec.Sha3.bytesAt, List.length_map, List.length_range]; omega)]
+    rw [take_drop_eq _ 0 (by rw [List.length_map, Spec.Sha3.bytesAt, List.length_map, List.length_range]; omega_arith)]
       at e
     have hB : ((List.range nb).map fun t => ((bytesAt s₀.mem v (32 * d)).map (·.toNat)).getD (nb * g + t) 0) =
         (List.range nb).map fun t => (s₀.mem (v + BitVec.ofNat 64 (nb * g + t))).toNat :=
       List.map_congr_left fun t ht => by
-        rw [getD_map_toNat, bytesAt_getD _ _ (by have := List.mem_range.mp ht; omega)]
+        rw [getD_map_toNat, bytesAt_getD _ _ (by have := List.mem_range.mp ht; omega_arith)]
     rw [hB] at e
     rw [e]
   · rw [x0', hI.x0, ptr_next]
@@ -229,7 +229,7 @@ theorem unpackStep {g : Nat} (hg : g < 256 / c) {s : State}
   · rw [Nat.mul_succ]; exact hw'
   · rw [k'.rd, hI.rd]
   · rw [k'.wr, hI.wr]
-  · rw [x11', count_step hI.x11 hg]; omega
+  · rw [x11', count_step hI.x11 hg]; omega_arith
 
 theorem unpackLoop_ok {s : State} (h0 : s.gpr .x0 = v) (h4 : s.gpr .x4 = p) (h12 : s.gpr .x12 = K12)
     (h13 : s.gpr .x13 = K13) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hm : s.mem = s₀.mem) :
@@ -239,7 +239,7 @@ theorem unpackLoop_ok {s : State} (h0 : s.gpr .x0 = v) (h4 : s.gpr .x4 = p) (h12
   obtain ⟨hG0, hG⟩ := hs.G
   have hd20 := hs.d20
   have hp : 2 ^ d - 1 < 2 ^ 64 := by
-    have := Nat.pow_le_pow_right (show 0 < 2 by decide) hd20; omega
+    have := Nat.pow_le_pow_right (show 0 < 2 by decide) hd20; omega_arith
   refine WP.seq ?_
   rw [← List.append_nil [Instr.movz .x .x11 _ 0]]
   refine wp_movImm fun s₁ o₁ e₁ => wp_movz fun s₂ o₂ e₂ => wp_nil ?_
@@ -250,7 +250,7 @@ theorem unpackLoop_ok {s : State} (h0 : s.gpr .x0 = v) (h4 : s.gpr .x4 = p) (h12
   · have k₂ := o₁.trans o₂
     refine ⟨by rw [k₂.get .x0, h0, Nat.mul_zero, ptr_zero],
       by rw [k₂.get .x4, h4, Nat.mul_zero, Nat.mul_zero, ptr_zero],
-      by rw [e₂, movz_toNat (by omega), Nat.sub_zero], by rw [k₂.get .x12, h12], by rw [k₂.get .x13, h13],
+      by rw [e₂, movz_toNat (by omega_arith), Nat.sub_zero], by rw [k₂.get .x12, h12], by rw [k₂.get .x13, h13],
       by rw [o₂.get .x15, e₁, toNat_ofNat_lt hp], ?_, by rw [k₂.mem, hm]; exact Frame.refl _ _, k₂.keep.mono,
       by rw [k₂.rd, hrd], by rw [k₂.wr, hwr]⟩
     rw [k₂.mem, hm, Nat.mul_zero]; exact CoeffsUpTo.zero _

@@ -68,8 +68,8 @@ theorem PtrsAt.three {s : State} {r r' r'' : Reg} {c c' c'' : Nat} (h : s.gpr r 
 theorem modOkN {Z : Nat} (hZ : 4096 ≤ Z) {mem : Mem} {base : Addr} (hv : wordsVal mem base fnMoN 9 = n521) :
     ModOkW fnModN Z n521 mem base where
   n0 := by decide
-  mo := by simp only [fnModN, fnMoN, fnTmp]; omega
-  tmp := by simp only [fnModN, fnTmp]; omega
+  mo := by simp only [fnModN, fnMoN, fnTmp]; omega_arith
+  tmp := by simp only [fnModN, fnTmp]; omega_arith
   sep := by decide
   val := hv
   inv := by decide +kernel
@@ -98,7 +98,7 @@ theorem saveStep_ok {s : State} {base : Addr} {Z d : Nat} (hs : Scr s base Z) (h
         t.mem = s.mem ∧ KeepRegs [.rax] s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, readSrc, Option.map_some,
-    State.load64, ea_sc, hs.rdi, ld_sc hs (d := d) (by omega), ite_true, Option.some.injEq,
+    State.load64, ea_sc, hs.rdi, ld_sc hs (d := d) (by omega_arith), ite_true, Option.some.injEq,
     exists_eq_left', RegUpd.xmm_setXmm_self, RegUpd.gpr_setReg_self]
   refine ⟨trivial, fun x hx => RegUpd.xmm_setXmm_of_ne _ _ hx, rfl, ⟨fun q hq => ?_, rfl, rfl⟩⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -111,7 +111,7 @@ theorem restoreStep_ok {s : State} {base : Addr} {Z d : Nat} (hs : Scr s base Z)
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64, ea_sc,
     RegUpd.gpr_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, reduceCtorEq, ite_true, ite_false,
-    hs.rdi, st_sc hs (d := d) (by omega), Option.some.injEq, exists_eq_left']
+    hs.rdi, st_sc hs (d := d) (by omega_arith), Option.some.injEq, exists_eq_left']
   refine ⟨rfl, rfl, ⟨fun q hq => ?_, rfl, rfl⟩⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   simp only [RegUpd.gpr_setReg, hq, ite_false]
@@ -127,15 +127,15 @@ theorem saveSteps_ok {base : Addr} {Z d : Nat} (xs : Nat → XReg) :
       ⟨fun _ _ => rfl, rfl, rfl⟩⟩
   | k + 1, s, hs, hd, hx => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (saveSteps_ok xs k s hs (by omega) fun i j hi hj => hx i j hi (by omega))
+    refine WP.mono (saveSteps_ok xs k s hs (by omega_arith) fun i j hi hj => hx i j hi (by omega_arith))
       fun u ⟨x₁, o₁, m₁, k₁⟩ => ?_
     have hu := hs.of_keepRegs k₁ (by decide)
-    refine WP.mono (saveStep_ok hu (d := d + 8 * k) (by omega) (xs k)) fun t ⟨x₂, o₂, m₂, k₂⟩ => ?_
+    refine WP.mono (saveStep_ok hu (d := d + 8 * k) (by omega_arith) (xs k)) fun t ⟨x₂, o₂, m₂, k₂⟩ => ?_
     refine ⟨fun j hj => ?_, fun x hx' => ?_, m₂.trans m₁, k₁.trans k₂⟩
     · by_cases he : j = k
       · subst he; rw [x₂, m₁]
-      · rw [o₂ _ (hx j k (by omega) (by omega)), x₁ j (by omega)]
-    · rw [o₂ x (hx' k (by omega)), o₁ x fun j hj => hx' j (by omega)]
+      · rw [o₂ _ (hx j k (by omega_arith) (by omega_arith)), x₁ j (by omega_arith)]
+    · rw [o₂ x (hx' k (by omega_arith)), o₁ x fun j hj => hx' j (by omega_arith)]
 
 /-- `xs j` into words `0 … k - 1` from `d`. -/
 theorem restoreSteps_ok {base : Addr} {Z d : Nat} (xs : Nat → XReg) :
@@ -149,15 +149,15 @@ theorem restoreSteps_ok {base : Addr} {Z d : Nat} (xs : Nat → XReg) :
   | k + 1, s, hs, hd => by
     have hnw := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (restoreSteps_ok xs k s hs (by omega)) fun u ⟨e₁, O₁, x₁, k₁⟩ => ?_
+    refine WP.mono (restoreSteps_ok xs k s hs (by omega_arith)) fun u ⟨e₁, O₁, x₁, k₁⟩ => ?_
     have hu := hs.of_keepRegs k₁ (by decide)
-    refine WP.mono (restoreStep_ok hu (d := d + 8 * k) (by omega) (xs k)) fun t ⟨m₂, x₂, k₂⟩ => ?_
-    have O₂ : Outside base (d + 8 * k) 8 u.mem t.mem := by rw [m₂]; exact writeW_outside _ _ _ (by omega)
-    refine ⟨fun j hj => ?_, (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega)),
+    refine WP.mono (restoreStep_ok hu (d := d + 8 * k) (by omega_arith) (xs k)) fun t ⟨m₂, x₂, k₂⟩ => ?_
+    have O₂ : Outside base (d + 8 * k) 8 u.mem t.mem := by rw [m₂]; exact writeW_outside _ _ _ (by omega_arith)
+    refine ⟨fun j hj => ?_, (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith)),
       x₂.trans x₁, k₁.trans k₂⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂.word (by omega) (by omega), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [O₂.word (by omega_arith) (by omega_arith), e₁ j h]
+    · obtain rfl : j = k := by omega_arith
       rw [m₂, word_writeW_self, x₁]
 
 /-- Bytes whose word reads the same are the same. -/
@@ -195,18 +195,18 @@ theorem mulN_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 40
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   rw [WP.block_append_iff]
-  refine WP.mono (saveSteps_ok (d := fnMoN) keepX 9 s₁ hs₁ (by rw [fnMoN_eq]; omega) keepX_ne)
+  refine WP.mono (saveSteps_ok (d := fnMoN) keepX 9 s₁ hs₁ (by rw [fnMoN_eq]; omega_arith) keepX_ne)
     fun s₁' ⟨x₁', o₁', m₁', k₁'⟩ => ?_
   have hs₁' := hs₁.of_keepRegs k₁' (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (WP.vecKeep storeN_scal
-    (setConst_ok (n := 9) (o := fnMoN) (x := n521) hs₁' (by rw [fnMoN_eq]; omega) n521_lt))
+    (setConst_ok (n := 9) (o := fnMoN) (x := n521) hs₁' (by rw [fnMoN_eq]; omega_arith) n521_lt))
     fun s₂ ⟨⟨v₂, k₂, O₂⟩, x₂, _⟩ => ?_
   have hs₂ := hs₁'.of_keepRegs k₂ (by decide)
   have far : ∀ x, x + 72 ≤ 3520 → wordsVal s₂.mem base x 9 = wordsVal s.mem base x 9 := fun x hx => by
     rw [(show Unch base [(fnMoN, 8 * 9)] s₁'.mem s₂.mem from
       fun y hy => O₂ y (hy _ (List.mem_singleton_self _))).wordsVal (fun w hw => by
-      rw [List.mem_singleton.mp hw]; dsimp only; rw [fnMoN_eq]; omega) (by omega), m₁', hm₁]
+      rw [List.mem_singleton.mp hw]; dsimp only; rw [fnMoN_eq]; omega_arith) (by omega_arith), m₁', hm₁]
   have g₂ : ∀ r, r ≠ .rax → s₂.gpr r = s₁.gpr r := fun r hr => by
     rw [k₂.gpr r (by simpa using hr), k₁'.gpr r (by simpa using hr)]
   have hp₂ : PtrsAt [(.rbx, a), (.rbp, b), (.rsi, o)] s₂ := .three
@@ -214,9 +214,9 @@ theorem mulN_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 40
     (by rw [g₂ _ (by decide), bp₁, hcx, hs₂.rdi])
     (by rw [g₂ _ (by decide), si₁, hsi, hs.rdi, hs₂.rdi])
   have w₃ := mulF_ok hs₂ (modOkN hZ v₂) rfl (Or.inr rfl) (o := o) (a := a) (b := b)
-    (by simp only [fnModN]; omega) (by simp only [fnModN]; omega) (by simp only [fnModN]; omega)
-    (by simp only [fnModN, fnTmp]; omega) (by simp only [fnModN, fnTmp]; omega)
-    (by simp only [fnModN, fnTmp]; omega) (by simp only [fnModN, fnMoN, fnTmp]; omega)
+    (by simp only [fnModN]; omega_arith) (by simp only [fnModN]; omega_arith) (by simp only [fnModN]; omega_arith)
+    (by simp only [fnModN, fnTmp]; omega_arith) (by simp only [fnModN, fnTmp]; omega_arith)
+    (by simp only [fnModN, fnTmp]; omega_arith) (by simp only [fnModN, fnMoN, fnTmp]; omega_arith)
     (by simp only [fnModN]; rw [far b hb]; exact hB)
   rw [← mulF_reloc, ← reloc_unptr] at w₃
   rw [WP.block_append_iff]
@@ -224,14 +224,14 @@ theorem mulN_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 40
     fun s₃ ⟨⟨k₃, lt₃, e₃⟩, x₃, _⟩ => ?_
   simp only [show fnModN.n = 9 from rfl] at k₃ lt₃ e₃
   have hs₃ : Scr s₃ base Z := ⟨(k₃.gpr _ (by decide)).trans hs₂.rdi, k₃.wr ▸ hs₂.wr, hnw⟩
-  refine WP.mono (restoreSteps_ok (d := fnMoN) keepX 9 s₃ hs₃ (by rw [fnMoN_eq]; omega))
+  refine WP.mono (restoreSteps_ok (d := fnMoN) keepX 9 s₃ hs₃ (by rw [fnMoN_eq]; omega_arith))
     fun s₄ ⟨e₄, O₄, x₄, k₄⟩ => ?_
   have hm₄ : ∀ x, ofs base x < 3952 ∨ 4024 ≤ ofs base x → s₄.mem x = s₃.mem x := fun x hx =>
-    O₄ x (by rw [fnMoN_eq]; omega)
+    O₄ x (by rw [fnMoN_eq]; omega_arith)
   refine ⟨⟨fun r hr => ?_, by rw [k₄.rd, k₃.rd, k₂.rd, k₁'.rd, k₁.2.2.1],
       by rw [k₄.wr, k₃.wr, k₂.wr, k₁'.wr, k₁.2.2.2]⟩,
     fun x hx hx' => ?_, fun x hx => ?_, by rw [O₄.unch.wordsVal (fun w hw => by
-      rw [List.mem_singleton.mp hw]; dsimp only; rw [fnMoN_eq]; omega) (by omega)]; exact lt₃, ?_⟩
+      rw [List.mem_singleton.mp hw]; dsimp only; rw [fnMoN_eq]; omega_arith) (by omega_arith)]; exact lt₃, ?_⟩
   · simp only [List.mem_cons, not_or] at hr
     have hra : r ≠ .rax := fun h => hr.2.2 (h ▸ by decide)
     rw [k₄.gpr r (by simpa using hra), k₃.gpr r hr.2.2, g₂ r hra,
@@ -239,18 +239,18 @@ theorem mulN_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 40
   · by_cases hin : 3952 ≤ ofs base x ∧ ofs base x < 4024
     · -- A byte of the words restored.
       have hp : ∃ i < 9, ∃ j < 8, x = off base (fnMoN + 8 * i) + BitVec.ofNat 64 j := by
-        refine ⟨(ofs base x - 3952) / 8, by omega, (ofs base x - 3952) % 8, Nat.mod_lt _ (by decide), ?_⟩
+        refine ⟨(ofs base x - 3952) / 8, by omega_arith, (ofs base x - 3952) % 8, Nat.mod_lt _ (by decide), ?_⟩
         rw [off, Offset.add_add, fnMoN_eq, show 3952 + 8 * ((ofs base x - 3952) / 8) + (ofs base x - 3952) % 8 =
-          ofs base x by omega, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+          ofs base x by omega_arith, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
       obtain ⟨i, hi, j, hj, rfl⟩ := hp
       have hw : word s₄.mem base (fnMoN + 8 * i) = word s.mem base (fnMoN + 8 * i) := by
         rw [e₄ i hi, x₃, x₂, x₁' i hi, qword_lo, hm₁]
       exact byte_of_word hw hj
-    · rw [hm₄ x (by omega), k₃.mem x hx (by simp only [fnModN, fnTmp] at hx' ⊢; omega),
-        O₂ x (by rw [fnMoN_eq]; omega), m₁', hm₁]
+    · rw [hm₄ x (by omega_arith), k₃.mem x hx (by simp only [fnModN, fnTmp] at hx' ⊢; omega_arith),
+        O₂ x (by rw [fnMoN_eq]; omega_arith), m₁', hm₁]
   · rw [x₄, x₃, x₂, o₁' x hx, xs₁]
   · rw [O₄.unch.wordsVal (fun w hw => by
-      rw [List.mem_singleton.mp hw]; dsimp only; rw [fnMoN_eq]; omega) (by omega), e₃, far a ha, far b hb]
+      rw [List.mem_singleton.mp hw]; dsimp only; rw [fnMoN_eq]; omega_arith) (by omega_arith), e₃, far a ha, far b hb]
 
 /-! ## The function -/
 

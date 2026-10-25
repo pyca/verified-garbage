@@ -42,14 +42,7 @@ theorem witnessMaskStore_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
   have readHeader := ready.workspace.read (off := 72) (by omega)
   have read := ready.workspace.read (off := arrAt w 1 + 4 * j) (by omega)
   have write := ready.workspace.write (off := arrAt w 1 + 4 * j) (by omega)
-  refine withRest [.r0, .r3, .r4] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.witnessMaskStore : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r3, .r4] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.witnessMaskStore
   ffrun [BitVec.add_zero, ready.stackRead, ready.saved, addr72, readHeader, pointer,
     index, shifted, address, read, write]

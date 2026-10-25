@@ -45,14 +45,14 @@ and zero: word `4h + e` of `a`. -/
 theorem dword_unpk0 (a : BitVec 128) {h : Nat} (hh : h < 2) {e : Nat} (he : e < 4) :
     (dword (XBinOp.eval (if h = 0 then .punpcklwd else .punpckhwd) a 0) e).toNat = (word a (4 * h + e)).toNat := by
   rw [dword_eq_words _ he]
-  rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl
-  · simp (disch := omega) only [word_punpcklwd, Nat.mul_mod_right, Nat.add_mod, Nat.mul_zero, Nat.zero_add,
+  rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl
+  · simp (disch := omega_arith) only [word_punpcklwd, Nat.mul_mod_right, Nat.add_mod, Nat.mul_zero, Nat.zero_add,
       Nat.one_mod, ↓reduceIte]
-    simp only [Nat.one_ne_zero, ite_false, word_zero128, show 2 * e / 2 = e by omega,
+    simp only [Nat.one_ne_zero, ite_false, word_zero128, show 2 * e / 2 = e by omega_arith,
       show BitVec.toNat (0 : BitVec 16) = 0 from rfl, Nat.mul_zero, Nat.add_zero]
-  · simp (disch := omega) only [Nat.one_ne_zero, word_punpckhwd, Nat.mul_mod_right, Nat.add_mod, Nat.zero_add,
+  · simp (disch := omega_arith) only [Nat.one_ne_zero, word_punpckhwd, Nat.mul_mod_right, Nat.add_mod, Nat.zero_add,
       Nat.one_mod, ↓reduceIte]
-    simp only [word_zero128, show 4 + 2 * e / 2 = 4 * 1 + e by omega,
+    simp only [word_zero128, show 4 + 2 * e / 2 = 4 * 1 + e by omega_arith,
       show BitVec.toNat (0 : BitVec 16) = 0 from rfl, Nat.mul_zero, Nat.add_zero]
 
 /-- In a lane: a word of `w` unpacked with `xmm14` (`op`), added to `xmm0` with
@@ -133,23 +133,23 @@ theorem finQ_step {tP : Addr} {m₀ : Mem} {E F : Poly}
       u'.wr = u.wr ∧ u'.mxcsr = u.mxcsr ∧ ∀ r, r ∉ [XReg.xmm0, .xmm1] → ∀ l < 2, u'.lane r l = u.lane r l := by
   refine WP.mono (finQ_ok hw0 hl hq (by rw [hrdi]; exact hin))
     fun u' ⟨hm, hd, hg, hrd, hwr, hmx, hlane⟩ => ⟨fun c hc => ?_, by rw [hm, hrdi], hg, hrd, hwr, hmx, hlane⟩
-  rw [hm, hrdi, coeffAt_write256 _ _ (by omega) _ hc]
+  rw [hm, hrdi, coeffAt_write256 _ _ (by omega_arith) _ hc]
   split
   · rename_i hr
     obtain ⟨l, e, hl', he, rfl⟩ : ∃ l e, l < 2 ∧ e < 4 ∧ c = 8 * j + 4 * l + e :=
-      ⟨(c - 8 * j) / 4, (c - 8 * j) % 4, by omega, by omega, by omega⟩
-    refine ⟨fun _ => ?_, fun h' => absurd h' (by omega)⟩
-    have hrest := (hM _ hc).2 (by omega)
+      ⟨(c - 8 * j) / 4, (c - 8 * j) % 4, by omega_arith, by omega_arith, by omega_arith⟩
+    refine ⟨fun _ => ?_, fun h' => absurd h' (by omega_arith)⟩
+    have hrest := (hM _ hc).2 (by omega_arith)
     have ha : (dword (u.mem.readW (u.gpr .rdi + BitVec.ofNat 64 off + BitVec.ofNat 64 (16 * l)) 128) e).toNat =
         (coeffAt m₀ tP (8 * j + 4 * l + e)).toNat := by
       rw [hrdi, YAddSub.lane_coeff _ _ _ _ _ he, hrest]
     have hb : (dword (XBinOp.eval xop (u.lane w l) (u.lane .xmm14 l)) e).toNat = (F[8 * j + 4 * l + e]!).val := by
       rw [hz l hl', hop _ e he, hwv l hl' e he]
-    rw [show 8 * (4 * (8 * j + 4 * l + e - 8 * j)) = 8 * (16 * l + 4 * e) by omega, extract_ymm _ _ hl' he,
+    rw [show 8 * (4 * (8 * j + 4 * l + e - 8 * j)) = 8 * (16 * l + 4 * e) by omega_arith, extract_ymm _ _ hl' he,
       hd l hl' e he, add_lane (by rw [ha]; exact (hE _ hc).1) (by rw [hb]; exact (F[8 * j + 4 * l + e]!).isLt), ha, hb,
       add_get _ _ (by rw [n_eq]; exact hc), val_add, (hE _ hc).2]
   · rename_i hr
-    exact ⟨fun h' => (hM c hc).1 (by omega), fun h' => (hM c hc).2 (by omega)⟩
+    exact ⟨fun h' => (hM c hc).1 (by omega_arith), fun h' => (hM c hc).2 (by omega_arith)⟩
 
 /-- `vpunpcklwd ymm10, ymm8, ymm9` and `vpunpckhwd ymm11, ymm8, ymm9`, in a lane. -/
 theorem unpk2_ok (t : State) :
@@ -175,26 +175,26 @@ theorem wv_of_w {F : Poly} {i : Nat} {A B : BitVec 128} {l : Nat} (hl : l < 2)
     (word (if q < 2 then XBinOp.eval .punpcklwd A B else XBinOp.eval .punpckhwd A B) (4 * (q % 2) + e)).toNat =
       (F[8 * (4 * i + q) + 4 * l + e]!).val := by
   have hs := srcF_ok q hq l hl e he
-  have hidx : 32 * i + 16 * (e % 2) + 8 * l + (2 * q + e / 2) = 32 * i + srcF q l e := by unfold srcF; omega
+  have hidx : 32 * i + 16 * (e % 2) + 8 * l + (2 * q + e / 2) = 32 * i + srcF q l e := by unfold srcF; omega_arith
   have hacc : accIdx (32 * i + srcF q l e) = 8 * (4 * i + q) + 4 * l + e := by
-    rw [accIdx_add32 hs.1, hs.2]; omega
+    rw [accIdx_add32 hs.1, hs.2]; omega_arith
   by_cases hq2 : q < 2
   · rw [ifp hq2]
-    simp (disch := omega) only [word_punpcklwd]
+    simp (disch := omega_arith) only [word_punpcklwd]
     have h1 : (if (4 * (q % 2) + e) % 2 = 0 then word A ((4 * (q % 2) + e) / 2) else word B ((4 * (q % 2) + e) / 2)) =
         word (if e % 2 = 0 then A else B) (2 * q + e / 2) := by
-      rcases (by omega : e % 2 = 0 ∨ e % 2 = 1) with h | h
-      · rw [ifp (by omega), ifp h]; exact congrArg _ (by omega)
-      · rw [ifn (by omega), ifn (by omega)]; exact congrArg _ (by omega)
-    rw [h1, hw _ (by omega) _ (by omega), hidx, hacc]
+      rcases (by omega_arith : e % 2 = 0 ∨ e % 2 = 1) with h | h
+      · rw [ifp (by omega_arith), ifp h]; exact congrArg _ (by omega_arith)
+      · rw [ifn (by omega_arith), ifn (by omega_arith)]; exact congrArg _ (by omega_arith)
+    rw [h1, hw _ (by omega_arith) _ (by omega_arith), hidx, hacc]
   · rw [ifn hq2]
-    simp (disch := omega) only [word_punpckhwd]
+    simp (disch := omega_arith) only [word_punpckhwd]
     have h1 : (if (4 * (q % 2) + e) % 2 = 0 then word A (4 + (4 * (q % 2) + e) / 2)
         else word B (4 + (4 * (q % 2) + e) / 2)) = word (if e % 2 = 0 then A else B) (2 * q + e / 2) := by
-      rcases (by omega : e % 2 = 0 ∨ e % 2 = 1) with h | h
-      · rw [ifp (by omega), ifp h]; exact congrArg _ (by omega)
-      · rw [ifn (by omega), ifn (by omega)]; exact congrArg _ (by omega)
-    rw [h1, hw _ (by omega) _ (by omega), hidx, hacc]
+      rcases (by omega_arith : e % 2 = 0 ∨ e % 2 = 1) with h | h
+      · rw [ifp (by omega_arith), ifp h]; exact congrArg _ (by omega_arith)
+      · rw [ifn (by omega_arith), ifn (by omega_arith)]; exact congrArg _ (by omega_arith)
+    rw [h1, hw _ (by omega_arith) _ (by omega_arith), hidx, hacc]
 
 /-- Word `4(q mod 2) + e` of lane `l` of `L` (`q < 2`) or `H`, from the two
 loads of iteration `i`: the accumulator's word of coefficient
@@ -207,15 +207,15 @@ theorem wv_of {m : Mem} {aP : Addr} {F : Poly} (hF : Acc16 m aP F) {i : Nat} (hi
     (word (if q < 2 then XBinOp.eval .punpcklwd A B else XBinOp.eval .punpckhwd A B) (4 * (q % 2) + e)).toNat =
       (F[8 * (4 * i + q) + 4 * l + e]!).val :=
   wv_of_w hl (fun h hh k hk => by
-    rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl
+    rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl
     · rw [ifp rfl, hA, show (BitVec.ofNat 64 0 : BitVec 64) = BitVec.ofNat 64 (32 * 0) from rfl,
-        acc_word _ _ _ _ _ hk]; exact hF _ (by omega)
+        acc_word _ _ _ _ _ hk]; exact hF _ (by omega_arith)
     · rw [ifn (by decide), hB, show (BitVec.ofNat 64 32 : BitVec 64) = BitVec.ofNat 64 (32 * 1) from rfl,
-        acc_word _ _ _ _ _ hk]; exact hF _ (by omega)) hq he
+        acc_word _ _ _ _ _ hk]; exact hF _ (by omega_arith)) hq he
 
 theorem rdi_q (p : Addr) (i q off : Nat) (h : off = 32 * q) :
     coeffAddr p (32 * i) + BitVec.ofNat 64 off = coeffAddr p (8 * (4 * i + q)) := by
-  subst h; rw [show 32 * q = 4 * (8 * q) by omega, coeffAddr_off]; exact congrArg _ (by omega)
+  subst h; rw [show 32 * q = 4 * (8 * q) by omega_arith, coeffAddr_off]; exact congrArg _ (by omega_arith)
 
 /-- After `i` iterations, with `F` the accumulator. -/
 structure Inv (s₀ : State) (F : Poly) (i : Nat) (s : State) : Prop where
@@ -246,10 +246,10 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ F i s) :
     accY.frame hI.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact hp.2.2.1.symm) hF
   have r0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 0) 32 :=
     ⟨_, hrA, by rw [hI.rsi, wAddr, BitVec.add_assoc, ← BitVec.ofNat_add]
-                exact Offset.contains_base _ (by omega) (by omega)⟩
+                exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have r1 : InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 32) 32 :=
     ⟨_, hrA, by rw [hI.rsi, wAddr, BitVec.add_assoc, ← BitVec.ofNat_add]
-                exact Offset.contains_base _ (by omega) (by omega)⟩
+                exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   rw [show finAccBodyY ++ ([.alu .sub .rcx (.imm 1)] : List Instr) =
       [.vmovdquLoad .l256 .xmm8 (at_ .rsi 0)] ++ ([.vmovdquLoad .l256 .xmm9 (at_ .rsi 32)] ++
         ([yb .vpunpcklwd .xmm10 .xmm8 .xmm9, yb .vpunpckhwd .xmm11 .xmm8 .xmm9] ++
@@ -289,7 +289,7 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ F i s) :
   have hM3 : MemOk s₀.mem (s₀.gpr .rdi) (polyAt s₀.mem (s₀.gpr .rdi)) F (4 * i + 0) s3.mem := by
     rw [o13.mem]; exact hI.mem
   have inT : ∀ q < 4, InRegions s₀.wr (coeffAddr (s₀.gpr .rdi) (8 * (4 * i + q))) 32 := fun q hq => by
-    rw [hp.2.1]; exact YAddSub.in32 (List.mem_singleton_self _) (by omega)
+    rw [hp.2.1]; exact YAddSub.in32 (List.mem_singleton_self _) (by omega_arith)
   have hop0 : ∀ a : BitVec 128, ∀ e < 4, (dword (XBinOp.eval .punpcklwd a 0) e).toNat = (word a (4 * 0 + e)).toNat :=
     fun a e he => by have := dword_unpk0 a (h := 0) (by decide) he; rwa [ifp rfl] at this
   have hop1 : ∀ a : BitVec 128, ∀ e < 4, (dword (XBinOp.eval .punpckhwd a 0) e).toNat = (word a (4 * 1 + e)).toNat :=
@@ -297,13 +297,13 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ F i s) :
   -- coefficients `32i, …, 32i + 7`
   rw [WP.block_append_iff]
   refine WP.mono (finQ_step (hE hp) (w := .xmm10) (by decide) (xop := .punpcklwd) (by decide +kernel) hop0
-    (j := 4 * i + 0) (by omega) (by rw [hrdi3]; exact rdi_q _ _ _ _ rfl) hq3 hz3
+    (j := 4 * i + 0) (by omega_arith) (by rw [hrdi3]; exact rdi_q _ _ _ _ rfl) hq3 hz3
     (fun l hl e he => by have := hLH 0 (by decide) l hl e he; rwa [ifp (by decide)] at this)
     (by rw [hw3]; exact inT 0 (by decide)) hM3) fun s4 ⟨M4, m4, g4, rd4, wr4, x4, ln4⟩ => ?_
   -- `32i + 8, …`
   rw [WP.block_append_iff]
   refine WP.mono (finQ_step (hE hp) (w := .xmm10) (by decide) (xop := .punpckhwd) (by decide +kernel) hop1
-    (j := 4 * i + 1) (by omega) (by rw [g4, hrdi3]; exact rdi_q _ _ _ _ rfl)
+    (j := 4 * i + 1) (by omega_arith) (by rw [g4, hrdi3]; exact rdi_q _ _ _ _ rfl)
     (fun l hl => by rw [ln4 _ (by decide) l hl]; exact hq3 l hl)
     (fun l hl => by rw [ln4 _ (by decide) l hl]; exact hz3 l hl)
     (fun l hl e he => by
@@ -312,7 +312,7 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ F i s) :
   -- `32i + 16, …`
   rw [WP.block_append_iff]
   refine WP.mono (finQ_step (hE hp) (w := .xmm11) (by decide) (xop := .punpcklwd) (by decide +kernel) hop0
-    (j := 4 * i + 2) (by omega) (by rw [g5, g4, hrdi3]; exact rdi_q _ _ _ _ rfl)
+    (j := 4 * i + 2) (by omega_arith) (by rw [g5, g4, hrdi3]; exact rdi_q _ _ _ _ rfl)
     (fun l hl => by rw [ln5 _ (by decide) l hl, ln4 _ (by decide) l hl]; exact hq3 l hl)
     (fun l hl => by rw [ln5 _ (by decide) l hl, ln4 _ (by decide) l hl]; exact hz3 l hl)
     (fun l hl e he => by
@@ -322,7 +322,7 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ F i s) :
   -- `32i + 24, …`
   rw [WP.block_append_iff]
   refine WP.mono (finQ_step (hE hp) (w := .xmm11) (by decide) (xop := .punpckhwd) (by decide +kernel) hop1
-    (j := 4 * i + 3) (by omega) (by rw [g6, g5, g4, hrdi3]; exact rdi_q _ _ _ _ rfl)
+    (j := 4 * i + 3) (by omega_arith) (by rw [g6, g5, g4, hrdi3]; exact rdi_q _ _ _ _ rfl)
     (fun l hl => by rw [ln6 _ (by decide) l hl, ln5 _ (by decide) l hl, ln4 _ (by decide) l hl]; exact hq3 l hl)
     (fun l hl => by rw [ln6 _ (by decide) l hl, ln5 _ (by decide) l hl, ln4 _ (by decide) l hl]; exact hz3 l hl)
     (fun l hl e he => by
@@ -335,7 +335,7 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ F i s) :
   have sx64 : BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 (2 * 32) := by decide
   have sx128 : BitVec.signExtend 64 (128 : BitVec 32) = BitVec.ofNat 64 (4 * 32) := by decide
   have cT : ∀ q < 4, (pR (s₀.gpr .rdi)).Contains (coeffAddr (s₀.gpr .rdi) (8 * (4 * i + q))) 32 := fun q hq =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   vrunm [sx64, sx128]
   refine ⟨⟨?_, ?_, ?_, ?_, fun l hl => ?_, fun l hl => ?_, ?_, ?_⟩, ?_, ?_⟩
   · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_true, ite_false, reduceCtorEq]
@@ -352,7 +352,7 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ F i s) :
       (List.mem_singleton_self _) _ (cT 1 (by decide))).writeW (List.mem_singleton_self _) _
       (cT 2 (by decide))).writeW (List.mem_singleton_self _) _ (cT 3 (by decide))
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
-    rw [show 4 * (i + 1) = 4 * i + 3 + 1 by omega]; exact M7
+    rw [show 4 * (i + 1) = 4 * i + 3 + 1 by omega_arith]; exact M7
   · rw [g37]
   · rw [g37]
 
@@ -389,7 +389,7 @@ theorem finAccY_correct (s₀ : State) (hs : (finK accY).pre s₀) :
           rw [show u.lane .xmm14 l = w2.lane .xmm14 l by simp only [State.lane]; rw [o.xmm, hy],
             ← State.proj_xmm]; exact Z2 l hl,
         by rw [o.mem, o2.mem, m1]; exact Frame.refl _ _,
-        fun c _ => ⟨fun h => absurd h (by omega), fun _ => by rw [o.mem, o2.mem, m1]⟩⟩)
+        fun c _ => ⟨fun h => absurd h (by omega_arith), fun _ => by rw [o.mem, o2.mem, m1]⟩⟩)
       fun i hi u hI => FinY.step hs hF0 hi hI) fun u hI => ?_)
     refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem) (by vrunm; rfl) fun u' hm' => ?_
     rw [hm']
@@ -399,7 +399,7 @@ theorem finAccY_correct (s₀ : State) (hs : (finK accY).pre s₀) :
     fun F hF => ?_⟩
   · simpa using hs.2.2.2.1
   · rw [acc16_unique hF hF0]
-    exact polyIs_of_toNat fun c hc => (hM c (by rw [n_eq] at hc; exact hc)).1 (by rw [n_eq] at hc; omega)
+    exact polyIs_of_toNat fun c hc => (hM c (by rw [n_eq] at hc; exact hc)).1 (by rw [n_eq] at hc; omega_arith)
 
 
 end VG.Proof.MlKem.X86_64

@@ -41,11 +41,11 @@ open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 /-- The registers the operations with the accumulator in memory use are
 among `clob n`. -/
 theorem wide_clob {n : Nat} (hn : 0 < n) : ∀ r ∈ [Reg.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10], r ∈ clob n := by
-  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega_arith⟩
   intro r hr
   refine mem_clob ?_
   simp only [acc, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-  rw [show n' + 1 + 2 = n' + 3 by omega]
+  rw [show n' + 1 + 2 = n' + 3 by omega_arith]
   simp only [List.take_succ_cons, List.mem_cons]
   rcases hr with h | h | h | h | h | h | h <;> simp [h]
 
@@ -81,11 +81,11 @@ theorem mulW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have hm₂ : s₂.mem = s₁.mem := k₂.2.1
   have hmo₂ : wordsVal s₂.mem base M.mo M.n = m := by
-    rw [hm₂, O₁.wordsVal hsep (by omega), hM.val]
+    rw [hm₂, O₁.wordsVal hsep (by omega_arith), hM.val]
   have hB₂ : wordsVal s₂.mem base b M.n = wordsVal s.mem base b M.n := by
-    rw [hm₂, O₁.wordsVal hbT (by omega)]
+    rw [hm₂, O₁.wordsVal hbT (by omega_arith)]
   have hA₂ : wordsVal s₂.mem base a M.n = wordsVal s.mem base a M.n := by
-    rw [hm₂, O₁.wordsVal haT (by omega)]
+    rw [hm₂, O₁.wordsVal haT (by omega_arith)]
   have h0 : accW s₂ base M = 0 := by
     simp only [accW, hm₂, z₁, z₂ .r9 (by simp), z₂ .r10 (by simp)]
     rfl
@@ -96,7 +96,7 @@ theorem mulW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   rw [hA₂, hB₂] at eU
   have hT' : accW s₃ base M = wordsVal s₃.mem base M.tmp M.n + 2 ^ (64 * M.n) * (s₃.gpr .r9).toNat := by
     simp only [accW, h10]; rfl
-  have hmo₃ : wordsVal s₃.mem base M.mo M.n = m := by rw [O₃.wordsVal hsep (by omega), hmo₂]
+  have hmo₃ : wordsVal s₃.mem base M.mo M.n = m := by rw [O₃.wordsVal hsep (by omega_arith), hmo₂]
   refine WP.mono (csubW_ok hs₃ hn hmo htmp ho hoT hoM hmo₃ (by rw [← hT']; exact hT))
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   rw [← hT'] at e₄
@@ -131,7 +131,7 @@ theorem addW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (chainWAdd_ok M.n hs₁ (op := .add) (c := false) (.inl ⟨rfl, rfl⟩) (.inl hn)
-    (t := M.tmp) (a := a) (b := b) htmp ha hb (by unfold Near; omega) (by unfold Near; omega))
+    (t := M.tmp) (a := a) (b := b) htmp ha hb (by unfold Near; omega_arith) (by unfold Near; omega_arith))
     fun s₂ ⟨c, c₂, e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [WP.block_append_iff]
@@ -143,7 +143,7 @@ theorem addW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hV : wordsVal s₃.mem base M.tmp M.n + 2 ^ (64 * M.n) * (s₃.gpr .r9).toNat =
       wordsVal s.mem base a M.n + wordsVal s.mem base b M.n := by rw [k₃.2.1, e₃, e₂]
   have hmo₃ : wordsVal s₃.mem base M.mo M.n = m := by
-    rw [k₃.2.1, O₂.wordsVal hM.sep (by omega), hm₁, hM.val]
+    rw [k₃.2.1, O₂.wordsVal hM.sep (by omega_arith), hm₁, hM.val]
   refine WP.mono (csubW_ok hs₃ hn hM.mo htmp ho hoT hoM hmo₃ (by rw [hV]; exact hAB))
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   refine ⟨⟨fun r hr => ?_, ?_, ?_, fun x hx hx' => ?_⟩, by rw [e₄, hV]⟩
@@ -172,23 +172,23 @@ theorem subW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hmX : m < 2 ^ (64 * M.n) := hM.val ▸ wordsVal_lt _ _ _ _
   rw [subW, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (chainWSub_ok M.n hs (op := .sub) (c := false) (.inl ⟨rfl, rfl⟩) (.inl hn)
-    (t := M.tmp) (a := a) (b := b) htmp ha hb (by unfold Near; omega) (by unfold Near; omega))
+    (t := M.tmp) (a := a) (b := b) htmp ha hb (by unfold Near; omega_arith) (by unfold Near; omega_arith))
     fun s₁ ⟨c, c₁, e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (sbbMask_ok s₁ c₁) fun s₂ ⟨x₂, k₂⟩ => ?_
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (masked_ok M.n c hs₂ (mo := M.mo) (tmp := o) hM.mo ho (by omega) x₂)
+  refine WP.mono (masked_ok M.n c hs₂ (mo := M.mo) (tmp := o) hM.mo ho (by omega_arith) x₂)
     fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   refine WP.mono (chainWAdd_ok M.n hs₃ (op := .add) (c := false) (.inl ⟨rfl, rfl⟩) (.inl hn)
-    (t := o) (a := M.tmp) (b := o) ho htmp ho (by unfold Near; omega) (by unfold Near; omega))
+    (t := o) (a := M.tmp) (b := o) ho htmp ho (by unfold Near; omega_arith) (by unfold Near; omega_arith))
     fun s₄ ⟨c', _, e₄, k₄, O₄⟩ => ?_
   have hmo₂ : wordsVal s₂.mem base M.mo M.n = m := by
-    rw [k₂.2.1, O₁.wordsVal hM.sep (by omega), hM.val]
+    rw [k₂.2.1, O₁.wordsVal hM.sep (by omega_arith), hM.val]
   have hD₃ : wordsVal s₃.mem base M.tmp M.n = wordsVal s₁.mem base M.tmp M.n := by
-    rw [O₃.wordsVal (by omega) (by omega), k₂.2.1]
+    rw [O₃.wordsVal (by omega_arith) (by omega_arith), k₂.2.1]
   rw [e₃, hD₃, hmo₂] at e₄
   simp only [Bool.toNat_false, Nat.add_zero] at e₁ e₄
   refine ⟨⟨fun r hr => ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_⟩
@@ -204,13 +204,13 @@ theorem subW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     cases c <;> cases c' <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero,
       Nat.mul_one, Nat.add_zero, Bool.false_eq_true, ite_false, ite_true] at e₁ e₄
     · rw [show wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n =
-        (wordsVal s.mem base a M.n - wordsVal s.mem base b M.n) + m by omega, Nat.add_mod_right,
-        Nat.mod_eq_of_lt (by omega)]
-      omega
-    · omega
-    · omega
-    · rw [Nat.mod_eq_of_lt (by omega)]
-      omega
+        (wordsVal s.mem base a M.n - wordsVal s.mem base b M.n) + m by omega_arith, Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
+    · omega_arith
+    · omega_arith
+    · rw [Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
 
 /-! ## The operations -/
 

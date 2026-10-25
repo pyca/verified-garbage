@@ -37,7 +37,7 @@ theorem blockLoad_run (u : State) (hr : InRegions (u.rd ++ u.wr) (u.gpr .r4) 8) 
         Keep [.r6, .r7, .r8, .r9, .r11] u t := by
   refine WP.mono (WP.keep [.r6, .r7, .r8, .r9, .r11] (c := .block blockLoad) (Q := fun t =>
       Holds (Spec.Rc2.decodeBlock (Spec.Rc2.blockAt u.mem (u.gpr .r4))) t ∧ t.mem = u.mem) ?_
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, blockLoad, dstOf]) rfl) fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
+    (by rfl) rfl) fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
   unfold blockLoad
   rrun [hr]
   intro i hi
@@ -70,7 +70,7 @@ theorem blockStore_run (u : State) {v : Spec.Rc2.State} (H : Holds v u) (hw : In
       t.mem = u.mem.writeW (u.gpr .r4) (pack v) ∧ Keep [.r11, .r12] u t := by
   refine WP.mono (WP.keep [.r11, .r12] (c := .block blockStore) (Q := fun t =>
       t.mem = u.mem.writeW (u.gpr .r4) (pack v)) ?_
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, blockStore, dstOf]) rfl) fun t ⟨a, c⟩ => ⟨a, c⟩
+    (by rfl) rfl) fun t ⟨a, c⟩ => ⟨a, c⟩
   have h0 := H 0 (by decide)
   have h1 := H 1 (by decide)
   have h2 := H 2 (by decide)

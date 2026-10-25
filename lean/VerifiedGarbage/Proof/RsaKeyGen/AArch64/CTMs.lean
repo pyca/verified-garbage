@@ -108,9 +108,9 @@ theorem setWord_ct {α : Type} {Φ : α → State → Prop} {o : Nat} (ho : o < 
       · exact h7) ht')
   intro a s h
   obtain ⟨⟨mi, hg, hZ⟩, h12, h13⟩ := hΦ a s h
-  have sa : sArr o < 32 := by unfold sArr; omega
+  have sa : sArr o < 32 := by unfold sArr; omega_arith
   refine WP.mono (WP.keep [.x7, .x8] (Q := fun t => t.gpr .x8 = off (B a) (slot (w a) o) ∧ t.gpr .x7 = 0)
-    (by brun [hg.x0, hdr_enc sa, hg.scr.ld (show 8 * sArr o + 8 ≤ Z a by have := hdr_lt_slot (w a) 8 sa; omega),
+    (by brun [hg.x0, hdr_enc sa, hg.scr.ld (show 8 * sArr o + 8 ≤ Z a by have := hdr_lt_slot (w a) 8 sa; omega_arith),
       hg.hdr.harr o ho]) rfl rfl rfl) fun t ⟨⟨h8, h7⟩, k⟩ =>
     ⟨h8, (k.gpr .x12 (by decide)).trans h12, (k.gpr .x13 (by decide)).trans h13, h7⟩
 
@@ -144,9 +144,9 @@ theorem MSc.frm {L : WsP} {s t : State} (h : MSc L s) {rs : List (Nat × Nat)} (
   have hZ := hw.hZ
   have hw1 := hw.w1
   have eN := hw.sl (show aN < 16 by decide)
-  refine ⟨hw.congr' hf hm k hr, h4, h64, N, by rw [hf.wv_eq dN (by omega)]; exact hn, hsh, ?_⟩
-  rw [hf.word_eq (d := slot L.w aN) (fun r hr => by have := dN r hr; omega) (by omega),
-    hf.word_eq (d := 8 * sMinv) dI (by simp only [sMinv] at *; have := hw.h256; omega)]
+  refine ⟨hw.congr' hf hm k hr, h4, h64, N, by rw [hf.wv_eq dN (by omega_arith)]; exact hn, hsh, ?_⟩
+  rw [hf.word_eq (d := slot L.w aN) (fun r hr => by have := dN r hr; omega_arith) (by omega_arith),
+    hf.word_eq (d := 8 * sMinv) dI (by simp only [sMinv] at *; have := hw.h256; omega_arith)]
   exact hinv
 
 /-- `MSb` survives changes away from `c`, `-c⁻¹` and the number 1. -/
@@ -158,13 +158,13 @@ theorem MSb.frm {L : WsP} {s t : State} (h : MSb L s) {rs : List (Nat × Nat)} (
   have hnw := h.1.1.scr.nowrap
   have hZ := h.1.1.hZ
   have eO := h.1.1.sl (show aOne < 16 by decide)
-  exact ⟨h.1.frm hf hm k hr dN dI, by rw [hf.wv_eq dO (by omega)]; exact h.2⟩
+  exact ⟨h.1.frm hf hm k hr dN dI, by rw [hf.wv_eq dO (by omega_arith)]; exact h.2⟩
 
 /-- Disjointness from each of a list of literal ranges of the working space. -/
 tactic_template "msb_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, r2Ranges, slot,
     hdrBytes, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, sFn, sMinv]
-  and_intros <;> omega))
+  and_intros <;> omega_arith))
 
 /-- Ranges of literal arrays and header slots are `KMut`. -/
 tactic_template "msb_mut" : tactic => `(tactic| first | hdr_disj | (
@@ -182,18 +182,18 @@ theorem msH_ok {L : WsP} {s : State} (h : MS0 L s) :
   have hw1 := hw.w1
   have hodd0 : (word s.mem L.B (slot L.w aN)).toNat % 2 = 1 := by
     have e := wv_add s.mem L.B (slot L.w aN) 1 (L.w - 1)
-    rw [show 1 + (L.w - 1) = L.w by omega, hn] at e
+    rw [show 1 + (L.w - 1) = L.w by omega_arith, hn] at e
     simp only [wv, Nat.mul_zero, Nat.add_zero, Nat.zero_add] at e
-    omega
+    omega_arith
   refine WP.mono (msHead_ok hw hodd0) fun t ⟨⟨hinv, hm, h12, h9, h13⟩, k⟩ => ?_
   have o₁ : Outside L.B (8 * sMinv) 8 s.mem t.mem := by
-    rw [hm]; exact writeW_outside _ _ _ (by simp only [sMinv]; omega)
+    rw [hm]; exact writeW_outside _ _ _ (by simp only [sMinv]; omega_arith)
   have f₁ : Frm L.B [(8 * sMinv, 8)] s.mem t.mem := Frm.of_outside o₁ (List.mem_singleton_self _)
   have hw₁ : word t.mem L.B (slot L.w aN) = word s.mem L.B (slot L.w aN) :=
-    o₁.word (by simp only [slot, hdrBytes, aN, sMinv]; omega) (by simp only [slot, hdrBytes, aN]; omega)
+    o₁.word (by simp only [slot, hdrBytes, aN, sMinv]; omega_arith) (by simp only [slot, hdrBytes, aN]; omega_arith)
   refine ⟨⟨hw.congr' f₁ (by msb_mut) k (by decide), h4, h64, N, ?_, hsh, by rw [hw₁]; exact hinv⟩, h12, h9,
     h13⟩
-  rw [o₁.wv (by simp only [slot, hdrBytes, aN, sMinv]; omega) (by simp only [slot, hdrBytes, aN]; omega)]; exact hn
+  rw [o₁.wv (by simp only [slot, hdrBytes, aN, sMinv]; omega_arith) (by simp only [slot, hdrBytes, aN]; omega_arith)]; exact hn
 
 theorem msOne_ok {L : WsP} {s : State} (h : MSa L s) : WP isa (setWord aOne) s (MSb L) := by
   obtain ⟨hc, h12, h9, h13⟩ := h
@@ -203,8 +203,8 @@ theorem msOne_ok {L : WsP} {s : State} (h : MSa L s) : WP isa (setWord aOne) s (
   have hw1 := hw.w1
   have hw2 := hw.w2
   obtain ⟨g, hZ8⟩ := hw.good
-  refine WP.mono (setWord_ok g.scr g.x0 g.hdr hZ8 h12 (by omega) (o := aOne) (by decide) (i := 0)
-    (by omega) h13) fun t ⟨hv, o, k⟩ => ?_
+  refine WP.mono (setWord_ok g.scr g.x0 g.hdr hZ8 h12 (by omega_arith) (o := aOne) (by decide) (i := 0)
+    (by omega_arith) h13) fun t ⟨hv, o, k⟩ => ?_
   rw [h9] at hv
   have f : Frm L.B [(slot L.w aOne, 8 * (L.w + 2))] s.mem t.mem := Frm.of_outside o (List.mem_singleton_self _)
   exact ⟨hc.frm f (by msb_mut) k (by decide) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl), hv⟩
@@ -213,10 +213,10 @@ theorem msb_r2pre {L : WsP} {s : State} (h : MSb L s) : Up R2Pre L s := by
   obtain ⟨⟨hw, h4, h64, N, hn, hsh, hinv⟩, -⟩ := h
   obtain ⟨hodd, hlo, hhi⟩ := hsh
   have htop : 2 ^ (64 * L.w - 1) ≤ N := by
-    have : 2 ^ (64 * L.w - 1) = 2 ^ (64 * L.w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega
-    omega
-  have hlo' : 2 ^ (64 * (L.w - 1)) ≤ N := Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) htop
-  exact ⟨word s.mem L.B (8 * sMinv), N, ⟨hw.good, show 2 ≤ L.w by omega, show L.w < 2 ^ 30 by omega, hn, hinv,
+    have : 2 ^ (64 * L.w - 1) = 2 ^ (64 * L.w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_arith
+    omega_arith
+  have hlo' : 2 ^ (64 * (L.w - 1)) ≤ N := Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_arith)) htop
+  exact ⟨word s.mem L.B (8 * sMinv), N, ⟨hw.good, show 2 ≤ L.w by omega_arith, show L.w < 2 ^ 30 by omega_arith, hn, hinv,
     hodd, hlo'⟩, htop⟩
 
 theorem msR2_ok (M : Mont) {L : WsP} {s : State} (h : MSb L s) : WP isa (seqs (r2Steps M.mm)) s (MSb L) := by
@@ -228,8 +228,8 @@ theorem msR2_ok (M : Mont) {L : WsP} {s : State} (h : MSb L s) : WP isa (seqs (r
 theorem msY_ok (M : Mont) {L : WsP} {s : State} (h : MSb L s) : WP isa (M.mm aY aR2 aOne) s (MSb L) := by
   obtain ⟨⟨hw, h4, h64, N, hn, hsh, hinv⟩, hone⟩ := h
   obtain ⟨g, hZ8⟩ := hw.good
-  have hN1 : 1 < N := by have := hsh.2.1; have := Nat.two_pow_pos (64 * L.w - 2); omega
-  refine WP.mono (M.mm_ok g hZ8 hw.w1 (by have := hw.w2; omega) (o := aY) (a := aR2) (b := aOne) (by decide)
+  have hN1 : 1 < N := by have := hsh.2.1; have := Nat.two_pow_pos (64 * L.w - 2); omega_arith
+  refine WP.mono (M.mm_ok g hZ8 hw.w1 (by have := hw.w2; omega_arith) (o := aY) (a := aR2) (b := aOne) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hinv (by rw [hone, hn]; exact hN1))
     fun t ⟨_, _, _, ha, k⟩ => ?_
   exact MSb.frm (s := s) ⟨⟨hw, h4, h64, N, hn, hsh, hinv⟩, hone⟩ (Frm.of_arrays ha (rs := [(slot L.w aAcc,
@@ -268,7 +268,7 @@ theorem msH_ct : RelCT isa (Two MS0) (.block ([ldh .x8 (sArr aN), ld .x3 .x8] ++
   have sN := hw.sl (show aN < 16 by decide)
   have h256 := hw.h256
   refine WP.mono (WP.keep [.x8] (Q := fun t => t.gpr .x8 = off L.B (slot L.w aN)) (by
-    brun [hw.x0, hdr_enc (show sArr aN < 32 by decide), hw.scr.ld (d := 8 * sArr aN) (by simp only [sArr, aN]; omega),
+    brun [hw.x0, hdr_enc (show sArr aN < 32 by decide), hw.scr.ld (d := 8 * sArr aN) (by simp only [sArr, aN]; omega_arith),
       hw.harr aN (by decide)]) (by decide) (by decide) (by decide +kernel)) fun t ⟨h8, k⟩ r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl

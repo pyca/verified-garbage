@@ -43,13 +43,13 @@ theorem triRows_ok {s0 : State} {B : Addr} {Z eA eT : Nat} (n : Nat) (hn : n ≤
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine WP.mono (ih (by omega)) fun t ⟨hv, ho, kt⟩ => ?_
-    have hn1 : n + 1 - 1 = n := by omega
+    refine WP.mono (ih (by omega_arith)) fun t ⟨hv, ho, kt⟩ => ?_
+    have hn1 : n + 1 - 1 = n := by omega_arith
     have hin' : ∀ i < 8, t.gpr (inp i) = word s0.mem B (eA + 8 * i) :=
       fun i hi => (kt.gpr _ (inp_not_work i hi)).trans (hin i hi)
     have hval : regVal t inp (n + 1) = wv s0.mem B eA (n + 1) :=
-      inputs_value (s := t) (fun i hi => hin' i (by omega))
-    have haj : t.gpr (inp (n + 1)) = word s0.mem B (eA + 8 * (n + 1)) := hin' _ (by omega)
+      inputs_value (s := t) (fun i hi => hin' i (by omega_arith))
+    have haj : t.gpr (inp (n + 1)) = word s0.mem B (eA + 8 * (n + 1)) := hin' _ (by omega_arith)
     have hcross := Square.crossValue_succ s0.mem B eA (n + 1)
     have hlt := cross_words_succ_lt s0.mem B eA (n + 1)
     rw [hn1] at hv
@@ -61,18 +61,18 @@ theorem triRows_ok {s0 : State} {B : Addr} {Z eA eT : Nat} (n : Nat) (hn : n ≤
           Square.crossValue s0.mem B eA (n + 1 + 1) := by
         rw [hcross, ← hv, Nat.mul_add]; grind
       have hp : 2 ^ (64 * (2 * (n + 1) + 1)) = 2 ^ (64 * (n + 1)) * 2 ^ (64 * (n + 1 + 1)) := by
-        rw [← Nat.pow_add]; exact congrArg (2 ^ ·) (by omega)
+        rw [← Nat.pow_add]; exact congrArg (2 ^ ·) (by omega_arith)
       rw [hp] at hlt
       exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_le_of_lt (Nat.le_add_left _ _) (e ▸ hlt))
-    refine WP.mono (triRow_ok (j := n + 1) (by omega) (by omega) (hs.congr kt.wr)
-      ((kt.gpr _ x16_not_work).trans h16) (by omega) ((kt.gpr _ x7_not_work).trans h7)
+    refine WP.mono (triRow_ok (j := n + 1) (by omega_arith) (by omega_arith) (hs.congr kt.wr)
+      ((kt.gpr _ x16_not_work).trans h16) (by omega_arith) ((kt.gpr _ x7_not_work).trans h7)
       (by rw [hn1]; exact hb)) fun u ⟨⟨hu, hum⟩, ku⟩ => ?_
     rw [hn1] at hu
-    have hnw : (eT + 8 * (n + 1)) + 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega
+    have hnw : (eT + 8 * (n + 1)) + 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
     refine ⟨?_, ?_, kt.trans ku |>.mono fun r hr => by
       rcases List.mem_append.mp hr with h | h <;> exact h⟩
-    · have hw := wv_writeW_top t.mem B eT (n + 1) (u.gpr (acc (n + 1))) (by omega)
-      rw [hum, show n + 1 + 1 - 1 = n + 1 by omega, hw]
+    · have hw := wv_writeW_top t.mem B eT (n + 1) (u.gpr (acc (n + 1))) (by omega_arith)
+      rw [hum, show n + 1 + 1 - 1 = n + 1 by omega_arith, hw]
       have hs2 := win_split u (n + 1) (n + 1)
       rw [hu] at hs2
       rw [hval, haj] at hs2
@@ -82,7 +82,7 @@ theorem triRows_ok {s0 : State} {B : Addr} {Z eA eT : Nat} (n : Nat) (hn : n ≤
       grind
     · rw [hum]
       have hw := writeW_outside t.mem B (u.gpr (acc (n + 1))) (d := eT + 8 * (n + 1)) hnw
-      exact (ho.mono (by omega) (by omega)).trans (hw.mono (by omega) (by omega))
+      exact (ho.mono (by omega_arith) (by omega_arith)).trans (hw.mono (by omega_arith) (by omega_arith))
 
 /-- The accumulators' words `w … w + k - 1` stored after the words before
 them (`w = 8`; a variable, so that no tactic evaluates `2 ^ (64 * 8)`). -/
@@ -98,21 +98,21 @@ theorem stores_ok {s : State} {B : Addr} {Z eT w : Nat} (hw : w = 8) (k : Nat) (
   | succ k ih =>
     rw [List.range_succ, List.map_append, List.map_cons, List.map_nil]
     apply WP.block_append
-    refine WP.mono (ih (by omega)) fun t ⟨⟨hv, ho⟩, kt⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨⟨hv, ho⟩, kt⟩ => ?_
     refine WP.mono (storeWord_ok (acc (k + 8)) (k + 8) (hs.congr kt.wr) ((kt.gpr _ (by simp)).trans h16)
-      (by omega) (by omega)) fun u ⟨hum, ku⟩ => ?_
-    have hnw : (eT + 8 * (k + 8)) + 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega
+      (by omega_arith) (by omega_arith)) fun u ⟨hum, ku⟩ => ?_
+    have hnw : (eT + 8 * (k + 8)) + 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
     refine ⟨⟨?_, ?_⟩, (kt.trans ku).mono (by simp)⟩
-    · have hwt := wv_writeW_top t.mem B eT (w + k) (t.gpr (acc (k + 8))) (by omega)
-      rw [hum, show eT + 8 * (k + 8) = eT + 8 * (w + k) by omega, show w + (k + 1) = w + k + 1 by omega,
-        hwt, hv, win_succ, kt.gpr _ (by simp), show w + k = k + 8 by omega, Nat.mul_add 64 k 8,
+    · have hwt := wv_writeW_top t.mem B eT (w + k) (t.gpr (acc (k + 8))) (by omega_arith)
+      rw [hum, show eT + 8 * (k + 8) = eT + 8 * (w + k) by omega_arith, show w + (k + 1) = w + k + 1 by omega_arith,
+        hwt, hv, win_succ, kt.gpr _ (by simp), show w + k = k + 8 by omega_arith, Nat.mul_add 64 k 8,
         ← hw, Nat.pow_add, ← Nat.pow_mul]
       generalize 2 ^ (64 * w) = P
       generalize 2 ^ (64 * k) = Q
       grind
     · rw [hum]
       have hwo := writeW_outside t.mem B (t.gpr (acc (k + 8))) (d := eT + 8 * (k + 8)) hnw
-      exact (ho.mono (by omega) (by omega)).trans (hwo.mono (by omega) (by omega))
+      exact (ho.mono (by omega_arith) (by omega_arith)).trans (hwo.mono (by omega_arith) (by omega_arith))
 
 /-- The scheduled eight-limb triangular product, including input loads,
 every carry, and the final output words. -/
@@ -139,6 +139,6 @@ theorem code_ok {s : State} {B : Addr} {Z eA eT : Nat}
     rw [ham, show (7 : Nat) + 1 - 1 = 7 from rfl, show (7 : Nat) + 1 = 8 from rfl] at hbv
     exact hbv
   · rw [← ham]
-    exact (hbo.mono (by omega) (by omega)).trans (hto.mono (by omega) (by omega))
+    exact (hbo.mono (by omega_arith) (by omega_arith)).trans (hto.mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Bignum.AArch64.SquareEight

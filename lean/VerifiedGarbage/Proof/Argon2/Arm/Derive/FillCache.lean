@@ -41,7 +41,7 @@ include hp
 theorem scr_blockAt (m : Mem) {o : Nat} (ho : o + 1024 ≤ 16384) :
     blockAt m (State.addr (scrP s₀ + BitVec.ofNat 32 o)) = blk m (scrP s₀) o := by
   have := hp.scr_fits
-  rw [Proof.Argon2.Arm.blockAt_eq (by rw [add_nat (by omega)]; omega), blk_shift]
+  rw [Proof.Argon2.Arm.blockAt_eq (by rw [add_nat (by omega_arith)]; omega_arith), blk_shift]
 
 /-- `stage x y out`: G of the blocks at `scratch + x` and `scratch + y` to `scratch + out`. -/
 theorem stage_ok {s : State} (h : Inv s₀ s) {x y o : Nat} (ho : 4096 ≤ o) (ho' : o + 1024 ≤ 16384)
@@ -84,8 +84,8 @@ theorem stage_keep {m m' : Mem} {o : Nat} (ho : 4096 ≤ o) (ho' : o + 1024 ≤ 
   refine blockAt_keep f fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint _ hdo (by omega) (by omega)
-  · exact Offset.disjoint_base _ hd (by omega)
+  · exact Offset.disjoint _ hdo (by omega_arith) (by omega_arith)
+  · exact Offset.disjoint_base _ hd (by omega_arith)
 
 omit hp in
 theorem stage_frame {m m' : Mem} {o : Nat} (ho' : o + 1024 ≤ 16384)
@@ -128,12 +128,12 @@ end
 
 theorem and127 {n : Nat} (h : n < 2 ^ 32) : BitVec.ofNat 32 n &&& 127 = BitVec.ofNat 32 (n % 128) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, toNat32 h, toNat32 (by omega),
+  rw [BitVec.toNat_and, toNat32 h, toNat32 (by omega_arith),
     show (127 : BitVec 32).toNat = 2 ^ 7 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
 
 theorem shr7 {n : Nat} (h : n < 2 ^ 32) : BitVec.ofNat 32 n >>> 7 = BitVec.ofNat 32 (n / 128) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, toNat32 h, toNat32 (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, toNat32 h, toNat32 (by omega_arith), Nat.shiftRight_eq_div_pow]
 
 section
 variable {s₀ : State} (hp : DPre s₀)
@@ -145,7 +145,7 @@ theorem cacheWord_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
     WP isa (.block Impl.Argon2.Arm.Derive.cacheWord) s fun t => FS s₀ pass slice lane index ctr st t ∧
       lw s₀ t j2Off ++ lw s₀ t j1Off = (blk s.mem (scrP s₀) 6144)[index % 128]'(Nat.mod_lt _ (by decide)) := by
   have hs := hp.scr_fits
-  have e8 : 8 * (index % 128) < 1024 := by omega
+  have e8 : 8 * (index % 128) < 1024 := by omega_arith
   unfold Impl.Argon2.Arm.Derive.cacheWord
   refine wp_ldloc hp h.inv (d := indexOff) (by decide) fun s₁ u₁ => wp_and (op2_imm (by decide)) fun s₂ u₂ => ?_
   have o₂ := (Only.of_upd u₁).trans (Only.of_upd u₂)
@@ -155,15 +155,15 @@ theorem cacheWord_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
   have h₅ := h₂.of_only (((Only.of_upd u₃).trans (Only.of_upd u₄)).trans (Only.of_upd u₅)) (by decide)
   have a₅ : s₅.gpr .r0 = scrP s₀ + BitVec.ofNat 32 (6144 + 8 * (index % 128)) := by
     rw [u₅.gpr, u₄.gpr, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₁.gpr, h.pos.index,
-      and127 (by omega), ofNat_shl (by omega), show (6144 : BitVec 32) = BitVec.ofNat 32 6144 from rfl,
+      and127 (by omega_arith), ofNat_shl (by omega_arith), show (6144 : BitVec 32) = BitVec.ofNat 32 6144 from rfl,
       BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    congr 2; omega
+    congr 2; omega_arith
   have m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, o₂.mem]
   have inS : ∀ t : State, Inv s₀ t → ∀ o, o + 4 ≤ 1024 →
       InRegions (t.rd ++ t.wr) (State.addr (scrP s₀ + BitVec.ofNat 32 (6144 + 8 * (index % 128) + o))) 4 :=
     fun t it o ho => by
-      rw [scr_addr hp (by omega), it.wr]
-      exact ⟨scrR s₀, List.mem_append_right _ (scr_mem hp), Offset.contains_base _ (by omega) (by omega)⟩
+      rw [scr_addr hp (by omega_arith), it.wr]
+      exact ⟨scrR s₀, List.mem_append_right _ (scr_mem hp), Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have ad : ∀ o, State.addr (s₅.gpr .r0 + BitVec.ofNat 32 o) =
       State.addr (scrP s₀ + BitVec.ofNat 32 (6144 + 8 * (index % 128) + o)) :=
     fun o => by rw [a₅, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
@@ -177,8 +177,8 @@ theorem cacheWord_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
   refine wp_stloc hp h₈.inv (d := j2Off) (by decide) fun t it vt ot gt mt => WP.block_nil ⟨?_, ?_⟩
   · exact h₈.store hp it (d := j2Off) (by decide) (by decide) (by decide) mt
   · rw [vt, ot j1Off (by decide) (by decide), lw_mem u₈.mem, v₇, u₈.gpr, m₇,
-      scr_addr hp (o := 6144 + 8 * (index % 128) + 4) (by omega), scr_loc hp (by decide) (by omega),
-      ← scr_addr hp (by omega), u₆.gpr, u₆.mem, m₅, blk_get _ _ _ _ (Nat.mod_lt _ (by decide)),
+      scr_addr hp (o := 6144 + 8 * (index % 128) + 4) (by omega_arith), scr_loc hp (by decide) (by omega_arith),
+      ← scr_addr hp (by omega_arith), u₆.gpr, u₆.mem, m₅, blk_get _ _ _ _ (Nat.mod_lt _ (by decide)),
       Nat.add_zero (6144 + 8 * (index % 128))]
 
 omit hp in
@@ -191,7 +191,7 @@ theorem cached {s : State} {pass slice lane index ctr : Nat} {st : FillState}
   · rw [he, c2] at c1
     have := congrArg BitVec.toNat c1
     rw [toNat32 hc'] at this
-    exact absurd this (by simp; omega)
+    exact absurd this (by simp; omega_arith)
   · rw [c4]
     rw [he] at c1
     have := congrArg BitVec.toNat c1
@@ -211,7 +211,7 @@ theorem cacheCheck_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSt
   have o₃ := ((Only.of_upd u₁).trans (Only.of_upd u₂)).trans (Only.of_upd u₃)
   have h₃ := h.of_only o₃ (by decide)
   have a₃ : s₃.gpr .r0 = BitVec.ofNat 32 (index / 128 + 1) := by
-    rw [u₃.gpr, u₂.gpr, u₁.gpr, h.pos.index, shr7 (by omega), show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
+    rw [u₃.gpr, u₂.gpr, u₁.gpr, h.pos.index, shr7 (by omega_arith), show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
       BitVec.ofNat_add_ofNat]
   refine wp_ldloc hp h₃.inv (d := counterOff) (by decide) fun s₄ u₄ =>
     wp_cmp (op2_reg _ _) fun t f z => WP.block_nil ?_
@@ -234,8 +234,8 @@ theorem cacheFill_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
   · have ce : lw s₀ s counterOff = BitVec.ofNat 32 (index / 128 + 1) := by
       have e := beq_iff_eq.mp hb
       exact ((BitVec.sub_eq_iff_eq_add.mp e).trans (by simp)).symm
-    have cb := cached h₄ (c := index / 128 + 1) (by omega) (by omega) ce
-    exact WP.block_nil ⟨⟨h₄.inv, h₄.pr, h₄.pos, ⟨by omega, ce, .inr ⟨by omega, cb⟩⟩, h₄.mem⟩, cb⟩
+    have cb := cached h₄ (c := index / 128 + 1) (by omega_arith) (by omega_arith) ce
+    exact WP.block_nil ⟨⟨h₄.inv, h₄.pr, h₄.pos, ⟨by omega_arith, ce, .inr ⟨by omega_arith, cb⟩⟩, h₄.mem⟩, cb⟩
   · refine WP.seq (wp_stloc hp h₄.inv (d := counterOff) (by decide) fun s₅ i₅ v₅ o₅ g₅ m₅ => WP.block_nil ?_)
     have L₅ : ∀ d ∈ fsOffs, d ≠ counterOff → lw s₀ s₅ d = lw s₀ s d := fun d hd hd' => by
       simp only [fsOffs, List.mem_cons, List.not_mem_nil, or_false] at hd
@@ -247,13 +247,13 @@ theorem cacheFill_ok {s : State} {pass slice lane index ctr : Nat} {st : FillSta
         rcases hd with rfl | rfl | rfl | rfl <;> decide) (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
         rcases hd with rfl | rfl | rfl | rfl <;> decide))
-      (by rw [v₅, a₃]) hpass (by omega) (by omega) (by omega)).mono
+      (by rw [v₅, a₃]) hpass (by omega_arith) (by omega_arith) (by omega_arith)).mono
       fun t ⟨it, _, ft, bt⟩ => ⟨?_, bt⟩
     have fsub : ∀ r ∈ [scrR s₀], ∃ r' ∈ [memR s₀, scrR s₀, outR s₀, callR s₀], Region.Sub r r' :=
       fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; subst hr; simp, fun _ h => h⟩
     have Lt : ∀ d, d + 4 ≤ 144 → lw s₀ t d = lw s₀ s₅ d := fun d hd => lw_keep hp ft fsub hd
-    refine ⟨it, Prm.of_lw h₄.pr fun d hd => ?_, h₄.pos.of_lw fun d hd => ?_, ⟨by omega,
-      by rw [Lt _ (by decide), v₅, a₃], .inr ⟨by omega, bt⟩⟩, Represents.keep h₄.mem fun k hk => ?_⟩
+    refine ⟨it, Prm.of_lw h₄.pr fun d hd => ?_, h₄.pos.of_lw fun d hd => ?_, ⟨by omega_arith,
+      by rw [Lt _ (by decide), v₅, a₃], .inr ⟨by omega_arith, bt⟩⟩, Represents.keep h₄.mem fun k hk => ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       rw [Lt d (by rcases hd with rfl | rfl | rfl | rfl <;> decide)]
       exact L₅ d (by simp only [fsOffs]; rcases hd with rfl | rfl | rfl | rfl <;> simp)
@@ -281,7 +281,7 @@ theorem addressCache_ok {s : State} {pass slice lane index ctr : Nat} {st : Fill
   unfold Impl.Argon2.Arm.Derive.addressCache
   refine WP.seq ((cacheCheck_ok hp h hi).mono fun s₄ ⟨h₄, a₄, z₄⟩ => ?_)
   have M := cacheFill_ok hp h₄ hpass hl hs hi a₄ z₄
-  refine WP.seq (M.mono fun t ⟨ht, bt⟩ => (cacheWord_ok hp ht (by omega)).mono fun u ⟨hu, wu⟩ => ⟨hu, ?_⟩)
+  refine WP.seq (M.mono fun t ⟨ht, bt⟩ => (cacheWord_ok hp ht (by omega_arith)).mono fun u ⟨hu, wu⟩ => ⟨hu, ?_⟩)
   rw [wu, bt]
 
 /-- `randomSource`: J₁ and J₂ are the step's random word. -/

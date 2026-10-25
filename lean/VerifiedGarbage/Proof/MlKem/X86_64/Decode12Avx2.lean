@@ -66,7 +66,7 @@ theorem cand_dword' (a : BitVec 128) {l j : Nat} (hl : l < 2) (hj : j < 4) :
   apply BitVec.eq_of_toNat_eq
   rw [dword_pand, (show ∀ i < 4, dword maskV i = 0xfff#32 by decide) j hj, toNat_and_fff]
   have hb : ∀ i, (byte a i).toNat < 256 := fun i => (byte a i).isLt
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rcases cases4 hj with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> rcases cases4 hj with rfl | rfl | rfl | rfl <;>
   simp only [shuf', VVarOp.eval, pshufb_shuf0', pshufb_shuf1', dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2,
     dword_ofDwords_3, ↓reduceIte, show (dword shV 0).toNat = 0 from rfl, show (dword shV 1).toNat = 4 from rfl,
     show (dword shV 2).toNat = 0 from rfl, show (dword shV 3).toNat = 4 from rfl, Nat.reduceLT,
@@ -99,7 +99,7 @@ theorem wp_vsh {op : XShiftOp} {d a : XReg} {n : BitVec 8}
     WP isa (.block (.vop (.vshift op .l256 d a n) :: is)) s Q :=
   WP.cons (s' := s.setV .l256 d (op.eval (s.lane a 0) n) (op.eval (s.lane a 1) n)) rfl (k _ (by
     have h := LUpd.setV256 s d (op.eval (s.lane a 0) n) (op.eval (s.lane a 1) n)
-    exact ⟨fun l hl => by rw [h.val l hl]; rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rfl,
+    exact ⟨fun l hl => by rw [h.val l hl]; rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> rfl,
       h.other, h.gpr, h.mem, h.rd, h.wr, h.syms⟩))
 
 theorem wp_subi' {d : Reg} {v : BitVec 32}
@@ -165,7 +165,7 @@ theorem yconst4_ok {r : XReg} (_hr0 : r ≠ .xmm0) (_hr1 : r ≠ .xmm1) (q₀ q�
   have hb : s1.gpr .rax = s1.syms "VG_MLKEM_YCONSTS" := by rw [u1.gpr, u1.syms]
   have ho : (s1.ea (at_ .rax (32 * i)) - s1.syms "VG_MLKEM_YCONSTS").toNat = 8 * (4 * i) := by
     simp only [State.ea, at_, hb, BitVec.ofInt_natCast, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   refine S4.wp_vtbl (o := 4 * i) hb ho hl fun s2 u2 => k s2 ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · rw [u2.val 0 (by decide)]; simp only [ite_true, h0, h1]
   · rw [u2.val 1 (by decide)]
@@ -201,7 +201,7 @@ theorem yconst_ok' (r : XReg) (v : BitVec 32) {is : List Instr} {s : State} {Q :
       rw [show s2.xmm r = s2.lane r 0 from rfl, u2.val 0 (by decide), itT rfl, u1.gpr]
       apply BitVec.eq_of_getLsbD_eq; intro i hi
       simp only [dword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, BitVec.getLsbD_setWidth]
-      simp [hi, show i < 64 by omega]
+      simp [hi, show i < 64 by omega_arith]
     simp only [e]
   · rw [u3.other x hx l hl, u2.other x hx l hl, u1.lane]
   · rw [u3.gpr, u2.gpr, u1.other g hg]
@@ -221,7 +221,7 @@ theorem consts_ok {is : List Instr} {s : State} {Q : State → Prop}
     k s7 ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩ (fun g hg => ?_) ?_ ?_ ?_
   · rw [o7 _ (by decide) l hl, o6 _ (by decide) l hl, u5.other _ (by decide) l hl, u4.other _ (by decide) l hl,
       u3.lane, o2 _ (by decide) (by decide) (by decide) l hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
     · rw [a1]; rfl
     · rw [b1]; rfl
   · rw [o7 _ (by decide) l hl, o6 _ (by decide) l hl, u5.val l hl]
@@ -232,7 +232,7 @@ theorem consts_ok {is : List Instr} {s : State} {Q : State → Prop}
   · rw [a7 l hl]; rfl
   · rw [o7 _ (by decide) l hl, o6 _ (by decide) l hl, u5.other _ (by decide) l hl, u4.other _ (by decide) l hl,
       u3.lane]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
     · rw [a2]; rfl
     · rw [b2]; rfl
   · rw [g7 g hg, g6 g hg, u5.gpr, u4.gpr, u3.other g hg, g2 g hg, g1 g hg]
@@ -260,7 +260,7 @@ abbrev red (x : BitVec 32) : BitVec 32 := cadd32 (x - 3329#32)
 
 theorem red_val {c : Nat} (hc : c < 4096) : (red (BitVec.ofNat 32 c)).toNat = (ofNat c : Zq).val := by
   rw [red, cadd32_toNat, val_ofNat, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, q_eq]
-  split <;> omega
+  split <;> omega_arith
 
 /-- The values of lane `l` of a group of the 16 bytes `L`, with the `vpshufb` mask `M`. -/
 abbrev vals (L M : BitVec 128) : BitVec 128 :=
@@ -312,8 +312,8 @@ theorem body_ok {m : XReg} {M : Nat → BitVec 128} {is : List Instr} {s : State
   · intro i hi
     rw [State.ymm_eq, ext_app2 _ _ hi]
     by_cases h4 : i < 4
-    · rw [itT h4, h8 0 (by decide), dword_red _ (by omega), show i / 4 = 0 by omega, hL]
-    · rw [itF h4, h8 1 (by decide), dword_red _ (by omega), show i / 4 = 1 by omega, hL]
+    · rw [itT h4, h8 0 (by decide), dword_red _ (by omega_arith), show i / 4 = 0 by omega_arith, hL]
+    · rw [itF h4, h8 1 (by decide), dword_red _ (by omega_arith), show i / 4 = 1 by omega_arith, hL]
 
 /-! ## The values of a group -/
 
@@ -324,16 +324,16 @@ theorem group_val {B : List Byte} (hB : B.length = 384) {g : Nat} (hg : g < 32) 
     (red (BitVec.ofNat 32 (candN (fun t => (bf t).toNat) e))).toNat = ((decode12 B)[8 * g + e]!).val := by
   rw [red_val (candN_lt _ (fun t => (bf t).isLt) e)]
   have hcb : cb e = 3 * (e / 2) + e % 2 := rfl
-  have h0 := hbf (cb e) (by omega)
-  have h1 := hbf (cb e + 1) (by omega)
+  have h0 := hbf (cb e) (by omega_arith)
+  have h1 := hbf (cb e + 1) (by omega_arith)
   unfold candN
   dsimp only
   split
-  · rw [show 8 * g + e = 2 * (4 * g + e / 2) by omega, decode12_even B hB (by omega), h0, h1,
-      show 12 * g + cb e = 3 * (4 * g + e / 2) by omega, show 12 * g + (cb e + 1) = 3 * (4 * g + e / 2) + 1 by omega]
-  · rw [show 8 * g + e = 2 * (4 * g + e / 2) + 1 by omega, decode12_odd B hB (by omega), h0, h1,
-      show 12 * g + cb e = 3 * (4 * g + e / 2) + 1 by omega,
-      show 12 * g + (cb e + 1) = 3 * (4 * g + e / 2) + 2 by omega]
+  · rw [show 8 * g + e = 2 * (4 * g + e / 2) by omega_arith, decode12_even B hB (by omega_arith), h0, h1,
+      show 12 * g + cb e = 3 * (4 * g + e / 2) by omega_arith, show 12 * g + (cb e + 1) = 3 * (4 * g + e / 2) + 1 by omega_arith]
+  · rw [show 8 * g + e = 2 * (4 * g + e / 2) + 1 by omega_arith, decode12_odd B hB (by omega_arith), h0, h1,
+      show 12 * g + cb e = 3 * (4 * g + e / 2) + 1 by omega_arith,
+      show 12 * g + (cb e + 1) = 3 * (4 * g + e / 2) + 2 by omega_arith]
 
 /-- Coefficient `k` after a write of eight doublewords `V` at coefficient `8 g`. -/
 theorem coeffAt_write8 (m : Mem) (p : Addr) (V : BitVec 256) {g k : Nat} (hg : g < 32) (hk : k < 256) :
@@ -341,11 +341,11 @@ theorem coeffAt_write8 (m : Mem) (p : Addr) (V : BitVec 256) {g k : Nat} (hg : g
       if 8 * g ≤ k ∧ k < 8 * g + 8 then V.extractLsb' (32 * (k - 8 * g)) 32 else coeffAt m p k := by
   rw [coeffAt_eq]
   split
-  · have e := readW_writeW_inside m (coeffAddr p (8 * g)) V (k := 4 * (k - 8 * g)) (n := 4) (by omega)
+  · have e := readW_writeW_inside m (coeffAddr p (8 * g)) V (k := 4 * (k - 8 * g)) (n := 4) (by omega_arith)
       (by decide)
-    rw [coeffAddr, Offset.add_add, show 4 * (8 * g) + 4 * (k - 8 * g) = 4 * k by omega] at e
-    rw [e, show 8 * (4 * (k - 8 * g)) = 32 * (k - 8 * g) by omega]
-  · exact readW_writeW_off m p V (d := 4 * k) (e := 4 * (8 * g)) (n := 4) (by omega) (by omega) (by omega)
+    rw [coeffAddr, Offset.add_add, show 4 * (8 * g) + 4 * (k - 8 * g) = 4 * k by omega_arith] at e
+    rw [e, show 8 * (4 * (k - 8 * g)) = 32 * (k - 8 * g) by omega_arith]
+  · exact readW_writeW_off m p V (d := 4 * k) (e := 4 * (8 * g)) (n := 4) (by omega_arith) (by omega_arith) (by omega_arith)
 
 /-! ## The loop -/
 
@@ -388,34 +388,34 @@ theorem group {g o : Nat} (hg : g < 32) (ho : o + 16 ≤ 384) {m : XReg} {M : Na
       WP isa (.block is) s' Q) :
     WP isa (.block (d12Body m ++ is)) s Q := by
   have hrw : s.rd ++ s.wr = [⟨bP s₀, 384⟩, pR (fP s₀)] := by rw [hrd, hwr, regs hp]
-  refine body_ok hm hm0 hm1 hc (by rw [hrw, hdi]; exact ⟨_, by simp, Offset.contains_base _ ho (by omega)⟩)
+  refine body_ok hm hm0 hm1 hc (by rw [hrw, hdi]; exact ⟨_, by simp, Offset.contains_base _ ho (by omega_arith)⟩)
     (by rw [hwr, hp.2.1, hsi]; exact ⟨_, List.mem_singleton_self _,
-      Offset.contains_base _ (show 4 * (8 * g) + 32 ≤ 1024 by omega) (by omega)⟩)
+      Offset.contains_base _ (show 4 * (8 * g) + 32 ≤ 1024 by omega_arith) (by omega_arith)⟩)
     fun s' hc' hm' hg' hrd' hwr' ⟨V, hmem, hV⟩ => k s' hc' hm' hg' (by rw [hrd', hrd]) (by rw [hwr', hwr]) ?_ ?_
   · rw [hmem, hsi]
     exact hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (show 4 * (8 * g) + 256 / 8 ≤ 1024 by omega) (by omega))
+      (Offset.contains_base _ (show 4 * (8 * g) + 256 / 8 ≤ 1024 by omega_arith) (by omega_arith))
   · intro c hc
     have hL : ∀ t < 16, byte (s.mem.readW (s.gpr .rdi) 128) t = s₀.mem (bP s₀ + BitVec.ofNat 64 (o + t)) :=
       fun t ht => by
-        rw [byte, byte_readW _ _ (by omega), hdi, Offset.add_add]
-        exact bytes_frame hf (by simpa using hp.2.2.1) (by decide) _ (by omega)
-    rw [hmem, hsi, coeffAt_write8 _ _ _ hg (by omega)]
+        rw [byte, byte_readW _ _ (by omega_arith), hdi, Offset.add_add]
+        exact bytes_frame hf (by simpa using hp.2.2.1) (by decide) _ (by omega_arith)
+    rw [hmem, hsi, coeffAt_write8 _ _ _ hg (by omega_arith)]
     split
     · rename_i hin
-      obtain ⟨bf, hbf, hv⟩ := hM _ (c - 8 * g) (by omega) hL
-      rw [hV _ (by omega), hv, group_val (bytesAt_length _ _ _) hg hbf (by omega),
-        show 8 * g + (c - 8 * g) = c by omega]
-    · exact hd c (by omega)
+      obtain ⟨bf, hbf, hv⟩ := hM _ (c - 8 * g) (by omega_arith) hL
+      rw [hV _ (by omega_arith), hv, group_val (bytesAt_length _ _ _) hg hbf (by omega_arith),
+        show 8 * g + (c - 8 * g) = c by omega_arith]
+    · exact hd c (by omega_arith)
 
 omit hp in
 theorem hM_mid {g : Nat} (hg : g < 31) : ∀ L : BitVec 128, ∀ e < 8,
     (∀ t < 16, byte L t = s₀.mem (bP s₀ + BitVec.ofNat 64 (12 * g + t))) →
     ∃ bf : Nat → Byte, (∀ t < 12, bf t = (BB s₀).getD (12 * g + t) 0) ∧
       dword (vals L (S4.shuf (e / 4))) (e % 4) = BitVec.ofNat 32 (candN (fun t => (bf t).toNat) e) :=
-  fun L e he hL => ⟨fun t => byte L t, fun t ht => by dsimp only; rw [hL t (by omega), bytesAt_getD _ _ (by omega)], by
-    have := cand_dword L (show e / 4 < 2 by omega) (show e % 4 < 4 by omega)
-    rwa [show 4 * (e / 4) + e % 4 = e by omega] at this⟩
+  fun L e he hL => ⟨fun t => byte L t, fun t ht => by dsimp only; rw [hL t (by omega_arith), bytesAt_getD _ _ (by omega_arith)], by
+    have := cand_dword L (show e / 4 < 2 by omega_arith) (show e % 4 < 4 by omega_arith)
+    rwa [show 4 * (e / 4) + e % 4 = e by omega_arith] at this⟩
 
 omit hp in
 theorem hM_last : ∀ L : BitVec 128, ∀ e < 8,
@@ -423,14 +423,14 @@ theorem hM_last : ∀ L : BitVec 128, ∀ e < 8,
     ∃ bf : Nat → Byte, (∀ t < 12, bf t = (BB s₀).getD (12 * 31 + t) 0) ∧
       dword (vals L (shuf' (e / 4))) (e % 4) = BitVec.ofNat 32 (candN (fun t => (bf t).toNat) e) :=
   fun L e he hL => ⟨fun t => byte L (4 + t), fun t ht => by
-    dsimp only; rw [hL (4 + t) (by omega), bytesAt_getD _ _ (by omega), show 368 + (4 + t) = 12 * 31 + t by omega], by
-    have := cand_dword' L (show e / 4 < 2 by omega) (show e % 4 < 4 by omega)
-    rwa [show 4 * (e / 4) + e % 4 = e by omega] at this⟩
+    dsimp only; rw [hL (4 + t) (by omega_arith), bytesAt_getD _ _ (by omega_arith), show 368 + (4 + t) = 12 * 31 + t by omega_arith], by
+    have := cand_dword' L (show e / 4 < 2 by omega_arith) (show e % 4 < 4 by omega_arith)
+    rwa [show 4 * (e / 4) + e % 4 = e by omega_arith] at this⟩
 
 theorem step {i : Nat} (hi : i < 31) {s : State} (hI : Inv s₀ i s) :
     WP isa (.block (d12Body .xmm8 ++ d12Step)) s fun s' => Inv s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  refine group hp (g := i) (o := 12 * i) (by omega) (by omega) hI.dc.c8 (by decide) (by decide) (hM_mid hi)
+  refine group hp (g := i) (o := 12 * i) (by omega_arith) (by omega_arith) hI.dc.c8 (by decide) (by decide) (hM_mid hi)
     hI.rdi hI.rsi hI.rd hI.wr hI.dc hI.frame hI.done fun s1 hc1 _ hg1 hrd1 hwr1 hf1 hd1 => ?_
   simp only [d12Step]
   refine wp_addi' fun s2 u2 => wp_addi' fun s3 u3 => wp_subi' fun s4 u4 hz => WP.block_nil ?_
@@ -439,10 +439,10 @@ theorem step {i : Nat} (hi : i < 31) {s : State} (hI : Inv s₀ i s) :
     by rw [u4.mem, u3.mem, u2.mem]; exact hf1, fun k hk => by rw [u4.mem, u3.mem, u2.mem]; exact hd1 k hk⟩, ?_, ?_⟩
   · rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr, hg1, hI.rdi,
       show BitVec.signExtend 64 (12 : BitVec 32) = BitVec.ofNat 64 12 by decide, BitVec.add_assoc,
-      ← BitVec.ofNat_add, show 12 * i + 12 = 12 * (i + 1) by omega]
+      ← BitVec.ofNat_add, show 12 * i + 12 = 12 * (i + 1) by omega_arith]
   · rw [u4.other _ (by decide), u3.gpr, u2.other _ (by decide), hg1, hI.rsi, coeffAddr, coeffAddr,
       show BitVec.signExtend 64 (32 : BitVec 32) = BitVec.ofNat 64 32 by decide, BitVec.add_assoc,
-      ← BitVec.ofNat_add, show 4 * (8 * i) + 32 = 4 * (8 * (i + 1)) by omega]
+      ← BitVec.ofNat_add, show 4 * (8 * i) + 32 = 4 * (8 * (i + 1)) by omega_arith]
   · rw [u4.gpr, u3.other _ (by decide), u2.other _ (by decide), hg1]; rfl
   · rw [hz, u3.other _ (by decide), u2.other _ (by decide), hg1]; rfl
 
@@ -452,7 +452,7 @@ theorem main : WP isa decode12Avx2 s₀ fun s => Frame [pR (fP s₀)] s₀.mem s
   refine WP.seq (consts_ok fun s1 hc1 hg1 hm1 hr1 hw1 => wp_mov32i fun s2 u2 => WP.block_nil ?_)
   refine WP.seq (wp_countdown (cnt := .rcx) (N := 31) (by decide) (by decide) (Inv s₀)
     (fun i hi s hI _ => step hp hi hI) (fun s hI => ?_) (s := s2) ⟨?_, ?_, by rw [u2.rd, hr1], by rw [u2.wr, hw1],
-      hc1.gupd u2.lane, by rw [u2.mem, hm1]; exact Frame.refl _ _, fun k hk => absurd hk (by omega)⟩
+      hc1.gupd u2.lane, by rw [u2.mem, hm1]; exact Frame.refl _ _, fun k hk => absurd hk (by omega_arith)⟩
     (by rw [u2.gpr]; rfl))
   · refine wp_subi' fun s3 u3 _ => group hp (g := 31) (o := 368) (by decide) (by decide)
       (fun l hl => by rw [u3.lane, hI.dc.c12 l hl]) (by decide) (by decide) hM_last ?_

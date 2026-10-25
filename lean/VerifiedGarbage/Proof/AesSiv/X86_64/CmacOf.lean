@@ -66,21 +66,21 @@ theorem chained_bv {L : Nat} (h0 : 0 < L) (hL : L < 2 ^ 64) :
   have e1 : BitVec.ofNat 64 L - BitVec.ofNat 64 1 = BitVec.ofNat 64 (L - 1) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   rw [e1]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_and, BitVec.toNat_ofNat, Spec.Cmac.chainedLen]
   rw [show (15 % 2 ^ 64 : Nat) = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_arith
 
 theorem chainedLen_le (L : Nat) : Spec.Cmac.chainedLen 16 L ≤ L := by
-  simp only [Spec.Cmac.chainedLen]; omega
+  simp only [Spec.Cmac.chainedLen]; omega_arith
 
 theorem chainedLen_rest (L : Nat) : L - Spec.Cmac.chainedLen 16 L ≤ 16 := by
-  simp only [Spec.Cmac.chainedLen]; omega
+  simp only [Spec.Cmac.chainedLen]; omega_arith
 
 theorem chainedLen_div (L : Nat) : 16 * (Spec.Cmac.chainedLen 16 L / 16) = Spec.Cmac.chainedLen 16 L := by
-  simp only [Spec.Cmac.chainedLen]; omega
+  simp only [Spec.Cmac.chainedLen]; omega_arith
 
 theorem chainedLen_zero : Spec.Cmac.chainedLen 16 0 = 0 := rfl
 
@@ -122,7 +122,7 @@ theorem cmacB_ok {s : State} (h14 : s.gpr .r14 = BitVec.ofNat 64 L) (h0 : 0 < L)
 theorem shr4 {c : Nat} (hc : c < 2 ^ 64) : BitVec.ofNat 64 c >>> 4 = BitVec.ofNat 64 (c / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc,
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+    Nat.mod_eq_of_lt (by omega_arith), Nat.shiftRight_eq_div_pow]
 
 theorem cmacC_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s) {c : Nat}
     (hc : c < 2 ^ 64) (hrcx : s.gpr .rcx = BitVec.ofNat 64 c) :
@@ -166,9 +166,9 @@ theorem cmacPre_wp (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P 
         UArgs s' C (W + BitVec.ofNat 64 128) P (W + BitVec.ofNat 64 256) R (Spec.Cmac.chainedLen 16 L / 16) ∧
         s'.mem = (zero2 s.mem (W + BitVec.ofNat 64 128)).writeW (W + BitVec.ofNat 64 144)
           (BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 L)) := by
-    obtain ⟨s', run, hr', rdi, rsi, rdx, rcx, r8, r9, m'⟩ := cmacC_ok h hr₂ (by omega) rcx₂
+    obtain ⟨s', run, hr', rdi, rsi, rdx, rcx, r8, r9, m'⟩ := cmacC_ok h hr₂ (by omega_arith) rcx₂
     refine WP.of_runBlock ⟨s', run, hr', h.uargs hr'.rd hr'.wr hr'.rsp (by decide)
-      (by rw [chainedLen_div]; exact h.srcData₀ (by decide) hcl) (by rw [chainedLen_div]; omega)
+      (by rw [chainedLen_div]; exact h.srcData₀ (by decide) hcl) (by rw [chainedLen_div]; omega_arith)
       rdi rsi rdx rcx r8 r9, by rw [m', m₂, m₁]⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.seq (WP.ite (decide (L = 0)) zf₁ (fun hz => ?_) (fun hz => ?_))
@@ -204,8 +204,8 @@ theorem cmacMid_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P 
     rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]
   · apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt,
-      Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show L - c < 2 ^ 64 by omega)]
-    omega
+      Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show L - c < 2 ^ 64 by omega_arith)]
+    omega_arith
 
 /-! ## The whole -/
 
@@ -222,7 +222,7 @@ theorem cmacOf_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : 
     WP isa (cmacOf v.callee v.ctr.callee v.ctr.suffix stOff) s (CPost s₀ C D P W R L s) := by
   have hcl := chainedLen_le L
   have hrest := chainedLen_rest L
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
   refine WP.seq (WP.mono (cmacPre_wp h hr) fun s₁ ⟨hr₁, hu₁, m₁⟩ => ?_)
   refine WP.seq (WP.mono (upd_call v hu₁) fun s₂ h₂ => ?_)
   have hr₂ := hr₁.keep h₂.saved h₂.rd h₂.wr
@@ -232,15 +232,15 @@ theorem cmacOf_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : 
     rw [f₂.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
-        · exact Offset.disjoint W (by omega) (by omega) (by omega)
-        · exact Offset.disjoint W (by omega) (by omega) (by omega)
+        · exact Offset.disjoint W (by omega_arith) (by omega_arith) (by omega_arith)
+        · exact Offset.disjoint W (by omega_arith) (by omega_arith) (by omega_arith)
         · exact (h.stk_w.sub_right (h.sW (by decide))).symm) (by decide), m₁,
       Mem.readW_writeW_self64]
   obtain ⟨s₃, run₃, hr₃, rdi₃, rsi₃, rdx₃, rcx₃, r8₃, r9₃, m₃⟩ := cmacMid_ok h hr₂ hcl hm₂
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
   refine WP.mono (finr_call v.ctr _ (h.fargs hr₃.rd hr₃.wr hr₃.rsp (by decide)
     (h.srcData (o := 128) (by decide) (show Spec.Cmac.chainedLen 16 L + (L - Spec.Cmac.chainedLen 16 L) ≤ L by
-      omega)) hrest rdi₃ rsi₃ rdx₃ rcx₃ r8₃ r9₃)) fun s₄ h₄ => ?_
+      omega_arith)) hrest rdi₃ rsi₃ rdx₃ rcx₃ r8₃ r9₃)) fun s₄ h₄ => ?_
   have f₄ : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below (s₀.gpr .rsp) 16]
       s₃.mem s₄.mem := by rw [← hr₃.rsp]; exact h₄.frame
   -- What the code before the update writes.
@@ -281,26 +281,26 @@ theorem cmacOf_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : 
     rcases hr with rfl | rfl | rfl
     · exact (h.c_w.sub_left (h.sC hd)).sub_right (h.sW (by decide))
     · exact (h.c_w.sub_left (h.sC hd)).sub_right (h.sW (by decide))
-    · exact (h.stk_c.sub_right (h.sC hd)).symm) (by omega)
+    · exact (h.stk_c.sub_right (h.sC hd)).symm) (by omega_arith)
   have dP {d n : Nat} (hd : d + n ≤ L) := dRead (Q := P + BitVec.ofNat 64 d) (n := n) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact (h.p_w.sub_left (h.sP hd)).sub_right (h.sW (by decide))
     · exact (h.p_w.sub_left (h.sP hd)).sub_right (h.sW (by decide))
-    · exact (h.stk_p.sub_right (h.sP hd)).symm) (by omega)
-  have sch := dC (d := 0) (n := 16 * (R + 1)) (by omega)
+    · exact (h.stk_p.sub_right (h.sP hd)).symm) (by omega_arith)
+  have sch := dC (d := 0) (n := 16 * (R + 1)) (by omega_arith)
   have k1 := (dC (d := 240) (n := 16) (by decide)).2
   have k2 := (dC (d := 256) (n := 16) (by decide)).2
-  have pre := (dP (d := 0) (n := Spec.Cmac.chainedLen 16 L) (by omega)).1
-  have rest := (dP (d := Spec.Cmac.chainedLen 16 L) (n := L - Spec.Cmac.chainedLen 16 L) (by omega)).2
+  have pre := (dP (d := 0) (n := Spec.Cmac.chainedLen 16 L) (by omega_arith)).1
+  have rest := (dP (d := Spec.Cmac.chainedLen 16 L) (n := L - Spec.Cmac.chainedLen 16 L) (by omega_arith)).2
   rw [k0] at sch pre
   have hz : Spec.Aes.bytesAt s₁.mem (W + BitVec.ofNat 64 128) 16 = Spec.Cmac.zeros 16 := by
     rw [m₁, bytesAt_frame (rs := [⟨W + BitVec.ofNat 64 144, 8⟩]) ((Frame.refl _ _).writeW
       (List.mem_singleton_self _) _ (Region.contains_self _ _)) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint W (by omega) (by omega) (by omega))
+        simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint W (by omega_arith) (by omega_arith) (by omega_arith))
       (by decide), zero2_bytes]
   have hS : (Spec.Aes.bytesAt s.mem P L).length = L := Proof.Cmac.bytesAt_length _ _ _
-  have hsplit : L = Spec.Cmac.chainedLen 16 L + (L - Spec.Cmac.chainedLen 16 L) := by omega
+  have hsplit : L = Spec.Cmac.chainedLen 16 L + (L - Spec.Cmac.chainedLen 16 L) := by omega_arith
   rw [h₄.out, mn, sch.2, k1, k2, rest, m₃, h₂.out, Proof.Cmac.Stream.blocksAt_eq, chainedLen_div, sch.1, hz, pre,
     Spec.Siv.ctxMac, Spec.Siv.schedCiph, Siv.cmacWith_chained, hS]
   have tk : (Spec.Aes.bytesAt s.mem P L).take (Spec.Cmac.chainedLen 16 L) =
@@ -328,8 +328,8 @@ theorem upd_after (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : 
   rw [h'.frame.readW (Region.contains_self _ _) (fun r hr' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl
-      · exact Offset.disjoint W (by omega) (by omega) (by have := h.wW; omega)
-      · exact Offset.disjoint W (by omega) (by have := h.wW; omega) (by have := h.wW; omega)
+      · exact Offset.disjoint W (by omega_arith) (by omega_arith) (by have := h.wW; omega_arith)
+      · exact Offset.disjoint W (by omega_arith) (by have := h.wW; omega_arith) (by have := h.wW; omega_arith)
       · rw [hr.rsp]; exact (h.stk_w.sub_right (h.sW (by decide))).symm) (by decide), hm]
 
 theorem mid_wp (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s)
@@ -340,7 +340,7 @@ theorem mid_wp (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R 
   have hcl := chainedLen_le L
   obtain ⟨s', run, hr', rdi, rsi, rdx, rcx, r8, r9, _⟩ := cmacMid_ok h hr hcl hm
   exact WP.of_runBlock ⟨s', run, hr', h.fargs hr'.rd hr'.wr hr'.rsp (by decide)
-    (h.srcData (o := 128) (by decide) (by omega)) (chainedLen_rest L) rdi rsi rdx rcx r8 r9⟩
+    (h.srcData (o := 128) (by decide) (by omega_arith)) (chainedLen_rest L) rdi rsi rdx rcx r8 r9⟩
 
 theorem cmacOf_rel (v : UpdateImpl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
     (hq : s₀.gpr .rsp = s₀'.gpr .rsp) :

@@ -24,7 +24,7 @@ theorem NafTableInv.readonly {K : WinCfg} {C : Curve} {base : Addr} {size m : Na
   have hxs : x∈nafSlots K := List.mem_append_left _ (List.mem_append_left _ hx)
   unfold tmv
   rw [h.unch.wordsVal (fun w hw => ?_) (by
-    have := hL.lay.le x hxs; have := h.field.scr.nowrap; omega)]
+    have := hL.lay.le x hxs; have := h.field.scr.nowrap; omega_arith)]
   simp only [nafTableWrites,List.mem_append,List.mem_map,List.mem_singleton] at hw
   rcases hw with ⟨y,hy,rfl⟩|rfl
   · rcases List.mem_append.mp hy with hy|hy
@@ -35,7 +35,7 @@ theorem NafTableInv.readonly {K : WinCfg} {C : Curve} {base : Addr} {size m : Na
       have hi' := List.mem_range.mp hi
       have := entry_end_le (8*K.M.n) hi'
       dsimp only
-      omega
+      omega_arith
   · exact hL.lay.tmp x hxs
 
 /-- The cache, in a loop or unrolled (`Joint.Cfg.cacheUnroll`). -/
@@ -57,7 +57,7 @@ theorem jointCache_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {a 
   split
   · split
     · refine WP.mono (nafCacheUnrolled_current_ok hL.layout.n hL.layout.lay hm 8
-        (by have := hCL.sep; omega) ii hCL.hz hCL.cache) fun t ⟨kt,it,ht⟩ =>
+        (by have := hCL.sep; omega_arith) ii hCL.hz hCL.cache) fun t ⟨kt,it,ht⟩ =>
         ⟨⟨⟨fun r hr => kt.gpr r (fun h => hr (List.mem_cons_of_mem _ h)),kt.rd,kt.wr⟩,
           kt.unch.mono fun w hw => ?_⟩,it,ht⟩
       simp only [List.mem_append,List.mem_map,List.mem_singleton] at hw ⊢
@@ -133,7 +133,7 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     simp only [cacheLoopSlots,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with hx|rfl|rfl|rfl
     · exact Or.inl hx
-    all_goals exact Or.inr ⟨by omega,by omega⟩
+    all_goals exact Or.inr ⟨by omega_arith,by omega_arith⟩
   have tx := hN.tbl c.K.E.x (List.mem_append_right _ (eo _ (by simp [jacCoords])))
   have tz := hN.tbl c.K.E.z (List.mem_append_right _ (eo _ (by simp [jacCoords])))
   rw [hN.exz] at tz
@@ -158,20 +158,20 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     intro n hn hn'
     apply kt.unch.invJ hL.layout.lay ii.scr hCL.slots
       (fun x hx => List.mem_append_left _ (List.mem_append_left _
-        (nafTblPt_mem c.K hn (by omega) x hx))) ?_ (ia.table n hn hn')
+        (nafTblPt_mem c.K hn (by omega_arith) x hx))) ?_ (ia.table n hn hn')
     intro x hx hc
     have hs := hL.cacheSep
     have := hL.layout.n
-    have := entry_le (24*c.K.M.n) (show n-1≤7 by omega)
+    have := entry_le (24*c.K.M.n) (show n-1≤7 by omega_arith)
     simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases notE x hc with hc|hc
     · obtain ⟨i,hi,hx'⟩ := mem_cacheTableSlots.mp hc
       have := entry_end_le (16*c.K.M.n) hi
-      omega
-    · omega
+      omega_arith
+    · omega_arith
   refine ⟨⟨ka.trans kr,ut⟩,iv,⟨zero,table,
-    jointInit_digits hL (by have := hi.scr.nowrap; omega) ut (by simp) hv,
-    jointInit_digits hL (by have := hi.scr.nowrap; omega) ut (by simp) hu,?_,?_⟩,
+    jointInit_digits hL (by have := hi.scr.nowrap; omega_arith) ut (by simp) hv,
+    jointInit_digits hL (by have := hi.scr.nowrap; omega_arith) ut (by simp) hu,?_,?_⟩,
     ea.keep_init hL.layout ii.mod.tmp kr ub st⟩
   · intro i hi
     simpa only [WinCfg.tblPt,Nat.add_sub_cancel] using (ht i hi).1

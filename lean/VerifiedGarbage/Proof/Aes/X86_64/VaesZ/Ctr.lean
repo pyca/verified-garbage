@@ -61,7 +61,7 @@ theorem ctr1Z_ok (c m i : XReg) (b : XReg) (s : State) (X : Block) (j : Nat) (h9
   · simp only [zlane_zbin _ _ _ _ _ _ hl, h9, ite_true, ite_false, hc l hl, hr l hl, ZBinOp.sse]
   · simp only [zlane_zbin _ _ _ _ _ _ hl, ite_true, Ne.symm h9, Ne.symm h12, ite_false, hc l hl, ht l hl,
       ZBinOp.sse]
-    rw [paddd_four, show j + 4 + l = (j + l) + 1 + 1 + 1 + 1 by omega]
+    rw [paddd_four, show j + 4 + l = (j + l) + 1 + 1 + 1 + 1 by omega_arith]
     rfl
   · refine ⟨by simp, by simp, by simp, by simp, fun r hr l hl => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -95,9 +95,9 @@ theorem ctrsZ_ok (c m i : XReg) (hci : c ≠ i) (hcm : c ≠ m) (regs : List XRe
         rw [f.zlane _ (by simp [h9, hbs]) l hl, e₁ l hl]
       | succ k =>
         simp only [List.getElem_cons_succ]
-        rw [e k (by simpa using hk) l hl, show j + 4 + 4 * k + l = j + 4 * (k + 1) + l by omega]
+        rw [e k (by simpa using hk) l hl, show j + 4 + 4 * k + l = j + 4 * (k + 1) + l by omega_arith]
     · intro l hl
-      rw [c l hl, List.length_cons, show j + 4 + 4 * bs.length + l = j + 4 * (bs.length + 1) + l by omega]
+      rw [c l hl, List.length_cons, show j + 4 + 4 * bs.length + l = j + 4 * (bs.length + 1) + l by omega_arith]
     · refine (f₁.comp f).mono fun r hr => ?_
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with (h | h) | h | h <;> simp [h]
@@ -107,8 +107,8 @@ theorem ctrsZ_ok (c m i : XReg) (hci : c ≠ i) (hcm : c ≠ m) (regs : List XRe
 /-- Lane `l` of a 64-byte load. -/
 theorem load512_lane (m : Mem) (a : Addr) {l : Nat} (hl : l < 4) :
     (m.readW a 512).extractLsb' (128 * l) 128 = m.readW (a + BitVec.ofNat 64 (16 * l)) 128 := by
-  have e := readW_extract m a (w := 512) (k := 16 * l) (n := 16) (by omega)
-  rw [show 8 * (16 * l) = 128 * l by omega] at e
+  have e := readW_extract m a (w := 512) (k := 16 * l) (n := 16) (by omega_arith)
+  rw [show 8 * (16 * l) = 128 * l by omega_arith] at e
   exact e
 
 /-- Lane `l` of a register, as a stored value. -/
@@ -117,26 +117,26 @@ theorem zmm_lane (s : State) (r : XReg) {l : Nat} (hl : l < 4) :
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [State.zmm, State.ymm, State.zlane, State.lane, BitVec.getLsbD_extractLsb',
     BitVec.getLsbD_append, decide_eq_true hj, Bool.true_and]
-  rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
-  · simp only [show 128 * 0 + j < 256 by omega, show 128 * 0 + j < 128 by omega, ite_true,
+  rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+  · simp only [show 128 * 0 + j < 256 by omega_arith, show 128 * 0 + j < 128 by omega_arith, ite_true,
       show (0 : Nat) < 2 by decide]
-    exact congrArg _ (by omega)
-  · simp only [show 128 * 1 + j < 256 by omega, show ¬ 128 * 1 + j < 128 by omega,
+    exact congrArg _ (by omega_arith)
+  · simp only [show 128 * 1 + j < 256 by omega_arith, show ¬ 128 * 1 + j < 128 by omega_arith,
       ite_true, ite_false, show (1 : Nat) < 2 by decide, show (1 : Nat) ≠ 0 by decide]
-    exact congrArg _ (by omega)
-  · simp only [show ¬ 128 * 2 + j < 256 by omega, ite_false, show ¬ (2 : Nat) < 2 by decide,
+    exact congrArg _ (by omega_arith)
+  · simp only [show ¬ 128 * 2 + j < 256 by omega_arith, ite_false, show ¬ (2 : Nat) < 2 by decide,
       BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and]
-    exact congrArg _ (by omega)
-  · simp only [show ¬ 128 * 3 + j < 256 by omega, ite_false, show ¬ (3 : Nat) < 2 by decide,
+    exact congrArg _ (by omega_arith)
+  · simp only [show ¬ 128 * 3 + j < 256 by omega_arith, ite_false, show ¬ (3 : Nat) < 2 by decide,
       BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_arith)
 
 /-- The block at `a + 16 l` of a 64-byte write at `a`. -/
 theorem blockAt_writeW_lane (m : Mem) (a : Addr) (v : BitVec 512) {l : Nat} (hl : l < 4) :
     blockAt (m.writeW a v) (a + BitVec.ofNat 64 (16 * l)) =
       XBinOp.eval .pshufb (v.extractLsb' (128 * l) 128) revMask := by
-  have e := readW_writeW_inside m a v (k := 16 * l) (n := 16) (by omega) (by decide)
-  rw [show 8 * (16 * l) = 128 * l by omega] at e
+  have e := readW_writeW_inside m a v (k := 16 * l) (n := 16) (by omega_arith) (by decide)
+  rw [show 8 * (16 * l) = 128 * l by omega_arith] at e
   rw [blockAt_eq, e]
 
 /-- XOR the four lanes of `b` into the blocks at `base + d` … `base + d + 48`. -/
@@ -202,27 +202,27 @@ theorem xorDataZ_ok (t : XReg) (base : Reg) (regs : List XReg) (j : Nat) (s : St
     have h8' : t ∉ bs := fun h => h8 (List.mem_cons_of_mem _ h)
     simp only [List.length_cons] at hin hw
     rw [xorDataZ, WP.block_append_iff]
-    have hin0 := hin 0 (by omega)
+    have hin0 := hin 0 (by omega_arith)
     rw [Nat.add_zero] at hin0
     refine WP.mono (xor1Z_ok t base b (64 * j) s hb8 hin0) fun s₁ ⟨⟨v, m₁⟩, b₁, g₁, rd₁, wr₁, x₁⟩ => ?_
     have hrcx : s₁.gpr base = s.gpr base := by rw [g₁]
     refine WP.mono (ih (j + 1) s₁ (List.nodup_cons.mp hnd).2 h8' (fun k hk => by
-        rw [wr₁, hrcx, show j + 1 + k = j + (k + 1) by omega]; exact hin (k + 1) (by omega))
-      (by rw [hrcx]; omega)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
+        rw [wr₁, hrcx, show j + 1 + k = j + (k + 1) by omega_arith]; exact hin (k + 1) (by omega_arith))
+      (by rw [hrcx]; omega_arith)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
     rw [hrcx] at hb hf
     rw [ofInt_natCast] at m₁ b₁
     have adr : ∀ l < 4, s.gpr base + BitVec.ofNat 64 (16 * (4 * j + l)) =
         s.gpr base + BitVec.ofNat 64 (64 * j) + BitVec.ofNat 64 (16 * l) := fun l _ => by
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * j + 16 * l = 16 * (4 * j + l) by omega]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * j + 16 * l = 16 * (4 * j + l) by omega_arith]
     have hdj : ∀ l < 4, ∀ r ∈ [(⟨s.gpr base + BitVec.ofNat 64 (64 * (j + 1)), 64 * bs.length⟩ : Region)],
         Region.Disjoint ⟨s.gpr base + BitVec.ofNat 64 (16 * (4 * j + l)), 16⟩ r := by
       intro l hl
       simp only [List.mem_singleton, forall_eq]
       intro a h₁ h₂
       simp only [Region.Contains] at h₁ h₂
-      rw [off_toNat _ _ (by omega)] at h₁ h₂
+      rw [off_toNat _ _ (by omega_arith)] at h₁ h₂
       have := (a - s.gpr base).isLt
-      omega
+      omega_arith
     refine ⟨fun k hk l hl => ?_, ?_, g.trans g₁, rd.trans rd₁, wr.trans wr₁, fun r hr hr' l hl => ?_⟩
     · cases k with
       | zero =>
@@ -231,23 +231,23 @@ theorem xorDataZ_ok (t : XReg) (base : Reg) (regs : List XReg) (j : Nat) (s : St
       | succ k =>
         simp only [List.getElem_cons_succ]
         have hk' : k < bs.length := by simpa using hk
-        rw [show j + (k + 1) = j + 1 + k by omega, hb k hk' l hl, m₁, blockAt_writeW_sep _ _ (by
+        rw [show j + (k + 1) = j + 1 + k by omega_arith, hb k hk' l hl, m₁, blockAt_writeW_sep _ _ (by
             intro a h₁ h₂
-            rw [off_toNat _ _ (by omega)] at h₁ h₂
+            rw [off_toNat _ _ (by omega_arith)] at h₁ h₂
             have := (a - s.gpr base).isLt
             simp only [Nat.reduceDiv] at h₂
-            omega),
+            omega_arith),
           x₁ _ (fun h => hbs (h ▸ List.getElem_mem hk')) (fun h => h8' (h ▸ List.getElem_mem hk')) l hl]
     · rw [m₁] at hf
       refine (Frame.writeW (Frame.refl [⟨s.gpr base + BitVec.ofNat 64 (64 * j), 64 * (bs.length + 1)⟩]
-        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega)).trans
+        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega_arith)).trans
         (hf.sub fun r hr => ⟨_, List.mem_cons_self, fun a ha => ?_⟩)
       simp only [List.mem_singleton] at hr
       subst hr
       simp only [Region.Contains] at ha ⊢
-      rw [off_toNat _ _ (by omega)] at ha ⊢
+      rw [off_toNat _ _ (by omega_arith)] at ha ⊢
       have := (a - s.gpr base).isLt
-      omega
+      omega_arith
     · simp only [List.mem_cons, not_or] at hr'
       rw [hx r hr hr'.2 l hl, x₁ r hr'.1 hr l hl]
 

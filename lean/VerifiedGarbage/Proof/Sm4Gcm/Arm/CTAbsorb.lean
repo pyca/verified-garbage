@@ -90,7 +90,7 @@ theorem ghash1_ct {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {b : Reg} {o : Nat}
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact hkeep _ (by decide) (by decide) (by decide) (by decide)
         (by decide)) hk.sp hk.rd hk.wr
-    exact ⟨ghCall_mk L hyo he₁ h0 h1 (by rw [h2, hP]) h3 h12 (by omega) (by simpa using hpy) (by simpa using hpw)
+    exact ⟨ghCall_mk L hyo he₁ h0 h1 (by rw [h2, hP]) h3 h12 (by omega_arith) (by simpa using hpy) (by simpa using hpw)
       (by simpa using hpk) (by rw [hk.rd, hk.wr]; simpa using hpr), he₁.sp⟩
   · exact CT.gh fun s₁ s₂ h₁ h₂ => ⟨_, _, _, _, _, h₁.1, h₂.1, h₁.2.trans h₂.2.symm⟩
 
@@ -111,7 +111,7 @@ include L hyo
 theorem absorbHead_ct {D : BitVec 32} {n q : Nat} (hn : n ≠ 0) (hq : q ≠ 0) :
     CT (AbsI c st w sp yo D n q) (absorbHead yo) := by
   let J : State → Prop := fun s => ∃ k7 k8 H x m₀ k, x.length % 16 = q ∧ HeadMid c st w sp k7 k8 yo H x D n m₀ k s
-  refine CT.seq (J := J) ?_ (fun s ⟨k7, k8, H, x, hx, hs⟩ => WP.mono (headPre_ok L hyo hs hn (by omega))
+  refine CT.seq (J := J) ?_ (fun s ⟨k7, k8, H, x, hx, hs⟩ => WP.mono (headPre_ok L hyo hs hn (by omega_arith))
     fun s' ⟨k, hm⟩ => ⟨k7, k8, H, x, s.mem, k, hx, hm⟩) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r4, .r5, .r6, .r10]) headPre h).isSome =
         true := ⟨_, by taint_decide⟩
@@ -125,10 +125,10 @@ theorem absorbHead_ct {D : BitVec 32} {n q : Nat} (hn : n ≠ 0) (hq : q ≠ 0) 
   · refine CT.ite (decide (q + min (16 - q) n = 16)) (fun s ⟨_, _, _, _, _, _, hx, hm⟩ => by
       rw [hm.z, hm.kmin, hx]) (fun _ => ?_) (fun _ => CT.skip)
     have eB := L.stA (d := 32) (by decide)
-    have hf : (st + BitVec.ofNat 32 32).toNat + 16 ≤ 2 ^ 32 := by rw [L.stN (by decide)]; have := L.sw; omega
+    have hf : (st + BitVec.ofNat 32 32).toNat + 16 ≤ 2 ^ 32 := by rw [L.stN (by decide)]; have := L.sw; omega_arith
     refine (ghash1_ct L hyo (.inl ⟨rfl, rfl⟩) (P := st + BitVec.ofNat 32 32) hf ?_ ?_ ?_).mono
       fun s ⟨k7, k8, _, _, _, _, _, hm⟩ => ⟨⟨k7, k8, hm.env⟩, by rw [hm.env.r10], ?_⟩
-    · rw [eB]; exact Lay.st_st (.inl (by omega)) (by omega) (by decide)
+    · rw [eB]; exact Lay.st_st (.inl (by omega_arith)) (by omega_arith) (by decide)
     · rw [eB]; exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
     · rw [eB]; exact L.stk_st (by decide)
     · rw [eB]; exact covers_left (hm.env.perm.stC (by decide))
@@ -141,7 +141,7 @@ theorem absorbFill_ct {D : BitVec 32} {n q : Nat} (hn : n ≠ 0) (hq : q < 16) :
         true := ⟨_, by taint_decide⟩
     exact CT.taint _ (fun s₁ s₂ ⟨_, _, _, x₁, hx₁, h₁⟩ ⟨_, _, _, x₂, hx₂, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.r6, h₂.r6, hx₁, hx₂]) hc
-  · obtain ⟨s₂, run₂, hz₂, hg₂, hm₂, hrd₂, hwr₂, hsp₂⟩ := cmp0_ok s .r6 hs.r6 (by omega)
+  · obtain ⟨s₂, run₂, hz₂, hg₂, hm₂, hrd₂, hwr₂, hsp₂⟩ := cmp0_ok s .r6 hs.r6 (by omega_arith)
     exact WP.of_runBlock ⟨s₂, run₂, ⟨k7, k8, H, x, hx, hs.keep hg₂ ⟨hm₂, hrd₂, hwr₂, hsp₂⟩⟩, by rw [hz₂, hx]⟩
   · exact CT.ite (decide (q = 0)) (fun s h => h.2) (fun _ => CT.skip) fun hb =>
       (absorbHead_ct L hyo hn (by simpa using hb)).mono fun s h => h.1
@@ -186,12 +186,12 @@ theorem absorbWhole_ct {D : BitVec 32} {n q j : Nat} : CT (MidI c st w sp yo D n
       · simp [gpr_setReg, h3]
       · simp [gpr_setReg, h11]
     · refine CT.gh fun s₁ s₂ ⟨_, _, he₁, hd₁, hj₁, a0, a1, a2, a3, a12⟩ ⟨_, _, he₂, hd₂, hj₂, b0, b1, b2, b3, b12⟩ => ?_
-      have hdj₁ := hd₁.sub (j := j) (k := 16 * nb) (by omega) (by omega)
-      have hdj₂ := hd₂.sub (j := j) (k := 16 * nb) (by omega) (by omega)
-      exact ⟨_, _, _, _, _, ghCall_mk L hyo he₁ a0 a1 a2 a3 a12 (by have := hdj₁.fit; omega)
-        (hdj₁.st.sub_right (Lay.stSub (by omega))).symm (hdj₁.w.sub_right (Lay.wSub (by decide))) hdj₁.stk hdj₁.rd,
-        ghCall_mk L hyo he₂ b0 b1 b2 b3 b12 (by have := hdj₂.fit; omega)
-        (hdj₂.st.sub_right (Lay.stSub (by omega))).symm (hdj₂.w.sub_right (Lay.wSub (by decide))) hdj₂.stk hdj₂.rd,
+      have hdj₁ := hd₁.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)
+      have hdj₂ := hd₂.sub (j := j) (k := 16 * nb) (by omega_arith) (by omega_arith)
+      exact ⟨_, _, _, _, _, ghCall_mk L hyo he₁ a0 a1 a2 a3 a12 (by have := hdj₁.fit; omega_arith)
+        (hdj₁.st.sub_right (Lay.stSub (by omega_arith))).symm (hdj₁.w.sub_right (Lay.wSub (by decide))) hdj₁.stk hdj₁.rd,
+        ghCall_mk L hyo he₂ b0 b1 b2 b3 b12 (by have := hdj₂.fit; omega_arith)
+        (hdj₂.st.sub_right (Lay.stSub (by omega_arith))).symm (hdj₂.w.sub_right (Lay.wSub (by decide))) hdj₂.stk hdj₂.rd,
         he₁.sp.trans he₂.sp.symm⟩
 
 omit L hyo in
@@ -227,9 +227,9 @@ theorem absorb_ct {D : BitVec 32} {n q : Nat} (hq : q < 16) : CT (AbsI c st w sp
 /-- `ghash1 yo .r11 96`, of `T`. -/
 theorem ghT_ct : CT (GhIn c st w sp .r11 96 (w + BitVec.ofNat 32 96)) (ghash1 yo .r11 tO) := by
   have eT := L.wA (d := 96) (by decide)
-  have hf : (w + BitVec.ofNat 32 96).toNat + 16 ≤ 2 ^ 32 := by rw [L.wN (by decide)]; have := L.ww; omega
+  have hf : (w + BitVec.ofNat 32 96).toNat + 16 ≤ 2 ^ 32 := by rw [L.wN (by decide)]; have := L.ww; omega_arith
   refine ghash1_ct L hyo (.inr ⟨rfl, rfl⟩) hf ?_ ?_ ?_
-  · rw [eT]; exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+  · rw [eT]; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
   · rw [eT]; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   · rw [eT]; exact L.stk_w (by decide)
 
@@ -247,7 +247,7 @@ theorem flush_ct {q : Nat} (hq : q < 16) :
         true := ⟨_, by taint_decide⟩
     exact CT.taint _ (fun s₁ s₂ ⟨_, _, _, h₁⟩ ⟨_, _, _, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) hc
-  · obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmp0_ok s .r6 h6 (by omega)
+  · obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmp0_ok s .r6 h6 (by omega_arith)
     exact WP.of_runBlock ⟨s₁, run₁, ⟨k7, k8, he.keep (fun r _ => by rw [hg₁]) hsp₁ hrd₁ hwr₁, by rw [hg₁, h6]⟩, hz⟩
   refine CT.ite (decide (q = 0)) (fun s h => h.2) (fun _ => CT.skip) fun hb => ?_
   have h0 : q ≠ 0 := by simpa using hb

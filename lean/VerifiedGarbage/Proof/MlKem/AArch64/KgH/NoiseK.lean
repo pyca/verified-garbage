@@ -48,7 +48,7 @@ theorem kgPoly_eq (s₀ : State) (N : Nat) :
   · rfl
   · rename_i h
     simp only [KPke.kgE, VG.Proof.MlKem.cbd, KemLay.params]
-    rw [Nat.add_sub_cancel' (by omega)]
+    rw [Nat.add_sub_cancel' (by omega_arith)]
 
 /-- The polynomials of the noise lie between `NS + 1024` and the end of `scratch`, apart from
 `TP`'s buffers. -/
@@ -67,10 +67,10 @@ theorem out_far (hw : P.Wf) (hr : Noise.Room P) {N : Nat} (hN : N < 2 * P.k) :
     simp only [ite_true]
     have so : KG.sOff P N = SH P + 1024 * N := rfl
     rw [so]
-    have := Nat.mul_le_mul_left 1024 (show N + 1 ≤ P.k by omega)
-    omega
+    have := Nat.mul_le_mul_left 1024 (show N + 1 ≤ P.k by omega_arith)
+    omega_arith
   · have := Noise.noise_past_kg hr (N - P.k)
-    omega
+    omega_arith
 
 /-- **`kgOut`**: `SamplePolyCBD₂` of buffer `N` into its polynomial, transformed. -/
 theorem kgOut_ok {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) (h : KB P s₀ s)
@@ -94,14 +94,14 @@ theorem kgOut_ok {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) (h : KB 
   have fN : KG.NS + 1024 ≤ kL P 3 := by omega_using [cst, hsv, sv]
   have fB : TP P + 168 * N + 128 ≤ kL P 3 := by omega_using [hsv, sv, hN6]
   have dBT : (R (kA s₀) 3 (TP P + 168 * N) 128).Disjoint (R (kA s₀) 3 T 1024) :=
-    sdisjK hp fB fT (by rcases tB with h | h <;> omega)
+    sdisjK hp fB fT (by rcases tB with h | h <;> omega_arith)
   have dTN : (R (kA s₀) 3 T 1024).Disjoint (R (kA s₀) 3 KG.NS 1024) := sdisjK hp fT fN (.inr tN)
   have cT : Covers [R (kA s₀) 3 T 1024] s.wr := cov_w hp h (b := 3) (by decide) fT
   have cN : Covers [R (kA s₀) 3 KG.NS 1024] s.wr := cov_w hp h (b := 3) (by decide) fN
   have cB : Covers [R (kA s₀) 3 (TP P + 168 * N) 128] (s.rd ++ s.wr) := cov_r hp h (b := 3) (by decide) fB
   have sT := kb_disj hp (b := 3) (o := T) (l := 1024) (by decide) fT
-    (.inr (by rcases tB with h | h <;> omega)) (by decide)
-  have sN := kb_disj hp (b := 3) (o := KG.NS) (l := 1024) (by decide) fN (.inr (.inr (by omega))) (by decide)
+    (.inr (by rcases tB with h | h <;> omega_arith)) (by decide)
+  have sN := kb_disj hp (b := 3) (o := KG.NS) (l := 1024) (by decide) fN (.inr (.inr (by omega_arith))) (by decide)
   unfold Impl.MlKem.AArch64.Kem16P.kgOut
   rw [kgTarget_eq, ht]
   simp only [seqs, Impl.MlKem.AArch64.Kem16P.bufOff]
@@ -171,7 +171,7 @@ theorem noise_regionK {s₀ : State} (hp : Pre P s₀) {o l : Nat} (hf : o + l �
   exact sdisjK hp (by omega_using [hsv, sv, hN]) hf (by omega_using [hb, sv, hN, hm, tp, sh])
 
 theorem NK.zero {s₀ s : State} (hk3 : 3 ≤ P.k) (H : FInv P s₀ 4 6 s) : NK P s₀ s 0 s :=
-  ⟨⟨H.b.kb, H.b.rho, H.b.sig, rfl, by have := Nat.mul_le_mul hk3 hk3; omega,
+  ⟨⟨H.b.kb, H.b.rho, H.b.sig, rfl, by have := Nat.mul_le_mul hk3 hk3; omega_arith,
     fun e he => ⟨H.b.red e he, rfl⟩⟩, rfl, H.tables.transforms, fun _ _ => rfl,
     fun N hN => absurd hN (Nat.not_lt_zero N)⟩
 
@@ -209,8 +209,8 @@ theorem kgOut_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {j :
     fun N hN => ?_, fun N hN => ?_⟩
   · rw [bytesAt_frame fu (fun r hr' => (far r hr').2.2 N hN) (by decide)]
     exact H.buf N hN
-  · rcases (by omega : N < j ∨ N = j) with hN | rfl
-    · obtain ⟨tN', tS', -, -⟩ := out_far hw hr (N := N) (by omega)
+  · rcases (by omega_arith : N < j ∨ N = j) with hN | rfl
+    · obtain ⟨tN', tS', -, -⟩ := out_far hw hr (N := N) (by omega_arith)
       have fT' : Noise.outOff P true N + 1024 ≤ kL P 3 := by omega_using [tS', kl3]
       have ord := Noise.outOff_order hw hr true hN
       refine polyIsW_frame_poly (w16 := true) fu (fun r hr' => ?_) (H.done N hN)
@@ -251,7 +251,7 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
     simpa only [R, ptr_zero] using cov_w hp kb (b := 3) (o := 0) (l := P.scl) (by decide) (by kl)
   have lim := Noise.layout_limits hw true
   simp only [Noise.scratchOff, Noise.nttOff, Noise.seedOff, ite_true] at lim
-  obtain ⟨oN, oS, oB, oH⟩ := out_far hw hr (N := n) (by omega)
+  obtain ⟨oN, oS, oB, oH⟩ := out_far hw hr (N := n) (by omega_arith)
   obtain ⟨oN', oS', oB', oH'⟩ := out_far hw hr (N := n + 1) hn
   have fO : Noise.outOff P true n + 1024 ≤ kL P 3 := by omega_using [oS, kl3]
   have fO' : Noise.outOff P true (n + 1) + 1024 ≤ kL P 3 := by omega_using [oS', kl3]
@@ -287,7 +287,7 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
     away (sdisjK hp hf fS (.inr (by omega_using [h1, lim]))) (sdisjK hp hf fN (.inr h1))
       (sdisjK hp hf fO h2) (sdisjK hp hf fO' h3)
   refine WP.mono_syms (Noise.readonly_noisePair_layout (B := kA s₀ 3) hw hr true hn kb.x28 hc
-    (rdy n (by omega)) (rdy (n + 1) hn) ffar) fun u ⟨ku, pu, qu⟩ sy => ?_
+    (rdy n (by omega_arith)) (rdy (n + 1) hn) ffar) fun u ⟨ku, pu, qu⟩ sy => ?_
   have sv : SV P = TP P + 2048 := rfl
   have tp : TP P = SH P + 1024 * P.k + 1024 := rfl
   have sh : SH P = AH + 1024 * (P.k * P.k) := rfl
@@ -315,9 +315,9 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
   · rw [bytesAt_frame ku.frame (hi (TP P + 168 * N) 128 (by omega_using [hsv, sv, hN]) (by omega_using [tp, sh, cst])
       (by omega_using [oB, oH, sv, tp, hN]) (by omega_using [oB', oH', sv, tp, hN])) (by decide)]
     exact H.buf N hN
-  · rcases (by omega : N < n ∨ N = n ∨ N = n + 1) with hN' | rfl | rfl
+  · rcases (by omega_arith : N < n ∨ N = n ∨ N = n + 1) with hN' | rfl | rfl
     · exact polyIsW_frame_poly (w16 := true) ku.frame (Noise.writes_old_far hw hr true (kA s₀ 3) hn hN') (H.done N hN')
-    · exact samp (by omega) pu
+    · exact samp (by omega_arith) pu
     · exact samp hn qu
 
 /-- **The noise** from the first pairs' buffers, then paired `PRF₂` for the rest. -/
@@ -327,22 +327,22 @@ theorem noiseK_ok {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) (hk3 : 
         Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWithW P true (6 + 2 * i))) s
       (NK P s₀ s (2 * P.k)) := by
   refine WPs.append (WPs.mono (WPs.range (I := NK P s₀ s) (fun j hj t ht =>
-    kgOut_step hp hr hj (by omega) (H.prf j hj) ht) (NK.zero hk3 H)) fun t ht => ?_)
+    kgOut_step hp hr hj (by omega_arith) (H.prf j hj) ht) (NK.zero hk3 H)) fun t ht => ?_)
   have r := WPs.range (f := fun i => Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWithW P true (6 + 2 * i))
     (I := fun i => NK P s₀ s (6 + 2 * i)) (n := P.k - 3) (fun i hi u hu => by
-      have st := pairK_step hp hr (n := 6 + 2 * i) (by omega) hu
-      rwa [show 6 + 2 * i + 2 = 6 + 2 * (i + 1) by omega] at st) ht
-  rwa [show 6 + 2 * (P.k - 3) = 2 * P.k by omega] at r
+      have st := pairK_step hp hr (n := 6 + 2 * i) (by omega_arith) hu
+      rwa [show 6 + 2 * i + 2 = 6 + 2 * (i + 1) by omega_arith] at st) ht
+  rwa [show 6 + 2 * (P.k - 3) = 2 * P.k by omega_arith] at r
 
 /-- The noise as `KgRows` encodes `ŝ` from it. -/
 theorem NK.encode {s₀ s t : State} (H : NK P s₀ s (2 * P.k) t) :
     EncodeInvW P s₀ s.mem t.mem (s.gpr .x24) 4 0 t := by
   refine ⟨H.c, fun j hj => ?_, fun j hj => ?_, fun _ hj => absurd hj (Nat.not_lt_zero _), Frame.refl _ _⟩
-  · have d := H.done j (by omega)
+  · have d := H.done j (by omega_arith)
     simp only [kgPoly, ite_true, hj, Noise.outOff] at d
     exact d
-  · have d := H.done (P.k + j) (by omega)
-    simp only [kgPoly, Noise.outOff, show ¬ P.k + j < P.k by omega, ite_false, Nat.add_sub_cancel_left] at d
+  · have d := H.done (P.k + j) (by omega_arith)
+    simp only [kgPoly, Noise.outOff, show ¬ P.k + j < P.k by omega_arith, ite_false, Nat.add_sub_cancel_left] at d
     exact d
 
 end VG.Proof.MlKem.AArch64.KeyGen

@@ -95,7 +95,7 @@ theorem sel_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) (hs : SelOk D s₀) {�
   · simp only [decide_eq_false_iff_not, Nat.not_lt] at hb
     have cs : (srcR s₀).Contains (s₀.gpr .r8 + BitVec.ofNat 64 off) 64 := by
       simp only [srcR, Region.Contains]
-      rw [show s₀.gpr .r8 + BitVec.ofNat 64 off - s₀.gpr .r8 = BitVec.ofNat 64 off by bv_omega,
+      rw [show s₀.gpr .r8 + BitVec.ofNat 64 off - s₀.gpr .r8 = BitVec.ofNat 64 off by bv_omega_arith,
         BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
       omega
     obtain ⟨s₂, hx, h₂⟩ := h₁.load t (at_ .r8 off) (f := fun p => .inp (off / 4 + p))
@@ -104,9 +104,9 @@ theorem sel_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) (hs : SelOk D s₀) {�
         have cp : (srcR s₀).Contains (s₀.gpr .r8 + BitVec.ofNat 64 off + BitVec.ofNat 64 (4 * p)) (32 / 8) := by
           simp only [srcR, Region.Contains] at cs ⊢
           rw [show s₀.gpr .r8 + BitVec.ofNat 64 off + BitVec.ofNat 64 (4 * p) - s₀.gpr .r8 =
-            BitVec.ofNat 64 (off + 4 * p) by rw [add_ofNat']; bv_omega,
+            BitVec.ofNat 64 (off + 4 * p) by rw [add_ofNat']; bv_omega_arith,
             BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-          rw [show s₀.gpr .r8 + BitVec.ofNat 64 off - s₀.gpr .r8 = BitVec.ofNat 64 off by bv_omega,
+          rw [show s₀.gpr .r8 + BitVec.ofNat 64 off - s₀.gpr .r8 = BitVec.ofNat 64 off by bv_omega_arith,
             BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at cs
           omega
         rw [ea, m₁, h.frame.readW cp hs.d (by decide)]

@@ -32,7 +32,7 @@ theorem zero_mask (b : Byte) :
   · have : (1 : BitVec 64).toNat ≤ (b.setWidth 64).toNat := by
       rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans b.isLt (by decide))]
       have : b.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq e)
-      show 1 ≤ _; omega
+      show 1 ≤ _; omega_arith
     simp only [this, ↓reduceIte, bm, h, decide_false, Bool.false_eq_true]
 
 theorem scanInit_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
@@ -96,21 +96,21 @@ theorem scanLoop_ok {t₀ : State} {O : Addr} {EM : List Byte} {k : Nat} (hk : 3
     (h17 : t₀.gpr .x17 = 1) :
     WP isa scanLoop t₀ fun u => Same t₀ u ∧ u.gpr .x15 = bm (firstZero EM k).isSome ∧
       u.gpr .x16 = BitVec.ofNat 64 ((firstZero EM k).getD 0) ∧ u.gpr .x13 = t₀.gpr .x13 ∧ u.gpr .x17 = 1 := by
-  refine (Bytes.count_loop (n := k - 2) (by omega) (fun j u => Same t₀ u ∧
+  refine (Bytes.count_loop (n := k - 2) (by omega_arith) (fun j u => Same t₀ u ∧
     u.gpr .x11 = O + BitVec.ofNat 64 (2 + j) ∧ u.gpr .x12 = BitVec.ofNat 64 (k - 2 - j) ∧
     u.gpr .x14 = BitVec.ofNat 64 (2 + j) ∧ u.gpr .x15 = bm (firstZero EM (2 + j)).isSome ∧
     u.gpr .x16 = BitVec.ofNat 64 ((firstZero EM (2 + j)).getD 0) ∧ u.gpr .x13 = t₀.gpr .x13 ∧ u.gpr .x17 = 1)
     (fun j hj u ⟨hs, u11, u12, u14, u15, u16, u13, u17⟩ => ?_)
     ⟨Same.refl _, h11, h12, h14, by rw [h15]; rfl, by rw [h16]; rfl, rfl, h17⟩).mono
     fun u ⟨hs, _, _, _, u15, u16, u13, u17⟩ => by
-      rw [show 2 + (k - 2) = k by omega] at u15 u16
+      rw [show 2 + (k - 2) = k by omega_arith] at u15 u16
       exact ⟨hs, u15, u16, u13, u17⟩
-  have hr0 := hr (2 + j) (by omega)
+  have hr0 := hr (2 + j) (by omega_arith)
   rw [← hs.rd, ← hs.wr] at hr0
-  have hb : u.mem (u.gpr .x11) = EM.getD (2 + j) 1 := by rw [u11, hs.mem, hEM _ (by omega)]
+  have hb : u.mem (u.gpr .x11) = EM.getD (2 + j) 1 := by rw [u11, hs.mem, hEM _ (by omega_arith)]
   refine WP.mono (scanBody_ok (by rw [u11, BitVec.add_zero]; exact hr0) u17)
     fun w ⟨hw, w11, w12, w14, w15, w16, w13, w17⟩ => ⟨⟨hs.trans hw, by rw [w11, u11, Enc.add_add]; rfl, by
-      rw [w12, u12, show k - 2 - j = (k - 2) - j from rfl, Bytes.counter_step hj (by omega)],
+      rw [w12, u12, show k - 2 - j = (k - 2) - j from rfl, Bytes.counter_step hj (by omega_arith)],
       by rw [w14, u14, ← BitVec.ofNat_add]; rfl, ?_, ?_,
       by rw [w13, u13], w17⟩, ?_⟩
   · rw [w15, u15, hb, firstZero_succ]
@@ -135,8 +135,8 @@ theorem scanLoop_ok {t₀ : State} {O : Addr} {EM : List Byte} {k : Nat} (hk : 3
         exact x16_pos _
       · simp only [Option.isSome_none, hz, decide_false, ite_false, Option.getD_none]
         exact x16_neg _
-  · rw [w12, u12, show k - 2 - j = (k - 2) - j from rfl, Bytes.counter_step hj (by omega)]
-    exact Bytes.counter_ne hj (by omega)
+  · rw [w12, u12, show k - 2 - j = (k - 2) - j from rfl, Bytes.counter_step hj (by omega_arith)]
+    exact Bytes.counter_ne hj (by omega_arith)
 
 section
 variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {R : BitVec 64} {EM : List Byte}
@@ -158,7 +158,7 @@ theorem bytes_getD' (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) (d : Byte) :
 /-- A byte of `out` is accessible. -/
 theorem Ctx.outR {t : State} (hc : Ctx L g vv m₀ t) {i : Nat} (hi : i < L.k.toNat) :
     InRegions (t.rd ++ t.wr) (L.out + BitVec.ofNat 64 i) 1 :=
-  ⟨L.OUT, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+  ⟨L.OUT, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem scanPart_ok (hL : L.Ok) {t : State} (h : AL L g vv m₀ R EM kd t) : WP isa scanPart t (SC L g vv m₀ R EM kd) := by
   have hk := hL.k1024
@@ -170,10 +170,10 @@ theorem scanPart_ok (hL : L.Ok) {t : State} (h : AL L g vv m₀ R EM kd t) : WP 
   have hc₁ := hc.same S₁
   have e12 : L.k - BitVec.ofNat 64 2 = BitVec.ofNat 64 (L.k.toNat - 2) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
   rw [e12] at x12
-  refine WP.mono (scanLoop_ok (O := L.out) (EM := EM) (k := L.k.toNat) (by omega) (by omega)
+  refine WP.mono (scanLoop_ok (O := L.out) (EM := EM) (k := L.k.toNat) (by omega_arith) (by omega_arith)
     (fun i hi => by rw [← hc₁.em, bytes_getD' _ _ hi]) (fun i hi => hc₁.ctx.outR hi) x11 x12 x14 x15 x16 x17)
     fun u ⟨hs, u15, u16, u13, u17⟩ => ⟨(h.amr.same S₁).same hs, by rw [u13, x13, h.al], u15, u16, u17⟩
 

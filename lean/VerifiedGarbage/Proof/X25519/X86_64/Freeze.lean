@@ -47,8 +47,8 @@ theorem fold_top (a0 a1 a2 a3 a3' m : BitVec 64) (hm : m.toNat = 19 * (a3.toNat 
   have hz : (0 : BitVec 64).toNat = 0 := rfl
   simp only [val4, hz] at e
   have hv : val4 a0 a1 a2 a3 = v + P * (a3.toNat / 2 ^ 63) := by
-    simp only [val4, P]; omega
-  exact ⟨by rw [hv, Nat.add_mul_mod_self_left], by omega⟩
+    simp only [val4, P]; omega_arith
+  exact ⟨by rw [hv, Nat.add_mul_mod_self_left], by omega_arith⟩
 
 theorem and_low63 (x : BitVec 64) : (x &&& low63).toNat = x.toNat % 2 ^ 63 := by
   rw [BitVec.toNat_and, show low63.toNat = 2 ^ 63 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
@@ -116,12 +116,12 @@ theorem add19_top (a0 a1 a2 a3 : BitVec 64) (hx : val4 a0 a1 a2 a3 < 2 ^ 255 + 1
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have hl := and_low63 w3
   by_cases h : P ≤ a0.toNat + 2 ^ 64 * a1.toNat + 2 ^ 128 * a2.toNat + 2 ^ 192 * a3.toNat
-  · have h1' : w3.toNat / 2 ^ 63 = 1 := by simp only [P] at h; omega
+  · have h1' : w3.toNat / 2 ^ 63 = 1 := by simp only [P] at h; omega_arith
     rw [BitVec.eq_of_toNat_eq (show (w3 >>> 63).toNat = (1 : BitVec 64).toNat by rw [ht, h1']; rfl),
       decide_eq_true h]
     refine ⟨by decide, fun _ => ?_⟩
-    rw [hl]; simp only [P] at h ⊢; omega
-  · have h0' : w3.toNat / 2 ^ 63 = 0 := by simp only [P] at h; omega
+    rw [hl]; simp only [P] at h ⊢; omega_arith
+  · have h0' : w3.toNat / 2 ^ 63 = 0 := by simp only [P] at h; omega_arith
     rw [BitVec.eq_of_toNat_eq (show (w3 >>> 63).toNat = (0 : BitVec 64).toNat by rw [ht, h0']; rfl),
       decide_eq_false h]
     exact ⟨by decide, fun h' => absurd h' h⟩
@@ -138,7 +138,7 @@ theorem freezeB_ok (s : State)
   apply WP.of_runBlock
   simp only [freezeB, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
     execShift, State.setReg32, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
-    RegUpd.cf_arithFlags, RegUpd.cf_setReg, hd, show 1 ≤ 63 ∧ 63 ≤ 63 from ⟨by omega, by omega⟩,
+    RegUpd.cf_arithFlags, RegUpd.cf_setReg, hd, show 1 ≤ 63 ∧ 63 ≤ 63 from ⟨by omega_arith, by omega_arith⟩,
     ite_true, ite_false, reduceCtorEq, and_self, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left', se0]
   obtain ⟨e₁, e₂⟩ := add19_top _ _ _ _ hx
@@ -192,8 +192,8 @@ theorem freeze_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Sl
   generalize val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) = x at l₁ y₂ ⊢
   by_cases h : P ≤ x
   · simp only [decide_eq_true h, ite_true]
-    rw [y₂ h]; simp only [P] at h l₁ ⊢; omega
+    rw [y₂ h]; simp only [P] at h l₁ ⊢; omega_arith
   · simp only [decide_eq_false h, Bool.false_eq_true, ite_false]
-    exact (Nat.mod_eq_of_lt (by omega)).symm
+    exact (Nat.mod_eq_of_lt (by omega_arith)).symm
 
 end VG.Proof.X25519.X86_64

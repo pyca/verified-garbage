@@ -48,7 +48,7 @@ theorem tail_big {rs : List Region} {D₀ D : Addr} {N w n : Nat} (hwr : Covers 
     16 ≤ N → n % 16 ≠ 0 → ∃ E, E + BitVec.ofNat 64 (16 - n % 16) = D + BitVec.ofNat 64 (n - n % 16) ∧
       InRegions rs E 16 := fun h16 _ =>
   ⟨D₀ + BitVec.ofNat 64 (N - 16), by
-    rw [hD, Offset.add_add, Offset.add_add]; congr 2; omega, in_off hwr (by omega) hN⟩
+    rw [hD, Offset.add_add, Offset.add_add]; congr 2; omega_arith, in_off hwr (by omega_arith) hN⟩
 
 section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
@@ -148,7 +148,7 @@ theorem ksTail_run {E : Addr} {r : Nat} (hr : r < 16) {s : State} (he : Env Ctx 
   have hks := he.perm.stR (show 64 + 16 ≤ 80 by decide)
   have h16 : (BitVec.setWidth 64 (16#16) <<< 0 : BitVec 64) = BitVec.ofNat 64 16 := by decide
   have hsub : BitVec.ofNat 64 16 - BitVec.ofNat 64 r = BitVec.ofNat 64 (16 - r) :=
-    BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)
+    BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith) (by omega_arith)
   have hx10 : E + BitVec.ofNat 64 (16 - r) - BitVec.ofNat 64 (16 - r) = E := BitVec.add_sub_cancel _ _
   have hEr := in_left (rd := s.rd) hE
   refine ⟨_, by
@@ -194,7 +194,7 @@ theorem crTailT_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D 
       InRegions s.wr E 16) :
     WP isa crTailT s (CrOut Ctx St W SP k R icb P D n m₀) := by
   have hj := h.lt16
-  refine WP.ite (decide (n - j = 0)) (eval_zero h.x24 (by have := h.data.ok.lt; omega)) (fun ht => ?_)
+  refine WP.ite (decide (n - j = 0)) (eval_zero h.x24 (by have := h.data.ok.lt; omega_arith)) (fun ht => ?_)
     (fun hf' => ?_)
   · have h0 : n - j = 0 := of_decide_eq_true ht
     refine WP.block_nil (crOut_of_xor h ?_ (fun _ _ => rfl) rfl rfl rfl)
@@ -207,15 +207,15 @@ theorem crTailT_ok {k : Reg → BitVec 64} {R : Nat} {icb : Block} {P : Nat} {D 
     simp [gpr_write, h26, lsr_ofNat _ _ hN]
   have h₁ := h.keep r₁.others r₁.mem r₁.sp r₁.rd r₁.wr
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine WP.ite (decide (N / 16 = 0)) (eval_zero x9₁ (by omega)) (fun _ => crTail_ok h₁) (fun hf => ?_)
-  have hbN : 16 ≤ N := by have := of_decide_eq_false hf; omega
+  refine WP.ite (decide (N / 16 = 0)) (eval_zero x9₁ (by omega_arith)) (fun _ => crTail_ok h₁) (fun hf => ?_)
+  have hbN : 16 ≤ N := by have := of_decide_eq_false hf; omega_arith
   obtain ⟨E, hE, hEw⟩ := hbig hbN h0
-  obtain ⟨s₂, run₂, m₂, g₂, sp₂, rd₂, wr₂⟩ := ksTail_run (r := n - j) (by omega) h₁.env
+  obtain ⟨s₂, run₂, m₂, g₂, sp₂, rd₂, wr₂⟩ := ksTail_run (r := n - j) (by omega_arith) h₁.env
     (by rw [h₁.x23, hE]) h₁.x24 (by rw [r₁.wr]; exact hEw)
   refine WP.of_runBlock ⟨s₂, run₂, crOut_of_xor h₁ ?_ (fun r hr => g₂ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₂ rd₂ wr₂⟩
-  rw [m₂, Tail.ks_mem _ _ _ (by omega), hE]
+  rw [m₂, Tail.ks_mem _ _ _ (by omega_arith), hE]
 
 /-- `cryptAlT`: `crypt` from the start of a keystream block, for a text of
 `N` bytes (in `x26`) whose last 16 bytes, if it is at least a block long and
@@ -228,15 +228,15 @@ theorem cryptAlT_ok (v : GcmImpl) {k : Reg → BitVec 64} {R P : Nat} {icb : Blo
     WP isa (cryptAlT v.callees) s (CrOut Ctx St W SP k R icb P D n s.mem) := by
   have hc : ∀ {m' : Mem}, Frame (crFrame St W D n) s.mem m' → ciphOf m' Ctx R = ciphOf s.mem Ctx R :=
     fun hf => ciph_frame hf (ctx_crFrame L h.data) h.rounds
-  have hj : 0 + 16 * ((n - 0) / 16) = n - n % 16 := by omega
+  have hj : 0 + 16 * ((n - 0) / 16) = n - n % 16 := by omega_arith
   exact WP.seq (WP.mono (WP.with_rdwr (crArgs_ok L (h.mid (icb := icb) hP))) fun s₁ ⟨h₁, _, w₁⟩ =>
     WP.seq (WP.mono (WP.with_rdwr (ctrCall1_ok L v h₁ (hc h₁.frame))) fun s₂ ⟨⟨h₂, hlt⟩, _, w₂⟩ =>
     WP.seq (WP.mono (WP.with_rdwr (crSeg2T_ok L h₂ hlt)) fun s₃ ⟨h₃, _, w₃⟩ =>
     WP.seq (WP.mono (WP.with_rdwr (ctrCall2_ok L v h₃ (hc h₃.frame))) fun s₄ ⟨h₄, _, w₄⟩ =>
       crTailT_ok h₄ ((h₄.kept .x26 (by decide)).trans h26) hN fun hb h0 => by
-        obtain ⟨E, hE, hw⟩ := hbig hb (by omega)
+        obtain ⟨E, hE, hw⟩ := hbig hb (by omega_arith)
         refine ⟨E, ?_, by rw [w₄, w₃, w₂, w₁]; exact hw⟩
-        rw [hj, show n - (n - n % 16) = n % 16 by omega, hE]))))
+        rw [hj, show n - (n - n % 16) = n % 16 by omega_arith, hE]))))
 
 end
 

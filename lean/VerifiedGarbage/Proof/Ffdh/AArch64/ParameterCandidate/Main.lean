@@ -62,11 +62,11 @@ theorem stat1_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
   have h256 := h.h256
   have hS' : s.mem.readW (B + BitVec.ofNat 64 (8 * kStat)) 64 = BitVec.ofNat 64 v := hS
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 v - BitVec.ofNat 64 1 ∧ t.mem = s.mem) (by
-    brun [h.x0, hdr_enc (show kStat < 32 by decide), h.scr.ld (d := 8 * kStat) (by simp only [kStat, sFn]; omega),
+    brun [h.x0, hdr_enc (show kStat < 32 by decide), h.scr.ld (d := 8 * kStat) (by simp only [kStat, sFn]; omega_arith),
       hS']) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h3, hm⟩, k⟩ => ?_
   refine ⟨?_, hm, k⟩
   rw [eval_zero, h3, eq_zero_iff, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  exact congrArg some (decide_eq_decide.mpr (by omega))
+  exact congrArg some (decide_eq_decide.mpr (by omega_arith))
 
 /-- The tests, once the shape passed. -/
 theorem tests_ok (M : Mont) (R : Kernel) {p : PP} {s : State} {c : Nat} (h : PSt p (mW p.bits) s)
@@ -78,10 +78,10 @@ theorem tests_ok (M : Mont) (R : Kernel) {p : PP} {s : State} {c : Nat} (h : PSt
   have hb2 := h.dims.b2
   have h256 := h.ws.h256
   have hbq : Spec.RsaKeyGen.bitLength ((c - 1) / 2) = p.bits - 1 := by
-    rw [hc]; exact VG.Proof.Ffdh.ParameterCandidate.half_bitLength (by omega) _
+    rw [hc]; exact VG.Proof.Ffdh.ParameterCandidate.half_bitLength (by omega_arith) _
   have hbp : Spec.RsaKeyGen.bitLength c = p.bits := by
-    rw [hc]; exact (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (by omega) _).1
-  obtain ⟨_, _, hcu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega)
+    rw [hc]; exact (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (by omega_arith) _).1
+  obtain ⟨_, _, hcu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_arith)
     (Spec.Rsa.os2ip (p.r.take p.L))
   rw [← hc] at hcu
   have hEZq := h.dims.eZ true
@@ -104,7 +104,7 @@ theorem tests_ok (M : Mont) (R : Kernel) {p : PP} {s : State} {c : Nat} (h : PSt
       WP isa (.block [ldh .x3 kStat, .subImm .x .x3 .x3 1]) t₁ fun t =>
         isa.eval (.zero .x .x3) t = some (decide (v = 1)) ∧ MrFix p (mW (p.bits - 1)) ((c - 1) / 2) (p.bits - 1)
           (Spec.Ffdh.primeChecks (p.bits - 1)) t ∧ t.mem = t₁.mem ∧ Keep [.x3] t₁ t :=
-    fun v hS hv2 => WP.mono (stat1_ok fix₁.st.ws (by omega) hS) fun t ⟨hz, hm, k⟩ =>
+    fun v hS hv2 => WP.mono (stat1_ok fix₁.st.ws (by omega_arith) hS) fun t ⟨hz, hm, k⟩ =>
       ⟨hz, fix₁.same hEZq hm k (by decide), hm, k⟩
   -- The end of a failed test of `q`.
   have qfail : ∀ {t₂ : State}, t₂.mem = t₁.mem → Keep [.x3] t₁ t₂ → (∀ rest, resQ ≠ some (true, rest)) →
@@ -142,10 +142,10 @@ theorem tests_ok (M : Mont) (R : Kernel) {p : PP} {s : State} {c : Nat} (h : PSt
       rw [seqs_one]
       have hn₃ : wv t₃.mem p.B (slot (mW p.bits) aN) ((p.L + 7) / 8) = c := by
         obtain ⟨_, hc₃⟩ := fix₃.ctx
-        refine wv_low hc₃.n (by simp only [PP.L, mW]; omega)
-          (Nat.lt_of_lt_of_le hcu (Nat.pow_le_pow_right (by decide) (by simp only [PP.L]; omega)))
-      refine WP.mono (pResult_ok (c := c) (r := p.r) fix₃.st.ws (by simp only [PP.L]; omega)
-        (by simp only [PP.L, mW]; omega) hn₃ fix₃.st.ou fix₃.st.args.out fix₃.len fix₃.st.args.usedP fix₃.msk
+        refine wv_low hc₃.n (by simp only [PP.L, mW]; omega_arith)
+          (Nat.lt_of_lt_of_le hcu (Nat.pow_le_pow_right (by decide) (by simp only [PP.L]; omega_arith)))
+      refine WP.mono (pResult_ok (c := c) (r := p.r) fix₃.st.ws (by simp only [PP.L]; omega_arith)
+        (by simp only [PP.L, mW]; omega_arith) hn₃ fix₃.st.ou fix₃.st.args.out fix₃.len fix₃.st.args.usedP fix₃.msk
         stp.1 stp.2) fun t ht => ?_
       have hk : Keep mmRegs s t₃ := ((k₁.trans k).trans k₃).mono (by decide)
       have ho : outBytes t₃.mem p.op p.L = outBytes s.mem p.op p.L :=
@@ -172,7 +172,7 @@ theorem checked_eq {bits g : Nat} {r : List Byte} (h : (bits + 7) / 8 ≤ r.leng
 theorem TabOk.frm {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)} (h : TabOk m B w)
     (hf : Frm B rs m m') (hd : ∀ r ∈ rs, r.1 + r.2 ≤ slot w aTab) (hn : slot w aTab + 2048 ≤ 2 ^ 64) :
     TabOk m' B w := fun i hi => by
-  rw [hf.word_eq (fun r hr => Or.inr (by have := hd r hr; omega)) (by omega)]; exact h i hi
+  rw [hf.word_eq (fun r hr => Or.inr (by have := hd r hr; omega_arith)) (by omega_arith)]; exact h i hi
 
 /-- `main`: `p`, its shape, and the tests. -/
 theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)

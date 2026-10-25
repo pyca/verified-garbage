@@ -148,7 +148,7 @@ theorem ecbWith_wp (sr : Reg) (kt : Prog isa) (dir : Dir) {s₀ : State}
     show (s₂.gpr .r2 - 0 == 0) = _
     rw [r2₂, Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
     have : n < 2 ^ 32 := (s₀.gpr .r2).isLt
-    bv_omega
+    bv_omega_arith
   refine WP.seq (WP.of_runBlock ⟨s₄, e₄, ?_⟩)
   have base₄ : s₄.gpr sb = b := base₂
   have mem₄ : s₄.mem = s₂.mem := rfl

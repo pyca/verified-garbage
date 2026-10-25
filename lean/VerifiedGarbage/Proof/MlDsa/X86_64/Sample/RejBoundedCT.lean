@@ -114,8 +114,8 @@ theorem try_ct {η : Nat} (hη : η = 2 ∨ η = 4) {h1 h2 h3 : VG.Taint.Hint X8
     RelCT isa P (rbTry η) fun s₁' s₂' => ∃ s₁ s₂, P s₁ s₂ ∧ TryPost η s₁ s₁' ∧ TryPost η s₂ s₂' :=
   RelCT.mono (RelCT.wpDep (RelCT.mono (tryTrace hη c1 c2 c3) (fun s₁ s₂ h => by
       obtain ⟨aP, L₁, L₂, b₁, b₂, hl, t₁, t₂, hb₁, hb₂, d₁, d₂, hok⟩ := hP s₁ s₂ h
-      have e₁ : ((s₁.gpr .rdx).setWidth 32).toNat = b₁ := by rw [d₁, BitVec.toNat_ofNat]; omega
-      have e₂ : ((s₂.gpr .rdx).setWidth 32).toNat = b₂ := by rw [d₂, BitVec.toNat_ofNat]; omega
+      have e₁ : ((s₁.gpr .rdx).setWidth 32).toNat = b₁ := by rw [d₁, BitVec.toNat_ofNat]; omega_arith
+      have e₂ : ((s₂.gpr .rdx).setWidth 32).toNat = b₂ := by rw [d₂, BitVec.toNat_ofNat]; omega_arith
       exact ⟨by rw [t₁.rbp, t₂.rbp], by rw [t₁.rdi, t₂.rdi, hl], by rw [e₁, e₂]; exact lt_rbB_congr hη hok⟩)
       (fun _ _ h => h))
     (F := TryPost η) fun s₁ s₂ h => by
@@ -171,7 +171,7 @@ theorem load_ct (η : Nat) : RelCT isa (BRel η) (.block rbLoad) (R1 η) := by
       s'.cf = some (decide ((s.gpr .rdi).toNat < 256)) → s'.mem = s.mem → s'.gpr .rdi = s.gpr .rdi →
       Keep [.rax, .rdx, .rdi] s s' → MPre s' aP L (s.mem (s.gpr .rsi)) :=
     fun {s s' L} p a d c m di kk => ⟨by rw [kk.gpr (by decide), p.rbp], by rw [di, p.rdi], p.len,
-      by rw [kk.2.2]; exact p.wr, by rw [m]; exact p.st, by rw [c, p.rdi, ofNat64_toNat (by have := p.len; omega)],
+      by rw [kk.2.2]; exact p.wr, by rw [m]; exact p.st, by rw [c, p.rdi, ofNat64_toNat (by have := p.len; omega_arith)],
       a, d⟩
   exact ⟨aP, L₁, L₂, _, _, hl, mp p1 ha hd hc hm hdi k, mp p2 ha' hd' hc' hm' hdi' k', hok,
     by rw [k.gpr (by decide), k'.gpr (by decide), ecx], by rw [k.gpr (by decide), k'.gpr (by decide), esi]⟩
@@ -217,14 +217,14 @@ theorem try1_ct : RelCT isa (fun s₁ s₂ => R1 η s₁ s₂ ∧ isa.eval .b s�
   refine RelCT.mono (try_ct hη c1 c2 c3 fun s₁ s₂ h => ?_) (fun _ _ h => h) ?_
   · obtain ⟨aP, L₁, L₂, z₁, z₂, hl, m₁, m₂, hok, _, _, hl1⟩ := hlt h
     simp only [hbOks, Prod.mk.injEq] at hok
-    exact ⟨aP, L₁, L₂, _, _, hl, ⟨m₁.rbp, m₁.rdi, hl1, m₁.wr, m₁.st⟩, ⟨m₂.rbp, m₂.rdi, by omega, m₂.wr, m₂.st⟩,
+    exact ⟨aP, L₁, L₂, _, _, hl, ⟨m₁.rbp, m₁.rdi, hl1, m₁.wr, m₁.st⟩, ⟨m₂.rbp, m₂.rdi, by omega_arith, m₂.wr, m₂.st⟩,
       Nat.mod_lt _ (by decide), Nat.mod_lt _ (by decide), m₁.rdx, m₂.rdx, hok.1⟩
   · intro s₁' s₂' ⟨s₁, s₂, h, f₁, f₂⟩
     obtain ⟨aP, L₁, L₂, z₁, z₂, hl, m₁, m₂, hok, ecx, esi, hl1⟩ := hlt h
     simp only [hbOks, Prod.mk.injEq] at hok
     obtain ⟨d₁, st₁, _, k₁⟩ := f₁ aP L₁ _ ⟨m₁.rbp, m₁.rdi, hl1, m₁.wr, m₁.st⟩ (Nat.mod_lt _ (by decide)) m₁.rdx
-    obtain ⟨d₂, st₂, _, k₂⟩ := f₂ aP L₂ _ ⟨m₂.rbp, m₂.rdi, by omega, m₂.wr, m₂.st⟩ (Nat.mod_lt _ (by decide)) m₂.rdx
-    exact ⟨aP, _, _, z₁, z₂, hbTry_length_eq hl hok.1, hbTry_length_le hl1 _, hbTry_length_le (by omega) _,
+    obtain ⟨d₂, st₂, _, k₂⟩ := f₂ aP L₂ _ ⟨m₂.rbp, m₂.rdi, by omega_arith, m₂.wr, m₂.st⟩ (Nat.mod_lt _ (by decide)) m₂.rdx
+    exact ⟨aP, _, _, z₁, z₂, hbTry_length_eq hl hok.1, hbTry_length_le hl1 _, hbTry_length_le (by omega_arith) _,
       by rw [k₁.gpr (by decide), m₁.rbp], by rw [k₂.gpr (by decide), m₂.rbp], d₁, d₂,
       by rw [k₁.2.2]; exact m₁.wr, by rw [k₂.2.2]; exact m₂.wr, st₁, st₂,
       by rw [k₁.gpr (by decide), m₁.rax], by rw [k₂.gpr (by decide), m₂.rax], hok.2,
@@ -244,8 +244,8 @@ theorem hi_ct : RelCT isa (R2 η) (.block rbHi) (R3 η) := by
     obtain ⟨⟨hd₂, hc₂, hm₂, hdi₂⟩, k₂⟩ := f₂ z₂ a₂
     exact ⟨aP, L₁, L₂, _, _, hl, l₁, by rw [k₁.gpr (by decide), b₁], by rw [k₂.gpr (by decide), b₂],
       by rw [hdi₁, d₁], by rw [hdi₂, d₂], by rw [k₁.2.2]; exact w₁, by rw [k₂.2.2]; exact w₂,
-      by rw [hm₁]; exact st₁, by rw [hm₂]; exact st₂, by have := z₁.isLt; omega, by have := z₂.isLt; omega,
-      hd₁, hd₂, hok, by rw [hc₁, d₁, ofNat64_toNat (by omega)], by rw [hc₂, d₂, ofNat64_toNat (by omega)],
+      by rw [hm₁]; exact st₁, by rw [hm₂]; exact st₂, by have := z₁.isLt; omega_arith, by have := z₂.isLt; omega_arith,
+      hd₁, hd₂, hok, by rw [hc₁, d₁, ofNat64_toNat (by omega_arith)], by rw [hc₂, d₂, ofNat64_toNat (by omega_arith)],
       by rw [k₁.gpr (by decide), k₂.gpr (by decide), ecx], by rw [k₁.gpr (by decide), k₂.gpr (by decide), esi]⟩
 
 theorem ite2_ct : RelCT isa (R3 η) (.ite .b (rbTry η) (.block []))
@@ -258,14 +258,14 @@ theorem ite2_ct : RelCT isa (R3 η) (.ite .b (rbTry η) (.block []))
       have hl1 : L₁.length < 256 := by
         have : s₁.cf = some true := hb
         rw [c₁] at this; simpa using this
-      exact ⟨aP, L₁, L₂, b₁, b₂, hl, ⟨p₁, d₁, hl1, w₁, st₁⟩, ⟨p₂, d₂, by omega, w₂, st₂⟩, hb₁, hb₂, x₁, x₂, hok⟩
+      exact ⟨aP, L₁, L₂, b₁, b₂, hl, ⟨p₁, d₁, hl1, w₁, st₁⟩, ⟨p₂, d₂, by omega_arith, w₂, st₂⟩, hb₁, hb₂, x₁, x₂, hok⟩
     · intro s₁' s₂' ⟨s₁, s₂, ⟨⟨aP, L₁, L₂, b₁, b₂, hl, _, p₁, p₂, d₁, d₂, w₁, w₂, st₁, st₂, hb₁, hb₂, x₁, x₂, _, c₁, _,
         ecx, esi⟩, hb⟩, f₁, f₂⟩
       have hl1 : L₁.length < 256 := by
         have : s₁.cf = some true := hb
         rw [c₁] at this; simpa using this
       obtain ⟨_, _, _, k₁⟩ := f₁ aP L₁ b₁ ⟨p₁, d₁, hl1, w₁, st₁⟩ hb₁ x₁
-      obtain ⟨_, _, _, k₂⟩ := f₂ aP L₂ b₂ ⟨p₂, d₂, by omega, w₂, st₂⟩ hb₂ x₂
+      obtain ⟨_, _, _, k₂⟩ := f₂ aP L₂ b₂ ⟨p₂, d₂, by omega_arith, w₂, st₂⟩ hb₂ x₂
       exact ⟨by rw [k₁.gpr (by decide), k₂.gpr (by decide), ecx], by rw [k₁.gpr (by decide), k₂.gpr (by decide), esi]⟩
   · refine RelCT.postDep (F := fun (x x' : State) => x' = x) (taintRel [] nil_regs (by taint_decide))
       (fun x y _ => ⟨WP.block_nil rfl, WP.block_nil rfl⟩) ?_
@@ -347,7 +347,7 @@ def LI (η n : Nat) (s₁ s₂ : State) : Prop :=
 theorem bpre {σ : State} (hp : rbK.pre σ) {t : Nat} (ht : t < 544) {s : State} (h : LAt σ t s) :
     BPre s (σ.gpr .rdx) (Lt σ t) :=
   ⟨h.env.rbp, h.rdi, Lt_length_le t, .of_mem (by rw [h.env.wr, hp.2.1]; simp), h.stored,
-    by rw [h.rsi, at_add]; exact inScrRd (spOk hp) h.env (by omega)⟩
+    by rw [h.rsi, at_add]; exact inScrRd (spOk hp) h.env (by omega_arith)⟩
 
 theorem li_brel {η n : Nat} {s₁ s₂ : State} (h : LI η n s₁ s₂) : BRel η s₁ s₂ := by
   obtain ⟨σ₁, σ₂, t, p₁, p₂, hq, he, _, ht, l₁, l₂⟩ := h
@@ -384,8 +384,8 @@ theorem loop_ct (n : Nat) :
     obtain ⟨l₁', z₁⟩ := f₁ (σ₁, t) ⟨p₁, he, ht, l₁⟩
     obtain ⟨l₂', z₂⟩ := f₂ (σ₂, t) ⟨p₂, by rw [← pub_eta hq, he], ht, l₂⟩
     have ez : (BitVec.ofNat 64 (544 - t) - 1 == 0) = decide (t + 1 = 544) := by
-      rw [ofNat64_pred (by omega) (by omega), ofNat64_beq_zero (by omega)]
-      exact decide_eq_decide.mpr (by omega)
+      rw [ofNat64_pred (by omega_arith) (by omega_arith), ofNat64_beq_zero (by omega_arith)]
+      exact decide_eq_decide.mpr (by omega_arith)
     rw [ez] at z₁ z₂
     refine ⟨by show x'.zf.map _ = y'.zf.map _; rw [z₁, z₂], fun hf => ?_, fun ht' => ?_⟩
     · have : t + 1 = 544 := by
@@ -396,7 +396,7 @@ theorem loop_ct (n : Nat) :
     · have : t + 1 ≠ 544 := by
         have : x'.zf.map (!·) = some true := ht'
         rw [z₁] at this; simpa using this
-      exact ⟨544 - (t + 1), by omega, σ₁, σ₂, t + 1, p₁, p₂, hq, he, rfl, by omega, l₁', l₂'⟩
+      exact ⟨544 - (t + 1), by omega_arith, σ₁, σ₂, t + 1, p₁, p₂, hq, he, rfl, by omega_arith, l₁', l₂'⟩
 
 /-- After the first block of the loop's setup. -/
 def IA (σ s : State) : Prop :=
@@ -430,7 +430,7 @@ theorem rbLoop_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ s => etaOf σ = η �
           bytesAt s.mem (P.at' 840) 544 = X σ ∧ s.gpr .rsi = P.at' 840 ∧ s.gpr .rdi = 0)
           (fun _ _ h => h.2.1) [] nil_regs (by taint_decide)))
       (fun _ _ h => h) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, ⟨he, l₁⟩, ⟨_, l₂⟩⟩ =>
-        ⟨σ₁, σ₂, 0, p₁, p₂, hq, he, rfl, by omega, l₁, l₂⟩)
+        ⟨σ₁, σ₂, 0, p₁, p₂, hq, he, rfl, by omega_arith, l₁, l₂⟩)
       (loop_ct hη c1 c2 c3 544))
 
 end

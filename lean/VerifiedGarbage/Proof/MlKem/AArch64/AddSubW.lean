@@ -62,12 +62,12 @@ theorem hcsub_ok {s : State} (hq : HLanes (s.v .v16) fun _ => 3329) {X : Nat →
   · rename_i c
     simp only [VCmpOp.test, hx', hq', decide_eq_true_eq] at c
     simp only [BitVec.allOnes_and, BitVec.toNat_sub, hx', hq']
-    omega
+    omega_arith
   · rename_i c
     simp only [VCmpOp.test, hx', hq', decide_eq_true_eq] at c
     have z : (0 : BitVec 16) &&& vhalf (s.v .v16) e = 0 := by ext; simp
     rw [z, BitVec.toNat_sub, hx']; simp
-    omega
+    omega_arith
 
 /-- `op` computes `F a b` in the halfwords of `v2` from those of `v0 = a` and `v1 = b`, with `q`
 in the halfwords of `v16`, changing only `v2` and `v3`. -/
@@ -85,8 +85,8 @@ theorem haddOp_spec : HOpSpec haddOp fun a b => (a + b) % 3329 := by
     rw [h₁.v]
     refine hlanes_map2 lA lB fun e he => ?_
     have := hA e he; have := hB e he
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  refine hcsub_ok (by rw [h₁.get .v16]; exact hq) l₁ (fun e he => by have := hA e he; have := hB e he; omega)
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
+  refine hcsub_ok (by rw [h₁.get .v16]; exact hq) l₁ (fun e he => by have := hA e he; have := hB e he; omega_arith)
     fun s₂ h₂ l₂ => k s₂ ((h₁.chg.trans h₂).mono) l₂
 
 end
@@ -128,26 +128,26 @@ theorem acc_step {op : List Instr} {F : Nat → Nat → Nat} (hop : HOpSpec op F
     WP isa (.block (accBodyW op)) s fun s' => AccInv F s₀ (k + 1) s' ∧ ((s'.gpr .x11).toNat ≠ 0 ↔ k + 1 ≠ 32) := by
   simp only [accBodyW, List.cons_append, List.nil_append]
   refine wp_ldrq (a := s₀.gpr .x0 + BitVec.ofNat 64 (2 * (8 * k))) (by decide)
-    (by rw [h.x0, BitVec.add_zero]; congr 2; omega)
-    (by rw [h.rd, h.wr]; exact in_rd_wr (hd.rf _ (by omega))) fun s₁ h₁ => ?_
+    (by rw [h.x0, BitVec.add_zero]; congr 2; omega_arith)
+    (by rw [h.rd, h.wr]; exact in_rd_wr (hd.rf _ (by omega_arith))) fun s₁ h₁ => ?_
   refine wp_ldrq (a := s₀.gpr .x1 + BitVec.ofNat 64 (2 * (8 * k))) (by decide)
-    (by rw [h₁.gpr, h.x1, BitVec.add_zero]; congr 2; omega)
-    (by rw [h₁.rd, h₁.wr, h.rd, h.wr]; exact hd.rg _ (by omega)) fun s₂ h₂ => ?_
+    (by rw [h₁.gpr, h.x1, BitVec.add_zero]; congr 2; omega_arith)
+    (by rw [h₁.rd, h₁.wr, h.rd, h.wr]; exact hd.rg _ (by omega_arith)) fun s₂ h₂ => ?_
   have cf : ∀ e < 8, (coeffAtW 16 s.mem (s₀.gpr .x0) (8 * k + e)) = coeffAtW 16 s₀.mem (s₀.gpr .x0) (8 * k + e) :=
-    fun e he => by rw [h.out _ (by omega), ite_eq_right (by omega)]
+    fun e he => by rw [h.out _ (by omega_arith), ite_eq_right (by omega_arith)]
   have cg : ∀ e < 8, (coeffAtW 16 s.mem (s₀.gpr .x1) (8 * k + e)) = coeffAtW 16 s₀.mem (s₀.gpr .x1) (8 * k + e) :=
-    fun e he => h.frame.readW (r := ⟨s₀.gpr .x1, 512⟩) (contains_off (by omega) (by decide))
+    fun e he => h.frame.readW (r := ⟨s₀.gpr .x1, 512⟩) (contains_off (by omega_arith) (by decide))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.apart.symm) (by decide)
   have lA : HLanes (s₂.v .v0) fun e => (coeffAtW 16 s₀.mem (s₀.gpr .x0) (8 * k + e)).toNat := by
     rw [h₂.get .v0, h₁.v]; exact hlanes_coeffs _ _ _ fun e he => by rw [cf e he]
   have lB : HLanes (s₂.v .v1) fun e => (coeffAtW 16 s₀.mem (s₀.gpr .x1) (8 * k + e)).toNat := by
     rw [h₂.v, h₁.mem]; exact hlanes_coeffs _ _ _ fun e he => by rw [cg e he]
-  refine hop _ s₂ _ _ _ (fun e _ => hd.f _ (by show _ < 256; omega)) (fun e _ => hd.g _ (by show _ < 256; omega))
+  refine hop _ s₂ _ _ _ (fun e _ => hd.f _ (by show _ < 256; omega_arith)) (fun e _ => hd.g _ (by show _ < 256; omega_arith))
     lA lB (by rw [h₂.get .v16, h₁.get .v16]; exact h.q) fun s₃ h₃ l₃ => ?_
   have g₃ : s₃.gpr = s.gpr := by rw [h₃.gpr, h₂.gpr, h₁.gpr]
   refine wp_strq (a := s₀.gpr .x0 + BitVec.ofNat 64 (2 * (8 * k))) (by decide)
-    (by rw [g₃, h.x0, BitVec.add_zero]; congr 2; omega)
-    (by rw [h₃.wr, h₂.wr, h₁.wr, h.wr]; exact hd.rf _ (by omega)) fun s₄ h₄ => ?_
+    (by rw [g₃, h.x0, BitVec.add_zero]; congr 2; omega_arith)
+    (by rw [h₃.wr, h₂.wr, h₁.wr, h.wr]; exact hd.rf _ (by omega_arith)) fun s₄ h₄ => ?_
   refine WP.mono (WP.keepV (Q := fun w' => Only [.x0, .x1, .x11] s₄ w' ∧
       w'.gpr .x0 = s₄.gpr .x0 + BitVec.ofNat 64 16 ∧ w'.gpr .x1 = s₄.gpr .x1 + BitVec.ofNat 64 16 ∧
       w'.gpr .x11 = s₄.gpr .x11 - BitVec.ofNat 64 1) (by decide)
@@ -159,10 +159,10 @@ theorem acc_step {op : List Instr} {F : Nat → Nat → Nat} (hop : HOpSpec op F
   have g₄ : s₄.gpr = s.gpr := by rw [h₄.gpr, g₃]
   have c11 : (s₄.gpr .x11).toNat = 32 - k := by rw [g₄, h.count]
   have v11 : (s'.gpr .x11).toNat = 32 - (k + 1) := by
-    rw [e11, toNat_sub_n (by rw [c11]; simp; omega), c11]; simp; omega
+    rw [e11, toNat_sub_n (by rw [c11]; simp; omega_arith), c11]; simp; omega_arith
   have mm : s'.mem = s.mem.write (s₀.gpr .x0 + BitVec.ofNat 64 (2 * (8 * k))) 16 (s₃.v .v2) := by
     rw [k'.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
-  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, v11, ?_, ?_, ?_⟩, by rw [v11]; omega⟩
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, v11, ?_, ?_, ?_⟩, by rw [v11]; omega_arith⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [k'.gpr r (by simp [hr.1, hr.2.1, hr.2.2.2]), g₄, h.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2])]
   · rw [k'.rd, h₄.rd, h₃.rd, h₂.rd, h₁.rd, h.rd]
@@ -172,10 +172,10 @@ theorem acc_step {op : List Instr} {F : Nat → Nat → Nat} (hop : HOpSpec op F
   · rw [e1, g₄, h.x1, ptr_add]; congr 2
   · rw [hv, h₄.v, h₃.v .v16 (by decide), h₂.get .v16, h₁.get .v16]; exact h.q
   · rw [mm]
-    refine h.out.write16 (by omega) (fun e he => BitVec.eq_of_toNat_eq ?_) (fun i _ => by omega)
-    rw [l₃ e he, newW, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (hF _ (hd.f _ (by show _ < 256; omega)) _
-      (hd.g _ (by show _ < 256; omega)))]
-  · rw [mm]; exact h.frame.write (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))
+    refine h.out.write16 (by omega_arith) (fun e he => BitVec.eq_of_toNat_eq ?_) (fun i _ => by omega_arith)
+    rw [l₃ e he, newW, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (hF _ (hd.f _ (by show _ < 256; omega_arith)) _
+      (hd.g _ (by show _ < 256; omega_arith)))]
+  · rw [mm]; exact h.frame.write (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by decide))
 
 theorem acc_init (F : Nat → Nat → Nat) (s : State) :
     WP isa (.block [.movz .x .x9 3329 0, .vop (.dup .h8 .v16 .x9), .movz .x .x11 32 0]) s (AccInv F s 0) := by
@@ -193,7 +193,7 @@ theorem acc_init (F : Nat → Nat → Nat) (s : State) :
       List.nil_append] at hr ⊢
     exact ⟨hr.2.2.1, hr.2.2.2⟩), k₃.rd, k₃.wr, k₃.sp,
     by rw [k₃.get .x0]; exact (BitVec.add_zero _).symm, by rw [k₃.get .x1]; exact (BitVec.add_zero _).symm,
-    e11, fun e he => ?_, fun i _ => by rw [m, ite_eq_right (by omega)], by rw [m]; exact Frame.refl _ _⟩
+    e11, fun e he => ?_, fun i _ => by rw [m, ite_eq_right (by omega_arith)], by rw [m]; exact Frame.refl _ _⟩
   rw [hv₃, h₂.v, Ntt16.vhalf_ofVHalves _ he]
   simp only [BitVec.toNat_setWidth, e9]
 
@@ -206,11 +206,11 @@ theorem accW_ok {op : List Instr} {F : Nat → Nat → Nat} (hop : HOpSpec op F)
       PolyIsW 16 s'.mem (s.gpr .x0) (G (polyAtW 16 s.mem (s.gpr .x0)) (polyAtW 16 s.mem (s.gpr .x1))) := by
   refine WP.mono (WP.vcs hv (WP.seq (WP.mono (acc_init F s) fun s₁ h₁ =>
     count_loop (by decide) (AccInv F s) (fun k hk t ht => acc_step hop (fun a ha b hb => by
-      have := hF a ha b hb; omega) hd hk ht) h₁)))
+      have := hF a ha b hb; omega_arith) hd hk ht) h₁)))
     fun s' ⟨h', vcs⟩ => ⟨⟨h'.gpr, h'.rd, h'.wr, h'.sp, vcs⟩, h'.frame,
-      h'.out.polyIs (fun i hi => by omega) fun i hi => ?_⟩
+      h'.out.polyIs (fun i hi => by omega_arith) fun i hi => ?_⟩
   · have hl : i < 256 := hi
-    rw [newW, BitVec.toNat_ofNat, hG _ _ i hl, Nat.mod_eq_of_lt (by have := hF _ (hd.f i hl) _ (hd.g i hl); omega)]
+    rw [newW, BitVec.toNat_ofNat, hG _ _ i hl, Nat.mod_eq_of_lt (by have := hF _ (hd.f i hl) _ (hd.g i hl); omega_arith)]
     simp only [polyAtW]
     rw [getElem!_eq _ hl, getElem!_eq _ hl, Vector.getElem_ofFn, Vector.getElem_ofFn, val_ofNat, val_ofNat,
       Nat.mod_eq_of_lt (hd.f i hl), Nat.mod_eq_of_lt (hd.g i hl)]
@@ -223,6 +223,6 @@ theorem addW_ok {s : State} (hd : AccData s) :
       have : (P[i]!).val < 3329 := Fin.isLt _
       have : (R[i]!).val < 3329 := Fin.isLt _
       have hq : q = 3329 := rfl
-      rw [add_get _ _ hi, val_add, condSub]; split <;> omega) (by decide +kernel) hd
+      rw [add_get _ _ hi, val_add, condSub]; split <;> omega_arith) (by decide +kernel) hd
 
 end VG.Proof.MlKem.AArch64.AddSubW

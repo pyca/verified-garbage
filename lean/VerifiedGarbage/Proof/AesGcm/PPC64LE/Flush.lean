@@ -99,7 +99,7 @@ theorem ctx_tFrame : ∀ r ∈ tFrame (V .r30) (V .r31) yo,
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact L.ctx_st (by decide) (by omega)
+  · exact L.ctx_st (by decide) (by omega_arith)
   · exact L.ctx_w (by decide) (by decide)
   · exact L.ctx_w (by decide) (by decide)
 
@@ -134,10 +134,10 @@ theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn V sp H s)
     exact ⟨fun r a b d => by simp [a, b, d], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
   refine WP.mono h₂ fun s₂ ⟨h3, h4, h5, hg₂, hk₂⟩ => ?_
   have lp : LoopPre s₂ (V .r30 + BitVec.ofNat 64 32) (V .r31 + BitVec.ofNat 64 96) o := by
-    refine ⟨h3, h4, h5, by omega, by omega, ?_, ?_, ?_⟩
-    · rw [hk₂.rd, hk₂.wr, hrd₁, hwr₁]; exact covers_left (he.perm.stC (by omega))
-    · rw [hk₂.wr, hwr₁]; exact he.perm.wC (by omega)
-    · exact L.st_w (by omega) (.inr ⟨by decide, by omega⟩)
+    refine ⟨h3, h4, h5, by omega_arith, by omega_arith, ?_, ?_, ?_⟩
+    · rw [hk₂.rd, hk₂.wr, hrd₁, hwr₁]; exact covers_left (he.perm.stC (by omega_arith))
+    · rw [hk₂.wr, hwr₁]; exact he.perm.wC (by omega_arith)
+    · exact L.st_w (by omega_arith) (.inr ⟨by decide, by omega_arith⟩)
   refine WP.mono (copyLoop_ok s₂ lp) fun s₃ ⟨hm₃, lo⟩ => ?_
   rw [hk₂.mem] at hm₃
   -- The memory so far.
@@ -145,15 +145,15 @@ theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn V sp H s)
     rw [hm₁]; exact Proof.Cmac.frame_store2 _ _ _
   have hB₁ : bytesAt s₁.mem (V .r30 + BitVec.ofNat 64 32) o = bytesAt s.mem (V .r30 + BitVec.ofNat 64 32) o :=
     bytesAt_frame fz (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩))
-      (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
+      (by omega_arith)
   have hlen := length_bytesAt s₁.mem (V .r30 + BitVec.ofNat 64 32) o
   have fc : Frame [⟨V .r31 + BitVec.ofNat 64 96, o⟩] s₁.mem s₃.mem := by
     rw [hm₃]; exact writeBytes_frame' _ hlen
   have f₃ : Frame [⟨V .r31 + BitVec.ofNat 64 96, 16⟩] s.mem s₃.mem :=
     fz.trans (fc.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩)
   refine ⟨he.keep (fun r hr => by
       rw [lo.other r (by revert r; decide) (by revert r; decide) (by revert r; decide)
           (by revert r; decide) (by revert r; decide),
@@ -163,16 +163,16 @@ theorem flushCopy_ok {H : Block} {o : Nat} {s : State} (h : FlIn V sp H s)
       (by rw [lo.keeps.2.1, hk₂.wr, hwr₁]), ?_, ?_, ?_, f₃⟩
   · rw [blockAt_frame f₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide), h.hH]
-  · rw [hm₃, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega) (by decide), hlen, hB₁]
+  · rw [hm₃, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_arith) (by decide), hlen, hB₁]
     congr 1
     have := zeroT_bytes s.mem (V .r31 + BitVec.ofNat 64 96)
-    rw [← hm₁, show (16 : Nat) = o + (16 - o) by omega, bytesAt_add] at this
+    rw [← hm₁, show (16 : Nat) = o + (16 - o) by omega_arith, bytesAt_add] at this
     have e := congrArg (List.drop o) this
     rw [List.drop_left' (length_bytesAt _ _ _)] at e
-    rw [e, show o + (16 - o) = 16 by omega, Spec.Gcm.zeros, List.drop_replicate]
+    rw [e, show o + (16 - o) = 16 by omega_arith, Spec.Gcm.zeros, List.drop_replicate]
     rfl
   · exact blockAt_frame f₃ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
 
 /-- The padded buffer absorbed. -/
 theorem flushGh_ok {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
@@ -180,7 +180,7 @@ theorem flushGh_ok {H : Block} {x : List Byte} {m₀ : Mem} {s : State}
     WP isa (ghash1 yo .r31 tO) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) m₀) := by
   have he := h.env
   refine WP.mono (ghash1_ok L hyo he .r31 96 (.inr rfl) (by decide) (P := V .r31 + BitVec.ofNat 64 96)
-    (by rw [he.r31]) (L.st_w (by omega) (.inr ⟨by decide, by decide⟩))
+    (by rw [he.r31]) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
     (Lay.w_w (.inl (by decide)) (by decide) (by decide)) (covers_left (he.perm.wC (by decide))))
     fun s₄ g => ?_
   refine ⟨g.env he, ?_, ?_, ?_⟩
@@ -195,7 +195,7 @@ theorem flush_ok {H : Block} {x : List Byte} {s : State} (h : FlIn V sp H s)
     (h26 : s.gpr .r26 = BitVec.ofNat 64 (x.length % 16)) :
     WP isa (flush yo) s (FlOut V sp yo H x (x ++ zeros (padLen x.length)) s.mem) := by
   have hlt := Nat.mod_lt x.length (show 16 > 0 by decide)
-  refine WP.ite (decide (x.length % 16 = 0)) (eval_zero h26 (by omega)) (fun ht => ?_) (fun hf => ?_)
+  refine WP.ite (decide (x.length % 16 = 0)) (eval_zero h26 (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
   · have h0 : x.length % 16 = 0 := by simpa using ht
     rw [Proof.Gcm.padLen_of_mod h0]
     exact WP.block_nil ⟨h.env, h.hH, fun ha => by simpa [zeros] using ha, Frame.refl _ _⟩
@@ -254,12 +254,12 @@ theorem lens_ok {H : Block} {s : State} (he : Env V sp s)
     rw [hm₂, Proof.Cmac.bytesAt_store2, le8_lens, le8_lens]; rfl
   have hY₂ : blockAt s₂.mem (V .r30 + BitVec.ofNat 64 yo) = blockAt s.mem (V .r30 + BitVec.ofNat 64 yo) :=
     blockAt_frame fT fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
   have hH₂ : blockAt s₂.mem (V .r29 + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame fT fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide), hH]
   refine WP.mono (ghash1_ok L hyo he₂ .r31 96 (.inr rfl) (by decide) (P := V .r31 + BitVec.ofNat 64 96)
-    (by rw [he₂.r31]) (L.st_w (by omega) (.inr ⟨by decide, by decide⟩))
+    (by rw [he₂.r31]) (L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
     (Lay.w_w (.inl (by decide)) (by decide) (by decide)) (covers_left (he₂.perm.wC (by decide))))
     fun s₃ g => ?_
   refine ⟨g.env he₂, ?_, ?_, fun r hr => by

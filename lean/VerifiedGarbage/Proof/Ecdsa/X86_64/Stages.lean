@@ -92,24 +92,24 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
       P.saved⟩
   have hsep : ∀ {i : Nat}, i < 45 → i ≠ TMP → ∀ j,
       c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
-    fun hi hit j => Or.inl (by have := sl_below_bits c hi j 0 (.inl hit); omega)
+    fun hi hit j => Or.inl (by have := sl_below_bits c hi j 0 (.inl hit); omega_arith)
   have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
   -- The table of `k`.
-  refine WP.seq (WP.mono_syms (kBitsIf_ok c skip P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
+  refine WP.seq (WP.mono_syms (kBitsIf_ok c skip P.scr h0 (by omega_arith) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
     (by decide)) (hsep (i := K) (by decide) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => ?_)
   have hs₂ := P.scr.of_keepRegs k₂ (by decide)
   have u₂ := O₂.unch
   have v₂ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₂ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0 (.inl hit))
   -- The table of `p - 2`.
-  refine WP.seq (WP.mono_syms (bits_ok hs₂ h0 (by omega) (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1)
+  refine WP.seq (WP.mono_syms (bits_ok hs₂ h0 (by omega_arith) (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1)
     (by decide)) (hsep (i := EXPP) (by decide) (by decide) 1)) fun s₃ ⟨b₃, k₃, O₃⟩ sy₃ => ?_)
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have u₃ := O₃.unch
   have v₃ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₃ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
     (sv_unch u₃ h7 hn hi (apart_tbl hi 1 (.inl hit))).trans (v₂ hi hit)
   -- The table of `n - 2`.
-  refine WP.seq (WP.mono_syms (bits_ok hs₃ h0 (by omega) (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2)
+  refine WP.seq (WP.mono_syms (bits_ok hs₃ h0 (by omega_arith) (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2)
     (by decide)) (hsep (i := EXPN) (by decide) (by decide) 2)) fun s₄ ⟨b₄, k₄, O₄⟩ sy₄ => h s₄ ?_)
   have u₄ := O₄.unch
   have v₄ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₄ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
@@ -130,8 +130,8 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
       fun j w hw => by
         rw [List.mem_singleton.mp hw]
         have := sl_below_bits c (i := FLAG) (by decide) j 0
-        exact Or.inl (by dsimp only; omega)
-    rw [u₄.word (ap 2) (by omega), u₃.word (ap 1) (by omega), u₂.word (ap 0) (by omega), P.flag]
+        exact Or.inl (by dsimp only; omega_arith)
+    rw [u₄.word (ap 2) (by omega_arith), u₃.word (ap 1) (by omega_arith), u₂.word (ap 0) (by omega_arith), P.flag]
   · intro hsk t ht
     rw [tbl_unch u₄ h7 hn (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht),
       tbl_unch u₃ h7 hn (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht), b₂ hsk t ht, hk]
@@ -146,11 +146,11 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
       k₃.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]), k₂.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]),
       P.keep.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1])]
   · intro x hx
-    have hx' : size ≤ ofs (s₀.gpr .r8) x := by have := hx _ (List.mem_singleton_self _); omega
-    rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega)),
-      O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega)),
-      O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega)),
-      P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by omega)]
+    have hx' : size ≤ ofs (s₀.gpr .r8) x := by have := hx _ (List.mem_singleton_self _); omega_arith
+    rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega_arith)),
+      O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega_arith)),
+      O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega_arith)),
+      P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by omega_arith)]
 
 theorem toM_cmont (hc : BaseCfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont x) = Fin.ofNat c.C.p x :=
   toM_mont (unitMod_pow_two hc.p_odd _)
@@ -172,9 +172,9 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine hu.word (fun w hw => ?_) (by omega)
+  refine hu.word (fun w hw => ?_) (by omega_arith)
   rcases apart_slW (c := c) hl w hw with h | h
-  · exact Or.inl (by omega)
+  · exact Or.inl (by omega_arith)
   · exact Or.inr h
 
 /-- A hash of `len` bytes is its number shifted right by the bits that are
@@ -184,7 +184,7 @@ theorem hashToInt_eq (c : Cfg) (m : Mem) (q : Addr) :
       ofBytes (Spec.Ecdsa.bytesAt m q c.C.len) >>> c.sh := by
   simp only [Spec.Ecdsa.hashToInt, length_bytesAt, Cfg.sh]
   split
-  · rw [show 8 * c.C.len - Spec.Ecdsa.nBits c.C = 0 by omega, Nat.shiftRight_zero]
+  · rw [show 8 * c.C.len - Spec.Ecdsa.nBits c.C = 0 by omega_arith, Nat.shiftRight_zero]
   · rfl
 
 end VG.Proof.Ecdsa.X86_64

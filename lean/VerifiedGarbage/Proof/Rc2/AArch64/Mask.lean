@@ -18,7 +18,7 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc2.AArch64
 theorem small_imm (i : Nat) (hi : i < 256) :
     (BitVec.ofNat 16 i).setWidth 64 = BitVec.ofNat 64 i := by
   rw [index_imm i hi]
-  bv_omega
+  bv_omega_arith
 
 theorem cmpMask_ok (s : State) (i : Nat) (hi : i < 7) :
     ∃ s', runBlock isa [.subImm .x .x10 .x5 (i + 1)] s = some s' ∧
@@ -32,7 +32,7 @@ theorem cmpMask_ok (s : State) (i : Nat) (hi : i < 7) :
     apply congrArg some
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq]
-    bv_omega
+    bv_omega_arith
   · exact ⟨fun r hr => gpr_write_of_ne _ _ _ (by simpa using hr), rfl, rfl, rfl⟩
 
 theorem setMask_ok (s : State) (i : Nat) (hi : i < 7) :
@@ -102,7 +102,7 @@ theorem maskBranches_ok (is : List Nat) (hi : ∀ i ∈ is, i < 7)
     rw [h₂.1, h₁.1, index]
     have eq : BitVec.ofNat 64 k = BitVec.ofNat 64 (i + 1) ↔ k = i + 1 := by
       have bound := hi i List.mem_cons_self
-      bv_omega
+      bv_omega_arith
     simp only [eq, List.map_cons, List.mem_cons]
     by_cases he : k = i + 1
     · subst k; simp

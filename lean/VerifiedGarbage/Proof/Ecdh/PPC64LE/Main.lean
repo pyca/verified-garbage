@@ -85,7 +85,7 @@ theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base)
   have h3 := hw.at3
   have h0 : out + BitVec.ofNat 64 0 = out := BitVec.add_zero out
   rw [finish_eq, List.singleton_append]
-  refine wp_step (ld0_ok hs h3 (by decide) (sl_al c FLAG) (by omega)) ?_
+  refine wp_step (ld0_ok hs h3 (by decide) (sl_al c FLAG) (by omega_arith)) ?_
   have hs₁ := hs.write .r10 (word s.mem base (c.sl FLAG))
   have h3₁ := h3.write (d := .r10) (word s.mem base (c.sl FLAG))
   have hc₁ : (s.write .r10 (word s.mem base (c.sl FLAG))).gpr .r10 = if b then BitVec.allOnes 64 else 0 := by
@@ -93,19 +93,19 @@ theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base)
   have hb₁ : (s.write .r10 (word s.mem base (c.sl FLAG))).gpr .r14 = out := by
     simp only [write_gpr, reduceCtorEq, ite_false]; exact h14
   refine wp_append (WP.mono (storeBytes_ok hs₁ h3₁ (dst := .r14) (d := 0) (a := c.sl X) (by decide) (by decide)
-    (by decide) (by decide) b hc₁ (by omega) (sl_al c X) (by omega) (by omega) hlhi (by omega)
+    (by decide) (by decide) b hc₁ (by omega_arith) (sl_al c X) (by omega_arith) (by omega_arith) hlhi (by omega_arith)
     (by rw [hb₁, h0]; exact hofit)
-    (fun e m he => ⟨_, hwr, by rw [hb₁, h0]; exact Offset.contains_base out he (by omega)⟩)
-    (by rw [hb₁, h0]; exact hd.symm.sub_left (Offset.sub_base base (by omega)))) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_)
+    (fun e m he => ⟨_, hwr, by rw [hb₁, h0]; exact Offset.contains_base out he (by omega_arith)⟩)
+    (by rw [hb₁, h0]; exact hd.symm.sub_left (Offset.sub_base base (by omega_arith)))) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_)
   rw [hb₁, h0] at e₂ O₂
   have U₂ := O₂.unch_far hd.symm
   have hsv : ∀ d, d + 8 ≤ 24 → word s₂.mem base d = word s.mem base d := fun d hd' =>
-    U₂.word (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega)
+    U₂.word (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith)
   have hs₂ := k₂.ws hs₁
   have h3₂ := k₂.at h3₁
   refine wp_step (exec_li (by decide)) ?_
   refine wp_step exec_logic ?_
-  refine restore_ok ((hs₂.write _ _).write _ _) ((h3₂.write _).write _) (by omega) fun t Kt mt lrt r14t r31t => ?_
+  refine restore_ok ((hs₂.write _ _).write _ _) ((h3₂.write _).write _) (by omega_arith) fun t Kt mt lrt r14t r31t => ?_
   refine wp_step exec_mov (WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩)
   · simp only [write_mem]; rw [mt]; simp only [write_mem]; rw [e₂]; rfl
   · simp only [write_gpr, ite_true]
@@ -154,7 +154,7 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
   have hsz : size = 8192 := rfl
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   have hone : sv c base s ONE = 1 := K.fixed.one
   rw [middle_eq]
   -- `XM = X · ACC`.
@@ -165,7 +165,7 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
     sv_unch U₁ h7 hn hi (apart_callW h7 hi h₁)
   -- `X = XM · 1`.
   refine WP.seq (WP.mono (slMul_ok hc.fp hc.fpk hc.fpm h7 K₁.ws (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [v₁ (by decide) (by decide), hone]; omega)) fun s₂ ⟨k₂, U₂, lt₂, e₂⟩ => ?_)
+    (by decide) (by decide) (by rw [v₁ (by decide) (by decide), hone]; omega_arith)) fun s₂ ⟨k₂, U₂, lt₂, e₂⟩ => ?_)
   have K₂ := K₁.step h7 k₂ (hU := U₂) (hW := fixedOk_callW h7 (by decide)) (hWs := callW_le h7 (by decide))
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ X → sv c base s₂ i = sv c base s i := fun hi h₁ h₂ =>
     (sv_unch U₂ h7 hn hi (apart_callW h7 hi h₂)).trans (v₁ hi h₁)
@@ -177,12 +177,12 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
     rw [flag_callW h0 h7 (o := X) (by decide) U₂, flag_callW h0 h7 (o := XM) (by decide) U₁]
   rw [List.append_assoc]
   refine wp_append (WP.mono (checkRange_ok c K₂.ws.ws K₂.ws.at3 (sl_al c D) h0
-    (by have := sl_le c h7 (i := D) (by decide); omega) (by have := sl_le c h7 (i := MN) (by decide); omega) hfl)
+    (by have := sl_le c h7 (i := D) (by decide); omega_arith) (by have := sl_le c h7 (i := MN) (by decide); omega_arith) hfl)
     fun s₅ ⟨f₅, k₅, O₅⟩ => ?_)
   have K₅ := K₂.step h7 (k₅.rk (rs' := [.r0, .r4, .r5, .r6, .r7, .r8, .r9])) (hU := O₅.unch) (hW := fixedOk_flag)
     (hWs := by intro w hw; rw [List.mem_singleton.mp hw]; exact hfl)
   refine wp_append (WP.mono (checkNonzero_ok c K₅.ws.ws K₅.ws.at3 (sl_al c RZ) h0
-    (by have := sl_le c h7 (i := RZ) (by decide); omega) hfl) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_)
+    (by have := sl_le c h7 (i := RZ) (by decide); omega_arith) hfl) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_)
   have K₆ := K₅.step h7 (k₆.rk (rs' := [.r4, .r5])) (hU := O₆.unch) (hW := fixedOk_flag) (hWs := by
     intro w hw; rw [List.mem_singleton.mp hw]; exact hfl)
   have e₆ : ∀ {i}, i < 45 → i ≠ FLAG → sv c base s₆ i = sv c base s₂ i := fun hi hif =>
@@ -231,9 +231,9 @@ theorem EPre.setup {s : State} (hp : EPre c s) : SetupPre c Impl.Ecdh.PPC64LE.Ar
   sc_reg := by decide
   wr := by show (⟨s.gpr .r6, size⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
   sc_fit := hp.sc_fit
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_arith)
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_arith)
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_arith)
   k_sc := hp.d_sc
   d_sc := hp.d_sc
   e_sc := hp.d_sc
@@ -293,7 +293,7 @@ theorem peer_bytes (m : Mem) (p : Addr) (L : Nat) :
       Spec.Ecdsa.bytesAt m (p + BitVec.ofNat 64 (1 + L)) L) := by
   have h1 : Spec.Ecdsa.bytesAt m p 1 = [m p] := by
     simp only [Spec.Ecdsa.bytesAt, List.range_one, List.map_cons, List.map_nil, BitVec.add_zero]
-  rw [show 1 + 2 * L = 1 + (L + L) by omega, bytesAt_add, bytesAt_add, h1, BitVec.add_assoc,
+  rw [show 1 + 2 * L = 1 + (L + L) by omega_arith, bytesAt_add, bytesAt_add, h1, BitVec.add_assoc,
     BitVec.ofNat_add_ofNat]
   rfl
 
@@ -346,13 +346,13 @@ theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State
     (hW := (fixedOk_slW (by decide)).append fixedOk_flag)
     (hWs := le_append (fun w hw => by
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have := sl_le c h7 (hl₃ i hi); dsimp only; omega)
+      have := sl_le c h7 (hl₃ i hi); dsimp only; omega_arith)
       (fun w hw => by
-        rw [List.mem_singleton.mp hw]; have := sl_le c h7 (i := FLAG) (by decide); dsimp only; omega))
+        rw [List.mem_singleton.mp hw]; have := sl_le c h7 (i := FLAG) (by decide); dsimp only; omega_arith))
   have e₃ : ∀ {i}, i < 45 → i ∉ [R2P, BP, E, QY] → i ≠ FLAG → sv c base s₃ i = sv c base s₂ i :=
     fun hi hl hf => sv_unch U₃ h7 hn hi (apart_append (apart_slW hl) (apart_flag h0 hf))
   have hq0 : s₂.mem (s₀.gpr .r5) = s₀.mem (s₀.gpr .r5) := by
-    have := keep_of_disjoint' W₂ hpsc (by omega) (i := 0) (by omega) (by omega)
+    have := keep_of_disjoint' W₂ hpsc (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   -- What the code checks of the peer's key so far.
   have hf₃ : flagW c base s₃ = mask64 ((s₀.mem (s₀.gpr .r5) = 4 ∧ sv c base s₃ E < c.C.p) ∧
@@ -393,17 +393,17 @@ theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State
     fun s' ⟨xv, hxl, hxv, bytes, ret, saved, sp, lr, m, Wm, Om⟩ => ⟨⟨saved, sp, lr, m, by rw [hb]; exact Wm, Om⟩, ?_⟩
   -- The specification.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .r5) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt]; omega
+    rw [length_bytesAt]; omega_arith
   have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .r5) (1 + 2 * c.C.len)).head? = some (s₀.mem (s₀.gpr .r5)) := by
     rw [peer_bytes]; rfl
   have hxs : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .r5) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
       sv c base s₃ E := by
     rw [peer_bytes, List.drop_one, List.tail_cons, List.take_left' (length_bytesAt _ _ _), x₃,
-      bytesAt_keep W₂ (hpsc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+      bytesAt_keep W₂ (hpsc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
   have hys : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .r5) (1 + 2 * c.C.len)).drop (c.C.len + 1)) =
       sv c base s₃ QY := by
     rw [peer_bytes, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _), y₃,
-      bytesAt_keep W₂ (hpsc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+      bytesAt_keep W₂ (hpsc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
   have hP' : ∀ h : Valid c.C (s₀.mem (s₀.gpr .r5)) (sv c base s₃ E) (sv c base s₃ QY),
       peerPt c (s₀.mem (s₀.gpr .r5) = 4) (sv c base s₃ E) (sv c base s₃ QY) =
         .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by

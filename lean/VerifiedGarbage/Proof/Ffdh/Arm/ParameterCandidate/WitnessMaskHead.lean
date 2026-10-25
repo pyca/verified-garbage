@@ -50,14 +50,7 @@ theorem witnessMaskHead_ok {s : State} {bits : Nat} (stack : Workspace s s.sp 72
   have sub : BitVec.ofNat 32 bits - 1 = BitVec.ofNat 32 (bits - 1) := by
     change BitVec.ofNat 32 bits - BitVec.ofNat 32 1 = _
     exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) positive
-  refine withRest [.r5, .r6] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.witnessMaskHead : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r5, .r6] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.witnessMaskHead
   ffrun [BitVec.add_zero, read, saved, sub, nativeIndex bound, nativeCount bound]
 

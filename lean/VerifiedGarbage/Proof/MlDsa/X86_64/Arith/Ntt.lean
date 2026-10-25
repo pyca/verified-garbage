@@ -51,35 +51,35 @@ theorem dwordTab_ok (t : Nat → Nat) (ht : ∀ k, t k < 2 ^ 32) {r : Reg} (hr :
       Tab t w.mem sP (2 * i) ∧ Frame [pR sP] s.mem w.mem ∧
         Keep [.r9] s w ∧ w.mxcsr = s.mxcsr ∧ w.xmm = s.xmm)
     (fun i w hi ⟨hT, hf, hk, hm, hx⟩ => ?_) 128 (Nat.le_refl _) s
-    ⟨fun _ h => absurd h (by omega), Frame.refl _ _, Keep.refl _ _, rfl, rfl⟩)
+    ⟨fun _ h => absurd h (by omega_arith), Frame.refl _ _, Keep.refl _ _, rfl, rfl⟩)
     fun w ⟨hT, hf, hk, hm, hx⟩ => ⟨hT, hf, hk, hm, hx⟩
   have hsi' : w.gpr r = sP := by
     rw [hk.gpr (by simp only [List.mem_singleton]; exact hr), hsi]
   have w0 : InRegions w.wr (sP + BitVec.ofNat 64 (8 * i)) 8 :=
-    ⟨_, by rw [hk.2.2]; exact hw, Offset.contains_base sP (by omega) (by omega)⟩
+    ⟨_, by rw [hk.2.2]; exact hw, Offset.contains_base sP (by omega_arith) (by omega_arith)⟩
   have hV : ∀ e < 2, (BitVec.ofNat 64 (t (2 * i) + 2 ^ 32 * t (2 * i + 1))).extractLsb' (32 * e) 32 =
       BitVec.ofNat 32 (t (2 * i + e)) := fun e he => by
     apply BitVec.eq_of_toNat_eq
     have h0 := ht (2 * i)
     have h1 := ht (2 * i + 1)
     rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rcases (by omega : e = 0 ∨ e = 1) with rfl | rfl
-    · simp only [Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.add_zero]; omega
-    · simp only [Nat.mul_one]; omega
+    rcases (by omega_arith : e = 0 ∨ e = 1) with rfl | rfl
+    · simp only [Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.add_zero]; omega_arith
+    · simp only [Nat.mul_one]; omega_arith
   vrund [hsi', w0, hr]
   generalize BitVec.ofNat 64 (t (2 * i) + 2 ^ 32 * t (2 * i + 1)) = V at hV ⊢
   refine ⟨fun k hk' => ?_, hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base sP (by omega) (by omega)),
+      (Offset.contains_base sP (by omega_arith) (by omega_arith)),
     ⟨fun r hr => ?_, hk.2.1, hk.2.2⟩, hm, hx⟩
   · by_cases h : 2 * i ≤ k
     · rw [coeffAt_eq, coeffAddr, show sP + BitVec.ofNat 64 (4 * k) =
           sP + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 (4 * (k - 2 * i)) by
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact congrArg _ (congrArg _ (by omega)),
-        show 32 = 8 * 4 from rfl, readW_writeW_inside _ _ _ (by omega) (by decide),
-        show 8 * (4 * (k - 2 * i)) = 32 * (k - 2 * i) by omega, hV _ (by omega),
-        show 2 * i + (k - 2 * i) = k by omega]
-    · rw [coeffAt_eq, Mem.readW_writeW_sep (Offset.sep sP (by omega) (by omega) (by omega)) (by decide)]
-      exact hT k (by omega)
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact congrArg _ (congrArg _ (by omega_arith)),
+        show 32 = 8 * 4 from rfl, readW_writeW_inside _ _ _ (by omega_arith) (by decide),
+        show 8 * (4 * (k - 2 * i)) = 32 * (k - 2 * i) by omega_arith, hV _ (by omega_arith),
+        show 2 * i + (k - 2 * i) = k by omega_arith]
+    · rw [coeffAt_eq, Mem.readW_writeW_sep (Offset.sep sP (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+      exact hT k (by omega_arith)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, hr, ite_false]
     exact hk.1 r (by simp [hr])
@@ -164,7 +164,7 @@ theorem fwdLay_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) (len k : Nat) (
   exact vlay_ok vbfly_spec nttBlk_ok hlen 4 (fun c => 128 / len + c) (by rw [hk]; rfl)
     (fun c hc => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
-      rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl <;> omega)
+      rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl <;> omega_arith)
     (fun c _ => step_fwd _ _ 1 (by decide)) hc hdi hsi hS hT hwf hw hd
 
 theorem fwdLay2_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : VConsts s) (hdi : s.gpr .rdi = fP)
@@ -174,8 +174,8 @@ theorem fwdLay2_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s 
   have hs : ∀ e < 4, sel 0x50 e = e / 2 := by decide
   rw [nttLayer_eq, show 128 / 2 = 64 from rfl]
   exact vlay2_ok vbfly_spec nttBlk_ok 64 0x50 8 (fun c => 64 + c) (fun i => 64 + 2 * i) rfl
-    (fun i _ => by omega) (fun i _ e he => by rw [hs e he]; omega)
-    (fun i _ => (step_fwd _ _ 2 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
+    (fun i _ => by omega_arith) (fun i _ e he => by rw [hs e he]; omega_arith)
+    (fun i _ => (step_fwd _ _ 2 (by decide)).trans (congrArg _ (by omega_arith))) hc hdi hsi hS hT hwf hw hd
 
 theorem fwdLay1_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : VConsts s) (hdi : s.gpr .rdi = fP)
     (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256) (hwf : pR fP ∈ s.wr)
@@ -184,8 +184,8 @@ theorem fwdLay1_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s 
   have hs : ∀ e < 4, sel 0xE4 e = e := by decide
   rw [nttLayer_eq, show 128 / 1 = 128 from rfl]
   exact vlay1_ok vbfly_spec nttBlk_ok 128 0xE4 16 (fun c => 128 + c) (fun i => 128 + 4 * i) rfl
-    (fun i _ => by omega) (fun i _ e he => by rw [hs e he]; omega)
-    (fun i _ => (step_fwd _ _ 4 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
+    (fun i _ => by omega_arith) (fun i _ e he => by rw [hs e he]; omega_arith)
+    (fun i _ => (step_fwd _ _ 4 (by decide)).trans (congrArg _ (by omega_arith))) hc hdi hsi hS hT hwf hw hd
 
 /-! ## `vg_mldsa_ntt` -/
 

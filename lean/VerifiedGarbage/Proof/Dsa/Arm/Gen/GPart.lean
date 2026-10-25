@@ -42,7 +42,7 @@ theorem gCount_gt (G : GP) (pv ev : Nat) : ∀ m k, k < gCount G pv ev m k
   | 0, k => by simp [gCount]
   | m + 1, k => by
     simp only [gCount]; split
-    · omega
+    · omega_arith
     · exact Nat.lt_of_succ_lt (gCount_gt G pv ev m (k + 1))
 
 /-- The generator the spec finds from the `k`-th h. -/
@@ -78,7 +78,7 @@ theorem adv_vp {d : Cfg} (hH : fH ∈ d.LS) (hL : fHLeft ∈ d.LS) :
       (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2])
       fun σ s ⟨⟨h, x⟩, r1⟩ => wp_movw fun t u => wp_dp (op2_reg _ _) fun t' u' => WP.block_nil ?_) ?_
   · have l := h.lens
-    have r2 : t.gpr .r2 = BitVec.ofNat 32 G.pLen := by rw [u.gpr, setWidth_ofNat16 (by omega)]
+    have r2 : t.gpr .r2 = BitVec.ofNat 32 G.pLen := by rw [u.gpr, setWidth_ofNat16 (by omega_arith)]
     refine ⟨⟨⟨h.of_rest ((u.rest (ws := [.r1, .r2]) (by simp)).trans (u'.rest (ws := [.r1, .r2]) (by simp)))
       (by rw [u'.mem, u.mem]), x⟩, ?_⟩, by rw [u'.other _ (by decide), r2]⟩
     rw [u'.gpr, dpVal, u.other _ (by decide), r1, r2]
@@ -278,7 +278,7 @@ theorem gPart_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
       (by decide) (varOk_of (by decide)) fun σ s t h h' _ =>
         ⟨⟨Nat.le_refl _, by simp, by simp only [Nat.sub_self, Nat.sub_zero]; exact hNN, by rw [Nat.sub_self]⟩,
           by simpa [gCfg] using h', h.2⟩) ?_
-  rw [show N = N - 1 + 1 by omega]
+  rw [show N = N - 1 + 1 by omega_arith]
   exact VP.loop (I := gInv c G pv ev qv (N - 1 + 1) X)
     (gBody_vp certs ok hp hlq hn hpm hpb hpe hpr hctx he4 he0 hP hPv hE hEv hM hMv hO hOv hHl hTl hGl hkls hpodd
       hp1 hplt hev hcl hhsb hmod h32 hfH hfL hev') _

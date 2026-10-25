@@ -90,7 +90,7 @@ theorem advance_ok {o u : State} {e : BitVec 32} {used n c : Nat}
       rw [U₄.gpr, g₃, c₃, BitVec.ofNat_add, ← BitVec.add_assoc]; rfl
     have v₇ : t₇.gpr .eax = BitVec.ofNat 32 ((ofState o).randLen - (used + c)) := by
       rw [U₇.gpr, g₆, c₆, show upd (upd (liveF (ofState o) e used n) candOff (BitVec.ofNat 32 c)) randOff
-        (t₄.gpr .eax) leftOff = BitVec.ofNat 32 ((ofState o).randLen - used) from rfl, sub_ofNat (by omega),
+        (t₄.gpr .eax) leftOff = BitVec.ofNat 32 ((ofState o).randLen - used) from rfl, sub_ofNat (by omega_arith),
         Nat.sub_add_eq]
     have v₁₀ : t₁₀.gpr .eax = BitVec.ofNat 32 (used + c) := by
       rw [U₁₀.gpr, g₉, c₉, show upd (upd (upd (liveF (ofState o) e used n) candOff (BitVec.ofNat 32 c)) randOff
@@ -117,10 +117,10 @@ theorem dec_hi {n : Nat} (h1 : 1 ≤ n) (h2 : n ≤ 2 ^ 32) :
   rw [sub3_toNat]
   by_cases hn : n = 2 ^ 32
   · subst hn; decide
-  · have hlt : n < 2 ^ 32 := by omega
+  · have hlt : n < 2 ^ 32 := by omega_arith
     rw [toNat_ofNat_lt hlt]
-    simp only [BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl, show ¬ n < 1 by omega,
-      decide_false, Bool.toNat_false, Nat.div_eq_of_lt hlt, Nat.div_eq_of_lt (show n - 1 < 2 ^ 32 by omega)]
+    simp only [BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl, show ¬ n < 1 by omega_arith,
+      decide_false, Bool.toNat_false, Nat.div_eq_of_lt hlt, Nat.div_eq_of_lt (show n - 1 < 2 ^ 32 by omega_arith)]
     rfl
 
 /-- A rejection: one fewer attempt (64 bits), the status 4. -/
@@ -156,7 +156,7 @@ theorem St.rejected {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : S
 theorem cmp_status {s t : State} {k j : Nat} (hk : k ≤ 2) (hj : j ≤ 2) (he : s.gpr .edx = BitVec.ofNat 32 k)
     (z : t.zf = some (s.gpr .edx - BitVec.ofNat 32 j == 0)) : isa.eval .e t = some (decide (k = j)) := by
   show t.zf = _
-  rw [z, he, sub_beq (by omega) (by omega)]
+  rw [z, he, sub_beq (by omega_arith) (by omega_arith)]
 
 theorem classify_ok {p : PPub} {o s₀ u : State} {used n : Nat} (h : Live p o used n s₀)
     (S : St o liveDs (liveF p (o.gpr .esi) used n) u)
@@ -174,7 +174,7 @@ theorem classify_ok {p : PPub} {o s₀ u : State} {used n : Nat} (h : Live p o u
     rw [hlen] at h2
     have := h.used_le
     show used + candUsed _ _ _ _ ≤ _
-    omega
+    omega_arith
   have hst := candidateStatus_le (candOf o used)
   unfold classify
   refine WP.seq (advance_ok (S.withWord hcu) hcl fun t S' hed Ft => wp_cmpi fun t' F _ z => WP.block_nil ?_)
@@ -207,7 +207,7 @@ theorem classify_ok {p : PPub} {o s₀ u : State} {used n : Nat} (h : Live p o u
       show t₅.cf = _
       rw [c₅, o₄ .eax (by decide), g₃, g₄]
       simp only [liveF, leftOff, capOff, ↓reduceIte, Nat.reduceEqDiff]
-      rw [toNat_ofNat_lt (by omega), toNat_ofNat_lt (by omega)]
+      rw [toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt (by omega_arith)]
     have tail := ptail_short (bits := (ofState o).bits) (gen := (ofState o).gen) (rand := (ofState o).rand)
       (used := used) hn hc
     rw [hlen] at tail
@@ -218,7 +218,7 @@ theorem classify_ok {p : PPub} {o s₀ u : State} {used n : Nat} (h : Live p o u
       show Done _ _ (ptail _ _ _ _ _) v
       rw [tail]
       split
-      · rename_i hc'; exact absurd hc' (by unfold PPub.cap at hl; omega)
+      · rename_i hc'; exact absurd hc' (by unfold PPub.cap at hl; omega_arith)
       · exact hv
     · refine WP.ite false (by rw [hb]; simp [hl]) (fun h => absurd h (by decide)) (fun _ => ?_)
       refine WP.mono (exhausted_ok L₅) fun v hv => Or.inl ⟨?_, nc⟩
@@ -226,7 +226,7 @@ theorem classify_ok {p : PPub} {o s₀ u : State} {used n : Nat} (h : Live p o u
       rw [tail]
       split
       · exact hv
-      · rename_i hc'; exact absurd (by unfold PPub.cap at hl; omega) hc'
+      · rename_i hc'; exact absurd (by unfold PPub.cap at hl; omega_arith) hc'
   · -- A rejection.
     rw [hc] at hedT hed'
     refine WP.ite false (by rw [cmp_status (candidateStatus_le _) (j := 1) (by decide) hedT z]; rfl)
@@ -236,9 +236,9 @@ theorem classify_ok {p : PPub} {o s₀ u : State} {used n : Nat} (h : Live p o u
     refine WP.ite true (by rw [cmp_status (candidateStatus_le _) (j := 2) (by decide) hed' z₂]; rfl) (fun _ => ?_)
       (fun h => absurd h (by decide))
     refine WP.mono (S₂.rejected hA (by decide) (by decide) (n := n) (by simp [liveF, attemptsOff])
-      (by simp [liveF, attemptsOff]) (by omega) (by omega)) fun v Sv => Or.inr ⟨⟨hn, hr, rest, hc⟩, ?_, ?_⟩
+      (by simp [liveF, attemptsOff]) (by omega_arith) (by omega_arith)) fun v Sv => Or.inr ⟨⟨hn, hr, rest, hc⟩, ?_, ?_⟩
     · refine ((Sv.sub fun d hd => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd))).congr
-        ?_).live (by omega) (by omega)
+        ?_).live (by omega_arith) (by omega_arith)
       simp only [liveDs, List.mem_cons, List.not_mem_nil, or_false]
       rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl) <;> simp [upd, liveF, statusOff, attemptsOff]

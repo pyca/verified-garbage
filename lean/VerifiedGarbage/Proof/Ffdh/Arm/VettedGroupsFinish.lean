@@ -17,14 +17,14 @@ open VG.Proof.X25519.Arm (Rest)
  theorem zero_test (s : State) (r : Reg) :
     WP isa (.block [.cmp r (.imm 0)]) s fun t =>
       (t.z = (s.gpr r == 0) ∧ t.mem = s.mem) ∧ Rest [] s t := by
-  refine withRest [] ?_ (by intro q _ i hi; simp only [instrs, List.mem_singleton] at hi; subst i; rfl) (by rfl)
+  refine withRest_all [] ?_ (by rfl) (by rfl)
   ffrun []
   change (s.gpr r - 0#32 == 0#32) = (s.gpr r == 0#32)
   rw [BitVec.sub_zero]
 
  theorem matched_ok (s : State) :
     WP isa (.block matched) s fun t => (t.gpr .r7 = 0 ∧ t.mem = s.mem) ∧ Rest [.r7] s t := by
-  refine withRest [.r7] ?_ (by intro r hr i hi; simp only [instrs, matched, List.mem_singleton] at hi; subst i; cases r <;> simp_all [VG.Arm.clobbers, VG.Arm.dstOf]) (by rfl)
+  refine withRest_all [.r7] ?_ (by rfl) (by rfl)
   unfold matched
   ffrun []
 
@@ -34,13 +34,7 @@ open VG.Proof.X25519.Arm (Rest)
     WP isa (.block next) s fun t =>
       (t.gpr .r11 = 0 ∧ t.gpr .r4 = table + BitVec.ofNat 32 (8 + 3 * len) ∧
        t.gpr .r7 = BitVec.ofNat 32 n ∧ t.mem = s.mem) ∧ Rest [.r4, .r7, .r11] s t := by
-  refine withRest [.r4, .r7, .r11] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block next : Prog isa)).all (fun i => !(VG.Arm.clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have hf := List.all_eq_true.mp checked i hi
-    cases hc : VG.Arm.clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r4, .r7, .r11] ?_ (by rfl) (by rfl)
   have pc : (table + 8) + BitVec.ofNat 32 (3 * len) = table + BitVec.ofNat 32 (8 + 3 * len) := by
     change (table + BitVec.ofNat 32 8) + BitVec.ofNat 32 (3 * len) = _
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]

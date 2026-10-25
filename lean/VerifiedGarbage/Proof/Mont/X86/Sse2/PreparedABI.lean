@@ -60,22 +60,22 @@ theorem PrABI.ws {s : State} (A : PrABI s) : Ws s (wsOf s) (lenOf s) :=
   ⟨by rw [A.wr]; exact List.mem_singleton_self _, by rw [A.ws_toNat]; exact A.bound⟩
 
 theorem PrABI.fit {s : State} (A : PrABI s) : arrAt (wOf s.mem (wsOf s)) 8 ≤ lenOf s := by
-  have := A.layout.2.2.1; show _ ≤ (arg s 1).toNat * 8; omega
+  have := A.layout.2.2.1; show _ ≤ (arg s 1).toNat * 8; omega_arith
 
 theorem PrABI.entry {s : State} (A : PrABI s) : Entry s (wsOf s) (lenOf s) := by
   have hlo := A.stackLo
   have hhi := A.stackBound
-  refine ⟨hlo, by omega, A.ws, fun j hj => ofs_far fun hc => ?_⟩
+  refine ⟨hlo, by omega_arith, A.ws, fun j hj => ofs_far fun hc => ?_⟩
   have := (s.gpr .esp).isLt
   by_cases h56 : j < 56
   · refine A.stkScratch _ ?_ hc
     simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     rw [show (56 : BitVec 64).toNat = 56 from rfl]
-    omega
+    omega_arith
   · refine A.retScratch _ ?_ hc
     simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     rw [show (56 : BitVec 64).toNat = 56 from rfl]
-    omega
+    omega_arith
 
 theorem PrABI.lay {s : State} (A : PrABI s) :
     Lay (lenOf s) (2 * wOf s.mem (wsOf s)) (arrAt (wOf s.mem (wsOf s)) 2) (arrAt (wOf s.mem (wsOf s)) 0) 56 (arrAt (wOf s.mem (wsOf s)) (arg s 2).toNat) (arrAt (wOf s.mem (wsOf s)) (arg s 3).toNat)
@@ -91,23 +91,23 @@ theorem PrABI.lay {s : State} (A : PrABI s) :
   have pb := Compact.operand_apart (w := wOf s.mem (wsOf s)) A.right
   generalize wOf s.mem (wsOf s) = w at *
   have e0 : arrAt w 0 = 256 := by simp [arrAt, Spec.Rsa.Mont.hdrBytes]
-  have e2 : arrAt w 2 = 256 + 16 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
-  have e4 : arrAt w 4 = 256 + 32 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
-  have e8 : arrAt w 8 = 256 + 64 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
+  have e2 : arrAt w 2 = 256 + 16 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
+  have e4 : arrAt w 4 = 256 + 32 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
+  have e8 : arrAt w 8 = 256 + 64 * (w + 2) := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
   have l1 : (arg s 1).toNat < 2 ^ 32 := (arg s 1).isLt
   simp only [lenOf] at *
-  constructor <;> omega
+  constructor <;> omega_arith
 
 /-- `w32` of the working space after the registers' push, as on entry. -/
 theorem PrABI.pushed_w32 {s : State} (A : PrABI s) {d : Nat} (hd : d + 4 ≤ lenOf s) :
     w32 (pushed rs4 s).mem (wsOf s) d = w32 s.mem (wsOf s) d := by
   have hlo := A.stackLo
-  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega
+  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega_arith
   have F1 := pushed_frame (rs := rs4) (s := s) (by decide) h16
   rw [show 4 * rs4.length = 16 from rfl] at F1
   have := A.bound
   exact Outs.w32 (frame_ws A.entry (c := 0) (n := 16) (by decide) (by decide) (by simpa using F1))
-    (by simp only [List.mem_singleton, forall_eq]; omega) (by omega)
+    (by simp only [List.mem_singleton, forall_eq]; omega_arith) (by omega_arith)
 
 /-- The arguments, read from the state after the registers' push. -/
 theorem PrABI.readArg {s : State} (A : PrABI s) {t : State} (hesp : t.gpr .esp = s.gpr .esp - 16)
@@ -122,14 +122,14 @@ theorem PrABI.readArg {s : State} (A : PrABI s) {t : State} (hesp : t.gpr .esp =
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
     rw [show (16 : BitVec 32).toNat = 16 from rfl]
     have := (s.gpr .esp).isLt
-    omega
+    omega_arith
   have hin : InRegions (t.rd ++ t.wr) (argAddr s i) 4 := by
     rw [hrd, A.rd]
     refine ⟨_, List.mem_append_left _ (List.mem_singleton_self _), ?_⟩
     simp only [Region.Contains, argAddr, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_add,
       BitVec.toNat_ofNat]
     have := (s.gpr .esp).isLt
-    omega
+    omega_arith
   show t.load32 (t.ea (prArg i)) = _
   rw [ea, State.load32, ite_eq_left_iff.mpr fun h => absurd hin h]
   refine congrArg some (Mem.readW_congr fun j hj => hmem _ fun r hr h => ?_)
@@ -137,7 +137,7 @@ theorem PrABI.readArg {s : State} (A : PrABI s) {t : State} (hesp : t.gpr .esp =
   have := (s.gpr .esp).isLt
   simp only [Region.Contains, argAddr, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_add,
     BitVec.toNat_ofNat] at h
-  omega
+  omega_arith
 
 /-- What `preparedParams` keeps of the state after the registers' push. -/
 def PrSt (s t : State) : Prop :=
@@ -150,7 +150,7 @@ theorem PrSt.upd {s t t' : State} {r : Reg} {v : BitVec 32} (h : PrSt s t) (u : 
 theorem PrABI.arg' {s t : State} (A : PrABI s) (h : PrSt s t) {i : Nat} (hi : i < 5) :
     readSrc t (.mem (prArg i)) = some (arg s i) := by
   have hlo := A.stackLo
-  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega
+  have h16 : 4 * rs4.length ≤ (s.gpr .esp).toNat := by simp only [List.length_cons, List.length_nil]; omega_arith
   have F1 := pushed_frame (rs := rs4) (s := s) (by decide) h16
   rw [show 4 * rs4.length = 16 from rfl] at F1
   exact A.readArg h.1 h.2.1 (by rw [h.2.2.1]; exact F1) hi
@@ -165,9 +165,9 @@ theorem PrABI.header {s t : State} (A : PrABI s) (h : PrSt s t) {r : Reg} {x d j
       v.toNat = ((wsOf s).toNat + arrAt (wOf s.mem (wsOf s)) j) % 2 ^ 32 := by
   have fit := A.fit
   have := Compact.array_mono (wOf s.mem (wsOf s)) (i := 0) (j := 8) (by decide)
-  refine ⟨_, readSrc_ptr (h.ws A) hp (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega), ?_⟩
+  refine ⟨_, readSrc_ptr (h.ws A) hp (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega_arith), ?_⟩
   show w32 t.mem (wsOf s) (x + d) = _
-  rw [h.2.2.1, A.pushed_w32 (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega), he]
+  rw [h.2.2.1, A.pushed_w32 (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega_arith), he]
   exact Compact.layout_pointer_low A.layout hj
 
 /-- The header word 6's low half, `w`. -/
@@ -176,11 +176,11 @@ theorem PrABI.width {s t : State} (A : PrABI s) (h : PrSt s t) {r : Reg} (hp : P
   have fit := A.fit
   have := Compact.array_mono (wOf s.mem (wsOf s)) (i := 0) (j := 8) (by decide)
   have w31 := A.layout.2.1
-  refine ⟨_, readSrc_ptr (h.ws A) hp (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega), ?_⟩
+  refine ⟨_, readSrc_ptr (h.ws A) hp (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega_arith), ?_⟩
   show w32 t.mem (wsOf s) (0 + 48) = _
-  rw [h.2.2.1, A.pushed_w32 (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega),
+  rw [h.2.2.1, A.pushed_w32 (by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega_arith),
     show 0 + 48 = 8 * Spec.Rsa.Mont.wWord from rfl, Compact.header_low]
-  exact Nat.mod_eq_of_lt (by show wOf s.mem (wsOf s) < _; omega)
+  exact Nat.mod_eq_of_lt (by show wOf s.mem (wsOf s) < _; omega_arith)
 
 /-- `prPtr r i`: `r` at array `arg s i`. -/
 theorem prPtr_ok {s t : State} (A : PrABI s) (h : PrSt s t) {r : Reg} (hr : r ≠ .esp) (hra : r ≠ .eax)
@@ -205,12 +205,12 @@ theorem prPtr_ok {s t : State} (A : PrABI s) (h : PrSt s t) {r : Reg} (hr : r �
   have a5 : (t5.gpr .eax).toNat = 8 * (arg s i).toNat := by
     rw [u5.gpr, u4.gpr, u3.gpr, u2.gpr]
     simp only [BitVec.toNat_add]
-    omega
+    omega_arith
   have r5 : t5.gpr r = arg s 0 := by
     rw [u5.other r hra, u4.other r hra, u3.other r hra, u2.other r hra, u1.gpr]
   have p6 : PtrAt t6 (wsOf s) r (8 * (arg s i).toNat) := by
     rw [PtrAt, u6.gpr, BitVec.toNat_add, r5, a5, A.ws_toNat]
-  obtain ⟨v, hv, hvt⟩ := A.header h6 hix p6 (d := 64) (by omega)
+  obtain ⟨v, hv, hvt⟩ := A.header h6 hix p6 (d := 64) (by omega_arith)
   refine wp_movS hv fun t7 u7 _ => k t7 (h6.upd u7 hr) (by rw [u7.gpr]; exact hvt) fun q hq hqa => ?_
   rw [u7.other q hq, u6.other q hq, u5.other q hqa, u4.other q hqa, u3.other q hqa, u2.other q hqa,
     u1.other q hq]
@@ -230,12 +230,12 @@ theorem preparedParams_ok {s : State} (A : PrABI s) :
   refine prPtr_ok A h2 (r := .edx) (by decide) (by decide) (i := 2) (by decide) A.output.1 fun t3 h3 e3 g3' => ?_
   refine wp_movS (A.arg' h3 (i := 0) (by decide)) fun t4 u4 _ => ?_
   have h4 := h3.upd u4 (by decide)
-  have p4 : PtrAt t4 (wsOf s) .ebx 0 := by rw [PtrAt, u4.gpr, hW]; omega
-  obtain ⟨v5, hv5, e5⟩ := A.header h4 (j := 0) (by decide) p4 (d := 64) (by omega)
+  have p4 : PtrAt t4 (wsOf s) .ebx 0 := by rw [PtrAt, u4.gpr, hW]; omega_arith
+  obtain ⟨v5, hv5, e5⟩ := A.header h4 (j := 0) (by decide) p4 (d := 64) (by omega_arith)
   refine wp_movS hv5 fun t5 u5 _ => ?_
   have h5 := h4.upd u5 (by decide)
   have p5 : PtrAt t5 (wsOf s) .ebx 0 := by rw [PtrAt, u5.other _ (by decide)]; exact p4
-  obtain ⟨v6, hv6, e6⟩ := A.header h5 (j := 2) (by decide) p5 (d := 80) (by omega)
+  obtain ⟨v6, hv6, e6⟩ := A.header h5 (j := 2) (by decide) p5 (d := 80) (by omega_arith)
   refine wp_movS hv6 fun t6 u6 _ => ?_
   have h6 := h5.upd u6 (by decide)
   have p6 : PtrAt t6 (wsOf s) .ebx 0 := by rw [PtrAt, u6.other _ (by decide)]; exact p5
@@ -275,6 +275,6 @@ theorem preparedParams_ok {s : State} (A : PrABI s) :
   · show (t11.gpr .eax).toNat = _
     rw [u11.other _ (by decide), u10.gpr, u9.gpr, u8.gpr, u7.gpr]
     simp only [BitVec.toNat_add, e7]
-    omega
+    omega_arith
 
 end VG.Proof.Mont.X86.Sse2

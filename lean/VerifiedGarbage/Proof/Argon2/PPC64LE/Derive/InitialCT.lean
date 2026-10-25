@@ -103,8 +103,8 @@ theorem fixed_rel (offset size : Nat) (ho : offset < 2 ^ 15) (lo : 768 ≤ offse
   have args := (T.leaf (P := fun s₁ s₂ => F₁ s₁ ∧ F₂ s₂) [] []
     (fun s₁ s₂ h => ⟨hF₁ _ h.1, hF₂ _ h.2, by simp, by simp⟩) hc).wpDep
     (F := fun s t => HPrime.FixedArgs s t offset size)
-    fun s₁ s₂ _ => ⟨HPrime.fixedArgs_ok s₁ offset size ho (by omega),
-      HPrime.fixedArgs_ok s₂ offset size ho (by omega)⟩
+    fun s₁ s₂ _ => ⟨HPrime.fixedArgs_ok s₁ offset size ho (by omega_arith),
+      HPrime.fixedArgs_ok s₂ offset size ho (by omega_arith)⟩
   refine args.seq (HPrime.update_rel fun s₁ s₂ ⟨_, σ₁, σ₂, hσ, h₁, h₂⟩ => ?_)
   have i₁ := hF₁ _ hσ.1
   have i₂ := hF₂ _ hσ.2
@@ -224,7 +224,7 @@ theorem absorb_rel {ptr len : Nat} (hptr : ptr < 18) (hlen : len < 18) (hnp : pt
       obtain ⟨i, p, rp, c, r4, r5, r6⟩ := h
       have dl : (data ++ Spec.Blake2.wordBytes ((arg s₀ len).setWidth 32)).length = data.length + 4 := by
         rw [List.length_append, wl]
-      exact (absU_ok hp ⟨i, p, rp, by rw [c, dl], by rw [dl]; omega⟩ (by rw [r4, dl]) (by rw [r6]; exact hl)
+      exact (absU_ok hp ⟨i, p, rp, by rw [c, dl], by rw [dl]; omega_arith⟩ (by rw [r4, dl]) (by rw [r6]; exact hl)
         (cov₂ hp ⟨i, p, rp, c, r4, r5, r6⟩ hR) (ds₂ hp ⟨i, p, rp, c, r4, r5, r6⟩ hR)
         (sd₂ hp ⟨i, p, rp, c, r4, r5, r6⟩ hR)).mono fun t ⟨i', _, c', _⟩ => ⟨i', c'.trans c⟩
   unfold Impl.Argon2.PPC64LE.Derive.absorb
@@ -296,35 +296,35 @@ theorem code_rel :
   unfold Impl.Argon2.PPC64LE.Derive.code
   refine RelCT.seqW T.start_rel (fun s h => start_ok T.hp₁ h.1 h.2) (fun s h => start_ok T.hp₂ h.1 h.2) ?_
   refine RelCT.seqW (T.absorb_rel (ptr := 1) (len := 2) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp) l1 m1
-      (by rw [h24, h24']) (by rw [h24]; omega) (by rw [h24']; omega)
+      (by rw [h24, h24']) (by rw [h24]; omega_arith) (by rw [h24']; omega_arith)
       ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
     (fun s h => absorb_ok T.hp₁ (ptr := 1) (len := 2) (by decide) (by decide) (by simp) l1
-      (by rw [h24]; omega) h)
+      (by rw [h24]; omega_arith) h)
     (fun s h => absorb_ok T.hp₂ (ptr := 1) (len := 2) (by decide) (by decide) (by simp) m1
-      (by rw [h24']; omega) h) ?_
+      (by rw [h24']; omega_arith) h) ?_
   refine RelCT.seqW (T.absorb_rel (ptr := 3) (len := 4) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp) l2 m2
-      (by rw [len, len, h24, h24', e2]) (by rw [len, h24]; omega) (by rw [len, h24']; omega)
+      (by rw [len, len, h24, h24', e2]) (by rw [len, h24]; omega_arith) (by rw [len, h24']; omega_arith)
       ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
     (fun s h => absorb_ok T.hp₁ (ptr := 3) (len := 4) (by decide) (by decide) (by simp) l2
-      (by rw [len, h24]; omega) h)
+      (by rw [len, h24]; omega_arith) h)
     (fun s h => absorb_ok T.hp₂ (ptr := 3) (len := 4) (by decide) (by decide) (by simp) m2
-      (by rw [len, h24']; omega) h) ?_
+      (by rw [len, h24']; omega_arith) h) ?_
   refine RelCT.seqW (T.absorb_rel (ptr := 9) (len := 10) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp) l3 m3
-      (by rw [len, len, len, len, h24, h24', e2, e4]) (by rw [len, len, h24]; omega)
-      (by rw [len, len, h24']; omega)
+      (by rw [len, len, len, len, h24, h24', e2, e4]) (by rw [len, len, h24]; omega_arith)
+      (by rw [len, len, h24']; omega_arith)
       ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
     (fun s h => absorb_ok T.hp₁ (ptr := 9) (len := 10) (by decide) (by decide) (by simp) l3
-      (by rw [len, len, h24]; omega) h)
+      (by rw [len, len, h24]; omega_arith) h)
     (fun s h => absorb_ok T.hp₂ (ptr := 9) (len := 10) (by decide) (by decide) (by simp) m3
-      (by rw [len, len, h24']; omega) h) ?_
+      (by rw [len, len, h24']; omega_arith) h) ?_
   refine RelCT.seqW (T.absorb_rel (ptr := 11) (len := 12) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp) l4 m4
-      (by rw [len, len, len, len, len, len, h24, h24', e2, e4, e10]) (by rw [len, len, len, h24]; omega)
-      (by rw [len, len, len, h24']; omega)
+      (by rw [len, len, len, len, len, len, h24, h24', e2, e4, e10]) (by rw [len, len, len, h24]; omega_arith)
+      (by rw [len, len, len, h24']; omega_arith)
       ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
     (fun s h => absorb_ok T.hp₁ (ptr := 11) (len := 12) (by decide) (by decide) (by simp) l4
-      (by rw [len, len, len, h24]; omega) h)
+      (by rw [len, len, len, h24]; omega_arith) h)
     (fun s h => absorb_ok T.hp₂ (ptr := 11) (len := 12) (by decide) (by decide) (by simp) m4
-      (by rw [len, len, len, h24']; omega) h) ?_
+      (by rw [len, len, len, h24']; omega_arith) h) ?_
   exact T.finish_rel (by rw [len, len, len, len, len, len, len, len, h24, h24', e2, e4, e10,
     T.pb.arg_eq (i := 12) (by decide)])
 

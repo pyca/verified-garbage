@@ -56,10 +56,10 @@ theorem swapStep_ok {s : State} {base : Addr} (hs : Scr s base) {x y i : Nat}
         (if sw then word s.mem base (y + 8 * i) else word s.mem base (x + 8 * i))).writeW
         (off base (y + 8 * i)) (if sw then word s.mem base (x + 8 * i) else word s.mem base (y + 8 * i)) ∧
       KeepsR [.rax, .rdx, .r8] s t := by
-  have lx := hs.read (d := x + 8 * i) (n := 8) (by omega)
-  have ly := hs.read (d := y + 8 * i) (n := 8) (by omega)
-  have wx := hs.write (d := x + 8 * i) (n := 8) (by omega)
-  have wy := hs.write (d := y + 8 * i) (n := 8) (by omega)
+  have lx := hs.read (d := x + 8 * i) (n := 8) (by omega_arith)
+  have ly := hs.read (d := y + 8 * i) (n := 8) (by omega_arith)
+  have wx := hs.write (d := x + 8 * i) (n := 8) (by omega_arith)
+  have wy := hs.write (d := y + 8 * i) (n := 8) (by omega_arith)
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, ea_sc,
     State.load64, State.store64, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
@@ -77,7 +77,7 @@ theorem word_write (m : Mem) (base : Addr) {d e : Nat} (hd : d + 8 ≤ 8192) (he
   by_cases h : e = d
   · rw [ite_eq_left h, h, word, Mem.readW_writeW_self64]
   · rw [ite_eq_right h]
-    exact Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep base (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
 
 /-- Swap the seven words under the mask, and nothing else. -/
 theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : x + 56 ≤ 1536)
@@ -103,30 +103,30 @@ theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : x
     have tc := (tk.1 .rcx (by decide)).trans hc
     refine WP.mono (swapStep_ok (hs.of_keepsR tk (by decide)) hx hy hn tc) fun u ⟨um, uk⟩ => ?_
     have ex : word t.mem base (x + 8 * n) = word s.mem base (x + 8 * n) :=
-      tm.word (by omega) (by omega) (by omega)
+      tm.word (by omega_arith) (by omega_arith) (by omega_arith)
     have ey : word t.mem base (y + 8 * n) = word s.mem base (y + 8 * n) :=
-      tm.word (by omega) (by omega) (by omega)
+      tm.word (by omega_arith) (by omega_arith) (by omega_arith)
     refine ⟨fun j hj => ?_, fun j hj => ?_, ?_, tk.trans uk⟩
-    · rw [um, word_write _ _ (by omega) (by omega) (by omega),
-        word_write _ _ (by omega) (by omega) (by omega)]
+    · rw [um, word_write _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+        word_write _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
       by_cases h : j = n
       · subst h
-        rw [ite_eq_right (by omega), ite_eq_left rfl, ex, ey]
-      · rw [ite_eq_right (by omega), ite_eq_right (by omega)]
-        exact tx j (by omega)
-    · rw [um, word_write _ _ (by omega) (by omega) (by omega)]
+        rw [ite_eq_right (by omega_arith), ite_eq_left rfl, ex, ey]
+      · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
+        exact tx j (by omega_arith)
+    · rw [um, word_write _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
       by_cases h : j = n
       · subst h
         rw [ite_eq_left rfl, ex, ey]
-      · rw [ite_eq_right (by omega), word_write _ _ (by omega) (by omega) (by omega),
-          ite_eq_right (by omega)]
-        exact ty j (by omega)
+      · rw [ite_eq_right (by omega_arith), word_write _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+          ite_eq_right (by omega_arith)]
+        exact ty j (by omega_arith)
     · intro p hp hq
-      rw [um, writeW_outside _ _ _ (by omega : y + 8 * n + 8 < 2 ^ 64) p (by omega),
-        writeW_outside _ _ _ (by omega : x + 8 * n + 8 < 2 ^ 64) p (by omega)]
-      exact tm p (by omega) (by omega)
+      rw [um, writeW_outside _ _ _ (by omega_arith : y + 8 * n + 8 < 2 ^ 64) p (by omega_arith),
+        writeW_outside _ _ _ (by omega_arith : x + 8 * n + 8 < 2 ^ 64) p (by omega_arith)]
+      exact tm p (by omega_arith) (by omega_arith)
   exact wp_range_flatMap (M := isa) (N := 7) inv step 7 (by decide) s
-    ⟨fun _ hi => by omega, fun _ hi => by omega, Outside2.refl _ _ _ _ _ _,
+    ⟨fun _ hi => by omega_arith, fun _ hi => by omega_arith, Outside2.refl _ _ _ _ _ _,
       ⟨fun _ _ => rfl, rfl, rfl⟩⟩
 
 end VG.Proof.X448.X86_64

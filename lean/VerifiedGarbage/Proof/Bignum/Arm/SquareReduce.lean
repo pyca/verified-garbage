@@ -46,21 +46,21 @@ theorem redInit_ok (s : State) {base : BitVec 32} {size M n : Nat} (ws : Workspa
         (off (State.addr base) (M + 12)) (0 : BitVec 32) ∧ Rest [.r1] s t := by
   have nowrap := ws.nowrap
   unfold redInit
-  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea nowrap p0 (imm := 0) (by omega))
-    (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea nowrap p0 (imm := 0) (by omega_arith))
+    (ws.read (by omega_arith)) fun s1 u1 => ?_
   have p1 := (u1.other .r0 (by decide)).trans p0
-  refine wp_str (by decide) (sq_ea nowrap p1 (by omega)) (by rw [u1.wr]; exact ws.write (by omega))
+  refine wp_str (by decide) (sq_ea nowrap p1 (by omega_arith)) (by rw [u1.wr]; exact ws.write (by omega_arith))
     fun s2 u2 => ?_
   have p2 : s2.gpr .r0 = base + BitVec.ofNat 32 M := by rw [u2.gpr]; exact p1
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   have p3 := (u3.other .r0 (by decide)).trans p2
-  refine wp_str (by decide) (sq_ea nowrap p3 (by omega)) (by rw [u3.wr, u2.wr, u1.wr]; exact ws.write (by omega))
+  refine wp_str (by decide) (sq_ea nowrap p3 (by omega_arith)) (by rw [u3.wr, u2.wr, u1.wr]; exact ws.write (by omega_arith))
     fun s4 u4 => ?_
   have p4 : s4.gpr .r0 = base + BitVec.ofNat 32 M := by rw [u4.gpr]; exact p3
   refine wp_mov (op2_imm (by decide)) fun s5 u5 => ?_
   have p5 := (u5.other .r0 (by decide)).trans p4
-  refine wp_str (by decide) (sq_ea nowrap p5 (by omega))
-    (by rw [u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]; exact ws.write (by omega)) fun t u6 => WP.block_nil ?_
+  refine wp_str (by decide) (sq_ea nowrap p5 (by omega_arith))
+    (by rw [u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]; exact ws.write (by omega_arith)) fun t u6 => WP.block_nil ?_
   refine ⟨?_, ?_⟩
   · have v3 : s3.gpr .r1 = base + BitVec.ofNat 32 (M + 24) := by
       rw [u3.gpr, dpVal, p2]
@@ -80,11 +80,11 @@ theorem redHeader_ok (s : State) {base : BitVec 32} {size mod M : Nat} {inv : Bi
       t.mem = s.mem ∧ Rest [.r0, .r1, .r12] s t := by
   have nowrap := ws.nowrap
   unfold redHeader
-  refine wp_ldr (by decide) (sq_ea0 nowrap p0 (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
-  refine wp_ldr (by decide) (sq_ea0 nowrap ((u1.other .r0 (by decide)).trans p0) (by omega))
-    (by rw [u1.rd, u1.wr]; exact ws.read (by omega)) fun s2 u2 => ?_
+  refine wp_ldr (by decide) (sq_ea0 nowrap p0 (by omega_arith)) (ws.read (by omega_arith)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (sq_ea0 nowrap ((u1.other .r0 (by decide)).trans p0) (by omega_arith))
+    (by rw [u1.rd, u1.wr]; exact ws.read (by omega_arith)) fun s2 u2 => ?_
   refine wp_ldr (by decide) (sq_ea0 nowrap ((u2.other .r0 (by decide)).trans ((u1.other .r0 (by decide)).trans p0))
-    (by omega)) (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact ws.read (by omega)) fun t u3 => WP.block_nil ?_
+    (by omega_arith)) (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact ws.read (by omega_arith)) fun t u3 => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [u3.other .r12 (by decide), u2.other .r12 (by decide), u1.gpr, hm]
   · rw [u3.other .r1 (by decide), u2.gpr, u1.mem, hi]
@@ -102,15 +102,15 @@ theorem redArgs_ok (s : State) {base : BitVec 32} {size M n P : Nat} (ws : Works
       Rest [.r0, .r2, .r3, .lr] s t := by
   have nowrap := ws.nowrap
   unfold redArgs
-  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea nowrap p0 (imm := 0) (by omega))
-    (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea nowrap p0 (imm := 0) (by omega_arith))
+    (ws.read (by omega_arith)) fun s1 u1 => ?_
   have p1 := (u1.other .r0 (by decide)).trans p0
-  refine wp_ldr (by decide) (sq_ea nowrap p1 (by omega)) (by rw [u1.rd, u1.wr]; exact ws.read (by omega))
+  refine wp_ldr (by decide) (sq_ea nowrap p1 (by omega_arith)) (by rw [u1.rd, u1.wr]; exact ws.read (by omega_arith))
     fun s2 u2 => ?_
   have p2 := (u2.other .r0 (by decide)).trans p1
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   have p3 := (u3.other .r0 (by decide)).trans p2
-  refine wp_str (by decide) (sq_ea nowrap p3 (by omega)) (by rw [u3.wr, u2.wr, u1.wr]; exact ws.write (by omega))
+  refine wp_str (by decide) (sq_ea nowrap p3 (by omega_arith)) (by rw [u3.wr, u2.wr, u1.wr]; exact ws.write (by omega_arith))
     fun s4 u4 => ?_
   refine wp_mov (op2_reg _ _) fun t u5 => WP.block_nil ?_
   have g2 : s2.gpr .r2 = base + BitVec.ofNat 32 P := by rw [u2.gpr, u1.mem, ht]
@@ -129,7 +129,7 @@ theorem redScalar_ok (s : State) {base : BitVec 32} {size D : Nat} (ws : Workspa
       t.gpr .r1 = s.gpr .r1 * s.mem.readW (off (State.addr base) D) 32 ∧ t.gpr .r11 = 0 ∧
       t.gpr .r0 = s.gpr .r0 ∧ t.mem = s.mem ∧ Rest [.r1, .r2, .r11] s t := by
   unfold redScalar
-  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea ws.nowrap p0 (imm := 0) (by omega))
+  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea ws.nowrap p0 (imm := 0) (by omega_arith))
     (ws.read fit) fun s1 u1 => ?_
   refine wp_mul fun s2 u2 => ?_
   refine wp_mov (op2_imm (by decide)) fun t u3 => WP.block_nil ?_
@@ -150,11 +150,11 @@ theorem redCarry_ok (s : State) {base : BitVec 32} {size D M : Nat} (ws : Worksp
       t.gpr .r0 = base + BitVec.ofNat 32 M ∧ Rest [.r0, .r3, .r4, .r5] s t := by
   have nowrap := ws.nowrap
   unfold redCarry
-  have ea0 := sq_ea nowrap p0 (imm := 0) (by omega)
+  have ea0 := sq_ea nowrap p0 (imm := 0) (by omega_arith)
   rw [Nat.add_zero] at ea0
   refine wp_ldr (by decide) ea0 (ws.read fitD) fun s1 u1 => ?_
-  refine wp_ldr (by decide) (sq_ea nowrap ((u1.other .r2 (by decide)).trans p2) (by omega))
-    (by rw [u1.rd, u1.wr]; exact ws.read (by omega)) fun s2 u2 => ?_
+  refine wp_ldr (by decide) (sq_ea nowrap ((u1.other .r2 (by decide)).trans p2) (by omega_arith))
+    (by rw [u1.rd, u1.wr]; exact ws.read (by omega_arith)) fun s2 u2 => ?_
   refine wp_adds (op2_reg _ _) fun s3 u3 c3 => ?_
   refine wp_mov_c (op2_imm (by decide)) fun s4 u4 c4 => ?_
   refine wp_adc (op2_imm (by decide)) fun s5 u5 c5 => ?_
@@ -170,8 +170,8 @@ theorem redCarry_ok (s : State) {base : BitVec 32} {size D M : Nat} (ws : Worksp
   have m7 : s7.mem = s.mem := by rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
   refine wp_str (a := off (State.addr base) D) (by decide) (by rw [q0]; exact ea0) (by rw [w7]; exact ws.write fitD)
     fun s8 u8 => ?_
-  refine wp_str (by decide) (sq_ea nowrap (by rw [u8.gpr, q2]; exact p2) (by omega))
-    (by rw [u8.wr, w7]; exact ws.write (by omega)) fun s9 u9 => ?_
+  refine wp_str (by decide) (sq_ea nowrap (by rw [u8.gpr, q2]; exact p2) (by omega_arith))
+    (by rw [u8.wr, w7]; exact ws.write (by omega_arith)) fun s9 u9 => ?_
   refine wp_mov (op2_reg _ _) fun t u10 => WP.block_nil ?_
   -- The values.
   have x : s1.gpr .r3 = s.mem.readW (off (State.addr base) D) 32 := u1.gpr
@@ -202,7 +202,7 @@ theorem redCarry_ok (s : State) {base : BitVec 32} {size D M : Nat} (ws : Worksp
   refine ⟨s6.gpr .r3, s7.gpr .r5, ?_, ?_, ?_, ?_⟩
   · rw [h7, h5, cc4, cc6]
     simp only [decide_eq_true_eq]
-    omega
+    omega_arith
   · rw [u10.mem, u9.mem, u8.mem, m7, u8.gpr, u7.other .r3 (by decide)]
   · rw [u10.gpr, u9.gpr, u8.gpr, q2, p2]
   · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans
@@ -220,9 +220,9 @@ theorem red_value {VT VT' P Wn W X X' win win' lo hi x r c m N : Nat}
   grind
 
 theorem red_q {Q P m W : Nat} (hQ : Q < P) (hm : m < W) : Q + P * m < P * W := by
-  have := Nat.mul_le_mul_left P (show m + 1 ≤ W by omega)
+  have := Nat.mul_le_mul_left P (show m + 1 ≤ W by omega_arith)
   rw [Nat.mul_succ] at this
-  omega
+  omega_arith
 
 section
 variable {m0 : Mem} {base : BitVec 32} {size out a mod M n : Nat} {inv : BitVec 32}
@@ -237,28 +237,28 @@ theorem sqReduceInit_ok (s : State) (h : ProdInv m0 base size out a mod M n inv 
   refine WP.mono (sqAnchor_ok s env) ?_
   rintro s1 ⟨p1, m1, r1⟩
   have e1 := env.of_mem m1 r1
-  refine WP.mono (redInit_ok s1 (M := M) (n := n) e1.workspace (by omega) p1 (by rw [m1]; exact h.md.count)) ?_
+  refine WP.mono (redInit_ok s1 (M := M) (n := n) e1.workspace (by omega_arith) p1 (by rw [m1]; exact h.md.count)) ?_
   rintro t ⟨mt, rt⟩
-  have o1 := writeW32_outside s1.mem (State.addr base) (d := M + 16) (BitVec.ofNat 32 n) (by omega)
+  have o1 := writeW32_outside s1.mem (State.addr base) (d := M + 16) (BitVec.ofNat 32 n) (by omega_arith)
   have o2 := writeW32_outside (s1.mem.writeW (off (State.addr base) (M + 16)) (BitVec.ofNat 32 n))
-    (State.addr base) (d := M + 20) (base + BitVec.ofNat 32 (M + 24)) (by omega)
+    (State.addr base) (d := M + 20) (base + BitVec.ofNat 32 (M + 24)) (by omega_arith)
   have o3 := writeW32_outside ((s1.mem.writeW (off (State.addr base) (M + 16)) (BitVec.ofNat 32 n)).writeW
       (off (State.addr base) (M + 20)) (base + BitVec.ofNat 32 (M + 24))) (State.addr base) (d := M + 12)
-    (0 : BitVec 32) (by omega)
+    (0 : BitVec 32) (by omega_arith)
   rw [← mt] at o3
   have O : Outside (State.addr base) (M + 12) 12 s1.mem t.mem :=
-    (o1.mono (by omega) (by omega)).trans ((o2.mono (by omega) (by omega)).trans (o3.mono (by omega) (by omega)))
-  have et := e1.next (Outs.of_outside (O.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega) (by omega))
+    (o1.mono (by omega_arith) (by omega_arith)).trans ((o2.mono (by omega_arith) (by omega_arith)).trans (o3.mono (by omega_arith) (by omega_arith)))
+  have et := e1.next (Outs.of_outside (O.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
     (by simp)) rt
-  refine ⟨⟨et, h.md.congr fun d hd => ?_, by omega, ?_, ?_, ⟨0, by simp, ?_⟩, ?_, ?_⟩, ?_⟩
-  · rw [outside_read32 O (by omega) (by omega), m1]
-  · rw [mt, rd_other _ (by omega) (by omega) (by omega), rd_other _ (by omega) (by omega) (by omega), rd_self,
+  refine ⟨⟨et, h.md.congr fun d hd => ?_, by omega_arith, ?_, ?_, ⟨0, by simp, ?_⟩, ?_, ?_⟩, ?_⟩
+  · rw [outside_read32 O (by omega_arith) (by omega_arith), m1]
+  · rw [mt, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), rd_self,
       Nat.sub_zero]
-  · rw [mt, rd_other _ (by omega) (by omega) (by omega), rd_self, Nat.mul_zero, Nat.add_zero]
-  · rw [O.val32 (by omega) (by omega), mt, rd_self, m1, h.value]
+  · rw [mt, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), rd_self, Nat.mul_zero, Nat.add_zero]
+  · rw [O.val32 (by omega_arith) (by omega_arith), mt, rd_self, m1, h.value]
     simp only [show (0 : BitVec 32).toNat = 0 from rfl, Nat.mul_zero, Nat.zero_mul, Nat.add_zero]
   · rfl
-  · rw [O.val32 (by omega) (by omega), m1]; exact h.top
+  · rw [O.val32 (by omega_arith) (by omega_arith), m1]; exact h.top
   · exact (r1.mono (by simp [roundClobbers])).trans (rt.mono (by simp [roundClobbers]))
 
 theorem redRound_ok (s : State) {k : Nat} (h : RedInv m0 base size out a mod M n inv k s) (hk : k < n) :
@@ -418,7 +418,7 @@ theorem redRounds_ok (s : State) (h : RedInv m0 base size out a mod M n inv 0 s)
   refine WP.loop (M := isa) loopInv ?_ n s ?_
   · intro k t hk
     obtain ⟨i, hik, hk, hi, rest⟩ := hk
-    refine WP.mono (redRound_ok t hi (by omega)) ?_
+    refine WP.mono (redRound_ok t hi (by omega_arith)) ?_
     rintro u ⟨hu, hz, ru⟩
     by_cases he : i + 1 = n
     · left
@@ -426,10 +426,10 @@ theorem redRounds_ok (s : State) (h : RedInv m0 base size out a mod M n inv 0 s)
       change some (!u.z) = some false
       simp only [hz, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, hu, rest.trans ru⟩
+      refine ⟨?_, k - 1, by omega_arith, i + 1, by omega_arith, by omega_arith, hu, rest.trans ru⟩
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
-  · exact ⟨0, by omega, by omega, h, Rest.refl _ _⟩
+  · exact ⟨0, by omega_arith, by omega_arith, h, Rest.refl _ _⟩
 
 theorem sqReduce_ok (s : State) (h : ProdInv m0 base size out a mod M n inv s) :
     WP isa sqReduce s fun t => RedInv m0 base size out a mod M n inv n t ∧ Rest roundClobbers s t := by

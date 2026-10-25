@@ -41,8 +41,8 @@ private theorem word_values {m m' : Mem} {base : Addr} {a n : Nat}
   | zero => rfl
   | succ n ih =>
     simp only [wordsVal]
-    rw [show word m base a=word m' base a by simpa only [Nat.mul_zero,Nat.add_zero] using h 0 (by omega)]
-    rw [ih (a:=a+8) (fun i hi => by rw [show a+8+8*i=a+8*(i+1) by omega]; exact h (i+1) (by omega))]
+    rw [show word m base a=word m' base a by simpa only [Nat.mul_zero,Nat.add_zero] using h 0 (by omega_arith)]
+    rw [ih (a:=a+8) (fun i hi => by rw [show a+8+8*i=a+8*(i+1) by omega_arith]; exact h (i+1) (by omega_arith))]
 
  theorem invAllocated_update_clob : ∀ r∈Forward.InvAllocated.optimized.flatMap Forward.instrClob,
     r∈allocatedRegs := by
@@ -85,11 +85,11 @@ theorem invAllocated_batch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
     intro i hi
     apply hu
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
-      rcases ha with rfl | rfl | rfl | rfl <;> change _<7104 ∨ 7680≤_ <;> left <;> omega
+      rcases ha with rfl | rfl | rfl | rfl <;> change _<7104 ∨ 7680≤_ <;> left <;> omega_arith
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
-      rcases ha with rfl | rfl | rfl | rfl <;> omega
+      rcases ha with rfl | rfl | rfl | rfl <;> omega_arith
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
-      rcases ha with rfl | rfl | rfl | rfl <;> omega
+      rcases ha with rfl | rfl | rfl | rfl <;> omega_arith
   have hnot1 : Reg.x1∉Forward.InvAllocated.optimized.flatMap Forward.instrClob :=
     fun hr => (Forward.InvAllocated.keepsDeltaCounter _ hr).1 rfl
   have hnot19 : Reg.x19∉Forward.InvAllocated.optimized.flatMap Forward.instrClob :=
@@ -130,7 +130,7 @@ theorem invAllocated_mod {base : Addr} {size m : Nat} {s t : State}
       IInv invAllocatedCfg base (Divstep.invRun 59 m invAllocatedCfg.M.minv.toNat X B) t ∧
       KeepRegs invAllocatedRegs s t ∧ Unch base invAllocatedBatchW s.mem t.mem := by
   have hmi : ((m : Int)*(invAllocatedCfg.M.minv.toNat : Int)+1)%2^64=0 := by exact_mod_cast hM.inv
-  refine countLoop_ok (n:=B) (by omega)
+  refine countLoop_ok (n:=B) (by omega_arith)
     (Inv:=fun j t => IInv invAllocatedCfg base (Divstep.invRun 59 m invAllocatedCfg.M.minv.toNat X (B-j)) t ∧
       t.gpr .x19=BitVec.ofNat 64 j ∧ Scr t base size ∧ ModOkA invAllocatedCfg.M size m t.mem base ∧
       KeepRegs invAllocatedRegs s t ∧ Unch base invAllocatedBatchW s.mem t.mem)
@@ -139,14 +139,14 @@ theorem invAllocated_mod {base : Addr} {size m : Nat} {s t : State}
     hB1 ⟨by rw [Nat.sub_self]; exact hI,h19,hs,hM,⟨fun _ _ => rfl,rfl,rfl,rfl⟩,Unch.refl _ _ _⟩
   obtain ⟨bd,bf1,bf,bg,ba0,ba1,bb0,bb1⟩ := Divstep.invRun_bounds (N:=59) (by decide)
     (p:=m) (m:=invAllocatedCfg.M.minv.toNat) (x:=X) (by exact_mod_cast hm2)
-    (by exact_mod_cast hm1) hmi (by omega) (by exact_mod_cast hX) (B-j)
+    (by exact_mod_cast hm1) hmi (by omega_arith) (by exact_mod_cast hX) (B-j)
   refine WP.mono (invAllocated_batch_ok hsize hL st mt it (by
-    have hh : ((59*(B-j) : Nat) : Int)≤59*2^16 := by exact_mod_cast (Nat.mul_le_mul_left 59 (by omega : B-j≤2^16))
-    omega) bf1 bf bg (by rw [abs_of_nonneg ba0]; exact ba1.le)
-    (by rw [abs_of_nonneg bb0]; exact bb1.le) hj1 (by omega) xt)
+    have hh : ((59*(B-j) : Nat) : Int)≤59*2^16 := by exact_mod_cast (Nat.mul_le_mul_left 59 (by omega_arith : B-j≤2^16))
+    omega_arith) bf1 bf bg (by rw [abs_of_nonneg ba0]; exact ba1.le)
+    (by rw [abs_of_nonneg bb0]; exact bb1.le) hj1 (by omega_arith) xt)
     fun u ⟨iu,xu,ku,uu⟩ => ⟨⟨?_,xu,st.of_keepRegs ku (by decide),invAllocated_mod st mt uu,
       kt.trans ku,fun x hx => (uu x hx).trans (ut x hx)⟩,xu⟩
-  rw [show B-(j-1)=B-j+1 by omega]
+  rw [show B-(j-1)=B-j+1 by omega_arith]
   exact iu
 
 end VG.Proof.Weierstrass.AArch64

@@ -39,13 +39,13 @@ variable {s₀ : State} (hp : DPre s₀)
 include hp
 
 theorem loc_addr {d : Nat} (hd : d < 236) :
-    (E s₀ + BitVec.ofNat 32 d).toNat = (E s₀).toNat + d := add_nat (by have := E_hi hp; omega)
+    (E s₀ + BitVec.ofNat 32 d).toNat = (E s₀).toNat + d := add_nat (by have := E_hi hp; omega_arith)
 
 /-- Another word of the frame, after a store to the locals. -/
 theorem lw_store {m : Mem} {d e : Nat} (hd : d + 4 ≤ 236) (he : e + 4 ≤ 236) (hde : d + 4 ≤ e ∨ e + 4 ≤ d)
     (v : BitVec 32) :
     (m.writeW (addr (E s₀) d) v).readW (addr (E s₀) e) 32 = m.readW (addr (E s₀) e) 32 :=
-  Proof.Sha256.X86.Stream.readW_writeW_addr m v (by have := E_hi hp; omega) (by have := E_hi hp; omega) hde.symm
+  Proof.Sha256.X86.Stream.readW_writeW_addr m v (by have := E_hi hp; omega_arith) (by have := E_hi hp; omega_arith) hde.symm
 
 theorem Inv.store_loc {s t : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 144) {v : BitVec 32}
     (u : Mupd s t (s.mem.writeW (addr (E s₀) d) v)) :
@@ -54,11 +54,11 @@ theorem Inv.store_loc {s t : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 1
   refine ⟨h.step (by rw [u.gpr]) (by rw [u.gpr]) u.rd u.wr ?_, ?_, fun e he hde => ?_⟩
   · rw [u.mem]
     exact (Frame.refl _ _).writeW (r := locR s₀) (by simp) v
-      (contains32 (by rw [loc_addr hp (by omega)]; omega) (by rw [loc_addr hp (by omega)]; omega))
+      (contains32 (by rw [loc_addr hp (by omega_arith)]; omega_arith) (by rw [loc_addr hp (by omega_arith)]; omega_arith))
   · show t.mem.readW _ 32 = v
     rw [u.mem, Mem.readW_writeW_self32]
   · show t.mem.readW _ 32 = _
-    rw [u.mem, lw_store hp (by omega) he hde]
+    rw [u.mem, lw_store hp (by omega_arith) he hde]
 
 /-- `mov [ebp + d], r` -/
 theorem wp_stloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 144) {r : Reg} {is : List Instr}
@@ -96,8 +96,8 @@ theorem loc_disj {d : Nat} (hd : d + 4 ≤ 144) :
   · exact (hp.stk_all _ (by simp)).sub_left sub
   · exact (hp.stk_all _ (by simp)).sub_left sub
   · exact (hp.stk_all _ (by simp)).sub_left sub
-  · exact disj32 (.inr (by rw [sub_nat (by rw [E_nat hp]; omega), loc_addr hp (by omega)]; omega))
-      (by rw [loc_addr hp (by omega)]; omega) (by rw [sub_nat (by rw [E_nat hp]; omega)]; omega)
+  · exact disj32 (.inr (by rw [sub_nat (by rw [E_nat hp]; omega_arith), loc_addr hp (by omega_arith)]; omega_arith))
+      (by rw [loc_addr hp (by omega_arith)]; omega_arith) (by rw [sub_nat (by rw [E_nat hp]; omega_arith)]; omega_arith)
 
 /-- The locals are kept by writes outside them. -/
 theorem lw_keep {s t : State} {rs : List Region} (f : Frame rs s.mem t.mem)
@@ -157,12 +157,12 @@ theorem dbl_ok {s : State} {is : List Instr} {Q : State → Prop} :
       have := Nat.mul_le_mul_right 2 hx
       rw [Nat.mul_right_comm] at this
       rw [e] at hn
-      omega
+      omega_arith
     refine wp_add fun s₁ u₁ _ => dbl_ok (s := s₁) n ?_ fun t ht kt => k t ?_
       ((Divide.Keep.of_upd u₁ (by simp)).trans kt)
-    · rw [u₁.gpr, BitVec.toNat_add, Nat.mod_eq_of_lt (by omega), ← Nat.two_mul, Nat.mul_comm 2]
+    · rw [u₁.gpr, BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_arith), ← Nat.two_mul, Nat.mul_comm 2]
       rw [e] at hn; exact hn
-    · rw [ht, u₁.gpr, BitVec.toNat_add, Nat.mod_eq_of_lt (by omega), ← Nat.two_mul, Nat.mul_comm 2, e]
+    · rw [ht, u₁.gpr, BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_arith), ← Nat.two_mul, Nat.mul_comm 2, e]
 
 theorem lw_mem {s₀ s t : State} (h : t.mem = s.mem) (d : Nat) : lw s₀ t d = lw s₀ s d := by
   simp only [lw, h]
@@ -196,12 +196,12 @@ theorem parameters_ok {is : List Instr} {Q : State → Prop}
     show (((arg s₀ 7).toNat + (arg s₀ 7).toNat) % 2 ^ 32 + ((arg s₀ 7).toNat + (arg s₀ 7).toNat) % 2 ^ 32)
       % 2 ^ 32 = 4 * (arg s₀ 7).toNat
     have : (arg s₀ 7).toNat < 2 ^ 24 := hL
-    omega
+    omega_arith
   refine wp_stloc hp i₄ (d := divisorOff) (by decide) fun s₅ i₅ v₅ _ g₅ _ => ?_
   refine wp_ldarg hp i₅ (i := Impl.Argon2.X86.Derive.memoryCostArg) (by decide) fun s₆ u₆ => ?_
   have i₆ := i₅.upd u₆ (by decide) (by decide)
   have d₆ : lw s₀ s₆ divisorOff = s₄.gpr .eax := by rw [lw_mem u₆.mem, v₅]
-  refine Divide.code_ok (D := s₄.gpr .eax) (by rw [e₄]; omega) (by rw [e₄]; omega) i₆.ebp
+  refine Divide.code_ok (D := s₄.gpr .eax) (by rw [e₄]; omega_arith) (by rw [e₄]; omega_arith) i₆.ebp
     (loc_in' hp i₆ (by decide)) d₆ fun s₇ c₇ _ k₇ => ?_
   have i₇ := i₆.keep k₇
   rw [u₆.gpr, e₄] at c₇
@@ -216,22 +216,22 @@ theorem parameters_ok {is : List Instr} {Q : State → Prop}
   have e₁₀ : (s₁₀.gpr .ecx).toNat = (prm s₀).laneLen := by
     rw [u₁₀.gpr, u₉.gpr, g₈]
     simp only [BitVec.toNat_add, c₇']
-    omega
+    omega_arith
   refine wp_stloc hp i₁₀ (d := laneLenOff) (by decide) fun s₁₁ i₁₁ v₁₁ o₁₁ g₁₁ _ => ?_
-  refine dbl_ok 10 (by rw [g₁₁, e₁₀]; omega) fun s₁₂ e₁₂ k₁₂ => ?_
+  refine dbl_ok 10 (by rw [g₁₁, e₁₀]; omega_arith) fun s₁₂ e₁₂ k₁₂ => ?_
   have i₁₂ := i₁₁.keep k₁₂
   refine wp_stloc hp i₁₂ (d := strideOff) (by decide) fun s₁₃ i₁₃ v₁₃ o₁₃ _ _ => k s₁₃ i₁₃ ⟨?_, ?_, ?_, ?_⟩
   · rw [o₁₃ _ (by decide) (by decide), lw_mem k₁₂.mem, o₁₁ _ (by decide) (by decide), lw_mem u₁₀.mem,
       lw_mem u₉.mem, o₈ _ (by decide) (by decide), lw_mem k₇.mem, lw_mem u₆.mem, v₅]
-    exact BitVec.eq_of_toNat_eq (by rw [e₄, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+    exact BitVec.eq_of_toNat_eq (by rw [e₄, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)])
   · rw [o₁₃ _ (by decide) (by decide), lw_mem k₁₂.mem, o₁₁ _ (by decide) (by decide), lw_mem u₁₀.mem,
       lw_mem u₉.mem, v₈]
-    exact BitVec.eq_of_toNat_eq (by rw [c₇', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+    exact BitVec.eq_of_toNat_eq (by rw [c₇', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)])
   · rw [o₁₃ _ (by decide) (by decide), lw_mem k₁₂.mem, v₁₁]
-    exact BitVec.eq_of_toNat_eq (by rw [e₁₀, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+    exact BitVec.eq_of_toNat_eq (by rw [e₁₀, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)])
   · rw [v₁₃]
     exact BitVec.eq_of_toNat_eq (by
-      rw [e₁₂, g₁₁, e₁₀, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+      rw [e₁₂, g₁₁, e₁₀, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)])
 
 end
 
@@ -270,12 +270,12 @@ theorem out_mem : outR s₀ ∈ (entry s₀).wr := wr_mem s₀ (by rw [hp.wr]; s
 
 /-- The 60 bytes below the locals that H′'s macros use are outside the body's other regions. -/
 theorem below60_call : Region.Sub (VG.X86.below (E s₀) 60) (callR s₀) :=
-  VG.X86.below_sub (by decide) (by rw [E_nat hp]; have := hp.esp_lo; omega)
+  VG.X86.below_sub (by decide) (by rw [E_nat hp]; have := hp.esp_lo; omega_arith)
 
 theorem ctx {s : State} (h : Inv s₀ s) (hb : s.gpr .ebx = scrP s₀) : Ctx (scrP s₀) (E s₀) s := by
   have := hp.scr_fits
-  refine ⟨hb, h.esp, by omega, by rw [E_nat hp]; have := hp.esp_lo; omega,
-    by have := E_hi hp; omega, ?_, ?_⟩
+  refine ⟨hb, h.esp, by omega_arith, by rw [E_nat hp]; have := hp.esp_lo; omega_arith,
+    by have := E_hi hp; omega_arith, ?_, ?_⟩
   · rw [h.wr]
     exact (Covers.of_sub (rs' := [scrR s₀]) fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr

@@ -77,7 +77,7 @@ theorem hbu_preS {s : State} (hs : Site L Wb STK s) {stk : Nat} (hstk : 4 + stk 
   refine hbu_pre g0 g1 g2 g3 ga
     (by rw [State.withRegions_rd, imm_toNat ll, hs.regE m.py l0, push_argAddr _ e1]; rfl)
     (by rw [State.withRegions_wr, imm_toNat lh, hs.regE m.ph h0])
-    (by rw [push_spN _ e1 _ _ h4]; have := hs.spk; omega) (push_fit _ _ _ h4 e1)
+    (by rw [push_spN _ e1 _ _ h4]; have := hs.spk; omega_arith) (push_fit _ _ _ h4 e1)
     ?_ ?_ ?_ ?_ ?_ (by rw [imm_toNat ll]; exact hs.fitE m.py l0) (by rw [imm_toNat lh]; exact hs.fitE m.ph h0)
     (by rw [imm_toNat lo, imm_toNat ll]; exact m.hp) (by rw [imm_toNat lo, imm_toNat ll]; exact m.ho)
     (by rw [imm_toNat lo, imm_toNat ll, imm_toNat lh]; exact m.hh)
@@ -99,13 +99,13 @@ theorem hbu_okS {c : Prog isa} (hc : Callee c (fun stk => hintBitUnpackContract 
   obtain ⟨l0, ll, lo, h0, lh⟩ := m.lt
   have e1 := glueSt_sp s (hbuAll y len om h hl)
   have hm := glueSt_mem s (hbuAll y len om h hl)
-  refine callVS hver.1 m.hg (hbu_preS hs (by omega) m) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk h3 =>
-      hQ s' (hs.keptW [tri h (hl * 4)] (by have := hc.stack; omega) hk) ?_
+  refine callVS hver.1 m.hg (hbu_preS hs (by omega_arith) m) c1 c2
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk h3 =>
+      hQ s' (hs.keptW [tri h (hl * 4)] (by have := hc.stack; omega_arith) hk) ?_
   obtain ⟨s₃, hm₃, hr₃, hp⟩ := h3
   obtain ⟨g0, g1, g2, g3, -⟩ := hbuG hs m (hbuRd L y len ++ [argR s]) (hbuWr L h hl)
   have := hbu_post hp
-  have hb := push_bytesAt hs e1 hm (hbuRd L y len ++ [argR s]) (hbuWr L h hl) m.py (by omega)
+  have hb := push_bytesAt hs e1 hm (hbuRd L y len ++ [argR s]) (hbuWr L h hl) m.py (by omega_arith)
   rw [g0, g1, g2, g3, hs.addrE m.py l0, hs.addrE m.ph h0, imm_toNat ll, imm_toNat lo, hb] at this
   simp only [State.withRegions_mem, State.withRegions_gpr, hm₃, hr₃ .r0 (by decide)] at this
   exact this
@@ -124,14 +124,14 @@ theorem hbu_tr {c : Prog isa} (hc : Callee c (fun stk => hintBitUnpackContract A
   obtain ⟨gy0, gy1, gy2, gy3, gya⟩ := hbuG hy m (hbuRd L y len ++ [argR x]) (hbuWr L h hl)
   have ex : argR y' = argR x := by simp only [argR, hsp]
   have bx := push_bytesAt hx (glueSt_sp x (hbuAll y len om h hl)) (glueSt_mem x _) (hbuRd L y len ++ [argR x])
-    (hbuWr L h hl) m.py (by omega)
+    (hbuWr L h hl) m.py (by omega_arith)
   have by' := push_bytesAt hy (glueSt_sp y' (hbuAll y len om h hl)) (glueSt_mem y' _) (hbuRd L y len ++ [argR x])
-    (hbuWr L h hl) m.py (by omega)
-  refine ⟨hbuRd L y len ++ [argR x], hbuWr L h hl, hbu_preS hx (by omega) m, ?_,
+    (hbuWr L h hl) m.py (by omega_arith)
+  refine ⟨hbuRd L y len ++ [argR x], hbuWr L h hl, hbu_preS hx (by omega_arith) m, ?_,
     hbu_pub (by simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp, glueSt_sp, hsp])
       (by rw [gx0, gy0]) (by rw [gx1, gy1]) (by rw [gx2, gy2]) (by rw [gx3, gy3]) (by rw [gxa, gya]) ?_,
     ?_, ?_, ?_, ?_⟩
-  · rw [← ex]; exact hbu_preS hy (by omega) m
+  · rw [← ex]; exact hbu_preS hy (by omega_arith) m
   · rw [gx0, gy0, gx1, gy1, hx.addrE m.py l0, imm_toNat ll]
     exact bx.trans (hl'.trans by'.symm)
   · exact (push_cov _ (hbu_cov hx m).1 (hbu_cov hx m).2).1
@@ -196,7 +196,7 @@ theorem bu_preS {s : State} (hs : Site L Wb STK s) {stk : Nat} (hstk : 4 + stk �
   refine bu_pre g0 g1 g2 g3 ga
     (by rw [State.withRegions_rd, imm_toNat ll, hs.regE m.pv l0, push_argAddr _ e1]; rfl)
     (by rw [State.withRegions_wr, hs.regE m.pf (by decide)])
-    (by rw [push_spN _ e1 _ _ h4]; have := hs.spk; omega) (push_fit _ _ _ h4 e1)
+    (by rw [push_spN _ e1 _ _ h4]; have := hs.spk; omega_arith) (push_fit _ _ _ h4 e1)
     ?_ ?_ ?_ ?_ ?_ (by rw [imm_toNat ll]; exact hs.fitE m.pv l0) (hs.fitE m.pf (by decide))
     (by rw [imm_toNat la, imm_toNat lb]; exact m.hab) (by rw [imm_toNat la, imm_toNat lb, imm_toNat ll]; exact m.hl)
   · rw [imm_toNat ll, hs.regE m.pv l0, hs.regE m.pf (by decide)]; exact hs.dE m.d1 (.inr m.wf)
@@ -215,13 +215,13 @@ theorem bu_okS {c : Prog isa} (hc : Callee c (fun stk => bitUnpackContract Arm.a
   obtain ⟨l0, ll, la, lb⟩ := m.lt
   have e1 := glueSt_sp s (buAll v len a b f)
   have hm := glueSt_mem s (buAll v len a b f)
-  refine callVS hver.1 m.hg (bu_preS hs (by omega) m) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk h3 =>
-      hQ s' (hs.keptW [tri f 1024] (by have := hc.stack; omega) hk) ?_
+  refine callVS hver.1 m.hg (bu_preS hs (by omega_arith) m) c1 c2
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk h3 =>
+      hQ s' (hs.keptW [tri f 1024] (by have := hc.stack; omega_arith) hk) ?_
   obtain ⟨s₃, hm₃, -, hp⟩ := h3
   obtain ⟨g0, g1, g2, g3, ga⟩ := buG hs m (buRd L v len ++ [argR s]) (buWr L f)
   have := bu_post hp
-  have hb := push_bytesAt hs e1 hm (buRd L v len ++ [argR s]) (buWr L f) m.pv (by omega)
+  have hb := push_bytesAt hs e1 hm (buRd L v len ++ [argR s]) (buWr L f) m.pv (by omega_arith)
   rw [g0, g1, g2, g3, ga, hs.addrE m.pv l0, hs.addrE m.pf (by decide), imm_toNat ll, imm_toNat la, imm_toNat lb,
     hb] at this
   simp only [State.withRegions_mem, hm₃] at this
@@ -238,11 +238,11 @@ theorem bu_tr {c : Prog isa} (hc : Callee c (fun stk => bitUnpackContract Arm.ab
   obtain ⟨gx0, gx1, gx2, gx3, gxa⟩ := buG hx m (buRd L v len ++ [argR x]) (buWr L f)
   obtain ⟨gy0, gy1, gy2, gy3, gya⟩ := buG hy m (buRd L v len ++ [argR x]) (buWr L f)
   have ex : argR y = argR x := by simp only [argR, hsp]
-  refine ⟨buRd L v len ++ [argR x], buWr L f, bu_preS hx (by omega) m, ?_,
+  refine ⟨buRd L v len ++ [argR x], buWr L f, bu_preS hx (by omega_arith) m, ?_,
     bu_pub (by simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp, glueSt_sp, hsp])
       (by rw [gx0, gy0]) (by rw [gx1, gy1]) (by rw [gx2, gy2]) (by rw [gx3, gy3]) (by rw [gxa, gya]),
     ?_, ?_, ?_, ?_⟩
-  · rw [← ex]; exact bu_preS hy (by omega) m
+  · rw [← ex]; exact bu_preS hy (by omega_arith) m
   · exact (push_cov _ (bu_cov hx m).1 (bu_cov hx m).2).1
   · exact (push_cov _ (bu_cov hx m).1 (bu_cov hx m).2).2
   · rw [← ex]; exact (push_cov _ (bu_cov hy m).1 (bu_cov hy m).2).1
@@ -310,7 +310,7 @@ theorem ball_preS {s : State} (hs : Site L Wb STK s) {stk : Nat} (hstk : 4 + stk
   refine ball_pre g0 g1 g2 g3 ga
     (by rw [State.withRegions_rd, imm_toNat ll, hs.regE m.pct l0, push_argAddr _ e1]; rfl)
     (by rw [State.withRegions_wr, hs.regE m.pc (by decide), hs.regE m.pw (by decide)])
-    (by rw [push_spN _ e1 _ _ h4]; have := hs.spk; omega) (push_fit _ _ _ h4 e1)
+    (by rw [push_spN _ e1 _ _ h4]; have := hs.spk; omega_arith) (push_fit _ _ _ h4 e1)
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ (by rw [imm_toNat ll]; exact hs.fitE m.pct l0) (hs.fitE m.pc (by decide))
     (hs.fitE m.pw (by decide)) (by rw [imm_toNat ll, imm_toNat lt]; exact m.hp)
   · rw [imm_toNat ll, hs.regE m.pct l0, hs.regE m.pc (by decide)]; exact hs.dE m.d1 (.inr m.wc)
@@ -335,15 +335,15 @@ theorem ball_okS {cd : Prog isa} (hc : Callee cd (fun stk => sampleInBallContrac
   obtain ⟨l0, ll, lt⟩ := m.lt
   have e1 := glueSt_sp s (ballAll ct len tau c w)
   have hm := glueSt_mem s (ballAll ct len tau c w)
-  refine callVS hver.1 m.hg (ball_preS hs (by omega) m) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk h3 => ?_
+  refine callVS hver.1 m.hg (ball_preS hs (by omega_arith) m) c1 c2
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk h3 => ?_
   obtain ⟨s₃, hm₃, hr₃, hp⟩ := h3
   obtain ⟨g0, g1, g2, g3, -⟩ := ballG hs m (ballRd L ct len ++ [argR s]) (ballWr L c w)
   have := ball_post hp
-  have hb := push_bytesAt hs e1 hm (ballRd L ct len ++ [argR s]) (ballWr L c w) m.pct (by omega)
+  have hb := push_bytesAt hs e1 hm (ballRd L ct len ++ [argR s]) (ballWr L c w) m.pct (by omega_arith)
   rw [g0, g1, g2, g3, hs.addrE m.pct l0, hs.addrE m.pc (by decide), imm_toNat ll, imm_toNat lt, hb] at this
   simp only [State.withRegions_mem, State.withRegions_gpr, hm₃, hr₃ .r0 (by decide)] at this
-  exact hQ s' (hs.keptW [tri c 1024, tri w 2048] (by have := hc.stack; omega) hk) this.1 this.2
+  exact hQ s' (hs.keptW [tri c 1024, tri w 2048] (by have := hc.stack; omega_arith) hk) this.1 this.2
 
 theorem ball_tr {cd : Prog isa} (hc : Callee cd (fun stk => sampleInBallContract Arm.abi stk) S) (hS : 4 + S ≤ STK)
     {name : String} (m : BallOk L Wb ct len tau c w) {P : State → State → Prop}
@@ -359,14 +359,14 @@ theorem ball_tr {cd : Prog isa} (hc : Callee cd (fun stk => sampleInBallContract
   obtain ⟨gy0, gy1, gy2, gy3, gya⟩ := ballG hy m (ballRd L ct len ++ [argR x]) (ballWr L c w)
   have ex : argR y = argR x := by simp only [argR, hsp]
   have bx := push_bytesAt hx (glueSt_sp x (ballAll ct len tau c w)) (glueSt_mem x _) (ballRd L ct len ++ [argR x])
-    (ballWr L c w) m.pct (by omega)
+    (ballWr L c w) m.pct (by omega_arith)
   have by' := push_bytesAt hy (glueSt_sp y (ballAll ct len tau c w)) (glueSt_mem y _) (ballRd L ct len ++ [argR x])
-    (ballWr L c w) m.pct (by omega)
-  refine ⟨ballRd L ct len ++ [argR x], ballWr L c w, ball_preS hx (by omega) m, ?_,
+    (ballWr L c w) m.pct (by omega_arith)
+  refine ⟨ballRd L ct len ++ [argR x], ballWr L c w, ball_preS hx (by omega_arith) m, ?_,
     ball_pub (by simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp, glueSt_sp, hsp])
       (by rw [gx0, gy0]) (by rw [gx1, gy1]) (by rw [gx2, gy2]) (by rw [gx3, gy3]) (by rw [gxa, gya]) ?_,
     ?_, ?_, ?_, ?_⟩
-  · rw [← ex]; exact ball_preS hy (by omega) m
+  · rw [← ex]; exact ball_preS hy (by omega_arith) m
   · rw [gx0, gy0, gx1, gy1, hx.addrE m.pct l0, imm_toNat ll]
     exact bx.trans (hl'.trans by'.symm)
   · exact (push_cov _ (ball_cov hx m).1 (ball_cov hx m).2).1
@@ -407,7 +407,7 @@ theorem nl_ok {c : Prog isa} (hc : Callee c (fun stk => normLtContract Arm.abi s
   obtain ⟨stk, hstk, hver⟩ := hc.verified
   refine callV hver.1 (nl_hg pf) (nl_preS hs (Nat.le_trans hstk hS) pf hr)
     (Covers.append_left (covers_cons' (hs.crE pf) covers_nil') covers_nil') covers_nil'
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [] (Nat.le_trans hc.stack hS) hk) ?_
   have := normLt_post hp
   rw [State.withRegions_gpr, view_r0, view_r1, hs.gE (nl_hg pf) nlArgs_nodup (by simp) pf.1,
@@ -501,7 +501,7 @@ theorem uh_ok {c : Prog isa} (hc : Callee c (fun stk => useHintContract Arm.abi 
   obtain ⟨stk, hstk, hver⟩ := hc.verified
   obtain ⟨c1, c2⟩ := uh_cov hs m
   refine callV hver.1 m.hg' (uh_preS hs (Nat.le_trans hstk hS) m hr) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [tri o 1024] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g0, g1, gg, g3⟩ := uhG hs m (uhRd L h r) (uhWr L o)
   have := useHint_post hp
@@ -572,7 +572,7 @@ theorem t1_ok {c : Prog isa} (hc : Callee c (fun stk => unpackT1Contract Arm.abi
   have cw : Covers (t1Wr L f) s.wr := covers_cons' (hs.cwE m.pf m.wf) covers_nil'
   refine callV hver.1 m.hg (t1_preS hs (Nat.le_trans hstk hS) m)
     (Covers.append_left (covers_cons' (hs.crE m.pv) covers_nil') (Covers.right cw)) cw
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [tri f 1024] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g0, g1⟩ := t1G hs m (t1Rd L v) (t1Wr L f)
   have := t1_post hp

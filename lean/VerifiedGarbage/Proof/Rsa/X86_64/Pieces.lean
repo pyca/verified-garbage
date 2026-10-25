@@ -13,6 +13,7 @@ import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Rsa.KeyMath
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA private keys on x86-64: the working space and its pieces
@@ -46,13 +47,13 @@ structure Ws (s : State) (B : Addr) (Z w : Nat) : Prop where
 theorem wv_zero {m : Mem} {B : Addr} {d n : Nat} (h : ∀ k < n, word m B (d + 8 * k) = 0) : wv m B d n = 0 := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [wv, ih fun k hk => h k (by omega), h n (by omega)]; rfl
+  | succ n ih => rw [wv, ih fun k hk => h k (by omega_arith), h n (by omega_arith)]; rfl
 
 /-- The ranges the pieces may change: arrays, `sMask` and `sMo`. -/
 def Mut (r : Nat × Nat) : Prop := 8 * 32 ≤ r.1 ∨ r = (8 * Impl.Bignum.X86_64.Public.sMask, 8) ∨ r = (8 * sMo, 8)
 
 theorem Mut.ofSlot (w j : Nat) (n : Nat) : Mut (Bignum.slot w j, n) :=
-  Or.inl (by unfold Bignum.slot hdrBytes; omega)
+  Or.inl (by unfold Bignum.slot hdrBytes; omega_arith)
 
 theorem Ws.congr {s t : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {rs : List (Nat × Nat)}
     (hf : Frm B rs s.mem t.mem) (hm : ∀ r ∈ rs, Mut r) {regs : List Reg} (k : Keep regs s t)
@@ -72,10 +73,10 @@ theorem Ws.congr {s t : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {rs : Lis
 
 theorem Ws.good {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
     Good s B Z w (word s.mem B (8 * sMinv)) ∧ slot w 8 ≤ Z :=
-  ⟨⟨h.scr, h.rdi, ⟨h.hw, rfl, h.harr⟩⟩, Nat.le_trans (by unfold slot; omega) h.hZ⟩
+  ⟨⟨h.scr, h.rdi, ⟨h.hw, rfl, h.harr⟩⟩, Nat.le_trans (by unfold slot; omega_arith) h.hZ⟩
 
 theorem Ws.h256 {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) : 8 * 32 ≤ Z := by
-  have := hdr_lt_slot w 16 (show 31 < 32 by decide); have := h.hZ; omega
+  have := hdr_lt_slot w 16 (show 31 < 32 by decide); have := h.hZ; omega_arith
 
 theorem Ws.sl {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (hj : j < 16) :
     slot w j + 8 * (w + 2) ≤ Z := Nat.le_trans (slot_lt hj) h.hZ
@@ -100,7 +101,7 @@ theorem zeroA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (
   refine WP.seq (WP.block_append_iff.mpr (WP.mono h.ws_ok fun s₁ ⟨h12, h9, m₁, k₁⟩ =>
     WP.mono (base_ok j (r := .r8) (by decide) ((k₁.gpr (by decide)).trans h.rdi) h9) fun s₂ ⟨h8, m₂, k₂⟩ => ?_))
   refine WP.mono (zeroAccLoop_ok (h.scr.congr (k₁.trans k₂).2.2) h8 ((k₂.gpr (by decide)).trans h12)
-    (by have := h.w1; omega) (by have := h.w2; omega) (by omega)) fun t ⟨hz, o, k₃⟩ => ?_
+    (by have := h.w1; omega_arith) (by have := h.w2; omega_arith) (by omega_arith)) fun t ⟨hz, o, k₃⟩ => ?_
   rw [m₂, m₁] at o
   exact ⟨hz, o, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
@@ -120,9 +121,9 @@ theorem copyA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {o a : Nat}
     WP.mono (base2_ok a o (r₁ := .rsi) (r₂ := .rbx) (by decide) (by decide) (by decide)
       ((k₁.gpr (by decide)).trans h.rdi) h9 (by decide)) fun s₂ ⟨hsi, hbx, m₂, k₂⟩ => ?_))
   have hs₂ := h.scr.congr (k₁.trans k₂).2.2
-  refine WP.mono (copyWords_ok hsi hbx ((k₂.gpr (by decide)).trans h12) (by have := h.w1; omega)
-    (by have := h.w2; omega) (by omega) (fun i hi => hs₂.ld (by omega)) (fun i hi => hs₂.st (by omega))
-    (fun i hi b hb => by rw [ofs_off B (by omega)]; omega)) fun t ⟨hv, _, o', k₃⟩ => ?_
+  refine WP.mono (copyWords_ok hsi hbx ((k₂.gpr (by decide)).trans h12) (by have := h.w1; omega_arith)
+    (by have := h.w2; omega_arith) (by omega_arith) (fun i hi => hs₂.ld (by omega_arith)) (fun i hi => hs₂.st (by omega_arith))
+    (fun i hi b hb => by rw [ofs_off B (by omega_arith)]; omega_arith)) fun t ⟨hv, _, o', k₃⟩ => ?_
   rw [m₂, m₁] at hv o'
   exact ⟨hv, o', ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
@@ -145,7 +146,7 @@ theorem loadA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sLe
   have h₁ : Ws s₁ B Z w := h.congr (Frm.of_outside o₁ (List.mem_singleton_self _)) (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact Mut.ofSlot w j _) k₁ (by decide)
   have hh : ∀ i < 32, word s₁.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
-    o₁.word (Or.inl (by have := hdr_lt_slot w j hi; omega)) (by omega)
+    o₁.word (Or.inl (by have := hdr_lt_slot w j hi; omega_arith)) (by omega_arith)
   refine WP.seq (WP.block_append_iff.mpr (WP.block_append_iff.mpr (WP.mono h₁.ws_ok fun s₂ ⟨h12, h9, m₂, k₂⟩ =>
     WP.mono (base_ok j (r := .rbx) (by decide) ((k₂.gpr (by decide)).trans h₁.rdi) h9) fun s₃ ⟨hbx, m₃, k₃⟩ =>
       WP.mono (WP.keep [.rsi, .rcx] (Q := fun t => t.gpr .rsi = p ∧ t.gpr .rcx = BitVec.ofNat 64 len ∧
@@ -153,24 +154,24 @@ theorem loadA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sLe
           have hdi₃ : s₃.gpr .rdi = B := ((k₂.trans k₃).gpr (by decide)).trans h₁.rdi
           have hs₃ := h₁.scr.congr (k₂.trans k₃).2.2
           have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
-            hs₃.ld (by have := h.h256; omega)
+            hs₃.ld (by have := h.h256; omega_arith)
           xrun [State.ea, hdr, hdi₃, hdrOff, m₃, m₂, hl₃ sPtr hP, hl₃ sLen hL, hh sPtr hP, hh sLen hL, hp, hl]) rfl)
       fun s₄ ⟨⟨hsi, hcx, m₄⟩, k₄⟩ => ?_)))
   have k14 := ((k₁.trans k₂).trans k₃).trans k₄
   have hs₄ := h.scr.congr k14.2.2
   have hsrc₄ : Src s₄ B Z p bs := hsrc.congrK (fun x hx => by
-    rw [m₄, m₃, m₂]; exact o₁ x (Or.inr (by omega))) k14
-  refine WP.mono (loadBE_ok (w := (len + 7) / 8) hs₄ hsi hcx ((k₄.gpr (by decide)).trans hbx) hlen hl1 (by omega) rfl
-    (by omega) (fun i hi => hsrc₄.rd i (by omega)) (fun i hi => hsrc₄.val i (by omega))
-    (fun i hi => Or.inr (by have := hsrc₄.out i (by omega); omega))) fun t ⟨hv, o, k₅⟩ => ?_
+    rw [m₄, m₃, m₂]; exact o₁ x (Or.inr (by omega_arith))) k14
+  refine WP.mono (loadBE_ok (w := (len + 7) / 8) hs₄ hsi hcx ((k₄.gpr (by decide)).trans hbx) hlen hl1 (by omega_arith) rfl
+    (by omega_arith) (fun i hi => hsrc₄.rd i (by omega_arith)) (fun i hi => hsrc₄.val i (by omega_arith))
+    (fun i hi => Or.inr (by have := hsrc₄.out i (by omega_arith); omega_arith))) fun t ⟨hv, o, k₅⟩ => ?_
   rw [m₄, m₃, m₂] at o
-  refine ⟨?_, fun x hx => by rw [o x (by omega), o₁ x hx], (k14.trans k₅).mono (by decide)⟩
+  refine ⟨?_, fun x hx => by rw [o x (by omega_arith), o₁ x hx], (k14.trans k₅).mono (by decide)⟩
   -- The words above the loaded ones are still zero.
   have hz' : ∀ q < w + 2, word s₁.mem B (slot w j + 8 * q) = 0 := (wv_eq_zero_iff _ _ _ _).mp hz
   have e := wv_add t.mem B (slot w j) ((len + 7) / 8) (w - (len + 7) / 8)
-  rw [show (len + 7) / 8 + (w - (len + 7) / 8) = w by omega] at e
+  rw [show (len + 7) / 8 + (w - (len + 7) / 8) = w by omega_arith] at e
   rw [e, hv, wv_zero (n := w - (len + 7) / 8) fun q hq => by
-      rw [o.word (by omega) (by omega), Nat.add_assoc, ← Nat.mul_add]; exact hz' _ (by omega)]
+      rw [o.word (by omega_arith) (by omega_arith), Nat.add_assoc, ← Nat.mul_add]; exact hz' _ (by omega_arith)]
   simp
 
 /-- `storeA j sPtr sLen sMsk`: the low `⌈len / 8⌉` words of `[j]`, masked by
@@ -197,12 +198,12 @@ theorem storeA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sL
           have hdi₃ : s₃.gpr .rdi = B := ((k₂.trans k₃).gpr (by decide)).trans h.rdi
           have hs₃ := h.scr.congr (k₂.trans k₃).2.2
           have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
-            hs₃.ld (by have := h.h256; omega)
+            hs₃.ld (by have := h.h256; omega_arith)
           xrun [State.ea, hdr, hdi₃, hdrOff, m₃, m₂, hl₃ sPtr hP, hl₃ sLen hL, hl₃ sMsk hM, hp, hl, hm]) rfl)
       fun s₄ ⟨⟨hsi, hcx, h15, m₄⟩, k₄⟩ => ?_)))
   have k24 := (k₂.trans k₃).trans k₄
   refine WP.mono (storeBE_ok (w := (len + 7) / 8) (h.scr.congr k24.2.2) ((k₄.gpr (by decide)).trans hbx) hsi hcx h15
-    hl1 (by omega) rfl (by omega) (fun i hi => by rw [k24.2.2]; exact hout i hi) hsep)
+    hl1 (by omega_arith) rfl (by omega_arith) (fun i hi => by rw [k24.2.2]; exact hout i hi) hsep)
     fun t ⟨hb, hx, hwr, hrd, k₅⟩ => ?_
   rw [m₄, m₃, m₂] at hb hx
   exact ⟨hb, hx, hwr.trans k24.2.2, hrd.trans k24.2.1, (k24.trans k₅).mono (by decide)⟩
@@ -211,13 +212,13 @@ theorem storeA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sL
 theorem wv_low_of_lt {m : Mem} {B : Addr} {e v w : Nat} (hv : v ≤ w) (h : wv m B e w < 2 ^ (64 * v)) :
     wv m B e v = wv m B e w := by
   have e1 := wv_add m B e v (w - v)
-  rw [show v + (w - v) = w by omega] at e1
+  rw [show v + (w - v) = w by omega_arith] at e1
   have : wv m B (e + 8 * v) (w - v) = 0 := by
     rcases Nat.eq_zero_or_pos (wv m B (e + 8 * v) (w - v)) with h0 | h0
     · exact h0
     · exfalso
       have : 2 ^ (64 * v) ≤ 2 ^ (64 * v) * wv m B (e + 8 * v) (w - v) := Nat.le_mul_of_pos_right _ h0
-      omega
+      omega_arith
   rw [e1, this]; simp
 
 end VG.Proof.Rsa.X86_64

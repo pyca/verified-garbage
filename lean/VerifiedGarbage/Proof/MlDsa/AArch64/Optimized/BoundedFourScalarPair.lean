@@ -71,7 +71,7 @@ theorem remaining_zero {s : State} {L : List Zq}
     isa.eval (.zero .x .x4) s=some (decide (L.length=256)) := by
   rw [eval_zero,eq_zero_iff,h4]
   congr 1
-  exact decide_eq_decide.mpr (by omega)
+  exact decide_eq_decide.mpr (by omega_arith)
 
 structure ScalarPairPost (η : Nat) (s t : State) (p : Addr) (L : List Zq) (b : Byte) : Prop where
  keep : Keep scalarPairRegs s t
@@ -96,7 +96,7 @@ theorem scalarPair_ok {η : Nat} (hη : η=2∨η=4) {s : State} {p : Addr} {L :
     refine WP.seq ?_
     rw [WP.block_append_iff]
     refine WP.mono (VG.Proof.MlDsa.AArch64.Sample.RejBounded.try_ok hη
-      (by omega) hC h7 h3 h4 (by omega) hS (hW _ (by omega)))
+      (by omega_arith) hC h7 h3 h4 (by omega_arith) hS (hW _ (by omega_arith)))
       fun a ⟨hak,haf,ha3,ha4,has⟩=>?_
     refine WP.mono (scalarHigh_ok (s := a) (b := b) (by rw [hak.gpr .x6 (by decide)]; exact h6))
       fun c ⟨hck,hc7⟩=>?_
@@ -104,26 +104,26 @@ theorem scalarPair_ok {η : Nat} (hη : η=2∨η=4) {s : State} {p : Addr} {L :
     have hL1 : L1.length≤256:=by
       have hh:=hbTry_length η L (b.toNat%16)
       have hb:=halfByteOk_le η (b.toNat%16)
-      dsimp only [L1]; omega
+      dsimp only [L1]; omega_arith
     have hc4 : (c.gpr .x4).toNat=256-L1.length:=by rw [hck.get .x4]; exact ha4
     have hcs : Stored c.mem p L1:=by rw [hck.mem]; exact has
     have hcf : Frame [polyR p] s.mem c.mem:=by rw [hck.mem]; exact haf
     have hkeep : Keep scalarPairRegs s c:=(hak.trans hck.keep).mono (by decide)
     by_cases hfull1 : L1.length=256
     · have he : rbStep η L b=L1:=by
-        simp only [rbStep,n,ifT (by omega : L.length<256)]
-        rw [ifF (by change ¬L1.length<256; omega)]
+        simp only [rbStep,n,ifT (by omega_arith : L.length<256)]
+        rw [ifF (by change ¬L1.length<256; omega_arith)]
       refine WP.ite true (by rw [remaining_zero hc4 hL1,decide_eq_true hfull1])
         (fun _=>WP.block_nil_iff.mpr ?_) (fun h=>nomatch h)
       exact ⟨hkeep,hcf,by rw [he,hck.get .x3]; exact ha3,by rwa [he],by rwa [he]⟩
     · have he : rbStep η L b=hbTry η L1 (b.toNat/16):=by
-        simp only [rbStep,n,ifT (by omega : L.length<256)]
-        rw [ifT (by change L1.length<256; omega)]
+        simp only [rbStep,n,ifT (by omega_arith : L.length<256)]
+        rw [ifT (by change L1.length<256; omega_arith)]
       refine WP.ite false (by rw [remaining_zero hc4 hL1,decide_eq_false hfull1]) (fun h=>nomatch h) fun _=>?_
       refine WP.mono (VG.Proof.MlDsa.AArch64.Sample.RejBounded.try_ok hη
-        (by have:=b.isLt; omega) (hC.keep hkeep (by decide)) hc7
-        (by rw [hck.get .x3]; exact ha3) hc4 (by omega) hcs
-        (by rw [hkeep.wr]; exact hW _ (by omega))) fun t ⟨htk,htf,ht3,ht4,hts⟩=>?_
+        (by have:=b.isLt; omega_arith) (hC.keep hkeep (by decide)) hc7
+        (by rw [hck.get .x3]; exact ha3) hc4 (by omega_arith) hcs
+        (by rw [hkeep.wr]; exact hW _ (by omega_arith))) fun t ⟨htk,htf,ht3,ht4,hts⟩=>?_
       exact ⟨(hkeep.trans htk).mono (by decide),hcf.trans htf,by rwa [he],by rwa [he],by rwa [he]⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour

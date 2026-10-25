@@ -154,20 +154,20 @@ theorem congruences_trace {p g : Nat} (hp3 : 3 ≤ p) {P : State → Prop}
           have e8 : p % 2 ^ 32 % 8 = p % 8 := Nat.mod_mod_of_dvd p (by decide)
           rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.mod_lt _ (by decide)),
             show (7 : BitVec 32).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod, e8,
-            Nat.mod_eq_of_lt (by omega : p % 8 < 2 ^ 32)]
+            Nat.mod_eq_of_lt (by omega_arith : p % 8 < 2 ^ 32)]
         show u₅.zf = _
-        rw [z₅, e₄, show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl, sub_beq (by omega) (by decide)]
+        rw [z₅, e₄, show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl, sub_beq (by omega_arith) (by decide)]
     refine ite_fixed (b := decide (p % 8 = 3)) (fun _ h => h.2) (fun _ => ?_) fun _ => ?_
-    · exact RelCT.seq (aRel (fun x h => h.1.1) minus2_check fun x h => minus_run (by omega) (by decide) h.1)
+    · exact RelCT.seq (aRel (fun x h => h.1.1) minus2_check fun x h => minus_run (by omega_arith) (by decide) h.1)
         (divides_trace (by decide) bounds12_check divSetup3_check fun _ h => h.1)
     · exact aEnd (fun x h => h.1.1) mov0_check
   · unfold gen5
-    refine RelCT.seq (aRel (fun x h => h.1.1) minus2_check fun x h => minus_run (by omega) (by decide) h.1) ?_
+    refine RelCT.seq (aRel (fun x h => h.1.1) minus2_check fun x h => minus_run (by omega_arith) (by decide) h.1) ?_
     refine RelCT.seq (relCT_both (divides_trace (by decide) bounds12_check divSetup5_check fun _ h => h.1)
       fun x h => divides_run (by decide) (by decide) (by decide) (by decide) (by decide) h) ?_
     refine RelCT.seq (aRel (F := PRun Ex base bytes len args sp p) (fun x h => h.1) storeOk_check fun x R =>
       hdr_store R.1.1 hdr_ok fun t S _ k _ _ _ _ => WP.block_nil ⟨run_step R.1 S, by rw [k.slot_eq, R.2]⟩) ?_
-    refine RelCT.seq (aRel (fun x h => h.1) minus3_check fun x h => minus_run (by omega) (by decide) h) ?_
+    refine RelCT.seq (aRel (fun x h => h.1) minus3_check fun x h => minus_run (by omega_arith) (by decide) h) ?_
     refine RelCT.seq (relCT_both (divides_trace (by decide) bounds12_check divSetup5_check fun _ h => h.1)
       fun x h => divides_run (by decide) (by decide) (by decide) (by decide) (by decide) h) ?_
     exact aEnd (fun x h => h.1) orOk_check
@@ -191,9 +191,9 @@ theorem shape_trace {T : List Byte} (G : TapeGeo Ex args base bytes sp T.length)
     have fit := Gx.fit
     have small := Gx.small
     refine WP.mono (load_ok hh (one_ok .wide) f9 (p := 2) (l := 3) (L := len) (by decide) (by decide) h3
-      (by omega) (by omega) (by omega)
+      (by omega_arith) (by omega_arith) (by omega_arith)
       (by simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
-        VG.CallLay.inRegions_sub (off := 0) (Gx.rd _ _ hh.extra) (by omega : 0 + len ≤ T.length) (by omega))
+        VG.CallLay.inRegions_sub (off := 0) (Gx.rd _ _ hh.extra) (by omega_arith : 0 + len ≤ T.length) (by omega_arith))
       (Gx.apart.sub_left (Region.sub_prefix hL))) fun u ⟨_, O, K⟩ => ?_
     rw [c1] at O
     exact ⟨run_step R (Step.slot hh (by decide) O K), by rw [(kept_slot hh O).word_eq, hb]⟩
@@ -261,21 +261,21 @@ theorem main_trace {T : List Byte} (G : TapeGeo Ex args base bytes sp T.length) 
     (hg25 : g = 2 ∨ g = 5) {up Tb : BitVec 32} (TA : Region.Disjoint ⟨Tb.setWidth 64, 8192⟩ ⟨base, bytes⟩) :
     RelCT isa (Both (MAt Ex base bytes len args sp up T bits g Tb)) main fun _ _ => True := by
   generalize hx : Spec.Rsa.os2ip (T.take len) = x
-  obtain ⟨hpo, hpl, hpu⟩ := ParameterCandidate.candidate_shape (bits := bits) (by omega) x
-  obtain ⟨hbp', hbp⟩ := ParameterCandidate.candidate_bitLength (bits := bits) (by omega) x
-  have hbq' := ParameterCandidate.half_bitLength (bits := bits) (by omega) x
-  have hbqp := fun qo => ParameterCandidate.half_pred_bitLength (bits := bits) (by omega) x qo
+  obtain ⟨hpo, hpl, hpu⟩ := ParameterCandidate.candidate_shape (bits := bits) (by omega_arith) x
+  obtain ⟨hbp', hbp⟩ := ParameterCandidate.candidate_bitLength (bits := bits) (by omega_arith) x
+  have hbq' := ParameterCandidate.half_bitLength (bits := bits) (by omega_arith) x
+  have hbqp := fun qo => ParameterCandidate.half_pred_bitLength (bits := bits) (by omega_arith) x qo
   generalize hp : Spec.Ffdh.candidateOf bits x = p at hpo hpl hpu hbp' hbp hbq' hbqp
-  have big : 2 ^ 20 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-  have p8 : p < 2 ^ (8 * len) := Nat.lt_of_lt_of_le hpu (Nat.pow_le_pow_right (by decide) (by omega))
-  have hp3 : 3 ≤ p := by omega
+  have big : 2 ^ 20 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  have p8 : p < 2 ^ (8 * len) := Nat.lt_of_lt_of_le hpu (Nat.pow_le_pow_right (by decide) (by omega_arith))
+  have hp3 : 3 ≤ p := by omega_arith
   have pcl : ∀ x v, PAt Ex base bytes len args sp up T bits g Tb p x → v.mem = x.mem → Keeps [] x v →
       v.syms = x.syms → PAt Ex base bytes len args sp up T bits g Tb p v :=
     fun x v A m K sy => ⟨A.1.regs m K sy, by rw [m, A.2.1], by rw [m, A.2.2]⟩
   unfold main
   -- p.
   refine RelCT.seq (relCT_both (F := PAt Ex base bytes len args sp up T bits g Tb p)
-    (shape_trace G h3 hL (by omega) fun x h => ⟨h.1.1, h.2.1⟩) fun x A => ?_) ?_
+    (shape_trace G h3 hL (by omega_arith) fun x h => ⟨h.1.1, h.2.1⟩) fun x A => ?_) ?_
   · have C := A.1
     exact VG.X86.WP.mono_syms (shape_ok C.1.1 (by rw [C.1.2.2]; exact G) C.2.2.2 h3 hL A.2.1 hbl hb1 hb2)
       fun u ⟨S, P₁, C₁, k₁⟩ sy => ⟨A.step G TA S sy k₁.word_eq k₁.word_eq k₁.word_eq, by rw [P₁, hx, hp], C₁⟩
@@ -297,7 +297,7 @@ theorem main_trace {T : List Byte} (G : TapeGeo Ex args base bytes sp T.length) 
     fun x A => ?_) ?_
   · exact VG.X86.WP.mono_syms (half_ok A.1.1.1.1.1 A.1.2.1) fun u ⟨S, Q₄, k₄⟩ sy =>
       ⟨⟨A.1.1.step G TA S sy k₄.word_eq k₄.word_eq k₄.word_eq, by rw [k₄.slot_eq, A.1.2.1], by rw [k₄.word_eq, A.1.2.2]⟩,
-        by rw [Q₄]; omega⟩
+        by rw [Q₄]; omega_arith⟩
   refine RelCT.seq (aRel (F := fun v => QAt Ex base bytes len args sp up T bits g Tb p v ∧
       isa.eval .e v = some (decide ((p - 1) / 2 % 2 = 0))) (fun x h => h.1.1.1.1) oddQ_check fun x A => ?_) ?_
   · exact VG.X86.WP.mono_syms (oddQ_ok A.1.1.1.1.1 A.2) fun u ⟨S, m, z⟩ sy =>
@@ -305,7 +305,7 @@ theorem main_trace {T : List Byte} (G : TapeGeo Ex args base bytes sp T.length) 
         by rw [m, A.2]⟩, z⟩
   refine ite_fixed (b := decide ((p - 1) / 2 % 2 = 0)) (fun _ h => h.2)
     (fun _ => reject_trace fun x h => h.1.1.1.1) fun e => ?_
-  have qo : (p - 1) / 2 % 2 = 1 := by simp at e; omega
+  have qo : (p - 1) / 2 % 2 = 1 := by simp at e; omega_arith
   -- RSA's sieve of p, then of q.
   refine RelCT.seq (relCT_both (F := fun u => QAt Ex base bytes len args sp up T bits g Tb p u ∧
       u.gpr .eax = BitVec.ofNat 32 (VG.Proof.RsaKeyGen.trialPrefix p (sieveCount bits)).toNat)
@@ -337,7 +337,7 @@ theorem main_trace {T : List Byte} (G : TapeGeo Ex args base bytes sp T.length) 
   have get : ∀ {x : State}, QAt Ex base bytes len args sp up T bits g Tb p x →
       TestsAt Ex base bytes len args sp up T bits p ((p - 1) / 2) len x :=
     fun h => ⟨h.1.1.1, h.1.1.2.1, h.1.2.1, h.2, h.1.2.2⟩
-  exact (tests_trace G hb1 hb2 hp3 hpo (by omega) qo hbp (hbqp qo) p8 hL).mono
+  exact (tests_trace G hb1 hb2 hp3 hpo (by omega_arith) qo hbp (hbqp qo) p8 hL).mono
     (fun x y h => ⟨get h.1.1, get h.2.1⟩)
     fun _ _ h => h
 

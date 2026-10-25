@@ -46,12 +46,12 @@ theorem initLay {c w sp : BitVec 32} (cw : c.toNat + 256 ≤ 2 ^ 32) (ww : w.toN
     (sp8 : 8 ≤ sp.toNat) (cW : (⟨State.addr c, 256⟩ : Region).Disjoint ⟨State.addr w, 2560⟩)
     (kc : (below sp).Disjoint ⟨State.addr c, 256⟩) (kw : (below sp).Disjoint ⟨State.addr w, 2560⟩) :
     Lay c (w + BitVec.ofNat 32 16) w sp := by
-  have e : State.addr (w + BitVec.ofNat 32 16) = State.addr w + BitVec.ofNat 64 16 := addr_add (by omega)
+  have e : State.addr (w + BitVec.ofNat 32 16) = State.addr w + BitVec.ofNat 64 16 := addr_add (by omega_arith)
   have hs : Region.Sub ⟨State.addr w + BitVec.ofNat 64 16, 80⟩ ⟨State.addr w, 2560⟩ := Lay.wSub (by decide)
   refine ⟨cw, ?_, ww, sp8, ?_, cW, ?_, ?_, kc, ?_, kw⟩
   · rw [show (w + BitVec.ofNat 32 16).toNat = w.toNat + 16 by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16) (by decide), Nat.mod_eq_of_lt (by omega)]]
-    omega
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16) (by decide), Nat.mod_eq_of_lt (by omega_arith)]]
+    omega_arith
   · rw [e]; exact cW.sub_right hs
   · rw [e]; simpa using Lay.w_w (w := w) (a := 16) (n := 80) (d := 0) (k := 16) (.inr (by decide)) (by decide)
       (by decide)
@@ -140,7 +140,7 @@ theorem init_kc {s₀ s₁ : State} (h : initArm.pre s₀) (h1 : IS1 s₀ s₁) 
   have hW : Covers [⟨State.addr (s₀.gpr .r3), 2560⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
   have hC : Covers [⟨State.addr (s₀.gpr .r2), 256⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
   have eS := L.wA (d := 512) (by decide)
-  refine ⟨h1.r0, by rw [h1.r1]; simp, h1.r2, h1.r3, hlen, fk, by omega, by rw [L.wN (by decide)]; omega,
+  refine ⟨h1.r0, by rw [h1.r1]; simp, h1.r2, h1.r3, hlen, fk, by omega_arith, by rw [L.wN (by decide)]; omega_arith,
     dkc.sub_right (Region.sub_prefix (by decide)), ?_, ?_, ?_, ?_⟩
   · rw [eS]; exact dks.sub_right (Lay.wSub (by decide))
   · rw [eS]; exact (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide))
@@ -196,7 +196,7 @@ theorem init_cc {s₀ s₃ : State} (h : initArm.pre s₀) (h3 : IS3 s₀ s₃) 
   have eT := L.wA (d := 96) (by decide)
   have eH := L.cA (d := 240) (by decide)
   refine ⟨g0, g1, g2, g3, g12, glr, rounds_ok hlen, by rw [hk3]; exact sp8,
-    by omega, by rw [L.wN (by decide)]; omega, by rw [L.cN (by decide)]; omega, by rw [L.wN (by decide)]; omega,
+    by omega_arith, by rw [L.wN (by decide)]; omega_arith, by rw [L.cN (by decide)]; omega_arith, by rw [L.wN (by decide)]; omega_arith,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals try simp only [eS, eT, eH, hk3]
   · exact (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide))
@@ -235,7 +235,7 @@ theorem init_fin {s₀ s₄ : State} (h : initArm.pre s₀) (h4 : IS4 s₀ s₄)
   have eH := L.cA (d := 240) (by decide)
   have dSv : ∀ {d k : Nat}, d + k ≤ 2560 → (128 + 36 ≤ d ∨ d + k ≤ 128) →
       (savedR (s₀.gpr .r3)).Disjoint ⟨State.addr (s₀.gpr .r3) + BitVec.ofNat 64 d, k⟩ :=
-    fun h₁ h₂ => Lay.w_w (by omega) (by decide) h₁
+    fun h₁ h₂ => Lay.w_w (by omega_arith) (by decide) h₁
   have dSc : ∀ {d k : Nat}, d + k ≤ 256 →
       (savedR (s₀.gpr .r3)).Disjoint ⟨State.addr (s₀.gpr .r2) + BitVec.ofNat 64 d, k⟩ :=
     fun h₁ => (L.ctx_w h₁ (show 128 + 36 ≤ 2560 by decide)).symm
@@ -270,26 +270,26 @@ theorem init_fin {s₀ s₄ : State} (h : initArm.pre s₀) (h4 : IS4 s₀ s₄)
   refine WP.mono (restore_ok (s₀ := s₀) (by rw [cp.saved _ (by decide) (by decide), g11]) fs
       (by rw [cp.wr, wr₃]; exact covers_left hW) sv₄ (by rw [cp.sp, hk3])) fun s' hh => ⟨hh.1, ?_⟩
   have hm := hh.2.1
-  have hRb : 16 * (initR s₀ + 1) ≤ 240 := by simp only [initR]; rcases hR with h' | h' | h' <;> omega
+  have hRb : 16 * (initR s₀ + 1) ≤ 240 := by simp only [initR]; rcases hR with h' | h' | h' <;> omega_arith
   have dP : ∀ {d k : Nat}, 240 ≤ d → d + k ≤ 256 →
       (⟨State.addr (s₀.gpr .r2), 16 * (initR s₀ + 1)⟩ : Region).Disjoint
         ⟨State.addr (s₀.gpr .r2) + BitVec.ofNat 64 d, k⟩ := fun {d k} h₁ h₂ => by
     simpa using Lay.ctx_ctx (c := s₀.gpr .r2) (a := 0) (n := 16 * (initR s₀ + 1))
-      (d := d) (k := k) (.inl (by simp only [initR] at hRb ⊢; omega)) (by simp only [initR] at hRb ⊢; omega) h₂
+      (d := d) (k := k) (.inl (by simp only [initR] at hRb ⊢; omega_arith)) (by simp only [initR] at hRb ⊢; omega_arith) h₂
   have dPw : ∀ {d k : Nat}, d + k ≤ 2560 →
       (⟨State.addr (s₀.gpr .r2), 16 * (initR s₀ + 1)⟩ : Region).Disjoint
         ⟨State.addr (s₀.gpr .r3) + BitVec.ofNat 64 d, k⟩ := fun h₁ =>
-    (L.cw'.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub h₁)
+    (L.cw'.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Lay.wSub h₁)
   have ks₃ : bytesAt s₃.mem (State.addr (s₀.gpr .r2)) (16 * (initR s₀ + 1)) =
       Spec.Aes.expandKey (bytesAt s₀.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat) := by
     rw [bytesAt_frame f₃ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact dP (Nat.le_refl _) (by decide)
-        · exact dPw (by decide)) (by omega), kp.out,
+        · exact dPw (by decide)) (by omega_arith), kp.out,
       bytesAt_frame h1.frame (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact dks.sub_right (Lay.wSub (by decide))) (by omega)]
+        exact dks.sub_right (Lay.wSub (by decide))) (by omega_arith)]
   simp only [initArm, KeyRepr, length_bytesAt, hm]
   refine ⟨?_, ?_⟩
   · rw [bytesAt_frame cframe (fun r hr => by
@@ -298,7 +298,7 @@ theorem init_fin {s₀ s₄ : State} (h : initArm.pre s₀) (h4 : IS4 s₀ s₄)
         · exact dPw (by decide)
         · exact dP (Nat.le_refl _) (by decide)
         · exact dPw (by decide)
-        · exact (L.kc.sub_right (Region.sub_prefix (by omega))).symm) (by omega), ks₃]
+        · exact (L.kc.sub_right (Region.sub_prefix (by omega_arith))).symm) (by omega_arith), ks₃]
   · rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq] at cout
     have z₁ : blockAt s₃.mem (State.addr (s₀.gpr .r3) + BitVec.ofNat 64 96) = 0 := by rw [hm₃, zero_block]
     have z₂ : blockAt s₃.mem (State.addr (s₀.gpr .r2) + BitVec.ofNat 64 240) = 0 := by

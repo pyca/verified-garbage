@@ -88,7 +88,7 @@ theorem consts_pi {st : Nat} {s : State} (hc : ConstsOk piConsts st s) :
   obtain ⟨hfit, hwr, hres⟩ := List.forall_mem_singleton.mp ht
   have hfit' : (s.syms piSym).toNat + 256 ≤ 2 ^ 32 := by
     have : (State.addr (s.syms piSym)).toNat = (s.syms piSym).toNat := by
-      simp only [State.addr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega)
+      simp only [State.addr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega_arith)
     rw [this] at hfit; exact hfit
   have held : PiHeld s.mem (State.addr (s.syms piSym)) := fun i hi => hh _ List.mem_cons_self i hi
   refine ⟨⟨⟨hfit', ?_, fun i hi => held.byte hi⟩, rfl⟩, hwr, hd, held, hres⟩
@@ -122,9 +122,9 @@ theorem key_body_correct (s : State) (hs : keyContract.pre (stripConsts piConsts
   have gpr₀ (r : Reg) (hr : r ≠ .r12) : s₀.gpr r = s.gpr r := keep₀.reg r (by simpa using hr)
   apply WP.seq
   rw [WP.block_append_iff, keySave_eq]
-  apply WP.mono_syms (Spill.save_block_ok keySlots_ok (by rw [scratch₀]; omega) fun d _ hd => by
+  apply WP.mono_syms (Spill.save_block_ok keySlots_ok (by rw [scratch₀]; omega_arith) fun d _ hd => by
     rw [keep₀.wr, scratch₀, hwr]
-    exact ⟨⟨State.addr (stackArg s 0), 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
+    exact ⟨⟨State.addr (stackArg s 0), 512⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
   intro s₁ h₁ sy₁
   obtain ⟨s₂, run₂, r8₂, key₂, len₂, ptr₂, bits₂, zero₂, keep₂⟩ := pinKey_ok s₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
@@ -141,17 +141,17 @@ theorem key_body_correct (s : State) (hs : keyContract.pre (stripConsts piConsts
   have source₂ : Spec.Rc2.bytesAt s₂.mem (State.addr (s₂.gpr .r4)) (s.gpr .r1).toNat =
       Spec.Rc2.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat := by
     rw [key₂]
-    exact bytesAt_frame scratchFrame (by simpa using keyScratch) (by omega)
+    exact bytesAt_frame scratchFrame (by simpa using keyScratch) (by omega_arith)
   have read₂ : ∀ i < (s.gpr .r1).toNat,
       InRegions (s₂.rd ++ s₂.wr) (State.addr (s₂.gpr .r4) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [rd₂, wr₂, key₂, hrd, hwr]
     exact ⟨⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, by simp,
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have write₂ : ∀ i < 128, InRegions s₂.wr (State.addr (s₂.gpr .r6) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [wr₂, ptr₂, hwr]
-    exact ⟨⟨State.addr (s.gpr .r3), 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨State.addr (s.gpr .r3), 128⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have sy₂ : s₂.syms = s.syms := (runBlock_syms run₂).trans (sy₁.trans (runBlock_syms run₀))
   have hT₂ : PiAt (s.syms piSym) s₂ := by
     refine ⟨⟨hT.fit, by rw [rd₂]; exact hT.rd, fun i hi => ?_⟩, by rw [sy₂]⟩
@@ -196,15 +196,15 @@ theorem key_body_correct (s : State) (hs : keyContract.pre (stripConsts piConsts
     intro p hp
     have bound := keySlots_ok.bound hp
     rw [keep₅.mem, base₅, outFrame.readW (r := ⟨State.addr (stackArg s 0), 512⟩)
-      (Offset.contains_base _ (by omega) (by omega)) (by simpa using outScratch.symm) (by decide),
+      (Offset.contains_base _ (by omega_arith) (by omega_arith)) (by simpa using outScratch.symm) (by decide),
       keep₂.mem, h₁.2.2.2, scratch₀, Spill.saveMem_saved _ _ _ _ keySlots_ok p hp]
     have sep : ∀ p ∈ slotsOf saved, p.1 ≠ .r12 := by decide
     exact gpr₀ _ (sep p hp)
   rw [keyRestore_eq]
-  apply WP.mono (Spill.restore_block_ok keySlots_ok (by decide) (by rw [base₅]; omega)
+  apply WP.mono (Spill.restore_block_ok keySlots_ok (by decide) (by rw [base₅]; omega_arith)
     (fun d _ hd => by
       rw [rd₅, wr₅, base₅, hrd, hwr]
-      exact ⟨⟨State.addr (stackArg s 0), 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩) stored)
+      exact ⟨⟨State.addr (stackArg s 0), 512⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) stored)
   intro s₆ h₆
   constructor
   · exact Spill.restored_of h₆.1 (by decide)

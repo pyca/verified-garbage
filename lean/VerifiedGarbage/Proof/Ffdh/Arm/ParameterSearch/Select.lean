@@ -31,11 +31,7 @@ theorem select_ok (maximum : Bool) (s : State) :
     · simp only [ite_true, lt]
       have run : WP isa (.block [.mov .r9 (.reg .r10)]) u fun t =>
           (t.gpr .r9 = s.gpr .r10 ∧ t.mem = s.mem) ∧ Rest [.r9] u t := by
-        refine withRest [.r9] ?_ (by
-          intro r hr i hi
-          simp only [instrs, List.mem_singleton] at hi
-          subst i
-          cases r <;> simp_all [clobbers, dstOf]) (by rfl)
+        refine withRest_all [.r9] ?_ (by rfl) (by rfl)
         ffrun [rest.gpr .r10 (by simp), mem]
       exact WP.mono run fun _ ⟨data, changed⟩ =>
         ⟨data, (rest.mono (by simp)).trans (changed.mono (by simp))⟩
@@ -45,11 +41,7 @@ theorem select_ok (maximum : Bool) (s : State) :
     · simp only [Bool.false_eq_true, ite_false, ge]
       have run : WP isa (.block [.mov .r9 (.reg .r10)]) u fun t =>
           (t.gpr .r9 = s.gpr .r10 ∧ t.mem = s.mem) ∧ Rest [.r9] u t := by
-        refine withRest [.r9] ?_ (by
-          intro r hr i hi
-          simp only [instrs, List.mem_singleton] at hi
-          subst i
-          cases r <;> simp_all [clobbers, dstOf]) (by rfl)
+        refine withRest_all [.r9] ?_ (by rfl) (by rfl)
         ffrun [rest.gpr .r10 (by simp), mem]
       exact WP.mono run fun _ ⟨data, changed⟩ =>
         ⟨data, (rest.mono (by simp)).trans (changed.mono (by simp))⟩

@@ -17,7 +17,7 @@ theorem reviewed_frame {g : Geometry} {capacity : Nat} {m m' : Mem}
     (K : Spec.MillerRabin.Keeps Spec.MillerRabin.compact g.W capacity g.w m m') :
     WorkspaceFrame g (roundWrites g) m m' := by
   intro i index apart
-  apply K i (by omega)
+  apply K i (by omega_arith)
   · intro k mem
     change k ∈ [23, 26, 29, 30, 1] at mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
@@ -34,12 +34,12 @@ theorem reviewed_frame {g : Geometry} {capacity : Nat} {m m' : Mem}
     have c := apart (g.array 8, 8 * (g.w + 2)) (by simp [roundWrites])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl | rfl | rfl | rfl <;>
-      simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at a b c ⊢ <;> omega
+      simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes] at a b c ⊢ <;> omega_arith
   · have h := apart (g.array 11, 128 * (g.w + 2)) (by simp [roundWrites])
     change i < g.array 11 ∨ g.array 27 ≤ i
     have endOffset : g.array 11 + 128 * (g.w + 2) = g.array 27 := by
       unfold Geometry.array Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes
-      omega
+      omega_arith
     change i < g.array 11 ∨ g.array 11 + 128 * (g.w + 2) ≤ i at h
     rw [endOffset] at h
     exact h

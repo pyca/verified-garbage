@@ -419,7 +419,7 @@ theorem normC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   have hR₃ : wordsVal u.mem base (t + 8) (M.n + 1) < 2 ^ (64 * M.n) := by
     have : (wordsVal u.mem base (t + 8) (M.n + 1) : Int) < 2 ^ (64 * M.n) := by
       rw [key]; have : (p : Int) < 2 ^ (64 * M.n) := by exact_mod_cast hpA
-      omega
+      omega_arith
     exact_mod_cast this
   have hlow : wordsVal u.mem base (t + 8) M.n = wordsVal u.mem base (t + 8) (M.n + 1) := by
     have h := congrArg (· % 2 ^ (64 * M.n)) (wordsVal_succ_top u.mem base (t + 8) M.n)

@@ -52,24 +52,24 @@ theorem headerMem_frame (s : State) (n : Nat) (hn : n ≤ 6) :
   induction n with
   | zero => exact Frame.refl _ _
   | succ n ih =>
-    exact (ih (by omega)).writeW (List.mem_singleton_self _) _
+    exact (ih (by omega_arith)).writeW (List.mem_singleton_self _) _
       (by
         rw [show (768 : Addr) = BitVec.ofNat 64 768 from rfl, BitVec.ofNat_add,
           ← BitVec.add_assoc]
-        exact Offset.contains_base _ (by omega) (by omega))
+        exact Offset.contains_base _ (by omega_arith) (by omega_arith))
 
 theorem headerMem_read (s : State) (n j : Nat) (hn : n ≤ 6) (hj : j < n) :
     (headerMem s n).readW (s.gpr .x24 + BitVec.ofNat 64 (768 + 4 * j)) 32 =
       headerValue s j := by
   induction n with
-  | zero => omega
+  | zero => omega_arith
   | succ n ih =>
     unfold headerMem
     by_cases he : j = n
     · subst j; exact Mem.readW_writeW_self32 ..
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega : 768 + 4 * j + 4 ≤ 768 + 4 * n ∨
-        768 + 4 * n + 4 ≤ 768 + 4 * j) (by omega) (by omega)) (by decide)]
-      exact ih (by omega) (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_arith : 768 + 4 * j + 4 ≤ 768 + 4 * n ∨
+        768 + 4 * n + 4 ≤ 768 + 4 * j) (by omega_arith) (by omega_arith)) (by decide)]
+      exact ih (by omega_arith) (by omega_arith)
 
 theorem headerMem_bytes (s : State) :
     bytesAt (headerMem s 6) (s.gpr .x24 + 768) 24 =
@@ -87,7 +87,7 @@ theorem headerSlot_ok (s : State) (j : Nat) (hj : j < 6) (h : Space s) :
     WP isa (.block (headerSlot j)) s fun t =>
       t.mem = s.mem.writeW (s.gpr .x24 + BitVec.ofNat 64 (768 + 4 * j)) (headerValue s j) ∧
       Keeps s t := by
-  have hw := h.write (768 + 4 * j) 4 (by omega)
+  have hw := h.write (768 + 4 * j) 4 (by omega_arith)
   have finish (t : State) (hm : t.mem = s.mem.writeW
       (s.gpr .x24 + BitVec.ofNat 64 (768 + 4 * j)) (headerValue s j))
       (regs : ∀ r, r ≠ .x8 → t.gpr r = s.gpr r)
@@ -99,7 +99,7 @@ theorem headerSlot_ok (s : State) (j : Nat) (hj : j < 6) (h : Space s) :
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     · rw [hm]
       exact (Frame.refl _ _).writeW (List.mem_cons_self ..) _
-        (Offset.contains_base _ (by omega) (by omega))
+        (Offset.contains_base _ (by omega_arith) (by omega_arith))
   unfold headerSlot
   split
   · next he =>
@@ -133,8 +133,8 @@ theorem headerSlot_ok (s : State) (j : Nat) (hj : j < 6) (h : Space s) :
     have align : headerSource j % 8 = 0 := by
       unfold headerSource
       split <;> (try split) <;> (try split) <;> (try split) <;> decide
-    refine (headerWord_ok s _ _ align (by have := headerSource_bound j; omega)
-      (by omega) (by omega) (h.readable _ (headerSource_slot j)) hw).mono ?_
+    refine (headerWord_ok s _ _ align (by have := headerSource_bound j; omega_arith)
+      (by omega_arith) (by omega_arith) (h.readable _ (headerSource_slot j)) hw).mono ?_
     rintro t ⟨hm, regs, rd, wr, sp⟩
     exact finish t (by simpa only [headerValue, he, ite_false, wordAt] using hm) regs rd wr sp
 
@@ -146,9 +146,9 @@ theorem headerWords_ok (s : State) (n : Nat) (hn : n ≤ 6) (h : Space s) :
     exact WP.block_nil ⟨rfl, fun _ _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_arith)).mono ?_
     rintro u ⟨hu, ku⟩
-    refine (headerSlot_ok u n (by omega) (h.keeps ku)).mono ?_
+    refine (headerSlot_ok u n (by omega_arith) (h.keeps ku)).mono ?_
     rintro t ⟨ht, kt⟩
     refine ⟨?_, ku.trans kt⟩
     rw [ht, ku.x24, headerValue_keeps h ku, hu]
@@ -296,7 +296,7 @@ theorem absorb_ok (v : HPrime.Backend) (s : State) (po lo : Nat)
         (appendInput d (inputBytes s po lo)) ∧
       t.gpr .x20 = BitVec.ofNat 64 (appendInput d (inputBytes s po lo)).length ∧ Keeps s t := by
   unfold absorb
-  refine WP.seq ((lengthArgs_ok s lo (slots_aligned lo h.lengthSlot) (by have := h.lengthBound; omega) (h.space.readable lo h.lengthSlot)
+  refine WP.seq ((lengthArgs_ok s lo (slots_aligned lo h.lengthSlot) (by have := h.lengthBound; omega_arith) (h.space.readable lo h.lengthSlot)
     (by simpa using h.space.write 792 4 (by decide))).mono ?_)
   intro a ha
   have ka := ha.keeps
@@ -319,7 +319,7 @@ theorem absorb_ok (v : HPrime.Backend) (s : State) (po lo : Nat)
     rw [ha.pointer, lenA, ka.x24.symm]
     exact hA.space.stackWork.sub_right (Offset.sub_base _ (by decide))
   refine WP.seq ((HPrime.update_ok v a _ d (ha.repr _ _ repr)
-    (ha.count.trans count) (by rw [lenA]; omega) hA.space.stackMinimum hA.space.work dataA dsA dwA
+    (ha.count.trans count) (by rw [lenA]; omega_arith) hA.space.stackMinimum hA.space.work dataA dsA dwA
     hA.space.stackWork sdA).mono ?_)
   rintro u ⟨reprU, regsU, rdU, wrU, spU, frameU⟩
   have ku : Keeps a u := Keeps.of_hash ⟨regsU, rdU, wrU, spU, HPrime.update_frame _ _ frameU⟩
@@ -330,7 +330,7 @@ theorem absorb_ok (v : HPrime.Backend) (s : State) (po lo : Nat)
   have r12U : u.gpr .x20 = s.gpr .x20 :=
     (regsU _ (by decide) (by decide)).trans (ha.other _ (by decide))
   have r14U : u.gpr .x22 = wordAt s lo := (regsU _ (by decide) (by decide)).trans ha.length
-  refine WP.seq ((inputArgs_ok u po (slots_aligned po h.pointerSlot) (by have := h.pointerBound; omega) (hU.space.readable po h.pointerSlot)).mono ?_)
+  refine WP.seq ((inputArgs_ok u po (slots_aligned po h.pointerSlot) (by have := h.pointerBound; omega_arith) (hU.space.readable po h.pointerSlot)).mono ?_)
   intro x hx
   have kux := hx.keeps
   have ksx := ksu.trans kux

@@ -139,7 +139,7 @@ theorem QG48.zframe {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Bl
 theorem off48 (a : Addr) (g k l : Nat) :
     a + BitVec.ofInt 64 ((256 * g + 64 * k : Nat) : Int) + BitVec.ofNat 64 (16 * l) =
       a + BitVec.ofNat 64 (16 * (16 * g + 4 * k + l)) := by
-  rw [ofInt_add_ofNat, show 256 * g + 64 * k + 16 * l = 16 * (16 * g + 4 * k + l) by omega]
+  rw [ofInt_add_ofNat, show 256 * g + 64 * k + 16 * l = 16 * (16 * g + 4 * k + l) by omega_arith]
 
 /-- A pair, the `i`-th of the 48 blocks, in group `b = i / 2`. -/
 theorem pairStep {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {T : Nat → Nat → Nat → Block}
@@ -150,25 +150,25 @@ theorem pairStep {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {T : N
     WP isa (.block (pair ka (ka + 1) g first)) s fun s' => GEnv48 s₀ lo a X T s' ∧
       (∀ l < 4, prod (s'.zproj l) = acc48 X T yl l (i + 1)) ∧ ZFrame gRegs48 s s' := by
   subst hka hg' hf
-  have hg : i / 2 < 3 := by omega
-  have hpa : pa i ≤ 2 := by simp only [pa]; omega
-  have hk : pa i + 1 < 4 := by omega
+  have hg : i / 2 < 3 := by omega_arith
+  have hpa : pa i ≤ 2 := by simp only [pa]; omega_arith
+  have hk : pa i + 1 < 4 := by omega_arith
   refine WP.mono (pair_ok (ka := pa i) (kb := pa i + 1) (g := i / 2) (decide (i = 0)) s hE.m0
-      (by rw [hE.rdx]; exact hE.ina _ (by omega)) (by rw [hE.rdx]; exact hE.ina _ (by omega))
-      (by rw [hE.r11]; exact hE.inp _ (by simp only [tab]; omega))
-      (by rw [hE.r11]; exact hE.inp _ (by simp only [tab]; omega)))
+      (by rw [hE.rdx]; exact hE.ina _ (by omega_arith)) (by rw [hE.rdx]; exact hE.ina _ (by omega_arith))
+      (by rw [hE.r11]; exact hE.inp _ (by simp only [tab]; omega_arith))
+      (by rw [hE.r11]; exact hE.inp _ (by simp only [tab]; omega_arith)))
     fun s' ⟨p', f'⟩ => ⟨hE.zframe f' (by decide), fun l hl => ?_, f'⟩
   rw [p' l hl, acc48_succ, hE.rdx, hE.r11, off48, off48, ofInt_add_ofNat, ofInt_add_ofNat,
-    hE.xs _ (by omega) (by omega), hE.xs _ (by omega) (by omega), hE.pv _ hg _ (by omega) l hl,
+    hE.xs _ (by omega_arith) (by omega_arith), hE.xs _ (by omega_arith) (by omega_arith), hE.pv _ hg _ (by omega_arith) l hl,
     hE.pv _ hg _ hk l hl]
   by_cases h0 : i = 0
   · subst h0
     simp only [decide_true, ite_true, inp48, show (0 : Nat) / 2 = 0 from rfl, pa, Nat.zero_mod, Nat.mul_zero,
       and_self, Nat.zero_add, hy rfl l hl,
       show acc48 X T yl l 0 = Prod.zero from rfl, true_and, Nat.one_ne_zero, ite_false, Stitch.zero_xor_b]
-  · have c1 : ¬ (i / 2 = 0 ∧ pa i = 0) := by simp only [pa]; omega
-    have c2 : ¬ (i / 2 = 0 ∧ pa i + 1 = 0) := by omega
-    simp only [h0, decide_false, Bool.false_eq_true, ite_false, hp (by omega) l hl, inp48, c1, c2,
+  · have c1 : ¬ (i / 2 = 0 ∧ pa i = 0) := by simp only [pa]; omega_arith
+    have c2 : ¬ (i / 2 = 0 ∧ pa i + 1 = 0) := by omega_arith
+    simp only [h0, decide_false, Bool.false_eq_true, ite_false, hp (by omega_arith) l hl, inp48, c1, c2,
       Stitch.zero_xor_b]
 
 /-- The reduction constant reloaded, and the four lanes reduced into `Y`. -/
@@ -206,29 +206,29 @@ theorem gq48_ok {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
   intro j hj1 hj9 s _ ⟨hE, h2⟩
   by_cases h1 : j = 1
   · subst h1
-    rw [ite_f (by omega)] at h2
+    rw [ite_f (by omega_arith)] at h2
     rw [show gq48 b 1 = pair 0 (0 + 1) b (decide (b = 0)) from rfl]
     have n1 : np b 1 = 2 * b := rfl
-    refine WP.mono (pairStep (yl := yl) (i := 2 * b) (by simp only [pa]; omega) (by omega)
-        (by simp only [decide_eq_decide]; omega) (by omega) (by simp only [pa]; omega) hE
-        (fun h => by rw [← n1]; exact h2.1 (by omega)) (fun h => by rw [← n1] at h; exact h2.2 h))
+    refine WP.mono (pairStep (yl := yl) (i := 2 * b) (by simp only [pa]; omega_arith) (by omega_arith)
+        (by simp only [decide_eq_decide]; omega_arith) (by omega_arith) (by simp only [pa]; omega_arith) hE
+        (fun h => by rw [← n1]; exact h2.1 (by omega_arith)) (fun h => by rw [← n1] at h; exact h2.2 h))
       fun s' ⟨hE', p', f'⟩ => ⟨⟨hE'.mono (hmono 1), ?_⟩, f'⟩
-    rw [ite_f (by omega)]
+    rw [ite_f (by omega_arith)]
     have n2 : np b (1 + 1) = 2 * b + 1 := rfl
-    exact ⟨fun _ => by rw [n2]; exact p', fun h => absurd h (by omega)⟩
+    exact ⟨fun _ => by rw [n2]; exact p', fun h => absurd h (by omega_arith)⟩
   by_cases h3 : j = 3
   · subst h3
-    rw [ite_f (by omega)] at h2
+    rw [ite_f (by omega_arith)] at h2
     rw [show gq48 b 3 = pair 2 (2 + 1) b false from rfl]
     have n3 : np b 3 = 2 * b + 1 := rfl
-    refine WP.mono (pairStep (yl := yl) (i := 2 * b + 1) (by simp only [pa]; omega) (by omega)
-        (by rw [eq_comm, decide_eq_false_iff_not]; omega) (by omega) (by simp only [pa]; omega)
+    refine WP.mono (pairStep (yl := yl) (i := 2 * b + 1) (by simp only [pa]; omega_arith) (by omega_arith)
+        (by rw [eq_comm, decide_eq_false_iff_not]; omega_arith) (by omega_arith) (by simp only [pa]; omega_arith)
         (hE.mono (Nat.le_refl _))
-        (fun _ => by rw [← n3]; exact h2.1 (by omega)) (fun h => absurd h (by omega)))
+        (fun _ => by rw [← n3]; exact h2.1 (by omega_arith)) (fun h => absurd h (by omega_arith)))
       fun s' ⟨hE', p', f'⟩ => ⟨⟨hE'.mono (hmono 3), ?_⟩, f'⟩
-    rw [ite_f (by omega)]
+    rw [ite_f (by omega_arith)]
     have n4 : np b (3 + 1) = 2 * b + 1 + 1 := rfl
-    exact ⟨fun _ => by rw [n4]; exact p', fun h => absurd h (by omega)⟩
+    exact ⟨fun _ => by rw [n4]; exact p', fun h => absurd h (by omega_arith)⟩
   by_cases h6 : b = 2 ∧ j = 6
   · obtain ⟨rfl, rfl⟩ := h6
     rw [ite_f (by decide)] at h2
@@ -247,12 +247,12 @@ theorem gq48_ok {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
     rw [hg]
     refine WP.block_nil ⟨⟨hE.mono (hmono j), ?_⟩, ZFrame.refl _ _⟩
     have hnp : np b (j + 1) = np b j := by
-      rcases (by omega : j = 2 ∨ 4 ≤ j) with rfl | h4
+      rcases (by omega_arith : j = 2 ∨ 4 ≤ j) with rfl | h4
       · rfl
-      · simp only [np, show ¬ (j + 1 ≤ 1) by omega, show ¬ (j + 1 ≤ 3) by omega, show ¬ (j ≤ 1) by omega,
-          show ¬ (j ≤ 3) by omega, ite_false]
+      · simp only [np, show ¬ (j + 1 ≤ 1) by omega_arith, show ¬ (j + 1 ≤ 3) by omega_arith, show ¬ (j ≤ 1) by omega_arith,
+          show ¬ (j ≤ 3) by omega_arith, ite_false]
     by_cases hr : b = 2 ∧ 6 < j
-    · rw [ite_t (by omega)]; rw [ite_t hr] at h2; exact h2
-    · rw [ite_f (by omega)]; rw [ite_f hr] at h2; rw [hnp]; exact h2
+    · rw [ite_t (by omega_arith)]; rw [ite_t hr] at h2; exact h2
+    · rw [ite_f (by omega_arith)]; rw [ite_f hr] at h2; rw [hnp]; exact h2
 
 end VG.Proof.Gcm.X86_64.StitchZ

@@ -48,29 +48,29 @@ theorem copy16_mem (m : Mem) (A B : Addr) (o : Nat) (h8 : o % 8 = 0)
         ((writeBytes m B (bytesAt m A o)).readW (A + BitVec.ofNat 64 o) 64)).writeW
       (B + BitVec.ofNat 64 o + 8) ((writeBytes m B (bytesAt m A o)).readW (A + BitVec.ofNat 64 o + 8) 64) =
       writeBytes m B (bytesAt m A (o + 16)) := by
-  obtain ⟨q, rfl⟩ : ∃ q, o = 8 * q := ⟨o / 8, by omega⟩
-  have e1 := copy_mem m A B q 8 (fun x hx hy => hsep x (by omega) (by omega)) (by omega)
-  have e2 := copy_mem m A B (q + 1) 8 (fun x hx hy => hsep x (by omega) (by omega)) (by omega)
+  obtain ⟨q, rfl⟩ : ∃ q, o = 8 * q := ⟨o / 8, by omega_arith⟩
+  have e1 := copy_mem m A B q 8 (fun x hx hy => hsep x (by omega_arith) (by omega_arith)) (by omega_arith)
+  have e2 := copy_mem m A B (q + 1) 8 (fun x hx hy => hsep x (by omega_arith) (by omega_arith)) (by omega_arith)
   simp only [Nat.reduceMul] at e1 e2
-  rw [show 8 * q + 8 = 8 * (q + 1) by omega] at e1
-  rw [show 8 * (q + 1) + 8 = 8 * q + 16 by omega] at e2
+  rw [show 8 * q + 8 = 8 * (q + 1) by omega_arith] at e1
+  rw [show 8 * (q + 1) + 8 = 8 * q + 16 by omega_arith] at e2
   have sep : Mem.Sep (A + BitVec.ofNat 64 (8 * (q + 1))) 8 (B + BitVec.ofNat 64 (8 * q)) 8 := by
     intro x hx hy
     apply hsep x (by
       rw [show x - A = (x - (A + BitVec.ofNat 64 (8 * (q + 1)))) + BitVec.ofNat 64 (8 * (q + 1)) by
         rw [← BitVec.sub_sub, BitVec.sub_add_cancel], BitVec.toNat_add, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (show 8 * (q + 1) < 2 ^ 64 by omega)]
+        Nat.mod_eq_of_lt (show 8 * (q + 1) < 2 ^ 64 by omega_arith)]
       have := Nat.mod_le ((x - (A + BitVec.ofNat 64 (8 * (q + 1)))).toNat + 8 * (q + 1)) (2 ^ 64)
-      omega)
+      omega_arith)
     rw [show x - B = (x - (B + BitVec.ofNat 64 (8 * q))) + BitVec.ofNat 64 (8 * q) by
       rw [← BitVec.sub_sub, BitVec.sub_add_cancel], BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show 8 * q < 2 ^ 64 by omega)]
+      Nat.mod_eq_of_lt (show 8 * q < 2 ^ 64 by omega_arith)]
     have := Nat.mod_le ((x - (B + BitVec.ofNat 64 (8 * q))).toNat + 8 * q) (2 ^ 64)
-    omega
+    omega_arith
   have e3 : (writeBytes m B (bytesAt m A (8 * q))).readW (A + BitVec.ofNat 64 (8 * q) + 8) 64 =
       (writeBytes m B (bytesAt m A (8 * (q + 1)))).readW (A + BitVec.ofNat 64 (8 * (q + 1))) 64 := by
-    rw [← e1, ofNat_add8, show 8 * q + 8 = 8 * (q + 1) by omega, readW_writeW_sep _ sep]
-  rw [e3, e1, ofNat_add8, show 8 * q + 8 = 8 * (q + 1) by omega, e2]
+    rw [← e1, ofNat_add8, show 8 * q + 8 = 8 * (q + 1) by omega_arith, readW_writeW_sep _ sep]
+  rw [e3, e1, ofNat_add8, show 8 * q + 8 = 8 * (q + 1) by omega_arith, e2]
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
@@ -83,10 +83,10 @@ theorem ld16_ok {src : Reg} {o : Nat} {a : Addr} (hs : src ≠ .x9) (ho : o % 8 
     WP isa (.block ((if o ≤ 496 then ([.ldp .x9 .x10 src o] : List Instr)
       else [.ldr .x .x9 src o, .ldr .x .x10 src (o + 8)]) ++ is)) s Q := by
   split
-  · exact wp_ldp (by decide) ⟨ho.1, by omega⟩ ha h₁ h₂ k
+  · exact wp_ldp (by decide) ⟨ho.1, by omega_arith⟩ ha h₁ h₂ k
   · simp only [List.cons_append, List.nil_append]
-    refine wp_ldr ⟨ho.1, by omega⟩ ha h₁ fun s₁ u₁ => ?_
-    refine wp_ldr (a := a + 8) ⟨by omega, by omega⟩ (by rw [u₁.other _ hs, ← ha, ofNat_add8])
+    refine wp_ldr ⟨ho.1, by omega_arith⟩ ha h₁ fun s₁ u₁ => ?_
+    refine wp_ldr (a := a + 8) ⟨by omega_arith, by omega_arith⟩ (by rw [u₁.other _ hs, ← ha, ofNat_add8])
       (by rw [u₁.rd, u₁.wr]; exact h₂) fun s₂ u₂ => ?_
     exact k s₂ ⟨by rw [u₂.other _ (by decide), u₁.gpr], by rw [u₂.gpr, u₁.mem],
       fun r h1 h2 => by rw [u₂.other r h2, u₁.other r h1], by rw [u₂.mem, u₁.mem],
@@ -100,10 +100,10 @@ theorem st16_ok {dst : Reg} {o : Nat} {a : Addr} (ho : o % 8 = 0 ∧ o + 16 ≤ 
     WP isa (.block ((if o ≤ 496 then ([.stp .x9 .x10 dst o] : List Instr)
       else [.str .x .x9 dst o, .str .x .x10 dst (o + 8)]) ++ is)) s Q := by
   split
-  · exact wp_stp ⟨ho.1, by omega⟩ ha h₁ h₂ k
+  · exact wp_stp ⟨ho.1, by omega_arith⟩ ha h₁ h₂ k
   · simp only [List.cons_append, List.nil_append]
-    refine wp_str ⟨ho.1, by omega⟩ ha h₁ fun s₁ u₁ => ?_
-    refine wp_str (a := a + 8) ⟨by omega, by omega⟩ (by rw [u₁.gpr, ← ha, ofNat_add8])
+    refine wp_str ⟨ho.1, by omega_arith⟩ ha h₁ fun s₁ u₁ => ?_
+    refine wp_str (a := a + 8) ⟨by omega_arith, by omega_arith⟩ (by rw [u₁.gpr, ← ha, ofNat_add8])
       (by rw [u₁.wr]; exact h₂) fun s₂ u₂ => ?_
     exact k s₂ ⟨by rw [u₂.gpr, u₁.gpr], by rw [u₂.mem, u₁.gpr, u₁.mem], by rw [u₂.rd, u₁.rd],
       by rw [u₂.wr, u₁.wr], by rw [u₂.sp, u₁.sp]⟩
@@ -129,26 +129,26 @@ theorem copy128_ok {src dst : Reg} (hs : src ≠ .x9 ∧ src ≠ .x10) (hd : dst
   | succ c ih =>
     intro rest s Q hin hout hsep k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih ⟨h₁.1, by omega⟩ ⟨h₂.1, by omega⟩ _ s Q (fun j hj => hin j (by omega))
-      (fun j hj => hout j (by omega)) (fun x hx hy => hsep x (by omega) (by omega))
+    refine ih ⟨h₁.1, by omega_arith⟩ ⟨h₂.1, by omega_arith⟩ _ s Q (fun j hj => hin j (by omega_arith))
+      (fun j hj => hout j (by omega_arith)) (fun x hx hy => hsep x (by omega_arith) (by omega_arith))
       fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     simp only [Hash.cp128, List.append_assoc]
-    have i0 := hin c (by omega) 0 (by omega)
-    have i1 := hin c (by omega) 1 (by omega)
-    have o0 := hout c (by omega) 0 (by omega)
-    have o1 := hout c (by omega) 1 (by omega)
+    have i0 := hin c (by omega_arith) 0 (by omega_arith)
+    have i1 := hin c (by omega_arith) 1 (by omega_arith)
+    have o0 := hout c (by omega_arith) 0 (by omega_arith)
+    have o1 := hout c (by omega_arith) 1 (by omega_arith)
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one] at i0 i1 o0 o1
     rw [add_ofNat] at i0 i1 o0 o1
     rw [← Nat.add_assoc, ← ofNat_add8] at i1 o1
-    refine ld16_ok (a := s.gpr src + BitVec.ofNat 64 (o₁ + 16 * c)) hs.1 ⟨by omega, by omega⟩
+    refine ld16_ok (a := s.gpr src + BitVec.ofNat 64 (o₁ + 16 * c)) hs.1 ⟨by omega_arith, by omega_arith⟩
       (by rw [g₁ _ hs.1 hs.2]) (by rw [rd₁, wr₁]; exact i0) (by rw [rd₁, wr₁]; exact i1) fun s₂ u₂ => ?_
-    refine st16_ok (a := s.gpr dst + BitVec.ofNat 64 (o₂ + 16 * c)) ⟨by omega, by omega⟩
+    refine st16_ok (a := s.gpr dst + BitVec.ofNat 64 (o₂ + 16 * c)) ⟨by omega_arith, by omega_arith⟩
       (by rw [u₂.other _ hd.1 hd.2, g₁ _ hd.1 hd.2]) (by rw [u₂.wr, wr₁]; exact o0)
       (by rw [u₂.wr, wr₁]; exact o1) fun s₃ g₃ => k s₃
         (fun r h9 h10 => by rw [g₃.gpr, u₂.other r h9 h10, g₁ r h9 h10])
         (by rw [g₃.rd, u₂.rd, rd₁]) (by rw [g₃.wr, u₂.wr, wr₁]) (by rw [g₃.sp, u₂.sp, sp₁]) ?_
     rw [g₃.mem, u₂.gpr₁, u₂.gpr₂, u₂.mem, m₁, ← add_ofNat, ← add_ofNat, Nat.mul_succ]
-    exact copy16_mem s.mem _ _ (16 * c) (by omega) (by rwa [← Nat.mul_succ]) (by omega)
+    exact copy16_mem s.mem _ _ (16 * c) (by omega_arith) (by rwa [← Nat.mul_succ]) (by omega_arith)
 
 /-- `copyW src so dst d n` writes the `n` bytes (a multiple of 4) at `src + so` to `dst + d`. -/
 theorem copyW_ok {src dst : Reg} (hs : src ≠ .x9 ∧ src ≠ .x10) (hd : dst ≠ .x9 ∧ dst ≠ .x10)
@@ -165,9 +165,9 @@ theorem copyW_ok {src dst : Reg} (hs : src ≠ .x9 ∧ src ≠ .x10) (hd : dst �
   split
   · rename_i h8
     simp only [List.append_assoc]
-    refine copy128_ok hs hd o₁ o₂ (n / 16) ⟨h8.2.1, by omega⟩ ⟨h8.2.2, by omega⟩ _ s Q
-      (fun j hj i hi => hin _ _ (by omega) (by omega)) (fun j hj i hi => hout _ _ (by omega) (by omega))
-      (fun x hx hy => hsep x (by omega) (by omega)) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
+    refine copy128_ok hs hd o₁ o₂ (n / 16) ⟨h8.2.1, by omega_arith⟩ ⟨h8.2.2, by omega_arith⟩ _ s Q
+      (fun j hj i hi => hin _ _ (by omega_arith) (by omega_arith)) (fun j hj i hi => hout _ _ (by omega_arith) (by omega_arith))
+      (fun x hx hy => hsep x (by omega_arith) (by omega_arith)) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     -- The 8 bytes after the 16-byte words, if any.
     have step8 : ∀ (rest' : List Instr) (t : State), (∀ r, r ≠ .x9 → r ≠ .x10 → t.gpr r = s.gpr r) →
         t.rd = s.rd → t.wr = s.wr → t.sp = s.sp →
@@ -183,41 +183,41 @@ theorem copyW_ok {src dst : Reg} (hs : src ≠ .x9 ∧ src ≠ .x10) (hd : dst �
       · rename_i h8'
         simp only [List.cons_append, List.nil_append]
         refine wp_ldr (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (16 * (n / 16))) ⟨by omega, by omega⟩
-          (by rw [g _ hs.1 hs.2, add_ofNat]) (by rw [rd, wr]; exact hin _ _ (by omega) (by omega)) fun t₁ u₁ => ?_
+          (by rw [g _ hs.1 hs.2, add_ofNat]) (by rw [rd, wr]; exact hin _ _ (by omega_arith) (by omega_arith)) fun t₁ u₁ => ?_
         refine wp_str (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (16 * (n / 16))) ⟨by omega, by omega⟩
-          (by rw [u₁.other _ hd.1, g _ hd.1 hd.2, add_ofNat]) (by rw [u₁.wr, wr]; exact hout _ _ (by omega) (by omega))
+          (by rw [u₁.other _ hd.1, g _ hd.1 hd.2, add_ofNat]) (by rw [u₁.wr, wr]; exact hout _ _ (by omega_arith) (by omega_arith))
           fun t₂ g₂ => k' t₂ (fun r h9 h10 => by rw [g₂.gpr, u₁.other r h9, g r h9 h10]) (by rw [g₂.rd, u₁.rd, rd])
             (by rw [g₂.wr, u₁.wr, wr]) (by rw [g₂.sp, u₁.sp, sp]) ?_
-        rw [g₂.mem, u₁.gpr, u₁.mem, m, show 16 * (n / 16) = 8 * (2 * (n / 16)) by omega,
-          show n / 8 * 8 = 8 * (2 * (n / 16)) + 8 by omega]
-        exact copy_mem s.mem _ _ (2 * (n / 16)) 8 (fun x hx hy => hsep x (by omega) (by omega)) (by omega)
-      · exact k' t g rd wr sp (by rw [m, show n / 8 * 8 = 16 * (n / 16) by omega])
+        rw [g₂.mem, u₁.gpr, u₁.mem, m, show 16 * (n / 16) = 8 * (2 * (n / 16)) by omega_arith,
+          show n / 8 * 8 = 8 * (2 * (n / 16)) + 8 by omega_arith]
+        exact copy_mem s.mem _ _ (2 * (n / 16)) 8 (fun x hx hy => hsep x (by omega_arith) (by omega_arith)) (by omega_arith)
+      · exact k' t g rd wr sp (by rw [m, show n / 8 * 8 = 16 * (n / 16) by omega_arith])
     refine step8 _ s₁ g₁ rd₁ wr₁ sp₁ m₁ fun s₂ g₂ rd₂ wr₂ sp₂ m₂ => ?_
     split
     · rename_i h4
-      obtain ⟨q, rfl⟩ : ∃ q, n = 4 * q + 4 := ⟨(n - 4) / 4, by omega⟩
-      have e8 : (4 * q + 4) / 8 * 8 = 4 * q := by omega
-      have e4 : 4 * q + 4 - 4 = 4 * q := by omega
+      obtain ⟨q, rfl⟩ : ∃ q, n = 4 * q + 4 := ⟨(n - 4) / 4, by omega_arith⟩
+      have e8 : (4 * q + 4) / 8 * 8 = 4 * q := by omega_arith
+      have e4 : 4 * q + 4 - 4 = 4 * q := by omega_arith
       rw [e4]
       rw [e8] at m₂
       simp only [cp32, List.cons_append, Nat.mul_zero, Nat.add_zero, List.nil_append]
-      refine wp_ldr32 (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (4 * q)) ⟨by omega, by omega⟩
-        (by rw [g₂ _ hs.1 hs.2, add_ofNat]) (by rw [rd₂, wr₂]; exact hin _ _ (by omega) (by omega)) fun s₃ u₃ => ?_
-      refine wp_str32 (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (4 * q)) ⟨by omega, by omega⟩
-        (by rw [u₃.other _ hd.1, g₂ _ hd.1 hd.2, add_ofNat]) (by rw [u₃.wr, wr₂]; exact hout _ _ (by omega) (by omega))
+      refine wp_ldr32 (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (4 * q)) ⟨by omega_arith, by omega_arith⟩
+        (by rw [g₂ _ hs.1 hs.2, add_ofNat]) (by rw [rd₂, wr₂]; exact hin _ _ (by omega_arith) (by omega_arith)) fun s₃ u₃ => ?_
+      refine wp_str32 (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (4 * q)) ⟨by omega_arith, by omega_arith⟩
+        (by rw [u₃.other _ hd.1, g₂ _ hd.1 hd.2, add_ofNat]) (by rw [u₃.wr, wr₂]; exact hout _ _ (by omega_arith) (by omega_arith))
         fun s₄ g₄ => k s₄ (fun r h9 h10 => by rw [g₄.gpr, u₃.other r h9, g₂ r h9 h10]) (by rw [g₄.rd, u₃.rd, rd₂])
           (by rw [g₄.wr, u₃.wr, wr₂]) (by rw [g₄.sp, u₃.sp, sp₂]) ?_
       rw [g₄.mem, u₃.gpr, u₃.mem, m₂, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
-      exact copy_mem s.mem _ _ q 4 hsep (by omega)
+      exact copy_mem s.mem _ _ q 4 hsep (by omega_arith)
     · rename_i h4
       simp only [List.nil_append]
-      exact k s₂ g₂ rd₂ wr₂ sp₂ (by rw [m₂, show n / 8 * 8 = n by omega])
+      exact k s₂ g₂ rd₂ wr₂ sp₂ (by rw [m₂, show n / 8 * 8 = n by omega_arith])
   · rename_i h8
     simp only [Hash.copy32]
-    refine VG.Proof.Pbkdf2.AArch64.copy32_ok hs.1 hd.1 o₁ o₂ (n / 4) ⟨h₁.1, by omega⟩ ⟨h₂.1, by omega⟩ rest s Q
-      (fun j hj => hin _ _ (by omega) (by omega)) (fun j hj => hout _ _ (by omega) (by omega))
-      (fun x hx hy => hsep x (by omega) (by omega)) fun s' g rd wr sp m => k s' (fun r h9 _ => g r h9) rd wr sp
-        (by rw [m, show 4 * (n / 4) = n by omega])
+    refine VG.Proof.Pbkdf2.AArch64.copy32_ok hs.1 hd.1 o₁ o₂ (n / 4) ⟨h₁.1, by omega_arith⟩ ⟨h₂.1, by omega_arith⟩ rest s Q
+      (fun j hj => hin _ _ (by omega_arith) (by omega_arith)) (fun j hj => hout _ _ (by omega_arith) (by omega_arith))
+      (fun x hx hy => hsep x (by omega_arith) (by omega_arith)) fun s' g rd wr sp m => k s' (fun r h9 _ => g r h9) rd wr sp
+        (by rw [m, show 4 * (n / 4) = n by omega_arith])
 
 /-! ## Padding -/
 
@@ -249,13 +249,13 @@ theorem zst_ok (A : Nat) (hA : A % 8 = 0) (c : Nat) :
   | succ c ih =>
     intro rest s Q p hbp hx hout hlt k
     rw [List.range_succ, List.map_append, List.map_singleton, List.append_assoc]
-    refine ih _ s Q p hbp hx (fun a h1 h2 => hout a h1 (by omega)) (by omega) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
+    refine ih _ s Q p hbp hx (fun a h1 h2 => hout a h1 (by omega_arith)) (by omega_arith) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     simp only [List.cons_append, List.nil_append]
-    refine wp_stpB (b := p) ⟨by omega, by omega⟩ (by rw [g₁, hbp]) (by rw [wr₁]; exact hout _ (by omega) (by omega))
-      (by rw [wr₁]; exact hout _ (by omega) (by omega)) fun s₂ g₂ => k s₂ (by rw [g₂.gpr, g₁])
+    refine wp_stpB (b := p) ⟨by omega_arith, by omega_arith⟩ (by rw [g₁, hbp]) (by rw [wr₁]; exact hout _ (by omega_arith) (by omega_arith))
+      (by rw [wr₁]; exact hout _ (by omega_arith) (by omega_arith)) fun s₂ g₂ => k s₂ (by rw [g₂.gpr, g₁])
         (by rw [g₂.rd, rd₁]) (by rw [g₂.wr, wr₁]) (by rw [g₂.sp, sp₁]) ?_
     have hl : (List.replicate (16 * c) (0 : Byte)).length + 16 < 2 ^ 64 := by
-      rw [List.length_replicate]; omega
+      rw [List.length_replicate]; omega_arith
     rw [g₂.mem, g₁, hx, m₁, writeW_zero8, writeW_zero8, writeBytes_8_8 _ _ _ _ _ (by rfl) (by rfl),
       Pbkdf2.Memory.writeBytes_append' _ _ _ (by rw [List.length_replicate, add_ofNat]) (by simpa using hl),
       List.replicate_append_replicate, List.replicate_append_replicate, Nat.mul_succ]
@@ -392,7 +392,7 @@ theorem padSel_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.
   unfold Hash.padSel
   split
   · exact padW_ok hs hok hD4 hB16 hL hA hB hbp hbx hw k
-  · exact Pbkdf2.AArch64.padLen_ok hs hok hD4 (by omega) (by omega) hpad hB hbp hbx hw
+  · exact Pbkdf2.AArch64.padLen_ok hs hok hD4 (by omega_arith) (by omega_arith) hpad hB hbp hbx hw
       fun s' g rd wr sp f t d => k s' (fun r h9 _ h12 h22 => g r h9 h12 h22) rd wr sp f t d
 
 end VG.Proof.Pbkdf2.Md.AArch64

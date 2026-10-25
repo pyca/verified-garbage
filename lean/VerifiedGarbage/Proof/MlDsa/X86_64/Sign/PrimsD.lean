@@ -39,7 +39,7 @@ theorem sbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
     (simpleBitPackContract X86_64.abi S).pre (s1.callEntry.withRegions [pR (pa s f)] [⟨pa s out, len⟩]) := by
   obtain ⟨_, i1, i2, d12, _⟩ := rwChk_spec hc
   obtain ⟨e1, e2, e3, e4⟩ := argsIn4 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_arith
   have hb' : b < 2 ^ 32 ∧ len < 2 ^ 32 := by
     simp only [simpleBitPackBounds, t1Max, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl <;> subst hl <;> decide
@@ -59,7 +59,7 @@ theorem sbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       bytesAt s'.mem (pa s out) len = simpleBitPack (natPolyAt s.mem (pa s f)) b := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
-  have hD : 8 ≤ D := by have := hP.simpleBitPack.hS; omega
+  have hD : 8 ≤ D := by have := hP.simpleBitPack.hS; omega_arith
   have hb' : b < 2 ^ 32 ∧ len < 2 ^ 32 := by
     simp only [simpleBitPackBounds, t1Max, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl <;> subst hl <;> decide
@@ -120,7 +120,7 @@ theorem bpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1
     (bitPackContract X86_64.abi S).pre (s1.callEntry.withRegions [pR (pa s f)] [⟨pa s out, len⟩]) := by
   obtain ⟨_, i1, i2, d12, _⟩ := rwChk_spec hc
   obtain ⟨e1, e2, e3, e4, e5⟩ := argsIn5 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_arith
   obtain ⟨ha', hb', hl'⟩ := bitPackParams_lt hp
   rw [← hl] at hl'
   have hwf := ce_wfS (ws := [64, 32, 32, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [pR (pa s f)] [⟨pa s out, len⟩]
@@ -139,7 +139,7 @@ theorem bpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s)
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       bytesAt s'.mem (pa s out) len = bitPack ((polyAt s.mem (pa s f)).map fun c => modPm c.val q) a b := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
-  have hD : 8 ≤ D := by have := hP.bitPack.hS; omega
+  have hD : 8 ≤ D := by have := hP.bitPack.hS; omega_arith
   obtain ⟨ha', hb', hl'⟩ := bitPackParams_lt hp
   rw [← hl] at hl'
   refine WP.mono (callP_ok hP.bitPack.ver.1 hP.bitPack.nosp hP.bitPack.depth L.dsm (bpArgs_ok ha' hb' hl' hc)
@@ -188,7 +188,7 @@ theorem bupPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
     (bitUnpackContract X86_64.abi S).pre (s1.callEntry.withRegions [⟨pa s v, len⟩] [pR (pa s f)]) := by
   obtain ⟨_, i1, i2, d12, _⟩ := rwChk_spec hc
   obtain ⟨e1, e2, e3, e4, e5⟩ := argsIn5 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_arith
   obtain ⟨ha', hb', hl'⟩ := bitPackParams_lt hp
   rw [← hl] at hl'
   have hwf := ce_wfS (ws := [64, 64, 32, 32, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [⟨pa s v, len⟩] [pR (pa s f)]
@@ -205,7 +205,7 @@ theorem bupAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       PolyIs s'.mem (pa s f) (toRq (bitUnpack (bytesAt s.mem (pa s v) len) a b)) := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
-  have hD : 8 ≤ D := by have := hP.bitUnpack.hS; omega
+  have hD : 8 ≤ D := by have := hP.bitUnpack.hS; omega_arith
   obtain ⟨ha', hb', hl'⟩ := bitPackParams_lt hp
   rw [← hl] at hl'
   refine WP.mono (callP_ok hP.bitUnpack.ver.1 hP.bitUnpack.nosp hP.bitUnpack.depth L.dsm (bupArgs_ok ha' hb' hl' hc)
@@ -260,15 +260,15 @@ theorem hbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
       (s1.callEntry.withRegions [⟨pa s h, 256 * k * 4⟩] [⟨pa s y, ω + k⟩]) := by
   obtain ⟨_, i1, i2, d12, _⟩ := rwChk_spec hc
   obtain ⟨e1, e2, e3, e4, e5⟩ := argsIn5 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_arith
   obtain ⟨h1, h2, h3⟩ := hintParams_lt hp
   have hwf := ce_wfS (ws := [64, 64, 32, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [⟨pa s h, 256 * k * 4⟩]
     [⟨pa s y, ω + k⟩]
-  have ek : ω + k - ω = k := by omega
-  have i1' : inB (rbs ++ wbs) h (1024 * k) = true := by rw [show 1024 * k = 256 * k * 4 by omega]; exact i1
+  have ek : ω + k - ω = k := by omega_arith
+  have i1' : inB (rbs ++ wbs) h (1024 * k) = true := by rw [show 1024 * k = 256 * k * 4 by omega_arith]; exact i1
   sig_pre [hintBitPackContract, hintBitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [e1, e2, e3, e4, e5, Arg.val, sw32_ofNat h1, toNat64 h2, toNat64 h3, ek]
-  refine ⟨hwf, trivial, trivial, A.L.disj d12, A.ret i1 hD, ?_, A.L.nwp i1, A.L.nwp i2, hp, by omega, trivial,
+  refine ⟨hwf, trivial, trivial, A.L.disj d12, A.ret i1 hD, ?_, A.L.nwp i1, A.L.nwp i2, hp, by omega_arith, trivial,
     by rw [A.hint i1' hD]; exact hones⟩
   refine Sig.conj_cons.mpr ⟨A.ret i2 hD, conj_stk [⟨pa s h, 256 * k * 4⟩, ⟨pa s y, ω + k⟩] ?_⟩
   simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
@@ -281,10 +281,10 @@ theorem hbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       bytesAt s'.mem (pa s y) (ω + k) = hintBitPack ω k (hintAt s.mem (pa s h) k) := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
-  have hD : 8 ≤ D := by have := hP.hintBitPack.hS; omega
+  have hD : 8 ≤ D := by have := hP.hintBitPack.hS; omega_arith
   obtain ⟨h1, h2, h3⟩ := hintParams_lt hp
-  have ek : ω + k - ω = k := by omega
-  have i1' : inB (rbs ++ wbs) h (1024 * k) = true := by rw [show 1024 * k = 256 * k * 4 by omega]; exact i1
+  have ek : ω + k - ω = k := by omega_arith
+  have i1' : inB (rbs ++ wbs) h (1024 * k) = true := by rw [show 1024 * k = 256 * k * 4 by omega_arith]; exact i1
   refine WP.mono (callP_ok hP.hintBitPack.ver.1 hP.hintBitPack.nosp hP.hintBitPack.depth L.dsm
     (hbpArgs_ok h3 h1 h2 hc) (fun s1 hA hm k => hbpPre hP.hintBitPack.hS (At.of L hm k) hp hc hA hones)
     (Covers.append_left (L.cR i1) (Covers.right (L.cW w1))) (L.cW w1))
@@ -304,7 +304,7 @@ theorem hbpAt_tr {P : Prims} (hP : PrimsOk P D) {h y : Ptr} {ω k : Nat} (hp : (
         (List.range (256 * k)).map (fun i => (coeffAt z.mem (pa z h) i).toNat))
       (hintBitPackAt P h (256 * k) ω y (ω + k)) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
-  have hD : 8 ≤ D := by have := hP.hintBitPack.hS; omega
+  have hD : 8 ≤ D := by have := hP.hintBitPack.hS; omega_arith
   obtain ⟨h1, h2, h3⟩ := hintParams_lt hp
   refine callP_tr hP.hintBitPack.ver.1 hP.hintBitPack.ver.2.1 (hbpArgs_ok h3 h1 h2 hc)
     fun x z x1 z1 ⟨R, ox, oz, hl⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAz, hmz⟩, kz⟩ =>

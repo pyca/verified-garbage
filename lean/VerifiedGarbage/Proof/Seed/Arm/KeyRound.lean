@@ -100,7 +100,7 @@ theorem keyRound_eq (j : Nat) :
     keyRound j = keyIn j ++ (if j % 2 = 0 then rotr8 .r4 .r5 else rotl8 .r6 .r7) := by
   simp only [keyRound, keyIn, List.append_assoc]
 
-theorem uSlot_lt {i : Nat} (hi : i < 32) : uSlot i < slots := by simp [uSlot, aSlot, slots_eq]; omega
+theorem uSlot_lt {i : Nat} (hi : i < 32) : uSlot i < slots := by simp [uSlot, aSlot, slots_eq]; omega_arith
 
 theorem keyIn_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
     ∃ s', runBlock isa (keyIn j) s = some s' ∧
@@ -109,8 +109,8 @@ theorem keyIn_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
       (∀ k < slots, k ≠ uSlot (2 * j) → k ≠ uSlot (2 * j + 1) → slotW s' k = slotW s k) ∧
       (∀ r, r ≠ t0 → r ≠ t1 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       Frame [workR s] s.mem s'.mem := by
-  have hu0 := uSlot_lt (i := 2 * j) (by omega)
-  have hu1 := uSlot_lt (i := 2 * j + 1) (by omega)
+  have hu0 := uSlot_lt (i := 2 * j) (by omega_arith)
+  have hu1 := uSlot_lt (i := 2 * j + 1) (by omega_arith)
   have hR : ∀ {t : State} (r : Reg) (v : BitVec 32), Room t → r ≠ sb → Room (t.setReg r v) :=
     fun r v ht hr => room_setReg ht hr v
   rw [show keyIn j = [addR t0 .r4 .r6, .movw t1 ((Spec.Seed.kc.getD j 0).extractLsb' 0 16),
@@ -132,8 +132,8 @@ theorem keyIn_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
   refine ⟨_, rfl, ?_, ?_, fun k hk1 hk2 hk3 => ?_, fun r h1 h2 => ?_, rfl, rfl, rfl, ?_⟩
   · simp (disch := decide) only [slotW_setMem, slotA_setReg, slotA_setMem, gpr_setReg_self, mem_setMem,
       mem_setReg, movw_movt]
-    rw [Mem.readW_writeW_sep (Straight.slot_sep _ (by have := h.fit; rw [slots_eq] at hu0 hu1 this; omega)
-      (by have := h.fit; rw [slots_eq] at hu0 hu1 this; omega) (by simp [uSlot])) (by decide),
+    rw [Mem.readW_writeW_sep (Straight.slot_sep _ (by have := h.fit; rw [slots_eq] at hu0 hu1 this; omega_arith)
+      (by have := h.fit; rw [slots_eq] at hu0 hu1 this; omega_arith) (by simp [uSlot])) (by decide),
       Mem.readW_writeW_self32]
     simp only [gpr_setReg, t0, t1, reduceCtorEq, ↓reduceIte]
   · simp (disch := decide) only [slotW_setMem, slotA_setReg, slotA_setMem, gpr_setReg_self, mem_setMem,
@@ -141,17 +141,17 @@ theorem keyIn_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
     simp only [gpr_setReg, gpr_setMem, t0, t1, reduceCtorEq, ↓reduceIte]
   · simp (disch := decide) only [slotW_setMem, slotA_setReg, slotA_setMem, mem_setMem, mem_setReg]
     have hf := h.fit; rw [slots_eq] at hk1 hu0 hu1 hf
-    rw [Mem.readW_writeW_sep (Straight.slot_sep _ (by omega) (by omega) hk3) (by decide),
-      Mem.readW_writeW_sep (Straight.slot_sep _ (by omega) (by omega) hk2) (by decide)]
+    rw [Mem.readW_writeW_sep (Straight.slot_sep _ (by omega_arith) (by omega_arith) hk3) (by decide),
+      Mem.readW_writeW_sep (Straight.slot_sep _ (by omega_arith) (by omega_arith) hk2) (by decide)]
     rfl
   · simp only [gpr_setMem, gpr_setReg_of_ne _ _ h1, gpr_setReg_of_ne _ _ h2]
   · simp (disch := decide) only [mem_setMem, mem_setReg, slotA_setReg, slotA_setMem]
     have hf := h.fit; rw [slots_eq] at hu0 hu1 hf
     have hw : ∀ i < 32, (workR s).Contains (slotA s (uSlot i)) 4 := fun i hi => by
-      rw [slotA, slot_addr (by simp [uSlot, aSlot]; omega)]
-      exact Offset.contains_base _ (by simp [uSlot, aSlot, tailSlot]; omega) (by simp [uSlot, aSlot]; omega)
-    exact ((Frame.refl _ _).writeW List.mem_cons_self _ (hw _ (by omega))).writeW List.mem_cons_self _
-      (hw _ (by omega))
+      rw [slotA, slot_addr (by simp [uSlot, aSlot]; omega_arith)]
+      exact Offset.contains_base _ (by simp [uSlot, aSlot, tailSlot]; omega_arith) (by simp [uSlot, aSlot]; omega_arith)
+    exact ((Frame.refl _ _).writeW List.mem_cons_self _ (hw _ (by omega_arith))).writeW List.mem_cons_self _
+      (hw _ (by omega_arith))
 
 theorem keyRound_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
     ∃ s', runBlock isa (keyRound j) s = some s' ∧ kw s' = keyStep j (kw s) ∧
@@ -188,11 +188,11 @@ theorem keyRound_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
 /-- The inputs of `G` from round `j + 1`'s key words. -/
 theorem gInput_even (key : Spec.Seed.Block) (j : Nat) :
     gInput key (2 * j) = (keyWords key j).1 + (keyWords key j).2.2.1 - Spec.Seed.kc.getD j 0 := by
-  simp only [gInput, show 2 * j / 2 = j by omega, show 2 * j % 2 = 0 by omega, ite_true]
+  simp only [gInput, show 2 * j / 2 = j by omega_arith, show 2 * j % 2 = 0 by omega_arith, ite_true]
 
 theorem gInput_odd (key : Spec.Seed.Block) (j : Nat) :
     gInput key (2 * j + 1) = (keyWords key j).2.1 - (keyWords key j).2.2.2 + Spec.Seed.kc.getD j 0 := by
-  simp only [gInput, show (2 * j + 1) / 2 = j by omega, show (2 * j + 1) % 2 = 1 by omega]; rfl
+  simp only [gInput, show (2 * j + 1) / 2 = j by omega_arith, show (2 * j + 1) % 2 = 1 by omega_arith]; rfl
 
 /-- The first `n` rounds of the key schedule. -/
 theorem keyRounds_ok (key : Spec.Seed.Block) {s : State} (h : Room s) (hk : kw s = keyWords key 0) :
@@ -203,22 +203,22 @@ theorem keyRounds_ok (key : Spec.Seed.Block) {s : State} (h : Room s) (hk : kw s
       Frame [workR s] s.mem s'.mem := by
   intro n hn
   induction n with
-  | zero => exact ⟨s, runBlock_nil, h, hk, fun i hi => by omega, fun _ _ _ => rfl, fun _ _ => rfl, rfl, rfl, rfl,
+  | zero => exact ⟨s, runBlock_nil, h, hk, fun i hi => by omega_arith, fun _ _ _ => rfl, fun _ _ => rfl, rfl, rfl, rfl,
       Frame.refl _ _⟩
   | succ n ih =>
-    obtain ⟨s₁, e₁, h₁, k₁, v₁, o₁, g₁, rd₁, wr₁, sp₁, f₁⟩ := ih (by omega)
-    obtain ⟨s₂, e₂, k₂, a₂, b₂, o₂, g₂, rd₂, wr₂, sp₂, f₂⟩ := keyRound_ok (j := n) (by omega) h₁
+    obtain ⟨s₁, e₁, h₁, k₁, v₁, o₁, g₁, rd₁, wr₁, sp₁, f₁⟩ := ih (by omega_arith)
+    obtain ⟨s₂, e₂, k₂, a₂, b₂, o₂, g₂, rd₂, wr₂, sp₂, f₂⟩ := keyRound_ok (j := n) (by omega_arith) h₁
     have sb₁ : s₁.gpr sb = s.gpr sb := g₁ _ (by decide)
     have sb₂ : s₂.gpr sb = s.gpr sb := by rw [g₂ _ (by decide), sb₁]
     refine ⟨s₂, ?_, h.congr sb₂ (by rw [wr₂, wr₁]), by rw [k₂, k₁]; rfl, fun i hi => ?_, fun k hk1 hk2 => ?_,
       fun r hr => by rw [g₂ r hr, g₁ r hr], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [sp₂, sp₁],
       f₁.trans (by simpa [workR, sb₁] using f₂)⟩
     · rw [List.range_succ, List.flatMap_append, runBlock_append, e₁, Option.bind_some, List.flatMap_singleton, e₂]
-    · rcases (show i < 2 * n ∨ i = 2 * n ∨ i = 2 * n + 1 by omega) with hi' | rfl | rfl
-      · rw [o₂ _ (uSlot_lt (by omega)) (by simp [uSlot]; omega) (by simp [uSlot]; omega), v₁ i hi']
+    · rcases (show i < 2 * n ∨ i = 2 * n ∨ i = 2 * n + 1 by omega_arith) with hi' | rfl | rfl
+      · rw [o₂ _ (uSlot_lt (by omega_arith)) (by simp [uSlot]; omega_arith) (by simp [uSlot]; omega_arith), v₁ i hi']
       · rw [a₂, k₁, gInput_even]
       · rw [b₂, k₁, gInput_odd]
-    · rw [o₂ k hk1 (by simp [uSlot] at hk2 ⊢; omega) (by simp [uSlot] at hk2 ⊢; omega),
-        o₁ k hk1 (by simp [uSlot] at hk2 ⊢; omega)]
+    · rw [o₂ k hk1 (by simp [uSlot] at hk2 ⊢; omega_arith) (by simp [uSlot] at hk2 ⊢; omega_arith),
+        o₁ k hk1 (by simp [uSlot] at hk2 ⊢; omega_arith)]
 
 end VG.Proof.Seed.Arm

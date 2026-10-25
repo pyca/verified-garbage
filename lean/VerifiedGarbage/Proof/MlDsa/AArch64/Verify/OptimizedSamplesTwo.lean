@@ -32,7 +32,7 @@ theorem vslot2_ok {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre
   have L1 := h1.vz.vc.lay hF hp
   unfold setSR
   refine WP.mono (vsetTwo_ok L1 (o := oSA4+34*j+32) (a := (e+j)%p.ℓ) (b := (e+j)/p.ℓ)
-    (by dsimp only [oSA4]; omega) (by vlayd) (by vlayd)) fun t ⟨hP2,hk2,hb2⟩ => ?_
+    (by dsimp only [oSA4]; omega_arith) (by vlayd) (by vlayd)) fun t ⟨hP2,hk2,hb2⟩ => ?_
   refine ⟨h1.keep hF hp hP2 (by vachk hF) (hk2.get .x24),fun k hk => ?_⟩
   by_cases heq : k = j
   · subst k
@@ -40,12 +40,12 @@ theorem vslot2_ok {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre
       sc_add,← sc_pa hP1,hb2,seedOf,Proof.MlDsa.Verify.aSeed,integerToBytes_one,integerToBytes_one,List.append_assoc]
     rfl
   · rw [L1.keepBytes hP2 (by vlayd),L.keepBytes hP1 (by vlayd)]
-    exact h.done k (by omega)
+    exact h.done k (by omega_arith)
 
 theorem vslot2_piece {p : Params} (hF : VFacts p) {S e j : Nat} (he : e+2 ≤ p.k*p.ℓ) (hj : j < 2) :
     VPiece p S (VS p · e j) (VS p · e (j+1)) (seedSlot4 p e j) :=
   ⟨fun _ _ hp h => vslot2_ok hF hp he hj h,
-    vrel_of (Q := VTwo p S) (taintRel [.x28] (fun _ _ h => VTwo.x28 h) (slot_taint p e (by omega)))
+    vrel_of (Q := VTwo p S) (taintRel [.x28] (fun _ _ h => VTwo.x28 h) (slot_taint p e (by omega_arith)))
       fun _ _ _ _ hp hp' hq h h' => vc_two hF hp hp' hq h.va.vz.vc h'.va.vz.vc⟩
 
 theorem vseed2_eq {p : Params} {σ : State} {e : Nat} {s : State} (h : VS p σ e 2 s) {k : Nat} (hk : k < 2) :
@@ -79,7 +79,7 @@ theorem vcall2_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
   rw [h20.get .x0,e20,e2,h20.mem] at hco
   have hco4 : ∀ k < 2,∀ i < 256,coeffAt s3.mem (poly4 (pa s (aP (e))) k) i =
       if (s2.gpr .x0).setWidth 32 = 1 then coeffAt s2.mem (poly4 (pa s (aP (e))) k) i else 0 :=
-    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega)
+    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega_arith)
   have e3 : ∀ k,pa s3 (aP (e+k)) = poly4 (pa s (aP (e))) k := fun k => by rw [pa_poly4,sc_pa hP13]
   obtain ⟨q,hq,h1,h0⟩ := h.va.ok
   have hA : ∀ e' < e,polyAt s3.mem (pa s3 (aP e')) = polyAt s.mem (pa s (aP e')) := fun e' he' => L.keepPolyAt hP13 (by vlay)
@@ -87,11 +87,11 @@ theorem vcall2_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
     fun e' he' => ?_,q && ((s2.gpr .x0).setWidth 32 == 1),?_,fun hq' e' he' => ?_,fun hq' => ?_⟩
   · by_cases hlt : e' < e
     · exact L.keepRed hP13 (by vlay) (h.va.red e' hlt)
-    · obtain ⟨k,rfl⟩ : ∃ k,e'=e+k := ⟨e'-e,by omega⟩
+    · obtain ⟨k,rfl⟩ : ∃ k,e'=e+k := ⟨e'-e,by omega_arith⟩
       rw [e3]
       by_cases hret : (s2.gpr .x0).setWidth 32 = 1
-      · exact (masked_one hret (hco4 k (by omega))).2 (hred hret k (by omega))
-      · exact (masked_zero hret (hco4 k (by omega))).1
+      · exact (masked_one hret (hco4 k (by omega_arith))).2 (hred hret k (by omega_arith))
+      · exact (masked_zero hret (hco4 k (by omega_arith))).1
   · rw [k3.get .x24,e24,h24,hq,and_flag _ (Q := (s2.gpr .x0).setWidth 32 = 1)
       (by rcases hr01 with h | h <;> rw [h] <;> decide)]
     exact flag_congr (by simp)
@@ -99,18 +99,18 @@ theorem vcall2_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
     by_cases hlt : e' < e
     · obtain ⟨b,hb⟩ := h1 hq'.1 e' hlt
       exact ⟨b,by rw [hb,hA e' hlt]⟩
-    · obtain ⟨k,rfl⟩ : ∃ k,e'=e+k := ⟨e'-e,by omega⟩
+    · obtain ⟨k,rfl⟩ : ∃ k,e'=e+k := ⟨e'-e,by omega_arith⟩
       rcases hout with ⟨_,hb⟩ | ⟨hret,_⟩
-      · obtain ⟨b,hb⟩ := hb k (by omega)
-        exact ⟨b,by rw [e3,(masked_one hq'.2 (hco4 k (by omega))).1,← vseed2_eq h (by omega)]; exact hb⟩
+      · obtain ⟨b,hb⟩ := hb k (by omega_arith)
+        exact ⟨b,by rw [e3,(masked_one hq'.2 (hco4 k (by omega_arith))).1,← vseed2_eq h (by omega_arith)]; exact hb⟩
       · rw [hq'.2] at hret; exact absurd hret (by decide)
   · cases hqq : q
-    · obtain ⟨e',he',hn⟩ := h0 hqq; exact ⟨e',by omega,hn⟩
+    · obtain ⟨e',he',hn⟩ := h0 hqq; exact ⟨e',by omega_arith,hn⟩
     · rw [hqq] at hq'
       simp only [Bool.true_and,beq_eq_false_iff_ne,ne_eq] at hq'
       rcases hout with ⟨hret,_⟩ | ⟨_,k,hk,hn⟩
       · exact absurd hret hq'
-      · exact ⟨e+k,by omega,by rw [← vseed2_eq h hk]; exact hn⟩
+      · exact ⟨e+k,by omega_arith,by rw [← vseed2_eq h hk]; exact hn⟩
 
 
 

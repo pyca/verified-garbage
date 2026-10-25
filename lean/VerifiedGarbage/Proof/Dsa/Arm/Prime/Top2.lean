@@ -47,7 +47,7 @@ abbrev PreEnc (bits : Nat) : Prop :=
 theorem readW_writeW_off (m : Mem) (A : Addr) {o p : Nat} (v : BitVec 32) (h : o + 4 ≤ p ∨ p + 4 ≤ o)
     (ho : o + 4 ≤ 2 ^ 64) (hp : p + 4 ≤ 2 ^ 64) :
     (m.writeW (A + BitVec.ofNat 64 o) v).readW (A + BitVec.ofNat 64 p) 32 = m.readW (A + BitVec.ofNat 64 p) 32 :=
-  Mem.readW_writeW_sep (Offset.sep A (by omega) hp ho) (by decide)
+  Mem.readW_writeW_sep (Offset.sep A (by omega_arith) hp ho) (by decide)
 
 section
 variable {s : State}
@@ -55,7 +55,7 @@ variable {s : State}
 theorem aA_add (h : 32 ≤ s.sp.toNat) {o : Nat} (ho : o ≤ 32) :
     State.addr (s.sp - BitVec.ofNat 32 32 + BitVec.ofNat 32 0 + BitVec.ofNat 32 o) = aA s + BitVec.ofNat 64 o := by
   rw [BitVec.add_zero]
-  exact addr_add (by rw [sub_toNat' h]; omega)
+  exact addr_add (by rw [sub_toNat' h]; omega_arith)
 
 /-- The allocation's arguments. -/
 theorem pre_ok {bits : Nat} (enc : PreEnc bits) (h1 : 144 ≤ s.sp.toNat) (h2 : s.sp.toNat + 4 ≤ 2 ^ 32)
@@ -69,12 +69,12 @@ theorem pre_ok {bits : Nat} (enc : PreEnc bits) (h1 : 144 ≤ s.sp.toNat) (h2 : 
   have hsp : (allocated 32 s).sp = s.sp - BitVec.ofNat 32 32 := rfl
   have hwr : (allocated 32 s).wr = ⟨aA s, 32⟩ :: s.wr := rfl
   have win : ∀ o, o + 4 ≤ 32 → InRegions (allocated 32 s).wr (aA s + BitVec.ofNat 64 o) 4 := fun o ho =>
-    ⟨_, by rw [hwr]; exact List.mem_cons_self, Offset.contains_base _ ho (by omega)⟩
+    ⟨_, by rw [hwr]; exact List.mem_cons_self, Offset.contains_base _ ho (by omega_arith)⟩
   unfold Impl.Dsa.Arm.ProbablePrime.pre
   refine wp_stackAddr (r := .r12) (d := 0) (by decide) fun u0 h0 => ?_
   have r12 : ∀ {u : State}, u.gpr .r12 = u0.gpr .r12 → ∀ o, o ≤ 32 →
       State.addr (u.gpr .r12 + BitVec.ofNat 32 o) = aA s + BitVec.ofNat 64 o := fun hu o ho => by
-    rw [hu, h0.gpr, hsp]; exact aA_add (by omega) ho
+    rw [hu, h0.gpr, hsp]; exact aA_add (by omega_arith) ho
   simp only [aoR, aoRl, aoP, aoS, aoSl, aoEl, aoPl, Impl.Dsa.Arm.ProbablePrime.aoChk]
   refine wp_str (a := aA s + BitVec.ofNat 64 12) (by decide) (r12 rfl _ (by decide))
     (by rw [h0.wr]; exact win 12 (by decide)) fun u1 m1 => ?_
@@ -119,9 +119,9 @@ theorem pre_ok {bits : Nat} (enc : PreEnc bits) (h1 : 144 ≤ s.sp.toNat) (h2 : 
       rw [h7.gpr, h6.gpr]
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (a := keyWords bits / 32) (by omega)]
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt e7]
-      omega
+        Nat.mod_eq_of_lt (a := keyWords bits / 32) (by omega_arith)]
+      rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt e7]
+      omega_arith
     rw [m14.mem, h13.gpr, h13.mem, m12.mem, h11.gpr, h11.mem, m10.mem, h9.gpr, h9.mem, m8.mem, k7, h7.mem,
       h6.mem, m5.mem, h4.gpr, dpVal, h4.mem, m3.mem, m2.mem, m1.mem, h0.mem]
     simp only [m1.gpr, m2.gpr, m3.gpr, h0.other .r0 (by decide), h0.other .r2 (by decide),
@@ -142,7 +142,7 @@ theorem pre_ok {bits : Nat} (enc : PreEnc bits) (h1 : 144 ≤ s.sp.toNat) (h2 : 
   have fr : Frame [⟨aA s, 32⟩] s.mem u14.mem := by
     rw [mem14]
     have c : ∀ o, o + 4 ≤ 32 → (⟨aA s, 32⟩ : Region).Contains (aA s + BitVec.ofNat 64 o) (32 / 8) :=
-      fun o ho => Offset.contains_base _ ho (by omega)
+      fun o ho => Offset.contains_base _ ho (by omega_arith)
     exact (((((((((Frame.refl _ _).writeW List.mem_cons_self _ (c 12 (by decide))).writeW List.mem_cons_self _
       (c 16 (by decide))).writeW List.mem_cons_self _ (c 4 (by decide))).writeW List.mem_cons_self _
       (c 20 (by decide))).writeW List.mem_cons_self _ (c 24 (by decide))).writeW List.mem_cons_self _
@@ -150,7 +150,7 @@ theorem pre_ok {bits : Nat} (enc : PreEnc bits) (h1 : 144 ≤ s.sp.toNat) (h2 : 
       (c 28 (by decide)))
   have eA : stackArgAddr s 0 = aA s + BitVec.ofNat 64 32 := by
     rw [← argA, g14 _ (by decide), h0.gpr, hsp, BitVec.add_zero]
-    exact addr_add (by rw [sub_toNat' (by omega)]; omega)
+    exact addr_add (by rw [sub_toNat' (by omega_arith)]; omega_arith)
   refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, by rw [ht.mem, h15.mem]; exact fr, fun p hp => ?_, ht.gpr, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [ht.other _ hr.1, h15.other _ hr.2.1, g14 _ hr.2.2.1, h0.other _ hr.2.2.2]
@@ -162,11 +162,11 @@ theorem pre_ok {bits : Nat} (enc : PreEnc bits) (h1 : 144 ≤ s.sp.toNat) (h2 : 
   · rw [ht.mem, h15.mem, mem14]
     simp only [allocVals, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp (disch := first | decide | omega) only [readW_writeW_off, Mem.readW_writeW_self32]
+      simp (disch := first | decide | omega_arith) only [readW_writeW_off, Mem.readW_writeW_self32]
   · rw [ht.other _ (by decide), h15.gpr, mem14]
     simp only [stackArg]
     rw [eA]
-    simp (disch := first | decide | omega) only [readW_writeW_off]
+    simp (disch := first | decide | omega_arith) only [readW_writeW_off]
 
 end
 

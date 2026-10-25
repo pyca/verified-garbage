@@ -49,22 +49,22 @@ theorem fill_ok {o : Nat} {src : Nat → List Instr} {s0 : State} {f : Nat → N
     WP isa (.block ((List.range 14).flatMap fun k =>
       src k ++ ([.store .w .r7 .r6 (o + 4 * k)] : List Instr))) s0 (FillInv b o s0 f 14) := by
   refine wp_range_flatMap (M := isa) (FillInv b o s0 f) (fun k s hk h => ?_)
-    14 (Nat.le_refl _) s0 ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega⟩
+    14 (Nat.le_refl _) s0 ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega_arith⟩
   refine WP.append (hsrc k hk s h) fun t ⟨hv, hr, hm⟩ => ?_
   refine sw0_ok ((hc.of_rest h.rest (by decide)).of_rest hr (by decide))
-    (by omega) fun u hu => WP.block_nil ?_
+    (by omega_arith) fun u hu => WP.block_nil ?_
   have em : u.mem = s.mem.writeW (b + BitVec.ofNat 64 (o + 4 * k)) ((t.gpr .r7).setWidth 32) := by
     rw [hu.mem, hm]
   refine ⟨h.rest.trans (hr.trans (hu.rest _)), ?_, fun j hj => ?_⟩
   · rw [em]
     refine (h.frame.sub fun r hmem => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
       (List.mem_singleton_self _) _ (Offset.contains _ (Nat.le_add_right _ _)
-        (by omega) (by omega))
+        (by omega_arith) (by omega_arith))
     rw [List.mem_singleton.mp hmem]
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_arith)
   · rw [limb, em]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]
+    · rw [wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
       exact h.outs j hj
     · rw [wd_write_self, toNat_lo32, hv]
 
@@ -86,14 +86,14 @@ theorem constField_ok {s : State} (hc : Ctx b s) {o : Nat} (ho : o + 56 ≤ 4096
 theorem fe_lt (x : Fe) : x.val < 2 ^ 224 * 2 ^ 224 := by
   have := x.isLt
   have := P_eq
-  omega
+  omega_arith
 
 /-- A slot apart from the one `constField` writes keeps its element. -/
 theorem slot_keep {m m' : Mem} {o q : Nat} (hf : Frame [⟨b + BitVec.ofNat 64 o, 56⟩] m m')
     (hoq : o + 56 ≤ q ∨ q + 56 ≤ o) (ho : o + 56 ≤ 4096) (hq : q + 56 ≤ 4096) : V m' b q = V m b q := by
   unfold V
   exact val32_congr (limb_frame hf fun r hr k hk => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega) (by omega) (by omega))
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
 
 /-- The slots `initSlots` writes. -/
 def initQ : List Nat := [RX, RY, RZ, QX, QY, QZ, DK]
@@ -130,7 +130,7 @@ theorem initSlots_ok {s : State} (hc : Ctx b s) :
       ∀ q ∈ initQ, V t.mem b q = initVal q := by
   rw [initSlots_eq]
   refine WP.mono (wp_range_flatMap (M := isa) (InitInv b s) (fun i t hi h => ?_) 7 (Nat.le_refl _) s
-    ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega⟩) fun t h => ⟨h.rest, h.frame, fun q hq => ?_⟩
+    ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega_arith⟩) fun t h => ⟨h.rest, h.frame, fun q hq => ?_⟩
   · have hi' := initQ_fits i hi
     have hv : initVal (initQ.getD i 0) < 2 ^ 224 * 2 ^ 224 := by
       simp only [initVal]; repeat' split
@@ -140,7 +140,7 @@ theorem initSlots_ok {s : State} (hc : Ctx b s) :
     · rw [List.mem_singleton.mp hr]
       exact List.mem_map.mpr ⟨_, initQ_mem i hi, rfl⟩
     · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-      · rw [slot_keep fu (initQ_sep i hi j (by omega) (by omega)) hi' (initQ_fits j (by omega))]
+      · rw [slot_keep fu (initQ_sep i hi j (by omega_arith) (by omega_arith)) hi' (initQ_fits j (by omega_arith))]
         exact h.vals j hj
       · exact vu
   · have : ∃ i < 7, initQ.getD i 0 = q := by

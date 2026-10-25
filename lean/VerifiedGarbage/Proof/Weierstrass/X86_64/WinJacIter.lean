@@ -34,7 +34,7 @@ variable {K : JacWinCfg} {size : Nat} {C : Curve}
 theorem offset_eq (J : Nat) : JacWinCfg.offset J = 16 * Window5.geom J := by
   have := Window5.geom_mul J
   unfold JacWinCfg.offset
-  omega
+  omega_arith
 
 /-- The loop's invariant at `rbx = j`: `R` is a triple of a point of the curve,
 `[winE k' J j]P` for `k < n`. -/
@@ -122,21 +122,21 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
   rw [JacWinCfg.step]
   simp only [Code.inline]
-  refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega_arith) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have R₁ := R₀.rbxKeeps hL k₁
   rw [← mul_one_pt Q] at R₁
-  refine WP.seq (WP.mono (dbls_ok hL hC hD hQ (j := j - 1) (by omega) b₁ R₁) fun s₂ ⟨R₂, b₂, _⟩ => ?_)
-  refine WP.seq (WP.mono (jentry_ok hL hF (j := j - 1) (by omega) R₂.fr R₂.tbl b₂) fun s₃ h₃ =>
+  refine WP.seq (WP.mono (dbls_ok hL hC hD hQ (j := j - 1) (by omega_arith) b₁ R₁) fun s₂ ⟨R₂, b₂, _⟩ => ?_)
+  refine WP.seq (WP.mono (jentry_ok hL hF (j := j - 1) (by omega_arith) R₂.fr R₂.tbl b₂) fun s₃ h₃ =>
     WP.seq (WP.mono h₃ fun s₄ E₄ => ?_))
   -- `R` is not written by the entry.
   have hRe : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₄.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := by
     intro x hx
     have hxo : x ∈ jwOther K := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
-    refine E₄.unch.wordsVal (fun w hw => ?_) (by have := hL.le (other_mem hxo); omega)
+    refine E₄.unch.wordsVal (fun w hw => ?_) (by have := hL.le (other_mem hxo); omega_arith)
     rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
-      exact hL.jg_apart (List.mem_append_right _ hxo) (by have := List.mem_range.mp hc; omega)
+      exact hL.jg_apart (List.mem_append_right _ hxo) (by have := List.mem_range.mp hc; omega_arith)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -179,12 +179,12 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
     have hv : x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
       rcases hx with h | h | h | h | h | h <;> simp [h]
-    refine (ProgKeep.unch k₅).wordsVal (fun w hw => ?_) (by have := hL.le (V₄ x hv).1; omega)
+    refine (ProgKeep.unch k₅).wordsVal (fun w hw => ?_) (by have := hL.le (V₄ x hv).1; omega_arith)
     rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hw
       exact cadd_apart hL x hx y hy
     · rw [List.mem_singleton.mp hw]; exact hL.lay.tmp x (V₄ x hv).1
-  refine WP.mono (jmask_ok hL hF (i := j - 1) (by omega) F₅ hb₅) fun s₆ ⟨F₆, U₆, b₆, z₆, w₆⟩ => ?_
+  refine WP.mono (jmask_ok hL hF (i := j - 1) (by omega_arith) F₅ hb₅) fun s₆ ⟨F₆, U₆, b₆, z₆, w₆⟩ => ?_
   rw [offset_eq] at w₆
   have ent := E₄.ent
   rw [offset_eq] at ent
@@ -231,9 +231,9 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   have vz := congrArg (fun p => p.2.2) v₅
   dsimp only at vx vy vz
   rw [vx] at ex; rw [vy] at ey; rw [vz] at ez
-  have hR := jstep_pt hC hM3 hO hP hP0 hn17 hn64 (k := k) (i := j - 1) (J := K.J) (by omega)
+  have hR := jstep_pt hC hM3 hO hP hP0 hn17 hn64 (k := k) (i := j - 1) (J := K.J) (by omega_arith)
     (hC.onCurve_mul hQ 32) (fun hk => by
-      rw [hQe hk, Window5.mul_mul hC hP, show j - 1 + 1 = j by omega]) R₂.rep
+      rw [hQe hk, Window5.mul_mul hC hP, show j - 1 + 1 = j by omega_arith]) R₂.rep
     (Z2 := tmv C K.M.n base s₄ K.E.z) (X2 := tmv C K.M.n base s₄ K.E.x) (Y2 := tmv C K.M.n base s₄ K.E.y)
     (fun h => by
       have J := ent h

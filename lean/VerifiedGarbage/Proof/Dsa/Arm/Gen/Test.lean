@@ -75,7 +75,7 @@ theorem targs1_vp {L : Nat} (hL : L = G.pLen) :
   have big := h.gi.scrBig
   have hLv := h.lens
   subst hL
-  refine scr_ok (d := .r0) h.r8 rfl hLv (by simp only [sK]; omega) fun s₁ v₁ R₁ M₁ => wp_movw fun t u => WP.block_nil
+  refine scr_ok (d := .r0) h.r8 rfl hLv (by simp only [sK]; omega_arith) fun s₁ v₁ R₁ M₁ => wp_movw fun t u => WP.block_nil
     ⟨⟨(h.of_rest R₁ M₁).of_rest (u.rest (ws := [.r1]) (by simp)) u.mem, x⟩, by rw [u.other _ (by decide)]; exact v₁, ?_⟩
   rw [u.gpr]; apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, wa]; rcases hLv with e | e | e <;> rw [e]
@@ -131,7 +131,7 @@ theorem targs3_vp {L u : Nat} (hu : u ≤ G.witLen) :
     (f.rest _)
   have v3 : s₂.gpr .r3 = BitVec.ofNat 32 (G.witLen - u) := by
     rw [u₂.gpr, dpVal, u₁.other _ (by decide), u₁.other _ (by decide), r3, r4,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith) (by omega_arith)]
   have t3 : t.gpr .r3 = BitVec.ofNat 32 (G.witLen - u) := by rw [f.gpr, u₃.other _ (by decide), v3]
   refine ⟨⟨h.of_rest R (by rw [f.mem, u₃.mem, u₂.mem, u₁.mem]), x⟩, ⟨?_, ?_⟩, ?_, t3, ?_, ?_⟩
   · rw [R.gpr _ (by decide), r0]
@@ -139,8 +139,8 @@ theorem targs3_vp {L u : Nat} (hu : u ≤ G.witLen) :
   · rw [f.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, dpVal, r2, r4]
   · rw [f.gpr, u₃.gpr, u₂.sp, u₁.sp, h.gi.sp]
   · have e0 : ∀ x : BitVec 32, x - 0 = x := fun x => by simp
-    rw [z, u₃.other _ (by decide), v3, e0, ofNat_beq_zero (by omega)]
-    simp only [decide_eq_decide]; omega
+    rw [z, u₃.other _ (by decide), v3, e0, ofNat_beq_zero (by omega_arith)]
+    simp only [decide_eq_decide]; omega_arith
 
 theorem targs4_vp {L u : Nat} :
     VP (fun σ s => St G c X σ s ∧ TR1 G L s ∧ s.gpr .r2 = G.wit + BitVec.ofNat 32 u ∧
@@ -193,7 +193,7 @@ theorem SS.of_call {σ s t : State} {L : Nat} (h : SS G σ c s) (hL : L = G.pLen
   have gi := h.gi
   have big := gi.scrBig
   have fit := gi.scrFit
-  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega
+  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
   subst hL
   have sA4 : sA + wa G.pLen = sK G.pLen := rfl
   have R : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r10, .r11, .r12, .lr] s t :=
@@ -201,16 +201,16 @@ theorem SS.of_call {σ s t : State} {L : Nat} (h : SS G σ c s) (hL : L = G.pLen
   have fs : Frame [G.rScr, G.rU, G.rBelow] s.mem t.mem := f.sub fun x hx => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
-    · exact ⟨G.rScr, List.mem_cons_self, sw G (by omega)⟩
+    · exact ⟨G.rScr, List.mem_cons_self, sw G (by omega_arith)⟩
     · exact ⟨G.rU, by simp, fun _ h => h⟩
     · exact ⟨G.rBelow, by simp, fun _ h => h⟩
-  have uF : Region.Sub G.rU G.rFrame := Offset.sub_base _ (by simp only [fUsedOut, F]; omega)
+  have uF : Region.Sub G.rU G.rFrame := Offset.sub_base _ (by simp only [fUsedOut, F]; omega_arith)
   have kd : ∀ r' ∈ [G.rs sA (wa G.pLen), G.rU, G.rBelow], G.rK.Disjoint r' := fun r' hr' => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     show Region.Disjoint ⟨State.addr G.KB, _⟩ _
     rw [gi.kaddr]
     rcases hr' with rfl | rfl | rfl
-    · exact gi.sdisj (.inr (by omega)) big (by omega)
+    · exact gi.sdisj (.inr (by omega_arith)) big (by omega_arith)
     · exact (gi.scr_frame big).sub_right uF
     · exact gi.scr_below big
   refine ⟨gi.of_used R fs h88 h92, (g _ (by simp)).trans h.r7, (g _ (by simp)).trans h.r8, (g _ (by simp)).trans h.r9,
@@ -220,9 +220,9 @@ theorem SS.of_call {σ s t : State} {L : Nat} (h : SS G σ c s) (hL : L = G.pLen
     rw [VG.Proof.Dsa.Generation.frame_bytesAt f (fun r' hr' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl
-      · exact gi.sdisj ha (by omega) (by omega)
-      · exact (gi.scr_frame (by omega)).sub_right uF
-      · exact gi.scr_below (by omega)) (by omega)]
+      · exact gi.sdisj ha (by omega_arith) (by omega_arith)
+      · exact (gi.scr_frame (by omega_arith)).sub_right uF
+      · exact gi.scr_below (by omega_arith)) (by omega_arith)]
     exact h.sb x hm
   · rw [num_frame h.lens f kd (h.liveOk j hj)]; exact h.arrs j hj
   · rw [slot_frame h.lens f kd (h.kslOk d hd)]; exact h.ksl d hd
@@ -273,7 +273,7 @@ theorem testRes_vp {c' : Cfg} {res : Option (Bool × Spec.RsaKeyGen.Rand)} :
         isa.eval .eq t = some (decide (res = none))) := by
   have e0 : ∀ t : State, (t.gpr .r0).toNat = Spec.Dsa.ProbablePrime.status res →
       t.gpr .r0 = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res) := fun t h =>
-    BitVec.eq_of_toNat_eq (by rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := status_lt res; omega)])
+    BitVec.eq_of_toNat_eq (by rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := status_lt res; omega_arith)])
   refine VP.seq (G := fun σ t => St G (c'.setV fRes (BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res))) X σ t ∧
       t.gpr .r0 = BitVec.ofNat 32 (Spec.Dsa.ProbablePrime.status res))
     (st_vp (c := fun _ => c') (fun σ t h => h.1.1) (by decide) varOk_fRes fun σ s t ⟨⟨_, x⟩, r0⟩ h R => ?_) ?_
@@ -284,7 +284,7 @@ theorem testRes_vp {c' : Cfg} {res : Option (Bool × Spec.RsaKeyGen.Rand)} :
     fun σ s ⟨⟨h, x⟩, r0⟩ => wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil
       ⟨⟨h.of_rest (f.rest []) f.mem, x⟩, ?_⟩
   have e00 : ∀ x : BitVec 32, x - 0 = x := fun x => by simp
-  rw [eval_eq, z, r0, e00, ofNat_beq_zero (by have := status_lt res; omega)]
+  rw [eval_eq, z, r0, e00, ofNat_beq_zero (by have := status_lt res; omega_arith)]
   congr 1
   unfold Spec.Dsa.ProbablePrime.status
   split <;> simp

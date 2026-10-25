@@ -38,14 +38,7 @@ theorem finish_ok (s : State) (usedPtr : BitVec 32) (status count : Nat)
       (t.gpr .r0 = BitVec.ofNat 32 status ∧
         t.mem = (s.mem.writeW (State.addr usedPtr) (BitVec.ofNat 32 count)).writeW
           (off (State.addr usedPtr) 4) (0 : BitVec 32)) ∧ Rest [.r0, .r1, .r2] s t := by
-    refine withRest [.r0, .r1, .r2] ?_ (by
-      intro r hr op hop
-      have checked : (instrs (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.finish status) : Prog isa)).all
-          (fun op => !(clobbers op r)) = true := by
-        cases r <;> try rfl
-        all_goals exact False.elim (hr (by decide))
-      have h := List.all_eq_true.mp checked op hop
-      cases hc : clobbers op r <;> simp_all) (by rfl)
+    refine withRest_all [.r0, .r1, .r2] ?_ (by rfl) (by rfl)
     unfold VG.Impl.Ffdh.Arm.ParameterCandidate.finish
     ffrun [BitVec.add_zero, read, pointer, write0, write4, addr4, value, enc]
   refine WP.mono run ?_

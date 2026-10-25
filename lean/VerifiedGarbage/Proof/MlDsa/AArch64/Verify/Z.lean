@@ -77,7 +77,7 @@ theorem VC.pkSlice {p : Params} {σ s : State} (h : VC p σ s) {o len : Nat} (hl
   rw [← h.pk, vpa0, Proof.MlKem.bytesAt_slice _ _ hl]
 
 theorem sc_ge {p : Params} (hF : VFacts p) : 4096 + 1024 * (p.k * p.ℓ + p.k + p.ℓ + 6) ≤ scrLen p := by
-  rw [scr_eq]; have := hF.k; have := hF.l; omega
+  rw [scr_eq]; have := hF.k; have := hF.l; omega_arith
 
 /-- The block `and24`: only `x24`, and memory kept. -/
 theorem and24_post {S : Nat} (s : State) :
@@ -105,7 +105,7 @@ theorem pro_vpiece {p : Params} (hF : VFacts p) {S : Nat} :
     have hsv : SV + 48 ≤ Spec.MlDsa.scratchWords p * 8 := Nat.le_trans (by decide) (Nat.le_trans (Nat.le_add_right 4096 _) hsc)
     have hin : ∀ k < 6, InRegions s.wr (s.gpr .x3 + BitVec.ofNat 64 (SV + 8 * k)) 8 := fun k hk =>
       ⟨⟨s.gpr .x3, Spec.MlDsa.scratchWords p * 8⟩, by rw [hwr]; simp,
-        Offset.contains_base _ (by simp only [SV]; omega) (by simp only [SV]; omega)⟩
+        Offset.contains_base _ (by simp only [SV]; omega_arith) (by simp only [SV]; omega_arith)⟩
     refine WP.mono (pro_ok hin) fun s' ⟨ht, h24, hf⟩ => ⟨⟨ht, ?_, ?_, ?_⟩, h24⟩
     · rw [vpa0, ht.x25]
       exact Proof.MlKem.bytesAt_frame hf (fun r hr => by
@@ -154,7 +154,7 @@ theorem hint_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : 
     have h₂ := h₁.step hF hp hP₂ (by
       have := hF.k; have := hF.l; have := scr_eq p; have := hF.small
       unfold vcChk; vlayd)
-    rw [h.1.slice (by rw [hF.sig, oHint]; omega), show p.ω + p.k - p.ω = p.k by omega, ← hint_eq] at hq
+    rw [h.1.slice (by rw [hF.sig, oHint]; omega_arith), show p.ω + p.k - p.ω = p.k by omega_arith, ← hint_eq] at hq
     refine ⟨h₂, ?_, fun hh e => ?_⟩
     · rw [x₂, x₁, h.2]
       revert hq; cases hintOf p σ with
@@ -166,7 +166,7 @@ theorem hint_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : 
   · refine vrel_of (Q := fun x y => VTwo p S x y ∧ bytesAt x.mem (pa x (.x27, oHint p)) (p.ω + p.k) =
       bytesAt y.mem (pa y (.x27, oHint p)) (p.ω + p.k)) ?_ fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
         ⟨vc_two hF p₁ p₂ pub h₁.1 h₂.1, by
-          have hl : oHint p + (p.ω + p.k) ≤ p.sigLen := by rw [hF.sig, oHint]; omega
+          have hl : oHint p + (p.ω + p.k) ≤ p.sigLen := by rw [hF.sig, oHint]; omega_arith
           rw [h₁.1.slice hl, h₂.1.slice hl, (vPub_eq pub).2.2.2.1]⟩
     unfold hint
     exact RelCT.seq (huAt_tr hP.hintUnpack (vOk p) hc hF.hu fun x y h => ⟨h.1.lx, h.1.ly, h.2, h.1.same⟩)
@@ -233,7 +233,7 @@ theorem bu_vpiece : VPiece p S (Z0 p j) (Z1 p j)
   refine WP.mono (buAt_ok hP.s64 hP.bitUnpack L hc hF.bp) fun s' ⟨hP', x', hq⟩ => ?_
   have := zl_le hj
   refine ⟨⟨h.1.keep hF hp hP' (by vzchk hF), by rw [x', h.2]⟩, ?_⟩
-  rw [h.1.vc.slice (by rw [hF.sig]; omega), ← zOf_eq] at hq
+  rw [h.1.vc.slice (by rw [hF.sig]; omega_arith), ← zOf_eq] at hq
   rw [hP'.pa (show Reg.x28 ∈ keptRegs by decide)]
   exact hq
 
@@ -260,13 +260,13 @@ theorem and_vpiece : VPiece p S (Z2 p j) (Z0 p (j + 1)) (.block and24) := by
   obtain ⟨⟨⟨hv, hn⟩, _⟩, hr⟩ := h
   have hv' := hv.keep hF hp hP' (by vzchk hF)
   refine ⟨⟨hv'.vc, hv'.hint, fun i hi => ?_⟩, ?_⟩
-  · rcases (by omega : i < j ∨ i = j) with hi | rfl
+  · rcases (by omega_arith : i < j ∨ i = j) with hi | rfl
     · exact hv'.z i hi
     · exact hz
   · rw [x', hn, and_flag _ hr]
     exact flag_congr ⟨fun ⟨h1, h2⟩ i hi => by
-      rcases (by omega : i < j ∨ i = j) with hi | rfl
-      exacts [h1 i hi, h2], fun h1 => ⟨fun i hi => h1 i (by omega), h1 j (by omega)⟩⟩
+      rcases (by omega_arith : i < j ∨ i = j) with hi | rfl
+      exacts [h1 i hi, h2], fun h1 => ⟨fun i hi => h1 i (by omega_arith), h1 j (by omega_arith)⟩⟩
 
 theorem zOne_vpiece : VPiece p S (Z0 p j) (Z0 p (j + 1)) (zOne P p j) :=
   (bu_vpiece hP hF hj).seq ((norm_vpiece hP hF hj).seq (and_vpiece hF hj))

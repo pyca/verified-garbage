@@ -73,8 +73,8 @@ theorem valid_lo {N k : Nat} (hv : Spec.Rsa.modulusValid N k = true) : N % 2 = 1
 theorem factors_of {N P Q k pl ql : Nat} (hN : N % 2 = 1) (hlo : 256 ^ (k - 1) ≤ N) (hP : P < 256 ^ pl)
     (hQ : Q < 256 ^ ql) (hpl : pl < k) (hql : ql < k) (h : P * Q = N) :
     P % 2 = 1 ∧ 1 < P ∧ Q % 2 = 1 ∧ 1 < Q := by
-  have hp1 : 256 ^ pl ≤ 256 ^ (k - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-  have hq1 : 256 ^ ql ≤ 256 ^ (k - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+  have hp1 : 256 ^ pl ≤ 256 ^ (k - 1) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  have hq1 : 256 ^ ql ≤ 256 ^ (k - 1) := Nat.pow_le_pow_right (by decide) (by omega_arith)
   have hpo := (pq_iff hN).mpr h
   have hqo := (pq_iff (P := Q) (Q := P) hN).mpr (by rw [Nat.mul_comm]; exact h)
   refine ⟨hpo.1, ?_, hqo.1, ?_⟩
@@ -82,18 +82,18 @@ theorem factors_of {N P Q k pl ql : Nat} (hN : N % 2 = 1) (hlo : 256 ^ (k - 1) �
     · exact h1
     · exfalso
       have : P * Q ≤ 1 * Q := Nat.mul_le_mul_right _ h1
-      omega
+      omega_arith
   · rcases Nat.lt_or_ge 1 Q with h1 | h1
     · exact h1
     · exfalso
       have : P * Q ≤ P * 1 := Nat.mul_le_mul_left _ h1
-      omega
+      omega_arith
 
 theorem pow256_le_wk (len : Nat) : 256 ^ len ≤ 2 ^ (64 * ((len + 7) / 8)) := by
-  rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega)
+  rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
 
 theorem pow256_le_w {len k : Nat} (h : len < k) : 256 ^ len ≤ 2 ^ (64 * wk k) := by
-  rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega)
+  rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega_arith)
 
 /-- `head`: the working space, the mask all ones, and `CvS` from the
 memory on entry to `main`. -/
@@ -109,11 +109,11 @@ theorem cvHeadS_ok {I : CvIn} {s : State} (h : CvPre I s) :
   have k1 := L.k1
   have hi₁ : InScr I.B I.Z s.mem s₁.mem := InScr.of_frm f₁ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega)
+    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith)
   exact ⟨hw₁, h.args.congr fun i hi => f₁.word_eq (fun r hr => by
       unfold argSlot at hi
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by unfold argSlot at hi; omega),
+      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by unfold argSlot at hi; omega_arith),
     h.n.congrK hi₁ k₁, h.p.congrK hi₁ k₁, h.q.congrK hi₁ k₁, h.d.congrK hi₁ k₁, hi₁, k₁.2.2.trans h.wr,
     (k₁.gpr (by decide)).trans h.rsp⟩
 

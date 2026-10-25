@@ -110,11 +110,11 @@ theorem vhead_ok {s : State} {base : Addr} (hb : s.gpr .x3 = base) (hw : (⟨bas
     (((((ka.mono (by simp)).trans (kb.mono (by simp))).trans (kc.mono (by simp))).trans
       (kc'.mono (by simp))).trans (kd.mono (by simp))).trans (kt.mono (by simp))
   have ob : Outside base 0 8192 s.mem b.mem := by
-    rw [mb, ← ma]; exact (writeW_outside _ _ _ (by decide)).mono (by omega) (by omega)
+    rw [mb, ← ma]; exact (writeW_outside _ _ _ (by decide)).mono (by omega_arith) (by omega_arith)
   have oc : Outside base 0 8192 b.mem c.mem := by
-    rw [mc]; exact (writeW_outside _ _ _ (by decide)).mono (by omega) (by omega)
+    rw [mc]; exact (writeW_outside _ _ _ (by decide)).mono (by omega_arith) (by omega_arith)
   have oc' : Outside base 0 8192 c.mem c'.mem := by
-    rw [mc']; exact (writeW_outside _ _ _ (by decide)).mono (by simp only [LRS]; omega) (by simp only [LRS]; omega)
+    rw [mc']; exact (writeW_outside _ _ _ (by decide)).mono (by simp only [LRS]; omega_arith) (by simp only [LRS]; omega_arith)
   refine ⟨hsd.of_keeps kt (by decide), by rw [kt.1 _ (by decide)]; exact d20, t4, ⟨?_, ?_⟩, ?_,
     by rw [mt, md]; exact (ob.trans oc).trans oc', k⟩
   · rw [mt, md, mc', word_write_aligned _ _ (by decide) (by decide) (by decide) (by decide),
@@ -136,7 +136,7 @@ theorem constE_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s
       BoundedEnv t.mem base ∧ E t.mem base o = v ∧ (∀ i : Fin 22, i ≠ o → E t.mem base i = E s.mem base i) ∧
       Outside base (slot o.val) 64 s.mem t.mem ∧ Keeps [.x4] s t := by
   have ho := o.isLt
-  refine WP.mono (constSlot_ok hs (o := slot o.val) (by simp only [slot]; omega) (by simp only [slot]; omega) v)
+  refine WP.mono (constSlot_ok hs (o := slot o.val) (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) v)
     fun t ⟨tv, tm, tk⟩ => ⟨fun i j hj => ?_, F_of_words tv, fun i hi => ?_, tm, tk⟩
   · by_cases h : i = o
     · subst h
@@ -145,10 +145,10 @@ theorem constE_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s
       exact Nat.lt_of_lt_of_le (limb_lt v j) (by decide)
     · have hsep := slot_sep h
       rw [show limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j from
-        tm.limbs (by omega) (by have := i.isLt; simp only [slot]; omega) (by omega)]
+        tm.limbs (by omega_arith) (by have := i.isLt; simp only [slot]; omega_arith) (by omega_arith)]
       exact hb i j hj
   · have hsep := slot_sep hi
-    exact E_outside tm i (by omega)
+    exact E_outside tm i (by omega_arith)
 
 /-- The constants, from zeroed slots: every slot bounded, slot 0 zero, `B`
 and `d`. -/
@@ -179,8 +179,8 @@ theorem vconsts_ok {s : State} {base : Addr} (hs : Scr s base)
       o4 10 (by decide), v3]
     rfl
   · simp only [slot] at m1 m2 m3 m4
-    exact (((m1.mono (by omega) (by omega)).trans (m2.mono (by omega) (by omega))).trans
-      (m3.mono (by omega) (by omega))).trans (m4.mono (by omega) (by omega))
+    exact (((m1.mono (by omega_arith) (by omega_arith)).trans (m2.mono (by omega_arith) (by omega_arith))).trans
+      (m3.mono (by omega_arith) (by omega_arith))).trans (m4.mono (by omega_arith) (by omega_arith))
 
 /-! ## Zeroing the slots -/
 
@@ -189,9 +189,9 @@ theorem zstore_ok {s : State} {base : Addr} (hw : (⟨base, 8192⟩ : Region) �
     (h4 : s.gpr .x4 = off base d) (hi : i < 8) (hd : d + 64 ≤ 8192) :
     WP isa (.block [.str .x .x20 .x4 (8 * i)]) s fun t =>
       t.mem = s.mem.writeW (off base (d + 8 * i)) (s.gpr .x20) ∧ Keeps [] s t := by
-  have enc : (8 * i) % 8 = 0 ∧ 8 * i < 4096 * 8 := ⟨by omega, by omega⟩
+  have enc : (8 * i) % 8 = 0 ∧ 8 * i < 4096 * 8 := ⟨by omega_arith, by omega_arith⟩
   have hwr : InRegions s.wr (off base (d + 8 * i)) 8 :=
-    ⟨_, hw, VG.Proof.X448.AArch64.contains_sc (by omega)⟩
+    ⟨_, hw, VG.Proof.X448.AArch64.contains_sc (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, Nat.reduceMul,
     enc, and_self, h4, Offset.add_add, State.store, State.read, BitVec.setWidth_eq,
@@ -228,12 +228,12 @@ theorem zeroPass_ok {s : State} {base : Addr} (h3 : s.gpr .x3 = base) (hw : (⟨
       fun v ⟨vm, vk⟩ => ?_
     rw [uk.1 _ (by decide), h20] at vm
     have out : Outside base (d + 8 * k) 8 u.mem v.mem := by
-      rw [vm]; exact VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega)
-    refine ⟨fun i hi => ?_, um.trans (out.mono (by omega) (by omega)), uk.trans vk⟩
-    rw [vm, VG.Proof.X448.AArch64.word_write u.mem base (by omega) (by omega)]
+      rw [vm]; exact VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega_arith)
+    refine ⟨fun i hi => ?_, um.trans (out.mono (by omega_arith) (by omega_arith)), uk.trans vk⟩
+    rw [vm, VG.Proof.X448.AArch64.word_write u.mem base (by omega_arith) (by omega_arith)]
     by_cases h : i = k
     · rw [ite_eq_left h]
-    · rw [ite_eq_right h]; exact uf i (by omega)
+    · rw [ite_eq_right h]; exact uf i (by omega_arith)
   refine WP.mono (wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hi => absurd hi (Nat.not_lt_zero _), Outside.refl _ _ _ _, Keeps.refl _ _⟩) fun u ⟨uf, um, uk⟩ => ?_
   refine WP.mono (zeroTail_ok (by rw [uk.1 _ (by decide)]; exact h3) (by rw [uk.1 _ (by decide)]; exact h4))
@@ -244,7 +244,7 @@ theorem zeroExit (n : Nat) (h1 : 1 ≤ n) (h2 : n ≤ 44) :
     (BitVec.ofNat 64 (64 + 64 * (44 - n) + 64) - BitVec.ofNat 64 2880 != 0) = decide (n ≠ 1) := by
   have : ∀ n < 45, 1 ≤ n →
       (BitVec.ofNat 64 (64 + 64 * (44 - n) + 64) - BitVec.ofNat 64 2880 != 0) = decide (n ≠ 1) := by decide
-  exact this n (by omega) h1
+  exact this n (by omega_arith) h1
 
 /-- The loop: the 352 words of the slots zeroed, 44 passes of `zeroPass`. -/
 theorem zeroLoop_ok {s : State} {base : Addr} (h3 : s.gpr .x3 = base) (hw : (⟨base, 8192⟩ : Region) ∈ s.wr)
@@ -255,23 +255,23 @@ theorem zeroLoop_ok {s : State} {base : Addr} (h3 : s.gpr .x3 = base) (hw : (⟨
   refine WP.loop (M := isa) (fun n (t : State) => 1 ≤ n ∧ n ≤ 44 ∧
       t.gpr .x4 = off base (64 + 64 * (44 - n)) ∧ (∀ i < 8 * (44 - n), word t.mem base (64 + 8 * i) = 0) ∧
       Outside base 64 2816 s.mem t.mem ∧ Keeps [.x4, .x12] s t) ?_ 44 s
-    ⟨by decide, by decide, h4, fun _ hi => absurd hi (by omega), Outside.refl _ _ _ _, Keeps.refl _ _⟩
+    ⟨by decide, by decide, h4, fun _ hi => absurd hi (by omega_arith), Outside.refl _ _ _ _, Keeps.refl _ _⟩
   intro n t ⟨hn1, hn2, t4, tz, tm, tk⟩
   refine WP.mono (zeroPass_ok (by rw [tk.1 _ (by decide)]; exact h3) (by rw [tk.2.2]; exact hw)
-    (by rw [tk.1 _ (by decide)]; exact h20) (by omega) t4) fun u ⟨u4, u12, uz, um, uk⟩ => ?_
+    (by rw [tk.1 _ (by decide)]; exact h20) (by omega_arith) t4) fun u ⟨u4, u12, uz, um, uk⟩ => ?_
   have uz' : ∀ i < 8 * (44 - n) + 8, word u.mem base (64 + 8 * i) = 0 := fun i hi => by
     by_cases h : i < 8 * (44 - n)
-    · rw [um.word (Or.inl (by omega)) (by omega)]; exact tz i h
-    · have := uz (i - 8 * (44 - n)) (by omega)
-      rwa [show 64 + 64 * (44 - n) + 8 * (i - 8 * (44 - n)) = 64 + 8 * i by omega] at this
-  have uM : Outside base 64 2816 s.mem u.mem := tm.trans (um.mono (by omega) (by omega))
+    · rw [um.word (Or.inl (by omega_arith)) (by omega_arith)]; exact tz i h
+    · have := uz (i - 8 * (44 - n)) (by omega_arith)
+      rwa [show 64 + 64 * (44 - n) + 8 * (i - 8 * (44 - n)) = 64 + 8 * i by omega_arith] at this
+  have uM : Outside base 64 2816 s.mem u.mem := tm.trans (um.mono (by omega_arith) (by omega_arith))
   have uK : Keeps [.x4, .x12] s u := tk.trans uk
   simp only [eval, State.read, BitVec.setWidth_eq, u12, zeroExit n hn1 hn2]
   by_cases h : n = 1
   · subst h
-    refine .inl ⟨rfl, fun i hi => uz' i (by omega), uM, uK⟩
-  · refine .inr ⟨by simp only [ne_eq, h, not_false_eq_true, decide_true], n - 1, by omega, by omega, by omega,
-      by rw [u4, show 64 + 64 * (44 - n) + 64 = 64 + 64 * (44 - (n - 1)) by omega], fun i hi => uz' i (by omega), uM, uK⟩
+    refine .inl ⟨rfl, fun i hi => uz' i (by omega_arith), uM, uK⟩
+  · refine .inr ⟨by simp only [ne_eq, h, not_false_eq_true, decide_true], n - 1, by omega_arith, by omega_arith, by omega_arith,
+      by rw [u4, show 64 + 64 * (44 - n) + 64 = 64 + 64 * (44 - (n - 1)) by omega_arith], fun i hi => uz' i (by omega_arith), uM, uK⟩
 
 /-- The entry: the registers, the saves, the zeroed slots and the constants. -/
 theorem ventry_ok {s : State} {base : Addr} (hb : s.gpr .x3 = base) (hw : (⟨base, 8192⟩ : Region) ∈ s.wr)
@@ -291,15 +291,15 @@ theorem ventry_ok {s : State} {base : Addr} (hb : s.gpr .x3 = base) (hw : (⟨ba
     by rw [kc.2.2, kb.2.2]; exact ha.wr, hn⟩
   have zs : ∀ i : Fin 22, ∀ w < 8, word c.mem base (slot i.val + 8 * w) = 0 := fun i w hw => by
     have := i.isLt
-    have hz := zb (16 * i.val + w) (by omega)
-    rwa [mc, show slot i.val + 8 * w = slot 0 + 8 * (16 * i.val + w) by simp only [slot]; omega]
+    have hz := zb (16 * i.val + w) (by omega_arith)
+    rwa [mc, show slot i.val + 8 * w = slot 0 + 8 * (16 * i.val + w) by simp only [slot]; omega_arith]
   refine WP.mono (vconsts_ok hsc zs) fun t ⟨bt, e0, pB, dt, ot, kt⟩ => ?_
   have obc : Outside base (slot 0) 2816 a.mem c.mem := by rw [mc]; exact ob
   refine ⟨hsc.of_keeps kt (by decide), bt, (sa.outside obc (by decide)).outside ot (by decide),
-    (la.outside obc (by simp only [LRS, slot]; omega)).outside ot (by simp only [LRS]; omega),
+    (la.outside obc (by simp only [LRS, slot]; omega_arith)).outside ot (by simp only [LRS]; omega_arith),
     by rw [kt.1 _ (by decide), kc.1 _ (by decide), kb.1 _ (by decide)]; exact a20,
     ((ka.trans (kb.mono (by simp))).trans (kc.mono (by simp))).trans (kt.mono (by simp)), ?_, e0, pB, dt⟩
-  exact ((oa.mono (by omega) (by omega)).trans (obc.mono (by simp only [slot]; omega)
-    (by simp only [slot]; omega))).trans (ot.mono (by omega) (by omega))
+  exact ((oa.mono (by omega_arith) (by omega_arith)).trans (obc.mono (by simp only [slot]; omega_arith)
+    (by simp only [slot]; omega_arith))).trans (ot.mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Ed448.AArch64

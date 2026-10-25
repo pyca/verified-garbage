@@ -26,15 +26,7 @@ theorem argumentHead_ok (s : State) {p : SearchParams} {used : Nat}
       (t.gpr .r0 = p.c.out ∧ t.gpr .r1 = BitVec.ofNat 32 p.c.length ∧
         t.gpr .r2 = p.control + 112#32 ∧ t.gpr .r3 = BitVec.ofNat 32 p.c.bits ∧
         t.gpr .r12 = s.sp ∧ t.mem = s.mem) ∧ Rest [.r0, .r1, .r2, .r3, .r12] s t := by
-    refine withRest [.r0, .r1, .r2, .r3, .r12] ?_ (by
-      intro r hr i hi
-      have checked : (instrs (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r0 5, VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r1 1,
-        .dp .add .r2 .r4 (.imm 112), VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r3 7, .addSp .r12 0] : Prog isa)).all
-          (fun i => !(clobbers i r)) = true := by
-        cases r <;> try rfl
-        all_goals exact False.elim (hr (by decide))
-      have f := List.all_eq_true.mp checked i hi
-      cases hc : clobbers i r <;> simp_all) (by rfl)
+    refine withRest_all [.r0, .r1, .r2, .r3, .r12] ?_ (by rfl) (by rfl)
     have out := headers 5 (by simp [searchSlots])
     have width := headers 1 (by simp [searchSlots])
     have bits := headers 7 (by simp [searchSlots])

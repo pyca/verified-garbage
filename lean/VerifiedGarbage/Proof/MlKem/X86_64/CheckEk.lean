@@ -48,7 +48,7 @@ theorem cnt_le (B : List Byte) : ∀ i, cnt B i ≤ 2 * i
     have := cnt_le B i
     have h0 := Bool.toNat_le (decide (field0 B i < q))
     have h1 := Bool.toNat_le (decide (field1 B i < q))
-    simp only [cnt]; omega
+    simp only [cnt]; omega_arith
 
 theorem cnt_eq_iff (B : List Byte) : ∀ i, cnt B i = 2 * i ↔ ∀ g < i, field0 B g < q ∧ field1 B g < q
   | 0 => by simp [cnt]
@@ -60,16 +60,16 @@ theorem cnt_eq_iff (B : List Byte) : ∀ i, cnt B i = 2 * i ↔ ∀ g < i, field
     simp only [cnt]
     constructor
     · intro h g hg
-      have e0 : (decide (field0 B i < q)).toNat = 1 := by omega
-      have e1 : (decide (field1 B i < q)).toNat = 1 := by omega
+      have e0 : (decide (field0 B i < q)).toNat = 1 := by omega_arith
+      have e1 : (decide (field1 B i < q)).toNat = 1 := by omega_arith
       by_cases hgi : g = i
       · subst hgi
         simp only [Bool.toNat_eq_one, decide_eq_true_eq] at e0 e1
         exact ⟨e0, e1⟩
-      · exact ih.mp (by omega) g (by omega)
+      · exact ih.mp (by omega_arith) g (by omega_arith)
     · intro h
-      have hi := h i (by omega)
-      rw [ih.mpr fun g hg => h g (by omega), decide_eq_true hi.1, decide_eq_true hi.2]
+      have hi := h i (by omega_arith)
+      rw [ih.mpr fun g hg => h g (by omega_arith), decide_eq_true hi.1, decide_eq_true hi.2]
       rfl
 
 theorem sx0 : BitVec.signExtend 64 (0 : BitVec 32) = 0#64 := by decide
@@ -96,7 +96,7 @@ theorem checkEkFin_ok {n : Nat} (hn : n < 2 ^ 31) (s : State) :
         Keep [.rax, .r8] s s' := by
   refine WP.keep _ ?_ (by rfl)
   xrun [sx_ofNat hn]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega_arith)]
 
 namespace CheckEk
 
@@ -125,23 +125,23 @@ theorem step {i : Nat} (hi : i < 128 * p.k) {s : State} (hI : Inv p s₀ i s) :
     rw [hI.rdi, BitVec.add_assoc, ← BitVec.ofNat_add]
   have hin : ∀ j < 3, InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 j) 1 := fun j hj => by
     rw [hI.rd, hI.wr, hp.1, hp.2.1, hb j hj]
-    exact ⟨⟨eP s₀, p.ekLen⟩, by simp, contains_offset' (by simp only [Params.ekLen]; omega)
-      (by simp only [Params.ekLen]; omega)⟩
+    exact ⟨⟨eP s₀, p.ekLen⟩, by simp, contains_offset' (by simp only [Params.ekLen]; omega_arith)
+      (by simp only [Params.ekLen]; omega_arith)⟩
   have e : ∀ j < 3, s.mem (s.gpr .rdi + BitVec.ofNat 64 j) = (E p s₀).getD (3 * i + j) 0 := fun j hj => by
-    rw [hb j hj, hI.mem, bytesAt_getD _ _ (by simp only [Params.ekLen]; omega)]
-  refine WP.mono (checkEkBody_ok s (by simpa using hin 0 (by omega)) (hin 1 (by omega)) (hin 2 (by omega)))
+    rw [hb j hj, hI.mem, bytesAt_getD _ _ (by simp only [Params.ekLen]; omega_arith)]
+  refine WP.mono (checkEkBody_ok s (by simpa using hin 0 (by omega_arith)) (hin 1 (by omega_arith)) (hin 2 (by omega_arith)))
     fun s' ⟨⟨h8, hdi, hcx, hz, hm⟩, hk⟩ => ⟨⟨?_, ?_, hk.2.1.trans hI.rd, hk.2.2.trans hI.wr, hm.trans hI.mem⟩,
       hcx, hz⟩
   · rw [hdi, hI.rdi]; exact ptr_step _ i 3
-  · have e0 := e 0 (by omega); simp only [add_ofNat_zero, Nat.add_zero] at e0
-    rw [h8, e0, e 1 (by omega), e 2 (by omega)]
+  · have e0 := e 0 (by omega_arith); simp only [add_ofNat_zero, Nat.add_zero] at e0
+    rw [h8, e0, e 1 (by omega_arith), e 2 (by omega_arith)]
     have hw := w24_toNat ((E p s₀).getD (3 * i) 0) ((E p s₀).getD (3 * i + 1) 0) ((E p s₀).getD (3 * i + 2) 0)
     have l0 := ((E p s₀).getD (3 * i) 0).isLt
     have l1 := ((E p s₀).getD (3 * i + 1) 0).isLt
     have l2 := ((E p s₀).getD (3 * i + 2) 0).isLt
     generalize w24 _ _ _ = W at hw
-    have f0 : (W &&& 4095).toNat = field0 (E p s₀) i := by rw [and4095_toNat, hw, field0]; omega
-    have f1 : (W >>> (12 : Nat)).toNat = field1 (E p s₀) i := by rw [shr_toNat, hw, field1]; omega
+    have f0 : (W &&& 4095).toNat = field0 (E p s₀) i := by rw [and4095_toNat, hw, field0]; omega_arith
+    have f1 : (W >>> (12 : Nat)).toNat = field1 (E p s₀) i := by rw [shr_toNat, hw, field1]; omega_arith
     have hc := cnt_le (E p s₀) i
     have b0 := Bool.toNat_le (decide (field0 (E p s₀) i < q))
     have b1 := Bool.toNat_le (decide (field1 (E p s₀) i < q))
@@ -149,7 +149,7 @@ theorem step {i : Nat} (hi : i < 128 * p.k) {s : State} (hI : Inv p s₀ i s) :
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofBool, cnt]
     have : ∀ b : Bool, b.toNat % 2 ^ 64 = b.toNat := fun b => Nat.mod_eq_of_lt (by cases b <;> decide)
     rw [this, this]
-    omega
+    omega_arith
 
 theorem correct : ∃ t s', Exec isa (checkEkK p.k) s₀ t s' ∧ abiPreserved s₀ s' ∧ (checkEkC p).post s₀ s' := by
   obtain ⟨t, s', he, hr, hk'⟩ := WP.keep (c := checkEkK p.k) [.rax, .rdx, .rdi, .rcx, .r8]
@@ -159,22 +159,22 @@ theorem correct : ∃ t s', Exec isa (checkEkK p.k) s₀ t s' ∧ abiPreserved s
     refine WP.seq (WP.mono (WP.keep (s := s₀) (c := .block [.mov32 .r8 (.imm 0)]) [.r8]
       (Q := fun s => s.gpr .r8 = 0 ∧ s.mem = s₀.mem) (by xrun) (by decide)) fun s₁ ⟨⟨h8, m₁⟩, k₁⟩ => ?_)
     refine WP.seq (WP.mono (wp_counted (s₀ := s₁) (N := 128 * p.k) (v := BitVec.ofNat 32 (128 * p.k))
-      (by rw [BitVec.toNat_ofNat]; omega) (by omega) (Inv p s₀)
+      (by rw [BitVec.toNat_ofNat]; omega_arith) (by omega_arith) (Inv p s₀)
       (fun s₂ m₂ k₂ => ⟨?_, ?_, ?_, ?_, ?_⟩) fun i hi s hI => step hk hp hi hI) fun s₃ hI => ?_)
     · rw [k₂.gpr (by decide), k₁.gpr (by decide)]; simp
     · rw [k₂.gpr (by decide), h8]; rfl
     · rw [k₂.2.1, k₁.2.1]
     · rw [k₂.2.2, k₁.2.2]
     · rw [m₂, m₁]
-    refine WP.mono (checkEkFin_ok (n := 256 * p.k) (by omega) s₃) fun s₄ ⟨hax, _⟩ => ?_
+    refine WP.mono (checkEkFin_ok (n := 256 * p.k) (by omega_arith) s₃) fun s₄ ⟨hax, _⟩ => ?_
     have hc := cnt_le (E p s₀) (128 * p.k)
     have hck := ekCheck_iff p (E p s₀) (bytesAt_length _ _ _)
     rw [hax, hI.r8]
     by_cases h : cnt (E p s₀) (128 * p.k) = 2 * (128 * p.k)
-    · rw [h, (cnt_eq_iff _ _).mp h |> hck.mpr, decide_eq_false (by omega)]; decide
+    · rw [h, (cnt_eq_iff _ _).mp h |> hck.mpr, decide_eq_false (by omega_arith)]; decide
     · have : ekCheck p (E p s₀) = false := by
         rw [Bool.eq_false_iff]; intro h'; exact h ((cnt_eq_iff _ _).mpr (hck.mp h'))
-      rw [this, decide_eq_true (by omega : cnt (E p s₀) (128 * p.k) < 256 * p.k)]
+      rw [this, decide_eq_true (by omega_arith : cnt (E p s₀) (128 * p.k) < 256 * p.k)]
       decide) (by rfl)
   exact ⟨t, s', he, abiPreserved_of_exec (by rfl) he
     (gprPreserved_of hk' (by decide) (ws := [])

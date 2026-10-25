@@ -69,9 +69,9 @@ theorem absA_of {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact cov_xw0 hL
-    · exact hL.covX (e := 200) (by omega)
-  exact ⟨e0, e1, e2, e3, e4, e5, by decide, hql, hnl, by rw [hs1]; have := hL.nSP; omega,
-    by have := hL.x32_lt; omega, hfit, by rw [x32_toNat hL (by omega)]; have := hL.x32_lt; omega,
+    · exact hL.covX (e := 200) (by omega_arith)
+  exact ⟨e0, e1, e2, e3, e4, e5, by decide, hql, hnl, by rw [hs1]; have := hL.nSP; omega_arith,
+    by have := hL.x32_lt; omega_arith, hfit, by rw [x32_toNat hL (by omega_arith)]; have := hL.x32_lt; omega_arith,
     by simp only [regA, hks]; exact st_ks, by simp only [regA]; exact dS,
     by simp only [regA, hks]; exact dK,
     by simp only [regA]; exact (k_st hL).sub_left bs, by simp only [regA, hks]; exact (k_ks hL).sub_left bs,
@@ -114,8 +114,8 @@ theorem padA_of {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1
   rw [hq] at e2
   have bs := below_stk hs1
   have hks := ks_eq hL
-  exact ⟨e0, e1, e2, e3, e4, by decide, hql, by rw [hs1]; have := hL.nSP; omega,
-    by have := hL.x32_lt; omega, by rw [x32_toNat hL (by omega)]; have := hL.x32_lt; omega,
+  exact ⟨e0, e1, e2, e3, e4, by decide, hql, by rw [hs1]; have := hL.nSP; omega_arith,
+    by have := hL.x32_lt; omega_arith, by rw [x32_toNat hL (by omega_arith)]; have := hL.x32_lt; omega_arith,
     by simp only [regA, hks]; exact st_ks,
     by simp only [regA]; exact (k_st hL).sub_left bs, by simp only [regA, hks]; exact (k_ks hL).sub_left bs,
     by simp only [regA, hks, hm.2.wr, hc.wr]
@@ -123,7 +123,7 @@ theorem padA_of {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1
          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
          rcases hr with rfl | rfl
          · exact cov_xw0 hL
-         · exact hL.covX (e := 200) (by omega)⟩
+         · exact hL.covX (e := 200) (by omega_arith)⟩
 
 theorem kpad_tr {Φ : Lay → Mem → State → Prop} {pos : Arg}
     (hok : argsOk (padArgs pos) = true) (q : Lay → Nat)
@@ -149,9 +149,9 @@ theorem sqzA_of {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1
   have bs := below_stk hs1
   have hks := ks_eq hL
   have hmu := mu_eq hL
-  exact ⟨e0, e1, e2, e3, e4, e5, by decide, by decide, by decide, by rw [hs1]; have := hL.nSP; omega,
-    by have := hL.x32_lt; omega, by rw [x32_toNat hL (by omega)]; have := hL.x32_lt; omega,
-    by rw [x32_toNat hL (by omega)]; have := hL.x32_lt; omega,
+  exact ⟨e0, e1, e2, e3, e4, e5, by decide, by decide, by decide, by rw [hs1]; have := hL.nSP; omega_arith,
+    by have := hL.x32_lt; omega_arith, by rw [x32_toNat hL (by omega_arith)]; have := hL.x32_lt; omega_arith,
+    by rw [x32_toNat hL (by omega_arith)]; have := hL.x32_lt; omega_arith,
     by simp only [regA, hmu]; exact st_mu, by simp only [regA, hks]; exact st_ks,
     by simp only [regA, hks, hmu]; exact mu_ks,
     by simp only [regA]; exact (k_st hL).sub_left bs, by simp only [regA, hmu]; exact (k_mu hL).sub_left bs,
@@ -161,8 +161,8 @@ theorem sqzA_of {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1
          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
          rcases hr with rfl | rfl | rfl
          · exact cov_xw0 hL
-         · exact hL.covX (e := 840) (by omega)
-         · exact hL.covX (e := 200) (by omega)⟩
+         · exact hL.covX (e := 840) (by omega_arith)
+         · exact hL.covX (e := 200) (by omega_arith)⟩
 
 theorem ksqz_tr {Φ : Lay → Mem → State → Prop} : RelCT isa (Two I Φ) ksqz fun _ _ => True :=
   RelCT.seq (setArgs_two (by decide)) (squeeze_ct fun a1 b1 ⟨a, b, ⟨L, g₁, g₂, m₁, m₂, hL, _, c₁, c₂, _, _⟩, f₁, f₂⟩ =>
@@ -203,11 +203,11 @@ theorem muHash_tr {Φ : Lay → Mem → State → Prop} {tr : Arg}
       Region.Disjoint ⟨State.addr (L.X32 + BitVec.ofNat 32 944), 2⟩ ⟨L.KS, 640⟩ ∧
       L.STK.Disjoint ⟨State.addr (L.X32 + BitVec.ofNat 32 944), 2⟩ := fun L hL => by
     rw [hL.xo (by decide)]
-    exact ⟨by decide, by decide, by rw [x32_toNat hL (by decide)]; have := hL.x32_lt; omega, cov_x hL (by omega),
-      by have := Offset.disjoint L.X (d := 944) (n := 2) (e := 0) (k := 200) (by omega) (by omega) (by omega)
+    exact ⟨by decide, by decide, by rw [x32_toNat hL (by decide)]; have := hL.x32_lt; omega_arith, cov_x hL (by omega_arith),
+      by have := Offset.disjoint L.X (d := 944) (n := 2) (e := 0) (k := 200) (by omega_arith) (by omega_arith) (by omega_arith)
          simpa only [x0] using this,
-      Offset.disjoint L.X (d := 944) (n := 2) (e := 200) (k := 640) (by omega) (by omega) (by omega),
-      hL.stk_x (by omega)⟩
+      Offset.disjoint L.X (d := 944) (n := 2) (e := 200) (k := 640) (by omega_arith) (by omega_arith) (by omega_arith),
+      hL.stk_x (by omega_arith)⟩
   have a2 := two_wp (I := I) (Φ := Ψ fun _ => 64) (Ψ := Ψ fun _ => 66)
     (kabs_tr (src := .off oHdr) (len := .imm 2) (pos := .imm 64) (absOk rfl rfl rfl rfl rfl)
       (fun L => L.X32 + BitVec.ofNat 32 944) (fun _ => 2) (fun _ => 64)
@@ -228,13 +228,13 @@ theorem muHash_tr {Φ : Lay → Mem → State → Prop} {tr : Arg}
   have a3 := two_wp (I := I) (Φ := Ψ fun _ => 66) (Ψ := Ψ qCtx)
     (kabs_tr (src := .slot fCtx) (len := .slot fCtxLen) (pos := .imm 66) (absOk rfl rfl rfl rfl rfl)
       (fun L => L.ctx) (fun L => L.ctxLen.toNat) (fun _ => 66)
-      (fun L g m t hL hc _ => ⟨by rw [hc.slotV hL (f := fCtx) (j := 3) rfl (by omega)]; rfl,
-        by rw [hc.slotV hL (f := fCtxLen) (j := 4) rfl (by omega), ofNat_toNat32]; rfl, rfl⟩) ctxS)
+      (fun L g m t hL hc _ => ⟨by rw [hc.slotV hL (f := fCtx) (j := 3) rfl (by omega_arith)]; rfl,
+        by rw [hc.slotV hL (f := fCtxLen) (j := 4) rfl (by omega_arith), ofNat_toNat32]; rfl, rfl⟩) ctxS)
     fun L g m₀ t hL hc _ => by
       obtain ⟨a, b, c, d, e, f, k⟩ := ctxS L hL
       exact WP.mono (kabs_ok hL hc (src := .slot fCtx) (len := .slot fCtxLen) (pos := .imm 66) (q := 66)
-        (absOk rfl rfl rfl rfl rfl) (by rw [hc.slotV hL (f := fCtx) (j := 3) rfl (by omega)]; rfl)
-        (by rw [hc.slotV hL (f := fCtxLen) (j := 4) rfl (by omega), ofNat_toNat32]; rfl) rfl a b c d e f k)
+        (absOk rfl rfl rfl rfl rfl) (by rw [hc.slotV hL (f := fCtx) (j := 3) rfl (by omega_arith)]; rfl)
+        (by rw [hc.slotV hL (f := fCtxLen) (j := 4) rfl (by omega_arith), ofNat_toNat32]; rfl) rfl a b c d e f k)
         fun t' ⟨hc', _, _, hx⟩ => ⟨hc', hx⟩
   have msgS : ∀ L : Lay, L.Ok → qCtx L < 136 ∧ L.len.toNat < 2 ^ 32 ∧ L.msg.toNat + L.len.toNat ≤ 2 ^ 32 ∧
       (∃ R ∈ L.rd ++ L.wr, Within ⟨State.addr L.msg, L.len.toNat⟩ R) ∧
@@ -247,13 +247,13 @@ theorem muHash_tr {Φ : Lay → Mem → State → Prop} {tr : Arg}
   have a4 := two_wp (I := I) (Φ := Ψ qCtx) (Ψ := Ψ qMsg)
     (kabs_tr (src := .slot fMsg) (len := .slot fLen) (pos := .ret) (absOk rfl rfl rfl rfl rfl)
       (fun L => L.msg) (fun L => L.len.toNat) qCtx
-      (fun L g m t hL hc hφ => ⟨by rw [hc.slotV hL (f := fMsg) (j := 1) rfl (by omega)]; rfl,
-        by rw [hc.slotV hL (f := fLen) (j := 2) rfl (by omega), ofNat_toNat32]; rfl, ofNat_toNat_eq32 hφ⟩) msgS)
+      (fun L g m t hL hc hφ => ⟨by rw [hc.slotV hL (f := fMsg) (j := 1) rfl (by omega_arith)]; rfl,
+        by rw [hc.slotV hL (f := fLen) (j := 2) rfl (by omega_arith), ofNat_toNat32]; rfl, ofNat_toNat_eq32 hφ⟩) msgS)
     fun L g m₀ t hL hc hφ => by
       obtain ⟨a, b, c, d, e, f, k⟩ := msgS L hL
       exact WP.mono (kabs_ok hL hc (src := .slot fMsg) (len := .slot fLen) (pos := .ret)
-        (absOk rfl rfl rfl rfl rfl) (by rw [hc.slotV hL (f := fMsg) (j := 1) rfl (by omega)]; rfl)
-        (by rw [hc.slotV hL (f := fLen) (j := 2) rfl (by omega), ofNat_toNat32]; rfl) (ofNat_toNat_eq32 hφ)
+        (absOk rfl rfl rfl rfl rfl) (by rw [hc.slotV hL (f := fMsg) (j := 1) rfl (by omega_arith)]; rfl)
+        (by rw [hc.slotV hL (f := fLen) (j := 2) rfl (by omega_arith), ofNat_toNat32]; rfl) (ofNat_toNat_eq32 hφ)
         a b c d e f k) fun t' ⟨hc', _, _, hx⟩ => ⟨hc', hx⟩
   have pd := kpad_tr (I := I) (Φ := Ψ qMsg) (pos := .ret) (padOk rfl) qMsg
     (fun L g m t _ _ hφ => ofNat_toNat_eq32 hφ) fun L _ => Nat.mod_lt _ (by decide)
@@ -270,28 +270,28 @@ theorem trHash_tr {p : Params} (hk : p.pkLen < 2 ^ 16)
       Region.Disjoint ⟨State.addr L.key, L.keyLen⟩ ⟨L.ST, 200⟩ ∧
       Region.Disjoint ⟨State.addr L.key, L.keyLen⟩ ⟨L.KS, 640⟩ ∧
       L.STK.Disjoint ⟨State.addr L.key, L.keyLen⟩ := fun L hL =>
-    ⟨by decide, by have := hL.hKey.2; omega, hL.nKey, ⟨L.KEY, List.mem_append_left _ hL.inKey, within_self _⟩,
+    ⟨by decide, by have := hL.hKey.2; omega_arith, hL.nKey, ⟨L.KEY, List.mem_append_left _ hL.inKey, within_self _⟩,
       by have := hL.x_r hL.xKey (e := 0) (k := 200) (by decide); simpa only [x0] using this.symm,
       (hL.x_r hL.xKey (e := 200) (k := 640) (by decide)).symm, hL.kKey⟩
   have z := two_wp (I := I) (Φ := Φ) (Ψ := fun L _ _ => L.keyLen = p.pkLen) zeroSt_tr
     fun L g m₀ t hL hc hφ => WP.mono (zeroSt_ok hL hc) fun t' ⟨hc', _⟩ => ⟨hc', hΦ L m₀ t hφ⟩
   have a1 := two_wp (I := I) (Φ := fun L _ _ => L.keyLen = p.pkLen) (Ψ := fun _ _ _ => True)
     (kabs_tr (src := .slot fKey) (len := .imm p.pkLen) (pos := .imm 0)
-      (absOk rfl (by simp only [Arg.ok, decide_eq_true_eq]; omega) rfl rfl rfl) (fun L => L.key) (fun L => L.keyLen)
-      (fun _ => 0) (fun L g m t hL hc hφ => ⟨by rw [hc.slotV hL (f := fKey) (j := 0) rfl (by omega)]; rfl,
+      (absOk rfl (by simp only [Arg.ok, decide_eq_true_eq]; omega_arith) rfl rfl rfl) (fun L => L.key) (fun L => L.keyLen)
+      (fun _ => 0) (fun L g m t hL hc hφ => ⟨by rw [hc.slotV hL (f := fKey) (j := 0) rfl (by omega_arith)]; rfl,
         by rw [hφ]; rfl, rfl⟩) keySide)
     fun L g m₀ t hL hc hφ => by
       obtain ⟨a, b, c, d, e, f, k⟩ := keySide L hL
       exact WP.mono (kabs_ok hL hc (src := .slot fKey) (len := .imm p.pkLen) (pos := .imm 0)
-        (n := L.keyLen) (q := 0) (absOk rfl (by simp only [Arg.ok, decide_eq_true_eq]; omega) rfl rfl rfl)
-        (by rw [hc.slotV hL (f := fKey) (j := 0) rfl (by omega)]; rfl) (by rw [hφ]; rfl) rfl a b c d e f k)
+        (n := L.keyLen) (q := 0) (absOk rfl (by simp only [Arg.ok, decide_eq_true_eq]; omega_arith) rfl rfl rfl)
+        (by rw [hc.slotV hL (f := fKey) (j := 0) rfl (by omega_arith)]; rfl) (by rw [hφ]; rfl) rfl a b c d e f k)
         fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
   have pd := kpad_tr (I := I) (Φ := fun _ _ _ => True) (pos := .imm (p.pkLen % 136))
-    (padOk (by simp only [Arg.ok, decide_eq_true_eq]; omega)) (fun _ => p.pkLen % 136)
+    (padOk (by simp only [Arg.ok, decide_eq_true_eq]; omega_arith)) (fun _ => p.pkLen % 136)
     (fun _ _ _ _ _ _ _ => rfl) fun _ _ => Nat.mod_lt _ (by decide)
   have pd' := two_wp (I := I) (Φ := fun _ _ _ => True) (Ψ := fun _ _ _ => True) pd
     fun L g m₀ t hL hc _ => WP.mono (kpad_ok hL hc (pos := .imm (p.pkLen % 136))
-      (padOk (by simp only [Arg.ok, decide_eq_true_eq]; omega)) rfl (Nat.mod_lt _ (by decide)))
+      (padOk (by simp only [Arg.ok, decide_eq_true_eq]; omega_arith)) rfl (Nat.mod_lt _ (by decide)))
       fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
   exact RelCT.seq z (a1.seq (pd'.seq ksqz_tr))
 

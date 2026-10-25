@@ -62,93 +62,93 @@ theorem coreSign_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (
   let xr := Spec.Dsa.decodeBE data.privateScalar * rr % L.subgroup
   let zz := Spec.Dsa.decodeBE data.digest % L.subgroup
   let vv := (zz + xr) % L.subgroup
-  have hrr : rr < L.subgroup := Nat.mod_lt _ (by omega)
-  have hki : ki < L.subgroup := VG.Proof.Dsa.powMod_lt _ _ (by omega)
-  have hxr : xr < L.subgroup := Nat.mod_lt _ (by omega)
-  have hzz : zz < L.subgroup := Nat.mod_lt _ (by omega)
-  have hvv : vv < L.subgroup := Nat.mod_lt _ (by omega)
-  have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega
-  have hr : r + L.qLen ≤ usedBytes := by unfold r usedBytes; omega
-  have hi : inverse + L.qLen ≤ usedBytes := by unfold inverse usedBytes; omega
-  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega
-  have hz' : z + L.qLen ≤ usedBytes := by unfold z usedBytes; omega
-  have hv : v + L.qLen ≤ usedBytes := by unfold v usedBytes; omega
-  have hs : s + L.qLen ≤ usedBytes := by unfold s usedBytes; omega
+  have hrr : rr < L.subgroup := Nat.mod_lt _ (by omega_arith)
+  have hki : ki < L.subgroup := VG.Proof.Dsa.powMod_lt _ _ (by omega_arith)
+  have hxr : xr < L.subgroup := Nat.mod_lt _ (by omega_arith)
+  have hzz : zz < L.subgroup := Nat.mod_lt _ (by omega_arith)
+  have hvv : vv < L.subgroup := Nat.mod_lt _ (by omega_arith)
+  have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega_arith
+  have hr : r + L.qLen ≤ usedBytes := by unfold r usedBytes; omega_arith
+  have hi : inverse + L.qLen ≤ usedBytes := by unfold inverse usedBytes; omega_arith
+  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_arith
+  have hz' : z + L.qLen ≤ usedBytes := by unfold z usedBytes; omega_arith
+  have hv : v + L.qLen ≤ usedBytes := by unfold v usedBytes; omega_arith
+  have hs : s + L.qLen ≤ usedBytes := by unfold s usedBytes; omega_arith
   have hqmLen := encodeBE_length L.qLen (L.subgroup - 2)
   unfold Core.sign
   refine WP.seq (WP.mono (readyPow_ok M Sq h0 .p hp hop Core.generator Core.nonce (by trivial) (by trivial)
-    hg.active hn.active (by rw [hgl]; omega) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
-    (by rw [hnl]; omega) (by rw [hnl]; omega) t (by decide) ht) fun s1 h1 => ?_)
+    hg.active hn.active (by rw [hgl]; omega_arith) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hnl]; omega_arith) (by rw [hnl]; omega_arith) t (by decide) ht) fun s1 h1 => ?_)
   have hn1 := h1.external (by decide) ht hn
   have hx1 := h1.external (by decide) ht hx
   have hz1 := h1.external (by decide) ht hz
   have hqm1 := h1.local (by decide) ht hqm
-    (by rw [hqmLen]; unfold qMinusTwo usedBytes; omega)
-    (Or.inl (by rw [hqmLen]; unfold qMinusTwo t; omega))
+    (by rw [hqmLen]; unfold qMinusTwo usedBytes; omega_arith)
+    (Or.inl (by rw [hqmLen]; unfold qMinusTwo t; omega_arith))
   have step2 := readyReduce_ok M h1.ready hq hoq (Core.element t) (by change t < 2 ^ 31; decide)
-    (h1.output (by decide) ht) (by simp only [encodeBE_length, ModulusSide.length]; omega) r (by decide) hr
+    (h1.output (by decide) ht) (by simp only [encodeBE_length, ModulusSide.length]; omega_arith) r (by decide) hr
   have step2' : WP isa (Core.reduce M.mm (Core.element t) (Core.scalar r)) s1 (CallResult L .q r rr s1) := by
-    simpa only [rr, SignValues.r, ModulusSide.length, ModulusSide.value, fitp _ (VG.Proof.Dsa.powMod_lt _ _ (by omega))] using step2
+    simpa only [rr, SignValues.r, ModulusSide.length, ModulusSide.value, fitp _ (VG.Proof.Dsa.powMod_lt _ _ (by omega_arith))] using step2
   refine WP.seq (WP.mono step2' fun s2 h2 => ?_)
   have hn2 := h2.external (by decide) hr hn1
   have hx2 := h2.external (by decide) hr hx1
   have hz2 := h2.external (by decide) hr hz1
   have hqm2 := h2.local (by decide) hr hqm1
-    (by rw [hqmLen]; unfold qMinusTwo usedBytes; omega)
-    (Or.inr (by simp only [ModulusSide.length]; unfold r qMinusTwo; omega))
-  have step3 := readyPow_ok M Sq h2.ready .q (by change 1 < L.subgroup; omega) hoq Core.nonce (Core.scalar qMinusTwo)
-    (by trivial) (by change qMinusTwo < 2 ^ 31; decide) hn2.active hqm2 (by rw [hnl]; omega) (by simp only [hnl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
-    (by rw [hqmLen]; omega) (by rw [hqmLen]; omega) inverse (by decide) hi
+    (by rw [hqmLen]; unfold qMinusTwo usedBytes; omega_arith)
+    (Or.inr (by simp only [ModulusSide.length]; unfold r qMinusTwo; omega_arith))
+  have step3 := readyPow_ok M Sq h2.ready .q (by change 1 < L.subgroup; omega_arith) hoq Core.nonce (Core.scalar qMinusTwo)
+    (by trivial) (by change qMinusTwo < 2 ^ 31; decide) hn2.active hqm2 (by rw [hnl]; omega_arith) (by simp only [hnl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hqmLen]; omega_arith) (by rw [hqmLen]; omega_arith) inverse (by decide) hi
   have step3' : WP isa (Core.pow Sq.mm M.mm qWorkspace Core.nonce (Core.scalar qMinusTwo) (Core.scalar inverse)) s2
       (CallResult L .q inverse ki s2) := by
-    simpa only [ki, Core.scalar, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value, fitq (L.subgroup - 2) (by omega)] using step3
+    simpa only [ki, Core.scalar, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value, fitq (L.subgroup - 2) (by omega_arith)] using step3
   refine WP.seq (WP.mono step3' fun s3 h3 => ?_)
   have hx3 := h3.external (by decide) hi hx2
   have hz3 := h3.external (by decide) hi hz2
   have hr3 := h3.local (by decide) hi (h2.output (by decide) hr)
-    (by simp only [encodeBE_length, ModulusSide.length]; exact hr) (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold r inverse; omega))
-  have step4 := readyProduct_ok M h3.ready .q (by change 1 < L.subgroup; omega) hoq Core.privateScalar (Core.scalar r)
-    (by trivial) (by change r < 2 ^ 31; decide) hx3.active hr3 (by rw [hxl]; omega) (by simp only [hxl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _) u (by decide) hu
+    (by simp only [encodeBE_length, ModulusSide.length]; exact hr) (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold r inverse; omega_arith))
+  have step4 := readyProduct_ok M h3.ready .q (by change 1 < L.subgroup; omega_arith) hoq Core.privateScalar (Core.scalar r)
+    (by trivial) (by change r < 2 ^ 31; decide) hx3.active hr3 (by rw [hxl]; omega_arith) (by simp only [hxl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_arith) (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _) u (by decide) hu
   have step4' : WP isa (Core.product M.mm qWorkspace Core.privateScalar (Core.scalar r) (Core.scalar u)) s3
       (CallResult L .q u xr s3) := by
     simpa only [xr, Core.scalar, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.length, ModulusSide.value, fitq _ hrr] using step4
   refine WP.seq (WP.mono step4' fun s4 h4 => ?_)
   have hz4 := h4.external (by decide) hu hz3
   have hr4 := h4.local (by decide) hu hr3 (by simp only [encodeBE_length, ModulusSide.length]; exact hr)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold r u; omega))
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold r u; omega_arith))
   have hi4 := h4.local (by decide) hu (h3.output (by decide) hi) (by simp only [encodeBE_length, ModulusSide.length]; exact hi)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse u; omega))
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse u; omega_arith))
   refine WP.seq (WP.mono (readyReduce_ok M h4.ready hq hoq Core.digest (by trivial) hz4.active hzl z (by decide) hz') fun s5 h5 => ?_)
   have hr5 := h5.local (by decide) hz' hr4 (by simp only [encodeBE_length, ModulusSide.length]; exact hr)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold r z; omega))
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold r z; omega_arith))
   have hi5 := h5.local (by decide) hz' hi4 (by simp only [encodeBE_length, ModulusSide.length]; exact hi)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse z; omega))
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse z; omega_arith))
   have hu5 := h5.local (by decide) hz' (h4.output (by decide) hu) (by simp only [encodeBE_length, ModulusSide.length]; exact hu)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold u z; omega))
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold u z; omega_arith))
   have step6 := readyAdd_ok h5.ready (Core.scalar z) (Core.scalar u) (by change z < 2 ^ 31; decide) (by change u < 2 ^ 31; decide)
     (h5.output (by decide) hz') hu5
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _)
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_arith) (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _)
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_arith) (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _)
     (by simp only [ModulusSide.length]; rw [fitq _ hzz]; exact hzz) (by simp only [ModulusSide.length]; rw [fitq _ hxr]; exact hxr) v (by decide) hv
   have step6' : WP isa (Core.add (Core.scalar z) (Core.scalar u) (Core.scalar v)) s5
       (CallResult L .q v vv s5) := by
     simpa only [ModulusSide.length, show Spec.Dsa.decodeBE data.digest % L.subgroup = zz from rfl, fitq _ hzz, fitq _ hxr, vv] using step6
   refine WP.seq (WP.mono step6' fun s6 h6 => ?_)
   have hr6 := h6.local (by decide) hv hr5 (by simp only [encodeBE_length, ModulusSide.length]; exact hr)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold r v; omega))
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold r v; omega_arith))
   have hi6 := h6.local (by decide) hv hi5 (by simp only [encodeBE_length, ModulusSide.length]; exact hi)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse v; omega))
-  have step7 := readyProduct_ok M h6.ready .q (by change 1 < L.subgroup; omega) hoq (Core.scalar inverse) (Core.scalar v)
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold inverse v; omega_arith))
+  have step7 := readyProduct_ok M h6.ready .q (by change 1 < L.subgroup; omega_arith) hoq (Core.scalar inverse) (Core.scalar v)
     (by change inverse < 2 ^ 31; decide) (by change v < 2 ^ 31; decide) hi6 (h6.output (by decide) hv)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _) s (by decide) hs
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_arith) (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _)
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_arith) (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _) s (by decide) hs
   have step7' : WP isa (Core.product M.mm qWorkspace (Core.scalar inverse) (Core.scalar v) (Core.scalar s)) s6
       (CallResult L .q s (data.s L) s6) := by
     simpa only [Core.scalar, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.length, ModulusSide.value, fitq _ hki, fitq _ hvv, ki, vv, zz, xr, rr, SignValues.s] using step7
   refine WP.mono step7' fun s7 h7 => ?_
   have hr7 := h7.local (by decide) hs hr6 (by simp only [encodeBE_length, ModulusSide.length]; exact hr)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold r s; omega))
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold r s; omega_arith))
   refine ⟨h7.ready, ?_, h7.bytes, ?_, ?_, ?_⟩
   · simpa only [encodeBE_length, ModulusSide.length, pointerValue, rr] using operand_bytesAt hr7
   · exact ((((((h1.scheduleFrame (by decide) ht).trans (h2.scheduleFrame (by decide) hr)).trans (h3.scheduleFrame (by decide) hi)).trans

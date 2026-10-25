@@ -46,7 +46,7 @@ theorem rowAlt_arith {T0 T1 T2 T3 L0 L1 L2 L3 H0 H1 H2 H3 P0 P1 P2 P3
     S0 + 2 ^ 64 * R1 + 2 ^ 128 * R2 + 2 ^ 192 * R3 + 2 ^ 256 * R4 =
       T0 + 2 ^ 64 * T1 + 2 ^ 128 * T2 + 2 ^ 192 * T3 +
         (P0 + 2 ^ 64 * P1 + 2 ^ 128 * P2 + 2 ^ 192 * P3) := by
-  omega
+  omega_arith
 
 /-- What `mulRow` computes, word by word. -/
 theorem rowAlt_value (a b0 b1 b2 b3 t0 t1 t2 t3 : Word) :
@@ -168,7 +168,7 @@ theorem firstAlt_arith {L0 L1 L2 L3 H0 H1 H2 H3 P0 P1 P2 P3 R1 R2 R3 R4 D1 D2 D3
     (p2 : P2 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) (p3 : P3 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) :
     L0 + 2 ^ 64 * R1 + 2 ^ 128 * R2 + 2 ^ 192 * R3 + 2 ^ 256 * R4 =
       P0 + 2 ^ 64 * P1 + 2 ^ 128 * P2 + 2 ^ 192 * P3 := by
-  omega
+  omega_arith
 
 /-- What the row of `mulFirst` computes, word by word. -/
 theorem firstAlt_value (a b0 b1 b2 b3 : Word) :
@@ -200,8 +200,8 @@ theorem mulFirst_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
   have _hcap := workSize_le large
   obtain ⟨aa, ab, ac⟩ := ha
   obtain ⟨ba, bb, bc⟩ := hb
-  have a16 : (a + 16) % 8 = 0 := by omega
-  have b16 : (b + 16) % 8 = 0 := by omega
+  have a16 : (a + 16) % 8 = 0 := by omega_arith
+  have b16 : (b + 16) % 8 = 0 := by omega_arith
   have w3 : Reg.x3 ≠ .x0 := by decide
   have w4 : Reg.x4 ≠ .x0 := by decide
   have w7 : Reg.x7 ≠ .x0 := by decide
@@ -216,21 +216,21 @@ theorem mulFirst_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
   have w16 : Reg.x16 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    ldp_sc hs aa (by omega) (by omega) (by decide : Reg.x3 ≠ .x4),
-    ldp_sc ((hs.write w3 _).write w4 _) ba (by omega) (by omega) (by decide : Reg.x7 ≠ .x8),
+    ldp_sc hs aa (by omega_arith) (by omega_arith) (by decide : Reg.x3 ≠ .x4),
+    ldp_sc ((hs.write w3 _).write w4 _) ba (by omega_arith) (by omega_arith) (by decide : Reg.x7 ≠ .x8),
     ldp_sc ((((((((((hs).write w3 _).write w4 _).write w7 _).write w8 _).write w12 _)
       |>.write w13 _).write w11 _).write w14 _)
-      |>.awc w13 _ _ _) b16 (by omega) (by omega) (by decide : Reg.x9 ≠ .x10),
+      |>.awc w13 _ _ _) b16 (by omega_arith) (by omega_arith) (by decide : Reg.x9 ≠ .x10),
     ldp_sc (((((((((((((((((((hs).write w3 _).write w4 _).write w7 _).write w8 _).write w12 _)
       |>.write w13 _).write w11 _).write w14 _).awc w13 _ _ _).write w9 _).write w10 _)
       |>.write w11 _).write w15 _).awc w14 _ _ _).write w11 _).write w16 _).awc w15 _ _ _)
-      |>.write w16 _) a16 (by omega) (by omega) (by decide : Reg.x5 ≠ .x6),
+      |>.write w16 _) a16 (by omega_arith) (by omega_arith) (by decide : Reg.x5 ≠ .x6),
     exec_mul_x, exec_umulh_x, exec_adds_x, exec_adcs_x, exec_adc_x,
     Option.some.injEq, exists_eq_left']
   simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry, RegUpd.gpr_write, RegUpd.gpr_addWithCarry,
     RegUpd.c_addWithCarry, RegUpd.c_write, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq,
     hz]
-  rw [show a + 16 + 8 = a + 24 by omega, show b + 16 + 8 = b + 24 by omega]
+  rw [show a + 16 + 8 = a + 24 by omega_arith, show b + 16 + 8 = b + 24 by omega_arith]
   refine ⟨trivial, trivial, trivial, trivial, ?_, ⟨?_, by simp only [RegUpd.mem_write,
       RegUpd.mem_addWithCarry],
       by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
@@ -291,10 +291,10 @@ theorem fold38_value (k t0 t1 t2 t3 h0 h1 h2 h3 : Word) (hk : k.toNat = 38) :
   dsimp only [c0, c1, c2, c3, s3, u, d] at *
   simp only [val4, Bool.toNat_false, z] at *
   refine ⟨?_, ?_, ?_, ?_⟩
-  · omega
-  · omega
-  · omega
-  · omega
+  · omega_arith
+  · omega_arith
+  · omega_arith
+  · omega_arith
 
 theorem mulFold38_ok (s : State) (hz : s.gpr .x17 = 0) :
     WP isa (.block mulFold38) s fun t =>
@@ -339,10 +339,10 @@ theorem fold_hi19 (x15 x16 : Word) (h : x16.toNat < 2 ^ 58) :
   have e : BitVec.setWidth 64 (BitVec.setWidth 32 (19 : BitVec 16)) = 19 := rfl
   rw [e, fold_c]
   simp only [BitVec.toNat_mul, BitVec.toNat_add, BitVec.toNat_ofNat]
-  have : x15.toNat / 2 ^ 63 ≤ 1 := by omega
+  have : x15.toNat / 2 ^ 63 ≤ 1 := by omega_arith
   have e19 : (19 : BitVec 64).toNat = 19 := rfl
   rw [e19]
-  omega
+  omega_arith
 
 theorem mulFold19_ok (s : State) (hz : s.gpr .x17 = 0) (h16 : (s.gpr .x16).toNat < 40)
     (h9 : (s.gpr .x9).toNat < 38) (h3 : (s.gpr .x3).toNat < 38) :
@@ -365,7 +365,7 @@ theorem mulFold19_ok (s : State) (hz : s.gpr .x17 = 0) (h16 : (s.gpr .x16).toNat
     (s.gpr .x9) (s.gpr .x3) 0 false
   dsimp only [addCarry, carryOut] at h
   have hU := fold_lo (s.gpr .x15)
-  have hM := fold_hi19 (s.gpr .x15) (s.gpr .x16) (by omega)
+  have hM := fold_hi19 (s.gpr .x15) (s.gpr .x16) (by omega_arith)
   have z : (0 : BitVec 64).toNat = 0 := rfl
   have := (s.gpr .x12).isLt
   have := (s.gpr .x13).isLt
@@ -377,8 +377,8 @@ theorem mulFold19_ok (s : State) (hz : s.gpr .x17 = 0) (h16 : (s.gpr .x16).toNat
       by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
       by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
       by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
-  · omega
-  · omega
+  · omega_arith
+  · omega_arith
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
@@ -422,7 +422,7 @@ theorem mul4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
   subst t
   have m6 : s₆.mem = s.mem := by rw [k6.mem, k5.mem, k4.mem, k3.mem, k2.mem, k1.mem]
   have _ho := ho.2.2
-  have hf := fe_st4 s₆.mem base (o := o) (by omega) (s₆.gpr .x12) (s₆.gpr .x13) (s₆.gpr .x14)
+  have hf := fe_st4 s₆.mem base (o := o) (by omega_arith) (s₆.gpr .x12) (s₆.gpr .x13) (s₆.gpr .x14)
     (s₆.gpr .x15)
   -- the registers each step reads, through the steps that keep them
   rw [k2.gpr .x5 (by decide), k2.gpr .x7 (by decide), k2.gpr .x8 (by decide),
@@ -457,9 +457,9 @@ theorem mul4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
       not_false_eq_true]), k1.gpr _ (by simp only [List.mem_cons, List.not_mem_nil, or_false, hr,
       not_false_eq_true])]
   · rw [mem_withMem, ← m6]
-    exact st4_outside _ _ (by omega) _ _ _ _
+    exact st4_outside _ _ (by omega_arith) _ _ _ _
   · rw [mem_withMem, hf, hab]
     simp only [val4] at e1 e2 e3 e4 e5 e6 ⊢
-    omega
+    omega_arith
 
 end VG.Proof.X25519.AArch64.Alt

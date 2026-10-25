@@ -44,10 +44,10 @@ structure RI (B : BitVec 32) (M : Block 64) (v : Work 64) (s₀ s : State) : Pro
   frame : Frame [⟨B.setWidth 64, 256⟩] s₀.mem s.mem
 
 theorem vOff_sep {j k : Nat} (_hj : j < 16) (_hk : k < 16) (h : j ≠ k) : Sep8 (vOff j) (vOff k) := by
-  simp only [Sep8, vOff]; omega
+  simp only [Sep8, vOff]; omega_arith
 
 theorem msg_vOff (j : Fin 16) {k : Nat} : Sep8 (msgOff j) (vOff k) := by
-  have := j.2; simp only [Sep8, msgOff, vOff]; omega
+  have := j.2; simp only [Sep8, msgOff, vOff]; omega_arith
 
 /-- The side conditions of `G_step`, decidable for concrete arguments: the
 four words are distinct. -/
@@ -61,8 +61,8 @@ theorem G_step {B : BitVec 32} (hfit : B.toNat + 512 ≤ 2 ^ 32) {s₀ : State}
   have nd : (a.1 ≠ b.1 ∧ a.1 ≠ c.1 ∧ a.1 ≠ d.1) ∧ (b.1 ≠ c.1 ∧ b.1 ≠ d.1) ∧ c.1 ≠ d.1 := by
     simpa [QSide] using hq
   obtain ⟨⟨nab, nac, nad⟩, ⟨nbc, nbd⟩, ncd⟩ := nd
-  have hv : ∀ q : Fin 16, vOff q + 8 ≤ 256 := fun q => by have := q.2; simp only [vOff]; omega
-  have hm : ∀ q : Fin 16, msgOff q + 8 ≤ 256 := fun q => by have := q.2; simp only [msgOff]; omega
+  have hv : ∀ q : Fin 16, vOff q + 8 ≤ 256 := fun q => by have := q.2; simp only [vOff]; omega_arith
+  have hm : ∀ q : Fin 16, msgOff q + 8 ≤ 256 := fun q => by have := q.2; simp only [msgOff]; omega_arith
   refine WP.mono (g_ok hfit (hv a) (hv b) (hv c) (hv d) (hm j) (hm k)
     (vOff_sep a.2 b.2 nab) (vOff_sep a.2 c.2 nac) (vOff_sep a.2 d.2 nad) (vOff_sep b.2 c.2 nbc)
     (vOff_sep b.2 d.2 nbd) (vOff_sep c.2 d.2 ncd) (msg_vOff k) (msg_vOff k)
@@ -85,10 +85,10 @@ theorem G_step {B : BitVec 32} (hfit : B.toNat + 512 ≤ 2 ^ 32) {s₀ : State}
     by_cases eqa : a.1 = q
     · subst eqa; simp only [eqb, eqc, eqd, ite_true, ite_false]; exact ea
     simp only [eqb, eqc, eqd, eqa, ite_false]
-    rw [other _ (by simp only [vOff]; omega) (vOff_sep a.2 hq eqa) (vOff_sep b.2 hq eqb)
+    rw [other _ (by simp only [vOff]; omega_arith) (vOff_sep a.2 hq eqa) (vOff_sep b.2 hq eqb)
       (vOff_sep c.2 hq eqc) (vOff_sep d.2 hq eqd)]
     exact hR.holds q hq
-  · rw [other _ (by have := i.2; simp only [msgOff]; omega) (msg_vOff i).symm (msg_vOff i).symm
+  · rw [other _ (by have := i.2; simp only [msgOff]; omega_arith) (msg_vOff i).symm (msg_vOff i).symm
       (msg_vOff i).symm (msg_vOff i).symm]
     exact hR.msg i
 
@@ -212,13 +212,13 @@ theorem in_st {s : State} (hw : s.wr = s₀.wr) {d : Nat} (hd : d + 4 ≤ 64) :
 
 theorem argAddr_eq {d : Nat} (hd : d < 32) :
     addr (esp₀ s₀) d = (esp₀ s₀).setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by have := hp.esp_fits; omega)
+  addr_eq (by have := hp.esp_fits; omega_arith)
 
 theorem arg_contains {d : Nat} (hd : 4 ≤ d) (hd' : d + 4 ≤ 32) :
     (argR s₀).Contains (addr (esp₀ s₀) d) 4 := by
   show (⟨addr (esp₀ s₀) 4, 28⟩ : Region).Contains _ _
-  rw [hp.argAddr_eq (by omega), hp.argAddr_eq (by omega)]
-  exact Offset.contains _ hd (by omega) (by omega)
+  rw [hp.argAddr_eq (by omega_arith), hp.argAddr_eq (by omega_arith)]
+  exact Offset.contains _ hd (by omega_arith) (by omega_arith)
 
 theorem in_arg {s : State} (hrd : s.rd = s₀.rd) {d : Nat} (hd : 4 ≤ d)
     (hd' : d + 4 ≤ 32) : InRegions (s.rd ++ s.wr) (addr (esp₀ s₀) d) 4 :=
@@ -227,8 +227,8 @@ theorem in_arg {s : State} (hrd : s.rd = s₀.rd) {d : Nat} (hd : 4 ≤ d)
 /-- An argument slot is inside the argument region. -/
 theorem arg_sub {i : Nat} (hi : i < 7) : Region.Sub ⟨argAddr s₀ i, 4⟩ (argR s₀) := by
   show Region.Sub ⟨addr (esp₀ s₀) (4 + 4 * i), 4⟩ ⟨addr (esp₀ s₀) 4, 28⟩
-  rw [hp.argAddr_eq (by omega), hp.argAddr_eq (by omega)]
-  exact Offset.sub _ (by omega) (by omega)
+  rw [hp.argAddr_eq (by omega_arith), hp.argAddr_eq (by omega_arith)]
+  exact Offset.sub _ (by omega_arith) (by omega_arith)
 
 /-- The arguments are unchanged while only the state and the scratch buffer are written. -/
 theorem arg_frame {m : Mem} (hf : Frame [stR s₀, scrR s₀] s₀.mem m) {i : Nat} (hi : i < 7) :
@@ -241,26 +241,26 @@ theorem blk_toNat {i : Nat} (hi : i < nb s₀) :
     (blkAddr s₀ i).toNat = (bp s₀).toNat + 128 * i := by
   have := hp.blk_fits
   simp only [blkAddr, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := 128 * i) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (a := 128 * i) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem blk_fit {i : Nat} (hi : i < nb s₀) : (blkAddr s₀ i).toNat + 128 ≤ 2 ^ 32 := by
-  have := hp.blk_fits; rw [hp.blk_toNat hi]; omega
+  have := hp.blk_fits; rw [hp.blk_toNat hi]; omega_arith
 
 theorem blk_addr {i : Nat} (hi : i < nb s₀) :
     (blkAddr s₀ i).setWidth 64 = (bp s₀).setWidth 64 + BitVec.ofNat 64 (128 * i) :=
-  addr_eq (x := bp s₀) (k := 128 * i) (by have := hp.blk_fits; omega)
+  addr_eq (x := bp s₀) (k := 128 * i) (by have := hp.blk_fits; omega_arith)
 
 theorem blk_sub {i : Nat} (hi : i < nb s₀) :
     Region.Sub ⟨(blkAddr s₀ i).setWidth 64, 128⟩ (blR s₀) := by
   have := hp.blk_fits
-  rw [hp.blk_addr hi]; exact sub_offset (by omega) (by omega)
+  rw [hp.blk_addr hi]; exact sub_offset (by omega_arith) (by omega_arith)
 
 theorem blk_rd {i : Nat} (hi : i < nb s₀) {o : Nat} (ho : o + 4 ≤ 128) :
     InRegions (s₀.rd ++ s₀.wr) (addr (blkAddr s₀ i) o) 4 := by
   refine ⟨blR s₀, by simp [hp.rd], ?_⟩
   rw [show addr (blkAddr s₀ i) o = addr (bp s₀) (128 * i + o) by
     simp only [addr, blkAddr, BitVec.add_assoc, BitVec.ofNat_add]]
-  exact contains_addr (by have : i + 1 ≤ nb s₀ := hi; omega) (by omega) hp.blk_fits
+  exact contains_addr (by have : i + 1 ≤ nb s₀ := hi; omega_arith) (by omega_arith) hp.blk_fits
 
 theorem blk_disj {i : Nat} (hi : i < nb s₀) :
     ∀ r ∈ [stR s₀, scrR s₀], Region.Disjoint ⟨(blkAddr s₀ i).setWidth 64, 128⟩ r := by
@@ -279,25 +279,25 @@ theorem high_frame {m m' : Mem}
   rcases hf with hf | hf
   · refine hf.readW hc ?_ (by decide)
     simp only [List.mem_singleton, forall_eq]
-    rw [addr_eq (by omega)]
-    exact Offset.disjoint_base _ hd (by omega)
+    rw [addr_eq (by omega_arith)]
+    exact Offset.disjoint_base _ hd (by omega_arith)
   · refine hf.readW hc ?_ (by decide)
     simp only [List.mem_singleton, forall_eq]
     refine Region.Disjoint.sub_left hp.st_scr.symm ?_
-    rw [addr_eq (by omega)]
-    exact Offset.sub_base _ (by omega)
+    rw [addr_eq (by omega_arith)]
+    exact Offset.sub_base _ (by omega_arith)
 
 theorem high_frame64 {m m' : Mem}
     (hf : Frame [⟨(scr s₀).setWidth 64, 256⟩] m m' ∨ Frame [stR s₀] m m') {d : Nat}
     (hd : 256 ≤ d) (hd' : d + 8 ≤ 512) :
     rd64 m' (scr s₀) d = rd64 m (scr s₀) d := by
   simp only [rd64]
-  rw [hp.high_frame hf hd (by omega), hp.high_frame hf (by omega) hd']
+  rw [hp.high_frame hf hd (by omega_arith), hp.high_frame hf (by omega_arith) hd']
 
 /-- The state's words are unchanged while only `scratch` is written. -/
 theorem st_frame {m m' : Mem} (hf : Frame [scrR s₀] m m') {d : Nat} (hd : d + 4 ≤ 64) :
     m'.readW (addr (st s₀) d) 32 = m.readW (addr (st s₀) d) 32 := by
-  refine hf.readW (contains_addr (len := 64) hd (by omega) hp.st_fits) ?_ (by decide)
+  refine hf.readW (contains_addr (len := 64) hd (by omega_arith) hp.st_fits) ?_ (by decide)
   simp only [List.mem_singleton, forall_eq]
   exact hp.st_scr
 
@@ -334,15 +334,15 @@ include hfit
 
 theorem rw64_ne (m : Mem) (x : BitVec 64) {o o' : Nat} (h : o + 8 ≤ 512) (h' : o' + 8 ≤ 512)
     (hs : Sep8 o o') : rd64 (write64 m B o x) B o' = rd64 m B o' :=
-  rd64_write64_ne m x (by omega) (by omega) hs
+  rd64_write64_ne m x (by omega_arith) (by omega_arith) hs
 
 theorem rw64_self (m : Mem) (x : BitVec 64) {o : Nat} (h : o + 8 ≤ 512) :
     rd64 (write64 m B o x) B o = x :=
-  rd64_write64_self m x (by omega)
+  rd64_write64_self m x (by omega_arith)
 
 theorem rw32_ne (m : Mem) (x : BitVec 32) {o o' : Nat} (h : o + 4 ≤ 512) (h' : o' + 4 ≤ 512)
     (hs : o + 4 ≤ o' ∨ o' + 4 ≤ o) : (m.writeW (addr B o) x).readW (addr B o') 32 = m.readW (addr B o') 32 :=
-  readW_writeW_addr m x (by omega) (by omega) hs.symm
+  readW_writeW_addr m x (by omega_arith) (by omega_arith) hs.symm
 
 end
 
@@ -350,13 +350,13 @@ end
 theorem rd64_eq {m : Mem} {x : BitVec 32} {o : Nat} (h : x.toNat + o + 8 ≤ 2 ^ 32) :
     rd64 m x o = m.readW (x.setWidth 64 + BitVec.ofNat 64 o) 64 := by
   rw [readW64, show x.setWidth 64 + BitVec.ofNat 64 o + 4 = x.setWidth 64 + BitVec.ofNat 64 (o + 4) from
-      Offset.add_ofNat_add_ofNat _ _ 4, ← addr_eq (by omega), ← addr_eq (by omega)]
+      Offset.add_ofNat_add_ofNat _ _ 4, ← addr_eq (by omega_arith), ← addr_eq (by omega_arith)]
   rfl
 
 theorem stateAt_rd64 {x : BitVec 32} (hfit : x.toNat + 64 ≤ 2 ^ 32) (m : Mem) {k : Nat} (hk : k < 8) :
     (stateAt 64 m (x.setWidth 64))[k] = rd64 m x (8 * k) := by
   simp only [stateAt, Vector.getElem_ofFn]
-  rw [rd64_eq (by omega)]
+  rw [rd64_eq (by omega_arith)]
 
 /-! ## Copying words -/
 
@@ -389,7 +389,7 @@ theorem copyWords_ok {src : Reg} (hsrc : src ≠ .eax) {S D : BitVec 32} {so d n
   · rw [u₂.mem, u₁.mem]; exact hf.writeW (List.mem_singleton_self _) _ (hR k hk)
   · rw [u₂.mem, u₁.gpr, u₁.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [readW_writeW_addr _ _ (by omega) (by omega) (by omega)]; exact hc j hj
+    · rw [readW_writeW_addr _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact hc j hj
     · rw [Mem.readW_writeW_self32, hv]
 
 /-! ## The rest of the work vector -/
@@ -404,9 +404,9 @@ theorem ivWord_ok (hD : s.gpr .esi = B) (hA : Acc s.wr B 512) {k : Nat} (hk : vO
     WP isa (.block (ivWord k v ++ rest)) s Q := by
   simp only [ivWord, List.cons_append, List.nil_append]
   refine wp_movi fun s₁ u₁ => wp_store (ea_of (by rw [u₁.other _ (by decide), hD]) _)
-    (by rw [u₁.wr]; exact hA _ (by omega)) fun s₂ u₂ => wp_movi fun s₃ u₃ =>
+    (by rw [u₁.wr]; exact hA _ (by omega_arith)) fun s₂ u₂ => wp_movi fun s₃ u₃ =>
     wp_store (ea_of (by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), hD]) _)
-    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hA _ (by omega)) fun s₄ u₄ => K s₄ ?_ ?_ ?_ ?_
+    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hA _ (by omega_arith)) fun s₄ u₄ => K s₄ ?_ ?_ ?_ ?_
   · intro r hr; rw [u₄.gpr, u₃.other r hr, u₂.gpr, u₁.other r hr]
   · rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]
   · rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
@@ -420,23 +420,23 @@ theorem ivXor_ok (hD : s.gpr .esi = B) (hA : Acc s.wr B 512) (hfit : B.toNat + 5
   simp only [ivXor, List.cons_append, List.nil_append]
   refine wp_movi fun s₁ u₁ => ?_
   refine wp_xorS (readSrc_mem (by rw [u₁.other _ (by decide), hD])
-    (by rw [u₁.rd, u₁.wr]; exact mem_rd (hA _ (by omega)))) fun s₂ u₂ => ?_
+    (by rw [u₁.rd, u₁.wr]; exact mem_rd (hA _ (by omega_arith)))) fun s₂ u₂ => ?_
   refine wp_store (ea_of (by rw [u₂.other _ (by decide), u₁.other _ (by decide), hD]) _)
-    (by rw [u₂.wr, u₁.wr]; exact hA _ (by omega)) fun s₃ u₃ => wp_movi fun s₄ u₄ => ?_
+    (by rw [u₂.wr, u₁.wr]; exact hA _ (by omega_arith)) fun s₃ u₃ => wp_movi fun s₄ u₄ => ?_
   have h₄ : s₄.gpr .esi = B := by
     rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), hD]
   have w₄ : s₄.wr = s.wr := by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
   have r₄ : s₄.rd = s.rd := by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]
-  refine wp_xorS (readSrc_mem h₄ (by rw [r₄, w₄]; exact mem_rd (hA _ (by omega))))
+  refine wp_xorS (readSrc_mem h₄ (by rw [r₄, w₄]; exact mem_rd (hA _ (by omega_arith))))
     fun s₅ u₅ => ?_
   refine wp_store (ea_of (by rw [u₅.other _ (by decide), h₄]) _)
-    (by rw [u₅.wr, w₄]; exact hA _ (by omega)) fun s₆ u₆ => K s₆ ?_ ?_ ?_ ?_
+    (by rw [u₅.wr, w₄]; exact hA _ (by omega_arith)) fun s₆ u₆ => K s₆ ?_ ?_ ?_ ?_
   · intro r hr
     rw [u₆.gpr, u₅.other r hr, u₄.other r hr, u₃.gpr, u₂.other r hr, u₁.other r hr]
   · rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
   · rw [u₆.wr, u₅.wr, w₄]
   · rw [u₆.mem, u₅.gpr, u₅.mem, u₄.gpr, u₄.mem, u₃.mem, u₂.gpr, u₁.gpr, u₂.mem, u₁.mem,
-      readW_writeW_addr _ _ (by omega) (by omega) (by simp only [Sep8] at hs; omega)]
+      readW_writeW_addr _ _ (by omega_arith) (by omega_arith) (by simp only [Sep8] at hs; omega_arith)]
     simp only [write64, rd64, lo_xor, hi_xor, lo_append, hi_append]
     rfl
 
@@ -467,19 +467,19 @@ theorem finishWord_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (hc : s₁.g
   have hsi : s.gpr .esi = scr s₀ := (hf.gpr _ (by decide)).trans he
   -- The scratch words are unchanged.
   have kv : ∀ d, d + 4 ≤ 512 → s.mem.readW (addr (scr s₀) d) 32 = s₁.mem.readW (addr (scr s₀) d) 32 :=
-    fun d hd => hf.frame.readW (contains_addr (len := 512) hd (by omega) fV)
+    fun d hd => hf.frame.readW (contains_addr (len := 512) hd (by omega_arith) fV)
       (by simpa using hp.st_scr.symm) (by decide)
   simp only [finishWord]
-  refine wp_movm (ea_of hsc _) (by rw [hf.rd, hrd, hw]; exact hp.in_st rfl (by omega))
+  refine wp_movm (ea_of hsc _) (by rw [hf.rd, hrd, hw]; exact hp.in_st rfl (by omega_arith))
     fun s₂ u₂ => ?_
   refine wp_xorS (readSrc_mem (by rw [u₂.other _ (by decide), hsi])
-    (by rw [u₂.rd, u₂.wr, hf.rd, hrd, hw]; exact hp.in_scr rfl (by simp only [vOff]; omega)))
+    (by rw [u₂.rd, u₂.wr, hf.rd, hrd, hw]; exact hp.in_scr rfl (by simp only [vOff]; omega_arith)))
     fun s₃ u₃ => ?_
   refine wp_xorS (readSrc_mem (by rw [u₃.other _ (by decide), u₂.other _ (by decide), hsi])
-    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, hf.rd, hrd, hw]; exact hp.in_scr rfl (by simp only [vOff]; omega)))
+    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, hf.rd, hrd, hw]; exact hp.in_scr rfl (by simp only [vOff]; omega_arith)))
     fun s₄ u₄ => ?_
   refine wp_store (ea_of (by rw [u₄.other _ (by decide), u₃.other _ (by decide),
-    u₂.other _ (by decide), hsc]) _) (by rw [u₄.wr, u₃.wr, u₂.wr, hw]; exact hp.accS rfl _ (by omega))
+    u₂.other _ (by decide), hsc]) _) (by rw [u₄.wr, u₃.wr, u₂.wr, hw]; exact hp.accS rfl _ (by omega_arith))
     fun s₅ u₅ => WP.block_nil ?_
   have hv : s₅.mem = s.mem.writeW (addr (st s₀) (4 * n))
       (s.mem.readW (addr (st s₀) (4 * n)) 32 ^^^ s.mem.readW (addr (scr s₀) (vOff 0 + 4 * n)) 32 ^^^
@@ -489,17 +489,17 @@ theorem finishWord_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (hc : s₁.g
     by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, hf.wr], ?_, fun j hj => ?_⟩
   · rw [u₅.gpr, u₄.other r hr, u₃.other r hr, u₂.other r hr, hf.gpr r hr]
   · rw [hv]
-    exact hf.frame.writeW (List.mem_singleton_self _) _ (contains_addr (by omega) (by omega) fS)
+    exact hf.frame.writeW (List.mem_singleton_self _) _ (contains_addr (by omega_arith) (by omega_arith) fS)
   · rw [hv]
     rcases Nat.lt_or_ge j n with hjn | hjn
-    · rw [readW_writeW_addr _ _ (by omega) (by omega) (by omega), hf.words j hj]
-      simp only [hjn, show j < n + 1 by omega, ite_true]
+    · rw [readW_writeW_addr _ _ (by omega_arith) (by omega_arith) (by omega_arith), hf.words j hj]
+      simp only [hjn, show j < n + 1 by omega_arith, ite_true]
     · rcases Nat.eq_or_lt_of_le hjn with rfl | hjn'
-      · rw [Mem.readW_writeW_self32, hf.words _ hj, kv _ (by simp only [vOff]; omega),
-          kv _ (by simp only [vOff]; omega)]
+      · rw [Mem.readW_writeW_self32, hf.words _ hj, kv _ (by simp only [vOff]; omega_arith),
+          kv _ (by simp only [vOff]; omega_arith)]
         simp only [Nat.lt_irrefl, ite_false, Nat.lt_succ_self, ite_true]
-      · rw [readW_writeW_addr _ _ (by omega) (by omega) (by omega), hf.words j hj]
-        simp only [show ¬ j < n by omega, show ¬ j < n + 1 by omega, ite_false]
+      · rw [readW_writeW_addr _ _ (by omega_arith) (by omega_arith) (by omega_arith), hf.words j hj]
+        simp only [show ¬ j < n by omega_arith, show ¬ j < n + 1 by omega_arith, ite_false]
 
 theorem finishWords_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (hc : s₁.gpr .ecx = st s₀)
     (he : s₁.gpr .esi = scr s₀) (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr) :
@@ -512,15 +512,15 @@ theorem finishWords_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (hc : s₁.
 theorem FI.state {s₀ s₁ s : State} (hf : FI s₀ s₁ 16 s) {k : Nat} (hk : k < 8) :
     rd64 s.mem (st s₀) (8 * k) = rd64 s₁.mem (st s₀) (8 * k) ^^^ rd64 s₁.mem (scr s₀) (vOff k) ^^^
       rd64 s₁.mem (scr s₀) (vOff (k + 8)) := by
-  have e₀ := hf.words (2 * k) (by omega)
-  have e₁ := hf.words (2 * k + 1) (by omega)
-  rw [ite_eq_left_iff.mpr (fun h => absurd (by omega) h)] at e₀ e₁
-  rw [show vOff 0 + 4 * (2 * k) = vOff k by simp only [vOff]; omega,
-    show vOff 8 + 4 * (2 * k) = vOff (k + 8) by simp only [vOff]; omega,
-    show 4 * (2 * k) = 8 * k by omega] at e₀
-  rw [show vOff 0 + 4 * (2 * k + 1) = vOff k + 4 by simp only [vOff]; omega,
-    show vOff 8 + 4 * (2 * k + 1) = vOff (k + 8) + 4 by simp only [vOff]; omega,
-    show 4 * (2 * k + 1) = 8 * k + 4 by omega] at e₁
+  have e₀ := hf.words (2 * k) (by omega_arith)
+  have e₁ := hf.words (2 * k + 1) (by omega_arith)
+  rw [ite_eq_left_iff.mpr (fun h => absurd (by omega_arith) h)] at e₀ e₁
+  rw [show vOff 0 + 4 * (2 * k) = vOff k by simp only [vOff]; omega_arith,
+    show vOff 8 + 4 * (2 * k) = vOff (k + 8) by simp only [vOff]; omega_arith,
+    show 4 * (2 * k) = 8 * k by omega_arith] at e₀
+  rw [show vOff 0 + 4 * (2 * k + 1) = vOff k + 4 by simp only [vOff]; omega_arith,
+    show vOff 8 + 4 * (2 * k + 1) = vOff (k + 8) + 4 by simp only [vOff]; omega_arith,
+    show 4 * (2 * k + 1) = 8 * k + 4 by omega_arith] at e₁
   rw [← hi_append_lo (rd64 s₁.mem (st s₀) (8 * k) ^^^ _ ^^^ _), hi_xor, hi_xor, lo_xor, lo_xor,
     hi_rd64, hi_rd64, hi_rd64, lo_rd64, lo_rd64, lo_rd64, ← e₀, ← e₁]
   rfl

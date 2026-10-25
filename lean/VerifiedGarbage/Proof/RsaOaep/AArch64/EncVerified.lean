@@ -77,7 +77,7 @@ theorem encFail_tr {P : Nat} {e : Env} (hL : e.L.Ok) (hP16 : 16 ≤ e.L.P) {X : 
     fun _ _ _ _ _ _ _ _ hc R hS _ => zeroE_pin hL hP16 hc R hS)
     fun _ _ _ _ _ _ _ _ hc R hS _ => ?_) (pw_taint [] (by taint_decide) nopin)
   refine WP.mono (zeroOut_ok (hc.lay hL hP16 R hS.scr) R hS.out (by rw [hS.k, BitVec.ofNat_toNat,
-      BitVec.setWidth_eq]) (by omega) hL.k1024
+      BitVec.setWidth_eq]) (by omega_arith) hL.k1024
     (Covers.of_sub fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨e.L.OUT, by rw [hc.wr]; simp, 0, (BitVec.add_zero _).symm, by simp⟩)
     hL.bO (out_apart hL hP16)) fun _ ⟨_, Su, Ru, _⟩ =>
@@ -96,7 +96,7 @@ theorem head_ok {Hs Gs : Spec.Mgf1.Hash} {H : Hash} (hD : H.D ≤ 64) {P : Nat} 
       (fun j => word t.mem (lay Hs.len P s).Q (8 * j)) := ⟨fun _ _ => rfl, fun _ _ => rfl⟩
   have hk3 : (fun j => word t.mem (lay Hs.len P s).Q (8 * j)) 21 = BitVec.ofNat 64 (lay Hs.len P s).k.toNat :=
     hS.k.trans (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
-  exact WP.mono (chkK_ok (H := H) (hc.lay hL hP R hS.scr) R hk3 hL.k1024 (by omega))
+  exact WP.mono (chkK_ok (H := H) (hc.lay hL hP R hS.scr) R hk3 hL.k1024 (by omega_arith))
     fun _ ⟨_, S1, hm1, x11⟩ => In.of_step hL hP hc S1 nil_ws (by rw [hm1]; exact R) hS x11
 
 /-- Two calls whose public data agree, in the inner frame. -/
@@ -175,7 +175,7 @@ theorem enc_ct {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x
     have hP16' : 16 ≤ e.L.P := hP' ▸ hP16
     have hkD : 2 * Hl.D + 2 ≤ e.L.k.toNat := by
       by_contra hc
-      rw [eval_nonzero, f₁.2.choose_spec.choose_spec.2.2, ifn (by omega)] at hb
+      rw [eval_nonzero, f₁.2.choose_spec.choose_spec.2.2, ifn (by omega_arith)] at hb
       exact absurd hb (by decide)
     refine (RelCT.seq (Q := fun _ _ => True) (pw_blk (X' := MX Hl.D e.L.k.toNat e.L.ml.toNat) []
       (check_of_zImm (τ := Taint.ofRegs []) (c' := .block (chkMsg gH)) (by rfl) (by taint_decide)) nopin
@@ -190,9 +190,9 @@ theorem enc_ct {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x
     · intro a₁ a₂ u₁ u₂ a₁' a₂' ⟨⟨_, _, _, g₁, g₂⟩, hb'⟩ e₁ e₂
       have hmk : e.L.ml.toNat ≤ e.L.k.toNat - (2 * Hl.D + 2) := by
         by_contra hc
-        rw [eval_nonzero, g₁.2.choose_spec.choose_spec.2.2, ifn (by omega)] at hb'
+        rw [eval_nonzero, g₁.2.choose_spec.choose_spec.2.2, ifn (by omega_arith)] at hb'
         exact absurd hb' (by decide)
-      exact encMain_tr hH hG hHh hGh hGl hGv c hL (hP' ▸ hP) hP16' (hDe.trans hHl) q₁ q₂ (by omega) _ _ _ _ _ _
+      exact encMain_tr hH hG hHh hGh hGl hGv c hL (hP' ▸ hP) hP16' (hDe.trans hHl) q₁ q₂ (by omega_arith) _ _ _ _ _ _
         ⟨hL, hP', hk, g₁.forget, g₂.forget⟩ e₁ e₂
   · rintro _ _ ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩
     exact ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩

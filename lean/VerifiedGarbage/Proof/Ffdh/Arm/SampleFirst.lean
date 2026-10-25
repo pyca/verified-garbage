@@ -29,14 +29,7 @@ theorem sampleFirst_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : Li
     VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
   have r20 := h.locals.read (d := 20) (by decide)
   have r68 := h.locals.read (d := 68) (by decide)
-  refine withRest [.r0, .r1, .r2, .r3, .lr] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.first : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r2, .r3, .lr] ?_ (by rfl) (by rfl)
   have keep (v : Byte) : (s.mem.writeW (State.addr dst) v).readW (off (State.addr s.sp) 20) 32 =
       BitVec.ofNat 32 l.width := by
     have frame : Frame [⟨State.addr dst, 1⟩] s.mem (s.mem.writeW (State.addr dst) v) :=

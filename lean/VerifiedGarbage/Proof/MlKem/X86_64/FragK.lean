@@ -48,7 +48,7 @@ theorem kzero_ok (s : State) (hw : Covers [⟨pa s (sc 0), 200⟩] s.wr) :
   have hbx : s1.gpr .rbx = s.gpr .rbx := k1.gpr (by decide)
   refine WP.mono (zeroSt_ok .rbx 0 s1 hax fun i hi => ?_) fun s2 ⟨hz, hf, k2⟩ => ?_
   · rw [k1.2.2, hbx]
-    exact hw _ _ ⟨_, List.mem_singleton_self _, contains_offset' (by omega) (by omega)⟩
+    exact hw _ _ ⟨_, List.mem_singleton_self _, contains_offset' (by omega_arith) (by omega_arith)⟩
   · rw [hbx] at hz hf
     exact ⟨hz, by rw [← hm]; exact hf, (k1.trans k2).mono (by decide)⟩
 
@@ -77,7 +77,7 @@ structure KAbsH (src : Ptr) (len rate pos : Nat) (s : State) : Prop where
 theorem pa_sc0 (s : State) : pa s (sc 0) = s.gpr .rbx := BitVec.add_zero _
 
 theorem rate_small {rate : Nat} (h : rate ∈ rates) : rate < 2 ^ 31 := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_arith
 
 theorem kabsGlue_ok (src : Ptr) (len rate pos : Nat) (ho : src.2 < 2 ^ 31) (hl : len < 2 ^ 31) (hr : rate < 2 ^ 31)
     (hp : pos < 2 ^ 31) (hs : NA src) (s : State) :
@@ -93,15 +93,15 @@ theorem kabsGlue_ok (src : Ptr) (len rate pos : Nat) (ho : src.2 < 2 ^ 31) (hl :
   refine WP.keep _ ?_ (by rfl)
   unfold lea
   xrun [sx_ofNat ho, sx_ofNat (show (0 : Nat) < 2 ^ 31 by decide), sx_ofNat (show (200 : Nat) < 2 ^ 31 by decide),
-    o1, o2, o3, sw_ofNat (show rate < 2 ^ 32 by omega), sw_ofNat (show pos < 2 ^ 32 by omega),
-    sw_ofNat (show len < 2 ^ 32 by omega), List.cons_append, List.nil_append, pa_sc0]
+    o1, o2, o3, sw_ofNat (show rate < 2 ^ 32 by omega_arith), sw_ofNat (show pos < 2 ^ 32 by omega_arith),
+    sw_ofNat (show len < 2 ^ 32 by omega_arith), List.cons_append, List.nil_append, pa_sc0]
 
 theorem kabsArgs {src : Ptr} {len rate pos : Nat} {s s1 : State} (h : KAbsH src len rate pos s)
     (hv : s1.gpr .rdi = pa s (sc 0) ∧ s1.gpr .rsi = BitVec.ofNat 64 rate ∧ s1.gpr .rdx = BitVec.ofNat 64 pos ∧
       s1.gpr .rcx = pa s src ∧ s1.gpr .r8 = BitVec.ofNat 64 len ∧ s1.gpr .r9 = pa s (sc 200))
     (k : Keep argRegs s s1) : AbsorbArgs s1 (pa s (sc 0)) (pa s src) (pa s (sc 200)) rate pos len := by
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
-  exact ⟨hv.1, hv.2.1, hv.2.2.1, hv.2.2.2.1, hv.2.2.2.2.1, hv.2.2.2.2.2, h.hrate, h.hpos, by have := h.hlen; omega,
+  exact ⟨hv.1, hv.2.1, hv.2.2.1, hv.2.2.2.1, hv.2.2.2.2.1, hv.2.2.2.2.2, h.hrate, h.hpos, by have := h.hlen; omega_arith,
     h.st_scr, h.d_st, h.d_scr, k16 s1 (by rw [hsp]; exact h.k_st), k16 s1 (by rw [hsp]; exact h.k_d),
     k16 s1 (by rw [hsp]; exact h.k_scr)⟩
 
@@ -111,12 +111,12 @@ theorem kabs_ok {src : Ptr} {len rate pos : Nat} (hs : NA src) {s : State} (h : 
         Spec.Sha3.Repr s'.mem (pa s (sc 0)) rate (msg ++ bytesAt s.mem (pa s src) len) := by
   have hr := rate_small h.hrate
   have := h.hpos
-  refine WP.seq (WP.mono (kabsGlue_ok src len rate pos h.hoff h.hlen hr (by omega) hs s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
+  refine WP.seq (WP.mono (kabsGlue_ok src len rate pos h.hoff h.hlen hr (by omega_arith) hs s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
   refine absorb_call (kabsArgs h hv k) (by rw [k.2.1, k.2.2]; exact h.c) (by rw [k.2.2]; exact h.w)
     fun s' hrd hwr hcs hf hR _ => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
       fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩, ?_⟩
-  · rw [← hm, ← hsp]; exact Frame.below_mono hf (by omega) (by omega)
+  · rw [← hm, ← hsp]; exact Frame.below_mono hf (by omega_arith) (by omega_arith)
   · intro msg hmsg hpos
     rw [← hm] at hmsg ⊢
     exact hR msg hmsg hpos
@@ -136,9 +136,9 @@ theorem kabs_tr {src : Ptr} {len rate pos : Nat} (hs : NA src) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hi; rcases hi with rfl | rfl <;> rfl)) (lea_nomem _ _))
       (mov32i_nomem _ _)) (lea_nomem _ _)))
     (fun x y ⟨hx, hy, _⟩ => ⟨kabsGlue_ok src len rate pos hx.hoff hx.hlen (rate_small hx.hrate)
-      (by have := rate_small hx.hrate; have := hx.hpos; omega) hs x,
+      (by have := rate_small hx.hrate; have := hx.hpos; omega_arith) hs x,
       kabsGlue_ok src len rate pos hy.hoff hy.hlen (rate_small hy.hrate)
-      (by have := rate_small hy.hrate; have := hy.hpos; omega) hs y⟩)
+      (by have := rate_small hy.hrate; have := hy.hpos; omega_arith) hs y⟩)
     fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩)
     (RelCT.callEx Proof.Sha3.X86_64.Stream.Absorb.absorb_correct Proof.Sha3.X86_64.Stream.Absorb.absorb_ct
       fun x1 y1 ⟨x, y, ⟨hx, hy, e1, e2, e3⟩, ⟨⟨hv1, _⟩, k1⟩, ⟨⟨hv2, _⟩, k2⟩⟩ => by
@@ -168,7 +168,7 @@ structure KPadH (rate pos : Nat) (s : State) : Prop where
 theorem b8_ofNat64 {v : Nat} (_hv : v < 256) : BitVec.setWidth 8 (BitVec.ofNat 64 v) = BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem kpadGlue_ok (rate pos suffix : Nat) (hr : rate < 2 ^ 31) (hp : pos < 2 ^ 31) (hs : suffix < 256) (s : State) :
     WP isa (.block (lea .rdi (sc 0) ++ ([.mov32 .rsi (.imm (BitVec.ofNat 32 rate)),
@@ -180,8 +180,8 @@ theorem kpadGlue_ok (rate pos suffix : Nat) (hr : rate < 2 ^ 31) (hp : pos < 2 ^
   refine WP.keep _ ?_ (by rfl)
   unfold lea
   xrun [sx_ofNat (show (0 : Nat) < 2 ^ 31 by decide), sx_ofNat (show (200 : Nat) < 2 ^ 31 by decide),
-    sw_ofNat (show rate < 2 ^ 32 by omega), sw_ofNat (show pos < 2 ^ 32 by omega),
-    sw_ofNat (show suffix < 2 ^ 32 by omega), List.cons_append, List.nil_append, pa_sc0]
+    sw_ofNat (show rate < 2 ^ 32 by omega_arith), sw_ofNat (show pos < 2 ^ 32 by omega_arith),
+    sw_ofNat (show suffix < 2 ^ 32 by omega_arith), List.cons_append, List.nil_append, pa_sc0]
 
 theorem kpadArgs {rate pos suffix : Nat} {s s1 : State} (h : KPadH rate pos s)
     (hv : s1.gpr .rdi = pa s (sc 0) ∧ s1.gpr .rsi = BitVec.ofNat 64 rate ∧ s1.gpr .rdx = BitVec.ofNat 64 pos ∧
@@ -197,12 +197,12 @@ theorem kpad_ok {rate pos suffix : Nat} (hs : suffix < 256) {s : State} (h : KPa
         stateAt s'.mem (pa s (sc 0)) = absorb rate (pad rate (BitVec.ofNat 8 suffix) msg) := by
   have hr := rate_small h.hrate
   have := h.hpos
-  refine WP.seq (WP.mono (kpadGlue_ok rate pos suffix hr (by omega) hs s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
+  refine WP.seq (WP.mono (kpadGlue_ok rate pos suffix hr (by omega_arith) hs s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
   refine pad_call (kpadArgs h hv k) (covers_nil_wr (by rw [k.2.2]; exact h.w)) (by rw [k.2.2]; exact h.w)
     fun s' hrd hwr hcs hf hR => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
       fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩, ?_⟩
-  · rw [← hm, ← hsp]; exact Frame.below_mono hf (by omega) (by omega)
+  · rw [← hm, ← hsp]; exact Frame.below_mono hf (by omega_arith) (by omega_arith)
   · intro msg hmsg hpos
     rw [← hm] at hmsg
     rw [hR msg hmsg hpos, hv.2.2.2.1, b8_ofNat64 hs]
@@ -220,8 +220,8 @@ theorem kpad_tr {rate pos suffix : Nat} (hs : suffix < 256) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hi; rcases hi with rfl | rfl | rfl <;> rfl))
       (lea_nomem _ _)))
     (fun x y ⟨hx, hy, _⟩ => ⟨kpadGlue_ok rate pos suffix (rate_small hx.hrate)
-      (by have := rate_small hx.hrate; have := hx.hpos; omega) hs x,
-      kpadGlue_ok rate pos suffix (rate_small hy.hrate) (by have := rate_small hy.hrate; have := hy.hpos; omega) hs y⟩)
+      (by have := rate_small hx.hrate; have := hx.hpos; omega_arith) hs x,
+      kpadGlue_ok rate pos suffix (rate_small hy.hrate) (by have := rate_small hy.hrate; have := hy.hpos; omega_arith) hs y⟩)
     fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩)
     (RelCT.callEx Proof.Sha3.X86_64.Stream.Pad.pad_correct Proof.Sha3.X86_64.Stream.Pad.pad_ct
       fun x1 y1 ⟨x, y, ⟨hx, hy, e1, e3⟩, ⟨⟨hv1, _⟩, k1⟩, ⟨⟨hv2, _⟩, k2⟩⟩ => by
@@ -263,8 +263,8 @@ theorem ksqzGlue_ok (dst : Ptr) (len rate : Nat) (ho : dst.2 < 2 ^ 31) (hl : len
   refine WP.keep _ ?_ (by rfl)
   unfold lea
   xrun [sx_ofNat ho, sx_ofNat (show (0 : Nat) < 2 ^ 31 by decide), sx_ofNat (show (200 : Nat) < 2 ^ 31 by decide),
-    o1, o2, o3, sw_ofNat (show rate < 2 ^ 32 by omega), sw_ofNat (show (0 : Nat) < 2 ^ 32 by decide),
-    sw_ofNat (show len < 2 ^ 32 by omega), List.cons_append, List.nil_append, pa_sc0]
+    o1, o2, o3, sw_ofNat (show rate < 2 ^ 32 by omega_arith), sw_ofNat (show (0 : Nat) < 2 ^ 32 by decide),
+    sw_ofNat (show len < 2 ^ 32 by omega_arith), List.cons_append, List.nil_append, pa_sc0]
 
 theorem ksqzArgs {dst : Ptr} {len rate : Nat} {s s1 : State} (h : KSqzH dst len rate s)
     (hv : s1.gpr .rdi = pa s (sc 0) ∧ s1.gpr .rsi = BitVec.ofNat 64 rate ∧ s1.gpr .rdx = BitVec.ofNat 64 0 ∧
@@ -272,7 +272,7 @@ theorem ksqzArgs {dst : Ptr} {len rate : Nat} {s s1 : State} (h : KSqzH dst len 
     (k : Keep argRegs s s1) : SqueezeArgs s1 (pa s (sc 0)) (pa s dst) (pa s (sc 200)) rate 0 len := by
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
   exact ⟨hv.1, hv.2.1, hv.2.2.1, hv.2.2.2.1, hv.2.2.2.2.1, hv.2.2.2.2.2, h.hrate, Nat.zero_le _,
-    by have := h.hlen; omega, h.st_out, h.st_scr, h.out_scr, k16 s1 (by rw [hsp]; exact h.k_st),
+    by have := h.hlen; omega_arith, h.st_out, h.st_scr, h.out_scr, k16 s1 (by rw [hsp]; exact h.k_st),
     k16 s1 (by rw [hsp]; exact h.k_out), k16 s1 (by rw [hsp]; exact h.k_scr)⟩
 
 theorem ksqz_ok {dst : Ptr} {len rate : Nat} (hs : NA dst) {s : State} (h : KSqzH dst len rate s) :
@@ -285,7 +285,7 @@ theorem ksqz_ok {dst : Ptr} {len rate : Nat} (hs : NA dst) {s : State} (h : KSqz
   refine squeeze_call (ksqzArgs h hv k) (covers_nil_wr (by rw [k.2.2]; exact h.w)) (by rw [k.2.2]; exact h.w)
     fun s' hrd hwr hcs hf ho => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
       fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩, ?_⟩
-  · rw [← hm, ← hsp]; exact Frame.below_mono hf (by omega) (by omega)
+  · rw [← hm, ← hsp]; exact Frame.below_mono hf (by omega_arith) (by omega_arith)
   · rw [ho, hm]
 
 theorem ksqz_tr {dst : Ptr} {len rate : Nat} (hs : NA dst) :

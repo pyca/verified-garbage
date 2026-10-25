@@ -55,7 +55,7 @@ theorem add_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} [NeZero m]
       have bx : x+8*K.L.M.n≤4096 := by
         simp only [TCombCfg.Q,ptAt] at hx
         exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide) x hx
-      omega
+      omega_arith
   have hltu : ∀ x ∈ rIds,wordsVal u.mem base (enc K.L.M.n false x) K.L.M.n<m := by
     apply rIds_lt_of false
     simp only [Bool.false_eq_true,↓reduceIte,List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
@@ -76,7 +76,7 @@ theorem add_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} [NeZero m]
   have hsv := hsu.of_rest kv (by decide)
   have backIn : ∀ d ∈ [K.L.R.x,K.L.R.y,K.L.R.z,K.O.x,K.O.y,K.O.z],d+8*K.L.M.n≤4096 := by
     simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
-    refine ⟨by omega,by omega,by omega,?_⟩
+    refine ⟨by omega_arith,by omega_arith,by omega_arith,?_⟩
     simp only [TCombCfg.O,ptAt]
     exact lay_cases K.L.M.n h.n3 h.n6 (by decide) (by decide) (by decide) (by decide)
   have backApart : ∀ d ∈ [K.L.R.x,K.L.R.y,K.L.R.z],∀ e ∈ [K.O.x,K.O.y,K.O.z],

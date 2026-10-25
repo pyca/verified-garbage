@@ -40,8 +40,8 @@ theorem ea_tblAt {s : State} {X : Addr} (hx : (s.gpr .edx).setWidth 64 = X) {d :
     (hd : X.toNat + d < 2 ^ 32) : s.ea (TCombCfg.tblAt d) = X + BitVec.ofNat 64 d := by
   change addr (s.gpr .edx) d = _
   have hnat : (s.gpr .edx).toNat = X.toNat := by
-    rw [← hx, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (s.gpr .edx).isLt; omega)]
-  rw [addr_eq (by omega), hx]
+    rw [← hx, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (s.gpr .edx).isLt; omega_arith)]
+  rw [addr_eq (by omega_arith), hx]
 
 abbrev KeepRegs := VG.Proof.Mont.X86.Keeps
 
@@ -91,7 +91,7 @@ theorem selStep_ok (s : State) {X : Addr} (hx : (s.gpr .edx).setWidth 64 = X) {d
       XKeep [] (fun r => r = selAcc c ∨ r = .xmm6) s t := by
   have h14 := (selAcc_ne c hc).1
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_tblAt hx (d := d) (by omega), State.load128, hr,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_tblAt hx (d := d) (by omega_arith), State.load128, hr,
     ite_true, Option.map_some, XOp.exec, XBinOp.eval, RegUpd.xmm_setXmm_self,
     RegUpd.xmm_setXmm_of_ne _ _ h14, Option.some.injEq,
     exists_eq_left', RegUpd.xmm_setXmm_of_ne _ _ (show XReg.xmm7 ≠ XReg.xmm6 from by decide)]
@@ -113,28 +113,28 @@ theorem selSteps_ok {n m : Nat} (hn : n ≤ 6) {X : Addr} (hX : X.toNat + 16 * n
   | 0, _, s, _, _ => WP.block_nil ⟨fun c _ => by simp, XKeep.refl _ _ _⟩
   | k + 1, hk, s, hx, hr => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (selSteps_ok hn hX k (by omega) s hx hr) fun s₁ ⟨a₁, k₁⟩ => ?_
+    refine WP.mono (selSteps_ok hn hX k (by omega_arith) s hx hr) fun s₁ ⟨a₁, k₁⟩ => ?_
     have h15 : s₁.xmm .xmm7 = s.xmm .xmm7 := k₁.xmm _ (by
       rintro (⟨c, hc, h⟩ | h)
-      · exact (selAcc_ne c (by omega)).2 h.symm
+      · exact (selAcc_ne c (by omega_arith)).2 h.symm
       · exact absurd h (by decide))
-    refine WP.mono (selStep_ok s₁ (X := X) (by rw [k₁.gpr _ List.not_mem_nil]; exact hx) (c := k) (by omega)
-      (by omega)
-      (by rw [k₁.rd, k₁.wr]; exact hr k (by omega))) fun t ⟨a₂, k₂⟩ => ⟨fun c hc => ?_, ?_⟩
+    refine WP.mono (selStep_ok s₁ (X := X) (by rw [k₁.gpr _ List.not_mem_nil]; exact hx) (c := k) (by omega_arith)
+      (by omega_arith)
+      (by rw [k₁.rd, k₁.wr]; exact hr k (by omega_arith))) fun t ⟨a₂, k₂⟩ => ⟨fun c hc => ?_, ?_⟩
     · by_cases hck : c = k
       · subst hck
         rw [a₂, a₁ c hc, h15, k₁.mem]
         simp only [Nat.lt_irrefl, ↓reduceIte, Nat.lt_succ_self]
       · rw [k₂.xmm _ (by
           rintro (h | h)
-          · exact hck (selAcc_inj c hc k (by omega) h)
+          · exact hck (selAcc_inj c hc k (by omega_arith) h)
           · exact (selAcc_ne c hc).1 h), a₁ c hc]
         by_cases hlt : c < k
-        · simp only [hlt, show c < k + 1 by omega, ↓reduceIte]
-        · simp only [hlt, show ¬ c < k + 1 by omega, ↓reduceIte]
+        · simp only [hlt, show c < k + 1 by omega_arith, ↓reduceIte]
+        · simp only [hlt, show ¬ c < k + 1 by omega_arith, ↓reduceIte]
     · exact k₁.trans (k₂.mono (fun _ h => h) fun r h => by
         rcases h with h | h
-        · exact Or.inl ⟨k, by omega, h⟩
+        · exact Or.inl ⟨k, by omega_arith, h⟩
         · exact Or.inr h)
 
 /-- `xmm7` = the mask `ecx` in both quadwords. -/
@@ -160,15 +160,15 @@ theorem accVal_step (mem : Mem) (X : Addr) (n a m c : Nat) (hm : 1 ≤ m) :
   by_cases h : a = m
   · subst h
     rw [decide_eq_true rfl, show bmask128 true = BitVec.allOnes 128 from rfl, BitVec.and_allOnes,
-      ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
+      ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)),
       ite_eq_left_of_eq_true _ _ (eq_true ⟨hm, Nat.le_refl _⟩)]
     simp
   · rw [decide_eq_false h, show bmask128 false = 0 from rfl]
     have e : ∀ x y : BitVec 128, x ||| (y &&& 0) = x := fun x y => by simp
     rw [e]
     by_cases h' : 1 ≤ a ∧ a ≤ m - 1
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h'), ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h'), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h'), ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h'), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
 
 /-- Entry `m` of the table at `edx = X` kept in the accumulators under the
 mask of `ebx = a`. -/
@@ -187,8 +187,8 @@ theorem selEntry_ok (K : TCombCfg) {s : State} {X : Addr} {a m : Nat} (hn : K.M.
   have hm₂ : s₂.mem = s.mem := k₂.mem.trans k₁.2.1
   refine WP.mono (selSteps_ok hn hX K.M.n (Nat.le_refl _) s₂ hx₂ (by
       rw [k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]; exact hr)) fun t ⟨a₃, k₃⟩ => ⟨fun c hc => ?_, ?_⟩
-  · rw [a₃ c (by omega), ite_eq_left_of_eq_true _ _ (eq_true hc), x₂, hm₂,
-      k₂.xmm _ (fun h => (selAcc_ne c (by omega)).2 h), x₁, hacc c hc]
+  · rw [a₃ c (by omega_arith), ite_eq_left_of_eq_true _ _ (eq_true hc), x₂, hm₂,
+      k₂.xmm _ (fun h => (selAcc_ne c (by omega_arith)).2 h), x₁, hacc c hc]
     exact accVal_step _ _ _ _ _ _ hm1
   · refine ⟨fun r hr => ?_, k₃.mem.trans hm₂, by rw [k₃.rd, k₂.rd, k₁.2.2.1],
       by rw [k₃.wr, k₂.wr, k₁.2.2.2], fun r hr => ?_⟩
@@ -207,16 +207,16 @@ theorem selEntries_ok (K : TCombCfg) {X : Addr} {a : Nat} (hn : K.M.n ≤ 6) (ha
       (∀ c < K.M.n, t.xmm (selAcc c) = accVal s.mem X K.M.n a h c) ∧
       XKeep [.ecx] (fun r => (∃ c < K.M.n, r = selAcc c) ∨ r = .xmm6 ∨ r = .xmm7) s t
   | 0, _, s, _, _, _, _, h0 => WP.block_nil ⟨fun c hc => by
-      rw [h0 c hc, accVal, ite_eq_right_of_eq_false _ _ (eq_false (by omega))], XKeep.refl _ _ _⟩
+      rw [h0 c hc, accVal, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))], XKeep.refl _ _ _⟩
   | h + 1, hh, s, h8, hx, hr, hX, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
     have hX' := hX
     rw [Nat.mul_add, Nat.mul_one] at hX'
-    refine WP.mono (selEntries_ok K hn ha h (by omega) s h8 hx (fun e he => hr e (by omega)) (by omega) h0)
+    refine WP.mono (selEntries_ok K hn ha h (by omega_arith) s h8 hx (fun e he => hr e (by omega_arith)) (by omega_arith) h0)
       fun s₁ ⟨a₁, k₁⟩ => ?_
-    refine WP.mono (selEntry_ok K (X := X) (m := h + 1) hn (by omega) hh ha
+    refine WP.mono (selEntry_ok K (X := X) (m := h + 1) hn (by omega_arith) hh ha
       (by rw [k₁.gpr _ (by decide), h8]) (by rw [k₁.gpr _ (by decide), hx])
-      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega) c hc)
+      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega_arith) c hc)
       (by simpa only [Nat.add_sub_cancel, Nat.add_assoc] using hX')
       (fun c hc => by rw [a₁ c hc, k₁.mem, Nat.add_sub_cancel])) fun t ⟨a₂, k₂⟩ =>
       ⟨fun c hc => by rw [a₂ c hc, k₁.mem], k₁.trans k₂⟩
@@ -228,15 +228,15 @@ theorem clearAcc_ok : ∀ k ≤ 6, ∀ (s : State),
   | 0, _, s => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), XKeep.refl _ _ _⟩
   | k + 1, hk, s => by
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (clearAcc_ok k (by omega) s) fun s₁ ⟨a₁, k₁⟩ => ?_
+    refine WP.mono (clearAcc_ok k (by omega_arith) s) fun s₁ ⟨a₁, k₁⟩ => ?_
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, XBinOp.eval, BitVec.xor_self,
       Option.some.injEq, exists_eq_left']
     refine ⟨fun c hc => ?_, ⟨fun r hr => k₁.gpr r hr, k₁.mem, k₁.rd, k₁.wr, fun r hr => ?_⟩⟩
     · by_cases hck : c = k
       · subst hck; exact RegUpd.xmm_setXmm_self _ _ _
-      · rw [RegUpd.xmm_setXmm_of_ne _ _ fun h => hck (selAcc_inj c (by omega) k (by omega) h), a₁ c (by omega)]
-    · rw [RegUpd.xmm_setXmm_of_ne _ _ fun h => hr ⟨k, by omega, h⟩, k₁.xmm r fun ⟨c, hc, h⟩ => hr ⟨c, by omega, h⟩]
+      · rw [RegUpd.xmm_setXmm_of_ne _ _ fun h => hck (selAcc_inj c (by omega_arith) k (by omega_arith) h), a₁ c (by omega_arith)]
+    · rw [RegUpd.xmm_setXmm_of_ne _ _ fun h => hr ⟨k, by omega_arith, h⟩, k₁.xmm r fun ⟨c, hc, h⟩ => hr ⟨c, by omega_arith, h⟩]
 
 /-- The accumulators `c < k` stored to the 16 bytes at `o + 16 c`. -/
 theorem storeAcc_ok {base : Addr} {size o : Nat} : ∀ k, ∀ (s : State), Scr s base size → o + 16 * k ≤ size →
@@ -248,21 +248,21 @@ theorem storeAcc_ok {base : Addr} {size o : Nat} : ∀ k, ∀ (s : State), Scr s
   | k + 1, s, hs, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (storeAcc_ok k s hs (by omega)) fun s₁ ⟨a₁, O₁, g₁, r₁, w₁, x₁⟩ => ?_
+    refine WP.mono (storeAcc_ok k s hs (by omega_arith)) fun s₁ ⟨a₁, O₁, g₁, r₁, w₁, x₁⟩ => ?_
     have hw : InRegions s₁.wr (off base (o + 16 * k)) 16 := by
-      rw [w₁]; exact ⟨_, hs.wr, Scr.contains hs.nowrap (by omega)⟩
+      rw [w₁]; exact ⟨_, hs.wr, Scr.contains hs.nowrap (by omega_arith)⟩
     have hs₁ : Scr s₁ base size := hs.of_eq (by rw [g₁]) (by rw [g₁]) w₁
-    have hea : s₁.ea (sc (o + 16 * k)) = off base (o + 16 * k) := hs₁.ea (by omega)
+    have hea : s₁.ea (sc (o + 16 * k)) = off base (o + 16 * k) := hs₁.ea (by omega_arith)
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, hea, State.store128, hw,
       ite_true, Option.some.injEq, exists_eq_left']
-    have O₂ := writeW128_out s₁.mem base (s₁.xmm (selAcc k)) (d := o + 16 * k) (by omega)
-    refine ⟨fun c hc => ?_, (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega)),
+    have O₂ := writeW128_out s₁.mem base (s₁.xmm (selAcc k)) (d := o + 16 * k) (by omega_arith)
+    refine ⟨fun c hc => ?_, (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith)),
       g₁, r₁, w₁, x₁⟩
     by_cases hck : c = k
     · subst hck
       rw [x₁]; exact Mem.readW_writeW_self (n := 16) _ _ _ (by decide)
-    · rw [O₂.read128 (by omega) (by omega), a₁ c (by omega)]
+    · rw [O₂.read128 (by omega_arith) (by omega_arith), a₁ c (by omega_arith)]
 
 /-- The accumulators cleared, entries `1 … H` of the table at `edx = X` kept
 under the masks of `ebx = a`, and stored to the `16 n` bytes at `E.x`. -/

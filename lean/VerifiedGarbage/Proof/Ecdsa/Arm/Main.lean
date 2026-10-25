@@ -68,7 +68,7 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 4)], w.1
   rw [List.mem_singleton.mp hw]
   have := sl_le c h7 (i := FLAG) (by decide)
   dsimp only
-  omega
+  omega_arith
 
 /-! ### The point functions' slots
 
@@ -83,13 +83,13 @@ theorem sl_below_pt (h6 : c.n ≤ 6) {i : Nat} (hi : i < 45) :
   simp only [Spec.Weierstrass.Point.oAt, Spec.Weierstrass.Point.pAt, Spec.Weierstrass.Point.qAt,
     Spec.Weierstrass.Point.aAt, Spec.Weierstrass.Point.b3At, Spec.Weierstrass.Point.ownAt,
     Spec.Weierstrass.Point.elemBytes, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]
-  omega
+  omega_arith
 
 theorem oAt_le (c : Cfg) : Spec.Weierstrass.Point.oAt c.n ≤ 4096 := by
   simp only [Spec.Weierstrass.Point.oAt, Spec.Weierstrass.Point.pAt, Spec.Weierstrass.Point.qAt,
     Spec.Weierstrass.Point.aAt, Spec.Weierstrass.Point.b3At, Spec.Weierstrass.Point.ownAt,
     Spec.Weierstrass.Point.elemBytes, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]
-  omega
+  omega_arith
 
 /-- The ladder's slots are below the point functions'. -/
 theorem ladPt (h6 : c.n ≤ 6) : VG.Proof.Weierstrass.Arm.Point.LadPt c.ladderCfg where
@@ -115,7 +115,7 @@ theorem tbl_apart_ptW (j t : Nat) :
   intro w hw
   unfold VG.Proof.Weierstrass.Arm.Point.ptW at hw
   split at hw
-  · rw [List.mem_singleton.mp hw, bitsAt_eq]; have := oAt_le c; dsimp only; omega
+  · rw [List.mem_singleton.mp hw, bitsAt_eq]; have := oAt_le c; dsimp only; omega_arith
   · simp at hw
 
 theorem fixedOk_ptW : FixedOk c (VG.Proof.Weierstrass.Arm.Point.ptW c.n) := by
@@ -130,7 +130,7 @@ theorem ptW_le : ∀ w ∈ VG.Proof.Weierstrass.Arm.Point.ptW c.n, w.1 + w.2 ≤
   intro w hw
   unfold VG.Proof.Weierstrass.Arm.Point.ptW at hw
   split at hw
-  · rw [List.mem_singleton.mp hw]; have := oAt_le c; dsimp only [size]; omega
+  · rw [List.mem_singleton.mp hw]; have := oAt_le c; dsimp only [size]; omega_arith
   · simp at hw
 
 /-- What the ladder writes: numbered slots, the accumulator and the point
@@ -156,9 +156,9 @@ theorem flag_unchP {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (sl
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
     m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine Unch.readW32 hu (fun w hw => ?_) (by omega)
+  refine Unch.readW32 hu (fun w hw => ?_) (by omega_arith)
   rcases apart_slWkP (c := c) h7 (i := FLAG) (by decide) hl w hw with h | h
-  · exact Or.inl (by omega)
+  · exact Or.inl (by omega_arith)
   · exact Or.inr h
 
 /-- After `[k]G` and `Z^(p-2)`. -/
@@ -195,7 +195,7 @@ theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base :
   have F := hS.fixed
   have hkl : kv c A s₀ < 2 ^ (8 * c.C.len) :=
     Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (ofBytes_bytesAt_lt _ _ _)
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have hlt : ∀ x ∈ ladR c.ladderCfg, wordsVal s.mem base x c.MP'.n < c.C.p := by
     intro x hx
     have hx' : x ∈ [AP, B3P, GX, GY, ONEP, RX, RY, RZ].map c.sl := hx
@@ -207,10 +207,10 @@ theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base :
     · exact lt_of_eq_of_lt F.b3p (hmont _)
     · exact lt_of_eq_of_lt F.gx (hmont _)
     · exact lt_of_eq_of_lt F.gy (hmont _)
-    · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega))
-    · exact lt_of_eq_of_lt hS.rx (by omega)
+    · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega_arith))
+    · exact lt_of_eq_of_lt hS.rx (by omega_arith)
     · exact lt_of_eq_of_lt hS.ry (hmont _)
-    · exact lt_of_eq_of_lt hS.rz (by omega)
+    · exact lt_of_eq_of_lt hS.rz (by omega_arith)
   have hG : Rep c.C (tmv c.C c.n base s (c.sl GX)) (tmv c.C c.n base s (c.sl GY))
       (tmv c.C c.n base s (c.sl ONEP)) (G c.C) := by
     show Rep c.C (toM _ _ (wordsVal s.mem base (c.sl GX) c.n)) (toM _ _ (wordsVal s.mem base (c.sl GY) c.n))
@@ -262,7 +262,7 @@ theorem stage₂With (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
       rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWkP h7 (by decide))]
       exact hS.t₁ t ht)
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega) henc) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
+    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith) henc) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   rw [powWxP_eq] at U₆
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
       i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] →
@@ -347,7 +347,7 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
       rw [tbl_unch O₈.unch h7 (j := 2) (by decide) ht (tbl_apart_flag h7 h0 2 t),
         tbl_unch Mp.unch h7 (j := 2) (by decide) ht (tbl_apart_slWk h7 (by decide))]
       exact hS.t₂ t ht)
-    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega) henc) fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
+    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega_arith) henc) fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
   rw [powWxN_eq] at U₉
   have e₉ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₉ i = sv c base s₈ i := fun hi hl =>
     sv_unch U₉ h7 hn hi (apart_slWk h7 hi hl)
@@ -416,7 +416,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Regi
   refine scalarOut_ok hc hs₁₀ (hS.far.of_rest K₁₀) hM₁₀ F₁₀.one dm em
     fun s₁₁ hs₁₁ K₁₁ U₁₁ ss_lt ss => ?_
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine VG.Proof.X25519.Arm.WP.append (checkNonzero_ok c hs₁₁ h0 (sl_le c h7 (i := SS) (by decide)) (by omega))
+  refine VG.Proof.X25519.Arm.WP.append (checkNonzero_ok c hs₁₁ h0 (sl_le c h7 (i := SS) (by decide)) (by omega_arith))
     fun s₁₂ ⟨f₁₂, k₁₂, O₁₂⟩ => ?_
   have hs₁₂ := hs₁₁.of_rest k₁₂ (by decide)
   have F₁₂ := (F₁₀.unch h7 hn (fixedOk_slWk h7 (l := [RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₁).unch
@@ -459,13 +459,13 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Regi
       sv c base s X % c.C.n ≠ 0 ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0
   · have hd : decide ((((0 < dv c .sign s₀ ∧ dv c .sign s₀ < c.C.n) ∧ (0 < kv c .sign s₀ ∧ kv c .sign s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = true := by
-      simp only [decide_eq_true_eq]; omega
+      simp only [decide_eq_true_eq]; omega_arith
     rw [ite_eq_left_of_eq_true _ _ (eq_true hP)]
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
     rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode]
   · have hd : decide ((((0 < dv c .sign s₀ ∧ dv c .sign s₀ < c.C.n) ∧ (0 < kv c .sign s₀ ∧ kv c .sign s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = false := by
-      simp only [decide_eq_false_iff_not]; omega
+      simp only [decide_eq_false_iff_not]; omega_arith
     rw [ite_eq_right_of_eq_false _ _ (eq_false hP)]
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
     rw [bytes, hd]; rfl

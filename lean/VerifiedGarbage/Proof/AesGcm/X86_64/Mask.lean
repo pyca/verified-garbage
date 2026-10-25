@@ -46,7 +46,7 @@ open VG.Proof.Cmac.Stream (bytesAt_append)
 
 /-- Runs a block of the masking loops. -/
 tactic_template "mrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-                   simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+                   simp (disch := first | decide | omega_arith) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
                      execAlu, State.load64, State.store64, State.load8, State.store8, State.load128, State.store128, XOp.exec,
                      State.ea, imm, maskByte, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg,
                      mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, zf_setReg, zf_arithFlags, gpr_setXmm,
@@ -171,13 +171,13 @@ theorem MInv.at {s t : State} {D : Addr} {c : Bool} {j i : Nat} (h : MInv s t D 
     (hi' : i < 2 ^ 64) : t.mem (D + BitVec.ofNat 64 i) = s.mem (D + BitVec.ofNat 64 i) :=
   (h.frame (D + BitVec.ofNat 64 i) fun r hr hcon => by
     simp only [List.mem_singleton] at hr; subst hr
-    simp only [Region.Contains, Mem.sub_ofNat_toNat D hi'] at hcon; omega)
+    simp only [Region.Contains, Mem.sub_ofNat_toNat D hi'] at hcon; omega_arith)
 
 theorem MInv.readW {s t : State} {D : Addr} {c : Bool} {j : Nat} (h : MInv s t D c j)
     (hj : j + 16 < 2 ^ 64) : t.mem.readW (D + BitVec.ofNat 64 j) 128 = s.mem.readW (D + BitVec.ofNat 64 j) 128 := by
   refine Mem.readW_congr fun k hk => ?_
   simp only [Offset.add_add]
-  exact h.at (by omega) (by omega)
+  exact h.at (by omega_arith) (by omega_arith)
 
 /-- `jne` after a flag result `b` is taken exactly if `b` is false. -/
 theorem maskBlocks_wp.eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = some !b := by
@@ -195,20 +195,20 @@ theorem maskBlocks_wp {s t : State} {D : Addr} {n : Nat} {c : Bool} {i : Nat} (h
       t.gpr .rcx = BitVec.ofNat 64 (n / 16 - i) ∧ t.xmm .xmm0 = maskV c) ?_ (n / 16 - i) t
     ⟨i, rfl, hi, ht, hcx, hx0⟩
   rintro k t ⟨i, rfl, hi, ht, hcx, hx0⟩
-  have hin : 16 * i + 16 ≤ n := by omega
+  have hin : 16 * i + 16 ≤ n := by omega_arith
   have cov (rs : List Region) (h : Covers [⟨D, n⟩] rs) : InRegions rs (D + BitVec.ofNat 64 (16 * i)) 16 :=
-    h _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base D hin (by omega)⟩
+    h _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base D hin (by omega_arith)⟩
   obtain ⟨t', run', mem', r10', rcx', zf', x0', g', rd', wr'⟩ := maskBlockStep_ok t (P := D) (j := 16 * i)
     (w := n / 16 - i) (c := c) (by rw [ht.keep _ (by decide) (by decide) (by decide), h12]) ht.r10 hx0 hcx
     (by rw [ht.rd, ht.wr]; exact cov _ hD) (by rw [ht.wr]; exact cov _ hDw)
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have hmem : t'.mem = writeBytes s.mem D (masked s.mem D c (16 * (i + 1))) := by
-    rw [mem', ht.readW (by omega), ht.mem, writeW_mask, show 16 * (i + 1) = 16 * i + 16 by omega, masked_add,
+    rw [mem', ht.readW (by omega_arith), ht.mem, writeW_mask, show 16 * (i + 1) = 16 * i + 16 by omega_arith, masked_add,
       ← writeBytes_append _ _ _ _ (by
         rw [length_masked, show (if c then bytesAt s.mem (D + BitVec.ofNat 64 (16 * i)) 16 else
-          List.replicate 16 0).length = 16 by cases c <;> simp [Proof.Cmac.bytesAt_length]]; omega), length_masked]
+          List.replicate 16 0).length = 16 by cases c <;> simp [Proof.Cmac.bytesAt_length]]; omega_arith), length_masked]
   have hsub : BitVec.ofNat 64 (n / 16 - i) - 1 = BitVec.ofNat 64 (n / 16 - (i + 1)) := by
-    rw [show n / 16 - i = (n / 16 - (i + 1)) + 1 by omega, ← succ_ofNat, BitVec.add_sub_cancel]
+    rw [show n / 16 - i = (n / 16 - (i + 1)) + 1 by omega_arith, ← succ_ofNat, BitVec.add_sub_cancel]
   have hcx' : t'.gpr .rcx = BitVec.ofNat 64 (n / 16 - (i + 1)) := by rw [rcx', hsub]
   have hz : t'.zf = some (decide (i + 1 = n / 16)) := by
     rw [zf', hsub]
@@ -216,16 +216,16 @@ theorem maskBlocks_wp {s t : State} {D : Addr} {n : Nat} {c : Bool} {i : Nat} (h
     · rw [he, Nat.sub_self]; simp
     · have : BitVec.ofNat 64 (n / 16 - (i + 1)) ≠ 0 := fun e => by
         have := congrArg BitVec.toNat e
-        rw [toNat_ofNat_of_lt (by omega)] at this; simp at this; omega
+        rw [toNat_ofNat_of_lt (by omega_arith)] at this; simp at this; omega_arith
       rw [beq_eq_false_iff_ne.mpr this]; simp [he]
   have ht' : MInv s t' D c (16 * (i + 1)) :=
-    ⟨by rw [r10', show 16 * (i + 1) = 16 * i + 16 by omega, BitVec.ofNat_add]; rfl, hmem,
+    ⟨by rw [r10', show 16 * (i + 1) = 16 * i + 16 by omega_arith, BitVec.ofNat_add]; rfl, hmem,
       fun r h₁ h₂ h₃ => by rw [g' r h₁ h₂ h₃, ht.keep r h₁ h₂ h₃], by rw [rd', ht.rd], by rw [wr', ht.wr]⟩
   by_cases he : i + 1 = n / 16
   · left
     exact ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), by rw [← he]; exact ht'⟩
   · right
-    exact ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), n / 16 - (i + 1), by omega, i + 1, rfl, by omega, ht', hcx',
+    exact ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), n / 16 - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, ht', hcx',
       by rw [x0', hx0]⟩
 
 /-- The last bytes: from `j < n` to `n`. -/
@@ -244,10 +244,10 @@ theorem maskBytes_wp {s t : State} {D : Addr} {n : Nat} {c : Bool} {j : Nat} (hn
     (by rw [ht.wr]; exact in_of_covers hDw hj hn)
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have hmem : t'.mem = writeBytes s.mem D (masked s.mem D c (j + 1)) := by
-    rw [mem', ht.at (Nat.le_refl _) (by omega), ht.mem, masked_succ,
-      writeBytes_snoc _ _ _ _ (by rw [length_masked]; omega), length_masked]
+    rw [mem', ht.at (Nat.le_refl _) (by omega_arith), ht.mem, masked_succ,
+      writeBytes_snoc _ _ _ _ (by rw [length_masked]; omega_arith), length_masked]
   have hz : t'.zf = some (decide (j + 1 = n)) := by
-    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega_arith) (by omega_arith)]
   have ht' : MInv s t' D c (j + 1) :=
     ⟨by rw [r10', succ_ofNat], hmem,
       fun r h₁ h₂ h₃ => by rw [g' r h₁ h₂, ht.keep r h₁ h₂ h₃], by rw [rd', ht.rd], by rw [wr', ht.wr]⟩
@@ -255,11 +255,11 @@ theorem maskBytes_wp {s t : State} {D : Addr} {n : Nat} {c : Bool} {j : Nat} (hn
   · left
     exact ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), by rw [← he]; exact ht'⟩
   · right
-    exact ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), n - (j + 1), by omega, j + 1, rfl, by omega, ht'⟩
+    exact ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), n - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, ht'⟩
 
 theorem ofNat_shr4 {n : Nat} (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 4 = BitVec.ofNat 64 (n / 16) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (by omega_arith), Nat.shiftRight_eq_div_pow]
 
 /-- `maskTail`, from the state `s` its first block leaves: the data masked,
 and the registers but `rax`, `r10` and `rcx` as they were. -/
@@ -290,7 +290,7 @@ theorem maskTail_wp {s : State} {D : Addr} {n : Nat} {c : Bool} (hn : n < 2 ^ 64
       t₁.wr = t.wr := by
     refine ⟨_, by mrun [], ?_, ?_, ?_, ?_, ?_⟩
     · simp only [zf_arithFlags, ht.r10, ht.keep .rbp (by decide) (by decide) (by decide), hbp]
-      rw [Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+      rw [Offset.ofNat_sub_ofNat_beq (by omega_arith) (by omega_arith)]
     all_goals rfl
   have ht₁ : MInv s t₁ D c (16 * (n / 16)) :=
     ⟨by rw [g₁, ht.r10], by rw [m₁, ht.mem], fun r h₁ h₂ h₃ => by rw [g₁, ht.keep r h₁ h₂ h₃],
@@ -298,6 +298,6 @@ theorem maskTail_wp {s : State} {D : Addr} {n : Nat} {c : Bool} (hn : n < 2 ^ 64
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.ite (decide (16 * (n / 16) = n)) zf₁ (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · rw [← of_decide_eq_true hb]; exact ht₁
-  · exact maskBytes_wp hn hD hDw h12 h11 hbp (by have := of_decide_eq_false hb; omega) ht₁
+  · exact maskBytes_wp hn hD hDw h12 h11 hbp (by have := of_decide_eq_false hb; omega_arith) ht₁
 
 end VG.Proof.AesGcm.X86_64

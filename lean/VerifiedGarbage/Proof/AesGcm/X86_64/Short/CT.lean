@@ -204,7 +204,7 @@ theorem ghash_taint : GhTaint ghash := by
   intro s₀ s₀' Ctx W SP A D R al n J J' tl tl' h32
   have h32' := h32
   simp only [nb16] at h32'
-  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
+  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega_arith
   have hw : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
       WP isa (.block ghSetup) s fun t => t.gpr .rdx = W + BitVec.ofNat 64 384 ∧
         t.gpr .r9 = BitVec.ofNat 64 (grp al n) ∧ t.gpr .r11 = W + BitVec.ofNat 64 (1344 + 64 * grp al n) :=
@@ -253,14 +253,14 @@ theorem copyA_rel (hal5 : al < 512) (h32 : nb16 al + nb16 n < 32) :
       copyA fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ := by
   have h32' := h32
   simp only [nb16] at h32'
-  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
+  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega_arith
   have hw : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
       WP isa (.block [.mov .rdi (.mem (at_ .r15 leadO)), .shift .shl .rdi 4, .alu .add .rdi (.reg .r15),
         .alu .add .rdi (imm gO), .mov .rsi (.mem (at_ .r15 aadO)), .mov .rcx (.mem (at_ .r15 alenO))]) s fun t =>
       t.gpr .rdi = W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1))) ∧ t.gpr .rsi = A ∧
         t.gpr .rcx = BitVec.ofNat 64 al := fun s h => by
     obtain ⟨t, run, di, si, cx, -⟩ := copyAArgs_ok s h.sm.env.r15 h.sm.env.perm.w h.sm.r296 h.sm.r232 h.sm.r184
-      (by omega)
+      (by omega_arith)
     exact WP.of_runBlock ⟨t, run, di, si, cx⟩
   exact rel_next (rel_piece [.rdi, .rsi, .rcx] (fun _ h => h.sm.env) (fun _ h => h.sm.env) (keepsEnv (by decide +kernel))
       ⟨_, by taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
@@ -278,7 +278,7 @@ theorem keystream_rel (hR : R = 10 ∨ R = 12 ∨ R = 14) (h32 : nb16 al + nb16 
       WP isa (.block ksSetup) s fun t => t.gpr .rdi = Ctx ∧ t.gpr .rsi = BitVec.ofNat 64 R ∧
         t.gpr .r10 = Ctx + BitVec.ofNat 64 (16 * R) ∧ t.gpr .rdx = W + BitVec.ofNat 64 1024 ∧
         t.gpr .r9 = BitVec.ofNat 64 ((nb16 n + 4) / 4) := fun s h =>
-    WP.mono (ksSetup_ok s h.sm.env h.sm.r176 h.sm.r280 (by omega) (by omega) h.z0)
+    WP.mono (ksSetup_ok s h.sm.env h.sm.r176 h.sm.r280 (by omega_arith) (by omega_arith) h.z0)
       fun _ ⟨_, _, _, di, si, r10, dx, r9, _⟩ => ⟨di, si, r10, dx, r9⟩
   exact rel_next (rel_piece [.rdi, .rsi, .r10, .rdx, .r9] (fun _ h => h.sm.env) (fun _ h => h.sm.env) (keepsEnv (by decide +kernel))
       ⟨_, by taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
@@ -297,13 +297,13 @@ theorem text_rel (g : Bool) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32) :
       fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ := by
   have h32' := h32
   simp only [nb16] at h32'
-  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
+  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega_arith
   have hw : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
       WP isa (.block textArgs) s fun t =>
       t.gpr .rdi = W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al)) ∧
         t.gpr .rsi = D ∧ t.gpr .rdx = W + BitVec.ofNat 64 1040 ∧ t.gpr .rcx = BitVec.ofNat 64 n := fun s h => by
     obtain ⟨t, run, di, si, dx, cx, -⟩ := textArgs_ok s h.sm.env.r15 h.sm.env.perm.w h.sm.r296 h.sm.r272
-      h.sm.r200 h.sm.r208 (by omega)
+      h.sm.r200 h.sm.r208 (by omega_arith)
     exact WP.of_runBlock ⟨t, run, di, si, dx, cx⟩
   exact rel_next (rel_piece [.rdi, .rsi, .rdx, .rcx] (fun _ h => h.sm.env) (fun _ h => h.sm.env) (keepsEnv (by decide +kernel))
       ⟨_, by taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
@@ -323,13 +323,13 @@ theorem copyCG_rel (h32 : nb16 al + nb16 n < 32) :
       copyCG fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ := by
   have h32' := h32
   simp only [nb16] at h32'
-  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
+  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega_arith
   have hw : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
       WP isa (.block (gText ++ [.mov .rsi (.mem (at_ .r15 dataO)), .mov .rcx (.mem (at_ .r15 lenO))])) s fun t =>
       t.gpr .rdi = W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al)) ∧
         t.gpr .rsi = D ∧ t.gpr .rcx = BitVec.ofNat 64 n := fun s h => by
     obtain ⟨t, run, di, si, cx, -⟩ := copyCArgs_ok s h.sm.env.r15 h.sm.env.perm.w h.sm.r296 h.sm.r272
-      h.sm.r200 h.sm.r208 (by omega)
+      h.sm.r200 h.sm.r208 (by omega_arith)
     exact WP.of_runBlock ⟨t, run, di, si, cx⟩
   refine rel_next ?_ (fun _ h => copyCG_sj C h32 h) (fun _ h => copyCG_sj C' h32 h)
   exact rel_seq_block_split (rel_piece [.rdi, .rsi, .rcx] (fun _ h => h.sm.env) (fun _ h => h.sm.env)
@@ -346,11 +346,11 @@ theorem lens_rel (hal5 : al < 512) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32)
       fun s₁ s₂ => SJ s₀ Ctx W SP A D R al n J tl s₁ ∧ SJ s₀' Ctx W SP A D R al n J' tl' s₂ := by
   have h32' := h32
   simp only [nb16] at h32'
-  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
+  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega_arith
   have hw : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SJ s₀ Ctx W SP A D R al n J tl s →
       WP isa (.block [.mov .rdi (.mem (at_ .r15 mpO)), .shift .shl .rdi 4, .alu .add .rdi (.reg .r15),
         .alu .add .rdi (imm (gO - 16))]) s fun t => t.gpr .rdi = W + BitVec.ofNat 64 (496 + 16 * (4 * grp al n)) :=
-    fun s h => lensHead_ok s h.sm.env.r15 h.sm.env.perm.w h.sm.r288 (by omega)
+    fun s h => lensHead_ok s h.sm.env.r15 h.sm.env.perm.w h.sm.r288 (by omega_arith)
   refine rel_next (rel_block_split (rel_piece [.rdi] (fun _ h => h.sm.env) (fun _ h => h.sm.env) (keepsEnv (by decide +kernel))
       ⟨_, by taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) ⟨_, by taint_decide⟩))
@@ -385,7 +385,7 @@ theorem FinI.keep {Ctx W SP D : Addr} {R r : Nat} {s s' : State} (h : FinI Ctx W
     (hf : Frame [⟨W + BitVec.ofNat 64 1024, 64⟩] s.mem s'.mem) : FinI Ctx W SP D R r s' := by
   have kp : ∀ d, d + 8 ≤ 1024 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d hd => hf.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun q hq => by
-      simp only [List.mem_singleton] at hq; subst hq; exact Offset.disjoint W (.inl (by omega)) (by omega) (by decide))
+      simp only [List.mem_singleton] at hq; subst hq; exact Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by decide))
       (by decide)
   exact ⟨h.env.keep hg hrd hwr, by rw [kp 176 (by decide)]; exact h.rounds, by rw [kp 200 (by decide)]; exact h.dat,
     by rw [kp 208 (by decide)]; exact h.len⟩
@@ -487,7 +487,7 @@ theorem sealRunF_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : Ks
   have fi : ∀ {s : State}, OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s →
       FinI Ctx W SP (D + BitVec.ofNat 64 (16 * (n / 16))) R (n - 16 * (n / 16)) s :=
     fun h => ⟨h.env, h.rounds.1, h.dat, h.len⟩
-  exact (RelCT.seq a (RelCT.seq bl ((finish_rel hF hks hkr hRr (by omega)).mono (fun _ _ h => ⟨fi h.1, fi h.2⟩)
+  exact (RelCT.seq a (RelCT.seq bl ((finish_rel hF hks hkr hRr (by omega_arith)).mono (fun _ _ h => ⟨fi h.1, fi h.2⟩)
     fun _ _ h => h))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 /-- After the entry, the long `seal` in two runs, with the additional data
@@ -528,7 +528,7 @@ theorem sealRunW_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : Ks
       FinI Ctx W SP (D + BitVec.ofNat 64 (16 * (n / 16))) R (n - 16 * (n / 16)) s :=
     fun h => ⟨h.env, h.rounds.1, h.dat, h.len⟩
   exact (RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨h.2.1, h.2.2⟩)
-    (RelCT.seq bl ((finish_rel hF hks hkr hRr (by omega)).mono (fun _ _ h => ⟨fi h.1, fi h.2⟩)
+    (RelCT.seq bl ((finish_rel hF hks hkr hRr (by omega_arith)).mono (fun _ _ h => ⟨fi h.1, fi h.2⟩)
     fun _ _ h => h))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 /-- What `seal` needs of the code `lng` it runs when the short path does not
@@ -621,13 +621,13 @@ theorem textSM_rel {s₀ s₀' : State} {Ctx W SP Np A D : Addr} {nl al n R : Na
       fun s₁ s₂ => SM s₀ Ctx W SP A D R al n J tl s₁ ∧ SM s₀' Ctx W SP A D R al n J' tl' s₂ := by
   have h32' := h32
   simp only [nb16] at h32'
-  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
+  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega_arith
   have hw : ∀ {s₀ : State} {J : Block} {tl : BitVec 64} (s : State), SM s₀ Ctx W SP A D R al n J tl s →
       WP isa (.block textArgs) s fun t =>
       t.gpr .rdi = W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al)) ∧
         t.gpr .rsi = D ∧ t.gpr .rdx = W + BitVec.ofNat 64 1040 ∧ t.gpr .rcx = BitVec.ofNat 64 n := fun s h => by
     obtain ⟨t, run, di, si, dx, cx, -⟩ := textArgs_ok s h.env.r15 h.env.perm.w h.r296 h.r272 h.r200 h.r208
-      (by omega)
+      (by omega_arith)
     exact WP.of_runBlock ⟨t, run, di, si, dx, cx⟩
   exact rel_next (rel_piece [.rdi, .rsi, .rdx, .rcx] (fun _ h => h.env) (fun _ h => h.env)
       (keepsEnv (by decide +kernel)) ⟨_, by taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
@@ -664,7 +664,7 @@ theorem openShort_rel (hF : ShortFacts) {pw gh : Prog isa} {tm tm' : Mem → Mem
   have hRr : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   have hb : 1 ≤ t ∧ t ≤ 16 := by
     simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
-    omega
+    omega_arith
   have oA := C.arg24 (by decide)
   have hTar := C.args 2 (by decide)
   have hTar' := C'.args 2 (by decide)
@@ -733,7 +733,7 @@ theorem sealMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMod
       fun C hnl hal s h => WP.mono (condE_ok C h hnl hal) fun _ ⟨z, E, _⟩ => ⟨z, E⟩
     have c := rel_next ((cond_rel (F₁ := OneEntry s₀ Ctx W SP A D n) (F₂ := OneEntry s₀' Ctx W SP A D n)
         (fun _ h => condS_of h hnl hal) (fun _ h => condS_of h hnl' hal')
-        (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega)))
+        (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_arith)))
       (hw C hnl hal) (hw C' hnl' hal')
     refine RelCT.seq (c.mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h) (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
       ((hlr C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
@@ -804,7 +804,7 @@ theorem openMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMod
         ⟨z, E, by rw [K.gpr _ (by decide) (by decide) (by decide), h.2.1], by rw [K.mem]; exact h.2.2⟩
     have c := rel_next ((cond_rel (F₁ := OpenIn s₀ Ctx W SP A D n t) (F₂ := OpenIn s₀' Ctx W SP A D n t)
         (fun _ h => condS_of h.1 hnl hal) (fun _ h => condS_of h.1 hnl' hal')
-        (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega)))
+        (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_arith)))
       (hw C hnl hal) (hw C' hnl' hal')
     refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
       ((hlr C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok).mono

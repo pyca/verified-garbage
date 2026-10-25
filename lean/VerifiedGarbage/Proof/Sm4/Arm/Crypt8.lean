@@ -41,9 +41,9 @@ theorem KeyCtx.of_ctx {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx 
 theorem ok_bs {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E) (hc : Ctx s₀ s) : Ok bsCfg s where
   slotIn k hk := by
     simp only [bsCfg, tableSlot_eq] at hk ⊢
-    rw [hc.wr, hc.base]; exact slot_in hp.scr hp.fit (by rw [slots_eq]; omega)
+    rw [hc.wr, hc.base]; exact slot_in hp.scr hp.fit (by rw [slots_eq]; omega_arith)
   extIn k hk := by simp [bsCfg] at hk
-  slots := by have := hp.fit; simp only [bsCfg, hc.base]; rw [slots_eq] at this; rw [tableSlot_eq]; omega
+  slots := by have := hp.fit; simp only [bsCfg, hc.base]; rw [slots_eq] at this; rw [tableSlot_eq]; omega_arith
   sep k _ j hj := by simp [bsCfg] at hj
 
 /-- The registers `Ctx` keeps but `kp`: `sb` alone. -/
@@ -74,25 +74,25 @@ theorem toBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀
     (fun j i hji => by
       simp only [tailIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
       obtain ⟨k, hk, rfl, rfl⟩ := hji
-      exact ⟨by simp only [bsCfg, tableSlot_eq, tailSlot_eq]; omega, by omega, rfl⟩)
+      exact ⟨by simp only [bsCfg, tableSlot_eq, tailSlot_eq]; omega_arith, by omega_arith, rfl⟩)
     (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hb' hso
   refine ⟨s', h', hc.bs rd' wr' sp' hb' f', fun w hw b hb i hi j hj => ?_⟩
-  have hp8 : 8 * i + b < 32 := by omega
+  have hp8 : 8 * i + b < 32 := by omega_arith
   have hmem := hso (32 + (8 * w + j)) (toBsG ((8 * w + j) / 8) ((8 * w + j) % 8)) (by
-      simp only [toBsOuts, List.mem_map, List.mem_range]; exact ⟨8 * w + j, by omega, rfl⟩)
-      (by rw [tableSlot_eq]; omega) _ hp8
-  rw [show (8 * w + j) / 8 = w by omega, show (8 * w + j) % 8 = j by omega] at hmem
-  have ht : 8 * i + j < 32 := by omega
+      simp only [toBsOuts, List.mem_map, List.mem_range]; exact ⟨8 * w + j, by omega_arith, rfl⟩)
+      (by rw [tableSlot_eq]; omega_arith) _ hp8
+  rw [show (8 * w + j) / 8 = w by omega_arith, show (8 * w + j) % 8 = j by omega_arith] at hmem
+  have ht : 8 * i + j < 32 := by omega_arith
   show (slotW s' (stateSlot w j)).getLsbD (8 * i + b) = _
-  rw [slotW, hb', show stateSlot w j = 32 + (8 * w + j) by simp only [stateSlot]; omega, hmem, toBsG,
-    show (8 * i + b) % 8 = b by omega, show (8 * i + b) / 8 = i by omega, xorBits_cons, xorBits_nil,
+  rw [slotW, hb', show stateSlot w j = 32 + (8 * w + j) by simp only [stateSlot]; omega_arith, hmem, toBsG,
+    show (8 * i + b) % 8 = b by omega_arith, show (8 * i + b) / 8 = i by omega_arith, xorBits_cons, xorBits_nil,
     Bool.xor_false, Nat.add_assoc, bitOf_word _ _ _ ht, slotW, readW_bit _ _ hi hj]
   simp only [ofBlock]
-  rw [getLsbD_wordAt _ _ hi hj, blockAt_getD _ _ (by omega), byte_addr _ rfl (by rw [tailSlot_eq]; omega),
+  rw [getLsbD_wordAt _ _ hi hj, blockAt_getD _ _ (by omega_arith), byte_addr _ rfl (by rw [tailSlot_eq]; omega_arith),
     BitVec.add_assoc, ← BitVec.ofNat_add,
-    show 4 * (tailSlot + (4 * b + w)) + i = 4 * tailSlot + 16 * b + (4 * w + i) by omega]
+    show 4 * (tailSlot + (4 * b + w)) + i = 4 * tailSlot + 16 * b + (4 * w + i) by omega_arith]
 
 /-- The state's planes back to the tail buffer's blocks. -/
 theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E) (hc : Ctx s₀ s)
@@ -108,7 +108,7 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
     (fun r i hri => by simp at hri)
     (fun j i hji => by
       obtain ⟨k, hk, rfl, rfl⟩ := stateIns_mem hji
-      exact ⟨by simp only [bsCfg, tableSlot_eq]; omega, by omega, by simp only [Nat.zero_add]; rfl⟩)
+      exact ⟨by simp only [bsCfg, tableSlot_eq]; omega_arith, by omega_arith, by simp only [Nat.zero_add]; rfl⟩)
     (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hb' hso hkeep
@@ -117,25 +117,25 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
   · show slotW s' (stateSlot w j) = slotW s (stateSlot w j)
     have hm : stateSlot w j ∈ stateSlots := by
       simp only [stateSlots, List.mem_map, List.mem_range]
-      exact ⟨8 * w + j, by omega, by simp only [stateSlot]; omega⟩
-    rw [slotW, hb', hkeep _ hm (by simp only [stateSlot, tableSlot_eq]; omega)]
+      exact ⟨8 * w + j, by omega_arith, by simp only [stateSlot]; omega_arith⟩
+    rw [slotW, hb', hkeep _ hm (by simp only [stateSlot, tableSlot_eq]; omega_arith)]
   apply Vector.ext
   intro k hk
   refine BitVec.eq_of_getLsbD_eq fun j hj => ?_
   rw [getLsbD_outBlock' (X b) hk hj]
-  have ht : 8 * (k % 4) + j < 32 := by omega
+  have ht : 8 * (k % 4) + j < 32 := by omega_arith
   have hmem := hso (tailSlot + (4 * b + k / 4)) (fromBsG (4 * b + k / 4)) (by
-      simp only [fromBsOuts, List.mem_map, List.mem_range]; exact ⟨4 * b + k / 4, by omega, rfl⟩)
-      (by rw [tableSlot_eq, tailSlot_eq]; omega) _ ht
-  rw [readW_bit _ _ (by omega) hj, byte_addr _ rfl (by rw [tailSlot_eq]; omega)] at hmem
-  have e1 : 8 * (3 - (4 * b + k / 4) % 4) + (8 * (k % 4) + j) % 8 = 8 * (3 - k / 4) + j := by omega
-  have e2 : 8 * ((8 * (k % 4) + j) / 8) + (4 * b + k / 4) / 4 = 8 * (k % 4) + b := by omega
-  have hw : 3 - k / 4 < 4 := by omega
-  have hbit := hX (3 - k / 4) hw b hb (k % 4) (by omega) j hj
-  rw [fromBsG, xorBits_cons, xorBits_nil, Bool.xor_false, e1, Nat.add_assoc, e2, bitOf_word _ _ _ (by omega)] at hmem
+      simp only [fromBsOuts, List.mem_map, List.mem_range]; exact ⟨4 * b + k / 4, by omega_arith, rfl⟩)
+      (by rw [tableSlot_eq, tailSlot_eq]; omega_arith) _ ht
+  rw [readW_bit _ _ (by omega_arith) hj, byte_addr _ rfl (by rw [tailSlot_eq]; omega_arith)] at hmem
+  have e1 : 8 * (3 - (4 * b + k / 4) % 4) + (8 * (k % 4) + j) % 8 = 8 * (3 - k / 4) + j := by omega_arith
+  have e2 : 8 * ((8 * (k % 4) + j) / 8) + (4 * b + k / 4) / 4 = 8 * (k % 4) + b := by omega_arith
+  have hw : 3 - k / 4 < 4 := by omega_arith
+  have hbit := hX (3 - k / 4) hw b hb (k % 4) (by omega_arith) j hj
+  rw [fromBsG, xorBits_cons, xorBits_nil, Bool.xor_false, e1, Nat.add_assoc, e2, bitOf_word _ _ _ (by omega_arith)] at hmem
   simp only [Spec.Sm4.blockAt, Vector.getElem_ofFn]
   rw [hb', BitVec.add_assoc, ← BitVec.ofNat_add,
-    show 4 * tailSlot + 16 * b + k = 4 * (tailSlot + (4 * b + k / 4)) + k % 4 by omega,
+    show 4 * tailSlot + 16 * b + k = 4 * (tailSlot + (4 * b + k / 4)) + k % 4 by omega_arith,
     hmem, ← hbit, planes_eq]
 
 /-- `crypt8`: each block of the tail buffer becomes the output of SM4's 32

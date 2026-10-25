@@ -282,7 +282,7 @@ theorem jbuildStepO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
   have hx := zadduO_x hC hO hP hP0 hn h1 h15 hI.d JT hz
   obtain ⟨JS, JD⟩ := InvJ.zaddu hC hM3 (hC.onCurve_mul hP 2) (hC.onCurve_mul hP _) hI.d JT hz hx
   rw [← hZ] at JS JD
-  rw [hC.add_mul_mul hP, show 2 * m - 1 + 2 = 2 * (m + 1) - 1 by omega] at JS
+  rw [hC.add_mul_mul hP, show 2 * m - 1 + 2 = 2 * (m + 1) - 1 by omega_arith] at JS
   have h11' := h11 (by rw [← tz, ← t2]; exact hI.T.z2)
   have v0 := val (i := 0) (by decide); have v1 := val (i := 1) (by decide)
   have v8 := val (i := 8) (by decide); have v9 := val (i := 9) (by decide)
@@ -291,10 +291,10 @@ theorem jbuildStepO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
   rw [σ0] at v0; rw [σ1] at v1; rw [σ8] at v8; rw [σ9] at v9; rw [σ10] at v10; rw [σ11] at v11
   rw [σ12] at v12
   have hm1 : mul (2 * (m + 1) - 1) P ≠ .infinity :=
-    Window5.mul_ne_infinity hO hP hP0 (by omega) (by omega)
+    Window5.mul_ne_infinity hO hP hP0 (by omega_arith) (by omega_arith)
   have J₂ : JPt C K.M.n base s₂ (TS K) (mul (2 * (m + 1) - 1) P) := by
     refine ⟨fun c hc => ?_, ?_, ?_, ?_, ?_⟩
-    · have : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4 := by omega
+    · have : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4 := by omega_arith
       rcases this with rfl | rfl | rfl | rfl | rfl
       · rw [tx]; exact v8.2.1
       · rw [ty]; exact v9.2.1
@@ -306,28 +306,28 @@ theorem jbuildStepO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
     · rw [t2, tz, v11.1, v10.1]; exact h11'
     · rw [t3, t2, tz, v12.1, v11.1, v10.1]; exact h12
   have T₂ : JTblOkO K C base P m s₂ :=
-    (hI.tbl.loopW hL (by rw [m₁]; exact Unch.refl _ _ _) hn' (by omega)).loopW hL
-      (k₂.loopW (tblW_loopW hL)) hn' (by omega)
+    (hI.tbl.loopW hL (by rw [m₁]; exact Unch.refl _ _ _) hn' (by omega_arith)).loopW hL
+      (k₂.loopW (tblW_loopW hL)) hn' (by omega_arith)
   -- The entry.
   have hb₂ : s₂.gpr .rbx = BitVec.ofNat 64 (m + 1) := by rw [k₂.gpr _ (rbx_not_clob _), b₁]
   rw [WP.block_append_iff]
-  refine WP.mono (jstoreEntry_ok hL F₂.scr hb₂ (by omega) (by omega)) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
-  have K₃ := dz_store hL (e := m + 1) (by omega) (by omega) O₃ hn'
+  refine WP.mono (jstoreEntry_ok hL F₂.scr hb₂ (by omega_arith) (by omega_arith)) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+  have K₃ := dz_store hL (e := m + 1) (by omega_arith) (by omega_arith) O₃ hn'
   rw [Nat.add_sub_cancel] at e₃ O₃
   have hs₃ := F₂.scr.of_keepRegs k₃ (by decide)
-  refine WP.mono (cmpRbxJ_ok s₃ (j := m + 1) (i := 16) (by decide) (by omega)
+  refine WP.mono (cmpRbxJ_ok s₃ (j := m + 1) (i := 16) (by decide) (by omega_arith)
     (by rw [k₃.gpr _ (by decide), hb₂])) fun s₄ ⟨z₄, k₄⟩ => ?_
   have m₄ : s₄.mem = s₃.mem := k₄.2.1
   have F₄ := (F₂.next hL hs₃ (k₃.mono (sub_powClob (by decide))) (outside_grid5 O₃)
-    (grid5_jwW (by omega))).next hL (hs₃.of_keeps k₄ (by decide)) ((Keeps.regs k₄).mono (by simp))
+    (grid5_jwW (by omega_arith))).next hL (hs₃.of_keeps k₄ (by decide)) ((Keeps.regs k₄).mono (by simp))
     (W := []) (by rw [m₄]; exact Unch.refl _ _ _) (by simp)
   have tv₄ : ∀ x ∈ [K.D.x, K.D.y, K.E.z], tmv C K.M.n base s₄ x = tmv C K.M.n base s₂ x := fun x hx => by
     show toM _ _ _ = toM _ _ _; rw [m₄, K₃ x hx]
-  refine ⟨⟨F₄, fun j hj1 hj => ?_, (J₂.store hL (b := 5 * m) (by omega) O₃ hn').congr fun c _ => by rw [m₄],
+  refine ⟨⟨F₄, fun j hj1 hj => ?_, (J₂.store hL (b := 5 * m) (by omega_arith) O₃ hn').congr fun c _ => by rw [m₄],
     by rw [k₄.1 _ (by simp), k₃.gpr _ (by decide), hb₂], fun x hx => ?_, ?_⟩, z₄⟩
   · rcases Nat.lt_or_ge j (m + 1) with h | h
-    · exact ((T₂.store hL O₃ hn' (by omega)) j hj1 (by omega)).congr fun c _ => by rw [m₄]
-    · obtain rfl : j = m + 1 := by omega
+    · exact ((T₂.store hL O₃ hn' (by omega_arith)) j hj1 (by omega_arith)).congr fun c _ => by rw [m₄]
+    · obtain rfl : j = m + 1 := by omega_arith
       exact J₂.congr fun c hc => by rw [m₄]; exact e₃ c hc
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl
@@ -345,12 +345,12 @@ theorem jbuildO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   rw [JacWinCfg.buildO]
   simp only [Code.inline]
   refine WP.seq (WP.mono (buildInit_ok hL hC hs hM hF) fun s₁ I₁ => ?_)
-  refine WP.seq (WP.mono (jbuildDbluO_ok hL hp hC hM3 hO hP hP0 (by omega) hF I₁) fun s₂ h₂ =>
+  refine WP.seq (WP.mono (jbuildDbluO_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hF I₁) fun s₂ h₂ =>
     WP.seq (WP.mono h₂ fun s₃ I₃ => ?_))
   exact countLoop_ok (Inv := fun j t => JBInvO K C base size P s (16 - j) t) (n := 15)
-    (fun j t h1 h2 hi => WP.mono (jbuildStepO_ok hL hp hC hM3 hO hP hP0 hn (m := 16 - j) (by omega)
-      (by omega) hi) fun u ⟨I, z⟩ => ⟨by rw [show 16 - (j - 1) = 16 - j + 1 by omega]; exact I,
-        by rw [z]; congr 1; simp only [decide_eq_decide]; omega⟩)
+    (fun j t h1 h2 hi => WP.mono (jbuildStepO_ok hL hp hC hM3 hO hP hP0 hn (m := 16 - j) (by omega_arith)
+      (by omega_arith) hi) fun u ⟨I, z⟩ => ⟨by rw [show 16 - (j - 1) = 16 - j + 1 by omega_arith]; exact I,
+        by rw [z]; congr 1; simp only [decide_eq_decide]; omega_arith⟩)
     (fun t hi => ⟨hi.fr, hi.tbl⟩) (by decide) I₃
 
 end VG.Proof.Weierstrass.X86_64

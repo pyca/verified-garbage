@@ -222,44 +222,44 @@ theorem gD_ok {k c : Nat} (hk1 : 1 ≤ k) (hk4 : k ≤ 4) (hc4 : c ≤ 4) {A W :
   intro j hj1 hj9 s ⟨hE, h1, h2⟩
   by_cases hjk : j ≤ k
   · -- Load `j - 1`.
-    rw [ite_eq_right (show ¬ 5 < j by omega)] at h2
+    rw [ite_eq_right (show ¬ 5 < j by omega_arith)] at h2
     have hg : gD k j = ldGD (j == k) (j - 1) := by
       simp only [gD, show 1 ≤ j ∧ j ≤ k from ⟨hj1, hjk⟩, and_self, ite_true]
-    have hl : (j == k) = true ↔ j - 1 + 1 = k := by simp only [beq_iff_eq]; omega
+    have hl : (j == k) = true ↔ j - 1 + 1 = k := by simp only [beq_iff_eq]; omega_arith
     have hin : ∀ a : Addr, (∀ i < k, InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 (64 * i))
         (if i + 1 = k then 16 * c else 64)) →
         InRegions (s.rd ++ s.wr) (a + BitVec.ofNat 64 (64 * (j - 1))) (if (j == k) then 16 * c else 64) :=
       fun a h => by
-        have := h (j - 1) (by omega)
+        have := h (j - 1) (by omega_arith)
         by_cases hjk' : j = k
-        · rw [ite_eq_left (show j - 1 + 1 = k by omega)] at this
+        · rw [ite_eq_left (show j - 1 + 1 = k by omega_arith)] at this
           rwa [ite_eq_left (show (j == k) = true by simpa using hjk')]
-        · rw [ite_eq_right (show ¬ j - 1 + 1 = k by omega)] at this
+        · rw [ite_eq_right (show ¬ j - 1 + 1 = k by omega_arith)] at this
           rwa [ite_eq_right (show ¬ (j == k) = true by simpa using hjk')]
     rw [hg]
     refine WP.mono (ldGD_ok (j == k) (j - 1) s hc4 hE.m0 (fun _ => hE.qk) (fun _ => hE.bk)
         (by rw [hE.rax]; exact hin W hE.inW) (by rw [hE.rdx]; exact hin A hE.inA))
       fun s' ⟨p', f'⟩ => ⟨⟨hE.zframe f' (by decide), fun l hl => by
         rw [f'.zlane _ (by decide) l hl]; exact h1 l hl, ?_⟩, f'.mono (by decide)⟩
-    rw [ite_eq_right (show ¬ 5 < j + 1 by omega)]
+    rw [ite_eq_right (show ¬ 5 < j + 1 by omega_arith)]
     refine ⟨fun _ l hl => ?_, fun l hl => by rw [f'.zlane _ (by decide) l hl]; exact h2.2 l hl⟩
-    rw [p' l hl, show min (j + 1 - 1) k = j - 1 + 1 by omega, hE.rdx, hE.rax]
+    rw [p' l hl, show min (j + 1 - 1) k = j - 1 + 1 by omega_arith, hE.rdx, hE.rax]
     have hp : j - 1 ≠ 0 → prod (s.zproj l) = laneAccG X T y l (4 * (j - 1)) := fun h => by
-      rw [h2.1 (by omega) l hl, show min (j - 1) k = j - 1 by omega]
+      rw [h2.1 (by omega_arith) l hl, show min (j - 1) k = j - 1 by omega_arith]
     have hy : s.zlane .xmm2 l = if l = 0 then y else 0 := h2.2 l hl
-    have ht := hE.ts (j - 1) (by omega) l hl
+    have ht := hE.ts (j - 1) (by omega_arith) l hl
     by_cases ho : (j == k) = false ∨ l < c
     · have ho' : j - 1 + 1 < k ∨ l < c := by
         rcases ho with h | h
         · left; have : ¬ j = k := by simpa using h
-          omega
+          omega_arith
         · exact .inr h
       rw [ite_eq_left ho, ite_eq_left ho]
       rw [ite_eq_left ho'] at ht
-      exact hashStep_eq (X := X) (T := T) (y := y) (j := j - 1) hl _ _ _ _ hp hy (hE.xs (j - 1) (by omega) l hl ho').symm ht
+      exact hashStep_eq (X := X) (T := T) (y := y) (j := j - 1) hl _ _ _ _ hp hy (hE.xs (j - 1) (by omega_arith) l hl ho').symm ht
     · have ho' : ¬ (j - 1 + 1 < k ∨ l < c) := fun h => ho (by
         rcases h with h | h
-        · left; simp only [beq_eq_false_iff_ne]; omega
+        · left; simp only [beq_eq_false_iff_ne]; omega_arith
         · exact .inr h)
       rw [ite_eq_right ho'] at ht
       have e := hashStep_eq (X := X) (T := T) (y := y) (j := j - 1) hl (prod (s.zproj l)) (s.zlane .xmm2 l)
@@ -269,25 +269,25 @@ theorem gD_ok {k c : Nat} (hk1 : 1 ≤ k) (hk4 : k ≤ 4) (hc4 : c ≤ 4) {A W :
   · by_cases h5 : j = 5
     · -- The reduction.
       subst h5
-      rw [ite_eq_right (show ¬ 5 < 5 by omega)] at h2
-      have hg : gD k 5 = fin := by simp only [gD, show ¬ (1 ≤ 5 ∧ 5 ≤ k) by omega, ite_false, ite_true]
+      rw [ite_eq_right (show ¬ 5 < 5 by omega_arith)] at h2
+      have hg : gD k 5 = fin := by simp only [gD, show ¬ (1 ≤ 5 ∧ 5 ≤ k) by omega_arith, ite_false, ite_true]
       rw [hg]
       refine WP.mono (fin_ok s h1) fun s' ⟨y0, y1, f'⟩ =>
         ⟨⟨hE.zframe f' (by decide), fun l hl => by rw [f'.zlane _ (by decide) l hl]; exact h1 l hl, ?_⟩,
           f'.mono (by decide)⟩
-      rw [ite_eq_left (show 5 < 5 + 1 by omega)]
+      rw [ite_eq_left (show 5 < 5 + 1 by omega_arith)]
       refine ⟨?_, y1⟩
       rw [y0, h2.1 (by decide) 0 (by decide), h2.1 (by decide) 1 (by decide), h2.1 (by decide) 2 (by decide),
-        h2.1 (by decide) 3 (by decide), show min (5 - 1) k = k by omega]
+        h2.1 (by decide) 3 (by decide), show min (5 - 1) k = k by omega_arith]
     · -- Nothing.
       have hg : gD k j = [] := by
-        simp only [gD, show ¬ (1 ≤ j ∧ j ≤ k) by omega, ite_false, h5]
+        simp only [gD, show ¬ (1 ≤ j ∧ j ≤ k) by omega_arith, ite_false, h5]
       rw [hg]
       refine WP.block_nil ⟨⟨hE, h1, ?_⟩, ZFrame.refl _ _⟩
       by_cases h6 : 5 < j
-      · rw [ite_eq_left h6] at h2; rw [ite_eq_left (show 5 < j + 1 by omega)]; exact h2
-      · rw [ite_eq_right h6] at h2; rw [ite_eq_right (show ¬ 5 < j + 1 by omega)]
+      · rw [ite_eq_left h6] at h2; rw [ite_eq_left (show 5 < j + 1 by omega_arith)]; exact h2
+      · rw [ite_eq_right h6] at h2; rw [ite_eq_right (show ¬ 5 < j + 1 by omega_arith)]
         refine ⟨fun _ l hl => ?_, h2.2⟩
-        rw [h2.1 (by omega) l hl, show min (j - 1) k = k by omega, show min (j + 1 - 1) k = k by omega]
+        rw [h2.1 (by omega_arith) l hl, show min (j - 1) k = k by omega_arith, show min (j + 1 - 1) k = k by omega_arith]
 
 end VG.Proof.Gcm.X86_64.StitchZH

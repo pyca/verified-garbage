@@ -73,7 +73,7 @@ theorem loop_step_ok {s₀ s : State} {a o : Addr} {g j : Nat}
     change (a+BitVec.ofNat 64 (64*j))+BitVec.ofNat 64 64=a+BitVec.ofNat 64 (64*(j+1))
     rw [Offset.add_add,Nat.mul_succ]
   · rw [ht.output,h.output,Offset.add_add,Nat.mul_succ]
-  · rw [ht.count,h.count]; bv_omega
+  · rw [ht.count,h.count]; bv_omega_arith
   · intro r h0 h1 h9 h11
     exact (ht.gpr r h0 h1 h9 h11).trans (h.gpr r h0 h1 h9 h11)
   · intro r hv
@@ -103,7 +103,7 @@ theorem loop_ok {s₀ s : State} {a o : Addr} {g start : Nat}
   · right
     refine ⟨?_,16-(j+1),by omega,j+1,by omega,rfl,hu⟩
     simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hu.count,Option.some.injEq,bne_iff_ne]
-    bv_omega
+    bv_omega_arith
 
 
 /-- The proved setup and loop are precisely the selected emitted function. -/

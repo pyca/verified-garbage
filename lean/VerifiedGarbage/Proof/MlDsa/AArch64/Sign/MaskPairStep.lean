@@ -75,9 +75,9 @@ theorem maskPairNonce_run (r j : Nat) (hr : r+j < 4096) (hj : j<2) (s : State)
         (pa s (sc (oMP+66*j+65))) (((s.mem.readW (pa s (sc oKAP)) 64 + BitVec.ofNat 64 (r+j)) >>> 8).setWidth 8) ∧
         Keep [.x9] s s' := by
   refine wp_ldrx (a := pa s (sc oKAP)) (by decide) rfl h1 fun s₁ h₁ e₁ => wp_addImm hr fun s₂ h₂ e₂ =>
-    wp_strb (a := pa s (sc (oMP+66*j+64))) (by dsimp only [oMP]; omega) (by rw [h₂.get .x28, h₁.get .x28]) (by rw [h₂.wr, h₁.wr]; exact h2)
+    wp_strb (a := pa s (sc (oMP+66*j+64))) (by dsimp only [oMP]; omega_arith) (by rw [h₂.get .x28, h₁.get .x28]) (by rw [h₂.wr, h₁.wr]; exact h2)
       fun s₃ h₃ => wp_lsr (by decide) fun s₄ h₄ e₄ =>
-        wp_strb (a := pa s (sc (oMP+66*j+65))) (by dsimp only [oMP]; omega) (by rw [h₄.get .x28, show s₃.gpr .x28 = s₂.gpr .x28 by
+        wp_strb (a := pa s (sc (oMP+66*j+65))) (by dsimp only [oMP]; omega_arith) (by rw [h₄.get .x28, show s₃.gpr .x28 = s₂.gpr .x28 by
           rw [h₃.gpr], h₂.get .x28, h₁.get .x28]) (by rw [h₄.wr, h₃.wr, h₂.wr, h₁.wr]; exact h3)
           fun s₅ h₅ => wp_nil ⟨?_, ((((h₁.keep.trans h₂.keep).trans h₃.keep).trans h₄.keep).trans h₅.keep).mono
             (by simp)⟩
@@ -92,15 +92,15 @@ theorem maskPairNonce_okB {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L
   have e65 : pa s (sc (oMP+66*j+65)) = pa s (sc (oMP+66*j+64)) + 1 := (pa_sc_add s (oMP+66*j+64) 1).symm
   have w2 := L.inW h2
   have c0 : (⟨pa s (sc (oMP+66*j+64)), 2⟩ : Region).Contains (pa s (sc (oMP+66*j+64))) 1 := by
-    have := Offset.contains_base (pa s (sc (oMP+66*j+64))) (d := 0) (n := 1) (k := 2) (by omega) (by decide)
+    have := Offset.contains_base (pa s (sc (oMP+66*j+64))) (d := 0) (n := 1) (k := 2) (by omega_arith) (by decide)
     rwa [BitVec.add_zero] at this
   have c1 : (⟨pa s (sc (oMP+66*j+64)), 2⟩ : Region).Contains (pa s (sc (oMP+66*j+65))) 1 := by
-    rw [e65]; exact Offset.contains_base _ (d := 1) (by omega) (by decide)
+    rw [e65]; exact Offset.contains_base _ (d := 1) (by omega_arith) (by decide)
   have i0 : InRegions s.wr (pa s (sc (oMP+66*j+64))) 1 := by
-    have := inRegions_sub (off := 0) (l := 1) w2 (by omega) (by decide)
+    have := inRegions_sub (off := 0) (l := 1) w2 (by omega_arith) (by decide)
     rwa [BitVec.add_zero] at this
   have i1 : InRegions s.wr (pa s (sc (oMP+66*j+65))) 1 := by
-    rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega) (by decide)
+    rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega_arith) (by decide)
   refine WP.mono (maskPairNonce_run r j hr hj s (L.inR h1) i0 i1) fun s' ⟨hm, k⟩ => ?_
   have hf : Frame [⟨pa s (sc (oMP+66*j+64)), 2⟩] s.mem s'.mem := by
     rw [hm]
@@ -114,15 +114,15 @@ theorem maskPairNonce_post {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (
   have e65 : pa s (sc (oMP+66*j+65)) = pa s (sc (oMP+66*j+64)) + 1 := (pa_sc_add s (oMP+66*j+64) 1).symm
   have w2 := L.inW h2
   have c0 : (⟨pa s (sc (oMP+66*j+64)), 2⟩ : Region).Contains (pa s (sc (oMP+66*j+64))) 1 := by
-    have := Offset.contains_base (pa s (sc (oMP+66*j+64))) (d := 0) (n := 1) (k := 2) (by omega) (by decide)
+    have := Offset.contains_base (pa s (sc (oMP+66*j+64))) (d := 0) (n := 1) (k := 2) (by omega_arith) (by decide)
     rwa [BitVec.add_zero] at this
   have c1 : (⟨pa s (sc (oMP+66*j+64)), 2⟩ : Region).Contains (pa s (sc (oMP+66*j+65))) 1 := by
-    rw [e65]; exact Offset.contains_base _ (d := 1) (by omega) (by decide)
+    rw [e65]; exact Offset.contains_base _ (d := 1) (by omega_arith) (by decide)
   have i0 : InRegions s.wr (pa s (sc (oMP+66*j+64))) 1 := by
-    have := inRegions_sub (off := 0) (l := 1) w2 (by omega) (by decide)
+    have := inRegions_sub (off := 0) (l := 1) w2 (by omega_arith) (by decide)
     rwa [BitVec.add_zero] at this
   have i1 : InRegions s.wr (pa s (sc (oMP+66*j+65))) 1 := by
-    rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega) (by decide)
+    rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega_arith) (by decide)
   refine WP.mono (maskPairNonce_run r j hr hj s (L.inR h1) i0 i1) fun s' ⟨hm, k⟩ => ⟨_, (postB_of_keep k (by decide)
     (W := [⟨pa s (sc (oMP+66*j+64)), 2⟩]) ?_)⟩
   rw [hm]
@@ -185,8 +185,8 @@ theorem maskPairSeed_ok {p : Params} {D : Nat} {σ s : State} {t r j : Nat}
     rw [show 64=32+32 from rfl,VG.Proof.MlKem.bytesAt_add,pa_sc_add,
       hA.l.st.lay.keepBytes hb ck1,b0,b1,List.take_append_drop]
   have hx' : p.ℓ*t+(r+j)<2^16 := by
-    have := Nat.mul_le_mul_left p.ℓ (show t≤813 by have := h.l.t_lt; omega)
-    omega
+    have := Nat.mul_le_mul_left p.ℓ (show t≤813 by have := h.l.t_lt; omega_arith)
+    omega_arith
   refine WP.mono (maskPairNonce_okB hB.l.st.lay hj hr hx' ck cwn hB.l.kap)
     fun u ⟨hu,_,hbn⟩ => ?_
   have hab := PPostB.trans ha hb (ws := [(sc (oMP+66*j),32),(sc (oMP+66*j+32),32)])
@@ -240,7 +240,7 @@ theorem maskFinish_ok {P : Prims} {D : Nat} (hP : PrimsOk P D)
     fun u ⟨hu,_,hqu⟩ => ?_
   have hU := hA.step hu c2
   have hyu := Fam.keep hA.l.st.lay hu fy2 hya
-  refine ⟨⟨hU.l,fun i hi => hyu i (by omega),Fam.snoc hU.yh ?_⟩,hyu⟩
+  refine ⟨⟨hU.l,fun i hi => hyu i (by omega_arith),Fam.snoc hU.yh ?_⟩,hyu⟩
   show PolyIs _ _ _
   rw [hu.pa (pS_bases _),hpoly.2] at *
   exact hqu
@@ -303,8 +303,8 @@ theorem maskPairR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D)
     · show PolyIs _ _ _
       rw [hcP.pa (pS_bases _)]
       exact hy1
-  refine WP.seq (WP.mono (maskFinish_ok hP (by omega) cf0 hC hy) fun d ⟨hD,hyD⟩ => ?_)
-  exact WP.mono (maskFinish_ok hP (by omega) cf1 hD hyD) fun _ hu => hu.1
+  refine WP.seq (WP.mono (maskFinish_ok hP (by omega_arith) cf0 hC hy) fun d ⟨hD,hyD⟩ => ?_)
+  exact WP.mono (maskFinish_ok hP (by omega_arith) cf1 hD hyD) fun _ hu => hu.1
 
 end VG.Proof.MlDsa.AArch64.Sign
 

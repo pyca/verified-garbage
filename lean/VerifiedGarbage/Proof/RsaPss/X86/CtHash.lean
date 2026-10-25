@@ -64,7 +64,7 @@ theorem out_vp (hg : Geo L scr) {X : State → Mem → Prop} :
     rw [m]
     intro a ha
     simp only [List.mem_singleton, forall_eq, Region.Contains, VG.WriteBytes.writeBytes, hl] at ha ⊢
-    rw [ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_arith)]
   refine ⟨c4.write (by rw [m4]; exact fr) (fun r hr => ?_) rd wr (regs _ (by decide) (by decide))
     (regs _ (by decide) (by decide)), s.mem, hx, fr, m⟩
   simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by pomega)
@@ -95,18 +95,18 @@ theorem ctHash_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 
   have hso := h.so_le
   have fit := hg.fit
   unfold oRsa at fit
-  have hB0 : 0 < h.B := by omega
-  have hLB : h.L < h.B := by have := h.D_pos; omega
+  have hB0 : 0 < h.B := by omega_arith
+  have hLB : h.L < h.B := by have := h.D_pos; omega_arith
   obtain ⟨σ', ok⟩ := hg.ok
-  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega
+  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega_arith
   have hIs : ∀ rs : List Region, (∀ r ∈ rs, r ∈ ctW h L scr (nbm * h.B)) →
       ∀ σ m m', Inv σ m → Frame rs m m' → Inv σ m' :=
     fun rs hs σ m m' hi hf => hI σ m m' hi (hf.mono hs)
   have hq : ∀ σ, ((msg σ).length + h.L) / h.B < nbm := fun σ =>
-    (Nat.div_lt_iff_lt_mul hB0).2 (by have := hfit σ; omega)
-  have hℓ : ∀ σ, (msg σ).length < 2048 := fun σ => by have := hfit σ; omega
+    (Nat.div_lt_iff_lt_mul hB0).2 (by have := hfit σ; omega_arith)
+  have hℓ : ∀ σ, (msg σ).length < 2048 := fun σ => by have := hfit σ; omega_arith
   have sl : ∀ d, d + 4 ≤ frameBytes → ∀ {o n : Nat}, o + n ≤ oRsa → (slotR L d).Disjoint (sR scr o n) :=
-    fun d hd o n h => hg.slot ok h (by rw [hg.F]; omega)
+    fun d hd o n h => hg.slot ok h (by rw [hg.F]; omega_arith)
   show VP _ (.seq (initPart h.H) (.seq (lenPart h.H) (.seq (padPart h.H) (.seq (compLoop h.H) (outPart h.H))))) _
   -- The hash value initialized.
   refine VP.seq (init_vp h hg (Inv := fun σ m => Inv σ m ∧ ∀ i < nbm * h.B, m (sa scr (oY + i)) = (msg σ).getD i 0)
@@ -135,7 +135,7 @@ theorem ctHash_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 
         rcases hr with rfl | rfl
         · exact Geo.sep (by pomega) (by pomega) (by pomega)
         · exact (sl sLb (by decide) (by pomega)).symm).trans he⟩)
-    fun σ => by have := hℓ σ; omega)).mono
+    fun σ => by have := hℓ σ; omega_arith)).mono
       (fun σ s ⟨hc, hi, he⟩ => ⟨hc, ⟨hi, he⟩, hsl σ _ hi.1⟩) fun _ _ h => h) ?_
   -- The padding.
   refine VP.seq ((pad_vp h hg hnb hnb0 hfit (Inv := fun σ m => Inv σ m ∧ h.md.stateAt m (sa scr oSt) = h.ok.iv)
@@ -173,7 +173,7 @@ theorem ctHash_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; simp) σ _ _ hi hf, fun i hi => ?_⟩
   have hl := h.md.digest_length (h.md.stateAt m₀ (sa scr oSel))
-  rw [hm, sa_writeBytes scr m₀ (by omega) (by pomega), he, h.ok.link.hash]
+  rw [hm, sa_writeBytes scr m₀ (by omega_arith) (by pomega), he, h.ok.link.hash]
   have hq1 : ((msg σ).length + h.L) / h.B + 1 ≤ nbm := hq σ
   have key : h.md.compressList h.ok.iv
       (ylist (fun i => padY h.B h.L (msg σ) (h.md.lenBytes (msg σ).length) i) (nbm * h.B))
@@ -184,7 +184,7 @@ theorem ctHash_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 
     have hT : j < nbm * h.B := by
       have := Nat.mul_le_mul_left h.B hq1
       rw [Nat.mul_comm h.B nbm] at this
-      omega
+      omega_arith
     rw [ylist_getD hT, padY_eq hB0 hLB _ _ hj, RsaPss.pad_getD h.md _ hB0 hLB hj]
   rw [key, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi]
   rfl

@@ -58,8 +58,8 @@ theorem combBitCount_ct {base : BitVec 32} {len : Nat} {mask : BitVec 32} :
       intro _ _ _
       exact Taint.agree_ofRegs (by simp)
     exact ⟨(trace _ _ _ _ _ _ trivial e1 e2).1,
-      (Exec.gpr (h:=e1) (by simp [instrs,clobbers,dstOf])).trans
-        (h.1.trans (Exec.gpr (h:=e2) (by simp [instrs,clobbers,dstOf])).symm),
+      (Exec.gpr (h:=e1) (by decide)).trans
+        (h.1.trans (Exec.gpr (h:=e2) (by decide)).symm),
       (Exec.sp e1).trans (h.2.trans (Exec.sp e2).symm)⟩
   exact (RelCT.block_append (load.seq mov)).seq (by
     apply RelCT.taint (A:=taint) (Taint.ofRegs [.r3]) _ (by taint_decide)
@@ -133,12 +133,12 @@ theorem combHeader_ct {base ctx : BitVec 32} {len : Nat} :
       exact ⟨(trace _ _ _ _ _ _ h.1 e1 e2).1,
         (Exec.gpr (r:=.r4) (h:=e1) (by simpa only [instrs] using safe)).trans (h.1.trans (Exec.gpr (r:=.r4) (h:=e2) (by simpa only [instrs] using safe)).symm),
         (Exec.sp e1).trans (h.2.trans (Exec.sp e2).symm)⟩
-    have mov := plain [.mov .r2 (.imm 0)] (by simp [clobbers,dstOf]) (by taint_decide)
+    have mov := plain [.mov .r2 (.imm 0)] (by decide) (by taint_decide)
     have stores (d : Nat) (hd : d=0 ∨ d=8 ∨ d=16) :
         RelCT isa (fun s t => s.gpr .r4=t.gpr .r4 ∧ s.sp=t.sp)
           (.block [.str .r1 .r4 d,.str .r2 .r4 (d+4)])
           (fun s t => s.gpr .r4=t.gpr .r4 ∧ s.sp=t.sp) := by
-      rcases hd with rfl|rfl|rfl <;> exact plain _ (by simp [clobbers,dstOf]) (by taint_decide)
+      rcases hd with rfl|rfl|rfl <;> exact plain _ (by decide) (by taint_decide)
     have last := RelCT.block_append ((load 44).seq (stores 16 (by simp)))
     have mid := RelCT.block_append ((stores 8 (by simp)).seq last)
     have mid := RelCT.block_append ((load 20).seq mid)

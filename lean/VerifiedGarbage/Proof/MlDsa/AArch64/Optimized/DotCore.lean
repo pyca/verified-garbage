@@ -68,13 +68,13 @@ theorem dotLoop_ok {count : Nat} (hn : 0<count) (hn7 : count≤7) {s : State}
     rcases hi with ⟨hk,hqt,hp0,hp1,hp13,hp14,hm⟩
     have ht' : InverseTable.Words t.mem (s.gpr .x1) := by
       rw [hm]
-      exact tableWords_frame ht (dotPass_frame (by omega)) (by
+      exact tableWords_frame ht (dotPass_frame (by omega_arith)) (by
         intro r hr; have he := List.mem_singleton.mp hr; subst r; exact hd)
     have hrt' : ∀off,off+16≤3904 → InRegions (t.rd++t.wr) (s.gpr .x1+BitVec.ofNat 64 off) 16 := by
       simpa only [hk.rd,hk.wr] using hrt
     have hqv : ∀e<4,vword (t.v .v31) e=8380417#32 := by
       intro e he; rw [hqt.qv,VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he]
-      rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+      rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_arith) with rfl | rfl | rfl | rfl <;> rfl
     refine dotFive_ok hn hn7 u (v:=dotBankValues t count) (fun j e he => dotBankValues_word t count j he)
       hqt (packed_tableRoots hu ht' hrt' hp1 hqv) (local_tableRoots hu ht' hrt' hp1 hqv)
       ?_ ?_ fun t₁ ⟨v,hv,hv₁⟩ => ?_
@@ -87,13 +87,13 @@ theorem dotLoop_ok {count : Nat} (hn : 0<count) (hn7 : count≤7) {s : State}
         · rw [hvec₂,hv₁.v,hv.get .v31 (by decide)]; exact hqt.qv
         · rw [hvec₂,hv₁.v,hv.get .v30 (by decide)]; exact hqt.qiv
       · rw [hp₂,hk₁.get .x0,hp0]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 128*(u+1)=128*u+128 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hp₃,hk₁.get .x1,hp1]
-        rw [show 480*(u+1)=480*u+480 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 480*(u+1)=480*u+480 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hp₁₃,hk₁.get .x13,hp13]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 128*(u+1)=128*u+128 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hp₁₄,hk₁.get .x14,hp14]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 128*(u+1)=128*u+128 by omega_arith,BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hm₂,hv₁.mem,← dotMemoryBank_eq]
         simp only [hm,hp0,hp13,hp14,dotPassMem]
       · rw [hc₂,hk₁.get .x11]; rfl
@@ -182,10 +182,10 @@ theorem dotCore_ok {count : Nat} (hn : 0<count) (hn7 : count≤7) {s : State}
   · simpa only [hka.rd,hka.wr,ha1] using hrt
   · intro u hu j hj k hk
     simp only [hka.rd,hka.wr,ha13,ha14,BitVec.add_assoc,← BitVec.ofNat_add]
-    exact ⟨hra _ (by omega),hrb _ (by omega)⟩
+    exact ⟨hra _ (by omega_arith),hrb _ (by omega_arith)⟩
   · intro u hu i
     simp only [hka.wr,ha0,BitVec.add_assoc,← BitVec.ofNat_add]
-    exact hw _ (by omega)
+    exact hw _ (by omega_arith)
   · have hb0' : b.gpr .x0=s.gpr .x0+1024 := by simpa only [ha0] using hb0
     have hb1' : b.gpr .x1=s.gpr .x1+3840 := by simpa only [ha1] using hb1
     have hmb' : b.mem=dotPassMem s.mem (s.gpr .x0) (s.gpr .x13) (s.gpr .x14) count 8 := by simpa only [hma,ha0,ha13,ha14] using hmb
@@ -208,17 +208,17 @@ theorem dotCore_ok {count : Nat} (hn : 0<count) (hn7 : count≤7) {s : State}
       rw [BitVec.add_assoc,← BitVec.ofNat_add]
       apply hrt
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hoff
-      omega
+      omega_arith
     · have hc0' : c.gpr .x0=s.gpr .x0 := by rw [hc0,hb0']; bv_omega
       have hc2' : c.gpr .x2=s.gpr .x0 := by rw [hc2,hb0']; bv_omega
       have hqv : c.v .v31=HighPack.repeatedWord 8380417 := (by apply VG.AArch64.vec_ext; intro e he; rw [hfc.q e he,HighPack.repeatedWord_lane _ he])
       refine WP.mono (finalLoop_ok hfc hsc hc12 ?_ ?_) fun t ⟨hkt,_,_,hmt⟩ => ?_
       · intro u hu i
         simp only [hkc.rd,hkc.wr,hkb.rd,hkb.wr,hka.rd,hka.wr,hc2',BitVec.add_assoc,← BitVec.ofNat_add]
-        exact hr _ (by omega)
+        exact hr _ (by omega_arith)
       · intro u hu i
         simp only [hkc.wr,hkb.wr,hka.wr,hc2',BitVec.add_assoc,← BitVec.ofNat_add]
-        exact hw _ (by omega)
+        exact hw _ (by omega_arith)
       · refine ⟨(((hka.trans hkb).trans hkc).trans hkt).mono,?_,?_⟩
         · rw [hkt.get .x0 (by decide),hc0']
         · simpa only [dotInverseMem,hmc,hmb',hc2',hqv] using hmt

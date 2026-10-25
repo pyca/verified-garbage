@@ -31,8 +31,8 @@ theorem src_of_region {s : State} {B : Addr} {Z : Nat} {p : Addr} {len : Nat}
     (hr : (⟨p, len⟩ : Region) ∈ s.rd ++ s.wr) (hlen : len ≤ 2 ^ 64)
     (hd : (⟨p, len⟩ : Region).Disjoint ⟨B, Z⟩) : Src s B Z p (Spec.Rsa.bytesAt s.mem p len) := by
   have hl : (Spec.Rsa.bytesAt s.mem p len).length = len := by simp [Spec.Rsa.bytesAt]
-  refine ⟨fun i hi => ⟨_, hr, contains_byte p (by omega) hlen⟩, fun i hi => ?_,
-    fun i hi => out_scr hd (contains_byte p (by omega) hlen)⟩
+  refine ⟨fun i hi => ⟨_, hr, contains_byte p (by omega_arith) hlen⟩, fun i hi => ?_,
+    fun i hi => out_scr hd (contains_byte p (by omega_arith) hlen)⟩
   simp [Spec.Rsa.bytesAt]
 
 /-! ## The contract on the registers and the stack -/
@@ -111,18 +111,18 @@ theorem codeCtx_of {s : State} (h : pubContract.pre s) : CodeCtx s := by
   unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hsl
   have hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
-  refine ⟨hk1, hk2, hL1, hL2, by omega, hs,
-    ⟨⟨stackArgAddr s 0, 32⟩, by rw [hrd]; simp, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩,
+  refine ⟨hk1, hk2, hL1, hL2, by omega_arith, hs,
+    ⟨⟨stackArgAddr s 0, 32⟩, by rw [hrd]; simp, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩,
     ⟨⟨stackArgAddr s 0, 32⟩, by rw [hrd]; simp,
-      by rw [stackArgAddr_two]; exact Offset.contains_base _ (by omega) (by omega)⟩,
+      by rw [stackArgAddr_two]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := b) (by omega) (by omega)); omega)),
-    src_of_region (by rw [hrd]; simp) (by omega) dns, src_of_region (by rw [hrd]; simp) (by omega) des,
-    src_of_region (by rw [hrd, ← hil]; simp) (by omega) (by rw [← hil]; exact dis),
-    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega) (by omega)⟩,
-    fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega)), fun b hb => ?_⟩
-  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega) (by omega)
-  exact ⟨out_scr dRs hc, fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega) (by omega))⟩
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := b) (by omega_arith) (by omega_arith)); omega_arith)),
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dns, src_of_region (by rw [hrd]; simp) (by omega_arith) des,
+    src_of_region (by rw [hrd, ← hil]; simp) (by omega_arith) (by rw [← hil]; exact dis),
+    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega_arith) (by omega_arith)⟩,
+    fun j hj => out_scr dOs (contains_byte _ (by omega_arith) (by omega_arith)), fun b hb => ?_⟩
+  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_arith) (by omega_arith)
+  exact ⟨out_scr dRs hc, fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega_arith) (by omega_arith))⟩
 
 /-- After `entry` and the reloads of `m` and `k`, from `s`. -/
 structure HeadPost (s t : State) : Prop where
@@ -146,21 +146,21 @@ theorem head_ok {s : State} (c : CodeCtx s) :
   have hn := c.hs.nowrap
   have hZ := c.hZ
   have hk1 := c.hk1
-  have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
   rw [WP.block_append_iff]
   refine WP.mono (entry_ok rfl hw c.ha0 c.ha2 c.hsep) fun t₀ ⟨hdi, h0, h1, h2, h3, h4, h5, hO, hN, hK, hE, hL,
     hIn, ho₀, k₀⟩ => ?_
   have hs₀ := c.hs.congr k₀.2.2
   refine WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = s.gpr .rdx ∧
       t.gpr .rcx = s.gpr .rcx ∧ t.mem = t₀.mem) (by
-    xrun [State.ea, hdr, hdi, hdrOff, hs₀.ld (d := 8 * sN) (by unfold sN sFn; omega),
-      hs₀.ld (d := 8 * sK) (by unfold sK sFn; omega), hN, hK]) rfl) fun t₁ ⟨⟨hdx, hcx, hm⟩, k₁⟩ => ?_
+    xrun [State.ea, hdr, hdi, hdrOff, hs₀.ld (d := 8 * sN) (by unfold sN sFn; omega_arith),
+      hs₀.ld (d := 8 * sK) (by unfold sK sFn; omega_arith), hN, hK]) rfl) fun t₁ ⟨⟨hdx, hcx, hm⟩, k₁⟩ => ?_
   refine ⟨hs₀.congr k₁.2.2, (k₁.gpr (by decide)).trans hdi, hdx, by rw [hcx, ofNat_toNat64], fun i hi => ?_,
     by rw [hm]; exact hO, by rw [hm]; exact hN, by rw [hm, hK, ofNat_toNat64], by rw [hm]; exact hE,
-    by rw [hm, hL, ofNat_toNat64], by rw [hm]; exact hIn, by rw [hm]; exact InScr.of_outside ho₀ (by omega),
+    by rw [hm, hL, ofNat_toNat64], by rw [hm]; exact hIn, by rw [hm]; exact InScr.of_outside ho₀ (by omega_arith),
     (k₀.trans k₁).mono (by decide)⟩
   rw [hm]
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2
@@ -181,7 +181,7 @@ theorem mainPre_of {s t₁ t : State} (c : CodeCtx s) (h : HeadPost s t₁) (hm 
   have hk1 := c.hk1
   have hk2 := c.hk2
   have hdi : t.gpr .rdi = stackArg s 2 := (k.gpr (by decide)).trans h.rdi
-  have hz : slot (((s.gpr .rcx).toNat + 7) / 8) 8 ≤ (stackArg s 3).toNat * 8 := by unfold slot hdrBytes; omega
+  have hz : slot (((s.gpr .rcx).toNat + 7) / 8) 8 ≤ (stackArg s 3).toNat * 8 := by unfold slot hdrBytes; omega_arith
   exact
     { scr := h.scr.congr k.2.2, rdi := hdi, z := hz, k1 := hk1, k2 := hk2, hO := (by rw [hm]; exact h.hO),
       hN := (by rw [hm]; exact h.hN), hK := (by rw [hm]; exact h.hK), hE := (by rw [hm]; exact h.hE),
@@ -242,8 +242,8 @@ theorem code_correct (s : State) (h : pubContract.pre s) :
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
         (s.gpr .rcx).toNat = false := by simpa using hb
     have hpre := mainPre_of c h₁ hm₂ k₂
-    exact WP.mono (fail_ok hpre.scr hpre.rdi (by have := hpre.z; unfold slot hdrBytes at this; omega)
-      (by omega) (by omega) hpre.hO hpre.hK hpre.out hpre.outSep)
+    exact WP.mono (fail_ok hpre.scr hpre.rdi (by have := hpre.z; unfold slot hdrBytes at this; omega_arith)
+      (by omega_arith) (by omega_arith) hpre.hO hpre.hK hpre.out hpre.outSep)
       fun t hp => code_fin c h₁ hm₂ k₂ hp (fun h => absurd h (by rw [hv]; decide)) fun _ => ⟨rfl, rfl⟩
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
         (s.gpr .rcx).toNat = true := by simpa using hb

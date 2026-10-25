@@ -47,13 +47,13 @@ theorem mgfD_vp (P : MP h L scr lo db seed Inv) (c : Nat) :
         Dg h scr (seed σ ++ Spec.Rsa.i2osp c 4) s.mem) := by
   have hB := h.B_le
   have hone : h.D + 5 + h.L ≤ h.B := h.one
-  refine ctHash_vp h P.hg (nbm := 1) (by omega) (by decide) (msg := fun σ => seed σ ++ Spec.Rsa.i2osp c 4)
-    (fun σ => by rw [List.length_append, P.sd σ, i2osp4_length]; omega) (fun σ m m' hm hf => ?_)
+  refine ctHash_vp h P.hg (nbm := 1) (by omega_arith) (by decide) (msg := fun σ => seed σ ++ Spec.Rsa.i2osp c 4)
+    (fun σ => by rw [List.length_append, P.sd σ, i2osp4_length]; omega_arith) (fun σ m m' hm hf => ?_)
     (fun σ m hm => by rw [hm.2.1, List.length_append, P.sd σ, i2osp4_length]) fun σ m hm => hm.2.2
   rw [Nat.one_mul] at hf
   exact ⟨P.keep h hm.1 hf (fun r hr => List.mem_append_left _ hr) (P.ctW_away h),
-    slot_keep hf (ctW_slot h P.hg (by omega) (by decide) (by decide)) hm.2.1,
-    slot_keep hf (ctW_slot h P.hg (by omega) (by decide) (by decide)) hm.2.2⟩
+    slot_keep hf (ctW_slot h P.hg (by omega_arith) (by decide) (by decide)) hm.2.1,
+    slot_keep hf (ctW_slot h P.hg (by omega_arith) (by decide) (by decide)) hm.2.2⟩
 
 /-- The XOR's registers. -/
 theorem mgfE_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hcd : c * h.D < db) :
@@ -75,14 +75,14 @@ theorem mgfE_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hcd : c * h.D < db) :
       t.gpr .lr = if db - c * h.D < h.D then BitVec.ofNat 32 (db - c * h.D) else BitVec.ofNat 32 h.D := by
     prun [xorSet, atS, atDb, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, P.lo σ _ hm.1.1,
       P.dbs σ _ hm.1.1, hm.1.2.done, movw_val (show oEm < 2 ^ 16 by decide), movw_val (show oDig < 2 ^ 16 by decide),
-      movw_val (show dig h.H < 2 ^ 16 by show h.D < 2 ^ 16; omega), BitVec.add_assoc, BitVec.ofNat_add_ofNat,
-      Offset.ofNat_sub_ofNat (w := 32) (show c * h.D ≤ db by omega),
-      ltBit (a := db - c * h.D) (b := h.D) (by omega) (by omega), neg_bit, neg_bit', selW, dpVal]
+      movw_val (show dig h.H < 2 ^ 16 by show h.D < 2 ^ 16; omega_arith), BitVec.add_assoc, BitVec.ofNat_add_ofNat,
+      Offset.ofNat_sub_ofNat (w := 32) (show c * h.D ≤ db by omega_arith),
+      ltBit (a := db - c * h.D) (b := h.D) (by omega_arith) (by omega_arith), neg_bit, neg_bit', selW, dpVal]
   refine WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr⟩ => ⟨hc.regs rd wr sp m, m ▸ ⟨hm, hd⟩, r0, r1, ?_⟩
   rw [lr]
   split
-  · rw [Nat.min_eq_right (by omega)]
-  · rw [Nat.min_eq_left (by omega)]
+  · rw [Nat.min_eq_right (by omega_arith)]
+  · rw [Nat.min_eq_left (by omega_arith)]
 
 /-- The memory after the XOR of iteration `c`. -/
 structure DX (L : Lay) (scr : BitVec 32) (lo db c : Nat) (dbv : Nat → Byte) (seed : List Byte) (m : Mem) : Prop where
@@ -99,11 +99,11 @@ theorem mask_byte {seed : List Byte} {c i : Nat} (hi : i < db) (h₁ : c * h.D �
   have hD0 := h.D_pos
   have glen : h.G.len = h.D := h.glen
   rw [RsaPss.mgf1_getD hv _ hi, glen, ← h.hash]
-  have e1 : i / h.D = c := Nat.div_eq_of_lt_le h₁ (by rw [Nat.succ_mul]; omega)
+  have e1 : i / h.D = c := Nat.div_eq_of_lt_le h₁ (by rw [Nat.succ_mul]; omega_arith)
   have e2 : i % h.D = i - c * h.D := by
     have := Nat.mod_add_div i h.D
     rw [e1, Nat.mul_comm] at this
-    omega
+    omega_arith
   rw [e1, e2]
 
 /-- The XOR of the digest into `DB`. -/
@@ -121,9 +121,9 @@ theorem mgfF_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hcd : c * h.D < db) :
   have hg := P.hg
   obtain ⟨σ', ok⟩ := hg.ok
   generalize hn : min h.D (db - c * h.D) = n
-  have hn0 : 0 < n := by omega
-  have hnD : n ≤ h.D := by omega
-  have hnd : c * h.D + n ≤ db := by omega
+  have hn0 : 0 < n := by omega_arith
+  have hnD : n ≤ h.D := by omega_arith
+  have hnd : c * h.D + n ≤ db := by omega_arith
   refine (xor_vp hg (od := oEm + lo + c * h.D) (os := oDig) (n := n) hn0 (by pomega) (by pomega) (by pomega)
     (X := fun σ m => HI h L scr lo db c dbv seed Inv σ m ∧ Dg h scr (seed σ ++ Spec.Rsa.i2osp c 4) m)).mono
     (fun _ _ h => h) fun σ s ⟨hc, m₀, ⟨hm, hd⟩, hf, hx⟩ => ⟨hc, ?_, ?_, ?_, fun i hi => ?_, ?_⟩
@@ -131,7 +131,7 @@ theorem mgfF_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hcd : c * h.D < db) :
       intro r hr
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨sR scr (oEm + lo) db, by simp, by
-        rw [show oEm + lo + c * h.D = (oEm + lo) + c * h.D from rfl]; exact Offset.sub _ (by omega) (by omega)⟩
+        rw [show oEm + lo + c * h.D = (oEm + lo) + c * h.D from rfl]; exact Offset.sub _ (by omega_arith) (by omega_arith)⟩
     exact P.I σ _ _ hm.1.1 (Frame.sub hf hsub)
   · exact slot_keep hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by pomega) (by rw [hg.F]; decide)) hm.1.2.ctr
@@ -139,7 +139,7 @@ theorem mgfF_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hcd : c * h.D < db) :
       simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by pomega) (by rw [hg.F]; decide)) hm.1.2.done
   · have old := hm.1.2.dbx i hi
     by_cases h1 : i < c * h.D
-    · rw [ite_eq_left (by omega)]
+    · rw [ite_eq_left (by omega_arith)]
       rw [ite_eq_left h1] at old
       rw [← old]
       exact hf _ fun r hr => by
@@ -148,11 +148,11 @@ theorem mgfF_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hcd : c * h.D < db) :
           (Region.contains_self _ _)
     rw [ite_eq_right h1] at old
     by_cases h2 : i < c * h.D + n
-    · rw [ite_eq_left (by omega), mask_byte h (c := c) hi (by omega) (by omega), ← hd _ (by omega), ← old]
-      have e := hx (i - c * h.D) (by omega)
-      rw [show oEm + lo + c * h.D + (i - c * h.D) = oEm + lo + i by omega] at e
+    · rw [ite_eq_left (by omega_arith), mask_byte h (c := c) hi (by omega_arith) (by omega_arith), ← hd _ (by omega_arith), ← old]
+      have e := hx (i - c * h.D) (by omega_arith)
+      rw [show oEm + lo + c * h.D + (i - c * h.D) = oEm + lo + i by omega_arith] at e
       exact e
-    · rw [ite_eq_right (by omega), ← old]
+    · rw [ite_eq_right (by omega_arith), ← old]
       exact hf _ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Geo.sep (scr := scr) (o := oEm + lo + i) (n := 1) (by pomega) (by pomega) (by pomega) _
@@ -186,10 +186,10 @@ theorem mgfG_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hcd : c * h.D < db) :
         (BitVec.ofNat 32 (c * h.D + h.D)) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.z = decide (db ≤ c * h.D + h.D) := by
     prun [mgfNext, sp0, ld, st, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.wFr hg, hm.ctr, r1, r2,
-      movw_val (show dig h.H < 2 ^ 16 by show h.D < 2 ^ 16; omega), VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32,
-      BitVec.ofNat_add_ofNat, ltBit (a := c * h.D + h.D) (b := db) (by omega) (by omega), bit_z, dpVal]
+      movw_val (show dig h.H < 2 ^ 16 by show h.D < 2 ^ 16; omega_arith), VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32,
+      BitVec.ofNat_add_ofNat, ltBit (a := c * h.D + h.D) (b := db) (by omega_arith) (by omega_arith), bit_z, dpVal]
     simp only [decide_eq_decide]
-    omega
+    omega_arith
   refine WP.mono hw fun t ⟨m, rd, wr, sp, z⟩ => ?_
   have fr : Frame [slotR L sCtr, slotR L sDone] s.mem t.mem := by
     rw [m]
@@ -227,7 +227,7 @@ theorem mgfIter_vp (P : MP h L scr lo db seed Inv) {c : Nat} (hcd : c * h.D < db
   have hc32 : c < 2 ^ 32 := by
     have := P.fit
     have : c ≤ c * h.D := Nat.le_mul_of_pos_right c h.D_pos
-    omega
+    omega_arith
   show VP _ (.seq (.block (mgfClr h.H)) (.seq Impl.Bignum.Arm.maskBytes (.seq (.block (mgfSeed h.H))
     (.seq Impl.Bignum.Arm.copyBytes (.seq (.block (ctrSet h.H)) (.seq (.block ctrPut) (.seq (ctHash h.H)
       (.seq (.block (xorSet h.H)) (.seq (countLoop xorBody) (.block (mgfNext h.H))))))))))) _
@@ -252,7 +252,7 @@ theorem mgf_vp (P : MP h L scr lo db seed Inv) :
   obtain ⟨σ', ok⟩ := hg.ok
   generalize hK : (db + h.D - 1) / h.D = K
   have hK0 : 0 < K := by
-    rw [← hK]; exact (Nat.le_div_iff_mul_le hD0).2 (by omega)
+    rw [← hK]; exact (Nat.le_div_iff_mul_le hD0).2 (by omega_arith)
   refine VP.seq (G := fun σ s => Ctx L scr σ s ∧ MI h L scr lo db 0 dbv seed Inv σ s.mem)
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hi, hd, hs⟩ => ?_) ?_
   · have hw : WP isa (.block mgfInit) s fun t =>
@@ -281,11 +281,11 @@ theorem mgf_vp (P : MP h L scr lo db seed Inv) :
       · exact slotSep (by decide) (by decide) (by decide)
     · rw [m, slot_ww _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]; rfl
     · rw [m, Mem.readW_writeW_self32, Nat.zero_mul]; rfl
-    · rw [ite_eq_right (by omega)]
+    · rw [ite_eq_right (by omega_arith)]
       exact sbytes_keep fr (fun r hr => dis r hr _ _ (by pomega)) (by pomega) hd i hi'
     · exact sbytes_keep fr (fun r hr => dis r hr _ _ (by pomega)) (by pomega) hs
   refine (VP.loop (I := fun k σ s => k ≤ K ∧ Ctx L scr σ s ∧ MI h L scr lo db (K - k) dbv seed Inv σ s.mem)
-    (fun k => ?_) (K - 1)).mono (fun σ s hs => ⟨by omega, by rw [show K - (K - 1 + 1) = 0 by omega]; exact hs⟩)
+    (fun k => ?_) (K - 1)).mono (fun σ s hs => ⟨by omega_arith, by rw [show K - (K - 1 + 1) = 0 by omega_arith]; exact hs⟩)
     fun _ _ h => h
   by_cases hk : k + 1 ≤ K
   swap
@@ -293,23 +293,23 @@ theorem mgf_vp (P : MP h L scr lo db seed Inv) :
   generalize hc : K - (k + 1) = c
   have key : ∀ x, (db + h.D - 1) / h.D ≤ x + 1 ↔ db ≤ x * h.D + h.D := fun x => by
     rw [← Nat.lt_succ_iff, Nat.div_lt_iff_lt_mul hD0, Nat.succ_mul, Nat.succ_mul]
-    omega
+    omega_arith
   have hcd : c * h.D < db := by
-    have := (Nat.le_div_iff_mul_le hD0).1 (show c + 1 ≤ (db + h.D - 1) / h.D by omega)
+    have := (Nat.le_div_iff_mul_le hD0).1 (show c + 1 ≤ (db + h.D - 1) / h.D by omega_arith)
     rw [Nat.succ_mul] at this
-    omega
+    omega_arith
   refine (mgfIter_vp h P hcd).mono (fun σ s ⟨_, hs⟩ => hs) fun σ s ⟨hc', hm, z⟩ => ⟨?_, fun h0 => ?_, fun hp => ?_⟩
   · rw [VG.Proof.X25519.Arm.eval_ne, z]
     have e := key c
     rw [hK] at e
     by_cases hz : k = 0
-    · rw [decide_eq_true (e.1 (by omega)), hz]; rfl
-    · rw [decide_eq_false (fun h' => hz (by have := e.2 h'; omega))]
+    · rw [decide_eq_true (e.1 (by omega_arith)), hz]; rfl
+    · rw [decide_eq_false (fun h' => hz (by have := e.2 h'; omega_arith))]
       simp only [Bool.not_false, Option.some.injEq]
-      exact (decide_eq_true (by omega)).symm
-  · have e := (key c).1 (by omega)
+      exact (decide_eq_true (by omega_arith)).symm
+  · have e := (key c).1 (by omega_arith)
     refine ⟨hc', hm.1, fun i hi => ?_, hm.2.sd⟩
-    rw [hm.2.dbx i hi, ite_eq_left (by rw [Nat.succ_mul]; omega)]
-  · exact ⟨by omega, hc', by rw [show K - k = c + 1 by omega]; exact hm⟩
+    rw [hm.2.dbx i hi, ite_eq_left (by rw [Nat.succ_mul]; omega_arith)]
+  · exact ⟨by omega_arith, hc', by rw [show K - k = c + 1 by omega_arith]; exact hm⟩
 
 end VG.Proof.RsaPss.Arm

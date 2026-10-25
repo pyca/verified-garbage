@@ -92,7 +92,7 @@ private theorem cbcBlocksAt_congr {n : Nat}
   refine List.map_congr_left fun i hi => bytesAt_congr' fun j hj => ?_
   have := List.mem_range.mp hi
   rw [Offset.add_add]
-  exact h _ (by omega)
+  exact h _ (by omega_arith)
 
 end
 
@@ -137,8 +137,8 @@ theorem cbcEncChainedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcChained
   dsimp only [Curry.apply, cbcEncChainedPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
-  rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
-    cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+  rw [subkeysAt_congr (by simp only [scheduleLength]; omega_arith) fun i hi => hs i (by omega_arith), bytesAt_congr' hv,
+    cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h hR
 
 theorem cbcDecChainedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcChainedSig.words pb).length →
@@ -168,8 +168,8 @@ theorem cbcDecChainedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcChained
   dsimp only [Curry.apply, cbcDecChainedPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
-  rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
-    cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+  rw [subkeysAt_congr (by simp only [scheduleLength]; omega_arith) fun i hi => hs i (by omega_arith), bytesAt_congr' hv,
+    cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_arith)]
   exact h hR
 
 theorem cbcEncChainedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcChainedSig.words pb).length →
@@ -198,7 +198,7 @@ theorem cbcEncChainedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcChain
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_arith), bytesAt_congr' hv]
   exact h hR
 
 theorem cbcDecChainedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcChainedSig.words pb).length →
@@ -227,7 +227,7 @@ theorem cbcDecChainedPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcChain
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_arith), bytesAt_congr' hv]
   exact h hR
 
 end VG.Proof.Camellia

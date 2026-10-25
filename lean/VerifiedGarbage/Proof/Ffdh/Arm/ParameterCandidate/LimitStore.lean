@@ -27,14 +27,7 @@ theorem phaseLimit_ok (first : Bool) {s : State} {checks : Nat} (positive : 0 < 
     exact stack.write (by decide)
   have subtract : BitVec.ofNat 32 checks - 1 = BitVec.ofNat 32 (checks - 1) :=
     BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) positive
-  refine withRest [.r1, .r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.phaseLimit first) : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases first <;> cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1, .r12] ?_ (by cases first <;> rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.phaseLimit VG.Impl.Ffdh.Arm.ParameterCandidate.save limitedChecks
   cases first <;> ffrun [List.cons_append, List.nil_append, BitVec.add_zero, read, write, saved, subtract]
   all_goals rfl

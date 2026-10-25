@@ -100,7 +100,7 @@ theorem VerifyPre.stk_ret {s : State} (h : VerifyPre s) : (stkR s).Disjoint (ret
   refine Region.disjoint_of_le (Or.inl ?_) ?_ ?_ <;> bv_omega
 
 theorem VerifyPre.args {s : State} (h : VerifyPre s) : Args s 4 3 :=
-  ⟨by rw [h.rd]; simp, by have := h.sp_fit; omega, by decide, by rw [h.wr]; simp, h.f3,
+  ⟨by rw [h.rd]; simp, by have := h.sp_fit; omega_arith, by decide, by rw [h.wr]; simp, h.f3,
     h.args_sc, h.ret_sc⟩
 
 /-- An argument's address, readable, and its value, in a later state. -/
@@ -145,11 +145,11 @@ theorem VBits.kept {base : Addr} {S K : Nat} {m m' : Mem} (h : WsOut2 base 16 28
   have hK : KBITS = 4608 := rfl
   have hA : ACC = 3584 := rfl
   refine ⟨?_, ?_⟩
-  · rw [h _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega)]
+  · rw [h _ (by rw [ofs_off' base (by omega_arith)]; omega_arith) (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+      (by rw [ofs_off' base (by omega_arith)]; omega_arith)]
     exact (hv t ht).1
-  · rw [h _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega)]
+  · rw [h _ (by rw [ofs_off' base (by omega_arith)]; omega_arith) (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+      (by rw [ofs_off' base (by omega_arith)]; omega_arith)]
     exact (hv t ht).2
 
 theorem VBits.keptD {base : Addr} {S K : Nat} {m m' : Mem} (h : DFrame base m m')
@@ -158,11 +158,11 @@ theorem VBits.keptD {base : Addr} {S K : Nat} {m m' : Mem} (h : DFrame base m m'
   have hK : KBITS = 4608 := rfl
   have hA : ACC = 3584 := rfl
   refine ⟨?_, ?_⟩
-  · rw [h _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega)]
+  · rw [h _ (by rw [ofs_off' base (by omega_arith)]; omega_arith) (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+      (by rw [ofs_off' base (by omega_arith)]; omega_arith)]
     exact (hv t ht).1
-  · rw [h _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega)]
+  · rw [h _ (by rw [ofs_off' base (by omega_arith)]; omega_arith) (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+      (by rw [ofs_off' base (by omega_arith)]; omega_arith)]
     exact (hv t ht).2
 
 /-- The checks of the decodings, in the order the result uses. -/
@@ -187,20 +187,20 @@ theorem ventry_ok {s₀ : State} (h : VerifyPre s₀) {base : Addr} (hbase : (ar
   -- The registers saved.
   refine WP.seq (WP.mono (save_ok hA) fun s₁ ⟨hs₁, sv₁, o₁, k₁⟩ => ?_)
   rw [hbase] at hs₁ sv₁ o₁
-  have o1w : Outside base 0 8192 s₀.mem s₁.mem := o₁.mono (by omega) (by omega)
+  have o1w : Outside base 0 8192 s₀.mem s₁.mem := o₁.mono (by omega_arith) (by omega_arith)
   -- The bits.
   obtain ⟨e8, r8, v8⟩ := hA.argRead (k₁.1 _ (by decide)) k₁.2.1 k₁.2.2 (hbase ▸ o1w) (i := 1) (by decide)
   obtain ⟨e12, r12, v12⟩ := hA.argRead (k₁.1 _ (by decide)) k₁.2.1 k₁.2.2 (hbase ▸ o1w) (i := 2) (by decide)
   have rr1 : s₁.rd ++ s₁.wr = s₀.rd ++ s₀.wr := by rw [k₁.2.1, k₁.2.2]
   refine WP.seq (WP.mono (vbits_ok hs₁ e8 r8 e12 r12 v8 v12 h.f1 h.f2
-    (fun i hi => by rw [rr1, Offset.add_add]; exact isig.read _ (by omega))
+    (fun i hi => by rw [rr1, Offset.add_add]; exact isig.read _ (by omega_arith))
     (fun i hi => by rw [rr1]; exact ich.read i hi)
-    (fun i hi => by rw [Offset.add_add]; exact isig.far _ (by omega)) ich.far)
+    (fun i hi => by rw [Offset.add_add]; exact isig.far _ (by omega_arith)) ich.far)
     fun s₂ ⟨esi₂, k₂, ⟨mK, oK, oS⟩, b₂⟩ => ?_)
   have hB : BITS = 3072 := rfl
   have hK : KBITS = 4608 := rfl
   have o12 : Outside base 0 8192 s₁.mem s₂.mem :=
-    (oK.mono (by omega) (by omega)).trans (oS.mono (by omega) (by omega))
+    (oK.mono (by omega_arith) (by omega_arith)).trans (oS.mono (by omega_arith) (by omega_arith))
   unfold vinit
   refine WP.seq ?_
   simp only [List.cons_append, List.nil_append]
@@ -209,7 +209,7 @@ theorem ventry_ok {s₀ : State} (h : VerifyPre s₀) {base : Addr} (hbase : (ar
     simp only [bytesAt]
     refine List.map_congr_left fun i hi => o1w _ (Or.inr ?_)
     simp only [List.mem_range] at hi
-    rw [Offset.add_add]; exact isig.far _ (by omega)
+    rw [Offset.add_add]; exact isig.far _ (by omega_arith)
   rw [bs, ich.bytes o1w] at b₂
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   -- `BAD = 0`.
@@ -223,16 +223,16 @@ theorem ventry_ok {s₀ : State} (h : VerifyPre s₀) {base : Addr} (hbase : (ar
   have esi₄ : s₄.gpr .esi = arg s₀ 1 := by rw [v₄.gpr, v₃.other _ (by decide), esi₂]
   have rr4 : s₄.rd ++ s₄.wr = s₀.rd ++ s₀.wr := by rw [v₄.rd, v₄.wr, v₃.rd, v₃.wr, k₂.2.1, k₂.2.2, rr1]
   have o04 : Outside base 0 8192 s₀.mem s₄.mem :=
-    (o1w.trans o12).trans (o₄.mono (by omega) (by decide))
+    (o1w.trans o12).trans (o₄.mono (by omega_arith) (by decide))
   refine WP.mono (sCheck_ok hs₄ (q := (arg s₀ 1).setWidth 64 + BitVec.ofNat 64 57) (by rw [esi₄])
-    (by rw [esi₄]; exact h.f1) (fun j hj => by rw [rr4, Offset.add_add]; exact isig.read _ (by omega))
-    (fun j hj => by rw [Offset.add_add]; exact isig.far _ (by omega))) fun s₅ ⟨c₅, o₅, k₅⟩ => ?_
+    (by rw [esi₄]; exact h.f1) (fun j hj => by rw [rr4, Offset.add_add]; exact isig.read _ (by omega_arith))
+    (fun j hj => by rw [Offset.add_add]; exact isig.far _ (by omega_arith))) fun s₅ ⟨c₅, o₅, k₅⟩ => ?_
   have bS : bytesAt s₄.mem ((arg s₀ 1).setWidth 64 + BitVec.ofNat 64 57) 57 =
       bytesAt s₀.mem ((arg s₀ 1).setWidth 64 + BitVec.ofNat 64 57) 57 := by
     simp only [bytesAt]
     refine List.map_congr_left fun i hi => o04 _ (Or.inr ?_)
     simp only [List.mem_range] at hi
-    rw [Offset.add_add]; exact isig.far _ (by omega)
+    rw [Offset.add_add]; exact isig.far _ (by omega_arith)
   rw [bS, bad₄] at c₅
   have hs₅ := hs₄.of_keeps k₅ (by decide)
   -- The slots.
@@ -241,20 +241,20 @@ theorem ventry_ok {s₀ : State} (h : VerifyPre s₀) {base : Addr} (hbase : (ar
   refine ⟨hs₅.of_keeps kt (by decide), ?_, ?_, ?_, ?_, fun j hj => ⟨?_, ?_⟩, initSlots_bounded lt, e⟩
   · exact ((((sv₁.outside oK (by decide)).outside oS (by decide)).outside o₄ (by decide)).outside2 o₅ (by decide)
       (by decide)).outside ot (by decide)
-  · exact (o04.trans (o₅.whole (by decide) (by decide))).trans (ot.mono (by omega) (by omega))
+  · exact (o04.trans (o₅.whole (by decide) (by decide))).trans (ot.mono (by omega_arith) (by omega_arith))
   · exact (k₁.mono (by decide)).trans ((k₂.mono (by decide)).trans ((v₃.rest (by decide)).trans
       ((v₄.rest _).trans ((k₅.mono (by decide)).trans (kt.mono (by decide))))))
   · refine c₅.of_eq ?_
     exact ot.word (Or.inl (by decide)) (by decide)
-  · rw [ot _ (Or.inr (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)),
-      o₅ _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, TMP]; omega)
-        (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, BAD]; omega),
-      o₄ _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, BAD]; omega)]
+  · rw [ot _ (Or.inr (by rw [ofs_off' base (by simp only [BITS]; omega_arith)]; simp only [BITS]; omega_arith)),
+      o₅ _ (by rw [ofs_off' base (by simp only [BITS]; omega_arith)]; simp only [BITS, TMP]; omega_arith)
+        (by rw [ofs_off' base (by simp only [BITS]; omega_arith)]; simp only [BITS, BAD]; omega_arith),
+      o₄ _ (by rw [ofs_off' base (by simp only [BITS]; omega_arith)]; simp only [BITS, BAD]; omega_arith)]
     exact (b₂ j hj).1
-  · rw [ot _ (Or.inr (by rw [ofs_off' base (by omega)]; simp only [KBITS]; omega)),
-      o₅ _ (by rw [ofs_off' base (by omega)]; simp only [KBITS, TMP]; omega)
-        (by rw [ofs_off' base (by omega)]; simp only [KBITS, BAD]; omega),
-      o₄ _ (by rw [ofs_off' base (by omega)]; simp only [KBITS, BAD]; omega)]
+  · rw [ot _ (Or.inr (by rw [ofs_off' base (by omega_arith)]; simp only [KBITS]; omega_arith)),
+      o₅ _ (by rw [ofs_off' base (by omega_arith)]; simp only [KBITS, TMP]; omega_arith)
+        (by rw [ofs_off' base (by omega_arith)]; simp only [KBITS, BAD]; omega_arith),
+      o₄ _ (by rw [ofs_off' base (by omega_arith)]; simp only [KBITS, BAD]; omega_arith)]
     exact (b₂ j hj).2
 
 /-- The arguments, in any state after the entry block whose writes since are in the working
@@ -274,7 +274,7 @@ theorem ventry_args {s₀ s₁ : State} (h : VerifyPre s₀) {base : Addr} (hbas
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
       · rw [← hbase]; exact h.args_sc
-      · exact h.stk_args.symm) (i := i) (by omega)
+      · exact h.stk_args.symm) (i := i) (by omega_arith)
   exact ⟨_, ae, ar, av⟩
 
 /-- The calls' context after the entry block. -/
@@ -408,8 +408,8 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h
   -- What is kept from the entry to the loop.
   have k41 : ∀ i : Index, i.val = 0 ∨ i.val = 2 ∨ (8 ≤ i.val ∧ i.val ≤ 11) →
       E s₄.mem base i = E s₁.mem base i := fun i hi => by
-    rw [e₄k i (fun h => by subst h; omega), k₃e i (fun h => by subst h; omega),
-      e₂ i (fun h => by subst h; omega) (fun h => by subst h; omega) (by omega)]
+    rw [e₄k i (fun h => by subst h; omega_arith), k₃e i (fun h => by subst h; omega_arith),
+      e₂ i (fun h => by subst h; omega_arith) (fun h => by subst h; omega_arith) (by omega_arith)]
   have bits₄ : VBits base S K s₄.mem :=
     VBits.kept (WsOut2.widen k₄.mem) (VBits.kept (WsOut2.widen k₃.mem) (VBits.keptD D₂.frame bits₁))
   -- The loop.

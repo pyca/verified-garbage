@@ -42,7 +42,7 @@ theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hw : WsReg s base) {
   have := sl_le c hc.n10 ho
   have := sl_le c hc.n10 ha
   have hsz : size = 8192 := rfl
-  exact copy_ok (size := size) c.n hw.ws hw.at3 (sl_al c o) (sl_al c a) (by omega) (by omega) (by omega)
+  exact copy_ok (size := size) c.n hw.ws hw.at3 (sl_al c o) (sl_al c a) (by omega_arith) (by omega_arith) (by omega_arith)
 
 /-- `[o] = x`, on numbered slots. -/
 theorem setSl_ok (hc : CfgOk c) {s : State} {base : Addr} (hw : WsReg s base) {o x : Nat}
@@ -51,7 +51,7 @@ theorem setSl_ok (hc : CfgOk c) {s : State} {base : Addr} (hw : WsReg s base) {o
       sv c base s' o = x ∧ Kp [.r11] s s' ∧ Outside base (c.sl o) (8 * c.n) s.mem s'.mem := by
   have := sl_le c hc.n10 ho
   have hsz : size = 8192 := rfl
-  refine WP.mono (setConst_ok (size := size) hw.ws hw.at3 (o := c.sl o) (by omega) hx) fun s' ⟨O, e, k⟩ =>
+  refine WP.mono (setConst_ok (size := size) hw.ws hw.at3 (o := c.sl o) (by omega_arith) hx) fun s' ⟨O, e, k⟩ =>
     ⟨?_, k, O⟩
   show wordsVal _ _ _ _ = _
   rw [wordsVal_eq_val32]; exact e
@@ -78,8 +78,8 @@ theorem save_ok (hc : CfgOk c) {s : State} {base : Addr} (hw : WsReg s base) :
   have hp := hc.p_lt
   have hp3 := hc.p_ge
   have hm1 : c.mont 1 < 2 ^ (64 * c.n) := by
-    have : c.mont 1 < c.C.p := Nat.mod_lt _ (by omega)
-    omega
+    have : c.mont 1 < c.C.p := Nat.mod_lt _ (by omega_arith)
+    omega_arith
   rw [save_eq]
   refine wp_append (WP.mono (copySl_ok hc hw (o := UX) (a := RX) (by decide) (by decide) (by decide))
     fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
@@ -131,7 +131,7 @@ theorem sumIdx_inj : ∀ i < 17, ∀ j < 17, sumIdx.getD i 0 = sumIdx.getD j 0 �
 theorem sumLay (h7 : c.n < 10) : LayR c.n 17 wIds (sumσ c) where
   le := fun x hx => sl_below_own c h7 (sumIdx_lt x hx)
   apart := fun w hw x hx hxw => sl_apart c fun h => hxw (sumIdx_inj x hx w (by
-    simp only [wIds, List.mem_cons, List.not_mem_nil, or_false] at hw; omega) h)
+    simp only [wIds, List.mem_cons, List.not_mem_nil, or_false] at hw; omega_arith) h)
 
 /-- The sum over any modulus `S` of `c.n` words, `m`. -/
 theorem sum_core {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} [NeZero m] (hkS : S.k = c.n) (hmS : S.m = m)
@@ -193,7 +193,7 @@ theorem sum_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K₀ : K
       exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_own c h7 (i := 12) (by decide)))))
     (hWs := le_append (slW_le h7 (by decide)) (fun w hw => by
       rw [List.mem_singleton.mp hw]; have := own_below_bits c h7 0; have := bitsAt_le c h7 (j := 0) (by decide)
-      dsimp only; omega))
+      dsimp only; omega_arith))
   refine wp_append (WP.mono (copySl_ok hc K₁.ws (o := RX) (a := DX) (by decide) (by decide) (by decide))
     fun s₂ ⟨e₂, k₂, O₂⟩ => ?_)
   have hw₂ := K₁.ws.of_kp k₂
@@ -265,8 +265,8 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} 
   have hsz : size = 8192 := rfl
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
-  have hlen : 8 * c.C.len ≤ 64 * c.n := by have := hc.len_hi; omega
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
+  have hlen : 8 * c.C.len ≤ 64 * c.n := by have := hc.len_hi; omega_arith
   have F := hM.fixed
   have ha : ∀ {t : State}, Fixed c base s₀.gpr s₀.lr t.mem → tmv c.C c.n base t (c.sl AP) = Fin.ofNat c.C.p c.C.a :=
     fun F => by show toM _ _ (wordsVal _ base (c.sl AP) c.n) = _; rw [F.ap]; exact toM_cmont hc _
@@ -299,10 +299,10 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} 
       · exact lt_of_eq_of_lt K₁.fixed.b3p (hmont _)
       · exact lt_of_eq_of_lt K₁.fixed.gx (hmont _)
       · exact lt_of_eq_of_lt K₁.fixed.gy (hmont _)
-      · exact lt_of_eq_of_lt K₁.fixed.onep (Nat.mod_lt _ (by omega))
-      · show sv c base s₁ RX < _; rw [v₁ (by decide), hM.rx]; omega
+      · exact lt_of_eq_of_lt K₁.fixed.onep (Nat.mod_lt _ (by omega_arith))
+      · show sv c base s₁ RX < _; rw [v₁ (by decide), hM.rx]; omega_arith
       · show sv c base s₁ RY < _; rw [v₁ (by decide), hM.ry]; exact hmont _
-      · show sv c base s₁ RZ < _; rw [v₁ (by decide), hM.rz]; omega)
+      · show sv c base s₁ RZ < _; rw [v₁ (by decide), hM.rz]; omega_arith)
     (step_rep hC hc.onG (ha K₁.fixed) (hb K₁.fixed) hG₁)
     (by
       show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ RX)) (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ RY))
@@ -345,10 +345,10 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} 
       · exact lt_of_eq_of_lt K₄.fixed.b3p (hmont _)
       · show sv c base s₄ PX < _; rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.px_lt
       · show sv c base s₄ PY < _; rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.py_lt
-      · exact lt_of_eq_of_lt K₄.fixed.onep (Nat.mod_lt _ (by omega))
-      · show sv c base s₄ RX < _; rw [v₄ (by decide), rx₃]; omega
+      · exact lt_of_eq_of_lt K₄.fixed.onep (Nat.mod_lt _ (by omega_arith))
+      · show sv c base s₄ RX < _; rw [v₄ (by decide), rx₃]; omega_arith
       · show sv c base s₄ RY < _; rw [v₄ (by decide), ry₃]; exact hmont _
-      · show sv c base s₄ RZ < _; rw [v₄ (by decide), rz₃]; omega)
+      · show sv c base s₄ RZ < _; rw [v₄ (by decide), rz₃]; omega_arith)
     (step_rep hC hP (ha K₄.fixed) (hb K₄.fixed) hQ₄)
     (by
       show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₄ RX)) (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₄ RY))
@@ -387,7 +387,7 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} 
   have flagOk : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch base W m m' →
       (∀ w ∈ W, c.sl FLAG + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG) →
       word m' base (c.sl FLAG) = word m base (c.sl FLAG) := fun U ap =>
-    U.word (fun w hw => (ap w hw).imp (fun h => by omega) id) (by omega)
+    U.word (fun w hw => (ap w hw).imp (fun h => by omega_arith) id) (by omega_arith)
   have fl₆ : flagW c base s₆ = flagW c base s := by
     simp only [flagW]
     rw [flagOk U₆ (apart_append (apart_slW (by decide)) (apart_own h7 (by decide))),

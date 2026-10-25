@@ -32,7 +32,7 @@ theorem shift3_ok (s : State) :
   · have h := leftShift_value 3 (Or.inr (Or.inr rfl)) (s.gpr .x9) (s.gpr .x10) (s.gpr .x11) (s.gpr .x12)
     simp only [regsVal,Nat.mul_zero,Nat.add_zero,RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,BitVec.setWidth_eq]
     simp only [five,four,show 64-3=61 from rfl] at h
-    omega
+    omega_arith
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hq
     simp only [RegUpd.gpr_write,hq.1,hq.2.1,hq.2.2.1,hq.2.2.2.1,hq.2.2.2.2,ite_false]
 
@@ -85,7 +85,7 @@ theorem shift1_ok (s : State) :
   · have h := leftShift_value 1 (Or.inl rfl) (s.gpr .x9) (s.gpr .x10) (s.gpr .x11) (s.gpr .x12)
     simp only [regsVal,Nat.mul_zero,Nat.add_zero,RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,BitVec.setWidth_eq]
     simp only [five,four,show 64-1=63 from rfl] at h
-    omega
+    omega_arith
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hq
     simp only [RegUpd.gpr_write,hq.1,hq.2.1,hq.2.2.1,hq.2.2.2.1,hq.2.2.2.2,ite_false]
 
@@ -109,7 +109,7 @@ theorem addTriple_ok (s : State) (hz : s.gpr .x17=0) :
         five (s.gpr .x1) (s.gpr .x2) (s.gpr .x8) (s.gpr .x13) 0=
         regsVal s [.x9,.x10,.x11,.x12]+regsVal s [.x1,.x2,.x8,.x13,.x16] := by
       simp only [five,four,regsVal,show (0:BitVec 64).toNat=0 from rfl,Nat.mul_zero,Nat.add_zero]
-      omega
+      omega_arith
     rw [hsum] at h
     simp only [regsVal,Nat.mul_zero,Nat.add_zero,RegUpd.gpr_write,RegUpd.gpr_addWithCarry,
       reduceCtorEq,ite_false,ite_true,BitVec.setWidth_eq]

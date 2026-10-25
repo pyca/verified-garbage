@@ -42,18 +42,18 @@ theorem joint_cache_mem {c : Joint.Cfg} {x : Nat} :
   rw [mem_cacheTableSlots]
   constructor
   · rintro ⟨i,hi,rfl|rfl⟩
-    · exact List.mem_map.mpr ⟨2*i,List.mem_range.mpr (by omega),by rw [slot_two_mul]⟩
-    · exact List.mem_map.mpr ⟨2*i+1,List.mem_range.mpr (by omega),
+    · exact List.mem_map.mpr ⟨2*i,List.mem_range.mpr (by omega_arith),by rw [slot_two_mul]⟩
+    · exact List.mem_map.mpr ⟨2*i+1,List.mem_range.mpr (by omega_arith),
         by rw [slot_two_mul_add,Nat.add_assoc]⟩
   · intro hx
     obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hx
     have hi' := List.mem_range.mp hi
-    refine ⟨i/2,by omega,?_⟩
+    refine ⟨i/2,by omega_arith,?_⟩
     rcases Nat.mod_two_eq_zero_or_one i with h|h
     · left
-      rw [show i=2*(i/2) by omega,slot_two_mul,show 2*(i/2)/2=i/2 by omega]
+      rw [show i=2*(i/2) by omega_arith,slot_two_mul,show 2*(i/2)/2=i/2 by omega_arith]
     · right
-      rw [show i=2*(i/2)+1 by omega,slot_two_mul_add,show (2*(i/2)+1)/2=i/2 by omega,
+      rw [show i=2*(i/2)+1 by omega_arith,slot_two_mul_add,show (2*(i/2)+1)/2=i/2 by omega_arith,
         Nat.add_assoc]
 
 theorem joint_tableLive {c : Joint.Cfg} :
@@ -68,14 +68,14 @@ theorem joint_tableLive {c : Joint.Cfg} :
     · apply List.mem_append_left
       apply List.mem_append_right
       simp only [jacCoords,Naf.twice,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false]
-      obtain rfl|rfl|rfl : i=24 ∨ i=25 ∨ i=26 := by omega
-      all_goals omega
+      obtain rfl|rfl|rfl : i=24 ∨ i=25 ∨ i=26 := by omega_arith
+      all_goals omega_arith
 
 theorem jointCache_z (c : Joint.Cfg) :
     ∀ i<8,c.K.tbl+24*c.K.M.n*i+16*c.K.M.n∈nafTableLive c.K 8 := by
   intro i hi
   apply List.mem_append_right
-  exact List.mem_map.mpr ⟨3*i+2,List.mem_range.mpr (by omega),
+  exact List.mem_map.mpr ⟨3*i+2,List.mem_range.mpr (by omega_arith),
     by rw [slot_three_mul_two,Nat.add_assoc]⟩
 
 /-- The cache loop's layout in the joint verifier, through `E`. -/
@@ -96,9 +96,9 @@ theorem JointInitLayout.cacheLay {c : Joint.Cfg} {size : Nat} (hL : JointInitLay
   have tz := hN.tbl c.K.E.z (List.mem_append_right _ (eo _ (by simp [jacCoords])))
   rw [hN.exz] at ez tz
   have cs := hL.cacheSep
-  refine ⟨hn,hL.tableSmall,hL.cacheSmall,by omega,jointCache_z c,fun i hi => ?_,
+  refine ⟨hn,hL.tableSmall,hL.cacheSmall,by omega_arith,jointCache_z c,fun i hi => ?_,
     ⟨ej _ (by simp [jacCoords]),hN.exy ▸ ej _ (by simp [jacCoords]),
-      hN.exz ▸ ej _ (by simp [jacCoords])⟩,by omega,fun x hx => ?_⟩
+      hN.exz ▸ ej _ (by simp [jacCoords])⟩,by omega_arith,fun x hx => ?_⟩
   · exact ⟨List.mem_append_right _ (joint_cache_mem.mp (mem_cacheTableSlots.mpr ⟨i,hi,Or.inl rfl⟩)),
       List.mem_append_right _ (joint_cache_mem.mp (mem_cacheTableSlots.mpr ⟨i,hi,Or.inr rfl⟩))⟩
   · have far (y : Nat) (hy : y∈winRo c.K++winOther c.K) (hE : y∉jacCoords c.K.E) :
@@ -114,7 +114,7 @@ theorem JointInitLayout.cacheLay {c : Joint.Cfg} {size : Nat} (hL : JointInitLay
         (fun h => hE (by simp [jacCoords,h]))
       rw [hN.exy] at a1
       rw [hN.exz] at a2
-      exact ⟨by omega,hL.cacheFar y hy⟩
+      exact ⟨by omega_arith,hL.cacheFar y hy⟩
     simp only [nafTableLive,nafTableSlots,List.mem_append,List.mem_map,List.mem_range] at hx
     rcases hx with ((hx|hx)|hx)|⟨j,hj,rfl⟩
     · refine far x (List.mem_append_left _ hx) fun he => hN.ro x hx (eo x he)
@@ -128,9 +128,9 @@ theorem JointInitLayout.cacheLay {c : Joint.Cfg} {size : Nat} (hL : JointInitLay
         not_or] at hd
       grind
     · simp only [jacCoords,Naf.twice,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
-      constructor <;> omega
-    · have := entry_end_le (8*c.K.M.n) (show j<24 by omega)
-      constructor <;> omega
+      constructor <;> omega_arith
+    · have := entry_end_le (8*c.K.M.n) (show j<24 by omega_arith)
+      constructor <;> omega_arith
 
 theorem JointGenerator.keep_init {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : Nat}
     {G : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s t : State} {rs : List Reg}
@@ -155,9 +155,9 @@ theorem jointInit_digits {c : Joint.Cfg} {size : Nat} (hL : JointInitLayout c si
     {β : Nat → BitVec 8} (hb : ∀ i<l,s.mem (off base (d+i))=β i) :
     ∀ i<l,t.mem (off base (d+i))=β i := by
   intro i hi
-  rw [hu.byte (fun w hw => ?_) (by have := hL.bitsBounds _ hd; dsimp only at this; omega),hb i hi]
+  rw [hu.byte (fun w hw => ?_) (by have := hL.bitsBounds _ hd; dsimp only at this; omega_arith),hb i hi]
   have := hL.bitsSep _ hd w hw
   dsimp only at this
-  omega
+  omega_arith
 
 end VG.Proof.Weierstrass.X86_64

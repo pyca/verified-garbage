@@ -41,7 +41,7 @@ theorem addr_bitO (base : Addr) (o i j : Nat) :
       off base (o + (8 * i + j)) := by
   rw [← BitVec.ofNat_mul, BitVec.add_assoc, ← BitVec.ofNat_add]
   congr 2
-  omega
+  omega_arith
 
 variable {o : Nat} (ho : o + 456 ≤ 8192)
 
@@ -53,7 +53,7 @@ theorem bitJO_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i <
       (∀ r, r ≠ .rdx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.mem = s.mem.writeW (off base (o + (8 * i + j))) (BitVec.ofNat 8 ((b.toNat >>> j) &&& 1)) := by
   have w : InRegions s.wr (off base (o + (8 * i + j))) 1 :=
-    ⟨_, hs.wr, contains_sc (by omega)⟩
+    ⟨_, hs.wr, contains_sc (by omega_arith)⟩
   have e := bit_byte b j hj
   apply WP.of_runBlock
   rcases Nat.eq_zero_or_pos j with rfl | hj0
@@ -65,11 +65,11 @@ theorem bitJO_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i <
     refine ⟨fun r hr => ?_, rfl, by trivial, ?_⟩
     · simp only [hr, ite_false]
     · rw [← e]; rfl
-  · simp only [bitJO, show ¬j = 0 by omega, ite_false, List.nil_append, List.cons_append,
+  · simp only [bitJO, show ¬j = 0 by omega_arith, ite_false, List.nil_append, List.cons_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, execShift, State.store8,
     ea_bitAtO, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, RegUpd.wr_setReg,
     RegUpd.wr_setFlags, RegUpd.wr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_setFlags,
-    RegUpd.mem_arithFlags, hs.rdi, hb, ha, addr_bitO, w, show 1 ≤ j ∧ j ≤ 63 from ⟨hj0, by omega⟩,
+    RegUpd.mem_arithFlags, hs.rdi, hb, ha, addr_bitO, w, show 1 ≤ j ∧ j ≤ 63 from ⟨hj0, by omega_arith⟩,
     ite_true, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
     and_self]
     refine ⟨fun r hr => ?_, rfl, by trivial, ?_⟩
@@ -107,28 +107,28 @@ theorem bitsBodyAt_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr 
     fun g _ wr hx hbx hax => ⟨⟨(g _ (by decide)).trans hx.rdi, wr ▸ hx.wr, hx.nowrap⟩,
       (g _ (by decide)).trans hbx, (g _ (by decide)).trans hax⟩
   rw [WP.block_append_iff]
-  refine WP.mono (bitJO_ok ho hs₀ hi hb₀ a0 (j := 0) (by omega)) fun s₁ ⟨g1, rd1, wr1, m1⟩ => ?_
+  refine WP.mono (bitJO_ok ho hs₀ hi hb₀ a0 (j := 0) (by omega_arith)) fun s₁ ⟨g1, rd1, wr1, m1⟩ => ?_
   obtain ⟨hs₁, hb₁, ha₁⟩ := keep g1 rd1 wr1 hs₀ hb₀ a0
   rw [WP.block_append_iff]
-  refine WP.mono (bitJO_ok ho hs₁ hi hb₁ ha₁ (j := 1) (by omega)) fun s₂ ⟨g2, rd2, wr2, m2⟩ => ?_
+  refine WP.mono (bitJO_ok ho hs₁ hi hb₁ ha₁ (j := 1) (by omega_arith)) fun s₂ ⟨g2, rd2, wr2, m2⟩ => ?_
   obtain ⟨hs₂, hb₂, ha₂⟩ := keep g2 rd2 wr2 hs₁ hb₁ ha₁
   rw [WP.block_append_iff]
-  refine WP.mono (bitJO_ok ho hs₂ hi hb₂ ha₂ (j := 2) (by omega)) fun s₃ ⟨g3, rd3, wr3, m3⟩ => ?_
+  refine WP.mono (bitJO_ok ho hs₂ hi hb₂ ha₂ (j := 2) (by omega_arith)) fun s₃ ⟨g3, rd3, wr3, m3⟩ => ?_
   obtain ⟨hs₃, hb₃, ha₃⟩ := keep g3 rd3 wr3 hs₂ hb₂ ha₂
   rw [WP.block_append_iff]
-  refine WP.mono (bitJO_ok ho hs₃ hi hb₃ ha₃ (j := 3) (by omega)) fun s₄ ⟨g4, rd4, wr4, m4⟩ => ?_
+  refine WP.mono (bitJO_ok ho hs₃ hi hb₃ ha₃ (j := 3) (by omega_arith)) fun s₄ ⟨g4, rd4, wr4, m4⟩ => ?_
   obtain ⟨hs₄, hb₄, ha₄⟩ := keep g4 rd4 wr4 hs₃ hb₃ ha₃
   rw [WP.block_append_iff]
-  refine WP.mono (bitJO_ok ho hs₄ hi hb₄ ha₄ (j := 4) (by omega)) fun s₅ ⟨g5, rd5, wr5, m5⟩ => ?_
+  refine WP.mono (bitJO_ok ho hs₄ hi hb₄ ha₄ (j := 4) (by omega_arith)) fun s₅ ⟨g5, rd5, wr5, m5⟩ => ?_
   obtain ⟨hs₅, hb₅, ha₅⟩ := keep g5 rd5 wr5 hs₄ hb₄ ha₄
   rw [WP.block_append_iff]
-  refine WP.mono (bitJO_ok ho hs₅ hi hb₅ ha₅ (j := 5) (by omega)) fun s₆ ⟨g6, rd6, wr6, m6⟩ => ?_
+  refine WP.mono (bitJO_ok ho hs₅ hi hb₅ ha₅ (j := 5) (by omega_arith)) fun s₆ ⟨g6, rd6, wr6, m6⟩ => ?_
   obtain ⟨hs₆, hb₆, ha₆⟩ := keep g6 rd6 wr6 hs₅ hb₅ ha₅
   rw [WP.block_append_iff]
-  refine WP.mono (bitJO_ok ho hs₆ hi hb₆ ha₆ (j := 6) (by omega)) fun s₇ ⟨g7, rd7, wr7, m7⟩ => ?_
+  refine WP.mono (bitJO_ok ho hs₆ hi hb₆ ha₆ (j := 6) (by omega_arith)) fun s₇ ⟨g7, rd7, wr7, m7⟩ => ?_
   obtain ⟨hs₇, hb₇, ha₇⟩ := keep g7 rd7 wr7 hs₆ hb₆ ha₆
   rw [WP.block_append_iff]
-  refine WP.mono (bitJO_ok ho hs₇ hi hb₇ ha₇ (j := 7) (by omega)) fun s₈ ⟨g8, rd8, wr8, m8⟩ => ?_
+  refine WP.mono (bitJO_ok ho hs₇ hi hb₇ ha₇ (j := 7) (by omega_arith)) fun s₈ ⟨g8, rd8, wr8, m8⟩ => ?_
   obtain ⟨hs₈, hb₈, ha₈⟩ := keep g8 rd8 wr8 hs₇ hb₇ ha₇
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.bind_some,
@@ -146,25 +146,25 @@ theorem bitsBodyAt_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr 
     have ne : ∀ a b, a < 8 → b < 8 → a ≠ b →
         off base (o + (8 * i + a)) ≠ off base (o + (8 * i + b)) := by
       intro a b ha hb hab h
-      rw [off_eq_iff base (by omega) (by omega)] at h
-      omega
+      rw [off_eq_iff base (by omega_arith) (by omega_arith)] at h
+      omega_arith
     have ne' : ∀ a b, a < 8 → b < 8 → a ≠ b →
         (off base (o + (8 * i + a)) = off base (o + (8 * i + b))) = False :=
       fun a b ha hb hab => eq_false (ne a b ha hb hab)
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp (disch := decide) only [writeW8_apply, ite_true, ne', ite_false]
   · intro x hx
-    have hd : ∀ j < 8, ofs base x ≠ o + (8 * i + j) := fun j hj h => by omega
-    have hb : ∀ j < 8, o + (8 * i + j) < 2 ^ 64 := fun j hj => by omega
-    rw [m8, m7, m6, m5, m4, m3, m2, m1, writeW8_outside _ _ _ (hb 7 (by omega)) (hd 7 (by omega)),
-      writeW8_outside _ _ _ (hb 6 (by omega)) (hd 6 (by omega)),
-      writeW8_outside _ _ _ (hb 5 (by omega)) (hd 5 (by omega)),
-      writeW8_outside _ _ _ (hb 4 (by omega)) (hd 4 (by omega)),
-      writeW8_outside _ _ _ (hb 3 (by omega)) (hd 3 (by omega)),
-      writeW8_outside _ _ _ (hb 2 (by omega)) (hd 2 (by omega)),
-      writeW8_outside _ _ _ (hb 1 (by omega)) (hd 1 (by omega)),
-      writeW8_outside _ _ _ (hb 0 (by omega)) (hd 0 (by omega)), hm]
+    have hd : ∀ j < 8, ofs base x ≠ o + (8 * i + j) := fun j hj h => by omega_arith
+    have hb : ∀ j < 8, o + (8 * i + j) < 2 ^ 64 := fun j hj => by omega_arith
+    rw [m8, m7, m6, m5, m4, m3, m2, m1, writeW8_outside _ _ _ (hb 7 (by omega_arith)) (hd 7 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 6 (by omega_arith)) (hd 6 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 5 (by omega_arith)) (hd 5 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 4 (by omega_arith)) (hd 4 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 3 (by omega_arith)) (hd 3 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 2 (by omega_arith)) (hd 2 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 1 (by omega_arith)) (hd 1 (by omega_arith)),
+      writeW8_outside _ _ _ (hb 0 (by omega_arith)) (hd 0 (by omega_arith)), hm]
 
 /-- `bitsAt`' loop invariant, after `i` bytes. -/
 structure BInvO (o : Nat) (base k : Addr) (s₀ s : State) (i : Nat) : Prop where
@@ -192,22 +192,22 @@ theorem bitsLoopAt_ok {s₀ : State} {base k : Addr}
   refine WP.mono (bitsBodyAt_ok ho hb.scr hb.rsi hi hb.rbx (by rw [hb.rd, hb.wr]; exact hkr i hi))
     fun s' ⟨b', z', g', rd', wr', bits', o'⟩ => ?_
   have hbyte : s.mem (k + BitVec.ofNat 64 i) = s₀.mem (k + BitVec.ofNat 64 i) :=
-    hb.mem _ (by have := hkd i hi; omega)
+    hb.mem _ (by have := hkd i hi; omega_arith)
   have inv : BInvO o base k s₀ s' (i + 1) := by
     refine ⟨⟨(g' _ (by decide)).trans hb.scr.rdi, wr' ▸ hb.scr.wr, hb.scr.nowrap⟩,
       (g' _ (by decide)).trans hb.rsi, b', fun r hr => (g' r hr).trans (hb.gpr r hr),
-      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega) (by omega)),
+      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega_arith) (by omega_arith)),
       fun t ht => ?_⟩
     rcases Nat.lt_or_ge t (8 * i) with h | h
-    · rw [o' _ (by rw [ofs_off' base (by omega)]; omega), hb.bits t h]
-    · have e := bits' (t - 8 * i) (by omega)
-      rw [show 8 * i + (t - 8 * i) = t by omega, hbyte] at e
-      rw [e, show t / 8 = i by omega, show t % 8 = t - 8 * i by omega]
+    · rw [o' _ (by rw [ofs_off' base (by omega_arith)]; omega_arith), hb.bits t h]
+    · have e := bits' (t - 8 * i) (by omega_arith)
+      rw [show 8 * i + (t - 8 * i) = t by omega_arith, hbyte] at e
+      rw [e, show t / 8 = i by omega_arith, show t % 8 = t - 8 * i by omega_arith]
   simp only [eval, z', Option.map_some]
   rcases Nat.lt_or_ge (i + 1) 57 with h | h
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬i + 1 = 57), Bool.not_false],
-      57 - (i + 1), by omega, i + 1, rfl, h, inv⟩
-  · obtain rfl : i = 56 := by omega
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬i + 1 = 57), Bool.not_false],
+      57 - (i + 1), by omega_arith, i + 1, rfl, h, inv⟩
+  · obtain rfl : i = 56 := by omega_arith
     exact .inl ⟨rfl, inv⟩
 
 include ho in
@@ -227,10 +227,10 @@ theorem bitsAt_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .rsi
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
       State.setReg32, Option.some.injEq, exists_eq_left']
     refine ⟨⟨hs.rdi, hs.wr, hs.nowrap⟩, hk, rfl, fun r hr => ?_, rfl, rfl, Outside.refl _ _ _ _,
-      fun t ht => absurd ht (by omega)⟩
+      fun t ht => absurd ht (by omega_arith)⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, hr.2.2, ite_false]) fun s₁ h₁ => ?_)
-  refine WP.mono (bitsLoopAt_ok ho hkr hkd 0 s₁ (by omega) h₁) fun s₂ h₂ => ?_
-  exact ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.mem, fun t ht => h₂.bits t (by omega)⟩
+  refine WP.mono (bitsLoopAt_ok ho hkr hkd 0 s₁ (by omega_arith) h₁) fun s₂ h₂ => ?_
+  exact ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.mem, fun t ht => h₂.bits t (by omega_arith)⟩
 
 end VG.Proof.Ed448.X86_64

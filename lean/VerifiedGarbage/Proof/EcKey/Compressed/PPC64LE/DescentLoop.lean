@@ -144,7 +144,7 @@ theorem descentRound_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s b
       simp only [fieldAt, f₂ hi]
     rw [ev', ev', ev', r₃, t₃, c₃, ff₂ (show ACC ∈ [ACC, T0, T1] by simp), ff₂ (show T0 ∈ [ACC, T0, T1] by simp),
       ff₂ (show T1 ∈ [ACC, T0, T1] by simp)]
-    conv => rhs; rw [show j = j - 1 + 1 by omega, rootDescent]
+    conv => rhs; rw [show j = j - 1 + 1 by omega_arith, rootDescent]
     simp only [pow_eq_npow]
     rw [← b₂]
 
@@ -172,11 +172,11 @@ theorem descentLoop_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s ba
   have h7 := hc.n10
   have hn := hw.nowrap
   refine loopBy_ok (Inv := fun k t => DescentInv c base count s t k) (n := count)
-    (fun k t I => eval_hi_nonzero (by have := I.le; omega) I.r31) (fun k t hk hkc I => ?_)
+    (fun k t I => eval_hi_nonzero (by have := I.le; omega_arith) I.r31) (fun k t hk hkc I => ?_)
     (fun t I => ⟨I.ws, I.rk, I.unch, I.lt _ (by simp), by rw [← I.val]; rfl⟩) hcount
     ⟨hw, h31, Nat.le_refl _, Rk.refl _ _, Unch.refl _ _ _, hlt, hO, rfl⟩
-  refine WP.mono (descentRound_ok hc I.ws hk (by omega) I.r31 I.lt I.one)
-    fun u ⟨hwu, r31u, ku, Uu, ltu, vu⟩ => ⟨hwu, r31u, by omega, I.rk.trans ku,
+  refine WP.mono (descentRound_ok hc I.ws hk (by omega_arith) I.r31 I.lt I.one)
+    fun u ⟨hwu, r31u, ku, Uu, ltu, vu⟩ => ⟨hwu, r31u, by omega_arith, I.rk.trans ku,
       (I.unch.trans Uu).mono fun w hw' => (List.mem_append.mp hw').elim id id, ltu, ?_, vu.trans I.val⟩
   exact (sv_unch Uu h7 hn (i := ONEP) (by decide)
     (apart_append (apart_slW (by decide)) (apart_own h7 (by decide)))).trans I.one

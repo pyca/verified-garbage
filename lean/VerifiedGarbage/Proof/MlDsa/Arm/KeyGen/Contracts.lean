@@ -46,9 +46,9 @@ theorem ip_pre {t : Poly → Poly} {f w : BitVec 32} (g0 : x.gpr .r0 = f) (g1 : 
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -85,9 +85,9 @@ theorem mul_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = f) (g2 : x.gpr .r2 = g)
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -113,9 +113,9 @@ theorem mulAdd_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = f) (g2 : x.gpr .r2 = g
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -156,9 +156,9 @@ theorem add_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = g) (hrd : x.rd = [regA g 
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -187,9 +187,9 @@ theorem sub_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = g) (hrd : x.rd = [regA g 
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -227,9 +227,9 @@ theorem rejNtt_pre (g0 : x.gpr .r0 = sd) (g1 : x.gpr .r1 = a) (g2 : x.gpr .r2 = 
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -263,9 +263,9 @@ theorem rejBounded_pre (g0 : x.gpr .r0 = sd) (g1 : x.gpr .r1 = e) (g2 : x.gpr .r
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -307,9 +307,9 @@ theorem p2r_pre (g0 : x.gpr .r0 = t) (g1 : x.gpr .r1 = t1) (g2 : x.gpr .r2 = t0)
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -348,9 +348,9 @@ theorem sbp_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = b) (g2 : x.gpr .r2 = o) (
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -386,9 +386,9 @@ theorem bp_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = a) (g2 : x.gpr .r2 = b) (g
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -432,9 +432,9 @@ theorem ball_pre (g0 : x.gpr .r0 = ct) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = 
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -477,9 +477,9 @@ theorem useHint_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = r) (gg : x.gpr .r2 = 
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -521,9 +521,9 @@ theorem bu_pre (g0 : x.gpr .r0 = v) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = a) 
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -555,9 +555,9 @@ theorem t1_pre (g0 : x.gpr .r0 = v) (g1 : x.gpr .r1 = f)
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -600,9 +600,9 @@ theorem hbu_pre (g0 : x.gpr .r0 = yy) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = o
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 
@@ -641,9 +641,9 @@ theorem normLt_pre (g0 : x.gpr .r0 = f) (hrd : x.rd = [regA f 1024]) (hwr : x.wr
     | with_reducible assumption
     | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
-        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | skip)
-    | (have := State.sp _ |>.isLt; omega)
-    | omega
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
+    | (have := State.sp _ |>.isLt; omega_arith)
+    | omega_arith
     | skip
   all_goals assumption
 

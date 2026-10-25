@@ -103,8 +103,8 @@ theorem bytes_eq {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) :
     b0 (coeffAt s₀.mem (F s₀) (2 * i)) = (E s₀)[3 * i]! ∧
     b1 (coeffAt s₀.mem (F s₀) (2 * i)) (coeffAt s₀.mem (F s₀) (2 * i + 1)) = (E s₀)[3 * i + 1]! ∧
     b2 (coeffAt s₀.mem (F s₀) (2 * i + 1)) = (E s₀)[3 * i + 2]! := by
-  have ea := polyAt_val hp.red (i := 2 * i) (by rw [n_eq]; omega)
-  have eb := polyAt_val hp.red (i := 2 * i + 1) (by rw [n_eq]; omega)
+  have ea := polyAt_val hp.red (i := 2 * i) (by rw [n_eq]; omega_arith)
+  have eb := polyAt_val hp.red (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
   have la := val_lt (polyAt s₀.mem (F s₀))[2 * i]!
   have lb := val_lt (polyAt s₀.mem (F s₀))[2 * i + 1]!
   rw [encode12_byte0 _ hi, encode12_byte1 _ hi, encode12_byte2 _ hi]
@@ -113,7 +113,7 @@ theorem bytes_eq {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) :
   · rw [← ea, Nat.mod_mod]
   · rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, ← ea, ← eb,
       Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-    omega
+    omega_arith
   · rw [BitVec.toNat_ushiftRight, ← eb, Nat.shiftRight_eq_div_pow]
 
 theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) {s : State} (h : Inv s₀ i s) :
@@ -121,44 +121,44 @@ theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) {s : State}
   have fF := hp.fitF
   have fO := hp.fitO
   have eA : State.addr (pf s₀ + BitVec.ofNat 32 (8 * i) + BitVec.ofNat 32 0) = coeffAddr (F s₀) (2 * i) :=
-    addr_coeff fF (by omega) (by omega)
+    addr_coeff fF (by omega_arith) (by omega_arith)
   have eB : State.addr (pf s₀ + BitVec.ofNat 32 (8 * i) + BitVec.ofNat 32 4) =
-      coeffAddr (F s₀) (2 * i + 1) := addr_coeff fF (by omega) (by omega)
+      coeffAddr (F s₀) (2 * i + 1) := addr_coeff fF (by omega_arith) (by omega_arith)
   have e0 : State.addr (po s₀ + BitVec.ofNat 32 (3 * i) + BitVec.ofNat 32 0) = O s₀ + BitVec.ofNat 64 (3 * i) :=
-    addr_byte fO (by omega) (by omega)
+    addr_byte fO (by omega_arith) (by omega_arith)
   have e1 : State.addr (po s₀ + BitVec.ofNat 32 (3 * i) + BitVec.ofNat 32 1) =
-      O s₀ + BitVec.ofNat 64 (3 * i + 1) := addr_byte fO rfl (by omega)
+      O s₀ + BitVec.ofNat 64 (3 * i + 1) := addr_byte fO rfl (by omega_arith)
   have e2 : State.addr (po s₀ + BitVec.ofNat 32 (3 * i) + BitVec.ofNat 32 2) =
-      O s₀ + BitVec.ofNat 64 (3 * i + 2) := addr_byte fO rfl (by omega)
+      O s₀ + BitVec.ofNat 64 (3 * i + 2) := addr_byte fO rfl (by omega_arith)
   have hrw : s.rd ++ s.wr = [polyRegion (F s₀), outR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have hw : s.wr = [outR s₀] := by rw [h.wr, hp.wr]
   have dF : ∀ r ∈ [outR s₀], (polyRegion (F s₀)).Disjoint r := fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; exact hp.disj
   have ra : s.mem.readW (coeffAddr (F s₀) (2 * i)) 32 = coeffAt s₀.mem (F s₀) (2 * i) :=
-    frame_coeff h.frame dF (by rw [n_eq]; omega)
+    frame_coeff h.frame dF (by rw [n_eq]; omega_arith)
   have rb : s.mem.readW (coeffAddr (F s₀) (2 * i + 1)) 32 = coeffAt s₀.mem (F s₀) (2 * i + 1) :=
-    frame_coeff h.frame dF (by rw [n_eq]; omega)
+    frame_coeff h.frame dF (by rw [n_eq]; omega_arith)
   obtain ⟨v0, v1, v2⟩ := bytes_eq hp hi
   refine WP.mono (body_ok h.r0 h.r1 h.r2 ?_ ?_ ?_ ?_ ?_) fun s' ⟨r0, r1, r2, z, m, rd, wr, sp, pres⟩ =>
     ⟨⟨?_, ?_, ?_, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, fun r hr => (pres r hr).trans (h.pres r hr),
       ?_, ?_⟩, ?_⟩
-  · rw [eA, hrw]; exact inRegions_of (by simp) (coeff_contains _ (by rw [n_eq]; omega))
-  · rw [eB, hrw]; exact inRegions_of (by simp) (coeff_contains _ (by rw [n_eq]; omega))
-  · rw [e0, hw]; exact inRegions_off (List.mem_singleton_self _) (by omega) (by omega)
-  · rw [e1, hw]; exact inRegions_off (List.mem_singleton_self _) (by omega) (by omega)
-  · rw [e2, hw]; exact inRegions_off (List.mem_singleton_self _) (by omega) (by omega)
+  · rw [eA, hrw]; exact inRegions_of (by simp) (coeff_contains _ (by rw [n_eq]; omega_arith))
+  · rw [eB, hrw]; exact inRegions_of (by simp) (coeff_contains _ (by rw [n_eq]; omega_arith))
+  · rw [e0, hw]; exact inRegions_off (List.mem_singleton_self _) (by omega_arith) (by omega_arith)
+  · rw [e1, hw]; exact inRegions_off (List.mem_singleton_self _) (by omega_arith) (by omega_arith)
+  · rw [e2, hw]; exact inRegions_off (List.mem_singleton_self _) (by omega_arith) (by omega_arith)
   · rw [r0]; exact ptr_succ _ 8 i
   · rw [r1]; exact ptr_succ _ 3 i
   · rw [r2]; exact count_sub (k := 1) hi
   · rw [m, e0, e1, e2]
-    exact ((h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega) (by omega))).writeW
-      (List.mem_singleton_self _) _ (contains_off (by omega) (by omega))).writeW
-      (List.mem_singleton_self _) _ (contains_off (by omega) (by omega))
+    exact ((h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (contains_off (by omega_arith) (by omega_arith))
   · intro k hk
     rw [m, e0, e1, e2, eA, eB, ra, rb, v0, v1, v2,
-      byte_writeW8 _ _ (by omega) (by omega), byte_writeW8 _ _ (by omega) (by omega),
-      byte_writeW8 _ _ (by omega) (by omega), h.bytes k hk]
-    rcases (by omega : k < 3 * i ∨ k = 3 * i ∨ k = 3 * i + 1 ∨ k = 3 * i + 2 ∨ 3 * i + 3 ≤ k) with
+      byte_writeW8 _ _ (by omega_arith) (by omega_arith), byte_writeW8 _ _ (by omega_arith) (by omega_arith),
+      byte_writeW8 _ _ (by omega_arith) (by omega_arith), h.bytes k hk]
+    rcases (by omega_arith : k < 3 * i ∨ k = 3 * i ∨ k = 3 * i + 1 ∨ k = 3 * i + 2 ∨ 3 * i + 3 ≤ k) with
       hk' | rfl | rfl | rfl | hk'
     · resolve_ifs
     · resolve_ifs
@@ -207,7 +207,7 @@ theorem verified :
     sig_post [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
     exact bytesAt_eq! (p := O s) (encode12_length _) fun k hk => by
-      rw [h.bytes k hk, ite_eq_left (by omega)]; rfl
+      rw [h.bytes k hk, ite_eq_left (by omega_arith)]; rfl
   · sig_pub [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
     exact ⟨h.2.1, h.2.2⟩

@@ -23,22 +23,22 @@ theorem suffix_byte (v : BitVec 16) {j : Nat} (hj : j<8) :
     (suffix v).extractLsb' (8*j) 8 =
       if j=0 then v.extractLsb' 0 8 else if j=1 then v.extractLsb' 8 8
       else if j=2 then 0x1f else 0 := by
-  rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5 ∨ j=6 ∨ j=7 by omega) with
+  rcases (show j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5 ∨ j=6 ∨ j=7 by omega_arith) with
     rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> apply BitVec.eq_of_getLsbD_eq <;> intro i hi <;>
-    rcases (show i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 by omega) with
+    rcases (show i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 by omega_arith) with
       rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> simp [suffix]
 
 theorem nonce_low (x y : Nat) :
     (BitVec.ofNat 16 (x+256*y)).extractLsb' 0 8 = BitVec.ofNat 8 x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem nonce_high {x : Nat} (y : Nat) (hx : x<256) :
     (BitVec.ofNat 16 (x+256*y)).extractLsb' 8 8 = BitVec.ofNat 8 y := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem seedBytes_get (m : Mem) (p : Addr) (a k j : Nat) :
     (seedBytes m p a k).getD j 0 = if j<32 then m (p+BitVec.ofNat 64 j)
@@ -53,7 +53,7 @@ theorem seedBytes_get (m : Mem) (p : Addr) (a k j : Nat) :
     · subst j; simp
     · by_cases h33 : j=33
       · subst j; simp
-      · rw [ite_eq_right h32,ite_eq_right h33,List.getElem?_eq_none (by simp only [List.length_cons,List.length_nil]; omega)]
+      · rw [ite_eq_right h32,ite_eq_right h33,List.getElem?_eq_none (by simp only [List.length_cons,List.length_nil]; omega_arith)]
         rfl
 
 theorem seedState_eq (m : Mem) (p : Addr) {a k : Nat} (hk : 0<k) (hk256 : k≤256) :
@@ -63,16 +63,16 @@ theorem seedState_eq (m : Mem) (p : Addr) {a k : Nat} (hk : 0<k) (hk256 : k≤25
   intro j hj
   rw [Proof.Sha3.Seed34.byteOf_A0 (seedBytes_length m p a k) hj]
   unfold Proof.Sha3.byteOf
-  rw [seedState_get m p a k (by omega)]
+  rw [seedState_get m p a k (by omega_arith)]
   by_cases h32 : j<32
-  · rw [ite_eq_left (by omega : j/8<4),ite_eq_left (by omega : j<34),seedBytes_get,ite_eq_left h32]
+  · rw [ite_eq_left (by omega_arith : j/8<4),ite_eq_left (by omega_arith : j<34),seedBytes_get,ite_eq_left h32]
     change (m.read (p+BitVec.ofNat 64 (8*(j/8))) 8).extractLsb' (8*(j%8)) 8 = _
-    rw [Mem.extractLsb'_read m _ (by omega),BitVec.add_assoc,←BitVec.ofNat_add,
-      show 8*(j/8)+j%8=j by omega]
-  · rw [ite_eq_right (by omega : ¬j/8<4)]
+    rw [Mem.extractLsb'_read m _ (by omega_arith),BitVec.add_assoc,←BitVec.ofNat_add,
+      show 8*(j/8)+j%8=j by omega_arith]
+  · rw [ite_eq_right (by omega_arith : ¬j/8<4)]
     by_cases h40 : j<40
-    · rw [ite_eq_left (by omega : j/8=4),suffix_byte _ (by omega)]
-      rcases (show j=32 ∨ j=33 ∨ j=34 ∨ 35≤j by omega) with h | h | h | h
+    · rw [ite_eq_left (by omega_arith : j/8=4),suffix_byte _ (by omega_arith)]
+      rcases (show j=32 ∨ j=33 ∨ j=34 ∨ 35≤j by omega_arith) with h | h | h | h
       · subst j
         simp only [Nat.reduceMod,ite_eq_left (by decide : 32<34),seedBytes_get,
           ite_eq_right (by decide : ¬32<32)]
@@ -83,13 +83,13 @@ theorem seedState_eq (m : Mem) (p : Addr) {a k : Nat} (hk : 0<k) (hk256 : k≤25
           ite_eq_right (by decide : ¬33=32)]
         exact nonce_high _ hx
       · subst j; simp
-      · simp (disch := omega) only [ite_eq_right]
-    · rw [ite_eq_right (by omega : ¬j/8=4)]
+      · simp (disch := omega_arith) only [ite_eq_right]
+    · rw [ite_eq_right (by omega_arith : ¬j/8=4)]
       by_cases h20 : j/8=20
-      · rw [ite_eq_left h20,Noise.pad_byte (j%8) (by omega)]
-        by_cases he : j=167 <;> simp (disch := omega) only [ite_eq_left,ite_eq_right]
+      · rw [ite_eq_left h20,Noise.pad_byte (j%8) (by omega_arith)]
+        by_cases he : j=167 <;> simp (disch := omega_arith) only [ite_eq_left,ite_eq_right]
       · rw [ite_eq_right h20]
-        simp (disch := omega) only [ite_eq_right]
+        simp (disch := omega_arith) only [ite_eq_right]
         apply BitVec.eq_of_getLsbD_eq
         intro i hi
         simp
@@ -109,6 +109,6 @@ theorem stream_seedState (m : Mem) (p : Addr) {a k : Nat}
       Proof.MlKem.xofByte (seedBytes m p a k) i := by
   rw [←xofByte_seedState m p hk hk256 (Nat.mod_lt i (by decide))]
   congr 1
-  omega
+  omega_arith
 
 end VG.Proof.MlKem.AArch64.Paired

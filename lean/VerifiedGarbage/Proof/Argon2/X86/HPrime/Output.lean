@@ -36,7 +36,7 @@ theorem bytesAt_writeBytes (m : Mem) (p : Addr) (xs : List Byte) (hn : xs.length
   apply List.ext_getElem (by simp only [bytesAt, List.length_map, List.length_range])
   intro i _ hi
   simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes,
-    Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i < 2 ^ 64),
+    Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : i < 2 ^ 64),
     hi, ite_true, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
 
 theorem bytesAt_take (m : Mem) (p : Addr) (n k : Nat) (hn : n ≤ k) :
@@ -58,7 +58,7 @@ variable {s₀ : State} (hp : Pre s₀)
 include hp
 
 theorem Body.ctx {s : State} (h : Body s₀ s) : Ctx (scr s₀) (esp₀ s₀) s :=
-  ⟨h.ebx, h.esp, by have := hp.scr_fits; omega, hp.esp_lo, by have := hp.esp_hi; omega,
+  ⟨h.ebx, h.esp, by have := hp.scr_fits; omega_arith, hp.esp_lo, by have := hp.esp_hi; omega_arith,
     (Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨scrR s₀, by simp [h.wr, hp.wr], 0, by simp, by simp⟩),
@@ -68,11 +68,11 @@ theorem Body.ctx {s : State} (h : Body s₀ s) : Ctx (scr s₀) (esp₀ s₀) s 
 theorem keeps_word {s t : State} (k : Keeps (scr s₀) (esp₀ s₀) s t) {d : Nat} (hd : 832 ≤ d)
     (hd' : d + 4 ≤ 16384) : t.mem.readW (addr (scr s₀) d) 32 = s.mem.readW (addr (scr s₀) d) 32 := by
   refine k.frame.readW (r := ⟨addr (scr s₀) d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
-  have e := scr_addr hp (d := d) (by omega)
+  have e := scr_addr hp (d := d) (by omega_arith)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · rw [e]; exact Offset.disjoint_base _ hd (by omega)
+  · rw [e]; exact Offset.disjoint_base _ hd (by omega_arith)
   · rw [e]
     exact (hp.stk_scr.sub_right (Offset.sub_base _ (show d + 4 ≤ 16384 from hd'))).symm
 
@@ -128,31 +128,31 @@ theorem copy_ok {s : State} (h : Body s₀ s) {k n : Nat} (hk : OutPtr s₀ s k)
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hn]
   have rd₃ : s₃.rd = s₀.rd := by rw [u₃.rd, u₂.rd, u₁.rd, h.rd]
   have wr₃ : s₃.wr = s₀.wr := by rw [u₃.wr, u₂.wr, u₁.wr, h.wr]
-  have e768 : (scr s₀ + 768).setWidth 64 = P s₀ + 768 := setWidth_add (d := 768) (by omega)
+  have e768 : (scr s₀ + 768).setWidth 64 = P s₀ + 768 := setWidth_add (d := 768) (by omega_arith)
   have b768 : (scr s₀ + 768).toNat = (scr s₀).toNat + 768 := by
-    rw [BitVec.toNat_add, show (768 : BitVec 32).toNat = 768 from rfl]; omega
+    rw [BitVec.toNat_add, show (768 : BitVec 32).toNat = 768 from rfl]; omega_arith
   have bk : (op s₀ + BitVec.ofNat 32 k).toNat = (op s₀).toNat + k := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega)]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_arith)]; omega_arith
   have eOut : addr (op s₀ + BitVec.ofNat 32 k) 0 = (op s₀).setWidth 64 + BitVec.ofNat 64 k := by
-    rw [MdStream.X86.addr_add_ofNat (by omega), Nat.add_zero]
+    rw [MdStream.X86.addr_add_ofNat (by omega_arith), Nat.add_zero]
   refine WP.seq (Proof.Blake2.X86.Stream.copyLoop_ok (w := 0) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (k := n) hn₁ (by omega) (by rw [b768]; omega)
-    (by simp only [Proof.Blake2.bufOff, Nat.reduceDiv, Nat.mul_zero, Nat.add_zero]; rw [bk]; omega)
+    (by decide) (by decide) (by decide) (k := n) hn₁ (by omega_arith) (by rw [b768]; omega_arith)
+    (by simp only [Proof.Blake2.bufOff, Nat.reduceDiv, Nat.mul_zero, Nat.add_zero]; rw [bk]; omega_arith)
     edx₃ edi₃ esi₃ (fun i hi => ?_) (fun i hi => ?_) ?_ fun t ht => ?_)
-  · have : i < 64 := by omega
+  · have : i < 64 := by omega_arith
     rw [rd₃, wr₃, e768, show P s₀ + 768 + BitVec.ofNat 64 i = P s₀ + BitVec.ofNat 64 (768 + i) by
       rw [BitVec.ofNat_add, BitVec.add_assoc]; rfl]
     refine ⟨scrR s₀, by simp [hp.wr], ?_⟩
-    exact Offset.contains_base _ (d := 768 + i) (n := 1) (k := 16384) (by omega) (by omega)
+    exact Offset.contains_base _ (d := 768 + i) (n := 1) (k := 16384) (by omega_arith) (by omega_arith)
   · rw [wr₃]
     simp only [Proof.Blake2.bufOff, Nat.reduceDiv, Nat.mul_zero, eOut]
     refine ⟨outR s₀, by simp [hp.wr], ?_⟩
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact Offset.contains_base _ (d := k + i) (n := 1) (k := ol s₀) (by omega) (by omega)
+    exact Offset.contains_base _ (d := k + i) (n := 1) (k := ol s₀) (by omega_arith) (by omega_arith)
   · rw [e768]
     simp only [Proof.Blake2.bufOff, Nat.reduceDiv, Nat.mul_zero, eOut]
-    exact (hp.out_scr.sub_left (Offset.sub_base _ (d := k) (n := n) (k := ol s₀) (by omega))).sub_right
-      (Offset.sub_base (P s₀) (d := 768) (n := n) (k := 16384) (by omega)) |>.symm
+    exact (hp.out_scr.sub_left (Offset.sub_base _ (d := k) (n := n) (k := ol s₀) (by omega_arith))).sub_right
+      (Offset.sub_base (P s₀) (d := 768) (n := n) (k := 16384) (by omega_arith)) |>.symm
   -- The store of the output pointer.
   have o : ∀ x, x ≠ .edx → x ≠ .edi → x ≠ .esi → x ≠ .eax → t.gpr x = s.gpr x := fun x a b c d => by
     rw [ht.other x a b c d, u₃.other _ b, u₂.other _ a, u₁.other _ a]
@@ -175,18 +175,18 @@ theorem copy_ok {s : State} (h : Body s₀ s) {k n : Nat} (hk : OutPtr s₀ s k)
       (by rw [lenL]; exact Region.contains_self _ _)).mono (by simp)).writeW
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (Region.contains_self _ _)
   have outSub : Region.Sub ⟨(op s₀).setWidth 64 + BitVec.ofNat 64 k, n⟩ (outR s₀) :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_arith)
   have slotSub : Region.Sub ⟨P s₀ + BitVec.ofNat 64 outOff, 4⟩ (scrR s₀) :=
     Offset.sub_base _ (by decide)
   have keep : ∀ d, d + 4 ≤ 16384 → (d + 4 ≤ outOff ∨ outOff + 4 ≤ d) →
       t'.mem.readW (addr (scr s₀) d) 32 = s.mem.readW (addr (scr s₀) d) 32 := fun d hd hd' => by
     refine F.readW (r := ⟨addr (scr s₀) d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
-    rw [scr_addr hp (by omega)]
+    rw [scr_addr hp (by omega_arith)]
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ((hp.out_scr.sub_left outSub).sub_right (Offset.sub_base _ hd)).symm
-    · exact Offset.disjoint _ hd' (by omega) (by simp only [outOff]; omega)
+    · exact Offset.disjoint _ hd' (by omega_arith) (by simp only [outOff]; omega_arith)
   refine ⟨⟨by rw [u.gpr, ebxT], by rw [u.gpr, o _ (by decide) (by decide) (by decide) (by decide), h.esp],
       by rw [u.rd, ht.rd, rd₃], by rw [u.wr, wrT], ?_, fun q hq => ?_, ?_⟩, ?_, ?_,
     by rw [u.gpr, o _ (by decide) (by decide) (by decide) (by decide)], F⟩
@@ -198,7 +198,7 @@ theorem copy_ok {s : State} (h : Body s₀ s) {k n : Nat} (hk : OutPtr s₀ s k)
   · have hb : 832 ≤ q.2 ∧ q.2 + 4 ≤ outOff := by
       simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl <;> decide
-    rw [keep _ (by simp only [outOff] at hb; omega) (.inl hb.2)]; exact h.saved q hq
+    rw [keep _ (by simp only [outOff] at hb; omega_arith) (.inl hb.2)]; exact h.saved q hq
   · rw [← h.pfx]
     refine Proof.Blake2.bytesAt_congr fun i hi => F.bytes (R := ⟨P s₀ + 832, 4⟩) (fun r hr => ?_)
       (by simp) hi
@@ -213,12 +213,12 @@ theorem copy_ok {s : State} (h : Body s₀ s) {k n : Nat} (hk : OutPtr s₀ s k)
   · have wb : bytesAt t.mem ((op s₀).setWidth 64 + BitVec.ofNat 64 k) n = bytesAt s.mem (P s₀ + 768) n := by
       rw [memT]
       have := bytesAt_writeBytes s.mem ((op s₀).setWidth 64 + BitVec.ofNat 64 k)
-        (bytesAt s.mem (P s₀ + 768) n) (by rw [lenL]; omega)
+        (bytesAt s.mem (P s₀ + 768) n) (by rw [lenL]; omega_arith)
       rwa [lenL] at this
     rw [← wb, u.mem]
     refine Proof.Blake2.bytesAt_congr fun i hi =>
       ((Frame.refl [⟨addr (scr s₀) outOff, 4⟩] t.mem).writeW (List.mem_singleton_self _) _
-        (Region.contains_self _ _)).bytes (R := ⟨(op s₀).setWidth 64 + BitVec.ofNat 64 k, n⟩) ?_ (by simp; omega) hi
+        (Region.contains_self _ _)).bytes (R := ⟨(op s₀).setWidth 64 + BitVec.ofNat 64 k, n⟩) ?_ (by simp; omega_arith) hi
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     rw [eslot]
@@ -265,7 +265,7 @@ theorem Out.keeps {s t : State} {xs : List Byte} (h : Out s₀ s xs)
   · show _ = _; rw [keeps_word hp k (by decide) (by decide)]; exact h.ptr
   · rw [keeps_word hp k (by decide) (by decide)]; exact h.left
   · have kb := k.bytes (R := ⟨(op s₀).setWidth 64, xs.length⟩)
-      (by have := h.len; have := hp.out_fits; simp; omega)
+      (by have := h.len; have := hp.out_fits; simp; omega_arith)
       ((hp.out_scr.sub_left (Region.sub_prefix h.len)).sub_right (Region.sub_prefix (by decide)))
       ((hp.stk_out.sub_right (Region.sub_prefix h.len)).symm)
     simp only at kb
@@ -278,13 +278,13 @@ theorem copy_word {s t : State} {k n : Nat} (hkn : k + n ≤ ol s₀)
     t.mem.readW (addr (scr s₀) d) 32 = s.mem.readW (addr (scr s₀) d) 32 := by
   have ho := hp.out_fits
   refine f.readW (r := ⟨addr (scr s₀) d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
-  rw [scr_addr hp (by omega)]
+  rw [scr_addr hp (by omega_arith)]
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact ((hp.out_scr.sub_left (Offset.sub_base _ (by omega))).sub_right
+  · exact ((hp.out_scr.sub_left (Offset.sub_base _ (by omega_arith))).sub_right
       (Offset.sub_base _ hd)).symm
-  · exact Offset.disjoint _ hd' (by omega) (by simp only [outOff]; omega)
+  · exact Offset.disjoint _ hd' (by omega_arith) (by simp only [outOff]; omega_arith)
 
 /-- Emit `n` digest bytes after the output `xs`. -/
 theorem copyOut_ok {s : State} (b : Body s₀ s) {xs : List Byte} (h : Out s₀ s xs) {n : Nat}
@@ -303,17 +303,17 @@ theorem copyOut_ok {s : State} (b : Body s₀ s) {xs : List Byte} (h : Out s₀ 
       (by simp) hi
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ((hp.out_scr.sub_left (Offset.sub_base _ (d := xs.length) (n := n) (k := ol s₀) (by omega))).sub_right
+    · exact ((hp.out_scr.sub_left (Offset.sub_base _ (d := xs.length) (n := n) (k := ol s₀) (by omega_arith))).sub_right
         (Offset.sub_base (P s₀) (d := 768) (n := 64) (k := 16384) (by decide))).symm
     · exact Offset.disjoint (P s₀) (d := 768) (n := 64) (e := outOff) (k := 4) (by decide) (by decide)
         (by decide)
   have old : bytesAt t.mem ((op s₀).setWidth 64) xs.length = bytesAt s.mem ((op s₀).setWidth 64) xs.length := by
     refine Proof.Blake2.bytesAt_congr fun i hi => f.bytes (R := ⟨(op s₀).setWidth 64, xs.length⟩)
-      (fun r hr => ?_) (by have := h.len; simp; omega) hi
+      (fun r hr => ?_) (by have := h.len; simp; omega_arith) hi
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.base_disjoint _ (by omega) (by omega)
-    · exact (hp.out_scr.sub_left (Region.sub_prefix (by omega))).sub_right
+    · exact Offset.base_disjoint _ (by omega_arith) (by omega_arith)
+    · exact (hp.out_scr.sub_left (Region.sub_prefix (by omega_arith))).sub_right
         (Offset.sub_base _ (by decide))
   rw [Proof.Blake2.bytesAt_add, bytes, bytesAt_take _ _ _ _ hn₂, old, h.bytes]
 
@@ -344,7 +344,7 @@ theorem emit_ok {s : State} (b : Body s₀ s) {xs : List Byte} (h : Out s₀ s x
   have d₁ : digest s₀ s₁ = digest s₀ s := by simp only [digest, u₁.mem]
   have v₄ : s₄.gpr .eax = BitVec.ofNat 32 (ol s₀ - (xs.length + 32)) := by
     rw [u₄.gpr, u₃.gpr, l₂, u₁.mem, h.left]
-    exact (Proof.Sha256.X86.Stream.sub_ofNat (a := ol s₀ - xs.length) (b := 32) (by omega)).trans
+    exact (Proof.Sha256.X86.Stream.sub_ofNat (a := ol s₀ - xs.length) (b := 32) (by omega_arith)).trans
       (by congr 1)
   have e₅ : s₅.mem = s₂.mem.writeW (P s₀ + BitVec.ofNat 64 leftOff) (BitVec.ofNat 32 (ol s₀ - (xs.length + 32))) := by
     rw [u₅.mem, m₄, v₄, scr_addr hp (by decide)]
@@ -352,8 +352,8 @@ theorem emit_ok {s : State} (b : Body s₀ s) {xs : List Byte} (h : Out s₀ s x
     rw [e₅]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have keepW : ∀ d, d + 4 ≤ 16384 → (d + 4 ≤ leftOff ∨ leftOff + 4 ≤ d) →
       s₅.mem.readW (addr (scr s₀) d) 32 = s₂.mem.readW (addr (scr s₀) d) 32 := fun d hd hd' => by
-    rw [e₅, scr_addr hp (by omega)]
-    exact Mem.readW_writeW_sep (Offset.sep _ hd' (by omega) (by simp only [leftOff]; omega)) (by decide)
+    rw [e₅, scr_addr hp (by omega_arith)]
+    exact Mem.readW_writeW_sep (Offset.sep _ hd' (by omega_arith) (by simp only [leftOff]; omega_arith)) (by decide)
   have keepB : ∀ R : Region, R.len ≤ 2 ^ 64 → R.Disjoint ⟨P s₀ + BitVec.ofNat 64 leftOff, 4⟩ →
       bytesAt s₅.mem R.base R.len = bytesAt s₂.mem R.base R.len := fun R hR hd =>
     Proof.Blake2.bytesAt_congr fun i hi => F.bytes (fun r hr => by
@@ -370,7 +370,7 @@ theorem emit_ok {s : State} (b : Body s₀ s) {xs : List Byte} (h : Out s₀ s x
   · have hb : 832 ≤ q.2 ∧ q.2 + 4 ≤ leftOff := by
       simp only [Impl.Argon2.X86.HPrime.saved, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl <;> decide
-    rw [keepW _ (by simp only [leftOff] at hb; omega) (.inl hb.2)]; exact b₂.saved q hq
+    rw [keepW _ (by simp only [leftOff] at hb; omega_arith) (.inl hb.2)]; exact b₂.saved q hq
   · rw [keepB ⟨P s₀ + 832, 4⟩ (by simp) (Offset.disjoint (P s₀) (d := 832) (n := 4) (e := leftOff) (k := 4)
       (by decide) (by decide) (by decide))]
     exact b₂.pfx
@@ -378,8 +378,8 @@ theorem emit_ok {s : State} (b : Body s₀ s) {xs : List Byte} (h : Out s₀ s x
     rw [len', keepW _ (by decide) (by decide)]; exact p₂
   · rw [len', e₅, scr_addr hp (by decide), Mem.readW_writeW_self32]
   · rw [len']
-    have k₁ := keepB ⟨(op s₀).setWidth 64, xs.length + 32⟩ (by simp; omega)
-      ((hp.out_scr.sub_left (Region.sub_prefix (by omega))).sub_right slotScr)
+    have k₁ := keepB ⟨(op s₀).setWidth 64, xs.length + 32⟩ (by simp; omega_arith)
+      ((hp.out_scr.sub_left (Region.sub_prefix (by omega_arith))).sub_right slotScr)
     simp only at k₁
     rw [k₁, by₂, d₁]
   · rw [len']; exact hkn
@@ -404,9 +404,9 @@ theorem copyRemaining_ok {s : State} (b : Body s₀ s) {xs : List Byte} (h : Out
     fun q hq => by rw [u₁.mem]; exact b.saved q hq, by rw [u₁.mem]; exact b.pfx⟩
   have h₁ : Out s₀ s₁ xs := ⟨by show _ = _; rw [u₁.mem]; exact h.ptr, by rw [u₁.mem]; exact h.left,
     by rw [u₁.mem]; exact h.bytes, h.len⟩
-  refine (copyOut_ok hp b₁ h₁ (n := ol s₀ - xs.length) (by rw [u₁.gpr, h.left]) (by omega) hn₂
-    (by omega)).mono fun t ⟨bt, et, byt, _, _, _⟩ => ⟨bt, by rw [et, u₁.other _ (by decide)], ?_⟩
-  rw [show xs.length + (ol s₀ - xs.length) = ol s₀ by omega] at byt
+  refine (copyOut_ok hp b₁ h₁ (n := ol s₀ - xs.length) (by rw [u₁.gpr, h.left]) (by omega_arith) hn₂
+    (by omega_arith)).mono fun t ⟨bt, et, byt, _, _, _⟩ => ⟨bt, by rw [et, u₁.other _ (by decide)], ?_⟩
+  rw [show xs.length + (ol s₀ - xs.length) = ol s₀ by omega_arith] at byt
   rw [byt]; simp only [digest, u₁.mem]
 
 end

@@ -53,7 +53,7 @@ structure PrimsOk (P : Prims) (S : Nat) : Prop where
   simpleBitPack : Callee P.simpleBitPack (fun stk => Spec.MlDsa.simpleBitPackContract PPC64LE.abi stk) S
   bitPack : Callee P.bitPack (fun stk => Spec.MlDsa.bitPackContract PPC64LE.abi stk) S
 
-theorem oP_lt {j : Nat} (h : j < 128) : oP j < 2 ^ 31 := by unfold oP; omega
+theorem oP_lt {j : Nat} (h : j < 128) : oP j < 2 ^ 31 := by unfold oP; omega_arith
 
 /-! ## `r24` -/
 
@@ -178,20 +178,20 @@ theorem rnA_ok {e : Nat} (he : e < p.k * p.ℓ) {σ s : State} (hs : Site (lay p
     WP isa (rejNttAt P (sc oSA) (aP e)) s Q := by
   have := hF.kl; have := hF.l; have := hF.k
   exact rn_ok hP.rejNtt hs hS (sd := sc oSA) (a := aP e) (w := sc oSS)
-    ⟨⟨sc_ok (by decide), by lsep hF⟩, ⟨sc_ok (oP_lt (by omega)), by lsep hF⟩, ⟨sc_ok (by decide), by lsep hF⟩,
+    ⟨⟨sc_ok (by decide), by lsep hF⟩, ⟨sc_ok (oP_lt (by omega_arith)), by lsep hF⟩, ⟨sc_ok (by decide), by lsep hF⟩,
       show ix Reg.r31 ∈ kWb by decide, show ix Reg.r31 ∈ kWb by decide, by lsep hF, by lsep hF, by lsep hF⟩ hQ
 
 theorem expA_ok {e : Nat} (he : e < p.k * p.ℓ) {σ s : State} (h : KSamp p STK σ e 0 s) :
     WP isa (expA P p e) s (KSamp p STK σ (e + 1) 0) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have hq : e / p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact he)
-  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega)
+  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega_arith)
   have hs := h.k1.kc.site
   unfold expA sampled
   -- `s` and `r` to the seed
   refine WP.seq (WP.block_append (WP.mono (setB_ok hs (q := sc (oSA + 32)) ⟨sc_ok (by decide), by lsep hF⟩
-    (by decide) (by decide) (v := e % p.ℓ) (by omega)) fun s₁ ⟨k₁, b₁⟩ => WP.mono (setB_ok (hs.kept k₁)
-      (q := sc (oSA + 33)) ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide) (v := e / p.ℓ) (by omega))
+    (by decide) (by decide) (v := e % p.ℓ) (by omega_arith)) fun s₁ ⟨k₁, b₁⟩ => WP.mono (setB_ok (hs.kept k₁)
+      (q := sc (oSA + 33)) ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide) (v := e / p.ℓ) (by omega_arith))
       fun s₂ ⟨k₂, b₂⟩ => ?_))
   have h₁ := h.keep k₁ (by lsep hF [k1Chk, kcChk]) (fun e' he' => by lsep hF)
     (fun _ h => absurd h (Nat.not_lt_zero _))
@@ -213,7 +213,7 @@ theorem expA_ok {e : Nat} (he : e < p.k * p.ℓ) {σ s : State} (h : KSamp p STK
   have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
   have hs₃ := hs₂.kept k₃
   -- the result and the mask
-  refine WP.mono (andMask_ok hs₃ (a := aP e) ⟨sc_ok (oP_lt (by omega)), by lsep hF⟩ (show ix Reg.r31 ∈ kWb by decide) hr01)
+  refine WP.mono (andMask_ok hs₃ (a := aP e) ⟨sc_ok (oP_lt (by omega_arith)), by lsep hF⟩ (show ix Reg.r31 ∈ kWb by decide) hr01)
     fun s₄ ⟨s₅, r₅, k₄, r₄, co⟩ => ?_
   have h₃ := h₂.keep k₃ (by lsep hF [k1Chk, kcChk]) (fun e' he' => by lsep hF)
     (fun _ h => absurd h (Nat.not_lt_zero _))
@@ -225,8 +225,8 @@ theorem expA_ok {e : Nat} (he : e < p.k * p.ℓ) {σ s : State} (h : KSamp p STK
     fun e' => if e' = e then polyAt s₄.mem ((lay p STK σ).A 0 (oP e)) else A e', S', fun e' he' => ?_,
     fun _ h => absurd h (Nat.not_lt_zero _), ?_⟩
   · dsimp only
-    rcases (by omega : e' < e ∨ e' = e) with he' | rfl
-    · rw [ifn (by omega)]
+    rcases (by omega_arith : e' < e ∨ e' = e) with he' | rfl
+    · rw [ifn (by omega_arith)]
       have := polyIs_keepW hL k₄.frame (i := 0) (o := oP e') (by lsep hF) (by decide) rfl
         (show PolyIs s₅.mem _ _ by rw [r₅.mem]; exact hA e' he')
       exact this
@@ -250,7 +250,7 @@ theorem rbS_ok {r : Nat} (hr : r < p.ℓ + p.k) {σ s : State} (hs : Site (lay p
     WP isa (rejBoundedAt P (sc oSB) p.η (sP p r)) s Q := by
   have := hF.kl; have := hF.l; have := hF.k
   exact rb_ok hP.rejBounded hs hS (sd := sc oSB) (a := sP p r) (w := sc oSS)
-    ⟨⟨sc_ok (by decide), by lsep hF⟩, ⟨sc_ok (oP_lt (by omega)), by lsep hF⟩, ⟨sc_ok (by decide), by lsep hF⟩,
+    ⟨⟨sc_ok (by decide), by lsep hF⟩, ⟨sc_ok (oP_lt (by omega_arith)), by lsep hF⟩, ⟨sc_ok (by decide), by lsep hF⟩,
       show ix Reg.r31 ∈ kWb by decide, show ix Reg.r31 ∈ kWb by decide, by lsep hF, by lsep hF, by lsep hF⟩
     (eta_of hF) hQ
 
@@ -260,12 +260,12 @@ theorem expS_ok {r : Nat} (hr : r < p.ℓ + p.k) {σ s : State} (h : KSamp p STK
   have hs := h.k1.kc.site
   unfold expS sampled
   refine WP.seq (WP.mono (setB_ok hs (q := sc (oSB + 64)) ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide)
-    (v := r) (by omega)) fun s₁ ⟨k₁, b₁⟩ => ?_)
+    (v := r) (by omega_arith)) fun s₁ ⟨k₁, b₁⟩ => ?_)
   have h₁ := h.keep k₁ (by lsep hF [k1Chk, kcChk]) (fun e' he' => by lsep hF) (fun r' hr' => by lsep hF)
   have hs₁ := h₁.k1.kc.site
   have hseed : bytesAt s₁.mem ((lay p STK σ).A 0 oSB) 66 = seedS (rho'Of p σ) r := by
     rw [show (66 : Nat) = 64 + 1 + 1 from rfl, Proof.MlKem.bytesAt_add, Proof.MlKem.bytesAt_add, h₁.k1.sb,
-      seedS_eq _ (by omega), List.append_assoc]
+      seedS_eq _ (by omega_arith), List.append_assoc]
     refine congrArg _ ?_
     have e1 : bytesAt s₁.mem ((lay p STK σ).A 0 (oSB + 64)) 1 = [BitVec.ofNat 8 r] := b₁
     have e2 : bytesAt s₁.mem ((lay p STK σ).A 0 (oSB + 65)) 1 = [0] := h₁.k1.z
@@ -275,7 +275,7 @@ theorem expS_ok {r : Nat} (hr : r < p.ℓ + p.k) {σ s : State} (h : KSamp p STK
   rw [hseed] at hout
   have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
   have hs₃ := hs₁.kept k₃
-  refine WP.mono (andMask_ok hs₃ (a := sP p r) ⟨sc_ok (oP_lt (by omega)), by lsep hF⟩ (show ix Reg.r31 ∈ kWb by decide)
+  refine WP.mono (andMask_ok hs₃ (a := sP p r) ⟨sc_ok (oP_lt (by omega_arith)), by lsep hF⟩ (show ix Reg.r31 ∈ kWb by decide)
     hr01) fun s₄ ⟨s₅, r₅, k₄, r₄, co⟩ => ?_
   have h₃ := h₁.keep k₃ (by lsep hF [k1Chk, kcChk]) (fun e' he' => by lsep hF) (fun r' hr' => by lsep hF)
   obtain ⟨A, S', hA, hS', hG⟩ := h₃.ex
@@ -288,8 +288,8 @@ theorem expS_ok {r : Nat} (hr : r < p.ℓ + p.k) {σ s : State} (h : KSamp p STK
   · exact polyIs_keepW hL k₄.frame (i := 0) (o := oP e') (by lsep hF) (by decide) rfl
       (show PolyIs s₅.mem _ _ by rw [r₅.mem]; exact hA e' he')
   dsimp only
-  rcases (by omega : r' < r ∨ r' = r) with hr' | rfl
-  · rw [ifn (by omega)]
+  rcases (by omega_arith : r' < r ∨ r' = r) with hr' | rfl
+  · rw [ifn (by omega_arith)]
     exact ⟨polyIs_keepW hL k₄.frame (i := 0) (o := oP (p.k * p.ℓ + r')) (by lsep hF) (by decide) rfl
       (show PolyIs s₅.mem _ _ by rw [r₅.mem]; exact (hS' r' hr').1), (hS' r' hr').2⟩
   · rw [ifp rfl]
@@ -331,7 +331,7 @@ theorem expA_two {e : Nat} (he : e < p.k * p.ℓ) (σ : State) :
       fun _ _ => True := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have hq : e / p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact he)
-  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega)
+  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega_arith)
   unfold expA sampled
   let F := fun (x x' : State) => (∃ rs, Kept rs x x') ∧
     bytesAt x'.mem ((lay p STK σ).A 0 oSA) 34 = bytesAt x.mem ((lay p STK σ).A 0 oSA) 32 ++
@@ -339,8 +339,8 @@ theorem expA_two {e : Nat} (he : e < p.k * p.ℓ) (σ : State) :
   have hF1 : ∀ x, Site (lay p STK σ) kWb STK x →
       WP isa (.block (setB (sc (oSA + 32)) (e % p.ℓ) ++ setB (sc (oSA + 33)) (e / p.ℓ))) x (F x) := fun x hs =>
     WP.block_append (WP.mono (setB_ok hs (q := sc (oSA + 32)) ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide)
-      (v := e % p.ℓ) (by omega)) fun s₁ ⟨k₁, b₁⟩ => WP.mono (setB_ok (hs.kept k₁) (q := sc (oSA + 33))
-        ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide) (v := e / p.ℓ) (by omega)) fun s₂ ⟨k₂, b₂⟩ =>
+      (v := e % p.ℓ) (by omega_arith)) fun s₁ ⟨k₁, b₁⟩ => WP.mono (setB_ok (hs.kept k₁) (q := sc (oSA + 33))
+        ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide) (v := e / p.ℓ) (by omega_arith)) fun s₂ ⟨k₂, b₂⟩ =>
         ⟨⟨_, (k₁.monoL (W' := [tri (sc (oSA + 32)) 1, tri (sc (oSA + 33)) 1]) (by simp)).trans (k₂.monoL (by simp))⟩,
         by
         have hL := hs.ok
@@ -356,7 +356,7 @@ theorem expA_two {e : Nat} (he : e < p.k * p.ℓ) (σ : State) :
         rw [e1, e2]; rfl⟩)
   refine RelCT.seq ((RelCT.wpDep (M := isa) (P := fun x y => Two (lay p STK σ) kWb STK x y ∧
       bytesAt x.mem ((lay p STK σ).A 0 oSA) 32 = bytesAt y.mem ((lay p STK σ).A 0 oSA) 32)
-    (taint31 (fun _ _ h => h.1) (setIJ_taint _ (by omega) _ (by omega))) (F := F)
+    (taint31 (fun _ _ h => h.1) (setIJ_taint _ (by omega_arith) _ (by omega_arith))) (F := F)
     fun x y h => ⟨hF1 x h.1.1, hF1 y h.1.2.1⟩).mono (fun _ _ h => h)
       (Q' := fun (x y : State) => Two (lay p STK σ) kWb STK x y ∧
         bytesAt x.mem ((lay p STK σ).A 0 oSA) 34 = bytesAt y.mem ((lay p STK σ).A 0 oSA) 34)
@@ -365,10 +365,10 @@ theorem expA_two {e : Nat} (he : e < p.k * p.ℓ) (σ : State) :
   have ok := fun x (hs : Site (lay p STK σ) kWb STK x) =>
     rnA_ok hP hF hS he hs (Q := fun x' => ∃ rs, Kept rs x x') fun _ k _ _ => ⟨_, k⟩
   refine RelCT.seq (RelCT.two (fun _ _ h => h.1) (rn_tr hP.rejNtt hS (sd := sc oSA) (a := aP e) (w := sc oSS)
-      ⟨⟨sc_ok (by decide), by lsep hF⟩, ⟨sc_ok (oP_lt (by omega)), by lsep hF⟩, ⟨sc_ok (by decide), by lsep hF⟩,
+      ⟨⟨sc_ok (by decide), by lsep hF⟩, ⟨sc_ok (oP_lt (by omega_arith)), by lsep hF⟩, ⟨sc_ok (by decide), by lsep hF⟩,
         show ix Reg.r31 ∈ kWb by decide, show ix Reg.r31 ∈ kWb by decide, by lsep hF, by lsep hF, by lsep hF⟩
       fun x y h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2⟩) fun x hs => ok x hs) ?_
-  exact taint31 (fun _ _ h => h) (andMask_taint _ (by omega))
+  exact taint31 (fun _ _ h => h) (andMask_taint _ (by omega_arith))
 
 theorem expA_tr {e : Nat} (he : e < p.k * p.ℓ) :
     RelCT isa (Rel2 (Pre p STK) (kgPub p) fun σ s => KSamp p STK σ e 0 s) (expA P p e) fun _ _ => True :=
@@ -391,13 +391,13 @@ theorem expS_two {r : Nat} (hr : r < p.ℓ + p.k) (σ : State) :
       bytesAt x'.mem ((lay p STK σ).A 0 oSB) 66 = seedS (bytesAt x.mem ((lay p STK σ).A 0 oSB) 64) r)
   have hF1 : ∀ x, Site (lay p STK σ) kWb STK x → WP isa (.block (setB (sc (oSB + 64)) r)) x (F x) := fun x hs =>
     WP.mono (setB_ok hs (q := sc (oSB + 64)) ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide) (v := r)
-      (by omega)) fun x' ⟨k₁, b₁⟩ =>
+      (by omega_arith)) fun x' ⟨k₁, b₁⟩ =>
       ⟨⟨_, k₁⟩, fun hz => by
         have hL := hs.ok
         have b₀ := bytes_keepW hL k₁.frame (i := 0) (o := oSB) (l := 64) (by lsep hF) (by decide) (by decide)
         have b₂ := bytes_keepW hL k₁.frame (i := 0) (o := oSB + 65) (l := 1) (by lsep hF) (by decide) (by decide)
         rw [show (66 : Nat) = 64 + 1 + 1 from rfl, Proof.MlKem.bytesAt_add, Proof.MlKem.bytesAt_add, b₀,
-          seedS_eq _ (by omega), List.append_assoc]
+          seedS_eq _ (by omega_arith), List.append_assoc]
         refine congrArg _ ?_
         have e1 : bytesAt x'.mem ((lay p STK σ).A 0 (oSB + 64)) 1 = [BitVec.ofNat 8 r] := b₁
         have e2 : bytesAt x'.mem ((lay p STK σ).A 0 (oSB + 65)) 1 = [0] := b₂.trans hz
@@ -407,7 +407,7 @@ theorem expS_two {r : Nat} (hr : r < p.ℓ + p.k) (σ : State) :
       bytesAt x.mem ((lay p STK σ).A 0 (oSB + 65)) 1 = [0] ∧ bytesAt y.mem ((lay p STK σ).A 0 (oSB + 65)) 1 = [0] ∧
       Spec.MlDsa.rejBoundedLeak p.η (seedS (bytesAt x.mem ((lay p STK σ).A 0 oSB) 64) r) =
         Spec.MlDsa.rejBoundedLeak p.η (seedS (bytesAt y.mem ((lay p STK σ).A 0 oSB) 64) r))
-    (taint31 (fun _ _ h => h.1) (setS_taint _ (by omega))) (F := F)
+    (taint31 (fun _ _ h => h.1) (setS_taint _ (by omega_arith))) (F := F)
     fun x y h => ⟨hF1 x h.1.1, hF1 y h.1.2.1⟩).mono (fun _ _ h => h)
       (Q' := fun (x y : State) => Two (lay p STK σ) kWb STK x y ∧
         Spec.MlDsa.rejBoundedLeak p.η (bytesAt x.mem ((lay p STK σ).A 0 oSB) 66) =
@@ -417,10 +417,10 @@ theorem expS_two {r : Nat} (hr : r < p.ℓ + p.k) (σ : State) :
   have ok := fun x (hs : Site (lay p STK σ) kWb STK x) =>
     rbS_ok hP hF hS hr hs (Q := fun x' => ∃ rs, Kept rs x x') fun _ k _ _ => ⟨_, k⟩
   refine RelCT.seq (RelCT.two (fun _ _ h => h.1) (rb_tr hP.rejBounded hS (sd := sc oSB) (a := sP p r)
-      (w := sc oSS) ⟨⟨sc_ok (by decide), by lsep hF⟩, ⟨sc_ok (oP_lt (by omega)), by lsep hF⟩, ⟨sc_ok (by decide), by lsep hF⟩,
+      (w := sc oSS) ⟨⟨sc_ok (by decide), by lsep hF⟩, ⟨sc_ok (oP_lt (by omega_arith)), by lsep hF⟩, ⟨sc_ok (by decide), by lsep hF⟩,
         show ix Reg.r31 ∈ kWb by decide, show ix Reg.r31 ∈ kWb by decide, by lsep hF, by lsep hF, by lsep hF⟩
       (eta_of hF) fun x y h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2⟩) fun x hs => ok x hs) ?_
-  exact taint31 (fun _ _ h => h) (andMask_taint _ (by omega))
+  exact taint31 (fun _ _ h => h) (andMask_taint _ (by omega_arith))
 
 theorem expS_tr {r : Nat} (hr : r < p.ℓ + p.k) :
     RelCT isa (Rel2 (Pre p STK) (kgPub p) fun σ s => KSamp p STK σ (p.k * p.ℓ) r s) (expS P p r)
@@ -445,7 +445,7 @@ theorem sampA_piece :
     KPiece p STK (fun σ s => K1 p STK σ s ∧ s.gpr .r24 = 1) (fun σ s => KSamp p STK σ (p.k * p.ℓ) 0 s)
       (seqR (expA P p) 0 (p.k * p.ℓ)) := by
   refine Piece.mono (Piece.seqR (I := fun e σ s => KSamp p STK σ e 0 s) (p.k * p.ℓ) 0
-    fun e _ he => expA_piece hP hF hS (by omega)) (fun σ s _ h => KSamp.zero h.1 h.2) fun σ s _ h => ?_
+    fun e _ he => expA_piece hP hF hS (by omega_arith)) (fun σ s _ h => KSamp.zero h.1 h.2) fun σ s _ h => ?_
   simpa using h
 
 /-- The entries of `s₁ ‖ s₂`. -/
@@ -453,7 +453,7 @@ theorem sampS_piece :
     KPiece p STK (fun σ s => KSamp p STK σ (p.k * p.ℓ) 0 s) (fun σ s => KSamp p STK σ (p.k * p.ℓ) (p.ℓ + p.k) s)
       (seqR (expS P p) 0 (p.ℓ + p.k)) := by
   refine Piece.mono (Piece.seqR (I := fun r σ s => KSamp p STK σ (p.k * p.ℓ) r s) (p.ℓ + p.k) 0
-    fun r _ hr => expS_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun σ s _ h => ?_
+    fun r _ hr => expS_piece hP hF hS (by omega_arith)) (fun _ _ _ h => h) fun σ s _ h => ?_
   simpa using h
 
 end

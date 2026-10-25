@@ -45,7 +45,7 @@ theorem wmem_head (m : Mem) (B : Addr) (o : Nat) (v : BitVec 32) (l : List (Nat 
 theorem wmem_cons_sep (m : Mem) (B : Addr) {o d : Nat} (v : BitVec 32) (l : List (Nat × BitVec 32))
     (h : d + 4 ≤ o ∨ o + 4 ≤ d) (ho : o + 4 ≤ 4096) (hd : d + 4 ≤ 4096) :
     (wmem m B ((o, v) :: l)).readW (B + BitVec.ofNat 64 d) 32 = (wmem m B l).readW (B + BitVec.ofNat 64 d) 32 :=
-  Mem.readW_writeW_sep (Offset.sep B h (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep B h (by omega_arith) (by omega_arith)) (by decide)
 
 theorem wmem_sep (m : Mem) (B : Addr) {d : Nat} (hd : d + 4 ≤ 4096) :
     ∀ l : List (Nat × BitVec 32), (∀ q ∈ l, (d + 4 ≤ q.1 ∨ q.1 + 4 ≤ d) ∧ q.1 + 4 ≤ 4096) →
@@ -96,21 +96,21 @@ variable {σ s : State} {rest : List Instr} {Q : State → Prop}
 
 theorem CIn.spN (h : CIn σ) : (mkG σ).sp.toNat = σ.sp.toNat - F := by
   have := h.spLo; show (σ.sp - BitVec.ofNat 32 F).toNat = _
-  exact sub_toNat' (by simp only [F]; omega)
+  exact sub_toNat' (by simp only [F]; omega_arith)
 
 theorem EI.st (h : EI σ s) (hpre : CIn σ) {o : Nat} (ho : o + 4 ≤ F) (r : Reg)
     (k : ∀ t, Mupd s t (s.mem.writeW (State.addr (mkG σ).sp + BitVec.ofNat 64 o) (s.gpr r)) →
       WP isa (.block rest) t Q) :
     WP isa (.block (.str r .r12 o :: rest)) s Q := by
   have := hpre.spN; have := hpre.spLo; have := hpre.spHi
-  exact wp_str (by simp only [F] at ho; omega) (by rw [h.r12]; exact addr_add (by simp only [F] at *; omega))
-    ⟨(mkG σ).rFrame, by rw [h.wr]; exact List.mem_cons_self, Offset.contains_base _ ho (by simp only [F] at *; omega)⟩ k
+  exact wp_str (by simp only [F] at ho; omega_arith) (by rw [h.r12]; exact addr_add (by simp only [F] at *; omega_arith))
+    ⟨(mkG σ).rFrame, by rw [h.wr]; exact List.mem_cons_self, Offset.contains_base _ ho (by simp only [F] at *; omega_arith)⟩ k
 
 theorem EI.of_st (h : EI σ s) (hpre : CIn σ) {o : Nat} (ho : o + 4 ≤ F) {t : State} {v : BitVec 32}
     (m : Mupd s t (s.mem.writeW (State.addr (mkG σ).sp + BitVec.ofNat 64 o) v)) : EI σ t := by
   have := hpre.spN; have := hpre.spLo; have := hpre.spHi
   exact ⟨m.sp.trans h.sp, m.rd.trans h.rd, m.wr.trans h.wr, by rw [m.gpr]; exact h.r12, by
-    rw [m.mem]; exact h.frame.writeW List.mem_cons_self _ (Offset.contains_base _ ho (by simp only [F] at *; omega))⟩
+    rw [m.mem]; exact h.frame.writeW List.mem_cons_self _ (Offset.contains_base _ ho (by simp only [F] at *; omega_arith))⟩
 
 theorem EI.of_upd (h : EI σ s) {t : State} {r : Reg} {v : BitVec 32} (u : Upd s t r v) (hr : r ≠ .r12) : EI σ t :=
   ⟨u.sp.trans h.sp, u.rd.trans h.rd, u.wr.trans h.wr, (u.other _ (Ne.symm hr)).trans h.r12, u.mem ▸ h.frame⟩
@@ -125,13 +125,13 @@ theorem EI.ldArg (h : EI σ s) (hpre : CIn σ) {i : Nat} (hi : i < 8) (r : Reg)
       BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
   have sub : Region.Sub ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * i)), 4⟩ (mkG σ).rArgs := by
     show Region.Sub _ ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * 0)), 32⟩
-    rw [Nat.mul_zero, BitVec.add_zero, addr_add (by omega)]
-    exact Offset.sub_base _ (by omega)
+    rw [Nat.mul_zero, BitVec.add_zero, addr_add (by omega_arith)]
+    exact Offset.sub_base _ (by omega_arith)
   have con : (mkG σ).rArgs.Contains (State.addr (σ.sp + BitVec.ofNat 32 (4 * i))) 4 := by
     show Region.Contains ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * 0)), 32⟩ _ _
-    rw [Nat.mul_zero, BitVec.add_zero, addr_add (by omega)]
-    exact Offset.contains_base _ (by omega) (by omega)
-  refine VG.Proof.Bignum.Arm.wp_loadStack (by simp only [arg, F]; omega) ha
+    rw [Nat.mul_zero, BitVec.add_zero, addr_add (by omega_arith)]
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+  refine VG.Proof.Bignum.Arm.wp_loadStack (by simp only [arg, F]; omega_arith) ha
     ⟨(mkG σ).rArgs, List.mem_append_left _ (by
       rw [h.rd, hpre.rd]
       exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))), con⟩
@@ -141,8 +141,8 @@ theorem EI.ldArg (h : EI σ s) (hpre : CIn σ) {i : Nat} (hi : i < 8) (r : Reg)
       simp only [List.mem_singleton] at hr; subst hr
       have fs : Region.Sub (mkG σ).rFrame (rStack σ) := by
         show Region.Sub ⟨State.addr (σ.sp - BitVec.ofNat 32 F), F⟩ _
-        rw [addr_sub' (by simp only [F]; omega)]
-        exact Offset.sub_below _ (by simp only [F]; omega) (by simp only [F]; omega)
+        rw [addr_sub' (by simp only [F]; omega_arith)]
+        exact Offset.sub_below _ (by simp only [F]; omega_arith) (by simp only [F]; omega_arith)
       exact (hpre.fA.sub_left fs).symm.sub_left sub) (by decide)
   rwa [e] at u
 
@@ -157,7 +157,7 @@ theorem entry_ok {σ : State} (hpre : CIn σ) :
   have spN := hpre.spN; have spLo := hpre.spLo; have spHi := hpre.spHi
   -- The frame's words are in the frame.
   have inF : ∀ o, o + 4 ≤ F → (mkG σ).rFrame.Contains (State.addr (mkG σ).sp + BitVec.ofNat 64 o) 4 :=
-    fun o ho => Offset.contains_base _ ho (by simp only [F] at *; omega)
+    fun o ho => Offset.contains_base _ ho (by simp only [F] at *; omega_arith)
   unfold entry
   rw [List.singleton_append,
     show VG.Impl.Dsa.Arm.Generation.saved.map (fun (r, o) => Instr.str r .r12 o) =
@@ -166,15 +166,15 @@ theorem entry_ok {σ : State} (hpre : CIn σ) :
   have e1 : EI σ u₁ := ⟨h0.sp, h0.rd, h0.wr, by rw [h0.gpr, BitVec.add_zero]; rfl, by rw [h0.mem]; exact Frame.refl _ _⟩
   refine Spill.saveList_ok _ _ _ (fun p hp => by
       have := saved_ok p hp
-      refine ⟨by omega, by rw [e1.r12, spN]; simp only [F] at *; omega, ⟨(mkG σ).rFrame, by rw [e1.wr]; exact List.mem_cons_self, by
-        rw [e1.r12]; exact inF p.2 (by simp only [F]; omega)⟩⟩)
+      refine ⟨by omega_arith, by rw [e1.r12, spN]; simp only [F] at *; omega_arith, ⟨(mkG σ).rFrame, by rw [e1.wr]; exact List.mem_cons_self, by
+        rw [e1.r12]; exact inF p.2 (by simp only [F]; omega_arith)⟩⟩)
     fun u₂ gp₂ rd₂ wr₂ sp₂ mm₂ => ?_
   have mem₂ : u₂.mem = Spill.saveMem σ.mem (State.addr (mkG σ).sp) σ.gpr VG.Impl.Dsa.Arm.Generation.saved := by
     rw [mm₂, e1.r12, h0.mem]
     exact Spill.saveMem_congr _ _ _ fun p hp => h0.other _ (saved_ne12 p hp)
   have e2 : EI σ u₂ := ⟨sp₂.trans e1.sp, rd₂.trans e1.rd, wr₂.trans e1.wr, by rw [gp₂]; exact e1.r12, by
     rw [mem₂]; exact Spill.saveMem_frame_of _ _ List.mem_cons_self _ _ fun p hp =>
-      inF p.2 (by have := saved_ok p hp; simp only [F]; omega)⟩
+      inF p.2 (by have := saved_ok p hp; simp only [F]; omega_arith)⟩
   have g₂ : ∀ r, r ≠ .r12 → u₂.gpr r = σ.gpr r := fun r hr => by rw [gp₂]; exact h0.other _ hr
   refine e2.st hpre (o := fOut) (by decide) .r0 fun u₃ m₃ => ?_
   have e3 := e2.of_st hpre (by decide) m₃
@@ -219,7 +219,7 @@ theorem entry_ok {σ : State} (hpre : CIn σ) :
   · -- The saved registers.
     have hb := saved_ok p hp
     show u₁₇.mem.readW _ 32 = _
-    rw [hmem, wmem_sep _ _ (by omega) _ fun q hq => ?_, mem₂]
+    rw [hmem, wmem_sep _ _ (by omega_arith) _ fun q hq => ?_, mem₂]
     · exact Spill.saveMem_saved (lo := 0) (hi := 36) _ _ _ _ (by decide) p hp
     · simp only [eWords, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>

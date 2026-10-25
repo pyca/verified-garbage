@@ -28,7 +28,7 @@ theorem clrW_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)
   have wl := h.wle
   unfold clrW
   rw [List.append_assoc]
-  refine ptr_ok h (by decide) (by omega) fun s1 p1 r1 m1 h1 => ?_
+  refine ptr_ok h (by decide) (by omega_arith) fun s1 p1 r1 m1 h1 => ?_
   simp only [List.cons_append, List.nil_append]
   refine wp_dp (op2_lsl (by decide)) fun s2 u2 => ?_
   have e2 : s2.gpr .r0 = B + BitVec.ofNat 32 (arr w j + 4 * w) := by
@@ -36,21 +36,21 @@ theorem clrW_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)
     have : BitVec.ofNat 32 w <<< 2 = BitVec.ofNat 32 (4 * w) := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_arith
     rw [this, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   refine wp_mov (op2_imm (by decide)) fun s3 u3 => ?_
   have h3 : Ws s3 B Z w N := (h1.of_upd u2 (by decide) (by decide) (by decide)).of_upd u3 (by decide) (by decide)
     (by decide)
   have a0 : State.addr (s3.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr B) (arr w j + 4 * w) := by
-    rw [u3.other _ (by decide), e2, BitVec.add_zero]; exact h.addr (by omega)
-  refine wp_str (by decide) a0 (h3.write (by omega)) fun t u4 => ?_
+    rw [u3.other _ (by decide), e2, BitVec.add_zero]; exact h.addr (by omega_arith)
+  refine wp_str (by decide) a0 (h3.write (by omega_arith)) fun t u4 => ?_
   have mt : t.mem = s.mem.writeW (off (State.addr B) (arr w j + 4 * w)) (0 : BitVec 32) := by
     rw [u4.mem, u3.gpr, u3.mem, u2.mem, m1]
-  have o1 := writeW32_outside s.mem (State.addr B) (d := arr w j + 4 * w) (0 : BitVec 32) (by omega)
+  have o1 := writeW32_outside s.mem (State.addr B) (d := arr w j + 4 * w) (0 : BitVec 32) (by omega_arith)
   rw [← mt] at o1
-  refine k t (h3.of_mupd u4) (Keep.of_arr (d := 4 * w) o1 (by omega) (by simp)) ?_ ?_
+  refine k t (h3.of_mupd u4) (Keep.of_arr (d := 4 * w) o1 (by omega_arith) (by simp)) ?_ ?_
     ((r1.mono (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest _))))
-  · exact o1.val32 (by omega) (by omega)
+  · exact o1.val32 (by omega_arith) (by omega_arith)
   · simp only [w32]; rw [mt, Mem.readW_writeW_self32]; rfl
 
 section
@@ -107,7 +107,7 @@ theorem divSet_vp {E : State → Prop} (F : FinishInputs P := legacyFinish P) : 
       (fun j hj => by simp at hj) (by simp) (h1.sl_keep k2 hls) h1.ls_ok
   · have fD := fit_w sz (show aDv < nArr by decide)
     have hS : S P.w = 4 * (P.w + 2) := rfl
-    rw [k2.word (by omega) (by simp) (by decide) fD, z1]
+    rw [k2.word (by omega_arith) (by simp) (by decide) fD, z1]
 
 /-- After `q = n / p`. -/
 abbrev Fq (P : RP) (E : State → Prop) (σ s : State) (F : FinishInputs P := legacyFinish P) : Prop :=

@@ -64,8 +64,8 @@ theorem rpMain_ct (M : Mont) : RelCT isa (Two GM) (Folded.main M.mm) fun _ _ => 
     obtain ⟨hNo, hlo⟩ := valid_lo hv
     have hlo' : 2 ^ (64 * (wk I.k - 1)) ≤ I.N := by
       refine Nat.le_trans ?_ hlo
-      rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega)
-    exact ⟨I, σ.mem, rfl, ⟨S, L, hNo, hlo', vN, hi, by rw [vM]; omega, by omega, by omega, by omega,
+      rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega_arith)
+    exact ⟨I, σ.mem, rfl, ⟨S, L, hNo, hlo', vN, hi, by rw [vM]; omega_arith, by omega_arith, by omega_arith, by omega_arith,
       ⟨fun i hi => by rw [S.wr, ← hp.wr]; exact hp.oP.wr i hi, hp.oP.sep⟩,
       ⟨fun i hi => by rw [S.wr, ← hp.wr]; exact hp.oQ.wr i hi, hp.oQ.sep⟩, hp.a⟩, hp.outs, hv⟩
 theorem rpCode_ct (M : Mont) : RelCT isa (Two RPRel) (Folded.code M.mm) fun _ _ => True := by

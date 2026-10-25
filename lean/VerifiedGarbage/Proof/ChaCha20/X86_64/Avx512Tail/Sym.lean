@@ -109,7 +109,7 @@ theorem slot_ok {m : MemOp} {n : Nat} {lim : Nat → Nat} {b i : Nat} (h : slot 
   · cases h
 
 theorem wsize_le (D b : Nat) : wsize D b ≤ bsize D b := by
-  unfold wsize bsize; split <;> omega
+  unfold wsize bsize; split <;> omega_arith
 
 /-- The regions: writable (and so readable) and disjoint. -/
 structure Ctx (D : Nat) (s₀ : State) : Prop where
@@ -119,14 +119,14 @@ structure Ctx (D : Nat) (s₀ : State) : Prop where
   small : D ≤ 128
 
 theorem bsize_le {D : Nat} (h : D ≤ 128) (b : Nat) : bsize D b ≤ 128 := by
-  unfold bsize; split <;> omega
+  unfold bsize; split <;> omega_arith
 
 theorem regn_contains {D : Nat} (hD : D ≤ 128) (s₀ : State) {b i n : Nat} (h : i + n ≤ bsize D b) :
     (regn D s₀ b).Contains ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) (4 * n) := by
   have := bsize_le hD b
   simp only [Region.Contains]
-  rw [Mem.sub_ofNat_toNat _ (by omega)]
-  simp only [regn]; omega
+  rw [Mem.sub_ofNat_toNat _ (by omega_arith)]
+  simp only [regn]; omega_arith
 
 /-- The terms `σ` hold in `s`. -/
 structure SRel (D : Nat) (σ : Sym) (s₀ s : State) : Prop where
@@ -203,8 +203,8 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
       refine ⟨_, rfl, h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
       rw [zw_split, zlane_zbin _ _ _ _ _ _ (div4_lt hp)]
       split
-      · exact (zbinT_eval hop (fun k hk => (h.reg a _ (by omega)).symm.trans (zw_lk s a hk))
-          (fun k hk => (h.reg b _ (by omega)).symm.trans (zw_lk s b hk))).symm
+      · exact (zbinT_eval hop (fun k hk => (h.reg a _ (by omega_arith)).symm.trans (zw_lk s a hk))
+          (fun k hk => (h.reg b _ (by omega_arith)).symm.trans (zw_lk s b hk))).symm
       · rfl
     · split at e
       · rename_i hor
@@ -223,7 +223,7 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
     rw [zw_split, zlane_vpshufd _ _ _ _ _ (div4_lt hp)]
     split
     · rw [dword_shufDwords _ _ (mod4_lt p), sel2_eq, ← zw_lk s a (sel2_lt _ _)]
-      exact h.reg a _ (by have := sel2_lt o.toNat (p % 4); omega)
+      exact h.reg a _ (by have := sel2_lt o.toNat (p % 4); omega_arith)
     · rfl
   · rename_i d a b n
     cases e
@@ -234,9 +234,9 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
       have := sel2_lt n.toNat (p / 4)
       by_cases hl : p / 4 < 2
       · simp only [hl, ite_true]
-        rw [← zw_lk s a (mod4_lt p)]; exact h.reg a _ (by omega)
+        rw [← zw_lk s a (mod4_lt p)]; exact h.reg a _ (by omega_arith)
       · simp only [hl, ite_false]
-        rw [← zw_lk s b (mod4_lt p)]; exact h.reg b _ (by omega)
+        rw [← zw_lk s b (mod4_lt p)]; exact h.reg b _ (by omega_arith)
     · rfl
   · rename_i d m
     obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
@@ -252,7 +252,7 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
     rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
     split
     · rw [pick4_ext _ (div4_lt hp), dword_read512 _ _ hp, add_ofNat', ← Nat.mul_add]
-      exact h.mem b (i + p) hb (by omega)
+      exact h.mem b (i + p) hb (by omega_arith)
     · rfl
   · rename_i d m
     obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
@@ -268,14 +268,14 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
     rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
     split
     · rw [pick4_same _ (div4_lt hp), dword_readW _ _ (mod4_lt p), add_ofNat', ← Nat.mul_add]
-      exact h.mem b (i + p % 4) hb (by have := mod4_lt p; omega)
+      exact h.mem b (i + p % 4) hb (by have := mod4_lt p; omega_arith)
     · rfl
   · rename_i m r
     obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
     obtain ⟨hb, hi, hea⟩ := slot_ok hs
     have hi' : i + 16 ≤ bsize D b := Nat.le_trans hi (wsize_le D b)
     have hb0 : b = 1 ∨ b = 2 := by
-      rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | e | e
+      rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2) with rfl | e | e
       · simp [wsize] at hi
       · exact .inl e
       · exact .inr e
@@ -291,22 +291,22 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
         simp only [and_self, h₁, h₂, ite_true]
         rw [show (regn D s₀ b').base + BitVec.ofNat 64 (4 * i') =
             (regn D s₀ b').base + BitVec.ofNat 64 (4 * i) + BitVec.ofNat 64 (4 * (i' - i)) by
-          rw [add_ofNat']; congr 2; omega]
-        refine (readW_writeW_inside s.mem _ (s.zmm r) (k := 4 * (i' - i)) (n := 4) (by omega)
+          rw [add_ofNat']; congr 2; omega_arith]
+        refine (readW_writeW_inside s.mem _ (s.zmm r) (k := 4 * (i' - i)) (n := 4) (by omega_arith)
           (by decide)).trans ?_
-        rw [show 8 * (4 * (i' - i)) = 8 * (16 * ((i' - i) / 4) + 4 * ((i' - i) % 4)) by omega,
-          State.zmm_extract _ _ (by omega) (mod4_lt _), ← zw_split]
-        exact h.reg r _ (by omega)
+        rw [show 8 * (4 * (i' - i)) = 8 * (16 * ((i' - i) / 4) + 4 * ((i' - i) % 4)) by omega_arith,
+          State.zmm_extract _ _ (by omega_arith) (mod4_lt _), ← zw_split]
+        exact h.reg r _ (by omega_arith)
       · rw [ite_eq_right hx]
         by_cases e : b' = b
         · subst e
-          have hx' : i' + 1 ≤ i ∨ i + 16 ≤ i' := by omega
+          have hx' : i' + 1 ≤ i ∨ i + 16 ≤ i' := by omega_arith
           have := bsize_le hD b'
           exact (readW_writeW_off s.mem _ (s.zmm r) (d := 4 * i') (e := 4 * i) (n := 4)
-            (by omega) (by omega) (by omega)).trans (h.mem b' i' hb' hi'')
+            (by omega_arith) (by omega_arith) (by omega_arith)).trans (h.mem b' i' hb' hi'')
         · have f := (Frame.refl [regn D s₀ b] s.mem).writeW (List.mem_singleton_self _) (s.zmm r)
             (regn_contains hD s₀ (n := 16) hi')
-          rw [f.readW (r := regn D s₀ b') (regn_contains hD s₀ (n := 1) (by omega))
+          rw [f.readW (r := regn D s₀ b') (regn_contains hD s₀ (n := 1) (by omega_arith))
             (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hc.d b' b hb' hb e)
             (by decide)]
           exact h.mem b' i' hb' hi''
@@ -315,15 +315,15 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
         (by rcases hb0 with rfl | rfl <;> simp [wregs]) _ ?_
       rcases hb0 with rfl | rfl
       · simp only [regn, baseR, Region.Contains, ite_true]
-        simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega
+        simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith
       · simp only [regn, baseR, Region.Contains, show (2 : Nat) ≠ 1 by decide, ite_false]
-        simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega
+        simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith
   · rename_i d m
     obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
     obtain ⟨hb, hi, hea⟩ := slot_ok hs
     have ea : s.ea m = (regn D s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
     have hin := in_regn' hc hb h.wr hi (by decide)
-    have hv := h.mem b i hb (by omega)
+    have hv := h.mem b i hb (by omega_arith)
     generalize hvd : s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 32 = v at hv
     refine ⟨s.setZ d (v ++ v ++ v ++ v) (v ++ v ++ v ++ v) (v ++ v ++ v ++ v) (v ++ v ++ v ++ v), ?_,
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
@@ -337,7 +337,7 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
     obtain ⟨hb, hi, hea⟩ := slot_ok hs
     have ea : s.ea m = (regn D s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
     have hin := in_regn' hc hb h.wr hi (by decide)
-    have hv := h.mem b i hb (by omega)
+    have hv := h.mem b i hb (by omega_arith)
     generalize hvd : s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 32 = v at hv
     refine ⟨s.setZ d (XBinOp.eval .paddd (s.zlane a 0) (v ++ v ++ v ++ v))
       (XBinOp.eval .paddd (s.zlane a 1) (v ++ v ++ v ++ v)) (XBinOp.eval .paddd (s.zlane a 2) (v ++ v ++ v ++ v))

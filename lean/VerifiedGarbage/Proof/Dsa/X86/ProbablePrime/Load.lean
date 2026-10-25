@@ -24,17 +24,17 @@ open VG.Impl.Dsa.X86.ProbablePrime VG.Impl.Bignum.X86.PublicContext
 theorem Environment.Valid.slotFit {E : Environment} (_ : E.Valid) {j : Nat} (index : j ≤ 27) :
     slot E.width j + 8 * E.width + 16 ≤ E.scratch := by
   unfold Environment.scratch scratchBytes slot stride VG.Impl.Bignum.hdrBytes
-  have := Nat.mul_le_mul_right (8 * E.width + 16) (show j + 1 ≤ 28 by omega)
+  have := Nat.mul_le_mul_right (8 * E.width + 16) (show j + 1 ≤ 28 by omega_arith)
   rw [Nat.add_mul, Nat.one_mul] at this
-  omega
+  omega_arith
 
 theorem Environment.Valid.geometry {E : Environment} (v : E.Valid) : E.geometry.Valid := by
-  refine ⟨v.bits.width_low, by have := v.bits.width_high; change VG.Impl.Dsa.X86.ProbablePrime.width E.bits ≤ 128; omega, ?_⟩
+  refine ⟨v.bits.width_low, by have := v.bits.width_high; change VG.Impl.Dsa.X86.ProbablePrime.width E.bits ≤ 128; omega_arith, ?_⟩
   change E.geometry.array 28 ≤ E.size
   rw [← VG.Proof.RsaKeyGen.X86.Prepared.slot_eq E.geometry 28]
   have := v.room
   change E.scratch ≤ E.size
-  omega
+  omega_arith
 
 /-- A stage that writes only the arrays keeps the input. -/
 theorem Input.keepArrays {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s t : State}
@@ -44,9 +44,9 @@ theorem Input.keepArrays {E : Environment} (v : E.Valid) {c : Nat} {entropy : Li
     Input E c entropy t := by
   have room := v.room
   have read (d : Nat) (small : d + 4 ≤ 256) : t.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32 :=
-    BitVec.eq_of_toNat_eq (O.w32 (Or.inl (by omega)) (by omega))
+    BitVec.eq_of_toNat_eq (O.w32 (Or.inl (by omega_arith)) (by omega_arith))
   refine ⟨I.scratch.of_keeps K edi esp, (K.1 .esp esp).trans I.stack, ?_, ?_, ?_, ?_,
-    I.memory.keep v K (v.work_of_outside O (by omega)) (v.tail_of_outside O high) symbol⟩
+    I.memory.keep v K (v.work_of_outside O (by omega_arith)) (v.tail_of_outside O high) symbol⟩
   · rw [read 28 (by decide)]; exact I.randPtr
   · unfold w32; rw [read 32 (by decide)]; exact I.randLength
   · unfold w32; rw [read 40 (by decide)]; exact I.capacity
@@ -143,16 +143,16 @@ theorem load_ok {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} 
       Loaded E c entropy t ∧ WorkFrame E s.mem t.mem ∧ Tail E s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have slot5 := v.slotFit (j := 5) (by decide)
-  have e0 : slot E.width 0 = 256 := by unfold slot VG.Impl.Bignum.hdrBytes; omega
+  have e0 : slot E.width 0 = 256 := by unfold slot VG.Impl.Bignum.hdrBytes; omega_arith
   have e5 : slot E.width 5 = 256 + 5 * (8 * E.width + 16) := by unfold slot stride VG.Impl.Bignum.hdrBytes; rfl
   have eS : E.scratch = 256 + 28 * (8 * E.width + 16) := by
     unfold Environment.scratch scratchBytes slot stride VG.Impl.Bignum.hdrBytes; rfl
   refine WP.mono_syms (load_raw v I odd) fun t ⟨value, minus, O, K⟩ syms => ?_
   have fit := v.workspaceFit
-  refine ⟨⟨I.keepArrays v O (by omega) (by omega) K (by decide) (by decide) (by rw [syms]), ?_, ?_, ?_⟩,
-    v.work_of_outside O (by have := v.room; omega), v.tail_of_outside O (by omega), K⟩
+  refine ⟨⟨I.keepArrays v O (by omega_arith) (by omega_arith) K (by decide) (by decide) (by rw [syms]), ?_, ?_, ?_⟩,
+    v.work_of_outside O (by have := v.room; omega_arith), v.tail_of_outside O (by omega_arith), K⟩
   · rw [← VG.Proof.RsaKeyGen.X86.Prepared.slot_eq]; exact value
   · rw [← VG.Proof.RsaKeyGen.X86.Prepared.slot_eq]; exact minus
-  · rw [O.w32 (Or.inl (by omega)) (by omega)]; exact count
+  · rw [O.w32 (Or.inl (by omega_arith)) (by omega_arith)]; exact count
 
 end VG.Proof.Dsa.X86.ProbablePrime

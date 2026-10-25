@@ -55,7 +55,7 @@ theorem args_ok (s : State) {o a b : Nat} (ho : o < 2 ^ 16) (ha : a < 2 ^ 16) (h
       ((BitVec.setWidth Size.x.bits v <<< (16 * 0) : BitVec 64)).toNat = x := by
     intro v x hx e; subst e
     simp only [Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    simp only [Size.bits]; omega
+    simp only [Size.bits]; omega_arith
   refine ⟨?_, ?_, ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩, ?_⟩
   · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, BitVec.setWidth_eq]
     exact v _ _ ho rfl
@@ -118,25 +118,25 @@ theorem callProgV29_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base s
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         F (wordsVal s.mem base a M.n) (wordsVal s.mem base b M.n) % m := by
-  have hn9 : M.n ≤ 9 := by rcases hn with h | h | h <;> omega
-  have hn4 : 4 ≤ M.n := by rcases hn with h | h | h <;> omega
+  have hn9 : M.n ≤ 9 := by rcases hn with h | h | h <;> omega_arith
+  have hn4 : 4 ≤ M.n := by rcases hn with h | h | h <;> omega_arith
   have hown := own_eq hn9
   obtain ⟨hmo1, hmo2, hmo8⟩ := moAt_facts hn9 hn4
   have htsz := hM.tmp
   rw [htmp] at htsz
   have hnw := hs.nowrap
   rw [callProg]
-  refine WP.seq (WP.mono (args_ok s (by omega) (by omega) (by omega)) fun s₁ ⟨g1, g2, g3, K₁, L₁⟩ => ?_)
+  refine WP.seq (WP.mono (args_ok s (by omega_arith) (by omega_arith) (by omega_arith)) fun s₁ ⟨g1, g2, g3, K₁, L₁⟩ => ?_)
   have x0₁ : s₁.gpr .x0 = base := (K₁.gpr _ (by decide)).trans hs.x0
   have hcov : Covers [⟨base, moAt M.n + 8 * M.n⟩] s₁.wr := by
     rw [K₁.wr]
     exact Covers.one ⟨_, hs.wr, by
-      have := hs.contains (d := 0) (n := moAt M.n + 8 * M.n) (by omega) (by omega)
+      have := hs.contains (d := 0) (n := moAt M.n + 8 * M.n) (by omega_arith) (by omega_arith)
       simpa [off] using this⟩
   have hW : moAt M.n + 8 * M.n ≤ size := htsz
-  have a1 : ((s₁.gpr .x1).setWidth 32).toNat = o := by rw [arg_of g1]; omega
-  have a2 : ((s₁.gpr .x2).setWidth 32).toNat = a := by rw [arg_of g2]; omega
-  have a3 : ((s₁.gpr .x3).setWidth 32).toNat = b := by rw [arg_of g3]; omega
+  have a1 : ((s₁.gpr .x1).setWidth 32).toNat = o := by rw [arg_of g1]; omega_arith
+  have a2 : ((s₁.gpr .x2).setWidth 32).toNat = a := by rw [arg_of g2]; omega_arith
+  have a3 : ((s₁.gpr .x3).setWidth 32).toNat = b := by rw [arg_of g3]; omega_arith
   have ce : ∀ r ∈ [Reg.x0, .x1, .x2, .x3], (s₁.callEntry.withRegions [] [⟨base, moAt M.n + 8 * M.n⟩]).gpr r =
       s₁.gpr r := fun r hr => by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by
@@ -152,7 +152,7 @@ theorem callProgV29_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base s
     have c1 := ce .x1 (by simp)
     have c2 := ce .x2 (by simp)
     have c3 := ce .x3 (by simp)
-    refine ⟨⟨rfl, by rw [c0, x0₁]; rfl, by rw [c0, x0₁]; omega, Nat.le_refl _, by omega, ?_, ?_, ?_⟩,
+    refine ⟨⟨rfl, by rw [c0, x0₁]; rfl, by rw [c0, x0₁]; omega_arith, Nat.le_refl _, by omega_arith, ?_, ?_, ?_⟩,
       by rw [c0, x0₁], ?_, ?_, ?_, by rw [State.withRegions_mem, State.callEntry_mem, K₁.mem], hpre⟩
     · simp only [arg]; rw [c1, a1]; exact ho
     · simp only [arg]; rw [c2, a2]; exact ha

@@ -66,9 +66,9 @@ theorem subModP_ok {s : State} {B : Addr} {Z len N o a b : Nat} (h : RtWs L s B 
   have ft4 := h.ws.fit64 (j := aT4) (by idx)
   rw [t13] at v4
   rw [s2, z3, n3] at v3
-  refine subMod_impl (P := 2 ^ (32 * kw len)) (by omega) hb' v1 (val32_lt _ _ _ _) b1 ?_ v4 (val32_lt _ _ _ _) b4
+  refine subMod_impl (P := 2 ^ (32 * kw len)) (by omega_arith) hb' v1 (val32_lt _ _ _ _) b1 ?_ v4 (val32_lt _ _ _ _) b4
   rw [v3]
-  split <;> omega
+  split <;> omega_arith
 
 
 /-- The halving of `[aT3]` modulo `m` into `[o]`. -/
@@ -87,13 +87,13 @@ theorem halfModP_ok {s : State} {B : Addr} {Z len N o : Nat} (h : RtWs L s B Z l
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (bitOf_ok h (by idx) hsB) fun t1 ⟨h1, k1, s1, r1⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have b1 : slot t1.mem B sB ≤ 1 := by rw [s1]; omega
+  have b1 : slot t1.mem B sB ≤ 1 := by rw [s1]; omega_arith
   refine WP.mono (sel_ok h1 (by idx) (by idx) (by idx) hsB b1 (.inl (by idx)))
     fun t2 ⟨h2, k2, v2, r2⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sub3_ok h2 ho (by idx) (by idx)) fun t3 ⟨h3, k3, v3, b3, r3⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine wp_logicS (.inr rfl) (readSrc_sc h3.ws.workspace (by have := h3.ws.hdr_le; unfold sB hdr at *; omega))
+  refine wp_logicS (.inr rfl) (readSrc_sc h3.ws.workspace (by have := h3.ws.hdr_le; unfold sB hdr at *; omega_arith))
     fun t4 u5 => WP.block_nil ?_
   have h5 := h3.keep u5.keeps (by decide) (by decide) (by rw [u5.mem]; exact Outside.refl _ _ _ _)
   have sB3 : slot t3.mem B sB = slot t1.mem B sB := by
@@ -102,8 +102,8 @@ theorem halfModP_ok {s : State} {B : Addr} {Z len N o : Nat} (h : RtWs L s B Z l
     rw [u5.gpr, ite_eq_right (by decide)]
     have e : (t3.mem.readW (off B sB) 32).toNat = num s.mem B (kw len) aT3 % 2 := by
       change slot t3.mem B sB = _; rw [sB3, s1]
-    rw [bv_xor_bits b3 (by rw [e]; omega), e]
-  refine WP.mono (half_ok h5 ho (by rw [c4]; omega)) fun t ⟨h6, k6, v6, r6⟩ => ?_
+    rw [bv_xor_bits b3 (by rw [e]; omega_arith), e]
+  refine WP.mono (half_ok h5 ho (by rw [c4]; omega_arith)) fun t ⟨h6, k6, v6, r6⟩ => ?_
   have m4 : t4.mem = t3.mem := u5.mem
   rw [m4] at k6 v6
   refine ⟨h6, (k1.join k2 (js := [aT4, o]) (ds := [sB])).join (k3.join k6 (js := [aT4, o]) (ds := [sB]))
@@ -119,8 +119,8 @@ theorem halfModP_ok {s : State} {B : Addr} {Z len N o : Nat} (h : RtWs L s B Z l
   rw [x2] at v3
   rw [s1, z1, n1] at v2
   rw [v6, c4]
-  refine halfMod_impl (P := 2 ^ (32 * kw len)) (by omega) (val32_lt _ _ _ _) ?_ v3 (val32_lt _ _ _ _) b3 rfl
-  rw [v2]; split <;> omega
+  refine halfMod_impl (P := 2 ^ (32 * kw len)) (by omega_arith) (val32_lt _ _ _ _) ?_ v3 (val32_lt _ _ _ _) b3 rfl
+  rw [v2]; split <;> omega_arith
 
 
 end VG.Proof.Rsa.X86.KeyRt

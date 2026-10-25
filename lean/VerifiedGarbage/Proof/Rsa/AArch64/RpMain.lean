@@ -65,11 +65,11 @@ theorem rpHeadS_ok {I : RpIn} {s : State} (h : RpPre I s) :
   have k1 := L.k1
   have hi₁ : InScr I.B I.Z s.mem s₁.mem := InScr.of_frm f₁ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega)
+    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith)
   refine ⟨⟨hw₁, h.args.congr fun i hi => f₁.word_eq (fun r hr => by
       unfold rArg at hi
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by unfold rArg at hi; omega),
+      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by unfold rArg at hi; omega_arith),
     h.n.congrK hi₁ k₁, h.e.congrK hi₁ k₁, h.d.congrK hi₁ k₁, hi₁, k₁.wr.trans h.wr⟩, k₁.mono (by decide)⟩
 
 /-- The skip's frame, as arrays and slots. -/
@@ -77,7 +77,7 @@ theorem frm_skip {B : Addr} {w : Nat} {m m' : Mem} (h : Frm B [(slot w aM, 8), (
     Frm B (rg w [aM] [sC2]) m m' := h.widen (by
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega)
+  · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega_arith)
   · exact rg_cover_hdr _ (by decide))
 
 /-- The factors written, or 0. -/
@@ -121,26 +121,26 @@ theorem rpPrefix_ok {I : RpIn} {s : State} (h : RpPre I s) (hv : Spec.Rsa.modulu
     have := os2ip_lt I.eb; rw [L.ebl] at this; exact Nat.lt_of_lt_of_le this (pow256_le_wk I.el)
   have hDl : I.D < 2 ^ (64 * wk I.k) := by
     have := os2ip_lt I.db; rw [L.dbl] at this
-    exact Nat.lt_of_lt_of_le this (by rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega))
+    exact Nat.lt_of_lt_of_le this (by rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega_arith))
   simp only [prefixList]
   -- The head.
   refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (rpHeadS_ok h) fun s₁ ⟨S₁, k₁⟩ => ?_)
-  have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := S₁.ws.scr.nowrap; have := S₁.ws.hZ; omega
+  have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := S₁.ws.scr.nowrap; have := S₁.ws.hZ; omega_arith
   -- The loads.
   refine wp_seqs_append (by simp [loadA]) (by simp) (WP.mono (rpLoads_ok S₁ L)
     fun s₂ ⟨S₂, _, vN, vE, vD, k₂⟩ => ?_)
   -- `-n⁻¹`.
   refine wp_seqs_append (by simp) (by simp [prod]) (WP.mono (minvBlk_ok S₂.ws (by
     rw [show (word s₂.mem I.B (slot (wk I.k) aN)).toNat % 2 = wv s₂.mem I.B (slot (wk I.k) aN) (wk I.k) % 2 by
-      rw [wv_low (by have := S₂.ws.w1; omega)]; omega, vN]; exact hNo)) fun s₃ ⟨hi₃, f₃, k₃⟩ => ?_)
+      rw [wv_low (by have := S₂.ws.w1; omega_arith)]; omega_arith, vN]; exact hNo)) fun s₃ ⟨hi₃, f₃, k₃⟩ => ?_)
   have S₃ := S₂.step f₃ (by simp) (by decide) k₃ (by decide)
   -- `M = d e`.
   have vE₃ : wv s₃.mem I.B (slot (wk I.k) aE) (wk I.k) = I.E := by
-    rw [f₃.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega), vE]
+    rw [f₃.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega_arith), vE]
   have vD₃ : wv s₃.mem I.B (slot (wk I.k) aD) (wk I.k) = I.D := by
-    rw [f₃.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega), vD]
+    rw [f₃.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega_arith), vD]
   refine wp_seqs_append (by simp [prod]) (by simp) (WP.mono (prod_ok S₃.ws S₃.args.el hel1
-    (by unfold wk; omega) (by rw [vE₃]; exact hEl)) fun s₄ ⟨vM₄, o₄, k₄⟩ => ?_)
+    (by unfold wk; omega_arith) (by rw [vE₃]; exact hEl)) fun s₄ ⟨vM₄, o₄, k₄⟩ => ?_)
   rw [vD₃, vE₃] at vM₄
   have sM := S₃.ws.sl (j := aM + 1) (by decide)
   have f₄ : Frm I.B (rg (wk I.k) [aM, aM + 1] []) s₃.mem s₄.mem :=
@@ -149,15 +149,15 @@ theorem rpPrefix_ok {I : RpIn} {s : State} (h : RpPre I s) (hv : Spec.Rsa.modulu
   have hDE : I.D * I.E < 2 ^ (64 * (wk I.k + (I.el + 7) / 8)) := by
     rw [Nat.mul_add, Nat.pow_add]; exact Nat.mul_lt_mul'' hDl hEl
   -- Whether `d e - 1` is even and positive.
-  refine WP.mono (skip_ok S₄.ws S₄.args.el hel1 (by unfold wk; omega)
+  refine WP.mono (skip_ok S₄.ws S₄.args.el hel1 (by unfold wk; omega_arith)
     (by rw [vM₄]; exact hDE)) fun s₅ ⟨hz₅, vM₅, f₅', _, k₅⟩ => ?_
   rw [vM₄] at hz₅ vM₅
   have f₅ := frm_skip f₅'
   have S₅ := S₄.step f₅ (by decide) (by decide) k₅ (by decide)
   refine ⟨S₅, hz₅, vM₅, ?_, ?_, hDE, ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).mono (by decide)⟩
-  · rw [f₅.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega),
-      f₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega),
-      f₃.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega), vN]
+  · rw [f₅.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith),
+      f₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_arith),
+      f₃.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega_arith), vN]
   · rw [f₅.rg_word0 hZ16 (by decide) (by decide) (by decide), f₅.rg_word (by decide) (by decide),
       f₄.rg_word0 hZ16 (by decide) (by decide) (by decide), f₄.rg_word (by decide) (by decide)]; exact hi₃
 
@@ -185,10 +185,10 @@ theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
   obtain ⟨hNo, hlo⟩ := valid_lo hv
   have hlo' : 2 ^ (64 * (wk I.k - 1)) ≤ I.N := by
     refine Nat.le_trans ?_ hlo
-    rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega)
+    rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega_arith)
   rw [rpMain_eq']
   refine wp_seqs_append (by simp) (by simp) (WP.mono (rpPrefix_ok h hv) fun s₅ ⟨S₅, hz₅, vM₅, vN₅, hi₅, hDE, k₅⟩ => ?_)
-  have hspec : (I.D * I.E < 2 ∨ (I.D * I.E - 1) % 2 = 1) ↔ ¬(I.D * I.E % 2 = 1 ∧ 2 ≤ I.D * I.E) := by omega
+  have hspec : (I.D * I.E < 2 ∨ (I.D * I.E - 1) % 2 = 1) ↔ ¬(I.D * I.E % 2 = 1 ∧ 2 ≤ I.D * I.E) := by omega_arith
   simp only [seqs]
   have hbz : (s₅.gpr .x10 == 0) = decide (I.D * I.E % 2 = 1 ∧ 2 ≤ I.D * I.E) := by
     rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]; exact hz₅
@@ -197,7 +197,7 @@ theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
     have hb' : I.D * I.E % 2 = 1 ∧ 2 ≤ I.D * I.E := by simpa using hb
     have hgo := VG.Proof.Rsa.recoverPrimes_go (n := I.N) (fun h' => (hspec.mp h') hb')
     refine WP.mono (rpRest_ok M (m := I.D * I.E - 1) (N := I.N) ⟨S₅, L, hNo, hlo', vN₅, hi₅,
-      by rw [vM₅]; omega, by omega, by omega, by omega,
+      by rw [vM₅]; omega_arith, by omega_arith, by omega_arith, by omega_arith,
       ⟨fun i hi => by rw [S₅.wr, ← h.wr]; exact h.oP.wr i hi, h.oP.sep⟩,
       ⟨fun i hi => by rw [S₅.wr, ← h.wr]; exact h.oQ.wr i hi, h.oQ.sep⟩, h.a⟩)
       fun t ⟨res, cnt, hres, bP, bQ, hax, hfr, kt⟩ => ?_
@@ -208,7 +208,7 @@ theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
   · -- Zeros.
     have hb' : ¬(I.D * I.E % 2 = 1 ∧ 2 ≤ I.D * I.E) := by simpa using hb
     have hnone := VG.Proof.Rsa.recoverPrimes_none (n := I.N) (hspec.mpr hb')
-    refine WP.mono (rpFail_ok S₅.ws.scr S₅.ws.x0 (by omega) S₅.args (by omega) (by omega)
+    refine WP.mono (rpFail_ok S₅.ws.scr S₅.ws.x0 (by omega_arith) S₅.args (by omega_arith) (by omega_arith)
       ⟨fun i hi => by rw [S₅.wr, ← h.wr]; exact h.oP.wr i hi, h.oP.sep⟩
       ⟨fun i hi => by rw [S₅.wr, ← h.wr]; exact h.oQ.wr i hi, h.oQ.sep⟩ h.a)
       fun t ⟨z1, z2, hax, hfr, kt⟩ => ⟨none, by rw [hnone], ?_, ?_, by rw [hax]; rfl,

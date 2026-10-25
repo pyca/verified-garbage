@@ -40,7 +40,7 @@ theorem shr8 {n : Nat} (hn : n < 2 ^ 64) :
     BitVec.ofNat 64 n >>> 8 = BitVec.ofNat 64 (n / 256) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt hn, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt hn, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem ctr_add (S : CState) (a b : Nat) : ctr (ctr S a) b = ctr S (a + b) := by
   simp only [ctr, Vector.getElem_set_self, Vector.set_set, BitVec.ofNat_add, BitVec.add_assoc]
@@ -49,8 +49,8 @@ theorem ks_shift (S : CState) {len t k : Nat} (hk : k < len) (ht : 256 * t ≤ k
     (keystream S len).getD k 0 =
       (serialize (block (ctr (ctr S (4 * t)) ((k - 256 * t) / 64)))).getD
         ((k - 256 * t) % 64) 0 := by
-  rw [keystream_getD _ hk, ctr_add, show 4 * t + (k - 256 * t) / 64 = k / 64 by omega,
-    show (k - 256 * t) % 64 = k % 64 by omega]
+  rw [keystream_getD _ hk, ctr_add, show 4 * t + (k - 256 * t) / 64 = k / 64 by omega_arith,
+    show (k - 256 * t) % 64 = k % 64 by omega_arith]
 
 theorem next_ok (s : State) (hlen : 256 ≤ (s.gpr .x2).toNat)
     (hin : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 48) 4)
@@ -71,8 +71,8 @@ theorem next_ok (s : State) (hlen : 256 ≤ (s.gpr .x2).toNat)
   · have he : s.gpr .x2 - BitVec.ofNat 64 256 = BitVec.ofNat 64 ((s.gpr .x2).toNat - 256) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      have h := (s.gpr .x2).isLt; omega
-    rw [he, shr8 (by have h := (s.gpr .x2).isLt; omega)]
+      have h := (s.gpr .x2).isLt; omega_arith
+    rw [he, shr8 (by have h := (s.gpr .x2).isLt; omega_arith)]
   · intro r h1 h2 h4 h5
     simp only [h1, h2, h4, h5, ite_false]
   · have hv : (stateAt s.mem (s.gpr .x0))[12] = s.mem.read (s.gpr .x0 + BitVec.ofNat 64 48) 4 := by
@@ -93,7 +93,7 @@ theorem win_sub {s₀ : State} {t : Nat} (h : 256 * t + 256 ≤ L s₀) :
 
 theorem data_in {s₀ : State} {k : Nat} (hk : k < L s₀) :
     (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
-  Offset.contains_base _ (by omega) (by have h := Xor.L_lt s₀; omega)
+  Offset.contains_base _ (by omega_arith) (by have h := Xor.L_lt s₀; omega_arith)
 
 theorem chunkData {s₀ s u : State} {t : Nat} (h : LInv s₀ t s)
     (hge : 256 * t + 256 ≤ L s₀)
@@ -108,19 +108,19 @@ theorem chunkData {s₀ s u : State} {t : Nat} (h : LInv s₀ t s)
   by_cases hin : 256 * t ≤ k ∧ k < 256 * t + 256
   · have he : s.gpr .x1 + BitVec.ofNat 64 (k - 256 * t) = dp s₀ + BitVec.ofNat 64 k := by
       rw [h.x1, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' hin.1]
-    have hh := hu (k - 256 * t) (by omega)
-    rw [he, h.data k hk, ite_eq_right (by omega), h.x0, h.cnt, ← ks_shift (S0 s₀) hk hin.1] at hh
-    rw [ite_eq_left (by omega)]; exact hh
+    have hh := hu (k - 256 * t) (by omega_arith)
+    rw [he, h.data k hk, ite_eq_right (by omega_arith), h.x0, h.cnt, ← ks_shift (S0 s₀) hk hin.1] at hh
+    rw [ite_eq_left (by omega_arith)]; exact hh
   · have hx : ¬ (win s₀ t).Contains (dp s₀ + BitVec.ofNat 64 k) 1 := by
       simp only [Region.Contains, Nat.add_one_le_iff]
-      rw [Offset.lt_iff _ _ (by omega), Mem.sub_ofNat_toNat _ (by omega : k < 2 ^ 64)]
+      rw [Offset.lt_iff _ _ (by omega_arith), Mem.sub_ofNat_toNat _ (by omega_arith : k < 2 ^ 64)]
       exact hin
     have hh := hf (dp s₀ + BitVec.ofNat 64 k) (by
       intro r hr; simp only [List.mem_singleton] at hr; subst r; rw [h.x1]; exact hx)
     rw [hh, h.data k hk]
     by_cases hold : k < 256 * t
-    · rw [ite_eq_left hold, ite_eq_left (by omega)]
-    · rw [ite_eq_right hold, ite_eq_right (by omega)]
+    · rw [ite_eq_left hold, ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right hold, ite_eq_right (by omega_arith)]
 
 theorem body_ok {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat}
     (hge : 256 * t + 256 ≤ L s₀) {s : State} (h : LInv s₀ t s) :
@@ -129,11 +129,11 @@ theorem body_ok {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat}
   have hL := Xor.L_lt s₀
   have hin : ∀ k : Fin 16, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (4 * k)) 4 := by
     intro k; rw [h.rd, h.wr, hp.rd, hp.wr, h.x0]
-    exact ⟨stR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨stR s₀, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hout : ∀ r j : Fin 4, InRegions s.wr
       (s.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16 := by
     intro r j; rw [h.wr, hp.wr, h.x1, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact ⟨dR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨dR s₀, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   apply WP.seq
   refine (chunk_ok (sve := sve) s hin hout).mono fun u ⟨hu, hf, hs⟩ => ?_
   have hcnt : stateAt u.mem (st s₀) = ctr (S0 s₀) (4 * t) := by
@@ -154,25 +154,25 @@ theorem body_ok {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat}
     rw [hw, hx0]
     exact ⟨stR s₀, by simp, Offset.contains_base _ (by decide) (by decide)⟩
   have hlen : (u.gpr .x2).toNat = L s₀ - 256 * t := by
-    rw [hx2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  refine (next_ok u (by rw [hlen]; omega) hi ho).mono fun v
+    rw [hx2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  refine (next_ok u (by rw [hlen]; omega_arith) hi ho).mono fun v
     ⟨hv1, hv2, hv5, hkeep, hctr, hframe, hrd, hwr, hsp⟩ => ?_
   have hptr : v.gpr .x1 = dp s₀ + BitVec.ofNat 64 (256 * (t + 1)) := by
     rw [hv1, hx1, BitVec.add_assoc]
     congr 1
     change BitVec.ofNat 64 (256 * t) + BitVec.ofNat 64 256 = _
-    rw [← BitVec.ofNat_add, show 256 * t + 256 = 256 * (t + 1) by omega]
+    rw [← BitVec.ofNat_add, show 256 * t + 256 = 256 * (t + 1) by omega_arith]
   have hrem : v.gpr .x2 = BitVec.ofNat 64 (L s₀ - 256 * (t + 1)) := by
     rw [hv2, hx2]
     change BitVec.ofNat 64 (L s₀ - 256 * t) - BitVec.ofNat 64 256 = _
-    rw [Offset.ofNat_sub_ofNat (by omega), show L s₀ - 256 * t - 256 = L s₀ - 256 * (t + 1) by omega]
-  refine ⟨⟨?_, hptr, hrem, ?_, by omega, ?_, hrd.trans (hs.rd.trans h.rd),
+    rw [Offset.ofNat_sub_ofNat (by omega_arith), show L s₀ - 256 * t - 256 = L s₀ - 256 * (t + 1) by omega_arith]
+  refine ⟨⟨?_, hptr, hrem, ?_, by omega_arith, ?_, hrd.trans (hs.rd.trans h.rd),
     hwr.trans (hs.wr.trans h.wr), hsp.trans (hs.sp.trans h.sp), ?_, ?_, ?_⟩, ?_⟩
   · rw [hkeep _ (by decide) (by decide) (by decide) (by decide), hx0]
   · rw [hkeep _ (by decide) (by decide) (by decide) (by decide), hx3]
   · intro r h1 h2 h4 h5
     rw [hkeep r h1 h2 h4 h5, hs.gpr r h4]; exact h.keep r h1 h2 h4 h5
-  · rw [hx0, hcnt, ctr_add, show 4 * t + 4 = 4 * (t + 1) by omega] at hctr
+  · rw [hx0, hcnt, ctr_add, show 4 * t + 4 = 4 * (t + 1) by omega_arith] at hctr
     exact hctr
   · intro k hk
     rw [hframe _ (by
@@ -185,7 +185,7 @@ theorem body_ok {sve : Bool} {s₀ : State} (hp : XPre s₀) {t : Nat}
       intro r hr; simp only [List.mem_singleton] at hr; subst r
       rw [hx0]; exact List.mem_cons_self ..)
     exact (h.frame.trans hf').trans hn'
-  · rw [hv5, hlen, show L s₀ - 256 * t - 256 = L s₀ - 256 * (t + 1) by omega]
+  · rw [hv5, hlen, show L s₀ - 256 * t - 256 = L s₀ - 256 * (t + 1) by omega_arith]
 
 theorem init_ok (s : State) :
     WP isa (.block [.lsr .x .x5 .x2 8]) s fun s' =>
@@ -193,7 +193,7 @@ theorem init_ok (s : State) :
   apply WP.of_runBlock
   simp only [↓reduceIte, Nat.reduceLT, runBlock_cons, runBlock_nil, exec, State.read,
     Size.bits, Option.some.injEq, isa, runStep_some, exists_eq_left']
-  refine ⟨⟨?_, ?_, ?_, ?_, by omega, ?_, rfl, rfl, rfl, ?_, ?_, Frame.refl _ _⟩, ?_⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, by omega_arith, ?_, rfl, rfl, rfl, ?_, ?_, Frame.refl _ _⟩, ?_⟩
   · exact RegUpd.gpr_write_of_ne _ _ _ (by decide)
   · simp only [RegUpd.gpr_write, show Reg.x1 ≠ .x5 by decide, ite_false]
     simp [dp]
@@ -212,9 +212,9 @@ theorem zero_chunks {s : State} {n : Nat} (hn : n < 2 ^ 64)
     (h : s.gpr .x5 = BitVec.ofNat 64 (n / 256)) :
     isa.eval (.zero .x .x5) s = some (decide (n < 256)) := by
   rw [show isa.eval (.zero .x .x5) s = some (s.gpr .x5 == 0) from Xor.eval_zero s .x5,
-    h, Xor.ofNat_beq_zero (by omega)]
+    h, Xor.ofNat_beq_zero (by omega_arith)]
   congr 2
-  apply propext; omega
+  apply propext; omega_arith
 
 theorem bulk_ok {sve : Bool} {s₀ : State} (hp : XPre s₀) {s : State} (h : LInv s₀ 0 s)
     (hx5 : s.gpr .x5 = BitVec.ofNat 64 (L s₀ / 256)) :
@@ -226,21 +226,21 @@ theorem bulk_ok {sve : Bool} {s₀ : State} (hp : XPre s₀) {s : State} (h : LI
     have hb' : L s₀ < 256 := of_decide_eq_true hb
     exact WP.block_nil ⟨0, by simpa using hb', h⟩
   · intro hb
-    have hge : 256 ≤ L s₀ := by have := of_decide_eq_false hb; omega
+    have hge : 256 ≤ L s₀ := by have := of_decide_eq_false hb; omega_arith
     let Inv : Nat → State → Prop := fun n s =>
       ∃ t, n = L s₀ - 256 * t ∧ 256 ≤ n ∧ LInv s₀ t s
-    refine WP.loop (M := isa) Inv ?_ (L s₀) s ⟨0, by omega, hge, h⟩
+    refine WP.loop (M := isa) Inv ?_ (L s₀) s ⟨0, by omega_arith, hge, h⟩
     intro n s ⟨t, hn, hge, hi⟩
-    refine (body_ok (sve := sve) hp (by omega) hi).mono fun u ⟨hu, h5⟩ => ?_
+    refine (body_ok (sve := sve) hp (by omega_arith) hi).mono fun u ⟨hu, h5⟩ => ?_
     have hc := Xor.eval_nonzero_ofNat u .x5
-      (by omega : (L s₀ - 256 * (t + 1)) / 256 < 2 ^ 64) h5
+      (by omega_arith : (L s₀ - 256 * (t + 1)) / 256 < 2 ^ 64) h5
     by_cases he : L s₀ - 256 * (t + 1) < 256
     · left
       refine ⟨?_, t + 1, he, hu⟩
       simpa only [Nat.div_eq_of_lt he, ne_eq, not_true_eq_false, decide_false] using hc
     · right
-      refine ⟨?_, L s₀ - 256 * (t + 1), by omega, t + 1, rfl, by omega, hu⟩
-      have hne : (L s₀ - 256 * (t + 1)) / 256 ≠ 0 := by omega
+      refine ⟨?_, L s₀ - 256 * (t + 1), by omega_arith, t + 1, rfl, by omega_arith, hu⟩
+      have hne : (L s₀ - 256 * (t + 1)) / 256 ≠ 0 := by omega_arith
       simpa only [decide_eq_true hne] using hc
 
 end VG.Proof.ChaCha20.AArch64.Neon4

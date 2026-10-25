@@ -33,7 +33,7 @@ theorem exec_strb {s : State} {t n : Reg} {off : Nat} (ho : off < 4096)
     (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 1) :
     exec (.strb t n off) s =
       some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 1 ((s.read .w t).setWidth 8) } := by
-  simp only [exec, addr, Nat.mod_one, show off < 4096 * 1 by omega, and_self, ite_true, Option.bind_some,
+  simp only [exec, addr, Nat.mod_one, show off < 4096 * 1 by omega_arith, and_self, ite_true, Option.bind_some,
     State.store, h]
 
 theorem exec_umov_w0 (s : State) (d : Reg) (n : VReg) :
@@ -68,13 +68,13 @@ theorem storeEntry_run {t : State} {w : Reg} (hw : w ≠ .x13) {e : Nat} (he : e
   have rW : ∀ (u : State) (v : BitVec 32), (u.write .w .x13 v).read .w w = u.read .w w := fun u v => by
     simp only [State.read, gpr_write_of_ne u .w v hw]
   refine ⟨t₇, ?_, ?_, fun r hr => ?_, rfl⟩
-  · rw [storeEntry, runBlock_cons, exec_strb (by omega) (by simpa using hW 0 (by decide)), runStep_some,
+  · rw [storeEntry, runBlock_cons, exec_strb (by omega_arith) (by simpa using hW 0 (by decide)), runStep_some,
       runBlock_cons, exec_lsr_w (by decide), runStep_some, runBlock_cons,
-      exec_strb (by omega) (by exact hW 1 (by decide)), runStep_some,
+      exec_strb (by omega_arith) (by exact hW 1 (by decide)), runStep_some,
       runBlock_cons, exec_lsr_w (by decide), runStep_some, runBlock_cons,
-      exec_strb (by omega) (by exact hW 2 (by decide)), runStep_some,
+      exec_strb (by omega_arith) (by exact hW 2 (by decide)), runStep_some,
       runBlock_cons, exec_lsr_w (by decide), runStep_some, runBlock_cons,
-      exec_strb (by omega) (by exact hW 3 (by decide)), runStep_some, runBlock_nil]
+      exec_strb (by omega_arith) (by exact hW 3 (by decide)), runStep_some, runBlock_nil]
   · have hm : ∀ u o v, (wb u o v).mem = u.mem.write (u.gpr .x14 + BitVec.ofNat 64 o) 1 v := fun _ _ _ => rfl
     have hg : ∀ u o v, (wb u o v).gpr = u.gpr := fun _ _ _ => rfl
     have hr : ∀ u o v sz r, (wb u o v).read sz r = u.read sz r := fun _ _ _ _ _ => rfl
@@ -125,21 +125,21 @@ structure StoreOut (S : Addr) (j : Nat) (t t' : State) : Prop where
 
 theorem ofNat_sub_one {a : Nat} (h : 0 < a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 1 = BitVec.ofNat 64 (a - 1) := by
-  apply BitVec.eq_of_toNat_eq; simp; omega
+  apply BitVec.eq_of_toNat_eq; simp; omega_arith
 
 theorem ofNat_sub_two {a : Nat} (h : 2 ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 2 = BitVec.ofNat 64 (a - 2) := by
-  apply BitVec.eq_of_toNat_eq; simp; omega
+  apply BitVec.eq_of_toNat_eq; simp; omega_arith
 
 /-- The first nine outputs go to the P-array. -/
 theorem storeP_run {S : Addr} {j : Nat} {t : State} (I : StoreIn S j t) (hj : j < 9) :
     WP isa storeOut t (StoreOut S j t) := by
-  apply WP.ite true (eval_nonzero t .x9 I.x9 (by omega) |>.trans (by simp; omega)) _ (fun h => nomatch h)
+  apply WP.ite true (eval_nonzero t .x9 I.x9 (by omega_arith) |>.trans (by simp; omega_arith)) _ (fun h => nomatch h)
   intro _
   have a₀ : t.gpr .x12 + BitVec.ofNat 64 0 = S + BitVec.ofNat 64 (4096 + 4 * (2 * j)) := by
-    rw [I.x12, Offset.add_add]; congr 2; omega
+    rw [I.x12, Offset.add_add]; congr 2; omega_arith
   have a₄ : t.gpr .x12 + BitVec.ofNat 64 4 = S + BitVec.ofNat 64 (4096 + 4 * (2 * j + 1)) := by
-    rw [I.x12, Offset.add_add]; congr 2; omega
+    rw [I.x12, Offset.add_add]; congr 2; omega_arith
   let t₁ : State := { t with mem := t.mem.writeW (t.gpr .x12 + BitVec.ofNat 64 0) ((t.gpr .x6).setWidth 32) }
   let t₂ : State := { t₁ with mem := t₁.mem.writeW (t₁.gpr .x12 + BitVec.ofNat 64 4) ((t₁.gpr .x8).setWidth 32) }
   let t₃ := t₂.write .x .x12 (t₂.read .x .x12 + BitVec.ofNat _ 8)
@@ -149,33 +149,33 @@ theorem storeP_run {S : Addr} {j : Nat} {t : State} (I : StoreIn S j t) (hj : j 
     show (t.mem.writeW (t.gpr .x12 + BitVec.ofNat 64 0) _).writeW (t.gpr .x12 + BitVec.ofNat 64 4) _ = _
     rw [a₀, a₄]; rfl
   refine WP.of_runBlock ⟨t₄, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, rfl⟩⟩
-  · rw [runBlock_cons, exec_str_w (by decide) (by rw [a₀]; exact I.wr _ _ (by omega)), runStep_some,
-      runBlock_cons, exec_str_w (by decide) (by show InRegions t.wr (t.gpr .x12 + _) 4; rw [a₄]; exact I.wr _ _ (by omega)),
+  · rw [runBlock_cons, exec_str_w (by decide) (by rw [a₀]; exact I.wr _ _ (by omega_arith)), runStep_some,
+      runBlock_cons, exec_str_w (by decide) (by show InRegions t.wr (t.gpr .x12 + _) 4; rw [a₄]; exact I.wr _ _ (by omega_arith)),
       runStep_some,
       runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons, exec_subImm_x (by decide),
       runStep_some, runBlock_nil]
-  · rw [m₄, scheduleAt_writeW_P _ _ (by omega), scheduleAt_writeW_P _ _ (by omega),
-      set!_eq_set _ (by omega), set!_eq_set _ (by omega)]
+  · rw [m₄, scheduleAt_writeW_P _ _ (by omega_arith), scheduleAt_writeW_P _ _ (by omega_arith),
+      set!_eq_set _ (by omega_arith), set!_eq_set _ (by omega_arith)]
   · simp only [t₄, t₃, gpr_write_self, State.read, BitVec.setWidth_eq,
       gpr_write_of_ne _ .x _ (by decide : Reg.x9 ≠ .x12)]
     show t.gpr .x9 - _ = _
-    rw [I.x9, ofNat_sub_one (by omega) (by omega)]; congr 1
+    rw [I.x9, ofNat_sub_one (by omega_arith) (by omega_arith)]; congr 1
   · simp only [t₄, t₃, gpr_write_of_ne _ .x _ (by decide : Reg.x12 ≠ .x9), gpr_write_self, State.read,
       BitVec.setWidth_eq]
     show t.gpr .x12 + _ = _
-    rw [I.x12, Offset.add_add]; congr 2; omega
+    rw [I.x12, Offset.add_add]; congr 2; omega_arith
   · simp only [t₄, t₃, gpr_write_of_ne _ .x _ (by decide : Reg.x14 ≠ .x9),
       gpr_write_of_ne _ .x _ (by decide : Reg.x14 ≠ .x12)]
     show t.gpr .x14 = _
-    rw [I.x14, sDone, sDone, show j + 1 - 9 = j - 9 by omega]
+    rw [I.x14, sDone, sDone, show j + 1 - 9 = j - 9 by omega_arith]
   · simp only [t₄, t₃, gpr_write_of_ne _ .x _ (by decide : Reg.x10 ≠ .x9),
       gpr_write_of_ne _ .x _ (by decide : Reg.x10 ≠ .x12)]
     show t.gpr .x10 = _
-    rw [I.x10, sDone, sDone, show j + 1 - 9 = j - 9 by omega]
+    rw [I.x10, sDone, sDone, show j + 1 - 9 = j - 9 by omega_arith]
   · rw [m₄]
     refine (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_ |>.writeW (List.mem_singleton_self _) _ ?_
-    · exact Offset.contains_base S (by simp only [Size.bits]; omega) (by omega)
-    · exact Offset.contains_base S (by simp only [Size.bits]; omega) (by omega)
+    · exact Offset.contains_base S (by simp only [Size.bits]; omega_arith) (by omega_arith)
+    · exact Offset.contains_base S (by simp only [Size.bits]; omega_arith) (by omega_arith)
   · simp only [t₄, t₃, gpr_write_of_ne _ .x _ hr.1, gpr_write_of_ne _ .x _ hr.2.2.1]
     rfl
 
@@ -183,13 +183,13 @@ theorem storeP_run {S : Addr} {j : Nat} {t : State} (I : StoreIn S j t) (hj : j 
 theorem storeS_run {S : Addr} {j : Nat} {t : State} (I : StoreIn S j t) (hj : 9 ≤ j) :
     WP isa storeOut t (StoreOut S j t) := by
   have hlt := I.lt
-  apply WP.ite false (eval_nonzero t .x9 I.x9 (by omega) |>.trans (by simp; omega)) (fun h => nomatch h)
+  apply WP.ite false (eval_nonzero t .x9 I.x9 (by omega_arith) |>.trans (by simp; omega_arith)) (fun h => nomatch h)
   intro _
   have ad : ∀ (u : State), u.gpr .x14 = t.gpr .x14 → ∀ k < 2, ∀ b < 4,
       u.gpr .x14 + BitVec.ofNat 64 (256 * b + k) = S + BitVec.ofNat 64 (entryOff (2 * j + k) b) :=
     fun u hu k hk b hb => by rw [hu, I.x14, Offset.add_add, entryOff_sbox hj hlt k hk]
   have inS : ∀ k < 2, ∀ b < 4, entryOff (2 * j + k) b + 1 ≤ 4168 := fun k hk b hb => by
-    have := entryOff_lt (i := 2 * j + k) (b := b) (by omega) hb; omega
+    have := entryOff_lt (i := 2 * j + k) (b := b) (by omega_arith) hb; omega_arith
   have W : ∀ (u : State), u.gpr .x14 = t.gpr .x14 → u.wr = t.wr → ∀ k < 2, ∀ b < 4,
       InRegions u.wr (u.gpr .x14 + BitVec.ofNat 64 (256 * b + k)) 1 := fun u hu hw k hk b hb => by
     rw [ad u hu k hk b hb, hw]; exact I.wr _ _ (inS k hk b hb)
@@ -217,11 +217,11 @@ theorem storeS_run {S : Addr} {j : Nat} {t : State} (I : StoreIn S j t) (hj : 9 
       ad t rfl 0 (by decide) 2 (by decide), ad t rfl 0 (by decide) 3 (by decide), Nat.add_zero]
   have sched₂ : scheduleAt t₂.mem S =
       ((scheduleAt t.mem S).set! (2 * j) (t.read .w .x6)).set! (2 * j + 1) (t.read .w .x8) := by
-    rw [mem₂, scheduleAt_write_bytes _ _ (by omega), scheduleAt_write_bytes _ _ (by omega),
-      set!_eq_set _ (by omega), set!_eq_set _ (by omega)]
+    rw [mem₂, scheduleAt_write_bytes _ _ (by omega_arith), scheduleAt_write_bytes _ _ (by omega_arith),
+      set!_eq_set _ (by omega_arith), set!_eq_set _ (by omega_arith)]
   have fr₂ : Frame [⟨S, 4168⟩] t.mem t₂.mem := by
     have c : ∀ k < 2, ∀ b < 4, (⟨S, 4168⟩ : Region).Contains (S + BitVec.ofNat 64 (entryOff (2 * j + k) b)) 1 :=
-      fun k hk b hb => Offset.contains_base S (inS k hk b hb) (by have := inS k hk b hb; omega)
+      fun k hk b hb => Offset.contains_base S (inS k hk b hb) (by have := inS k hk b hb; omega_arith)
     have mm := List.mem_singleton_self (⟨S, 4168⟩ : Region)
     rw [mem₂]
     exact ((((((((Frame.refl _ _).write mm _ (c 0 (by decide) 0 (by decide))).write mm _
@@ -234,11 +234,11 @@ theorem storeS_run {S : Addr} {j : Nat} {t : State} (I : StoreIn S j t) (hj : 9 
   let t₄ := t₃.write .x .x10 (t₃.read .x .x10 - BitVec.ofNat _ 2)
   have hg₂ : ∀ r, r ≠ .x13 → t₂.gpr r = t.gpr r := fun r hr => (g₂ r hr).trans (g₁ r hr)
   have e₂' : t₂ = { t with gpr := t₂.gpr, mem := t₂.mem } := by rw [e₂, e₁]
-  have hr10 : sDone j % 256 ≤ 254 := by unfold sDone; omega
+  have hr10 : sDone j % 256 ≤ 254 := by unfold sDone; omega_arith
   have x10₄ : t₄.gpr .x10 = BitVec.ofNat 64 (256 - sDone j % 256 - 2) := by
     simp only [t₄, t₃, gpr_write_self, State.read, BitVec.setWidth_eq,
       gpr_write_of_ne _ .x _ (by decide : Reg.x10 ≠ .x14)]
-    rw [hg₂ _ (by decide), I.x10, ofNat_sub_two (by omega) (by omega)]
+    rw [hg₂ _ (by decide), I.x10, ofNat_sub_two (by omega_arith) (by omega_arith)]
   have x14₄ : t₄.gpr .x14 = S + BitVec.ofNat 64 (1024 * (sDone j / 256) + sDone j % 256 + 2) := by
     simp only [t₄, t₃, gpr_write_of_ne _ .x _ (by decide : Reg.x14 ≠ .x10), gpr_write_self, State.read,
       BitVec.setWidth_eq]
@@ -249,18 +249,18 @@ theorem storeS_run {S : Addr} {j : Nat} {t : State} (I : StoreIn S j t) (hj : 9 
   have g₄ : ∀ r, StoreRegs r → t₄.gpr r = t.gpr r := fun r hr => g₄' r hr.2.2.2.1 hr.2.2.2.2 hr.2.1
   have e₄ : t₄ = { t with gpr := t₄.gpr, mem := t₄.mem } := by
     simp only [t₄, t₃, State.write]; rw [e₂']
-  have x9' : t.gpr .x9 = BitVec.ofNat 64 (9 - (j + 1)) := by rw [I.x9, show 9 - j = 9 - (j + 1) by omega]
+  have x9' : t.gpr .x9 = BitVec.ofNat 64 (9 - (j + 1)) := by rw [I.x9, show 9 - j = 9 - (j + 1) by omega_arith]
   have x12' : t.gpr .x12 = S + BitVec.ofNat 64 (4096 + 8 * min (j + 1) 9) := by
-    rw [I.x12, show min j 9 = min (j + 1) 9 by omega]
+    rw [I.x12, show min j 9 = min (j + 1) 9 by omega_arith]
   apply WP.seq
   refine WP.of_runBlock ⟨t₄, ?_, ?_⟩
   · rw [List.append_assoc]
     refine cat_run r₁ (cat_run r₂ ?_)
     rw [runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons, exec_subImm_x (by decide),
       runStep_some, runBlock_nil]
-  apply WP.ite _ (eval_zero t₄ .x10 x10₄ (by omega))
+  apply WP.ite _ (eval_zero t₄ .x10 x10₄ (by omega_arith))
   · intro hz
-    have h254 : sDone j % 256 = 254 := by simp at hz; omega
+    have h254 : sDone j % 256 = 254 := by simp at hz; omega_arith
     let t₅ := t₄.write .x .x14 (t₄.read .x .x14 + BitVec.ofNat _ 768)
     let t₆ := t₅.write .x .x10 ((256 : BitVec 16).setWidth 64 <<< (16 * 0))
     refine WP.of_runBlock ⟨t₆, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_⟩⟩
@@ -274,20 +274,20 @@ theorem storeS_run {S : Addr} {j : Nat} {t : State} (I : StoreIn S j t) (hj : 9 
       rw [g₄' _ (by decide) (by decide) (by decide)]; exact x12'
     · simp only [t₆, t₅, gpr_write_of_ne _ .x _ (by decide : Reg.x14 ≠ .x10), gpr_write_self, State.read,
         BitVec.setWidth_eq]
-      rw [x14₄, Offset.add_add]; congr 2; unfold sDone at h254 ⊢; omega
+      rw [x14₄, Offset.add_add]; congr 2; unfold sDone at h254 ⊢; omega_arith
     · simp only [t₆, gpr_write_self]
-      rw [show sDone (j + 1) % 256 = 0 by unfold sDone at h254 ⊢; omega]; rfl
+      rw [show sDone (j + 1) % 256 = 0 by unfold sDone at h254 ⊢; omega_arith]; rfl
     · exact fr₂
     · simp only [t₆, t₅, gpr_write_of_ne _ .x _ hr.2.1, gpr_write_of_ne _ .x _ hr.2.2.2.2]
       exact g₄ r hr
     · simp only [t₆, t₅, State.write]; rw [e₄]
   · intro hz
-    have h254 : sDone j % 256 ≠ 254 := by simp at hz; omega
+    have h254 : sDone j % 256 ≠ 254 := by simp at hz; omega_arith
     refine WP.block_nil ⟨sched₂, ?_, ?_, ?_, ?_, fr₂, g₄, e₄⟩
     · rw [g₄' _ (by decide) (by decide) (by decide)]; exact x9'
     · rw [g₄' _ (by decide) (by decide) (by decide)]; exact x12'
-    · rw [x14₄]; congr 2; unfold sDone at h254 ⊢; omega
-    · rw [x10₄]; congr 1; unfold sDone at h254 ⊢; omega
+    · rw [x14₄]; congr 2; unfold sDone at h254 ⊢; omega_arith
+    · rw [x10₄]; congr 1; unfold sDone at h254 ⊢; omega_arith
 
 /-! ## The loop -/
 
@@ -362,7 +362,7 @@ theorem enc_step {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s₀)
     · rw [g₂' _ (by decide) (by decide) (by decide) (by decide)]; exact I.x14
     · rw [g₂' _ (by decide) (by decide) (by decide) (by decide)]; exact I.x10
   have st : WP isa storeOut u₂ (StoreOut S j u₂) :=
-    if h : j < 9 then storeP_run SI h else storeS_run SI (by omega)
+    if h : j < 9 then storeP_run SI h else storeS_run SI (by omega_arith)
   apply WP.seq
   refine WP.mono st fun u₃ O => ?_
   have v₃ : u₃.v = u₁.v := by rw [O.eq]; rfl
@@ -375,7 +375,7 @@ theorem enc_step {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s₀)
       show bReg 0 = .v8 from rfl, show aReg 0 = .v4 from rfl, v₃]
   have g₄ : ∀ r, r ≠ .x15 → u₄.gpr r = u₃.gpr r := fun r hr => by
     simp only [u₄, gpr_write_of_ne _ .x _ hr]; rfl
-  refine WP.of_runBlock ⟨u₄, ?_, ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_,
+  refine WP.of_runBlock ⟨u₄, ?_, ⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_,
     fun r hr => ?_, ?_⟩⟩
   · rw [runBlock_cons, exec_vmov, runStep_some, runBlock_cons, exec_vmov, runStep_some, runBlock_cons,
       exec_vmov, runStep_some, runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_nil]
@@ -392,7 +392,7 @@ theorem enc_step {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s₀)
   · simp only [u₄, gpr_write_self, State.read, BitVec.setWidth_eq]
     show u₃.gpr .x15 - _ = _
     rw [O.gpr _ (by decide), g₂' _ (by decide) (by decide) (by decide) (by decide), I.x15,
-      ofNat_sub_one (by omega) (by omega)]
+      ofNat_sub_one (by omega_arith) (by omega_arith)]
     congr 1
   · rw [g₄ _ (by decide)]; exact O.x9
   · rw [g₄ _ (by decide)]; exact O.x12
@@ -443,15 +443,15 @@ theorem encryptions_run {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv 
       runStep_some, runBlock_cons, exec_movz_x0, runStep_some, runBlock_cons, exec_movz_x0, runStep_some,
       runBlock_nil]
   refine WP.loop (M := isa) (fun m u => ∃ j, j < 521 ∧ m = 521 - j ∧ EncInv key S s₀ j u) ?_ 521 s₇
-    ⟨0, by omega, rfl, ?_⟩
+    ⟨0, by omega_arith, rfl, ?_⟩
   · intro m u ⟨j, hj, hm, I⟩
     refine WP.mono (enc_step E hj I) fun u' I' => ?_
-    have flag := eval_nonzero u' .x15 I'.x15 (by omega)
+    have flag := eval_nonzero u' .x15 I'.x15 (by omega_arith)
     by_cases h : j + 1 = 521
-    · left; exact ⟨by rw [flag]; simp; omega, h ▸ I'⟩
-    · right; exact ⟨by rw [flag]; simp; omega, 521 - (j + 1), by omega, j + 1, by omega, rfl, I'⟩
+    · left; exact ⟨by rw [flag]; simp; omega_arith, h ▸ I'⟩
+    · right; exact ⟨by rw [flag]; simp; omega_arith, 521 - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, I'⟩
   · have hm : s₇.mem = s₀.mem := by simp only [s₇, s₆, s₅, s₄, s₃, s₂, s₁, mem_write, mem_setV]
-    refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, fun r hr => ?_, ?_⟩
+    refine ⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, fun r hr => ?_, ?_⟩
     · rw [hm, hK]; rfl
     · simp only [ksIter_zero]
       simp only [s₇, s₆, s₅, s₄, s₃, s₂, s₁, v_write, v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v11),

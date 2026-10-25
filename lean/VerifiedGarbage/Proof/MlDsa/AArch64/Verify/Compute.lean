@@ -71,9 +71,9 @@ structure SCChk (p : Params) (r : Nat) (ws : List (Ptr × Nat)) : Prop where
   rows : ∀ r' < r, keepB (vR p) (vW p) ws (rowP p r') (w1Len p) = true
 
 theorem ar_lt {p : Params} {r c : Nat} (hr : r < p.k) (hc : c < p.ℓ) : p.ℓ * r + c < p.k * p.ℓ := by
-  have := Nat.mul_le_mul_left p.ℓ (show r + 1 ≤ p.k by omega)
+  have := Nat.mul_le_mul_left p.ℓ (show r + 1 ≤ p.k by omega_arith)
   rw [Nat.mul_succ, Nat.mul_comm p.ℓ p.k] at this
-  omega
+  omega_arith
 
 theorem SC.keep {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre p S σ) {h : List (Vector Bool _)}
     {A' : Nat → Nat → Poly} {c0 : Poly} {q : Bool} {j : Nat} {cn : Bool} {r : Nat} {s s' : State}
@@ -137,12 +137,12 @@ theorem SCChk.x28 {p : Params} (hF : VFacts p) {r : Nat} (hr : r ≤ p.k) {o n :
       keepB (vR p) (vW p) [((.x28, o), n)] (.x28, o') l = true :=
     fun h => vkeepB_one_same h h5
   have hw : w1Len p * r ≤ 1024 := by
-    have := Nat.mul_le_mul_left (w1Len p) hr; rw [Nat.mul_comm (w1Len p) p.k] at this; have := hF.w1; omega
+    have := Nat.mul_le_mul_left (w1Len p) hr; rw [Nat.mul_comm (w1Len p) p.k] at this; have := hF.w1; omega_arith
   simp only [SV, oP] at h1 h2 h3 h4
   refine ⟨?_, bx ?_ ?_, fun r' hr' c hc => bx ?_ ?_, fun i hi' => bx ?_ ?_, bx ?_ ?_, fun r' hr' => bx ?_ ?_⟩
   · have hpk := hF.pk; have hsg := hF.sig
     simp only [vcChk, Bool.and_eq_true]
-    exact ⟨⟨⟨bx (by rw [hs]; simp only [SV]; omega) (by simp only [SV]; omega),
+    exact ⟨⟨⟨bx (by rw [hs]; simp only [SV]; omega_arith) (by simp only [SV]; omega_arith),
       vkeepB_one_diff (by decide) ((vinB_x25 p 0 _).trans (decide_eq_true (Nat.le_of_eq (Nat.zero_add _)))) hi⟩,
       vkeepB_one_diff (by decide) ((vinB_x26 p 0 _).trans (decide_eq_true (Nat.le_of_eq (Nat.zero_add _)))) hi⟩,
       vkeepB_one_diff (by decide) ((vinB_x27 p 0 _).trans (decide_eq_true (Nat.le_of_eq (Nat.zero_add _)))) hi⟩
@@ -164,8 +164,8 @@ theorem SCChk.cons_x28 {p : Params} (hF : VFacts p) {r : Nat} (hr : r ≤ p.k) {
     (h4 : o + n ≤ oP (p.k * p.ℓ + 1) ∨ oP (p.k * p.ℓ + (1 + p.k + p.ℓ + 1)) ≤ o) (h5 : o + n ≤ scrLen p)
     (h : SCChk p r ws) : SCChk p r (((.x28, o), n) :: ws) := by
   have : w1Len p * r ≤ 1024 := by
-    have := Nat.mul_le_mul_left (w1Len p) hr; rw [Nat.mul_comm (w1Len p) p.k] at this; have := hF.w1; omega
-  exact (SCChk.x28 hF hr h1 h2 (by omega) h4 h5).append (ws₁ := [_]) h
+    have := Nat.mul_le_mul_left (w1Len p) hr; rw [Nat.mul_comm (w1Len p) p.k] at this; have := hF.w1; omega_arith
+  exact (SCChk.x28 hF hr h1 h2 (by omega_arith) h4 h5).append (ws₁ := [_]) h
 
 /-- Proves an `SCChk` of writes to `scratch` by `SCChk.cons_x28`, with `hr : r ≤ p.k`. -/
 tactic_template "scchks " hF:term:max hr:term:max : tactic => `(tactic| (
@@ -183,7 +183,7 @@ tactic_template "scchks " hF:term:max hr:term:max : tactic => `(tactic| (
 
 theorem seedOf_ar (p : Params) (σ : State) {r c : Nat} (hc : c < p.ℓ) :
     seedOf p σ (p.ℓ * r + c) = aSeed (vPk p σ) r c := by
-  have hl : 0 < p.ℓ := by omega
+  have hl : 0 < p.ℓ := by omega_arith
   rw [seedOf, Nat.mul_add_div hl, Nat.div_eq_of_lt hc, Nat.add_zero, Nat.mul_add_mod, Nat.mod_eq_of_lt hc]
 
 theorem vb_sc {p : Params} {σ s : State} (hs : VB p σ s) : SCx p 0 false 0 σ s := by
@@ -196,7 +196,7 @@ theorem vb_sc {p : Params} {σ s : State} (hs : VB p σ s) : SCx p 0 false 0 σ 
   · obtain ⟨b, hb⟩ := (h1 hq').1 _ (ar_lt hr hc)
     exact ⟨b, by rw [← seedOf_ar p σ hc]; exact hb⟩
   · rcases h0 hq' with ⟨e, he, hn⟩ | hn
-    · have hl : 0 < p.ℓ := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.mul_zero] at he; omega
+    · have hl : 0 < p.ℓ := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.mul_zero] at he; omega_arith
       refine .inl ⟨e / p.ℓ, Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact he), e % p.ℓ, Nat.mod_lt _ hl, ?_⟩
       rw [← seedOf_ar p σ (Nat.mod_lt _ hl), Nat.div_add_mod]; exact hn
     · exact .inr hn
@@ -225,16 +225,16 @@ theorem nttZ_vpiece {i : Nat} (hi : i < p.ℓ) :
   refine ⟨hs.vc.step hF hp hP' (by unfold vcChk; vlayd), hs.hh, L.keepHint hP' (by vlayd) hs.hint, hs.nok, hs.gd,
     fun r' hr' c hc' => L.keepPoly hP' (by have := ar_lt hr' hc'; vlayd) (hs.a r' hr' c hc'), fun i' hi' => ?_,
     L.keepPoly hP' (by vlayd) hs.c, fun _ h => absurd h (Nat.not_lt_zero _), by rw [x']; exact hs.x24⟩
-  rcases (by omega : i' < i ∨ i' = i ∨ i < i') with hlt | rfl | hgt
-  · rw [ifp (by omega : i' < i + 1)]
+  rcases (by omega_arith : i' < i ∨ i' = i ∨ i < i') with hlt | rfl | hgt
+  · rw [ifp (by omega_arith : i' < i + 1)]
     have := L.keepPoly hP' (by vlayd) (hs.z i' hi')
     rwa [ifp hlt] at this
   · rw [ifp (Nat.lt_succ_self _), hP'.pa (show Reg.x28 ∈ keptRegs by decide)]
     rw [hz.2] at hq
     exact hq
-  · rw [ifn (by omega : ¬ i' < i + 1)]
+  · rw [ifn (by omega_arith : ¬ i' < i + 1)]
     have := L.keepPoly hP' (by vlayd) (hs.z i' hi')
-    rwa [ifn (by omega : ¬ i' < i)] at this
+    rwa [ifn (by omega_arith : ¬ i' < i)] at this
 
 theorem nttC_vpiece : VPiece p S (SCx p p.ℓ false 0) (SCx p p.ℓ true 0) (nttAt P (sc oSS) (cP p)) := by
   have hc : ipChk (vR p) (vW p) (cP p) (sc oSS) = true := by
@@ -298,7 +298,7 @@ theorem rowI_two {p : Params} (hF : VFacts p) {S r : Nat} {f : State → List (V
 
 theorem hintRow_pa (p : Params) (s : State) (r : Nat) :
     pa s (hP p r) = pa s (hP p 0) + BitVec.ofNat 64 (1024 * r) := by
-  have e : oP (p.k * p.ℓ + (1 + r)) = oP (p.k * p.ℓ + (1 + 0)) + 1024 * r := by simp only [oP]; omega
+  have e : oP (p.k * p.ℓ + (1 + r)) = oP (p.k * p.ℓ + (1 + 0)) + 1024 * r := by simp only [oP]; omega_arith
   rw [show pa s (hP p r) = s.gpr .x28 + BitVec.ofNat 64 (oP (p.k * p.ℓ + (1 + r))) from rfl,
     show pa s (hP p 0) = s.gpr .x28 + BitVec.ofNat 64 (oP (p.k * p.ℓ + (1 + 0))) from rfl, e, BitVec.ofNat_add,
     BitVec.add_assoc]
@@ -327,7 +327,7 @@ include hP hF hr
 
 theorem dot0_vpiece : VPiece p S (SCx p p.ℓ true r) (RowI p r (F1 p r 1)) (mulAt P (wP p) (aP (p.ℓ * r)) (zP p 0)) := by
   have hl := hF.l
-  have hc := mulW_chk hF hr (c := 0) (by omega)
+  have hc := mulW_chk hF hr (c := 0) (by omega_arith)
   rw [Nat.add_zero] at hc
   refine ⟨fun σ s hp ⟨h, A', c0, q, hs⟩ => ?_, vrel_of (Q := fun x y => VTwo p S x y ∧
     (Reduced x.mem (pa x (aP (p.ℓ * r))) ∧ Reduced x.mem (pa x (zP p 0))) ∧
@@ -335,9 +335,9 @@ theorem dot0_vpiece : VPiece p S (SCx p p.ℓ true r) (RowI p r (F1 p r 1)) (mul
     (mulAt_tr hP.mul (vOk p) hc fun x y h => ⟨h.1.lx, h.1.ly, h.2.1, h.2.2, h.1.same⟩)
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, _, h₁⟩ ⟨_, _, _, _, h₂⟩ => ⟨vc_two hF p₁ p₂ pub h₁.vc h₂.vc, ?_, ?_⟩⟩
   · have L := hs.vc.lay hF hp
-    have hA := hs.a r hr 0 (by omega)
+    have hA := hs.a r hr 0 (by omega_arith)
     rw [Nat.add_zero] at hA
-    have hZ := hs.zHat (c := 0) (by omega)
+    have hZ := hs.zHat (c := 0) (by omega_arith)
     refine WP.mono (mulAt_ok hP.s64 hP.mul L hc hA.1 hZ.1) fun s' ⟨hP', x', hq⟩ =>
       ⟨h, A', c0, q, hs.keep hF hp hP' (by scchks hF (Nat.le_of_lt hr)) x', ?_⟩
     rw [hA.2, hZ.2] at hq
@@ -345,8 +345,8 @@ theorem dot0_vpiece : VPiece p S (SCx p p.ℓ true r) (RowI p r (F1 p r 1)) (mul
     rw [hP'.pa (show Reg.x28 ∈ keptRegs by decide)]
     simp only [dotAcc, Proof.MlDsa.Verify.add_zero_left]
     exact hq
-  · have := h₁.a r hr 0 (by omega); rw [Nat.add_zero] at this; exact ⟨this.1, (h₁.zHat (c := 0) (by omega)).1⟩
-  · have := h₂.a r hr 0 (by omega); rw [Nat.add_zero] at this; exact ⟨this.1, (h₂.zHat (c := 0) (by omega)).1⟩
+  · have := h₁.a r hr 0 (by omega_arith); rw [Nat.add_zero] at this; exact ⟨this.1, (h₁.zHat (c := 0) (by omega_arith)).1⟩
+  · have := h₂.a r hr 0 (by omega_arith); rw [Nat.add_zero] at this; exact ⟨this.1, (h₂.zHat (c := 0) (by omega_arith)).1⟩
 
 theorem dotS_vpiece {j : Nat} (hj : j < p.ℓ) : VPiece p S (RowI p r (F1 p r j)) (RowI p r (F1 p r (j + 1)))
     (mulAddAt P (wP p) (aP (p.ℓ * r + j)) (zP p j)) := by
@@ -372,8 +372,8 @@ theorem dot_vpiece : VPiece p S (SCx p p.ℓ true r) (RowI p r (F1 p r p.ℓ)) (
   unfold dot
   refine (dot0_vpiece hP hF hr).seq ?_
   refine VPiece.mono (VPiece.seqR (I := fun j => RowI p r (F1 p r j)) (p.ℓ - 1) 1
-    fun j h1 h2 => dotS_vpiece hP hF hr (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
-  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h
+    fun j h1 h2 => dotS_vpiece hP hF hr (by omega_arith)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega_arith] at h
 
 theorem t1_vpiece : VPiece p S (RowI p r (F1 p r p.ℓ)) (RowI p r (F3 p r)) (unpackT1At P (.x25, 32 + 320 * r) (tmP p)) := by
   have hc : rwChk (vR p) (vW p) (.x25, 32 + 320 * r) 320 (tmP p) 1024 = true := by
@@ -385,7 +385,7 @@ theorem t1_vpiece : VPiece p S (RowI p r (F1 p r p.ℓ)) (RowI p r (F3 p r)) (un
   refine WP.mono (t1At_ok hP.s64 hP.unpackT1 L hc) fun s' ⟨hP', x', hq⟩ =>
     ⟨h, A', c0, q, hs.keep hF hp hP' (by scchks hF (Nat.le_of_lt hr)) x', L.keepPoly hP' (by
       have := hF.k; have := hF.l; have := hF.kl; have := hF.scr; vlayd) hw, ?_⟩
-  rw [hs.vc.pkSlice (by rw [hF.pk]; omega)] at hq
+  rw [hs.vc.pkSlice (by rw [hF.pk]; omega_arith)] at hq
   rw [hP'.pa (show Reg.x28 ∈ keptRegs by decide)]
   exact hq
 
@@ -509,7 +509,7 @@ theorem sbpR_vpiece : VPiece p S (RowI p r (F8 p r)) (SCx p p.ℓ true (r + 1))
       scchks hF (Nat.le_of_lt hr)) x'
     refine ⟨h, A', c0, q, ⟨hs'.vc, hs'.hh, hs'.hint, hs'.nok, hs'.gd, hs'.a, hs'.z, hs'.c, fun r' hr' => ?_,
       hs'.x24⟩⟩
-    rcases (by omega : r' < r ∨ r' = r) with hlt | rfl
+    rcases (by omega_arith : r' < r ∨ r' = r) with hlt | rfl
     · exact hs'.rows r' hlt
     · rw [hP'.pa (show Reg.x28 ∈ keptRegs by decide), hq, hw]
   · obtain ⟨_, _, _, _, _, w⟩ := h₁; exact w1_bound hF w

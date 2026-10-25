@@ -163,16 +163,16 @@ theorem pick2_tt (a b : BitVec 64) : pick2 a b true true = b := by
   simp only [pick2, ite_true, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : j < 32
   · simp [h]
-  · simp only [h, decide_false, ite_false, decide_eq_true (show j - 32 < 32 by omega), Bool.true_and]
-    exact congrArg _ (by omega)
+  · simp only [h, decide_false, ite_false, decide_eq_true (show j - 32 < 32 by omega_arith), Bool.true_and]
+    exact congrArg _ (by omega_arith)
 
 theorem pick2_ff (a b : BitVec 64) : pick2 a b false false = a := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [pick2, Bool.false_eq_true, ite_false, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : j < 32
   · simp [h]
-  · simp only [h, decide_false, ite_false, decide_eq_true (show j - 32 < 32 by omega), Bool.true_and]
-    exact congrArg _ (by omega)
+  · simp only [h, decide_false, ite_false, decide_eq_true (show j - 32 < 32 by omega_arith), Bool.true_and]
+    exact congrArg _ (by omega_arith)
 
 theorem pick2_sel (a b : BitVec 64) (sel k : Nat) (hs : (selQ sel k).isSome = true) :
     pick2 a b (sel.testBit (2 * k)) (sel.testBit (2 * k + 1)) = if selQ sel k = some true then b else a := by
@@ -241,18 +241,18 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     rw [← ea, ← eb]
     have := BitVec.isLt (a.eval s₀ k + b.eval s₀ k)
     rw [BitVec.toNat_add] at this
-    refine ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega) this, ?_⟩
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+    refine ⟨Nat.mod_eq_of_lt (by omega_arith), capW_ge (by rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith) this, ?_⟩
+    rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   | sub a b iha ihb =>
     intro k hk ho
     simp only [T.ok, Bool.and_eq_true, decide_eq_true_eq] at ho
     obtain ⟨⟨hs, oa⟩, ob⟩ := ho
     obtain ⟨ea, ba, la⟩ := iha hk oa
     obtain ⟨eb, bb, lb⟩ := ihb hk ob
-    have hle : (b.eval s₀ k).toNat ≤ (a.eval s₀ k).toNat := by omega
+    have hle : (b.eval s₀ k).toNat ≤ (a.eval s₀ k).toNat := by omega_arith
     simp only [T.eval, T.nat, T.bnd, T.lb]
     rw [BitVec.toNat_sub_of_le (BitVec.le_def.2 hle), ← ea, ← eb]
-    exact ⟨rfl, by omega, by omega⟩
+    exact ⟨rfl, by omega_arith, by omega_arith⟩
   | and a b iha ihb =>
     intro k hk ho
     simp only [T.ok, Bool.and_eq_true] at ho
@@ -302,13 +302,13 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     split
     · rename_i h; rw [ite_eq_left h] at ho; exact ⟨(iha hk ho).1, (iha hk ho).2.1, Nat.zero_le _⟩
     · rename_i h; rw [ite_eq_right h] at ho
-      exact ⟨(ihb (by omega) ho).1, (ihb (by omega) ho).2.1, Nat.zero_le _⟩
+      exact ⟨(ihb (by omega_arith) ho).1, (ihb (by omega_arith) ho).2.1, Nat.zero_le _⟩
   | unph a b iha ihb =>
     intro k hk ho
     simp only [T.eval, T.nat, T.bnd, T.ok, T.lb] at ho ⊢
     split
     · rename_i h; rw [ite_eq_left h] at ho
-      exact ⟨(iha (by omega) ho).1, (iha (by omega) ho).2.1, Nat.zero_le _⟩
+      exact ⟨(iha (by omega_arith) ho).1, (iha (by omega_arith) ho).2.1, Nat.zero_le _⟩
     · rename_i h; rw [ite_eq_right h] at ho; exact ⟨(ihb hk ho).1, (ihb hk ho).2.1, Nat.zero_le _⟩
   | perm a o ih =>
     intro k _ ho
@@ -340,8 +340,8 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
       simp only [T.eval, T.nat, T.bnd, T.lb]
       rw [mad52_toNat]
       simp only [Bool.false_eq_true, ite_false]
-      rw [← ec, ← ea, ← eb, Nat.mod_eq_of_lt (by omega)]
-      exact ⟨rfl, capW_ge (by omega) (by omega), by omega⟩
+      rw [← ec, ← ea, ← eb, Nat.mod_eq_of_lt (by omega_arith)]
+      exact ⟨rfl, capW_ge (by omega_arith) (by omega_arith), by omega_arith⟩
     · simp only [T.ok, Bool.and_eq_true, decide_eq_true_eq] at ho
       obtain ⟨⟨⟨hs, oc⟩, oa⟩, ob⟩ := ho
       obtain ⟨ec, bc, lc⟩ := ihc hk oc
@@ -351,16 +351,16 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
       simp only [T.eval, T.nat, T.bnd, T.lb]
       rw [mad52_toNat]
       simp only [ite_true]
-      rw [← ec, ← ea, ← eb, Nat.mod_eq_of_lt (by omega)]
-      exact ⟨rfl, capW_ge (by omega) (by omega), by omega⟩
+      rw [← ec, ← ea, ← eb, Nat.mod_eq_of_lt (by omega_arith)]
+      exact ⟨rfl, capW_ge (by omega_arith) (by omega_arith), by omega_arith⟩
   | p2 a b hi iha ihb =>
     intro k hk ho
     simp only [T.eval, T.nat, T.bnd, T.ok, T.lb] at ho ⊢
     split
     · rename_i h; rw [ite_eq_left h] at ho
-      exact ⟨(iha (by split <;> omega) ho).1, (iha (by split <;> omega) ho).2.1, Nat.zero_le _⟩
+      exact ⟨(iha (by split <;> omega_arith) ho).1, (iha (by split <;> omega_arith) ho).2.1, Nat.zero_le _⟩
     · rename_i h; rw [ite_eq_right h] at ho
-      exact ⟨(ihb (by split <;> omega) ho).1, (ihb (by split <;> omega) ho).2.1, Nat.zero_le _⟩
+      exact ⟨(ihb (by split <;> omega_arith) ho).1, (ihb (by split <;> omega_arith) ho).2.1, Nat.zero_le _⟩
   | low a ih =>
     intro k hk ho
     simp only [T.eval, T.nat, T.bnd, T.ok, T.lb] at ho ⊢

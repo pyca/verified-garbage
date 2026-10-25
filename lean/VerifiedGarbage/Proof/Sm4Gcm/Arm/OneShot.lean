@@ -48,7 +48,7 @@ theorem oneLay {s₀ : State} (h : onePre n wi s₀) : Lay (s₀.gpr .r0) (oSt s
 
 theorem oSt_addr {s₀ : State} (h : onePre n wi s₀) :
     State.addr (oSt s₀ wi) = State.addr (arg s₀ wi) + BitVec.ofNat 64 16 :=
-  addr_add (by have := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1; omega)
+  addr_add (by have := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1; omega_arith)
 
 /-- A buffer apart from `W` is apart from the state. -/
 theorem oSt_disj {s₀ : State} (h : onePre n wi s₀) {R : Region} (hR : R.Disjoint ⟨State.addr (arg s₀ wi), 768⟩) :
@@ -176,10 +176,10 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
   have hiv : bytesAt s₁.mem (State.addr (s₀.gpr .r1)) (s₀.gpr .r2).toNat =
       bytesAt s₀.mem (State.addr (s₀.gpr .r1)) (s₀.gpr .r2).toNat :=
     bytesAt_frame h1.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dnW.sub_right (Lay.wSub (by decide))) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact dnW.sub_right (Lay.wSub (by decide))) (by omega_arith)
   rw [hiv] at jo
   have hk₂ := h1.args.frame spf jo.frame (one_argsJ0 h) sp₂ rd₂ wr₂
-  obtain ⟨a0, v0⟩ := hk₂.at spf hin 0 (by omega) (show 4 * 0 = 0 from rfl)
+  obtain ⟨a0, v0⟩ := hk₂.at spf hin 0 (by omega_arith) (show 4 * 0 = 0 from rfl)
   have h8₂ := he₂.r8
   obtain ⟨s₃, run₃, h4₃, h5₃, h6₃, g₃, k₃⟩ : ∃ s₃, runBlock isa [.mov .r4 (.reg .r8), .ldrSp .r5 0, .mov .r6 (imm 0)] s₂ =
       some s₃ ∧ s₃.gpr .r4 = s₀.gpr .r3 ∧ s₃.gpr .r5 = arg s₀ 0 ∧ s₃.gpr .r6 = BitVec.ofNat 32 0 ∧
@@ -200,9 +200,9 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
       oSt_disj h daW, daW, ba⟩
   have haad : bytesAt s₃.mem (State.addr (s₀.gpr .r3)) (arg s₀ 0).toNat =
       bytesAt s₀.mem (State.addr (s₀.gpr .r3)) (arg s₀ 0).toNat := by
-    rw [k₃.mem, bytesAt_frame jo.frame (one_dataJ0 h daW ba) (by omega),
+    rw [k₃.mem, bytesAt_frame jo.frame (one_dataJ0 h daW ba) (by omega_arith),
       bytesAt_frame h1.frame (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact daW.sub_right (Lay.wSub (by decide))) (by omega)]
+        simp only [List.mem_singleton] at hr; subst hr; exact daW.sub_right (Lay.wSub (by decide))) (by omega_arith)]
   have ai : AbsIn (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp k7 (s₀.gpr .r3) 16 (ctxH s₀.mem (State.addr (s₀.gpr .r0))) []
       (s₀.gpr .r3) (arg s₀ 0).toNat s₃ :=
     ⟨he₃, h4₃, by rw [h5₃]; simp, by rw [h6₃]; rfl, hda, by rw [k₃.mem]; exact jo.hH⟩
@@ -210,7 +210,7 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
   obtain ⟨ab, rd₄, wr₄, sp₄⟩ := hh
   rw [haad, List.nil_append] at ab
   have hk₄ := hk₃.frame spf ab.frame (disj_sub (one_argsJ0 h) abs16_sub) sp₄ rd₄ wr₄
-  obtain ⟨b1, w1⟩ := hk₄.at spf hin 0 (by omega) (show 4 * 0 = 0 from rfl)
+  obtain ⟨b1, w1⟩ := hk₄.at spf hin 0 (by omega_arith) (show 4 * 0 = 0 from rfl)
   obtain ⟨s₅, run₅, h6₅, g₅, k₅⟩ : ∃ s₅, runBlock isa [.ldrSp .r6 0, .dp .and .r6 .r6 (imm 15)] s₄ = some s₅ ∧
       s₅.gpr .r6 = BitVec.ofNat 32 ((arg s₀ 0).toNat % 16) ∧ (∀ r, r ≠ .r6 → s₅.gpr r = s₄.gpr r) ∧ Keeps s₄ s₅ := by
     refine ⟨_, by arun [b1, w1], ?_, ?_, ?_⟩
@@ -233,18 +233,18 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
       (⟨State.addr (oSt s₀ wi) + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact Lay.st_st (by omega) (by omega) (by decide)
-    · exact Lay.st_st (by omega) (by omega) (by decide)
-    · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-    · exact (L.stk_st (by omega)).symm
+    · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
+    · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
+    · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
+    · exact (L.stk_st (by omega_arith)).symm
   have keepT : ∀ {d : Nat}, (d = 0 ∨ d = 48) → ∀ r ∈ tFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16,
       (⟨State.addr (oSt s₀ wi) + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact Lay.st_st (by omega) (by omega) (by decide)
-    · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-    · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-    · exact (L.stk_st (by omega)).symm
+    · exact Lay.st_st (by omega_arith) (by omega_arith) (by decide)
+    · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
+    · exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
+    · exact (L.stk_st (by omega_arith)).symm
   have blk : ∀ {d : Nat}, (d = 0 ∨ d = 48) → blockAt s₆.mem (State.addr (oSt s₀ wi) + BitVec.ofNat 64 d) =
       blockAt s₂.mem (State.addr (oSt s₀ wi) + BitVec.ofNat 64 d) := fun hd => by
     rw [blockAt_frame fl.frame (keepT hd), blockAt_frame ab.frame (keepA hd), k₃.mem]
@@ -267,8 +267,8 @@ theorem dataArgs_run {s₀ s : State} (hk : ArgsKeep n s₀ s) (hf : s₀.sp.toN
     (hin : args s₀ n ∈ s₀.rd) (hn : 5 ≤ n) :
     ∃ s', runBlock isa dataArgs s = some s' ∧ s'.gpr .r4 = arg s₀ 1 ∧ s'.gpr .r5 = arg s₀ 2 ∧
       s'.gpr .r6 = BitVec.ofNat 32 0 ∧ (∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
-  obtain ⟨a2, v2⟩ := hk.at hf hin 1 (by omega) (show 4 * 1 = 4 from rfl)
-  obtain ⟨a3, v3⟩ := hk.at hf hin 2 (by omega) (show 4 * 2 = 8 from rfl)
+  obtain ⟨a2, v2⟩ := hk.at hf hin 1 (by omega_arith) (show 4 * 1 = 4 from rfl)
+  obtain ⟨a3, v3⟩ := hk.at hf hin 2 (by omega_arith) (show 4 * 2 = 8 from rfl)
   refine ⟨_, by simp only [dataArgs]; arun [a2, v2, a3, v3], ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_setReg, v2]
   · simp [gpr_setReg, v3]
@@ -390,7 +390,7 @@ theorem one_argsOt {s₀ : State} (h : onePre n wi s₀) {o : Nat} (ho : o = 0 �
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · rw [hst]; exact (dWA.sub_left (Lay.wSub (by decide))).symm
   · exact (dWA.sub_left (Lay.wSub (by decide))).symm
-  · exact (dWA.sub_left (Lay.wSub (by omega))).symm
+  · exact (dWA.sub_left (Lay.wSub (by omega_arith))).symm
   · exact (dWA.sub_left (Lay.wSub (by decide))).symm
   · exact (below_args s₀ spf).symm
 
@@ -411,7 +411,7 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact L.cs.sub_right (Region.sub_prefix (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
-    · exact L.cw'.sub_right (Lay.wSub (by omega))
+    · exact L.cw'.sub_right (Lay.wSub (by omega_arith))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact L.kc.symm
   have dJ : ∀ r ∈ absFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16 ++ tFrame (oSt s₀ wi) (arg s₀ wi) s₀.sp 16,
@@ -453,7 +453,7 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
   obtain ⟨ab, rd₂, wr₂, sp₂⟩ := hh
   rw [k₁.mem] at ab
   have hk₂ := hk₁.frame spf (k₁.mem ▸ ab.frame) (disj_sub hA abs_otSub) sp₂ rd₂ wr₂
-  obtain ⟨b3, w3⟩ := hk₂.at spf hin 2 (by omega) (show 4 * 2 = 8 from rfl)
+  obtain ⟨b3, w3⟩ := hk₂.at spf hin 2 (by omega_arith) (show 4 * 2 = 8 from rfl)
   obtain ⟨s₃, run₃, h6₃, g₃, k₃⟩ : ∃ s₃, runBlock isa [.ldrSp .r6 8, .dp .and .r6 .r6 (imm 15)] s₂ = some s₃ ∧
       s₃.gpr .r6 = BitVec.ofNat 32 ((arg s₀ 2).toNat % 16) ∧ (∀ r, r ≠ .r6 → s₃.gpr r = s₂.gpr r) ∧ Keeps s₂ s₃ := by
     refine ⟨_, by arun [b3, w3], ?_, ?_, ?_⟩
@@ -469,15 +469,15 @@ theorem oneTag_ok {s₀ s : State} (h : onePre n wi s₀) (hn : 5 ≤ n) {o : Na
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl))]; exact hH
   let ct := bytesAt s.mem (State.addr (arg s₀ 1)) (arg s₀ 2).toNat
   have hlx : ((a ++ zeros (padLen a.length)) ++ ct).length % 16 = (arg s₀ 2).toNat % 16 := by
-    simp only [List.length_append, Proof.Gcm.length_zeros, ct, length_bytesAt] at hx ⊢; omega
+    simp only [List.length_append, Proof.Gcm.length_zeros, ct, length_bytesAt] at hx ⊢; omega_arith
   refine WP.seq (WP.mono (WP.with_rdwr (flush_ok L (yo := 16) (.inr rfl)
     (x := (a ++ zeros (padLen a.length)) ++ ct) (H := ctxH s₀.mem (State.addr (s₀.gpr .r0)))
     ⟨he₃, by rw [k₃.mem]; exact hH₂⟩ (by rw [h6₃, hlx]))) fun s₄ hh => ?_)
   obtain ⟨fl, rd₄, wr₄, sp₄⟩ := hh
   rw [k₃.mem] at fl
   have hk₄ := hk₂.frame spf fl.frame (disj_sub hA t_otSub) (sp₄.trans k₃.sp) (rd₄.trans k₃.rd) (wr₄.trans k₃.wr)
-  obtain ⟨c1, x1⟩ := hk₄.at spf hin 0 (by omega) (show 4 * 0 = 0 from rfl)
-  obtain ⟨c3, x3⟩ := hk₄.at spf hin 2 (by omega) (show 4 * 2 = 8 from rfl)
+  obtain ⟨c1, x1⟩ := hk₄.at spf hin 0 (by omega_arith) (show 4 * 0 = 0 from rfl)
+  obtain ⟨c3, x3⟩ := hk₄.at spf hin 2 (by omega_arith) (show 4 * 2 = 8 from rfl)
   obtain ⟨s₅, run₅, h4₅, h5₅, h6₅, h7₅, g₅, k₅⟩ : ∃ s₅, runBlock isa [.ldrSp .r4 0, .mov .r5 (imm 0), .ldrSp .r6 8,
       .mov .r7 (imm 0)] s₄ = some s₅ ∧ s₅.gpr .r4 = arg s₀ 0 ∧ s₅.gpr .r5 = 0 ∧ s₅.gpr .r6 = arg s₀ 2 ∧
       s₅.gpr .r7 = 0 ∧ (∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → s₅.gpr r = s₄.gpr r) ∧ Keeps s₄ s₅ := by

@@ -114,8 +114,8 @@ theorem zadduStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : N
     fun t ⟨kt, Ut, It, et⟩ => ?_
   let e : Nat → Fe C := fun j => tmv C K.M.n base s (coZσ K j)
   have hr' : InvJ C (e 8) (e 9) (e 10) (mul (2 * (m - 1) + 1) P) := by
-    rw [show 2 * (m - 1) + 1 = 2 * m - 1 by omega]; exact hr
-  obtain ⟨js, jd, jz⟩ := CoZTable.zaddu_pts hC hO hn hM3 hP hP0 (k := m - 1) (by omega) hd hr' hz
+    rw [show 2 * (m - 1) + 1 = 2 * m - 1 by omega_arith]; exact hr
+  obtain ⟨js, jd, jz⟩ := CoZTable.zaddu_pts hC hO hn hM3 hP hP0 (k := m - 1) (by omega_arith) hd hr' hz
   have w : ∀ i ∈ [0, 1, 8, 9, 10], tmv C K.M.n base t (coZσ K i) = runOps CoZ.zaddu e i ∧
       wordsVal t.mem base (coZσ K i) K.M.n < C.p := by
     intro i hi
@@ -138,7 +138,7 @@ theorem zadduStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : N
     rw [w0, w1, w10]; exact jd
   · change InvJ C (tmv C K.M.n base t (coZσ K 8)) (tmv C K.M.n base t (coZσ K 9))
       (tmv C K.M.n base t (coZσ K 10)) _
-    rw [w8, w9, w10, show 2 * (m + 1) - 1 = 2 * (m - 1 + 1) + 1 by omega]; exact js
+    rw [w8, w9, w10, show 2 * (m + 1) - 1 = 2 * (m - 1 + 1) + 1 by omega_arith]; exact js
   · change tmv C K.M.n base t (coZσ K 10) ≠ 0
     rw [w10]; exact jz
 
@@ -153,9 +153,9 @@ theorem coZStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
       CSt K C base size P s₀ t (m + 1) ∧ t.gpr .x19 = BitVec.ofNat 64 (8 - (m + 1)) := by
   have hW := hL.win
   have hn := h.scr.nowrap
-  have h10 : K.M.n < 10 := by have := hL.n6; omega
+  have h10 : K.M.n < 10 := by have := hL.n6; omega_arith
   rw [tableStep]
-  refine WP.seq (WP.mono (zadduStep_ok hL hp hC hM3 hO hn17 hP hP0 hm1 (by omega) h.scr h.mod
+  refine WP.seq (WP.mono (zadduStep_ok hL hp hC hM3 hO hn17 hP hP0 hm1 (by omega_arith) h.scr h.mod
     (winRo_lt hW hF h.unch hn) h.lt h.d h.r h.z)
     fun s₂ ⟨k₂, U₂, sc₂, M₂, lt₂, d₂, r₂, z₂⟩ => ?_)
   have x20₂ : s₂.gpr .x20 = off base (stride K * m) := (k₂.gpr _ (x20_not_clob' h10)).trans h.x20
@@ -167,33 +167,33 @@ theorem coZStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
   have x19₃ : s₃.gpr .x19 = BitVec.ofNat 64 (8 - m) := (k₃.gpr _ (by decide)).trans x19₂
   rw [show ([.addImm .x .x20 .x20 (stride K), decCounter] : List Instr) =
     [.addImm .x .x20 .x20 (stride K)] ++ [decCounter] from rfl, WP.block_append_iff]
-  have hst : stride K < 4096 := by have := hL.n6; simp only [stride]; omega
+  have hst : stride K < 4096 := by have := hL.n6; simp only [stride]; omega_arith
   refine WP.mono (addImm_ok s₃ (d := .x20) (n := .x20) hst) fun s₄ ⟨a₄, k₄⟩ => ?_
   have sc₄ := sc₃.of_keeps k₄ (by decide)
   have x19₄ : s₄.gpr .x19 = BitVec.ofNat 64 (8 - m) := (k₄.gpr _ (by decide)).trans x19₃
-  refine WP.mono (decCounter_ok s₄ (by omega) (by omega) x19₄) fun t ⟨x19t, kt⟩ => ?_
+  refine WP.mono (decCounter_ok s₄ (by omega_arith) (by omega_arith) x19₄) fun t ⟨x19t, kt⟩ => ?_
   have sct := sc₄.of_keeps kt (by decide)
   have m34 : t.mem = s₃.mem := by rw [kt.mem, k₄.mem]
-  have U3' := fun {x : Nat} => entry_unch hW (j := m + 1) (by omega) (by omega) U₃ hn (x := x)
+  have U3' := fun {x : Nat} => entry_unch hW (j := m + 1) (by omega_arith) (by omega_arith) U₃ hn (x := x)
   have keepS : ∀ x ∈ winRo K ++ winOther K,
       wordsVal t.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := fun x hx => by
     rw [m34]
     exact U3' (by
       rcases List.mem_append.mp hx with hx | hx
       · exact winRo_slots K x hx
-      · exact winOther_mem hx) (other_not_tbl hW (by omega) (by omega) hx)
+      · exact winOther_mem hx) (other_not_tbl hW (by omega_arith) (by omega_arith) hx)
   have tm : ∀ x ∈ winRo K ++ winOther K, tmv C K.M.n base t x = tmv C K.M.n base s₂ x :=
     fun x hx => by show toM _ _ _ = toM _ _ _; rw [keepS x hx]
   have oC : ∀ x ∈ [K.E.x, K.E.y, K.R.x, K.R.y, K.R.z], x ∈ winRo K ++ winOther K :=
     fun x hx => List.mem_append_right _ (coZ_other K x hx)
-  have T₂ : OddTbl K C base P m s₂ := h.tbl.unch hW (by omega) U₂ hn
+  have T₂ : OddTbl K C base P m s₂ := h.tbl.unch hW (by omega_arith) U₂ hn
   have hU3w : Unch base (winW K) s₂.mem t.mem := by
     rw [m34]
     refine U₃.mono fun w hw => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     simp only [winW, List.mem_append, List.mem_map, List.mem_singleton]
     refine Or.inl ⟨w.1, List.mem_append_right _ ?_, by rcases hw with rfl | rfl | rfl <;> rfl⟩
-    obtain ⟨i, hi, e, -, -⟩ := tblPt_mem K (m := m + 1) (by omega) (by omega) w.1 (by
+    obtain ⟨i, hi, e, -, -⟩ := tblPt_mem K (m := m + 1) (by omega_arith) (by omega_arith) w.1 (by
       rcases hw with rfl | rfl | rfl <;> simp)
     rw [e]; exact winTbl_mem K hi
   refine ⟨⟨sct, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
@@ -212,19 +212,19 @@ theorem coZStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
   · exact M₂.unch hU3w (fun w hw => winW_mo hW M₂ w hw) hn
   · intro a ha1 ham
     rcases Nat.lt_or_ge a (m + 1) with ha | ha
-    · obtain ⟨tl, tJ⟩ := T₂ a ha1 (by omega)
+    · obtain ⟨tl, tJ⟩ := T₂ a ha1 (by omega_arith)
       have e : ∀ x ∈ [(K.tblPt a).x, (K.tblPt a).y, (K.tblPt a).z],
           wordsVal t.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := fun x hx => by
         rw [m34]
-        exact U3' (tbl_slot ha1 (by omega) x hx) (tbl_not_tbl hW ha1 (by omega) (by omega) (by omega)
-          (by omega) hx)
+        exact U3' (tbl_slot ha1 (by omega_arith) x hx) (tbl_not_tbl hW ha1 (by omega_arith) (by omega_arith) (by omega_arith)
+          (by omega_arith) hx)
       refine ⟨fun x hx => by rw [e x hx]; exact tl x hx, ?_⟩
       have et : ∀ x ∈ [(K.tblPt a).x, (K.tblPt a).y, (K.tblPt a).z],
           tmv C K.M.n base t x = tmv C K.M.n base s₂ x := fun x hx => by
         show toM _ _ _ = toM _ _ _; rw [e x hx]
       rw [et _ (by simp), et _ (by simp), et _ (by simp)]
       exact tJ
-    · obtain rfl : a = m + 1 := by omega
+    · obtain rfl : a = m + 1 := by omega_arith
       have ec : ∀ c < 3, wordsVal t.mem base (K.tbl + 8 * K.M.n * (3 * m + c)) K.M.n =
           wordsVal s₂.mem base (K.R.x + 8 * K.M.n * c) K.M.n := fun c hc => by rw [m34]; exact cw c hc
       have px : (K.tblPt (m + 1)).x = K.tbl + 8 * K.M.n * (3 * m + 0) := by
@@ -235,7 +235,7 @@ theorem coZStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
         rw [tblPt_z, Nat.add_sub_cancel]
       have rx : K.R.x = K.R.x + 8 * K.M.n * 0 := by simp
       have ry : K.R.y = K.R.x + 8 * K.M.n * 1 := by rw [hL.rxy]; simp
-      have rz : K.R.z = K.R.x + 8 * K.M.n * 2 := by rw [hL.rxz]; omega
+      have rz : K.R.z = K.R.x + 8 * K.M.n * 2 := by rw [hL.rxz]; omega_arith
       have ex := ec 0 (by decide)
       have ey := ec 1 (by decide)
       have ez := ec 2 (by decide)
@@ -301,7 +301,7 @@ theorem coZInit_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
   rw [show ([.addImm .x .x20 .x20 (stride K), .movz .x .x19 7 0] : List Instr) =
     [.addImm .x .x20 .x20 (stride K)] ++ [.movz .x .x19 (BitVec.ofNat 16 7) 0] from rfl,
     WP.block_append_iff]
-  have hst : stride K < 4096 := by have := hL.n6; simp only [stride]; omega
+  have hst : stride K < 4096 := by have := hL.n6; simp only [stride]; omega_arith
   refine WP.mono (addImm_ok s₄ (d := .x20) (n := .x20) hst) fun s₅ ⟨a₅, k₅⟩ => ?_
   have sc₅ := sc₄.of_keeps k₅ (by decide)
   refine WP.mono (setCounter_ok s₅ (j := 7) (by decide)) fun t ⟨x19t, kt⟩ => ?_
@@ -314,7 +314,7 @@ theorem coZInit_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     simp only [winW, List.mem_append, List.mem_map, List.mem_singleton]
     refine Or.inl ⟨w.1, List.mem_append_right _ ?_, by rcases hw with rfl | rfl | rfl <;> rfl⟩
-    obtain ⟨i, hi, e, -, -⟩ := tblPt_mem K (m := 0 + 1) (by omega) (by omega) w.1 (by
+    obtain ⟨i, hi, e, -, -⟩ := tblPt_mem K (m := 0 + 1) (by omega_arith) (by omega_arith) w.1 (by
       rcases hw with rfl | rfl | rfl <;> simp)
     rw [e]; exact winTbl_mem K hi
   have kc : ∀ r ∈ [Reg.x20], r ∈ nafClob K.M.n := fun r hr => nafClob_mem (by
@@ -332,7 +332,7 @@ theorem coZInit_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
       · exact hw,
     M₂.unch hU4w (fun w hw => winW_mo hW M₂ w hw) hn, ?_, ?_, x19t⟩
   · intro a ha1 ha
-    obtain rfl : a = 1 := by omega
+    obtain rfl : a = 1 := by omega_arith
     have ec : ∀ c < 3, wordsVal t.mem base (K.tbl + 8 * K.M.n * (3 * 0 + c)) K.M.n =
         wordsVal s₂.mem base (K.R.x + 8 * K.M.n * c) K.M.n := fun c hc => by
       rw [m4, cw c hc, m3]
@@ -340,8 +340,8 @@ theorem coZInit_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
     have ey := ec 1 (by decide)
     have ez := ec 2 (by decide)
     simp only [Nat.mul_zero, Nat.zero_add, Nat.add_zero, Nat.mul_one] at ex ey ez
-    rw [show K.tbl + 8 * K.M.n * 2 = (K.tblPt 1).z by simp [WinCfg.tblPt]; omega,
-      show K.R.x + 8 * K.M.n * 2 = K.R.z by rw [hL.rxz]; omega] at ez
+    rw [show K.tbl + 8 * K.M.n * 2 = (K.tblPt 1).z by simp [WinCfg.tblPt]; omega_arith,
+      show K.R.x + 8 * K.M.n * 2 = K.R.z by rw [hL.rxz]; omega_arith] at ez
     rw [show K.tbl + 8 * K.M.n = (K.tblPt 1).y by simp [WinCfg.tblPt],
       show K.R.x + 8 * K.M.n = K.R.y by rw [hL.rxy]] at ey
     rw [show K.tbl = (K.tblPt 1).x by simp [WinCfg.tblPt]] at ex
@@ -369,7 +369,7 @@ theorem dbluStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
       CSt K C base size P s₀ t 1 ∧ t.gpr .x19 = BitVec.ofNat 64 (8 - 1) := by
   have hW := hL.win
   have hn := hs.nowrap
-  have h10 : K.M.n < 10 := by have := hL.n6; omega
+  have h10 : K.M.n < 10 := by have := hL.n6; omega_arith
   have ro : ∀ x ∈ winRo K, tmv C K.M.n base s x = tmv C K.M.n base s₀ x := fun x hx => by
     show toM _ _ _ = toM _ _ _; rw [hW.ro_val hU hn hx]
   have hv : ∀ i ∈ [13, 14, 15], dbluσ K i ∈ winRo K := by
@@ -399,7 +399,7 @@ theorem dbluStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
   obtain ⟨w9, l9⟩ := w 9 (by simp)
   obtain ⟨w10, l10⟩ := w 10 (by simp)
   have sct : Scr t base size := It.scr
-  refine ⟨⟨sct, hk.trans (kt.mono clob_nafClob), ?_, It.mod, hT.unch hW (by omega) Ut hn, ?_, ?_, ?_,
+  refine ⟨⟨sct, hk.trans (kt.mono clob_nafClob), ?_, It.mod, hT.unch hW (by omega_arith) Ut hn, ?_, ?_, ?_,
     ?_, ?_⟩, (kt.gpr _ (x19_not_clob _)).trans h19⟩
   · exact (hU.trans Ut).mono fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
@@ -435,11 +435,11 @@ theorem table_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Naf
   refine countLoop_ok (Inv := fun j t => CSt K C base size P s₀ t (8 - j) ∧ t.gpr .x19 = BitVec.ofNat 64 j)
     (n := 7) (by decide) (fun j t hj1 hj7 hI => ?_)
     (fun t hI => ⟨hI.1.scr, hI.1.keep, hI.1.unch, hI.1.mod, hI.1.tbl⟩) (by decide) ⟨by rw [show 8 - 7 = 1 from rfl]; exact T₂, x19₂⟩
-  have e : 8 - (8 - j) = j := by omega
-  refine WP.mono (coZStep_ok hL hp hC hM3 hO hn17 hP hP0 hF (m := 8 - j) (by omega) (by omega) hI.1
+  have e : 8 - (8 - j) = j := by omega_arith
+  refine WP.mono (coZStep_ok hL hp hC hM3 hO hn17 hP hP0 hF (m := 8 - j) (by omega_arith) (by omega_arith) hI.1
     (by rw [e]; exact hI.2)) fun t' ⟨T', x'⟩ => ⟨⟨?_, ?_⟩, ?_⟩
-  · rw [show 8 - (j - 1) = 8 - j + 1 by omega]; exact T'
-  · rw [x']; congr 1; omega
-  · rw [x']; congr 1; omega
+  · rw [show 8 - (j - 1) = 8 - j + 1 by omega_arith]; exact T'
+  · rw [x']; congr 1; omega_arith
+  · rw [x']; congr 1; omega_arith
 
 end VG.Proof.Weierstrass.AArch64.PubNaf

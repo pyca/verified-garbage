@@ -70,19 +70,19 @@ theorem APre.a1' : stackArg s₀ 1 = BitVec.ofNat 32 L :=
 theorem APre.argAddr {k : Nat} (hk : k < 3) : stackArgAddr s₀ k = stackArgAddr s₀ 0 + BitVec.ofNat 64 (4 * k) := by
   have := hp.spf
   simp only [stackArgAddr]
-  rw [addr_add (by omega), addr_add (by omega)]
+  rw [addr_add (by omega_arith), addr_add (by omega_arith)]
   simp
 
 theorem APre.arg_sub {k : Nat} (hk : k < 3) : Region.Sub ⟨stackArgAddr s₀ k, 4⟩ ⟨stackArgAddr s₀ 0, 12⟩ := by
-  rw [hp.argAddr hk]; exact Offset.sub_base _ (by omega)
+  rw [hp.argAddr hk]; exact Offset.sub_base _ (by omega_arith)
 
 theorem APre.arg_in {k : Nat} (hk : k < 3) : InRegions (s₀.rd ++ s₀.wr) (stackArgAddr s₀ k) 4 := by
   refine ⟨⟨stackArgAddr s₀ 0, 12⟩, by rw [hp.rd]; simp, ?_⟩
-  rw [hp.argAddr hk]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [hp.argAddr hk]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- Offsets in the state. -/
 theorem APre.aS {k : Nat} (hk : k < 416) : State.addr (St + BitVec.ofNat 32 k) = State.addr St + BitVec.ofNat 64 k :=
-  addr_add (by have := hp.fSt; omega)
+  addr_add (by have := hp.fSt; omega_arith)
 
 theorem APre.inSt {d n : Nat} (h : d + n ≤ 416) :
     Covers [⟨State.addr St + BitVec.ofNat 64 d, n⟩] s₀.wr := by
@@ -124,7 +124,7 @@ theorem APre.uargs {s : State} {Dd : BitVec 32} {n : Nat} (hr0 : s.gpr .r0 = St)
   exact
   { r0 := hr0, r1 := hr1, r2 := hr2, r3 := hr3, r10 := hr10, hn := hn
     hsp := by rw [hsp]; exact hp.sp
-    wc := by rw [a400]; exact Offset.base_disjoint _ (by decide) (by omega)
+    wc := by rw [a400]; exact Offset.base_disjoint _ (by decide) (by omega_arith)
     ws := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
     dc := by rw [a400]; exact hdc
     ds := hds.sub_right (Region.sub_prefix (by decide))
@@ -133,10 +133,10 @@ theorem APre.uargs {s : State} {Dd : BitVec 32} {n : Nat} (hr0 : s.gpr .r0 = St)
     bd := by rw [hb]; exact hbd
     bc := by rw [hb, a400]; exact hp.b_st.sub_right c400
     bs := by rw [hb]; exact hp.b_s.sub_right (Region.sub_prefix (by decide))
-    fW := by omega
-    fC := by rw [toNat_add_ofNat (by omega)]; omega
+    fW := by omega_arith
+    fC := by rw [toNat_add_ofNat (by omega_arith)]; omega_arith
     fD := hfD
-    fS := by have := hp.fS; omega
+    fS := by have := hp.fS; omega_arith
     reads := by
       rw [hrd, hwr]
       intro a k hi
@@ -202,7 +202,7 @@ theorem save_wp {s₀ : State} {St D S : BitVec 32} {L : Nat} (hp : APre s₀ St
   refine saveList_ok saved s₁ _ (fun p hp' => ?_) fun s₂ g₂ rd₂ wr₂ sp₂ m₂ => ?_
   · have := saved_bound p hp'
     rw [h12, u₁.wr, hp.wr]
-    exact ⟨by omega, by omega, ⟨⟨State.addr S, 688⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩⟩
+    exact ⟨by omega_arith, by omega_arith, ⟨⟨State.addr S, 688⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩⟩
   have hm₂ : s₂.mem = aMem s₀ S := by
     rw [m₂, u₁.mem, h12, aMem]
     exact saveMem_congr _ _ _ fun p hp' => u₁.other _ (saved_ne_r12 p hp')
@@ -277,23 +277,23 @@ theorem absorbPre_wp {s₀ : State} {St D S : BitVec 32} {L : Nat} (hp : APre s�
   refine WP.seq (WP.mono (copy_wp (p := D) (c := St + BitVec.ofNat 32 (408 + held c)) (L := fOf c L) (x := L)
     hfL hL (by rw [g _ (by decide) (by decide) (by decide) (by decide), h₁.r6]) r2₃ (by rw [r1₃]; rfl)
     (by rw [g _ (by decide) (by decide) (by decide) (by decide), h₁.r7]) fun hpos => ?_) fun s₄ h₄ => ?_)
-  · have hlt : 408 + held c < 416 := by unfold fOf at hpos; omega
+  · have hlt : 408 + held c < 416 := by unfold fOf at hpos; omega_arith
     have aDst' : State.addr (St + BitVec.ofNat 32 (408 + held c)) = State.addr St + BitVec.ofNat 64 (408 + held c) :=
       hp.aS hlt
     exact
-    { fp := by omega
-      fc := by rw [toNat_add_ofNat (by omega)]; omega
+    { fp := by omega_arith
+      fc := by rw [toNat_add_ofNat (by omega_arith)]; omega_arith
       hr := by
         rw [rd₃', wr₃']
-        have := hp.inD (d := 0) (n := fOf c L) (by omega)
+        have := hp.inD (d := 0) (n := fOf c L) (by omega_arith)
         rwa [BitVec.add_zero] at this
-      hw := by rw [wr₃', aDst']; exact hp.inSt (by omega)
+      hw := by rw [wr₃', aDst']; exact hp.inSt (by omega_arith)
       hd := by
         rw [aDst']
-        exact (hp.st_d.sub_left (Offset.sub_base _ (by omega))).symm.sub_left (Region.sub_prefix hfL) }
+        exact (hp.st_d.sub_left (Offset.sub_base _ (by omega_arith))).symm.sub_left (Region.sub_prefix hfL) }
   have g' (r : Reg) (a : r ≠ .r0) (b : r ≠ .r1) (c : r ≠ .r2) (d : r ≠ .r12) (e : r ≠ .r6) (f : r ≠ .r7) :
       s₄.gpr r = s₁.gpr r := by rw [h₄.other r b c e f d, g r a b c d]
-  refine WP.mono (chain1_wp (x := leftOf c L) (by unfold leftOf; omega) (by rw [h₄.r7]; rfl)
+  refine WP.mono (chain1_wp (x := leftOf c L) (by unfold leftOf; omega_arith) (by rw [h₄.r7]; rfl)
     (by rw [g' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h₁.r4])) fun s₅ h₅ => ?_
   obtain ⟨r3₅, r0₅, r1₅, r2₅, g₅, m₅, sp₅, rd₅, wr₅⟩ := h₅
   have k (r : Reg) (a : r ≠ .r0) (b : r ≠ .r1) (c : r ≠ .r2) (d : r ≠ .r3) (f : r ≠ .r12) (i : r ≠ .r6)
@@ -301,18 +301,18 @@ theorem absorbPre_wp {s₀ : State} {St D S : BitVec 32} {L : Nat} (hp : APre s�
   have hrd : s₅.rd = s₀.rd := by rw [rd₅, h₄.rd, rd₃']
   have hwr : s₅.wr = s₀.wr := by rw [wr₅, h₄.wr, wr₃']
   have hsp : s₅.sp = s₀.sp := by rw [sp₅, h₄.sp, sp₃, sp₂, h₁.sp]
-  have hb1 : 8 * b1Of c L ≤ 8 := by unfold b1Of; split <;> omega
+  have hb1 : 8 * b1Of c L ≤ 8 := by unfold b1Of; split <;> omega_arith
   have a408 := hp.aS (k := 408) (by decide)
   have c408 : Region.Sub ⟨State.addr (St + BitVec.ofNat 32 408), 8 * b1Of c L⟩ ⟨State.addr St, 416⟩ := by
-    rw [a408]; exact Offset.sub_base _ (by omega)
+    rw [a408]; exact Offset.sub_base _ (by omega_arith)
   subst hc
   refine ⟨hp.uargs (Dd := St + BitVec.ofNat 32 408) r0₅ r1₅ r2₅
       (by rw [r3₅, b1Of, leftOf]) (by rw [k _ (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide) (by decide), h₁.r10]) hsp hrd hwr (by omega)
-      (by rw [a408]; exact Offset.disjoint _ (by omega) (by omega) (by omega))
+        (by decide) (by decide), h₁.r10]) hsp hrd hwr (by omega_arith)
+      (by rw [a408]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
       ((hp.st_s.sub_left c408))
-      (hp.b_st.sub_right c408) (by rw [toNat_add_ofNat (by omega)]; omega)
-      (Covers.right (by rw [a408]; exact hp.inSt (by omega))), ?_, ?_, ?_, ?_, hsp, ?_, ?_, hrd, hwr⟩
+      (hp.b_st.sub_right c408) (by rw [toNat_add_ofNat (by omega_arith)]; omega_arith)
+      (Covers.right (by rw [a408]; exact hp.inSt (by omega_arith))), ?_, ?_, ?_, ?_, hsp, ?_, ?_, hrd, hwr⟩
   · rw [k _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h₁.r4]
   · rw [g₅ _ (by decide) (by decide) (by decide) (by decide), h₄.r6]
   · rw [g₅ _ (by decide) (by decide) (by decide) (by decide), h₄.r7]; rfl

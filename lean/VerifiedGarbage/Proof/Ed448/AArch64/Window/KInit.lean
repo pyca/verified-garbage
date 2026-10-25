@@ -68,26 +68,26 @@ theorem kInit_ok {s : State} {base : Addr} {P S : Point} (hs : Scr s base) (hb :
     have n4 : i.val ≠ 4 := fun e => h4 (Fin.ext e)
     have n5 : i.val ≠ 5 := fun e => h5 (Fin.ext e)
     have n20 : i.val ≠ 20 := fun e => h20 (Fin.ext e)
-    rw [mt, o4.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega),
-      o3.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega),
-      o2.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega),
-      o1.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) (by omega)]
+    rw [mt, o4.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
+      o3.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
+      o2.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
+      o1.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)]
   have w3 : ∀ w < 8, word t.mem base (slot 3 + 8 * w) = limb 0 w := fun w hw => by
-    rw [mt, o4.word (Or.inl (by simp only [slot]; omega)) (by simp only [slot]; omega),
-      o3.word (Or.inl (by simp only [slot]; omega)) (by simp only [slot]; omega),
-      o2.word (Or.inl (by simp only [slot]; omega)) (by simp only [slot]; omega)]
+    rw [mt, o4.word (Or.inl (by simp only [slot]; omega_arith)) (by simp only [slot]; omega_arith),
+      o3.word (Or.inl (by simp only [slot]; omega_arith)) (by simp only [slot]; omega_arith),
+      o2.word (Or.inl (by simp only [slot]; omega_arith)) (by simp only [slot]; omega_arith)]
     exact v1 w hw
   have w4 : ∀ w < 8, word t.mem base (slot 4 + 8 * w) = limb 1 w := fun w hw => by
-    rw [mt, o4.word (Or.inl (by simp only [slot]; omega)) (by simp only [slot]; omega),
-      o3.word (Or.inl (by simp only [slot]; omega)) (by simp only [slot]; omega)]
+    rw [mt, o4.word (Or.inl (by simp only [slot]; omega_arith)) (by simp only [slot]; omega_arith),
+      o3.word (Or.inl (by simp only [slot]; omega_arith)) (by simp only [slot]; omega_arith)]
     exact v2 w hw
   have w5 : ∀ w < 8, word t.mem base (slot 5 + 8 * w) = limb 1 w := fun w hw => by
-    rw [mt, o4.word (Or.inl (by simp only [slot]; omega)) (by simp only [slot]; omega)]
+    rw [mt, o4.word (Or.inl (by simp only [slot]; omega_arith)) (by simp only [slot]; omega_arith)]
     exact v3 w hw
   have w20 : ∀ w < 8, word t.mem base (slot 20 + 8 * w) = limb 1 w := fun w hw => by rw [mt]; exact v4 w hw
   have oSt : Outside2 base 64 2816 ACC 1152 s.mem t.mem := fun x a _ => by
-    rw [mt, o4 x (by simp only [slot] at a ⊢; omega), o3 x (by simp only [slot] at a ⊢; omega),
-      o2 x (by simp only [slot] at a ⊢; omega), o1 x (by simp only [slot] at a ⊢; omega)]
+    rw [mt, o4 x (by simp only [slot] at a ⊢; omega_arith), o3 x (by simp only [slot] at a ⊢; omega_arith),
+      o2 x (by simp only [slot] at a ⊢; omega_arith), o1 x (by simp only [slot] at a ⊢; omega_arith)]
   have eO : ∀ i : Index, i ≠ 3 → i ≠ 4 → i ≠ 5 → i ≠ 20 → EV t.mem base i = EV s.mem base i :=
     fun i a b c d => congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (O i a b c d))
   have benv : BEnv t.mem base := by
@@ -106,22 +106,22 @@ theorem kInit_ok {s : State} {base : Addr} {P S : Point} (hs : Scr s base) (hb :
   -- The nibbles and the challenge's copy, kept.
   have hn := hs.nowrap
   have keepB : ∀ d, 2880 ≤ d → d < 3584 → t.mem (off base d) = s.mem (off base d) := fun d h1 h2 => by
-    have ho : ofs base (off base d) = d := ofs_off0' base (by omega)
-    exact oSt _ (Or.inr (by rw [ho]; omega)) (Or.inl (by rw [ho]; simp only [ACC]; omega))
+    have ho : ofs base (off base d) = d := ofs_off0' base (by omega_arith)
+    exact oSt _ (Or.inr (by rw [ho]; omega_arith)) (Or.inl (by rw [ho]; simp only [ACC]; omega_arith))
   have hNt : ∀ i < 57, nibs t base (2 * i) = nibOf (t.mem (off base (KB + i))) 0 ∧
       nibs t base (2 * i + 1) = nibOf (t.mem (off base (KB + i))) 4 := fun i hi => by
     obtain ⟨n0, n1⟩ := hN i hi
-    have eK := keepB (KB + i) (by simp only [KB]; omega) (by simp only [KB]; omega)
+    have eK := keepB (KB + i) (by simp only [KB]; omega_arith) (by simp only [KB]; omega_arith)
     unfold nibs
-    rw [keepB (BITS + 2 * i) (by simp only [BITS]; omega) (by simp only [BITS]; omega),
-      keepB (BITS + (2 * i + 1)) (by simp only [BITS]; omega) (by simp only [BITS]; omega), eK,
+    rw [keepB (BITS + 2 * i) (by simp only [BITS]; omega_arith) (by simp only [BITS]; omega_arith),
+      keepB (BITS + (2 * i + 1)) (by simp only [BITS]; omega_arith) (by simp only [BITS]; omega_arith), eK,
       ← Nat.add_assoc, n0, n1]
     exact ⟨Nat.mod_eq_of_lt (Nat.lt_trans (nibOf_lt _ _) (by decide)),
       Nat.mod_eq_of_lt (Nat.lt_trans (nibOf_lt _ _) (by decide))⟩
   have hnib : ∀ i < 114, nibs t base i < 16 := fun i hi => by
     rcases Nat.even_or_odd' i with ⟨k, rfl | rfl⟩
-    · rw [(hNt k (by omega)).1]; exact nibOf_lt _ _
-    · rw [(hNt k (by omega)).2]; exact nibOf_lt _ _
+    · rw [(hNt k (by omega_arith)).1]; exact nibOf_lt _ _
+    · rw [(hNt k (by omega_arith)).2]; exact nibOf_lt _ _
   refine ⟨⟨by decide, ⟨hst, benv, z19, F_of_words w20, fun w hw => ?_, ht.of_outside2 oSt (by decide), rfl, rfl, rfl,
       Outside2.refl _ _ _ _ _ _⟩, ct, ?_, ?_, hnib⟩, hNt, oSt, ?_, ?_, ?_⟩
   · show (word t.mem base (slot 5 + 8 * w)).toNat < Mb

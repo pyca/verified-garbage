@@ -124,7 +124,7 @@ theorem head_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Naf
     (E := infinityEnv K.M C.p K.one E K.D) (pub := [.x0]) (rs := [.x19]) (Pre := fun _ => True)
     (Post := fun a => a.gpr .x19 = BitVec.ofNat 64 (64 * K.M.n)) (by decide) hc.counter
     (fun a b hp _ _ => ⟨hp.sp, fun q hq => pub_x0 hp (Taint.mem_ofRegs.mp hq)⟩)
-    (fun a _ _ => setCounter_ok a (j := 64 * K.M.n) (by have := hL.n6; omega))
+    (fun a _ _ => setCounter_ok a (j := 64 * K.M.n) (by have := hL.n6; omega_arith))
   exact cnt.mono (fun _ _ h => ⟨h, trivial, trivial⟩)
     (fun _ _ ⟨h, a, b⟩ => ⟨⟨_, h.sub (digitLive_sub K)⟩, a, b⟩)
 
@@ -156,15 +156,15 @@ theorem loop_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
     intro j
     by_cases hj : 1 ≤ j
     · by_cases hjn : j ≤ 64 * K.M.n
-      · have e : j - 1 + 1 = j := by omega
+      · have e : j - 1 + 1 = j := by omega_arith
         have raw := (stepOfRaw_relCT (base := base) (size := size) hL hp hone hc hD hT hF₁ hF₂
-          (j := j - 1) (by omega)).mono (P' := I j)
+          (j := j - 1) (by omega_arith)).mono (P' := I j)
           (fun _ _ h => ⟨h.2.2.1, h.2.2.2.1.st, h.2.2.2.2.st, h.2.2.2.1.cache, h.2.2.2.2.cache,
             by rw [e]; exact h.2.2.2.1.x19, by rw [e]; exact h.2.2.2.2.x19⟩) (fun _ _ h => h)
         have hw := raw.wp (F₁ := fun s => NInv K C base size P s₀ s (j - 1) (Naf5.residual k (j - 1)))
           (F₂ := fun s => NInv K C base size P t₀ s (j - 1) (Naf5.residual k (j - 1)))
-          (fun s t h => ⟨stepOf_ok hL hp hC hM3 hone hP hF₁ hD (j := j - 1) (by omega) (by rw [e]; exact h.2.2.2.1),
-            stepOf_ok hL hp hC hM3 hone hP hF₂ hD (j := j - 1) (by omega) (by rw [e]; exact h.2.2.2.2)⟩)
+          (fun s t h => ⟨stepOf_ok hL hp hC hM3 hone hP hF₁ hD (j := j - 1) (by omega_arith) (by rw [e]; exact h.2.2.2.1),
+            stepOf_ok hL hp hC hM3 hone hP hF₂ hD (j := j - 1) (by omega_arith) (by rw [e]; exact h.2.2.2.2)⟩)
         refine hw.mono (fun _ _ h => h) ?_
         intro s t ⟨pair, Is, It⟩
         have s19 := Is.x19
@@ -176,7 +176,7 @@ theorem loop_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
               rw [bne_iff_ne]
               intro hh
               have hh' := congrArg BitVec.toNat hh
-              simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : j - 1 < 2 ^ 64)] at hh'
+              simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : j - 1 < 2 ^ 64)] at hh'
               exact hn hh'
             have htrue : eval (.nonzero .x .x19) s = some true := by
               change some (s.read .x .x19 != 0) = some true
@@ -186,10 +186,10 @@ theorem loop_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : N
           exact ⟨pair, Is, It⟩
         · have hz : j - 1 ≠ 0 := by
             intro hz; simp only [eval, State.read, s19, hz] at he; cases he
-          exact ⟨j - 1, by omega, by omega, by omega, pair, Is, It⟩
+          exact ⟨j - 1, by omega_arith, by omega_arith, by omega_arith, pair, Is, It⟩
       · exact RelCT.of_false (fun _ _ h => hjn h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
-  exact (RelCT.loop I step (64 * K.M.n)).mono (fun _ _ h => ⟨by omega, Nat.le_refl _, h⟩)
+  exact (RelCT.loop I step (64 * K.M.n)).mono (fun _ _ h => ⟨by omega_arith, Nat.le_refl _, h⟩)
     (fun _ _ h => h)
 
 /-- `[k]P`, for a public point `P` and scalar `k`: two runs with the same values of
@@ -254,11 +254,11 @@ theorem window_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
   obtain ⟨_, rfl⟩ := Exec.det f2 y2
   -- The top digit.
   obtain ⟨tr3, E3, p3⟩ := digit_relCT hL hp hone_lt hc.step.digit G₁ G₂ (j := 64 * K.M.n)
-    (by omega) _ _ _ _ _ _ ⟨p2, S2, T2, C2, D2, a19, b19⟩ e3 f3
-  obtain ⟨_, _, x3, I3⟩ := digit_ok hL hp hC hM3 hone_lt hP S2 G₁ C2 (j := 64 * K.M.n) (by omega)
+    (by omega_arith) _ _ _ _ _ _ ⟨p2, S2, T2, C2, D2, a19, b19⟩ e3 f3
+  obtain ⟨_, _, x3, I3⟩ := digit_ok hL hp hC hM3 hone_lt hP S2 G₁ C2 (j := 64 * K.M.n) (by omega_arith)
     a19 Dl2 DJ2
   obtain ⟨_, rfl⟩ := Exec.det e3 x3
-  obtain ⟨_, _, y3, J3⟩ := digit_ok hL hp hC hM3 hone_lt hP T2 G₂ D2 (j := 64 * K.M.n) (by omega)
+  obtain ⟨_, _, y3, J3⟩ := digit_ok hL hp hC hM3 hone_lt hP T2 G₂ D2 (j := 64 * K.M.n) (by omega_arith)
     b19 Dl2' DJ2'
   obtain ⟨_, rfl⟩ := Exec.det f3 y3
   -- The iterations.

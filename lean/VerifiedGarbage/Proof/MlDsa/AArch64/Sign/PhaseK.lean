@@ -130,23 +130,23 @@ theorem bit_zero {a : Prop} [Decidable a] : bit a = 0 ↔ ¬ a := by
 
 theorem forall_lt_succ {P : Nat → Prop} {r : Nat} : ((∀ j < r, P j) ∧ P r) ↔ ∀ j < r + 1, P j :=
   ⟨fun ⟨h1, h2⟩ j hj => by
-    rcases (by omega : j < r ∨ j = r) with hj | rfl
-    exacts [h1 j hj, h2], fun h => ⟨fun j hj => h j (by omega), h r (by omega)⟩⟩
+    rcases (by omega_arith : j < r ∨ j = r) with hj | rfl
+    exacts [h1 j hj, h2], fun h => ⟨fun j hj => h j (by omega_arith), h r (by omega_arith)⟩⟩
 
-theorem Fam.head {s : State} {b m : Nat} {f : Nat → Poly} (h : Fam s b (m + 1) f) : Pl s b (f 0) := h 0 (by omega)
+theorem Fam.head {s : State} {b m : Nat} {f : Nat → Poly} (h : Fam s b (m + 1) f) : Pl s b (f 0) := h 0 (by omega_arith)
 
 theorem Fam.tail {s : State} {b m : Nat} {f : Nat → Poly} (h : Fam s b (m + 1) f) :
     Fam s (b + 1) m fun j => f (j + 1) := fun j hj => by
-  have := h (j + 1) (by omega)
+  have := h (j + 1) (by omega_arith)
   show Pl s (b + 1 + j) _
-  rw [show b + 1 + j = b + (j + 1) by omega]
+  rw [show b + 1 + j = b + (j + 1) by omega_arith]
   exact this
 
 theorem Fam.shift {s : State} {b m r : Nat} {f : Nat → Poly} (h : Fam s (b + r) (m - r) fun j => f (r + j))
     (hr : r < m) : Fam s (b + (r + 1)) (m - (r + 1)) fun j => f (r + 1 + j) := fun j hj => by
-  have := h (j + 1) (by omega)
+  have := h (j + 1) (by omega_arith)
   show Pl s (b + (r + 1) + j) (f (r + 1 + j))
-  rw [show b + (r + 1) + j = b + r + (j + 1) by omega, show r + 1 + j = r + (j + 1) by omega]
+  rw [show b + (r + 1) + j = b + r + (j + 1) by omega_arith, show r + 1 + j = r + (j + 1) by omega_arith]
   exact this
 
 theorem Fam.zero {s : State} {b m : Nat} {f : Nat → Poly} (h : Fam s b m f) :
@@ -227,7 +227,7 @@ theorem zR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State}
     (by rw [hP1.pa (by decide)]; exact hq1.1)) fun s2 ⟨hP2, hcs2, hq2⟩ => ?_)
   rw [hP1.pa (by decide), hq1.2] at hq2
   have I2 := I1.step hP2 z2 y2
-  have hy2 : Pl s2 (yBase p + r) (Yv p σ (p.ℓ * t) r) := I2.y 0 (by omega)
+  have hy2 : Pl s2 (yBase p + r) (Yv p σ (p.ℓ * t) r) := I2.y 0 (by omega_arith)
   refine WP.seq (WP.mono (addAt_ok hP I2.b.l.st.lay ca hy2.1 (by rw [hP2.pa (by decide), hP1.pa (by decide)]; exact hq2.1))
     fun s3 ⟨hP3, hcs3, hq3⟩ => ?_)
   rw [hy2.2, hP2.pa (pS_bases 1), hP1.pa (pS_bases 1), hq2.2] at hq3
@@ -308,7 +308,7 @@ theorem r0R_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State
     (by rw [hP1.pa (by decide)]; exact hq1.1)) fun s2 ⟨hP2, hcs2, hq2⟩ => ?_)
   rw [hP1.pa (by decide), hq1.2] at hq2
   have I2 := I1.step hP2 z2 y2
-  have hw2 : Pl s2 (wBase p + i) (Wv p σ (p.ℓ * t) i) := I2.w 0 (by omega)
+  have hw2 : Pl s2 (wBase p + i) (Wv p σ (p.ℓ * t) i) := I2.w 0 (by omega_arith)
   refine WP.seq (WP.mono (subAt_ok hP I2.b.l.st.lay ca hw2.1
     (by rw [hP2.pa (by decide), hP1.pa (by decide)]; exact hq2.1)) fun s3 ⟨hP3, hcs3, hq3⟩ => ?_)
   rw [hw2.2, hP2.pa (pS_bases 1), hP1.pa (pS_bases 1), hq2.2] at hq3
@@ -342,7 +342,7 @@ theorem zq_sub_add (a b : Zq) : a - (a + b) = -b := by
   apply Fin.ext
   have ha := a.isLt; have hb := b.isLt
   simp only [Fin.sub_def, Fin.add_def, Fin.neg_def, q] at *
-  omega
+  omega_arith
 
 theorem sub_add_neg (a b : Poly) : sub a (add a b) = neg b := by
   apply Vector.ext
@@ -354,7 +354,7 @@ theorem hintIs_congr {m m' : Mem} {a : Addr} {h : List (Vector Bool n)}
     HintIs m' a 1 h :=
   ⟨H.1, fun i hi j hj => by
     have hn : n = 256 := rfl
-    rw [coeffAt_congr₂ hb (show 256 * i + j < 256 by omega)]; exact H.2 i hi j hj⟩
+    rw [coeffAt_congr₂ hb (show 256 * i + j < 256 by omega_arith)]; exact H.2 i hi j hj⟩
 
 /-- The hints of the first `m` slots from `b`. -/
 def HFam (s : State) (b m : Nat) (f : Nat → Vector Bool n) : Prop :=
@@ -369,7 +369,7 @@ theorem HFam.keep {D : Nat} {rbs wbs : List (Reg × Nat)} {s s' : State} (L : La
 
 theorem HFam.snoc {s : State} {b m : Nat} {f : Nat → Vector Bool n} (h : HFam s b m f)
     (h' : HintIs s.mem (pa s (pS (b + m))) 1 [f m]) : HFam s b (m + 1) f := fun j hj => by
-  rcases (by omega : j < m ∨ j = m) with hj | rfl
+  rcases (by omega_arith : j < m ∨ j = m) with hj | rfl
   exacts [h j hj, h']
 
 theorem hintOnes_le (h : Vector Bool n) : hintOnes [h] ≤ 256 := by
@@ -386,7 +386,7 @@ theorem onesSum_le (f : Nat → Vector Bool n) : ∀ i, onesSum f i ≤ 256 * i
       List.sum_cons, List.sum_nil, Nat.add_zero]
     have := onesSum_le f i; have := hintOnes_le (f i)
     simp only [onesSum] at *
-    omega
+    omega_arith
 
 theorem onesSum_succ (f : Nat → Vector Bool n) (i : Nat) : onesSum f (i + 1) = onesSum f i + hintOnes [f i] := by
   simp only [onesSum, List.range_succ, List.map_append, List.map_cons, List.map_nil, List.sum_append,
@@ -429,11 +429,11 @@ theorem ones32 {m : Mem} {a : Addr} {x : Nat} (h : m.readW a 64 = BitVec.ofNat 6
   rw [h]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem sw_ofNat {n : Nat} (h : n < 2 ^ 32) : BitVec.setWidth 64 (BitVec.ofNat 32 n) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- What `h[i]` needs of the layout. -/
 def hChk2 (p : Params) (i : Nat) : Bool :=
@@ -487,13 +487,13 @@ theorem hR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State}
   have I3 := I2.step hP3 g3 o3
   have q3 : Pl s3 3 (CT0v p σ (p.ℓ * t) i) := I2.b.l.st.lay.keepPoly hP3 t3 q2
   -- `T4 ← w[i] - cs₂[i]`
-  have hw3 : Pl s3 (wBase p + i) (W'v p σ (p.ℓ * t) i) := I3.w' 0 (by omega)
+  have hw3 : Pl s3 (wBase p + i) (W'v p σ (p.ℓ * t) i) := I3.w' 0 (by omega_arith)
   refine WP.seq (WP.mono (copy_ok I3.b.l.st.lay cc) fun s4 ⟨hP4, hcs4, hb4⟩ => ?_)
   have I4 := I3.step hP4 g4 o4
   have q4 : Pl s4 3 (CT0v p σ (p.ℓ * t) i) := I3.b.l.st.lay.keepPoly hP4 t4 q3
   have r4 : Pl s4 4 (W'v p σ (p.ℓ * t) i) := by
     show PolyIs _ _ _; rw [hP4.pa (pS_bases 4)]; exact polyIs_of_bytes hb4 hw3
-  have hw4 : Pl s4 (wBase p + i) (W'v p σ (p.ℓ * t) i) := I4.w' 0 (by omega)
+  have hw4 : Pl s4 (wBase p + i) (W'v p σ (p.ℓ * t) i) := I4.w' 0 (by omega_arith)
   -- `w[i] ← w[i] - cs₂[i] + ct₀[i]`
   refine WP.seq (WP.mono (addAt_ok hP I4.b.l.st.lay ca hw4.1 q4.1) fun s5 ⟨hP5, hcs5, hq5⟩ => ?_)
   rw [hw4.2, q4.2] at hq5
@@ -510,7 +510,7 @@ theorem hR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State}
     sub_add_neg] at hq6
   have J6 := J5.step hP6 g6 o4
   have r6 : Pl s6 4 (neg (CT0v p σ (p.ℓ * t) i)) := by show PolyIs _ _ _; rw [hP6.pa (pS_bases 4)]; exact hq6
-  have hw6 : Pl s6 (wBase p + i) (W''v p σ (p.ℓ * t) i) := J6.w'' i (by omega)
+  have hw6 : Pl s6 (wBase p + i) (W''v p σ (p.ℓ * t) i) := J6.w'' i (by omega_arith)
   -- the hint
   refine WP.seq (WP.mono (hintCall_ok hP J6.b.l.st.lay hγ ch r6.1 hw6.1) fun s7 ⟨hP7, hcs7, hq7, he7⟩ => ?_)
   rw [r6.2, hw6.2] at hq7 he7
@@ -535,8 +535,8 @@ theorem hR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State}
   · rw [hP8'.pa (sc_bases _), hm8, Mem.readW_writeW_self64, ho7, onesSum_succ]
     have he7' : ((s7.gpr .x0).setWidth 32).toNat = hintOnes [Hv p σ (p.ℓ * t) i] := he7
     have ea : (s7.gpr .x0).setWidth 32 = BitVec.ofNat 32 (hintOnes [Hv p σ (p.ℓ * t) i]) := by
-      apply BitVec.eq_of_toNat_eq; rw [he7', BitVec.toNat_ofNat]; omega
-    have hlt : onesSum (Hv p σ (p.ℓ * t)) i + hintOnes [Hv p σ (p.ℓ * t) i] < 2 ^ 32 := by omega
+      apply BitVec.eq_of_toNat_eq; rw [he7', BitVec.toNat_ofNat]; omega_arith
+    have hlt : onesSum (Hv p σ (p.ℓ * t)) i + hintOnes [Hv p σ (p.ℓ * t) i] < 2 ^ 32 := by omega_arith
     rw [ea, ← BitVec.ofNat_add, sw_ofNat hlt]
   · have e8 : s8.gpr .x24 = s3.gpr .x24 := by
       rw [hcs8, hcs7, hcs6, hcs5, hcs4]
@@ -553,12 +553,12 @@ theorem sign_bit {S w : Nat} (hS : S < 2 ^ 32) (hw : w < 2 ^ 31) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     rw [Nat.shiftRight_eq_div_pow, show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+    omega_arith
   · rw [ifn h]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     rw [Nat.shiftRight_eq_div_pow, show (0 : BitVec 32).toNat = 0 from rfl]
-    omega
+    omega_arith
 
 /-! ## The checks -/
 
@@ -697,7 +697,7 @@ theorem onesOk_ok {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t :
   have L6 := J6.b.l.st.lay
   have hS := onesSum_le (Hv p σ (p.ℓ * t)) p.k
   refine WP.mono (onesOk_run p hω s (L6.inR c8)) fun s7 ⟨⟨h157, hm7⟩, k7⟩ => ?_
-  rw [J6.ones, sign_bit (by omega) (by omega), h156, bit_and', bit_congr passV_iff] at h157
+  rw [J6.ones, sign_bit (by omega_arith) (by omega_arith), h156, bit_and', bit_congr passV_iff] at h157
   have hP7 : PPostB D s s7 [] := postB_of_keep k7 (by decide) (by rw [hm7]; exact Frame.refl _ _)
   exact ⟨J6.b.step hP7 c13, Fam.keep L6 hP7 c16 J6.z, HFam.keep L6 hP7 c17 J6.h, h157⟩
 
@@ -732,13 +732,13 @@ theorem checks_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : ks
   unfold checks
   refine WP.seq (WP.mono (cntt_ok hP hc h) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (kInit_ok hc h1) fun s3 I3 => ?_)
-  refine WP.seq (WP.mono (seqR_ok (I := fun r => IZ p D σ t r) p.ℓ 0 (fun r _ hr s hs => zR_ok hP (hz r (by omega)) hs)
+  refine WP.seq (WP.mono (seqR_ok (I := fun r => IZ p D σ t r) p.ℓ 0 (fun r _ hr s hs => zR_ok hP (hz r (by omega_arith)) hs)
     s3 I3) fun s4 hs4 => ?_)
   rw [Nat.zero_add] at hs4
-  refine WP.seq (WP.mono (seqR_ok (I := fun i => IR p D σ t i) p.k 0 (fun i _ hi s hs => r0R_ok hP (hr i (by omega)) hs)
+  refine WP.seq (WP.mono (seqR_ok (I := fun i => IR p D σ t i) p.k 0 (fun i _ hi s hs => r0R_ok hP (hr i (by omega_arith)) hs)
     s4 hs4.ir) fun s5 hs5 => ?_)
   rw [Nat.zero_add] at hs5
-  refine WP.seq (WP.mono (seqR_ok (I := fun i => IH p D σ t i) p.k 0 (fun i _ hi s hs => hR_ok hP (hh i (by omega)) hs)
+  refine WP.seq (WP.mono (seqR_ok (I := fun i => IH p D σ t i) p.k 0 (fun i _ hi s hs => hR_ok hP (hh i (by omega_arith)) hs)
     s5 hs5.ih) fun s6 hs6 => ?_)
   rw [Nat.zero_add] at hs6
   exact WP.seq (WP.mono (onesOk_ok hc hs6) fun s7 h7 => kBranch_ok hc h7)

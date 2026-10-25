@@ -45,17 +45,17 @@ theorem stk_sub {r : Region} (h : Region.Sub r L.STK) :
   ⟨hL.ko.sub_left h, hL.kn.sub_left h, hL.ke.sub_left h, hL.ki.sub_left h, hL.kp.sub_left h,
     hL.kq.sub_left h, hL.kdp.sub_left h, hL.kdq.sub_left h, hL.kqi.sub_left h, hL.ksc.sub_left h⟩
 
-theorem M_sub : Region.Sub L.M L.STK := Offset.sub_base _ (by have := hL.khi; simp only [oM, stackBytes]; omega)
+theorem M_sub : Region.Sub L.M L.STK := Offset.sub_base _ (by have := hL.khi; simp only [oM, stackBytes]; omega_arith)
 
 theorem PRE_sub : Region.Sub L.PRE L.STK := by
   have := hL.khi
   refine Offset.sub_base _ ?_
-  simp only [oPre, stackBytes, Lay.pw]; omega
+  simp only [oPre, stackBytes, Lay.pw]; omega_arith
 
-theorem M_HI : Within L.M L.HI := ⟨0, by simp, by have := hL.khi; simp only [oM, frameBytes]; omega⟩
+theorem M_HI : Within L.M L.HI := ⟨0, by simp, by have := hL.khi; simp only [oM, frameBytes]; omega_arith⟩
 
 theorem PRE_HI : Within L.PRE L.HI :=
-  ⟨oPre - oM, by rw [add_add]; rfl, by have := hL.khi; simp only [oPre, oM, frameBytes, Lay.pw]; omega⟩
+  ⟨oPre - oM, by rw [add_add]; rfl, by have := hL.khi; simp only [oPre, oM, frameBytes, Lay.pw]; omega_arith⟩
 
 theorem IN_k : Within ⟨L.inp, L.k.toNat⟩ L.IN := within_base _ (by rw [hL.ilk])
 
@@ -73,10 +73,10 @@ theorem crtCall_pre (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (ha : CrtAr
   have hM := hL.stk_sub hL.M_sub
   have hA := hL.stk_sub (low_sub L (n := 80) (by decide))
   have hMA : L.M.Disjoint ⟨L.B, 80⟩ :=
-    Offset.disjoint_base _ (by decide) (by simp only [oM]; omega)
+    Offset.disjoint_base _ (by decide) (by simp only [oM]; omega_arith)
   simp only [crtA, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, State.callEntry_sp,
-    hc.sp, sa 0 (by omega), sa 1 (by omega), sa 2 (by omega), sa 3 (by omega), sa 4 (by omega),
-    sa 5 (by omega), sa 6 (by omega), sa 7 (by omega), sa 8 (by omega), sa 9 (by omega), Lay.argv,
+    hc.sp, sa 0 (by omega_arith), sa 1 (by omega_arith), sa 2 (by omega_arith), sa 3 (by omega_arith), sa 4 (by omega_arith),
+    sa 5 (by omega_arith), sa 6 (by omega_arith), sa 7 (by omega_arith), sa 8 (by omega_arith), sa 9 (by omega_arith), Lay.argv,
     gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x1 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x5 ∉ linkRegs),
@@ -88,8 +88,8 @@ theorem crtCall_pre (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (ha : CrtAr
   have hIk : (⟨L.inp, L.k.toNat⟩ : Region).Disjoint L.SC := hL.isc.sub_left hL.IN_k.sub
   obtain ⟨-, hMn, -, hMi, hMp, hMq, hMdp, hMdq, hMqi, hMsc⟩ := hM
   have hMk : BitVec.toNat (L.B + BitVec.ofNat 64 oM) + L.k.toNat ≤ 2 ^ 64 := by
-    rw [Offset.toNat_add_ofNat]; simp only [oM]; omega
-  exact ⟨by omega, trivial, trivial, hMn, hMi.sub_right hL.IN_k.sub, hMp, hMq, hMdp, hMdq, hMqi, hMsc, hMA,
+    rw [Offset.toNat_add_ofNat]; simp only [oM]; omega_arith
+  exact ⟨by omega_arith, trivial, trivial, hMn, hMi.sub_right hL.IN_k.sub, hMp, hMq, hMdp, hMdq, hMqi, hMsc, hMA,
     hL.nsc, hIk, hL.psc, hL.qsc, hL.dpsc, hL.dqsc, hL.qisc, hA.2.2.2.2.2.2.2.2.2.symm, hMk, hL.bn,
     by have := hL.bi; rw [hL.ilk] at this; exact this, hL.bp, hL.bq, hL.bdp, hL.bdq, hL.bqi, hL.bsc,
     ⟨hL.klo, hL.khi⟩, trivial, trivial, hL.pl1, hL.plk, hL.ql1, hL.qlk, hdp, hqi, hdq, hL.slk⟩
@@ -106,7 +106,7 @@ theorem crt_sub (hL : L.Ok) : ∀ r ∈ crtRd L ++ crtWr L, ∃ R ∈ L.regions,
   · exact ⟨L.DQ, by simp, within_base _ (Nat.le_refl _)⟩
   · exact ⟨L.QI, by simp, within_base _ (Nat.le_refl _)⟩
   · exact ⟨L.FR, by simp, within_base _ (by decide)⟩
-  · exact ⟨L.FR, by simp, within_off _ (by simp only [oM, frameBytes]; omega)⟩
+  · exact ⟨L.FR, by simp, within_off _ (by simp only [oM, frameBytes]; omega_arith)⟩
   · exact ⟨L.SC, by simp, within_base _ (Nat.le_refl _)⟩
 
 theorem crt_wsub (hL : L.Ok) : ∀ r ∈ crtWr L, InW L r := by
@@ -140,8 +140,8 @@ theorem crt_call (v : CrtImpl) (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) 
     gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x7 ∉ linkRegs),
-    ha.x0, ha.x2, ha.x3, ha.x4, ha.x6, ha.x7, sa 0 (by omega), sa 1 (by omega), sa 2 (by omega),
-    sa 4 (by omega), sa 6 (by omega), Lay.argv] at h
+    ha.x0, ha.x2, ha.x3, ha.x4, ha.x6, ha.x7, sa 0 (by omega_arith), sa 1 (by omega_arith), sa 2 (by omega_arith),
+    sa 4 (by omega_arith), sa 6 (by omega_arith), Lay.argv] at h
   exact h
 
 end

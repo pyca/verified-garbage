@@ -95,9 +95,9 @@ theorem leak_eq {s₀ : State} (h₀ : SPre p s₀) (h8 : (arg s₀ 4).toNat < 2
   have := h₀.nSk
   rw [signMessageLeak, formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact h8)]
   simp only [messageRep, skTr, Proof.MlKem.bytesAt_length]
-  rw [Proof.MlKem.bytesAt_slice _ _ (by omega)]
+  rw [Proof.MlKem.bytesAt_slice _ _ (by omega_arith)]
   simp only [sMu, hdrBytes, slay, List.append_assoc]
-  rw [Proof.MlKem.X86.ea_off (by omega)]
+  rw [Proof.MlKem.X86.ea_off (by omega_arith)]
 
 
 /-- The values of the arguments. -/
@@ -131,14 +131,14 @@ theorem sregs {s₀ : State} (h₀ : SPre p s₀) (hL : (slay p s₀).Ok) : SReg
   have hsp := h₀.sp
   have hE : 120 ≤ (slay p s₀).E1.toNat := by
     show 120 ≤ (s₀.gpr .esp - BitVec.ofNat 32 16).toNat
-    rw [sub_toNat (by omega)]; omega
+    rw [sub_toNat (by omega_arith)]; omega_arith
   have hk : ∀ {R : Region}, (sStk s₀ 136).Disjoint R → (slay p s₀).STK.Disjoint R := fun h =>
     (stk_eq hsp ▸ h).sub_left hL.stk_sub
   have scrSub : Region.Sub ⟨(arg s₀ 7).setWidth 64, sScr p⟩ (slay p s₀).SC :=
-    (within_base _ (by show sScr p ≤ mScrLen p; simp only [sScr, mScrLen, messageScratchWords]; omega)).sub
+    (within_base _ (by show sScr p ≤ mScrLen p; simp only [sScr, mScrLen, messageScratchWords]; omega_arith)).sub
   have muSub : Region.Sub ⟨((slay p s₀).X32 + BitVec.ofNat 32 840).setWidth 64, 64⟩ (slay p s₀).SC := by
-    rw [mu_eq hL]; exact hL.sub_sc (e := 840) (k := 64) (by omega)
-  refine ⟨hE, scrSub, below_sub (by show 20 ≤ 136 - 16; decide) (by show 136 - 16 ≤ _; omega), muSub, hk h₀.kSk, by rw [mu_eq hL]; exact k_mu hL, hk h₀.kRnd,
+    rw [mu_eq hL]; exact hL.sub_sc (e := 840) (k := 64) (by omega_arith)
+  refine ⟨hE, scrSub, below_sub (by show 20 ≤ 136 - 16; decide) (by show 136 - 16 ≤ _; omega_arith), muSub, hk h₀.kSk, by rw [mu_eq hL]; exact k_mu hL, hk h₀.kRnd,
     hk h₀.kSig, hL.kSC.sub_right scrSub, ?_⟩
   have hx := hL.x_eq
   have := h₀.nScr
@@ -148,7 +148,7 @@ theorem sregs {s₀ : State} (h₀ : SPre p s₀) (hL : (slay p s₀).Ok) : SReg
     rw [mu_eq hL, Lay.MU, hx, add_add]; rfl
   rw [e]
   have d := Offset.disjoint ((arg s₀ 7).setWidth 64) (d := oE p + 840) (n := 64) (e := 0) (k := sScr p)
-    (.inr (by simp only [oE, sScr]; omega)) (by omega) (by simp only [oE, sScr] at *; omega)
+    (.inr (by simp only [oE, sScr]; omega_arith)) (by omega_arith) (by simp only [oE, sScr] at *; omega_arith)
   rwa [BitVec.add_zero] at d
 
 /-- The callee's precondition. -/
@@ -161,7 +161,7 @@ theorem sign_callPre {s₀ s s₁ : State} (h₀ : SPre p s₀) (hc : CtxO (slay
   have hE := R.hE
   have hsp1 : s₁.gpr .esp = (slay p s₀).E1 := hc1.esp
   have fit : 4 * Proof.MlKem.X86.rs5.length + 4 ≤ (s₁.gpr .esp).toNat := by
-    rw [hsp1]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hsp1]; simp only [List.length_cons, List.length_nil]; omega_arith
   have a0 : arg (pushed Proof.MlKem.X86.rs5 s₁).callEntry 0 = arg s₀ 0 := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact v0
   have a1 : arg (pushed Proof.MlKem.X86.rs5 s₁).callEntry 1 = (slay p s₀).X32 + BitVec.ofNat 32 840 := by
@@ -181,31 +181,31 @@ theorem sign_callPre {s₀ s s₁ : State} (h₀ : SPre p s₀) (hc : CtxO (slay
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact withinRW hc1 ⟨_, List.mem_append_left _ hL.inKey, within_self _⟩
-    · exact withinRW hc1 (by rw [mu_eq hL]; exact cov_x hL (e := 840) (k := 64) (by omega))
+    · exact withinRW hc1 (by rw [mu_eq hL]; exact cov_x hL (e := 840) (k := 64) (by omega_arith))
     · exact withinRW hc1 ⟨_, List.mem_append_left _ (by show _ ∈ s₀.rd; rw [h₀.rd]; simp), within_self _⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inr (withinW hc1 ⟨_, by show _ ∈ s₀.wr; rw [h₀.wr]; simp, within_self _⟩)
-    · exact .inr (withinW hc1 ⟨_, hL.inSC, within_base _ (by show sScr p ≤ mScrLen p; simp only [sScr, mScrLen, messageScratchWords]; omega)⟩)
+    · exact .inr (withinW hc1 ⟨_, hL.inSC, within_base _ (by show sScr p ≤ mScrLen p; simp only [sScr, mScrLen, messageScratchWords]; omega_arith)⟩)
     · exact .inl (by rw [hsp1])
   refine ⟨?_, cv.1, cv.2⟩
-  obtain ⟨rSk₁, rSk₂, rSk₃⟩ := entry_regions (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega) R.kSk
-  obtain ⟨rMu₁, rMu₂, rMu₃⟩ := entry_regions (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega) R.kMu
-  obtain ⟨rRnd₁, rRnd₂, rRnd₃⟩ := entry_regions (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega) R.kRnd
-  obtain ⟨rSig₁, rSig₂, rSig₃⟩ := entry_regions (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega) R.kSig
-  obtain ⟨rScr₁, rScr₂, rScr₃⟩ := entry_regions (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega) R.kScr
-  obtain ⟨rA₂, rA₃⟩ := entry_self (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega)
+  obtain ⟨rSk₁, rSk₂, rSk₃⟩ := entry_regions (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega_arith) R.kSk
+  obtain ⟨rMu₁, rMu₂, rMu₃⟩ := entry_regions (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega_arith) R.kMu
+  obtain ⟨rRnd₁, rRnd₂, rRnd₃⟩ := entry_regions (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega_arith) R.kRnd
+  obtain ⟨rSig₁, rSig₂, rSig₃⟩ := entry_regions (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega_arith) R.kSig
+  obtain ⟨rScr₁, rScr₂, rScr₃⟩ := entry_regions (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega_arith) R.kScr
+  obtain ⟨rA₂, rA₃⟩ := entry_self (E := (slay p s₀).E1) (k := 5) (K := 96) (by omega_arith)
   generalize he : (pushed Proof.MlKem.X86.rs5 s₁).callEntry = e at a0 a1 a2 a3 a4 eA eSp ⊢
   sig_pre [signContract, signSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
   subst he
   simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, eA, eSp]
   have hX := hL.x32_lt
-  refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (slay p s₀).E1.isLt; omega,
+  refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (slay p s₀).E1.isLt; omega_arith,
     trivial, trivial, h₀.skSig, h₀.skScr.sub_right R.scrSub, rSk₁, h₀.sigScr.symm.sub_left R.muSub, R.muScr, rMu₁,
     h₀.rndSig, h₀.rndScr.sub_right R.scrSub, rRnd₁, h₀.sigScr.sub_right R.scrSub, rSig₁, rScr₁,
     rSk₂, rMu₂, rRnd₂, rSig₂, rScr₂, rA₂, rSk₃, rMu₃, rRnd₃, rSig₃, rScr₃, rA₃, h₀.nSk,
-    by rw [hL.x32_toNat (by omega)]; omega, h₀.nRnd, h₀.nSig,
-    by have := h₀.nScr; simp only [mScrLen, messageScratchWords] at this ⊢; omega⟩
+    by rw [hL.x32_toNat (by omega_arith)]; omega_arith, h₀.nRnd, h₀.nSig,
+    by have := h₀.nScr; simp only [mScrLen, messageScratchWords] at this ⊢; omega_arith⟩
 
 /-- What the signing function on `μ` sees on entry. -/
 structure SView (p : Params) (s₀ s₁ : State) : Prop where
@@ -231,11 +231,11 @@ theorem sign_view {s₀ s s₁ : State} (h₀ : SPre p s₀) (hc : CtxO (slay p)
   have hE := R.hE
   have hsp1 : s₁.gpr .esp = (slay p s₀).E1 := hc1.esp
   have fit : 4 * Proof.MlKem.X86.rs5.length + 4 ≤ (s₁.gpr .esp).toNat := by
-    rw [hsp1]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hsp1]; simp only [List.length_cons, List.length_nil]; omega_arith
   have fr := callEntry_frame fit (by decide : Reg.esp ∉ Proof.MlKem.X86.rs5)
   rw [hsp1] at fr
   have b24 : Region.Sub (below (slay p s₀).E1 (4 * Proof.MlKem.X86.rs5.length + 4)) (slay p s₀).STK :=
-    below_sub (by show 24 ≤ 136 - 16; decide) (by show 136 - 16 ≤ _; omega)
+    below_sub (by show 24 ≤ 136 - 16; decide) (by show 136 - 16 ≤ _; omega_arith)
   -- Bytes apart from the stack the call uses, as on entry.
   have ent : ∀ {R : Region}, (slay p s₀).STK.Disjoint R → R.len ≤ 2 ^ 64 →
       bytesAt (pushed Proof.MlKem.X86.rs5 s₁).callEntry.mem R.base R.len = bytesAt s₁.mem R.base R.len :=
@@ -244,7 +244,7 @@ theorem sign_view {s₀ s s₁ : State} (h₀ : SPre p s₀) (hc : CtxO (slay p)
   have hsp := h₀.sp
   have p0 : ∀ {R : Region}, (sStk s₀ 136).Disjoint R → (slay p s₀).SC.Disjoint R → R.len ≤ 2 ^ 64 →
       bytesAt s₁.mem R.base R.len = bytesAt s₀.mem R.base R.len := fun {R} hk hx hn => by
-    have hf := pushed_frame (rs := Impl.MlKem.X86.saveRegs) (s := s₀) (by decide) (by show 16 ≤ _; omega)
+    have hf := pushed_frame (rs := Impl.MlKem.X86.saveRegs) (s := s₀) (by decide) (by show 16 ≤ _; omega_arith)
     rw [hs.2.mem, hc.ctx.bytesAt_eq hx ((stk_eq hsp ▸ hk).sub_left hL.stk_sub) hn]
     exact Proof.MlKem.bytesAt_congr fun _ hi => hf.bytes (R := R) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -255,8 +255,8 @@ theorem sign_view {s₀ s s₁ : State} (h₀ : SPre p s₀) (hc : CtxO (slay p)
     by rw [callEntry_arg fit (by decide) (by decide)]; exact v3,
     by rw [callEntry_arg fit (by decide) (by decide)]; exact v4,
     by rw [callEntry_esp', hsp1]; rfl, ?_, ?_, ?_⟩
-  · rw [ent (R := ⟨_, p.skLen⟩) R.kSk (by show p.skLen ≤ 2 ^ 64; have := h₀.nSk; omega)]
-    exact p0 (R := ⟨_, p.skLen⟩) h₀.kSk h₀.skScr.symm (by show p.skLen ≤ 2 ^ 64; have := h₀.nSk; omega)
+  · rw [ent (R := ⟨_, p.skLen⟩) R.kSk (by show p.skLen ≤ 2 ^ 64; have := h₀.nSk; omega_arith)]
+    exact p0 (R := ⟨_, p.skLen⟩) h₀.kSk h₀.skScr.symm (by show p.skLen ≤ 2 ^ 64; have := h₀.nSk; omega_arith)
   · rw [ent (R := ⟨_, 64⟩) R.kMu (by show 64 ≤ 2 ^ 64; decide), hs.2.mem, mu_eq hL]; exact hμ
   · rw [ent (R := ⟨_, 32⟩) R.kRnd (by show 32 ≤ 2 ^ 64; decide)]
     exact p0 (R := ⟨_, 32⟩) h₀.kRnd h₀.rndScr.symm (by show 32 ≤ 2 ^ 64; decide)
@@ -276,9 +276,9 @@ theorem signCall_piece (hp : p ∈ params) {n : String} {f : Prog isa} (hf : Sig
   · have := hf.su
     have := h₀.sp
     show _ ≤ (s₀.gpr .esp - BitVec.ofNat 32 16).toNat
-    rw [sub_toNat (by omega)]
+    rw [sub_toNat (by omega_arith)]
     simp only [List.length_cons, List.length_nil]
-    omega
+    omega_arith
   · exact sign_callPre h₀ ha.1 hs
   · obtain ⟨hc, hμ⟩ := ha
     obtain ⟨hc', hμ'⟩ := ha'
@@ -311,8 +311,8 @@ theorem signCall_piece (hp : p ∈ params) {n : String} {f : Prog isa} (hf : Sig
       · refine ⟨(slay p s₀).STK, by simp, ?_⟩
         rw [hsp1]
         have := hf.su
-        exact below_sub (by show _ ≤ 136 - 16; simp only [List.length_cons, List.length_nil]; omega)
-          (by show 136 - 16 ≤ _; omega)
+        exact below_sub (by show _ ≤ 136 - 16; simp only [List.length_cons, List.length_nil]; omega_arith)
+          (by show 136 - 16 ≤ _; omega_arith)
     · have v := sign_view h₀ hc hμ hs
       obtain ⟨s₂, m₂, g₂, post⟩ := post
       obtain ⟨a0, a1, a2, a3, -, -, bSk, bMu, bRnd⟩ := v

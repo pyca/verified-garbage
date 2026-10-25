@@ -28,7 +28,7 @@ open VG VG.PPC64LE VG.Impl.Weierstrass VG.Impl.Weierstrass.PPC64LE VG.Proof.Mont
 theorem std0_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {t r : Reg} {d : Nat}
     (hr : At s base r 0) (hr0 : r ≠ .r0) (hd4 : d % 4 = 0) (hd : d + 8 ≤ size) :
     exec (.store .d t r d) s = some { s with mem := s.mem.writeW (off base d) (s.gpr t) } := by
-  rw [std_ok hs hr hr0 hd4 (by omega), Nat.zero_add]
+  rw [std_ok hs hr hr0 hd4 (by omega_arith), Nat.zero_add]
 
 /-- A word of `[a]` to `[o]`. -/
 theorem copyWord_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {o a : Nat}
@@ -50,12 +50,12 @@ theorem copy_ok {size : Nat} : ∀ (k : Nat) {s : State} {base : Addr} {o a : Na
   | k + 1, s, base, o, a, hs, h3, ho4, ha4, ho, ha, hsep => by
     have hn := hs.nowrap
     rw [copy, show ∀ (x y : Instr) (l : List Instr), [x, y] ++ l = [x, y] ++ l from fun _ _ _ => rfl]
-    refine wp_append (WP.mono (copyWord_ok hs h3 ho4 ha4 (by omega) (by omega)) fun s₁ ⟨m₁, K₁⟩ => ?_)
-    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
-    refine WP.mono (copy_ok k (K₁.ws hs) (K₁.at h3) (o := o + 8) (a := a + 8) (by omega) (by omega)
-      (by omega) (by omega) (by omega)) fun s₂ ⟨e₂, K₂, O₂⟩ => ⟨?_, K₁.trans K₂,
-        (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
-    rw [wordsVal, wordsVal, O₂.word (by omega) (by omega), e₂, O₁.wordsVal (by omega) (by omega), m₁,
+    refine wp_append (WP.mono (copyWord_ok hs h3 ho4 ha4 (by omega_arith) (by omega_arith)) fun s₁ ⟨m₁, K₁⟩ => ?_)
+    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega_arith)
+    refine WP.mono (copy_ok k (K₁.ws hs) (K₁.at h3) (o := o + 8) (a := a + 8) (by omega_arith) (by omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith)) fun s₂ ⟨e₂, K₂, O₂⟩ => ⟨?_, K₁.trans K₂,
+        (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))⟩
+    rw [wordsVal, wordsVal, O₂.word (by omega_arith) (by omega_arith), e₂, O₁.wordsVal (by omega_arith) (by omega_arith), m₁,
       word_writeW_self]
 
 /-- A word of `[a]` or `[b]` to `[o]` by the mask `r10`. -/
@@ -93,23 +93,23 @@ theorem sel_ok {size : Nat} (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr}
     have hn := hs.nowrap
     rw [sel, show ∀ (x₁ x₂ x₃ x₄ x₅ x₆ : Instr) (l : List Instr), [x₁, x₂, x₃, x₄, x₅, x₆] ++ l =
       [x₁, x₂, x₃, x₄, x₅, x₆] ++ l from fun _ _ _ _ _ _ _ => rfl]
-    refine wp_append (WP.mono (selWord'_ok hs h3 ho4 ha4 hb4 (by omega) (by omega) (by omega))
+    refine wp_append (WP.mono (selWord'_ok hs h3 ho4 ha4 hb4 (by omega_arith) (by omega_arith) (by omega_arith))
       fun s₁ ⟨m₁, K₁⟩ => ?_)
     have hmk : s.gpr .r10 = 0 ∨ s.gpr .r10 = BitVec.allOnes 64 := by
       cases c
       · exact .inl hc
       · exact .inr hc
     rw [sel_mask _ _ hmk] at m₁
-    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
+    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega_arith)
     refine WP.mono (sel_ok c k (K₁.ws hs) (K₁.at h3) (by rw [K₁.g]; exact hc) (o := o + 8) (a := a + 8)
-      (b := b + 8) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
-      (by omega)) fun s₂ ⟨e₂, K₂, O₂⟩ => ⟨?_, K₁.trans K₂,
-        (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (b := b + 8) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (by omega_arith)) fun s₂ ⟨e₂, K₂, O₂⟩ => ⟨?_, K₁.trans K₂,
+        (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))⟩
     have ea : wordsVal s₁.mem base (a + 8) k = wordsVal s.mem base (a + 8) k :=
-      O₁.wordsVal (by omega) (by omega)
+      O₁.wordsVal (by omega_arith) (by omega_arith)
     have eb : wordsVal s₁.mem base (b + 8) k = wordsVal s.mem base (b + 8) k :=
-      O₁.wordsVal (by omega) (by omega)
-    rw [wordsVal, O₂.word (by omega) (by omega), e₂, ea, eb, m₁, word_writeW_self, hc]
+      O₁.wordsVal (by omega_arith) (by omega_arith)
+    rw [wordsVal, O₂.word (by omega_arith) (by omega_arith), e₂, ea, eb, m₁, word_writeW_self, hc]
     cases c <;> simp [wordsVal]
 
 /-- `o = b` if the mask `r10` is all ones (`c`), `a` if it is zero, for points

@@ -61,8 +61,8 @@ theorem mulx_arith (d v : BitVec 64) :
         2 ^ 64 * (BitVec.ofNat 64 (d.toNat * v.toNat / 2 ^ 64)).toNat = d.toNat * v.toNat := by
   have hd := d.isLt; have hv := v.isLt
   have hp : d.toNat * v.toNat < 2 ^ 64 * 2 ^ 64 := Nat.mul_lt_mul'' hd hv
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ / 2 ^ 64) (by omega)]
-  omega
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ / 2 ^ 64) (by omega_arith)]
+  omega_arith
 
 theorem adc_carry (a b : BitVec 64) (c : Bool) :
     (a + b + (BitVec.ofBool c).setWidth 64).toNat +
@@ -71,7 +71,7 @@ theorem adc_carry (a b : BitVec 64) (c : Bool) :
   have := a.isLt; have := b.isLt; have := Bool.toNat_le c
   rw [BitVec.toNat_add, BitVec.toNat_add, toNat_ofBool64]
   by_cases h : 2 ^ 64 ≤ a.toNat + b.toNat + c.toNat <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- `mulx hi, lo, src`: `lo + 2⁶⁴ hi = rdx · src`, the flags unchanged. -/
 theorem mulx_ok (s : State) {hi lo : Reg} {src : Src} {v : BitVec 64}
@@ -167,7 +167,7 @@ theorem wordA_ok (s : State) {k : Nat} {hi col prev : Reg} {vb vt : BitVec 64} {
   have h₃ : s₃.gpr hi = s₁.gpr hi := (k₃.gpr (by simpa using d1)).trans (k₂.gpr (by simpa using d1))
   rw [h₃]
   rw [p₂] at e₃
-  omega
+  omega_arith
 
 /-- A word of a block's second half: `col += lo(rdx · m_k) + CF`, then
 `+ prev + OF`, the product's high half into `hi`. -/
@@ -195,7 +195,7 @@ theorem wordB_ok (s : State) {k : Nat} {hi col prev : Reg} {vm : BitVec 64} {c o
   rw [h₃]
   rw [p₂] at e₃
   rw [r₁] at e₂
-  omega
+  omega_arith
 
 /-- The end of both chains: `h += OF + CF`. -/
 theorem close_ok (s : State) {h : Reg} {c o : Bool} (hc : s.cf = some c) (ho : s.of = some o) (hh : h ≠ .rsi) :
@@ -215,7 +215,7 @@ theorem close_ok (s : State) {h : Reg} {c o : Bool} (hc : s.cf = some c) (ho : s
   rw [r₁, z₁] at e₂
   rw [z₂] at e₃
   simp only [show (0 : BitVec 64).toNat = 0 from rfl] at e₂ e₃
-  omega
+  omega_arith
 
 /-- `xor esi, esi`: CF and OF clear. -/
 theorem xorRsi_ok (s : State) :

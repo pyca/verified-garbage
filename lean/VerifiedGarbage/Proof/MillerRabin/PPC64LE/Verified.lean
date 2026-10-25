@@ -152,20 +152,20 @@ theorem same_of {m₁ m₂ : Mem} {ws : Addr} {n : Nat}
   dsimp only [Layout, compact] at hl
   obtain ⟨-, -, -, h128, hsp, -⟩ := hl
   have hsp' : arrAt (wOf m₁ ws) 28 ≤ n * 8 := by
-    change arrAt (wOf m₁ ws) 28 ≤ 8 * n at hsp; omega
-  have hz : arrAt (wOf m₁ ws) 28 < 2 ^ 64 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
+    change arrAt (wOf m₁ ws) 28 ≤ 8 * n at hsp; omega_arith
+  have hz : arrAt (wOf m₁ ws) 28 < 2 ^ 64 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
   have rd : ∀ d, d + 8 ≤ arrAt (wOf m₁ ws) 28 →
       m₂.readW (ws + BitVec.ofNat 64 d) 64 = m₁.readW (ws + BitVec.ofNat 64 d) 64 :=
-    fun d hd => VG.Proof.Bignum.PPC64LE.agree_readW h (by omega) (by omega)
-  have h48 : 8 * 6 + 8 ≤ arrAt (wOf m₁ ws) 28 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
+    fun d hd => VG.Proof.Bignum.PPC64LE.agree_readW h (by omega_arith) (by omega_arith)
+  have h48 : 8 * 6 + 8 ≤ arrAt (wOf m₁ ws) 28 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
   refine ⟨?_, rd, fun j hj => ?_⟩
   · simp only [wOf, wordAt, Spec.Rsa.Mont.wWord]
     rw [rd _ h48]
-  · have hj' := arrAt_le (w := wOf m₁ ws) (show j + 1 ≤ 28 by omega)
+  · have hj' := arrAt_le (w := wOf m₁ ws) (show j + 1 ≤ 28 by omega_arith)
     have e : arrAt (wOf m₁ ws) (j + 1) = arrAt (wOf m₁ ws) j + 8 * (wOf m₁ ws + 2) := by
-      unfold arrAt; rw [Nat.add_mul, Nat.one_mul]; omega
+      unfold arrAt; rw [Nat.add_mul, Nat.one_mul]; omega_arith
     simp only [numAt]
-    rw [VG.Proof.Bignum.PPC64LE.agree_read h (by omega) (by omega)]
+    rw [VG.Proof.Bignum.PPC64LE.agree_read h (by omega_arith) (by omega_arith)]
 
 theorem layout_congr {m₁ m₂ : Mem} {ws : Addr} {n : Nat} (hS : Same ws m₁ m₂) (hl : Layout compact m₁ ws n) :
     Layout compact m₂ ws n := by
@@ -173,12 +173,12 @@ theorem layout_congr {m₁ m₂ : Mem} {ws : Addr} {n : Nat} (hS : Same ws m₁ 
   dsimp only [Layout, compact, Spec.Rsa.Mont.Layout] at hl' ⊢
   obtain ⟨h0, ⟨h2, h31, h8, harr⟩, h4, h128, hsp, hst⟩ := hl'
   rw [hS.w]
-  have hz : 8 * 28 + 8 ≤ arrAt (wOf m₁ ws) 28 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
+  have hz : 8 * 28 + 8 ≤ arrAt (wOf m₁ ws) 28 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
   refine ⟨h0, ⟨h2, h31, h8, fun j hj => ?_⟩, h4, h128, hsp, ?_⟩
   · simp only [wordAt, Spec.Rsa.Mont.arrWord] at harr ⊢
-    rw [hS.rd _ (by omega)]; exact harr j hj
+    rw [hS.rd _ (by omega_arith)]; exact harr j hj
   · simp only [wordAt] at hst ⊢
-    rw [hS.rd _ (by omega)]; exact hst
+    rw [hS.rd _ (by omega_arith)]; exact hst
 
 theorem prepared_congr {m₁ m₂ : Mem} {ws : Addr} {n : Nat} (hS : Same ws m₁ m₂) (hl : Layout compact m₁ ws n)
     (hp : Prepared compact m₁ ws) : Prepared compact m₂ ws := by
@@ -188,10 +188,10 @@ theorem prepared_congr {m₁ m₂ : Mem} {ws : Addr} {n : Nat} (hS : Same ws m�
   rw [hS.w, hS.num 0 (by decide), hS.num 5 (by decide), hS.num 9 (by decide), hS.num 10 (by decide),
     hS.num 27 (by decide)]
   obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8⟩ := hp
-  have hz0 : arrAt (wOf m₁ ws) 0 + 8 ≤ arrAt (wOf m₁ ws) 28 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
-  have hz7 : 8 * 7 + 8 ≤ arrAt (wOf m₁ ws) 28 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
+  have hz0 : arrAt (wOf m₁ ws) 0 + 8 ≤ arrAt (wOf m₁ ws) 28 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
+  have hz7 : 8 * 7 + 8 ≤ arrAt (wOf m₁ ws) 28 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
   have hz27 : arrAt (wOf m₁ ws) 27 + 8 * wOf m₁ ws + 8 ≤ arrAt (wOf m₁ ws) 28 := by
-    unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
+    unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
   refine ⟨a1, a2, ?_, a4, a5, a6, a7, ?_⟩
   · simp only [wordAt, Spec.Rsa.Mont.minvWord] at a3 ⊢
     rw [hS.rd _ hz0, hS.rd _ hz7]; exact a3
@@ -245,7 +245,7 @@ theorem post_local : ∀ vs m₁ m₂ m' r, vs.length = (Spec.MillerRabin.roundS
   rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
   have := Nat.mod_le i (2 ^ 64)
   have hi' : i < 8 * (l : BitVec 64).toNat := hi
-  omega
+  omega_arith
 
 theorem leak_local : ∀ f, some rLeak = some f → ∀ vs m₁ m₂,
     vs.length = (Spec.MillerRabin.roundSig.words abi.ptrBits).length →

@@ -55,7 +55,7 @@ theorem mpRanges_le {w Z : Nat} (hZ : slot w 16 ≤ Z) : ∀ r ∈ mpRanges w, r
   simp only [mpRanges, mpTail, List.mem_cons, List.not_mem_nil, or_false]
   simp only [slot, hdrBytes] at hZ
   rintro r (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-    simp only [slot, hdrBytes, aOne, aAcc, aTmp, aR2, aY, aR1, aRm1, sCnt, sFn, sMinv] <;> omega
+    simp only [slot, hdrBytes, aOne, aAcc, aTmp, aR2, aY, aR1, aRm1, sCnt, sFn, sMinv] <;> omega_arith
 
 /-- Disjointness of a range from `mpTail`'s. -/
 tactic_template "mp_disj" : tactic => `(tactic| first | hdr_disj | (

@@ -50,10 +50,10 @@ theorem stepPre_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t
     have e1 : (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 := by decide
     rw [hb, e1, BitVec.ofNat_add, BitVec.add_sub_cancel]
   have hin : InRegions (s.rd ++ s.wr) (off base (BITS + t)) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega)⟩
-  have hw : InRegions s.wr (off base SWAP) 8 := ⟨_, hs.wr, contains_sc (by simp only [SWAP]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_arith)⟩
+  have hw : InRegions s.wr (off base SWAP) 8 := ⟨_, hs.wr, contains_sc (by simp only [SWAP]; omega_arith)⟩
   have hr : InRegions (s.rd ++ s.wr) (off base SWAP) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [SWAP]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [SWAP]; omega_arith)⟩
   apply WP.of_runBlock
   simp only [stepPre, runBlock_cons, runStep_some, exec, readSrc, execAlu, State.load8,
     RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.rd_arithFlags,
@@ -70,7 +70,7 @@ theorem stepPre_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t
     exists_eq_left', State.setReg32]
   have e0 : BitVec.setWidth 64 (0 : BitVec 32) = 0 := rfl
   have ek : BitVec.setWidth 64 (BitVec.ofNat 8 kt) = BitVec.ofNat 64 kt := by
-    rcases (by omega : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
+    rcases (by omega_arith : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
   refine ⟨trivial, by rw [e0]; exact mask_xor sw0 hsw kt hk, fun r hr => ?_, trivial, trivial,
     by rw [ek], rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -232,19 +232,19 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} {n :
     WP isa (.block (step fld)) s fun s' => LInv base k u s₀ s' n ∧ s'.zf = some (decide (n = 0)) := by
   have hs := hi.scr
   have hbit : s.mem (off base (BITS + n)) = BitVec.ofNat 8 (bit k n) := by
-    rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)]
+    rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega_arith)]; simp only [BITS]; omega_arith)]
     exact hbits n hn
   rw [step_eq, WP.block_append_iff]
-  refine WP.mono (stepPre_ok hs hn hi.rbx (by have := bit_le k n; omega)
-    (by have := ladderAfter_swap_le k u (n := n + 1) (by omega); omega) hbit hi.swap)
+  refine WP.mono (stepPre_ok hs hn hi.rbx (by have := bit_le k n; omega_arith)
+    (by have := ladderAfter_swap_le k u (n := n + 1) (by omega_arith); omega_arith) hbit hi.swap)
     fun s1 ⟨b1, m1, g1, rd1, wr1, mem1, _, _⟩ => ?_
   have hs1 : Scr s1 base := ⟨(g1 _ (by decide)).trans hs.rdi, wr1 ▸ hs.wr, hs.nowrap⟩
   have o8 : Outside base SWAP 8 s.mem s1.mem := by
-    rw [mem1]; exact writeW_outside _ _ _ (by simp only [SWAP]; omega)
+    rw [mem1]; exact writeW_outside _ _ _ (by simp only [SWAP]; omega_arith)
   have e1 : ∀ i : Index, E s1.mem base i = E s.mem base i := fun i => by
     have := slot_ge i
     simp only [E, F]
-    rw [o8.fe (Or.inr (by simp only [SWAP]; omega)) (by have := slot_lt i; simp only [ACC] at this; omega)]
+    rw [o8.fe (Or.inr (by simp only [SWAP]; omega_arith)) (by have := slot_lt i; simp only [ACC] at this; omega_arith)]
   rw [WP.block_append_iff]
   refine WP.mono (ops_ok hf hs1 m1) fun s2 ⟨K, e2⟩ => ?_
   have hs2 := K.scr hs1
@@ -255,12 +255,12 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} {n :
     rw [BitVec.and_self]
     rcases Nat.eq_zero_or_pos n with rfl | h
     · rfl
-    · rw [decide_eq_false (by omega)]
+    · rw [decide_eq_false (by omega_arith)]
       apply beq_false_of_ne
       intro h'
       have := congrArg BitVec.toNat h'
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-      exact absurd this (by simp; omega)
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
+      exact absurd this (by simp; omega_arith)
   obtain ⟨v0, v1, v2, v3, v4⟩ := stepEnv_eval (E s1.mem base) (ladderAfter k u (n + 1)) k u n
     (by rw [e1]; exact hi.x1) (by rw [e1]; exact hi.x2) (by rw [e1]; exact hi.z2)
     (by rw [e1]; exact hi.x3) (by rw [e1]; exact hi.z3)
@@ -277,9 +277,9 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} {n :
   · rw [RegUpd.rd_arithFlags, K.rd, rd1, hi.rd]
   · rw [RegUpd.wr_arithFlags, K.wr, wr1, hi.wr]
   · rw [RegUpd.mem_arithFlags]
-    exact hi.mem.trans ((o8.mono (by simp only [SWAP]; omega) (by simp only [SWAP]; omega)).trans
-      (K.mem.mono (by omega) (by omega)))
-  · rw [RegUpd.mem_arithFlags, K.mem.word (by simp only [SWAP]; omega) (by simp only [SWAP]; omega),
+    exact hi.mem.trans ((o8.mono (by simp only [SWAP]; omega_arith) (by simp only [SWAP]; omega_arith)).trans
+      (K.mem.mono (by omega_arith) (by omega_arith)))
+  · rw [RegUpd.mem_arithFlags, K.mem.word (by simp only [SWAP]; omega_arith) (by simp only [SWAP]; omega_arith),
       mem1, ladderAfter_step k u hn]
     simp only [X86_64.word, Mem.readW_writeW_self64]
     rfl
@@ -296,13 +296,13 @@ theorem loop_ok {s₀ : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}
     (Q := fun s' => LInv base k u s₀ s' 0)
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 448 ∧ LInv base k u s₀ s m) ?_ n s ⟨h1, h2, hi⟩
   intro m s ⟨h1, h2, hi⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (step_ok hf (by omega) hbits hi) fun s' ⟨hi', hz⟩ => ?_
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_arith⟩
+  refine WP.mono (step_ok hf (by omega_arith) hbits hi) fun s' ⟨hi', hz⟩ => ?_
   simp only [eval, hz, Option.map_some]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, hi'⟩
-  · refine .inr ⟨by simp only [decide_eq_false (by omega : ¬m = 0), Bool.not_false], m, by omega,
-      by omega, by omega, hi'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬m = 0), Bool.not_false], m, by omega_arith,
+      by omega_arith, by omega_arith, hi'⟩
 
 include hf in
 /-- The ladder: the counter set to 448, then the loop. -/
@@ -318,7 +318,7 @@ theorem ladder_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
       State.setReg32, Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg_self]
     exact ⟨rfl, fun r hr => by simp only [RegUpd.gpr_setReg, hr, ite_false], rfl, rfl, rfl⟩)
-    fun s' ⟨h1, h2, h3, h4, h5⟩ => loop_ok hf hbits 448 s' (by omega) (by omega) (hi s' h1 h2 h3 h4 h5))
+    fun s' ⟨h1, h2, h3, h4, h5⟩ => loop_ok hf hbits 448 s' (by omega_arith) (by omega_arith) (hi s' h1 h2 h3 h4 h5))
 
 /-- What a ladder leaves: the slots `x2, z2, x3, z3` (1–4) and the word
 `swap` hold the ladder's final state, and since its start (`s₀`) nothing else

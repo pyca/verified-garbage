@@ -55,9 +55,9 @@ theorem wv_lt (m : Mem) (p : Addr) (d n : Nat) : wv m p d n < 2 ^ (64 * n) := by
     rw [wv, pow64_succ]
     have hw := (word m p (d + 8 * n)).isLt
     have : 2 ^ (64 * n) * (word m p (d + 8 * n)).toNat ≤ 2 ^ (64 * n) * (2 ^ 64 - 1) :=
-      Nat.mul_le_mul_left _ (by omega)
+      Nat.mul_le_mul_left _ (by omega_arith)
     rw [Nat.mul_sub, Nat.mul_one] at this
-    omega
+    omega_arith
 
 theorem wv_congr {m m' : Mem} {p : Addr} {d n : Nat}
     (h : ∀ i < n, word m' p (d + 8 * i) = word m p (d + 8 * i)) : wv m' p d n = wv m p d n := by
@@ -65,7 +65,7 @@ theorem wv_congr {m m' : Mem} {p : Addr} {d n : Nat}
   | zero => rfl
   | succ n ih =>
     simp only [wv]
-    rw [ih fun i hi => h i (by omega), h n (by omega)]
+    rw [ih fun i hi => h i (by omega_arith), h n (by omega_arith)]
 
 /-- A number of `n + k` words is its low `n` words and its high `k` words. -/
 theorem wv_add (m : Mem) (p : Addr) (d n k : Nat) :
@@ -73,8 +73,8 @@ theorem wv_add (m : Mem) (p : Addr) (d n k : Nat) :
   induction k with
   | zero => simp [wv]
   | succ k ih =>
-    rw [← Nat.add_assoc, wv, ih, wv, show 64 * (n + k) = 64 * n + 64 * k by omega, Nat.pow_add,
-      show d + 8 * (n + k) = d + 8 * n + 8 * k by omega, Nat.mul_add, Nat.add_assoc, Nat.mul_assoc]
+    rw [← Nat.add_assoc, wv, ih, wv, show 64 * (n + k) = 64 * n + 64 * k by omega_arith, Nat.pow_add,
+      show d + 8 * (n + k) = d + 8 * n + 8 * k by omega_arith, Nat.mul_add, Nat.add_assoc, Nat.mul_assoc]
 
 /-- A number is zero iff its words are. -/
 theorem wv_eq_zero_iff (m : Mem) (p : Addr) (d n : Nat) :
@@ -85,8 +85,8 @@ theorem wv_eq_zero_iff (m : Mem) (p : Addr) (d n : Nat) :
     rw [wv]
     constructor
     · intro h q hq
-      have h1 : wv m p d n = 0 := by omega
-      have h2 : 2 ^ (64 * n) * (word m p (d + 8 * n)).toNat = 0 := by omega
+      have h1 : wv m p d n = 0 := by omega_arith
+      have h2 : 2 ^ (64 * n) * (word m p (d + 8 * n)).toNat = 0 := by omega_arith
       rcases Nat.lt_succ_iff_lt_or_eq.mp hq with hq | hq
       · exact ih.mp h1 q hq
       · subst hq
@@ -94,21 +94,21 @@ theorem wv_eq_zero_iff (m : Mem) (p : Addr) (d n : Nat) :
         · exact absurd h (Nat.ne_of_gt (Nat.two_pow_pos _))
         · exact BitVec.eq_of_toNat_eq h
     · intro h
-      rw [ih.mpr fun q hq => h q (by omega), h n (by omega)]
+      rw [ih.mpr fun q hq => h q (by omega_arith), h n (by omega_arith)]
       rfl
 
 /-- A number whose words but word `i` are zero. -/
 theorem wv_single (m : Mem) (p : Addr) (d : Nat) {i : Nat} :
     ∀ n, i < n → (∀ q < n, q ≠ i → word m p (d + 8 * q) = 0) →
       wv m p d n = (word m p (d + 8 * i)).toNat * 2 ^ (64 * i)
-  | 0, hi, _ => absurd hi (by omega)
+  | 0, hi, _ => absurd hi (by omega_arith)
   | n + 1, hi, h => by
     rw [wv]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | hi
-    · rw [wv_single m p d n hi fun q hq hne => h q (by omega) hne, h n (by omega) (by omega)]
+    · rw [wv_single m p d n hi fun q hq hne => h q (by omega_arith) hne, h n (by omega_arith) (by omega_arith)]
       simp
     · subst hi
-      rw [(wv_eq_zero_iff m p d i).mpr fun q hq => h q (by omega) (by omega), Nat.zero_add, Nat.mul_comm]
+      rw [(wv_eq_zero_iff m p d i).mpr fun q hq => h q (by omega_arith) (by omega_arith), Nat.zero_add, Nat.mul_comm]
 
 /-! ## Addresses -/
 
@@ -138,7 +138,7 @@ theorem Outside.trans {base : Addr} {o n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : O
 
 theorem Outside.mono {base : Addr} {o n o' n' : Nat} {m m' : Mem} (h : Outside base o n m m')
     (h₁ : o' ≤ o) (h₂ : o + n ≤ o' + n') : Outside base o' n' m m' :=
-  fun x hx => h x (by omega)
+  fun x hx => h x (by omega_arith)
 
 theorem ofs_off (base : Addr) {d i : Nat} (h : d + i < 2 ^ 64) :
     ofs base (off base d + BitVec.ofNat 64 i) = d + i := by
@@ -148,12 +148,12 @@ theorem ofs_off (base : Addr) {d i : Nat} (h : d + i < 2 ^ 64) :
 /-- A word at an offset outside the bytes that changed. -/
 theorem Outside.word {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
     (hd : d + 8 ≤ o ∨ o + n ≤ d) (hd' : d + 8 ≤ 2 ^ 64) : word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega_arith)]; omega_arith)).symm).symm
 
 theorem Outside.wv {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
     {d k : Nat} (hd : d + 8 * k ≤ o ∨ o + n ≤ d) (hd' : d + 8 * k ≤ 2 ^ 64) :
     wv m' base d k = wv m base d k :=
-  wv_congr fun i hi => h.word (by omega) (by omega)
+  wv_congr fun i hi => h.word (by omega_arith) (by omega_arith)
 
 theorem writeW_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 64) (h : d + 8 ≤ 2 ^ 64) :
     Outside base d 8 m (m.writeW (off base d) v) := by
@@ -161,14 +161,14 @@ theorem writeW_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 64) (h : d 
   apply Mem.write_apply
   simp only [ofs] at hx
   have : (x - off base d).toNat = (2 ^ 64 - d + (x - base).toNat) % 2 ^ 64 :=
-    Offset.toNat_sub_add x base (by omega)
+    Offset.toNat_sub_add x base (by omega_arith)
   rw [this]
   have := (x - base).isLt
   rcases hx with hx | hx
-  · rw [Nat.mod_eq_of_lt (by omega)]; omega
-  · rw [show 2 ^ 64 - d + (x - base).toNat = (x - base).toNat - d + 2 ^ 64 by omega,
-      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
+  · rw [show 2 ^ 64 - d + (x - base).toNat = (x - base).toNat - d + 2 ^ 64 by omega_arith,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
 
 theorem word_writeW_self (m : Mem) (base : Addr) (d : Nat) (v : BitVec 64) :
     word (m.writeW (off base d) v) base d = v := Mem.readW_writeW_self64 m _ v
@@ -176,7 +176,7 @@ theorem word_writeW_self (m : Mem) (base : Addr) (d : Nat) (v : BitVec 64) :
 /-- Writing word `n` of a number of `n + 1` words. -/
 theorem wv_writeW_top (m : Mem) (base : Addr) (d n : Nat) (v : BitVec 64) (h : d + 8 * n + 8 ≤ 2 ^ 64) :
     wv (m.writeW (off base (d + 8 * n)) v) base d (n + 1) = wv m base d n + 2 ^ (64 * n) * v.toNat := by
-  rw [wv, word_writeW_self, (writeW_outside m base v (by omega)).wv (Or.inl (Nat.le_refl _)) (by omega)]
+  rw [wv, word_writeW_self, (writeW_outside m base v (by omega_arith)).wv (Or.inl (Nat.le_refl _)) (by omega_arith)]
 
 
 /-! ## Carries, borrows, products and masks -/
@@ -186,7 +186,7 @@ theorem addc_toNat (lo hi c : BitVec 64) (h : lo.toNat + c.toNat + 2 ^ 64 * hi.t
     (lo + c).toNat + 2 ^ 64 * (hi + 0 +
       (BitVec.ofBool (decide (2 ^ 64 ≤ lo.toNat + c.toNat))).setWidth 64).toNat =
       lo.toNat + c.toNat + 2 ^ 64 * hi.toNat := by
-  have := add_adc_toNat lo c hi 0 (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega)
+  have := add_adc_toNat lo c hi 0 (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega_arith)
   rwa [show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at this
 
 /-- The product `rdx:rax` of `mul`, as a number. -/
@@ -194,12 +194,12 @@ theorem mul_toNat (a b : BitVec 64) :
     (BitVec.ofNat 64 (a.toNat * b.toNat)).toNat +
       2 ^ 64 * (BitVec.ofNat 64 (a.toNat * b.toNat / 2 ^ 64)).toNat = a.toNat * b.toNat := by
   have ha := a.isLt; have hb := b.isLt
-  have hp : a.toNat * b.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a.toNat * b.toNat / 2 ^ 64) (by omega)]
+  have hp : a.toNat * b.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a.toNat * b.toNat / 2 ^ 64) (by omega_arith)]
   exact Nat.mod_add_div _ _
 
 theorem mul_le (a b : BitVec 64) : a.toNat * b.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) :=
-  Nat.mul_le_mul (by have := a.isLt; omega) (by have := b.isLt; omega)
+  Nat.mul_le_mul (by have := a.isLt; omega_arith) (by have := b.isLt; omega_arith)
 
 
 /-- The mask of a borrow, as `sbb rbp, rbp` leaves it. -/
@@ -222,7 +222,7 @@ theorem sbb_toNat (a b : BitVec 64) (c : Bool) :
   have hc1 := Bool.toNat_le c
   rw [BitVec.toNat_sub, BitVec.toNat_sub, hc]
   by_cases h : a.toNat < b.toNat + c.toNat <;> simp only [h, decide_true, decide_false,
-    Bool.toNat_true, Bool.toNat_false] <;> omega
+    Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- The selection: `((a ^ b) & m) ^ b` is `a` for the mask of `true`, `b`
 for that of `false`. -/
@@ -243,13 +243,13 @@ theorem adc_toNat (a b : BitVec 64) (c : Bool) :
   have hc1 := Bool.toNat_le c
   rw [BitVec.toNat_add, BitVec.toNat_add, hc]
   by_cases h : 2 ^ 64 ≤ a.toNat + b.toNat + c.toNat <;> simp only [h, decide_true, decide_false,
-    Bool.toNat_true, Bool.toNat_false] <;> omega
+    Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 
 theorem lt_of_borrow {X N d P : Nat} {c : Bool} (hd : d < P)
     (h : d + N = X + P * c.toNat) : c = decide (X < N) := by
   cases c <;> simp only [Bool.toNat_true, Bool.toNat_false, Nat.mul_one, Nat.mul_zero] at h <;>
-    (symm; simp only [decide_eq_true_eq, decide_eq_false_iff_not]) <;> omega
+    (symm; simp only [decide_eq_true_eq, decide_eq_false_iff_not]) <;> omega_arith
 
 
 /-- Numbers at two places with the same words. -/
@@ -259,7 +259,7 @@ theorem wv_congr2 {m m' : Mem} {p p' : Addr} {d d' n : Nat}
   | zero => rfl
   | succ n ih =>
     simp only [wv]
-    rw [ih fun i hi => h i (by omega), h n (by omega)]
+    rw [ih fun i hi => h i (by omega_arith), h n (by omega_arith)]
 
 
 /-- `t₀ + (t₀ m' mod 2⁶⁴) m ≡ 0 (mod 2⁶⁴)` when `m m' ≡ -1`. -/
@@ -275,7 +275,7 @@ theorem mont_low (t0 minv m : Nat) (h : (m * minv + 1) % 2 ^ 64 = 0) :
 theorem wv_top2 (m : Mem) (B : Addr) (d w : Nat) :
     wv m B d (w + 2) = wv m B d w + 2 ^ (64 * w) *
       ((word m B (d + 8 * w)).toNat + 2 ^ 64 * (word m B (d + 8 * w + 8)).toNat) := by
-  rw [show w + 2 = w + 1 + 1 from rfl, wv, wv, pow64_succ, show d + 8 * (w + 1) = d + 8 * w + 8 by omega]
+  rw [show w + 2 = w + 1 + 1 from rfl, wv, wv, pow64_succ, show d + 8 * (w + 1) = d + 8 * w + 8 by omega_arith]
   grind
 
 
@@ -293,9 +293,9 @@ theorem shr8_toNat (x : BitVec 64) : (x >>> 8).toNat = x.toNat / 256 := by
 theorem word_of_wv (m : Mem) (B : Addr) (ed w : Nat) {q : Nat} (hq : q < w) :
     (word m B (ed + 8 * q)).toNat = wv m B ed w / 2 ^ (64 * q) % 2 ^ 64 := by
   have h := wv_add m B ed q (w - q)
-  rw [show q + (w - q) = w by omega] at h
-  obtain ⟨r, hr⟩ : ∃ r, w - q = r + 1 := ⟨w - q - 1, by omega⟩
-  rw [hr, show r + 1 = 1 + r by omega, wv_add, show (wv m B (ed + 8 * q) 1) = (word m B (ed + 8 * q)).toNat
+  rw [show q + (w - q) = w by omega_arith] at h
+  obtain ⟨r, hr⟩ : ∃ r, w - q = r + 1 := ⟨w - q - 1, by omega_arith⟩
+  rw [hr, show r + 1 = 1 + r by omega_arith, wv_add, show (wv m B (ed + 8 * q) 1) = (word m B (ed + 8 * q)).toNat
     by simp [wv]] at h
   rw [h]
   have hl := wv_lt m B ed q
@@ -331,7 +331,7 @@ theorem pre_len (bs : List Byte) : pre bs bs.length = Spec.Rsa.os2ip bs := by
   unfold pre; rw [List.take_length]
 
 theorem pow256 (a : Nat) : (256 : Nat) ^ (8 * a) = 2 ^ (64 * a) := by
-  rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul]; congr 1; omega
+  rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul]; congr 1; omega_arith
 
 /-- Words that are the base-`2⁶⁴` digits of `V` make `V mod 2^(64 n)`. -/
 theorem wv_digits {m : Mem} {B : Addr} {ed V : Nat} (n : Nat)
@@ -340,17 +340,17 @@ theorem wv_digits {m : Mem} {B : Addr} {ed V : Nat} (n : Nat)
   induction n with
   | zero => simp [wv, Nat.mod_one]
   | succ n ih =>
-    rw [wv, ih fun q hq => h q (by omega), h n (by omega), BitVec.toNat_ofNat, pow256,
-      show 64 * (n + 1) = 64 * n + 64 by omega, Nat.pow_add, Nat.mod_mul]
+    rw [wv, ih fun q hq => h q (by omega_arith), h n (by omega_arith), BitVec.toNat_ofNat, pow256,
+      show 64 * (n + 1) = 64 * n + 64 by omega_arith, Nat.pow_add, Nat.mod_mul]
 
 theorem pre_lt (bs : List Byte) {i : Nat} (hi : i ≤ bs.length) : pre bs i < 256 ^ i := by
   induction i with
   | zero => exact Nat.one_pos
   | succ i ih =>
-    rw [pre_succ bs (by omega), Nat.pow_succ]
-    have := ih (by omega)
-    have := (bs[i]'(by omega)).isLt
-    omega
+    rw [pre_succ bs (by omega_arith), Nat.pow_succ]
+    have := ih (by omega_arith)
+    have := (bs[i]'(by omega_arith)).isLt
+    omega_arith
 
 
 /-! ## Inverses and bits -/
@@ -360,14 +360,14 @@ theorem neg_inv {a x : Nat} (hx : x < 2 ^ 64) (h : ((a : Int) * x - 1) % (2 ^ 64
     (a * ((2 ^ 64 - x + 0) % 2 ^ 64) + 1) % 2 ^ 64 = 0 := by
   have hr : (((2 ^ 64 - x + 0) % 2 ^ 64 : Nat) : Int) % 2 ^ 64 = -(x : Int) % 2 ^ 64 := by
     rw [Int.natCast_emod, show ((2 ^ 64 : Nat) : Int) = 2 ^ 64 from rfl, Int.emod_emod]
-    omega
+    omega_arith
   have h2 : ((a * ((2 ^ 64 - x + 0) % 2 ^ 64) + 1 : Nat) : Int) % 2 ^ 64 =
       (-((a : Int) * x - 1)) % 2 ^ 64 := by
     rw [Int.natCast_add, Int.natCast_mul, Int.add_emod, Int.mul_emod, hr, ← Int.mul_emod,
       ← Int.add_emod]
     congr 1
     rw [Int.mul_neg]
-    omega
+    omega_arith
   have h3 : (-((a : Int) * x - 1)) % 2 ^ 64 = 0 :=
     Int.emod_eq_zero_of_dvd (Int.dvd_neg.mpr (Int.dvd_of_emod_eq_zero h))
   have h4 := h2.trans h3
@@ -383,11 +383,11 @@ theorem div_pow_succ (T j : Nat) : T / 2 ^ j / 2 = T / 2 ^ (j + 1) := by
 theorem wv_mod64 (m : Mem) (p : Addr) (d : Nat) {n : Nat} (hn : 1 ≤ n) :
     wv m p d n % 2 ^ 64 = (word m p d).toNat := by
   induction n with
-  | zero => omega
+  | zero => omega_arith
   | succ n ih =>
     rcases Nat.eq_zero_or_pos n with rfl | hn'
     · simp [wv, Nat.mod_eq_of_lt (word m p d).isLt]
-    · rw [wv, Nat.add_mod, ih hn', show 64 * n = 64 + 64 * (n - 1) by omega, Nat.pow_add, Nat.mul_assoc,
+    · rw [wv, Nat.add_mod, ih hn', show 64 * n = 64 + 64 * (n - 1) by omega_arith, Nat.pow_add, Nat.mul_assoc,
         Nat.mul_mod_right, Nat.add_zero, Nat.mod_eq_of_lt (word m p d).isLt]
 
 end VG.Proof.Bignum

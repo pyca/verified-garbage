@@ -29,7 +29,7 @@ theorem maskInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} 
   xrun [maskInit, ea_sp, hc.rsp, hs.ld (d := oK) (by decide), hc.slots.sK]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, show (BitVec.signExtend 64 (11 : BitVec 32)).toNat = 11 from rfl, BitVec.toNat_ofNat]
-  unfold kOf at *; omega
+  unfold kOf at *; omega_arith
 
 
 theorem maskBody_run {t : State} {x j : Nat} (hx : x < 2 ^ 32) (hj : 2 ^ j - 1 < x)
@@ -38,35 +38,35 @@ theorem maskBody_run {t : State} {x j : Nat} (hx : x < 2 ^ 32) (hj : 2 ^ j - 1 <
       t'.mem = t.mem ∧ t'.gpr .r8 = BitVec.ofNat 64 (2 ^ (j + 1) - 1) ∧
       t'.cf = some (decide (2 ^ (j + 1) - 1 < x)) ∧ Keep [.r8] t t' := by
   have hp := Nat.one_le_two_pow (n := j)
-  have hs : 2 * (2 ^ j - 1) + 1 = 2 ^ (j + 1) - 1 := by rw [Nat.pow_succ]; omega
+  have hs : 2 * (2 ^ j - 1) + 1 = 2 ^ (j + 1) - 1 := by rw [Nat.pow_succ]; omega_arith
   refine WP.keep [.r8] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .r8 = BitVec.ofNat 64 (2 ^ (j + 1) - 1) ∧
       t'.cf = some (decide (2 ^ (j + 1) - 1 < x))) ?_ rfl |>.mono fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
-  have hb1 : 2 ^ j ≤ 2 ^ 32 := by omega
+  have hb1 : 2 ^ j ≤ 2 ^ 32 := by omega_arith
   have hb2 : 2 ^ (j + 1) = 2 * 2 ^ j := Nat.pow_succ'
   generalize 2 ^ j = a at *
   generalize 2 ^ (j + 1) = b at *
   subst hb2
   have e : BitVec.ofNat 64 (a - 1) + BitVec.ofNat 64 (a - 1) + 1 = BitVec.ofNat 64 (2 * a - 1) := by
-    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]; omega
+    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]; omega_arith
   xrun [h8, h9, e]
   simp only [BitVec.toNat_ofNat]
   congr 1
   apply propext
-  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 
 theorem maskLoop_ok {t₀ : State} {x : Nat} (hx1 : 1 ≤ x) (hx : x < 2 ^ 32) (h8 : t₀.gpr .r8 = BitVec.ofNat 64 0)
     (h9 : t₀.gpr .r9 = BitVec.ofNat 64 x) :
     WP isa maskLoop t₀ fun t' => t'.mem = t₀.mem ∧ t'.gpr .r8 = BitVec.ofNat 64 (bitMask x) ∧ Keep [.r8] t₀ t' := by
   refine WP.loop (M := isa) (fun n (u : State) => ∃ j, n = x - (2 ^ j - 1) ∧ 2 ^ j - 1 < x ∧ u.gpr .r8 = BitVec.ofNat 64 (2 ^ j - 1) ∧
-      u.mem = t₀.mem ∧ Keep [.r8] t₀ u) ?_ x t₀ ⟨0, by simp, by simp; omega, by simpa using h8, rfl, Keep.refl _ _⟩
+      u.mem = t₀.mem ∧ Keep [.r8] t₀ u) ?_ x t₀ ⟨0, by simp, by simp; omega_arith, by simpa using h8, rfl, Keep.refl _ _⟩
   rintro n u ⟨j, rfl, hj, hr8, hm, k⟩
   refine WP.mono (maskBody_run hx hj hr8 ((k.gpr (by decide)).trans h9)) fun u' ⟨hm', hr8', hcf, k'⟩ => ?_
   have hb := bitMask_step hx1 hj
   by_cases hc : 2 ^ (j + 1) - 1 < x
   · refine .inr ⟨by simp [eval, hcf, hc], _, ?_, j + 1, rfl, hc, hr8', hm'.trans hm, (k.trans k').mono (by decide)⟩
-    omega
-  · refine .inl ⟨by simp [eval, hcf, hc], hm'.trans hm, by rw [hr8', hb.2 (by omega)], (k.trans k').mono (by decide)⟩
+    omega_arith
+  · refine .inl ⟨by simp [eval, hcf, hc], hm'.trans hm, by rw [hr8', hb.2 (by omega_arith)], (k.trans k').mono (by decide)⟩
 
 
 theorem zx (b : Byte) : BitVec.setWidth 64 b = BitVec.ofNat 64 b.toNat := BitVec.eq_of_toNat_eq (by simp)
@@ -109,23 +109,23 @@ theorem alBody_run {t : State} {p : Addr} {j M x al : Nat} (hj : j < 128) (hM : 
     fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, k⟩
   have e1 : 0 + 2 * j = 2 * j := Nat.zero_add _
   have e2 : 1 + 2 * j = 2 * j + 1 := Nat.add_comm _ _
-  xrun [ea_bxd (p := p) (j := 2 * j), hsi, hcx, e1, e2, hin (2 * j) (by omega), hin (2 * j + 1) (by omega), h8, h9,
+  xrun [ea_bxd (p := p) (j := 2 * j), hsi, hcx, e1, e2, hin (2 * j) (by omega_arith), hin (2 * j + 1) (by omega_arith), h8, h9,
     h11, zx, addN, ← Nat.two_mul]
   have ha := (t.mem (off p (2 * j))).isLt
   have hb := (t.mem (off p (2 * j + 1))).isLt
   generalize (t.mem (off p (2 * j))).toNat = a at *
   generalize (t.mem (off p (2 * j + 1))).toNat = b at *
   have hc : 256 * a + b &&& M ≤ M := Nat.and_le_right
-  have e2 : BitVec.ofNat 64 (2 * j) + 2 = BitVec.ofNat 64 (2 * (j + 1)) := BitVec.eq_of_toNat_eq (by simp; omega)
-  rw [show 2 * (2 * (2 * (2 * (2 * (2 * (2 * (2 * a))))))) = 256 * a by omega, andN (by omega) (by omega), sel_mask,
+  have e2 : BitVec.ofNat 64 (2 * j) + 2 = BitVec.ofNat 64 (2 * (j + 1)) := BitVec.eq_of_toNat_eq (by simp; omega_arith)
+  rw [show 2 * (2 * (2 * (2 * (2 * (2 * (2 * (2 * a))))))) = 256 * a by omega_arith, andN (by omega_arith) (by omega_arith), sel_mask,
     e2, show BitVec.signExtend 64 (256 : BitVec 32) = BitVec.ofNat 64 256 by decide,
-    ofNat_sub_beq (by omega) (by decide)]
-  refine ⟨?_, rfl, by simp only [decide_eq_decide]; omega⟩
-  simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show x < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show 256 * a + b &&& M < 2 ^ 64 by omega)]
+    ofNat_sub_beq (by omega_arith) (by decide)]
+  refine ⟨?_, rfl, by simp only [decide_eq_decide]; omega_arith⟩
+  simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show x < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show 256 * a + b &&& M < 2 ^ 64 by omega_arith)]
   by_cases h : 256 * a + b &&& M ≤ x
-  · simp [h, show ¬ x < 256 * a + b &&& M by omega]
-  · simp [h, show x < 256 * a + b &&& M by omega]
+  · simp [h, show ¬ x < 256 * a + b &&& M by omega_arith]
+  · simp [h, show x < 256 * a + b &&& M by omega_arith]
 
 
 theorem altFold_le (k : Nat) (CL : List Byte) (j : Nat) :
@@ -135,14 +135,14 @@ theorem altFold_le (k : Nat) (CL : List Byte) (j : Nat) :
   | succ j ih =>
     rw [foldl_range_succ]
     simp only [altStep]
-    split <;> omega
+    split <;> omega_arith
 
 /-- The candidate, as the loop computes it. -/
 theorem altStep_eq (k : Nat) (CL : List Byte) (al i : Nat) (h : 2 * i + 1 < CL.length) :
-    altStep k CL al i = (let c := (256 * (CL[2 * i]'(by omega)).toNat + (CL[2 * i + 1]'h).toNat) &&& bitMask (k - 11)
+    altStep k CL al i = (let c := (256 * (CL[2 * i]'(by omega_arith)).toNat + (CL[2 * i + 1]'h).toNat) &&& bitMask (k - 11)
       if c ≤ k - 11 then c else al) := by
   simp only [altStep, cand_eq, bitMask, Nat.and_two_pow_sub_one_eq_mod, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (show 2 * i < CL.length by omega), List.getElem?_eq_getElem h, Option.getD_some]
+    List.getElem?_eq_getElem (show 2 * i < CL.length by omega_arith), List.getElem?_eq_getElem h, Option.getD_some]
 
 /-- After the mask: `bitMask (k - 11)` in `r8` and `k - 11` in `r9`. -/
 structure MK (s : State) (R : BitVec 64) (EM : List Byte) (t : State) : Prop where
@@ -155,7 +155,7 @@ theorem maskPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte}
   have hk1 := hp.k1
   have hk2 := hp.k2
   refine WP.seq (WP.mono (maskInit_run hp h.ctx) fun t₁ ⟨hm₁, h9₁, h8₁, k₁⟩ => ?_)
-  refine WP.mono (maskLoop_ok (x := kOf s - 11) (by unfold kOf; omega) (by unfold kOf; omega) h8₁ h9₁)
+  refine WP.mono (maskLoop_ok (x := kOf s - 11) (by unfold kOf; omega_arith) (by unfold kOf; omega_arith) h8₁ h9₁)
     fun t₂ ⟨hm₂, h8₂, k₂⟩ => ?_
   have hm : t₂.mem = t.mem := hm₂.trans hm₁
   have k := k₁.trans k₂
@@ -165,7 +165,7 @@ theorem maskPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte}
 theorem bitMask_le {x : Nat} (hx : x ≠ 0) : bitMask x ≤ 2 * x := by
   simp only [bitMask, Spec.RsaPkcs1Enc.bitLength, hx, ↓reduceIte, Nat.pow_succ]
   have := Nat.log2_self_le hx
-  omega
+  omega_arith
 
 /-- `CL`. -/
 abbrev clOf (s : State) : List Byte := Spec.RsaPkcs1Enc.irprf (kdkOf s) (Spec.RsaPkcs1Enc.ascii "length") 256
@@ -190,12 +190,12 @@ theorem alPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
   have hCL : Spec.Rsa.bytesAt t₁.mem (scA s sCL) 256 = clOf s := hm₁ ▸ h.am.cl
   have hlen : (clOf s).length = 256 := by rw [← hCL, blen]
   have hin : ∀ i < 256, InRegions (t₁.rd ++ t₁.wr) (off (scA s sCL) i) 1 := fun i hi => by
-    obtain ⟨r, hr, hcr⟩ := (hsc.congr k₁.2.2).region (d := sCL + i) (n := 1) (by unfold sCL scrBytes; omega)
+    obtain ⟨r, hr, hcr⟩ := (hsc.congr k₁.2.2).region (d := sCL + i) (n := 1) (by unfold sCL scrBytes; omega_arith)
       (by decide)
     exact ⟨r, List.mem_append_right _ hr, by rw [scA, off_off]; exact hcr⟩
   have hM : bitMask (kOf s - 11) < 2 ^ 16 := by
-    have := bitMask_le (x := kOf s - 11) (by unfold kOf; omega); unfold kOf at *; omega
-  have hget : ∀ i (hi : i < 256), (clOf s)[i]'(by omega) = t₁.mem (off (scA s sCL) i) := fun i hi => by
+    have := bitMask_le (x := kOf s - 11) (by unfold kOf; omega_arith); unfold kOf at *; omega_arith
+  have hget : ∀ i (hi : i < 256), (clOf s)[i]'(by omega_arith) = t₁.mem (off (scA s sCL) i) := fun i hi => by
     have := bget t₁.mem (scA s sCL) (n := 256) (i := i) (by rw [blen]; exact hi)
     simp only [hCL] at this; rw [this, off]
   refine WP.mono (wp_upto (a := 0) (N := 128) (by decide) (fun j u => Keep [.rax, .rdx, .r11, .rcx] t₁ u ∧
@@ -204,11 +204,11 @@ theorem alPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
       ⟨Keep.refl _ _, rfl, h11₁, hcx₁⟩) fun t₂ ⟨k₂, hm₂, h11₂, _⟩ => ?_
   · have hin' : ∀ i < 256, InRegions (u.rd ++ u.wr) (off (scA s sCL) i) 1 := by
       rw [ku.2.1, ku.2.2]; exact hin
-    refine WP.mono (alBody_run (p := scA s sCL) hj hM (by unfold kOf; omega) ((ku.gpr (by decide)).trans hsi₁)
+    refine WP.mono (alBody_run (p := scA s sCL) hj hM (by unfold kOf; omega_arith) ((ku.gpr (by decide)).trans hsi₁)
       hcxu ((ku.gpr (by decide)).trans ((k₁.gpr (by decide)).trans h.r8))
       ((ku.gpr (by decide)).trans ((k₁.gpr (by decide)).trans h.r9)) h11u hin')
       fun u' ⟨hm', h11', hcx', hz, k'⟩ => ⟨hz, (ku.trans k').mono (by decide), hm'.trans hmu, ?_, hcx'⟩
-    rw [h11', foldl_range_succ, altStep_eq _ _ _ _ (by omega), hget _ (by omega), hget _ (by omega), hmu]
+    rw [h11', foldl_range_succ, altStep_eq _ _ _ _ (by omega_arith), hget _ (by omega_arith), hget _ (by omega_arith), hmu]
   · have hm : t₂.mem = t.mem := hm₂.trans hm₁
     have k := k₁.trans k₂
     refine ⟨⟨⟨h.am.ctx.regs hp hm k (by decide), hm ▸ h.am.cl, hm ▸ h.am.am⟩,

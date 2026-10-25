@@ -80,8 +80,8 @@ theorem core_ok {s : State}
       apply hrt
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hoff
       omega
-    · have hc0' : c.gpr .x0=s.gpr .x0 := by rw [hc0,hb0']; bv_omega
-      have hc2' : c.gpr .x2=s.gpr .x0 := by rw [hc2,hb0']; bv_omega
+    · have hc0' : c.gpr .x0=s.gpr .x0 := by rw [hc0,hb0']; bv_omega_arith
+      have hc2' : c.gpr .x2=s.gpr .x0 := by rw [hc2,hb0']; bv_omega_arith
       have hqv : c.v .v31=HighPack.repeatedWord 8380417 := qVector_eq hfc.q
       refine WP.mono (finalLoop_ok hfc hsc hc12 ?_ ?_) fun t ⟨hkt,_,_,hmt⟩ => ?_
       · intro u hu i

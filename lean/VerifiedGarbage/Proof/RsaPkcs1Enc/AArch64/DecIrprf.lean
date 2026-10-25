@@ -55,14 +55,14 @@ theorem prfLoop_ok (hL : L.Ok) (hP : 16 ≤ L.P) {label : List Nat} {len count :
     WP isa (.loop (prfBody (HH v) label len dst count) (.nonzero .x .x12)) t₀
       (PInv L g vv m₀ R EM kd nbv dst textF t₀ N) := by
   refine Bytes.count_loop hN0 (PInv L g vv m₀ R EM kd nbv dst textF t₀) (fun i hi u hu => ?_) h
-  refine WP.mono (prfBody_ok hL hP hu.post hu.kdk hu.ctr hu.nb (by omega) (by omega) (by omega) hdst hn (htl i)
+  refine WP.mono (prfBody_ok hL hP hu.post hu.kdk hu.ctr hu.nb (by omega_arith) (by omega_arith) (by omega_arith) hdst hn (htl i)
     (hmsg i hi) hcount) fun w hw => ⟨⟨hw.post, ?_, hw.ctr, hw.nb, fun j hj => ?_, fun a l h₁ h₂ => ?_⟩, ?_⟩
-  · rw [hw.keep _ _ (by decide) (by unfold scrBytes at hd2; decide) (.inl (by unfold sKDK; omega)), hu.kdk]
+  · rw [hw.keep _ _ (by decide) (by unfold scrBytes at hd2; decide) (.inl (by unfold sKDK; omega_arith)), hu.kdk]
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [hw.keep _ _ (by omega) (by omega) (.inl (by omega)), hu.out j hj]
+    · rw [hw.keep _ _ (by omega_arith) (by omega_arith) (.inl (by omega_arith)), hu.out j hj]
     · exact hw.out
-  · rw [hw.keep _ _ h₁ (by omega) (.inl (by omega)), hu.keep a l h₁ h₂]
-  · rw [hw.x12, hC i hi]; exact Bytes.counter_ne hi (by omega)
+  · rw [hw.keep _ _ h₁ (by omega_arith) (.inl (by omega_arith)), hu.keep a l h₁ h₂]
+  · rw [hw.x12, hC i hi]; exact Bytes.counter_ne hi (by omega_arith)
 
 /-! ## The bytes of the blocks -/
 
@@ -71,14 +71,14 @@ theorem flatMap_range_congr {α : Type} {f g : Nat → List α} (n : Nat) (h : �
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [List.range_succ, List.flatMap_append, List.flatMap_append, ih (fun j hj => h j (by omega)),
-      List.flatMap_cons, List.flatMap_cons, List.flatMap_nil, List.flatMap_nil, h n (by omega)]
+    rw [List.range_succ, List.flatMap_append, List.flatMap_append, ih (fun j hj => h j (by omega_arith)),
+      List.flatMap_cons, List.flatMap_cons, List.flatMap_nil, List.flatMap_nil, h n (by omega_arith)]
 
 theorem bytes_blocks (m : Mem) (o : Nat) : ∀ n, Spec.Rsa.bytesAt m (scA L o) (32 * n) =
     (List.range n).flatMap fun j => Spec.Rsa.bytesAt m (scA L (o + 32 * j)) 32
   | 0 => rfl
   | n + 1 => by
-    rw [show 32 * (n + 1) = 32 * n + 32 by omega, Enc.bytesAt_add, bytes_blocks m o n, List.range_succ,
+    rw [show 32 * (n + 1) = 32 * n + 32 by omega_arith, Enc.bytesAt_add, bytes_blocks m o n, List.range_succ,
       List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil, Enc.add_add]
 
 theorem bytesAt_take (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) :
@@ -126,7 +126,7 @@ theorem nb_eq {k : BitVec 64} (hk : k.toNat ≤ 1024) : (k + 31) >>> 5 = BitVec.
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     show (31 : BitVec 64).toNat = 31 from rfl]
-  omega
+  omega_arith
 
 /-- `CL` after its loop. -/
 structure CLR (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (R : BitVec 64)
@@ -140,7 +140,7 @@ structure CLR (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀
 theorem Post.msgW (hL : L.Ok) {t : State} (hc : Post L g vv m₀ R EM t) :
     ∀ d < 16, InRegions t.wr (scA L sMsg + BitVec.ofNat 64 d) 1 := fun d hd => by
   rw [Enc.add_add]
-  exact (scCov hL hc.ctx (a := sMsg + d) (n := 1) (by unfold sMsg scrBytes; omega)) _ _
+  exact (scCov hL hc.ctx (a := sMsg + d) (n := 1) (by unfold sMsg scrBytes; omega_arith)) _ _
     ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
 /-- After `clInit`: the counter zero, the number of `AM`'s blocks in its slot, and `scratch` as before. -/
@@ -150,7 +150,7 @@ theorem clStart_ok (hL : L.Ok) {t : State} (hc : Post L g vv m₀ R EM t) :
         Spec.Rsa.bytesAt t₁.mem (scA L a) l = Spec.Rsa.bytesAt t.mem (scA L a) l := by
   have hk := hL.k1024
   have hnQ := hL.nQ
-  refine WP.mono (clInit_ok hc.ctx.sp hc.slots fun d _ h₂ => hc.ctx.inFr (by unfold frameBytes; omega))
+  refine WP.mono (clInit_ok hc.ctx.sp hc.slots fun d _ h₂ => hc.ctx.inFr (by unfold frameBytes; omega_arith))
     fun t₁ ⟨S₁, m₁⟩ => ?_
   have F₁ : Frame [⟨L.Q + BitVec.ofNat 64 oI, 8⟩, ⟨L.Q + BitVec.ofNat 64 oNB, 8⟩] t.mem t₁.mem := by
     rw [m₁]
@@ -168,9 +168,9 @@ theorem clStart_ok (hL : L.Ok) {t : State} (hc : Post L g vv m₀ R EM t) :
       rcases hr with rfl | rfl
       · exact (hL.stk_buf (d := oI) (n := 8) (by decide) (.inr (.inr (sub_trans (scSub h₂) hL.sc_sub)))).symm
       · exact (hL.stk_buf (d := oNB) (n := 8) (by decide) (.inr (.inr (sub_trans (scSub h₂) hL.sc_sub)))).symm)
-      (by unfold scrBytes at h₂; omega)
+      (by unfold scrBytes at h₂; omega_arith)
   have sep : ∀ a b, a + 8 ≤ b ∨ b + 8 ≤ a → a + 8 ≤ 344 → b + 8 ≤ 344 → Mem.Sep (L.Q + BitVec.ofNat 64 a) 8
-      (L.Q + BitVec.ofNat 64 b) 8 := fun a b h h₁ h₂ => Offset.sep _ h (by omega) (by omega)
+      (L.Q + BitVec.ofNat 64 b) 8 := fun a b h h₁ h₂ => Offset.sep _ h (by omega_arith) (by omega_arith)
   have ct₁ : slot t₁ L.Q oI = BitVec.ofNat 64 0 := by
     show t₁.mem.readW _ 64 = _
     rw [m₁, Mem.readW_writeW_sep (sep _ _ (by decide) (by decide) (by decide)) (by decide),
@@ -190,8 +190,8 @@ theorem clLoop_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {kd : List Byte} (hc
     (textF := fun i => Spec.Rsa.i2osp i 2 ++ Spec.RsaPkcs1Enc.ascii "length" ++ Spec.Rsa.i2osp (8 * 256) 2)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (fun i => by simp [Proof.RsaPkcs1Enc.i2osp_length, ascii_length, lengthLabel])
-    (fun i hi => Offset.ofNat_sub_ofNat (by omega))
-    (fun i hi u hu x9 x11 x12 => WP.mono (msgCL_ok x9 x11 (by omega) (hu.msgW hL))
+    (fun i hi => Offset.ofNat_sub_ofNat (by omega_arith))
+    (fun i hi u hu x9 x11 x12 => WP.mono (msgCL_ok x9 x11 (by omega_arith) (hu.msgW hL))
       fun w ⟨a, b, c, d, e, f, g⟩ => ⟨⟨a, b, c, d, e⟩, f, g⟩)
     (fun u hu _ => WP.mono (incrCL_ok hu.ctx.sp hu.slots (hu.ctx.inFr (d := 184) (by decide)))
       fun w hw => hw)
@@ -225,13 +225,13 @@ theorem amStart_ok (hL : L.Ok) {t : State} (hc : Post L g vv m₀ R EM t)
     bytes_keep F₁ (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact (hL.stk_buf (d := oI) (n := 8) (by decide) (.inr (.inr (sub_trans (scSub h₂) hL.sc_sub)))).symm)
-      (by unfold scrBytes at h₂; omega)
+      (by unfold scrBytes at h₂; omega_arith)
   have ct₁ : slot t₁ L.Q oI = BitVec.ofNat 64 0 := by
     show t₁.mem.readW _ 64 = _
     rw [m₁, Mem.readW_writeW_self64]; rfl
   have nb₁ : slot t₁ L.Q oNB = BitVec.ofNat 64 ((L.k.toNat + 31) / 32) := by
     show t₁.mem.readW _ 64 = _
-    rw [m₁, Mem.readW_writeW_sep (Offset.sep _ (by decide) (by unfold oNB; omega) (by unfold oI; omega))
+    rw [m₁, Mem.readW_writeW_sep (Offset.sep _ (by decide) (by unfold oNB; omega_arith) (by unfold oI; omega_arith))
       (by decide)]
     exact hnb
   exact ⟨hc₁, ct₁, nb₁, kp₁⟩
@@ -241,20 +241,20 @@ theorem amLoop_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {kd : List Byte} (h 
   have hk := hL.k1024
   have hk64 := hL.k64
   refine WP.seq (WP.mono (amStart_ok hL h.post h.nb) fun t₁ ⟨hc₁, ct₁, nb₁, kp₁⟩ => ?_)
-  have hN0 : 0 < (L.k.toNat + 31) / 32 := by omega
+  have hN0 : 0 < (L.k.toNat + 31) / 32 := by omega_arith
   refine WP.mono (prfLoop_ok (v := v) hL hP (label := messageLabel) (len := amLen) (count := [.ldrSp .x12 oNB])
     (dst := sAM) (N := (L.k.toNat + 31) / 32) (C := BitVec.ofNat 64 ((L.k.toNat + 31) / 32)) (t₀ := t₁)
     (textF := fun i => Spec.Rsa.i2osp i 2 ++ Spec.RsaPkcs1Enc.ascii "message" ++ Spec.Rsa.i2osp (8 * L.k.toNat) 2)
-    hN0 (by omega) (by decide) (by unfold sAM scrBytes; omega) (by decide) (by decide)
+    hN0 (by omega_arith) (by decide) (by unfold sAM scrBytes; omega_arith) (by decide) (by decide)
     (fun i => by simp [Proof.RsaPkcs1Enc.i2osp_length, ascii_message, messageLabel])
-    (fun i hi => Offset.ofNat_sub_ofNat (by omega))
-    (fun i hi u hu x9 x11 x12 => WP.mono (msgAM_ok x9 x11 x12 (by omega) hk (hu.msgW hL))
+    (fun i hi => Offset.ofNat_sub_ofNat (by omega_arith))
+    (fun i hi u hu x9 x11 x12 => WP.mono (msgAM_ok x9 x11 x12 (by omega_arith) hk (hu.msgW hL))
       fun w ⟨a, b, c, d, e, f, g⟩ => ⟨⟨a, b, c, d, e⟩, f, g⟩)
     (fun u hu hnb' => WP.mono (incrAM_ok hu.ctx.sp hu.slots (hu.ctx.inFr (d := 184) (by decide)))
       fun w ⟨a, b, c⟩ => ⟨a, b, by rw [c, hnb']⟩)
     ⟨hc₁, by rw [kp₁ _ _ (by decide), h.kdk], ct₁, nb₁, fun j hj => absurd hj (Nat.not_lt_zero _),
       fun _ _ _ _ => rfl⟩) fun t₂ h₂ => ⟨h₂.post, ?_, ?_⟩
   · rw [h₂.keep _ _ (by decide) (by decide), kp₁ _ _ (by decide), h.cl]
-  · exact irprf_bytes rfl (fun j hj => h₂.out j hj) (by omega)
+  · exact irprf_bytes rfl (fun j hj => h₂.out j hj) (by omega_arith)
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec

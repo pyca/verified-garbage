@@ -35,7 +35,7 @@ theorem drawCopy_ok {s : State} {B rp op : Addr} {Z w N drawBytes used : Nat} {m
       ModulusReady t B Z w mi N ∧ Spec.Rsa.bytesAt t.mem op bs.length = bs ∧
       word t.mem B (8 * kUsed) = BitVec.ofNat 64 (used + drawBytes) ∧
       WorkFrame B [(8 * kUsed, 8)] [⟨op, bs.length⟩] s.mem t.mem ∧ Keep mmRegs s t := by
-  have hz : 256 ≤ Z := by have := hd.z; simp only [slot, hdrBytes] at this; omega
+  have hz : 256 ≤ Z := by have := hd.z; simp only [slot, hdrBytes] at this; omega_arith
   unfold Impl.Dsa.X86_64.Generation.drawCopy
   simp only [seqs]
   refine WP.seq (WP.mono (drawCopyArgs_ok h.good hd.z hld hmax hrp hop hus)
@@ -45,12 +45,12 @@ theorem drawCopy_ok {s : State} {B rp op : Addr} {Z w N drawBytes used : Nat} {m
     exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kUsed) (by decide)) (by simp)
   have hsrcu := hsrc.congrK (fun x hx => hfu x (by
     intro r hr; simp only [List.mem_singleton] at hr; subst r
-    right; change 208 ≤ ofs B x; omega)) ku
+    right; change 208 ≤ ofs B x; omega_arith)) ku
   have hwu : ∀ i < bs.length, InRegions u.wr (off op i) 1 := fun i hi => by rw [ku.2.2]; exact hwr i hi
   have hbu : ∀ i < bs.length, u.mem (off (off rp (used + (drawBytes - bs.length))) i) = bs.getD i 0 := by
     intro i hi
     simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some] using hsrcu.val i hi
-  refine WP.seq (WP.mono (copyBytes_ok ⟨hlen, by omega⟩ hsi hdi hcx hdx hsrcu.rd hwu hbu hsep)
+  refine WP.seq (WP.mono (copyBytes_ok ⟨hlen, by omega_arith⟩ hsi hdi hcx hdx hsrcu.rd hwu hbu hsep)
     fun v ⟨hbv, hfv, kv⟩ => ?_)
   refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = B ∧ t.mem = v.mem) (by
     xrun [(kv.gpr (by decide) : v.gpr .r15 = u.gpr .r15).trans h15]) rfl)
@@ -65,14 +65,14 @@ theorem drawCopy_ok {s : State} {B rp op : Addr} {Z w N drawBytes used : Nat} {m
     apply hx ⟨op, bs.length⟩ (by simp)
     apply (Region.contains_self op bs.length).byte
     simp only [off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : i < 2 ^ 64)]
+    rw [Nat.mod_eq_of_lt (by omega_arith : i < 2 ^ 64)]
     exact hi
   have hft : WorkFrame B [(8 * kUsed, 8)] [⟨op, bs.length⟩] s.mem t.mem :=
     hfu.work.trans (hfvt.mono (by simp))
   have hex : ∀ r ∈ [⟨op, bs.length⟩], Region.Disjoint ⟨B, Z⟩ r := by simpa using hout
   refine ⟨ready_of_work h hd hft hex k.2.2 hdit (by simp; decide) (by rng_disj) (by rng_disj),
     by rw [hmt]; exact hbv, ?_, hft, ?_⟩
-  · rw [hfvt.word_eq (by simp) (by change 208 ≤ Z; omega) h.good.scr.nowrap hex,
+  · rw [hfvt.word_eq (by simp) (by change 208 ≤ Z; omega_arith) h.good.scr.nowrap hex,
       hmu, word_writeW_self]
   · refine ⟨fun r hr => ?_, k.2⟩
     by_cases he : r = .rdi

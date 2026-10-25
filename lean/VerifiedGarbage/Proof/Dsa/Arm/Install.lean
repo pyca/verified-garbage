@@ -41,20 +41,20 @@ structure Installed (s₀ : State) (base : Addr) (size : Nat) (fields : Fields) 
 theorem openScratch_ws {s u : State} {i : Nat} (hu : Upd s u .r12 (stackArg s i)) (size : Nat)
     (hr : ⟨State.addr (stackArg s i), size⟩ ∈ s.wr) (hb : (stackArg s i).toNat + size ≤ 2 ^ 32) :
     Ws u (State.addr (stackArg s i)) size :=
-  ⟨by rw [hu.gpr], ⟨size, Nat.le_refl _, by omega, by rw [hu.wr]; exact hr⟩,
+  ⟨by rw [hu.gpr], ⟨size, Nat.le_refl _, by omega_arith, by rw [hu.wr]; exact hr⟩,
     by rw [VG.Proof.X25519.Arm.addr_toNat]; exact hb⟩
 
 theorem args_read {s : State} {n : Nat} (h : ⟨State.addr s.sp, 4 * n⟩ ∈ s.rd) (hb : s.sp.toNat + 4 * n ≤ 2 ^ 32) :
     ArgsRead s n := fun i hi =>
   ⟨_, List.mem_append_left _ h, by
-    rw [stackArgAddr, VG.Arm.addr_add (by omega)]
-    exact Offset.contains_base _ (by omega) (by omega)⟩
+    rw [stackArgAddr, VG.Arm.addr_add (by omega_arith)]
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 theorem args_apart {s : State} {base : Addr} {n size : Nat} (h : Region.Disjoint ⟨State.addr s.sp, 4 * n⟩ ⟨base, size⟩)
     (hb : s.sp.toNat + 4 * n ≤ 2 ^ 32) (hz : 164 ≤ size) :
     ArgsApart s base n := fun i hi d hd =>
-  Region.Disjoint.sep h (by rw [stackArgAddr, VG.Arm.addr_add (by omega)]; exact Offset.contains_base _ (by omega) (by omega))
-    (Offset.contains_base base (by omega) (by omega))
+  Region.Disjoint.sep h (by rw [stackArgAddr, VG.Arm.addr_add (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
+    (Offset.contains_base base (by omega_arith) (by omega_arith))
 
 /-- The fields of signing. -/
 abbrev signFields (s : State) : Fields :=
@@ -80,7 +80,7 @@ theorem readW_apart {m m' : Mem} {base p : Addr} {o n size : Nat} (O : Outside b
     (hd : Region.Disjoint ⟨p, 4⟩ ⟨base, size⟩) (ho : o + n ≤ size) (hs : size ≤ 2 ^ 64) :
     m'.readW p 32 = m.readW p 32 :=
   Mem.readW_congr fun i hi =>
-    (VG.Proof.Weierstrass.keep_of_disjoint O (hd.sub_right (Offset.sub_base base ho)) (by omega) hi (by decide))
+    (VG.Proof.Weierstrass.keep_of_disjoint O (hd.sub_right (Offset.sub_base base ho)) (by omega_arith) hi (by decide))
 
 theorem stackArg_apart {s s' : State} {base : Addr} {o n size k i : Nat} (O : Outside base o n s.mem s'.mem)
     (hsp : s'.sp = s.sp) (hd : Region.Disjoint ⟨State.addr s.sp, 4 * k⟩ ⟨base, size⟩) (hi : i < k)
@@ -89,8 +89,8 @@ theorem stackArg_apart {s s' : State} {base : Addr} {o n size k i : Nat} (O : Ou
   unfold stackArg
   rw [show stackArgAddr s' i = stackArgAddr s i by simp only [stackArgAddr, hsp]]
   refine readW_apart O (hd.sub_left ?_) ho hs
-  rw [stackArgAddr, VG.Arm.addr_add (by omega)]
-  exact Offset.sub_base _ (by omega)
+  rw [stackArgAddr, VG.Arm.addr_add (by omega_arith)]
+  exact Offset.sub_base _ (by omega_arith)
 
 theorem ArgsApart.sp {s s' : State} {base : Addr} {n : Nat} (h : ArgsApart s base n) (hsp : s'.sp = s.sp) :
     ArgsApart s' base n :=
@@ -104,7 +104,7 @@ theorem signEntry_ok {s : State} (h : signPre s) :
   obtain ⟨hsp, hrd, hwr, _, _, _, _, _, _, _, _, hsa, _, _, _, _, hsb, hv, _, _, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 16384 ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hs16 : 16384 ≤ (arg s 6).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have hd : Region.Disjoint ⟨State.addr s.sp, 4 * 7⟩ ⟨State.addr (arg s 5), (arg s 6).toNat * 8⟩ := hsa.symm
   show WP isa (.block (((Entry.openScratch 5) ++ Entry.signArguments.flatMap Entry.saveArgument) ++
     Entry.keyPointers)) s _
@@ -112,16 +112,16 @@ theorem signEntry_ok {s : State} (h : signPre s) :
   refine wp_ldrSp (i := 5) (by decide) (args_read (n := 7) (by rw [hrd]; simp) hsp 5 (by decide)) fun u₁ v₁ => ?_
   have w₁ := openScratch_ws v₁ ((arg s 6).toNat * 8) (by rw [hwr]; simp) hsb
   have nw := w₁.nowrap
-  have aa : ArgsApart s (State.addr (arg s 5)) 7 := args_apart hd hsp (by omega)
-  refine VG.Proof.X25519.Arm.WP.append (save_ok w₁ (by omega)) fun u₂ ⟨S₂, R₂, O₂⟩ => ?_
+  have aa : ArgsApart s (State.addr (arg s 5)) 7 := args_apart hd hsp (by omega_arith)
+  refine VG.Proof.X25519.Arm.WP.append (save_ok w₁ (by omega_arith)) fun u₂ ⟨S₂, R₂, O₂⟩ => ?_
   have w₂ := w₁.of_rest R₂ (by decide)
   have hsp₂ : u₂.sp = s.sp := by rw [R₂.sp, v₁.sp]
   rw [v₁.mem] at O₂
   have A₂ : ∀ i < 7, stackArg u₂ i = stackArg s i := fun i hi =>
-    stackArg_apart O₂ hsp₂ hd hi hsp (by omega) (by omega)
+    stackArg_apart O₂ hsp₂ hd hi hsp (by omega_arith) (by omega_arith)
   have r₂ : ArgsRead u₂ 7 := (args_read (n := 7) (by rw [hrd]; simp) hsp).keep (by rw [R₂.rd, v₁.rd])
     (by rw [R₂.wr, v₁.wr]) hsp₂
-  refine VG.Proof.X25519.Arm.WP.append (signArgs_ok w₂ (by omega) r₂ (aa.sp hsp₂))
+  refine VG.Proof.X25519.Arm.WP.append (signArgs_ok w₂ (by omega_arith) r₂ (aa.sp hsp₂))
     fun u₃ ⟨F₁, F₂, F₃, F₄, F₅, F₆, F₇, R₃, O₃, A₃⟩ => ?_
   have w₃ := w₂.of_rest R₃ (by decide)
   have g0 : u₂.gpr .r0 = s.gpr .r0 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
@@ -133,10 +133,10 @@ theorem signEntry_ok {s : State} (h : signPre s) :
   rw [A₂ 2 (by decide)] at F₅
   rw [A₂ 3 (by decide)] at F₆
   rw [A₂ 4 (by decide)] at F₇
-  refine WP.mono (keyPointers_ok w₃ (by omega) F₂ F₃ F₅) fun u ⟨K₁, K₂, K₃, K₄, R₄, O₄⟩ => ⟨w₃.of_rest R₄ (by decide), ?_, ?_, ?_, ?_⟩
+  refine WP.mono (keyPointers_ok w₃ (by omega_arith) F₂ F₃ F₅) fun u ⟨K₁, K₂, K₃, K₄, R₄, O₄⟩ => ⟨w₃.of_rest R₄ (by decide), ?_, ?_, ?_, ?_⟩
   · intro f hf
     have k : ∀ {d} {x : BitVec 32}, (d + 4 ≤ 68 ∨ 84 ≤ d) → d + 4 ≤ 164 → u₃.mem.readW (off (State.addr (arg s 5)) d) 32 = x →
-        u.mem.readW (off (State.addr (arg s 5)) d) 32 = x := fun hd' hd'' h => keep_word O₄ hd' (by omega) h
+        u.mem.readW (off (State.addr (arg s 5)) d) 32 = x := fun hd' hd'' h => keep_word O₄ hd' (by omega_arith) h
     simp only [signFields, List.mem_cons, List.not_mem_nil, or_false] at hf
     rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact k (d := 96) (by decide) (by decide) F₁
@@ -154,7 +154,7 @@ theorem signEntry_ok {s : State} (h : signPre s) :
     have g : u₁.gpr (Entry.savedRegs.getD i .r0) = s.gpr (Entry.savedRegs.getD i .r0) :=
       v₁.other _ (saved_ne i hi)
     rw [← g]
-    exact keep_word O₄ (.inr (by omega)) (by omega) (keep_word O₃ (.inr (by omega)) (by omega) (S₂ i hi))
+    exact keep_word O₄ (.inr (by omega_arith)) (by omega_arith) (keep_word O₃ (.inr (by omega_arith)) (by omega_arith) (S₂ i hi))
   · exact ((O₂.mono (by decide) (by decide)).trans (O₃.mono (by decide) (by decide))).trans
       (O₄.mono (by decide) (by decide))
   · exact (((v₁.rest (by decide)).trans (R₂.mono (by decide))).trans (R₃.mono (by decide))).trans (R₄.mono (by decide))
@@ -165,23 +165,23 @@ theorem verifyEntry_ok {s : State} (h : verifyPre s) :
   obtain ⟨hsp, hrd, hwr, _, _, _, hsa, _, _, _, hsb, hv, _, _, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 16384 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hs16 : 16384 ≤ (arg s 5).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have hd : Region.Disjoint ⟨State.addr s.sp, 4 * 6⟩ ⟨State.addr (arg s 4), (arg s 5).toNat * 8⟩ := hsa.symm
   show WP isa (.block (((Entry.openScratch 4) ++ Entry.verifyArguments.flatMap Entry.saveArgument) ++
     Entry.keyPointers)) s _
   simp only [Entry.openScratch, List.append_assoc, List.singleton_append]
   refine wp_ldrSp (i := 4) (by decide) (args_read (n := 6) (by rw [hrd]; simp) hsp 4 (by decide)) fun u₁ v₁ => ?_
   have w₁ := openScratch_ws v₁ ((arg s 5).toNat * 8) (by rw [hwr]; simp) hsb
-  have aa : ArgsApart s (State.addr (arg s 4)) 6 := args_apart hd hsp (by omega)
-  refine VG.Proof.X25519.Arm.WP.append (save_ok w₁ (by omega)) fun u₂ ⟨S₂, R₂, O₂⟩ => ?_
+  have aa : ArgsApart s (State.addr (arg s 4)) 6 := args_apart hd hsp (by omega_arith)
+  refine VG.Proof.X25519.Arm.WP.append (save_ok w₁ (by omega_arith)) fun u₂ ⟨S₂, R₂, O₂⟩ => ?_
   have w₂ := w₁.of_rest R₂ (by decide)
   have hsp₂ : u₂.sp = s.sp := by rw [R₂.sp, v₁.sp]
   rw [v₁.mem] at O₂
   have A₂ : ∀ i < 6, stackArg u₂ i = stackArg s i := fun i hi =>
-    stackArg_apart O₂ hsp₂ hd hi hsp (by omega) (by omega)
+    stackArg_apart O₂ hsp₂ hd hi hsp (by omega_arith) (by omega_arith)
   have r₂ : ArgsRead u₂ 6 := (args_read (n := 6) (by rw [hrd]; simp) hsp).keep (by rw [R₂.rd, v₁.rd])
     (by rw [R₂.wr, v₁.wr]) hsp₂
-  refine VG.Proof.X25519.Arm.WP.append (verifyArgs_ok w₂ (by omega) r₂ (aa.sp hsp₂))
+  refine VG.Proof.X25519.Arm.WP.append (verifyArgs_ok w₂ (by omega_arith) r₂ (aa.sp hsp₂))
     fun u₃ ⟨F₁, F₂, F₃, F₄, F₅, F₆, R₃, O₃, A₃⟩ => ?_
   have w₃ := w₂.of_rest R₃ (by decide)
   have g0 : u₂.gpr .r0 = s.gpr .r0 := by rw [R₂.gpr _ (by decide), v₁.other _ (by decide)]
@@ -193,10 +193,10 @@ theorem verifyEntry_ok {s : State} (h : verifyPre s) :
   rw [A₂ 0 (by decide)] at F₄
   rw [A₂ 2 (by decide)] at F₅
   rw [A₂ 3 (by decide)] at F₆
-  refine WP.mono (keyPointers_ok w₃ (by omega) F₁ F₂ F₃) fun u ⟨K₁, K₂, K₃, K₄, R₄, O₄⟩ => ⟨w₃.of_rest R₄ (by decide), ?_, ?_, ?_, ?_⟩
+  refine WP.mono (keyPointers_ok w₃ (by omega_arith) F₁ F₂ F₃) fun u ⟨K₁, K₂, K₃, K₄, R₄, O₄⟩ => ⟨w₃.of_rest R₄ (by decide), ?_, ?_, ?_, ?_⟩
   · intro f hf
     have k : ∀ {d} {x : BitVec 32}, (d + 4 ≤ 68 ∨ 84 ≤ d) → d + 4 ≤ 164 → u₃.mem.readW (off (State.addr (arg s 4)) d) 32 = x →
-        u.mem.readW (off (State.addr (arg s 4)) d) 32 = x := fun hd' hd'' h => keep_word O₄ hd' (by omega) h
+        u.mem.readW (off (State.addr (arg s 4)) d) 32 = x := fun hd' hd'' h => keep_word O₄ hd' (by omega_arith) h
     simp only [verifyFields, List.mem_cons, List.not_mem_nil, or_false] at hf
     rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact k (d := 64) (by decide) (by decide) F₁
@@ -213,7 +213,7 @@ theorem verifyEntry_ok {s : State} (h : verifyPre s) :
     have g : u₁.gpr (Entry.savedRegs.getD i .r0) = s.gpr (Entry.savedRegs.getD i .r0) :=
       v₁.other _ (saved_ne i hi)
     rw [← g]
-    exact keep_word O₄ (.inr (by omega)) (by omega) (keep_word O₃ (.inr (by omega)) (by omega) (S₂ i hi))
+    exact keep_word O₄ (.inr (by omega_arith)) (by omega_arith) (keep_word O₃ (.inr (by omega_arith)) (by omega_arith) (S₂ i hi))
   · exact ((O₂.mono (by decide) (by decide)).trans (O₃.mono (by decide) (by decide))).trans
       (O₄.mono (by decide) (by decide))
   · exact (((v₁.rest (by decide)).trans (R₂.mono (by decide))).trans (R₃.mono (by decide))).trans (R₄.mono (by decide))

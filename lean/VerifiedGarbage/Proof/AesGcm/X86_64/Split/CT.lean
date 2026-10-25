@@ -101,7 +101,7 @@ def G₄ (Ctx W SP : Addr) (σ s : State) : Prop :=
 
 theorem g₁_wp : WP isa (.block SealSplit.preTest) σ (G₁ Ctx W SP sl σ) := by
   have := h.sl_le; have := h.data.ok.lt
-  refine WP.mono (pre1_ok (sl := sl) (by omega) h.env h.slen) fun s₁ ⟨ax₁, zf₁, g₁, m₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (pre1_ok (sl := sl) (by omega_arith) h.env h.slen) fun s₁ ⟨ax₁, zf₁, g₁, m₁, rd₁, wr₁⟩ => ?_
   exact ⟨h.env.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁, ax₁, zf₁, m₁, rd₁, wr₁⟩
@@ -125,7 +125,7 @@ theorem mid2_call_wp (T : BlkToFn M) {s : State} (g : G₂ Ctx W SP D S R sl σ 
     WP isa (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)) s
       (Mid2 Ctx W SP D S R sl σ) := by
   obtain ⟨he, di, si, dx, cx, r8, r9, r10, r11, ax, m, rd, wr⟩ := g
-  refine WP.mono (preCall_ok h T (q := sl / 16) (by omega) he.rsp rd wr m di si dx cx r8 r9 r10 r11 ax)
+  refine WP.mono (preCall_ok h T (q := sl / 16) (by omega_arith) he.rsp rd wr m di si dx cx r8 r9 r10 r11 ax)
     fun s₃ ⟨cs₃, rd₃, wr₃, fr₃, bl₃, ct₃, y₃⟩ => ⟨he.keep (fun r hr => cs₃ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])) rd₃ wr₃,
@@ -136,8 +136,8 @@ theorem g₃_wp {s : State} (H : Mid2 Ctx W SP D S R sl σ s) :
   have hn := h.data.ok.lt
   have hsl := h.sl_le
   have kp : ∀ d, 128 ≤ d → d + 8 ≤ 448 → s.mem.readW (W + BitVec.ofNat 64 d) 64 = σ.mem.readW (W + BitVec.ofNat 64 d) 64 :=
-    fun d h₁ h₂ => H.frame.readW (Region.contains_self _ _) (slot_disj h (q := sl / 16) (by omega) h₁ h₂) (by decide)
-  refine WP.mono (pre3_ok (D := D) (S := S) (sl := sl) (by omega) H.env (by rw [kp 200 (by decide) (by decide)]; exact h.dat)
+    fun d h₁ h₂ => H.frame.readW (Region.contains_self _ _) (slot_disj h (q := sl / 16) (by omega_arith) h₁ h₂) (by decide)
+  refine WP.mono (pre3_ok (D := D) (S := S) (sl := sl) (by omega_arith) H.env (by rw [kp 200 (by decide) (by decide)]; exact h.dat)
     (by rw [kp 224 (by decide) (by decide)]; exact h.src) (by rw [kp 192 (by decide) (by decide)]; exact h.slen))
     fun s₃ ⟨cx₃, si₃, di₃, zf₃, g₃, m₃, rd₃, wr₃⟩ => ?_
   exact ⟨⟨H.env.keep g₃ rd₃ wr₃, rd₃.trans H.rd, wr₃.trans H.wr, by rw [m₃]; exact H.frame, by rw [m₃]; exact H.blocks,
@@ -148,16 +148,16 @@ theorem g₄_copy_wp (h0 : sl % 16 ≠ 0) {s : State} (g : G₃ Ctx W SP D S R s
   obtain ⟨H, cx₃, si₃, di₃, -⟩ := g
   have hn := h.data.ok.lt
   have hsl := h.sl_le
-  have e1 : 16 * (sl / 16) + sl % 16 ≤ sl := by omega
-  have e2 : 16 * (sl / 16) + sl % 16 ≤ n := by omega
-  have sl64 : sl < 2 ^ 64 := by omega
+  have e1 : 16 * (sl / 16) + sl % 16 ≤ sl := by omega_arith
+  have e2 : 16 * (sl / 16) + sl % 16 ≤ n := by omega_arith
+  have sl64 : sl < 2 ^ 64 := by omega_arith
   have c1 : Covers [⟨S + BitVec.ofNat 64 (16 * (sl / 16)), sl % 16⟩] (s.rd ++ s.wr) := by
     rw [H.rd, H.wr]; exact covers_off' h.srcCov e1 sl64
   have c2 : Covers [⟨D + BitVec.ofNat 64 (16 * (sl / 16)), sl % 16⟩] s.wr := by
     rw [H.wr]; exact covers_off' h.data.wr e2 hn
   have hlp : LoopPre s (S + BitVec.ofNat 64 (16 * (sl / 16))) (D + BitVec.ofNat 64 (16 * (sl / 16))) (sl % 16) :=
-    ⟨si₃, di₃, cx₃, by omega, by omega, c1, c2,
-      (h.sD.sub_left (Offset.sub_base S (by omega))).sub_right (Offset.sub_base D (by omega))⟩
+    ⟨si₃, di₃, cx₃, by omega_arith, by omega_arith, c1, c2,
+      (h.sD.sub_left (Offset.sub_base S (by omega_arith))).sub_right (Offset.sub_base D (by omega_arith))⟩
   refine WP.mono (copyLoop_ok s hlp) fun s₄ ⟨_, g₄, rd₄, wr₄⟩ => ⟨H.env.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₄ _ (by decide) (by decide)) rd₄ wr₄,
@@ -286,7 +286,7 @@ omit L in
 /-- What `oneBlocks` needs, a word lower. -/
 theorem oneS_pushed {T : Option Nat} {s : State} (h : OneS M Ctx W SP R A al D n T s) :
     OneS M Ctx W (SP - BitVec.ofNat 64 8) R A al D n T (pushed [Reg.rax] s) := by
-  obtain ⟨f₀, -⟩ := push_frame h.env (by omega)
+  obtain ⟨f₀, -⟩ := push_frame h.env (by omega_arith)
   have b8 : Region.Sub (below SP 8) (below SP 56) := below_sub (by decide) (by decide)
   have one : ∀ {r : Region}, (below SP 56).Disjoint r → ∀ r' ∈ [below SP 8], r.Disjoint r' := fun hd r' hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (hd.sub_left b8).symm
@@ -330,7 +330,7 @@ theorem body_ct (B : BlkFn M) {fin : Prog isa} (hfin : FinRel M fin) {N : Nat} :
   have t_c := kc.sub_left (sub (k := 24) (by decide))
   have t_w := kw.sub_left (sub (k := 24) (by decide))
   have t_d := kd.sub_left (sub (k := 24) (by decide))
-  have sp24 : 24 ≤ (SP - BitVec.ofNat 64 8).toNat := by rw [toNat_sub_ofNat (by omega)]; omega
+  have sp24 : 24 ≤ (SP - BitVec.ofNat 64 8).toNat := by rw [toNat_sub_ofNat (by omega_arith)]; omega_arith
   have bl := oneBlocksE_rel B L' (R := R) (A := A) (al := al) (D := D) (n := n) (T := none) t_c t_w t_d sp24
   have hw : ∀ s, OneS M Ctx W (SP - BitVec.ofNat 64 8) R A al D n none s ∧
       s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N →
@@ -343,7 +343,7 @@ theorem body_ct (B : BlkFn M) {fin : Prog isa} (hfin : FinRel M fin) {N : Nat} :
   have pre : ∀ s, OneS M Ctx W SP R A al D n none s ∧ s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N →
       OneS M Ctx W (SP - BitVec.ofNat 64 8) R A al D n none (pushed [Reg.rax] s) ∧
         (pushed [Reg.rax] s).mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N :=
-    fun s g => ⟨oneS_pushed kw kd kM ka sp g.1, aux_pushed kw g.1.env (by omega) g.2⟩
+    fun s g => ⟨oneS_pushed kw kd kM ka sp g.1, aux_pushed kw g.1.env (by omega_arith) g.2⟩
   refine RelCT.frame (R := fun _ _ => True) (fun _ _ g => by rw [g.1.1.env.rsp, g.2.1.env.rsp]) ?_
   refine RelCT.seq (rel_wp (bl.mono (fun _ _ g => by
       obtain ⟨s₁, s₂, ⟨g₁, g₂⟩, rfl, rfl⟩ := g
@@ -353,7 +353,7 @@ theorem body_ct (B : BlkFn M) {fin : Prog isa} (hfin : FinRel M fin) {N : Nat} :
   refine RelCT.seq (step [.r15] fixTlen_check
     (fun _ _ g r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [g.2.1.1.env.r15, g.2.2.1.env.r15])
     (fun _ _ g => g.2) (fun _ g => fixTlen_oneS L' g.1 g.2) (fun _ g => fixTlen_oneS L' g.1 g.2)) ?_
-  exact hfin L' hR (by omega) (hDW.sub_left (Offset.sub_base D (by omega)))
+  exact hfin L' hR (by omega_arith) (hDW.sub_left (Offset.sub_base D (by omega_arith)))
 
 end
 
@@ -393,7 +393,7 @@ theorem oneS_afterG {M : CtxMode} {Ctx W SP A D S : Addr} {R al n sl q : Nat} {�
   exact ⟨Q.env, ⟨by rw [kp 176 (.inl ⟨by decide, by decide⟩)]; exact O.rounds.1, O.rounds.2⟩,
     by rw [kp 232 (.inr ⟨by decide, by decide⟩)]; exact O.aad, by rw [kp 184 (.inl ⟨by decide, by decide⟩)]; exact O.alen,
     Q.dat, Q.len, O.dA.of_eq Q.rd Q.wr, (O.dD.of_eq Q.rd Q.wr).drop hq, (fun _ e => nomatch e),
-    (O.ext.keep Q.rd Q.wr Q.frame (pp_outG O.ext.cw O.ext.cd h.kM.symm)).sub (Offset.sub_base D (by omega))⟩
+    (O.ext.keep Q.rd Q.wr Q.frame (pp_outG O.ext.cw O.ext.cd h.kM.symm)).sub (Offset.sub_base D (by omega_arith))⟩
 
 /-- What constant time needs of the code before `body`: from states `prefix`
 could start from, with the same public values, the same pieces. -/
@@ -460,7 +460,7 @@ theorem splitRun_rel_of_pre {M : CtxMode} {pre : Prog isa} {qf : Nat → Nat →
       ⟨oneS_ofMid C X E hNp hnl hal hR M₂, PP.ofMid C X kM hR M₂ (mid_slots C E M₂).1 (mid_slots C E M₂).2⟩
   refine RelCT.seq (rel_wp ha (fun _ _ g => g) (hw C X hNp hnl hal hR hm) (hw C' X' hNp' hnl' hal' hR' hm')) ?_
   have sD' : Region.Sub ⟨D + BitVec.ofNat 64 (16 * qf n sl), n - 16 * qf n sl⟩ ⟨D, n⟩ :=
-    Offset.sub_base D (by have := hq n sl hsl; omega)
+    Offset.sub_base D (by have := hq n sl hsl; omega_arith)
   let G : State → Prop := fun a =>
     OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * qf n sl)) (n - 16 * qf n sl) none a ∧
       a.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n
@@ -492,7 +492,7 @@ theorem splitRun_rel_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
       (OneMid s₀' Ctx W SP D n (ctxH s₀'.mem Ctx) (bytesAt s₀'.mem Np nl) (bytesAt s₀'.mem A al) s.mem)) :
     RelCT isa (fun s₁ s₂ => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
       (.seq aadP (.seq (SealSplit.prefix T.fn) body)) fun _ _ => True :=
-  splitRun_rel_of_pre (prefixOk T) (prefixRel T) (fun _ _ h => by omega) hbody C C' X X' kM hNp hnl hal hR hNp' hnl'
+  splitRun_rel_of_pre (prefixOk T) (prefixRel T) (fun _ _ h => by omega_arith) hbody C C' X X' kM hNp hnl hal hR hNp' hnl'
     hal' hR' ha hm hm'
 
 /-- `splitRun_rel_of_midB` with `SealSplit.body`. -/
@@ -550,7 +550,7 @@ theorem splitTag_rel {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) (hrel :
     have dA : ∀ r ∈ [(⟨W, 2560⟩ : Region), ⟨D, n⟩, below SP 56],
         (⟨SP + BitVec.ofNat 64 40, 8⟩ : Region).Disjoint r := by
       have hs : Region.Sub ⟨SP + BitVec.ofNat 64 40, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 6⟩ := by
-        rw [show (40 : Nat) = 8 + 32 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega)
+        rw [show (40 : Nat) = 8 + 32 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_arith)
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl

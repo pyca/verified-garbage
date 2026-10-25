@@ -99,7 +99,7 @@ theorem SRel.hterm {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) {r l : Nat} 
 
 theorem kx1_le {m : Mem} {base : Addr} {x1 : Nat → Nat} (hk : Consts m base x1) {i l : Nat} (hi : i < 5)
     (hl : l < 4) : slotv m base KX1 l i < 2 ^ 52 := by
-  rw [hk.kx1 i hi l hl]; have := hk.x1 i hi; split <;> [omega; split <;> omega]
+  rw [hk.kx1 i hi l hl]; have := hk.x1 i hi; split <;> [omega_arith; split <;> omega_arith]
 
 /-- What `carry r` leaves: limbs `r0` to `r0 + 4` carried. -/
 def CarryPost (r0 : Nat) (s s' : State) : Prop :=
@@ -115,7 +115,7 @@ theorem carry_env {r : Nat → Nat} {r0 : Nat} (hr : ∀ i, r i = r0 + i) {s : S
   · simp only [carryB, hr]
     split
     · rename_i h
-      have : ∃ i < 5, r' = r0 + i := by rcases h with h | h | h | h | h <;> exact ⟨_, by omega, h⟩
+      have : ∃ i < 5, r' = r0 + i := by rcases h with h | h | h | h | h <;> exact ⟨_, by omega_arith, h⟩
       obtain ⟨i, hi, rfl⟩ := this
       exact Nat.le_sub_one_of_lt (hx l hl i hi)
     · exact lt64 _
@@ -135,13 +135,13 @@ theorem carryI_wp {s : State} {base : Addr}
   refine WP.mono (run_ok hc e) fun s' h => ?_
   refine ⟨h.eq, by rw [h.mem, carryI_st]; rfl, fun l hl i hi => ?_, fun r hr h1 h2 l hl => ?_⟩
   · obtain ⟨o, b⟩ := carryI_ok i hi l hl
-    obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+    obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
     have hs' : (fun j => lanes s 0 l j) = fun j => (envOf s).v j l := by
       funext j; simp only [lanes, Nat.zero_add, envOf_v]
-    refine ⟨?_, by simp only [lanes, Nat.zero_add]; omega⟩
+    refine ⟨?_, by simp only [lanes, Nat.zero_add]; omega_arith⟩
     simp only [lanes, Nat.zero_add] at e ⊢
     rw [e, carryI_nat _ _ i hi, envOf_m hs, envOf_m hs, hk.km l hl, hk.k19 l hl, ← hs']
-  · exact h.keep hr hl (carryI_keep r hr (by omega))
+  · exact h.keep hr hl (carryI_keep r hr (by omega_arith))
 
 theorem carryF_wp {s : State} {base : Addr}
     (hs : s.gpr .rdi = base) (hc : Ctx s) (hk : CConsts s.mem base)
@@ -152,13 +152,13 @@ theorem carryF_wp {s : State} {base : Addr}
   refine WP.mono (run_ok hc e) fun s' h => ?_
   refine ⟨h.eq, by rw [h.mem, carryF_st]; rfl, fun l hl i hi => ?_, fun r hr h1 h2 l hl => ?_⟩
   · obtain ⟨o, b⟩ := carryF_ok i hi l hl
-    obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+    obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
     have hs' : (fun j => lanes s 5 l j) = fun j => (envOf s).v (5 + j) l := by
       funext j; simp only [lanes, envOf_v]
-    refine ⟨?_, by simp only [lanes]; omega⟩
+    refine ⟨?_, by simp only [lanes]; omega_arith⟩
     simp only [lanes] at e ⊢
     rw [e, carryF_nat _ _ i hi, envOf_m hs, envOf_m hs, hk.km l hl, hk.k19 l hl, ← hs']
-  · exact h.keep hr hl (carryF_keep r hr (by omega))
+  · exact h.keep hr hl (carryF_keep r hr (by omega_arith))
 
 /-! ## Memory -/
 
@@ -179,8 +179,8 @@ theorem stores_outside (s₀ : State) (base : Addr) (m : Mem) {o n : Nat} (hn : 
       rw [Offset.sub_add_eq, Offset.toNat_sub_ofNat]
       simp only [ofs] at hx
       have := (x - base).isLt
-      rw [Nat.mod_eq_of_lt (show e < 2 ^ 64 by omega)]
-      omega
+      rw [Nat.mod_eq_of_lt (show e < 2 ^ 64 by omega_arith)]
+      omega_arith
 
 theorem mq_eq_word (m : Mem) (base : Addr) (d : Nat) : mq m base d = word m base d := rfl
 
@@ -188,18 +188,18 @@ open VG.Proof.X25519.X86_64 (Outside) in
 theorem Consts.outside {m m' : Mem} {base : Addr} {x1 : Nat → Nat} (hk : Consts m base x1)
     (h : Outside base 1024 480 m m') : Consts m' base x1 := by
   have w : ∀ d, 1504 ≤ d → d + 8 ≤ 4096 → mq m' base d = mq m base d := fun d h1 h2 => by
-    rw [mq_eq_word, mq_eq_word]; exact h.word (by omega) (by omega)
+    rw [mq_eq_word, mq_eq_word]; exact h.word (by omega_arith) (by omega_arith)
   refine ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun i hi l hl => ?_,
     fun i hi l hl => ?_, hk.x1, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩
-  · rw [w _ (by simp only [KM]; omega) (by simp only [KM]; omega)]; exact hk.km l hl
-  · rw [w _ (by simp only [K19]; omega) (by simp only [K19]; omega)]; exact hk.k19 l hl
-  · rw [w _ (by simp only [KB0]; omega) (by simp only [KB0]; omega)]; exact hk.kb0 l hl
-  · rw [w _ (by simp only [KB1]; omega) (by simp only [KB1]; omega)]; exact hk.kb1 l hl
-  · rw [slotv, w _ (by simp only [KA24]; omega) (by simp only [KA24]; omega)]; exact hk.a24 i hi l hl
-  · rw [slotv, w _ (by simp only [KX1]; omega) (by simp only [KX1]; omega)]; exact hk.kx1 i hi l hl
-  · rw [w _ (by simp only [K13]; omega) (by simp only [K13]; omega)]; exact hk.k13 l hl
-  · rw [w _ (by simp only [K26]; omega) (by simp only [K26]; omega)]; exact hk.k26 l hl
-  · rw [w _ (by simp only [K39]; omega) (by simp only [K39]; omega)]; exact hk.k39 l hl
+  · rw [w _ (by simp only [KM]; omega_arith) (by simp only [KM]; omega_arith)]; exact hk.km l hl
+  · rw [w _ (by simp only [K19]; omega_arith) (by simp only [K19]; omega_arith)]; exact hk.k19 l hl
+  · rw [w _ (by simp only [KB0]; omega_arith) (by simp only [KB0]; omega_arith)]; exact hk.kb0 l hl
+  · rw [w _ (by simp only [KB1]; omega_arith) (by simp only [KB1]; omega_arith)]; exact hk.kb1 l hl
+  · rw [slotv, w _ (by simp only [KA24]; omega_arith) (by simp only [KA24]; omega_arith)]; exact hk.a24 i hi l hl
+  · rw [slotv, w _ (by simp only [KX1]; omega_arith) (by simp only [KX1]; omega_arith)]; exact hk.kx1 i hi l hl
+  · rw [w _ (by simp only [K13]; omega_arith) (by simp only [K13]; omega_arith)]; exact hk.k13 l hl
+  · rw [w _ (by simp only [K26]; omega_arith) (by simp only [K26]; omega_arith)]; exact hk.k26 l hl
+  · rw [w _ (by simp only [K39]; omega_arith) (by simp only [K39]; omega_arith)]; exact hk.k39 l hl
 
 /-! ## Products -/
 
@@ -225,24 +225,24 @@ theorem mul4_wp {a : Nat} (ha : a % 32 = 0) {σ : Sym}
     · simp only [mulB]
       split
       · rename_i h
-        have := hy l hl (r - 5) (by omega)
-        simp only [lanes, show 5 + (r - 5) = r by omega] at this
-        omega
+        have := hy l hl (r - 5) (by omega_arith)
+        simp only [lanes, show 5 + (r - 5) = r by omega_arith] at this
+        omega_arith
       · exact lt64 _
     · simp only [mulB]
       split
       · rename_i h
-        obtain ⟨i, hi, rfl⟩ : ∃ i < 5, d = a + 32 * i := ⟨(d - a) / 32, by omega, by omega⟩
+        obtain ⟨i, hi, rfl⟩ : ∃ i < 5, d = a + 32 * i := ⟨(d - a) / 32, by omega_arith, by omega_arith⟩
         have := hx l hl i hi
         simp only [slotv] at this
-        omega
+        omega_arith
       · exact lt64 _
   refine WP.mono (run_ok hc he) fun s' h => ?_
   refine ⟨h.eq, by rw [h.mem, hst]; rfl, fun l hl i hi => ?_, fun r hr h1 h2 l hl => h.keep hr hl (hkeep r hr h1 h2)⟩
   obtain ⟨o, b⟩ := hok i hi l hl
-  obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+  obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
   simp only [lanes, Nat.zero_add] at e ⊢
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_arith⟩
   have hf : (fun i => (envOf s).m (a + 32 * i) l) = slotv s.mem base a l :=
     funext fun j => by rw [envOf_m hs, slotv]
   have hg : (fun j => (envOf s).v (5 + j) l) = lanes s 5 l := funext fun j => rfl
@@ -266,24 +266,24 @@ theorem mul4H_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s)
     · simp only [mulHB]
       split
       · rename_i h
-        have := hy l hl (r - 5) (by omega)
-        simp only [lanes, show 5 + (r - 5) = r by omega] at this
-        omega
+        have := hy l hl (r - 5) (by omega_arith)
+        simp only [lanes, show 5 + (r - 5) = r by omega_arith] at this
+        omega_arith
       · exact lt64 _
     · simp only [mulHB]
       split
       · rename_i h
         have := hx l hl r h
         simp only [hlanes] at this
-        omega
+        omega_arith
       · exact lt64 _
   refine WP.mono (run_ok hc mulHS_eq) fun s' h => ?_
   refine ⟨h.eq, by rw [h.mem, mulHS_st]; rfl, fun l hl i hi => ?_,
     fun r hr h1 h2 l hl => h.keep hr hl (mulHS_keep r hr h1 h2)⟩
   obtain ⟨o, b⟩ := mulHS_ok i hi l hl
-  obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+  obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
   simp only [lanes, Nat.zero_add] at e ⊢
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_arith⟩
   have hf : (fun i => (envOf s).h i l) = hlanes s l := funext fun j => rfl
   have hg : (fun j => (envOf s).v (5 + j) l) = lanes s 5 l := funext fun j => rfl
   rw [e, mulHS_nat _ _ i hi, hf, hg]
@@ -317,7 +317,7 @@ theorem s1a_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : s.gpr .rdi = b
     refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun d l hl => ?_) (fun d l hl => ?_)
     · simp only [s1aB]
       split
-      · have := hx l hl r (by omega); simp only [lanes, Nat.zero_add] at this; omega
+      · have := hx l hl r (by omega_arith); simp only [lanes, Nat.zero_add] at this; omega_arith
       · exact lt64 _
     · simp only [s1aB]
       split
@@ -336,9 +336,9 @@ theorem s1a_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : s.gpr .rdi = b
   refine ⟨h.eq, by rw [h.mem, s1a_st]; rfl, fun l hl i hi => ?_,
     fun r hr h1 h2 l hl => h.keep hr hl (s1a_keep r hr h1 h2)⟩
   obtain ⟨o, b⟩ := s1a_ok i hi l hl
-  obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+  obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
   simp only [lanes, Nat.zero_add] at e ⊢
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_arith⟩
   rw [e, s1a_nat _ i hi l hl]
   have kbe : (envOf s).m (kb i) = fun l => (mq s.mem base (kb i + 8 * l)).toNat := by
     funext l; rw [envOf_m hs]
@@ -358,10 +358,10 @@ theorem s1b_wp {s : State} (base : Addr) (hc : Ctx s) :
   refine ⟨h.gpr, h.rd, h.wr, ?_, fun l hl i hi => ⟨?_, ?_⟩, fun r hr h1 l hl => h.keep hr hl (s1b_keep r hr h1)⟩
   · rw [h.mem, s1b_st]
     exact VG.Proof.X25519.X86_64.Outside.refl _ _ _ _
-  · rw [hlanes, h.hterm (r := i) (by omega) hl, s1b_hregs i hi]
+  · rw [hlanes, h.hterm (r := i) (by omega_arith) hl, s1b_hregs i hi]
     simp only [T.eval, lanes, Nat.zero_add]
   · have := h.reg (xr (5 + i)) l hl
-    rw [xi_xr _ (by omega), s1b_regs i hi] at this
+    rw [xi_xr _ (by omega_arith), s1b_regs i hi] at this
     simp only [lanes, Nat.zero_add, this, T.eval]
 
 /-- Stage 2's first operand from `(AA, BB, DA, CB)` (`x l i`):
@@ -391,7 +391,7 @@ theorem s2a_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : s.gpr .rdi = b
     refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun d l hl => ?_) (fun d l hl => ?_)
     · simp only [s2aB]
       split
-      · have := hx l hl r (by omega); simp only [lanes, Nat.zero_add] at this; omega
+      · have := hx l hl r (by omega_arith); simp only [lanes, Nat.zero_add] at this; omega_arith
       · exact lt64 _
     · simp only [s2aB]
       split
@@ -401,7 +401,7 @@ theorem s2a_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : s.gpr .rdi = b
         · split
           · rename_i h
             obtain ⟨i, hi, rfl⟩ : ∃ i < 5, d = KA24 + 32 * i :=
-              ⟨(d - KA24) / 32, by simp only [KA24] at h ⊢; omega, by simp only [KA24] at h ⊢; omega⟩
+              ⟨(d - KA24) / 32, by simp only [KA24] at h ⊢; omega_arith, by simp only [KA24] at h ⊢; omega_arith⟩
             have := hk.a24 i hi l hl
             simp only [slotv] at this
             rw [this]; split <;> decide
@@ -417,11 +417,11 @@ theorem s2a_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : s.gpr .rdi = b
   refine ⟨h.eq, by rw [h.mem, s2a_st]; rfl, fun l hl i hi => ?_,
     fun r hr h1 l hl => h.keep hr hl (s2a_keep r hr h1)⟩
   obtain ⟨o1, b1, o2, b2⟩ := s2a_ok i hi l hl
-  obtain ⟨e1, be1⟩ := h.out hE (by omega) hl o1
-  obtain ⟨e2, be2⟩ := h.out hE (by omega) hl o2
+  obtain ⟨e1, be1⟩ := h.out hE (by omega_arith) hl o1
+  obtain ⟨e2, be2⟩ := h.out hE (by omega_arith) hl o2
   obtain ⟨n1, n2⟩ := s2a_nat (envOf s) i hi l hl
   simp only [lanes, Nat.zero_add] at e1 e2 ⊢
-  refine ⟨?_, by omega, ?_, by omega⟩
+  refine ⟨?_, by omega_arith, ?_, by omega_arith⟩
   · rw [e1, n1]
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;>
       simp only [s2aV, opV, lanes, Nat.zero_add, envOf_v, envOf_m hs, kb_m hk.c (show 1 < 4 by decide),
@@ -452,10 +452,10 @@ theorem s2b_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s) :
       rw [s2b_st]; decide
     rw [slotv, h.mem, hs, stores_mq _ _ _ _ (hm i hi) hl (by rw [s2b_st]; decide) (by rw [s2b_st]; decide)]
     simp only [T.eval, lanes]
-  · rw [hlanes, h.hterm (r := i) (by omega) hl, s2b_hregs i hi]
+  · rw [hlanes, h.hterm (r := i) (by omega_arith) hl, s2b_hregs i hi]
     simp only [T.eval, lanes]
   · have := h.reg (xr (5 + i)) l hl
-    rw [xi_xr _ (by omega), s2b_regs i hi] at this
+    rw [xi_xr _ (by omega_arith), s2b_regs i hi] at this
     simp only [lanes, Nat.zero_add, this, T.eval]
 
 /-- Stage 3's second operand, from stage 2's product `(x₃', t, x₂', a24 E)`
@@ -486,33 +486,33 @@ theorem s3a_wp {s : State} {base : Addr} {x1 : Nat → Nat} (hs : s.gpr .rdi = b
     refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun d l hl => ?_) (fun _ _ _ => Nat.zero_le _)
     · simp only [s3aB]
       split
-      · have := hx l hl r (by omega); simp only [lanes, Nat.zero_add] at this; omega
+      · have := hx l hl r (by omega_arith); simp only [lanes, Nat.zero_add] at this; omega_arith
       · exact lt64 _
     · simp only [s3aB]
       split
       · rename_i h
         rcases h with ⟨h | h, h'⟩
         · obtain ⟨i, hi, rfl⟩ : ∃ i < 5, d = OPV + 32 * i :=
-            ⟨(d - OPV) / 32, by simp only [OPV] at h h' ⊢; omega, by simp only [OPV] at h h' ⊢; omega⟩
+            ⟨(d - OPV) / 32, by simp only [OPV] at h h' ⊢; omega_arith, by simp only [OPV] at h h' ⊢; omega_arith⟩
           have := hv l hl i hi
           simp only [slotv] at this
-          omega
+          omega_arith
         · obtain ⟨i, hi, rfl⟩ : ∃ i < 5, d = KX1 + 32 * i :=
-            ⟨(d - KX1) / 32, by simp only [KX1] at h h' ⊢; omega, by simp only [KX1] at h h' ⊢; omega⟩
+            ⟨(d - KX1) / 32, by simp only [KX1] at h h' ⊢; omega_arith, by simp only [KX1] at h h' ⊢; omega_arith⟩
           have := kx1_le hk hi hl
           simp only [slotv] at this
-          omega
+          omega_arith
       · exact lt64 _
   have e : Sym.init.run stage3a = some s3a := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
   refine ⟨h.eq, by rw [h.mem, s3a_st]; rfl, fun l hl i hi => ?_,
     fun r hr h1 l hl => h.keep hr hl (s3a_keep r hr h1)⟩
   obtain ⟨o1, b1, o2, b2⟩ := s3a_ok i hi l hl
-  obtain ⟨e1, be1⟩ := h.out hE (by omega) hl o1
-  obtain ⟨e2, be2⟩ := h.out hE (by omega) hl o2
+  obtain ⟨e1, be1⟩ := h.out hE (by omega_arith) hl o1
+  obtain ⟨e2, be2⟩ := h.out hE (by omega_arith) hl o2
   obtain ⟨n1, n2⟩ := s3a_nat (envOf s) i hi l hl
   simp only [lanes, Nat.zero_add] at e1 e2 ⊢
-  refine ⟨?_, by omega, ?_, by omega⟩
+  refine ⟨?_, by omega_arith, ?_, by omega_arith⟩
   · rw [e1, n1]
     have kx := hk.kx1 i hi l hl
     simp only [slotv] at kx
@@ -530,7 +530,7 @@ theorem s3b_wp {s : State} (hc : Ctx s) :
   have e : Sym.init.run stage3b = some s3b := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
   refine ⟨h.eq, by rw [h.mem, s3b_st]; rfl, fun l hl i hi => ?_, fun r hr l hl => h.keep hr hl (s3b_keep r hr)⟩
-  rw [hlanes, h.hterm (r := i) (by omega) hl, s3b_hregs i hi]
+  rw [hlanes, h.hterm (r := i) (by omega_arith) hl, s3b_hregs i hi]
   simp only [T.eval, lanes, Nat.zero_add]
 
 /-! ## The swap -/
@@ -562,8 +562,8 @@ theorem vsw_wp {s : State} (hc : Ctx s) {b : Bool} (hm : s.gpr .rcx = VG.Proof.X
   have e : Sym.init.run vsw = some swS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ?_
   refine ⟨h.eq, by rw [h.mem, swS_st]; rfl, fun l hl i hi => ?_,
-    fun r hr h1 h2 l hl => h.keep (by omega) hl (swS_keep r hr h1 h2)⟩
-  rw [h.reg _ l hl, xi_xr _ (by omega), swS_regs i hi]
+    fun r hr h1 h2 l hl => h.keep (by omega_arith) hl (swS_keep r hr h1 h2)⟩
+  rw [h.reg _ l hl, xi_xr _ (by omega_arith), swS_regs i hi]
   simp only [T.eval, ite_true, hm, sel4_swap l hl]
   rw [xor_mask]
   cases b <;> rfl

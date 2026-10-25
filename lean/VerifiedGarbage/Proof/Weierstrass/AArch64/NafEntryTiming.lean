@@ -65,8 +65,8 @@ theorem nafEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size j : Nat}
       (Naf.signedEntry K)
       (fun s t => ∃ E', FieldPair K.M base size C.p (·∈jacWinSlots K) (jacCoords K.E++nafLive K) E' s t) := by
   let a := (nafMagnitude (β j)+1)/2
-  have ha : 1≤a := by dsimp [a]; omega
-  have ha8 : a≤8 := by dsimp [a]; omega
+  have ha : 1≤a := by dsimp [a]; omega_arith
+  have ha8 : a≤8 := by dsimp [a]; omega_arith
   have hD : ∀ x∈jacCoords K.E, x∈jacWinSlots K := by
     intro x hx; simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl <;> jmem
@@ -75,16 +75,16 @@ theorem nafEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size j : Nat}
     apply List.mem_append_right
     simp only [jacCoords,Jacobian.tablePt,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl
-    · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega),by omega⟩
-    · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega),by omega⟩
-    · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega),by omega⟩
+    · exact List.mem_map.mpr ⟨3*(a-1),List.mem_range.mpr (by omega_arith),by omega_arith⟩
+    · exact List.mem_map.mpr ⟨3*(a-1)+1,List.mem_range.mpr (by omega_arith),by omega_arith⟩
+    · exact List.mem_map.mpr ⟨3*(a-1)+2,List.mem_range.mpr (by omega_arith),by omega_arith⟩
   have hap : K.E.x+96≤K.tbl+96*(a-1) ∨ K.tbl+96*(a-1)+96≤K.E.x := by
     have hx := hL.tbl K.E.x (by jmem)
     have hy := hL.tbl K.E.y (by jmem)
     have hz := hL.tbl K.E.z (by jmem)
     rw [hL.exy] at hy
     rw [hL.exz] at hz
-    omega
+    omega_arith
   have load := nafPublic_relCT (base:=base) (E:=E) (b:=β j) hL.lay hAl hL.n hL.exy hL.exz hD hT hap ha hTbl hc.lookup
   have load' : RelCT isa (fun s t => FieldPair K.M base size C.p (·∈jacWinSlots K) (nafLive K) E s t ∧
       NafStable K C base P β s ∧ NafStable K C base P β t ∧
@@ -119,8 +119,8 @@ theorem nafEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size j : Nat}
         s.gpr .x3=BitVec.ofNat 64 (nafNegative (β j)).toNat ∧
         t.gpr .x3=BitVec.ofNat 64 (nafNegative (β j)).toNat) := by
     intro s t ts tt s' t' ⟨hp,ss,st,s19,t19⟩ es et
-    obtain ⟨_,_,xs,vs,ks⟩ := nafSignRead_ok hp.left.scr hBits (by have := hL.bits; omega) s19 (ss.bits j hj)
-    obtain ⟨_,_,xt,vt,kt⟩ := nafSignRead_ok hp.right.scr hBits (by have := hL.bits; omega) t19 (st.bits j hj)
+    obtain ⟨_,_,xs,vs,ks⟩ := nafSignRead_ok hp.left.scr hBits (by have := hL.bits; omega_arith) s19 (ss.bits j hj)
+    obtain ⟨_,_,xt,vt,kt⟩ := nafSignRead_ok hp.right.scr hBits (by have := hL.bits; omega_arith) t19 (st.bits j hj)
     obtain ⟨_,rfl⟩ := Exec.det es xs
     obtain ⟨_,rfl⟩ := Exec.det et xt
     have pub : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]) s t := by

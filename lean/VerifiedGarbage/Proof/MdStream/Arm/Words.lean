@@ -97,9 +97,9 @@ theorem InRegions.offset {rs : List Region} {a : Addr} {n off m : Nat} (h : InRe
   simp only [Region.Contains] at *
   have : (a + BitVec.ofNat 64 off - R.base).toNat ≤ (a - R.base).toNat + off := by
     rw [Offset.add_sub_comm,
-      BitVec.toNat_add, toNat_ofNat_lt (by omega)]
+      BitVec.toNat_add, toNat_ofNat_lt (by omega_arith)]
     exact Nat.mod_le _ _
-  omega
+  omega_arith
 
 /-! ## The length field -/
 
@@ -114,26 +114,26 @@ theorem len64_ok {d : Nat} {be : Bool} {s : State} (hd : d + 4 < 4096)
   have hv : BitVec.ofNat 64 (8 * (s.gpr .r5 ++ s.gpr .r4).toNat) =
       (s.gpr .r5 <<< 3 ||| s.gpr .r4 >>> 29) ++ s.gpr .r4 <<< 3 := by rw [bits8, shl3]
   have a0 : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = State.addr (s.gpr .r0) + BitVec.ofNat 64 d :=
-    addr_off (by omega)
+    addr_off (by omega_arith)
   have a4 : State.addr (s.gpr .r0 + BitVec.ofNat 32 (d + 4)) =
       State.addr (s.gpr .r0) + BitVec.ofNat 64 d + BitVec.ofNat 64 4 := by
-    rw [addr_off (by omega), add_ofNat]
+    rw [addr_off (by omega_arith), add_ofNat]
   have o0 : InRegions s.wr (State.addr (s.gpr .r0) + BitVec.ofNat 64 d) 4 := by
-    simpa using InRegions.offset hout (off := 0) (m := 4) (by omega) (by omega)
+    simpa using InRegions.offset hout (off := 0) (m := 4) (by omega_arith) (by omega_arith)
   have o4 : InRegions s.wr (State.addr (s.gpr .r0) + BitVec.ofNat 64 d + BitVec.ofNat 64 4) 4 :=
-    InRegions.offset hout (by omega) (by omega)
+    InRegions.offset hout (by omega_arith) (by omega_arith)
   have hw : ∀ (m : Mem) (xs ys : List Byte), xs.length = 4 → ys.length = 4 →
       writeBytes (writeBytes m (State.addr (s.gpr .r0) + BitVec.ofNat 64 d) xs)
         (State.addr (s.gpr .r0) + BitVec.ofNat 64 d + BitVec.ofNat 64 4) ys =
       writeBytes m (State.addr (s.gpr .r0) + BitVec.ofNat 64 d) (xs ++ ys) := by
     intro m xs ys hx hy
-    rw [← writeBytes_append _ _ _ _ (by omega), hx]
+    rw [← writeBytes_append _ _ _ _ (by omega_arith), hx]
   cases be
   · simp only [len64, Bool.false_eq_true, ite_false]
     refine wp_mov (op2_lsl (by decide)) fun s₁ u₁ => wp_str (a := State.addr (s.gpr .r0) + BitVec.ofNat 64 d)
-      (by omega) (by rw [u₁.other _ (by decide), a0]) (by rw [u₁.wr]; exact o0) fun s₂ g₂ => ?_
+      (by omega_arith) (by rw [u₁.other _ (by decide), a0]) (by rw [u₁.wr]; exact o0) fun s₂ g₂ => ?_
     refine wp_mov (op2_lsl (by decide)) fun s₃ u₃ => wp_orr (op2_lsr (by decide)) fun s₄ u₄ =>
-      wp_str (a := State.addr (s.gpr .r0) + BitVec.ofNat 64 d + BitVec.ofNat 64 4) (by omega)
+      wp_str (a := State.addr (s.gpr .r0) + BitVec.ofNat 64 d + BitVec.ofNat 64 4) (by omega_arith)
         (by rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), a4])
         (by rw [u₄.wr, u₃.wr, g₂.wr, u₁.wr]; exact o4) fun s₅ g₅ => WP.block_nil
           ⟨fun r h => by rw [g₅.gpr, u₄.other r h, u₃.other r h, g₂.gpr, u₁.other r h],
@@ -147,10 +147,10 @@ theorem len64_ok {d : Nat} {be : Bool} {s : State} (hd : d + 4 < 4096)
   · simp only [len64, ite_true]
     refine wp_mov (op2_lsl (by decide)) fun s₁ u₁ => wp_orr (op2_lsr (by decide)) fun s₂ u₂ =>
       wp_rev fun s₃ u₃ => wp_str (a := State.addr (s.gpr .r0) + BitVec.ofNat 64 d)
-      (by omega) (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), a0])
+      (by omega_arith) (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), a0])
       (by rw [u₃.wr, u₂.wr, u₁.wr]; exact o0) fun s₄ g₄ => ?_
     refine wp_mov (op2_lsl (by decide)) fun s₅ u₅ => wp_rev fun s₆ u₆ =>
-      wp_str (a := State.addr (s.gpr .r0) + BitVec.ofNat 64 d + BitVec.ofNat 64 4) (by omega)
+      wp_str (a := State.addr (s.gpr .r0) + BitVec.ofNat 64 d + BitVec.ofNat 64 4) (by omega_arith)
         (by rw [u₆.other _ (by decide), u₅.other _ (by decide), g₄.gpr, u₃.other _ (by decide),
           u₂.other _ (by decide), u₁.other _ (by decide), a4])
         (by rw [u₆.wr, u₅.wr, g₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact o4) fun s₇ g₇ => WP.block_nil
@@ -204,18 +204,18 @@ theorem out32_ok {n : Nat} (be : Bool) (hn : 4 * n ≤ 64) {s₀ : State}
     exact WP.block_nil ⟨g, rd, wr, sp, m⟩
   | succ j ih =>
     intro hj s g rd wr sp m
-    have hk : n - (j + 1) < n := by omega
-    rw [List.drop_eq_getElem_cons (by simp; omega), List.flatMap_cons, List.getElem_range,
+    have hk : n - (j + 1) < n := by omega_arith
+    rw [List.drop_eq_getElem_cons (by simp; omega_arith), List.flatMap_cons, List.getElem_range,
       List.append_assoc, List.append_assoc]
-    rw [show n - (j + 1) + 1 = n - j by omega]
-    have hoff : 4 * (n - (j + 1)) + 4 ≤ 4 * n := by omega
+    rw [show n - (j + 1) + 1 = n - j by omega_arith]
+    have hoff : 4 * (n - (j + 1)) + 4 ≤ 4 * n := by omega_arith
     have a0 : State.addr (s.gpr .r0 + BitVec.ofNat 32 (4 * (n - (j + 1)))) =
         State.addr (s₀.gpr .r0) + BitVec.ofNat 64 (4 * (n - (j + 1))) := by
-      rw [g _ (by decide)]; exact addr_off (by omega)
+      rw [g _ (by decide)]; exact addr_off (by omega_arith)
     have a6 : ∀ t : State, t.gpr .r6 = s₀.gpr .r6 →
         State.addr (t.gpr .r6 + BitVec.ofNat 32 (4 * (n - (j + 1)))) =
           State.addr (s₀.gpr .r6) + BitVec.ofNat 64 (4 * (n - (j + 1))) :=
-      fun t ht => by rw [ht]; exact addr_off (by omega)
+      fun t ht => by rw [ht]; exact addr_off (by omega_arith)
     -- The word read is not yet overwritten.
     have hread : s.mem.readW (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 (4 * (n - (j + 1)))) 32 =
         s₀.mem.readW (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 (4 * (n - (j + 1)))) 32 := by
@@ -225,35 +225,35 @@ theorem out32_ok {n : Nat} (be : Bool) (hn : 4 * n ≤ 64) {s₀ : State}
         (by decide)
       · rw [hflat]
         simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]
-        omega
+        omega_arith
       · intro r' hr'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         subst hr'
-        exact hd.sub_left (sub_offset hoff (by omega))
+        exact hd.sub_left (sub_offset hoff (by omega_arith))
     have hmem : ∀ (t : State), t.mem = s.mem →
         t.mem.writeW (State.addr (s₀.gpr .r6) + BitVec.ofNat 64 (4 * (n - (j + 1))))
           (if be then rev (s.mem.readW (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 (4 * (n - (j + 1)))) 32)
             else s.mem.readW (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 (4 * (n - (j + 1)))) 32) =
         writeBytes s₀.mem (State.addr (s₀.gpr .r6)) ((List.range (n - j)).flatMap f) := by
       intro t ht
-      rw [ht, writeW32, hread, m, show n - j = n - (j + 1) + 1 by omega, List.range_succ,
+      rw [ht, writeW32, hread, m, show n - j = n - (j + 1) + 1 by omega_arith, List.range_succ,
         List.flatMap_append, List.flatMap_singleton,
-        ← writeBytes_append _ _ _ _ (by rw [hflat, bytes32_length]; omega), hflat]
-    refine wp_ldr (a := State.addr (s₀.gpr .r0) + BitVec.ofNat 64 (4 * (n - (j + 1)))) (by omega) a0
-      (by rw [rd, wr]; exact InRegions.offset hin hoff (by omega)) fun s₁ u₁ => ?_
+        ← writeBytes_append _ _ _ _ (by rw [hflat, bytes32_length]; omega_arith), hflat]
+    refine wp_ldr (a := State.addr (s₀.gpr .r0) + BitVec.ofNat 64 (4 * (n - (j + 1)))) (by omega_arith) a0
+      (by rw [rd, wr]; exact InRegions.offset hin hoff (by omega_arith)) fun s₁ u₁ => ?_
     cases be
     · simp only [Bool.false_eq_true, ite_false, List.nil_append, List.cons_append]
-      refine wp_str (by omega) (a6 s₁ (by rw [u₁.other _ (by decide), g _ (by decide)]))
-        (by rw [u₁.wr, wr]; exact InRegions.offset hout hoff (by omega)) fun s₂ g₂ => ?_
-      refine ih (by omega) s₂ (fun r h => by rw [g₂.gpr, u₁.other r h, g r h]) (by rw [g₂.rd, u₁.rd, rd])
+      refine wp_str (by omega_arith) (a6 s₁ (by rw [u₁.other _ (by decide), g _ (by decide)]))
+        (by rw [u₁.wr, wr]; exact InRegions.offset hout hoff (by omega_arith)) fun s₂ g₂ => ?_
+      refine ih (by omega_arith) s₂ (fun r h => by rw [g₂.gpr, u₁.other r h, g r h]) (by rw [g₂.rd, u₁.rd, rd])
         (by rw [g₂.wr, u₁.wr, wr]) (by rw [g₂.sp, u₁.sp, sp]) ?_
       rw [g₂.mem, u₁.gpr]
       exact hmem s₁ u₁.mem
     · simp only [ite_true, List.cons_append, List.nil_append]
-      refine wp_rev fun s₂ u₂ => wp_str (by omega) (a6 s₂ (by rw [u₂.other _ (by decide),
-        u₁.other _ (by decide), g _ (by decide)])) (by rw [u₂.wr, u₁.wr, wr]; exact InRegions.offset hout hoff (by omega))
+      refine wp_rev fun s₂ u₂ => wp_str (by omega_arith) (a6 s₂ (by rw [u₂.other _ (by decide),
+        u₁.other _ (by decide), g _ (by decide)])) (by rw [u₂.wr, u₁.wr, wr]; exact InRegions.offset hout hoff (by omega_arith))
         fun s₃ g₃ => ?_
-      refine ih (by omega) s₃ (fun r h => by rw [g₃.gpr, u₂.other r h, u₁.other r h, g r h])
+      refine ih (by omega_arith) s₃ (fun r h => by rw [g₃.gpr, u₂.other r h, u₁.other r h, g r h])
         (by rw [g₃.rd, u₂.rd, u₁.rd, rd]) (by rw [g₃.wr, u₂.wr, u₁.wr, wr]) (by rw [g₃.sp, u₂.sp, u₁.sp, sp]) ?_
       rw [g₃.mem, u₂.mem, u₂.gpr, u₁.gpr]
       exact hmem s₁ u₁.mem

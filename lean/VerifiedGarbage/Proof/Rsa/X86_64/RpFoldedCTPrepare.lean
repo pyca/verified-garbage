@@ -70,11 +70,11 @@ theorem alignHead_pins {p : RpP} {s : State} (h : PB p s) :
   have hw2 := h.ws.w2
   have h256 := h.ws.h256
   rw [WP.block_append_iff]
-  refine WP.mono (halfHead_ok h.ws h.hel (by have := h.e2; omega))
+  refine WP.mono (halfHead_ok h.ws h.hel (by have := h.e2; omega_arith))
     fun u ⟨h8, hsi, h12, _, hdi, mu, ku⟩ => ?_
   have hs := h.ws.scr.congr ku.2.2
   refine WP.mono (WP.keep [.rax, .rbp] (Q := fun _ => True) (by
-    xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * sT) (by dsimp [sT, sFn]; omega)]
+    xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * sT) (by dsimp [sT, sFn]; omega_arith)]
     exact ⟨_, rfl⟩) rfl) fun t ⟨_, k⟩ r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -96,7 +96,7 @@ theorem half_gct {Φ Ψ : RpP → State → Prop} (hpb : ∀ p s, Φ p s → PB 
     cases align
     · have h := hpb p s h
       have hw2 := h.ws.w2
-      exact WP.mono (halfHead_ok h.ws h.hel (by have := h.e2; omega))
+      exact WP.mono (halfHead_ok h.ws h.hel (by have := h.e2; omega_arith))
         fun _ ⟨h8, hsi, h12, _, hdi, _, _⟩ r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl
@@ -124,7 +124,7 @@ theorem PB.half {p : RpP} {s u : State} (h : PB p s)
     (f : Frm p.B (rg (wk p.k) [aM, aM + 1, aH, aH + 1] [sT]) s.mem u.mem)
     {regs : List Reg} (k : Keep regs s u) (hr : .rdi ∉ regs)
     (hm : wv u.mem p.B (slot (wk p.k) aM) (2 * (wk p.k + 2)) < 2 ^ (64 * bW p)) : PB p u := by
-  have hz : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := h.ws.hZ; have := h.ws.scr.nowrap; omega
+  have hz : slot (wk p.k) 16 ≤ 2 ^ 64 := by have := h.ws.hZ; have := h.ws.scr.nowrap; omega_arith
   exact ⟨h.ws.congrG f (by decide) k hr,
     by rw [f.rg_word (by decide) (by decide)]; exact h.hel, h.e1, h.e2, hm,
     by rw [f.rg_wv2 hz (by decide) (by decide) (by decide) (by decide) (Nat.le_refl _)]; exact h.glt⟩
@@ -145,21 +145,21 @@ theorem halvingBound_ct : RelCT isa (Two fun p s => PB p s ∧
     have hz := hw.hZ
     have hw2 := hw.w2
     let m := wv s.mem p.B (slot (wk p.k) aM) (2 * (wk p.k + 2))
-    refine WP.mono (halfInit_ok hw h.hel (by have := h.e2; omega))
-      fun t ⟨h11, h13, mt, kt⟩ => ⟨by have := hw.w1; unfold hN; omega, t, m, ?_, h.e1, h.e2, h.mlt, h11, ?_⟩
-    · have o := writeW_outside s.mem p.B (0 : BitVec 64) (d := 8 * sT) (by simp only [sT, sFn]; omega)
+    refine WP.mono (halfInit_ok hw h.hel (by have := h.e2; omega_arith))
+      fun t ⟨h11, h13, mt, kt⟩ => ⟨by have := hw.w1; unfold hN; omega_arith, t, m, ?_, h.e1, h.e2, h.mlt, h11, ?_⟩
+    · have o := writeW_outside s.mem p.B (0 : BitVec 64) (d := 8 * sT) (by simp only [sT, sFn]; omega_arith)
       rw [← mt] at o
-      rw [o.word (Or.inl (by simp only [Impl.Bignum.X86_64.Public.sElen, sFn, sT]; omega))
-        (by simp only [Impl.Bignum.X86_64.Public.sElen, sFn]; omega)]
+      rw [o.word (Or.inl (by simp only [Impl.Bignum.X86_64.Public.sElen, sFn, sT]; omega_arith))
+        (by simp only [Impl.Bignum.X86_64.Public.sElen, sFn]; omega_arith)]
       exact h.hel
-    · have o := writeW_outside s.mem p.B (0 : BitVec 64) (d := 8 * sT) (by simp only [sT, sFn]; omega)
+    · have o := writeW_outside s.mem p.B (0 : BitVec 64) (d := 8 * sT) (by simp only [sT, sFn]; omega_arith)
       rw [← mt] at o
       have f : Frm p.B (rg (wk p.k) [] [sT]) s.mem t.mem := Frm.rg_of_hdr o _ _ (by decide)
       have hs₁ := slot_add (wk p.k) aM 2
       have hs₂ := slot_mono (w := wk p.k) (show aM + 2 ≤ 16 by decide)
       have hs₃ := hdr_lt_slot (wk p.k) aM (show sT < 32 by decide)
       exact ⟨hw.congrG f (by decide) kt (by decide), Keep.refl _ _, h13, Frm.refl _ _ _,
-        by rw [o.wv (Or.inr (by omega)) (by omega)]; rfl, by rw [mt, word_writeW_self]; rfl⟩
+        by rw [o.wv (Or.inr (by omega_arith)) (by omega_arith)]; rfl, by rw [mt, word_writeW_self]; rfl⟩
   · intro p s ⟨h, hm0⟩
     have hw2 := h.ws.w2
     refine WP.mono (halving_ok h.ws h.hel h.e1 h.e2 rfl hm0 h.mlt)
@@ -202,8 +202,8 @@ theorem backup_ct : RelCT isa (Two GR0) (copyExponent aG aM)
   intro p s h
   obtain ⟨I, m₀, rfl, h, O, hv⟩ := h
   have hw := h.S.ws
-  have hz : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
-  have he2 : I.el ≤ 8 * wk I.k := by have := h.L.el2; unfold wk; omega
+  have hz : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega_arith
+  have he2 : I.el ≤ 8 * wk I.k := by have := h.L.el2; unfold wk; omega_arith
   refine WP.mono (copyExponent_ok hw (o := aG) (a := aM) (by decide) (by decide) (by decide))
     fun u ⟨hG, o, k⟩ => ?_
   have f := pair_frame o

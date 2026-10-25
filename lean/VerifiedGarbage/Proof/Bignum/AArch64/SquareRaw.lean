@@ -25,8 +25,8 @@ theorem squareSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
         t.gpr .x15 = minv ∧ t.gpr .x7 = 0 ∧ t.mem = s.mem) ∧
       Keep [.x8, .x9, .x10, .x12, .x15, .x7] s t := by
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8*i)) 8 :=
-    fun i hi => hs.ld (by have := hdr_lt_slot w 8 hi; omega)
-  have sa : ∀ j < 8, sArr j < 32 := fun j hj => by unfold sArr; omega
+    fun i hi => hs.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
+  have sa : ∀ j < 8, sArr j < 32 := fun j hj => by unfold sArr; omega_arith
   refine WP.keep [.x8, .x9, .x10, .x12, .x15, .x7] ?_ rfl rfl rfl
   unfold VG.Impl.Bignum.AArch64.Square.squareSetup
   brun [h0, hdr_enc (sa a ha), hl _ (sa a ha),
@@ -52,12 +52,12 @@ theorem rawSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   let eb := slot w a
   have hA : A+8*(2*w+2) ≤ Z := by
     have := slot_le (w := w) (show aTmp < 8 by decide)
-    unfold A slot aAcc aTmp at *; omega
-  have hb : eb+8*w ≤ Z := by have := slot_le (w := w) ha; omega
+    unfold A slot aAcc aTmp at *; omega_arith
+  have hb : eb+8*w ≤ Z := by have := slot_le (w := w) ha; omega_arith
   have sb : eb+8*w ≤ A ∨ A+8*(2*w+2) ≤ eb := by
     have := slot_sep (w := w) ha1
     have := slot_sep (w := w) ha2
-    unfold A eb slot aAcc aTmp at *; omega
+    unfold A eb slot aAcc aTmp at *; omega_arith
   unfold VG.Impl.Bignum.AArch64.Square.rawSquare
   refine WP.seq (WP.mono (squareSetup_ok hs h0 hH hZ ha)
     fun u ⟨⟨h8, h9, h10, h12, h15, h7, hm⟩, ku⟩ => ?_)
@@ -66,49 +66,49 @@ theorem rawSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   rw [hm] at hv ho
   have kAll := ku.trans kv
   have read : ∀ j < w, word v.mem B (eb+8*j) = word s.mem B (eb+8*j) :=
-    fun j hj => ho.word (by omega) (by omega)
+    fun j hj => ho.word (by omega_arith) (by omega_arith)
   have lower : wv v.mem B A (2*w) = crossValue s.mem B eb w := by
     have upper : wv v.mem B (A+8*(2*w)) 2 = 0 := wv_zero fun j hj => by
-      rw [show A+8*(2*w)+8*j = A+8*(2*w+j) by omega]
-      exact hz _ (by omega) (by omega)
+      rw [show A+8*(2*w)+8*j = A+8*(2*w+j) by omega_arith]
+      exact hz _ (by omega_arith) (by omega_arith)
     rw [wv_add, upper, Nat.mul_zero, Nat.add_zero] at hv
     exact hv
   have v8 := (kv.gpr .x8 (by decide)).trans h8
   have v9 := (kv.gpr .x9 (by decide)).trans h9
   have v12 := (kv.gpr .x12 (by decide)).trans h12
   have v7 := (kv.gpr .x7 (by decide)).trans h7
-  refine WP.mono (diagonal_ok (hs.congr kAll.wr) v8 v9 v12 v7 (by omega) hw
-    (by omega) hb (by omega)) fun t ⟨ht, hot, ht16, kt⟩ => ?_
+  refine WP.mono (diagonal_ok (hs.congr kAll.wr) v8 v9 v12 v7 (by omega_arith) hw
+    (by omega_arith) hb (by omega_arith)) fun t ⟨ht, hot, ht16, kt⟩ => ?_
   rw [lower, diagonalValue_congr read, square_decomposition] at ht
   have bound : wv s.mem B eb w * wv s.mem B eb w < 2 ^ (128*w) := by
     have hl := wv_lt s.mem B eb w
     have hp := Nat.mul_lt_mul'' hl hl
-    rw [← Nat.pow_add, show 64*w+64*w = 128*w by omega] at hp
+    rw [← Nat.pow_add, show 64*w+64*w = 128*w by omega_arith] at hp
     exact hp
   have topEq : wv t.mem B A (2*w+1) = wv t.mem B A (2*w) +
       2 ^ (128*w)*(word t.mem B (A+16*w)).toNat := by
-    rw [wv, show 64*(2*w) = 128*w by omega, show A+8*(2*w) = A+16*w by omega]
+    rw [wv, show 64*(2*w) = 128*w by omega_arith, show A+8*(2*w) = A+16*w by omega_arith]
   have topZero : (word t.mem B (A+16*w)).toNat = 0 := by
     rw [topEq] at ht
     by_contra hc
-    have hc' : 1 ≤ (word t.mem B (A+16*w)).toNat := by omega
+    have hc' : 1 ≤ (word t.mem B (A+16*w)).toNat := by omega_arith
     have hm' := Nat.mul_le_mul_left (2 ^ (128*w)) hc'
     simp only [Nat.mul_one] at hm'
-    omega
+    omega_arith
   have lowEq : wv t.mem B A (2*w) = wv s.mem B eb w * wv s.mem B eb w := by
     rw [topEq, topZero, Nat.mul_zero, Nat.add_zero] at ht
     exact ht
   have pad : word t.mem B (A+8*(2*w+1)) = 0 := by
-    rw [hot.word (by omega) (by omega)]
-    exact hz _ (by omega) (by omega)
+    rw [hot.word (by omega_arith) (by omega_arith)]
+    exact hz _ (by omega_arith) (by omega_arith)
   refine ⟨?_, lowEq, ho.trans (hot.mono (o' := A) (n' := 8*(2*w+2))
-    (Nat.le_refl _) (by omega)),
+    (Nat.le_refl _) (by omega_arith)),
     (kt.gpr .x8 (by decide)).trans v8,
     (kt.gpr .x10 (by decide)).trans ((kv.gpr .x10 (by decide)).trans h10),
     (kt.gpr .x12 (by decide)).trans v12,
     (kt.gpr .x15 (by decide)).trans ((kv.gpr .x15 (by decide)).trans h15),
     (kt.gpr .x7 (by decide)).trans v7, ht16, (kAll.trans kt).mono (by decide)⟩
-  rw [show 2*w+2 = (2*w+1)+1 by omega, wv, pad, ht]
+  rw [show 2*w+2 = (2*w+1)+1 by omega_arith, wv, pad, ht]
   simp [eb]
 
 end VG.Proof.Bignum.AArch64.Square

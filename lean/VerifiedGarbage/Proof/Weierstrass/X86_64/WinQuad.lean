@@ -54,7 +54,7 @@ theorem TblOkR.unch {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Wi
     obtain ⟨i, hi, rfl, -, -⟩ := tblPt_mem K h1 h8 x hx
     have hs : K.tbl + 8 * K.M.n * i ∈ winSlots K := by
       simp only [winSlots, List.mem_append]; exact Or.inr (winTbl_mem K hi)
-    refine hU.wordsVal (fun w hw => ?_) (by have := hL.lay.le _ hs; omega)
+    refine hU.wordsVal (fun w hw => ?_) (by have := hL.lay.le _ hs; omega_arith)
     simp only [loopW, List.mem_append, List.mem_map, List.mem_singleton] at hw
     rcases hw with ⟨y, hy, rfl⟩ | rfl
     · exact (hL.tbl_apart (List.mem_append_right _ hy) hi).symm
@@ -308,8 +308,8 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
     have J₂' := InvJ.dbl' hC hM3 (hQ _) J₁' (v₂'.trans (dblJSChoiceN_run (K.M.n ≤ 6 : Bool) _))
     rw [hC.double hP] at J₂'
     have ar : 2 * (2 * (4 ^ (2 - j) * e)) = 4 ^ (2 - (j - 1)) * e := by
-      have hj12 : j = 1 ∨ j = 2 := by omega
-      rcases hj12 with rfl | rfl <;> simp <;> omega
+      have hj12 : j = 1 ∨ j = 2 := by omega_arith
+      rcases hj12 with rfl | rfl <;> simp <;> omega_arith
     rw [ar] at J₂'
     have b' : st₂.gpr .rbx = BitVec.ofNat 64 (i + 4096 * j) := by
       rw [k₂'.gpr _ (rbx_not_clob _), k₁'.gpr _ (rbx_not_clob _), b]
@@ -381,14 +381,14 @@ theorem winZeroMask_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat} (hs :
   refine WP.mono (show WP isa (.block [.mov .rdx (.mem (sc K.E.z))]) s (fun s₁ =>
       s₁.gpr .rdx = word s.mem base K.E.z ∧ Keeps [.rdx] s s₁) by
     apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc_sc hs (d := K.E.z) (by omega),
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc_sc hs (d := K.E.z) (by omega_arith),
       Option.map_some, RegUpd.gpr_setReg, ite_true, Option.some.injEq, exists_eq_left']
     refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ors_ok hs₁ (a := K.E.z) (K.M.n - 1) (by omega)) fun s₂ ⟨e₂, k₂⟩ => ?_
+  refine WP.mono (ors_ok hs₁ (a := K.E.z) (K.M.n - 1) (by omega_arith)) fun s₂ ⟨e₂, k₂⟩ => ?_
   rw [e₁, k₁.2.1] at e₂
   have hz : s₂.gpr .rdx = 0 ↔ wordsVal s.mem base K.E.z K.M.n = 0 := by
     rw [e₂, wordsVal_eq_zero_iff]
@@ -396,9 +396,9 @@ theorem winZeroMask_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat} (hs :
     · intro ⟨h₀, h⟩ j hj
       rcases j with _ | j
       · simpa using h₀
-      · exact h j (by omega)
+      · exact h j (by omega_arith)
     · intro h
-      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega)⟩
+      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega_arith)⟩
   rw [show ([.alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx)] : List Instr) =
     [.alu .cmp .rdx (.imm 1)] ++ [.alu .sbb .rdx (.reg .rdx)] from rfl, WP.block_append_iff]
   refine WP.mono (zmCmp_ok s₂) fun s₃ ⟨c₃, k₃⟩ => ?_
@@ -427,7 +427,7 @@ theorem ySelWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     State.load64, State.store64, ea_sc, hdx, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
     RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     RegUpd.mem_arithFlags, reduceCtorEq, ite_true, ite_false, hs.rdi,
-    ld_sc hs (d := K.R.y + 8 * w) (by omega), st_sc hs (d := K.R.y + 8 * w) (by omega),
+    ld_sc hs (d := K.R.y + 8 * w) (by omega_arith), st_sc hs (d := K.R.y + 8 * w) (by omega_arith),
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨by rw [sel_mask], ⟨fun r hr => ?_, rfl, rfl⟩⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -446,18 +446,18 @@ theorem ySelWords_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ySelWords_ok hs K p hdx k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    refine WP.mono (ySelWords_ok hs K p hdx k (by omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
-    refine WP.mono (ySelWord_ok hs₁ K p ((k₁.gpr _ (by decide)).trans hdx) (w := k) (by omega))
+    refine WP.mono (ySelWord_ok hs₁ K p ((k₁.gpr _ (by decide)).trans hdx) (w := k) (by omega_arith))
       fun s₂ ⟨m₂, k₂⟩ => ?_
     have O₂ : Outside base (K.R.y + 8 * k) 8 s₁.mem s₂.mem := by
-      rw [m₂]; exact writeW_outside _ _ _ (by omega)
+      rw [m₂]; exact writeW_outside _ _ _ (by omega_arith)
     refine ⟨fun j hj => ?_, k₁.trans k₂,
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂.word (by omega) (by omega), e₁ j h]
-    · obtain rfl : j = k := by omega
-      rw [m₂, word_writeW_self, O₁.word (by omega) (by omega)]
+    · rw [O₂.word (by omega_arith) (by omega_arith), e₁ j h]
+    · obtain rfl : j = k := by omega_arith
+      rw [m₂, word_writeW_self, O₁.word (by omega_arith) (by omega_arith)]
 
 /-- `R.y` = Montgomery's one where `E.z` is zero. -/
 theorem ySel_ok {K : WinCfg} {base : Addr} {size : Nat} (hL : WinLay K size)
@@ -526,7 +526,7 @@ theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     have hxw : x ∈ winWs K := hws x (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
       rcases hx with h | h <;> simp [h])
-    refine U₂.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (winWs_slots K x hxw); omega)
+    refine U₂.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (winWs_slots K x hxw); omega_arith)
     rw [List.mem_singleton.mp hw]
     exact hL.apart₂ hxw (hws _ (by simp)) hne
   have ex₂ := eR K.R.x (by simp) rxy

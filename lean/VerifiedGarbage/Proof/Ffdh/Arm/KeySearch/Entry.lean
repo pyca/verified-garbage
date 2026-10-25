@@ -29,14 +29,7 @@ theorem entry_base_ok (s : State) {p : KeyPublic sampling} (h : EntryArguments p
     (space : Workspace s p.control 128) (x : s.gpr .r0 = p.xp) (y : s.gpr .r2 = p.yp) :
     WP isa (.block VG.Impl.Ffdh.Arm.KeySearch.entry) s fun t =>
       (EntryContext p t ∧ t.mem = writeLow s.mem p.control (entryValues p)) ∧ Rest [.r3, .r4] s t := by
-  refine withRest [.r3, .r4] ?_ (by
-    intro r hr instr hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.KeySearch.entry : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked instr hi
-    cases hc : clobbers instr r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r4] ?_ (by rfl) (by rfl)
   change WP isa (.block ([.ldrSp .r4 56, VG.Impl.Ffdh.Arm.KeySearch.stf .r0 5,
     VG.Impl.Ffdh.Arm.KeySearch.stf .r2 6] ++ _)) s _
   rw [WP.block_append_iff]

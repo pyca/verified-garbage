@@ -64,11 +64,11 @@ theorem cyd_ct (hc : VerifyChecks H.P H.D) :
     (fun i hi => by
       rw [k1.2.1, hrd]
       exact hp.hrd.left _ _ ⟨⟨s.gpr .r8, lk.G.len⟩, by simp,
-      Offset.contains_base _ (by omega) (by omega)⟩)
+      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     (fun i hi j hj => Outside.ne L1 (by
       have := hp.outside lk.G hp.ddgs hp.dKdg (a := s.gpr .r8 + BitVec.ofNat 64 i)
-        (Offset.contains_base _ (by omega) (by omega))
-      rwa [k1.2.2, v.wr]) (by unfold oY oRsa; omega))) fun u2 ⟨L2, k2, R2⟩ =>
+        (Offset.contains_base _ (by omega_arith) (by omega_arith))
+      rwa [k1.2.2, v.wr]) (by unfold oY oRsa; omega_arith))) fun u2 ⟨L2, k2, R2⟩ =>
     ⟨s, S, ⟨v.next L2 (k2.2.2.trans k1.2.2) R2 hw hx, k2.2.1.trans (k1.2.1.trans hrd), hok⟩,
       (k2.gpr (by decide)).trans hcx1⟩
 
@@ -87,7 +87,7 @@ theorem copyDb_ct (hc : VerifyChecks H.P H.D) :
   have hN := hH.N_le
   have := vlo_le s
   exact WP.mono (copyDb_ok v.L R (e := oEm + vlo s) (db := vdb H.D s) (hw 23 (by decide)) (hw 24 (by decide)) hcx
-    (by unfold vdb; omega) (by unfold vdb veml oEm oY; omega) (by unfold vdb veml; omega)) fun u ⟨L', k', R'⟩ =>
+    (by unfold vdb; omega_arith) (by unfold vdb veml oEm oY; omega_arith) (by unfold vdb veml; omega_arith)) fun u ⟨L', k', R'⟩ =>
     ⟨s, S, v.next L' k'.2.2 R' hw hx, k'.2.1.trans hrd, hok⟩
 
 /-- `shift`'s first slots. -/
@@ -118,7 +118,7 @@ theorem shiftPro_ct : RelCT isa (Two (VAt (extra := extra) G (JM H (X7 H)))) (.b
   obtain ⟨V, W, R, hw, pos, hpos, h27, h34⟩ := v.W
   have hk2 := S.ps.k2
   have := vlo_le s
-  have hp1 : pos + 1 < 2 ^ 64 := by unfold vdb veml at hpos; omega
+  have hp1 : pos + 1 < 2 ^ 64 := by unfold vdb veml at hpos; omega_arith
   exact WP.mono (shiftPro_ok v.L R h34) fun u ⟨L', k', R'⟩ =>
     ⟨s, S, v.next L' k'.2.2 R' (km_upd (km_upd (km_upd hw (by decide) _) (by decide) _) (by decide) _)
       ⟨⟨pos, hpos, by simp [upd, h27], by simp [upd, h34]⟩, by simp [upd], by simp [upd], pos + 1, by simp [upd], hp1⟩,
@@ -144,10 +144,10 @@ theorem pass_ct (hc : VerifyChecks H.P H.D) :
   have hN := hH.N_le
   have := vlo_le s
   have hpp : 2 ^ p.2 ≤ 512 := by
-    calc 2 ^ p.2 ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega)
+    calc 2 ^ p.2 ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_arith)
       _ = 512 := rfl
-  exact WP.mono (shiftPass_ok hH v.L R h45 h46 (hw 24 (by decide)) hxl Nat.one_le_two_pow (by unfold vdb; omega)
-    (by unfold vdb veml oY oRsa; omega)) fun u ⟨L', k', R'⟩ =>
+  exact WP.mono (shiftPass_ok hH v.L R h45 h46 (hw 24 (by decide)) hxl Nat.one_le_two_pow (by unfold vdb; omega_arith)
+    (by unfold vdb veml oY oRsa; omega_arith)) fun u ⟨L', k', R'⟩ =>
     ⟨s, S, v.next L' k'.2.2 R' hw ⟨hx, h46, h44, x, h45, hxl⟩, k'.2.1.trans hrd, hok⟩
 
 include hH in
@@ -162,11 +162,11 @@ theorem pass_wp {a : State} {j : Nat} {t : State} (hj : j < 10) (h : VAt (extra 
   have hN := hH.N_le
   have := vlo_le s
   have hpp : 2 ^ j ≤ 512 := by
-    calc 2 ^ j ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega)
+    calc 2 ^ j ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_arith)
       _ = 512 := rfl
   refine WP.seq (WP.mono (shiftPass_ok hH v.L R h45 h46 (hw 24 (by decide)) hxl Nat.one_le_two_pow
-    (by unfold vdb; omega) (by unfold vdb veml oY oRsa; omega)) fun u ⟨Lu, ku, Ru⟩ => ?_)
-  refine WP.mono (nextPass_ok Lu Ru h45 h46 h44 hxl (by omega) (by omega)) fun y ⟨Ly, ky, Ry, hzy⟩ => ?_
+    (by unfold vdb; omega_arith) (by unfold vdb veml oY oRsa; omega_arith)) fun u ⟨Lu, ku, Ru⟩ => ?_)
+  refine WP.mono (nextPass_ok Lu Ru h45 h46 h44 hxl (by omega_arith) (by omega_arith)) fun y ⟨Ly, ky, Ry, hzy⟩ => ?_
   obtain ⟨pos, hpos, h27, h34⟩ := hx
   have hw' := km_upd (j := 44) (km_upd (j := 46) (km_upd (j := 45) hw (by decide) (BitVec.ofNat 64 (x / 2)))
     (by decide) (BitVec.ofNat 64 (2 * 2 ^ j))) (by decide) (BitVec.ofNat 64 (10 - j - 1))
@@ -175,9 +175,9 @@ theorem pass_wp {a : State} {j : Nat} {t : State} (hj : j < 10) (h : VAt (extra 
         (BitVec.ofNat 64 (10 - j - 1))) := ⟨pos, hpos, by simp [upd, h27], by simp [upd, h34]⟩
   have hwr : y.wr = t.wr := ky.2.2.trans ku.2.2
   have hrd' : y.rd = s.rd := ky.2.1.trans (ku.2.1.trans hrd)
-  refine ⟨eval_ne_cnt hj (by rw [hzy]; simp only [Option.some.injEq, decide_eq_decide]; omega), fun _ =>
+  refine ⟨eval_ne_cnt hj (by rw [hzy]; simp only [Option.some.injEq, decide_eq_decide]; omega_arith), fun _ =>
     ⟨s, S, v.next Ly hwr Ry hw' ⟨hX, by simp [upd, Nat.pow_succ, Nat.mul_comm], by simp only [upd, Nat.reduceEqDiff, ite_true, ite_false]; congr 1,
-      x / 2, by simp [upd], by have := Nat.div_le_self x 2; omega⟩, hrd', hok⟩, fun _ =>
+      x / 2, by simp [upd], by have := Nat.div_le_self x 2; omega_arith⟩, hrd', hok⟩, fun _ =>
     ⟨s, S, v.next Ly hwr Ry hw' hX, hrd', hok⟩⟩
 
 include hH in
@@ -197,7 +197,7 @@ theorem verifyNb_ct (hc : VerifyChecks H.P H.D) :
   obtain ⟨v, hrd, hok⟩ := h
   obtain ⟨V, W, R, hw, hx⟩ := v.W
   have hk2 := S.ps.k2
-  exact WP.mono (verifyNb_ok hH v.L R (db := vdb H.D s) (hw 24 (by decide)) (by unfold vdb veml; omega))
+  exact WP.mono (verifyNb_ok hH v.L R (db := vdb H.D s) (hw 24 (by decide)) (by unfold vdb veml; omega_arith))
     fun u ⟨L', k', R'⟩ => ⟨s, S, v.next L' k'.2.2 R' (fun k hk => by
       rcases List.mem_append.mp hk with hk | hk
       · exact km_upd hw (by decide) _ k hk
@@ -219,13 +219,13 @@ theorem jn_he {a t : State} (h : VAt (extra := extra) G (JN H) a t) : HE H 1 (ha
   have hL := hH.dims.L
   have h1 := Nat.lt_div_mul_add (a := vdb H.D a + (7 + H.D + H.P.L)) (b := H.P.B) hB0
   have h2 := Nat.div_mul_le_self (vdb H.D a + (7 + H.D + H.P.L)) H.P.B
-  have hdb : vdb H.D a ≤ 1024 := by unfold vdb veml; omega
-  refine ⟨⟨S.rest, Nat.succ_pos _, by simp only [hashA, vnb]; rw [Nat.succ_mul]; omega⟩,
+  have hdb : vdb H.D a ≤ 1024 := by unfold vdb veml; omega_arith
+  refine ⟨⟨S.rest, Nat.succ_pos _, by simp only [hashA, vnb]; rw [Nat.succ_mul]; omega_arith⟩,
     (vs_pub S v).sub (fun p hp => ?_) (fun _ h => h) fun _ _ ⟨pos, hpos, h27, _⟩ =>
       ⟨vdb H.D s - pos - 1 + (8 + H.D), h27, ?_⟩⟩
   · simp only [hws, hashA, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> simp [pw, KM, vw]
-  · simp only [hashA, vnb]; rw [S.vdb] at hpos ⊢; rw [Nat.succ_mul]; omega
+  · simp only [hashA, vnb]; rw [S.vdb] at hpos ⊢; rw [Nat.succ_mul]; omega_arith
 
 include hH K in
 theorem mhash_ct (hc : HashChecks H.P H.D 1) :
@@ -242,9 +242,9 @@ theorem mhash_ct (hc : HashChecks H.P H.D 1) :
   have hL := hH.dims.L
   have h1 := Nat.lt_div_mul_add (a := vdb H.D s + (7 + H.D + H.P.L)) (b := H.P.B) hB0
   have h2 := Nat.div_mul_le_self (vdb H.D s + (7 + H.D + H.P.L)) H.P.B
-  have hdb : vdb H.D s ≤ 1024 := by unfold vdb veml; omega
-  exact WP.mono (ctHash_gen hH K v.L R h27 (hw 28 (by simp)) (by unfold vnb; rw [Nat.succ_mul]; omega)
-    (by unfold vnb; rw [Nat.succ_mul]; omega)) fun u ⟨L', rd', wr', _, V', W', R', _, hW', _⟩ =>
+  have hdb : vdb H.D s ≤ 1024 := by unfold vdb veml; omega_arith
+  exact WP.mono (ctHash_gen hH K v.L R h27 (hw 28 (by simp)) (by unfold vnb; rw [Nat.succ_mul]; omega_arith)
+    (by unfold vnb; rw [Nat.succ_mul]; omega_arith)) fun u ⟨L', rd', wr', _, V', W', R', _, hW', _⟩ =>
     ⟨s, S, ⟨L', wr'.trans v.wr, ⟨V', W', R', fun k hk => (hW' k (km_lt hk) (km_ne hk (by decide))
       (km_ne hk (by decide))).trans (hw k (List.mem_append_left _ hk)), trivial⟩, fun _ hp => by cases hp⟩,
       rd'.trans hrd, hok⟩
@@ -262,7 +262,7 @@ theorem cmpH_ct (hc : VerifyChecks H.P H.D) :
   have hN := hH.N_le
   have := vlo_le s
   exact WP.mono (cmpH_ok hH v.L R (e := oEm + vlo s) (db := vdb H.D s) (hw 23 (by decide)) (hw 24 (by decide))
-    (by unfold vdb veml oEm oRsa; omega)) fun u ⟨k', hm', _⟩ =>
+    (by unfold vdb veml oEm oRsa; omega_arith)) fun u ⟨k', hm', _⟩ =>
     ⟨s, S, (v.keep k' hm' (by decide) (fun _ hp => by cases hp)).sub (fun _ hk => by cases hk) []
       (fun _ hp => by cases hp) fun _ _ _ => trivial⟩
 

@@ -29,7 +29,7 @@ theorem bitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 
       (∀ r, r ≠ .rdx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.mem = s.mem.writeW (off base (BITS + (8 * i + j))) (BitVec.ofNat 8 ((b.toNat >>> j) &&& 1)) := by
   have w : InRegions s.wr (off base (BITS + (8 * i + j))) 1 :=
-    ⟨_, hs.wr, contains_sc (by simp only [BITS]; omega)⟩
+    ⟨_, hs.wr, contains_sc (by simp only [BITS]; omega_arith)⟩
   have e := bit_byte b j hj
   apply WP.of_runBlock
   rcases Nat.eq_zero_or_pos j with rfl | hj0
@@ -41,11 +41,11 @@ theorem bitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 
     refine ⟨fun r hr => ?_, rfl, by trivial, ?_⟩
     · simp only [hr, ite_false]
     · rw [← e]; rfl
-  · simp only [bitJ, show ¬j = 0 by omega, ite_false, List.nil_append, List.cons_append,
+  · simp only [bitJ, show ¬j = 0 by omega_arith, ite_false, List.nil_append, List.cons_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, execShift, State.store8,
     ea_bitAt, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, RegUpd.wr_setReg,
     RegUpd.wr_setFlags, RegUpd.wr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_setFlags,
-    RegUpd.mem_arithFlags, hs.rdi, hb, ha, addr_bit, w, show 1 ≤ j ∧ j ≤ 63 from ⟨hj0, by omega⟩,
+    RegUpd.mem_arithFlags, hs.rdi, hb, ha, addr_bit, w, show 1 ≤ j ∧ j ≤ 63 from ⟨hj0, by omega_arith⟩,
     ite_true, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
     and_self]
     refine ⟨fun r hr => ?_, rfl, by trivial, ?_⟩
@@ -170,22 +170,22 @@ theorem bitsLoop_ok {s₀ : State} {base k : Addr}
   refine WP.mono (bitsBody_ok hb.scr hb.rsi hi hb.rbx (by rw [hb.rd, hb.wr]; exact hkr i hi))
     fun s' ⟨b', z', g', rd', wr', bits', o'⟩ => ?_
   have hbyte : s.mem (k + BitVec.ofNat 64 i) = s₀.mem (k + BitVec.ofNat 64 i) :=
-    hb.mem _ (by have := hkd i hi; simp only [BITS]; omega)
+    hb.mem _ (by have := hkd i hi; simp only [BITS]; omega_arith)
   have inv : BInv base k s₀ s' (i + 1) := by
     refine ⟨⟨(g' _ (by decide)).trans hb.scr.rdi, wr' ▸ hb.scr.wr, hb.scr.nowrap⟩,
       (g' _ (by decide)).trans hb.rsi, b', fun r hr => (g' r hr).trans (hb.gpr r hr),
-      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega) (by omega)),
+      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega_arith) (by omega_arith)),
       fun t ht => ?_⟩
     rcases Nat.lt_or_ge t (8 * i) with h | h
-    · rw [o' _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; omega), hb.bits t h]
-    · have e := bits' (t - 8 * i) (by omega)
-      rw [show 8 * i + (t - 8 * i) = t by omega, hbyte] at e
-      rw [e, show t / 8 = i by omega, show t % 8 = t - 8 * i by omega]
+    · rw [o' _ (by rw [ofs_off' base (by simp only [BITS]; omega_arith)]; omega_arith), hb.bits t h]
+    · have e := bits' (t - 8 * i) (by omega_arith)
+      rw [show 8 * i + (t - 8 * i) = t by omega_arith, hbyte] at e
+      rw [e, show t / 8 = i by omega_arith, show t % 8 = t - 8 * i by omega_arith]
   simp only [eval, z', Option.map_some]
   rcases Nat.lt_or_ge (i + 1) 57 with h | h
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬i + 1 = 57), Bool.not_false],
-      57 - (i + 1), by omega, i + 1, rfl, h, inv⟩
-  · obtain rfl : i = 56 := by omega
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬i + 1 = 57), Bool.not_false],
+      57 - (i + 1), by omega_arith, i + 1, rfl, h, inv⟩
+  · obtain rfl : i = 56 := by omega_arith
     exact .inl ⟨rfl, inv⟩
 
 /-- `bits`: byte `t` of `BITS` is bit `t` of byte `t / 8` of the scalar, for
@@ -204,10 +204,10 @@ theorem bits_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .rsi =
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
       State.setReg32, Option.some.injEq, exists_eq_left']
     refine ⟨⟨hs.rdi, hs.wr, hs.nowrap⟩, hk, rfl, fun r hr => ?_, rfl, rfl, Outside.refl _ _ _ _,
-      fun t ht => absurd ht (by omega)⟩
+      fun t ht => absurd ht (by omega_arith)⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, hr.2.2, ite_false]) fun s₁ h₁ => ?_)
-  refine WP.mono (bitsLoop_ok hkr hkd 0 s₁ (by omega) h₁) fun s₂ h₂ => ?_
-  exact ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.mem, fun t ht => h₂.bits t (by omega)⟩
+  refine WP.mono (bitsLoop_ok hkr hkd 0 s₁ (by omega_arith) h₁) fun s₂ h₂ => ?_
+  exact ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.mem, fun t ht => h₂.bits t (by omega_arith)⟩
 
 end VG.Proof.Ed448.X86_64

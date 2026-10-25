@@ -324,7 +324,7 @@ theorem chainCode_ok {size : Nat} {rm : Reg} {base : Addr} {x : Reg} (hx2 : x �
     simp only [Bool.false_eq_true, ite_false] at e₁
     simp only [List.map_cons, regsVal, chainVal, List.length_cons, ht₂, pow64_succ]
     rw [Nat.mul_assoc]
-    omega
+    omega_arith
 
 /-- A chain, skipping its words before the first piece: `T + 2^(64 k) c = T + V`
 for a carry `c`. -/
@@ -347,7 +347,7 @@ theorem chainSkip_ok {size : Nat} {rm : Reg} {base : Addr} {x : Reg} (hx2 : x �
     have ht₁ : s₁.gpr t = s.gpr t := k₁.gpr t (by simp [ht.2.1, ht.2.2.1, htL])
     simp only [List.map_cons, regsVal, chainVal, List.length_cons, ht₁, pow64_succ, optVal]
     rw [Nat.mul_assoc]
-    omega
+    omega_arith
   | (t, some p) :: L, s, hs, hz, hc, hrL => by
     simp only [List.map_cons, List.mem_cons, not_or] at hrL
     have ht := hc.regs t (List.mem_cons_self ..)
@@ -377,7 +377,7 @@ theorem chainSkip_ok {size : Nat} {rm : Reg} {base : Addr} {x : Reg} (hx2 : x �
     simp only [ite_true, Nat.add_zero] at e₁
     simp only [List.map_cons, regsVal, chainVal, List.length_cons, ht₂, pow64_succ]
     rw [Nat.mul_assoc]
-    omega
+    omega_arith
 
 /-! ## Rows -/
 
@@ -414,7 +414,7 @@ theorem word_split {s : State} {base : Addr} {size : Nat} (x : Nat) {w : RWord}
   | pow2 k =>
     obtain ⟨hk0, hk⟩ := hw
     simp only [RWord.lo, RWord.hi, optVal, Piece.val, RWord.val]
-    have h64 : 2 ^ 64 = 2 ^ (64 - k) * 2 ^ k := by rw [← Nat.pow_add]; congr 1; omega
+    have h64 : 2 ^ 64 = 2 ^ (64 - k) * 2 ^ k := by rw [← Nat.pow_add]; congr 1; omega_arith
     have hd := Nat.div_add_mod x (2 ^ (64 - k))
     have hr := Nat.mod_lt x (Nat.two_pow_pos (64 - k))
     have hrk : x % 2 ^ (64 - k) * 2 ^ k < 2 ^ 64 := by
@@ -464,19 +464,19 @@ theorem pieces_sum {s : State} {base : Addr} {size : Nat} (x : Nat) {ws : List R
           x * rwVal s base (ws.drop j)
   | [], j, h => by
     simp only [List.length_nil, Nat.add_zero] at h
-    have hj : j ≠ 0 := by omega
-    simp only [pieces, chainVal, hj, ite_false, getD_hi_of_le (show ws.length ≤ j - 1 by omega),
-      optVal, List.drop_eq_nil_of_le (show ws.length ≤ j by omega), rwVal, Nat.mul_zero]
+    have hj : j ≠ 0 := by omega_arith
+    simp only [pieces, chainVal, hj, ite_false, getD_hi_of_le (show ws.length ≤ j - 1 by omega_arith),
+      optVal, List.drop_eq_nil_of_le (show ws.length ≤ j by omega_arith), rwVal, Nat.mul_zero]
   | t :: ts, j, h => by
     simp only [List.length_cons] at h
-    have IH := pieces_sum (s := s) (base := base) x hws ts (j + 1) (by omega)
+    have IH := pieces_sum (s := s) (base := base) x hws ts (j + 1) (by omega_arith)
     simp only [Nat.add_one_ne_zero, ite_false, Nat.add_sub_cancel] at IH
     have hab := pieceAB x s base ws j
     have hsp := word_split (s := s) (base := base) x (getD_ok hws j)
     rw [rwVal_drop s base ws j]
     simp only [pieces, chainVal]
     rw [Nat.mul_add, Nat.mul_left_comm x (2 ^ 64)]
-    omega
+    omega_arith
 
 theorem pieces_fst (f : List RWord → Nat → Option Piece) (ws : List RWord) :
     ∀ (ts : List Reg) (j : Nat), (pieces f ws ts j).map Prod.fst = ts
@@ -539,7 +539,7 @@ theorem piece_of_word {size : Nat} {w : RWord} (hw : w.Ok size) {p : Piece}
     simp only [RWord.lo, RWord.hi, Option.mem_def, Option.some.injEq] at h
     rcases h with rfl | rfl
     · exact ⟨hw.2, fun _ h => by simp [Piece.reads] at h⟩
-    · exact ⟨show 64 - k < 64 by have := hw.1; omega, fun _ h => by simp [Piece.reads] at h⟩
+    · exact ⟨show 64 - k < 64 by have := hw.1; omega_arith, fun _ h => by simp [Piece.reads] at h⟩
   | gen src =>
     simp only [RWord.lo, RWord.hi, Option.mem_def, Option.some.injEq] at h
     rcases h with rfl | rfl <;> exact ⟨hw, fun r hr => hr⟩
@@ -581,7 +581,7 @@ theorem row_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s rm 
     WP isa (.block (row rm x ts ws)) s fun s' =>
       regsVal s' ts = regsVal s ts + (s.gpr x).toNat * rwVal s base ws ∧
       Keeps (.x2 :: .x3 :: ts) s s' := by
-  have hsum := pieces_sum (s := s) (base := base) (s.gpr x).toNat h.ok ts 0 (by omega)
+  have hsum := pieces_sum (s := s) (base := base) (s.gpr x).toNat h.ok ts 0 (by omega_arith)
   simp only [ite_true, Nat.zero_add, List.drop_zero] at hsum
   rw [row, WP.block_append_iff]
   have cA := h.chain (Or.inl rfl) 0
@@ -613,8 +613,8 @@ theorem row_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s rm 
   rw [hV] at e₂
   refine ⟨?_, (k₁.trans k₂)⟩
   have hP := Nat.two_pow_pos (64 * ts.length)
-  rcases (by omega : c₁ = 0 ∨ c₁ = 1) with rfl | rfl <;>
-    rcases (by omega : c₂ = 0 ∨ c₂ = 1) with rfl | rfl <;> omega
+  rcases (by omega_arith : c₁ = 0 ∨ c₁ = 1) with rfl | rfl <;>
+    rcases (by omega_arith : c₂ = 0 ∨ c₂ = 1) with rfl | rfl <;> omega_arith
 
 
 end VG.Proof.Mont.AArch64

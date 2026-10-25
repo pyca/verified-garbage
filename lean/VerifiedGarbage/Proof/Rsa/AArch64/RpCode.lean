@@ -234,19 +234,19 @@ theorem rpCtx_of {s : State} (h : rpA.pre s) : RpCtx s := by
   rw [hx1] at dpq dpn dpe dpd dps dpa wP
   rw [hx3] at dpq dqn dqe dqd dqs dqa wQ
   refine ⟨⟨hk1, hk2, hel1, hel2, hdl1, hdl2, bytesAt_length _ _ _, bytesAt_length _ _ _,
-      bytesAt_length _ _ _, by simp only [rpIn]; omega⟩, hx1, hx3, hs,
-    fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
+      bytesAt_length _ _ _, by simp only [rpIn]; omega_arith⟩, hx1, hx3, hs,
+    fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 32) (by omega) (by omega))
-      rw [← stkAddr_add s j b] at this; omega)),
-    src_of_region (by rw [hrd]; simp) (by omega) dns,
-    src_of_region (by rw [hrd]; simp) (by omega) des,
-    src_of_region (by rw [hrd]; simp) (by omega) dds,
-    ⟨fun j hj => ⟨_, by rw [hwr, hx1]; simp, contains_byte _ hj (by omega)⟩,
-      fun j hj => out_scr dps (contains_byte _ hj (by omega))⟩,
-    ⟨fun j hj => ⟨_, by rw [hwr, hx3]; simp, contains_byte _ hj (by omega)⟩,
-      fun j hj => out_scr dqs (contains_byte _ hj (by omega))⟩,
-    apart_of dpq (by omega) (by omega)⟩
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 32) (by omega_arith) (by omega_arith))
+      rw [← stkAddr_add s j b] at this; omega_arith)),
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) des,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dds,
+    ⟨fun j hj => ⟨_, by rw [hwr, hx1]; simp, contains_byte _ hj (by omega_arith)⟩,
+      fun j hj => out_scr dps (contains_byte _ hj (by omega_arith))⟩,
+    ⟨fun j hj => ⟨_, by rw [hwr, hx3]; simp, contains_byte _ hj (by omega_arith)⟩,
+      fun j hj => out_scr dqs (contains_byte _ hj (by omega_arith))⟩,
+    apart_of dpq (by omega_arith) (by omega_arith)⟩
 
 /-- After `entry`, from `s`. -/
 structure RpHeadPost (s t : State) : Prop where
@@ -264,14 +264,14 @@ theorem rpHead_ok' {s : State} (c : RpCtx s) : WP isa (.block entry) s (RpHeadPo
   have hn := c.hs.nowrap
   have hZ : 128 * (s.gpr .x5).toNat ≤ (stackArg s 3).toNat * 8 := c.L.z
   have hk1 : 64 ≤ (s.gpr .x5).toNat := c.L.k1
-  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
   refine WP.mono (rpEntry_ok rfl hw c.ha c.hsep) fun t ⟨h0, h2, h3, hP, hQ, hN, hK, hE, hEl, hD, hDl, ho, k⟩ => ?_
   refine ⟨c.hs.congr k.wr, h0, h2, by rw [h3, ofNat_toNat64],
     ⟨hP, hQ, hN,
       show word _ (stackArg s 2) _ = BitVec.ofNat 64 (s.gpr .x5).toNat by rw [hK, ofNat_toNat64], hE,
       show word _ (stackArg s 2) _ = BitVec.ofNat 64 (s.gpr .x7).toNat by rw [hEl, ofNat_toNat64], hD,
       show word _ (stackArg s 2) _ = BitVec.ofNat 64 (stackArg s 1).toNat by rw [hDl, ofNat_toNat64]⟩,
-    InScr.of_outside ho (by omega), k⟩
+    InScr.of_outside ho (by omega_arith), k⟩
 
 /-- `main`'s hypotheses after the head and the modulus' check. -/
 theorem rpPre_of {s t₁ t : State} (c : RpCtx s) (h : RpHeadPost s t₁) (hm : t.mem = t₁.mem)
@@ -310,8 +310,8 @@ theorem rpCode_correct (M : Mont) (s : State) (h : rpA.pre s) :
     (by rw [eval_zero, hz₂]; cases Spec.Rsa.modulusValid _ _ <;> rfl) (fun hb => ?_) (fun hb => ?_)
   · have hv : Spec.Rsa.modulusValid (rpIn s).N (s.gpr .x5).toNat = false := by simpa using hb
     have z : 128 * (s.gpr .x5).toNat ≤ (stackArg s 3).toNat * 8 := c.L.z
-    exact WP.mono (rpFail_ok hpre.scr hpre.x0 (show 8 * 32 ≤ (stackArg s 3).toNat * 8 by omega) hpre.args
-      (show 1 ≤ (s.gpr .x5).toNat by omega) (show (s.gpr .x5).toNat < 2 ^ 31 by omega) hpre.oP hpre.oQ hpre.a)
+    exact WP.mono (rpFail_ok hpre.scr hpre.x0 (show 8 * 32 ≤ (stackArg s 3).toNat * 8 by omega_arith) hpre.args
+      (show 1 ≤ (s.gpr .x5).toNat by omega_arith) (show (s.gpr .x5).toNat < 2 ^ 31 by omega_arith) hpre.oP hpre.oQ hpre.a)
       fun t ⟨z1, z2, hax, _, kt⟩ => ⟨abiPreserved_of_keep ((kk.trans kt).mono (by decide)), by
         show Spec.Rsa.writtenAll _ _ _ _
         have hnone : (Spec.Rsa.primesKey (rpIn s).nb (rpIn s).eb (rpIn s).db).1 = none := by

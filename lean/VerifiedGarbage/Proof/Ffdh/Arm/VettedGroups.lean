@@ -21,13 +21,7 @@ open VG.Proof.X25519.Arm (Rest)
         t.gpr .r6 = BitVec.ofNat 32 p.k ∧ t.gpr .r9 = p.domain ∧
         t.gpr .r10 = BitVec.ofNat 32 p.dom.length) ∧ t.gpr .r8 = p.base ∧ t.mem = s.mem) ∧
       Rest [.r4, .r6, .r7, .r8, .r9, .r10] s t := by
-  refine withRest [.r4, .r6, .r7, .r8, .r9, .r10] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block entry : Prog isa)).all (fun i => !(VG.Arm.clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have hf := List.all_eq_true.mp checked i hi
-    cases hc : VG.Arm.clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r4, .r6, .r7, .r8, .r9, .r10] ?_ (by rfl) (by rfl)
   have addr (d : Nat) (hd : d + 4 ≤ 72) :
       State.addr (s.sp + BitVec.ofNat 32 d) = VG.Proof.Mont.off (State.addr s.sp) d :=
     VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
@@ -54,11 +48,7 @@ open VG.Proof.X25519.Arm (Rest)
  theorem restore_ok (s : State) :
     WP isa (.block [.mov .r0 (.reg .r8)]) s fun t =>
       (t.gpr .r0 = s.gpr .r8 ∧ t.mem = s.mem) ∧ Rest [.r0] s t := by
-  refine withRest [.r0] ?_ (by
-    intro r hr i hi
-    simp only [instrs, List.mem_singleton] at hi
-    subst i
-    cases r <;> simp_all [VG.Arm.clobbers, VG.Arm.dstOf]) (by rfl)
+  refine withRest_all [.r0] ?_ (by rfl) (by rfl)
   ffrun []
 
  theorem code_ok (s : State) {p : Inputs} {slots : List Nat} (h : Context p slots s)

@@ -62,12 +62,12 @@ theorem IT.keep {t : Nat} {s₀ s s' : State} (hp : TPre (Y p) s₀) (ps : PS p)
   ⟨⟨c', h.kd.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) hN fr fun c hc => (hb c hc).1,
     by rw [keepB hp hN fr (sc_ok' ps (by decide) (by decide)) fun c hc => (hb c hc).2.2, h.kd.ms]⟩,
     by rw [scw, keepW' hp hN fr (sc_ok' ps (by decide) (by decide)) fun c hc => ⟨(hb c hc).2.1.1, fun e => by
-      have := (hb c hc).2.1.2 e; simp only [oCNT, oKAP] at this ⊢; omega⟩]; exact h.kap,
+      have := (hb c hc).2.1.2 e; simp only [oCNT, oKAP] at this ⊢; omega_arith⟩]; exact h.kap,
     by rw [scw, keepW' hp hN fr (sc_ok' ps (by decide) (by decide)) fun c hc => ⟨(hb c hc).2.1.1, fun e => by
-      have := (hb c hc).2.1.2 e; simp only [oCNT, oKAP] at this ⊢; omega⟩]; exact h.cnt, h.lt⟩
+      have := (hb c hc).2.1.2 e; simp only [oCNT, oKAP] at this ⊢; omega_arith⟩]; exact h.cnt, h.lt⟩
 
 theorem aVal_ij {s₀ : State} {i j : Nat} (hj : j < p.ℓ) : aVal p s₀ (p.ℓ * i + j) = Am p s₀ i j := by
-  have hl : 0 < p.ℓ := by omega
+  have hl : 0 < p.ℓ := by omega_arith
   have e1 : (p.ℓ * i + j) / p.ℓ = i := by
     rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
   have e2 : (p.ℓ * i + j) % p.ℓ = j := by
@@ -81,8 +81,8 @@ theorem integerToBytes_two (x : Nat) : integerToBytes x 2 = [BitVec.ofNat 8 x, B
 
 theorem kap_lt (ps : PS p) {t r : Nat} (ht : t < 814) (hr : r < p.ℓ) : p.ℓ * t + r < 2 ^ 16 := by
   have := ps.hl
-  have : p.ℓ * t ≤ 7 * 813 := Nat.mul_le_mul (by omega) (by omega)
-  omega
+  have : p.ℓ * t ≤ 7 * 813 := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  omega_arith
 
 /-- Iteration `t`, with the first `r` polynomials of `y` and `ŷ`. -/
 structure CM (p : Params) (t r : Nat) (s₀ s : State) : Prop where
@@ -113,12 +113,12 @@ theorem setKappa_piece (ps : PS p) (t r : Nat) (hr : r < p.ℓ) :
     rw [m₅, ← o₄.mem]; exact frW8 (Y := Y p)
   have fs : ∀ o, o = oMS + 64 ∨ o = oMS + 65 → ∀ c ∈ [sc o 1], c.arg = SC ∧ oMS + 64 ≤ c.off ∧
       c.off + c.len ≤ oMS + 66 ∧ 0 < c.len :=
-    fun o ho c hc => by rw [List.mem_singleton] at hc; subst hc; simp only [oMS, true_and] at ho ⊢; omega
-  have hhi : oMS + 66 ≤ scrLen p := by have := scr_ge ps; simp only [oP, oMS, nS] at this ⊢; omega
+    fun o ho c hc => by rw [List.mem_singleton] at hc; subst hc; simp only [oMS, true_and] at ho ⊢; omega_arith
+  have hhi : oMS + 66 ≤ scrLen p := by have := scr_ge ps; simp only [oP, oMS, nS] at this ⊢; omega_arith
   have f := (frSc hp (M := 80) (by decide) (by decide) (by decide) hhi (fs _ (.inl rfl)) fr₃).trans
     (frSc hp (M := 80) (by decide) (by decide) (by decide) hhi (fs _ (.inr rfl)) fr₅)
-  refine ⟨⟨h.keep hp ps c₅ (by decide) f (by ofsd), hc.fy.keep hp ps (by decide) f (by simp only [nS, yB]; omega) (by ofsd),
-    hc.fyh.keep hp ps (by decide) f (by simp only [nS, yhB]; omega) (by ofsd)⟩, ?_⟩
+  refine ⟨⟨h.keep hp ps c₅ (by decide) f (by ofsd), hc.fy.keep hp ps (by decide) f (by simp only [nS, yB]; omega_arith) (by ofsd),
+    hc.fyh.keep hp ps (by decide) f (by simp only [nS, yhB]; omega_arith) (by ofsd)⟩, ?_⟩
   have b0 : bytesAt s₃.mem (Buf.addr s₀ (sc (oMS + 64) 1)) 1 = [BitVec.ofNat 8 (p.ℓ * t + r)] := by
     rw [m₃, bytes1_write]; show [(s₂.gpr .eax).setWidth 8] = _; rw [ex, setWidth8_ofNat]
   have b0' : bytesAt s₅.mem (Buf.addr s₀ (sc (oMS + 64) 1)) 1 = [BitVec.ofNat 8 (p.ℓ * t + r)] := by
@@ -129,7 +129,7 @@ theorem setKappa_piece (ps : PS p) (t r : Nat) (hr : r < p.ℓ) :
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   have hm : bytesAt s₅.mem (Buf.addr s₀ (sc oMS 64)) 64 = rppS p s₀ := by
     rw [keepB hp (by decide) f (sc_ok' ps (by decide) (by decide)) (by ofsd), h.kd.ms]
   rw [bytes_split hp s₅.mem (o' := oMS + 64) (l₁ := 64) (l₂ := 2) rfl rfl (sc_ok' ps (by decide) (by decide))
@@ -141,29 +141,29 @@ theorem setKappa_piece (ps : PS p) (t r : Nat) (hr : r < p.ℓ) :
 /-- `y[r]` and `ŷ[r]`. -/
 theorem maskR_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t r : Nat) (hr : r < p.ℓ) :
     SP p (CM p t r) (CM p t (r + 1)) (maskR P p r) := by
-  have hj : yB p + r < nS p := by simp only [nS, yB]; omega
-  have hj' : yhB p + r < nS p := by simp only [nS, yhB]; omega
+  have hj : yB p + r < nS p := by simp only [nS, yB]; omega_arith
+  have hj' : yhB p + r < nS p := by simp only [nS, yhB]; omega_arith
   refine (setKappa_piece ps t r hr).seq ?_
   refine Piece.seq (B := fun s₀ s => CM p t r s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (yB p + r))) (Yv p s₀ (p.ℓ * t) r))
     (mask_piece F.expandMask (F.ok _ (by simp)) p.γ₁ ps.hγ₁ SC oMS SC (oP (yB p + r)) SC oPS (by ofsd)
       (fun _ _ _ h => h.1.it.kd.ctx) fun s₀ s s' hp h c' fr hq => ⟨⟨h.1.it.keep hp ps c' (by decide) fr (by ofsd),
-        h.1.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofsd),
-        h.1.fyh.keep hp ps (by decide) fr (by simp only [nS, yhB]; omega) (by ofsd)⟩, by rw [h.2] at hq; exact hq⟩) ?_
+        h.1.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega_arith) (by ofsd),
+        h.1.fyh.keep hp ps (by decide) fr (by simp only [nS, yhB]; omega_arith) (by ofsd)⟩, by rw [h.2] at hq; exact hq⟩) ?_
   refine Piece.seq (B := fun s₀ s => CM p t r s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (yB p + r))) (Yv p s₀ (p.ℓ * t) r) ∧
       PolyIs s.mem (Buf.addr s₀ (pS (yhB p + r))) (Yv p s₀ (p.ℓ * t) r))
     (copy_piece SC (oP (yB p + r)) SC (oP (yhB p + r)) 256 (by decide) (by decide) (by ofsd)
       (fun _ _ _ h => h.1.it.kd.ctx) fun s₀ s s' hp h c' fr hb => ?_) ?_
   · have fr' : Frame (FR s₀ [pS (yhB p + r)] 80) s.mem s'.mem := fr.mono (by simp)
     exact ⟨⟨h.1.it.keep hp ps c' (by decide) fr' (by ofsd),
-      h.1.fy.keep hp ps (by decide) fr' (by simp only [nS, yB]; omega) (by ofsd),
-      h.1.fyh.keep hp ps (by decide) fr' (by simp only [nS, yhB]; omega) (by ofsd)⟩,
+      h.1.fy.keep hp ps (by decide) fr' (by simp only [nS, yB]; omega_arith) (by ofsd),
+      h.1.fyh.keep hp ps (by decide) fr' (by simp only [nS, yhB]; omega_arith) (by ofsd)⟩,
       keepP hp ps (by decide) fr' hj (by ofsd) h.2, polyIs_of_bytes hb h.2⟩
   refine inPlace_piece (t := ntt) F.ntt (F.ok _ (by simp)) (pS (yhB p + r)) rfl (by ofsd)
     (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.2.1⟩) fun s₀ s s' hp h c' fr hq => ?_
   rw [h.2.2.2] at hq
   exact ⟨h.1.it.keep hp ps c' (by decide) fr (by ofsd),
-    (h.1.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofsd)).snoc (keepP hp ps (by decide) fr hj (by ofsd) h.2.1),
-    (h.1.fyh.keep hp ps (by decide) fr (by simp only [nS, yhB]; omega) (by ofsd)).snoc hq⟩
+    (h.1.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega_arith) (by ofsd)).snoc (keepP hp ps (by decide) fr hj (by ofsd) h.2.1),
+    (h.1.fyh.keep hp ps (by decide) fr (by simp only [nS, yhB]; omega_arith) (by ofsd)).snoc hq⟩
 
 /-! ## `w` -/
 
@@ -194,12 +194,12 @@ theorem CW.keep {t i : Nat} {s₀ s s' : State} (hp : TPre (Y p) s₀) (ps : PS 
     (c' : Ctx (Y p) s₀ s') {bs : List Buf} {N : Nat} (hN : N ≤ 80) (fr : Frame (FR s₀ bs N) s.mem s'.mem)
     (hb : ∀ c ∈ bs, OutI p c ∧ Out p (oP (yB p)) (oP (wB p + i)) c) : CW p t i s₀ s' :=
   ⟨⟨h.cm.it.keep hp ps c' hN fr fun c hc => (hb c hc).1,
-    h.cm.fy.keep hp ps hN fr (by simp only [nS, yB]; omega) fun c hc => ⟨(hb c hc).2.1, fun e => by
-      have := (hb c hc).2.2 e; simp only [oP, yB, wB] at this ⊢; omega⟩,
-    h.cm.fyh.keep hp ps hN fr (by simp only [nS, yhB]; omega) fun c hc => ⟨(hb c hc).2.1, fun e => by
-      have := (hb c hc).2.2 e; simp only [oP, yB, yhB, wB] at this ⊢; omega⟩⟩,
-    h.fw.keep hp ps hN fr (by simp only [nS, wB]; omega) fun c hc => ⟨(hb c hc).2.1, fun e => by
-      have := (hb c hc).2.2 e; simp only [oP, yB, wB] at this ⊢; omega⟩⟩
+    h.cm.fy.keep hp ps hN fr (by simp only [nS, yB]; omega_arith) fun c hc => ⟨(hb c hc).2.1, fun e => by
+      have := (hb c hc).2.2 e; simp only [oP, yB, wB] at this ⊢; omega_arith⟩,
+    h.cm.fyh.keep hp ps hN fr (by simp only [nS, yhB]; omega_arith) fun c hc => ⟨(hb c hc).2.1, fun e => by
+      have := (hb c hc).2.2 e; simp only [oP, yB, yhB, wB] at this ⊢; omega_arith⟩⟩,
+    h.fw.keep hp ps hN fr (by simp only [nS, wB]; omega_arith) fun c hc => ⟨(hb c hc).2.1, fun e => by
+      have := (hb c hc).2.2 e; simp only [oP, yB, wB] at this ⊢; omega_arith⟩⟩
 
 theorem fam_at {s₀ : State} {m : Mem} {b n : Nat} {f : Nat → Poly} (h : Fam s₀ m b n f) {j : Nat} (hj : j < n) :
     PolyIs m (Buf.addr s₀ (pS (b + j))) (f j) := h j hj
@@ -208,34 +208,34 @@ theorem fam_at {s₀ : State} {m : Mem} {b n : Nat} {f : Nat → Poly} (h : Fam 
 theorem rowW_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i < p.k) :
     SP p (CW p t i) (CW p t (i + 1)) (rowW P p i) := by
   have hl := ps.hl
-  have hj : wB p + i < nS p := by simp only [nS, wB]; omega
+  have hj : wB p + i < nS p := by simp only [nS, wB]; omega_arith
   have ha : ∀ j < p.ℓ, p.ℓ * i + j < p.k * p.ℓ := fun j hj => aIdx hi hj
   unfold rowW
   simp only [aP_eq]
   refine Piece.seq (B := fun s₀ s => CW p t i s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (wB p + i))) (wAcc p s₀ (p.ℓ * t) i 1))
     (mul_piece F.mul (F.ok _ (by simp)) SC (oP (wB p + i)) SC (oP (aBase p + (p.ℓ * i + 0))) SC (oP (yhB p + 0))
-      (by have := ha 0 (by omega); ofsd)
-      (fun _ _ _ h => ⟨h.cm.it.kd.ctx, (fam_at h.cm.it.kd.dk.fa (ha 0 (by omega))).1, (fam_at h.cm.fyh (by omega)).1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps (by omega) c' (by decide) fr (by ofsd), ?_⟩) ?_
-  · rw [(fam_at h.cm.it.kd.dk.fa (ha 0 (by omega))).2, (fam_at h.cm.fyh (by omega)).2, aVal_ij (by omega)] at hq
+      (by have := ha 0 (by omega_arith); ofsd)
+      (fun _ _ _ h => ⟨h.cm.it.kd.ctx, (fam_at h.cm.it.kd.dk.fa (ha 0 (by omega_arith))).1, (fam_at h.cm.fyh (by omega_arith)).1⟩)
+      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps (by omega_arith) c' (by decide) fr (by ofsd), ?_⟩) ?_
+  · rw [(fam_at h.cm.it.kd.dk.fa (ha 0 (by omega_arith))).2, (fam_at h.cm.fyh (by omega_arith)).2, aVal_ij (by omega_arith)] at hq
     rw [wAcc_one]; exact hq
   refine Piece.seq (B := fun s₀ s => CW p t i s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (wB p + i))) (wAcc p s₀ (p.ℓ * t) i p.ℓ))
     ?_ ?_
   · have := seqR_piece (p := p) (I := fun j s₀ s => CW p t i s₀ s ∧
         PolyIs s.mem (Buf.addr s₀ (pS (wB p + i))) (wAcc p s₀ (p.ℓ * t) i j)) 1 (p.ℓ - 1) fun j hj1 hj2 =>
       mulAdd_piece (nm := "vg_mldsa_multiply_add_ntt") F.mulAdd (F.ok _ (by simp)) SC (oP (wB p + i)) SC (oP (aBase p + (p.ℓ * i + j))) SC (oP (yhB p + j))
-        (by have := ha j (by omega); ofsd)
-        (fun _ _ _ h => ⟨h.1.cm.it.kd.ctx, h.2.1, (fam_at h.1.cm.it.kd.dk.fa (ha j (by omega))).1,
-          (fam_at h.1.cm.fyh (by omega)).1⟩)
-        fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps (by omega) c' (by decide) fr (by ofsd), by
-          rw [h.2.2, (fam_at h.1.cm.it.kd.dk.fa (ha j (by omega))).2, (fam_at h.1.cm.fyh (by omega)).2,
-            aVal_ij (by omega)] at hq
+        (by have := ha j (by omega_arith); ofsd)
+        (fun _ _ _ h => ⟨h.1.cm.it.kd.ctx, h.2.1, (fam_at h.1.cm.it.kd.dk.fa (ha j (by omega_arith))).1,
+          (fam_at h.1.cm.fyh (by omega_arith)).1⟩)
+        fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps (by omega_arith) c' (by decide) fr (by ofsd), by
+          rw [h.2.2, (fam_at h.1.cm.it.kd.dk.fa (ha j (by omega_arith))).2, (fam_at h.1.cm.fyh (by omega_arith)).2,
+            aVal_ij (by omega_arith)] at hq
           rw [wAcc_succ]; exact hq⟩
-    rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at this
+    rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega_arith] at this
   refine inPlace_piece (t := nttInv) F.invNtt (F.ok _ (by simp)) (pS (wB p + i)) rfl (by ofsd)
     (fun _ _ _ h => ⟨h.1.cm.it.kd.ctx, h.2.1⟩) fun s₀ s s' hp h c' fr hq => ?_
   rw [h.2.2] at hq
-  exact ⟨(h.1.keep hp ps (by omega) c' (by decide) fr (by ofsd)).cm, (h.1.keep hp ps (by omega) c' (by decide) fr
+  exact ⟨(h.1.keep hp ps (by omega_arith) c' (by decide) fr (by ofsd)).cm, (h.1.keep hp ps (by omega_arith) c' (by decide) fr
     (by ofsd)).fw.snoc hq⟩
 
 /-! ## `w₁` and `c̃` -/
@@ -258,18 +258,18 @@ theorem natPolyIs_coeff {m : Mem} {a : Addr} {f : Vector Nat n} (h : NatPolyIs m
 /-- `w1Encode(w₁[i])` to `W1 + w1Len · i`. -/
 theorem w1R_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i < p.k) :
     SP p (CH p t i) (CH p t (i + 1)) (w1R P p i) := by
-  have hj : wB p + i < nS p := by simp only [nS, wB]; omega
+  have hj : wB p + i < nS p := by simp only [nS, wB]; omega_arith
   have hw := ps.hw1
   have hwl : w1Len p * i + w1Len p ≤ 1024 := by
     have : w1Len p * i + w1Len p ≤ w1Len p * p.k := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
-    rw [Nat.mul_comm p.k] at hw; omega
-  have hwp : 0 < w1Len p := by rcases ps.hw1Len with h | h <;> omega
+    rw [Nat.mul_comm p.k] at hw; omega_arith
+  have hwp : 0 < w1Len p := by rcases ps.hw1Len with h | h <;> omega_arith
   refine Piece.seq (B := fun s₀ s => CH p t i s₀ s ∧
       NatPolyIs s.mem (Buf.addr s₀ t1P) (w1F p (Am p s₀) (rppS p s₀) (p.ℓ * t) i))
     (hb_piece F.highBits (F.ok _ (by simp)) p.γ₂ ps.hγ₂ SC (oP (wB p + i)) SC (oP 1) (by ofsd)
       (fun _ _ _ h => ⟨h.cw.cm.it.kd.ctx, (fam_at h.cw.fw hi).1⟩) fun s₀ s s' hp h c' fr hq =>
       ⟨⟨h.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofsd), by
-        rw [keepB0 hp (by decide) fr 1024 (by have := scr_ge ps; simp only [oP, oW1, nS] at this ⊢; omega) (by ofsd)]
+        rw [keepB0 hp (by decide) fr 1024 (by have := scr_ge ps; simp only [oP, oW1, nS] at this ⊢; omega_arith) (by ofsd)]
         exact h.w1⟩, by rw [(fam_at h.cw.fw hi).2] at hq; exact hq⟩) ?_
   refine sbp_piece F.simpleBitPack (F.ok _ (by simp)) (w1Max p) (w1Len p) ps.hw1Max.1 ps.hw1Max.2 SC (oP 1) SC
     (oW1 + w1Len p * i) (by ofsd) (fun _ _ _ h => ⟨h.1.cw.cm.it.kd.ctx, fun j hj => by
@@ -278,7 +278,7 @@ theorem w1R_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i < 
   have e : Buf.addr s₀ (sc (oW1 + w1Len p * i) (w1Len p)) = Buf.addr s₀ (sc oW1 1024) + BitVec.ofNat 64 (w1Len p * i) :=
     addr_off hp (sc_ok' ps (by decide) (by decide)) (by ofsd)
   rw [Nat.mul_succ, VG.Proof.MlKem.bytesAt_add, ← e, hq, h.2,
-    keepB0 hp (by decide) fr 1024 (by have := scr_ge ps; simp only [oP, oW1, nS] at this ⊢; omega) (by ofsd), h.1.w1,
+    keepB0 hp (by decide) fr 1024 (by have := scr_ge ps; simp only [oP, oW1, nS] at this ⊢; omega_arith) (by ofsd), h.1.w1,
     w1Enc, w1Enc, List.range_succ, List.flatMap_append, List.flatMap_singleton]
 
 /-- Iteration `t`, with `y`, `w` and `c̃`. -/
@@ -296,18 +296,18 @@ theorem commit_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t : Nat) :
   have hw := ps.hw1
   have hc := ps.hcLen
   refine Piece.seq (B := CM p t p.ℓ) ?_ ?_
-  · have := seqR_piece (p := p) (I := CM p t) 0 p.ℓ fun r _ hr => maskR_piece F ps t r (by omega)
+  · have := seqR_piece (p := p) (I := CM p t) 0 p.ℓ fun r _ hr => maskR_piece F ps t r (by omega_arith)
     simpa using this
   refine Piece.seq (B := CW p t p.k) ?_ ?_
-  · have := seqR_piece (p := p) (I := CW p t) 0 p.k fun i _ hi => rowW_piece F ps t i (by omega)
+  · have := seqR_piece (p := p) (I := CW p t) 0 p.k fun i _ hi => rowW_piece F ps t i (by omega_arith)
     simp only [Nat.zero_add] at this
     exact this.mono (fun _ _ _ h => ⟨h, fun j hj => absurd hj (Nat.not_lt_zero _)⟩) fun _ _ _ h => h
   refine Piece.seq (B := CH p t p.k) ?_ ?_
-  · have := seqR_piece (p := p) (I := CH p t) 0 p.k fun i _ hi => w1R_piece F ps t i (by omega)
+  · have := seqR_piece (p := p) (I := CH p t) 0 p.k fun i _ hi => w1R_piece F ps t i (by omega_arith)
     simp only [Nat.zero_add] at this
     exact this.mono (fun _ _ _ h => ⟨h, rfl⟩) fun _ _ _ h => h
   refine hash2_piece' 136 0x1f bMu (sc oW1 (p.k * w1Len p)) (sc oCT (cLen p)) (by decide) (by ofsd) (by decide)
-    (by show p.k * w1Len p < 2 ^ 32; omega) (by show cLen p < 2 ^ 32; omega) (fun _ _ _ h => h.cw.cm.it.kd.ctx)
+    (by show p.k * w1Len p < 2 ^ 32; omega_arith) (by show cLen p < 2 ^ 32; omega_arith) (fun _ _ _ h => h.cw.cm.it.kd.ctx)
     fun s₀ s s' hp h c' fr hb => ⟨h.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofsd), ?_⟩
   have e : BitVec.setWidth 8 (31#32) = Spec.Sha3.shakeSuffix := by decide
   have hw1 : bytesAt s.mem (Buf.addr s₀ (sc oW1 (p.k * w1Len p))) (p.k * w1Len p) = w1Enc p s₀ (p.ℓ * t) p.k := by

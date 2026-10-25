@@ -83,8 +83,8 @@ theorem baseMask_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : 
     change (u2.gpr .ebp + BitVec.ofNat 32 BITS).setWidth 64 = _
     rw [v2.gpr]; change (u1.gpr .ebp + u1.gpr .esi + BitVec.ofNat 32 BITS).setWidth 64 = _
     rw [v1.gpr, v1.other .esi (by decide), hb, Offset.add_add, Nat.add_comm t BITS]
-    exact hs.ea (by omega)
-  refine wp_load8 ba (by rw [v2.rd, v2.wr, v1.rd, v1.wr]; exact hs.read (by omega)) fun u3 v3 => ?_
+    exact hs.ea (by omega_arith)
+  refine wp_load8 ba (by rw [v2.rd, v2.wr, v1.rd, v1.wr]; exact hs.read (by omega_arith)) fun u3 v3 => ?_
   refine wp_mov rfl fun u4 v4 => wp_alu (Or.inr (Or.inl rfl)) rfl fun u5 v5 _ =>
     WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [v5.gpr]; change u4.gpr .ebx - u4.gpr .eax = _
@@ -121,7 +121,7 @@ theorem baseSwap_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEn
     rw [k4.regs.1 _ (by decide), k3.regs.1 _ (by decide), k2.regs.1 _ (by decide),
       k1.1 _ (by decide), hb]
   rw [hz, esi, show BitVec.ofNat 32 t - (0 : BitVec 32) = BitVec.ofNat 32 t from BitVec.sub_zero _,
-    ofNat_beq_zero (by omega)]
+    ofNat_beq_zero (by omega_arith)]
 
 /-- The loop's invariant, after the bits above `n` of `k`. -/
 structure BaseInv (base : Addr) (k : Nat) (s₀ s : State) (n : Nat) : Prop where
@@ -145,11 +145,11 @@ theorem baseStep_ok {s₀ s : State} {base : Addr} {k n : Nat} (hn : n < 456)
   have hB : BITS = 3072 := rfl
   have hA : ACC = 3584 := rfl
   have bitval : s.mem (off base (BITS + n)) = BitVec.ofNat 8 ((k >>> n) &&& 1) := by
-    rw [hi.mem _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega)]
+    rw [hi.mem _ (by rw [ofs_off' base (by omega_arith)]; omega_arith) (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+      (by rw [ofs_off' base (by omega_arith)]; omega_arith)]
     exact hbits n hn
   unfold baseStep
-  refine WP.seq (WP.mono (decCounter_ok (by omega) hi.esi) fun s₁ ⟨b₁, g₁, m₁, rd₁, wr₁, _⟩ => ?_)
+  refine WP.seq (WP.mono (decCounter_ok (by omega_arith) hi.esi) fun s₁ ⟨b₁, g₁, m₁, rd₁, wr₁, _⟩ => ?_)
   have K₁ : Keeps [.esi] s s₁ := ⟨fun r hr => g₁ r (fun h => hr (by simp [h])), rd₁, wr₁⟩
   have hs₁ := hs.of_keeps K₁ (by decide)
   have hc₁ : CallCtx s₁ base := hi.ctx.keep (g₁ _ (by decide))
@@ -161,9 +161,9 @@ theorem baseStep_ok {s₀ s : State} {base : Addr} {k n : Nat} (hn : n < 456)
   have b₃ : s₃.gpr .esi = BitVec.ofNat 32 n := by
     rw [k₃.regs.1 _ (by decide), k₂.regs.1 _ (by decide), b₁]
   have bit₃ : s₃.mem (off base (BITS + n)) = BitVec.ofNat 8 ((k >>> n) &&& 1) := by
-    rw [(k₂.trans k₃).mem _ (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega), m₁, bitval]
-  refine WP.mono (baseSwap_ok hs₃ bb₃ (by omega) b₃ (bit_lt k n) bit₃) fun t ⟨k₄, bb₄, z₄, e₄⟩ => ?_
+    rw [(k₂.trans k₃).mem _ (by rw [ofs_off' base (by omega_arith)]; omega_arith)
+      (by rw [ofs_off' base (by omega_arith)]; omega_arith) (by rw [ofs_off' base (by omega_arith)]; omega_arith), m₁, bitval]
+  refine WP.mono (baseSwap_ok hs₃ bb₃ (by omega_arith) b₃ (bit_lt k n) bit₃) fun t ⟨k₄, bb₄, z₄, e₄⟩ => ?_
   have core := k₂.trans (k₃.trans k₄)
   have ee : E t.mem base = baseEnv (decide ((k >>> n) &&& 1 = 1)) (E s.mem base) := by
     rw [e₄, e₃, e₂, m₁]; rfl
@@ -189,12 +189,12 @@ theorem baseLoop_ok {s₀ s : State} {base : Addr} {k : Nat}
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 456 ∧ BaseInv base k s₀ s m) ?_ 456 s'
     ⟨by decide, by decide, hi s' h1 h2 h3 h4 h5⟩
   intro m s ⟨h1, h2, hi⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (baseStep_ok (by omega) hbits hi) fun s' ⟨hi', hz⟩ => ?_
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_arith⟩
+  refine WP.mono (baseStep_ok (by omega_arith) hbits hi) fun s' ⟨hi', hz⟩ => ?_
   simp only [eval, hz, Option.map_some]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, hi'⟩
-  · refine .inr ⟨by simp only [decide_eq_false (by omega : ¬m = 0), Bool.not_false], m, by omega,
-      by omega, by omega, hi'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (by omega_arith : ¬m = 0), Bool.not_false], m, by omega_arith,
+      by omega_arith, by omega_arith, hi'⟩
 
 end VG.Proof.Ed448.X86

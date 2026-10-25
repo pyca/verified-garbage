@@ -51,10 +51,10 @@ theorem Post.slotKeep (hL : L.Ok) (hP : 16 ≤ L.P) {t t' : State} (hc : Post L 
     t'.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
   h.frame.readW (Region.contains_self _ _) (fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
-    · exact hL.stk_buf (by unfold frameBytes at hd; omega) (.inr (.inr (sub_trans (hs r hr) hL.sc_sub)))
+    · exact hL.stk_buf (by unfold frameBytes at hd; omega_arith) (.inr (.inr (sub_trans (hs r hr) hL.sc_sub)))
     · rw [List.mem_singleton.mp hr, hc.ctx.sp]
-      exact (hL.fr_low (by unfold frameBytes at hd; omega)).sub_right
-        (Offset.sub_below _ hP (by have := hL.pQ; omega))) (by decide)
+      exact (hL.fr_low (by unfold frameBytes at hd; omega_arith)).sub_right
+        (Offset.sub_below _ hP (by have := hL.pQ; omega_arith))) (by decide)
 
 /-- A call writing below 1024 in `scratch` keeps the rest. -/
 theorem Post.keepLow (hL : L.Ok) (hP : 16 ≤ L.P) {t t' : State} (hc : Post L g vv m₀ R EM t) {ws : List Region}
@@ -62,10 +62,10 @@ theorem Post.keepLow (hL : L.Ok) (hP : 16 ≤ L.P) {t t' : State} (hc : Post L g
     Keep L o n t.mem t'.mem :=
   ⟨fun a l h₁ h₂ _ => hc.keep hL hP h h₂ fun r hr => by
     obtain ⟨b, k, hb, rfl⟩ := hs r hr
-    exact scD hL (.inr (by omega)) h₂ (by unfold scrBytes; omega),
+    exact scD hL (.inr (by omega_arith)) h₂ (by unfold scrBytes; omega_arith),
    fun _ _ hd => hc.slotKeep hL hP h (fun r hr => by
     obtain ⟨b, k, hb, rfl⟩ := hs r hr
-    exact scSub (by unfold scrBytes; omega)) hd⟩
+    exact scSub (by unfold scrBytes; omega_arith)) hd⟩
 
 /-- The streaming state at `scratch + a` represents what it did, if a call
 missed it. -/
@@ -81,9 +81,9 @@ theorem Post.repr (hL : L.Ok) (hP : 16 ≤ L.P) {t t' : State} (hc : Post L g vv
 
 theorem blockKey_length {key : List Byte} (h : key.length ≤ 64) :
     (Spec.Hmac.blockKey Spec.Hmac.sha256 key).length = 64 := by
-  have : ¬ 64 < key.length := by omega
+  have : ¬ 64 < key.length := by omega_arith
   simp only [Spec.Hmac.blockKey, Spec.Hmac.sha256, this, ite_false, List.length_append, List.length_replicate]
-  omega
+  omega_arith
 
 /-! ## The arguments -/
 
@@ -102,8 +102,8 @@ theorem macInitArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) (
 
 theorem scA_toNat (hL : L.Ok) {a : Nat} (ha : a ≤ scrBytes) : (scA L a).toNat = L.scr.toNat + a := by
   have := hL.bS; have := hL.s8192
-  rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by unfold scrBytes at ha; omega),
-    Nat.mod_eq_of_lt (by unfold scrBytes at ha; omega)]
+  rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by unfold scrBytes at ha; omega_arith),
+    Nat.mod_eq_of_lt (by unfold scrBytes at ha; omega_arith)]
 
 /-! ## HMAC's `init` -/
 
@@ -121,23 +121,23 @@ theorem mac_init (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m�
       (Spec.Hmac.blockKey Spec.Hmac.sha256 (Spec.Rsa.bytesAt t.mem (scA L key) 32)) t u → WP isa rest u Q') :
     WP isa (.seq (.block (macInitArgs key)) (.seq (.call (HH v).hmacInitN (HH v).hmacInit) rest)) t Q' := by
   have hs := hL.s8192
-  refine WP.seq (WP.mono (macInitArgs_ok hc.ctx.sp hc.slots key (by unfold scrBytes at hk2; omega))
+  refine WP.seq (WP.mono (macInitArgs_ok hc.ctx.sp hc.slots key (by unfold scrBytes at hk2; omega_arith))
     fun t₁ ⟨S₁, x0, x1, x2, x3, x4⟩ => ?_)
   have hc₁ := hc.same S₁
   simp only [hc.ctx.kept.scr] at x0 x1 x2 x4
   refine WP.seq (Proof.Pbkdf2.Md.AArch64.Pbk.hinit_call (OK v) (hI v) (hId v) (kl := 32)
     { x0 := x0, x1 := x1, x2 := x2, x3 := by rw [x3]; rfl, x4 := x4
       klB := Nat.le_of_ble_eq_true rfl
-      cr := Covers.right (scCov hL hc₁.ctx (by omega))
+      cr := Covers.right (scCov hL hc₁.ctx (by omega_arith))
       cw := (scCov hL hc₁.ctx (a := sSt) (n := 96) (by decide)).cons
         ((scCov hL hc₁.ctx (a := sOuter) (n := 96) (by decide)).cons
           ((scCov hL hc₁.ctx (a := sWork) (n := 832) (by decide)).cons Covers.nil))
       i_o := scD hL (a := sSt) (n := 96) (b := sOuter) (m := 96) (.inl (by decide)) (by decide) (by decide)
       i_s := scD hL (a := sSt) (n := 96) (b := sWork) (m := 832) (.inl (by decide)) (by decide) (by decide)
       o_s := scD hL (a := sOuter) (n := 96) (b := sWork) (m := 832) (.inl (by decide)) (by decide) (by decide)
-      k_i := scD hL (b := sSt) (m := 96) (.inr (by unfold sSt; omega)) hk2 (by decide)
-      k_o := scD hL (b := sOuter) (m := 96) (.inr (by unfold sOuter; omega)) hk2 (by decide)
-      k_s := scD hL (b := sWork) (m := 832) (.inr (by unfold sWork; omega)) hk2 (by decide)
+      k_i := scD hL (b := sSt) (m := 96) (.inr (by unfold sSt; omega_arith)) hk2 (by decide)
+      k_o := scD hL (b := sOuter) (m := 96) (.inr (by unfold sOuter; omega_arith)) hk2 (by decide)
+      k_s := scD hL (b := sWork) (m := 832) (.inr (by unfold sWork; omega_arith)) hk2 (by decide)
       sp16 := hc₁.sp16 hL hP
       stk_i := hc₁.stk hL hP (a := sSt) (m := 96) (by decide)
       stk_o := hc₁.stk hL hP (a := sOuter) (m := 96) (by decide)
@@ -145,7 +145,7 @@ theorem mac_init (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m�
       stk_s := hc₁.stk hL hP (a := sWork) (m := 832) (by decide)
       scnw := by
         show (scA L sWork).toNat + 832 ≤ 2 ^ 64
-        rw [scA_toNat hL (by decide)]; have := hL.bS; unfold sWork; omega }
+        rw [scA_toNat hL (by decide)]; have := hL.bS; unfold sWork; omega_arith }
     fun t₂ a₂ hi₂ ho₂ => hrest t₂ ⟨hc₁.after hL hP a₂ fun r hr => ?_, ?_, ?_, ?_⟩)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -221,11 +221,11 @@ theorem mac_fin (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀
         ((scCov hL hc.ctx (a := o) (n := 32) ho2).cons
           ((scCov hL hc.ctx (a := sWork) (n := 832) (by decide)).cons Covers.nil))
       i_u := scD hL (a := sSt) (n := 96) (b := sOuter) (m := 96) (.inl (by decide)) (by decide) (by decide)
-      i_o := scD hL (a := sSt) (n := 96) (b := o) (m := 32) (.inl (by unfold sSt; omega)) (by decide) ho2
+      i_o := scD hL (a := sSt) (n := 96) (b := o) (m := 32) (.inl (by unfold sSt; omega_arith)) (by decide) ho2
       i_s := scD hL (a := sSt) (n := 96) (b := sWork) (m := 832) (.inl (by decide)) (by decide) (by decide)
-      u_o := scD hL (a := sOuter) (n := 96) (b := o) (m := 32) (.inl (by unfold sOuter; omega)) (by decide) ho2
+      u_o := scD hL (a := sOuter) (n := 96) (b := o) (m := 32) (.inl (by unfold sOuter; omega_arith)) (by decide) ho2
       u_s := scD hL (a := sOuter) (n := 96) (b := sWork) (m := 832) (.inl (by decide)) (by decide) (by decide)
-      o_s := scD hL (a := o) (n := 32) (b := sWork) (m := 832) (.inr (by unfold sWork; omega)) ho2 (by decide)
+      o_s := scD hL (a := o) (n := 32) (b := sWork) (m := 832) (.inr (by unfold sWork; omega_arith)) ho2 (by decide)
       sp16 := hc.sp16 hL hP
       stk_i := hc.stk hL hP (a := sSt) (m := 96) (by decide)
       stk_u := hc.stk hL hP (a := sOuter) (m := 96) (by decide)
@@ -233,7 +233,7 @@ theorem mac_fin (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀
       stk_s := hc.stk hL hP (a := sWork) (m := 832) (by decide)
       scnw := by
         show (scA L sWork).toNat + 832 ≤ 2 ^ 64
-        rw [scA_toNat hL (by decide)]; have := hL.bS; unfold sWork; omega }
+        rw [scA_toNat hL (by decide)]; have := hL.bS; unfold sWork; omega_arith }
     fun u a hf => ⟨hc.after hL hP a fun r hr => ?_, ?_, ⟨fun b l h₁ h₂ h₃ => hc.keep hL hP a h₂ fun r hr => ?_,
       fun _ _ hd => hc.slotKeep hL hP a (fun r hr => ?_) hd⟩⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -241,12 +241,12 @@ theorem mac_fin (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀
     · exact scSub (a := sSt) (n := 96) (by decide)
     · exact scSub (a := o) (n := 32) ho2
     · exact scSub (a := sWork) (n := 832) (by decide)
-  · exact hf k0 text hk0 (by rw [hk0]; omega) hi (by rw [hx2]; rfl) ho
+  · exact hf k0 text hk0 (by rw [hk0]; omega_arith) hi (by rw [hx2]; rfl) ho
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact scD hL (b := sSt) (m := 96) (.inr (by unfold sSt; omega)) h₂ (by decide)
+    · exact scD hL (b := sSt) (m := 96) (.inr (by unfold sSt; omega_arith)) h₂ (by decide)
     · exact scD hL (b := o) (m := 32) h₃ h₂ ho2
-    · exact scD hL (b := sWork) (m := 832) (.inr (by unfold sWork; omega)) h₂ (by decide)
+    · exact scD hL (b := sWork) (m := 832) (.inr (by unfold sWork; omega_arith)) h₂ (by decide)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact scSub (a := sSt) (n := 96) (by decide)

@@ -589,7 +589,7 @@ theorem offsO : oEm = 0 ∧ oBuf = 1024 ∧ oSt = 3072 ∧ oDig = 3328 ∧ oLh =
 
 /-- `omega`, with the offsets of our part of `scratch` and of the frame as
 numbers. -/
-macro "oomega" : tactic => `(tactic| (obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ := offsO; omega))
+macro "oomega" : tactic => `(tactic| (obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ := offsO; omega_arith))
 
 variable {L : Lay} {scr : BitVec 32}
 
@@ -616,7 +616,7 @@ theorem covS {σ s : State} (hs : L.St σ s) {o n : Nat} (ho : o < oRsa) (h : o 
   exact Covers.one (hg.wr hs h)
 
 theorem fitS {o n : Nat} (h : o + n ≤ oRsa) : (scr + BitVec.ofNat 32 o).toNat + n ≤ 2 ^ 32 := by
-  rw [hg.scr_lt (by omega)]; have := hg.fit; unfold oRsa at *; omega
+  rw [hg.scr_lt (by omega_arith)]; have := hg.fit; unfold oRsa at *; omega_arith
 
 /-- The stack below the frame and a range of our part of `scratch`. -/
 theorem belowS {σ s : State} (hc : Ctx L scr σ s) {o n : Nat} (ho : o < oRsa) (h : o + n ≤ oRsa) :
@@ -626,7 +626,7 @@ theorem belowS {σ s : State} (hc : Ctx L scr σ s) {o n : Nat} (ho : o < oRsa) 
   exact (hg.low ok h).symm.sub_left (below_low hg hc)
 
 theorem sp16 {σ s : State} (hc : Ctx L scr σ s) : 16 ≤ s.sp.toNat := by
-  rw [hc.st.sp]; have := hg.C16; have := hc.st.ok.B56; omega
+  rw [hc.st.sp]; have := hg.C16; have := hc.st.ok.B56; omega_arith
 
 /-- A write to a range of our part of `scratch` and the stack below the
 frame keeps `Ctx`. -/
@@ -640,7 +640,7 @@ theorem ctxW {σ s t : State} (hc : Ctx L scr σ s) {rs : List Region} (hf : Fra
     · exact ⟨L.LOW, by simp [Lay.W], fun _ h => h⟩
   · rcases hs r hr with ⟨o, n, h, rfl⟩ | rfl
     · exact hg.slot ok h (by rw [hg.F]; decide)
-    · exact Lay.fr_low (by decide) (by have := hc.st.ok.B56; have := L.B.isLt; omega)
+    · exact Lay.fr_low (by decide) (by have := hc.st.ok.B56; have := L.B.isLt; omega_arith)
 
 end
 
@@ -692,7 +692,7 @@ theorem count_of {s : State} {c : Nat} (hc : c < 2 ^ 32) (h2 : s.gpr .r2 = BitVe
     count s = BitVec.ofNat 64 c := by
   simp only [count, h2, h3]
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc, Nat.mod_eq_of_lt (by omega_arith)]
   simp
 
 theorem upd_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {d : BitVec 32} {len c : Nat}
@@ -706,7 +706,7 @@ theorem upd_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {d : BitVec 32} {len 
       (updCall G)
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) (msg σ ++ dat σ)) := by
   have hS := hG.hSB
-  have hWb : hG.Wb ≤ 512 := by have := hG.hWb; have := hG.hW; omega
+  have hWb : hG.Wb ≤ 512 := by have := hG.hWb; have := hG.hW; omega_arith
   have aS : State.addr (scr + BitVec.ofNat 32 oSt) = sa scr oSt := hg.addr (by oomega)
   have aW : State.addr (scr + BitVec.ofNat 32 oW) = sa scr oW := hg.addr (by oomega)
   have sw : Region.Disjoint (sR scr oSt G.S) (sR scr oW hG.Wb) := Geo.sep (by oomega) (by oomega) (by oomega)
@@ -760,8 +760,8 @@ theorem fin_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {o c : Nat} (ho1 : o 
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ (Spec.Sha256.bytesAt s.mem (sa scr o) G.F).take G.D = hG.SH.H.hash (msg σ)) := by
   have hS := hG.hSB
   have hF := hG.hF
-  have hF0 : 0 < G.F := by have := hG.hD0; have := hG.hDF; omega
-  have hWb : hG.Wb ≤ 512 := by have := hG.hWb; have := hG.hW; omega
+  have hF0 : 0 < G.F := by have := hG.hD0; have := hG.hDF; omega_arith
+  have hWb : hG.Wb ≤ 512 := by have := hG.hWb; have := hG.hW; omega_arith
   have aS : State.addr (scr + BitVec.ofNat 32 oSt) = sa scr oSt := hg.addr (by oomega)
   have aW : State.addr (scr + BitVec.ofNat 32 oW) = sa scr oW := hg.addr (by oomega)
   have aO : State.addr (scr + BitVec.ofNat 32 o) = sa scr o := hg.addr (by oomega)
@@ -771,7 +771,7 @@ theorem fin_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {o c : Nat} (ho1 : o 
     intro σ s hc f
     refine ⟨f.r0, f.r1, f.r12, sp16 hg hc,
       Covers.cons (covS hg hc.st (by oomega) (by oomega)) (Covers.cons (covS hg hc.st (by oomega) hoR) (covS hg hc.st (by oomega) (by oomega))),
-      by rw [aS, aO]; exact Geo.sep (by omega) (by oomega) hoR, by rw [aS, aW]; exact Geo.sep (by oomega) (by oomega) (by oomega),
+      by rw [aS, aO]; exact Geo.sep (by omega_arith) (by oomega) hoR, by rw [aS, aW]; exact Geo.sep (by oomega) (by oomega) (by oomega),
       by rw [aO, aW]; exact Geo.sep ho2 hoR (by oomega),
       belowS hg hc (by oomega) (by oomega), belowS hg hc (by oomega) hoR, belowS hg hc (by oomega) (by oomega), fitS hg (by oomega), fitS hg hoR,
       fitS hg (by oomega)⟩
@@ -796,7 +796,7 @@ theorem fin_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {o c : Nat} (ho1 : o 
     · exact .inl ⟨o, G.F, hoR, rfl⟩
     · exact .inl ⟨oW, hG.Wb, by oomega, rfl⟩
     · exact .inr rfl
-  have := hr (msg σ) (by rw [aS]; exact rp) (by rw [hl]; omega) (by rw [count_of hc32 f.r2 f.r3, hl])
+  have := hr (msg σ) (by rw [aS]; exact rp) (by rw [hl]; omega_arith) (by rw [count_of hc32 f.r2 f.r3, hl])
   rw [aO] at this
   exact this
 

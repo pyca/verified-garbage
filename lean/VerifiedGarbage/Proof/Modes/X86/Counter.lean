@@ -128,7 +128,7 @@ theorem incMem_apply (m : Mem) (Q x : Addr) :
     have e := congrArg (fun bs : List Byte => bs.getD (x - Q).toNat 0) (incMem_bytes m Q)
     simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi,
       Option.map_some, Option.getD_some] at e
-    have ex : Q + BitVec.ofNat 64 (x - Q).toNat = x := by bv_omega
+    have ex : Q + BitVec.ofNat 64 (x - Q).toNat = x := by bv_omega_arith
     rwa [ex] at e
   · rename_i hi
     exact incMem_frame m Q x (by
@@ -182,7 +182,7 @@ theorem inc32Mem_apply (m : Mem) (Q x : Addr) :
     have e := congrArg (fun bs : List Byte => bs.getD (x - Q).toNat 0) (inc32Mem_bytes m Q)
     simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi,
       Option.map_some, Option.getD_some] at e
-    have ex : Q + BitVec.ofNat 64 (x - Q).toNat = x := by bv_omega
+    have ex : Q + BitVec.ofNat 64 (x - Q).toNat = x := by bv_omega_arith
     rw [ex] at e
     rw [e]
     simp only [bytesAt, List.getD_eq_getElem?_getD]

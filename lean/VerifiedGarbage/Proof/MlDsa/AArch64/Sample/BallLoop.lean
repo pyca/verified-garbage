@@ -89,7 +89,7 @@ theorem take_succ'' (L : List Byte) {i : Nat} (h : i < L.length) : L.take (i + 1
 theorem sign_bit {X : List Byte} {τ i : Nat} (hτ : τ ≤ 256) (hi0 : 256 - τ ≤ i) (hi : i < 256) (hτ' : τ ≤ 64) :
     (W X >>> (i - (256 - τ))).getLsbD 0 = (signs X).getD (i + τ - 256) false := by
   rw [BitVec.getLsbD_ushiftRight, Nat.add_zero, signs_getD, BitVec.getLsbD_ofNat,
-    show i - (256 - τ) = i + τ - 256 by omega, decide_eq_true (show i + τ - 256 < 64 by omega), Bool.true_and]
+    show i - (256 - τ) = i + τ - 256 by omega_arith, decide_eq_true (show i + τ - 256 < 64 by omega_arith), Bool.true_and]
 
 /-- The word of the sign `b`, `1 + (q - 2) b`. -/
 theorem sgn_word (x : BitVec 64) {v : BitVec 64} (hv : v.toNat = q - 2) {o : BitVec 64} (ho : o.toNat = 1) :
@@ -97,7 +97,7 @@ theorem sgn_word (x : BitVec 64) {v : BitVec 64} (hv : v.toNat = q - 2) {o : Bit
   have hb : (x &&& o).toNat = if x.getLsbD 0 then 1 else 0 := by
     rw [BitVec.toNat_and, ho, show (1 : Nat) = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
       BitVec.getLsbD, Nat.testBit, Nat.shiftRight_zero, Nat.one_and_eq_mod_two]
-    split <;> rename_i h <;> simp at h <;> omega
+    split <;> rename_i h <;> simp at h <;> omega_arith
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_mul, hb, hv, ho, zw_toNat]
   split <;> decide
@@ -115,24 +115,24 @@ theorem set_ok {aP : Addr} {c : IPoly} {i j : Nat} (hij : j ≤ i) (hi : i < 256
   have addr : ∀ {x : BitVec 64} {k : Nat}, x.toNat = k → k < 256 → aP + x <<< 2 = coeffAddr aP k :=
     fun {x k} hx hk => by
       rw [coeffAddr]; congr 1; apply BitVec.eq_of_toNat_eq
-      rw [toNat_lsl_n (by rw [hx]; simp only [Nat.reducePow]; omega), hx, BitVec.toNat_ofNat]; omega
+      rw [toNat_lsl_n (by rw [hx]; simp only [Nat.reducePow]; omega_arith), hx, BitVec.toNat_ofNat]; omega_arith
   refine wp_lsl (by decide) fun s₁ o₁ e₁ => wp_add fun s₂ o₂ e₂ => wp_lsl (by decide) fun s₃ o₃ e₃ =>
     wp_add fun s₄ o₄ e₄ => ?_
   have a8 : s₄.gpr .x8 = coeffAddr aP j := by
-    rw [o₄.get .x8, o₃.get .x8, e₂, o₁.get .x26, h26, e₁]; exact addr h6 (by omega)
+    rw [o₄.get .x8, o₃.get .x8, e₂, o₁.get .x26, h26, e₁]; exact addr h6 (by omega_arith)
   have a13 : s₄.gpr .x13 = coeffAddr aP i := by
     rw [e₄, o₃.get .x26, o₂.get .x26, o₁.get .x26, h26, e₃, o₂.get .x10, o₁.get .x10]; exact addr h10 hi
   have w4 : s₄.wr = s.wr := by rw [o₄.wr, o₃.wr, o₂.wr, o₁.wr]
   have r4 : s₄.rd = s.rd := by rw [o₄.rd, o₃.rd, o₂.rd, o₁.rd]
   have m4 : s₄.mem = s.mem := by rw [o₄.mem, o₃.mem, o₂.mem, o₁.mem]
   refine wp_ldrw (a := coeffAddr aP j) (by decide) (by rw [a8, ptr_zero])
-    (by rw [r4, w4]; exact Proof.MlKem.AArch64.in_rd_wr (hw j (by omega))) fun s₅ o₅ e₅ => ?_
+    (by rw [r4, w4]; exact Proof.MlKem.AArch64.in_rd_wr (hw j (by omega_arith))) fun s₅ o₅ e₅ => ?_
   refine wp_strw (a := coeffAddr aP i) (by decide) (by rw [o₅.get .x13, a13, ptr_zero])
     (by rw [o₅.wr, w4]; exact hw i hi) fun s₆ o₆ => ?_
   refine wp_and fun s₇ o₇ e₇ => wp_madd fun s₈ o₈ e₈ => ?_
   refine wp_strw (a := coeffAddr aP j) (by decide)
     (by rw [o₈.get .x8, o₇.get .x8, o₆.gpr, o₅.get .x8, a8, ptr_zero])
-    (by rw [o₈.wr, o₇.wr, o₆.wr, o₅.wr, w4]; exact hw j (by omega)) fun s₉ o₉ => ?_
+    (by rw [o₈.wr, o₇.wr, o₆.wr, o₅.wr, w4]; exact hw j (by omega_arith)) fun s₉ o₉ => ?_
   refine wp_lsr (by decide) fun s₁₀ o₁₀ e₁₀ => wp_addImm (by decide) fun s₁₁ o₁₁ e₁₁ =>
     wp_subImm (by decide) fun s₁₂ o₁₂ e₁₂ => wp_nil ?_
   have k₈ := (((((((o₁.keep.trans o₂.keep).trans o₃.keep).trans o₄.keep).trans o₅.keep).trans o₆.keep).trans
@@ -152,21 +152,21 @@ theorem set_ok {aP : Addr} {c : IPoly} {i j : Nat} (hij : j ≤ i) (hi : i < 256
     o₁₂.keep).mono (rs' := [.x8, .x13, .x14, .x9, .x10, .x11]) (by decide)
   have m₁₂ : s₁₂.mem = s₉.mem := by rw [o₁₂.mem, o₁₁.mem, o₁₀.mem]
   refine ⟨k₁₂, ?_, ?_, ?_, fun k hk => ?_, ?_⟩
-  · rw [o₁₂.get .x10, e₁₁, o₁₀.get .x10, o₉.gpr, k₈.get .x10, toNat_add_n (by rw [h10]; simp; omega), h10]; rfl
-  · rw [e₁₂, o₁₁.get .x11, o₁₀.get .x11, o₉.gpr, k₈.get .x11, toNat_sub_n (by rw [h11]; simp; omega),
-      h11]; simp; omega
+  · rw [o₁₂.get .x10, e₁₁, o₁₀.get .x10, o₉.gpr, k₈.get .x10, toNat_add_n (by rw [h10]; simp; omega_arith), h10]; rfl
+  · rw [e₁₂, o₁₁.get .x11, o₁₀.get .x11, o₉.gpr, k₈.get .x11, toNat_sub_n (by rw [h11]; simp; omega_arith),
+      h11]; simp; omega_arith
   · rw [o₁₂.get .x9, o₁₁.get .x9, e₁₀, o₉.gpr, k₈.get .x9]
-  · rw [m₁₂, m₉, coeffAt_writeW _ _ hk (by omega), coeffAt_writeW _ _ hk hi,
-      ipoly_set!_get _ _ (by simp only [n]; omega), ipoly_set!_get _ _ (by simp only [n]; omega)]
+  · rw [m₁₂, m₉, coeffAt_writeW _ _ hk (by omega_arith), coeffAt_writeW _ _ hk hi,
+      ipoly_set!_get _ _ (by simp only [n]; omega_arith), ipoly_set!_get _ _ (by simp only [n]; omega_arith)]
     by_cases ejk : j = k
     · subst ejk; rw [ifT rfl, ifT rfl]
     · rw [ifF ejk, ifF ejk]
       by_cases eik : i = k
-      · subst eik; rw [ifT rfl, ifT rfl, ← coeffAt_eq, hst j (by omega)]
+      · subst eik; rw [ifT rfl, ifT rfl, ← coeffAt_eq, hst j (by omega_arith)]
       · rw [ifF eik, ifF eik]; exact hst k hk
   · rw [m₁₂, m₉]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hi)).writeW
-      (List.mem_singleton_self _) _ (coeff_contains _ (by omega))
+      (List.mem_singleton_self _) _ (coeff_contains _ (by omega_arith))
 
 
 end VG.Proof.MlDsa.AArch64.Sample.Ball
@@ -190,7 +190,7 @@ theorem BAt.byte {X : List Byte} {bP aP : Addr} {τ : Nat} {s₀ : State} (hp : 
   rw [← hp.buf p hp']
   exact h.frame _ fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact hp.disj _ (Offset.contains_base _ (by omega) (by omega))
+    exact hp.disj _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
 
 /-- An iteration, from `BAt t`. -/
 theorem step_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} (hτ : τ ≤ 64) {s₀ : State}
@@ -202,7 +202,7 @@ theorem step_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} 
     rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_drop]
   have ht1 : St X τ (t + 1) = bStep τ (signs X) (St X τ t) ((X.drop 8).getD t 0) := by
     simp only [St]
-    rw [take_succ'' _ (by rw [List.length_drop, hX]; omega), bFold_snoc]
+    rw [take_succ'' _ (by rw [List.length_drop, hX]; omega_arith), bFold_snoc]
   have hw : ∀ k < 256, InRegions s.wr (coeffAddr aP k) 4 := fun k hk => by rw [h.keep.wr]; exact hp.ina k hk
   -- the tail of the iteration
   have tail : ∀ u : State, Keep [.x6, .x7, .x8, .x13, .x14, .x9, .x10, .x11] s u → Frame [polyR aP] s.mem u.mem →
@@ -214,25 +214,25 @@ theorem step_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} 
     refine wp_addImm (by decide) fun u₁ o₁ e₁ => wp_subImm (by decide) fun u₂ o₂ e₂ => wp_nil ?_
     have c5 : (u₁.gpr .x5).toNat = 264 - t := by rw [o₁.get .x5, ku.get .x5, h.x5]
     have v5 : (u₂.gpr .x5).toNat = 264 - (t + 1) := by
-      rw [e₂, toNat_sub_n (by rw [c5]; simp; omega), c5]; simp; omega
+      rw [e₂, toNat_sub_n (by rw [c5]; simp; omega_arith), c5]; simp; omega_arith
     refine ⟨⟨((h.keep.trans ku).trans (o₁.keep.trans o₂.keep)).mono, h.frame.trans (by
         rw [o₂.mem, o₁.mem]; exact fu), ?_, v5, by rw [o₂.get .x9, o₁.get .x9, x9],
       by rw [o₂.get .x10, o₁.get .x10, x10], by rw [o₂.get .x11, o₁.get .x11, x11],
       by rw [o₂.get .x12, o₁.get .x12, ku.get .x12, h.x12], by rw [o₂.get .x15, o₁.get .x15, ku.get .x15, h.x15],
-      by rw [o₂.mem, o₁.mem]; exact st⟩, by rw [v5]; omega⟩
+      by rw [o₂.mem, o₁.mem]; exact st⟩, by rw [v5]; omega_arith⟩
     rw [o₂.get .x2, e₁, ku.get .x2, h.x2, ptr_add, Nat.add_assoc]
   by_cases hf : (St X τ t).2 = 256
   · -- `i = 256`: nothing to do
-    have e : St X τ (t + 1) = St X τ t := by rw [ht1, bStep_full (by simp only [n]; omega)]
+    have e : St X τ (t + 1) = St X τ t := by rw [ht1, bStep_full (by simp only [n]; omega_arith)]
     refine WP.seq (WP.ite true (by rw [eval_zero, eq_zero_iff, h.x11, hf]; rfl) (fun _ => wp_nil ?_)
       (fun h => nomatch h))
     exact tail s (Keep.refl _ _) (Frame.refl _ _) (by rw [e, h.x9]) (by rw [e, h.x10]) (by rw [e, h.x11])
       (by rw [e]; exact h.st)
-  refine WP.seq (WP.ite false (by rw [eval_zero, eq_zero_iff, h.x11]; simp; omega) (fun h => nomatch h)
+  refine WP.seq (WP.ite false (by rw [eval_zero, eq_zero_iff, h.x11]; simp; omega_arith) (fun h => nomatch h)
     fun _ => ?_)
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .x2) 1 := by
-    rw [h.keep.rd, h.keep.wr, h.x2]; exact hp.inb _ (by omega)
-  have hb : s.mem (s.gpr .x2) = (X.drop 8).getD t 0 := by rw [hj, h.x2]; exact h.byte hp (by omega)
+    rw [h.keep.rd, h.keep.wr, h.x2]; exact hp.inb _ (by omega_arith)
+  have hb : s.mem (s.gpr .x2) = (X.drop 8).getD t 0 := by rw [hj, h.x2]; exact h.byte hp (by omega_arith)
   refine WP.seq (wp_ldrb (a := s.gpr .x2) (by decide) (ptr_zero _) hin fun s₁ o₁ e₁ =>
     wp_sub fun s₂ o₂ e₂ => wp_lsr (by decide) fun s₃ o₃ e₃ => wp_nil ?_)
   have k₃ := ((o₁.keep.trans o₂.keep).trans o₃.keep).mono (rs' := [.x6, .x7]) (by decide)
@@ -242,8 +242,8 @@ theorem step_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} 
   have v7 : (s₃.gpr .x7).toNat = if (St X τ t).2 < ((X.drop 8).getD t 0).toNat then 1 else 0 := by
     rw [e₃, e₂, o₁.get .x10]
     exact lt_bit h.x10 (by rw [e₁, toNat_byte, hb])
-      (by omega) (by simp only [Nat.reducePow] at hjl ⊢; omega)
-  have hi : (St X τ t).2 < n := by simp only [n]; omega
+      (by omega_arith) (by simp only [Nat.reducePow] at hjl ⊢; omega_arith)
+  have hi : (St X τ t).2 < n := by simp only [n]; omega_arith
   by_cases hr : (St X τ t).2 < ((X.drop 8).getD t 0).toNat
   · -- rejected
     have e : St X τ (t + 1) = St X τ t := by
@@ -260,18 +260,18 @@ theorem step_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} 
       rw [ht1]; unfold bStep; rw [ifT hi, ifF hr]
     refine WP.ite false (by rw [eval_nonzero, ne_zero_iff, v7, ifF hr]; rfl) (fun h => nomatch h)
       (fun _ => WP.mono (set_ok (aP := aP) (c := (St X τ t).1) (i := (St X τ t).2)
-        (j := ((X.drop 8).getD t 0).toNat) (by omega) (by omega)
+        (j := ((X.drop 8).getD t 0).toNat) (by omega_arith) (by omega_arith)
         (by rw [k₃.get .x26, h.keep.get .x26, hp.x26]) v6 (by rw [k₃.get .x10, h.x10])
         (by rw [k₃.get .x11, h.x11]) (by rw [k₃.get .x12, h.x12]) (by rw [k₃.get .x15, h.x15])
         (by rw [o₃.wr, o₂.wr, o₁.wr]; exact hw) (by rw [o₃.mem, o₂.mem, o₁.mem]; exact h.st))
         fun s₄ ⟨k₄, x10, x11, x9, st, f₄⟩ => ?_)
     have sg : (s₃.gpr .x9).getLsbD 0 = (signs X).getD ((St X τ t).2 + τ - 256) false := by
-      rw [k₃.get .x9, h.x9]; exact sign_bit (by omega) hge (by omega) hτ
+      rw [k₃.get .x9, h.x9]; exact sign_bit (by omega_arith) hge (by omega_arith) hτ
     rw [sg] at st
     refine tail s₄ (k₃.trans k₄).mono (by rw [← show s₃.mem = s.mem by rw [o₃.mem, o₂.mem, o₁.mem]]; exact f₄) ?_
       (by rw [e, x10]) (by rw [e, x11]) (by rw [e]; exact st)
     rw [x9, k₃.get .x9, h.x9, e, ← BitVec.shiftRight_add, show (St X τ t).2 + 1 - (256 - τ) =
-      (St X τ t).2 - (256 - τ) + 1 by omega]
+      (St X τ t).2 - (256 - τ) + 1 by omega_arith]
 
 /-- The loop: `BAt 264` at the end. -/
 theorem loop_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} (hτ : τ ≤ 64) {s₀ : State}
@@ -294,15 +294,15 @@ theorem loop_ok {X : List Byte} (hX : X.length = 272) {bP aP : Addr} {τ : Nat} 
     by rw [o₉.get .x5, o₈.get .x5, o₇.get .x5, e₆]; rfl,
     by rw [o₉.get .x9, o₈.get .x9, o₇.get .x9, o₆.get .x9, o₅.get .x9, o₄.get .x9, o₃.get .x9, o₂.get .x9, e₁,
       hS, Nat.sub_self, BitVec.ushiftRight_zero]
-       exact readW_leNat _ _ _ fun k hk => hp.buf k (by omega),
+       exact readW_leNat _ _ _ fun k hk => hp.buf k (by omega_arith),
     by rw [o₉.get .x10, o₈.get .x10, o₇.get .x10, o₆.get .x10, o₅.get .x10, o₄.get .x10, e₃,
-      BitVec.toNat_sub, e₂, x27, hp.x27, hS]; simp; omega,
+      BitVec.toNat_sub, e₂, x27, hp.x27, hS]; simp; omega_arith,
     by rw [o₉.get .x11, o₈.get .x11, o₇.get .x11, o₆.get .x11, o₅.get .x11, e₄, o₃.get .x27, x27, hp.x27, hS]
-       simp only; have := hp.tau; omega,
+       simp only; have := hp.tau; omega_arith,
     by rw [o₉.get .x12, e₈, toNat_sub_n (by rw [e₇, q_eq]; decide), e₇, q_eq]; rfl,
     by rw [e₉]; rfl,
     by rw [m₉, hS]; intro k hk
-       rw [hp.zero k hk, getElem!_pos _ k (by simp only [n]; omega), Vector.getElem_replicate]; rfl⟩
+       rw [hp.zero k hk, getElem!_pos _ k (by simp only [n]; omega_arith), Vector.getElem_replicate]; rfl⟩
   exact count_loop (by decide) (BAt X bP aP τ s₀) (fun t ht s h => step_ok hX hτ hp ht h) i₀
 
 end VG.Proof.MlDsa.AArch64.Sample.Ball

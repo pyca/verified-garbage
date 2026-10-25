@@ -40,7 +40,7 @@ def Core2 (core : List Instr) (V : Nat → Nat → Nat) (reqA cnt : Bool) : Prop
 def mhV (g a b : Nat) : Nat := if hbV g b = hbV g ((b + a) % q) then 0 else 1
 
 theorem xor_shift {x y : Nat} (hx : x < 64) (hy : y < 64) : ((x ^^^ y) + 63) / 64 = if x = y then 0 else 1 := by
-  have hl : x ^^^ y < 2 ^ 6 := Nat.xor_lt_two_pow (by omega) (by omega)
+  have hl : x ^^^ y < 2 ^ 6 := Nat.xor_lt_two_pow (by omega_arith) (by omega_arith)
   by_cases e : x = y
   · subst e; rw [Nat.xor_self, ite_eq_left_of_eq_true _ _ (eq_true rfl)]
   · rw [ite_eq_right_of_eq_false _ _ (eq_false e)]
@@ -48,12 +48,12 @@ theorem xor_shift {x y : Nat} (hx : x < 64) (hy : y < 64) : ((x ^^^ y) + 63) / 6
       have := congrArg (Nat.testBit · i) h
       simp only [Nat.testBit_xor, Nat.zero_testBit] at this
       revert this; cases x.testBit i <;> cases y.testBit i <;> simp)
-    omega
+    omega_arith
 
 theorem hbV_lt64 {g : Nat} (hg : g ∈ gamma2s) (a : Nat) : hbV g a < 64 := by
   have := Nat.mod_lt (hbF g a) (show hbM g > 0 by rcases mem_gamma2s hg with rfl | rfl <;> decide)
   have : hbM g ≤ 44 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
-  unfold hbV; omega
+  unfold hbV; omega_arith
 
 theorem mhCore_eq (g : Nat) (is : List Instr) : mhCore g ++ is =
     .mov .eax (.mem (at_ .edi 0)) :: (hb g ++ (.mov .ebx (.reg .eax) :: .mov .eax (.mem (at_ .edi 0)) ::
@@ -82,9 +82,9 @@ theorem mhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (mhCore g) (mhV g) tr
   have v₄ : (s₄.gpr .eax).toNat = b + a := by
     rw [u₄.gpr, BitVec.toNat_add, v₃, u₃.mem, u₂.mem, m₁]
     rw [show (s.mem.readW (addr (s.gpr .esi) 0) 32) = s.mem.readW (s.ea (at_ .esi 0)) 32 from rfl, hva]
-    omega
-  refine condAdd_spec (by decide) (X := qImm) rfl (by rw [v₄, show qImm.toNat = q from rfl]; omega)
-    fun s₅ o₅ v₅ => hb_spec hg (a := (b + a) % q) (by rw [v₅, v₄, show qImm.toNat = 8380417 from rfl, hq]; unfold condAddN; split <;> omega)
+    omega_arith
+  refine condAdd_spec (by decide) (X := qImm) rfl (by rw [v₄, show qImm.toNat = q from rfl]; omega_arith)
+    fun s₅ o₅ v₅ => hb_spec hg (a := (b + a) % q) (by rw [v₅, v₄, show qImm.toNat = 8380417 from rfl, hq]; unfold condAddN; split <;> omega_arith)
       (Nat.mod_lt _ (by decide)) fun s₆ o₆ v₆ => wp_xor fun s₇ u₇ => wp_addi fun s₈ u₈ =>
       wp_shr (by decide) fun s₉ u₉ _ => wp_add fun s₁₀ u₁₀ _ => c s₁₀ ?_ ?_ fun _ => ?_
   · have o := (VG.Proof.MlKem.X86.Only.setReg s .eax (s.mem.readW (s.ea (at_ .edi 0)) 32)).trans o₁
@@ -99,8 +99,8 @@ theorem mhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (mhCore g) (mhV g) tr
       BitVec.toNat_xor, v₆, eb₆, Nat.shiftRight_eq_div_pow]
     have h1 := hbV_lt64 hg ((b + a) % q)
     have h2 := hbV_lt64 hg b
-    have hx : hbF g ((b + a) % q) % hbM g ^^^ hbV g b < 2 ^ 6 := Nat.xor_lt_two_pow (by unfold hbV at h1; omega) (by omega)
-    rw [show (63 : BitVec 32).toNat = 63 from rfl, Nat.mod_eq_of_lt (by omega),
+    have hx : hbF g ((b + a) % q) % hbM g ^^^ hbV g b < 2 ^ 6 := Nat.xor_lt_two_pow (by unfold hbV at h1; omega_arith) (by omega_arith)
+    rw [show (63 : BitVec 32).toNat = 63 from rfl, Nat.mod_eq_of_lt (by omega_arith),
       show hbF g ((b + a) % q) % hbM g = hbV g ((b + a) % q) from rfl, xor_shift h1 h2, mhV]
     by_cases e : hbV g b = hbV g ((b + a) % q)
     · rw [ite_eq_left_of_eq_true _ _ (eq_true e.symm), ite_eq_left_of_eq_true _ _ (eq_true e)]
@@ -125,27 +125,27 @@ theorem uh_val (c₁ c₂ : Bool) (F M : BitVec 32) (hF : F.toNat + M.toNat + 1 
       if c₂ then (if c₁ then F.toNat + M.toNat + 1 else F.toNat + M.toNat - 1) else F.toNat + M.toNat := by
   cases c₁ <;> cases c₂
   · rw [show uhD false false = 0 by decide, BitVec.toNat_add, BitVec.toNat_add]
-    simp; omega
+    simp; omega_arith
   · rw [show uhD false true = BitVec.allOnes 32 by decide, BitVec.toNat_add, BitVec.toNat_add,
       BitVec.toNat_allOnes]
-    simp; omega
+    simp; omega_arith
   · rw [show uhD true false = 0 by decide, BitVec.toNat_add, BitVec.toNat_add]
-    simp; omega
+    simp; omega_arith
   · rw [show uhD true true = 1 by decide, BitVec.toNat_add, BitVec.toNat_add]
-    simp; omega
+    simp; omega_arith
 
 /-- Two conditional subtractions of `m` reduce a value less than `3m`. -/
 theorem condAdd_twice {x m : Nat} (hx : x < 3 * m) : condAddN (condAddN x m m) m m = x % m := by
   unfold condAddN
   by_cases h₁ : x < m
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h₁), show x + m - m = x by omega,
-      ite_eq_left_of_eq_true _ _ (eq_true h₁), show x + m - m = x by omega, Nat.mod_eq_of_lt h₁]
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h₁), show x + m - m = x by omega_arith,
+      ite_eq_left_of_eq_true _ _ (eq_true h₁), show x + m - m = x by omega_arith, Nat.mod_eq_of_lt h₁]
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h₁)]
     by_cases h₂ : x - m < m
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h₂), show x - m + m - m = x - m by omega,
-        Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt h₂]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h₂), Nat.mod_eq_sub_mod (by omega),
-        Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h₂), show x - m + m - m = x - m by omega_arith,
+        Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt h₂]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h₂), Nat.mod_eq_sub_mod (by omega_arith),
+        Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem uhCore_eq (g : Nat) (is : List Instr) : uhCore g ++ is =
     .mov .eax (.mem (at_ .edi 0)) :: .mov .ebx (.reg .eax) :: (hbRaw g ++
@@ -164,7 +164,7 @@ theorem uhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (uhCore g) (uhV g) fa
   have hf := hbF_le hg hb
   have hm : 16 ≤ hbM g ∧ hbM g ≤ 44 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
   have hgl : 2 * g ≤ 523776 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
-  have hk : (BitVec.ofNat 32 (dMod g)).toNat = hbM g := by rw [dMod_eq hg]; exact ofNat_small (by omega)
+  have hk : (BitVec.ofNat 32 (dMod g)).toNat = hbM g := by rw [dMod_eq hg]; exact ofNat_small (by omega_arith)
   rw [uhCore_eq]
   refine wp_movm hib (wp_mov fun s₂ u₂ => hbRaw_spec hg (a := b) ?_ hb fun s₃ o₃ v₃ => ?_)
   · rw [u₂.other _ (by decide)]; simp [State.setReg, hvb]
@@ -176,7 +176,7 @@ theorem uhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (uhCore g) (uhV g) fa
   have rw₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [o₃.rd, o₃.wr, u₂.rd, u₂.wr]; rfl
   refine wp_mov fun s₄ u₄ => wp_movi fun s₅ u₅ => ?_
   have e₅ : (s₅.gpr .eax).toNat = hbF g b := by rw [u₅.other _ (by decide), u₄.other _ (by decide), v₃]
-  have d₅ : (s₅.gpr .edx).toNat = 2 * g := by rw [u₅.gpr]; exact ofNat_small (by omega)
+  have d₅ : (s₅.gpr .edx).toNat = 2 * g := by rw [u₅.gpr]; exact ofNat_small (by omega_arith)
   have hmul : hbF g b * (2 * g) < 2 ^ 32 :=
     Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_trans hf hm.2) hgl) (by decide)
   refine wp_mulSmall (r := .edx) (by rw [e₅, d₅]; exact hmul) fun s₆ o₆ v₆ => ?_
@@ -204,16 +204,16 @@ theorem uhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (uhCore g) (uhV g) fa
     rw [u₁₆.gpr, u₁₅.gpr, u₁₄.gpr, u₁₃.gpr, u₁₄.other .ecx (by decide), u₁₃.other .eax (by decide),
       u₁₃.other .ecx (by decide), u₁₂.other .eax (by decide), u₁₁.other .eax (by decide), u₁₀.gpr, u₉.gpr,
       u₈.gpr, e₆, eb₆, e0, ea]
-    refine (uh_val _ _ _ _ (by rw [eF, hk]; omega) (by rw [hk]; omega)).trans ?_
+    refine (uh_val _ _ _ _ (by rw [eF, hk]; omega_arith) (by rw [hk]; omega_arith)).trans ?_
     rw [eF, hk]
     by_cases h₁ : 0 < a <;> by_cases h₂ : hbF g b * (2 * g) < b <;> simp [h₁, h₂]
   have hx : (s₁₆.gpr .eax).toNat < 3 * hbM g := by
     rw [x₁₆]; split
-    · split <;> omega
-    · omega
-  refine condAdd_spec (by decide) (X := BitVec.ofNat 32 (dMod g)) rfl (by rw [hk]; omega)
+    · split <;> omega_arith
+    · omega_arith
+  refine condAdd_spec (by decide) (X := BitVec.ofNat 32 (dMod g)) rfl (by rw [hk]; omega_arith)
     fun s₁₇ o₁₇ v₁₇ => condAdd_spec (by decide) (X := BitVec.ofNat 32 (dMod g)) rfl
-      (by rw [hk, v₁₇, hk]; unfold condAddN; split <;> omega) fun s₁₈ o₁₈ v₁₈ =>
+      (by rw [hk, v₁₇, hk]; unfold condAddN; split <;> omega_arith) fun s₁₈ o₁₈ v₁₈ =>
       c s₁₈ ?_ ?_ (fun h => absurd h (by decide))
   · have o := (VG.Proof.MlKem.X86.Only.setReg s .eax (s.mem.readW (s.ea (at_ .edi 0)) 32)).trans (updOnly u₂)
     have o := ((o.trans o₃).trans (updOnly u₄)).trans (updOnly u₅)
@@ -223,7 +223,7 @@ theorem uhCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core2 (uhCore g) (uhV g) fa
     exact o.mono (by decide)
   · rw [v₁₈, v₁₇, hk, condAdd_twice hx, x₁₆, uhV]
     by_cases h₁ : 0 < a
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h₁), ite_eq_left_of_eq_true _ _ (eq_true (by omega : a ≠ 0))]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h₁), ite_eq_right_of_eq_false _ _ (eq_false (by omega : ¬a ≠ 0))]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h₁), ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith : a ≠ 0))]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h₁), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith : ¬a ≠ 0))]
 
 end VG.Proof.MlDsa.X86.Round

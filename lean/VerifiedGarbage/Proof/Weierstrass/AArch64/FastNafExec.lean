@@ -26,7 +26,7 @@ theorem fastMask7 (x : BitVec 64) : x &&& 127=BitVec.ofNat 64 (x.toNat%128) := b
   simp only [BitVec.toNat_and,BitVec.toNat_ofNat]
   change x.toNat &&& (2^7-1) = (x.toNat%128)%2^64
   rw [Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_arith
 
 theorem fastRaw7_eq {x : BitVec 64} {k j : Nat}
     (hx : x.toNat%128=FastNaf7.residual k j%128) : fastRaw7 x=BitVec.ofInt 64 (FastNaf7.digit k j) := by
@@ -39,7 +39,7 @@ theorem fastRaw7_eq {x : BitVec 64} {k j : Nat}
     change x.toNat &&& 1=0 ↔ x.toNat%2=0
     rw [Nat.and_one_is_mod]
   simp only [fastRaw7,he,fastMask7,hx,FastNaf7.digit_mod128]
-  have hp : x.toNat%2=FastNaf7.residual k j%128%2 := by omega
+  have hp : x.toNat%2=FastNaf7.residual k j%128%2 := by omega_arith
   rw [hp]
   change (if FastNaf7.residual k j%128%2=0 then (0:BitVec 64) else
     (x &&& (127:BitVec 64))-(BitVec.ofNat 64 (FastNaf7.residual k j%128) &&& 64) <<< 1)=_
@@ -56,9 +56,9 @@ theorem fastChoice_eq {w : Nat} (hw : FastNaf.Width w) (x : BitVec 64) (k j : Na
     have hv := congrArg BitVec.toNat h
     change x.toNat &&& 1=0 at hv
     rw [Nat.and_one_is_mod] at hv
-    omega
+    omega_arith
   rcases hw with rfl | rfl
-  · have h := nafRaw_eq (x:=x) (k:=k) (j:=j) (by simpa only [FastNaf.residual,ite_false,show ¬(5=7) from by decide,FastNaf.ne_5_9] using (show x.toNat%32=FastNaf.residual 5 k j%32 from by omega))
+  · have h := nafRaw_eq (x:=x) (k:=k) (j:=j) (by simpa only [FastNaf.residual,ite_false,show ¬(5=7) from by decide,FastNaf.ne_5_9] using (show x.toNat%32=FastNaf.residual 5 k j%32 from by omega_arith))
     simp only [nafRaw,he,ite_false] at h
     simpa only [BitVec.ofNat_eq_ofNat,BitVec.natCast_eq_ofNat,Nat.reducePow,Nat.reduceSub,ite_false,FastNaf.digit,show ¬(5=7) from by decide,FastNaf.ne_5_9] using h
   · have h := fastRaw7_eq (x:=x) (k:=k) (j:=j) (by simpa only [FastNaf.residual,ite_true] using hx)
@@ -71,7 +71,7 @@ theorem fastChoose_ok (s : State) {w : Nat} (hw : FastNaf.Width w) (k j : Nat)
     (ho : FastNaf.residual w k j%2≠0) :
     WP isa (.block Impl.Weierstrass.AArch64.FastNaf.choose) s fun t =>
       t.gpr .x2=BitVec.ofInt 64 (FastNaf.digit w k j) ∧ Keeps [.x2,.x3] s t := by
-  have he := fastChoice_eq hw (s.gpr .x5) k j (by dsimp only [nafVal5] at hv; omega) ho
+  have he := fastChoice_eq hw (s.gpr .x5) k j (by dsimp only [nafVal5] at hv; omega_arith) ho
   apply WP.of_runBlock
   simp only [Impl.Weierstrass.AArch64.FastNaf.choose,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,
     RegUpd.gpr_write,BitVec.setWidth_eq,ite_true,ite_false,reduceCtorEq,hm,hs,
@@ -100,15 +100,15 @@ theorem fastChoice9_eq (x : BitVec 64) (k j : Nat)
     simp only [FastNaf.residual,FastNaf.ne_9_7,ite_true,ite_false]
   rw [hd,FastNaf9.digit_mod512]
   rw [hr] at hx ho
-  have hp : FastNaf9.residual k j%512%2≠0 := by omega
+  have hp : FastNaf9.residual k j%512%2≠0 := by omega_arith
   simp only [hp,ite_false]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub,BitVec.toNat_shiftLeft,BitVec.toNat_and,hm,BitVec.toNat_ofNat,
     Nat.shiftLeft_eq] at hb ⊢
   change _=(BitVec.ofInt 64 (if FastNaf9.residual k j%512<256 then _ else _)).toNat
   rw [show (x.toNat%512 &&& 256%2^64)*2^1%2^64=(x.toNat%512 &&& 256)*2 from by
-    rw [show 256%2^64=256 from rfl]; have : (x.toNat%512 &&& 256)≤256 := Nat.and_le_right; omega,hb]
-  split <;> split <;> simp only [BitVec.toNat_ofInt] <;> omega
+    rw [show 256%2^64=256 from rfl]; have : (x.toNat%512 &&& 256)≤256 := Nat.and_le_right; omega_arith,hb]
+  split <;> split <;> simp only [BitVec.toNat_ofInt] <;> omega_arith
 
 theorem fastChoose9_ok (s : State) (k j : Nat)
     (hm : s.gpr .x10=BitVec.ofNat 64 511) (hs : s.gpr .x11=BitVec.ofNat 64 256)
@@ -116,7 +116,7 @@ theorem fastChoose9_ok (s : State) (k j : Nat)
     (ho : FastNaf.residual 9 k j%2≠0) :
     WP isa (.block Impl.Weierstrass.AArch64.FastNaf.choose) s fun t =>
       t.gpr .x2=BitVec.ofInt 64 (FastNaf.digit 9 k j) ∧ Keeps [.x2,.x3] s t := by
-  have he := fastChoice9_eq (s.gpr .x5) k j (by dsimp only [nafVal5] at hv; omega) ho
+  have he := fastChoice9_eq (s.gpr .x5) k j (by dsimp only [nafVal5] at hv; omega_arith) ho
   apply WP.of_runBlock
   simp only [Impl.Weierstrass.AArch64.FastNaf.choose,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,
     RegUpd.gpr_write,BitVec.setWidth_eq,ite_true,ite_false,reduceCtorEq,hm,hs,

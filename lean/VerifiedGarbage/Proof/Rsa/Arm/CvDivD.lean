@@ -51,7 +51,7 @@ theorem divP_ok {s0 s : State} {X₁ X₂ : Nat} (h : StD s0 X₁ X₂ s) :
   · rw [← h.count]; exact BitVec.eq_of_toNat_eq (k.slot (e := 16) (by decide) (by simp))
   · rw [k.num (by decide) (by simp) (fit _ (by decide)), h.q]
   · rw [k.num (by decide) (by simp) (fit _ (by decide)), h.d]
-  · rw [k.word (by omega) (by decide) (by simp) (fit _ (by decide)), h.ddTop]
+  · rw [k.word (by omega_arith) (by decide) (by simp) (fit _ (by decide)), h.ddTop]
   · rw [v (by rw [h.dd]; exact pos), h.dq, h.dd]
   · rw [k.slot (by decide) (by simp), mV]
   · rw [k.num (by decide) (by simp) (fit _ (by decide))]; exact iV
@@ -101,7 +101,7 @@ theorem divQ_pre_ok {s0 s : State} {X₁ X₂ : Nat} (h : StE s0 X₁ X₂ s) :
   have b5 := b1.keep K5 (by decide) (by decide) (by decide) R5.sp R5.rd R5.wr
   have fDD := fit aDD (by decide)
   have top5 : w32 t5.mem (State.addr (cvB s0)) (arr (cvW s0) aDD + 4 * cvW s0) = 0 := by
-    rw [k5.word (by omega) (by simp) (by decide) fDD, top4, top3, k2.word (by omega) (by decide) (by simp) fDD, m1,
+    rw [k5.word (by omega_arith) (by simp) (by decide) fDD, top4, top3, k2.word (by omega_arith) (by decide) (by simp) fDD, m1,
       h.ddTop]
   refine ⟨divGeom_ctx h5 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) d5, ?_⟩
@@ -110,7 +110,7 @@ theorem divQ_pre_ok {s0 s : State} {X₁ X₂ : Nat} (h : StE s0 X₁ X₂ s) :
   have tr : ∀ j, j < nArr → j ∉ [aDQ, aDD, aDR3, aDT] →
       num t.mem (cvB s0) (cvW s0) j = num s.mem (cvB s0) (cvW s0) j := fun j hj hn => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-    rw [k.num (by simp; omega) (by simp) (fit j hj), K5.num (by simp; omega) (by decide) (fit j hj), m1]
+    rw [k.num (by simp; omega_arith) (by simp) (fit j hj), K5.num (by simp; omega_arith) (by decide) (fit j hj), m1]
   refine ⟨bt, fun pos => ?_, fun pos => ?_, ⟨V, ?_, ?_⟩⟩
   · rw [tr _ (by decide) (by decide)]; exact h.dp pos
   · have dd5 : num t5.mem (cvB s0) (cvW s0) aDD = 2 * (cvQ s0 / 2) := by

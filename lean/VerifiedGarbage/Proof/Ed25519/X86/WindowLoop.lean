@@ -82,18 +82,18 @@ theorem sNib_high (s₀ : State) {n : Nat} (hn : 64 ≤ n) : sNib s₀ n = 0 := 
 theorem digitK_ok {s₀ : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128)
     (t : State) (ht : WinCtx s₀ Aa R t) (et : t.gpr .esi = BitVec.ofNat 32 n) :
     WP isa (digitNibble 12 0) t fun u => EaxKeep t u ∧ u.gpr .eax = BitVec.ofNat 32 (kNib s₀ n) :=
-  digitNibble_ok (a := 2) ht.pre.scratch ht.saved (by decide) ht.pre.challenge (by omega) (by decide) et
+  digitNibble_ok (a := 2) ht.pre.scratch ht.saved (by decide) ht.pre.challenge (by omega_arith) (by decide) et
 
 /-- `S`'s nibble `n`. -/
 theorem digitS_ok {s₀ : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 64)
     (t : State) (ht : WinCtx s₀ Aa R t) (et : t.gpr .esi = BitVec.ofNat 32 n) :
     WP isa (digitNibble 8 32) t fun u => EaxKeep t u ∧ u.gpr .eax = BitVec.ofNat 32 (sNib s₀ n) :=
-  digitNibble_ok (a := 1) ht.pre.scratch ht.saved (by decide) ht.pre.scalar (by omega) (by decide) et
+  digitNibble_ok (a := 1) ht.pre.scratch ht.saved (by decide) ht.pre.scalar (by omega_arith) (by decide) et
 
 /-- The nibble counter leaves the top two bits of `esi` to the doublings' loop. -/
 theorem esi_lt {s : State} {i : Nat} (hi : i < 2 ^ 30) (hesi : s.gpr .esi = BitVec.ofNat 32 i) :
     (s.gpr .esi).toNat < 2 ^ 30 := by
-  rw [hesi, BitVec.toNat_ofNat]; omega
+  rw [hesi, BitVec.toNat_ofNat]; omega_arith
 
 /-- `cmp esi, 64`: CF is set exactly below `S`'s 64 nibbles. -/
 theorem cmp64_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} (h : WinCtx s₀ Aa R s)
@@ -102,7 +102,7 @@ theorem cmp64_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} (h :
       t.gpr .esi = s.gpr .esi ∧ t.mem = s.mem ∧ t.cf = some (decide (n < 64)) :=
   Wp.wp_cmpi fun t ht ct _ => WP.block_nil ⟨h.of_ikeep ⟨by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr,
     by rw [ht.mem]; exact Frame.refl _ _⟩ (by rw [ht.mem]), by rw [ht.gpr], ht.mem,
-    by rw [ct, hesi, Wp.toNat_ofNat_lt (by omega)]; rfl⟩
+    by rw [ct, hesi, Wp.toNat_ofNat_lt (by omega_arith)]; rfl⟩
 
 /-- `S`'s digit added, below its 64 nibbles. -/
 theorem addS_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} (h : WinCtx s₀ Aa R s)
@@ -120,7 +120,7 @@ theorem addS_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} (h : 
     refine WP.mono (addDigit_ok wc.ctx (by decide) (by decide) (nibbleOf_lt _ _) ec wc.tb rc wc.d)
       fun t ⟨kt, et, rt, ht⟩ => ⟨wc.of_ikeep kt (ht 16 (by decide)), ?_, rt⟩
     rw [et, kc.gpr _ (by decide)]; exact eu
-  · have h64 : 64 ≤ n := by simp at hh; omega
+  · have h64 : 64 ≤ n := by simp at hh; omega_arith
     refine WP.block_nil ⟨wu, eu, ?_⟩
     rw [sNib_high s₀ h64, zero_smul, add_zero]; exact ru
 
@@ -142,7 +142,7 @@ theorem esiDec_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} (h 
     WP isa (.block [.alu .sub .esi (.imm 1)]) s fun u => WinCtx s₀ Aa R u ∧
       u.gpr .esi = BitVec.ofNat 32 i ∧ u.mem = s.mem :=
   Wp.wp_subi fun u hu _ _ => WP.block_nil ⟨h.of_ikeep (IKeep.of_counter hu) (by rw [hu.mem]),
-    by rw [hu.gpr, hesi, Wp.ofNat_pred (by omega), Nat.add_sub_cancel], hu.mem⟩
+    by rw [hu.gpr, hesi, Wp.ofNat_pred (by omega_arith), Nat.add_sub_cancel], hu.mem⟩
 
 theorem test_zero (i : Nat) (hi : i < 2 ^ 32) :
     (BitVec.ofNat 32 i &&& BitVec.ofNat 32 i == 0) = decide (i = 0) := by
@@ -156,7 +156,7 @@ theorem nibbleStep_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
       t.zf = some (decide (n = 0)) ∧ Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) (nsum s₀ Aa n) := by
   refine WP.seq (WP.mono (esiDec_ok h hesi) fun u ⟨wu, eu, mu⟩ => ?_)
   have ru : Rep (point (env u.mem (arg s₀ 3)) 0 1 2 3) (nsum s₀ Aa (n + 1)) := by rw [mu]; exact hacc
-  refine WP.seq (WP.mono (doubleWindow_ok wu.ctx (esi_lt (by omega) eu) ru) fun b ⟨kb, eb, rb, hb⟩ => ?_)
+  refine WP.seq (WP.mono (doubleWindow_ok wu.ctx (esi_lt (by omega_arith) eu) ru) fun b ⟨kb, eb, rb, hb⟩ => ?_)
   have wb := wu.of_ikeep kb (hb 16 (by decide))
   have ebs : b.gpr .esi = BitVec.ofNat 32 n := eb.trans eu
   refine WP.seq (WP.mono (addK_ok wb hn ebs rb) fun d ⟨wd, ed, rd⟩ => ?_)
@@ -164,7 +164,7 @@ theorem nibbleStep_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
   refine Wp.wp_test fun t ht zt => WP.block_nil ⟨we.of_ikeep ⟨by rw [ht.gpr], by rw [ht.gpr], ht.rd,
     ht.wr, by rw [ht.mem]; exact Frame.refl _ _⟩ (by rw [ht.mem]), ?_, ?_, ?_⟩
   · rw [ht.gpr, ee, ed, ebs]
-  · rw [zt, ee, ed, ebs, test_zero n (by omega)]
+  · rw [zt, ee, ed, ebs, test_zero n (by omega_arith)]
   · rw [ht.mem, nsum, ← nibble_step Aa (-baseAff) (verificationChallenge s₀) (verificationScalar s₀) n,
       ← kNib_val, ← sNib_val]
     exact re
@@ -180,13 +180,13 @@ theorem loopN_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
     t.gpr .esi = BitVec.ofNat 32 m ∧ Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) (nsum s₀ Aa m)) ?_ c s
     ⟨h, hc0, hc, hesi, hacc⟩
   intro m u ⟨wu, hm0, hm, eu, ru⟩
-  obtain ⟨i, rfl⟩ : ∃ i, m = i + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (nibbleStep_ok wu (by omega) eu ru) fun t ⟨wt, et, zt, rt⟩ => ?_
+  obtain ⟨i, rfl⟩ : ∃ i, m = i + 1 := ⟨m - 1, by omega_arith⟩
+  refine WP.mono (nibbleStep_ok wu (by omega_arith) eu ru) fun t ⟨wt, et, zt, rt⟩ => ?_
   by_cases hi : i = 0
   · subst hi
     exact .inl ⟨by show t.zf.map (!·) = _; rw [zt]; rfl, wt, rt⟩
-  · exact .inr ⟨by show t.zf.map (!·) = _; rw [zt, decide_eq_false hi]; rfl, i, by omega,
-      wt, by omega, by omega, et, rt⟩
+  · exact .inr ⟨by show t.zf.map (!·) = _; rw [zt, decide_eq_false hi]; rfl, i, by omega_arith,
+      wt, by omega_arith, by omega_arith, et, rt⟩
 
 /-- `add esi, esi`: the bytes left to the nibbles left. -/
 theorem nibbles_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {c : Nat}
@@ -222,17 +222,17 @@ theorem skipLoad_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
     rw [e₄]; simp only [addr]
     rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 32 (c - 1))]
   have hr₄ : u₄.rd ++ u₄.wr = s₀.rd ++ s₀.wr := by rw [h₄.rd, h₄.wr, h₃.rd, h₃.wr, hr₂]
-  refine scalar_ld8 hA (by rw [hr₄]; exact slice_read hp.challenge (by omega) (by decide))
+  refine scalar_ld8 hA (by rw [hr₄]; exact slice_read hp.challenge (by omega_arith) (by decide))
     fun u₅ h₅ => Wp.wp_test fun t ht zt => WP.block_nil ?_
   have hsl := hp.challenge
   have byte : s.mem (addr (arg s₀ 2 + BitVec.ofNat 32 0) (c - 1)) = kByte s₀ (c - 1) := by
-    rw [kByte, bytesAt_getD _ _ _ _ (by omega), ← addr_eq (by have := hsl.fit; omega)]
+    rw [kByte, bytesAt_getD _ _ _ _ (by omega_arith), ← addr_eq (by have := hsl.fit; omega_arith)]
     apply hs.frame
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hsl.sep _ (slice_contains hsl (by omega) (by decide))
-    · exact hsl.stk _ (slice_contains hsl (by omega) (by decide))
+    · exact hsl.sep _ (slice_contains hsl (by omega_arith) (by decide))
+    · exact hsl.stk _ (slice_contains hsl (by omega_arith) (by decide))
   have mt : t.mem = s.mem := by rw [ht.mem, h₅.mem, h₄.mem, h₃.mem, m₂]
   have k₅ : IKeep (arg s₀ 3) s t := ⟨by rw [ht.gpr, h₅.other _ (by decide), h₄.other _ (by decide),
       h₃.other _ (by decide), h₂.other _ (by decide), h₁.other _ (by decide)],
@@ -277,7 +277,7 @@ theorem skipBody_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {
       (skipOn s₀ m = false → 32 ≤ skipEnd s₀ m ∧ skipEnd s₀ m ≤ 64 ∧ LoopAt s₀ Aa R (skipEnd s₀ m) t) ∧
       (skipOn s₀ m = true → SkipAt s₀ Aa R (m - 1) t) := by
   obtain ⟨wu, hm0, hm, eu, ku, ru⟩ := h
-  refine WP.seq (WP.mono (skipLoad_ok wu (by omega) (by omega) eu) fun v ⟨wv, ev, dv, zv, mv⟩ => ?_)
+  refine WP.seq (WP.mono (skipLoad_ok wu (by omega_arith) (by omega_arith) eu) fun v ⟨wv, ev, dv, zv, mv⟩ => ?_)
   have rv : Rep (point (env v.mem (arg s₀ 3)) 0 1 2 3) 0 := by rw [mv]; exact ru
   refine WP.ite (!decide ((kByte s₀ (32 + m - 1)).toNat = 0)) (by show v.zf.map (!·) = _; rw [zv]; rfl)
     (fun hh => ?_) (fun hh => ?_)
@@ -287,13 +287,13 @@ theorem skipBody_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {
     refine Wp.wp_cmp fun t ht _ zt => WP.block_nil ⟨?_, fun _ => ?_, fun h => absurd h (by rw [son]; decide)⟩
     · rw [zt, son]; simp
     · rw [sen]
-      refine ⟨by omega, by omega, wv.of_ikeep ⟨by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr,
+      refine ⟨by omega_arith, by omega_arith, wv.of_ikeep ⟨by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr,
         by rw [ht.mem]; exact Frame.refl _ _⟩ (by rw [ht.mem]), by rw [ht.gpr, ev], ?_⟩
-      rw [ht.mem, wsum_zero (by omega) ku]; exact rv
+      rw [ht.mem, wsum_zero (by omega_arith) ku]; exact rv
   · have hz : (kByte s₀ (32 + m - 1)).toNat = 0 := by simpa using hh
     have k' : verificationChallenge s₀ / 256 ^ (32 + m - 1) = 0 := by
       have := div_split (verificationChallenge s₀) (32 + m - 1)
-      rw [show 32 + m - 1 + 1 = 32 + m by omega, ku, ← kByte_val, hz] at this
+      rw [show 32 + m - 1 + 1 = 32 + m by omega_arith, ku, ← kByte_val, hz] at this
       exact this
     have son : skipOn s₀ m = decide (m ≠ 1) := by
       simp only [skipOn, decide_eq_true hz, Bool.true_and]
@@ -305,12 +305,12 @@ theorem skipBody_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {
     have rt : Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) 0 := by rw [ht.mem, hw.mem]; exact rv
     have zt' : t.zf = some (decide (32 + m - 1 = 32)) := by
       rw [zt, hw.gpr, dv, show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl,
-        Wp.sub_beq (by omega) (by omega)]
+        Wp.sub_beq (by omega_arith) (by omega_arith)]
     refine ⟨?_, fun hf => ?_, fun hn => ?_⟩
     · rw [zt', son]
       by_cases h1 : m = 1
       · subst h1; rfl
-      · rw [decide_eq_false (show ¬(32 + m - 1 = 32) by omega), decide_eq_true h1]; rfl
+      · rw [decide_eq_false (show ¬(32 + m - 1 = 32) by omega_arith), decide_eq_true h1]; rfl
     · have h1 : m = 1 := by
         rw [son] at hf
         by_contra hne
@@ -322,8 +322,8 @@ theorem skipBody_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {
     · have h1 : m ≠ 1 := by
         rw [son] at hn
         exact of_decide_eq_true hn
-      exact ⟨ww, by omega, by omega, by rw [et]; congr 1; omega,
-        by rw [show 32 + (m - 1) = 32 + m - 1 by omega]; exact k', rt⟩
+      exact ⟨ww, by omega_arith, by omega_arith, by rw [et]; congr 1; omega_arith,
+        by rw [show 32 + (m - 1) = 32 + m - 1 by omega_arith]; exact k', rt⟩
 
 theorem skipZero_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
     (h : WinCtx s₀ Aa R s) (hesi : s.gpr .esi = BitVec.ofNat 32 64)
@@ -337,7 +337,7 @@ theorem skipZero_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
   refine WP.mono (skipBody_ok hu) fun t ⟨zt, ft, tt⟩ => ?_
   cases hs : skipOn s₀ m
   · exact .inl ⟨by show t.zf.map (!·) = _; rw [zt, hs], skipEnd s₀ m, ft hs⟩
-  · exact .inr ⟨by show t.zf.map (!·) = _; rw [zt, hs], m - 1, by omega, tt hs⟩
+  · exact .inr ⟨by show t.zf.map (!·) = _; rw [zt, hs], m - 1, by omega_arith, tt hs⟩
 
 /-! ## The whole multiplication -/
 
@@ -355,8 +355,8 @@ theorem Saved.frame2 {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s) (hx
     have := savedSlots_bound p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact sub_disj (by omega) (by omega) (Or.inl (by omega))
-    · exact sub_disj (by omega) (by omega) (Or.inl (by omega))
+    · exact sub_disj (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))
+    · exact sub_disj (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))
 
 theorem Saved.frame2s {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s) (hx : x.toNat + 8192 ≤ 2 ^ 32)
     (hk : ScalarKeep s t) {o n o' n' : Nat} (hf : Frame [sub x o n, sub x o' n', callStk s] s.mem t.mem)
@@ -373,10 +373,10 @@ theorem Saved.frame2s {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s) (h
     have := savedSlots_bound p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact sub_disj (by omega) (by omega) (Or.inl (by omega))
-    · exact sub_disj (by omega) (by omega) (Or.inl (by omega))
+    · exact sub_disj (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))
+    · exact sub_disj (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))
     · rw [callStk, h.esp]
-      exact h.stk.2.sub_left (by rw [scR_eq]; exact sub_sub hx (Nat.zero_le _) (by omega) (by omega))
+      exact h.stk.2.sub_left (by rw [scR_eq]; exact sub_sub hx (Nat.zero_le _) (by omega_arith) (by omega_arith))
 
 theorem windowPrep_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s)
     {A R : Spec.Ed25519.Point} {Aa : EPoint dZ} (hA : Rep A Aa)
@@ -402,11 +402,11 @@ theorem windowPrep_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (a
   have ke : IKeep (arg s₀ 3) b e := (IKeep.of_field kd).trans (IKeep.of_counter he)
   have de : env e.mem (arg s₀ 3) 16 = env b.mem (arg s₀ 3) 16 := by rw [he.mem, ed]; rfl
   refine ⟨⟨hp, sb.ikeep hfit ke, de.trans hb.d, fun j hj => ?_, fun j hj => ?_, ?_⟩, he.gpr, ?_⟩
-  · rw [workspace_table ke cb _ (by omega) (by omega)]
+  · rw [workspace_table ke cb _ (by omega_arith) (by omega_arith)]
     exact hb.table j hj
-  · rw [workspace_table ke cb _ (by omega) (by omega),
-      tablePoint_frame2s ca hb.frame (by decide) (by decide) (by omega) (Or.inr (by omega)) (Or.inr (by omega)),
-      tpa _ (by omega) (by omega)]
+  · rw [workspace_table ke cb _ (by omega_arith) (by omega_arith),
+      tablePoint_frame2s ca hb.frame (by decide) (by decide) (by omega_arith) (Or.inr (by omega_arith)) (Or.inr (by omega_arith)),
+      tpa _ (by omega_arith) (by omega_arith)]
     exact htb j hj
   · rw [workspace_table ke cb _ (by decide) (by decide),
       tablePoint_frame2s ca hb.frame (by decide) (by decide) (by decide) (Or.inr (by decide))
@@ -424,7 +424,7 @@ theorem windowMultiply_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s�
   refine WP.seq (WP.mono (windowPrep_ok hp hs hA ha hr htb) fun e ⟨we, ee, re⟩ => ?_)
   refine WP.seq (WP.mono (skipZero_ok we ee re) fun f ⟨c', hc1, hc2, wf, ef, rf⟩ => ?_)
   refine WP.seq (WP.mono (nibbles_ok wf ef) fun g ⟨wg, eg, mg⟩ => ?_)
-  refine WP.mono (loopN_ok wg (by omega) (by omega) eg (by rw [mg, nsum_two_mul]; exact rf))
+  refine WP.mono (loopN_ok wg (by omega_arith) (by omega_arith) eg (by rw [mg, nsum_two_mul]; exact rf))
     fun t ⟨wt, rt⟩ => ⟨wt, ?_⟩
   simpa only [nsum, pow_zero, Nat.div_one] using rt
 

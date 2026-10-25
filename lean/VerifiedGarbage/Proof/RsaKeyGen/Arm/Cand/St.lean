@@ -93,7 +93,7 @@ theorem KS.str {d : Nat} (h : KS P σ A live V ls s) (hw : Ws s P.B P.Z P.W nArr
     WP isa (.block (.str r .r8 d :: rest)) s Q :=
   wp_strSlot hw hd.1 fun t m => by
     have kt : Keep P.B P.W [] [d] s.mem t.mem := by
-      rw [m.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega)
+      rw [m.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega_arith)
     exact k t (h.slot1 kt hd m.sp m.rd m.wr (by rw [m.mem, slot_write_self])) (hw.of_mupd m) m
 
 /-- `str r, [r8, #d]`, keeping the Z flag. -/
@@ -103,10 +103,10 @@ theorem KS.strz {d : Nat} (h : KS P σ A live V ls s) (hw : Ws s P.B P.Z P.W nAr
       WP isa (.block rest) t Q) :
     WP isa (.block (.str r .r8 d :: rest)) s Q := by
   have := hw.hdr_le
-  refine wp_str_z (by have := hd.1; simp only [hdr] at this; omega) (slot_addr hw (by have := hd.1; omega))
-    (hw.write (by have := hd.1; omega)) fun t m z => ?_
+  refine wp_str_z (by have := hd.1; simp only [hdr] at this; omega_arith) (slot_addr hw (by have := hd.1; omega_arith))
+    (hw.write (by have := hd.1; omega_arith)) fun t m z => ?_
   have kt : Keep P.B P.W [] [d] s.mem t.mem := by
-    rw [m.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega)
+    rw [m.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega_arith)
   exact k t (h.slot1 kt hd m.sp m.rd m.wr (by rw [m.mem, slot_write_self])) (hw.of_mupd m) z
 
 /-- `ldr r, [r8, #d]` of a header word the stage holds. -/
@@ -280,7 +280,7 @@ theorem St.pisOne {d : Nat} (cert : Cert (.block (isOne d))) (hd : d ∈ LS) (bi
     refine wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil ⟨⟨e, h1.of_rest (f.rest []) f.mem, hw1.of (by rw [f.gpr]) (by rw [f.gpr]) (by rw [f.gpr]) f.wr⟩, ?_⟩
     rw [z, u1.gpr]
     have := bit σ e
-    rcases (by omega : V σ d = 0 ∨ V σ d = 1) with h0 | h0 <;> rw [h0] <;> decide
+    rcases (by omega_arith : V σ d = 0 ∨ V σ d = 1) with h0 | h0 <;> rw [h0] <;> decide
 
 end
 

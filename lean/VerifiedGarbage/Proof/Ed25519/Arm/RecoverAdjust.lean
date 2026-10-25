@@ -32,10 +32,10 @@ theorem limbSum_bound {f : Nat → Nat} {n : Nat} (hf : ∀ k < n, f k < 65536) 
   induction n with
   | zero => rfl
   | succ n ih =>
-    have h := ih (fun k hk => hf k (by omega))
-    have hn := hf n (by omega)
+    have h := ih (fun k hk => hf k (by omega_arith))
+    have hn := hf n (by omega_arith)
     simp only [limbSum, Nat.mul_succ]
-    omega
+    omega_arith
 
 theorem limbSum_zero (f : Nat → Nat) (n : Nat) : limbSum f n = 0 ↔ val16 f n = 0 := by
   induction n with
@@ -55,7 +55,7 @@ theorem sumLimbs_ok {b : BitVec 32} {s₀ : State} (hc : Ctx b s₀) (o : Nat) (
       t.mem = s₀.mem ∧ (t.gpr .r9).toNat = limbSum (limb s₀.mem (State.addr b) o) 16 := by
   refine WP.mono (wp_range_flatMap (M := isa) (SumInv b o s₀) (fun k s hk h => ?_)
     16 (Nat.le_refl _) s₀ ⟨Rest.refl _ _, rfl, hz⟩) fun t ht => ⟨ht.rest, ht.mem, ht.value⟩
-  refine ldr0_ok (hc.of_rest h.rest (by decide)) (by omega) fun u hu =>
+  refine ldr0_ok (hc.of_rest h.rest (by decide)) (by omega_arith) fun u hu =>
     wp_dp (op2_reg _ _) fun t ht => WP.block_nil ?_
   have el : (u.gpr .r3).toNat = limb s₀.mem (State.addr b) o k := by rw [hu.gpr, h.mem]; rfl
   have es : (u.gpr .r9).toNat = limbSum (limb s₀.mem (State.addr b) o) k := by
@@ -66,9 +66,9 @@ theorem sumLimbs_ok {b : BitVec 32} {s₀ : State} (hc : Ctx b s₀) (o : Nat) (
   change (u.gpr .r9 + u.gpr .r3).toNat = _
   rw [toNat_add_lt (by
     rw [es, el]
-    have := limbSum_bound (fun j hj => hl j (by omega) : ∀ j < k, limb s₀.mem (State.addr b) o j < 65536)
+    have := limbSum_bound (fun j hj => hl j (by omega_arith) : ∀ j < k, limb s₀.mem (State.addr b) o j < 65536)
     have := hl k hk
-    omega), es, el]
+    omega_arith), es, el]
   rfl
 
 theorem wordsZero_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (o : Nat) (ho : o + 64 ≤ 4096)
@@ -85,9 +85,9 @@ theorem wordsZero_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (o : Nat) (ho : 
   refine ⟨(hu.rest (by decide)).trans (vr.trans (ht.rest _)), by rw [ht.mem, vm, hu.mem], ?_⟩
   have ve : v.gpr .r9 = BitVec.ofNat 32 (limbSum (limb s.mem (State.addr b) o) 16) := by
     apply BitVec.eq_of_toNat_eq
-    rw [vv, hu.mem, toNat_imm (by have := limbSum_bound hl; omega)]
+    rw [vv, hu.mem, toNat_imm (by have := limbSum_bound hl; omega_arith)]
   have he : v.gpr .r9 - (0 : BitVec 32) = v.gpr .r9 := BitVec.sub_zero _
-  rw [hz, he, ve, ofNat_beq_zero (by have := limbSum_bound hl; omega)]
+  rw [hz, he, ve, ofNat_beq_zero (by have := limbSum_bound hl; omega_arith)]
   apply Bool.eq_iff_iff.mpr
   simp only [decide_eq_true_eq]
   exact limbSum_zero _ _

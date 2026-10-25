@@ -113,7 +113,7 @@ theorem geo : Geo (P.lay D) P.scr := by
   have hf := h.ok.fits (P.SCR) (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hf
   unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs
-  exact ⟨rfl, by unfold oRsa; omega, ⟨P.scl * 8, by unfold oRsa; omega, by simp⟩, ⟨σ, h.ok⟩, by show 16 ≤ 3440; decide⟩
+  exact ⟨rfl, by unfold oRsa; omega_arith, ⟨P.scl * 8, by unfold oRsa; omega_arith, by simp⟩, ⟨σ, h.ok⟩, by show 16 ≤ 3440; decide⟩
 
 end In
 
@@ -167,11 +167,11 @@ theorem in_of_pre {G : Spec.Mgf1.Hash} {s : State} (h : (spec G).pre s) : In G.l
   rw [qil] at oQI qiS kQI fQI hrd
   rw [dql] at oDQ dqS kDQ fDQ hrd
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
-    FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega)
+    FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
       ⟨State.addr s.sp - BitVec.ofNat 64 stackBytes, stackBytes⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
-    rw [FrameStack.addr_sub' (by omega)]
+    rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (show 56 ≤ stackBytes by decide) (show stackBytes - 56 + 56 ≤ stackBytes by decide)
   refine
     { ok := ?_
@@ -180,10 +180,10 @@ theorem in_of_pre {G : Spec.Mgf1.Hash} {s : State} (h : (spec G).pre s) : In G.l
       scl32 := (stackArg s 16).isLt
       nB := bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kN.sub_left below).symm)
-        (by show (s.gpr .r3).toNat ≤ 2 ^ 64; omega)
+        (by show (s.gpr .r3).toNat ≤ 2 ^ 64; omega_arith)
       eB := bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below).symm)
-        (by show (stackArg s 1).toNat ≤ 2 ^ 64; omega) }
+        (by show (stackArg s 1).toNat ≤ 2 ^ 64; omega_arith) }
   rw [ep_lay]
   refine ok_entered (by decide) (by decide) rfl hsp hsa hrd hwr ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
@@ -202,14 +202,14 @@ theorem in_of_pre {G : Spec.Mgf1.Hash} {s : State} (h : (spec G).pre s) : In G.l
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [fN, fE, fP, fQ, fDP, fDQ, fQI, fD, fSl, fO, fS]
   · intro j hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
     · rfl
     · simp [regArg, ep, r1]
     · rfl
     · simp [regArg, ep]
   · intro i hi
     have : i < 17 := hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
         i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp [ep, a7, a9, a11]

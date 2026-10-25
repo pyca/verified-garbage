@@ -110,7 +110,7 @@ theorem Pub.eFl : fl s₀' = fl s₀ := by
 theorem Pub.eFb : fb s₀' = fb s₀ := by
   by_cases hc : Cnt s₀ = 0
   · simp only [fb, pb.cnt, hc, ↓reduceIte, pb.src]
-  · simp only [fb, pb.cnt, hc, ↓reduceIte]; exact pb.sb (by omega)
+  · simp only [fb, pb.cnt, hc, ↓reduceIte]; exact pb.sb (by omega_arith)
 
 end
 
@@ -278,8 +278,8 @@ theorem splitCall_rel (S : SplitFn M) {σ₁ σ₂ : State} (h₁ : SCBase s₀ 
       (.seq (.block splitCtx) (.call S.fn.name S.fn.code)) (.pop .rax 5)) TT := by
   have wsp := hp.w_sp
   have wsp' := hp'.w_sp
-  have hn₁ : 8 * [Reg.rax, .r10, .r11, .rdi, .rsi].length ≤ (σ₁.gpr .rsp).toNat := by rw [h₁.rsp]; simp; omega
-  have hn₂ : 8 * [Reg.rax, .r10, .r11, .rdi, .rsi].length ≤ (σ₂.gpr .rsp).toNat := by rw [h₂.rsp]; simp; omega
+  have hn₁ : 8 * [Reg.rax, .r10, .r11, .rdi, .rsi].length ≤ (σ₁.gpr .rsp).toNat := by rw [h₁.rsp]; simp; omega_arith
+  have hn₂ : 8 * [Reg.rax, .r10, .r11, .rdi, .rsi].length ≤ (σ₂.gpr .rsp).toNat := by rw [h₂.rsp]; simp; omega_arith
   obtain ⟨hpf₁, -⟩ := pushRegs_mem σ₁ [.rax, .r10, .r11, .rdi, .rsi] (by decide) hn₁
   obtain ⟨hpf₂, -⟩ := pushRegs_mem σ₂ [.rax, .r10, .r11, .rdi, .rsi] (by decide) hn₂
   have hP₁ : (pushed [.rax, .r10, .r11, .rdi, .rsi] σ₁).gpr .rsp = SP s₀ - BitVec.ofNat 64 40 := by
@@ -344,10 +344,10 @@ theorem copySplit_rel (S : SplitFn M) (hL : L s₀ - fl s₀ < 2 ^ 63) {σ₁ σ
     intro j hj
     have hk := k0_le s₀
     have hw := hp.w_ds
-    have hj' : 16 * k0 s₀ + j < Cnt s₀ * 16 := by rw [Nat.sub_mul] at hj; omega
+    have hj' : 16 * k0 s₀ + j < Cnt s₀ * 16 := by rw [Nat.sub_mul] at hj; omega_arith
     rw [BitVec.add_assoc, ofNat_add_ofNat]
     have hc : (Sig.descRegion 64 (Src s₀) (Cnt s₀)).Contains (Src s₀ + BitVec.ofNat 64 (16 * k0 s₀ + j)) 1 :=
-      Offset.contains_base _ (show 16 * k0 s₀ + j + 1 ≤ Cnt s₀ * (2 * (64 / 8)) by simp; omega) (by omega)
+      Offset.contains_base _ (show 16 * k0 s₀ + j + 1 ≤ Cnt s₀ * (2 * (64 / 8)) by simp; omega_arith) (by omega_arith)
     have hc' : (Sig.descRegion 64 (Src s₀') (Cnt s₀')).Contains (Src s₀ + BitVec.ofNat 64 (16 * k0 s₀ + j)) 1 := by
       rw [pb.src, pb.cnt]; exact hc
     rw [desc_byte hp P₁.frame _ hc, desc_byte hp' P₂.frame _ hc', pb.desc _ hj']

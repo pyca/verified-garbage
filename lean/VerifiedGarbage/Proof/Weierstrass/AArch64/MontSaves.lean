@@ -32,15 +32,15 @@ theorem extract_setLane (x : BitVec 128) (v : BitVec 64) {i j : Nat} (hi : i < 2
     (setLane x 64 i v).extractLsb' (64 * j) 64 = if i = j then v else x.extractLsb' (64 * j) 64 := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;>
+  rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl <;>
+    rcases (by omega_arith : j = 0 ∨ j = 1) with rfl | rfl <;>
     simp only [setLane, BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_and,
       BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes,
       hk, decide_true, Bool.true_and, ite_true, ite_false, Nat.mul_zero, Nat.mul_one,
       Nat.sub_zero, reduceCtorEq] <;>
-    (have h1 : k < 128 := by omega
-     have h2 : 64 + k < 128 := by omega
-     have h3 : ¬ 64 + k < 64 := by omega
+    (have h1 : k < 128 := by omega_arith
+     have h2 : 64 + k < 128 := by omega_arith
+     have h3 : ¬ 64 + k < 64 := by omega_arith
      simp [h1, h2, h3, hk])
 
 theorem slot_lt (i : Nat) : (slot i).2 < 2 := Nat.mod_lt _ (by decide)
@@ -80,7 +80,7 @@ theorem exec_ins {s : State} {d : VReg} {i : Nat} (hi : i < 2) (r : Reg) :
 
 theorem exec_umov {s : State} {d : Reg} {n : VReg} {i : Nat} (hi : i < 2) :
     exec (.umov .x d n i) s = some (s.write .x d ((s.v n).extractLsb' (64 * i) 64)) := by
-  simp only [exec, Size.bits, show i * 64 < 128 by omega, ite_true, Nat.mul_comm 64 i]
+  simp only [exec, Size.bits, show i * 64 < 128 by omega_arith, ite_true, Nat.mul_comm 64 i]
 
 /-- The registers `rs`, the `k`-th on, saved in their lanes. -/
 def insCode (rs : List Reg) (k : Nat) : List Instr :=
@@ -119,21 +119,21 @@ theorem saves_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length ≤ 
     simp only [runBlock_cons, exec_ins (slot_lt k), runStep_some, runBlock_nil, Option.some.injEq,
       exists_eq_left']
     refine WP.mono (saves_ok rs (k + 1) (s := s.setV (slot k).1 (setLane (s.v (slot k).1) 64 (slot k).2
-      (s.gpr r))) (by omega)) fun s' ⟨K, E, L, V⟩ => ⟨⟨K.gpr, K.mem, K.rd, K.wr, K.sp, K.c⟩, ?_, ?_, ?_⟩
+      (s.gpr r))) (by omega_arith)) fun s' ⟨K, E, L, V⟩ => ⟨⟨K.gpr, K.mem, K.rd, K.wr, K.sp, K.c⟩, ?_, ?_, ?_⟩
     · intro i hi
       cases i with
       | zero =>
         simp only [List.getElem_cons_zero, Nat.add_zero]
-        rw [L k (by omega), lane_set s (s.gpr r) (by omega) (by omega)]
+        rw [L k (by omega_arith), lane_set s (s.gpr r) (by omega_arith) (by omega_arith)]
         simp
       | succ i =>
         simp only [List.getElem_cons_succ]
-        rw [show k + (i + 1) = k + 1 + i by omega, E i (by simpa using hi)]; rfl
+        rw [show k + (i + 1) = k + 1 + i by omega_arith, E i (by simpa using hi)]; rfl
     · intro j hj
-      rw [L j (by omega), lane_set s (s.gpr r) (by omega) (by omega)]
-      simp only [show k ≠ j by omega, ite_false]
+      rw [L j (by omega_arith), lane_set s (s.gpr r) (by omega_arith) (by omega_arith)]
+      simp only [show k ≠ j by omega_arith, ite_false]
     · intro d hd
-      rw [V d hd, RegUpd.v_setV_of_ne _ _ (hd k (by omega))]
+      rw [V d hd, RegUpd.v_setV_of_ne _ _ (hd k (by omega_arith))]
 
 /-- Restoring `rs` from the `k`-th lane on writes each from its lane and
 keeps the rest. -/
@@ -149,7 +149,7 @@ theorem restores_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length �
     apply WP.of_runBlock
     simp only [runBlock_cons, exec_umov (slot_lt k), runStep_some, runBlock_nil, Option.some.injEq,
       exists_eq_left']
-    refine WP.mono (restores_ok rs (k + 1) (by omega) (List.nodup_cons.mp hnd).2)
+    refine WP.mono (restores_ok rs (k + 1) (by omega_arith) (List.nodup_cons.mp hnd).2)
       fun s' ⟨K, V, E⟩ => ⟨⟨fun q hq => ?_, K.mem, K.rd, K.wr, K.sp⟩, V, ?_⟩
     · simp only [List.mem_cons, not_or] at hq
       rw [K.gpr q hq.2, RegUpd.gpr_write_of_ne _ _ _ hq.1]
@@ -160,6 +160,6 @@ theorem restores_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length �
         rw [K.gpr r hr, RegUpd.gpr_write_self, BitVec.setWidth_eq]; rfl
       | succ i =>
         simp only [List.getElem_cons_succ]
-        rw [E i (by simpa using hi), show k + (i + 1) = k + 1 + i by omega]; rfl
+        rw [E i (by simpa using hi), show k + (i + 1) = k + 1 + i by omega_arith]; rfl
 
 end VG.Proof.Weierstrass.AArch64.Mont

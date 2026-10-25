@@ -70,13 +70,13 @@ theorem cmp_step {S D : BitVec 32} {len : Nat} {s₀ : State} (fS : S.toNat + le
     {k : Nat} (hk : k < len) {s : State} (h : CmpInv S D len s₀ k s) :
     WP isa (.block cmpBody) s fun s' => CmpInv S D len s₀ (k + 1) s' ∧ s'.z = decide (k + 1 = len) := by
   have eS : State.addr (S + BitVec.ofNat 32 (1 * k) + BitVec.ofNat 32 0) = State.addr S + BitVec.ofNat 64 k := by
-    rw [addr_ptr _ _ _ (by omega)]; simp
+    rw [addr_ptr _ _ _ (by omega_arith)]; simp
   have eD : State.addr (D + BitVec.ofNat 32 (1 * k) + BitVec.ofNat 32 0) = State.addr D + BitVec.ofNat 64 k := by
-    rw [addr_ptr _ _ _ (by omega)]; simp
+    rw [addr_ptr _ _ _ (by omega_arith)]; simp
   have cS : (⟨State.addr S, len⟩ : Region).Contains (State.addr S + BitVec.ofNat 64 k) 1 :=
-    contains_off (by omega) (by omega)
+    contains_off (by omega_arith) (by omega_arith)
   have cD : (⟨State.addr D, len⟩ : Region).Contains (State.addr D + BitVec.ofNat 64 k) 1 :=
-    contains_off (by omega) (by omega)
+    contains_off (by omega_arith) (by omega_arith)
   refine WP.mono (cmpBody_ok h.r0 h.r1 h.r9 rfl
     (by rw [eS, h.rd, h.wr]; exact cr _ _ ⟨_, List.mem_cons_self .., cS⟩)
     (by rw [eD, h.rd, h.wr]; exact cr _ _ ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), cD⟩))
@@ -97,11 +97,11 @@ theorem cmp_step {S D : BitVec 32} {len : Nat} {s₀ : State} (fS : S.toNat + le
       obtain ⟨h₁, h₂⟩ := BitVec.or_eq_zero_iff.mp h₀
       by_cases e : t = k
       · subst e; exact setWidth32_inj (BitVec.xor_eq_zero_iff.mp h₂)
-      · exact h.eq.mp h₁ t (by omega)
+      · exact h.eq.mp h₁ t (by omega_arith)
     · intro h₁
-      exact BitVec.or_eq_zero_iff.mpr ⟨h.eq.mpr fun t ht => h₁ t (by omega),
-        BitVec.xor_eq_zero_iff.mpr (congrArg _ (h₁ k (by omega)))⟩
-  · rw [z]; exact count_z (k := 1) hk (by decide) (by omega)
+      exact BitVec.or_eq_zero_iff.mpr ⟨h.eq.mpr fun t ht => h₁ t (by omega_arith),
+        BitVec.xor_eq_zero_iff.mpr (congrArg _ (h₁ k (by omega_arith)))⟩
+  · rw [z]; exact count_z (k := 1) hk (by decide) (by omega_arith)
 
 theorem cmpArgs_ok {K : KemLay} (hK : K.WF) {s : State} {P C : BitVec 32} (h7 : s.gpr .r7 = P)
     (h6 : s.gpr .r6 = C) :
@@ -110,7 +110,7 @@ theorem cmpArgs_ok {K : KemLay} (hK : K.WF) {s : State} {P C : BitVec 32} (h7 : 
       fun s' => s'.gpr .r0 = C ∧ s'.gpr .r1 = P + BitVec.ofNat 32 K.oCt ∧ s'.gpr .r12 = 0 ∧
         s'.gpr .r9 = BitVec.ofNat 32 K.ctLen ∧ (∀ r ∈ preserved, r ≠ .r9 → s'.gpr r = s.gpr r) ∧
         s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  have e1 : encodable (BitVec.ofNat 32 K.oCt) = true := hK.enc (by omega)
+  have e1 : encodable (BitVec.ofNat 32 K.oCt) = true := hK.enc (by omega_arith)
   have e2 : encodable (0 : BitVec 32) = true := by decide
   have e3 := hK.encCt
   run_block [ptrTo, e1, e2, e3, h7, h6, preserved,
@@ -126,7 +126,7 @@ theorem compare_ok {K : KemLay} (hK : K.WF) {s : State} {P C : BitVec 32} (h7 : 
       (s'.gpr .r12 = 0 ↔
         bytesAt s.mem (State.addr C) K.ctLen = bytesAt s.mem (State.addr (P + BitVec.ofNat 32 K.oCt)) K.ctLen) := by
   have c1 := hK.ct_pos
-  have c2 : K.ctLen < 2 ^ 32 := by have := hK.cin; simp only [oCin] at this; omega
+  have c2 : K.ctLen < 2 ^ 32 := by have := hK.cin; simp only [oCin] at this; omega_arith
   refine WP.seq (WP.mono (cmpArgs_ok hK h7 h6) fun s₁ ⟨g0, g1, g12, g9, cs, m, rd, wr, sp⟩ => ?_)
   refine wp_loop_ne (CmpInv C (P + BitVec.ofNat 32 K.oCt) K.ctLen s₁) (N := K.ctLen) c1
     (fun k hk s h => cmp_step fC fD c2 (by rw [rd, wr]; exact cr) hk h)
@@ -231,17 +231,17 @@ theorem sel_step {X Y Z : BitVec 32} {e : Bool} {s₀ : State} (fX : X.toNat + 3
     {k : Nat} (hk : k < 32) {s : State} (h : SelInv X Y Z e s₀ k s) :
     WP isa (.block selBody) s fun s' => SelInv X Y Z e s₀ (k + 1) s' ∧ s'.z = decide (k + 1 = 32) := by
   have eX : State.addr (X + BitVec.ofNat 32 (1 * k) + BitVec.ofNat 32 0) = State.addr X + BitVec.ofNat 64 k := by
-    rw [addr_ptr _ _ _ (by omega)]; simp
+    rw [addr_ptr _ _ _ (by omega_arith)]; simp
   have eY : State.addr (Y + BitVec.ofNat 32 (1 * k) + BitVec.ofNat 32 0) = State.addr Y + BitVec.ofNat 64 k := by
-    rw [addr_ptr _ _ _ (by omega)]; simp
+    rw [addr_ptr _ _ _ (by omega_arith)]; simp
   have eZ : State.addr (Z + BitVec.ofNat 32 (1 * k) + BitVec.ofNat 32 0) = State.addr Z + BitVec.ofNat 64 k := by
-    rw [addr_ptr _ _ _ (by omega)]; simp
+    rw [addr_ptr _ _ _ (by omega_arith)]; simp
   have cX : (⟨State.addr X, 32⟩ : Region).Contains (State.addr X + BitVec.ofNat 64 k) 1 :=
-    contains_off (by omega) (by omega)
+    contains_off (by omega_arith) (by omega_arith)
   have cY : (⟨State.addr Y, 32⟩ : Region).Contains (State.addr Y + BitVec.ofNat 64 k) 1 :=
-    contains_off (by omega) (by omega)
+    contains_off (by omega_arith) (by omega_arith)
   have cZ : (⟨State.addr Z, 32⟩ : Region).Contains (State.addr Z + BitVec.ofNat 64 k) 1 :=
-    contains_off (by omega) (by omega)
+    contains_off (by omega_arith) (by omega_arith)
   refine WP.mono (selBody_ok h.r0 h.r1 h.r2 h.r9 h.r12
     (by rw [eX, h.rd, h.wr]; exact cr _ _ ⟨_, List.mem_cons_self .., cX⟩)
     (by rw [eY, h.rd, h.wr]; exact cr _ _ ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), cY⟩)
@@ -258,11 +258,11 @@ theorem sel_step {X Y Z : BitVec 32} {e : Bool} {s₀ : State} (fX : X.toNat + 3
       h.frame _ fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact dX _ cX
     have hY : s.mem (State.addr Y + BitVec.ofNat 64 k) = s₀.mem (State.addr Y + BitVec.ofNat 64 k) :=
       h.frame _ fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact dY _ cY
-    rw [m, eZ, eX, eY, byte_writeW8 _ _ (by omega) (by omega), sel_byte, hX, hY]
+    rw [m, eZ, eX, eY, byte_writeW8 _ _ (by omega_arith) (by omega_arith), sel_byte, hX, hY]
     by_cases et : t = k
     · subst et; rw [ite_eq_left rfl]
-    · rw [ite_eq_right et]; exact h.bytes t (by omega)
-  · rw [z]; exact count_z (k := 1) hk (by decide) (by omega)
+    · rw [ite_eq_right et]; exact h.bytes t (by omega_arith)
+  · rw [z]; exact count_z (k := 1) hk (by decide) (by omega_arith)
 
 /-- The loop of `selBody`: the 32 bytes at `X` if `e`, and at `Y` otherwise, into `Z`. -/
 theorem select_ok {X Y Z : BitVec 32} {e : Bool} {s₀ : State} (fX : X.toNat + 32 ≤ 2 ^ 32)

@@ -39,7 +39,7 @@ theorem zero_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s₀
       ∀ r ∈ preservedV, (s'.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64 := by
   have hv0 : ∀ r ∈ preservedV, r ≠ .v0 := by decide
   refine WP.mono (zeroAt_ok (b := 768) (J := 32) (by decide) (by decide) hx21 fun a ha => by
-    rw [hwr]; exact hp.in_ctx (a := 768 + a) (by omega)) fun s' ⟨g, rd, wr, sp, v, z⟩ =>
+    rw [hwr]; exact hp.in_ctx (a := 768 + a) (by omega_arith)) fun s' ⟨g, rd, wr, sp, v, z⟩ =>
       ⟨Kept.of (fun r _ => by rw [g]) sp rd wr (z.frame (by decide)), z,
         fun r hr => by rw [v r (hv0 r hr)]⟩
 
@@ -79,7 +79,7 @@ theorem args_ok {s₀ s : State} (hp : APre e s₀) (h : Inv s₀ s) :
 /-- The keystream of the data from counter 1, `i < n ≤ 512` bytes in. -/
 theorem ks_prefix (S : VG.Spec.ChaCha20.State) {n i : Nat} (hi : i < n) (hn : n ≤ 512) :
     (keystream S 512).getD i 0 = (keystream S n).getD i 0 := by
-  rw [VG.Proof.ChaCha20.keystream_getD _ (by omega), VG.Proof.ChaCha20.keystream_getD _ hi]
+  rw [VG.Proof.ChaCha20.keystream_getD _ (by omega_arith), VG.Proof.ChaCha20.keystream_getD _ hi]
 
 /-- `Pad.cryptPad` encrypts up to 512 bytes of data from counter 1. -/
 theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀)
@@ -89,18 +89,18 @@ theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   have wc := hp.wrap_c
   unfold cryptPad
   refine WP.seq (WP.block_append (WP.mono (zero_ok hp h.x21 h.wr) fun s₁ ⟨k₁, z₁, v₁⟩ => ?_))
-  have i₁ : Inv s₀ s₁ := h.step1 k₁ (by omega) (by omega) (by omega)
+  have i₁ : Inv s₀ s₁ := h.step1 k₁ (by omega_arith) (by omega_arith) (by omega_arith)
   refine WP.mono (WP.preservedV (args_ok hp i₁) (by lit_decide))
     fun s₂ ⟨⟨m₂, x0₂, x1₂, x2₂, x3₂, k₂⟩, v₂⟩ => ?_
-  have i₂ : Inv s₀ s₂ := i₁.step1 k₂ (by omega) (by omega) (by omega)
+  have i₂ : Inv s₀ s₂ := i₁.step1 k₂ (by omega_arith) (by omega_arith) (by omega_arith)
   have wr₂ : s₂.wr = s₀.wr := i₂.wr
   have hw : Covers [⟨off (cx s₀) 64, 64⟩, ⟨off (cx s₀) 768, 512⟩, ⟨off (cx s₀) 128, 320⟩] s₂.wr := by
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 64, rfl, by show 64 + 64 ≤ 1280; omega⟩
-    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 768, rfl, by show 768 + 512 ≤ 1280; omega⟩
-    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1280; omega⟩
+    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 64, rfl, by show 64 + 64 ≤ 1280; omega_arith⟩
+    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 768, rfl, by show 768 + 512 ≤ 1280; omega_arith⟩
+    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1280; omega_arith⟩
   refine WP.seq (xor_call v x0₂ x1₂ x2₂ x3₂ (by decide)
     (sub_disj s₀ (a := 64) (n := 64) (b := 768) (m := 512) (by lit_omega) (by lit_omega) (by lit_omega))
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
@@ -130,8 +130,8 @@ theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   -- The data XORed with it.
   have x22₃ : s₃.gpr .x22 = dp s₀ + BitVec.ofNat 64 0 := by rw [i₃.x22, BitVec.add_zero]
   have x23₃ : s₃.gpr .x23 = BitVec.ofNat 64 (L s₀) := by rw [i₃.x23, hL s₀]
-  refine WP.seq (WP.mono (WP.preservedV (xorKsFromAt_ok hp (k := 768) (o := 0) (n := L s₀) (by omega)
-    (by omega) i₃.x21 x22₃ x23₃ i₃.rd i₃.wr) (by lit_decide)) fun s₄ ⟨⟨k₄, d₄, _, _⟩, v₄⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (xorKsFromAt_ok hp (k := 768) (o := 0) (n := L s₀) (by omega_arith)
+    (by omega_arith) i₃.x21 x22₃ x23₃ i₃.rd i₃.wr) (by lit_decide)) fun s₄ ⟨⟨k₄, d₄, _, _⟩, v₄⟩ => ?_)
   have i₄ : Inv s₀ s₄ := i₃.step k₄
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp, fun _ h => h⟩)
@@ -139,7 +139,7 @@ theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
       simp only [List.mem_singleton] at hr; subst hr; exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega)))
   -- The keystream zeroed.
   refine WP.mono (zero_ok hp i₄.x21 i₄.wr) fun s₅ ⟨k₅, _, v₅⟩ => ?_
-  have i₅ : Inv s₀ s₅ := i₄.step1 k₅ (by omega) (by omega) (by omega)
+  have i₅ : Inv s₀ s₅ := i₄.step1 k₅ (by omega_arith) (by omega_arith) (by omega_arith)
   have T₁ : ∀ r ∈ [sub s₀ 768 512], ∃ r' ∈ [sub s₀ 64 384, dR s₀, sub s₀ 768 512], Region.Sub r r' :=
     fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
   refine ⟨fun r hr => (v₅ r hr).trans ((v₄ r hr).trans ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr)))),
@@ -177,7 +177,7 @@ theorem cryptPad_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
       rw [List.getElem_zipWith, e1, e2, e3]
       have d := d₄ i hi
       simp only [Nat.zero_add, kpAt] at d
-      rw [d, dat i hi, ks₃ i (by omega), ks_prefix _ hi h512]
+      rw [d, dat i hi, ks₃ i (by omega_arith), ks_prefix _ hi h512]
 
 theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀)
     (h512 : L s₀ ≤ 512) : WP isa (Pad.sealMain v.callee) s₀ (MainS s₀) :=
@@ -219,7 +219,7 @@ theorem splitVal_eq (sve : Bool) {L : Nat} (h : L ≤ 511) :
   cases sve <;>
   simp only [splitVal, threshold, BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow, Bool.false_eq_true, ite_true, ite_false] <;>
-  omega
+  omega_arith
 
 /-- The branch: to `ShortRest.lean`'s code iff `len ≤ threshold sve` (for `len ≤ 511`, where
 the addition does not wrap around). -/
@@ -239,8 +239,8 @@ theorem sealRoute_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : A
   have hp₁ := Short.APre.agree ag hp
   have hL₁ : L s₁ = L s₀ := by rw [L, L, ag.gpr .x5 (by decide) (by decide)]
   refine WP.ite (decide (L s₀ ≤ threshold v.callee.sve)) (split_eval h511 x9) (fun _ => ?_) (fun _ => ?_)
-  · exact WP.mono (ShortRest.sealMain_ok v hp₁ (by omega)) fun _ h => Short.MainS.agree ag h
+  · exact WP.mono (ShortRest.sealMain_ok v hp₁ (by omega_arith)) fun _ h => Short.MainS.agree ag h
   · have := threshold_lt v.callee.sve
-    exact WP.mono (sealMain_ok v hp₁ (by omega)) fun _ h => Short.MainS.agree ag h
+    exact WP.mono (sealMain_ok v hp₁ (by omega_arith)) fun _ h => Short.MainS.agree ag h
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Pad

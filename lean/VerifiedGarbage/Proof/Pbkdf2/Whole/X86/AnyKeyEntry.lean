@@ -78,9 +78,9 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
       Spec.Hmac.initPost, X86.abi] at hs
     obtain ⟨h0, -, h2, -⟩ := hs
     have hf : (s.gpr .esp).toNat + 4 + 16 ≤ 2 ^ 32 := by
-      revert h0; cases n₂ <;> simp [argBytes] <;> omega
+      revert h0; cases n₂ <;> simp [argBytes] <;> omega_arith
     have hr : (⟨addr (s.gpr .esp) 4, 16⟩ : Region) = ⟨argAddr s 0, argBytes [32, 32, 32, 32]⟩ := rfl
-    refine ⟨_, ?_, Pbkdf2.Stream.X86.arg_contains rfl (by omega) hf⟩
+    refine ⟨_, ?_, Pbkdf2.Stream.X86.arg_contains rfl (by omega_arith) hf⟩
     rw [h2, hr]
     exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
   refine Verified.entryBranch (p := fun s => decide (I.S.H.blockSize + 1 ≤ (arg s 3).toNat))
@@ -100,20 +100,20 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
         Spec.Hmac.initPost, X86.abi] at q ⊢
       simp only [hval, hm] at q
       exact q
-    · have hk : (arg s 3).toNat ≤ I.S.H.blockSize := by have := of_decide_eq_false hp; omega
+    · have hk : (arg s 3).toNat ≤ I.S.H.blockSize := by have := of_decide_eq_false hp; omega_arith
       sig_pre [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
         Spec.Hmac.initPost, X86.abi] at hs
       sig_pre [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
         Spec.Hmac.initPost, X86.abi]
-      obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega⟩
-      obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega⟩
+      obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega_arith⟩
+      obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega_arith⟩
       simp only [hval, haddr, hesp, hrd, hwr]
       simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
         List.append_nil] at hs ⊢
       obtain ⟨⟨h0, h0'⟩, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, ⟨c0, c1, c2, c3, c4⟩, n1, n2, n3⟩ := hs
       have sb := Offset.sub_below ((s.gpr .esp).setWidth 64) (a := m₁ + 1) (n := m₁ + 1) (b := m₂ + 1)
-        (m := m₂ + 1) (by omega) (by omega)
-      refine ⟨⟨by omega, h0'⟩, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+        (m := m₂ + 1) (by omega_arith) (by omega_arith)
+      refine ⟨⟨by omega_arith, h0'⟩, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
         ⟨c0, c1.sub_left sb, c2.sub_left sb, c3.sub_left sb, c4.sub_left sb⟩, n1, n2, n3, ?_⟩
       rw [argVal32, setWidth32_64]; exact hk
     · sig_post [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
@@ -160,8 +160,8 @@ theorem initCode_verified {I : Spec.Hmac.Instance} {c : Prog isa} {F : Impl.Pbkd
     (hB : I.S.H.blockSize + 1 < 2 ^ 32)
     (hsat : ∃ s, (I.initAnyKeyContract X86.abi (76 + Any.anyFrame I)).pre s) :
     Verified X86.target (initCode I c F) (I.initAnyKeyContract X86.abi (76 + Any.anyFrame I)) :=
-  initEntry_verified hS hL (by omega)
-    (by simp only [Md.X86.initFrame, Any.anyFrame, Spec.Hmac.Instance.initAnyKeyScratch]; omega) hB hsat
+  initEntry_verified hS hL (by omega_arith)
+    (by simp only [Md.X86.initFrame, Any.anyFrame, Spec.Hmac.Instance.initAnyKeyScratch]; omega_arith) hB hsat
 
 theorem initCode_spSafe {I : Spec.Hmac.Instance} {c : Prog isa} {F : Impl.Pbkdf2.Whole.X86.Fns}
     (hs : c.all (fun i => !isa.writesSp i) = true)

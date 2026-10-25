@@ -45,7 +45,7 @@ theorem sepB_mono {sz : List Nat} {a a' b b' : Nat × Nat × Nat} (h : sepB sz a
   obtain ⟨⟨e1, a1⟩, a2⟩ := ha
   obtain ⟨⟨e2, b1⟩, b2⟩ := hb
   subst e1; subst e2
-  omega
+  omega_arith
 
 theorem sepAll_mono {sz : List Nat} {a a' : Nat × Nat × Nat} {W W' : List (Nat × Nat × Nat)}
     (h : sepAll sz a W' = true) (ha : inB a' a = true) (hW : W.all (fun w => W'.any (inB w)) = true) :
@@ -55,10 +55,10 @@ theorem sepAll_mono {sz : List Nat} {a a' : Nat × Nat × Nat} {W W' : List (Nat
     exact sepB_mono (List.all_eq_true.mp h w' hw') ha hi
 
 theorem inB_off {i o l k n : Nat} (h : k + n ≤ l) : inB (i, o + k, n) (i, o, l) = true := by
-  simp only [inB, beq_self_eq_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq]; omega
+  simp only [inB, beq_self_eq_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq]; omega_arith
 
 theorem inB_refl (w : Nat × Nat × Nat) : inB w w = true := by
-  simp only [inB, beq_self_eq_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq]; omega
+  simp only [inB, beq_self_eq_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq]; omega_arith
 
 /-- The bounds of a region apart from another. -/
 theorem sepAll_bounds {sz : List Nat} {i o l : Nat} {w : Nat × Nat × Nat} {W : List (Nat × Nat × Nat)}
@@ -76,7 +76,7 @@ theorem copyLo {L : Lay} {s : State} (hL : L.Ok) {sb db : Reg} {bo so dO len i j
       Kept (L.RL [(j, dO, len)]) s s' ∧ bytesAt s'.mem (L.A j dO) len = bytesAt s.mem (L.A i (bo + so)) len := by
   refine WP.seq (WP.mono (copy_setup hsb hdb hse hde hle) fun s₁ ⟨o₁, g3, g4, g5⟩ => ?_)
   rw [gs, ptr_add] at g3; rw [gd] at g4
-  refine WP.mono (copy_loop (by omega) hl0 (Lay.disj hL hs)
+  refine WP.mono (copy_loop (by omega_arith) hl0 (Lay.disj hL hs)
     (by rw [o₁.rd, o₁.wr]; exact Lay.covers ri (sepB_bounds hs).2)
     (by rw [o₁.wr]; exact Lay.covers wj (sepB_bounds (sepB_symm hs)).2) g3 g4 g5)
     fun s' ⟨cs, rd, wr, sp, fr, hb⟩ => ⟨(o₁.kept _).trans ⟨cs, sp, rd, wr, fr⟩, ?_⟩
@@ -132,7 +132,7 @@ section
 variable {K : KemLay} (hK : K.WF)
 include hK
 
-theorem decT_slots : DecTSlots K := (by decide : ∀ k < 5, DecTSlots (kOf k)) K.k (by have := hK.k4; omega)
+theorem decT_slots : DecTSlots K := (by decide : ∀ k < 5, DecTSlots (kOf k)) K.k (by have := hK.k4; omega_arith)
 
 theorem decT_step {L : Lay} {i o : Nat} {s₀ : State} (hc : Ctx L s₀) (h30 : s₀.gpr .r30 = L.A i o)
     (hs : sepAll L.sizes (i, o, 384 * K.k) [(0, 2048, 1024 * K.k)] = true) (hr : L.buf i ∈ s₀.rd ++ s₀.wr)
@@ -145,18 +145,18 @@ theorem decT_step {L : Lay} {i o : Nat} {s₀ : State} (hc : Ctx L s₀) (h30 : 
   have g30 : s.gpr .r30 = L.A i o := by rw [h.kx.cs .r30 (by decide) (by decide), h30]
   refine WP.seq (WP.mono (decTArgs_ok hc'.r31 g30 h.r26) fun s₁ ⟨o₁, a3, a4⟩ => ?_)
   rw [ptr_add] at a3
-  rw [slot_eq _ (by offs), show 2048 + 1024 * 0 + 1024 * j = 2048 + 1024 * j by omega] at a4
+  rw [slot_eq _ (by offs), show 2048 + 1024 * 0 + 1024 * j = 2048 + 1024 * j by omega_arith] at a4
   have hc₁ := hc'.only o₁
   have hsj : sepAll L.sizes (i, o + 384 * j, 384) [(0, 2048, 1024 * K.k)] = true :=
-    sepAll_mono hs (inB_off (by omega)) (by kdecide)
+    sepAll_mono hs (inB_off (by omega_arith)) (by kdecide)
   have hsep : sepB L.sizes (i, o + 384 * j, 384) (0, oPoly j, 1024) = true :=
     sepB_mono (List.all_eq_true.mp hsj _ (List.mem_singleton_self _)) (inB_refl _) (by
-      simp only [inB, oPoly, beq_self_eq_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq]; omega)
+      simp only [inB, oPoly, beq_self_eq_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq]; omega_arith)
   refine WP.seq (decode12L hL a3 a4 hsep (by rw [o₁.rd, o₁.wr, h.kx.rd, h.kx.wr]; exact hr) hc₁.cw
     fun s₂ k₂ p₂ => ?_)
   have g26 : s₂.gpr .r26 = BitVec.ofNat 64 j := by
     rw [k₂.cs .r26 (by decide), o₁.cs .r26 (by decide), h.r26]
-  refine WP.mono (count_ok (by decide) (by omega) (by omega) g26) fun s' ⟨k', g', z'⟩ => ⟨⟨?_, g', ?_⟩, z'⟩
+  refine WP.mono (count_ok (by decide) (by omega_arith) (by omega_arith) g26) fun s' ⟨k', g', z'⟩ => ⟨⟨?_, g', ?_⟩, z'⟩
   all_goals have K : KeptX [.r26] (L.RL [(0, oPoly j, 1024)]) s s' :=
     (o₁.x _ _).trans ((k₂.x _).trans (k'.mono (fun _ h => absurd h List.not_mem_nil)))
   · exact h.kx.trans (K.subL hc c_sub)
@@ -167,7 +167,7 @@ theorem decT_step {L : Lay} {i o : Nat} {s₀ : State} (hc : Ctx L s₀) (h30 : 
     · subst e
       rw [o₁.mem, hb] at p₂
       exact polyIs_frame k'.frame (fun _ h => absurd h List.not_mem_nil) p₂
-    · exact Lay.polyIs_keep hL K.frame (hc.sepAll0 (by offs) (c_sep k (by omega) e)) (h.t k (by omega))
+    · exact Lay.polyIs_keep hL K.frame (hc.sepAll0 (by offs) (c_sep k (by omega_arith) e)) (h.t k (by omega_arith))
 
 omit hK in
 theorem decT_init {L : Lay} {i o : Nat} {s₀ : State} :
@@ -178,7 +178,7 @@ theorem decT_init {L : Lay} {i o : Nat} {s₀ : State} :
 theorem decT_loop {L : Lay} {i o : Nat} {s₀ : State} (hc : Ctx L s₀) (h30 : s₀.gpr .r30 = L.A i o)
     (hs : sepAll L.sizes (i, o, 384 * K.k) [(0, 2048, 1024 * K.k)] = true) (hr : L.buf i ∈ s₀.rd ++ s₀.wr) {s : State}
     (h : DecInv K L i o s₀ 0 s) : WP isa (.loop K.decTBody (.nonzero .d .r0)) s (DecInv K L i o s₀ K.k) :=
-  wp_loop_nz (DecInv K L i o s₀) (N := K.k) (by have := hK.k1; omega)
+  wp_loop_nz (DecInv K L i o s₀) (N := K.k) (by have := hK.k1; omega_arith)
     (fun _ hj _ h => decT_step hK hc h30 hs hr hj h) (fun _ h => h) h
 
 end
@@ -264,7 +264,7 @@ theorem EA.bytes {s : State} (h : EA K L s₀ s) {i o l : Nat} (hs : sepAll L.si
     bytesAt s.mem (L.A i o) l = bytesAt s₀.mem (L.A i o) l := by
   have := sepAll_bounds hs
   have := hp.ctx.ok.fit i this.1
-  exact Lay.bytes_keep hp.ctx.ok h.frame hs (by simp only [Lay.size] at this; omega)
+  exact Lay.bytes_keep hp.ctx.ok h.frame hs (by simp only [Lay.size] at this; omega_arith)
 
 theorem EA.ek {s : State} (h : EA K L s₀ s) {k n : Nat} (hk : k + n ≤ K.ekLen) :
     bytesAt s.mem (L.A b.iE (b.oE + k)) n = bytesAt s₀.mem (L.A b.iE (b.oE + k)) n :=
@@ -286,7 +286,7 @@ theorem enc1_ok : WP isa (copy .r30 (384 * K.k) .r31 oSeed 32) s₀ fun s =>
   have k4 := hK.k4
   have hs : sepB L.sizes (b.iE, b.oE + 384 * K.k, 32) (0, oSeed, 32) = true :=
     sepB_mono (List.all_eq_true.mp hp.sE (0, 1248, 34) (by simp)) (inB_off (by offs)) (by decide)
-  refine WP.mono (copyLo hL (bo := b.oE) (by decide) (by decide) hp.r30 hp.ctx.r31 (by omega)
+  refine WP.mono (copyLo hL (bo := b.oE) (by decide) (by decide) hp.r30 hp.ctx.r31 (by omega_arith)
     (by decide) (by decide) (by decide) hs hp.wE hp.ctx.cw) fun s ⟨k, e⟩ =>
     ⟨(k.x _).subL hp.ctx (by kdecide), k.frame, e.trans ?_⟩
   show _ = ((bytesAt s₀.mem (L.A b.iE b.oE) K.ekLen).drop (384 * K.k)).take 32
@@ -319,7 +319,7 @@ abbrev PrfEk (K : KemLay) : Prop := (prfLW K 0 K.k).all (fun w => (encW0 K).any 
 
 omit hp in
 theorem prf_ek (hK : K.WF) : PrfEk K :=
-  (by decide : ∀ k < 5, PrfEk (kOf k)) K.k (by have := hK.k4; omega)
+  (by decide : ∀ k < 5, PrfEk (kOf k)) K.k (by have := hK.k4; omega_arith)
 
 theorem enc3_ok {s₂ : State} (h₂ : EA K L s₀ s₂) (hρ : bytesAt s₂.mem (L.A 0 oSeed) 32 = ρE K L b s₀)
     (ht : ∀ k < K.k, PolyIs s₂.mem (L.A 0 (oPoly k)) (VG.Proof.MlKem.ekT (ekB K L b s₀) k)) :
@@ -329,7 +329,7 @@ theorem enc3_ok {s₂ : State} (h₂ : EA K L s₀ s₂) (hρ : bytesAt s₂.mem
   have hK := hp.wf
   have hc := EA.ctx hp h₂
   obtain ⟨c1, -, c3, -, c5, -, c7⟩ := prf_ek hK
-  refine WP.mono (prfLoop_ok hK hc true (N₀ := 0) (N₁ := K.k) (by have := hK.k1; omega) (by omega)
+  refine WP.mono (prfLoop_ok hK hc true (N₀ := 0) (N₁ := K.k) (by have := hK.k1; omega_arith) (by omega_arith)
     (EA.bytes hp h₂ (hp.ctx.sepAll0 (by decide) c7))) fun s ⟨k, p⟩ =>
     ⟨?_, ?_, fun k' hk' => ?_, fun j hj => ?_⟩
   · exact h₂.trans ((k.weaken (by simp)).subL hp.ctx c1)
@@ -349,7 +349,7 @@ theorem enc4_ok {s₃ : State} (h₃ : EA K L s₀ s₃) (hρ : bytesAt s₃.mem
   have hK := hp.wf
   have hc := EA.ctx hp h₃
   obtain ⟨-, c2, -, c4, -, c6, c7⟩ := prf_ek hK
-  refine WP.mono (prfLoop_ok hK hc false (N₀ := K.k) (N₁ := 2 * K.k + 1) (by omega) (by omega)
+  refine WP.mono (prfLoop_ok hK hc false (N₀ := K.k) (N₁ := 2 * K.k + 1) (by omega_arith) (by omega_arith)
     (EA.bytes hp h₃ (hp.ctx.sepAll0 (by decide) c7))) fun s ⟨k, p⟩ => ⟨?_, ?_, fun k' hk' => ?_, p⟩
   · exact h₃.trans ((k.weaken (by simp)).subL hp.ctx c2)
   · rw [← hρ]; exact Lay.bytes_keep hp.ctx.ok k.frame (hc.sepAll0 (by decide) c4) (by decide)
@@ -403,7 +403,7 @@ theorem sepB_same {sz : List Nat} {i o l o' l' : Nat} (hb : i < sz.length) (h1 :
     (h2 : o' + l' ≤ sz.getD i 0) (hd : o + l ≤ o' ∨ o' + l' ≤ o) : sepB sz (i, o, l) (i, o', l') = true := by
   simp only [sepB, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq, not_true_eq_false,
     false_or]
-  omega
+  omega_arith
 
 /-- The polynomials the rows and `v` use: `ρ`, `t̂`, `ŷ`, `e₁`, `e₂` and `μ`. -/
 structure EData (K : KemLay) (L : Lay) (b : EB) (s₀ s : State) : Prop where
@@ -418,11 +418,11 @@ theorem EData.keep {K : KemLay} {L : Lay} {b : EB} {s₀ s s' : State} (hL : L.O
     (h2 : sepAll L.sizes (0, 2048, 1024 * (3 * K.k + 2)) W = true) : EData K L b s₀ s' := by
   have hp : ∀ k < 3 * K.k + 2, sepAll L.sizes (0, oPoly k, 1024) W = true := fun k hk =>
     sepAll_left h2 (by
-      simp only [inB, oPoly, beq_self_eq_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq]; omega)
+      simp only [inB, oPoly, beq_self_eq_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq]; omega_arith)
   exact ⟨(Lay.bytes_keep hL hf h1 (by decide)).trans h.rho,
-    fun k hk => Lay.polyIs_keep hL hf (hp k (by omega)) (h.v k hk),
-    fun N h3 h7 => Lay.polyIs_keep hL hf (hp (K.k + N) (by omega)) (h.e N h3 h7),
-    Lay.polyIs_keep hL hf (hp (3 * K.k + 1) (by omega)) h.mu⟩
+    fun k hk => Lay.polyIs_keep hL hf (hp k (by omega_arith)) (h.v k hk),
+    fun N h3 h7 => Lay.polyIs_keep hL hf (hp (K.k + N) (by omega_arith)) (h.e N h3 h7),
+    Lay.polyIs_keep hL hf (hp (3 * K.k + 1) (by omega_arith)) h.mu⟩
 
 /-- After the rows `i' < i`. -/
 structure ERow (K : KemLay) (L : Lay) (b : EB) (s₀ : State) (i : Nat) (s : State) : Prop where
@@ -457,12 +457,12 @@ abbrev RowFacts (K : KemLay) : Prop := (rowW K).all (fun w => (encW0 K).any (sub
     (∀ i < K.k, (rowW K).all (sep0 (oPoly (K.k + (K.k + i))) 1024) = true)
 
 theorem row_facts {K : KemLay} (hK : K.WF) : RowFacts K :=
-  (by decide : ∀ k < 5, RowFacts (kOf k)) K.k (by have := hK.k4; omega)
+  (by decide : ∀ k < 5, RowFacts (kOf k)) K.k (by have := hK.k4; omega_arith)
 
 /-- A `u[i]` within `c`. -/
 theorem uSlot {K : KemLay} {i : Nat} (hi : i < K.k) : K.uLen * i + K.uLen ≤ K.ctLen := by
   have : K.uLen * i + K.uLen ≤ K.uLen * K.k := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
-  simp only [KemLay.ctLen]; omega
+  simp only [KemLay.ctLen]; omega_arith
 
 /-- Two `u[i]` within `c` are apart. -/
 theorem uApart {K : KemLay} {i i' : Nat} (h : i' ≠ i) :
@@ -503,9 +503,9 @@ theorem cBound : b.iC < L.sizes.length ∧ b.oC + K.ctLen ≤ L.size b.iC := sep
 theorem ERow.rowPre {i : Nat} (hi : i < K.k) {s : State} (h : ERow K L b s₀ i s) :
     RowPre K L (ρE K L b s₀) (VG.Proof.MlKem.encY (rB L s₀)) i (okE K L b s₀ i) s :=
   ⟨hp.wf, h.kx.ctx (by decide) hp.ctx, hi, h.r26, h.r24, h.d.rho, fun j hj => by
-    have := h.d.v (K.k + j) (by omega)
-    have e : ¬ (K.k + j < K.k) := by omega
-    simp only [e, ↓reduceIte, show K.k + j - K.k = j by omega] at this
+    have := h.d.v (K.k + j) (by omega_arith)
+    have e : ¬ (K.k + j < K.k) := by omega_arith
+    simp only [e, ↓reduceIte, show K.k + j - K.k = j by omega_arith] at this
     exact this⟩
 
 section
@@ -558,7 +558,7 @@ theorem er5_ok {f : Poly} {s₄ : State} (r : RB K L b s₀ i s f s₄) (g3 : s�
   have hc := r.ctx hp h
   obtain ⟨-, -, -, -, -, c6, c7⟩ := row_facts hK
   have he : PolyIs s₄.mem (L.A 0 (oPoly (K.k + (K.k + i)))) (VG.Proof.MlKem.cbd (rB L s₀) (K.k + i)) :=
-    Lay.polyIs_keep hp.ctx.ok r.kx.frame (hc.sepAll0 (by offs) (c7 i hi)) (h.d.e (K.k + i) (by omega) (by omega))
+    Lay.polyIs_keep hp.ctx.ok r.kx.frame (hc.sepAll0 (by offs) (c7 i hi)) (h.d.e (K.k + i) (by omega_arith) (by omega_arith))
   exact addL hp.ctx.ok g3 g4 (hc.sep00 (by offs) (by offs) (by offs)) hc.cw (mem_rd_wr hc.cw) r.acc he
     fun s₅ k₅ p₅ => ⟨r.kx.trans ((k₅.x _).subL hp.ctx c6), by rw [k₅.cs .r26 (by decide), r.r26],
       by rw [k₅.cs .r24 (by decide), r.r24], p₅⟩
@@ -623,7 +623,7 @@ theorem er8_ok {s₇ : State} (r : RC K L b s₀ i s s₇) :
   have k4 := hK.k4
   obtain ⟨r1, r2, r3, r4, -, -, -⟩ := row_facts hK
   obtain ⟨cb1, cb2⟩ := cBound hp
-  refine WP.mono (count_ok (by decide) (by omega) (by omega) r.r26) fun s' ⟨k', g', z'⟩ =>
+  refine WP.mono (count_ok (by decide) (by omega_arith) (by omega_arith) r.r26) fun s' ⟨k', g', z'⟩ =>
     ⟨⟨?_, g', ?_, ?_, ?_⟩, z'⟩
   all_goals have K' : KeptX [.r26, .r25, .r24] (L.RL (rowW K ++ [(b.iC, b.oC + K.uLen * i, K.uLen)])) s s' :=
     r.kx.trans ((k'.weaken (by simp)).mono (fun _ h => absurd h List.not_mem_nil))
@@ -637,7 +637,7 @@ theorem er8_ok {s₇ : State} (r : RC K L b s₀ i s s₇) :
         exact ⟨w', by simp only [Lay.RL, List.map_append, List.mem_append]; exact .inl hw', hs⟩
       · simp only [List.map_cons, List.map_nil, List.mem_singleton] at hw; subst hw
         have := uSlot (K := K) hi
-        exact ⟨L.R b.iC b.oC K.ctLen, by simp, Lay.R_sub_R L (by omega) (by omega)⟩
+        exact ⟨L.R b.iC b.oC K.ctLen, by simp, Lay.R_sub_R L (by omega_arith) (by omega_arith)⟩
     exact K'.sub e
   · rw [k'.cs .r24 (by decide) (by decide), r.r24]
   · obtain ⟨d1, d2⟩ := cData hp (k := K.uLen * i) (n := K.uLen) (uSlot hi)
@@ -647,14 +647,14 @@ theorem er8_ok {s₇ : State} (r : RC K L b s₀ i s s₇) :
     by_cases e : i' = i
     · subst e
       exact (bytesAt_frame k'.frame (fun _ h => absurd h List.not_mem_nil) (by offs)).trans r.cb
-    · have u1 := uSlot (K := K) (i := i') (by omega)
+    · have u1 := uSlot (K := K) (i := i') (by omega_arith)
       have u2 := uSlot (K := K) hi
-      have s1 : sepAll L.sizes (b.iC, b.oC + K.uLen * i', K.uLen) (rowW K) = true := cSep hp (by omega) r2
+      have s1 : sepAll L.sizes (b.iC, b.oC + K.uLen * i', K.uLen) (rowW K) = true := cSep hp (by omega_arith) r2
       have s2 : sepAll L.sizes (b.iC, b.oC + K.uLen * i', K.uLen) [(b.iC, b.oC + K.uLen * i, K.uLen)] = true := by
         simp only [sepAll, List.all_cons, List.all_nil, Bool.and_true]
-        exact sepB_same cb1 (by simp only [Lay.size] at cb2; omega) (by simp only [Lay.size] at cb2; omega)
-          (by have := uApart (K := K) e; omega)
-      rw [← h.c i' (by omega)]
+        exact sepB_same cb1 (by simp only [Lay.size] at cb2; omega_arith) (by simp only [Lay.size] at cb2; omega_arith)
+          (by have := uApart (K := K) e; omega_arith)
+      rw [← h.c i' (by omega_arith)]
       exact Lay.bytes_keep hL K'.frame (sepAll_append s1 s2) (by offs)
 
 end
@@ -691,7 +691,7 @@ abbrev VOKFacts (K : KemLay) : Prop := (dotW K).all (vOK K) = true ∧
     [((0 : Nat), K.oAcc, (1024 : Nat))].all (vOK K) = true
 
 theorem vOK_facts {K : KemLay} (hK : K.WF) : VOKFacts K :=
-  (by decide : ∀ k < 5, VOKFacts (kOf k)) K.k (by have := hK.k4; omega)
+  (by decide : ∀ k < 5, VOKFacts (kOf k)) K.k (by have := hK.k4; omega_arith)
 
 section
 variable {K : KemLay} {L : Lay} {b : EB} {s₀ : State} (hp : EncPre K L b s₀)
@@ -713,7 +713,7 @@ theorem VEnv.keep {s s' : State} (h : VEnv K L b s₀ s) {xs : List Reg} {W : Li
     have := List.all_eq_true.mp hW w hw; simp only [vOK, Bool.and_eq_true] at this; exact this.2
   refine ⟨h.kx.trans ?_, ?_, h.d.keep hL k.frame (hc.sepAll0 (by decide) w3) (hc.sepAll0 (by offs) w4),
     fun i' hi' => (Lay.bytes_keep hL k.frame (cSep hp (uSlot hi') w2)
-      (by simp only [KemLay.uLen]; have := hK.du; omega)).trans (h.c i' hi')⟩
+      (by simp only [KemLay.uLen]; have := hK.du; omega_arith)).trans (h.c i' hi')⟩
   · refine ((k.weaken fun x hx' => ?_).subL hp.ctx w1).monoL fun w hw => List.mem_append_left _ hw
     have := hx x hx'; simp only [List.mem_cons, List.not_mem_nil, or_false] at this ⊢
     rcases this with rfl | rfl <;> simp
@@ -729,10 +729,10 @@ theorem ev1_ok {s : State} (h : VEnv K L b s₀ s) :
   have hc := h.kx.ctx (by decide) hp.ctx
   refine WP.mono (dot_ok hK hc (fun j hj => ?_) (fun j hj => ?_)) fun s' ⟨k, p⟩ =>
     ⟨h.keep hp k (by simp) (vOK_facts hK).1, p⟩
-  · have := h.d.v j (by omega); simp only [hj, ↓reduceIte] at this; exact this
-  · have := h.d.v (K.k + j) (by omega)
-    have e : ¬ (K.k + j < K.k) := by omega
-    simp only [e, ↓reduceIte, show K.k + j - K.k = j by omega] at this
+  · have := h.d.v j (by omega_arith); simp only [hj, ↓reduceIte] at this; exact this
+  · have := h.d.v (K.k + j) (by omega_arith)
+    have e : ¬ (K.k + j < K.k) := by omega_arith
+    simp only [e, ↓reduceIte, show K.k + j - K.k = j by omega_arith] at this
     exact this
 
 theorem evArgs_ok {s : State} {f : Poly} (h : VEnv K L b s₀ s) (hf : PolyIs s.mem (L.A 0 K.oAcc) f) {o : Nat}
@@ -807,8 +807,8 @@ theorem catK_congr {f g : Nat → List Byte} : ∀ {k}, (∀ i < k, f i = g i) �
   | k + 1, h => by
     show VG.Proof.MlKem.KPke.foldK (· ++ ·) [] f (k + 1) = VG.Proof.MlKem.KPke.foldK (· ++ ·) [] g (k + 1)
     rw [VG.Proof.MlKem.KPke.foldK_succ List.nil_append, VG.Proof.MlKem.KPke.foldK_succ List.nil_append,
-      h k (by omega)]
-    exact congrArg (· ++ g k) (catK_congr fun i hi => h i (by omega))
+      h k (by omega_arith)]
+    exact congrArg (· ++ g k) (catK_congr fun i hi => h i (by omega_arith))
 
 theorem ev9_ok {s : State} (h : VEnv K L b s₀ s ∧ PolyIs s.mem (L.A 0 K.oAcc)
       (VG.Proof.MlKem.KPke.encV K.p (ekB K L b s₀) (mB L b s₀) (rB L s₀)))
@@ -823,7 +823,7 @@ theorem ev9_ok {s : State} (h : VEnv K L b s₀ s ∧ PolyIs s.mem (L.A 0 K.oAcc
   have hc := h.1.kx.ctx (by decide) hp.ctx
   obtain ⟨cb1, cb2⟩ := cBound hp
   have hs : sepB L.sizes (0, K.oAcc, 1024) (b.iC, b.oC + K.uLen * K.k, 32 * K.dv) = true := by
-    have := cSep hp (k := K.uLen * K.k) (n := K.vLen) (by simp only [KemLay.ctLen]; omega)
+    have := cSep hp (k := K.uLen * K.k) (n := K.vLen) (by simp only [KemLay.ctLen]; omega_arith)
       (W := [(0, K.oAcc, 1024)]) (by kdecide)
     simp only [sepAll, List.all_cons, List.all_nil, Bool.and_true] at this
     exact sepB_symm this
@@ -834,16 +834,16 @@ theorem ev9_ok {s : State} (h : VEnv K L b s₀ s ∧ PolyIs s.mem (L.A 0 K.oAcc
     (by rw [h.1.kx.wr]; exact hp.wC) h.2 fun s' k p => ⟨?_, ?_, ?_⟩
   · refine h.1.kx.trans ((k.x _).sub fun r hr => ?_)
     simp only [Lay.RL, List.map_cons, List.map_nil, List.mem_singleton] at hr; subst hr
-    exact ⟨L.R b.iC b.oC K.ctLen, by simp, Lay.R_sub_R L (by omega) (by omega)⟩
+    exact ⟨L.R b.iC b.oC K.ctLen, by simp, Lay.R_sub_R L (by omega_arith) (by omega_arith)⟩
   · rw [k.cs .r24 (by decide), h.1.r24]
   · have keep : ∀ i' < K.k, bytesAt s'.mem (L.A b.iC (b.oC + K.uLen * i')) K.uLen =
         compressEncode K.du (VG.Proof.MlKem.KPke.encU K.p (aE K L b s₀) (rB L s₀) i') := fun i' hi' => by
       have u1 := uSlot (K := K) hi'
       have u2 : K.uLen * i' + K.uLen ≤ K.uLen * K.k := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi'
       rw [← h.1.c i' hi']
-      refine Lay.bytes_keep hL k.frame ?_ (by simp only [KemLay.uLen]; omega)
+      refine Lay.bytes_keep hL k.frame ?_ (by simp only [KemLay.uLen]; omega_arith)
       simp only [sepAll, List.all_cons, List.all_nil, Bool.and_true]
-      exact sepB_same cb1 (by omega) (by omega) (by omega)
+      exact sepB_same cb1 (by omega_arith) (by omega_arith) (by omega_arith)
     simp only [Lay.A] at keep p ⊢
     rw [KemLay.ctLen, bytesAt_add, bytes_catK, ptr_add, VG.Proof.MlKem.KPke.ct, ← p]
     congr 1
@@ -860,7 +860,7 @@ abbrev MuSep (K : KemLay) : Prop :=
     (∀ N < 2 * K.k + 1, [((0 : Nat), oPoly (3 * K.k + 1), (1024 : Nat))].all (sep0 (oPoly (K.k + N)) 1024) = true)
 
 theorem mu_sep {K : KemLay} (hK : K.WF) : MuSep K :=
-  (by decide : ∀ k < 5, MuSep (kOf k)) K.k (by have := hK.k4; omega)
+  (by decide : ∀ k < 5, MuSep (kOf k)) K.k (by have := hK.k4; omega_arith)
 
 theorem flagInit_ok {s : State} :
     WP isa (.block [.li .r24 1, .li .r26 0]) s fun s' =>
@@ -889,8 +889,8 @@ theorem v_of {s₃ : State} (t₃ : ∀ k < K.k, PolyIs s₃.mem (L.A 0 (oPoly k
   by_cases e : k < K.k
   · simp only [e, ↓reduceIte]; exact t₃ k e
   · simp only [e, ↓reduceIte]
-    have := y₃ (k - K.k) (by omega)
-    rwa [show K.k + (k - K.k) = k by omega] at this
+    have := y₃ (k - K.k) (by omega_arith)
+    rwa [show K.k + (k - K.k) = k by omega_arith] at this
 
 theorem rows_init {s₅ : State} (e₅ : EA K L s₀ s₅) (d₅ : EData K L b s₀ s₅) :
     WP isa (.block [.li .r24 1, .li .r26 0]) s₅ (ERow K L b s₀ 0) :=
@@ -929,14 +929,14 @@ theorem encrypt_ok : WP isa K.encrypt s₀ fun s => KeptX [.r26, .r25, .r24] (L.
   refine WP.seq (WP.mono (enc5b_ok hp e₄ h₄' a3 a4 a5 a6) fun s₅ ⟨e₅, f₅, μ₅⟩ => ?_)
   have d₅ := data5 hp ρ₄ v₄ E₄ f₅ μ₅
   refine WP.seq (WP.mono (rows_init hp e₅ d₅) fun s₆ h₆ => ?_)
-  refine WP.seq (WP.mono (wp_loop_nz (ERow K L b s₀) (N := K.k) (by have := hK.k1; omega)
+  refine WP.seq (WP.mono (wp_loop_nz (ERow K L b s₀) (N := K.k) (by have := hK.k1; omega_arith)
     (fun i hi s h => encRow_step hp hi h) (fun _ h => h) h₆) fun s₇ h₇ => ?_)
   refine WP.seq (WP.mono (ev1_ok hp h₇.venv) fun s₈ h₈ => ?_)
   refine WP.seq (WP.mono (evArgs_ok hp h₈.1 h₈.2 (o := K.oNtt) (oNtt_lt hK)) fun s₉ ⟨h₉, a3, a4⟩ => ?_)
   refine WP.seq (WP.mono (ev3_ok hp h₉ a3 a4) fun s₁₀ h₁₀ => ?_)
   refine WP.seq (WP.mono (evArgs_ok hp h₁₀.1 h₁₀.2 (o := oPoly (3 * K.k)) (by offs)) fun s₁₁ ⟨h₁₁, b3, b4⟩ => ?_)
-  have e₁₁ := h₁₁.1.d.e (2 * K.k) (by omega) (by omega)
-  rw [show K.k + 2 * K.k = 3 * K.k by omega] at e₁₁
+  have e₁₁ := h₁₁.1.d.e (2 * K.k) (by omega_arith) (by omega_arith)
+  rw [show K.k + 2 * K.k = 3 * K.k by omega_arith] at e₁₁
   refine WP.seq (WP.mono (evAdd_ok hp (.inl rfl) h₁₁ e₁₁ b3 b4) fun s₁₂ h₁₂ => ?_)
   refine WP.seq (WP.mono (evArgs_ok hp h₁₂.1 h₁₂.2 (o := oPoly (3 * K.k + 1)) (by offs))
     fun s₁₃ ⟨h₁₃, c3, c4⟩ => ?_)

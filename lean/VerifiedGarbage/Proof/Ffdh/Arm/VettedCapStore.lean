@@ -22,10 +22,7 @@ theorem load_ok (s : State) {p : Inputs} {slots : List Nat} (h : Context p slots
     VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
   have r20 := h.locals.read (d := 20) (by decide)
   have r68 := h.locals.read (d := 68) (by decide)
-  refine withRest [.r3, .r6] ?_ (by
-    intro r hr i hi
-    simp only [instrs, VG.Impl.Ffdh.Arm.VettedCap.load, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl <;> cases r <;> simp_all [clobbers, dstOf]) (by rfl)
+  refine withRest_all [.r3, .r6] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.VettedCap.load
   ffrun [addr 20 (by decide), addr 68 (by decide), r20, r68]
 
@@ -37,14 +34,7 @@ theorem save_store (s : State) {p : Inputs} {slots : List Nat} (h : Context p sl
     VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
   have w20 := h.locals.space.write (off := 20) (by decide)
   have w68 := h.locals.space.write (off := 68) (by decide)
-  refine withRest [.r12] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.boundSave : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.boundSave VG.Impl.Ffdh.Arm.Domain.st
   ffrun [addr 20 (by decide), addr 68 (by decide), w20, w68, BitVec.add_zero, off]
 

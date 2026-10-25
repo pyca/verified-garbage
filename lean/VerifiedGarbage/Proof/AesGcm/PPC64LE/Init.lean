@@ -139,7 +139,7 @@ theorem init_cc {C W : Addr} {R : Nat} {s : State} (dcs : (⟨C, 256⟩ : Region
   · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
   · exact (dcs.sub_left (Offset.sub_base _ (by decide))).sub_right (Offset.sub_base _ (by decide))
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 240) (by decide),
-      Nat.mod_eq_of_lt (by omega)]; omega
+      Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   · exact Covers.cons (Covers.right (covers_prefix hC (by decide))) (Covers.cons
       (Covers.right (covers_off hW (by decide) (by decide))) (Covers.cons
         (Covers.right (covers_off hC (by decide) (by decide))) (Covers.cons
@@ -155,7 +155,7 @@ theorem init_wp {s₀ : State} (h : initPPC64LE.pre s₀) :
   have hW : Covers [⟨s₀.gpr .r6, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have hC : Covers [⟨s₀.gpr .r5, 256⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have hR := rounds_ok hlen
-  have hRb : 16 * (initR s₀ + 1) ≤ 240 := by simp only [initR]; rcases hR with h' | h' | h' <;> omega
+  have hRb : 16 * (initR s₀ + 1) ≤ 240 := by simp only [initR]; rcases hR with h' | h' | h' <;> omega_arith
   -- Regions apart from the saved slots, and from the key schedule.
   have sW : ∀ {d k : Nat}, d + k ≤ 2560 → (d + k ≤ 128 ∨ 248 ≤ d) →
       (savedR (s₀.gpr .r6)).Disjoint ⟨s₀.gpr .r6 + BitVec.ofNat 64 d, k⟩ := fun h₁ h₂ => saved_w h₁ h₂
@@ -165,10 +165,10 @@ theorem init_wp {s₀ : State} (h : initPPC64LE.pre s₀) :
     (dcs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide)) |>.symm
   have kW : ∀ {d k : Nat}, d + k ≤ 2560 →
       (⟨s₀.gpr .r5, 16 * (initR s₀ + 1)⟩ : Region).Disjoint ⟨s₀.gpr .r6 + BitVec.ofNat 64 d, k⟩ :=
-    fun h₁ => (dcs.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h₁)
+    fun h₁ => (dcs.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Offset.sub_base _ h₁)
   have kC : (⟨s₀.gpr .r5, 16 * (initR s₀ + 1)⟩ : Region).Disjoint ⟨s₀.gpr .r5 + BitVec.ofNat 64 240, 16⟩ := by
     simpa using Offset.disjoint (s₀.gpr .r5) (d := 0) (n := 16 * (initR s₀ + 1)) (e := 240) (k := 16)
-      (.inl (by omega)) (by omega) (by decide)
+      (.inl (by omega_arith)) (by omega_arith) (by decide)
   refine WP.seq (WP.mono (is1_wp h) fun s₁ h1 => ?_)
   refine WP.seq (WP.mono (key_call (init_kc h h1)) fun s₂ kp => ?_)
   have g31 : s₂.gpr .r31 = s₀.gpr .r6 := (kp.saved _ (by decide)).trans h1.r31
@@ -228,10 +228,10 @@ theorem init_wp {s₀ : State} (h : initPPC64LE.pre s₀) :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact kC
-        · exact kW (by decide)) (by omega), kp.out,
+        · exact kW (by decide)) (by omega_arith), kp.out,
       bytesAt_frame h1.frame (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact dks.sub_right (Offset.sub_base _ (by decide))) (by omega)]
+        exact dks.sub_right (Offset.sub_base _ (by decide))) (by omega_arith)]
   simp only [initPPC64LE, KeyRepr, length_bytesAt, hm']
   refine ⟨?_, ?_⟩
   · rw [bytesAt_frame cp.frame (fun r hr => by
@@ -239,7 +239,7 @@ theorem init_wp {s₀ : State} (h : initPPC64LE.pre s₀) :
         rcases hr with rfl | rfl | rfl
         · exact kW (by decide)
         · simpa using kC
-        · exact kW (by decide)) (by omega), ks₃]
+        · exact kW (by decide)) (by omega_arith), ks₃]
   · have cout := cp.out
     rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq] at cout
     have z₁ : blockAt s₃.mem (s₀.gpr .r6 + BitVec.ofNat 64 96) = 0 := by rw [hm₃, zero_block2]

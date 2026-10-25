@@ -61,7 +61,7 @@ def mN (D : Nat) (a : MA) : Nat := (a.db + D - 1) / D
 
 theorem cnt_iff {j D db : Nat} (hD : 0 < D) : j < (db + D - 1) / D ↔ j * D < db := by
   rw [Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le hD, Nat.succ_mul]
-  omega
+  omega_arith
 
 variable {H : Hash} (hH : HashOK H) (K : Callees H) (n : Nat)
 variable {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G)
@@ -121,11 +121,11 @@ theorem mgfInit_ct (hfx : FixedChecks n) :
   have R2' : Rep v.mem a.F a.S V (upd (upd W 31 0#64) 32 0#64) := hm ▸ R2
   have Lv : Lay v a.F a.S := L.congr (hk.gpr (by decide)) hk.2.2 (by
     rw [slot_eq sScr 21 rfl, slot_eq sScr 21 rfl, R2'.fr 21 (by decide), R.fr 21 (by decide)]; simp [upd])
-  refine ⟨(cnt_iff hD).mpr (by rw [Nat.zero_mul]; omega), h.1, by rw [Nat.zero_mul]; omega, t, V, W, h.2.wr,
+  refine ⟨(cnt_iff hD).mpr (by rw [Nat.zero_mul]; omega_arith), h.1, by rw [Nat.zero_mul]; omega_arith, t, V, W, h.2.wr,
     hw (21, a.S) (by simp), hw (23, off a.S a.e) (by simp), hw (24, BitVec.ofNat 64 a.db) (by simp),
     Lv, hk.2.1, hk.2.2, keep_cs hk (by decide), _, _, R2', by simp [upd], by simp [upd],
-    fun k _ h => by simp only [upd, ifn (show k ≠ 32 by omega), ifn (show k ≠ 31 by omega)],
-    fun o _ _ => by simp only [mixV, Nat.zero_mul, Nat.zero_min, Nat.add_zero]; rw [ifn (by omega)]⟩
+    fun k _ h => by simp only [upd, ifn (show k ≠ 32 by omega_arith), ifn (show k ≠ 31 by omega_arith)],
+    fun o _ _ => by simp only [mixV, Nat.zero_mul, Nat.zero_min, Nat.add_zero]; rw [ifn (by omega_arith)]⟩
 
 /-! ## A round -/
 
@@ -177,7 +177,7 @@ theorem clearCopy_ct (hc : HashChecks H.P H.D n) :
   refine WP.mono (copyH_ok hH L1 R1' hm.2 w23 w24 hcx1) fun u2 ⟨L2, k2, R2⟩ =>
     ⟨hm, hj, L2, k2.2.2.trans (k1.2.2.trans (I.wr.trans hwr)), ⟨_, _, R2, hw, fun i h1 h2 => ?_⟩, fun q hq => ?_⟩
   · simp only [cpV, clrV]
-    rw [ifn (by omega), ifp (by omega)]
+    rw [ifn (by omega_arith), ifp (by omega_arith)]
   · rw [List.mem_singleton.mp hq]
     show u2.gpr .rcx = off p.1.S oY
     exact (k2.gpr (by decide)).trans hcx1
@@ -196,18 +196,18 @@ theorem counter_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (M1 H n)) (.bloc
   have hfit := hm.2.fit
   have c1 : oEm = 2560 := rfl
   have hjD : p.2 ≤ p.2 * H.D := Nat.le_mul_of_pos_right _ hD
-  refine WP.mono (counter_ok hH P.L R (hw (31, BitVec.ofNat 64 p.2) (by simp [mws])) (by omega)
+  refine WP.mono (counter_ok hH P.L R (hw (31, BitVec.ofNat 64 p.2) (by simp [mws])) (by omega_arith)
     (P.regs (.rcx, _) (by simp))) fun u ⟨L', k, R'⟩ => ⟨hm, hj, P.next L' k.2.2 R' (fun q hq => ?_) ⟨by simp [upd],
       fun i h1 h2 => ?_⟩⟩
   · rcases List.mem_append.mp hq with hq | hq
     · have := mws_keys hq
       simp only [upd]
-      rw [ifn (by omega), ifn (by omega)]
+      rw [ifn (by omega_arith), ifn (by omega_arith)]
       exact hw q hq
     · rw [List.mem_singleton.mp hq]; simp [upd]
   · simp only [ctrV]
-    rw [ifn (by omega)]
-    exact hz i (by omega) h2
+    rw [ifn (by omega_arith)]
+    exact hz i (by omega_arith) h2
 
 /-- The anchor of the hash in round `p`. -/
 def mHA (H : Hash) (p : MA × Nat) : HA := ⟨p.1.F, p.1.S, p.1.rest, mgfNb H⟩
@@ -216,23 +216,23 @@ include hH K in
 theorem hash_ct (hc : HashChecks H.P H.D n) (hfx : FixedChecks n) :
     RelCT isa (Two (M2 H n)) (mgfHash H) (Two (M3 H n)) := by
   obtain ⟨hnb1, hnb2⟩ := mgfNb_spec hH
-  refine two_post (two_map (mHA H) (fun p t h => ⟨⟨h.1.1, by simp only [mHA]; exact Nat.succ_pos _, by simp only [mHA]; omega⟩,
+  refine two_post (two_map (mHA H) (fun p t h => ⟨⟨h.1.1, by simp only [mHA]; exact Nat.succ_pos _, by simp only [mHA]; omega_arith⟩,
     h.2.2.sub (fun q hq => by
       simp only [hws, mHA, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl <;> simp [mws]) (fun _ h => h) fun _ _ ⟨h27, _⟩ => ⟨h27, by simp only [mHA]; omega⟩⟩)
+      rcases hq with rfl | rfl <;> simp [mws]) (fun _ h => h) fun _ _ ⟨h27, _⟩ => ⟨h27, by simp only [mHA]; omega_arith⟩⟩)
     (mgfHash_ct hH K n hc hfx)) fun p t h => ?_
   obtain ⟨hm, hj, P⟩ := h
   obtain ⟨V, W, R, hw, h27, hz⟩ := P.W
   refine WP.mono (mgfHash_ok hH K P.L R (msg := (List.range (H.D + 4)).map fun i => V (oY + i)) (nbm := mgfNb H) (by simp)
-    (by simp [h27]) (hw (28, BitVec.ofNat 64 (mgfNb H)) (by simp)) (by simp; omega) (by omega) fun i hi => ?_)
+    (by simp [h27]) (hw (28, BitVec.ofNat 64 (mgfNb H)) (by simp)) (by simp; omega_arith) (by omega_arith) fun i hi => ?_)
     fun u ⟨L', _, hwr, _, V', W', R', _, hW', _⟩ =>
       ⟨hm, hj, P.next L' hwr R' (fun q hq => ?_) trivial⟩
   · by_cases h : i < H.D + 4
     · simp [List.getD_eq_getElem?_getD, h]
-    · rw [hz i (by omega) hi]
+    · rw [hz i (by omega_arith) hi]
       simp [List.getD_eq_getElem?_getD, h]
   · have := mws_keys hq
-    rw [hW' q.1 (by unfold nW frameBytes; omega) (by omega) (by omega)]
+    rw [hW' q.1 (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)]
     exact hw q (List.mem_append_left _ hq)
 
 include hH in

@@ -83,13 +83,13 @@ theorem hintInit_piece (reqA : Bool) : Piece (HPre reqA) HPub (fun s₀ s => s =
   refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by native_taint_decide)
   · subst e
     have hin : aR s₀ 4 ∈ s₀.rd ++ s₀.wr := by simp [hp.wr]
-    obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega) hp.sp hp.sp' hin hp.stk_a
-    obtain ⟨a₁, i₁, v₁⟩ := arg_P0 (i := 1) (by omega) hp.sp hp.sp' hin hp.stk_a
-    obtain ⟨a₂, i₂, v₂⟩ := arg_P0 (i := 2) (by omega) hp.sp hp.sp' hin hp.stk_a
-    obtain ⟨a₃, i₃, v₃⟩ := arg_P0 (i := 3) (by omega) hp.sp hp.sp' hin hp.stk_a
+    obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega_arith) hp.sp hp.sp' hin hp.stk_a
+    obtain ⟨a₁, i₁, v₁⟩ := arg_P0 (i := 1) (by omega_arith) hp.sp hp.sp' hin hp.stk_a
+    obtain ⟨a₂, i₂, v₂⟩ := arg_P0 (i := 2) (by omega_arith) hp.sp hp.sp' hin hp.stk_a
+    obtain ⟨a₃, i₃, v₃⟩ := arg_P0 (i := 3) (by omega_arith) hp.sp hp.sp' hin hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd, Nat.reduceMul] at a₀ a₁ a₂ a₃
     have w₂ : InRegions (P0 s₀).wr (argAddr s₀ 2) 4 :=
-      ⟨aR s₀ 4, by rw [P0_wr, hp.wr]; simp, arg_contains (by omega) hp.sp'⟩
+      ⟨aR s₀ 4, by rw [P0_wr, hp.wr]; simp, arg_contains (by omega_arith) hp.sp'⟩
     have s02 : Mem.Sep (argAddr s₀ 2) 4 (argAddr s₀ 0) 4 := by
       have := hp.sp'; intro x h₁ h₂; simp only [argAddr, E0] at this h₁ h₂; bv_omega
     have s12 : Mem.Sep (argAddr s₀ 2) 4 (argAddr s₀ 1) 4 := by
@@ -101,7 +101,7 @@ theorem hintInit_piece (reqA : Bool) : Piece (HPre reqA) HPub (fun s₀ s => s =
       exec, execAlu, readSrc, State.ea, State.load32, State.store32, State.setReg, arithFlags, State.setFlags,
       Option.map_some, Option.bind_some, a₀, a₁, a₂, a₃, i₀, i₁, i₂, i₃, v₀, v₁, v₂, v₃, w₂, 
       Option.some.injEq, exists_eq_left']
-    refine ⟨by simp, rfl, rfl, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (arg_contains (by omega)
+    refine ⟨by simp, rfl, rfl, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (arg_contains (by omega_arith)
       hp.sp'), Mem.readW_writeW_self32 _ _ _, by simp, by simp, by simp, by simp, by rw [sub_beq_zero']⟩
   · simp only [List.mem_singleton] at hr
     subst hr
@@ -136,10 +136,10 @@ structure HInv (V : Nat → Nat → Nat) (cnt : Bool) (s₀ : State) (k : Nat) (
 /-- The output pointer compared with the end of the output. -/
 theorem end_cmp' (x : BitVec 32) {X : Nat} (hX : X ≤ 1024) :
     (x + BitVec.ofNat 32 X - (x + 1024) == 0) = decide (X = 1024) := by
-  rw [sub_beq_zero, BitVec.toNat_add, BitVec.toNat_add, toNat_ofNat32 (by omega),
+  rw [sub_beq_zero, BitVec.toNat_add, BitVec.toNat_add, toNat_ofNat32 (by omega_arith),
     show (1024 : BitVec 32).toNat = 1024 from rfl]
   simp only [Nat.reducePow]
-  exact decide_eq_decide.mpr (by constructor <;> intro h <;> omega)
+  exact decide_eq_decide.mpr (by constructor <;> intro h <;> omega_arith)
 
 theorem hint_step {core : List Instr} {V : Nat → Nat → Nat} {reqA cnt : Bool} (hc : Core2 core V reqA cnt)
     {s₀ : State} (hp : HPre reqA s₀) {k : Nat} (hk : k < 256) {s : State}
@@ -172,7 +172,7 @@ theorem hint_step {core : List Instr} {V : Nat → Nat → Nat} {reqA cnt : Bool
         h.esp]
     rw [show addr (s₅.gpr .esp) 28 = argAddr s₀ 2 by rw [hsp]; exact VG.Proof.MlKem.X86.P0_argAddr s₀ 2,
       u₅.rd, u₅.wr, u₄.rd, u₄.wr, u₃.rd, u₃.wr, m₂.rd, m₂.wr, o₁.rd, o₁.wr, h.rd, h.wr, pushed_rd, P0_wr, hp.wr]
-    exact ⟨aR s₀ 4, by simp, arg_contains (by omega) hp.sp'⟩
+    exact ⟨aR s₀ 4, by simp, arg_contains (by omega_arith) hp.sp'⟩
   · rw [f₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), m₂.gpr,
       o₁.gpr _ (by decide), h.esp]
   · rw [f₆.rd, u₅.rd, u₄.rd, u₃.rd, m₂.rd, o₁.rd, h.rd]
@@ -186,13 +186,13 @@ theorem hint_step {core : List Instr} {V : Nat → Nat → Nat} {reqA cnt : Bool
   · rw [f₆.mem, u₅.mem, u₄.mem, u₃.mem, m₂.mem, addr_cf hp.o_fit hk, o₁.mem]
     exact h.frame.writeW (by simp) _ (coeff_contains _ hk')
   · rw [f₆.mem, u₅.mem, u₄.mem, u₃.mem, m₂.mem, addr_cf hp.o_fit hk, o₁.mem,
-      Mem.readW_writeW_sep (Region.Disjoint.sep hp.o_a.symm (arg_contains (by omega) hp.sp')
+      Mem.readW_writeW_sep (Region.Disjoint.sep hp.o_a.symm (arg_contains (by omega_arith) hp.sp')
         (coeff_contains _ hk')) (by decide), h.slot]
   · rw [f₆.mem, u₅.mem, u₄.mem, u₃.mem, m₂.mem, addr_cf hp.o_fit hk, o₁.mem,
-      coeffAt_writeW _ _ (by rw [n_eq]; omega) hk']
+      coeffAt_writeW _ _ (by rw [n_eq]; omega_arith) hk']
     by_cases e : k = i
     · subst e; rw [ite_eq_left rfl]; exact eq_ofNat_of_toNat v₁
-    · rw [ite_eq_right e]; exact h.out i (by omega)
+    · rw [ite_eq_right e]; exact h.out i (by omega_arith)
   · rw [f₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), m₂.gpr, c₁ e,
       h.ecx e, eq_ofNat_of_toNat v₁, ← BitVec.ofNat_add]
     rfl
@@ -201,13 +201,13 @@ theorem hint_step {core : List Instr} {V : Nat → Nat → Nat} {reqA cnt : Bool
       show addr (s₅.gpr .esp) 28 = argAddr s₀ 2 by
         rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), m₂.gpr, o₁.gpr _ (by decide),
           h.esp]; exact VG.Proof.MlKem.X86.P0_argAddr s₀ 2,
-      Mem.readW_writeW_sep (Region.Disjoint.sep hp.o_a.symm (arg_contains (by omega) hp.sp')
+      Mem.readW_writeW_sep (Region.Disjoint.sep hp.o_a.symm (arg_contains (by omega_arith) hp.sp')
         (coeff_contains _ hk')) (by decide), h.slot, u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide),
       m₂.gpr, ebp₁, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.Proof.MlKem.X86.add_ofNat_add,
-      end_cmp' _ (by omega)]
+      end_cmp' _ (by omega_arith)]
     by_cases e : k + 1 < 256
-    · rw [decide_eq_false (by omega), decide_eq_true e]; rfl
-    · rw [decide_eq_true (by omega), decide_eq_false e]; rfl
+    · rw [decide_eq_false (by omega_arith), decide_eq_true e]; rfl
+    · rw [decide_eq_true (by omega_arith), decide_eq_false e]; rfl
 
 theorem hint_loop {core : List Instr} {V : Nat → Nat → Nat} {reqA cnt : Bool} (hc : Core2 core V reqA cnt)
     (E : State → Prop) {hh : Taint.Hint VG.X86.Taint.T}
@@ -225,7 +225,7 @@ theorem hint_loop {core : List Instr} {V : Nat → Nat → Nat} {reqA cnt : Bool
         · rw [h.edi, h'.edi, hq.2.2.1]
         · rw [h.ebp, h'.ebp, hq.2.2.2.2]) ht).mono (fun s₀ s _ ⟨h, he⟩ => ⟨?_, he⟩) fun _ _ _ h => h
   exact ⟨h.esp, h.rd, h.wr, by rw [h.esi]; simp, by rw [h.edi]; simp, by rw [h.ebp]; simp,
-    h.frame.mono (by simp), h.slot, fun i hi => absurd hi (by omega), fun _ => by rw [h.ecx]; rfl⟩
+    h.frame.mono (by simp), h.slot, fun i hi => absurd hi (by omega_arith), fun _ => by rw [h.ecx]; rfl⟩
 
 /-- `γ₂` is `(q - 1)/32`: the branch the code takes. -/
 def hG32 (s₀ : State) : Bool := arg s₀ 2 == BitVec.ofNat 32 g32

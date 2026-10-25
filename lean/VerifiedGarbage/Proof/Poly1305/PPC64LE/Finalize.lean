@@ -396,7 +396,7 @@ theorem fepilogue_ok {s₀ : State} (hp : FPre s₀) {m₁ : Mem} {s₁ : State}
     simp only [v, w64, l₁, l₂, k₂.2.1, k₂.gpr' (r := .r3), x0, off, add_ofNat_zero, add_ofNat_add]
     rw [key_word hf (d := 40) (by decide) (by decide), key_word hf (d := 40 + 8) (by decide) (by decide)]
   have hSlt : v s₃ .r18 + 2 ^ 64 * v s₃ .r19 < 2 ^ 128 := by
-    have := (s₃.gpr .r18).isLt; have := (s₃.gpr .r19).isLt; simp only [v]; omega
+    have := (s₃.gpr .r18).isLt; have := (s₃.gpr .r19).isLt; simp only [v]; omega_arith
   have hsum := ha (by omega_using [n0]) (by omega_using [n1]) (by omega_using [n2]) (by omega_using [n3]) (by omega_using [n4])
     (by rw [m0]; exact Nat.lt_trans (lim_lt _ (by decide)) (by decide))
     (by rw [m1]; exact Nat.lt_trans (lim_lt _ (by decide)) (by decide))

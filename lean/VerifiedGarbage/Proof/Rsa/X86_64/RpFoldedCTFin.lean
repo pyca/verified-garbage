@@ -49,10 +49,10 @@ theorem finA_ct (M : Mont) : RelCT isa (Two GR3) (seqs [.block [.mov .rax (.mem 
     have h256 := hc.ws.h256
     refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = s.mem.writeW (off I.B (8 * sMask))
         (mask res.isSome)) (by
-      xrun [State.ea, hdr, hc.ws.rdi, hdrOff, hc.ws.scr.ld (d := 8 * sC3) (by simp only [sC3, sFn]; omega),
-        hc.ws.scr.st (d := 8 * sMask) (by simp only [sMask, sFn]; omega), hc3]) rfl) fun u ⟨m₁, k₁⟩ => ?_
+      xrun [State.ea, hdr, hc.ws.rdi, hdrOff, hc.ws.scr.ld (d := 8 * sC3) (by simp only [sC3, sFn]; omega_arith),
+        hc.ws.scr.st (d := 8 * sMask) (by simp only [sMask, sFn]; omega_arith), hc3]) rfl) fun u ⟨m₁, k₁⟩ => ?_
     have hf₁ : Frm I.B (rg (wk I.k) [] [sMask]) s.mem u.mem := by
-      rw [m₁]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sMask, sFn]; omega)) _ _
+      rw [m₁]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sMask, sFn]; omega_arith)) _ _
         (List.mem_singleton_self _)
     exact ⟨I, m₀, res.isSome, rfl, S.step hf₁ (by decide) (by decide) k₁ (by decide), L, O,
       by rw [m₁, word_writeW_self], minv, _, _, hc.congr hf₁ (by decide) (by decide) k₁ (by decide)⟩
@@ -62,9 +62,9 @@ theorem finA_ct (M : Mont) : RelCT isa (Two GR3) (seqs [.block [.mov .rax (.mem 
     obtain ⟨I, m₀, c, rfl, S, L, O, hmk, minv, r, t, hc⟩ := h'
     have hg := hc.good
     have hw2 := hc.ws.w2
-    exact WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 (by omega) (o := aY) (a := aY) (b := aOne) (by decide)
+    exact WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 (by omega_arith) (o := aY) (a := aY) (b := aOne) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.hinv
-      (by rw [hc.hone, hc.hn]; have := hc.n1; omega)) fun u ⟨_, _, _, ha, k⟩ =>
+      (by rw [hc.hone, hc.hn]; have := hc.n1; omega_arith)) fun u ⟨_, _, _, ha, k⟩ =>
       h.step (Frm.rg_of_arrays ha [aAcc, aTmp, aY] [] (by decide)) (by decide) (by simp) (by simp) k (by decide)
         fun _ _ _ => trivial
   refine RelCT.seq (R := Two (FX XU)) (zeroA_gct RpP.B RpP.Z (fun p => wk p.k) (fun _ _ h => h.ws)
@@ -87,17 +87,17 @@ theorem finA_ct (M : Mont) : RelCT isa (Two GR3) (seqs [.block [.mov .rax (.mem 
   have sY := hw.sl (j := aY) (by decide)
   have sO := hw.sl (j := aOne) (by decide)
   have sU := hw.sl (j := fU) (by decide)
-  refine WP.mono (sub_ok (hw.scr.congr k₄.2.2) h8 h10 hsi h12 hbp (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by have := slot_far (w := wk p.k) (show fU ≠ aY by decide); omega)
-    (by have := slot_far (w := wk p.k) (show fU ≠ aOne by decide); omega)) fun u ⟨_, _, _, o₅, k₅⟩ => ?_
+  refine WP.mono (sub_ok (hw.scr.congr k₄.2.2) h8 h10 hsi h12 hbp (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by have := slot_far (w := wk p.k) (show fU ≠ aY by decide); omega_arith)
+    (by have := slot_far (w := wk p.k) (show fU ≠ aOne by decide); omega_arith)) fun u ⟨_, _, _, o₅, k₅⟩ => ?_
   rw [m₄] at o₅
-  have hf : Frm p.B (rg (wk p.k) [fU] []) s.mem u.mem := Frm.rg_of_out o₅ (by omega) _ _ (by decide)
+  have hf : Frm p.B (rg (wk p.k) [fU] []) s.mem u.mem := Frm.rg_of_out o₅ (by omega_arith) _ _ (by decide)
   refine h.step hf (by decide) (by simp) (by simp) (k₄.trans k₅) (by decide) fun I e z => ?_
   subst e
   dsimp only [RpIn.pub] at *
   show word u.mem I.B (slot (wk I.k) fU + 8 * wk I.k) = 0
-  rw [o₅.word (Or.inr (by omega)) (by omega)]
-  exact word_above_zero (n := wk I.k) (L := wk I.k + 2) (by omega) (by rw [z]; exact Nat.two_pow_pos _)
+  rw [o₅.word (Or.inr (by omega_arith)) (by omega_arith)]
+  exact word_above_zero (n := wk I.k) (L := wk I.k + 2) (by omega_arith) (by rw [z]; exact Nat.two_pow_pos _)
 
 theorem fin_ct (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) fun _ _ => True := by
   rw [show fin M.mm = [.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax], M.mm aY aY aOne, zeroA fU,

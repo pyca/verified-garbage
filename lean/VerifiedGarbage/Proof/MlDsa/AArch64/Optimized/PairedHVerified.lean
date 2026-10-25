@@ -66,7 +66,7 @@ theorem hPass_all_fields {m : Mem} {work challenge secret out aux : Addr} {g : N
   have hpointer : ∀mm:Mem,coeffAt mm out (256*j+k)=coeffAt mm (pairPolyPtr out j) k := by
     intro mm
     simp only [coeffAt,pairPolyPtr,BitVec.add_assoc,←BitVec.ofNat_add]
-    rw [show 4*(256*j+k)=1024*j+4*k by omega]
+    rw [show 4*(256*j+k)=1024*j+4*k by omega_arith]
   rw [hpointer,hv']
   have hj' : j<((List.range 2).map fun j => pairedHintPoly m challenge secret out aux g j).length := by simpa using hj
   rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem hj',Option.getD_some,
@@ -91,7 +91,7 @@ theorem pairedCoeff_frame {rs : List Region} {m m' : Mem} {p : Addr}
   apply VG.Proof.MlDsa.Verify.coeffAt_congr _ hk
   apply VG.Proof.MlKem.bytes_frame hf _ (by decide)
   intro r hr
-  exact (hd r hr).sub_left (Offset.sub_base _ (by omega))
+  exact (hd r hr).sub_left (Offset.sub_base _ (by omega_arith))
 
 theorem pairedHintBase_frame {rs : List Region} {m m' : Mem} {out aux : Addr}
     (hf : Frame rs m m') (ho : ∀r∈rs,(⟨out,2048⟩:Region).Disjoint r)
@@ -175,7 +175,7 @@ private theorem fourCount_nat (a b c d : BitVec 32)
     (ha : a.toNat≤128) (hb : b.toNat≤128) (hc : c.toNat≤128) (hd : d.toNat≤128) :
     (a+b+c+d).toNat=a.toNat+b.toNat+c.toNat+d.toNat := by
   simp only [BitVec.toNat_add]
-  rw [Nat.mod_eq_of_lt (by omega),Nat.mod_eq_of_lt (by omega),Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_arith),Nat.mod_eq_of_lt (by omega_arith),Nat.mod_eq_of_lt (by omega_arith)]
 
 private theorem pack_success (lo : BitVec 32) (P : Prop) [Decidable P] :
     (lo.setWidth 64 ||| ((if P then (1 : BitVec 64) else 0) <<< 32))=
@@ -187,12 +187,12 @@ private theorem pack_success (lo : BitVec 32) (P : Prop) [Decidable P] :
     change (lo.setWidth 64 ||| ((1#32).setWidth 64 <<< 32)).toNat=_
     rw [packedWords_nat]
     simp only [BitVec.toNat_ofNat,show (1#32).toNat=1 by decide,Nat.one_mul]
-    exact (Nat.mod_eq_of_lt (by omega)).symm
+    exact (Nat.mod_eq_of_lt (by omega_arith)).symm
   · simp only [ite_eq_right hp]
     change (lo.setWidth 64 ||| ((0#32).setWidth 64 <<< 32)).toNat=_
     rw [packedWords_nat]
     simp only [BitVec.toNat_ofNat,show (0#32).toNat=0 by decide,Nat.zero_mul]
-    exact (Nat.mod_eq_of_lt (by omega)).symm
+    exact (Nat.mod_eq_of_lt (by omega_arith)).symm
 
 theorem hintFinish_packed (counts flags : BitVec 128) (P : Prop) [Decidable P]
     (hb : ∀e<4,(vword counts e).toNat≤128)
@@ -248,7 +248,7 @@ theorem hOutput_field {m : Mem} {work challenge secret out aux : Addr} {u e g : 
     finalPass_read_written true work out aux c _ (by decide : 8≤8) hu i ho hd] at h
   rw [h,BitVec.toNat_ofNat,Nat.mod_eq_of_lt]
   have hb := (pairedHintPoly m challenge secret out aux g i.1.val)[4*u+32*i.2.val+e]!.toNat_le
-  omega
+  omega_arith
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
@@ -266,7 +266,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.Paired
 private theorem accessRegion {p : Addr} {len : Nat} {rs : List Region}
     (h : (⟨p,len⟩:Region)∈rs) {off : Nat} (ho : off+16≤len) (hl : len<2^64) :
     InRegions rs (p+BitVec.ofNat 64 off) 16 :=
-  ⟨_,h,Offset.contains_base p ho (by omega)⟩
+  ⟨_,h,Offset.contains_base p ho (by omega_arith)⟩
 
 theorem HintSpecPre.access {s : State} (h : HintSpecPre s) : EntryAccess s := by
   constructor
@@ -360,10 +360,10 @@ theorem finalPass_count (work out aux : Addr) (c : CheckConstants) (d : CheckDat
   induction n with
   | zero => exact (BitVec.add_zero _).symm
   | succ n ih =>
-    rw [finalPass_step true work out aux c d (by omega) hw,
+    rw [finalPass_step true work out aux c d (by omega_arith) hw,
       checkRun_count _ _ _ _ _ _ allChecks_nodup
-        (fun i _ j _ => ha.sep (checkAddr_contains aux (by omega) i) (checkAddr_contains out (by omega) j)) he,
-      ih (by omega)]
+        (fun i _ j _ => ha.sep (checkAddr_contains aux (by omega_arith) i) (checkAddr_contains out (by omega_arith) j)) he,
+      ih (by omega_arith)]
     have hs : hintSum
         (fun p => Inverse.rawFinalValues (readPair d.mem (work+BitVec.ofNat 64 (16*n)) 128 p))
         (out+BitVec.ofNat 64 (16*n)) (aux+BitVec.ofNat 64 (16*n)) c
@@ -375,8 +375,8 @@ theorem finalPass_count (work out aux : Addr) (c : CheckConstants) (d : CheckDat
       apply congrArg (fun xs : List (BitVec 32) => xs.sum)
       apply List.map_congr_left
       intro i _
-      rw [finalPass_read_future true work out aux c d (Nat.le_refl n) (by omega) i,
-        finalPass_read_aux true work out aux c d (by omega) (by omega) i ha]
+      rw [finalPass_read_future true work out aux c d (Nat.le_refl n) (by omega_arith) i,
+        finalPass_read_aux true work out aux c d (by omega_arith) (by omega_arith) i ha]
     rw [hs,passHintSum]
     exact BitVec.add_assoc _ _ _
 
@@ -430,7 +430,7 @@ theorem hPass_norm_complete {m : Mem} {work challenge secret out aux : Addr} {B 
     (∀e<4,vword (finalPassData true work out aux c d 8).flags e=0) ↔
       normRq ((List.range 2).map fun j => pairedProduct m challenge secret j)<B := by
   dsimp only
-  rw [paired_norm_iff _ (by omega),←checkCoverage]
+  rw [paired_norm_iff _ (by omega_arith),←checkCoverage]
   apply forall_congr'
   intro e
   apply forall_congr'
@@ -471,11 +471,11 @@ theorem bitSum_value (xs : List (BitVec 32)) (hl : xs.length≤128)
   | nil => exact ⟨rfl,Nat.le_refl _⟩
   | cons x xs ih =>
     have hx := hb x (by simp)
-    have ht := ih (by simp only [List.length_cons] at hl; omega)
+    have ht := ih (by simp only [List.length_cons] at hl; omega_arith)
       (fun y hy => hb y (List.mem_cons_of_mem _ hy))
-    have hn : x.toNat+xs.sum.toNat<2^32 := by simp only [List.length_cons] at hl; omega
+    have hn : x.toNat+xs.sum.toNat<2^32 := by simp only [List.length_cons] at hl; omega_arith
     simp only [List.sum_cons,List.map_cons,BitVec.toNat_add,Nat.mod_eq_of_lt hn]
-    exact ⟨by rw [ht.1],by simp only [List.length_cons]; omega⟩
+    exact ⟨by rw [ht.1],by simp only [List.length_cons]; omega_arith⟩
 
 theorem hintSum_bound (v : Values) (out aux : Addr) (c : CheckConstants) (m : Mem)
     {e : Nat} (he : e<4) : (hintSum v out aux c m e allChecks).toNat≤16 := by
@@ -494,12 +494,12 @@ theorem passHintSum_bound (work out aux : Addr) (c : CheckConstants) (m : Mem)
   induction n with
   | zero => exact Nat.le_refl _
   | succ n ih =>
-    have hp := ih (by omega)
+    have hp := ih (by omega_arith)
     have hs := hintSum_bound
       (fun p => Inverse.rawFinalValues (readPair m (work+BitVec.ofNat 64 (16*n)) 128 p))
       (out+BitVec.ofNat 64 (16*n)) (aux+BitVec.ofNat 64 (16*n)) c m he
-    rw [passHintSum,BitVec.toNat_add,Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [passHintSum,BitVec.toNat_add,Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
@@ -548,16 +548,16 @@ theorem pairedHint_sat : (pairedHintContract (abi.withConsts pairedConsts)).pre 
     intro j hj
     change PositiveReduced pairedSatMem (8192+BitVec.ofNat 64 (1024*j))
     rw [show (8192:BitVec 64)=BitVec.ofNat 64 8192 by rfl,←BitVec.ofNat_add]
-    exact pairedSat_positive (by omega)
+    exact pairedSat_positive (by omega_arith)
   · intro j hj i hi
     have hl : coeffAt pairedSatMem (pairPolyPtr 12288 j) i=0 := by
       change coeffAt pairedSatMem (12288+BitVec.ofNat 64 (1024*j)) i=0
       rw [show (12288:BitVec 64)=BitVec.ofNat 64 12288 by rfl,←BitVec.ofNat_add]
-      exact pairedSat_coeff_zero (by omega) hi
+      exact pairedSat_coeff_zero (by omega_arith) hi
     have hh : coeffAt pairedSatMem (pairPolyPtr 16384 j) i=0 := by
       change coeffAt pairedSatMem (16384+BitVec.ofNat 64 (1024*j)) i=0
       rw [show (16384:BitVec 64)=BitVec.ofNat 64 16384 by rfl,←BitVec.ofNat_add]
-      exact pairedSat_coeff_zero (by omega) hi
+      exact pairedSat_coeff_zero (by omega_arith) hi
     simp only [responseHintBase,hl,hh]
     decide
 
@@ -625,14 +625,14 @@ theorem passHintSum_field {m : Mem} {work challenge secret out aux : Addr} {e g 
   induction n with
   | zero => rfl
   | succ n ih =>
-    have hpbound := passHintSum_bound work out aux c (firstPassMem m work challenge secret 8) he (by omega : n≤8)
+    have hpbound := passHintSum_bound work out aux c (firstPassMem m work challenge secret 8) he (by omega_arith : n≤8)
     have hsbound := hintSum_bound
       (fun p => Inverse.rawFinalValues (readPair (firstPassMem m work challenge secret 8)
         (work+BitVec.ofNat 64 (16*n)) 128 p))
       (out+BitVec.ofNat 64 (16*n)) (aux+BitVec.ofNat 64 (16*n)) c
       (firstPassMem m work challenge secret 8) he
-    rw [passHintSum,BitVec.toNat_add,Nat.mod_eq_of_lt (by omega),ih (by omega),sumN_succ]
-    rw [hintSum_field (by omega) he hg c hgamma hc hs ho ha hd hp hy]
+    rw [passHintSum,BitVec.toNat_add,Nat.mod_eq_of_lt (by omega_arith),ih (by omega_arith),sumN_succ]
+    rw [hintSum_field (by omega_arith) he hg c hgamma hc hs ho ha hd hp hy]
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 

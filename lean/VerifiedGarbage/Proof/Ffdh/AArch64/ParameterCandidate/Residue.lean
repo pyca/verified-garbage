@@ -52,14 +52,14 @@ theorem resFlag_zero {g c : Nat} (hg : g = 2 ∨ g = 5) :
     resFlag g (BitVec.ofNat 64 (c % resMod g)) = 0 ↔
       (if g = 2 then c % 24 = 11 else g = 5 ∧ (c % 10 = 3 ∨ c % 10 = 7)) := by
   rcases hg with rfl | rfl
-  · rw [resFlag_two (by unfold resMod; simp only [show ¬ 3 ≤ 2 by decide, ite_false]; omega)]
+  · rw [resFlag_two (by unfold resMod; simp only [show ¬ 3 ≤ 2 by decide, ite_false]; omega_arith)]
     simp [resMod]
-  · rw [resFlag_five (by unfold resMod; simp only [show 3 ≤ 5 by decide, ite_true]; omega)]
+  · rw [resFlag_five (by unfold resMod; simp only [show 3 ≤ 5 by decide, ite_true]; omega_arith)]
     simp [resMod]
 
 theorem w8_addr (B : Addr) {d w : Nat} (hw : w < 2 ^ 31) :
     off B d + BitVec.ofNat 64 w <<< 3 = off B (d + 8 * w) := by
-  rw [shl_ofNat (show w * 2 ^ 3 < 2 ^ 64 by omega), off_add, show w * 2 ^ 3 = 8 * w by omega]
+  rw [shl_ofNat (show w * 2 ^ 3 < 2 ^ 64 by omega_arith), off_add, show w * 2 ^ 3 = 8 * w by omega_arith]
 
 /-- The reduction's start. -/
 theorem residueHead_ok {s : State} {p : PP} {w : Nat} (h : PSt p w s) :
@@ -85,7 +85,7 @@ theorem residueHead_ok {s : State} {p : PP} {w : Nat} (h : PSt p w s) :
   have hG : s₂.mem.readW (off p.B (8 * fGen)) 64 = BitVec.ofNat 64 p.g := by rw [hm₂]; exact h.args.gen
   have hsel : (if decide (2 ^ 64 ≤ (BitVec.ofNat 64 p.g).toNat + (~~~BitVec.ofNat 64 3).toNat + true.toNat) = true
       then BitVec.ofNat 64 10 else BitVec.ofNat 64 24) = BitVec.ofNat 64 (resMod p.g) := by
-    rw [subs_ge (by omega) (by decide)]
+    rw [subs_ge (by omega_arith) (by decide)]
     unfold resMod
     by_cases hc : 3 ≤ p.g
     · simp [hc]
@@ -94,8 +94,8 @@ theorem residueHead_ok {s : State} {p : PP} {w : Nat} (h : PSt p w s) :
       t.gpr .x10 = off p.B (slot w aN + 8 * w) ∧ t.gpr .x14 = BitVec.ofNat 64 w ∧
         t.gpr .x13 = BitVec.ofNat 64 (resMod p.g) ∧ t.gpr .x3 = 0 ∧ t.gpr .x7 = 0 ∧ t.gpr .x8 = mask true ∧
         t.mem = s.mem) (by
-    brun [h16, e12, h0₂, hm₂, w8_addr p.B (d := slot w aN) (w := w) (by omega), hdr_enc (show fGen < 32 by decide),
-      hs₂.ld (d := 8 * fGen) (by have := hws.h256; simp only [fGen, sFn]; omega), hG,
+    brun [h16, e12, h0₂, hm₂, w8_addr p.B (d := slot w aN) (w := w) (by omega_arith), hdr_enc (show fGen < 32 by decide),
+      hs₂.ld (d := 8 * fGen) (by have := hws.h256; simp only [fGen, sFn]; omega_arith), hG,
       imm16 (show 3 < 65536 by decide), imm16 (show 10 < 65536 by decide), imm16 (show 24 < 65536 by decide),
       imm16 (show 0 < 65536 by decide), hsel, h.args.gen]) (by decide) (by decide) (by decide +kernel)) fun t ⟨hq, k₃⟩ => ⟨hq, (k12.trans k₃).mono (by decide)⟩
 
@@ -116,7 +116,7 @@ theorem residueTail_ok {s : State} {p : PP} {w : Nat} {X : BitVec 64} (h : PSt p
       t.mem = s.mem.writeW (off p.B (8 * fBad)) (resFlag p.g X)) (by
     rcases hg with hg | hg <;> rw [hg] at hgen ⊢ <;>
     brun [hws.x0, h3, hdr_enc (show fGen < 32 by decide), hdr_enc (show fBad < 32 by decide),
-      hs.ld (d := 8 * fGen) (by simp only [fGen, sFn]; omega), hs.st (d := 8 * fBad) (by simp only [fBad]; omega),
+      hs.ld (d := 8 * fGen) (by simp only [fGen, sFn]; omega_arith), hs.st (d := 8 * fBad) (by simp only [fBad]; omega_arith),
       hgen, resFlag, imm16 (show 3 < 65536 by decide), imm16 (show 4 < 65536 by decide),
       imm16 (show 7 < 65536 by decide), imm16 (show 11 < 65536 by decide)]) (by decide) (by decide) (by decide +kernel))
     fun t ⟨hm, k⟩ => ⟨hm, k.mono (by decide)⟩
@@ -136,7 +136,7 @@ theorem residue_ok {s : State} {p : PP} {w c : Nat} (h : PSt p w s) (hc : wv s.m
   simp only [residue, seqs]
   refine WP.seq (WP.mono (residueHead_ok h) fun s₁ ⟨⟨h10, h14, h13, h3, h7, h8, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.wr
-  refine WP.seq (WP.mono (modWords_ok hs₁ h10 h14 h7 h8 (by omega) (by omega) (by omega) h3
+  refine WP.seq (WP.mono (modWords_ok hs₁ h10 h14 h7 h8 (by omega_arith) (by omega_arith) (by omega_arith) h3
     (by rw [h13, BitVec.toNat_ofNat]; unfold resMod; split <;> decide)) fun s₂ ⟨hr₂, hm₂, k₂⟩ => ?_)
   have e13 : (s₁.gpr .x13).toNat = resMod p.g := by
     rw [h13, BitVec.toNat_ofNat]; apply Nat.mod_eq_of_lt; unfold resMod; split <;> decide
@@ -144,16 +144,16 @@ theorem residue_ok {s : State} {p : PP} {w c : Nat} (h : PSt p w s) (hc : wv s.m
   have h3₂ : s₂.gpr .x3 = BitVec.ofNat 64 (c % resMod p.g) := by
     have h1 := Nat.mod_lt c (show 0 < resMod p.g by unfold resMod; split <;> decide)
     have h2 : resMod p.g ≤ 24 := by unfold resMod; split <;> decide
-    apply BitVec.eq_of_toNat_eq; rw [hr₂, BitVec.toNat_ofNat]; exact (Nat.mod_eq_of_lt (by omega)).symm
+    apply BitVec.eq_of_toNat_eq; rw [hr₂, BitVec.toNat_ofNat]; exact (Nat.mod_eq_of_lt (by omega_arith)).symm
   have k12 := k₁.trans k₂
   have st₂ : PSt p w s₂ := h.step (rs := []) (hws.congr' (rs := []) (by rw [hm₂, hm₁]; exact Frm.refl _ _ _)
     (by simp) k12 (by decide)) (by rw [hm₂, hm₁]; exact Frm.refl _ _ _) (by simp) (by simp) k12
   refine WP.mono (residueTail_ok st₂ h3₂) fun t ⟨hm, k₃⟩ => ?_
   have hf : Frm p.B [(8 * fBad, 8)] s.mem t.mem := by
-    rw [hm, hm₂, hm₁]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [fBad]; omega)) (by simp)
+    rw [hm, hm₂, hm₁]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [fBad]; omega_arith)) (by simp)
   refine ⟨h.step (hws.congr' hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.hdr (by decide))
       ((k12.trans k₃)) (by decide)) hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.hdr (by decide))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fBad]; omega) (k12.trans k₃), ?_, hf,
+      (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [fBad]; omega_arith) (k12.trans k₃), ?_, hf,
     (k12.trans k₃).mono (by decide)⟩
   rw [hm, word_writeW_self]
 

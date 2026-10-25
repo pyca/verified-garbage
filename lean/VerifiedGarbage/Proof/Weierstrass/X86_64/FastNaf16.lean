@@ -47,7 +47,7 @@ theorem fastEvenStep16_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn 
     by_cases he : i/2=j
     · simp only [he,Nat.lt_irrefl,ite_false,Nat.lt_add_one,ite_true]
       exact (FastNaf.wbyte_of_zero (by rw [he]; exact (FastNaf.magnitude_zero_iff 9 k j).mpr ho)).symm
-    · have hh : (i/2<j)=(i/2<j+1) := propext (by omega)
+    · have hh : (i/2<j)=(i/2<j+1) := propext (by omega_arith)
       simp only [hh]
   · exact ((VG.Proof.Mont.X86_64.Keeps.regs ka).mono (fun r hr => mem_clobN (pre:=[.rax])
       (by decide) hr)).trans
@@ -70,7 +70,7 @@ theorem fastOddStep16_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn :
   have hx : (s.gpr .r8).toNat%2^9=FastNaf.residual 9 k j%2^9 := by
     have h := hI.value
     rw [nafValN_r8] at h
-    omega
+    omega_arith
   refine WP.seq (WP.mono (fastChoose_ok s hw) fun a ⟨da,ka⟩ => ?_)
   have sa := hI.scr.of_keeps ka (by decide)
   have va : nafValN n a=FastNaf.residual 9 k j :=
@@ -97,7 +97,7 @@ theorem fastOddStep16_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn :
     · cases h
     exact notin_sregs (by decide) h)).trans da'
   rw [WP.block_append_iff]
-  refine WP.mono (fastStore16_ok sb (by omega) cb db) fun c ⟨mc,kc⟩ => ?_
+  refine WP.mono (fastStore16_ok sb (by omega_arith) cb db) fun c ⟨mc,kc⟩ => ?_
   have sc := sb.of_keepRegs kc (by simp)
   rw [WP.block_append_iff]
   refine WP.mono (fastShiftN_ok c hn hsft) fun d ⟨vd,kd⟩ => ?_
@@ -116,21 +116,21 @@ theorem fastOddStep16_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn :
   refine ⟨⟨sd.of_keeps kt (by decide),?_,ct,?_⟩,?_,?_⟩
   · rw [nafValN_keep kt.1 (by decide),vd,nafValN_keep kc.gpr (by simp),vb]
     rw [FastNaf.residual_succ,FastNaf.next_odd9 _ ho,FastNaf.residual_skip9 k j ho]
-    omega
+    omega_arith
   · intro i hi
     rw [mt]
     by_cases hij : i/2=j
-    · have he : bits+i=bits+2*j+i%2 := by omega
-      rw [he,writeW16_at _ _ _ (Nat.mod_lt _ (by decide)),ite_eq_left (by omega),FastNaf.wbyte,hij]
-    · rw [writeW16_outside _ _ _ (by omega) (by
-        rw [ofs_off0 base (d:=bits+i) (by omega)]; omega),hI.digits i hi]
+    · have he : bits+i=bits+2*j+i%2 := by omega_arith
+      rw [he,writeW16_at _ _ _ (Nat.mod_lt _ (by decide)),ite_eq_left (by omega_arith),FastNaf.wbyte,hij]
+    · rw [writeW16_outside _ _ _ (by omega_arith) (by
+        rw [ofs_off0 base (d:=bits+i) (by omega_arith)]; omega_arith),hI.digits i hi]
       by_cases hij' : i/2<j
-      · simp only [hij',show i/2<j+9 from by omega,ite_true]
+      · simp only [hij',show i/2<j+9 from by omega_arith,ite_true]
       · by_cases hil : i/2<j+9
         · simp only [hij',hil,ite_false,ite_true]
           exact (FastNaf.wbyte_of_zero (by
-            have h := FastNaf.magnitude_skip_zero9 k j (i/2-j) ho (by omega) (by omega)
-            rwa [Nat.add_sub_of_le (by omega)] at h)).symm
+            have h := FastNaf.magnitude_skip_zero9 k j (i/2-j) ho (by omega_arith) (by omega_arith)
+            rwa [Nat.add_sub_of_le (by omega_arith)] at h)).symm
         · simp only [hij',hil,ite_false]
   · exact (((VG.Proof.Mont.X86_64.Keeps.regs ka).mono (fun r hr => mem_clobN (pre:=[.rcx])
       (by decide) (List.mem_append_left _ hr))).trans
@@ -142,7 +142,7 @@ theorem fastOddStep16_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn :
           (by decide) (List.mem_append_left _ hr)))))
   · intro x hx
     rw [mt]
-    exact writeW16_outside _ _ _ (by omega) (by omega)
+    exact writeW16_outside _ _ _ (by omega_arith) (by omega_arith)
 
 def fastDelta16 (k j : Nat) : Nat := if FastNaf.residual 9 k j%2=0 then 1 else 9
 
@@ -165,7 +165,7 @@ theorem fastPrepStep16_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn 
     rw [nafParity]
     have h := hI.value
     rw [nafValN_r8] at h
-    omega
+    omega_arith
   apply WP.seq
   have branches : WP isa
       (.ite .e (.block (Impl.Weierstrass.X86_64.FastNaf.shiftN n 1++Impl.Weierstrass.X86_64.FastNaf.advance 1))
@@ -182,7 +182,7 @@ theorem fastPrepStep16_ok {s : State} {base : Addr} {size n bits k j : Nat} (hn 
       have he : FastNaf.residual 9 k j%2≠0 := fun he => (of_decide_eq_false h) (hp.mpr he)
       simpa only [fastDelta16,he,ite_false] using fastOddStep16_ok hn ia hb hj hv he
   refine WP.mono branches fun b ⟨ib,kb,ob⟩ => ?_
-  refine WP.mono (fastCompare_ok b (n:=n) (by omega) (by rcases hd with h|h <;> omega) ib.count)
+  refine WP.mono (fastCompare_ok b (n:=n) (by omega_arith) (by rcases hd with h|h <;> omega_arith) ib.count)
     fun t ⟨cf,kt⟩ => ?_
   refine ⟨ib.of_keeps kt (by simp),cf,?_,?_⟩
   · exact (((VG.Proof.Mont.X86_64.Keeps.regs ka).mono (fun r hr => mem_clobN (pre:=[.rcx])
@@ -199,14 +199,14 @@ theorem fastClear16_ok {s : State} {base : Addr} {size n bits : Nat}
   have hc : WP isa (.block (setConst (16*n+1) bits 0)) s fun t =>
       wordsVal t.mem base bits (16*n+1)=0 ∧ KeepRegs [.rax] s t ∧
         Outside base bits (8*(16*n+1)) s.mem t.mem :=
-    setConst_ok hs (by omega) (Nat.two_pow_pos _)
+    setConst_ok hs (by omega_arith) (Nat.two_pow_pos _)
   refine WP.mono hc fun t ⟨ht,kt,ot⟩ => ⟨?_,kt,?_⟩
   · intro i hi
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
-    rw [testBit_byte t.mem base (n:=16*n+1) (by omega) hb,ht]
+    rw [testBit_byte t.mem base (n:=16*n+1) (by omega_arith) hb,ht]
     simp only [BitVec.ofNat_eq_ofNat,Nat.zero_testBit,BitVec.getLsbD_zero]
-  · rwa [show 8*(16*n+1)=128*n+8 by omega] at ot
+  · rwa [show 8*(16*n+1)=128*n+8 by omega_arith] at ot
 
 theorem fastPrepInit16_ok {s : State} {base : Addr} {size n src bits : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
     (hs : Scr s base size) (hsrc : src+8*n≤size) (hb : bits+128*n+8≤size) :
@@ -224,7 +224,7 @@ theorem fastPrepInit16_ok {s : State} {base : Addr} {size n src bits : Nat} (hn 
   · rw [hv,va,FastNaf.residual_zero]
   · exact (kt.gpr .rbx (by decide)).trans ca
   · intro i hi
-    simpa only [Nat.not_lt_zero,ite_false] using zt i (by omega)
+    simpa only [Nat.not_lt_zero,ite_false] using zt i (by omega_arith)
   · rw [ma] at ot
     exact ot
 
@@ -240,28 +240,28 @@ theorem fastPrep16_ok {s : State} {base : Addr} {size n src bits : Nat} (hn : n=
   rw [Impl.Weierstrass.X86_64.FastNaf.prepN16]
   refine WP.seq (WP.mono (fastPrepInit16_ok hn hs hsrc hb) fun a ⟨ia,ka,oa⟩ => ?_)
   refine WP.loop (M:=isa) (fun m t => 1≤m ∧ m≤64*n+1 ∧ I m t) (fun m t ⟨hm,hm',hi⟩ => ?_)
-    (64*n+1) a ⟨by omega,by omega,by simpa only [Nat.sub_self] using ia,ka,oa⟩
-  have hj : 64*n+1-m<64*n+1 := by omega
+    (64*n+1) a ⟨by omega_arith,by omega_arith,by simpa only [Nat.sub_self] using ia,ka,oa⟩
+  have hj : 64*n+1-m<64*n+1 := by omega_arith
   have hv : FastNaf.residual 9 k (64*n+1-m)≤2^(64*n) := by
-    have h := FastNaf.residual_boundB 9 (Nat.le_of_lt hk) (j:=64*n+1-m) (by omega)
-    exact Nat.le_trans h (Nat.pow_le_pow_right (by decide) (by omega))
+    have h := FastNaf.residual_boundB 9 (Nat.le_of_lt hk) (j:=64*n+1-m) (by omega_arith)
+    exact Nat.le_trans h (Nat.pow_le_pow_right (by decide) (by omega_arith))
   have hd : 1≤fastDelta16 k (64*n+1-m) ∧ fastDelta16 k (64*n+1-m)≤9 := by
     unfold fastDelta16; split <;> decide
   refine WP.mono (fastPrepStep16_ok hn hi.1 hb hj hv) fun u ⟨iu,cf,ku,ou⟩ => ?_
   have ki := hi.2.1.trans ku
   have oi := hi.2.2.trans ou
   by_cases he : 64*n+1≤64*n+1-m+fastDelta16 k (64*n+1-m)
-  · refine Or.inl ⟨?_,⟨_,he,by omega,iu⟩,ki,oi⟩
+  · refine Or.inl ⟨?_,⟨_,he,by omega_arith,iu⟩,ki,oi⟩
     change u.cf=some false
     rw [cf]
     congr 1
-    exact decide_eq_false (by omega)
-  · refine Or.inr ⟨?_,m-fastDelta16 k (64*n+1-m),by omega,by omega,by omega,?_,ki,oi⟩
+    exact decide_eq_false (by omega_arith)
+  · refine Or.inr ⟨?_,m-fastDelta16 k (64*n+1-m),by omega_arith,by omega_arith,by omega_arith,?_,ki,oi⟩
     · change u.cf=some true
       rw [cf]
       congr 1
-      exact decide_eq_true (by omega)
-    · rw [show 64*n+1-(m-fastDelta16 k (64*n+1-m))=64*n+1-m+fastDelta16 k (64*n+1-m) from by omega]
+      exact decide_eq_true (by omega_arith)
+    · rw [show 64*n+1-(m-fastDelta16 k (64*n+1-m))=64*n+1-m+fastDelta16 k (64*n+1-m) from by omega_arith]
       exact iu
 
 /-- The recoder leaves every digit's bytes. -/
@@ -272,6 +272,6 @@ theorem fastPrepDigits16_ok {s : State} {base : Addr} {size n src bits : Nat} (h
       KeepRegs (nafPrepClobN n) s t ∧ Outside base bits (128*n+8) s.mem t.mem := by
   refine WP.mono (fastPrep16_ok hn hs hsrc hb) fun t ⟨⟨j,hj,_,hi⟩,kt,ot⟩ => ⟨?_,kt,ot⟩
   intro i hi'
-  simpa only [show i/2<j from by omega,ite_true] using hi.digits i hi'
+  simpa only [show i/2<j from by omega_arith,ite_true] using hi.digits i hi'
 
 end VG.Proof.Weierstrass.X86_64

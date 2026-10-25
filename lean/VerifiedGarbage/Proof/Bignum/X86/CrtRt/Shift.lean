@@ -64,8 +64,8 @@ theorem shiftLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x N
     change (w32 t.mem W (x + 4 * j + 0) * 16 % 2 ^ 32 + _) % 2 ^ 32 = _
     rw [Nat.add_zero, word]
     have : val32 t₀.mem W x j * 16 / 2 ^ (32 * j) < 16 :=
-      (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).2 (by have := val32_lt t₀.mem W x j; omega)
-    omega
+      (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).2 (by have := val32_lt t₀.mem W x j; omega_arith)
+    omega_arith
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · exact Kt.trans ((((k₉.mono (by decide)).trans (m₁₀.keeps _)).trans (u₁₁.keeps.mono (by decide))).trans
       ((u₁₂.keeps.mono (by decide)).trans (u₁₃.keeps.mono (by decide))))
@@ -101,12 +101,12 @@ theorem nextWindow_ok (h : In Ex base bytes len args s) (c : Ctx) :
   have nb : numBase = 3336 := rfl
   have cb1 : cb len (one c) = bc len c := by simp [cb, one]
   have cw1 : cw len (one c) = cwc len c := by simp [cw, cwc, cb, one]
-  obtain ⟨k, ek⟩ : ∃ k, cwc len c = k + 1 := ⟨cwc len c - 1, by omega⟩
+  obtain ⟨k, ek⟩ : ∃ k, cwc len c = k + 1 := ⟨cwc len c - 1, by omega_arith⟩
   unfold nextWindow
   simp only [List.append_assoc]
   -- The window word.
   refine WP.seq (ptrTo_ok (r := .eax) (t := .edx) (x := .slot c 8) (by decide) (by decide) h.edi h.width
-    h.upper' (by omega) fun u₁ K₁ m₁ p₁ => ?_)
+    h.upper' (by omega_arith) fun u₁ K₁ m₁ p₁ => ?_)
   have h₁ := h.regs K₁ m₁
   refine widthC_ok (k := 0) (c := c) (r := .edx) h₁.width h.upper' fun u₂ K₂ m₂ e₂ => ?_
   refine wp_addS rfl fun u₃ a₃ _ => wp_subS rfl fun u₄ a₄ _ => ?_
@@ -117,45 +117,45 @@ theorem nextWindow_ok (h : In Ex base bytes len args s) (c : Ctx) :
   have p₄ : PtrAt u₄ base .eax (lo len (.slot c 8) + 4 * k) := by
     rw [PtrAt, a₄.gpr, a₃.gpr, K₂.1 _ (by decide), e₂]
     rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.sub_eq_add_neg, BitVec.add_assoc,
-      ← BitVec.sub_eq_add_neg, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), ptr_add p₁,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := bc len c - 4) (by omega)]
-    congr 2; omega
-  refine wp_movS (readSrc_ptr ws₄ p₄ (d := 0) (by omega)) fun u₅ a₅ _ => ?_
+      ← BitVec.sub_eq_add_neg, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith) (by omega_arith), ptr_add p₁,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := bc len c - 4) (by omega_arith)]
+    congr 2; omega_arith
+  refine wp_movS (readSrc_ptr ws₄ p₄ (d := 0) (by omega_arith)) fun u₅ a₅ _ => ?_
   refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun u₆ a₆ => ?_
   have K₆ : Keeps [.eax, .edx] s u₆ := (K₄.trans (a₅.keeps.mono (by decide))).trans (a₆.keeps.mono (by decide))
   have h₆ := h.regs K₆ (by rw [a₆.mem, a₅.mem, a₄.mem, a₃.mem, m₂, m₁])
-  refine wp_storeS (h₆.scratch.ea (d := winOff) (by simp only [winOff]; omega))
-    (h₆.scratch.write (d := winOff) (by simp only [winOff]; omega)) fun u₇ m₇ => WP.block_nil ?_
+  refine wp_storeS (h₆.scratch.ea (d := winOff) (by simp only [winOff]; omega_arith))
+    (h₆.scratch.write (d := winOff) (by simp only [winOff]; omega_arith)) fun u₇ m₇ => WP.block_nil ?_
   have mem₆ : u₆.mem = s.mem := by rw [a₆.mem, a₅.mem, a₄.mem, a₃.mem, m₂, m₁]
   have W₇ : Outside base winOff 4 s.mem u₇.mem := by
-    rw [m₇.mem, ← mem₆]; exact writeW32_outside _ _ _ (by simp only [winOff]; omega)
+    rw [m₇.mem, ← mem₆]; exact writeW32_outside _ _ _ (by simp only [winOff]; omega_arith)
   have win₇ : w32 u₇.mem base winOff = sv s.mem base len c 8 * 16 / 2 ^ (32 * cwc len c) := by
     rw [m₇.mem, w32_write_self, a₆.gpr, a₅.gpr, shr28_toNat, a₄.mem, a₃.mem, m₂, m₁, Nat.add_zero]
     simp only [sv]
     rw [ek, val32_top_bits]
   have K₇ : Keeps [.eax, .edx] s u₇ := K₆.trans (m₇.keeps _)
-  have h₇ := h.keep K₇ (by decide) (by decide) (W₇.mono (Nat.zero_le _) (by simp only [winOff]; omega))
+  have h₇ := h.keep K₇ (by decide) (by decide) (W₇.mono (Nat.zero_le _) (by simp only [winOff]; omega_arith))
   -- The exponent shifted.
   refine WP.seq (ptrTo_ok (r := .ebp) (t := .edx) (x := .slot c 8) (by decide) (by decide) h₇.edi h₇.width
-    h.upper' (by omega) fun u₈ K₈ m₈ p₈ => ?_)
+    h.upper' (by omega_arith) fun u₈ K₈ m₈ p₈ => ?_)
   have h₈ := h₇.regs K₈ m₈
   refine cntTo_ok (r := .edx) (n := one c) h₈.width h.upper' (one_ok c).extra fun u₉ K₉ m₉ c₉ => ?_
   refine wp_movS rfl fun u₁₀ a₁₀ _ => WP.block_nil ?_
   have K₁₀ : Keeps [.ecx, .edx, .ebp] u₇ u₁₀ :=
     ((K₈.mono (by decide)).trans (K₉.mono (by decide))).trans (a₁₀.keeps.mono (by decide))
-  refine WP.mono (shiftLoop_ok (h₇.ws.of_keeps K₁₀) (x := lo len (.slot c 8)) (N := cwc len c) (by omega)
-    (by omega) (by rw [PtrAt, a₁₀.other _ (by decide), K₉.1 _ (by decide)]; exact p₈)
+  refine WP.mono (shiftLoop_ok (h₇.ws.of_keeps K₁₀) (x := lo len (.slot c 8)) (N := cwc len c) (by omega_arith)
+    (by omega_arith) (by rw [PtrAt, a₁₀.other _ (by decide), K₉.1 _ (by decide)]; exact p₈)
     (by rw [a₁₀.other _ (by decide), cnt_toNat h.upper' (one_ok c) c₉, cw1])
     a₁₀.gpr) fun u ⟨O, V, K⟩ => ?_
   have m₁₀ : u₁₀.mem = u₇.mem := by rw [a₁₀.mem, m₉, m₈]
   refine ⟨?_, ?_, ?_, ((K₇.mono (by decide)).trans (K₁₀.mono (by decide))).trans K⟩
   · rw [← m₁₀] at W₇
     have O' : Outside base (lo len (.slot c 8)) (bc len c) u₁₀.mem u.mem := by rw [bw]; exact O
-    exact (frameR_of_outside W₇ (by simp only [winOff]; omega) (by simp)).trans
-      (frameR_of_outside O' (by omega) (by simp))
-  · rw [O.w32 (d := winOff) (by simp only [winOff]; omega) (by simp only [winOff]; omega), m₁₀, win₇]
+    exact (frameR_of_outside W₇ (by simp only [winOff]; omega_arith) (by simp)).trans
+      (frameR_of_outside O' (by omega_arith) (by simp))
+  · rw [O.w32 (d := winOff) (by simp only [winOff]; omega_arith) (by simp only [winOff]; omega_arith), m₁₀, win₇]
   · simp only [sv]
-    rw [V, m₁₀, W₇.val32 (by simp only [winOff]; omega) (by omega)]
+    rw [V, m₁₀, W₇.val32 (by simp only [winOff]; omega_arith) (by omega_arith)]
 
 end
 

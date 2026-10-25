@@ -33,14 +33,14 @@ open VG.Proof.Ed448 (cL)
 
 theorem cLimb_high {k : Nat} (h : 14 ≤ k) : cLimb k = 0 := by
   rw [cLimb, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by
-    simp only [cLimbs, List.length_cons, List.length_nil]; omega)]
+    simp only [cLimbs, List.length_cons, List.length_nil]; omega_arith)]
   rfl
 
 theorem cLimb_lt (k : Nat) : cLimb k < radix := by
   by_cases h : k < 14
   · have : ∀ k < 14, cLimb k < radix := by decide
     exact this k h
-  · rw [cLimb_high (by omega)]; decide
+  · rw [cLimb_high (by omega_arith)]; decide
 
 theorem kLimb_lt (k : Nat) : kLimb k < radix := by
   unfold kLimb; split
@@ -58,7 +58,7 @@ theorem valN_kLimb : valN kLimb 28 = radix ^ 28 - L := by decide +kernel
 
 theorem readSc {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d + 4 ≤ 8192) :
     readSrc s (.mem (Impl.X448.X86.sc d)) = some (word s.mem base d) := by
-  simp only [readSrc, hs.ea (by omega : d < 8192), State.load32, hs.read hd, ite_true]
+  simp only [readSrc, hs.ea (by omega_arith : d < 8192), State.load32, hs.read hd, ite_true]
 
 theorem toNat_imm {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 32 v).toNat = v := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
@@ -76,12 +76,12 @@ theorem toNat_rotr30 (x : BitVec 32) (h : x.toNat < 16384) : (x.rotateRight 30).
     apply BitVec.eq_of_toNat_eq
     rw [toNat_shr]
     change x.toNat / 2 ^ 30 = 0
-    omega
+    omega_arith
   have e : x.rotateRight 30 = x <<< 2 := by
     rw [BitVec.rotateRight_def, hz]; exact BitVec.zero_or
   rw [e, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
   change x.toNat * 4 % 4294967296 = _
-  omega
+  omega_arith
 
 theorem toNat_and14 (x : BitVec 32) : (x &&& (16383 : BitVec 32)).toNat = x.toNat % 16384 := by
   rw [BitVec.toNat_and, show (16383 : BitVec 32).toNat = 2 ^ 14 - 1 by rfl,
@@ -106,10 +106,10 @@ theorem foldHead_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s
       Keeps [.eax, .ebx, .ecx] s t ∧ t.mem = s.mem := by
   obtain ⟨_, ho2⟩ := ho
   unfold foldHead
-  refine load_ok hs (by omega) fun s1 u1 => ?_
+  refine load_ok hs (by omega_arith) fun s1 u1 => ?_
   refine wp_shift (by decide) fun s2 u2 => ?_
   have hs2 := (hs.of_upd u1 (by decide)).of_upd u2 (by decide)
-  refine load_ok hs2 (by omega) fun s3 u3 => ?_
+  refine load_ok hs2 (by omega_arith) fun s3 u3 => ?_
   refine wp_shift (by decide) fun s4 u4 => ?_
   refine wp_alu (Or.inl rfl) rfl fun s5 u5 _ => ?_
   refine wp_mov rfl fun s6 u6 => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
@@ -123,7 +123,7 @@ theorem foldHead_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s
       exact toNat_rotr30 _ h27
     rw [u6.other .ecx (by decide), u5.gpr]
     change (s4.gpr .ecx + s4.gpr .eax).toNat = _
-    rw [toNat_add_lt (by rw [e1, e2]; simp only [radix] at h26; omega), e1, e2]
+    rw [toNat_add_lt (by rw [e1, e2]; simp only [radix] at h26; omega_arith), e1, e2]
     rfl
   · rw [u6.gpr]; rfl
   · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
@@ -146,25 +146,25 @@ theorem foldSrc_ok {o : Nat} (ho : Buf o) {base : Addr} {r : Nat → Nat} {w : N
   unfold foldSrc
   have hc := cLimb_lt k
   have hprod : (BitVec.ofNat 32 (cLimb k)).toNat * (s.gpr .ecx).toNat < 2 ^ 32 := by
-    rw [toNat_imm (by simp only [radix] at hc; omega), h1]
+    rw [toNat_imm (by simp only [radix] at hc; omega_arith), h1]
     have := Nat.mul_le_mul (Nat.le_of_lt_succ hc) (Nat.le_of_lt_succ hH)
-    omega
+    omega_arith
   have prod : ∀ t : State, t.gpr .eax = BitVec.ofNat 32
       ((BitVec.ofNat 32 (cLimb k)).toNat * (s.gpr .ecx).toNat) →
       (t.gpr .eax).toNat = foldH r * cLimb k := fun t ht => by
-    rw [ht, toNat_mul_lt hprod, toNat_imm (by simp only [radix] at hc; omega), h1, Nat.mul_comm]
+    rw [ht, toNat_mul_lt hprod, toNat_imm (by simp only [radix] at hc; omega_arith), h1, Nat.mul_comm]
   by_cases k0 : k = 0
   · subst k0
     rw [ite_eq_left rfl]
     refine wp_mov rfl fun s1 u1 => wp_mul fun s2 e2 m2 k2 => ?_
     have hs2 := (hs.of_upd u1 (by decide)).of_keeps k2 (by decide)
-    refine wp_alu (Or.inl rfl) (readSc hs2 (by omega)) fun s3 u3 _ => WP.block_nil ⟨?_, ?_, ?_⟩
+    refine wp_alu (Or.inl rfl) (readSc hs2 (by omega_arith)) fun s3 u3 _ => WP.block_nil ⟨?_, ?_, ?_⟩
     · have p2 := prod s2 (by rw [e2, u1.gpr, u1.other .ecx (by decide)])
       have ww : (word s2.mem base W).toNat = w := by rw [m2, u1.mem, hw]
       rw [u3.gpr]
       change (s2.gpr .eax + word s2.mem base W).toNat = _
       simp only [foldL, ite_true] at hs' ⊢
-      rw [toNat_add_lt (by rw [p2, ww]; omega), p2, ww, Nat.add_comm]
+      rw [toNat_add_lt (by rw [p2, ww]; omega_arith), p2, ww, Nat.add_comm]
     · exact (u1.rest (by decide)).trans (k2.trans (u3.rest (by decide)))
     · rw [u3.mem, m2, u1.mem]
   rw [ite_eq_right k0]
@@ -172,33 +172,33 @@ theorem foldSrc_ok {o : Nat} (ho : Buf o) {base : Addr} {r : Nat → Nat} {w : N
   · rw [ite_eq_left k14]
     refine wp_mov rfl fun s1 u1 => wp_mul fun s2 e2 m2 k2 => ?_
     have hs2 := (hs.of_upd u1 (by decide)).of_keeps k2 (by decide)
-    refine wp_alu (Or.inl rfl) (readSc hs2 (by omega)) fun s3 u3 _ => WP.block_nil ⟨?_, ?_, ?_⟩
+    refine wp_alu (Or.inl rfl) (readSc hs2 (by omega_arith)) fun s3 u3 _ => WP.block_nil ⟨?_, ?_, ?_⟩
     · have p2 := prod s2 (by rw [e2, u1.gpr, u1.other .ecx (by decide)])
       have ww : limbs s2.mem base o (k - 1) = r (k - 1) := by
-        rw [m2, u1.mem]; exact hr (k - 1) (by omega)
+        rw [m2, u1.mem]; exact hr (k - 1) (by omega_arith)
       rw [u3.gpr]
       change (s2.gpr .eax + word s2.mem base (o + 4 * (k - 1))).toNat = _
-      simp only [foldL, k0, ite_false, show k < 27 by omega, ite_true] at hs' ⊢
+      simp only [foldL, k0, ite_false, show k < 27 by omega_arith, ite_true] at hs' ⊢
       have ww' : (word s2.mem base (o + 4 * (k - 1))).toNat = r (k - 1) := ww
-      rw [toNat_add_lt (by rw [p2, ww']; omega), p2, ww', Nat.add_comm]
+      rw [toNat_add_lt (by rw [p2, ww']; omega_arith), p2, ww', Nat.add_comm]
     · exact (u1.rest (by decide)).trans (k2.trans (u3.rest (by decide)))
     · rw [u3.mem, m2, u1.mem]
   rw [ite_eq_right k14]
   by_cases k27 : k < 27
   · rw [ite_eq_left k27]
-    refine load_ok hs (by omega) fun s1 u1 => WP.block_nil ⟨?_, u1.rest (by decide), u1.mem⟩
+    refine load_ok hs (by omega_arith) fun s1 u1 => WP.block_nil ⟨?_, u1.rest (by decide), u1.mem⟩
     rw [u1.gpr]
-    simp only [foldL, k0, ite_false, k27, ite_true, cLimb_high (by omega : 14 ≤ k), Nat.mul_zero,
+    simp only [foldL, k0, ite_false, k27, ite_true, cLimb_high (by omega_arith : 14 ≤ k), Nat.mul_zero,
       Nat.add_zero]
-    exact hr (k - 1) (by omega)
+    exact hr (k - 1) (by omega_arith)
   · rw [ite_eq_right k27]
-    refine load_ok hs (by omega) fun s1 u1 => ?_
+    refine load_ok hs (by omega_arith) fun s1 u1 => ?_
     refine wp_alu (Or.inr (Or.inr (Or.inl rfl))) rfl fun s2 u2 _ => WP.block_nil
       ⟨?_, (u1.rest (by decide)).trans (u2.rest (by decide)), by rw [u2.mem, u1.mem]⟩
     rw [u2.gpr]
     change (s1.gpr .eax &&& (16383 : BitVec 32)).toNat = _
     rw [toNat_and14, u1.gpr]
-    simp only [foldL, k0, ite_false, k27, cLimb_high (by omega : 14 ≤ k), Nat.mul_zero, Nat.add_zero]
+    simp only [foldL, k0, ite_false, k27, cLimb_high (by omega_arith : 14 ≤ k), Nat.mul_zero, Nat.add_zero]
     exact congrArg (· % 16384) (hr 26 (by decide))
 
 /-- `fold o`: the limbs of `l + h c` into `TF`. -/
@@ -217,15 +217,15 @@ theorem fold_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s bas
   refine WP.mono (foldHead_ok ⟨ho1, ho2⟩ hs h27 (hl 26 (by decide))) fun s1 ⟨e1, e5, k1, m1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   refine WP.mono (carryPass_ok (rb := .edi) (o := TF) (d := TF) (s0 := s1)
-    (c := foldC cLimb (limbs s.mem base o) (word s.mem base W).toNat) (by decide) (by omega)
-    (fun k hk => hs1.ea (by omega)) (fun k hk => hs1.write (by omega)) e5 hsum ?_) fun t ht => ?_
+    (c := foldC cLimb (limbs s.mem base o) (word s.mem base W).toNat) (by decide) (by omega_arith)
+    (fun k hk => hs1.ea (by omega_arith)) (fun k hk => hs1.write (by omega_arith)) e5 hsum ?_) fun t ht => ?_
   · intro k hk s' hp
     have hs' := hs1.of_keeps hp.regs (by decide)
     have hm := hp.mem
     rw [m1] at hm
     refine foldSrc_ok ⟨ho1, ho2⟩ hH hsum hk hs' (fun j hj => ?_) ?_ ?_
-    · exact hm.limbs (Or.inr (by omega)) (by omega) hj
-    · rw [hm.word (Or.inl (by omega)) (by omega)]
+    · exact hm.limbs (Or.inr (by omega_arith)) (by omega_arith) hj
+    · rw [hm.word (Or.inl (by omega_arith)) (by omega_arith)]
     · rw [hp.regs.1 _ (by decide)]; exact e1
   · generalize hc : foldC cLimb (limbs s.mem base o) (word s.mem base W).toNat = c at ht hlt hmod hsum
     have hval : fe t.mem base TF = valN c 28 := by
@@ -248,17 +248,17 @@ theorem csubSrc_ok {k : Nat} (hk : k < 28) {s : State} {base : Addr} (hs : Scr s
   unfold csubSrc
   by_cases hkk : k < 14 ∨ k = 27
   · rw [ite_eq_left hkk]
-    refine load_ok hs (by omega) fun s1 u1 => wp_alu (Or.inl rfl) rfl fun s2 u2 _ =>
+    refine load_ok hs (by omega_arith) fun s1 u1 => wp_alu (Or.inl rfl) rfl fun s2 u2 _ =>
       WP.block_nil ⟨?_, (u1.rest (by decide)).trans (u2.rest (by decide)), by rw [u2.mem, u1.mem]⟩
     have hkl := kLimb_lt k
     have e1 : (s1.gpr .eax).toNat = limbs s.mem base TF k := by rw [u1.gpr]
-    have e2 : (BitVec.ofNat 32 (kLimb k)).toNat = kLimb k := toNat_imm (by simp only [radix] at hkl; omega)
+    have e2 : (BitVec.ofNat 32 (kLimb k)).toNat = kLimb k := toNat_imm (by simp only [radix] at hkl; omega_arith)
     rw [u2.gpr]
     change (s1.gpr .eax + BitVec.ofNat 32 (kLimb k)).toNat = _
-    rw [toNat_add_lt (by rw [e1, e2]; simp only [radix] at hl hkl; omega), e1, e2]
+    rw [toNat_add_lt (by rw [e1, e2]; simp only [radix] at hl hkl; omega_arith), e1, e2]
   · rw [ite_eq_right hkk]
-    refine load_ok hs (by omega) fun s1 u1 => WP.block_nil ⟨?_, u1.rest (by decide), u1.mem⟩
-    rw [u1.gpr, kLimb_mid (by omega) (by omega), Nat.add_zero]
+    refine load_ok hs (by omega_arith) fun s1 u1 => WP.block_nil ⟨?_, u1.rest (by decide), u1.mem⟩
+    rw [u1.gpr, kLimb_mid (by omega_arith) (by omega_arith), Nat.add_zero]
 
 theorem selectStep_ok {o : Nat} (ho : Buf o) {k : Nat} (hk : k < 28) {s : State} {base : Addr}
     (hs : Scr s base) {sw : Bool} (hc : s.gpr .ecx = mask sw) :
@@ -269,9 +269,9 @@ theorem selectStep_ok {o : Nat} (ho : Buf o) {k : Nat} (hk : k < 28) {s : State}
   obtain ⟨ho1, ho2⟩ := ho
   have hT := TF_eq
   unfold Impl.Ed448.X86.selectStep
-  refine load_ok hs (by omega) fun t ht => ?_
+  refine load_ok hs (by omega_arith) fun t ht => ?_
   have ts := hs.of_upd ht (by decide)
-  refine load_ok ts (by omega) fun u hu => ?_
+  refine load_ok ts (by omega_arith) fun u hu => ?_
   have us := ts.of_upd hu (by decide)
   refine wp_alu (by simp [plain]) rfl fun v hv _ => ?_
   have vs := us.of_upd hv (by decide)
@@ -279,7 +279,7 @@ theorem selectStep_ok {o : Nat} (ho : Buf o) {k : Nat} (hk : k < 28) {s : State}
   have ws := vs.of_upd hw (by decide)
   refine wp_alu (by simp [plain]) rfl fun x hx _ => ?_
   have xs := ws.of_upd hx (by decide)
-  refine store_ok xs (by omega) fun y hy => WP.block_nil ⟨?_, ?_⟩
+  refine store_ok xs (by omega_arith) fun y hy => WP.block_nil ⟨?_, ?_⟩
   · rw [hy.mem, hx.mem, hw.mem, hv.mem, hu.mem, ht.mem, hx.gpr]
     change _ = s.mem.writeW _ _
     simp only [aluVal]
@@ -306,18 +306,18 @@ theorem select_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s b
     refine WP.mono (selectStep_ok ⟨ho1, ho2⟩ hn (hs.of_keeps tk (by decide)) ((tk.1 _ (by decide)).trans hc))
       fun u ⟨um, uk⟩ => ?_
     have out : Outside base (o + 4 * n) 4 t.mem u.mem := by
-      rw [um]; exact writeW_outside _ _ _ (by omega)
-    refine ⟨?_, (tm.mono (by omega) (by omega)).trans (out.mono (by omega) (by omega)), tk.trans uk⟩
+      rw [um]; exact writeW_outside _ _ _ (by omega_arith)
+    refine ⟨?_, (tm.mono (by omega_arith) (by omega_arith)).trans (out.mono (by omega_arith) (by omega_arith)), tk.trans uk⟩
     intro i hi
     change (word u.mem base (o + 4 * i)).toNat = _
-    rw [um, word_write t.mem base (by omega) (by omega)]
+    rw [um, word_write t.mem base (by omega_arith) (by omega_arith)]
     by_cases h : i = n
-    · rw [ite_eq_left h, h, tm.word (Or.inr (by omega)) (by omega),
-        tm.word (Or.inl (by omega)) (by omega)]
+    · rw [ite_eq_left h, h, tm.word (Or.inr (by omega_arith)) (by omega_arith),
+        tm.word (Or.inl (by omega_arith)) (by omega_arith)]
       cases sw <;> rfl
-    · rw [ite_eq_right h]; exact tf i (by omega)
+    · rw [ite_eq_right h]; exact tf i (by omega_arith)
   exact wp_range_flatMap (M := isa) (N := 28) inv st 28 (by decide) s
-    ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
+    ⟨fun _ hi => by omega_arith, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 
 /-- `reduceT o`: `TF` (below `2L`) modulo `L`, into `o`. -/
 theorem reduceT_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s base)
@@ -334,14 +334,14 @@ theorem reduceT_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s 
   have hs1 := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (carryPass_ok (rb := .edi) (o := o) (d := o) (s0 := s1)
-    (c := fun k => limbs s.mem base TF k + kLimb k) (by decide) (by omega)
-    (fun k hk => hs1.ea (by omega)) (fun k hk => hs1.write (by omega)) (by rw [e1]; rfl)
-    (fun k hk => by have := hl k hk; have := kLimb_lt k; simp only [radix] at *; omega) ?_)
+    (c := fun k => limbs s.mem base TF k + kLimb k) (by decide) (by omega_arith)
+    (fun k hk => hs1.ea (by omega_arith)) (fun k hk => hs1.write (by omega_arith)) (by rw [e1]; rfl)
+    (fun k hk => by have := hl k hk; have := kLimb_lt k; simp only [radix] at *; omega_arith) ?_)
     fun s2 h2 => ?_
   · intro k hk s' hp
     have hs' := hs1.of_keeps hp.regs (by decide)
     have et : limbs s'.mem base TF k = limbs s.mem base TF k := by
-      rw [hp.mem.limbs (Or.inl (by omega)) (by omega) hk, m1]
+      rw [hp.mem.limbs (Or.inl (by omega_arith)) (by omega_arith) hk, m1]
     refine WP.mono (csubSrc_ok hk hs' (by rw [et]; exact hl k hk)) fun t ⟨e, kt, mt⟩ => ⟨?_, kt, mt⟩
     rw [e, et]
   generalize hcf : (fun k => limbs s.mem base TF k + kLimb k) = c at h2
@@ -355,13 +355,13 @@ theorem reduceT_ok {o : Nat} (ho : Buf o) {s : State} {base : Addr} (hs : Scr s 
   obtain ⟨hc1, hsel⟩ := csub_facts hLM hv hy hval
   rw [← h2.carry] at hc1
   rw [WP.block_append_iff]
-  refine WP.mono (freezeMask_ok (s := s2) rfl (by omega)) fun s3 ⟨e3, m3, k3⟩ => ?_
+  refine WP.mono (freezeMask_ok (s := s2) rfl (by omega_arith)) fun s3 ⟨e3, m3, k3⟩ => ?_
   have hs3 := (hs1.of_keeps h2.regs (by decide)).of_keeps k3 (by decide)
   refine WP.mono (select_ok ⟨ho1, ho2⟩ hs3 e3) fun t ⟨ht, mt, kt⟩ => ?_
   have hlt : ∀ k < 28, limbs t.mem base o k =
       if carry c 28 = 1 then digit c k else limbs s.mem base TF k := by
     intro k hk
-    rw [ht k hk, m3, h2.outs k hk, h2.mem.limbs (Or.inl (by omega)) (by omega) hk, m1, ← h2.carry]
+    rw [ht k hk, m3, h2.outs k hk, h2.mem.limbs (Or.inl (by omega_arith)) (by omega_arith) hk, m1, ← h2.carry]
     simp only [decide_eq_true_eq]
   refine ⟨(k1.mono (by decide)).trans ((h2.regs.mono (by decide)).trans ((k3.mono (by decide)).trans
     (kt.mono (by decide)))), ?_, fun k hk => ?_, ?_⟩

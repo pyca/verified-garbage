@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 namespace VG.Proof.Rsa.X86.GcdBatch
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86 VG.Impl.Rsa.X86.GcdBatch
   VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass.X86.Inv
-local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega))
+local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega_arith))
 
 theorem start_ok {s : State} {base : Addr} {size n : Nat}
     (hs : Scr s base size) (hn : 16 ≤ n) (hz : offset n 15 ≤ size) :

@@ -65,9 +65,9 @@ theorem bit_ok {s : State} {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31)
     (hq : ∀ t, Stage n D (k + 1) t → Keep s t → WP isa (.block is) t Q) :
     WP isa (.block (bit ++ is)) s Q := by
   obtain ⟨hc, hq6, ha⟩ := h
-  have hm : k + (31 - k) = 31 := by omega
+  have hm : k + (31 - k) = 31 := by omega_arith
   have pos : ∀ j, 0 < 2 ^ j := fun j => Nat.two_pow_pos j
-  have e32 : 32 - k = 31 - k + 1 := by omega
+  have e32 : 32 - k = 31 - k + 1 := by omega_arith
   have p31 : 2 ^ (31 - k) * 2 ^ k = 2 ^ 31 := by rw [← Nat.pow_add, Nat.add_comm, hm]
   have hRlt : n % 2 ^ (32 - k) < 2 ^ (32 - k) := Nat.mod_lt _ (pos _)
   have hRb := (Nat.div_add_mod' (n % 2 ^ (32 - k)) (2 ^ (31 - k))).symm
@@ -83,12 +83,12 @@ theorem bit_ok {s : State} {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31)
   generalize hbb : R / 2 ^ (31 - k) = b at hRb hb1
   generalize hR' : R % 2 ^ (31 - k) = R' at hRb hR'lt
   have N' : n / 2 ^ (32 - (k + 1)) = 2 * N + b := by
-    rw [← hN, ← hbb, ← hRR, show 32 - (k + 1) = 31 - k by omega, e32, Nat.pow_succ,
+    rw [← hN, ← hbb, ← hRR, show 32 - (k + 1) = 31 - k by omega_arith, e32, Nat.pow_succ,
       Nat.mod_mul_right_div_self, ← Nat.div_div_eq_div_mul]
     have := Nat.div_add_mod (n / 2 ^ (31 - k)) 2
     omega_using [this]
   have R'' : n % 2 ^ (32 - (k + 1)) = R' := by
-    rw [← hR', ← hRR, show 32 - (k + 1) = 31 - k by omega, e32, Nat.pow_succ, Nat.mod_mul_right_mod]
+    rw [← hR', ← hRR, show 32 - (k + 1) = 31 - k by omega_arith, e32, Nat.pow_succ, Nat.mod_mul_right_mod]
   have step := Proof.Argon2.divide_step (n := N) (d := D) (q := N / D) (r := N % D)
     (bit := b) (Nat.div_add_mod' N _).symm hrlt hb1
   dsimp only at step
@@ -96,7 +96,7 @@ theorem bit_ok {s : State} {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31)
   have res := Proof.Argon2.divide_result hD st₁ st₂
   have pk : 2 ^ (k + 1) = 2 * 2 ^ k := by rw [Nat.pow_succ, Nat.mul_comm]
   have hPb : R' * 2 ^ k + 2 ^ k ≤ 2 ^ 31 := by
-    have := Nat.mul_le_mul_right (2 ^ k) (show R' + 1 ≤ 2 ^ (31 - k) by omega)
+    have := Nat.mul_le_mul_right (2 ^ k) (show R' + 1 ≤ 2 ^ (31 - k) by omega_arith)
     rw [Nat.add_mul, Nat.one_mul, p31] at this
     exact this
   have hL : ((s.gpr .r4).setWidth 32).toNat = b * 2 ^ 31 + R' * 2 ^ k := by
@@ -110,45 +110,45 @@ theorem bit_ok {s : State} {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31)
   have v₁ : (s₁.gpr .r8).toNat = b := by
     rw [u₁.gpr, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hL,
       Nat.mod_eq_of_lt (by
-        rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl <;>
-          exact Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega))]
-    rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl <;> omega
+        rcases (by omega_arith : b = 0 ∨ b = 1) with rfl | rfl <;>
+          exact Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_arith))]
+    rcases (by omega_arith : b = 0 ∨ b = 1) with rfl | rfl <;> omega_arith
   refine wp_lsl (by decide) fun s₂ u₂ => ?_
   have v₂ : ((s₂.gpr .r4).setWidth 32).toNat = 2 * P := by
     rw [u₂.gpr, u₁.other _ (by decide), BitVec.toNat_setWidth, toNat_lsl1]
     have hx : (s.gpr .r4).toNat % 2 ^ 32 = b * 2 ^ 31 + P := by
       rw [← BitVec.toNat_setWidth, hL]
     rw [Nat.mod_mod_of_dvd _ (by decide), Nat.mul_mod, hx]
-    rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl <;> omega
+    rcases (by omega_arith : b = 0 ∨ b = 1) with rfl | rfl <;> omega_arith
   refine wp_lsl (by decide) fun s₃ u₃ => ?_
   refine wp_add fun s₄ u₄ => ?_
   have v₄ : (s₄.gpr .r7).toNat = 2 * (N % D) + b := by
     rw [u₄.gpr, u₃.gpr, u₃.other _ (by decide), BitVec.toNat_add, toNat_lsl1,
       u₂.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), ha, v₁]
-    omega
+    omega_arith
   refine wp_sub fun s₅ u₅ => ?_
   have d₄ : (s₄.gpr .r5).toNat = D := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.other _ (by decide), hb]
   refine wp_lsr (by decide) fun s₆ u₆ => ?_
   generalize ht : (if 2 * (N % D) + b < D then 0 else 1) = t
-  have ht1 : t ≤ 1 := by rw [← ht]; split <;> omega
+  have ht1 : t ≤ 1 := by rw [← ht]; split <;> omega_arith
   have v₆ : (s₆.gpr .r8).toNat = 1 - t := by
     rw [u₆.gpr, toNat_lsr, u₅.gpr, BitVec.toNat_sub, v₄, d₄, ← ht]
     split
-    · rw [show 2 ^ 64 - D + (2 * (N % D) + b) = 2 ^ 64 - (D - (2 * (N % D) + b)) by omega,
-        Nat.mod_eq_of_lt (by omega)]
-      omega
-    · rw [show 2 ^ 64 - D + (2 * (N % D) + b) = (2 * (N % D) + b - D) + 2 ^ 64 by omega,
-        Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-      omega
+    · rw [show 2 ^ 64 - D + (2 * (N % D) + b) = 2 ^ 64 - (D - (2 * (N % D) + b)) by omega_arith,
+        Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
+    · rw [show 2 ^ 64 - D + (2 * (N % D) + b) = (2 * (N % D) + b - D) + 2 ^ 64 by omega_arith,
+        Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
   refine wp_sub fun s₇ u₇ => ?_
   have v₇ : (s₇.gpr .r8).toNat = t := by
     have e9 : (s₆.gpr .r9).toNat = 1 := by
       rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
         u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h9]
     rw [u₇.gpr, BitVec.toNat_sub, v₆, e9]
-    rcases (by omega : t = 0 ∨ t = 1) with rfl | rfl <;> decide
+    rcases (by omega_arith : t = 0 ∨ t = 1) with rfl | rfl <;> decide
   refine wp_lsl (by decide) fun s₈ u₈ => ?_
   refine wp_add fun s₉ u₉ => ?_
   refine wp_mul fun s₁₀ u₁₀ => ?_
@@ -160,7 +160,7 @@ theorem bit_ok {s : State} {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31)
       u₈.gpr, u₈.other _ (by decide), toNat_lsl1, v₇, u₇.other _ (by decide), u₆.other _ (by decide),
       u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.other _ (by decide), hq6, N', ← res.1, ← ht]
-    omega
+    omega_arith
   · have d₉ : (s₉.gpr .r5).toNat = D := by
       rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
         u₆.other _ (by decide), u₅.other _ (by decide), d₄]
@@ -172,11 +172,11 @@ theorem bit_ok {s : State} {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31)
       N', ← res.2, ← ht]
     have sub : ∀ x v : Nat, x ≤ v → v < 2 ^ 64 → (2 ^ 64 - x % 2 ^ 64 + v) % 2 ^ 64 = v - x :=
       fun x v h₁ h₂ => by
-        rw [Nat.mod_eq_of_lt (a := x) (by omega), show 2 ^ 64 - x + v = (v - x) + 2 ^ 64 by omega,
-          Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+        rw [Nat.mod_eq_of_lt (a := x) (by omega_arith), show 2 ^ 64 - x + v = (v - x) + 2 ^ 64 by omega_arith,
+          Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
     split
-    · rw [Nat.zero_mul, sub 0 _ (by omega) (by omega)]; rfl
-    · rw [Nat.one_mul, sub D _ (by omega) (by omega)]
+    · rw [Nat.zero_mul, sub 0 _ (by omega_arith) (by omega_arith)]; rfl
+    · rw [Nat.one_mul, sub D _ (by omega_arith) (by omega_arith)]
   · exact (((((((((((Keep.of_upd u₁ (by simp)).trans (Keep.of_upd u₂ (by simp))).trans (Keep.of_upd u₃ (by simp))).trans (Keep.of_upd u₄ (by simp))).trans (Keep.of_upd u₅ (by simp))).trans (Keep.of_upd u₆ (by simp))).trans (Keep.of_upd u₇ (by simp))).trans (Keep.of_upd u₈ (by simp))).trans (Keep.of_upd u₉ (by simp))).trans (Keep.of_upd u₁₀ (by simp))).trans (Keep.of_upd u₁₁ (by simp)))
 
 theorem bits_ok {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31) {n : Nat}
@@ -187,9 +187,9 @@ theorem bits_ok {D : Nat} (hD : 0 < D) (hD2 : D < 2 ^ 31) {n : Nat}
   | 0, _, s, _, _, h, hq => hq s h (Keep.refl s)
   | k + 1, hk, s, hb, h9, h, hq => by
     simp only [bits, List.append_assoc]
-    refine bits_ok hD hD2 hn k (by omega) s hb h9 h fun t ht kt => ?_
+    refine bits_ok hD hD2 hn k (by omega_arith) s hb h9 h fun t ht kt => ?_
     refine bit_ok hD hD2 (by rw [kt.other _ (by decide) (by decide) (by decide) (by decide), hb])
-      (by rw [kt.other _ (by decide) (by decide) (by decide) (by decide), h9]) hn (by omega) ht
+      (by rw [kt.other _ (by decide) (by decide) (by decide) (by decide), h9]) hn (by omega_arith) ht
       fun u hu ku => hq u hu (kt.trans ku)
 
 /-- Only `r4` and `r6`–`r9` change. -/

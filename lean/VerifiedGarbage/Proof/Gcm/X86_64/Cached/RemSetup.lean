@@ -39,11 +39,11 @@ theorem dword_ofNat {n : Nat} (hn : n < 2 ^ 32) {k : Nat} (hk : k < 4) :
   apply BitVec.eq_of_toNat_eq
   have z : (0 : BitVec 64).toNat = 0 := rfl
   have z32 : (0 : BitVec 32).toNat = 0 := rfl
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
   simp only [dword, BitVec.extractLsb'_toNat, BitVec.toNat_append, BitVec.toNat_ofNat, ↓reduceIte, z, z32,
     Nat.shiftRight_eq_div_pow, Nat.reduceEqDiff, Nat.zero_shiftLeft, Nat.zero_or, Nat.reduceMul,
     Nat.reducePow] <;>
-  omega
+  omega_arith
 
 /-- `r` added to doubleword 0: `r` steps of `inc₃₂`. -/
 theorem paddd_rep (c : Block) : ∀ r, r < 2 ^ 32 →
@@ -52,12 +52,12 @@ theorem paddd_rep (c : Block) : ∀ r, r < 2 ^ 32 →
     apply ext_dword <;> rw [dword_paddd _ _ (by decide), dword_ofNat (by decide) (by decide)] <;>
       simp only [↓reduceIte, Nat.reduceEqDiff, BitVec.ofNat_eq_ofNat, BitVec.add_zero] <;> rfl
   | r + 1, hr => by
-    rw [Nat.repeat, ← paddd_rep c r (by omega), ← paddd_one]
+    rw [Nat.repeat, ← paddd_rep c r (by omega_arith), ← paddd_one]
     have o : ∀ k < 4, dword one k = if k = 0 then 1 else 0 := fun k hk => by
-      rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> decide
+      rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> decide
     apply ext_dword <;>
     rw [dword_paddd _ _ (by decide), dword_paddd _ _ (by decide), dword_paddd _ _ (by decide),
-      dword_ofNat hr (by decide), dword_ofNat (by omega) (by decide), o _ (by decide), BitVec.add_assoc] <;>
+      dword_ofNat hr (by decide), dword_ofNat (by omega_arith) (by decide), o _ (by decide), BitVec.add_assoc] <;>
     simp only [↓reduceIte, Nat.reduceEqDiff]
     all_goals first | (rw [BitVec.ofNat_add]; rfl) | rfl
 
@@ -92,8 +92,8 @@ theorem remAlu1_ok (s : State) {r : Nat} (h15 : r ≤ 15) (h9 : s.gpr .r9 = BitV
   have e16 : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
   have sr : BitVec.ofNat 64 (16 + r) - 16 = BitVec.ofNat 64 r := by
     rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
-      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega) (by omega)]
-    congr 1; omega
+      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
+    congr 1; omega_arith
   apply WP.of_runBlock
   simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags,
     State.setFlags, isa, State.setReg, e16, h9, sr, Option.map_some, Option.bind_some, Option.some.injEq,
@@ -115,10 +115,10 @@ theorem remAlu2_ok (s : State) {r : Nat} (h15 : r ≤ 15) (h10 : s.gpr .r10 = Bi
       (BitVec.ofNat 64 r + BitVec.ofNat 64 r + (BitVec.ofNat 64 r + BitVec.ofNat 64 r) +
       (BitVec.ofNat 64 r + BitVec.ofNat 64 r + (BitVec.ofNat 64 r + BitVec.ofNat 64 r))) =
       BitVec.ofNat 64 (16 * r) := by
-    simp only [← BitVec.ofNat_add]; congr 1; omega
+    simp only [← BitVec.ofNat_add]; congr 1; omega_arith
   have wa : s.gpr .r11 + 256 - BitVec.ofNat 64 (16 * r) = s.gpr .r11 + BitVec.ofNat 64 (256 - 16 * r) := by
     rw [show (256 : BitVec 64) = BitVec.ofNat 64 256 from rfl, BitVec.sub_eq_add_neg, BitVec.add_assoc,
-      ← BitVec.sub_eq_add_neg, VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega) (by omega)]
+      ← BitVec.sub_eq_add_neg, VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
   apply WP.of_runBlock
   simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags,
     State.setFlags, isa, State.setReg, e256, h10, x16, wa, reduceCtorEq, Option.map_some, Option.bind_some,
@@ -149,7 +149,7 @@ theorem remSetup_ok (s : State) {r : Nat} (h1 : 1 ≤ r) (h15 : r ≤ 15)
   rw [WP.block_append_iff]
   refine WP.mono (remAlu1_ok s h15 h9) fun s₁ ⟨a₁, g₁, z₁, l₁, m₁, rd₁, wr₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (remCtr_ok s₁ (r := r) (by omega) a₁ (by rw [l₁]; exact h0)) fun s₂ ⟨c₂, f₂⟩ => ?_
+  refine WP.mono (remCtr_ok s₁ (r := r) (by omega_arith) a₁ (by rw [l₁]; exact h0)) fun s₂ ⟨c₂, f₂⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (store16_ok .xmm13 .rax s₂ (by
       rw [f₂.gpr, f₂.wr, g₁ _ (by decide), wr₁]; exact hin)) fun s₃ ⟨m₃, g₃, rd₃, wr₃, z₃⟩ => ?_

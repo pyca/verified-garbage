@@ -76,7 +76,7 @@ theorem pins_ff (o : Nat) : Pins (FF o) [.r12, .r8, .rsi, .rbx, .r10] := by
   · rw [d₁, d₂]
   · rw [e₁, e₂]
 
-theorem SizeOk.lt {w : Nat} (h : SizeOk w) : w < 2 ^ 31 := by unfold SizeOk at h; omega
+theorem SizeOk.lt {w : Nat} (h : SizeOk w) : w < 2 ^ 31 := by unfold SizeOk at h; omega_arith
 
 /-- A row keeps the bases and the header, and moves the window. -/
 theorem row_fw {a b : Nat} (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc)
@@ -85,19 +85,19 @@ theorem row_fw {a b : Nat} (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a
       (j + 1 < L.w → FW b L (j + 1) s') ∧ (j + 1 = L.w → FW b L L.w s') := by
   obtain ⟨⟨mi, hg, hZ⟩, hsz, h8, h9, h10, hbx⟩ := h
   have hn := hg.scr.nowrap
-  have hg0 : hdrBytes ≤ slot L.w aAcc := by unfold slot; omega
+  have hg0 : hdrBytes ≤ slot L.w aAcc := by unfold slot; omega_arith
   refine WP.mono (row_ok hg.scr hg.rdi hg.hdr hZ ha hb ha1 ha2 hb1 hb2 rfl hj hsz.1 hsz.2.1
-    (by have := hsz.lt; omega) h8 h9 h10 hbx) fun s' ⟨_, ho, h8', hz, k⟩ => ?_
+    (by have := hsz.lt; omega_arith) h8 h9 h10 hbx) fun s' ⟨_, ho, h8', hz, k⟩ => ?_
   have hg' : GoodW L s' := ⟨mi, ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ho (by omega)⟩, hZ⟩
-  have hfw : FW b L (j + 1) s' := ⟨hg', hsz, by rw [h8', show slot L.w aAcc + 16 + 8 * j + 8 = slot L.w aAcc + 16 + 8 * (j + 1) by omega], (k.gpr (by decide)).trans h9,
+    hg.hdr.of_outside ho (by omega_arith)⟩, hZ⟩
+  have hfw : FW b L (j + 1) s' := ⟨hg', hsz, by rw [h8', show slot L.w aAcc + 16 + 8 * j + 8 = slot L.w aAcc + 16 + 8 * (j + 1) by omega_arith], (k.gpr (by decide)).trans h9,
     (k.gpr (by decide)).trans h10, (k.gpr (by decide)).trans hbx⟩
   refine ⟨?_, fun _ => hfw, fun he => he ▸ hfw⟩
   simp only [eval, hz, Option.map_some]
   congr 1
   by_cases he : j + 1 = L.w
   · simp [he]
-  · simp [he]; omega
+  · simp [he]; omega_arith
 
 /-- The fused multiplication is constant time, given that the taint analysis
 checks its header loads from `rdi`. -/
@@ -118,9 +118,9 @@ theorem fused_ct {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
     (fun L s₁ s₂ h₁ h₂ => h₁.pins h₂) (by taint_decide) fun L s h => ?_) ?_
   · obtain ⟨⟨mi, hg, hZ⟩, hsz, h8, h9, h10, hbx⟩ := h
     have hn := hg.scr.nowrap
-    refine WP.mono (zeroWin_ok (A := slot L.w aAcc + 16) hg.scr (by rw [h8, Nat.mul_zero, Nat.add_zero]) hbx (by have := hsz.lt; omega)
-      (by unfold slot aAcc at *; omega)) fun t ⟨_, ho', k⟩ => ⟨by have := hsz.2.1; omega, ⟨mi, ⟨hg.scr.congr k.2.2,
-        (k.gpr (by decide)).trans hg.rdi, hg.hdr.of_outside ho' (by unfold slot hdrBytes; omega)⟩, hZ⟩, hsz,
+    refine WP.mono (zeroWin_ok (A := slot L.w aAcc + 16) hg.scr (by rw [h8, Nat.mul_zero, Nat.add_zero]) hbx (by have := hsz.lt; omega_arith)
+      (by unfold slot aAcc at *; omega_arith)) fun t ⟨_, ho', k⟩ => ⟨by have := hsz.2.1; omega_arith, ⟨mi, ⟨hg.scr.congr k.2.2,
+        (k.gpr (by decide)).trans hg.rdi, hg.hdr.of_outside ho' (by unfold slot hdrBytes; omega_arith)⟩, hZ⟩, hsz,
       (k.gpr (by decide)).trans h8, (k.gpr (by decide)).trans h9, (k.gpr (by decide)).trans h10,
       (k.gpr (by decide)).trans hbx⟩
   -- The rows.

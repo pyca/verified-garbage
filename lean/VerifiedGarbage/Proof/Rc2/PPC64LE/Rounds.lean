@@ -76,7 +76,7 @@ theorem andInputs_run (u : State) {i : Nat} (hi : i < 4) :
   refine WP.mono (WP.keep [.r10, .r11] (c := .block (andInputs i)) (Q := fun t =>
       t.gpr .r10 = u.gpr (wordReg (i + 3)) &&& u.gpr (wordReg (i + 2)) ∧
       t.gpr .r11 = u.gpr (wordReg (i + 1)) ^^^ (u.gpr (wordReg (i + 3)) &&& u.gpr (wordReg (i + 1))) ∧
-      t.mem = u.mem) ?_ (by simp [writesOnly, Code.allInstrs_eq, instrs, andInputs, dstOf]) rfl)
+      t.mem = u.mem) ?_ (by rfl) rfl)
     fun t ⟨⟨a, b, c⟩, d⟩ => ⟨a, b, c, d⟩
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
     (unfold andInputs; rrun [wordReg_0, wordReg_1, wordReg_2, wordReg_3, wordReg_4, wordReg_5, wordReg_6])
@@ -241,7 +241,7 @@ theorem mashIndex_run (u : State) {i : Nat} (hi : i < 4) :
       t.gpr .r10 = (u.gpr (wordReg (i + 3)) <<< 58) >>> 57 ∧ t.mem = u.mem ∧ Keep [.r10] u t := by
   refine WP.mono (WP.keep [.r10] (c := .block (mashIndex i)) (Q := fun t =>
       t.gpr .r10 = (u.gpr (wordReg (i + 3)) <<< 58) >>> 57 ∧ t.mem = u.mem) ?_
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, mashIndex, dstOf]) rfl) fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
+    (by rfl) rfl) fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
     (unfold mashIndex; rrun [wordReg_3, wordReg_4, wordReg_5, wordReg_6])
 

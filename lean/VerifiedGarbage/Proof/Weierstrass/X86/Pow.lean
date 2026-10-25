@@ -89,9 +89,9 @@ theorem powBody_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {
     rcases hw with hw | rfl | rfl
     · exact hL.base_w w hw
     · exact .inl hW.base
-    · exact .inl (by simp only; omega)
+    · exact .inl (by simp only; omega_arith)
   have hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
-    hI.unch.wordsVal hbw (by omega)
+    hI.unch.wordsVal hbw (by omega_arith)
   -- `esi -= 1` and `acc = acc²`.
   rw [powBody]
   refine WP.seq (wp_decCounter hj hI.esi fun s₁ b₁ k₁ hm₁ => WP.block_nil ?_)
@@ -110,7 +110,7 @@ theorem powBody_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {
       · exact hbw _ (by simp [powWx, powW])
       · exact hbw _ (by simp [powWx, powW])
       · exact hbw _ (by simp [powWx])
-      · exact hbw _ (by simp [powWx])) (by omega), hm₁, hBs]
+      · exact hbw _ (by simp [powWx])) (by omega_arith), hm₁, hBs]
   -- `tmp = acc · base`.
   refine WP.seq (WP.mono (mulC_ok hW.toCallCfg hs₂ hW.tmp hW.acc hW.base
     (by rw [hB₂]; exact hB)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
@@ -122,7 +122,7 @@ theorem powBody_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {
       · exact hat
       · exact ham
       · exact .inl hW.acc
-      · exact .inl (by simp only; omega)) (by omega)
+      · exact .inl (by simp only; omega_arith)) (by omega_arith)
   have v₃ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₃.mem base P.tmp P.M.n) =
       toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) *
         toM m (2 ^ (64 * P.M.n)) (wordsVal s₀.mem base P.base P.M.n) := by
@@ -136,9 +136,9 @@ theorem powBody_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {
     rw [hU₃.byte (fun w hw => by
       simp only [powWx, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with hw | rfl | rfl
-      · have := hL.bits_w w hw; omega
-      · simp only; omega
-      · simp only; omega) (by omega), hbits _ (by omega)]
+      · have := hL.bits_w w hw; omega_arith
+      · simp only; omega_arith
+      · simp only; omega_arith) (by omega_arith), hbits _ (by omega_arith)]
   have hesi₃ : s₃.gpr .esi = BitVec.ofNat 32 (j - 1) := by
     rw [k₃.gpr _ esi_not_clob, k₂.gpr _ esi_not_clob, b₁]
   have hk₃ : Keeps powClob s₀ s₃ :=
@@ -146,17 +146,17 @@ theorem powBody_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {
       rw [k₃.gpr r (fun h => hr (List.mem_cons_of_mem _ h)), k₂.gpr r (fun h => hr (List.mem_cons_of_mem _ h))],
       by rw [k₃.rd, k₂.rd], by rw [k₃.wr, k₂.wr]⟩
   simp only [List.append_assoc]
-  refine WP.block_append (WP.mono (bitMask_bool_ok hs₃ hesi₃ (by omega) hbyte) fun s₄ ⟨c₄, k₄, hm₄⟩ => ?_)
+  refine WP.block_append (WP.mono (bitMask_bool_ok hs₃ hesi₃ (by omega_arith) hbyte) fun s₄ ⟨c₄, k₄, hm₄⟩ => ?_)
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   refine WP.block_append (WP.mono (sel_ok (e.testBit (j - 1)) (2 * P.M.n) hs₄ c₄ (o := P.acc) (a := P.acc)
-    (b := P.tmp) (by omega) (by omega) (by omega) (Or.inl (Nat.le_refl _)) (by omega))
+    (b := P.tmp) (by omega_arith) (by omega_arith) (by omega_arith) (Or.inl (Nat.le_refl _)) (by omega_arith))
     fun s₅ ⟨e₅, k₅, O₅⟩ => ?_)
   have hesi₅ : s₅.gpr .esi = BitVec.ofNat 32 (j - 1) := by
     rw [k₅.1 _ (by decide), k₄.1 _ (by decide), hesi₃]
-  refine wp_testCounter (by omega) hesi₅ fun s₆ f₆ z₆ => WP.block_nil ⟨⟨hs₄.of_keeps (k₅.trans (f₆.keeps _))
+  refine wp_testCounter (by omega_arith) hesi₅ fun s₆ f₆ z₆ => WP.block_nil ⟨⟨hs₄.of_keeps (k₅.trans (f₆.keeps _))
     (by decide), by rw [f₆.gpr, hesi₅], (hk₃.widen k₄).widen (k₅.trans (f₆.keeps _)), ?_, ?_, ?_⟩, z₆⟩
   · intro x hx
-    rw [f₆.mem, O₅ x (by rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega]; exact hx _ (List.mem_cons_self ..)),
+    rw [f₆.mem, O₅ x (by rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega_arith]; exact hx _ (List.mem_cons_self ..)),
       hm₄]
     exact hU₃ x hx
   · rw [f₆.mem, wordsVal_eq_val32, e₅, hm₄, ← wordsVal_eq_val32, ← wordsVal_eq_val32]
@@ -188,8 +188,8 @@ theorem pow_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {base
   have hacc := hL.acc
   have hone := hL.one
   rw [pow]
-  refine WP.seq (WP.block_append (WP.mono (copy_ok (2 * P.M.n) hs (o := P.acc) (a := P.one) (by omega)
-    (by omega) (by have := hL.acc_one; omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_))
+  refine WP.seq (WP.block_append (WP.mono (copy_ok (2 * P.M.n) hs (o := P.acc) (a := P.one) (by omega_arith)
+    (by omega_arith) (by have := hL.acc_one; omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_))
   refine wp_movS rfl fun s₂ u₂ _ => WP.block_nil ?_
   refine countLoop_ok (Inv := fun j s' => PowInv P wk base size m e s s' j) (n := P.nbits)
     (fun j s' h1 h2 hi => powBody_ok hL hW hm hB hbits h1 h2 hi)
@@ -200,7 +200,7 @@ theorem pow_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {wk : Nat} {base
   refine ⟨(hs.of_keeps k₁ (by decide)).of_keeps u₂.keeps (by decide), u₂.gpr,
     (k₁.mono (by decide)).widen u₂.keeps, ?_, ?_, ?_⟩
   · rw [hm₂]
-    rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega] at O₁
+    rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega_arith] at O₁
     exact O₁.unch.mono fun w hw => by simp at hw; simp [hw, powWx, powW]
   · rw [hv, hO]; exact Nat.mod_lt _ hm0
   · rw [hv, hO, toM_one hm, shiftRight_eq_zero he, Lean.Grind.Semiring.pow_zero]

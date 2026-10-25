@@ -54,7 +54,7 @@ theorem word_ok {s : State} {B : Addr} {Z e eb j k : Nat} {hi prev : Reg} {c o :
   refine ⟨c', o', ct.trans ca, ot.trans oa, ?_, ?_, (ka.keep.trans kt).mono (by simp)⟩
   · rw [kt.gpr (by simp), hm, word_writeW_self]
     omega_using [eq]
-  · rw [hm, ka.2.1]; exact writeW_outside _ _ _ (by omega)
+  · rw [hm, ka.2.1]; exact writeW_outside _ _ _ (by omega_arith)
 end VG.Proof.Bignum.X86_64.AdxSquareWide
 
 end
@@ -86,31 +86,31 @@ theorem pair_ok {s : State} {B : Addr} {Z e eb j k : Nat} {c o : Bool}
   have hn := hs.nowrap
   unfold AdxSquareWide.pair
   rw [WP.block_append_iff]
-  refine WP.mono (word_ok hs h8 h9 h14 (by omega) (by omega) hc ho
+  refine WP.mono (word_ok hs h8 h9 h14 (by omega_arith) (by omega_arith) hc ho
     (by decide) (by decide) (by decide) (by decide) (by decide))
     fun a ⟨ca, oa, hca, hoa, ea, outa, ka⟩ => ?_
   refine WP.mono (word_ok (k := k + 1) (hs.congr ka.2.2) ((ka.gpr (by decide)).trans h8)
     ((ka.gpr (by decide)).trans h9) ((ka.gpr (by decide)).trans h14)
-    (by omega) (by omega) hca hoa (by decide) (by decide) (by decide) (by decide) (by decide))
+    (by omega_arith) (by omega_arith) hca hoa (by decide) (by decide) (by decide) (by decide) (by decide))
     fun t ⟨ct, ot, hct, hot, et, outt, kt⟩ => ?_
-  have he : e + 8 * j + 8 * (k + 1) = e + 8 * j + 8 * k + 8 := by omega
-  have heb : eb + 8 * j + 8 * (k + 1) = eb + 8 * j + 8 * k + 8 := by omega
+  have he : e + 8 * j + 8 * (k + 1) = e + 8 * j + 8 * k + 8 := by omega_arith
+  have heb : eb + 8 * j + 8 * (k + 1) = eb + 8 * j + 8 * k + 8 := by omega_arith
   rw [he, heb, ka.gpr (by decide)] at et
   rw [he] at outt
   have lo : word t.mem B (e + 8 * j + 8 * k) = word a.mem B (e + 8 * j + 8 * k) :=
-    outt.word (by omega) (by omega)
+    outt.word (by omega_arith) (by omega_arith)
   have ti : word a.mem B (e + 8 * j + 8 * k + 8) = word s.mem B (e + 8 * j + 8 * k + 8) :=
-    outa.word (by omega) (by omega)
+    outa.word (by omega_arith) (by omega_arith)
   have bi : word a.mem B (eb + 8 * j + 8 * k + 8) = word s.mem B (eb + 8 * j + 8 * k + 8) :=
-    outa.word (by omega) (by omega)
+    outa.word (by omega_arith) (by omega_arith)
   rw [ti, bi] at et
   refine ⟨ct, ot, hct, hot, ?_, ?_, (ka.trans kt).mono (by simp)⟩
   · rw [AdxSquare.wv2, AdxSquare.wv2, AdxSquare.wv2, lo]
     simp only [Nat.mul_add]
     rw [Nat.mul_left_comm (s.gpr .rdx).toNat]
     omega_using [ea, et]
-  · exact (outa.mono (o' := e + 8 * j + 8 * k) (n' := 16) (Nat.le_refl _) (by omega)).trans
-      (outt.mono (o' := e + 8 * j + 8 * k) (n' := 16) (by omega) (by omega))
+  · exact (outa.mono (o' := e + 8 * j + 8 * k) (n' := 16) (Nat.le_refl _) (by omega_arith)).trans
+      (outt.mono (o' := e + 8 * j + 8 * k) (n' := 16) (by omega_arith) (by omega_arith))
 end VG.Proof.Bignum.X86_64.AdxSquareWide
 
 end
@@ -146,29 +146,29 @@ theorem chain_ok (n : Nat) {s : State} {B : Addr} {Z e eb j k : Nat} {c o : Bool
   | succ n ih =>
     have hn := hs.nowrap
     rw [AdxSquareWide.chain, WP.block_append_iff]
-    refine WP.mono (pair_ok hs h8 h9 h14 (by omega) (by omega) (by omega) hc ho)
+    refine WP.mono (pair_ok hs h8 h9 h14 (by omega_arith) (by omega_arith) (by omega_arith) hc ho)
       fun a ⟨ca, oa, hca, hoa, ea, outa, ka⟩ => ?_
     refine WP.mono (ih (k := k + 2) (hs.congr ka.2.2) ((ka.gpr (by decide)).trans h8)
       ((ka.gpr (by decide)).trans h9) ((ka.gpr (by decide)).trans h14)
-      (by omega) (by omega) (by omega) hca hoa)
+      (by omega_arith) (by omega_arith) (by omega_arith) hca hoa)
       fun t ⟨ct, ot, hct, hot, et, outt, kt⟩ => ?_
-    have he : e + 8 * j + 8 * (k + 2) = e + 8 * j + 8 * k + 8 * 2 := by omega
-    have heb : eb + 8 * j + 8 * (k + 2) = eb + 8 * j + 8 * k + 8 * 2 := by omega
+    have he : e + 8 * j + 8 * (k + 2) = e + 8 * j + 8 * k + 8 * 2 := by omega_arith
+    have heb : eb + 8 * j + 8 * (k + 2) = eb + 8 * j + 8 * k + 8 * 2 := by omega_arith
     rw [he, heb, ka.gpr (by decide)] at et
     rw [he] at outt
     have lo : wv t.mem B (e + 8 * j + 8 * k) 2 = wv a.mem B (e + 8 * j + 8 * k) 2 :=
-      outt.wv (by omega) (by omega)
+      outt.wv (by omega_arith) (by omega_arith)
     have ti : wv a.mem B (e + 8 * j + 8 * k + 8 * 2) (2 * n) =
-        wv s.mem B (e + 8 * j + 8 * k + 8 * 2) (2 * n) := outa.wv (by omega) (by omega)
+        wv s.mem B (e + 8 * j + 8 * k + 8 * 2) (2 * n) := outa.wv (by omega_arith) (by omega_arith)
     have bi : wv a.mem B (eb + 8 * j + 8 * k + 8 * 2) (2 * n) =
-        wv s.mem B (eb + 8 * j + 8 * k + 8 * 2) (2 * n) := outa.wv (by omega) (by omega)
+        wv s.mem B (eb + 8 * j + 8 * k + 8 * 2) (2 * n) := outa.wv (by omega_arith) (by omega_arith)
     rw [ti, bi] at et
     refine ⟨ct, ot, hct, hot, ?_, ?_, (ka.trans kt).mono (by simp)⟩
-    · rw [show 2 * (n + 1) = 2 + 2 * n by omega, wv_add, wv_add, wv_add, lo,
-        show 64 * (2 + 2 * n) = 128 + 64 * (2 * n) by omega, Nat.pow_add]
+    · rw [show 2 * (n + 1) = 2 + 2 * n by omega_arith, wv_add, wv_add, wv_add, lo,
+        show 64 * (2 + 2 * n) = 128 + 64 * (2 * n) by omega_arith, Nat.pow_add]
       grind
-    · exact (outa.mono (o' := e + 8 * j + 8 * k) (n' := 8 * (2 * (n + 1))) (Nat.le_refl _) (by omega)).trans
-        (outt.mono (o' := e + 8 * j + 8 * k) (n' := 8 * (2 * (n + 1))) (by omega) (by omega))
+    · exact (outa.mono (o' := e + 8 * j + 8 * k) (n' := 8 * (2 * (n + 1))) (Nat.le_refl _) (by omega_arith)).trans
+        (outt.mono (o' := e + 8 * j + 8 * k) (n' := 8 * (2 * (n + 1))) (by omega_arith) (by omega_arith))
 end VG.Proof.Bignum.X86_64.AdxSquareWide
 
 end
@@ -185,7 +185,7 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 theorem carry_bound {R V T X Y C H : Nat} (hR : 0 < R) (hT : T < R)
     (hX : X < 2 ^ 64) (hY : Y < R) (hC : C < 2 ^ 64)
     (he : V + R * H = T + X * Y + C) : H < 2 ^ 64 := by
-  have hp : X * Y ≤ (2 ^ 64 - 1) * (R - 1) := Nat.mul_le_mul (by omega) (by omega)
+  have hp : X * Y ≤ (2 ^ 64 - 1) * (R - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
   have hb : R * H < R * 2 ^ 64 := by omega_using [he, hp, hR, hT, hC]
   exact Nat.lt_of_mul_lt_mul_left hb
 
@@ -261,21 +261,21 @@ theorem blocks_ok {s₀ s : State} {B : Addr} {Z e eb a w : Nat}
     (sb : eb + 8 * w ≤ e ∨ e + 8 * w ≤ eb)
     (hI : RowInv s₀ B Z e eb (16 * a) s) :
     WP isa (.loop (.block AdxSquareWide.block) .ne) s (RowInv s₀ B Z e eb w) := by
-  refine wp_upto (a := a) (N := w / 16) (by omega)
+  refine wp_upto (a := a) (N := w / 16) (by omega_arith)
     (fun k t => RowInv s₀ B Z e eb (16 * k) t ∧ t.gpr .rbx = BitVec.ofNat 64 w) ?_ ?_ ⟨hI, hbx⟩
   · intro k _ hk t h
     obtain ⟨h, hbx'⟩ := h
     have kp := h.keep
     refine WP.mono (block_ok h.scr ((kp.gpr (by decide)).trans h8)
       ((kp.gpr (by decide)).trans h9) h.r14 hbx'
-      (by omega) (by omega) (by omega) (by omega) (by omega))
+      (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
       fun t' ⟨hv, ho, h14, hz, kt⟩ => ⟨?_, ?_, (kt.gpr (by decide)).trans hbx'⟩
     · exact hz.trans (congrArg some (decide_eq_decide.mpr (by omega_using [hk, hw16])))
     · have step := @RowInv.step s₀ t t' B Z e eb (16 * k) 16 w h (by omega_using [hk, hw16] : 16 * k + 16 ≤ w) hZ hZb sb (by simpa only [Nat.reduceMul] using hv) ho h14 (kt.mono (by decide))
       rw [show 16 * (k + 1) = 16 * k + 16 by omega_using []]
       exact step
   · intro t h
-    have he : 16 * (w / 16) = w := by omega
+    have he : 16 * (w / 16) = w := by omega_arith
     exact he ▸ h.1
 
 theorem and15 (w : Nat) (hw : w < 2 ^ 64) :
@@ -284,7 +284,7 @@ theorem and15 (w : Nat) (hw : w < 2 ^ 64) :
   rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hw,
     show (15 : BitVec 64).toNat = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
     BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem row_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     (h8 : s.gpr .r8 = off B e) (h9 : s.gpr .r9 = off B eb)
@@ -300,10 +300,10 @@ theorem row_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
       fun t => t.zf = some (decide (w % 16 = 0)) ∧ t.mem = s.mem ∧ Keep [.rbx] s t := by
     refine WP.mono (WP.keep [.rbx] (Q := fun t => t.zf = some (decide (w % 16 = 0)) ∧ t.mem = s.mem)
       ?_ rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
-    xrun [hbp, and15 w (by omega)]
+    xrun [hbp, and15 w (by omega_arith)]
     change ((BitVec.ofNat 64 w &&& 15) - BitVec.ofNat 64 0 == 0) = _
-    rw [and15 w (by omega)]
-    exact ofNat_sub_beq (by omega) (by decide)
+    rw [and15 w (by omega_arith)]
+    exact ofNat_sub_beq (by omega_arith) (by decide)
   unfold AdxSquareWide.row
   refine WP.seq (WP.mono guard fun a ⟨hz, hm, ka⟩ => ?_)
   have ha8 := (ka.gpr (by decide)).trans h8
@@ -323,7 +323,7 @@ theorem row_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     have inv : RowInv b B Z e eb 0 b :=
       ⟨hs.congr kab.2.2, Keep.refl _ _, h14, Outside.refl _ _ _ _, by simp [wv]⟩
     refine WP.mono (blocks_ok (a := 0) ((kab.gpr (by decide)).trans h8)
-      ((kab.gpr (by decide)).trans h9) hbx h16 (by omega) hw hZ hZb sb inv)
+      ((kab.gpr (by decide)).trans h9) hbx h16 (by omega_arith) hw hZ hZb sb inv)
       fun t hi => ⟨?_, ?_, hi.r14, (kab.trans hi.keep).mono (by decide)⟩
     · have hv := hi.val
       rw [hmb, hm, kab.gpr (by decide), hcx] at hv

@@ -18,20 +18,20 @@ open VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
 
 private theorem mac_bound {R Q X U V : Nat} (hx : X<R) (hu : U<Q) (hv : V<Q) : V+X*U<R*Q := by
-  have h : X*U ≤ (R-1)*(Q-1) := Nat.mul_le_mul (by omega) (by omega)
+  have h : X*U ≤ (R-1)*(Q-1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
   have e : (Q-1)+(R-1)*(Q-1)+R=R*Q := by
     calc
-      _ = ((R-1)+1)*(Q-1)+R := by rw [Nat.add_mul,Nat.one_mul]; omega
-      _ = R*(Q-1)+R := by rw [Nat.sub_add_cancel (by omega : 1≤R)]
+      _ = ((R-1)+1)*(Q-1)+R := by rw [Nat.add_mul,Nat.one_mul]; omega_arith
+      _ = R*(Q-1)+R := by rw [Nat.sub_add_cancel (by omega_arith : 1≤R)]
       _ = R*((Q-1)+1) := by rw [Nat.mul_add,Nat.mul_one]
-      _ = R*Q := by rw [Nat.sub_add_cancel (by omega : 1≤Q)]
-  omega
+      _ = R*Q := by rw [Nat.sub_add_cancel (by omega_arith : 1≤Q)]
+  omega_arith
 
 private theorem no_carry {L Q C V : Nat} (h : L+Q*C=V) (hb : V<Q) : L=V := by
   have hc : C=0 := by
     by_contra ne
-    have : Q ≤ Q*C := Nat.le_mul_of_pos_right _ (by omega)
-    omega
+    have : Q ≤ Q*C := Nat.le_mul_of_pos_right _ (by omega_arith)
+    omega_arith
   simpa only [hc,Nat.mul_zero,Nat.add_zero] using h
 
 theorem last_mem (col : Reg) (rest : List Reg) : AdxTri8.last col rest ∈ col::rest := by
@@ -93,7 +93,7 @@ theorem wordF_ok (s : State) {k : Nat} {hi col : Reg} {v : BitVec 64} {c : Bool}
   refine ⟨ct,hct,ot.trans oa,?_,(ka.trans kt).mono (by simp)⟩
   rw [hiT]
   rw [colA] at eq
-  omega
+  omega_arith
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 
@@ -215,7 +215,7 @@ theorem rowCore_ok (col : Reg) (rest : List Reg) {s : State} {B : Addr} {Z e i :
       (word s.mem B (e+8*(i+1))).toNat+2^64*wv s.mem B (e+8*(i+2)) rest.length := by
     rw [Nat.add_comm rest.length 1,wv_add]
     simp only [wv,Nat.mul_zero,Nat.add_zero,Nat.zero_add,Nat.pow_zero,Nat.one_mul]
-    rw [show e+8*(i+1)+8=e+8*(i+2) by omega]
+    rw [show e+8*(i+1)+8=e+8*(i+2) by omega_arith]
   have total := row_arith eqF eqT
   rw [← split,vb',← colT] at total
   have vt : value t (col::next::rest)=(t.gpr col).toNat+2^64*value t (next::rest) := rfl

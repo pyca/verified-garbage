@@ -60,11 +60,7 @@ theorem entryCopy_ok (s : State) {p : SearchParams} {i j : Nat}
     (h : EntryContext p s) (incoming : i < 6) (slot : j < 16) :
     WP isa (.block [.ldrSp .r3 (24 + 4 * i), VG.Impl.Ffdh.Arm.ParameterSearch.stf .r3 j]) s fun t =>
       t.mem = s.mem.writeW (off (State.addr p.control) (8 * j)) (incomingValue p i) ∧ Rest [.r3] s t := by
-  refine withRest [.r3] ?_ (by
-    intro r hr instr hi
-    simp only [instrs, List.mem_cons, List.not_mem_nil, or_false] at hi
-    have ne : r ≠ .r3 := by simpa only [List.mem_singleton] using hr
-    rcases hi with rfl | rfl <;> simp [VG.Impl.Ffdh.Arm.ParameterSearch.stf, clobbers, dstOf, Ne.symm ne]) (by rfl)
+  refine withRest_all [.r3] ?_ (by rfl) (by rfl)
   have arg := h.incoming i incoming
   have address : State.addr (s.sp + BitVec.ofNat 32 (24 + 4 * i)) =
       off (State.addr s.sp) (24 + 4 * i) := VG.Arm.addr_add (by have := arg.fits; omega)

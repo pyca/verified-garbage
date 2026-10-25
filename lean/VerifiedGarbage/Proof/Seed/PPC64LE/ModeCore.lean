@@ -75,7 +75,7 @@ theorem ready_core {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Seed.S
   obtain ⟨⟨hk, hin, hd⟩, hB⟩ := h
   refine ⟨⟨?_, by rw [hrd, keyR, e]; exact hin, by rw [keyR, e]; exact hd⟩, by rw [keyR, e]; exact hB⟩
   rw [e, Proof.Seed.scheduleAt_frame hf fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact hB.sub_right (Region.sub_prefix (by omega)), hk]
+    simp only [List.mem_singleton] at hr; subst hr; exact hB.sub_right (Region.sub_prefix (by omega_arith)), hk]
 
 theorem layout (d : Direction) : Layout (dirCore d) :=
   ⟨by cases d <;> decide, .inr rfl, by cases d <;> decide, by cases d <;> decide, by cases d <;> decide⟩
@@ -139,7 +139,7 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
   let s₁ := s.write .r8 (s.gpr .r5)
   have r8₁ : s₁.gpr .r8 = B := by simp [s₁, gpr_write, hB]
   have g₁ : ∀ r, r ≠ .r8 → s₁.gpr r = s.gpr r := fun r hr => gpr_write_of_ne _ _ hr
-  have room₁ : Room s₁ := ⟨8 * (bufSlot + 8), by omega, by rw [r8₁]; exact hW⟩
+  have room₁ : Room s₁ := ⟨8 * (bufSlot + 8), by omega_arith, by rw [r8₁]; exact hW⟩
   have scr₁ : scratchR s₁ = ⟨B, 8 * scratchSlots⟩ := by simp only [scratchR, r8₁]
   obtain ⟨s₂, e₂, g₂, rd₂, wr₂, sp₂, f₂, set₂, -⟩ := stores_ok room₁
     (callerRegs.map fun p => (p.2, p.1)) (by decide) (by decide)
@@ -186,27 +186,27 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
   have room₃ : Room s₃ := room_congr room₁ (by rw [r8₃, r8₁]) (by rw [wr₃]; rfl)
   -- The block, outside the scratch buffer of the batch.
   have Psep : Region.Disjoint ⟨P, 16⟩ ⟨B, 8 * scratchSlots⟩ :=
-    Offset.disjoint_base B (by omega) (by omega)
+    Offset.disjoint_base B (by omega_arith) (by omega_arith)
   have Parr : ∀ t : State, t.gpr .r8 = B → Region.Disjoint ⟨P, 16⟩ (arraysR t) := fun t ht => by
     rw [show arraysR t = ⟨B + BitVec.ofNat 64 (8 * 48), 8 * 64⟩ by simp only [arraysR, ht]]
-    exact Offset.disjoint B (by omega) (by omega) (by omega)
+    exact Offset.disjoint B (by omega_arith) (by omega_arith) (by omega_arith)
   have Pwr : (⟨P, 16⟩ : Region) ∈ s.wr ∨ True := .inr trivial
   have Pin : ∀ w < 4, InRegions s.wr (P + BitVec.ofNat 64 (16 * 0 + 4 * w)) 4 := fun w hw =>
     ⟨_, hW, by
       rw [Offset.add_add]
-      exact Offset.contains_base _ (by omega) (by omega)⟩
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   -- The copy in.
   have pre₃ : CopyPre s₃ P 1 := by
-    refine ⟨room₃, by omega, fun b hb w hw => ?_, ?_⟩
-    · obtain rfl : b = 0 := by omega
+    refine ⟨room₃, by omega_arith, fun b hb w hw => ?_, ?_⟩
+    · obtain rfl : b = 0 := by omega_arith
       obtain ⟨r, hr, hc⟩ := Pin w hw
       exact ⟨r, by rw [rd₃, wr₃]; exact List.mem_append_right _ hr, hc⟩
     · exact Parr s₃ r8₃
   have inv₃ : CopyInInv s₃ P 1 (1 - 1) s₃ := by
-    refine ⟨by omega, by rw [r6₃]; simp, by rw [r7₃, r8₃]; simp, by rw [r10₃], fun w _ b hb => by omega,
+    refine ⟨by omega_arith, by rw [r6₃]; simp, by rw [r7₃, r8₃]; simp, by rw [r10₃], fun w _ b hb => by omega_arith,
       Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
   refine WP.seq (WP.of_runBlock ⟨s₃, e₃, ?_⟩)
-  refine WP.seq (WP.mono (copyIn_loop pre₃ 1 s₃ inv₃ (by omega) (by omega)) fun s₄ i₄ => ?_)
+  refine WP.seq (WP.mono (copyIn_loop pre₃ 1 s₃ inv₃ (by omega_arith) (by omega_arith)) fun s₄ i₄ => ?_)
   have G₄ : ∀ r, r ≠ .r3 → r ≠ .r6 → r ≠ .r7 → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → s₄.gpr r = s.gpr r :=
     fun r a b c e f g => (i₄.regs r f c g b).trans (G₃ r a b c e g)
   have r8₄ : s₄.gpr .r8 = B := (i₄.regs _ (by decide) (by decide) (by decide) (by decide)).trans r8₃
@@ -217,7 +217,7 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
     simp only [List.mem_singleton] at hr; subst hr
     refine ⟨_, List.mem_cons_self, ?_⟩
     rw [show arraysR s₃ = ⟨B + BitVec.ofNat 64 (8 * 48), 8 * 64⟩ by simp only [arraysR, r8₃]]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_arith)
   have slot₄ : ∀ p ∈ callerRegs, slotW s₄ p.2 = s.gpr p.1 := by
     intro p hp
     have hp' := callerRegs_ok p hp
@@ -230,7 +230,7 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
     exact Offset.disjoint B (by omega)
       (by omega) (by omega)
   have hq₄ : quad s₄ 0 = decodeQ (Spec.Seed.blockAt s.mem P) := by
-    rw [quad_of_lanes (m := s₃.mem) (p := P) fun w hw => i₄.lanes w hw 0 (by omega)]
+    rw [quad_of_lanes (m := s₃.mem) (p := P) fun w hw => i₄.lanes w hw 0 (by omega_arith)]
     rw [show P + BitVec.ofNat 64 (16 * 0) = P by simp, blockAt_frame f₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Psep]
   -- The modes' state to `r4`–`r6`.
@@ -252,7 +252,7 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
     fun j hj => by
       rw [kp_start _ _ hj]
       exact (hk.sub_left (Offset.sub_base _ (keyOff_le d hj))).sub_right
-        (Region.sub_prefix (by omega))
+        (Region.sub_prefix (by omega_arith))
   have keys₅ : KeysOk d s₅ (s₅.gpr .r3) := by
     intro j hj
     have hle := keyOff_le d hj
@@ -260,9 +260,9 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
       rw [show s₅.rd = s.rd by simp only [s₅, rd_write]; rw [i₄.rd, rd₃]]; exact List.mem_append_left _ hkin
     rw [r3₅, scr₅]
     refine ⟨?_, ?_, hkB j hj⟩
-    · rw [kp_start _ _ hj]; exact ⟨_, hin, Offset.contains_base _ (by omega) (by omega)⟩
+    · rw [kp_start _ _ hj]; exact ⟨_, hin, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     · rw [kp_start _ _ hj, show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, Offset.add_ofNat_add_ofNat]
-      exact ⟨_, hin, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, hin, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hkeys : ∀ j < 16, keysAt d s₅.mem (s₅.gpr .r3) j = keysAt d s.mem (s.gpr .r3 + BitVec.ofNat 64 (keyStart d)) j := by
     intro j hj
     rw [r3₅]
@@ -272,7 +272,7 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
   refine WP.seq (WP.mono (rounds_ok d room₅ keys₅) fun s₆ ⟨q₆, room₆, rd₆, wr₆, sp₆, g₆, f₆⟩ => ?_)
   have hq₆ : quad s₆ 0 = roundsN (keysAt d s.mem (s.gpr .r3 + BitVec.ofNat 64 (keyStart d))) 16
       (decodeQ (Spec.Seed.blockAt s.mem P)) := by
-    rw [q₆ 0 (by omega), roundsN_congr 16 _ hkeys,
+    rw [q₆ 0 (by omega_arith), roundsN_congr 16 _ hkeys,
       show quad s₅ 0 = quad s₄ 0 by simp only [quad, lv, laneA, r8₅, r8₄]; rfl, hq₄]
   have r8₆ : s₆.gpr .r8 = B := (g₆ _ (by simp)).trans r8₅
   -- The modes' state back, and the copy out.
@@ -306,13 +306,13 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
     simp only [s₅, rd_write]; rw [i₄.rd, rd₃]]
   have quad₇ : quad s₇ 0 = quad s₆ 0 := by simp only [quad, lv, laneA, r8₇, r8₆]; rfl
   have pre₇ : CopyOutPre s₇ P 1 := by
-    refine ⟨room_congr room₃ (by rw [r8₇, r8₃]) (by rw [wr₇, wr₃]), by omega, fun b hb w hw => ?_, Parr s₇ r8₇⟩
-    obtain rfl : b = 0 := by omega
+    refine ⟨room_congr room₃ (by rw [r8₇, r8₃]) (by rw [wr₇, wr₃]), by omega_arith, fun b hb w hw => ?_, Parr s₇ r8₇⟩
+    obtain rfl : b = 0 := by omega_arith
     rw [wr₇]; exact Pin w hw
   have inv₇ : CopyOutInv s₇ P 1 (1 - 1) s₇ := by
-    refine ⟨by omega, by rw [r6₇]; simp, by rw [r7₇, r8₇]; simp, by rw [r10₇], fun b hb => by omega,
+    refine ⟨by omega_arith, by rw [r6₇]; simp, by rw [r7₇, r8₇]; simp, by rw [r10₇], fun b hb => by omega_arith,
       Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
-  refine WP.seq (WP.mono (copyOut_loop pre₇ 1 s₇ inv₇ (by omega) (by omega)) fun s₈ i₈ => ?_)
+  refine WP.seq (WP.mono (copyOut_loop pre₇ 1 s₇ inv₇ (by omega_arith) (by omega_arith)) fun s₈ i₈ => ?_)
   have G₈ : ∀ r, r ≠ .r6 → r ≠ .r7 → r ≠ .r9 → r ≠ .r10 → s₈.gpr r = s₇.gpr r :=
     fun r a b c e => i₈.regs r c b e a
   have r8₈ : s₈.gpr .r8 = B := (G₈ _ (by decide) (by decide) (by decide) (by decide)).trans r8₇
@@ -350,11 +350,11 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
     refine ((f₄.trans (f₆.sub fun r hr => ?_)).sub fun r hr => ?_).trans (i₈.frame.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨_, List.mem_cons_self, ?_⟩
-      simp only [workR, r8₅]; exact Region.sub_prefix (by omega)
+      simp only [workR, r8₅]; exact Region.sub_prefix (by omega_arith)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_self, Region.sub_prefix (by omega)⟩
+      exact ⟨_, List.mem_cons_self, Region.sub_prefix (by omega_arith)⟩
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_self, Offset.sub_base _ (by omega)⟩
+      exact ⟨_, List.mem_cons_self, Offset.sub_base _ (by omega_arith)⟩
   refine ⟨?_, fun r hr => ?_, fwork, ?_, ?_, ?_⟩
   · rw [keep' _ (not_callerRegs .r5 (by simp))]; simp only [s₉, gpr_write_self]
   · by_cases h29 : r = .r29
@@ -393,7 +393,7 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .r5 = B)
     refine congrArg Vector.toList ?_
     rw [← crypt_keysAt, crypt_eq, ← hq₆, ← quad₇]
     refine blockAt_of_bytes fun i hi => ?_
-    have e := i₈.done 0 (by omega) i hi
+    have e := i₈.done 0 (by omega_arith) i hi
     rw [show P + BitVec.ofNat 64 (16 * 0 + i) = P + BitVec.ofNat 64 i by simp] at e
     rw [e, encodeSwapped_get _ _ hi]
   · rw [rd', show s₉.rd = s₈.rd by simp only [s₉, rd_write], i₈.rd, rd₇]

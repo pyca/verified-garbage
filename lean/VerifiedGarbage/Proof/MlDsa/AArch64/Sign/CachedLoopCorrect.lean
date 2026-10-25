@@ -99,7 +99,7 @@ theorem optimizedR0_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     (hp : Ok3 p) (hi : i+1<p.k) (roots : Roots p S f s) (h : PositiveIR p S σ t i s) :
     WP isa (Impl.MlDsa.AArch64.Sign.Optimized.r0Pair p i) s fun u =>
       PositiveIR p S σ t (i+2) u ∧ Roots p S f u := by
-  have checks := pairedR0Chk_ok hp i (by omega) hi
+  have checks := pairedR0Chk_ok hp i (by omega_arith) hi
   simp only [pairedR0Chk,Bool.and_eq_true,decide_eq_true_eq,List.all_eq_true] at checks
   obtain ⟨⟨⟨⟨⟨⟨cl,hgb⟩,rr⟩,wr⟩,re⟩,we⟩,hws⟩ := checks
   simp only [pairedLowChk,Bool.and_eq_true] at cl
@@ -108,11 +108,11 @@ theorem optimizedR0_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
   have hdata : ∀j<2,PolyIs s.mem (pairPolyPtr (pa s (wP p i)) j) (Wv p σ (p.ℓ*t) (i+j)) := by
     intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc] using h.w j (by omega)
+    simpa only [Nat.add_assoc] using h.w j (by omega_arith)
   have hsecret : ∀j<2,PosPolyIs s.mem (pairPolyPtr (pa s (s2P p i)) j) (S2v p σ (i+j)) := by
     intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc] using h.b.l.k.d.s2 (i+j) (by omega)
+    simpa only [Nat.add_assoc] using h.b.l.k.d.s2 (i+j) (by omega_arith)
   have hprod : pairedProductsReduced s.mem (pa s cP) (pa s (s2P p i)) :=
     ⟨h.b.c.bound,fun j hj => (hsecret j hj).bound⟩
   have hdiff : ∀j<2,pairedDifference s.mem (pa s cP) (pa s (s2P p i)) (pa s (wP p i)) j=
@@ -160,7 +160,7 @@ theorem optimizedR0_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     simpa only [Nat.add_zero,Nat.add_assoc] using
       (lowold.snoc (by simpa only [Nat.add_zero] using hlow 0 (by decide))).snoc (hlow 1 (by decide))
   have wshift : Fam s (wBase p+(i+2)) (p.k-(i+2)) (fun j=>Wv p σ (p.ℓ*t) (i+2+j)) := by
-    simpa only [show i+1+1=i+2 by omega] using ((h.w.shift (by omega)).shift (by omega))
+    simpa only [show i+1+1=i+2 by omega_arith] using ((h.w.shift (by omega_arith)).shift (by omega_arith))
   have ha : PositiveIRb p S σ t (i+2) a :=
     ⟨h.b.step hpa hsa rr.1.1.1.1 hws,h.z.keep h.b.l.st.lay hpa rr.1.1.1.2,
       highall,lowall,wshift.keep h.b.l.st.lay hpa wr,(h.b.l.st.lay.keepW hpa rr.2).trans h.ones⟩
@@ -192,7 +192,7 @@ theorem optimizedHint_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     (hp : Ok3 p) (hi : i+1<p.k) (roots : Roots p S f s) (h : PositiveIH p S σ t i s) :
     WP isa (Impl.MlDsa.AArch64.Sign.Optimized.hintPair p i) s fun u =>
       PositiveIH p S σ t (i+2) u ∧ Roots p S f u := by
-  have hc := pairedHintChk_ok hp i (by omega) hi
+  have hc := pairedHintChk_ok hp i (by omega_arith) hi
   simp only [pairedHintChk,Bool.and_eq_true,decide_eq_true_eq,List.all_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨kr,zr⟩,hr⟩,lr⟩,fr⟩,orr⟩,wr⟩,kf⟩,zf⟩,hf⟩,lf⟩,ff⟩,ir⟩,iw⟩,hg,hgpos,hk⟩ := hc
   unfold Impl.MlDsa.AArch64.Sign.Optimized.hintPair
@@ -206,8 +206,8 @@ theorem optimizedHint_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
       (fun j=>R0v p σ (p.ℓ*t) (i+2+j)) (-(p.γ₂:Int)) p.γ₂ := by
     intro j hj
     show SignedPl s (5+(i+2)+j) (R0v p σ (p.ℓ*t) (i+2+j)) _ _
-    rw [show 5+(i+2)+j=5+i+(j+2) by omega,show i+2+j=i+(j+2) by omega]
-    exact h.low (j+2) (by omega)
+    rw [show 5+(i+2)+j=5+i+(j+2) by omega_arith,show i+2+j=i+(j+2) by omega_arith]
+    exact h.low (j+2) (by omega_arith)
   have lowa := lowshift.keep h.b.l.st.lay hpa lr
   have hints : ∀j<2,HintIs a.mem (pa a (hP (i+j))) 1 [Hv p σ (p.ℓ*t) (i+j)] := by
     intro j hj
@@ -224,7 +224,7 @@ theorem optimizedHint_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
   have hbound : onesSum (Hv p σ (p.ℓ*t)) i+hintOnes ((List.range 2).map fun j=>Hv p σ (p.ℓ*t) (i+j))<2^32 := by
     rw [onesSum_pair]
     have := onesSum_le (Hv p σ (p.ℓ*t)) (i+2)
-    omega
+    omega_arith
   refine WP.mono_syms (hintFinish_semantic (S:=S) a _ _ _ _ (ba.l.st.lay.inR ir)
     (ba.l.st.lay.inW iw) hbound onesa hret (h24.trans hflag)) fun b ⟨hpb,hmem,hflagb⟩ hsb => ?_
   have rb := ra.step_layout ba.l.st.lay hpb hsb (by simpa using iw) (keep_ones hp)
@@ -248,7 +248,7 @@ theorem optimizedHint_paired_vector_ok {p : Params} {S : Nat} {σ s : State} {t 
   simpa only [Nat.zero_add,he] using seqR_ok
     (I:=fun j s=>PositiveIH p S σ t (2*j) s ∧ Roots p S f s) (p.k/2) 0
     (fun j _ hj s hs=>by simpa only [Nat.mul_add,Nat.mul_one] using
-      optimizedHint_pair_ok hp (by omega : 2*j+1<p.k) hs.2 hs.1) s ⟨by simpa using h,roots⟩
+      optimizedHint_pair_ok hp (by omega_arith : 2*j+1<p.k) hs.2 hs.1) s ⟨by simpa using h,roots⟩
 
 end VG.Proof.MlDsa.AArch64.Sign.CachedChecks
 
@@ -272,9 +272,9 @@ theorem optimizedR0_paired_vector_ok {p : Params} {S : Nat} {σ s : State} {t : 
   rw [ite_eq_left heven]
   refine WP.seq (WP.mono (seqR_ok (I:=fun j s => PositiveIR p S σ t (2*j) s ∧ Roots p S f s)
     (p.k/2) 0 (fun j _ hj a ha => ?_) s ⟨by simpa only [Nat.mul_zero] using h,roots⟩) ?_)
-  · simpa only [Nat.mul_add,Nat.mul_one] using optimizedR0_pair_ok hp (by omega : 2*j+1<p.k) ha.2 ha.1
+  · simpa only [Nat.mul_add,Nat.mul_one] using optimizedR0_pair_ok hp (by omega_arith : 2*j+1<p.k) ha.2 ha.1
   · intro a ha
-    have he : 2*(p.k/2)=p.k := by omega
+    have he : 2*(p.k/2)=p.k := by omega_arith
     simp only [Nat.zero_add,he] at ha
     exact WP.block_nil ha
 
@@ -367,7 +367,7 @@ theorem signLoop_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
     (fun n s ⟨t,hn,hs,rs,cs⟩=>?_) 814 a ⟨0,rfl,ha,ra,.inl rfl⟩
   refine WP.mono (iter_ok hP hp hb hcommit hs rs cs) fun u ⟨hu,ru,cu⟩=>?_
   rcases hu with ⟨hz,hi⟩|⟨hz,hx⟩
-  · exact .inr ⟨by rw [eval_x9]; simpa using hz,814-(t+1),by have := hs.t_lt; omega,
+  · exact .inr ⟨by rw [eval_x9]; simpa using hz,814-(t+1),by have := hs.t_lt; omega_arith,
       t+1,rfl,hi,ru,.inr cu⟩
   · exact .inl ⟨by rw [eval_x9,hz]; rfl,hx,ru⟩
 

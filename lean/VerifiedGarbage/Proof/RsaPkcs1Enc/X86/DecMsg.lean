@@ -37,7 +37,7 @@ def msgV (i : Nat) (lab : List Byte) (L : Nat) : List Byte :=
   Spec.Rsa.i2osp i 2 ++ lab ++ Spec.Rsa.i2osp (8 * L) 2
 
 theorem msgV_length (i : Nat) (lab : List Byte) (L : Nat) : (msgV i lab L).length = lab.length + 4 := by
-  simp [msgV, VG.Proof.RsaPkcs1Enc.i2osp_length]; omega
+  simp [msgV, VG.Proof.RsaPkcs1Enc.i2osp_length]; omega_arith
 
 /-- The message's first `n` bytes written, memory changed only in its 16
 bytes, and the registers but `eax` kept. -/
@@ -65,10 +65,10 @@ theorem MW.st8 (h : MW P σ s₀ xs n t) (hbx : s₀.gpr .ebx = P.scr + BitVec.o
   have hs := h.st
   have ha : t.ea (Impl.RsaPkcs1Sig.X86.at_ .ebx n) = msgA P + BitVec.ofNat 64 n := by
     show t.ea ⟨.ebx, n⟩ = _
-    rw [ea_at, h.regs _ (by decide), hbx, hs.1.addrSc (by simp only [sMsg]; omega)]
+    rw [ea_at, h.regs _ (by decide), hbx, hs.1.addrSc (by simp only [sMsg]; omega_arith)]
     exact (Offset.add_ofNat_add_ofNat _ _ _).symm
-  have hc : (sc P sMsg 16).Contains (msgA P + BitVec.ofNat 64 n) 1 := Offset.contains_base _ (by omega) (by omega)
-  refine wp_store8 ha (by rw [Offset.add_ofNat_add_ofNat]; exact St.sc_w hs (by simp only [sMsg]; omega))
+  have hc : (sc P sMsg 16).Contains (msgA P + BitVec.ofNat 64 n) 1 := Offset.contains_base _ (by omega_arith) (by omega_arith)
+  refine wp_store8 ha (by rw [Offset.add_ofNat_add_ofNat]; exact St.sc_w hs (by simp only [sMsg]; omega_arith))
     fun t' u => k t' ⟨⟨hs.1, ?_⟩, ?_, fun r hr => by rw [u.gpr]; exact h.regs r hr, ?_⟩ u.gpr
   · refine hs.2.write (rs := [sc P sMsg 16]) ?_ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨P.SCR, by simp, hs.1.sc_sub (by decide)⟩) u.rd u.wr
@@ -81,13 +81,13 @@ theorem MW.st8 (h : MW P σ s₀ xs n t) (hbx : s₀.gpr .ebx = P.scr + BitVec.o
     rw [u.mem, WriteBytes.writeW8_apply]
     by_cases e : j = n
     · subst e; simp [hb]
-    · simp only [Offset.add_ofNat_ne (msgA P) (by omega) (by omega) e, ↓reduceIte]
-      exact h.bytes j (by omega)
+    · simp only [Offset.add_ofNat_ne (msgA P) (by omega_arith) (by omega_arith) e, ↓reduceIte]
+      exact h.bytes j (by omega_arith)
 
 theorem setWidth_ofNat8 (v : Nat) : (BitVec.ofNat 32 v).setWidth 8 = BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- `putByte n v`: the byte `v` at index `n`. -/
 theorem MW.putByte (h : MW P σ s₀ xs n t) (hbx : s₀.gpr .ebx = P.scr + BitVec.ofNat 32 sMsg) (hn : n < 16)
@@ -106,9 +106,9 @@ theorem MW.putLabel (hbx : s₀.gpr .ebx = P.scr + BitVec.ofNat 32 sMsg) :
   | [], n, t, h, _, _, _, _, k => by simpa [Impl.RsaPkcs1Enc.X86.Decrypt.putLabel] using k t h
   | v :: vs, n, t, h, hn, hb, _, _, k => by
     simp only [Impl.RsaPkcs1Enc.X86.Decrypt.putLabel, List.append_assoc]
-    refine h.putByte hbx (by simp at hn; omega) (by simpa using hb 0 (by simp)) fun t1 h1 => ?_
-    refine MW.putLabel hbx vs h1 (by simp at hn; omega)
-      (fun j hj => by rw [show n + 1 + j = n + (j + 1) by omega, hb (j + 1) (by simp; omega)]; rfl)
+    refine h.putByte hbx (by simp at hn; omega_arith) (by simpa using hb 0 (by simp)) fun t1 h1 => ?_
+    refine MW.putLabel hbx vs h1 (by simp at hn; omega_arith)
+      (fun j hj => by rw [show n + 1 + j = n + (j + 1) by omega_arith, hb (j + 1) (by simp; omega_arith)]; rfl)
       fun t2 h2 => k t2 (by simpa [Nat.add_assoc, Nat.add_comm 1] using h2)
 
 end
@@ -138,10 +138,10 @@ theorem msgBytes_wp {σ s : State} {vs : List Nat} {len : List Instr} {L i : Nat
       rw [show Reg8.cl.reg = .ecx from rfl, h1.regs _ (by decide), hcx, setWidth_ofNat8]
       simp [msgV, i2osp_two_lt hi])
     fun t2 h2 _ => ?_
-  refine MW.putLabel hbx vs h2 (by omega) (fun j hj => ?_) fun t3 h3 => ?_
+  refine MW.putLabel hbx vs h2 (by omega_arith) (fun j hj => ?_) fun t3 h3 => ?_
   · simp only [msgV, i2osp_two_lt hi, List.cons_append, List.nil_append]
-    rw [show 0 + 1 + 1 + j = j + 2 by omega, List.getD_cons_succ, List.getD_cons_succ,
-      Proof.RsaPkcs1Sig.getD_append_left _ _ _ (by simp; omega)]
+    rw [show 0 + 1 + 1 + j = j + 2 by omega_arith, List.getD_cons_succ, List.getD_cons_succ,
+      Proof.RsaPkcs1Sig.getD_append_left _ _ _ (by simp; omega_arith)]
     simp [List.getD_eq_getElem?_getD, hj]
   · refine hlen (by simpa [Nat.add_comm] using h3) fun t4 h4 => ⟨h4.st, h4.frame, h4.regs, ?_⟩
     rw [← hm]
@@ -166,7 +166,7 @@ theorem clLen_wp {σ s t : State} {lab : List Byte} {i : Nat} (hl : lab.length =
 theorem shr5 {K : Nat} (hK : K ≤ 1024) : (BitVec.ofNat 32 K >>> 5).setWidth 8 = BitVec.ofNat 8 (8 * K / 256) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem times8 (K : Nat) :
     ((BitVec.ofNat 32 K + BitVec.ofNat 32 K + (BitVec.ofNat 32 K + BitVec.ofNat 32 K)) +
@@ -174,7 +174,7 @@ theorem times8 (K : Nat) :
       BitVec.ofNat 8 (8 * K) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- The bit length `8 k` (`amLen`), after a label of 7 bytes, from `k` in `edx`. -/
 theorem amLen_wp {σ s t : State} {lab : List Byte} {i K : Nat} (hl : lab.length = 7) (hK : K ≤ 1024)

@@ -42,14 +42,14 @@ variable {F A C : Nat} {argv : List (BitVec 32)} {ro rw : List Region} {s : Stat
 theorem layOf_B_toNat (hsp : 56 + F ≤ s.sp.toNat) :
     (layOf F A argv ro rw s C).B.toNat = s.sp.toNat - 56 - F := by
   simp only [layOf]
-  rw [FrameStack.sub_toNat' (by rw [FrameStack.sub_toNat' (by omega)]; omega),
-    FrameStack.sub_toNat' (by omega)]
+  rw [FrameStack.sub_toNat' (by rw [FrameStack.sub_toNat' (by omega_arith)]; omega_arith),
+    FrameStack.sub_toNat' (by omega_arith)]
 
 theorem layOf_fr (hsp : 56 + F ≤ s.sp.toNat) (d : Nat) :
     (layOf F A argv ro rw s C).fr d = State.addr s.sp - BitVec.ofNat 64 (56 + F) + BitVec.ofNat 64 d := by
   simp only [Lay.fr, Lay.Q, layOf]
-  rw [FrameStack.addr_sub' (by rw [FrameStack.sub_toNat' (by omega)]; omega),
-    FrameStack.addr_sub' (by omega), BitVec.sub_sub, BitVec.ofNat_add]
+  rw [FrameStack.addr_sub' (by rw [FrameStack.sub_toNat' (by omega_arith)]; omega_arith),
+    FrameStack.addr_sub' (by omega_arith), BitVec.sub_sub, BitVec.ofNat_add]
 
 theorem layOf_Q (hsp : 56 + F ≤ s.sp.toNat) :
     (layOf F A argv ro rw s C).Q = State.addr s.sp - BitVec.ofNat 64 (56 + F) := by
@@ -59,7 +59,7 @@ theorem layOf_Q (hsp : 56 + F ≤ s.sp.toNat) :
 theorem layOf_STK (hsp : 56 + F ≤ s.sp.toNat) :
     (layOf F A argv ro rw s C).STK = ⟨State.addr s.sp - BitVec.ofNat 64 (56 + F + C), 56 + F + C⟩ := by
   show (⟨(layOf F A argv ro rw s C).Q - BitVec.ofNat 64 C, C + F + 56⟩ : Region) = _
-  rw [layOf_Q hsp, BitVec.sub_sub, ← BitVec.ofNat_add, show C + F + 56 = 56 + F + C by omega]
+  rw [layOf_Q hsp, BitVec.sub_sub, ← BitVec.ofNat_add, show C + F + 56 = 56 + F + C by omega_arith]
 
 theorem layOf_down (hsp : 56 + F ≤ s.sp.toNat) {a : Nat} (ha : a ≤ 56 + F) :
     (layOf F A argv ro rw s C).fr (56 + F - a) = State.addr s.sp - BitVec.ofNat 64 a := by
@@ -73,15 +73,15 @@ theorem layOf_up (hsp : 56 + F ≤ s.sp.toNat) (i : Nat) :
 theorem layOf_ARGS (hsp : 56 + F ≤ s.sp.toNat) :
     (layOf F A argv ro rw s C).ARGS = ⟨stackArgAddr s 0, A⟩ := by
   show (⟨(layOf F A argv ro rw s C).fr (F + 56), A⟩ : Region) = _
-  rw [show F + 56 = 56 + F + 0 by omega, layOf_up hsp]
+  rw [show F + 56 = 56 + F + 0 by omega_arith, layOf_up hsp]
   simp [stackArgAddr]
 
 theorem layOf_PUSH (hsp : 56 + F ≤ s.sp.toNat) :
     (layOf F A argv ro rw s C).PUSH = ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ := by
   show (⟨(layOf F A argv ro rw s C).fr F, 56⟩ : Region) = _
-  have := layOf_down (A := A) (C := C) (argv := argv) (ro := ro) (rw := rw) hsp (a := 56) (by omega)
-  rw [show 56 + F - 56 = F by omega] at this
-  rw [this, FrameStack.addr_sub' (by omega)]
+  have := layOf_down (A := A) (C := C) (argv := argv) (ro := ro) (rw := rw) hsp (a := 56) (by omega_arith)
+  rw [show 56 + F - 56 = F by omega_arith] at this
+  rw [this, FrameStack.addr_sub' (by omega_arith)]
 
 /-- The layout of the state the body starts from. -/
 theorem ok_entered (hF : 8 ≤ F) (hA : A % 4 = 0) (hn : argv.length = 4 + A / 4)
@@ -95,24 +95,24 @@ theorem ok_entered (hF : 8 ≤ F) (hA : A % 4 = 0) (hn : argv.length = 4 + A / 4
     (hregs : ∀ j < 4, s.gpr (regArg j) = argv.getD j 0)
     (hstack : ∀ i < A / 4, stackArg s i = argv.getD (i + 4) 0) :
     (layOf F A argv ro rw s C).Ok (entered F s) := by
-  have hB := layOf_B_toNat (A := A) (C := C) (argv := argv) (ro := ro) (rw := rw) (show 56 + F ≤ s.sp.toNat by omega)
-  have hs : 56 + F ≤ s.sp.toNat := by omega
+  have hB := layOf_B_toNat (A := A) (C := C) (argv := argv) (ro := ro) (rw := rw) (show 56 + F ≤ s.sp.toNat by omega_arith)
+  have hs : 56 + F ≤ s.sp.toNat := by omega_arith
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered F s).mem :=
-    FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega)
+    FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
       ⟨State.addr s.sp - BitVec.ofNat 64 (56 + F + C), 56 + F + C⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
-    rw [FrameStack.addr_sub' (by omega)]
-    exact Offset.sub_below _ (by omega) (by omega)
-  have saved := pc_push_saved s (by omega)
+    rw [FrameStack.addr_sub' (by omega_arith)]
+    exact Offset.sub_below _ (by omega_arith) (by omega_arith)
+  have saved := pc_push_saved s (by omega_arith)
   have sp56 : State.addr (s.sp - 56) = State.addr s.sp - BitVec.ofNat 64 56 :=
-    FrameStack.addr_sub' (x := s.sp) (k := 56) (by omega)
+    FrameStack.addr_sub' (x := s.sp) (k := 56) (by omega_arith)
   refine
     { sp := rfl
       rd := by rw [entered_rd, hrd, layOf_ARGS hs]; rfl
       wr := by rw [entered_wr, hwr, ← layOf_PUSH (F := F) (A := A) (C := C) (argv := argv) (ro := ro) (rw := rw) hs]; rfl
-      B56 := by show C ≤ _; rw [hB]; omega
-      fit := by show _ + F + 56 + A ≤ _; rw [hB]; omega
+      B56 := by show C ≤ _; rw [hB]; omega_arith
+      fit := by show _ + F + 56 + A ≤ _; rw [hB]; omega_arith
       F8 := hF
       nargs := hn
       A4 := hA
@@ -129,27 +129,27 @@ theorem ok_entered (hF : 8 ≤ F) (hA : A % 4 = 0) (hn : argv.length = 4 + A / 4
       fits := hfits
       args := ?_ }
   intro j hj
-  rcases (by omega : j < 4 ∨ 4 ≤ j) with hj4 | hj4
+  rcases (by omega_arith : j < 4 ∨ 4 ≤ j) with hj4 | hj4
   · have ea : Impl.RsaPkcs1Sig.Arm.argOff F j = 56 + F - (56 - 4 * j) := by
-      simp only [Impl.RsaPkcs1Sig.Arm.argOff, hj4, ite_true]; omega
+      simp only [Impl.RsaPkcs1Sig.Arm.argOff, hj4, ite_true]; omega_arith
     have e : (layOf F A argv ro rw s C).argA j = State.addr (s.sp - 56) + BitVec.ofNat 64 (4 * j) := by
       show (layOf F A argv ro rw s C).fr (Impl.RsaPkcs1Sig.Arm.argOff F j) = _
-      rw [ea, layOf_down hs (by omega), sp56, Offset.sub_ofNat_eq _ (show 56 - 4 * j ≤ 56 by omega)]
-      congr 2; omega
+      rw [ea, layOf_down hs (by omega_arith), sp56, Offset.sub_ofNat_eq _ (show 56 - 4 * j ≤ 56 by omega_arith)]
+      congr 2; omega_arith
     show _ = argv.getD j 0
     rw [e, entered_mem, ← hregs j hj4]
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
     · exact saved (.r0, 0) (by simp [pcAllSaved])
     · exact saved (.r1, 4) (by simp [pcAllSaved])
     · exact saved (.r2, 8) (by simp [pcAllSaved])
     · exact saved (.r3, 12) (by simp [pcAllSaved])
-  · obtain ⟨i, rfl⟩ : ∃ i, j = i + 4 := ⟨j - 4, by omega⟩
+  · obtain ⟨i, rfl⟩ : ∃ i, j = i + 4 := ⟨j - 4, by omega_arith⟩
     have hj' : i + 4 < argv.length := hj
-    have hi : i < A / 4 := by omega
+    have hi : i < A / 4 := by omega_arith
     have ea : Impl.RsaPkcs1Sig.Arm.argOff F (i + 4) = 56 + F + 4 * i := by
-      simp only [Impl.RsaPkcs1Sig.Arm.argOff, show ¬ (i + 4 < 4) by omega, ite_false]; omega
+      simp only [Impl.RsaPkcs1Sig.Arm.argOff, show ¬ (i + 4 < 4) by omega_arith, ite_false]; omega_arith
     have a0 : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
-    have ai : stackArgAddr s i = State.addr s.sp + BitVec.ofNat 64 (4 * i) := addr_add (by omega)
+    have ai : stackArgAddr s i = State.addr s.sp + BitVec.ofNat 64 (4 * i) := addr_add (by omega_arith)
     have e : (layOf F A argv ro rw s C).argA (i + 4) = stackArgAddr s i := by
       show (layOf F A argv ro rw s C).fr (Impl.RsaPkcs1Sig.Arm.argOff F (i + 4)) = _
       rw [ea, layOf_up hs, ai]
@@ -157,7 +157,7 @@ theorem ok_entered (hF : 8 ≤ F) (hA : A % 4 = 0) (hn : argv.length = 4 + A / 4
     rw [e, ← hstack i hi]
     show _ = s.mem.readW (stackArgAddr s i) 32
     rw [ai]
-    refine hpush.readW (r := ⟨State.addr s.sp, A⟩) (Offset.contains_base _ (by omega) (by omega)) ?_
+    refine hpush.readW (r := ⟨State.addr s.sp, A⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith)) ?_
       (by decide)
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
@@ -168,8 +168,8 @@ theorem ok_entered (hF : 8 ≤ F) (hA : A % 4 = 0) (hn : argv.length = 4 + A / 4
 theorem entered_ro (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp : 56 + F ≤ s.sp.toNat) {R : Region}
     (hR : R ∈ ro) : Spec.Rsa.bytesAt (entered F s).mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len := by
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered F s).mem :=
-    FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega)
-  refine bytesAt_frame hpush (fun r hr => ?_) (by have := h.fits R (List.mem_append_left _ hR); omega)
+    FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
+  refine bytesAt_frame hpush (fun r hr => ?_) (by have := h.fits R (List.mem_append_left _ hR); omega_arith)
   simp only [List.mem_singleton] at hr; subst hr
   show Region.Disjoint _ ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩
   rw [← layOf_PUSH (A := A) (C := C) (argv := argv) (ro := ro) (rw := rw) hsp]

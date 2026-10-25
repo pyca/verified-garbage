@@ -114,10 +114,10 @@ theorem sub_scr {a n : Nat} (h : a + n ≤ 2048) : Region.Sub ⟨P.at' a, n⟩ P
 theorem sub_scr0 {n : Nat} (h : n ≤ 2048) : Region.Sub ⟨P.scr, n⟩ P.scrR := Region.sub_prefix h
 
 theorem disj_scr {a n b m : Nat} (h : a + n ≤ b ∨ b + m ≤ a) (ha : a + n ≤ 2048) (hb : b + m ≤ 2048) :
-    Region.Disjoint ⟨P.at' a, n⟩ ⟨P.at' b, m⟩ := Offset.disjoint _ h (by omega) (by omega)
+    Region.Disjoint ⟨P.at' a, n⟩ ⟨P.at' b, m⟩ := Offset.disjoint _ h (by omega_arith) (by omega_arith)
 
 theorem contains_scr {a n : Nat} (h : a + n ≤ 2048) : P.scrR.Contains (P.at' a) n :=
-  Offset.contains_base _ h (by omega)
+  Offset.contains_base _ h (by omega_arith)
 
 theorem at_zero : P.at' 0 = P.scr := ptr_zero _
 
@@ -173,7 +173,7 @@ theorem sd_frame {m : Mem} (hf : Frame [polyR P.a, P.scrR, below σ.sp 16] σ.me
 omit hp in
 /-- The saved registers are apart from the parts of `scratch` below them. -/
 theorem sv_disj {off n : Nat} (h : off + n ≤ 2016) :
-    Region.Disjoint ⟨P.at' 2016, 32⟩ ⟨P.at' off, n⟩ := disj_scr (.inr h) (by omega) (by omega)
+    Region.Disjoint ⟨P.at' 2016, 32⟩ ⟨P.at' off, n⟩ := disj_scr (.inr h) (by omega_arith) (by omega_arith)
 
 omit hp in
 theorem sv_frame {m m' : Mem} (h : m.readW (P.at' 2016) 64 = σ.gpr .x25 ∧ m.readW (P.at' 2024) 64 = σ.gpr .x26 ∧
@@ -185,7 +185,7 @@ theorem sv_frame {m m' : Mem} (h : m.readW (P.at' 2016) 64 = σ.gpr .x25 ∧ m.r
     fun k hk => by
       refine hf.readW (r := ⟨P.at' 2016, 32⟩) ?_ hd (by decide)
       rw [← at_add]
-      exact contains_off (by omega) (by decide)
+      exact contains_off (by omega_arith) (by decide)
   exact ⟨(e 0 (by decide)).trans h.1, (e 1 (by decide)).trans h.2.1, (e 2 (by decide)).trans h.2.2.1,
     (e 3 (by decide)).trans h.2.2.2⟩
 
@@ -197,14 +197,14 @@ theorem Env.call {s s' : State} (he : Env P σ s) {rs : List Region} (hk : Kept 
   have hd : ∀ r ∈ rs, Region.Disjoint ⟨P.at' 2016, 32⟩ r := fun r hr => by
     rcases hrs r hr with ⟨off, n, rfl, h⟩ | rfl
     · exact sv_disj h
-    · rw [he.sp]; exact (stk_scr' hp (a := 2016) (n := 32) (by omega)).symm
+    · rw [he.sp]; exact (stk_scr' hp (a := 2016) (n := 32) (by omega_arith)).symm
   refine ⟨by rw [hk.rd, he.rd], by rw [hk.wr, he.wr], by rw [hk.sp, he.sp],
     by rw [hk.cs _ (by decide) (by decide), he.x25], by rw [hk.cs _ (by decide) (by decide), he.x26],
     by rw [hk.cs _ (by decide) (by decide), he.x27],
     fun r hr h25 h26 h27 h30 => by rw [hk.cs r hr h30, he.cs r hr h25 h26 h27 h30],
     sv_frame he.saved hk.frame hd, he.frame.trans (hk.frame.sub fun r hr => ?_), fun r hr => (hk.vcs r hr).trans (he.vcs r hr)⟩
   rcases hrs r hr with ⟨off, n, rfl, h⟩ | rfl
-  · exact ⟨P.scrR, by simp, sub_scr (by omega)⟩
+  · exact ⟨P.scrR, by simp, sub_scr (by omega_arith)⟩
   · exact ⟨below σ.sp 16, by simp, by rw [he.sp]; exact fun _ h => h⟩
 
 /-- Code that writes only registers that are not callee-saved, and the
@@ -218,7 +218,7 @@ theorem Env.keepA {s s' : State} (he : Env P σ s) {regs : List Reg} (hk : Keep 
     by rw [hk.get .x27 (fun h' => hr _ h' (by decide)), he.x27],
     fun r hp' h25 h26 h27 h30 => by rw [hk.get r (fun h' => hr _ h' hp'), he.cs r hp' h25 h26 h27 h30],
     sv_frame he.saved hf (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact (a_scr' hp (a := 2016) (n := 32) (by omega)).symm),
+      rw [List.mem_singleton.mp hr]; exact (a_scr' hp (a := 2016) (n := 32) (by omega_arith)).symm),
     he.frame.trans (hf.mono (by simp)), fun r hr => (hk.vcs r hr).trans (he.vcs r hr)⟩
 
 end
@@ -251,13 +251,13 @@ theorem pro_ok {P : Sp} {σ : State} (hp : SpOk P σ) {scr a : Reg} {prm len : I
       ∃ s', exec len s = some s' ∧ Only [.x4] s s' ∧ (s'.gpr .x4).toNat = P.len) :
     WP isa (.block (pro scr a prm len)) σ (J0 P σ) := by
   unfold pro
-  refine wp_strx (a := P.at' 2016) (by decide) (by rw [hscr]) (inScr hp rfl (by omega)) fun s₁ h₁ => ?_
+  refine wp_strx (a := P.at' 2016) (by decide) (by rw [hscr]) (inScr hp rfl (by omega_arith)) fun s₁ h₁ => ?_
   refine wp_strx (a := P.at' 2024) (by decide) (by rw [h₁.gpr, hscr])
-    (by rw [h₁.wr]; exact inScr hp rfl (by omega)) fun s₂ h₂ => ?_
+    (by rw [h₁.wr]; exact inScr hp rfl (by omega_arith)) fun s₂ h₂ => ?_
   refine wp_strx (a := P.at' 2032) (by decide) (by rw [h₂.gpr, h₁.gpr, hscr])
-    (by rw [h₂.wr, h₁.wr]; exact inScr hp rfl (by omega)) fun s₃ h₃ => ?_
+    (by rw [h₂.wr, h₁.wr]; exact inScr hp rfl (by omega_arith)) fun s₃ h₃ => ?_
   refine wp_strx (a := P.at' 2040) (by decide) (by rw [h₃.gpr, h₂.gpr, h₁.gpr, hscr])
-    (by rw [h₃.wr, h₂.wr, h₁.wr]; exact inScr hp rfl (by omega)) fun s₄ h₄ => ?_
+    (by rw [h₃.wr, h₂.wr, h₁.wr]; exact inScr hp rfl (by omega_arith)) fun s₄ h₄ => ?_
   have g₄ : ∀ r, s₄.gpr r = σ.gpr r := fun r => by rw [h₄.gpr, h₃.gpr, h₂.gpr, h₁.gpr]
   refine wp_mov fun s₅ h₅ e₅ => wp_mov fun s₆ h₆ e₆ => ?_
   obtain ⟨s₇, x₇, h₇, e₇⟩ := hprm s₆ fun r h25 h26 => by
@@ -273,7 +273,7 @@ theorem pro_ok {P : Sp} {σ : State} (hp : SpOk P σ) {scr a : Reg} {prm len : I
     rw [h₉.mem, h₈.mem, h₇.mem, h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem, h₃.gpr, h₂.gpr, h₁.gpr]
   have sep : ∀ a b, 2016 ≤ a → a + 8 ≤ b → b + 8 ≤ 2048 →
       Mem.Sep (P.at' a) (64 / 8) (P.at' b) (64 / 8) := fun a b h1 h2 h3 =>
-    Offset.sep _ (.inl h2) (by omega) (by omega)
+    Offset.sep _ (.inl h2) (by omega_arith) (by omega_arith)
   refine ⟨⟨by rw [k₉.rd, h₄.rd, h₃.rd, h₂.rd, h₁.rd], by rw [k₉.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr],
     by rw [k₉.sp, h₄.sp, h₃.sp, h₂.sp, h₁.sp], ?_, ?_, ?_, ?_, ?_, ?_,
       fun r hr => by rw [k₉.vcs r hr, h₄.vcs r hr, h₃.vcs r hr, h₂.vcs r hr, h₁.vcs r hr]⟩, ?_, ?_⟩
@@ -287,19 +287,19 @@ theorem pro_ok {P : Sp} {σ : State} (hp : SpOk P σ) {scr a : Reg} {prm len : I
       h₆.get r (by simpa using h26), h₅.get r (by simpa using h25), g₄]
   · rw [m₉]
     refine ⟨?_, ?_, ?_, Mem.readW_writeW_self64 _ _ _⟩
-    · rw [Mem.readW_writeW_sep (sep 2016 2040 (by omega) (by omega) (by omega)) (by decide),
-        Mem.readW_writeW_sep (sep 2016 2032 (by omega) (by omega) (by omega)) (by decide),
-        Mem.readW_writeW_sep (sep 2016 2024 (by omega) (by omega) (by omega)) (by decide),
+    · rw [Mem.readW_writeW_sep (sep 2016 2040 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        Mem.readW_writeW_sep (sep 2016 2032 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        Mem.readW_writeW_sep (sep 2016 2024 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
         Mem.readW_writeW_self64]
-    · rw [Mem.readW_writeW_sep (sep 2024 2040 (by omega) (by omega) (by omega)) (by decide),
-        Mem.readW_writeW_sep (sep 2024 2032 (by omega) (by omega) (by omega)) (by decide),
+    · rw [Mem.readW_writeW_sep (sep 2024 2040 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        Mem.readW_writeW_sep (sep 2024 2032 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
         Mem.readW_writeW_self64]
-    · rw [Mem.readW_writeW_sep (sep 2032 2040 (by omega) (by omega) (by omega)) (by decide),
+    · rw [Mem.readW_writeW_sep (sep 2032 2040 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
         Mem.readW_writeW_self64]
   · rw [m₉]
     have hm : P.scrR ∈ [polyR P.a, P.scrR, below σ.sp 16] := by simp
-    exact ((((Frame.refl _ _).writeW hm _ (contains_scr (by omega))).writeW hm _
-      (contains_scr (by omega))).writeW hm _ (contains_scr (by omega))).writeW hm _ (contains_scr (by omega))
+    exact ((((Frame.refl _ _).writeW hm _ (contains_scr (by omega_arith))).writeW hm _
+      (contains_scr (by omega_arith))).writeW hm _ (contains_scr (by omega_arith))).writeW hm _ (contains_scr (by omega_arith))
   · rw [h₉.get .x3, e₈, h₇.get .x0, h₆.get .x0, h₅.get .x0, g₄, hsd]
   · exact e₉
 
@@ -317,20 +317,20 @@ theorem zst_ok {P : Sp} {σ : State} (hp : SpOk P σ) :
       Frame.refl _ _⟩
   | n + 1, hn, s, h9, h25, hw => by
     rw [zst, List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (zst_ok hp n (by omega) h9 h25 hw) fun s₁ ⟨g₁, r₁, w₁, p₁, z₁, f₁⟩ => ?_
-    refine wp_strx (a := P.at' (8 * n)) (by constructor <;> omega) (by rw [g₁, h25])
-      (by rw [w₁]; exact inScr hp hw (by omega)) fun s₂ h₂ => wp_nil ?_
+    refine WP.mono (zst_ok hp n (by omega_arith) h9 h25 hw) fun s₁ ⟨g₁, r₁, w₁, p₁, z₁, f₁⟩ => ?_
+    refine wp_strx (a := P.at' (8 * n)) (by constructor <;> omega_arith) (by rw [g₁, h25])
+      (by rw [w₁]; exact inScr hp hw (by omega_arith)) fun s₂ h₂ => wp_nil ?_
     refine ⟨by rw [h₂.gpr, g₁], by rw [h₂.rd, r₁], by rw [h₂.wr, w₁], by rw [h₂.sp, p₁],
       fun k hk => ?_, ?_⟩
     · rw [h₂.mem, g₁, h9]
       by_cases e : k = n
       · subst e; exact Mem.readW_writeW_self64 _ _ _
-      · rw [Mem.readW_writeW_sep (sep_off _ (by omega) (by omega) (by omega)) (by decide)]
-        exact z₁ k (by omega)
+      · rw [Mem.readW_writeW_sep (sep_off _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+        exact z₁ k (by omega_arith)
     · rw [h₂.mem]
       refine f₁.writeW (List.mem_singleton_self _) _ ?_
       rw [← at_zero (P := P)]
-      exact Offset.contains _ (by omega) (by omega) (by omega)
+      exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem stateAt_zero {m : Mem} {p : Addr}
     (h : ∀ k < 25, m.readW (p + BitVec.ofNat 64 (8 * k)) 64 = 0) : stateAt m p = Spec.Sha3.zero := by
@@ -342,10 +342,10 @@ theorem toNat_movz {n : Nat} (h : n < 2 ^ 16) : ((BitVec.ofNat 16 n).setWidth 64
   rw [toNat_imm, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
 
 theorem rate_pos {rate : Nat} (h : rate ∈ rates) : 0 < rate := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_arith
 
 theorem rate_lt {rate : Nat} (h : rate ∈ rates) : rate < 2 ^ 16 := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_arith
 
 /-- After zeroing the state: the arguments of `absorb`. -/
 structure J1 (rate : Nat) (P : Sp) (σ s : State) : Prop where
@@ -373,9 +373,9 @@ theorem blk1_ok {rate : Nat} (hr : rate < 2 ^ 16) {s : State} (h : J0 P σ s) :
   have e2 : Env P σ s₂ := ⟨by rw [r₂, e1.rd], by rw [w₂, e1.wr], by rw [p₂, e1.sp], by rw [g₂, e1.x25],
     by rw [g₂, e1.x26], by rw [g₂, e1.x27], fun r hr a b c d => by rw [g₂, e1.cs r hr a b c d],
     sv_frame e1.saved f₂ (fun r hr => by
-      rw [List.mem_singleton.mp hr, ← at_zero (P := P)]; exact sv_disj (by omega)),
+      rw [List.mem_singleton.mp hr, ← at_zero (P := P)]; exact sv_disj (by omega_arith)),
     e1.frame.trans (f₂.sub fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact ⟨P.scrR, by simp, sub_scr0 (by omega)⟩), fun r hr => (vc₂ r hr).trans (e1.vcs r hr)⟩
+      rw [List.mem_singleton.mp hr]; exact ⟨P.scrR, by simp, sub_scr0 (by omega_arith)⟩), fun r hr => (vc₂ r hr).trans (e1.vcs r hr)⟩
   refine wp_mov fun s₃ h₃ e₃ => wp_movz fun s₄ h₄ e₄ => wp_movz fun s₅ h₅ e₅ =>
     wp_addImm (by decide) fun s₆ h₆ e₆ => wp_nil ?_
   have k₆ := ((h₃.keep.trans h₄.keep).trans h₅.keep).trans h₆.keep
@@ -401,10 +401,10 @@ theorem call1With_ok (v : Proof.Sha3.AArch64.Permutation) {rate : Nat} (hr : rat
   have hsp := h.env.sp
   refine absorb_callWith v (st := P.scr) (sc := P.at' 200) h.x0 h.x1 h.x2 h.x3 h.x4 h.x5 hr
     (rate_pos hr)
-    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega)) (by omega) (by omega))
-    (hp.sd_scr.sub_right (sub_scr0 (by omega))) (sd_scr' hp (by omega))
-    (by rw [hsp]; exact hp.sp16) (by rw [stk, hsp]; exact hp.stk_scr.sub_right (sub_scr0 (by omega)))
-    (by rw [stk, hsp]; exact hp.stk_sd) (by rw [stk, hsp]; exact stk_scr' hp (by omega)) ?_
+    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega_arith)) (by omega_arith) (by omega_arith))
+    (hp.sd_scr.sub_right (sub_scr0 (by omega_arith))) (sd_scr' hp (by omega_arith))
+    (by rw [hsp]; exact hp.sp16) (by rw [stk, hsp]; exact hp.stk_scr.sub_right (sub_scr0 (by omega_arith)))
+    (by rw [stk, hsp]; exact hp.stk_sd) (by rw [stk, hsp]; exact stk_scr' hp (by omega_arith)) ?_
     (cov_scr hp h.env.wr ?_) fun s' hk hrep hx => ⟨Env.call hp h.env hk ?_, ?_, ?_⟩
   · rw [regions hp h.env]
     refine Covers.of_sub fun r hr => ?_
@@ -418,8 +418,8 @@ theorem call1With_ok (v : Proof.Sha3.AArch64.Permutation) {rate : Nat} (hr : rat
     · exact ⟨200, rfl, by simp⟩
   · intro r hr
     rcases mem3 hr with rfl | rfl | rfl
-    · exact .inl ⟨0, 200, by rw [at_zero], by omega⟩
-    · exact .inl ⟨200, 640, rfl, by omega⟩
+    · exact .inl ⟨0, 200, by rw [at_zero], by omega_arith⟩
+    · exact .inl ⟨200, 640, rfl, by omega_arith⟩
     · exact .inr rfl
   · have := hrep [] (MlKem.repr_nil h.zero) (by simp)
     rwa [List.nil_append, sd_frame hp h.env.frame] at this
@@ -463,14 +463,14 @@ theorem call2With_ok (v : Proof.Sha3.AArch64.Permutation) {rate : Nat} (hr : rat
     · exact ⟨200, rfl, by simp⟩
   refine pad_callWith v (st := P.scr) (sc := P.at' 200) h.x0 h.x1 h.x2 h.x4 hr
     (Nat.mod_lt _ (rate_pos hr))
-    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega)) (by omega) (by omega))
-    (by rw [hsp]; exact hp.sp16) (by rw [stk, hsp]; exact hp.stk_scr.sub_right (sub_scr0 (by omega)))
-    (by rw [stk, hsp]; exact stk_scr' hp (by omega)) (cov_rd cw) cw fun s' hk hst =>
+    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega_arith)) (by omega_arith) (by omega_arith))
+    (by rw [hsp]; exact hp.sp16) (by rw [stk, hsp]; exact hp.stk_scr.sub_right (sub_scr0 (by omega_arith)))
+    (by rw [stk, hsp]; exact stk_scr' hp (by omega_arith)) (cov_rd cw) cw fun s' hk hst =>
       ⟨Env.call hp h.env hk ?_, ?_⟩
   · intro r hr
     rcases mem3 hr with rfl | rfl | rfl
-    · exact .inl ⟨0, 200, by rw [at_zero], by omega⟩
-    · exact .inl ⟨200, 640, rfl, by omega⟩
+    · exact .inl ⟨0, 200, by rw [at_zero], by omega_arith⟩
+    · exact .inl ⟨200, 640, rfl, by omega_arith⟩
     · exact .inr rfl
   · have := hst (P.msg σ) h.repr (by rw [MlKem.bytesAt_length])
     rw [h.x3] at this
@@ -519,21 +519,21 @@ theorem call3With_ok (v : Proof.Sha3.AArch64.Permutation) {rate outlen : Nat} (h
     cov_scr hp h.env.wr fun r hr => by
       rcases mem3 hr with rfl | rfl | rfl
       · exact ⟨0, (at_zero).symm, by simp⟩
-      · exact ⟨840, rfl, by simp; omega⟩
+      · exact ⟨840, rfl, by simp; omega_arith⟩
       · exact ⟨200, rfl, by simp⟩
   refine squeeze_callWith v (st := P.scr) (out := P.at' 840) (sc := P.at' 200) h.x0 h.x1 h.x2 h.x3 h.x4 h.x5 hr
     (Nat.zero_le _)
-    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega)) (by omega) (by omega))
-    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega)) (by omega) (by omega))
-    (disj_scr (.inr (by omega)) (by omega) (by omega))
-    (by rw [hsp]; exact hp.sp16) (by rw [stk, hsp]; exact hp.stk_scr.sub_right (sub_scr0 (by omega)))
-    (by rw [stk, hsp]; exact stk_scr' hp (by omega)) (by rw [stk, hsp]; exact stk_scr' hp (by omega))
+    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega_arith)) (by omega_arith) (by omega_arith))
+    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega_arith)) (by omega_arith) (by omega_arith))
+    (disj_scr (.inr (by omega_arith)) (by omega_arith) (by omega_arith))
+    (by rw [hsp]; exact hp.sp16) (by rw [stk, hsp]; exact hp.stk_scr.sub_right (sub_scr0 (by omega_arith)))
+    (by rw [stk, hsp]; exact stk_scr' hp (by omega_arith)) (by rw [stk, hsp]; exact stk_scr' hp (by omega_arith))
     (cov_rd cw) cw fun s' hk hout _ _ => ⟨Env.call hp h.env hk ?_, ?_⟩
   · intro r hr
     rcases mem4 hr with rfl | rfl | rfl | rfl
-    · exact .inl ⟨0, 200, by rw [at_zero], by omega⟩
+    · exact .inl ⟨0, 200, by rw [at_zero], by omega_arith⟩
     · exact .inl ⟨840, outlen, rfl, ho⟩
-    · exact .inl ⟨200, 640, rfl, by omega⟩
+    · exact .inl ⟨200, 640, rfl, by omega_arith⟩
     · exact .inr rfl
   · rw [hout, h.st]
 
@@ -543,7 +543,7 @@ theorem spongeWith_ok (v : Proof.Sha3.AArch64.Permutation) {rate outlen : Nat} (
   WP.seq (WP.mono (blk1_ok hp (rate_lt hr) h) fun _ h1 =>
     WP.seq (WP.mono ((call1With_ok (v := v)) hp hr h1) fun _ h2 => WP.seq (WP.mono (blk2_ok hr h2) fun _ h3 =>
       WP.seq (WP.mono ((call2With_ok (v := v)) hp hr h3) fun _ h4 =>
-        WP.seq (WP.mono (blk3_ok hr (by omega) h4) fun _ h5 => (call3With_ok (v := v)) hp hr ho h5)))))
+        WP.seq (WP.mono (blk3_ok hr (by omega_arith) h4) fun _ h5 => (call3With_ok (v := v)) hp hr ho h5)))))
 
 theorem sponge_ok {rate outlen : Nat} (hr : rate ∈ rates) (ho : 840 + outlen ≤ 2016) {s : State}
     (h : J0 P σ s) : WP isa (sponge rate outlen) s (J6 rate outlen P σ) :=
@@ -558,14 +558,14 @@ theorem epi_ok {s : State} (he : Env P σ s) :
       Keep [.x30, .x26, .x27, .x25] s s' := by
   have in8 : ∀ {u : State}, u.rd = σ.rd → u.wr = σ.wr → ∀ {off : Nat}, off + 8 ≤ 2048 →
       InRegions (u.rd ++ u.wr) (P.at' off) 8 := fun hr hw _ h' => inScrRd hp hr hw h'
-  refine wp_ldrx (a := P.at' 2040) (by decide) (by rw [he.x25]) (in8 he.rd he.wr (by omega))
+  refine wp_ldrx (a := P.at' 2040) (by decide) (by rw [he.x25]) (in8 he.rd he.wr (by omega_arith))
     fun s₁ h₁ e₁ => ?_
   refine wp_ldrx (a := P.at' 2024) (by decide) (by rw [h₁.get .x25, he.x25])
-    (in8 (by rw [h₁.rd, he.rd]) (by rw [h₁.wr, he.wr]) (by omega)) fun s₂ h₂ e₂ => ?_
+    (in8 (by rw [h₁.rd, he.rd]) (by rw [h₁.wr, he.wr]) (by omega_arith)) fun s₂ h₂ e₂ => ?_
   refine wp_ldrx (a := P.at' 2032) (by decide) (by rw [h₂.get .x25, h₁.get .x25, he.x25])
-    (in8 (by rw [h₂.rd, h₁.rd, he.rd]) (by rw [h₂.wr, h₁.wr, he.wr]) (by omega)) fun s₃ h₃ e₃ => ?_
+    (in8 (by rw [h₂.rd, h₁.rd, he.rd]) (by rw [h₂.wr, h₁.wr, he.wr]) (by omega_arith)) fun s₃ h₃ e₃ => ?_
   refine wp_ldrx (a := P.at' 2016) (by decide) (by rw [h₃.get .x25, h₂.get .x25, h₁.get .x25, he.x25])
-    (in8 (by rw [h₃.rd, h₂.rd, h₁.rd, he.rd]) (by rw [h₃.wr, h₂.wr, h₁.wr, he.wr]) (by omega))
+    (in8 (by rw [h₃.rd, h₂.rd, h₁.rd, he.rd]) (by rw [h₃.wr, h₂.wr, h₁.wr, he.wr]) (by omega_arith))
     fun s₄ h₄ e₄ => wp_nil ?_
   have k₄ := ((h₁.keep.trans h₂.keep).trans h₃.keep).trans h₄.keep
   have m₄ : s₄.mem = s.mem := by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem]

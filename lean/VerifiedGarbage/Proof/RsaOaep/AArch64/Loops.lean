@@ -33,24 +33,24 @@ theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat 
     (hstep : ∀ k < n, ∀ s, I k s →
       WP isa body s fun s' => I (k + 1) s' ∧ (s'.gpr cr != 0) = decide (k + 1 ≠ n))
     {s : State} (h0 : I 0 s) : WP isa (.loop body (.nonzero .x cr)) s (I n) := by
-  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega, hn, h0⟩
+  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega_arith, hn, h0⟩
   rintro m s ⟨k, rfl, hk, hi⟩
   refine WP.mono (hstep k hk s hi) fun s' ⟨hi', hc⟩ => ?_
   have hz : isa.eval (.nonzero .x cr) s' = some (decide (k + 1 ≠ n)) := by rw [eval_nonzero, hc]
   by_cases hl : k + 1 = n
   · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
     rwa [hl] at hi'
-  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
+  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, hi'⟩
 
 /-- The counter after one more iteration. -/
 theorem counter_step {n k : Nat} (hk : k < n) (hn : n < 2 ^ 64) :
     BitVec.ofNat 64 (n - k) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - (k + 1)) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show n - k < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show n - (k + 1) < 2 ^ 64 by omega),
+  rw [Nat.mod_eq_of_lt (show n - k < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show n - (k + 1) < 2 ^ 64 by omega_arith),
     show (1 : Nat) % 2 ^ 64 = 1 from rfl]
-  rw [show 2 ^ 64 - 1 + (n - k) = (n - (k + 1)) + 2 ^ 64 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)]
+  rw [show 2 ^ 64 - 1 + (n - k) = (n - (k + 1)) + 2 ^ 64 by omega_arith, Nat.add_mod_right,
+    Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- Whether the counter is zero. -/
 theorem counter_ne {n k : Nat} (hk : k + 1 ≤ n) (hn : n < 2 ^ 64) :
@@ -59,8 +59,8 @@ theorem counter_ne {n k : Nat} (hk : k + 1 ≤ n) (hn : n < 2 ^ 64) :
     constructor
     · intro h
       have := congrArg BitVec.toNat h
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-      simp at this; omega
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
+      simp at this; omega_arith
     · intro h; rw [h, Nat.sub_self]; rfl
   by_cases h : k + 1 = n
   · simp [h]
@@ -75,7 +75,7 @@ theorem carry_sub (a c : BitVec 64) :
   have := c.isLt
   rw [hn]
   simp only [Bool.toNat_true, decide_eq_decide]
-  omega
+  omega_arith
 
 /-! ## XORing bytes -/
 
@@ -89,9 +89,9 @@ theorem xorStep_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     WP isa (.block Impl.RsaOaep.AArch64.Mgf1.xorBody) u fun u' => Lay u' F S ∧ Step F S ws u u' ∧
       Rep u'.mem F S (upd V (b + j) (V (b + j) ^^^ V (a + j))) W ∧ u'.gpr .x11 = off S (a + j + 1) ∧
       u'.gpr .x12 = off S (b + j + 1) ∧ u'.gpr .x14 = u.gpr .x14 - BitVec.ofNat 64 1 := by
-  have r1 : InRegions (u.rd ++ u.wr) (off S (a + j)) 1 := L.sld (by omega)
-  have r2 : InRegions (u.rd ++ u.wr) (off S (b + j)) 1 := L.sld (by omega)
-  have w2 : InRegions u.wr (off S (b + j)) 1 := L.sst (by omega)
+  have r1 : InRegions (u.rd ++ u.wr) (off S (a + j)) 1 := L.sld (by omega_arith)
+  have r2 : InRegions (u.rd ++ u.wr) (off S (b + j)) 1 := L.sld (by omega_arith)
+  have w2 : InRegions u.wr (off S (b + j)) 1 := L.sst (by omega_arith)
   have v1 : u.mem (off S (a + j)) = V (a + j) := R.scr _ ha
   have v2 : u.mem (off S (b + j)) = V (b + j) := R.scr _ hb
   refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem.write (off S (b + j)) 1 (V (b + j) ^^^ V (a + j)) ∧
@@ -115,11 +115,11 @@ theorem xorV_succ (V : Nat → Byte) {a b j n : Nat} (hj : j < n) (hab : a + n �
   simp only [upd, xorV]
   by_cases hx : x = b + j
   · subst hx
-    rw [ifp rfl, ifn (by omega), ifn (by omega), ifp (by omega), Nat.add_sub_cancel_left]
+    rw [ifp rfl, ifn (by omega_arith), ifn (by omega_arith), ifp (by omega_arith), Nat.add_sub_cancel_left]
   · rw [ifn hx]
     by_cases h : b ≤ x ∧ x < b + j
-    · rw [ifp h, ifp (by omega)]
-    · rw [ifn h, ifn (by omega)]
+    · rw [ifp h, ifp (by omega_arith)]
+    · rw [ifn h, ifn (by omega_arith)]
 
 /-- The `n` bytes at `a` XORed into the `n` bytes at `b` (`x11`, `x12`, the
 count in `x14`). -/
@@ -135,12 +135,12 @@ theorem xorLoop_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat → B
     (fun j hj u ⟨Lu, Su, Ru, u11, u12, u14⟩ => ?_)
     ⟨L, Step.refl _ _ _ _, by
       refine (congrArg (fun V' => Rep _ F S V' _) (funext fun x => ?_)).mp R
-      simp only [xorV]; rw [ifn (by omega)], by rw [h11]; rfl, by rw [h12]; rfl, h14⟩)
+      simp only [xorV]; rw [ifn (by omega_arith)], by rw [h11]; rfl, by rw [h12]; rfl, h14⟩)
     fun u ⟨Lu, Su, Ru, _⟩ => ⟨Lu, Su, Ru⟩
-  refine WP.mono (xorStep_ok Lu Ru (a := a) (b := b) (j := j) (by omega) (by omega) u11 u12 ws)
+  refine WP.mono (xorStep_ok Lu Ru (a := a) (b := b) (j := j) (by omega_arith) (by omega_arith) u11 u12 ws)
     fun u' ⟨L', S', R', x11, x12, x14⟩ => ⟨⟨L', Su.trans S', xorV_succ V hj hab ▸ R', x11, x12, ?_⟩, ?_⟩
-  · rw [x14, u14, counter_step hj (by omega)]
-  · rw [x14, u14, counter_step hj (by omega)]; exact counter_ne hj (by omega)
+  · rw [x14, u14, counter_step hj (by omega_arith)]
+  · rw [x14, u14, counter_step hj (by omega_arith)]; exact counter_ne hj (by omega_arith)
 
 /-! ## Clearing words -/
 
@@ -153,8 +153,8 @@ theorem Rep.wz {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     Rep (m.write (off S o) 8 (0 : BitVec 64)) F S (zV V o 8) W where
   scr x hx := by
     simp only [Mem.write, zV]
-    have e := Offset.lt_iff (off S x) S (d := o) (n := 8) (by have := G.Sw; unfold oRsa at *; omega)
-    rw [off, Mem.sub_ofNat_toNat S (by unfold oRsa at *; omega)] at e
+    have e := Offset.lt_iff (off S x) S (d := o) (n := 8) (by have := G.Sw; unfold oRsa at *; omega_arith)
+    rw [off, Mem.sub_ofNat_toNat S (by unfold oRsa at *; omega_arith)] at e
     by_cases h : o ≤ x ∧ x < o + 8
     · rw [ifp (e.mpr h), ifp h]; simp
     · rw [ifn (fun h' => h (e.mp h')), ifn h]; exact R.scr x hx
@@ -165,10 +165,10 @@ theorem Rep.wz {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
 theorem zV_succ (V : Nat → Byte) (o j : Nat) : zV (zV V o (8 * j)) (o + 8 * j) 8 = zV V o (8 * (j + 1)) := by
   funext x; simp only [zV]
   by_cases h1 : o + 8 * j ≤ x ∧ x < o + 8 * j + 8
-  · rw [ifp h1, ifp (by omega)]
+  · rw [ifp h1, ifp (by omega_arith)]
   · rw [ifn h1]; by_cases h2 : o ≤ x ∧ x < o + 8 * j
-    · rw [ifp h2, ifp (by omega)]
-    · rw [ifn h2, ifn (by omega)]
+    · rw [ifp h2, ifp (by omega_arith)]
+    · rw [ifn h2, ifn (by omega_arith)]
 
 theorem clearBody_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {o : Nat} (ho : o + 8 ≤ oRsa) (h11 : u.gpr .x11 = off S o) (h13 : u.gpr .x13 = 0)
@@ -202,13 +202,13 @@ theorem clearLoop_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat →
     (fun j hj u ⟨Lu, Su, Ru, u11, u12, u13⟩ => ?_)
     ⟨L, Step.refl _ _ _ _, by
       refine (congrArg (fun V' => Rep _ F S V' _) (funext fun x => ?_)).mp R
-      simp only [zV]; rw [ifn (by omega)], by rw [h11]; rfl, h12, h13⟩)
+      simp only [zV]; rw [ifn (by omega_arith)], by rw [h11]; rfl, h12, h13⟩)
     fun u ⟨Lu, Su, Ru, _⟩ => ⟨Lu, Su, Ru⟩
-  refine WP.mono (clearBody_ok Lu Ru (o := o + 8 * j) (by omega) u11 u13 ws)
+  refine WP.mono (clearBody_ok Lu Ru (o := o + 8 * j) (by omega_arith) u11 u13 ws)
     fun u' ⟨L', S', R', x11, x12, x13⟩ => ⟨⟨L', Su.trans S', zV_succ V o j ▸ R', by rw [x11]; congr 1,
       ?_, x13⟩, ?_⟩
-  · rw [x12, u12, counter_step hj (by omega)]
-  · rw [x12, u12, counter_step hj (by omega)]; exact counter_ne hj (by omega)
+  · rw [x12, u12, counter_step hj (by omega_arith)]
+  · rw [x12, u12, counter_step hj (by omega_arith)]; exact counter_ne hj (by omega_arith)
 
 /-! ## Copying bytes -/
 
@@ -218,10 +218,10 @@ def cpV (V : Nat → Byte) (b n : Nat) (f : Nat → Byte) (x : Nat) : Byte := if
 theorem cpV_succ (V : Nat → Byte) (b j : Nat) (f : Nat → Byte) : upd (cpV V b j f) (b + j) (f j) = cpV V b (j + 1) f := by
   funext x; simp only [upd, cpV]
   by_cases hx : x = b + j
-  · subst hx; rw [ifp rfl, ifp (by omega), Nat.add_sub_cancel_left]
+  · subst hx; rw [ifp rfl, ifp (by omega_arith), Nat.add_sub_cancel_left]
   · rw [ifn hx]; by_cases h : b ≤ x ∧ x < b + j
-    · rw [ifp h, ifp (by omega)]
-    · rw [ifn h, ifn (by omega)]
+    · rw [ifp h, ifp (by omega_arith)]
+    · rw [ifn h, ifn (by omega_arith)]
 
 theorem copyBody_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {A : Addr} {b j : Nat} (hb : b + j < oRsa) (hA : InRegions (u.rd ++ u.wr) (off A j) 1)
@@ -231,18 +231,18 @@ theorem copyBody_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
       u'.mem = u.mem.write (off S (b + j)) 1 (u.mem (off A j)) ∧
       Rep u'.mem F S (upd V (b + j) (u.mem (off A j))) W ∧ u'.gpr .x11 = off A (j + 1) ∧
       u'.gpr .x12 = off S (b + j + 1) ∧ u'.gpr .x13 = u.gpr .x13 - BitVec.ofNat 64 1 := by
-  have w : InRegions u.wr (off S (b + j)) 1 := L.sst (by omega)
+  have w : InRegions u.wr (off S (b + j)) 1 := L.sst (by omega_arith)
   refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem.write (off S (b + j)) 1 (u.mem (off A j)) ∧
       u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧
       u'.gpr .x11 = off A j + BitVec.ofNat 64 1 ∧ u'.gpr .x12 = off S (b + j) + BitVec.ofNat 64 1 ∧
       u'.gpr .x13 = u.gpr .x13 - BitVec.ofNat 64 1) ?_ fun u' ⟨hm, hrd, hwr, hsp, hv, hcs, x11, x12, x13⟩ => ?_
   · oaep_run [h11, h12, BitVec.add_zero, hA, w, read_one, byte64, byte_rt64]
     oaep_fin
-  have R' : Rep u'.mem F S (upd V (b + j) (u.mem (off A j))) W := by rw [hm]; exact R.wb L.geo (by omega) _
+  have R' : Rep u'.mem F S (upd V (b + j) (u.mem (off A j))) W := by rw [hm]; exact R.wb L.geo (by omega_arith) _
   refine ⟨L.congr hsp hwr ?_, ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv], ?_⟩, hm, R', x11.trans (off_off A j 1),
     x12.trans (off_off S _ 1), x13⟩
   · rw [show sScr = 8 * 12 from rfl, R'.fr 12 (by decide), R.fr 12 (by decide)]
-  · rw [hm]; exact frame_wb (Frame.refl _ _) (by omega) _
+  · rw [hm]; exact frame_wb (Frame.refl _ _) (by omega_arith) _
 
 /-- The loop copying the `n` bytes at `A` (`x11`) to `b` (`x12`), the count
 in `x13`: the source's bytes are not among those it writes. -/
@@ -260,14 +260,14 @@ theorem copyLoop_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat → 
     (fun j hj u ⟨Lu, Su, Ru, Ku, u11, u12, u13⟩ => ?_)
     ⟨L, Step.refl _ _ _ _, by
       refine (congrArg (fun V' => Rep _ F S V' _) (funext fun x => ?_)).mp R
-      simp only [cpV]; rw [ifn (by omega)], fun _ _ => rfl, by rw [h11]; exact (BitVec.add_zero _).symm,
+      simp only [cpV]; rw [ifn (by omega_arith)], fun _ _ => rfl, by rw [h11]; exact (BitVec.add_zero _).symm,
       by rw [h12]; rfl, h13⟩)
     fun u ⟨Lu, Su, Ru, _⟩ => ⟨Lu, Su, Ru⟩
-  refine WP.mono (copyBody_ok Lu Ru (A := A) (b := b) (j := j) (by omega)
+  refine WP.mono (copyBody_ok Lu Ru (A := A) (b := b) (j := j) (by omega_arith)
     (by rw [Su.rd, Su.wr]; exact hA j hj) u11 u12 ws)
     fun u' ⟨L', S', hm, R', x11, x12, x13⟩ => ⟨⟨L', Su.trans S', by rw [Ku j hj] at R'; exact cpV_succ V b j _ ▸ R',
       fun i hi => by rw [hm, write1_apply, ifn (hsd i hi j hj), Ku i hi], x11, x12, ?_⟩, ?_⟩
-  · rw [x13, u13, counter_step hj (by omega)]
-  · rw [x13, u13, counter_step hj (by omega)]; exact counter_ne hj (by omega)
+  · rw [x13, u13, counter_step hj (by omega_arith)]
+  · rw [x13, u13, counter_step hj (by omega_arith)]; exact counter_ne hj (by omega_arith)
 
 end VG.Proof.RsaOaep.AArch64

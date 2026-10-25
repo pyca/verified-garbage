@@ -41,7 +41,7 @@ namespace VG.Proof.Blowfish.X86
 open VG VG.X86 VG.Impl.Blowfish.X86
 
 theorem disjoint_empty (r : Region) (a : Addr) : Region.Disjoint ⟨a, 0⟩ r := fun _ h => by
-  simp only [Region.Contains] at h; omega
+  simp only [Region.Contains] at h; omega_arith
 
 theorem scr_eq (up : Bool) (s : State) : Modes.X86.scrR s (dirCore up) = ⟨(arg s 4).setWidth 64, 8 * 11⟩ := by
   simp [Modes.X86.scrR, dirCore]
@@ -104,8 +104,8 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (d : Bool) (hstep
   obtain ⟨hrd, hwr, dKD, dKV, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE⟩ := h
   have hL := (dirCoreSpec d).layout
   refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore]),
-      (by simp only [dirCore]; omega)⟩, (by rw [hwr]; simp [dirCore]),
-    (fun _ => by rw [hwr]; simp [dirCore]), (by simp only [dirCore]; omega), (by rw [hwr, hstep]; simp [dirCore]),
+      (by simp only [dirCore]; omega_arith)⟩, (by rw [hwr]; simp [dirCore]),
+    (fun _ => by rw [hwr]; simp [dirCore]), (by simp only [dirCore]; omega_arith), (by rw [hwr, hstep]; simp [dirCore]),
     (by rw [hstep]; exact fD), ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,
     (fun _ => ?_), disjoint_empty _ _, disjoint_empty _ _,
     disjoint_empty _ _, disjoint_empty _ _, (by simp [dirCore]), (by rw [hstep]; simp [dirCore]), hL⟩
@@ -126,7 +126,7 @@ theorem keyArgs_of {post : State → State → Prop} (d : Bool) {s : State} (h :
   refine ⟨arg s 0, ⟨⟨⟨argAddr s 0, 20⟩, by rw [hrd]; simp, ?_⟩, rfl, rfl, by rw [hrd]; simp, fK⟩,
     fun r hr => ?_, fun r hr => ?_⟩
   · show (⟨argAddr s 0, 20⟩ : Region).Contains (argAddr s 0) 4
-    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
   · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]; exact ⟨dKS, hA _ dAS⟩
   · rw [hwr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -178,19 +178,19 @@ theorem fbTaint_wf {post : State → State → Prop} {s : State} (hp : (fbX86 po
   obtain ⟨hrd, hwr, dKD, dKV, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE⟩ := hp
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [fbTaint]; omega, ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [fbTaint]; omega_arith, ?_⟩, ?_⟩
   · rw [hwr]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil))
   · simp only [hwr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
       List.Pairwise.nil, and_true]
     exact ⟨⟨dVD.symm, dDS⟩, dVS, fun _ h => h.elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) dRD dAD
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) dRV dAV
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) dRS dAS
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_arith) dRD dAD
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_arith) dRV dAV
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_arith) dRS dAS
   · intro p hp'
     simp only [fbTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -206,12 +206,12 @@ theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h�
     fun k h4 hk => ?_⟩
   · simp only [fbTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
-  · rw [hwr₁, hwr₂, ha 1 (by omega), ha 2 (by omega), ha 3 (by omega), ha 4 (by omega)]
+  · rw [hwr₁, hwr₂, ha 1 (by omega_arith), ha 2 (by omega_arith), ha 3 (by omega_arith), ha 4 (by omega_arith)]
   · simp only [fbTaint] at hk
     rw [show VG.X86.Taint.depth fbTaint.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 24) fE₁ h4 hk, VG.X86.Taint.argByte_eq (n := 24) fE₂ h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_arith)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_arith))]
+    exact congrArg _ (ha _ (by omega_arith))
 
 theorem ofb_ct : ConstantTime isa (fbX86 ofbPost).pre (fbX86 ofbPost).pub ofb :=
   VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
@@ -289,7 +289,7 @@ theorem wide_implies_ofb :
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
+      | omega_arith
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.ofbPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost, ciph, ivAt, dataAt]
   · sig_implies_pub [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.ofbPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost]
@@ -308,7 +308,7 @@ theorem wide_implies_cfbEnc :
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
+      | omega_arith
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbEncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost, ciph, ivAt, dataAt]
   · sig_implies_pub [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbEncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost]
@@ -327,7 +327,7 @@ theorem wide_implies_cfbDec :
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega
+      | omega_arith
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost, ciph, ivAt, dataAt]
   · sig_implies_pub [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost]

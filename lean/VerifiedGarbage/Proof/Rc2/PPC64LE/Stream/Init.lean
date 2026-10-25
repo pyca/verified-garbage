@@ -49,25 +49,25 @@ theorem initBody_wp (s : State) (h : InitPre s)
   simp only [hK, hV, hC, hW] at hrd hwr kC kW vC vW CW
   rw [hK, hC, hV]
   have inW : ∀ d, d + 8 ≤ 576 → InRegions s.wr (W + BitVec.ofNat 64 d) 8 := fun d hd => by
-    rw [hwr]; exact ⟨⟨W, 576⟩, by simp, Offset.contains_base _ hd (by omega)⟩
+    rw [hwr]; exact ⟨⟨W, 576⟩, by simp, Offset.contains_base _ hd (by omega_arith)⟩
   have inC : InRegions s.wr (C + 128) 8 := by
-    rw [hwr]; exact ⟨⟨C, 144⟩, by simp, Offset.contains_base C (d := 128) (by omega) (by omega)⟩
+    rw [hwr]; exact ⟨⟨C, 144⟩, by simp, Offset.contains_base C (d := 128) (by omega_arith) (by omega_arith)⟩
   have inV : InRegions (s.rd ++ s.wr) V 8 := by
     rw [hrd]; exact ⟨⟨V, (s.gpr .r7).toNat⟩, by simp, by rw [hi]; exact Region.contains_self _ _⟩
   have cW : ∀ d, d + 8 ≤ 576 → (⟨W, 576⟩ : Region).Contains (W + BitVec.ofNat 64 d) 8 := fun d hd =>
-    Offset.contains_base W hd (by omega)
+    Offset.contains_base W hd (by omega_arith)
   have W512 := inW 512 (by decide)
   have W520 := inW 520 (by decide)
   -- frames
-  have slot512 : Region.Sub ⟨W + BitVec.ofNat 64 512, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega)
-  have slot520 : Region.Sub ⟨W + BitVec.ofNat 64 520, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega)
-  have ivC : Region.Sub ⟨C + 128, 8⟩ ⟨C, 144⟩ := Offset.sub_base C (d := 128) (by omega)
+  have slot512 : Region.Sub ⟨W + BitVec.ofNat 64 512, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega_arith)
+  have slot520 : Region.Sub ⟨W + BitVec.ofNat 64 520, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega_arith)
+  have ivC : Region.Sub ⟨C + 128, 8⟩ ⟨C, 144⟩ := Offset.sub_base C (d := 128) (by omega_arith)
   unfold initBody withLr
   apply WP.seq
   refine WP.mono (WP.keep [.r0, .r25] (c := .block [.mflr .r0, .store .d .r0 .r9 512, .store .d .r25 .r9 520,
       mov .r25 .r9]) (Q := fun t => t.gpr .r25 = W ∧
       t.mem = (s.mem.writeW (W + BitVec.ofNat 64 512) s.lr).writeW (W + BitVec.ofNat 64 520) (s.gpr .r25))
-    (by rrun [mov, hW, W512, W520]) (by simp [writesOnly, Code.allInstrs_eq, instrs, mov, dstOf]) rfl)
+    (by rrun [mov, hW, W512, W520]) (by rfl) rfl)
     fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
   have F₁ : Frame [⟨W, 576⟩] s.mem t₁.mem := by
     rw [m₁]
@@ -83,7 +83,7 @@ theorem initBody_wp (s : State) (h : InitPre s)
   refine WP.mono (WP.keep [.r6, .r7, .r10] (c := .block initArgs) (Q := fun t =>
       t.gpr .r6 = C ∧ t.gpr .r7 = W ∧ t.mem = t₁.mem.writeW (C + 128#64) (t₁.mem.readW V 64))
     (by unfold initArgs; rrun [mov, h6, h8, h9, inV₁, inC₁])
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, initArgs, mov, dstOf]) rfl) fun t₂ ⟨⟨a6, a7, m₂⟩, k₂⟩ => ?_
+    (by rfl) rfl) fun t₂ ⟨⟨a6, a7, m₂⟩, k₂⟩ => ?_
   have k12 := k₁.trans k₂
   have h3 : t₂.gpr .r3 = K := by rw [k12.gpr (by decide), hK]
   have h4 : t₂.gpr .r4 = s.gpr .r4 := k12.gpr (by decide)
@@ -112,24 +112,24 @@ theorem initBody_wp (s : State) (h : InitPre s)
     · exact ⟨⟨W, 576⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
   -- after the call
   refine WP.mono (WP.keep [.r3] (c := .block [.li .r3 0]) (Q := fun t => t.gpr .r3 = 0#64 ∧ t.mem = t₃.mem)
-    (by rrun) (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun t₄ ⟨⟨a3, m₄⟩, k₄⟩ => ?_
+    (by rrun) (by rfl) rfl) fun t₄ ⟨⟨a3, m₄⟩, k₄⟩ => ?_
   have h31 : t₄.gpr .r25 = W := by rw [k₄.gpr (by decide), P₃ _ (by decide), k₂.gpr (by decide), a₁]
   have F₂ : Frame [⟨C, 144⟩, ⟨W, 576⟩] s.mem t₂.mem := by
     rw [m₂]
-    exact (F₁.mono (by simp)).writeW (r := ⟨C, 144⟩) (by simp) _ (Offset.contains_base C (d := 128) (by omega) (by omega))
+    exact (F₁.mono (by simp)).writeW (r := ⟨C, 144⟩) (by simp) _ (Offset.contains_base C (d := 128) (by omega_arith) (by omega_arith))
   -- the slots, apart from the context and the called function's working space
   have slot : ∀ d, 512 ≤ d → d + 8 ≤ 576 → t₄.mem.readW (W + BitVec.ofNat 64 d) 64 = t₁.mem.readW (W + BitVec.ofNat 64 d) 64 := by
     intro d hd hd'
-    have sd : Region.Sub ⟨W + BitVec.ofNat 64 d, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega)
+    have sd : Region.Sub ⟨W + BitVec.ofNat 64 d, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega_arith)
     rw [m₄, F₃.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
       · exact (CW.sub_left C128).symm.sub_left sd
-      · exact Offset.disjoint_base W (by omega) (by omega)) (by decide), m₂,
+      · exact Offset.disjoint_base W (by omega_arith) (by omega_arith)) (by decide), m₂,
       Mem.readW_writeW_sep (((CW.sub_left ivC).symm.sub_left sd).sep (Region.contains_self _ _)
         (Region.contains_self _ _)) (by decide)]
   have e512 : t₄.mem.readW (W + 512#64) 64 = s.lr := by
-    rw [slot 512 (by decide) (by decide), m₁, Mem.readW_writeW_sep (Offset.sep W (by omega) (by omega) (by omega))
+    rw [slot 512 (by decide) (by decide), m₁, Mem.readW_writeW_sep (Offset.sep W (by omega_arith) (by omega_arith) (by omega_arith))
       (by decide), Mem.readW_writeW_self64]
   have e520 : t₄.mem.readW (W + 520#64) 64 = s.gpr .r25 := by
     rw [slot 520 (by decide) (by decide), m₁, Mem.readW_writeW_self64]
@@ -140,7 +140,7 @@ theorem initBody_wp (s : State) (h : InitPre s)
     rw [rw₄.1, rw₄.2]; obtain ⟨r, hr, hc⟩ := W520; exact ⟨r, List.mem_append_right _ hr, hc⟩
   refine WP.mono (WP.keep [.r0, .r25] (c := .block [.load .d .r0 .r25 512, .mtlr .r0, .load .d .r25 .r25 520])
       (Q := fun t => t.gpr .r25 = s.gpr .r25 ∧ t.lr = s.lr ∧ t.mem = t₄.mem)
-    (by rrun [h31, e512, e520, in512, in520]) (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl)
+    (by rrun [h31, e512, e520, in512, in520]) (by rfl) rfl)
     fun t₅ ⟨⟨a31, lr₅, m₅⟩, k₅⟩ => ⟨fun r hr => ?_, lr₅, by rw [k₅.gpr (by decide), a3], ?_, ?_⟩
   · by_cases h31' : r = .r25
     · subst h31'; exact a31
@@ -149,7 +149,7 @@ theorem initBody_wp (s : State) (h : InitPre s)
       rw [k₅.gpr (by simp [hn]), k₄.gpr (by simp; intro e; subst e; revert hr; decide), P₃ r hr,
         k12.gpr (by simp [hn])]
   · have hB : Spec.Rc2.bytesAt t₂.mem K (s.gpr .r4).toNat = Spec.Rc2.bytesAt s.mem K (s.gpr .r4).toNat :=
-      Proof.Rc2.bytesAt_frame F₂ K _ (by omega) (by
+      Proof.Rc2.bytesAt_frame F₂ K _ (by omega_arith) (by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro r (rfl | rfl)
         · exact kC
@@ -163,7 +163,7 @@ theorem initBody_wp (s : State) (h : InitPre s)
       Proof.Rc2.blockAt_frame F₃ _ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro r (rfl | rfl)
-        · exact Offset.disjoint_base C (d := 128) (by omega) (by omega)
+        · exact Offset.disjoint_base C (d := 128) (by omega_arith) (by omega_arith)
         · exact (CW.sub_left ivC).sub_right W512r)
     have hV₁ : Spec.Rc2.blockAt t₁.mem V = Spec.Rc2.blockAt s.mem V :=
       Proof.Rc2.blockAt_frame F₁ V (by

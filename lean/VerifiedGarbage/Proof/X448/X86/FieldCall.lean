@@ -47,7 +47,7 @@ theorem CallCtx.keep {s t : State} {base : Addr} (h : CallCtx s base) (hsp : t.g
 /-- Byte `d` of the stack a call uses. -/
 theorem callStk_byte (s : State) {d : Nat} (hd : d < 20) :
     (callStk s).Contains ((s.gpr .esp - BitVec.ofNat 32 20).setWidth 64 + BitVec.ofNat 64 d) 1 :=
-  Offset.contains_base _ (by omega) (by omega)
+  Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- A byte of the stack a call uses lies outside the working space. -/
 theorem CallCtx.out {s : State} {base : Addr} (h : CallCtx s base) {d : Nat} (hd : d < 20) :
@@ -61,11 +61,11 @@ theorem WsEq.of_frame {s : State} {base : Addr} (h : CallCtx s base) {m m' : Mem
     (hf : Frame [callStk s] m m') : WsEq base m m' := fun x hx =>
   hf x fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact fun hc => h.sep x (by simp only [Region.Contains]; simp only [ofs] at hx; omega) hc
+    exact fun hc => h.sep x (by simp only [Region.Contains]; simp only [ofs] at hx; omega_arith) hc
 
 theorem WsEq.limbs {base : Addr} {m m' : Mem} (h : WsEq base m m') {d : Nat} (hd : d + 112 ≤ 8192)
     {i : Nat} (hi : i < 28) : limbs m' base d i = limbs m base d i :=
-  congrArg BitVec.toNat (Mem.readW_congr fun k hk => (h _ (by rw [ofs_off base (by omega)]; omega)).symm).symm
+  congrArg BitVec.toNat (Mem.readW_congr fun k hk => (h _ (by rw [ofs_off base (by omega_arith)]; omega_arith)).symm).symm
 
 theorem WsEq.fe {base : Addr} {m m' : Mem} (h : WsEq base m m') {d : Nat} (hd : d + 112 ≤ 8192) :
     fe m' base d = fe m base d := valN_congr fun _ hi => h.limbs hd hi
@@ -82,17 +82,17 @@ theorem ret_disjoint {t : State} {base : Addr} (h : ∀ k < 4, 8192 ≤ ofs base
     Region.Disjoint ⟨(t.gpr .esp).setWidth 64, 4⟩ ⟨base, 8192⟩ := by
   intro x hx hw
   simp only [Region.Contains] at hx hw
-  have := h (x - (t.gpr .esp).setWidth 64).toNat (by omega)
+  have := h (x - (t.gpr .esp).setWidth 64).toNat (by omega_arith)
   rw [show (t.gpr .esp).setWidth 64 + BitVec.ofNat 64 (x - (t.gpr .esp).setWidth 64).toNat = x by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm]; exact BitVec.sub_add_cancel _ _] at this
   simp only [ofs] at this
-  omega
+  omega_arith
 
 /-- A byte at an offset below `esp`, as a byte of the stack a call uses. -/
 theorem stk_addr {E : BitVec 32} (hE : 20 ≤ E.toNat) {m d : Nat} (hm : m ≤ 20) :
     (E - BitVec.ofNat 32 m).setWidth 64 + BitVec.ofNat 64 d =
       (E - BitVec.ofNat 32 20).setWidth 64 + BitVec.ofNat 64 (20 - m + d) := by
-  rw [VG.X86.Taint.sub_setWidth (by omega), VG.X86.Taint.sub_setWidth hE]
+  rw [VG.X86.Taint.sub_setWidth (by omega_arith), VG.X86.Taint.sub_setWidth hE]
   have := E.isLt
   bv_omega
 
@@ -103,7 +103,7 @@ theorem argAddr_pushed {rs : List Reg} {s : State} (hE : 20 ≤ (s.gpr .esp).toN
       (s.gpr .esp - BitVec.ofNat 32 (4 * rs.length)).setWidth 64 + BitVec.ofNat 64 (4 * i) := by
   change argAddr (pushed rs s).callEntry i = _
   rw [argAddr_callEntry, pushed_esp]
-  exact addr_eq (by rw [sub_toNat (by omega)]; have := (s.gpr .esp).isLt; omega)
+  exact addr_eq (by rw [sub_toNat (by omega_arith)]; have := (s.gpr .esp).isLt; omega_arith)
 
 /-- A call of a field function whose code is `body`, with `rs` pushed as its
 arguments, the first of which (pushed last) is the working space. -/
@@ -127,30 +127,30 @@ theorem callFrame_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : st
   let e := (pushed rs s).callEntry.withRegions rd wr
   have esp_e : e.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (4 * rs.length + 4) := callEntry_esp' rs s
   have frame_e : Frame [below (s.gpr .esp) (4 * rs.length + 4)] s.mem e.mem :=
-    callEntry_frame (by omega) hrs
+    callEntry_frame (by omega_arith) hrs
   have stk : below (s.gpr .esp) (4 * rs.length + 4) ∈ [callStk s] ∨ 4 * rs.length + 4 < 20 := by
     rcases Nat.lt_or_ge rs.length 4 with h | h
-    · exact Or.inr (by omega)
-    · exact Or.inl (by rw [show rs.length = 4 by omega]; exact List.mem_singleton_self _)
+    · exact Or.inr (by omega_arith)
+    · exact Or.inl (by rw [show rs.length = 4 by omega_arith]; exact List.mem_singleton_self _)
   have weq : WsEq base s.mem e.mem := WsEq.of_frame hc (frame_e.sub fun r hr => by
     rw [List.mem_singleton.mp hr]
-    refine ⟨callStk s, List.mem_singleton_self _, below_sub (by omega) hE⟩)
+    refine ⟨callStk s, List.mem_singleton_self _, below_sub (by omega_arith) hE⟩)
   have entry : FnEntry e base rs.length o a := by
     refine ⟨?_, List.mem_singleton_self _, ?_, ⟨fun i hi => ?_, fun i hi k hk => ?_⟩, hl3,
       fun k hk => ?_, ?_, ?_, ho, ha⟩
     · change (arg (pushed rs s).callEntry 0).setWidth 64 = _
-      rw [hv 0 (by omega), h0v]; exact hs.edi
+      rw [hv 0 (by omega_arith), h0v]; exact hs.edi
     · change (arg (pushed rs s).callEntry 0).toNat + 8192 ≤ _
-      rw [hv 0 (by omega), h0v]; exact hs.nowrap
+      rw [hv 0 (by omega_arith), h0v]; exact hs.nowrap
     · refine ⟨_, List.mem_append_left _ (List.mem_singleton_self _), ?_⟩
       rw [argAddr_pushed hE hl4 hi]
-      exact Offset.contains_base _ (by omega) (by omega)
-    · rw [argAddr_pushed hE hl4 hi, Offset.add_add, stk_addr hE (by omega)]
-      exact hc.out (by omega)
-    · rw [esp_e, stk_addr (d := k) hE (by omega)]
-      exact hc.out (by omega)
-    · change arg (pushed rs s).callEntry 1 = _; rw [hv 1 (by omega), h1v]
-    · change arg (pushed rs s).callEntry 2 = _; rw [hv 2 (by omega), h2v]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+    · rw [argAddr_pushed hE hl4 hi, Offset.add_add, stk_addr hE (by omega_arith)]
+      exact hc.out (by omega_arith)
+    · rw [esp_e, stk_addr (d := k) hE (by omega_arith)]
+      exact hc.out (by omega_arith)
+    · change arg (pushed rs s).callEntry 1 = _; rw [hv 1 (by omega_arith), h1v]
+    · change arg (pushed rs s).callEntry 2 = _; rw [hv 2 (by omega_arith), h2v]
   let K : Contract isa :=
     { pre := fun t => t = e
       post := fun t t' => FnOut base o t t' ∧ Q t.mem t'.mem
@@ -163,7 +163,7 @@ theorem callFrame_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : st
     rw [show e.wr = wr from rfl] at hr
     rw [List.mem_singleton.mp hr]
     exact ret_disjoint entry.ret
-  refine WP.callWith (k := K) hK hn hne hrs (by rw [h0]; omega)
+  refine WP.callWith (k := K) hK hn hne hrs (by rw [h0]; omega_arith)
     ⟨rfl, Covers.of_mem fun r hr => ?_, Covers.of_mem fun r hr => ?_⟩ fun s' hrd hwr hcs hfr ⟨s₂, hm2, hpost, hq⟩ => ?_
   · rcases List.mem_append.mp hr with hr | hr
     · rw [List.mem_singleton.mp hr]; exact List.mem_append_right _ List.mem_cons_self
@@ -179,7 +179,7 @@ theorem callFrame_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : st
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self, fun _ h => h⟩
     · rw [List.mem_singleton.mp hr]
-      exact ⟨callStk s, by simp, below_sub (by omega) hE⟩
+      exact ⟨callStk s, by simp, below_sub (by omega_arith) hE⟩
   · rw [← hm2]; exact hpost.bounded
 
 theorem COp.of_movs {base : Addr} {o : Nat} {s s₁ t : State} (k : Keeps [.eax, .ecx, .edx] s s₁)
@@ -217,9 +217,9 @@ theorem call3_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : stackU
     (fun _ _ => rfl) (av 0 (by decide)) ((av 1 (by decide)).trans v1) ((av 2 (by decide)).trans v2)
     (Q := fun m m' => F m' base o = op (F m base a) (F m base b))
     fun t he hav hw _ => hok t he (by rw [hav 3 (by decide), av 3 (by decide)]; exact u₃.gpr)
-      (hw.bounded (by omega) (m₃ ▸ ab)) (hw.bounded (by omega) (m₃ ▸ bb)))
+      (hw.bounded (by omega_arith) (m₃ ▸ ab)) (hw.bounded (by omega_arith) (m₃ ▸ bb)))
     fun t ⟨hop, hbd, m, hm, hq⟩ => ⟨hop.of_movs k₃ m₃, hbd, ?_⟩
-  rw [hq, F, F, hm.fe (by omega), hm.fe (by omega), m₃]
+  rw [hq, F, F, hm.fe (by omega_arith), hm.fe (by omega_arith), m₃]
 
 /-- A call of `vg_gf448_r16_mul_a24`'s code `body`. -/
 theorem call2_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : stackUse body = 0)
@@ -237,7 +237,7 @@ theorem call2_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : stackU
   have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
   have hs₂ := hs.of_keeps k₂ (by decide)
   have hc₂ := hc.keep (k₂.1 _ (by decide))
-  have fit : 4 * [Reg.ecx, .eax, .edi].length + 4 ≤ (s₂.gpr .esp).toNat := by have := hc₂.sp; simp; omega
+  have fit : 4 * [Reg.ecx, .eax, .edi].length + 4 ≤ (s₂.gpr .esp).toNat := by have := hc₂.sp; simp; omega_arith
   have av : ∀ i (hi : i < 3), arg (pushed [.ecx, .eax, .edi] s₂).callEntry i =
       s₂.gpr [Reg.ecx, .eax, .edi][3 - 1 - i] := fun i hi => callEntry_arg fit (by decide) hi
   refine WP.mono (callFrame_ok (rs := [.ecx, .eax, .edi]) (name := name) hn h0 (by decide) (by decide)
@@ -245,9 +245,9 @@ theorem call2_ok {name : String} {body : Prog isa} (hn : NoSp body) (h0 : stackU
     (fun _ _ => rfl) (av 0 (by decide)) ((av 1 (by decide)).trans ((u₂.other _ (by decide)).trans u₁.gpr))
     ((av 2 (by decide)).trans u₂.gpr)
     (Q := fun m m' => F m' base o = op (F m base a))
-    fun t he _ hw _ => hok t he (hw.bounded (by omega) (m₂ ▸ ab)))
+    fun t he _ hw _ => hok t he (hw.bounded (by omega_arith) (m₂ ▸ ab)))
     fun t ⟨hop, hbd, m, hm, hq⟩ => ⟨hop.of_movs k₂ m₂, hbd, ?_⟩
-  rw [hq, F, F, hm.fe (by omega), m₂]
+  rw [hq, F, F, hm.fe (by omega_arith), m₂]
 
 theorem mulCall_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {o a b : Nat}
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :

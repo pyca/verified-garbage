@@ -29,14 +29,7 @@ theorem passHead_ok {s : State} {passed checks : Nat} (stack : Workspace s s.sp 
     exact BitVec.ofNat_add_ofNat _ _
   have zero : (BitVec.ofNat 32 (passed + 1) - BitVec.ofNat 32 checks == 0) = decide (passed + 1 = checks) :=
     (sub_beq_zero _ _).trans (ofNat_beq_eq (by omega) (by omega))
-  refine withRest [.r1, .r2] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.onPassHead : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r1, .r2] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.onPassHead
   ffrun [BitVec.add_zero, reads 56 (by decide), reads 52 (by decide), savedPassed, savedChecks, increment, zero]
 
@@ -63,14 +56,7 @@ private theorem passFinish_ok {s : State} (stack : Workspace s s.sp 72) :
   have write : InRegions s.wr (State.addr (s.sp + 56#32)) 4 := by
     rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
     exact stack.write (by decide)
-  refine withRest [.r12] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.onPassFinish : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.onPassFinish VG.Impl.Ffdh.Arm.ParameterCandidate.save
   ffrun [List.cons_append, List.nil_append, BitVec.add_zero, write]
   exact sub_beq_zero _ _

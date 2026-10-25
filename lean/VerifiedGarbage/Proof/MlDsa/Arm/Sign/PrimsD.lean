@@ -27,7 +27,7 @@ variable {D : Nat} {rbs wbs : List (Reg × Nat)}
 theorem sp8 {s E : State} (L : Lay D rbs wbs s) (hD : 8 ≤ D) (hsp : E.sp = s.sp - BitVec.ofNat 32 8) :
     E.sp.toNat + 4 ≤ 2 ^ 32 := by
   have := L.sp; have := s.sp.isLt
-  rw [hsp, sp_sub8 (by omega)]; omega
+  rw [hsp, sp_sub8 (by omega_arith)]; omega_arith
 
 /-- The entry state of a stack call, as its preconditions below need it. -/
 structure EntS (D : Nat) (rbs wbs : List (Reg × Nat)) (s : State) (S : Nat) (E : State) (v : BitVec 32) : Prop where
@@ -41,7 +41,7 @@ theorem entS {s s1 : State} {S : Nat} (L : Lay D rbs wbs s) (k : Keep argRegs s 
     (rd wr : List Region) :
     EntS D rbs wbs s S ((pushed [.r12, .lr] s1).callEntry.withRegions rd wr) (s1.gpr .r12) :=
   ⟨ent_S L k hS rd wr, hS, by rw [State.withRegions_sp, State.callEntry_sp, pushed_sp8, k.sp],
-    (stk_arg L k (by omega) rd wr).1, (stk_arg L k (by omega) rd wr).2⟩
+    (stk_arg L k (by omega_arith) rd wr).1, (stk_arg L k (by omega_arith) rd wr).2⟩
 
 /-! ## `BitPack` -/
 
@@ -68,7 +68,7 @@ theorem bpPre {S len : Nat} {s E : State} (En : EntS D rbs wbs s S E (BitVec.ofN
   obtain ⟨_, i1, i2, d12, _⟩ := rwChk_spec hc
   obtain ⟨ha', hb', hl', hl0⟩ := bitPackParams_lt hp
   rw [← hl] at hl' hl0
-  have hD : 8 ≤ D := by have := En.hS; omega
+  have hD : 8 ≤ D := by have := En.hS; omega_arith
   sig_pre [bitPackContract, bitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   simp only [g0, g1, g2, g3, En.aa, En.av, En.en.L.w i1 (by decide), En.en.L.w i2 hl0, toNat32 ha', toNat32 hb',
     toNat32 hl']
@@ -87,7 +87,7 @@ theorem bpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s)
   obtain ⟨ha', hb', hl', hl0⟩ := bitPackParams_lt hp
   rw [← hl] at hl' hl0
   have hS := hP.bitPack.hS
-  refine WP.mono (callS_ok hP.bitPack.ver.1 (by have := hP.bitPack.su; omega) (bpArgs_ok b1 b2) L.sp
+  refine WP.mono (callS_ok hP.bitPack.ver.1 (by have := hP.bitPack.su; omega_arith) (bpArgs_ok b1 b2) L.sp
     (rd := [pR (pa s f)]) (wr := [⟨pa s out, len⟩])
     (fun s1 hA k => by
       obtain ⟨e0, e1, e2, e3, e4⟩ := argsIn5 hA
@@ -99,7 +99,7 @@ theorem bpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s)
     fun s' ⟨hpost, hcs, s1, hA, k, s₂, hm₂, _, hq⟩ => ⟨hpost, hcs, ?_⟩
   obtain ⟨e0, e1, e2, e3, e4⟩ := argsIn5 hA
   have En := ent_S (S := hP.bitPack.S) L k hS ([pR (pa s f)] ++ [argR s]) [⟨pa s out, len⟩]
-  obtain ⟨-, av⟩ := stk_arg L k (by omega) ([pR (pa s f)] ++ [argR s]) [⟨pa s out, len⟩]
+  obtain ⟨-, av⟩ := stk_arg L k (by omega_arith) ([pR (pa s f)] ++ [argR s]) [⟨pa s out, len⟩]
   set E := (pushed [.r12, .lr] s1).callEntry.withRegions ([pR (pa s f)] ++ [argR s]) [⟨pa s out, len⟩] with hE
   have g0 : E.gpr .r0 = s.gpr f.1 + BitVec.ofNat 32 f.2 := by rw [hE, vS _ _ _ nl0, e0]; rfl
   have g1 : E.gpr .r1 = BitVec.ofNat 32 a := by rw [hE, vS _ _ _ nl1, e1]; rfl
@@ -135,12 +135,12 @@ theorem bpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {a b len : Nat}
   refine callS_tr hP.bitPack.ver.1 hP.bitPack.ver.2.1 (bpArgs_ok b1 b2) (fun x y h => h.1.sp)
     fun x y x1 y1 ⟨R, ⟨rx, gx⟩, ⟨ry, gy⟩⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, pre R.lx kx hAx rx gx, pre R.ly ky hAy ry gy, ?_,
-      (cov_S R.lx kx (by omega) (R.lx.cR i1) (R.lx.cW w1)).1, (cov_S R.lx kx (by omega) (R.lx.cR i1) (R.lx.cW w1)).2,
-      (cov_S R.ly ky (by omega) (R.ly.cR i1) (R.ly.cW w1)).1, (cov_S R.ly ky (by omega) (R.ly.cR i1) (R.ly.cW w1)).2⟩
+      (cov_S R.lx kx (by omega_arith) (R.lx.cR i1) (R.lx.cW w1)).1, (cov_S R.lx kx (by omega_arith) (R.lx.cR i1) (R.lx.cW w1)).2,
+      (cov_S R.ly ky (by omega_arith) (R.ly.cR i1) (R.ly.cW w1)).1, (cov_S R.ly ky (by omega_arith) (R.ly.cR i1) (R.ly.cW w1)).2⟩
   obtain ⟨hx0, hx1, hx2, hx3, hx4⟩ := argsIn5 hAx
   obtain ⟨hy0, hy1, hy2, hy3, hy4⟩ := argsIn5 hAy
-  obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega) ([pR (pa x f)] ++ [argR x]) [⟨pa x out, len⟩]
-  obtain ⟨-, vy⟩ := stk_arg R.ly ky (by omega) ([pR (pa y f)] ++ [argR y]) [⟨pa y out, len⟩]
+  obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega_arith) ([pR (pa x f)] ++ [argR x]) [⟨pa x out, len⟩]
+  obtain ⟨-, vy⟩ := stk_arg R.ly ky (by omega_arith) ([pR (pa y f)] ++ [argR y]) [⟨pa y out, len⟩]
   set X := (pushed [.r12, .lr] x1).callEntry.withRegions ([pR (pa x f)] ++ [argR x]) [⟨pa x out, len⟩] with hX
   set Y := (pushed [.r12, .lr] y1).callEntry.withRegions ([pR (pa y f)] ++ [argR y]) [⟨pa y out, len⟩] with hY
   have gx : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], X.gpr r = x1.gpr r := by
@@ -171,7 +171,7 @@ theorem bupPre {S : Nat} {s E : State} {v f : Ptr} (En : EntS D rbs wbs s S E (s
   obtain ⟨_, i1, i2, d12, _⟩ := rwChk_spec hc
   obtain ⟨ha', hb', hl', hl0⟩ := bitPackParams_lt hp
   rw [← hl] at hl' hl0
-  have hD : 8 ≤ D := by have := En.hS; omega
+  have hD : 8 ≤ D := by have := En.hS; omega_arith
   sig_pre [bitUnpackContract, bitUnpackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   simp only [g0, g1, g2, g3, En.aa, En.av, En.en.L.w i1 hl0, En.en.L.w i2 (by decide), toNat32 ha', toNat32 hb',
     toNat32 hl']
@@ -188,7 +188,7 @@ theorem bupAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
   obtain ⟨ha', hb', hl', hl0⟩ := bitPackParams_lt hp
   rw [← hl] at hl' hl0
   have hS := hP.bitUnpack.hS
-  refine WP.mono (callS_ok hP.bitUnpack.ver.1 (by have := hP.bitUnpack.su; omega) (bupArgs_ok b1 b2) L.sp
+  refine WP.mono (callS_ok hP.bitUnpack.ver.1 (by have := hP.bitUnpack.su; omega_arith) (bupArgs_ok b1 b2) L.sp
     (rd := [⟨pa s v, len⟩]) (wr := [pR (pa s f)])
     (fun s1 hA k => by
       obtain ⟨e0, e1, e2, e3, e4⟩ := argsIn5 hA
@@ -200,7 +200,7 @@ theorem bupAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
     fun s' ⟨hpost, hcs, s1, hA, k, s₂, hm₂, _, hq⟩ => ⟨hpost, hcs, ?_⟩
   obtain ⟨e0, e1, e2, e3, e4⟩ := argsIn5 hA
   have En := ent_S (S := hP.bitUnpack.S) L k hS ([⟨pa s v, len⟩] ++ [argR s]) [pR (pa s f)]
-  obtain ⟨-, av⟩ := stk_arg L k (by omega) ([⟨pa s v, len⟩] ++ [argR s]) [pR (pa s f)]
+  obtain ⟨-, av⟩ := stk_arg L k (by omega_arith) ([⟨pa s v, len⟩] ++ [argR s]) [pR (pa s f)]
   set E := (pushed [.r12, .lr] s1).callEntry.withRegions ([⟨pa s v, len⟩] ++ [argR s]) [pR (pa s f)] with hE
   have g0 : E.gpr .r0 = s.gpr v.1 + BitVec.ofNat 32 v.2 := by rw [hE, vS _ _ _ nl0, e0]; rfl
   have g1 : E.gpr .r1 = BitVec.ofNat 32 len := by rw [hE, vS _ _ _ nl1, e1]; rfl
@@ -234,12 +234,12 @@ theorem bupAt_tr {P : Prims} (hP : PrimsOk P D) {v f : Ptr} {a b len : Nat}
   refine callS_tr hP.bitUnpack.ver.1 hP.bitUnpack.ver.2.1 (bupArgs_ok b1 b2) (fun x y h => h.sp)
     fun x y x1 y1 R ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, pre R.lx kx hAx, pre R.ly ky hAy, ?_,
-      (cov_S R.lx kx (by omega) (R.lx.cR i1) (R.lx.cW w1)).1, (cov_S R.lx kx (by omega) (R.lx.cR i1) (R.lx.cW w1)).2,
-      (cov_S R.ly ky (by omega) (R.ly.cR i1) (R.ly.cW w1)).1, (cov_S R.ly ky (by omega) (R.ly.cR i1) (R.ly.cW w1)).2⟩
+      (cov_S R.lx kx (by omega_arith) (R.lx.cR i1) (R.lx.cW w1)).1, (cov_S R.lx kx (by omega_arith) (R.lx.cR i1) (R.lx.cW w1)).2,
+      (cov_S R.ly ky (by omega_arith) (R.ly.cR i1) (R.ly.cW w1)).1, (cov_S R.ly ky (by omega_arith) (R.ly.cR i1) (R.ly.cW w1)).2⟩
   obtain ⟨hx0, hx1, hx2, hx3, hx4⟩ := argsIn5 hAx
   obtain ⟨hy0, hy1, hy2, hy3, hy4⟩ := argsIn5 hAy
-  obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega) ([⟨pa x v, len⟩] ++ [argR x]) [pR (pa x f)]
-  obtain ⟨-, vy⟩ := stk_arg R.ly ky (by omega) ([⟨pa y v, len⟩] ++ [argR y]) [pR (pa y f)]
+  obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega_arith) ([⟨pa x v, len⟩] ++ [argR x]) [pR (pa x f)]
+  obtain ⟨-, vy⟩ := stk_arg R.ly ky (by omega_arith) ([⟨pa y v, len⟩] ++ [argR y]) [pR (pa y f)]
   set X := (pushed [.r12, .lr] x1).callEntry.withRegions ([⟨pa x v, len⟩] ++ [argR x]) [pR (pa x f)] with hX
   set Y := (pushed [.r12, .lr] y1).callEntry.withRegions ([⟨pa y v, len⟩] ++ [argR y]) [pR (pa y f)] with hY
   have gx : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], X.gpr r = x1.gpr r := by
@@ -278,15 +278,15 @@ theorem hbpPre {S : Nat} {s E : State} {ω k : Nat} (En : EntS D rbs wbs s S E (
   obtain ⟨_, i1, i2, d12, _⟩ := rwChk_spec hc
   obtain ⟨h1, h2, h3⟩ := hintParams_lt hp
   have k0 := hintParams_pos hp
-  have hD : 8 ≤ D := by have := En.hS; omega
-  have ek : ω + k - ω = k := by omega
-  have i1' : inB (rbs ++ wbs) h (1024 * k) = true := by rw [show 1024 * k = 256 * k * 4 by omega]; exact i1
+  have hD : 8 ≤ D := by have := En.hS; omega_arith
+  have ek : ω + k - ω = k := by omega_arith
+  have i1' : inB (rbs ++ wbs) h (1024 * k) = true := by rw [show 1024 * k = 256 * k * 4 by omega_arith]; exact i1
   sig_pre [hintBitPackContract, hintBitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  simp only [g0, g1, g2, g3, En.aa, En.av, En.en.L.w i1 (by omega), En.en.L.w i2 (by omega), toNat32 h1,
+  simp only [g0, g1, g2, g3, En.aa, En.av, En.en.L.w i1 (by omega_arith), En.en.L.w i2 (by omega_arith), toNat32 h1,
     toNat32 h2, toNat32 h3, ek]
   refine ⟨wf4 En.en.wf (sp8 En.en.L hD En.sp), hrd, hwr, En.en.L.disj d12, (argR_disj En.en.L hD i2).symm,
-    conj_stk [⟨pa s h, 256 * k * 4⟩, ⟨pa s y, ω + k⟩, argR s] ?_, En.en.L.fit i1 (by omega), En.en.L.fit i2 (by omega),
-    hp, by omega, trivial, by rw [En.en.hint i1']; exact hones⟩
+    conj_stk [⟨pa s h, 256 * k * 4⟩, ⟨pa s y, ω + k⟩, argR s] ?_, En.en.L.fit i1 (by omega_arith), En.en.L.fit i2 (by omega_arith),
+    hp, by omega_arith, trivial, by rw [En.en.hint i1']; exact hones⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨En.en.stk _ _ i1, En.en.stk _ _ i2, En.sp ▸ argR_stk En.en.L En.hS⟩
 
@@ -298,10 +298,10 @@ theorem hbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
   obtain ⟨w1, i1, i2, _, b1, b2⟩ := rwChk_spec hc
   obtain ⟨h1, h2, h3⟩ := hintParams_lt hp
   have k0 := hintParams_pos hp
-  have ek : ω + k - ω = k := by omega
-  have i1' : inB (rbs ++ wbs) h (1024 * k) = true := by rw [show 1024 * k = 256 * k * 4 by omega]; exact i1
+  have ek : ω + k - ω = k := by omega_arith
+  have i1' : inB (rbs ++ wbs) h (1024 * k) = true := by rw [show 1024 * k = 256 * k * 4 by omega_arith]; exact i1
   have hS := hP.hintBitPack.hS
-  refine WP.mono (callS_ok hP.hintBitPack.ver.1 (by have := hP.hintBitPack.su; omega) (hbpArgs_ok b1 b2) L.sp
+  refine WP.mono (callS_ok hP.hintBitPack.ver.1 (by have := hP.hintBitPack.su; omega_arith) (hbpArgs_ok b1 b2) L.sp
     (rd := [⟨pa s h, 256 * k * 4⟩]) (wr := [⟨pa s y, ω + k⟩])
     (fun s1 hA k' => by
       obtain ⟨e0, e1, e2, e3, e4⟩ := argsIn5 hA
@@ -313,7 +313,7 @@ theorem hbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
     fun s' ⟨hpost, hcs, s1, hA, k', s₂, hm₂, _, hq⟩ => ⟨hpost, hcs, ?_⟩
   obtain ⟨e0, e1, e2, e3, e4⟩ := argsIn5 hA
   have En := ent_S (S := hP.hintBitPack.S) L k' hS ([⟨pa s h, 256 * k * 4⟩] ++ [argR s]) [⟨pa s y, ω + k⟩]
-  obtain ⟨-, av⟩ := stk_arg L k' (by omega) ([⟨pa s h, 256 * k * 4⟩] ++ [argR s]) [⟨pa s y, ω + k⟩]
+  obtain ⟨-, av⟩ := stk_arg L k' (by omega_arith) ([⟨pa s h, 256 * k * 4⟩] ++ [argR s]) [⟨pa s y, ω + k⟩]
   set E := (pushed [.r12, .lr] s1).callEntry.withRegions ([⟨pa s h, 256 * k * 4⟩] ++ [argR s]) [⟨pa s y, ω + k⟩]
     with hE
   have g0 : E.gpr .r0 = s.gpr h.1 + BitVec.ofNat 32 h.2 := by rw [hE, vS _ _ _ nl0, e0]; rfl
@@ -323,7 +323,7 @@ theorem hbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
   have eh := En.hint i1'
   clear_value E
   sig_post [hintBitPackContract, hintBitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hq
-  simp only [g0, g2, g3, av, hm₂, toNat32 h1, toNat32 h2, ek, L.w i1 (by omega), L.w i2 (by omega), Arg.val,
+  simp only [g0, g2, g3, av, hm₂, toNat32 h1, toNat32 h2, ek, L.w i1 (by omega_arith), L.w i2 (by omega_arith), Arg.val,
     eh] at hq
   exact hq
 
@@ -353,14 +353,14 @@ theorem hbpAt_tr {P : Prims} (hP : PrimsOk P D) {h y : Ptr} {ω k : Nat} (hp : (
   refine callS_tr hP.hintBitPack.ver.1 hP.hintBitPack.ver.2.1 (hbpArgs_ok b1 b2) (fun x z h => h.1.sp)
     fun x z x1 z1 ⟨R, ox, oz, hl⟩ ⟨hAx, kx⟩ ⟨hAz, kz⟩ =>
     ⟨_, _, _, _, pre R.lx kx hAx ox, pre R.ly kz hAz oz, ?_,
-      (cov_S R.lx kx (by omega) (R.lx.cR i1) (R.lx.cW w1)).1, (cov_S R.lx kx (by omega) (R.lx.cR i1) (R.lx.cW w1)).2,
-      (cov_S R.ly kz (by omega) (R.ly.cR i1) (R.ly.cW w1)).1, (cov_S R.ly kz (by omega) (R.ly.cR i1) (R.ly.cW w1)).2⟩
+      (cov_S R.lx kx (by omega_arith) (R.lx.cR i1) (R.lx.cW w1)).1, (cov_S R.lx kx (by omega_arith) (R.lx.cR i1) (R.lx.cW w1)).2,
+      (cov_S R.ly kz (by omega_arith) (R.ly.cR i1) (R.ly.cW w1)).1, (cov_S R.ly kz (by omega_arith) (R.ly.cR i1) (R.ly.cW w1)).2⟩
   obtain ⟨hx0, hx1, hx2, hx3, hx4⟩ := argsIn5 hAx
   obtain ⟨hz0, hz1, hz2, hz3, hz4⟩ := argsIn5 hAz
   have Ex := ent_S (S := hP.hintBitPack.S) R.lx kx hS ([⟨pa x h, 256 * k * 4⟩] ++ [argR x]) [⟨pa x y, ω + k⟩]
   have Ez := ent_S (S := hP.hintBitPack.S) R.ly kz hS ([⟨pa z h, 256 * k * 4⟩] ++ [argR z]) [⟨pa z y, ω + k⟩]
-  obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega) ([⟨pa x h, 256 * k * 4⟩] ++ [argR x]) [⟨pa x y, ω + k⟩]
-  obtain ⟨-, vz⟩ := stk_arg R.ly kz (by omega) ([⟨pa z h, 256 * k * 4⟩] ++ [argR z]) [⟨pa z y, ω + k⟩]
+  obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega_arith) ([⟨pa x h, 256 * k * 4⟩] ++ [argR x]) [⟨pa x y, ω + k⟩]
+  obtain ⟨-, vz⟩ := stk_arg R.ly kz (by omega_arith) ([⟨pa z h, 256 * k * 4⟩] ++ [argR z]) [⟨pa z y, ω + k⟩]
   set X := (pushed [.r12, .lr] x1).callEntry.withRegions ([⟨pa x h, 256 * k * 4⟩] ++ [argR x]) [⟨pa x y, ω + k⟩]
     with hX
   set Z := (pushed [.r12, .lr] z1).callEntry.withRegions ([⟨pa z h, 256 * k * 4⟩] ++ [argR z]) [⟨pa z y, ω + k⟩]
@@ -378,7 +378,7 @@ theorem hbpAt_tr {P : Prims} (hP : PrimsOk P D) {h y : Ptr} {ω k : Nat} (hp : (
   simp only [gx .r0 (by decide), gx .r1 (by decide), gx .r2 (by decide), gx .r3 (by decide),
     gz .r0 (by decide), gz .r1 (by decide), gz .r2 (by decide), gz .r3 (by decide), sx, sz,
     hx0, hx1, hx2, hx3, hz0, hz1, hz2, hz3, vx, vz, hx4, hz4, Arg.val, toNat32 h3]
-  rw [R.lx.w i1 (by omega), R.ly.w i1 (by omega), cx, cz, hl]
+  rw [R.lx.w i1 (by omega_arith), R.ly.w i1 (by omega_arith), cx, cz, hl]
   simp only [R.eq i1, R.eq i2, R.sp, and_self]
 
 end

@@ -101,12 +101,12 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
   unfold scalarReduce scalarReduceSetup
   rw [scalarSave_eq]
   refine WP.seq (Spill.save_ok (b := .r5) (by decide) saveList_fits
-    (fun p hpl => in_base hws (by have := saveList_in p hpl; omega) (by have := saveList_in p hpl; omega)) ?_)
+    (fun p hpl => in_base hws (by have := saveList_in p hpl; omega_arith) (by have := saveList_in p hpl; omega_arith)) ?_)
   -- The state after the saves.
   let s1 : State := { s with mem := Spill.saveMem s.mem (s.gpr .r5) s.gpr saveList }
   have hsv : Spill.Saved (s.gpr .r5) s.gpr saveList s1.mem := Spill.saveMem_saved (by decide) _ _ _
   have hf1 : Frame [⟨s.gpr .r5, 8192⟩] s.mem s1.mem :=
-    Spill.saveMem_frame_base (fun p hpl => by have := saveList_in p hpl; omega) (by decide) _ _ _
+    Spill.saveMem_frame_base (fun p hpl => by have := saveList_in p hpl; omega_arith) (by decide) _ _ _
   refine wp_addi (by decide) (by decide) fun s2 u2 => wp_addi (by decide) (by decide) fun s3 u3 =>
     wp_addi (by decide) (by decide) fun s4 u4 => WP.block_nil ?_
   have hr4 : Rest [.r6, .r14, .r27] s1 s4 :=
@@ -121,15 +121,15 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
   have hc4 : Ctx (s.gpr .r5) s4 := ⟨e6, 8192, by decide, by rw [hr4.wr]; exact hws⟩
   -- The bytes of `wide`, kept by the saves.
   have hwb : ∀ i < 64, ¬ (⟨s.gpr .r5, 8192⟩ : Region).Contains (s.gpr .r4 + BitVec.ofNat 64 i) 1 :=
-    fun i hi => hp.wide_ws _ (Offset.contains_base _ (by omega) (by omega))
+    fun i hi => hp.wide_ws _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   have hb1 : bytesAt s4.mem (s.gpr .r4) 64 = bytesAt s.mem (s.gpr .r4) 64 := by
     rw [hm4]
     simp only [bytesAt, List.map_inj_left]
     intro i hi
     exact hf1 _ fun r hr => by rw [List.mem_singleton.mp hr]; exact hwb i (List.mem_range.mp hi)
   refine WP.seq (WP.mono (engine_ok hc4 e14
-    (fun i hi => by rw [hr4.rd, hr4.wr]; exact in_base (List.mem_append_left _ hwide) (by omega) (by omega))
-    (fun i hi => not_in_ws (by omega) (hwb i hi))) fun s5 ⟨hr5, hf5, hv5⟩ => ?_)
+    (fun i hi => by rw [hr4.rd, hr4.wr]; exact in_base (List.mem_append_left _ hwide) (by omega_arith) (by omega_arith))
+    (fun i hi => not_in_ws (by omega_arith) (hwb i hi))) fun s5 ⟨hr5, hf5, hv5⟩ => ?_)
   rw [hb1] at hv5
   have hc5 : Ctx (s.gpr .r5) s5 := hc4.of_rest hr5 (by decide)
   -- The copy to `out`, and the restores.
@@ -141,27 +141,27 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
   have hc6 : Ctx (s.gpr .r5) s6 := hc5.of_rest (u6.rest (ws := [.r14]) (by decide)) (by decide)
   have hwr6 : s6.wr = s.wr := by rw [u6.wr, hr5.wr, hr4.wr]
   have hrd6 : s6.rd = s.rd := by rw [u6.rd, hr5.rd, hr4.rd]
-  refine WP.append (packField_ok hc6 e14' (a := SR) (dst := 0) (by omega) (by decide)
-    (fun k hk => by rw [hwr6]; exact in_base hout (by omega) (by omega))
-    (by rw [BitVec.add_zero]; exact hp.out_ws.sub_right (Offset.sub_base _ (by omega))))
+  refine WP.append (packField_ok hc6 e14' (a := SR) (dst := 0) (by omega_arith) (by decide)
+    (fun k hk => by rw [hwr6]; exact in_base hout (by omega_arith) (by omega_arith))
+    (by rw [BitVec.add_zero]; exact hp.out_ws.sub_right (Offset.sub_base _ (by omega_arith))))
     fun s7 hp7 => ?_
   have hsv7 : Spill.Saved (s.gpr .r5) s.gpr saveList s7.mem := by
     have h5 : Spill.Saved (s.gpr .r5) s.gpr saveList s5.mem := by
       rw [← hm4] at hsv
       refine hsv.frame_in (lo := SAVE) (n := 96) saveList_in hf5 fun r hr => ?_
       rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+      exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
     rw [← u6.mem] at h5
     refine h5.frame_in (lo := SAVE) (n := 96) saveList_in hp7.frame fun r hr => ?_
     rw [List.mem_singleton.mp hr, BitVec.add_zero]
-    exact fun x h₁ h₂ => hp.out_ws x h₂ (Offset.sub_base _ (by omega) x h₁)
+    exact fun x h₁ h₂ => hp.out_ws x h₂ (Offset.sub_base _ (by omega_arith) x h₁)
   refine Spill.restore_ok (b := .r6) (B := s.gpr .r5) (by decide)
     (by rw [hp7.rest.gpr _ (by decide), u6.other _ (by decide), hr5.gpr _ (by decide), e6])
     saveList_fits saveList_restorable
     (fun p hpl => by
       rw [hp7.rest.rd, hp7.rest.wr, hrd6, hwr6]
-      exact in_base (List.mem_append_right _ hws) (by have := saveList_in p hpl; omega)
-        (by have := saveList_in p hpl; omega)) hsv7 fun s8 h8 => WP.block_nil ⟨fun r hr => ?_, ?_, ?_⟩
+      exact in_base (List.mem_append_right _ hws) (by have := saveList_in p hpl; omega_arith)
+        (by have := saveList_in p hpl; omega_arith)) hsv7 fun s8 h8 => WP.block_nil ⟨fun r hr => ?_, ?_, ?_⟩
   · refine h8.gpr_of ?_
     by_cases hm : r ∈ saveList.map Prod.fst
     · exact .inl hm

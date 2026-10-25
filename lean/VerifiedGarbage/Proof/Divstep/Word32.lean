@@ -7,6 +7,7 @@ public import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Divstep.Word32Bits
 public import Mathlib.Data.BitVec
 public import VerifiedGarbage.Proof.Divstep.Word32Def
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Divsteps on 32-bit words
@@ -45,7 +46,7 @@ theorem toNat_cong {x : BitVec 32} {a : Int} {k : Nat} (hk : k ≤ 32)
 
 theorem lowered {x : BitVec 32} {a : Int} {k : Nat} (h : (x.toNat : Int) % 2 ^ (k + 1) = a % 2 ^ (k + 1)) :
     (x.toNat : Int) % 2 ^ k = a % 2 ^ k := by
-  have hd : (2 : Int) ^ k ∣ 2 ^ (k + 1) := pow_dvd_pow 2 (by omega)
+  have hd : (2 : Int) ^ k ∣ 2 ^ (k + 1) := pow_dvd_pow 2 (by omega_arith)
   rw [← Int.emod_emod_of_dvd _ hd, h, Int.emod_emod_of_dvd _ hd]
 
 /-- `x - y` as an integer modulo `2^32`. -/
@@ -55,7 +56,7 @@ theorem toNat_sub_cong (x y : BitVec 32) :
   have := y.isLt
   push_cast
   rw [Int.emod_emod_of_dvd _ (by norm_num)]
-  omega
+  omega_arith
 
 theorem toNat_add_cong (x y : BitVec 32) :
     ((x + y).toNat : Int) % 2 ^ 32 = ((x.toNat : Int) + y.toNat) % 2 ^ 32 := by
@@ -67,8 +68,8 @@ theorem half_word {x : BitVec 32} {a : Int} {k : Nat} (hk : k + 1 ≤ 32)
     ((x >>> 1).toNat : Int) % 2 ^ k = (a / 2) % 2 ^ k := by
   have hx2 : (x.toNat : Int) % 2 = 0 := by
     have := congrArg (· % 2) h
-    simp only [Int.emod_emod_of_dvd _ (show (2 : Int) ∣ 2 ^ (k + 1) from dvd_pow_self 2 (by omega))] at this
-    omega
+    simp only [Int.emod_emod_of_dvd _ (show (2 : Int) ∣ 2 ^ (k + 1) from dvd_pow_self 2 (by omega_arith))] at this
+    omega_arith
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.pow_one]
   have : ((x.toNat / 2 : Nat) : Int) = (x.toNat : Int) / 2 := by push_cast; rfl
   rw [this]
@@ -122,7 +123,7 @@ theorem sign_word {d : Int} (hd : |d| < 2 ^ 30) : BitVec.ofInt 32 d >>> 31 = if 
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofInt, Nat.shiftRight_eq_div_pow]
   rw [abs_lt] at hd
   push_cast
-  split <;> simp only [BitVec.toNat_ofNat] <;> omega
+  split <;> simp only [BitVec.toNat_ofNat] <;> omega_arith
 
 /-- A divstep on words. -/
 theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 32) (h : w.rel t (k + 1))
@@ -131,7 +132,7 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 32) (h : w.rel t
   have hpar : ∀ x : BitVec 32, ∀ a : Int, (x.toNat : Int) % 2 ^ (k + 1) = a % 2 ^ (k + 1) →
       (x.toNat : Int) % 2 = a % 2 := fun x a hx => by
     have := congrArg (· % 2) hx
-    simpa only [Int.emod_emod_of_dvd _ (show (2 : Int) ∣ 2 ^ (k + 1) from dvd_pow_self 2 (by omega))] using this
+    simpa only [Int.emod_emod_of_dvd _ (show (2 : Int) ∣ 2 ^ (k + 1) from dvd_pow_self 2 (by omega_arith))] using this
   have gG := hpar _ _ hG
   have hS := sign_word hd
   rw [← hD] at hS
@@ -139,11 +140,11 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 32) (h : w.rel t
   have hd' : (2 : Int) ^ (k + 1) ∣ 2 ^ 32 := pow_dvd_pow 2 hk
   unfold mstep
   by_cases hg : t.g % 2 = 1
-  · rw [ite_t (show w.G.toNat % 2 = 1 by omega)] at hB
+  · rw [ite_t (show w.G.toNat % 2 = 1 by omega_arith)] at hB
     by_cases hd0 : 0 ≤ t.d
-    · rw [ite_f (show ¬ t.d < 0 by omega)] at hS
+    · rw [ite_f (show ¬ t.d < 0 by omega_arith)] at hS
       rw [wstep_swap w hB hS, ite_t ⟨hd0, hg⟩]
-      refine ⟨?_, ?_, ?_, ?_, ?_, lowered hG, half_word hk ?_ (by omega)⟩
+      refine ⟨?_, ?_, ?_, ?_, ?_, lowered hG, half_word hk ?_ (by omega_arith)⟩
       · simp only; rw [hD, ofInt_sub', ofInt_two]; ring
       · simp only; rw [hQ, ofInt_two_mul]
       · simp only; rw [hR, ofInt_two_mul]
@@ -151,8 +152,8 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 32) (h : w.rel t
       · simp only; rw [hR, hV, ofInt_sub']
       · rw [← Int.emod_emod_of_dvd _ hd', toNat_sub_cong, Int.emod_emod_of_dvd _ hd', Int.sub_emod, hG, hF,
           ← Int.sub_emod]
-    · rw [ite_t (show t.d < 0 by omega)] at hS
-      rw [wstep_odd w hB hS, ite_f (show ¬ (0 ≤ t.d ∧ t.g % 2 = 1) by omega)]
+    · rw [ite_t (show t.d < 0 by omega_arith)] at hS
+      rw [wstep_odd w hB hS, ite_f (show ¬ (0 ≤ t.d ∧ t.g % 2 = 1) by omega_arith)]
       refine ⟨?_, ?_, ?_, ?_, ?_, lowered hF, ?_⟩
       · simp only; rw [hD, BitVec.ofInt_add, BitVec.ofInt_ofNat, two32]; ring
       · simp only; rw [hU, ofInt_two_mul]
@@ -160,12 +161,12 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 32) (h : w.rel t
       · simp only; rw [hQ, hU, hg, one_mul, BitVec.ofInt_add]
       · simp only; rw [hR, hV, hg, one_mul, BitVec.ofInt_add]
       · simp only; rw [hg, one_mul]
-        refine half_word hk ?_ (by omega)
+        refine half_word hk ?_ (by omega_arith)
         rw [← Int.emod_emod_of_dvd _ hd', toNat_add_cong, Int.emod_emod_of_dvd _ hd', Int.add_emod, hG, hF,
           ← Int.add_emod]
-  · have hg0 : t.g % 2 = 0 := by omega
-    rw [ite_f (show ¬ w.G.toNat % 2 = 1 by omega)] at hB
-    rw [wstep_even w hB, ite_f (show ¬ (0 ≤ t.d ∧ t.g % 2 = 1) by omega)]
+  · have hg0 : t.g % 2 = 0 := by omega_arith
+    rw [ite_f (show ¬ w.G.toNat % 2 = 1 by omega_arith)] at hB
+    rw [wstep_even w hB, ite_f (show ¬ (0 ≤ t.d ∧ t.g % 2 = 1) by omega_arith)]
     refine ⟨?_, ?_, ?_, ?_, ?_, lowered hF, ?_⟩
     · simp only; rw [hD, BitVec.ofInt_add, BitVec.ofInt_ofNat, two32]; ring
     · simp only; rw [hU, ofInt_two_mul]
@@ -179,12 +180,12 @@ theorem wsteps_rel {w : WSt} {t : MSt} {K : Nat} (hK : K ≤ 32) (h : w.rel t K)
     (hd : |t.d| + 2 * K < 2 ^ 30) (hf : t.f % 2 = 1) : ∀ n ≤ K, (wsteps n w).rel (msteps n t) (K - n)
   | 0, _ => by simpa [wsteps, msteps] using h
   | n + 1, hn => by
-    have ih := wsteps_rel hK h hd hf n (by omega)
+    have ih := wsteps_rel hK h hd hf n (by omega_arith)
     rw [wsteps_succ, msteps_succ]
-    rw [show K - n = (K - (n + 1)) + 1 by omega] at ih
-    refine wstep_rel (by omega) ih ?_ (msteps_f_odd hf n)
+    rw [show K - n = (K - (n + 1)) + 1 by omega_arith] at ih
+    refine wstep_rel (by omega_arith) ih ?_ (msteps_f_odd hf n)
     have := msteps_d t n
-    have : (2 * n : Int) ≤ 2 * K := by exact_mod_cast (by omega : 2 * n ≤ 2 * K)
+    have : (2 * n : Int) ≤ 2 * K := by exact_mod_cast (by omega_arith : 2 * n ≤ 2 * K)
     linarith
 
 end VG.Proof.Divstep.W32

@@ -92,9 +92,9 @@ theorem ctrBlock_ok (hL : Layout c) (s : State) {B : Addr} {V b : Nat} (hb : b <
   have hs := hL.small
   have hroom := hL.room
   have hbuf := hL.buf_le
-  have hN : 8 * c.ctrSlots < 2 ^ 64 := by simp only [Core.ctrSlots]; omega
-  have h0 : c.buf + 2 * b < c.ctrSlots := by simp only [Core.ctrSlots]; omega
-  have h1 : c.buf + 2 * b + 1 < c.ctrSlots := by simp only [Core.ctrSlots]; omega
+  have hN : 8 * c.ctrSlots < 2 ^ 64 := by simp only [Core.ctrSlots]; omega_arith
+  have h0 : c.buf + 2 * b < c.ctrSlots := by simp only [Core.ctrSlots]; omega_arith
+  have h1 : c.buf + 2 * b + 1 < c.ctrSlots := by simp only [Core.ctrSlots]; omega_arith
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s .rcx .rax
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := bswap_ok s₁ .rcx
   obtain ⟨s₃, e₃, m₃, g₃, rd₃, wr₃⟩ := stReg_ok (s := s₂) (b := B) (k := c.buf + 2 * b) .rcx
@@ -109,9 +109,9 @@ theorem ctrBlock_ok (hL : Layout c) (s : State) {B : Addr} {V b : Nat} (hb : b <
   obtain ⟨s₇, e₇, h₇, l₇, o₇, m₇, rd₇, wr₇⟩ := incr_ok s₆ (V := V) (by rw [g₆' _ (by decide), hh])
     (by rw [g₆' _ (by decide), hl])
   have hP : wordAddr B (c.buf + 2 * b) = bufAddr c B b := by
-    simp only [wordAddr, bufAddr]; congr 2; omega
+    simp only [wordAddr, bufAddr]; congr 2; omega_arith
   have hP1 : wordAddr B (c.buf + 2 * b + 1) = bufAddr c B b + BitVec.ofNat 64 8 := by
-    simp only [wordAddr, bufAddr]; rw [addr_add]; congr 2; omega
+    simp only [wordAddr, bufAddr]; rw [addr_add]; congr 2; omega_arith
   have hmem : s₇.mem = (s.mem.writeW (wordAddr B (c.buf + 2 * b)) (bswap64 (hiOf V))).writeW
       (wordAddr B (c.buf + 2 * b + 1)) (bswap64 (loOf V)) := by
     rw [m₇, m₆, m₅, m₄, m₃, m₂, m₁, r₅, r₄, g₃, r₂, r₁, hh, o₂ .rbx (by decide), o₁ .rbx (by decide), hl]
@@ -140,13 +140,13 @@ theorem ctrLoop_ok (hL : Layout c) {B : Addr} : ∀ (k : Nat), k ≤ c.G → ∀
       (∀ j < k, bytesAt s'.mem (bufAddr c B j) 16 = Spec.Ctr.ofNat (V + j) 16) ∧
       Frame [bufPrefix c B k] s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .rcx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr
-  | 0, _, s, V, _, _, hh, hl => ⟨s, rfl, hh, hl, fun j hj => by omega, Frame.refl _ _, fun _ _ _ _ => rfl, rfl, rfl⟩
+  | 0, _, s, V, _, _, hh, hl => ⟨s, rfl, hh, hl, fun j hj => by omega_arith, Frame.refl _ _, fun _ _ _ _ => rfl, rfl, rfl⟩
   | k + 1, hk, s, V, hB, hw, hh, hl => by
     have hs := hL.small
     have hroom := hL.room
     have hbuf := hL.buf_le
-    obtain ⟨s₁, e₁, h₁, l₁, b₁, f₁, o₁, rd₁, wr₁⟩ := ctrLoop_ok hL k (by omega) s V hB hw hh hl
-    obtain ⟨s₂, e₂, h₂, l₂, b₂, f₂, o₂, rd₂, wr₂⟩ := ctrBlock_ok hL s₁ (V := V + k) (b := k) (by omega)
+    obtain ⟨s₁, e₁, h₁, l₁, b₁, f₁, o₁, rd₁, wr₁⟩ := ctrLoop_ok hL k (by omega_arith) s V hB hw hh hl
+    obtain ⟨s₂, e₂, h₂, l₂, b₂, f₂, o₂, rd₂, wr₂⟩ := ctrBlock_ok hL s₁ (V := V + k) (b := k) (by omega_arith)
       (by rw [o₁ _ (by decide) (by decide) (by decide), hB]) (by rw [wr₁]; exact hw) h₁ l₁
     refine ⟨s₂, ?_, by rw [h₂, Nat.add_assoc], by rw [l₂, Nat.add_assoc], fun j hj => ?_, ?_,
       fun r h1 h2 h3 => by rw [o₂ r h1 h2 h3, o₁ r h1 h2 h3], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
@@ -155,14 +155,14 @@ theorem ctrLoop_ok (hL : Layout c) {B : Addr} : ∀ (k : Nat), k ≤ c.G → ∀
       · subst hjk; exact b₂
       · rw [bytesAt_frame f₂ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact VG.Offset.disjoint B (by omega) (by omega) (by omega)) (by decide)]
-        exact b₁ j (by omega)
+          exact VG.Offset.disjoint B (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+        exact b₁ j (by omega_arith)
     · refine (f₁.sub fun r hr => ⟨bufPrefix c B (k + 1), List.mem_singleton_self _, ?_⟩).trans
         (f₂.sub fun r hr => ⟨bufPrefix c B (k + 1), List.mem_singleton_self _, ?_⟩)
       · simp only [List.mem_singleton] at hr; subst hr
-        exact VG.Offset.sub B (by omega) (by omega)
+        exact VG.Offset.sub B (by omega_arith) (by omega_arith)
       · simp only [List.mem_singleton] at hr; subst hr
-        exact VG.Offset.sub B (by omega) (by omega)
+        exact VG.Offset.sub B (by omega_arith) (by omega_arith)
 
 /-- The running counter's slots. -/
 abbrev ctrRegion (c : Core) (B : Addr) : Region := ⟨B + BitVec.ofNat 64 (8 * c.hiSlot), 16⟩
@@ -181,9 +181,9 @@ theorem ctrBlocks_ok (hL : Layout c) (s : State) {B : Addr} {V : Nat} (hB : s.gp
   have hs := hL.small
   have hroom := hL.room
   have hbuf := hL.buf_le
-  have hN : 8 * c.ctrSlots < 2 ^ 64 := by simp only [Core.ctrSlots]; omega
-  have hH : c.hiSlot < c.ctrSlots := by simp only [Core.hiSlot, Core.ctrSlots]; omega
-  have hLo : c.loSlot < c.ctrSlots := by simp only [Core.loSlot, Core.ctrSlots]; omega
+  have hN : 8 * c.ctrSlots < 2 ^ 64 := by simp only [Core.ctrSlots]; omega_arith
+  have hH : c.hiSlot < c.ctrSlots := by simp only [Core.hiSlot, Core.ctrSlots]; omega_arith
+  have hLo : c.loSlot < c.ctrSlots := by simp only [Core.loSlot, Core.ctrSlots]; omega_arith
   obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := movS_ok (s := s) (b := B) (k := c.hiSlot) .rax hB
     (inRd (slot_wr hw hN hH))
   obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂⟩ := movS_ok (s := s₁) (b := B) (k := c.loSlot) .rbx
@@ -205,8 +205,8 @@ theorem ctrBlocks_ok (hL : Layout c) (s : State) {B : Addr} {V : Nat} (hB : s.gp
     have hm : ctrRegion c B ∈ [ctrRegion c B] := List.mem_singleton_self _
     have hc := fun (x : Nat) (hx : x = c.hiSlot ∨ x = c.loSlot) =>
       (VG.Offset.contains B (d := 8 * x) (n := 64 / 8) (e := 8 * c.hiSlot) (k := 16)
-        (by simp only [Core.hiSlot, Core.loSlot] at hx ⊢; omega) (by simp only [Core.hiSlot, Core.loSlot] at hx ⊢; omega)
-        (by simp only [Core.hiSlot] at hx ⊢; omega))
+        (by simp only [Core.hiSlot, Core.loSlot] at hx ⊢; omega_arith) (by simp only [Core.hiSlot, Core.loSlot] at hx ⊢; omega_arith)
+        (by simp only [Core.hiSlot] at hx ⊢; omega_arith))
     exact ((Frame.refl _ _).writeW hm _ (hc _ (.inl rfl))).writeW hm _ (hc _ (.inr rfl))
   refine ⟨s₅, ?_, fun j hj => ?_, ?_, ?_, ?_, fun r h1 h2 h3 => ?_, by rw [rd₅, rd₄, rd₃, rd₂, rd₁],
     by rw [wr₅, wr₄, wr₃, wr₂, wr₁]⟩
@@ -218,11 +218,11 @@ theorem ctrBlocks_ok (hL : Layout c) (s : State) {B : Addr} {V : Nat} (hB : s.gp
       runBlock_app, e₄, Option.bind_some, e₅]
   · rw [bytesAt_frame fC (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint B (by simp only [Core.hiSlot]; omega) (by omega)
-        (by simp only [Core.hiSlot]; omega)) (by decide)]
+      exact VG.Offset.disjoint B (by simp only [Core.hiSlot]; omega_arith) (by omega_arith)
+        (by simp only [Core.hiSlot]; omega_arith)) (by decide)]
     exact b₃ j hj
-  · rw [hmem, readW_slot_write _ (by simp only [Core.hiSlot]; omega) (by simp only [Core.loSlot]; omega),
-      ite_eq_right (by simp only [Core.hiSlot, Core.loSlot]; omega), Mem.readW_writeW_self64]
+  · rw [hmem, readW_slot_write _ (by simp only [Core.hiSlot]; omega_arith) (by simp only [Core.loSlot]; omega_arith),
+      ite_eq_right (by simp only [Core.hiSlot, Core.loSlot]; omega_arith), Mem.readW_writeW_self64]
   · rw [hmem, Mem.readW_writeW_self64]
   · have f₃' : Frame [bufRegion c B] s.mem s₃.mem := by rw [← m₁, ← m₂]; exact f₃
     exact (f₃'.sub fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; rw [hr]; exact List.mem_cons_self,

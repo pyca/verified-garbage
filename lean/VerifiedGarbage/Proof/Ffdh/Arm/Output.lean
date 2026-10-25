@@ -31,12 +31,7 @@ theorem saveResult_ok (s : State) {base : BitVec 32} {len : Nat} (locals : Local
   have addr : State.addr (s.sp + BitVec.ofNat 32 64) = off (State.addr s.sp) 64 :=
     VG.Arm.addr_add (by have := locals.space.nowrap; omega)
   have write := locals.space.write (off := 64) (by decide)
-  refine withRest [.r12] ?_ (by
-    intro r hr i hi
-    simp only [instrs, VG.Impl.Ffdh.Arm.Domain.Exchange.saveResult, VG.Impl.Ffdh.Arm.Domain.st,
-      List.mem_cons, List.not_mem_nil, or_false] at hi
-    have ne : r ≠ .r12 := by simpa only [List.mem_singleton] using hr
-    rcases hi with rfl | rfl <;> simp [clobbers, dstOf, Ne.symm ne]) (by rfl)
+  refine withRest_all [.r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.Exchange.saveResult VG.Impl.Ffdh.Arm.Domain.st
   ffrun [addr, write, off, BitVec.add_zero]
   exact ⟨Mem.readW_writeW_self32 _ _ _, (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)⟩

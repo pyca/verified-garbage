@@ -93,10 +93,10 @@ theorem sfail_ct {Φ : State → State → Prop}
     rw [v.wr, hp.hwr, ← hp.hsi]; simp
   have hO : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region).Disjoint (stkR s) := by rw [← hp.hsi]; exact hp.dKo.symm
   exact WP.mono (signFail_ok v.L R (out := s.gpr .rdi) (k := (s.gpr .rcx).toNat) (hw 16 (by decide))
-    (by rw [hw 17 (by decide)]; show s.gpr .rcx = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega) hk2
+    (by rw [hw 17 (by decide)]; show s.gpr .rcx = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_arith) hk2
     hout (by rw [← hp.hsi]; exact hp.wO)
     ((by rw [← hp.hsi]; exact hp.dOs : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region).Disjoint
-      ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩).sub_right (Region.sub_prefix (by have := hp.hsl; unfold oRsa; omega)))
+      ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩).sub_right (Region.sub_prefix (by have := hp.hsl; unfold oRsa; omega_arith)))
     (hO.sub_right (frame_sub s))) fun u ⟨L', k', R', _⟩ =>
     ⟨s, S, v.next L' k'.2.2 R' (fun _ h => by cases h) trivial⟩
 
@@ -120,13 +120,13 @@ theorem semLen_ct (hc : SignChecks H.P H.D) (hH : HashOK H) :
   have L3 : Lay t3 (fb s) (stackArg s 13) := v.L.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep t3.mem (fb s) (stackArg s 13) V W := hm3 ▸ R
   refine WP.mono (WP.keepIn (by safe_by [emLen]) (by exact Nat.zero_le 8)
-    (emLen_ok (H := H) (by omega) L3 R3 (x := sn0v s) (k := (s.gpr .rcx).toNat)
+    (emLen_ok (H := H) (by omega_arith) L3 R3 (x := sn0v s) (k := (s.gpr .rcx).toNat)
       (by rw [hw 17 (by decide)]; show s.gpr .rcx = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
-      (by omega) (by omega) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ =>
+      (by omega_arith) (by omega_arith) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ =>
     ⟨s, S, ⟨L4, k4.2.2.trans (k3.2.2.trans v.wr), ⟨V, _, R4, fun k hk => ?_, trivial⟩, fun _ hp => by cases hp⟩,
       k4.2.1.trans (k3.2.1.trans hrd), frame_keep hp (k3.2.2.trans v.wr) L3.rsp (hm3 ▸ hM) f4, hax4, hc4⟩
   rcases List.mem_append.mp hk with hk | hk
-  · have : k ≠ 25 ∧ k ≠ 26 := by simp only [KS1, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+  · have : k ≠ 25 ∧ k ≠ 26 := by simp only [KS1, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_arith
     simp only [upd]; rw [ifn this.2, ifn this.1]; exact hw k hk
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
     rcases hk with rfl | rfl <;> simp [upd, sw, slo]
@@ -142,7 +142,7 @@ theorem ssalt_ct (hc : SignChecks H.P H.D) (hH : HashOK H) :
   obtain ⟨v, hrd, hM, hax, hcf⟩ := h
   have hok : H.D + 2 ≤ seml s := by
     rw [show isa.eval .b t = t.cf from rfl, hcf] at hb
-    simp only [Option.some.injEq, decide_eq_false_iff_not] at hb; omega
+    simp only [Option.some.injEq, decide_eq_false_iff_not] at hb; omega_arith
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have hp := S.ps
   have hk2 := hp.k2
@@ -154,8 +154,8 @@ theorem ssalt_ct (hc : SignChecks H.P H.D) (hH : HashOK H) :
   · xrun [ea_sp, L.rsp, L.ld (d := sSaltLen) (by decide), R.rd (d := sSaltLen) 40 rfl (by decide),
       hw 40 (by decide)]
     rfl
-  refine WP.mono (saltFits_ok (H := H) (by omega) t5 (a := seml s) (b := stackArg s 12) hok
-    (by unfold seml; omega) (by rw [k5.gpr (by decide)]; exact hax) hdx5) fun t6 ⟨k6, hm6, hax6, hc6⟩ => ?_
+  refine WP.mono (saltFits_ok (H := H) (by omega_arith) t5 (a := seml s) (b := stackArg s 12) hok
+    (by unfold seml; omega_arith) (by rw [k5.gpr (by decide)]; exact hax) hdx5) fun t6 ⟨k6, hm6, hax6, hc6⟩ => ?_
   have hm : t6.mem = t.mem := by rw [hm6, hm5]
   exact ⟨s, S, (v.keep (k5.trans k6) hm (by decide) (fun _ hp => by cases hp)).sub (by decide) []
     (fun _ hp => by cases hp) fun _ _ x => x, k6.2.1.trans (k5.2.1.trans hrd), hm ▸ hM, hax6, hc6, hok⟩
@@ -179,7 +179,7 @@ theorem privArgs_ct : RelCT isa (Two (SAt G (SE H KSM fun _ _ _ => True))) (.blo
       (hw 19 (by decide)) (hw 20 (by decide)) (hw 22 (by decide))))
     fun u ⟨⟨k', L', ⟨W', R', ha, _⟩, di, si, dx, cx, r8, r9⟩, f⟩ =>
     ⟨s, S, v.next L' k'.2.2 R' (fun _ h => by cases h) trivial, k'.2.1.trans hrd, frame_keep hp v.wr v.L.rsp hM f,
-      fun i hi => (R'.fr i (by unfold nW frameBytes; omega)).trans (ha i hi), di, si, dx, cx, r8, r9⟩
+      fun i hi => (R'.fr i (by unfold nW frameBytes; omega_arith)).trans (ha i hi), di, si, dx, cx, r8, r9⟩
 
 /-- An input, at the call, as on entry. -/
 theorem sentry_bytes {s t : State} (hst : t.gpr .rsp = fb s) (hM : Frame (wrR s) s.mem t.mem)
@@ -200,7 +200,7 @@ theorem pArg_sib {a s : State} (S : SSib G a s) {i : Nat} (hi : i < 14) : pArg s
   · rw [S.gpr (r := .rcx) (by decide)]
   · rw [S.arg (i := 13) (by decide)]
   · rw [S.arg (i := 14) (by decide)]
-  · exact S.arg (by omega)
+  · exact S.arg (by omega_arith)
 
 /-- The call's public data agree. -/
 theorem scall_pub {a s₁ s₂ t₁ t₂ : State} (S₁ : SSib G a s₁) (h₁ : SJP H s₁ t₁) (S₂ : SSib G a s₂)
@@ -220,14 +220,14 @@ theorem scall_pub {a s₁ s₂ t₁ t₂ : State} (S₁ : SSib G a s₁) (h₁ :
     have hp := S.ps
     rw [← S.nB]
     exact sentry_bytes (R := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩) hst hM hp.dKn hp.dOn hp.dns
-      (by have := hp.wN; dsimp only; omega)
+      (by have := hp.wN; dsimp only; omega_arith)
   have be : ∀ {s t : State}, SSib G a s → t.gpr .rsp = fb s → Frame (wrR s) s.mem t.mem →
       Spec.Rsa.bytesAt t.callEntry.mem (s.gpr .r8) (s.gpr .r9).toNat =
         Spec.Rsa.bytesAt a.mem (a.gpr .r8) (a.gpr .r9).toNat := fun {s t} S hst hM => by
     have hp := S.ps
     rw [← S.eB]
     exact sentry_bytes (R := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩) hst hM hp.dKe hp.dOe hp.des
-      (by have := hp.wE; dsimp only; omega)
+      (by have := hp.wE; dsimp only; omega_arith)
   have g : ∀ (t : State) (rd wr : List Region) {r : Reg}, r ≠ .rsp → (t.callEntry.withRegions rd wr).gpr r = t.gpr r :=
     fun t rd wr r hr => by rw [State.withRegions_gpr, State.callEntry_gpr _ hr]
   refine ⟨fun r hr => ?_, List.map_congr_left fun i hi => ?_, ?_, ?_⟩

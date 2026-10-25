@@ -87,11 +87,11 @@ theorem tailHead_ok (s : State) {t : Nat} (ht : t < 8) (h9 : s.gpr .r9 = BitVec.
   have e16 : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
   have e128 : BitVec.signExtend 64 (128 : BitVec 32) = 128 := by decide
   have a9 : BitVec.ofNat 64 (8 + t) + 8 = BitVec.ofNat 64 (16 + t) := by
-    rw [show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, ← BitVec.ofNat_add]; congr 1; omega
+    rw [show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, ← BitVec.ofNat_add]; congr 1; omega_arith
   have hz : (BitVec.ofNat 64 (16 + t) - 16 == 0) = decide (t = 0) := by
-    rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+    rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.ofNat_sub_ofNat_beq (by omega_arith) (by omega_arith)]
     simp only [decide_eq_decide]
-    omega
+    omega_arith
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
     isa, State.setReg, e8, e16, e128, h9, a9, hz, reduceCtorEq, ↓reduceIte,
@@ -108,12 +108,12 @@ theorem tailD_ok {s₀ s : State} {P : Nat → Block} {g : Nat} (hp : SPre s₀)
   have hle := h.le
   have hlt := h.lt
   obtain ⟨t, ht⟩ : ∃ t, t = nb s₀ - (g + 8) := ⟨_, rfl⟩
-  have ht8 : t < 8 := by omega
-  have hnb : nb s₀ = g + 8 + t := by omega
-  have h9 : s.gpr .r9 = BitVec.ofNat 64 (8 + t) := by rw [h.remaining]; congr 1; omega
+  have ht8 : t < 8 := by omega_arith
+  have hnb : nb s₀ = g + 8 + t := by omega_arith
+  have h9 : s.gpr .r9 = BitVec.ofNat 64 (8 + t) := by rw [h.remaining]; congr 1; omega_arith
   rw [tailD]
   refine WP.seq (WP.seq (WP.mono (tailHead_ok s ht8 h9) fun s₁ ⟨r9₁, dx₁, z₁, g₁, l₁, m₁, rd₁, wr₁⟩ => ?_))
-  have hR : Region.Sub ⟨bAddr s₀ (g + 8), 16 * t⟩ (dR s₀) := Offset.sub_base _ (by omega)
+  have hR : Region.Sub ⟨bAddr s₀ (g + 8), 16 * t⟩ (dR s₀) := Offset.sub_base _ (by omega_arith)
   have hE₁ : Env s₀ P s₁ := h.env.dataWrite hp hR (by rw [m₁]; exact Frame.refl _ _)
     (fun r _ h2 _ h4 => g₁ r h4 h2) rd₁ wr₁
   refine WP.ite (decide (t = 0)) z₁ (fun he => ?_) (fun he => ?_)
@@ -127,7 +127,7 @@ theorem tailD_ok {s₀ s : State} {P : Nat → Block} {g : Nat} (hp : SPre s₀)
   -- `t` blocks left.
   have t1 : 1 ≤ t := by
     have : t ≠ 0 := by simpa using he
-    omega
+    omega_arith
   refine WP.seq (WP.mono (ksTail_ok hp (.inr (.inr rfl)) hE₁ (m₁ ▸ h.templates))
     fun s₂ ⟨hE₂, hks, hF₂, hg₂, hy₂, hrd₂, hwr₂⟩ => ?_)
   refine WP.seq ?_
@@ -148,7 +148,7 @@ theorem tailD_ok {s₀ s : State} {P : Nat → Block} {g : Nat} (hp : SPre s₀)
   have m₄ : s₄.mem = s₂.mem := by rw [f₄.mem, am]
   have rdx₄ : s₄.gpr .rdx = bAddr s₀ (g + 8) := by rw [f₄.gpr, rdx₃]
   have hEok : E.Ok :=
-    { r1 := t1, r15 := show t ≤ 15 by omega, gS := rdx₄, gA := rdx₄
+    { r1 := t1, r15 := show t ≤ 15 by omega_arith, gS := rdx₄, gA := rdx₄
       gP := by show s₄.gpr .r11 = _; rw [f₄.gpr, a11, hE₂.r11]; rfl
       gW := by show s₄.gpr .rax = _; rw [f₄.gpr, aax, hE₂.r11]
       src9 := show Reg.rdx ≠ .r9 by decide
@@ -156,33 +156,33 @@ theorem tailD_ok {s₀ s : State} {P : Nat → Block} {g : Nat} (hp : SPre s₀)
       inS := fun j (hj : j < t) => by
         show InRegions (s₄.rd ++ s₄.wr) (bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j)) 16
         rw [rd₄, wr₄, bAddr_add]
-        exact in_rdwr (in_sub hp.d_in (by omega))
+        exact in_rdwr (in_sub hp.d_in (by omega_arith))
       inK := fun j (hj : j < t) => by
         show InRegions (s₄.rd ++ s₄.wr) (pp s₀ + BitVec.ofNat 64 64 + BitVec.ofNat 64 (768 + 16 * j)) 16
         rw [rd₄, wr₄, Offset.add_add]
-        exact in_rdwr (in_sub hp.p_in (by omega))
+        exact in_rdwr (in_sub hp.p_in (by omega_arith))
       inD := fun j (hj : j < t) => by
         show InRegions s₄.wr (bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j)) 16
         rw [wr₄, bAddr_add]
-        exact in_sub hp.d_in (by omega)
+        exact in_sub hp.d_in (by omega_arith)
       inW := fun j (hj : j < t) => by
         show InRegions (s₄.rd ++ s₄.wr) (pp s₀ + BitVec.ofNat 64 (256 - 16 * t) + BitVec.ofNat 64 (16 * j)) 16
         rw [rd₄, wr₄, Offset.add_add]
-        exact in_rdwr (in_sub hp.p_in (by omega))
+        exact in_rdwr (in_sub hp.p_in (by omega_arith))
       dS := fun j (hj : j < t) i hi => by
         show Region.Disjoint ⟨bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j), 16⟩ ⟨bAddr s₀ (g + 8), 16 * i⟩
         rw [bAddr_add]
-        exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+        exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
       dK := fun j (hj : j < t) => by
         show Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 64 + BitVec.ofNat 64 (768 + 16 * j), 16⟩
           ⟨bAddr s₀ (g + 8), 16 * t⟩
         rw [Offset.add_add]
-        exact (hp.d_p.symm.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))
+        exact (hp.d_p.symm.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))
       dW := fun j (hj : j < t) => by
         show Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 (256 - 16 * t) + BitVec.ofNat 64 (16 * j), 16⟩
           ⟨bAddr s₀ (g + 8), 16 * t⟩
         rw [Offset.add_add]
-        exact (hp.d_p.symm.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega)) }
+        exact (hp.d_p.symm.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith)) }
   have hI₄ : RInvD E 0 s₄ :=
     { le := Nat.zero_le _
       r10 := by rw [f₄.gpr]; exact a10
@@ -226,30 +226,30 @@ theorem tailD_ok {s₀ s : State} {P : Nat → Block} {g : Nat} (hp : SPre s₀)
     exact Offset.sub_base (pp s₀) (d := 832) (n := 128) (k := 1024) (by decide))
   have hB : ∀ j < t, E.H j = blk s₀ (g + 8 + j) := fun j hj => by
     show blockAt s₄.mem (bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j)) = _
-    rw [m₄, bAddr_add, ← srcBlk_false, (hD₂ _ (by omega)).2 (by omega)]
+    rw [m₄, bAddr_add, ← srcBlk_false, (hD₂ _ (by omega_arith)).2 (by omega_arith)]
   have hX : ∀ j < t, E.X j = ctb s₀ (g + 8 + j) := fun j hj => by
     show blockAt s₄.mem (bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j)) ^^^
       blockAt s₄.mem (pp s₀ + BitVec.ofNat 64 64 + BitVec.ofNat 64 (768 + 16 * j)) = _
     rw [show blockAt s₄.mem (bAddr s₀ (g + 8) + BitVec.ofNat 64 (16 * j)) = E.H j from rfl, hB j hj, m₄,
-      Offset.add_add, show 64 + (768 + 16 * j) = 832 + 16 * j by omega, hks j (by omega)]
+      Offset.add_add, show 64 + (768 + 16 * j) = 832 + 16 * j by omega_arith, hks j (by omega_arith)]
   have hT : ∀ j < t, E.T j = P (8 - t + j) := fun j hj => by
     show s₄.mem.readW (pp s₀ + BitVec.ofNat 64 (256 - 16 * t) + BitVec.ofNat 64 (16 * j)) 128 = _
-    rw [m₄, Offset.add_add, show 256 - 16 * t + 16 * j = 128 + 16 * (8 - t + j) by omega]
-    exact hE₂.powers _ (by omega)
+    rw [m₄, Offset.add_add, show 256 - 16 * t + 16 * j = 128 + 16 * (8 - t + j) by omega_arith]
+    exact hE₂.powers _ (by omega_arith)
   refine WP.mono (finish_complete (ix := false) hp true hE₆
-    (fun k hk => ⟨fun hk' => ?_, fun hk' => absurd hk (by omega)⟩) ?_ ?_) fun u hu => hu.1
+    (fun k hk => ⟨fun hk' => ?_, fun hk' => absurd hk (by omega_arith)⟩) ?_ ?_) fun u hu => hu.1
   · by_cases hkg : k < g + 8
     · rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hF (fun r hr => by
           simp only [List.mem_singleton] at hr; subst r
-          exact Offset.disjoint (dp s₀) (.inl (by omega)) (by omega) (by omega)),
-        (hD₂ k (by omega)).1 hkg]
-    · obtain ⟨j, rfl⟩ : ∃ j, k = g + 8 + j := ⟨k - (g + 8), by omega⟩
-      have ct := hI₅.ct j (show j < t by omega)
+          exact Offset.disjoint (dp s₀) (.inl (by omega_arith)) (by omega_arith) (by omega_arith)),
+        (hD₂ k (by omega_arith)).1 hkg]
+    · obtain ⟨j, rfl⟩ : ∃ j, k = g + 8 + j := ⟨k - (g + 8), by omega_arith⟩
+      have ct := hI₅.ct j (show j < t by omega_arith)
       rw [show E.aD j = bAddr s₀ (g + 8 + j) from bAddr_add s₀ (g + 8) j, ← m₆] at ct
-      rw [ct, hX j (by omega)]
+      rw [ct, hX j (by omega_arith)]
   · rw [g₆₄ _ (by decide) (by decide) (by decide), f₄.gpr, a8, hg₂, g₁ _ (by decide) (by decide), h.counter,
-      hnb, BitVec.add_assoc, BitVec.ofNat_add_ofNat, show g + 8 + 8 + t = g + 8 + t + 8 by omega]
-  · rw [y₆, hI₅.prod, accR_congr _ t hB hT, hlaw t t1 (by omega)]
+      hnb, BitVec.add_assoc, BitVec.ofNat_add_ofNat, show g + 8 + 8 + t = g + 8 + t + 8 by omega_arith]
+  · rw [y₆, hI₅.prod, accR_congr _ t hB hT, hlaw t t1 (by omega_arith)]
     have hy : E.y = hashPrefix s₀ true (g + 8) := by
       show s₄.lane .xmm2 0 = _
       rw [f₄.lane _ (by decide) 0 (by decide), al _ (by decide) (by decide), hy₂, l₁, h.hash]

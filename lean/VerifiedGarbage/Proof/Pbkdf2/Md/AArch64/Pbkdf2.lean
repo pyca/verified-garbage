@@ -49,7 +49,7 @@ theorem sub1_32 (x : BitVec 64) (h : 0 < (x.setWidth 32).toNat) :
   apply BitVec.eq_of_toNat_eq
   have := (x.setWidth 32).isLt
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat] at h this ⊢
-  omega
+  omega_arith
 
 /-- A shift right leaves zero exactly when the value is below the power of two. -/
 theorem shr_beq_zero (x : BitVec 64) (k : Nat) : (x >>> k == 0) = decide (x.toNat < 2 ^ k) := by
@@ -63,10 +63,10 @@ theorem shr_beq_zero (x : BitVec 64) (k : Nat) : (x >>> k == 0) = decide (x.toNa
       rw [beq_eq_false_iff_ne]
       intro h0
       have h1 : x.toNat / 2 ^ k = 0 := by rw [← e, h0]; rfl
-      have h2 : 2 ^ k ≤ x.toNat := by omega
+      have h2 : 2 ^ k ≤ x.toNat := by omega_arith
       have := Nat.div_le_div_right (c := 2 ^ k) h2
       rw [Nat.div_self hk] at this
-      omega
+      omega_arith
     rw [hne]; simp [h]
 
 theorem log2_B (hz : PSizes H) : 2 ^ Nat.log2 H.P.B = H.P.B ∧ Nat.log2 H.P.B < 64 := by
@@ -205,40 +205,40 @@ end
 /-! ## Facts about the hash function -/
 
 theorem _root_.VG.Proof.Pbkdf2.Md.AArch64.HashOK.wb_le (hH : HashOK H) : hH.stream.Wb ≤ 8 * H.W := by
-  have := hH.stream.hWb; have e : H.stream.W = (H.P.so + 48) / 8 := rfl; have := hH.sizes.fits; omega
+  have := hH.stream.hWb; have e : H.stream.W = (H.P.so + 48) / 8 := rfl; have := hH.sizes.fits; omega_arith
 
 theorem PSizes.o_hsWb_le_L (hz : PSizes H) (hH : HashOK H) : hH.stream.Wb ≤ (H.W + H.S) * 8 := by
-  have := hH.wb_le; have := hz.W; omega
+  have := hH.wb_le; have := hz.W; omega_arith
 
 theorem hash_len (hH : HashOK H) (m : List Byte) : (hH.SH.H.hash m).length = H.D := by
-  rw [hH.hash, List.length_take, VG.Proof.MdStream.Md.hash, hH.md.digest_length]; have := hH.sizes.DN; omega
+  rw [hH.hash, List.length_take, VG.Proof.MdStream.Md.hash, hH.md.digest_length]; have := hH.sizes.DN; omega_arith
 
 /-- A key longer than a block and its digest give the same `K₀`. -/
 theorem blockKey_hash (hH : HashOK H) {k : List Byte} (hk : H.P.B < k.length) :
     blockKey hH.SH.H (hH.SH.H.hash k) = blockKey hH.SH.H k := by
   have hl := hash_len hH k; have hB := hH.hB; have := hH.sizes.pad
   simp only [blockKey, hB, hl, ite_eq_left_of_eq_true _ _ (eq_true hk),
-    ite_eq_right_of_eq_false _ _ (eq_false (show ¬ H.P.B < H.D by omega))]
+    ite_eq_right_of_eq_false _ _ (eq_false (show ¬ H.P.B < H.D by omega_arith))]
 
 theorem blockKey_length (hH : HashOK H) (k : List Byte) : (blockKey hH.SH.H k).length = H.P.B := by
   have hB := hH.hB; have := hH.sizes.pad
   simp only [blockKey, hB, List.length_append, List.length_replicate]
   split
-  · rw [hash_len]; omega
-  · omega
+  · rw [hash_len]; omega_arith
+  · omega_arith
 
 theorem repr_keep (hH : HashOK H) {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, H.S⟩ r) {msg : List Byte} (hr : hH.SH.Repr m p msg) :
     hH.SH.Repr m' p msg :=
   hH.stream.repr _ _ _ _ _ (fun i hi => hf.bytes (R := ⟨p, H.S⟩) hd
-    (by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 2 ^ 64; omega) hi) hr
+    (by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 2 ^ 64; omega_arith) hi) hr
 
 /-- A state copied from `p` to `q` represents the same message. -/
 theorem repr_copy (hH : HashOK H) {m : Mem} {p q : Addr} {msg : List Byte} (hr : hH.SH.Repr m p msg) :
     hH.SH.Repr (writeBytes m q (bytesAt m p H.S)) q msg := by
-  have : H.S ≤ 256 := by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 256; omega
+  have : H.S ≤ 256 := by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 256; omega_arith
   refine hH.stream.repr _ _ _ _ _ (fun i hi => ?_) hr
-  rw [writeBytes_at _ _ _ (by rw [bytesAt_length]; exact hi) (by rw [bytesAt_length]; omega),
+  rw [writeBytes_at _ _ _ (by rw [bytesAt_length]; exact hi) (by rw [bytesAt_length]; omega_arith),
     bytesAt_getD' _ _ (show i < H.S from hi)]
 
 /-! ## Hashing a password longer than a block -/
@@ -430,7 +430,7 @@ theorem short_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hs : pwl 
   simp only [Hash.short]
   refine wp_mov fun t₁ u₁ => wp_mov fun t₂ u₂ => WP.block_nil ?_
   refine ⟨(h.upd u₁ (by decide)).upd u₂ (by decide), by rw [u₂.other _ (by decide), u₁.gpr, h.x19],
-    by rw [u₂.gpr, u₁.other _ (by decide), h.x20], ⟨.inl ⟨rfl, rfl⟩, by omega, ?_⟩⟩
+    by rw [u₂.gpr, u₁.other _ (by decide), h.x20], ⟨.inl ⟨rfl, rfl⟩, by omega_arith, ?_⟩⟩
   rw [u₂.mem, u₁.mem, h.kr.pwBytes hp]
 
 theorem long_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hs : ¬ pwl s₀ < H.P.B + 1) :
@@ -442,7 +442,7 @@ theorem long_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hs : ¬ pw
   rw [e₁, e₂]
   refine WP.mono (hashKey_ok hp hz hH h) fun t ⟨k, x2, x3, hb⟩ =>
     ⟨k, x2, x3, ⟨.inr ⟨rfl, rfl⟩, by exact hz.o_D_le_B, ?_⟩⟩
-  rw [hb, blockKey_hash hH (by rw [bytesAt_length]; omega)]
+  rw [hb, blockKey_hash hH (by rw [bytesAt_length]; omega_arith)]
 
 omit hp in
 /-- The value of `x9` the key's first branch tests. -/
@@ -468,13 +468,13 @@ theorem key_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) :
   unfold Hash.key Hash.keyShr Hash.keySub
   refine WP.seq (wp_lsr (log2_B hz).2 fun s₁ u₁ => WP.block_nil ?_)
   have k₁ := h.upd u₁ (by decide)
-  refine WP.ite _ (key_shr hz h u₁) (fun hT => short_ok hp hH k₁ (by have := of_decide_eq_true hT; omega))
+  refine WP.ite _ (key_shr hz h u₁) (fun hT => short_ok hp hH k₁ (by have := of_decide_eq_true hT; omega_arith))
     fun hF => ?_
   refine WP.seq (wp_subImm (by exact hz.o_B_lt_4096) fun s₂ u₂ => WP.block_nil ?_)
   have k₂ := k₁.upd u₂ (by decide)
   refine WP.ite _ (key_sub k₁ u₂ (by exact hz.o_B_lt_p64)) (fun hT => short_ok hp hH k₂ (by
-    have := of_decide_eq_true hT; omega)) fun hF' => long_ok hp hz hH k₂ (by
-      have := of_decide_eq_false hF; have := of_decide_eq_false hF'; omega)
+    have := of_decide_eq_true hT; omega_arith)) fun hF' => long_ok hp hz hH k₂ (by
+      have := of_decide_eq_false hF; have := of_decide_eq_false hF'; omega_arith)
 
 /-! ## HMAC's states -/
 
@@ -543,7 +543,7 @@ theorem su1_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hx2 : s.gpr
       stk_o := stk_sc hp k₃.kr (part_sub (by exact hz.o_st1O_S_le_L))
       stk_k := k_stk
       stk_s := stk_sc hp k₃.kr low_sub
-      scnw := by show (scr s₀).toNat + 8 * H.W ≤ 2 ^ 64; omega }
+      scnw := by show (scr s₀).toNat + 8 * H.W ≤ 2 ^ 64; omega_arith }
 
 /-- HMAC's `init`: the key's inner and outer states. -/
 theorem su2_ok (hH : HashOK H) (hI : Verified AArch64.target H.hmacInit (initG hH.SH H.W))

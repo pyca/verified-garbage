@@ -89,21 +89,21 @@ theorem bad_toNat {F : BitVec 64} (h : F.toNat < 4096) : (bad F).toNat = badN F.
   split <;> bv_omega
 
 theorem byte64 (b : Byte) : (b.setWidth 64).toNat = b.toNat := by
-  rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := b.isLt; omega)
+  rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := b.isLt; omega_arith)
 
 theorem fld0_toNat (b₀ b₁ : Byte) : (fld0 b₀ b₁).toNat = b₀.toNat + 256 * (b₁.toNat % 16) := by
   have h₀ := b₀.isLt
   have h₁ := b₁.isLt
   rw [fld0, BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, byte64, byte64,
     Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem fld1_toNat (b₁ b₂ : Byte) : (fld1 b₁ b₂).toNat = b₁.toNat / 16 + 16 * b₂.toNat := by
   have h₁ := b₁.isLt
   have h₂ := b₂.isLt
   rw [fld1, BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, byte64, byte64,
     Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 /-- The fields of the first `i` groups that are at least `q`. -/
 def badCount (E : List Byte) : Nat → Nat
@@ -115,10 +115,10 @@ theorem badCount_le (E : List Byte) : ∀ i, badCount E i ≤ 2 * i
   | i + 1 => by
     have := badCount_le E i
     simp only [badCount, badN]
-    split <;> split <;> omega
+    split <;> split <;> omega_arith
 
 theorem badN_le (F : Nat) : badN F ≤ 1 := by
-  unfold badN; split <;> omega
+  unfold badN; split <;> omega_arith
 
 theorem badN_eq_zero (F : Nat) : badN F = 0 ↔ F < q := by
   unfold badN; split <;> simp_all
@@ -164,25 +164,25 @@ theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 384) {s : State}
   have x0 : K s₀ + BitVec.ofNat 64 (3 * i) = K s₀ + BitVec.ofNat 64 (3 * i + 0) := rfl
   have hrw : s.rd ++ s.wr = [⟨K s₀, 1184⟩] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have ib : ∀ k < 3, InRegions (s.rd ++ s.wr) (K s₀ + BitVec.ofNat 64 (3 * i + k)) 1 := fun k hk => by
-    rw [hrw]; exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+    rw [hrw]; exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have rb : ∀ k < 3, s.mem (K s₀ + BitVec.ofNat 64 (3 * i + k)) = (E s₀).getD (3 * i + k) 0 := fun k hk => by
-    rw [h.mem, bytesAt_getD _ _ (by omega)]
-  refine WP.mono (body_ok h.r3 h.r4 h.r5 (by rw [x0]; exact ib 0 (by omega))
-    (by rw [eb 1 (by omega)]; exact ib 1 (by omega)) (by rw [eb 2 (by omega)]; exact ib 2 (by omega)))
+    rw [h.mem, bytesAt_getD _ _ (by omega_arith)]
+  refine WP.mono (body_ok h.r3 h.r4 h.r5 (by rw [x0]; exact ib 0 (by omega_arith))
+    (by rw [eb 1 (by omega_arith)]; exact ib 1 (by omega_arith)) (by rw [eb 2 (by omega_arith)]; exact ib 2 (by omega_arith)))
     fun s' ⟨r3, r4, r5, m, rd, wr, sp, lr, pres⟩ =>
     ⟨⟨?_, ?_, ?_, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, lr.trans h.lr,
       fun r hr => (pres r hr).trans (h.pres r hr), m.trans h.mem⟩, ?_⟩
   · rw [r3]; exact ptr_succ _ 3 i
   · rw [r4]; exact count_sub hi
-  · rw [r5, eb 1 (by omega), eb 2 (by omega), x0, rb 0 (by omega), rb 1 (by omega), rb 2 (by omega),
+  · rw [r5, eb 1 (by omega_arith), eb 2 (by omega_arith), x0, rb 0 (by omega_arith), rb 1 (by omega_arith), rb 2 (by omega_arith),
       Nat.add_zero]
     have l0 := ((E s₀).getD (3 * i) 0).isLt
     have l1 := ((E s₀).getD (3 * i + 1) 0).isLt
     have l2 := ((E s₀).getD (3 * i + 2) 0).isLt
     have c0 := bad_toNat (F := fld0 ((E s₀).getD (3 * i) 0) ((E s₀).getD (3 * i + 1) 0))
-      (by rw [fld0_toNat]; omega)
+      (by rw [fld0_toNat]; omega_arith)
     have c1 := bad_toNat (F := fld1 ((E s₀).getD (3 * i + 1) 0) ((E s₀).getD (3 * i + 2) 0))
-      (by rw [fld1_toNat]; omega)
+      (by rw [fld1_toNat]; omega_arith)
     rw [fld0_toNat] at c0
     rw [fld1_toNat] at c1
     have hb := badCount_le (E s₀) i
@@ -191,7 +191,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 384) {s : State}
     simp only [field0, field1]
     have := badN_le (((E s₀).getD (3 * i) 0).toNat + 256 * (((E s₀).getD (3 * i + 1) 0).toNat % 16))
     have := badN_le (((E s₀).getD (3 * i + 1) 0).toNat / 16 + 16 * ((E s₀).getD (3 * i + 2) 0).toNat)
-    omega
+    omega_arith
   · rw [r4, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]
     exact count_nz hi (by decide)
 
@@ -218,7 +218,7 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) :
   · have hb := badCount_le (E s₀) 384
     refine WP.mono (end_ok h.r5) fun s' ⟨r3, sp, lr, pres⟩ =>
       ⟨fun r hr => (pres r hr).trans (h.pres r hr), sp.trans h.sp, lr.trans h.lr, ?_⟩
-    rw [r3, ret_eq _ (by omega)]
+    rw [r3, ret_eq _ (by omega_arith)]
   · refine ⟨by simp [State.write], by simp [State.write], by simp [State.write, badCount], rfl, rfl, rfl, rfl,
       fun r hr => ?_, rfl⟩
     have : r ≠ .r4 ∧ r ≠ .r5 := by revert r hr; decide

@@ -32,25 +32,25 @@ theorem prepR_sv (h : In Ex base bytes len args s) (c : Ctx) {sp : BitVec 32} {m
   have bw := bc_eq_cwc len c
   have est : st len c = 2 * bc len c + 32 := rfl
   have j8 : lo len (.slot c j) ≤ lo len (.slot c 8) := by
-    have := Nat.mul_le_mul_right (st len c) hj; simp only [lo]; omega
-  have a3 := slot_apart len c (o := 3) (j := j) (by omega)
-  have a4 := slot_apart len c (o := 4) (j := j) (by omega)
+    have := Nat.mul_le_mul_right (st len c) hj; simp only [lo]; omega_arith
+  have a3 := slot_apart len c (o := 3) (j := j) (by omega_arith)
+  have a4 := slot_apart len c (o := 4) (j := j) (by omega_arith)
   have a7 := slot_apart len c (o := 7) (j := j) h7
-  have p1 := slot_past1 len c (j := j) (by omega)
+  have p1 := slot_past1 len c (j := j) (by omega_arith)
   have z0 : lo len (.slot c 0) = numBase := sl_zero len c
   have e1 : lo len (.slot c 1) = numBase + st len c := by simp [lo]
   have nb : numBase = 3336 := rfl
-  refine frameR_val32 F R nw (by omega) ?_ (prepR_fit h c)
+  refine frameR_val32 F R nw (by omega_arith) ?_ (prepR_fit h c)
   intro p hp
   simp only [prepR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [invOff] <;> omega
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [invOff] <;> omega_arith
 
 /-- Changes below the wide slot 9 keep the slots from 9 on. -/
 theorem low_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem}
     (F : Frame (frameR base sp ws) m m') (R : CallRoom sp base bytes) (fit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes)
     (hw : ∀ p ∈ ws, p.1 + p.2 ≤ lo len (.slot .wide 9)) {d k : Nat} (hd : lo len (.slot .wide 9) ≤ d)
     (hk : d + 4 * k ≤ bytes) : val32 m' base d k = val32 m base d k :=
-  frameR_val32 F R h.scratch.nowrap hk (fun p hp => .inr (by have := hw p hp; omega)) fit
+  frameR_val32 F R h.scratch.nowrap hk (fun p hp => .inr (by have := hw p hp; omega_arith)) fit
 
 /-- Where the wide slots lie, for a factor's power. -/
 structure WideLay (len bytes f o : Nat) : Prop where
@@ -72,16 +72,16 @@ structure WideLay (len bytes f o : Nat) : Prop where
 theorem WideLay.mk' (h : In Ex base bytes len args s) {f o : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (ho16 : 16 ≤ o)
     (ho : o ≤ 17) : WideLay len bytes f o := by
   have a := Nat.mul_le_mul_right (st len .wide) hf9
-  have b := Nat.mul_le_mul_right (st len .wide) (show f + 1 ≤ 16 by omega)
+  have b := Nat.mul_le_mul_right (st len .wide) (show f + 1 ≤ 16 by omega_arith)
   have c := Nat.mul_le_mul_right (st len .wide) ho16
-  have d := Nat.mul_le_mul_right (st len .wide) (show o + 1 ≤ 18 by omega)
+  have d := Nat.mul_le_mul_right (st len .wide) (show o + 1 ≤ 18 by omega_arith)
   rw [Nat.succ_mul] at b d
   have ef : lo len (.slot .wide f) = numBase + f * st len .wide := rfl
   have eo : lo len (.slot .wide o) = numBase + o * st len .wide := rfl
   have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
   have e16 : lo len (.slot .wide 16) = numBase + 16 * st len .wide := rfl
   have e18 : lo len (.slot .wide 18) = numBase + 18 * st len .wide := rfl
-  exact ⟨rfl, sl_zero len .wide, rfl, rfl, rfl, rfl, rfl, rfl, by omega, by omega, by omega, by omega,
+  exact ⟨rfl, sl_zero len .wide, rfl, rfl, rfl, rfl, rfl, rfl, by omega_arith, by omega_arith, by omega_arith, by omega_arith,
     h.slot_fit .wide (by decide), rfl⟩
 
 /-- The input (wide slot 15) modulo the factor in the wide slot `f`, into the wide slot `o`. -/
@@ -171,8 +171,8 @@ theorem reduce_ok (h : In Ex base bytes len args s) {f o : Nat} (hf9 : 9 ≤ f) 
       ((K₄.trans K₅).mono (by decide))).trans (K₆.mono (by decide)))
 
 theorem safeM_lt {p k : Nat} (hp : p < 2 ^ (32 * k)) (hk : 1 ≤ k) : safeM p < 2 ^ (32 * k) := by
-  have : 2 ^ 32 ≤ 2 ^ (32 * k) := Nat.pow_le_pow_right (by decide) (by omega)
-  unfold safeM; split <;> omega
+  have : 2 ^ 32 ≤ 2 ^ (32 * k) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  unfold safeM; split <;> omega_arith
 
 /-- Where the half context's slots lie. -/
 structure HalfLay (len : Nat) : Prop where
@@ -190,7 +190,7 @@ theorem HalfLay.mk' (h : In Ex base bytes len args s) : HalfLay len := by
   have a := bc_eq_cwc len .half
   have b := bc_eq_cwc len .wide
   have g := bc_ge h.lower' .half
-  exact ⟨by omega, by omega, a, sl_zero len .half, rfl, rfl, rfl, half_in_wide h (by decide)⟩
+  exact ⟨by omega_arith, by omega_arith, a, sl_zero len .half, rfl, rfl, rfl, half_in_wide h (by decide)⟩
 
 /-- The factor, a number below it and the exponent into the half context's slots 0, 5 and 8. -/
 theorem narrowCopies_ok (h : In Ex base bytes len args s) {f e o : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
@@ -266,7 +266,7 @@ theorem powerTail_ok (h : In Ex base bytes len args s) (c : Ctx) {o : Nat} (ho16
       Frame (frameR base (s.gpr .esp) (stR len o)) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide o)) (2 * cwc len .wide) = y ^ d % safeM p ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
-  have ho' : o ≤ 19 := by omega
+  have ho' : o ≤ 19 := by omega_arith
   refine WP.seq (WP.mono (prepCtx_ok h c) fun u₅ ⟨C₅, one₅, R₅, F₅, K₅⟩ => ?_)
   rw [hp] at C₅ R₅
   have B₅ : sv u₅.mem base len c 5 = y := by
@@ -275,7 +275,7 @@ theorem powerTail_ok (h : In Ex base bytes len args s) (c : Ctx) {o : Nat} (ho16
     rw [prepR_sv h c F₅ h.room (j := 8) (by decide) (by decide) (by decide), hd]
   refine WP.seq (WP.mono (windowPower_ok C₅ one₅ R₅) fun u₆ ⟨C₆, F₆, K₆, Y₆⟩ => ?_)
   rw [B₅, E₅] at Y₆
-  refine WP.mono (saveResult_ok C₆.inp c (o := o) (by omega) ho') fun u ⟨O₇, V₇, K₇⟩ => ⟨?_, by rw [V₇, Y₆], ?_⟩
+  refine WP.mono (saveResult_ok C₆.inp c (o := o) (by omega_arith) ho') fun u ⟨O₇, V₇, K₇⟩ => ⟨?_, by rw [V₇, Y₆], ?_⟩
   · have sp₅ : u₅.gpr .esp = s.gpr .esp := K₅.1 _ (by decide)
     rw [sp₅] at F₆
     exact ((stR_widen F₅ (prepR_in h c o)).trans (stR_widen F₆ (pwR_in C₅.inp c o))).trans
@@ -299,24 +299,24 @@ theorem narrowPower_ok (h : In Ex base bytes len args s) {f e o : Nat} (hf9 : 9 
   have cwle := (HalfLay.mk' h).cw
   have cw8 := (HalfLay.mk' h).cw8
   have hM := safeM_gt p
-  have sml := safeM_lt hpn (by omega)
-  have split : cwc len .half + (cwc len .wide - cwc len .half) = cwc len .wide := by omega
+  have sml := safeM_lt hpn (by omega_arith)
+  have split : cwc len .half + (cwc len .wide - cwc len .half) = cwc len .wide := by omega_arith
   unfold narrowPower
   refine reduce_ok h hf9 hf ho16 ho hp hx fun u₁ h₁ F₁ V₁ K₁ => ?_
   have bw := bc_eq_cwc len .wide
   have kf := stR_keep h ho16 ho F₁ h.room (k := cwc len .wide) Lf.f1
-    (by have := Lf.f2; have := Lf.o1; have := Lf.l16; have := Lf.l18; have := Lf.est; omega)
-    (.inl (by have := Lf.f2; have := Lf.o1; have := Lf.est; omega))
+    (by have := Lf.f2; have := Lf.o1; have := Lf.l16; have := Lf.l18; have := Lf.est; omega_arith)
+    (.inl (by have := Lf.f2; have := Lf.o1; have := Lf.est; omega_arith))
   have ke := stR_keep h ho16 ho F₁ h.room (k := cwc len .wide) Le.f1
-    (by have := Le.f2; have := Le.o1; have := Le.l16; have := Le.l18; have := Le.est; omega)
-    (.inl (by have := Le.f2; have := Le.o1; have := Le.est; omega))
+    (by have := Le.f2; have := Le.o1; have := Le.l16; have := Le.l18; have := Le.est; omega_arith)
+    (.inl (by have := Le.f2; have := Le.o1; have := Le.est; omega_arith))
   have P₁ : val32 u₁.mem base (lo len (.slot .wide f)) (cwc len .half) = p :=
     val32_low (b := cwc len .wide - cwc len .half) (by rw [split, kf, hp]) hpn
   have D₁ : val32 u₁.mem base (lo len (.slot .wide e)) (cwc len .half) = d :=
     val32_low (b := cwc len .wide - cwc len .half) (by rw [split, ke, hd]) hdn
   have X₁ : val32 u₁.mem base (lo len (.slot .wide o)) (cwc len .half) = x % safeM p :=
     val32_low (b := cwc len .wide - cwc len .half) (by rw [split, V₁])
-      (by have := Nat.mod_lt x (by omega : 0 < safeM p); omega)
+      (by have := Nat.mod_lt x (by omega_arith : 0 < safeM p); omega_arith)
   refine narrowCopies_ok h₁ hf9 hf he9 he ho16 ho P₁ D₁ X₁ fun u₄ h₄ F₄ M₄ B₄ E₄ K₄ => ?_
   refine WP.mono (powerTail_ok h₄ .half ho16 ho M₄ B₄ E₄) fun u ⟨F, V, K⟩ => ⟨?_, ?_, ?_⟩
   · have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
@@ -435,14 +435,14 @@ theorem power_ok (h : In Ex base bytes len args s) {f e o l : Nat} (hf9 : 9 ≤ 
   have eax : u₃.gpr .eax = args l := by rw [a₃.other _ (by decide), K₂.1 _ (by decide), a₁.gpr]
   have edx : (u₃.gpr .edx).toNat = bc len .half + 1 := by
     rw [a₃.gpr, e₂, BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+    omega_arith
   rw [eax, edx] at c₄
   have sp : u₄.gpr .esp = s.gpr .esp := K₄.1 _ (by decide)
   have hp' : val32 u₄.mem base (lo len (.slot .wide f)) (cwc len .wide) = p := by rw [m₄, hp]
   have hd' : val32 u₄.mem base (lo len (.slot .wide e)) (cwc len .wide) = d := by rw [m₄, hd]
   have hx' : val32 u₄.mem base (lo len (.slot .wide 15)) (cwc len .wide) = x := by rw [m₄, hx]
   refine WP.ite _ c₄ (fun nar => ?_) (fun _ => ?_)
-  · have F := fits (by have := of_decide_eq_true nar; omega)
+  · have F := fits (by have := of_decide_eq_true nar; omega_arith)
     refine WP.mono (narrowPower_ok h₄ hf9 hf he9 he ho16 ho hp' F.1 hd' F.2 hx') fun u ⟨Fu, Vu, Ku⟩ =>
       ⟨by rw [sp, m₄] at Fu; exact Fu, Vu, (K₄.mono (by decide)).trans Ku⟩
   · refine WP.mono (widePower_ok h₄ hf9 hf he9 he ho16 ho hp' hd' hx') fun u ⟨Fu, Vu, Ku⟩ =>

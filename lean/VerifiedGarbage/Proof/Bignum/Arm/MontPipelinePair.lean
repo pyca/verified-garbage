@@ -53,9 +53,9 @@ theorem pair_step {P T T' a b u m A : Nat} (h : 2 ^ 64 * T' = T + a * b + u * m)
 /-- Two rows keep the accumulator below `2m`. -/
 theorem pair_lt {T T' A b U m : Nat} (h : 2 ^ 64 * T' = T + A * b + U * m) (hT : T < 2 * m)
     (hA : A < 2 ^ 64) (hb : b < m) (hU : U < 2 ^ 64) : T' < 2 * m := by
-  have h1 : A * b ≤ (2 ^ 64 - 1) * (m - 1) := Nat.mul_le_mul (by omega) (by omega)
-  have h2 : U * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_right _ (by omega)
-  have : 2 ^ 64 * T' < 2 ^ 64 * (2 * m) := by omega
+  have h1 : A * b ≤ (2 ^ 64 - 1) * (m - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  have h2 : U * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_right _ (by omega_arith)
+  have : 2 ^ 64 * T' < 2 ^ 64 * (2 * m) := by omega_arith
   exact Nat.lt_of_mul_lt_mul_left this
 
 theorem pairBody_ok (round : Prog isa) (law : PairLaw round) {s0 s : State} {base : BitVec 32}
@@ -78,25 +78,25 @@ theorem pairBody_ok (round : Prog isa) (law : PairLaw round) {s0 s : State} {bas
   have tm := ctx.tmpM
   have oldB := h.outside.val32 (d := b) (k := n) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)
   have oldM := h.outside.val32 (d := mod) (k := n) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)
   have oldA0 := outs_word32 h.outside (d := a + 4 * i) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)
   have oldA1 := outs_word32 h.outside (d := a + 4 * i + 4) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)
   refine WP.mono (law s (ctx.congr h.rest.wr) even h.hdr hi h.ptr
     (by rw [oldM]; exact h.bound) (by rw [oldB, oldM]; exact hB) (by rw [oldM]; exact hInv)) ?_
   intro t post
   obtain ⟨q, _, value⟩ := post.value
   rw [oldA0, oldA1, oldB, oldM] at value
-  refine ⟨⟨by omega, post.hdr, post.ptr, ?_, ?_, h.outside.trans post.outside,
+  refine ⟨⟨by omega_arith, post.hdr, post.ptr, ?_, ?_, h.outside.trans post.outside,
     h.rest.trans post.rest⟩, post.zero⟩
   · have pw : 2 ^ (32 * (i + 2)) = 2 ^ (32 * i) * 2 ^ 64 := by
-      rw [show 32 * (i + 2) = 32 * i + 64 by omega]; exact Nat.pow_add 2 (32 * i) 64
+      rw [show 32 * (i + 2) = 32 * i + 64 by omega_arith]; exact Nat.pow_add 2 (32 * i) 64
     have va : val32 s0.mem (State.addr base) a (i + 2) = val32 s0.mem (State.addr base) a i +
         2 ^ (32 * i) * (w32 s0.mem (State.addr base) (a + 4 * i) +
           2 ^ 32 * w32 s0.mem (State.addr base) (a + 4 * i + 4)) := by
@@ -121,7 +121,7 @@ theorem pair_rounds_ok (round : Prog isa) (law : PairLaw round) (s : State) {bas
   refine WP.loop (M := isa) loopInv ?_ (n / 2) s ?_
   · intro k t h
     obtain ⟨i, hik, hk, hi⟩ := h
-    refine WP.mono (pairBody_ok round law ctx even hi (by omega) hB hInv) ?_
+    refine WP.mono (pairBody_ok round law ctx even hi (by omega_arith) hB hInv) ?_
     rintro u ⟨hu, hz⟩
     by_cases he : i + 2 = n
     · left
@@ -129,15 +129,15 @@ theorem pair_rounds_ok (round : Prog isa) (law : PairLaw round) (s : State) {bas
       change some (!u.z) = some false
       simp only [hz, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 2, by omega, by omega, hu⟩
+      refine ⟨?_, k - 1, by omega_arith, i + 2, by omega_arith, by omega_arith, hu⟩
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, by omega, ?_⟩
-    refine ⟨by omega, hdr, ptr, ?_, ?_, Outs.refl _ _ _, Rest.refl _ _⟩
+  · refine ⟨0, by omega_arith, by omega_arith, ?_⟩
+    refine ⟨by omega_arith, hdr, ptr, ?_, ?_, Outs.refl _ _ _, Rest.refl _ _⟩
     · rw [hzero]
       simp only [val32, Nat.mul_zero, Nat.zero_mul, Nat.zero_mod]
     · rw [hzero]
-      omega
+      omega_arith
 
 theorem PairLaw.loop {round : Prog isa} (law : PairLaw round) : LoopLaw round :=
   fun s _ _ _ _ _ _ _ _ _ ctx even hdr ptr hzero hB hInv => pair_rounds_ok round law s ctx even hdr ptr hzero hB hInv

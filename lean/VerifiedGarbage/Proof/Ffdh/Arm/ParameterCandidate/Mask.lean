@@ -36,14 +36,7 @@ theorem maskStep_ok (s : State) {n i : Nat} (bound : n ≤ 32) (more : i < n)
   have zero : (BitVec.ofNat 32 (n - (i + 1)) == (0 : BitVec 32)) = decide (i + 1 = n) := by
     rw [ofNat_beq_zero (k := n - (i + 1)) (by omega)]
     simp only [show n - (i + 1) = 0 ↔ i + 1 = n by omega]
-  refine withRest [.r6, .r7] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.maskStep : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r6, .r7] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.maskStep
   ffrun [mask, count, inc, dec, zero]
 

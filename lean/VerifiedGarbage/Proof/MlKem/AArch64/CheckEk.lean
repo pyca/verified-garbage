@@ -138,10 +138,10 @@ theorem step {s₀ : State} (hp : (checkEkAArch64 p).pre s₀) (hk4 : p.k ≤ 4)
       t.gpr .x10 = (s.mem.readW (s.gpr .x0 + 8) 32).setWidth 64 := by
     refine wp_ldrx (a := s.gpr .x0) (by decide) (by simp) ?_ fun s1 h1 e1 => ?_
     · rw [h.rd, h.wr, hp.1, hp.2, h.x0]
-      exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by simp only [Params.ekLen]; omega)))
+      exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega_arith) (by simp only [Params.ekLen]; omega_arith)))
     refine wp_ldrw (a := s.gpr .x0 + 8) (by decide) (by rw [h1.get .x0]; rfl) ?_ fun s2 h2 e2 => wp_nil ?_
     · rw [h1.rd, h1.wr, h.rd, h.wr, hp.1, hp.2, h.x0, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, ptr_add]
-      exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by simp only [Params.ekLen]; omega)))
+      exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega_arith) (by simp only [Params.ekLen]; omega_arith)))
     refine ⟨h1.trans h2, by rw [h2.get .x9, e1], ?_⟩
     rw [e2, h1.mem]
   unfold checkEkBody
@@ -156,29 +156,29 @@ theorem step {s₀ : State} (hp : (checkEkAArch64 p).pre s₀) (hk4 : p.k ≤ 4)
     intro j hj
     rw [show x = ofVDwords (s.mem.readW (s.gpr .x0) 64) ((s.mem.readW (s.gpr .x0 + 8) 32).setWidth 64) by
       dsimp only [x]; rw [x9, x10], input_byte _ _ hj, h.x0, ptr_add, h.mem,
-      bytesAt_getD _ _ (by simp only [Params.ekLen]; omega)]
+      bytesAt_getD _ _ (by simp only [Params.ekLen]; omega_arith)]
   have hacc : ∀ e < 4, vword (s3.v .v19) e = accW (B p s₀) (k + 1) e := by
     intro e he
     have hl := low_lanes x e he
     have hh := high_lanes x e he
     simp only at hl hh
-    rw [xb _ (by omega), xb _ (by omega), xb _ (by omega)] at hl hh
+    rw [xb _ (by omega_arith), xb _ (by omega_arith), xb _ (by omega_arith)] at hl hh
     have f0 : (vword (low x) e).toNat = field0 (B p s₀) (4 * k + e) := by
-      rw [hl, field0, show 12 * k + 3 * e = 3 * (4 * k + e) by omega,
-        show 12 * k + (3 * e + 1) = 3 * (4 * k + e) + 1 by omega,
-        show 12 * k + (3 * e + 2) = 3 * (4 * k + e) + 2 by omega]
+      rw [hl, field0, show 12 * k + 3 * e = 3 * (4 * k + e) by omega_arith,
+        show 12 * k + (3 * e + 1) = 3 * (4 * k + e) + 1 by omega_arith,
+        show 12 * k + (3 * e + 2) = 3 * (4 * k + e) + 2 by omega_arith]
       have := ((B p s₀).getD (3 * (4 * k + e)) 0).isLt
       have := ((B p s₀).getD (3 * (4 * k + e) + 1) 0).isLt
       have := ((B p s₀).getD (3 * (4 * k + e) + 2) 0).isLt
-      omega
+      omega_arith
     have f1 : (vword (high x) e).toNat = field1 (B p s₀) (4 * k + e) := by
-      rw [hh, field1, show 12 * k + 3 * e = 3 * (4 * k + e) by omega,
-        show 12 * k + (3 * e + 1) = 3 * (4 * k + e) + 1 by omega,
-        show 12 * k + (3 * e + 2) = 3 * (4 * k + e) + 2 by omega]
+      rw [hh, field1, show 12 * k + 3 * e = 3 * (4 * k + e) by omega_arith,
+        show 12 * k + (3 * e + 1) = 3 * (4 * k + e) + 1 by omega_arith,
+        show 12 * k + (3 * e + 2) = 3 * (4 * k + e) + 2 by omega_arith]
       have := ((B p s₀).getD (3 * (4 * k + e)) 0).isLt
       have := ((B p s₀).getD (3 * (4 * k + e) + 1) 0).isLt
       have := ((B p s₀).getD (3 * (4 * k + e) + 2) 0).isLt
-      omega
+      omega_arith
     rw [v19, vword_or, vword_or, vl, h.acc e he, vword_geq _ he, vword_geq _ he, f0, f1, accW, acc_step]
     simp only [accW]
     congr 1
@@ -187,15 +187,15 @@ theorem step {s₀ : State} (hp : (checkEkAArch64 p).pre s₀) (hk4 : p.k ≤ 4)
     · intro ⟨h₁, h₂, h₃⟩ g hg
       by_cases hgk : g = k
       · subst hgk; exact ⟨h₂, h₃⟩
-      · exact h₁ g (by omega)
-    · intro h'; exact ⟨fun g hg => h' g (by omega), (h' k (by omega)).1, (h' k (by omega)).2⟩
+      · exact h₁ g (by omega_arith)
+    · intro h'; exact ⟨fun g hg => h' g (by omega_arith), (h' k (by omega_arith)).1, (h' k (by omega_arith)).2⟩
   have gp (r : Reg) (hr : r ∉ [.x9, .x10]) : s3.gpr r = s.gpr r := by rw [g3, hl.gpr _ hr]
   have scalar : WP isa (.block [.addImm .x .x0 .x0 12, .subImm .x .x11 .x11 1]) s3
       fun t => Only [.x0, .x11] s3 t ∧ t.gpr .x0 = s3.gpr .x0 + 12 ∧ (t.gpr .x11).toNat = 32 * p.k - (k + 1) := by
     refine wp_addImm (by decide) fun s6 h6 e6 => wp_subImm (by decide) fun s7 h7 e7 => wp_nil ?_
     refine ⟨(h6.trans h7).mono (by decide), by rw [h7.get .x0, e6]; rfl, ?_⟩
     have cnt : (s6.gpr .x11).toNat = 32 * p.k - k := by rw [h6.get .x11, gp .x11 (by decide), h.x11]
-    rw [e7, toNat_sub_n (by rw [cnt]; simp; omega), cnt]; simp; omega
+    rw [e7, toNat_sub_n (by rw [cnt]; simp; omega_arith), cnt]; simp; omega_arith
   refine WP.mono (WP.keepV (by decide) scalar) ?_
   intro t ⟨⟨ht, p0, cnt⟩, vt⟩
   have keepv (r : VReg) (r0 : r ≠ .v0) (r1 : r ≠ .v1) (r2 : r ≠ .v2) (r3 : r ≠ .v3) (r19 : r ≠ .v19) :
@@ -205,7 +205,7 @@ theorem step {s₀ : State} (hp : (checkEkAArch64 p).pre s₀) (hk4 : p.k ≤ 4)
     by rw [keepv .v16 (by decide) (by decide) (by decide) (by decide) (by decide), h.mask],
     by rw [keepv .v17 (by decide) (by decide) (by decide) (by decide) (by decide), h.bits],
     by rw [keepv .v18 (by decide) (by decide) (by decide) (by decide) (by decide), h.q],
-    fun e he => by rw [vt]; exact hacc e he⟩, by rw [cnt]; omega⟩
+    fun e he => by rw [vt]; exact hacc e he⟩, by rw [cnt]; omega_arith⟩
   rw [p0, gp .x0 (by decide), h.x0, show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl, ptr_add]
   congr 2
 
@@ -229,15 +229,15 @@ theorem fin (s : State) :
 theorem laneSum_s4 (x : BitVec 128) :
     VArr.s4.laneSum x = (vword x 0).toNat + (vword x 1).toNat + (vword x 2).toNat + (vword x 3).toNat := by
   simp [VArr.laneSum, VArr.lanes, BitVec.toNat_setWidth]
-  omega
+  omega_arith
 
 theorem sgn (L : Nat) (hL : L < 2 ^ 63) :
     (((BitVec.ofNat 128 (L % 2 ^ 64)).extractLsb' 0 64 - BitVec.ofNat 64 1) >>> 63).toNat =
       if L = 0 then 1 else 0 := by
   have hx : ((BitVec.ofNat 128 (L % 2 ^ 64)).extractLsb' 0 64).toNat = L := by
-    rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat]; omega
+    rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat]; omega_arith
   rw [toNat_lsr, BitVec.toNat_sub, hx, BitVec.toNat_ofNat]
-  split <;> omega
+  split <;> omega_arith
 
 theorem correct (hk : 1 ≤ p.k ∧ p.k ≤ 4) (s₀ : State) (hs : (checkEkAArch64 p).pre s₀) :
     ∃ t s', Exec isa (checkEkWith (32 * p.k)) s₀ t s' ∧ abiPreserved s₀ s' ∧ (checkEkAArch64 p).post s₀ s' := by
@@ -247,9 +247,9 @@ theorem correct (hk : 1 ≤ p.k ∧ p.k ≤ 4) (s₀ : State) (hs : (checkEkAArc
   unfold checkEkWith
   refine WP.seq (WP.mono (init s₀ (32 * p.k)) fun s₁ ⟨r₁, w₁, sp₁, m₁, x0₁, x11₁, v16₁, v17₁, v18₁, v19₁⟩ => ?_)
   have i₀ : Inv p s₀ 0 s₁ := ⟨r₁, w₁, sp₁, m₁, by rw [x0₁, Nat.mul_zero, ptr_zero],
-    by rw [x11₁]; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega, v16₁, v17₁, v18₁,
+    by rw [x11₁]; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_arith, v16₁, v17₁, v18₁,
     fun e he => by rw [v19₁]; simp [accW, vword]⟩
-  refine WP.seq (WP.mono (count_loop (by omega) (Inv p s₀) (fun j hj s h => step hs hk.2 hj h) i₀)
+  refine WP.seq (WP.mono (count_loop (by omega_arith) (Inv p s₀) (fun j hj s h => step hs hk.2 hj h) i₀)
     fun s h => ?_)
   refine WP.mono (fin s) fun t ⟨ht, _⟩ => ?_
   have hsum := laneSum_s4 (s.v .v19)
@@ -259,17 +259,17 @@ theorem correct (hk : 1 ≤ p.k ∧ p.k ≤ 4) (s₀ : State) (hs : (checkEkAArc
     rw [ekCheck_iff p _ (bytesAt_length _ _ _)]
     constructor
     · intro h t ht
-      have := h (t % 4) (by omega) (t / 4) (by omega)
-      rwa [show 4 * (t / 4) + t % 4 = t by omega] at this
-    · intro h e he g hg; exact h _ (by omega)
+      have := h (t % 4) (by omega_arith) (t / 4) (by omega_arith)
+      rwa [show 4 * (t / 4) + t % 4 = t by omega_arith] at this
+    · intro h e he g hg; exact h _ (by omega_arith)
   have hv : ∀ e < 4, (accW (B p s₀) (32 * p.k) e).toNat =
       if ∀ g < 32 * p.k, good (B p s₀) (4 * g + e) then 0 else 2 ^ 32 - 1 := fun e _ => by
     unfold accW; split <;> simp
   rw [hv 0 (by decide), hv 1 (by decide), hv 2 (by decide), hv 3 (by decide)] at hsum
   show (t.gpr .x0).setWidth 32 = if ekCheck p (bytesAt s₀.mem (s₀.gpr .x0) p.ekLen) then 1 else 0
   apply BitVec.eq_of_toNat_eq
-  have hlt : VArr.s4.laneSum (s.v .v19) < 2 ^ 34 := by rw [hsum]; split <;> split <;> split <;> split <;> omega
-  rw [BitVec.toNat_setWidth, ht, sgn _ (by omega)]
+  have hlt : VArr.s4.laneSum (s.v .v19) < 2 ^ 34 := by rw [hsum]; split <;> split <;> split <;> split <;> omega_arith
+  rw [BitVec.toNat_setWidth, ht, sgn _ (by omega_arith)]
   by_cases hc : ekCheck p (bytesAt s₀.mem (s₀.gpr .x0) p.ekLen) = true
   · have h4 := hall.mpr hc
     rw [ite_eq_left (h4 0 (by decide)), ite_eq_left (h4 1 (by decide)), ite_eq_left (h4 2 (by decide)),
@@ -282,8 +282,8 @@ theorem correct (hk : 1 ≤ p.k ∧ p.k ≤ 4) (s₀ : State) (hs : (checkEkAArc
       intro e he
       rw [h0] at hsum
       by_contra hn
-      rcases (by omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;>
-        (rw [ite_eq_right hn] at hsum; omega)
+      rcases (by omega_arith : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;>
+        (rw [ite_eq_right hn] at hsum; omega_arith)
     rw [ite_eq_right hne]; rfl
 
 /-! ## ML-KEM-768 -/

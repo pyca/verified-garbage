@@ -62,13 +62,13 @@ def AddMid (o : Nat) (L : Ws) (t : State) : Prop :=
 theorem addHead_ok {a b : Nat} (ha : a < 8) (hb : b < 8) {L : Ws} {s : State} (h : AddPre L s) : WP isa (.block (addHead a b)) s (AddHead a b L) := by
   obtain ⟨⟨minv, hg, hZ⟩, hw, hw'⟩ := h
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off L.B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega_arith)
   refine WP.mono (WP.keep [.rbx, .r9, .r10, .r8, .r12, .rsi, .rbp] (Q := fun t =>
       t.gpr .rbx = off L.B (slot L.w a) ∧ t.gpr .r9 = off L.B (slot L.w b) ∧
       t.gpr .r10 = off L.B (slot L.w Public.aN) ∧ t.gpr .r8 = off L.B (slot L.w Public.aAcc) ∧
       t.gpr .r12 = BitVec.ofNat 64 L.w ∧ t.gpr .rsi = off L.B (slot L.w Public.aTmp) ∧ t.gpr .rbp = mask false ∧
       t.mem = s.mem)
-    (by unfold addHead; xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr a) (by unfold sArr; omega), hl (sArr b) (by unfold sArr; omega),
+    (by unfold addHead; xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr a) (by unfold sArr; omega_arith), hl (sArr b) (by unfold sArr; omega_arith),
       hl (sArr Public.aN) (by decide), hl (sArr Public.aAcc) (by decide), hl sW (by decide),
       hl (sArr Public.aTmp) (by decide), hg.hdr.harr a ha, hg.hdr.harr b hb,
       hg.hdr.harr Public.aN (by decide), hg.hdr.harr Public.aAcc (by decide), hg.hdr.harr Public.aTmp (by decide),
@@ -91,30 +91,30 @@ theorem addCarry_ok {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
       AddInv s₁ L.B L.Z (slot L.w Public.aAcc) (slot L.w a) (slot L.w b) 0 t := fun t h14 hm k _ =>
     ⟨hs₁.congr k.2.2, k.mono (by decide), h14, by rw [hm]; exact Outside.refl _ _ _ _,
       ⟨false, (k.gpr (by decide)).trans hbp, by rw [hm]; rfl⟩⟩
-  refine WP.seq (WP.mono (wordLoop_ok (start := 0) (N := L.w) (by omega) hw'
+  refine WP.seq (WP.mono (wordLoop_ok (start := 0) (N := L.w) (by omega_arith) hw'
     (AddInv s₁ L.B L.Z (slot L.w Public.aAcc) (slot L.w a) (slot L.w b)) h0
-    (fun j _ hj t hI => addStep_ok h8 hbx h9 h12 (by omega) (by omega) (by omega) (by omega) (by omega)
-      (by omega) hj hI)) fun s₂ hI => ?_)
+    (fun j _ hj t hI => addStep_ok h8 hbx h9 h12 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (by omega_arith) hj hI)) fun s₂ hI => ?_)
   obtain ⟨c, hc, -⟩ := hI.val
   have s₂8 : s₂.gpr .r8 = off L.B (slot L.w Public.aAcc) := (hI.keep.gpr (by decide)).trans h8
   have s₂12 : s₂.gpr .r12 = BitVec.ofNat 64 L.w := (hI.keep.gpr (by decide)).trans h12
   have s₂di : s₂.gpr .rdi = L.B := (hI.keep.gpr (by decide)).trans hdi
   have hl₂ : ∀ i < 32, InRegions (s₂.rd ++ s₂.wr) (off L.B (8 * i)) 8 := fun i hi =>
-    hI.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega)
-  have q1 := hdr_lt_slot L.w Public.aAcc (show sArr o < 32 by unfold sArr; omega)
-  have q2 := hdr_lt_slot L.w 8 (show sArr o < 32 by unfold sArr; omega)
+    hI.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega_arith)
+  have q1 := hdr_lt_slot L.w Public.aAcc (show sArr o < 32 by unfold sArr; omega_arith)
+  have q2 := hdr_lt_slot L.w 8 (show sArr o < 32 by unfold sArr; omega_arith)
   have ho₂ : word s₂.mem L.B (8 * sArr o) = off L.B (slot L.w o) := by
-    rw [hI.out.word (by omega) (by omega)]
+    rw [hI.out.word (by omega_arith) (by omega_arith)]
     exact hg.hdr.harr o ho
   have hX : ∀ v : BitVec 64,
       (s₂.mem.writeW (off L.B (slot L.w Public.aAcc + 8 * L.w)) v).readW (off L.B (8 * sArr o)) 64 =
         off L.B (slot L.w o) := fun v =>
-    ((writeW_outside s₂.mem L.B v (by omega)).word (Or.inl (by omega)) (by omega)).trans ho₂
+    ((writeW_outside s₂.mem L.B v (by omega_arith)).word (Or.inl (by omega_arith)) (by omega_arith)).trans ho₂
   refine WP.mono (WP.keep [.rax, .rbp, .rbx] (Q := fun t => t.gpr .rbx = off L.B (slot L.w o))
     (by
       unfold addCarry cfFromRbp
       xrun [State.ea, ix, hdr, s₂di, hdrOff, addr0 s₂8 s₂12, hc, cf_mask,
-        hI.scr.st (show slot L.w Public.aAcc + 8 * L.w + 8 ≤ L.Z by omega), sx0, hl₂ (sArr o) (by unfold sArr; omega),
+        hI.scr.st (show slot L.w Public.aAcc + 8 * L.w + 8 ≤ L.Z by omega_arith), sx0, hl₂ (sArr o) (by unfold sArr; omega_arith),
         hX]) rfl) fun t ⟨hbx', k⟩ => ⟨hbx', ?_, ?_, ?_, ?_⟩
   · exact (k.gpr (by decide)).trans ((hI.keep.gpr (by decide)).trans h10)
   · exact (k.gpr (by decide)).trans s₂8

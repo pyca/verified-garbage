@@ -81,13 +81,13 @@ theorem out_fit : P.out.toNat + P.K ≤ 2 ^ 32 := by
   have := h.ok.fits P.OUT (by simp); simpa [Proof.X25519.Arm.addr_toNat] using this
 
 theorem outA {i : Nat} (hi : i < P.K) : State.addr (P.out + BitVec.ofNat 32 i) = State.addr P.out + BitVec.ofNat 64 i :=
-  addr_add (by have := h.out_fit; omega)
+  addr_add (by have := h.out_fit; omega_arith)
 
 end In
 
 theorem St.out_w {σ s : State} (hs : S P σ s) {i n : Nat} (hn : i + n ≤ P.K) :
     InRegions s.wr (State.addr P.out + BitVec.ofNat 64 i) n :=
-  ⟨P.OUT, by rw [hs.2.wr, hs.1.ok.wr]; simp, Offset.contains_base _ hn (by have := hs.1.k1024; omega)⟩
+  ⟨P.OUT, by rw [hs.2.wr, hs.1.ok.wr]; simp, Offset.contains_base _ hn (by have := hs.1.k1024; omega_arith)⟩
 
 theorem St.out_r {σ s : State} (hs : S P σ s) {i n : Nat} (hn : i + n ≤ P.K) :
     InRegions (s.rd ++ s.wr) (State.addr P.out + BitVec.ofNat 64 i) n :=
@@ -111,10 +111,10 @@ theorem isZero_bit (x : BitVec 32) (hx : x.toNat < 2 ^ 31) : (x - 1) >>> 31 = if
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub,
       show (1 : BitVec 32).toNat = 1 from rfl]
     show _ = 0
-    omega
+    omega_arith
 
 theorem byte_lt (b : Byte) : (b.setWidth 32).toNat < 2 ^ 31 := by
-  have := b.isLt; simp only [BitVec.toNat_setWidth]; omega
+  have := b.isLt; simp only [BitVec.toNat_setWidth]; omega_arith
 
 theorem setWidth_ne_zero {b : Byte} (h : b ≠ 0) : b.setWidth 32 ≠ 0 := by
   intro e
@@ -170,7 +170,7 @@ theorem scanInit_wp {σ s : State} (h : AL P σ s) : WP isa (.block scanInit) s 
   · rw [u9.other _ (by decide), u8.other _ (by decide), u7.other _ (by decide), u6.gpr]
   · rw [u9.other _ (by decide), u8.other _ (by decide), u7.other _ (by decide), u6.other _ (by decide), u5.gpr,
       dpVal, u4.gpr]
-    exact Offset.ofNat_sub_ofNat (d := 2) (by omega)
+    exact Offset.ofNat_sub_ofNat (d := 2) (by omega_arith)
   · rw [u9.other _ (by decide), u8.other _ (by decide), u7.gpr]; rfl
   · rw [u9.other _ (by decide), u8.gpr]; rfl
 
@@ -223,10 +223,10 @@ theorem scanBody_vp (n : Nat) : VP (SCM P (n + 1)) (.block scanBody) fun σ s =>
   have hs := hb.S
   have hK := hs.1.k64
   have hK' := hs.1.k1024
-  have hjK : 2 + j < P.K := by omega
+  have hjK : 2 + j < P.K := by omega_arith
   refine wp_ldrb (by decide) (a := State.addr P.out + BitVec.ofNat 64 (2 + j))
     (by rw [r0, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_zero, hs.1.outA hjK])
-    (St.out_r hs (by omega)) fun t1 u1 => ?_
+    (St.out_r hs (by omega_arith)) fun t1 u1 => ?_
   refine wp_dp (op2_imm (by decide)) fun t2 u2 => ?_
   refine wp_mov (op2_lsr (by decide)) fun t3 u3 => ?_
   refine wp_dp (op2_imm (by decide)) fun t4 u4 => ?_
@@ -250,7 +250,7 @@ theorem scanBody_vp (n : Nat) : VP (SCM P (n + 1)) (.block scanBody) fun σ s =>
   have st : P.lay.St σ t12 := hs.2.of_rest R12 mm
   have z3 : t3.gpr .r2 = BitVec.ofNat 32 (decide ((emOf P σ).getD (2 + j) 1 = 0)).toNat := by
     rw [u3.gpr, u2.gpr, dpVal, u1.gpr, hb.byte hjK, isZero_bit _ (byte_lt _), zbit]
-  have step := scan_step (emOf P σ) (i := 2 + j) (by omega)
+  have step := scan_step (emOf P σ) (i := 2 + j) (by omega_arith)
   have a4 : t3.gpr .r4 = BitVec.ofNat 32 (fz P σ (2 + j)).isSome.toNat := by rw [R3.gpr _ (by decide), r4]
   have v4 : t4.gpr .r3 = BitVec.ofNat 32 (fz P σ (2 + j)).isSome.toNat ^^^ 1 := by rw [u4.gpr, dpVal, a4]
   have v5 : t5.gpr .r3 = (BitVec.ofNat 32 (fz P σ (2 + j)).isSome.toNat ^^^ 1) &&&
@@ -280,24 +280,24 @@ theorem scanBody_vp (n : Nat) : VP (SCM P (n + 1)) (.block scanBody) fun σ s =>
       BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   have lrt : t12.gpr .lr = BitVec.ofNat 32 n := by
     rw [u12.gpr, u11.other _ (by decide), u10.other _ (by decide), R9.gpr _ (by decide), lr,
-      show P.K - 2 - j = n + 1 by omega]
-    exact sub_one_ofNat (by omega)
+      show P.K - 2 - j = n + 1 by omega_arith]
+    exact sub_one_ofNat (by omega_arith)
   have r6t : t12.gpr .r6 = 0 := by rw [R12.gpr _ (by decide), r6]
   have sb := hb.of_mem st mm
-  refine ⟨?_, fun h0 => ⟨sb, r6t, ?_, ?_⟩, fun h0 => ⟨by omega, sb, ?_, ?_, ?_, r6t, ?_, ?_⟩⟩
-  · rw [eval_ne, hz, ← u12.gpr, lrt, ofNat_beq_zero (by omega)]
-    by_cases h0 : n = 0 <;> simp [h0] <;> omega
-  · rw [r4t, show 2 + j + 1 = P.K by omega]
-  · rw [r5t, show 2 + j + 1 = P.K by omega]
-  · rw [r0t, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega]
-  · rw [r1t, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega]
-  · rw [lrt, show P.K - 2 - (P.K - 2 - n) = n by omega]
-  · rw [r4t, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega]
-  · rw [r5t, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega]
+  refine ⟨?_, fun h0 => ⟨sb, r6t, ?_, ?_⟩, fun h0 => ⟨by omega_arith, sb, ?_, ?_, ?_, r6t, ?_, ?_⟩⟩
+  · rw [eval_ne, hz, ← u12.gpr, lrt, ofNat_beq_zero (by omega_arith)]
+    by_cases h0 : n = 0 <;> simp [h0] <;> omega_arith
+  · rw [r4t, show 2 + j + 1 = P.K by omega_arith]
+  · rw [r5t, show 2 + j + 1 = P.K by omega_arith]
+  · rw [r0t, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega_arith]
+  · rw [r1t, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega_arith]
+  · rw [lrt, show P.K - 2 - (P.K - 2 - n) = n by omega_arith]
+  · rw [r4t, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega_arith]
+  · rw [r5t, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega_arith]
 
 theorem scanLoop_vp : VP (SCI P 0) scanLoop (SCQ P) := by
   refine (VP.loop (I := SCM P) scanBody_vp (P.K - 2 - 1)).mono (fun σ s h => ?_) fun _ _ h => h
   have hK := h.1.S.1.k64
-  exact ⟨by omega, by rw [show P.K - 2 - (P.K - 2 - 1 + 1) = 0 by omega]; exact h⟩
+  exact ⟨by omega_arith, by rw [show P.K - 2 - (P.K - 2 - 1 + 1) = 0 by omega_arith]; exact h⟩
 
 end VG.Proof.RsaPkcs1Enc.Arm.Dec

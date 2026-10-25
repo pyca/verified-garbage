@@ -152,7 +152,7 @@ theorem cmpStatus_ok {s : State} {D : Option (Bool × Spec.RsaKeyGen.Rand)}
   refine wp_cmpi fun u F _ z => WP.block_nil ⟨?_, F.mem, F.keeps [], congrFun F.gpr _⟩
   show u.zf = _
   rw [z, he]
-  exact congrArg some (sub_beq (by omega) (by omega))
+  exact congrArg some (sub_beq (by omega_arith) (by omega_arith))
 
 /-- After a phase whose result `D` the runs share: on to `rest` if it passed, else a rejection or a
 shortage. `P` holds through a comparison. -/
@@ -235,8 +235,8 @@ theorem Passed.tests {up : BitVec 32} {T : List Byte} {bits p q w n c : Nat} {D 
     TestsAt Ex base bytes len args sp up T bits p q (T.length - r.length) u ∧ T.length - r.length ≤ T.length := by
   obtain ⟨⟨⟨x, ⟨⟨_, hb, hp, hq, _⟩, _⟩, k⟩, C, _⟩, hc⟩ := h
   obtain ⟨c', hc', hl, hr⟩ := hc true r hD
-  have e : T.length - r.length = c' := by rw [← hr, List.length_drop]; omega
-  exact ⟨⟨C, by rw [k.word_eq, hb], by rw [k.slot_eq, hp], by rw [k.slot_eq, hq], by rw [e, hc']⟩, by omega⟩
+  have e : T.length - r.length = c' := by rw [← hr, List.length_drop]; omega_arith
+  exact ⟨⟨C, by rw [k.word_eq, hb], by rw [k.slot_eq, hp], by rw [k.slot_eq, hq], by rw [e, hc']⟩, by omega_arith⟩
 
 /-- A phase's words for the modulus `w` of `bits − δ` bits, with `n` witnesses. -/
 theorem stageWords_ok {up : BitVec 32} {T : List Byte} (G : TapeGeo Ex args base bytes sp T.length)
@@ -258,7 +258,7 @@ theorem tests_trace {up : BitVec 32} {T : List Byte} (G : TapeGeo Ex args base b
     (hq3 : 3 ≤ q) (hqo : q % 2 = 1) (hbp : Spec.RsaKeyGen.bitLength (p - 1) = bits)
     (hbq : Spec.RsaKeyGen.bitLength (q - 1) = bits - 1) (hpl : p < 2 ^ (8 * len)) (hcT : c₀ ≤ T.length) :
     RelCT isa (Both (TestsAt Ex base bytes len args sp up T bits p q c₀)) tests fun _ _ => True := by
-  have pc : ∀ b, 1 ≤ Spec.Ffdh.primeChecks b - 1 := fun b => by unfold Spec.Ffdh.primeChecks; split <;> omega
+  have pc : ∀ b, 1 ≤ Spec.Ffdh.primeChecks b - 1 := fun b => by unfold Spec.Ffdh.primeChecks; split <;> omega_arith
   unfold tests
   -- One witness for p.
   refine RelCT.seq (aRel (F := StageAt Ex base bytes len args sp up T bits p q p 1 c₀) (fun x h => h.1.1)
@@ -281,14 +281,14 @@ theorem tests_trace {up : BitVec 32} {T : List Byte} (G : TapeGeo Ex args base b
   refine RelCT.seq (aRel (F := StageAt Ex base bytes len args sp up T bits p q q
       (Spec.Ffdh.primeChecks (bits - 1) - 0) (T.length - r₁.length)) (fun x h => h.1.2.1.1)
     words2_check fun x h => stageWords_ok G (h.tests hD₁).1 (by decide) (by decide) hb1 hb2 hbq) ?_
-  refine phasePass_trace G (by decide) (by decide) prepHead10_check hq3 hqo (by have := pc (bits - 1); omega) (by omega)
+  refine phasePass_trace G (by decide) (by decide) prepHead10_check hq3 hqo (by have := pc (bits - 1); omega_arith) (by omega_arith)
     (fun x h => ⟨h.1.1, h.1.2.2.2.1, h.2.1, h.2.2.1, h.2.2.2, h.1.2.2.2.2⟩) fun e₂ => ?_
   obtain ⟨r₂, hD₂⟩ := drawStatus_one e₂
   -- The rest of p's.
   refine RelCT.seq (aRel (F := StageAt Ex base bytes len args sp up T bits p q p
       (Spec.Ffdh.primeChecks (bits - 0) - 1) (T.length - r₂.length)) (fun x h => h.1.2.1.1)
     words3_check fun x h => stageWords_ok G (h.tests hD₂).1 (by decide) (by decide) hb1 hb2 hbp) ?_
-  refine phasePass_trace G (by decide) (by decide) prepHead9_check hp3 hpo (pc _) (by omega)
+  refine phasePass_trace G (by decide) (by decide) prepHead9_check hp3 hpo (pc _) (by omega_arith)
     (fun x h => ⟨h.1.1, h.1.2.2.1, h.2.1, h.2.2.1, h.2.2.2, h.1.2.2.2.2⟩) fun e₃ => ?_
   obtain ⟨r₃, hD₃⟩ := drawStatus_one e₃
   exact accept_trace fun x h => by

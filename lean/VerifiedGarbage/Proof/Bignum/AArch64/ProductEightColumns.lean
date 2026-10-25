@@ -36,7 +36,7 @@ theorem bit_word {x : Word} (h : x.toNat ≤ 1) :
     ∃ p : Bool, x = BitVec.ofNat 64 p.toNat := by
   by_cases hz : x.toNat = 0
   · exact ⟨false, BitVec.eq_of_toNat_eq hz⟩
-  · exact ⟨true, BitVec.eq_of_toNat_eq (by simpa using (show x.toNat = 1 by omega))⟩
+  · exact ⟨true, BitVec.eq_of_toNat_eq (by simpa using (show x.toNat = 1 by omega_arith))⟩
 
 /-- Compose overlapping two-block products without losing the pending carry. -/
 theorem productColumnStep_ok {s t : State} {B : Addr} {Z eQ eT eN j k : Nat}
@@ -51,21 +51,21 @@ theorem productColumnStep_ok {s t : State} {B : Addr} {Z eQ eT eN j k : Nat}
         u.gpr .x15 = t.gpr .x15 - BitVec.ofNat 64 1 := by
   have hnw := hs.nowrap
   obtain ⟨p, hp⟩ := bit_word hI.carry
-  have q := hI.frame.wv (d := eQ) (k := 8) (by omega) (by omega)
-  have n := hI.frame.wv (d := eN + 64 * j) (k := 8) (by omega) (by omega)
+  have q := hI.frame.wv (d := eQ) (k := 8) (by omega_arith) (by omega_arith)
+  have n := hI.frame.wv (d := eN + 64 * j) (k := 8) (by omega_arith) (by omega_arith)
   apply WP.block_append
   refine WP.mono (offBlock_ok (hs.congr hI.keep.wr)
     ((hI.keep.gpr .x8 (by decide)).trans h8) hI.ptrT hI.ptrN
     ((hI.keep.gpr .x7 (by decide)).trans h7) hp
-    hQ (by omega) (by omega) (by omega) (by omega))
+    hQ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun a ⟨hav, hac, ha16, ha17, hao, ka⟩ => ?_
   refine WP.mono (decrement_ok (s := a)) fun u ⟨⟨hu15, hum⟩, ku⟩ => ?_
   have hf := wv_window_delta (n := 8 * (k + 1)) (j := 8 * j) (k := 16)
-    (by omega : eT + 8 * (8 * (k + 1)) ≤ 2 ^ 64) (by omega)
+    (by omega_arith : eT + 8 * (8 * (k + 1)) ≤ 2 ^ 64) (by omega_arith)
     (show Outside B (eT + 8 * (8 * j)) (8 * 16) t.mem a.mem from
-      by simpa only [show 8 * (8 * j) = 64 * j by omega] using hao)
+      by simpa only [show 8 * (8 * j) = 64 * j by omega_arith] using hao)
   have havAligned := hav
-  have hoff : eT + 64 * j = eT + 8 * (8 * j) := by omega
+  have hoff : eT + 64 * j = eT + 8 * (8 * j) := by omega_arith
   rewrite [hoff] at havAligned
   have he := window_lift hf havAligned
   have hc : (t.gpr .x10).toNat = p.toNat := by
@@ -83,12 +83,12 @@ theorem productColumnStep_ok {s t : State} {B : Addr} {Z eQ eT eN j k : Nat}
   · rewrite [hum, ku.gpr .x10 (by decide), pow_blocks_succ, wv_blocks_succ s.mem B eN j]
     exact hv
   · exact Nat.le_trans (Nat.le_of_eq (congrArg BitVec.toNat (ku.gpr .x10 (by decide)))) hac
-  · exact ((ku.gpr .x16 (by decide)).trans ha16).trans (congrArg (off B) (by omega))
-  · exact ((ku.gpr .x17 (by decide)).trans ha17).trans (congrArg (off B) (by omega))
+  · exact ((ku.gpr .x16 (by decide)).trans ha16).trans (congrArg (off B) (by omega_arith))
+  · exact ((ku.gpr .x17 (by decide)).trans ha17).trans (congrArg (off B) (by omega_arith))
   · have ho : Outside B (eT + 64 * j) 128 t.mem u.mem := by
       intro x hx
       exact (congrArg (fun m : Mem => m x) hum).trans (hao x hx)
-    exact (hI.frame.mono (by omega) (by omega)).trans (ho.mono (by omega) (by omega))
+    exact (hI.frame.mono (by omega_arith) (by omega_arith)).trans (ho.mono (by omega_arith) (by omega_arith))
 
 /-- All columns of an eight-limb multiplication row. -/
 theorem productColumns_ok {s : State} {B : Addr} {Z eQ eT eN k : Nat}

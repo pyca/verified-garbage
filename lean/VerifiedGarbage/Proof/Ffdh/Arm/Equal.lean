@@ -37,11 +37,7 @@ theorem equalFinish_ok (s : State) {base : BitVec 32} {len w : Nat}
   have addr : State.addr (base + BitVec.ofNat 32 136) = off (State.addr base) 136 :=
     VG.Arm.addr_add (by have := h.workspace.nowrap; omega)
   have read := h.workspace.read (off := 136) (by omega)
-  refine withRest [.r3, .r11] ?_ (by
-    intro r hr i hi
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [instrs, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl <;> simp [clobbers, dstOf, Ne.symm hr.1, Ne.symm hr.2]) (by rfl)
+  refine withRest_all [.r3, .r11] ?_ (by rfl) (by rfl)
   ffrun [h.ptr, addr, read, off]
 
 theorem equal_ok (s : State) {base : BitVec 32} {len w a b : Nat}

@@ -24,15 +24,15 @@ theorem square_ok {s : State} {B : Addr} {Z w a : Nat} {minv : BitVec 64}
         wv s.mem B (slot w a) w * wv s.mem B (slot w a) w % wv s.mem B (slot w aN) w ∧
       Arrays B w [aAcc,aTmp,a] s.mem t.mem ∧ Keep WindowRaw.regs s t := by
   have hn := hs.nowrap
-  have hsep : slot w aN+8*(w+2) ≤ slot w aAcc+16 := by unfold slot aN aAcc; omega
+  have hsep : slot w aN+8*(w+2) ≤ slot w aAcc+16 := by unfold slot aN aAcc; omega_arith
   have hnz := slot_le (w := w) (show aN < 8 by decide)
   unfold VG.Impl.Bignum.AArch64.WindowArithmetic.square
   refine WP.seq (WP.mono (WindowRaw.raw_width_ok hs h0 hH hZ hw hw' hmod ha ha1 ha2)
     fun u ⟨hu,ho,h8,h12,h7,ku⟩ => ?_)
   have hHU := (Square.scratch_arrays ho).hdr hH
-  have hN : wv u.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho.wv (by omega) (by omega)
+  have hN : wv u.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho.wv (by omega_arith) (by omega_arith)
   have hi : ((word u.mem B (slot w aN)).toNat * minv.toNat + 1) % 2^64 = 0 := by
-    rw [ho.word (d := slot w aN) (by omega) (by omega)]; exact hinv
+    rw [ho.word (d := slot w aN) (by omega_arith) (by omega_arith)]; exact hinv
   refine WP.mono (lazy_ok (hs.congr ku.wr) ((ku.gpr .x0 (by decide)).trans h0)
     hHU hZ hw hw' hmod h8 h12 h7 ha ha1 ha2 haN hi) fun t ⟨ht,hf,kt⟩ => ?_
   rw [hu,hN] at ht
@@ -52,20 +52,20 @@ theorem product_ok {s : State} {B : Addr} {Z w o a b : Nat} {minv : BitVec 64}
         wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w aN) w ∧
       Arrays B w [aAcc,aTmp,o] s.mem t.mem ∧ Keep WindowRaw.regs s t := by
   have hn := hs.nowrap
-  have hsep : slot w aN+8*(w+2) ≤ slot w aAcc+16 := by unfold slot aN aAcc; omega
+  have hsep : slot w aN+8*(w+2) ≤ slot w aAcc+16 := by unfold slot aN aAcc; omega_arith
   have hnz := slot_le (w := w) (show aN < 8 by decide)
   unfold VG.Impl.Bignum.AArch64.WindowArithmetic.product
   refine WP.seq (WP.mono (WindowRaw.product_width_ok hs h0 hH hZ hw hw' hmod ha hb ha1 ha2 hb1 hb2)
     fun u ⟨hu,hout,h8,h12,h7,ku⟩ => ?_)
   have hHU := (Square.scratch_arrays hout).hdr hH
-  have hN : wv u.mem B (slot w aN) w = wv s.mem B (slot w aN) w := hout.wv (by omega) (by omega)
+  have hN : wv u.mem B (slot w aN) w = wv s.mem B (slot w aN) w := hout.wv (by omega_arith) (by omega_arith)
   have hi : ((word u.mem B (slot w aN)).toNat * minv.toNat + 1) % 2^64 = 0 := by
-    rw [hout.word (d := slot w aN) (by omega) (by omega)]; exact hinv
+    rw [hout.word (d := slot w aN) (by omega_arith) (by omega_arith)]; exact hinv
   have hprod : wv u.mem B (slot w aAcc+16) (2*w) < wv u.mem B (slot w aN) w * 2^(64*w) := by
     rw [hu,hN,Nat.mul_comm (wv s.mem B (slot w a) w)]
     exact Nat.mul_lt_mul'' hB (wv_lt _ _ _ _)
   refine WP.mono (canonical_ok (hs.congr ku.wr) ((ku.gpr .x0 (by decide)).trans h0)
-    hHU hZ hw hw' hmod h8 h12 h7 ho ho1 ho2 hoN hi (by rw [hN]; omega) hprod)
+    hHU hZ hw hw' hmod h8 h12 h7 ho ho1 ho2 hoN hi (by rw [hN]; omega_arith) hprod)
     fun t ⟨hlt,ht,hf,kt⟩ => ?_
   rw [hu,hN] at ht
   rw [hN] at hlt

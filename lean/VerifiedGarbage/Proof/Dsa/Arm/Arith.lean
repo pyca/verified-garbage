@@ -59,24 +59,24 @@ theorem saved_keep {s t u : State} {base : Addr} {rs : List (Nat × Nat)}
     ∀ x ∈ slots, u.mem.readW (off base x.2) 32 = s.gpr x.1 := fun x hx => by
   have hw := slots_words _ (List.mem_map_of_mem (f := fun x => (x.2, 4)) hx)
   simp only at hw
-  rw [outs_readW O (fun r h => by have := hr r h; omega) (by omega), hv x hx]
+  rw [outs_readW O (fun r h => by have := hr r h; omega_arith) (by omega_arith), hv x hx]
 
 theorem setup_apart (n : Nat) : ∀ r ∈ Context.callRanges n, r.1 + r.2 ≤ 8 ∨ 48 ≤ r.1 := by
   simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
     slot, stride]
-  omega
+  omega_arith
 
 theorem stream_apart (n : Nat) : ∀ r ∈ streamRanges n, r.1 + r.2 ≤ 8 ∨ 48 ≤ r.1 := by
   simp only [streamRanges, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
     slot, stride]
-  omega
+  omega_arith
 
 theorem stream_scratch {n : Nat} :
     ∀ r ∈ streamRanges n, ∃ r' ∈ scratch n, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 :=
   within_scratch (by
     simp only [streamRanges, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
       contextBytes, slot, stride]
-    omega)
+    omega_arith)
 
 theorem ctx_of_rest {n m size : Nat} {base : Addr} {rs : List Reg} {s t : State} (h : Context n m base size s)
     (R : Rest rs s t) (h12 : .r12 ∉ rs) (hm : t.mem = s.mem) : Context n m base size t :=
@@ -104,24 +104,24 @@ theorem mulBody_ok {s : State} {base : Addr} {size n m : Nat} (E : Entry s base 
   have h11 := slot_header n 11
   simp only [stride] at s0 s8 s11
   unfold mulBody
-  refine WP.seq (WP.mono (save_ok E (by omega)) fun s₂ ⟨w₂, S₂, O₂, R₂⟩ => ?_)
+  refine WP.seq (WP.mono (save_ok E (by omega_arith)) fun s₂ ⟨w₂, S₂, O₂, R₂⟩ => ?_)
   have away : ∀ {d k : Nat}, 48 ≤ d → d + 4 * k ≤ 2 ^ 64 → val32 s₂.mem base d k = val32 s.mem base d k :=
-    fun hd hd' => O₂.val32 (fun r hr => .inr (by have := slots_words r hr; omega)) hd'
+    fun hd hd' => O₂.val32 (fun r hr => .inr (by have := slots_words r hr; omega_arith)) hd'
   have hv₂ : val32 s₂.mem base (slot n 0) (2 * n) = m := by
-    rw [away (by omega) (by omega)]; exact hv
-  refine WP.seq (WP.mono (Context.call_ok w₂ (by omega) hn hn48 hv₂ hm1 hodd)
+    rw [away (by omega_arith) (by omega_arith)]; exact hv
+  refine WP.seq (WP.mono (Context.call_ok w₂ (by omega_arith) hn hn48 hv₂ hm1 hodd)
     fun s₃ ⟨c₃, _, rr₃, O₃, R₃⟩ => ?_)
   refine WP.seq (WP.mono (ordinaryMul_ok c₃ rr₃) fun s₄ ⟨c₄, V₄, O₄, R₄⟩ => ?_)
-  refine WP.mono (restore_ok c₄.ws (by omega) (saved_keep (saved_keep S₂ O₃ (setup_apart n)) O₄ (stream_apart n)))
+  refine WP.mono (restore_ok c₄.ws (by omega_arith) (saved_keep (saved_keep S₂ O₃ (setup_apart n)) O₄ (stream_apart n)))
     fun t ⟨P, R₅, M₅⟩ => ⟨?_, ?_, P, ?_, ?_, ?_⟩
   · have k₃ : ∀ {d k : Nat}, (∀ r ∈ Context.callRanges n, d + 4 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) → d + 4 * k ≤ 2 ^ 64 →
         val32 s₃.mem base d k = val32 s₂.mem base d k := fun h h' => O₃.val32 h h'
     rw [M₅, V₄,
       k₃ (by simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
-        implies_true, and_true, slot, stride]; omega) (by omega),
+        implies_true, and_true, slot, stride]; omega_arith) (by omega_arith),
       k₃ (by simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
-        implies_true, and_true, slot, stride]; omega) (by omega),
-      away (by omega) (by omega), away (by omega) (by omega), Nat.mul_comm]
+        implies_true, and_true, slot, stride]; omega_arith) (by omega_arith),
+      away (by omega_arith) (by omega_arith), away (by omega_arith) (by omega_arith), Nat.mul_comm]
   · rw [M₅]
     exact ((outs_within O₂ (words_scratch n)).trans (outs_within O₃ (setup_scratch hn))).trans
       (outs_within O₄ stream_scratch)
@@ -137,21 +137,21 @@ theorem bytes_apart {m m' : Mem} {base p : Addr} {len n : Nat} {rs : List (Nat �
     (O : Outs base rs m m') (hd : Region.Disjoint ⟨p, len⟩ ⟨base, contextBytes n⟩) (hl : len ≤ 2 ^ 64)
     (hr : ∀ r ∈ rs, r.1 + r.2 ≤ contextBytes n) (hn48 : n ≤ 48) :
     Spec.Rsa.bytesAt m' p len = Spec.Rsa.bytesAt m p len :=
-  VG.Proof.Dsa.outs_bytes O hl (fun r h => by have := hr r h; have := contextBytes_bounds hn48; omega)
+  VG.Proof.Dsa.outs_bytes O hl (fun r h => by have := hr r h; have := contextBytes_bounds hn48; omega_arith)
     fun r h => hd.sub_right (Offset.sub_base base (hr r h))
 
 theorem setup_inside {n : Nat} (hn : 0 < n) : ∀ r ∈ Context.callRanges n, r.1 + r.2 ≤ contextBytes n := by
   simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
     contextBytes, slot, stride]
-  omega
+  omega_arith
 
 theorem stream_inside {n : Nat} : ∀ r ∈ streamRanges n, r.1 + r.2 ≤ contextBytes n := by
   simp only [streamRanges, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
     contextBytes, slot, stride]
-  omega
+  omega_arith
 
 theorem words_inside {n : Nat} (hn48 : n ≤ 48) : ∀ r ∈ words slots, r.1 + r.2 ≤ contextBytes n :=
-  fun r h => by have := slots_words r h; have := contextBytes_bounds hn48; omega
+  fun r h => by have := slots_words r h; have := contextBytes_bounds hn48; omega_arith
 
 /-- The saves, then the bytes' address into `r11` and their length into the
 header. -/
@@ -161,20 +161,20 @@ theorem reduceHead_ok {s : State} {base : Addr} {size : Nat} (E : Entry s base s
       Outs base ((lenAt, 4) :: words slots) s.mem t.mem ∧ Rest [.r11, .r12] s t ∧
       t.gpr .r11 = s.gpr .r2 ∧ t.mem.readW (off base lenAt) 32 = s.gpr .r3 := by
   have nw := E.nowrap
-  refine VG.Proof.X25519.Arm.WP.append (save_ok E (by omega)) fun s₁ ⟨w₁, S₁, O₁, R₁⟩ =>
+  refine VG.Proof.X25519.Arm.WP.append (save_ok E (by omega_arith)) fun s₁ ⟨w₁, S₁, O₁, R₁⟩ =>
     wp_mov (op2_reg s₁ .r2) fun s₂ u₂ => ?_
   have w₂ := w₁.of_upd u₂ (by decide)
-  refine wp_str (by decide) (w₂.ea12 (by simp only [lenAt]; omega)) (w₂.write (by simp only [lenAt]; omega))
+  refine wp_str (by decide) (w₂.ea12 (by simp only [lenAt]; omega_arith)) (w₂.write (by simp only [lenAt]; omega_arith))
     fun t m₃ => WP.block_nil ⟨w₂.of_mupd m₃, fun x hx => ?_, ?_, ?_, ?_, ?_⟩
   · have hw := slots_words _ (List.mem_map_of_mem (f := fun x => (x.2, 4)) hx)
     simp only at hw
-    rw [m₃.mem, Mem.readW_writeW_sep (Offset.sep base (.inl (by simp only [lenAt]; omega)) (by omega)
-      (by simp only [lenAt]; omega)) (by decide), u₂.mem]
+    rw [m₃.mem, Mem.readW_writeW_sep (Offset.sep base (.inl (by simp only [lenAt]; omega_arith)) (by omega_arith)
+      (by simp only [lenAt]; omega_arith)) (by decide), u₂.mem]
     exact S₁ x hx
   · rw [m₃.mem]
     refine (O₁.mono fun r h => List.mem_cons_of_mem _ h).trans ?_
     rw [u₂.mem]
-    exact Outs.of_outside (writeW32_outside _ _ _ (by simp only [lenAt]; omega)) (List.mem_cons_self ..)
+    exact Outs.of_outside (writeW32_outside _ _ _ (by simp only [lenAt]; omega_arith)) (List.mem_cons_self ..)
   · exact ((R₁.mono (by decide)).trans (u₂.rest (by decide))).trans (m₃.rest _)
   · rw [m₃.gpr, u₂.gpr, R₁.gpr .r2 (by decide)]
   · rw [m₃.mem, Mem.readW_writeW_self32, u₂.other .r3 (by decide), R₁.gpr .r3 (by decide)]
@@ -183,7 +183,7 @@ theorem reduceHead_ok {s : State} {base : Addr} {size : Nat} (E : Entry s base s
 theorem reduceEnd_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (hz : 48 ≤ size) :
     WP isa (.block [.ldr .lr .r12 lenAt, .dp .add .lr .lr (.reg .r11)]) s fun t =>
       t.gpr .lr = s.mem.readW (off base lenAt) 32 + s.gpr .r11 ∧ Rest [.lr] s t ∧ t.mem = s.mem :=
-  wp_ldr (by decide) (hs.ea12 (by simp only [lenAt]; omega)) (hs.read (by simp only [lenAt]; omega))
+  wp_ldr (by decide) (hs.ea12 (by simp only [lenAt]; omega_arith)) (hs.read (by simp only [lenAt]; omega_arith))
     fun u₁ v₁ => wp_dp (op2_reg _ _) fun t v₂ => WP.block_nil
       ⟨by rw [v₂.gpr, dpVal, v₁.gpr, v₁.other .r11 (by decide)],
         (v₁.rest (by decide)).trans (v₂.rest (by decide)), by rw [v₂.mem, v₁.mem]⟩
@@ -204,34 +204,34 @@ theorem reduceBody_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec
       Outs base (scratch n) s.mem t.mem ∧ (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
       t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   obtain ⟨c44, c4960⟩ := contextBytes_bounds hn48
-  have c48 : 48 ≤ contextBytes n := by simp only [contextBytes, slot, stride]; omega
+  have c48 : 48 ≤ contextBytes n := by simp only [contextBytes, slot, stride]; omega_arith
   have nw := E.nowrap
   have s0 := slot_bound (n := n) (i := 0) (by decide)
   have h0 := slot_header n 0
   simp only [stride] at s0
   have llt : len < 2 ^ 32 := by rw [← hl]; exact (s.gpr .r3).isLt
   unfold reduceBody
-  refine WP.seq (WP.mono (reduceHead_ok E (by omega)) fun s₂ ⟨w₂, S₂, O₂, R₂, P₂, L₂⟩ => ?_)
+  refine WP.seq (WP.mono (reduceHead_ok E (by omega_arith)) fun s₂ ⟨w₂, S₂, O₂, R₂, P₂, L₂⟩ => ?_)
   have hv₂ : val32 s₂.mem base (slot n 0) (2 * n) = m := by
-    rw [O₂.val32 (fun r hr => .inr (by have := len_apart r hr; omega)) (by omega)]; exact hv
-  refine WP.seq (WP.mono (Context.light_ok w₂ (by omega) hn hn48 hv₂ (by omega) hodd)
+    rw [O₂.val32 (fun r hr => .inr (by have := len_apart r hr; omega_arith)) (by omega_arith)]; exact hv
+  refine WP.seq (WP.mono (Context.light_ok w₂ (by omega_arith) hn hn48 hv₂ (by omega_arith) hodd)
     fun s₃ ⟨c₃, O₃, R₃⟩ => ?_)
-  refine WP.seq (WP.mono (reduceEnd_ok c₃.ws (by omega)) fun s₄ ⟨L₄, R₄, M₄⟩ => ?_)
+  refine WP.seq (WP.mono (reduceEnd_ok c₃.ws (by omega_arith)) fun s₄ ⟨L₄, R₄, M₄⟩ => ?_)
   have c₄ := ctx_of_rest c₃ R₄ (by decide) M₄
   have r11 : s₄.gpr .r11 = p := by rw [R₄.gpr .r11 (by decide), R₃.gpr .r11 (by decide), P₂, hp]
   have lr : s₄.gpr .lr = p + BitVec.ofNat 32 len := by
-    rw [L₄, R₃.gpr .r11 (by decide), P₂, hp, outs_readW O₃ (fun r h => by have := setup_apart n r h; simp only [lenAt]; omega)
-      (by simp only [lenAt]; omega), L₂, BitVec.add_comm, ← hl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    rw [L₄, R₃.gpr .r11 (by decide), P₂, hp, outs_readW O₃ (fun r h => by have := setup_apart n r h; simp only [lenAt]; omega_arith)
+      (by simp only [lenAt]; omega_arith), L₂, BitVec.add_comm, ← hl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have rw₄ : s₄.rd ++ s₄.wr = s.rd ++ s.wr := by
     rw [R₄.rd, R₄.wr, R₃.rd, R₃.wr, R₂.rd, R₂.wr]
   refine WP.seq (WP.mono (reduceStream_ok c₄ hm hfit llt r11 lr (fun i hi => by rw [rw₄]; exact hr i hi)
     (by rw [show off base 0 = base from BitVec.add_zero _]; exact hd)) fun s₅ ⟨c₅, V₅, O₅, R₅⟩ => ?_)
   have K₄ : Outs base [] s₃.mem s₄.mem := fun x _ => by rw [M₄]
-  refine WP.mono (restore_ok c₅.ws (by omega)
+  refine WP.mono (restore_ok c₅.ws (by omega_arith)
     (saved_keep (saved_keep (saved_keep S₂ O₃ (setup_apart n)) K₄ (by simp)) O₅ (stream_apart n)))
     fun t ⟨P, R₆, M₆⟩ => ⟨?_, ?_, P, ?_, ?_, ?_⟩
-  · rw [M₆, V₅, M₄, bytes_apart O₃ hd (by omega) (setup_inside hn) hn48,
-      bytes_apart O₂ hd (by omega) (fun r h => by have := len_apart r h; omega) hn48]
+  · rw [M₆, V₅, M₄, bytes_apart O₃ hd (by omega_arith) (setup_inside hn) hn48,
+      bytes_apart O₂ hd (by omega_arith) (fun r h => by have := len_apart r h; omega_arith) hn48]
   · rw [M₆]
     refine ((outs_within O₂ (within_scratch fun r h => .inl (len_apart r h))).trans
       (outs_within O₃ (setup_scratch hn))).trans ?_
@@ -258,7 +258,7 @@ theorem mulK_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h : (
     ∃ tr t, Exec isa (mulBody n) s tr t ∧ abiPreserved s t ∧ (mulK n).post s t := by
   obtain ⟨-, hwr, hnw, hz, hodd, hm1⟩ := h
   have E : Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) :=
-    ⟨rfl, ⟨_, Nat.le_refl _, by omega, by rw [hwr]; exact List.mem_singleton_self _⟩,
+    ⟨rfl, ⟨_, Nat.le_refl _, by omega_arith, by rw [hwr]; exact List.mem_singleton_self _⟩,
       by rw [VG.Proof.X25519.Arm.addr_toNat]; exact hnw⟩
   obtain ⟨tr, t, ex, V, O, P, hsp, -, -⟩ := mulBody_ok E hz hn hn48 rfl hm1 hodd
   exact ⟨tr, t, ex, ⟨P, hsp⟩, V, O⟩
@@ -268,7 +268,7 @@ theorem mulK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
   refine SameTrace.constantTime fun s₁ s₂ h₁ h₂ Eq => ?_
   have E : ∀ {s : State}, (mulK n).pre s → Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) := by
     intro s H
-    exact ⟨rfl, ⟨_, Nat.le_refl _, by have := H.2.2.1; omega, by rw [H.2.1]; simp⟩,
+    exact ⟨rfl, ⟨_, Nat.le_refl _, by have := H.2.2.1; omega_arith, by rw [H.2.1]; simp⟩,
       by simpa only [VG.Proof.X25519.Arm.addr_toNat] using H.2.2.1⟩
   have E₂ : Entry s₂ (State.addr (s₁.gpr .r0)) ((s₂.gpr .r1).toNat * 8) := by rw [Eq]; exact E h₂
   unfold mulBody
@@ -301,13 +301,13 @@ def reduceK (n : Nat) : Contract isa where
 
 theorem reduceK_entry {n : Nat} {s : State} (h : (reduceK n).pre s) :
     Entry s (State.addr (s.gpr .r0)) ((s.gpr .r1).toNat * 8) :=
-  ⟨rfl, ⟨_, Nat.le_refl _, by have := h.2.2.1; omega, by rw [h.2.1]; exact List.mem_singleton_self _⟩,
+  ⟨rfl, ⟨_, Nat.le_refl _, by have := h.2.2.1; omega_arith, by rw [h.2.1]; exact List.mem_singleton_self _⟩,
     by rw [VG.Proof.X25519.Arm.addr_toNat]; exact h.2.2.1⟩
 
 theorem reduceK_bytes {n : Nat} {s : State} (h : (reduceK n).pre s) :
     ∀ i < (s.gpr .r3).toNat, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r2) + BitVec.ofNat 64 i) 1 :=
   fun i hi => ⟨_, List.mem_append_left _ (by rw [h.1]; exact List.mem_singleton_self _),
-    Offset.contains_base _ (by omega) (by have := h.2.2.2.1; have := (s.gpr .r2).isLt; omega)⟩
+    Offset.contains_base _ (by omega_arith) (by have := h.2.2.2.1; have := (s.gpr .r2).isLt; omega_arith)⟩
 
 theorem reduceK_correct {n : Nat} (hn : 0 < n) (hn48 : n ≤ 48) (s : State) (h : (reduceK n).pre s) :
     ∃ tr t, Exec isa (reduceBody n) s tr t ∧ abiPreserved s t ∧ (reduceK n).post s t := by
@@ -329,7 +329,7 @@ theorem reduceK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
   have hz₁ := h₁.2.2.2.2.1
   have hz₂ := h₂.2.2.2.2.1
   obtain ⟨c44, c4960⟩ := contextBytes_bounds hn48
-  have c48 : 48 ≤ contextBytes n := by simp only [contextBytes, slot, stride]; omega
+  have c48 : 48 ≤ contextBytes n := by simp only [contextBytes, slot, stride]; omega_arith
   have s0 := slot_bound (n := n) (i := 0) (by decide)
   have h0 := slot_header n 0
   simp only [stride] at s0
@@ -340,21 +340,21 @@ theorem reduceK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
       (VG.Arm.Taint.agree_ofRegs fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl <;> with_reducible assumption))
-    (reduceHead_ok E₁ (by omega)) (reduceHead_ok E₂ (by omega))
+    (reduceHead_ok E₁ (by omega_arith)) (reduceHead_ok E₂ (by omega_arith))
     fun u₁ u₂ ⟨w₁, _, O₁, _, P₁, L₁⟩ ⟨w₂, _, O₂, _, P₂, L₂⟩ => ?_
   have mod : ∀ {s u : State} {base : Addr}, Outs base ((lenAt, 4) :: words slots) s.mem u.mem →
       val32 u.mem base (slot n 0) (2 * n) = val32 s.mem base (slot n 0) (2 * n) := fun O =>
-    O.val32 (fun r hr => .inr (by have := len_apart r hr; omega)) (by omega)
+    O.val32 (fun r hr => .inr (by have := len_apart r hr; omega_arith)) (by omega_arith)
   have W₂ : Ws u₂ (State.addr (s₁.gpr .r0)) ((s₂.gpr .r1).toNat * 8) := by rw [pb]; exact w₂
   refine SameTrace.seq (Context.light_trace w₁ W₂ (by rw [P₁, P₂, p2]))
-    (Context.light_ok w₁ (by omega) hn hn48 (mod O₁) (by have := h₁.2.2.2.2.2.2.2; omega)
+    (Context.light_ok w₁ (by omega_arith) hn hn48 (mod O₁) (by have := h₁.2.2.2.2.2.2.2; omega_arith)
       h₁.2.2.2.2.2.2.1)
-    (Context.light_ok w₂ (by omega) hn hn48 (mod O₂) (by have := h₂.2.2.2.2.2.2.2; omega)
+    (Context.light_ok w₂ (by omega_arith) hn hn48 (mod O₂) (by have := h₂.2.2.2.2.2.2.2; omega_arith)
       h₂.2.2.2.2.2.2.1)
     fun v₁ v₂ ⟨c₁, Q₁, R₁⟩ ⟨c₂, Q₂, R₂⟩ => ?_
   refine SameTrace.seq (SameTrace.of_relCT (relCT_of_check (τ := wsT true false) (σ := wsT true false)
       (h := .block []) (by decide)) (VG.Arm.Taint.agree_ofRegs fun r hr => ?_))
-    (reduceEnd_ok c₁.ws (by omega)) (reduceEnd_ok c₂.ws (by omega)) fun x₁ x₂ ⟨L₃, K₁, _⟩ ⟨L₄, K₂, _⟩ => ?_
+    (reduceEnd_ok c₁.ws (by omega_arith)) (reduceEnd_ok c₂.ws (by omega_arith)) fun x₁ x₂ ⟨L₃, K₁, _⟩ ⟨L₄, K₂, _⟩ => ?_
   · simp only [wsRegs, Bool.false_eq_true, ↓reduceIte, List.append_nil,
       List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -365,7 +365,7 @@ theorem reduceK_ct (n : Nat) (hn : 0 < n) (hn48 : n ≤ 48) :
       fun _ _ _ => trivial)) (VG.Arm.Taint.agree_ofRegs fun r hr => ?_)
   have k : ∀ {s u : State} {base : Addr}, Outs base (Context.callRanges n) s.mem u.mem →
       u.mem.readW (off base lenAt) 32 = s.mem.readW (off base lenAt) 32 := fun O =>
-    outs_readW O (fun r h => by have := setup_apart n r h; simp only [lenAt]; omega) (by simp only [lenAt]; omega)
+    outs_readW O (fun r h => by have := setup_apart n r h; simp only [lenAt]; omega_arith) (by simp only [lenAt]; omega_arith)
   simp only [wsRegs, ↓reduceIte, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl

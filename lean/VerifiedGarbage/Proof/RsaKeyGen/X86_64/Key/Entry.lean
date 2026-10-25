@@ -126,7 +126,7 @@ theorem keyEntry_ok {s : State} {B : Addr} (hB : stackArg s 10 = B)
   rw [← hmem] at h0 h1 h2 h3 h4 h5 hNo hNl hDo hPp hPl hQp hDp hDq hQi hE hEl ho
   refine ⟨hdi, fun i hi => ?_, hNo, hNl, hDo, hPp, hPl, hQp, hDp, hDq, hQi, hE, hEl, ho,
     ((k₁.trans k₂).trans k₃).mono (by decide)⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2
@@ -137,7 +137,7 @@ theorem keyEntry_ok {s : State} {B : Addr} (hB : stackArg s 10 = B)
 theorem ofNat_shr3 {k : Nat} (hk : k < 2 ^ 64) : BitVec.ofNat 64 k >>> 3 = BitVec.ofNat 64 (k / 8) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk,
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+    Nat.mod_eq_of_lt (by omega_arith), Nat.shiftRight_eq_div_pow]
 
 /-- `head`: `W = n_len / 8`, the arrays' bases and the stride. -/
 theorem keyHead_ok {s : State} {B : Addr} {Z nl : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
@@ -152,41 +152,41 @@ theorem keyHead_ok {s : State} {B : Addr} {Z nl : Nat} (hs : Scr s B Z) (hdi : s
   have eA : sArr 0 = 8 := rfl
   have eS : sStride = 28 := rfl
   have eN : kNl = 17 := rfl
-  have hl8 : slot (nl / 8) 8 ≤ slot (nl / 8) 16 := by unfold slot; omega
+  have hl8 : slot (nl / 8) 8 ≤ slot (nl / 8) 16 := by unfold slot; omega_arith
   unfold head
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.rcx, .r12] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 (nl / 8) ∧
       t.mem = s.mem.writeW (off B (8 * sW)) (BitVec.ofNat 64 (nl / 8))) ?_ rfl)
     fun t₁ ⟨⟨h12, hm₁⟩, k₁⟩ => ?_
-  · xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * kNl) (by omega),
-      hs.st (d := 8 * sW) (by omega), hnl, ofNat_shr3 (show nl < 2 ^ 64 by omega)]
+  · xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * kNl) (by omega_arith),
+      hs.st (d := 8 * sW) (by omega_arith), hnl, ofNat_shr3 (show nl < 2 ^ 64 by omega_arith)]
   have hs₁ := hs.congr k₁.2.2
-  refine WP.mono (setBases_ok hs₁ ((k₁.gpr (by decide)).trans hdi) h12 (by unfold sArr; omega))
+  refine WP.mono (setBases_ok hs₁ ((k₁.gpr (by decide)).trans hdi) h12 (by unfold sArr; omega_arith))
     fun t₂ ⟨hb₂, ho₂, k₂⟩ => ?_
   have hs₂ := hs₁.congr k₂.2.2
   have hdi₂ : t₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hdi)
   have h12₂ : t₂.gpr .r12 = BitVec.ofNat 64 (nl / 8) := (k₂.gpr (by decide)).trans h12
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = t₂.mem.writeW (off B (8 * sStride))
       (BitVec.ofNat 64 (8 * (nl / 8 + 2)))) (by
-    xrun [State.ea, hdr, hdi₂, hdrOff, h12₂, hs₂.st (d := 8 * sStride) (by omega), ofNat_dbl]
+    xrun [State.ea, hdr, hdi₂, hdrOff, h12₂, hs₂.st (d := 8 * sStride) (by omega_arith), ofNat_dbl]
     congr 1
     rw [show (2 : BitVec 64) = BitVec.ofNat 64 2 from rfl, ← BitVec.ofNat_add, ofNat_dbl, ofNat_dbl, ofNat_dbl]
-    congr 1; omega) rfl) fun t ⟨hm, k₃⟩ => ?_
-  have o1 := writeW_outside t₂.mem B (BitVec.ofNat 64 (8 * (nl / 8 + 2))) (d := 8 * sStride) (by omega)
+    congr 1; omega_arith) rfl) fun t ⟨hm, k₃⟩ => ?_
+  have o1 := writeW_outside t₂.mem B (BitVec.ofNat 64 (8 * (nl / 8 + 2))) (d := 8 * sStride) (by omega_arith)
   have hw : ∀ i < 32, i ≠ sStride → word t.mem B (8 * i) = word t₂.mem B (8 * i) :=
-    fun i hi h1 => by rw [hm, o1.word (by omega) (by omega)]
+    fun i hi h1 => by rw [hm, o1.word (by omega_arith) (by omega_arith)]
   have kk := ((k₁.trans k₂).trans k₃)
-  refine ⟨⟨hs₂.congr k₃.2.2, (k₃.gpr (by decide)).trans hdi₂, ?_, ?_, fun j hj => ?_, hZ, by omega,
-    by omega⟩, ?_, kk.mono (by simp)⟩
-  · rw [hw sW (by decide) (by decide), ho₂.word (by omega) (by omega), hm₁, word_writeW_self]
+  refine ⟨⟨hs₂.congr k₃.2.2, (k₃.gpr (by decide)).trans hdi₂, ?_, ?_, fun j hj => ?_, hZ, by omega_arith,
+    by omega_arith⟩, ?_, kk.mono (by simp)⟩
+  · rw [hw sW (by decide) (by decide), ho₂.word (by omega_arith) (by omega_arith), hm₁, word_writeW_self]
   · rw [hm, word_writeW_self]
-  · rw [hw (sArr j) (by unfold sArr; omega) (by unfold sArr sStride sFn; omega)]
+  · rw [hw (sArr j) (by unfold sArr; omega_arith) (by unfold sArr sStride sFn; omega_arith)]
     exact hb₂ j hj
   · intro x hx
     have a := hx (8 * sW, 8) (by simp)
     have b := hx (8 * sArr 0, 64) (by simp)
     have c := hx (8 * sStride, 8) (by simp)
     dsimp only at a b c
-    rw [hm, o1 x c, ho₂ x b, hm₁, writeW_outside s.mem B _ (by omega) x a]
+    rw [hm, o1 x c, ho₂ x b, hm₁, writeW_outside s.mem B _ (by omega_arith) x a]
 
 end VG.Proof.RsaKeyGen.X86_64.Key

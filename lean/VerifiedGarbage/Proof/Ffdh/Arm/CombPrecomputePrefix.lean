@@ -67,14 +67,14 @@ theorem metadataState_ok (s : State) {p : Inputs}
       Frame (combMetadataWrites s p.output) s.mem t.mem ∧ Rest roundClobbers s t := by
   have prefixFit : 24≤bytes p := by
     unfold bytes Spec.Ffdh.generationPrecomputedWords
-    omega
+    omega_arith
   have headerSub : (⟨State.addr p.output,24⟩ : Region).Sub ⟨State.addr p.output,bytes p⟩ :=
     by simpa only [off,BitVec.add_zero] using (Offset.sub_base (State.addr p.output) (d:=0) (n:=24) (k:=bytes p) prefixFit)
   have headerSep := localSeparate.sub_right headerSub
-  have ws : OutputBuffer p.output 24 s := ⟨by have := output.fits; omega,
+  have ws : OutputBuffer p.output 24 s := ⟨by have := output.fits; omega_arith,
     by
       obtain ⟨r,hr,h⟩ := output.writable
-      exact ⟨r,hr,by change (State.addr p.output-r.base).toNat+24≤r.len; change (State.addr p.output-r.base).toNat+bytes p≤r.len at h; omega⟩⟩
+      exact ⟨r,hr,by change (State.addr p.output-r.base).toNat+24≤r.len; change (State.addr p.output-r.base).toNat+bytes p≤r.len at h; omega_arith⟩⟩
   refine WP.mono (combMetadata_ok s context.locals ws headerSep positive bound
     (context.saved 4 (by decide)) width mask) ?_
   rintro t ⟨mem,frame,restSmall⟩
@@ -109,9 +109,9 @@ theorem metadataState_ok (s : State) {p : Inputs}
     simp only [slots,List.mem_cons,List.not_mem_nil,or_false] at hd
     simp only [combMetadataWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl|rfl
-    · exact Offset.disjoint _ (by omega) (by omega) (by decide)
-    · exact Offset.disjoint _ (by omega) (by omega) (by decide)
-    · exact headerSep.sub_left (Offset.sub_base _ (by omega)))
+    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by decide)
+    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by decide)
+    · exact headerSep.sub_left (Offset.sub_base _ (by omega_arith)))
   let initial := (s.mem.writeW (off (State.addr s.sp) 16) (BitVec.ofNat 32 (bits p))).writeW
         (off (State.addr s.sp) 44) (BitVec.ofNat 32 (Spec.Rsa.FixedBaseComb.rows (bits p)))
   have save {d : Nat} (fit : d+4≤72) :
@@ -214,7 +214,7 @@ theorem prefix_ok (backend : MontBackend) (s : State) {p : Inputs}
       have width := CachedSample.layout_width p positive
       unfold Proof.Ffdh.ScalarWidth.width
       change (ScalarLayout.vetted p).width= max 1 ((bits p+7)/8)
-      rw [Nat.max_eq_right (by omega)]
+      rw [Nat.max_eq_right (by omega_arith)]
       exact width
   rw [widthEq] at widthV
   have maskEq : (ScalarLayout.vetted p).mask=(Proof.Ffdh.ScalarWidth.mask (bits p)).setWidth 32 := rfl
@@ -227,7 +227,7 @@ theorem prefix_ok (backend : MontBackend) (s : State) {p : Inputs}
   have fitV := readyV.width ▸ readyV.layout.2.2.1
   have widthNat : Proof.Ffdh.ScalarWidth.width (bits p)=(bits p+7)/8 := by
     unfold Proof.Ffdh.ScalarWidth.width
-    exact Nat.max_eq_right (by omega)
+    exact Nat.max_eq_right (by omega_arith)
   rw [widthNat] at header
   refine ⟨memoryT,header,(workspaceT.number fitV (by decide : 0<8)).trans modV,
     (workspaceT.number fitV (by decide : 4<8)).trans r2V,?_,rV.trans restT⟩
@@ -242,7 +242,7 @@ theorem prefix_ok (backend : MontBackend) (s : State) {p : Inputs}
     rcases hr with rfl|rfl|rfl
     · exact ⟨⟨State.addr s.sp,72⟩,by simp [combPrecomputeWrites],by rw [rV.sp]; exact Offset.sub_base _ (by decide)⟩
     · exact ⟨⟨State.addr s.sp,72⟩,by simp [combPrecomputeWrites],by rw [rV.sp]; exact Offset.sub_base _ (by decide)⟩
-    · exact ⟨⟨State.addr p.output,bytes p⟩,by simp [combPrecomputeWrites],Region.sub_prefix (by unfold bytes Spec.Ffdh.generationPrecomputedWords; omega)⟩
+    · exact ⟨⟨State.addr p.output,bytes p⟩,by simp [combPrecomputeWrites],Region.sub_prefix (by unfold bytes Spec.Ffdh.generationPrecomputedWords; omega_arith)⟩
 
 
 theorem enteredPrefix_ok (backend : MontBackend) (s : State) {p : Inputs}
@@ -261,7 +261,7 @@ theorem enteredPrefix_ok (backend : MontBackend) (s : State) {p : Inputs}
   rintro u ⟨⟨ctxU,frameU⟩,restU⟩ symsU
   have context : Context p slots u :=
     ⟨⟨ctxU.workspace,ctxU.locals,ctxU.domain,ctxU.domainStack,fun d hd =>
-      ctxU.saved d (by simp only [slots,List.mem_cons,List.not_mem_nil,or_false] at hd ⊢; omega)⟩,ctxU.ptr⟩
+      ctxU.saved d (by simp only [slots,List.mem_cons,List.not_mem_nil,or_false] at hd ⊢; omega_arith)⟩,ctxU.ptr⟩
   have environment := VettedGroups.environment.stable h.environment
     (frameU.mono (by simp [keyCallWrites,keyWrites])) restU symsU
   refine WP.mono (prefix_ok backend u context environment (h.calls.after restU) (h.output.after restU)

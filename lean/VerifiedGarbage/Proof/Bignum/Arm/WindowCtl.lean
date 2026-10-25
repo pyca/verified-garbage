@@ -27,12 +27,12 @@ theorem TableHolds.after_header {m m' : Mem} {base : BitVec 32} {len w M x k d :
     (hd : d + 4 ≤ 256) (hk : k ≤ 8) (outside : Outside (State.addr base) d 4 m m') :
     TableHolds m' base w M x k := by
   intro j hj
-  have bound := Nat.le_trans (array_end_le (w := w) (show 8 + j < 16 by omega)) fits
+  have bound := Nat.le_trans (array_end_le (w := w) (show 8 + j < 16 by omega_arith)) fits
   have value : numAt m' (State.addr base) w (8 + j) = numAt m (State.addr base) w (8 + j) := by
     rw [numAt_native, numAt_native]
     apply outside.val32
-    · right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
-    · omega
+    · right; simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith
+    · omega_arith
   rw [value]
   exact h j hj
 
@@ -47,7 +47,7 @@ theorem stride_value (w : Nat) :
   change (BitVec.ofNat 32 w + BitVec.ofNat 32 2) * BitVec.ofNat 32 8 = _
   rw [← BitVec.ofNat_add, ← BitVec.ofNat_mul]
   congr 1
-  omega
+  omega_arith
 
 theorem entry_next (base : BitVec 32) (w j : Nat) :
     base + BitVec.ofNat 32 (arrAt w (8 + j)) + BitVec.ofNat 32 (8 * (w + 2)) =
@@ -56,8 +56,8 @@ theorem entry_next (base : BitVec 32) (w j : Nat) :
   congr 2
   simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
   generalize 8 * (w + 2) = a
-  rw [show 8 + (j + 1) = (8 + j) + 1 by omega, Nat.add_mul (8 + j), Nat.one_mul]
-  omega
+  rw [show 8 + (j + 1) = (8 + j) + 1 by omega_arith, Nat.add_mul (8 + j), Nat.one_mul]
+  omega_arith
 
 /-- The table's first entry, from array 7's address. -/
 theorem tableStart_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -65,18 +65,18 @@ theorem tableStart_ok (s : State) {base : BitVec 32} {len w : Nat}
     WP isa (.block tableStart) s fun t =>
       t.gpr .r12 = base + BitVec.ofNat 32 (arrAt w (8 + 0)) ∧ t.mem = s.mem ∧ Rest [.r1, .r12] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega_arith
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :
       State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
+    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_arith)
   unfold tableStart
-  refine wp_ldr (a := off (State.addr base) 120) (by decide) (addr 120 (by omega))
-    (h.workspace.read (by omega)) fun u a => ?_
+  refine wp_ldr (a := off (State.addr base) 120) (by decide) (addr 120 (by omega_arith))
+    (h.workspace.read (by omega_arith)) fun u a => ?_
   refine wp_ldr (a := off (State.addr base) 48) (by decide)
-    (by rw [a.other .r0 (by decide)]; exact addr 48 (by omega))
-    (by rw [a.rd, a.wr]; exact h.workspace.read (by omega)) fun v b => ?_
+    (by rw [a.other .r0 (by decide)]; exact addr 48 (by omega_arith))
+    (by rw [a.rd, a.wr]; exact h.workspace.read (by omega_arith)) fun v b => ?_
   refine wp_dp (op2_imm (by decide)) fun z c => ?_
   refine wp_mov (op2_lsl (by decide)) fun q d => ?_
   refine wp_dp (op2_reg _ _) fun t e => WP.block_nil ?_
@@ -89,7 +89,7 @@ theorem tableStart_ok (s : State) {base : BitVec 32} {len w : Nat}
   rw [stride_value, Offset.add_add]
   congr 2
   simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
-  omega
+  omega_arith
 
 theorem index_next : ∀ j < 8, (BitVec.ofNat 32 (j + 1) - BitVec.ofNat 32 8 == 0) = decide (j + 1 = 8) := by
   decide
@@ -108,18 +108,18 @@ theorem entryNext_ok (s : State) {base : BitVec 32} {len w j : Nat}
           (off (State.addr base) 228) (BitVec.ofNat 32 (j + 1)) ∧
       t.z = decide (j + 1 = 8) ∧ Rest [.r1, .r2] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega_arith
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :
       State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
+    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_arith)
   unfold entryNext
-  refine wp_ldr (a := off (State.addr base) 220) (by decide) (addr 220 (by omega))
-    (h.workspace.read (by omega)) fun u a => ?_
+  refine wp_ldr (a := off (State.addr base) 220) (by decide) (addr 220 (by omega_arith))
+    (h.workspace.read (by omega_arith)) fun u a => ?_
   refine wp_ldr (a := off (State.addr base) 48) (by decide)
-    (by rw [a.other .r0 (by decide)]; exact addr 48 (by omega))
-    (by rw [a.rd, a.wr]; exact h.workspace.read (by omega)) fun v b => ?_
+    (by rw [a.other .r0 (by decide)]; exact addr 48 (by omega_arith))
+    (by rw [a.rd, a.wr]; exact h.workspace.read (by omega_arith)) fun v b => ?_
   refine wp_dp (op2_imm (by decide)) fun z c => ?_
   refine wp_dp (op2_lsl (by decide)) fun q d => ?_
   have r0q : q.gpr .r0 = s.gpr .r0 := by
@@ -129,8 +129,8 @@ theorem entryNext_ok (s : State) {base : BitVec 32} {len w j : Nat}
       c.gpr, dpVal, b.gpr, a.mem, header.count]
     change base + BitVec.ofNat 32 (arrAt w (8 + j)) + (BitVec.ofNat 32 w + BitVec.ofNat 32 2) <<< 3 = _
     rw [stride_value, entry_next]
-  refine wp_str (a := off (State.addr base) 220) (by decide) (by rw [r0q]; exact addr 220 (by omega))
-    (by rw [d.wr, c.wr, b.wr, a.wr]; exact h.workspace.write (by omega)) fun y e => ?_
+  refine wp_str (a := off (State.addr base) 220) (by decide) (by rw [r0q]; exact addr 220 (by omega_arith))
+    (by rw [d.wr, c.wr, b.wr, a.wr]; exact h.workspace.write (by omega_arith)) fun y e => ?_
   have memY : y.mem = s.mem.writeW (off (State.addr base) 220)
       (base + BitVec.ofNat 32 (arrAt w (8 + (j + 1)))) := by
     rw [e.mem, d.mem, c.mem, b.mem, a.mem, next]
@@ -138,16 +138,16 @@ theorem entryNext_ok (s : State) {base : BitVec 32} {len w j : Nat}
     (base + BitVec.ofNat 32 (arrAt w (8 + (j + 1)))) (by decide)
   rw [← memY] at outsideY
   refine wp_ldr (a := off (State.addr base) 228) (by decide)
-    (by rw [congrFun e.gpr .r0, r0q]; exact addr 228 (by omega))
-    (by rw [e.rd, e.wr, d.rd, d.wr, c.rd, c.wr, b.rd, b.wr, a.rd, a.wr]; exact h.workspace.read (by omega))
+    (by rw [congrFun e.gpr .r0, r0q]; exact addr 228 (by omega_arith))
+    (by rw [e.rd, e.wr, d.rd, d.wr, c.rd, c.wr, b.rd, b.wr, a.rd, a.wr]; exact h.workspace.read (by omega_arith))
     fun g f => ?_
   refine wp_dp (op2_imm (by decide)) fun g2 f2 => ?_
   have value : g2.gpr .r1 = BitVec.ofNat 32 (j + 1) := by
     rw [f2.gpr, dpVal, f.gpr, outside_read32 outsideY (d := 228) (by decide) (by decide), index]
     exact (BitVec.ofNat_add _ _).symm
   refine wp_str (a := off (State.addr base) 228) (by decide)
-    (by rw [f2.other .r0 (by decide), f.other .r0 (by decide), congrFun e.gpr .r0, r0q]; exact addr 228 (by omega))
-    (by rw [f2.wr, f.wr, e.wr, d.wr, c.wr, b.wr, a.wr]; exact h.workspace.write (by omega)) fun g3 f3 => ?_
+    (by rw [f2.other .r0 (by decide), f.other .r0 (by decide), congrFun e.gpr .r0, r0q]; exact addr 228 (by omega_arith))
+    (by rw [f2.wr, f.wr, e.wr, d.wr, c.wr, b.wr, a.wr]; exact h.workspace.write (by omega_arith)) fun g3 f3 => ?_
   refine wp_cmp (op2_imm (by decide)) fun t f4 zz => WP.block_nil ?_
   refine ⟨?_, ?_, ?_⟩
   · rw [f4.mem, f3.mem, f2.mem, f.mem, memY, value]
@@ -163,21 +163,21 @@ theorem tableInit_ok (s : State) {base : BitVec 32} {len w : Nat} (h : Arithmeti
       t.mem = (s.mem.writeW (off (State.addr base) 220) (base + BitVec.ofNat 32 (arrAt w (8 + 0)))).writeW
         (off (State.addr base) 228) (BitVec.ofNat 32 0) ∧ Rest [.r1, .r12] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega_arith
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :
       State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
+    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_arith)
   unfold tableInit
   apply WP.block_append_iff.mpr
   refine WP.mono (tableStart_ok s h) ?_
   rintro u ⟨r12, memU, restU⟩
   have r0u : u.gpr .r0 = s.gpr .r0 := restU.gpr .r0 (by simp)
-  refine wp_str (a := off (State.addr base) 220) (by decide) (by rw [r0u]; exact addr 220 (by omega))
-    (by rw [restU.wr]; exact h.workspace.write (by omega)) fun v a => ?_
+  refine wp_str (a := off (State.addr base) 220) (by decide) (by rw [r0u]; exact addr 220 (by omega_arith))
+    (by rw [restU.wr]; exact h.workspace.write (by omega_arith)) fun v a => ?_
   refine wp_mov (op2_imm (by decide)) fun z b => ?_
   refine wp_str (a := off (State.addr base) 228) (by decide)
-    (by rw [b.other .r0 (by decide), congrFun a.gpr .r0, r0u]; exact addr 228 (by omega))
-    (by rw [b.wr, a.wr, restU.wr]; exact h.workspace.write (by omega)) fun t c => WP.block_nil ?_
+    (by rw [b.other .r0 (by decide), congrFun a.gpr .r0, r0u]; exact addr 228 (by omega_arith))
+    (by rw [b.wr, a.wr, restU.wr]; exact h.workspace.write (by omega_arith)) fun t c => WP.block_nil ?_
   refine ⟨?_, restU.trans ((a.rest _).trans ((b.rest (by simp)).trans (c.rest _)))⟩
   rw [c.mem, b.mem, a.mem, memU, b.gpr, r12]
   rfl
@@ -190,16 +190,16 @@ theorem scanBit_ok (s : State) {base : BitVec 32} {len w d j : Nat}
     WP isa (.block scanBit) s fun t =>
       t.gpr .r11 = (if d = j then 1 else 0) ∧ t.mem = s.mem ∧ Rest [.r1, .r2, .r11] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega_arith
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :
       State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
+    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_arith)
   unfold scanBit
-  refine wp_ldr (a := off (State.addr base) 196) (by decide) (addr 196 (by omega))
-    (h.workspace.read (by omega)) fun u a => ?_
+  refine wp_ldr (a := off (State.addr base) 196) (by decide) (addr 196 (by omega_arith))
+    (h.workspace.read (by omega_arith)) fun u a => ?_
   refine wp_ldr (a := off (State.addr base) 228) (by decide)
-    (by rw [a.other .r0 (by decide)]; exact addr 228 (by omega))
-    (by rw [a.rd, a.wr]; exact h.workspace.read (by omega)) fun v b => ?_
+    (by rw [a.other .r0 (by decide)]; exact addr 228 (by omega_arith))
+    (by rw [a.rd, a.wr]; exact h.workspace.read (by omega_arith)) fun v b => ?_
   refine wp_dp (op2_reg _ _) fun z c => ?_
   refine wp_dp (op2_imm (by decide)) fun q e => ?_
   refine wp_mov (op2_lsr (by decide)) fun t f => WP.block_nil ?_
@@ -215,18 +215,18 @@ theorem windowReset_ok (s : State) {base : BitVec 32} {len w : Nat} (h : Arithme
       t.mem = (s.mem.writeW (off (State.addr base) 196) (BitVec.ofNat 32 0)).writeW
         (off (State.addr base) 204) (BitVec.ofNat 32 0) ∧ Rest [.r1] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega_arith
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :
       State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
+    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_arith)
   unfold windowReset
   refine wp_mov (op2_imm (by decide)) fun u a => ?_
   refine wp_str (a := off (State.addr base) 196) (by decide)
-    (by rw [a.other .r0 (by decide)]; exact addr 196 (by omega))
-    (by rw [a.wr]; exact h.workspace.write (by omega)) fun v b => ?_
+    (by rw [a.other .r0 (by decide)]; exact addr 196 (by omega_arith))
+    (by rw [a.wr]; exact h.workspace.write (by omega_arith)) fun v b => ?_
   refine wp_str (a := off (State.addr base) 204) (by decide)
-    (by rw [congrFun b.gpr .r0, a.other .r0 (by decide)]; exact addr 204 (by omega))
-    (by rw [b.wr, a.wr]; exact h.workspace.write (by omega)) fun t c => WP.block_nil ?_
+    (by rw [congrFun b.gpr .r0, a.other .r0 (by decide)]; exact addr 204 (by omega_arith))
+    (by rw [b.wr, a.wr]; exact h.workspace.write (by omega_arith)) fun t c => WP.block_nil ?_
   refine ⟨?_, (a.rest (by simp)).trans ((b.rest _).trans (c.rest _))⟩
   rw [c.mem, b.mem, a.mem, congrFun b.gpr .r1, a.gpr]
   rfl
@@ -242,13 +242,13 @@ theorem windowBitValue_ok (s : State) {base : BitVec 32} {len w V p q : Nat}
         (off (State.addr base) 204) (BitVec.ofNat 32 (q + 1)) ∧
       t.z = decide (q + 1 = 3) ∧ Rest [.r1, .r2] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega_arith
   have addr (d : Nat) (hd : d + 4 ≤ 8 * len) :
       State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
+    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_arith)
   unfold windowBitValue
-  refine wp_ldr (a := off (State.addr base) 200) (by decide) (addr 200 (by omega))
-    (h.workspace.read (by omega)) fun u a => ?_
+  refine wp_ldr (a := off (State.addr base) 200) (by decide) (addr 200 (by omega_arith))
+    (h.workspace.read (by omega_arith)) fun u a => ?_
   refine wp_mov (op2_lsr (by decide)) fun v b => ?_
   refine wp_dp (op2_imm (by decide)) fun z c => ?_
   have bit : z.gpr .r1 = BitVec.ofNat 32 (V / 128 % 2) := by
@@ -258,11 +258,11 @@ theorem windowBitValue_ok (s : State) {base : BitVec 32} {len w V p q : Nat}
       show (1 : BitVec 32).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
       BitVec.toNat_ofNat]
     simp only [Nat.reducePow]
-    omega
+    omega_arith
   have r0z : z.gpr .r0 = s.gpr .r0 := by
     rw [c.other .r0 (by decide), b.other .r0 (by decide), a.other .r0 (by decide)]
-  refine wp_ldr (a := off (State.addr base) 196) (by decide) (by rw [r0z]; exact addr 196 (by omega))
-    (by rw [c.rd, c.wr, b.rd, b.wr, a.rd, a.wr]; exact h.workspace.read (by omega)) fun y d => ?_
+  refine wp_ldr (a := off (State.addr base) 196) (by decide) (by rw [r0z]; exact addr 196 (by omega_arith))
+    (by rw [c.rd, c.wr, b.rd, b.wr, a.rd, a.wr]; exact h.workspace.read (by omega_arith)) fun y d => ?_
   refine wp_dp (op2_lsl (by decide)) fun g e => ?_
   have joined : g.gpr .r2 = BitVec.ofNat 32 (2 * p + V / 128 % 2) := by
     rw [e.gpr, dpVal, d.other .r1 (by decide), bit, d.gpr, c.mem, b.mem, a.mem, digit,
@@ -270,10 +270,10 @@ theorem windowBitValue_ok (s : State) {base : BitVec 32} {len w V p q : Nat}
     change BitVec.ofNat 32 (V / 128 % 2) + BitVec.ofNat 32 p * BitVec.ofNat 32 2 = _
     rw [← BitVec.ofNat_mul, ← BitVec.ofNat_add]
     congr 1
-    omega
+    omega_arith
   refine wp_str (a := off (State.addr base) 196) (by decide)
-    (by rw [e.other .r0 (by decide), d.other .r0 (by decide), r0z]; exact addr 196 (by omega))
-    (by rw [e.wr, d.wr, c.wr, b.wr, a.wr]; exact h.workspace.write (by omega)) fun k f => ?_
+    (by rw [e.other .r0 (by decide), d.other .r0 (by decide), r0z]; exact addr 196 (by omega_arith))
+    (by rw [e.wr, d.wr, c.wr, b.wr, a.wr]; exact h.workspace.write (by omega_arith)) fun k f => ?_
   have memK : k.mem = s.mem.writeW (off (State.addr base) 196) (BitVec.ofNat 32 (2 * p + V / 128 % 2)) := by
     rw [f.mem, e.mem, d.mem, c.mem, b.mem, a.mem, joined]
   have outsideK := writeW32_outside s.mem (State.addr base) (d := 196)
@@ -281,16 +281,16 @@ theorem windowBitValue_ok (s : State) {base : BitVec 32} {len w V p q : Nat}
   rw [← memK] at outsideK
   have r0k : k.gpr .r0 = s.gpr .r0 := by
     rw [congrFun f.gpr .r0, e.other .r0 (by decide), d.other .r0 (by decide), r0z]
-  refine wp_ldr (a := off (State.addr base) 204) (by decide) (by rw [r0k]; exact addr 204 (by omega))
+  refine wp_ldr (a := off (State.addr base) 204) (by decide) (by rw [r0k]; exact addr 204 (by omega_arith))
     (by rw [f.rd, f.wr, e.rd, e.wr, d.rd, d.wr, c.rd, c.wr, b.rd, b.wr, a.rd, a.wr]
-        exact h.workspace.read (by omega)) fun l g1 => ?_
+        exact h.workspace.read (by omega_arith)) fun l g1 => ?_
   refine wp_dp (op2_imm (by decide)) fun l2 g2 => ?_
   have count : l2.gpr .r1 = BitVec.ofNat 32 (q + 1) := by
     rw [g2.gpr, dpVal, g1.gpr, outside_read32 outsideK (d := 204) (by decide) (by decide), pending]
     exact (BitVec.ofNat_add _ _).symm
   refine wp_str (a := off (State.addr base) 204) (by decide)
-    (by rw [g2.other .r0 (by decide), g1.other .r0 (by decide), r0k]; exact addr 204 (by omega))
-    (by rw [g2.wr, g1.wr, f.wr, e.wr, d.wr, c.wr, b.wr, a.wr]; exact h.workspace.write (by omega))
+    (by rw [g2.other .r0 (by decide), g1.other .r0 (by decide), r0k]; exact addr 204 (by omega_arith))
+    (by rw [g2.wr, g1.wr, f.wr, e.wr, d.wr, c.wr, b.wr, a.wr]; exact h.workspace.write (by omega_arith))
     fun l3 g3 => ?_
   refine wp_cmp (op2_imm (by decide)) fun t g4 zz => WP.block_nil ?_
   refine ⟨?_, ?_, ?_⟩

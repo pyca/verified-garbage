@@ -40,33 +40,26 @@ theorem exponentPowerStore_words {s : State} {base : BitVec 32} {capacity w : Na
     change BitVec.ofNat 32 (2 * w + 2) * BitVec.ofNat 32 4 = _
     rw [BitVec.ofNat_mul_ofNat]
     congr 1
-    omega
+    omega_arith
   have pointer : B + BitVec.ofNat 32 (arr (2 * w + 2) 27) + BitVec.ofNat 32 (4 * (2 * w + 2)) - 8 =
       base + BitVec.ofNat 32 (arrAt w 27 + 8 * w) := by
     change base + 96#32 + BitVec.ofNat 32 (arr (2 * w + 2) 27) +
       BitVec.ofNat 32 (4 * (2 * w + 2)) - BitVec.ofNat 32 8 = _
-    rw [VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega), BitVec.add_assoc,
+    rw [VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega_arith), BitVec.add_assoc,
       ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add]
     congr 1
     rw [← Nat.add_assoc, keyView_array]
     congr 1
-    omega
+    omega_arith
   have addr0 : State.addr (base + BitVec.ofNat 32 (arrAt w 27 + 8 * w)) =
-      off (State.addr base) (arrAt w 27 + 8 * w) := VG.Arm.addr_add (by have := workspace.nowrap; omega)
+      off (State.addr base) (arrAt w 27 + 8 * w) := VG.Arm.addr_add (by have := workspace.nowrap; omega_arith)
   have addr4 : State.addr (base + BitVec.ofNat 32 (arrAt w 27 + 8 * w) + 4#32) =
       off (State.addr base) (arrAt w 27 + 8 * w + 4) := by
     rw [Offset.add_add]
-    exact VG.Arm.addr_add (by have := workspace.nowrap; omega)
-  have write0 := workspace.write (off := arrAt w 27 + 8 * w) (by omega)
-  have write4 := workspace.write (off := arrAt w 27 + 8 * w + 4) (by omega)
-  refine withRest [.r0] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.exponentPowerStore : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+    exact VG.Arm.addr_add (by have := workspace.nowrap; omega_arith)
+  have write0 := workspace.write (off := arrAt w 27 + 8 * w) (by omega_arith)
+  have write4 := workspace.write (off := arrAt w 27 + 8 * w + 4) (by omega_arith)
+  refine withRest_all [.r0] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.exponentPowerStore VG.Impl.Rsa.Arm.Keys.ptr
   ffrun [List.cons_append, List.nil_append, BitVec.add_zero, r7, r8, r9, ptrValue, shifted, pointer,
     addr0, addr4, write0, write4]
@@ -95,7 +88,7 @@ theorem exponentPowerStore_ok {s : State} {base : BitVec 32} {capacity w : Nat}
     apply congrArg BitVec.toNat
     exact frame.read (r := ⟨off (State.addr base) (arrAt w 27), 8 * w⟩) (Region.contains_self _ _)
       (by intro r hr; rw [List.mem_singleton] at hr; subst r
-          exact Offset.disjoint _ (.inl (Nat.le_refl _)) (by omega) (by omega)) (by omega)
+          exact Offset.disjoint _ (.inl (Nat.le_refl _)) (by omega_arith) (by omega_arith)) (by omega_arith)
   have shiftFits := ready.baseShiftFits workspace
   have offNative : off (State.addr base) (arrAt w 27 + 8 * w) =
       off (State.addr (base + 96#32)) (arr (2 * w + 2) 27 + 8 * w) := by
@@ -105,8 +98,8 @@ theorem exponentPowerStore_ok {s : State} {base : BitVec 32} {capacity w : Nat}
   have keep : VG.Proof.Rsa.Arm.Keys.Keep (base + 96#32) (2 * w + 2) [27] [] s.mem t.mem := by
     rw [written, offNative]
     exact VG.Proof.Rsa.Arm.Keys.Keep.of_arr (d := 8 * w)
-      (writeW_outside _ _ _ (by have := ready.fit64 (j := 27) (by decide); simp only [S] at this; omega))
-      (by simp only [S]; omega) (by simp)
+      (writeW_outside _ _ _ (by have := ready.fit64 (j := 27) (by decide); simp only [S] at this; omega_arith))
+      (by simp only [S]; omega_arith) (by simp)
   exact ⟨ready.rest rest (by decide) (by decide) (by decide),
     (data.after_key_keep workspace ready (by simp) (by simp) keep).1,
     by rw [written, Mem.readW_writeW_self64], number, keep, rest⟩

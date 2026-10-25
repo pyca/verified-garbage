@@ -208,11 +208,11 @@ theorem open_head {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s�
   have hH₄ : blockAt s₄.mem (s₄.gpr .r29 + BitVec.ofNat 64 240) = H := by
     rw [h4.r29]; exact ctxH_keep F₄ dcF
   have iv₄ : bytesAt s₄.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat = iv :=
-    bytes_W F₄ dnW (by have := (s₀.gpr .r6).isLt; omega)
+    bytes_W F₄ dnW (by have := (s₀.gpr .r6).isLt; omega_arith)
   have a₄ : bytesAt s₄.mem (s₄.gpr .r21) (s₄.gpr .r22).toNat = a := by
-    rw [h4.r21, h4.r22]; exact bytes_W F₄ daW (by have := (s₀.gpr .r8).isLt; omega)
+    rw [h4.r21, h4.r22]; exact bytes_W F₄ daW (by have := (s₀.gpr .r8).isLt; omega_arith)
   have ct₅ : bytesAt s₅.mem (s₄.gpr .r27) (s₄.gpr .r23).toNat = ct := by
-    rw [h4.r27, h4.r23]; exact bytes_W F₅ ddW (by have := (s₀.gpr .r10).isLt; omega)
+    rw [h4.r27, h4.r23]; exact bytes_W F₅ ddW (by have := (s₀.gpr .r10).isLt; omega_arith)
   have hc₅ : ciphOf s₅.mem (s₄.gpr .r29) (s₀.gpr .r4).toNat = ciph := by rw [h4.r29]; exact ciph_keep F₅ dcF hR
   have hj₅ : blockAt s₅.mem (s₄.gpr .r30) = j0 H iv := by rw [oa.j, hH₄, iv₄]
   have hT₆ : bytesAt s₆.mem (stackArg s₀ 2 + BitVec.ofNat 64 112) 16 = fullTag ciph H iv a ct := by
@@ -225,7 +225,7 @@ theorem open_head {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s�
       exact Lay.w_w (.inl (by decide)) (by decide) (by decide)) (by decide)]
     exact hT₆
   have hr₇ : bytesAt s₇.mem (stackArg s₀ 2 + BitVec.ofNat 64 256) 16 = tg ++ zeros (16 - (stackArg s₀ 1).toNat) := by
-    rw [hb₇, h4.r20]; congr 1; exact bytes_W F₆ dtW (by omega)
+    rw [hb₇, h4.r20]; congr 1; exact bytes_W F₆ dtW (by omega_arith)
   let X := (fullTag ciph H iv a ct).take (stackArg s₀ 1).toNat = tg
   have hX : (bytesAt s₇.mem (stackArg s₀ 2 + BitVec.ofNat 64 112) (stackArg s₀ 1).toNat ++
       zeros (16 - (stackArg s₀ 1).toNat) = bytesAt s₇.mem (stackArg s₀ 2 + BitVec.ofNat 64 256) 16) ↔ X := by
@@ -233,7 +233,7 @@ theorem open_head {s₀ s₄ : State} (h : openPre s₀) (h4 : SO1 (stackArg s�
   have r3₈ : s₈.gpr .r3 = if X then 1 else 0 := by
     rw [h3₈]; exact ite_congr (propext hX) (fun _ => rfl) (fun _ => rfl)
   have dat₈ : bytesAt s₈.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat = ct :=
-    bytes_W F₈ ddW (by have := (s₀.gpr .r10).isLt; omega)
+    bytes_W F₈ ddW (by have := (s₀.gpr .r10).isLt; omega_arith)
   have cb₈ : blockAt s₈.mem (stackArg s₀ 2 + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) = inc32 (j0 H iv) := by
     have f₆₈ : Frame (otFrame (stackArg s₀ 2 + BitVec.ofNat 64 16) (stackArg s₀ 2) 112 ++
         [⟨stackArg s₀ 2 + BitVec.ofNat 64 256, 16⟩, ⟨stackArg s₀ 2 + BitVec.ofNat 64 272, 16⟩]) s₅.mem s₈.mem :=
@@ -291,7 +291,7 @@ theorem open_tail {s₀ s₄ s₉ : State} (h : openPre s₀) (h4 : SO1 (stackAr
   have sv₉ := om.saved
   have F₉ := om.frame
   have dat₉ : bytesAt s₉.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat = ct :=
-    bytes_W F₉ ddW (by have := (s₀.gpr .r10).isLt; omega)
+    bytes_W F₉ ddW (by have := (s₀.gpr .r10).isLt; omega_arith)
   have hd₉₀ : DataW (s₀.gpr .r3) (stackArg s₀ 2 + BitVec.ofNat 64 16) (stackArg s₀ 2) s₉ (s₀.gpr .r9)
       (s₀.gpr .r10).toNat := by
     have := hd₄.of_eq rd₉ wr₉
@@ -430,7 +430,7 @@ theorem open_wp {s₀ : State} (h : openPPC64LE.pre s₀) :
       · rw [k.mem, k₃.mem]; exact h2.en.saved
       · refine openPost_none (by simp only [openRes, openResult, hbad]; rfl) z3 ?_
         rw [k.mem, k₃.mem]
-        exact bytes_W F₂ ddW (by have := (s₀.gpr .r10).isLt; omega)
+        exact bytes_W F₂ ddW (by have := (s₀.gpr .r10).isLt; omega_arith)
     · have hok : Spec.Gcm.tagLenOk (stackArg s₀ 1).toNat = true := by
         cases e : Spec.Gcm.tagLenOk (stackArg s₀ 1).toNat
         · simp [e] at hf

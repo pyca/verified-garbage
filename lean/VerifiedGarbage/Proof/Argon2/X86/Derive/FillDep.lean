@@ -60,8 +60,8 @@ include hp
 theorem scr_blk (m : Mem) {o : Nat} (ho : o + 1024 ≤ 16384) :
     blk m (scrP s₀) o = blockAt m (scrB s₀ + BitVec.ofNat 64 o) := by
   have := hp.scr_fits
-  have e : (scrP s₀ + BitVec.ofNat 32 o).setWidth 64 = scrB s₀ + BitVec.ofNat 64 o := HPrime.setWidth_add (by omega)
-  have f : (scrP s₀ + BitVec.ofNat 32 o).toNat + 1024 ≤ 2 ^ 32 := by rw [add_nat (by omega)]; omega
+  have e : (scrP s₀ + BitVec.ofNat 32 o).setWidth 64 = scrB s₀ + BitVec.ofNat 64 o := HPrime.setWidth_add (by omega_arith)
+  have f : (scrP s₀ + BitVec.ofNat 32 o).toNat + 1024 ≤ 2 ^ 32 := by rw [add_nat (by omega_arith)]; omega_arith
   rw [← e, Proof.Argon2.X86.blockAt_eq f, blk_shift]
 
 /-- A word of the matrix is kept by a store to the locals. -/
@@ -86,12 +86,12 @@ theorem FS.store {s t : State} {pass slice lane index ctr : Nat} {st : FillState
     have : (e + 4 ≤ d ∨ d + 4 ≤ e) ∧ e + 4 ≤ 236 := by
       rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [divisorOff, segLenOff, laneLenOff, strideOff, passOff, sliceOff, laneOff, indexOff,
-        counterOff] at hd' ⊢ <;> omega
-    exact lw_store hp (by omega) this.2 this.1.symm v
+        counterOff] at hd' ⊢ <;> omega_arith
+    exact lw_store hp (by omega_arith) this.2 this.1.symm v
   · rw [scr_blk hp t.mem (by decide), scr_blk hp s.mem (by decide)]
     refine blockAt_keep f fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact (loc_disj hp hd (scrR s₀) (by simp)).symm.sub_left (Offset.sub_base _ (by omega))
+    exact (loc_disj hp hd (scrR s₀) (by simp)).symm.sub_left (Offset.sub_base _ (by omega_arith))
   · refine blockAt_keep f fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     have hk' : k < blocksN s₀ := by rw [hp.blocks]; exact hk
@@ -107,7 +107,7 @@ theorem dependentWord_ok {s : State} {pass slice lane index ctr : Nat} {st : Fil
   have hm := hp.mem_fits
   have L8 := laneLen_ge hp
   obtain ⟨cl, cf⟩ := cell_fits hp hl (col := (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) %
-    (prm s₀).laneLen) (Nat.mod_lt _ (by omega))
+    (prm s₀).laneLen) (Nat.mod_lt _ (by omega_arith))
   unfold Impl.Argon2.X86.Derive.dependentWord
   refine WP.seq ((prevPointer_ok hp h.inv h.pr h.pos hl hs hi).mono fun s₁ ⟨a₁, k₁⟩ => ?_)
   generalize (lane * (prm s₀).laneLen + (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) %
@@ -115,8 +115,8 @@ theorem dependentWord_ok {s : State} {pass slice lane index ctr : Nat} {st : Fil
   have h₁ := h.of_keep k₁
   have inP : ∀ o, o + 4 ≤ 1024 → (memR s₀).Contains (addr (memP s₀ + BitVec.ofNat 32 (c * 1024)) o) 4 :=
     fun o ho => by
-      rw [addr_shift, addr_eq (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega)
+      rw [addr_shift, addr_eq (by omega_arith)]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   have mW : memR s₀ ∈ s₁.wr := by rw [h₁.inv.wr]; exact mem_mem hp
   have in0 : InRegions (s₁.rd ++ s₁.wr) (addr (memP s₀ + BitVec.ofNat 32 (c * 1024)) 0) 4 :=
     ⟨_, List.mem_append_right _ mW, inP 0 (by decide)⟩
@@ -146,7 +146,7 @@ include hp
 
 theorem loc_word_sub {d : Nat} (hd : d + 4 ≤ 144) : Region.Sub ⟨addr (E s₀) d, 4⟩ (locR s₀) := by
   have := E_hi hp
-  exact sub32 (by rw [loc_addr hp (by omega)]; omega) (by rw [loc_addr hp (by omega)]; omega)
+  exact sub32 (by rw [loc_addr hp (by omega_arith)]; omega_arith) (by rw [loc_addr hp (by omega_arith)]; omega_arith)
 
 theorem FS.frame {s t : State} {pass slice lane index ctr : Nat} {st : FillState}
     (h : FS s₀ pass slice lane index ctr st s) (it : Inv s₀ t) {rs : List Region} (f : Frame rs s.mem t.mem)
@@ -164,9 +164,9 @@ theorem FS.frame {s t : State} {pass slice lane index ctr : Nat} {st : FillState
 
 theorem outside_scr {o n : Nat} (h : o + n ≤ 6144 ∨ (7168 ≤ o ∧ o + n ≤ 16384)) :
     Outside s₀ ⟨scrB s₀ + BitVec.ofNat 64 o, n⟩ := by
-  have sub : Region.Sub ⟨scrB s₀ + BitVec.ofNat 64 o, n⟩ (scrR s₀) := Offset.sub_base _ (by omega)
-  refine ⟨(loc_disj' hp (R := scrR s₀) (by simp)).symm.sub_left sub, Offset.disjoint _ (by omega) (by omega)
-    (by omega), hp.mem_scr.symm.sub_left sub⟩
+  have sub : Region.Sub ⟨scrB s₀ + BitVec.ofNat 64 o, n⟩ (scrR s₀) := Offset.sub_base _ (by omega_arith)
+  refine ⟨(loc_disj' hp (R := scrR s₀) (by simp)).symm.sub_left sub, Offset.disjoint _ (by omega_arith) (by omega_arith)
+    (by omega_arith), hp.mem_scr.symm.sub_left sub⟩
 
 theorem outside_call : Outside s₀ (callR s₀) :=
   ⟨(loc_call hp).symm, (call_disj hp (R := scrR s₀) (by simp)).sub_right (Offset.sub_base _ (by decide)),

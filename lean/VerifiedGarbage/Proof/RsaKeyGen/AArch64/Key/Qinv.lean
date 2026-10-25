@@ -44,7 +44,7 @@ theorem qinv_mask_or (a b : Bool) : mask a ||| mask b = mask (a || b) := by case
 theorem qMod_bad (P : Nat) : (if (decide (P % 2 = 0) || decide (P < 3)) = true then 3 else P) = qMod P := by
   unfold qMod
   by_cases h1 : P % 2 = 0 <;> by_cases h2 : P < 3 <;>
-    simp [h1, h2, show P % 2 = 1 ↔ ¬ P % 2 = 0 by omega]
+    simp [h1, h2, show P % 2 = 1 ↔ ¬ P % 2 = 0 by omega_arith]
 
 /-- `qinvPart`, for `[aPa] = P` and `[aQa] = Q`. -/
 theorem qinvPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {P Q : Nat} {ok : Bool}
@@ -62,7 +62,7 @@ theorem qinvPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {P Q : Nat} {ok 
     fun s₂ ⟨h₂, f₂, c₂, _⟩ => ?_)
   have c3 : av I s₂.mem aC = 3 :=
     av_of_full c₂ (Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (by decide)
-      (show 2 ≤ 64 * I.W by have := h.ws.w1; omega)))
+      (show 2 ≤ 64 * I.W by have := h.ws.w1; omega_arith)))
   have vP₂ : av I s₂.mem aPa = P := by
     rw [f₂.av (by decide) (by decide) (by decide) hZ, f₁.av (by decide) (by decide) (by decide) hZ, hP]
   refine wp_seqs_append (by simp [ltA, cmpA]) (by simp) (WP.mono (ltA_k h₂ (a := aPa) (b := aC) (by decide)
@@ -101,7 +101,7 @@ theorem qinvPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {P Q : Nat} {ok 
     by_cases hc : (decide (P % 2 = 1) && !decide (P < 3)) = true
     · rw [ite_eq_left hc]
       simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not] at hc
-      omega
+      omega_arith
     · rw [ite_eq_right hc]; decide
   -- The inverse.
   refine wp_seqs_append (by simp [invFrom]) (by simp) (WP.mono (invFrom_k h₉ (j := aM) (by decide) (by decide))

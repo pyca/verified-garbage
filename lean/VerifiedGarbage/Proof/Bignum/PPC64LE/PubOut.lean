@@ -30,7 +30,7 @@ theorem mask_byte (x : BitVec 8) (b : Bool) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth]
     have := x.isLt
-    omega
+    omega_arith
 
 theorem read1_setWidth (m : Mem) (a : Addr) : (m.read a 1).setWidth 64 = (m a).setWidth 64 := by
   apply BitVec.eq_of_toNat_eq
@@ -63,7 +63,7 @@ theorem output_ok {s : State} {B O : Addr} {Z w k : Nat} {b : Bool} (hs : Scr s 
     s₂.gpr .r16 = off O 0 ∧ s₂.gpr .r17 = BitVec.ofNat 64 k ∧ s₂.mem = s₁.mem)
     (by prun [a15, (k1.gpr .r28 (by decide)).trans h28, (k1.gpr .r27 (by decide)).trans h27, off_add,
         BitVec.add_zero]
-        rw [off_sub1 _ (by omega)]; congr 2; omega) (by decide)) fun s₂ ⟨⟨b15, b16, b17, m2⟩, k2⟩ => ?_
+        rw [off_sub1 _ (by omega_arith)]; congr 2; omega_arith) (by decide)) fun s₂ ⟨⟨b15, b16, b17, m2⟩, k2⟩ => ?_
   have k12 := k1.trans k2
   have h26' : s₂.gpr .r26 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0) :=
     (k12.gpr _ (by decide)).trans h26
@@ -73,11 +73,11 @@ theorem output_ok {s : State} {B O : Addr} {Z w k : Nat} {b : Bool} (hs : Scr s 
       Keep [.r0, .r15, .r16, .r17] s t
   refine WP.seq (WP.mono (wp_countdown (body := .block ([.lbz .r0 .r15 0, .logic .and .r0 .r0 .r26,
       .stb .r0 .r16 0, .addi .r16 .r16 1, .subi .r15 .r15 1] ++ ([.subi .r17 .r17 1] : List Instr)))
-    (cnt := .r17) (N := k) (by omega) (by omega) Inv (fun j hj t ⟨t15, t16, tout, tb, tk⟩ hc => ?_)
-    ⟨by rw [b15]; rfl, b16, by rw [m2, m1]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega),
+    (cnt := .r17) (N := k) (by omega_arith) (by omega_arith) Inv (fun j hj t ⟨t15, t16, tout, tb, tk⟩ hc => ?_)
+    ⟨by rw [b15]; rfl, b16, by rw [m2, m1]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega_arith),
       k12.mono⟩ b17) fun t ⟨_, _, tout, tb, tk⟩ => ?_)
   · have hrd : InRegions (t.rd ++ t.wr) (off B (slot w 4 + (k - 1) - j)) 1 := by
-      rw [tk.rd, tk.wr]; exact hs.ld (show slot w 4 + (k - 1) - j + 1 ≤ Z by have := slot_le (w := w) (j := 4) (by decide); omega)
+      rw [tk.rd, tk.wr]; exact hs.ld (show slot w 4 + (k - 1) - j + 1 ≤ Z by have := slot_le (w := w) (j := 4) (by decide); omega_arith)
     have hst : WP isa (.block [.lbz .r0 .r15 0, .logic .and .r0 .r0 .r26, .stb .r0 .r16 0, .addi .r16 .r16 1,
         .subi .r15 .r15 1, .subi .r17 .r17 1]) t fun t' => t' = ((({ ((t.write .r0
           ((t.mem.read (off B (slot w 4 + (k - 1) - j)) 1).setWidth 64)).write .r0
@@ -89,28 +89,28 @@ theorem output_ok {s : State} {B O : Addr} {Z w k : Nat} {b : Bool} (hs : Scr s 
               (off B (slot w 4 + (k - 1) - j) - BitVec.ofNat 64 1)).write .r17 (t.gpr .r17 - BitVec.ofNat 64 1) := by
       prun [t15, t16, (tk.gpr .r26 (by decide)).trans h26, exec_lbz' (show Reg.r15 ≠ .r0 by decide)
         (show 0 < 2 ^ 15 by decide), exec_stb (show Reg.r16 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hrd,
-        (ho.congr tk.wr).st (d := j) (n := 1) (by omega)]
+        (ho.congr tk.wr).st (d := j) (n := 1) (by omega_arith)]
     refine WP.mono hst fun t' e => ?_
     subst e
     have hw1 := write1_outside t.mem O (d := j) (((t.mem.read (off B (slot w 4 + (k - 1) - j)) 1).setWidth 64 &&&
-      (BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0))).setWidth 8) (by omega)
+      (BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0))).setWidth 8) (by omega_arith)
     have harr : t.mem (off B (slot w 4 + (k - 1) - j)) = s.mem (off B (slot w 4 + (k - 1) - j)) := by
       refine tout _ (Or.inr ?_)
       by_contra hc
-      have := hsep (off B (slot w 4 + (k - 1) - j)) (by omega)
+      have := hsep (off B (slot w 4 + (k - 1) - j)) (by omega_arith)
       rw [show ofs B (off B (slot w 4 + (k - 1) - j)) = slot w 4 + (k - 1) - j from
-        Mem.sub_ofNat_toNat B (by have := slot_le (w := w) (j := 4) (by decide); omega)] at this
+        Mem.sub_ofNat_toNat B (by have := slot_le (w := w) (j := 4) (by decide); omega_arith)] at this
       have := slot_le (w := w) (j := 4) (by decide)
-      omega
+      omega_arith
     refine ⟨⟨?_, by gsimp, ?_, ?_, ?_⟩, by gsimp⟩
-    · gsimp; rw [off_sub1 _ (by have := slot_le (w := w) (j := 4) (by decide); unfold slot hdrBytes at *; omega),
-        show slot w 4 + (k - 1) - j - 1 = slot w 4 + (k - 1) - (j + 1) by omega]
-    · gsimp; exact (tout.mono (Nat.le_refl _) (by omega)).trans (hw1.mono (by omega) (by omega))
+    · gsimp; rw [off_sub1 _ (by have := slot_le (w := w) (j := 4) (by decide); unfold slot hdrBytes at *; omega_arith),
+        show slot w 4 + (k - 1) - j - 1 = slot w 4 + (k - 1) - (j + 1) by omega_arith]
+    · gsimp; exact (tout.mono (Nat.le_refl _) (by omega_arith)).trans (hw1.mono (by omega_arith) (by omega_arith))
     · intro i hi
       gsimp
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-      · rw [hw1 _ (by rw [ofs_off0 O (by omega)]; omega)]; exact tb i hi
-      · rw [write1_self, read1_setWidth, show slot w 4 + (k - 1 - i) = slot w 4 + (k - 1) - i by omega, ← harr]
+      · rw [hw1 _ (by rw [ofs_off0 O (by omega_arith)]; omega_arith)]; exact tb i hi
+      · rw [write1_self, read1_setWidth, show slot w 4 + (k - 1 - i) = slot w 4 + (k - 1) - i by omega_arith, ← harr]
         exact mask_byte _ b
     · exact tk.trans' ((((((Keep.write _ _ _).trans (Keep.write _ _ _)).trans (Keep.mem _ _)).trans
         (Keep.write _ _ _)).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono

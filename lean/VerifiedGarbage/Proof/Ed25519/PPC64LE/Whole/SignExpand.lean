@@ -32,11 +32,11 @@ theorem sign_Fw {s t : State} (hp : SignPre s) (h : SignInv s t) : (⟨s.gpr .r9
   rw [h.wr, hp.wr]; simp
 
 theorem sign_inF {s t : State} (hp : SignPre s) (h : SignInv s t) {d : Nat} (hd : d + 8 ≤ 288) :
-    InRegions t.wr (s.gpr .r9 + BitVec.ofNat 64 d) 8 := in_base (sign_Fw hp h) hd (by omega)
+    InRegions t.wr (s.gpr .r9 + BitVec.ofNat 64 d) 8 := in_base (sign_Fw hp h) hd (by omega_arith)
 
 theorem sign_inF' {s t : State} (hp : SignPre s) (h : SignInv s t) {d : Nat} (hd : d + 8 ≤ 288) :
     InRegions (t.rd ++ t.wr) (s.gpr .r9 + BitVec.ofNat 64 d) 8 :=
-  in_base (List.mem_append_right _ (sign_Fw hp h)) hd (by omega)
+  in_base (List.mem_append_right _ (sign_Fw hp h)) hd (by omega_arith)
 
 /-- An input, while the body runs. -/
 theorem sign_input {s t : State} (h : SignInv s t) {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
@@ -61,7 +61,7 @@ theorem keep_hi {s : State} (hp : SignPre s) {d n : Nat} (hd : 192 ≤ d) (hdn :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.cF.symm.sub_left hs
-  · exact Offset.disjoint_base _ hd (by omega)
+  · exact Offset.disjoint_base _ hd (by omega_arith)
   · exact hp.bF.symm.sub_left hs
 
 theorem signExpand_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s t) :
@@ -115,7 +115,7 @@ theorem signExpand_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s 
     hd₄ _ r₃ (by simp [bytesAt]) (by simp [bytesAt])
   -- The pruning, and the copy of the second half.
   refine prune_ok (f := .r25) (F := s.gpr .r9) (d := 128) (o := 0) (by decide) (by decide) (h₄.regs _ (by decide))
-    (by decide) (by decide) (by decide) (fun k hk => sign_inF' hp h₄ (by omega)) (fun k hk => sign_inF hp h₄ (by omega))
+    (by decide) (by decide) (by decide) (fun k hk => sign_inF' hp h₄ (by omega_arith)) (fun k hk => sign_inF hp h₄ (by omega_arith))
     fun u hu hfu hpr => ?_
   have hu' : SignInv s u := signStep hp h₄ hu.rd hu.wr hu.sp
     (fun r hr => hu.gpr r (by revert hr; cases r <;> decide)) hfu fun r hr => by
@@ -123,11 +123,11 @@ theorem signExpand_ok (C : ShaOK) {s t : State} (hp : SignPre s) (h : SignInv s 
   rw [← List.append_nil (copy32 .r25 160 32)]
   refine copy_ok (A := s.gpr .r9) (B := s.gpr .r9) (da := fun k => 160 + 8 * k) (db := fun k => 32 + 8 * k)
     (R := ⟨s.gpr .r9 + BitVec.ofNat 64 32, 32⟩) (by decide) (by decide) (by decide) (by decide)
-    (hu'.regs _ (by decide)) (hu'.regs _ (by decide)) (fun k hk => ⟨by omega, by omega⟩)
-    (fun k hk => ⟨by omega, by omega⟩) (fun k hk => sign_inF' hp hu' (by omega)) (fun k hk => sign_inF hp hu' (by omega))
-    (fun k hk => Offset.contains _ (by omega) (by omega) (by omega))
-    (fun i hi j hj => Offset.sep _ (by omega) (by omega) (by omega))
-    (fun i hi j hj hij => Offset.sep _ (by omega) (by omega) (by omega)) fun v hv hfv hw => WP.block_nil ?_
+    (hu'.regs _ (by decide)) (hu'.regs _ (by decide)) (fun k hk => ⟨by omega_arith, by omega_arith⟩)
+    (fun k hk => ⟨by omega_arith, by omega_arith⟩) (fun k hk => sign_inF' hp hu' (by omega_arith)) (fun k hk => sign_inF hp hu' (by omega_arith))
+    (fun k hk => Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith))
+    (fun i hi j hj => Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith))
+    (fun i hi j hj hij => Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) fun v hv hfv hw => WP.block_nil ?_
   have hv' : SignInv s v := signStep hp hu' hv.rd hv.wr hv.sp
     (fun r hr => hv.gpr r (by revert hr; cases r <;> decide)) hfv fun r hr => by
       rw [List.mem_singleton.mp hr]; exact .inr (.inr (.inr (.inr (.inr ⟨32, 32, by decide, rfl⟩))))

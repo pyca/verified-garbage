@@ -39,9 +39,9 @@ theorem and_mask' (x : BitVec 64) : x &&& mask52 = BitVec.ofNat 64 (x.toNat % 2 
 theorem wv_div {m : Mem} {A : Addr} {W w : Nat} (hw : w < W) :
     wv m A 0 W / 2 ^ (64 * w) = (word m A (8 * w)).toNat + 2 ^ 64 * wv m A (8 * w + 8) (W - 1 - w) := by
   have e := VG.Proof.Bignum.wv_add m A 0 w (W - w)
-  rw [show w + (W - w) = W by omega] at e
+  rw [show w + (W - w) = W by omega_arith] at e
   have e1 := VG.Proof.Bignum.wv_add m A (0 + 8 * w) 1 (W - 1 - w)
-  rw [show 1 + (W - 1 - w) = W - w by omega] at e1
+  rw [show 1 + (W - 1 - w) = W - w by omega_arith] at e1
   rw [e, e1, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
     Nat.div_eq_of_lt (VG.Proof.Bignum.wv_lt m A 0 w), Nat.zero_add]
   simp only [VG.Proof.Bignum.wv, Nat.zero_add, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_one,
@@ -68,30 +68,30 @@ theorem limbN_one {m : Mem} {A : Addr} {W j : Nat} (hw : 52 * j / 64 < W)
     (h : 52 * j % 64 ≤ 12 ∨ 52 * j / 64 = W - 1) :
     limbN (wv m A 0 W) j = (word m A (8 * (52 * j / 64))).toNat / 2 ^ (52 * j % 64) % 2 ^ 52 := by
   unfold limbN
-  rw [show 52 * j = 64 * (52 * j / 64) + 52 * j % 64 by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul,
-    show (64 * (52 * j / 64) + 52 * j % 64) / 64 = 52 * j / 64 by omega,
-    show (64 * (52 * j / 64) + 52 * j % 64) % 64 = 52 * j % 64 by omega, wv_div hw, div_split _ _ _ (by omega)]
+  rw [show 52 * j = 64 * (52 * j / 64) + 52 * j % 64 by omega_arith, Nat.pow_add, ← Nat.div_div_eq_div_mul,
+    show (64 * (52 * j / 64) + 52 * j % 64) / 64 = 52 * j / 64 by omega_arith,
+    show (64 * (52 * j / 64) + 52 * j % 64) % 64 = 52 * j % 64 by omega_arith, wv_div hw, div_split _ _ _ (by omega_arith)]
   rcases h with h | h
-  · exact drop_hi _ _ _ (by omega)
-  · rw [show W - 1 - 52 * j / 64 = 0 by omega]; simp [VG.Proof.Bignum.wv]
+  · exact drop_hi _ _ _ (by omega_arith)
+  · rw [show W - 1 - 52 * j / 64 = 0 by omega_arith]; simp [VG.Proof.Bignum.wv]
 
 /-- The value of a limb across two words. -/
 theorem limbN_two {m : Mem} {A : Addr} {W j : Nat} (h : 12 < 52 * j % 64) (h' : 52 * j / 64 + 1 < W) :
     limbN (wv m A 0 W) j = ((word m A (8 * (52 * j / 64))).toNat / 2 ^ (52 * j % 64) +
       (word m A (8 * (52 * j / 64 + 1))).toNat * 2 ^ (64 - 52 * j % 64) % 2 ^ 64) % 2 ^ 52 := by
-  have hw : 52 * j / 64 < W := by omega
+  have hw : 52 * j / 64 < W := by omega_arith
   unfold limbN
-  rw [show 52 * j = 64 * (52 * j / 64) + 52 * j % 64 by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul,
-    show (64 * (52 * j / 64) + 52 * j % 64) / 64 = 52 * j / 64 by omega,
-    show (64 * (52 * j / 64) + 52 * j % 64) % 64 = 52 * j % 64 by omega, wv_div hw, div_split _ _ _ (by omega),
-    wv_one (by omega), mod52_of_mod64, Nat.mul_add, ← Nat.mul_assoc, ← Nat.pow_add, ← Nat.add_assoc,
-    show 8 * (52 * j / 64) + 8 = 8 * (52 * j / 64 + 1) by omega, Nat.mul_comm (2 ^ (64 - _))]
-  exact drop_hi _ _ _ (by omega)
+  rw [show 52 * j = 64 * (52 * j / 64) + 52 * j % 64 by omega_arith, Nat.pow_add, ← Nat.div_div_eq_div_mul,
+    show (64 * (52 * j / 64) + 52 * j % 64) / 64 = 52 * j / 64 by omega_arith,
+    show (64 * (52 * j / 64) + 52 * j % 64) % 64 = 52 * j % 64 by omega_arith, wv_div hw, div_split _ _ _ (by omega_arith),
+    wv_one (by omega_arith), mod52_of_mod64, Nat.mul_add, ← Nat.mul_assoc, ← Nat.pow_add, ← Nat.add_assoc,
+    show 8 * (52 * j / 64) + 8 = 8 * (52 * j / 64 + 1) by omega_arith, Nat.mul_comm (2 ^ (64 - _))]
+  exact drop_hi _ _ _ (by omega_arith)
 
 /-- A limb above the words is zero. -/
 theorem limbN_zero {m : Mem} {A : Addr} {W j : Nat} (h : W ≤ 52 * j / 64) : limbN (wv m A 0 W) j = 0 := by
   unfold limbN
-  rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le (VG.Proof.Bignum.wv_lt m A 0 W) (pow2_le (by omega)))]
+  rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le (VG.Proof.Bignum.wv_lt m A 0 W) (pow2_le (by omega_arith)))]
 
 theorem l52_writes (j : Nat) : VG.Proof.MlKem.X86_64.writesOnly [.rax, .rcx, .rbp] (.block (l52 l j)) = true := by
   unfold l52
@@ -115,27 +115,27 @@ theorem l52_ok {s : State} {A C : Addr} {j : Nat} (hA : s.gpr .rsi = A) (hC : s.
     xrun [eaG', hC, hwr]
     refine ⟨congrArg (Mem.writeW _ _) ?_, rfl⟩
     rw [limbN_zero hz]; rfl
-  have hw : 52 * j / 64 < l.W := by omega
+  have hw : 52 * j / 64 < l.W := by omega_arith
   have r0 := hrd _ hw
   by_cases h0 : 52 * j % 64 = 0
-  · have hC' : (12 < 0 ∧ 52 * j / 64 + 1 < l.W) = False := eq_false (by omega)
+  · have hC' : (12 < 0 ∧ 52 * j / 64 + 1 < l.W) = False := eq_false (by omega_arith)
     simp only [l52, hz, ite_false, h0, ite_true, hC', List.append_nil, List.cons_append, List.nil_append]
     xrun [eaG', hA, hC, h12, r0, hwr]
     refine ⟨congrArg (Mem.writeW _ _) ?_, rfl⟩
-    rw [and_mask', limbN_one hw (.inl (by omega)), h0, Nat.pow_zero, Nat.div_one]
-  · have hsc : (1 ≤ 52 * j % 64 ∧ 52 * j % 64 ≤ 63) = True := eq_true ⟨by omega, by omega⟩
+    rw [and_mask', limbN_one hw (.inl (by omega_arith)), h0, Nat.pow_zero, Nat.div_one]
+  · have hsc : (1 ≤ 52 * j % 64 ∧ 52 * j % 64 ≤ 63) = True := eq_true ⟨by omega_arith, by omega_arith⟩
     by_cases hC2 : 12 < 52 * j % 64 ∧ 52 * j / 64 + 1 < l.W
     · have r1 := hrd _ hC2.2
       have hmc : (1 ≤ 64 - (64 - 52 * j % 64) ∧ 64 - (64 - 52 * j % 64) ≤ 63) = True :=
-        eq_true ⟨by omega, by omega⟩
+        eq_true ⟨by omega_arith, by omega_arith⟩
       simp only [l52, hz, h0, ite_false, hC2, and_self, ite_true, shl, List.cons_append, List.nil_append]
       xrun [eaG', hA, hC, h12, r0, r1, hwr, hsc, hmc]
       refine ⟨congrArg (Mem.writeW _ _) ?_, rfl⟩
-      rw [shl_eq' _ (by omega) (by omega), and_mask', or_shr_shl _ _ (by omega) (by omega), limbN_two hC2.1 hC2.2]
+      rw [shl_eq' _ (by omega_arith) (by omega_arith), and_mask', or_shr_shl _ _ (by omega_arith) (by omega_arith), limbN_two hC2.1 hC2.2]
     · simp only [l52, hz, h0, ite_false, hC2, List.append_nil, List.cons_append, List.nil_append]
       xrun [eaG', hA, hC, h12, r0, hwr, hsc]
       refine ⟨congrArg (Mem.writeW _ _) ?_, rfl⟩
-      rw [and_mask', BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, limbN_one hw (by omega)]
+      rw [and_mask', BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, limbN_one hw (by omega_arith)]
 
 /-- The `W` words at `rsi = A` into `4 R` limbs at `r11 = C`. -/
 theorem to52_ok (hl : AmmOk l) {s : State} {A C : Addr} (hA : s.gpr .rsi = A) (hC : s.gpr .r11 = C)
@@ -153,29 +153,29 @@ theorem to52_ok (hl : AmmOk l) {s : State} {A C : Addr} (hA : s.gpr .rsi = A) (h
     h l.L (Nat.le_refl _)
   intro n
   induction n with
-  | zero => intro _; exact WP.block_nil ⟨fun _ h => absurd h (by omega), Outside.refl _ _ _ _,
+  | zero => intro _; exact WP.block_nil ⟨fun _ h => absurd h (by omega_arith), Outside.refl _ _ _ _,
       VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl⟩
   | succ n ih =>
     intro hn
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨v, o, k, x⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨v, o, k, x⟩ => ?_
     have hwv : wv t.mem A 0 l.W = wv s.mem A 0 l.W := VG.Proof.Bignum.wv_congr fun i hi => by
       rw [Nat.zero_add]; exact hsep _ _ o i hi
     refine WP.mono (l52_ok (j := n) (A := A) (C := C) ((k.gpr (by decide)).trans hA)
       ((k.gpr (by decide)).trans hC) ((k.gpr (by decide)).trans h12)
-      (fun i hi => by rw [k.2.1, k.2.2]; exact hrd i hi) (by rw [k.2.2]; exact hwr n (by omega)))
+      (fun i hi => by rw [k.2.1, k.2.2]; exact hrd i hi) (by rw [k.2.2]; exact hwr n (by omega_arith)))
       fun t' ⟨m', k', x'⟩ => ⟨fun j hj => ?_, ?_, (k.trans k').mono (by decide), x'.trans x⟩
-    · have := off_ltN hl (j := n) (by omega)
+    · have := off_ltN hl (j := n) (by omega_arith)
       rw [m', hwv]
       rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hj) with hj | rfl
-      · have := off_ltN hl (j := j) (by omega)
-        have hs := off_sepN hl (j := n) (q := j) (by omega) (by omega) (by omega)
-        rw [(writeW_outside _ C _ (by omega)).word (by omega) (by omega)]
+      · have := off_ltN hl (j := j) (by omega_arith)
+        have hs := off_sepN hl (j := n) (q := j) (by omega_arith) (by omega_arith) (by omega_arith)
+        rw [(writeW_outside _ C _ (by omega_arith)).word (by omega_arith) (by omega_arith)]
         exact v j hj
       · exact VG.Proof.Bignum.word_writeW_self _ _ _ _
-    · have := off_ltN hl (j := n) (by omega)
+    · have := off_ltN hl (j := n) (by omega_arith)
       rw [m']
-      exact o.trans ((writeW_outside _ C _ (by omega)).mono (by omega) (by omega))
+      exact o.trans ((writeW_outside _ C _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
 
 /-! ## Back to words -/
 
@@ -208,12 +208,12 @@ theorem orj_ok {s : State} {C : Addr} {lo j : Nat} (h1 : 52 * j < lo + 64) (h2 :
     · simp only [he, Nat.le_refl, ite_true, List.cons_append, List.nil_append]
       xrun [eaG', hC, hrd]
       rfl
-    · have hmc : (1 ≤ 64 - (52 * j - lo) ∧ 64 - (52 * j - lo) ≤ 63) = True := eq_true ⟨by omega, by omega⟩
+    · have hmc : (1 ≤ 64 - (52 * j - lo) ∧ 64 - (52 * j - lo) ≤ 63) = True := eq_true ⟨by omega_arith, by omega_arith⟩
       simp only [hlo, he, ite_true, ite_false, shl, List.cons_append, List.nil_append]
       xrun [eaG', hC, hrd, hmc]
       refine ⟨?_, rfl⟩
-      rw [shl_eq' _ (by omega) (by omega)]
-  · have hsc : (1 ≤ lo - 52 * j ∧ lo - 52 * j ≤ 63) = True := eq_true ⟨by omega, by omega⟩
+      rw [shl_eq' _ (by omega_arith) (by omega_arith)]
+  · have hsc : (1 ≤ lo - 52 * j ∧ lo - 52 * j ≤ 63) = True := eq_true ⟨by omega_arith, by omega_arith⟩
     simp only [hlo, ite_false, List.cons_append, List.nil_append]
     xrun [eaG', hC, hrd, hsc]
     rfl
@@ -240,16 +240,16 @@ theorem foldl_cj {Ls : Nat → BitVec 64} (hL : ∀ j, (Ls j).toNat < 2 ^ 52) (l
     obtain ⟨hle, hb⟩ := hb
     have hlt : lo + i - 52 * j < 52 := by
       by_contra h
-      rw [AmmSym.testBit_hi (hL j) (by omega)] at hb
+      rw [AmmSym.testBit_hi (hL j) (by omega_arith)] at hb
       exact Bool.false_ne_true hb
-    refine ⟨by omega, ?_⟩
-    rw [show (i + lo) / 52 = j by omega, show (i + lo) % 52 = lo + i - 52 * j by omega]
+    refine ⟨by omega_arith, ?_⟩
+    rw [show (i + lo) / 52 = j by omega_arith, show (i + lo) % 52 = lo + i - 52 * j by omega_arith]
     exact hb
   · rintro ⟨hlt, hb⟩
-    refine ⟨(i + lo) / 52, ⟨by omega, by omega, by omega⟩, ?_⟩
-    rw [cj_bit (by omega) (by omega) hi]
+    refine ⟨(i + lo) / 52, ⟨by omega_arith, by omega_arith, by omega_arith⟩, ?_⟩
+    rw [cj_bit (by omega_arith) (by omega_arith) hi]
     simp only [Bool.and_eq_true, decide_eq_true_eq]
-    exact ⟨by omega, by rw [show lo + i - 52 * ((i + lo) / 52) = (i + lo) % 52 by omega]; exact hb⟩
+    exact ⟨by omega_arith, by rw [show lo + i - 52 * ((i + lo) / 52) = (i + lo) % 52 by omega_arith]; exact hb⟩
 
 /-- The limbs of `xs` OR'ed into `rax`. -/
 theorem orList_ok {C : Addr} {lo : Nat} :
@@ -340,28 +340,28 @@ theorem to64_ok {s : State} {C D' : Addr} (hC : s.gpr .r11 = C) (h8 : s.gpr .r8 
     h (l.W + 1) (Nat.le_refl _)
   intro n
   induction n with
-  | zero => intro _; exact WP.block_nil ⟨fun _ h => absurd h (by omega), Outside.refl _ _ _ _,
+  | zero => intro _; exact WP.block_nil ⟨fun _ h => absurd h (by omega_arith), Outside.refl _ _ _ _,
       VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl⟩
   | succ n ih =>
     intro hn
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨v, o, k, x⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨v, o, k, x⟩ => ?_
     have hlim : ∀ j, limbsAt l t.mem C j = limbsAt l s.mem C j := fun j => by
       unfold limbsAt; split
       · exact hsep _ _ o j (by assumption)
       · rfl
     refine WP.mono (w64_ok (w := n) ((k.gpr (by decide)).trans hC) ((k.gpr (by decide)).trans h8)
-      (fun j hj => by rw [k.2.1, k.2.2]; exact hrd j hj) (by rw [k.2.2]; exact hwr n (by omega))
+      (fun j hj => by rw [k.2.1, k.2.2]; exact hrd j hj) (by rw [k.2.2]; exact hwr n (by omega_arith))
       (fun j hj => by rw [hsep _ _ o j hj]; exact hL j hj))
       fun t' ⟨m', k', x'⟩ => ⟨fun w hw => ?_, ?_, (k.trans k').mono (by decide), x'.trans x⟩
     · simp only [hlim] at m'
       rw [m']
       rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hw) with hw | rfl
-      · rw [(writeW_outside _ D' _ (by omega)).word (by omega) (by omega)]
+      · rw [(writeW_outside _ D' _ (by omega_arith)).word (by omega_arith) (by omega_arith)]
         exact v w hw
       · exact VG.Proof.Bignum.word_writeW_self _ _ _ _
     · rw [m']
-      exact o.trans ((writeW_outside _ D' _ (by omega)).mono (by omega) (by omega))
+      exact o.trans ((writeW_outside _ D' _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
 
 /-! ## The numbers -/
 
@@ -369,7 +369,7 @@ theorem wv_digitsG {m : Mem} {P : Addr} {V : Nat} :
     ∀ n, (∀ w < n, word m P (8 * w) = BitVec.ofNat 64 (V / 2 ^ (64 * w) % 2 ^ 64)) → wv m P 0 n = V % 2 ^ (64 * n)
   | 0, _ => by simp [VG.Proof.Bignum.wv, Nat.mod_one]
   | n + 1, h => by
-    rw [VG.Proof.Bignum.wv, wv_digitsG n fun w hw => h w (by omega), Nat.zero_add, h n (by omega),
+    rw [VG.Proof.Bignum.wv, wv_digitsG n fun w hw => h w (by omega_arith), Nat.zero_add, h n (by omega_arith),
       BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide), Nat.mul_succ, Nat.pow_add, Nat.mod_mul]
 
 /-- The value of the limbs `to52` writes: the number, below `2^(64 W)`. -/
@@ -379,7 +379,7 @@ theorem val_to52 (hl : AmmOk l) {m : Mem} {A : Addr} : lval (limbN (wv m A 0 l.W
   rw [lval_limbN]
   generalize 2 ^ (64 * l.W) = a at h1 h2
   generalize 2 ^ (52 * l.L) = b at h2 ⊢
-  exact Nat.mod_eq_of_lt (by omega)
+  exact Nat.mod_eq_of_lt (by omega_arith)
 
 /-- The words `to64` writes, for a value below twice a number of `W` words. -/
 theorem wv_to64_lt {m m₀ : Mem} {D' A : Addr} {d V : Nat} (hV : V < 2 * wv m₀ A d l.W)
@@ -391,7 +391,7 @@ theorem wv_to64_lt {m m₀ : Mem} {D' A : Addr} {d V : Nat} (hV : V < 2 * wv m�
     generalize 2 ^ (64 * l.W) = a at this ⊢
     have : 2 ≤ 2 ^ 64 := Nat.pow_le_pow_right (n := 2) (by decide) (show 1 ≤ 64 by decide)
     have := Nat.mul_le_mul_left a this
-    omega
+    omega_arith
   rw [wv_digitsG (l.W + 1) h]
   exact Nat.mod_eq_of_lt h4
 

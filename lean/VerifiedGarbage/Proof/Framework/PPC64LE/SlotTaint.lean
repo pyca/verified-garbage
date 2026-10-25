@@ -748,6 +748,135 @@ theorem call_sound {τ τ' : T} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s
   simp only [h0, h11, h12, ite_false]
   exact ha.regs r hr
 
+/-! ## The analysis for the kernel
+
+`stepK` is `step` with the list functions of `KList` and `Nat.beq`/`Nat.ble`
+on the registers' indices and the offsets, which the kernel evaluates
+natively, in place of the library's list functions and `Decidable`
+instances (`Proof/Framework/KernelList.lean`); `stepK_eq` says it is `step`. -/
+
+/-- `a == b`, through the registers' indices. -/
+def regEq (a b : Reg) : Bool := Nat.beq (RegIdx.idx a) (RegIdx.idx b)
+
+theorem regEq_eq (a b : Reg) : regEq a b = (a == b) := by
+  rw [Bool.eq_iff_iff, regEq, Nat.beq_eq, beq_iff_eq]
+  exact ⟨RegIdx.idx_inj, congrArg _⟩
+
+/-- `l.getD i 0`. -/
+def getDK (l : List Nat) (i : Nat) : Nat :=
+  List.rec (motive := fun _ => Nat → Nat) (fun _ => 0) (fun a _ ih j => Nat.casesOn j a ih) l i
+
+theorem getDK_eq (l : List Nat) (i : Nat) : getDK l i = l.getD i 0 := by
+  induction l generalizing i with
+  | nil => simp [getDK]
+  | cons a l ih =>
+    cases i with
+    | zero => rfl
+    | succ i => exact (ih i).trans (by simp)
+
+def killK (τ : T) (d : Reg) : List (Reg × Nat × Nat) := KList.filter (fun p => !regEq p.1 d) τ.bases
+
+theorem killK_eq (τ : T) (d : Reg) : killK τ d = kill τ d := by
+  simp only [killK, kill, KList.filter_eq, regEq_eq, bne]
+
+def wrK (τ : T) (d : Reg) (p : Bool) : T := { τ with regs := set τ d p, bases := killK τ d }
+
+def addiBasesK (τ : T) (d n : Reg) (imm : Nat) : List (Reg × Nat × Nat) :=
+  KList.append (killK τ d) (KList.map (fun p => (d, p.2.1, p.2.2 + imm)) (KList.filter (fun p => regEq p.1 n) τ.bases))
+
+def subiBasesK (τ : T) (d n : Reg) (imm : Nat) : List (Reg × Nat × Nat) :=
+  KList.append (killK τ d) (KList.map (fun p => (d, p.2.1, p.2.2 - imm))
+    (KList.filter (fun p => regEq p.1 n && Nat.ble imm p.2.2) τ.bases))
+
+def movBasesK (τ : T) (d n : Reg) : List (Reg × Nat × Nat) :=
+  KList.append (killK τ d) (KList.map (fun p => (d, p.2)) (KList.filter (fun p => regEq p.1 n) τ.bases))
+
+def addrOfK (τ : T) (n : Reg) (off : Nat) : Option (Nat × Nat) :=
+  (KList.find? (fun p => regEq p.1 n) τ.bases).map fun p => (p.2.1, p.2.2 + off)
+
+def slotPubK (τ : T) (n : Reg) (off w : Nat) : Bool :=
+  match addrOfK τ n off with
+  | some (i, d) => KList.any τ.slots fun sl => Nat.beq sl.1 i && Nat.ble sl.2.1 d && Nat.ble (d + w) (sl.2.1 + sl.2.2)
+  | none => false
+
+def storeSlotsK (τ : T) (n : Reg) (off w : Nat) (p : Bool) : List (Nat × Nat × Nat) :=
+  match addrOfK τ n off with
+  | some (i, d) =>
+    bif Nat.ble (d + w) (getDK τ.lens i) then
+      let kept := KList.filter (fun sl => p || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 || Nat.ble (sl.2.1 + sl.2.2) d) τ.slots
+      bif p then (i, d, w) :: kept else kept
+    else bif p then τ.slots else []
+  | none => bif p then τ.slots else []
+
+def storeStepK (τ : T) (n : Reg) (off w : Nat) (p : Bool) : Option T :=
+  bif pub τ n then some { τ with slots := storeSlotsK τ n off w p } else none
+
+/-- `op = .or ∧ n = m`. -/
+def isMov (op : LogicOp) (n m : Reg) : Bool :=
+  match op with
+  | .or => regEq n m
+  | _ => false
+
+def stepK (τ : T) : Instr → Option T
+  | .add d n m | .sub d n m | .mul d n m | .mulhu d n m | .addc d n m | .subc d n m =>
+    some (wrK τ d (pub τ n && pub τ m))
+  | .adde d .. | .addze d _ | .sube d .. => some (wrK τ d false)
+  | .logic op d n m =>
+    bif isMov op n m then some { τ with regs := set τ d (pub τ n), bases := movBasesK τ d n }
+    else some (wrK τ d (pub τ n && pub τ m))
+  | .addi d n imm => some { τ with regs := set τ d (pub τ n), bases := addiBasesK τ d n imm }
+  | .subi d n imm => some { τ with regs := set τ d (pub τ n), bases := subiBasesK τ d n imm }
+  | .ori d n _ | .oris d n _ | .rotr _ d n _ | .lsr _ d n _ | .lsl d n _ => some (wrK τ d (pub τ n))
+  | .li d _ | .lis d _ | .addSp d _ => some (wrK τ d true)
+  | .load sz t n off => bif pub τ n then some (wrK τ t (slotPubK τ n off sz.bytes)) else none
+  | .lbz t n off => bif pub τ n then some (wrK τ t (slotPubK τ n off 1)) else none
+  | .store sz t n off => storeStepK τ n off sz.bytes (pub τ t)
+  | .stb t n off => storeStepK τ n off 1 (pub τ t)
+  | .loadRev _ t a b => bif pub τ a && pub τ b then some (wrK τ t false) else none
+  | .storeRev _ t a b =>
+    bif pub τ a && pub τ b then some { τ with slots := bif pub τ t then τ.slots else [] } else none
+  | .mflr d => some (wrK τ d false)
+  | .mtlr _ => some τ
+  | .push _ | .pop _ | .alloc _ | .free _ | .adrSym .. => none
+
+theorem wrK_eq (τ : T) (d : Reg) (p : Bool) : wrK τ d p = wr τ d p := by
+  simp only [wrK, wr, killK_eq]
+
+theorem addiBasesK_eq (τ : T) (d n : Reg) (imm : Nat) : addiBasesK τ d n imm = addiBases τ d n imm := by
+  simp only [addiBasesK, addiBases, killK_eq, KList.append_eq, KList.map_eq, KList.filter_eq, regEq_eq]
+
+theorem subiBasesK_eq (τ : T) (d n : Reg) (imm : Nat) : subiBasesK τ d n imm = subiBases τ d n imm := by
+  simp only [subiBasesK, subiBases, killK_eq, KList.append_eq, KList.map_eq, KList.filter_eq, regEq_eq,
+    KList.ble_eq]
+
+theorem movBasesK_eq (τ : T) (d n : Reg) : movBasesK τ d n = movBases τ d n := by
+  simp only [movBasesK, movBases, killK_eq, KList.append_eq, KList.map_eq, KList.filter_eq, regEq_eq]
+
+theorem addrOfK_eq (τ : T) (n : Reg) (off : Nat) : addrOfK τ n off = addrOf τ n off := by
+  simp only [addrOfK, addrOf, KList.find?_eq, regEq_eq]
+
+theorem slotPubK_eq (τ : T) (n : Reg) (off w : Nat) : slotPubK τ n off w = slotPub τ n off w := by
+  simp only [slotPubK, slotPub, addrOfK_eq, KList.any_eq, KList.beq_eq, KList.ble_eq]
+
+theorem storeSlotsK_eq (τ : T) (n : Reg) (off w : Nat) (p : Bool) :
+    storeSlotsK τ n off w p = storeSlots τ n off w p := by
+  simp only [storeSlotsK, storeSlots, addrOfK_eq, KList.filter_eq, KList.beq_eq, KList.ble_eq, getDK_eq,
+    cond_eq_ite, decide_eq_true_eq, bne]
+
+theorem storeStepK_eq (τ : T) (n : Reg) (off w : Nat) (p : Bool) :
+    storeStepK τ n off w p = storeStep τ n off w p := by
+  simp only [storeStepK, storeStep, storeSlotsK_eq, cond_eq_ite]
+
+theorem isMov_eq (op : LogicOp) (n m : Reg) : isMov op n m = decide (op = .or ∧ n = m) := by
+  cases op
+  case or => rw [isMov, regEq_eq, Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]; simp
+  all_goals simp [isMov]
+
+theorem stepK_eq : stepK = step := by
+  funext τ i
+  cases i <;> simp only [stepK, step, wrK_eq, addiBasesK_eq, subiBasesK_eq, movBasesK_eq, slotPubK_eq,
+    storeStepK_eq, isMov_eq, cond_eq_ite, decide_eq_true_eq]
+
 end VG.PPC64LE.SlotTaint
 
 namespace VG.PPC64LE
@@ -756,8 +885,8 @@ namespace VG.PPC64LE
 def slotTaint : VG.Taint isa where
   T := SlotTaint.T
   Agree := SlotTaint.Agree
-  step := SlotTaint.step
-  step_sound := SlotTaint.step_sound
+  step := SlotTaint.stepK
+  step_sound ha hs := SlotTaint.step_sound ha (SlotTaint.stepK_eq ▸ hs)
   condPub := SlotTaint.condPub
   cond_sound := SlotTaint.cond_sound
   meet := SlotTaint.meet

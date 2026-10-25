@@ -44,7 +44,7 @@ theorem carry_ne32 (x : BitVec 32) :
   · subst h; decide
   · have : x.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
     rw [show (x != 0) = true from bne_iff_ne.mpr h]
-    exact decide_eq_true (by change 2 ^ 32 ≤ x.toNat + 4294967295; omega)
+    exact decide_eq_true (by change 2 ^ 32 ≤ x.toNat + 4294967295; omega_arith)
 
 theorem xor_ofNat_ne {j ld : Nat} (hj : j < 2 ^ 32) (hl : ld < 2 ^ 32) :
     (BitVec.ofNat 32 j ^^^ BitVec.ofNat 32 ld != 0) = !decide (j = ld) := by
@@ -54,7 +54,7 @@ theorem xor_ofNat_ne {j ld : Nat} (hj : j < 2 ^ 32) (hl : ld < 2 ^ 32) :
       intro z
       have := congrArg BitVec.toNat (BitVec.xor_eq_zero_iff.mp z)
       simp only [BitVec.toNat_ofNat] at this
-      omega
+      omega_arith
     rw [show (BitVec.ofNat 32 j ^^^ BitVec.ofNat 32 ld != 0) = true from bne_iff_ne.mpr this, decide_eq_false e]
     rfl
 
@@ -189,7 +189,7 @@ theorem in_keepOut (h : In Ex base bytes len args s) {t : State} {regs : List Re
   have P : VG.Proof.Dsa.X86.stackAddress t i = VG.Proof.Dsa.X86.stackAddress s i := by
     simp only [VG.Proof.Dsa.X86.stackAddress, K.1 _ sp]
   have E : VG.Proof.Dsa.X86.stackAddress s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
-    addr_eq (by omega)
+    addr_eq (by omega_arith)
   refine Eq.trans ?_ (h.stack i hi).value
   unfold VG.Proof.Dsa.X86.stackValue
   rw [P]
@@ -197,7 +197,7 @@ theorem in_keepOut (h : In Ex base bytes len args s) {t : State} {regs : List Re
     (by decide)
   obtain rfl := List.mem_singleton.mp hr'
   rw [E]
-  exact hf.sub_left (Offset.sub_base _ (by omega))
+  exact hf.sub_left (Offset.sub_base _ (by omega_arith))
 
 /-- Where `rand` and `x` are. -/
 structure CutGeo (base : Addr) (bytes len : Nat) (rp xp sp : BitVec 32) (rd wr : List Region) : Prop where
@@ -227,8 +227,8 @@ theorem byte_write_self (m : Mem) (a : Addr) (v : BitVec 8) : (m.writeW a v) a =
 theorem ea_at {u : State} {r : Reg} {p : BitVec 32} {j n : Nat} (hr : u.gpr r = p + BitVec.ofNat 32 j)
     (hj : j < n) (fit : p.toNat + n ≤ 2 ^ 32) : u.ea ⟨r, 0⟩ = byteAddr p + BitVec.ofNat 64 j := by
   change addr (u.gpr r) 0 = _
-  rw [hr, addr_eq (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega), BitVec.add_zero]
-  exact addr_eq (by omega)
+  rw [hr, addr_eq (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith), BitVec.add_zero]
+  exact addr_eq (by omega_arith)
 
 theorem cut_getD {r : List Byte} {ld : Nat} (tt : Byte) (h : ld < r.length) {i : Nat} (hi : i < r.length) :
     (KeyScalar.cut r ld tt).getD i 0 = if i < ld then 0 else if i = ld then r.getD i 0 &&& tt else r.getD i 0 := by
@@ -252,22 +252,22 @@ theorem cutStep_ok (h₀ : In Ex base bytes len args s) {t : State} {rp xp : Bit
   have r24 := word_room h (d := ldOff) (by decide)
   have r28 := word_room h (d := tOff) (by decide)
   have ws : ∀ d, d + 4 ≤ 32 → t.mem.readW (off base d) 32 = s.mem.readW (off base d) 32 := fun d hd =>
-    I.frame.readW (r := ⟨base, bytes⟩) (Scr.contains h.scratch.nowrap (by have := word_room h hd; omega))
+    I.frame.readW (r := ⟨base, bytes⟩) (Scr.contains h.scratch.nowrap (by have := word_room h hd; omega_arith))
       (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact C.xWs.symm) (by decide)
   rw [cutStep_eq]
-  refine WP.block_append (WP.mono (cutA_ok (ld := ld) (tt := tt) h.scratch r24 r28 I.ecx (by omega)
-    (by rw [ws _ (by decide), wld]) (by omega) (by rw [ws _ (by decide), wt])) fun uA ⟨eA, mA, kA⟩ => ?_)
+  refine WP.block_append (WP.mono (cutA_ok (ld := ld) (tt := tt) h.scratch r24 r28 I.ecx (by omega_arith)
+    (by rw [ws _ (by decide), wld]) (by omega_arith) (by rw [ws _ (by decide), wt])) fun uA ⟨eA, mA, kA⟩ => ?_)
   have esiA : uA.gpr .esi = rp + BitVec.ofNat 32 j := by rw [kA.1 _ (by decide), I.esi]
   have ebxA : uA.gpr .ebx = xp + BitVec.ofNat 32 j := by rw [kA.1 _ (by decide), I.ebx]
   have rdA : InRegions (uA.rd ++ uA.wr) (byteAddr rp + BitVec.ofNat 64 j) 1 := by
-    rw [kA.2.1, kA.2.2, I.keeps.2.1, I.keeps.2.2]; exact VG.CallLay.inRegions_sub C.rrd (by omega) (by omega)
+    rw [kA.2.1, kA.2.2, I.keeps.2.1, I.keeps.2.2]; exact VG.CallLay.inRegions_sub C.rrd (by omega_arith) (by omega_arith)
   have wrA : InRegions uA.wr (byteAddr xp + BitVec.ofNat 64 j) 1 := by
-    rw [kA.2.2, I.keeps.2.2]; exact VG.CallLay.inRegions_sub C.xwr (by omega) (by omega)
+    rw [kA.2.2, I.keeps.2.2]; exact VG.CallLay.inRegions_sub C.xwr (by omega_arith) (by omega_arith)
   refine WP.block_append (WP.mono (cutB_ok (ea_at esiA hj rf) rdA (ea_at ebxA hj xf) wrA)
     fun uB ⟨mB, kB⟩ => ?_)
   have FB : Frame [⟨byteAddr xp, len⟩] s.mem uB.mem := by
     rw [mB, mA]
-    exact I.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact I.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   have kB' : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s uB := (I.keeps.widen kA).widen kB
   have hB := in_keepOut h₀ kB' (by decide) (by decide) FB C.xFrame
   refine WP.mono (cutC_ok (L := BitVec.ofNat 32 len) (by rw [← h3]; exact (hB.stack 3 (by decide)).readSrc))
@@ -277,7 +277,7 @@ theorem cutStep_ok (h₀ : In Ex base bytes len args s) {t : State} {rp xp : Bit
     rw [mA, bytesAt_getD _ _ hj]
     refine I.frame _ fun r hr hc => ?_
     obtain rfl := List.mem_singleton.mp hr
-    exact C.apart _ (Offset.contains_base _ (by omega) (by omega)) hc
+    exact C.apart _ (Offset.contains_base _ (by omega_arith) (by omega_arith)) hc
   have hl : (Spec.Rsa.bytesAt s.mem (byteAddr rp) len).length = len := by simp [Spec.Rsa.bytesAt]
   refine ⟨⟨by rw [mu]; exact FB, kB'.widen ku, ?_, ?_, ?_, fun i hi => ?_⟩, ?_⟩
   · rw [e1, kB.1 _ (by decide), esiA, BitVec.add_assoc, e1j]
@@ -287,8 +287,8 @@ theorem cutStep_ok (h₀ : In Ex base bytes len args s) {t : State} {rp xp : Bit
     by_cases e : i = j
     · subst e
       rw [byte_write_self, rb, eA, cut_byte, cut_getD tt (by rw [hl]; exact hld) (by rw [hl]; exact hj)]
-    · rw [Mem.writeW, Mem.write_apply (by rw [Offset.sub_toNat' _ (by omega) (by omega)]; split <;> omega), mA,
-        I.out i (by omega)]
+    · rw [Mem.writeW, Mem.write_apply (by rw [Offset.sub_toNat' _ (by omega_arith) (by omega_arith)]; split <;> omega_arith), mA,
+        I.out i (by omega_arith)]
   · rw [z, kB.1 _ (by decide), kA.1 _ (by decide), I.ecx, e1j]
     by_cases e : j + 1 = len
     · subst e; rw [BitVec.sub_self, decide_eq_true rfl]; rfl
@@ -298,7 +298,7 @@ theorem cutStep_ok (h₀ : In Ex base bytes len args s) {t : State} {rp xp : Bit
         have := BitVec.sub_eq_iff_eq_add.mp z; simpa using this
       have := congrArg BitVec.toNat z'
       simp only [BitVec.toNat_ofNat] at this
-      omega
+      omega_arith
 
 /-- What the cut leaves: `x` holds the cut octets of `rand`, nothing else changed. -/
 structure CutOut (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat)
@@ -328,7 +328,7 @@ theorem cut_ok (h : In Ex base bytes len args s) {ld : Nat} {tt : Byte} (hld : l
       by simp only [upd_get a3, upd_get a2, upd_get a1, reduceCtorEq, ite_true, ite_false, BitVec.add_zero],
       by simp only [upd_get a3, upd_get a2, reduceCtorEq, ite_true, ite_false, BitVec.add_zero],
       by simp only [upd_get a3, ite_true]; rfl, fun i hi => absurd hi (Nat.not_lt_zero _)⟩
-  refine WP.mono (count_loop (n := len) (by omega) _ (fun k hk v Iv => cutStep_ok h hk hld C h3 wld wt Iv) I0)
+  refine WP.mono (count_loop (n := len) (by omega_arith) _ (fun k hk v Iv => cutStep_ok h hk hld C h3 wld wt Iv) I0)
     fun u Iu => ⟨in_keepOut h Iu.keeps (by decide) (by decide) Iu.frame C.xFrame, Iu.frame, Iu.keeps, ?_⟩
   have hl : (Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len).length = len := by simp [Spec.Rsa.bytesAt]
   apply List.ext_getElem

@@ -64,25 +64,25 @@ theorem sizes_ok {W : Addr} {al n : Nat} (s : State) (h15 : s.gpr .r15 = W)
   have w280 : InRegions s.wr (W + BitVec.ofNat 64 280) 8 := in_off hw (by decide) (by decide)
   have w288 : InRegions s.wr (W + BitVec.ofNat 64 288) 8 := in_off hw (by decide) (by decide)
   have w296 : InRegions s.wr (W + BitVec.ofNat 64 296) 8 := in_off hw (by decide) (by decide)
-  have hna : nb16 al ≤ 32 := by simp only [nb16]; omega
-  have hnc : nb16 n ≤ 32 := by simp only [nb16]; omega
-  have hg : grp al n ≤ 17 ∧ nb16 al + nb16 n + 1 ≤ 4 * grp al n := by simp only [grp, nb16]; omega
+  have hna : nb16 al ≤ 32 := by simp only [nb16]; omega_arith
+  have hnc : nb16 n ≤ 32 := by simp only [nb16]; omega_arith
+  have hg : grp al n ≤ 17 ∧ nb16 al + nb16 n + 1 ≤ 4 * grp al n := by simp only [grp, nb16]; omega_arith
   have e₁ : (BitVec.ofNat 64 al + BitVec.ofNat 64 15) >>> 4 = BitVec.ofNat 64 (nb16 al) := by
-    rw [ofNat_add_ofNat, shr4 _ (by omega)]
+    rw [ofNat_add_ofNat, shr4 _ (by omega_arith)]
   have e₂ : (BitVec.ofNat 64 n + BitVec.ofNat 64 15) >>> 4 = BitVec.ofNat 64 (nb16 n) := by
-    rw [ofNat_add_ofNat, shr4 _ (by omega)]
+    rw [ofNat_add_ofNat, shr4 _ (by omega_arith)]
   have e₃ : (BitVec.ofNat 64 (nb16 al) + BitVec.ofNat 64 (nb16 n) + BitVec.ofNat 64 1 + BitVec.ofNat 64 3) >>> 2 =
       BitVec.ofNat 64 (grp al n) := by
-    rw [ofNat_add_ofNat, ofNat_add_ofNat, ofNat_add_ofNat, shr2 _ (by omega)]
-  have e₄ : BitVec.ofNat 64 (grp al n) <<< 2 = BitVec.ofNat 64 (4 * grp al n) := shl2_ofNat (by omega)
+    rw [ofNat_add_ofNat, ofNat_add_ofNat, ofNat_add_ofNat, shr2 _ (by omega_arith)]
+  have e₄ : BitVec.ofNat 64 (grp al n) <<< 2 = BitVec.ofNat 64 (4 * grp al n) := shl2_ofNat (by omega_arith)
   have e₅ : BitVec.ofNat 64 (4 * grp al n) - (BitVec.ofNat 64 (nb16 al) + BitVec.ofNat 64 (nb16 n) + BitVec.ofNat 64 1) =
       BitVec.ofNat 64 (4 * grp al n - (nb16 al + nb16 n + 1)) := by
-    rw [ofNat_add_ofNat, ofNat_add_ofNat, ofNat_sub (by omega) (by omega)]
+    rw [ofNat_add_ofNat, ofNat_add_ofNat, ofNat_sub (by omega_arith) (by omega_arith)]
   apply WP.of_runBlock
   refine ⟨_, by xrun [sizes, execShift, h15, hal, hn, r184, r208, w272, w280, w288, w296, naO, ncO, mpO, leadO], ?_⟩
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2560 → d + 8 ≤ 2560 →
       Mem.Sep (W + BitVec.ofNat 64 a) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep W h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep W h (by omega_arith) (by omega_arith)
   have q₁ := sep 272 280 (by decide) (by decide) (by decide)
   have q₂ := sep 272 288 (by decide) (by decide) (by decide)
   have q₃ := sep 272 296 (by decide) (by decide) (by decide)
@@ -91,7 +91,7 @@ theorem sizes_ok {W : Addr} {al n : Nat} (s : State) (h15 : s.gpr .r15 = W)
   have q₆ := sep 288 296 (by decide) (by decide) (by decide)
   have c : ∀ d, 272 ≤ d → d + 8 ≤ 304 →
       (⟨W + BitVec.ofNat 64 272, 32⟩ : Region).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-    fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+    fun d h₁ h₂ => Offset.contains _ h₁ (by omega_arith) (by omega_arith)
   have q₀ := sep 208 272 (by decide) (by decide) (by decide)
   have rdn : (s.mem.writeW (W + BitVec.ofNat 64 272) ((BitVec.ofNat 64 al + 15#64) >>> 4)).readW
       (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n := by rw [Mem.readW_writeW_sep q₀ (by decide), hn]
@@ -135,13 +135,13 @@ theorem storesZ_ok {W : Addr} (k : Nat) (hk : k ≤ 8) (t : State) (h15 : t.gpr 
   | zero => exact WP.block_nil ⟨by simp [writeBytes_nil], rfl, rfl, rfl, rfl, rfl, rfl⟩
   | succ k ih =>
     rw [List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t₁ ⟨m₁, g₁, rd₁, wr₁, x₁, y₁, z₁⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t₁ ⟨m₁, g₁, rd₁, wr₁, x₁, y₁, z₁⟩ => ?_
     have ea : t₁.gpr .r15 + BitVec.ofInt 64 ((gO + 64 * k : Nat) : Int) =
         W + BitVec.ofNat 64 512 + BitVec.ofNat 64 (64 * k) := by
       rw [g₁, h15, BitVec.ofInt_natCast, add_ofNat_ofNat]; rfl
     have hz : t₁.zmm .xmm2 = 0 := by rw [← h2]; simp only [State.zmm, State.ymm, x₁, y₁, z₁]
     have hin : InRegions t₁.wr (W + BitVec.ofNat 64 512 + BitVec.ofNat 64 (64 * k)) 64 := by
-      rw [wr₁]; exact in_off hw (by omega) (by decide)
+      rw [wr₁]; exact in_off hw (by omega_arith) (by decide)
     rw [List.map_singleton, WP.block_cons_iff]
     refine ⟨t₁.setMem (t₁.mem.writeW (W + BitVec.ofNat 64 512 + BitVec.ofNat 64 (64 * k)) (0 : BitVec 512)),
       by simp only [isa, exec, State.store512_eq, State.ea, at_, ea, hin, ite_true, hz], WP.block_nil ?_⟩
@@ -149,9 +149,9 @@ theorem storesZ_ok {W : Addr} (k : Nat) (hk : k ≤ 8) (t : State) (h15 : t.gpr 
       by rw [← x₁]; rfl, by rw [← y₁]; rfl, by rw [← z₁]; rfl⟩
     rw [State.setMem_mem, m₁, writeW_zero512]
     have := writeBytes_append t.mem (W + BitVec.ofNat 64 512) (List.replicate (64 * k) 0) (List.replicate 64 0)
-      (by simp; omega)
+      (by simp; omega_arith)
     rw [List.length_replicate, List.replicate_append_replicate] at this
-    rw [this, show 64 * k + 64 = 64 * (k + 1) by omega]
+    rw [this, show 64 * k + 64 = 64 * (k + 1) by omega_arith]
 
 /-- `zeroG`: `G` (`W + 512`, 512 bytes) zeroed, through `zmm2`. -/
 theorem zeroG_ok {W : Addr} (t : State) (h15 : t.gpr .r15 = W) (hw : Covers [⟨W + BitVec.ofNat 64 512, 512⟩] t.wr) :
@@ -168,9 +168,9 @@ theorem zeroG_ok {W : Addr} (t : State) (h15 : t.gpr .r15 = W) (hw : Covers [⟨
       rfl
     apply BitVec.eq_of_getLsbD_eq; intro j hj
     have e := congrArg (fun v : BitVec 128 => v.getLsbD (j % 128))
-      ((VG.Proof.Aes.X86_64.VaesZ.zmm_lane _ .xmm2 (l := j / 128) (by omega)).trans (hl (j / 128) (by omega)))
-    simp only [BitVec.getLsbD_extractLsb', show j % 128 < 128 by omega, decide_true, Bool.true_and,
-      show 128 * (j / 128) + j % 128 = j by omega, getLsbD_zero'] at e
+      ((VG.Proof.Aes.X86_64.VaesZ.zmm_lane _ .xmm2 (l := j / 128) (by omega_arith)).trans (hl (j / 128) (by omega_arith)))
+    simp only [BitVec.getLsbD_extractLsb', show j % 128 < 128 by omega_arith, decide_true, Bool.true_and,
+      show 128 * (j / 128) + j % 128 = j by omega_arith, getLsbD_zero'] at e
     rw [e, getLsbD_zero']
   · have hz : t'.zlane r l = ((ZOp.zbin .vpxord .xmm2 .xmm2 .xmm2).exec t).zlane r l := by
       simp only [State.zlane, State.lane, x', y', z']
@@ -193,7 +193,7 @@ theorem copyAArgs_ok {W A : Addr} {al lead : Nat} (s : State) (h15 : s.gpr .r15 
   have r₂ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 232) 8 := in_left (in_off hw (by decide) (by decide))
   have r₃ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 184) 8 := in_left (in_off hw (by decide) (by decide))
   have e : BitVec.ofNat 64 lead <<< 4 = BitVec.ofNat 64 (16 * lead) := by
-    rw [shl_ofNat (by omega)]; congr 1; omega
+    rw [shl_ofNat (by omega_arith)]; congr 1; omega_arith
   refine ⟨_, by xrun [execShift, h15, hlead, hA, hal, r₁, r₂, r₃, leadO, gO, e], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, reduceCtorEq, ite_true, ite_false, h15]
     rw [BitVec.add_comm (BitVec.ofNat 64 (16 * lead)) W, add_ofNat_ofNat, Nat.add_comm]
@@ -219,7 +219,7 @@ theorem textArgs_ok {W D : Addr} {n lead na : Nat} (s : State) (h15 : s.gpr .r15
   have r₃ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 200) 8 := in_left (in_off hw (by decide) (by decide))
   have r₄ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 208) 8 := in_left (in_off hw (by decide) (by decide))
   have e : (BitVec.ofNat 64 lead + BitVec.ofNat 64 na) <<< 4 = BitVec.ofNat 64 (16 * (lead + na)) := by
-    rw [ofNat_add_ofNat, shl_ofNat (by omega)]; congr 1; omega
+    rw [ofNat_add_ofNat, shl_ofNat (by omega_arith)]; congr 1; omega_arith
   refine ⟨_, by xrun [textArgs, gText, execShift, h15, hlead, hna, hD, hn, r₁, r₂, r₃, r₄, leadO, naO, gO, kO, e],
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, reduceCtorEq, ite_true, ite_false, h15]
@@ -246,17 +246,17 @@ theorem lensG_ok {W : Addr} {al n mp : Nat} (s : State) (h15 : s.gpr .r15 = W)
   have r₂ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 184) 8 := in_left (in_off hw (by decide) (by decide))
   have r₃ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 208) 8 := in_left (in_off hw (by decide) (by decide))
   let L := W + BitVec.ofNat 64 (496 + 16 * mp)
-  have w₁ : InRegions s.wr L 8 := in_off hw (by omega) (by decide)
+  have w₁ : InRegions s.wr L 8 := in_off hw (by omega_arith) (by decide)
   have w₂ : InRegions s.wr (L + BitVec.ofNat 64 8) 8 := by
-    rw [add_ofNat_ofNat]; exact in_off hw (by omega) (by decide)
+    rw [add_ofNat_ofNat]; exact in_off hw (by omega_arith) (by decide)
   have e₁ : BitVec.ofNat 64 mp <<< 4 + W + BitVec.ofNat 64 496 = L := by
-    rw [shl_ofNat (by omega), BitVec.add_comm _ W, add_ofNat_ofNat]; congr 2; omega
-  have e₂ : BitVec.ofNat 64 al <<< 3 = BitVec.ofNat 64 (8 * al) := by rw [shl_ofNat (by omega)]; congr 1; omega
-  have e₃ : BitVec.ofNat 64 n <<< 3 = BitVec.ofNat 64 (8 * n) := by rw [shl_ofNat (by omega)]; congr 1; omega
+    rw [shl_ofNat (by omega_arith), BitVec.add_comm _ W, add_ofNat_ofNat]; congr 2; omega_arith
+  have e₂ : BitVec.ofNat 64 al <<< 3 = BitVec.ofNat 64 (8 * al) := by rw [shl_ofNat (by omega_arith)]; congr 1; omega_arith
+  have e₃ : BitVec.ofNat 64 n <<< 3 = BitVec.ofNat 64 (8 * n) := by rw [shl_ofNat (by omega_arith)]; congr 1; omega_arith
   refine ⟨_, by xrun [Short.lens, execShift, h15, hmp, hal, hn, r₁, r₂, r₃, mpO, gO, e₁, e₂, e₃, w₁, w₂,
     BitVec.add_zero], ?_⟩
   have rdn : ∀ v : BitVec 64, (s.mem.writeW L v).readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n :=
-    fun v => by rw [Mem.readW_writeW_sep (Offset.sep W (.inl (by omega)) (by omega) (by omega)) (by decide), hn]
+    fun v => by rw [Mem.readW_writeW_sep (Offset.sep W (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide), hn]
   refine ⟨?_, ?_, ?_, rfl, rfl, fun _ _ => rfl⟩
   · simp only [mem_setReg, mem_setFlags, mem_arithFlags]
     exact Proof.Cmac.frame_store2 _ _ _
@@ -276,7 +276,7 @@ theorem tagK_ok {W : Addr} {o : Nat} (s : State) (h15 : s.gpr .r15 = W) (hw : Co
   have eo : s.gpr .r15 + BitVec.ofInt 64 ((o : Nat) : Int) = W + BitVec.ofNat 64 o := by
     rw [h15, BitVec.ofInt_natCast]
   have rK : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 1024) 16 := in_left (in_off hw (by decide) (by decide))
-  have wo : InRegions s.wr (W + BitVec.ofNat 64 o) 16 := in_off hw (by omega) (by decide)
+  have wo : InRegions s.wr (W + BitVec.ofNat 64 o) 16 := in_off hw (by omega_arith) (by decide)
   refine ⟨_, by
     simp only [tagK, at_, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec, State.load128,
       State.store128, State.ea, eK, eo, rK, wo, ite_true, Option.map_some, Option.bind_some, State.setV,
@@ -310,7 +310,7 @@ theorem copyCArgs_ok {W D : Addr} {n lead na : Nat} (s : State) (h15 : s.gpr .r1
   have r₃ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 200) 8 := in_left (in_off hw (by decide) (by decide))
   have r₄ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 208) 8 := in_left (in_off hw (by decide) (by decide))
   have e : (BitVec.ofNat 64 lead + BitVec.ofNat 64 na) <<< 4 = BitVec.ofNat 64 (16 * (lead + na)) := by
-    rw [ofNat_add_ofNat, shl_ofNat (by omega)]; congr 1; omega
+    rw [ofNat_add_ofNat, shl_ofNat (by omega_arith)]; congr 1; omega_arith
   refine ⟨_, by xrun [gText, execShift, h15, hlead, hna, hD, hn, r₁, r₂, r₃, r₄, leadO, naO, gO, e],
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, reduceCtorEq, ite_true, ite_false, h15]

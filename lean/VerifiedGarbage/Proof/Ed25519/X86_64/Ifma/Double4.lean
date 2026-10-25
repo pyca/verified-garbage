@@ -46,16 +46,16 @@ theorem EConsts.outside {m m' : Mem} {base : Addr} (hk : EConsts m base)
     (h : Outside base 1024 320 m m') : EConsts m' base := by
   have w : ∀ d, 1344 ≤ d → d + 8 ≤ 4096 → mq m' base d = mq m base d := fun d h1 h2 => by
     rw [VG.Proof.X25519.X86_64.Ifma.mq_eq_word, VG.Proof.X25519.X86_64.Ifma.mq_eq_word]
-    exact h.word (by omega) (by omega)
+    exact h.word (by omega_arith) (by omega_arith)
   refine ⟨⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩, fun l hl => ?_,
     fun l hl => ?_, fun l hl => ?_⟩
-  · rw [w _ (by simp only [KM]; omega) (by simp only [KM]; omega)]; exact hk.km l hl
-  · rw [w _ (by simp only [K19]; omega) (by simp only [K19]; omega)]; exact hk.k19 l hl
-  · rw [w _ (by simp only [KB0]; omega) (by simp only [KB0]; omega)]; exact hk.kb0 l hl
-  · rw [w _ (by simp only [KB1]; omega) (by simp only [KB1]; omega)]; exact hk.kb1 l hl
-  · rw [w _ (by simp only [EK13]; omega) (by simp only [EK13]; omega)]; exact hk.k13 l hl
-  · rw [w _ (by simp only [EK26]; omega) (by simp only [EK26]; omega)]; exact hk.k26 l hl
-  · rw [w _ (by simp only [EK39]; omega) (by simp only [EK39]; omega)]; exact hk.k39 l hl
+  · rw [w _ (by simp only [KM]; omega_arith) (by simp only [KM]; omega_arith)]; exact hk.km l hl
+  · rw [w _ (by simp only [K19]; omega_arith) (by simp only [K19]; omega_arith)]; exact hk.k19 l hl
+  · rw [w _ (by simp only [KB0]; omega_arith) (by simp only [KB0]; omega_arith)]; exact hk.kb0 l hl
+  · rw [w _ (by simp only [KB1]; omega_arith) (by simp only [KB1]; omega_arith)]; exact hk.kb1 l hl
+  · rw [w _ (by simp only [EK13]; omega_arith) (by simp only [EK13]; omega_arith)]; exact hk.k13 l hl
+  · rw [w _ (by simp only [EK26]; omega_arith) (by simp only [EK26]; omega_arith)]; exact hk.k26 l hl
+  · rw [w _ (by simp only [EK39]; omega_arith) (by simp only [EK39]; omega_arith)]; exact hk.k39 l hl
 
 /-! ## Loading -/
 
@@ -106,9 +106,9 @@ theorem vload_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Pro
   · rw [cst EK26 .r9 l (by decide) hl, h9]; rfl
   · rw [cst EK39 .r10 l (by decide) hl, h10]; rfl
   · obtain ⟨o, b⟩ := loadS_ok i hi l hl
-    obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+    obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
     simp only [lanes, Nat.zero_add] at e ⊢
-    refine ⟨?_, by omega⟩
+    refine ⟨?_, by omega_arith⟩
     rw [e, loadS_regs _ i hi l hl]
     have hw : (fun k => (envOf s).m (64 + 32 * l) k) = fun k => (mq s.mem base (64 + 32 * l + 8 * k)).toNat :=
       funext fun k => envOf_m hs _ _
@@ -136,7 +136,7 @@ theorem dblA_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
       (by rw [dblAS_st]; decide)]
     simp only [T.eval, lanes, Nat.zero_add]
   · have := h.reg (xr (5 + i)) l hl
-    rw [xi_xr _ (by omega), dblAS_regs i hi] at this
+    rw [xi_xr _ (by omega_arith), dblAS_regs i hi] at this
     simp only [lanes, Nat.zero_add, this, T.eval]
 
 /-! ## Products, with their limbs' bound -/
@@ -157,18 +157,18 @@ theorem mulLB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base)
     refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun d l hl => ?_) (fun _ _ _ => Nat.zero_le _)
     · simp only [VG.Proof.X25519.X86_64.Ifma.mulB]
       split
-      · have := hy l hl (r - 5) (by omega)
-        simp only [lanes, show 5 + (r - 5) = r by omega] at this
-        omega
+      · have := hy l hl (r - 5) (by omega_arith)
+        simp only [lanes, show 5 + (r - 5) = r by omega_arith] at this
+        omega_arith
       · exact lt64 _
     · simp only [VG.Proof.X25519.X86_64.Ifma.mulB]
       split
       · rename_i h
         obtain ⟨i, hi, rfl⟩ : ∃ i < 5, d = OPL + 32 * i :=
-          ⟨(d - OPL) / 32, by simp only [OPL] at h ⊢; omega, by simp only [OPL] at h ⊢; omega⟩
+          ⟨(d - OPL) / 32, by simp only [OPL] at h ⊢; omega_arith, by simp only [OPL] at h ⊢; omega_arith⟩
         have := hx l hl i hi
         simp only [slotv] at this
-        omega
+        omega_arith
       · exact lt64 _
   have e : Sym.init.run (VG.Impl.X25519.X86_64.Ifma.mul4 OPL) = some VG.Proof.X25519.X86_64.Ifma.mulL :=
     VG.Proof.X25519.X86_64.Ifma.mulS_eq OPL _
@@ -176,17 +176,17 @@ theorem mulLB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base)
     fun l hl i hi => ?_, fun r hr h1 h2 l hl =>
       h.keep hr hl (VG.Proof.X25519.X86_64.Ifma.mulL_keep r hr h1 h2)⟩, fun l hl i hi => ?_⟩
   · obtain ⟨o, b⟩ := VG.Proof.X25519.X86_64.Ifma.mulL_ok i hi l hl
-    obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+    obtain ⟨e, be⟩ := h.out hE (by omega_arith) hl o
     simp only [lanes, Nat.zero_add] at e ⊢
-    refine ⟨?_, by omega⟩
+    refine ⟨?_, by omega_arith⟩
     have hf : (fun i => (envOf s).m (OPL + 32 * i) l) = slotv s.mem base OPL l :=
       funext fun j => by rw [envOf_m hs, slotv]
     have hg : (fun j => (envOf s).v (5 + j) l) = lanes s 5 l := funext fun j => rfl
     rw [e, VG.Proof.X25519.X86_64.Ifma.mulL_nat _ _ i hi, hf, hg]
   · obtain ⟨o, b⟩ := mulL_bound i hi l hl
-    obtain ⟨_, be⟩ := h.out hE (by omega) hl o
+    obtain ⟨_, be⟩ := h.out hE (by omega_arith) hl o
     simp only [lanes, Nat.zero_add] at be ⊢
-    omega
+    omega_arith
 
 /-- `F`, limb `i`, from `(A, B, C', P)` (`x l i`). -/
 def fv (x : Nat → Nat → Nat) (i : Nat) : Nat := x 2 i + x 2 i + (kbv i + x 0 i - x 1 i)
@@ -217,7 +217,7 @@ theorem dblB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
     refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun d l hl => ?_) (fun d l hl => ?_)
     · simp only [dblBB]
       split
-      · have := hx l hl r (by omega); simp only [lanes, Nat.zero_add] at this; omega
+      · have := hx l hl r (by omega_arith); simp only [lanes, Nat.zero_add] at this; omega_arith
       · exact lt64 _
     · simp only [dblBB]
       split
@@ -236,11 +236,11 @@ theorem dblB_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
   refine ⟨h.eq, by rw [h.mem, dblBS_st]; rfl, fun l hl i hi => ?_,
     fun r hr h1 l hl => h.keep hr hl (dblBS_keep r hr h1)⟩
   obtain ⟨o1, b1, o2, b2⟩ := dblBS_ok i hi l hl
-  obtain ⟨e1, be1⟩ := h.out hE (by omega) hl o1
-  obtain ⟨e2, be2⟩ := h.out hE (by omega) hl o2
+  obtain ⟨e1, be1⟩ := h.out hE (by omega_arith) hl o1
+  obtain ⟨e2, be2⟩ := h.out hE (by omega_arith) hl o2
   obtain ⟨n1, n2⟩ := dblBS_nat (envOf s) i hi l hl
   simp only [lanes, Nat.zero_add] at e1 e2 ⊢
-  refine ⟨?_, by omega, ?_, by omega⟩
+  refine ⟨?_, by omega_arith, ?_, by omega_arith⟩
   · rw [e1, n1]
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;>
       simp only [dblOp1, op1, fv, fNat, lanes, Nat.zero_add, envOf_v, envOf_m hs,
@@ -295,10 +295,10 @@ def lanePt (s : State) : Spec.Ed25519.Point :=
 def Small (s : State) : Prop := ∀ l < 4, ∀ i < 5, lanes s 0 l i < 2 ^ 61
 
 theorem kbv_ge (i : Nat) : 2 ^ 61 ≤ kbv i := by
-  simp only [kbv]; split <;> omega
+  simp only [kbv]; split <;> omega_arith
 
 theorem prodBound_le (i : Nat) : prodBound ≤ kbv i := by
-  have := kbv_ge i; simp only [prodBound]; omega
+  have := kbv_ge i; simp only [prodBound]; omega_arith
 
 theorem fe_add_sub (a b c : Spec.X25519.Fe) : a + (b - c) = a - (c - b) :=
   by grind
@@ -312,14 +312,14 @@ theorem ops_fe (x : Nat → Nat → Nat) (hx : ∀ l < 4, ∀ i < 5, x l i < pro
     fe5 (op2 x 1) = fe5 (x 0) + fe5 (x 1) ∧ fe5 (op2 x 2) = fe5 (x 1) - fe5 (x 0) ∧
     fe5 (op2 x 3) = fe5 (x 0) + fe5 (x 1) := by
   have g : fe5 (fun i => kbv i + x 1 i - x 0 i) = fe5 (x 1) - fe5 (x 0) :=
-    fe5_sub (fun i hi => by have := hx 0 (by decide) i hi; have := prodBound_le i; omega)
-      (fun i hi => by have := hx 0 (by decide) i hi; have := prodBound_le i; omega)
+    fe5_sub (fun i hi => by have := hx 0 (by decide) i hi; have := prodBound_le i; omega_arith)
+      (fun i hi => by have := hx 0 (by decide) i hi; have := prodBound_le i; omega_arith)
   have f : fe5 (fv x) = fe5 (x 2) + fe5 (x 2) - (fe5 (x 1) - fe5 (x 0)) := by
     rw [fe5_add (z := fv x) (x := fun i => x 2 i + x 2 i) (y := fun i => kbv i + x 0 i - x 1 i)
       (fun i _ => rfl),
       fe5_add (z := fun i => x 2 i + x 2 i) (x := x 2) (y := x 2) (fun i _ => rfl),
-      fe5_sub (z := fun i => kbv i + x 0 i - x 1 i) (x := x 0) (y := x 1) (fun i hi => by have := hx 1 (by decide) i hi; have := prodBound_le i; omega)
-        (fun i hi => by have := hx 1 (by decide) i hi; have := prodBound_le i; omega), fe_add_sub]
+      fe5_sub (z := fun i => kbv i + x 0 i - x 1 i) (x := x 0) (y := x 1) (fun i hi => by have := hx 1 (by decide) i hi; have := prodBound_le i; omega_arith)
+        (fun i hi => by have := hx 1 (by decide) i hi; have := prodBound_le i; omega_arith), fe_add_sub]
   have e : fe5 (fun i => x 3 i + x 3 i) = fe5 (x 3) + fe5 (x 3) := fe5_add fun _ _ => rfl
   have h : fe5 (fun i => x 0 i + x 1 i) = fe5 (x 0) + fe5 (x 1) := fe5_add fun _ _ => rfl
   exact ⟨e, g, f, e, f, h, g, h⟩
@@ -327,7 +327,7 @@ theorem ops_fe (x : Nat → Nat → Nat) (hx : ∀ l < 4, ∀ i < 5, x l i < pro
 theorem lanes_keep {s t : State} {r : Nat} (hr : r + 5 ≤ 16)
     (h : ∀ q < 16, r ≤ q → q < r + 5 → ∀ l < 4, qw t (xr q) l = qw s (xr q) l) :
     ∀ l < 4, ∀ i < 5, lanes t r l i = lanes s r l i := fun l hl i hi => by
-  simp only [lanes]; rw [h (r + i) (by omega) (by omega) (by omega) l hl]
+  simp only [lanes]; rw [h (r + i) (by omega_arith) (by omega_arith) (by omega_arith) l hl]
 
 /-- `vdbl`: the lanes doubled, with `T`. -/
 theorem vdbl_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proof.X25519.X86_64.Ifma.Ctx s)
@@ -338,13 +338,13 @@ theorem vdbl_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
   simp only [vdbl, List.append_assoc]
   -- the point carried
   rw [WP.block_append_iff]
-  refine WP.mono (carryI_wp hs hc hcc fun l hl i hi => by have := hx l hl i hi; omega)
+  refine WP.mono (carryI_wp hs hc hcc fun l hl i hi => by have := hx l hl i hi; omega_arith)
     fun s₁ ⟨v₁, m₁, u₁, _⟩ => ?_
   have hs₁ : s₁.gpr .rdi = base := by rw [vm_gpr v₁]; exact hs
   have hc₁ : VG.Proof.X25519.X86_64.Ifma.Ctx s₁ := by
     intro d hd; rw [vm_gpr v₁, vm_wr v₁]; exact hc d hd
   have p₁ : ∀ l < 4, fe5 (lanes s₁ 0 l) = fe5 (lanes s 0 l) := fun l hl => by
-    rw [fe5_congr (fun i hi => (u₁ l hl i hi).1), fe5_carry _ (by have := hx l hl 4 (by decide); omega)]
+    rw [fe5_congr (fun i hi => (u₁ l hl i hi).1), fe5_carry _ (by have := hx l hl 4 (by decide); omega_arith)]
   -- the first operands
   rw [WP.block_append_iff]
   refine WP.mono (dblA_wp hs₁ hc₁) fun s₂ ⟨g₂, rd₂, wr₂, o₂, u₂, k₂⟩ => ?_
@@ -384,14 +384,14 @@ theorem vdbl_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
   have hc₆ : VG.Proof.X25519.X86_64.Ifma.Ctx s₆ := by intro d hd; rw [vm_gpr v₆, vm_wr v₆]; exact hc₅ d hd
   have hk₆ : EConsts s₆.mem base := by rw [m₆]; exact hk₅
   have l₆ := lanes_keep (r := 0) (s := s₅) (t := s₆) (by decide) fun q hq h1 h2 l hl =>
-    k₆ q hq (by omega) (by omega) l hl
+    k₆ q hq (by omega_arith) (by omega_arith) l hl
   rw [WP.block_append_iff]
   refine WP.mono (carryI_wp hs₆ hc₆ hk₆.toCConsts fun l hl i hi => by
       rw [l₆ l hl i hi]; exact (u₅ l hl i hi).2.1) fun s₇ ⟨v₇, m₇, u₇, k₇⟩ => ?_
   have hs₇ : s₇.gpr .rdi = base := by rw [vm_gpr v₇]; exact hs₆
   have hc₇ : VG.Proof.X25519.X86_64.Ifma.Ctx s₇ := by intro d hd; rw [vm_gpr v₇, vm_wr v₇]; exact hc₆ d hd
   have l₇ := lanes_keep (r := 5) (s := s₆) (t := s₇) (by decide) fun q hq h1 h2 l hl =>
-    k₇ q hq (by omega) (by omega) l hl
+    k₇ q hq (by omega_arith) (by omega_arith) l hl
   -- the first operand to `OPV`
   rw [WP.block_append_iff]
   refine WP.mono (dblC_wp hs₇ hc₇) fun s₈ ⟨v₈, o₈, u₈, k₈⟩ => ?_
@@ -414,11 +414,11 @@ theorem vdbl_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
       fe5_mul (fun i hi => by rw [u₈ l hl i hi]; exact (u₇ l hl i hi).2)
         (fun i hi => by rw [l₈ l hl i hi, l₇ l hl i hi]; exact (u₆ l hl i hi).2),
       fe5_congr (fun i hi => u₈ l hl i hi), fe5_congr (fun i hi => (u₇ l hl i hi).1),
-      fe5_carry _ (by rw [l₆ l hl 4 (by decide)]; have := (u₅ l hl 4 (by decide)).2.1; omega),
+      fe5_carry _ (by rw [l₆ l hl 4 (by decide)]; have := (u₅ l hl 4 (by decide)).2.1; omega_arith),
       fe5_congr (fun i hi => (l₆ l hl i hi).trans (u₅ l hl i hi).1),
       fe5_congr (fun i hi => (l₈ l hl i hi).trans (l₇ l hl i hi)),
       fe5_congr (fun i hi => (u₆ l hl i hi).1),
-      fe5_carry _ (by have := (u₅ l hl 4 (by decide)).2.2.2; omega),
+      fe5_carry _ (by have := (u₅ l hl 4 (by decide)).2.2.2; omega_arith),
       fe5_congr (fun i hi => (u₅ l hl i hi).2.2.1)]
   obtain ⟨a0, a1, a2, a3, b0, b1, b2, b3⟩ := ops_fe (lanes s₄ 0) b₄
   have hA : fe5 (lanes s₄ 0 0) = fe5 (lanes s 0 0) * fe5 (lanes s 0 0) := by
@@ -461,7 +461,7 @@ theorem packB_env {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hk : ECons
   refine envOK_of hs (fun r l hl => ?_) (fun _ => rfl) (fun d l hl => ?_) (fun _ _ _ => Nat.zero_le _)
   · simp only [packB]
     split
-    · have := hx l hl r (by omega); simp only [lanes, Nat.zero_add] at this; exact this
+    · have := hx l hl r (by omega_arith); simp only [lanes, Nat.zero_add] at this; exact this
     · exact lt64 _
   · simp only [packB]
     split
@@ -480,13 +480,13 @@ theorem vstore_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Pr
     WP isa (.block vstore) s fun s' => s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Outside base 64 128 s.mem s'.mem ∧ ∀ m < 4, F s'.mem base (64 + 32 * m) = fe5 (lanes s 0 m) := by
   rw [vstore_eq, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (carryI_wp hs hc hk.toCConsts fun l hl i hi => by have := hy l hl i hi; omega)
+  refine WP.mono (carryI_wp hs hc hk.toCConsts fun l hl i hi => by have := hy l hl i hi; omega_arith)
     fun s₁ ⟨v₁, m₁, u₁, _⟩ => ?_
   have hs₁ : s₁.gpr .rdi = base := by rw [vm_gpr v₁]; exact hs
   have hc₁ : VG.Proof.X25519.X86_64.Ifma.Ctx s₁ := by intro d hd; rw [vm_gpr v₁, vm_wr v₁]; exact hc d hd
   have hk₁ : EConsts s₁.mem base := by rw [m₁]; exact hk
   rw [WP.block_append_iff]
-  refine WP.mono (carryI_wp hs₁ hc₁ hk₁.toCConsts fun l hl i hi => by have := (u₁ l hl i hi).2; omega)
+  refine WP.mono (carryI_wp hs₁ hc₁ hk₁.toCConsts fun l hl i hi => by have := (u₁ l hl i hi).2; omega_arith)
     fun s₂ ⟨v₂, m₂, u₂, _⟩ => ?_
   have hs₂ : s₂.gpr .rdi = base := by rw [vm_gpr v₂]; exact hs₁
   have hc₂ : VG.Proof.X25519.X86_64.Ifma.Ctx s₂ := by intro d hd; rw [vm_gpr v₂, vm_wr v₂]; exact hc₁ d hd
@@ -517,8 +517,8 @@ theorem vstore_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Pr
     show VG.Proof.X25519.toFe _ = _
     rw [fe']
     rw [show VG.Proof.X25519.toFe (VG.Proof.X25519.X86_64.Ifma.lv (lanes s₂ 0 m)) = fe5 (lanes s₂ 0 m) from rfl,
-      fe5_congr (fun i hi => (u₂ m hm i hi).1), fe5_carry _ (by have := (u₁ m hm 4 (by decide)).2; omega),
-      fe5_congr (fun i hi => (u₁ m hm i hi).1), fe5_carry _ (by have := hy m hm 4 (by decide); omega)]
+      fe5_congr (fun i hi => (u₂ m hm i hi).1), fe5_carry _ (by have := (u₁ m hm 4 (by decide)).2; omega_arith),
+      fe5_congr (fun i hi => (u₁ m hm i hi).1), fe5_carry _ (by have := hy m hm 4 (by decide); omega_arith)]
 
 /-! ## Before the loop -/
 
@@ -531,7 +531,7 @@ theorem fe5_load (m : Mem) (base : Addr) (l : Nat) :
 theorem ctx_of {s : State} {base : Addr} (hs : Scratch s base) : VG.Proof.X25519.X86_64.Ifma.Ctx s :=
   fun d hd => by
     rw [hs.rdi]
-    exact ⟨_, hs.wr, Offset.contains_base base (show d + 32 ≤ 8192 by omega) (by omega)⟩
+    exact ⟨_, hs.wr, Offset.contains_base base (show d + 32 ≤ 8192 by omega_arith) (by omega_arith)⟩
 
 theorem mov32_wp (s : State) (r : Reg) (n : BitVec 32) :
     WP isa (.block [.mov32 r (.imm n)]) s fun t => t.gpr r = n.setWidth 64 ∧
@@ -580,21 +580,21 @@ theorem MxKeep.qw_eq {base : Addr} {s t : State} (h : MxKeep base s t) : ∀ x l
   fun _ _ => by simp only [qw, State.lane, h.xmm, h.ymm]
 
 theorem mx_in {s : State} {base : Addr} (hs : Scratch s base) {d n : Nat} (hd : d + n ≤ 8192) :
-    InRegions s.wr (off base d) n := ⟨_, hs.wr, Offset.contains_base base hd (by omega)⟩
+    InRegions s.wr (off base d) n := ⟨_, hs.wr, Offset.contains_base base hd (by omega_arith)⟩
 
 theorem mx_in' {s : State} {base : Addr} (hs : Scratch s base) {d n : Nat} (hd : d + n ≤ 8192) :
     InRegions (s.rd ++ s.wr) (off base d) n :=
-  ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base base hd (by omega)⟩
+  ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base base hd (by omega_arith)⟩
 
 theorem outside_emx (m : Mem) (base : Addr) {d : Nat} (hd : EMX ≤ d ∧ d + 4 ≤ EMX + 8) (v : BitVec 32) :
     Outside base EMX 8 m (m.writeW (off base d) v) := by
   intro x hx
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by simp only [EMX] at hd ⊢; omega)]
+  rw [Offset.lt_iff x base (by simp only [EMX] at hd ⊢; omega_arith)]
   simp only [VG.Proof.X25519.X86_64.ofs] at hx
   simp only [EMX] at hd hx ⊢
-  omega
+  omega_arith
 
 /-- The save: MXCSR (its reserved bits cleared) into `r11`. -/
 theorem save_wp {s : State} {base : Addr} (hs : Scratch s base) :
@@ -607,7 +607,7 @@ theorem save_wp {s : State} {base : Addr} (hs : Scratch s base) :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, State.load32, readSrc32,
     VG.Proof.X25519.X86_64.ea_sc, hs.rdi, h1, h2, ite_true, Option.bind_some, Option.map_some,
     Mem.readW_writeW_self32, execAlu32, State.setReg32, Option.some.injEq, exists_eq_left']
-  refine ⟨fun r hr => ?_, ?_, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega) _, rfl, rfl, rfl⟩⟩
+  refine ⟨fun r hr => ?_, ?_, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega_arith) _, rfl, rfl, rfl⟩⟩
   · simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
   · simp only [RegUpd.gpr_setReg_self, BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide),
       BitVec.setWidth_eq]
@@ -624,7 +624,7 @@ theorem load_wp {s : State} {base : Addr} (hs : Scratch s base) :
     VG.Proof.X25519.X86_64.ea_sc, RegUpd.gpr_setReg, RegUpd.wr_setReg, RegUpd.rd_setReg, hs.rdi, h1, h2,
     ite_true, ite_false, reduceCtorEq, Option.bind_some, Option.map_some, Mem.readW_writeW_self32,
     State.setReg32, e, Option.some.injEq, exists_eq_left']
-  refine ⟨fun r hr => ?_, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega) _, rfl, rfl, rfl⟩⟩
+  refine ⟨fun r hr => ?_, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega_arith) _, rfl, rfl, rfl⟩⟩
   simp only [hr, ite_false]
 
 /-- MXCSR back from `r11`, through `[EMX]`. -/
@@ -638,7 +638,7 @@ theorem restore_wp {s : State} {base : Addr} (hs : Scratch s base)
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, State.load32,
     VG.Proof.X25519.X86_64.ea_sc, hs.rdi, h1, h2, ite_true, Option.bind_some, Mem.readW_writeW_self32,
     h11, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega) _, rfl, rfl, rfl⟩⟩
+  exact ⟨trivial, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega_arith) _, rfl, rfl, rfl⟩⟩
 
 theorem and_ffff (v : BitVec 32) : (v &&& 0xFFFF).extractLsb' 16 16 = 0 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -655,15 +655,15 @@ theorem EConsts.outsideMx {m m' : Mem} {base : Addr} (hk : EConsts m base)
     (h : Outside base EMX 8 m m') : EConsts m' base := by
   have w : ∀ d, 1664 ≤ d → d + 8 ≤ 4096 → mq m' base d = mq m base d := fun d h1 h2 => by
     rw [VG.Proof.X25519.X86_64.Ifma.mq_eq_word, VG.Proof.X25519.X86_64.Ifma.mq_eq_word]
-    exact h.word (by simp only [EMX]; omega) (by omega)
+    exact h.word (by simp only [EMX]; omega_arith) (by omega_arith)
   refine ⟨⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩, fun l hl => ?_,
     fun l hl => ?_, fun l hl => ?_⟩
-  · rw [w _ (by simp only [KM]; omega) (by simp only [KM]; omega)]; exact hk.km l hl
-  · rw [w _ (by simp only [K19]; omega) (by simp only [K19]; omega)]; exact hk.k19 l hl
-  · rw [w _ (by simp only [KB0]; omega) (by simp only [KB0]; omega)]; exact hk.kb0 l hl
-  · rw [w _ (by simp only [KB1]; omega) (by simp only [KB1]; omega)]; exact hk.kb1 l hl
-  · rw [w _ (by simp only [EK13]; omega) (by simp only [EK13]; omega)]; exact hk.k13 l hl
-  · rw [w _ (by simp only [EK26]; omega) (by simp only [EK26]; omega)]; exact hk.k26 l hl
-  · rw [w _ (by simp only [EK39]; omega) (by simp only [EK39]; omega)]; exact hk.k39 l hl
+  · rw [w _ (by simp only [KM]; omega_arith) (by simp only [KM]; omega_arith)]; exact hk.km l hl
+  · rw [w _ (by simp only [K19]; omega_arith) (by simp only [K19]; omega_arith)]; exact hk.k19 l hl
+  · rw [w _ (by simp only [KB0]; omega_arith) (by simp only [KB0]; omega_arith)]; exact hk.kb0 l hl
+  · rw [w _ (by simp only [KB1]; omega_arith) (by simp only [KB1]; omega_arith)]; exact hk.kb1 l hl
+  · rw [w _ (by simp only [EK13]; omega_arith) (by simp only [EK13]; omega_arith)]; exact hk.k13 l hl
+  · rw [w _ (by simp only [EK26]; omega_arith) (by simp only [EK26]; omega_arith)]; exact hk.k26 l hl
+  · rw [w _ (by simp only [EK39]; omega_arith) (by simp only [EK39]; omega_arith)]; exact hk.k39 l hl
 
 end VG.Proof.Ed25519.X86_64.Ifma

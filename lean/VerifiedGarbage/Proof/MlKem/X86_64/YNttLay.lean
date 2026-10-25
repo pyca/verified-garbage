@@ -150,7 +150,7 @@ theorem ystep {Sp : Addr} {len st u k : Nat} (hl : 16 ≤ len) (hl' : len ≤ 12
           show st + 16 * u + len + (8 * l + i) = st + 16 * u + len + 8 * l + i by bdd_omega]
         exact (B3 l hl).2 i hi) fun i hi => ?_
     rw [← hP, show 16 * (u + 1) = 16 * u + 16 by bdd_omega, hblk.add, hblk.get _ _ _ _ _ (by bdd_omega) (by bdd_omega)
-      (by rw [n_eq]; omega) _ (by rw [n_eq]; exact hi)]
+      (by rw [n_eq]; omega_arith) _ (by rw [n_eq]; exact hi)]
     rw [hP]
     by_cases c1 : st + 16 * u ≤ i ∧ i < st + 16 * u + 16
     · rw [ite_eq_left_of_eq_true _ _ (eq_true c1), ite_eq_left_of_eq_true _ _ (eq_true c1),
@@ -219,7 +219,7 @@ theorem yblock_ok {sP : Addr} {len st kz k : Nat} (h16 : 16 ≤ len) (hl16 : len
       lanes_gpr (s := s2) (GOnly.lane o hy) (YOnly.refl [] s2) c2 (by decide) (by decide),
       fun l _ => GOnly.lane o hy _ l, o.keep.mono (by simp), by rw [o.mem]; exact Frame.refl _ _, o.mxcsr⟩)
     (fun u hu w ⟨hS', hdx', hc', hz', hk', hf', hx'⟩ => WP.mono (ystep hbf hY hblk h16 hl hs (by
-        have := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero hl16); omega) hc'
+        have := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero hl16); omega_arith) hc'
         (fun l hl => by rw [hz' l hl]; exact z2 l hl) hdx' hS'
         (fun j hj => sp_inY (by rw [hk'.2.2]; exact hw2) hj))
       fun w' ⟨hS'', hdx'', hf'', hc'', hz'', hk'', hcx, hzf, hx''⟩ =>
@@ -253,7 +253,7 @@ theorem ylay_ok {sP : Addr} {len t : Nat} (hlen : len ∈ [16, 32, 64, 128]) (zi
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
     rcases hlen with rfl | rfl | rfl | rfl <;> decide
   obtain ⟨h16, hl16, hl128, hcov, hpos, h8⟩ := hl
-  have ht : t < 128 := by have := (hzi 0 hpos).1; omega
+  have ht : t < 128 := by have := (hzi 0 hpos).1; omega_arith
   refine WP.seq (WP.mono (Q := fun (w : State) => w.gpr .rdx = spW sP ∧ w.gpr .r8 = wAddr sP t ∧
       w.gpr .rax = BitVec.ofNat 64 (128 / len) ∧ GOnly [.rdx, .r8, .rax] s w ∧ w.ymmHi = s.ymmHi)
     (by
@@ -263,7 +263,7 @@ theorem ylay_ok {sP : Addr} {len t : Nat} (hlen : len ∈ [16, 32, 64, 128]) (zi
       refine ⟨?_, by gonly⟩
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega) fun w ⟨hdx, h8r, hax, o, hy⟩ => ?_)
+      omega_arith) fun w ⟨hdx, h8r, hax, o, hy⟩ => ?_)
   have hw' : pR sP ∈ w.wr := by rw [o.keep.2.2]; exact hw
   have cw : YConsts w := lanes_gpr (s := s) (GOnly.lane o hy) (YOnly.refl [] s) hc (by decide) (by decide)
   refine WP.mono (wp_countdown (cnt := .rax) (N := 128 / len) (by bdd_omega) hpos
@@ -276,7 +276,7 @@ theorem ylay_ok {sP : Addr} {len t : Nat} (hlen : len ∈ [16, 32, 64, 128]) (zi
       by rw [← o.mem]; exact hb'.frame, hb'.consts, by rw [hb'.mxcsr, o.mxcsr]⟩⟩
   have hs : 2 * len * c + 2 * len ≤ 256 := by
     have : 2 * len * (c + 1) ≤ 2 * len * (128 / len) := Nat.mul_le_mul_left _ (by bdd_omega)
-    rw [Nat.mul_succ] at this; omega
+    rw [Nat.mul_succ] at this; omega_arith
   refine WP.mono (yblock_ok hbf hY hblk h16 hl16 hl128 hs (hzi c hc).1 (hzi c hc).2 hb'.consts hdx' h8' hS' hT'
     (by rw [hb'.keep.2.2]; exact hw')) fun u' ⟨hS'', hdx'', h8'', hax'', hzf'', hb''⟩ =>
       ⟨⟨by rw [layF, foldl_range_succ]; exact hS'', by rw [hdx'', Nat.mul_succ],
@@ -404,21 +404,21 @@ theorem ystep8 {sP : Addr} {m t : Nat} (hm : m < 8) (zi : Nat → Nat) {z : Nat 
         rw [ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)), show 8 * 1 + i - 8 = i by bdd_omega]
         exact (B7 1 (by decide)).2 i hi
     · -- the specification: two blocks
-      rw [show 2 * (m + 1) = 2 * m + 2 by omega, layF_two hblk F (by decide) zi (st := 32 * m) (st' := 32 * m + 16)
-        (en := 32 * m + 16 + 16) (by omega) (by omega) (by omega) (by omega) hi, hP]
+      rw [show 2 * (m + 1) = 2 * m + 2 by omega_arith, layF_two hblk F (by decide) zi (st := 32 * m) (st' := 32 * m + 16)
+        (en := 32 * m + 16 + 16) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hi, hP]
       by_cases h1 : 32 * m ≤ i ∧ i < 32 * m + 16
       · rw [ifp h1, ifp h1]
         unfold blkV
         split
         · rw [Nat.add_right_comm (32 * m) (i - 32 * m) 8]
-        · rw [show 32 * m + 8 + (i - 32 * m - 8) = 32 * m + (i - 32 * m) by omega]
+        · rw [show 32 * m + 8 + (i - 32 * m - 8) = 32 * m + (i - 32 * m) by omega_arith]
       · rw [ifn h1, ifn h1]
         by_cases h2 : 32 * m + 16 ≤ i ∧ i < 32 * m + 16 + 16
         · rw [ifp h2, ifp h2]
           unfold blkV
           split
           · rw [Nat.add_right_comm (32 * m + 16) (i - (32 * m + 16)) 8]
-          · rw [show 32 * m + 16 + 8 + (i - (32 * m + 16) - 8) = 32 * m + 16 + (i - (32 * m + 16)) by omega]
+          · rw [show 32 * m + 16 + 8 + (i - (32 * m + 16) - 8) = 32 * m + 16 + (i - (32 * m + 16)) by omega_arith]
         · rw [ifn h2, ifn h2]
   · rw [show BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 (2 * 32) by decide, wAddr_add, Nat.mul_succ]
   · have e3 : s3.gpr .r8 = wAddr sP (t + 2 * m) := by rw [o3.gpr, o12.gpr, h8]
@@ -454,7 +454,7 @@ theorem ylay8_ok {sP : Addr} {t : Nat} (zi : Nat → Nat) {z : Nat → Zq}
     {F : Vector α n} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16R R s.mem (spW sP) F)
     (hT : TZ s.mem sP z) (hw : pR sP ∈ s.wr) :
     WP isa (ylay8 bf t) s fun s' => S16R R s'.mem (spW sP) (layF blk F 8 zi 16) ∧ BInvY sP s s' := by
-  have ht : t < 128 := by have := (hz 0 (by decide)).1; omega
+  have ht : t < 128 := by have := (hz 0 (by decide)).1; omega_arith
   refine WP.seq (WP.mono (ypre_ok t ht hsi) fun w ⟨hdx, h8, og, hy⟩ => ?_)
   have cw : YConsts w := lanes_gpr (s := s) (GOnly.lane og hy) (YOnly.refl [] s) hc (by decide) (by decide)
   refine WP.mono (wp_rcxLoopY (N := 8) (by decide) (by decide)

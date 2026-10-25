@@ -99,8 +99,8 @@ theorem read_kept {m : Mem} {S D : Addr} {j n L : Nat} (hd : (⟨S, L⟩ : Regio
     (by rw [Proof.Cmac.bytesAt_length]; exact Region.contains_self _ _)) _ fun r hr hcon => ?_
   simp only [List.mem_singleton] at hr; subst hr
   simp only [Offset.add_add] at hcon
-  exact hd _ (Offset.contains_base S (show j + k + 1 ≤ L by omega) (by omega))
-    (Region.sub_prefix (show j ≤ L by omega) _ hcon)
+  exact hd _ (Offset.contains_base S (show j + k + 1 ≤ L by omega_arith) (by omega_arith))
+    (Region.sub_prefix (show j ≤ L by omega_arith) _ hcon)
 
 /-- The 16 bytes of a read, as a list. -/
 theorem read16_bytes (m : Mem) (a : Addr) :
@@ -122,31 +122,31 @@ theorem copyBlocks_wp (s : State) {S D : Addr} {k : Nat} (h : BlocksPre s S D k)
     ⟨0, rfl, h.pos, by rw [h.x12]; simp, by rw [h.x11]; simp, by rw [h.x14, Nat.sub_zero],
       by simp [bytesAt, writeBytes_nil], rfl, Keeps.refl s⟩
   rintro w t ⟨i, rfl, hi, x12, x11, x14, mem, x13, kp⟩
-  have hin : 16 * i + 16 ≤ 16 * k := by omega
+  have hin : 16 * i + 16 ≤ 16 * k := by omega_arith
   have cov (rs : List Region) (P : Addr) (hc : Covers [⟨P, 16 * k⟩] rs) :
       InRegions rs (P + BitVec.ofNat 64 (16 * i)) 16 :=
-    hc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P hin (by omega)⟩
+    hc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P hin (by omega_arith)⟩
   obtain ⟨t', run', mem', x12', x11', x14', x13', kp'⟩ := blockStep_ok t
     (A := S + BitVec.ofNat 64 (16 * i)) (B := D + BitVec.ofNat 64 (16 * i)) (by rw [x12, BitVec.add_zero])
     (by rw [x11, BitVec.add_zero]) (by rw [kp.rd, kp.wr]; exact cov _ _ h.rd)
     (by rw [kp.wr]; exact cov _ _ h.wr)
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have hmem : t'.mem = writeBytes s.mem D (bytesAt s.mem S (16 * (i + 1))) := by
-    rw [mem', mem, read_kept h.disj hin (by omega), write_eq_writeBytes, read16_bytes,
-      show 16 * (i + 1) = 16 * i + 16 by omega, bytesAt_append,
-      ← writeBytes_append _ _ _ _ (by simp [Proof.Cmac.bytesAt_length]; omega), Proof.Cmac.bytesAt_length]
+    rw [mem', mem, read_kept h.disj hin (by omega_arith), write_eq_writeBytes, read16_bytes,
+      show 16 * (i + 1) = 16 * i + 16 by omega_arith, bytesAt_append,
+      ← writeBytes_append _ _ _ _ (by simp [Proof.Cmac.bytesAt_length]; omega_arith), Proof.Cmac.bytesAt_length]
   have hstep (P : Addr) : P + BitVec.ofNat 64 (16 * i) + 16 = P + BitVec.ofNat 64 (16 * (i + 1)) := by
     rw [BitVec.add_assoc, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ← BitVec.ofNat_add,
       Nat.mul_succ]
   have x14'' : t'.gpr .x14 = BitVec.ofNat 64 (k - (i + 1)) := by
-    rw [x14', x14, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]; rfl
-  have ev := eval_nonzero (r := .x14) (a := k - (i + 1)) x14'' (by omega)
+    rw [x14', x14, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith)]; rfl
+  have ev := eval_nonzero (r := .x14) (a := k - (i + 1)) x14'' (by omega_arith)
   by_cases he : i + 1 = k
   · left
     refine ⟨by rw [ev]; simp [he], by rw [hmem, he], by rw [x12', x12, hstep, he], by rw [x11', x11, hstep, he],
       x13'.trans x13, kp.trans kp'⟩
   · right
-    refine ⟨by rw [ev]; simp; omega, k - (i + 1), by omega, i + 1, rfl, by omega,
+    refine ⟨by rw [ev]; simp; omega_arith, k - (i + 1), by omega_arith, i + 1, rfl, by omega_arith,
       by rw [x12', x12, hstep], by rw [x11', x11, hstep], x14'', hmem, x13'.trans x13, kp.trans kp'⟩
 
 /-- What the copy of a slice needs: `n` bytes at `S` to copy to `D`, apart. -/
@@ -162,13 +162,13 @@ structure SlicePre (s : State) (S D : Addr) (n : Nat) : Prop where
 theorem ofNat_lsr4 {n : Nat} (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 4 = BitVec.ofNat 64 (n / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+    Nat.mod_eq_of_lt (by omega_arith), Nat.shiftRight_eq_div_pow]
 
 theorem ofNat_and15 {n : Nat} (hn : n < 2 ^ 64) :
     BitVec.ofNat 64 n &&& BitVec.ofNat 64 15 = BitVec.ofNat 64 (n % 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
-    Nat.mod_eq_of_lt (show 15 < 2 ^ 64 by decide), Nat.mod_eq_of_lt (by omega),
+    Nat.mod_eq_of_lt (show 15 < 2 ^ 64 by decide), Nat.mod_eq_of_lt (by omega_arith),
     show (15 : Nat) = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
 
 theorem blocksArg_ok (s : State) :
@@ -204,7 +204,7 @@ theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
       s₂.mem = writeBytes s.mem D (bytesAt s.mem S (16 * (n / 16))) ∧
       s₂.gpr .x12 = S + BitVec.ofNat 64 (16 * (n / 16)) ∧ s₂.gpr .x11 = D + BitVec.ofNat 64 (16 * (n / 16)) ∧
       s₂.gpr .x13 = BitVec.ofNat 64 n ∧ Keeps s s₂ := by
-    refine WP.ite (decide (n / 16 = 0)) (eval_zero x14₁' (by omega)) (fun ht => ?_) (fun hf => ?_)
+    refine WP.ite (decide (n / 16 = 0)) (eval_zero x14₁' (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
     · have h0 : n / 16 = 0 := by simpa using ht
       refine WP.block_nil ⟨?_, ?_, ?_, ?_, kp₁⟩
       · rw [m₁, h0, Nat.mul_zero]; simp [bytesAt, writeBytes_nil]
@@ -213,10 +213,10 @@ theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
       · rw [g₁ _ (by decide), h.x13]
     · have h0 : n / 16 ≠ 0 := by simpa using hf
       have hb : BlocksPre s₁ S D (n / 16) :=
-        ⟨by rw [g₁ _ (by decide), h.x12], by rw [g₁ _ (by decide), h.x11], x14₁', by omega, by omega,
-          by rw [rd₁, wr₁]; exact covers_prefix h.rd (by omega),
-          by rw [wr₁]; exact covers_prefix h.wr (by omega),
-          (h.disj.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by omega))⟩
+        ⟨by rw [g₁ _ (by decide), h.x12], by rw [g₁ _ (by decide), h.x11], x14₁', by omega_arith, by omega_arith,
+          by rw [rd₁, wr₁]; exact covers_prefix h.rd (by omega_arith),
+          by rw [wr₁]; exact covers_prefix h.wr (by omega_arith),
+          (h.disj.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Region.sub_prefix (by omega_arith))⟩
       refine WP.mono (copyBlocks_wp s₁ hb) fun s₂ ⟨m₂, x12₂, x11₂, x13₂, kp₂⟩ => ⟨?_, x12₂, x11₂, ?_, kp₁.trans kp₂⟩
       · rw [m₂, m₁]
       · rw [x13₂, g₁ _ (by decide), h.x13]
@@ -227,35 +227,35 @@ theorem copySlice_wp (s : State) {S D : Addr} {n : Nat} (h : SlicePre s S D n) :
   have kp₃ : Keeps s s₃ := kp₂.trans ⟨fun r hr => g₃ r (by intro e; subst e; simp [copyRegs] at hr)
     (by intro e; subst e; simp [copyRegs] at hr), sp₃, rd₃, wr₃⟩
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have hS : (⟨S + BitVec.ofNat 64 (16 * (n / 16)), n % 16⟩ : Region).Sub ⟨S, n⟩ := Offset.sub_base _ (by omega)
-  have hD : (⟨D + BitVec.ofNat 64 (16 * (n / 16)), n % 16⟩ : Region).Sub ⟨D, n⟩ := Offset.sub_base _ (by omega)
+  have hS : (⟨S + BitVec.ofNat 64 (16 * (n / 16)), n % 16⟩ : Region).Sub ⟨S, n⟩ := Offset.sub_base _ (by omega_arith)
+  have hD : (⟨D + BitVec.ofNat 64 (16 * (n / 16)), n % 16⟩ : Region).Sub ⟨D, n⟩ := Offset.sub_base _ (by omega_arith)
   have hlen : (bytesAt s.mem S (16 * (n / 16))).length = 16 * (n / 16) := Proof.Cmac.bytesAt_length _ _ _
   -- The bytes still to copy are what they were.
   have hrest : bytesAt s₃.mem (S + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) =
       bytesAt s.mem (S + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) := by
     rw [m₃, m₂]
     refine Proof.AesGcm.AArch64.bytesAt_frame (writeBytes_frame s.mem D _ (R := ⟨D, 16 * (n / 16)⟩)
-      (by rw [hlen]; exact Region.contains_self _ _)) (fun r hr => ?_) (by omega)
+      (by rw [hlen]; exact Region.contains_self _ _)) (fun r hr => ?_) (by omega_arith)
     simp only [List.mem_singleton] at hr; subst hr
-    exact (h.disj.sub_left hS).sub_right (Region.sub_prefix (by omega))
+    exact (h.disj.sub_left hS).sub_right (Region.sub_prefix (by omega_arith))
   have hend : D + BitVec.ofNat 64 (16 * (n / 16)) + BitVec.ofNat 64 (n % 16) = D + BitVec.ofNat 64 n := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, hqr]
   have hall : writeBytes (writeBytes s.mem D (bytesAt s.mem S (16 * (n / 16)))) (D + BitVec.ofNat 64 (16 * (n / 16)))
       (bytesAt s.mem (S + BitVec.ofNat 64 (16 * (n / 16))) (n % 16)) = writeBytes s.mem D (bytesAt s.mem S n) := by
     have e := writeBytes_append s.mem D (bytesAt s.mem S (16 * (n / 16)))
       (bytesAt s.mem (S + BitVec.ofNat 64 (16 * (n / 16))) (n % 16))
-      (by rw [hlen, Proof.Cmac.bytesAt_length]; omega)
+      (by rw [hlen, Proof.Cmac.bytesAt_length]; omega_arith)
     rw [hlen] at e
     rw [e, ← bytesAt_append, hqr]
-  refine WP.ite (decide (n % 16 = 0)) (eval_zero x13₃' (by omega)) (fun ht => ?_) (fun hf => ?_)
+  refine WP.ite (decide (n % 16 = 0)) (eval_zero x13₃' (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n % 16 = 0 := by simpa using ht
     refine WP.block_nil ⟨?_, ?_, kp₃⟩
     · rw [m₃, m₂, ← hall, h0]; simp [bytesAt, writeBytes_nil]
     · rw [g₃ _ (by decide) (by decide), x11₂, ← hend, h0]; simp
   · have h0 : n % 16 ≠ 0 := by simpa using hf
     have lp : LoopPre s₃ (S + BitVec.ofNat 64 (16 * (n / 16))) (D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) :=
-      ⟨by omega, by rw [rd₃, wr₃, kp₂.rd, kp₂.wr]; exact covers_off h.rd (by omega) hn,
-        by rw [wr₃, kp₂.wr]; exact covers_off h.wr (by omega) hn, (h.disj.sub_left hS).sub_right hD⟩
+      ⟨by omega_arith, by rw [rd₃, wr₃, kp₂.rd, kp₂.wr]; exact covers_off h.rd (by omega_arith) hn,
+        by rw [wr₃, kp₂.wr]; exact covers_off h.wr (by omega_arith) hn, (h.disj.sub_left hS).sub_right hD⟩
     have W₀ : WordAt s₃ (S + BitVec.ofNat 64 (16 * (n / 16))) (D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) 0
         (D + BitVec.ofNat 64 (16 * (n / 16))) (bytesAt s₃.mem (S + BitVec.ofNat 64 (16 * (n / 16))) 0) s₃ :=
       ⟨Nat.zero_le _, by rw [g₃ _ (by decide) (by decide), x12₂]; simp,

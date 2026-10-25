@@ -790,7 +790,7 @@ theorem sealMidM_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86
     h₁.inv.rsp h₁.inv.rd h₁.inv.wr h₁.rbx (by rw [h₁.rbp]; exact hRDX s₀))
     fun s₂ ⟨cs₂, rd₂, wr₂, f₂, _, r₂⟩ => ?_)
   have i₂ := mac_inv hp h₁.inv cs₂ rd₂ wr₂ f₂
-  refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by simp [calleeSaved]), h₁.rbp]))
+  refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by decide), h₁.rbp]))
     fun s₃ ⟨i₃, _, f₃, _⟩ => ?_)
   refine WP.mono (cmpFold_ok (fold := fold) (by lit_omega) i₃.r13) fun s₄ ⟨g₄, rd₄, wr₄, m₄, c₄⟩ => ?_
   refine ⟨⟨⟨i₃.step (fun r _ => by rw [g₄]) rd₄ wr₄ (rs := []) (by rw [m₄]; exact Frame.refl _ _)
@@ -821,7 +821,7 @@ theorem sealMidX_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86
     h₁.inv.rsp h₁.inv.rd h₁.inv.wr h₁.rbx (by rw [h₁.rbp]; exact hRDX s₀))
     fun s₂ ⟨cs₂, rd₂, wr₂, f₂, _, r₂⟩ => ?_)
   have i₂ := mac_inv hp h₁.inv cs₂ rd₂ wr₂ f₂
-  refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by simp [calleeSaved]), h₁.rbp]))
+  refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by decide), h₁.rbp]))
     fun s₃ ⟨i₃, _, f₃, _⟩ => ?_)
   refine WP.mono (cmpFold_ok (fold := fold) (by lit_omega) i₃.r13) fun s₄ ⟨g₄, rd₄, wr₄, m₄, c₄⟩ => ?_
   refine ⟨⟨i₃.step (fun r _ => by rw [g₄]) rd₄ wr₄ (rs := []) (by rw [m₄]; exact Frame.refl _ _)
@@ -844,8 +844,8 @@ theorem argsCmp_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
   · rw [g₃, rsi₂]
   · rw [g₃, rdx₂, hL]
   · rw [g₃, rcx₂]
-  · rw [g₃, cs₂ _ (by simp [calleeSaved]), h.r13, hL]
-  · rw [g₃, cs₂ _ (by simp [calleeSaved]), h.r14]
+  · rw [g₃, cs₂ _ (by decide), h.r13, hL]
+  · rw [g₃, cs₂ _ (by decide), h.r14]
   · rw [g₃, cs₂ r (by rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])]
 
 /-- After `cryptS`'s branch: as `After`, and `rbx`, `rbp` the ciphertext not
@@ -870,11 +870,11 @@ theorem smallS_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w = 5 
   have a0 : aOf fold (L s₀) = 0 := by simp only [aOf]; rw [ite_eq_left hle]
   refine ⟨by rw [g₄ _ (by decide) (by decide), c₃.rsi],
     by rw [g₄ _ (by decide) (by decide), c₃.cs _ calleeSaved_rsp (by decide), h.inv.rsp],
-    by rw [g₄ _ (by decide) (by decide), c₃.cs _ (by simp [calleeSaved]) (by decide), h.inv.r13],
-    by rw [g₄ _ (by decide) (by decide), c₃.cs _ (by simp [calleeSaved]) (by decide), h.inv.r14],
-    by rw [g₄ _ (by decide) (by decide), c₃.cs _ (by simp [calleeSaved]) (by decide), h.inv.r12],
-    by rw [rbx₄, c₃.cs _ (by simp [calleeSaved]) (by decide), h.inv.r14, a0]; simp,
-    by rw [rbp₄, c₃.cs _ (by simp [calleeSaved]) (by decide), h.inv.r13, hL, a0, Nat.sub_zero],
+    by rw [g₄ _ (by decide) (by decide), c₃.cs _ (by decide) (by decide), h.inv.r13],
+    by rw [g₄ _ (by decide) (by decide), c₃.cs _ (by decide) (by decide), h.inv.r14],
+    by rw [g₄ _ (by decide) (by decide), c₃.cs _ (by decide) (by decide), h.inv.r12],
+    by rw [rbx₄, c₃.cs _ (by decide) (by decide), h.inv.r14, a0]; simp,
+    by rw [rbp₄, c₃.cs _ (by decide) (by decide), h.inv.r13, hL, a0, Nat.sub_zero],
     by rw [wr₄, c₃.wr, h.inv.wr]⟩
 
 /-- Before the call of `vg_chacha20_xor` after `bulk`. -/
@@ -3521,7 +3521,7 @@ theorem decK_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e 
   refine WP.seq (WP.mono (xorTail_ok v hp h hEd (o := 736) (.inr rfl) hc hks) fun s₁ R₁ => ?_)
   obtain ⟨rsi₁, cs₁, rd₁, wr₁, f₁, d₁, mx₁⟩ := R₁
   refine WP.seq (WP.mono (mov576_ok s₁) fun s₂ ⟨d₂, g₂, rd₂, wr₂, m₂, mx₂⟩ => ?_)
-  have r15₂ : s₂.gpr .r15 = cx s₀ := by rw [g₂ _ (by decide), cs₁ _ (by simp [calleeSaved]), h.r15]
+  have r15₂ : s₂.gpr .r15 = cx s₀ := by rw [g₂ _ (by decide), cs₁ _ (by decide), h.r15]
   refine WP.mono_mx (by rcases wide_of v with h | h | h <;> (rw [h]; lit_decide))
     (zeroKs_ok (wide_of v) hp (n := 576) (by decide) (by decide) d₂ r15₂ (by rw [wr₂, wr₁, h.wr]))
     fun s₃ ⟨g₃, rd₃, wr₃, f₃, _⟩ mx₃ => ?_
@@ -3558,7 +3558,7 @@ theorem wipeK_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   obtain ⟨rsi₁, cs₁, rd₁, wr₁, f₁, d₁, mx₁⟩ := hr
   refine WP.seq (WP.mono (mov576_ok t) fun s₂ ⟨d₂, g₂, rd₂, wr₂, m₂, mx₂⟩ => ?_)
-  have r15₂ : s₂.gpr .r15 = cx s₀ := by rw [g₂ _ (by decide), cs₁ _ (by simp [calleeSaved]), h.r15]
+  have r15₂ : s₂.gpr .r15 = cx s₀ := by rw [g₂ _ (by decide), cs₁ _ (by decide), h.r15]
   refine WP.seq (WP.mono_mx (by rcases wide_of v with h | h | h <;> (rw [h]; lit_decide))
     (zeroKs_ok (wide_of v) hp (n := 576) (by decide) (by decide) d₂ r15₂ (by rw [wr₂, wr₁, h.wr]))
     fun s₃ ⟨g₃, rd₃, wr₃, f₃, _⟩ mx₃ => WP.mono (padIns_ok .rax (by decide) s₃) fun u p => RestP.pad ?_ p)
@@ -3723,10 +3723,10 @@ theorem argsCmpO_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ 
   · rw [g₃, rsi₂]
   · rw [g₃, rdx₂, hL]
   · rw [g₃, rcx₂]
-  · rw [g₃, cs₂ _ (by simp [calleeSaved]), h.r13, hL]
-  · rw [g₃, cs₂ _ (by simp [calleeSaved]), h.r14]
+  · rw [g₃, cs₂ _ (by decide), h.r13, hL]
+  · rw [g₃, cs₂ _ (by decide), h.r14]
   · rw [g₃, cs₂ r (by rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])]
-  · rw [g₃, cs₂ _ (by simp [calleeSaved])]
+  · rw [g₃, cs₂ _ (by decide)]
 
 /-- More than `fold` bytes: the whole chunks decrypted and absorbed by
 `bulkO` (none below 512 bytes), the rest and the lengths block absorbed, and
@@ -3773,8 +3773,8 @@ theorem bigO_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e 
     fun s₅ ⟨rsi₅, cs₅, rd₅, wr₅, f₅, d₅, mx₅⟩ => ?_
   · rcases hm.tail with ⟨hl, ks⟩ | ⟨hge, hA, nt, nk⟩ | ⟨t, ks⟩ | ⟨t, ks⟩
     · exact .inl ⟨hl, ks736_frame f₄ (by rdisj_all) (by omega_arith) ks⟩
-    · exact .inr (.inl ⟨hge, nt, nk, by rw [cs₄ _ (by simp [calleeSaved]), hm.rbx, hA],
-        by rw [cs₄ _ (by simp [calleeSaved]), hm.rbp, hA]⟩)
+    · exact .inr (.inl ⟨hge, nt, nk, by rw [cs₄ _ (by decide), hm.rbx, hA],
+        by rw [cs₄ _ (by decide), hm.rbp, hA]⟩)
     · exact .inr (.inr (.inl ⟨t, buf_frame f₄ (by rdisj_all) (by unfold TailC at t; omega_arith) ks⟩))
     · exact .inr (.inr (.inr ⟨t, ks736_frame f₄ (by rdisj_all) (by have := hm.Ediv; omega_arith) ks⟩))
   have dd : ∀ k < L s₀, ∀ r ∈ macR s₀, ¬ r.Contains (dp s₀ + BitVec.ofNat 64 k) 1 := by
@@ -3991,7 +3991,7 @@ theorem openStitched_correct (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = 
   have i₂ := mac_inv hp h₁.inv cs₂ rd₂ wr₂ f₂
   have D₂ : bytesAt s₂.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame f₂ (by rdisj_all) hL', bytesAt_frame h₁.fine (by rdisj_all) hL']
-  refine WP.seq (WP.mono_mx (by lit_decide) (lengths_ok hp i₂ (by rw [cs₂ _ (by simp [calleeSaved]),
+  refine WP.seq (WP.mono_mx (by lit_decide) (lengths_ok hp i₂ (by rw [cs₂ _ (by decide),
     h₁.rbp])) fun s₃ ⟨i₃, _, f₃, len₃⟩ mx₃ => ?_)
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by rw [bytesAt_frame f₃ (by rdisj_all) hL', D₂]
   have st₃ : stateAt s₃.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
@@ -4004,7 +4004,7 @@ theorem openStitched_correct (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = 
   refine WP.seq (WP.mono_mx (by lit_decide) (finalizeTo_ok hp i₆ (out := 48) (.inl (by omega_using [])))
     fun s₇ ⟨cs₇, rd₇, wr₇, rdi₇, rcx₇, f₇, tag₇⟩ mx₇ => ?_)
   refine WP.block_append (WP.mono_mx (by lit_decide) (compare_ok hp rcx₇
-    (by rw [cs₇ _ (by simp [calleeSaved]), i₆.r12]) (by rw [rd₇, i₆.rd])
+    (by rw [cs₇ _ (by decide), i₆.r12]) (by rw [rd₇, i₆.rd])
     (by rw [wr₇, i₆.wr])) fun s₈ ⟨rax₈, g₈, m₈, rd₈, wr₈⟩ mx₈ => ?_)
   refine WP.mono_mx (by lit_decide) (restore_ok hp (by rw [g₈ _ (by decide) (by decide), rdi₇])
     (by rw [m₈]; exact i₆.saved.frame f₇ (by rdisj_all))
@@ -4501,8 +4501,8 @@ theorem XO.call (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} (h : XO s₀ s) 
     (by rw [h.rsp]; exact hp.stk_sub (by lit_omega)) (by rw [h.rsp]; exact hp.stk_d.sub_right dsub)
     (by rw [h.rsp]; exact hp.stk_sub (by lit_omega)) (Covers.right (h.hw hp)) (h.hw hp)
     fun s' _ wr' cs' _ rsi' _ => ⟨rsi', by rw [cs' _ calleeSaved_rsp, h.rsp],
-      by rw [cs' _ (by simp [calleeSaved]), h.r13], by rw [cs' _ (by simp [calleeSaved]), h.r14],
-      by rw [cs' _ (by simp [calleeSaved]), h.r12], by rw [wr', h.wr]⟩
+      by rw [cs' _ (by decide), h.r13], by rw [cs' _ (by decide), h.r14],
+      by rw [cs' _ (by decide), h.r12], by rw [wr', h.wr]⟩
 
 end
 
@@ -4551,8 +4551,8 @@ theorem macO_done (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e 
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
       · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega)))
   exact WP.mono (macPadLengths_ok b hp (p := .rbx) (n := .rbp) ⟨.inl rfl, .inl rfl⟩ (srcRest hp hm.AL) i
-    hm.rbx hm.rbp) fun _ ⟨i', cs', f', _⟩ => ⟨i', by rw [cs' _ (by simp [calleeSaved]), hm.rbx, hm.Aeq],
-      by rw [cs' _ (by simp [calleeSaved]), hm.rbp, hm.Aeq], fun t => by
+    hm.rbx hm.rbp) fun _ ⟨i', cs', f', _⟩ => ⟨i', by rw [cs' _ (by decide), hm.rbx, hm.Aeq],
+      by rw [cs' _ (by decide), hm.rbp, hm.Aeq], fun t => by
         subst hE
         rcases hm.tail with ⟨hl, -⟩ | ⟨-, -, nt, -⟩ | ⟨-, ks⟩ | ⟨tk, -⟩
         · exact absurd t.1 (by omega_arith)
@@ -4596,8 +4596,8 @@ theorem xorTail_after (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : A
     (h : MacDone s₀ s) (t : TailC (L s₀) (Eof (L s₀))) : WP isa (xorTail v.callee.wide 128) s (After s₀) :=
   WP.mono (xorTail_ok v hp h.1 rfl (.inl rfl) (by unfold TailC at t; simp only [Eof] at t; omega_arith) (h.2.2.2.1 t))
     fun _ ⟨rsi, cs, _, wr, _⟩ => ⟨rsi, by rw [cs _ calleeSaved_rsp, h.1.rsp],
-      by rw [cs _ (by simp [calleeSaved]), h.1.r13], by rw [cs _ (by simp [calleeSaved]), h.1.r14],
-      by rw [cs _ (by simp [calleeSaved]), h.1.r12], by rw [wr, h.1.wr]⟩
+      by rw [cs _ (by decide), h.1.r13], by rw [cs _ (by decide), h.1.r14],
+      by rw [cs _ (by decide), h.1.r12], by rw [wr, h.1.wr]⟩
 
 /-- The rest decrypted from the keystream at `ctx + 736`: `twoKs`'s or
 `fourKs`'s (1 to 192 bytes after the whole chunks), or `tail3O`'s or
@@ -4622,8 +4622,8 @@ theorem xorKs_after (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APr
   have h₂ := h₁.pad ⟨g₂, m₂, rd₂, wr₂, mx₂⟩
   have fin : ∀ {u}, RestP s₀ s (Eof (L s₀)) u → After s₀ u := fun ⟨rsi, cs, _, wr, _⟩ =>
     ⟨rsi, by rw [cs _ calleeSaved_rsp, h.1.rsp],
-      by rw [cs _ (by simp [calleeSaved]), h.1.r13], by rw [cs _ (by simp [calleeSaved]), h.1.r14],
-      by rw [cs _ (by simp [calleeSaved]), h.1.r12], by rw [wr, h.1.wr]⟩
+      by rw [cs _ (by decide), h.1.r13], by rw [cs _ (by decide), h.1.r14],
+      by rw [cs _ (by decide), h.1.r12], by rw [wr, h.1.wr]⟩
   exact WP.ite _ c₂ (fun _ => WP.mono (wipeK_ok v hp h.1 h₂) fun _ h' => fin h') (fun _ => WP.block_nil (fin h₂))
 
 /-- Below 512 bytes, the data decrypted from the keystream `wholeO` left at
@@ -4634,8 +4634,8 @@ theorem decWhole_after (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : 
       (After s₀) :=
   WP.mono (decWhole_ok v hp h.1 hl (h.2.2.2.2.2.1 hl))
     fun _ ⟨rsi, cs, _, wr, _⟩ => ⟨rsi, by rw [cs _ calleeSaved_rsp, h.1.rsp],
-      by rw [cs _ (by simp [calleeSaved]), h.1.r13], by rw [cs _ (by simp [calleeSaved]), h.1.r14],
-      by rw [cs _ (by simp [calleeSaved]), h.1.r12], by rw [wr, h.1.wr]⟩
+      by rw [cs _ (by decide), h.1.r13], by rw [cs _ (by decide), h.1.r14],
+      by rw [cs _ (by decide), h.1.r12], by rw [wr, h.1.wr]⟩
 
 /-! ## The taint analyses -/
 

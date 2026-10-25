@@ -126,14 +126,14 @@ theorem lo_off (E : BitVec 32) {d : Nat} (hd : d ≤ 24) :
 theorem ret_lo {E : BitVec 32} (hE : 24 ≤ E.toNat) :
     Region.Sub ⟨(E - 4).setWidth 64, 4⟩ (Lo E) := by
   have e : (E - 4).setWidth 64 = E.setWidth 64 - 24 + BitVec.ofNat 64 20 := by
-    rw [show (E - 4) = E - BitVec.ofNat 32 4 from rfl, Taint.sub_setWidth (by omega), lo_off E (by decide)]
+    rw [show (E - 4) = E - BitVec.ofNat 32 4 from rfl, Taint.sub_setWidth (by omega_arith), lo_off E (by decide)]
   rw [e]
   exact Offset.sub_base _ (by decide)
 
 theorem stk_lo {E : BitVec 32} (hE : 24 ≤ E.toNat) :
     Region.Sub ⟨(E - 4).setWidth 64 - 12, 12⟩ (Lo E) := by
   have e : (E - 4).setWidth 64 - 12 = E.setWidth 64 - 24 + BitVec.ofNat 64 8 := by
-    rw [show (E - 4) = E - BitVec.ofNat 32 4 from rfl, Taint.sub_setWidth (by omega),
+    rw [show (E - 4) = E - BitVec.ofNat 32 4 from rfl, Taint.sub_setWidth (by omega_arith),
       show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl, BitVec.sub_sub, ← BitVec.ofNat_add,
       lo_off E (by decide)]
   rw [e]
@@ -154,7 +154,7 @@ theorem covers_of {E : BitVec 32} {rs : List Region}
     · exact List.mem_append_right _ (List.mem_cons_of_mem _ ho)
 
 theorem args_within (E : BitVec 32) {k : Nat} (hk : k ≤ 256) : Whole.Within ⟨E.setWidth 64, k⟩ (Whole.FR E) :=
-  ⟨0, (BitVec.add_zero _).symm, by change 0 + k ≤ 256; omega⟩
+  ⟨0, (BitVec.add_zero _).symm, by change 0 + k ≤ 256; omega_arith⟩
 
 theorem frame_within (E : BitVec 32) {d l : Nat} (hd : d + l ≤ 256) : Whole.Within (fr E d l) (Whole.FR E) :=
   ⟨d, rfl, hd⟩
@@ -181,8 +181,8 @@ structure ZInv (scr : BitVec 32) (s₁ : State) (k : Nat) (s : State) : Prop whe
 theorem stateAt_zero {m : Mem} (h : ∀ j < 50, m.readW (scr.setWidth 64 + BitVec.ofNat 64 (4 * j)) 32 = 0) :
     stateAt m (scr.setWidth 64) = Spec.Sha3.zero := by
   refine Eq.trans (Proof.Sha3.stateAt_congr (m := fun _ => 0) fun j hj => ?_) ?_
-  · have e := Mem.readW_byte m (scr.setWidth 64 + BitVec.ofNat 64 (4 * (j / 4))) (i := j % 4) (by omega)
-    rw [Offset.add_add, show 4 * (j / 4) + j % 4 = j by omega, h (j / 4) (by omega)] at e
+  · have e := Mem.readW_byte m (scr.setWidth 64 + BitVec.ofNat 64 (4 * (j / 4))) (i := j % 4) (by omega_arith)
+    rw [Offset.add_add, show 4 * (j / 4) + j % 4 = j by omega_arith, h (j / 4) (by omega_arith)] at e
     rw [e]
     apply BitVec.eq_of_toNat_eq
     simp
@@ -250,13 +250,13 @@ variable (hk : Kit E scr n ins outs)
 include hk
 
 theorem scr_addr : (scr + BitVec.ofNat 32 KSCR).setWidth 64 = scr.setWidth 64 + BitVec.ofNat 64 KSCR :=
-  addr_eq (by have := hk.nc; simp only [KSCR]; omega)
+  addr_eq (by have := hk.nc; simp only [KSCR]; omega_arith)
 
 theorem scr_fit : (scr + BitVec.ofNat 32 KSCR).toNat + 640 ≤ 2 ^ 32 := by
   have := hk.nc
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := KSCR) (by simp only [KSCR]; omega),
-    Nat.mod_eq_of_lt (by simp only [KSCR]; omega)]
-  simp only [KSCR]; omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := KSCR) (by simp only [KSCR]; omega_arith),
+    Nat.mod_eq_of_lt (by simp only [KSCR]; omega_arith)]
+  simp only [KSCR]; omega_arith
 
 theorem kWr_sub : ∀ r ∈ kWr scr, Whole.Within r (SCR scr) := by
   intro r hr
@@ -301,17 +301,17 @@ theorem zeroStores_ok {s₁ : State} (h0 : s₁.gpr .eax = scr) (h2 : s₁.gpr .
   refine wp_range_flatMap (M := isa) (ZInv scr s₁) (fun k s hk' h => ?_) 50 (Nat.le_refl _) s₁
     ⟨rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero j)⟩
   have ea : addr scr (4 * k) = scr.setWidth 64 + BitVec.ofNat 64 (4 * k) :=
-    addr_eq (by have := hk.nc; omega)
+    addr_eq (by have := hk.nc; omega_arith)
   have hb : s.gpr .eax = scr := by rw [h.gpr, h0]
   refine wp_stm hb (by rw [ea, h.wr]; exact hwr k hk') fun s' m => WP.block_nil
     ⟨by rw [m.gpr, h.gpr], by rw [m.rd, h.rd], by rw [m.wr, h.wr], ?_, fun j hj => ?_⟩
   · rw [m.mem, ea]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
   · rw [m.mem, ea, h.gpr, h2]
     by_cases e : j = k
     · subst e; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.zero j (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+      exact h.zero j (by omega_arith)
 
 /-- `scratch` into `eax`, `0` into `edx`. -/
 theorem zeroArgs_ok (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) {sc : Nat} (hsc : ScrAt n val sc scr) :
@@ -336,7 +336,7 @@ theorem zeroStores_step {s : State} (hc : Whole.Ctx E g m₀ ins outs s) (h0 : s
   have hw : ∀ k < 50, InRegions s.wr (scr.setWidth 64 + BitVec.ofNat 64 (4 * k)) 4 := by
     intro k hk'
     rw [hc.wr]
-    exact ⟨SCR scr, List.mem_cons_of_mem _ hk.so, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨SCR scr, List.mem_cons_of_mem _ hk.so, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   refine WP.mono (hk.zeroStores_ok h0 h2 hw) fun v hv => ⟨?_, stateAt_zero hv.zero, hv.frame⟩
   refine hc.of_frame hv.rd hv.wr (by rw [hv.gpr]) (fun r _ _ => by rw [hv.gpr]) hv.frame ?_
   intro r hr
@@ -354,7 +354,7 @@ theorem zero_ok (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) {s
 
 /-! ## The calls' common facts -/
 
-theorem esp4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by have := hk.below; omega)
+theorem esp4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by have := hk.below; omega_arith)
 
 /-- The return address and the callee's stack are outside the regions `D`
 that `Lo E` is outside. -/
@@ -401,13 +401,13 @@ theorem abs_pre (hc : Whole.Ctx E g m₀ ins outs t) {P N : BitVec 32} {pos : Na
   have e4 := hk.esp4
   have hb := hk.below
   have hf := hk.frame
-  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega
+  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega_arith
   refine ⟨trivial, trivial, hk.state_scratch, hd.kwr _ (kWr_state scr), hd.kwr _ (kWr_scratch scr),
     args_disj (by decide) (lk _ (kWr_state scr)), args_disj (by decide) hd.lo,
     args_disj (by decide) (lk _ (kWr_scratch scr)),
     hk.ret_disj (lk _ (kWr_state scr)), hk.ret_disj hd.lo, hk.ret_disj (lk _ (kWr_scratch scr)),
     hk.stk_disj (lk _ (kWr_state scr)), hk.stk_disj hd.lo, hk.stk_disj (lk _ (kWr_scratch scr)),
-    by have := hk.nc; omega, hfit, hk.scr_fit, by omega, by omega, by decide, ?_⟩
+    by have := hk.nc; omega_arith, hfit, hk.scr_fit, by omega_arith, by omega_arith, by decide, ?_⟩
   rw [hpn]; exact hp
 
 theorem abs_covers {D : Region} (hcov : DataOk E ins outs D) :
@@ -452,7 +452,7 @@ theorem absorb_call (hc : Whole.Ctx E g m₀ ins outs t) {P N : BitVec 32} {pos 
       (∀ msg, Spec.Sha3.Repr t.mem (scr.setWidth 64) 136 msg → pos = msg.length % 136 →
         Spec.Sha3.Repr v.mem (scr.setWidth 64) 136 (msg ++ Spec.Sha3.bytesAt t.mem (P.setWidth 64) N.toNat)) ∧
       v.gpr .eax = BitVec.ofNat 32 ((pos + N.toNat) % 136) := by
-  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega
+  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega_arith
   refine Whole.call_ok hc hk.below Proof.Sha3.X86.Stream.Absorb.absorb_verified.1 absorb_nosp
     (by rw [absorb_stack]; decide) (hk.abs_pre hc hp hd hfit h0 h1 h2 h3 h4 h5) (hk.abs_covers hcov)
     hk.abs_writes fun v hv hf _ ⟨s₂, hm, hg, hpost⟩ => ⟨hv, hk.call_frame hf absWr_lo, ?_, ?_⟩
@@ -463,7 +463,7 @@ theorem absorb_call (hc : Whole.Ctx E g m₀ ins outs t) {P N : BitVec 32} {pos 
     simp only [State.withRegions_mem, arg_withRegions, h0, h1, h3, h4] at h
     have e : Spec.Sha3.bytesAt t.callEntry.mem (P.setWidth 64) N.toNat =
         Spec.Sha3.bytesAt t.mem (P.setWidth 64) N.toNat :=
-      hk.entry_bytes hc (D := ⟨P.setWidth 64, N.toNat⟩) hd.lo (by change N.toNat ≤ 2 ^ 64; have := N.isLt; omega)
+      hk.entry_bytes hc (D := ⟨P.setWidth 64, N.toNat⟩) hd.lo (by change N.toNat ≤ 2 ^ 64; have := N.isLt; omega_arith)
     rw [hm, e] at h
     exact h
   · have h := hpost.2
@@ -472,7 +472,7 @@ theorem absorb_call (hc : Whole.Ctx E g m₀ ins outs t) {P N : BitVec 32} {pos 
     apply BitVec.eq_of_toNat_eq
     rw [h, show BitVec.toNat (136 : BitVec 32) = 136 from rfl, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (a := (pos + N.toNat) % 136) (b := 2 ^ 32)
-        (by have := Nat.mod_lt (pos + N.toNat) (by decide : 136 > 0); omega)]
+        (by have := Nat.mod_lt (pos + N.toNat) (by decide : 136 > 0); omega_arith)]
 
 /-! ## Set-ups -/
 
@@ -496,7 +496,7 @@ theorem store2_ok (hc : Whole.Ctx E g m₀ ins outs t) :
       Frame [⟨E.setWidth 64, 24⟩] t.mem u.mem ∧ Whole.slots E u 2 = t.gpr .edx ∧
       (∀ j < 6, j ≠ 2 → Whole.slots E u j = Whole.slots E t j) ∧ u.gpr = t.gpr := by
   have hf := hk.frame
-  have ea : addr E 8 = E.setWidth 64 + BitVec.ofNat 64 8 := addr_eq (by omega)
+  have ea : addr E 8 = E.setWidth 64 + BitVec.ofNat 64 8 := addr_eq (by omega_arith)
   refine wp_stm (b := .esp) (o := 8) hc.esp ?_ fun u m => WP.block_nil ?_
   · rw [ea, hc.wr]; exact ⟨Whole.FR E, List.mem_cons_self, Offset.contains_base _ (by decide) (by decide)⟩
   have hfr : Frame [⟨E.setWidth 64, 24⟩] t.mem u.mem := by
@@ -508,7 +508,7 @@ theorem store2_ok (hc : Whole.Ctx E g m₀ ins outs t) :
   · show u.mem.readW (E.setWidth 64 + BitVec.ofNat 64 8) 32 = _
     rw [m.mem, ea]; exact Mem.readW_writeW_self32 _ _ _
   · show u.mem.readW (E.setWidth 64 + BitVec.ofNat 64 (4 * j)) 32 = t.mem.readW _ 32
-    rw [m.mem, ea, Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
+    rw [m.mem, ea, Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
 
 omit hk in
 /-- `mov edx, eax`. -/
@@ -538,7 +538,7 @@ theorem nsetup_ok (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) 
   refine WP.mono (hk.setup_ok hc1 ha hn hv) fun u ⟨hu, hm, hs, hreg⟩ => ?_
   refine WP.mono (hk.store2_ok hu) fun w ⟨hw, hm2, h2, hs', _⟩ =>
     ⟨hw, by rw [m1] at hm; exact hm.trans hm2, by rw [h2, hreg .edx (by decide), e1, hpos],
-      fun j hj h => (hs' j (by omega) h).trans (hs j hj)⟩
+      fun j hj h => (hs' j (by omega_arith) h).trans (hs j hj)⟩
 
 /-! ## Absorptions -/
 
@@ -621,7 +621,7 @@ theorem first_abs (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) 
   refine WP.mono (hk.absorb_slots hu (by decide) hs hcov hd hfit)
     fun v ⟨hv, hf, hrv, h0v⟩ => ⟨hv, (args_frame hm).trans hf, ?_, by rw [h0v, Nat.zero_add]⟩
   have e := sframe_bytes (D := ⟨(argVal E val src).setWidth 64, (argVal E val len).toNat⟩) hm (data_args hd)
-    (by change (argVal E val len).toNat ≤ 2 ^ 64; omega)
+    (by change (argVal E val len).toNat ≤ 2 ^ 64; omega_arith)
   have h := hrv [] hrd rfl
   rw [List.nil_append, e] at h
   exact h
@@ -644,7 +644,7 @@ theorem next_abs (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) {
   subst hP hN
   have hrd := repr_frame hm hk.state_args hr
   have e := sframe_bytes (D := ⟨(argVal E val src).setWidth 64, (argVal E val len).toNat⟩) hm (data_args hd)
-    (by change (argVal E val len).toNat ≤ 2 ^ 64; omega)
+    (by change (argVal E val len).toNat ≤ 2 ^ 64; omega_arith)
   refine WP.mono (hk.absorb_slots hu (Nat.mod_lt _ (by decide)) hs hcov hd hfit)
     fun v ⟨hv, hf, hrv, h0v⟩ => ⟨hv, (args_frame hm).trans hf, ?_, ?_⟩
   · have h := hrv msg hrd rfl
@@ -669,12 +669,12 @@ theorem pad_pre (hc : Whole.Ctx E g m₀ ins outs t) {pos : Nat} (hp : pos < 136
   have e4 := hk.esp4
   have hb := hk.below
   have hf := hk.frame
-  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega
+  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega_arith
   refine ⟨trivial, trivial, hk.state_scratch,
     args_disj (by decide) (lk _ (kWr_state scr)), args_disj (by decide) (lk _ (kWr_scratch scr)),
     hk.ret_disj (lk _ (kWr_state scr)), hk.ret_disj (lk _ (kWr_scratch scr)),
     hk.stk_disj (lk _ (kWr_state scr)), hk.stk_disj (lk _ (kWr_scratch scr)),
-    by have := hk.nc; omega, hk.scr_fit, by omega, by omega, by decide, ?_⟩
+    by have := hk.nc; omega_arith, hk.scr_fit, by omega_arith, by omega_arith, by decide, ?_⟩
   rw [hpn]; exact hp
 
 theorem pad_covers : Covers ([] ++ padWr E scr) (ins ++ Whole.FR E :: outs) := by
@@ -718,7 +718,7 @@ theorem pad_call (hc : Whole.Ctx E g m₀ ins outs t) {pos : Nat} (hp : pos < 13
       Whole.Ctx E g m₀ ins outs v ∧ Frame (Lo E :: kWr scr) t.mem v.mem ∧
       ∀ msg, Spec.Sha3.Repr t.mem (scr.setWidth 64) 136 msg → pos = msg.length % 136 →
         stateAt v.mem (scr.setWidth 64) = Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 Spec.Sha3.shakeSuffix msg) := by
-  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega
+  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega_arith
   refine Whole.call_ok hc hk.below Proof.Sha3.X86.Stream.Pad.pad_verified.1 pad_nosp
     (by rw [pad_stack]; decide) (hk.pad_pre hc hp hs) hk.pad_covers
     hk.pad_writes fun v hv hf _ ⟨s₂, hm₂, _, hpost⟩ => ⟨hv, hk.call_frame hf padWr_lo, fun msg hr hpos => ?_⟩
@@ -751,7 +751,7 @@ theorem sqz_pre (hc : Whole.Ctx E g m₀ ins outs t) {d : Nat} (h24 : 24 ≤ d) 
     Proof.Sha3.squeezeX86.pre (t.callEntry.withRegions [] (sqzWr E scr d)) := by
   have ab : ∀ rd wr, argAddr (t.callEntry.withRegions rd wr) 0 = E.setWidth 64 :=
     Whole.arg_base hc.esp
-  have fa := hk.fr_addr (d := d) (by omega)
+  have fa := hk.fr_addr (d := d) (by omega_arith)
   simp only [Proof.Sha3.squeezeX86, State.withRegions_rd, State.withRegions_wr, arg_withRegions,
     State.withRegions_gpr, State.callEntry_esp, hc.esp, hk.slot_arg hc (by decide) hs.a0,
     hk.slot_arg hc (by decide) hs.a1, hk.slot_arg hc (by decide) hs.a2, hk.slot_arg hc (by decide) hs.a3,
@@ -763,11 +763,11 @@ theorem sqz_pre (hc : Whole.Ctx E g m₀ ins outs t) {d : Nat} (h24 : 24 ≤ d) 
   have so : ∀ r ∈ kWr scr, (fr E d 114).Disjoint r := fun r hr => (hk.fr_scr hd).sub_right (hk.kWr_sub r hr).sub
   have lo := lo_fr E h24 hd
   refine ⟨trivial, rfl, (so _ (kWr_state scr)).symm, hk.state_scratch, so _ (kWr_scratch scr),
-    args_disj (by decide) (lk _ (kWr_state scr)), Offset.base_disjoint _ h24 (by omega),
+    args_disj (by decide) (lk _ (kWr_state scr)), Offset.base_disjoint _ h24 (by omega_arith),
     args_disj (by decide) (lk _ (kWr_scratch scr)),
     hk.ret_disj (lk _ (kWr_state scr)), hk.ret_disj lo, hk.ret_disj (lk _ (kWr_scratch scr)),
     hk.stk_disj (lk _ (kWr_state scr)), hk.stk_disj lo, hk.stk_disj (lk _ (kWr_scratch scr)),
-    by have := hk.nc; omega, hk.fr_fit hd, hk.scr_fit, by omega, by omega, by decide, by decide⟩
+    by have := hk.nc; omega_arith, hk.fr_fit hd, hk.scr_fit, by omega_arith, by omega_arith, by decide, by decide⟩
 
 theorem sqz_writes {d : Nat} (hd : d + 114 ≤ 256) :
     ∀ r ∈ sqzWr E scr d, Whole.Within r (Whole.FR E) ∨ ∃ R ∈ outs, Whole.Within r R := by
@@ -830,7 +830,7 @@ theorem sqz_call (hc : Whole.Ctx E g m₀ ins outs t) {d : Nat} (h24 : 24 ≤ d)
   · have h := hpost.1
     simp only [State.withRegions_mem, arg_withRegions, hm₂, hk.slot_arg hc (by decide) hs.a0,
       hk.slot_arg hc (by decide) hs.a1, hk.slot_arg hc (by decide) hs.a2, hk.slot_arg hc (by decide) hs.a3,
-      hk.slot_arg hc (by decide) hs.a4, hk.fr_addr (d := d) (by omega), hst] at h
+      hk.slot_arg hc (by decide) hs.a4, hk.fr_addr (d := d) (by omega_arith), hst] at h
     exact h
 
 def sqz_ready (hc : Whole.Ctx E g m₀ ins outs t) {d : Nat} (h24 : 24 ≤ d) (hd : d + 114 ≤ 256)

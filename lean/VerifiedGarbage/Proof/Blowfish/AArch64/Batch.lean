@@ -35,9 +35,9 @@ theorem vword_rev_read (m : Mem) (a : Addr) {w : Nat} (hw : w < 4) :
     vword (VRevOp.eval .rev32b (m.read a 16)) w =
       decodeWord (blockAt m (a + BitVec.ofNat 64 (8 * (w / 2)))) (4 * (w % 2)) := by
   refine word_ext fun b hb => ?_
-  rw [← vbyte_word _ hb, vbyte_rev32b _ (by omega), vbyte_read16 _ _ (by omega), decodeWord_byte _ _ hb,
-    blockAt_getD _ _ (by omega), Offset.add_add,
-    show 4 * ((4 * w + b) / 4) + (3 - (4 * w + b) % 4) = 8 * (w / 2) + (4 * (w % 2) + (3 - b)) by omega]
+  rw [← vbyte_word _ hb, vbyte_rev32b _ (by omega_arith), vbyte_read16 _ _ (by omega_arith), decodeWord_byte _ _ hb,
+    blockAt_getD _ _ (by omega_arith), Offset.add_add,
+    show 4 * ((4 * w + b) / 4) + (3 - (4 * w + b) % 4) = 8 * (w / 2) + (4 * (w % 2) + (3 - b)) by omega_arith]
 
 theorem ldrq_run {t : State} (d : VReg) (n : Reg) {off : Nat} (ho : off % 16 = 0 ∧ off < 65536)
     (h : InRegions (t.rd ++ t.wr) (t.gpr n + BitVec.ofNat 64 off) 16) :
@@ -68,9 +68,9 @@ theorem loadPair_run {s : State} {k : Nat} (hk : k < 4)
         decodeWord (blockAt s.mem (s.gpr .x4 + BitVec.ofNat 64 (8 * (4 * k + l)))) 4) ∧
       VOnly [.v20, .v21, aReg k, bReg k] s s' := by
   have ne := ab_ne k hk
-  obtain ⟨s₁, r₁, v₁, o₁⟩ := ldrq_run (t := s) .v20 .x4 (off := 32 * k) (by omega)
+  obtain ⟨s₁, r₁, v₁, o₁⟩ := ldrq_run (t := s) .v20 .x4 (off := 32 * k) (by omega_arith)
     (by have := hR 0 (by decide); simpa using this)
-  obtain ⟨s₂, r₂, v₂, o₂⟩ := ldrq_run (t := s₁) .v21 .x4 (off := 32 * k + 16) (by omega)
+  obtain ⟨s₂, r₂, v₂, o₂⟩ := ldrq_run (t := s₁) .v21 .x4 (off := 32 * k + 16) (by omega_arith)
     (by rw [o₁.rd, o₁.wr, o₁.gpr]; exact hR 1 (by decide))
   obtain ⟨s₃, r₃, v₃, o₃⟩ := vop_run (t := s₂) (.rev .rev32b .v20 .v20) .v20 _ (exec_rev32b _ _ _)
   obtain ⟨s₄, r₄, v₄, o₄⟩ := vop_run (t := s₃) (.rev .rev32b .v21 .v21) .v21 _ (exec_rev32b _ _ _)
@@ -92,20 +92,20 @@ theorem loadPair_run {s : State} {k : Nat} (hk : k < 4)
   · intro l hl
     rw [o₆.2 _ (by simp; exact ne.2.2.2.2), v₅, vword_uzp1 _ _ hl, w20, w21]
     split
-    · rw [vword_rev_read _ _ (by omega), Offset.add_add, show 32 * k + 8 * (2 * l / 2) = 8 * (4 * k + l) by omega,
-        show 4 * (2 * l % 2) = 0 by omega]
-    · rw [vword_rev_read _ _ (by omega), Offset.add_add,
-        show 32 * k + 16 + 8 * ((2 * l - 4) / 2) = 8 * (4 * k + l) by omega,
-        show 4 * ((2 * l - 4) % 2) = 0 by omega]
+    · rw [vword_rev_read _ _ (by omega_arith), Offset.add_add, show 32 * k + 8 * (2 * l / 2) = 8 * (4 * k + l) by omega_arith,
+        show 4 * (2 * l % 2) = 0 by omega_arith]
+    · rw [vword_rev_read _ _ (by omega_arith), Offset.add_add,
+        show 32 * k + 16 + 8 * ((2 * l - 4) / 2) = 8 * (4 * k + l) by omega_arith,
+        show 4 * ((2 * l - 4) % 2) = 0 by omega_arith]
   · intro l hl
     rw [v₆, w20', w21', vword_uzp2 _ _ hl, w20, w21]
     split
-    · rw [vword_rev_read _ _ (by omega), Offset.add_add,
-        show 32 * k + 8 * ((2 * l + 1) / 2) = 8 * (4 * k + l) by omega,
-        show 4 * ((2 * l + 1) % 2) = 4 by omega]
-    · rw [vword_rev_read _ _ (by omega), Offset.add_add,
-        show 32 * k + 16 + 8 * ((2 * l + 1 - 4) / 2) = 8 * (4 * k + l) by omega,
-        show 4 * ((2 * l + 1 - 4) % 2) = 4 by omega]
+    · rw [vword_rev_read _ _ (by omega_arith), Offset.add_add,
+        show 32 * k + 8 * ((2 * l + 1) / 2) = 8 * (4 * k + l) by omega_arith,
+        show 4 * ((2 * l + 1) % 2) = 4 by omega_arith]
+    · rw [vword_rev_read _ _ (by omega_arith), Offset.add_add,
+        show 32 * k + 16 + 8 * ((2 * l + 1 - 4) / 2) = 8 * (4 * k + l) by omega_arith,
+        show 4 * ((2 * l + 1 - 4) % 2) = 4 by omega_arith]
   · exact (((((VOnly.mono o₁ (by simp)).trans (VOnly.mono o₂ (by simp))).trans (VOnly.mono o₃ (by simp))).trans
       (VOnly.mono o₄ (by simp))).trans (VOnly.mono o₅ (by simp))).trans (VOnly.mono o₆ (by simp))
 
@@ -122,8 +122,8 @@ theorem loadBatch_run {s : State}
   have hR' : ∀ {t : State}, VOnly (.v20 :: .v21 :: halfRegs) s t → ∀ k < 4, ∀ j < 2,
       InRegions (t.rd ++ t.wr) (t.gpr .x4 + BitVec.ofNat 64 (32 * k + 16 * j)) 16 := by
     intro t ht k hk j hj
-    rw [ht.rd, ht.wr, ht.gpr, show 32 * k + 16 * j = 16 * (2 * k + j) by omega]
-    exact hR _ (by omega)
+    rw [ht.rd, ht.wr, ht.gpr, show 32 * k + 16 * j = 16 * (2 * k + j) by omega_arith]
+    exact hR _ (by omega_arith)
   have sub : ∀ k < 4, ∀ r ∈ [VReg.v20, .v21, aReg k, bReg k], r ∈ VReg.v20 :: .v21 :: halfRegs := by decide
   obtain ⟨s₀, r₀, a₀, b₀, o₀⟩ := loadPair_run (s := s) (by decide : 0 < 4) (hR' (VOnly.refl _ _) 0 (by decide))
   have p₀ := VOnly.mono o₀ (sub 0 (by decide))
@@ -142,23 +142,23 @@ theorem loadBatch_run {s : State}
     have pres : ∀ k < 4, ∀ k' < 4, k ≠ k' → aReg k ∉ [VReg.v20, .v21, aReg k', bReg k'] ∧
         bReg k ∉ [VReg.v20, .v21, aReg k', bReg k'] := by decide
     simp only [lane]
-    rcases (by omega : n / 4 = 0 ∨ n / 4 = 1 ∨ n / 4 = 2 ∨ n / 4 = 3) with h | h | h | h <;> rw [h]
-  · rw [o₃.2 _ (pres 0 (by decide) 3 (by decide) (by decide)).1, o₂.2 _ (pres 0 (by decide) 2 (by decide) (by decide)).1, o₁.2 _ (pres 0 (by decide) 1 (by decide) (by decide)).1, a₀ _ (by omega)]
-    exact congrArg (decodeWord · 0) (congrArg _ (congrArg _ (congrArg _ (by omega))))
-  · rw [o₃.2 _ (pres 1 (by decide) 3 (by decide) (by decide)).1, o₂.2 _ (pres 1 (by decide) 2 (by decide) (by decide)).1, a₁ _ (by omega), m₀, g₀]
-    exact congrArg (decodeWord · 0) (congrArg _ (congrArg _ (congrArg _ (by omega))))
-  · rw [o₃.2 _ (pres 2 (by decide) 3 (by decide) (by decide)).1, a₂ _ (by omega), m₁, g₁, m₀, g₀]
-    exact congrArg (decodeWord · 0) (congrArg _ (congrArg _ (congrArg _ (by omega))))
-  · rw [a₃ _ (by omega), m₂, g₂, m₁, g₁, m₀, g₀]
-    exact congrArg (decodeWord · 0) (congrArg _ (congrArg _ (congrArg _ (by omega))))
-  · rw [o₃.2 _ (pres 0 (by decide) 3 (by decide) (by decide)).2, o₂.2 _ (pres 0 (by decide) 2 (by decide) (by decide)).2, o₁.2 _ (pres 0 (by decide) 1 (by decide) (by decide)).2, b₀ _ (by omega)]
-    exact congrArg (decodeWord · 4) (congrArg _ (congrArg _ (congrArg _ (by omega))))
-  · rw [o₃.2 _ (pres 1 (by decide) 3 (by decide) (by decide)).2, o₂.2 _ (pres 1 (by decide) 2 (by decide) (by decide)).2, b₁ _ (by omega), m₀, g₀]
-    exact congrArg (decodeWord · 4) (congrArg _ (congrArg _ (congrArg _ (by omega))))
-  · rw [o₃.2 _ (pres 2 (by decide) 3 (by decide) (by decide)).2, b₂ _ (by omega), m₁, g₁, m₀, g₀]
-    exact congrArg (decodeWord · 4) (congrArg _ (congrArg _ (congrArg _ (by omega))))
-  · rw [b₃ _ (by omega), m₂, g₂, m₁, g₁, m₀, g₀]
-    exact congrArg (decodeWord · 4) (congrArg _ (congrArg _ (congrArg _ (by omega))))
+    rcases (by omega_arith : n / 4 = 0 ∨ n / 4 = 1 ∨ n / 4 = 2 ∨ n / 4 = 3) with h | h | h | h <;> rw [h]
+  · rw [o₃.2 _ (pres 0 (by decide) 3 (by decide) (by decide)).1, o₂.2 _ (pres 0 (by decide) 2 (by decide) (by decide)).1, o₁.2 _ (pres 0 (by decide) 1 (by decide) (by decide)).1, a₀ _ (by omega_arith)]
+    exact congrArg (decodeWord · 0) (congrArg _ (congrArg _ (congrArg _ (by omega_arith))))
+  · rw [o₃.2 _ (pres 1 (by decide) 3 (by decide) (by decide)).1, o₂.2 _ (pres 1 (by decide) 2 (by decide) (by decide)).1, a₁ _ (by omega_arith), m₀, g₀]
+    exact congrArg (decodeWord · 0) (congrArg _ (congrArg _ (congrArg _ (by omega_arith))))
+  · rw [o₃.2 _ (pres 2 (by decide) 3 (by decide) (by decide)).1, a₂ _ (by omega_arith), m₁, g₁, m₀, g₀]
+    exact congrArg (decodeWord · 0) (congrArg _ (congrArg _ (congrArg _ (by omega_arith))))
+  · rw [a₃ _ (by omega_arith), m₂, g₂, m₁, g₁, m₀, g₀]
+    exact congrArg (decodeWord · 0) (congrArg _ (congrArg _ (congrArg _ (by omega_arith))))
+  · rw [o₃.2 _ (pres 0 (by decide) 3 (by decide) (by decide)).2, o₂.2 _ (pres 0 (by decide) 2 (by decide) (by decide)).2, o₁.2 _ (pres 0 (by decide) 1 (by decide) (by decide)).2, b₀ _ (by omega_arith)]
+    exact congrArg (decodeWord · 4) (congrArg _ (congrArg _ (congrArg _ (by omega_arith))))
+  · rw [o₃.2 _ (pres 1 (by decide) 3 (by decide) (by decide)).2, o₂.2 _ (pres 1 (by decide) 2 (by decide) (by decide)).2, b₁ _ (by omega_arith), m₀, g₀]
+    exact congrArg (decodeWord · 4) (congrArg _ (congrArg _ (congrArg _ (by omega_arith))))
+  · rw [o₃.2 _ (pres 2 (by decide) 3 (by decide) (by decide)).2, b₂ _ (by omega_arith), m₁, g₁, m₀, g₀]
+    exact congrArg (decodeWord · 4) (congrArg _ (congrArg _ (congrArg _ (by omega_arith))))
+  · rw [b₃ _ (by omega_arith), m₂, g₂, m₁, g₁, m₀, g₀]
+    exact congrArg (decodeWord · 4) (congrArg _ (congrArg _ (congrArg _ (by omega_arith))))
 
 /-! ## Storing -/
 
@@ -170,35 +170,35 @@ def outByte (v : VReg → BitVec 128) (j : Nat) : Byte :=
 theorem write16_byte (m : Mem) (p : Addr) (x : BitVec 128) {o j : Nat} (ho : o + 16 ≤ 128) (hj : j < 128) :
     m.write (p + BitVec.ofNat 64 o) 16 x (p + BitVec.ofNat 64 j) =
       if o ≤ j ∧ j < o + 16 then vbyte x (j - o) else m (p + BitVec.ofNat 64 j) := by
-  simp only [Mem.write, Offset.sub_toNat' p (show o < 2 ^ 64 by omega) (show j < 2 ^ 64 by omega)]
+  simp only [Mem.write, Offset.sub_toNat' p (show o < 2 ^ 64 by omega_arith) (show j < 2 ^ 64 by omega_arith)]
   by_cases h : o ≤ j
   · simp only [h, ite_true, true_and]
     by_cases h' : j < o + 16
-    · simp only [show j - o < 16 by omega, h', ite_true]; rfl
-    · simp only [show ¬ j - o < 16 by omega, h', ite_false]
+    · simp only [show j - o < 16 by omega_arith, h', ite_true]; rfl
+    · simp only [show ¬ j - o < 16 by omega_arith, h', ite_false]
   · simp only [h, ite_false, false_and]
-    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
 
 /-- What `rev32 (zip1/zip2 .4s B A)` holds: byte `e` of it is byte `e % 8` of
 block `2 o + e / 8` of the four in words `k` of `A` and `B`. -/
 theorem stored_byte (Bk Ak : BitVec 128) {o e : Nat} (ho : o < 2) (he : e < 16) :
     vbyte (VRevOp.eval .rev32b (VPermOp.eval (if o = 0 then .zip1 else .zip2) .s4 Bk Ak)) e =
       (encodeBlock (vword Bk (2 * o + e / 8)) (vword Ak (2 * o + e / 8))).getD (e % 8) 0 := by
-  rw [vbyte_rev32b _ he, vbyte_word _ (by omega), encodeBlock_getD _ _ (by omega)]
-  have hw : (e / 4) / 2 = e / 8 := by omega
-  rcases (by omega : o = 0 ∨ o = 1) with rfl | rfl
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true rfl), vword_zip1 _ _ (by omega), hw]
+  rw [vbyte_rev32b _ he, vbyte_word _ (by omega_arith), encodeBlock_getD _ _ (by omega_arith)]
+  have hw : (e / 4) / 2 = e / 8 := by omega_arith
+  rcases (by omega_arith : o = 0 ∨ o = 1) with rfl | rfl
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true rfl), vword_zip1 _ _ (by omega_arith), hw]
     by_cases h : e % 8 < 4
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega)), ite_eq_left_of_eq_true _ _ (eq_true h),
-        show 3 - e % 4 = 3 - e % 8 by omega, show 2 * 0 + e / 8 = e / 8 by omega]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false h),
-        show 3 - e % 4 = 7 - e % 8 by omega, show 2 * 0 + e / 8 = e / 8 by omega]
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by decide)), vword_zip2 _ _ (by omega), hw]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)), ite_eq_left_of_eq_true _ _ (eq_true h),
+        show 3 - e % 4 = 3 - e % 8 by omega_arith, show 2 * 0 + e / 8 = e / 8 by omega_arith]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false h),
+        show 3 - e % 4 = 7 - e % 8 by omega_arith, show 2 * 0 + e / 8 = e / 8 by omega_arith]
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by decide)), vword_zip2 _ _ (by omega_arith), hw]
     by_cases h : e % 8 < 4
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega)), ite_eq_left_of_eq_true _ _ (eq_true h),
-        show 3 - e % 4 = 3 - e % 8 by omega, show 2 * 1 + e / 8 = 2 + e / 8 by omega]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false h),
-        show 3 - e % 4 = 7 - e % 8 by omega, show 2 * 1 + e / 8 = 2 + e / 8 by omega]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)), ite_eq_left_of_eq_true _ _ (eq_true h),
+        show 3 - e % 4 = 3 - e % 8 by omega_arith, show 2 * 1 + e / 8 = 2 + e / 8 by omega_arith]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false h),
+        show 3 - e % 4 = 7 - e % 8 by omega_arith, show 2 * 1 + e / 8 = 2 + e / 8 by omega_arith]
 
 /-- Only the memory and the vector registers `vs` change. -/
 structure MOnly (vs : List VReg) (s s' : State) : Prop where
@@ -239,9 +239,9 @@ theorem storePair_run {s : State} {k : Nat} (hk : k < 4)
   obtain ⟨s₄, r₄, v₄, o₄⟩ := vop_run (t := s₃) (.rev .rev32b .v21 .v21) .v21 _ (exec_rev32b _ _ _)
   have o₁₄ : VOnly [.v20, .v21] s s₄ := (((VOnly.mono o₁ (by simp)).trans (VOnly.mono o₂ (by simp))).trans
     (VOnly.mono o₃ (by simp))).trans (VOnly.mono o₄ (by simp))
-  obtain ⟨s₅, r₅, m₅, o₅⟩ := strq_run (t := s₄) .v20 .x4 (off := 32 * k) (by omega)
+  obtain ⟨s₅, r₅, m₅, o₅⟩ := strq_run (t := s₄) .v20 .x4 (off := 32 * k) (by omega_arith)
     (by rw [o₁₄.wr, o₁₄.gpr]; simpa using hW 0 (by decide))
-  obtain ⟨s₆, r₆, m₆, o₆⟩ := strq_run (t := s₅) .v21 .x4 (off := 32 * k + 16) (by omega)
+  obtain ⟨s₆, r₆, m₆, o₆⟩ := strq_run (t := s₅) .v21 .x4 (off := 32 * k + 16) (by omega_arith)
     (by rw [o₅.wr, o₅.gpr, o₁₄.wr, o₁₄.gpr]; exact hW 1 (by decide))
   -- the values stored
   have x20 : s₄.v .v20 = VRevOp.eval .rev32b (VPermOp.eval .zip1 .s4 (s.v (bReg k)) (s.v (aReg k))) := by
@@ -254,33 +254,33 @@ theorem storePair_run {s : State} {k : Nat} (hk : k < 4)
   have fr : Frame [⟨s.gpr .x4, 128⟩] s.mem s₆.mem := by
     rw [m₆, m₅, g₅', g₄', o₁₄.mem]
     exact ((Frame.refl _ _).write (List.mem_singleton.mpr rfl) _
-      (Offset.contains_base _ (by omega) (by omega))).write (List.mem_singleton.mpr rfl) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_arith) (by omega_arith))).write (List.mem_singleton.mpr rfl) _
+      (Offset.contains_base _ (by omega_arith) (by omega_arith))
   refine ⟨s₆, cat_run r₁ (cat_run r₂ (cat_run r₃ (cat_run r₄ (cat_run r₅ r₆)))), fun j hj => ?_, fr,
     (MOnly.ofV o₁₄).trans (o₅.trans o₆ |>.trans ⟨rfl, fun _ _ => rfl⟩ |> fun h => ⟨h.eq, fun r _ => h.v r (by simp)⟩)⟩
   have g₄ : s₄.gpr = s.gpr := o₁₄.gpr
   have g₅ : s₅.gpr = s.gpr := by rw [o₅.gpr, g₄]
   rw [m₆, g₅, show s.gpr .x4 + BitVec.ofNat 64 (32 * k + 16) = s.gpr .x4 + BitVec.ofNat 64 (32 * k + 16) from rfl,
-    write16_byte _ _ _ (by omega) hj, m₅, g₄, write16_byte _ _ _ (by omega) hj, o₁₄.mem, x21, x20]
+    write16_byte _ _ _ (by omega_arith) hj, m₅, g₄, write16_byte _ _ _ (by omega_arith) hj, o₁₄.mem, x21, x20]
   have lane_k : ∀ (R : Nat → VReg) (e : Nat), e < 16 → ∀ o < 2,
       vword (s.v (R k)) (2 * o + e / 8) = lane s.v R (4 * k + (2 * o + e / 8)) := by
     intro R e he o ho
     simp only [lane]
-    rw [show (4 * k + (2 * o + e / 8)) / 4 = k by omega, show (4 * k + (2 * o + e / 8)) % 4 = 2 * o + e / 8 by omega]
+    rw [show (4 * k + (2 * o + e / 8)) / 4 = k by omega_arith, show (4 * k + (2 * o + e / 8)) % 4 = 2 * o + e / 8 by omega_arith]
   by_cases h₂ : 32 * k + 16 ≤ j ∧ j < 32 * k + 16 + 16
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h₂), ite_eq_left_of_eq_true _ _ (eq_true (by omega)),
-      show VPermOp.zip2 = (if 1 = 0 then .zip1 else .zip2) from rfl, stored_byte _ _ (by decide) (by omega),
-      lane_k bReg _ (by omega) 1 (by decide), lane_k aReg _ (by omega) 1 (by decide), outByte,
-      show 4 * k + (2 * 1 + (j - (32 * k + 16)) / 8) = j / 8 by omega,
-      show (j - (32 * k + 16)) % 8 = j % 8 by omega]
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h₂), ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)),
+      show VPermOp.zip2 = (if 1 = 0 then .zip1 else .zip2) from rfl, stored_byte _ _ (by decide) (by omega_arith),
+      lane_k bReg _ (by omega_arith) 1 (by decide), lane_k aReg _ (by omega_arith) 1 (by decide), outByte,
+      show 4 * k + (2 * 1 + (j - (32 * k + 16)) / 8) = j / 8 by omega_arith,
+      show (j - (32 * k + 16)) % 8 = j % 8 by omega_arith]
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h₂)]
     by_cases h₁ : 32 * k ≤ j ∧ j < 32 * k + 16
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h₁), ite_eq_left_of_eq_true _ _ (eq_true (by omega)),
-        show VPermOp.zip1 = (if 0 = 0 then .zip1 else .zip2) from rfl, stored_byte _ _ (by decide) (by omega),
-        lane_k bReg _ (by omega) 0 (by decide), lane_k aReg _ (by omega) 0 (by decide), outByte,
-        show 4 * k + (2 * 0 + (j - 32 * k) / 8) = j / 8 by omega,
-        show (j - 32 * k) % 8 = j % 8 by omega]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h₁), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h₁), ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)),
+        show VPermOp.zip1 = (if 0 = 0 then .zip1 else .zip2) from rfl, stored_byte _ _ (by decide) (by omega_arith),
+        lane_k bReg _ (by omega_arith) 0 (by decide), lane_k aReg _ (by omega_arith) 0 (by decide), outByte,
+        show 4 * k + (2 * 0 + (j - 32 * k) / 8) = j / 8 by omega_arith,
+        show (j - 32 * k) % 8 = j % 8 by omega_arith]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h₁), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
 
 theorem storePair_eq : (List.range 4).flatMap (storePair .x4) =
     storePair .x4 0 ++ (storePair .x4 1 ++ (storePair .x4 2 ++ (storePair .x4 3 ++ []))) := rfl
@@ -289,11 +289,11 @@ theorem outByte_congr {v v' : VReg → BitVec 128} (h : ∀ r ∈ halfRegs, v' r
     outByte v' j = outByte v j := by
   have ha : ∀ n, lane v' aReg n = lane v aReg n := fun n => by
     simp only [lane]; rw [h _ (by
-      rcases (by omega : n / 4 = 0 ∨ n / 4 = 1 ∨ n / 4 = 2 ∨ n / 4 = 3 ∨ 4 ≤ n / 4) with e | e | e | e | e <;>
+      rcases (by omega_arith : n / 4 = 0 ∨ n / 4 = 1 ∨ n / 4 = 2 ∨ n / 4 = 3 ∨ 4 ≤ n / 4) with e | e | e | e | e <;>
         simp [e, aReg, halfRegs])]
   have hb : ∀ n, lane v' bReg n = lane v bReg n := fun n => by
     simp only [lane]; rw [h _ (by
-      rcases (by omega : n / 4 = 0 ∨ n / 4 = 1 ∨ n / 4 = 2 ∨ n / 4 = 3 ∨ 4 ≤ n / 4) with e | e | e | e | e <;>
+      rcases (by omega_arith : n / 4 = 0 ∨ n / 4 = 1 ∨ n / 4 = 2 ∨ n / 4 = 3 ∨ 4 ≤ n / 4) with e | e | e | e | e <;>
         simp [e, bReg, halfRegs])]
   simp only [outByte, ha, hb]
 
@@ -306,8 +306,8 @@ theorem storeBatch_run {s : State}
   have hW' : ∀ {t : State}, MOnly [.v20, .v21] s t → ∀ k < 4, ∀ j < 2,
       InRegions t.wr (t.gpr .x4 + BitVec.ofNat 64 (32 * k + 16 * j)) 16 := by
     intro t ht k hk j hj
-    rw [ht.wr, ht.gpr, show 32 * k + 16 * j = 16 * (2 * k + j) by omega]
-    exact hW _ (by omega)
+    rw [ht.wr, ht.gpr, show 32 * k + 16 * j = 16 * (2 * k + j) by omega_arith]
+    exact hW _ (by omega_arith)
   have hh : ∀ {t : State}, MOnly [.v20, .v21] s t → ∀ r ∈ halfRegs, t.v r = s.v r := fun ht r hr =>
     ht.v r (by revert r; decide)
   obtain ⟨s₀, r₀, m₀, f₀, o₀⟩ := storePair_run (s := s) (by decide : 0 < 4) (hW' ⟨rfl, fun _ _ => rfl⟩ 0 (by decide))
@@ -332,7 +332,7 @@ theorem storeBatch_run {s : State}
         · rfl
         · rw [e₀]; split
           · rfl
-          · omega
+          · omega_arith
   refine ⟨s₃, by rw [storeBatch, storePair_eq]; exact cat_run r₀ (cat_run r₁ (cat_run r₂ (cat_run r₃ runBlock_nil))),
     mem, ?_, p₃⟩
   rw [g₂] at f₃; rw [g₁] at f₂; rw [g₀] at f₁
@@ -384,8 +384,8 @@ theorem batch_ok (up : Bool) {s : State} (hS : SchedIn s .x0) (hc : Consts s)
   have K₁ : scheduleAt s₁.mem (s₁.gpr .x0) = K := by rw [o₁.mem, o₁.gpr]
   refine ⟨fun n hn => ?_, fun r h5 h6 h7 => ?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩
   · refine blockAt_eq _ _ _ fun i hi => ?_
-    rw [← g₂, Offset.add_add, m₃ _ (by omega), outByte, show (8 * n + i) / 8 = n by omega,
-      show (8 * n + i) % 8 = i by omega, (hl n hn).1, (hl n hn).2, K₁, a₁ n hn, b₁ n hn, ← blockOut_eq, g₂]
+    rw [← g₂, Offset.add_add, m₃ _ (by omega_arith), outByte, show (8 * n + i) / 8 = n by omega_arith,
+      show (8 * n + i) % 8 = i by omega_arith, (hl n hn).1, (hl n hn).2, K₁, a₁ n hn, b₁ n hn, ← blockOut_eq, g₂]
   · rw [o₃.gpr, o₂.g _ (by simp; exact ⟨h5, h6, h7⟩), o₁.gpr]
   · rw [o₃.rd, o₂.rd, o₁.rd]
   · rw [o₃.wr, o₂.wr, o₁.wr]

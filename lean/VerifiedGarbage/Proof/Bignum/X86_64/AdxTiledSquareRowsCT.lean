@@ -47,11 +47,11 @@ theorem init_fw {ps : List (Nat × Nat)} (L : RowLayout) (s : State) (h : RowSta
     intro x hx
     apply o x
     have := hx (8*sFn 12,32) (by simp [ranges])
-    simp only [sFn] at *; omega
+    simp only [sFn] at *; omega_arith
   have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.i := by
     rw [o.word (by decide) (by decide)]; exact idx
   exact ⟨tail,j0,⟨mi,⟨hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,frame_hdr hg.hdr f⟩,frame_ops hv f,it,
-    by rw [j0]; exact j⟩,c,by rw [o.word (by unfold handOffset sFn; omega) (by unfold handOffset sFn; omega)]; exact hh⟩
+    by rw [j0]; exact j⟩,c,by rw [o.word (by unfold handOffset sFn; omega_arith) (by unfold handOffset sFn; omega_arith)]; exact hh⟩
 
 theorem inner_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
@@ -61,9 +61,9 @@ theorem inner_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha
   simp only [Nat.mul_zero,Nat.add_zero] at jdx
   refine WP.mono (AdxRect8.rowS_ok hg.scr hg.rdi hg.hdr hv pa pa L.hZ L.hw L.hi ha ha ha1 ha2 ha1 ha2
     L.hwN L.hn idx jdx (by rw [carry]; rfl) rfl hh) fun t ht => ?_
-  have ptr := ht.endPtr.resolve_left (by have := L.hn; omega)
+  have ptr := ht.endPtr.resolve_left (by have := L.hn; omega_arith)
   have wn := L.hwN
-  exact ⟨⟨⟨mi,ht.scr,ht.rdi,ht.hdr⟩,ht.indexI,by simpa only [show L.i+L.j₀+8*L.n=L.i+L.w by omega] using ptr⟩,tail⟩
+  exact ⟨⟨⟨mi,ht.scr,ht.rdi,ht.hdr⟩,ht.indexI,by simpa only [show L.i+L.j₀+8*L.n=L.i+L.w by omega_arith] using ptr⟩,tail⟩
 
 abbrev TailReadyS (L : RowLayout) (s : State) : Prop := TailReady L s ∧ ∃ q, L.w=L.i+8+8*q
 
@@ -72,7 +72,7 @@ theorem lastTest_fw (L : RowLayout) (s : State) (h : TailReadyS L s) :
       (fun t => TailReadyS L t ∧ isa.eval .e t = some (decide (L.i+16=L.w))) := by
   obtain ⟨⟨⟨mi,hg⟩,idx,ptr⟩,q⟩ := h
   have hw := L.hw; have hi := L.hi
-  refine WP.mono (lastTest_ok hg.scr hg.rdi hg.hdr L.hZ (by omega) (by omega) idx) fun t ⟨mt,zt,kt⟩ => ?_
+  refine WP.mono (lastTest_ok hg.scr hg.rdi hg.hdr L.hZ (by omega_arith) (by omega_arith) idx) fun t ⟨mt,zt,kt⟩ => ?_
   exact ⟨⟨⟨⟨mi,hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,mt ▸ hg.hdr⟩,mt ▸ idx,
     (kt.gpr (by decide)).trans ptr⟩,q⟩,by simp only [eval,zt]⟩
 
@@ -94,7 +94,7 @@ theorem tailS_fw (L : RowLayout) (s : State) (h : TailReadyS L s) :
   obtain ⟨⟨⟨mi,hg⟩,idx,ptr⟩,q,hq⟩ := h
   have hw := L.hw; have hi := L.hi
   unfold AdxTiledSquare.tail
-  refine WP.seq (WP.mono (lastTest_ok hg.scr hg.rdi hg.hdr L.hZ (by omega) (by omega) idx)
+  refine WP.seq (WP.mono (lastTest_ok hg.scr hg.rdi hg.hdr L.hZ (by omega_arith) (by omega_arith) idx)
     fun y ⟨my,zy,ky⟩ => ?_)
   have sy := hg.scr.congr ky.2.2
   have dy : y.gpr .rdi = L.B := (ky.gpr (by decide)).trans hg.rdi
@@ -153,10 +153,10 @@ theorem row_loop_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) 
   intro s t ts tt s' t' ⟨⟨L,k⟩,⟨hk,⟨mi,gs,vs,is⟩,hs⟩,⟨_,⟨mj,gt,vt,it⟩,ht⟩⟩ es et
   dsimp only at hk
   have wn := L.hwN
-  let R : AdxRect8.RowLayout := ⟨L.B,L.Z,L.w,8*k,8*k+8,L.n-k-1,L.hZ,L.hw,by omega,by omega,by omega⟩
+  let R : AdxRect8.RowLayout := ⟨L.B,L.Z,L.w,8*k,8*k+8,L.n-k-1,L.hZ,L.hw,by omega_arith,by omega_arith,by omega_arith⟩
   apply row_ct pa ha ha1 ha2 hS s t ts tt s' t' ?_ es et
-  exact ⟨R,⟨⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mi,gs⟩,vs,is,hs⟩,
-    ⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mj,gt⟩,vt,it,ht⟩
+  exact ⟨R,⟨⟨L.n-k-1,by dsimp [R]; omega_arith⟩,rfl,⟨mi,gs⟩,vs,is,hs⟩,
+    ⟨L.n-k-1,by dsimp [R]; omega_arith⟩,rfl,⟨mj,gt⟩,vt,it,ht⟩
 
 theorem row_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
@@ -167,18 +167,18 @@ theorem row_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) 
   obtain ⟨⟨mi,hg,hv,idx⟩,hh⟩ := h
   have wn := L.hwN
   refine WP.mono (row_ok hg.scr hg.rdi hg.hdr hv pa L.hZ L.hw
-    (by omega : L.w=8*k+8+8*(L.n-k-1)) (by omega) ha ha1 ha2 idx rfl hh)
+    (by omega_arith : L.w=8*k+8+8*(L.n-k-1)) (by omega_arith) ha ha1 ha2 idx rfl hh)
     fun t ⟨zt,it,σt,_,ht,ft,kt⟩ => ?_
   have good : Good t L.B L.Z L.w mi := ⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,ht⟩
   have vt := frame_ops hv ft
   refine ⟨?_,fun _ => ⟨⟨mi,good,vt,?_⟩,σt⟩,fun _ => ⟨⟨mi,good⟩,vt⟩⟩
   · simp only [eval,zt,Option.map_some]
     by_cases he : k+1=L.n-1
-    · simp only [show 8*k+8=L.w-8 by omega,decide_true,Bool.not_true,
-        show ¬(k+1<L.n-1) by omega,decide_false]
-    · simp only [show ¬(8*k+8=L.w-8) by omega,decide_false,Bool.not_false,
-        show k+1<L.n-1 by omega,decide_true]
-  · simpa only [show 8*(k+1)=8*k+8 by omega] using it
+    · simp only [show 8*k+8=L.w-8 by omega_arith,decide_true,Bool.not_true,
+        show ¬(k+1<L.n-1) by omega_arith,decide_false]
+    · simp only [show ¬(8*k+8=L.w-8) by omega_arith,decide_false,Bool.not_false,
+        show k+1<L.n-1 by omega_arith,decide_true]
+  · simpa only [show 8*(k+1)=8*k+8 by omega_arith] using it
 
 theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : StartGood ps L s) :
     WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax]) s
@@ -186,9 +186,9 @@ theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Star
   obtain ⟨h1,⟨mi,hg⟩,hv⟩ := h
   have hZ := L.hZ
   have iZ : 8*sFn 12+8 ≤ L.Z := by
-    have := hdr_lt_slot L.w 8 (show sFn 12<32 by decide); omega
+    have := hdr_lt_slot L.w 8 (show sFn 12<32 by decide); omega_arith
   have i15 : 8*sFn 15+8 ≤ L.Z := by
-    have := hdr_lt_slot L.w 8 (show sFn 15<32 by decide); omega
+    have := hdr_lt_slot L.w 8 (show sFn 15<32 by decide); omega_arith
   have nowrap := hg.scr.nowrap
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem=(s.mem.writeW (off L.B (8*sFn 12)) (0 : BitVec 64)).writeW
     (off L.B (8*sFn 15)) (0 : BitVec 64)) ?_ rfl) fun t ⟨mt,kt⟩ => ?_
@@ -200,8 +200,8 @@ theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Star
   have ft : Frm L.B (ranges L.w) s.mem t.mem := by
     intro x hx
     have := hx (8*sFn 12,32) (by simp [ranges])
-    exact (o2 x (by simp only [sFn] at *; omega)).trans (o1 x (by simp only [sFn] at *; omega))
-  refine ⟨by omega,⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,frame_hdr hg.hdr ft⟩,
+    exact (o2 x (by simp only [sFn] at *; omega_arith)).trans (o1 x (by simp only [sFn] at *; omega_arith))
+  refine ⟨by omega_arith,⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,frame_hdr hg.hdr ft⟩,
     frame_ops hv ft,?_⟩,?_⟩
   · rw [o2.word (by decide) (by decide),word_writeW_self]; rfl
   · rw [mt,show AdxRect8.handOffset = 8*sFn 15 from rfl,word_writeW_self]; decide
@@ -249,7 +249,7 @@ theorem init1_fw {ps : List (Nat × Nat)} (L : RowLayout) (s : State) (h : RowSt
     intro x hx
     apply o x
     have := hx (8*sFn 12,32) (by simp [ranges])
-    simp only [sFn] at *; omega
+    simp only [sFn] at *; omega_arith
   have hh : Hdr t.mem L.B L.w mi := frame_hdr hg.hdr f
   have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.i := by
     rw [o.word (by decide) (by decide)]; exact idx
@@ -264,9 +264,9 @@ theorem inner1_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (h
   simp only [Nat.mul_zero,Nat.add_zero] at jdx
   refine WP.mono (AdxRect8.row_ok hg.scr hg.rdi hg.hdr hv pa pa L.hZ L.hw L.hi ha ha ha1 ha2 ha1 ha2
     L.hwN L.hn idx jdx (by rw [carry]; rfl)) fun t ht => ?_
-  have ptr := ht.endPtr.resolve_left (by have := L.hn; omega)
+  have ptr := ht.endPtr.resolve_left (by have := L.hn; omega_arith)
   have wn := L.hwN
-  exact ⟨⟨⟨mi,ht.scr,ht.rdi,ht.hdr⟩,ht.indexI,by simpa only [show L.i+L.j₀+8*L.n=L.i+L.w by omega] using ptr⟩,tail⟩
+  exact ⟨⟨⟨mi,ht.scr,ht.rdi,ht.hdr⟩,ht.indexI,by simpa only [show L.i+L.j₀+8*L.n=L.i+L.w by omega_arith] using ptr⟩,tail⟩
 
 theorem row1_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
@@ -314,10 +314,10 @@ theorem row1_loop_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
   intro s t ts tt s' t' ⟨⟨L,k⟩,⟨hk,mi,gs,vs,is⟩,⟨_,mj,gt,vt,it⟩⟩ es et
   dsimp only at hk
   have wn := L.hwN
-  let R : AdxRect8.RowLayout := ⟨L.B,L.Z,L.w,8*k,8*k+8,L.n-k-1,L.hZ,L.hw,by omega,by omega,by omega⟩
+  let R : AdxRect8.RowLayout := ⟨L.B,L.Z,L.w,8*k,8*k+8,L.n-k-1,L.hZ,L.hw,by omega_arith,by omega_arith,by omega_arith⟩
   apply row1_ct pa ha ha1 ha2 hS s t ts tt s' t' ?_ es et
-  exact ⟨R,⟨⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mi,gs⟩,vs,is⟩,
-    ⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mj,gt⟩,vt,it⟩
+  exact ⟨R,⟨⟨L.n-k-1,by dsimp [R]; omega_arith⟩,rfl,⟨mi,gs⟩,vs,is⟩,
+    ⟨L.n-k-1,by dsimp [R]; omega_arith⟩,rfl,⟨mj,gt⟩,vt,it⟩
 
 theorem row1_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
@@ -328,23 +328,23 @@ theorem row1_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
   obtain ⟨mi,hg,hv,idx⟩ := h
   have wn := L.hwN
   refine WP.mono (row1_ok hg.scr hg.rdi hg.hdr hv pa L.hZ L.hw
-    (by omega : L.w=8*k+8+8*(L.n-k-1)) (by omega) ha ha1 ha2 idx)
+    (by omega_arith : L.w=8*k+8+8*(L.n-k-1)) (by omega_arith) ha ha1 ha2 idx)
     fun t ⟨zt,it,_,ht,ft,kt⟩ => ?_
   have good : Good t L.B L.Z L.w mi := ⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,ht⟩
   have vt := frame_ops hv ft
   refine ⟨?_,fun _ => ⟨mi,good,vt,?_⟩,fun _ => ⟨⟨mi,good⟩,vt⟩⟩
   · simp only [eval,zt,Option.map_some]
     by_cases he : k+1=L.n-1
-    · simp only [show 8*k+8=L.w-8 by omega,decide_true,Bool.not_true,
-        show ¬(k+1<L.n-1) by omega,decide_false]
-    · simp only [show ¬(8*k+8=L.w-8) by omega,decide_false,Bool.not_false,
-        show k+1<L.n-1 by omega,decide_true]
-  · simpa only [show 8*(k+1)=8*k+8 by omega] using it
+    · simp only [show 8*k+8=L.w-8 by omega_arith,decide_true,Bool.not_true,
+        show ¬(k+1<L.n-1) by omega_arith,decide_false]
+    · simp only [show ¬(8*k+8=L.w-8) by omega_arith,decide_false,Bool.not_false,
+        show k+1<L.n-1 by omega_arith,decide_true]
+  · simpa only [show 8*(k+1)=8*k+8 by omega_arith] using it
 
 theorem rows1_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : StartGood ps L s) :
     WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) s
       (fun t => 0<L.n-1 ∧ LoopState ps L 0 t) :=
-  WP.mono (AdxTiledProduct.rows_init_fw L s h.2) fun _ ht => ⟨by have := h.1; omega,ht.2⟩
+  WP.mono (AdxTiledProduct.rows_init_fw L s h.2) fun _ ht => ⟨by have := h.1; omega_arith,ht.2⟩
 
 theorem rows1_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)

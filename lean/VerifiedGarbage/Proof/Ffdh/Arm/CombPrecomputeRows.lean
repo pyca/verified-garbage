@@ -23,10 +23,7 @@ theorem combRowsStep_ok (s : State) {m : Nat} (large : 5≤m) (fit : m<2^32)
     exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) large
   have val : (BitVec.ofNat 32 (m-5)).toNat=m-5 := by
     exact Nat.mod_eq_of_lt (by omega)
-  refine withRest (c := .block rowsStep) [.r3,.r6,.r7] ?_ (by
-    intro r hr i hi
-    simp only [instrs,rowsStep,List.mem_cons,List.not_mem_nil,or_false] at hi
-    rcases hi with rfl|rfl|rfl|rfl|rfl <;> simp [clobbers,dstOf] at * <;> grind) rfl
+  refine withRest_all (c := .block rowsStep) [.r3,.r6,.r7] ?_ (by rfl) rfl
   unfold rowsStep
   ffrun [value,zero,sub,val]
   by_cases next : 5≤m-5
@@ -78,11 +75,8 @@ theorem combRowsCount_ok (s : State) {base : BitVec 32} {len N : Nat}
   have init : WP isa (.block [.dp .add .r3 .r1 (.imm 4),.mov .r6 (.imm 0),.mov .r2 (.imm 0)]) s fun u =>
       (u.gpr .r3=BitVec.ofNat 32 (N+4) ∧ u.gpr .r6=0 ∧ u.gpr .r2=0 ∧ u.mem=s.mem) ∧
       Rest [.r2,.r3,.r6] s u := by
-    refine withRest (c := .block [.dp .add .r3 .r1 (.imm 4),.mov .r6 (.imm 0),.mov .r2 (.imm 0)])
-      [.r2,.r3,.r6] ?_ (by
-        intro r hr i hi
-        simp only [instrs,List.mem_cons,List.not_mem_nil,or_false] at hi
-        rcases hi with rfl|rfl|rfl <;> simp [clobbers,dstOf] at * <;> grind) rfl
+    refine withRest_all (c := .block [.dp .add .r3 .r1 (.imm 4),.mov .r6 (.imm 0),.mov .r2 (.imm 0)])
+      [.r2,.r3,.r6] ?_ (by rfl) rfl
     ffrun [value]
     exact (BitVec.ofNat_add N 4).symm
   rw [rowsCount,WP.seq_iff]

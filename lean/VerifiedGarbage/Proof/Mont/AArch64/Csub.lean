@@ -50,7 +50,7 @@ theorem sub_borrow (a b : BitVec 64) (c : Bool) :
   have := Word64.subCarry_value a b c
   generalize Word64.carryOut a (~~~b) c = co at this ⊢
   cases c <;> cases co <;> simp only [Bool.not_true, Bool.not_false, Bool.toNat_true,
-    Bool.toNat_false] at this ⊢ <;> omega
+    Bool.toNat_false] at this ⊢ <;> omega_arith
 
 /-- The registers for the difference. -/
 abbrev dPool : List Reg := [.x1, .x3, .x4, .x5, .x6, .x16, .x17, .x24, .x25]
@@ -108,11 +108,11 @@ theorem diffsRSbc_ok {size : Nat} : ∀ (ts ds : List Reg) {s : State} {base : A
     have hdP := hd.2 d (List.mem_cons_self ..)
     rw [diffsR, WP.block_append_iff]
     refine WP.mono (diffR1_ok hs t d ht2 false (c := s.c) rfl (mo := mo)
-      (by omega) hmo8) fun s₁ ⟨e₁, k₁⟩ => ?_
+      (by omega_arith) hmo8) fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨by decide, Ne.symm (dPool_ne d hdP).2.2⟩)
-    refine WP.mono (diffsRSbc_ok ts ds hs₁ (mo := mo + 8) (by omega) (by omega) (by omega) hf.tail
+    refine WP.mono (diffsRSbc_ok ts ds hs₁ (mo := mo + 8) (by omega_arith) (by omega_arith) (by omega_arith) hf.tail
       hd.tail) fun s₂ ⟨e₂, k₂⟩ => ?_
     have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.gpr q (by
       have hq' := hf.tail.2 q hq
@@ -125,7 +125,7 @@ theorem diffsRSbc_ok {size : Nat} : ∀ (ts ds : List Reg) {s : State} {base : A
     refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
     simp only [wordsVal, regsVal, List.length_cons, pow64_succ, hd₂]
     rw [Nat.mul_assoc]
-    omega
+    omega_arith
 
 /-- The difference of the words `t :: ts` and the words at `mo` into `ds`, and
 its borrow `!c` (`c` the carry flag after it). -/
@@ -145,11 +145,11 @@ theorem diffsR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hdP := hd.2 d (List.mem_cons_self ..)
   rw [diffsR, WP.block_append_iff]
   refine WP.mono (diffR1_ok hs t d ht2 true (c := true) rfl (mo := mo)
-    (by omega) hmo8) fun s₁ ⟨e₁, k₁⟩ => ?_
+    (by omega_arith) hmo8) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
     exact ⟨by decide, Ne.symm (dPool_ne d hdP).2.2⟩)
-  refine WP.mono (diffsRSbc_ok ts ds' hs₁ (mo := mo + 8) (by omega) (by omega) (by omega) hf.tail
+  refine WP.mono (diffsRSbc_ok ts ds' hs₁ (mo := mo + 8) (by omega_arith) (by omega_arith) (by omega_arith) hf.tail
     hd.tail) fun s₂ ⟨e₂, k₂⟩ => ?_
   have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.gpr q (by
     have hq' := hf.tail.2 q hq
@@ -163,7 +163,7 @@ theorem diffsR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   simp only [wordsVal, regsVal, pow64_succ, hd₂]
   simp only [Bool.not_true, Bool.toNat_false, Nat.add_zero] at e₁
   rw [Nat.mul_assoc]
-  omega
+  omega_arith
 
 /-! ## The borrow and the selection -/
 
@@ -171,9 +171,9 @@ theorem borrow_flag (x : Nat) (c : Bool) (hx : x < 2 ^ 64) :
     decide (2 ^ 64 ≤ x + (2 ^ 64 - 1) + c.toNat) = !decide (x < (!c).toNat) := by
   cases c
   · by_cases h : x < 1
-    · rw [decide_eq_false (by simp only [Bool.toNat_false]; omega), decide_eq_true (by simpa using h)]; rfl
-    · rw [decide_eq_true (by simp only [Bool.toNat_false]; omega), decide_eq_false (by simpa using h)]; rfl
-  · rw [decide_eq_true (by simp only [Bool.toNat_true]; omega), decide_eq_false (by simp)]; rfl
+    · rw [decide_eq_false (by simp only [Bool.toNat_false]; omega_arith), decide_eq_true (by simpa using h)]; rfl
+    · rw [decide_eq_true (by simp only [Bool.toNat_false]; omega_arith), decide_eq_false (by simpa using h)]; rfl
+  · rw [decide_eq_true (by simp only [Bool.toNat_true]; omega_arith), decide_eq_false (by simp)]; rfl
 
 /-- The top word less the borrow `!c`: the carry is then set exactly if it
 does not borrow. -/
@@ -241,16 +241,16 @@ theorem csubR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
       Keeps (.x2 :: .x17 :: ts ++ dRegs M.n) s s' := by
   obtain ⟨t, ts', rfl⟩ : ∃ t ts', ts = t :: ts' := by
     cases ts with
-    | nil => simp at hlen; omega
+    | nil => simp at hlen; omega_arith
     | cons t ts' => exact ⟨t, ts', rfl⟩
   have hft := hf.tail
   have htop := hf.head
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at htop
   obtain ⟨hD, hDl⟩ := dRegs_ok M.n h7
-  have hDl' := hDl (by omega)
+  have hDl' := hDl (by omega_arith)
   have hmX : m < 2 ^ (64 * M.n) := hm ▸ wordsVal_lt _ _ _ _
   rw [csubR, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (diffsR_ok hs (mo := M.mo) (ds := dRegs M.n) (by rw [hlen, hDl']) (by rw [hlen]; omega)
+  refine WP.mono (diffsR_ok hs (mo := M.mo) (ds := dRegs M.n) (by rw [hlen, hDl']) (by rw [hlen]; omega_arith)
     hmo8 hft hD) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by
     intro h

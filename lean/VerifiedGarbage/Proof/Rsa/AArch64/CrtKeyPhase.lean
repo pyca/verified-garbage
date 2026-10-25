@@ -202,7 +202,7 @@ theorem phQIC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
   have hk1 : 1 ≤ (I.ql + 7) / 8 := by have := L.ql1; omega_using [this]
   have hk : (I.ql + 7) / 8 < wW I.cap := by have := L.qcap; simp only [wW, wk]; omega_using [this]
   refine WP.mono (ckModOneTop_ok h₅ (m₅.trans (m₄.trans m₃)) O₅ (topQ_ok h₅.args.ql
-    (by have := L.ql2; have := L.k2; omega) (by have := h₅.ws.h256; omega_using [this])) hk1 hk)
+    (by have := L.ql2; have := L.k2; omega_arith) (by have := h₅.ws.h256; omega_using [this])) hk1 hk)
     fun t ⟨ht, ⟨r, hr, mt⟩, ot⟩ => ?_
   have M₅ : I.av s₅.mem aM = I.P := by
     rw [o₅ aM (by decide) (by decide), o₄ aM (by decide) (by decide), o₃ aM (by decide), M₂]

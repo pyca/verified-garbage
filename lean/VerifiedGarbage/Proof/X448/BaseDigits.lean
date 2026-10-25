@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.BaseTable
 public import Mathlib.Algebra.Module.NatInt
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The fixed-base comb's digits and partial sums
@@ -52,7 +53,7 @@ theorem comb_partial (S : Nat) : ∀ n, 16 * oddSum S n + evenSum S n = S % 256 
     rw [hm, ← ih, hd, pow_256]
     generalize S / 16 ^ (2 * n) = x
     generalize 16 ^ (2 * n) = y
-    have : x % 256 = x % 16 + 16 * (x / 16 % 16) := by omega
+    have : x % 256 = x % 16 + 16 * (x / 16 % 16) := by omega_arith
     rw [this]; ring
 
 /-- `Σ_{j < c} 256^j`. -/
@@ -112,14 +113,14 @@ theorem nib_bits (S i : Nat) :
     rw [h16, Nat.div_div_eq_div_mul, ← Nat.pow_add]
   rw [nib, e 3, e 2, e 1, ← Nat.add_zero (4 * i), e 0]
   simp only [Nat.pow_zero, Nat.div_one, Nat.reducePow]
-  omega
+  omega_arith
 
 theorem nib_lt (S i : Nat) : nib S i < 16 := Nat.mod_lt _ (by decide)
 
 /-- The magnitude of the digit `n - 8`. -/
 def mag (n : Nat) : Nat := if n < 8 then 8 - n else n - 8
 
-theorem mag_lt {n : Nat} (hn : n < 16) : mag n < 9 := by unfold mag; split <;> omega
+theorem mag_lt {n : Nat} (hn : n < 16) : mag n < 9 := by unfold mag; split <;> omega_arith
 
 /-- The affine point `(x, y)` negated: `(-x, y)`. -/
 def negAff (q : Fe × Fe) : Fe × Fe := (0 - q.1, q.2)
@@ -135,12 +136,12 @@ theorem baseEntry_ok (j n : Nat) (hj : j < 57) (hn : n < 16) :
   by_cases hlt : n < 8
   · simp only [hlt, ↓reduceIte, basePt_neg]
     have e : ((n : ℤ) - 8) * 256 ^ j = -(((mag n * 256 ^ j : Nat) : ℤ)) := by
-      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : n ≤ 8)]; ring
+      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega_arith : n ≤ 8)]; ring
     rw [e, neg_smul, natCast_zsmul]
     exact hr.neg
   · simp only [hlt, ↓reduceIte]
     have e : ((n : ℤ) - 8) * 256 ^ j = (((mag n * 256 ^ j : Nat) : ℤ)) := by
-      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : 8 ≤ n)]; ring
+      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega_arith : 8 ≤ n)]; ring
     rw [e, natCast_zsmul]
     exact hr
 

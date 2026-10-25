@@ -24,7 +24,7 @@ theorem valN_digits (N : Nat) (n : Nat) : valN (fun i => N / 2 ^ (17 * i) % 2 ^ 
   induction n with
   | zero => simp [valN, Nat.mod_one]
   | succ n ih =>
-    rw [valN, ih, show 17 * (n + 1) = 17 * n + 17 by omega, Nat.pow_add, Nat.mod_mul,
+    rw [valN, ih, show 17 * (n + 1) = 17 * n + 17 by omega_arith, Nat.pow_add, Nat.mod_mul,
       Nat.mul_comm (N / 2 ^ (17 * n) % 2 ^ 17)]
 
 /-- Limb `i` of the u-coordinate, as `limbOf i` computes it from the words `w`. -/
@@ -46,8 +46,8 @@ theorem pow_split {r k : Nat} (h : r ≤ k) (b : Nat) : 2 ^ k * b = 2 ^ r * (2 ^
 
 /-- A digit inside the low word. -/
 theorem digit_in {a b r : Nat} (hr : r + 17 ≤ 64) : (a + 2 ^ 64 * b) / 2 ^ r % 2 ^ 17 = a / 2 ^ r % 2 ^ 17 := by
-  rw [pow_split (r := r) (by omega), Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
-    pow_split (r := 17) (by omega), Nat.add_mul_mod_self_left]
+  rw [pow_split (r := r) (by omega_arith), Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
+    pow_split (r := 17) (by omega_arith), Nat.add_mul_mod_self_left]
 
 /-- A digit across the low word and the next. -/
 theorem digit_across {a b r : Nat} (hr : r ≤ 64) :
@@ -74,10 +74,10 @@ theorem ulimb_eq {w : Nat → Nat} (h0 : w 0 < 2 ^ 64) (h1 : w 1 < 2 ^ 64) (h2 :
   · rw [show 64 + r = 64 + (0 + r) by rw [Nat.zero_add], div_drop h0, Nat.zero_add]
     exact (digit_in ‹r + 17 ≤ 64›).symm
   · rw [show 64 + r = 64 + (0 + r) by rw [Nat.zero_add], div_drop h0, Nat.zero_add, digit_across (Nat.le_of_lt hr64), mul_low]
-  · rw [show 128 + r = 64 + (64 + r) by omega, div_drop h0, div_drop h1]
+  · rw [show 128 + r = 64 + (64 + r) by omega_arith, div_drop h0, div_drop h1]
     exact (digit_in ‹r + 17 ≤ 64›).symm
-  · rw [show 128 + r = 64 + (64 + r) by omega, div_drop h0, div_drop h1, digit_across (Nat.le_of_lt hr64)]
-  · rw [show 192 + r = 64 + (64 + (64 + r)) by omega, div_drop h0, div_drop h1, div_drop h2]
+  · rw [show 128 + r = 64 + (64 + r) by omega_arith, div_drop h0, div_drop h1, digit_across (Nat.le_of_lt hr64)]
+  · rw [show 192 + r = 64 + (64 + (64 + r)) by omega_arith, div_drop h0, div_drop h1, div_drop h2]
   · exfalso; omega_using [e, hi, hr64, ‹¬_›]
 
 /-! ## The full reduction -/
@@ -104,21 +104,21 @@ theorem valN_ge0 (f : Nat → Nat) : ∀ n, 1 ≤ n → f 0 ≤ valN f n
   | 0, h => absurd h (by decide)
   | 1, _ => by simp [valN]
   | n + 2, _ => by
-    have := valN_ge0 f (n + 1) (by omega)
-    rw [valN]; omega
+    have := valN_ge0 f (n + 1) (by omega_arith)
+    rw [valN]; omega_arith
 
 theorem valN_le {f : Nat → Nat} : ∀ n, 1 ≤ n → (∀ i, 1 ≤ i → i < n → f i < 2 ^ 17) →
     valN f n + 2 ^ 17 ≤ f 0 + 2 ^ (17 * n)
   | 0, h, _ => absurd h (by decide)
   | 1, _, _ => by simp [valN]
   | n + 2, _, h => by
-    have ih := valN_le (n + 1) (by omega) fun i h1 h2 => h i h1 (by omega)
-    have hn := h (n + 1) (by omega) (by omega)
+    have ih := valN_le (n + 1) (by omega_arith) fun i h1 h2 => h i h1 (by omega_arith)
+    have hn := h (n + 1) (by omega_arith) (by omega_arith)
     rw [valN]
     have : f (n + 1) * 2 ^ (17 * (n + 1)) + 2 ^ (17 * (n + 1)) ≤ 2 ^ 17 * 2 ^ (17 * (n + 1)) := by
       rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ hn
-    rw [show 17 * (n + 2) = 17 + 17 * (n + 1) by omega, Nat.pow_add]
-    omega
+    rw [show 17 * (n + 2) = 17 + 17 * (n + 1) by omega_arith, Nat.pow_add]
+    omega_arith
 
 theorem quotN_eq {f : Nat → Nat} (hf : ∀ i < 15, f i < 2 ^ 17) :
     ∀ n < 15, quotN f n = (valN f (n + 1) + 19) / 2 ^ (17 * (n + 1)) := by
@@ -127,20 +127,20 @@ theorem quotN_eq {f : Nat → Nat} (hf : ∀ i < 15, f i < 2 ^ 17) :
   | zero =>
     have := hf 0 (by decide)
     simp only [quotN, valN, Nat.zero_add, Nat.mul_one, Nat.mul_zero, Nat.pow_zero, Nat.mul_one]
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_arith)]
   | succ n ih =>
-    have h1 := ih (by omega)
+    have h1 := ih (by omega_arith)
     have h2 := hf (n + 1) hn
-    have hv : valN f (n + 1) < 2 ^ (17 * (n + 1)) := valN_lt fun i hi => hf i (by omega)
+    have hv : valN f (n + 1) < 2 ^ (17 * (n + 1)) := valN_lt fun i hi => hf i (by omega_arith)
     have hq : (valN f (n + 1) + 19) / 2 ^ (17 * (n + 1)) ≤ 1 := by
       have : 19 ≤ 2 ^ (17 * (n + 1)) :=
-        Nat.le_trans (by decide) (Nat.pow_le_pow_right (by decide) (by omega : 5 ≤ 17 * (n + 1)))
-      rw [Nat.div_le_iff_le_mul_add_pred (Nat.two_pow_pos _)]; omega
-    rw [quotN, h1, Nat.mod_eq_of_lt (by omega),
+        Nat.le_trans (by decide) (Nat.pow_le_pow_right (by decide) (by omega_arith : 5 ≤ 17 * (n + 1)))
+      rw [Nat.div_le_iff_le_mul_add_pred (Nat.two_pow_pos _)]; omega_arith
+    rw [quotN, h1, Nat.mod_eq_of_lt (by omega_arith),
       show valN f (n + 1 + 1) = valN f (n + 1) + f (n + 1) * 2 ^ (17 * (n + 1)) from rfl,
-      show 17 * (n + 1 + 1) = 17 * (n + 1) + 17 by omega,
+      show 17 * (n + 1 + 1) = 17 * (n + 1) + 17 by omega_arith,
       Nat.pow_add, ← Nat.div_div_eq_div_mul, show valN f (n + 1) + f (n + 1) * 2 ^ (17 * (n + 1)) + 19 =
-        valN f (n + 1) + 19 + f (n + 1) * 2 ^ (17 * (n + 1)) by omega,
+        valN f (n + 1) + 19 + f (n + 1) * 2 ^ (17 * (n + 1)) by omega_arith,
       Nat.add_mul_div_right _ _ (Nat.two_pow_pos _), Nat.add_comm]
 
 theorem valN_limb0 {f g : Nat → Nat} {d : Nat} (h0 : g 0 = f 0 + d) (hi : ∀ i, 0 < i → g i = f i) :
@@ -149,15 +149,15 @@ theorem valN_limb0 {f g : Nat → Nat} {d : Nat} (h0 : g 0 = f 0 + d) (hi : ∀ 
   | 1, _ => by simp [valN, h0]
   | n + 2, _ => by
     show valN g (n + 1) + g (n + 1) * _ = valN f (n + 1) + f (n + 1) * _ + d
-    rw [valN_limb0 h0 hi (n + 1) (by omega), hi (n + 1) (by omega)]; omega
+    rw [valN_limb0 h0 hi (n + 1) (by omega_arith), hi (n + 1) (by omega_arith)]; omega_arith
 
 theorem valN_split (f : Nat → Nat) : valN f 15 = valN f 14 + f 14 * 2 ^ 238 := rfl
 
 theorem maskTop_valN (f : Nat → Nat) : valN (maskTop f) 15 + 2 ^ 255 * (f 14 / 2 ^ 17) = valN f 15 := by
   rw [valN_split, valN_split, valN_congr (g := f) fun i hi => by
-    simp only [maskTop, show i ≠ 14 by omega, ite_false]]
+    simp only [maskTop, show i ≠ 14 by omega_arith, ite_false]]
   simp only [maskTop, ite_true]
-  omega
+  omega_arith
 
 /-- `freeze`: from limbs below `2¹⁸`, the limbs of the number modulo `p`. -/
 theorem freezeF_spec {f : Nat → Nat} (hf : Bnd f 18) :
@@ -168,30 +168,30 @@ theorem freezeF_spec {f : Nat → Nat} (hf : Bnd f 18) :
     (n := 14) (by decide)
   generalize hg1 : chainN f 14 = g1 at a1 a2 a4
   have a0 := a1 0 (by decide)
-  have hfold1 : g1 0 + g1 14 / 2 ^ 17 * 19 < 2 ^ 64 := by omega
+  have hfold1 : g1 0 + g1 14 / 2 ^ 17 * 19 < 2 ^ 64 := by omega_arith
   have v1 := cfold_val hfold1
   simp only [val15] at v1
   have p10 : cfold g1 0 = g1 0 + g1 14 / 2 ^ 17 * 19 := by
     simp only [cfold, show (0 : Nat) ≠ 14 by decide, ite_false, ite_true]; exact Nat.mod_eq_of_lt hfold1
   have p1i : ∀ i, 1 ≤ i → i < 15 → cfold g1 i < 2 ^ 17 := fun i h1 h15 => by
-    simp only [cfold, show i ≠ 0 by omega]
+    simp only [cfold, show i ≠ 0 by omega_arith]
     split
     · exact Nat.mod_lt _ (by decide)
-    · simp only [ite_false]; exact a1 i (by omega)
+    · simp only [ite_false]; exact a1 i (by omega_arith)
   generalize hp1 : cfold g1 = p1 at v1 p10 p1i
   -- the second round
   obtain ⟨b1, b2, -, b4⟩ := chainN_spec (f := p1) (M := 2 ^ 17 + 37) (by decide) (fun i hi => by
     rcases Nat.eq_zero_or_pos i with rfl | h
-    · omega
+    · omega_arith
     · exact Nat.le_of_lt (Nat.lt_of_lt_of_le (p1i i h hi) (by decide))) (n := 14) (by decide)
   generalize hg2 : chainN p1 14 = g2 at b1 b2 b4
   have b0 := b1 0 (by decide)
-  have hfold2 : g2 0 + g2 14 / 2 ^ 17 * 19 < 2 ^ 64 := by omega
+  have hfold2 : g2 0 + g2 14 / 2 ^ 17 * 19 < 2 ^ 64 := by omega_arith
   have v2 := cfold_val hfold2
   simp only [val15] at v2
   have hV1 : valN p1 15 + 2 ^ 17 ≤ p1 0 + 2 ^ (17 * 15) := valN_le 15 (by decide) fun i h1 h2 => p1i i h1 h2
   have hlow : g2 0 + g2 14 * 2 ^ 238 ≤ valN g2 15 := by
-    rw [valN_split]; have := valN_ge0 g2 14 (by decide); omega
+    rw [valN_split]; have := valN_ge0 g2 14 (by decide); omega_arith
   have p20 : cfold g2 0 = g2 0 + g2 14 / 2 ^ 17 * 19 := by
     simp only [cfold, show (0 : Nat) ≠ 14 by decide, ite_false, ite_true]; exact Nat.mod_eq_of_lt hfold2
   have p2b : Bnd (cfold g2) 17 := fun i hi => by
@@ -199,33 +199,33 @@ theorem freezeF_spec {f : Nat → Nat} (hf : Bnd f 18) :
     · rw [p20]
       rw [b4] at hlow
       simp only [Nat.reduceMul] at hV1
-      omega
-    · simp only [cfold, show i ≠ 0 by omega]
+      omega_arith
+    · simp only [cfold, show i ≠ 0 by omega_arith]
       split
       · exact Nat.mod_lt _ (by decide)
-      · simp only [ite_false]; exact b1 i (by omega)
+      · simp only [ite_false]; exact b1 i (by omega_arith)
   generalize hp2 : cfold g2 = p2 at v2 p2b
   -- the carry out of `x + 19`
   have hV2 : valN p2 15 < 2 ^ 255 := valN_lt fun i hi => p2b i hi
   have hq := quotN_eq (f := p2) (fun i hi => p2b i hi) 14 (by decide)
   simp only [Nat.reduceAdd, Nat.reduceMul] at hq
-  have hq1 : quotN p2 14 ≤ 1 := by rw [hq]; omega
-  have hp30 : p2 0 + quotN p2 14 * 19 < 2 ^ 64 := by have := p2b 0 (by decide); omega
+  have hq1 : quotN p2 14 ≤ 1 := by rw [hq]; omega_arith
+  have hp30 : p2 0 + quotN p2 14 * 19 < 2 ^ 64 := by have := p2b 0 (by decide); omega_arith
   have v3 : valN (add19 p2 (quotN p2 14)) 15 = valN p2 15 + quotN p2 14 * 19 :=
     valN_limb0 (by simp only [add19, ite_true]; exact Nat.mod_eq_of_lt hp30)
-      (fun i hi => by simp only [add19, show i ≠ 0 by omega, ite_false]) 15 (by decide)
+      (fun i hi => by simp only [add19, show i ≠ 0 by omega_arith, ite_false]) 15 (by decide)
   obtain ⟨c1, c2, -, c4⟩ := chainN_spec (f := add19 p2 (quotN p2 14)) (M := 2 ^ 17 + 18) (by decide)
     (fun i hi => by
       simp only [add19]
       split
-      · rename_i h; subst h; have := p2b 0 (by decide); rw [Nat.mod_eq_of_lt hp30]; omega
+      · rename_i h; subst h; have := p2b 0 (by decide); rw [Nat.mod_eq_of_lt hp30]; omega_arith
       · exact Nat.le_of_lt (Nat.lt_of_lt_of_le (p2b i hi) (by decide))) (n := 14) (by decide)
   have hr := maskTop_valN (chainN (add19 p2 (quotN p2 14)) 14)
   have rb : Bnd (freezeF f) 17 := fun i hi => by
     simp only [freezeF, twice, hg1, hp1, hg2, hp2, maskTop]
     split
     · exact Nat.mod_lt _ (by decide)
-    · exact c1 i (by omega)
+    · exact c1 i (by omega_arith)
   have hR : valN (freezeF f) 15 < 2 ^ 255 := valN_lt fun i hi => rb i hi
   have hF : freezeF f = maskTop (chainN (add19 p2 (quotN p2 14)) 14) := by
     simp only [freezeF, twice, hg1, hp1, hg2, hp2]
@@ -313,7 +313,7 @@ theorem digits4 {w0 w1 w2 w3 : Nat} (h0 : w0 < 2 ^ 64) (h1 : w1 < 2 ^ 64) (h2 : 
       [w0, w1, w2, w3].getD j 0 := by
   intro j hj
   rw [show w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3 = uN w0 w1 w2 w3 from rfl, uN_nest]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
   · rw [Nat.mul_zero, Nat.pow_zero, Nat.div_one, low_word h0, List.getD_cons_zero]
   · rw [show 64 * 1 = 64 + 0 from rfl, div_drop h0, Nat.pow_zero, Nat.div_one, low_word h1,
       List.getD_cons_succ, List.getD_cons_zero]
@@ -350,7 +350,7 @@ theorem packV_eq {l : Nat → Nat} (hl : Bnd l 17) : ∀ j < 4, packV l j = valN
     grind
   intro j hj
   rw [hv, digits4 b0 b1 b2 b3 j hj]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
     simp only [List.getD_cons_succ, List.getD_cons_zero]
 
 end VG.Proof.X25519.AArch64

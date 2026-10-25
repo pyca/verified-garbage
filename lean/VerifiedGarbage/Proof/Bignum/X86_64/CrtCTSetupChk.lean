@@ -59,11 +59,11 @@ theorem CK.frm {p : ChecksPub} {t t' : State} (h : CK p t) {rs : List (Nat × Na
     (k : Keep regs t t') : CK p t' := by
   obtain ⟨hs, hH, hWP, hWQ, -, -, ⟨c, hM⟩, b⟩ := h
   have hn := hs.nowrap
-  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
+  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega_arith
   have hw : ∀ i < 32, word t'.mem p.B (8 * i) = word t.mem p.B (8 * i) := fun i hi =>
-    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega)) (by omega)
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega_arith)) (by omega_arith)
   exact ⟨hs.congr k.2.2, ⟨(hw _ (by decide)).trans hH.hw, (hw _ (by decide)).trans hH.hminv,
-    fun j hj => (hw _ (by unfold sArr; omega)).trans (hH.harr j hj)⟩, (hw _ (by decide)).trans hWP,
+    fun j hj => (hw _ (by unfold sArr; omega_arith)).trans (hH.harr j hj)⟩, (hw _ (by decide)).trans hWP,
     (hw _ (by decide)).trans hWQ, hP, hQ, ⟨c, (hw _ (by decide)).trans hM⟩, b⟩
 
 theorem CK.mem {p : ChecksPub} {t t' : State} (h : CK p t) (hm : t'.mem = t.mem) {regs : List Reg}
@@ -81,29 +81,29 @@ theorem CK.acc {p : ChecksPub} {t t' : State} (h : CK p t)
   have h0 := hdr_lt_slot p.w Public.aAcc (show 31 < 32 by decide)
   have f := Frm.of_outside (rs := [(slot p.w Public.aAcc, 8 * (2 * p.w + 2))]) ho (by simp)
   have hr : ∀ r ∈ [(slot p.w Public.aAcc, 8 * (2 * p.w + 2))], r.1 + r.2 ≤ p.op := fun r hr => by
-    rw [List.mem_singleton.mp hr]; simp only; omega
-  exact h.frm f (fun r hr' => by rw [List.mem_singleton.mp hr']; simp only; omega)
-    (h.2.2.2.2.1.frm f (fun r hr' => Or.inr (hr r hr')) (by omega))
-    (h.2.2.2.2.2.1.frm f (fun r hr' => Or.inr (by have := hr r hr'; omega)) (by omega)) k
+    rw [List.mem_singleton.mp hr]; simp only; omega_arith
+  exact h.frm f (fun r hr' => by rw [List.mem_singleton.mp hr']; simp only; omega_arith)
+    (h.2.2.2.2.1.frm f (fun r hr' => Or.inr (hr r hr')) (by omega_arith))
+    (h.2.2.2.2.2.1.frm f (fun r hr' => Or.inr (by have := hr r hr'; omega_arith)) (by omega_arith)) k
 
 /-- A change of the mask. -/
 theorem CK.newMask {p : ChecksPub} {t t' : State} (h : CK p t) (ho : Outside p.B (8 * Public.sMask) 8 t.mem t'.mem)
     (hM : ∃ c, word t'.mem p.B (8 * Public.sMask) = mask c) {regs : List Reg} (k : Keep regs t t') : CK p t' := by
   obtain ⟨hn, -, -, hlo, hop, hoq, -⟩ := h.bounds
-  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
+  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega_arith
   have := hdr_lt_slot p.wp 8 (show 31 < 32 by decide)
   have := hdr_lt_slot p.wq 8 (show 31 < 32 by decide)
   have f := Frm.of_outside (rs := [(8 * Public.sMask, 8)]) ho (by simp)
   have hr : ∀ r ∈ [(8 * Public.sMask, 8)], r.1 + r.2 ≤ p.op := fun r hr => by
-    rw [List.mem_singleton.mp hr]; unfold Public.sMask sFn; simp only; omega
+    rw [List.mem_singleton.mp hr]; unfold Public.sMask sFn; simp only; omega_arith
   obtain ⟨hs, hH, hWP, hWQ, hP, hQ, -, b⟩ := h
   have hw : ∀ i < 32, i ≠ Public.sMask → word t'.mem p.B (8 * i) = word t.mem p.B (8 * i) := fun i hi hne =>
-    ho.word (by unfold Public.sMask sFn at hne ⊢; omega) (by omega)
+    ho.word (by unfold Public.sMask sFn at hne ⊢; omega_arith) (by omega_arith)
   exact ⟨hs.congr k.2.2, ⟨(hw _ (by decide) (by decide)).trans hH.hw, (hw _ (by decide) (by decide)).trans hH.hminv,
-    fun j hj => (hw _ (by unfold sArr; omega) (by unfold sArr Public.sMask sFn; omega)).trans (hH.harr j hj)⟩,
+    fun j hj => (hw _ (by unfold sArr; omega_arith) (by unfold sArr Public.sMask sFn; omega_arith)).trans (hH.harr j hj)⟩,
     (hw _ (by decide) (by decide)).trans hWP, (hw _ (by decide) (by decide)).trans hWQ,
-    hP.frm f (fun r hr' => Or.inr (hr r hr')) (by omega),
-    hQ.frm f (fun r hr' => Or.inr (by have := hr r hr'; omega)) (by omega), hM, b⟩
+    hP.frm f (fun r hr' => Or.inr (hr r hr')) (by omega_arith),
+    hQ.frm f (fun r hr' => Or.inr (by have := hr r hr'; omega_arith)) (by omega_arith), hM, b⟩
 
 theorem ChecksPre.ck {p : ChecksPub} {s : State} (h : ChecksPre p s) : CKr (·.B) p s := by
   obtain ⟨mp, mq, P, Q, QI, m0, hg, a1, a2, b1, b2, b3, c1, c2, c3, c4, hsP, hsQ, hwsP, hwsQ, -, hM, -⟩ := h
@@ -114,7 +114,7 @@ theorem CK.good {p : ChecksPub} {t : State} (h : CK p t) (hdi : t.gpr .rdi = p.B
   ⟨h.1, hdi, h.2.1⟩
 
 theorem CK.slotZ {p : ChecksPub} {t : State} (h : CK p t) : slot p.w 8 ≤ p.Z := by
-  obtain ⟨-, -, h28, hlo, hop, hoq, -⟩ := h.bounds; omega
+  obtain ⟨-, -, h28, hlo, hop, hoq, -⟩ := h.bounds; omega_arith
 
 /-- Into a workspace from the modulus' (`enterP`, `enterQ`), or back (`leave`). -/
 theorem CK.move {p : ChecksPub} {s : State} (h : CK p s) {X : Addr} {i : Nat} {A' : Addr}
@@ -125,19 +125,19 @@ theorem CK.move {p : ChecksPub} {s : State} (h : CK p s) {X : Addr} {i : Nat} {A
 
 theorem CK.ldB {p : ChecksPub} {s : State} (h : CK p s) {i : Nat} (hi : i < 32) :
     InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 :=
-  h.1.ld (by have := h.slotZ; have := hdr_lt_slot p.w 8 hi; omega)
+  h.1.ld (by have := h.slotZ; have := hdr_lt_slot p.w 8 hi; omega_arith)
 
 theorem CK.ldP {p : ChecksPub} {s : State} (h : CK p s) {i : Nat} (hi : i < 32) :
     InRegions (s.rd ++ s.wr) (off (off p.B p.op) (8 * i)) 8 := by
   obtain ⟨hn, -, -, hlo, hop, hoq, -⟩ := h.bounds
   have h8 := hdr_lt_slot p.wp 8 hi
-  exact (h.1.sub (o := p.op) (n := slot p.wp 8) (by omega) (by omega)).ld (by omega)
+  exact (h.1.sub (o := p.op) (n := slot p.wp 8) (by omega_arith) (by omega_arith)).ld (by omega_arith)
 
 theorem CK.ldQ {p : ChecksPub} {s : State} (h : CK p s) {i : Nat} (hi : i < 32) :
     InRegions (s.rd ++ s.wr) (off (off p.B p.oq) (8 * i)) 8 := by
   obtain ⟨hn, -, -, hlo, hop, hoq, -⟩ := h.bounds
   have h8 := hdr_lt_slot p.wq 8 hi
-  exact (h.1.sub (o := p.oq) (n := slot p.wq 8) (by omega) (by omega)).ld (by omega)
+  exact (h.1.sub (o := p.oq) (n := slot p.wq 8) (by omega_arith) (by omega_arith)).ld (by omega_arith)
 
 /-- `p`'s workspace. -/
 abbrev ckP (p : ChecksPub) : Addr := off p.B p.op
@@ -162,7 +162,7 @@ theorem CKr.rows {p : ChecksPub} {s : State} (h : CKr (·.B) p s) :
     RowsPre Public.aN ⟨p.B, p.Z, p.w, p.op, p.oq, p.wp, p.wq⟩ s := by
   obtain ⟨⟨hs, hH, hWP, hWQ, hP, hQ, -, -, -, hlo, hop, hoq, -⟩, hdi⟩ := h
   exact ⟨hs, hdi, hH.harr _ (by decide), hWP, hWQ, hP.2.1, hQ.2.1, (hP.2.2 _ (by decide)).trans (off_off _ _ _),
-    (hQ.2.2 _ (by decide)).trans (off_off _ _ _), by decide, hlo, by dsimp only; omega, by dsimp only; omega⟩
+    (hQ.2.2 _ (by decide)).trans (off_off _ _ _), by decide, hlo, by dsimp only; omega_arith, by dsimp only; omega_arith⟩
 
 theorem pq_ct : RelCT isa (Two (CKr (·.B))) (seqs pqProduct) (Two (CKr (·.B))) := by
   refine two_post ?_ fun p s h => ?_
@@ -171,14 +171,14 @@ theorem pq_ct : RelCT isa (Two (CKr (·.B))) (seqs pqProduct) (Two (CKr (·.B)))
       (two_map (fun p : ChecksPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun p s h => ⟨p.minv, h.1.good h.2, h.1.slotZ⟩)
         zeroAccs_ct) fun p s h => ?_) ?_)
     · obtain ⟨hn, -, h28, -⟩ := h.1.bounds
-      exact WP.mono (zeroAccs_ok (h.1.good h.2) h.1.slotZ (by omega)) fun t ⟨_, ho, k⟩ =>
+      exact WP.mono (zeroAccs_ok (h.1.good h.2) h.1.slotZ (by omega_arith)) fun t ⟨_, ho, k⟩ =>
         ⟨h.1.acc ho k, (k.gpr (by decide)).trans h.2⟩
     · exact two_map (fun p : ChecksPub => (⟨p.B, p.Z, p.w, p.op, p.oq, p.wp, p.wq⟩ : RowsPub))
         (fun p s h => h.rows) (rows_ct (by taint_decide))
   · obtain ⟨hn, -, h28, hlo, hop, hoq, a1, a2, a3, a4⟩ := h.1.bounds
     have hR := h.rows
-    exact WP.mono (pqProduct_ok (h.1.good h.2) (by omega) hR.2.2.2.1 hR.2.2.2.2.1 hR.2.2.2.2.2.1
-      hR.2.2.2.2.2.2.1 hR.2.2.2.2.2.2.2.1 hR.2.2.2.2.2.2.2.2.1 hlo hop hoq (show 1 ≤ p.wp by omega) a2 (show 1 ≤ p.wq by omega) a4)
+    exact WP.mono (pqProduct_ok (h.1.good h.2) (by omega_arith) hR.2.2.2.1 hR.2.2.2.2.1 hR.2.2.2.2.2.1
+      hR.2.2.2.2.2.2.1 hR.2.2.2.2.2.2.2.1 hR.2.2.2.2.2.2.2.2.1 hlo hop hoq (show 1 ≤ p.wp by omega_arith) a2 (show 1 ≤ p.wq by omega_arith) a4)
       fun t ⟨_, ho, k⟩ => ⟨h.1.acc ho k, (k.gpr (by decide)).trans h.2⟩
 
 /-! ## `p q = n` -/
@@ -212,7 +212,7 @@ theorem eq_ct : RelCT isa (Two (CKr (·.B))) (seqs eqCheck) (Two (CKr (·.B))) :
       fun t ⟨h', k⟩ => ⟨(k.gpr (by decide)).trans hdi, h'⟩
   · obtain ⟨hn, a1, a2, -⟩ := h.1.bounds
     obtain ⟨c, hM⟩ := h.1.2.2.2.2.2.2.1
-    exact WP.mono (eqCheck_ok (h.1.good h.2) h.1.slotZ (by omega) (by omega)) fun t ⟨hM', ho, k⟩ =>
+    exact WP.mono (eqCheck_ok (h.1.good h.2) h.1.slotZ (by omega_arith) (by omega_arith)) fun t ⟨hM', ho, k⟩ =>
       ⟨h.1.newMask ho ⟨_, by rw [hM', hM, mask_and]⟩ k, (k.gpr (by decide)).trans h.2⟩
 
 /-! ## `qInv < p` -/
@@ -252,8 +252,8 @@ theorem qinv_ct : RelCT isa (Two (CKr ckP)) (seqs qinvCheck) (Two (CKr ckP)) := 
       obtain ⟨hn, -, h28, hlo, hop, hoq, a1, a2, -⟩ := hk.bounds
       have := slot_le (w := p.wp) (show aChunk < 8 by decide)
       have := slot_le (w := p.wp) (show Public.aN < 8 by decide)
-      exact WP.mono (cmpLoop_ok (hk.1.sub (o := p.op) (n := slot p.wp 8) (by omega)
-        (by unfold slot hdrBytes; omega)) hbx h10 h12 hbp (by omega) (by omega) (by omega) (by omega))
+      exact WP.mono (cmpLoop_ok (hk.1.sub (o := p.op) (n := slot p.wp 8) (by omega_arith)
+        (by unfold slot hdrBytes; omega_arith)) hbx h10 h12 hbp (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
         fun t ⟨_, hm, k⟩ => ⟨hk.mem hm k, (k.gpr (by decide)).trans hdi⟩
     · obtain ⟨hk, hdi⟩ := h
       exact WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = p.B)
@@ -263,8 +263,8 @@ theorem qinv_ct : RelCT isa (Two (CKr ckP)) (seqs qinvCheck) (Two (CKr ckP)) := 
     obtain ⟨hn, -, h28, hlo, hop, hoq, a1, a2, -⟩ := hk.bounds
     obtain ⟨c, hM⟩ := hk.2.2.2.2.2.2.1
     have hF := hk.2.2.2.2.1
-    exact WP.mono (qinvCheck_ok hk.1 hdi (hdr_any hF.2.1 hF.2.2) (by omega)
-      (by unfold Public.sMask sFn; unfold slot hdrBytes at hlo; omega) (by omega) (by omega) hF.1)
+    exact WP.mono (qinvCheck_ok hk.1 hdi (hdr_any hF.2.1 hF.2.2) (by omega_arith)
+      (by unfold Public.sMask sFn; unfold slot hdrBytes at hlo; omega_arith) (by omega_arith) (by omega_arith) hF.1)
       fun t ⟨hM', ho, k⟩ => ⟨hk.newMask ho ⟨_, by rw [hM', hM, mask_and]⟩ k, (k.gpr (by decide)).trans hdi⟩
 
 /-! ## The fixes -/
@@ -276,7 +276,7 @@ theorem pfRanges_le (wx : Nat) : ∀ r ∈ pfRanges wx, 8 * 7 ≤ r.1 ∧ r.1 + 
   have := slot_le (w := wx) (show Public.aOne < 8 by decide)
   intro r hr
   simp only [pfRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> simp only [sMaskX, sMinv, sFn] <;> omega
+  rcases hr with rfl | rfl | rfl | rfl <;> simp only [sMaskX, sMinv, sFn] <;> omega_arith
 
 theorem CK.sub {p : ChecksPub} {s : State} {o wx : Nat} (hk : CK p s) (hdi : s.gpr .rdi = off p.B o)
     (hF : WsF s.mem p.B o wx) (hlo : slot p.w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ p.Z) :
@@ -289,45 +289,45 @@ theorem CK.pf {p : ChecksPub} {s : State} {o wx : Nat} (hk : CK p s) (hdi : s.gp
     PF ⟨p.B, p.Z, o, p.w, wx⟩ s := by
   have := hk.bounds
   obtain ⟨m, c, hc, hM⟩ := hk.sub hdi hF hlo hhi
-  exact ⟨m, c, hc, hM, h2, by simp only; omega⟩
+  exact ⟨m, c, hc, hM, h2, by simp only; omega_arith⟩
 
 theorem fixP_ct : RelCT isa (Two (CKr ckP)) (seqs primeFix) (Two (CKr ckP)) := by
   refine two_post (two_map (fun p : ChecksPub => (⟨p.B, p.Z, p.op, p.w, p.wp⟩ : XPub)) (fun p s ⟨hk, hdi⟩ => by
     obtain ⟨-, -, h28, hlo, hop, hoq, a1, a2, -⟩ := hk.bounds
-    exact hk.pf hdi hk.2.2.2.2.1 hlo (by omega) a1 a2) primeFix_ct) fun p s ⟨hk, hdi⟩ => ?_
+    exact hk.pf hdi hk.2.2.2.2.1 hlo (by omega_arith) a1 a2) primeFix_ct) fun p s ⟨hk, hdi⟩ => ?_
   obtain ⟨hn, -, h28, hlo, hop, hoq, a1, a2, -⟩ := hk.bounds
-  obtain ⟨_, c, hc, hM⟩ := hk.sub hdi hk.2.2.2.2.1 hlo (by omega)
+  obtain ⟨_, c, hc, hM⟩ := hk.sub hdi hk.2.2.2.2.1 hlo (by omega_arith)
   have h8 := hdr_lt_slot p.wp 8 (show 31 < 32 by decide)
   have h8q := hdr_lt_slot p.wq 8 (show 31 < 32 by decide)
   have h8w := hdr_lt_slot p.w 8 (show 31 < 32 by decide)
   have hr := pfRanges_le p.wp
-  refine WP.mono (primeFix_frm hc hM (by omega) (by omega)) fun t ⟨_, hc', f, k⟩ => ?_
-  have f' := f.rebase (by omega) fun r hr' => by have := hr r hr'; omega
+  refine WP.mono (primeFix_frm hc hM (by omega_arith) (by omega_arith)) fun t ⟨_, hc', f, k⟩ => ?_
+  have f' := f.rebase (by omega_arith) fun r hr' => by have := hr r hr'; omega_arith
   have hr' : ∀ r ∈ shiftRanges p.op (pfRanges p.wp), p.op + 8 * 7 ≤ r.1 ∧ r.1 + r.2 ≤ p.op + slot p.wp 8 :=
     fun r hr'' => by
       obtain ⟨r₀, h₀, rfl⟩ := List.mem_map.mp hr''
-      have := hr r₀ h₀; simp only; omega
-  exact ⟨hk.frm f' (fun r h => by have := hr' r h; omega) ⟨hc'.link, hc'.hdr.hw, hc'.hdr.harr⟩
-    (hk.2.2.2.2.2.1.frm f' (fun r h => Or.inr (by have := hr' r h; omega)) (by omega)) k, hc'.rdi⟩
+      have := hr r₀ h₀; simp only; omega_arith
+  exact ⟨hk.frm f' (fun r h => by have := hr' r h; omega_arith) ⟨hc'.link, hc'.hdr.hw, hc'.hdr.harr⟩
+    (hk.2.2.2.2.2.1.frm f' (fun r h => Or.inr (by have := hr' r h; omega_arith)) (by omega_arith)) k, hc'.rdi⟩
 
 theorem fixQ_ct : RelCT isa (Two (CKr ckQ)) (seqs primeFix) (Two (CKr ckQ)) := by
   refine two_post (two_map (fun p : ChecksPub => (⟨p.B, p.Z, p.oq, p.w, p.wq⟩ : XPub)) (fun p s ⟨hk, hdi⟩ => by
     obtain ⟨-, -, h28, hlo, hop, hoq, -, -, a3, a4⟩ := hk.bounds
-    exact hk.pf hdi hk.2.2.2.2.2.1 (by omega) hoq a3 a4) primeFix_ct) fun p s ⟨hk, hdi⟩ => ?_
+    exact hk.pf hdi hk.2.2.2.2.2.1 (by omega_arith) hoq a3 a4) primeFix_ct) fun p s ⟨hk, hdi⟩ => ?_
   obtain ⟨hn, -, h28, hlo, hop, hoq, -, -, a3, a4⟩ := hk.bounds
-  obtain ⟨_, c, hc, hM⟩ := hk.sub hdi hk.2.2.2.2.2.1 (by omega) hoq
+  obtain ⟨_, c, hc, hM⟩ := hk.sub hdi hk.2.2.2.2.2.1 (by omega_arith) hoq
   have h8 := hdr_lt_slot p.wp 8 (show 31 < 32 by decide)
   have h8q := hdr_lt_slot p.wq 8 (show 31 < 32 by decide)
   have h8w := hdr_lt_slot p.w 8 (show 31 < 32 by decide)
   have hr := pfRanges_le p.wq
-  refine WP.mono (primeFix_frm hc hM (by omega) (by omega)) fun t ⟨_, hc', f, k⟩ => ?_
-  have f' := f.rebase (by omega) fun r hr' => by have := hr r hr'; omega
+  refine WP.mono (primeFix_frm hc hM (by omega_arith) (by omega_arith)) fun t ⟨_, hc', f, k⟩ => ?_
+  have f' := f.rebase (by omega_arith) fun r hr' => by have := hr r hr'; omega_arith
   have hr' : ∀ r ∈ shiftRanges p.oq (pfRanges p.wq), p.oq + 8 * 7 ≤ r.1 ∧ r.1 + r.2 ≤ p.oq + slot p.wq 8 :=
     fun r hr'' => by
       obtain ⟨r₀, h₀, rfl⟩ := List.mem_map.mp hr''
-      have := hr r₀ h₀; simp only; omega
-  exact ⟨hk.frm f' (fun r h => by have := hr' r h; omega)
-    (hk.2.2.2.2.1.frm f' (fun r h => Or.inl (by have := hr' r h; omega)) (by omega))
+      have := hr r₀ h₀; simp only; omega_arith
+  exact ⟨hk.frm f' (fun r h => by have := hr' r h; omega_arith)
+    (hk.2.2.2.2.1.frm f' (fun r h => Or.inl (by have := hr' r h; omega_arith)) (by omega_arith))
     ⟨hc'.link, hc'.hdr.hw, hc'.hdr.harr⟩ k, hc'.rdi⟩
 
 end VG.Proof.Bignum.X86_64

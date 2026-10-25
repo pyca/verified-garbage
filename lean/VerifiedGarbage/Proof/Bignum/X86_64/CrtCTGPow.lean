@@ -101,11 +101,11 @@ theorem gBody_ct (M : Mont) : RelCT isa (Two fun (q : GPub × Nat) s => q.2 < (g
     (fun q s ⟨_, _, hI, hZ, _⟩ => ⟨q.1.minv, hI.good, hZ⟩) (M.ct (by unfold MmUse; decide))) ?_) ?_
   · rintro q s ⟨hj, s₀, hI, hZ, hw, hw30, -, -, hwx, hwx'⟩
     obtain ⟨hD0, hD1, -⟩ := gD_bounds hwx hwx' hw30
-    have hL : (gD q.1.w q.1.wx).log2 < 62 := (Nat.log2_lt (by omega)).mpr hD1
+    have hL : (gD q.1.w q.1.wx).log2 < 62 := (Nat.log2_lt (by omega_arith)).mpr hD1
     have hc2 : 2 ^ ((gD q.1.w q.1.wx).log2 + 1 - q.2) / 2 = 2 ^ ((gD q.1.w q.1.wx).log2 - q.2) := by
-      rw [show (gD q.1.w q.1.wx).log2 + 1 - q.2 = ((gD q.1.w q.1.wx).log2 - q.2) + 1 by omega, Nat.pow_succ,
+      rw [show (gD q.1.w q.1.wx).log2 + 1 - q.2 = ((gD q.1.w q.1.wx).log2 - q.2) + 1 by omega_arith, Nat.pow_succ,
         Nat.mul_div_cancel _ (by decide)]
-    refine WP.mono (mmN_ok M (o := Public.aY) (a := Public.aY) (b := Public.aY) hI.good hZ hw (by omega)
+    refine WP.mono (mmN_ok M (o := Public.aY) (a := Public.aY) (b := Public.aY) hI.good hZ hw (by omega_arith)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hI.n hI.inv
       hI.ylt) fun t₁ ⟨hg₁, hn₁, _, hlt₁, _, ha₁, _⟩ => ⟨⟨hg₁, hZ⟩, hw, hw30, hj, hL, by rw [hn₁]; exact hlt₁,
         by rw [ha₁.hslot (by decide)]; exact hI.d, by rw [ha₁.hslot (by decide), hI.c, hc2]⟩
@@ -115,11 +115,11 @@ theorem gBody_ct (M : Mont) : RelCT isa (Two fun (q : GPub × Nat) s => q.2 < (g
   · rintro q t₁ ⟨hg₁, hw, hw30, hj, hL, hlt, hd, hc⟩
     have hZ := hg₁.2
     have hl₁ : ∀ i < 32, InRegions (t₁.rd ++ t₁.wr) (off q.1.B (8 * i)) 8 := fun i hi =>
-      hg₁.1.scr.ld (by have := hdr_lt_slot q.1.w 8 hi; omega)
+      hg₁.1.scr.ld (by have := hdr_lt_slot q.1.w 8 hi; omega_arith)
     refine WP.mono (WP.keep [.rax] (Q := fun t₂ =>
         t₂.zf = some (decide ((gD q.1.w q.1.wx) / 2 ^ ((gD q.1.w q.1.wx).log2 - q.2) % 2 = 0)) ∧ t₂.mem = t₁.mem) (by
       xrun [State.ea, hdr, hg₁.1.rdi, hdrOff, hl₁ sD (by decide), hl₁ Public.sCnt (by decide), hd, hc,
-        and_pow_beq (gD q.1.w q.1.wx) ((gD q.1.w q.1.wx).log2 - q.2) (by omega)]) rfl)
+        and_pow_beq (gD q.1.w q.1.wx) ((gD q.1.w q.1.wx).log2 - q.2) (by omega_arith)]) rfl)
       fun t₂ ⟨⟨hz, hm⟩, k⟩ => ⟨⟨⟨hg₁.1.scr.congr k.2.2, (k.gpr (by decide)).trans hg₁.1.rdi, hm ▸ hg₁.1.hdr⟩,
         hg₁.2⟩, hw, hw30, by rw [hm]; exact hlt, hz⟩
   -- Doubled if it is set.
@@ -128,7 +128,7 @@ theorem gBody_ct (M : Mont) : RelCT isa (Two fun (q : GPub × Nat) s => q.2 < (g
   · refine two_post (two_map (fun q => q.1.L) (fun _ _ h => h.1.1)
       (double_ct (by decide) (by decide) (by decide) (by decide) (by taint_decide))) fun q t h => ?_
     obtain ⟨⟨hg, hw, hw30, hlt, -⟩, -⟩ := h
-    exact WP.mono (double_ok hg.1.scr hg.1.rdi hg.1.hdr hg.2 hw (by omega) (mo := Public.aN) (acc := Public.aAcc)
+    exact WP.mono (double_ok hg.1.scr hg.1.rdi hg.1.hdr hg.2 hw (by omega_arith) (mo := Public.aN) (acc := Public.aAcc)
       (tmp := Public.aTmp) (o := Public.aY) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) hlt) fun t' ⟨_, ha, k⟩ =>
         ⟨⟨hg.1.scr.congr k.2.2, (k.gpr (by decide)).trans hg.1.rdi, ha.hdr hg.1.hdr⟩, hg.2⟩
@@ -142,8 +142,8 @@ theorem gLoop_ct (M : Mont) : RelCT isa (Two fun p s => 0 < (gD p.w p.wx).log2 +
   two_loop (Φ := GLoop) (fun p => (gD p.w p.wx).log2 + 1) (gBody_ct M)
     fun p j s hj ⟨s₀, hI, hZ, hw, hw30, hodd, hN1, hwx, hwx'⟩ => by
       obtain ⟨hD0, hD1, -⟩ := gD_bounds hwx hwx' hw30
-      have hL : (gD p.w p.wx).log2 < 62 := (Nat.log2_lt (by omega)).mpr hD1
-      exact WP.mono (gBit_ok M hZ hw (by omega) (VG.Proof.Bignum.coprime_pow2 hodd _) (by omega) (by omega) hj hI)
+      have hL : (gD p.w p.wx).log2 < 62 := (Nat.log2_lt (by omega_arith)).mpr hD1
+      exact WP.mono (gBit_ok M hZ hw (by omega_arith) (VG.Proof.Bignum.coprime_pow2 hodd _) (by omega_arith) (by omega_arith) hj hI)
         fun s' ⟨hz, hI'⟩ => ⟨eval_ne_count hj hz, fun _ => ⟨s₀, hI', hZ, hw, hw30, hodd, hN1, hwx, hwx'⟩,
           fun _ => trivial⟩
 
@@ -232,7 +232,7 @@ theorem gHead_ct {sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
         · exact h.2.2.2) (by taint_decide))
   · intro p s h
     have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi =>
-      h.1.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := h.2.1; omega)
+      h.1.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := h.2.1; omega_arith)
     exact WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = p.Bx ∧ t.mem = s.mem)
       (by xrun [State.ea, hdr, h.1.rdi, hdrOff, hl sl h.2.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.2.1]) rfl)
       fun t ⟨⟨h1, h2⟩, k⟩ => ⟨s, h, h2, k, h1⟩
@@ -245,7 +245,7 @@ theorem gHead_ct {sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     have hdi : t.gpr .rdi = p.B := (k.gpr (by decide)).trans hg.rdi
     have hXr' : InRegions (t.rd ++ t.wr) (off p.Bx (8 * sW)) 8 := by rw [k.2.1, k.2.2]; exact hXr
     have hW : InRegions (t.rd ++ t.wr) (off p.B (8 * sW)) 8 := by
-      rw [k.2.1, k.2.2]; exact hg.scr.ld (by have := hdr_lt_slot p.w 8 (show sW < 32 by decide); omega)
+      rw [k.2.1, k.2.2]; exact hg.scr.ld (by have := hdr_lt_slot p.w 8 (show sW < 32 by decide); omega_arith)
     have hXw' : word t.mem p.Bx (8 * sW) = BitVec.ofNat 64 p.wx := by rw [hm]; exact hXw
     have hw' : word t.mem p.B (8 * sW) = BitVec.ofNat 64 p.w := by rw [hm]; exact hg.hdr.hw
     exact WP.mono (WP.keep [.rax, .r12, .rcx] (Q := fun t' => t'.gpr .rax = BitVec.ofNat 64 p.wx ∧
@@ -268,13 +268,13 @@ theorem gTop_ct (sl : Nat) : RelCT isa (Two (GHd sl)) (.seq topBit (.block [.sto
   obtain ⟨hD0, hD1, -⟩ := gD_bounds hwx hwx' hw30
   have hs₁ := hg.scr.congr k₁.2.2
   have hdi₁ : t₁.gpr .rdi = p.B := (k₁.gpr (by decide)).trans hg.rdi
-  refine WP.seq (WP.mono (topBit_ok hax₁ hD0 (by omega)) fun t₂ ⟨hdx₂, _, hm₂, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (topBit_ok hax₁ hD0 (by omega_arith)) fun t₂ ⟨hdx₂, _, hm₂, k₂⟩ => ?_)
   have hs₂ := hs₁.congr k₂.2.2
   have hdi₂ : t₂.gpr .rdi = p.B := (k₂.gpr (by decide)).trans hdi₁
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = t₂.mem.writeW (off p.B (8 * Public.sCnt))
       (BitVec.ofNat 64 (2 ^ (gD p.w p.wx).log2))) (by
     xrun [State.ea, hdr, hdi₂, hdrOff, hs₂.st (show 8 * Public.sCnt + 8 ≤ p.Z by
-      have := hdr_lt_slot p.w 8 (show Public.sCnt < 32 by decide); omega), hdx₂]) rfl) fun t₃ ⟨hm₃, k₃⟩ => ?_
+      have := hdr_lt_slot p.w 8 (show Public.sCnt < 32 by decide); omega_arith), hdx₂]) rfl) fun t₃ ⟨hm₃, k₃⟩ => ?_
   have hm₃' : t₃.mem = (s.mem.writeW (off p.B (8 * sD)) (BitVec.ofNat 64 (gD p.w p.wx))).writeW (off p.B (8 *
       Public.sCnt))
       (BitVec.ofNat 64 (2 ^ (gD p.w p.wx).log2)) := by rw [hm₃, hm₂, hm₁]
@@ -288,18 +288,18 @@ theorem gStart_ok (M : Mont) {sl : Nat} {p : GPub} {t : State} (h : GTop sl p t)
     WP isa (M.mm Public.aY Public.aR2 Public.aOne) t fun t' => 0 < (gD p.w p.wx).log2 + 1 ∧ GLoop p 0 t' := by
   obtain ⟨s, ⟨hg, hZ, hw, hw30, hn, hinv, hodd, hN1, hr2', hone, _, _, _, _, hwx, hwx'⟩, hg₃, hm₃', k₃⟩ := h
   have hnw := hg.scr.nowrap
-  have hn' : p.B.toNat + slot p.w 8 ≤ 2 ^ 64 := by omega
+  have hn' : p.B.toNat + slot p.w 8 ≤ 2 ^ 64 := by omega_arith
   have hR : Nat.Coprime (2 ^ (64 * p.w)) p.N := VG.Proof.Bignum.coprime_pow2 hodd _
   obtain ⟨hD0, hD1, -⟩ := gD_bounds hwx hwx' hw30
   have hwv₃ : ∀ j < 8, wv t.mem p.B (slot p.w j) p.w = wv s.mem p.B (slot p.w j) p.w := fun j hj => by
     rw [hm₃', hdrStore_wv _ _ _ (by decide) hj hn', hdrStore_wv _ _ _ (by decide) hj hn']
-  refine WP.mono (mmN_ok M (N := p.N) (o := Public.aY) (a := Public.aR2) (b := Public.aOne) hg₃ hZ hw (by omega)
+  refine WP.mono (mmN_ok M (N := p.N) (o := Public.aY) (a := Public.aR2) (b := Public.aOne) hg₃ hZ hw (by omega_arith)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     ((hwv₃ Public.aN (by decide)).trans hn)
     (by rw [hm₃', hdrStore_word _ _ _ (by decide) (by decide) hn', hdrStore_word _ _ _ (by decide) (by decide) hn'];
         exact hinv)
     (by rw [hwv₃ Public.aOne (by decide), hone]; exact hN1))
-    fun t₄ ⟨hg₄, hn₄, hinv₄, hlt₄, hm₄, ha₄, k₄⟩ => ⟨by omega, s, ?_, hZ, hw, hw30, hodd, hN1, hwx, hwx'⟩
+    fun t₄ ⟨hg₄, hn₄, hinv₄, hlt₄, hm₄, ha₄, k₄⟩ => ⟨by omega_arith, s, ?_, hZ, hw, hw30, hodd, hN1, hwx, hwx'⟩
   rw [hwv₃ Public.aR2 (by decide), hwv₃ Public.aOne (by decide), hone, Nat.mul_one] at hm₄
   have hY₄ : wv t₄.mem p.B (slot p.w Public.aY) p.w % p.N =
       2 ^ ((gD p.w p.wx) / 2 ^ ((gD p.w p.wx).log2 + 1 - 0)) * 2 ^ (64 * p.w) % p.N := by
@@ -307,9 +307,9 @@ theorem gStart_ok (M : Mont) {sl : Nat} {p : GPub} {t : State} (h : GTop sl p t)
     apply VG.Proof.Bignum.mont_cancel hR
     rw [hm₄, hr2']
   have hfr₄ : Frm p.B (gRanges p.w) s.mem t₄.mem := by
-    have o1 := writeW_outside s.mem p.B (BitVec.ofNat 64 (gD p.w p.wx)) (d := 8 * sD) (by unfold sD sFn; omega)
+    have o1 := writeW_outside s.mem p.B (BitVec.ofNat 64 (gD p.w p.wx)) (d := 8 * sD) (by unfold sD sFn; omega_arith)
     have o2 := writeW_outside (s.mem.writeW (off p.B (8 * sD)) (BitVec.ofNat 64 (gD p.w p.wx))) p.B
-      (BitVec.ofNat 64 (2 ^ (gD p.w p.wx).log2)) (d := 8 * Public.sCnt) (by unfold Public.sCnt sFn; omega)
+      (BitVec.ofNat 64 (2 ^ (gD p.w p.wx).log2)) (d := 8 * Public.sCnt) (by unfold Public.sCnt sFn; omega_arith)
     rw [← hm₃'] at o2
     exact ((Frm.of_outside o1 (by simp [gRanges])).trans (Frm.of_outside o2 (by simp [gRanges]))).trans
       (Frm.of_arrays ha₄ (by simp [gRanges]))
@@ -357,7 +357,7 @@ theorem gFast_ct (M : Mont) (sl : Nat) : RelCT isa (Two (GFs sl)) (Crt.gFast M.m
           · exact h.1.1.2.2.1) (by taint_decide))
     obtain ⟨hg, hZ⟩ := h.1.1.good
     have hl : InRegions (t.rd ++ t.wr) (off p.B (8 * sArr Public.aY)) 8 :=
-      hg.scr.ld (by have := hdr_lt_slot p.w 8 (show sArr Public.aY < 32 by decide); omega)
+      hg.scr.ld (by have := hdr_lt_slot p.w 8 (show sArr Public.aY < 32 by decide); omega_arith)
     refine WP.mono (WP.keep [.r8] (Q := fun t' => t'.gpr .r8 = off p.B (slot p.w Public.aY) ∧ t'.mem = t.mem) (by
       xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hg.hdr.harr Public.aY (by decide)]) rfl)
       fun t' ⟨⟨h8, hm⟩, k⟩ => ⟨⟨?_, (k.gpr (by decide)).trans h.2⟩, h8⟩
@@ -366,9 +366,9 @@ theorem gFast_ct (M : Mont) (sl : Nat) : RelCT isa (Two (GFs sl)) (Crt.gFast M.m
   · intro p t ⟨⟨hS, h12, hcx, hc, htop⟩, hdx⟩
     obtain ⟨hg, hZ⟩ := hS.good
     obtain ⟨_, hs, _, _⟩ := hS
-    refine WP.mono (setWord_ok hg.scr hg.rdi hg.hdr hZ h12 (by have := hs.2.2.1; omega)
-      (by have := hs.2.2.2.1; omega) (o := Public.aY) (by decide) (ri := .rcx) (by decide) (i := gC p.w p.wx)
-      (by omega) hcx) fun t' ⟨_, ho, k⟩ => ?_
+    refine WP.mono (setWord_ok hg.scr hg.rdi hg.hdr hZ h12 (by have := hs.2.2.1; omega_arith)
+      (by have := hs.2.2.2.1; omega_arith) (o := Public.aY) (by decide) (ri := .rcx) (by decide) (i := gC p.w p.wx)
+      (by omega_arith) hcx) fun t' ⟨_, ho, k⟩ => ?_
     have ha : Arrays p.B p.w [Public.aY] t.mem t'.mem :=
       Arrays.of_outside (List.mem_singleton_self _) ho (Nat.le_refl _) (Nat.le_refl _)
     exact ⟨⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, ha.hdr hg.hdr⟩, hZ⟩
@@ -402,7 +402,7 @@ theorem gPow_ct_of {M : Mont} {sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   · obtain ⟨hS, h12, h10⟩ := h
     obtain ⟨hg, hZ⟩ := hS.good
     obtain ⟨s, hs, hm, _⟩ := id hS
-    have hn' : p.B.toNat + slot p.w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega
+    have hn' : p.B.toNat + slot p.w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega_arith
     exact WP.mono (gTest_ok hg.scr hZ hs.2.2.1 h12 h10
       (by rw [hm, hdrStore_wv _ _ _ (by decide) (by decide) hn']; exact hs.2.2.2.2.1))
       fun t' ⟨hz, hm', k⟩ => ⟨hS.step hm' k (by decide), (k.gpr (by decide)).trans h12, hz⟩

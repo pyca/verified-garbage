@@ -64,10 +64,10 @@ theorem paramsBytes_at (mem : Mem) (ptr : Addr) {pLen qLen total : Nat} (h : 2 *
       ⟨Spec.Dsa.decodeBE (Spec.Rsa.bytesAt mem ptr pLen),
         Spec.Dsa.decodeBE (Spec.Rsa.bytesAt mem (ptr + BitVec.ofNat 64 pLen) qLen),
         Spec.Dsa.decodeBE (Spec.Rsa.bytesAt mem (ptr + BitVec.ofNat 64 (pLen + qLen)) pLen)⟩ := by
-  have h0 := VG.Proof.Dsa.bytesAt_slice mem ptr (offset := 0) (len := pLen) (by omega : 0 + pLen ≤ total)
+  have h0 := VG.Proof.Dsa.bytesAt_slice mem ptr (offset := 0) (len := pLen) (by omega_arith : 0 + pLen ≤ total)
   simp only [List.drop_zero, BitVec.add_zero] at h0
-  rw [VG.Proof.Dsa.paramsBytes_eq, h0, VG.Proof.Dsa.bytesAt_slice mem ptr (by omega : pLen + qLen ≤ total),
-    VG.Proof.Dsa.bytesAt_slice mem ptr (by omega : (pLen + qLen) + pLen ≤ total)]
+  rw [VG.Proof.Dsa.paramsBytes_eq, h0, VG.Proof.Dsa.bytesAt_slice mem ptr (by omega_arith : pLen + qLen ≤ total),
+    VG.Proof.Dsa.bytesAt_slice mem ptr (by omega_arith : (pLen + qLen) + pLen ≤ total)]
 
 /-- The domain check, by the checks the code makes. -/
 theorem checkParametersBytes_iff {pLen qLen : Nat} {params : List Byte}
@@ -96,18 +96,18 @@ theorem checkIn {s t : State} {base : Addr} {size : Nat} (h : checkPre s) (hb : 
   obtain ⟨_, hrd, _, dPS, _, fP, _, hv, hr1, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hz : 4960 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   have pr : (⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (s.gpr .r2).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 64) (v := s.gpr .r0) (by simp))
-    pr fP (by omega) (.inr rfl) dPS hz
+    pr fP (by omega_arith) (.inr rfl) dPS hz
   rw [BitVec.add_zero] at ip
   have cg := fun {a : Nat} {xs : List (BitVec 32)} (h : (xs.map BitVec.toNat).sum = a) =>
     (sum_ofNat (s.gpr .r0) xs).trans (congrArg (fun n => s.gpr .r0 + BitVec.ofNat 32 n) h)
-  refine ⟨ip, input_of E (p := .input .q) (by decide : Impl.Dsa.Layout.Field.q ≠ .mask) ?_ pr fP (by omega)
-      (.inl (by omega)) dPS hz,
-    input_of E (p := .input .g) (by decide : Impl.Dsa.Layout.Field.g ≠ .mask) ?_ pr fP (by omega)
-      (.inl (by omega)) dPS hz⟩
+  refine ⟨ip, input_of E (p := .input .q) (by decide : Impl.Dsa.Layout.Field.q ≠ .mask) ?_ pr fP (by omega_arith)
+      (.inl (by omega_arith)) dPS hz,
+    input_of E (p := .input .g) (by decide : Impl.Dsa.Layout.Field.g ≠ .mask) ?_ pr fP (by omega_arith)
+      (.inl (by omega_arith)) dPS hz⟩
   · exact (E.field (d := 68) (v := s.gpr .r0 + s.gpr .r2) (by simp)).trans (cg (xs := [s.gpr .r2]) (by simp))
   · exact (E.field (d := 72) (v := s.gpr .r0 + s.gpr .r2 + s.gpr .r3) (by simp)).trans
       (cg (xs := [s.gpr .r2, s.gpr .r3]) (by simp))
@@ -117,23 +117,23 @@ theorem check_correct {s : State} (h : checkPre s) :
   obtain ⟨hsp, hrd, hwr, dPS, dSA, fP, fS, hv, hr1, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (s.gpr .r2).toNat ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hs16 : 128 * (s.gpr .r2).toNat ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   simp only [Generate.checkParameters, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (checkEntry_ok h) fun u I => ?_)
-  have E₀ := Env.of_installed I (by omega)
+  have E₀ := Env.of_installed I (by omega_arith)
   have fok := checkFields_ok s
-  refine WP.seq (genDispatch_ok Generate.checkSized _ E₀.ws (by omega) (genWidths_mem hv) (by decide)
+  refine WP.seq (genDispatch_ok Generate.checkSized _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := s.gpr .r2) (by simp)]) (by rw [E₀.field (d := 104) (v := s.gpr .r3) (by simp)])
     fun t₁ R₁ M₁ => ?_)
   have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 1).toNat * 8 := by omega
+  have hz : 4960 ≤ (arg s 1).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, Ig₁⟩ := checkIn h rfl rfl E₁
   -- The specification's components.
   have hpl : (checkParams s).length = 2 * (s.gpr .r2).toNat + (s.gpr .r3).toNat := by
     simp only [checkParams, Spec.Rsa.bytesAt, List.length_map, List.length_range]; exact hr1
   have PB := paramsBytes_at s.mem (State.addr (s.gpr .r0)) (pLen := (s.gpr .r2).toNat) (qLen := (s.gpr .r3).toNat)
-    (total := (s.gpr .r1).toNat) (by omega)
+    (total := (s.gpr .r1).toNat) (by omega_arith)
   have spec := checkParametersBytes_iff hv hpl
   simp only [checkParams] at spec
   rw [PB] at spec
@@ -143,12 +143,12 @@ theorem check_correct {s : State} (h : checkPre s) :
     fun t₂ ⟨Z, M, _, R₂, O₂⟩ => ?_)
   have E₂ := E₁.keep fok R₂ (by decide) O₂ (fun r hr => by
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega)
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith)
   refine WP.ite t₂.z (eval_eq _) (fun ht => ?_) (fun hf => ?_)
   · -- A rejected shape.
     have nv := of_decide_eq_true (Z ▸ ht)
     refine wp_mov (op2_imm (by decide)) fun t₃ v₃ => WP.block_nil ?_
-    refine finish_ok (E₂.ws.of_upd v₃ (by decide)) (by omega) (fun i hi => by rw [v₃.mem]; exact E₂.saved i hi)
+    refine finish_ok (E₂.ws.of_upd v₃ (by decide)) (by omega_arith) (fun i hi => by rw [v₃.mem]; exact E₂.saved i hi)
       (v₃.sp.trans E₂.sp) fun u A r0 _ => ⟨A, ?_⟩
     have : checkRes s = false := by
       by_contra hc
@@ -163,14 +163,14 @@ theorem check_correct {s : State} (h : checkPre s) :
       rw [M]; unfold mask32; split
       · rfl
       · contradiction
-    refine WP.seq (WP.mono (parameters_ok ⟨E₂.ws, by omega, wp, wq, qp, q32⟩ Ip Iq Ig hP hPo hQ hQo)
+    refine WP.seq (WP.mono (parameters_ok ⟨E₂.ws, by omega_arith, wp, wq, qp, q32⟩ Ip Iq Ig hP hPo hQ hQo)
       fun t₃ ⟨F₃, Rn₃⟩ => ?_)
     have E₃ := E₂.keep fok Rn₃.rest (by decide) Rn₃.mem (fun r hr => by
       simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega)
+      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega_arith)
     rw [hm, BitVec.allOnes_and] at F₃
-    refine WP.mono (result_ok E₃.ws (by omega) _ F₃) fun t₄ ⟨r0₄, R₄, M₄⟩ => ?_
-    refine finish_ok (E₃.ws.of_rest R₄ (by decide)) (by omega) (fun i hi => by rw [M₄]; exact E₃.saved i hi)
+    refine WP.mono (result_ok E₃.ws (by omega_arith) _ F₃) fun t₄ ⟨r0₄, R₄, M₄⟩ => ?_
+    refine finish_ok (E₃.ws.of_rest R₄ (by decide)) (by omega_arith) (fun i hi => by rw [M₄]; exact E₃.saved i hi)
       (R₄.sp.trans E₃.sp) fun u A r0 _ => ⟨A, ?_⟩
     show (BitVec.setWidth 32 (u.gpr .r1 ++ u.gpr .r0)).toNat = if checkRes s = true then 1 else 0
     rw [status_toNat (r0.trans r0₄)]

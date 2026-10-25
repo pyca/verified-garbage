@@ -142,8 +142,8 @@ theorem cpMain_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {s t : State} (c : C
   have i₃ : InScr B Z t.mem u₃.mem := (i₁.trans hi₂).trans hi₃
   have saved₃ : ∀ i < 6, word u₃.mem B (8 * i) = word t.mem B (8 * i) := by
     intro i hi
-    rw [hw₃ i (by omega), hp₁ i (by omega) (by unfold sW; omega) (by unfold sWs sFn; omega)
-      (by unfold sArr; omega)]
+    rw [hw₃ i (by omega_arith), hp₁ i (by omega_arith) (by unfold sW; omega_arith) (by unfold sWs sFn; omega_arith)
+      (by unfold sArr; omega_arith)]
   simp only [seqs]
   refine WP.ite (!decide (1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) k) ∧
     2 * (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) k) / 2) + 1 <
@@ -179,7 +179,7 @@ theorem cpMain_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {s t : State} (c : C
     have hq : (domainOf k (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)).q =
         some (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdi + BitVec.ofNat 64 (2 * k)) k)) := by
       rw [hdl]; exact domainOf_q3 _ _ _
-    refine WP.ite false (by simp [eval, hz₄, hdl, show 3 * k ≠ 2 * k by omega]) (fun h => by simp at h)
+    refine WP.ite false (by simp [eval, hz₄, hdl, show 3 * k ≠ 2 * k by omega_arith]) (fun h => by simp at h)
       (fun _ => ?_)
     have hc₄ := hc₃.toMem.congr hm₄ k₄.2.2
     have hv₄ : XVals u₄ B (inner ((k + 7) / 8)) ((k + 7) / 8) mi (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) k)) :=

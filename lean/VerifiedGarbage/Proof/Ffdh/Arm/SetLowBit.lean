@@ -37,11 +37,7 @@ theorem setLowBit_store (s : State) {base : BitVec 32} {len w : Nat}
   have rh := h.workspace.read (off := 120) (by omega)
   have ra := h.workspace.read (off := arrAt w 7) (by omega)
   have wa := h.workspace.write (off := arrAt w 7) (by omega)
-  refine withRest [.r3, .r4] ?_ (by
-    intro r hr i hi
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [instrs, VG.Impl.Ffdh.Arm.setLowBit, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl | rfl <;> simp [clobbers, dstOf, Ne.symm hr.1, Ne.symm hr.2]) (by rfl)
+  refine withRest_all [.r3, .r4] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.setLowBit
   ffrun [h.ptr, a120, arrAddr, rh, ra, wa, pointer, off, BitVec.add_zero]
 

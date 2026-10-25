@@ -223,7 +223,7 @@ theorem invPlace_ok (z : Spec.Idea.Schedule) (q i : Nat) (hi : i < 4) (t : State
       Keep [.r8, .r12] t t' := by
   refine WP.mono (WP.keep (c := .block (invPlace (4 * q + i))) [.r8, .r12] (Q := fun t' =>
       Acc z q (i + 1) t' ∧ t'.mem = t.mem) ?_
-    (by unfold invPlace; split <;> simp [writesOnly, Code.allInstrs_eq, instrs, dstOf, mov]) rfl)
+    (by unfold invPlace; split <;> rfl) rfl)
     fun t' ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
   unfold invPlace
   split

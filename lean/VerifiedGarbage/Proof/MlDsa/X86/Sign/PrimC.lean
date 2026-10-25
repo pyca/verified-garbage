@@ -76,7 +76,7 @@ theorem hb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (highB
     sig_pre [highBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, eA, eSp, gl]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hR hO' dRO, rR₁, rO₁, rR₂, rO₂, rA₂, rR₃, rO₃, rA₃,
       Buf.fit hp hR, Buf.fit hp hO', hγ, ?_⟩
     exact reduced_congr (ent_bytes hp h (n := 3) (by decide) hR) (m ▸ (hA s₀ s hp ha).2)
@@ -108,7 +108,7 @@ theorem hb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (highB
     subst he
     simp only [arg_withRegions, a0, a1, a2, m₂, gl] at post
     rw [polyAt_congr (ent_bytes hp h (n := 3) (by decide) hR), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 /-- `out ← LowBits(r)`, in `R_q`. -/
 theorem lb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (lowBitsContract X86.abi 16))
@@ -151,7 +151,7 @@ theorem lb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (lowBi
     sig_pre [lowBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, eA, eSp, gl]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hR hO' dRO, rR₁, rO₁, rR₂, rO₂, rA₂, rR₃, rO₃, rA₃,
       Buf.fit hp hR, Buf.fit hp hO', hγ, ?_⟩
     exact reduced_congr (ent_bytes hp h (n := 3) (by decide) hR) (m ▸ (hA s₀ s hp ha).2)
@@ -183,7 +183,7 @@ theorem lb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (lowBi
     subst he
     simp only [arg_withRegions, a0, a1, a2, m₂, gl] at post
     rw [polyAt_congr (ent_bytes hp h (n := 3) (by decide) hR), m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post
 
 /-- `eax ← ‖f‖∞ < bound`. -/
 theorem norm_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (normLtContract X86.abi 16))
@@ -193,7 +193,7 @@ theorem norm_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (nor
       s'.gpr .eax = (if normRq [polyAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩)] < bnd then 1 else 0) → B s₀ s') :
     SP p A B (callPR nm c [.buf ⟨fa, fo, 1024⟩, .imm bnd]) := by
   set F : Buf := ⟨fa, fo, 1024⟩
-  have bl : (BitVec.ofNat 32 bnd).toNat = bnd := by rw [BitVec.toNat_ofNat]; omega
+  have bl : (BitVec.ofNat 32 bnd).toNat = bnd := by rw [BitVec.toNat_ofNat]; omega_arith
   refine callPR_piece _ 2 rfl hv ok (by decide) (by decide) (by simp [argOk, hc]) (fun s₀ => [F.rgn s₀, below (E1 s₀) 8])
     (fun _ => []) (fun s₀ s hp ha => (hA s₀ s hp ha).1)
     (fun s₀ s₁ hp ⟨s, ha, h, m, hg⟩ => ?_) (fun s₀ s₀' s₁ s₁' hp hp' hq ⟨s, ha, h, m, hg⟩ ⟨s', ha', h', m', hg'⟩ => ?_)
@@ -215,7 +215,7 @@ theorem norm_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (nor
     sig_pre [normLtContract, normLtSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, eA, eSp]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rF₂, rA₂, rF₃, rA₃, Buf.fit hp hc, ?_⟩
     exact reduced_congr (ent_bytes hp h (n := 2) (by decide) hc) (m ▸ (hA s₀ s hp ha).2)
   · have e₁ : F.ptr s₀ = F.ptr s₀' := hq.t.ptr hc
@@ -240,7 +240,7 @@ theorem norm_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (nor
     rw [polyAt_congr (ent_bytes hp h (n := 2) (by decide) hc), m] at post
     refine hQ s₀ s s' hp ha h' ((m ▸ fr).sub fun r hr => ?_) post
     simp only [List.nil_append, List.mem_singleton] at hr; subst hr
-    exact ⟨below (E1 s₀) 80, by simp [FR], stk_sub hp (by have := ok.stk; omega) (by show 80 + 16 ≤ 96; omega)⟩
+    exact ⟨below (E1 s₀) 80, by simp [FR], stk_sub hp (by have := ok.stk; omega_arith) (by show 80 + 16 ≤ 96; omega_arith)⟩
 
 /-- `h ← MakeHint(z, r)`, returning the number of 1s in `eax`. -/
 theorem hint_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (makeHintContract X86.abi 16))
@@ -292,7 +292,7 @@ theorem hint_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mak
     sig_pre [makeHintContract, makeHintSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     subst he
     simp only [arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp, gl]
-    refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; have := (E1 s₀).isLt; omega,
+    refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; have := (E1 s₀).isLt; omega_arith,
       rfl, rfl, Buf.disj hp hZ hH' dZH, rZ₁, Buf.disj hp hR hH' dRH, rR₁, rH₁, rZ₂, rR₂, rH₂, rA₂, rZ₃, rR₃, rH₃, rA₃,
       Buf.fit hp hZ, Buf.fit hp hR, Buf.fit hp hH', hγ, ?_, ?_⟩
     · exact reduced_congr (ent_bytes hp h (n := 4) (by decide) hZ) (m ▸ (hA s₀ s hp ha).2.1)
@@ -330,6 +330,6 @@ theorem hint_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mak
     simp only [arg_withRegions, a0, a1, a2, a3, m₂, sw32, g₂, gl] at post
     rw [polyAt_congr (ent_bytes hp h (n := 4) (by decide) hZ), polyAt_congr (ent_bytes hp h (n := 4) (by decide) hR),
       m] at post
-    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega) hp (m ▸ fr)) post.1 post.2
+    exact hQ s₀ s s' hp ha h' (fr80 (by decide) (by have := ok.stk; omega_arith) hp (m ▸ fr)) post.1 post.2
 
 end VG.Proof.MlDsa.X86.Sign

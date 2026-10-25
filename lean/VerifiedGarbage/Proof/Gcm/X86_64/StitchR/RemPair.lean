@@ -100,10 +100,10 @@ theorem pairMem_ok (t : State)
   let s₅ := s₄.setV .l256 .xmm12 (w.extractLsb' 0 128) (w.extractLsb' 128 128)
   have l₁ : ∀ l < 2, s₁.lane .xmm13 l = t.mem.readW (aS + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
     rw [← load256_lane _ _ hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [s₁, State.lane_setV256, v]
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> simp [s₁, State.lane_setV256, v]
   have l₂ : ∀ l < 2, s₂.lane .xmm12 l = t.mem.readW (aK + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
     rw [← load256_lane _ _ hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [s₂, State.lane_setV256, k]
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> simp [s₂, State.lane_setV256, k]
   have l₃ : ∀ l < 2, s₃.lane .xmm12 l =
       t.mem.readW (aK + BitVec.ofNat 64 (16 * l)) 128 ^^^ t.mem.readW (aS + BitVec.ofNat 64 (16 * l)) 128 :=
     fun l hl => by
@@ -130,7 +130,7 @@ theorem pairMem_ok (t : State)
   · rw [← l₁ l hl]
     simp [s₅, s₄, s₃, s₂, s₁, lane_vbin256, State.lane_setV256]
   · rw [← load256_lane _ _ hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [s₅, State.lane_setV256, w, aW]
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> simp [s₅, State.lane_setV256, w, aW]
   · simp [s₅, s₄, s₃, s₂, s₁, lane_vbin256, State.lane_setV256, h13, h12]
 
 /-- The block in `xmm13` byte-reversed and `Y` added, `Y` cleared, and the
@@ -183,18 +183,18 @@ theorem remNextPair_ok (s : State) {m : Nat} (h2 : 2 ≤ m) (h15 : m ≤ 15) {i 
     rw [show (32 : BitVec 64) = BitVec.ofNat 64 32 from rfl, ← BitVec.ofNat_add]; congr 1
   have s9 : BitVec.ofNat 64 (16 + m) - 2 = BitVec.ofNat 64 (16 + (m - 2)) := by
     rw [show (2 : BitVec 64) = BitVec.ofNat 64 2 from rfl,
-      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega) (by omega)]
-    congr 1; omega
+      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
+    congr 1; omega_arith
   have z9 : (BitVec.ofNat 64 (16 + (m - 2)) - 16 == 0) = decide (m = 2) := by
     rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
-      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega) (by omega)]
+      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
     by_cases h : m = 2
     · subst h; rfl
     · have : BitVec.ofNat 64 (16 + (m - 2) - 16) ≠ 0 := fun e => by
         have := congrArg BitVec.toNat e
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 16 + (m - 2) - 16 < 2 ^ 64 by omega)] at this
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 16 + (m - 2) - 16 < 2 ^ 64 by omega_arith)] at this
         have h0 : BitVec.toNat (0 : BitVec 64) = 0 := rfl
-        omega
+        omega_arith
       rw [beq_false_of_ne this, decide_eq_false h]
   apply WP.of_runBlock
   simp only [remNextPair, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
@@ -248,7 +248,7 @@ theorem RInvP.of_D {E : REnv} {i : Nat} {t : State} (hI : RInvD E i t) (h8 : t.l
         simp only [Pclmul.prod, State.proj_xmm, h8, h9, h10]; rfl,
         xor_zero]
     y := hI.y, y1 := y1
-    m0 := fun l hl => by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [hI.m0, m0]
+    m0 := fun l hl => by rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl; exacts [hI.m0, m0]
     m1 := hI.m1 }
 
 theorem aOff (p : Addr) (j l : Nat) :
@@ -284,28 +284,28 @@ theorem pairStep_ok {E : REnv} (hE : E.Ok) (h2 : Ok2 E) (hsrc : E.src = .rdx) {i
   rw [WP.block_append_iff]
   refine WP.mono (pairLanes_ok t₁ fun l hl => by rw [k₁ _ (by decide) (by decide) l hl]; exact hI.m0 l hl)
     fun t₂ ⟨kk, q₂⟩ => ?_
-  refine WP.mono (remNextPair_ok t₂ (m := E.r - i) (i := i) (by omega) (by omega) (by rw [kk.gpr, g₁, hI.r9])
+  refine WP.mono (remNextPair_ok t₂ (m := E.r - i) (i := i) (by omega_arith) (by omega_arith) (by rw [kk.gpr, g₁, hI.r9])
     (by rw [kk.gpr, g₁, hI.r10])) fun t' ⟨a10, a9, z, gg, ln, mm, rd', wr'⟩ => ⟨?_, z⟩
   have fA : ∀ (R : Region), R.Disjoint ⟨E.A, 16 * E.r⟩ → ∀ k ≤ E.r, ∀ r' ∈ [(⟨E.A, 16 * k⟩ : Region)],
       R.Disjoint r' := fun R hR k hk r' hr' => by
     simp only [List.mem_singleton] at hr'; subst hr'
-    exact hR.sub_right (Region.sub_prefix (by omega))
+    exact hR.sub_right (Region.sub_prefix (by omega_arith))
   have F₁ : Frame [⟨E.A, 16 * (i + 2)⟩] E.m t₁.mem := by
     rw [m₁]
     exact (hI.frame.sub fun r' hr' => by
         simp only [List.mem_singleton] at hr'; subst hr'
-        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩).writeW (List.mem_singleton_self _) _
+      (Offset.contains_base _ (by omega_arith) (by omega_arith))
   have mt : t'.mem = t₁.mem := by rw [mm, kk.mem]
   have bS : ∀ l < 2, blockAt t.mem (E.A + BitVec.ofNat 64 (16 * (i + l))) = blockAt E.m (E.aS (i + l)) :=
     fun l hl => by
       rw [show E.A + BitVec.ofNat 64 (16 * (i + l)) = E.aS (i + l) by rw [eS]]
       exact blockAt_frame hI.frame fun r' hr' => by
-        simp only [List.mem_singleton] at hr'; subst hr'; exact hE.dS (i + l) (by omega) i (by omega)
+        simp only [List.mem_singleton] at hr'; subst hr'; exact hE.dS (i + l) (by omega_arith) i (by omega_arith)
   have bK : ∀ l < 2, blockAt t.mem (E.P + BitVec.ofNat 64 (768 + 16 * (i + l))) = blockAt E.m (E.aK (i + l)) :=
-    fun l hl => blockAt_frame hI.frame (fA _ (hE.dK _ (by omega)) i (by omega))
+    fun l hl => blockAt_frame hI.frame (fA _ (hE.dK _ (by omega_arith)) i (by omega_arith))
   have rW : ∀ l < 2, t₁.mem.readW (E.aW (i + l)) 128 = E.T (i + l) := fun l hl =>
-    F₁.readW (Region.contains_self _ _) (fA _ (hE.dW _ (by omega)) (i + 2) hi) (by decide)
+    F₁.readW (Region.contains_self _ _) (fA _ (hE.dW _ (by omega_arith)) (i + 2) hi) (by decide)
   have P : ∀ l < 2, Pclmul.prod (t'.proj l) =
       (Pclmul.prod (t.proj l)).acc (E.H (i + l) ^^^ t.lane .xmm2 l) (E.T (i + l)) := fun l hl => by
     obtain ⟨p₂, -, -⟩ := q₂ l hl
@@ -315,22 +315,22 @@ theorem pairStep_ok {E : REnv} (hE : E.Ok) (h2 : Ok2 E) (hsrc : E.src = .rdx) {i
         k₁ .xmm9 (by decide) (by decide) l hl, k₁ .xmm10 (by decide) (by decide) l hl]
     rw [e, p₂, e₁, x13 l hl, x12 l hl, k₁ _ (by decide) (by decide) l hl, aOff, aOff, rW l hl, ← blockAt_eq,
       bS l hl]
-  refine ⟨by omega, a10, by rw [a9, show E.r - i - 2 = E.r - (i + 2) by omega],
+  refine ⟨by omega_arith, a10, by rw [a9, show E.r - i - 2 = E.r - (i + 2) by omega_arith],
     fun q h9 h10 => by rw [gg q h9 h10, kk.gpr, g₁]; exact hI.gpr q h9 h10, by rw [rd', kk.rd, rd₁, hI.rd],
     by rw [wr', kk.wr, wr₁, hI.wr], by rw [mt]; exact F₁, fun j hj => ?_, ?_, ?_, ?_, fun l hl => ?_, ?_⟩
   · rw [mt]
     by_cases hji : j < i
     · rw [m₁, show E.aD i = (⟨E.aD i, 32⟩ : Region).base from rfl,
-        blockAt_writeW_sep' (Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)) rfl]
+        blockAt_writeW_sep' (Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) rfl]
       exact hI.ct j hji
-    · obtain ⟨l, hl, rfl⟩ : ∃ l < 2, j = i + l := ⟨j - i, by omega, by omega⟩
+    · obtain ⟨l, hl, rfl⟩ : ∃ l < 2, j = i + l := ⟨j - i, by omega_arith, by omega_arith⟩
       have b := b₁ l hl
       rw [aOff, aOffK, bS l hl, bK l hl] at b
       exact b
   · rw [P 0 (by decide), P 1 (by decide), xor_acc_acc, hI.prod, hI.y, hI.y1]
     simp only [accR, Nat.add_zero, Nat.add_one_ne_zero, ↓reduceIte]
     rw [BitVec.xor_comm (E.H i), BitVec.xor_comm (E.H (i + 1))]
-  · rw [ln, (q₂ 0 (by decide)).2.1]; exact (ite_eq_right_iff.mpr fun h => absurd h (by omega)).symm
+  · rw [ln, (q₂ 0 (by decide)).2.1]; exact (ite_eq_right_iff.mpr fun h => absurd h (by omega_arith)).symm
   · rw [ln, (q₂ 1 (by decide)).2.1]
   · rw [ln, (q₂ l hl).2.2 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
       k₁ _ (by decide) (by decide) l hl]
@@ -349,9 +349,9 @@ theorem pairLoop_ok {E : REnv} (hE : E.Ok) (h2 : Ok2 E) (hsrc : E.src = .rdx) {i
   refine WP.mono (pairStep_ok hE h2 hsrc hj hIs) fun s' ⟨hI', hz⟩ => ?_
   by_cases h1 : E.r - j = 2
   · refine .inl ⟨by simp only [eval, hz, h1, decide_true, Option.map_some, Bool.not_true], ?_⟩
-    rwa [show E.r = j + 2 by omega]
+    rwa [show E.r = j + 2 by omega_arith]
   · exact .inr ⟨by simp only [eval, hz, h1, decide_false, Option.map_some, Bool.not_false], E.r - (j + 2),
-      by omega, j + 2, rfl, by omega, by omega, hI'⟩
+      by omega_arith, j + 2, rfl, by omega_arith, by omega_arith, hI'⟩
 
 theorem wp_and_run {is : List Instr} {s : State} {Q R : State → Prop} (h : WP isa (.block is) s Q)
     (hR : ∀ s', runBlock isa is s = some s' → R s') : WP isa (.block is) s fun s' => Q s' ∧ R s' := by
@@ -478,20 +478,20 @@ theorem remMid_ok {E : REnv} (hE : E.Ok) (h2 : Ok2 E) (hsrc : E.src = .rdx) {t :
     · have h' : E.r = i := by simpa using h
       refine WP.block_nil (hX s ?_)
       rw [h']; exact hD h'
-    · exact WP.seq (WP.mono (pairLoop_ok hE h2 hsrc (by simp at h; omega) hev hIs) fun s' hP =>
+    · exact WP.seq (WP.mono (pairLoop_ok hE h2 hsrc (by simp at h; omega_arith) hev hIs) fun s' hP =>
         WP.mono (foldLanes_ok hP) hX)
   refine WP.mono (test91_ok t) fun t₁ ⟨z₁, g₁, l₁, m₁, rd₁, wr₁⟩ => ?_
   have hI₁ := rinvD_keep hI g₁ m₁ rd₁ wr₁ l₁
-  rw [hI.r9, Nat.sub_zero, parity16 _ (by omega)] at z₁
+  rw [hI.r9, Nat.sub_zero, parity16 _ (by omega_arith)] at z₁
   refine WP.seq (WP.ite (decide (E.r % 2 = 0)) (by simp only [eval, z₁]) (fun h => ?_) (fun h => ?_))
   · refine WP.mono (cmp916_ok t₁) fun t₂ ⟨z₂, g₂, l₂, m₂, rd₂, wr₂⟩ =>
-      hlast t₂ ⟨0, by omega, by simpa using h, ?_, fun h0 => absurd h0 (by omega), ?_⟩
+      hlast t₂ ⟨0, by omega_arith, by simpa using h, ?_, fun h0 => absurd h0 (by omega_arith), ?_⟩
     · exact RInvP.of_D (rinvD_keep hI₁ g₂ m₂ rd₂ wr₂ l₂) (by rw [l₂, l₁]; exact h8) (by rw [l₂, l₁]; exact h9)
         (by rw [l₂, l₁]; exact h10) (by rw [l₂, l₁]; exact y1) (by rw [l₂, l₁]; exact m0)
-    · rw [z₂, g₁, hI.r9, Nat.sub_zero, zero16 _ (by omega)]
+    · rw [z₂, g₁, hI.r9, Nat.sub_zero, zero16 _ (by omega_arith)]
   · rw [← hsrc]
     exact WP.mono (oddStep_ok (E := E) hE hI₁ (by rw [l₁]; exact h8) (by rw [l₁]; exact h9)
       (by rw [l₁]; exact h10) (by rw [l₁]; exact y1) (by rw [l₁]; exact m0))
-      fun t₂ ⟨hP₂, hD₂, z₂⟩ => hlast t₂ ⟨1, Nat.le_refl _, by simp at h; omega, hP₂, fun _ => hD₂, z₂⟩
+      fun t₂ ⟨hP₂, hD₂, z₂⟩ => hlast t₂ ⟨1, Nat.le_refl _, by simp at h; omega_arith, hP₂, fun _ => hD₂, z₂⟩
 
 end VG.Proof.Gcm.X86_64.StitchR

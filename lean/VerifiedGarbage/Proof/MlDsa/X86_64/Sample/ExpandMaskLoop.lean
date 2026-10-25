@@ -41,17 +41,17 @@ theorem etaF_eq {g x : BitVec 32} (hg : g.toNat < q) (hx : x.toNat < q + g.toNat
   by_cases h : g.toNat < x.toNat
   · rw [decide_eq_true h, show (0#32 - BitVec.setWidth 32 (BitVec.ofBool true) &&& qImm) = qImm by decide,
       BitVec.toNat_add, BitVec.toNat_sub, show qImm.toNat = 8380417 from rfl]
-    omega
+    omega_arith
   · rw [decide_eq_false h, show (0#32 - BitVec.setWidth 32 (BitVec.ofBool false) &&& qImm) = 0 by decide,
       BitVec.toNat_add, BitVec.toNat_sub, show (0 : BitVec 32).toNat = 0 from rfl]
-    omega
+    omega_arith
 
 /-- Bit `j` of a 32-bit little-endian word. -/
 theorem readW32_getLsbD (m : Mem) (a : Addr) {j : Nat} (hj : j < 32) :
     (m.readW a 32).getLsbD j = (m (a + BitVec.ofNat 64 (j / 8))).getLsbD (j % 8) := by
-  rw [Mem.readW_byte m a (by omega), BitVec.getLsbD_extractLsb']
-  simp only [show j % 8 < 8 by omega, decide_true, Bool.true_and]
-  congr 1; omega
+  rw [Mem.readW_byte m a (by omega_arith), BitVec.getLsbD_extractLsb']
+  simp only [show j % 8 < 8 by omega_arith, decide_true, Bool.true_and]
+  congr 1; omega_arith
 
 /-- The `c` bits from bit `sh` of the word at `a` are those of `X` from bit
 `8o + sh`, if its first 3 bytes are those of `X` from byte `o`. -/
@@ -63,9 +63,9 @@ theorem word_bits (m : Mem) (a : Addr) (X : List Byte) {o sh c : Nat} (hc : sh +
   rw [Nat.testBit_mod_two_pow, Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, Nat.testBit_div_two_pow]
   by_cases hj : j < c
   · simp only [hj, decide_true, Bool.true_and]
-    rw [← BitVec.getLsbD, readW32_getLsbD m a (j := j + sh) (by omega), hb ((j + sh) / 8) (by omega),
-      testBit_leNat, show (j + (8 * o + sh)) / 8 = o + (j + sh) / 8 by omega,
-      show (j + (8 * o + sh)) % 8 = (j + sh) % 8 by omega]
+    rw [← BitVec.getLsbD, readW32_getLsbD m a (j := j + sh) (by omega_arith), hb ((j + sh) / 8) (by omega_arith),
+      testBit_leNat, show (j + (8 * o + sh)) / 8 = o + (j + sh) / 8 by omega_arith,
+      show (j + (8 * o + sh)) % 8 = (j + sh) % 8 by omega_arith]
   · simp [hj]
 
 /-! ## A coefficient -/
@@ -90,7 +90,7 @@ theorem emCoef_run (c k : Nat) (hk : c * k % 8 < 8) (s : State)
     xrun [h0, h1]
     rw [BitVec.ushiftRight_zero]; rfl
   · simp only [emCoef, hs, ite_false, List.cons_append, List.nil_append]
-    xrun [h0, h1, show 1 ≤ c * k % 8 by omega, show c * k % 8 ≤ 31 by omega]
+    xrun [h0, h1, show 1 ≤ c * k % 8 by omega_arith, show c * k % 8 ≤ 31 by omega_arith]
     rfl
 
 /-- The widths of the coefficients. -/
@@ -101,25 +101,25 @@ theorem emCoef_val {c : Nat} (hc : emOk c) (m : Mem) (a : Addr) (X : List Byte) 
     (hb : ∀ b < 3, m (a + BitVec.ofNat 64 b) = X.getD (c / 2 * g + c * k / 8 + b) 0) :
     etaF (BitVec.ofNat 32 (2 ^ (c - 1))) (m.readW a 32 >>> (c * k % 8) &&& BitVec.ofNat 32 (2 ^ c - 1)) =
       emV X c (4 * g + k) := by
-  have hc' : c ≤ 20 := by rcases hc with rfl | rfl <;> omega
-  have hsh : c * k % 8 + c ≤ 24 := by rcases hc with rfl | rfl <;> omega
+  have hc' : c ≤ 20 := by rcases hc with rfl | rfl <;> omega_arith
+  have hsh : c * k % 8 + c ≤ 24 := by rcases hc with rfl | rfl <;> omega_arith
   have e1 : (m.readW a 32 >>> (c * k % 8) &&& BitVec.ofNat 32 (2 ^ c - 1)).toNat =
       leNat X / 2 ^ ((4 * g + k) * c) % 2 ^ c := by
     rw [BitVec.toNat_and, shr_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 ^ c - 1) (by
-      have : 2 ^ c ≤ 2 ^ 20 := Nat.pow_le_pow_right (by decide) hc'; omega), Nat.and_two_pow_sub_one_eq_mod,
+      have : 2 ^ c ≤ 2 ^ 20 := Nat.pow_le_pow_right (by decide) hc'; omega_arith), Nat.and_two_pow_sub_one_eq_mod,
       word_bits m a X hsh hb]
     have e : 8 * (c / 2 * g + c * k / 8) + c * k % 8 = (4 * g + k) * c := by
-      rcases hc with rfl | rfl <;> omega
+      rcases hc with rfl | rfl <;> omega_arith
     rw [e]
   have e2 : (BitVec.ofNat 32 (2 ^ (c - 1))).toNat = 2 ^ (c - 1) := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
-      have : 2 ^ (c - 1) ≤ 2 ^ 19 := Nat.pow_le_pow_right (by decide) (by omega); omega)]
+      have : 2 ^ (c - 1) ≤ 2 ^ 19 := Nat.pow_le_pow_right (by decide) (by omega_arith); omega_arith)]
   have hp : 2 ^ c = 2 * 2 ^ (c - 1) := by
     rw [← Nat.pow_succ']; congr 1; rcases hc with rfl | rfl <;> rfl
   rw [etaF_eq (by rw [e2]; rcases hc with rfl | rfl <;> decide) (by
     rw [e1, e2]; have := Nat.mod_lt (leNat X / 2 ^ ((4 * g + k) * c)) (Nat.two_pow_pos c)
     have : 2 ^ (c - 1) < q := by rcases hc with rfl | rfl <;> decide
-    omega), e1, e2]
+    omega_arith), e1, e2]
 
 /-! ## A group of 4 coefficients -/
 
@@ -152,26 +152,26 @@ theorem emGroup_ok {c : Nat} (hc : emOk c) {X : List Byte} {out aP : Addr} {g : 
   have hsi : s'.gpr .rsi = out + BitVec.ofNat 64 (c / 2 * g) := by rw [k'.gpr (by decide), h.rsi]
   have hdi : s'.gpr .rdi = aP + BitVec.ofNat 64 (16 * g) := by rw [k'.gpr (by decide), h.rdi]
   have ha : s'.gpr .rdi + BitVec.ofNat 64 (4 * k) = coeffAddr aP (4 * g + k) := by
-    rw [hdi, offAdd]; congr 2; omega
+    rw [hdi, offAdd]; congr 2; omega_arith
   have hr : s'.gpr .rsi + BitVec.ofNat 64 (c * k / 8) = out + BitVec.ofNat 64 (c / 2 * g + c * k / 8) := by
     rw [hsi, offAdd]
-  have hkk : c * k / 8 ≤ c * 3 / 8 := Nat.div_le_div_right (Nat.mul_le_mul_left c (by omega))
-  have hg' : c / 2 * g ≤ c / 2 * 63 := Nat.mul_le_mul_left _ (by omega)
-  refine WP.mono (emCoef_run c k (by omega) s' (by rw [hr, k'.2.1, k'.2.2]; exact h.rd _ (by omega))
-    (by rw [ha, k'.2.2]; exact h.wr _ (by omega))) fun s'' ⟨hm, k''⟩ => ?_
+  have hkk : c * k / 8 ≤ c * 3 / 8 := Nat.div_le_div_right (Nat.mul_le_mul_left c (by omega_arith))
+  have hg' : c / 2 * g ≤ c / 2 * 63 := Nat.mul_le_mul_left _ (by omega_arith)
+  refine WP.mono (emCoef_run c k (by omega_arith) s' (by rw [hr, k'.2.1, k'.2.2]; exact h.rd _ (by omega_arith))
+    (by rw [ha, k'.2.2]; exact h.wr _ (by omega_arith))) fun s'' ⟨hm, k''⟩ => ?_
   have hv := emCoef_val hc s'.mem (s'.gpr .rsi + BitVec.ofNat 64 (c * k / 8)) X (g := g) (k := k) (fun b hb => by
     rw [hr, offAdd, hf _ fun r hr' => by
-      simp only [List.mem_singleton] at hr'; subst hr'; exact h.apart _ (by omega)]
-    exact h.bytes _ (by omega))
+      simp only [List.mem_singleton] at hr'; subst hr'; exact h.apart _ (by omega_arith)]
+    exact h.bytes _ (by omega_arith))
   rw [ha, hv] at hm
   refine ⟨k'.trans k'' |>.mono (by simp), ?_, fun j hj => ?_, fun i hi hi' => ?_⟩
-  · rw [hm]; exact hf.writeW (List.mem_singleton_self _) _ (coeff_contains _ (by omega))
-  · rw [hm, coeffAt_writeW _ _ (by omega) (by omega)]
+  · rw [hm]; exact hf.writeW (List.mem_singleton_self _) _ (coeff_contains _ (by omega_arith))
+  · rw [hm, coeffAt_writeW _ _ (by omega_arith) (by omega_arith)]
     by_cases e : j = k
     · subst e; rw [ifT rfl]
-    · rw [ifF (by omega)]; exact hst j (by omega)
-  · rw [hm, coeffAt_writeW _ _ hi (by omega), ifF (by omega)]
-    exact hsame i hi (by omega)
+    · rw [ifF (by omega_arith)]; exact hst j (by omega_arith)
+  · rw [hm, coeffAt_writeW _ _ hi (by omega_arith), ifF (by omega_arith)]
+    exact hsame i hi (by omega_arith)
 
 theorem sxHalf {c : Nat} (hc : emOk c) : BitVec.signExtend 64 (BitVec.ofNat 32 (c / 2)) = BitVec.ofNat 64 (c / 2) := by
   rcases hc with rfl | rfl <;> decide

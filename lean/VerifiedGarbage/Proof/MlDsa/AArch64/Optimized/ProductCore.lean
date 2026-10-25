@@ -99,8 +99,8 @@ theorem productCore_ok (raw : Bool) {s : State}
       apply hrt
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hoff
       omega
-    · have hc0' : c.gpr .x0=s.gpr .x0 := by rw [hc0,hb0']; bv_omega
-      have hc2' : c.gpr .x2=s.gpr .x0 := by rw [hc2,hb0']; bv_omega
+    · have hc0' : c.gpr .x0=s.gpr .x0 := by rw [hc0,hb0']; bv_omega_arith
+      have hc2' : c.gpr .x2=s.gpr .x0 := by rw [hc2,hb0']; bv_omega_arith
       refine WP.mono (productFinal_ok raw hfc hsc hc12 ?_ ?_) fun t ⟨hkt,hmt⟩ => ?_
       · intro u hu i
         simp only [hkc.rd,hkc.wr,hkb.rd,hkb.wr,hka.rd,hka.wr,hc2',BitVec.add_assoc,← BitVec.ofNat_add]

@@ -39,14 +39,7 @@ theorem keyContext_ok (s : State) (base : BitVec 32) (w : Nat)
       (t.gpr .r0 = base ∧ t.gpr .r8 = base + 96#32 ∧
         t.gpr .r9 = BitVec.ofNat 32 (2 * w + 2) ∧ t.gpr .r7 = BitVec.ofNat 32 (8 * (w + 2)) ∧
         t.mem = s.mem) ∧ Rest [.r0, .r7, .r8, .r9] s t := by
-  refine withRest [.r0, .r7, .r8, .r9] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterCandidate.keyContext : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have h := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r7, .r8, .r9] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.keyContext VG.Impl.Rsa.Arm.Keys.stride
   ffrun [List.cons_append, List.nil_append, BitVec.add_zero, readBase, saved, readWidth, width,
     nativeKeyWords w, nativeKeyStride w, show (96 : BitVec 32) = 96#32 from rfl]

@@ -105,19 +105,19 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {rs : L
     have S₂ := h.o₂.sl
     have key : ∀ d, d ∈ [200, 208, 216, 224, 232, 240] → d ≤ k → k < d + 8 →
         s₁.mem (W + BitVec.ofNat 64 k) = s₂.mem (W + BitVec.ofNat 64 k) := fun d hd h₁ h₂ => by
-      rw [hw d (by omega)]
+      rw [hw d (by omega_arith)]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       rcases hd with rfl | rfl | rfl | rfl | rfl | rfl
-      · exact word_byte S₁.rounds S₂.rounds (by omega)
-      · exact word_byte S₁.nonce S₂.nonce (by omega)
-      · exact word_byte S₁.aad S₂.aad (by omega)
-      · exact word_byte S₁.alen S₂.alen (by omega)
-      · exact word_byte S₁.data S₂.data (by omega)
-      · exact word_byte S₁.len S₂.len (by omega)
+      · exact word_byte S₁.rounds S₂.rounds (by omega_arith)
+      · exact word_byte S₁.nonce S₂.nonce (by omega_arith)
+      · exact word_byte S₁.aad S₂.aad (by omega_arith)
+      · exact word_byte S₁.alen S₂.alen (by omega_arith)
+      · exact word_byte S₁.data S₂.data (by omega_arith)
+      · exact word_byte S₁.len S₂.len (by omega_arith)
     have hq : (k - 200) / 8 = 0 ∨ (k - 200) / 8 = 1 ∨ (k - 200) / 8 = 2 ∨ (k - 200) / 8 = 3 ∨
-        (k - 200) / 8 = 4 ∨ (k - 200) / 8 = 5 := by omega
+        (k - 200) / 8 = 4 ∨ (k - 200) / 8 = 5 := by omega_arith
     exact key (200 + 8 * ((k - 200) / 8)) (by
-      rcases hq with h | h | h | h | h | h <;> rw [h] <;> decide) (by omega) (by omega)
+      rcases hq with h | h | h | h | h | h <;> rw [h] <;> decide) (by omega_arith) (by omega_arith)
 
 /-- Code the taint analysis checks from `sivT rs`. -/
 theorem rel_taintC {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {P : State → State → Prop}
@@ -181,10 +181,10 @@ theorem tagCall_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R
   obtain ⟨t₁, run₁, -, rdi, rsi, rdx, rcx, r8, r9, hg₁, hrd₁, hwr₁⟩ := tagArgs_ok L O.env O.sl ho
   have E₁ : Env K W SP t₁ := O.env.of_saved hg₁ hrd₁ hwr₁
   have dO : (⟨W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 112, 16⟩ :=
-    L.w_w (by omega) (by omega) (by decide)
+    L.w_w (by omega_arith) (by omega_arith) (by decide)
   exact WP.of_runBlock ⟨t₁, run₁, cargs L E₁ hR (keyS L E₁.perm) (c := 112) (by decide)
-    (srcW L E₁.perm (t := o) (k := 16 * 1) (by omega)) dO (L.w_w (.inr (by omega)) (by decide) (by omega))
-    (E₁.perm.wC (by omega)) rdi rsi rdx rcx r8 r9, E₁.rsp⟩
+    (srcW L E₁.perm (t := o) (k := 16 * 1) (by omega_arith)) dO (L.w_w (.inr (by omega_arith)) (by decide) (by omega_arith))
+    (E₁.perm.wC (by omega_arith)) rdi rsi rdx rcx r8 r9, E₁.rsp⟩
 
 theorem tagArgs_check {o : Nat} (ho : o = 0 ∨ o = 128) :
     ∃ hc, (taint.check (sivT []) (.block (copy16 cmO ccO ++ zero16 o ++ ptr .rdi .r15 skO ++ ctrArgs ++
@@ -259,11 +259,11 @@ theorem chunkGen_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {a
       (.ite .b (.block [.mov .r14 (.reg .rbx)]) (.block []))) ctrGen) t
       (CMid K W SP R N A D al n b j (min 64 (b - j))) := by
   have hn := I.buf.lt
-  refine WP.seq (WP.mono (chunkHead_wp (b := b) (j := j) (by omega) I.rbx) fun t₂ H => ?_)
+  refine WP.seq (WP.mono (chunkHead_wp (b := b) (j := j) (by omega_arith) I.rbx) fun t₂ H => ?_)
   obtain ⟨r14₂, g₂, m₂, rd₂, wr₂⟩ := H
   have E₂ : Env K W SP t₂ := I.one.env.keep (fun r hr => g₂ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide)) rd₂ wr₂
-  refine WP.mono (ctrGen_ok L E₂ (by omega) (by omega) r14₂ (CtrSt.self W t₂.mem)) fun t₃ G => ?_
+  refine WP.mono (ctrGen_ok L E₂ (by omega_arith) (by omega_arith) r14₂ (CtrSt.self W t₂.mem)) fun t₃ G => ?_
   have k : ∀ r, r ≠ .r8 → r ≠ .r9 → r ≠ .rdx → r ≠ .rcx → r ≠ .rdi → r ≠ .r14 → t₃.gpr r = t.gpr r :=
     fun r h₁ h₂ h₃ h₄ h₅ h₆ => by rw [G.gpr r h₁ h₂ h₃ h₄ h₅, g₂ r h₆]
   have E₃ : Env K W SP t₃ := E₂.keep (fun r hr => G.gpr r (by
@@ -311,7 +311,7 @@ theorem ecbCall_wp (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} 
     (by rw [B.saved _ (by decide), I.inv.rbx]) (B.saved _ (by decide)), by rw [B.saved _ (by decide), I.r14]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by mem_lit, Offset.sub W (by decide) (by omega)⟩
+  · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by mem_lit, Offset.sub W (by decide) (by omega_arith)⟩
   · exact ⟨_, by mem_lit, fun _ h => h⟩
   · exact ⟨_, by mem_lit, fun _ h => h⟩
 
@@ -339,7 +339,7 @@ theorem xorEnd_wp (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
   unfold ksXor
   refine WP.seq (WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩))
   refine WP.mono (ksLoop_regs wide L E₁ (I.inv.buf.of_eq rd₁ wr₁) (by rw [wr₁]; exact hDw) (j := j) (c := c) hc1 hc
-    (by omega)
+    (by omega_arith)
     ⟨by rw [g₁ _ (by decide) (by decide), I.inv.r12, Nat.add_zero], by rw [rsi₁, Nat.mul_zero, Nat.add_zero],
       by rw [rcx₁, Nat.sub_zero], Frame.refl _ _, fun _ _ _ _ _ _ => rfl, rfl, rfl⟩) fun t₂ X => ?_
   have rbx₂ : t₂.gpr .rbx = BitVec.ofNat 64 (b - j) := by
@@ -351,10 +351,10 @@ theorem xorEnd_wp (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
       (∀ r, r ≠ .rbx → t₃.gpr r = t₂.gpr r) ∧ t₃.mem = t₂.mem ∧ t₃.rd = t₂.rd ∧ t₃.wr = t₂.wr := by
     refine ⟨_, by srun [rbx₂, r14₂], ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, gpr_arithFlags, ite_true]
-      rw [Proof.AesGcm.X86_64.ofNat_sub (by omega) (by omega), Nat.sub_sub]
+      rw [Proof.AesGcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith), Nat.sub_sub]
     · simp only [zf_setReg, zf_arithFlags]
-      rw [Proof.AesGcm.X86_64.sub_beq (by omega) (by omega)]
-      exact congrArg some (decide_eq_decide.mpr (by omega))
+      rw [Proof.AesGcm.X86_64.sub_beq (by omega_arith) (by omega_arith)]
+      exact congrArg some (decide_eq_decide.mpr (by omega_arith))
     · intro r hr; simp only [gpr_setReg, gpr_arithFlags, hr, ite_false]
     all_goals rfl
   have E₂ : Env K W SP t₂ := E₁.keep (fun r hr => X.gpr r (by
@@ -370,7 +370,7 @@ theorem xorEnd_wp (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
     rw [m₃, ← m₁]
     exact X.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨D, n⟩, by mem_lit, Offset.sub_base D (by omega)⟩
+      exact ⟨⟨D, n⟩, by mem_lit, Offset.sub_base D (by omega_arith)⟩
   refine WP.of_runBlock ⟨t₃, run₃, I.inv.of_frame L E₃ (by rw [wr₃, X.wr, wr₁]) (by rw [rd₃, X.rd, rd₁]) hf
     (by rw [g₃ _ (by decide), X.r12]) rbx₃ ?_, zf₃⟩
   rw [g₃ _ (by decide), X.gpr .rbp (by decide) (by decide) (by decide) (by decide) (by decide),
@@ -400,9 +400,9 @@ theorem ctrChunk_rel (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K 
         (CInv K W SP R N A D al n b (j + min 64 (b - j)) t₂ ∧
           t₂.zf = some (decide (b - (j + min 64 (b - j)) = 0))) := by
   generalize hcd : min 64 (b - j) = c
-  have hc1 : 1 ≤ c := by omega
-  have hc : c ≤ 64 := by omega
-  have hjc : j + c ≤ b := by omega
+  have hc1 : 1 ≤ c := by omega_arith
+  have hc : c ≤ 64 := by omega_arith
+  have hjc : j + c ≤ b := by omega_arith
   unfold cryptChunk
   refine RelCT.assoc (RelCT.assoc ?_)
   have r₁ := (rel_taintC [.r12, .rbx, .rbp] (P := fun t₁ t₂ => CInv K W SP R N A D al n b j t₁ ∧
@@ -441,12 +441,12 @@ theorem blks_rel (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP
       refine (ctrChunk_rel eb wide L hR hDW hn hb hj).mono (fun t₁ t₂ h => ⟨h.2.2.1, h.2.2.2⟩)
         fun t₁ t₂ ⟨⟨I₁, z₁⟩, ⟨I₂, z₂⟩⟩ => ⟨by rw [eval_ne z₁, eval_ne z₂], fun hc => ?_, fun hc => ?_⟩
       · rw [eval_ne z₁] at hc
-        have he : j + min 64 (b - j) = b := by simp at hc; omega
+        have he : j + min 64 (b - j) = b := by simp at hc; omega_arith
         rw [he] at I₁ I₂
         exact ⟨I₁, I₂⟩
       · rw [eval_ne z₁] at hc
         have he : b - (j + min 64 (b - j)) ≠ 0 := by simpa using hc
-        exact ⟨b - (j + min 64 (b - j)), by omega, j + min 64 (b - j), rfl, by omega, I₁, I₂⟩
+        exact ⟨b - (j + min 64 (b - j)), by omega_arith, j + min 64 (b - j), rfl, by omega_arith, I₁, I₂⟩
     · exact RelCT.of_false fun _ _ h => hm h.1
   · exact RelCT.of_false fun _ _ h => hj h.2.1
 
@@ -521,7 +521,7 @@ theorem test_cinv {K W SP : Addr} {R : Nat} {N A D : Addr} {al n b j : Nat} {t :
   · exact ⟨⟨I.one.env.keep (fun _ _ => by simp only [gpr_arithFlags]) rfl rfl, I.one.sl, I.one.wr⟩, I.buf.of_eq rfl rfl,
       by simp only [gpr_arithFlags, I.r12], by simp only [gpr_arithFlags, I.rbx], by simp only [gpr_arithFlags, I.rbp]⟩
   · simp only [zf_arithFlags, I.rbp]
-    rw [Proof.AesGcm.X86_64.and_self_beq (by omega)]
+    rw [Proof.AesGcm.X86_64.and_self_beq (by omega_arith)]
 
 /-- `crypt`, in two runs with the same public arguments. -/
 theorem crypt_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
@@ -551,7 +551,7 @@ theorem crypt_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} 
         have := h.2
         rw [eval_e h.1.2.1.2] at this
         simp [h0] at this
-      · exact (blks_rel eb wide L hR hDW hn (b := n / 16) (by omega) (by omega)).mono
+      · exact (blks_rel eb wide L hR hDW hn (b := n / 16) (by omega_arith) (by omega_arith)).mono
           (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h
   have r₃ := (rel_taintC [.r12, .rbx, .rbp] (P := fun t₁ t₂ => CInv K W SP R N A D al n (n / 16) (n / 16) t₁ ∧
       CInv K W SP R N A D al n (n / 16) (n / 16) t₂) hDW hn (fun t₁ t₂ h => h.1.agree h.2) test_check).wp

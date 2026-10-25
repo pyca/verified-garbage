@@ -45,10 +45,10 @@ theorem ofNat_bne_zero {x : Nat} (h : x < 2 ^ 64) : (BitVec.ofNat 64 x != 0) = d
 
 theorem ofNat_shr {x : Nat} (h : x < 2 ^ 64) : BitVec.ofNat 64 x >>> 4 = BitVec.ofNat 64 (x / 16) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, toNat64 h, toNat64 (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, toNat64 h, toNat64 (by omega_arith), Nat.shiftRight_eq_div_pow]
 
 theorem off_toNat (p : Addr) {d : Nat} (h : p.toNat + d < 2 ^ 64) : (off p d).toNat = p.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith
 
 /-! ## What `macPad` keeps -/
 
@@ -101,7 +101,7 @@ theorem absorb_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
   have hsp : s₁.sp = s₀.sp := i₁.sp
   have hbP : (⟨s₁.sp - 160, 160⟩ : Region).Disjoint ⟨cx s₀, 128⟩ := by
     rw [hsp, ← sub_zero s₀ 128]; exact hp.b_c.sub_right (sub_ctx s₀ (by decide))
-  have hP : (cx s₀).toNat + 128 ≤ 2 ^ 64 := by have := hp.fit_c; omega
+  have hP : (cx s₀).toNat + 128 ≤ 2 ^ 64 := by have := hp.fit_c; omega_arith
   have cv : Covers ([(⟨p, 16 * n⟩ : Region)] ++ [⟨cx s₀, 128⟩]) (s₁.rd ++ s₁.wr) := by
     intro a w ⟨r, hr, hcn⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -154,14 +154,14 @@ theorem padZ_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) :
     by rw [u₄.sp, g₃.sp, g₂.sp, u₁.sp], ?_, fun j hj => ?_⟩
   · rw [hm]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (contains_sub s₀ (w := 64 / 8) (by omega) (by omega) (by decide))).writeW
-      (List.mem_singleton_self _) _ (contains_sub s₀ (w := 64 / 8) (by omega) (by omega) (by decide))
+      (contains_sub s₀ (w := 64 / 8) (by omega_arith) (by omega_arith) (by decide))).writeW
+      (List.mem_singleton_self _) _ (contains_sub s₀ (w := 64 / 8) (by omega_arith) (by omega_arith) (by decide))
   · rw [hm, writeW64_zero_apply]
     by_cases hj8 : 8 ≤ j
-    · rw [ite_eq_left (by rw [Offset.sub_toNat _ (by omega) (by rw [padOff_eq]; omega)]; omega)]
-    · rw [ite_eq_right (by rw [Offset.sub_toNat' _ (by rw [padOff_eq]; omega) (by rw [padOff_eq]; omega)]; split <;> omega),
+    · rw [ite_eq_left (by rw [Offset.sub_toNat _ (by omega_arith) (by rw [padOff_eq]; omega_arith)]; omega_arith)]
+    · rw [ite_eq_right (by rw [Offset.sub_toNat' _ (by rw [padOff_eq]; omega_arith) (by rw [padOff_eq]; omega_arith)]; split <;> omega_arith),
         writeW64_zero_apply,
-        ite_eq_left (by rw [Offset.sub_toNat _ (by omega) (by rw [padOff_eq]; omega)]; omega)]
+        ite_eq_left (by rw [Offset.sub_toNat _ (by omega_arith) (by rw [padOff_eq]; omega_arith)]; omega_arith)]
 
 /-! ## Copying the last bytes -/
 
@@ -189,7 +189,7 @@ theorem byte_rt (b : Byte) : ((b.setWidth 64).setWidth 8 : Byte) = b := by
 theorem sub_toNat_lt_one (x a : Addr) : (x - a).toNat < 1 ↔ x = a := by
   constructor
   · intro h
-    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : Addr).toNat = 0 from rfl]; omega)
+    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : Addr).toNat = 0 from rfl]; omega_arith)
     calc x = x - a + a := (BitVec.sub_add_cancel x a).symm
       _ = a := by rw [h0]; exact BitVec.zero_add a
   · rintro rfl; simp
@@ -212,7 +212,7 @@ theorem copy_step {s₀ : State} (hp : APre e s₀) {s₂ : State} {Q : Addr} {t
   have hin : InRegions (s.rd ++ s.wr) (Q + BitVec.ofNat 64 i) 1 := by
     rw [h.rd, h.wr]; exact hsrc i hi
   have hout : InRegions s.wr (off (cx s₀) (padOff + i)) 1 := by
-    rw [h.wr, hwr]; exact hp.in_ctx (by rw [padOff_eq]; omega)
+    rw [h.wr, hwr]; exact hp.in_ctx (by rw [padOff_eq]; omega_arith)
   unfold copyBody
   refine wp_lbz (a := Q + BitVec.ofNat 64 i) (by decide) (by decide)
     (by rw [h.r4]; exact BitVec.add_zero _) hin fun s₁ u₁ => ?_
@@ -229,7 +229,7 @@ theorem copy_step {s₀ : State} (hp : APre e s₀) {s₂ : State} {Q : Addr} {t
   · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), h.r6,
       off_add, Nat.add_assoc]
   · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), h.r12,
-      sub_one (by omega), Nat.sub_sub]
+      sub_one (by omega_arith), Nat.sub_sub]
   · rw [u₅.other _ (ne_of_pres hr), u₄.other _ (ne_of_pres hr), u₃.other _ (ne_of_pres hr), g₂.gpr,
       u₁.other _ (ne_of_pres hr), h.keep r hr]
   · rw [u₅.sp, u₄.sp, u₃.sp, g₂.sp, u₁.sp, h.sp]
@@ -237,7 +237,7 @@ theorem copy_step {s₀ : State} (hp : APre e s₀) {s₂ : State} {Q : Addr} {t
   · rw [u₅.wr, u₄.wr, u₃.wr, g₂.wr, u₁.wr, h.wr]
   · rw [hm]
     exact h.frame.writeW (List.mem_singleton_self _) _
-      (contains_sub s₀ (w := 8 / 8) (by omega) (by omega) (by decide))
+      (contains_sub s₀ (w := 8 / 8) (by omega_arith) (by omega_arith) (by decide))
   · have hbyte : s.mem (Q + BitVec.ofNat 64 i) = s₂.mem (Q + BitVec.ofNat 64 i) :=
       h.frame _ fun r hr hc => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -245,19 +245,19 @@ theorem copy_step {s₀ : State} (hp : APre e s₀) {s₂ : State} {Q : Addr} {t
     rw [hm, writeW8_apply]
     by_cases hki : k = i
     · subst hki
-      simp only [ite_true, show k < k + 1 by omega, hbyte]
-    · rw [ite_eq_right (Offset.add_ofNat_ne (cx s₀) (by rw [padOff_eq]; omega) (by rw [padOff_eq]; omega)
-        (by omega)), h.buf k hk]
+      simp only [ite_true, show k < k + 1 by omega_arith, hbyte]
+    · rw [ite_eq_right (Offset.add_ofNat_ne (cx s₀) (by rw [padOff_eq]; omega_arith) (by rw [padOff_eq]; omega_arith)
+        (by omega_arith)), h.buf k hk]
       by_cases hk' : k < i
-      · simp [hk', show k < i + 1 by omega]
-      · simp [hk', show ¬ k < i + 1 by omega]
+      · simp [hk', show k < i + 1 by omega_arith]
+      · simp [hk', show ¬ k < i + 1 by omega_arith]
 
 /-- The padded block's bytes. -/
 theorem padded_bytes {s₀ : State} {m mz : Mem} {Q : Addr} {t : Nat} (ht : t < 16)
     (h : ∀ j < 16, m (off (cx s₀) (padOff + j)) = if j < t then mz (Q + BitVec.ofNat 64 j) else 0) :
     bytesAt m (off (cx s₀) padOff) 16 = bytesAt mz Q t ++ List.replicate (16 - t) 0 := by
   apply List.ext_getElem
-  · simp [bytesAt]; omega
+  · simp [bytesAt]; omega_arith
   · intro k h₁ h₂
     simp only [bytesAt, List.length_map, List.length_range] at h₁
     simp only [bytesAt, List.getElem_map, List.getElem_range]
@@ -265,7 +265,7 @@ theorem padded_bytes {s₀ : State} {m mz : Mem} {Q : Addr} {t : Nat} (ht : t < 
     by_cases hk : k < t
     · rw [List.getElem_append_left (by simp [hk])]
       simp [hk]
-    · rw [List.getElem_append_right (by simp; omega)]
+    · rw [List.getElem_append_right (by simp; omega_arith)]
       simp [hk]
 
 theorem padTail_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) {Q : Addr} {t : Nat}
@@ -294,10 +294,10 @@ theorem padTail_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
       refine WP.mono (copy_step hp ht (by rw [i₂.wr]) (by rw [rd₂, wr₂]; exact hsrc) hdisj hi hI)
         fun s' h' => ?_
       have hz : isa.eval (.nonzero .d .r12) s' = some (decide (t - (i + 1) ≠ 0)) := by
-        rw [VG.Proof.Poly1305.PPC64LE.eval_nonzero, h'.r12, ofNat_bne_zero (by omega)]
+        rw [VG.Proof.Poly1305.PPC64LE.eval_nonzero, h'.r12, ofNat_bne_zero (by omega_arith)]
       by_cases hl : i + 1 = t
       · exact .inl ⟨by rw [hz]; simp [hl], hl ▸ h'⟩
-      · exact .inr ⟨by rw [hz]; simp; omega, t - (i + 1), by omega, i + 1, rfl, by omega, h'⟩
+      · exact .inr ⟨by rw [hz]; simp; omega_arith, t - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, h'⟩
     exact WP.loop (M := isa) I hstep t s₂ ⟨0, by simp, ht0, ⟨by rw [g₂ _ (by decide) (by decide), h4]; exact (BitVec.add_zero _).symm,
       by rw [r6₂]; rfl, by rw [g₂ _ (by decide) (by decide), h12]; rfl, fun _ _ => rfl, rfl, rfl, rfl,
       Frame.refl _ _, fun j hj => by simp [z₂ j hj]⟩⟩
@@ -312,7 +312,7 @@ theorem padTail_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
   have hbp : (belR s₀).Disjoint ⟨off (cx s₀) padOff, 16 * 1⟩ :=
     hp.b_c.sub_right (sub_ctx s₀ (by decide))
   have hfit : (off (cx s₀) padOff).toNat + 16 * 1 ≤ 2 ^ 64 := by
-    have := hp.fit_c; rw [off_toNat _ (by rw [padOff_eq]; omega), padOff_eq]; omega
+    have := hp.fit_c; rw [off_toNat _ (by rw [padOff_eq]; omega_arith), padOff_eq]; omega_arith
   have hc : Covers [(⟨off (cx s₀) padOff, 16 * 1⟩ : Region)] (s₀.rd ++ s₀.wr) :=
     covers_right (covers1 hp rfl (a := padOff) (n := 16 * 1) (by decide))
   refine WP.mono (absorb_ok hp i₅ (n := 1) (by rw [u₅.other _ (by decide), u₄.gpr, i₃.regs.r24])
@@ -380,11 +380,11 @@ theorem macPad_ok {s₀ : State} (hp : APre e s₀) {p n : Reg} (hr : MacRegs p 
   have hdj : (sub s₀ 0 128).Disjoint ⟨P, 16 * (len / 16)⟩ :=
     (hs.ctx.sub_left (sub_ctx s₀ (by decide))).sub_right (Region.sub_prefix hk)
   refine WP.seq (WP.mono (absorb_ok hp i₂ (p := P) (n := len / 16) (by rw [u₂.other _ (by decide), u₁.gpr, hP])
-    (by rw [u₂.gpr, u₁.other _ hnn.r4, hn, ofNat_shr hlt]) (by omega) hdj
-    (hs.bel.sub_right (Region.sub_prefix hk)) (by have := hs.fit; omega)
+    (by rw [u₂.gpr, u₁.other _ hnn.r4, hn, ofNat_shr hlt]) (by omega_arith) hdj
+    (hs.bel.sub_right (Region.sub_prefix hk)) (by have := hs.fit; omega_arith)
     (fun a w ⟨r, hr', hc⟩ => by
       simp only [List.mem_singleton] at hr'; subst hr'
-      exact hs.cov a w ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩))
+      exact hs.cov a w ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_arith⟩))
     fun s₃ ⟨i₃, k₃, repr₃⟩ => ?_)
   have m₂ := k₂.mem_eq
   rw [m₂] at repr₃
@@ -403,14 +403,14 @@ theorem macPad_ok {s₀ : State} (hp : APre e s₀) {p n : Reg} (hr : MacRegs p 
   have hlen : (bytesAt s.mem P len).length = len := VG.Proof.Poly1305.length_bytesAt _ _ _
   have m₅ := k₅.mem_eq
   refine WP.ite (decide (len % 16 = 0)) (by
-      rw [VG.Proof.Poly1305.PPC64LE.eval_zero, r12₅, ofNat_beq_zero (by omega)]) (fun hb => ?_) (fun hb => ?_)
+      rw [VG.Proof.Poly1305.PPC64LE.eval_zero, r12₅, ofNat_beq_zero (by omega_arith)]) (fun hb => ?_) (fun hb => ?_)
   · -- A multiple of 16: nothing to pad.
     have h0 : len % 16 = 0 := by simpa using hb
     refine WP.block_nil ⟨i₅, k₁₅, fun key msg hr => ?_⟩
     rw [m₅]
     have := repr₃ key msg hr
     rwa [show pad16 (bytesAt s.mem P len) = [] by simp [pad16, hlen, h0], List.append_nil,
-      ← show 16 * (len / 16) = len by omega]
+      ← show 16 * (len / 16) = len by omega_arith]
   · have h0 : len % 16 ≠ 0 := by simpa using hb
     refine WP.seq (wp_sub fun s₆ u₆ => wp_add fun s₇ u₇ => WP.block_nil ?_)
     have k₇ : Kept [] s₅ s₇ := ⟨fun r hr => by rw [u₇.other _ (ne_of_pres hr), u₆.other _ (ne_of_pres hr)],
@@ -419,19 +419,19 @@ theorem macPad_ok {s₀ : State} (hp : APre e s₀) {p n : Reg} (hr : MacRegs p 
     have hQ : s₇.gpr .r4 = P + BitVec.ofNat 64 (16 * (len / 16)) := by
       rw [u₇.gpr, u₆.other _ hpn.r4, u₆.gpr, u₅.other _ hpn.r12, u₄.other _ hpn.r12, p₃,
         u₅.other _ hnn.r12, u₄.other _ hnn.r12, n₃, r12₅, Offset.ofNat_sub_ofNat (Nat.mod_le _ _),
-        show len - len % 16 = 16 * (len / 16) by omega]
+        show len - len % 16 = 16 * (len / 16) by omega_arith]
     have hsrc : ∀ j < len % 16, InRegions (s₇.rd ++ s₇.wr)
         (P + BitVec.ofNat 64 (16 * (len / 16)) + BitVec.ofNat 64 j) 1 := fun j hj => by
       rw [i₇.rd, i₇.wr, BitVec.add_assoc, ← BitVec.ofNat_add]
       exact hs.cov _ _ ⟨_, List.mem_singleton_self _,
-        Offset.contains_base P (d := 16 * (len / 16) + j) (n := 1) (by omega) (by omega)⟩
+        Offset.contains_base P (d := 16 * (len / 16) + j) (n := 1) (by omega_arith) (by omega_arith)⟩
     have hdj' : ∀ j < len % 16, (⟨P + BitVec.ofNat 64 (16 * (len / 16)) + BitVec.ofNat 64 j, 1⟩ :
         Region).Disjoint (sub s₀ padOff 16) := fun j hj => by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
       exact ((hs.ctx.sub_left (sub_ctx s₀ (by decide))).sub_right
-        (Offset.sub_base P (d := 16 * (len / 16) + j) (n := 1) (by omega))).symm
+        (Offset.sub_base P (d := 16 * (len / 16) + j) (n := 1) (by omega_arith))).symm
     refine WP.mono (padTail_ok hp i₇ (Q := P + BitVec.ofNat 64 (16 * (len / 16))) (t := len % 16)
-      (by omega) (by omega) hQ (by rw [u₇.other _ (by decide), u₆.other _ (by decide), r12₅]) hsrc hdj')
+      (by omega_arith) (by omega_arith) hQ (by rw [u₇.other _ (by decide), u₆.other _ (by decide), r12₅]) hsrc hdj')
       fun s₈ ⟨i₈, k₈, repr₈⟩ => ?_
     refine ⟨i₈, k₁₅.trans ((kept_mac0 k₇).trans k₈), fun key msg hr => ?_⟩
     have m₇ := k₇.mem_eq
@@ -440,10 +440,10 @@ theorem macPad_ok {s₀ : State} (hp : APre e s₀) {p n : Reg} (hr : MacRegs p 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact ((hs.ctx.sub_left (sub_ctx s₀ (by decide))).sub_right
-            (Offset.sub_base P (d := 16 * (len / 16)) (by omega))).symm
+            (Offset.sub_base P (d := 16 * (len / 16)) (by omega_arith))).symm
         · exact ((hs.ctx.sub_left (sub_ctx s₀ (by decide))).sub_right
-            (Offset.sub_base P (d := 16 * (len / 16)) (by omega))).symm
-        · exact (hs.bel.sub_right (Offset.sub_base P (d := 16 * (len / 16)) (by omega))).symm) (by omega),
+            (Offset.sub_base P (d := 16 * (len / 16)) (by omega_arith))).symm
+        · exact (hs.bel.sub_right (Offset.sub_base P (d := 16 * (len / 16)) (by omega_arith))).symm) (by omega_arith),
       m₂] at this
     rw [show pad16 (bytesAt s.mem P len) = List.replicate (16 - len % 16) 0 by
       simp [pad16, hlen, h0], x_eq]

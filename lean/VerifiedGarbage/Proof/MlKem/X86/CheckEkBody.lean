@@ -89,7 +89,7 @@ theorem sbb_mask (x : BitVec 32) (c : Bool) :
 
 theorem ok_succ (L : List Byte) (t : Nat) :
     ok L (t + 1) ↔ ok L t ∧ field0 L t < q ∧ field1 L t < q :=
-  ⟨fun h => ⟨fun g hg => h g (by omega), h t (by omega)⟩, fun ⟨h, h'⟩ g hg => by
+  ⟨fun h => ⟨fun g hg => h g (by omega_arith), h t (by omega_arith)⟩, fun ⟨h, h'⟩ g hg => by
     rcases Nat.lt_succ_iff_lt_or_eq.mp hg with hg | rfl
     · exact h g hg
     · exact h'⟩
@@ -114,7 +114,7 @@ theorem byte {j : Nat} (hj : j < p.ekLen) : (P0 s₀).mem (eA s₀ + BitVec.ofNa
   have hf := pushed_frame (rs := saveRegs) (s := s₀) (by decide) (by rw [saveRegs_len]; exact hp.sp)
   rw [saveRegs_len] at hf
   rw [bytesAt_getD _ _ hj, hf.bytes (R := eR p s₀) (by simpa [← hp.stk_eq] using hp.stk_e.symm)
-    (by show p.ekLen ≤ 2 ^ 64; have := hp.e_fit; omega) hj]
+    (by show p.ekLen ≤ 2 ^ 64; have := hp.e_fit; omega_arith) hj]
 
 end Pre
 
@@ -124,8 +124,8 @@ theorem init_piece : Piece (Pre p) Pub (fun s₀ s => s = P0 s₀) (Inv p · 0) 
   · subst e
     have fit := hp.sp'
     have a₀ := P0_argAddr s₀ 0
-    have i₀ := P0_argIn (s₀ := s₀) (n := 1) (i := 0) (by omega) fit (by simp [hp.rd])
-    have v₀ := P0_arg hp.sp (n := 1) (i := 0) (by omega) fit hp.stk_a
+    have i₀ := P0_argIn (s₀ := s₀) (n := 1) (i := 0) (by omega_arith) fit (by simp [hp.rd])
+    have v₀ := P0_arg hp.sp (n := 1) (i := 0) (by omega_arith) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero] at a₀
     apply WP.of_runBlock
     simp only [↓reduceIte, ekInitN, at_, runBlock_cons, runStep_some, runBlock_nil,
@@ -143,20 +143,20 @@ theorem step {s₀ : State} (hp : Pre p s₀) {t : Nat} (ht : t < 128 * p.k) {s 
   have fe := hp.e_fit
   have hE : p.ekLen = 384 * p.k + 32 := rfl
   have eb : ∀ o < 3, (eP s₀ + BitVec.ofNat 32 (3 * t) + BitVec.ofNat 32 o).setWidth 64 =
-      eA s₀ + BitVec.ofNat 64 (3 * t + o) := fun o ho => ea_add (by omega)
-  have e0 := eb 0 (by omega)
-  have e1 := eb 1 (by omega)
-  have e2 := eb 2 (by omega)
+      eA s₀ + BitVec.ofNat 64 (3 * t + o) := fun o ho => ea_add (by omega_arith)
+  have e0 := eb 0 (by omega_arith)
+  have e1 := eb 1 (by omega_arith)
+  have e2 := eb 2 (by omega_arith)
   have inE : ∀ o < 3, InRegions (s.rd ++ s.wr) (eA s₀ + BitVec.ofNat 64 (3 * t + o)) 1 := fun o ho =>
-    ⟨eR p s₀, List.mem_append_left _ (by rw [h.rd, pushed_rd, hp.rd]; simp), contains_at (by omega) fe⟩
-  have i0 := inE 0 (by omega)
-  have i1 := inE 1 (by omega)
-  have i2 := inE 2 (by omega)
+    ⟨eR p s₀, List.mem_append_left _ (by rw [h.rd, pushed_rd, hp.rd]; simp), contains_at (by omega_arith) fe⟩
+  have i0 := inE 0 (by omega_arith)
+  have i1 := inE 1 (by omega_arith)
+  have i2 := inE 2 (by omega_arith)
   have v : ∀ o < 3, s.mem (eA s₀ + BitVec.ofNat 64 (3 * t + o)) = (K p s₀).getD (3 * t + o) 0 :=
-    fun o ho => by rw [h.mem, hp.byte (by omega)]
-  have v0 := v 0 (by omega)
-  have v1 := v 1 (by omega)
-  have v2 := v 2 (by omega)
+    fun o ho => by rw [h.mem, hp.byte (by omega_arith)]
+  have v0 := v 0 (by omega_arith)
+  have v1 := v 1 (by omega_arith)
+  have v2 := v 2 (by omega_arith)
   simp only [Nat.add_zero] at e0 i0 v0
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, ekBody, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
@@ -171,16 +171,16 @@ theorem step {s₀ : State} (hp : Pre p s₀) {t : Nat} (ht : t < 128 * p.k) {s 
         ((K p s₀).getD (3 * t + 1) 0).toNat % 16 := by
       rw [show (15 : BitVec 32) = BitVec.ofNat 32 (2 ^ 4 - 1) from rfl, toNat_and_mask _ _ (by decide),
         toNat_byte32]
-    rw [BitVec.toNat_add, rotr_small _ (by decide) (by decide) (by rw [hm]; omega), hm, toNat_byte32,
-      Nat.mod_eq_of_lt (by omega), field0]
-    omega
+    rw [BitVec.toNat_add, rotr_small _ (by decide) (by decide) (by rw [hm]; omega_arith), hm, toNat_byte32,
+      Nat.mod_eq_of_lt (by omega_arith), field0]
+    omega_arith
   have x1 : (BitVec.setWidth 32 ((K p s₀).getD (3 * t + 1) 0) >>> 4 +
       (BitVec.setWidth 32 ((K p s₀).getD (3 * t + 2) 0)).rotateRight 28).toNat = field1 (K p s₀) t := by
     have l1 := ((K p s₀).getD (3 * t + 1) 0).isLt
     have l2 := ((K p s₀).getD (3 * t + 2) 0).isLt
-    rw [BitVec.toNat_add, rotr_small _ (by decide) (by decide) (by rw [toNat_byte32]; omega), toNat_shr,
-      toNat_byte32, toNat_byte32, Nat.mod_eq_of_lt (by omega), field1]
-    omega
+    rw [BitVec.toNat_add, rotr_small _ (by decide) (by decide) (by rw [toNat_byte32]; omega_arith), toNat_shr,
+      toNat_byte32, toNat_byte32, Nat.mod_eq_of_lt (by omega_arith), field1]
+    omega_arith
   simp only [x0, x1, show Q.toNat = 3329 from rfl, h.ebx, mask_succ]
   refine ⟨⟨by simp [h.esp], h.rd, h.wr, h.mem, ?_, ?_, by simp⟩, ?_⟩
   · simp only [show Reg.esi ≠ Reg.ecx by decide, ite_false, ite_true]
@@ -188,7 +188,7 @@ theorem step {s₀ : State} (hp : Pre p s₀) {t : Nat} (ht : t < 128 * p.k) {s 
   · simp only [ite_true, h.ecx]
     exact cnt_next ht
   · simp only [eval, h.ecx]
-    exact cnt_ne ht (by omega)
+    exact cnt_ne ht (by omega_arith)
 
 theorem mask_and1 (p : Prop) [Decidable p] : mask p &&& 1 = if p then 1 else 0 := by
   unfold mask
@@ -215,7 +215,7 @@ theorem end_piece : Piece (Pre p) Pub (Inv p · (128 * p.k)) (Fin p) (.block ekE
   rw [h.ebx, mask_and1]
 
 theorem loop_piece (hk : 0 < p.k) : Piece (Pre p) Pub (Inv p · 0) (Inv p · (128 * p.k)) (.loop (.block ekBody) .ne) :=
-  Piece.countLoop (by omega) (fun t s₀ s => Inv p s₀ t s) [.esp, .esi, .ecx]
+  Piece.countLoop (by omega_arith) (fun t s₀ s => Inv p s₀ t s) [.esp, .esi, .ecx]
     (fun t ht s₀ s hp h => step hp ht h)
     (fun t _ s₀ s₀' s s' _ _ hq h h' r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -227,7 +227,7 @@ theorem loop_piece (hk : 0 < p.k) : Piece (Pre p) Pub (Inv p · 0) (Inv p · (12
 theorem piece (hk : 0 < p.k) (hsp : NoSp (.seq (.block (ekInitN (128 * p.k)))
       (.seq (.loop (.block ekBody) .ne) (.block ekEnd)))) :
     Piece (Pre p) Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin p s₀) s₀ s') (checkEkN (128 * p.k)) :=
-  Piece.leaf (fun _ => []) hsp (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+  Piece.leaf (fun _ => []) hsp (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_arith⟩)
     (fun _ _ r hr => absurd hr (by simp)) (fun _ _ _ _ hq => hq.1)
     ((Piece.seq init_piece (Piece.seq (loop_piece hk) end_piece)).mono (fun _ _ _ h => h)
       fun _ _ _ h => ⟨by rw [h.mem]; exact Frame.refl _ _, h.esp, h.rd, h.wr⟩ |> fun e => ⟨e, h⟩)

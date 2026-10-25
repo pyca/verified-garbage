@@ -37,14 +37,7 @@ theorem rejectHead_ok {p : SearchParams} {used remaining count : Nat} {s : State
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ countFit countRoom]
     congr 1
     omega
-  refine withRest [.r9, .r10, .r11, .r12] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterSearch.rejectHead : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r9, .r10, .r11, .r12] ?_ (by rfl) (by rfl)
   have control := h.buffers.controller
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.rejectHead VG.Impl.Ffdh.Arm.ParameterSearch.ldf
     VG.Impl.Ffdh.Arm.ParameterSearch.stf lowWord at *

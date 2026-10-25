@@ -34,18 +34,18 @@ theorem newton_val (a x : BitVec 64) :
   generalize x.toNat = X at *
   generalize a.toNat = A at *
   have hDj : (D : Int) = 2 - (A * X : Nat) + 2 ^ 64 * (((D : Int) - 2 + (A * X : Nat)) / 2 ^ 64) := by
-    have : ((A * X : Nat) : Int) % 2 ^ 64 = ((A * X % 2 ^ 64 : Nat) : Int) := by omega
-    omega
+    have : ((A * X : Nat) : Int) % 2 ^ 64 = ((A * X % 2 ^ 64 : Nat) : Int) := by omega_arith
+    omega_arith
   generalize (((D : Int) - 2 + (A * X : Nat)) / 2 ^ 64) = j at hDj
   have hXD : ((X * D : Nat) : Int) = 2 * X - (X : Int) * (A * X : Nat) + 2 ^ 64 * (X * j) := by
     rw [Int.natCast_mul, hDj, Int.mul_add, Int.mul_sub, Int.mul_left_comm (X : Int) (2 ^ 64) j]
-    omega
+    omega_arith
   have e : (X : Int) * (2 - (A : Int) * X) = 2 * X - (X : Int) * (A * X : Nat) := by
     rw [Int.mul_sub, Int.natCast_mul, Int.mul_comm (X : Int) 2]
   rw [e]
-  have : ((X * D % 2 ^ 64 : Nat) : Int) = ((X * D : Nat) : Int) % 2 ^ 64 := by omega
+  have : ((X * D % 2 ^ 64 : Nat) : Int) = ((X * D : Nat) : Int) % 2 ^ 64 := by omega_arith
   rw [hR, this, hXD]
-  omega
+  omega_arith
 
 /-- A step: `a x' ≡ 1 (mod 2^(2j))` from `a x ≡ 1 (mod 2^j)`, `a` in `r0`
 and `x` in `r12`. -/
@@ -62,11 +62,11 @@ theorem nstep_ok (t : State) {j : Nat} (hj : 2 * j ≤ 64)
 theorem neg_inv32 {a x : Nat} (h : ((a : Int) * x - 1) % (2 ^ 32 : Int) = 0) :
     (a % 2 ^ 32 * ((2 ^ 64 - x % 2 ^ 64) % 2 ^ 64 % 2 ^ 32) + 1) % 2 ^ 32 = 0 := by
   generalize hy : (2 ^ 64 - x % 2 ^ 64) % 2 ^ 64 % 2 ^ 32 = y
-  have hxy : (x + y) % 2 ^ 32 = 0 := by omega
+  have hxy : (x + y) % 2 ^ 32 = 0 := by omega_arith
   rw [Nat.add_mod, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, ← Nat.add_mod]
   have h1 : (2 ^ 32 : Int) ∣ (a : Int) * x - 1 := Int.dvd_of_emod_eq_zero h
   have h2 : (2 ^ 32 : Int) ∣ ((x + y : Nat) : Int) := by
-    have := Int.dvd_of_emod_eq_zero (show ((x + y : Nat) : Int) % (2 ^ 32 : Int) = 0 by omega)
+    have := Int.dvd_of_emod_eq_zero (show ((x + y : Nat) : Int) % (2 ^ 32 : Int) = 0 by omega_arith)
     exact this
   have h3 : (2 ^ 32 : Int) ∣ ((a * y + 1 : Nat) : Int) := by
     have e : ((a * y + 1 : Nat) : Int) = (a : Int) * ((x + y : Nat) : Int) - ((a : Int) * x - 1) := by
@@ -100,7 +100,7 @@ theorem minv_ok {s : State} {B : Addr} {Z d : Nat} (hs : Scr s B Z) (h10 : s.gpr
       simpa only [Int.natCast_mul, Int.natCast_emod, show ((8 : Nat) : Int) = 8 from rfl,
         show ((1 : Nat) : Int) = 1 from rfl] using congrArg (fun n : Nat => (n : Int)) h1
     show (((word s.mem B d).toNat : Int) * (word s.mem B d).toNat - 1) % 8 = 0
-    omega
+    omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (nstep_ok t₀ (j := 3) (by decide) e₀) fun t₁ ⟨⟨e₁, hb₁, hm₁⟩, k₁⟩ => ?_
   rw [WP.block_append_iff]
@@ -117,7 +117,7 @@ theorem minv_ok {s : State} {B : Addr} {Z d : Nat} (hs : Scr s B Z) (h10 : s.gpr
     fun t ⟨⟨h12', hm⟩, k⟩ => ⟨⟨?_, ?_, by rw [hm, hm₄, hm₃, hm₂, hm₁, hm₀]⟩, (kk.trans k).mono⟩
   · rw [h12', BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     have := ((0 - t₄.gpr .r12) <<< 32).isLt
-    omega
+    omega_arith
   · have hw : w32 s.mem B d = (word s.mem B d).toNat % 2 ^ 32 := by
       have h2 : w32 s.mem B d < 2 ^ 32 := (s.mem.readW (off B d) 32).isLt
       rw [word_eq_w32, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt h2]
@@ -125,7 +125,7 @@ theorem minv_ok {s : State} {B : Addr} {Z d : Nat} (hs : Scr s B Z) (h10 : s.gpr
       rw [h12', BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow,
         Nat.shiftLeft_eq, show (0 : BitVec 64).toNat = 0 from rfl]
       have := (t₄.gpr .r12).isLt
-      omega
+      omega_arith
     rw [hw, hv]
     exact neg_inv32 (emod_pow_weaken (by decide) e₄)
 

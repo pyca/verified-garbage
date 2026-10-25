@@ -97,19 +97,19 @@ theorem SqLay.stepLay {S : Impl.MlKem.AArch64.Hybrid.HSrc} {p e st : Addr} {s : 
   have subP : Region.Sub (pairR p) ⟨p, 2048⟩ := Region.sub_prefix (by decide : 400 ≤ 2048)
   rw [ea, eb]
   refine ⟨?_, h.ekr, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, h.sp,
-    Offset.disjoint p (by omega) (by omega) (by omega),
-    Offset.base_disjoint p (by omega) (by omega), Offset.base_disjoint p (by omega) (by omega),
+    Offset.disjoint p (by omega_arith) (by omega_arith) (by omega_arith),
+    Offset.base_disjoint p (by omega_arith) (by omega_arith), Offset.base_disjoint p (by omega_arith) (by omega_arith),
     (h.dSP.sub_right subP).symm, Offset.base_disjoint p (e := 1536) (n := 136) (by decide) (by decide),
-    h.dSP.sub_right (sub (o := 1536) (n := 136) (by decide)), h.dSP.sub_right (sub (by omega)),
-    h.dSP.sub_right (sub (by omega)),
+    h.dSP.sub_right (sub (o := 1536) (n := 136) (by decide)), h.dSP.sub_right (sub (by omega_arith)),
+    h.dSP.sub_right (sub (by omega_arith)),
     h.dSE, h.fP.sub_right subP, h.fS, h.fP.sub_right (sub (o := 1536) (n := 136) (by decide))⟩
   · refine Covers.cons ?_ (Covers.cons (covers_mono h.state (by simp)) (Covers.cons ?_ Covers.nil))
     · simpa only [BitVec.add_zero, pairR] using cov_scratch (o := 0) (n := 400) h.scratch (by decide)
     · exact cov_scratch (o := 1536) (n := 136) h.scratch (by decide)
-  · exact Covers.right (cov_scratch h.scratch (o := 16 * i) (n := 16) (by omega)) _ _
+  · exact Covers.right (cov_scratch h.scratch (o := 16 * i) (n := 16) (by omega_arith)) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
-  · rw [outAddr_eq]; exact in_scratch h.scratch (by omega)
-  · rw [outAddr_eq]; exact in_scratch h.scratch (by omega)
+  · rw [outAddr_eq]; exact in_scratch h.scratch (by omega_arith)
+  · rw [outAddr_eq]; exact in_scratch h.scratch (by omega_arith)
 
 theorem extend_blocks3 {m m' : Mem} {p a b st sp : Addr} {A : Spec.Sha3.State} {k : Nat} (hk : k < 3)
     (old : Blocks m a k A) (new : Rate21 m' (blockAt a k) (iterF (k + 1) A))
@@ -120,19 +120,19 @@ theorem extend_blocks3 {m m' : Mem} {p a b st sp : Addr} {A : Spec.Sha3.State} {
   intro j hj
   by_cases he : j = k
   · subst j; exact new
-  · have hjk : j < k := by omega
+  · have hjk : j < k := by omega_arith
     intro i hi
     have hc : (rateR21 (blockAt a j)).Contains (outAddr (blockAt a j) i) 8 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [hf.readW hc (by
         intro r hr; simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-        · exact (hpa.sub_right (block_sub a (by omega))).symm
-        · exact Offset.disjoint a (Or.inl (by omega)) (by omega) (by omega)
-        · exact (hab.sub_left (block_sub a (by omega))).sub_right (block_sub b hk)
-        · exact (hwa.sub_right (block_sub a (by omega))).symm
-        · exact (hsa.sub_right (block_sub a (by omega))).symm
-        · exact (hfa.sub_right (block_sub a (by omega))).symm) (by decide)]
+        · exact (hpa.sub_right (block_sub a (by omega_arith))).symm
+        · exact Offset.disjoint a (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
+        · exact (hab.sub_left (block_sub a (by omega_arith))).sub_right (block_sub b hk)
+        · exact (hwa.sub_right (block_sub a (by omega_arith))).symm
+        · exact (hsa.sub_right (block_sub a (by omega_arith))).symm
+        · exact (hfa.sub_right (block_sub a (by omega_arith))).symm) (by decide)]
     exact old j hjk i hi
 
 /-- One of the three main squeezes. -/
@@ -173,9 +173,9 @@ theorem sstep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {initial s : State} {p e s
       h.frame.trans fsub, ?_, ?_, st', ?_⟩
     · simpa only [iterF_succ] using pt
     · rw [t20]; show (p + 400 + BitVec.ofNat 64 (168 * k)) + BitVec.ofNat 64 168 = p + 400 + BitVec.ofNat 64 (168 * (k + 1))
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega_arith]
     · rw [t21]; show (p + 904 + BitVec.ofNat 64 (168 * k)) + BitVec.ofNat 64 168 = p + 904 + BitVec.ofNat 64 (168 * (k + 1))
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 168 * k + 168 = 168 * (k + 1) by omega_arith]
     · exact extend_blocks3 hk h.oa (by simpa only [iterF_succ] using at') ft
         (Offset.base_disjoint p (by decide) (by decide)) (Offset.disjoint p (by decide) (by decide) (by decide))
         (Offset.disjoint p (by decide) (by decide) (by decide)) (hl.dSP.sub_right (sub (by decide)))
@@ -187,16 +187,16 @@ theorem sstep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {initial s : State} {p e s
         (dP (by decide))
       intro r hr; simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with h | h | h | h | h | h <;> simp [h]
-    · rw [VG.Proof.MlKem.bytesAt_frame ft (fun r hr => ?_) (by have := hS.lim; omega)]
+    · rw [VG.Proof.MlKem.bytesAt_frame ft (fun r hr => ?_) (by have := hS.lim; omega_arith)]
       · exact h.ek
       simp only [step3Writes, List.mem_cons, List.not_mem_nil, or_false] at hr
       have dEP := hl.dEP
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact dEP.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048))
       · show Region.Disjoint _ ⟨blockAt (p + BitVec.ofNat 64 400) k, 168⟩
-        rw [blockAt_eq]; exact dEP.sub_right (sub (by omega))
+        rw [blockAt_eq]; exact dEP.sub_right (sub (by omega_arith))
       · show Region.Disjoint _ ⟨blockAt (p + BitVec.ofNat 64 904) k, 168⟩
-        rw [blockAt_eq]; exact dEP.sub_right (sub (by omega))
+        rw [blockAt_eq]; exact dEP.sub_right (sub (by omega_arith))
       · exact dEP.sub_right (sub (by decide))
       · exact hl.dSE.symm
       · exact hl.fE.symm
@@ -208,11 +208,11 @@ theorem sstep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {initial s : State} {p e s
       (by rw [h.keep.get .x28]; exact h28) (hb hkm) h.ek
       (by rw [h.hash, Nat.min_eq_left (Nat.le_of_lt hkm)]) h.pair (hls.stepLay hk))
       fun t ⟨kt, ft, pt, at', bt, st', t20, t21⟩ => next kt ft pt at' bt ?_ t20 t21
-    rw [st', Nat.min_eq_left (show k + 1 ≤ m by omega), Nat.add_assoc]
+    rw [st', Nat.min_eq_left (show k + 1 ≤ m by omega_arith), Nat.add_assoc]
   · rename_i hkm
     refine WP.mono (plainStep_ok S h.ptr h.pa h.pb h.pair (hls.stepLay hk))
       fun t ⟨kt, ft, pt, at', bt, st', t20, t21⟩ => next kt ft pt at' bt ?_ t20 t21
-    rw [st', h.hash, Nat.min_eq_right (show m ≤ k by omega), Nat.min_eq_right (show m ≤ k + 1 by omega)]
+    rw [st', h.hash, Nat.min_eq_right (show m ≤ k by omega_arith), Nat.min_eq_right (show m ≤ k + 1 by omega_arith)]
 
 /-- **The three main squeezes** of a pair, the first `m` absorbing from block `j`. -/
 theorem squeezeM_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p e st : Addr} {E : List Byte}
@@ -260,7 +260,7 @@ theorem startM_ok (L : Impl.MlKem.AArch64.KemLay) (S : Impl.MlKem.AArch64.Hybrid
   have sub : ∀ {o n : Nat}, o + n ≤ 2048 → Region.Sub ⟨p + BitVec.ofNat 64 o, n⟩ ⟨p, 2048⟩ :=
     fun h => Offset.sub_base p h
   refine WP.seq (WP.mono (Paired.init_ok hss hsb h8b hp ha hin
-    (fun j hj => iw (by omega)) (fun j hj => iw (by omega))
+    (fun j hj => iw (by omega_arith)) (fun j hj => iw (by omega_arith))
     (hsep.sub_right (Offset.sub_base p (by decide)))
     (hsep.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048)))
     (Offset.disjoint_base p (by decide) (by decide))) fun u ⟨ku, fu, sv, h19, h20, h21, h22, pair⟩ => ?_)
@@ -274,7 +274,7 @@ theorem startM_ok (L : Impl.MlKem.AArch64.KemLay) (S : Impl.MlKem.AArch64.Hybrid
       rw [List.mem_singleton.mp hr]; exact hl.dSP), hash]
   have heu : bytesAt u.mem e S.len = E := by
     rw [VG.Proof.MlKem.bytesAt_frame fi (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact hl.dEP) (by have := hS.lim; omega), hE]
+      rw [List.mem_singleton.mp hr]; exact hl.dEP) (by have := hS.lim; omega_arith), hE]
   refine WP.mono (squeezeM_ok S hS hb (hl.frame ku.rd ku.wr ku.sp) h19 h20 h21
     (by rw [hS.keep ku (by decide) (by decide)]; exact h25) (by rw [ku.get .x28]; exact h28) pair hsu heu) fun t ht => ?_
   refine ⟨ku.trans ht.keep, ?_, ?_, ht.ptr, ht.pair, ht.oa, ht.ob, ht.hash, ht.ek⟩

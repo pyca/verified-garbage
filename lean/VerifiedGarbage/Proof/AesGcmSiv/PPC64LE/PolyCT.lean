@@ -96,7 +96,7 @@ theorem chunks_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ�
       CInv c σ₁ Q m d a ∧ CInv c σ₂ Q m d b) (fun k => ?_) (m / 16 - 0)).mono
     (fun a b hab => by
       obtain ⟨rfl, rfl⟩ := hab
-      exact ⟨0, rfl, by omega,
+      exact ⟨0, rfl, by omega_arith,
         ⟨⟨PK.refl _, Frame.refl _ _, by simp [elemsAt, Proof.Gcm.ghashFrom_nil]⟩,
           by rw [h23₁, Nat.mul_zero, BitVec.add_zero], by rw [h24₁, Nat.mul_zero, Nat.sub_zero]⟩,
         ⟨⟨PK.refl _, Frame.refl _ _, by simp [elemsAt, Proof.Gcm.ghashFrom_nil]⟩,
@@ -106,22 +106,22 @@ theorem chunks_rel {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ�
   have F₁ := E₁.of_pk J₁.abs.pk
   have F₂ := E₂.of_pk J₂.abs.pk
   have S₁ : Src c a (Q + BitVec.ofNat 64 (16 * d)) (16 * ((m - 16 * d) / 16)) :=
-    (hQ₁.slice (by omega) (by omega)).of_eq J₁.abs.pk.rd J₁.abs.pk.wr
+    (hQ₁.slice (by omega_arith) (by omega_arith)).of_eq J₁.abs.pk.rd J₁.abs.pk.wr
   have S₂ : Src c b (Q + BitVec.ofNat 64 (16 * d)) (16 * ((m - 16 * d) / 16)) :=
-    (hQ₂.slice (by omega) (by omega)).of_eq J₂.abs.pk.rd J₂.abs.pk.wr
-  refine (rel_post (chunk_rel L F₁ F₂ (by rw [J₁.abs.pk.sp, J₂.abs.pk.sp, hsp]) (by omega) (by omega) S₁ S₂
+    (hQ₂.slice (by omega_arith) (by omega_arith)).of_eq J₂.abs.pk.rd J₂.abs.pk.wr
+  refine (rel_post (chunk_rel L F₁ F₂ (by rw [J₁.abs.pk.sp, J₂.abs.pk.sp, hsp]) (by omega_arith) (by omega_arith) S₁ S₂
       J₁.r23 J₂.r23 J₁.r24 J₂.r24)
-    (Runs.of_wp (chunk_wp L F₁ (by omega) (by omega) S₁ J₁.r23 J₁.r24))
-    (Runs.of_wp (chunk_wp L F₂ (by omega) (by omega) S₂ J₂.r23 J₂.r24))).mono (fun _ _ h => h)
+    (Runs.of_wp (chunk_wp L F₁ (by omega_arith) (by omega_arith) S₁ J₁.r23 J₁.r24))
+    (Runs.of_wp (chunk_wp L F₂ (by omega_arith) (by omega_arith) S₂ J₂.r23 J₂.r24))).mono (fun _ _ h => h)
     fun a' b' ⟨C₁, C₂⟩ => ?_
   obtain ⟨I₁', r11₁⟩ := J₁.step L hQ₁ hd C₁
   obtain ⟨I₂', r11₂⟩ := J₂.step L hQ₂ hd C₂
-  have ev₁ := eval_nonzero r11₁ (by omega)
-  have ev₂ := eval_nonzero r11₂ (by omega)
+  have ev₁ := eval_nonzero r11₁ (by omega_arith)
+  have ev₂ := eval_nonzero r11₂ (by omega_arith)
   refine ⟨by rw [ev₁, ev₂], fun _ => trivial,
     fun ht => ⟨m / 16 - (d + min (m / 16 - d) 64), ?_, d + min (m / 16 - d) 64, rfl, ?_, I₁', I₂'⟩⟩
-  · rw [ev₁] at ht; simp at ht; omega
-  · rw [ev₁] at ht; simp at ht; omega
+  · rw [ev₁] at ht; simp at ht; omega_arith
+  · rw [ev₁] at ht; simp at ht; omega_arith
 
 section
 variable {c : Cx} (L : Lay c) {σ₁ σ₂ : State} (E₁ : Env c σ₁) (E₂ : Env c σ₂) (hsp : σ₁.sp = σ₂.sp)
@@ -167,20 +167,20 @@ theorem absorb_rel {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (hQ₁ : Src c σ₁ Q
   have R₂ : Src c τ₂ Q m := hQ₂.of_eq u₂.rd u₂.wr
   refine rel_seqR ?_ (Runs.of_wp (absMid_wp L F₁ hm R₁ q23₁ q24₁ u₁.gpr))
     (Runs.of_wp (absMid_wp L F₂ hm R₂ q23₂ q24₂ u₂.gpr)) fun ρ₁ ρ₂ ⟨P₁, r23₁, r24₁⟩ ⟨P₂, r23₂, r24₂⟩ => ?_
-  · refine rel_ite (eval_zero u₁.gpr (by omega)) (eval_zero u₂.gpr (by omega)) (fun _ => ?_) (fun hf => ?_)
+  · refine rel_ite (eval_zero u₁.gpr (by omega_arith)) (eval_zero u₂.gpr (by omega_arith)) (fun _ => ?_) (fun hf => ?_)
     · exact rel_env [] F₁ F₂ hsp₁ (by simp) ⟨_, by taint_decide⟩
     · have h0 : m / 16 ≠ 0 := by simpa using hf
-      exact chunks_rel L F₁ F₂ hsp₁ hm (by omega) (R₁.take (by omega)) (R₂.take (by omega)) q23₁ q23₂ q24₁ q24₂
+      exact chunks_rel L F₁ F₂ hsp₁ hm (by omega_arith) (R₁.take (by omega_arith)) (R₂.take (by omega_arith)) q23₁ q23₂ q24₁ q24₂
   · have G₁ := F₁.of_pk P₁.pk
     have G₂ := F₂.of_pk P₂.pk
     have hsp₂ : ρ₁.sp = ρ₂.sp := by rw [P₁.pk.sp, P₂.pk.sp, hsp₁]
-    refine rel_ite (eval_zero r24₁ (by omega)) (eval_zero r24₂ (by omega)) (fun _ => ?_) (fun hf => ?_)
+    refine rel_ite (eval_zero r24₁ (by omega_arith)) (eval_zero r24₂ (by omega_arith)) (fun _ => ?_) (fun hf => ?_)
     · exact rel_env [] G₁ G₂ hsp₂ (by simp) ⟨_, by taint_decide⟩
     · have h0 : m % 16 ≠ 0 := by simpa using hf
-      have hs₁ := R₁.slice (a := 16 * (m / 16)) (k := m % 16) (by omega) (by omega)
-      have hs₂ := R₂.slice (a := 16 * (m / 16)) (k := m % 16) (by omega) (by omega)
-      exact absTail_rel L G₁ G₂ hsp₂ (by omega) (by omega) (by rw [P₁.pk.rd, P₁.pk.wr]; exact hs₁.rd)
-        (by rw [P₂.pk.rd, P₂.pk.wr]; exact hs₂.rd) (hd.sub_left (Offset.sub_base Q (by omega))) r23₁ r23₂ r24₁ r24₂
+      have hs₁ := R₁.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith) (by omega_arith)
+      have hs₂ := R₂.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith) (by omega_arith)
+      exact absTail_rel L G₁ G₂ hsp₂ (by omega_arith) (by omega_arith) (by rw [P₁.pk.rd, P₁.pk.wr]; exact hs₁.rd)
+        (by rw [P₂.pk.rd, P₂.pk.wr]; exact hs₂.rd) (hd.sub_left (Offset.sub_base Q (by omega_arith))) r23₁ r23₂ r24₁ r24₂
 
 /-- `lens`. -/
 theorem lens_rel : RelCT isa (Eq2 σ₁ σ₂) lens TT := by

@@ -36,14 +36,14 @@ theorem wordsVal_append (m : Mem) (base : Addr) (d j k : Nat) :
   induction j generalizing d with
   | zero => simp only [wordsVal, Nat.zero_add, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.add_zero]
   | succ j ih =>
-    rw [Nat.add_right_comm, wordsVal, ih, wordsVal, pow64_succ, show d + 8 + 8 * j = d + 8 * (j + 1) by omega,
+    rw [Nat.add_right_comm, wordsVal, ih, wordsVal, pow64_succ, show d + 8 + 8 * j = d + 8 * (j + 1) by omega_arith,
       Nat.mul_add, Nat.mul_assoc]
-    omega
+    omega_arith
 
 /-- A word stored at `o` leaves the word at `d`, apart from it. -/
 theorem word_writeW_ne {m : Mem} {base : Addr} {o d : Nat} (v : BitVec 64) (hsep : d + 8 ≤ o ∨ o + 8 ≤ d)
     (ho : o + 8 ≤ 2 ^ 64) (hd : d + 8 ≤ 2 ^ 64) : word (m.writeW (off base o) v) base d = word m base d :=
-  (writeW_outside m base v ho).word (by omega) hd
+  (writeW_outside m base v ho).word (by omega_arith) hd
 
 theorem macs_succ (rs : Reg) (src rd dst k : Nat) :
     macs rs src rd dst (k + 1) = macs rs src rd dst k ++ macStep rs src rd dst k := by
@@ -67,19 +67,19 @@ theorem macs_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {rs
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [macs_succ]
-    refine wp_append (WP.mono (macs_ok hs hb h3 hrs hsrc4 hrd4 hdst4 hbW hrdW hdW hle hsep (k := k) (by omega))
+    refine wp_append (WP.mono (macs_ok hs hb h3 hrs hsrc4 hrd4 hdst4 hbW hrdW hdW hle hsep (k := k) (by omega_arith))
       fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
     refine WP.mono (macStep_ok (K₁.ws hs) (K₁.at hb hrs) (K₁.at h3) hrs hsrc4 hrd4 hdst4 (j := k)
-      (by omega) (by omega) (by omega)) fun u ⟨lo, m₂, c₂, K₂⟩ => ?_
+      (by omega_arith) (by omega_arith) (by omega_arith)) fun u ⟨lo, m₂, c₂, K₂⟩ => ?_
     rw [K₁.g (r := .r9)] at c₂
     have yk : word s₁.mem base (K + (src + 8 * k)) = word s.mem base (K + src + 8 * k) := by
-      rw [← Nat.add_assoc]; exact O₁.word (by omega) (by omega)
-    have tk : word s₁.mem base (rd + 8 * k) = word s.mem base (rd + 8 * k) := O₁.word (by omega) (by omega)
+      rw [← Nat.add_assoc]; exact O₁.word (by omega_arith) (by omega_arith)
+    have tk : word s₁.mem base (rd + 8 * k) = word s.mem base (rd + 8 * k) := O₁.word (by omega_arith) (by omega_arith)
     rw [yk, tk] at c₂
-    have W := writeW_outside s₁.mem base (d := dst + 8 * k) lo (by omega)
+    have W := writeW_outside s₁.mem base (d := dst + 8 * k) lo (by omega_arith)
     rw [← m₂] at W
-    refine ⟨(O₁.mono (Nat.le_refl _) (by omega)).trans (W.mono (by omega) (by omega)), ?_, K₁.trans K₂⟩
-    rw [wordsVal_succ_top, wordsVal_succ_top, wordsVal_succ_top, W.wordsVal (by omega) (by omega), m₂,
+    refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (W.mono (by omega_arith) (by omega_arith)), ?_, K₁.trans K₂⟩
+    rw [wordsVal_succ_top, wordsVal_succ_top, wordsVal_succ_top, W.wordsVal (by omega_arith) (by omega_arith), m₂,
       word_writeW_self, pow64_succ]
     generalize 2 ^ (64 * k) = P at *
     have e := congrArg (P * ·) c₂
@@ -100,18 +100,18 @@ theorem topB_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (h3
   refine wp_step (ld0_ok hs h3 (by decide) hd4 hd) ?_
   refine wp_step exec_addc ?_
   refine wp_step (std_ok ((hs.write _ _).writeCarry _ _) ((h3.write _).writeCarry _) (by decide) hd4 (d := d)
-    (by omega)) ?_
+    (by omega_arith)) ?_
   refine wp_step (exec_li (by decide)) ?_
   refine wp_step exec_addze (WP.block_nil ?_)
   simp only [write_gpr, writeCarry_gpr, write_mem, RegUpd.mem_writeCarry, RegUpd.ca_writeCarry, RegUpd.ca_write,
     reduceCtorEq, ite_false, ite_true, Nat.zero_add]
-  refine ⟨writeW_outside _ base _ (by omega), ?_, ?_⟩
+  refine ⟨writeW_outside _ base _ (by omega_arith), ?_, ?_⟩
   · rw [word_writeW_self]
     simp only [BitVec.toNat_ofNat]
     have := ca_split (v := (word s.mem base d).toNat + (s.gpr .r0).toNat)
-      (by have := (word s.mem base d).isLt; have := (s.gpr .r0).isLt; omega)
+      (by have := (word s.mem base d).isLt; have := (s.gpr .r0).isLt; omega_arith)
     generalize (decide (2 ^ 64 ≤ (word s.mem base d).toNat + (s.gpr .r0).toNat)).toNat = c at *
-    omega
+    omega_arith
   · refine ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [write_gpr, writeCarry_gpr, hr.1, hr.2, ite_false]
@@ -133,7 +133,7 @@ theorem qStart_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (
   refine wp_step (ld0_ok (hs.write _ _) (h3.write _) (by decide) hmi4 hmi) ?_
   refine wp_step exec_mul ?_
   refine wp_step (ld_ok (((hs.write _ _).write _ _).write _ _) (((h7.write _).write _).write _) (by decide)
-    (by decide) (d := 0) (by omega)) ?_
+    (by decide) (d := 0) (by omega_arith)) ?_
   refine wp_step exec_mulhu ?_
   refine wp_step exec_mul ?_
   refine wp_step exec_addc ?_
@@ -145,13 +145,13 @@ theorem qStart_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (
     generalize hm : word s.mem base K = m0
     generalize ht : word s.mem base a = t
     have hq64 : q < 2 ^ 64 := hq ▸ Nat.mod_lt _ (by decide)
-    have hP : q * m0.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by have := m0.isLt; omega)
+    have hP : q * m0.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by have := m0.isLt; omega_arith)
     simp only [BitVec.toNat_ofNat]
     have := t.isLt
-    have := ca_split (v := q * m0.toNat % 2 ^ 64 + t.toNat) (by omega)
+    have := ca_split (v := q * m0.toNat % 2 ^ 64 + t.toNat) (by omega_arith)
     generalize (decide (2 ^ 64 ≤ q * m0.toNat % 2 ^ 64 + t.toNat)).toNat = c at *
     refine ⟨(q * m0.toNat % 2 ^ 64 + t.toNat) % 2 ^ 64, Nat.mod_lt _ (by decide), ?_⟩
-    omega
+    omega_arith
   · refine ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [write_gpr, writeCarry_gpr, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
@@ -169,29 +169,29 @@ theorem topQ_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (h3
   subst hf
   have hn := hs.nowrap
   have hs15 := hs.small
-  refine wp_step (ld0_ok hs h3 (by decide) (by omega) (by omega)) ?_
+  refine wp_step (ld0_ok hs h3 (by decide) (by omega_arith) (by omega_arith)) ?_
   refine wp_step exec_addc ?_
   refine wp_step (std_ok ((hs.write _ _).writeCarry _ _) ((h3.write _).writeCarry _) (by decide) he4 (d := e)
-    (by omega)) ?_
+    (by omega_arith)) ?_
   refine wp_step exec_addze ?_
   refine wp_step (std_ok ((((hs.write _ _).writeCarry _ _).store _).writeCarry _ _)
-    ((((h3.write _).writeCarry _).store _).writeCarry _) (by decide) (by omega) (d := e + 8)
-    (by omega)) (WP.block_nil ?_)
+    ((((h3.write _).writeCarry _).store _).writeCarry _) (by decide) (by omega_arith) (d := e + 8)
+    (by omega_arith)) (WP.block_nil ?_)
   simp only [write_gpr, writeCarry_gpr, write_mem, RegUpd.mem_writeCarry, RegUpd.ca_writeCarry,
     reduceCtorEq, ite_false, ite_true, Nat.zero_add]
   generalize hv : (word s.mem base (e + 8)).toNat + (s.gpr .r0).toNat = v
-  have W₀ := writeW_outside s.mem base (d := e) (BitVec.ofNat 64 v) (by omega)
+  have W₀ := writeW_outside s.mem base (d := e) (BitVec.ofNat 64 v) (by omega_arith)
   refine ⟨?_, ?_, ?_⟩
   · intro x hx
-    rw [(writeW_outside _ base _ (by omega)) x (by omega), W₀ x (by omega)]
-  · rw [word_writeW_ne _ (by omega) (by omega) (by omega), word_writeW_self, word_writeW_self]
+    rw [(writeW_outside _ base _ (by omega_arith)) x (by omega_arith), W₀ x (by omega_arith)]
+  · rw [word_writeW_ne _ (by omega_arith) (by omega_arith) (by omega_arith), word_writeW_self, word_writeW_self]
     simp only [BitVec.toNat_ofNat]
-    have h1 := ca_split (v := v) (by have := (word s.mem base (e + 8)).isLt; have := (s.gpr .r0).isLt; omega)
+    have h1 := ca_split (v := v) (by have := (word s.mem base (e + 8)).isLt; have := (s.gpr .r0).isLt; omega_arith)
     generalize (decide (2 ^ 64 ≤ v)).toNat = c at *
     have := (s.gpr .r12).isLt
-    have h2 := ca_split (v := (s.gpr .r12).toNat + c) (by omega)
+    have h2 := ca_split (v := (s.gpr .r12).toNat + c) (by omega_arith)
     generalize (decide (2 ^ 64 ≤ (s.gpr .r12).toNat + c)).toNat = c' at *
-    omega
+    omega_arith
   · refine ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [write_gpr, writeCarry_gpr, hr.1, hr.2, ite_false]

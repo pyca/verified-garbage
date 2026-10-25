@@ -134,8 +134,8 @@ theorem bytes_keepR {L : Lay} (hL : OkW L vWb) {W : List (Nat × Nat × Nat)} {m
 
 theorem vfit {p : Params} {STK : Nat} {σ : State} (hL : OkW (vlay p STK σ) vWb) (i : Nat) (hi : i < 5) :
     (vlay p STK σ).size i ≤ 2 ^ 64 := by
-  have := hL.fit i (by simp only [vlay, List.length_cons, List.length_nil]; omega)
-  omega
+  have := hL.fit i (by simp only [vlay, List.length_cons, List.length_nil]; omega_arith)
+  omega_arith
 
 theorem VC.keep {p : Params} {STK : Nat} {σ s s' : State} (h : VC p STK σ s) {W : List (Nat × Nat × Nat)}
     (hk : Kept ((vlay p STK σ).RL W) s s') (hc : vcChk p STK W = true) : VC p STK σ s' := by
@@ -147,9 +147,9 @@ theorem VC.keep {p : Params} {STK : Nat} {σ s s' : State} (h : VC p STK σ s) {
       obtain ⟨w, hw', rfl⟩ := List.mem_map.mp hr
       exact disjW hL (List.all_eq_true.mp h0 w hw') (.inl (by decide))
   refine ⟨h.site.kept hk, hk.rd.trans h.rd, hk.wr.trans h.wr, hk.sp.trans h.sp, fun i hi => ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hk.frame.readW (r := (vlay p STK σ).R 0 840 36) (by simp only [Region.Contains]; bv_omega) hd (by decide)]
+  · rw [hk.frame.readW (r := (vlay p STK σ).R 0 840 36) (by simp only [Region.Contains]; bv_omega_arith) hd (by decide)]
     exact h.sav i hi
-  · rw [hk.frame.readW (r := (vlay p STK σ).R 0 840 36) (by simp only [Region.Contains]; bv_omega) hd (by decide)]
+  · rw [hk.frame.readW (r := (vlay p STK σ).R 0 840 36) (by simp only [Region.Contains]; bv_omega_arith) hd (by decide)]
     exact h.lr
   · rw [bytes_keepR hL hk.frame h2 hw (by have := vfit hL 2 (by decide); exact this)]
     exact h.pk
@@ -170,14 +170,14 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 8 ≤ STK) {σ 
     exact List.mem_singleton_self _
   have eA : ∀ o, (vlay p STK σ).A 0 o = State.addr (σ.gpr .r3) + BitVec.ofNat 64 o := fun o => rfl
   have wS : ∀ {o n : Nat}, o + n ≤ 32768 → InRegions σ.wr ((vlay p STK σ).A 0 o) n := fun {o n} h =>
-    Lay.covers (o := o) (l := n) w0 (by simp only [vlay, Lay.size, List.getD_cons_zero]; omega) _ _
+    Lay.covers (o := o) (l := n) w0 (by simp only [vlay, Lay.size, List.getD_cons_zero]; omega_arith) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [pro, WP.block_append_iff]
-  refine WP.mono (saveRegs_ok .r3 (off := 840) (by decide) (fit_le (by omega) fc) fun i hi => by
-    rw [add_ofNat_add, ← eA]; exact wS (o := 840 + 4 * i) (n := 4) (by omega)) fun s₁ h₁ => ?_
+  refine WP.mono (saveRegs_ok .r3 (off := 840) (by decide) (fit_le (by omega_arith) fc) fun i hi => by
+    rw [add_ofNat_add, ← eA]; exact wS (o := 840 + 4 * i) (n := 4) (by omega_arith)) fun s₁ h₁ => ?_
   have g3 : s₁.gpr .r3 = vScr σ := by rw [h₁.gpr]
   have e872 : State.addr (s₁.gpr .r3 + BitVec.ofNat 32 (Impl.MlKem.Arm.oSave + 32)) = (vlay p STK σ).A 0 872 := by
-    rw [g3]; exact addr_add (by simp only [Impl.MlKem.Arm.oSave]; omega)
+    rw [g3]; exact addr_add (by simp only [Impl.MlKem.Arm.oSave]; omega_arith)
   have i872 : InRegions s₁.wr (State.addr (s₁.gpr .r3 + BitVec.ofNat 32 (Impl.MlKem.Arm.oSave + 32))) 4 := by
     rw [e872, h₁.wr]; exact wS (by decide)
   have o1 : Impl.MlKem.Arm.oSave + 32 < 4096 := by decide
@@ -186,13 +186,13 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 8 ≤ STK) {σ 
   have ne1 : ∀ i < 8, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((vlay p STK σ).A 0 872) v).readW
       ((vlay p STK σ).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 =
         m.readW ((vlay p STK σ).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
-    fun i hi m v => Mem.readW_writeW_sep (fun x h1 h2 => by rw [eA] at h1 h2; bv_omega) (by decide)
+    fun i hi m v => Mem.readW_writeW_sep (fun x h1 h2 => by rw [eA] at h1 h2; bv_omega_arith) (by decide)
   have fr : Frame [(vlay p STK σ).R 0 840 36] σ.mem (s₁.mem.writeW ((vlay p STK σ).A 0 872) (s₁.gpr .lr)) := by
     refine (h₁.frame.sub fun r hr => ⟨(vlay p STK σ).R 0 840 36, List.mem_singleton_self _, ?_⟩).writeW
       (r := (vlay p STK σ).R 0 840 36) (List.mem_singleton_self _) _ ?_
     · rw [List.mem_singleton] at hr; subst hr
-      intro x hx; simp only [Region.Contains, eA] at hx ⊢; bv_omega
-    · simp only [Region.Contains, eA]; bv_omega
+      intro x hx; simp only [Region.Contains, eA] at hx ⊢; bv_omega_arith
+    · simp only [Region.Contains, eA]; bv_omega_arith
   have hin : ∀ {i l : Nat}, i ≠ 0 → i < 5 → l = (vlay p STK σ).size i →
       bytesAt (s₁.mem.writeW ((vlay p STK σ).A 0 872) (s₁.gpr .lr)) ((vlay p STK σ).A i 0) l =
         bytesAt σ.mem ((vlay p STK σ).A i 0) l := fun {i l} h0 h5 hl => by
@@ -200,9 +200,9 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 8 ≤ STK) {σ 
     rw [List.mem_singleton] at hr; subst hr
     refine disjW' (i := i) (o := 0) (l := l) (j := 0) (o' := 840) (l' := 36) hL ?_ (.inr (.inl (by decide)))
     subst hl
-    rcases (by omega : i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> vsep hF [vlay, Lay.size]
+    rcases (by omega_arith : i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> vsep hF [vlay, Lay.size]
   obtain ⟨ep, em, es⟩ := inputs_eq p STK σ
-  refine ⟨⟨⟨hL, rfl, by decide, by decide, by simp only [vlay, Lay.size, List.getD_cons_zero]; omega, rfl,
+  refine ⟨⟨⟨hL, rfl, by decide, by decide, by simp only [vlay, Lay.size, List.getD_cons_zero]; omega_arith, rfl,
     show σ.sp - BitVec.ofNat 32 STK = s₁.sp - BitVec.ofNat 32 STK by rw [h₁.sp], hSTK,
     by rw [h₁.sp]; exact hp.stk, ?_, ?_, ?_, ?_, fun i hi hi1 => ?_, fun i hi hi1 => ?_⟩, h₁.rd, h₁.wr, h₁.sp,
     fun i hi => ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
@@ -218,7 +218,7 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 8 ≤ STK) {σ 
     · exact absurd rfl hi1
   · show _ ∈ s₁.rd ++ s₁.wr
     rw [h₁.rd, h₁.wr, hp.rd, hp.wr]
-    rcases (by omega : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, vlay]
+    rcases (by omega_arith : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, vlay]
   · show (s₁.mem.writeW _ _).readW _ _ = _
     rw [e872, ne1 i hi]
     exact h₁.saved i hi

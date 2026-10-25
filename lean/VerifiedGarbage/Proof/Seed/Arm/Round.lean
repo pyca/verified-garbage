@@ -26,9 +26,9 @@ open VG.Arm.Straight (wordAddr Ok slotRegion add_ofNat_ofNat)
 open VG.Proof.Aes.Arm (layerWrites)
 
 theorem room_ok_gCfg {s : State} (h : Room s) : Ok gCfg s where
-  slotIn k hk := ⟨_, h.mem, slot_in h (by simp [gCfg] at hk; rw [slots_eq]; omega)⟩
+  slotIn k hk := ⟨_, h.mem, slot_in h (by simp [gCfg] at hk; rw [slots_eq]; omega_arith)⟩
   extIn k hk := by simp [gCfg] at hk
-  slots := by have := h.fit; simp [gCfg, slots_eq] at this ⊢; omega
+  slots := by have := h.fit; simp [gCfg, slots_eq] at this ⊢; omega_arith
   sep k _ j hj := by simp [gCfg] at hj
 
 /-- `g8` on the lanes: `G` of `G`'s words, the other arrays and the slots
@@ -50,8 +50,8 @@ theorem g8_lanes {s : State} (h : Room s) :
     refine hfr.readW (r := ⟨wordAddr (s.gpr sb) k, 4⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
-    rw [slot_addr (by omega)]
-    exact Offset.disjoint_base _ (by simp [gCfg]; omega) (by omega)
+    rw [slot_addr (by omega_arith)]
+    exact Offset.disjoint_base _ (by simp [gCfg]; omega_arith) (by omega_arith)
   · refine hfr.sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨workR s, List.mem_singleton_self _, Region.sub_prefix (by simp [gCfg, tailSlot])⟩
@@ -137,8 +137,8 @@ theorem slot_keep_work {s s' : State} (h : Room s) (hfr : Frame [workR s] s.mem 
   refine hfr.readW (r := ⟨wordAddr (s.gpr sb) k, 4⟩) (Region.contains_self _ _) ?_ (by decide)
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
-  rw [slot_addr (by omega)]
-  exact Offset.disjoint_base _ (by simp [tailSlot] at hk1 ⊢; omega) (by omega)
+  rw [slot_addr (by omega_arith)]
+  exact Offset.disjoint_base _ (by simp [tailSlot] at hk1 ⊢; omega_arith) (by omega_arith)
 
 theorem keepRegs : ∀ r ∈ [Reg.r8, .r9], r ≠ t0 ∧ r ≠ t1 ∧ r ∉ layerWrites := by decide
 
@@ -168,11 +168,11 @@ theorem round_ok {l r : Nat} (hl : l ∈ halves) (hr : r ∈ halves) (hlr : l �
     rw [hkp, add_ofNat_ofNat]; rcases hd with rfl | rfl <;> rfl
   have e1 : exec (.ldr u7 kp 0) s = some (s.setReg u7 K0) := by
     rw [exec_ldr (by decide) (by rw [ek 0 (.inl rfl)]; exact ⟨_, List.mem_append_right _ h.mem,
-      slot_in h (by rw [slots_eq]; omega)⟩), ek 0 (.inl rfl)]; rfl
+      slot_in h (by rw [slots_eq]; omega_arith)⟩), ek 0 (.inl rfl)]; rfl
   have e2 : exec (.ldr .lr kp 4) (s.setReg u7 K0) = some ((s.setReg u7 K0).setReg .lr K1) := by
     rw [exec_ldr (by decide) (by
       rw [gpr_setReg_of_ne _ _ (by decide), ek 4 (.inr rfl), rd_setReg, wr_setReg]
-      exact ⟨_, List.mem_append_right _ h.mem, slot_in h (by rw [slots_eq]; omega)⟩),
+      exact ⟨_, List.mem_append_right _ h.mem, slot_in h (by rw [slots_eq]; omega_arith)⟩),
       gpr_setReg_of_ne _ _ (by decide), ek 4 (.inr rfl), mem_setReg]; rfl
   let s2 := (s.setReg u7 K0).setReg .lr K1
   have hrun2 : runBlock isa [.ldr u7 kp 0, .ldr .lr kp 4] s = some s2 := by
@@ -257,7 +257,7 @@ theorem round_ok {l r : Nat} (hl : l ∈ halves) (hr : r ∈ halves) (hlr : l �
       have hk56 : 56 ≤ k := by
         simp only [arrays, List.mem_cons, List.not_mem_nil, or_false] at hk
         rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | exact absurd rfl hkt | decide
-      exact hk4 _ (by omega) (by rw [slots_eq]; omega)
+      exact hk4 _ (by omega_arith) (by rw [slots_eq]; omega_arith)
     have t5 : lv s5 (tSlot 0) b = lv s4 (tSlot 0) b + lv s4 aSlot b := by
       rw [hv5 _ mem_tA b hb]; simp [newVal, sp2, tSlot, cSlot]
     have c5 : lv s5 cSlot b = lv s4 (tSlot 0) b := by
@@ -270,7 +270,7 @@ theorem round_ok {l r : Nat} (hl : l ∈ halves) (hr : r ∈ halves) (hlr : l �
       have hk56 : 56 ≤ k := by
         simp only [arrays, List.mem_cons, List.not_mem_nil, or_false] at hk
         rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | exact absurd rfl hkt | decide
-      exact hk6 _ (by omega) (by rw [slots_eq]; omega)
+      exact hk6 _ (by omega_arith) (by rw [slots_eq]; omega_arith)
     have t7 : lv s7 (tSlot 0) b = lv s6 (tSlot 0) b + lv s6 cSlot b := by
       rw [hv7 _ mem_tA b hb]; simp [newVal, sp3, tSlot, dSlot]
     have d7 : lv s7 dSlot b = lv s6 (tSlot 0) b := by
@@ -283,7 +283,7 @@ theorem round_ok {l r : Nat} (hl : l ∈ halves) (hr : r ∈ halves) (hlr : l �
       have hk56 : 56 ≤ k := by
         simp only [arrays, List.mem_cons, List.not_mem_nil, or_false] at hk
         rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | exact absurd rfl hkt | decide
-      exact hk8 _ (by omega) (by rw [slots_eq]; omega)
+      exact hk8 _ (by omega_arith) (by rw [slots_eq]; omega_arith)
     have l0_9 : lv s9 l b = (lv s8 (tSlot 0) b + lv s8 dSlot b) ^^^ lv s8 l b := by
       rw [hv9 _ hL b hb]; simp [newVal, sp4]
     have l1_9 : lv s9 (l + 8) b = lv s8 (l + 8) b ^^^ lv s8 (tSlot 0) b := by

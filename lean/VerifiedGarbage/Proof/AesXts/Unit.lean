@@ -55,11 +55,11 @@ theorem bytesAt_append (m : Mem) (p : Addr) (a b : Nat) :
 
 theorem bytesAt_take (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
     (bytesAt m p n).take a = bytesAt m p a := by
-  rw [show n = a + (n - a) by omega, bytesAt_append, List.take_left' (length_bytesAt _ _ _)]
+  rw [show n = a + (n - a) by omega_arith, bytesAt_append, List.take_left' (length_bytesAt _ _ _)]
 
 theorem bytesAt_drop (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
     (bytesAt m p n).drop a = bytesAt m (p + BitVec.ofNat 64 a) (n - a) := by
-  rw [show n = a + (n - a) by omega, bytesAt_append, List.drop_left' (length_bytesAt _ _ _),
+  rw [show n = a + (n - a) by omega_arith, bytesAt_append, List.drop_left' (length_bytesAt _ _ _),
     Nat.add_sub_cancel_left]
 
 theorem length_blocksAt (m : Mem) (p : Addr) (n : Nat) : (blocksAt m p n).length = n := by
@@ -78,14 +78,14 @@ theorem flatten_blocksAt (m : Mem) (p : Addr) (n : Nat) :
   | zero => rfl
   | succ n ih =>
     rw [blocksAt_succ, List.flatten_append, ih, List.flatten_singleton,
-      show 16 * (n + 1) = 16 * n + 16 by omega, bytesAt_append]
+      show 16 * (n + 1) = 16 * n + 16 by omega_arith, bytesAt_append]
 
 theorem blocks_bytesAt (m : Mem) (p : Addr) (n : Nat) :
     Spec.Cbc.blocks (bytesAt m p (16 * n)) = blocksAt m p n := by
   simp only [Spec.Cbc.blocks, length_bytesAt, Nat.mul_div_cancel_left _ (by decide : 0 < 16), blocksAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  rw [bytesAt_drop _ _ (by omega), bytesAt_take _ _ (by omega)]
+  rw [bytesAt_drop _ _ (by omega_arith), bytesAt_take _ _ (by omega_arith)]
 
 /-! ## The swap -/
 
@@ -98,7 +98,7 @@ def swapMem (m : Mem) (L : Addr) (k : Nat) : Mem := fun x =>
 theorem swapMem_zero (m : Mem) (L : Addr) : swapMem m L 0 = m := by
   funext x
   simp only [swapMem, Nat.not_lt_zero, ite_false, Nat.add_zero]
-  rw [ite_eq_right (by omega)]
+  rw [ite_eq_right (by omega_arith)]
 
 theorem eq_add_iff (x L : Addr) {j : Nat} (hj : j < 2 ^ 64) :
     x = L + BitVec.ofNat 64 j ↔ (x - L).toNat = j := by
@@ -110,7 +110,7 @@ theorem eq_add_iff (x L : Addr) {j : Nat} (hj : j < 2 ^ 64) :
 
 theorem add16_of (x L : Addr) {j : Nat} (h : (x - L).toNat = j) (hj : j + 16 < 2 ^ 64) :
     x + 16 = L + BitVec.ofNat 64 (16 + j) := by
-  rw [(eq_add_iff x L (by omega)).mpr h, BitVec.add_assoc, Nat.add_comm, BitVec.ofNat_add]; rfl
+  rw [(eq_add_iff x L (by omega_arith)).mpr h, BitVec.add_assoc, Nat.add_comm, BitVec.ofNat_add]; rfl
 
 theorem sub16_of (x L : Addr) {j : Nat} (h : (x - L).toNat = 16 + j) (hj : 16 + j < 2 ^ 64) :
     x - 16 = L + BitVec.ofNat 64 j := by
@@ -119,13 +119,13 @@ theorem sub16_of (x L : Addr) {j : Nat} (h : (x - L).toNat = 16 + j) (hj : 16 + 
 
 theorem swapMem_lo (m : Mem) (L : Addr) {k i : Nat} (hk : k ≤ i) (hi : i < 16) :
     swapMem m L k (L + BitVec.ofNat 64 i) = m (L + BitVec.ofNat 64 i) := by
-  simp only [swapMem, Mem.sub_ofNat_toNat L (show i < 2 ^ 64 by omega)]
-  rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+  simp only [swapMem, Mem.sub_ofNat_toNat L (show i < 2 ^ 64 by omega_arith)]
+  rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
 
 theorem swapMem_hi (m : Mem) (L : Addr) {k i : Nat} (hk : k ≤ i) (hi : i < 16) :
     swapMem m L k (L + BitVec.ofNat 64 (16 + i)) = m (L + BitVec.ofNat 64 (16 + i)) := by
-  simp only [swapMem, Mem.sub_ofNat_toNat L (show 16 + i < 2 ^ 64 by omega)]
-  rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+  simp only [swapMem, Mem.sub_ofNat_toNat L (show 16 + i < 2 ^ 64 by omega_arith)]
+  rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
 
 theorem swapMem_step (m : Mem) (L : Addr) {k : Nat} (hk : k < 16) :
     ((swapMem m L k).writeW (L + BitVec.ofNat 64 k) (m (L + BitVec.ofNat 64 (16 + k)))).writeW
@@ -134,26 +134,26 @@ theorem swapMem_step (m : Mem) (L : Addr) {k : Nat} (hk : k < 16) :
   rw [WriteBytes.writeW8_apply, WriteBytes.writeW8_apply]
   have hd := (x - L).isLt
   by_cases h₁ : x = L + BitVec.ofNat 64 (16 + k)
-  · have e := (eq_add_iff x L (by omega)).mp h₁
+  · have e := (eq_add_iff x L (by omega_arith)).mp h₁
     rw [ite_eq_left h₁]
     simp only [swapMem]
-    rw [ite_eq_right (by omega), ite_eq_left (by omega), sub16_of x L e (by omega)]
-  · have e₁ : (x - L).toNat ≠ 16 + k := fun h => h₁ ((eq_add_iff x L (by omega)).mpr h)
+    rw [ite_eq_right (by omega_arith), ite_eq_left (by omega_arith), sub16_of x L e (by omega_arith)]
+  · have e₁ : (x - L).toNat ≠ 16 + k := fun h => h₁ ((eq_add_iff x L (by omega_arith)).mpr h)
     rw [ite_eq_right h₁]
     by_cases h₂ : x = L + BitVec.ofNat 64 k
-    · have e := (eq_add_iff x L (by omega)).mp h₂
+    · have e := (eq_add_iff x L (by omega_arith)).mp h₂
       rw [ite_eq_left h₂]
       simp only [swapMem]
-      rw [ite_eq_left (by omega), add16_of x L e (by omega)]
-    · have e₂ : (x - L).toNat ≠ k := fun h => h₂ ((eq_add_iff x L (by omega)).mpr h)
+      rw [ite_eq_left (by omega_arith), add16_of x L e (by omega_arith)]
+    · have e₂ : (x - L).toNat ≠ k := fun h => h₂ ((eq_add_iff x L (by omega_arith)).mpr h)
       rw [ite_eq_right h₂]
       simp only [swapMem]
       by_cases a : (x - L).toNat < k
-      · simp only [a, show (x - L).toNat < k + 1 by omega, ite_true]
-      · simp only [a, show ¬ (x - L).toNat < k + 1 by omega, ite_false]
+      · simp only [a, show (x - L).toNat < k + 1 by omega_arith, ite_true]
+      · simp only [a, show ¬ (x - L).toNat < k + 1 by omega_arith, ite_false]
         by_cases c : 16 ≤ (x - L).toNat ∧ (x - L).toNat < 16 + k
-        · simp only [c, show 16 ≤ (x - L).toNat ∧ (x - L).toNat < 16 + (k + 1) by omega]
-        · simp only [c, show ¬ (16 ≤ (x - L).toNat ∧ (x - L).toNat < 16 + (k + 1)) by omega, ite_false]
+        · simp only [c, show 16 ≤ (x - L).toNat ∧ (x - L).toNat < 16 + (k + 1) by omega_arith]
+        · simp only [c, show ¬ (16 ≤ (x - L).toNat ∧ (x - L).toNat < 16 + (k + 1)) by omega_arith, ite_false]
 
 theorem swapMem_frame (m : Mem) (L : Addr) (b : Nat) :
     Frame [⟨L, 16 + b⟩] m (swapMem m L b) := by
@@ -161,34 +161,34 @@ theorem swapMem_frame (m : Mem) (L : Addr) (b : Nat) :
   have hc := hx _ List.mem_cons_self
   simp only [Region.Contains] at hc
   simp only [swapMem]
-  rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+  rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
 
 theorem bytesAt_swap_lo (m : Mem) (L : Addr) {b : Nat} (hb : b ≤ 16) :
     bytesAt (swapMem m L b) L 16 = bytesAt m (L + 16) b ++ (bytesAt m L 16).drop b := by
-  apply List.ext_getElem (by simp [bytesAt]; omega)
+  apply List.ext_getElem (by simp [bytesAt]; omega_arith)
   intro k h₁ h₂
   rw [length_bytesAt] at h₁
   simp only [bytesAt, List.getElem_map, List.getElem_range]
   by_cases hk : k < b
-  · rw [List.getElem_append_left (by simp; omega)]
-    simp only [List.getElem_map, List.getElem_range, swapMem, Mem.sub_ofNat_toNat L (show k < 2 ^ 64 by omega),
+  · rw [List.getElem_append_left (by simp; omega_arith)]
+    simp only [List.getElem_map, List.getElem_range, swapMem, Mem.sub_ofNat_toNat L (show k < 2 ^ 64 by omega_arith),
       hk, ite_true]
     rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 64 k)]
-  · rw [List.getElem_append_right (by simp; omega)]
+  · rw [List.getElem_append_right (by simp; omega_arith)]
     simp only [List.length_map, List.length_range, List.getElem_drop, List.getElem_map, List.getElem_range]
-    rw [show b + (k - b) = k by omega, swapMem_lo m L (by omega) (by omega)]
+    rw [show b + (k - b) = k by omega_arith, swapMem_lo m L (by omega_arith) (by omega_arith)]
 
 theorem bytesAt_swap_hi (m : Mem) (L : Addr) {b : Nat} (hb : b ≤ 16) :
     bytesAt (swapMem m L b) (L + 16) b = (bytesAt m L 16).take b := by
-  apply List.ext_getElem (by simp [bytesAt]; omega)
+  apply List.ext_getElem (by simp [bytesAt]; omega_arith)
   intro k h₁ h₂
   rw [length_bytesAt] at h₁
   simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_take]
   have e : L + 16 + BitVec.ofNat 64 k = L + BitVec.ofNat 64 (16 + k) := by
     rw [BitVec.add_assoc, BitVec.ofNat_add]; rfl
   rw [e]
-  simp only [swapMem, Mem.sub_ofNat_toNat L (show 16 + k < 2 ^ 64 by omega)]
-  rw [ite_eq_right (by omega), ite_eq_left (by omega)]
+  simp only [swapMem, Mem.sub_ofNat_toNat L (show 16 + k < 2 ^ 64 by omega_arith)]
+  rw [ite_eq_right (by omega_arith), ite_eq_left (by omega_arith)]
   congr 1
   rw [BitVec.ofNat_add, BitVec.add_comm (BitVec.ofNat 64 16), ← BitVec.add_assoc]
   exact BitVec.add_sub_cancel _ _
@@ -221,13 +221,13 @@ def decWith (dec : Cipher) (t c : List Byte) : List Byte :=
 theorem aesXtsEncrypt_eq {key i p : List Byte} {enc dec : Cipher} {t : List Byte}
     (hk : keys key i = (enc, dec, t)) (hp : 16 ≤ p.length) :
     aesXtsEncrypt key i p = some (encWith enc t p) := by
-  simp only [aesXtsEncrypt, hk, encWith, show ¬ p.length < 16 by omega, ite_false]
+  simp only [aesXtsEncrypt, hk, encWith, show ¬ p.length < 16 by omega_arith, ite_false]
   split <;> rfl
 
 theorem aesXtsDecrypt_eq {key i c : List Byte} {enc dec : Cipher} {t : List Byte}
     (hk : keys key i = (enc, dec, t)) (hc : 16 ≤ c.length) :
     aesXtsDecrypt key i c = some (decWith dec t c) := by
-  simp only [aesXtsDecrypt, hk, decWith, show ¬ c.length < 16 by omega, ite_false]
+  simp only [aesXtsDecrypt, hk, decWith, show ¬ c.length < 16 by omega_arith, ite_false]
   split <;> rfl
 
 /-- The ciphers and the tweak of a key whose schedules are at `W` and `K`. -/
@@ -238,7 +238,7 @@ theorem keys_of {mem : Mem} {W K : Addr} {R : Nat} {key : List Byte} (i : List B
       Spec.Cbc.aesWith R (bytesAt mem K (16 * (R + 1))) i) := by
   obtain ⟨hl, hR, hW, hK⟩ := h
   have e : (key.drop (key.length / 2)).length / 4 = (key.take (key.length / 2)).length / 4 := by
-    simp only [List.length_drop, List.length_take]; omega
+    simp only [List.length_drop, List.length_take]; omega_arith
   simp only [keys, hW, hK, e, ← hR]
 
 /-! ## The tweak -/
@@ -285,13 +285,13 @@ variable {m₀ : Mem} {D : Addr} {M b : Nat}
 theorem enc_whole {enc : Cipher} {t : List Byte} {m₃ : Mem}
     (h₃ : blocksAt m₃ D M = crypt enc t (blocksAt m₀ D M)) :
     bytesAt m₃ D (16 * M) = encWith enc t (bytesAt m₀ D (16 * M)) := by
-  simp only [encWith, length_bytesAt, show 16 * M % 16 = 0 by omega, ite_true]
+  simp only [encWith, length_bytesAt, show 16 * M % 16 = 0 by omega_arith, ite_true]
   rw [blocks_bytesAt, ← h₃, flatten_blocksAt]
 
 theorem dec_whole {dec : Cipher} {t : List Byte} {m₃ : Mem}
     (h₃ : blocksAt m₃ D M = crypt dec t (blocksAt m₀ D M)) :
     bytesAt m₃ D (16 * M) = decWith dec t (bytesAt m₀ D (16 * M)) := by
-  simp only [decWith, length_bytesAt, show 16 * M % 16 = 0 by omega, ite_true]
+  simp only [decWith, length_bytesAt, show 16 * M % 16 = 0 by omega_arith, ite_true]
   rw [blocks_bytesAt, ← h₃, flatten_blocksAt]
 
 /-- The bytes of the data unit, in three parts. -/
@@ -299,7 +299,7 @@ theorem bytesAt_three (m : Mem) (D : Addr) (M b : Nat) (hM : 1 ≤ M) :
     bytesAt m D (16 * M + b) = bytesAt m D (16 * (M - 1)) ++
       bytesAt m (D + BitVec.ofNat 64 (16 * (M - 1))) 16 ++
       bytesAt m (D + BitVec.ofNat 64 (16 * (M - 1)) + 16) b := by
-  rw [show 16 * M + b = 16 * (M - 1) + 16 + b by omega, bytesAt_append, bytesAt_append, add16]
+  rw [show 16 * M + b = 16 * (M - 1) + 16 + b by omega_arith, bytesAt_append, bytesAt_append, add16]
 
 /-- The parts of the data unit on entry. -/
 theorem parts (m : Mem) (D : Addr) (hM : 1 ≤ M) (hb : b < 16) :
@@ -308,12 +308,12 @@ theorem parts (m : Mem) (D : Addr) (hM : 1 ≤ M) (hb : b < 16) :
     (p.drop (16 * (M - 1))).take 16 = bytesAt m (D + BitVec.ofNat 64 (16 * (M - 1))) 16 ∧
     p.drop (16 * M) = bytesAt m (D + BitVec.ofNat 64 (16 * (M - 1)) + 16) b ∧
     p.length / 16 = M ∧ p.length % 16 = b := by
-  refine ⟨bytesAt_take _ _ (by omega), ?_, ?_, ?_, ?_⟩
-  · rw [bytesAt_drop _ _ (by omega), bytesAt_take _ _ (by omega)]
-  · rw [bytesAt_drop _ _ (by omega), add16, show 16 * (M - 1) + 16 = 16 * M by omega,
-      show 16 * M + b - 16 * M = b by omega]
-  · rw [length_bytesAt]; omega
-  · rw [length_bytesAt]; omega
+  refine ⟨bytesAt_take _ _ (by omega_arith), ?_, ?_, ?_, ?_⟩
+  · rw [bytesAt_drop _ _ (by omega_arith), bytesAt_take _ _ (by omega_arith)]
+  · rw [bytesAt_drop _ _ (by omega_arith), add16, show 16 * (M - 1) + 16 = 16 * M by omega_arith,
+      show 16 * M + b - 16 * M = b by omega_arith]
+  · rw [length_bytesAt]; omega_arith
+  · rw [length_bytesAt]; omega_arith
 
 /-- Encryption with a partial block: `m₃` after the call on the `M` whole
 blocks from `t`, `m₅` after the swap and the call on the last whole block
@@ -336,8 +336,8 @@ theorem enc_steal {enc : Cipher} {t : List Byte} {m₃ m₅ : Mem} (hM : 1 ≤ M
   rw [hs, crypt_snoc, hs₃, length_blocksAt] at h₃
   obtain ⟨hh, hc⟩ := List.append_inj' h₃ rfl
   simp only [List.cons.injEq, and_true] at hc
-  simp only [encWith, p4, p5, show b ≠ 0 by omega, ite_false, p1, p2, p3]
-  rw [bytesAt_three _ _ _ _ hM, h5L, h5H, h5T, bytesAt_swap_lo _ _ (by omega), bytesAt_swap_hi _ _ (by omega),
+  simp only [encWith, p4, p5, show b ≠ 0 by omega_arith, ite_false, p1, p2, p3]
+  rw [bytesAt_three _ _ _ _ hM, h5L, h5H, h5T, bytesAt_swap_lo _ _ (by omega_arith), bytesAt_swap_hi _ _ (by omega_arith),
     h₃t, hc, ← flatten_blocksAt, hh, blocks_bytesAt]
 
 /-- Decryption with a partial block: `m₃` after the call on the first
@@ -361,8 +361,8 @@ theorem dec_steal {dec : Cipher} {t : List Byte} {m₃ m₅ m₇ : Mem} (hM : 1 
   obtain ⟨h3L, h3T⟩ := h₃L
   obtain ⟨h5L, h5H, h5T⟩ := h₅
   obtain ⟨h7L, h7H, h7T⟩ := h₇
-  simp only [decWith, p4, p5, show b ≠ 0 by omega, ite_false, p1, p2, p3]
-  rw [bytesAt_three _ _ _ _ hM, h7L, h7H, h7T, bytesAt_swap_lo _ _ (by omega), bytesAt_swap_hi _ _ (by omega),
+  simp only [decWith, p4, p5, show b ≠ 0 by omega_arith, ite_false, p1, p2, p3]
+  rw [bytesAt_three _ _ _ _ hM, h7L, h7H, h7T, bytesAt_swap_lo _ _ (by omega_arith), bytesAt_swap_hi _ _ (by omega_arith),
     h5L, h5H, h5T, h3L, h3T, ← flatten_blocksAt, h₃, blocks_bytesAt]
 
 end

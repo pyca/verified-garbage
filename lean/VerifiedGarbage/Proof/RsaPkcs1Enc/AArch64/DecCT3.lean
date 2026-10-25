@@ -47,7 +47,7 @@ theorem count_ct {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (P : Nat �
     exact this ▸ hq
   · rw [Bytes.eval_nonzero, c₁] at h
     have : k + 1 ≠ n := by simpa using h
-    exact ⟨n - (k + 1), by omega, k + 1, by omega, rfl, hq⟩
+    exact ⟨n - (k + 1), by omega_arith, k + 1, by omega_arith, rfl, hq⟩
 
 /-- The counter `i` and the number of blocks `nbv` in their slots. -/
 def Ctr (L : Lay) (i : Nat) (nbv : BitVec 64) (t : State) : Prop :=
@@ -90,7 +90,7 @@ theorem prfBody_tr {S : Nat} (hS : 15 ≤ S) (e : Env) {label : List Nat} {len c
         fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (scSub (by decide))⟩,
       hG t w hx fun d _ hd => F₂.readW (Region.contains_self _ _) (fun r hr => by
         rw [List.mem_singleton.mp hr]
-        exact hL.stk_buf (by unfold frameBytes at hd; omega) (.inr (.inr (sub_trans (scSub (by decide))
+        exact hL.stk_buf (by unfold frameBytes at hd; omega_arith) (.inr (.inr (sub_trans (scSub (by decide))
           hL.sc_sub)))) (by decide)⟩).seq ?_
   -- HMAC's `init` with `KDK`.
   refine (macArgs_pw hG sKDK (by decide) (by taint_decide)).seq ((hinit_pw (v := v) hS hG (key := sKDK)
@@ -98,23 +98,23 @@ theorem prfBody_tr {S : Nat} (hS : 15 ≤ S) (e : Env) {label : List Nat} {len c
   -- `update` with the message.
   refine (pw_blk (X' := fun t => Ctr e.L i nbv t ∧ XUp (scA e.L sMsg) (label.length + 4) e.L t) [] tu nil
     fun g vv m₀ R EM t _ _ hc hx => WP.mono (prfUpdArgs_ok hc.ctx.sp hc.slots (n := label.length + 4)
-      (by omega)) fun u ⟨hs, y0, y1, y2, y3, y4⟩ =>
+      (by omega_arith)) fun u ⟨hs, y0, y1, y2, y3, y4⟩ =>
       ⟨⟨R, EM, hc.same hs⟩, hG t u hx fun _ _ _ => by rw [hs.mem], by simp only [y0, hc.ctx.kept.scr], y1,
-        by simp only [y2, hc.ctx.kept.scr], by rw [y3, BitVec.toNat_ofNat]; omega,
+        by simp only [y2, hc.ctx.kept.scr], by rw [y3, BitVec.toNat_ofNat]; omega_arith,
         by simp only [y4, hc.ctx.kept.scr]⟩).seq ?_
-  refine (upd_pw (v := v) hS hG (fun hL _ _ _ _ _ _ hc => Covers.right (scCov hL hc.ctx (by unfold sMsg scrBytes; omega)))
-    (fun hL a l hal => scD hL (.inr (by unfold sMsg; omega)) (by unfold sMsg scrBytes; omega)
-      (by unfold scrBytes; omega))
-    (fun hL hP => stkD hL (by omega) (by unfold sMsg scrBytes; omega))).seq ?_
+  refine (upd_pw (v := v) hS hG (fun hL _ _ _ _ _ _ hc => Covers.right (scCov hL hc.ctx (by unfold sMsg scrBytes; omega_arith)))
+    (fun hL a l hal => scD hL (.inr (by unfold sMsg; omega_arith)) (by unfold sMsg scrBytes; omega_arith)
+      (by unfold scrBytes; omega_arith))
+    (fun hL hP => stkD hL (by omega_arith) (by unfold sMsg scrBytes; omega_arith))).seq ?_
   -- HMAC's `finalize` to the block.
   refine (pw_blk (X' := fun t => Ctr e.L i nbv t ∧
       XHF (dst + 32 * i) (BitVec.ofNat 64 (64 + (label.length + 4))) e.L t) [] tf nil
     fun g vv m₀ R EM t _ _ hc hx => WP.mono (prfFinArgs_ok hc.ctx.sp hc.slots (n := label.length + 4)
-      (dst := dst) (by omega) hdst) fun u ⟨hs, z0, z1, z2, z3, z4⟩ =>
+      (dst := dst) (by omega_arith) hdst) fun u ⟨hs, z0, z1, z2, z3, z4⟩ =>
       ⟨⟨R, EM, hc.same hs⟩, hG t u hx fun _ _ _ => by rw [hs.mem], by simp only [z0, hc.ctx.kept.scr],
         by simp only [z1, hc.ctx.kept.scr], z2, by simp only [z3, hx.1, hc.ctx.kept.scr]; exact shl5 i dst _,
         by simp only [z4, hc.ctx.kept.scr]⟩).seq ?_
-  refine (hfin_pw (v := v) hS hG (o := dst + 32 * i) (by omega) (by omega)).seq ?_
+  refine (hfin_pw (v := v) hS hG (o := dst + 32 * i) (by omega_arith) (by omega_arith)).seq ?_
   -- The counter.
   refine pw_blk [] tc nil fun g vv m₀ R EM t hL _ hc hx => WP.mono (hcount _ _ _ _ _ t hc hx.2)
     fun w ⟨Sw, mw, xw⟩ => ?_
@@ -150,10 +150,10 @@ theorem prfLoop_tr {S : Nat} (hS : 15 ≤ S) (e : Env) {label : List Nat} {len c
     RelCT isa (PW S e (Ctr e.L 0 nbv)) (.loop (prfBody (HH v) label len dst count) (.nonzero .x .x12))
       fun _ _ => True :=
   (count_ct hN0 (fun i => PW S e (Ctr e.L i nbv)) fun i hi =>
-    (prfBody_tr (v := v) hS e (i := i) (C := C) (by omega) (by omega) (by omega) hdst hn tm tu tf tc (hmsg i hi)
+    (prfBody_tr (v := v) hS e (i := i) (C := C) (by omega_arith) (by omega_arith) (by omega_arith) hdst hn tm tu tf tc (hmsg i hi)
       hcount).mono (fun _ _ h => h) fun _ _ ⟨hL, hP, pa, pb, ⟨ca, xa⟩, ⟨cb, xb⟩⟩ =>
-      ⟨⟨hL, hP, pa, pb, ca, cb⟩, by rw [xa, hC i hi]; exact Bytes.counter_ne hi (by omega),
-        by rw [xb, hC i hi]; exact Bytes.counter_ne hi (by omega)⟩).mono (fun _ _ h => h) fun _ _ _ => trivial
+      ⟨⟨hL, hP, pa, pb, ca, cb⟩, by rw [xa, hC i hi]; exact Bytes.counter_ne hi (by omega_arith),
+        by rw [xb, hC i hi]; exact Bytes.counter_ne hi (by omega_arith)⟩).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 /-! ## The loops -/
 
@@ -164,8 +164,8 @@ theorem clLoop_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
       WP.mono (clStart_ok hL hc) fun _ ⟨hc₁, ct₁, nb₁, _⟩ => ⟨⟨R, EM, hc₁⟩, ct₁, nb₁⟩).seq
   (prfLoop_tr (v := v) hS e (N := 8) (C := BitVec.ofNat 64 8) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)
-    (fun i hi => Offset.ofNat_sub_ofNat (by omega))
-    (fun i hi hL _ _ _ _ _ u hu ⟨x9, x11, _⟩ => WP.mono (msgCL_ok x9 x11 (by omega) (hu.msgW hL))
+    (fun i hi => Offset.ofNat_sub_ofNat (by omega_arith))
+    (fun i hi hL _ _ _ _ _ u hu ⟨x9, x11, _⟩ => WP.mono (msgCL_ok x9 x11 (by omega_arith) (hu.msgW hL))
       fun _ ⟨a, b, c, d, e, f, _⟩ => ⟨⟨a, b, c, d, e⟩, f⟩)
     fun _ _ _ _ _ u hu _ => WP.mono (incrCL_ok hu.ctx.sp hu.slots (hu.ctx.inFr (d := 184) (by decide)))
       fun _ hw => hw)
@@ -179,11 +179,11 @@ theorem amLoop_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   have hk := hp.1.k1024
   exact (prfLoop_tr (v := v) hS e (N := (e.L.k.toNat + 31) / 32)
-    (C := BitVec.ofNat 64 ((e.L.k.toNat + 31) / 32)) (by have := hp.1.k64; omega) (by omega) (by decide)
-    (by unfold sAM scrBytes; omega) (by decide) (by decide)
+    (C := BitVec.ofNat 64 ((e.L.k.toNat + 31) / 32)) (by have := hp.1.k64; omega_arith) (by omega_arith) (by decide)
+    (by unfold sAM scrBytes; omega_arith) (by decide) (by decide)
     (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)
-    (fun i hi => Offset.ofNat_sub_ofNat (by omega))
-    (fun i hi hL _ _ _ _ _ u hu ⟨x9, x11, x12⟩ => WP.mono (msgAM_ok x9 x11 x12 (by omega) hk (hu.msgW hL))
+    (fun i hi => Offset.ofNat_sub_ofNat (by omega_arith))
+    (fun i hi hL _ _ _ _ _ u hu ⟨x9, x11, x12⟩ => WP.mono (msgAM_ok x9 x11 x12 (by omega_arith) hk (hu.msgW hL))
       fun _ ⟨a, b, c, d, e, f, _⟩ => ⟨⟨a, b, c, d, e⟩, f⟩)
     fun _ _ _ _ _ u hu hnb => WP.mono (incrAM_ok hu.ctx.sp hu.slots (hu.ctx.inFr (d := 184) (by decide)))
       fun _ ⟨a, b, c⟩ => ⟨a, b, by rw [c, hnb]⟩) _ _ _ _ _ _ hp e₁ e₂
@@ -193,13 +193,13 @@ theorem clLoop_ct {S : Nat} (hS : 15 ≤ S) :
       (Two S fun L g vv m₀ t => ∃ R EM kd, CLR L g vv m₀ R EM kd t) :=
   two_wp (fun e => (clLoop_tr hS e).mono (fun _ _ ⟨hL, hP, _, ⟨_, _, f₁⟩, ⟨_, _, f₂⟩⟩ =>
       ⟨hL, hP, ⟨_, _, f₁.post⟩, ⟨_, _, f₂.post⟩, trivial, trivial⟩) fun _ _ h => h)
-    fun _ _ _ _ _ hL hP ⟨_, _, h⟩ => WP.mono (clLoop_ok hL (by omega) h.post h.kdk) fun _ h' => ⟨_, _, _, h'⟩
+    fun _ _ _ _ _ hL hP ⟨_, _, h⟩ => WP.mono (clLoop_ok hL (by omega_arith) h.post h.kdk) fun _ h' => ⟨_, _, _, h'⟩
 
 theorem amLoop_ct {S : Nat} (hS : 15 ≤ S) :
     RelCT isa (Two S fun L g vv m₀ t => ∃ R EM kd, CLR L g vv m₀ R EM kd t) (amLoop (HH v))
       (Two S fun L g vv m₀ t => ∃ R EM kd, AMR L g vv m₀ R EM kd t) :=
   two_wp (fun e => (amLoop_tr hS e).mono (fun _ _ ⟨hL, hP, _, ⟨_, _, _, f₁⟩, ⟨_, _, _, f₂⟩⟩ =>
       ⟨hL, hP, ⟨_, _, f₁.post⟩, ⟨_, _, f₂.post⟩, f₁.nb, f₂.nb⟩) fun _ _ h => h)
-    fun _ _ _ _ _ hL hP ⟨_, _, _, h⟩ => WP.mono (amLoop_ok hL (by omega) h) fun _ h' => ⟨_, _, _, h'⟩
+    fun _ _ _ _ _ hL hP ⟨_, _, _, h⟩ => WP.mono (amLoop_ok hL (by omega_arith) h) fun _ h' => ⟨_, _, _, h'⟩
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec

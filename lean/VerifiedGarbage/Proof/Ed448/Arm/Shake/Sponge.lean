@@ -78,7 +78,7 @@ theorem covers_of {rs : List Region}
     · exact List.mem_append_right _ (List.mem_cons_of_mem _ ho)
 
 theorem args_within (E : BitVec 32) {k : Nat} (hk : k ≤ 248) : Whole.Within (kArgs E k) (Whole.FR E) :=
-  ⟨0, (BitVec.add_zero _).symm, by change 0 + k ≤ 248; omega⟩
+  ⟨0, (BitVec.add_zero _).symm, by change 0 + k ≤ 248; omega_arith⟩
 
 theorem frame_within (E : BitVec 32) {d k : Nat} (hd : d + k ≤ 248) :
     Whole.Within ⟨State.addr E + BitVec.ofNat 64 d, k⟩ (Whole.FR E) := ⟨d, rfl, hd⟩
@@ -119,13 +119,13 @@ variable (hk : Kit E scr n ins outs)
 include hk
 
 theorem scr_addr : State.addr (scr + BitVec.ofNat 32 KSCR) = State.addr scr + BitVec.ofNat 64 KSCR :=
-  addr_add (by have := hk.nc; simp only [KSCR]; omega)
+  addr_add (by have := hk.nc; simp only [KSCR]; omega_arith)
 
 theorem scr_fit : (scr + BitVec.ofNat 32 KSCR).toNat + 640 ≤ 2 ^ 32 := by
   have := hk.nc
-  rw [BitVec.toNat_add_of_lt (by change scr.toNat + 208 < 2 ^ 32; omega)]
+  rw [BitVec.toNat_add_of_lt (by change scr.toNat + 208 < 2 ^ 32; omega_arith)]
   change scr.toNat + 208 + 640 ≤ 2 ^ 32
-  omega
+  omega_arith
 
 theorem kWr_writes : ∀ r ∈ kWr scr, Whole.Within r (Whole.FR E) ∨ ∃ R ∈ outs, Whole.Within r R :=
   fun r hr => .inr ⟨SCR scr, hk.so, kWr_sub scr r hr⟩
@@ -163,8 +163,8 @@ theorem zeroStores_step (hu : Whole.Ctx E g m₀ ins outs t) (h0 : t.gpr .r0 = s
       stateAt v.mem (State.addr scr) = Spec.Sha3.zero ∧ Frame [⟨State.addr scr, 200⟩] t.mem v.mem := by
   have hw : ∀ k < 50, InRegions t.wr (State.addr (t.gpr .r0) + BitVec.ofNat 64 (4 * k)) 4 := by
     intro k hk'
-    rw [hu.wr, h0]; exact ⟨SCR scr, List.mem_cons_of_mem _ hk.so, Offset.contains_base _ (by omega) (by omega)⟩
-  refine WP.mono (PublicKey.zeroStores_ok h1 (by rw [h0]; have := hk.nc; omega) hw) fun v hv => ⟨?_, ?_, ?_⟩
+    rw [hu.wr, h0]; exact ⟨SCR scr, List.mem_cons_of_mem _ hk.so, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  refine WP.mono (PublicKey.zeroStores_ok h1 (by rw [h0]; have := hk.nc; omega_arith) hw) fun v hv => ⟨?_, ?_, ?_⟩
   · refine hu.of_frame hv.rd hv.wr hv.sp (fun r _ _ => by rw [hv.gpr]) hv.frame ?_
     intro r hr
     rw [List.mem_singleton.mp hr, h0]
@@ -192,7 +192,7 @@ theorem zero_ok (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) {s
   rw [List.mem_singleton.mp hr]
   intro x hx
   simp only [Region.Contains, List.length_nil, Nat.mul_zero] at hx
-  omega
+  omega_arith
 
 /-! ## `absorb` -/
 
@@ -212,10 +212,10 @@ theorem abs_pre {P N : BitVec 32} {pos : Nat} (hp : pos < 136)
     State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs), State.withRegions_sp, State.callEntry_sp]
   rw [h0, h1, h2, h3, a0, a1, he, hk.scr_addr]
   have wa := hk.args_scr (k := 8) (by decide)
-  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega
+  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega_arith
   refine ⟨rfl, rfl, state_scratch scr, hs _ (by simp [kWr]), hs _ (by simp [kWr]),
-    wa _ (by simp [kWr]), wa _ (by simp [kWr]), by have := hk.nc; omega, hfit, hk.scr_fit,
-    by have := hk.top; omega, by decide, ?_⟩
+    wa _ (by simp [kWr]), wa _ (by simp [kWr]), by have := hk.nc; omega_arith, hfit, hk.scr_fit,
+    by have := hk.top; omega_arith, by decide, ?_⟩
   rw [hpn]; exact hp
 
 theorem abs_covers {D : Region} (hcov : DataOk E ins outs D) :
@@ -237,7 +237,7 @@ theorem absorb_call (hc : Whole.Ctx E g m₀ ins outs u) {P N : BitVec 32} {pos 
       (∀ msg, Spec.Sha3.Repr u.mem (State.addr scr) 136 msg → pos = msg.length % 136 →
         Spec.Sha3.Repr v.mem (State.addr scr) 136 (msg ++ Spec.Ed448.bytesAt u.mem (State.addr P) N.toNat)) ∧
       v.gpr .r0 = BitVec.ofNat 32 ((pos + N.toNat) % 136) := by
-  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega
+  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega_arith
   refine Whole.call_ok hc Proof.Sha3.Arm.Stream.Absorb.absorb_verified.1 PublicKey.absorb_noFrames
     (hk.abs_pre hp hs hfit hc.sp h0 h1 h2 h3 a0 a1) (hk.abs_covers hcov) hk.kWr_writes
     fun v hv hf hpost => ⟨hv, hf, ?_, ?_⟩
@@ -255,7 +255,7 @@ theorem absorb_call (hc : Whole.Ctx E g m₀ ins outs u) {P N : BitVec 32} {pos 
     apply BitVec.eq_of_toNat_eq
     rw [hp2, show BitVec.toNat (136 : BitVec 32) = 136 from rfl, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (a := (pos + N.toNat) % 136) (b := 2 ^ 32)
-        (by have := Nat.mod_lt (pos + N.toNat) (by decide : 136 > 0); omega)]
+        (by have := Nat.mod_lt (pos + N.toNat) (by decide : 136 > 0); omega_arith)]
 
 /-- The first absorption, from position 0 of an empty state. -/
 theorem first_abs (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) {sc : Nat} (hsc : ScrAt n val sc scr)
@@ -286,7 +286,7 @@ theorem first_abs (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) 
   have a1 := st 1 (by simp)
   simp only [argVal, hsc.val, List.getElem_cons_zero, List.getElem_cons_succ, BitVec.add_zero] at h0 h1 h2 a1
   simp only [List.getElem_cons_zero] at a0
-  have hbytes := bytes_setup hm h8 (by change (argVal E val len).toNat ≤ 2 ^ 64; have := (argVal E val len).isLt; omega)
+  have hbytes := bytes_setup hm h8 (by change (argVal E val len).toNat ≤ 2 ^ 64; have := (argVal E val len).isLt; omega_arith)
   refine WP.mono (hk.absorb_call hu (pos := 0) (by decide) hcov hs hfit h0 h1 h2 h3 a0 a1)
     fun v ⟨hv, hf, hrv, h0v⟩ => ⟨hv, ?_, ?_, by rw [h0v, Nat.zero_add]⟩
   · exact (hm.mono fun r hr => by simp at hr ⊢; exact .inl hr).trans
@@ -332,7 +332,7 @@ theorem next_abs (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) {
     rw [hk' .r2 (by simp) (by decide) (by decide), v1.gpr, hpos]
   have hrd : Spec.Sha3.Repr u.mem (State.addr scr) 136 msg := repr_frame' hm (hk.state_args (by decide)) (by
     unfold Spec.Sha3.Repr at hr ⊢; rw [v1.mem]; exact hr)
-  have hbytes := bytes_setup hm h8 (by change (argVal E val len).toNat ≤ 2 ^ 64; have := (argVal E val len).isLt; omega)
+  have hbytes := bytes_setup hm h8 (by change (argVal E val len).toNat ≤ 2 ^ 64; have := (argVal E val len).isLt; omega_arith)
   refine WP.mono (hk.absorb_call hu (Nat.mod_lt _ (by decide)) hcov hs hfit h0 h1 h2 h3 a0 a1)
     fun v ⟨hv, hf, hrv, h0v⟩ => ⟨hv, ?_, ?_, ?_⟩
   · rw [v1.mem] at hm
@@ -393,9 +393,9 @@ theorem pad_pre {pos : Nat} (hp : pos < 136) (he : t.sp = E) (h0 : t.gpr .r0 = s
     State.withRegions_sp, State.callEntry_sp]
   rw [h0, h1, h2, a0, he, hk.scr_addr]
   have wa := hk.args_scr (k := 4) (by decide)
-  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega
+  have hpn : (BitVec.ofNat 32 pos).toNat = pos := by rw [BitVec.toNat_ofNat]; omega_arith
   refine ⟨rfl, rfl, state_scratch scr, wa _ (by simp [kWr]), wa _ (by simp [kWr]),
-    by have := hk.nc; omega, hk.scr_fit, by have := hk.top; omega, by decide, ?_⟩
+    by have := hk.nc; omega_arith, hk.scr_fit, by have := hk.top; omega_arith, by decide, ?_⟩
   rw [hpn]; exact hp
 
 theorem pad_covers : Covers ([kArgs E 4] ++ kWr scr) (ins ++ Whole.FR E :: outs) := by
@@ -429,7 +429,7 @@ theorem pad_step (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) {
   have hrd : Spec.Sha3.Repr u.mem (State.addr scr) 136 msg := repr_frame' hm (hk.state_args (by simp)) (by
     unfold Spec.Sha3.Repr at hr ⊢; rw [v1.mem]; exact hr)
   have hpn : (BitVec.ofNat 32 (msg.length % 136)).toNat = msg.length % 136 := by
-    rw [BitVec.toNat_ofNat]; have := Nat.mod_lt msg.length (by decide : 136 > 0); omega
+    rw [BitVec.toNat_ofNat]; have := Nat.mod_lt msg.length (by decide : 136 > 0); omega_arith
   refine Whole.call_ok hu Proof.Sha3.Arm.Stream.Pad.pad_verified.1 PublicKey.pad_noFrames
     (hk.pad_pre (Nat.mod_lt _ (by decide)) hu.sp h0 h1 h2 a0) hk.pad_covers hk.kWr_writes
     fun v hv hf hp => ⟨hv, ?_, ?_⟩
@@ -457,13 +457,13 @@ theorem sqz_pre {d : Nat} (h8 : 8 ≤ d) (hd : d + 114 ≤ 248) (he : t.sp = E) 
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs), State.withRegions_sp, State.callEntry_sp]
-  rw [h0, h1, h2, h3, a0, a1, he, hk.scr_addr, hk.frame_addr (by omega)]
+  rw [h0, h1, h2, h3, a0, a1, he, hk.scr_addr, hk.frame_addr (by omega_arith)]
   have wa := hk.args_scr (k := 8) (by decide)
-  have so := hk.frame_kWr (d := d) (l := 114) (by omega)
+  have so := hk.frame_kWr (d := d) (l := 114) (by omega_arith)
   have ht := hk.top
   refine ⟨rfl, rfl, (so _ (by simp [kWr])).symm, state_scratch scr, so _ (by simp [kWr]),
-    wa _ (by simp [kWr]), Offset.base_disjoint _ h8 (by omega), wa _ (by simp [kWr]),
-    by have := hk.nc; omega, hk.frame_fit hd, hk.scr_fit, by omega, by decide, by decide⟩
+    wa _ (by simp [kWr]), Offset.base_disjoint _ h8 (by omega_arith), wa _ (by simp [kWr]),
+    by have := hk.nc; omega_arith, hk.frame_fit hd, hk.scr_fit, by omega_arith, by decide, by decide⟩
 
 theorem sqz_writes {d : Nat} (hd : d + 114 ≤ 248) :
     ∀ r ∈ sqzWr E scr d, Whole.Within r (Whole.FR E) ∨ ∃ R ∈ outs, Whole.Within r R := by
@@ -493,7 +493,7 @@ theorem sqz_step (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) {
   refine WP.seq (WP.mono (hk.setup_ok hc ha
     (args := [(.r0, .caller sc 0), (.r1, .const 136), (.r2, .const 0), (.r3, .frame d)])
     (stk := [.const 114, .caller sc KSCR])
-    (by simp) (by simp only [List.forall_mem_cons]; exact ⟨hsc.valid (by decide), valid_const (by decide), valid_const (by decide), valid_frame (by omega), fun _ h => nomatch h⟩) (by simp [preserved])
+    (by simp) (by simp only [List.forall_mem_cons]; exact ⟨hsc.valid (by decide), valid_const (by decide), valid_const (by decide), valid_frame (by omega_arith), fun _ h => nomatch h⟩) (by simp [preserved])
     (by simp) (by simp only [List.forall_mem_cons]; exact ⟨valid_const (by decide), hsc.valid (by decide), fun _ h => nomatch h⟩))
     fun u ⟨hu, hm, hv, st, _⟩ => ?_)
   rw [args_two] at hm
@@ -514,7 +514,7 @@ theorem sqz_step (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) {
       State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
       State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs),
       stackArg_withRegions] at hp1
-    rw [h0, h1, h2, h3, show stackArg u.callEntry 0 = stackArg u 0 from rfl, a0, hk.frame_addr (by omega),
+    rw [h0, h1, h2, h3, show stackArg u.callEntry 0 = stackArg u 0 from rfl, a0, hk.frame_addr (by omega_arith),
       state_frame hm (hk.state_args (by decide))] at hp1
     exact hp1
 

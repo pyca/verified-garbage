@@ -52,7 +52,7 @@ theorem sAdd_ok (s : State) {r0 r1 r2 : Reg} (hd : [r0, r1, r2, .rax, .rcx, .rdx
     have := (s.gpr r0 + s.gpr .rax).isLt; have := (s.gpr r1 + s.gpr .rdx + (BitVec.ofBool c0).setWidth 64).isLt
     have := (s.gpr r2 + 0 + (BitVec.ofBool c1).setWidth 64).isLt
     rw [z] at e2
-    rcases Nat.lt_or_ge c2.toNat 1 with h | h <;> omega
+    rcases Nat.lt_or_ge c2.toNat 1 with h | h <;> omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2, ite_false]
 
@@ -67,7 +67,7 @@ theorem sTerm_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (
       regsVal s' (pAccs c) = regsVal s (pAccs c) + mult two * ((word s.mem base dx).toNat * pY s.mem base dy) ∧
       Keeps (.rax :: .rcx :: .rdx :: pAccs c) s s' := by
   rw [sTerm, WP.block_append_iff]
-  refine WP.mono (pTerm_ok hs c hdx hdy (by cases two <;> simp only [mult, Bool.false_eq_true, ↓reduceIte] at hb <;> omega))
+  refine WP.mono (pTerm_ok hs c hdx hdy (by cases two <;> simp only [mult, Bool.false_eq_true, ↓reduceIte] at hb <;> omega_arith))
     fun s₁ ⟨e₁, k₁, x₁⟩ => ?_
   cases two with
   | false => exact WP.block_nil ⟨by rw [e₁]; simp [mult], k₁⟩
@@ -77,9 +77,9 @@ theorem sTerm_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (
     have hm₁ : s₁.mem = s.mem := k₁.2.1
     refine WP.mono (sAdd_ok s₁ hok.1 (by
       rw [show [pAcc c 0, pAcc c 1, pAcc c 2] = pAccs c from rfl, e₁, x₁]
-      simp only [mult, ↓reduceIte] at hb; omega)) fun s₂ ⟨e₂, k₂⟩ => ⟨?_, k₁.trans (k₂.mono (by simp [pAccs]))⟩
+      simp only [mult, ↓reduceIte] at hb; omega_arith)) fun s₂ ⟨e₂, k₂⟩ => ⟨?_, k₁.trans (k₂.mono (by simp [pAccs]))⟩
     rw [show [pAcc c 0, pAcc c 1, pAcc c 2] = pAccs c from rfl, e₁, x₁] at e₂
-    rw [e₂]; simp only [mult, ↓reduceIte]; omega
+    rw [e₂]; simp only [mult, ↓reduceIte]; omega_arith
 
 /-- The sum of a squaring's terms, with their multiplicities. -/
 def sSum (m : Mem) (base : Addr) (ts : List (Nat × Option Nat × Bool)) : Nat :=
@@ -96,14 +96,14 @@ theorem sTerms_ok (c : Nat) {size : Nat} : ∀ (ts : List (Nat × Option Nat × 
     rw [List.flatMap_cons, WP.block_append_iff]
     have ht := hin t List.mem_cons_self
     simp only [sSum, List.map_cons, List.sum_cons] at hb
-    refine WP.mono (sTerm_ok hs c (dx := t.1) (dy := t.2.1) ht.1 ht.2 t.2.2 (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
+    refine WP.mono (sTerm_ok hs c (dx := t.1) (dy := t.2.1) ht.1 ht.2 t.2.2 (by omega_arith)) fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by have := (pAccs_ok c).2; simp only [List.mem_cons, not_or]; grind)
     have hm₁ : s₁.mem = s.mem := k₁.2.1
     refine WP.mono (sTerms_ok c ts hs₁ (fun t' ht' => hin t' (List.mem_cons_of_mem _ ht'))
-      (by rw [e₁, hm₁]; simp only [sSum] at hb ⊢; omega)) fun s₂ ⟨e₂, k₂⟩ => ⟨?_, k₁.trans k₂⟩
+      (by rw [e₁, hm₁]; simp only [sSum] at hb ⊢; omega_arith)) fun s₂ ⟨e₂, k₂⟩ => ⟨?_, k₁.trans k₂⟩
     rw [e₂, e₁, hm₁]
     simp only [sSum, List.map_cons, List.sum_cons]
-    omega
+    omega_arith
 
 /-- Column `c` of `sqrP`: its terms, and its low word stored at
 `[tmp + 8 (c mod 9)]`; the rest of the accumulator is the next column's. -/
@@ -121,7 +121,7 @@ theorem sCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   rw [sCol, WP.block_append_iff]
   refine WP.mono (sTerms_ok c _ hs hin hb) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by simp only [List.mem_cons, not_or]; grind)
-  refine WP.mono (pEnd_ok hs₁ c (t := M.tmp + 8 * (c % 9)) (by omega)) fun s₂ ⟨m₂, e₂, k₂⟩ => ?_
+  refine WP.mono (pEnd_ok hs₁ c (t := M.tmp + 8 * (c % 9)) (by omega_arith)) fun s₂ ⟨m₂, e₂, k₂⟩ => ?_
   refine ⟨?_, ?_, ?_⟩
   · rw [m₂, word_writeW_self, ← e₂, e₁]
   · refine ⟨fun r hr => ?_, k₂.rd.trans k₁.2.2.1, k₂.wr.trans k₁.2.2.2⟩
@@ -136,7 +136,7 @@ theorem sCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       simp only [List.mem_singleton] at h
       simp [h, pAccs])
     rw [k₂.gpr r h2, k₁.1 r h1]
-  · rw [m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega)
+  · rw [m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega_arith)
 
 /-! ## The columns' arithmetic -/
 
@@ -193,7 +193,7 @@ theorem colSum_s (A : Nat → Nat) (hA : ∀ i, A i < 2 ^ 64) : ColSum (sColSum 
   lt l c h := by
     unfold sColSum
     have hAA : ∀ i j, A i * A j ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := fun i j =>
-      Nat.mul_le_mul (by have := hA i; omega) (by have := hA j; omega)
+      Nat.mul_le_mul (by have := hA i; omega_arith) (by have := hA j; omega_arith)
     have h1 := sum_le_mul (L := ((List.range 9).filter fun i => 2 * i < c ∧ c - i < 9).map
         fun i => 2 * (A i * A (c - i))) (K := 2 * ((2 ^ 64 - 1) * (2 ^ 64 - 1))) fun x hx => by
       simp only [List.mem_map] at hx
@@ -210,11 +210,11 @@ theorem colSum_s (A : Nat → Nat) (hA : ∀ i, A i < 2 ^ 64) : ColSum (sColSum 
       · exact Nat.zero_le _
     have h5 : (if 8 ≤ c ∧ c ≤ 16 then l (c - 8) * 512 else 0) < 2 ^ 64 * 512 := by
       split
-      · rename_i hc; have := h hc.1 hc.2; omega
-      · omega
+      · rename_i hc; have := h hc.1 hc.2; omega_arith
+      · omega_arith
     have : 9 * (2 * ((2 ^ 64 - 1) * (2 ^ 64 - 1))) + (2 ^ 64 - 1) * (2 ^ 64 - 1) + 2 ^ 64 * 512 ≤ 2 ^ 133 := by
       decide
-    omega
+    omega_arith
 
 /-- `sqrP`'s columns. -/
 theorem sCol_colOk {base : Addr} {size : Nat} {m₀ : Mem} {M : Mod} {a : Nat}
@@ -223,7 +223,7 @@ theorem sCol_colOk {base : Addr} {size : Nat} {m₀ : Mem} {M : Mod} {a : Nat}
   fun c hc s l hsS _ O hacc hL => by
     have hnw := hsS.nowrap
     have hA : ∀ i < 9, (word s.mem base (a + 8 * i)).toNat = (word m₀ base (a + 8 * i)).toNat :=
-      fun i hi => by rw [O.word (by omega) (by omega)]
+      fun i hi => by rw [O.word (by omega_arith) (by omega_arith)]
     have hsum := sSum_sTerms (M := M) (c := c) hA hL
     have hcol := (colSum_s (fun i => (word m₀ base (a + 8 * i)).toNat) (fun _ => (word _ _ _).isLt)).lt l c
       fun h1 h2 => by rw [← hL h1 h2]; exact (word _ _ _).isLt
@@ -232,19 +232,19 @@ theorem sCol_colOk {base : Addr} {size : Nat} {m₀ : Mem} {M : Mod} {a : Nat}
       simp only [sTerms, List.mem_append, List.mem_map, List.mem_filter, List.mem_range,
         decide_eq_true_eq] at ht
       rcases ht with (⟨i, ⟨hi, -, hj⟩, rfl⟩ | ht) | ht
-      · exact ⟨by omega, fun d hd => by simp only [Option.some.injEq] at hd; omega⟩
+      · exact ⟨by omega_arith, fun d hd => by simp only [Option.some.injEq] at hd; omega_arith⟩
       · split at ht
         · rename_i h
           simp only [List.mem_singleton] at ht
           subst ht
-          exact ⟨by omega, fun d hd => by simp only [Option.some.injEq] at hd; omega⟩
+          exact ⟨by omega_arith, fun d hd => by simp only [Option.some.injEq] at hd; omega_arith⟩
         · simp at ht
       · split at ht
         · simp only [List.mem_singleton] at ht
           subst ht
-          exact ⟨by omega, fun d hd => by simp at hd⟩
+          exact ⟨by omega_arith, fun d hd => by simp at hd⟩
         · simp at ht
-    refine WP.mono (sCol_ok hsS htmp hin (by rw [hsum]; omega)) fun s' ⟨e', k', O'⟩ =>
+    refine WP.mono (sCol_ok hsS htmp hin (by rw [hsum]; omega_arith)) fun s' ⟨e', k', O'⟩ =>
       ⟨by rw [e', hsum], k', O'⟩
 
 /-- `[o] = [a]² R⁻¹ mod p` for P-521's `p`, `R = 2⁵⁷⁶`. -/
@@ -264,7 +264,7 @@ theorem sqrP_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     rw [hn9, ← wordsVal_hval s.mem base a 0 9, Nat.mul_zero, Nat.add_zero]
   rw [sqrP, hv]
   exact prodCols_ok hs hM hred ho hoT hoM (colSum_s _ fun _ => (word _ _ _).isLt)
-    (sCol_colOk (by omega) (by omega) (by omega)) (by rw [← hv]; exact wordsVal_lt _ _ _ _)
+    (sCol_colOk (by omega_arith) (by omega_arith) (by omega_arith)) (by rw [← hv]; exact wordsVal_lt _ _ _ _)
     (by rw [← hv]; exact hB) fun l => sColSum_total _ l
 
 end VG.Proof.Mont.X86_64

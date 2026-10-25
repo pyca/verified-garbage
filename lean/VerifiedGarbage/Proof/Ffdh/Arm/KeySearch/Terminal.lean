@@ -23,14 +23,7 @@ theorem terminal_ok (s : State) {base : BitVec 32} {status : Nat}
     (h : Controller base s) (statusBound : status = 1 ∨ status = 3) :
     WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.terminal status)) s fun t =>
       t.mem = terminalMem s.mem base (BitVec.ofNat 32 status) ∧ Rest [.r10, .r11] s t := by
-  refine withRest [.r10, .r11] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block (VG.Impl.Ffdh.Arm.KeySearch.terminal status) : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r10, .r11] ?_ (by rfl) (by rfl)
   have addr28 : State.addr (s.gpr .r4 + BitVec.ofNat 32 28) = off (State.addr base) 28 := by
     rw [h.ptr]
     exact VG.Arm.addr_add (by have := h.space.nowrap; omega)
@@ -50,15 +43,7 @@ theorem requestBlock_ok (s : State) {base : BitVec 32} (h : Controller base s) :
     WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r10 2, .mov .r11 (.imm 0),
       VG.Impl.Ffdh.Arm.KeySearch.stf .r10 3, .str .r11 .r4 28, VG.Impl.Ffdh.Arm.KeySearch.stf .r11 14]) s fun t =>
       t.mem = requestMem s.mem base ∧ Rest [.r10, .r11] s t := by
-  refine withRest [.r10, .r11] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r10 2, .mov .r11 (.imm 0),
-      VG.Impl.Ffdh.Arm.KeySearch.stf .r10 3, .str .r11 .r4 28, VG.Impl.Ffdh.Arm.KeySearch.stf .r11 14] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r10, .r11] ?_ (by rfl) (by rfl)
   have addr28 : State.addr (s.gpr .r4 + BitVec.ofNat 32 28) = off (State.addr base) 28 := by
     rw [h.ptr]
     exact VG.Arm.addr_add (by have := h.space.nowrap; omega)

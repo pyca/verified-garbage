@@ -23,7 +23,7 @@ theorem fe_lt (m : Mem) (base : Addr) (a : Nat) : fe m base a < 2 ^ 256 := by
   simp only [X86_64.fe, val4]
   have := (word m base a).isLt; have := (word m base (a + 8)).isLt
   have := (word m base (a + 16)).isLt; have := (word m base (a + 24)).isLt
-  omega
+  omega_arith
 
 /-- `mov32 r, 0`. -/
 theorem zero_ok (s : State) (r : Reg) :
@@ -105,7 +105,7 @@ theorem sq1_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Slot 
   rw [M6, C6, R11, hz] at e7
   rw [m8, k8.1 .r9 (by decide), k7.1 .r9 (by decide), k6.1 .r9 (by decide),
     k8.1 .r10 (by decide), k7.1 .r10 (by decide), k8.1 .r11 (by decide)]
-  omega
+  omega_arith
 
 theorem sq2_eq (a : Nat) : sq2 a = ([.mov .rcx (.mem (sc (a + 8))), .mov32 .rbp (.imm 0)] : List Instr) ++
     (mulStep .r11 .rbp .rcx (.mem (sc (a + 16))) ++ (mulStep .r12 .rbp .rcx (.mem (sc (a + 24))) ++
@@ -137,7 +137,7 @@ theorem sq2_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Slot 
   rw [k1.2.1, c1, b1, k1.1 .r11 (by decide), hz] at e2
   rw [k2.2.1, k1.2.1, k2.1 .rcx (by decide), c1, k2.1 .r12 (by decide), k1.1 .r12 (by decide)] at e3
   rw [m4, k4.1 .r11 (by decide), k3.1 .r11 (by decide), k4.1 .r12 (by decide)]
-  omega
+  omega_arith
 
 theorem sq3_eq (a : Nat) : sq3 a = ([.mov .rcx (.mem (sc (a + 16))), .mov32 .rbp (.imm 0)] : List Instr) ++
     (mulStep .r13 .rbp .rcx (.mem (sc (a + 24))) ++ ([.mov .r14 (.reg .rbp)] : List Instr)) := by
@@ -160,7 +160,7 @@ theorem sq3_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Slot 
   have hz : (0 : BitVec 64).toNat = 0 := rfl
   rw [k1.2.1, c1, b1, k1.1 .r13 (by decide), hz] at e2
   rw [m3, k3.1 .r13 (by decide)]
-  omega
+  omega_arith
 
 /-! ## The doubling and the squares -/
 
@@ -203,7 +203,7 @@ theorem sqDbl_ok (s : State) :
     have hz : (BitVec.setWidth 64 (0 : BitVec 32)).toNat = 0 := rfl
     rw [hz] at e15
     have := Bool.toNat_le c14
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
       hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2,
@@ -212,8 +212,8 @@ theorem sqDbl_ok (s : State) :
 /-- The high half of a square is at most `2⁶⁴ - 2`. -/
 theorem sq_hi_le (w : BitVec 64) : w.toNat * w.toNat / 2 ^ 64 ≤ 2 ^ 64 - 2 := by
   have h := w.isLt
-  have : w.toNat * w.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
-  omega
+  have : w.toNat * w.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  omega_arith
 
 /-- `diag t u d`: the square of the word at `d` added at `t` and `u`, with
 the carry word `rbp` in and out. -/
@@ -240,7 +240,7 @@ theorem diag_ok {s : State} {base : Addr} (hs : Scr s base) {t u : Reg} {d : Nat
     generalize hlo : BitVec.ofNat 64 p = lo at hm ⊢
     generalize hhi : BitVec.ofNat 64 (p / 2 ^ 64) = hi at hm ⊢
     have hhi' : hi.toNat ≤ 2 ^ 64 - 2 := by
-      rw [← hhi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hh
+      rw [← hhi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; exact hh
     have e1 := add_carry lo (s.gpr .rbp)
     generalize decide (2 ^ 64 ≤ lo.toNat + (s.gpr .rbp).toNat) = c1 at e1 ⊢
     have e2 := adc_carry hi 0 c1
@@ -283,13 +283,13 @@ theorem reduce_ok (s : State) :
     have := (s.gpr .r8).isLt; have := (s.gpr .r9).isLt; have := (s.gpr .r10).isLt
     have := (s.gpr .r11).isLt; have := (s.gpr .r12).isLt; have := (s.gpr .r13).isLt
     have := (s.gpr .r14).isLt; have := (s.gpr .r15).isLt
-    omega
+    omega_arith
   have hc : (s₁.gpr .rbp).toNat < 39 := by
     simp only [val4] at e1 hB
     have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
     have := (s₁.gpr .r11).isLt
-    omega
-  refine WP.mono (fold_ok s₁ c1 (by omega)) fun s₂ ⟨e2, b2, k2⟩ => ?_
+    omega_arith
+  refine WP.mono (fold_ok s₁ c1 (by omega_arith)) fun s₂ ⟨e2, b2, k2⟩ => ?_
   refine ⟨?_, b2, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
   rw [e2, ← fold256, e1, fold256]
 

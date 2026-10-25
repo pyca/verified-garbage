@@ -41,7 +41,7 @@ theorem PDims.eZ {p : PP} (h : PDims p) (q : Bool) :
   have := h.b1
   obtain ⟨_, _, _, h4⟩ := h.mb q
   simp only [slot, hdrBytes, aE, mW, PP.L] at *
-  omega
+  omega_arith
 
 /-- What the test of `N` (of `mb` bits) in `aN` needs, from octet `u` of the tape. -/
 structure TT (p : PP) (mb N u : Nat) (s : State) : Prop where
@@ -71,7 +71,7 @@ theorem primeChecks_pos (mb : Nat) : 1 ≤ Spec.Ffdh.primeChecks mb := by
 theorem TT.dims {p : PP} {mb N u : Nat} {s : State} (h : TT p mb N u s) :
     MrDims p (mW mb) N mb (Spec.Ffdh.primeChecks mb) :=
   ⟨rfl, h.mb1, h.mb2, h.eZ, h.odd, Nat.le_trans (show 3 ≤ 2 ^ 2 by decide)
-    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by have := h.mb1; omega)) h.lo), h.bl, primeChecks_lt mb, h.hL, h.mbb⟩
+    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by have := h.mb1; omega_arith)) h.lo), h.bl, primeChecks_lt mb, h.hL, h.mbb⟩
 
 /-- The Montgomery setup and the exponent of the test of `N`. -/
 theorem testPre_ok (M : Mont) {p : PP} {mb N u : Nat} {s : State} (h₀ : TT p mb N u s) :
@@ -83,18 +83,18 @@ theorem testPre_ok (M : Mont) {p : PP} {mb N u : Nat} {s : State} (h₀ : TT p m
   have hn' := hws.scr.nowrap
   have hZ := hws.hZ
   have h256 := hws.h256
-  have hw8 : 8 ≤ mW mb := by simp only [mW]; omega
+  have hw8 : 8 ≤ mW mb := by simp only [mW]; omega_arith
   have hlo' : 2 ^ (64 * (mW mb - 1)) ≤ N :=
-    Nat.le_trans (Nat.pow_le_pow_right (by decide) (by simp only [mW]; omega)) hlo
+    Nat.le_trans (Nat.pow_le_pow_right (by decide) (by simp only [mW]; omega_arith)) hlo
   have hN3 : 3 ≤ N := Nat.le_trans (show 3 ≤ 2 ^ 2 by decide)
-    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) hlo)
+    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_arith)) hlo)
   have hle16 : ∀ r ∈ mpRanges (mW mb), r.1 + r.2 ≤ p.Z := mpRanges_le hZ
   refine wp_seqs_append (by simp [montPrep]) (by simp [expSetup]) ?_
-  refine WP.mono (montPrep_ok M hws (by omega) hn hodd hlo')
+  refine WP.mono (montPrep_ok M hws (by omega_arith) hn hodd hlo')
     fun s₁ ⟨ws₁, inv₁, n₁, r2₁, r1₁, rm1₁, f₁, k₁⟩ => ?_
   have st₁ : PSt p (mW mb) s₁ := h.step ws₁ f₁ (mpRanges_pmut _) hle16 k₁
-  refine WP.mono (expSetup_ok ws₁ hEZ n₁ hodd (by omega)) fun s₂ ⟨ex₂, f₂, ws₂, k₂⟩ => ?_
-  have hE1 : slot (mW mb) aE + 8 * (mW mb + 1) ≤ p.Z := by omega
+  refine WP.mono (expSetup_ok ws₁ hEZ n₁ hodd (by omega_arith)) fun s₂ ⟨ex₂, f₂, ws₂, k₂⟩ => ?_
+  have hE1 : slot (mW mb) aE + 8 * (mW mb + 1) ≤ p.Z := by omega_arith
   have st₂ : PSt p (mW mb) s₂ := st₁.step ws₂ f₂
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.ofSlot _ _ _)
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact hE1) k₂
@@ -102,21 +102,21 @@ theorem testPre_ok (M : Mont) {p : PP} {mb N u : Nat} {s : State} (h₀ : TT p m
       slot (mW mb) j + 8 * (mW mb) ≤ r.1 ∨ r.1 + r.2 ≤ slot (mW mb) j := fun {j} hj r hr => by
     rw [List.mem_singleton.mp hr]
     exact .inl (Nat.le_trans (Nat.add_le_add_left (Nat.mul_le_mul_left 8 (Nat.le_add_right _ 2)) _)
-      (VG.Proof.Rsa.slot_lt (w := mW mb) (show j < aE by simp only [aE]; omega)))
+      (VG.Proof.Rsa.slot_lt (w := mW mb) (show j < aE by simp only [aE]; omega_arith)))
   have sl : ∀ {j : Nat}, j < 16 → p.B.toNat + slot (mW mb) j + 8 * mW mb ≤ 2 ^ 64 := fun {j} hj => by
-    have := VG.Proof.Rsa.slot_lt (w := mW mb) hj; omega
+    have := VG.Proof.Rsa.slot_lt (w := mW mb) hj; omega_arith
   have dH : ∀ {k : Nat}, k < 32 → ∀ r ∈ [(slot (mW mb) aE, 8 * (mW mb + 1))],
       8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := fun {k} hk r hr => by
-    rw [List.mem_singleton.mp hr]; exact .inl (by simp only [slot, hdrBytes]; omega)
+    rw [List.mem_singleton.mp hr]; exact .inl (by simp only [slot, hdrBytes]; omega_arith)
   have hH : ∀ {k : Nat}, k ∈ [0, 2, 3, 18, 22, 27] → word s₂.mem p.B (8 * k) = word s.mem p.B (8 * k) := fun {k} hk => by
-    have hk' : k < 32 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega
-    rw [f₂.word_eq (dH hk') (by omega), f₁.word_eq (mp_hdr _ hk) (by omega)]
+    have hk' : k < 32 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_arith
+    rw [f₂.word_eq (dH hk') (by omega_arith), f₁.word_eq (mp_hdr _ hk) (by omega_arith)]
   have hWv : ∀ {j : Nat}, j < 16 → wv s₂.mem p.B (slot (mW mb) j) (mW mb) = wv s₁.mem p.B (slot (mW mb) j) (mW mb) :=
-    fun {j} hj => f₂.wv_eq (dE hj) (by have := sl hj; omega)
+    fun {j} hj => f₂.wv_eq (dE hj) (by have := sl hj; omega_arith)
   have hWd : word s₂.mem p.B (slot (mW mb) aN) = word s₁.mem p.B (slot (mW mb) aN) :=
-    f₂.word_eq (fun r hr => by have := dE (j := aN) (by decide) r hr; omega) (by have := sl (j := aN) (by decide); omega)
+    f₂.word_eq (fun r hr => by have := dE (j := aN) (by decide) r hr; omega_arith) (by have := sl (j := aN) (by decide); omega_arith)
   have hMi : word s₂.mem p.B (8 * sMinv) = word s₁.mem p.B (8 * sMinv) :=
-    f₂.word_eq (dH (by decide)) (by simp only [sMinv]; omega)
+    f₂.word_eq (dH (by decide)) (by simp only [sMinv]; omega_arith)
   have fix : MrFix p (mW mb) N mb (Spec.Ffdh.primeChecks mb) s₂ :=
     ⟨st₂, ⟨_, ⟨ws₂, by rw [hWd, hMi]; exact inv₁, by rw [hWv (by decide)]; exact n₁, rfl,
         by rw [hWv (by decide)]; exact r1₁, by rw [hWv (by decide)]; exact rm1₁⟩⟩, ex₂,

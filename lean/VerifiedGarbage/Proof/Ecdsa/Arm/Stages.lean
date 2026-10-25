@@ -131,19 +131,19 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
     by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_⟩
   · exact (fx.unch h7 hn (fixedOk_tbl h7 0) u₂ |>.unch h7 hn (fixedOk_tbl h7 1) u₃).unch h7 hn (fixedOk_tbl h7 2) u₄
   · intro x hx
-    have hx' : 8192 ≤ ofs (scBase A s₀) x := by have := hx _ (List.mem_singleton_self _); omega
-    rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega)),
-      O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega)),
-      O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega)),
-      P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by dsimp only [size]; omega)]
+    have hx' : 8192 ≤ ofs (scBase A s₀) x := by have := hx _ (List.mem_singleton_self _); omega_arith
+    rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega_arith)),
+      O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega_arith)),
+      O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega_arith)),
+      P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by dsimp only [size]; omega_arith)]
   · have hF := sl_le c h7 (i := FLAG) (by decide)
     have ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
       fun j w hw => by
         rw [List.mem_singleton.mp hw]
         have := sl_below_bits c hc.n10 (i := FLAG) (by decide) j 0
-        exact Or.inl (by dsimp only; omega)
-    rw [flagW, Unch.readW32 u₄ (ap 2) (by omega), Unch.readW32 u₃ (ap 1) (by omega),
-      Unch.readW32 u₂ (ap 0) (by omega), ← flagW, P.flag]
+        exact Or.inl (by dsimp only; omega_arith)
+    rw [flagW, Unch.readW32 u₄ (ap 2) (by omega_arith), Unch.readW32 u₃ (ap 1) (by omega_arith),
+      Unch.readW32 u₂ (ap 0) (by omega_arith), ← flagW, P.flag]
   · intro t ht
     rw [tbl_unch u₄ h7 (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht),
       tbl_unch u₃ h7 (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht), b₂ t ht, hk]
@@ -176,26 +176,26 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
     m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine Unch.readW32 hu (fun w hw => ?_) (by omega)
+  refine Unch.readW32 hu (fun w hw => ?_) (by omega_arith)
   rcases List.mem_append.mp hw with hw | hw
   · rcases apart_slW (c := c) hl w hw with h | h
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_arith)
     · exact Or.inr h
   · rcases apart_wk (c := c) h7 (i := FLAG) (by decide) w hw with h | h
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_arith)
     · exact Or.inr h
 
 /-- A stage writes in `scratch` only. -/
 theorem whole_of' {base : Addr} {W : List (Nat × Nat)} {m₀ m m' : Mem} (h₀ : Unch base [(0, 8192)] m₀ m)
     (hu : Unch base W m m') (hW : ∀ w ∈ W, w.1 + w.2 ≤ 8192) : Unch base [(0, 8192)] m₀ m' := fun x hx => by
   have h := hx (0, 8192) (List.mem_singleton_self _)
-  have hx' : 8192 ≤ ofs base x := by dsimp only at h; omega
-  rw [hu x (fun w hw => Or.inr (by have := hW w hw; omega)), h₀ x hx]
+  have hx' : 8192 ≤ ofs base x := by dsimp only at h; omega_arith
+  rw [hu x (fun w hw => Or.inr (by have := hW w hw; omega_arith)), h₀ x hx]
 
 /-- A stage writes in the working space only. -/
 theorem whole_of {base : Addr} {W : List (Nat × Nat)} {m₀ m m' : Mem} (h₀ : Unch base [(0, 8192)] m₀ m)
     (hu : Unch base W m m') (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, 8192)] m₀ m' :=
-  whole_of' h₀ hu fun w hw => by have := hW w hw; dsimp only [size] at this; omega
+  whole_of' h₀ hu fun w hw => by have := hW w hw; dsimp only [size] at this; omega_arith
 
 /-- A hash of `len` bytes is its number without the bits that are not
 `e`'s. -/
@@ -204,7 +204,7 @@ theorem hashToInt_eq (c : Cfg) (m : Mem) (q : Addr) :
       ofBytes (Spec.Ecdsa.bytesAt m q c.C.len) >>> c.sh := by
   simp only [Spec.Ecdsa.hashToInt, length_bytesAt, Cfg.sh]
   split
-  · rw [show 8 * c.C.len - Spec.Ecdsa.nBits c.C = 0 by omega, Nat.shiftRight_zero]
+  · rw [show 8 * c.C.len - Spec.Ecdsa.nBits c.C = 0 by omega_arith, Nat.shiftRight_zero]
   · rfl
 
 end VG.Proof.Ecdsa.Arm

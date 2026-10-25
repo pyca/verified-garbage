@@ -55,24 +55,24 @@ theorem crossRowWith_ok {row : Prog isa} (hr : RowOk row) {s : State} {B : Addr}
       Keep [.rsi, .rdx, .rax, .r11, .r12, .r13, .r15, .rcx, .r14, .rbx, .r8, .rbp] s t := by
   have hn := hs.nowrap
   have rd : readSrc s (.mem (ix .r9 .rbp)) = some (word s.mem B (eb + 8 * i)) :=
-    readSrc_word hs (by simpa using ea_ixk s h9 hbp 0) (by omega)
+    readSrc_word hs (by simpa using ea_ixk s h9 hbp 0) (by omega_arith)
   unfold AdxSquare.crossRowWith
   refine WP.seq (WP.mono (movMem_ok s (dst := .rdx) rd) fun s₁ ⟨hdx, _, _, k₁⟩ => ?_)
   refine WP.seq (WP.mono (hr.ok (hs.congr k₁.2.2.2) ((k₁.gpr (by decide)).trans h8)
-    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) hi0 (by omega)
-    (by omega) (by omega) (by omega)) fun s₂ ⟨hv, ho, h14, k₂⟩ => ?_)
+    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) hi0 (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith)) fun s₂ ⟨hv, ho, h14, k₂⟩ => ?_)
   have k12 := k₁.keep.trans k₂
   refine WP.mono (crossTail_ok (hs.congr k12.2.2) ((k12.gpr (by decide)).trans h8) h14
     ((k12.gpr (by decide)).trans hbp) ((k12.gpr (by decide)).trans h10)
-    (by omega) (by omega) (by omega)) fun t ⟨hm, h8', hbp', hz, kt⟩ => ?_
+    (by omega_arith) (by omega_arith) (by omega_arith)) fun t ⟨hm, h8', hbp', hz, kt⟩ => ?_
   rw [k₁.2.1, hdx] at hv
   rw [k₁.2.1] at ho
   refine ⟨?_, ?_, h8', hbp', hz, (k12.trans kt).mono (by decide)⟩
-  · rw [hm, wv_writeW_top _ _ _ _ _ (by omega)]
+  · rw [hm, wv_writeW_top _ _ _ _ _ (by omega_arith)]
     exact hv
   · rw [hm]
-    exact (ho.mono (Nat.le_refl _) (by omega)).trans
-      ((writeW_outside s₂.mem B (s₂.gpr .rcx) (d := e + 8 * i) (by omega)).mono (by omega) (by omega))
+    exact (ho.mono (Nat.le_refl _) (by omega_arith)).trans
+      ((writeW_outside s₂.mem B (s₂.gpr .rcx) (d := e + 8 * i) (by omega_arith)).mono (by omega_arith) (by omega_arith))
 
 /-- Replacing a contiguous digit window changes the whole value by the
 window's change times its radix offset. -/
@@ -81,10 +81,10 @@ theorem wv_change_window {m m' : Mem} {B : Addr} {A n i len v : Nat}
     (ho : Outside B (A + 8 * i) (8 * len) m m')
     (hv : wv m' B (A + 8 * i) len = wv m B (A + 8 * i) len + v) :
     wv m' B A n = wv m B A n + 2 ^ (64 * i) * v := by
-  have hl : wv m' B A i = wv m B A i := ho.wv (by omega) (by omega)
+  have hl : wv m' B A i = wv m B A i := ho.wv (by omega_arith) (by omega_arith)
   have hh : wv m' B (A + 8 * i + 8 * len) (n - (i + len)) =
-      wv m B (A + 8 * i + 8 * len) (n - (i + len)) := ho.wv (by omega) (by omega)
-  have he : n = i + (len + (n - (i + len))) := by omega
+      wv m B (A + 8 * i + 8 * len) (n - (i + len)) := ho.wv (by omega_arith) (by omega_arith)
+  have he : n = i + (len + (n - (i + len))) := by omega_arith
   have h1 := wv_add m' B A i (len + (n - (i + len)))
   have h2 := wv_add m B A i (len + (n - (i + len)))
   rw [← he] at h1 h2
@@ -132,26 +132,26 @@ theorem crossStep_ok {row : Prog isa} (hr : RowOk row) {s₀ t : State} {B : Add
   have hn := hI.scr.nowrap
   have kp := hI.keep
   refine WP.mono (crossRowWith_ok hr hI.scr hI.r8 ((kp.gpr (by decide)).trans h9)
-    hI.rbp ((kp.gpr (by decide)).trans h10) hi0 hi hw (by omega) (by omega) (by omega))
+    hI.rbp ((kp.gpr (by decide)).trans h10) hi0 hi hw (by omega_arith) (by omega_arith) (by omega_arith))
     fun t' ⟨hv, ho, h8', hbp', hz, kt⟩ => ⟨hz, ?_⟩
-  have rB : wv t.mem B eb i = wv s₀.mem B eb i := hI.out.wv (by omega) (by omega)
-  have rX : word t.mem B (eb + 8 * i) = word s₀.mem B (eb + 8 * i) := hI.out.word (by omega) (by omega)
+  have rB : wv t.mem B eb i = wv s₀.mem B eb i := hI.out.wv (by omega_arith) (by omega_arith)
+  have rX : word t.mem B (eb + 8 * i) = word s₀.mem B (eb + 8 * i) := hI.out.word (by omega_arith) (by omega_arith)
   have z : word t.mem B (A + 8 * i + 8 * i) = 0 := by
-    rw [show A + 8 * i + 8 * i = A + 8 * (2 * i) by omega]
-    exact hI.zero _ (Nat.le_refl _) (by omega)
+    rw [show A + 8 * i + 8 * i = A + 8 * (2 * i) by omega_arith]
+    exact hI.zero _ (Nat.le_refl _) (by omega_arith)
   have old : wv t.mem B (A + 8 * i) (i + 1) = wv t.mem B (A + 8 * i) i := by
     rw [wv, z]; simp
   rw [rB, rX, ← old] at hv
-  have global := wv_change_window (n := 2 * w + 2) (by omega) (by omega) ho hv
+  have global := wv_change_window (n := 2 * w + 2) (by omega_arith) (by omega_arith) ho hv
   rw [hI.val] at global
   refine ⟨hI.scr.congr kt.2.2, (kp.trans kt).mono (by decide), ?_, hbp',
-    hI.out.trans (ho.mono (o' := A) (n' := 8 * (2 * w + 2)) (by omega) (by omega)), ?_, ?_⟩
+    hI.out.trans (ho.mono (o' := A) (n' := 8 * (2 * w + 2)) (by omega_arith) (by omega_arith)), ?_, ?_⟩
   · rw [h8']; congr 1
   · rw [global, crossValue_succ]
     grind
   · intro k hk hk'
-    rw [ho.word (by omega) (by omega)]
-    exact hI.zero k (by omega) hk'
+    rw [ho.word (by omega_arith) (by omega_arith)]
+    exact hI.zero k (by omega_arith) hk'
 
 theorem crossValue_congr {m m' : Mem} {B : Addr} {eb w : Nat}
     (h : ∀ j < w, word m' B (eb + 8 * j) = word m B (eb + 8 * j)) :
@@ -159,8 +159,8 @@ theorem crossValue_congr {m m' : Mem} {B : Addr} {eb w : Nat}
   induction w with
   | zero => rfl
   | succ w ih =>
-    rw [crossValue_succ, crossValue_succ, ih (fun j hj => h j (by omega)), h w (by omega),
-      wv_congr (fun j hj => h j (by omega))]
+    rw [crossValue_succ, crossValue_succ, ih (fun j hj => h j (by omega_arith)), h w (by omega_arith),
+      wv_congr (fun j hj => h j (by omega_arith))]
 
 /-- All off-diagonal products are accumulated once, preserving the input. -/
 theorem crossWith_ok {row : Prog isa} (hr : RowOk row) {s : State} {B : Addr} {Z A eb w : Nat}
@@ -194,14 +194,14 @@ theorem crossWith_ok {row : Prog isa} (hr : RowOk row) {s : State} {B : Addr} {Z
   have hI : CrossInv s₂ B Z A eb w 1 s₂ :=
     ⟨hs₂, Keep.refl _ _, h8₂, hbp₂, Outside.refl _ _ _ _, by
       rw [hm₂, wv_zero hz₁]; simp [crossValue, Square.cross, Square.value], fun k _ hk => by rw [hm₂]; exact hz₁ k hk⟩
-  refine WP.mono (wp_upto (a := 1) (N := w) (by omega) (CrossInv s₂ B Z A eb w)
-    (fun i h1 hi t hI => crossStep_ok hr h9₂ h10₂ hw (by omega) hi hA hb sb hI) (fun _ h => h) hI)
+  refine WP.mono (wp_upto (a := 1) (N := w) (by omega_arith) (CrossInv s₂ B Z A eb w)
+    (fun i h1 hi t hI => crossStep_ok hr h9₂ h10₂ hw (by omega_arith) hi hA hb sb hI) (fun _ h => h) hI)
     fun t h => ⟨?_, ?_, h.zero, (k12.trans h.keep).mono (by decide)⟩
   · rw [h.val]
     apply crossValue_congr
     intro j hj
     rw [hm₂]
-    exact ho₁.word (by omega) (by omega)
+    exact ho₁.word (by omega_arith) (by omega_arith)
   · have ho := h.out
     rw [hm₂] at ho
     exact ho₁.trans ho

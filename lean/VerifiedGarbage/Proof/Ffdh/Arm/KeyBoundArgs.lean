@@ -24,14 +24,7 @@ theorem keyBoundSelect_ok (s : State) {p : Inputs} {slots : List Nat}
     (h : Context p slots s) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots) (h32 : 32 ∈ slots) (h60 : 60 ∈ slots) :
     WP isa (VG.Impl.Ffdh.Arm.Domain.withQ (.block [.ldrSp .r4 60]) (.block [.ldrSp .r4 24])) s fun t =>
       (t.gpr .r4 = p.boundSource ∧ t.mem = s.mem) ∧ Rest [.r3, .r4] s t := by
-  refine withRest [.r3, .r4] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (VG.Impl.Ffdh.Arm.Domain.withQ (.block [.ldrSp .r4 60]) (.block [.ldrSp .r4 24]))).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r4] ?_ (by rfl) (by rfl)
   rw [VG.Impl.Ffdh.Arm.Domain.withQ, WP.seq_iff]
   refine WP.mono (qTest_ok s h h28 h32) ?_
   rintro u ⟨⟨zero, memU⟩, restU⟩
@@ -52,13 +45,7 @@ theorem keyBoundArgs_ok (s : State) {p : Inputs} {slots : List Nat}
     (h : Context p slots s) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots) (h32 : 32 ∈ slots) (h60 : 60 ∈ slots) :
     WP isa VG.Impl.Ffdh.Arm.Domain.GenerateKey.boundArgs s fun t =>
       (t.gpr .r4 = p.boundSource ∧ t.gpr .r6 = BitVec.ofNat 32 p.k ∧ t.mem = s.mem) ∧ Rest [.r3, .r4, .r6] s t := by
-  refine withRest [.r3, .r4, .r6] ?_ (by
-    intro r hr i hi
-    have checked : (instrs VG.Impl.Ffdh.Arm.Domain.GenerateKey.boundArgs).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r4, .r6] ?_ (by rfl) (by rfl)
   rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.boundArgs, WP.seq_iff]
   refine WP.mono (keyBoundSelect_ok s h h24 h28 h32 h60) ?_
   rintro u ⟨⟨ptr, memU⟩, restU⟩

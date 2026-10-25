@@ -63,7 +63,7 @@ theorem mix_in {V : Nat → Byte} {mk : List Byte} {e n o : Nat} (h₁ : e ≤ o
 
 theorem mix_out {V : Nat → Byte} {mk : List Byte} {e n o : Nat} (h : o < e ∨ e + n ≤ o) :
     mixV V mk e n o = V o := by
-  simp only [mixV]; rw [ifn (by omega)]
+  simp only [mixV]; rw [ifn (by omega_arith)]
 
 section keep
 variable {P : EP} {σ : State} {rs : List Region} {m m' : Mem}
@@ -105,7 +105,7 @@ theorem lab_vp (P : EP) :
     (Inv := fun σ m => K0 h P σ m ∧ ∀ x < P.K, m (sa P.scr x) = V P σ x) ?_).mono
     (fun σ s ⟨⟨hc, hi, he, hr, hk, z⟩, e⟩ => ⟨hc, ⟨hi, ?_, hr, hk⟩, he⟩) fun σ s hh => hh
   · intro σ m m' ⟨hk, he⟩ hf
-    refine ⟨hk.keep h hf fun r hr => ?_, em_keep hf (fun r hr => ?_) (by omega) he⟩
+    refine ⟨hk.keep h hf fun r hr => ?_, em_keep hf (fun r hr => ?_) (by omega_arith) he⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact hg.slot ok (by oomega) (by rw [hg.F]; decide)
@@ -173,7 +173,7 @@ theorem x1_keep4 {P : EP} (hg : Geo P.lay P.scr) {σ : State} {m m' : Mem}
     rcases hr with rfl | rfl | rfl | rfl <;> exact slotSep (by decide) (by decide) (by decide)
   · rw [← hx.2.2]
     have e := sbytes_keep (o := 0) (n := 1) hf (dis4 hg (by oomega)) (by decide)
-      (f := fun _ => m (sa P.scr 0)) (fun i hi => by rw [show i = 0 by omega]) 0 (by decide)
+      (f := fun _ => m (sa P.scr 0)) (fun i hi => by rw [show i = 0 by omega_arith]) 0 (by decide)
     simpa using e
 
 /-- The slots for unmasking the seed with MGF1 of `maskedDB`. -/
@@ -201,15 +201,15 @@ theorem seed_vp (P : EP) :
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
     prun [seedArgs, atS, sp0, ld, st, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.wFr hg, hc.slotS, a4, r4, v4, arg_lt,
       sDst_lt, sDstLen_lt, sSrc_lt, sSrcLen_lt,
-      movw_val (show oEm + 1 + h.H.D < 2 ^ 16 by oomega), movw_val (show h.H.D + 1 < 2 ^ 16 by omega),
-      movw_val (show oEm + 1 < 2 ^ 16 by decide), movw_val (show h.H.D < 2 ^ 16 by omega),
-      Offset.ofNat_sub_ofNat (show h.H.D + 1 ≤ P.K by omega), Nat.sub_add_eq]
+      movw_val (show oEm + 1 + h.H.D < 2 ^ 16 by oomega), movw_val (show h.H.D + 1 < 2 ^ 16 by omega_arith),
+      movw_val (show oEm + 1 < 2 ^ 16 by decide), movw_val (show h.H.D < 2 ^ 16 by omega_arith),
+      Offset.ofNat_sub_ofNat (show h.H.D + 1 ≤ P.K by omega_arith), Nat.sub_add_eq]
   refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
   have fr := frame4 P.lay s.mem (P.scr + BitVec.ofNat 32 (oEm + 1)) (BitVec.ofNat 32 h.H.D)
     (P.scr + BitVec.ofNat 32 (oEm + 1 + h.H.D)) (BitVec.ofNat 32 (P.K - h.H.D - 1))
   rw [← m] at fr
   refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp,
-    ⟨x1_keep4 h hg fr ⟨hk, hl, he 0 (by omega)⟩, ?_, ?_, ?_, ?_⟩, fun i hi' => ?_, fun i hi' => ?_⟩
+    ⟨x1_keep4 h hg fr ⟨hk, hl, he 0 (by omega_arith)⟩, ?_, ?_, ?_, ?_⟩, fun i hi' => ?_, fun i hi' => ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact slotW hg (by decide)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -220,10 +220,10 @@ theorem seed_vp (P : EP) :
       slot_ww _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
   · rw [m, slot_ww _ _ (by decide) (by decide) (by decide), slot_ww _ _ (by decide) (by decide) (by decide),
       Mem.readW_writeW_self32]
-  · have e := em_keep fr (dis4 hg (by oomega)) (by omega) he (1 + i) (by omega)
+  · have e := em_keep fr (dis4 hg (by oomega)) (by omega_arith) he (1 + i) (by omega_arith)
     rwa [show oEm + 1 + i = 1 + i by oomega]
   · rw [srcB_getD _ _ hi']
-    have e := em_keep fr (dis4 hg (by oomega)) (by omega) he (1 + h.H.D + i) (by omega)
+    have e := em_keep fr (dis4 hg (by oomega)) (by omega_arith) he (1 + h.H.D + i) (by omega_arith)
     rwa [show oEm + 1 + h.H.D + i = 1 + h.H.D + i by oomega]
 
 /-- The slots for unmasking `DB` with MGF1 of the seed. -/
@@ -254,9 +254,9 @@ theorem db_vp (P : EP) :
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
     prun [dbArgs, atS, sp0, ld, st, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.wFr hg, hc.slotS, a4, r4, v4, arg_lt,
       sDst_lt, sDstLen_lt, sSrc_lt, sSrcLen_lt,
-      movw_val (show oEm + 1 + h.H.D < 2 ^ 16 by oomega), movw_val (show h.H.D + 1 < 2 ^ 16 by omega),
-      movw_val (show oEm + 1 < 2 ^ 16 by decide), movw_val (show h.H.D < 2 ^ 16 by omega),
-      Offset.ofNat_sub_ofNat (show h.H.D + 1 ≤ P.K by omega), Nat.sub_add_eq]
+      movw_val (show oEm + 1 + h.H.D < 2 ^ 16 by oomega), movw_val (show h.H.D + 1 < 2 ^ 16 by omega_arith),
+      movw_val (show oEm + 1 < 2 ^ 16 by decide), movw_val (show h.H.D < 2 ^ 16 by omega_arith),
+      Offset.ofNat_sub_ofNat (show h.H.D + 1 ≤ P.K by omega_arith), Nat.sub_add_eq]
   refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
   have fr := frame4 P.lay s.mem (P.scr + BitVec.ofNat 32 (oEm + 1 + h.H.D)) (BitVec.ofNat 32 (P.K - h.H.D - 1))
     (P.scr + BitVec.ofNat 32 (oEm + 1)) (BitVec.ofNat 32 h.H.D)
@@ -273,8 +273,8 @@ theorem db_vp (P : EP) :
       slot_ww _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
   · rw [m, slot_ww _ _ (by decide) (by decide) (by decide), slot_ww _ _ (by decide) (by decide) (by decide),
       Mem.readW_writeW_self32]
-  · rw [V3, mix_out (by omega), sbytes_keep fr (dis4 hg (by oomega)) (by oomega) hdb i hi', srcB_getD _ _ hi']
-  · rw [srcB_getD _ _ hi', V3, mix_in (by omega) (by omega), show 1 + i - 1 = i by omega]
+  · rw [V3, mix_out (by omega_arith), sbytes_keep fr (dis4 hg (by oomega)) (by oomega) hdb i hi', srcB_getD _ _ hi']
+  · rw [srcB_getD _ _ hi', V3, mix_in (by omega_arith) (by omega_arith), show 1 + i - 1 = i by omega_arith]
     exact sbytes_keep fr (dis4 hg (by oomega)) (by oomega) hsd i hi'
 
 /-! ## Unmasking -/
@@ -295,24 +295,24 @@ theorem unmask_vp (P : EP) :
   have hD := h.D_le
   have hD0 := h.D_pos
   have P1 := mpOf g hg (so := oEm + 1 + h.H.D) (sl := P.K - h.H.D - 1) (dOff := oEm + 1) (dl := h.H.D)
-    (by omega) hD0 (by oomega) (by oomega) (.inr (Nat.le_refl _))
+    (by omega_arith) hD0 (by oomega) (by oomega) (.inr (Nat.le_refl _))
     (seed := fun σ => srcB (V P σ) (1 + h.H.D) (P.K - h.H.D - 1)) (fun σ => srcB_length _ _ _)
     (x1_keep h g hg (by oomega) (by oomega))
   have P2 := mpOf g hg (so := oEm + 1) (sl := h.H.D) (dOff := oEm + 1 + h.H.D) (dl := P.K - h.H.D - 1) hD0
-    (by omega) (by oomega) (by oomega) (.inl (Nat.le_refl _)) (seed := fun σ => srcB (V3 h g P σ) 1 h.H.D)
+    (by omega_arith) (by oomega) (by oomega) (.inl (Nat.le_refl _)) (seed := fun σ => srcB (V3 h g P σ) 1 h.H.D)
     (fun σ => srcB_length _ _ _) (x1_keep h g hg (by oomega) (by oomega))
   refine VP.seq (seed_vp h P) (VP.seq (mgf_vp g P1 (dstv := fun σ i => V P σ (1 + i)))
     (VP.seq (db_vp h g P) ((mgf_vp g P2 (dstv := fun σ i => V3 h g P σ (1 + h.H.D + i))).mono
       (fun _ _ hh => hh) fun σ s ⟨hc, ⟨hx, _⟩, hdb, hsd⟩ => ⟨hc, hx, fun x hx' => ?_⟩)))
   by_cases h0 : x = 0
   · subst h0
-    rw [hx.2.2, V5, mix_out (by omega), V3, mix_out (by omega)]
+    rw [hx.2.2, V5, mix_out (by omega_arith), V3, mix_out (by omega_arith)]
   by_cases h1 : x < 1 + h.H.D
-  · have e := hsd (x - 1) (by omega)
-    rw [show oEm + 1 + (x - 1) = x by oomega, srcB_getD _ _ (by omega), show 1 + (x - 1) = x by omega] at e
-    rw [e, V5, mix_out (by omega)]
-  · have e := hdb (x - 1 - h.H.D) (by omega)
-    rw [show oEm + 1 + h.H.D + (x - 1 - h.H.D) = x by oomega, show 1 + h.H.D + (x - 1 - h.H.D) = x by omega] at e
-    rw [e, V5, mix_in (by omega) (by omega), show x - (1 + h.H.D) = x - 1 - h.H.D by omega]
+  · have e := hsd (x - 1) (by omega_arith)
+    rw [show oEm + 1 + (x - 1) = x by oomega, srcB_getD _ _ (by omega_arith), show 1 + (x - 1) = x by omega_arith] at e
+    rw [e, V5, mix_out (by omega_arith)]
+  · have e := hdb (x - 1 - h.H.D) (by omega_arith)
+    rw [show oEm + 1 + h.H.D + (x - 1 - h.H.D) = x by oomega, show 1 + h.H.D + (x - 1 - h.H.D) = x by omega_arith] at e
+    rw [e, V5, mix_in (by omega_arith) (by omega_arith), show x - (1 + h.H.D) = x - 1 - h.H.D by omega_arith]
 
 end VG.Proof.RsaOaep.Arm.Dec

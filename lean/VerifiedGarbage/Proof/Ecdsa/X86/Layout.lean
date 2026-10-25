@@ -84,10 +84,10 @@ calls' 20. -/
 abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.stk (c : Cfg) : Nat := if c.comb.isNone ∧ c.n ≤ 6 then 28 else 20
 
 theorem Cfg.stk_ge (c : Cfg) : 20 ≤ c.stk := by
-  unfold Cfg.stk; split <;> omega
+  unfold Cfg.stk; split <;> omega_arith
 
 theorem Cfg.stk_le (c : Cfg) : c.stk ≤ 28 := by
-  unfold Cfg.stk; split <;> omega
+  unfold Cfg.stk; split <;> omega_arith
 
 theorem Cfg.stk_28 {c : Cfg} (hc : c.comb = none) (h6 : c.n ≤ 6) : 28 ≤ c.stk := by
   have h : c.comb.isNone ∧ c.n ≤ 6 := ⟨by rw [hc]; rfl, h6⟩
@@ -143,12 +143,12 @@ theorem argAddr_eq (s : State) (i : Nat) : argAddr s i = addr (s.gpr .esp) (4 + 
 theorem arg_contains {s : State} (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) {i : Nat}
     (hi : i < 5) : (argsR s).Contains (argAddr s i) 4 := by
   have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := by
-    rw [argAddr_eq, addr_eq (by omega)]
+    rw [argAddr_eq, addr_eq (by omega_arith)]
   have ei : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * i) := by
-    rw [argAddr_eq, addr_eq (by omega), Offset.add_add]
+    rw [argAddr_eq, addr_eq (by omega_arith), Offset.add_add]
   show Region.Contains ⟨argAddr s 0, 20⟩ (argAddr s i) 4
   rw [e0, ei]
-  exact Offset.contains_base _ (show 4 * i + 4 ≤ 20 by omega) (by omega)
+  exact Offset.contains_base _ (show 4 * i + 4 ≤ 20 by omega_arith) (by omega_arith)
 
 /-- The stack the calls use is below the return address and the arguments. -/
 theorem below_disjoint_args {s : State} {n k : Nat} (hn : n ≤ (s.gpr .esp).toNat)
@@ -157,23 +157,23 @@ theorem below_disjoint_args {s : State} {n k : Nat} (hn : n ≤ (s.gpr .esp).toN
   have he := (s.gpr .esp).isLt
   refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> simp only [argAddr]
   · rw [BitVec.toNat_setWidth, sub_toNat hn, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (a := 4 + 4 * 0) (by omega), Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
-  · rw [BitVec.toNat_setWidth, sub_toNat hn, Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (a := 4 + 4 * 0) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith),
+      Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
+  · rw [BitVec.toNat_setWidth, sub_toNat hn, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   · rw [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (a := 4 + 4 * 0) (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := 4 + 4 * 0) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
 
 theorem below_disjoint_ret {s : State} {n : Nat} (hn : n ≤ (s.gpr .esp).toNat) :
     (below (s.gpr .esp) n).Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
   have he := (s.gpr .esp).isLt
   refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> dsimp only [below]
-  · rw [BitVec.toNat_setWidth, sub_toNat hn, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
-    omega
-  · rw [BitVec.toNat_setWidth, sub_toNat hn, Nat.mod_eq_of_lt (by omega)]; omega
-  · rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]; omega
+  · rw [BitVec.toNat_setWidth, sub_toNat hn, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_arith),
+      Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
+  · rw [BitVec.toNat_setWidth, sub_toNat hn, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
+  · rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
 
 /-- The arguments `A` names. -/
 def _root_.VG.Impl.Ecdsa.X86.Args.idx (A : Args) : List Nat := [A.sc, A.k, A.d, A.e]
@@ -182,31 +182,31 @@ def _root_.VG.Impl.Ecdsa.X86.Args.idx (A : Args) : List Nat := [A.sc, A.k, A.d, 
 theorem arg_sub {s : State} (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) {i : Nat}
     (hi : i < 5) : Region.Sub ⟨argAddr s i, 4⟩ (argsR s) := by
   have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := by
-    rw [argAddr_eq, addr_eq (by omega)]
+    rw [argAddr_eq, addr_eq (by omega_arith)]
   have ei : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * i) := by
-    rw [argAddr_eq, addr_eq (by omega), Offset.add_add]
+    rw [argAddr_eq, addr_eq (by omega_arith), Offset.add_add]
   show Region.Sub ⟨argAddr s i, 4⟩ ⟨argAddr s 0, 20⟩
   rw [e0, ei]
-  exact Offset.sub_base _ (show 4 * i + 4 ≤ 20 by omega)
+  exact Offset.sub_base _ (show 4 * i + 4 ≤ 20 by omega_arith)
 
 /-- Argument `i` of `k`'s slot is in the slots of the `k` arguments. -/
 theorem arg_subN {s : State} {k i : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4 * k ≤ 2 ^ 32) (hi : i < k) :
     Region.Sub ⟨argAddr s i, 4⟩ ⟨argAddr s 0, 4 * k⟩ := by
   have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := by
-    rw [argAddr_eq, addr_eq (by omega)]
+    rw [argAddr_eq, addr_eq (by omega_arith)]
   have ei : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * i) := by
-    rw [argAddr_eq, addr_eq (by omega), Offset.add_add]
+    rw [argAddr_eq, addr_eq (by omega_arith), Offset.add_add]
   rw [e0, ei]
-  exact Offset.sub_base _ (show 4 * i + 4 ≤ 4 * k by omega)
+  exact Offset.sub_base _ (show 4 * i + 4 ≤ 4 * k by omega_arith)
 
 theorem arg_containsN {s : State} {k i : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4 * k ≤ 2 ^ 32) (hi : i < k) :
     Region.Contains ⟨argAddr s 0, 4 * k⟩ (argAddr s i) 4 := by
   have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := by
-    rw [argAddr_eq, addr_eq (by omega)]
+    rw [argAddr_eq, addr_eq (by omega_arith)]
   have ei : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * i) := by
-    rw [argAddr_eq, addr_eq (by omega), Offset.add_add]
+    rw [argAddr_eq, addr_eq (by omega_arith), Offset.add_add]
   rw [e0, ei]
-  exact Offset.contains_base _ (show 4 * i + 4 ≤ 4 * k by omega) (by omega)
+  exact Offset.contains_base _ (show 4 * i + 4 ≤ 4 * k by omega_arith) (by omega_arith)
 
 /-- Which slot `setupWith` may shift: none, `d`'s (verification reads the
 hash there) or the hash's. -/
@@ -238,21 +238,21 @@ structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
     (hl : len ≤ 2 ^ 64) : ∀ d, d + 4 ≤ len → InRegions rs (p + BitVec.ofNat 64 d) 4 :=
-  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega)⟩
+  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega_arith)⟩
 
 theorem idx_sign {i : Nat} (hi : i ∈ Args.sign.idx) : i < 5 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
-  omega
+  omega_arith
 
 theorem Pre.setup {c : Cfg} {s : State} {extra : List Region} (hp : Pre c s extra) : SetupPre c .sign s where
   shift := .inr (.inr rfl)
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨argsR s, by rw [hp.rd]; simp, arg_contains hp.sp_fit (idx_sign hi)⟩
   arg_sc := fun i hi => hp.args_sc.sub_left (arg_sub hp.sp_fit (idx_sign hi))
-  sp_fit := fun i hi => by have := idx_sign hi; have := hp.sp_fit; omega
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.k_fit; omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.digest_fit; omega)
+  sp_fit := fun i hi => by have := idx_sign hi; have := hp.sp_fit; omega_arith
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.k_fit; omega_arith)
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_arith)
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.digest_fit; omega_arith)
   k_sc := hp.k_sc
   d_sc := hp.d_sc
   e_sc := hp.digest_sc
@@ -261,7 +261,7 @@ theorem Pre.setup {c : Cfg} {s : State} {extra : List Region} (hp : Pre c s extr
   e_fit := hp.digest_fit
   sc_fit := hp.sc_fit
   stk := stkOk_of (Cfg.stk_ge c) hp.sp_lo
-    (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := hp.sc_fit; omega)]; exact hp.sc_fit)
+    (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := hp.sc_fit; omega_arith)]; exact hp.sc_fit)
     (by decide) hp.stk_sc
   sp_lo := hp.sp_lo
   stk_sc := hp.stk_sc
@@ -306,14 +306,14 @@ theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 4096 + (64 * c.n + 4) * j
 theorem wk_eq (c : Cfg) : c.wk = 4096 - 64 * c.n := rfl
 
 theorem accLen_eq (M : Mod) : accLen M = 16 * M.n + 4 := by
-  simp only [accLen, words]; omega
+  simp only [accLen, words]; omega_arith
 
 /-- Slots `i < j` are apart. -/
 theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) : c.sl i + 8 * c.n ≤ c.sl j := by
   rw [sl_eq, sl_eq]
   have := Nat.mul_le_mul_left (8 * c.n) h
   rw [Nat.mul_succ] at this
-  omega
+  omega_arith
 
 theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
     c.sl i + 8 * c.n ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := by
@@ -324,19 +324,19 @@ theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
 theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = j := by
   by_contra hij
   have := sl_apart c hij
-  omega
+  omega_arith
 
 /-- A slot is below the field arithmetic's own working space. -/
 theorem sl_below_wk (c : Cfg) {i : Nat} (hi : i < 45) (hn : c.n < 10 := by n10) : c.sl i + 8 * c.n ≤ c.wk := by
   have := sl_lt c hi
   rw [sl_eq c 45] at this
   rw [wk_eq]
-  have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
-  omega
+  have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega_arith)
+  omega_arith
 
 /-- The field arithmetic's own working space ends at byte 4096. -/
 theorem wk_own (c : Cfg) (hn : c.n < 10 := by n10) : c.wk + 64 * c.n = 4096 := by
-  rw [wk_eq]; omega
+  rw [wk_eq]; omega_arith
 
 /-- A slot is below the tables. -/
 theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) (hn : c.n < 10 := by n10) :
@@ -344,34 +344,34 @@ theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) (hn : c.n < 
   have := sl_below_wk c hi
   have := wk_own c
   rw [bitsAt_eq]
-  omega
+  omega_arith
 
 /-- The tables are above the field arithmetic's own working space. -/
 theorem wk_below_bits (c : Cfg) (j : Nat) (hn : c.n < 10 := by n10) : c.wk + 64 * c.n ≤ bitsAt c.n j := by
   have := wk_own c
   rw [bitsAt_eq]
-  omega
+  omega_arith
 
 /-- The accumulator is in the working space. -/
 theorem wk_le (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) : c.wk + accLen M ≤ size := by
   have := wk_own c
   rw [accLen_eq, hM]
   show _ ≤ 8192
-  omega
+  omega_arith
 
 /-- Every slot is in the working space. -/
 theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
   have := sl_below_wk c hi
   have := wk_own c
   show _ ≤ 8192
-  omega
+  omega_arith
 
 /-- Every table is in the working space. -/
 theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
   rw [bitsAt_eq]
-  have := Nat.mul_le_mul_left (64 * c.n + 4) (show j ≤ 2 by omega)
-  have : (64 * c.n + 4) * 2 ≤ (64 * 9 + 4) * 2 := Nat.mul_le_mul_right _ (by omega)
+  have := Nat.mul_le_mul_left (64 * c.n + 4) (show j ≤ 2 by omega_arith)
+  have : (64 * c.n + 4) * 2 ≤ (64 * 9 + 4) * 2 := Nat.mul_le_mul_right _ (by omega_arith)
   show _ ≤ 8192
-  omega
+  omega_arith
 
 end VG.Proof.Ecdsa.X86

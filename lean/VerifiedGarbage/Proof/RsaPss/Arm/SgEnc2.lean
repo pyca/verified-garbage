@@ -96,7 +96,7 @@ theorem clr_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   refine VP.seq (G := fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Ke h P σ s.mem ∧
       s.gpr .r0 = P.scr + BitVec.ofNat 32 oEm ∧ s.gpr .r2 = 0 ∧ s.gpr .lr = BitVec.ofNat 32 P.K)
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.1.st.sp.trans h₂.1.1.st.sp.symm) fun σ s ⟨⟨hc, hk⟩, hd⟩ => ?_)
-    ((zero_vp (hg.wbuf (o := oEm) (n := P.K) (by pomega) (by omega)) (by omega) (Inv := Ke h P)
+    ((zero_vp (hg.wbuf (o := oEm) (n := P.K) (by pomega) (by omega_arith)) (by omega_arith) (Inv := Ke h P)
       fun σ m m' hk hf => hk.keep h hg (by rwa [hg.addr (by pomega)] at hf) (Nat.le_refl _) (by pomega)).mono
       (fun _ _ h => h) fun σ s ⟨hc, hk, hz⟩ => ⟨hc, hk, fun i hi => by rw [← hg.byteAt_scr (by pomega)]; exact hz i hi⟩)
   obtain ⟨a3, r3, v3⟩ := argAt hk.1 hc.st (j := 3) (by decide)
@@ -118,8 +118,8 @@ theorem fit_bounds {P : EP} {σ : State} {m : Mem} (hk : Kp h P σ m) :
   have := h.D_le
   have := h.N_le
   have := h.D_pos
-  have : lo P ≤ 1 := by unfold lo; split <;> omega
-  refine ⟨this, ?_, ?_, hk.1.k1024, by omega, h.D_pos⟩ <;> unfold dbN <;> omega
+  have : lo P ≤ 1 := by unfold lo; split <;> omega_arith
+  refine ⟨this, ?_, ?_, hk.1.k1024, by omega_arith, h.D_pos⟩ <;> unfold dbN <;> omega_arith
 
 /-- `0x01` before the salt's place at the end of `DB`. -/
 theorem one_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
@@ -133,12 +133,12 @@ theorem one_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   by_cases hf : fits h P
   swap
   · exact VP.empty fun σ s h' => hf h'.2.1.1.2.1
-  have hsl2 : P.sl + h.D + 2 ≤ P.K := by have := hf.2; omega
+  have hsl2 : P.sl + h.D + 2 ≤ P.K := by have := hf.2; omega_arith
   have hK := hi₀.k1024
-  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega
+  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega_arith
   have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; omega
-  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; omega
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; omega_arith
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have e1 : oEm = 1024 := rfl
   have e2 : oRsa = 8192 := rfl
   have e3 : oY = 2048 := rfl
@@ -156,8 +156,8 @@ theorem one_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
         t.gpr .lr = BitVec.ofNat 32 P.sl := by
       prun [saltPos, atDb, atS, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, a17, r17, v17, a18,
         r18, v18, arg_lt, hk.1.2.2.2.1, hk.1.2.2.2.2, movw_val (show oEm < 2 ^ 16 by decide), BitVec.add_assoc,
-        BitVec.ofNat_add_ofNat, add_ofNat_sub (x := P.scr) (a := oEm + lo P + dbN h P) (b := P.sl) (by omega),
-        add_ofNat_sub_one (x := P.scr) (a := oEm + lo P + dbN h P - P.sl) (by omega)]
+        BitVec.ofNat_add_ofNat, add_ofNat_sub (x := P.scr) (a := oEm + lo P + dbN h P) (b := P.sl) (by omega_arith),
+        add_ofNat_sub_one (x := P.scr) (a := oEm + lo P + dbN h P - P.sl) (by omega_arith)]
       rfl
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk, m ▸ he⟩, r0, r1, lr⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -165,8 +165,8 @@ theorem one_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     · rw [h₁.2.1, h₂.2.1]
     · rw [h₁.2.2.2, h₂.2.2.2]
   · have ad : State.addr (P.scr + BitVec.ofNat 32 (oEm + lo P + dbN h P - P.sl - 1)) =
-        sa P.scr (oEm + lo P + dbN h P - P.sl - 1) := hg.addr (by omega)
-    have wd : InRegions s.wr (sa P.scr (oEm + lo P + dbN h P - P.sl - 1)) 1 := hg.wr hc.st (by omega)
+        sa P.scr (oEm + lo P + dbN h P - P.sl - 1) := hg.addr (by omega_arith)
+    have wd : InRegions s.wr (sa P.scr (oEm + lo P + dbN h P - P.sl - 1)) 1 := hg.wr hc.st (by omega_arith)
     have hz0 : ∀ y : BitVec 32, y - 0 = y := fun y => BitVec.sub_zero y
     have hw : WP isa (.block put1) s fun t =>
         t.mem = s.mem.writeW (sa P.scr (oEm + lo P + dbN h P - P.sl - 1)) (1 : Byte) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
@@ -177,17 +177,17 @@ theorem one_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       rfl
     refine WP.mono hw fun t ⟨m, rd, wr, sp, t0, t1, tl, z⟩ => ?_
     have fr : Frame [sR P.scr (oEm + lo P + dbN h P - P.sl - 1) 1] s.mem t.mem := by
-      rw [m]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega) (by omega)
-    refine ⟨⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, hk.keep h hg fr (by omega) (by omega),
-      fun i hi => ?_⟩, by rw [t0, show oEm + lo P + dbN h P - P.sl - 1 + 1 = oEm + lo P + dbN h P - P.sl by omega],
+      rw [m]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega_arith) (by omega_arith)
+    refine ⟨⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, hk.keep h hg fr (by omega_arith) (by omega_arith),
+      fun i hi => ?_⟩, by rw [t0, show oEm + lo P + dbN h P - P.sl - 1 + 1 = oEm + lo P + dbN h P - P.sl by omega_arith],
       t1, tl, z⟩
-    · simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega)
+    · simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega_arith)
     · obtain ⟨σ', ok⟩ := hg.ok
-      simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by omega) (by rw [hg.F]; decide)
-    · rw [m, sa_write P.scr _ _ (by omega) (by omega), he i hi]
+      simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by omega_arith) (by rw [hg.F]; decide)
+    · rw [m, sa_write P.scr _ _ (by omega_arith) (by omega_arith), he i hi]
       by_cases e : i = lo P + dbN h P - P.sl - 1
-      · rw [ite_eq_left (by omega)]; exact (ite_eq_left e).symm
-      · rw [ite_eq_right (by omega)]; exact (ite_eq_right e).symm
+      · rw [ite_eq_left (by omega_arith)]; exact (ite_eq_left e).symm
+      · rw [ite_eq_right (by omega_arith)]; exact (ite_eq_right e).symm
 
 /-- `EM` after the salt, from `EM` after `0x01`. -/
 theorem emA_eq {P : EP} {σ : State} (hlo : lo P ≤ 1) (hdb : P.sl + 1 ≤ dbN h P) (i : Nat) :
@@ -195,17 +195,17 @@ theorem emA_eq {P : EP} {σ : State} (hlo : lo P ≤ 1) (hdb : P.sl + 1 ≤ dbN 
       (saltB P σ).getD (i - (lo P + dbN h P - P.sl)) 0 else emP h P i := by
   unfold emA dbv emP
   by_cases h1 : i < lo P
-  · rw [ite_eq_left h1, ite_eq_right (by omega), ite_eq_right (by omega)]
+  · rw [ite_eq_left h1, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
   rw [ite_eq_right h1]
   by_cases h2 : i < lo P + dbN h P
   · rw [ite_eq_left h2]
     by_cases h3 : i - lo P < dbN h P - P.sl - 1
-    · rw [ite_eq_left h3, ite_eq_right (by omega), ite_eq_right (by omega)]
+    · rw [ite_eq_left h3, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
     rw [ite_eq_right h3]
     by_cases h4 : i - lo P = dbN h P - P.sl - 1
-    · rw [ite_eq_left h4, ite_eq_right (by omega), ite_eq_left (by omega)]
-    · rw [ite_eq_right h4, ite_eq_left (by omega), show i - lo P - (dbN h P - P.sl) = i - (lo P + dbN h P - P.sl) by omega]
-  · rw [ite_eq_right h2, ite_eq_right (by omega), ite_eq_right (by omega)]
+    · rw [ite_eq_left h4, ite_eq_right (by omega_arith), ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right h4, ite_eq_left (by omega_arith), show i - lo P - (dbN h P - P.sl) = i - (lo P + dbN h P - P.sl) by omega_arith]
+  · rw [ite_eq_right h2, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
 
 /-- The salt at the end of `DB`. -/
 theorem cpS_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
@@ -221,9 +221,9 @@ theorem cpS_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   swap
   · exact VP.empty fun σ s h' => hf h'.1.2.1.1.2.1
   have hK := hi₀.k1024
-  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega
-  have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; have := hf.2; omega
-  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; have := hf.2; omega
+  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega_arith
+  have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; have := hf.2; omega_arith
+  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; have := hf.2; omega_arith
   have e1 : oEm = 1024 := rfl
   have e2 : oRsa = 8192 := rfl
   have e3 : oY = 2048 := rfl
@@ -231,28 +231,28 @@ theorem cpS_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   refine VP.ite (fun _ _ _ _ h₁ h₂ => by rw [VG.Proof.X25519.Arm.eval_eq, VG.Proof.X25519.Arm.eval_eq, h₁.2.2.2.2,
       h₂.2.2.2.2]) (VP.block_nil fun σ s ⟨⟨⟨hc, hk, he⟩, _, _, _, z⟩, e⟩ => ⟨hc, hk, fun i hi => ?_⟩) ?_
   · have h0 : P.sl = 0 := by rw [VG.Proof.X25519.Arm.eval_eq, z] at e; simpa using e
-    rw [he i hi, emA_eq h hlo hdb, ite_eq_right (by omega)]
+    rw [he i hi, emA_eq h hlo hdb, ite_eq_right (by omega_arith)]
   by_cases h0 : P.sl = 0
   · exact VP.empty fun σ s ⟨⟨_, _, _, _, z⟩, e⟩ => by
       rw [VG.Proof.X25519.Arm.eval_eq, z, decide_eq_true h0] at e; exact absurd e (by decide)
-  refine (copy_vp (hg.wbuf (o := oEm + lo P + dbN h P - P.sl) (n := P.sl) (by omega) (by omega))
-    (salt_buf h ⟨σ₀, hi₀⟩) (by rw [hg.addr (by omega)]; exact (hg.ro ok (by omega) (R := P.SALT) (by simp)).symm)
-    (by omega) (f := fun σ i => (saltB P σ).getD i 0)
+  refine (copy_vp (hg.wbuf (o := oEm + lo P + dbN h P - P.sl) (n := P.sl) (by omega_arith) (by omega_arith))
+    (salt_buf h ⟨σ₀, hi₀⟩) (by rw [hg.addr (by omega_arith)]; exact (hg.ro ok (by omega_arith) (R := P.SALT) (by simp)).symm)
+    (by omega_arith) (f := fun σ i => (saltB P σ).getD i 0)
     (Inv := fun σ m => Ke h P σ m ∧ ∀ i < P.K, (i < lo P + dbN h P - P.sl ∨ lo P + dbN h P ≤ i) →
       m (sa P.scr (oEm + i)) = emP h P i) fun σ m m' ⟨hk, ho⟩ hf' => ?_).mono
     (fun σ s ⟨⟨⟨hc, hk, he⟩, r0, r1, lr, _⟩, _⟩ => ⟨hc, ⟨hk, fun i hi _ => he i hi⟩, r0, r1, lr,
       fun i hi => salt_at h hc hi⟩) fun σ s ⟨hc, ⟨hk, ho⟩, hs⟩ => ⟨hc, hk, fun i hi => ?_⟩
-  · rw [hg.addr (by omega)] at hf'
-    refine ⟨hk.keep h hg hf' (by omega) (by omega), fun i hi hr => ?_⟩
+  · rw [hg.addr (by omega_arith)] at hf'
+    refine ⟨hk.keep h hg hf' (by omega_arith) (by omega_arith), fun i hi hr => ?_⟩
     rw [← ho i hi hr]
     exact hf' _ fun r hr' => by
       simp only [List.mem_singleton] at hr'; subst hr'
-      exact Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by omega) (by omega) (by omega) _ (Region.contains_self _ _)
+      exact Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by omega_arith) (by omega_arith) (by omega_arith) _ (Region.contains_self _ _)
   · rw [emA_eq h hlo hdb]
     by_cases hr : lo P + dbN h P - P.sl ≤ i ∧ i < lo P + dbN h P
-    · rw [ite_eq_left hr, ← hs (i - (lo P + dbN h P - P.sl)) (by omega), hg.byteAt_scr (by omega),
-        show oEm + lo P + dbN h P - P.sl + (i - (lo P + dbN h P - P.sl)) = oEm + i by omega]
-    · rw [ite_eq_right hr]; exact ho i hi (by omega)
+    · rw [ite_eq_left hr, ← hs (i - (lo P + dbN h P - P.sl)) (by omega_arith), hg.byteAt_scr (by omega_arith),
+        show oEm + lo P + dbN h P - P.sl + (i - (lo P + dbN h P - P.sl)) = oEm + i by omega_arith]
+    · rw [ite_eq_right hr]; exact ho i hi (by omega_arith)
 
 /-- `H` after `DB`. -/
 theorem putH_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
@@ -265,10 +265,10 @@ theorem putH_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   swap
   · exact VP.empty fun σ s h' => hf h'.2.1.1.2.1
   have hK := hi₀.k1024
-  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega
-  have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; have := hf.2; omega
-  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; have := hf.2; omega
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hlo : lo P ≤ 1 := by unfold lo; split <;> omega_arith
+  have hdb : P.sl + 1 ≤ dbN h P := by unfold dbN; have := hf.2; omega_arith
+  have hsum : lo P + dbN h P + h.D + 1 = P.K := by unfold dbN; have := hf.2; omega_arith
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hD0 := h.D_pos
   have e1 : oEm = 1024 := rfl
   have e2 : oRsa = 8192 := rfl
@@ -279,37 +279,37 @@ theorem putH_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       s.gpr .r0 = P.scr + BitVec.ofNat 32 (oEm + lo P + dbN h P) ∧ s.gpr .r1 = P.scr + BitVec.ofNat 32 oDig ∧
       s.gpr .lr = BitVec.ofNat 32 h.D)
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hk, he⟩ => ?_)
-    ((copy_vp (hg.wbuf (o := oEm + lo P + dbN h P) (n := h.D) (by omega) hD0)
-      (hg.rbuf (o := oDig) (n := h.D) (by omega) hD0)
-      (by rw [hg.addr (by omega), hg.addr (by omega)]; exact Geo.sep (by omega) (by omega) (by omega)) hD0
+    ((copy_vp (hg.wbuf (o := oEm + lo P + dbN h P) (n := h.D) (by omega_arith) hD0)
+      (hg.rbuf (o := oDig) (n := h.D) (by omega_arith) hD0)
+      (by rw [hg.addr (by omega_arith), hg.addr (by omega_arith)]; exact Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)) hD0
       (f := fun σ i => (Hs h P σ).getD i 0)
       (Inv := fun σ m => Ke h P σ m ∧ ∀ i < P.K, (i < lo P + dbN h P ∨ lo P + dbN h P + h.D ≤ i) →
         m (sa P.scr (oEm + i)) = emA h P σ i) fun σ m m' ⟨hk, ho⟩ hf' => ?_).mono
       (fun σ s ⟨⟨hc, hk, he⟩, r0, r1, lr⟩ => ⟨hc, ⟨hk, fun i hi _ => he i hi⟩, r0, r1, lr, fun i hi => by
-        rw [hg.byteAt_scr (by omega)]; exact hk.2 i hi⟩) fun σ s ⟨hc, ⟨hk, ho⟩, hs⟩ => ⟨hc, hk, fun i hi => ?_⟩)
+        rw [hg.byteAt_scr (by omega_arith)]; exact hk.2 i hi⟩) fun σ s ⟨hc, ⟨hk, ho⟩, hs⟩ => ⟨hc, hk, fun i hi => ?_⟩)
   · have hw : WP isa (.block (putH h.H)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = P.scr + BitVec.ofNat 32 (oEm + lo P + dbN h P) ∧ t.gpr .r1 = P.scr + BitVec.ofNat 32 oDig ∧
         t.gpr .lr = BitVec.ofNat 32 h.D := by
       prun [putH, atDb, atS, addSlot, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hk.1.2.2.2.1,
         hk.1.2.2.2.2, movw_val (show oEm < 2 ^ 16 by decide), movw_val (show oDig < 2 ^ 16 by decide),
-        movw_val (show dig h.H < 2 ^ 16 by show h.D < 2 ^ 16; omega), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+        movw_val (show dig h.H < 2 ^ 16 by show h.D < 2 ^ 16; omega_arith), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk, m ▸ he⟩, r0, r1, lr⟩
-  · rw [hg.addr (by omega)] at hf'
-    refine ⟨hk.keep h hg hf' (by omega) (by omega), fun i hi hr => ?_⟩
+  · rw [hg.addr (by omega_arith)] at hf'
+    refine ⟨hk.keep h hg hf' (by omega_arith) (by omega_arith), fun i hi hr => ?_⟩
     rw [← ho i hi hr]
     exact hf' _ fun r hr' => by
       simp only [List.mem_singleton] at hr'; subst hr'
-      exact Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by omega) (by omega) (by omega) _ (Region.contains_self _ _)
+      exact Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by omega_arith) (by omega_arith) (by omega_arith) _ (Region.contains_self _ _)
   · unfold emB
     by_cases h1 : i < lo P + dbN h P
     · rw [ite_eq_left h1]; exact ho i hi (.inl h1)
     rw [ite_eq_right h1]
     by_cases h2 : i < lo P + dbN h P + h.D
-    · rw [ite_eq_left h2, ← hs (i - lo P - dbN h P) (by omega), hg.byteAt_scr (by omega),
-        show oEm + lo P + dbN h P + (i - lo P - dbN h P) = oEm + i by omega]
-    · rw [ite_eq_right h2, ho i hi (.inr (by omega))]
+    · rw [ite_eq_left h2, ← hs (i - lo P - dbN h P) (by omega_arith), hg.byteAt_scr (by omega_arith),
+        show oEm + lo P + dbN h P + (i - lo P - dbN h P) = oEm + i by omega_arith]
+    · rw [ite_eq_right h2, ho i hi (.inr (by omega_arith))]
       unfold emA
-      rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+      rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
 
 theorem bcPut_cert : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0])
     (.block bcPut) hc).isSome = true := ⟨_, by taint_decide⟩
@@ -337,26 +337,26 @@ theorem bc_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
         t.gpr .r0 = P.scr + BitVec.ofNat 32 (oEm + P.K - 1) := by
       prun [bcSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, a3, r3, v3, arg_lt,
         movw_val (show oEm < 2 ^ 16 by decide), BitVec.add_assoc, BitVec.ofNat_add_ofNat,
-        add_ofNat_sub_one (x := P.scr) (a := oEm + P.K) (by omega)]
+        add_ofNat_sub_one (x := P.scr) (a := oEm + P.K) (by omega_arith)]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk, m ▸ he⟩, r0⟩
   · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2]
-  · have ad : State.addr (P.scr + BitVec.ofNat 32 (oEm + P.K - 1)) = sa P.scr (oEm + P.K - 1) := hg.addr (by omega)
-    have wd : InRegions s.wr (sa P.scr (oEm + P.K - 1)) 1 := hg.wr hc.st (by omega)
+  · have ad : State.addr (P.scr + BitVec.ofNat 32 (oEm + P.K - 1)) = sa P.scr (oEm + P.K - 1) := hg.addr (by omega_arith)
+    have wd : InRegions s.wr (sa P.scr (oEm + P.K - 1)) 1 := hg.wr hc.st (by omega_arith)
     have hw : WP isa (.block bcPut) s fun t => t.mem = s.mem.writeW (sa P.scr (oEm + P.K - 1)) (0xbc : Byte) ∧
         t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
       prun [bcPut, mw, r0, ad, wd, movw_val (show 0xbc < 2 ^ 16 by decide)]
       rfl
     refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
     have fr : Frame [sR P.scr (oEm + P.K - 1) 1] s.mem t.mem := by
-      rw [m]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega) (by omega)
+      rw [m]; exact frame_byte P.scr _ _ (Nat.le_refl _) (by omega_arith) (by omega_arith)
     obtain ⟨σ', ok⟩ := hg.ok
-    refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, hk.keep h hg fr (by omega) (by omega),
+    refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, hk.keep h hg fr (by omega_arith) (by omega_arith),
       fun i hi => ?_⟩
-    · simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega)
-    · simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by omega) (by rw [hg.F]; decide)
-    · rw [m, sa_write P.scr _ _ (by omega) (by omega), he i hi]
+    · simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega_arith)
+    · simp only [List.mem_singleton] at hr; subst hr; exact hg.slot ok (by omega_arith) (by rw [hg.F]; decide)
+    · rw [m, sa_write P.scr _ _ (by omega_arith) (by omega_arith), he i hi]
       by_cases e : i = P.K - 1
-      · rw [ite_eq_left (by omega)]; exact (ite_eq_left e).symm
-      · rw [ite_eq_right (by omega)]; exact (ite_eq_right e).symm
+      · rw [ite_eq_left (by omega_arith)]; exact (ite_eq_left e).symm
+      · rw [ite_eq_right (by omega_arith)]; exact (ite_eq_right e).symm
 
 end VG.Proof.RsaPss.Arm.Sg

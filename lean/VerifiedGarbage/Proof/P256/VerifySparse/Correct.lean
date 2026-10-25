@@ -21,7 +21,7 @@ private theorem first_value (a : BitVec 64) :
   have h := Word64.addCarry_value a 1 false
   cases hc : Word64.carryOut a 1 false <;>
     simp only [hc,Bool.not_false,Bool.not_true,Bool.toNat_true,Bool.toNat_false,
-      show (1 : BitVec 64).toNat=1 from rfl] at h ⊢ <;> omega
+      show (1 : BitVec 64).toNat=1 from rfl] at h ⊢ <;> omega_arith
 
 private theorem first_ok (s : State) (r : Reg) (hr : r≠.x2) :
     WP isa (.block [.movz .x .x2 1 0,.adds .x .x1 r .x2]) s fun t =>
@@ -62,7 +62,7 @@ private theorem diffs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base
   refine WP.mono (first_ok s a na.2.2.1) fun s1 ⟨e1,k1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (diffR1_ok (hs.of_keeps k1 (by decide)) b .x3 nb.2.2.1 false
-    (c:=s1.c) rfl (mo:=Impl.P256.VerifySparse.M.mo+8) (by omega) (by decide)) fun s2 ⟨e2,k2⟩ => ?_
+    (c:=s1.c) rfl (mo:=Impl.P256.VerifySparse.M.mo+8) (by omega_arith) (by decide)) fun s2 ⟨e2,k2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (subc_ok s2 .x4 c .x7 false (c:=s2.c) rfl) fun s3 ⟨v3,c3,k3⟩ => ?_
   have z2 : s2.gpr .x7=0 := by rw [k2.gpr _ (by decide),k1.gpr _ (by decide),hz]
@@ -70,7 +70,7 @@ private theorem diffs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base
   rw [←v3,←c3,z2] at e3
   have hs3 := ((hs.of_keeps k1 (by decide)).of_keeps k2 (by decide)).of_keeps k3 (by decide)
   refine WP.mono (diffR1_ok hs3 d .x5 nd.2.2.1 false (c:=s3.c) rfl
-    (mo:=Impl.P256.VerifySparse.M.mo+24) (by omega) (by decide)) fun t ⟨e4,k4⟩ => ?_
+    (mo:=Impl.P256.VerifySparse.M.mo+24) (by omega_arith) (by decide)) fun t ⟨e4,k4⟩ => ?_
   refine ⟨?_,(((k1.mono (by sub_regs)).trans (k2.mono (by sub_regs))).trans
     (k3.mono (by sub_regs))).trans (k4.mono (by sub_regs))⟩
   have ea : t.gpr .x1=s1.gpr .x1 := by rw [k4.gpr _ (by decide),k3.gpr _ (by decide),k2.gpr _ (by decide)]
@@ -86,12 +86,12 @@ private theorem diffs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base
   change (s3.gpr .x4).toNat+0+(!s2.c).toNat=(s.gpr c).toNat+2^64*(!s3.c).toNat at e3
   rw [rd,k3.mem,k2.mem,k1.mem] at e4
   simp only [dRegs,List.take,regsVal,wordsVal,ea,eb,ec,Nat.mul_zero,Nat.add_zero]
-  rw [h0,show Impl.P256.VerifySparse.M.mo+8+8=Impl.P256.VerifySparse.M.mo+16 by omega,h2,
-    show Impl.P256.VerifySparse.M.mo+16+8=Impl.P256.VerifySparse.M.mo+24 by omega]
+  rw [h0,show Impl.P256.VerifySparse.M.mo+8+8=Impl.P256.VerifySparse.M.mo+16 by omega_arith,h2,
+    show Impl.P256.VerifySparse.M.mo+16+8=Impl.P256.VerifySparse.M.mo+24 by omega_arith]
   change (s1.gpr .x1).toNat+2^64*((s2.gpr .x3).toNat+2^64*((s3.gpr .x4).toNat+2^64*(t.gpr .x5).toNat))+
     ((2^64-1)+2^64*((word s.mem base (Impl.P256.VerifySparse.M.mo+8)).toNat+
       2^64*(0+2^64*(word s.mem base (Impl.P256.VerifySparse.M.mo+24)).toNat)))=_
-  omega
+  omega_arith
 
 
 /-- Sparse conditional subtraction has the ordinary canonical csub contract. -/
@@ -106,17 +106,17 @@ theorem correct_ok {s : State} {base : Addr} {size m : Nat} (hs : Scr s base siz
       regsVal t ts=(regsVal s ts+2^256*(s.gpr top).toNat)%m ∧
       Keeps (.x2::.x17::ts++dRegs 4) s t := by
   rcases ts with _ | ⟨a,ts⟩ <;> simp only [List.length_nil,List.length_cons] at hlen
-  · omega
+  · omega_arith
   rcases ts with _ | ⟨b,ts⟩ <;> simp only [List.length_nil,List.length_cons] at hlen
-  · omega
+  · omega_arith
   rcases ts with _ | ⟨c,ts⟩ <;> simp only [List.length_nil,List.length_cons] at hlen
-  · omega
+  · omega_arith
   rcases ts with _ | ⟨d,ts⟩ <;> simp only [List.length_nil,List.length_cons] at hlen
-  · omega
+  · omega_arith
   have ht : ts=[] := by
     cases ts with
     | nil => rfl
-    | cons e es => simp only [List.length_cons] at hlen; omega
+    | cons e es => simp only [List.length_cons] at hlen; omega_arith
   subst ts
   have ft := hf.tail
   have ne : ∀ q∈top::[a,b,c,d],q∉[Reg.x1,.x2,.x3,.x4,.x5] := by
@@ -165,17 +165,17 @@ theorem modulus_words {mem : Mem} {base : Addr} {mo : Nat}
   have h2 := (word mem base (mo+16)).isLt
   have h3 := (word mem base (mo+24)).isLt
   simp only [wordsVal,Nat.mul_zero,Nat.add_zero] at hm
-  have e8 : mo+8+8=mo+16 := by omega
-  have e16 : mo+8+8+8=mo+24 := by omega
+  have e8 : mo+8+8=mo+16 := by omega_arith
+  have e16 : mo+8+8+8=mo+24 := by omega_arith
   rw [e16,e8] at hm
   unfold p at hm
   constructor
   · apply BitVec.eq_of_toNat_eq
     change (word mem base mo).toNat=2^64-1
-    omega
+    omega_arith
   · apply BitVec.eq_of_toNat_eq
     change (word mem base (mo+16)).toNat=0
-    omega
+    omega_arith
 
 /-- Fixed P-256 modulus wrapper with the generic csub premise order. -/
 theorem correctP_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)

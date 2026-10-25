@@ -115,10 +115,10 @@ theorem branch {d c nb B : Nat} (hs : Shape d c nb) (hB : B ≤ 2 ^ 19) {X : Sta
     have hy' := hy
     unfold inNum at hy'
     rw [hp.bytes_keep (by simp only [vL]; rw [hlen s₀ h₀ hx])] at hy'
-    rw [hc i hi, buWord, subModQ_toNat (by rw [BitVec.toNat_ofNat]; omega) (by rw [BitVec.toNat_ofNat]; omega),
-      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show B < 2 ^ 32 by omega),
-      Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega), toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi,
-      hlen s₀ h₀ hx, e₁, e₂, ofInt_sub (by omega), inNum, hp.bytes_keep (by simp only [vL]; rw [hlen s₀ h₀ hx])]
+    rw [hc i hi, buWord, subModQ_toNat (by rw [BitVec.toNat_ofNat]; omega_arith) (by rw [BitVec.toNat_ofNat]; omega_arith),
+      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show B < 2 ^ 32 by omega_arith),
+      Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_arith), toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi,
+      hlen s₀ h₀ hx, e₁, e₂, ofInt_sub (by omega_arith), inNum, hp.bytes_keep (by simp only [vL]; rw [hlen s₀ h₀ hx])]
 
 /-- The branch for `b = B` is the one for `a = A`, of width `d'`. -/
 theorem pick {s₀ : State} (h₀ : Pre s₀) {A B d' : Nat} (hd : bitlen (A + B) = d') (e : (arg s₀ 3).toNat = B)
@@ -138,20 +138,20 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Fin
   refine Piece.seq (ldArgs_piece (k := 5) (by decide) (by decide) (by decide) (fun _ h => h.lay)
     (fun _ _ _ _ hq => hq.1) (by native_taint_decide)) ?_
   refine sel_piece (arg · 3) (by decide) hw (by native_taint_decide)
-    (branch sh3 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 2) (by decide) e fun _ _ => by omega)
+    (branch sh3 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 2) (by decide) e fun _ _ => by omega_arith)
       (by native_taint_decide) (by native_taint_decide)) ?_
   refine sel_piece (arg · 3) (by decide) hw (by native_taint_decide)
-    (branch sh4 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 4) (by decide) e fun _ _ => by omega)
+    (branch sh4 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 4) (by decide) e fun _ _ => by omega_arith)
       (by native_taint_decide) (by native_taint_decide)) ?_
   refine sel_piece (arg · 3) (by decide) hw (by native_taint_decide)
-    (branch sh13 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 4095) (by decide) e fun _ _ => by omega)
+    (branch sh13 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 4095) (by decide) e fun _ _ => by omega_arith)
       (by native_taint_decide) (by native_taint_decide)) ?_
   refine sel_piece (arg · 3) (by decide) hw (by native_taint_decide)
-    (branch sh18 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 131071) (by decide) e fun _ _ => by omega)
+    (branch sh18 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 131071) (by decide) e fun _ _ => by omega_arith)
       (by native_taint_decide) (by native_taint_decide)) ?_
   refine (branch sh20 (B := 524288) (by decide) (fun s₀ h₀ ⟨⟨⟨⟨_, e₂⟩, e₄⟩, e₄₀⟩, e₁₃⟩ =>
-      pick h₀ (A := 524287) (by decide) (by have := mem_bitPackParams h₀.ab; simp only [aN, bN] at this; omega)
-        fun _ _ => by omega)
+      pick h₀ (A := 524287) (by decide) (by have := mem_bitPackParams h₀.ab; simp only [aN, bN] at this; omega_arith)
+        fun _ _ => by omega_arith)
       (by native_taint_decide) (by native_taint_decide)).mono (fun _ _ _ ⟨⟨h, _⟩, hx⟩ => ⟨h, hx⟩) fun _ _ _ h => h
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')
@@ -229,8 +229,8 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Fin
   · rw [hc i hi, inNum, hp.bytes_keep (by decide)]
     have hy := Nat.mod_lt (Proof.MlKem.digits 8 ((bytesAt s₀.mem (iA vP s₀) 320).map (·.toNat)) / 2 ^ (10 * i))
       (show 2 ^ 10 > 0 by decide)
-    rw [t1Word, rotr_small _ (by decide) (by decide) (by rw [BitVec.toNat_ofNat]; omega),
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega), show 32 - 19 = 13 from rfl,
+    rw [t1Word, rotr_small _ (by decide) (by decide) (by rw [BitVec.toNat_ofNat]; omega_arith),
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_arith), show 32 - 19 = 13 from rfl,
       Vector.getElem_map, simpleBitUnpack_get _ _ hi, show bitlen t1Max = 10 by decide, ofInt_t1 hy]
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')

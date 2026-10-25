@@ -44,7 +44,7 @@ theorem WP.both {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : 
 
 /-- The kernel's loop invariant on entry. -/
 theorem linv0 (s₀ : State) : LInv s₀ 0 s₀ := by
-  refine ⟨rfl, ?_, ?_, rfl, by omega, fun _ _ _ _ _ => rfl, rfl, rfl, rfl, ?_, ?_, Frame.refl _ _⟩
+  refine ⟨rfl, ?_, ?_, rfl, by omega_arith, fun _ _ _ _ _ => rfl, rfl, rfl, rfl, ?_, ?_, Frame.refl _ _⟩
   · simp only [Nat.mul_zero, BitVec.add_zero]
   · simp only [Nat.mul_zero, Nat.sub_zero]
     simpa only [BitVec.setWidth_eq] using (BitVec.ofNat_toNat 64 (s₀.gpr .x2)).symm
@@ -91,7 +91,7 @@ theorem window_orig {s₀ x : State} {t : Nat} (h : LInv s₀ t x) (hge : 512 * 
   apply List.map_congr_left
   intro i hi
   have hi := List.mem_range.mp hi
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, h.data _ (by omega), ite_eq_right (by omega)]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, h.data _ (by omega_arith), ite_eq_right (by omega_arith)]
 
 /-- Data the loop has passed is the output. -/
 theorem prefix_ct {s₀ x : State} {t n : Nat} (h : LInv s₀ t x) (hn : n ≤ 512 * t) :
@@ -100,7 +100,7 @@ theorem prefix_ct {s₀ x : State} {t n : Nat} (h : LInv s₀ t x) (hn : n ≤ 5
   apply List.map_congr_left
   intro i hi
   have hi := List.mem_range.mp hi
-  rw [h.data _ (by have := h.le; omega), ite_eq_left (by omega)]
+  rw [h.data _ (by have := h.le; omega_arith), ite_eq_left (by omega_arith)]
 
 theorem bytesAt_join (m : Mem) (p : Addr) (n : Nat) :
     bytesAt m p n ++ bytesAt m (p + BitVec.ofNat 64 n) 512 = bytesAt m p (n + 512) :=
@@ -122,27 +122,27 @@ theorem chunks_open {s₀ : State} (hp : BPre s₀) {R a : Nat} {s : State} {t :
       BulkInv (rebase s₀ u) T u ∧ Acc R (absorbAll R a (bytesAt s₀.mem (dp s₀) (512 * T))) u := by
   let Inv : Nat → State → Prop := fun n x => ∃ i, n = L s₀ - 512 * i ∧ 512 ≤ n ∧ t ≤ i ∧
     BulkInv (rebase s₀ x) i x ∧ Acc R (absorbAll R a (bytesAt s₀.mem (dp s₀) (512 * i))) x
-  refine WP.loop (M := isa) Inv ?_ (L s₀ - 512 * t) s ⟨t, rfl, by omega, Nat.le_refl _, h, ha⟩
+  refine WP.loop (M := isa) Inv ?_ (L s₀ - 512 * t) s ⟨t, rfl, by omega_arith, Nat.le_refl _, h, ha⟩
   rintro n x ⟨i, rfl, hge', hti, hx, hax⟩
   have hb : dp (rebase s₀ x) + BitVec.ofNat 64 (512 * i) =
       dataOf false (dp (rebase s₀ x) + BitVec.ofNat 64 (512 * i)) := by
     simp only [dataOf, Bool.false_eq_true, ite_false, BitVec.add_zero]
-  refine (body_ok false (hp.rebase x) (t := i) (by simp; omega) hx (w := 512 * i)
-    (by simp; omega) hb hax).mono fun v ⟨⟨hv, h5⟩, hav⟩ => ?_
+  refine (body_ok false (hp.rebase x) (t := i) (by simp; omega_arith) hx (w := 512 * i)
+    (by simp; omega_arith) hb hax).mono fun v ⟨⟨hv, h5⟩, hav⟩ => ?_
   rw [rebase_rebase] at hv
-  have hwin := window_orig hx.toLInv (by simp; omega)
+  have hwin := window_orig hx.toLInv (by simp; omega_arith)
   simp only [dp_rebase, rebase_mem] at hwin hav
-  rw [hwin, absorb_join (by rw [Poly1305.length_bytesAt]; omega), bytesAt_join,
-    show 512 * i + 512 = 512 * (i + 1) by omega] at hav
+  rw [hwin, absorb_join (by rw [Poly1305.length_bytesAt]; omega_arith), bytesAt_join,
+    show 512 * i + 512 = 512 * (i + 1) by omega_arith] at hav
   rw [L_rebase] at h5
   have hc := eval_zero5 h5
   by_cases he : L s₀ - 512 * (i + 1) < 512
   · left
-    rw [decide_eq_false (show ¬ 512 ≤ L s₀ - 512 * (i + 1) by omega)] at hc
-    exact ⟨hc, i + 1, he, by omega, hv, hav⟩
+    rw [decide_eq_false (show ¬ 512 ≤ L s₀ - 512 * (i + 1) by omega_arith)] at hc
+    exact ⟨hc, i + 1, he, by omega_arith, hv, hav⟩
   · right
-    rw [decide_eq_true (show 512 ≤ L s₀ - 512 * (i + 1) by omega)] at hc
-    exact ⟨hc, L s₀ - 512 * (i + 1), by omega, i + 1, rfl, by omega, by omega, hv, hav⟩
+    rw [decide_eq_true (show 512 ≤ L s₀ - 512 * (i + 1) by omega_arith)] at hc
+    exact ⟨hc, L s₀ - 512 * (i + 1), by omega_arith, i + 1, rfl, by omega_arith, by omega_arith, hv, hav⟩
 
 /-- The loop of chunks that encrypt, each absorbing the output of the one before. -/
 theorem chunks_seal {s₀ : State} (hp : BPre s₀) {R a : Nat} {s : State} {t : Nat} (ht : 1 ≤ t)
@@ -153,31 +153,31 @@ theorem chunks_seal {s₀ : State} (hp : BPre s₀) {R a : Nat} {s : State} {t :
       Acc R (absorbAll R a (bytesAt u.mem (dp s₀) (512 * (T - 1)))) u := by
   let Inv : Nat → State → Prop := fun n x => ∃ i, n = L s₀ - 512 * i ∧ 512 ≤ n ∧ t ≤ i ∧
     BulkInv (rebase s₀ x) i x ∧ Acc R (absorbAll R a (bytesAt x.mem (dp s₀) (512 * (i - 1)))) x
-  refine WP.loop (M := isa) Inv ?_ (L s₀ - 512 * t) s ⟨t, rfl, by omega, Nat.le_refl _, h, ha⟩
+  refine WP.loop (M := isa) Inv ?_ (L s₀ - 512 * t) s ⟨t, rfl, by omega_arith, Nat.le_refl _, h, ha⟩
   rintro n x ⟨i, rfl, hge', hti, hx, hax⟩
   have hb : dp (rebase s₀ x) + BitVec.ofNat 64 (512 * i) =
       dataOf true (dp (rebase s₀ x) + BitVec.ofNat 64 (512 * (i - 1))) := by
     simp only [dataOf, ite_true, BitVec.add_assoc, ← BitVec.ofNat_add]
-    congr 2; omega
-  refine (body_ok true (hp.rebase x) (t := i) (by simp; omega) hx (w := 512 * (i - 1))
-    (by simp; omega) hb hax).mono fun v ⟨⟨hv, h5⟩, hav⟩ => ?_
+    congr 2; omega_arith
+  refine (body_ok true (hp.rebase x) (t := i) (by simp; omega_arith) hx (w := 512 * (i - 1))
+    (by simp; omega_arith) hb hax).mono fun v ⟨⟨hv, h5⟩, hav⟩ => ?_
   rw [rebase_rebase] at hv
   simp only [dp_rebase] at hav
-  rw [absorb_join (by rw [Poly1305.length_bytesAt]; omega), bytesAt_join,
-    show 512 * (i - 1) + 512 = 512 * (i + 1 - 1) by omega] at hav
-  have p1 := prefix_ct hx.toLInv (n := 512 * (i + 1 - 1)) (by omega)
-  have p2 := prefix_ct hv.toLInv (n := 512 * (i + 1 - 1)) (by omega)
+  rw [absorb_join (by rw [Poly1305.length_bytesAt]; omega_arith), bytesAt_join,
+    show 512 * (i - 1) + 512 = 512 * (i + 1 - 1) by omega_arith] at hav
+  have p1 := prefix_ct hx.toLInv (n := 512 * (i + 1 - 1)) (by omega_arith)
+  have p2 := prefix_ct hv.toLInv (n := 512 * (i + 1 - 1)) (by omega_arith)
   simp only [dp_rebase, D0_rebase, KS_rebase] at p1 p2
   rw [p1, ← p2] at hav
   rw [L_rebase] at h5
   have hc := eval_zero5 h5
   by_cases he : L s₀ - 512 * (i + 1) < 512
   · left
-    rw [decide_eq_false (show ¬ 512 ≤ L s₀ - 512 * (i + 1) by omega)] at hc
-    exact ⟨hc, i + 1, he, by omega, hv, hav⟩
+    rw [decide_eq_false (show ¬ 512 ≤ L s₀ - 512 * (i + 1) by omega_arith)] at hc
+    exact ⟨hc, i + 1, he, by omega_arith, hv, hav⟩
   · right
-    rw [decide_eq_true (show 512 ≤ L s₀ - 512 * (i + 1) by omega)] at hc
-    exact ⟨hc, L s₀ - 512 * (i + 1), by omega, i + 1, rfl, by omega, by omega, hv, hav⟩
+    rw [decide_eq_true (show 512 ≤ L s₀ - 512 * (i + 1) by omega_arith)] at hc
+    exact ⟨hc, L s₀ - 512 * (i + 1), by omega_arith, i + 1, rfl, by omega_arith, by omega_arith, hv, hav⟩
 
 /-- `leave` only loads. -/
 theorem leave_mem (s : State)
@@ -220,7 +220,7 @@ theorem leave_bulk {enc : Bool} {s₀ : State} (hp : BPre s₀) {R a : Nat} {u :
     intro d n hd
     rw [h.rd, h.wr, h.x3]
     simp only [rebase_rd, rebase_wr, bp_rebase, hp.rd, hp.wr]
-    exact ⟨bR s₀, by simp, Offset.contains_base _ hd (by omega)⟩
+    exact ⟨bR s₀, by simp, Offset.contains_base _ hd (by omega_arith)⟩
   refine (WP.both (leave_ok (hp.rebase u).toXPre h) (leave_mem u hi)).mono
     fun v ⟨⟨hl, hcs, h8, h9⟩, hm⟩ => ?_
   have hacc : ∀ r ∈ accRegs, v.gpr r = u.gpr r := fun r hr =>
@@ -240,7 +240,7 @@ theorem bulk_ok (enc : Bool) {s₀ : State} (hp : BPre s₀) (hL : 512 ≤ L s�
   have ho : ∀ d n, d + n ≤ 320 → InRegions s₀.wr (s₀.gpr .x3 + BitVec.ofNat 64 d) n := by
     intro d n hd
     rw [hp.wr]
-    exact ⟨bR s₀, by simp, Offset.contains_base _ hd (by omega)⟩
+    exact ⟨bR s₀, by simp, Offset.contains_base _ hd (by omega_arith)⟩
   have nil (m : Mem) (k : Nat) (hk : k = 0) :
       absorbAll R a (bytesAt m (dp s₀) (512 * k)) = a := by
     rw [hk, Nat.mul_zero, bytesAt_zero, Poly1305.absorbAll_nil]
@@ -258,17 +258,17 @@ theorem bulk_ok (enc : Bool) {s₀ : State} (hp : BPre s₀) (hL : 512 ≤ L s�
   cases enc
   · -- Decrypting: every chunk absorbs itself.
     simp only [Bool.false_eq_true, ite_false]
-    refine (chunks_open hp (R := R) (a := a) (t := 0) (by omega) hb₁
+    refine (chunks_open hp (R := R) (a := a) (t := 0) (by omega_arith) hb₁
       (by rw [nil _ _ rfl]; exact ha₁)).mono fun u ⟨T, hr, hT, hu, hau⟩ => ?_
-    exact (leave_bulk (enc := false) hp (by omega) hr hu (by simpa using hau)).mono
+    exact (leave_bulk (enc := false) hp (by omega_arith) hr hu (by simpa using hau)).mono
       fun w hw => ⟨T, hw⟩
   · -- Encrypting: the first chunk is the kernel's.
     simp only [ite_true]
     apply WP.seq
     apply WP.seq
-    refine (VG.Proof.ChaCha20.AArch64.Mixed8.chunk_ok s₁ (cp_of_inv hp.toXPre h₁ (by omega))).mono
+    refine (VG.Proof.ChaCha20.AArch64.Mixed8.chunk_ok s₁ (cp_of_inv hp.toXPre h₁ (by omega_arith))).mono
       fun g hg => ?_
-    refine (next_after hp.toXPre (t := 0) (by omega) h₁ hg).mono fun v ⟨⟨hv, h5⟩, hkeep, hf⟩ => ?_
+    refine (next_after hp.toXPre (t := 0) (by omega_arith) h₁ hg).mono fun v ⟨⟨hv, h5⟩, hkeep, hf⟩ => ?_
     have accv : ∀ r ∈ accRegs, v.gpr r = s₀.gpr r := fun r hr =>
       (hkeep r (by intro he; rw [he] at hr; exact absurd hr (by decide))
         (by intro he; rw [he] at hr; exact absurd hr (by decide))
@@ -285,7 +285,7 @@ theorem bulk_ok (enc : Bool) {s₀ : State} (hp : BPre s₀) (hL : 512 ≤ L s�
       rcases List.mem_append.mp hr with hr | hr
       · rcases List.mem_append.mp hr with hr | hr
         · exact key_enter hp r hr
-        · exact key_chunk hp h₁.toLInv (by omega) r hr
+        · exact key_chunk hp h₁.toLInv (by omega_arith) r hr
       · rw [List.mem_singleton.mp hr]; exact (hp.st_b.symm.sub_left hp.key_sub))
     have hav : Acc R (absorbAll R a (bytesAt v.mem (dp s₀) (512 * (1 - 1)))) v := by
       rw [nil _ _ rfl]; exact ha.frame (acc_regs_keep accv) rwv
@@ -294,13 +294,13 @@ theorem bulk_ok (enc : Bool) {s₀ : State} (hp : BPre s₀) (hL : 512 ≤ L s�
       (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short h5)
     · intro hs
       have hs' := of_decide_eq_true hs
-      exact WP.block_nil ((leave_bulk (enc := true) hp (Nat.le_refl 1) (by omega) hbv
+      exact WP.block_nil ((leave_bulk (enc := true) hp (Nat.le_refl 1) (by omega_arith) hbv
         (by simpa using hav)).mono fun w hw => ⟨1, hw⟩)
     · intro hs
       have hs' := of_decide_eq_false hs
-      refine (chunks_seal hp (t := 1) (Nat.le_refl 1) (by omega) hbv hav).mono
+      refine (chunks_seal hp (t := 1) (Nat.le_refl 1) (by omega_arith) hbv hav).mono
         fun u ⟨T, hr, hT, hu, hau⟩ => ?_
-      exact (leave_bulk (enc := true) hp (by omega) hr hu (by simpa using hau)).mono
+      exact (leave_bulk (enc := true) hp (by omega_arith) hr hu (by simpa using hau)).mono
         fun w hw => ⟨T, hw⟩
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Stitch

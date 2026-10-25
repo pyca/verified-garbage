@@ -46,7 +46,7 @@ theorem ofs_param {sp : BitVec 32} (hlo : 12 ≤ sp.toNat) (hhi : sp.toNat + 28 
       12 + 4 * i + j := by
   simp only [ofs, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   rw [show (12 : BitVec 32).toNat = 12 from rfl]
-  omega
+  omega_arith
 
 /-- The MCDT frame's push writes no byte of the parameters. -/
 theorem pushed_param (s : State) (hlo : 12 ≤ (s.gpr .esp).toNat) (hhi : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32)
@@ -59,12 +59,12 @@ theorem pushed_param (s : State) (hlo : 12 ≤ (s.gpr .esp).toNat) (hhi : (s.gpr
     have := (s.gpr .esp).isLt
     simp only [off, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
     rw [show (12 : BitVec 32).toNat = 12 from rfl, show (8 : BitVec 32).toNat = 8 from rfl]
-    omega
+    omega_arith
   have o := ofs_param hlo hhi hi hj
   simp only [mcdtPushed]
   rw [b0, b4]
-  rw [writeW32_outside _ _ _ (by decide) _ (by simp only [State.ea, prm, at_] at o ⊢; omega),
-    writeW32_outside _ _ _ (by decide) _ (by simp only [State.ea, prm, at_] at o ⊢; omega)]
+  rw [writeW32_outside _ _ _ (by decide) _ (by simp only [State.ea, prm, at_] at o ⊢; omega_arith),
+    writeW32_outside _ _ _ (by decide) _ (by simp only [State.ea, prm, at_] at o ⊢; omega_arith)]
 
 /-- The MCDT frame's push writes only its 8 bytes. -/
 theorem pushed_other (s : State) (hlo : 12 ≤ (s.gpr .esp).toNat) {x : Addr}
@@ -75,14 +75,14 @@ theorem pushed_other (s : State) (hlo : 12 ≤ (s.gpr .esp).toNat) {x : Addr}
     have := (s.gpr .esp).isLt
     simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
     rw [show (12 : BitVec 32).toNat = 12 from rfl, show (8 : BitVec 32).toNat = 8 from rfl]
-    omega
+    omega_arith
   simp only [mcdtPushed, Mem.writeW]
-  rw [Mem.write_apply (fun h => hx ((x - (s.gpr .esp - 12).setWidth 64).toNat) (by omega)
+  rw [Mem.write_apply (fun h => hx ((x - (s.gpr .esp - 12).setWidth 64).toNat) (by omega_arith)
       (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel])),
     Mem.write_apply (fun h => hx ((x - (s.gpr .esp - 12).setWidth 64).toNat) (by
       rw [b4] at h
       have := (Offset.lt_iff x ((s.gpr .esp - 12).setWidth 64) (d := 4) (n := 4) (by decide)).mp h
-      omega) (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]))]
+      omega_arith) (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]))]
 
 /-- The MCDT frame's push writes no byte of the working space. -/
 theorem pushed_ws (s : State) {W : Addr} {L : Nat}
@@ -92,8 +92,8 @@ theorem pushed_ws (s : State) {W : Addr} {L : Nat}
   have hx' : ofs W x < L := by
     have := hx _ (List.mem_singleton_self _)
     have : ofs W x < 2 ^ 64 := (x - W).isLt
-    simp only at *; omega
-  exact pushed_other s hlo fun j hj h => by have := hfar j hj; rw [← h] at this; omega
+    simp only at *; omega_arith
+  exact pushed_other s hlo fun j hj h => by have := hfar j hj; rw [← h] at this; omega_arith
 
 theorem value_digits (m : Mem) (W : Addr) (x n : Nat) :
     Column.value (2 ^ 32) (digits m W x) n = val32 m W x n := VG.Proof.Mont.X86.Square.value_val32 m W x n
@@ -126,9 +126,9 @@ theorem pushed_ready (K : KReady s W L N S mo inv o a b V) :
   have hn := K.ws.nowrap
   have Ly := K.ly
   have esp0 : (mcdtPushed .eax s).gpr .esp = s.gpr .esp - 12 := mcdtPushed_esp _ _ (by decide)
-  have O0 := pushed_ws s (fun j hj => K.far j (by omega)) K.lo
+  have O0 := pushed_ws s (fun j hj => K.far j (by omega_arith)) K.lo
   have ws0 : ∀ {d k : Nat}, d + 4 * k ≤ L → val32 (mcdtPushed .eax s).mem W d k = val32 s.mem W d k := fun hd =>
-    O0.val32 (by simp only [List.mem_singleton, forall_eq]; omega) (by omega)
+    O0.val32 (by simp only [List.mem_singleton, forall_eq]; omega_arith) (by omega_arith)
   refine ⟨⟨List.mem_cons_of_mem _ K.ws.wr, hn⟩, K.prm.transport
     (fun i _ => by
       simp only [State.ea, prm, at_, esp0]
@@ -136,14 +136,14 @@ theorem pushed_ready (K : KReady s W L N S mo inv o a b V) :
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
       rw [show (12 : BitVec 32).toNat = 12 from rfl]
-      omega)
+      omega_arith)
     (fun i hi j hj => pushed_param s K.lo K.hi hi hj)
     (fun a ⟨r, hr, hc⟩ => ⟨r, by
       rcases List.mem_append.mp hr with h | h
       · exact List.mem_append_left _ h
       · exact List.mem_append_right _ (List.mem_cons_of_mem _ h), hc⟩), ?_, ws0⟩
-  have e1 := ws0 (d := mo) (k := 1) (by have := Ly.mo_le; have := Ly.hN; omega)
-  have e2 := ws0 (d := inv) (k := 1) (by have := Ly.inv_le; omega)
+  have e1 := ws0 (d := mo) (k := 1) (by have := Ly.mo_le; have := Ly.hN; omega_arith)
+  have e2 := ws0 (d := inv) (k := 1) (by have := Ly.inv_le; omega_arith)
   simp only [val32, Nat.mul_zero, Nat.add_zero] at e1 e2
   rw [e1, e2]; exact K.inv
 
@@ -159,7 +159,7 @@ theorem value_lt_pow {q : Nat → Nat} (hq : ∀ i, q i ≤ 2 ^ 32 - 1) :
     generalize hX : 2 ^ (32 * N) = X at ih ⊢
     have := Nat.mul_le_mul_right X hN
     rw [Nat.sub_mul, Nat.one_mul] at this
-    omega
+    omega_arith
 
 /-- After the MCDT frame: `R (T + R c) = A B + Q M` for some `Q` (the
 quotient digits'), with `T + R c < 2 M`, `T`'s words in reverse at `S + 24`;
@@ -191,12 +191,12 @@ theorem frame_ok (K : KReady s W L N S mo inv o a b V) :
   have esp0 : s0.gpr .esp = s.gpr .esp - 12 := mcdtPushed_esp _ _ (by decide)
   obtain ⟨hw0, P0, hinv0, ws0⟩ := pushed_ready K
   refine WP.mcdtFrame (by decide) hlo columns_noSp'
-    (WP.mono (columns_ok Ly K.pv hinv0 (by rw [mcdtPushed_mcdt]; omega) hw0 P0) fun u ⟨c, q, I⟩ => ?_)
+    (WP.mono (columns_ok Ly K.pv hinv0 (by rw [mcdtPushed_mcdt]; omega_arith) hw0 P0) fun u ⟨c, q, I⟩ => ?_)
   have Ku := I.keep
   have espu : u.gpr .esp = s0.gpr .esp := Ku.1 _ (by decide)
   -- Memory past the working space, as the push left it.
   have far : ∀ x, L ≤ ofs W x → u.mem x = s0.mem x := fun x hx =>
-    I.out x (by simp only [List.mem_singleton, forall_eq]; omega)
+    I.out x (by simp only [List.mem_singleton, forall_eq]; omega_arith)
   refine ⟨by rw [I.mcdt, mcdtPushed_mcdt], ?_, ?_⟩
   · rw [espu, ← mcdtPushed_saved .eax s (by decide) hlo]
     refine Mem.readW_congr fun j hj => far _ ?_
@@ -207,8 +207,8 @@ theorem frame_ok (K : KReady s W L N S mo inv o a b V) :
       have := (s.gpr .esp).isLt
       simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
       rw [show (12 : BitVec 32).toNat = 12 from rfl, show (4 : BitVec 32).toNat = 4 from rfl]
-      omega
-    rw [e]; exact K.far _ (by omega)
+      omega_arith
+    rw [e]; exact K.far _ (by omega_arith)
   -- After the frame.
   have hpe : (mcdtPopped u).gpr .esp = s.gpr .esp := by
     rw [mcdtPopped_esp, espu, esp0, BitVec.sub_add_cancel]
@@ -216,16 +216,16 @@ theorem frame_ok (K : KReady s W L N S mo inv o a b V) :
   have hpr : (mcdtPopped u).rd = s.rd := by rw [mcdtPopped_rd, Ku.2.1]; rfl
   -- The columns' equation, at the end.
   have eq := I.eq
-  rw [show 2 * N - N = N by omega] at eq
+  rw [show 2 * N - N = N by omega_arith] at eq
   rw [Column.partSum_done _ _ _ (Nat.le_refl _), Column.partSum_congr_left _ _ N (2 * N)
-    (b := q) (fun i hi => by simp only [Column.prefixDigits]; rw [ite_eq_left (by omega)]),
+    (b := q) (fun i hi => by simp only [Column.prefixDigits]; rw [ite_eq_left (by omega_arith)]),
     Column.partSum_done _ _ _ (Nat.le_refl _)] at eq
   simp only [value_digits] at eq
   have ea := ws0 (d := a) (k := N) Ly.a_le
   have eb := ws0 (d := b) (k := N) Ly.b_le
   have em := ws0 (d := mo) (k := N) Ly.mo_le
   rw [ea, eb, em, VG.Proof.Mont.X86.Square.pow32, VG.Proof.Mont.X86.Square.pow32, show (2 : Nat) ^ (32 * (2 * N)) = 2 ^ (32 * N) * 2 ^ (32 * N) by
-    rw [← Nat.pow_add]; congr 1; omega] at eq
+    rw [← Nat.pow_add]; congr 1; omega_arith] at eq
   have eq' : 2 ^ (32 * N) * (rvalT u.mem W N S N + 2 ^ (32 * N) * c) =
       val32 s.mem W a N * val32 s.mem W b N + Column.value (2 ^ 32) q N * val32 s.mem W mo N := by
     rw [← eq]; grind
@@ -238,11 +238,11 @@ theorem frame_ok (K : KReady s W L N S mo inv o a b V) :
       rcases Nat.eq_zero_or_pos (w32 u.mem W (S + 20)) with h | h
       · exact h
       · have : 2 ^ 32 ≤ 2 ^ 32 * w32 u.mem W (S + 20) := Nat.le_mul_of_pos_right _ h
-        omega
-    omega
+        omega_arith
+    omega_arith
   have mou : val32 u.mem W mo N = val32 s.mem W mo N := by
-    rw [← em]; exact I.out.val32 (by have := Ly.smo; simp only [List.mem_singleton, forall_eq]; omega)
-      (by have := Ly.mo_le; omega)
+    rw [← em]; exact I.out.val32 (by have := Ly.smo; simp only [List.mem_singleton, forall_eq]; omega_arith)
+      (by have := Ly.mo_le; omega_arith)
   refine ⟨⟨by rw [hpw]; exact K.ws.wr, hn⟩, K.prm.transport
     (fun i _ => by simp only [State.ea, prm, at_, hpe])
     (fun i hi j hj => by
@@ -270,7 +270,7 @@ theorem kernel_ok (K : KReady s W L N S mo inv o a b V) :
   simp only [kernel, seqs]
   refine WP.seq (WP.mono (frame_ok K) fun p M => WP.mono
     (reduction_ok Ly K.pv M.ws M.prm (by rw [M.modulus]; exact M.bound)) fun v ⟨Vv, Ov, Kv⟩ => ?_)
-  have hM : 0 < val32 s.mem W mo N := by have := K.bLt; omega
+  have hM : 0 < val32 s.mem W mo N := by have := K.bLt; omega_arith
   rw [M.modulus] at Vv
   obtain ⟨Q, eqn⟩ := M.eqn
   refine ⟨by rw [Vv]; exact Nat.mod_lt _ hM, by rw [Vv]; exact final_mod eqn, ?_, ?_⟩

@@ -76,14 +76,14 @@ theorem MS.frm {p : PP} {n : Nat} {s t : State} (h : MS p n s) {rs : List (Nat �
   have hn := h.st.ws.scr.nowrap
   have sN := h.st.ws.sl (show aN < 16 by decide)
   have h256 := h.st.ws.h256
-  exact ⟨h.st.step hws hf hp hZ k, by rw [hf.wv_eq dN (by omega)]; exact h.an,
-    by rw [hf.word_eq dU (by simp only [kUsed, sFn]; omega)]; exact h.used, h.hl⟩
+  exact ⟨h.st.step hws hf hp hZ k, by rw [hf.wv_eq dN (by omega_arith)]; exact h.an,
+    by rw [hf.word_eq dU (by simp only [kUsed, sFn]; omega_arith)]; exact h.used, h.hl⟩
 
 theorem pTab {p : PP} (h : PDims p) : slot (mW p.bits) aTab + 2048 ≤ p.Z := by
   have := h.z
   have := h.b1
   simp only [slot, hdrBytes, aTab, mW, PP.L] at *
-  omega
+  omega_arith
 
 /-- The residue's flag of the candidate. -/
 abbrev rOf (p : PP) : BitVec 64 := resFlag p.g (BitVec.ofNat 64 (cOf p % resMod p.g))
@@ -112,8 +112,8 @@ theorem stA_ok {p : PP} {s : State} (h : M0 p s) : WP isa (seqs (phase false ++ 
 theorem stB_ok {p : PP} {s : State} (h : MS p (cOf p) s) : WP isa (seqs residue) s (C2 p) :=
   WP.mono (residue_ok h.st h.an) fun t ⟨st, hb, f, k⟩ =>
     ⟨h.frm st.ws f (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.hdr (by decide))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; have := h.st.ws.h256; simp only [fBad]; omega) k
-      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only [slot, hdrBytes, fBad]; omega))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; have := h.st.ws.h256; simp only [fBad]; omega_arith) k
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only [slot, hdrBytes, fBad]; omega_arith))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)), hb⟩
 
 theorem stC_ok {p : PP} {s : State} (h : C2 p s) : WP isa tableWrite s (C3 p) := by
@@ -122,20 +122,20 @@ theorem stC_ok {p : PP} {s : State} (h : C2 p s) : WP isa tableWrite s (C3 p) :=
   exact WP.mono (tableWrite_ok h.1.st hT) fun t ⟨st, tab, f, k⟩ =>
     ⟨⟨h.1.frm st.ws f (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.ofSlot _ _ _)
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact hT) k
-      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [slot, hdrBytes, aN, aTab]; omega))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [slot, hdrBytes, kUsed, sFn]; omega)),
-      by rw [f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [slot, hdrBytes, fBad]; omega))
-        (by simp only [fBad]; omega)]; exact h.2⟩, tab⟩
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [slot, hdrBytes, aN, aTab]; omega_arith))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [slot, hdrBytes, kUsed, sFn]; omega_arith)),
+      by rw [f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [slot, hdrBytes, fBad]; omega_arith))
+        (by simp only [fBad]; omega_arith)]; exact h.2⟩, tab⟩
 
 theorem stD_ok {p : PP} {s : State} (h : C3 p s) : WP isa (seqs sieve) s (C4 p) := by
   have hT := pTab h.1.1.st.dims
   exact WP.mono (sieve_ok h.1.1.st hT h.2 h.1.1.an h.1.2) fun t ⟨st, hb, f, k⟩ =>
     ⟨h.1.1.frm st.ws f (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.hdr (by decide))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; have := h.1.1.st.ws.h256; simp only [fBad]; omega) k
-      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only [slot, hdrBytes, fBad]; omega))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; have := h.1.1.st.ws.h256; simp only [fBad]; omega_arith) k
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only [slot, hdrBytes, fBad]; omega_arith))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)),
-      h.2.frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [slot, hdrBytes, fBad]; omega) (by
-        have := h.1.1.st.ws.scr.nowrap; omega), hb⟩
+      h.2.frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [slot, hdrBytes, fBad]; omega_arith) (by
+        have := h.1.1.st.ws.scr.nowrap; omega_arith), hb⟩
 
 theorem stE_ok {p : PP} {s : State} (h : C4 p s) : WP isa (seqs halveQ) s (C5 p) := by
   have hT := pTab h.1.st.dims
@@ -145,21 +145,21 @@ theorem stE_ok {p : PP} {s : State} (h : C4 p s) : WP isa (seqs halveQ) s (C5 p)
       rw [f.word_eq (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact .inl (by simp only [slot, hdrBytes, kUsed, sFn]; omega)
-        · exact .inr (by decide)) (by simp only [kUsed, sFn]; have := h.1.st.ws.h256; omega)]
+        · exact .inl (by simp only [slot, hdrBytes, kUsed, sFn]; omega_arith)
+        · exact .inr (by decide)) (by simp only [kUsed, sFn]; have := h.1.st.ws.h256; omega_arith)]
       exact h.1.used, h.1.hl⟩,
       h.2.1.frm f (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · simp only [slot, hdrBytes, aN, aTab]; omega
-        · simp only [slot, hdrBytes, fBad]; omega) (by have := h.1.st.ws.scr.nowrap; omega), hb⟩
+        · simp only [slot, hdrBytes, aN, aTab]; omega_arith
+        · simp only [slot, hdrBytes, fBad]; omega_arith) (by have := h.1.st.ws.scr.nowrap; omega_arith), hb⟩
 
 theorem stF_ok {p : PP} {s : State} (h : C5 p s) : WP isa (seqs sieve) s (C6 p) := by
   have hT := pTab h.1.st.dims
   exact WP.mono (sieve_ok h.1.st hT h.2.1 h.1.an h.2.2) fun t ⟨st, hb, f, k⟩ =>
     ⟨h.1.frm st.ws f (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.hdr (by decide))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; have := h.1.st.ws.h256; simp only [fBad]; omega) k
-      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only [slot, hdrBytes, fBad]; omega))
+      (fun r hr => by rw [List.mem_singleton.mp hr]; have := h.1.st.ws.h256; simp only [fBad]; omega_arith) k
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only [slot, hdrBytes, fBad]; omega_arith))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)), by rw [hb]; rfl⟩
 
 /-! ## The tests -/
@@ -178,7 +178,7 @@ def uOfRes (r : List Byte) (res : Option (Bool × List Byte)) : Nat :=
 
 theorem OutUp.mono' {s : State} {B : Addr} {Z : Nat} {op up : Addr} {k k' : Nat} (h : OutUp s B Z op up k)
     (hk : k' ≤ k) : OutUp s B Z op up k' :=
-  ⟨h.upw, h.upZ, fun j hj => h.outw j (by omega), fun j hj => h.outZ j (by omega), fun j hj => h.ou j (by omega)⟩
+  ⟨h.upw, h.upZ, fun j hj => h.outw j (by omega_arith), fun j hj => h.outZ j (by omega_arith), fun j hj => h.ou j (by omega_arith)⟩
 
 theorem te_stat {q : TQ} {s : State} (h : TE q s) :
     word s.mem q.p.B (8 * kStat) = BitVec.ofNat 64 (statF q.res) := by
@@ -198,7 +198,7 @@ theorem te_endF {q : TQ} {s : State} (h : TE q s) : EndF (endFOf q) s := by
   have hd := h.1
   have fix := te_fix h
   have hmbb := hd.mbb
-  refine ⟨fix.st.ws, fix.st.args.out, fix.len, fix.st.args.usedP, OutUp.mono' fix.st.ou (by simp only [mLen, PP.L]; omega),
+  refine ⟨fix.st.ws, fix.st.args.out, fix.len, fix.st.args.usedP, OutUp.mono' fix.st.ou (by simp only [mLen, PP.L]; omega_arith),
     te_stat h, ?_⟩
   show statF q.res < 4
   unfold statF; split <;> (try split) <;> decide
@@ -252,7 +252,7 @@ theorem testP_ct (M : Mont) (R : Kernel) :
     obtain ⟨hd, s₀, he⟩ := h
     obtain ⟨u, hu, hrest, hU⟩ := (he.2.2.1 true rest hr).2
     have hu' : uOfRes q.p.r q.res = u := by
-      rw [hr]; simp only [uOfRes]; rw [hrest, List.length_drop]; omega
+      rw [hr]; simp only [uOfRes]; rw [hrest, List.length_drop]; omega_arith
     refine WP.mono (pPhase_ok he.1.st.ph rfl (by rw [hu']; exact hU) (by rw [hu']; exact hu) hd.hL)
       fun t ⟨ht', _⟩ => ht'
 
@@ -295,7 +295,7 @@ theorem flag_ok {p : PP} {s : State} (h : C6 p s) : WP isa (.block [ldh .x5 fBad
   have hn := hw.scr.nowrap
   have h256 := hw.h256
   refine WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = shapeFlag p.g (cOf p) ∧ t.mem = s.mem)
-    (by brun [hw.x0, hdr_enc (show fBad < 32 by decide), hw.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega),
+    (by brun [hw.x0, hdr_enc (show fBad < 32 by decide), hw.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega_arith),
       h.2]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h5, hm⟩, k⟩ => ⟨⟨?_, by rw [hm]; exact h.2⟩, h5⟩
   exact h.1.frm (rs := []) (hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide))
     (by rw [hm]; exact Frm.refl _ _ _) (by simp) (by simp) k (by simp) (by simp)
@@ -308,7 +308,7 @@ theorem flagR_ok {p : PP} {s : State} (h : C2 p s) : WP isa (.block [ldh .x5 fBa
   have hn := hw.scr.nowrap
   have h256 := hw.h256
   refine WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = rOf p ∧ t.mem = s.mem)
-    (by brun [hw.x0, hdr_enc (show fBad < 32 by decide), hw.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega),
+    (by brun [hw.x0, hdr_enc (show fBad < 32 by decide), hw.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega_arith),
       h.2]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h5, hm⟩, k⟩ => ⟨⟨?_, by rw [hm]; exact h.2⟩, h5⟩
   exact h.1.frm (rs := []) (hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide))
     (by rw [hm]; exact Frm.refl _ _ _) (by simp) (by simp) k (by simp) (by simp)
@@ -367,9 +367,9 @@ theorem main_ct (M : Mont) (R : Kernel) : RelCT isa (Two M0) (main M.mm R.run) f
       unfold Spec.Ffdh.primeShape at hqs
       simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hqs
       exact hqs.1.2
-    obtain ⟨hpo, _, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega)
+    obtain ⟨hpo, _, _⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_arith)
       (Spec.Rsa.os2ip (p.r.take p.L))
-    have hq : (cOf p - 1) / 2 = cOf p / 2 := by simp only [cOf] at hpo ⊢; omega
+    have hq : (cOf p - 1) / 2 = cOf p / 2 := by simp only [cOf] at hpo ⊢; omega_arith
     exact ⟨⟨hm.st, by rw [hq]; exact hm.an, hm.used, hm.hl⟩, hqo⟩
   · rw [finUsed_split]
     exact two_map (Φ' := UpF) (fun p : PP => (⟨p.B, p.Z, mW p.bits, p.op, p.up, p.L, 0⟩ : FQ))

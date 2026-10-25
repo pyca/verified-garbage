@@ -102,7 +102,7 @@ theorem St.pmasks {kf tf : State → Nat} {dn ok e1 e2 : State → Bool}
   have a2 : s2.gpr .r2 = BitVec.ofNat 32 (tf σ) := by rw [u2.gpr, u1.mem, rd sTc lT, vT]
   have a2' : s2.gpr .r1 = BitVec.ofNat 32 (kf σ) := by rw [u2.other _ (by decide), a1]
   have a4 : s4.gpr .r3 = BitVec.ofNat 32 (b2n (decide (kf σ < tf σ))) := by
-    rw [u4.gpr, u3.gpr, dpVal, a2', a2, VG.Proof.Rsa.lt_bv (by omega) ht]
+    rw [u4.gpr, u3.gpr, dpVal, a2', a2, VG.Proof.Rsa.lt_bv (by omega_arith) ht]
   have a5 : s5.gpr .r4 = BitVec.ofNat 32 (b2n (dn σ)) := by
     rw [u5.gpr, u4.mem, u3.mem, u2.mem, u1.mem, rd sDone lD, vD]
   have a7 : s7.gpr .r3 = BitVec.ofNat 32 (b2n (decide (kf σ < tf σ))) &&& (BitVec.ofNat 32 (b2n (dn σ)) ^^^ 1) := by
@@ -138,7 +138,7 @@ theorem St.pmasks {kf tf : State → Nat} {dn ok e1 e2 : State → Bool}
   obtain ⟨mo, md, ml⟩ := VG.Proof.Rsa.masks_bv (decide (kf σ < tf σ)) (decide (kf σ + 1 = tf σ)) (dn σ) (ok σ)
     (e1 σ) (e2 σ)
   have tn : ∀ b : Bool, (BitVec.ofNat 32 (b2n b)).toNat = b2n b := fun b => by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := VG.Proof.Rsa.b2n_le b; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := VG.Proof.Rsa.b2n_le b; omega_arith)]
   -- The stores.
   refine h17.strSlot_m hm17 w17 (d := sOk) (r := .r5) (by decide) fun t1 ht1 hmt1 hwt1 g1 _ => ?_
   refine wp_dp (op2_reg _ _) fun t2 v2 => ?_

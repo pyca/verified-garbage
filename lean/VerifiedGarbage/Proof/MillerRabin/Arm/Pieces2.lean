@@ -43,9 +43,9 @@ theorem KS.strz {σ s : State} {A : Nat → Nat} {V : Nat → Nat} {d : Nat} (h 
     WP isa (.block (.str r .r8 d :: rest)) s Q := by
   have hd' := wDs_hdr d hd
   have hz := hw.hdr_le
-  refine wp_str_z (by simp only [hdr] at hd'; omega) (slot_addr hw (by omega)) (hw.write (by omega)) fun t m z => ?_
+  refine wp_str_z (by simp only [hdr] at hd'; omega_arith) (slot_addr hw (by omega_arith)) (hw.write (by omega_arith)) fun t m z => ?_
   have kt : Keep P.B P.W [] [d] s.mem t.mem := by
-    rw [m.mem]; exact keep_write _ _ (by simp) (by simp only [hdr] at hd'; omega)
+    rw [m.mem]; exact keep_write _ _ (by simp) (by simp only [hdr] at hd'; omega_arith)
   exact k t (h.slot1 kt hd m.sp m.rd m.wr (by rw [m.mem, slot_write_self])) (hw.of_mupd m) z m.gpr
 
 /-- The count of the table's entries. -/
@@ -71,10 +71,10 @@ theorem St.pcnt {n : Nat} (hk : sK ∈ LS) (vk : ∀ σ, E σ → V σ sK = n + 
   have hw2 := hw1.of_upd u2 (by decide) (by decide) (by decide)
   have e2 : s2.gpr .r1 = BitVec.ofNat 32 n := by
     rw [u2.gpr, u1.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), Nat.add_sub_cancel]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith), Nat.add_sub_cancel]
   refine KS.strz h2 hw2 (d := sK) (by decide) (r := .r1) fun t ht hwt zt _ => WP.block_nil ⟨⟨e, ?_, hwt⟩, ?_⟩
-  · rwa [e2, ofNat_toNat32 (by omega)] at ht
-  · rw [zt, z2, show s1.gpr .r1 - 1 = s2.gpr .r1 from u2.gpr.symm, e2, ofNat_beq_zero (by omega)]
+  · rwa [e2, ofNat_toNat32 (by omega_arith)] at ht
+  · rw [zt, z2, show s1.gpr .r1 - 1 = s2.gpr .r1 from u2.gpr.symm, e2, ofNat_beq_zero (by omega_arith)]
 
 /-- The flag 0 and the count of windows `16 w`. -/
 theorem St.pwinCnt :
@@ -98,8 +98,8 @@ theorem St.pwinCnt :
       show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl]
     rw [BitVec.toNat_sub_of_le (by
       rw [BitVec.le_def, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      simp only [MP.W]; omega), BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    simp only [MP.W]; omega
+      simp only [MP.W]; omega_arith), BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    simp only [MP.W]; omega_arith
   rw [e4, show (0 : BitVec 32).toNat = 0 from rfl] at ht
   exact ht
 
@@ -165,11 +165,11 @@ theorem St.psqFlag {k : Nat} {r : State → Nat} {fb eb : State → Bool} (hq : 
   have hw10 := hw9.of_upd u10 (by decide) (by decide) (by decide)
   have e10 : s10.gpr .r1 = BitVec.ofNat 32 k := by
     rw [u10.gpr, m9.gpr, g1, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), Nat.add_sub_cancel]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith), Nat.add_sub_cancel]
   refine KS.strz h10 hw10 (d := sQ) (by decide) (r := .r1) fun t ht hwt zt _ => WP.block_nil ⟨⟨e, ?_, hwt⟩, ?_⟩
-  · rwa [e10, ofNat_toNat32 (by omega)] at ht
+  · rwa [e10, ofNat_toNat32 (by omega_arith)] at ht
   · rw [zt, z10, m9.gpr, g1, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), Nat.add_sub_cancel, ofNat_beq_zero (by omega)]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith), Nat.add_sub_cancel, ofNat_beq_zero (by omega_arith)]
 
 /-- The digit at the top of the word `v`. -/
 abbrev digitOf (v : Nat) : Nat := v / 2 ^ 28
@@ -185,7 +185,7 @@ theorem St.pwinEnd {K : Nat} {v : State → Nat} {e1 e2 fb : State → Bool} (hv
           (if digitOf (v σ) = 0 then fb σ else (e1 σ || e2 σ)).toNat) sV (BitVec.ofNat 32 (v σ) <<< 4).toNat) sK K)
         (sK :: sV :: sF :: LS) σ s ∧ s.z = decide (K % 8 = 0)) := by
   refine VP.kv winEnd_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => ?_
-  have dl : digitOf (v σ) < 16 := by have := vl σ e; simp only [digitOf]; omega
+  have dl : digitOf (v σ) < 16 := by have := vl σ e; simp only [digitOf]; omega_arith
   simp only [winEnd]
   refine h.ldr hw hv (r := .r1) (by decide) fun s1 h1' hw1 u1 => ?_
   refine wp_mov (op2_lsr (by decide)) fun s2 u2 => ?_
@@ -254,9 +254,9 @@ theorem St.pwinEnd {K : Nat} {v : State → Nat} {e1 e2 fb : State → Bool} (hv
   have hw17 := hw16.of_upd u17 (by decide) (by decide) (by decide)
   have e17 : s17.gpr .r1 = BitVec.ofNat 32 K := by
     rw [u17.gpr, dpVal, u16.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), Nat.add_sub_cancel]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith), Nat.add_sub_cancel]
   refine h17.str hw17 (d := sK) (by decide) (r := .r1) fun s18 h18 hw18 m18 => ?_
-  rw [e17, ofNat_toNat32 (by omega)] at h18
+  rw [e17, ofNat_toNat32 (by omega_arith)] at h18
   refine wp_dp (op2_imm (by decide)) fun s19 u19 => ?_
   refine wp_cmp (op2_imm (by decide)) fun t u20 z20 => WP.block_nil ⟨⟨e, ?_, ?_⟩, ?_⟩
   · exact h18.of_rest ((u19.rest (ws := [.r1]) (by simp)).trans (u20.rest _)) (u20.mem.trans u19.mem)
@@ -264,10 +264,10 @@ theorem St.pwinEnd {K : Nat} {v : State → Nat} {e1 e2 fb : State → Bool} (hv
   · rw [z20, u19.gpr, dpVal, m18.gpr, e17]
     have : BitVec.ofNat 32 K &&& 7 = BitVec.ofNat 32 (K % 8) := by
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_and, ofNat_toNat32 (by omega), show (7 : BitVec 32).toNat = 2 ^ 3 - 1 from rfl,
-        Nat.and_two_pow_sub_one_eq_mod, ofNat_toNat32 (by omega)]
+      rw [BitVec.toNat_and, ofNat_toNat32 (by omega_arith), show (7 : BitVec 32).toNat = 2 ^ 3 - 1 from rfl,
+        Nat.and_two_pow_sub_one_eq_mod, ofNat_toNat32 (by omega_arith)]
     rw [this, show BitVec.ofNat 32 (K % 8) - 0 = BitVec.ofNat 32 (K % 8) from BitVec.sub_zero _,
-      ofNat_beq_zero (by omega)]
+      ofNat_beq_zero (by omega_arith)]
 
 end
 

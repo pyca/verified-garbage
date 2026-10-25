@@ -83,16 +83,16 @@ theorem fnLazy_correct (s : State) (h : fnLazyContract.pre s) :
     all_goals exact hcs _ (by simp)
   · refine Mem.readW_congr fun i hi => har _ fun j hj => Or.inr ?_
     have hx := hret (s.gpr .rsp + BitVec.ofNat 64 i) (by
-      simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)
+      simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith)
     simp only [Region.Contains, Nat.not_le] at hx
     have := slot_le (w := wOf s.mem (s.gpr .rdi)) (show j < 8 by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; rcases hj with rfl | rfl | rfl <;> first | decide | omega)
-    simp only [ofs]; omega
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; rcases hj with rfl | rfl | rfl <;> first | decide | omega_arith)
+    simp only [ofs]; omega_arith
   · rw [numAt_eq, numAt_eq, numAt_eq, numAt_eq]; exact heq
   · intro i hi hj
     have := har (s.gpr .rdi + BitVec.ofNat 64 i) fun j hj' => by
       rw [show ofs (s.gpr .rdi) (s.gpr .rdi + BitVec.ofNat 64 i) = i by
-        simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega)]]
+        simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]]
       exact hj j hj'
     exact this
 
@@ -126,16 +126,16 @@ theorem fnAdxLazy_correct (s : State) (h : fnLazyContract.pre s) :
     all_goals exact hcs _ (by simp)
   · refine Mem.readW_congr fun i hi => har _ fun j hj => Or.inr ?_
     have hx := hret (s.gpr .rsp + BitVec.ofNat 64 i) (by
-      simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)
+      simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; omega_arith)
     simp only [Region.Contains, Nat.not_le] at hx
     have := slot_le (w := wOf s.mem (s.gpr .rdi)) (show j < 8 by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; rcases hj with rfl | rfl | rfl <;> first | decide | omega)
-    simp only [ofs]; omega
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; rcases hj with rfl | rfl | rfl <;> first | decide | omega_arith)
+    simp only [ofs]; omega_arith
   · rw [numAt_eq, numAt_eq, numAt_eq, numAt_eq]; exact heq
   · intro i hi hj
     have := har (s.gpr .rdi + BitVec.ofNat 64 i) fun j hj' => by
       rw [show ofs (s.gpr .rdi) (s.gpr .rdi + BitVec.ofNat 64 i) = i by
-        simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega)]]
+        simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega_arith)]]
       exact hj j hj'
     exact this
 

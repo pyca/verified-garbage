@@ -69,8 +69,8 @@ theorem copy_ct {K : Nat} : RelCT isa (Two (FV H.D K)) (Impl.RsaPss.AArch64.Fixe
   rotate_left
   · have := h.ok.db
     refine WP.mono (VG.Proof.RsaPss.AArch64.FixedSalt.copySalt_ok hH h.L (fun _ _ => rfl)
-      (e := oEm + loA a) (db := dbA H.D a) (sl := salt a) (by omega) (by unfold oEm oY; omega)
-      (by omega) (by omega) h.x24 h.x25
+      (e := oEm + loA a) (db := dbA H.D a) (sl := salt a) (by omega_arith) (by unfold oEm oY; omega_arith)
+      (by omega_arith) (by omega_arith) h.x24 h.x25
       (by rw [h.ssl, BitVec.ofNat_toNat, BitVec.setWidth_eq])) fun _ ⟨k, f, _⟩ =>
         ⟨h.keep k (nk_of (by decide)) (by decide) f (vslots_S h.L), hs⟩
   unfold Impl.RsaPss.AArch64.FixedSalt.copySalt
@@ -83,7 +83,7 @@ theorem copy_ct {K : Nat} : RelCT isa (Two (FV H.D K)) (Impl.RsaPss.AArch64.Fixe
     (fun a u ⟨h, _⟩ => ?_) ?_
   · refine wp_add fun u₁ o₁ e₁ => wp_ldrSp (by decide)
       (by rw [o₁.sp, o₁.rd, o₁.wr]; exact ld_slot h.L (by decide)) fun u₂ o₂ e₂ =>
-      wp_sub fun u₃ o₃ e₃ => wp_addImm (by have := hH.sizes.DN; have := hH.N_le; unfold oY; omega)
+      wp_sub fun u₃ o₃ e₃ => wp_addImm (by have := hH.sizes.DN; have := hH.N_le; unfold oY; omega_arith)
         fun u₄ o₄ e₄ => wp_nil ?_
     refine ⟨by rw [o₄.sp, o₃.sp, o₂.sp, o₁.sp, h.L.sp], ?_, ?_, ?_⟩
     · rw [o₄.get .x11, e₃, o₂.get .x11, e₁, h.x24, h.x25, e₂, o₁.sp, h.L.sp, o₁.mem, h.ssl]
@@ -109,7 +109,7 @@ theorem len_ct {K : Nat} : RelCT isa (Two (FV H.D K)) (.block (signLen H))
     (c' := Code.eraseOff (.block (signLen zH))) rfl (by taint_decide)) fun a u ⟨h, hs⟩ => ?_
   have := h.ok.db
   refine WP.mono (signLen_ok hH h.L (sl := salt a)
-    (by rw [h.ssl, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega)) fun u' ⟨k, x22, m⟩ =>
+    (by rw [h.ssl, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_arith)) fun u' ⟨k, x22, m⟩ =>
       ⟨h.congr k.sp k.rd k.wr (k.get .x20) (fun q hq => ?_) (fun q hq => ?_), hs⟩
   · rcases List.mem_append.mp hq with hq | hq
     · rw [k.get q.1 (nk_of (by decide) q hq)]; exact h.r q hq
@@ -138,7 +138,7 @@ theorem hash_ct {K : Nat} (hc : PssChecks H.P H.D) :
       have hnbB : ((8 + H.D + salt a + H.P.L) / H.P.B + 1) * H.P.B =
           (8 + H.D + salt a + H.P.L) / H.P.B * H.P.B + H.P.B := Nat.succ_mul _ _
       show _ ≤ ((8 + H.D + salt a + H.P.L) / H.P.B + 1) * H.P.B ∧ ((8 + H.D + salt a + H.P.L) / H.P.B + 1) * H.P.B ≤ 2048
-      rw [hnbB]; omega
+      rw [hnbB]; omega_arith
   have x19 : ∀ {a u : State}, VR H.D K (regs H.D) (slots H) a u → u.gpr .x19 = off (scr a) oSt := fun h =>
     h.r (.x19, fun a => off (scr a) oSt) (by simp [regs, vregs])
   have x21 : ∀ {a u : State}, VR H.D K (regs H.D) (slots H) a u → u.gpr .x21 = off (scr a) oDig := fun h =>
@@ -153,13 +153,13 @@ theorem hash_ct {K : Nat} (hc : PssChecks H.P H.D) :
       x19 := x19 h
       x21 := x21 h
       nb := nb h
-      len := ⟨8 + H.D + salt a, x22 h, (hb a (by have := h.ok.db; omega)).1⟩
-      hnb := (hb a (by have := h.ok.db; omega)).2
+      len := ⟨8 + H.D + salt a, x22 h, (hb a (by have := h.ok.db; omega_arith)).1⟩
+      hnb := (hb a (by have := h.ok.db; omega_arith)).2
       fx := fun _ e => nomatch e }) (ctHash_ct hH hc)) fun a u ⟨h, hsalt⟩ => ?_
-  have hs : salt a ≤ 1024 := by have := h.ok.db; omega
+  have hs : salt a ≤ 1024 := by have := h.ok.db; omega_arith
   refine WP.mono (ctHashWith_out hH (pad80 H) h.L (fun _ _ => rfl) (x19 h) (x21 h) (x22 h) (nb h) (hb a hs).1
     (hb a hs).2 fun L' R' h22' hNb' => ?_) fun u' O => ?_
-  · exact WP.mono (pad80_ok H L' R' hlg.1 hlg.2 (by omega) (hb a hs).2 (by have := (hb a hs).1; omega) h22' hNb')
+  · exact WP.mono (pad80_ok H L' R' hlg.1 hlg.2 (by omega_arith) (hb a hs).2 (by have := (hb a hs).1; omega_arith) h22' hNb')
       fun _ ⟨k, f, r⟩ => ⟨k.mono, f, r⟩
   refine h.congr O.sp O.rd O.wr (O.cs .x20 (by decide)) (fun q hq => ?_) fun q hq => ?_
   · rw [O.cs q.1 ((by decide : ∀ r ∈ [Reg.x19, .x21, .x23, .x24, .x25], r ∈ [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x28]) _ (vregs_fst hq))]; exact h.r q (List.mem_append_left _ hq)

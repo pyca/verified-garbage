@@ -34,8 +34,8 @@ theorem foldl_max_lt {B : Nat} : ∀ (l : List Nat) (a : Nat), l.foldl max a < B
     rw [List.foldl_cons, foldl_max_lt l (max a x)]
     simp only [List.mem_cons, forall_eq_or_imp]
     constructor
-    · intro ⟨h₁, h₂⟩; exact ⟨by omega, by omega, h₂⟩
-    · intro ⟨h₁, h₂, h₃⟩; exact ⟨by omega, h₃⟩
+    · intro ⟨h₁, h₂⟩; exact ⟨by omega_arith, by omega_arith, h₂⟩
+    · intro ⟨h₁, h₂, h₃⟩; exact ⟨by omega_arith, h₃⟩
 
 theorem normR_lt_iff {B : Nat} (hB : 0 < B) (zs : List IPoly) :
     normR zs < B ↔ ∀ z ∈ zs, ∀ x ∈ z.toList, x.natAbs < B := by
@@ -61,12 +61,12 @@ theorem normZq_ofInt {x : Int} (h₁ : -4190208 ≤ x) (h₂ : x ≤ 4190208) : 
   have hq2 : ((q / 2 : Nat) : Int) = 4190208 := rfl
   unfold normZq ofInt modPm
   have hv : ((Fin.ofNat q (x % (q : Int)).toNat : Zq).val : Int) = x % 8380417 := by
-    rw [Fin.val_ofNat, hq, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Fin.val_ofNat, hq, Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   rw [hv]
   dsimp only
   rw [hq, hq2]
-  split <;> omega
+  split <;> omega_arith
 
 theorem bitsToInteger_lt : ∀ (l : List Bool), bitsToInteger l < 2 ^ l.length
   | [] => by decide
@@ -74,7 +74,7 @@ theorem bitsToInteger_lt : ∀ (l : List Bool), bitsToInteger l < 2 ^ l.length
     have := bitsToInteger_lt l
     have : b.toNat ≤ 1 := by cases b <;> decide
     simp only [bitsToInteger, List.foldr_cons, List.length_cons, Nat.pow_succ] at *
-    omega
+    omega_arith
 
 /-- The coefficients of `BitUnpack(v, a, b)` are in `(b - 2^bitlen (a + b), b]`. -/
 theorem bitUnpack_bounds (v : List Byte) (a b : Nat) {i : Nat} (hi : i < n) :
@@ -84,7 +84,7 @@ theorem bitUnpack_bounds (v : List Byte) (a b : Nat) {i : Nat} (hi : i < n) :
     (bytesToBits v).getD (i * bitlen (a + b) + j) false)
   rw [List.length_map, List.length_range] at this
   have e : ((2 ^ bitlen (a + b) : Nat) : Int) = 2 ^ bitlen (a + b) := Int.natCast_pow 2 _
-  constructor <;> omega
+  constructor <;> omega_arith
 
 /-- The parameter sets' `γ₁`. -/
 def gamma1s : List Nat := [2 ^ 17, 2 ^ 19]
@@ -99,7 +99,7 @@ theorem normRq_vZ {B : Nat} (hB : 0 < B) (p : Params) (hg : p.γ₁ ∈ gamma1s)
   rw [normRq_lt_iff hB]
   have hb := bitlen_gamma1 hg
   have hs : p.γ₁ ≤ 2 ^ 19 := by
-    simp only [gamma1s, List.mem_cons, List.not_mem_nil, or_false] at hg; omega
+    simp only [gamma1s, List.mem_cons, List.not_mem_nil, or_false] at hg; omega_arith
   constructor
   · intro h x hx
     obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hx
@@ -108,7 +108,7 @@ theorem normRq_vZ {B : Nat} (hB : 0 < B) (p : Params) (hg : p.γ₁ ∈ gamma1s)
     rw [hb] at hb'
     have := h (toRq (vZ p σ i))[j] (List.mem_iff_getElem.mpr ⟨j, by simpa using hj, by simp⟩)
     simp only [toRq, Vector.getElem_map, Vector.getElem_toList] at this ⊢
-    rw [normZq_ofInt (by unfold vZ; omega) (by unfold vZ; omega)] at this
+    rw [normZq_ofInt (by unfold vZ; omega_arith) (by unfold vZ; omega_arith)] at this
     exact this
   · intro h x hx
     obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hx
@@ -116,7 +116,7 @@ theorem normRq_vZ {B : Nat} (hB : 0 < B) (p : Params) (hg : p.γ₁ ∈ gamma1s)
     have hb' := bitUnpack_bounds (((σ.drop (p.ctildeLen + lenZ p * i)).take (lenZ p))) (p.γ₁ - 1) p.γ₁ hj
     rw [hb] at hb'
     simp only [toRq, Vector.getElem_toList, Vector.getElem_map]
-    rw [normZq_ofInt (by unfold vZ; omega) (by unfold vZ; omega)]
+    rw [normZq_ofInt (by unfold vZ; omega_arith) (by unfold vZ; omega_arith)]
     exact h _ (List.mem_iff_getElem.mpr ⟨j, by simpa using hj, by simp⟩)
 
 /-- `‖z‖∞ < B` exactly when each `‖z[i]‖∞ < B`, in `R_q`. -/
@@ -137,10 +137,10 @@ theorem useHint_le₁ (h : Bool) (r : Zq) : (useHint ((q - 1) / 88) h r).toNat �
   have e4 : ((2 * ((q - 1) / 88) / 2 : Nat) : Int) = 95232 := rfl
   have e5 : (q - 1) / (2 * ((q - 1) / 88)) - 1 = 43 := rfl
   unfold useHint decompose modPm
-  have hR : 0 ≤ ((r.val : Nat) : Int) ∧ ((r.val : Nat) : Int) < 8380417 := ⟨by omega, by omega⟩
+  have hR : 0 ≤ ((r.val : Nat) : Int) ∧ ((r.val : Nat) : Int) < 8380417 := ⟨by omega_arith, by omega_arith⟩
   simp only [e1, e2, e3, e4, e5]
   generalize ((r.val : Nat) : Int) = R at *
-  split_ifs <;> omega
+  split_ifs <;> omega_arith
 
 theorem useHint_le₂ (h : Bool) (r : Zq) : (useHint ((q - 1) / 32) h r).toNat ≤ (q - 1) / (2 * ((q - 1) / 32)) - 1 := by
   have hr := r.isLt
@@ -150,10 +150,10 @@ theorem useHint_le₂ (h : Bool) (r : Zq) : (useHint ((q - 1) / 32) h r).toNat �
   have e4 : ((2 * ((q - 1) / 32) / 2 : Nat) : Int) = 261888 := rfl
   have e5 : (q - 1) / (2 * ((q - 1) / 32)) - 1 = 15 := rfl
   unfold useHint decompose modPm
-  have hR : 0 ≤ ((r.val : Nat) : Int) ∧ ((r.val : Nat) : Int) < 8380417 := ⟨by omega, by omega⟩
+  have hR : 0 ≤ ((r.val : Nat) : Int) ∧ ((r.val : Nat) : Int) < 8380417 := ⟨by omega_arith, by omega_arith⟩
   simp only [e1, e2, e3, e4, e5]
   generalize ((r.val : Nat) : Int) = R at *
-  split_ifs <;> omega
+  split_ifs <;> omega_arith
 
 /-- The coefficients of `w₁`: at most `(q - 1)/(2γ₂) - 1`. -/
 theorem useHint_le {γ₂ : Nat} (hg : γ₂ ∈ gamma2s) (h : Bool) (r : Zq) :

@@ -35,10 +35,10 @@ theorem read_write256 (m : Mem) (p : Addr) {d e : Nat} (hd : d + 8 ≤ 4096) (he
   split
   · rename_i h
     rw [show off p d = off p e + BitVec.ofNat 64 (8 * ((d - e) / 8)) from
-      (Offset.add_add_eq p (by omega)).symm]
-    refine (readW_writeW_inside _ _ v (k := 8 * ((d - e) / 8)) (n := 8) (by omega) (by decide)).trans ?_
-    rw [qword256, show 8 * (8 * ((d - e) / 8)) = 64 * ((d - e) / 8) by omega]
-  · exact readW_writeW_off m p v (n := 8) (by omega) (by omega) (by omega)
+      (Offset.add_add_eq p (by omega_arith)).symm]
+    refine (readW_writeW_inside _ _ v (k := 8 * ((d - e) / 8)) (n := 8) (by omega_arith) (by decide)).trans ?_
+    rw [qword256, show 8 * (8 * ((d - e) / 8)) = 64 * ((d - e) / 8) by omega_arith]
+  · exact readW_writeW_off m p v (n := 8) (by omega_arith) (by omega_arith) (by omega_arith)
 
 /-- The chunks `k < n` of both halves of scratch hold `r`. -/
 def Initialized (m : Mem) (p : Addr) (r : Block) (n : Nat) : Prop :=
@@ -65,11 +65,11 @@ theorem initChunk_ok {k : Nat} (hk : k < 32) {s : State} {p x y : Addr} (hs : Sc
       t.mem = (s.mem.writeW (off p (32 * k)) v).writeW (off p (1024 + 32 * k)) v ∧ VKeep s t ∧
       (Masks s → Masks t) := by
   have lx : InRegions (s.rd ++ s.wr) (off x (32 * k)) 32 :=
-    ⟨_, hin.xread, Offset.contains_base x (by omega) (by omega)⟩
+    ⟨_, hin.xread, Offset.contains_base x (by omega_arith) (by omega_arith)⟩
   have ly : InRegions (s.rd ++ s.wr) (off y (32 * k)) 32 :=
-    ⟨_, hin.yread, Offset.contains_base y (by omega) (by omega)⟩
-  have w1 := hs.write (d := 32 * k) (n := 32) (by omega)
-  have w2 := hs.write (d := 1024 + 32 * k) (n := 32) (by omega)
+    ⟨_, hin.yread, Offset.contains_base y (by omega_arith) (by omega_arith)⟩
+  have w1 := hs.write (d := 32 * k) (n := 32) (by omega_arith)
+  have w2 := hs.write (d := 1024 + 32 * k) (n := 32) (by omega_arith)
   apply WP.of_runBlock
   simp only [initChunk_eq, runBlock_cons, runStep_some, runBlock_nil, exec, State.load256,
     State.store256_eq, ea_at, State.setV_rd, State.setV_wr, State.setV_gpr, State.setV_mem,
@@ -100,18 +100,18 @@ theorem initialized_step {m : Mem} {p : Addr} {r : Block} {n : Nat} (hn : n < 32
   intro i hi
   have hi' := i.isLt
   simp only [word]
-  rw [read_write256 _ p (by omega) (by omega) (by omega) (by omega),
-    read_write256 _ p (by omega) (by omega) (by omega) (by omega),
-    read_write256 _ p (by omega) (by omega) (by omega) (by omega),
-    read_write256 _ p (by omega) (by omega) (by omega) (by omega)]
+  rw [read_write256 _ p (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+    read_write256 _ p (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+    read_write256 _ p (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+    read_write256 _ p (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
   by_cases e : i.val / 4 = n
-  · have q := hv (i.val % 4) (Nat.mod_lt _ (by decide)) (by omega)
-    simp only [show 4 * n + i.val % 4 = i.val by omega] at q
-    simp (disch := omega) only [ifp, ifn, Fin.getElem_fin,
-      show (8 * i.val - 32 * n) / 8 = i.val % 4 by omega,
-      show (1024 + 8 * i.val - (1024 + 32 * n)) / 8 = i.val % 4 by omega, q, and_self]
-  · have := h i (by omega)
-    simp (disch := omega) only [ifn]
+  · have q := hv (i.val % 4) (Nat.mod_lt _ (by decide)) (by omega_arith)
+    simp only [show 4 * n + i.val % 4 = i.val by omega_arith] at q
+    simp (disch := omega_arith) only [ifp, ifn, Fin.getElem_fin,
+      show (8 * i.val - 32 * n) / 8 = i.val % 4 by omega_arith,
+      show (1024 + 8 * i.val - (1024 + 32 * n)) / 8 = i.val % 4 by omega_arith, q, and_self]
+  · have := h i (by omega_arith)
+    simp (disch := omega_arith) only [ifn]
     exact this
 
 theorem _root_.VG.Proof.Argon2.X86_64.Inputs.of_vkeep {s t : State} {x y p : Addr} (h : Inputs s x y p) (hk : VKeep s t) :
@@ -126,25 +126,25 @@ theorem init_prefix (n : Nat) (hn : n ≤ 32) {s : State} {p x y : Addr} (hs : S
       Initialized t.mem p (xorBlock (blockAt s.mem x) (blockAt s.mem y)) n ∧
       Frame [⟨p, 4096⟩] s.mem t.mem ∧ VKeep s t ∧ (Masks s → Masks t) := by
   induction n with
-  | zero => exact WP.block_nil ⟨fun i hi => by omega, Frame.refl _ _, VKeep.refl s, id⟩
+  | zero => exact WP.block_nil ⟨fun i hi => by omega_arith, Frame.refl _ _, VKeep.refl s, id⟩
   | succ n ih =>
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_arith)).mono ?_
     rintro t ⟨ht, hf, hk, hm⟩
-    refine (initChunk_ok (by omega) (hs.of_vkeep hk) (hin.of_vkeep hk)).mono ?_
+    refine (initChunk_ok (by omega_arith) (hs.of_vkeep hk) (hin.of_vkeep hk)).mono ?_
     rintro u ⟨v, hv, hmem, hk', hm'⟩
     refine ⟨?_, ?_, hk.trans hk', fun h => hm' (hm h)⟩
     · rw [hmem]
-      refine initialized_step (by omega) ht fun q hq hi => ?_
-      rw [hv q hq, show 32 * n + 8 * q = 8 * (4 * n + q) by omega,
+      refine initialized_step (by omega_arith) ht fun q hq hi => ?_
+      rw [hv q hq, show 32 * n + 8 * q = 8 * (4 * n + q) by omega_arith,
         input_unchanged hf hin.xsep ⟨4 * n + q, hi⟩, input_unchanged hf hin.ysep ⟨4 * n + q, hi⟩]
       simp only [xorBlock, Vector.getElem_zipWith, blockAt, Vector.getElem_ofFn]
       rfl
     · rw [hmem]
-      exact (hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base p (by omega) (by omega))).writeW
-        (List.mem_singleton_self _) _ (Offset.contains_base p (by omega) (by omega))
+      exact (hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base p (by omega_arith) (by omega_arith))).writeW
+        (List.mem_singleton_self _) _ (Offset.contains_base p (by omega_arith) (by omega_arith))
 
 
 theorem finishChunk_eq (k : Nat) : finishChunk k =
@@ -156,9 +156,9 @@ theorem finishChunk_ok {k : Nat} (hk : k < 32) {s : State} {p out : Addr} (hs : 
     WP isa (.block (finishChunk k)) s fun t => ∃ v : BitVec 256,
       (∀ q < 4, qword256 v q = word s.mem p (4 * k + q) ^^^ s.mem.readW (off p (8 * (4 * k + q))) 64) ∧
       t.mem = s.mem.writeW (off out (32 * k)) v ∧ VKeep s t ∧ (Masks s → Masks t) := by
-  have r1 := hs.read (d := 1024 + 32 * k) (n := 32) (by omega)
-  have r2 := hs.read (d := 32 * k) (n := 32) (by omega)
-  have w : InRegions s.wr (off out (32 * k)) 32 := ⟨_, hw, Offset.contains_base out (by omega) (by omega)⟩
+  have r1 := hs.read (d := 1024 + 32 * k) (n := 32) (by omega_arith)
+  have r2 := hs.read (d := 32 * k) (n := 32) (by omega_arith)
+  have w : InRegions s.wr (off out (32 * k)) 32 := ⟨_, hw, Offset.contains_base out (by omega_arith) (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [finishChunk_eq, runBlock_cons, runStep_some, runBlock_nil, exec, State.load256,
     State.store256_eq, ea_at, State.setV_rd, State.setV_wr, State.setV_gpr, State.setV_mem,
@@ -167,8 +167,8 @@ theorem finishChunk_ok {k : Nat} (hk : k < 32) {s : State} {p out : Addr} (hs : 
   refine ⟨_, fun q hq => ?_, rfl, ?_, fun h => ?_⟩
   · simp only [qw_xor_ymm _ _ hq, qw_set256 _ _ _ _ hq, ↓reduceIte, reduceCtorEq,
       qword256_readW _ _ hq, Offset.add_add, word]
-    rw [show 1024 + 32 * k + 8 * q = 1024 + 8 * (4 * k + q) by omega,
-      show 32 * k + 8 * q = 8 * (4 * k + q) by omega]
+    rw [show 1024 + 32 * k + 8 * q = 1024 + 8 * (4 * k + q) by omega_arith,
+      show 32 * k + 8 * q = 8 * (4 * k + q) by omega_arith]
   · exact ⟨by simp only [State.setMem_gpr, VOp.exec_gpr, State.setV_gpr],
       by simp only [State.setMem_rd, VOp.exec_rd, State.setV_rd],
       by simp only [State.setMem_wr, VOp.exec_wr, State.setV_wr],
@@ -185,27 +185,27 @@ theorem finish_prefix (n : Nat) (hn : n ≤ 32) {s : State} {p out : Addr} (hs :
         t.mem.readW (off out (8 * i.val)) 64 = (xorBlock (working s.mem p) (blockAt s.mem p))[i]) ∧
       Frame [⟨out, 1024⟩] s.mem t.mem ∧ VKeep s t ∧ (Masks s → Masks t) := by
   induction n with
-  | zero => exact WP.block_nil ⟨fun i hi => by omega, Frame.refl _ _, VKeep.refl s, id⟩
+  | zero => exact WP.block_nil ⟨fun i hi => by omega_arith, Frame.refl _ _, VKeep.refl s, id⟩
   | succ n ih =>
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_arith)).mono ?_
     rintro t ⟨ht, hf, hk, hm⟩
-    refine (finishChunk_ok (out := out) (by omega) (hs.of_vkeep hk) (by rw [hk.gpr]; exact ho)
+    refine (finishChunk_ok (out := out) (by omega_arith) (hs.of_vkeep hk) (by rw [hk.gpr]; exact ho)
       (by rw [hk.wr]; exact hw)).mono ?_
     rintro u ⟨v, hv, hmem, hk', hm'⟩
     refine ⟨fun i hi => ?_, ?_, hk.trans hk', fun h => hm' (hm h)⟩
     · have hi' := i.isLt
-      rw [hmem, read_write256 _ out (by omega) (by omega) (by omega) (by omega)]
+      rw [hmem, read_write256 _ out (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
       by_cases e : i.val / 4 = n
-      · rw [ifp (by omega), show (8 * i.val - 32 * n) / 8 = i.val % 4 by omega,
-          hv _ (Nat.mod_lt _ (by decide)), show 4 * n + i.val % 4 = i.val by omega, word,
-          scratch_unchanged hf hd (d := 1024 + 8 * i.val) (by omega),
-          scratch_unchanged hf hd (d := 8 * i.val) (by omega), xorBlock_get, working_get, blockAt_get]
-      · rw [ifn (by omega)]
-        exact ht i (by omega)
+      · rw [ifp (by omega_arith), show (8 * i.val - 32 * n) / 8 = i.val % 4 by omega_arith,
+          hv _ (Nat.mod_lt _ (by decide)), show 4 * n + i.val % 4 = i.val by omega_arith, word,
+          scratch_unchanged hf hd (d := 1024 + 8 * i.val) (by omega_arith),
+          scratch_unchanged hf hd (d := 8 * i.val) (by omega_arith), xorBlock_get, working_get, blockAt_get]
+      · rw [ifn (by omega_arith)]
+        exact ht i (by omega_arith)
     · rw [hmem]
-      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base out (by omega) (by omega))
+      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base out (by omega_arith) (by omega_arith))
 
 end VG.Proof.Argon2.X86_64.Avx2

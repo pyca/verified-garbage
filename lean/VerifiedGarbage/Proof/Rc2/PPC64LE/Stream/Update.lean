@@ -67,7 +67,7 @@ theorem short_wp (d : Spec.Rc2.Direction) (s : State) (h : UpdatePre s) (h0 : (s
   unfold short
   apply WP.seq
   refine WP.mono (WP.keep [.r10] (c := .block [.add .r10 .r3 .r4]) (Q := fun t => t.gpr .r10 = C + BitVec.ofNat 64 P ∧
-      t.mem = s.mem) (by rrun [hC, e4]) (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl)
+      t.mem = s.mem) (by rrun [hC, e4]) (by rfl) rfl)
     fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
   have pIn : Region.Sub ⟨C + BitVec.ofNat 64 (136 + P), L⟩ ⟨C, 144⟩ := Offset.sub_base C (by omega_arith)
   refine WP.mono (copy_run (src := .r5) (dst := .r10) (cnt := .r6) ⟨by decide, by decide, by decide, by decide,
@@ -138,7 +138,7 @@ theorem long_wp (d : Spec.Rc2.Direction) (s : State) (h : UpdatePre s) (h0 : (s.
   refine WP.mono (WP.keep [.r0, .r25] (c := .block [.mflr .r0, .store .d .r0 .r9 512, .store .d .r25 .r9 520,
       mov .r25 .r9]) (Q := fun t => t.gpr .r25 = W ∧
       t.mem = (s.mem.writeW (W + BitVec.ofNat 64 512) s.lr).writeW (W + BitVec.ofNat 64 520) (s.gpr .r25))
-    (by rrun [mov, hW, W512, W520]) (by simp [writesOnly, Code.allInstrs_eq, instrs, mov, dstOf]) rfl)
+    (by rrun [mov, hW, W512, W520]) (by rfl) rfl)
     fun t₀ ⟨⟨a₀, m₀⟩, k₀⟩ => ?_
   have FA : Frame [⟨W, 576⟩] s.mem t₀.mem := by
     rw [m₀]
@@ -151,7 +151,7 @@ theorem long_wp (d : Spec.Rc2.Direction) (s : State) (h : UpdatePre s) (h0 : (s.
   refine WP.mono (WP.keep [.r10, .r11, .r12] (c := .block toOut) (Q := fun t =>
       t.gpr .r10 = C + BitVec.ofNat 64 136 ∧ t.gpr .r11 = O ∧ t.gpr .r12 = BitVec.ofNat 64 P ∧ t.mem = t₀.mem)
     (by unfold toOut; rrun [mov, g₀ .r3 (by decide), g₀ .r7 (by decide), g₀ .r4 (by decide), hC, hO, e4])
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, toOut, mov, dstOf]) rfl) fun t₁ ⟨⟨a10, a11, a12, m₁⟩, k₁⟩ => ?_
+    (by rfl) rfl) fun t₁ ⟨⟨a10, a11, a12, m₁⟩, k₁⟩ => ?_
   have rw₁ : t₁.rd = s.rd ∧ t₁.wr = s.wr := ⟨by rw [k₁.2.1, k₀.2.1], by rw [k₁.2.2, k₀.2.2]⟩
   have inC : ∀ i, 136 + i < 144 → InRegions t₁.wr (C + BitVec.ofNat 64 136 + BitVec.ofNat 64 i) 1 := fun i hi => by
     rw [rw₁.2, hwr, Offset.add_add]; exact ⟨⟨C, 144⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
@@ -174,7 +174,7 @@ theorem long_wp (d : Spec.Rc2.Direction) (s : State) (h : UpdatePre s) (h0 : (s.
       t.gpr .r12 = BitVec.ofNat 64 (N - P) ∧ t.mem = t₂.mem)
     (by unfold middle; rrun [kk₂.gpr (show Reg.r8 ∉ _ by decide), kk₂.gpr (show Reg.r4 ∉ _ by decide), e8, e4,
       Offset.ofNat_sub_ofNat hPN])
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, middle, dstOf]) rfl) fun t₃ ⟨⟨a12', m₃⟩, k₃⟩ => ?_
+    (by rfl) rfl) fun t₃ ⟨⟨a12', m₃⟩, k₃⟩ => ?_
   have kk₃ := kk₂.trans k₃
   have rw₃ : t₃.rd = t₁.rd ∧ t₃.wr = t₁.wr := ⟨by rw [k₃.2.1, c₂.keep.2.1], by rw [k₃.2.2, c₂.keep.2.2]⟩
   -- the first `out_len - pending_len` bytes of data, after them
@@ -196,7 +196,7 @@ theorem long_wp (d : Spec.Rc2.Direction) (s : State) (h : UpdatePre s) (h0 : (s.
       t.gpr .r10 = C + BitVec.ofNat 64 136 ∧ t.gpr .r12 = BitVec.ofNat 64 ((P + L) % 8) ∧ t.mem = t₄.mem)
     (by unfold toPending; rrun [kk₄.gpr (show Reg.r3 ∉ _ by decide), kk₄.gpr (show Reg.r6 ∉ _ by decide),
       kk₄.gpr (show Reg.r8 ∉ _ by decide), kk₄.gpr (show Reg.r4 ∉ _ by decide), hC, e6, e8, e4, eR])
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, toPending, dstOf]) rfl) fun t₅ ⟨⟨a10', a12'', m₅⟩, k₅⟩ => ?_
+    (by rfl) rfl) fun t₅ ⟨⟨a10', a12'', m₅⟩, k₅⟩ => ?_
   have kk₅ := kk₄.trans k₅
   have rw₅ : t₅.rd = t₁.rd ∧ t₅.wr = t₁.wr := ⟨by rw [k₅.2.1, rw₄.1], by rw [k₅.2.2, rw₄.2]⟩
   apply WP.seq
@@ -218,7 +218,7 @@ theorem long_wp (d : Spec.Rc2.Direction) (s : State) (h : UpdatePre s) (h0 : (s.
         t.gpr .r7 = W ∧ t.mem = t₆.mem)
     (by unfold cbcArgs; rrun [mov, kk₆.gpr (show Reg.r3 ∉ _ by decide), kk₆.gpr (show Reg.r7 ∉ _ by decide),
       kk₆.gpr (show Reg.r8 ∉ _ by decide), kk₆.gpr (show Reg.r9 ∉ _ by decide), hC, hO, e8, hW, shr3])
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, cbcArgs, mov, dstOf]) rfl)
+    (by rfl) rfl)
     fun t₇ ⟨⟨b3, b4, b5, b6, b7, m₇⟩, k₇⟩ => ?_
   have rw₇ : t₇.rd = s.rd ∧ t₇.wr = s.wr := ⟨by rw [k₇.2.1, rw₆.1, rw₁.1], by rw [k₇.2.2, rw₆.2, rw₁.2]⟩
   have hn8 : 8 * (N / 8) = N := by omega_arith
@@ -306,7 +306,7 @@ theorem long_wp (d : Spec.Rc2.Direction) (s : State) (h : UpdatePre s) (h0 : (s.
     rw [rd₈, wr₈, rw₇.1, rw₇.2]; obtain ⟨r, hr, hc⟩ := W520; exact ⟨r, List.mem_append_right _ hr, hc⟩
   refine WP.mono (WP.keep [.r0, .r25] (c := .block [.load .d .r0 .r25 512, .mtlr .r0, .load .d .r25 .r25 520])
       (Q := fun t => t.gpr .r25 = s.gpr .r25 ∧ t.lr = s.lr ∧ t.mem = t₈.mem)
-    (by rrun [h31, e512, e520, in512, in520]) (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl)
+    (by rrun [h31, e512, e520, in512, in520]) (by rfl) rfl)
     fun t₉ ⟨⟨a31, lr₉, m₉⟩, k₉⟩ => ⟨fun r hr => ?_, lr₉, ?_⟩
   · by_cases h31' : r = .r25
     · subst h31'; exact a31

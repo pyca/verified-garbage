@@ -103,7 +103,7 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
   have dT : ∀ {d k : Nat}, d + k ≤ 480 → ∀ r ∈ [tblR p.W], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
     fun {d k} h r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.w_w (.inl (by show d + k ≤ 480; exact h)) (by omega) (by decide)
+      exact L.w_w (.inl (by show d + k ≤ 480; exact h)) (by omega_arith) (by decide)
   have dTD : ∀ r ∈ [tblR p.W], (⟨p.D, p.n⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)
   have C₃ : CtrSt p.W icb 0 s₃.mem := by rw [m₁₃]; exact ctrSt_frame C f₁ (dT (by decide))
@@ -113,7 +113,7 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
       Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R := by
     rw [m₁₃]; unfold Spec.GcmSiv.ctxCiph
     rw [Proof.AesGcm.AArch64.bytesAt_frame f₁ (fun r hr => (dT (k := 240) (by decide) r hr).sub_left
-      (Region.sub_prefix L.rounds_le)) (by have := L.rounds_le; omega)]
+      (Region.sub_prefix L.rounds_le)) (by have := L.rounds_le; omega_arith)]
   have hx₃ : bytesAt s₃.mem p.D p.n = bytesAt t.mem p.D p.n := by
     rw [m₁₃]; exact Proof.AesGcm.AArch64.bytesAt_frame f₁ dTD (Nat.le_of_lt hn)
   -- The context of the loop.
@@ -122,7 +122,7 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
   have hp : KPre σ := {
     rounds := by rcases L.rounds with h | h <;> simp [σ, h]
     nb1 := hnb
-    n16 := by show 128 * (p.n / 128) < 2 ^ 64; omega
+    n16 := by show 128 * (p.n / 128) < 2 ^ 64; omega_arith
     k_in := by
       show InRegions (t.rd ++ t.wr) (p.W + BitVec.ofNat 64 240) (16 * (p.R + 1))
       exact E.perm.wR (by rcases L.rounds with h | h <;> rw [h] <;> decide)
@@ -130,23 +130,23 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
     d_in := by
       show InRegions t.wr p.D (128 * (p.n / 128))
       exact E.perm.d _ _ ⟨⟨p.D, p.n⟩, List.mem_singleton_self _, by
-        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; omega⟩
+        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; omega_arith⟩
     t_in := E.perm.wR (by decide)
     d_k := by
       show (⟨p.D, 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 240, 16 * (p.R + 1)⟩
       exact (L.d_w' (d := 240) (k := 16 * (p.R + 1)) (by rcases L.rounds with h | h <;> rw [h] <;> decide)).sub_left
-        (Region.sub_prefix (by omega))
+        (Region.sub_prefix (by omega_arith))
     d_c := by
       show (⟨p.D, 128 * (p.n / 128)⟩ : Region).Disjoint _
-      exact (L.d_w' (by decide)).sub_left (Region.sub_prefix (by omega))
+      exact (L.d_w' (by decide)).sub_left (Region.sub_prefix (by omega_arith))
     d_t := by
       show (⟨p.D, 128 * (p.n / 128)⟩ : Region).Disjoint _
-      exact (L.d_w' (by decide)).sub_left (Region.sub_prefix (by omega))
-    wrap_t := by show p.W.toNat + 480 + 192 ≤ 2 ^ 64; omega
-    wrap_c := by show p.W.toNat + 96 + 16 ≤ 2 ^ 64; omega
+      exact (L.d_w' (by decide)).sub_left (Region.sub_prefix (by omega_arith))
+    wrap_t := by show p.W.toNat + 480 + 192 ≤ 2 ^ 64; omega_arith
+    wrap_c := by show p.W.toNat + 96 + 16 ≤ 2 ^ 64; omega_arith
     wrap_k := by
       show (p.W + BitVec.ofNat 64 240).toNat + 16 * (p.R + 1) ≤ 2 ^ 64
-      rw [L.toNat_W (by decide)]; rcases L.rounds with h | h <;> rw [h] <;> omega
+      rw [L.toNat_W (by decide)]; rcases L.rounds with h | h <;> rw [h] <;> omega_arith
     tbl := by show TblOk s₃.mem p.W _; rw [m₁₃]; exact tok₁ }
   have hI : CInv σ s₃ 0 0 s₃ := {
     le := Nat.zero_le _
@@ -158,7 +158,7 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
       rw [m₃, m₂]
     x11 := x11₃
     gpr := fun _ _ => rfl
-    data := fun i _ => by rw [ite_eq_right (by omega)]; show s₃.mem _ = s₃.mem _ ^^^ 0; simp
+    data := fun i _ => by rw [ite_eq_right (by omega_arith)]; show s₃.mem _ = s₃.mem _ ^^^ 0; simp
     frame := Frame.refl _ _
     sp := rfl
     rd := rfl
@@ -183,8 +183,8 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
     fun {d k} h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rcases h₁ with h | h
-      · exact L.w_w (.inr (by omega)) (by omega) (by omega)
-      · exact L.w_w (.inl (by omega)) (by omega) (by omega)
+      · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+      · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
   have dYD : ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 80, 16⟩ : Region)], (⟨p.D, p.n⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)
   refine ⟨E₅.keep (fun r _ => by rw [g₆]) sp₆ rd₆ wr₆, by rw [rd₆, rd₅, O.ci.rd, rd₃, rd₂, rd₁],
@@ -204,7 +204,7 @@ theorem openBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
     have hr : ∀ i < 8 * (p.n / 128), s₄.mem.readW (p.D + BitVec.ofNat 64 (16 * i)) 128 =
         s₆.mem.readW (p.D + BitVec.ofNat 64 (16 * i)) 128 := fun i hi => by
       have hc : (⟨p.D, p.n⟩ : Region).Contains (p.D + BitVec.ofNat 64 (16 * i)) 16 :=
-        Offset.contains_base p.D (by omega) (by omega)
+        Offset.contains_base p.D (by omega_arith) (by omega_arith)
       rw [f₆.readW hc dYD (by decide), fw₅.readW hc (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by decide)]
     rw [← elemsAt_eq hr]
@@ -221,13 +221,13 @@ theorem openBatches_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : La
   have hn := L.n_lt
   unfold ifBatch
   refine WP.seq (WP.mono (batchHead_ok L E) fun t₂ ⟨x9₂, E₂, m₂, rd₂, wr₂⟩ => ?_)
-  refine WP.ite (decide (p.n / 128 = 0)) (eval_zero x9₂ (by omega)) (fun h => ?_) (fun h => ?_)
+  refine WP.ite (decide (p.n / 128 = 0)) (eval_zero x9₂ (by omega_arith)) (fun h => ?_) (fun h => ?_)
   · have h0 : p.n / 128 = 0 := by simpa using h
     refine WP.block_nil ⟨E₂, rd₂, wr₂, ?_, ?_, by rw [m₂]; exact Frame.refl _ _, ?_⟩
     · rw [h0, m₂]; exact C
     · rw [h0, m₂, Nat.mul_zero, GcmSiv.ctrPart_zero]
     · rw [h0, m₂]; simp [elemsAt, ghashFrom]
-  · have h1 : 1 ≤ p.n / 128 := by simp at h; omega
+  · have h1 : 1 ≤ p.n / 128 := by simp at h; omega_arith
     rw [← m₂] at C
     refine WP.mono (openBatch_ok hP gh e3 L E₂ C h1) fun t₃ B => ?_
     rw [m₂] at B
@@ -243,8 +243,8 @@ theorem elemsAt_of_getD {m₁ m₂ : Mem} {D : Addr} {n k : Nat} (hk : 16 * k �
   refine List.map_congr_left fun i hi => congrArg _ (GcmSiv.ext_getD (by simp [Proof.Cmac.bytesAt_length]) fun t ht => ?_)
   have hi' := List.mem_range.mp hi
   rw [Proof.Cmac.bytesAt_length] at ht
-  have e := h (16 * i + t) (by omega)
-  rw [Proof.Cmac.getD_bytesAt _ _ (by omega), Proof.Cmac.getD_bytesAt _ _ (by omega)] at e
+  have e := h (16 * i + t) (by omega_arith)
+  rw [Proof.Cmac.getD_bytesAt _ _ (by omega_arith), Proof.Cmac.getD_bytesAt _ _ (by omega_arith)] at e
   rw [Proof.Cmac.getD_bytesAt _ _ ht, Proof.Cmac.getD_bytesAt _ _ ht, Offset.add_add, e, ← Offset.add_add]
 
 /-- What `openData` leaves, from `t`. -/
@@ -273,16 +273,16 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
     fun {d k} h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact (L.d_w' (by omega)).symm
+      · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+      · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+      · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+      · exact (L.d_w' (by omega_arith)).symm
   have dAbs : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ absR p.W, (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
     fun {d k} h r hr => by
       simp only [absR, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+      · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+      · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   have dKey : ∀ r ∈ cryR p.W p.D p.n ++ absR p.W,
       (⟨p.W + BitVec.ofNat 64 240, 16 * (p.R + 1)⟩ : Region).Disjoint r := fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
@@ -290,15 +290,15 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
     · simp only [absR, List.mem_cons, List.not_mem_nil, or_false] at hr
       have := L.rounds_le
       rcases hr with rfl | rfl
-      · exact L.w_w (.inr (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+      · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+      · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   have f₁ : Frame [⟨p.W + BitVec.ofNat 64 96, 16⟩] t.mem t₁.mem := by
     rw [hm₁, headMem, show p.W + BitVec.ofNat 64 104 = p.W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 by
       rw [Proof.AesGcm.AArch64.add_ofNat_assoc]]
     exact Proof.Cmac.frame_store2 _ _ _
   have d96 : ∀ {d k : Nat}, d + k ≤ 96 → ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 96, 16⟩ : Region)],
       (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q := fun {d k} h q hq => by
-    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl (by omega)) (by omega) (by decide)
+    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   have dD : ∀ q ∈ [(⟨p.W + BitVec.ofNat 64 96, 16⟩ : Region)], (⟨p.D, p.n⟩ : Region).Disjoint q := fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq; exact L.d_w' (by decide)
   have hx₁ : bytesAt t₁.mem p.D p.n = bytesAt t.mem p.D p.n :=
@@ -309,7 +309,7 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
     rw [Proof.AesGcm.AArch64.bytesAt_frame f₁ (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
       exact (L.w_w (.inr (by decide)) (by decide) (by decide)).sub_left (Region.sub_prefix L.rounds_le))
-      (by have := L.rounds_le; omega)]
+      (by have := L.rounds_le; omega_arith)]
   have hH₁ : blockAt t₁.mem (p.W + BitVec.ofNat 64 64) = blockAt t.mem (p.W + BitVec.ofNat 64 64) :=
     Proof.AesGcm.AArch64.blockAt_frame f₁ (d96 (by decide))
   have hY₁ : blockAt t₁.mem (p.W + BitVec.ofNat 64 80) = blockAt t.mem (p.W + BitVec.ofNat 64 80) :=
@@ -327,19 +327,19 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
   have hc₂ : Spec.GcmSiv.ctxCiph t₂.mem (p.W + BitVec.ofNat 64 240) p.R =
       Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R := by
     rw [← hc₁]; unfold Spec.GcmSiv.ctxCiph
-    rw [Proof.AesGcm.AArch64.bytesAt_frame B.frame dKey (by have := L.rounds_le; omega)]
+    rw [Proof.AesGcm.AArch64.bytesAt_frame B.frame dKey (by have := L.rounds_le; omega_arith)]
   -- The rest, decrypted.
   refine WP.seq (WP.mono (cryptRest_ok v L B.env hxl B.ctr B.data hc₂) fun t₃ T => ?_)
   -- The rest, absorbed.
   refine WP.seq (WP.mono (rest_ok L T.env) fun t₄ ⟨x27₄, x28₄, E₄, _, m₄, rd₄, wr₄⟩ => ?_)
   have hc : Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (t₄.rd ++ t₄.wr) := by
     rw [rd₄, wr₄, T.rd, T.wr, B.rd, B.wr, rd₁, wr₁]
-    exact Proof.AesGcm.AArch64.covers_left (Proof.AesGcm.AArch64.covers_off E.perm.d (by omega) hn)
+    exact Proof.AesGcm.AArch64.covers_left (Proof.AesGcm.AArch64.covers_off E.perm.d (by omega_arith) hn)
   have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
-    L.d_w.sub_left (Offset.sub_base p.D (by omega))
-  refine WP.mono (absorb_ok v L E₄ hc (by omega) (by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega)]
-      have := L.dw; have := Nat.mod_le (p.D.toNat + 128 * (p.n / 128)) (2 ^ 64); omega)
+    L.d_w.sub_left (Offset.sub_base p.D (by omega_arith))
+  refine WP.mono (absorb_ok v L E₄ hc (by omega_arith) (by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega_arith)]
+      have := L.dw; have := Nat.mod_le (p.D.toNat + 128 * (p.n / 128)) (2 ^ 64); omega_arith)
     dW x27₄ x28₄) fun t₅ P₅ => ?_
   have d₅ : bytesAt t₅.mem p.D p.n = bytesAt t₃.mem p.D p.n := by
     rw [Proof.AesGcm.AArch64.bytesAt_frame P₅.frame (absorbR_buf L.d_w) (Nat.le_of_lt hn), m₄]
@@ -369,11 +369,11 @@ theorem openData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
       rw [m₄, Proof.AesGcm.AArch64.blockAt_frame T.frame (dCry (by decide))]
     have hr₅ : bytesAt t₅.mem (p.D + BitVec.ofNat 64 (128 * (p.n / 128))) (p.n - 128 * (p.n / 128)) =
         bytesAt t₄.mem (p.D + BitVec.ofNat 64 (128 * (p.n / 128))) (p.n - 128 * (p.n / 128)) :=
-      Proof.AesGcm.AArch64.bytesAt_frame P₅.frame (absorbR_buf dW) (by omega)
+      Proof.AesGcm.AArch64.bytesAt_frame P₅.frame (absorbR_buf dW) (by omega_arith)
     have he : elemsAt t₅.mem p.D (8 * (p.n / 128)) = elemsAt t₂.mem p.D (8 * (p.n / 128)) := by
-      refine elemsAt_of_getD (n := p.n) (by omega) fun q hq => ?_
-      rw [d₅, T.data, B.data, GcmSiv.getD_ctrPart _ _ _ _ (by rw [hxl]; omega),
-        GcmSiv.getD_ctrPart _ _ _ _ (by rw [hxl]; omega), ite_eq_left (by omega), ite_eq_left (by omega)]
+      refine elemsAt_of_getD (n := p.n) (by omega_arith) fun q hq => ?_
+      rw [d₅, T.data, B.data, GcmSiv.getD_ctrPart _ _ _ _ (by rw [hxl]; omega_arith),
+        GcmSiv.getD_ctrPart _ _ _ _ (by rw [hxl]; omega_arith), ite_eq_left (by omega_arith), ite_eq_left (by omega_arith)]
     rw [P₅.out, hH₄, hY₄, B.out, hH₁, hY₁, elems_split t₅.mem, Proof.Gcm.ghashFrom_append, he, hr₅]
 
 end VG.Proof.AesGcmSiv.AArch64.Stitch

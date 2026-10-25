@@ -44,7 +44,7 @@ theorem fvS_shape : (∀ i < 5, fvS.reg (xi (hreg i)) = .reg (xi (hreg i)) ∧
   decide +kernel
 
 theorem five_lo (y : Nat) : (y * 2 ^ 2 % 2 ^ 64 + y) % 2 ^ 64 % 2 ^ 32 = 5 * (y % 2 ^ 32) % 2 ^ 32 := by
-  omega
+  omega_arith
 
 theorem fiveY_ok (s : State) :
     WP isa (.block fiveY) s fun s' => vec s s' = s' ∧
@@ -98,7 +98,7 @@ theorem wrAll_frame {p : Addr} {x : XReg → BitVec 128} :
 theorem rd_sep (m : Mem) (p : Addr) {w n : Nat} (v : BitVec w) {d e : Nat} (hd : d < 2 ^ 32)
     (he : e < 2 ^ 32) (hn : n / 8 ≤ 16) (hk : w / 8 ≤ 16) (h : d + n / 8 ≤ e ∨ e + w / 8 ≤ d) :
     (m.writeW (off p e) v).readW (off p d) n = m.readW (off p d) n :=
-  Mem.readW_writeW_sep (sep_off p hd he hn hk h) (by omega)
+  Mem.readW_writeW_sep (sep_off p hd he hn hk h) (by omega_arith)
 
 theorem rd32_self (m : Mem) (p : Addr) (d : Nat) (v : BitVec 128) :
     (m.writeW (off p d) v).readW (off p d) 32 = v.extractLsb' 0 32 := by
@@ -120,7 +120,7 @@ theorem yMem_lo (m : Mem) (p : Addr) (x : XReg → BitVec 128) (a b : BitVec 64)
   rw [lo32_rd]
   simp only [stL, List.mem_cons, List.not_mem_nil, or_false] at he
   rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) only [yMem, stL, wrAll, rd_sep, rd32_self]
+    simp (disch := omega_arith) only [yMem, stL, wrAll, rd_sep, rd32_self]
 
 theorem yMem_mask (m : Mem) (p : Addr) (x : XReg → BitVec 128) (a b : BitVec 64) :
     (yMem m p x a b).readW (off p 104) 64 = a := by
@@ -132,7 +132,7 @@ theorem yMem_pad (m : Mem) (p : Addr) (x : XReg → BitVec 128) (a b : BitVec 64
 
 theorem yMem_mx (m : Mem) (p : Addr) (x : XReg → BitVec 128) (a b : BitVec 64) :
     (yMem m p x a b).readW (off p 120) 32 = m.readW (off p 120) 32 := by
-  simp (disch := omega) only [yMem, stL, wrAll, rd_sep]
+  simp (disch := omega_arith) only [yMem, stL, wrAll, rd_sep]
 
 theorem yMem_frame (m : Mem) (p : Addr) (x : XReg → BitVec 128) (a b : BitVec 64) :
     Frame [wR p] m (yMem m p x a b) :=
@@ -143,7 +143,7 @@ theorem yMem_frame (m : Mem) (p : Addr) (x : XReg → BitVec 128) (a b : BitVec 
 theorem xmm_lo32 (s : State) (r : XReg) : ((s.xmm r).extractLsb' 0 32).toNat = (qz s r 0).toNat % 2 ^ 32 := by
   have e : qz s r 0 = (s.xmm r).extractLsb' 0 64 := rfl
   rw [e, BitVec.extractLsb'_toNat, BitVec.extractLsb'_toNat, Nat.shiftRight_zero]
-  omega
+  omega_arith
 
 /-- What `storeY` leaves. -/
 structure StoreYPost (s s' : State) : Prop where
@@ -195,7 +195,7 @@ theorem storeY_ok (s : State) (hw : ∀ d, 56 ≤ d → d + 16 ≤ 128 → InReg
     · rw [L (72, yreg 4) (by decide), xmm_lo32, (hy₁ 4 (by decide) 0 (by decide)).2]; rfl
   · simp only [ms]
     rw [M]
-    rcases (by omega : i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl
+    rcases (by omega_arith : i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl
     · rw [L (76, dreg 0) (by decide), xmm_lo32]; exact f₁ 0 (by decide)
     · rw [L (80, dreg 1) (by decide), xmm_lo32]; exact f₁ 1 (by decide)
     · rw [L (84, dreg 2) (by decide), xmm_lo32]; exact f₁ 2 (by decide)

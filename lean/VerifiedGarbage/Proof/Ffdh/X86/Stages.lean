@@ -34,7 +34,7 @@ theorem slot_fit1 (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) :
     lo len (.slot .wide j) + cb len (one .wide) ≤ bytes := by
   have := h.slot_fit .wide hj
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  rw [cb1]; omega
+  rw [cb1]; omega_arith
 
 /-- Two distinct wide slots lie apart. -/
 theorem apart1 (len : Nat) {a b : Nat} (hab : a ≠ b) :
@@ -42,7 +42,7 @@ theorem apart1 (len : Nat) {a b : Nat} (hab : a ≠ b) :
   rw [cb1]
   have := slot_apart len .wide hab
   simp only [Apart]
-  omega
+  omega_arith
 
 /-- The value of the bytes of argument `p`, `L` of them. -/
 abbrev argNum (m : Mem) (args : Nat → BitVec 32) (p L : Nat) : Nat :=
@@ -108,19 +108,19 @@ theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 
   have lo' := h.lower'
   unfold Impl.Ffdh.X86.pSetup
   refine WP.seq (WP.mono (load_ok h (one_ok .wide) f9 (p := 2) (l := 3) (L := len) (by decide) (by decide) h3
-    (by omega) (by omega) fit rd apart) fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
+    (by omega_arith) (by omega_arith) fit rd apart) fun u₁ ⟨V₁, O₁, K₁⟩ => ?_)
   rw [c1] at O₁
   rw [w1] at V₁
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
   refine WP.seq (WP.mono (setSmall_ok h₁ (one_ok .wide) f14 (v := 1) (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   rw [c1] at O₂
   rw [w1] at V₂
-  have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega))
+  have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
   refine WP.mono (chainSub_ok h₂ (one_ok .wide) f15 f9 f14 (apart1 len (by decide)) (apart1 len (by decide)))
     fun u ⟨O₃, _, ⟨c, _, V₃⟩, K₃⟩ => ?_
   rw [c1] at O₃
   rw [w1] at V₃
-  have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega))
+  have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega_arith))
   have k₁ := kept_slot h (a := 9) O₁
   have k₂ := kept_slot h₁ (a := 14) O₂
   have k₃ := kept_slot h₂ (a := 15) O₃
@@ -130,7 +130,7 @@ theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 
   have sp₂ : u₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
   refine ⟨h₃, ?_, ((k₁.mono).trans k₂.mono).trans k₃.mono, k₃.slot_eq.trans e9, k₃.slot_eq.trans e14, ?_,
     (K₁.mono (by decide)).trans ((K₂.mono (by decide)).trans (K₃.mono (by decide)))⟩
-  · have bst : bc len .wide ≤ st len .wide := by have est : st len .wide = 2 * bc len .wide + 32 := rfl; omega
+  · have bst : bc len .wide ≤ st len .wide := by have est : st len .wide = 2 * bc len .wide + 32 := rfl; omega_arith
     have F₁ := fR_of_outside h (sp := s.gpr .esp) O₁ (slot_inF (by decide) bst)
     have F₂ := fR_of_outside h (sp := s.gpr .esp) O₂ (slot_inF (by decide) bst)
     have F₃ := fR_of_outside h (sp := s.gpr .esp) O₃ (slot_inF (by decide) bst)
@@ -145,7 +145,7 @@ theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 
     have := Nat.two_pow_pos (32 * cwc len .wide)
     unfold pm1
     split <;> (cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero]
-      at V₃ <;> omega)
+      at V₃ <;> omega_arith)
 
 theorem pm1_of {len p : Nat} (h : 0 < p) : pm1 len p = p - 1 := by simp [pm1, h]
 
@@ -161,15 +161,15 @@ theorem copyIn_ok (h : In Ex base bytes len args s) {j d : Nat} (hj9 : 9 ≤ j) 
   have f := h.slot_fit .wide (j := 19) (by decide)
   have := hi_fit (len := len) hj9 hj
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  have b := Nat.mul_le_mul_right (st len .wide) (show d + 1 ≤ 9 by omega)
+  have b := Nat.mul_le_mul_right (st len .wide) (show d + 1 ≤ 9 by omega_arith)
   rw [Nat.succ_mul] at b
   have ej := lo_wide len j
   have ed := lo_wide len d
   have e9 := lo_wide len 9
   have e20 := lo_wide len 20
   have e19 := lo_wide len 19
-  refine WP.mono (copy_ok h (x := .slot .wide j) (d := .slot .wide d) (one_ok .wide) (by rw [cb1]; omega)
-    (by rw [cb1]; omega) (by rw [cb1]; exact .inl (by omega))) fun u ⟨O, V, K⟩ => ⟨?_, ?_, K⟩
+  refine WP.mono (copy_ok h (x := .slot .wide j) (d := .slot .wide d) (one_ok .wide) (by rw [cb1]; omega_arith)
+    (by rw [cb1]; omega_arith) (by rw [cb1]; exact .inl (by omega_arith))) fun u ⟨O, V, K⟩ => ⟨?_, ?_, K⟩
   · rw [cb1] at O; exact O
   · rw [cw1] at V; exact V
 
@@ -186,7 +186,7 @@ theorem ctxP_ok (h : In Ex base bytes len args s) {P : Nat} (hP : safeM (sv s.me
   unfold Impl.Ffdh.X86.ctxP
   refine WP.seq (WP.mono (copyIn_ok h (j := 9) (d := 0) (by decide) (by decide) (by decide))
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega))
+  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
   refine WP.mono (prepCtx_ok h₁ .wide) fun u ⟨C, one, R2, F, K⟩ => ?_
   rw [V₁, hP] at C R2
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
@@ -215,10 +215,10 @@ theorem pwR_sv3 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
   have e7 := lo_wide len 7
   have e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
-  refine frameR_val32 F R nw (by omega) ?_ (pwR_fit h .wide)
+  refine frameR_val32 F R nw (by omega_arith) ?_ (pwR_fit h .wide)
   intro p hp
   simp only [pwR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [winOff] <;> omega
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [winOff] <;> omega_arith
 
 /-- Slot 6 the wide slot `b` to the power of the wide slot `e`, modulo p (in the wide slot 9). -/
 theorem powP_ok (h : In Ex base bytes len args s) {P b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 19) (he9 : 9 ≤ e)
@@ -242,7 +242,7 @@ theorem powP_ok (h : In Ex base bytes len args s) {P b e : Nat} (hb9 : 9 ≤ b) 
   refine WP.seq (WP.mono (ctxP_ok h hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
   have h₁ := C₁.inp
   refine WP.seq (WP.mono (copyIn_ok h₁ (j := b) (d := 5) hb9 hb (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
-  have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega))
+  have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
   refine WP.seq (WP.mono (copyIn_ok h₂ (j := e) (d := 8) he9 he (by decide)) fun u₃ ⟨O₃, V₃, K₃⟩ => ?_)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
   have sp₂ : u₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
@@ -255,15 +255,15 @@ theorem powP_ok (h : In Ex base bytes len args s) {P b e : Nat} (hb9 : 9 ≤ b) 
     refine C₁.keepF (regs := [.eax, .ebx, .ecx, .edx, .ebp]) (K₂.trans K₃) (by decide) (by decide)
       (ws := [(lo len (.slot .wide 5), bc len .wide), (lo len (.slot .wide 8), bc len .wide)]) ?_ ?_ ?_
     · rw [sp₁]
-      exact (frameR_of_outside O₂ (by omega) (by simp)).trans
-        (by rw [← sp₁]; exact frameR_of_outside O₃ (by omega) (by simp))
+      exact (frameR_of_outside O₂ (by omega_arith) (by simp)).trans
+        (by rw [← sp₁]; exact frameR_of_outside O₃ (by omega_arith) (by simp))
     · intro p hp; simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only <;> omega
+      rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
     · intro p hp; simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only <;> omega
+      rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
   have kb : sv u₁.mem base len .wide b = sv s.mem base len .wide b := k₁.slots b hb9 hb (by simp)
   have ke : sv u₂.mem base len .wide e = sv s.mem base len .wide e :=
-    (slotKeep h₁ he (by omega) O₂).trans (k₁.slots e he9 he (by simp))
+    (slotKeep h₁ he (by omega_arith) O₂).trans (k₁.slots e he9 he (by simp))
   have B₃ : sv u₃.mem base len .wide 5 = sv s.mem base len .wide b := by
     rw [slotKeep h₂ (by decide) (by decide) O₃, V₂, kb]
   have E₃ : sv u₃.mem base len .wide 8 = sv s.mem base len .wide e := by rw [V₃, ke]
@@ -331,10 +331,10 @@ theorem storeMask_ok (h : In Ex base bytes len args s) {d : Nat} (hd : d + 4 ≤
   have nb : numBase = 3336 := rfl
   have nd := h.need
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
-  refine wp_storeS (h.scratch.ea (d := d) (by omega)) (h.scratch.write (d := d) (n := 4) (by omega)) fun u M =>
+  refine wp_storeS (h.scratch.ea (d := d) (by omega_arith)) (h.scratch.write (d := d) (n := 4) (by omega_arith)) fun u M =>
     WP.block_nil ?_
-  have O : Outside base d 4 s.mem u.mem := by rw [M.mem]; exact writeW32_outside _ _ _ (by omega)
-  refine ⟨h.keep (M.keeps []) (by decide) (by decide) (O.mono (Nat.zero_le _) (by omega)), O, ?_, M.zf, M.keeps []⟩
+  have O : Outside base d 4 s.mem u.mem := by rw [M.mem]; exact writeW32_outside _ _ _ (by omega_arith)
+  refine ⟨h.keep (M.keeps []) (by decide) (by decide) (O.mono (Nat.zero_le _) (by omega_arith)), O, ?_, M.zf, M.keeps []⟩
   show (u.mem.readW (off base d) 32).toNat = _
   rw [M.mem, Mem.readW_writeW_self32, hc]
 
@@ -347,7 +347,7 @@ theorem andMask_ok (h : In Ex base bytes len args s) {d : Nat} (hd : d + 4 ≤ n
   have nb : numBase = 3336 := rfl
   have nd := h.need
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
-  refine wp_logicS (.inl rfl) (readSrc_sc h.scratch (d := d) (by omega)) fun u U => WP.block_nil ⟨?_, U.mem, U.keeps⟩
+  refine wp_logicS (.inl rfl) (readSrc_sc h.scratch (d := d) (by omega_arith)) fun u U => WP.block_nil ⟨?_, U.mem, U.keeps⟩
   rw [U.gpr]; simp only [↓reduceIte]
   rw [hc, show s.mem.readW (off base d) 32 = cmask c' from BitVec.eq_of_toNat_eq hw, cmask_and]
 
@@ -359,7 +359,7 @@ theorem rangeMask_ok (h : In Ex base bytes len args s) {a : Nat} (ha : a ≤ 19)
         decide (sv s.mem base len .wide 14 < sv s.mem base len .wide a)) ∧
       Outside base maskOff 4 s.mem u.mem ∧ Keeps [.eax, .ecx, .edx, .ebp, .esi] s u := by
   have bl := h.bytes_lt
-  have fa := slot_fit1 h (j := a) (by omega)
+  have fa := slot_fit1 h (j := a) (by omega_arith)
   have f14 := slot_fit1 h (j := 14) (by decide)
   have f15 := slot_fit1 h (j := 15) (by decide)
   have ea := lo_wide len a
@@ -372,20 +372,20 @@ theorem rangeMask_ok (h : In Ex base bytes len args s) {a : Nat} (ha : a ≤ 19)
   refine WP.seq (WP.mono (lessThan_ok h (a := .slot .wide 14) (b := .slot .wide a) (one_ok .wide) f14 fa)
     fun u₁ ⟨m₁, e₁, K₁⟩ => ?_)
   have h₁ := h.regs K₁ m₁
-  refine WP.seq (WP.mono (storeMask_ok h₁ (d := maskOff) (by omega) e₁) fun u₂ ⟨h₂, O₂, W₂, _, K₂⟩ => ?_)
+  refine WP.seq (WP.mono (storeMask_ok h₁ (d := maskOff) (by omega_arith) e₁) fun u₂ ⟨h₂, O₂, W₂, _, K₂⟩ => ?_)
   refine WP.seq (WP.mono (lessThan_ok h₂ (a := .slot .wide a) (b := .slot .wide 15) (one_ok .wide) fa f15)
     fun u₃ ⟨m₃, e₃, K₃⟩ => ?_)
   have h₃ := h₂.regs K₃ m₃
   have W₃ := W₂
   rw [← m₃] at W₃
-  refine WP.mono (andMask_ok h₃ (d := maskOff) (by omega) e₃ W₃) fun u ⟨E, M, K⟩ => ?_
+  refine WP.mono (andMask_ok h₃ (d := maskOff) (by omega_arith) e₃ W₃) fun u ⟨E, M, K⟩ => ?_
   have ce := cb_eq (len := len) (one_ok .wide)
   have v : ∀ j, j ≤ 19 → val32 u₂.mem base (lo len (.slot .wide j)) (cw len (one .wide)) =
       sv s.mem base len .wide j := by
     intro j hj
     have := lo_wide len j
-    have := slot_fit1 h (j := j) (by omega)
-    rw [O₂.val32 (.inr (by omega)) (by omega), m₁, w1]
+    have := slot_fit1 h (j := j) (by omega_arith)
+    rw [O₂.val32 (.inr (by omega_arith)) (by omega_arith), m₁, w1]
   refine ⟨h₃.regs K M, ?_, by rw [M, m₃, ← m₁]; exact O₂, ?_⟩
   · rw [E, v a ha, v 15 (by decide), w1]
   · exact ((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans ((K₃.mono (by decide)).trans (K.mono (by decide)))
@@ -423,7 +423,7 @@ theorem zeroW_ok (h : In Ex base bytes len args s) {a : Nat} (ha : a ≤ 27) :
 /-- A number written into a wide slot (to 27), within `fR`. -/
 theorem slotF (h : In Ex base bytes len args s) {sp : BitVec 32} {a : Nat} (ha : a ≤ 27) {m m' : Mem}
     (O : Outside base (lo len (.slot .wide a)) (bc len .wide) m m') : Frame (frameR base sp (fR len)) m m' :=
-  fR_of_outside h O (slot_inF ha (by have est : st len .wide = 2 * bc len .wide + 32 := rfl; omega))
+  fR_of_outside h O (slot_inF ha (by have est : st len .wide = 2 * bc len .wide + 32 := rfl; omega_arith))
 
 /-- A header word written, within `fR`. -/
 theorem wordF (h : In Ex base bytes len args s) {sp : BitVec 32} {d : Nat} (hd : d + 4 ≤ 32) {m m' : Mem}
@@ -436,13 +436,13 @@ theorem kept_word (h : In Ex base bytes len args s) {d : Nat} (hd : d + 4 ≤ nu
   have bl := h.bytes_lt
   have nb : numBase = 3336 := rfl
   refine ⟨fun j hj9 hj _ => ?_, fun e he he' e4 hn => ?_⟩
-  · have := slot_fit1 h (j := j) (by omega)
+  · have := slot_fit1 h (j := j) (by omega_arith)
     have := lo_wide len j
     have ce := cb_eq (len := len) (one_ok .wide)
     rw [cw1] at ce
     rw [cb1] at *
-    exact O.val32 (.inr (by omega)) (by omega)
-  · exact O.w32 (by simp only [List.mem_singleton] at hn; omega) (by omega)
+    exact O.val32 (.inr (by omega_arith)) (by omega_arith)
+  · exact O.w32 (by simp only [List.mem_singleton] at hn; omega_arith) (by omega_arith)
 
 /-- What a stage leaves: the status `r`, the changes within `fR`, and the registers. -/
 def Res (base : Addr) (len : Nat) (s : State) (r : Nat) (t : State) : Prop :=
@@ -498,7 +498,7 @@ theorem Step.slot (h : In Ex base bytes len args s) {u : State} {a : Nat} (ha : 
   have := slot_fit1 h ha
   rw [cb1] at this
   exact ⟨h.keep K (by intro hm; have := hrs _ hm; simp at this) (by intro hm; have := hrs _ hm; simp at this)
-    (O.mono (Nat.zero_le _) (by omega)), slotF h ha O, K.mono hrs⟩
+    (O.mono (Nat.zero_le _) (by omega_arith)), slotF h ha O, K.mono hrs⟩
 
 /-- A stage changing a header word below the saved registers. -/
 theorem Step.word (h : In Ex base bytes len args s) {u : State} {d : Nat} (hd : d + 4 ≤ 32)
@@ -510,7 +510,7 @@ theorem Step.word (h : In Ex base bytes len args s) {u : State} {d : Nat} (hd : 
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
   have nb : numBase = 3336 := rfl
   exact ⟨h.keep K (by intro hm; have := hrs _ hm; simp at this) (by intro hm; have := hrs _ hm; simp at this)
-    (O.mono (Nat.zero_le _) (by omega)), wordF h hd O, K.mono hrs⟩
+    (O.mono (Nat.zero_le _) (by omega_arith)), wordF h hd O, K.mono hrs⟩
 
 /-- A stage that changes no memory. -/
 theorem Step.regs (h : In Ex base bytes len args s) {u : State} (m : u.mem = s.mem) {rs : List Reg}

@@ -146,9 +146,9 @@ theorem cryptBlockL_ok (v : GcmImpl) {p : Prm} (L : Lay p) {j : Nat} (hj : 16 * 
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, h27₂, add_ofNat_assoc]
     congr 2
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, h28₂]
-    rw [ofNat_sub (by omega) (by omega)]; congr 1
+    rw [ofNat_sub (by omega_arith) (by omega_arith)]; congr 1
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, h28₂]
-    rw [ofNat_sub (by omega) (by omega), lsr_ofNat _ _ (by omega)]; congr 2
+    rw [ofNat_sub (by omega_arith) (by omega_arith), lsr_ofNat _ _ (by omega_arith)]; congr 2
 
 /-- The whole blocks of counter mode, for their registers. -/
 theorem cryptMidL_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (B : BL p 0 t)
@@ -156,18 +156,18 @@ theorem cryptMidL_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (B : BL p 0
     WP isa (.ite (.zero .x .x9) (.block []) (.loop (cryptBlock v.callees) (.nonzero .x .x9))) t
       (BL p (p.n / 16)) := by
   have hn := L.n_lt
-  refine WP.ite (decide (p.n / 16 = 0)) (eval_zero h9 (by omega)) (fun ht => ?_) (fun hf => ?_)
+  refine WP.ite (decide (p.n / 16 = 0)) (eval_zero h9 (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
   · have h0 : p.n / 16 = 0 := by simpa using ht
     rw [h0]; exact WP.block_nil B
   · have h0 : p.n / 16 ≠ 0 := by simpa using hf
     refine WP.loop (M := isa) (fun k t' => ∃ j, k = p.n / 16 - j ∧ j < p.n / 16 ∧ BL p j t') ?_
-      (p.n / 16 - 0) t ⟨0, rfl, by omega, B⟩
+      (p.n / 16 - 0) t ⟨0, rfl, by omega_arith, B⟩
     rintro k t' ⟨j, rfl, hj, B'⟩
-    refine WP.mono (cryptBlockL_ok v L (j := j) (by omega) B') fun t'' ⟨B'', x9⟩ => ?_
-    have ev := eval_nonzero x9 (by omega)
+    refine WP.mono (cryptBlockL_ok v L (j := j) (by omega_arith) B') fun t'' ⟨B'', x9⟩ => ?_
+    have ev := eval_nonzero x9 (by omega_arith)
     by_cases he : j + 1 = p.n / 16
-    · left; exact ⟨ev.trans (by simp; omega), he ▸ B''⟩
-    · right; exact ⟨ev.trans (by simp; omega), p.n / 16 - (j + 1), by omega, j + 1, rfl, by omega, B''⟩
+    · left; exact ⟨ev.trans (by simp; omega_arith), he ▸ B''⟩
+    · right; exact ⟨ev.trans (by simp; omega_arith), p.n / 16 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, B''⟩
 
 theorem cryptHead_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs [])) (.block cryptHead) h).isSome = true :=
   ⟨_, by taint_decide⟩
@@ -191,24 +191,24 @@ theorem crypt_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E�
   refine rel_seq (rel_env E₁ E₂ [] (by simp) cryptHead_check) (wh E₁) (wh E₂)
     fun u₁ u₂ ⟨B₁, x9₁⟩ ⟨B₂, x9₂⟩ => ?_
   -- The whole blocks.
-  refine rel_seq (rel_ite (eval_zero x9₁ (by omega)) (eval_zero x9₂ (by omega))
+  refine rel_seq (rel_ite (eval_zero x9₁ (by omega_arith)) (eval_zero x9₂ (by omega_arith))
       (fun _ => RelCT.block_nil fun _ _ _ => trivial) (fun hf => ?_))
     (cryptMidL_ok v L B₁ x9₁) (cryptMidL_ok v L B₂ x9₂) fun w₁ w₂ C₁ C₂ => ?_
   · have h0 : p.n / 16 ≠ 0 := by simpa using hf
     refine rel_loop (fun k t₁ t₂ => ∃ j, k = p.n / 16 - j ∧ j < p.n / 16 ∧ BL p j t₁ ∧ BL p j t₂)
-      (fun k t₁ t₂ ⟨j, hk, hj, J₁, J₂⟩ => ?_) (p.n / 16 - 0) ⟨0, rfl, by omega, B₁, B₂⟩
-    refine rel_wpQ (cryptBlock_rel v L J₁.env J₂.env (j := j) (by omega) J₁.x27 J₂.x27 J₁.x28 J₂.x28)
-      (cryptBlockL_ok v L (by omega) J₁) (cryptBlockL_ok v L (by omega) J₂) fun a b ⟨K₁, x9₁⟩ ⟨K₂, x9₂⟩ => ?_
-    have ev₁ := eval_nonzero x9₁ (by omega)
-    have ev₂ := eval_nonzero x9₂ (by omega)
+      (fun k t₁ t₂ ⟨j, hk, hj, J₁, J₂⟩ => ?_) (p.n / 16 - 0) ⟨0, rfl, by omega_arith, B₁, B₂⟩
+    refine rel_wpQ (cryptBlock_rel v L J₁.env J₂.env (j := j) (by omega_arith) J₁.x27 J₂.x27 J₁.x28 J₂.x28)
+      (cryptBlockL_ok v L (by omega_arith) J₁) (cryptBlockL_ok v L (by omega_arith) J₂) fun a b ⟨K₁, x9₁⟩ ⟨K₂, x9₂⟩ => ?_
+    have ev₁ := eval_nonzero x9₁ (by omega_arith)
+    have ev₂ := eval_nonzero x9₂ (by omega_arith)
     refine ⟨by rw [ev₁, ev₂], fun hc => ?_⟩
     rw [ev₁] at hc
-    have he : j + 1 ≠ p.n / 16 := by simp at hc; omega
-    exact ⟨p.n / 16 - (j + 1), by omega, j + 1, rfl, by omega, K₁, K₂⟩
+    have he : j + 1 ≠ p.n / 16 := by simp at hc; omega_arith
+    exact ⟨p.n / 16 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, K₁, K₂⟩
   -- The last bytes.
-  have x28₁ : w₁.gpr .x28 = BitVec.ofNat 64 (p.n % 16) := by rw [C₁.x28]; congr 1; omega
-  have x28₂ : w₂.gpr .x28 = BitVec.ofNat 64 (p.n % 16) := by rw [C₂.x28]; congr 1; omega
-  refine rel_ite (eval_zero x28₁ (by omega)) (eval_zero x28₂ (by omega))
+  have x28₁ : w₁.gpr .x28 = BitVec.ofNat 64 (p.n % 16) := by rw [C₁.x28]; congr 1; omega_arith
+  have x28₂ : w₂.gpr .x28 = BitVec.ofNat 64 (p.n % 16) := by rw [C₂.x28]; congr 1; omega_arith
+  refine rel_ite (eval_zero x28₁ (by omega_arith)) (eval_zero x28₂ (by omega_arith))
     (fun _ => RelCT.block_nil fun _ _ _ => trivial) (fun _ => ?_)
   refine rel_seq (tag_rel v L C₁.env C₂.env (o := 224) (by decide)) (tag_ok v L C₁.env (o := 224) (by decide))
     (tag_ok v L C₂.env (o := 224) (by decide)) fun z₁ z₂ T₁ T₂ => ?_

@@ -131,7 +131,7 @@ theorem setupRanges_core (n : Nat) :
   simp only [setupRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact ⟨(0, 8), List.mem_cons_self .., by decide, by decide⟩
-  all_goals exact in_core (by decide) (by simp only [contextBytes, slot_lin] at b8 ⊢; omega)
+  all_goals exact in_core (by decide) (by simp only [contextBytes, slot_lin] at b8 ⊢; omega_arith)
 
 theorem contextSeed_check (n bits : Nat) :
     VG.Taint.check taint (workspaceTaint false) (contextSeed n bits) contextSetupHint = some counterEndTaint :=
@@ -150,13 +150,13 @@ theorem wk_seed (hn : 2 ≤ n) (hn48 : n ≤ 48) :
       obtain rfl := List.mem_singleton.mp hr
       exact BitVec.eq_of_toNat_eq (h₁.edi_toNat.trans h₂.edi_toNat.symm)
   · intro u ⟨size, m, hs, R, e, hz, hv, hm1, hodd⟩
-    refine WP.mono (contextSeed_ok (bits := 65 * n) hs (by omega) (by omega) (by omega) hz hv hm1 hodd)
+    refine WP.mono (contextSeed_ok (bits := 65 * n) hs (by omega_arith) (by omega_arith) (by omega_arith) hz hv hm1 hodd)
       fun v ⟨Cv, _, Xv, Ov, Kv⟩ => ?_
     rw [← e] at R
     refine ⟨size, m, u, ⟨Cv, R, Kv, (OutsS.of_outs Ov).core (setupRanges_core n)⟩, e, ?_, fun b hb => ?_⟩
     · intro c h; cases h
     · rw [List.mem_singleton.mp hb, Xv]
-      exact Nat.mod_lt _ (by omega)
+      exact Nat.mod_lt _ (by omega_arith)
 
 theorem wk_encode (hn : 2 ≤ n) :
     RelCT isa (Both (Wk n base sp none [4])) (encode n) (Both (Wk n base sp none [5])) := by
@@ -264,7 +264,7 @@ theorem wk_loop {e : Nat} (hn : 2 ≤ n) (he : 2 ≤ e) (hen : e ≤ 2 * n) (j :
       exact ⟨W₁, W₂⟩
     · rw [e₁] at h
       have : j ≠ 1 := by simpa using h
-      exact ⟨j - 1, by omega, by omega, by omega, W₁, W₂⟩
+      exact ⟨j - 1, by omega_arith, by omega_arith, by omega_arith, W₁, W₂⟩
   · exact VG.RelCT.of_false fun _ _ h => hj ⟨h.1, h.2.1⟩
 
 theorem wk_finish {cnt : Option Nat} (hn : 2 ≤ n) :
@@ -284,7 +284,7 @@ theorem core_relCT {e : Nat} (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen 
   refine VG.RelCT.seq (VG.RelCT.seq (wk_seed hn hn48) (wk_squarings hn 6)) ?_
   refine VG.RelCT.seq (wk_encode hn) ?_
   refine VG.RelCT.seq (wk_start e) ?_
-  refine VG.RelCT.seq ((wk_loop hn he hen (32 * e)).mono (fun _ _ h => ⟨by omega, by omega, h⟩) fun _ _ h => h) ?_
+  refine VG.RelCT.seq ((wk_loop hn he hen (32 * e)).mono (fun _ _ h => ⟨by omega_arith, by omega_arith, h⟩) fun _ _ h => h) ?_
   refine (wk_finish (base := base) (sp := sp) (cnt := some 0) hn).mono (fun _ _ h => ⟨?_, ?_⟩) fun _ _ h => h
   · obtain ⟨size, m, s₀, S, e', c, _⟩ := h.1
     exact ⟨size, m, s₀, S, e', c, fun _ h => nomatch h⟩

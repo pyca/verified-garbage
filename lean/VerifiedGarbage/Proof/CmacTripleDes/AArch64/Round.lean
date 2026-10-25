@@ -67,7 +67,7 @@ theorem vbyte_setLane0 (x : BitVec 128) (y : BitVec 64) {e : Nat} (he : e < 8) :
   simp only [vbyte, setLane, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and,
     BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes, Nat.mul_zero, Nat.sub_zero,
-    show 8 * e + i < 128 by omega, show 8 * e + i < 64 by omega, show ¬ 8 * e + i < 0 by omega]
+    show 8 * e + i < 128 by omega_arith, show 8 * e + i < 64 by omega_arith, show ¬ 8 * e + i < 0 by omega_arith]
   simp
 
 theorem sIn_ok (s : State) {b : Reg} (hb5 : b ≠ .x5) (hb10 : b ≠ .x10) (down : Bool)
@@ -152,7 +152,7 @@ theorem exec_umovx0 (s : State) (d : Reg) (n : VReg) :
 theorem extract_vbyte (v : BitVec 128) {l : Nat} (hl : l < 8) :
     ((v.extractLsb' 0 64).extractLsb' (8 * l) 8) = vbyte v l := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp [vbyte, hi, show 8 * l + i < 64 by omega]
+  simp [vbyte, hi, show 8 * l + i < 64 by omega_arith]
 
 /-- The S-boxes' outputs `y`, in `x5`: byte `l` is the table's byte at the
 index's byte `l`. -/
@@ -171,7 +171,7 @@ theorem sOut_ok {s : State} (I : Nat → BitVec 8)
   refine ⟨t, ?_, fun l hl => ?_, fun r hr => ?_, fun w a b c e => ?_, ?_, ?_, ?_, ?_⟩
   · rw [sOut, runBlock_cat_some rund (by rw [runBlock_cons, exec_umovx0, runStep_some, runBlock_nil])]
   · simp only [t, gpr_write_self, BitVec.setWidth_eq]
-    rw [extract_vbyte _ hl, d0 l (by omega)]
+    rw [extract_vbyte _ hl, d0 l (by omega_arith)]
   · simp only [t, gpr_write_of_ne _ _ _ hr, dv.gpr]
   · simp only [t, v_write]; exact dv.2 w (by simp [a, b, c, e])
   · simp only [t, mem_write, dv.mem]
@@ -286,10 +286,10 @@ theorem pOut_ok (s : State) {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a = 
       · rename_i q hq
         have hq64 : q < 64 := ySrc_lt hp hq
         simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, W,
-          Nat.div_eq_of_lt hq64, Nat.mod_eq_of_lt hq64, show (64 + p) / 64 = 1 by omega,
-          show (64 + p) % 64 = p by omega, ite_true, show (1 : Nat) ≠ 0 by decide, ite_false]
+          Nat.div_eq_of_lt hq64, Nat.mod_eq_of_lt hq64, show (64 + p) / 64 = 1 by omega_arith,
+          show (64 + p) % 64 = p by omega_arith, ite_true, show (1 : Nat) ≠ 0 by decide, ite_false]
       · simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, W, Bool.false_xor,
-          show (64 + p) / 64 = 1 by omega, show (64 + p) % 64 = p by omega,
+          show (64 + p) / 64 = 1 by omega_arith, show (64 + p) % 64 = p by omega_arith,
           show (1 : Nat) ≠ 0 by decide, ite_false]
     · exact runBlock_v hv hs'
     · exact frame_oCfg hfr
@@ -358,7 +358,7 @@ theorem round_ok {s : State} {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a =
     rw [i₀ _ hL, hK, hr, index_byte K r hL, boxOf_laneOf i hi, BitVec.toNat_ofNat]
     have := (chunk r (K.setWidth 48) i).isLt
     have := tableOf_lt i hi
-    omega
+    omega_arith
   refine ⟨s₃, ?_, ?_, ?_, fun g hg => ?_, hc₃, hm₃, by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁],
     by rw [wr₃, wr₂, wr₁], by rw [sp₃, sp₂, sp₁]⟩
   · rw [round, runBlock_cat_some (runBlock_cat_some h₁ h₂) h₃]
@@ -373,7 +373,7 @@ theorem round_ok {s : State} {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a =
         getLsbD_roundFunction r _ hj]
       dsimp only
       have hu := pSrc_lt _ hj
-      have hi : 7 - pSrc ((xSrc p + 32 - rot) % 32) / 4 < 8 := by omega
+      have hi : 7 - pSrc ((xSrc p + 32 - rot) % 32) / 4 < 8 := by omega_arith
       have hq : pSrc ((xSrc p + 32 - rot) % 32) % 4 < 4 := Nat.mod_lt _ (by decide)
       rw [y_bit I sTable hy hi (posOf_lt _ hi _ hq), hI _ hi,
         sTable_bit _ hi _ (chunk r (K.setWidth 48) _).isLt _ hq, BitVec.ofNat_toNat,

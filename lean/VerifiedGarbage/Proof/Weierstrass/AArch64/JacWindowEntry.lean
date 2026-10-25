@@ -65,7 +65,7 @@ theorem jacSignedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k e j : N
       InvJ C (tmv C K.M.n base t K.E.x) (tmv C K.M.n base t K.E.y)
         (tmv C K.M.n base t K.E.z) (Window5.winPt C P k j) := by
   let a := magH 16 (Window5.nib k j)
-  have ha : 1≤a := by dsimp [a]; omega
+  have ha : 1≤a := by dsimp [a]; omega_arith
   have h16 : a≤16 := magH_le (by
     have hl : Window5.nib k j<32 := Nat.mod_lt _ (by decide)
     exact hl)
@@ -89,7 +89,7 @@ theorem jacSignedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k e j : N
     have hz := hL.tbl K.E.z (by jmem)
     rw [hL.exy] at hy
     rw [hL.exz] at hz
-    omega
+    omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (jacPublicPoint_ok hL.lay hAl hL.n hL.exy hL.exz h.field h2 ha hTbl
     hD hT hap (h.stable.table a ha h16)) fun s₁ ⟨k₁,i₁,j₁⟩ => ?_
@@ -113,7 +113,7 @@ theorem jacSignedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k e j : N
   have hbt' : K.bits+260 ≤ K.M.tmp ∨ K.M.tmp+8*K.M.n ≤ K.bits := by rw [hL.n]; exact hbt
   have h19' : s₁.gpr .x19=BitVec.ofNat 64 j := by rw [k₁.gpr _ (x19_not_clob _),h19]
   refine WP.mono (negFieldWindow_ok hL.lay hAl hm i₁' (by jmem) (by jmem) (by jmem)
-    hny hzero (by decide) (by decide) (by omega) hL.bits (by omega) h19' hs₁.bits hbn' hbt')
+    hny hzero (by decide) (by decide) (by omega_arith) hL.bits (by omega_arith) h19' hs₁.bits hbn' hbt')
     fun t ⟨k₂,i₂⟩ => ?_
   have ks₂ : ProgKeep K.M base (winOther K) s₁ t := k₂.mono (by
     intro x hx; simp only [List.mem_cons,List.not_mem_nil,or_false] at hx

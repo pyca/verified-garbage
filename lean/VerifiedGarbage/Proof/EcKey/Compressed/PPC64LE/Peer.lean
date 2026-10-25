@@ -102,7 +102,7 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
   have hp3 := hc.p_ge
   have hl8 := hc.len8
   have hlhi := hc.len_hi
-  have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   have hR2 := sl_le c h7 (i := R2P) (by decide)
   have hB := sl_le c h7 (i := BP) (by decide)
   have hD := sl_le c h7 (i := D) (by decide)
@@ -114,8 +114,8 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
   refine wp_append (WP.mono (setupConsts_ok hc (Impl.Ecdh.PPC64LE.Cfg.consts c) hw (fun ix hix => by
       simp only [Impl.Ecdh.PPC64LE.Cfg.consts, List.mem_cons, List.not_mem_nil, or_false] at hix
       rcases hix with rfl | rfl
-      · exact ⟨show R2P < 45 by decide, Nat.lt_trans (Nat.mod_lt _ (by omega)) hpl⟩
-      · exact ⟨show BP < 45 by decide, Nat.lt_trans (Nat.mod_lt _ (by omega)) hpl⟩)
+      · exact ⟨show R2P < 45 by decide, Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpl⟩
+      · exact ⟨show BP < 45 by decide, Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpl⟩)
       (show [R2P, BP].Nodup by decide))
     fun s₁ ⟨e₁, k₁, U₁⟩ => ?_)
   have hw₁ := hw.of_kp k₁
@@ -129,43 +129,43 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
     rw [K.rd, K.wr]
   have O₁ : Outside base 0 4096 s.mem s₁.mem := U₁'.outside fun w hw => by
     simp only [slW, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases hw with rfl | rfl <;> exact ⟨Nat.zero_le _, by dsimp only; omega⟩
+    rcases hw with rfl | rfl <;> exact ⟨Nat.zero_le _, by dsimp only; omega_arith⟩
   have hfit₁ : (qa + BitVec.ofNat 64 1).toNat + c.C.len ≤ 2 ^ 64 := by
-    rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   -- `x`
   refine wp_append (WP.mono (setupLoad_ok hc (s := s) (i := E) (src := .r6) (p := qa + BitVec.ofNat 64 1)
     (hw₁.of_kp (Kp.write _ (d := .r6) (rs := [.r6]) _ (by decide))) (by decide) (by decide)
     (by simp only [write_gpr, ite_true, hq₁]) hfit₁
     (fun e he => ⟨_, by rw [hrw k₂]; exact hin, by
-      rw [Offset.add_add]; exact Offset.contains_base qa (by omega) (by omega)⟩)
-    (hd.sub_left (Offset.sub_base qa (by omega))) (by simp only [write_mem]; exact O₁))
+      rw [Offset.add_add]; exact Offset.contains_base qa (by omega_arith) (by omega_arith)⟩)
+    (hd.sub_left (Offset.sub_base qa (by omega_arith))) (by simp only [write_mem]; exact O₁))
     fun s₃ ⟨e₃, k₃, O₃⟩ => ?_)
   have K₃ : Kp [.r6, .r8, .r9, .r11] s s₃ :=
     (k₂.mono (by decide)).trans (k₃.mono (by decide))
   have hw₃ := hw.of_kp K₃
   have hq₃ : s₃.gpr .r12 = qa := by rw [K₃.gpr _ (by decide), hqa]
   have O₃' : Outside base 0 size s.mem s₃.mem :=
-    (O₁.mono (Nat.le_refl _) (by omega)).trans (O₃.mono (Nat.zero_le _) (by omega))
+    (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₃.mono (Nat.zero_le _) (by omega_arith))
   -- the tag
   refine wp_append (WP.mono (decompressTag_ok c hw₃.ws hw₃.at3
     ⟨_, by rw [hrw K₃]; exact hin, by
-      have := Offset.contains_base qa (d := 0) (n := 1) (k := 1 + c.C.len) (by omega) (by omega)
-      rw [BitVec.add_zero] at this; rw [hq₃]; exact this⟩ (by omega)) fun s₄ ⟨m₄, k₄, h₄⟩ => ?_)
+      have := Offset.contains_base qa (d := 0) (n := 1) (k := 1 + c.C.len) (by omega_arith) (by omega_arith)
+      rw [BitVec.add_zero] at this; rw [hq₃]; exact this⟩ (by omega_arith)) fun s₄ ⟨m₄, k₄, h₄⟩ => ?_)
   rw [hq₃] at m₄ h₄
   have hw₄ := hw₃.of_kp k₄
   have lead₃ : s₃.mem qa = s.mem qa := by
-    have := keep_of_disjoint' O₃' hd (by omega) (i := 0) (by omega) (by omega)
+    have := keep_of_disjoint' O₃' hd (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   rw [lead₃] at m₄ h₄
-  have O₄ : Outside base (c.sl D) 8 s₃.mem s₄.mem := by rw [h₄]; exact writeW_outside _ _ _ (by omega)
+  have O₄ : Outside base (c.sl D) 8 s₃.mem s₄.mem := by rw [h₄]; exact writeW_outside _ _ _ (by omega_arith)
   -- the flag `&=` the tag's mask
   refine wp_append (WP.mono (andFlag_ok c hw₄.ws hw₄.at3 hF) fun s₅ ⟨f₅, k₅, m₅⟩ => ?_)
   rw [m₄] at f₅
   have hw₅ := hw₄.of_kp k₅
-  have O₅ : Outside base (c.sl FLAG) 8 s₄.mem s₅.mem := by rw [m₅]; exact writeW_outside _ _ _ (by omega)
+  have O₅ : Outside base (c.sl FLAG) 8 s₄.mem s₅.mem := by rw [m₅]; exact writeW_outside _ _ _ (by omega_arith)
   -- `x < p`
-  refine WP.mono (checkLtP_ok c hw₅.ws hw₅.at3 (by omega) (by omega) hF) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_
+  refine WP.mono (checkLtP_ok c hw₅.ws hw₅.at3 (by omega_arith) (by omega_arith) hF) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_
   -- The slots.
   have U₃₆ : Unch base ([(c.sl D, 8)] ++ [(c.sl FLAG, 8)] ++ [(c.sl FLAG, 8)]) s₃.mem s₆.mem :=
     (O₄.unch.trans O₅.unch).trans O₆.unch
@@ -173,7 +173,7 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
       ∀ w ∈ [(c.sl D, 8)] ++ [(c.sl FLAG, 8)] ++ [(c.sl FLAG, 8)],
         c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := fun hi hf hD' =>
     apart_append (apart_append (fun w hw => by
-      rw [List.mem_singleton.mp hw]; have := sl_apart c hD'; dsimp only; omega) (apart_flag h0 hf))
+      rw [List.mem_singleton.mp hw]; have := sl_apart c hD'; dsimp only; omega_arith) (apart_flag h0 hf))
       (apart_flag h0 hf)
   have v₆ : ∀ {i}, i < 45 → i ≠ FLAG → i ≠ D → sv c base s₆ i = sv c base s₃ i := fun hi hf hD' =>
     sv_unch U₃₆ h7 hn hi (apDF hi hf hD')
@@ -190,12 +190,12 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
   · refine ((U₁'.trans O₃.unch).trans U₃₆).cover fun w hw => ?_
     simp only [slW, List.map_cons, List.map_nil, List.mem_append, List.mem_cons, List.not_mem_nil, or_false,
       or_assoc] at hw
-    have h8 : 8 ≤ 8 * c.n := by omega
+    have h8 : 8 ≤ 8 * c.n := by omega_arith
     rcases hw with h | h | h | h | h | h <;> subst h
     · exact ⟨_, by simp [slW], Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨_, by simp [slW], Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨_, by simp [slW], Nat.le_refl _, Nat.le_refl _⟩
-    · exact ⟨(c.sl D, 8 * c.n), by simp [slW], Nat.le_refl _, by dsimp only; omega⟩
+    · exact ⟨(c.sl D, 8 * c.n), by simp [slW], Nat.le_refl _, by dsimp only; omega_arith⟩
     · exact ⟨_, by simp [slW], Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨_, by simp [slW], Nat.le_refl _, Nat.le_refl _⟩
   · rw [v₆ (by decide) (by decide) (by decide), v₃ (by decide) (by decide)]
@@ -204,12 +204,12 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
     exact e₁ (BP, c.mont c.C.b) (List.mem_cons_of_mem _ (List.mem_singleton_self _))
   · have U₄₆ : Unch base ([(c.sl FLAG, 8)] ++ [(c.sl FLAG, 8)]) s₄.mem s₆.mem := O₅.unch.trans O₆.unch
     rw [U₄₆.word (fun w hw => by
-      simp only [List.mem_append, List.mem_singleton, or_self] at hw; subst hw; dsimp only; omega) (by omega),
+      simp only [List.mem_append, List.mem_singleton, or_self] at hw; subst hw; dsimp only; omega_arith) (by omega_arith),
       h₄, word_writeW_self]
   · have mp₅ : wordsVal s₅.mem base (c.sl MP) c.n = c.C.p := by
       rw [sv_unch O₅.unch h7 hn (i := MP) (by decide) (apart_flag h0 (by decide)),
         sv_unch O₄.unch h7 hn (i := MP) (by decide) (fun w hw => by
-          rw [List.mem_singleton.mp hw]; have := sl_apart c (i := MP) (j := D) (by decide); dsimp only; omega)]
+          rw [List.mem_singleton.mp hw]; have := sl_apart c (i := MP) (j := D) (by decide); dsimp only; omega_arith)]
       exact (v₃ (by decide) (by decide)).trans ((v₁ (by decide) (by decide)).trans hmp)
     have e₅ : wordsVal s₅.mem base (c.sl E) c.n = sv c base s₆ E :=
       (sv_unch O₆.unch h7 hn (i := E) (by decide) (apart_flag h0 (by decide))).symm
@@ -220,11 +220,11 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
         simp only [slW, List.map_cons, List.map_nil, List.mem_append, List.mem_cons, List.not_mem_nil,
           or_false, or_assoc] at hw
         rcases hw with h | h | h | h <;> subst h <;> dsimp only
-        · have := sl_lt c (i := R2P) (j := FLAG) (by decide); omega
-        · have := sl_lt c (i := BP) (j := FLAG) (by decide); omega
-        · have := sl_lt c (i := E) (j := FLAG) (by decide); omega
-        · have := sl_lt c (i := D) (j := FLAG) (by decide); omega
-      exact ((U₁'.trans O₃.unch).trans O₄.unch).word ap (by omega)
+        · have := sl_lt c (i := R2P) (j := FLAG) (by decide); omega_arith
+        · have := sl_lt c (i := BP) (j := FLAG) (by decide); omega_arith
+        · have := sl_lt c (i := E) (j := FLAG) (by decide); omega_arith
+        · have := sl_lt c (i := D) (j := FLAG) (by decide); omega_arith
+      exact ((U₁'.trans O₃.unch).trans O₄.unch).word ap (by omega_arith)
     rw [f₆, f₅, fl₄, e₅, mp₅]
 
 end VG.Proof.EcKey.Compressed.PPC64LE

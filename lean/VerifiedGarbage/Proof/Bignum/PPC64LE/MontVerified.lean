@@ -111,8 +111,8 @@ theorem agree_read {m₁ m₂ : Mem} {ws : Addr} {L d k : Nat}
     m₁.read (ws + BitVec.ofNat 64 d) k = m₂.read (ws + BitVec.ofNat 64 d) k :=
   Mem.read_congr fun i hi => h _ (by
     simp only [Region.Contains]
-    rw [Offset.add_add, Mem.sub_ofNat_toNat _ (by omega)]
-    omega)
+    rw [Offset.add_add, Mem.sub_ofNat_toNat _ (by omega_arith)]
+    omega_arith)
 
 theorem agree_readW {m₁ m₂ : Mem} {ws : Addr} {L d : Nat}
     (h : ∀ a, (⟨ws, L⟩ : Region).Contains a 1 → m₁ a = m₂ a) (hk : d + 8 ≤ L) (hk' : d + 8 < 2 ^ 64) :
@@ -133,24 +133,24 @@ theorem same_of {m₁ m₂ : Mem} {ws : Addr} {L : Nat}
     (h : ∀ a, (⟨ws, L⟩ : Region).Contains a 1 → m₁ a = m₂ a) (hl : Layout m₂ ws (L / 8)) :
     Same ws L m₁ m₂ := by
   obtain ⟨h2, h31, h8, -⟩ := hl
-  have h8' : arrAt (wOf m₂ ws) 8 ≤ L := by omega
-  have hz : arrAt (wOf m₂ ws) 8 < 2 ^ 64 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega
+  have h8' : arrAt (wOf m₂ ws) 8 ≤ L := by omega_arith
+  have hz : arrAt (wOf m₂ ws) 8 < 2 ^ 64 := by unfold arrAt Spec.Rsa.Mont.hdrBytes; omega_arith
   have hd : ∀ j < 8, arrAt (wOf m₂ ws) j + 8 * (wOf m₂ ws) ≤ arrAt (wOf m₂ ws) 8 := fun j hj => by
     unfold arrAt
-    have := Nat.mul_le_mul_right (8 * (wOf m₂ ws + 2)) (show j + 1 ≤ 8 by omega)
+    have := Nat.mul_le_mul_right (8 * (wOf m₂ ws + 2)) (show j + 1 ≤ 8 by omega_arith)
     rw [Nat.add_mul, Nat.one_mul] at this
-    omega
+    omega_arith
   have hword : ∀ i < 16, wordAt m₁ ws i = wordAt m₂ ws i := fun i hi =>
-    agree_readW h (by unfold arrAt Spec.Rsa.Mont.hdrBytes at h8'; omega) (by omega)
+    agree_readW h (by unfold arrAt Spec.Rsa.Mont.hdrBytes at h8'; omega_arith) (by omega_arith)
   have h0 := hd aM (by decide)
-  refine ⟨?_, hword, fun j hj => ?_, agree_readW h (by omega) (by omega), fun i hi => h _ ?_⟩
+  refine ⟨?_, hword, fun j hj => ?_, agree_readW h (by omega_arith) (by omega_arith), fun i hi => h _ ?_⟩
   · simp only [wOf, Spec.Rsa.Mont.wWord, hword 6 (by decide)]
   · simp only [numAt]
-    rw [agree_read h (by have := hd j hj; omega) (by have := hd j hj; omega)]
+    rw [agree_read h (by have := hd j hj; omega_arith) (by have := hd j hj; omega_arith)]
   · simp only [Region.Contains]
     have : (ws + BitVec.ofNat 64 i - ws).toNat ≤ i := by
       rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]; exact Nat.mod_le _ _
-    omega
+    omega_arith
 
 /-- The contract's arguments, as `Curry.apply` passes them. -/
 theorem words_eq : Spec.Rsa.Mont.sig.words abi.ptrBits = [.addr, .int 64, .int 32, .int 32, .int 32] := rfl
@@ -174,7 +174,7 @@ theorem pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Rsa.Mont.sig.words abi.p
   have hS := same_of (fun x hx => (hb x hx).symm) (m₁ := m₂) (m₂ := m₁) hl'
   obtain ⟨h2, h31, h8, harr⟩ := hl
   refine ⟨⟨by rw [hS.w]; exact h2, by rw [hS.w]; exact h31, by rw [hS.w]; exact h8, fun j hj => by
-    rw [hS.word _ (by unfold Spec.Rsa.Mont.arrWord; omega), hS.w]; exact harr j hj⟩,
+    rw [hS.word _ (by unfold Spec.Rsa.Mont.arrWord; omega_arith), hS.w]; exact harr j hj⟩,
     ho, ha, hb', ?_, ?_⟩
   · rw [hS.w, hS.m0, hS.word _ (by decide)]; exact hinv
   · rw [hS.w, hS.num _ hb'.1, hS.num _ (by decide)]; exact hB

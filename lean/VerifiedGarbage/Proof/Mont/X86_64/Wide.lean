@@ -96,20 +96,20 @@ theorem memSteps_ok {size : Nat} : ∀ (k : Nat) {s : State} {base : Addr} {t d 
   | k + 1, s, base, t, d, hs, ht, hd, hsep => by
     have hn := hs.nowrap
     rw [memSteps, WP.block_append_iff]
-    refine WP.mono (memStep_ok hs (t := t) (d := d) (by omega) (by omega)) fun s₁ ⟨e₁, m₁, k₁⟩ => ?_
+    refine WP.mono (memStep_ok hs (t := t) (d := d) (by omega_arith) (by omega_arith)) fun s₁ ⟨e₁, m₁, k₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
-    have O₁ : Outside base t 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
-    refine WP.mono (memSteps_ok k hs₁ (t := t + 8) (d := d + 8) (by omega) (by omega) (by omega))
+    have O₁ : Outside base t 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega_arith)
+    refine WP.mono (memSteps_ok k hs₁ (t := t + 8) (d := d + 8) (by omega_arith) (by omega_arith) (by omega_arith))
       fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
     have hT₁ : wordsVal s₁.mem base (t + 8) k = wordsVal s.mem base (t + 8) k :=
-      O₁.wordsVal (by omega) (by omega)
+      O₁.wordsVal (by omega_arith) (by omega_arith)
     have hD₁ : wordsVal s₁.mem base (d + 8) k = wordsVal s.mem base (d + 8) k :=
-      O₁.wordsVal (by omega) (by omega)
-    have hD₀ : word s₁.mem base d = word s.mem base d := O₁.word (by omega) (by omega)
-    have hw₂ : word s₂.mem base t = word s₁.mem base t := O₂.word (by omega) (by omega)
+      O₁.wordsVal (by omega_arith) (by omega_arith)
+    have hD₀ : word s₁.mem base d = word s.mem base d := O₁.word (by omega_arith) (by omega_arith)
+    have hw₂ : word s₂.mem base t = word s₁.mem base t := O₂.word (by omega_arith) (by omega_arith)
     have hc₁ : s₁.gpr .rcx = s.gpr .rcx := k₁.gpr .rcx (by decide)
     rw [hT₁, hD₁, hc₁] at e₂
-    refine ⟨?_, k₁.trans k₂, fun x hx => by rw [O₂ x (by omega), O₁ x (by omega)]⟩
+    refine ⟨?_, k₁.trans k₂, fun x hx => by rw [O₂ x (by omega_arith), O₁ x (by omega_arith)]⟩
     simp only [wordsVal, pow64_succ, hw₂]
     have h1 : (s.gpr .rcx).toNat * ((word s.mem base d).toNat + 2 ^ 64 * wordsVal s.mem base (d + 8) k) =
         (s.gpr .rcx).toNat * (word s.mem base d).toNat +
@@ -118,7 +118,7 @@ theorem memSteps_ok {size : Nat} : ∀ (k : Nat) {s : State} {base : Addr} {t d 
     have h2 : 2 ^ 64 * 2 ^ (64 * k) * (s₂.gpr .rbp).toNat =
         2 ^ 64 * (2 ^ (64 * k) * (s₂.gpr .rbp).toNat) := Nat.mul_assoc _ _ _
     rw [h1, h2]
-    omega
+    omega_arith
 
 /-- A row: the carry word cleared, then `memSteps`. -/
 theorem memRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {k t d : Nat}
@@ -145,19 +145,19 @@ theorem moveDown_ok {size : Nat} : ∀ (k : Nat) {s : State} {base : Addr} {t : 
   | k + 1, s, base, t, hs, ht => by
     have hn := hs.nowrap
     rw [moveDown, WP.block_append_iff, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (movMem_ok hs .r8 (d := t + 8) (by omega)) fun s₁ ⟨l₁, _, k₁⟩ => ?_
+    refine WP.mono (movMem_ok hs .r8 (d := t + 8) (by omega_arith)) fun s₁ ⟨l₁, _, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by decide)
-    refine WP.mono (storeReg_ok hs₁ .r8 (d := t) (by omega)) fun s₂ ⟨m₂, g₂, _, k₂⟩ => ?_
+    refine WP.mono (storeReg_ok hs₁ .r8 (d := t) (by omega_arith)) fun s₂ ⟨m₂, g₂, _, k₂⟩ => ?_
     have hs₂ := hs₁.of_keepRegs k₂ (by decide)
     have O₂ : Outside base t 8 s.mem s₂.mem := by
-      rw [m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega)
-    refine WP.mono (moveDown_ok k hs₂ (t := t + 8) (by omega)) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+      rw [m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega_arith)
+    refine WP.mono (moveDown_ok k hs₂ (t := t + 8) (by omega_arith)) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
     have hw₃ : word s₃.mem base t = word s.mem base (t + 8) := by
-      rw [O₃.word (by omega) (by omega), m₂, word_writeW_self, l₁]
+      rw [O₃.word (by omega_arith) (by omega_arith), m₂, word_writeW_self, l₁]
     have hS : wordsVal s₂.mem base (t + 8 + 8) k = wordsVal s.mem base (t + 8 + 8) k :=
-      O₂.wordsVal (by omega) (by omega)
+      O₂.wordsVal (by omega_arith) (by omega_arith)
     refine ⟨?_, (((Keeps.regs k₁).mono (by sub_regs')).trans (k₂.mono (by sub_regs'))).trans k₃,
-      fun x hx => by rw [O₃ x (by omega), O₂ x (by omega)]⟩
+      fun x hx => by rw [O₃ x (by omega_arith), O₂ x (by omega_arith)]⟩
     rw [wordsVal, wordsVal, hw₃, e₃, hS]
 
 /-- The accumulator `[tmp] + 2^(64 n) (r9 + 2⁶⁴ r10)` divided by `2⁶⁴` (its
@@ -172,14 +172,14 @@ theorem shiftDown_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
       KeepRegs [.r8, .r9, .r10] s s' ∧ Outside base M.tmp (8 * M.n) s.mem s'.mem := by
   have hnw := hs.nowrap
   rw [shiftDown, WP.block_append_iff]
-  refine WP.mono (moveDown_ok (M.n - 1) hs (t := M.tmp) (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  refine WP.mono (moveDown_ok (M.n - 1) hs (t := M.tmp) (by omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (storeReg_ok hs₁ .r9 (d := M.tmp + 8 * (M.n - 1)) (by omega))
+  refine WP.mono (storeReg_ok hs₁ .r9 (d := M.tmp + 8 * (M.n - 1)) (by omega_arith))
     fun s₂ ⟨m₂, g₂, _, k₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have O₂ : Outside base (M.tmp + 8 * (M.n - 1)) 8 s₁.mem s₂.mem := by
-    rw [m₂]; exact writeW_outside _ _ _ (by omega)
+    rw [m₂]; exact writeW_outside _ _ _ (by omega_arith)
   refine WP.mono (show WP isa (.block [.mov .r9 (.reg .r10), .mov32 .r10 (.imm 0)]) s₂
       (fun s₃ => s₃.gpr .r9 = s₂.gpr .r10 ∧ s₃.gpr .r10 = 0 ∧ Keeps [.r9, .r10] s₂ s₃) by
     apply WP.of_runBlock
@@ -194,11 +194,11 @@ theorem shiftDown_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   refine ⟨?_, by rw [r9₃, hr10], r10₃, (k₁.mono (by sub_regs')).trans
     ((k₂.mono (by sub_regs')).trans ((Keeps.regs k₃).mono (by sub_regs'))), fun x hx => ?_⟩
   · have hsplit := wordsVal_succ_top s₃.mem base M.tmp (M.n - 1)
-    rw [show M.n - 1 + 1 = M.n by omega] at hsplit
+    rw [show M.n - 1 + 1 = M.n by omega_arith] at hsplit
     rw [hsplit, k₃.2.1, m₂, word_writeW_self,
-      (writeW_outside s₁.mem base (d := M.tmp + 8 * (M.n - 1)) (s₁.gpr .r9) (by omega)).wordsVal
-        (by omega) (by omega), e₁, hr9]
-  · rw [k₃.2.1, O₂ x (by omega), O₁ x (by omega)]
+      (writeW_outside s₁.mem base (d := M.tmp + 8 * (M.n - 1)) (s₁.gpr .r9) (by omega_arith)).wordsVal
+        (by omega_arith) (by omega_arith), e₁, hr9]
+  · rw [k₃.2.1, O₂ x (by omega_arith), O₁ x (by omega_arith)]
 
 /-! ## Clearing -/
 
@@ -223,19 +223,19 @@ theorem zeroWords_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
               exact WP.block_nil ⟨rfl, rfl, ⟨fun _ _ => rfl, rfl, rfl⟩, Outside.refl _ _ _ _⟩
     | succ j ih =>
       intro hj u hu h0
-      rw [List.drop_eq_getElem_cons (by simp; omega), List.map_cons, ← List.singleton_append,
+      rw [List.drop_eq_getElem_cons (by simp; omega_arith), List.map_cons, ← List.singleton_append,
         WP.block_append_iff]
       simp only [List.getElem_range]
-      refine WP.mono (storeReg_ok hu .r8 (d := t + 8 * (k - (j + 1))) (by omega))
+      refine WP.mono (storeReg_ok hu .r8 (d := t + 8 * (k - (j + 1))) (by omega_arith))
         fun u₁ ⟨m₁, g₁, _, k₁'⟩ => ?_
       have hu₁ := hu.of_keepRegs k₁' (by decide)
-      rw [show k - (j + 1) + 1 = k - j by omega]
-      refine WP.mono (ih (by omega) hu₁ (by rw [g₁, h0])) fun u₂ ⟨e₂, g₂, k₂, O₂⟩ => ?_
+      rw [show k - (j + 1) + 1 = k - j by omega_arith]
+      refine WP.mono (ih (by omega_arith) hu₁ (by rw [g₁, h0])) fun u₂ ⟨e₂, g₂, k₂, O₂⟩ => ?_
       have O₁ : Outside base (t + 8 * (k - (j + 1))) 8 u.mem u₁.mem := by
-        rw [m₁]; exact writeW_outside _ _ _ (by omega)
-      refine ⟨?_, by rw [g₂, g₁], k₁'.trans k₂, fun x hx => by rw [O₂ x (by omega), O₁ x (by omega)]⟩
-      rw [wordsVal, O₂.word (by omega) (by omega), m₁, word_writeW_self, h0,
-        show t + 8 * (k - (j + 1)) + 8 = t + 8 * (k - j) by omega, e₂]
+        rw [m₁]; exact writeW_outside _ _ _ (by omega_arith)
+      refine ⟨?_, by rw [g₂, g₁], k₁'.trans k₂, fun x hx => by rw [O₂ x (by omega_arith), O₁ x (by omega_arith)]⟩
+      rw [wordsVal, O₂.word (by omega_arith) (by omega_arith), m₁, word_writeW_self, h0,
+        show t + 8 * (k - (j + 1)) + 8 = t + 8 * (k - j) by omega_arith, e₂]
       rfl
   have hk := key k (Nat.le_refl _) hs₁ h8
   rw [Nat.sub_self, List.drop_zero, Nat.mul_zero, Nat.add_zero] at hk

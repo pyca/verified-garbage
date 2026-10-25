@@ -129,14 +129,14 @@ theorem mulBnd_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho 
     have := (s₄.gpr .r8).isLt; have := (s₄.gpr .r9).isLt; have := (s₄.gpr .r10).isLt
     have := (s₄.gpr .r11).isLt; have := (s₄.gpr .r12).isLt; have := (s₄.gpr .r13).isLt
     have := (s₄.gpr .r14).isLt; have := (s₄.gpr .r15).isLt
-    omega
+    omega_arith
   have hc : (s₅.gpr .rbp).toNat < 39 := by
     simp only [val4] at e5 hB
     have := (s₅.gpr .r8).isLt; have := (s₅.gpr .r9).isLt; have := (s₅.gpr .r10).isLt
     have := (s₅.gpr .r11).isLt
-    omega
+    omega_arith
   rw [WP.block_append_iff]
-  refine WP.mono (fold_ok s₅ c5 (by omega)) fun s₆ ⟨e6, b6, k6⟩ => ?_
+  refine WP.mono (fold_ok s₅ c5 (by omega_arith)) fun s₆ ⟨e6, b6, k6⟩ => ?_
   have hs₆ := hs₅.of_keeps k6 (by decide)
   refine WP.mono (store4_ok hs₆ ho) fun s₇ ⟨m7, g7, rd7, wr7⟩ => ?_
   -- Memory is only read until the store.

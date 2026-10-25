@@ -64,10 +64,10 @@ structure Base (s : State) (K : BitVec 32) (k : Spec.Cast5.Schedule) (n : Nat) :
 
 /-- The second argument's address. -/
 theorem addr8 {E : BitVec 32} (h : E.toNat + 12 ≤ 2 ^ 32) : addr E 8 = addr E 4 + BitVec.ofNat 64 4 := by
-  rw [addr_eq (by omega), addr_eq (by omega), Offset.add_add]
+  rw [addr_eq (by omega_arith), addr_eq (by omega_arith), Offset.add_add]
 
 theorem argR_contains4 (s : State) : (argR s).Contains (addr (s.gpr .esp) 4) (32 / 8) := by
-  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
 
 theorem argR_contains8 {s : State} (h : (s.gpr .esp).toNat + 12 ≤ 2 ^ 32) :
     (argR s).Contains (addr (s.gpr .esp) 8) (32 / 8) := by
@@ -139,7 +139,7 @@ theorem prepare_wp (up : Bool) {s : State} {B : BitVec 32} {rs : List Region} {k
 theorem inRegions_prefix {X : List Region} {a : Addr} {n l : Nat} (h : InRegions X a n) (hl : l ≤ n) :
     InRegions X a l := by
   obtain ⟨r, hr, hc⟩ := h
-  exact ⟨r, hr, by unfold Region.Contains at hc ⊢; omega⟩
+  exact ⟨r, hr, by unfold Region.Contains at hc ⊢; omega_arith⟩
 
 /-- What `store` does: the block `out` at `D`, and nothing else but the
 rounds' memory; `edi` the working space's address. -/
@@ -170,12 +170,12 @@ theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n 
   have w0 : InRegions u.wr (addr D 0) 4 := by
     rw [addr_D0 h.fitD, hu.wr]
     obtain ⟨g, hg, hc⟩ := h.wD
-    exact ⟨g, hg, by unfold Region.Contains at hc ⊢; omega⟩
+    exact ⟨g, hg, by unfold Region.Contains at hc ⊢; omega_arith⟩
   have w4 : InRegions u.wr (addr D 4) 4 := by
     rw [addr_off h.fitD 4 (by decide), hu.wr]
-    exact CallLay.inRegions_sub h.wD (by omega) (by decide)
+    exact CallLay.inRegions_sub h.wD (by omega_arith) (by decide)
   have mW : ∀ e, e + 4 ≤ 304 → InRegions u.wr (addr S e) 4 := fun e he => by
-    rw [addr_eq (by omega), hu.wr]; exact CallLay.inRegions_sub hW he (by decide)
+    rw [addr_eq (by omega_arith), hu.wr]; exact CallLay.inRegions_sub hW he (by decide)
   have mR : ∀ e, e + 4 ≤ 304 → InRegions (u.rd ++ u.wr) (addr S e) 4 := fun e he => by
     obtain ⟨g, hg, hc⟩ := mW e he; exact ⟨g, List.mem_append_right _ hg, hc⟩
   have rdD := mR dataOff (by decide)
@@ -190,8 +190,8 @@ theorem store_ok {s u : State} {S K D : BitVec 32} {k : Spec.Cast5.Schedule} {n 
   have sm (e : Nat) (h1 : 280 ≤ e) (h2 : e + 4 ≤ 288) : m'.readW (addr S e) 32 = u.mem.readW (addr S e) 32 := by
     have hs (o : Nat) (ho : o + 4 ≤ 8) : Mem.Sep (addr S e) 4 (addr D o) 4 := by
       refine Region.Disjoint.sep hDm.symm ?_ ?_
-      · rw [addr_eq (by omega)]; exact Offset.contains _ h1 (by omega) (by omega)
-      · rw [addr_off h.fitD o (by omega)]; exact Offset.contains_base _ (by omega) (by omega)
+      · rw [addr_eq (by omega_arith)]; exact Offset.contains _ h1 (by omega_arith) (by omega_arith)
+      · rw [addr_off h.fitD o (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [← hm', Mem.readW_writeW_sep (w' := 32) (hs 4 (by decide)) (by decide),
       Mem.readW_writeW_sep (w' := 32) (hs 0 (by decide)) (by decide)]
   have e : (m'.writeW (addr S 280) X).writeW (addr S 284) Y = m' := by
@@ -263,7 +263,7 @@ theorem dirCipher_bytes (up : Bool) (k : Spec.Cast5.Schedule) (n : Nat) (m : Mem
 
 theorem toNat_add32 {B : BitVec 32} {d : Nat} (h : B.toNat + d < 2 ^ 32) :
     (B + BitVec.ofNat 32 d).toNat = B.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 32), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : d < 2 ^ 32), Nat.mod_eq_of_lt h]
 
 theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedule × Nat}
     (hB : s.gpr Impl.Modes.X86.sb = B) (hs : ScrIn s B (dirCore up).total) (hr : Ready s B kn)
@@ -284,12 +284,12 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedu
   have aE4 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 4) 4 := inRegions_prefix hb.inA (by decide)
   have aE8 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 8) 4 := by
     rw [addr8 hb.fitE]; exact CallLay.inRegions_sub hb.inA (by decide) (by decide)
-  have aB : ∀ e, e < 4 * 76 → addr B e = B.setWidth 64 + BitVec.ofNat 64 e := fun e he => addr_eq (by omega)
+  have aB : ∀ e, e < 4 * 76 → addr B e = B.setWidth 64 + BitVec.ofNat 64 e := fun e he => addr_eq (by omega_arith)
   have sW : ∀ e, e + 4 ≤ 4 * 76 → InRegions s.wr (addr B e) 4 := fun e he => by
-    rw [aB e (by omega)]; exact ⟨_, hw, Offset.contains_base _ he (by omega)⟩
+    rw [aB e (by omega_arith)]; exact ⟨_, hw, Offset.contains_base _ he (by omega_arith)⟩
   -- The slots `48 … 59` of the working space.
   have inSl : ∀ e, 48 ≤ e → e + 4 ≤ 60 → (⟨B.setWidth 64, 4 * 66⟩ : Region).Contains (addr B e) (32 / 8) :=
-    fun e h1 h2 => by rw [aB e (by omega)]; exact Offset.contains_base _ (by omega) (by omega)
+    fun e h1 h2 => by rw [aB e (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   show WP isa (.seq (.block Modes.setup) (.seq (.block load)
     (.seq (if up then encryptBlock else decryptBlock) (.block Modes.store)))) s _
   refine WP.seq ?_
@@ -323,7 +323,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedu
       u₂.other _ (by decide), u₁.other _ (by decide)]; exact hB'
   have ax₂ : s₂.gpr .eax = K := by rw [u₂.gpr, u₁.mem]; exact hb.argK
   have sepA : ∀ e, 48 ≤ e → e + 4 ≤ 60 → Mem.Sep (addr (s.gpr .esp) 8) 4 (addr B e) 4 := fun e h1 h2 =>
-    Region.Disjoint.sep dAB (argR_contains8 hb.fitE) (by rw [aB e (by omega)]; exact Offset.contains_base _ (by omega) (by omega))
+    Region.Disjoint.sep dAB (argR_contains8 hb.fitE) (by rw [aB e (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
   have ax₄ : s₄.gpr .eax = BitVec.ofNat 32 n := by
     rw [u₄.gpr, u₃.mem, u₂.mem, u₁.mem, ax₂, Mem.readW_writeW_sep (w' := 32) (sepA schedOff (by decide) (by decide)) (by decide)]
     exact hb.argN
@@ -336,7 +336,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedu
     Offset.sub_base _ (by decide)
   have inSl' : ∀ e, 48 ≤ e → e + 4 ≤ 60 →
       (⟨B.setWidth 64 + BitVec.ofNat 64 48, 12⟩ : Region).Contains (addr B e) (32 / 8) :=
-    fun e h1 h2 => by rw [aB e (by omega)]; exact Offset.contains _ h1 (by omega) (by omega)
+    fun e h1 h2 => by rw [aB e (by omega_arith)]; exact Offset.contains _ h1 (by omega_arith) (by omega_arith)
   have f₈ : Frame [⟨B.setWidth 64 + BitVec.ofNat 64 48, 12⟩] s.mem s₈.mem := by
     rw [m₈]
     exact (((Frame.refl _ _).writeW List.mem_cons_self _ (inSl' 48 (by decide) (by decide))).writeW
@@ -351,17 +351,17 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedu
     exact ⟨dKB.sub_right slScr, dTB.sub_right slScr, dAB.sub_right slScr⟩
   have hb₈ : Base s₈ K k n := hb.frame esp₈ rd₈ wr₈ sy₈ f₈ dSl
   have sep48 : ∀ d e, d + 4 ≤ e ∨ e + 4 ≤ d → d < 256 → e < 256 → Mem.Sep (addr B d) 4 (addr B e) 4 :=
-    fun d e h hd he => slot_sep (by omega) hd he h (by decide) (by decide)
+    fun d e h hd he => slot_sep (by omega_arith) hd he h (by decide) (by decide)
   have rB : Region.Sub ⟨B.setWidth 64, 256⟩ ⟨B.setWidth 64, 4 * 76⟩ := Region.sub_prefix (by decide)
   have eD : (B + BitVec.ofNat 32 256).setWidth 64 = B.setWidth 64 + BitVec.ofNat 64 256 := aB 256 (by decide)
   have blkSub : Region.Sub (blockR (B + BitVec.ofNat 32 256)) ⟨B.setWidth 64, 4 * 66⟩ := by
     show Region.Sub ⟨(B + BitVec.ofNat 32 256).setWidth 64, 8⟩ _
     rw [eD]; exact Offset.sub_base _ (by decide)
   have hpre : BPre s₈ B K (B + BitVec.ofNat 32 256) k n := by
-    refine ⟨⟨si₈, by omega, ?_, ?_, ?_, hb.nv, hb.fitK, hb₈.inK, fun j hj => ?_, by rw [esp₈]; exact hb.sp,
+    refine ⟨⟨si₈, by omega_arith, ?_, ?_, ?_, hb.nv, hb.fitK, hb₈.inK, fun j hj => ?_, by rw [esp₈]; exact hb.sp,
       by rw [esp₈]; exact (hsd.sub_right rB).symm, hb₈.dKs, dKB.sub_right rB, hb₈.fitT, hb₈.inT, hb₈.dTs,
       by rw [sy₈]; exact dTB.sub_right rB, tabAt_of_held hb₈.held⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [wr₈]; exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
+    · rw [wr₈]; exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩
     · rw [m₈, Mem.readW_writeW_sep (w' := 32) (sep48 48 56 (by decide) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_sep (w' := 32) (sep48 48 52 (by decide) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_self32]
@@ -369,10 +369,10 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedu
         Mem.readW_writeW_self32]
     · rw [← Proof.Cast5.scheduleAt_getD _ _ hj, hb₈.sk]
     · rw [m₈, Mem.readW_writeW_self32]
-    · rw [toNat_add32 (by omega)]; omega
-    · rw [wr₈, eD]; exact ⟨_, hw, Offset.contains_base _ (by decide) (by omega)⟩
+    · rw [toNat_add32 (by omega_arith)]; omega_arith
+    · rw [wr₈, eD]; exact ⟨_, hw, Offset.contains_base _ (by decide) (by omega_arith)⟩
     · show Region.Disjoint ⟨(B + BitVec.ofNat 32 256).setWidth 64, 8⟩ _
-      rw [eD]; exact Offset.disjoint_base _ (by decide) (by omega)
+      rw [eD]; exact Offset.disjoint_base _ (by decide) (by omega_arith)
     · exact ((dKB.sub_right coreScr).sub_right blkSub).symm
     · rw [sy₈]; exact ((dTB.sub_right coreScr).sub_right blkSub).symm
     · rw [esp₈]; exact ((hsd.sub_right coreScr).sub_right blkSub).symm
@@ -387,7 +387,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedu
   have hbx : u₉.gpr .ebx = lr.1 := by rw [← hlr]
   have hbp : u₉.gpr .ebp = lr.2 := by rw [← hlr]
   have hW₉ : InRegions u₉.wr (B.setWidth 64) 304 := by
-    rw [wr₉, wr₈]; exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
+    rw [wr₉, wr₈]; exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩
   have hDm : (blockR (B + BitVec.ofNat 32 256)).Disjoint ⟨B.setWidth 64 + BitVec.ofNat 64 280, 8⟩ := by
     show Region.Disjoint ⟨(B + BitVec.ofNat 32 256).setWidth 64, 8⟩ _
     rw [eD]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
@@ -401,7 +401,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedu
         (∀ j < (dirCore up).G, Spec.Aes.bytesAt s'.mem (blkAddr (dirCore up) B j) (4 * (dirCore up).bw) =
           dirCipher up (k, n).1 (k, n).2 (Spec.Aes.bytesAt s.mem (blkAddr (dirCore up) B j) (4 * (dirCore up).bw))) ∧
         s'.rd = s.rd ∧ s'.wr = s.wr := by
-    refine WP.mono (store_ok hb₉ hv hW₉ (by omega) hDm) fun w hw' => ?_
+    refine WP.mono (store_ok hb₉ hv hW₉ (by omega_arith) hDm) fun w hw' => ?_
     have espw : w.gpr .esp = s.gpr .esp := (hw'.same .esp (by decide)).trans esp₉
     have fall : Frame [coreRegion (dirCore up) B, stkRegion (s.gpr .esp) (dirCore up).stack] s.mem w.mem := by
       refine (f₈.sub fun r hr => ?_).trans ?_
@@ -424,7 +424,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {kn : Spec.Cast5.Schedu
     refine ⟨hw'.edi, espw, ⟨K, hb.frame espw (hw'.rd.trans (rd₉.trans rd₈)) (hw'.wr.trans (wr₉.trans wr₈))
       (hw'.syms.trans (sy₉.trans sy₈)) fall dAll, by simp only [stk, espw]; exact hsd⟩, fall, fun j hj => ?_,
       hw'.rd.trans (rd₉.trans rd₈), hw'.wr.trans (wr₉.trans wr₈)⟩
-    have hj0 : j = 0 := by simp only [dirCore] at hj; omega
+    have hj0 : j = 0 := by simp only [dirCore] at hj; omega_arith
     subst hj0
     have eB : blkAddr (dirCore up) B 0 = B.setWidth 64 + BitVec.ofNat 64 256 := by
       simp [blkAddr, slotA, dirCore, bufSlot]

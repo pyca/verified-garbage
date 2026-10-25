@@ -31,7 +31,7 @@ structure RowsInv (s : State) (B : Addr) (Z k a i : Nat) (t : State) : Prop wher
 theorem frame_header {s t : State} {B : Addr} {k : Nat} {minv : BitVec 64}
     (ho : Outside B (productBase k) (8*(16*k+2)) s.mem t.mem)
     (hh : Hdr s.mem B (8*k) minv) : Hdr t.mem B (8*k) minv :=
-  (Square.scratch_arrays (by simpa only [productBase, show 2*(8*k) = 16*k by omega] using ho)).hdr hh
+  (Square.scratch_arrays (by simpa only [productBase, show 2*(8*k) = 16*k by omega_arith] using ho)).hdr hh
 
 /-- A full triangular row adds its internal products and every earlier tile,
 then proves that the discarded final carry is zero. -/
@@ -47,13 +47,13 @@ theorem row_ok {s t : State} {B : Addr} {Z k a i : Nat} {minv : BitVec 64}
   have hn := hI.scr.nowrap
   have hP : productBase k+8*(16*k+2) ≤ Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_arith
   have hAZ : slot (8*k) a+64*k ≤ Z := by
     have := slot_le (w := 8*k) ha
-    omega
+    omega_arith
   have hsmall : wv t.mem B (productBase k) (16*k+2) < 2 ^ (64*(16*i)) := by
     rw [hI.value]
-    simpa only [show 128*(8*i) = 64*(16*i) by omega] using
+    simpa only [show 128*(8*i) = 64*(16*i) by omega_arith] using
       cross_words_lt_full s.mem B (slot (8*k) a) (8*i)
   refine WP.seq (WP.mono (rowHead_ok hI.scr ((hI.keep.gpr _ (by decide)).trans h0)
     ((hI.keep.gpr _ (by decide)).trans h7) (frame_header hI.frame hH) hZ ha hk hi hI.ptr h12 hsmall)
@@ -66,16 +66,16 @@ theorem row_ok {s t : State} {B : Addr} {Z k a i : Nat} {minv : BitVec 64}
       Square.crossValue s.mem B (slot (8*k) a+64*i) 8 := by
     apply Square.crossValue_congr
     intro j hj
-    exact hI.frame.word (by omega) (by omega)
+    exact hI.frame.word (by omega_arith) (by omega_arith)
   have h1 := hvv
   rw [hI.value, hcInput] at h1
   refine WP.seq (WP.mono (offDiagonal_full (hI.scr.congr kv.wr) hv8 hv7 hv10 hv16 hv17 hv15
-    (by omega) hP (by omega) (by omega) (by omega) (by omega) (by omega))
+    (by omega_arith) hP (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun v' ⟨hvv', hvo', kv'⟩ => ?_)
-  have ho2 := ho1.trans (hvo'.mono (by omega) (by omega))
+  have ho2 := ho1.trans (hvo'.mono (by omega_arith) (by omega_arith))
   have k2 := k1.trans kv'
-  have hq := ho1.wv (d := slot (8*k) a+64*i) (k := 8) (by omega) (by omega)
-  have hb := ho1.wv (d := slot (8*k) a) (k := 8*i) (by omega) (by omega)
+  have hq := ho1.wv (d := slot (8*k) a+64*i) (k := 8) (by omega_arith) (by omega_arith)
+  have hb := ho1.wv (d := slot (8*k) a) (k := 8*i) (by omega_arith) (by omega_arith)
   have h2 := hvv'
   rw [hq, hb] at h2
   refine WP.mono (rowTail_ok (hI.scr.congr (kv'.wr.trans kv.wr))
@@ -103,7 +103,7 @@ theorem rows_ok {s : State} {B : Addr} {Z k a : Nat} {minv : BitVec 64}
     refine ⟨hs, Keep.refl _ _, h8, Outside.refl _ _ _ _, ?_⟩
     exact hz
   have hp : WP isa (SquareEightRaw.rows a) s (RowsInv s B Z k a k) :=
-    wp_countdown (by omega) hk (RowsInv s B Z k a)
+    wp_countdown (by omega_arith) hk (RowsInv s B Z k a)
       (fun i hi t hI hcount => row_ok h0 h7 hH hZ ha hk' hi hA hI hcount) hinit h12
   obtain ⟨tr, t, he, ht⟩ := hp
   refine ⟨tr, t, he, ht, fun v => Exec.vec ?_ he⟩

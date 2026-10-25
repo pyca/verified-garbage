@@ -106,7 +106,7 @@ theorem blockAtMem_ofs_ck {W : Addr} {m m' : Mem}
     blockAtMem m' (W + BitVec.ofNat 64 ofsO) = blockAtMem m (W + BitVec.ofNat 64 ofsO) :=
   blockAtMem_frame h fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint W (d := 16) (n := 16) (e := 32) (k := 16) (.inl (by decide)) (by omega) (by omega)
+    exact Offset.disjoint W (d := 16) (n := 16) (e := 32) (k := 16) (.inl (by decide)) (by omega_arith) (by omega_arith)
 
 theorem blockAtMem_B_ck {W B : Addr} (hBW : (⟨B, 16⟩ : Region).Disjoint ⟨W, 2560⟩) {m m' : Mem}
     (h : Frame [⟨B + BitVec.ofNat 64 0, 16⟩] m m') {d : Nat} (hd : d + 16 ≤ 2560) :
@@ -183,10 +183,10 @@ theorem pass_step {V : Reg → BitVec 64} {sp D : Addr} (L : Lay (V .r29) (V .r3
     WP isa (.seq nextOffset (.block (body ++ nextBlock))) t fun t' =>
       PassInv V sp D m O0 l X fB ckF t₀ t' (i + 1) := by
   have hDt : DBuf (V .r29) (V .r31) t D (16 * m) := hD.of_eq P.rd P.wr
-  have hBi := hDt.slice (a := 16 * i) (k := 16) (by omega)
+  have hBi := hDt.slice (a := 16 * i) (k := 16) (by omega_arith)
   have E := P.env
   have hw := E.perm.w
-  refine WP.seq (WP.seq (WP.mono (lNtz_ok E.r31 hw (by omega) (by omega) P.r26 P.l0) fun t₁ P₁ => ?_))
+  refine WP.seq (WP.seq (WP.mono (lNtz_ok E.r31 hw (by omega_arith) (by omega_arith) P.r26 P.l0) fun t₁ P₁ => ?_))
   have h31₁ : t₁.gpr .r31 = V .r31 := by rw [P₁.gpr _ (by decide), E.r31]
   have hw₁ : Covers [⟨V .r31, 2560⟩] t₁.wr := by rw [P₁.wr]; exact hw
   refine WP.mono (xorB_ok (s := t₁) (pd := ofsO) (qd := lO) (cd := ofsO) (by decide) (by decide) (by decide)
@@ -262,16 +262,16 @@ theorem pass_step {V : Reg → BitVec 64} {sp D : Addr} (L : Lay (V .r29) (V .r3
         exact P.frame.trans ((fW₂.mono (by simp)).trans (fr₃.sub fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact ⟨⟨D, 16 * m⟩, by simp, Offset.sub_base D (by omega)⟩
+          · exact ⟨⟨D, 16 * m⟩, by simp, Offset.sub_base D (by omega_arith)⟩
           · exact ⟨⟨V .r31 + BitVec.ofNat 64 ckO, 16⟩, by simp, fun _ h => h⟩))
       rd := by rw [u₆.rd, u₅.rd, u₄.rd, rd₃, rd₂, P.rd]
       wr := by rw [u₆.wr, u₅.wr, u₄.wr, wr₃, wr₂, P.wr]
       r24 := by
         rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, r24₃, Offset.add_add,
-          show 16 * i + 16 = 16 * (i + 1) by omega]
+          show 16 * i + 16 = 16 * (i + 1) by omega_arith]
       r26 := by rw [u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), r26₃, ← BitVec.ofNat_add]
       r25 := by
-        rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), r25₃, Offset.ofNat_sub_ofNat (by omega),
+        rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), r25₃, Offset.ofNat_sub_ofNat (by omega_arith),
           Nat.sub_sub]
       ofs := by
         rw [hmem, blockAtMem_frame fr₃ (fun r hr => by
@@ -301,11 +301,11 @@ theorem pass_step {V : Reg → BitVec 64} {sp D : Addr} (L : Lay (V .r29) (V .r3
   by_cases hki : k = i
   · subst hki
     rw [blk₃, Bi₂, ofs₂]; simp
-  · have hBk := hDt.slice (a := 16 * k) (k := 16) (by omega)
-    rw [kB₃ (Offset.disjoint D (by omega) (by omega) (by omega)) hBk.w, P.blk k hk]
+  · have hBk := hDt.slice (a := 16 * k) (k := 16) (by omega_arith)
+    rw [kB₃ (Offset.disjoint D (by omega_arith) (by omega_arith) (by omega_arith)) hBk.w, P.blk k hk]
     by_cases hk' : k < i
-    · simp [hk', show k < i + 1 by omega]
-    · simp [hk', show ¬ k < i + 1 by omega]
+    · simp [hk', show k < i + 1 by omega_arith]
+    · simp [hk', show ¬ k < i + 1 by omega_arith]
 
 theorem pass_ok {V : Reg → BitVec 64} {sp D : Addr} (L : Lay (V .r29) (V .r31)) {m : Nat} {O0 l : Block}
     {X : Nat → Block} {fB : Block → Block → Block} {fC : Block → Block → Block → Block} {ckF : Nat → Block}
@@ -319,11 +319,11 @@ theorem pass_ok {V : Reg → BitVec 64} {sp D : Addr} (L : Lay (V .r29) (V .r31)
     (m - j) _ ⟨j, rfl, hj, P⟩
   rintro k u ⟨i, rfl, hi, P⟩
   refine WP.mono (pass_step L hB hckF hD hm hi P) fun u' P' => ?_
-  have ev := eval_nonzero P'.r25 (by omega)
+  have ev := eval_nonzero P'.r25 (by omega_arith)
   by_cases he : m - (i + 1) = 0
   · left
-    exact ⟨ev.trans (by simp [he]), (show i + 1 = m by omega) ▸ P'⟩
+    exact ⟨ev.trans (by simp [he]), (show i + 1 = m by omega_arith) ▸ P'⟩
   · right
-    exact ⟨ev.trans (by simp [he]), m - (i + 1), by omega, i + 1, rfl, by omega, P'⟩
+    exact ⟨ev.trans (by simp [he]), m - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, P'⟩
 
 end VG.Proof.AesOcb.PPC64LE

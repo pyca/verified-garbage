@@ -97,7 +97,7 @@ theorem advance_ok {o u : State} {e : BitVec 32} {used keys scalars : Nat}
       rw [U₄.gpr, g₃, c₃, BitVec.ofNat_add, ← BitVec.add_assoc]; rfl
     have v₇ : t₇.gpr .eax = BitVec.ofNat 32 ((ofState o).randLen - (used + (ofState o).len)) := by
       rw [U₇.gpr, g₆, c₆, show upd (liveF (ofState o) e used keys scalars) randOff (t₄.gpr .eax) leftOff =
-        BitVec.ofNat 32 ((ofState o).randLen - used) from rfl, sub_ofNat (by omega), Nat.sub_add_eq]
+        BitVec.ofNat 32 ((ofState o).randLen - used) from rfl, sub_ofNat (by omega_arith), Nat.sub_add_eq]
     have v₁₀ : t₁₀.gpr .eax = BitVec.ofNat 32 (used + (ofState o).len) := by
       rw [U₁₀.gpr, g₉, c₉, show upd (upd (liveF (ofState o) e used keys scalars) randOff (t₄.gpr .eax)) leftOff
         (t₇.gpr .eax) usedOff = BitVec.ofNat 32 used from rfl, BitVec.ofNat_add_ofNat]
@@ -185,7 +185,7 @@ theorem out_keep {o : State} (A : KeySearchABI o) {m m' : Mem} (h : Frame [sR o]
     Spec.Rsa.bytesAt m' (argumentPointer o i) (arg o 7).toNat = Spec.Rsa.bytesAt m (argumentPointer o i) (arg o 7).toNat := by
   have hp := A.pLen
   unfold Spec.Ffdh.pLenValid at hp
-  refine bytes_frame h (fun r hr => ?_) (by omega)
+  refine bytes_frame h (fun r hr => ?_) (by omega_arith)
   simp only [List.mem_singleton] at hr; subst hr
   rcases hi with rfl | rfl
   · rw [← xR_eq A]; exact A.xs
@@ -194,7 +194,7 @@ theorem out_keep {o : State} (A : KeySearchABI o) {m m' : Mem} (h : Frame [sR o]
 theorem cmp_status {s t : State} {k j : Nat} (hk : k ≤ 3) (hj : j ≤ 3) (he : s.gpr .edx = BitVec.ofNat 32 k)
     (z : t.zf = some (s.gpr .edx - BitVec.ofNat 32 j == 0)) : isa.eval .e t = some (decide (k = j)) := by
   show t.zf = _
-  rw [z, he, sub_beq (by omega) (by omega)]
+  rw [z, he, sub_beq (by omega_arith) (by omega_arith)]
 
 theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h : Live p o used keys scalars s₀)
     (S : St o liveDs (liveF p (o.gpr .esi) used keys scalars) u)
@@ -217,15 +217,15 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
     hed.trans he
   have hst := attemptStatus_cases (ofState o).a (ofState o).len ((randOf o).drop used)
   have hle : attemptStatus (ofState o).a (ofState o).len ((randOf o).drop used) ≤ 3 := by
-    rcases hst with h1 | h1 | h1 <;> omega
+    rcases hst with h1 | h1 | h1 <;> omega_arith
   rcases hst with h1 | h2 | h3
   · -- Accepted.
     refine WP.ite true (by rw [cmp_status hle (j := 1) (by decide) hedT z, h1]; rfl) (fun _ => ?_) (fun h => absurd h (by decide))
     refine WP.mono (S''.terminal hA 1) fun v ⟨Sv, Fv⟩ => Or.inl ⟨?_, fun ⟨_, _, _, h⟩ => by
-      rw [h1] at h; omega⟩
+      rw [h1] at h; omega_arith⟩
     show Done _ _ (keyTail _ _ _ _ _ _) v
     rw [keyTail_accepted hk hs hr' h1]
-    refine Sv.done (by decide) ?_ ?_ ⟨Nat.zero_le _, Nat.zero_le _, by simp only [ofState] at hr ⊢; omega⟩
+    refine Sv.done (by decide) ?_ ?_ ⟨Nat.zero_le _, Nat.zero_le _, by simp only [ofState] at hr ⊢; omega_arith⟩
     · simp only [doneDs, List.mem_cons, List.not_mem_nil, or_false]
       rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
         simp [upd, liveF, doneF, statusOff, requestOff, scalarsOff, keysOff, KeySearchResult.retries,
@@ -243,9 +243,9 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
     have S₂ := S''.fupd F₂
     have hed₂ : t₂.gpr .edx = _ := (congrFun F₂.gpr .edx).trans hed'
     refine WP.ite true (by rw [cmp_status hle (j := 2) (by decide) hed' z₂, h2]; rfl) (fun _ => ?_) (fun h => absurd h (by decide))
-    refine WP.mono (S₂.rejectedScalar hA (by decide) (c := scalars) (by simp [liveF, scalarsOff]) (by omega))
+    refine WP.mono (S₂.rejectedScalar hA (by decide) (c := scalars) (by simp [liveF, scalarsOff]) (by omega_arith))
       fun v Sv => Or.inr ⟨hk, hs, hr, Or.inl ⟨h2, Sv.sub (fun d hd => by
-        exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd)) |>.congr ?_ |>.live (by omega) hkl (by omega),
+        exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd)) |>.congr ?_ |>.live (by omega_arith) hkl (by omega_arith),
         ?_⟩⟩
     · simp only [liveDs, List.mem_cons, List.not_mem_nil, or_false]
       rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
@@ -263,10 +263,10 @@ theorem classify_ok {p : KPub} {o s₀ u : State} {used keys scalars : Nat} (h :
     have S₃ := S₂.fupd F₃
     have hed₃ : t₃.gpr .edx = _ := (congrFun F₃.gpr .edx).trans hed₂
     refine WP.ite true (by rw [cmp_status hle (j := 3) (by decide) hed₂ z₃, h3]; rfl) (fun _ => ?_) (fun h => absurd h (by decide))
-    refine WP.mono (S₃.rejectedPublic hA (by decide) (k := keys) (by simp [liveF, keysOff]) (by omega))
+    refine WP.mono (S₃.rejectedPublic hA (by decide) (k := keys) (by simp [liveF, keysOff]) (by omega_arith))
       fun v Sv => Or.inr ⟨hk, hs, hr, Or.inr ⟨h3, Sv.sub (fun d hd => by
         exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd))) |>.congr ?_
-        |>.live (by omega) (by omega) (by decide), ?_⟩⟩
+        |>.live (by omega_arith) (by omega_arith) (by decide), ?_⟩⟩
     · simp only [liveDs, List.mem_cons, List.not_mem_nil, or_false]
       rintro d (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl | rfl) <;> simp [upd, liveF, statusOff, scalarsOff, keysOff]

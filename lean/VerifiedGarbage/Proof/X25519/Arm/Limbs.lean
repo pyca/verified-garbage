@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.X25519
 
 import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X25519 on 32-bit ARM: numbers of 16-bit limbs
@@ -35,21 +36,21 @@ theorem pow16_succ (n : Nat) : 2 ^ (16 * (n + 1)) = 2 ^ (16 * n) * 65536 := by
 theorem val16_congr {f g : Nat → Nat} : ∀ {n : Nat}, (∀ k < n, f k = g k) → val16 f n = val16 g n
   | 0, _ => rfl
   | n + 1, h => by
-    rw [val16_succ, val16_succ, val16_congr (fun k hk => h k (by omega)), h n (by omega)]
+    rw [val16_succ, val16_succ, val16_congr (fun k hk => h k (by omega_arith)), h n (by omega_arith)]
 
 theorem val16_lt {f : Nat → Nat} : ∀ {n : Nat}, (∀ k < n, f k < 65536) → val16 f n < 2 ^ (16 * n)
   | 0, _ => Nat.one_pos
   | n + 1, h => by
-    have ih := val16_lt (n := n) fun k hk => h k (by omega)
+    have ih := val16_lt (n := n) fun k hk => h k (by omega_arith)
     have h1 : 2 ^ (16 * n) * f n ≤ 2 ^ (16 * n) * 65535 :=
-      Nat.mul_le_mul_left _ (by have := h n (by omega); omega)
+      Nat.mul_le_mul_left _ (by have := h n (by omega_arith); omega_arith)
     rw [val16_succ, pow16_succ]
-    omega
+    omega_arith
 
 theorem val16_add (f g : Nat → Nat) :
     ∀ n, val16 (fun k => f k + g k) n = val16 f n + val16 g n
   | 0 => rfl
-  | n + 1 => by rw [val16_succ, val16_succ, val16_succ, val16_add f g n, Nat.mul_add]; omega
+  | n + 1 => by rw [val16_succ, val16_succ, val16_succ, val16_add f g n, Nat.mul_add]; omega_arith
 
 theorem val16_cmul (a : Nat) (f : Nat → Nat) : ∀ n, val16 (fun k => a * f k) n = a * val16 f n
   | 0 => rfl
@@ -62,7 +63,7 @@ theorem val16_append (f : Nat → Nat) (m : Nat) :
   | n + 1 => by
     rw [← Nat.add_assoc, val16_succ, val16_append f m n, val16_succ, Nat.mul_add (2 ^ (16 * m)),
       ← Nat.mul_assoc, ← Nat.pow_add, Nat.mul_add 16 m n]
-    omega
+    omega_arith
 
 theorem val16_zero_fn : ∀ n, val16 (fun _ => 0) n = 0
   | 0 => rfl
@@ -75,7 +76,7 @@ theorem val16_mono (f : Nat → Nat) {m n : Nat} (h : m ≤ n) : val16 f m ≤ v
 theorem val16_head (f : Nat → Nat) {n : Nat} (hn : 0 < n) : f 0 ≤ val16 f n := by
   have := val16_mono f (m := 1) (n := n) hn
   simp only [val16] at this
-  omega
+  omega_arith
 
 /-- Changing limb 0 by `d`. -/
 theorem val16_add_head (f : Nat → Nat) (d : Nat) {n : Nat} (hn : 0 < n) :
@@ -114,7 +115,7 @@ theorem chain_val (c : Nat → Nat) (cin : Nat) :
         2 ^ (16 * n) * 65536 * ((c n + chain c cin n) / 65536) = 2 ^ (16 * n) * (c n + chain c cin n) := by
       rw [Nat.mul_assoc, ← Nat.mul_add, Nat.mod_add_div]
     rw [Nat.mul_add] at e
-    omega
+    omega_arith
 
 /-- The carries stay below `2¹⁶` (and each sum below `2³²`) if every sum is at
 most `2³² - 2¹⁶`. -/
@@ -122,16 +123,16 @@ theorem chain_lt {c : Nat → Nat} {cin n : Nat} (hc : ∀ k < n, c k + 65536 �
     (hcin : cin < 65536) : ∀ k ≤ n, chain c cin k < 65536
   | 0, _ => hcin
   | k + 1, hk => by
-    have := chain_lt hc hcin k (by omega)
-    have := hc k (by omega)
+    have := chain_lt hc hcin k (by omega_arith)
+    have := hc k (by omega_arith)
     rw [chain_succ, Nat.div_lt_iff_lt_mul (by decide)]
-    omega
+    omega_arith
 
 theorem sum_lt {c : Nat → Nat} {cin n : Nat} (hc : ∀ k < n, c k + 65536 ≤ 2 ^ 32)
     (hcin : cin < 65536) {k : Nat} (hk : k < n) : c k + chain c cin k < 2 ^ 32 := by
-  have := chain_lt hc hcin k (by omega)
+  have := chain_lt hc hcin k (by omega_arith)
   have := hc k hk
-  omega
+  omega_arith
 
 /-! ## A row of a product -/
 
@@ -150,22 +151,22 @@ theorem row_val {acc a b : Nat → Nat} {i : Nat} (hv : val16 acc (i + 16) = val
   have e2 : val16 (fun k => rowAcc acc a b i (i + k)) 17 =
       val16 (out (rowC acc a b i) 0) 16 + 2 ^ 256 * chain (rowC acc a b i) 0 16 := by
     rw [val16_succ, val16_congr (g := out (rowC acc a b i) 0) fun k hk => by
-      simp only [rowAcc, show ¬ i + k < i by omega, show i + k < i + 16 by omega, ite_false, ite_true,
+      simp only [rowAcc, show ¬ i + k < i by omega_arith, show i + k < i + 16 by omega_arith, ite_false, ite_true,
         Nat.add_sub_cancel_left]]
-    simp only [rowAcc, show ¬ i + 16 < i by omega, Nat.lt_irrefl, ite_false]
+    simp only [rowAcc, show ¬ i + 16 < i by omega_arith, Nat.lt_irrefl, ite_false]
   have e3 : val16 (rowC acc a b i) 16 = a i * val16 b 16 + val16 (fun k => acc (i + k)) 16 := by
     rw [← val16_cmul, ← val16_add]; rfl
   have hc := chain_val (rowC acc a b i) 0 16
   rw [show 16 * 16 = 256 from rfl, Nat.add_zero, e3] at hc
   rw [val16_append _ i 17, e1, e2, hc, val16_succ a i, Nat.add_mul, ← hv, val16_append acc i 16,
     Nat.mul_add, Nat.mul_assoc]
-  omega
+  omega_arith
 
 theorem rowC_le {acc a b : Nat → Nat} {i j : Nat} (ha : a i < 65536) (hb : b j < 65536)
     (hacc : acc (i + j) < 65536) : rowC acc a b i j + 65536 ≤ 2 ^ 32 := by
   simp only [rowC]
-  have : a i * b j ≤ 65535 * 65535 := Nat.mul_le_mul (by omega) (by omega)
-  omega
+  have : a i * b j ≤ 65535 * 65535 := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  omega_arith
 
 theorem rowAcc_lt {acc a b : Nat → Nat} {i : Nat} (hacc : ∀ k < i, acc k < 65536)
     (hc : ∀ j < 16, rowC acc a b i j + 65536 ≤ 2 ^ 32) :
@@ -173,7 +174,7 @@ theorem rowAcc_lt {acc a b : Nat → Nat} {i : Nat} (hacc : ∀ k < i, acc k < 6
   intro k _
   simp only [rowAcc]
   split
-  · exact hacc k (by omega)
+  · exact hacc k (by omega_arith)
   · split
     · exact out_lt _ _ _
     · exact chain_lt hc (by decide) 16 (Nat.le_refl _)
@@ -186,10 +187,10 @@ def foldC (acc : Nat → Nat) (k : Nat) : Nat := acc k + 38 * acc (16 + k)
 theorem foldC_le {acc : Nat → Nat} (h : ∀ k < 32, acc k < 65536) :
     ∀ k < 16, foldC acc k + 65536 ≤ 2 ^ 32 := by
   intro k hk
-  have := h k (by omega)
-  have := h (16 + k) (by omega)
+  have := h k (by omega_arith)
+  have := h (16 + k) (by omega_arith)
   simp only [foldC]
-  omega
+  omega_arith
 
 theorem val16_foldC (acc : Nat → Nat) :
     val16 (foldC acc) 16 = val16 acc 16 + 38 * val16 (fun k => acc (16 + k)) 16 := by
@@ -200,14 +201,14 @@ theorem fold_facts {acc : Nat → Nat} (h : ∀ k < 32, acc k < 65536) :
       (val16 (out (foldC acc) 0) 16 + 2 ^ 256 * chain (foldC acc) 0 16) % P = val16 acc 32 % P := by
   have hc := chain_val (foldC acc) 0 16
   have hs := val16_append acc 16 16
-  have hlo := val16_lt (f := acc) (n := 16) fun k hk => h k (by omega)
-  have hhi := val16_lt (f := fun k => acc (16 + k)) (n := 16) fun k hk => h (16 + k) (by omega)
+  have hlo := val16_lt (f := acc) (n := 16) fun k hk => h k (by omega_arith)
+  have hhi := val16_lt (f := fun k => acc (16 + k)) (n := 16) fun k hk => h (16 + k) (by omega_arith)
   rw [val16_foldC] at hc
   rw [show 16 * 16 = 256 from rfl] at hc hlo hhi hs
   refine ⟨?_, ?_⟩
-  · have : 2 ^ 256 * chain (foldC acc) 0 16 < 2 ^ 256 * 39 := by omega
+  · have : 2 ^ 256 * chain (foldC acc) 0 16 < 2 ^ 256 * 39 := by omega_arith
     have := Nat.lt_of_mul_lt_mul_left this
-    omega
+    omega_arith
   · rw [show (16 : Nat) + 16 = 32 from rfl] at hs
     rw [hc, Nat.add_zero, hs, fold256]
 
@@ -224,15 +225,15 @@ theorem tail_facts {l : Nat → Nat} (hl : ∀ k < 16, l k < 65536) {c16 : Nat} 
   have h0 := val16_head (out l (38 * c16)) (n := 16) (by decide)
   rw [show 16 * 16 = 256 from rfl] at hv hL hO
   have ht : chain l (38 * c16) 16 ≤ 1 := by
-    have : 2 ^ 256 * chain l (38 * c16) 16 < 2 ^ 256 * 2 := by omega
+    have : 2 ^ 256 * chain l (38 * c16) 16 < 2 ^ 256 * 2 := by omega_arith
     have := Nat.lt_of_mul_lt_mul_left this
-    omega
+    omega_arith
   refine ⟨ht, fun k hk => ?_, ?_⟩
   · simp only [tailL]
     split
     · rcases Nat.le_one_iff_eq_zero_or_eq_one.mp ht with h | h
       · rw [h]; exact out_lt _ _ _
-      · rw [h] at hv ⊢; omega
+      · rw [h] at hv ⊢; omega_arith
     · exact out_lt _ _ _
   · have e : val16 (tailL l c16) 16 = val16 (out l (38 * c16)) 16 + 38 * chain l (38 * c16) 16 :=
       val16_add_head (out l (38 * c16)) _ (by decide)
@@ -258,18 +259,18 @@ theorem subC_facts {a b : Nat → Nat} (ha : ∀ k < 16, a k < 65536) (hb : ∀ 
   refine ⟨fun k hk => ?_, ?_⟩
   · have := ha k hk; have := hb k hk
     have := fourP_le k hk
-    simp only [subC]; omega
+    simp only [subC]; omega_arith
   · rw [← val16_add, ← val16_fourP, ← val16_add]
-    exact val16_congr fun k hk => by have := hK k hk; have := hb k hk; simp only [subC]; omega
+    exact val16_congr fun k hk => by have := hK k hk; have := hb k hk; simp only [subC]; omega_arith
 
 /-- The carry out of the limbs of a sum or difference of numbers below
 `2²⁵⁶` is at most 38 (it is at most 2). -/
 theorem carry_le {c : Nat → Nat} (h : val16 c 16 < 39 * 2 ^ 256) : chain c 0 16 ≤ 38 := by
   have hv := chain_val c 0 16
   rw [show 16 * 16 = 256 from rfl] at hv
-  have : 2 ^ 256 * chain c 0 16 < 2 ^ 256 * 39 := by omega
+  have : 2 ^ 256 * chain c 0 16 < 2 ^ 256 * 39 := by omega_arith
   have := Nat.lt_of_mul_lt_mul_left this
-  omega
+  omega_arith
 
 /-! ## The final reduction -/
 
@@ -282,20 +283,20 @@ def mask15 (l : Nat → Nat) (k : Nat) : Nat := if k = 15 then l 15 % 32768 else
 theorem mask15_facts {l : Nat → Nat} (hl : ∀ k < 16, l k < 65536) :
     val16 l 16 = val16 (mask15 l) 16 + 2 ^ 255 * (l 15 / 32768) ∧ val16 (mask15 l) 16 < 2 ^ 255 ∧
       (∀ k < 16, mask15 l k < 65536) ∧ l 15 / 32768 ≤ 1 := by
-  have e : val16 (mask15 l) 15 = val16 l 15 := val16_congr fun k hk => by simp [mask15, show k ≠ 15 by omega]
+  have e : val16 (mask15 l) 15 = val16 l 15 := val16_congr fun k hk => by simp [mask15, show k ≠ 15 by omega_arith]
   have h15 := hl 15 (by decide)
-  have hlo := val16_lt (f := l) (n := 15) fun k hk => hl k (by omega)
+  have hlo := val16_lt (f := l) (n := 15) fun k hk => hl k (by omega_arith)
   rw [show 16 * 15 = 240 from rfl] at hlo
   have hm : l 15 = l 15 % 32768 + 32768 * (l 15 / 32768) := (Nat.mod_add_div _ _).symm
-  refine ⟨?_, ?_, fun k hk => ?_, by omega⟩
+  refine ⟨?_, ?_, fun k hk => ?_, by omega_arith⟩
   · rw [val16_succ l 15, val16_succ (mask15 l) 15, e, show mask15 l 15 = l 15 % 32768 from rfl,
       show 16 * 15 = 240 from rfl]
     conv => lhs; rw [hm]
-    rw [Nat.mul_add, show (2 : Nat) ^ 255 = 2 ^ 240 * 32768 from rfl, Nat.mul_assoc]; omega
+    rw [Nat.mul_add, show (2 : Nat) ^ 255 = 2 ^ 240 * 32768 from rfl, Nat.mul_assoc]; omega_arith
   · rw [val16_succ (mask15 l) 15, e, show mask15 l 15 = l 15 % 32768 from rfl, show 16 * 15 = 240 from rfl]
     have : 2 ^ 240 * (l 15 % 32768) ≤ 2 ^ 240 * 32767 :=
-      Nat.mul_le_mul_left _ (by have := Nat.mod_lt (l 15) (show 32768 > 0 by decide); omega)
-    rw [show (2 : Nat) ^ 255 = 2 ^ 240 * 32768 from rfl]; omega
+      Nat.mul_le_mul_left _ (by have := Nat.mod_lt (l 15) (show 32768 > 0 by decide); omega_arith)
+    rw [show (2 : Nat) ^ 255 = 2 ^ 240 * 32768 from rfl]; omega_arith
   · simp only [mask15]; split
     · exact Nat.lt_trans (Nat.mod_lt _ (by decide)) (by decide)
     · exact hl k hk
@@ -322,7 +323,7 @@ theorem freeze_facts {l : Nat → Nat} (hl : ∀ k < 16, l k < 65536) :
     rcases Nat.eq_zero_or_pos (chain (mask15 l) (19 * (l 15 / 32768)) 16) with h | h
     · exact h
     · have : 2 ^ 256 ≤ 2 ^ 256 * chain (mask15 l) (19 * (l 15 / 32768)) 16 := Nat.le_mul_of_pos_right _ h
-      omega
+      omega_arith
   rw [tA, Nat.mul_zero, Nat.add_zero] at hA
   -- `x' = val16 (frA l) 16`.
   have hY := chain_val (frA l) 19 16
@@ -334,7 +335,7 @@ theorem freeze_facts {l : Nat → Nat} (hl : ∀ k < 16, l k < 65536) :
     · exact h
     · have : 2 ^ 256 ≤ 2 ^ 256 * chain (frA l) 19 16 := Nat.le_mul_of_pos_right _ h
       have : val16 (frA l) 16 = val16 (mask15 l) 16 + 19 * (l 15 / 32768) := hA
-      omega
+      omega_arith
   rw [tY, Nat.mul_zero, Nat.add_zero] at hY
   obtain ⟨e2, b2, lm2, c2⟩ := mask15_facts hYl
   have hxA : val16 (frA l) 16 = val16 (mask15 l) 16 + 19 * (l 15 / 32768) := hA
@@ -351,23 +352,23 @@ theorem freeze_facts {l : Nat → Nat} (hl : ∀ k < 16, l k < 65536) :
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp c2 with h0 | h1
     · have e : val16 (frR l) 16 = val16 (frA l) 16 :=
         val16_congr fun k _ => by simp only [frR, sel, hs, h0]; rfl
-      rw [e, Nat.mod_eq_of_lt (by rw [h0] at e2; omega)]
+      rw [e, Nat.mod_eq_of_lt (by rw [h0] at e2; omega_arith)]
     · have e : val16 (frR l) 16 = val16 (mask15 (frY l)) 16 :=
         val16_congr fun k _ => by simp only [frR, sel, hs, h1, ite_true]
       rw [e]
       rw [h1] at e2
-      have : val16 (frA l) 16 = val16 (mask15 (frY l)) 16 + P := by omega
-      rw [this, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+      have : val16 (frA l) 16 = val16 (mask15 (frY l)) 16 + P := by omega_arith
+      rw [this, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- The limbs of a number of 16 limbs below `2¹⁶`. -/
 theorem val16_div {r : Nat → Nat} {n : Nat} (hr : ∀ k < n, r k < 65536) {k : Nat} (hk : k < n) :
     val16 r n / 2 ^ (16 * k) % 65536 = r k := by
   have e := val16_append r k (n - k)
-  rw [Nat.add_sub_cancel' (by omega)] at e
+  rw [Nat.add_sub_cancel' (by omega_arith)] at e
   have e' := val16_append (fun j => r (k + j)) 1 (n - k - 1)
-  rw [Nat.add_sub_cancel' (by omega)] at e'
+  rw [Nat.add_sub_cancel' (by omega_arith)] at e'
   simp only [val16, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero] at e'
-  have hlt := val16_lt (f := r) (n := k) fun j hj => hr j (by omega)
+  have hlt := val16_lt (f := r) (n := k) fun j hj => hr j (by omega_arith)
   rw [e, e', Nat.mul_comm (2 ^ (16 * k)), Nat.add_mul_div_right _ _ (Nat.two_pow_pos _),
     Nat.div_eq_of_lt hlt, Nat.zero_add, show (2 : Nat) ^ (16 * 1) = 65536 from rfl, Nat.add_mul_mod_self_left,
     Nat.mod_eq_of_lt (hr k hk)]
@@ -377,7 +378,7 @@ theorem bytes_of_limbs {r : Nat → Nat} (hr : ∀ k < 16, r k < 65536) {k : Nat
     val16 r 16 / 256 ^ (2 * k) % 256 = r k % 256 ∧ val16 r 16 / 256 ^ (2 * k + 1) % 256 = r k / 256 := by
   have h := val16_div hr hk
   have p1 : (256 : Nat) ^ (2 * k) = 2 ^ (16 * k) := by
-    rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega
+    rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega_arith
   refine ⟨?_, ?_⟩
   · rw [p1, ← h, Nat.mod_mod_of_dvd _ (by decide)]
   · rw [Nat.pow_succ, p1, ← Nat.div_div_eq_div_mul, ← h, show (65536 : Nat) = 256 * 256 from rfl,

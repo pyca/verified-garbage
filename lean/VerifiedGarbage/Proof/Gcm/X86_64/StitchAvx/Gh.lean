@@ -125,7 +125,7 @@ theorem ghLoad_ok (k : Nat) (s : State) (h0 : s.lane .xmm0 0 = revMask)
     fun s' ⟨⟨p, o⟩, hi, hg⟩ => ⟨p, ?_⟩
   have hg := hg (ghLoad_noGpr k)
   refine ⟨hg, by simpa using o.mem, by simpa using o.rd, by simpa using o.wr, fun r hr l hl => ?_⟩
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
   · simpa using o.xmm r hr
   · exact hi r (ghLoad_dst k r hr)
 
@@ -249,38 +249,38 @@ theorem gq_ok {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block} {
   by_cases hl4 : j ≤ 4
   · -- A load.
     obtain ⟨hk, hlo⟩ := hrd j hj1 hl4
-    rw [ite_f (by omega)] at h2
+    rw [ite_f (by omega_arith)] at h2
     simp only [gq, show 1 ≤ j ∧ j ≤ 4 from ⟨hj1, hl4⟩, and_self, ite_true]
-    rw [show min (j - 1) 4 = j - 1 by omega, show base + (j - 1) = base + j - 1 by omega] at h2
+    rw [show min (j - 1) 4 = j - 1 by omega_arith, show base + (j - 1) = base + j - 1 by omega_arith] at h2
     refine WP.mono (ghStep hk hlo hE h2.1 h2.2) fun s' ⟨hE', p', y', f'⟩ =>
       ⟨⟨hE'.mono (hmono j), by rw [f'.lane _ (by decide) 0 (by decide)]; exact h1, ?_⟩,
         f'.mono (by decide)⟩
-    rw [ite_f (by omega), show min (j + 1 - 1) 4 = j by omega, show base + j = base + j - 1 + 1 by omega]
+    rw [ite_f (by omega_arith), show min (j + 1 - 1) 4 = j by omega_arith, show base + j = base + j - 1 + 1 by omega_arith]
     exact ⟨p', y'⟩
   · by_cases h5 : fin = true ∧ j = 5
     · -- The reduction.
       obtain ⟨hf, rfl⟩ := h5
-      rw [ite_f (by omega)] at h2
-      simp only [gq, show ¬ (1 ≤ 5 ∧ 5 ≤ 4) by omega, ite_false, hf, and_self, ite_true]
+      rw [ite_f (by omega_arith)] at h2
+      simp only [gq, show ¬ (1 ≤ 5 ∧ 5 ≤ 4) by omega_arith, ite_false, hf, and_self, ite_true]
       have hb := hfin hf
       subst hb
       refine WP.mono (ghFin hE h1) fun s' ⟨hE', y0, f'⟩ =>
         ⟨⟨hE'.mono (hmono 5), by rw [f'.lane _ (by decide) 0 (by decide)]; exact h1, ?_⟩,
           f'.mono (by decide)⟩
-      rw [ite_t ⟨rfl, by omega⟩, y0, h2.1]; rfl
+      rw [ite_t ⟨rfl, by omega_arith⟩, y0, h2.1]; rfl
     · -- Nothing.
       have hg : gq ord base fin j = [] := by
-        simp only [gq, show ¬ (1 ≤ j ∧ j ≤ 4) by omega, ite_false]
+        simp only [gq, show ¬ (1 ≤ j ∧ j ≤ 4) by omega_arith, ite_false]
         rw [ite_f h5]
       rw [hg]
       refine WP.block_nil ⟨⟨hE.mono (hmono j), h1, ?_⟩, YFrame.refl _ _⟩
       by_cases hf : fin = true ∧ 5 < j
-      · rw [ite_t hf] at h2; rw [ite_t ⟨hf.1, by omega⟩]; exact h2
+      · rw [ite_t hf] at h2; rw [ite_t ⟨hf.1, by omega_arith⟩]; exact h2
       · rw [ite_f hf] at h2
         by_cases hf' : fin = true ∧ 5 < j + 1
         · have : ¬ 5 < j := fun h => hf ⟨hf'.1, h⟩
-          exact absurd ⟨hf'.1, by omega⟩ h5
-        · rw [ite_f hf', show min (j + 1 - 1) 4 = min (j - 1) 4 by omega]; exact h2
+          exact absurd ⟨hf'.1, by omega_arith⟩ h5
+        · rw [ite_f hf', show min (j + 1 - 1) 4 = min (j - 1) 4 by omega_arith]; exact h2
 
 /-- The GHASH state, kept by the data a batch writes. -/
 theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X : Nat → Block}
@@ -299,18 +299,18 @@ theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X
     fun k hk => by rw [hrd, hwr]; exact hE.ina k hk, fun k hk => by rw [hrd, hwr]; exact hE.inp k hk,
     by rw [hlane _ (by decide) (by decide) 0 (by decide)]; exact hE.m0⟩,
     by rw [hlane _ (by decide) (by decide) 0 (by decide)]; exact h1, ?_⟩
-  · have e : a + BitVec.ofNat 64 (16 * i) = bAddr s₀ (16 * g + i) := addr_eq (by omega)
+  · have e : a + BitVec.ofNat 64 (16 * i) = bAddr s₀ (16 * g + i) := addr_eq (by omega_arith)
     rw [e, blockAt_frame hf fun r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
       intro x h₁ h₂
-      exact run_sep hw (by omega) hc (hsep i hi hi') h₁ h₂]
+      exact run_sep hw (by omega_arith) hc (hsep i hi hi') h₁ h₂]
     have := hE.xs i hi hi'
     rwa [e] at this
-  · rw [hf.readW (r := pR s₀) (Offset.contains_base _ (by omega) (by omega))
+  · rw [hf.readW (r := pR s₀) (Offset.contains_base _ (by omega_arith) (by omega_arith))
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hp.d_p.symm.sub_right (Offset.sub_base _ (by omega))) (by decide)]
+        exact hp.d_p.symm.sub_right (Offset.sub_base _ (by omega_arith))) (by decide)]
     exact hE.pv k hk
   · split
     · rw [ite_t (by assumption)] at h2

@@ -20,11 +20,11 @@ abbrev val4 (a b c d : Word) : Nat :=
 theorem val4_lt (a b c d : Word) : val4 a b c d < 2 ^ 256 := by
   have := a.isLt; have := b.isLt; have := c.isLt; have := d.isLt
   simp only [val4]
-  omega
+  omega_arith
 
 theorem low_le_val4 (a b c d : Word) : a.toNat ≤ val4 a b c d := by
   simp only [val4]
-  omega
+  omega_arith
 
 theorem carryWord (c : Bool) : (BitVec.ofNat 64 c.toNat).toNat = c.toNat := by
   cases c <;> rfl
@@ -48,7 +48,7 @@ theorem addCarry_value (a b : Word) (c : Bool) :
   have := a.isLt; have := b.isLt; have := Bool.toNat_le c
   simp only [addCarry, BitVec.toNat_add, carryWord, carryOut]
   by_cases h : 2 ^ 64 ≤ a.toNat + b.toNat + c.toNat <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- Complemented addition implements subtraction with C as *no borrow*. -/
 theorem subCarry_value (a b : Word) (c : Bool) :
@@ -59,7 +59,7 @@ theorem subCarry_value (a b : Word) (c : Bool) :
   have hc := Bool.toNat_le c
   have hd := Bool.toNat_le (carryOut a (~~~b) c)
   simp only [BitVec.toNat_not] at h
-  omega
+  omega_arith
 
 theorem addCarry_false (a b : Word) : addCarry a b false = a + b := by
   change a + b + 0 = a + b
@@ -75,7 +75,7 @@ theorem addCarry_sub (a b : Word) (c : Bool) :
   have := a.isLt; have := b.isLt; have := Bool.toNat_le c
   simp only [addCarry, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_not,
     BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- Four limbs, including a carry into the low limb and out of the high limb. -/
 theorem add4_value (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (c : Bool) :
@@ -92,7 +92,7 @@ theorem add4_value (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (c : Bool) :
   have e3 := addCarry_value a3 b3 c2
   dsimp only [c0, c1, c2, c3] at *
   simp only [val4]
-  omega
+  omega_arith
 
 theorem sub4_value (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (c : Bool) :
     let c0 := carryOut a0 (~~~b0) c
@@ -110,7 +110,7 @@ theorem sub4_value (a0 a1 a2 a3 b0 b1 b2 b3 : Word) (c : Bool) :
   have e3 := subCarry_value a3 b3 c2
   dsimp only [c0, c1, c2, c3] at *
   simp only [val4]
-  omega
+  omega_arith
 
 /-- A full 64-by-64 product, plus two words, fits in two words. -/
 theorem multiply_accumulate (a b c t : Word) :
@@ -124,11 +124,11 @@ theorem multiply_accumulate (a b c t : Word) :
   intro lo hi r d
   have ha := a.isLt; have hb := b.isLt; have hc := c.isLt; have ht := t.isLt
   have hp : a.toNat * b.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) :=
-    Nat.mul_le_mul (by omega) (by omega)
+    Nat.mul_le_mul (by omega_arith) (by omega_arith)
   have hlo : lo.toNat = a.toNat * b.toNat % 2 ^ 64 := BitVec.toNat_mul _ _
   have hhi : hi.toNat = a.toNat * b.toNat / 2 ^ 64 := by
     simp only [hi, BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_arith)
   have hz : (0 : Word).toNat = 0 := rfl
   simp only [r, d, addCarry, carryOut, BitVec.toNat_add, carryWord,
     Bool.toNat_false, BitVec.add_zero, hz, Nat.add_zero, hlo, hhi]
@@ -136,10 +136,10 @@ theorem multiply_accumulate (a b c t : Word) :
   all_goals simp only [h1, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false]
   all_goals by_cases h2 : 2 ^ 64 ≤ t.toNat + (a.toNat * b.toNat % 2 ^ 64 + c.toNat) % 2 ^ 64
   all_goals simp only [h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false]
-  all_goals omega
+  all_goals omega_arith
 
 /-- A doubled bounded value cannot carry out of its four limbs. -/
 theorem bounded_double {v a c b : Nat} (e : v + 2 ^ 256 * c = a + a + b)
-    (h : 2 * a + b < 2 ^ 256) : v = 2 * a + b := by omega
+    (h : 2 * a + b < 2 ^ 256) : v = 2 * a + b := by omega_arith
 
 end VG.Proof.Ed25519.Word64

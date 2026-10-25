@@ -46,35 +46,35 @@ open VG.Spec.Gcm (Block blockAt ghashFrom)
 
 theorem getLsbD_read (m : Mem) : ∀ (n : Nat) (a : Addr) (i : Nat), i < 8 * n →
     (m.read a n).getLsbD i = (m (a + BitVec.ofNat 64 (i / 8))).getLsbD (i % 8)
-  | 0, _, _, h => absurd h (by omega)
+  | 0, _, _, h => absurd h (by omega_arith)
   | n + 1, a, i, h => by
     simp only [Mem.read, BitVec.getLsbD_append]
     by_cases hi : i < 8
     · simp [hi, Nat.div_eq_of_lt hi, Nat.mod_eq_of_lt hi]
     · simp only [hi, ite_false]
-      rw [getLsbD_read m n (a + 1) (i - 8) (by omega)]
-      have e1 : (i - 8) / 8 = i / 8 - 1 := by omega
-      have e2 : (i - 8) % 8 = i % 8 := by omega
+      rw [getLsbD_read m n (a + 1) (i - 8) (by omega_arith)]
+      have e1 : (i - 8) / 8 = i / 8 - 1 := by omega_arith
+      have e2 : (i - 8) % 8 = i % 8 := by omega_arith
       rw [e1, e2]
       congr 2
       rw [BitVec.add_assoc]; congr 1
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-      omega
+      omega_arith
 
 /-- 16 bytes as two doublewords. -/
 theorem readW128_q (m : Mem) (a : Addr) : m.readW a 128 = m.readW (a + BitVec.ofNat 64 8) 64 ++ m.readW a 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [Mem.readW, BitVec.getLsbD_setWidth, BitVec.getLsbD_append]
-  rw [getLsbD_read _ 16 a i (by omega)]
+  rw [getLsbD_read _ 16 a i (by omega_arith)]
   by_cases h : i < 64
   · simp only [h, decide_true, Bool.cond_true, BitVec.getLsbD_setWidth]
-    rw [getLsbD_read _ 8 a i (by omega)]
+    rw [getLsbD_read _ 8 a i (by omega_arith)]
     simp [hi, h]
   · simp only [h, decide_false, Bool.cond_false, BitVec.getLsbD_setWidth]
-    rw [getLsbD_read _ 8 _ (i - 64) (by omega), Offset.add_add, show 8 + (i - 64) / 8 = i / 8 by omega,
-      show (i - 64) % 8 = i % 8 by omega]
-    simp [hi, h, show i - 64 < 64 by omega]
+    rw [getLsbD_read _ 8 _ (i - 64) (by omega_arith), Offset.add_add, show 8 + (i - 64) / 8 = i / 8 by omega_arith,
+      show (i - 64) % 8 = i % 8 by omega_arith]
+    simp [hi, h, show i - 64 < 64 by omega_arith]
 
 /-- 16 bytes as a number. -/
 theorem ofBytes_readW (m : Mem) (a : Addr) : Spec.GcmSiv.ofBytes (bytesAt m a 16) = m.readW a 128 := by
@@ -169,7 +169,7 @@ theorem polyBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
   have hp : KPre σ := {
     rounds := by rcases L.rounds with h | h <;> simp [σ, h]
     nb1 := hnb
-    n16 := by show 128 * (p.n / 128) < 2 ^ 64; omega
+    n16 := by show 128 * (p.n / 128) < 2 ^ 64; omega_arith
     k_in := by
       show InRegions (t.rd ++ t.wr) (p.W + BitVec.ofNat 64 240) (16 * (p.R + 1))
       exact E.perm.wR (by rcases L.rounds with h | h <;> rw [h] <;> decide)
@@ -177,23 +177,23 @@ theorem polyBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
     d_in := by
       show InRegions t.wr p.D (128 * (p.n / 128))
       exact E.perm.d _ _ ⟨⟨p.D, p.n⟩, List.mem_singleton_self _, by
-        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; omega⟩
+        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; omega_arith⟩
     t_in := E.perm.wR (by decide)
     d_k := by
       show (⟨p.D, 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 240, 16 * (p.R + 1)⟩
       exact (L.d_w' (d := 240) (k := 16 * (p.R + 1)) (by rcases L.rounds with h | h <;> rw [h] <;> decide)).sub_left
-        (Region.sub_prefix (by omega))
+        (Region.sub_prefix (by omega_arith))
     d_c := by
       show (⟨p.D, 128 * (p.n / 128)⟩ : Region).Disjoint _
-      exact (L.d_w' (by decide)).sub_left (Region.sub_prefix (by omega))
+      exact (L.d_w' (by decide)).sub_left (Region.sub_prefix (by omega_arith))
     d_t := by
       show (⟨p.D, 128 * (p.n / 128)⟩ : Region).Disjoint _
-      exact (L.d_w' (by decide)).sub_left (Region.sub_prefix (by omega))
-    wrap_t := by show p.W.toNat + 480 + 192 ≤ 2 ^ 64; omega
-    wrap_c := by show p.W.toNat + 96 + 16 ≤ 2 ^ 64; omega
+      exact (L.d_w' (by decide)).sub_left (Region.sub_prefix (by omega_arith))
+    wrap_t := by show p.W.toNat + 480 + 192 ≤ 2 ^ 64; omega_arith
+    wrap_c := by show p.W.toNat + 96 + 16 ≤ 2 ^ 64; omega_arith
     wrap_k := by
       show (p.W + BitVec.ofNat 64 240).toNat + 16 * (p.R + 1) ≤ 2 ^ 64
-      rw [L.toNat_W (by decide)]; rcases L.rounds with h | h <;> rw [h] <;> omega
+      rw [L.toNat_W (by decide)]; rcases L.rounds with h | h <;> rw [h] <;> omega_arith
     tbl := by show TblOk s₂.mem p.W _; rw [m₂]; exact tok₁ }
   have hI : GInv σ (blockAt t.mem (p.W + BitVec.ofNat 64 80)) s₂ 0 s₂ := {
     le := Nat.zero_le _
@@ -239,13 +239,13 @@ theorem polyBatch_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : Lay 
     have hσ : σ.nb = p.n / 128 := rfl
     show s₂.mem.readW _ 128 = _
     rw [m₂]
-    exact f₁.readW (r := ⟨p.D, p.n⟩) (Offset.contains_base p.D (by omega) (by omega))
+    exact f₁.readW (r := ⟨p.D, p.n⟩) (Offset.contains_base p.D (by omega_arith) (by omega_arith))
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dT) (by decide)
 
 theorem pad16_append {a b : List Byte} (ha : a.length % 16 = 0) :
     Spec.GcmSiv.pad16 (a ++ b) = a ++ Spec.GcmSiv.pad16 b := by
   simp only [Spec.GcmSiv.pad16, List.length_append, List.append_assoc]
-  congr 3; omega
+  congr 3; omega_arith
 
 /-- The elements of the data padded: those of its batches, then those of
 the rest padded. -/
@@ -254,10 +254,10 @@ theorem elems_split (m : Mem) (D : Addr) (n : Nat) :
       elemsAt m D (8 * (n / 128)) ++
         Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt m (D + BitVec.ofNat 64 (128 * (n / 128))) (n - 128 * (n / 128)))) := by
   have e := Proof.Cmac.bytesAt_add m D (128 * (n / 128)) (n - 128 * (n / 128))
-  rw [show 128 * (n / 128) + (n - 128 * (n / 128)) = n by omega] at e
-  rw [e, pad16_append (by rw [length_bytesAt]; omega),
-    GcmSiv.elems_append (by rw [length_bytesAt]; omega),
-    show 128 * (n / 128) = 16 * (8 * (n / 128)) by omega, GcmSiv.elems_bytesAt]
+  rw [show 128 * (n / 128) + (n - 128 * (n / 128)) = n by omega_arith] at e
+  rw [e, pad16_append (by rw [length_bytesAt]; omega_arith),
+    GcmSiv.elems_append (by rw [length_bytesAt]; omega_arith),
+    show 128 * (n / 128) = 16 * (8 * (n / 128)) by omega_arith, GcmSiv.elems_bytesAt]
 
 /-- The start of `ifBatch`: `x9` the number of batches. -/
 theorem batchHead_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
@@ -276,9 +276,9 @@ theorem rest_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
   WP.run ⟨_, by simp only [rest]; grun [], rfl⟩ fun t₁ ht₁ => by
     subst ht₁
     have hl : (BitVec.ofNat 64 p.n >>> 7) <<< 7 = BitVec.ofNat 64 (128 * (p.n / 128)) := by
-      rw [lsr_ofNat _ _ L.n_lt, Proof.AesGcmSiv.AArch64.ofNat_lsl]; congr 1; omega
+      rw [lsr_ofNat _ _ L.n_lt, Proof.AesGcmSiv.AArch64.ofNat_lsl]; congr 1; omega_arith
     refine ⟨by simp [gpr_write, E.x25, E.x26, hl], ?_, ?_, by others_tac, rfl, rfl, rfl⟩
-    · simp [gpr_write, E.x26, hl, Proof.AesGcm.AArch64.ofNat_sub (show 128 * (p.n / 128) ≤ p.n by omega) L.n_lt]
+    · simp [gpr_write, E.x26, hl, Proof.AesGcm.AArch64.ofNat_sub (show 128 * (p.n / 128) ≤ p.n by omega_arith) L.n_lt]
     · exact ((((E.write (by decide) _).write (by decide) _).write (by decide) _).write (by decide) _)
 
 /-- The batches, if the data has one. -/
@@ -288,11 +288,11 @@ theorem polyBatches_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) {p : Prm} (L : La
   have hn := L.n_lt
   unfold ifBatch
   refine WP.seq (WP.mono (batchHead_ok L E) fun t₁ ⟨x9₁, E₁, m₁, rd₁, wr₁⟩ => ?_)
-  refine WP.ite (decide (p.n / 128 = 0)) (eval_zero x9₁ (by omega)) (fun h => ?_) (fun h => ?_)
+  refine WP.ite (decide (p.n / 128 = 0)) (eval_zero x9₁ (by omega_arith)) (fun h => ?_) (fun h => ?_)
   · have h0 : p.n / 128 = 0 := by simpa using h
     refine WP.block_nil ⟨E₁, rd₁, wr₁, by rw [m₁]; exact Frame.refl _ _, ?_⟩
     rw [h0, m₁]; simp [elemsAt, ghashFrom]
-  · have h1 : 1 ≤ p.n / 128 := by simp at h; omega
+  · have h1 : 1 ≤ p.n / 128 := by simp at h; omega_arith
     exact WP.mono (polyBatch_ok hP gh e3 L E₁ h1) fun t₂ A => by rw [m₁] at A; exact A.of_eq m₁ rd₁ wr₁
 
 /-- `polyData`: the data padded absorbed. -/
@@ -307,19 +307,19 @@ theorem polyData_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : P
   refine WP.seq (WP.mono (rest_ok L A.env) fun t₃ ⟨x27₃, x28₃, E₃, o₃, m₃, rd₃, wr₃⟩ => ?_)
   have hc : Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (t₃.rd ++ t₃.wr) := by
     rw [rd₃, wr₃, A.rd, A.wr]
-    exact covers_left (Proof.AesGcm.AArch64.covers_off E.perm.d (by omega) hn)
+    exact covers_left (Proof.AesGcm.AArch64.covers_off E.perm.d (by omega_arith) hn)
   have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
-    L.d_w.sub_left (Offset.sub_base p.D (by omega))
-  refine WP.mono (absorb_ok v L E₃ hc (by omega) (by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega)]
-      have := L.dw; have := Nat.mod_le (p.D.toNat + 128 * (p.n / 128)) (2 ^ 64); omega)
+    L.d_w.sub_left (Offset.sub_base p.D (by omega_arith))
+  refine WP.mono (absorb_ok v L E₃ hc (by omega_arith) (by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega_arith)]
+      have := L.dw; have := Nat.mod_le (p.D.toNat + 128 * (p.n / 128)) (2 ^ 64); omega_arith)
     dW x27₃ x28₃) fun t₄ P₄ => ?_
   have e : bytesAt t₃.mem (p.D + BitVec.ofNat 64 (128 * (p.n / 128))) (p.n - 128 * (p.n / 128)) =
       bytesAt t.mem (p.D + BitVec.ofNat 64 (128 * (p.n / 128))) (p.n - 128 * (p.n / 128)) := by
     rw [m₃]
     exact Proof.AesGcm.AArch64.bytesAt_frame A.frame (fun r hr => dW.sub_right (by
       simp only [absR, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Proof.AesGcmSiv.AArch64.Lay.wSub (by decide))) (by omega)
+      rcases hr with rfl | rfl <;> exact Proof.AesGcmSiv.AArch64.Lay.wSub (by decide))) (by omega_arith)
   rw [e] at P₄
   rw [elems_split]
   exact AbsPost.trans L (A.sub (absR_sub p.W)) (P₄.of_eq m₃ rd₃ wr₃)
@@ -338,7 +338,7 @@ theorem polyval_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
   have P₂' := P₂.of_eq (t := t) rfl rfl rfl
   -- The data.
   refine WP.seq (WP.mono (polyData_ok hP gh e3 v L P₂.env) fun t₄ P₄ => ?_)
-  rw [Proof.AesGcm.AArch64.bytesAt_frame P₂.frame (absorbR_buf L.d_w) (by have := L.n_lt; omega)] at P₄
+  rw [Proof.AesGcm.AArch64.bytesAt_frame P₂.frame (absorbR_buf L.d_w) (by have := L.n_lt; omega_arith)] at P₄
   have P₂₄ := AbsPost.trans L P₂' P₄
   -- The lengths.
   refine WP.seq (WP.mono (lens_ok v L P₂₄.env) fun t₅ P₅ => ?_)
@@ -354,7 +354,7 @@ theorem polyval_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
     exact (tagInMem_frame _ _ _).mono fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self
   · have hp : ∀ xs ys : List Byte, (Spec.GcmSiv.pad16 xs ++ Spec.GcmSiv.pad16 ys).length % 16 = 0 := fun xs ys => by
-      rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega
+      rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega_arith
     have nN : bytesAt t₅.mem p.N 12 = bytesAt t.mem p.N 12 :=
       Proof.AesGcm.AArch64.bytesAt_frame P₂₅.frame (absorbR_buf L.n_w) (by decide)
     rw [hm₆, tagInMem_bytes, nN, P₂₅.out, hG, hY, tagInputG, length_bytesAt, length_bytesAt,

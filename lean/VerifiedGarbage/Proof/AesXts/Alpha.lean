@@ -36,7 +36,7 @@ theorem shl1_add (b : Byte) (c : Bool) :
   · apply BitVec.add_eq_or_of_and_eq_zero
     ext i hi
     simp
-    omega
+    omega_arith
 
 theorem mulAlpha_16 (a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 : Byte) :
     mulAlpha [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15] =
@@ -69,35 +69,35 @@ theorem byte_shl {w : Nat} (x : BitVec w) (c : Bool) {j : Nat} (hj : 8 * j + 8 �
   by_cases h0 : i = 0
   · subst h0
     by_cases hj0 : j = 0
-    · subst hj0; cases c <;> simp <;> omega
-    · have e : 8 * j - 1 = 8 * (j - 1) + 7 := by omega
-      have l : 8 * j < w := by omega
-      have z : ¬ 8 * j = 0 := by omega
-      have l2 : 8 * (j - 1) + 7 < w := by omega
+    · subst hj0; cases c <;> simp <;> omega_arith
+    · have e : 8 * j - 1 = 8 * (j - 1) + 7 := by omega_arith
+      have l : 8 * j < w := by omega_arith
+      have z : ¬ 8 * j = 0 := by omega_arith
+      have l2 : 8 * (j - 1) + 7 < w := by omega_arith
       by_cases hb : x.getLsbD (8 * (j - 1) + 7) <;> cases c <;>
         simp_all
-  · have e : 8 * j + i - 1 = 8 * j + (i - 1) := by omega
-    have l : 8 * j + i < w := by omega
-    have l3 : 8 * j + (i - 1) < w := by omega
+  · have e : 8 * j + i - 1 = 8 * j + (i - 1) := by omega_arith
+    have l : 8 * j + i < w := by omega_arith
+    have l3 : 8 * j + (i - 1) < w := by omega_arith
     cases c <;> simp [h0, e, l] <;> split <;> simp [h0, BitVec.getLsbD_eq_getElem l3]
 
 theorem byte_shl_xor {w : Nat} (x : BitVec w) (c : Bool) {j : Nat} (hj : 8 * j + 8 ≤ w) :
     ((x <<< 1) ^^^ (if c then (0x87 : BitVec w) else 0)).extractLsb' (8 * j) 8 =
       if j = 0 then (x.extractLsb' 0 8 <<< 1) ^^^ (if c then (135 : Byte) else 0)
       else (x.extractLsb' (8 * j) 8 <<< 1) + (if (x.extractLsb' (8 * (j - 1)) 8).msb then (1 : Byte) else 0) := by
-  have l : 8 * j < w := by omega
+  have l : 8 * j < w := by omega_arith
   have t : (135#w).toNat = 135 :=
-    Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (by decide : 135 < 2 ^ 8) (Nat.pow_le_pow_right (by decide) (by omega)))
+    Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (by decide : 135 < 2 ^ 8) (Nat.pow_le_pow_right (by decide) (by omega_arith)))
   have k (i : Nat) (h : i < w) : (135#w)[i] = Nat.testBit 135 i := by
     rw [BitVec.getElem_eq_testBit_toNat, t]
   by_cases hj0 : j = 0
   · subst hj0
     simp only [↓reduceIte]
     ext i hi
-    have l1 : i < w := by omega
+    have l1 : i < w := by omega_arith
     by_cases h0 : i = 0
     · subst h0; cases c <;> simp [l1, k 0 l1]
-    · have l2 : i - 1 < w := by omega
+    · have l2 : i - 1 < w := by omega_arith
       have k8 : (135#8)[i] = Nat.testBit 135 i := by rw [BitVec.getElem_eq_testBit_toNat]; rfl
       cases c <;> simp [l1, h0, k i l1, k8, BitVec.getLsbD_eq_getElem l2]
   · simp only [hj0, ↓reduceIte]
@@ -105,9 +105,9 @@ theorem byte_shl_xor {w : Nat} (x : BitVec w) (c : Bool) {j : Nat} (hj : 8 * j +
     simp only [hj0, ↓reduceIte, Bool.false_eq_true] at e
     rw [← e]
     ext i hi
-    have l1 : 8 * j + i < w := by omega
+    have l1 : 8 * j + i < w := by omega_arith
     have k1 : Nat.testBit 135 (8 * j + i) = false :=
-      Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (by decide : 135 < 2 ^ 8) (Nat.pow_le_pow_right (by decide) (by omega)))
+      Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (by decide : 135 < 2 ^ 8) (Nat.pow_le_pow_right (by decide) (by omega_arith)))
     cases c <;> simp [l1, k _ l1, k1]
 
 /-! ## Bytes of words in memory -/
@@ -131,7 +131,7 @@ theorem bytesAt_readW {k : Nat} (m : Mem) (P : Addr) :
     bytesAt m P k = (List.range k).map fun j => (m.readW P (8 * k)).extractLsb' (8 * j) 8 := by
   apply List.map_congr_left
   intro j hj
-  rw [Mem.readW, show 8 * k / 8 = k by omega, BitVec.setWidth_eq, Mem.extractLsb'_read _ _ (List.mem_range.mp hj)]
+  rw [Mem.readW, show 8 * k / 8 = k by omega_arith, BitVec.setWidth_eq, Mem.extractLsb'_read _ _ (List.mem_range.mp hj)]
 
 /-- The bytes after storing the word `v` at `P`. -/
 theorem bytesAt_writeW {k : Nat} (m : Mem) (P : Addr) (v : BitVec (8 * k)) (hk : k < 2 ^ 64) :
@@ -139,12 +139,12 @@ theorem bytesAt_writeW {k : Nat} (m : Mem) (P : Addr) (v : BitVec (8 * k)) (hk :
   apply List.map_congr_left
   intro j hj
   have hj := List.mem_range.mp hj
-  have e : (P + BitVec.ofNat 64 j - P).toNat = j := Mem.sub_ofNat_toNat P (by omega)
-  simp only [Mem.writeW, Mem.write, e, show j < 8 * k / 8 by omega, ↓reduceIte]
+  have e : (P + BitVec.ofNat 64 j - P).toNat = j := Mem.sub_ofNat_toNat P (by omega_arith)
+  simp only [Mem.writeW, Mem.write, e, show j < 8 * k / 8 by omega_arith, ↓reduceIte]
   ext i hi
   simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_setWidth]
-  have l : 8 * j + i < 8 * (8 * k / 8) := by omega
-  simp only [l, decide_true, Bool.true_and, BitVec.getLsbD_eq_getElem (show 8 * j + i < 8 * k by omega)]
+  have l : 8 * j + i < 8 * (8 * k / 8) := by omega_arith
+  simp only [l, decide_true, Bool.true_and, BitVec.getLsbD_eq_getElem (show 8 * j + i < 8 * k by omega_arith)]
 
 /-- Bytes below a store. -/
 theorem bytesAt_writeW_below (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {a n : Nat}
@@ -155,16 +155,16 @@ theorem bytesAt_writeW_below (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {a n 
   have hj := List.mem_range.mp hj
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.sub_toNat' P (by omega) (by omega)]
-  split <;> omega
+  rw [Offset.sub_toNat' P (by omega_arith) (by omega_arith)]
+  split <;> omega_arith
 
 /-- Bytes below a store, both at offsets. -/
 theorem bytesAt_writeW_below' (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d e n : Nat}
     (hd : e + n ≤ d) (ha : d + w / 8 < 2 ^ 64) :
     bytesAt (m.writeW (P + BitVec.ofNat 64 d) v) (P + BitVec.ofNat 64 e) n = bytesAt m (P + BitVec.ofNat 64 e) n := by
   rw [show P + BitVec.ofNat 64 d = (P + BitVec.ofNat 64 e) + BitVec.ofNat 64 (d - e) from
-    (Offset.add_add_eq P (by omega)).symm]
-  exact bytesAt_writeW_below _ _ _ (by omega) (by omega)
+    (Offset.add_add_eq P (by omega_arith)).symm]
+  exact bytesAt_writeW_below _ _ _ (by omega_arith) (by omega_arith)
 
 /-- Bytes above a store, both at offsets. -/
 theorem bytesAt_writeW_above (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d e n : Nat}
@@ -175,8 +175,8 @@ theorem bytesAt_writeW_above (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d e 
   have hj := List.mem_range.mp hj
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.add_add_eq P rfl, Offset.sub_toNat' P (by omega) (by omega)]
-  split <;> omega
+  rw [Offset.add_add_eq P rfl, Offset.sub_toNat' P (by omega_arith) (by omega_arith)]
+  split <;> omega_arith
 
 /-! ## The product -/
 

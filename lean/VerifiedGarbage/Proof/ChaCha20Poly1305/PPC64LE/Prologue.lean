@@ -357,7 +357,7 @@ theorem wordOf_frame {s₀ : State} (hp : APre e s₀) {m m' : Mem} (hf : Frame 
   by_cases h₂ : k < 12
   · simp only [h₁, h₂, ite_true, ite_false]; exact readW_out hf hp.k_c.symm (by omega)
   by_cases h₃ : k = 12
-  · subst h₃; rfl
+  · subst h₃; simp only [h₁, h₂, ite_true, ite_false]
   · simp only [h₁, h₂, h₃, ite_false]; exact readW_out hf hp.n_c.symm (by omega)
 
 theorem initState_step (j : Nat) : (List.range (j + 1)).flatMap stW = (List.range j).flatMap stW ++ stW j := by
@@ -412,7 +412,7 @@ theorem stateAt_initState {s₀ : State} (hp : APre e s₀) {m₁ m' : Mem} (hf�
     rw [show (K s₀) = Spec.ChaCha20.bytesAt s₀.mem (kp s₀) 32 from rfl,
       wordLE_bytesAt s₀.mem (kp s₀) (n := 32) (j := i - 4) (by omega)]
   by_cases h₃ : i = 12
-  · subst h₃; rfl
+  · subst h₃; simp only [h₁, h₂, ite_true, ite_false]
   · simp only [h₁, h₂, h₃, ite_false]
     rw [show (N s₀) = Spec.ChaCha20.bytesAt s₀.mem (np s₀) 12 from rfl,
       wordLE_bytesAt s₀.mem (np s₀) (n := 12) (j := i - 13) (by omega)]

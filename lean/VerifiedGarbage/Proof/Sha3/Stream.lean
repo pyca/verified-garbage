@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Sha3
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The SHA-3 sponge: facts about the specification
@@ -24,22 +25,22 @@ def byteOf (A : State) (j : Nat) : Byte := A[j / 8]!.extractLsb' (8 * (j % 8)) 8
 
 theorem byteOf_eq (A : State) {i k : Nat} (hi : i < 25) (hk : k < 8) :
     byteOf A (8 * i + k) = A[i].extractLsb' (8 * k) 8 := by
-  simp only [byteOf, show (8 * i + k) / 8 = i by omega, show (8 * i + k) % 8 = k by omega,
+  simp only [byteOf, show (8 * i + k) / 8 = i by omega_arith, show (8 * i + k) % 8 = k by omega_arith,
     getElem!_pos A i hi]
 
 theorem byteOf_eq' (A : State) {j : Nat} (hj : j < 200) :
     byteOf A j = A[j / 8].extractLsb' (8 * (j % 8)) 8 := by
-  rw [← byteOf_eq A (by omega) (by omega), show 8 * (j / 8) + j % 8 = j by omega]
+  rw [← byteOf_eq A (by omega_arith) (by omega_arith), show 8 * (j / 8) + j % 8 = j by omega_arith]
 
 theorem ext_bytes {A B : State} (h : ∀ j < 200, byteOf A j = byteOf B j) : A = B := by
   apply Vector.ext
   intro i hi
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
-  have := congrArg (fun x : Byte => x.getLsbD (b % 8)) (h (8 * i + b / 8) (by omega))
-  simp only [byteOf_eq A hi (show b / 8 < 8 by omega), byteOf_eq B hi (show b / 8 < 8 by omega),
-    BitVec.getLsbD_extractLsb', show b % 8 < 8 by omega, decide_true, Bool.true_and,
-    show 8 * (b / 8) + b % 8 = b by omega] at this
+  have := congrArg (fun x : Byte => x.getLsbD (b % 8)) (h (8 * i + b / 8) (by omega_arith))
+  simp only [byteOf_eq A hi (show b / 8 < 8 by omega_arith), byteOf_eq B hi (show b / 8 < 8 by omega_arith),
+    BitVec.getLsbD_extractLsb', show b % 8 < 8 by omega_arith, decide_true, Bool.true_and,
+    show 8 * (b / 8) + b % 8 = b by omega_arith] at this
   exact this
 
 theorem byteOf_stateAt (m : Mem) (p : Addr) {j : Nat} (hj : j < 200) :
@@ -48,9 +49,9 @@ theorem byteOf_stateAt (m : Mem) (p : Addr) {j : Nat} (hj : j < 200) :
   simp only [stateAt, Vector.getElem_ofFn, Mem.readW]
   rw [show (m.read (p + BitVec.ofNat 64 (8 * (j / 8))) (64 / 8)).setWidth 64
       = m.read (p + BitVec.ofNat 64 (8 * (j / 8))) 8 from BitVec.setWidth_eq _,
-    Mem.extractLsb'_read m _ (show j % 8 < 8 by omega)]
+    Mem.extractLsb'_read m _ (show j % 8 < 8 by omega_arith)]
   congr 1
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * (j / 8) + j % 8 = j by omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * (j / 8) + j % 8 = j by omega_arith]
 
 theorem extractLsb'_append_lo {n : Nat} (x : BitVec n) (y : Byte) :
     (x ++ y).extractLsb' 0 8 = y := by
@@ -60,9 +61,9 @@ theorem extractLsb'_append_lo {n : Nat} (x : BitVec n) (y : Byte) :
 theorem extractLsb'_append_hi {n : Nat} (x : BitVec n) (y : Byte) {s : Nat} (hs : 8 ≤ s) :
     (x ++ y).extractLsb' s 8 = x.extractLsb' (s - 8) 8 := by
   ext i hi
-  simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append, show ¬ s + i < 8 by omega,
+  simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append, show ¬ s + i < 8 by omega_arith,
     ite_false]
-  congr 1; omega
+  congr 1; omega_arith
 
 theorem extractLsb'_byte (y : Byte) : y.extractLsb' 0 8 = y := by
   ext i hi; simp
@@ -70,16 +71,16 @@ theorem extractLsb'_byte (y : Byte) : y.extractLsb' 0 8 = y := by
 theorem extractLsb'_laneOfBytes (b : Nat → Byte) {k : Nat} (hk : k < 8) :
     (laneOfBytes b).extractLsb' (8 * k) 8 = b k := by
   unfold laneOfBytes
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
+  rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
     h | h | h | h | h | h | h | h <;> subst h <;>
-  simp (disch := omega) only [extractLsb'_append_hi, extractLsb'_append_lo,
+  simp (disch := omega_arith) only [extractLsb'_append_hi, extractLsb'_append_lo,
     extractLsb'_byte, Nat.reduceMul, Nat.reduceSub]
 
 theorem byteOf_xorBytes (A : State) (bs : List Byte) {j : Nat} (hj : j < 200) :
     byteOf (xorBytes A bs) j = byteOf A j ^^^ bs.getD j 0 := by
   rw [byteOf_eq' _ hj, byteOf_eq' _ hj]
   simp only [xorBytes, Vector.getElem_ofFn, BitVec.extractLsb'_xor,
-    extractLsb'_laneOfBytes _ (show j % 8 < 8 by omega), show 8 * (j / 8) + j % 8 = j by omega,
+    extractLsb'_laneOfBytes _ (show j % 8 < 8 by omega_arith), show 8 * (j / 8) + j % 8 = j by omega_arith,
     Fin.getElem_fin]
 
 theorem length_flatMap8 {α β : Type} (f : α → List β) (hf : ∀ a, (f a).length = 8)
@@ -88,22 +89,22 @@ theorem length_flatMap8 {α β : Type} (f : α → List β) (hf : ∀ a, (f a).l
   | nil => rfl
   | cons a L ih =>
     simp only [List.flatMap_cons, List.length_append, hf, ih, List.length_cons]
-    omega
+    omega_arith
 
 theorem getElem_flatMap8 {α β : Type} (f : α → List β) (hf : ∀ a, (f a).length = 8) :
     ∀ (L : List α) {j : Nat} (hj : j < (L.flatMap f).length),
-      (L.flatMap f)[j] = (f (L[j / 8]'(by rw [length_flatMap8 f hf] at hj; omega)))[j % 8]'(by
-          rw [hf]; omega)
+      (L.flatMap f)[j] = (f (L[j / 8]'(by rw [length_flatMap8 f hf] at hj; omega_arith)))[j % 8]'(by
+          rw [hf]; omega_arith)
   | [], _, hj => by simp at hj
   | a :: L, j, hj => by
     simp only [List.flatMap_cons]
     by_cases h : j < 8
     · rw [List.getElem_append_left (by rw [hf]; exact h)]
       simp only [Nat.div_eq_of_lt h, Nat.mod_eq_of_lt h, List.getElem_cons_zero]
-    · rw [List.getElem_append_right (by rw [hf]; omega)]
+    · rw [List.getElem_append_right (by rw [hf]; omega_arith)]
       simp only [hf]
       rw [getElem_flatMap8 f hf L]
-      simp only [show j / 8 = (j - 8) / 8 + 1 by omega, show (j - 8) % 8 = j % 8 by omega,
+      simp only [show j / 8 = (j - 8) / 8 + 1 by omega_arith, show (j - 8) % 8 = j % 8 by omega_arith,
         List.getElem_cons_succ]
 
 theorem length_toBytes (A : State) : (toBytes A).length = 200 := by
@@ -121,17 +122,17 @@ theorem getD_snoc (L : List Byte) (b : Byte) (i : Nat) :
     (L ++ [b]).getD i 0 = if i = L.length then b else L.getD i 0 := by
   simp only [List.getD_eq_getElem?_getD, List.getElem?_append, List.getElem?_singleton]
   split
-  · simp only [show i ≠ L.length by omega, ↓reduceIte]
+  · simp only [show i ≠ L.length by omega_arith, ↓reduceIte]
   · split
-    · simp only [show i = L.length by omega, ↓reduceIte]; rfl
-    · simp only [show i ≠ L.length by omega, ↓reduceIte, List.getElem?_eq_none (show L.length ≤ i by omega)]
+    · simp only [show i = L.length by omega_arith, ↓reduceIte]; rfl
+    · simp only [show i ≠ L.length by omega_arith, ↓reduceIte, List.getElem?_eq_none (show L.length ≤ i by omega_arith)]
 
 theorem getD_append_replicate (L : List Byte) (n i : Nat) :
     (L ++ List.replicate n 0).getD i 0 = L.getD i 0 := by
   simp only [List.getD_eq_getElem?_getD, List.getElem?_append, List.getElem?_replicate]
   split
   · rfl
-  · rw [List.getElem?_eq_none (by omega)]
+  · rw [List.getElem?_eq_none (by omega_arith)]
     split <;> rfl
 
 theorem xorBytes_nil (A : State) : xorBytes A [] = A :=
@@ -184,8 +185,8 @@ theorem absorbN_succ (rate : Nat) (P : List Byte) (k : Nat) :
 theorem block_append {rate : Nat} {P : List Byte} (Q : List Byte) {i : Nat}
     (h : rate * i + rate ≤ P.length) : block rate (P ++ Q) i = block rate P i := by
   simp only [block]
-  rw [List.drop_append_of_le_length (by omega),
-    List.take_append_of_le_length (by rw [List.length_drop]; omega)]
+  rw [List.drop_append_of_le_length (by omega_arith),
+    List.take_append_of_le_length (by rw [List.length_drop]; omega_arith)]
 
 theorem absorbN_append {rate : Nat} {P : List Byte} (Q : List Byte) :
     ∀ {k : Nat}, rate * k ≤ P.length → absorbN rate (P ++ Q) k = absorbN rate P k := by
@@ -195,7 +196,7 @@ theorem absorbN_append {rate : Nat} {P : List Byte} (Q : List Byte) :
   | succ k ih =>
     intro h
     rw [Nat.mul_succ] at h
-    rw [absorbN_succ, absorbN_succ, ih (by omega), block_append Q h]
+    rw [absorbN_succ, absorbN_succ, ih (by omega_arith), block_append Q h]
 
 theorem xorBytes_snoc (A : State) (L : List Byte) (b : Byte) :
     xorBytes A (L ++ [b]) = xorByte (xorBytes A L) L.length b :=
@@ -228,7 +229,7 @@ theorem length_split {rate : Nat} (hr : 0 < rate) (msg : List Byte) :
   have h2 := Nat.mod_lt msg.length hr
   refine ⟨h1, h2, ?_⟩
   rw [List.length_drop]
-  omega
+  omega_arith
 
 /-- The state that represents `msg` (`Repr`). -/
 def Rep (rate : Nat) (msg : List Byte) : State :=
@@ -256,16 +257,16 @@ theorem rep_snoc {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (msg : List B
   have ha : absorbN rate msg q = absorb rate msg := by rw [absorb_eq, hq]
   split
   · have hq' : (msg.length + 1) / rate = q + 1 :=
-      Nat.div_eq_of_lt_le (by rw [Nat.succ_mul, Nat.mul_comm]; omega)
-        (by rw [Nat.succ_mul, Nat.succ_mul, Nat.mul_comm]; omega)
-    rw [hq', List.drop_eq_nil_of_le (by rw [hl, Nat.mul_succ]; omega), xorBytes_nil, absorb_eq,
-      hl, hq', absorbN_succ, absorbN_append _ (by omega), block, ha,
-      List.drop_append_of_le_length (by omega), List.take_of_length_le (by simp; omega)]
+      Nat.div_eq_of_lt_le (by rw [Nat.succ_mul, Nat.mul_comm]; omega_arith)
+        (by rw [Nat.succ_mul, Nat.succ_mul, Nat.mul_comm]; omega_arith)
+    rw [hq', List.drop_eq_nil_of_le (by rw [hl, Nat.mul_succ]; omega_arith), xorBytes_nil, absorb_eq,
+      hl, hq', absorbN_succ, absorbN_append _ (by omega_arith), block, ha,
+      List.drop_append_of_le_length (by omega_arith), List.take_of_length_le (by simp; omega_arith)]
   · have hq' : (msg.length + 1) / rate = q :=
-      Nat.div_eq_of_lt_le (by rw [Nat.mul_comm]; omega)
-        (by rw [Nat.succ_mul, Nat.mul_comm]; omega)
-    rw [hq', absorb_eq, hl, hq', absorbN_append _ (by omega), ha,
-      List.drop_append_of_le_length (by omega)]
+      Nat.div_eq_of_lt_le (by rw [Nat.mul_comm]; omega_arith)
+        (by rw [Nat.succ_mul, Nat.mul_comm]; omega_arith)
+    rw [hq', absorb_eq, hl, hq', absorbN_append _ (by omega_arith), ha,
+      List.drop_append_of_le_length (by omega_arith)]
 
 /-- `A` with the bytes `bs` XORed into it from byte `j` on. -/
 def xorAt (A : State) (j : Nat) (bs : List Byte) : State :=
@@ -276,8 +277,8 @@ theorem foldl_range_congr {α : Type} {f g : α → Nat → α} (A : α) :
   | 0, _ => rfl
   | n + 1, h => by
     rw [List.range_succ, List.foldl_append, List.foldl_append, foldl_range_congr A n
-      (fun S d hd => h S d (by omega)), List.foldl_cons, List.foldl_cons, List.foldl_nil,
-      List.foldl_nil, h _ n (by omega)]
+      (fun S d hd => h S d (by omega_arith)), List.foldl_cons, List.foldl_cons, List.foldl_nil,
+      List.foldl_nil, h _ n (by omega_arith)]
 
 /-- Induction on a list from its end. -/
 theorem snoc_induction {P : List Byte → Prop} (h0 : P []) (hs : ∀ bs b, P bs → P (bs ++ [b])) :
@@ -293,7 +294,7 @@ theorem xorAt_snoc (A : State) (j : Nat) (bs : List Byte) (b : Byte) :
   unfold xorAt
   rw [List.length_append, List.length_singleton, List.range_succ, List.foldl_append, List.foldl_cons,
     List.foldl_nil, getD_snoc, ite_eq_left rfl,
-    foldl_range_congr A bs.length fun S d hd => by rw [getD_snoc, ite_eq_right (by omega)]]
+    foldl_range_congr A bs.length fun S d hd => by rw [getD_snoc, ite_eq_right (by omega_arith)]]
 
 theorem xorAt_single (A : State) (j : Nat) (b : Byte) : xorAt A j [b] = xorByte A j b := by
   simp [xorAt]
@@ -307,12 +308,12 @@ theorem byteOf_xorAt (A : State) (j : Nat) (bs : List Byte) {i : Nat} (hi : i < 
     rw [xorAt_snoc, byteOf_xorByte _ _ _ hi, List.length_append, List.length_singleton]
     by_cases e : i = j + bs.length
     · subst e
-      rw [ite_eq_left rfl, ih hi, ite_eq_right (by omega), ite_eq_left (by omega), getD_snoc,
-        ite_eq_left (by omega)]
+      rw [ite_eq_left rfl, ih hi, ite_eq_right (by omega_arith), ite_eq_left (by omega_arith), getD_snoc,
+        ite_eq_left (by omega_arith)]
     · rw [ite_eq_right e, ih hi]
       by_cases c : j ≤ i ∧ i < j + bs.length
-      · rw [ite_eq_left c, ite_eq_left (by omega), getD_snoc, ite_eq_right (by omega)]
-      · rw [ite_eq_right c, ite_eq_right (by omega)]
+      · rw [ite_eq_left c, ite_eq_left (by omega_arith), getD_snoc, ite_eq_right (by omega_arith)]
+      · rw [ite_eq_right c, ite_eq_right (by omega_arith)]
 
 /-- Absorbing bytes that fit in the block: they are XORed into the state
 from the position in the block, and the state is permuted if they complete
@@ -332,14 +333,14 @@ theorem rep_append {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (msg : List
     have hl : (msg ++ bs).length % rate = msg.length % rate + bs.length := by
       rw [List.length_append]
       have := Nat.div_add_mod msg.length rate
-      rw [← Nat.mod_add_mod, Nat.mod_eq_of_lt (by omega)]
+      rw [← Nat.mod_add_mod, Nat.mod_eq_of_lt (by omega_arith)]
     rw [hl]
     by_cases h0 : bs = []
     · subst h0
       simp only [List.length_nil, Nat.add_zero, Nat.zero_add, List.append_nil, List.nil_append,
         xorAt_single]
     · have hb : 0 < bs.length := List.length_pos_iff.mpr h0
-      rw [ih hb (by omega), ite_eq_right (show ¬ (msg.length % rate + bs.length = rate) by omega),
+      rw [ih hb (by omega_arith), ite_eq_right (show ¬ (msg.length % rate + bs.length = rate) by omega_arith),
         xorAt_snoc, Nat.add_assoc]
 
 /-- The padding: the suffix XORed into the byte at the position in the
@@ -348,13 +349,13 @@ theorem absorb_pad {rate : Nat} (hr : 1 < rate) (hr' : rate ≤ 200) (suffix : B
     absorb rate (pad rate suffix msg) =
       keccakF (xorByte (xorByte (Rep rate msg) (msg.length % rate) suffix) (rate - 1) 0x80) := by
   have _ := hr'
-  obtain ⟨h1, h2, h3⟩ := length_split (rate := rate) (by omega) msg
+  obtain ⟨h1, h2, h3⟩ := length_split (rate := rate) (by omega_arith) msg
   have hp : (padding rate suffix msg.length).length = rate - msg.length % rate := by
     simp only [padding]
     split
-    · simp only [List.length_singleton]; omega
+    · simp only [List.length_singleton]; omega_arith
     · simp only [List.length_cons, List.length_append, List.length_replicate, List.length_nil]
-      omega
+      omega_arith
   have hl : (pad rate suffix msg).length = msg.length + (rate - msg.length % rate) := by
     simp only [pad, List.length_append, hp]
   simp only [Rep]
@@ -362,21 +363,21 @@ theorem absorb_pad {rate : Nat} (hr : 1 < rate) (hr' : rate ≤ 200) (suffix : B
   have ha : absorbN rate msg q = absorb rate msg := by rw [absorb_eq, hq]
   have hq' : (pad rate suffix msg).length / rate = q + 1 := by
     rw [hl]
-    exact Nat.div_eq_of_lt_le (by rw [Nat.succ_mul, Nat.mul_comm]; omega)
-      (by rw [Nat.succ_mul, Nat.succ_mul, Nat.mul_comm]; omega)
-  rw [absorb_eq, hq', absorbN_succ, pad, absorbN_append _ (by omega), ha, block,
-    List.drop_append_of_le_length (by omega),
-    List.take_of_length_le (by rw [List.length_append, hp]; omega)]
+    exact Nat.div_eq_of_lt_le (by rw [Nat.succ_mul, Nat.mul_comm]; omega_arith)
+      (by rw [Nat.succ_mul, Nat.succ_mul, Nat.mul_comm]; omega_arith)
+  rw [absorb_eq, hq', absorbN_succ, pad, absorbN_append _ (by omega_arith), ha, block,
+    List.drop_append_of_le_length (by omega_arith),
+    List.take_of_length_le (by rw [List.length_append, hp]; omega_arith)]
   refine congrArg keccakF ?_
   generalize List.drop (rate * q) msg = L at h3 ⊢
   generalize absorb rate msg = A
   simp only [padding]
   split
-  · rw [xorBytes_snoc, h3, show rate - 1 = msg.length % rate by omega, xorByte_xorByte]
+  · rw [xorBytes_snoc, h3, show rate - 1 = msg.length % rate by omega_arith, xorByte_xorByte]
   · rw [List.cons_append, ← List.singleton_append, ← List.append_assoc, ← List.append_assoc,
       xorBytes_snoc, xorBytes_append_replicate, xorBytes_snoc, h3]
     simp only [List.length_append, List.length_singleton, List.length_replicate, h3]
-    rw [show msg.length % rate + 1 + (rate - msg.length % rate - 2) = rate - 1 by omega]
+    rw [show msg.length % rate + 1 + (rate - msg.length % rate - 2) = rate - 1 by omega_arith]
 
 /-! ## Squeezing -/
 
@@ -398,7 +399,7 @@ theorem length_squeezeBlocks {rate : Nat} (hr' : rate ≤ 200) (n : Nat) :
     intro S
     simp only [squeezeBlocks, List.length_append, List.length_take, length_toBytes, ih]
     rw [Nat.mul_succ]
-    omega
+    omega_arith
 
 theorem getElem_squeezeBlocks {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (n : Nat) :
     ∀ (S : State) {i : Nat} (hi : i < (squeezeBlocks rate S n).length),
@@ -409,19 +410,19 @@ theorem getElem_squeezeBlocks {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) 
     intro S i hi
     simp only [squeezeBlocks]
     have ht : ((toBytes S).take rate).length = rate := by
-      rw [List.length_take, length_toBytes]; omega
+      rw [List.length_take, length_toBytes]; omega_arith
     by_cases h : i < rate
-    · rw [List.getElem_append_left (by rw [ht]; exact h), List.getElem_take, toBytes_getElem _ (by omega),
+    · rw [List.getElem_append_left (by rw [ht]; exact h), List.getElem_take, toBytes_getElem _ (by omega_arith),
         Nat.div_eq_of_lt h, Nat.mod_eq_of_lt h]
       rfl
-    · rw [List.getElem_append_right (by rw [ht]; omega)]
+    · rw [List.getElem_append_right (by rw [ht]; omega_arith)]
       simp only [ht]
       have hl := length_squeezeBlocks hr' (n + 1) S
       rw [Nat.mul_succ] at hl
-      have e1 : (i - rate) / rate + 1 = i / rate := (Nat.div_eq_sub_div hr (by omega)).symm
-      have e2 : (i - rate) % rate = i % rate := (Nat.mod_eq_sub_mod (by omega)).symm
+      have e1 : (i - rate) / rate + 1 = i / rate := (Nat.div_eq_sub_div hr (by omega_arith)).symm
+      have e2 : (i - rate) % rate = i % rate := (Nat.mod_eq_sub_mod (by omega_arith)).symm
       have hi' : i - rate < (squeezeBlocks rate (keccakF S) n).length := by
-        rw [length_squeezeBlocks hr']; omega
+        rw [length_squeezeBlocks hr']; omega_arith
       rw [ih (keccakF S) hi', iterF_keccakF, e1, e2]
 
 theorem length_squeeze {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (S : State) (d : Nat) :
@@ -429,7 +430,7 @@ theorem length_squeeze {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (S : St
   rw [squeeze, List.length_take, length_squeezeBlocks hr']
   have h1 := Nat.div_add_mod (d + rate - 1) rate
   have h2 := Nat.mod_lt (d + rate - 1) hr
-  omega
+  omega_arith
 
 /-- Byte `i` of the output is byte `i mod r` of the state after `⌊i / r⌋`
 permutations. -/
@@ -459,7 +460,7 @@ theorem length_squeezeFrom {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (S 
   rw [squeezeFrom, List.length_take, List.length_drop, length_squeezeBlocks hr']
   have h1 := Nat.div_add_mod (pos + d + rate - 1) rate
   have h2 := Nat.mod_lt (pos + d + rate - 1) hr
-  omega
+  omega_arith
 
 /-- Byte `i` of the output from `pos` on is byte `(pos + i) mod r` of the
 state after `⌊(pos + i) / r⌋` permutations. -/

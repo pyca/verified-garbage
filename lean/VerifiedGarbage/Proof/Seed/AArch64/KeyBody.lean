@@ -28,17 +28,17 @@ def keyPre : List Instr := (List.range 16).flatMap keyRound ++ [.movz .x .x3 2 0
 
 theorem gSlot_lo {i : Nat} (hi : i < 16) : gSlot i = tSlot 0 := by simp [gSlot, hi]
 theorem gSlot_hi {w : Nat} (hw : w < 16) : gSlot (16 + w) = uSlot := by
-  simp [gSlot, show ¬ 16 + w < 16 by omega]
+  simp [gSlot, show ¬ 16 + w < 16 by omega_arith]
 
 theorem schedR_sep {s : State} {k : Nat} (hk : k + 64 ≤ 128)
     (h : (⟨s.gpr .x1, 128⟩ : Region).Disjoint (scratchR s)) : (outR s (k / 4)).Disjoint (scratchR s) := by
   refine h.sub_left ?_
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_arith)
 
 theorem lane_sub_work {s : State} {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) :
     Region.Sub ⟨laneA s k b, 4⟩ (workR s) := by
   have := arrays_bound k hk
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_arith)
 
 /-- A lane after a frame over regions apart from the scratch buffer. -/
 theorem lv_frame {s s' : State} {R : Region} (hx5 : s'.gpr .x5 = s.gpr .x5) (hf : Frame [R] s.mem s'.mem)
@@ -50,7 +50,7 @@ theorem lv_frame {s s' : State} {R : Region} (hx5 : s'.gpr .x5 = s.gpr .x5) (hf 
   simp only [List.mem_singleton] at hr; subst hr
   exact (hd.sub_right (lane_in hk hb s |> fun _ => by
     have := arrays_bound k hk
-    exact Offset.sub_base _ (by unfold scratchSlots; omega))).symm
+    exact Offset.sub_base _ (by unfold scratchSlots; omega_arith))).symm
 
 theorem keyPre_ok (key : Spec.Seed.Block) {s : State} (h : Room s)
     (h3 : s.gpr .x3 = kx (keyWords key 0)) (h4 : s.gpr .x4 = ky (keyWords key 0)) :
@@ -69,8 +69,8 @@ theorem keyPre_ok (key : Spec.Seed.Block) {s : State} (h : Room s)
     simp only [lv, laneA, g2 _ (show Reg.x5 ≠ .x3 by decide)]; rfl
   refine ⟨s2, runBlock_trans e1 e2, room_congr h x5_2 inv.wr, fun w hw => ?_, fun w hw => ?_,
     by simp [s2, gpr_write], fun r hr => ?_, inv.rd, inv.wr, inv.frame⟩
-  · rw [lv2, ← inv.lanes w (by omega), gSlot_lo hw, Nat.mod_eq_of_lt hw]
-  · rw [lv2, ← inv.lanes (16 + w) (by omega), gSlot_hi hw, show (16 + w) % 16 = w by omega]
+  · rw [lv2, ← inv.lanes w (by omega_arith), gSlot_lo hw, Nat.mod_eq_of_lt hw]
+  · rw [lv2, ← inv.lanes (16 + w) (by omega_arith), gSlot_hi hw, show (16 + w) % 16 = w by omega_arith]
   · simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
     rcases hr with rfl | rfl <;>
       rw [g2 _ (by decide), inv.regs _ (by decide) (by decide) (by decide) (by decide) (by decide)]
@@ -112,32 +112,32 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
   have scrS : ∀ t : State, t.gpr .x5 = s.gpr .x5 → scratchR t = scratchR s := fun t h => by simp only [scratchR, h]
   have workS : ∀ t : State, t.gpr .x5 = s.gpr .x5 → workR t = workR s := fun t h => by simp only [workR, h]
   have schedWork : (⟨S, 128⟩ : Region).Disjoint (workR s) :=
-    hsep.sub_right (Region.sub_prefix (by unfold scratchSlots; omega))
+    hsep.sub_right (Region.sub_prefix (by unfold scratchSlots; omega_arith))
   -- `G` of the sixteen
   obtain ⟨t2, e2, g2, keep2, room2, rd2, wr2, -, regs2, f2⟩ := g16_lanes hi.room
   have x5_2 : t2.gpr .x5 = s.gpr .x5 := (regs2 _ (by decide)).trans hi.x5
   have x1_2 : t2.gpr .x1 = S + BitVec.ofNat 64 (64 * c) := (regs2 _ (by decide)).trans hi.x1
   have out2 : (outR t2 0).Disjoint (scratchR t2) := by
     rw [scrS t2 x5_2]; simp only [outR, x1_2, Nat.mul_zero]; rw [BitVec.add_zero]
-    exact hsep.sub_left (Offset.sub_base _ (by omega))
+    exact hsep.sub_left (Offset.sub_base _ (by omega_arith))
   -- the copy
   obtain ⟨t3, e3, v3, g3, rd3, wr3, f3⟩ := keyStore_ok 0 (by decide) room2
     (fun w hw => by
       rw [x1_2, wr2, hi.wr, Offset.add_add]
-      exact ⟨_, hin, Offset.contains_base _ (by omega) (by omega)⟩) out2 16 (Nat.le_refl _)
+      exact ⟨_, hin, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) out2 16 (Nat.le_refl _)
   obtain ⟨t4, e4, x1_4', x3_4', g4, m4, rd4, wr4⟩ := halfTail_ok t3
   have x5_4 : t4.gpr .x5 = s.gpr .x5 := by rw [g4 _ (by decide) (by decide), g3 _ (by decide), x5_2]
   have x3_4 : t4.gpr .x3 = BitVec.ofNat 64 (2 - (c + 1)) := by
-    rw [x3_4', g3 _ (by decide), regs2 _ (by decide), hi.x3, Offset.ofNat_sub_ofNat (by omega)]
+    rw [x3_4', g3 _ (by decide), regs2 _ (by decide), hi.x3, Offset.ofNat_sub_ofNat (by omega_arith)]
     congr 1
   have x1_4 : t4.gpr .x1 = S + BitVec.ofNat 64 (64 * (c + 1)) := by
-    rw [x1_4', g3 _ (by decide), x1_2, Offset.add_add, show 64 * c + 64 = 64 * (c + 1) by omega]
+    rw [x1_4', g3 _ (by decide), x1_2, Offset.add_add, show 64 * c + 64 = 64 * (c + 1) by omega_arith]
   have ev4 : isa.eval (.nonzero .x .x3) t4 = some (decide (c = 0)) := by
     show some (t4.read .x .x3 != 0) = _
     rw [show t4.read .x .x3 = t4.gpr .x3 by simp [State.read], x3_4]
     congr 1
-    have : 2 - (c + 1) < 2 ^ 64 := by omega
-    rcases (show c = 0 ∨ c = 1 by omega) with rfl | rfl <;> decide
+    have : 2 - (c + 1) < 2 ^ 64 := by omega_arith
+    rcases (show c = 0 ∨ c = 1 by omega_arith) with rfl | rfl <;> decide
   -- the schedule's words so far
   have lvS : ∀ (t t' : State) (rs : List Region), Frame rs t.mem t'.mem →
       ∀ i, (∀ r ∈ rs, (⟨S + BitVec.ofNat 64 (4 * i), 4⟩ : Region).Disjoint r) →
@@ -150,14 +150,14 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
     · rw [lvS t2 t3 _ f3 i (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; simp only [outR, x1_2, Nat.mul_zero]
           rw [BitVec.add_zero]
-          exact Offset.disjoint _ (Or.inl (by omega)) (by omega) (by omega)),
+          exact Offset.disjoint _ (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)),
         lvS t t2 _ f2 i (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; rw [workS t hi.x5]
-          exact schedWork.sub_left (Offset.sub_base _ (by omega))), hi.done i hlo]
-    · obtain ⟨w, rfl⟩ : ∃ w, i = 16 * c + w := ⟨i - 16 * c, by omega⟩
-      have := v3 w (by omega)
-      rw [x1_2, Offset.add_add, show 64 * c + 4 * (0 + w) = 4 * (16 * c + w) by omega] at this
-      rw [this, g2 w (by omega), hi.cur w (by omega)]
+          exact schedWork.sub_left (Offset.sub_base _ (by omega_arith))), hi.done i hlo]
+    · obtain ⟨w, rfl⟩ : ∃ w, i = 16 * c + w := ⟨i - 16 * c, by omega_arith⟩
+      have := v3 w (by omega_arith)
+      rw [x1_2, Offset.add_add, show 64 * c + 4 * (0 + w) = 4 * (16 * c + w) by omega_arith] at this
+      rw [this, g2 w (by omega_arith), hi.cur w (by omega_arith)]
   have frame4 : Frame [workR s, ⟨S, 128⟩] s.mem t4.mem := by
     rw [m4]
     refine (hi.frame.trans (f2.sub ?_)).trans (f3.sub ?_)
@@ -166,7 +166,7 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
     · intro r hr; simp only [List.mem_singleton] at hr; subst hr
       refine ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩
       simp only [outR, x1_2, Nat.mul_zero]; rw [BitVec.add_zero]
-      exact Offset.sub_base _ (by omega)
+      exact Offset.sub_base _ (by omega_arith)
   have room4 : Room t4 := room_congr hi.room (x5_4.trans hi.x5.symm) (by rw [wr4, wr3, wr2, hi.wr])
   refine WP.seq (WP.of_runBlock ⟨t4, runBlock_trans (runBlock_trans e2 e3) e4, ?_⟩)
   refine WP.ite (decide (c = 0)) ev4 (fun hb => ?_) (fun hb => ?_)
@@ -174,7 +174,7 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
     have hc0 : c = 0 := by simpa using hb
     subst hc0
     obtain ⟨t5, e5, room5, v5, f5, rd5, wr5, g5⟩ := keyMove_ok room4
-    refine WP.of_runBlock ⟨t5, e5, .inr ⟨?_, 1, by omega, 1, by omega, rfl, ?_⟩⟩
+    refine WP.of_runBlock ⟨t5, e5, .inr ⟨?_, 1, by omega_arith, 1, by omega_arith, rfl, ?_⟩⟩
     · show some (t5.read .x .x3 != 0) = some true
       rw [show t5.read .x .x3 = t5.gpr .x3 by simp [State.read], g5 _ (by decide) (by decide), x3_4]
       decide
@@ -194,10 +194,10 @@ theorem keyHalves_wp (key : Spec.Seed.Block) {s : State} {S : Addr} (hin : (⟨S
         hi.next rfl w hw]
     · rw [lvS t4 t5 _ workF i (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact schedWork.sub_left (Offset.sub_base _ (by omega)))]
+        exact schedWork.sub_left (Offset.sub_base _ (by omega_arith)))]
       exact done4 i hi'
   · -- the end
-    have hc1 : c = 1 := by simp at hb; omega
+    have hc1 : c = 1 := by simp at hb; omega_arith
     subst hc1
     refine WP.block_nil (.inl ⟨?_, hQ t4 done4 x5_4 (by rw [rd4, rd3, rd2, hi.rd])
       (by rw [wr4, wr3, wr2, hi.wr]) frame4⟩)

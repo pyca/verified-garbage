@@ -67,7 +67,7 @@ theorem round_implies : roundContract.Implies
     obtain ⟨spLo, _, rd, wr, disj, fit, lay, prep⟩ := h
     obtain ⟨_, mont, w4, w128, fits, _⟩ := lay
     have fits' : arrAt (wOf s.mem (State.addr (s.gpr .r0))) 28 ≤ 8 * (s.gpr .r1).toNat := fits
-    refine ⟨rd, by rw [wr]; simp [State.addr, Nat.mul_comm], by omega, spLo, ?_, ⟨mont, w4, w128, ?_⟩, ?_⟩
+    refine ⟨rd, by rw [wr]; simp [State.addr, Nat.mul_comm], by omega_arith, spLo, ?_, ⟨mont, w4, w128, ?_⟩, ?_⟩
     · show (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region).Disjoint _
       rw [FrameStack.addr_sub' spLo]
       simpa [State.addr, Nat.mul_comm] using disj
@@ -84,20 +84,20 @@ theorem round_implies : roundContract.Implies
     · rw [BitVec.setWidth_append_eq_right]; exact hr b hb
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hk' ⊢
       simp only [Spec.MillerRabin.compact]
-      omega
+      omega_arith
     · have ht : i < arrAt (wOf s.mem (State.addr (s.gpr .r0))) 11 ∨
           arrAt (wOf s.mem (State.addr (s.gpr .r0))) 27 ≤ i := htab
       by_cases hs : j ∈ [2, 3, 5, 6, 8]
       · exact harr j (by simpa only [Spec.MillerRabin.compact] using hs)
       · have hj' : 11 ≤ j ∧ j ≤ 26 := by
-          simp only [wJs, aX, aY, aM1, List.mem_cons, List.not_mem_nil, or_false] at hj hs; omega
+          simp only [wJs, aX, aY, aM1, List.mem_cons, List.not_mem_nil, or_false] at hj hs; omega_arith
         generalize wOf s.mem (State.addr (s.gpr .r0)) = w at ht ⊢
         have a := Nat.mul_le_mul_right (8 * (w + 2)) hj'.1
-        have b := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ 27 by omega)
+        have b := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ 27 by omega_arith)
         rw [Nat.add_mul, Nat.one_mul] at b
         simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at ht ⊢
         generalize 8 * (w + 2) = S at *
-        omega
+        omega_arith
   pub := by
     rintro s t - - h
     sig_pub [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, abi, argRegs, reduceClassify, Loc.val,

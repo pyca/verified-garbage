@@ -68,7 +68,7 @@ theorem correctMain (v : Permutation) {s₀ : State} (hp : Pre s₀) :
   have hr : 72 ≤ (s₀.gpr .x1).toNat ∧ (s₀.gpr .x1).toNat ≤ 168 := Proof.Sha3.rate_bounds hp.rate
   have hpl : (s₀.gpr .x2).toNat < (s₀.gpr .x1).toNat := hp.pos_lt
   have hin : ∀ j < 200, (stR s₀).Contains (st s₀ + BitVec.ofNat 64 j) 1 := fun j hj =>
-    contains_offset (by omega) (by omega)
+    contains_offset (by omega_arith) (by omega_arith)
   have hw : ∀ j < 200, InRegions s₀.wr (st s₀ + BitVec.ofNat 64 j) 1 := fun j hj => by
     rw [hp.wr]; exact ⟨_, List.mem_cons_self .., hin j hj⟩
   have hw' : ∀ j < 200, InRegions (s₀.rd ++ s₀.wr) (st s₀ + BitVec.ofNat 64 j) 1 := fun j hj => by
@@ -77,25 +77,25 @@ theorem correctMain (v : Permutation) {s₀ : State} (hp : Pre s₀) :
   refine WP.seq (wp_add fun s₁ u₁ => ?_)
   have e₁ : s₁.gpr .x9 + BitVec.ofNat 64 0 = st s₀ + BitVec.ofNat 64 ((s₀.gpr .x2).toNat) := by
     rw [u₁.gpr]; simp
-  refine wp_ldrb (a := st s₀ + BitVec.ofNat 64 ((s₀.gpr .x2).toNat)) (by omega) e₁
-    (by rw [u₁.rd, u₁.wr]; exact hw' _ (by omega)) fun s₂ u₂ => wp_eor fun s₃ u₃ =>
-    wp_strb (a := st s₀ + BitVec.ofNat 64 ((s₀.gpr .x2).toNat)) (by omega)
+  refine wp_ldrb (a := st s₀ + BitVec.ofNat 64 ((s₀.gpr .x2).toNat)) (by omega_arith) e₁
+    (by rw [u₁.rd, u₁.wr]; exact hw' _ (by omega_arith)) fun s₂ u₂ => wp_eor fun s₃ u₃ =>
+    wp_strb (a := st s₀ + BitVec.ofNat 64 ((s₀.gpr .x2).toNat)) (by omega_arith)
       (by rw [u₃.other _ (by decide), u₂.other _ (by decide)]; exact e₁)
-      (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hw _ (by omega)) fun s₄ g₄ => ?_
+      (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hw _ (by omega_arith)) fun s₄ g₄ => ?_
   have k₄ : ∀ r, r ≠ .x9 → r ≠ .x10 → s₄.gpr r = s₀.gpr r := fun r h h' => by
     rw [g₄.gpr, u₃.other _ h', u₂.other _ h', u₁.other _ h]
   refine wp_add fun s₅ u₅ => wp_subImm (by decide) fun s₆ u₆ => ?_
   have e₆ : s₆.gpr .x9 + BitVec.ofNat 64 0 = st s₀ + BitVec.ofNat 64 ((s₀.gpr .x1).toNat - 1) := by
     rw [u₆.gpr, u₅.gpr, k₄ _ (by decide) (by decide), k₄ _ (by decide) (by decide)]
     simp only [st]
-    rw [BitVec.add_zero]; exact Offset.add_sub_one64 _ _ (by omega)
-  refine wp_ldrb (a := st s₀ + BitVec.ofNat 64 ((s₀.gpr .x1).toNat - 1)) (by omega) e₆
+    rw [BitVec.add_zero]; exact Offset.add_sub_one64 _ _ (by omega_arith)
+  refine wp_ldrb (a := st s₀ + BitVec.ofNat 64 ((s₀.gpr .x1).toNat - 1)) (by omega_arith) e₆
     (by rw [u₆.rd, u₆.wr, u₅.rd, u₅.wr, g₄.rd, g₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]
-        exact hw' _ (by omega))
+        exact hw' _ (by omega_arith))
     fun s₇ u₇ => wp_movz fun s₈ u₈ => wp_eor fun s₉ u₉ =>
-    wp_strb (a := st s₀ + BitVec.ofNat 64 ((s₀.gpr .x1).toNat - 1)) (by omega)
+    wp_strb (a := st s₀ + BitVec.ofNat 64 ((s₀.gpr .x1).toNat - 1)) (by omega_arith)
       (by rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide)]; exact e₆)
-      (by rw [u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, g₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hw _ (by omega))
+      (by rw [u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, g₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hw _ (by omega_arith))
     fun s₁₀ g₁₀ => wp_mov fun s₁₁ u₁₁ => wp_nil ?_
   -- The two bytes written.
   have hb₁ : s₄.mem = s₀.mem.writeW (st s₀ + BitVec.ofNat 64 ((s₀.gpr .x2).toNat))
@@ -108,20 +108,20 @@ theorem correctMain (v : Permutation) {s₀ : State} (hp : Pre s₀) :
       u₅.mem, Proof.Sha3.xor_byte, x80]
   have hS : stateAt s₁₀.mem (st s₀) =
       xorByte (xorByte (stateAt s₀.mem (st s₀)) ((s₀.gpr .x2).toNat) ((s₀.gpr .x3).setWidth 8)) ((s₀.gpr .x1).toNat - 1) 0x80 := by
-    rw [← stateAt_xorByte (m := s₀.mem) (m' := s₄.mem) (by omega)
+    rw [← stateAt_xorByte (m := s₀.mem) (m' := s₄.mem) (by omega_arith)
       (by simp only [hb₁, Proof.Sha3.writeW8_apply, ↓reduceIte])
       (fun i hi hne => by
-        simp only [hb₁, Proof.Sha3.writeW8_apply, Proof.Sha3.ne_of_lt200 hi (by omega) hne, ite_false])]
-    exact stateAt_xorByte (by omega) (by simp only [hb₂, Proof.Sha3.writeW8_apply, ↓reduceIte])
+        simp only [hb₁, Proof.Sha3.writeW8_apply, Proof.Sha3.ne_of_lt200 hi (by omega_arith) hne, ite_false])]
+    exact stateAt_xorByte (by omega_arith) (by simp only [hb₂, Proof.Sha3.writeW8_apply, ↓reduceIte])
       (fun i hi hne => by
-        simp only [hb₂, Proof.Sha3.writeW8_apply, Proof.Sha3.ne_of_lt200 hi (by omega) hne, ite_false])
+        simp only [hb₂, Proof.Sha3.writeW8_apply, Proof.Sha3.ne_of_lt200 hi (by omega_arith) hne, ite_false])
   have k₁₁ : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x1 → s₁₁.gpr r = s₀.gpr r :=
     fun r h9 h10 h11 h1 => by
       rw [u₁₁.other _ h1, g₁₀.gpr, u₉.other _ h10, u₈.other _ h11, u₇.other _ h10, u₆.other _ h9,
         u₅.other _ h9, k₄ _ h9 h10]
   have sp₁₁ : s₁₁.sp = s₀.sp := by
     rw [u₁₁.sp, g₁₀.sp, u₉.sp, u₈.sp, u₇.sp, u₆.sp, u₅.sp, g₄.sp, u₃.sp, u₂.sp, u₁.sp]
-  have e512 : Region.Sub ⟨scr s₀, 512⟩ (scR s₀) := Region.sub_prefix (by omega)
+  have e512 : Region.Sub ⟨scr s₀, 512⟩ (scR s₀) := Region.sub_prefix (by omega_arith)
   refine call_ok v (st := st s₀) (scr := scr s₀)
     (by rw [k₁₁ _ (by decide) (by decide) (by decide) (by decide)])
     (by rw [u₁₁.gpr, g₁₀.gpr, u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
@@ -140,7 +140,7 @@ theorem correctMain (v : Permutation) {s₀ : State} (hp : Pre s₀) :
     rw [vc' r hr, u₁₁.vec, g₁₀.vec, u₉.vec, u₈.vec, u₇.vec, u₆.vec, u₅.vec, g₄.vec, u₃.vec, u₂.vec, u₁.vec]), fun msg hR hm => ?_⟩
   · have ne := keep_ne r hr
     rw [cs' r hr h30, k₁₁ r ne.1 ne.2.1 ne.2.2.1 ne.2.2.2]
-  · rw [e', u₁₁.mem, hS, absorb_pad (by omega) (by omega), ← hm,
+  · rw [e', u₁₁.mem, hS, absorb_pad (by omega_arith) (by omega_arith), ← hm,
       show Rep ((s₀.gpr .x1).toNat) msg = stateAt s₀.mem (st s₀) from hR.symm]
 
 /-- The state `padMain` starts in, inside the frame. -/

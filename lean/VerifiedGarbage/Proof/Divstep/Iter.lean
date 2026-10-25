@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Divstep.Steps
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The divstep's bound
@@ -17,7 +18,7 @@ after 590 steps (`divsteps_590`; 885 up to `2^384`, `divsteps_words`), and
 namespace VG.Proof.Divstep
 
 theorem ediv2_cast {a : Int} (h : a % 2 = 0) : ((a / 2 : Int) : ℚ) = (a : ℚ) / 2 := by
-  obtain ⟨k, rfl⟩ : ∃ k, a = 2 * k := ⟨a / 2, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, a = 2 * k := ⟨a / 2, by omega_arith⟩
   rw [Int.mul_ediv_cancel_left _ (by decide)]; push_cast; ring
 
 /-- The divstep's runs are runs of the relaxed iteration, with `i = (d - 1)/2`. -/
@@ -36,18 +37,18 @@ theorem run {f g : Int} (hf : f % 2 = 1) :
   · rename_i h
     obtain ⟨hd0, hg⟩ := h
     right
-    rw [ite_f (by omega)]
-    refine ⟨by omega, rfl, ?_⟩
-    simp only; rw [ediv2_cast (a := g' - f') (by omega)]; push_cast; ring
+    rw [ite_f (by omega_arith)]
+    refine ⟨by omega_arith, rfl, ?_⟩
+    simp only; rw [ediv2_cast (a := g' - f') (by omega_arith)]; push_cast; ring
   · rename_i h
     rcases Int.emod_two_eq_zero_or_one g' with hg | hg
     · left
-      refine ⟨by omega, rfl, ?_⟩
+      refine ⟨by omega_arith, rfl, ?_⟩
       simp only [hg, zero_mul, add_zero]; exact ediv2_cast hg
     · right
-      rw [ite_t (by omega)]
-      refine ⟨by omega, rfl, ?_⟩
-      simp only [hg, one_mul]; rw [ediv2_cast (by omega)]; push_cast; ring
+      rw [ite_t (by omega_arith)]
+      refine ⟨by omega_arith, rfl, ?_⟩
+      simp only [hg, one_mul]; rw [ediv2_cast (by omega_arith)]; push_cast; ring
 
 /-- `2^b s^m` is at most the fuzziness, in naturals. -/
 theorem pow_fuzz {b m : Nat} (h : 2 ^ b * sn ^ m * 8388608 ≤ 8388391 * sd ^ m) : (2 : ℚ) ^ b * s ^ m ≤ fuzz := by
@@ -64,7 +65,7 @@ theorem g_bound {f g : Int} (hf : f % 2 = 1) (hg : 0 ≤ g) (hgf : g ≤ f) {b m
     (M := 2 ^ b) (m := m) (by simp [divsteps]; exact_mod_cast hg)
     (by simp [divsteps]; exact_mod_cast hgf) (by simp [divsteps]; exact_mod_cast hf2) hbm
   simp only [Int.cast_eq_zero] at h0
-  obtain ⟨j, rfl⟩ : ∃ j, n = k + j := ⟨n - k, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, n = k + j := ⟨n - k, by omega_arith⟩
   rw [divsteps_add]
   exact (divsteps_zero h0 j).1
 
@@ -102,12 +103,12 @@ theorem divsteps_words {f g : Int} {n N : Nat} (hf : f % 2 = 1) (hg : 0 ≤ g) (
   rcases hb with ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩
   · refine divsteps_590 hf hg hgf ?_ h2
     calc f ≤ 2 ^ (64 * n) := hfn.le
-      _ ≤ 2 ^ 256 := pow_le_pow_right₀ (by norm_num) (by omega)
+      _ ≤ 2 ^ 256 := pow_le_pow_right₀ (by norm_num) (by omega_arith)
   · refine divsteps_885 hf hg hgf ?_ h2
     calc f ≤ 2 ^ (64 * n) := hfn.le
-      _ ≤ 2 ^ 384 := pow_le_pow_right₀ (by norm_num) (by omega)
+      _ ≤ 2 ^ 384 := pow_le_pow_right₀ (by norm_num) (by omega_arith)
   · refine divsteps_1328 hf hg hgf ?_ h2
     calc f ≤ 2 ^ (64 * n) := hfn.le
-      _ ≤ 2 ^ 576 := pow_le_pow_right₀ (by norm_num) (by omega)
+      _ ≤ 2 ^ 576 := pow_le_pow_right₀ (by norm_num) (by omega_arith)
 
 end VG.Proof.Divstep

@@ -70,16 +70,16 @@ theorem LFrame.of_c {base : Addr} {m m' : Mem} (h : CFrame base m m') : LFrame b
 
 theorem LFrame.of_out {base : Addr} {m m' : Mem} {o : Nat} (ho : slot 12 ≤ o ∧ o + 128 ≤ slot 14)
     (h : Outside base o 128 m m') : LFrame base m m' :=
-  fun x _ _ _ d => h x (by omega)
+  fun x _ _ _ d => h x (by omega_arith)
 
 theorem LFrame.word {base : Addr} {m m' : Mem} (h : LFrame base m m') {d : Nat}
     (h1 : d + 8 ≤ X2 ∨ X2 + 128 ≤ d) (h2 : d + 8 ≤ CAN ∨ CAN + 128 ≤ d) (h3 : d + 8 ≤ ACC ∨ ACC + 512 ≤ d)
     (h4 : d + 8 ≤ slot 12 ∨ slot 14 ≤ d) (hd : d + 8 ≤ 8192) : word m' base d = word m base d :=
   Mem.readW_congr fun i hi => h _ (by
-      simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
-    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
-    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
-    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
+      simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega_arith)]; omega_arith)
+    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega_arith)]; omega_arith)
+    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega_arith)]; omega_arith)
+    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega_arith)]; omega_arith)
 
 theorem LFrame.saved {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : LFrame base m m') (hs : Saved base g m) :
     Saved base g m' :=
@@ -88,33 +88,33 @@ theorem LFrame.saved {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : LFr
 
 theorem LFrame.lrs {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : LFrame base m m')
     (hs : VG.Proof.Ed448.AArch64.LrSaved base g m) : VG.Proof.Ed448.AArch64.LrSaved base g m' :=
-  (h.word (Or.inr (by simp only [X2, slot, LRS]; omega)) (Or.inl (by simp only [CAN, LRS]; omega))
-    (Or.inl (by simp only [ACC, LRS]; omega)) (Or.inr (by simp only [slot, LRS]; omega))
-    (by simp only [LRS]; omega)).trans hs
+  (h.word (Or.inr (by simp only [X2, slot, LRS]; omega_arith)) (Or.inl (by simp only [CAN, LRS]; omega_arith))
+    (Or.inl (by simp only [ACC, LRS]; omega_arith)) (Or.inr (by simp only [slot, LRS]; omega_arith))
+    (by simp only [LRS]; omega_arith)).trans hs
 
 theorem LFrame.savedX {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : LFrame base m m') (hs : SavedX base g m) :
     SavedX base g m' := fun k hk =>
-  (h.word (Or.inr (by simp only [X2, slot, Impl.X448.AArch64.Fast.SAVE]; omega))
-    (Or.inl (by simp only [CAN, Impl.X448.AArch64.Fast.SAVE]; omega))
-    (Or.inl (by simp only [ACC, Impl.X448.AArch64.Fast.SAVE]; omega))
-    (Or.inr (by simp only [slot, Impl.X448.AArch64.Fast.SAVE]; omega))
-    (by simp only [Impl.X448.AArch64.Fast.SAVE]; omega)).trans (hs k hk)
+  (h.word (Or.inr (by simp only [X2, slot, Impl.X448.AArch64.Fast.SAVE]; omega_arith))
+    (Or.inl (by simp only [CAN, Impl.X448.AArch64.Fast.SAVE]; omega_arith))
+    (Or.inl (by simp only [ACC, Impl.X448.AArch64.Fast.SAVE]; omega_arith))
+    (Or.inr (by simp only [slot, Impl.X448.AArch64.Fast.SAVE]; omega_arith))
+    (by simp only [Impl.X448.AArch64.Fast.SAVE]; omega_arith)).trans (hs k hk)
 
 theorem LFrame.savedV {base : Addr} {v : VReg → BitVec 128} {m m' : Mem} (h : LFrame base m m') (hs : SavedV base v m) :
     SavedV base v m' := by
   have hV : Impl.X448.AArch64.Fast.VSAVE = 4736 := rfl
   refine hs.frame fun d h1 h2 => ?_
-  have ho : ofs base (off base d) = d := ofs_off0' base (by omega)
-  exact h _ (by rw [ho]; simp only [X2, slot]; omega) (by rw [ho]; simp only [CAN]; omega)
-    (by rw [ho]; simp only [ACC]; omega) (by rw [ho]; simp only [slot]; omega)
+  have ho : ofs base (off base d) = d := ofs_off0' base (by omega_arith)
+  exact h _ (by rw [ho]; simp only [X2, slot]; omega_arith) (by rw [ho]; simp only [CAN]; omega_arith)
+    (by rw [ho]; simp only [ACC]; omega_arith) (by rw [ho]; simp only [slot]; omega_arith)
 
 /-- A slot but 1, 12 and 13 is unchanged. -/
 theorem LFrame.limbs {base : Addr} {m m' : Mem} (h : LFrame base m m') {i : Index} (hi : i.val ≠ 1)
     (h12 : i.val ≠ 12) (h13 : i.val ≠ 13) {j : Nat} (hj : j < 8) :
     limbs m' base (slot i.val) j = limbs m base (slot i.val) j := by
   have := i.isLt
-  exact congrArg BitVec.toNat (h.word (by simp only [X2, slot]; omega) (by simp only [CAN, slot]; omega)
-    (by simp only [ACC, slot]; omega) (by simp only [slot]; omega) (by simp only [slot]; omega))
+  exact congrArg BitVec.toNat (h.word (by simp only [X2, slot]; omega_arith) (by simp only [CAN, slot]; omega_arith)
+    (by simp only [ACC, slot]; omega_arith) (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith))
 
 /-! ## The comparisons -/
 
@@ -125,7 +125,7 @@ theorem decX19_ok (s : State) {n : Nat} (hn : n < 2) (hc : s.gpr .x19 = BitVec.o
     WP isa (.block [.subImm .x .x19 .x19 1]) s fun t =>
       t.gpr .x19 = BitVec.ofNat 64 n ∧ Keeps [.x19] s t ∧ t.mem = s.mem := by
   have e : BitVec.ofNat 64 (n + 1) - BitVec.ofNat 64 1 = BitVec.ofNat 64 n := by
-    rcases (by omega : n = 0 ∨ n = 1) with rfl | rfl <;> decide
+    rcases (by omega_arith : n = 0 ∨ n = 1) with rfl | rfl <;> decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     show (1 : Nat) < 4096 from by decide, ite_true, RegUpd.gpr_write_self, BitVec.setWidth_eq, hc,
@@ -162,11 +162,11 @@ theorem wcmp_ok {s : State} {base : Addr} (hs : Scr s base) {n : Nat} (hn : n < 
   -- Slots 14 and 15, kept by the comparison and the copies.
   have l1 : ∀ i : Index, i.val ≠ 1 → i.val ≠ 12 → i.val ≠ 13 → ∀ j < 8,
       limbs s1.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := fun i h1 _ _ j hj =>
-    k1.mem.limbs (fun e => h1 (congrArg Fin.val e)) (by omega)
+    k1.mem.limbs (fun e => h1 (congrArg Fin.val e)) (by omega_arith)
   have l12 : ∀ j < 8, limbs t.mem base (slot 12) j = limbs s.mem base (slot 14) j := fun j hj => by
-    rw [mt, o3.limbs (by decide) (by decide) (by omega), v2 j hj]; exact l1 14 (by decide) (by decide) (by decide) j hj
+    rw [mt, o3.limbs (by decide) (by decide) (by omega_arith), v2 j hj]; exact l1 14 (by decide) (by decide) (by decide) j hj
   have l13 : ∀ j < 8, limbs t.mem base (slot 13) j = limbs s.mem base (slot 15) j := fun j hj => by
-    rw [mt, v3 j hj, o2.limbs (by decide) (by decide) (by omega)]
+    rw [mt, v3 j hj, o2.limbs (by decide) (by decide) (by omega_arith)]
     exact l1 15 (by decide) (by decide) (by decide) j hj
   refine ⟨?_, ct, ?_, f, congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr l12),
     congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr l13), fun i h1 h2 j hj => ?_⟩
@@ -174,10 +174,10 @@ theorem wcmp_ok {s : State} {base : Addr} (hs : Scr s base) {n : Nat} (hn : n < 
     exact ⟨c, hc, by rw [kt.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), x]⟩
   · exact ((k1.regs.mono (fun r hr => List.mem_cons_of_mem _ hr)).trans
       ((k2.mono (by decide)).trans (k3.mono (by decide)))).trans (kt.mono (by decide))
-  · rcases (by omega : i.val = 12 ∨ i.val = 13 ∨ (i.val ≠ 12 ∧ i.val ≠ 13)) with e | e | ⟨e1, e2⟩
+  · rcases (by omega_arith : i.val = 12 ∨ i.val = 13 ∨ (i.val ≠ 12 ∧ i.val ≠ 13)) with e | e | ⟨e1, e2⟩
     · rw [e, l12 j hj]; exact hb 14 (by decide) (by decide) j hj
     · rw [e, l13 j hj]; exact hb 15 (by decide) (by decide) j hj
-    · rw [f.limbs (by omega) e1 e2 hj]; exact hb i h1 h2 j hj
+    · rw [f.limbs (by omega_arith) e1 e2 hj]; exact hb i h1 h2 j hj
 
 theorem setX19_ok (s : State) :
     WP isa (.block [.movz .x .x19 2 0]) s fun t => t.gpr .x19 = BitVec.ofNat 64 2 ∧ Keeps [.x19] s t ∧ t.mem = s.mem := by
@@ -206,20 +206,20 @@ theorem wloop_ok {s : State} {base : Addr} (hs : Scr s base)
       by rw [m₁]; exact hb, fun _ => by rw [m₁, k₁.1 _ (by decide)]; exact ⟨rfl, rfl, rfl, rfl, rfl⟩,
       fun h => absurd h (by decide)⟩
   intro n t ⟨hn, ct, ht, kt, ft, bt, e2, e1⟩
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-  refine WP.mono (wcmp_ok ht (n := k) (by omega) ct bt) fun u ⟨⟨c, hc, xu⟩, cu, ku, fu, u12, u13, bu⟩ => ?_
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_arith⟩
+  refine WP.mono (wcmp_ok ht (n := k) (by omega_arith) ct bt) fun u ⟨⟨c, hc, xu⟩, cu, ku, fu, u12, u13, bu⟩ => ?_
   have hu := ht.of_keeps ku (by decide)
   have kU : Keeps cmpRegs s u := kt.trans ku
   have fU : LFrame base s.mem u.mem := ft.trans fu
   simp only [eval, State.read, BitVec.setWidth_eq, cu]
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl
   · -- The second pass: done.
     obtain ⟨t12, t13, ht0⟩ := e1 rfl
     refine .inl ⟨by decide, hu, kU, fU, ?_⟩
     rw [xu, or_eq_zero64, ht0, hc, t12, t13, and_assoc]
   · -- The first pass: on to the second.
     obtain ⟨t12, t13, t14, t15, t20⟩ := e2 rfl
-    refine .inr ⟨by decide, 1, by omega, .inl rfl, rfl, hu, kU, fU, bu, fun h => absurd h (by decide),
+    refine .inr ⟨by decide, 1, by omega_arith, .inl rfl, rfl, hu, kU, fU, bu, fun h => absurd h (by decide),
       fun _ => ⟨by rw [u12, t14], by rw [u13, t15], ?_⟩⟩
     rw [xu, or_eq_zero64, t20, hc, t12, t13]
 

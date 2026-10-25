@@ -71,24 +71,24 @@ theorem jointCachedDigit_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size u
   have hbytes : c.K.bits+j<size := by
     have hh := hL.lookup.layout.stableBounds (c.K.bits,64*c.K.M.n+1) (by simp [jointStableRanges])
     dsimp only at hh
-    omega
+    omega_arith
   apply nafDigitBranch_relCT hbytes hc.read (fun _ hs => hs.stable.peer j hj)
     (fun s t hk st hs => hs.of_keeps hk (by decide) (hExternal s t hk st hs.external))
   intro hb s t ts tt s' t' ⟨hp,cs,_,s8,t8⟩ es et
   have hmag : FastNaf.magnitude 5 v j≠0 := fun he => hb ((FastNaf.byte_zero_iff 5 v j).mpr he)
   have hmagn : nafMagnitude (FastNaf.byte 5 v j)=FastNaf.magnitude 5 v j := FastNaf.byte_magnitude 5 v j
-  have ha : 1≤nafMagnitude (FastNaf.byte 5 v j) := by rw [hmagn]; omega
+  have ha : 1≤nafMagnitude (FastNaf.byte 5 v j) := by rw [hmagn]; omega_arith
   have hbound : nafMagnitude (FastNaf.byte 5 v j)≤15 := by
     rw [hmagn]; exact FastNaf.magnitude_le (Or.inl rfl) v j
   have ho : nafMagnitude (FastNaf.byte 5 v j)%2=1 := by
     rw [hmagn]; exact (FastNaf.magnitude_odd_or_zero 5 v j).resolve_left hmag
   let i := (nafMagnitude (FastNaf.byte 5 v j)-1)/2
-  have hi : i<8 := by dsimp only [i]; omega
+  have hi : i<8 := by dsimp only [i]; omega_arith
   have hq : ∀ x∈cachedSlots c.K.M.n (c.K.tblPt (i+1)) (c.cache+16*c.K.M.n*i),x∈jointLive c := by
     intro x hx
     apply jointStable_live c
     rcases List.mem_append.mp hx with hx|hx
-    · exact jointStable_table c (by omega) (by omega) hx
+    · exact jointStable_table c (by omega_arith) (by omega_arith) hx
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
       rcases hx with rfl|rfl
       · exact jointStable_cache2 c hi
@@ -99,8 +99,8 @@ theorem jointCachedDigit_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size u
     rw [CachedPoint,←same _ (by simp [cachedSlots,jacCoords]),
       ←same _ (by simp [cachedSlots,jacCoords]),←same _ (by simp [cachedSlots,jacCoords]),
       ←same _ (by simp [cachedSlots]),←same _ (by simp [cachedSlots])]
-    exact ⟨cs.stable.table (i+1) (by omega) (by omega),cs.stable.cache2 i hi,cs.stable.cache3 i hi⟩
-  have result := cachedEntryEnv_point (by have := hL.lookup.layout.n; omega) hL.lookup.exy hL.lookup.exz hL.lookup.selectedEntry point
+    exact ⟨cs.stable.table (i+1) (by omega_arith) (by omega_arith),cs.stable.cache2 i hi,cs.stable.cache3 i hi⟩
+  have result := cachedEntryEnv_point (by have := hL.lookup.layout.n; omega_arith) hL.lookup.exy hL.lookup.exz hL.lookup.selectedEntry point
   have zero : E c.K.zero=0 := by
     rw [←hp.1.val _ (by simp [jointLive,winRo])]
     exact cs.stable.zero

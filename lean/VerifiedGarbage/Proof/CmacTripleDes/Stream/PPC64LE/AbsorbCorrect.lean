@@ -34,17 +34,17 @@ theorem fill_spec {m m' : Mem} {S D : Addr} {key msg : List Byte} {len : Nat}
   have hh := Proof.CmacTripleDes.Stream.held_le msg.length
   have ne : ∀ a, a < 408 + held msg.length → ∀ i < len,
       S + BitVec.ofNat 64 a ≠ S + BitVec.ofNat 64 (408 + held msg.length) + BitVec.ofNat 64 i := fun a ha i hi => by
-    rw [VG.Offset.add_add]; exact VG.Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)
-  refine Proof.CmacTripleDes.Stream.repr_fill hr (fun i hi => hc.rest _ (ne i (by omega)))
+    rw [VG.Offset.add_add]; exact VG.Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith)
+  refine Proof.CmacTripleDes.Stream.repr_fill hr (fun i hi => hc.rest _ (ne i (by omega_arith)))
     (by simp [Spec.Aes.bytesAt]; exact hl) ?_ ?_
   · rw [show S + 400 = S + BitVec.ofNat 64 400 from rfl]
     exact Proof.CmacTripleDes.Stream.bytesAt_congr fun i hi => by
-      rw [VG.Offset.add_add]; exact hc.rest _ (ne _ (by omega))
+      rw [VG.Offset.add_add]; exact hc.rest _ (ne _ (by omega_arith))
   · have hlen : (Spec.Aes.bytesAt m D len).length = len := by simp [Spec.Aes.bytesAt]
     rw [hlen, show S + 408 = S + BitVec.ofNat 64 408 from rfl, Proof.Cmac.Stream.bytesAt_append, VG.Offset.add_add]
     congr 1
     · exact Proof.CmacTripleDes.Stream.bytesAt_congr fun i hi => by
-        rw [VG.Offset.add_add]; exact hc.rest _ (ne _ (by omega))
+        rw [VG.Offset.add_add]; exact hc.rest _ (ne _ (by omega_arith))
     · exact List.map_congr_left fun i hi => hc.copied i (List.mem_range.mp hi)
 
 theorem chain_spec {m m' : Mem} {S D : Addr} {key msg : List Byte} {len : Nat}
@@ -55,20 +55,20 @@ theorem chain_spec {m m' : Mem} {S D : Addr} {key msg : List Byte} {len : Nat}
   have hlen : (Spec.Aes.bytesAt m D len).length = len := by simp [Spec.Aes.bytesAt]
   have hnb : nblocks msg.length len = nbOf len (8 - held msg.length) := rfl
   have hnb8 : 8 * nbOf len (8 - held msg.length) ≤ len - (8 - held msg.length) - 1 := by
-    show 8 * ((len - (8 - held msg.length) - 1) / 8) ≤ _; omega
+    show 8 * ((len - (8 - held msg.length) - 1) / 8) ≤ _; omega_arith
   refine Proof.CmacTripleDes.Stream.repr_chain hr hc.key (by rw [hlen]; exact hl) ?_ ?_
   · rw [show S + 400 = S + BitVec.ofNat 64 400 from rfl, show S + 408 = S + BitVec.ofNat 64 408 from rfl,
-      hc.chain, hr.2.1, hlen, hnb, take_bytesAt _ _ (by omega), ← Proof.Cmac.Stream.bytesAt_offset _ _ (by omega),
+      hc.chain, hr.2.1, hlen, hnb, take_bytesAt _ _ (by omega_arith), ← Proof.Cmac.Stream.bytesAt_offset _ _ (by omega_arith),
       Proof.CmacTripleDes.Stream.blocksAt_eq]
     rfl
   · rw [show S + 408 = S + BitVec.ofNat 64 408 from rfl, hlen, hnb, List.drop_drop]
     have e := hc.held
     rw [Proof.Cmac.Stream.bytesAt_offset m D (n := len) (by
       show 8 - held msg.length + 8 * nbOf len (8 - held msg.length) +
-        (len - (8 - held msg.length) - 8 * nbOf len (8 - held msg.length)) ≤ len; omega)] at e
+        (len - (8 - held msg.length) - 8 * nbOf len (8 - held msg.length)) ≤ len; omega_arith)] at e
     exact e.trans (List.take_of_length_le (by
       rw [List.length_drop, hlen]
-      show len - _ ≤ len - (8 - held msg.length) - 8 * nbOf len (8 - held msg.length); omega))
+      show len - _ ≤ len - (8 - held msg.length) - 8 * nbOf len (8 - held msg.length); omega_arith))
 
 /-- What `absorb` leaves, for a state that represents a message of `count`
 bytes. -/
@@ -85,7 +85,7 @@ theorem absorb_wp (s : State) (hp : AbsorbPre s) :
   have hfW := hp.scrFit
   have hh := Proof.CmacTripleDes.Stream.held_le (s.gpr .r4).toNat
   have cW : ∀ off, off + 8 ≤ 688 → (⟨s.gpr .r7, 688⟩ : Region).Contains (s.gpr .r7 + BitVec.ofNat 64 off) (64 / 8) :=
-    fun off h => VG.Offset.contains_base _ h (by omega)
+    fun off h => VG.Offset.contains_base _ h (by omega_arith)
   unfold absorb
   refine WP.seq ?_
   rw [← List.append_nil absorbSave]
@@ -136,7 +136,7 @@ theorem absorb_wp (s : State) (hp : AbsorbPre s) :
     List.map_congr_left fun i hi => by
       rw [hmu]; exact F0.bytes (R := ⟨s.gpr .r5, (s.gpr .r6).toNat⟩) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hp.dataScr)
-        (by show (s.gpr .r6).toNat ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
+        (by show (s.gpr .r6).toNat ≤ 2 ^ 64; omega_arith) (List.mem_range.mp hi)
   have hb : WP isa (.ite (.nonzero .d .r10) chainPath fillPath) u fun v =>
       PathOut u (s.gpr .r3) (s.gpr .r7) v ∧
         AbsorbOut s.mem (s.gpr .r3) (s.gpr .r5) (s.gpr .r4).toNat (s.gpr .r6).toNat v.mem := by
@@ -147,10 +147,10 @@ theorem absorb_wp (s : State) (hp : AbsorbPre s) :
       rw [← hn] at hc cm
       exact chain_spec (Proof.CmacTripleDes.Stream.repr_congr_416 stEq hr) hc cm
     · refine WP.ite false (by rw [ev, decide_eq_false hc]) (fun h => by cases h) fun _ => ?_
-      refine WP.mono (fill_wp he (by omega)) fun v ⟨po, cp⟩ => ⟨po, fun key msg hr hn => ?_⟩
+      refine WP.mono (fill_wp he (by omega_arith)) fun v ⟨po, cp⟩ => ⟨po, fun key msg hr hn => ?_⟩
       rw [← dEq]
       rw [← hn] at hc cp
-      exact fill_spec (Proof.CmacTripleDes.Stream.repr_congr_416 stEq hr) (by omega) cp
+      exact fill_spec (Proof.CmacTripleDes.Stream.repr_congr_416 stEq hr) (by omega_arith) cp
   refine WP.seq (WP.mono hb fun v hv => ?_)
   obtain ⟨po, out⟩ := hv
   -- The saved registers, back.
@@ -161,10 +161,10 @@ theorem absorb_wp (s : State) (hp : AbsorbPre s) :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact (hp.stateScr.sub_right (VG.Offset.sub_base _ h2)).symm
-        · exact VG.Offset.disjoint_base _ (by omega) (by omega)) (by decide), hmu]
+        · exact VG.Offset.disjoint_base _ (by omega_arith) (by omega_arith)) (by decide), hmu]
   have hR : ∀ (w : State), w.rd = s.rd → w.wr = s.wr → ∀ off, off + 8 ≤ 688 →
       InRegions (w.rd ++ w.wr) (s.gpr .r7 + BitVec.ofNat 64 off) 8 := fun w hrd hwr off h => by
-    rw [hrd, hwr]; exact ⟨_, List.mem_append_right _ hW, VG.Offset.contains_base _ h (by omega)⟩
+    rw [hrd, hwr]; exact ⟨_, List.mem_append_right _ hW, VG.Offset.contains_base _ h (by omega_arith)⟩
   have v5 : v.gpr .r5 = s.gpr .r7 := po.r5
   have rdv : v.rd = s.rd := by rw [po.rd, rdu']
   have wrv : v.wr = s.wr := by rw [po.wr, wru']
@@ -186,7 +186,7 @@ theorem absorb_wp (s : State) (hp : AbsorbPre s) :
     rintro off (rfl | rfl | rfl | rfl) <;> exact slot _ (by decide) (by decide)
   have dj : ∀ a b, a + 8 ≤ b ∨ b + 8 ≤ a → b + 8 ≤ 688 → a + 8 ≤ 688 →
       Region.Disjoint ⟨s.gpr .r7 + BitVec.ofNat 64 a, 8⟩ ⟨s.gpr .r7 + BitVec.ofNat 64 b, 8⟩ :=
-    fun a b h hb ha => VG.Offset.disjoint _ h (by omega) (by omega)
+    fun a b h hb ha => VG.Offset.disjoint _ h (by omega_arith) (by omega_arith)
   refine ⟨fun r hr => ?_, ?_, ?_⟩
   · show w₄.gpr r = _
     by_cases e31 : r = .r31

@@ -43,7 +43,7 @@ theorem callee_noSp : NoSp Impl.Ffdh.X86.Candidate.code := NoSp.of_all (by rsa_s
 /-- The bytes `[u, u + l)` of `n` at `p`. -/
 theorem bytes_window (m : Mem) (p : Addr) {u l n : Nat} (h : u + l ≤ n) :
     Spec.Rsa.bytesAt m (p + BitVec.ofNat 64 u) l = ((Spec.Rsa.bytesAt m p n).drop u).take l := by
-  apply List.ext_getElem (by simp [Spec.Rsa.bytesAt]; omega)
+  apply List.ext_getElem (by simp [Spec.Rsa.bytesAt]; omega_arith)
   intro i h₁ h₂
   simp only [Spec.Rsa.bytesAt, List.getElem_take, List.getElem_drop, List.getElem_map, List.getElem_range,
     BitVec.add_assoc, BitVec.ofNat_add_ofNat]
@@ -89,7 +89,7 @@ theorem call_covers {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (
     rw [callRd, tableRs_eq] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨rR o, by simp, used, win_base A hu, show used + ((arg o 6).toNat - used) ≤ (arg o 6).toNat by omega⟩
+    · exact ⟨rR o, by simp, used, win_base A hu, show used + ((arg o 6).toNat - used) ≤ (arg o 6).toNat by omega_arith⟩
     · exact ⟨tR o, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
   · obtain ⟨r', hr', off, hb⟩ := hw r hr
     exact ⟨r', List.mem_append_right _ hr', off, hb⟩
@@ -122,7 +122,7 @@ theorem below_eq {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp 
   have e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (172 + 4)).setWidth 64 = low o := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, hl, argsBytes]
-    omega
+    omega_arith
   rw [callee_stack, below, he, e]
 
 theorem rand_length {o : State} : (ofState o).rand.length = (arg o 6).toNat := by
@@ -141,8 +141,8 @@ theorem entry_bytes {o t : State} {ds : List Nat} {f : Nat → BitVec 32} {used 
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   rw [bytes_frame fe (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ((A.lowRand.sub_left Rs).sub_right W).symm)
-      (by omega), bytes_frame h.frame (fun r hr => (rand_apart A r hr).sub_left W) (by omega),
-    win_base A hu, bytes_window _ _ (show used + ((arg o 6).toNat - used) ≤ (arg o 6).toNat by omega)]
+      (by omega_arith), bytes_frame h.frame (fun r hr => (rand_apart A r hr).sub_left W) (by omega_arith),
+    win_base A hu, bytes_window _ _ (show used + ((arg o 6).toNat - used) ≤ (arg o 6).toNat by omega_arith)]
   show _ = (Spec.Rsa.bytesAt o.mem (argumentPointer o 5) (arg o 6).toNat).drop used
   rw [List.take_of_length_le (by simp [Spec.Rsa.bytesAt])]
 
@@ -152,8 +152,8 @@ theorem candidateStatus_le (c : Option (Option Nat × Spec.RsaKeyGen.Rand)) : ca
 /-- The state's word at `d < 80`, apart from the candidate's `used`. -/
 theorem word_cu {o : State} (A : PSearchABI o) {d : Nat} (hd : d + 4 ≤ 80) :
     (⟨addr (arg o 9) d, 4⟩ : Region).Disjoint (cuR o) := by
-  rw [cuR, cu_base A, Spill.addr_eq_of A.sBound (d := d) (by omega)]
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  rw [cuR, cu_base A, Spill.addr_eq_of A.sBound (d := d) (by omega_arith)]
+  exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 /-- The state's word at `d` lies in the state's region. -/
 theorem word_sub {o : State} (A : PSearchABI o) {d : Nat} (hd : d + 4 ≤ 128) :
@@ -171,9 +171,9 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
   have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
   have hb := A.stackBound
   have hn : (t.gpr .esp).toNat = (o.gpr .esp).toNat - 36 := by
-    rw [h.esp]; exact VG.X86.sub_toNat (by unfold argsBytes; omega)
+    rw [h.esp]; exact VG.X86.sub_toNat (by unfold argsBytes; omega_arith)
   obtain ⟨hc, hcw⟩ := call_covers (t := t) A hu h.rd h.wr
-  refine WP.of_syms (WP.call Cand.verified.1 callee_noSp (by rw [callee_stack, hn]; omega)
+  refine WP.of_syms (WP.call Cand.verified.1 callee_noSp (by rw [callee_stack, hn]; omega_arith)
     (call_pre A hu h.esp ha h.syms h.frame) hc hcw fun u hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ sy => ?_)
   have hp := hpost
   sig_post [Cand.contract, Spec.Ffdh.sievedParameterCandidateContract, Spec.Ffdh.parameterCandidateSig, abi,
@@ -183,7 +183,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
     ce_arg A h.esp ha _ _ (show 4 < 9 by decide), ce_arg A h.esp ha _ _ (show 5 < 9 by decide),
     ce_arg A h.esp ha _ _ (show 6 < 9 by decide), callArg, Nat.reduceEqDiff, ↓reduceIte, ret_eq A h.esp] at hp
   have hlen : (BitVec.ofNat 32 ((arg o 6).toNat - used)).toNat = (arg o 6).toNat - used := by
-    have := (arg o 6).isLt; rw [BitVec.toNat_ofNat]; omega
+    have := (arg o 6).isLt; rw [BitVec.toNat_ofNat]; omega_arith
   rw [hlen, show low o + 172#64 = low o + BitVec.ofNat 64 172 from rfl, entry_bytes h hu] at hp
   obtain ⟨hr, hout, hw⟩ := hp
   rw [BitVec.setWidth_append_eq_right, hg₂ .eax (by decide)] at hr
@@ -204,13 +204,13 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
     by rw [hcs .esi (by decide), h.esi], fun r hr hne hsp => by rw [hcs r hr, h.saved r hr hne hsp],
     h.frame.trans fr, ctl_frameW h.words hf fun d hd r hr => ?_⟩, ?_, ?_, ?_⟩
   · have hd4 : d + 4 ≤ 76 := by
-      simp only [liveDs, List.mem_cons, List.not_mem_nil, or_false] at hd; omega
-    have ws := word_sub A (d := d) (by omega)
+      simp only [liveDs, List.mem_cons, List.not_mem_nil, or_false] at hd; omega_arith
+    have ws := word_sub A (d := d) (by omega_arith)
     rw [below_eq A h.esp] at hr
     simp only [callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact A.os.symm.sub_left ws
-    · exact word_cu A (by omega)
+    · exact word_cu A (by omega_arith)
     · exact A.bs.symm.sub_left ws
     · exact (A.lowS.symm.sub_left ws).sub_right Fs
     · exact (A.lowS.symm.sub_left ws).sub_right Bs
@@ -225,7 +225,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
       BitVec.add_zero, List.cons.injEq] at hw
     rw [← hm₂]
     refine (halves hw.1 ?_).1.trans ?_
-    · split <;> (have := (arg o 6).isLt; omega)
+    · split <;> (have := (arg o 6).isLt; omega_arith)
     · unfold candUsed
       rw [rand_length]
       rfl
@@ -252,7 +252,7 @@ theorem attempt_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n 
   have S := h.st
   obtain ⟨A, rfl⟩ := h.input
   have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega) body_noSp ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [S.esp]; unfold argsBytes; omega_arith) body_noSp ?_
   refine WP.seq (WP.mono (arguments_ok S.alloc) fun t ⟨F, a⟩ => ?_)
   exact WP.mono (call_ok F hu a) fun u ⟨F', e, out, cu⟩ =>
     ⟨F'.free, by rw [freed_gpr _ _ (by decide)]; exact e, by rw [freed_mem]; exact out, by rw [freed_mem]; exact cu⟩

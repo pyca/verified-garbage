@@ -63,9 +63,9 @@ theorem coZ_tbl_slots (K : WinCfg) {a : Nat} (ha : 1≤a) (h9 : a≤9) :
   intro x hx
   simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
   rcases hx with rfl|rfl|rfl
-  · rw [tblPt_x]; exact nafTbl_slot K (by omega)
-  · rw [tblPt_y]; exact nafTbl_slot K (by omega)
-  · rw [tblPt_z]; exact nafTbl_slot K (by omega)
+  · rw [tblPt_x]; exact nafTbl_slot K (by omega_arith)
+  · rw [tblPt_y]; exact nafTbl_slot K (by omega_arith)
+  · rw [tblPt_z]; exact nafTbl_slot K (by omega_arith)
 
 theorem coZ_tbl_writes (K : WinCfg) {a : Nat} (ha : 1≤a) (h9 : a≤9) :
     ∀ x∈jacCoords (K.tblPt a), x∈nafWrites K :=
@@ -76,9 +76,9 @@ theorem coZ_tbl_sep {K : WinCfg} {size : Nat} (hL : NafLay K size) {a : Nat} (ha
   intro x hx hy
   have hs := hL.tbl x hy
   have := hL.n
-  have := entry_end_le (24*K.M.n) (show a-1<9 by omega)
+  have := entry_end_le (24*K.M.n) (show a-1<9 by omega_arith)
   simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
-  omega
+  omega_arith
 
 theorem coZ_tbl_other {K : WinCfg} {size : Nat} (hL : NafLay K size) {a : Nat} (ha : 1≤a) (h9 : a≤9) :
     ∀ x∈jacCoords (K.tblPt a), x∉winOther K :=
@@ -90,9 +90,9 @@ theorem coZ_tbl_ne {K : WinCfg} {size : Nat} (hL : NafLay K size) {a b : Nat} (h
   intro x hx hy
   have := hL.n
   simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx hy
-  rcases Nat.lt_or_gt_of_ne (show a-1≠b-1 by omega) with h|h
-  · have := entry_end_le (24*K.M.n) h; omega
-  · have := entry_end_le (24*K.M.n) h; omega
+  rcases Nat.lt_or_gt_of_ne (show a-1≠b-1 by omega_arith) with h|h
+  · have := entry_end_le (24*K.M.n) h; omega_arith
+  · have := entry_end_le (24*K.M.n) h; omega_arith
 
 theorem coZ_R_other (K : WinCfg) : ∀ x∈jacCoords K.R, x∈winOther K := by
   intro x hx
@@ -132,7 +132,7 @@ theorem coZLive_next (K : WinCfg) (m : Nat) :
     · apply List.mem_append_left
       simp only [jacCoords,tblPt_x,tblPt_y,tblPt_z,Nat.add_sub_cancel,List.mem_cons,
         List.not_mem_nil,or_false]
-      obtain rfl|rfl|rfl : i=3*m ∨ i=3*m+1 ∨ i=3*m+2 := by omega
+      obtain rfl|rfl|rfl : i=3*m ∨ i=3*m+1 ∨ i=3*m+2 := by omega_arith
       · exact Or.inl rfl
       · exact Or.inr (Or.inl rfl)
       · exact Or.inr (Or.inr rfl)
@@ -170,7 +170,7 @@ theorem coZLive_dblu (K : WinCfg) : ∀ x∈coZLive K 1,
   · refine (mem_validAfter _ _).mpr (Or.inl (List.mem_append_left _ ?_))
     simp only [jacCoords,WinCfg.tblPt,Nat.sub_self,Nat.mul_zero,Nat.add_zero,List.mem_cons,
       List.not_mem_nil,or_false]
-    have : 8*K.M.n*2=16*K.M.n := by omega
+    have : 8*K.M.n*2=16*K.M.n := by omega_arith
     rw [this] at h
     exact or_assoc.mp h
 
@@ -218,7 +218,7 @@ theorem nafTableCoZ_init_ok {P : Point C} (hP : onCurve C P=true) {s : State}
   apply WP.seq
   rw [WP.block_append_iff]
   refine WP.mono (copyPointFields_ok hL.lay (q:=K.P) (o:=K.tblPt 1)
-    (by have := hL.n; simp [jacCoords,WinCfg.tblPt] <;> omega)
+    (by have := hL.n; simp [jacCoords,WinCfg.tblPt] <;> omega_arith)
     (fun x hx y hy he => t1 y hy (List.mem_append_left _ (he ▸ pr x hx))) ts hI pr)
     fun a ⟨ea,ka,ia,va⟩ => ?_
   have pd : ∀ x∈jacCoords K.P,x∉jacCoords (K.tblPt 1) :=
@@ -278,7 +278,7 @@ theorem nafTableCoZ_init_ok {P : Point C} (hP : onCurve C P=true) {s : State}
   · exact it.to_tmv.sub (coZLive_dblu K)
   · rw [show 2*1-1=1 from rfl,mul_one_pt]; exact rt
   · intro a ha ha1
-    obtain rfl : a=1 := by omega
+    obtain rfl : a=1 := by omega_arith
     rw [show 2*1-1=1 from rfl,mul_one_pt]; exact tt
   · rw [kt.gpr _ (rbx_not_clob _)]; exact cb
   · exact (coZ_lift ka).trans ((VG.Proof.Mont.X86_64.Keeps.regs kb).mono
@@ -305,10 +305,10 @@ theorem nafTableCoZ_step_ok (ht : K.tbl<2^31) {P : Point C} (hP : onCurve C P=tr
     rcases hi with rfl|rfl|rfl|rfl|rfl <;> simp [Naf.coZσ,coZLive,jacCoords]
   refine WP.mono (nafCoZ_ok hL hm (nafCoZσ_ren hW) CoZTable.zaddu_out CoZTable.zaddu_reads hf hv)
     fun u ⟨ku,iu,eu⟩ => ?_
-  obtain ⟨jr,jd,jz⟩ := CoZTable.zaddu_pts hC hO hn ha hP hP0 (k:=m-1) (by omega)
+  obtain ⟨jr,jd,jz⟩ := CoZTable.zaddu_pts hC hO hn ha hP hP0 (k:=m-1) (by omega_arith)
     (e:=fun j => tmv C K.M.n base s (Naf.coZσ K j)) hI.twice
-    (by rw [show 2*(m-1)+1=2*m-1 by omega]; exact hI.point) hI.z
-  rw [← eu 8,← eu 9,← eu 10,show 2*(m-1+1)+1=2*(m+1)-1 by omega] at jr
+    (by rw [show 2*(m-1)+1=2*m-1 by omega_arith]; exact hI.point) hI.z
+  rw [← eu 8,← eu 9,← eu 10,show 2*(m-1+1)+1=2*(m+1)-1 by omega_arith] at jr
   rw [← eu 0,← eu 1,← eu 10] at jd
   rw [← eu 10] at jz
   have va : ∀ x∈coZLive K m,x∈validAfter (CoZ.zaddu.map (FOp.rename (Naf.coZσ K))) (coZLive K m) :=
@@ -322,19 +322,19 @@ theorem nafTableCoZ_step_ok (ht : K.tbl<2^31) {P : Point C} (hP : onCurve C P=tr
   have iu' := iu.to_tmv.sub va
   have ku' := ku.mono (W':=winOther K) (fun _ hx => hx)
   have tu (a : Nat) (ha1 : 1≤a) (ham : a≤m) := ku.invJ hL.lay hf.scr (coZ_other_slots K)
-    (nafTblPt_mem K ha1 (by omega)) (coZ_tbl_other hL ha1 (by omega)) (hI.table a ha1 ham)
+    (nafTblPt_mem K ha1 (by omega_arith)) (coZ_tbl_other hL ha1 (by omega_arith)) (hI.table a ha1 ham)
   have cu : u.gpr .rbx=BitVec.ofNat 64 m := (ku.gpr _ (rbx_not_clob _)).trans hI.counter
   have sep : K.R.x+24*K.M.n≤K.tbl ∨ K.tbl+192*K.M.n≤K.R.x := by
     have hx := hL.tbl K.R.x (List.mem_append_right _ (coZ_R_other K _ (by simp [jacCoords])))
     have hz := hL.tbl K.R.z (List.mem_append_right _ (coZ_R_other K _ (by simp [jacCoords])))
     rw [hL.rxz] at hz
-    omega
+    omega_arith
   rw [WP.block_append_iff]
-  refine WP.mono (nafTablePoint_ok hL.lay hL.n hL.rxy hL.rxz iu' (by omega : m<8) cu ht
-    (by have := hL.table_le; omega) (nafTblPt_mem K (a:=m+1) (by omega) (by omega))
+  refine WP.mono (nafTablePoint_ok hL.lay hL.n hL.rxy hL.rxz iu' (by omega_arith : m<8) cu ht
+    (by have := hL.table_le; omega_arith) (nafTblPt_mem K (a:=m+1) (by omega_arith) (by omega_arith))
     rL sep ru) fun v ⟨kv,iv,jv⟩ => ?_
-  have tS := nafTblPt_mem K (a:=m+1) (by omega) (by omega)
-  have tn := coZ_tbl_other hL (a:=m+1) (by omega) (by omega)
+  have tS := nafTblPt_mem K (a:=m+1) (by omega_arith) (by omega_arith)
+  have tn := coZ_tbl_other hL (a:=m+1) (by omega_arith) (by omega_arith)
   have ss := iu'.scr
   have rv := kv.invJ hL.lay ss tS (fun x hx => coZ_other_slots K x (coZ_R_other K x hx))
     (fun x hx hy => tn x hy (coZ_R_other K x hx)) ru
@@ -345,9 +345,9 @@ theorem nafTableCoZ_step_ok (ht : K.tbl<2^31) {P : Point C} (hP : onCurve C P=tr
       (fun hy => tn _ hy (coZ_R_other K _ (by simp [jacCoords])))]
     exact zu
   have tv (a : Nat) (ha1 : 1≤a) (ham : a≤m) := kv.invJ hL.lay ss tS
-    (nafTblPt_mem K ha1 (by omega)) (coZ_tbl_ne hL ha1 (by omega) (show a≠m+1 by omega)) (tu a ha1 ham)
+    (nafTblPt_mem K ha1 (by omega_arith)) (coZ_tbl_ne hL ha1 (by omega_arith) (show a≠m+1 by omega_arith)) (tu a ha1 ham)
   have cv : v.gpr .rbx=BitVec.ofNat 64 m := (kv.gpr _ (rbx_not_clob _)).trans cu
-  refine WP.mono (nafTable_advance_ok (by omega) cv) fun t ⟨hc,cf,kc⟩ => ?_
+  refine WP.mono (nafTable_advance_ok (by omega_arith) cv) fun t ⟨hc,cf,kc⟩ => ?_
   have et (x : Nat) : tmv C K.M.n base t x=tmv C K.M.n base v x := by unfold tmv; rw [kc.2.1]
   refine ⟨⟨(iv.of_keeps kc (by decide)).to_tmv.sub (coZLive_next K m),?_,?_,?_,?_,hc,?_,?_⟩,cf⟩
   · simpa only [et,Naf.coZD] using dv
@@ -356,11 +356,11 @@ theorem nafTableCoZ_step_ok (ht : K.tbl<2^31) {P : Point C} (hP : onCurve C P=tr
   · intro a ha1 ham
     by_cases he : a=m+1
     · subst a; simpa only [et] using jv
-    · simpa only [et] using tv a ha1 (by omega)
+    · simpa only [et] using tv a ha1 (by omega_arith)
   · exact hI.keep.trans ((coZ_lift ku).trans ((coZ_lift kv).trans
       ((VG.Proof.Mont.X86_64.Keeps.regs kc).mono (fun _ hx => List.mem_append_right _ hx))))
   · have uu := nafTable_progUnch ku' (fun x hx => List.mem_append_left _ hx)
-    have uv := nafTable_progUnch kv (coZ_tbl_writes K (a:=m+1) (by omega) (by omega))
+    have uv := nafTable_progUnch kv (coZ_tbl_writes K (a:=m+1) (by omega_arith) (by omega_arith))
     rw [kc.2.1]
     exact ((hI.unch.trans uu).trans uv).mono
       (by intro w hw; simpa only [List.mem_append,or_self] using hw)
@@ -374,7 +374,7 @@ theorem nafTableCoZ_twice_ok {P : Point C} {s₀ s : State} (hI : CoZTableInv K 
   have tn := coZ_tbl_other hL (a:=9) (by decide) (by decide)
   have dL := coZLive_D K 8
   refine WP.mono (copyPointFields_ok hL.lay (q:=Naf.coZD K) (o:=Naf.twice K)
-    (by have := hL.n; simp only [Naf.twice]; simp [jacCoords,WinCfg.tblPt] <;> omega)
+    (by have := hL.n; simp only [Naf.twice]; simp [jacCoords,WinCfg.tblPt] <;> omega_arith)
     (fun x hx y hy he => tn y hy (he ▸ coZ_D_other K x hx)) tS hf dL)
     fun t ⟨E',kt,it,vt⟩ => ?_
   have jt : InvJ C (tmv C K.M.n base t (Naf.twice K).x) (tmv C K.M.n base t (Naf.twice K).y)
@@ -387,8 +387,8 @@ theorem nafTableCoZ_twice_ok {P : Point C} {s₀ s : State} (hI : CoZTableInv K 
   · exact kt.invJ hL.lay hf.scr tS (fun x hx => coZ_other_slots K x (coZ_R_other K x hx))
       (fun x hx hy => tn x hy (coZ_R_other K x hx)) hI.point
   · intro a ha1 ha8
-    exact kt.invJ hL.lay hf.scr tS (nafTblPt_mem K ha1 (by omega))
-      (coZ_tbl_ne hL ha1 (by omega) (show a≠9 by omega)) (hI.table a ha1 ha8)
+    exact kt.invJ hL.lay hf.scr tS (nafTblPt_mem K ha1 (by omega_arith))
+      (coZ_tbl_ne hL ha1 (by omega_arith) (show a≠9 by omega_arith)) (hI.table a ha1 ha8)
   · exact (kt.gpr _ (rbx_not_clob _)).trans hI.counter
   · exact (hI.unch.trans (nafTable_progUnch kt (coZ_tbl_writes K (a:=9) (by decide) (by decide)))).mono
       (by intro w hw; simpa only [List.mem_append,or_self] using hw)
@@ -409,15 +409,15 @@ theorem nafTableCoZ_ok (ht : K.tbl<2^31) {P : Point C} (hP : onCurve C P=true)
   refine WP.loop (M:=isa)
     (fun j t => 1≤j ∧ j≤7 ∧ CoZTableInv K C base size P s t (8-j))
     (fun j u ⟨hj,hj7,hu⟩ => ?_) 7 a ⟨by decide,by decide,ia⟩
-  refine WP.mono (nafTableCoZ_step_ok hL hJ hm hC hO hn ha ht hP hP0 (by omega) (by omega) hu)
+  refine WP.mono (nafTableCoZ_step_ok hL hJ hm hC hO hn ha ht hP hP0 (by omega_arith) (by omega_arith) hu)
     fun t ⟨it,cf⟩ => ?_
   by_cases hj1 : j=1
   · subst j
     exact Or.inl ⟨cf,nafTableCoZ_twice_ok hL it⟩
-  · refine Or.inr ⟨?_,j-1,by omega,by omega,by omega,?_⟩
+  · refine Or.inr ⟨?_,j-1,by omega_arith,by omega_arith,by omega_arith,?_⟩
     · change t.cf=some true
-      rw [cf]; congr 1; exact decide_eq_true (by omega)
-    · rw [show 8-(j-1)=8-j+1 from by omega]
+      rw [cf]; congr 1; exact decide_eq_true (by omega_arith)
+    · rw [show 8-(j-1)=8-j+1 from by omega_arith]
       exact it
 
 end

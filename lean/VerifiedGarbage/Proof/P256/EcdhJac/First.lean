@@ -56,21 +56,21 @@ theorem selectBlock_field_ok {base : Addr} {P : Point C} {k a : Nat} {s : State}
     · rw [ite_eq_left hz]
       apply (wordsVal_eq_zero_iff _ _ _ _).mpr
       intro j hj
-      have hh := hw (4*i+j) (by omega)
+      have hh := hw (4*i+j) (by omega_arith)
       have hout : Select.output (4*i+j)=selectedSlot i+8*j := by
-        unfold Select.output selectedSlot; split <;> split <;> omega
+        unfold Select.output selectedSlot; split <;> split <;> omega_arith
       simpa only [hout,hz,ite_true] using hh
     · rw [ite_eq_right hz]
       apply wordsVal_of_words₂
       intro j hj
-      have hh := hw (4*i+j) (by omega)
+      have hh := hw (4*i+j) (by omega_arith)
       have hout : Select.output (4*i+j)=selectedSlot i+8*j := by
-        unfold Select.output selectedSlot; split <;> split <;> omega
-      have hin : 2816+160*(a-1)+8*(4*i+j)=entrySlot a i+8*j := by unfold entrySlot; omega
+        unfold Select.output selectedSlot; split <;> split <;> omega_arith
+      have hin : 2816+160*(a-1)+8*(4*i+j)=entrySlot a i+8*j := by unfold entrySlot; omega_arith
       simpa only [hout,hin,ite_eq_right hz] using hh
   have hfix := hf.keep (frame_build fr)
   refine ⟨fr,hkeep.gpr _ (by decide),?_,fun hnz=>(ht a hnz ha).congr (fun i hi'=>by
-    rw [hv i hi',ite_eq_right (by omega)]),fun hz i hi'=>by
+    rw [hv i hi',ite_eq_right (by omega_arith)]),fun hz i hi'=>by
       simpa only [hz,ite_true] using hv i hi',?_⟩
   rotate_left
   · intro x hx
@@ -93,7 +93,7 @@ theorem selectBlock_field_ok {base : Addr} {P : Point C} {k a : Nat} {s : State}
       rw [hv i hi']
       split
       · decide
-      · exact (ht a (by omega) ha).lt i hi'
+      · exact (ht a (by omega_arith) ha).lt i hi'
     · have hwv : wordsVal t.mem base x 4=wordsVal s.mem base x 4 :=
         ho.wordsVal (by
           have hsep : ∀ x∈live,∀ w∈Select.outputRanges,x+32≤w.1 ∨ w.1+w.2≤x := by decide
@@ -166,7 +166,7 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
   have hzero : K.zero∈selected++V := List.mem_append_right _ (hro _ (by decide))
   refine WP.mono (negFieldWindow_ok layout aligned (unitMod_pow_two (by decide) _) i₁
     (by decide : Sl K.neg) hzero hy (by decide) hz (by decide : 1≤5) (by decide)
-    (by omega : 5*j+5≤260) (by decide) (by decide) (c₁.trans h19) f₁.bits
+    (by omega_arith : 5*j+5≤260) (by decide) (by decide) (c₁.trans h19) f₁.bits
     (by decide) (by decide)) fun t ⟨kp₂,i₂⟩=>?_
   have fr₂ : Frame base work s₁ t := AllocatedFrame.of_prog kp₂ clob_regs (by decide)
   have iv := i₂.sub (fun x (hx : x∈selected++V)=>List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx))
@@ -191,7 +191,7 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
       change wordsVal s₁.mem base 5400 4=0 at e3
       change toM _ _ (wordsVal s₁.mem base 5400 4)=toM _ _ (wordsVal s₁.mem base 768 4)*toM _ _ (wordsVal s₁.mem base 768 4)
       rw [e2,e3,toM_zero]; grind
-    · exact (p₁ (by omega)).z2
+    · exact (p₁ (by omega_arith)).z2
   have hc3 : tmv C 4 base s₁ 5432=tmv C 4 base s₁ 5400*tmv C 4 base s₁ K.E.z := by
     by_cases hz : magH 16 (Window5.nib (k+offset) j)=0
     · have e4:=z₁ hz 4 (by decide)
@@ -200,7 +200,7 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
       change wordsVal s₁.mem base 5400 4=0 at e3
       unfold tmv
       rw [e4,e3,toM_zero]; grind
-    · exact (p₁ (by omega)).z3
+    · exact (p₁ (by omega_arith)).z3
   refine ⟨fr₁.trans fr₂,(kp₂.gpr _ (x19_not_clob _)).trans c₁,iv.to_tmv,fun hz=>?_,?_,?_,?_,fun hnz=>?_⟩
   · rw [hez]; unfold tmv; rw [show wordsVal s₁.mem base K.E.z 4=0 from z₁ hz 2 (by decide),toM_zero]
   · change tmv C 4 base t (selectedSlot 3)=tmv C 4 base t (selectedSlot 2)*tmv C 4 base t (selectedSlot 2)
@@ -265,7 +265,7 @@ theorem entry_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
     WP isa (.block entry) s (EntryPost base P k j V s) := by
   rw [entry,WP.block_append_iff]
   refine WP.mono (digitW_ok tc hi.scr (k:=k+offset) (j:=j) (N:=260)
-    (by decide) (by decide) (by change 5*j+5≤260; omega) (by decide) (by decide) h19 hf.bits)
+    (by decide) (by decide) (by change 5*j+5≤260; omega_arith) (by decide) (by decide) h19 hf.bits)
     fun u ⟨hu,hkeep⟩=>?_
   have fr : Frame base work s u := (AllocatedFrame.of_keeps hkeep).widenRegs (by decide)
   have iu : Inv M base 8192 C.p Sl V (tmv C 4 base u) u := by
@@ -313,7 +313,7 @@ theorem first_ok (hC : Law C) {base : Addr} {P : Point C} {k : Nat} {s : State}
     by_cases hz : magH 16 (Window5.nib (k+offset) 51)=0
     · rw [Window5.winPt_zero hz]
       exact Or.inl ⟨rfl,hv.zero hz⟩
-    · exact (hv.point (by omega)).jac
+    · exact (hv.point (by omega_arith)).jac
   have hA : RcbApart K.S K.E K.E K.R := ⟨by decide,by decide⟩
   have hsl : ∀ x∈rcbW K.S K.R++rcbR K.S K.E K.E,Sl x := by decide
   have hvalid : ∀ x∈rcbR K.S K.E K.E,x∈selected++ro := by decide
@@ -331,7 +331,7 @@ theorem first_ok (hC : Law C) {base : Addr} {P : Point C} {k : Nat} {s : State}
   refine ⟨allframe,⟨⟨Window5.winPt C P (k+offset) 51,Window5.onCurve_winPt hC hP (k+offset) 51,fun _=>?_,
     ⟨hf.keep (frame_build allframe),ht.keep allframe,iout.to_tmv,?_⟩⟩,?_⟩⟩
   · have he := Window5.win_add hC hP (k:=k+offset) (J:=52) (j:=51)
-      (by rw [offset_eq]; omega) (by decide)
+      (by rw [offset_eq]; omega_arith) (by decide)
     have htop : Window5.winE (k+offset) 52 52=0 :=
       Window5.winE_top (by rw [offset_eq]; exact Window5.recode_lt hk)
     rw [show 51+1=52 from rfl,htop,Nat.mul_zero,Window5.mul_zero_pt,infinity_add'] at he

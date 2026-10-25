@@ -79,7 +79,7 @@ theorem pfacts : 4 ≤ pk s₀ ∧ pk s₀ ≤ 8 ∧ 55 ≤ pω s₀ ∧ pω s�
   have := mem_hintParams hp.par
   have := hp.ωle
   have e : pk s₀ = pLen s₀ - pω s₀ := rfl
-  omega
+  omega_arith
 
 /-! ## Zeroing `y` -/
 
@@ -117,7 +117,7 @@ theorem zero_ok {s : State} (h0 : s.gpr .r0 = pH s₀) (h2 : s.gpr .r2 = pW s₀
       s'.gpr .r4 = BitVec.ofNat 32 (1 * (pLen s₀ - t)) ∧ s'.gpr .r12 = 0 ∧ s'.gpr .r0 = pH s₀ ∧
       s'.gpr .r1 = BitVec.ofNat 32 (pk s₀) ∧ s'.gpr .r2 = pW s₀ ∧ s'.gpr .r3 = pY s₀ ∧
       Frame [yR s₀] s.mem s'.mem ∧ (∀ u < t, s'.mem (State.addr (pY s₀) + BitVec.ofNat 64 u) = 0) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp) (by omega)
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp) (by omega_arith)
     (fun t ht s' ⟨i5, i4, i12, i0, i1, i2, i3, hf, hz, hrd, hwr', hsp⟩ => ?_)
     (fun s' ⟨_, _, _, i0, i1, i2, i3, hf, hz, hrd, hwr', hsp⟩ => ⟨i0, i1, i2, i3,
       VG.Proof.MlKem.bytesAt_eq (by simp) fun u hu => by rw [hz u hu]; simp, hf, hrd, hwr', hsp⟩)
@@ -125,22 +125,22 @@ theorem zero_ok {s : State} (h0 : s.gpr .r0 = pH s₀) (h2 : s.gpr .r2 = pW s₀
       r12₁, by rw [r0₁, h0], ?_, by rw [r2₁, h2], by rw [r3₁, h3], by rw [m₁]; exact Frame.refl _ _,
       fun _ h => absurd h (Nat.not_lt_zero _), rd₁, wr₁, sp₁⟩
   · have ea : State.addr (pY s₀ + BitVec.ofNat 32 t + BitVec.ofNat 32 0) = State.addr (pY s₀) + BitVec.ofNat 64 t :=
-      addr_ptr _ _ _ (by omega)
+      addr_ptr _ _ _ (by omega_arith)
     refine WP.mono (zeroStep_ok i5 i4 (by
-        rw [ea, hwr']; exact ⟨_, hwr, Offset.contains_base _ (by omega) (by omega)⟩))
+        rw [ea, hwr']; exact ⟨_, hwr, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩))
       fun s'' ⟨r5', r4', z', m', r0', r1', r2', r3', r12', rd', wr', sp'⟩ =>
         ⟨⟨by rw [r5', BitVec.add_assoc, ofNat_succ32], by rw [r4']; exact count_sub (k := 1) ht, by rw [r12', i12],
           by rw [r0', i0], by rw [r1', i1], by rw [r2', i2], by rw [r3', i3], ?_, fun u hu => ?_,
-          by rw [rd', hrd], by rw [wr', hwr'], by rw [sp', hsp]⟩, by rw [z']; exact count_z (k := 1) ht (by decide) (by omega)⟩
+          by rw [rd', hrd], by rw [wr', hwr'], by rw [sp', hsp]⟩, by rw [z']; exact count_z (k := 1) ht (by decide) (by omega_arith)⟩
     · rw [m', ea]
-      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
-    · rw [m', ea, VG.Proof.MlKem.Arm.byte_writeW8 _ _ (by omega) (by omega)]
+      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
+    · rw [m', ea, VG.Proof.MlKem.Arm.byte_writeW8 _ _ (by omega_arith) (by omega_arith)]
       split
       · rw [i12]; rfl
-      · exact hz u (by omega)
+      · exact hz u (by omega_arith)
   · rw [r1₁, h12, h2]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub_of_le (by have := hp.ωle; exact this), toNat_ofNat32 (by omega)]
+    rw [BitVec.toNat_sub_of_le (by have := hp.ωle; exact this), toNat_ofNat32 (by omega_arith)]
 
 end
 
@@ -238,12 +238,12 @@ theorem coef_ok {i j : Nat} (hi : i < pk s₀) (hj : j < 256) {s : State} (hI : 
   have fH := hp.fitH
   have fY := hp.fitY
   have hl := hp.hlen
-  have t_lt : 256 * i + j < 256 * pk s₀ := by omega
+  have t_lt : 256 * i + j < 256 * pk s₀ := by omega_arith
   have hin : (hR s₀).Contains (coeffAddr (State.addr (pH s₀)) (256 * i + j)) 4 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have ea : State.addr (pH s₀ + BitVec.ofNat 32 (4 * (256 * i + j)) + BitVec.ofNat 32 0) =
       coeffAddr (State.addr (pH s₀)) (256 * i + j) := by
-    rw [addr_ptr _ _ _ (by omega), Nat.add_zero]
+    rw [addr_ptr _ _ _ (by omega_arith), Nat.add_zero]
   have hw : s.mem.readW (coeffAddr (State.addr (pH s₀)) (256 * i + j)) 32 =
       coeffAt s₀.mem (State.addr (pH s₀)) (256 * i + j) := by
     rw [← hA.hint _ t_lt, coeffAt_eq]
@@ -265,7 +265,7 @@ theorem coef_ok {i j : Nat} (hi : i < pk s₀) (hj : j < 256) {s : State} (hI : 
         (by rw [g₁ _ (by decide), hI.r12])) fun s₃ ⟨r0₃, r12₃, z₃, m₃, rd₃, wr₃, sp₃, g₃⟩ =>
       ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, by rw [rd₃, rd₁, hI.rd], by rw [wr₃, wr₁, hI.wr], by rw [sp₃, sp₁, hI.sp],
         by rw [m₃, m₁]; exact hI.frame, ?_⟩, ?_⟩)
-    · rw [r0₃, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ptr_add, show 4 * (256 * i + j) + 4 = 4 * (256 * i + (j + 1)) by omega]
+    · rw [r0₃, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ptr_add, show 4 * (256 * i + j) + 4 = 4 * (256 * i + (j + 1)) by omega_arith]
     · rw [g₃ _ (by decide) (by decide), g₁ _ (by decide), hI.r1, hT, hpStep, hbit]
       simp only [h0, ne_eq, not_true_eq_false, decide_false, Bool.false_eq_true, ↓reduceIte]
     · rw [g₃ _ (by decide) (by decide), g₁ _ (by decide), hI.r3]
@@ -274,7 +274,7 @@ theorem coef_ok {i j : Nat} (hi : i < pk s₀) (hj : j < 256) {s : State} (hI : 
     · rw [r12₃, ofNat_succ32]
     · rw [m₃, m₁, hI.y, hT, hpStep, hbit]
       simp only [h0, ne_eq, not_true_eq_false, decide_false, Bool.false_eq_true, ↓reduceIte]
-    · rw [z₃, ofNat_succ32]; exact cmp_const (by omega) (by decide)
+    · rw [z₃, ofNat_succ32]; exact cmp_const (by omega_arith) (by decide)
   · -- A 1: `y[index] ← j`.
     have h1 : coeffAt s₀.mem (State.addr (pH s₀)) (256 * i + j) ≠ 0 := by
       rw [z₁] at h1; exact fun e => by rw [e] at h1; exact absurd h1 (by decide)
@@ -282,12 +282,12 @@ theorem coef_ok {i j : Nat} (hi : i < pk s₀) (hj : j < 256) {s : State} (hI : 
       have : onesBefore (pHint s₀) i j < hintOnes (pHint s₀) :=
         hpIdx_lt (hintAt_length s₀.mem _ _) hi hj (by rw [hbit]; exact decide_eq_true h1)
       have := hp.ones
-      omega
+      omega_arith
     have eb : State.addr (pY s₀ + BitVec.ofNat 32 (hpT s₀ i j).2 + BitVec.ofNat 32 0) =
         State.addr (pY s₀) + BitVec.ofNat 64 (hpT s₀ i j).2 := by
-      rw [addr_ptr _ _ _ (by omega), Nat.add_zero]
+      rw [addr_ptr _ _ _ (by omega_arith), Nat.add_zero]
     have hinY : (yR s₀).Contains (State.addr (pY s₀) + BitVec.ofNat 64 (hpT s₀ i j).2) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_arith) (by omega_arith)
     refine WP.mono (coefSet_ok (i := BitVec.ofNat 32 (hpT s₀ i j).2) (y := pY s₀) (j := BitVec.ofNat 32 j)
         (by rw [g₁ _ (by decide), hI.r1]) (by rw [g₁ _ (by decide), hI.r3])
         (by rw [g₁ _ (by decide), hI.r12]) (by rw [eb, wr₁, hI.wr]; exact ⟨_, hA.wr, hinY⟩))
@@ -298,7 +298,7 @@ theorem coef_ok {i j : Nat} (hi : i < pk s₀) (hj : j < 256) {s : State} (hI : 
       fun s₃ ⟨r0₃, r12₃, z₃, m₃, rd₃, wr₃, sp₃, g₃⟩ =>
       ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, by rw [rd₃, rd₂, rd₁, hI.rd], by rw [wr₃, wr₂, wr₁, hI.wr],
         by rw [sp₃, sp₂, sp₁, hI.sp], ?_, ?_⟩, ?_⟩
-    · rw [r0₃, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ptr_add, show 4 * (256 * i + j) + 4 = 4 * (256 * i + (j + 1)) by omega]
+    · rw [r0₃, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ptr_add, show 4 * (256 * i + j) + 4 = 4 * (256 * i + (j + 1)) by omega_arith]
     · rw [g₃ _ (by decide) (by decide), r1₂, hT, hpStep, hbit, ofNat_succ32]
       simp only [h1, ne_eq, not_false_eq_true, decide_true, ↓reduceIte]
     · rw [g₃ _ (by decide) (by decide), g₂ _ (by decide) (by decide), g₁ _ (by decide), hI.r3]
@@ -307,11 +307,11 @@ theorem coef_ok {i j : Nat} (hi : i < pk s₀) (hj : j < 256) {s : State} (hI : 
     · rw [r12₃, ofNat_succ32]
     · rw [m₃, m₂, m₁, eb]
       exact hI.frame.writeW (List.mem_singleton_self _) _ hinY
-    · rw [m₃, m₂, m₁, eb, bytesAt_writeW8 _ _ (by omega) (by omega), hI.y, hT, hpStep, hbit,
+    · rw [m₃, m₂, m₁, eb, bytesAt_writeW8 _ _ (by omega_arith) (by omega_arith), hI.y, hT, hpStep, hbit,
         setWidth8_ofNat]
       simp only [h1, ne_eq, not_false_eq_true, decide_true, ↓reduceIte, Array.set!_eq_setIfInBounds,
         Array.toList_setIfInBounds]
-    · rw [z₃, ofNat_succ32]; exact cmp_const (by omega) (by decide)
+    · rw [z₃, ofNat_succ32]; exact cmp_const (by omega_arith) (by decide)
 
 /-- The coefficients of polynomial `i`. -/
 theorem coefs_ok {i : Nat} (hi : i < pk s₀) {s : State} (hI : CInv s₀ sA i 0 s) :
@@ -367,25 +367,25 @@ theorem poly_ok {i : Nat} (hi : i < pk s₀) {s : State} (hP : HPInv s₀ sA i s
     have := hpT_idx s₀ i 256
     have h1 : onesBefore (pHint s₀) i 256 ≤ hintOnes (pHint s₀) := onesBefore_n_le (hintAt_length _ _ _) hi
     have := hp.ones
-    omega
+    omega_arith
   have ea : State.addr (pY s₀ + BitVec.ofNat 32 (pω s₀ + i) + BitVec.ofNat 32 0) =
       State.addr (pY s₀) + BitVec.ofNat 64 (pω s₀ + i) := by
-    rw [addr_ptr _ _ _ (by omega), Nat.add_zero]
+    rw [addr_ptr _ _ _ (by omega_arith), Nat.add_zero]
   have hinY : (yR s₀).Contains (State.addr (pY s₀) + BitVec.ofNat 64 (pω s₀ + i)) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   refine WP.mono (polyEnd_ok hI.r1 hI.r5 hI.r4 (by rw [ea, hI.wr]; exact ⟨_, hA.wr, hinY⟩))
     fun s₃ ⟨r5₃, r4₃, z₃, m₃, rd₃, wr₃, sp₃, g₃⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, by rw [rd₃, hI.rd], by rw [wr₃, hI.wr],
       by rw [sp₃, hI.sp], ?_, ?_⟩, ?_⟩
-  · rw [g₃ _ (by decide) (by decide), hI.r0, show 4 * (256 * i + 256) = 4 * (256 * (i + 1)) by omega]
+  · rw [g₃ _ (by decide) (by decide), hI.r0, show 4 * (256 * i + 256) = 4 * (256 * (i + 1)) by omega_arith]
   · rw [g₃ _ (by decide) (by decide), hI.r1, hpS_succ]
   · rw [g₃ _ (by decide) (by decide), hI.r3]
   · rw [r4₃]; exact count_sub (k := 1) hi
   · rw [r5₃, BitVec.add_assoc, ofNat_succ32, Nat.add_assoc]
   · rw [m₃, ea]
     exact hI.frame.writeW (List.mem_singleton_self _) _ hinY
-  · rw [m₃, ea, bytesAt_writeW8 _ _ (by omega) (by omega), hI.y, hpS_succ, setWidth8_ofNat,
+  · rw [m₃, ea, bytesAt_writeW8 _ _ (by omega_arith) (by omega_arith), hI.y, hpS_succ, setWidth8_ofNat,
       Array.set!_eq_setIfInBounds, Array.toList_setIfInBounds]
-  · rw [z₃]; exact count_z (k := 1) hi (by decide) (by omega)
+  · rw [z₃]; exact count_z (k := 1) hi (by decide) (by omega_arith)
 
 end
 
@@ -405,7 +405,7 @@ theorem main_ok {s₀ : State} (hp : PPre s₀) {sA : State} (hA : MainPre s₀ 
   obtain ⟨hk4, hk8, hω55, hω80, hsum, hL88⟩ := pfacts hp
   unfold hbpMain
   refine WP.seq (WP.mono mainPro_ok fun s₁ ⟨r4₁, r5₁, r1₁, r0₁, r3₁, m₁, rd₁, wr₁, sp₁⟩ => ?_)
-  refine wp_loop_ne (HPInv s₀ sA) (N := pk s₀) (by omega) (fun i hi s h => poly_ok hp hA hi h)
+  refine wp_loop_ne (HPInv s₀ sA) (N := pk s₀) (by omega_arith) (fun i hi s h => poly_ok hp hA hi h)
     (fun s hP => ⟨hP.y.trans (hintBitPack_eq _ _ _).symm, hP.frame, hP.rd, hP.wr, hP.sp⟩)
     ⟨by rw [r0₁, h0]; simp, by rw [r1₁]; rfl, by rw [r3₁, h3], by rw [r4₁, h1, Nat.one_mul, Nat.sub_zero],
       by rw [r5₁, h3, h2, Nat.add_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq], rd₁, wr₁, sp₁,
@@ -458,7 +458,7 @@ theorem zp_hint {a : State} (hz : ZP s₀ a) :
   have fH := hp.fitH
   have hl := hp.hlen
   rw [coeffAt_eq, coeffAt_eq]
-  exact (zp_frame hp hz).readW (r := hR s₀) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => by
+  exact (zp_frame hp hz).readW (r := hR s₀) (Offset.contains_base _ (by omega_arith) (by omega_arith)) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.b_h.symm

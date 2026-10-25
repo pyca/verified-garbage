@@ -108,16 +108,16 @@ theorem init_piece :
     have fit := hp.sp'
     have a₀ := P0_argAddr s₀ 0
     have a₁ := P0_argAddr s₀ 1
-    have i₀ := P0_argIn (s₀ := s₀) (n := 2) (i := 0) (by omega) fit (by simp [hp.wr])
-    have i₁ := P0_argIn (s₀ := s₀) (n := 2) (i := 1) (by omega) fit (by simp [hp.wr])
-    have v₀ := P0_arg hp.sp (n := 2) (i := 0) (by omega) fit hp.stk_a
-    have v₁ := P0_arg hp.sp (n := 2) (i := 1) (by omega) fit hp.stk_a
+    have i₀ := P0_argIn (s₀ := s₀) (n := 2) (i := 0) (by omega_arith) fit (by simp [hp.wr])
+    have i₁ := P0_argIn (s₀ := s₀) (n := 2) (i := 1) (by omega_arith) fit (by simp [hp.wr])
+    have v₀ := P0_arg hp.sp (n := 2) (i := 0) (by omega_arith) fit hp.stk_a
+    have v₁ := P0_arg hp.sp (n := 2) (i := 1) (by omega_arith) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd] at a₀ a₁
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, enc12Init, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, a₁, i₀, i₁, v₀, v₁,
       Option.some.injEq, exists_eq_left']
-    exact ⟨by simp, rfl, rfl, by simp, by simp, by simp, Frame.refl _ _, fun j hj => absurd hj (by omega)⟩
+    exact ⟨by simp, rfl, rfl, by simp, by simp, by simp, Frame.refl _ _, fun j hj => absurd hj (by omega_arith)⟩
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [e, e', P0_esp, P0_esp, hq.1]
@@ -128,62 +128,62 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   have ff := hp.f_fit
   have fo := hp.o_fit
   have e0 : (fP s₀ + BitVec.ofNat 32 (8 * k) + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (fA s₀) (2 * k) := by
-    rw [ea_add (by omega)]; congr 2; omega
+    rw [ea_add (by omega_arith)]; congr 2; omega_arith
   have e1 : (fP s₀ + BitVec.ofNat 32 (8 * k) + BitVec.ofNat 32 4).setWidth 64 =
       coeffAddr (fA s₀) (2 * k + 1) := by
-    rw [ea_add (by omega)]; congr 2; omega
+    rw [ea_add (by omega_arith)]; congr 2; omega_arith
   have o0 : (oP s₀ + BitVec.ofNat 32 (3 * k) + BitVec.ofNat 32 0).setWidth 64 =
-      oA s₀ + BitVec.ofNat 64 (3 * k) := by rw [ea_add (by omega), Nat.add_zero]
+      oA s₀ + BitVec.ofNat 64 (3 * k) := by rw [ea_add (by omega_arith), Nat.add_zero]
   have o1 : (oP s₀ + BitVec.ofNat 32 (3 * k) + BitVec.ofNat 32 1).setWidth 64 =
-      oA s₀ + BitVec.ofNat 64 (3 * k + 1) := ea_add (by omega)
+      oA s₀ + BitVec.ofNat 64 (3 * k + 1) := ea_add (by omega_arith)
   have o2 : (oP s₀ + BitVec.ofNat 32 (3 * k) + BitVec.ofNat 32 2).setWidth 64 =
-      oA s₀ + BitVec.ofNat 64 (3 * k + 2) := ea_add (by omega)
+      oA s₀ + BitVec.ofNat 64 (3 * k + 2) := ea_add (by omega_arith)
 
   have inF : ∀ i < 256, InRegions (s.rd ++ s.wr) (coeffAddr (fA s₀) i) 4 := fun i hi =>
     ⟨polyRegion (fA s₀), by rw [h.rd, pushed_rd, hp.rd]; simp, coeff_contains _ hi⟩
   have outO : ∀ t < 3, InRegions s.wr (oA s₀ + BitVec.ofNat 64 (3 * k + t)) 1 := fun t ht =>
-    ⟨oR s₀, by rw [h.wr, P0_wr, hp.wr]; simp, contains_at (by omega) fo⟩
-  have i0 := inF (2 * k) (by omega)
-  have i1 := inF (2 * k + 1) (by omega)
-  have w0 := outO 0 (by omega)
-  have w1 := outO 1 (by omega)
-  have w2 := outO 2 (by omega)
+    ⟨oR s₀, by rw [h.wr, P0_wr, hp.wr]; simp, contains_at (by omega_arith) fo⟩
+  have i0 := inF (2 * k) (by omega_arith)
+  have i1 := inF (2 * k + 1) (by omega_arith)
+  have w0 := outO 0 (by omega_arith)
+  have w1 := outO 1 (by omega_arith)
+  have w2 := outO 2 (by omega_arith)
   simp only [Nat.add_zero] at w0
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, enc12Body, at_, runBlock_cons, runStep_some, runBlock_nil,
     exec, execAlu, execShift, readSrc, State.ea, State.load32, State.store8, State.setReg, arithFlags,
     State.setFlags, Reg8.reg, Option.map_some, Option.bind_some, h.esi, h.edi, e0, e1, o0, o1, o2,
     i0, i1, w0, w1, w2, Option.some.injEq, exists_eq_left']
-  have ha := hp.f_red (2 * k) (by show 2 * k < 256; omega)
-  have hb := hp.f_red (2 * k + 1) (by show 2 * k + 1 < 256; omega)
-  rw [← coeffAt_eq, ← coeffAt_eq, hp.f_keep h.frame (by omega), hp.f_keep h.frame (by omega)]
+  have ha := hp.f_red (2 * k) (by show 2 * k < 256; omega_arith)
+  have hb := hp.f_red (2 * k + 1) (by show 2 * k + 1 < 256; omega_arith)
+  rw [← coeffAt_eq, ← coeffAt_eq, hp.f_keep h.frame (by omega_arith), hp.f_keep h.frame (by omega_arith)]
   generalize ea : coeffAt s₀.mem (fA s₀) (2 * k) = a at ha
   generalize eb : coeffAt s₀.mem (fA s₀) (2 * k + 1) = b at hb
   rw [q_eq] at ha hb
   have hw : (a + b.rotateRight 20).toNat = a.toNat + 4096 * b.toNat := by
-    rw [BitVec.toNat_add, rotr_small b (by decide) (by decide) (by omega)]
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+    rw [BitVec.toNat_add, rotr_small b (by decide) (by decide) (by omega_arith)]
+    rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   have byte : ∀ t < 3, (L s₀)[3 * k + t]! = BitVec.ofNat 8 ((a + b.rotateRight 20).toNat / 2 ^ (8 * t)) := by
     intro t ht
-    rw [encode12_group _ (by omega) ht, polyAt_val hp.f_red (by show 2 * k < 256; omega),
-      polyAt_val hp.f_red (by show 2 * k + 1 < 256; omega), ea, eb, hw]
+    rw [encode12_group _ (by omega_arith) ht, polyAt_val hp.f_red (by show 2 * k < 256; omega_arith),
+      polyAt_val hp.f_red (by show 2 * k + 1 < 256; omega_arith), ea, eb, hw]
   refine ⟨⟨by simp [h.esp], h.rd, h.wr, ptr_next _ _ 8, ptr_next _ _ 3, by rw [h.ecx]; exact cnt_next hk,
     ?_, ?_⟩, by simp only [eval, h.ecx]; exact cnt_ne hk (by decide)⟩
   · have c : ∀ t < 3, (oR s₀).Contains (oA s₀ + BitVec.ofNat 64 (3 * k + t)) (8 / 8) :=
-      fun t ht => contains_at (by omega) fo
-    exact ((h.frame.writeW (List.mem_singleton_self _) _ (by simpa using c 0 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 1 (by omega))).writeW (List.mem_singleton_self _) _ (c 2 (by omega))
-  · refine bytes_extend (by omega) h.out ?_ ?_ ?_
-    · have := byte 0 (by omega)
+      fun t ht => contains_at (by omega_arith) fo
+    exact ((h.frame.writeW (List.mem_singleton_self _) _ (by simpa using c 0 (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (c 1 (by omega_arith))).writeW (List.mem_singleton_self _) _ (c 2 (by omega_arith))
+  · refine bytes_extend (by omega_arith) h.out ?_ ?_ ?_
+    · have := byte 0 (by omega_arith)
       rw [Nat.add_zero] at this
       rw [this, setWidth8_eq]; simp
-    · rw [byte 1 (by omega), setWidth8_eq, toNat_shr]
-    · rw [byte 2 (by omega), setWidth8_eq, toNat_shr, toNat_shr, Nat.div_div_eq_div_mul]
+    · rw [byte 1 (by omega_arith), setWidth8_eq, toNat_shr]
+    · rw [byte 2 (by omega_arith), setWidth8_eq, toNat_shr, toNat_shr, Nat.div_div_eq_div_mul]
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Inv s₀ 128) s₀ s')
     Impl.MlKem.X86.encode12 :=
   Piece.leafLoop (fun s₀ => [oR s₀]) (fun k s₀ s => Inv s₀ k s) (NoSp.of_all (by decide +kernel))
-    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_arith⟩)
     (fun _ hp r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
@@ -210,7 +210,7 @@ theorem verified : Verified X86.target Impl.MlKem.X86.encode12 (encode12Contract
     refine ⟨habi, ?_⟩
     sig_post [encode12Contract, encode12Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     rw [hm]
-    exact bytesAt_eq! (encode12_length _) fun j hj => hinv.out j (by omega)
+    exact bytesAt_eq! (encode12_length _) fun j hj => hinv.out j (by omega_arith)
   · let st := satState satMem [⟨0, 1024⟩] [⟨0x400, 384⟩, ⟨0x5004, 8⟩]
     have a0 : arg st 0 = 0 := by decide
     have a1 : arg st 1 = 0x400 := by decide
@@ -224,5 +224,5 @@ theorem verified : Verified X86.target Impl.MlKem.X86.encode12 (encode12Contract
       | exact Region.disjoint_of_sep (by decide)
       | (show satMem a = 0
          simp only [satMem]
-         rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)])
+         rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_arith)])
 end VG.Proof.MlKem.X86.Encode12

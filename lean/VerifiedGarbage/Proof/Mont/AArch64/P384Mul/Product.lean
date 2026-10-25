@@ -83,15 +83,15 @@ theorem rowsAt_ok {rb : Reg} (hrb : BaseOk rb) {pa : Addr} {size o B : Nat} (ho 
   induction h : 6 - n generalizing n with
   | zero =>
     intro s _ _ _ hv
-    obtain rfl : n = 6 := by omega
+    obtain rfl : n = 6 := by omega_arith
     exact WP.block_nil ⟨hv, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | succ k ih =>
     intro s hp hz hB hv
     rw [List.range_succ_eq_map, List.flatMap_cons, WP.block_append_iff]
     simp only [Nat.add_zero]
     rw [← List.singleton_append, WP.block_append_iff]
-    have hn6 : n < 6 := by omega
-    refine WP.mono (ldR_ok hp (d := 8 * n + o) (by omega) (by omega) .x1) fun s₁ ⟨l₁, k₁, _⟩ => ?_
+    have hn6 : n < 6 := by omega_arith
+    refine WP.mono (ldR_ok hp (d := 8 * n + o) (by omega_arith) (by omega_arith) .x1) fun s₁ ⟨l₁, k₁, _⟩ => ?_
     have r1 : rb ∉ [Reg.x1] := fun hm => hrb.1 (by simp only [List.mem_singleton] at hm; simp [hm])
     have hp₁ : Ptr s₁ rb pa size := hp.of_keeps k₁ r1
     have hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (by decide), hz]
@@ -117,14 +117,14 @@ theorem rowsAt_ok {rb : Reg} (hrb : BaseOk rb) {pa : Addr} {size o B : Nat} (ho 
     have hrow : regsVal s₁ (rowRegs n) < 2 ^ 384 := by
       refine Nat.lt_of_mul_lt_mul_left (a := 2 ^ (64 * n)) ?_
       have : 2 ^ (64 * n) * regsVal s₁ (rowRegs n) ≤ wordsVal s.mem pa o n * B := by
-        rw [← hv₁, Nat.mul_add]; omega
-      omega
+        rw [← hv₁, Nat.mul_add]; omega_arith
+      omega_arith
     have hx := (s₁.gpr .x1).isLt
     have hxB : (s₁.gpr .x1).toNat * B ≤ (2 ^ 64 - 1) * 2 ^ 384 :=
-      Nat.mul_le_mul (by omega) (Nat.le_of_lt hBl)
+      Nat.mul_le_mul (by omega_arith) (Nat.le_of_lt hBl)
     refine WP.mono (row_ok hp₁ hz₁ hR (fun e => fra (by simp [e])) (fun e => fra (by simp [e]))
       (fun h => fra (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)))
-      (by rw [hrl]; decide) (by rw [rwVal_regs, hB₁, hrl]; omega)) fun s₂ ⟨e₂, k₂⟩ => ?_
+      (by rw [hrl]; decide) (by rw [rwVal_regs, hB₁, hrl]; omega_arith)) fun s₂ ⟨e₂, k₂⟩ => ?_
     rw [rwVal_regs, hB₁] at e₂
     have hs₂ : Ptr s₂ rb pa size := hp₁.of_keeps k₂ fra
     have hz₂ : s₂.gpr .x7 = 0 := by rw [k₂.gpr _ f7, hz₁]
@@ -136,16 +136,16 @@ theorem rowsAt_ok {rb : Reg} (hrb : BaseOk rb) {pa : Addr} {size o B : Nat} (ho 
       regsVal_congr fun r hr => k₂.gpr r (fhi r hr)
     have hmem : s₂.mem = s.mem := by rw [k₂.mem, k₁.mem]
     have hv₂ : regsVal s₂ accRegs = wordsVal s₂.mem pa o (n + 1) * B := by
-      rw [hmem, wordsVal_succ_top, show o + 8 * n = 8 * n + o by omega, ← l₁, hsplit, regsVal_append,
+      rw [hmem, wordsVal_succ_top, show o + 8 * n = 8 * n + o by omega_arith, ← l₁, hsplit, regsVal_append,
         regsVal_append, hlen, hrl, hlo, hhi, e₂]
       rw [← hlen] at hv₁ ⊢
       have hv₁' := hv₁
       rw [hlen] at hv₁'
       rw [hlen, Nat.add_mul, ← hv₁', Nat.mul_assoc]
       simp only [Nat.mul_add]
-      omega
-    have := ih (n + 1) (by omega) (by omega) s₂ hs₂ hz₂ hB₂ hv₂
-    simp only [show ∀ i, n + 1 + i = n + (i + 1) from fun i => by omega] at this
+      omega_arith
+    have := ih (n + 1) (by omega_arith) (by omega_arith) s₂ hs₂ hz₂ hB₂ hv₂
+    simp only [show ∀ i, n + 1 + i = n + (i + 1) from fun i => by omega_arith] at this
     rw [List.flatMap_map]
     refine WP.mono this fun t ⟨e, k₃⟩ => ⟨by rw [e, hmem], (k₁.mono (by sub_regs)).trans
       ((k₂.mono fsub).trans k₃)⟩
@@ -203,7 +203,7 @@ theorem adcsIn_ok : ∀ (ts hs : List Reg) (s : State), ts.length = hs.length �
     rw [gt, gh] at e₂
     simp only [regsVal, List.length_cons, g₁, pow64_succ]
     simp only [Nat.mul_assoc] at ev ⊢
-    omega
+    omega_arith
 
 /-- `[x21; low] = low + high`. -/
 theorem addHigh_ok (s : State) (hz : s.gpr .x7 = 0) :
@@ -240,7 +240,7 @@ theorem addHigh_ok (s : State) (hz : s.gpr .x7 = 0) :
     rw [gt, gh, show 64 * lowRegs.tail.length = 320 from rfl] at e₂
     simp only [regsVal, g8]
     simp only [Bool.toNat_false] at ev
-    omega
+    omega_arith
   · simp only [List.mem_cons, not_or] at hr
     rw [RegUpd.gpr_write_of_ne _ _ _ hr.1, k₂.gpr _ hr.2.2, k₁.gpr _ (by simpa using hr.2.1)]
 

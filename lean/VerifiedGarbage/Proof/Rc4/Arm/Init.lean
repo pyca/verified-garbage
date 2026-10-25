@@ -33,8 +33,8 @@ theorem save_ok (s : State) (hfit : (s.gpr .r3).toNat + 64 ≤ 2 ^ 32)
     (hw : InRegions s.wr (State.addr (s.gpr .r3)) 64) :
     WP isa (.block save) s fun t =>
       t.mem = Spill.saveMem s.mem (State.addr (s.gpr .r3)) s.gpr saved ∧ Keep [] s t := by
-  refine WP.mono (WP.keep [] (Spill.save_block_ok saved_slots (by omega) fun d _ hd =>
-    region_offset _ _ _ _ _ (by omega) (by omega) hw) (by decide)) fun t ⟨h, hk⟩ => ⟨h.2.2.2, hk⟩
+  refine WP.mono (WP.keep [] (Spill.save_block_ok saved_slots (by omega_arith) fun d _ hd =>
+    region_offset _ _ _ _ _ (by omega_arith) (by omega_arith) hw) (by decide)) fun t ⟨h, hk⟩ => ⟨h.2.2.2, hk⟩
 
 /-- What saving changes: the first 32 bytes of `scratch`. -/
 theorem save_frame (m : Mem) (S : Addr) (g : Reg → BitVec 32) :
@@ -59,8 +59,8 @@ theorem restore_ok (s : State) {g : Reg → BitVec 32} (hfit : (s.gpr .r3).toNat
     WP isa (.block restore) s fun t =>
       (∀ r ∈ saved.map Prod.fst, t.gpr r = g r) ∧
       Keep [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11] s t ∧ t.mem = s.mem := by
-  refine WP.mono (Spill.restore_block_ok saved_slots saved_restorable (by omega)
-    (fun d _ hd => region_offset _ _ _ _ _ (by omega) (by omega) hr) hs)
+  refine WP.mono (Spill.restore_block_ok saved_slots saved_restorable (by omega_arith)
+    (fun d _ hd => region_offset _ _ _ _ _ (by omega_arith) (by omega_arith) hr) hs)
     fun t ⟨h₁, h₂, h₃, h₄, h₅, h₆⟩ => ⟨fun r hr => Spill.restored_reg h₁ hr,
       ⟨fun r hr => h₂ r (by rw [saved_regs]; exact hr), h₄, h₅, h₆⟩, h₃⟩
 
@@ -71,8 +71,8 @@ theorem init_finish (s : State) {P : BitVec 32} (h12 : s.gpr .r12 = P)
     WP isa (.block [.mov .r9 (imm 0), .strb .r9 .r12 256, .strb .r9 .r12 257]) s
       fun t => t.mem = (s.mem.write (State.addr P + 256#64) 1 0#8).write
           (State.addr P + 257#64) 1 0#8 ∧ Keep [.r9] s t := by
-  have a256 : State.addr (P + BitVec.ofNat 32 256) = State.addr P + 256#64 := addr_add (by omega)
-  have a257 : State.addr (P + BitVec.ofNat 32 257) = State.addr P + 257#64 := addr_add (by omega)
+  have a256 : State.addr (P + BitVec.ofNat 32 256) = State.addr P + 256#64 := addr_add (by omega_arith)
+  have a257 : State.addr (P + BitVec.ofNat 32 257) = State.addr P + 257#64 := addr_add (by omega_arith)
   have h256 : InRegions s.wr (State.addr (P + BitVec.ofNat 32 256)) 1 := by
     rw [a256]; exact region_offset _ _ _ 256 1 (by decide) (by decide) hp
   have h257 : InRegions s.wr (State.addr (P + BitVec.ofNat 32 257)) 1 := by
@@ -115,7 +115,7 @@ theorem init_valid (s : State) (hs : initC.pre s)
   refine WP.mono (WP.keep [.r12, .r4] hb (by decide)) fun b ⟨⟨hb12, hb4, hbm⟩, hbk⟩ => ?_
   have kb : Keep [.r12, .r4] s b := (hak.trans hbk).mono (by decide)
   have hpb : InRegions b.wr (State.addr (b.gpr .r12)) 256 := by rw [kb.2.2.1, hb12]; exact htab
-  have hfit : (b.gpr .r12).toNat + 256 ≤ 2 ^ 32 := by rw [hb12]; omega
+  have hfit : (b.gpr .r12).toNat + 256 ≤ 2 ^ 32 := by rw [hb12]; omega_arith
   have hib : IdentityInv b 0 b := ⟨by rw [identityMem_zero], Keep.refl _ _, hb4⟩
   refine WP.seq (WP.mono (identity_loop b b (by decide) hfit hpb hib) fun c hc => ?_)
   obtain ⟨hcm, hck, _⟩ := hc
@@ -137,9 +137,9 @@ theorem init_valid (s : State) (hs : initC.pre s)
     intro k hk
     have hk' := List.mem_range.mp hk
     have hin : (⟨State.addr K, Lk.toNat⟩ : Region).Contains (State.addr K + BitVec.ofNat 64 k) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [hdmem, identityMem_frame _ _ _ (by decide) _ fun hl =>
-      kc _ hin (by simp only [Region.Contains] at hl ⊢; omega)]
+      kc _ hin (by simp only [Region.Contains] at hl ⊢; omega_arith)]
     exact haf _ fun r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
@@ -150,13 +150,13 @@ theorem init_valid (s : State) (hs : initC.pre s)
       l := (kd.gpr (by decide)).trans hL
       ones := hd10
       len := hlen
-      fit := by omega
+      fit := by omega_arith
       table := by rw [kd.2.2.1]; exact htab
       key := by
         rw [kd.2.1, kd.2.2.1, hrd]
         exact ⟨_, List.mem_cons_self, Region.contains_self _ _⟩
       keyFit := kfit
-      keySep := fun x h₁ h₂ => kc x h₁ (by simp only [Region.Contains] at h₂ ⊢; omega) }
+      keySep := fun x h₁ h₂ => kc x h₁ (by simp only [Region.Contains] at h₂ ⊢; omega_arith) }
   have hid : ScheduleInv d P K Lk 0 d := by
     refine ⟨TableFrame.refl _ _, ?_, ?_, ?_, ?_, Keep.refl _ _⟩
     · rw [hdmem, identityMem_table, schedule_zero]
@@ -215,7 +215,7 @@ theorem valid_len (L : BitVec 32) :
     ← BitVec.toNat_inj, BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
   have := L.isLt
   simp only [BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-  omega
+  omega_arith
 
 /-- The full checked initializer, including both key-length boundaries. -/
 theorem init_ok (s : State) (hs : initC.pre s) :

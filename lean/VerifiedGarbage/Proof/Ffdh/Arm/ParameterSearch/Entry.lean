@@ -32,14 +32,7 @@ theorem entry_ok (s : State) {p : SearchParams} (h : EntryArguments p s)
     (bits : s.gpr .r3 = BitVec.ofNat 32 p.c.bits) :
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterSearch.entry) s fun t =>
       (EntryContext p t ∧ t.mem = writeLow s.mem p.control (entryValues p)) ∧ Rest [.r3, .r4] s t := by
-  refine withRest [.r3, .r4] ?_ (by
-    intro r hr instr hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.ParameterSearch.entry : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked instr hi
-    cases hc : clobbers instr r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r4] ?_ (by rfl) (by rfl)
   change WP isa (.block ([.ldrSp .r4 44, VG.Impl.Ffdh.Arm.ParameterSearch.stf .r0 5,
     VG.Impl.Ffdh.Arm.ParameterSearch.stf .r2 6, VG.Impl.Ffdh.Arm.ParameterSearch.stf .r3 7] ++ _)) s _
   rw [WP.block_append_iff]

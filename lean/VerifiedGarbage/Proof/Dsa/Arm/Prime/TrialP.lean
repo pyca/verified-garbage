@@ -45,7 +45,7 @@ theorem isZero_bit {v : BitVec 32} (h : v.toNat < 2 ^ 31) :
     ((v - 1) >>> 31).toNat = if v.toNat = 0 then 1 else 0 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub]
   simp only [show (1 : BitVec 32).toNat = 1 from rfl]
-  split <;> omega
+  split <;> omega_arith
 
 /-! ## Newton's iteration -/
 
@@ -90,10 +90,10 @@ theorem entryS_ok {u : State} {B : BitVec 32} {Z W : Nat} (hw : Ws u B Z W nArr)
       (by rw [v11.other _ (by decide), v10.other _ (by decide), p9]) ?_ (by rw [v11.gpr])
   rw [v11.other _ (by decide), v10.gpr, dpVal, hw9.r9]
   apply BitVec.eq_of_toNat_eq
-  have : W < 2 ^ 32 := by have := hw.wle; omega
+  have : W < 2 ^ 32 := by have := hw.wle; omega_arith
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   simp only [show (2 : BitVec 32).toNat = 2 from rfl]
-  omega
+  omega_arith
 
 /-! ## Montgomery reduction -/
 
@@ -130,8 +130,8 @@ theorem trialWord_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {s : Nat} {u₀ u : S
   have hn := hw.nowrap
   have hW := hw.wle
   have ea : State.addr (u.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr B) (arr W aC + 4 * j) := by
-    rw [r0, BitVec.add_assoc, ← BitVec.ofNat_add]; exact hw.addr (by omega)
-  have rd : InRegions (u.rd ++ u.wr) (off (State.addr B) (arr W aC + 4 * j)) 4 := hw.read (by omega)
+    rw [r0, BitVec.add_assoc, ← BitVec.ofNat_add]; exact hw.addr (by omega_arith)
+  have rd : InRegions (u.rd ++ u.wr) (off (State.addr B) (arr W aC + 4 * j)) 4 := hw.read (by omega_arith)
   have r3u : u.gpr .r3 = BitVec.ofNat 32 s := by rw [rest.gpr _ (by decide), r3]
   have r4u : (u.gpr .r4).toNat = (u₀.gpr .r4).toNat := by rw [rest.gpr _ (by decide)]
   set x := w32 m (State.addr B) (arr W aC + 4 * j) with ex
@@ -154,7 +154,7 @@ theorem trialWord_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {s : Nat} {u₀ u : S
   have h6 : (u6.gpr .r5).toNat = x / 2 ^ 16 := by rw [v6.gpr, hi16, v5.gpr, m4, m3, rx]
   have k6 : Rest [.r5] u4 u6 := (v5.rest (by simp)).trans (v6.rest (by simp))
   have hx : x < 2 ^ 32 := (m.readW _ 32).isLt
-  refine redc_ok h6 (by omega) (by rw [k6.gpr _ (by decide), r24]) ha1
+  refine redc_ok h6 (by omega_arith) (by rw [k6.gpr _ (by decide), r24]) ha1
     (by rw [k6.gpr _ (by decide), k4.gpr _ (by decide), k3.gpr _ (by decide), r4u])
     (by rw [k6.gpr _ (by decide), k4.gpr _ (by decide), k3.gpr _ (by decide), r3u]) hs hinv
     fun u7 k7 m7 a2 ha2 hc2 r27 => ?_
@@ -167,9 +167,9 @@ theorem trialWord_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {s : Nat} {u₀ u : S
     rw [v9.gpr, v8.other _ (by decide), k7.gpr _ (by decide), k6.gpr _ (by decide), k4.gpr _ (by decide),
       k3.gpr _ (by decide), r1]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub, ofNat_toNat_lt (by omega), ofNat_toNat_lt (by omega)]
+    rw [BitVec.toNat_sub, ofNat_toNat_lt (by omega_arith), ofNat_toNat_lt (by omega_arith)]
     simp only [show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+    omega_arith
   refine ⟨⟨hw.rest kall, m9, rest.trans kall, ?_, r1v, a2, ?_, ha2, ?_⟩, ?_⟩
   · rw [v9.other _ (by decide), v8.gpr, dpVal, k7.gpr _ (by decide), k6.gpr _ (by decide), k4.gpr _ (by decide),
       k3.gpr _ (by decide), r0, BitVec.add_assoc, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
@@ -182,7 +182,7 @@ theorem trialWord_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {s : Nat} {u₀ u : S
     by_cases h0 : W - 2 - (j + 1) = 0
     · simp [h0]
     · have : (BitVec.ofNat 32 (W - 2 - (j + 1))) ≠ 0 := fun e => h0 (by
-        have := congrArg BitVec.toNat e; rw [ofNat_toNat_lt (by omega)] at this; simpa using this)
+        have := congrArg BitVec.toNat e; rw [ofNat_toNat_lt (by omega_arith)] at this; simpa using this)
       simpa [h0] using this
 
 theorem isa_ne (s : State) : isa.eval .ne s = some (!s.z) := rfl
@@ -195,15 +195,15 @@ theorem primeLoop_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {s : Nat} {u₀ u : S
     WP isa (.loop (.block trialWord) .ne) u (TW B Z W m s u₀ (W - 2)) := by
   refine WP.loop (M := isa) (fun n v => 0 < n ∧ n ≤ W - 2 ∧ TW B Z W m s u₀ (W - 2 - n) v)
     (fun n v ⟨hn, hn2, hu⟩ => ?_)
-    (W - 2) u ⟨by omega, Nat.le_refl _, by rw [Nat.sub_self]; exact h⟩
-  refine WP.mono (trialWord_ok hu (by omega) hZ r3 hs hinv) fun u' ⟨hu', z⟩ => ?_
+    (W - 2) u ⟨by omega_arith, Nat.le_refl _, by rw [Nat.sub_self]; exact h⟩
+  refine WP.mono (trialWord_ok hu (by omega_arith) hZ r3 hs hinv) fun u' ⟨hu', z⟩ => ?_
   rw [isa_ne, z]
   by_cases h0 : n = 1
   · subst h0
-    refine .inl ⟨by simp; omega, ?_⟩
-    rwa [show W - 2 - 1 + 1 = W - 2 by omega] at hu'
-  · refine .inr ⟨by simp; omega, n - 1, by omega, by omega, by omega, ?_⟩
-    rwa [show W - 2 - n + 1 = W - 2 - (n - 1) by omega] at hu'
+    refine .inl ⟨by simp; omega_arith, ?_⟩
+    rwa [show W - 2 - 1 + 1 = W - 2 by omega_arith] at hu'
+  · refine .inr ⟨by simp; omega_arith, n - 1, by omega_arith, by omega_arith, by omega_arith, ?_⟩
+    rwa [show W - 2 - n + 1 = W - 2 - (n - 1) by omega_arith] at hu'
 
 /-- `r11 |=` whether `acc` (in `r2`) is 0 or `s` (in `r3`). -/
 theorem trialFlag_ok {u : State} {a s : Nat} {f : Bool} (r2 : u.gpr .r2 = BitVec.ofNat 32 a) (ha : a < 2 * s)
@@ -219,29 +219,29 @@ theorem trialFlag_ok {u : State} {a s : Nat} {f : Bool} (r2 : u.gpr .r2 = BitVec
   refine k u7 ((v1.rest (by simp)).trans ((v2.rest (by simp)).trans ((v3.rest (by simp)).trans ((v4.rest (by simp)).trans
     ((v5.rest (by simp)).trans ((v6.rest (by simp)).trans (v7.rest (by simp))))))))
     (by rw [v7.mem, v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]) ?_
-  have ha' : a < 2 ^ 14 := by omega
-  have hs' : s < 2 ^ 14 := by omega
+  have ha' : a < 2 ^ 14 := by omega_arith
+  have hs' : s < 2 ^ 14 := by omega_arith
   have b5 : u2.gpr .r5 = BitVec.ofNat 32 (b2n (decide (a = 0))) := by
     rw [v2.gpr, v1.gpr, dpVal, r2]
     apply BitVec.eq_of_toNat_eq
-    rw [isZero_bit (by rw [ofNat_toNat_lt (by omega)]; omega), ofNat_toNat_lt (by omega),
+    rw [isZero_bit (by rw [ofNat_toNat_lt (by omega_arith)]; omega_arith), ofNat_toNat_lt (by omega_arith),
       ofNat_toNat_lt (by cases decide (a = 0) <;> decide)]
     by_cases h : a = 0 <;> simp [h, b2n]
   have b6 : u5.gpr .r6 = BitVec.ofNat 32 (b2n (decide (a = s))) := by
     rw [v5.gpr, v4.gpr, dpVal, v3.gpr, dpVal, v2.other _ (by decide), v1.other _ (by decide), r2,
       v2.other _ (by decide), v1.other _ (by decide), r3]
     have hx : (BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 s).toNat < 2 ^ 14 := by
-      rw [BitVec.toNat_xor, ofNat_toNat_lt (by omega), ofNat_toNat_lt (by omega)]
+      rw [BitVec.toNat_xor, ofNat_toNat_lt (by omega_arith), ofNat_toNat_lt (by omega_arith)]
       exact Nat.xor_lt_two_pow ha' hs'
     apply BitVec.eq_of_toNat_eq
-    rw [isZero_bit (by omega), ofNat_toNat_lt (by cases decide (a = s) <;> decide)]
+    rw [isZero_bit (by omega_arith), ofNat_toNat_lt (by cases decide (a = s) <;> decide)]
     have : (BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 s).toNat = 0 ↔ a = s := by
       constructor
       · intro e
         have e' := congrArg BitVec.toNat (BitVec.xor_eq_zero_iff.mp (BitVec.eq_of_toNat_eq (by rw [e]; rfl)))
-        rwa [ofNat_toNat_lt (by omega), ofNat_toNat_lt (by omega)] at e'
+        rwa [ofNat_toNat_lt (by omega_arith), ofNat_toNat_lt (by omega_arith)] at e'
       · rintro rfl; simp
-    by_cases h : a = s <;> simp [h, b2n] at this ⊢ <;> omega
+    by_cases h : a = s <;> simp [h, b2n] at this ⊢ <;> omega_arith
   have r11' : u6.gpr .r11 = BitVec.ofNat 32 (b2n f) := by
     rw [v6.other _ (by decide), v5.other _ (by decide), v4.other _ (by decide), v3.other _ (by decide),
       v2.other _ (by decide), v1.other _ (by decide), r11]
@@ -266,11 +266,11 @@ theorem trialPrime_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u : State} {s : Nat
     WP isa (.block entryS) u fun u1 =>
       WP isa (.seq (.loop (.block trialWord) .ne) (.seq (.block trialFlag) rest)) u1 Q := by
   rw [← List.append_nil entryS]
-  refine entryS_ok hw (by omega) fun u1 k1 m1 hw1 e4 e0 e1 e2 => WP.block_nil ?_
+  refine entryS_ok hw (by omega_arith) fun u1 k1 m1 hw1 e4 e0 e1 e2 => WP.block_nil ?_
   have r31 : u1.gpr .r3 = BitVec.ofNat 32 s := by rw [k1.gpr _ (by decide), r3]
   refine WP.seq (WP.mono (primeLoop_ok (u₀ := u1) ⟨hw1, m1.trans mem, Rest.refl _ _,
     by rw [Nat.mul_zero, Nat.add_zero]; exact e0, by rw [Nat.sub_zero]; exact e1,
-    ⟨0, by rw [e2]; rfl, by omega, by simp [val32]⟩⟩ hW hZ r31 ⟨hs.2.1, hs.2.2⟩
+    ⟨0, by rw [e2]; rfl, by omega_arith, by simp [val32]⟩⟩ hW hZ r31 ⟨hs.2.1, hs.2.2⟩
       (by rw [e4, r3]; exact hinv)) fun u2 h2 => ?_)
   obtain ⟨_, m2, k2, _, _, a, r2, ha, hc⟩ := h2
   refine WP.seq ?_
@@ -279,7 +279,7 @@ theorem trialPrime_ok {B : BitVec 32} {Z W : Nat} {m : Mem} {u : State} {s : Nat
     (by rw [k2.gpr _ (by decide), k1.gpr _ (by decide), r11]) fun u3 k3 m3 r113 => WP.block_nil ?_
   refine k u3 (((k1.trans (k2.mono (by simp))).mono (by simp)).trans (k3.mono (by simp))) (m3.trans m2) ?_
   rw [r113]
-  have e64 : 32 * (W - 2) = 64 * ((W - 2) / 2) := by omega
+  have e64 : 32 * (W - 2) = 64 * ((W - 2) / 2) := by omega_arith
   rw [e64] at hc
   have := (VG.Proof.RsaKeyGen.trial_div hs.1 ha hc).symm
   rw [show decide (a = 0 ∨ a = s) = decide (val32 m (State.addr B) (arr W aC) (W - 2) % s = 0) from

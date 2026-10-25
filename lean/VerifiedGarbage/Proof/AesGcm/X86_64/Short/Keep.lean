@@ -52,8 +52,8 @@ theorem powSj {pw gh : Prog isa} {tm : Mem → Mem} (C : OneCtx s₀ k Ctx W SP 
     WP isa pw s (SJ s₀ Ctx W SP A D R al n J tl) := by
   have h32' := h32
   simp only [nb16] at h32'
-  have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega
-  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
+  have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega_arith
+  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega_arith
   exact WP.mono (hpw.run s S.env S.r288 hg1 hg8 S.frame S.rd S.wr) fun t ⟨_, fT, z0, z1, g, rd, wr⟩ =>
     ⟨S.keep C.dE fT (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact wk_T)
       (fun r hr => by
@@ -77,19 +77,19 @@ theorem copyA_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hal5 : al < 512)
     WP isa copyA s (SJ s₀ Ctx W SP A D R al n J tl) := by
   have h32' := h32
   simp only [nb16] at h32'
-  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
-  have hna : 16 * nb16 al < al + 16 := by simp only [nb16]; omega
+  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega_arith
+  have hna : 16 * nb16 al < al + 16 := by simp only [nb16]; omega_arith
   refine WP.seq ?_
   obtain ⟨s₁, run₁, di₁, si₁, cx₁, g₁, m₁, rd₁, wr₁, z₁⟩ := copyAArgs_ok s S.sm.env.r15 S.sm.env.perm.w S.sm.r296
-    S.sm.r232 S.sm.r184 (by omega)
+    S.sm.r232 S.sm.r184 (by omega_arith)
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   have cp : CopyPre s₁ A (W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1)))) al :=
-    ⟨si₁, di₁, cx₁, by omega, by rw [rd₁, wr₁, S.sm.rd, S.sm.wr]; exact C.aad.rd,
-      by rw [wr₁]; exact S.sm.env.perm.wC (by omega), C.aad.w.sub_right (Lay.wSub (by omega))⟩
+    ⟨si₁, di₁, cx₁, by omega_arith, by rw [rd₁, wr₁, S.sm.rd, S.sm.wr]; exact C.aad.rd,
+      by rw [wr₁]; exact S.sm.env.perm.wC (by omega_arith), C.aad.w.sub_right (Lay.wSub (by omega_arith))⟩
   refine WP.mono (copyBytes_ok s₁ cp) fun s₂ ⟨m₂, g₂, rd₂, wr₂, z₂⟩ => ⟨S.sm.keep C.dE (rs :=
       [⟨W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1))), al⟩])
       (by rw [m₂, m₁]; exact writeBytes_frame' _ (length_bytesAt _ _ _))
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact wk_G (by omega))
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact wk_G (by omega_arith))
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;>
@@ -100,7 +100,7 @@ theorem copyA_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hal5 : al < 512)
 theorem keystream_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (h32 : nb16 al + nb16 n < 32) (S : SJ s₀ Ctx W SP A D R al n J tl s) :
     WP isa keystream s (SJ s₀ Ctx W SP A D R al n J tl) :=
-  WP.mono (keystream_ok s S.sm.env C.lay S.sm.r176 S.sm.r280 (by omega) hR S.z0)
+  WP.mono (keystream_ok s S.sm.env C.lay S.sm.r176 S.sm.r280 (by omega_arith) hR S.z0)
     fun t ⟨_, fK, gK, rdK, wrK, zK, m0K⟩ =>
     ⟨S.sm.keep C.dE fK (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact .inr (.inl (Offset.sub W (by decide) (by decide))))
@@ -115,22 +115,22 @@ theorem text_sm (g : Bool) (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hn5 : n 
   have dD := C.dE
   have h32' := h32
   simp only [nb16] at h32'
-  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
+  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega_arith
   have hmp : 4 * grp al n = (4 * grp al n - (nb16 al + nb16 n + 1)) + nb16 al + nb16 n + 1 := by
-    simp only [grp, nb16]; omega
-  have hnc : n ≤ 16 * nb16 n := by simp only [nb16]; omega
-  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
+    simp only [grp, nb16]; omega_arith
+  have hnc : n ≤ 16 * nb16 n := by simp only [nb16]; omega_arith
+  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega_arith
   refine WP.seq ?_
   obtain ⟨s₁, run₁, di₁, si₁, dx₁, cx₁, g₁, m₁, rd₁, wr₁, z₁⟩ := textArgs_ok s S.env.r15 S.env.perm.w
-    S.r296 S.r272 S.r200 S.r208 (by omega)
+    S.r296 S.r272 S.r200 S.r208 (by omega_arith)
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   have xp : XorPre g s₁ D (W + BitVec.ofNat 64 1040)
       (W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al))) n :=
-    ⟨si₁, dx₁, di₁, cx₁, by omega, by rw [rd₁, wr₁, S.rd, S.wr]; exact C.data.ok.rd,
-      by rw [rd₁, wr₁]; exact covers_left (S.env.perm.wC (by omega)),
-      by rw [wr₁, S.wr]; exact C.data.wr, fun _ => by rw [wr₁]; exact S.env.perm.wC (by omega),
-      dD.sub_right (Lay.wSub (by omega)), fun _ => dD.sub_right (Lay.wSub (by omega)),
-      fun _ => Offset.disjoint W (.inr (by omega)) (by omega) (by omega)⟩
+    ⟨si₁, dx₁, di₁, cx₁, by omega_arith, by rw [rd₁, wr₁, S.rd, S.wr]; exact C.data.ok.rd,
+      by rw [rd₁, wr₁]; exact covers_left (S.env.perm.wC (by omega_arith)),
+      by rw [wr₁, S.wr]; exact C.data.wr, fun _ => by rw [wr₁]; exact S.env.perm.wC (by omega_arith),
+      dD.sub_right (Lay.wSub (by omega_arith)), fun _ => dD.sub_right (Lay.wSub (by omega_arith)),
+      fun _ => Offset.disjoint W (.inr (by omega_arith)) (by omega_arith) (by omega_arith)⟩
   refine WP.mono (xorText_ok g s₁ xp) fun s₂ ⟨m₂, g₂, rd₂, wr₂, z₂⟩ => ?_
   have fX : Frame [⟨D, n⟩, ⟨W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1) + nb16 al)), n⟩]
       s.mem s₂.mem := by
@@ -141,7 +141,7 @@ theorem text_sm (g : Bool) (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hn5 : n 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact .inr (.inr (.inl fun _ h => h))
-      · exact wk_G (by omega))
+      · exact wk_G (by omega_arith))
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;>
@@ -162,12 +162,12 @@ theorem copyCG_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n)
   have h32' := h32
   simp only [nb16] at h32'
   have hmp : 4 * grp al n = (4 * grp al n - (nb16 al + nb16 n + 1)) + nb16 al + nb16 n + 1 := by
-    simp only [grp, nb16]; omega
-  have hnc : n ≤ 16 * nb16 n := by simp only [nb16]; omega
-  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
+    simp only [grp, nb16]; omega_arith
+  have hnc : n ≤ 16 * nb16 n := by simp only [nb16]; omega_arith
+  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega_arith
   have dW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ := dD
   refine WP.mono (copyCG_ok s (lead := 4 * grp al n - (nb16 al + nb16 n + 1)) (na := nb16 al) (n := n)
-    S.sm.env.r15 S.sm.env.perm.w S.sm.r296 S.sm.r272 S.sm.r200 S.sm.r208 (by simp only [nb16] at hmp ⊢; omega)
+    S.sm.env.r15 S.sm.env.perm.w S.sm.r296 S.sm.r272 S.sm.r200 S.sm.r208 (by simp only [nb16] at hmp ⊢; omega_arith)
     (by rw [S.sm.rd, S.sm.wr]; exact C.data.ok.rd) dW) fun s₂ ⟨f₂, _, g₂, rd₂, wr₂, z₂⟩ =>
     ⟨S.sm.keep dD f₂ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact wk_G (o := 0) (k := 512) (by decide))
@@ -183,12 +183,12 @@ theorem lens_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hal5 : al < 512) (h
     WP isa (.block Short.lens) s (SJ s₀ Ctx W SP A D R al n J tl) := by
   have h32' := h32
   simp only [nb16] at h32'
-  have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega
-  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
-  obtain ⟨t, run, fL, -, g, rd, wr, z⟩ := lensG_ok s S.sm.env.r15 S.sm.env.perm.w S.sm.r288 (by omega) (by omega)
-    S.sm.r184 S.sm.r208 (by omega) (by omega)
+  have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega_arith
+  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega_arith
+  obtain ⟨t, run, fL, -, g, rd, wr, z⟩ := lensG_ok s S.sm.env.r15 S.sm.env.perm.w S.sm.r288 (by omega_arith) (by omega_arith)
+    S.sm.r184 S.sm.r208 (by omega_arith) (by omega_arith)
   exact WP.of_runBlock ⟨t, run, S.sm.keep C.dE fL (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact .inr (.inl (Offset.sub W (by omega) (by omega))))
+      simp only [List.mem_singleton] at hr; subst hr; exact .inr (.inl (Offset.sub W (by omega_arith) (by omega_arith))))
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide)) rd wr,
@@ -199,8 +199,8 @@ theorem gh_sj {gh : Prog isa} {tm : Mem → Mem} (hgh : GhFrom gh tm s₀ Ctx W 
     (S : SJ s₀ Ctx W SP A D R al n J tl s) : WP isa gh s (SJ s₀ Ctx W SP A D R al n J tl) := by
   have h32' := h32
   simp only [nb16] at h32'
-  have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega
-  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
+  have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega_arith
+  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega_arith
   exact WP.mono (hgh s S.sm.env S.sm.r288 hg1 hg8 S.z0 S.z1 S.sm.rd S.sm.wr)
     fun t ⟨_, _, g, m, rd, wr, z⟩ =>
     ⟨S.sm.keep C.dE (rs := []) (by rw [m]; exact Frame.refl _ _) (by simp)
@@ -215,7 +215,7 @@ theorem ghash_sj (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (h32 : nb16 al + nb
 
 theorem tagK_sm (C : OneCtx s₀ k Ctx W SP Np A D nl al n) {o : Nat} (ho : o = 0 ∨ o = 112)
     (S : SJ s₀ Ctx W SP A D R al n J tl s) : WP isa (.block (tagK o)) s (SM s₀ Ctx W SP A D R al n J tl) := by
-  obtain ⟨t, run, -, fU, g, rd, wr⟩ := tagK_ok (o := o) s S.sm.env.r15 S.sm.env.perm.w (by omega)
+  obtain ⟨t, run, -, fU, g, rd, wr⟩ := tagK_ok (o := o) s S.sm.env.r15 S.sm.env.perm.w (by omega_arith)
     (by rw [show s.xmm .xmm0 = s.zlane .xmm0 0 from rfl, S.z0 0 (by decide)])
   refine WP.of_runBlock ⟨t, run, S.sm.keep C.dE fU (fun r hr => ?_) (fun r _ => by rw [g]) rd wr⟩
   simp only [List.mem_singleton] at hr; subst hr
@@ -230,7 +230,7 @@ theorem lensHead_ok {W : Addr} {mp : Nat} (s : State) (h15 : s.gpr .r15 = W) (hw
         .alu .add .rdi (imm (gO - 16))]) s fun t => t.gpr .rdi = W + BitVec.ofNat 64 (496 + 16 * mp) := by
   have r₁ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 288) 8 := in_left (in_off hw (by decide) (by decide))
   have e₁ : BitVec.ofNat 64 mp <<< 4 + W + BitVec.ofNat 64 496 = W + BitVec.ofNat 64 (496 + 16 * mp) := by
-    rw [shl_ofNat (by omega), BitVec.add_comm _ W, add_ofNat_ofNat]; congr 2; omega
+    rw [shl_ofNat (by omega_arith), BitVec.add_comm _ W, add_ofNat_ofNat]; congr 2; omega_arith
   refine WP.of_runBlock ⟨_, by xrun [execShift, h15, hmp, r₁, mpO, gO, e₁], ?_⟩
   simp [gpr_setReg, gpr_setFlags, gpr_arithFlags, h15, e₁]
 

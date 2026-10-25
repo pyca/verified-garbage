@@ -48,18 +48,18 @@ theorem cst_lane {c l : Nat} (hc : c < 3) (hl : l < 2) :
     (if l = 0 then tblWords.getD (512 + 4 * c + 1) 0 ++ tblWords.getD (512 + 4 * c) 0
       else tblWords.getD (512 + 4 * c + 3) 0 ++ tblWords.getD (512 + 4 * c + 2) 0) =
       consts.getD (4 * c + 2 * l + 1) 0 ++ consts.getD (4 * c + 2 * l) 0 := by
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
-  · rw [ite_eq_left rfl, show 512 + 4 * c + 1 = 512 + (4 * c + 1) by omega, tblWords_cst (by omega),
-      tblWords_cst (by omega)]
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
+  · rw [ite_eq_left rfl, show 512 + 4 * c + 1 = 512 + (4 * c + 1) by omega_arith, tblWords_cst (by omega_arith),
+      tblWords_cst (by omega_arith)]
     simp only [Nat.mul_zero, Nat.add_zero]
-  · rw [ite_eq_right (by decide), show 512 + 4 * c + 3 = 512 + (4 * c + 3) by omega,
-      show 512 + 4 * c + 2 = 512 + (4 * c + 2) by omega, tblWords_cst (by omega), tblWords_cst (by omega)]
+  · rw [ite_eq_right (by decide), show 512 + 4 * c + 3 = 512 + (4 * c + 3) by omega_arith,
+      show 512 + 4 * c + 2 = 512 + (4 * c + 2) by omega_arith, tblWords_cst (by omega_arith), tblWords_cst (by omega_arith)]
 
 /-- Where the constants are in the static. -/
 theorem cst_at {s : State} (ht : TabOK s) {c : Nat} (hc : c < 3) :
     (s.ea (at_ .r11 (oCst + 32 * c)) - s.syms tblName).toNat = 8 * (512 + 4 * c) := by
   rw [ea_at, show s.gpr .r11 = s.syms tblName from ht, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  simp only [oCst]; omega
+  simp only [oCst]; omega_arith
 
 /-! ## The loop -/
 
@@ -98,7 +98,7 @@ omit hp in
 theorem cst_ok {s₀ : State} {K b t : Nat} {s : State} (l₁ : LAtW w16 σ s₀ K b t s) :
     WP isa (.block cstLoad) s fun s' => LVW w16 σ s₀ K b t s' ∧ s'.gpr .r10 = s.gpr .r10 := by
   have tab := l₁.lb.tab
-  have hl : ∀ c < 3, (512 + 4 * c) + 4 ≤ tblWords.length := fun c hc => by rw [tblWords_length]; omega
+  have hl : ∀ c < 3, (512 + 4 * c) + 4 ≤ tblWords.length := fun c hc => by rw [tblWords_length]; omega_arith
   rw [cstLoad_eq]
   refine wp_vtbl tab (cst_at tab (by decide)) (hl 0 (by decide)) fun s₂ u₂ =>
     have t₂ := tab.of (by rw [u₂.gpr]) u₂.syms
@@ -125,7 +125,7 @@ theorem setup_ok {K : Nat} (hK : K < 4) {s : State} (h : LBW w16 σ s K 0 s) :
   refine WP.mono_syms (WP.keep [.rsi, .rdi, .rbp, .r10] (Q := fun s' => s'.mem = s.mem ∧
       s'.gpr .rsi = at' σ (oBuf + 504 * K) ∧ s'.gpr .rdi = 0 ∧ s'.gpr .rbp = poly4W w16 (aP σ) K ∧
       s'.gpr .r10 = BitVec.ofNat 64 21)
-    (by xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 504 * K < 2 ^ 31 by simp only [oBuf]; omega),
+    (by xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 504 * K < 2 ^ 31 by simp only [oBuf]; omega_arith),
       sx_ofNat (show pBytes w16 * K < 2 ^ 31 by wd_omega)]) rfl) fun s₁ ⟨⟨hm, hsi, hdi, hbp, h10⟩, k₁⟩ sy => ?_
   have l₁ : LAtW w16 σ s K 0 0 s₁ := ⟨h.keep hm k₁ sy, by rw [hsi, Nat.mul_zero, add_ofNat_zero], by rw [hdi]; rfl,
     hbp, fun k hk => absurd hk (by simp [sampleAfter])⟩
@@ -138,13 +138,13 @@ theorem contSetup_ok {K : Nat} (hK : K < 4) {s : State} (h : LBW w16 σ s K 168 
     (hst : Stored w16 s.mem (poly4W w16 (aP σ) K) (Lt σ K 168)) :
     WP isa (.block (contSetup K w16 ++ cstLoad)) s fun s' => LVW w16 σ s K 168 0 s' ∧ s'.gpr .r10 = BitVec.ofNat 64 14 := by
   have hin : InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oCnt + 8 * K)) 8 :=
-    in_scr' hp h.env.rd h.env.wr (by simp only [oCnt]; omega)
+    in_scr' hp h.env.rd h.env.wr (by simp only [oCnt]; omega_arith)
   rw [WP.block_append_iff, contSetup_eq]
   refine WP.mono_syms (WP.keep [.rsi, .rdi, .rbp, .r10] (Q := fun s' => s'.mem = s.mem ∧
       s'.gpr .rsi = at' σ (oBuf + 504 * K) ∧ s'.gpr .rdi = BitVec.ofNat 64 (Lt σ K 168).length ∧
       s'.gpr .rbp = poly4W w16 (aP σ) K ∧ s'.gpr .r10 = BitVec.ofNat 64 14)
     (by
-      xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 504 * K < 2 ^ 31 by simp only [oBuf]; omega),
+      xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 504 * K < 2 ^ 31 by simp only [oBuf]; omega_arith),
         sx_ofNat (show pBytes w16 * K < 2 ^ 31 by wd_omega), hin, hj]) rfl) fun s₁ ⟨⟨hm, hsi, hdi, hbp, h10⟩, k₁⟩ sy => ?_
   have l₁ : LAtW w16 σ s K 168 0 s₁ := ⟨h.keep hm k₁ sy, by rw [hsi, Nat.mul_zero, add_ofNat_zero], hdi,
     hbp, by rw [hm]; exact hst⟩
@@ -180,8 +180,8 @@ theorem vcand_eq {s₀ : State} {K b t : Nat} (ht : t + 8 ≤ 168) (hbt : b + t 
   unfold candN cand4 cb
   dsimp only
   rw [vbytes ht hbt h (i := 3 * (k / 2) + k % 2) (by bdd_omega),
-    vbytes ht hbt h (i := 3 * (k / 2) + k % 2 + 1) (by bdd_omega), show k % 8 % 2 = k % 2 by omega]
-  have e : 3 * (b + t) + 12 * (k / 8) + 3 * (k % 8 / 2) = 3 * (b + t) + 3 * (k / 2) := by omega
+    vbytes ht hbt h (i := 3 * (k / 2) + k % 2 + 1) (by bdd_omega), show k % 8 % 2 = k % 2 by omega_arith]
+  have e : 3 * (b + t) + 12 * (k / 8) + 3 * (k % 8 / 2) = 3 * (b + t) + 3 * (k / 2) := by omega_arith
   split
   · rw [show 3 * (b + t) + (3 * (k / 2) + k % 2) = 3 * (b + t) + 3 * (k / 2) by bdd_omega,
       show 3 * (b + t) + (3 * (k / 2) + k % 2 + 1) = 3 * (b + t) + 3 * (k / 2) + 1 by bdd_omega, e]
@@ -227,7 +227,7 @@ theorem maskL_eq {s₀ : State} {K b t : Nat} (ht : t + 8 ≤ 168) (hbt : b + t 
     maskL (s.mem.readW (s.gpr .rsi) 256) l =
       bsum (fun i => decide (cand4 (xofByte (B σ K)) (3 * (b + t) + 12 * l) i < 3329)) 8 :=
   bsum_congr fun i hi => by
-    rw [vcand_eq ht hbt h (by omega), show (8 * l + i) / 8 = l by omega, show (8 * l + i) % 8 = i by omega]
+    rw [vcand_eq ht hbt h (by omega_arith), show (8 * l + i) / 8 = l by omega_arith, show (8 * l + i) % 8 = i by omega_arith]
 
 /-- `s₁` after `vcand` from `s`. -/
 abbrev VIF (s s₁ : State) : Prop :=
@@ -251,7 +251,7 @@ theorem vec1_ok {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 8 ≤ 168) {
     WP isa (.block vcand) s fun s₁ => VIW w16 σ s₀ K b t s₁ ∧ s₁.gpr .r10 = s.gpr .r10 := by
   have hrsi : s.gpr .rsi = at' σ (oBuf + 504 * K + 3 * t) := by rw [h.rsi, at', at', Offset.add_add]
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 32 := by
-    rw [hrsi]; exact in_scr' hp h.lb.env.rd h.lb.env.wr (by simp only [oBuf]; omega)
+    rw [hrsi]; exact in_scr' hp h.lb.env.rd h.lb.env.wr (by simp only [oBuf]; omega_arith)
   exact WP.mono (vcand_ok hv hin) fun s₁ h₁ => ⟨⟨s, h, hl, h₁⟩, h₁.2.2.2.2.2.2.2 _ (by decide)⟩
 
 /-- The output region holds 8 coefficients from `n`. -/
@@ -261,8 +261,8 @@ theorem out_reg (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) {s :
   subst hw
   rw [wr₁, h.lb.env.wr, hp.wr]
   exact ⟨aRW true σ, by simp, by
-    rw [poly4W, Offset.add_add]; exact Offset.contains_base _ (by simp only [pBytes, ↓reduceIte]; omega)
-      (by simp only [pBytes, ↓reduceIte]; omega)⟩
+    rw [poly4W, Offset.add_add]; exact Offset.contains_base _ (by simp only [pBytes, ↓reduceIte]; omega_arith)
+      (by simp only [pBytes, ↓reduceIte]; omega_arith)⟩
 
 /-- The low half's coefficients, after `vcand`. -/
 theorem vec2a_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) {s₁ : State}
@@ -272,10 +272,10 @@ theorem vec2a_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) {s�
   obtain ⟨s, h, hl, hf⟩ := hi
   obtain ⟨hax, h0, c₁, -, -, wr₁, sy₁, g₁⟩ := id hf
   have hdi : (s₁.gpr .rdi).toNat = (Lt σ K (b + t)).length := by
-    rw [g₁ _ (by decide), h.rdi, ofNat64_toNat (by omega)]
+    rw [g₁ _ (by decide), h.rdi, ofNat64_toNat (by omega_arith)]
   have hbp : s₁.gpr .rbp = poly4W true (aP σ) K := by rw [g₁ _ (by decide), h.rbp]
-  exact WP.mono (vputA_ok c₁ h0 hax (by rw [g₁ _ (by decide), sy₁]; exact h.lb.tab) (by rw [hdi]; omega)
-    (by rw [hbp, hdi]; exact out_reg hp rfl hK h wr₁ (by omega)))
+  exact WP.mono (vputA_ok c₁ h0 hax (by rw [g₁ _ (by decide), sy₁]; exact h.lb.tab) (by rw [hdi]; omega_arith)
+    (by rw [hbp, hdi]; exact out_reg hp rfl hK h wr₁ (by omega_arith)))
     fun s₂ hv => ⟨⟨s, s₁, h, hl, hf, hv⟩, hv.gpr _ (by decide) (by decide) (by decide)⟩
 
 /-- The high half's coefficients, after `vputA`. -/
@@ -287,11 +287,11 @@ theorem vec2b_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht
   obtain ⟨s, s₁, h, hl, ⟨-, -, -, m₁, rd₁, wr₁, sy₁, g₁⟩, hv⟩ := hi
   have hc0 : ∀ k < 8, candN (fun i => (byteY (s.mem.readW (s.gpr .rsi) 256) i).toNat) (8 * 0 + k) =
       cand4 (xofByte (B σ K)) (3 * (b + t)) k := fun k hk => by
-    rw [vcand_eq ht hbt h (by omega), show (8 * 0 + k) / 8 = 0 by omega, show (8 * 0 + k) % 8 = k by omega,
+    rw [vcand_eq ht hbt h (by omega_arith), show (8 * 0 + k) / 8 = 0 by omega_arith, show (8 * 0 + k) % 8 = k by omega_arith,
       Nat.mul_zero, Nat.add_zero]
   have hc1 : ∀ k < 8, candN (fun i => (byteY (s.mem.readW (s.gpr .rsi) 256) i).toNat) (8 * 1 + k) =
       cand4 (xofByte (B σ K)) (3 * (b + t) + 12) k := fun k hk => by
-    rw [vcand_eq ht hbt h (by omega), show (8 * 1 + k) / 8 = 1 by omega, show (8 * 1 + k) % 8 = k by omega, Nat.mul_one]
+    rw [vcand_eq ht hbt h (by omega_arith), show (8 * 1 + k) / 8 = 1 by omega_arith, show (8 * 1 + k) % 8 = k by omega_arith, Nat.mul_one]
   have hA0 := acc4_length (xofByte (B σ K)) (3 * (b + t))
   have hA1 := acc4_length (xofByte (B σ K)) (3 * (b + t) + 12)
   have e0 : cntL (s.mem.readW (s.gpr .rsi) 256) 0 = (acc4 (xofByte (B σ K)) (3 * (b + t))).length := by
@@ -299,28 +299,28 @@ theorem vec2b_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht
   have e1 : cntL (s.mem.readW (s.gpr .rsi) 256) 1 = (acc4 (xofByte (B σ K)) (3 * (b + t) + 12)).length := by
     rw [cntL, acc_mask hc1, List.length_map]
   have hdi : (s₁.gpr .rdi).toNat = (Lt σ K (b + t)).length := by
-    rw [g₁ _ (by decide), h.rdi, ofNat64_toNat (by omega)]
+    rw [g₁ _ (by decide), h.rdi, ofNat64_toNat (by omega_arith)]
   have hbp : s₁.gpr .rbp = poly4W true (aP σ) K := by rw [g₁ _ (by decide), h.rbp]
-  refine WP.mono (vputB_ok hv (by rw [g₁ _ (by decide), sy₁]; exact h.lb.tab) (by rw [hdi]; omega)
-    (by rw [hbp, hdi, e0]; exact out_reg hp rfl hK h wr₁ (by omega)))
+  refine WP.mono (vputB_ok hv (by rw [g₁ _ (by decide), sy₁]; exact h.lb.tab) (by rw [hdi]; omega_arith)
+    (by rw [hbp, hdi, e0]; exact out_reg hp rfl hK h wr₁ (by omega_arith)))
     fun s₂ ⟨hm₂, hdi₂, hsi₂, c₂, rd₂, wr₂, sy₂, g₂⟩ => ?_
   rw [hbp, hdi, e0, m₁] at hm₂
   rw [hdi, e0, e1] at hdi₂
   have hL8 : Lt σ K (b + (t + 8)) = Lt σ K (b + t) ++ acc4 (xofByte (B σ K)) (3 * (b + t)) ++
       acc4 (xofByte (B σ K)) (3 * (b + t) + 12) := by
     have hl' : (sampleAfter [] (xofByte (B σ K)) (b + t)).length < 241 := hl
-    rw [← Nat.add_assoc]; exact sampleAfter_eight (by rw [n_eq]; omega)
+    rw [← Nat.add_assoc]; exact sampleAfter_eight (by rw [n_eq]; omega_arith)
   have ca : ∀ n, cAddr true (poly4W true (aP σ) K) n = poly4W true (aP σ) K + BitVec.ofNat 64 (2 * n) := fun _ => rfl
-  have st0 := stored_write8 h.stored (by omega) hA0 (compW (s.mem.readW (s.gpr .rsi) 256) 0)
+  have st0 := stored_write8 h.stored (by omega_arith) hA0 (compW (s.mem.readW (s.gpr .rsi) 256) 0)
     (comp_words (by decide) hc0)
-  have st1 := stored_write8 st0 (by rw [List.length_append]; omega) hA1 (compW (s.mem.readW (s.gpr .rsi) 256) 1)
+  have st1 := stored_write8 st0 (by rw [List.length_append]; omega_arith) hA1 (compW (s.mem.readW (s.gpr .rsi) 256) 1)
     (comp_words (by decide) hc1)
   rw [ca, ca, List.length_append] at st1
   have hf : Frame [cRegion true (poly4W true (aP σ) K)] s.mem s₂.mem := by
     rw [hm₂]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by simp only [cw, ↓reduceIte]; omega) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by simp only [cw, ↓reduceIte]; omega) (by omega))
+      (Offset.contains_base _ (by simp only [cw, ↓reduceIte]; omega_arith) (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by simp only [cw, ↓reduceIte]; omega_arith) (by omega_arith))
   have gk : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rdi → r ≠ .rsi → s₂.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [g₂ r h1 h2 h3 h4, g₁ r h1]
   refine ⟨⟨h.lb.poly hp hK hf (rd₂.trans rd₁) (wr₂.trans wr₁) (fun r hr => gk r ?_ ?_ ?_ ?_) (sy₂.trans sy₁), ?_, ?_,
@@ -330,11 +330,11 @@ theorem vec2b_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht
   all_goals try (simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
                  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
   · rw [hsi₂, g₁ _ (by decide), h.rsi, show (24 : BitVec 64) = BitVec.ofNat 64 24 from rfl, Offset.add_add]
-    exact congrArg (fun x => at' σ (oBuf + 504 * K) + BitVec.ofNat 64 x) (by omega)
+    exact congrArg (fun x => at' σ (oBuf + 504 * K) + BitVec.ofNat 64 x) (by omega_arith)
   · rw [hL8]
     apply BitVec.eq_of_toNat_eq
     simp only [List.length_append, BitVec.toNat_ofNat]
-    omega
+    omega_arith
 
 /-- The stores of eight iterations' coefficients, after `vcand`. -/
 theorem vec2_ok (hw : w16 = true) {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 8 ≤ 168)
@@ -377,12 +377,12 @@ theorem skip_ok {s₀ : State} {K b t : Nat} {s : State} (h : LAtW w16 σ s₀ K
     WP isa (.block [.alu .add .rsi (.imm 24)]) s fun s' =>
       LAtW w16 σ s₀ K b (t + 8) s' ∧ s'.gpr .r10 = s.gpr .r10 := by
   have e : Lt σ K (b + (t + 8)) = Lt σ K (b + t) :=
-    Proof.MlKem.sampleAfter_full (by rw [n_eq]; exact hf) _ (by omega)
+    Proof.MlKem.sampleAfter_full (by rw [n_eq]; exact hf) _ (by omega_arith)
   refine WP.mono_syms (WP.keep [.rsi] (Q := fun s' => s'.mem = s.mem ∧
       s'.gpr .rsi = s.gpr .rsi + BitVec.ofNat 64 24)
     (by xrun [show BitVec.signExtend 64 (24 : BitVec 32) = BitVec.ofNat 64 24 by decide]) (by decide))
     fun s' ⟨⟨hm, hsi⟩, k⟩ sy => ?_
-  exact ⟨⟨h.lb.keep hm k sy, by rw [hsi, h.rsi, Offset.add_add, show 3 * (t + 8) = 3 * t + 24 by omega],
+  exact ⟨⟨h.lb.keep hm k sy, by rw [hsi, h.rsi, Offset.add_add, show 3 * (t + 8) = 3 * t + 24 by omega_arith],
     by rw [k.gpr (by decide), e]; exact h.rdi, by rw [k.gpr (by decide)]; exact h.rbp,
     by rw [hm, e]; exact h.stored⟩, k.gpr (by decide)⟩
 
@@ -395,7 +395,7 @@ theorem scaG_ok {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 8 ≤ 168) (
   have hlen : (Lt σ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
   rw [h.rdi, ofNat64_toNat (by bdd_omega)] at hcf
   refine WP.ite _ hcf (fun _ => WP.mono (sca_ok hp hK ht hbt l₁) fun s' ⟨l', h10⟩ => ⟨l', by rw [h10, hg]⟩)
-    fun hb => WP.mono (skip_ok l₁ (by have := of_decide_eq_false hb; omega)) fun s' ⟨l', h10⟩ =>
+    fun hb => WP.mono (skip_ok l₁ (by have := of_decide_eq_false hb; omega_arith)) fun s' ⟨l', h10⟩ =>
       ⟨l', by rw [h10, hg]⟩
 
 /-- Eight iterations of the loop. -/

@@ -48,11 +48,11 @@ theorem MSp.of_read {s t : State} (h : MSp P σ s)
     rw [width]
     refine ⟨layout.1, layout.2.1, layout.2.2.1, fun j hj => ?_⟩
     unfold wordAt
-    rw [ew _ (.inl (by simp only [Spec.Rsa.Mont.arrWord]; omega))]
+    rw [ew _ (.inl (by simp only [Spec.Rsa.Mont.arrWord]; omega_arith))]
     exact layout.2.2.2 j hj
   · change ((t.mem.readW (off (State.addr P.M0) (arrAt P.w 0)) 64).toNat *
       (t.mem.readW (off (State.addr P.M0) 56) 64).toNat + 1) % 2 ^ 64 = 0
-    rw [ew _ (.inr ⟨Nat.le_refl _, by simp only [mHd]; omega⟩), ew 56 (.inl (by decide))]
+    rw [ew _ (.inr ⟨Nat.le_refl _, by simp only [mHd]; omega_arith⟩), ew 56 (.inl (by decide))]
     exact h.inverse
   · unfold numAt
     rw [show State.addr P.M0 + BitVec.ofNat 64 (arrAt P.w 0) = off (State.addr P.M0) (arrAt P.w 0) from rfl,
@@ -82,7 +82,7 @@ theorem Keep.frameS {v : Nat} {js ds : List Nat} {m m' : Mem} (k : Keep P.B v js
   intro x hx
   have hz' : ¬ P.rS.Contains x 1 := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hz'
-  exact k.out (Z := P.Z) hj hd (by simp only [ofs]; omega)
+  exact k.out (Z := P.Z) hj hd (by simp only [ofs]; omega_arith)
 
 /-- The key arrays a step may write and keep `MS`. -/
 abbrev MOk (j : Nat) : Prop := j < 15 ∨ (mBase < j ∧ j ≠ mBase + 4 ∧ j < nArr)
@@ -107,32 +107,32 @@ theorem MS.of_keep (pre : In P σ) {s t : State} (h : MS P σ s) {js ds : List N
     have : arr P.W (mBase + 1) ≤ arr P.W (mBase + 5) := arr_mono (by decide)
     have : arr P.W (mBase + 5) ≤ arr P.W (mBase + 8) := arr_mono (by decide)
     refine k _ fun r hr => ?_
-    rw [ofs_off _ (by omega)]
+    rw [ofs_off _ (by omega_arith)]
     simp only [ranges, List.mem_append, List.mem_map] at hr
     rcases hr with ⟨j, hj, rfl⟩ | ⟨d', hd', rfl⟩
     · have hjo := hjs j hj
       dsimp only
       rcases hjo with c | ⟨c1, c2, c3⟩
-      · have := arr_end (w := P.W) (show j < 15 by omega); omega
+      · have := arr_end (w := P.W) (show j < 15 by omega_arith); omega_arith
       · rcases Nat.lt_or_gt_of_ne c2 with c4 | c4
         · have := arr_end (w := P.W) c4
-          have := arr_mono (w := P.W) (show mBase + 1 ≤ j by omega)
-          omega
-        · have := arr_mono (w := P.W) (show mBase + 5 ≤ j by omega)
+          have := arr_mono (w := P.W) (show mBase + 1 ≤ j by omega_arith)
+          omega_arith
+        · have := arr_mono (w := P.W) (show mBase + 5 ≤ j by omega_arith)
           have : arr P.W (mBase + 1) ≤ arr P.W (mBase + 4) := arr_mono (by decide)
-          omega
+          omega_arith
     · have := hds d' hd'
       have : hdr ≤ arr P.W 15 := Nat.le_add_right _ _
-      dsimp only; omega
+      dsimp only; omega_arith
   refine h.of_read (fun d n hdn => ?_) ?_ ?_ sp rd wr
   · rw [pre.M0_off]
     have hdn : d + n ≤ mHd P := by
-      have : 232 ≤ arrAt P.w 0 := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega
-      rcases hdn with (h1 | ⟨_, h1⟩) | ⟨_, h1⟩ <;> simp only [mHd] at * <;> omega
+      have : 232 ≤ arrAt P.w 0 := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes]; omega_arith
+      rcases hdn with (h1 | ⟨_, h1⟩) | ⟨_, h1⟩ <;> simp only [mHd] at * <;> omega_arith
     simp only [mHd] at hdn
     refine Mem.read_congr fun i hi => ?_
     have c1 : P.oM ≤ P.oM + d + i := by rw [Nat.add_assoc]; exact Nat.le_add_right _ _
-    have a01 : arrAt P.w 0 + 8 * P.w ≤ arrAt P.w 1 := by simp only [arrAt]; omega
+    have a01 : arrAt P.w 0 + 8 * P.w ≤ arrAt P.w 1 := by simp only [arrAt]; omega_arith
     have c2 : P.oM + d + i < arr P.W (mBase + 1) := by omega_using [hdn, hi, e1, a01]
     exact kb (P.oM + d) i (.inl ⟨c1, c2⟩)
   · unfold numAt
@@ -140,7 +140,7 @@ theorem MS.of_keep (pre : In P σ) {s t : State} (h : MS P σ s) {js ds : List N
       pre.M0_off]
     have e5 := pre.oM_arrAt 5
     have d45 : arrAt P.w 5 = arrAt P.w 4 + 8 * (P.w + 2) := by
-      simp only [arrAt, show 5 = 4 + 1 from rfl, Nat.add_mul, Nat.one_mul]; omega
+      simp only [arrAt, show 5 = 4 + 1 from rfl, Nat.add_mul, Nat.one_mul]; omega_arith
     refine congrArg BitVec.toNat (Mem.read_congr fun i hi => ?_)
     have c1 : arr P.W (mBase + 4) ≤ P.oM + arrAt P.w 4 + i := by omega_using [e4]
     have c2 : P.oM + arrAt P.w 4 + i < arr P.W (mBase + 5) := by omega_using [hi, e5, d45]
@@ -148,7 +148,7 @@ theorem MS.of_keep (pre : In P σ) {s t : State} (h : MS P σ s) {js ds : List N
   · rw [sp, spw]
     have hfr := Keep.frameS (P := P) k (fun j hj => by
       rcases hjs j hj with c | ⟨_, _, c⟩
-      · exact pre.fitZ (by simp only [nArr]; omega)
+      · exact pre.fitZ (by simp only [nArr]; omega_arith)
       · exact pre.fitZ c) (fun d hd => Nat.le_trans (hds d hd) pre.hdr_Z)
     exact hfr.readW (r := P.rW0) (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide)
       (fun r hr => by

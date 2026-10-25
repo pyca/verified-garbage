@@ -39,9 +39,9 @@ theorem add_ok {s : State} (hc : VConsts s) {A B : Nat → Nat}
   have hsum : Lanes (t.v .v0) (fun e => A e + B e) := by
     rw [ht.v]
     exact (lanes_add ha hb).congr fun e he => Nat.mod_eq_of_lt (by
-      have := halt e he; have := hblt e he; simp only [VG.Spec.MlDsa.q] at *; omega)
+      have := halt e he; have := hblt e he; simp only [VG.Spec.MlDsa.q] at *; omega_arith)
   refine csub_ok (by decide) (hc.chg ht.chg).lanes_q hsum
-    (fun e he => by have := halt e he; have := hblt e he; omega) fun u hu hv =>
+    (fun e he => by have := halt e he; have := hblt e he; omega_arith) fun u hu hv =>
       k u (ht.chg.trans hu).mono hv
 
 /-- Exact measured vector subtraction, with q added before the subtraction. -/
@@ -59,16 +59,16 @@ theorem sub_ok {s : State} (hc : VConsts s) {A B : Nat → Nat}
     rw [ht.v]
     exact (lanes_add ha hc.lanes_q).congr fun e he => Nat.mod_eq_of_lt (by
       have := halt e he; change A e < 8380417 at this
-      change A e + 8380417 < 2^32; omega)
+      change A e + 8380417 < 2^32; omega_arith)
   have hb' : Lanes (t.v .v1) B := by rw [ht.get .v1]; exact hb
   have hdiff : Lanes (u.v .v0) (fun e => A e + q - B e) := by
     rw [hu.v]
     exact (lanes_sub hsum hb').congr fun e he => by
       have := halt e he; have := hblt e he
       simp only [VG.Spec.MlDsa.q] at *
-      omega
+      omega_arith
   refine csub_ok (by decide) (hc.chg (ht.chg.trans hu.chg)).lanes_q hdiff
-    (fun e he => by have := halt e he; have := hblt e he; omega) fun v hv hl =>
+    (fun e he => by have := halt e he; have := hblt e he; omega_arith) fun v hv hl =>
       k v ((ht.chg.trans hu.chg).trans hv).mono hl
 end VG.Proof.MlDsa.AArch64.Optimized.AddSub
 
@@ -205,14 +205,14 @@ theorem inv_step {s₀ s t : State} {v : Nat → Nat} {i : Nat}
   frame := by
     rw [hm,h.x0]
     exact h.frame.write (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_arith) (by omega_arith))
   coeff k hk := by
-    rw [hm,h.x0,coeffAt_write16 _ _ (by omega) _ hk]
+    rw [hm,h.x0,coeffAt_write16 _ _ (by omega_arith) _ hk]
     by_cases he : 4*i ≤ k ∧ k < 4*i+4
-    · rw [ite_eq_left he,hx (k-4*i) (by omega),ite_eq_left (by omega)]
-      exact congrArg v (by omega)
+    · rw [ite_eq_left he,hx (k-4*i) (by omega_arith),ite_eq_left (by omega_arith)]
+      exact congrArg v (by omega_arith)
     · rw [ite_eq_right he,h.coeff k hk]
-      have hh : (k < 4*(i+1)) = (k < 4*i) := propext (by omega)
+      have hh : (k < 4*(i+1)) = (k < 4*i) := propext (by omega_arith)
       simp only [hh]
 
 /-- Current input vectors still contain the original, as-yet-unprocessed coefficients. -/
@@ -227,13 +227,13 @@ theorem reads {op : Poly → Poly → Poly} {s₀ s : State} (hp : (accK op).pre
   have hrd := h.keep.rd.trans hp.1
   have hwr := h.keep.wr.trans hp.2.1
   have contains (p : Addr) : (pR p).Contains (coeffAddr p (4*i)) 16 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   refine ⟨?_,?_,?_,?_,?_⟩
   · intro e he
-    rw [h.x0,VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,coeffAddr_add,← coeffAt_eq,h.coeff _ (by omega),ite_eq_right (by omega)]
+    rw [h.x0,VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,coeffAddr_add,← coeffAt_eq,h.coeff _ (by omega_arith),ite_eq_right (by omega_arith)]
   · intro e he
     rw [h.x1,VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,coeffAddr_add,← coeffAt_eq,
-      coeffAt_frame h.frame (by simpa using hp.2.2.1.symm) (by change 4*i+e < 256; omega)]
+      coeffAt_frame h.frame (by simpa using hp.2.2.1.symm) (by change 4*i+e < 256; omega_arith)]
   · rw [hrd,hwr,h.x0]; exact ⟨_,by simp,contains _⟩
   · rw [hrd,hwr,h.x1]; exact ⟨_,by simp,contains _⟩
   · rw [hwr,h.x0]; exact ⟨_,by simp,contains _⟩
@@ -267,8 +267,8 @@ theorem run_ok (sub : Bool) {op : Poly → Poly → Poly} (s₀ : State) (hp : (
     (by decide) (by decide) (Inv s₀ _) (fun i hi t ht _ => ?_) hs hcnt
   obtain ⟨ha,hb,hra,hrb,hw⟩ := reads hp hi ht
   refine WP.mono (body_ok sub ht.consts ha hb
-    (fun e he => hp.2.2.2.1 _ (by change 4*i+e < 256; omega))
-    (fun e he => hp.2.2.2.2 _ (by change 4*i+e < 256; omega)) hra hrb hw)
+    (fun e he => hp.2.2.2.1 _ (by change 4*i+e < 256; omega_arith))
+    (fun e he => hp.2.2.2.2 _ (by change 4*i+e < 256; omega_arith)) hra hrb hw)
     fun u ⟨x,hm,hx,hc,h0,h1,h12,hk⟩ => ?_
   exact ⟨inv_step hi ht hm hx hc h0 h1 hk,h12⟩
 end VG.Proof.MlDsa.AArch64.Optimized.AddSub

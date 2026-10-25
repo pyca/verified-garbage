@@ -59,7 +59,7 @@ theorem fourStep_ok {s : State} {p : Addr} {L : List Zq}
   have hresult : laneFold a.v fourLanes L=fourResult s.mem (s.gpr .x2) L := by
     simp only [laneFold,fourLanes]
     rw [hval 0 (by decide),hval 1 (by decide),hval 2 (by decide),hval 3 (by decide)]
-    rw [show s.gpr .x2+BitVec.ofNat 64 (3*0)=s.gpr .x2 by bv_omega]
+    rw [show s.gpr .x2+BitVec.ofNat 64 (3*0)=s.gpr .x2 by bv_omega_arith]
     rfl
   refine WP.mono (fourChoice_ok (p := p) (L := L) hbound hbranch (by rw [ha.get .x9]; exact hconst.qreg)
     (by rw [ha.get .x3]; exact h3) (by rw [ha.get .x4]; exact h4) hL

@@ -44,7 +44,7 @@ open VG.Proof.MlDsa.PPC64LE.Round.Bits
 theorem load_toNat {m : Mem} {p : Addr} (hr : Reduced m p) {i : Nat} (hi : i < 256) :
     ((coeffAt m p i).setWidth 64).toNat = ((polyAt m p)[i]!).val ∧ ((coeffAt m p i).setWidth 64).toNat < q := by
   have := polyAt_val hr (i := i) hi
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (coeffAt m p i).isLt; omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (coeffAt m p i).isLt; omega_arith)]
   exact ⟨this.symm, hr i hi⟩
 
 /-- The value `highBits` stores for coefficient `j`. -/
@@ -88,19 +88,19 @@ theorem lb_val {g : Nat} (hg : g ∈ gamma2s) {s₀ : State} (hp : Pre s₀) {i 
   have hb : (hbv g A * BitVec.ofNat 64 (2 * g)).toNat = hbF g A.toNat % hbM g * (2 * g) := by
     rw [BitVec.toNat_mul, hbv_toNat hg hq, BitVec.toNat_ofNat]
     have : g ≤ 261888 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
-    rw [Nat.mod_eq_of_lt (by omega : 2 * g < 2 ^ 64)]
+    rw [Nat.mod_eq_of_lt (by omega_arith : 2 * g < 2 ^ 64)]
     exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul_right _ (Nat.le_of_lt hlt))
       (by rw [hm]; rw [VG.Proof.MlDsa.Round.q_eq]; decide))
   have hbq : hbF g A.toNat % hbM g * (2 * g) ≤ q := by
-    have := Nat.mul_le_mul_right (2 * g) (Nat.le_of_lt hlt); omega
+    have := Nat.mul_le_mul_right (2 * g) (Nat.le_of_lt hlt); omega_arith
   have := fixk_diff (k := 8380417) (by decide) (a := A) (b := hbv g A * BitVec.ofNat 64 (2 * g))
-    (by rw [VG.Proof.MlDsa.Round.q_eq] at hq; omega) (by rw [hb]; rw [VG.Proof.MlDsa.Round.q_eq] at hbq; omega)
-    (by rw [hb]; rw [VG.Proof.MlDsa.Round.q_eq] at hbq; omega)
+    (by rw [VG.Proof.MlDsa.Round.q_eq] at hq; omega_arith) (by rw [hb]; rw [VG.Proof.MlDsa.Round.q_eq] at hbq; omega_arith)
+    (by rw [hb]; rw [VG.Proof.MlDsa.Round.q_eq] at hbq; omega_arith)
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, show (8380417 : BitVec 64) = BitVec.ofNat 64 8380417 from rfl, this, lbOut_toNat,
     map_get _ _ hi, lowBits_val hg, ← e, hb, VG.Proof.MlDsa.Round.q_eq]
   rw [VG.Proof.MlDsa.Round.q_eq] at hbq hq
-  split <;> exact Nat.mod_eq_of_lt (by omega)
+  split <;> exact Nat.mod_eq_of_lt (by omega_arith)
 
 /-! ## The functions -/
 
@@ -128,7 +128,7 @@ theorem high_correct {s₀ : State} (hp : Pre s₀) : WP isa highBits s₀ (Post
     (fun i hi => hb_val hg hp hi) ?_)
     fun s' h' => ⟨h'.pres, h'.sp, h'.lr, fun j hj => h'.coeff j hj hj⟩
   refine ⟨?_, ?_, by simp [State.write], ⟨?_, ?_, ?_, ?_, ?_⟩, hrd, hwr, hsp, hlr, kgpr_pres hgpr,
-    by rw [show _ = s.mem from rfl, hm]; exact Frame.refl _ _, fun j _ h => absurd h (by omega)⟩ <;>
+    by rw [show _ = s.mem from rfl, hm]; exact Frame.refl _ _, fun j _ h => absurd h (by omega_arith)⟩ <;>
     simp [State.write, kgpr, hgpr, selGpr]
 
 theorem low_correct {s₀ : State} (hp : Pre s₀) : WP isa lowBits s₀ (Post (lbOut (G s₀).toNat s₀) s₀) := by
@@ -150,7 +150,7 @@ theorem low_correct {s₀ : State} (hp : Pre s₀) : WP isa lowBits s₀ (Post (
   have e4 := VG.Proof.MlDsa.PPC64LE.Arith.loadImm_val b2
   have e7 := VG.Proof.MlDsa.PPC64LE.Arith.loadImm_val (v := 8380417) (by decide)
   refine ⟨?_, ?_, by simp [State.write], ⟨?_, ?_, ?_, ?_, ?_⟩, hrd, hwr, hsp, hlr, fun r hr => ?_,
-    by rw [show _ = s.mem from rfl, hm]; exact Frame.refl _ _, fun j _ h => absurd h (by omega)⟩
+    by rw [show _ = s.mem from rfl, hm]; exact Frame.refl _ _, fun j _ h => absurd h (by omega_arith)⟩
   · simp [State.write, kgpr, hgpr, selGpr]
   · simp [State.write, kgpr, hgpr, selGpr]
   · simp only [State.write, ite_true, ite_false, reduceCtorEq]; exact e4

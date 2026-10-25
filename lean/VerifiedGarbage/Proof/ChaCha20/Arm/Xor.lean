@@ -126,7 +126,7 @@ theorem ea0 {p : BitVec 32} {k : Nat} (h : p.toNat + k < 2 ^ 32) :
 
 theorem addr_toNat (p : BitVec 32) : (State.addr p).toNat = p.toNat := by
   simp only [State.addr, BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := p.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := p.isLt; omega_arith)
 
 /-- The byte stored by `eor r0, r0, r12; strb r0, …` after two `ldrb`s. -/
 theorem xor_setWidth (a b : Byte) : ((a.setWidth 32 ^^^ b.setWidth 32).setWidth 8) = a ^^^ b := by
@@ -183,10 +183,10 @@ variable {s₀ : State} (hp : XPre s₀)
 include hp
 
 theorem eaB {d : Nat} (h : d < 320) : State.addr (bP s₀ + BitVec.ofNat 32 d) = bA s₀ + BitVec.ofNat 64 d :=
-  addr_add (by have := hp.b_fit; omega)
+  addr_add (by have := hp.b_fit; omega_arith)
 
 theorem eaS {d : Nat} (h : d < 64) : State.addr (stP s₀ + BitVec.ofNat 32 d) = stA s₀ + BitVec.ofNat 64 d :=
-  addr_add (by have := hp.st_fit; omega)
+  addr_add (by have := hp.st_fit; omega_arith)
 
 theorem inB {d n : Nat} (h : d + n ≤ 320) (rd : List Region) {wr : List Region}
     (hw : wr = s₀.wr) : InRegions (rd ++ wr) (bA s₀ + BitVec.ofNat 64 d) n :=
@@ -296,7 +296,7 @@ theorem writeW8_apply (m : Mem) (a x : Addr) (v : Byte) :
   · have : ¬ (x - a).toNat < 8 / 8 := by
       intro h'
       apply h
-      have h0 : (x - a).toNat = 0 := by omega
+      have h0 : (x - a).toNat = 0 := by omega_arith
       have := BitVec.eq_of_toNat_eq (x := x - a) (y := 0) (by rw [h0]; rfl)
       rw [← BitVec.sub_add_cancel x a, this]; exact BitVec.zero_add a
     simp only [this, h, ↓reduceIte]
@@ -307,7 +307,7 @@ theorem prologue_ok {s₀ : State} (hp : XPre s₀) :
     WP isa (.block (save ++ ([.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2),
       .mov .r1 (.reg .r3), .cmp .r6 (.imm 0)] : List Instr))) s₀ (OInv s₀ 0) := by
   refine Spill.save_slots_ok saved_slots (Nat.le_trans (Nat.add_le_add_left (by decide : 272 ≤ 320) _) hp.b_fit)
-    (fun _ _ hd => hp.outB (by omega) rfl) ?_
+    (fun _ _ hd => hp.outB (by omega_arith) rfl) ?_
   refine wp_mov (op2_reg _ _) fun s₅ u₅ => wp_mov (op2_reg _ _) fun s₆ u₆ =>
     wp_mov (op2_reg _ _) fun s₇ u₇ => wp_mov (op2_reg _ _) fun s₈ u₈ =>
     wp_cmp (n := .r6) (op2_imm imm0) fun s₉ f₉ hz => WP.block_nil ?_
@@ -333,7 +333,7 @@ theorem prologue_ok {s₀ : State} (hp : XPre s₀) :
     rw [g, u₈.other _ hr'.2.2.2, u₇.other _ hr'.2.2.1, u₆.other _ hr'.2.1, u₅.other _ hr'.1]
   · rw [stateAt_frame hf (by simpa using hp.st_b), ctr_zero]
   · simp only [P, Nat.mul_zero, Nat.zero_min, Nat.not_lt_zero, ite_false]
-    exact hf.bytes (R := dRg s₀) (by simpa using hp.d_b) (show L s₀ ≤ 2 ^ 64 by have := L_lt s₀; omega) hk
+    exact hf.bytes (R := dRg s₀) (by simpa using hp.d_b) (show L s₀ ≤ 2 ^ 64 by have := L_lt s₀; omega_arith) hk
   · rw [hm]; exact Spill.saveMem_saved _ _ _ _ saved_slots
   · rw [hz, g]
 
@@ -362,17 +362,17 @@ theorem call_ok {s₀ : State} (hp : XPre s₀) {j : Nat} {s : State} (h : Inv s
   · simp only [Proof.ChaCha20.blockArm, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, c0, c1]
     exact ⟨trivial, trivial, (hp.st_b.sub_right (b256_sub s₀)).symm, hp.st_fit,
-      by have := hp.b_fit; omega⟩
+      by have := hp.b_fit; omega_arith⟩
   · rw [hrd, hwr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨stRg s₀, by simp, 0, by simp, show 0 + 64 ≤ 64 by omega⟩
-    · exact ⟨bRg s₀, by simp, 0, by simp, show 0 + 256 ≤ 320 by omega⟩
+    · exact ⟨stRg s₀, by simp, 0, by simp, show 0 + 64 ≤ 64 by omega_arith⟩
+    · exact ⟨bRg s₀, by simp, 0, by simp, show 0 + 256 ≤ 320 by omega_arith⟩
   · rw [hwr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨bRg s₀, by simp, 0, by simp, show 0 + 256 ≤ 320 by omega⟩
+    exact ⟨bRg s₀, by simp, 0, by simp, show 0 + 256 ≤ 320 by omega_arith⟩
   · intro s₂ hrd₂ hwr₂ _ hf hcs hkeep hpost
     have hst : stateAt s₂.mem (stA s₀) = stateAt s.mem (stA s₀) :=
       stateAt_frame hf (by simpa using hp.st_b.sub_right (b256_sub s₀))
@@ -391,7 +391,7 @@ theorem call_ok {s₀ : State} (hp : XPre s₀) {j : Nat} {s : State} (h : Inv s
       by rw [hrd₂, h.rd], by rw [hwr₂, h.wr], hk₂, by rw [hst, h.cnt], fun k hk => ?_,
       h.saved.frame hf (by simpa using savR_b256 s₀)⟩, fun t ht => ?_⟩
     · rw [hf.bytes (R := dRg s₀) (by simpa using hp.d_b.sub_right (b256_sub s₀))
-        (show L s₀ ≤ 2 ^ 64 by have := L_lt s₀; omega) hk]
+        (show L s₀ ≤ 2 ^ 64 by have := L_lt s₀; omega_arith) hk]
       exact h.data k hk
     · rw [← serialize_stateAt s₂.mem (bA s₀) ht, hpost]
 
@@ -440,9 +440,9 @@ theorem sel_ok {s₀ : State} {j : Nat} (hj : P s₀ j < L s₀) {s : State} (h 
       (fun ht => wp_mov (op2_reg _ _) fun s₃ u₃ => WP.block_nil ⟨?_, u₃.other, u₃.mem, u₃.rd, u₃.wr⟩)
       (fun hf => wp_mov (op2_imm imm64) fun s₃ u₃ => WP.block_nil ⟨?_, u₃.other, u₃.mem, u₃.rd, u₃.wr⟩)
     · simp only [decide_eq_true_eq] at ht
-      rw [u₃.gpr, hx6, show C s₀ j = L s₀ - P s₀ j by omega]
+      rw [u₃.gpr, hx6, show C s₀ j = L s₀ - P s₀ j by omega_arith]
     · simp only [decide_eq_false_iff_not] at hf
-      rw [u₃.gpr, show C s₀ j = 64 by omega]; rfl
+      rw [u₃.gpr, show C s₀ j = 64 by omega_arith]; rfl
   · refine wp_sub (op2_reg _ _) fun s₄ u₄ => wp_mov (op2_reg _ _) fun s₅ u₅ => WP.block_nil ?_
     have g : ∀ r, r ≠ .r2 → r ≠ .r6 → r ≠ .r3 → s₅.gpr r = s.gpr r :=
       fun r h₁ h₂ h₃ => by
@@ -472,20 +472,20 @@ theorem xorLoop_eq : xorLoop = .loop (.block xorBody) .ne := rfl
 
 /-- `P j = 64 j` while blocks remain. -/
 theorem P_eq {s₀ : State} {j : Nat} (hj : P s₀ j < L s₀) : P s₀ j = 64 * j := by
-  simp only [P] at *; omega
+  simp only [P] at *; omega_arith
 
 theorem ks_eq {s₀ : State} {j i : Nat} (hj : P s₀ j < L s₀) (hi : i < C s₀ j) :
     (KS s₀).getD (P s₀ j + i) 0 = (serialize (Spec.ChaCha20.block (ctr (S0 s₀) j))).getD i 0 := by
   have hP := P_eq hj
   have hC : C s₀ j = min 64 (L s₀ - P s₀ j) := rfl
-  rw [KS, keystream_getD _ (by lit_omega), hP, show (64 * j + i) / 64 = j by omega,
-    show (64 * j + i) % 64 = i by omega]
+  rw [KS, keystream_getD _ (by lit_omega), hP, show (64 * j + i) / 64 = j by omega_arith,
+    show (64 * j + i) % 64 = i by omega_arith]
 
 theorem xor_step {s₀ : State} (hp : XPre s₀) {j i : Nat} (hj : P s₀ j < L s₀) (hi : i < C s₀ j)
     {s : State} (h : IInv s₀ j i s) :
     WP isa (.block xorBody) s (fun s' => IInv s₀ j (i + 1) s' ∧ s'.z = (s'.gpr .r2 - 0 == 0)) := by
   have hL := L_lt s₀
-  have hk : P s₀ j + i < L s₀ := by have hC : C s₀ j = min 64 (L s₀ - P s₀ j) := rfl; omega
+  have hk : P s₀ j + i < L s₀ := by have hC : C s₀ j = min 64 (L s₀ - P s₀ j) := rfl; omega_arith
   have hC64 : C s₀ j ≤ 64 := Nat.min_le_left _ _
   have hdf := hp.d_fit
   have hbf := hp.b_fit
@@ -549,10 +549,10 @@ theorem xor_step {s₀ : State} (hp : XPre s₀) {j i : Nat} (hj : P s₀ j < L 
     · simp only [data_ne hk hk' he, ite_false]
       rw [h.data k hk']
       by_cases h₁ : k < P s₀ j + i
-      · simp [h₁, show k < P s₀ j + (i + 1) by omega]
-      · simp [h₁, show ¬ k < P s₀ j + (i + 1) by omega]
-  · rw [hfd.bytes (R := bRg s₀) (by simpa using hp.d_b.symm) (show 320 ≤ 2 ^ 64 by omega)
-      (show t < 320 by omega)]
+      · simp [h₁, show k < P s₀ j + (i + 1) by omega_arith]
+      · simp [h₁, show ¬ k < P s₀ j + (i + 1) by omega_arith]
+  · rw [hfd.bytes (R := bRg s₀) (by simpa using hp.d_b.symm) (show 320 ≤ 2 ^ 64 by omega_arith)
+      (show t < 320 by omega_arith)]
     exact h.ks t ht
   · rw [hz, hr2, h6, sub_one' (by lit_omega), sub_zero', Nat.sub_sub]
 
@@ -561,8 +561,8 @@ theorem xor_step {s₀ : State} (hp : XPre s₀) {j i : Nat} (hj : P s₀ j < L 
 theorem xorLoop_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L s₀) {s : State}
     (h : IInv s₀ j 0 s) : WP isa xorLoop s (IInv s₀ j (C s₀ j)) := by
   have hL := L_lt s₀
-  have hpos : 0 < C s₀ j := by simp only [C]; omega
-  have hC : C s₀ j ≤ 64 := by simp only [C]; omega
+  have hpos : 0 < C s₀ j := by simp only [C]; omega_arith
+  have hC : C s₀ j ≤ 64 := by simp only [C]; omega_arith
   rw [xorLoop_eq]
   let Inv : Nat → State → Prop := fun n s => ∃ i, n = C s₀ j - i ∧ i < C s₀ j ∧ IInv s₀ j i s
   have hstep : ∀ n s, Inv n s → WP isa (.block xorBody) s (fun s' =>
@@ -573,7 +573,7 @@ theorem xorLoop_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L 
     have hz := eval_ne_ofNat s' (by lit_omega) hz' h'.r2
     by_cases hl : i + 1 = C s₀ j
     · exact .inl ⟨by rw [hz]; simp [hl], hl ▸ h'⟩
-    · exact .inr ⟨by rw [hz]; simp; omega, C s₀ j - (i + 1), by omega, i + 1, rfl, by omega, h'⟩
+    · exact .inr ⟨by rw [hz]; simp; omega_arith, C s₀ j - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, h'⟩
   exact WP.loop (M := isa) Inv hstep (C s₀ j) s ⟨0, by simp, hpos, h⟩
 
 /-! ## The end of a block -/
@@ -582,7 +582,7 @@ def nextInstrs : List Instr :=
   [.ldr .r0 .r4 48, .dp .add .r0 .r0 (.imm 1), .str .r0 .r4 48, .cmp .r6 (.imm 0)]
 
 theorem P_succ {s₀ : State} {j : Nat} (hj : P s₀ j < L s₀) : P s₀ (j + 1) = P s₀ j + C s₀ j := by
-  simp only [P, C] at *; omega
+  simp only [P, C] at *; omega_arith
 
 theorem next_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L s₀) {s : State}
     (h : IInv s₀ j (C s₀ j) s) : WP isa (.block nextInstrs) s (OInv s₀ (j + 1)) := by
@@ -610,7 +610,7 @@ theorem next_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L s�
     by rw [hm, stateAt_writeW_counter, h.cnt, ctr_succ], fun k hk => ?_,
     h.saved.frame hfs (by simpa using (hp.st_b.sub_right (savR_sub s₀)).symm)⟩, ?_⟩
   · rw [hfs.bytes (R := dRg s₀) (by simpa using hp.st_d.symm)
-      (show L s₀ ≤ 2 ^ 64 by have := L_lt s₀; omega) hk,
+      (show L s₀ ≤ 2 ^ 64 by have := L_lt s₀; omega_arith) hk,
       h.data k hk, hP]
   · rw [hz, g _ (by decide), g₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)]
 
@@ -657,7 +657,7 @@ theorem epilogue_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j = L
   rw [restore, ← List.append_nil (saved.map _)]
   refine Spill.restore_slots_ok saved_slots (by decide) (g := s₀.gpr)
     (by rw [b₁]; exact Nat.le_trans (Nat.add_le_add_left (by decide : 272 ≤ 320) _) hp.b_fit)
-    (fun _ _ hd => by rw [b₁, u₁.rd, u₁.wr, h.rd, h.wr]; exact hp.inB (by omega) _ rfl)
+    (fun _ _ hd => by rw [b₁, u₁.rd, u₁.wr, h.rd, h.wr]; exact hp.inB (by omega_arith) _ rfl)
     (by rw [b₁, u₁.mem]; exact h.saved)
     fun s' hs ho hm _ _ _ => WP.block_nil ⟨hs, fun r hr => ?_, ?_, by rw [ho _ (by decide), b₁], ?_⟩
   · have hk : ∀ r ∈ kept, r ∉ saved.map Prod.fst ∧ r ≠ .r0 := by decide
@@ -666,7 +666,7 @@ theorem epilogue_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j = L
   · refine bytesAt_xor (length_keystream _ _) fun k hk => ?_
     have hk' : k < L s₀ := hk
     rw [hm, u₁.mem, h.data k hk']
-    simp only [show k < P s₀ j by omega, ite_true]
+    simp only [show k < P s₀ j by omega_arith, ite_true]
 
 /-! ## The whole function -/
 
@@ -697,12 +697,12 @@ theorem main_ok {s₀ : State} (hp : XPre s₀) : WP isa Impl.ChaCha20.Arm.Xor.x
       refine WP.mono (body_ok hp hj hI) fun s' h' => ?_
       have hz' := eval_ne_ofNat s' (by lit_omega) h'.z h'.r6
       have hP := P_succ hj
-      have hC : 0 < C s₀ j := by simp only [C]; omega
-      have hle : P s₀ (j + 1) ≤ L s₀ := by simp only [P]; omega
+      have hC : 0 < C s₀ j := by simp only [C]; omega_arith
+      have hle : P s₀ (j + 1) ≤ L s₀ := by simp only [P]; omega_arith
       by_cases hl : L s₀ - P s₀ (j + 1) = 0
-      · exact .inl ⟨by rw [hz']; simp [hl], j + 1, by omega, h'.toInv⟩
-      · exact .inr ⟨by rw [hz']; simp [hl], L s₀ - P s₀ (j + 1), by omega, j + 1, rfl, by omega, h'⟩
-    exact WP.loop (M := isa) Inv' hstep (L s₀ - P s₀ 0) s₁ ⟨0, rfl, by simp [P]; omega, h₁⟩
+      · exact .inl ⟨by rw [hz']; simp [hl], j + 1, by omega_arith, h'.toInv⟩
+      · exact .inr ⟨by rw [hz']; simp [hl], L s₀ - P s₀ (j + 1), by omega_arith, j + 1, rfl, by omega_arith, h'⟩
+    exact WP.loop (M := isa) Inv' hstep (L s₀ - P s₀ 0) s₁ ⟨0, rfl, by simp [P]; omega_arith, h₁⟩
 
 theorem correct {s₀ : State} (hp : XPre s₀) :
     ∃ t s', Exec isa Impl.ChaCha20.Arm.Xor.xor s₀ t s' ∧ abiPreserved s₀ s' ∧

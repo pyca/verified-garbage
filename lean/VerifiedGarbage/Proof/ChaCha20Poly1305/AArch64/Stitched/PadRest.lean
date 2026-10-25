@@ -36,7 +36,7 @@ theorem setWidth_ofNat16 {n : Nat} (hn : n < 2 ^ 16) :
     (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- The stream's arguments for `ctx[768, 768 + n)`. -/
 theorem padArgs_ok {s₀ w : State} {n : Nat} (hn : n < 2 ^ 16) (hx21 : w.gpr .x21 = cx s₀) :
@@ -56,7 +56,7 @@ theorem padArgs_ok {s₀ w : State} {n : Nat} (hn : n < 2 ^ 16) (hx21 : w.gpr .x
           by rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hx21],
           by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem], by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd],
           by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
-  exact WP.mono (WP.kept core (by simp [clobbers, dstOf, preserved]))
+  exact WP.mono (WP.kept core (by rfl))
     fun u ⟨⟨h0, h1, h2, h3, hm, hrd, hwr⟩, hg, hsp⟩ =>
       ⟨h0, h1, h2, h3, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 
@@ -82,25 +82,25 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   have hL' : L s₀ ≤ 2 ^ 64 := Nat.le_of_lt hL
   have wc := hp.wrap_c
-  have ts : Region.Sub (restR s₀ P) (dR s₀) := Offset.sub_base _ (by omega)
+  have ts : Region.Sub (restR s₀ P) (dR s₀) := Offset.sub_base _ (by omega_arith)
   unfold padRest
   -- The keystream's region zeroed, and the stream's arguments.
   refine WP.seq (WP.block_append (WP.mono (Pad.zero_ok hp hx21 hwr) fun s₁ ⟨k₁, z₁, v₁⟩ => ?_))
-  refine WP.mono (WP.preservedV (padArgs_ok (s₀ := s₀) (n := n) (by omega) (by rw [k₁.cs _ (pres .x21) (pres30 .x21), hx21]))
-    (by simp [Code.allInstrs, keepsV, vdstOf])) fun s₂ ⟨⟨x0₂, x1₂, x2₂, x3₂, k₂⟩, v₂⟩ => ?_
+  refine WP.mono (WP.preservedV (padArgs_ok (s₀ := s₀) (n := n) (by omega_arith) (by rw [k₁.cs _ (pres .x21) (pres30 .x21), hx21]))
+    (by rfl)) fun s₂ ⟨⟨x0₂, x1₂, x2₂, x3₂, k₂⟩, v₂⟩ => ?_
   have wr₂ : s₂.wr = s₀.wr := by rw [k₂.wr, k₁.wr, hwr]
   have hw : Covers [⟨off (cx s₀) 64, 64⟩, ⟨off (cx s₀) 768, n⟩, ⟨off (cx s₀) 128, 320⟩] s₂.wr := by
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 64, rfl, by show 64 + 64 ≤ 1280; omega⟩
-    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 768, rfl, by show 768 + n ≤ 1280; omega⟩
-    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1280; omega⟩
+    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 64, rfl, by show 64 + 64 ≤ 1280; omega_arith⟩
+    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 768, rfl, by show 768 + n ≤ 1280; omega_arith⟩
+    · exact ⟨ctxR s₀, by rw [wr₂]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1280; omega_arith⟩
   -- The stream on the zeros.
-  refine WP.seq (xor_call v x0₂ x1₂ x2₂ x3₂ (by omega)
-    (sub_disj s₀ (a := 64) (n := 64) (b := 768) (m := n) (by omega) (by omega) (by omega))
+  refine WP.seq (xor_call v x0₂ x1₂ x2₂ x3₂ (by omega_arith)
+    (sub_disj s₀ (a := 64) (n := 64) (b := 768) (m := n) (by omega_arith) (by omega_arith) (by omega_arith))
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
-    (sub_disj s₀ (a := 768) (n := n) (b := 128) (m := 320) (by omega) (by omega) (by omega))
+    (sub_disj s₀ (a := 768) (n := n) (b := 128) (m := 320) (by omega_arith) (by omega_arith) (by omega_arith))
     (by rw [hp.off_toNat (by decide)]; lit_omega) (Covers.right hw) hw fun s₃ v₃ k₃ data₃ => ?_)
   have ctxData : ∀ {a n : Nat}, a + n ≤ 1280 → ∀ k < L s₀,
       ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
@@ -115,7 +115,7 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact ctxData (a := 64) (n := 64) (by lit_omega) k hk
-        · exact ctxData (a := 768) (n := n) (by omega) k hk
+        · exact ctxData (a := 768) (n := n) (by omega_arith) k hk
         · exact ctxData (a := 128) (n := 320) (by lit_omega) k hk), m₂ k hk]
   have st₂ : stateAt s₂.mem (off (cx s₀) 64) = stateAt w.mem (off (cx s₀) 64) := by
     rw [stateAt_frame k₂.frame (fun r hr => absurd hr List.not_mem_nil),
@@ -130,7 +130,7 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
     have z : s₂.mem (off (cx s₀) 768 + BitVec.ofNat 64 i) = 0 := by
       rw [k₂.frame _ (fun r hr => absurd hr List.not_mem_nil),
         show off (cx s₀) 768 + BitVec.ofNat 64 i = cx s₀ + BitVec.ofNat 64 (768 + i) from off_off _ _ _]
-      exact z₁.byte (k := i) (by omega) (by decide)
+      exact z₁.byte (k := i) (by omega_arith) (by decide)
     rw [z]; simp
   -- The data XORed with it.
   have x21₃ : s₃.gpr .x21 = cx s₀ := by
@@ -145,7 +145,7 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
   have rd₃ : s₃.rd = s₀.rd := by rw [k₃.rd, k₂.rd, k₁.rd, hrd]
   have wr₃ : s₃.wr = s₀.wr := by rw [k₃.wr, wr₂]
   refine WP.seq (WP.mono (WP.preservedV (xorKsFromAt_ok hp (k := 768) (o := P) (n := L s₀ - P)
-    (by omega) (by omega) x21₃ x22₃ x23₃ rd₃ wr₃) (by lit_decide)) fun s₄ ⟨⟨k₄, d₄, f₄, _⟩, v₄⟩ => ?_)
+    (by omega_arith) (by omega_arith) x21₃ x22₃ x23₃ rd₃ wr₃) (by lit_decide)) fun s₄ ⟨⟨k₄, d₄, f₄, _⟩, v₄⟩ => ?_)
   -- The keystream zeroed again.
   refine WP.mono (Pad.zero_ok hp (by rw [k₄.cs _ (pres .x21) (pres30 .x21), x21₃])
     (by rw [k₄.wr, wr₃])) fun s₅ ⟨k₅, _, v₅⟩ => ?_
@@ -159,7 +159,7 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨sub s₀ 768 512, by simp, sub_sub s₀ (Nat.le_refl _) (by omega) (by omega)⟩
+    · exact ⟨sub s₀ 768 512, by simp, sub_sub s₀ (Nat.le_refl _) (by omega_arith) (by omega_arith)⟩
     · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
   have K : Kept [sub s₀ 64 384, dR s₀, sub s₀ 768 512] w s₅ :=
     ((((k₁.sub T768).trans (k₂.sub fun r hr => absurd hr List.not_mem_nil)).trans (k₃.sub T3)).trans
@@ -175,7 +175,7 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨sub s₀ 768 512, by simp, sub_sub s₀ (Nat.le_refl _) (by omega) (by omega)⟩
+      · exact ⟨sub s₀ 768 512, by simp, sub_sub s₀ (Nat.le_refl _) (by omega_arith) (by omega_arith)⟩
       · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨restR s₀ P, by simp, fun _ h => h⟩
   refine ⟨fun r hr => (v₅ r hr).trans ((v₄ r hr).trans ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr)))),
@@ -193,13 +193,13 @@ theorem padRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APr
   · rw [f₄ _ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact not_rest hk' hle),
       m₃ k hk, hdata k hk, ite_eq_left hk']
-  · have hPL : P < L s₀ := by omega
+  · have hPL : P < L s₀ := by omega_arith
     have h64 := hP hPL
-    have x := d₄ (k - P) (by omega)
-    rw [show P + (k - P) = k by omega, m₃ k hk, hdata k hk, ite_eq_right hk'] at x
-    rw [x, show kpAt s₀ 768 = off (cx s₀) 768 from rfl, ks₃ (k - P) (by omega), hcnt hPL,
-      VG.Proof.ChaCha20.keystream_getD _ (by omega), ks_shift _ hk (q := P / 64) (by omega),
-      show 64 * (P / 64) = P by omega]
+    have x := d₄ (k - P) (by omega_arith)
+    rw [show P + (k - P) = k by omega_arith, m₃ k hk, hdata k hk, ite_eq_right hk'] at x
+    rw [x, show kpAt s₀ 768 = off (cx s₀) 768 from rfl, ks₃ (k - P) (by omega_arith), hcnt hPL,
+      VG.Proof.ChaCha20.keystream_getD _ (by omega_arith), ks_shift _ hk (q := P / 64) (by omega_arith),
+      show 64 * (P / 64) = P by omega_arith]
 
 /-- `openRest`'s test: `x9 = 0` iff the rest is at most `Pad.threshold sve`. -/
 theorem restSplit_ok (sve : Bool) (w : State) :
@@ -211,7 +211,7 @@ theorem restSplit_ok (sve : Bool) (w : State) :
     wp_addImm (by cases sve <;> decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ =>
       WP.block_nil ⟨by rw [u₂.gpr, u₁.gpr], by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd],
         by rw [u₂.wr, u₁.wr]⟩
-  exact WP.mono (WP.preservedV (WP.kept core (by cases sve <;> simp [clobbers, dstOf, preserved]))
+  exact WP.mono (WP.preservedV (WP.kept core (by cases sve <;> rfl))
     (by cases sve <;> lit_decide)) fun u ⟨⟨⟨h9, hm, hrd, hwr⟩, hg, hsp⟩, hv⟩ =>
       ⟨h9, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _), hv⟩
 
@@ -224,7 +224,7 @@ theorem restWhole_ok (w : State) :
       fun u => u.gpr .x9 = w.gpr .x23 <<< 58 ∧ u.mem = w.mem ∧ u.rd = w.rd ∧ u.wr = w.wr :=
     wp_lsl (by decide) fun s₁ u₁ =>
       WP.block_nil ⟨u₁.gpr, u₁.mem, u₁.rd, u₁.wr⟩
-  exact WP.mono (WP.preservedV (WP.kept core (by simp [clobbers, dstOf, preserved]))
+  exact WP.mono (WP.preservedV (WP.kept core (by rfl))
     (by lit_decide)) fun u ⟨⟨⟨h9, hm, hrd, hwr⟩, hg, hsp⟩, hv⟩ =>
       ⟨h9, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _), hv⟩
 
@@ -239,8 +239,8 @@ theorem restAtMost_ok (k : Nat) (hk : k < 64) (w : State) :
     VG.Proof.ChaCha20.AArch64.Xor.wp_subImm (by decide) fun s₁ u₁ => wp_lsr hk fun s₂ u₂ =>
       WP.block_nil ⟨by rw [u₂.gpr, u₁.gpr], by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd],
         by rw [u₂.wr, u₁.wr]⟩
-  exact WP.mono (WP.preservedV (WP.kept core (by simp [atMost, clobbers, dstOf, preserved]))
-    (by simp [atMost, Code.allInstrs, keepsV, vdstOf])) fun u ⟨⟨⟨h9, hm, hrd, hwr⟩, hg, hsp⟩, hv⟩ =>
+  exact WP.mono (WP.preservedV (WP.kept core (by rfl))
+    (by rfl)) fun u ⟨⟨⟨h9, hm, hrd, hwr⟩, hg, hsp⟩, hv⟩ =>
       ⟨h9, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _), hv⟩
 
 /-- `openRest`'s test of eight blocks: `x9 = 0` iff the rest is at least 321. -/
@@ -254,8 +254,8 @@ theorem restAbove_ok (w : State) :
     VG.Proof.ChaCha20.AArch64.Xor.wp_subImm (by decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ =>
       WP.block_nil ⟨by rw [u₂.gpr, u₁.gpr], by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd],
         by rw [u₂.wr, u₁.wr]⟩
-  exact WP.mono (WP.preservedV (WP.kept core (by simp [above320, clobbers, dstOf, preserved]))
-    (by simp [above320, Code.allInstrs, keepsV, vdstOf])) fun u ⟨⟨⟨h9, hm, hrd, hwr⟩, hg, hsp⟩, hv⟩ =>
+  exact WP.mono (WP.preservedV (WP.kept core (by rfl))
+    (by rfl)) fun u ⟨⟨⟨h9, hm, hrd, hwr⟩, hg, hsp⟩, hv⟩ =>
       ⟨h9, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _), hv⟩
 
 theorem beq_zero_toNat (x : BitVec 64) : (x == 0) = decide (x.toNat = 0) := by
@@ -281,17 +281,17 @@ theorem atMost_eq {r k : Nat} (h1 : 1 ≤ r) (h : r < 2 ^ 64) :
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt h, Nat.shiftRight_eq_div_pow]
   have hp : 0 < 2 ^ k := Nat.two_pow_pos k
-  rw [show (2 ^ 64 - 1 % 2 ^ 64 + r) % 2 ^ 64 = r - 1 by omega, Nat.div_eq_zero_iff_lt hp]
-  omega
+  rw [show (2 ^ 64 - 1 % 2 ^ 64 + r) % 2 ^ 64 = r - 1 by omega_arith, Nat.div_eq_zero_iff_lt hp]
+  omega_arith
 
 theorem above_eq {r : Nat} (h : r < 2 ^ 63) :
     ((BitVec.ofNat 64 r - BitVec.ofNat 64 321) >>> 63 == 0) = decide (321 ≤ r) := by
   rw [beq_zero_toNat]
   refine decide_eq_decide.mpr ?_
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega : r < 2 ^ 64), Nat.shiftRight_eq_div_pow]
+    Nat.mod_eq_of_lt (by omega_arith : r < 2 ^ 64), Nat.shiftRight_eq_div_pow]
   rw [Nat.div_eq_zero_iff_lt (Nat.two_pow_pos 63)]
-  omega
+  omega_arith
 
 /-- `padRest` after code that kept everything but `x9`. -/
 theorem padRest_after (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀)
@@ -391,15 +391,15 @@ theorem openRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   unfold openRest
   refine WP.seq (WP.mono (restSplit_ok v.callee.sve w) fun w₁ ⟨x9₁, k₁, v₁⟩ => ?_)
   refine WP.ite (decide (L s₀ - P ≤ Pad.threshold v.callee.sve))
-    (by rw [evz, x9₁, hx23]; exact congrArg some (Pad.splitVal_eq _ (by omega)))
-    (fun _ => ?_) (fun _ => pad (by omega) (by omega) k₁ v₁)
+    (by rw [evz, x9₁, hx23]; exact congrArg some (Pad.splitVal_eq _ (by omega_arith)))
+    (fun _ => ?_) (fun _ => pad (by omega_arith) (by omega_arith) k₁ v₁)
   -- At most the threshold: whole blocks through the stream.
   refine WP.seq (WP.mono (restWhole_ok w₁) fun w₂ ⟨x9₂, k₂, v₂⟩ => ?_)
   have k₂' : Kept [] w w₂ := k₁.trans k₂
   have v₂' : ∀ r ∈ preservedV, (w₂.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64 :=
     fun r hr => (v₂ r hr).trans (v₁ r hr)
   refine WP.ite (decide ((L s₀ - P) % 64 = 0))
-    (by rw [evz, x9₂, x23k k₁]; exact congrArg some (whole_eq (by omega)))
+    (by rw [evz, x9₂, x23k k₁]; exact congrArg some (whole_eq (by omega_arith)))
     (fun _ => crypt k₂' v₂') (fun hwh => ?_)
   have h1 : 1 ≤ L s₀ - P := Nat.pos_of_ne_zero fun h => by
     rw [h] at hwh; exact absurd hwh (by decide)
@@ -409,7 +409,7 @@ theorem openRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   have v₃' : ∀ r ∈ preservedV, (w₃.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64 :=
     fun r hr => (v₃ r hr).trans (v₂' r hr)
   refine WP.ite (decide (L s₀ - P ≤ 2 ^ 6))
-    (by rw [evz, x9₃, x23k k₂']; exact congrArg some (atMost_eq h1 (by omega)))
+    (by rw [evz, x9₃, x23k k₂']; exact congrArg some (atMost_eq h1 (by omega_arith)))
     (fun _ => crypt k₃' v₃') (fun _ => ?_)
   -- Up to 256 bytes: four blocks of keystream; above, the stream.
   refine WP.seq (WP.mono (restAtMost_ok 8 (by decide) w₃) fun w₄ ⟨x9₄, k₄, v₄⟩ => ?_)
@@ -417,7 +417,7 @@ theorem openRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   have v₄' : ∀ r ∈ preservedV, (w₄.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64 :=
     fun r hr => (v₄ r hr).trans (v₃' r hr)
   refine WP.ite (decide (L s₀ - P ≤ 2 ^ 8))
-    (by rw [evz, x9₄, x23k k₃']; exact congrArg some (atMost_eq h1 (by omega)))
+    (by rw [evz, x9₄, x23k k₃']; exact congrArg some (atMost_eq h1 (by omega_arith)))
     (fun h4 => pad (by decide) (by simpa using h4) k₄' v₄') (fun _ => ?_)
   -- From 321 bytes: eight blocks of keystream; below, the stream.
   refine WP.seq (WP.mono (restAbove_ok w₄) fun w₅ ⟨x9₅, k₅, v₅⟩ => ?_)
@@ -425,7 +425,7 @@ theorem openRest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
   have v₅' : ∀ r ∈ preservedV, (w₅.v r).extractLsb' 0 64 = (w.v r).extractLsb' 0 64 :=
     fun r hr => (v₅ r hr).trans (v₄' r hr)
   refine WP.ite (decide (321 ≤ L s₀ - P))
-    (by rw [evz, x9₅, x23k k₄']; exact congrArg some (above_eq (by omega)))
-    (fun _ => pad (by decide) (by omega) k₅' v₅') (fun _ => crypt k₅' v₅')
+    (by rw [evz, x9₅, x23k k₄']; exact congrArg some (above_eq (by omega_arith)))
+    (fun _ => pad (by decide) (by omega_arith) k₅' v₅') (fun _ => crypt k₅' v₅')
 
 end VG.Proof.ChaCha20Poly1305.AArch64

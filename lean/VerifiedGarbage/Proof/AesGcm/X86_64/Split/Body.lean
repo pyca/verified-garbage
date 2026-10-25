@@ -38,7 +38,7 @@ theorem xorKs_shift (ciph : Block → Block) (icb : Block) (q : Nat) (d : List B
   simp only [xorKs]
   refine List.map_congr_left fun i _ => ?_
   simp only [Proof.Gcm.ksByte, Nat.zero_add]
-  rw [show (16 * q + i) / 16 = i / 16 + q by omega, show (16 * q + i) % 16 = i % 16 by omega,
+  rw [show (16 * q + i) / 16 = i / 16 + q by omega_arith, show (16 * q + i) % 16 = i % 16 by omega_arith,
     Proof.Gcm.repeat_add]
 
 /-- The total length put back. -/
@@ -79,8 +79,8 @@ theorem inner_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {
       (⟨W + BitVec.ofNat 64 216, 8⟩ : Region).Disjoint r := by
     intro r hr
     rcases List.mem_cons.mp hr with rfl | hr
-    · exact Offset.disjoint W (.inr (by decide)) (by have := L.ww; omega) (by have := L.ww; omega)
-    · exact ob_slots L hD (by have := h.data.ok.lt; omega) h.t_w (by decide) (by decide) r hr
+    · exact Offset.disjoint W (.inr (by decide)) (by have := L.ww; omega_arith) (by have := L.ww; omega_arith)
+    · exact ob_slots L hD (by have := h.data.ok.lt; omega_arith) h.t_w (by decide) (by decide) r hr
   have a₃ : s₃.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N := by
     rw [P.frame.readW (Region.contains_self _ _) d216 (by decide), haux]
   refine WP.seq (WP.mono (fixTlen_ok P.env a₃) fun s₄ ⟨m₄, g₄, rd₄, wr₄⟩ => ?_)
@@ -89,7 +89,7 @@ theorem inner_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₄ _ (by decide)) rd₄ wr₄
   have fW : Frame [⟨W + BitVec.ofNat 64 192, 24⟩] s₃.mem s₄.mem := by
     rw [m₄]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (Nat.le_refl _) (by decide) (by have := L.ww; omega))
+      (Offset.contains _ (Nat.le_refl _) (by decide) (by have := L.ww; omega_arith))
   have f₄ : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s.mem s₄.mem :=
     P.frame.trans (fW.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., fun _ h => h⟩)
@@ -100,12 +100,12 @@ theorem inner_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {
     intro d hd
     rw [m₄]
     rcases hd with rfl | rfl <;>
-      exact Mem.readW_writeW_sep (Offset.sep W (.inr (by decide)) (by have := L.ww; omega) (by have := L.ww; omega))
+      exact Mem.readW_writeW_sep (Offset.sep W (.inr (by decide)) (by have := L.ww; omega_arith) (by have := L.ww; omega_arith))
         (by decide)
   obtain ⟨o₁, o₂, o₃⟩ := o
   have eB : blocksAt s₄.mem D (n / 16) = blocksAt s₃.mem D (n / 16) :=
-    blocksAt_frame fW (one ((hD.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide))))
-      (by have := h.data.ok.wrap; omega)
+    blocksAt_frame fW (one ((hD.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Lay.wSub (by decide))))
+      (by have := h.data.ok.wrap; omega_arith)
   have eC : blockAt s₄.mem (cbA W) = blockAt s₃.mem (cbA W) :=
     blockAt_frame fW (one (by simp only [cbA]; rw [add_ofNat_assoc]; exact L.w_w (.inl (by decide)) (by decide) (by decide)))
   have eY : blockAt s₄.mem (yA W) = blockAt s₃.mem (yA W) :=
@@ -119,7 +119,7 @@ end
 /-- The stack below `SP - 8`, in the 56 bytes below `SP`. -/
 theorem below8_sub {SP : Addr} {k : Nat} (hk : k + 8 ≤ 56) :
     Region.Sub (below (SP - BitVec.ofNat 64 8) k) (below SP 56) :=
-  fun a h => below_sub (by omega) (by decide) a (below_below SP 8 k a h)
+  fun a h => below_sub (by omega_arith) (by decide) a (below_below SP 8 k a h)
 
 /-- What a state may access, after a push. -/
 theorem perm_pushed {Ctx St W : Addr} {s : State} (P : Perm Ctx St W s) : Perm Ctx St W (pushed [.rax] s) :=
@@ -175,8 +175,8 @@ theorem body_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {D
       bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D n) ∧
       bytesAt s'.mem W 16 = toBytes (ghashFrom H (ghash H (blocks (padded a (bytesAt s'.mem D n))))
         [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))) := by
-  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [he.rsp]; simp; omega
-  obtain ⟨f₀, psp⟩ := push_frame he (by omega)
+  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [he.rsp]; simp; omega_arith
+  obtain ⟨f₀, psp⟩ := push_frame he (by omega_arith)
   have b8 : Region.Sub (below SP 8) (below SP 56) := below_sub (by decide) (by decide)
   have one : ∀ {r : Region}, (below SP 56).Disjoint r → ∀ r' ∈ [below SP 8], r.Disjoint r' := fun hd r' hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (hd.sub_left b8).symm
@@ -195,7 +195,7 @@ theorem body_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {D
      ⟨⟨by rw [pushed_rd, pushed_wr]; exact covers_ins hd.ok.rd, hd.ok.lt, hd.ok.wrap, hd.ok.st, hd.ok.w,
         kd.sub_left (below8_sub (by decide))⟩, by rw [pushed_wr]; exact covers_tail hd.wr, hd.ctx⟩,
      kc.sub_left (below8_sub (by decide)), kw.sub_left (below8_sub (by decide)), kd.sub_left (below8_sub (by decide)),
-     by rw [toNat_sub_ofNat (by omega)]; omega,
+     by rw [toNat_sub_ofNat (by omega_arith)]; omega_arith,
      ⟨X.w, X.cs, X.cw, X.cd, kM.sub_left (below8_sub (by decide)), by rw [pushed_rd, pushed_wr]; exact covers_ins X.cov,
       M.frame f₀ (one kM) X.w X.ok⟩⟩
   have hH' : blockAt (pushed [.rax] s).mem (Ctx + BitVec.ofNat 64 240) = H := by
@@ -209,7 +209,7 @@ theorem body_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {D
     have hm := Nat.mod_lt (a ++ zeros (padLen a.length)).length (show 16 > 0 by decide)
     refine ⟨by rw [bA (fun a hc => st_w a (y_sub a hc))]; exact habs.1, ?_⟩
     rw [bytesAt_frame f₀ (one (kw.sub_right (fun a hc => st_w a
-      (Offset.sub_base (W + BitVec.ofNat 64 16) (d := 32) (k := 80) (by omega) a hc)))) (by omega)]
+      (Offset.sub_base (W + BitVec.ofNat 64 16) (d := 32) (k := 80) (by omega_arith) a hc)))) (by omega_arith)]
     exact habs.2
   have hc : ciphOf (pushed [.rax] s).mem Ctx R = ciphOf s.mem Ctx R := ciph_frame f₀ (one kc) hR.2
   refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (inner_ok L' B hfin (al := al) (N := N) hu hH' hcb'
@@ -231,7 +231,7 @@ theorem body_ok (B : BlkFn M) {fin : Prog isa} (hfin : FinOk M fin) {R : Nat} {D
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨below SP 56, by simp, below8_sub (by decide)⟩
-  · rw [popped_mem, hC, hc, bytesAt_frame f₀ (one kd) (by have := hd.ok.wrap; omega)]
+  · rw [popped_mem, hC, hc, bytesAt_frame f₀ (one kd) (by have := hd.ok.wrap; omega_arith)]
   · rw [popped_mem, hT, hc, bW 16 (by decide)]
 
 end

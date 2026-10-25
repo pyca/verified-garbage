@@ -27,20 +27,20 @@ theorem Y.get_ofFn (f : Nat → E) {e : Nat} (he : e < 16) : (Y.ofFn f).get e = 
 
 theorem extract_perm (y : BitVec 256) (o : BitVec 8) {e : Nat} (he : e < 16) :
     (permQwords y o).extractLsb' (16 * e) 16 = y.extractLsb' (16 * (4 * sel4 o.toNat (e / 4) + e % 4)) 16 := by
-  have hq := Proof.Poly1305.X86_64.Avx2.qword256_perm y o (k := e / 4) (by omega)
+  have hq := Proof.Poly1305.X86_64.Avx2.qword256_perm y o (k := e / 4) (by omega_arith)
   have h1 : ∀ x : BitVec 256, x.extractLsb' (16 * e) 16 = (qword256 x (e / 4)).extractLsb' (16 * (e % 4)) 16 := by
     intro x
     apply BitVec.eq_of_getLsbD_eq; intro j hj
     simp only [qword256, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-      decide_eq_true (show 16 * (e % 4) + j < 64 by omega)]
-    exact congrArg _ (by omega)
+      decide_eq_true (show 16 * (e % 4) + j < 64 by omega_arith)]
+    exact congrArg _ (by omega_arith)
   have h2 : ∀ x : BitVec 256, ∀ m < 4,
       (qword256 x m).extractLsb' (16 * (e % 4)) 16 = x.extractLsb' (16 * (4 * m + e % 4)) 16 := by
     intro x m _
     apply BitVec.eq_of_getLsbD_eq; intro j hj
     simp only [qword256, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-      decide_eq_true (show 16 * (e % 4) + j < 64 by omega)]
-    exact congrArg _ (by omega)
+      decide_eq_true (show 16 * (e % 4) + j < 64 by omega_arith)]
+    exact congrArg _ (by omega_arith)
   rw [h1, hq, h2 _ _ (Proof.Poly1305.X86_64.Avx2.sel4_lt _ _)]
   rfl
 
@@ -49,10 +49,10 @@ theorem word_cat (a b : BitVec 64) {i : Nat} (hi : i < 8) :
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [word, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hj, decide_true, Bool.true_and]
   split
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega : i < 4))]
-    exact congrArg _ (by omega)
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega : ¬ i < 4))]
-    exact congrArg _ (by omega)
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith : i < 4))]
+    exact congrArg _ (by omega_arith)
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith : ¬ i < 4))]
+    exact congrArg _ (by omega_arith)
 
 theorem extract16 (x : BitVec 64) (t : Nat) : x.extractLsb' t 16 = BitVec.ofNat 16 (x.toNat / 2 ^ t % 2 ^ 16) := by
   apply BitVec.eq_of_toNat_eq
@@ -65,8 +65,8 @@ variable {L : Nat → Nat → BitVec 16} {O : Nat → BitVec 16}
 theorem lane_word {σ : St} {s : State} (hr : ∀ r e, e < 16 → Hd L O ((σ.reg r).get e) (wd s r e))
     (r : XReg) {e : Nat} (he : e < 16) {j : Nat} (hj : j < 8) :
     Hd L O ((σ.reg r).get (8 * (e / 8) + j)) (word (s.lane r (e / 8)) j) := by
-  have := hr r (8 * (e / 8) + j) (by omega)
-  rwa [wd, show (8 * (e / 8) + j) / 8 = e / 8 by omega, show (8 * (e / 8) + j) % 8 = j by omega] at this
+  have := hr r (8 * (e / 8) + j) (by omega_arith)
+  rwa [wd, show (8 * (e / 8) + j) / 8 = e / 8 by omega_arith, show (8 * (e / 8) + j) % 8 = j by omega_arith] at this
 
 theorem wd_vbin (op : VBinOp) (d a b : XReg) (s : State) (r : XReg) (e : Nat) :
     wd ((VOp.vbin op .l256 d a b).exec s) r e =
@@ -90,19 +90,19 @@ theorem bin_ok {R : Rules} (hM : Model R L O) {σ : St} {s : State} (hr : ∀ r 
     exact mk2_ok .and (· &&& ·) (fun _ _ => rfl) (hA hi) (hB hi)
   · rw [word_punpckldq _ _ hi]
     split
-    · exact hA (by omega)
-    · exact hB (by omega)
+    · exact hA (by omega_arith)
+    · exact hB (by omega_arith)
   · rw [word_punpckhdq _ _ hi]
     split
-    · exact hA (by omega)
-    · exact hB (by omega)
+    · exact hA (by omega_arith)
+    · exact hB (by omega_arith)
   · rw [word_punpcklqdq _ _ hi]
     split
     · exact hA hi
-    · exact hB (by omega)
+    · exact hB (by omega_arith)
   · rw [word_punpckhqdq _ _ hi]
     split
-    · exact hA (by omega)
+    · exact hA (by omega_arith)
     · exact hB hi
   · rw [word_paddw _ _ hi]; exact mkAdd_ok hM (hA hi) (hB hi)
   · rw [word_psubw _ _ hi]; exact mkSub_ok hM (hA hi) (hB hi)
@@ -113,17 +113,17 @@ theorem bin_ok {R : Rules} (hM : Model R L O) {σ : St} {s : State} (hr : ∀ r 
   · rw [word_packssdw _ _ hi]
     by_cases hc : e % 8 < 4
     · simp only [hc, ite_true]
-      exact pk_ok hM hc (hA (by omega)) (hA (by omega))
+      exact pk_ok hM hc (hA (by omega_arith)) (hA (by omega_arith))
     · simp only [hc, ite_false]
-      exact pk_ok hM (by omega) (hB (by omega)) (hB (by omega))
+      exact pk_ok hM (by omega_arith) (hB (by omega_arith)) (hB (by omega_arith))
   · rw [word_punpcklwd _ _ hi]
     split
-    · exact hA (by omega)
-    · exact hB (by omega)
+    · exact hA (by omega_arith)
+    · exact hB (by omega_arith)
   · rw [word_punpckhwd _ _ hi]
     split
-    · exact hA (by omega)
-    · exact hB (by omega)
+    · exact hA (by omega_arith)
+    · exact hB (by omega_arith)
 
 theorem shift_ok {σ : St} {s : State} (hr : ∀ r e, e < 16 → Hd L O ((σ.reg r).get e) (wd s r e))
     {op : XShiftOp} {n : BitVec 8} {a : XReg} (hok : shiftOk op n.toNat = true) {e : Nat} (he : e < 16) :
@@ -135,21 +135,21 @@ theorem shift_ok {σ : St} {s : State} (hr : ∀ r e, e < 16 → Hd L O ((σ.reg
     subst hn
     rw [word_psllq32 _ hi]
     split
-    · rename_i h; rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega))]; exact Hd.of_eq rfl
-    · rename_i h; rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
-        show e - 2 = 8 * (e / 8) + (e % 8 - 2) by omega]
-      exact hA (by omega)
+    · rename_i h; rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]; exact Hd.of_eq rfl
+    · rename_i h; rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)),
+        show e - 2 = 8 * (e / 8) + (e % 8 - 2) by omega_arith]
+      exact hA (by omega_arith)
   · have hn : n = 32 := BitVec.eq_of_toNat_eq hok
     subst hn
     rw [word_psrlq32 _ hi]
     split
-    · rename_i h; rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega)),
-        show e + 2 = 8 * (e / 8) + (e % 8 + 2) by omega]
-      exact hA (by omega)
-    · rename_i h; rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))]; exact Hd.of_eq rfl
+    · rename_i h; rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)),
+        show e + 2 = 8 * (e / 8) + (e % 8 + 2) by omega_arith]
+      exact hA (by omega_arith)
+    · rename_i h; rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]; exact Hd.of_eq rfl
   · rw [word_psraw _ _ hi, hok]
     have := hA hi
-    rw [show 8 * (e / 8) + e % 8 = e by omega] at this
+    rw [show 8 * (e / 8) + e % 8 = e by omega_arith] at this
     exact mkSra_ok this
 
 theorem vop_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {σ σ' : St} {s₀ s : State} (h : Rel rs L O σ s₀ s) {o : VOp}
@@ -185,16 +185,16 @@ theorem vop_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {σ σ' : St} {s₀
           blendDwords (s.lane a (e / 8)) (s.lane b (e / 8)) (sel.extractLsb' (4 * (e / 8)) 4) := by
         by_cases h0 : e / 8 = 0
         · rw [ite_eq_left_of_eq_true _ _ (eq_true h0), h0]
-        · rw [ite_eq_right_of_eq_false _ _ (eq_false h0), show e / 8 = 1 by omega]
+        · rw [ite_eq_right_of_eq_false _ _ (eq_false h0), show e / 8 = 1 by omega_arith]
       rw [hl, word_blend _ _ _ (Nat.mod_lt _ (by decide)), BitVec.getLsbD_extractLsb',
-        decide_eq_true (show e % 8 / 2 < 4 by omega), Bool.true_and, ← BitVec.testBit_toNat,
-        show 4 * (e / 8) + e % 8 / 2 = e / 2 by omega]
+        decide_eq_true (show e % 8 / 2 < 4 by omega_arith), Bool.true_and, ← BitVec.testBit_toNat,
+        show 4 * (e / 8) + e % 8 / 2 = e / 2 by omega_arith]
       simp only [blendW]
       split
-      · have := lane_word hr b he (j := e % 8) (by omega)
-        rwa [show 8 * (e / 8) + e % 8 = e by omega] at this
-      · have := lane_word hr a he (j := e % 8) (by omega)
-        rwa [show 8 * (e / 8) + e % 8 = e by omega] at this
+      · have := lane_word hr b he (j := e % 8) (by omega_arith)
+        rwa [show 8 * (e / 8) + e % 8 = e by omega_arith] at this
+      · have := lane_word hr a he (j := e % 8) (by omega_arith)
+        rwa [show 8 * (e / 8) + e % 8 = e by omega_arith] at this
     · simp only [VOp.exec, wd_setV256, ite_eq_right_of_eq_false _ _ (eq_false hr')]
   · -- vpermq
     rename_i d a o
@@ -205,8 +205,8 @@ theorem vop_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {σ σ' : St} {s₀
       simp only [VOp.exec, wd_setV256, ite_true]
       rw [word_split _ he, extract_perm _ _ he,
         ymm_word _ _ (show 4 * sel4 o.toNat (e / 4) + e % 4 < 16 by
-          have := Proof.Poly1305.X86_64.Avx2.sel4_lt o.toNat (e / 4); simp only [sel4] at this ⊢; omega)]
-      exact h.reg a _ (by have := Proof.Poly1305.X86_64.Avx2.sel4_lt o.toNat (e / 4); simp only [sel4] at this ⊢; omega)
+          have := Proof.Poly1305.X86_64.Avx2.sel4_lt o.toNat (e / 4); simp only [sel4] at this ⊢; omega_arith)]
+      exact h.reg a _ (by have := Proof.Poly1305.X86_64.Avx2.sel4_lt o.toNat (e / 4); simp only [sel4] at this ⊢; omega_arith)
     · simp only [VOp.exec, wd_setV256, ite_eq_right_of_eq_false _ _ (eq_false hr')]
   · -- vperm2i128
     rename_i d a b sel
@@ -219,7 +219,7 @@ theorem vop_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {σ σ' : St} {s₀
           perm2Lanes (s.lane a) (s.lane b) sel (e / 8) := by
         by_cases h0 : e / 8 = 0
         · rw [ite_eq_left_of_eq_true _ _ (eq_true h0), h0]
-        · rw [ite_eq_right_of_eq_false _ _ (eq_false h0), show e / 8 = 1 by omega]
+        · rw [ite_eq_right_of_eq_false _ _ (eq_false h0), show e / 8 = 1 by omega_arith]
       rw [hl]
       simp only [perm2Lanes, perm2W, ← BitVec.testBit_toNat]
       have hk : (sel.extractLsb' (4 * (e / 8)) 2).toNat = sel.toNat / 16 ^ (e / 8) % 4 := by
@@ -229,12 +229,12 @@ theorem vop_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {σ σ' : St} {s₀
       · exact Hd.of_eq (by simp [word, E.eval])
       · have hk4 : sel.toNat / 16 ^ (e / 8) % 4 < 4 := Nat.mod_lt _ (by decide)
         split
-        · have := h.reg a (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) (by omega)
-          rwa [wd, show (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) / 8 = sel.toNat / 16 ^ (e / 8) % 4 % 2 by omega,
-            show (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) % 8 = e % 8 by omega] at this
-        · have := h.reg b (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) (by omega)
-          rwa [wd, show (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) / 8 = sel.toNat / 16 ^ (e / 8) % 4 % 2 by omega,
-            show (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) % 8 = e % 8 by omega] at this
+        · have := h.reg a (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) (by omega_arith)
+          rwa [wd, show (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) / 8 = sel.toNat / 16 ^ (e / 8) % 4 % 2 by omega_arith,
+            show (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) % 8 = e % 8 by omega_arith] at this
+        · have := h.reg b (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) (by omega_arith)
+          rwa [wd, show (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) / 8 = sel.toNat / 16 ^ (e / 8) % 4 % 2 by omega_arith,
+            show (8 * (sel.toNat / 16 ^ (e / 8) % 4 % 2) + e % 8) % 8 = e % 8 by omega_arith] at this
     · simp only [VOp.exec, wd_setV256, ite_eq_right_of_eq_false _ _ (eq_false hr')]
   · cases e
 
@@ -254,11 +254,11 @@ theorem findAux_ok {base : Reg} {d : Nat} : ∀ (rs : List Rg) (k0 : Nat) {k j :
       simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hc
       obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := hc
       simp only [Nat.sub_self, List.getD_cons_zero, List.length_cons]
-      exact ⟨Nat.le_refl _, by omega, h1, by omega, h4, by omega⟩
+      exact ⟨Nat.le_refl _, by omega_arith, h1, by omega_arith, h4, by omega_arith⟩
     · obtain ⟨a, b, c, e, f, g⟩ := findAux_ok rs (k0 + 1) h
-      have hk : k - k0 = (k - (k0 + 1)) + 1 := by omega
+      have hk : k - k0 = (k - (k0 + 1)) + 1 := by omega_arith
       rw [hk, List.getD_cons_succ]
-      exact ⟨by omega, by simp only [List.length_cons]; omega, c, e, f, g⟩
+      exact ⟨by omega_arith, by simp only [List.length_cons]; omega_arith, c, e, f, g⟩
 
 theorem ea_of {m : MemOp} (hi : m.index = none) (h0 : 0 ≤ m.disp) (s : State) :
     s.ea m = s.gpr m.base + BitVec.ofNat 64 m.disp.toNat := by
@@ -294,22 +294,22 @@ theorem inR_sub {wr : List Region} {B : Addr} {n j : Nat} (h : InRegions wr B (2
   have := Nat.mod_le ((B - R.base).toNat + (BitVec.ofNat 64 (2 * j)).toNat) (2 ^ 64)
   have := Nat.mod_le (2 * j) (2 ^ 64)
   rw [BitVec.toNat_ofNat] at *
-  omega
+  omega_arith
 
 theorem sep_sub {a b : Addr} {n k : Nat} (h : Mem.Sep a n b k) {i c j d : Nat} (hi : i + c ≤ n) (hj : j + d ≤ k)
     (hn : n ≤ 2 ^ 64) (hk : k ≤ 2 ^ 64) : Mem.Sep (a + BitVec.ofNat 64 i) c (b + BitVec.ofNat 64 j) d := by
   intro x h1 h2
-  rw [Offset.lt_iff x a (by omega)] at h1
-  rw [Offset.lt_iff x b (by omega)] at h2
-  exact h x (by omega) (by omega)
+  rw [Offset.lt_iff x a (by omega_arith)] at h1
+  rw [Offset.lt_iff x b (by omega_arith)] at h2
+  exact h x (by omega_arith) (by omega_arith)
 
 theorem wordAt_in (m : Mem) (B : Addr) {j i : Nat} (v : BitVec 256) (h1 : j ≤ i) (h2 : i < j + 16) :
     wordAt (m.writeW (B + BitVec.ofNat 64 (2 * j)) v) B i = v.extractLsb' (16 * (i - j)) 16 := by
   unfold wordAt wAddr
   rw [show B + BitVec.ofNat 64 (2 * i) = B + BitVec.ofNat 64 (2 * j) + BitVec.ofNat 64 (2 * (i - j)) by
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega]
-  have := readW_writeW_inside m (B + BitVec.ofNat 64 (2 * j)) v (k := 2 * (i - j)) (n := 2) (by omega) (by decide)
-  rw [show 8 * (2 * (i - j)) = 16 * (i - j) by omega] at this
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith]
+  have := readW_writeW_inside m (B + BitVec.ofNat 64 (2 * j)) v (k := 2 * (i - j)) (n := 2) (by omega_arith) (by decide)
+  rw [show 8 * (2 * (i - j)) = 16 * (i - j) by omega_arith] at this
   exact this
 
 theorem wordAt_out (m : Mem) (B a : Addr) {i : Nat} (v : BitVec 256) (h : Mem.Sep (B + BitVec.ofNat 64 (2 * i)) 2 a 32) :
@@ -340,12 +340,12 @@ theorem load_ok {rs : List Rg} {σ : St} {s₀ s : State} (hc : Ctx rs s₀) (h 
   rw [wd_setV256, ite_eq_left_of_eq_true _ _ (eq_true rfl), word_split _ he,
     show BitVec.extractLsb' (16 * e) 16 (s.mem.readW (s.ea m) 256) =
       s.mem.readW (s.ea m + BitVec.ofNat 64 (2 * e)) 16 by
-        have := readW_extract (k := 2 * e) (n := 2) s.mem (s.ea m) (w := 256) (by omega)
-        rwa [show 8 * (2 * e) = 16 * e by omega] at this]
-  have hm := h.mem k (j + e) hk (by unfold rlen at hj ⊢; omega)
-  rw [show (j + e) / 16 = j / 16 by omega, show (j + e) % 16 = e by omega] at hm
+        have := readW_extract (k := 2 * e) (n := 2) s.mem (s.ea m) (w := 256) (by omega_arith)
+        rwa [show 8 * (2 * e) = 16 * e by omega_arith] at this]
+  have hm := h.mem k (j + e) hk (by unfold rlen at hj ⊢; omega_arith)
+  rw [show (j + e) / 16 = j / 16 by omega_arith, show (j + e) % 16 = e by omega_arith] at hm
   unfold wordAt wAddr at hm
-  rwa [ea, BitVec.add_assoc, ← BitVec.ofNat_add, show 2 * j + 2 * e = 2 * (j + e) by omega]
+  rwa [ea, BitVec.add_assoc, ← BitVec.ofNat_add, show 2 * j + 2 * e = 2 * (j + e) by omega_arith]
 
 theorem store_ok {rs : List Rg} {σ : St} {s₀ s : State} (hc : Ctx rs s₀) (h : Rel rs L O σ s₀ s) {r : XReg}
     {m : MemOp} {k j : Nat} (hf : find rs m = some (k, j)) (hw : (rs.getD k default).2.2.2 = true)
@@ -366,21 +366,21 @@ theorem store_ok {rs : List Rg} {σ : St} {s₀ s : State} (hc : Ctx rs s₀) (h
       rw [getD_set_mem _ _ _ _ hl]
       split
       · rename_i hji
-        rw [wordAt_in _ _ _ (by omega) (by omega), ymm_word _ _ (by omega), show i % 16 = i - j by omega]
-        exact h.reg r (i - j) (by omega)
+        rw [wordAt_in _ _ _ (by omega_arith) (by omega_arith), ymm_word _ _ (by omega_arith), show i % 16 = i - j by omega_arith]
+        exact h.reg r (i - j) (by omega_arith)
       · rename_i hji
         rw [wordAt_out]
         · exact h.mem k i hk hi
         · have := (hsh k hk).1
           unfold rbase
-          exact Offset.sep _ (by omega) (by omega) (by omega)
+          exact Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)
     · rename_i hkk
       rw [wordAt_out]
       · exact h.mem k' i hk' hi
       · have h1 := (hsh k hk).1; have h2 := (hsh k' hk').1
         have hs := hc.sep k' k hk' hk hkk
-        have := sep_sub hs (i := 2 * i) (c := 2) (j := 2 * j) (d := 32) (by omega) (by omega)
-          (by omega) (by omega)
+        have := sep_sub hs (i := 2 * i) (c := 2) (j := 2 * j) (d := 32) (by omega_arith) (by omega_arith)
+          (by omega_arith) (by omega_arith)
         exact this
   · rw [← h.eq]; rfl
   · exact ⟨by simp only [List.length_set, h.len.1], h.len.2⟩
@@ -391,9 +391,9 @@ theorem store_ok {rs : List Rg} {σ : St} {s₀ s : State} (hc : Ctx rs s₀) (h
     · intro hlt
       have hb := (hsh k hk).1
       have := hx k hk hw
-      rw [Offset.lt_iff x _ (by omega)] at hlt
+      rw [Offset.lt_iff x _ (by omega_arith)] at hlt
       unfold rlen at hj this
-      omega
+      omega_arith
 
 end
 
@@ -406,7 +406,7 @@ theorem tbl_ok {rs : List Rg} {σ : St} {s₀ s : State} (hc : Ctx rs s₀) (h :
     ∃ s', exec (.vmovdquTbl d m tblName ws) s = some s' ∧
       Rel rs L O (σ.set d (Y.ofFn fun e => tblW ws (m.disp.toNat / 8 + e / 4) (e % 4))) s₀ s' := by
   have hoff : (s.ea m - s.gpr m.base).toNat = m.disp.toNat := by
-    rw [ea_of hi h0, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [ea_of hi h0, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have hr8 : s.gpr m.base = s.syms tblName := by rw [hb, h.gpr, h.syms, hc.r8]
   have hoff' : (s.ea m - s.syms tblName).toNat = m.disp.toNat := by rw [← hr8]; exact hoff
   refine ⟨_, by simp only [exec, hr8, hoff', h8, hl, and_self, ite_true]; rfl, ?_⟩
@@ -417,14 +417,14 @@ theorem tbl_ok {rs : List Rg} {σ : St} {s₀ s : State} (hc : Ctx rs s₀) (h :
   simp only [tblW, E.eval]
   have hl8 : e % 8 < 8 := Nat.mod_lt _ (by decide)
   by_cases h0' : e / 8 = 0
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h0'), word_cat _ _ hl8, extract16, show e % 8 % 4 = e % 4 by omega]
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h0'), word_cat _ _ hl8, extract16, show e % 8 % 4 = e % 4 by omega_arith]
     by_cases h4 : e % 8 < 4
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h4), show e / 4 = 0 by omega]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h4), show e / 4 = 1 by omega]
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false h0'), word_cat _ _ hl8, extract16, show e % 8 % 4 = e % 4 by omega]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h4), show e / 4 = 0 by omega_arith]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h4), show e / 4 = 1 by omega_arith]
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false h0'), word_cat _ _ hl8, extract16, show e % 8 % 4 = e % 4 by omega_arith]
     by_cases h4 : e % 8 < 4
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h4), show e / 4 = 2 by omega]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false h4), show e / 4 = 3 by omega]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h4), show e / 4 = 2 by omega_arith]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h4), show e / 4 = 3 by omega_arith]
 
 theorem step_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {σ σ' : St} {s₀ s : State} (hc : Ctx rs s₀) (h : Rel rs L O σ s₀ s)
     {i : Instr} (e : σ.step R rs i = some σ') : ∃ s', exec i s = some s' ∧ Rel rs L O σ' s₀ s' := by

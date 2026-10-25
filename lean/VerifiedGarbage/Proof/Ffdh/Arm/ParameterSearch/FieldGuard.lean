@@ -19,15 +19,7 @@ theorem fieldLoads_ok (s : State) {base : BitVec 32} {i j : Nat}
       VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r10 j]) s fun t =>
       (t.gpr .r9 = lowWord s.mem base i ∧ t.gpr .r10 = lowWord s.mem base j ∧ t.mem = s.mem) ∧
         Rest [.r9, .r10] s t := by
-  refine withRest [.r9, .r10] ?_ (by
-    intro r hr op hop
-    have checked : (instrs (.block [VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r9 i,
-        VG.Impl.Ffdh.Arm.ParameterSearch.ldf .r10 j] : Prog isa)).all
-        (fun op => !(clobbers op r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked op hop
-    cases hc : clobbers op r <;> simp_all) (by rfl)
+  refine withRest_all [.r9, .r10] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.ldf lowWord
   ffrun [show 8 * i < 4096 by omega, show 8 * j < 4096 by omega,
     h.addr hi, h.addr hj, h.read hi, h.read hj]

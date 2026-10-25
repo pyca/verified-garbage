@@ -91,6 +91,6 @@ theorem chain_ok (s : State) (a b : Nat → Src) (va vb : Nat → BitVec 64) {c 
   refine ⟨c8,o8,hc8,ho8,?_,k8.mono (by simp [AdxDualAdd.regs])⟩
   unfold cols number
   rw [f1,f2,f3,f4,f5,f6,f7]
-  omega
+  omega_arith
 
 end VG.Proof.Bignum.X86_64.AdxDualAdd

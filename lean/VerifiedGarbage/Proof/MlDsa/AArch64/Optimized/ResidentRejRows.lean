@@ -25,11 +25,11 @@ open VG.Proof.MlDsa.AArch64.Optimized.Resident (StreamOutput)
 theorem firstStream_byte {σ s : State} {k : Nat}
     (h : StreamOutput s.mem (bufP σ k) 10 5 (A0 σ k)) {j : Nat} (hj : j<840) :
     s.mem (bufP σ k+BitVec.ofNat 64 j)=F σ k j := by
-  have hb := (h (j/168) (by omega)).byte (j := j%168) (by omega)
+  have hb := (h (j/168) (by omega_arith)).byte (j := j%168) (by omega_arith)
   change s.mem ((bufP σ k+BitVec.ofNat 64 (168*(j/168)))+BitVec.ofNat 64 (j%168)) = _ at hb
   rw [Offset.add_add,Nat.div_add_mod] at hb
   rw [hb,Resident.permuted_eq_iterF]
-  exact (F_block σ k (by omega : j/168<6) (by omega : j%168<168)).symm.trans
+  exact (F_block σ k (by omega_arith : j/168<6) (by omega_arith : j%168<168)).symm.trans
     (congrArg (F σ k) (Nat.div_add_mod j 168))
 
 theorem FirstBlocks.byte {v : Nat} {σ s : State} (h : FirstBlocks v σ s)
@@ -60,7 +60,7 @@ theorem segmentWrites_sub {v k : Nat} {σ : State} (hk : k<v) (hv : v≤4) :
   rcases hr with rfl | rfl
   · exact ⟨aR v σ,by simp,poly_sub hk⟩
   · exact ⟨scrR σ,by simp,Offset.sub_base (scr σ) (by
-      unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega)⟩
+      unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega_arith)⟩
 
 theorem segmentWrites_save {v k : Nat} {σ : State} (hp : Pre v σ) (hk : k<v) :
     ∀r∈segmentWrites σ k,(saveR σ).Disjoint r := by
@@ -70,7 +70,7 @@ theorem segmentWrites_save {v k : Nat} {σ : State} (hp : Pre v σ) (hk : k<v) :
   · exact ((hp.a_scr.sub_left (poly_sub hk)).symm).sub_left
       (Offset.sub_base (scr σ) (by decide))
   · exact Offset.disjoint (scr σ) (d := 7968) (e := 7904+8*k) (n := 144) (k := 8)
-      (by have:=hp.streams; omega) (by decide) (by have:=hp.streams; omega)
+      (by have:=hp.streams; omega_arith) (by decide) (by have:=hp.streams; omega_arith)
 
 /-- The segment loop's pointers at stream `k`: its input (at offset `off`),
 output and count slot. -/
@@ -86,17 +86,17 @@ theorem Ptrs.next {σ t : State} {off k : Nat}
     change ((scr σ+BitVec.ofNat 64 (840+1008*k))+BitVec.ofNat 64 off)+BitVec.ofNat 64 1008=
       (scr σ+BitVec.ofNat 64 (840+1008*(k+1)))+BitVec.ofNat 64 off
     rw [Offset.add_add,Offset.add_add,Offset.add_add]
-    exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by omega)
+    exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by omega_arith)
   · rw [h25]
     change (aP σ+BitVec.ofNat 64 (1024*k))+BitVec.ofNat 64 1024=aP σ+BitVec.ofNat 64 (1024*(k+1))
     rw [Offset.add_add]
-    exact congrArg (fun d => aP σ+BitVec.ofNat 64 d) (by omega)
+    exact congrArg (fun d => aP σ+BitVec.ofNat 64 d) (by omega_arith)
   · rw [h26]
     change (scr σ+BitVec.ofNat 64 (Impl.MlDsa.AArch64.Optimized.ResidentRej.counts+8*k))+
       BitVec.ofNat 64 8=
       scr σ+BitVec.ofNat 64 (Impl.MlDsa.AArch64.Optimized.ResidentRej.counts+8*(k+1))
     rw [Offset.add_add]
-    exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by omega)
+    exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by omega_arith)
 
 theorem segmentEnv_ok {streams k off n : Nat} {σ s : State} {L : List Zq}
     (hp : Pre streams σ) (he : Env streams σ s) (hk : k<streams) (hptr : Ptrs σ off k s)
@@ -110,19 +110,19 @@ theorem segmentEnv_ok {streams k off n : Nat} {σ s : State} {L : List Zq}
       Stored t.mem (polyP σ k) (segmentResult s (bufP σ k+BitVec.ofNat 64 off) n L) ∧
       Ptrs σ off (k+1) t ∧ t.gpr .x27=s.gpr .x27-BitVec.ofNat 64 1 := by
   have hcount : InRegions s.wr (countP σ k) 8 :=
-    in_scr hp he.wr (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega)
+    in_scr hp he.wr (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega_arith)
   have hread : InRegions (s.rd++s.wr) (countP σ k) 8 := by
     obtain ⟨r,hr,hc⟩ := hcount
     exact ⟨r,List.mem_append.mpr (Or.inr hr),hc⟩
   have hl := segment_layout hp he hk hn
   rw [segment_input_eq he,segment_output_eq he] at hl
-  refine WP.mono (segment_ok variant n (by omega) hL hmod hptr.1 hptr.2.1 hptr.2.2
+  refine WP.mono (segment_ok variant n (by omega_arith) hL hmod hptr.1 hptr.2.1 hptr.2.2
     hl hread hcount hc hs (by
       exact (hp.a_scr.sub_left (poly_sub hk)).sub_right
         (Offset.sub_base (scr σ) (by
-          unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega))))
+          unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega_arith))))
     fun t ⟨ht,h24,h25,h26,h27,hf,hc,hs⟩ => ?_
-  refine ⟨he.frameStep hf (segmentWrites_sub hk (by have:=hp.streams; omega))
+  refine ⟨he.frameStep hf (segmentWrites_sub hk (by have:=hp.streams; omega_arith))
     (segmentWrites_save hp hk) ht.rd ht.wr ht.sp ?_,hf,hc,hs,Ptrs.next h24 h25 h26,h27⟩
   intro r hr
   exact ht.get r (by
@@ -159,9 +159,9 @@ theorem segmentWrites_other_poly {v k j : Nat} {σ : State}
   simp only [segmentWrites,List.mem_cons,List.not_mem_nil,or_false] at hw
   rcases hw with rfl | rfl
   · exact Offset.disjoint (aP σ) (d := 1024*j) (e := 1024*k) (n := 1024) (k := 1024)
-      (by omega) (by have:=hp.streams; omega) (by have:=hp.streams; omega)
+      (by omega_arith) (by have:=hp.streams; omega_arith) (by have:=hp.streams; omega_arith)
   · exact (hp.a_scr.sub_left (poly_sub hj)).sub_right
-      (Offset.sub_base (scr σ) (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega))
+      (Offset.sub_base (scr σ) (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega_arith))
 
 theorem segment_count_keep {v k j : Nat} {σ s t : State}
     (hp : Pre v σ) (hk : k<v) (hj : j<v) (hne : j≠k)
@@ -169,9 +169,9 @@ theorem segment_count_keep {v k j : Nat} {σ s t : State}
     t.mem.readW (countP σ j) 64=s.mem.readW (countP σ j) 64 := by
   apply hf.readW (r := ⟨countP σ j,8⟩) (Region.contains_self _ _) _ (by decide)
   apply segmentWrites_scratch hp hk
-  · exact Offset.sub_base (scr σ) (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega)
+  · exact Offset.sub_base (scr σ) (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega_arith)
   · exact Offset.disjoint (scr σ) (d := 7904+8*j) (e := 7904+8*k) (n := 8) (k := 8)
-      (by omega) (by have:=hp.streams; omega) (by have:=hp.streams; omega)
+      (by omega_arith) (by have:=hp.streams; omega_arith) (by have:=hp.streams; omega_arith)
 
 theorem segment_stored_keep {v k j : Nat} {σ s t : State} {L : List Zq}
     (hp : Pre v σ) (hk : k<v) (hj : j<v) (hne : j≠k)
@@ -187,10 +187,10 @@ theorem segment_buffer_keep {v k j d : Nat} {σ s t : State}
   intro r hr
   apply (segmentWrites_scratch hp hk (r := ⟨bufP σ j,1008⟩)
     (Offset.sub_base (scr σ) (by
-      unfold Impl.MlDsa.AArch64.Sample.Rej4.oBuf; have:=hp.streams; omega))
+      unfold Impl.MlDsa.AArch64.Sample.Rej4.oBuf; have:=hp.streams; omega_arith))
     (Offset.disjoint (scr σ) (d := 840+1008*j) (e := 7904+8*k) (n := 1008) (k := 8)
-      (by have:=hp.streams; omega) (by have:=hp.streams; omega) (by have:=hp.streams; omega)) r hr)
-  exact Offset.contains_base (bufP σ j) (by omega) (by omega)
+      (by have:=hp.streams; omega_arith) (by have:=hp.streams; omega_arith) (by have:=hp.streams; omega_arith)) r hr)
+  exact Offset.contains_base (bufP σ j) (by omega_arith) (by omega_arith)
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
@@ -244,7 +244,7 @@ theorem segmentResult_rows {v blocks k off n : Nat} {σ s : State} {L : Nat → 
   intro j hj
   have hjn : j<3*n := List.mem_range.mp hj
   rw [Offset.add_add]
-  exact h.bytes k hk (off+j) (by omega)
+  exact h.bytes k hk (off+j) (by omega_arith)
 
 theorem segment_pair_keep {v k p : Nat} {σ s t : State} {A B : Spec.Sha3.State}
     (hp : Pre v σ) (hk : k<v) (hpv : 2*p+1<v)
@@ -252,9 +252,9 @@ theorem segment_pair_keep {v k p : Nat} {σ s t : State} {A B : Spec.Sha3.State}
     (hs : PairAt s.mem (stateP σ p) A B) : PairAt t.mem (stateP σ p) A B := by
   intro i hi
   rw [hf.read (pair_contains (stateP σ p) hi) (segmentWrites_scratch hp hk
-    (Offset.sub_base (scr σ) (by have:=hp.streams; omega))
+    (Offset.sub_base (scr σ) (by have:=hp.streams; omega_arith))
     (Offset.disjoint (scr σ) (d := 400*p) (e := 7904+8*k) (n := 400) (k := 8)
-      (by have:=hp.streams; omega) (by have:=hp.streams; omega) (by have:=hp.streams; omega))) (by decide)]
+      (by have:=hp.streams; omega_arith) (by have:=hp.streams; omega_arith) (by have:=hp.streams; omega_arith))) (by decide)]
   exact hs i hi
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

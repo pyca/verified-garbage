@@ -49,12 +49,12 @@ theorem Ctx.roundPre {s : State} {k : Spec.Cast5.Schedule} (h : Ctx s k) {i : Na
     {l r : Spec.Cast5.Word} (h5 : s.gpr .x5 = l.setWidth 64) (h6 : s.gpr .x6 = r.setWidth 64) :
     RoundPre s (k.getD (i - 1) 0) (k.getD (15 + i) 0) l r := by
   have h64 : s.gpr .x12 + BitVec.ofNat 64 64 = s.gpr .x0 + BitVec.ofNat 64 (4 * (15 + i)) := by
-    rw [h12, add_ofNat_add]; congr 2; omega
+    rw [h12, add_ofNat_add]; congr 2; omega_arith
   refine ⟨h5, h6, ?_, ?_, ?_, ?_, h.tab, h.held⟩
-  · rw [h12]; exact CallLay.inRegions_sub h.sched (by omega) (by decide)
-  · rw [h12]; exact h.key _ (by omega)
-  · rw [h64]; exact CallLay.inRegions_sub h.sched (by omega) (by decide)
-  · rw [h64]; exact h.key _ (by omega)
+  · rw [h12]; exact CallLay.inRegions_sub h.sched (by omega_arith) (by decide)
+  · rw [h12]; exact h.key _ (by omega_arith)
+  · rw [h64]; exact CallLay.inRegions_sub h.sched (by omega_arith) (by decide)
+  · rw [h64]; exact h.key _ (by omega_arith)
 
 /-- The registers a block writes. -/
 def blockRegs : List Reg := roundRegs ++ [.x7, .x8]
@@ -110,21 +110,21 @@ theorem groupEnc_ok {s u : State} {k : Spec.Cast5.Schedule} {lr : Spec.Cast5.Wor
     fun v lr' hv => (hv.same .x0 (by decide)).trans (h.same .x0 (by decide)).symm
   unfold group
   simp only [ite_true]
-  refine WP.seq (WP.mono (round_step h (t := 1) (i := 3 * g + 1) (by decide) (by omega) (by omega)
-    (by rw [h12]; congr 2; omega) true) fun v₁ ⟨h₁, a₁, b₁, c₁⟩ => ?_)
-  refine WP.seq (WP.mono (round_step h₁ (t := 2) (i := 3 * g + 2) (by decide) (by omega) (by omega)
-    (by rw [a₁, ite_eq_left rfl, h12, hdi v₁ _ h₁, four, add_ofNat_add]; congr 2; omega) true)
+  refine WP.seq (WP.mono (round_step h (t := 1) (i := 3 * g + 1) (by decide) (by omega_arith) (by omega_arith)
+    (by rw [h12]; congr 2; omega_arith) true) fun v₁ ⟨h₁, a₁, b₁, c₁⟩ => ?_)
+  refine WP.seq (WP.mono (round_step h₁ (t := 2) (i := 3 * g + 2) (by decide) (by omega_arith) (by omega_arith)
+    (by rw [a₁, ite_eq_left rfl, h12, hdi v₁ _ h₁, four, add_ofNat_add]; congr 2; omega_arith) true)
     fun v₂ ⟨h₂, a₂, b₂, c₂⟩ => ?_)
-  refine WP.seq (WP.mono (round_step h₂ (t := 3) (i := 3 * g + 3) (by decide) (by omega) (by omega)
+  refine WP.seq (WP.mono (round_step h₂ (t := 3) (i := 3 * g + 3) (by decide) (by omega_arith) (by omega_arith)
     (by rw [a₂, ite_eq_left rfl, a₁, ite_eq_left rfl, h12, hdi v₂ _ h₂, four, add_ofNat_add, add_ofNat_add]
-        congr 2; omega)
+        congr 2; omega_arith)
     true) fun v₃ ⟨h₃, a₃, b₃, c₃⟩ => ?_)
   refine WP.mono (countDown_ok h₃) fun v₄ ⟨h₄, a₄, b₄, c₄⟩ => ?_
   refine ⟨?_, ?_, by rw [b₄, b₃, b₂, b₁], by rw [c₄, c₃, c₂, c₁]⟩
-  · rw [show 3 * (g + 1) = 3 * g + 2 + 1 by omega, encFold_succ, encFold_succ, encFold_succ]
+  · rw [show 3 * (g + 1) = 3 * g + 2 + 1 by omega_arith, encFold_succ, encFold_succ, encFold_succ]
     exact h₄
   · rw [a₄, a₃, ite_eq_left rfl, a₂, ite_eq_left rfl, a₁, ite_eq_left rfl, h12, hdi v₄ _ h₄, four,
-      add_ofNat_add, add_ofNat_add, add_ofNat_add, show 12 * g + 4 + 4 + 4 = 12 * (g + 1) by omega]
+      add_ofNat_add, add_ofNat_add, add_ofNat_add, show 12 * g + 4 + 4 + 4 = 12 * (g + 1) by omega_arith]
 
 /-- Rounds `n - m`, `n - m - 1`, `n - m - 2` of decryption with `n` rounds,
 after the first `m`. -/
@@ -141,18 +141,18 @@ theorem groupDec_ok {s u : State} {k : Spec.Cast5.Schedule} {lr : Spec.Cast5.Wor
     rw [show (4 : Addr) = BitVec.ofNat 64 4 from rfl, Offset.add_ofNat_sub _ ha]
   unfold group
   simp only [Bool.false_eq_true, ite_false]
-  refine WP.seq (WP.mono (round_step h (t := 3) (i := n - m) (by decide) (by omega) (by omega)
+  refine WP.seq (WP.mono (round_step h (t := 3) (i := n - m) (by decide) (by omega_arith) (by omega_arith)
     h12 false) fun v₁ ⟨h₁, a₁, b₁, c₁⟩ => ?_)
-  refine WP.seq (WP.mono (round_step h₁ (t := 2) (i := n - m - 1) (by decide) (by omega) (by omega)
-    (by rw [a₁, ite_eq_right Bool.false_ne_true, h12, hdi v₁ _ h₁, sub4 _ _ (by omega)]; congr 2; omega)
+  refine WP.seq (WP.mono (round_step h₁ (t := 2) (i := n - m - 1) (by decide) (by omega_arith) (by omega_arith)
+    (by rw [a₁, ite_eq_right Bool.false_ne_true, h12, hdi v₁ _ h₁, sub4 _ _ (by omega_arith)]; congr 2; omega_arith)
     false) fun v₂ ⟨h₂, a₂, b₂, c₂⟩ => ?_)
-  refine WP.seq (WP.mono (round_step h₂ (t := 1) (i := n - m - 2) (by decide) (by omega) (by omega)
+  refine WP.seq (WP.mono (round_step h₂ (t := 1) (i := n - m - 2) (by decide) (by omega_arith) (by omega_arith)
     (by rw [a₂, ite_eq_right Bool.false_ne_true, a₁, ite_eq_right Bool.false_ne_true, h12, hdi v₂ _ h₂,
-      sub4 _ _ (by omega), sub4 _ _ (by omega)]; congr 2; omega) false) fun v₃ ⟨h₃, a₃, b₃, c₃⟩ => ?_)
+      sub4 _ _ (by omega_arith), sub4 _ _ (by omega_arith)]; congr 2; omega_arith) false) fun v₃ ⟨h₃, a₃, b₃, c₃⟩ => ?_)
   refine WP.mono (countDown_ok h₃) fun v₄ ⟨h₄, a₄, b₄, c₄⟩ => ?_
   refine ⟨?_, ?_, by rw [b₄, b₃, b₂, b₁], by rw [c₄, c₃, c₂, c₁]⟩
-  · rw [decFold_succ, decFold_succ, decFold_succ, show n - (m + 1) = n - m - 1 by omega,
-      show n - (m + 2) = n - m - 2 by omega]
+  · rw [decFold_succ, decFold_succ, decFold_succ, show n - (m + 1) = n - m - 1 by omega_arith,
+      show n - (m + 2) = n - m - 2 by omega_arith]
     exact h₄
   · rw [a₄, a₃, a₂, a₁]
     simp only [Bool.false_eq_true, ite_false]
@@ -172,12 +172,12 @@ theorem rev32_eq (x : BitVec 32) : rev32 x = byteRev32 x := rfl
 theorem BPre.ld0 {s : State} {k : Spec.Cast5.Schedule} {n : Nat} (h : BPre s k n) :
     InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 0) 4 := by
   obtain ⟨g, hg, hc⟩ := h.data
-  exact CallLay.inRegions_sub ⟨g, List.mem_append_right _ hg, hc⟩ (by omega) (by decide)
+  exact CallLay.inRegions_sub ⟨g, List.mem_append_right _ hg, hc⟩ (by omega_arith) (by decide)
 
 theorem BPre.ld4 {s : State} {k : Spec.Cast5.Schedule} {n : Nat} (h : BPre s k n) :
     InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 4) 4 := by
   obtain ⟨g, hg, hc⟩ := h.data
-  exact CallLay.inRegions_sub ⟨g, List.mem_append_right _ hg, hc⟩ (by omega) (by decide)
+  exact CallLay.inRegions_sub ⟨g, List.mem_append_right _ hg, hc⟩ (by omega_arith) (by decide)
 
 theorem groups_x7 {n : Nat} (hn : n = 12 ∨ n = 16) :
     BitVec.ofNat 64 n >>> 2 + BitVec.ofNat 64 1 = BitVec.ofNat 64 (n / 4 + 1) := by
@@ -219,8 +219,8 @@ theorem store_ok {s u : State} {k : Spec.Cast5.Schedule} {lr : Spec.Cast5.Word �
       v.gpr .x2 = u.gpr .x2 + BitVec.ofNat 64 8 ∧ v.gpr .x3 = u.gpr .x3 - BitVec.ofNat 64 1 ∧
       v.rd = u.rd ∧ v.wr = u.wr ∧ v.syms = u.syms ∧
       (∀ q, q ≠ .x5 → q ≠ .x6 → q ≠ .x2 → q ≠ .x3 → v.gpr q = u.gpr q) := by
-  have hd0 : InRegions u.wr (u.gpr .x2 + BitVec.ofNat 64 0) 4 := CallLay.inRegions_sub hd (by omega) (by decide)
-  have hd4 : InRegions u.wr (u.gpr .x2 + BitVec.ofNat 64 4) 4 := CallLay.inRegions_sub hd (by omega) (by decide)
+  have hd0 : InRegions u.wr (u.gpr .x2 + BitVec.ofNat 64 0) 4 := CallLay.inRegions_sub hd (by omega_arith) (by decide)
+  have hd4 : InRegions u.wr (u.gpr .x2 + BitVec.ofNat 64 4) 4 := CallLay.inRegions_sub hd (by omega_arith) (by decide)
   have h5 := h.x5
   have h6 := h.x6
   unfold store
@@ -250,7 +250,7 @@ theorem finish_ok {s u : State} {k : Spec.Cast5.Schedule} {lr : Spec.Cast5.Word 
     have c0 : Region.Contains ⟨s.gpr .x2, 8⟩ (s.gpr .x2) (32 / 8) := by
       simp [Region.Contains]
     exact (Frame.writeW (Frame.writeW (Frame.refl _ _) List.mem_cons_self _ c0)
-      List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega)))
+      List.mem_cons_self _ (Offset.contains_base _ (by omega_arith) (by omega_arith)))
   · rw [vg q (fun e => hq (by rw [e]; decide)) (fun e => hq (by rw [e]; decide)) hdq hcq]
     exact h.same q hq
 
@@ -263,7 +263,7 @@ theorem encryptBlock_ok {s : State} {k : Spec.Cast5.Schedule} {n : Nat} (h : BPr
   refine WP.seq (WP.mono (wp_countdown (cnt := .x7) (N := n / 4 + 1) hG.2 hG.1
     (fun g v => RInv s k (encFold k (3 * g) (Spec.Cast5.decodeBlock (Spec.Cast5.blockAt s.mem (s.gpr .x2)))) v ∧
       v.gpr .x12 = v.gpr .x0 + BitVec.ofNat 64 (12 * g) ∧ v.gpr .x8 = BitVec.ofNat 64 n - BitVec.ofNat 64 16)
-    (fun g hg v ⟨hv, h12, h8⟩ _ => WP.mono (groupEnc_ok (by rcases h.nv with rfl | rfl <;> omega) hv h12)
+    (fun g hg v ⟨hv, h12, h8⟩ _ => WP.mono (groupEnc_ok (by rcases h.nv with rfl | rfl <;> omega_arith) hv h12)
       fun w ⟨hw, w12, w7, w8⟩ => ⟨⟨hw, w12, w8.trans h8⟩, w7⟩)
     ⟨hu, by rw [u12, Nat.mul_zero, BitVec.add_zero], u8⟩ u7) fun v ⟨hv, v12, v8⟩ => ?_)
   refine WP.seq (WP.ite (decide (n = 16)) (by rw [eval_zero, v8, x8_zero h.nv]) (fun h16 => ?_)
@@ -300,7 +300,7 @@ theorem dec_x12 {n : Nat} (hn : n = 12 ∨ n = 16) (x : Addr) :
   rcases hn with rfl | rfl <;>
   · apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat]
-    omega
+    omega_arith
 
 /-- The block loaded, `x12` at the last round's subkeys, and the count of groups. -/
 theorem decStart_ok {s : State} {k : Spec.Cast5.Schedule} {n : Nat} (h : BPre s k n) :
@@ -344,7 +344,7 @@ theorem decryptBlock_ok {s : State} {k : Spec.Cast5.Schedule} {n : Nat} (h : BPr
       v.gpr .x7 = BitVec.ofNat 64 (n / 4 + 1) := by
     refine WP.ite (decide (n = 16)) (by rw [eval_zero, u8, x8_zero h.nv]) (fun h16 => ?_) (fun h16 => ?_)
     · have hn : n = 16 := of_decide_eq_true h16
-      refine WP.mono (round_step hu (t := 1) (i := n) (by decide) (by rw [hn]) (by omega)
+      refine WP.mono (round_step hu (t := 1) (i := n) (by decide) (by rw [hn]) (by omega_arith)
         (by rw [u12]) false) fun x ⟨hx, x12, x7, _⟩ => ?_
       have hdi : x.gpr .x0 = u.gpr .x0 :=
         (hx.same .x0 (by decide)).trans (hu.same .x0 (by decide)).symm
@@ -364,18 +364,18 @@ theorem decryptBlock_ok {s : State} {k : Spec.Cast5.Schedule} {n : Nat} (h : BPr
   refine WP.seq (WP.mono (wp_countdown (cnt := .x7) (N := n / 4 + 1) hG.2.1 hG.1
     (fun g w => RInv s k (decFold k n (n % 3 + 3 * g) lr) w ∧
       (n % 3 + 3 * g < n → w.gpr .x12 = w.gpr .x0 + BitVec.ofNat 64 (4 * (n - (n % 3 + 3 * g) - 1))))
-    (fun g hg w ⟨hw, w12⟩ _ => WP.mono (groupDec_ok (m := n % 3 + 3 * g) (by omega) (by
-        rcases h.nv with rfl | rfl <;> decide) (by omega) hw (w12 (by omega)))
+    (fun g hg w ⟨hw, w12⟩ _ => WP.mono (groupDec_ok (m := n % 3 + 3 * g) (by omega_arith) (by
+        rcases h.nv with rfl | rfl <;> decide) (by omega_arith) hw (w12 (by omega_arith)))
       fun x ⟨hx, x12, x7, _⟩ =>
-        ⟨⟨(show n % 3 + 3 * (g + 1) = n % 3 + 3 * g + 3 by omega) ▸ hx, fun hlt => ?_⟩, x7⟩)
+        ⟨⟨(show n % 3 + 3 * (g + 1) = n % 3 + 3 * g + 3 by omega_arith) ▸ hx, fun hlt => ?_⟩, x7⟩)
     ⟨by rw [Nat.mul_zero, Nat.add_zero]; exact hv, fun _ => by rw [Nat.mul_zero, Nat.add_zero]; exact v12⟩
     v7) fun w ⟨hw, _⟩ => ?_)
   · have hdi : x.gpr .x0 = w.gpr .x0 :=
       (hx.same .x0 (by decide)).trans (hw.same .x0 (by decide)).symm
-    rw [x12, w12 (by omega), hdi, show (12 : Addr) = BitVec.ofNat 64 12 from rfl,
-      Offset.add_ofNat_sub _ (by omega)]
+    rw [x12, w12 (by omega_arith), hdi, show (12 : Addr) = BitVec.ofNat 64 12 from rfl,
+      Offset.add_ofNat_sub _ (by omega_arith)]
     congr 2
-    omega
+    omega_arith
   · rw [hG.2.2.1] at hw
     have e : Spec.Cast5.decryptBlock k n (Spec.Cast5.blockAt s.mem (s.gpr .x2)) =
         Spec.Cast5.encodeBlock ((decFold k n n lr).2, (decFold k n n lr).1) := by

@@ -48,17 +48,17 @@ theorem le4_inj {x y : BitVec 32} (h : le4 x = le4 y) : x = y := by
     simpa only [Cmac.getD_le4 _ hk] using this
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
-  have := congrArg (fun v => v.getLsbD (j % 8)) (e (j / 8) (by omega))
+  have := congrArg (fun v => v.getLsbD (j % 8)) (e (j / 8) (by omega_arith))
   simp only [BitVec.getLsbD_extractLsb', show j % 8 < 8 from Nat.mod_lt _ (by decide), decide_true,
     Bool.true_and] at this
-  rwa [show 8 * (j / 8) + j % 8 = j by omega] at this
+  rwa [show 8 * (j / 8) + j % 8 = j by omega_arith] at this
 
 /-- Subtracting 4 and comparing unsigned with 13 rejects both ends. -/
 theorem tagLenOk_carry {tl : Nat} (htl : tl < 2 ^ 32) :
     decide (13 ≤ (BitVec.ofNat 32 tl - 4#32).toNat) = !Spec.Gcm.tagLenOk tl := by
   apply Bool.eq_iff_iff.mpr
   simp [Spec.Gcm.tagLenOk, BitVec.toNat_sub, Nat.mod_eq_of_lt htl]
-  omega
+  omega_arith
 
 /-- `tagLenOk`: `Z` clear iff the tag length is allowed. -/
 theorem tagLenOk_ok {s : State} {tl : Nat} (h6 : s.gpr .r6 = BitVec.ofNat 32 tl) (htl : tl < 2 ^ 32) :
@@ -75,7 +75,7 @@ theorem tagLenOk_ok {s : State} {tl : Nat} (h6 : s.gpr .r6 = BitVec.ofNat 32 tl)
 theorem store4_zero_tail (m : Mem) (p : Addr) {k : Nat} (hk : k ≤ 16) :
     bytesAt (store4 m p 0 0 0 0) (p + BitVec.ofNat 64 k) (16 - k) = zeros (16 - k) := by
   have h := store4_zero_bytes m p
-  rw [show (16 : Nat) = k + (16 - k) by omega, bytesAt_add,
+  rw [show (16 : Nat) = k + (16 - k) by omega_arith, bytesAt_add,
     show zeros (k + (16 - k)) = zeros k ++ zeros (16 - k) by rw [zeros, zeros, zeros, List.replicate_append_replicate]] at h
   exact (List.append_inj h (by simp [length_bytesAt, Proof.Gcm.length_zeros])).2
 
@@ -92,11 +92,11 @@ theorem padCopy_ok {s : State} (he : Env c st w sp k7 k8 s) {S : BitVec 32} {d t
     WP isa copyLoop s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 d) 16 =
         bytesAt m₀ (State.addr S) tl ++ zeros (16 - tl) ∧
       Frame [⟨State.addr w + BitVec.ofNat 64 d, 16⟩] m₀ s'.mem ∧ LoopOut s S (w + BitVec.ofNat 32 d) tl s' := by
-  have eD := L.wA (d := d) (by omega)
+  have eD := L.wA (d := d) (by omega_arith)
   have ww := L.ww
   have lp : LoopPre s S (w + BitVec.ofNat 32 d) tl := by
-    refine ⟨hr1, hr2, hr3, h1, by omega, hSf, by rw [L.wN (by omega)]; omega, hSr, ?_, ?_⟩
-    · rw [eD]; exact he.perm.wC (by omega)
+    refine ⟨hr1, hr2, hr3, h1, by omega_arith, hSf, by rw [L.wN (by omega_arith)]; omega_arith, hSr, ?_, ?_⟩
+    · rw [eD]; exact he.perm.wC (by omega_arith)
     · rw [eD]; exact hSd.sub_right (Region.sub_prefix h16)
   refine WP.mono (copyLoop_ok s lp) fun s' ⟨hm', lo⟩ => ?_
   rw [hm, eD] at hm'
@@ -104,15 +104,15 @@ theorem padCopy_ok {s : State} (he : Env c st w sp k7 k8 s) {S : BitVec 32} {d t
     Cmac.frame_store4 _ _ _ _ _
   have hx : bytesAt (store4 m₀ (State.addr w + BitVec.ofNat 64 d) 0 0 0 0) (State.addr S) tl =
       bytesAt m₀ (State.addr S) tl :=
-    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hSd) (by omega)
+    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hSd) (by omega_arith)
   rw [hx] at hm'
   have hlen := length_bytesAt m₀ (State.addr S) tl
   refine ⟨?_, ?_, lo⟩
-  · rw [hm', bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega) (by omega), hlen, store4_zero_tail _ _ h16]
+  · rw [hm', bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_arith) (by omega_arith), hlen, store4_zero_tail _ _ h16]
   · rw [hm']
     exact fz.trans ((writeBytes_frame' _ hlen).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩)
 
 /-- `zero16 d`: the 16 bytes at `W + d` zeroed. -/
 theorem zero16_ok {s : State} (he : Env c st w sp k7 k8 s) {d : Nat} (hd : d + 16 ≤ 2560) (ed₁ : d + 12 < 4096) :
@@ -120,17 +120,17 @@ theorem zero16_ok {s : State} (he : Env c st w sp k7 k8 s) {d : Nat} (hd : d + 1
       s'.mem = store4 s.mem (State.addr w + BitVec.ofNat 64 d) 0 0 0 0 ∧
       (∀ r, r ≠ .r0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   have h11 := he.r11
-  have w₀ := he.perm.wW (show d + 4 ≤ 2560 by omega)
-  have w₁ := he.perm.wW (show d + 4 + 4 ≤ 2560 by omega)
-  have w₂ := he.perm.wW (show d + 8 + 4 ≤ 2560 by omega)
-  have w₃ := he.perm.wW (show d + 12 + 4 ≤ 2560 by omega)
-  have e₀ := L.wA (d := d) (by omega)
-  have e₁ := L.wA (d := d + 4) (by omega)
-  have e₂ := L.wA (d := d + 8) (by omega)
-  have e₃ := L.wA (d := d + 12) (by omega)
-  have o₀ : d < 4096 := by omega
-  have o₁ : d + 4 < 4096 := by omega
-  have o₂ : d + 8 < 4096 := by omega
+  have w₀ := he.perm.wW (show d + 4 ≤ 2560 by omega_arith)
+  have w₁ := he.perm.wW (show d + 4 + 4 ≤ 2560 by omega_arith)
+  have w₂ := he.perm.wW (show d + 8 + 4 ≤ 2560 by omega_arith)
+  have w₃ := he.perm.wW (show d + 12 + 4 ≤ 2560 by omega_arith)
+  have e₀ := L.wA (d := d) (by omega_arith)
+  have e₁ := L.wA (d := d + 4) (by omega_arith)
+  have e₂ := L.wA (d := d + 8) (by omega_arith)
+  have e₃ := L.wA (d := d + 12) (by omega_arith)
+  have o₀ : d < 4096 := by omega_arith
+  have o₁ : d + 4 < 4096 := by omega_arith
+  have o₂ : d + 8 < 4096 := by omega_arith
   refine ⟨_, by simp only [zero16]; arun [h11, e₀, e₁, e₂, e₃, w₀, w₁, w₂, w₃, o₀, o₁, o₂, ed₁], ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_store, store4_eq, add_ofNat_assoc]; rfl
   · intro r a; simp [gpr_setReg, a]
@@ -321,12 +321,12 @@ theorem cmp_ok {s : State} (he : Env c st w sp k7 k8 s) {o : Nat} (ho : o = 0 �
       rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide)]) (k₂.sp.trans sp₁) (k₂.rd.trans rd₁)
       (k₂.wr.trans wr₁)
   have hSr : Covers [⟨State.addr (w + BitVec.ofNat 32 o), tl⟩] (s₂.rd ++ s₂.wr) := by
-    rw [L.wA (by omega)]; exact covers_left (he₂.perm.wC (by omega))
+    rw [L.wA (by omega_arith)]; exact covers_left (he₂.perm.wC (by omega_arith))
   have hSd : (⟨State.addr (w + BitVec.ofNat 32 o), tl⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 240, 16⟩ := by
-    rw [L.wA (by omega)]; exact Lay.w_w (by omega) (by omega) (by decide)
-  refine WP.seq (WP.mono (padCopy_ok L he₂ (d := 240) (by decide) h1 h16 hSr (by rw [L.wN (by omega)]; have := L.ww; omega) hSd
+    rw [L.wA (by omega_arith)]; exact Lay.w_w (by omega_arith) (by omega_arith) (by decide)
+  refine WP.seq (WP.mono (padCopy_ok L he₂ (d := 240) (by decide) h1 h16 hSr (by rw [L.wN (by omega_arith)]; have := L.ww; omega_arith) hSd
     (m₀ := s.mem) (by rw [k₂.mem, hm₁]; rfl) h1₂ h2₂ h3₂) fun s₃ ⟨hb, hf, lo⟩ => ?_)
-  rw [L.wA (by omega)] at hb
+  rw [L.wA (by omega_arith)] at hb
   have he₃ := he₂.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact lo.other _ (by decide) (by decide) (by decide) (by decide)

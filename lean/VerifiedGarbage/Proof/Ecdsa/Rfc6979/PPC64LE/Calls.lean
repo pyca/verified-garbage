@@ -96,8 +96,8 @@ theorem initPre (P : Kit) {s : State} {inner outer key scr : Addr} {kl : Nat}
   simp only [h3, h4, h5, h6, h7, hS]
   have kb : ∀ {r : Region}, (below s.sp 96).Disjoint r →
       Region.Disjoint ⟨s.sp - BitVec.ofNat 64 (P.kI + 1), P.kI + 1⟩ r := fun h =>
-    h.sub_left (below_sub hk (by omega))
-  exact ⟨by omega, trivial, trivial, d₁, d₂, d₃, d₄, d₅, d₆, kb k₁, kb k₂, kb k₃, kb k₄, n₁, n₂, n₃, n₄, hkl⟩
+    h.sub_left (below_sub hk (by omega_arith))
+  exact ⟨by omega_arith, trivial, trivial, d₁, d₂, d₃, d₄, d₅, d₆, kb k₁, kb k₂, kb k₃, kb k₄, n₁, n₂, n₃, n₄, hkl⟩
 
 /-- The call of HMAC's `init` with the key of `kl` bytes at `key`, the
 states at `inner` and `outer` and the working space at `scr`. -/
@@ -130,12 +130,12 @@ theorem initCall (P : Kit) {s : State} {inner outer key scr : Addr} {kl : Nat}
   refine WP.callAny (k := P.I.initScratchContract PPC64LE.abi (P.kI + 1)) P.initV (rd := [⟨key, kl⟩])
     (wr := [⟨inner, P.H.S⟩, ⟨outer, P.H.S⟩, ⟨scr, P.I.scratch * 8⟩])
     (initPre P h3 h4 h5 h6 h7 hkl d₁ d₂ d₃ d₄ d₅ d₆ hsp k₁ k₂ k₃ k₄ n₁ n₂ n₃ n₄) hc hw ?_
-    (by have := P.dI; omega)
+    (by have := P.dI; omega_arith)
   · intro s' h₁ h₂ h₃ h₄ hcs hpost
     sig_post [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract,
       Spec.Hmac.initScratchSig, Spec.Hmac.initPost, PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost
     simp only [h3, h4, h5, h6] at hpost
-    exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := P.dI; omega) (by omega)) hcs hpost.1 hpost.2
+    exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := P.dI; omega_arith) (by omega_arith)) hcs hpost.1 hpost.2
 
 theorem finPre (P : Kit) {s : State} {inner outer out scr : Addr}
     (h3 : s.gpr .r3 = inner) (h4 : s.gpr .r4 = outer) (h6 : s.gpr .r6 = out) (h7 : s.gpr .r7 = scr)
@@ -159,8 +159,8 @@ theorem finPre (P : Kit) {s : State} {inner outer out scr : Addr}
   simp only [h3, h4, h6, h7, hS, hD]
   have kb : ∀ {r : Region}, (below s.sp 96).Disjoint r →
       Region.Disjoint ⟨s.sp - BitVec.ofNat 64 (P.kF + 1), P.kF + 1⟩ r := fun h =>
-    h.sub_left (below_sub hk (by omega))
-  exact ⟨by omega, trivial, trivial, d₁, d₂, d₃, d₄, d₅, d₆, kb k₁, kb k₂, kb k₃, kb k₄, n₁, n₂, n₃, n₄⟩
+    h.sub_left (below_sub hk (by omega_arith))
+  exact ⟨by omega_arith, trivial, trivial, d₁, d₂, d₃, d₄, d₅, d₆, kb k₁, kb k₂, kb k₃, kb k₄, n₁, n₂, n₃, n₄⟩
 
 /-- The call of HMAC's `finalize` with the states at `inner` and `outer`,
 the count `cnt`, the MAC to `out` and the working space at `scr`. -/
@@ -193,12 +193,12 @@ theorem finCall (P : Kit) {s : State} {inner outer out scr : Addr}
   refine WP.callAny (k := P.I.finalizeScratchContract PPC64LE.abi (P.kF + 1)) P.finV (rd := [⟨outer, P.H.S⟩])
     (wr := [⟨inner, P.H.S⟩, ⟨out, P.H.D⟩, ⟨scr, P.I.scratch * 8⟩])
     (finPre P h3 h4 h6 h7 d₁ d₂ d₃ d₄ d₅ d₆ hsp k₁ k₂ k₃ k₄ n₁ n₂ n₃ n₄) hc hw ?_
-    (by have := P.dF; omega)
+    (by have := P.dF; omega_arith)
   · intro s' h₁ h₂ h₃ h₄ hcs hpost
     sig_post [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract,
       Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost
     simp only [h3, h4, h6, hD] at hpost
-    exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := P.dF; omega) (by omega)) hcs hpost
+    exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := P.dF; omega_arith) (by omega_arith)) hcs hpost
 
 /-- The signature with a given `k`, as the code calls it: the curve's
 contract, its code and its name. -/
@@ -262,11 +262,11 @@ theorem coreCall (R : Core) {s : State} {out d dg k scr : Addr}
   refine WP.callAny (k := R.E.signContract PPC64LE.abi) R.V
     (rd := [⟨d, R.E.curve.len⟩, ⟨dg, R.E.curve.len⟩, ⟨k, R.E.curve.len⟩])
     (wr := [⟨out, 2 * R.E.curve.len⟩, ⟨scr, 8192⟩])
-    (corePre R h3 h4 h5 h6 h7 o₁ o₂ o₃ o₄ c₁ c₂ c₃ n₁ n₂ n₃ n₄ n₅) hc hw ?_ (by have := R.d; omega)
+    (corePre R h3 h4 h5 h6 h7 o₁ o₂ o₃ o₄ c₁ c₂ c₃ n₁ n₂ n₃ n₄ n₅) hc hw ?_ (by have := R.d; omega_arith)
   · intro s' h₁ h₂ h₃ h₄ hcs hpost
     sig_post [Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig, Spec.Ecdsa.scratchWords,
       PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost
     simp only [h3, h4, h5, h6] at hpost
-    exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := R.d; omega) (by omega)) hcs hpost
+    exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := R.d; omega_arith) (by omega_arith)) hcs hpost
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

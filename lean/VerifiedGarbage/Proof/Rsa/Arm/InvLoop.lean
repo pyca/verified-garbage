@@ -66,7 +66,7 @@ theorem inverseBody_ok {s0 t : State} {B : BitVec 32} {Z w N i : Nat} (hN15 : 15
   · exact inv.rest.trans ((r1.mono (by simp)).trans ((r2.mono (by simp)).trans (u3.rest (by simp))))
   · rw [u3.gpr, r6, inv.count]
     change BitVec.ofNat 32 (32 * w - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by have := h.wle; omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by have := h.wle; omega_arith)]
     congr 1
   · intro hNM hZ hodd h1M hst
     have prev := inv.value hNM hZ hodd h1M hst
@@ -82,12 +82,12 @@ theorem inverseBody_ok {s0 t : State} {B : BitVec 32} {Z w N i : Nat} (hN15 : 15
     have s2 := e2 (by rw [n1, m1, n0, m0]; exact hNM) (by rw [z1, z0]; exact hZ)
       (by rw [m1, m0]; exact I1.x₁_lt) (by rw [m1, m0]; exact I1.x₂_lt)
     rw [m1, m0, s1, prev] at s2
-    rw [m2, s2, show 2 * (i + 1) = 2 * i + 1 + 1 by omega]
+    rw [m2, s2, show 2 * (i + 1) = 2 * i + 1 + 1 by omega_arith]
     rfl
   · rw [hz, r6, inv.count]
     change (BitVec.ofNat 32 (32 * w - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by have := h.wle; omega), ofNat_beq_zero (by have := h.wle; omega)]
-    simp only [show 32 * w - i - 1 = 0 ↔ i + 1 = 32 * w by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by have := h.wle; omega_arith), ofNat_beq_zero (by have := h.wle; omega_arith)]
+    simp only [show 32 * w - i - 1 = 0 ↔ i + 1 = 32 * w by omega_arith]
 
 theorem inverse_ok {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256) :
     WP isa VG.Impl.Rsa.Arm.Keys.inverse s fun t => Ws t B Z w N ∧ Keep B w invArrs invSlots s.mem t.mem ∧
@@ -104,12 +104,12 @@ theorem inverse_ok {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) 
   have wp := h.wpos
   have wl := h.wle
   have start : InvLoopI s B Z w N 0 s1 := ⟨h1, by rw [u1.mem]; exact Keep.refl _ _ _ _ _, u1.rest (by simp),
-    by rw [u1.gpr, h.r9]; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; simp; omega,
+    by rw [u1.gpr, h.r9]; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; simp; omega_arith,
     fun _ _ _ _ _ => by rw [u1.mem]; rfl⟩
   refine WP.loop (M := isa) (fun k t => ∃ i, i + k = 32 * w ∧ 0 < k ∧ InvLoopI s B Z w N i t) ?_ (32 * w) s1
-    ⟨0, by omega, by omega, start⟩
+    ⟨0, by omega_arith, by omega_arith, start⟩
   · intro k t ⟨i, hik, hk, inv⟩
-    refine WP.mono (inverseBody_ok hN15 hN inv (by omega)) fun u ⟨iu, hz⟩ => ?_
+    refine WP.mono (inverseBody_ok hN15 hN inv (by omega_arith)) fun u ⟨iu, hz⟩ => ?_
     by_cases e : i + 1 = 32 * w
     · left
       refine ⟨by change some (!u.z) = some false; simp [hz, e], iu.ws, iu.keep, iu.rest, ?_⟩
@@ -122,12 +122,12 @@ theorem inverse_ok {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) 
         have := val32_lt s.mem (State.addr B) (arr w aM) w
         calc num s.mem B w 0 * num s.mem B w aM < 2 ^ (32 * w) * 2 ^ (32 * w) :=
               Nat.mul_lt_mul'' (by assumption) (by assumption)
-          _ = 2 ^ (2 * (32 * w)) := by rw [← Nat.pow_add]; congr 1; omega)
+          _ = 2 ^ (2 * (32 * w)) := by rw [← Nat.pow_add]; congr 1; omega_arith)
       rw [hm] at D
       dsimp only at D
       rw [← v] at D
       exact ⟨D.2.1, D.2.2.1, D.2.2.2⟩
     · right
-      exact ⟨by change some (!u.z) = some true; simp [hz, e], k - 1, by omega, i + 1, by omega, by omega, iu⟩
+      exact ⟨by change some (!u.z) = some true; simp [hz, e], k - 1, by omega_arith, i + 1, by omega_arith, by omega_arith, iu⟩
 
 end VG.Proof.Rsa.Arm.Keys

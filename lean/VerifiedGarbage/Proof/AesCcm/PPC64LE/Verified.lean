@@ -81,7 +81,7 @@ theorem seal_verified :
             | with_reducible assumption
             | sig_disjoint_symm
             | omega
-            | bv_omega
+            | bv_omega_arith
         post := by
           sig_implies_post [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre,
             Spec.Ccm.sealPost, sealPPC64LE, sealPre, oneLay, onePub, args, rounds, PPC64LE.abi, PPC64LE.argRegs,
@@ -116,7 +116,7 @@ theorem open_verified :
             | with_reducible assumption
             | sig_disjoint_symm
             | omega
-            | bv_omega
+            | bv_omega_arith
         post := by
           sig_implies_post [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
             Spec.Ccm.openPost, Spec.Ccm.openLeak, openPPC64LE, openPre, oneLay, onePub, openRes, openLeak, args,

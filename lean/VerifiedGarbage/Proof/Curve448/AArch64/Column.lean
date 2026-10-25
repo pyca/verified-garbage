@@ -27,10 +27,10 @@ theorem loadTerm_ok {s : State} {base : Addr} (hs : Scr s base) {a b i j : Nat}
       t.gpr .x6 = word s.mem base (a + 8 * i) ∧
       t.gpr .x9 = word s.mem base (b + 8 * j) ∧
       t.mem = s.mem ∧ Keeps [.x6, .x9] s t := by
-  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := ⟨by omega, by omega⟩
-  have be : (b + 8 * j) % 8 = 0 ∧ b + 8 * j < 32768 := ⟨by omega, by omega⟩
-  have al := hs.read (d := a + 8 * i) (n := 8) (by omega)
-  have bl := hs.read (d := b + 8 * j) (n := 8) (by omega)
+  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := ⟨by omega_arith, by omega_arith⟩
+  have be : (b + 8 * j) % 8 = 0 ∧ b + 8 * j < 32768 := ⟨by omega_arith, by omega_arith⟩
+  have al := hs.read (d := a + 8 * i) (n := 8) (by omega_arith)
+  have bl := hs.read (d := b + 8 * j) (n := 8) (by omega_arith)
   apply WP.of_runBlock
   simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     ae, be, and_self, State.load, hs.x3, al, bl, ite_true, Option.map_some,
@@ -56,10 +56,10 @@ theorem zero_ok (s : State) :
 theorem store_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk : k < 16) :
     WP isa (.block [st .x4 (ACC + 16 * k), st .x5 (ACC + 16 * k + 8)]) s fun t =>
       t.mem = putCoeff s.mem base ACC k (s.gpr .x4) (s.gpr .x5) ∧ Keeps [] s t := by
-  have ae : (ACC + 16 * k) % 8 = 0 ∧ ACC + 16 * k < 32768 := by simp only [ACC]; omega
-  have be : (ACC + 16 * k + 8) % 8 = 0 ∧ ACC + 16 * k + 8 < 32768 := by simp only [ACC]; omega
-  have aw := hs.write (d := ACC + 16 * k) (n := 8) (by simp only [ACC]; omega)
-  have bw := hs.write (d := ACC + 16 * k + 8) (n := 8) (by simp only [ACC]; omega)
+  have ae : (ACC + 16 * k) % 8 = 0 ∧ ACC + 16 * k < 32768 := by simp only [ACC]; omega_arith
+  have be : (ACC + 16 * k + 8) % 8 = 0 ∧ ACC + 16 * k + 8 < 32768 := by simp only [ACC]; omega_arith
+  have aw := hs.write (d := ACC + 16 * k) (n := 8) (by simp only [ACC]; omega_arith)
+  have bw := hs.write (d := ACC + 16 * k + 8) (n := 8) (by simp only [ACC]; omega_arith)
   apply WP.of_runBlock
   simp only [st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     ae, be, and_self, State.read, State.store, hs.x3, aw, bw, ite_true,
@@ -91,28 +91,28 @@ theorem columnBody_ok {s : State} {base : Addr} (hs : Scr s base) {a b k : Nat}
     by_cases h : n ≤ k ∧ k < n + 8
     · rw [ite_eq_left h, WP.block_append_iff]
       have ts := hs.of_keeps tk (by decide)
-      refine WP.mono (loadTerm_ok ts ha hb ha8 hb8 hn (by omega)) fun u ⟨u6, u9, um, uk⟩ => ?_
+      refine WP.mono (loadTerm_ok ts ha hb ha8 hb8 hn (by omega_arith)) fun u ⟨u6, u9, um, uk⟩ => ?_
       have uv : pair (u.gpr .x4) (u.gpr .x5) = colSum f g k n := by
         rw [uk.1 .x4 (by decide), uk.1 .x5 (by decide), tv]
       have av : (u.gpr .x6).toNat = f n := by rw [u6, tm]
       have bv : (u.gpr .x9).toNat = g (k - n) := by rw [u9, tm]
       have prod : f n * g (k - n) ≤ (weakBound - 1) ^ 2 := by
         rw [Nat.pow_two]
-        exact Nat.mul_le_mul (by have fh : f n < weakBound := fa n hn; omega) (by have gh : g (k - n) < weakBound := fb (k - n) (by omega); omega)
-      have cb := VG.Proof.Curve448.AArch64.rows_bound fa fb (n := n) (by omega) k
+        exact Nat.mul_le_mul (by have fh : f n < weakBound := fa n hn; omega_arith) (by have gh : g (k - n) < weakBound := fb (k - n) (by omega_arith); omega_arith)
+      have cb := VG.Proof.Curve448.AArch64.rows_bound fa fb (n := n) (by omega_arith) k
       rw [← colSum_eq] at cb
       change colSum f g k n ≤ n * (weakBound - 1) ^ 2 at cb
       have sum : (u.gpr .x6).toNat * (u.gpr .x9).toNat + pair (u.gpr .x4) (u.gpr .x5) < 2 ^ 128 := by
         rw [av, bv, uv]
         have bd : (n + 1) * (weakBound - 1) ^ 2 ≤ 8 * (weakBound - 1) ^ 2 :=
-          Nat.mul_le_mul_right _ (by omega)
+          Nat.mul_le_mul_right _ (by omega_arith)
         have cap : 8 * (weakBound - 1) ^ 2 < 2 ^ 128 := by decide +kernel
         rw [Nat.add_mul, Nat.one_mul] at bd
-        omega
+        omega_arith
       refine WP.mono (term_ok u sum) fun v ⟨vv, vm, vk⟩ => ?_
       refine ⟨?_, vm.trans (um.trans tm), ?_⟩
       · rw [vv, av, bv, uv, colSum, ite_eq_left h]
-        omega
+        omega_arith
       · exact tk.trans ((uk.mono (by decide)).trans (vk.mono (by decide)))
     · rw [ite_eq_right h]
       apply WP.block_nil
@@ -138,10 +138,10 @@ theorem column_ok {s : State} {base : Addr} (hs : Scr s base) {a b k : Nat}
   have vs := (hs.of_keeps uk (by decide)).of_keeps vk (by decide)
   refine WP.mono (store_ok vs hk) fun t ⟨tm, tk⟩ => ?_
   refine ⟨?_, ?_, ?_⟩
-  · rw [tm, coeff_put _ base _ _ (by simp only [ACC]; omega)
-      (by simp only [ACC]; omega), ite_eq_left rfl, vv, um]
+  · rw [tm, coeff_put _ base _ _ (by simp only [ACC]; omega_arith)
+      (by simp only [ACC]; omega_arith), ite_eq_left rfl, vv, um]
   · rw [tm, vm, um]
-    exact putCoeff_outside _ _ _ _ (by simp only [ACC]; omega)
+    exact putCoeff_outside _ _ _ _ (by simp only [ACC]; omega_arith)
   · exact (uk.mono (by decide)).trans (vk.trans (tk.mono (by decide)))
 
 end VG.Proof.Curve448.AArch64

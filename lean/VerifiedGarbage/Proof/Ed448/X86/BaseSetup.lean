@@ -65,8 +65,8 @@ theorem zeroSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (WP.loop (M := isa) (Q := inv 704) (fun m t => ∃ n, m = 704 - n ∧ n < 704 ∧ inv n t) ?_ 704 u
     ⟨0, rfl, by decide, i₀⟩) fun t ⟨_, _, _, _, z, o, k⟩ => ⟨z, o, k⟩
   rintro m t ⟨n, rfl, hn, ts, tp, tb, ta, tz, tm, tk⟩
-  refine wp_store (a := off base (64 + 4 * n)) (by rw [rowEa ts tp (by omega)]; congr 1; omega)
-    (ts.write (by omega)) fun v hv => ?_
+  refine wp_store (a := off base (64 + 4 * n)) (by rw [rowEa ts tp (by omega_arith)]; congr 1; omega_arith)
+    (ts.write (by omega_arith)) fun v hv => ?_
   refine wp_alu (Or.inl rfl) rfl fun w hw _ => wp_alu (Or.inr (Or.inl rfl)) rfl fun x hx hz => WP.block_nil ?_
   have kx : Keeps [.eax, .ebx, .ebp] t x :=
     (hv.rest _).trans ((hw.rest (by decide)).trans (hx.rest (by decide)))
@@ -75,8 +75,8 @@ theorem zeroSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
   have ax : x.gpr .eax = BitVec.ofNat 32 (704 - (n + 1)) := by
     rw [hx.gpr, hw.other _ (by decide), hv.gpr, ta]
     simp only [aluVal]
-    rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega)
-      (by omega)]
+    rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith)
+      (by omega_arith)]
     congr 1
   have nx : inv (n + 1) x := by
     refine ⟨ts.of_keeps kx (by decide), ?_, ?_, ax, fun j hj => ?_, ?_, tk.trans kx⟩
@@ -85,28 +85,28 @@ theorem zeroSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
       rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       congr 2
     · exact (hx.other _ (by decide)).trans ((hw.other _ (by decide)).trans ((congrFun hv.gpr _).trans tb))
-    · rw [mx, word_write t.mem base (o := 64) (by omega) (by omega)]
+    · rw [mx, word_write t.mem base (o := 64) (by omega_arith) (by omega_arith)]
       by_cases e : j = n
       · rw [ite_eq_left e]
-      · rw [ite_eq_right e]; exact tz j (by omega)
-    · rw [mx]; exact tm.trans ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega))
+      · rw [ite_eq_right e]; exact tz j (by omega_arith)
+    · rw [mx]; exact tm.trans ((writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
   simp only [eval, hz, Option.map_some]
   by_cases done : n + 1 = 704
   · refine .inl ⟨?_, done ▸ nx⟩
     rw [hw.other _ (by decide), hv.gpr, ta]
     simp only [aluVal]
-    rw [show n = 703 by omega]; decide
-  · refine .inr ⟨?_, 704 - (n + 1), by omega, n + 1, rfl, by omega, nx⟩
+    rw [show n = 703 by omega_arith]; decide
+  · refine .inr ⟨?_, 704 - (n + 1), by omega_arith, n + 1, rfl, by omega_arith, nx⟩
     rw [hw.other _ (by decide), hv.gpr, ta]
     simp only [aluVal]
-    rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega)
-      (by omega)]
-    have hlt : 704 - n - 1 < 2 ^ 32 := by omega
+    rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith)
+      (by omega_arith)]
+    have hlt : 704 - n - 1 < 2 ^ 32 := by omega_arith
     have h0 : BitVec.ofNat 32 (704 - n - 1) ≠ 0 := fun h => by
       have := congrArg BitVec.toNat h
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt] at this
       have h2 : 704 - n - 1 = 0 := this.trans rfl
-      omega
+      omega_arith
     simpa using h0
 
 theorem initStep_ok {s : State} {base : Addr} (hs : Scr s base)
@@ -115,7 +115,7 @@ theorem initStep_ok {s : State} {base : Addr} (hs : Scr s base)
     WP isa (.block (initStep i k)) s fun t =>
       limbs t.mem base (slot i) k = initLimb i k ∧ Outside base (slot i + 4 * k) 4 s.mem t.mem ∧
         Keeps [.eax] s t := by
-  have hsl : slot i + 4 * k + 4 ≤ 4096 := by simp only [slot]; omega
+  have hsl : slot i + 4 * k + 4 ≤ 4096 := by simp only [slot]; omega_arith
   unfold initStep
   split
   · rename_i h0
@@ -123,13 +123,13 @@ theorem initStep_ok {s : State} {base : Addr} (hs : Scr s base)
   · refine wp_mov rfl fun u hu => ?_
     have hsu := hs.of_upd hu (by decide)
     refine wp_store (a := off base (slot i + 4 * k))
-      (by rw [rowEa hsu (by rw [hu.other .ebp (by decide), hu.other .edi (by decide)]; exact hp) (by omega)]
-          congr 1; simp only [slot]; omega)
-      (hsu.write (by omega)) fun t ht => WP.block_nil ⟨?_, ?_, (hu.rest (by decide)).trans (ht.rest _)⟩
+      (by rw [rowEa hsu (by rw [hu.other .ebp (by decide), hu.other .edi (by decide)]; exact hp) (by omega_arith)]
+          congr 1; simp only [slot]; omega_arith)
+      (hsu.write (by omega_arith)) fun t ht => WP.block_nil ⟨?_, ?_, (hu.rest (by decide)).trans (ht.rest _)⟩
     · change (Proof.X448.X86.word t.mem base (slot i + 4 * k)).toNat = _
       rw [ht.mem, hu.gpr, Proof.X448.X86.word, Mem.readW_writeW_self32, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by have := initLimb_lt i k; omega)]
-    · rw [ht.mem, hu.mem]; exact writeW_outside _ _ _ (by omega)
+        Nat.mod_eq_of_lt (by have := initLimb_lt i k; omega_arith)]
+    · rw [ht.mem, hu.mem]; exact writeW_outside _ _ _ (by omega_arith)
 
 theorem initSlot_ok {s : State} {base : Addr} (hs : Scr s base)
     (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * 16)) {i : Nat}
@@ -137,7 +137,7 @@ theorem initSlot_ok {s : State} {base : Addr} (hs : Scr s base)
     WP isa (.block (initSlot i)) s fun t =>
       (∀ k < 28, limbs t.mem base (slot i) k = initLimb i k) ∧
         Outside base (slot i) 112 s.mem t.mem ∧ Keeps [.eax] s t := by
-  have hsl : slot i + 112 ≤ 4096 := by simp only [slot]; omega
+  have hsl : slot i + 112 ≤ 4096 := by simp only [slot]; omega_arith
   let inv := fun n (t : State) => (∀ k < n, limbs t.mem base (slot i) k = initLimb i k) ∧
     (∀ k, n ≤ k → k < 28 → limbs t.mem base (slot i) k = 0) ∧
     Outside base (slot i) 112 s.mem t.mem ∧ Keeps [.eax] s t
@@ -146,16 +146,16 @@ theorem initSlot_ok {s : State} {base : Addr} (hs : Scr s base)
     fun t ⟨tf, _, tm, tk⟩ => ⟨tf, tm, tk⟩
   refine WP.mono (initStep_ok (hs.of_keeps tk (by decide))
     (by rw [tk.1 _ (by decide), tk.1 _ (by decide)]; exact hp) hi hn (t0 n (Nat.le_refl _) hn))
-    fun u ⟨uf, um, uk⟩ => ⟨fun k hk => ?_, fun k hk hk' => ?_, tm.trans (um.mono (by omega) (by omega)),
+    fun u ⟨uf, um, uk⟩ => ⟨fun k hk => ?_, fun k hk hk' => ?_, tm.trans (um.mono (by omega_arith) (by omega_arith)),
       tk.trans uk⟩
   · by_cases h : k = n
     · rw [h]; exact uf
     · change (Proof.X448.X86.word u.mem base (slot i + 4 * k)).toNat = _
-      rw [um.word (by omega) (by simp only [slot]; omega)]
-      exact tf k (by omega)
+      rw [um.word (by omega_arith) (by simp only [slot]; omega_arith)]
+      exact tf k (by omega_arith)
   · change (Proof.X448.X86.word u.mem base (slot i + 4 * k)).toNat = _
-    rw [um.word (by omega) (by simp only [slot]; omega)]
-    exact t0 k (by omega) hk'
+    rw [um.word (by omega_arith) (by simp only [slot]; omega_arith)]
+    exact t0 k (by omega_arith) hk'
 
 theorem initSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa initSlots s fun t =>
@@ -179,7 +179,7 @@ theorem initSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
     Outside base 64 2816 s.mem t.mem ∧ Keeps [.eax] u t
   have zu : ∀ i, 0 ≤ i → i < 22 → ∀ k < 28, limbs u.mem base (slot i) k = 0 := fun i _ hi k hk => by
     change (Proof.X448.X86.word u.mem base (slot i + 4 * k)).toNat = 0
-    rw [mu, show slot i + 4 * k = 64 + 4 * (32 * i + k) by simp only [slot]; omega, z₀ _ (by omega)]
+    rw [mu, show slot i + 4 * k = 64 + 4 * (32 * i + k) by simp only [slot]; omega_arith, z₀ _ (by omega_arith)]
     rfl
   have i0 : inv 0 u := ⟨fun _ h => absurd h (Nat.not_lt_zero _), zu, by rw [mu]; exact o₀, Keeps.refl _ _⟩
   refine WP.mono (wp_range_flatMap (M := isa) (N := 22) inv (fun n t hn ⟨tf, t0, tm, tk⟩ => ?_) 22
@@ -188,13 +188,13 @@ theorem initSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (initSlot_ok (hsu.of_keeps tk (by decide))
     (by rw [tk.1 _ (by decide), tk.1 _ (by decide)]; exact hpu) hn (t0 n (Nat.le_refl _) hn))
     fun v ⟨vf, vm, vk⟩ => ⟨fun i hi k hk => ?_, fun i hi hi' k hk => ?_,
-      tm.trans (vm.mono (by simp only [slot]; omega) (by simp only [slot]; omega)), tk.trans vk⟩
+      tm.trans (vm.mono (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith)), tk.trans vk⟩
   · by_cases h : i = n
     · subst h; exact vf k hk
-    · rw [vm.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) hk]
-      exact tf i (by omega) k hk
-  · rw [vm.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) hk]
-    exact t0 i (by omega) hi' k hk
+    · rw [vm.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) hk]
+      exact tf i (by omega_arith) k hk
+  · rw [vm.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) hk]
+    exact t0 i (by omega_arith) hi' k hk
 
 /-- The slots' values. -/
 theorem initSlots_E {m : Mem} {base : Addr}

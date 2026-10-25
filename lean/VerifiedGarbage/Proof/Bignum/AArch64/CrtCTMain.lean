@@ -118,7 +118,7 @@ theorem two_stage {R : StageRel} {α : Type} {Φ : α → State → Prop} (f : C
   obtain ⟨m₂, n₂, φ₂⟩ := m p _ _ _ _ _ _ _ _ h₂ hv₂ r₂
   obtain ⟨hodd, -, -⟩ := valid_facts hv h₁.k1
   have := h₁.k1
-  obtain rfl := nv_minv n₁ n₂ hodd (show 1 ≤ p.w by simp only [CrtPub.w]; omega)
+  obtain rfl := nv_minv n₁ n₂ hodd (show 1 ≤ p.w by simp only [CrtPub.w]; omega_arith)
   exact ⟨_, φ₁, φ₂, hsp⟩
 
 /-- The primes' setup leaks the same in runs that agree on the public data. -/
@@ -130,13 +130,13 @@ theorem setupS_ct (hS : SetupCT) : RelCT isa (Two (Stage R1)) (seqs primesSetup)
   have hk2 := h.k2
   have hZq := h.z
   have hh : ∀ i < 32, hFixed i = true → word t.mem p.B (8 * i) = word σ.mem p.B (8 * i) := hr.hfix
-  refine ⟨minv, hr.nv, pb, qb, qib, hr.good, by simp only [CrtPub.w]; omega, by simp only [CrtPub.w]; omega, hZq,
+  refine ⟨minv, hr.nv, pb, qb, qib, hr.good, by simp only [CrtPub.w]; omega_arith, by simp only [CrtPub.w]; omega_arith, hZq,
     by rw [hh _ (by decide) (by decide)]; exact h.hPl, by rw [hh _ (by decide) (by decide)]; exact h.hQl,
     by rw [hh _ (by decide) (by decide)]; exact h.hP, by rw [hh _ (by decide) (by decide)]; exact h.hQ,
     by rw [hh _ (by decide) (by decide)]; exact h.hQi, h.p.congrK hr.iscr hr.keep, h.q.congrK hr.iscr hr.keep,
     h.qi.congrK hr.iscr hr.keep, h.pbl, h.qbl, h.qil, h.pl1, ?_, h.ql1, ?_⟩
-  · have := h.pl2; simp only [CrtPub.w]; omega
-  · have := h.ql2; simp only [CrtPub.w]; omega
+  · have := h.pl2; simp only [CrtPub.w]; omega_arith
+  · have := h.ql2; simp only [CrtPub.w]; omega_arith
 
 /-- The checks leak the same in runs that agree on the public data. -/
 theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (Two (Stage R3)) := by
@@ -149,16 +149,16 @@ theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (T
   have hk1 := h.k1
   have hk2 := h.k2
   have hZq := h.z
-  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
-  have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
-  have hwp2 : 2 ≤ wsWords p.pl := by unfold wsWords; omega
-  have hwq2 : 2 ≤ wsWords p.ql := by unfold wsWords; omega
+  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega_arith
+  have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega_arith
+  have hwp2 : 2 ≤ wsWords p.pl := by unfold wsWords; omega_arith
+  have hwq2 : 2 ≤ wsWords p.ql := by unfold wsWords; omega_arith
   refine ⟨minv, hr.n.nv, ?_⟩
   unfold ChecksPre
   dsimp only [CrtPub.w]
-  refine ⟨mp, mq, _, _, _, _, hr.n.good, by omega, by omega,
-    show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from le_refl _, by unfold offQ offP; omega, hZq, hwp2,
-    wsWords_le (by have := h.pl2; omega) (by omega), hwq2, wsWords_le (by have := h.ql2; omega) (by omega),
+  refine ⟨mp, mq, _, _, _, _, hr.n.good, by omega_arith, by omega_arith,
+    show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from le_refl _, by unfold offQ offP; omega_arith, hZq, hwp2,
+    wsWords_le (by have := h.pl2; omega_arith) (by omega_arith), hwq2, wsWords_le (by have := h.ql2; omega_arith) (by omega_arith),
     hr.wsP, hr.wsQ, hr.pws, hr.qws, hr.n.nv.n, hr.n.msk, hr.pv, hr.qv, hr.qiv, hodd⟩
 
 /-- `q`'s phase leaks the same in runs that agree on the public data. -/
@@ -175,17 +175,17 @@ theorem qS_ct (M : Mont) (hQ : QPhaseCT M) : RelCT isa (Two (Stage R3)) (seqs (q
   have hql2 := h.ql2
   have hql1 := h.ql1
   have hZq := h.z
-  have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
-  have hwq2 : 2 ≤ wsWords p.ql := by unfold wsWords; omega
+  have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega_arith
+  have hwq2 : 2 ≤ wsWords p.ql := by unfold wsWords; omega_arith
   have hh : ∀ i < 32, hFixed i = true → word t.mem p.B (8 * i) = word σ.mem p.B (8 * i) := hr.hfix
   refine ⟨minv, hr.nv, ?_⟩
   unfold QPre
   dsimp only [CrtPub.w]
-  exact ⟨mq, _, _, dqb, hr.good, by omega, by omega,
-    by unfold offQ; omega, hZq, hwq2, wsWords_le (by omega) (by omega), hr.wsQ, hr.qws, hr.nv,
+  exact ⟨mq, _, _, dqb, hr.good, by omega_arith, by omega_arith,
+    by unfold offQ; omega_arith, hZq, hwq2, wsWords_le (by omega_arith) (by omega_arith), hr.wsQ, hr.qws, hr.nv,
     hodd, hN1, hr.xm, hr.qxv, hQ'.1, hQ'.2, by rw [hh _ (by decide) (by decide)]; exact h.hDq,
-    by rw [hh _ (by decide) (by decide), h.dql]; exact h.hQl, h.dql, by rw [h.dql]; omega,
-    by rw [h.dql]; omega, h.dq.congrK hr.iscr hr.keep⟩
+    by rw [hh _ (by decide) (by decide), h.dql]; exact h.hQl, h.dql, by rw [h.dql]; omega_arith,
+    by rw [h.dql]; omega_arith, h.dq.congrK hr.iscr hr.keep⟩
 
 /-- `p`'s phase leaks the same in runs that agree on the public data. -/
 theorem pS_ct (M : Mont) (hP : PPhaseCT M) : RelCT isa (Two (Stage R4)) (seqs (pPhase M.mm)) (Two (Stage R5)) := by
@@ -203,21 +203,21 @@ theorem pS_ct (M : Mont) (hP : PPhaseCT M) : RelCT isa (Two (Stage R4)) (seqs (p
   have hpl1 := h.pl1
   have hql1 := h.ql1
   have hZq := h.z
-  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
-  have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
-  have hwp2 : 2 ≤ wsWords p.pl := by unfold wsWords; omega
+  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega_arith
+  have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega_arith
+  have hwp2 : 2 ≤ wsWords p.pl := by unfold wsWords; omega_arith
   have hh : ∀ i < 32, hFixed i = true → word t.mem p.B (8 * i) = word σ.mem p.B (8 * i) := hr.hfix
   refine ⟨minv, hr.nv, ?_⟩
   unfold PPre
   dsimp only [CrtPub.w]
-  refine ⟨mp, mq, _, _, dpb, qib, p.mask xb pb qb qib, hr.good, by omega,
-    by omega, show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from le_refl _, by unfold offQ offP; omega, hZq, hwp2,
-    wsWords_le (by omega) (by omega), by unfold wsWords; omega,
-    wsWords_le (by omega) (by omega), hr.wsP, hr.pws, hr.wsQ, hr.qws, hr.nv, hodd, hN1, hr.xm,
+  refine ⟨mp, mq, _, _, dpb, qib, p.mask xb pb qb qib, hr.good, by omega_arith,
+    by omega_arith, show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from le_refl _, by unfold offQ offP; omega_arith, hZq, hwp2,
+    wsWords_le (by omega_arith) (by omega_arith), by unfold wsWords; omega_arith,
+    wsWords_le (by omega_arith) (by omega_arith), hr.wsP, hr.pws, hr.wsQ, hr.qws, hr.nv, hodd, hN1, hr.xm,
     hr.pxv, hP'.1, hP'.2, hr.pmask, fun hm => ?_, by rw [hh _ (by decide) (by decide)]; exact h.hDp,
-    by rw [hh _ (by decide) (by decide), h.dpl]; exact h.hPl, h.dpl, by rw [h.dpl]; omega, by rw [h.dpl]; omega,
+    by rw [hh _ (by decide) (by decide), h.dpl]; exact h.hPl, h.dpl, by rw [h.dpl]; omega_arith, by rw [h.dpl]; omega_arith,
     h.dp.congrK hr.iscr hr.keep, by rw [hh _ (by decide) (by decide)]; exact h.hQi, by rw [h.qil, h.dpl],
-    h.qi.congrK hr.iscr hr.keep, by rw [h.qil]; unfold wsWords; omega, fun hm => ?_⟩
+    h.qi.congrK hr.iscr hr.keep, by rw [h.qil]; unfold wsWords; omega_arith, fun hm => ?_⟩
   · obtain ⟨_, hpq, _⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact ⟨_, hpq.symm⟩
   · obtain ⟨_, _, hqi⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact hqi
 

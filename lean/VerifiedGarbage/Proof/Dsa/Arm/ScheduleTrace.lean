@@ -213,22 +213,22 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
   simp only [Core.verify, Core.verifyScalars, Core.verifyPowers, Core.sequence, List.foldr]
   -- `w = s^(q-2) mod q`
   refine SameTrace.assoc_left (SameTrace.seq (power_trace (output := Impl.Dsa.Layout.inverse)
-      (X.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
+      (X.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
       (X.C₁.inp ms).toReady (X.C₂.inp ms).toReady
-      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X.E _ mq) (X.E _ ms) (ws X.C₁.S.ws X.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega) (by omega) (by omega)) q4 (Nat.le_refl _) qw)
-    (power_ok (output := Impl.Dsa.Layout.inverse) X.C₁.S.ws (by omega) X.C₁.S.wq q4 (Nat.le_refl _) qw
+      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) q4 (Nat.le_refl _) qw)
+    (power_ok (output := Impl.Dsa.Layout.inverse) X.C₁.S.ws (by omega_arith) X.C₁.S.wq q4 (Nat.le_refl _) qw
       (X.C₁.inp mq).toReady (X.C₁.inp ms).toReady
-      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega) (by omega) (by omega))
-      (X.C₁.inp mq).value (by omega) D₁.hQo (by omega) (by omega) (by omega))
-    (power_ok (output := Impl.Dsa.Layout.inverse) X.C₂.S.ws (by omega) X.C₁.S.wq q4 (Nat.le_refl _) qw
+      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X.C₁.inp mq).value (by omega_arith) D₁.hQo (by omega_arith) (by omega_arith) (by omega_arith))
+    (power_ok (output := Impl.Dsa.Layout.inverse) X.C₂.S.ws (by omega_arith) X.C₁.S.wq q4 (Nat.le_refl _) qw
       (X.C₂.inp mq).toReady (X.C₂.inp ms).toReady
-      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega) (by omega) (by omega))
-      (X.C₂.inp mq).value (by omega) D₂.hQo (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X.C₂.inp mq).value (by omega_arith) D₂.hQo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have A₁ := St₁.run (.inr ⟨by omega, by omega⟩)
-  have A₂ := St₂.run (.inr ⟨by omega, by omega⟩)
+  have A₁ := St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)
+  have A₂ := St₂.run (.inr ⟨by omega_arith, by omega_arith⟩)
   have X₁ := X.run A₁ A₂
   -- `z = digest mod q`
   have I₁ := X₁.C₁.inp md
@@ -236,114 +236,114 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
   rw [← (countValue_run A₁).trans hc₁] at I₁
   rw [← (countValue_run A₂).trans hc₂] at I₂
   refine SameTrace.assoc_left (SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.z) (count := Core.digestPrefix)
-      (X₁.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₁.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
+      (X₁.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₁.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
       (by decide : Impl.Dsa.Layout.Field.digest ≠ .mask) (by simp only [CountOk, Core.digestPrefix]; decide)
       (X₁.E _ mq) (X₁.E _ md) (((countValue_run A₁).trans hc₁).trans ((countValue_run A₂).trans hc₂).symm)
       I₁.toReady I₂.toReady D₁.hQ D₂.hQ)
-    (reduce_ok (output := Impl.Dsa.Layout.z) X₁.C₁.S.ws (by omega) X.C₁.S.wq (X₁.C₁.inp mq).toReady
+    (reduce_ok (output := Impl.Dsa.Layout.z) X₁.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₁.C₁.inp mq).toReady
       (by simp only [CountOk, Core.digestPrefix]; decide) I₁.toReady (X₁.C₁.inp mq).value D₁.hQ D₁.hQo
-      (by omega) (by omega) (by omega))
-    (reduce_ok (output := Impl.Dsa.Layout.z) X₁.C₂.S.ws (by omega) X.C₁.S.wq (X₁.C₂.inp mq).toReady
+      (by omega_arith) (by omega_arith) (by omega_arith))
+    (reduce_ok (output := Impl.Dsa.Layout.z) X₁.C₂.S.ws (by omega_arith) X.C₁.S.wq (X₁.C₂.inp mq).toReady
       (by simp only [CountOk, Core.digestPrefix]; decide) I₂.toReady (X₁.C₂.inp mq).value D₂.hQ D₂.hQo
-      (by omega) (by omega) (by omega))
+      (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have X₂ := X₁.run (St₁.run (.inr ⟨by omega, by omega⟩)) (St₂.run (.inr ⟨by omega, by omega⟩))
+  have X₂ := X₁.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- `u₁ = z w mod q`
   refine SameTrace.assoc_left (SameTrace.seq (productMod_trace (output := Impl.Dsa.Layout.u)
-      (X₂.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₂.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
-      (localReady (o := Impl.Dsa.Layout.z) X₂.C₁.S.ws (by omega) (by omega) (by omega))
-      (localReady (o := Impl.Dsa.Layout.z) X₂.C₂.S.ws (by omega) (by omega) (by omega))
-      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₁.S.ws (by omega) (by omega) (by omega))
+      (X₂.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₂.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
+      (localReady (o := Impl.Dsa.Layout.z) X₂.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (localReady (o := Impl.Dsa.Layout.z) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₂.E _ mq) (ws X₂.C₁.S.ws X₂.C₂.S.ws _) (ws X₂.C₁.S.ws X₂.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₂.S.ws (by omega) (by omega) (by omega)))
-    (productMod_ok (output := Impl.Dsa.Layout.u) X₂.C₁.S.ws (by omega) X.C₁.S.wq (X₂.C₁.inp mq).toReady
-      (localReady (o := Impl.Dsa.Layout.z) X₂.C₁.S.ws (by omega) (by omega) (by omega))
-      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₂.C₁.inp mq).value (by omega) D₁.hQo (by omega) (by omega) (by omega))
-    (productMod_ok (output := Impl.Dsa.Layout.u) X₂.C₂.S.ws (by omega) X.C₁.S.wq (X₂.C₂.inp mq).toReady
-      (localReady (o := Impl.Dsa.Layout.z) X₂.C₂.S.ws (by omega) (by omega) (by omega))
-      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₂.S.ws (by omega) (by omega) (by omega))
-      (X₂.C₂.inp mq).value (by omega) D₂.hQo (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)))
+    (productMod_ok (output := Impl.Dsa.Layout.u) X₂.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₂.C₁.inp mq).toReady
+      (localReady (o := Impl.Dsa.Layout.z) X₂.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₂.C₁.inp mq).value (by omega_arith) D₁.hQo (by omega_arith) (by omega_arith) (by omega_arith))
+    (productMod_ok (output := Impl.Dsa.Layout.u) X₂.C₂.S.ws (by omega_arith) X.C₁.S.wq (X₂.C₂.inp mq).toReady
+      (localReady (o := Impl.Dsa.Layout.z) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₂.C₂.inp mq).value (by omega_arith) D₂.hQo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have X₃ := X₂.run (St₁.run (.inr ⟨by omega, by omega⟩)) (St₂.run (.inr ⟨by omega, by omega⟩))
+  have X₃ := X₂.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- `u₂ = r w mod q`
   refine SameTrace.assoc_left (SameTrace.seq (productMod_trace (output := Impl.Dsa.Layout.v)
-      (X₃.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₃.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
+      (X₃.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₃.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
       (X₃.C₁.inp mr).toReady (X₃.C₂.inp mr).toReady
-      (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₁.S.ws (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₃.E _ mq) (X₃.E _ mr) (ws X₃.C₁.S.ws X₃.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₂.S.ws (by omega) (by omega) (by omega)))
-    (productMod_ok (output := Impl.Dsa.Layout.v) X₃.C₁.S.ws (by omega) X.C₁.S.wq (X₃.C₁.inp mq).toReady
-      (X₃.C₁.inp mr).toReady (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₃.C₁.inp mq).value (by omega) D₁.hQo (by omega) (by omega) (by omega))
-    (productMod_ok (output := Impl.Dsa.Layout.v) X₃.C₂.S.ws (by omega) X.C₁.S.wq (X₃.C₂.inp mq).toReady
-      (X₃.C₂.inp mr).toReady (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₂.S.ws (by omega) (by omega) (by omega))
-      (X₃.C₂.inp mq).value (by omega) D₂.hQo (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)))
+    (productMod_ok (output := Impl.Dsa.Layout.v) X₃.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₃.C₁.inp mq).toReady
+      (X₃.C₁.inp mr).toReady (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₃.C₁.inp mq).value (by omega_arith) D₁.hQo (by omega_arith) (by omega_arith) (by omega_arith))
+    (productMod_ok (output := Impl.Dsa.Layout.v) X₃.C₂.S.ws (by omega_arith) X.C₁.S.wq (X₃.C₂.inp mq).toReady
+      (X₃.C₂.inp mr).toReady (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₃.C₂.inp mq).value (by omega_arith) D₂.hQo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have X₄ := X₃.run (St₁.run (.inr ⟨by omega, by omega⟩)) (St₂.run (.inr ⟨by omega, by omega⟩))
+  have X₄ := X₃.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   refine SameTrace.nil_seq ?_
   -- `g^u₁ mod p`
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t)
       (X₄.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X₄.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo)
       (X₄.C₁.inp mg).toReady (X₄.C₂.inp mg).toReady
-      (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₄.E _ mp) (X₄.E _ mg) (ws X₄.C₁.S.ws X₄.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega) (by omega) (by omega)) q4 qp qw)
-    (power_ok (output := Impl.Dsa.Layout.t) X₄.C₁.S.ws (by omega) X.C₁.S.wp q4 qp qw (X₄.C₁.inp mp).toReady
-      (X₄.C₁.inp mg).toReady (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₄.C₁.inp mp).value D₁.hP D₁.hPo (by omega) (by omega) (by omega))
-    (power_ok (output := Impl.Dsa.Layout.t) X₄.C₂.S.ws (by omega) X.C₁.S.wp q4 qp qw (X₄.C₂.inp mp).toReady
-      (X₄.C₂.inp mg).toReady (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega) (by omega) (by omega))
-      (X₄.C₂.inp mp).value D₂.hP D₂.hPo (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) q4 qp qw)
+    (power_ok (output := Impl.Dsa.Layout.t) X₄.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₄.C₁.inp mp).toReady
+      (X₄.C₁.inp mg).toReady (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₄.C₁.inp mp).value D₁.hP D₁.hPo (by omega_arith) (by omega_arith) (by omega_arith))
+    (power_ok (output := Impl.Dsa.Layout.t) X₄.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₄.C₂.inp mp).toReady
+      (X₄.C₂.inp mg).toReady (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₄.C₂.inp mp).value D₂.hP D₂.hPo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  have X₅ := X₄.run (St₁.run (.inr ⟨by omega, by omega⟩)) (St₂.run (.inr ⟨by omega, by omega⟩))
+  have X₅ := X₄.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- `y^u₂ mod p`
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t2)
       (X₅.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X₅.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo)
       (X₅.C₁.inp my).toReady (X₅.C₂.inp my).toReady
-      (localReady (o := Impl.Dsa.Layout.v) X₅.C₁.S.ws (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.v) X₅.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₅.E _ mp) (X₅.E _ my) (ws X₅.C₁.S.ws X₅.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.v) X₅.C₂.S.ws (by omega) (by omega) (by omega)) q4 qp qw)
-    (power_ok (output := Impl.Dsa.Layout.t2) X₅.C₁.S.ws (by omega) X.C₁.S.wp q4 qp qw (X₅.C₁.inp mp).toReady
-      (X₅.C₁.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₅.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₅.C₁.inp mp).value D₁.hP D₁.hPo (by omega) (by omega) (by omega))
-    (power_ok (output := Impl.Dsa.Layout.t2) X₅.C₂.S.ws (by omega) X.C₁.S.wp q4 qp qw (X₅.C₂.inp mp).toReady
-      (X₅.C₂.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₅.C₂.S.ws (by omega) (by omega) (by omega))
-      (X₅.C₂.inp mp).value D₂.hP D₂.hPo (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.v) X₅.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)) q4 qp qw)
+    (power_ok (output := Impl.Dsa.Layout.t2) X₅.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₅.C₁.inp mp).toReady
+      (X₅.C₁.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₅.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₅.C₁.inp mp).value D₁.hP D₁.hPo (by omega_arith) (by omega_arith) (by omega_arith))
+    (power_ok (output := Impl.Dsa.Layout.t2) X₅.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X₅.C₂.inp mp).toReady
+      (X₅.C₂.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₅.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₅.C₂.inp mp).value D₂.hP D₂.hPo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  have X₆ := X₅.run (St₁.run (.inr ⟨by omega, by omega⟩)) (St₂.run (.inr ⟨by omega, by omega⟩))
+  have X₆ := X₅.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- their product mod p
   refine SameTrace.seq (productMod_trace (output := Impl.Dsa.Layout.t)
       (X₆.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X₆.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo)
-      (localReady (o := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega) (by omega) (by omega))
-      (localReady (o := Impl.Dsa.Layout.t) X₆.C₂.S.ws (by omega) (by omega) (by omega))
-      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₁.S.ws (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (localReady (o := Impl.Dsa.Layout.t) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₆.E _ mp) (ws X₆.C₁.S.ws X₆.C₂.S.ws _) (ws X₆.C₁.S.ws X₆.C₂.S.ws _)
-      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₂.S.ws (by omega) (by omega) (by omega)))
-    (productMod_ok (output := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega) X.C₁.S.wp (X₆.C₁.inp mp).toReady
-      (localReady (o := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega) (by omega) (by omega))
-      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₆.C₁.inp mp).value D₁.hP D₁.hPo (by omega) (by omega) (by omega))
-    (productMod_ok (output := Impl.Dsa.Layout.t) X₆.C₂.S.ws (by omega) X.C₁.S.wp (X₆.C₂.inp mp).toReady
-      (localReady (o := Impl.Dsa.Layout.t) X₆.C₂.S.ws (by omega) (by omega) (by omega))
-      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₂.S.ws (by omega) (by omega) (by omega))
-      (X₆.C₂.inp mp).value D₂.hP D₂.hPo (by omega) (by omega) (by omega))
+      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith)))
+    (productMod_ok (output := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega_arith) X.C₁.S.wp (X₆.C₁.inp mp).toReady
+      (localReady (o := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₁.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₆.C₁.inp mp).value D₁.hP D₁.hPo (by omega_arith) (by omega_arith) (by omega_arith))
+    (productMod_ok (output := Impl.Dsa.Layout.t) X₆.C₂.S.ws (by omega_arith) X.C₁.S.wp (X₆.C₂.inp mp).toReady
+      (localReady (o := Impl.Dsa.Layout.t) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
+      (X₆.C₂.inp mp).value D₂.hP D₂.hPo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  have X₇ := X₆.run (St₁.run (.inr ⟨by omega, by omega⟩)) (St₂.run (.inr ⟨by omega, by omega⟩))
+  have X₇ := X₆.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- mod q
   exact SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.u) (count := .imm pLen)
-      (X₇.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₇.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
-      (ok _ (by omega)) (show pLen < 2 ^ 16 by omega) (X₇.E _ mq) (ws X₇.C₁.S.ws X₇.C₂.S.ws _) rfl
-      (localReady X₇.C₁.S.ws (by omega) (by simp only [countValue]; omega) (by omega)) (localReady X₇.C₂.S.ws (by omega) (by simp only [countValue]; omega) (by omega)) D₁.hQ D₂.hQ)
+      (X₇.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₇.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
+      (ok _ (by omega_arith)) (show pLen < 2 ^ 16 by omega_arith) (X₇.E _ mq) (ws X₇.C₁.S.ws X₇.C₂.S.ws _) rfl
+      (localReady X₇.C₁.S.ws (by omega_arith) (by simp only [countValue]; omega_arith) (by omega_arith)) (localReady X₇.C₂.S.ws (by omega_arith) (by simp only [countValue]; omega_arith) (by omega_arith)) D₁.hQ D₂.hQ)
     (F₁ := fun _ => True) (F₂ := fun _ => True)
-    (WP.mono (reduce_ok (output := Impl.Dsa.Layout.u) X₇.C₁.S.ws (by omega) X.C₁.S.wq (X₇.C₁.inp mq).toReady
-      (count := .imm pLen) (input := .local Impl.Dsa.Layout.t) (show pLen < 2 ^ 16 by omega)
-      (localReady X₇.C₁.S.ws (by omega) (by simp only [countValue]; omega) (by omega))
-      (X₇.C₁.inp mq).value D₁.hQ D₁.hQo (by omega) (by omega) (by omega)) fun _ _ => trivial)
-    (WP.mono (reduce_ok (output := Impl.Dsa.Layout.u) X₇.C₂.S.ws (by omega) X.C₁.S.wq (X₇.C₂.inp mq).toReady
-      (count := .imm pLen) (input := .local Impl.Dsa.Layout.t) (show pLen < 2 ^ 16 by omega)
-      (localReady X₇.C₂.S.ws (by omega) (by simp only [countValue]; omega) (by omega))
-      (X₇.C₂.inp mq).value D₂.hQ D₂.hQo (by omega) (by omega) (by omega)) fun _ _ => trivial)
+    (WP.mono (reduce_ok (output := Impl.Dsa.Layout.u) X₇.C₁.S.ws (by omega_arith) X.C₁.S.wq (X₇.C₁.inp mq).toReady
+      (count := .imm pLen) (input := .local Impl.Dsa.Layout.t) (show pLen < 2 ^ 16 by omega_arith)
+      (localReady X₇.C₁.S.ws (by omega_arith) (by simp only [countValue]; omega_arith) (by omega_arith))
+      (X₇.C₁.inp mq).value D₁.hQ D₁.hQo (by omega_arith) (by omega_arith) (by omega_arith)) fun _ _ => trivial)
+    (WP.mono (reduce_ok (output := Impl.Dsa.Layout.u) X₇.C₂.S.ws (by omega_arith) X.C₁.S.wq (X₇.C₂.inp mq).toReady
+      (count := .imm pLen) (input := .local Impl.Dsa.Layout.t) (show pLen < 2 ^ 16 by omega_arith)
+      (localReady X₇.C₂.S.ws (by omega_arith) (by simp only [countValue]; omega_arith) (by omega_arith))
+      (X₇.C₂.inp mq).value D₂.hQ D₂.hQo (by omega_arith) (by omega_arith) (by omega_arith)) fun _ _ => trivial)
     fun _ _ _ _ => SameTrace.block_nil
 
 end VG.Proof.Dsa.Arm

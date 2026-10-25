@@ -63,7 +63,7 @@ theorem Outs.arith_run {base : Addr} {m m' : Mem} (O : Outs base arithRanges m m
     have h₃ := hx (256, 15456) (by simp [runRanges])
     simp only [arithRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only at h₁ h₃
-    rcases hr with rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith
 
 /-- The flag's low bit. -/
 theorem result_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (hz : 120 ≤ size)
@@ -71,7 +71,7 @@ theorem result_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (
     WP isa (.block SignVerify.result) s fun t =>
       t.gpr .r0 = (if acc then 1 else 0) ∧ Rest [.r0] s t ∧ t.mem = s.mem := by
   have fm : Impl.Dsa.Arm.Layout.field .mask = 116 := rfl
-  refine wp_ldr (by decide) (hs.ea12 (by omega)) (hs.read (by omega)) fun t₁ u₁ => wp_dp (op2_imm (by decide))
+  refine wp_ldr (by decide) (hs.ea12 (by omega_arith)) (hs.read (by omega_arith)) fun t₁ u₁ => wp_dp (op2_imm (by decide))
     fun t u₂ => WP.block_nil ⟨?_, (u₁.rest (by decide)).trans (u₂.rest (by decide)), by rw [u₂.mem, u₁.mem]⟩
   have m : s.mem.readW (off base 116) 32 = mask32 acc := hm
   rw [u₂.gpr, dpVal, u₁.gpr, show Impl.Dsa.Arm.Layout.field .mask = 116 from rfl, m]
@@ -89,10 +89,10 @@ theorem Body.of_out {base P : Addr} {L e l : Nat} {s t : State} (R : Rest coreCl
     (O : Outside (P + BitVec.ofNat 64 e) 0 l s.mem t.mem) (he : e + l ≤ L) (hL : L ≤ 2 ^ 64) :
     Body base P L s t :=
   ⟨R, fun x _ h' => O x (.inr (by
-    have H := Offset.lt_iff x P (d := e) (n := l) (by omega)
-    have : ¬ (x - (P + BitVec.ofNat 64 e)).toNat < l := fun h => by have := H.mp h; simp only [ofs] at h'; omega
+    have H := Offset.lt_iff x P (d := e) (n := l) (by omega_arith)
+    have : ¬ (x - (P + BitVec.ofNat 64 e)).toNat < l := fun h => by have := H.mp h; simp only [ofs] at h'; omega_arith
     simp only [ofs]
-    omega))⟩
+    omega_arith))⟩
 
 theorem writeScalar_ok {s : State} {base : Addr} {size qLen nQ input v : Nat} (hs : Ws s base size)
     (hz : 15712 < size) (wq : Width qLen nQ) (q32 : qLen ≤ 32) (hin : 4960 ≤ input) (hin' : input + qLen ≤ 15712)
@@ -117,9 +117,9 @@ theorem writeScalar_ok {s : State} {base : Addr} {size qLen nQ input v : Nat} (h
   unfold SignVerify.writeScalar
   dsimp only
   rw [← wq.n_eq]
-  refine WP.seq (WP.mono (loadSlot_ok (i := 8) hs (by omega) wq (by decide)
-    (localReady (o := input) (len := qLen) hs hin (by omega) (by omega))) fun u ⟨wu, Vu, Ru, Ou⟩ => ?_)
-  rw [local_operand hs (by omega), hv] at Vu
+  refine WP.seq (WP.mono (loadSlot_ok (i := 8) hs (by omega_arith) wq (by decide)
+    (localReady (o := input) (len := qLen) hs hin (by omega_arith) (by omega_arith))) fun u ⟨wu, Vu, Ru, Ou⟩ => ?_)
+  rw [local_operand hs (by omega_arith), hv] at Vu
   have Ku : Outs base arithRanges s.mem u.mem := Outs.of_slot (i := 8) Ou (by decide) n48
   have Pu : pointerValue base u (.input .out) = pointerValue base s (.input .out) :=
     pointerValue_keep (Ru.gpr .r12 (by decide)) Ku arith_hdr (by decide : Impl.Dsa.Layout.Field.out ≠ .mask)
@@ -130,43 +130,43 @@ theorem writeScalar_ok {s : State} {base : Addr} {size qLen nQ input v : Nat} (h
       fun w => w.gpr .r11 = pointerValue base s (.input .out) + BitVec.ofNat 32 (if second then qLen else 0) ∧ w.gpr .r3 = mask32 acc ∧
         Rest [.r3, .r4, .r11] u w ∧ w.mem = u.mem := by
     simp only [SignVerify.outputPointer, List.append_assoc]
-    refine VG.Proof.X25519.Arm.WP.append (pointer_ok wu (by omega) (p := .input .out)
+    refine VG.Proof.X25519.Arm.WP.append (pointer_ok wu (by omega_arith) (p := .input .out)
       (by decide : Impl.Dsa.Layout.Field.out ≠ .mask))
       fun w₁ ⟨P₁, R₁, M₁⟩ => ?_
     rw [Pu] at P₁
     have w₁s := wu.of_rest R₁ (by decide)
     cases second
     · simp only [Bool.false_eq_true, ↓reduceIte, List.nil_append]
-      refine wp_ldr (by decide) (w₁s.ea12 (by omega)) (w₁s.read (by omega)) fun w u₂ => WP.block_nil
+      refine wp_ldr (by decide) (w₁s.ea12 (by omega_arith)) (w₁s.read (by omega_arith)) fun w u₂ => WP.block_nil
         ⟨by rw [u₂.other .r11 (by decide), P₁]; exact (BitVec.add_zero _).symm, ?_,
           (R₁.mono (by decide)).trans (u₂.rest (by decide)), by rw [u₂.mem, M₁]⟩
       rw [u₂.gpr, M₁, fm]; exact mu.trans hm
     · simp only [↓reduceIte, List.cons_append, List.nil_append]
       refine wp_movw fun w₂ u₂ => wp_dp (op2_reg _ _) fun w₃ u₃ => ?_
       have w₃s := (w₁s.of_upd u₂ (by decide)).of_upd u₃ (by decide)
-      refine wp_ldr (by decide) (w₃s.ea12 (by omega)) (w₃s.read (by omega)) fun w u₄ => WP.block_nil
+      refine wp_ldr (by decide) (w₃s.ea12 (by omega_arith)) (w₃s.read (by omega_arith)) fun w u₄ => WP.block_nil
         ⟨?_, ?_, (((R₁.mono (by decide)).trans (u₂.rest (by decide))).trans (u₃.rest (by decide))).trans
           (u₄.rest (by decide)),
           by rw [u₄.mem, u₃.mem, u₂.mem, M₁]⟩
-      · rw [u₄.other .r11 (by decide), u₃.gpr, dpVal, u₂.other .r11 (by decide), u₂.gpr, P₁, movw_ofNat (by omega)]
+      · rw [u₄.other .r11 (by decide), u₃.gpr, dpVal, u₂.other .r11 (by decide), u₂.gpr, P₁, movw_ofNat (by omega_arith)]
       · rw [u₄.gpr, u₃.mem, u₂.mem, M₁, fm]; exact mu.trans hm
   refine WP.seq (WP.mono ptr fun w ⟨Pw, Cw, Rw, Mw⟩ => ?_)
   have ww := wu.of_rest Rw (by decide)
-  have off32 : (if second then qLen else 0) + qLen ≤ 2 * qLen := by split <;> omega
+  have off32 : (if second then qLen else 0) + qLen ≤ 2 * qLen := by split <;> omega_arith
   have addr : State.addr (w.gpr .r11) = State.addr (pointerValue base s (.input .out)) + BitVec.ofNat 64 (if second then qLen else 0) := by
-    rw [Pw, VG.Arm.addr_add (by omega)]
+    rw [Pw, VG.Arm.addr_add (by omega_arith)]
   have hc : w.gpr .r3 = if decide acc then BitVec.allOnes 32 else 0 := by
     rw [Cw]; by_cases h : acc <;> simp [mask32, h]
   have wr : w.wr = s.wr := by rw [Rw.wr, Ru.wr]
   refine WP.mono (storeComponent_ok (input := baseS nQ) (len := qLen) ww (decide acc) hc
-    (by simp only [baseS]; omega) (by simp only [baseS]; omega) q4 wq.word
-    (by rw [Pw, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by split <;> omega : (if second then qLen else 0) < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega)]; omega)
-    (fun e k hek => by rw [addr, Offset.add_add, wr]; exact O.writes _ _ (by omega))
+    (by simp only [baseS]; omega_arith) (by simp only [baseS]; omega_arith) q4 wq.word
+    (by rw [Pw, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by split <;> omega_arith : (if second then qLen else 0) < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_arith)]; omega_arith)
+    (fun e k hek => by rw [addr, Offset.add_add, wr]; exact O.writes _ _ (by omega_arith))
     (by
       rw [addr]
       exact ((O.apart.sub_left (Offset.sub_base (State.addr (pointerValue base s (.input .out))) off32)).sub_right
-        (Offset.sub_base base (by simp only [baseS]; omega))).symm)) fun t ⟨wt, Vt, Rt, Ot⟩ => ?_
+        (Offset.sub_base base (by simp only [baseS]; omega_arith))).symm)) fun t ⟨wt, Vt, Rt, Ot⟩ => ?_
   rw [addr] at Vt Ot
   have dis : ∀ d k, d + k ≤ size → Region.Disjoint ⟨off base d, k⟩
       ⟨State.addr (pointerValue base s (.input .out)) + BitVec.ofNat 64 (if second then qLen else 0), qLen⟩ :=
@@ -175,31 +175,31 @@ theorem writeScalar_ok {s : State} {base : Addr} {size qLen nQ input v : Nat} (h
   have rw32 : ∀ d, d + 4 ≤ size → t.mem.readW (off base d) 32 = u.mem.readW (off base d) 32 := fun d h => by
     rw [← Mw]
     exact (Mem.readW_congr fun i hi =>
-      (VG.Proof.Weierstrass.keep_of_disjoint' Ot (dis d 4 h) (by omega) hi (by decide)).symm).symm
+      (VG.Proof.Weierstrass.keep_of_disjoint' Ot (dis d 4 h) (by omega_arith) hi (by decide)).symm).symm
   refine ⟨?_, ?_, ?_, by rw [Rt.wr, wr], ?_, ?_, ?_⟩
   · rw [Vt, Mw]
     have e : val32 u.mem base (baseS nQ) (qLen / 4) = v := by
-      rw [val32_prefix_of_lt (n := 2 * nQ) (by omega) (by
+      rw [val32_prefix_of_lt (n := 2 * nQ) (by omega_arith) (by
         rw [show baseS nQ = slot nQ 8 from rfl, Vu, ← pow256_words wq.word]; exact hvl)]
       exact Vu
     rw [e]
     by_cases h : acc <;> simp [h]
-  · exact (rw32 116 (by omega)).trans mu
-  · exact (rw32 96 (by omega)).trans Pu
+  · exact (rw32 116 (by omega_arith)).trans mu
+  · exact (rw32 96 (by omega_arith)).trans Pu
   · intro o len h₁ h₂
-    rw [Arm.localVal, Arm.localVal, bytes_keep Ot (dis o len (by omega)) (by omega) (by omega), Mw,
-      outs_bytes Ku (by omega) (by decide) fun r hr => by
+    rw [Arm.localVal, Arm.localVal, bytes_keep Ot (dis o len (by omega_arith)) (by omega_arith) (by omega_arith), Mw,
+      outs_bytes Ku (by omega_arith) (by decide) fun r hr => by
         simp only [arithRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact Offset.disjoint base (.inr (by omega)) (by omega) (by omega)]
+        rcases hr with rfl | rfl <;> exact Offset.disjoint base (.inr (by omega_arith)) (by omega_arith) (by omega_arith)]
   · intro e k hek hsep
     have Pf := O.fits
-    rw [bytes_keep Ot (Offset.disjoint _ hsep (by omega) (by omega)) (by omega) (by omega), Mw,
-      outs_bytes Ku (by omega) (by decide) fun r hr => by
+    rw [bytes_keep Ot (Offset.disjoint _ hsep (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith), Mw,
+      outs_bytes Ku (by omega_arith) (by decide) fun r hr => by
         simp only [arithRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;>
-          exact (O.apart.sub_left (Offset.sub_base _ hek)).sub_right (Offset.sub_base base (by omega))]
+          exact (O.apart.sub_left (Offset.sub_base _ hek)).sub_right (Offset.sub_base base (by omega_arith))]
   · exact (Body.of_run (Run.mk Ru (Outs.arith_run Ku))).trans
-      (Body.of_out ((Rw.mono (by decide)).trans (Rt.mono (by decide))) (by rw [Mw] at Ot; exact Ot) off32 (by omega))
+      (Body.of_out ((Rw.mono (by decide)).trans (Rt.mono (by decide))) (by rw [Mw] at Ot; exact Ot) off32 (by omega_arith))
 
 theorem Output.keep {s t : State} {base : Addr} {size len : Nat} (O : Output s base size len)
     (hp : pointerValue base t (.input .out) = pointerValue base s (.input .out)) (hw : t.wr = s.wr) :
@@ -224,7 +224,7 @@ theorem signBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X K 
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := Sc.lens
   have big := Sc.big
   have Qlt := operand_lt_of Iq
-  have qlt : ∀ x, x % Q < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega)) Qlt
+  have qlt : ∀ x, x % Q < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Qlt
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   unfold SignVerify.signBody
@@ -235,20 +235,20 @@ theorem signBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X K 
     pointerValue_keep (Rn.rest.gpr .r12 (by decide)) Rn.mem (by decide) (by decide : Impl.Dsa.Layout.Field.out ≠ .mask)
   have Ou := O.run Rn
   have wu := Rn.ws Sc.ws
-  refine WP.seq (WP.mono (writeScalar_ok wu big Sc.wq q32 (by omega) (by omega) Ru (by simp only [rValue]; exact qlt _)
+  refine WP.seq (WP.mono (writeScalar_ok wu big Sc.wq q32 (by omega_arith) (by omega_arith) Ru (by simp only [rValue]; exact qlt _)
     _ mu Ou false) fun v ⟨Bv, mv, Pv, Wv, Kv, _, Bdv⟩ => ?_)
   have wv := wu.of_rest Bdv.rest (by decide)
-  refine WP.seq (WP.mono (writeScalar_ok (v := sValue P Q G X K D) wv big Sc.wq q32 (by omega) (by omega)
-    (by rw [Kv _ _ (by omega) (by omega)]; exact Su) (by simp only [sValue]; exact qlt _) _ (mv.trans mu)
+  refine WP.seq (WP.mono (writeScalar_ok (v := sValue P Q G X K D) wv big Sc.wq q32 (by omega_arith) (by omega_arith)
+    (by rw [Kv _ _ (by omega_arith) (by omega_arith)]; exact Su) (by simp only [sValue]; exact qlt _) _ (mv.trans mu)
     (Ou.keep Pv Wv) true) fun w ⟨Bw, mw, Pw, Ww, Kw, Ew, Bdw⟩ => ?_)
   have ww := wv.of_rest Bdw.rest (by decide)
-  refine WP.mono (result_ok ww (by omega) _ ((mw.trans mv).trans mu)) fun t ⟨r0, Rt, Mt⟩ => ⟨r0, ?_, ?_⟩
+  refine WP.mono (result_ok ww (by omega_arith) _ ((mw.trans mv).trans mu)) fun t ⟨r0, Rt, Mt⟩ => ⟨r0, ?_, ?_⟩
   · rw [Pu] at Bv
     rw [Pv, Pu] at Bw
     simp only [Bool.false_eq_true, ↓reduceIte] at Bv Bw
     rw [Mt]
     refine VG.Proof.Dsa.signatureBytes _ ?_ Bw
-    have E := Ew 0 qLen (by omega) (.inl (by simp only [↓reduceIte]; omega))
+    have E := Ew 0 qLen (by omega_arith) (.inl (by simp only [↓reduceIte]; omega_arith))
     rw [Pv, Pu, BitVec.add_zero] at E
     rw [E]
     simpa only [BitVec.add_zero] using Bv
@@ -269,7 +269,7 @@ theorem verifyBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R 
   have big := Sc.big
   unfold SignVerify.verifyBody
   refine WP.seq (WP.mono (verifyCompute_ok Sc Ip Iq Ig Iy Ir Is Id hc hP hPo hQ hQo) fun u ⟨Fu, Rn⟩ => ?_)
-  refine WP.mono (result_ok (Rn.ws Sc.ws) (by omega) _ (by rw [Fu, hm, BitVec.allOnes_and])) fun t ⟨r0, Rt, Mt⟩ =>
+  refine WP.mono (result_ok (Rn.ws Sc.ws) (by omega_arith) _ (by rw [Fu, hm, BitVec.allOnes_and])) fun t ⟨r0, Rt, Mt⟩ =>
     ⟨r0, Rn.trans ⟨Rt.mono (by decide), fun x _ => by rw [Mt]⟩⟩
 
 end VG.Proof.Dsa.Arm

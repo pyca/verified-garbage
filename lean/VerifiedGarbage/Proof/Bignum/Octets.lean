@@ -57,55 +57,55 @@ theorem modulusValid_nat {n0 r l P k : Nat} (hn0 : n0 < 256) (hr : r < P) (hP : 
   unfold Spec.Rsa.modulusValid
   by_cases h0 : n0 = 0
   · subst h0
-    simp only [Nat.zero_mul, Nat.zero_add, ← hP, show ¬ P ≤ r by omega, decide_false, Bool.and_false,
+    simp only [Nat.zero_mul, Nat.zero_add, ← hP, show ¬ P ≤ r by omega_arith, decide_false, Bool.and_false,
       show (0 < 1) = True from propext ⟨fun _ => trivial, fun _ => by decide⟩, decide_true, Bool.true_or,
       Bool.not_true]
-  have hge : P ≤ n0 * P + r := Nat.le_add_right_of_le (Nat.le_mul_of_pos_left _ (by omega))
+  have hge : P ≤ n0 * P + r := Nat.le_add_right_of_le (Nat.le_mul_of_pos_left _ (by omega_arith))
   have hlt : n0 * P + r < 2 ^ 8192 := by
     have h1 : n0 * P + r < 256 * P := by
-      have := Nat.mul_le_mul_right P (show n0 + 1 ≤ 256 by omega); rw [Nat.add_mul, Nat.one_mul] at this; omega
+      have := Nat.mul_le_mul_right P (show n0 + 1 ≤ 256 by omega_arith); rw [Nat.add_mul, Nat.one_mul] at this; omega_arith
     have h2 : 256 * P = 2 ^ (8 * k) := by
-      rw [hP, ← pow256_eq, ← Nat.pow_succ']; congr 1; omega
-    have h3 := (fun B (hB : 8 * k ≤ B) => Nat.pow_le_pow_right (n := 2) (by decide) hB) 8192 (by omega)
-    omega
+      rw [hP, ← pow256_eq, ← Nat.pow_succ']; congr 1; omega_arith
+    have h3 := (fun B (hB : 8 * k ≤ B) => Nat.pow_le_pow_right (n := 2) (by decide) hB) 8192 (by omega_arith)
+    omega_arith
   have h511 : decide (2 ^ 511 ≤ n0 * P + r) = !decide ((k - 64) * 256 + n0 < 128) := by
     by_cases hk64 : k = 64
     · subst hk64
       have hP' : P = 2 ^ 504 := by
         simpa only [Nat.reduceSub, Nat.reduceMul] using hP.trans (pow256_eq _)
       rw [hP'] at hr ⊢
-      rw [show (64 - 64) * 256 + n0 = n0 by omega]
+      rw [show (64 - 64) * 256 + n0 = n0 by omega_arith]
       by_cases h128 : 128 ≤ n0
-      · simp only [show 2 ^ 511 ≤ n0 * 2 ^ 504 + r by omega, show ¬ n0 < 128 by omega, decide_true,
+      · simp only [show 2 ^ 511 ≤ n0 * 2 ^ 504 + r by omega_arith, show ¬ n0 < 128 by omega_arith, decide_true,
           decide_false, Bool.not_false]
-      · simp only [show ¬ 2 ^ 511 ≤ n0 * 2 ^ 504 + r by omega, show n0 < 128 by omega, decide_true,
+      · simp only [show ¬ 2 ^ 511 ≤ n0 * 2 ^ 504 + r by omega_arith, show n0 < 128 by omega_arith, decide_true,
           decide_false, Bool.not_true]
     · have hP' : 2 ^ 512 ≤ P := by
-        rw [hP, ← pow256_64]; exact Nat.pow_le_pow_right (by decide) (by omega)
-      simp only [show 2 ^ 511 ≤ n0 * P + r by omega, show ¬ (k - 64) * 256 + n0 < 128 by omega, decide_true,
+        rw [hP, ← pow256_64]; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
+      simp only [show 2 ^ 511 ≤ n0 * P + r by omega_arith, show ¬ (k - 64) * 256 + n0 < 128 by omega_arith, decide_true,
         decide_false, Bool.not_false]
   rw [← hP]
-  simp only [h511, show P ≤ n0 * P + r from hge, show n0 * P + r < 2 ^ 8192 from hlt, show ¬ n0 < 1 by omega,
+  simp only [h511, show P ≤ n0 * P + r from hge, show n0 * P + r < 2 ^ 8192 from hlt, show ¬ n0 < 1 by omega_arith,
     decide_true, decide_false, Bool.and_true, Bool.false_or, Bool.not_or]
   by_cases hl : l % 2 = 1
   · simp [hl, hodd]
-  · simp [show l % 2 = 0 by omega, hodd]
+  · simp [show l % 2 = 0 by omega_arith, hodd]
 
 /-- `m` is a valid modulus iff its first byte is not zero, its last byte is
 odd, and `256 (k - 64) + m[0] ≥ 128`, for `64 ≤ k ≤ 1024`. -/
 theorem modulusValid_iff {nb : List Byte} {k : Nat} (hlen : nb.length = k) (hk : 64 ≤ k) (hk' : k ≤ 1024) :
     Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k =
-      !(decide ((nb[0]'(by omega)).toNat < 1) || decide ((nb[k - 1]'(by omega)).toNat % 2 < 1) ||
-        decide ((k - 64) * 256 + (nb[0]'(by omega)).toNat < 128)) := by
-  have hodd : Spec.Rsa.os2ip nb % 2 = (nb[k - 1]'(by omega)).toNat % 2 := by
-    have := pre_succ nb (i := k - 1) (by omega)
-    rw [show k - 1 + 1 = nb.length by omega, pre_len] at this
-    omega
+      !(decide ((nb[0]'(by omega_arith)).toNat < 1) || decide ((nb[k - 1]'(by omega_arith)).toNat % 2 < 1) ||
+        decide ((k - 64) * 256 + (nb[0]'(by omega_arith)).toNat < 128)) := by
+  have hodd : Spec.Rsa.os2ip nb % 2 = (nb[k - 1]'(by omega_arith)).toNat % 2 := by
+    have := pre_succ nb (i := k - 1) (by omega_arith)
+    rw [show k - 1 + 1 = nb.length by omega_arith, pre_len] at this
+    omega_arith
   obtain ⟨b, bs, rfl⟩ : ∃ b bs, nb = b :: bs := by
     cases nb with
-    | nil => simp at hlen; omega
+    | nil => simp at hlen; omega_arith
     | cons b bs => exact ⟨b, bs, rfl⟩
-  have hl : bs.length = k - 1 := by simp at hlen; omega
+  have hl : bs.length = k - 1 := by simp at hlen; omega_arith
   rw [os2ip_cons, hl] at hodd ⊢
   have hr := os2ip_lt bs
   rw [hl] at hr
@@ -122,10 +122,10 @@ theorem valid_facts {N k : Nat} (hv : Spec.Rsa.modulusValid N k = true) (hk : 64
   obtain ⟨⟨⟨h1, -⟩, -⟩, h4⟩ := hv
   have h4 := of_decide_eq_true h4
   have hp : 2 ^ (64 * ((k + 7) / 8 - 1)) ≤ 256 ^ (k - 1) := by
-    rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega)
+    rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
   have h256 : 256 ≤ 256 ^ (k - 1) := by
-    have := Nat.pow_le_pow_right (n := 256) (by decide) (show 1 ≤ k - 1 by omega); simpa using this
-  exact ⟨beq_iff_eq.mp h1, by omega, Nat.le_trans hp h4⟩
+    have := Nat.pow_le_pow_right (n := 256) (by decide) (show 1 ≤ k - 1 by omega_arith); simpa using this
+  exact ⟨beq_iff_eq.mp h1, by omega_arith, Nat.le_trans hp h4⟩
 
 /-! ## Word lists and the precomputed values -/
 
@@ -137,7 +137,7 @@ theorem le_ofs_of_sep {B op x : Addr} {Z n : Nat} (hsep : ∀ i < n, Z ≤ ofs B
   · have := hsep (ofs op x) h
     rw [show op + BitVec.ofNat 64 (ofs op x) = x by
       rw [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]] at this
-    omega
+    omega_arith
   · exact h
 
 /-- A word of a number, as `toWords` gives it. -/
@@ -151,13 +151,13 @@ theorem wordsAt_two {m : Mem} {op : Addr} {w : Nat} {x y : Nat}
     (hx : ∀ i < w, word m op (8 * i) = BitVec.ofNat 64 (x / 2 ^ (64 * i)))
     (hy : ∀ i < w, word m op (8 * w + 8 * i) = BitVec.ofNat 64 (y / 2 ^ (64 * i))) :
     Spec.Rsa.wordsAt m op (2 * w) = Spec.Rsa.toWords x w ++ Spec.Rsa.toWords y w := by
-  rw [Spec.Rsa.wordsAt, Spec.Rsa.toWords, Spec.Rsa.toWords, show 2 * w = w + w by omega, List.range_add,
+  rw [Spec.Rsa.wordsAt, Spec.Rsa.toWords, Spec.Rsa.toWords, show 2 * w = w + w by omega_arith, List.range_add,
     List.map_append, List.map_map]
   congr 1
   · exact List.map_congr_left fun i hi => hx i (List.mem_range.mp hi)
   · refine List.map_congr_left fun i hi => ?_
     simp only [Function.comp_apply]
-    rw [show 8 * (w + i) = 8 * w + 8 * i by omega]
+    rw [show 8 * (w + i) = 8 * w + 8 * i by omega_arith]
     exact hy i (List.mem_range.mp hi)
 
 /-- The precomputed values of a valid modulus. -/
@@ -172,14 +172,14 @@ theorem wv_of_words {m : Mem} {p : Addr} {d x : Nat} : ∀ {n : Nat},
     (∀ i < n, (word m p (d + 8 * i)).toNat = x / 2 ^ (64 * i) % 2 ^ 64) → wv m p d n = x % 2 ^ (64 * n)
   | 0, _ => by simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.mod_one]
   | n + 1, h => by
-    rw [wv, wv_of_words fun i hi => h i (by omega), h n (by omega), pow64_succ, Nat.mod_mul]
+    rw [wv, wv_of_words fun i hi => h i (by omega_arith), h n (by omega_arith), pow64_succ, Nat.mod_mul]
 
 /-- The `2 w` words at `pp`, as two numbers of `w` words. -/
 theorem pre_words {m : Mem} {pp : Addr} {w N R : Nat}
     (h : Spec.Rsa.wordsAt m pp (2 * w) = Spec.Rsa.toWords N w ++ Spec.Rsa.toWords R w)
     (hN : N < 2 ^ (64 * w)) (hR : R < 2 ^ (64 * w)) :
     wv m pp 0 w = N ∧ wv m pp (8 * w) w = R := by
-  rw [Spec.Rsa.wordsAt, Spec.Rsa.toWords, Spec.Rsa.toWords, show 2 * w = w + w by omega, List.range_add,
+  rw [Spec.Rsa.wordsAt, Spec.Rsa.toWords, Spec.Rsa.toWords, show 2 * w = w + w by omega_arith, List.range_add,
     List.map_append, List.map_map] at h
   obtain ⟨h1, h2⟩ := List.append_inj h (by simp)
   rw [List.map_inj_left] at h1 h2
@@ -193,7 +193,7 @@ theorem pre_words {m : Mem} {pp : Addr} {w N R : Nat}
     have := h2 i (List.mem_range.mpr hi)
     simp only [Function.comp_apply] at this
     show (m.readW (pp + BitVec.ofNat 64 (8 * w + 8 * i)) 64).toNat = _
-    rw [show 8 * w + 8 * i = 8 * (w + i) by omega, this, BitVec.toNat_ofNat]
+    rw [show 8 * w + 8 * i = 8 * (w + i) by omega_arith, this, BitVec.toNat_ofNat]
 
 /-- `pre` holds the values of the valid modulus `nB`. -/
 theorem pre_of_some {m : Mem} {pp : Addr} {k : Nat} {nB : List Byte} (hl : nB.length = k) (hk : 64 ≤ k)
@@ -208,9 +208,9 @@ theorem pre_of_some {m : Mem} {pp : Addr} {k : Nat} {nB : List Byte} (hl : nB.le
   have hlt : Spec.Rsa.os2ip nB < 2 ^ (64 * ((k + 7) / 8)) := by
     have := os2ip_lt nB
     rw [hl, pow256_eq] at this
-    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_arith))
   have hpos : 0 < Spec.Rsa.os2ip nB := by
-    have := (valid_facts hv hk).2.1; omega
+    have := (valid_facts hv hk).2.1; omega_arith
   obtain ⟨h1, h2⟩ := pre_words (Option.some.inj hpp).symm hlt (Nat.lt_trans (Nat.mod_lt _ hpos) hlt)
   exact ⟨hv, h1, h2⟩
 
@@ -220,10 +220,10 @@ theorem wv_of_wordsAt {m m' : Mem} {p : Addr} {n c w : Nat}
     wv m p (8 * c) w = wv m' p (8 * c) w :=
   wv_congr fun i hi => by
     have := congrArg (fun l => l[c + i]?) h
-    simp only [Spec.Rsa.wordsAt, List.getElem?_map, List.getElem?_range (show c + i < n by omega),
+    simp only [Spec.Rsa.wordsAt, List.getElem?_map, List.getElem?_range (show c + i < n by omega_arith),
       Option.map_some, Option.some.injEq] at this
     show m.readW (p + BitVec.ofNat 64 (8 * c + 8 * i)) 64 = m'.readW (p + BitVec.ofNat 64 (8 * c + 8 * i)) 64
-    rw [show 8 * c + 8 * i = 8 * (c + i) by omega]
+    rw [show 8 * c + 8 * i = 8 * (c + i) by omega_arith]
     exact this
 
 /-- `-n⁻¹ mod 2⁶⁴` is unique. -/
@@ -232,7 +232,7 @@ theorem minv_unique {n : Nat} {a b : BitVec 64} (hn : n % 2 = 1) (ha : (n * a.to
   have hc : Nat.Coprime (2 ^ 64) n := VG.Proof.Bignum.coprime_pow2 hn 64
   have h : a.toNat * n % 2 ^ 64 = b.toNat * n % 2 ^ 64 := by
     rw [Nat.mul_comm a.toNat, Nat.mul_comm b.toNat]
-    omega
+    omega_arith
   have he := VG.Proof.Bignum.mont_cancel hc.symm h
   apply BitVec.eq_of_toNat_eq
   simpa only [Nat.mod_eq_of_lt a.isLt, Nat.mod_eq_of_lt b.isLt] using he
@@ -248,7 +248,7 @@ theorem leak_eq2 {a c : List (BitVec 64)} {b d : List Byte} (hl : a.length = c.l
 /-! ## Buffers and the working space -/
 
 theorem contains_scr {B a : Addr} {Z : Nat} (h : ofs B a < Z) : (⟨B, Z⟩ : Region).Contains a 1 := by
-  simp only [Region.Contains, ofs] at *; omega
+  simp only [Region.Contains, ofs] at *; omega_arith
 
 /-- A byte of a region disjoint from the working space is outside it. -/
 theorem out_scr {B : Addr} {Z : Nat} {r : Region} (hd : r.Disjoint ⟨B, Z⟩) {a : Addr} (ha : r.Contains a 1) :
@@ -259,7 +259,7 @@ theorem out_scr {B : Addr} {Z : Nat} {r : Region} (hd : r.Disjoint ⟨B, Z⟩) {
 
 theorem contains_byte (p : Addr) {i len : Nat} (hi : i < len) (hlen : len ≤ 2 ^ 64) :
     (⟨p, len⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by omega_arith) (by omega_arith)
 
 /-! ## The results -/
 

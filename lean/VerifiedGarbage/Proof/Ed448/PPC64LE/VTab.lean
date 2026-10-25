@@ -49,26 +49,26 @@ def tabV (S K h : Nat) : Nat :=
 theorem bit4 (x q : Nat) : ((4 * x) >>> q) &&& 1 = if 2 ≤ q then (x >>> (q - 2)) &&& 1 else 0 := by
   by_cases hq : 2 ≤ q
   · rw [ite_eq_left hq]
-    obtain ⟨n, rfl⟩ : ∃ n, q = n + 2 := ⟨q - 2, by omega⟩
+    obtain ⟨n, rfl⟩ : ∃ n, q = n + 2 := ⟨q - 2, by omega_arith⟩
     rw [Nat.add_sub_cancel, Nat.add_comm n 2, Nat.shiftRight_add,
-      show (4 * x) >>> 2 = x by rw [Nat.shiftRight_eq_div_pow]; omega]
+      show (4 * x) >>> 2 = x by rw [Nat.shiftRight_eq_div_pow]; omega_arith]
   · rw [ite_eq_right hq, Nat.and_one_is_mod, Nat.shiftRight_eq_div_pow]
-    rcases (by omega : q = 0 ∨ q = 1) with rfl | rfl
-    · simp only [Nat.pow_zero, Nat.div_one]; omega
-    · simp only [Nat.pow_one]; omega
+    rcases (by omega_arith : q = 0 ∨ q = 1) with rfl | rfl
+    · simp only [Nat.pow_zero, Nat.div_one]; omega_arith
+    · simp only [Nat.pow_one]; omega_arith
 
 theorem one_shr (n : Nat) : (1 >>> n) &&& 1 = if n = 0 then 1 else 0 := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · rfl
-  · rw [ite_eq_right (by omega), Nat.shiftRight_eq_div_pow, Nat.div_eq_of_lt (Nat.one_lt_two_pow (by omega))]
+  · rw [ite_eq_right (by omega_arith), Nat.shiftRight_eq_div_pow, Nat.div_eq_of_lt (Nat.one_lt_two_pow (by omega_arith))]
     rfl
 
 theorem tab_eq (S K : Nat) : ∀ h < 1832, tabSet 1 K (tabSet 2 S fill0) h = tabV S K h := by
   intro h _
-  have e8 : 8 ≤ h ↔ 2 ≤ h / 4 := by omega
-  have e4 : 8 ≤ h → (h - 8) / 4 = h / 4 - 2 := fun _ => by omega
+  have e8 : 8 ≤ h ↔ 2 ≤ h / 4 := by omega_arith
+  have e4 : 8 ≤ h → (h - 8) / 4 = h / 4 - 2 := fun _ => by omega_arith
   unfold tabSet fill0 tabV
-  rcases (by omega : h % 4 = 0 ∨ h % 4 = 1 ∨ h % 4 = 2 ∨ h % 4 = 3) with r | r | r | r <;>
+  rcases (by omega_arith : h % 4 = 0 ∨ h % 4 = 1 ∨ h % 4 = 2 ∨ h % 4 = 3) with r | r | r | r <;>
     simp only [r, Nat.reduceEqDiff, and_false, ite_false, ite_true, false_or, true_or, and_true]
   · -- The entries of `4`.
     rw [show (4 : Nat) = 4 * 1 from rfl, bit4, one_shr]
@@ -76,16 +76,16 @@ theorem tab_eq (S K : Nat) : ∀ h < 1832, tabSet 1 K (tabSet 2 S fill0) h = tab
     · rw [ite_eq_left (e8.mp h8)]
       by_cases h8' : h = 8
       · subst h8'; rfl
-      · rw [ite_eq_right h8', ite_eq_right (by omega)]
-    · rw [ite_eq_right (fun h' => h8 (e8.mpr h')), ite_eq_right (by omega)]
+      · rw [ite_eq_right h8', ite_eq_right (by omega_arith)]
+    · rw [ite_eq_right (fun h' => h8 (e8.mpr h')), ite_eq_right (by omega_arith)]
   · rw [bit4]
     by_cases h8 : 8 ≤ h
     · rw [ite_eq_left h8, ite_eq_left (e8.mp h8), e4 h8]
-    · rw [ite_eq_right h8, ite_eq_right (fun h' => h8 (e8.mpr h')), ite_eq_right (by omega)]
+    · rw [ite_eq_right h8, ite_eq_right (fun h' => h8 (e8.mpr h')), ite_eq_right (by omega_arith)]
   · rw [bit4]
     by_cases h8 : 8 ≤ h
     · rw [ite_eq_left h8, ite_eq_left (e8.mp h8), e4 h8]
-    · rw [ite_eq_right h8, ite_eq_right (fun h' => h8 (e8.mpr h')), ite_eq_right (by omega)]
+    · rw [ite_eq_right h8, ite_eq_right (fun h' => h8 (e8.mpr h')), ite_eq_right (by omega_arith)]
 
 section
 variable {b : Addr}
@@ -99,7 +99,7 @@ structure FInv (b : Addr) (s0 : State) (j : Nat) (s : State) : Prop where
   vals : ∀ h < 4 * j, s.mem (b + BitVec.ofNat 64 (TAB + h)) = BitVec.ofNat 8 (if h % 4 = 3 then 1 else 0)
 
 theorem setWidth8_ofNat {x : Nat} (hx : x < 256) : (BitVec.ofNat 64 x).setWidth 8 = BitVec.ofNat 8 x :=
-  stb_byte (toNat_imm (by omega))
+  stb_byte (toNat_imm (by omega_arith))
 
 theorem fillStep_ok {s0 s : State} (hc : VCtx b s0) (h7 : s0.gpr .r7 = BitVec.ofNat 64 0)
     (h8 : s0.gpr .r8 = BitVec.ofNat 64 1) {j : Nat} (hj : j < 458) (h : FInv b s0 j s) :
@@ -109,17 +109,17 @@ theorem fillStep_ok {s0 s : State} (hc : VCtx b s0) (h7 : s0.gpr .r7 = BitVec.of
   have hT : TAB = 1064 := rfl
   have hcs : VCtx b s := hc.of_rest h.rest (by decide) (by decide)
   have a : ∀ i < 4, s.gpr .r9 + BitVec.ofNat 64 (TAB + i) = b + BitVec.ofNat 64 (TAB + (4 * j + i)) := fun i _ => by
-    rw [h.r9, Offset.add_add]; congr 2; omega
+    rw [h.r9, Offset.add_add]; congr 2; omega_arith
   have e7 : s.gpr .r7 = BitVec.ofNat 64 0 := by rw [h.rest.gpr _ (by decide), h7]
   have e8 : s.gpr .r8 = BitVec.ofNat 64 1 := by rw [h.rest.gpr _ (by decide), h8]
   refine wp_stb (a := b + BitVec.ofNat 64 (TAB + (4 * j + 0))) (by decide) (by decide) (a 0 (by decide))
-    (hcs.inW (by omega)) fun s1 u1 => ?_
+    (hcs.inW (by omega_arith)) fun s1 u1 => ?_
   refine wp_stb (a := b + BitVec.ofNat 64 (TAB + (4 * j + 1))) (by decide) (by decide)
-    (by rw [u1.gpr]; exact a 1 (by decide)) (by rw [u1.wr]; exact hcs.inW (by omega)) fun s2 u2 => ?_
+    (by rw [u1.gpr]; exact a 1 (by decide)) (by rw [u1.wr]; exact hcs.inW (by omega_arith)) fun s2 u2 => ?_
   refine wp_stb (a := b + BitVec.ofNat 64 (TAB + (4 * j + 2))) (by decide) (by decide)
-    (by rw [u2.gpr, u1.gpr]; exact a 2 (by decide)) (by rw [u2.wr, u1.wr]; exact hcs.inW (by omega)) fun s3 u3 => ?_
+    (by rw [u2.gpr, u1.gpr]; exact a 2 (by decide)) (by rw [u2.wr, u1.wr]; exact hcs.inW (by omega_arith)) fun s3 u3 => ?_
   refine wp_stb (a := b + BitVec.ofNat 64 (TAB + (4 * j + 3))) (by decide) (by decide)
-    (by rw [u3.gpr, u2.gpr, u1.gpr]; exact a 3 (by decide)) (by rw [u3.wr, u2.wr, u1.wr]; exact hcs.inW (by omega))
+    (by rw [u3.gpr, u2.gpr, u1.gpr]; exact a 3 (by decide)) (by rw [u3.wr, u2.wr, u1.wr]; exact hcs.inW (by omega_arith))
     fun s4 u4 => ?_
   refine wp_addi (by decide) (by decide) fun s5 u5 => wp_subi (by decide) (by decide) fun s6 u6 => WP.block_nil ?_
   have hg4 : s4.gpr = s.gpr := by rw [u4.gpr, u3.gpr, u2.gpr, u1.gpr]
@@ -130,33 +130,33 @@ theorem fillStep_ok {s0 s : State} (hc : VCtx b s0) (h7 : s0.gpr .r7 = BitVec.of
     rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem, u3.gpr, u2.gpr, u1.gpr, e7, e8, setWidth8_ofNat (by decide),
       setWidth8_ofNat (by decide)]
   have r11' : s6.gpr .r11 = BitVec.ofNat 64 (458 - (j + 1)) := by
-    rw [u6.gpr, u5.other _ (by decide), hg4, h.r11, ofNat_sub_one (by omega) (by omega)]; congr 1
+    rw [u6.gpr, u5.other _ (by decide), hg4, h.r11, ofNat_sub_one (by omega_arith) (by omega_arith)]; congr 1
   have hr6 : Rest [.r9, .r11] s s6 := ((u1.rest _).trans ((u2.rest _).trans ((u3.rest _).trans (u4.rest _)))).trans
     ((u5.rest (by decide)).trans (u6.rest (by decide)))
-  refine ⟨⟨h.rest.trans hr6, ?_, r11', ?_, fun h' hh => ?_⟩, by rw [r11', ofNat_ne_zero (by omega)]⟩
+  refine ⟨⟨h.rest.trans hr6, ?_, r11', ?_, fun h' hh => ?_⟩, by rw [r11', ofNat_ne_zero (by omega_arith)]⟩
   · rw [u6.other _ (by decide), u5.gpr, hg4, h.r9, Offset.add_add, Nat.mul_succ]
   · rw [hm6]
     refine ((((h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))
+      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_arith)⟩).writeW (List.mem_singleton_self _) _
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_arith) (by omega_arith))
   · rw [hm6]
     simp only [VG.WriteBytes.writeW8_apply]
     have ne : ∀ i < 4, h' ≠ 4 * j + i → b + BitVec.ofNat 64 (TAB + h') ≠ b + BitVec.ofNat 64 (TAB + (4 * j + i)) :=
-      fun i _ hne => Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)
+      fun i _ hne => Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith)
     rcases Nat.lt_or_ge h' (4 * j) with hl | hl
-    · rw [iteF (ne 3 (by decide) (by omega)), iteF (ne 2 (by decide) (by omega)), iteF (ne 1 (by decide) (by omega)),
-        iteF (ne 0 (by decide) (by omega))]
+    · rw [iteF (ne 3 (by decide) (by omega_arith)), iteF (ne 2 (by decide) (by omega_arith)), iteF (ne 1 (by decide) (by omega_arith)),
+        iteF (ne 0 (by decide) (by omega_arith))]
       exact h.vals h' hl
-    · rcases (by omega : h' = 4 * j + 0 ∨ h' = 4 * j + 1 ∨ h' = 4 * j + 2 ∨ h' = 4 * j + 3) with e | e | e | e <;>
+    · rcases (by omega_arith : h' = 4 * j + 0 ∨ h' = 4 * j + 1 ∨ h' = 4 * j + 2 ∨ h' = 4 * j + 3) with e | e | e | e <;>
         subst e
-      · rw [iteF (ne 3 (by decide) (by omega)), iteF (ne 2 (by decide) (by omega)),
-          iteF (ne 1 (by decide) (by omega)), iteT rfl, ite_eq_right (by omega)]
-      · rw [iteF (ne 3 (by decide) (by omega)), iteF (ne 2 (by decide) (by omega)), iteT rfl, ite_eq_right (by omega)]
-      · rw [iteF (ne 3 (by decide) (by omega)), iteT rfl, ite_eq_right (by omega)]
-      · rw [iteT rfl, ite_eq_left (by omega)]
+      · rw [iteF (ne 3 (by decide) (by omega_arith)), iteF (ne 2 (by decide) (by omega_arith)),
+          iteF (ne 1 (by decide) (by omega_arith)), iteT rfl, ite_eq_right (by omega_arith)]
+      · rw [iteF (ne 3 (by decide) (by omega_arith)), iteF (ne 2 (by decide) (by omega_arith)), iteT rfl, ite_eq_right (by omega_arith)]
+      · rw [iteF (ne 3 (by decide) (by omega_arith)), iteT rfl, ite_eq_right (by omega_arith)]
+      · rw [iteT rfl, ite_eq_left (by omega_arith)]
 
 theorem tabFill_ok {s : State} (hc : VCtx b s) :
     WP isa tabFill s fun t => VCtx b t ∧ Rest [.r7, .r8, .r9, .r11] s t ∧
@@ -171,7 +171,7 @@ theorem tabFill_ok {s : State} (hc : VCtx b s) :
   have hc4 : VCtx b s4 := hc.of_rest hr4 (by decide) (by decide)
   have h0 : FInv b s4 0 s4 := ⟨Rest.refl _ _, by
       rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), u1.gpr, hc.ctx.r6],
-    by rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr], Frame.refl _ _, fun h hh => absurd hh (by omega)⟩
+    by rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr], Frame.refl _ _, fun h hh => absurd hh (by omega_arith)⟩
   have h7 : s4.gpr .r7 = BitVec.ofNat 64 0 := by rw [u4.other _ (by decide), u3.gpr]
   have h8 : s4.gpr .r8 = BitVec.ofNat 64 1 := by rw [u4.gpr]
   refine WP.seq (WP.mono (Q := FInv b s4 458) (WP.loop (M := isa)
@@ -180,26 +180,26 @@ theorem tabFill_ok {s : State} (hc : VCtx b s) :
     refine WP.mono (fillStep_ok hc4 h7 h8 hj hf) fun s'' ⟨hf', hz⟩ => ?_
     by_cases h458 : j + 1 = 458
     · exact .inl ⟨by rw [eval_nonzero, hz]; simp [h458], by rw [h458] at hf'; exact hf'⟩
-    · exact .inr ⟨by rw [eval_nonzero, hz]; simp; omega, 458 - (j + 1), by omega, j + 1, rfl, by omega, hf'⟩
+    · exact .inr ⟨by rw [eval_nonzero, hz]; simp; omega_arith, 458 - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, hf'⟩
   have hc5 : VCtx b s5 := hc4.of_rest h5.rest (by decide) (by decide)
   refine wp_stb (a := b + BitVec.ofNat 64 (TAB + 8)) (by decide) (by decide) (by rw [hc5.ctx.r6])
-    (hc5.inW (by omega)) fun t ut => WP.block_nil ?_
+    (hc5.inW (by omega_arith)) fun t ut => WP.block_nil ?_
   have hmt : t.mem = s5.mem.writeW (b + BitVec.ofNat 64 (TAB + 8)) (BitVec.ofNat 8 1) := by
     rw [ut.mem, h5.rest.gpr _ (by decide), h8, setWidth8_ofNat (by decide)]
   have hrt : Rest [.r7, .r8, .r9, .r11] s t := hr4.trans ((h5.rest.mono (by decide)).trans (ut.rest _))
   refine ⟨hc.of_rest hrt (by decide) (by decide), hrt, ?_, fun h hh => ?_⟩
   · rw [hmt, ← hm4]
     exact (h5.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))
+      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_arith)⟩).writeW (List.mem_singleton_self _) _
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_arith) (by omega_arith))
   · rw [hmt, VG.WriteBytes.writeW8_apply, fill0]
     by_cases e : h = 8
     · subst e; rw [iteT rfl, ite_eq_left (.inr rfl)]
-    · rw [iteF (Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)), h5.vals h (by omega)]
+    · rw [iteF (Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith)), h5.vals h (by omega_arith)]
       congr 1
       by_cases e3 : h % 4 = 3
       · rw [ite_eq_left e3, ite_eq_left (.inl e3)]
-      · rw [ite_eq_right e3, ite_eq_right (by omega)]
+      · rw [ite_eq_right e3, ite_eq_right (by omega_arith)]
 
 /-- The table after the bits of the first `i` bytes and `j` bits of byte `i`
 at `sc` (in `m0`) into the entries `e`, over `f`. -/
@@ -223,26 +223,26 @@ theorem tabStep_ok {m0 : Mem} {sc : Addr} {e : Nat} (he : e < 4) {f : Nat → Na
   have e7 : (s.gpr .r7).toNat = (m0 (sc + BitVec.ofNat 64 i)).toNat := by rw [h.rest.gpr _ (by decide), h7]
   have e9 : s.gpr .r9 = b + BitVec.ofNat 64 (32 * i) := by rw [h.rest.gpr _ (by decide), h9]
   have hcs : VCtx b s := hc.of_rest h.rest (by decide) (by decide)
-  refine wp_lsl (by omega) fun s2 u2 => wp_lsr (by decide) fun s3 u3 => ?_
+  refine wp_lsl (by omega_arith) fun s2 u2 => wp_lsr (by decide) fun s3 u3 => ?_
   have e8 : (s3.gpr .r8).toNat = ((m0 (sc + BitVec.ofNat 64 i)).toNat >>> j) &&& 1 := by
-    rw [u3.gpr, u2.gpr, bit_shift _ (by omega), e7]
-  refine wp_stb (a := b + BitVec.ofNat 64 (TAB + (8 + 32 * i + 4 * j + e))) (by decide) (by omega)
-    (by rw [u3.other _ (by decide), u2.other _ (by decide), e9, Offset.add_add]; congr 2; omega)
-    (by rw [u3.wr, u2.wr]; exact hcs.inW (by omega)) fun s4 u4 => WP.block_nil ⟨?_, ?_, fun h' hh => ?_⟩
+    rw [u3.gpr, u2.gpr, bit_shift _ (by omega_arith), e7]
+  refine wp_stb (a := b + BitVec.ofNat 64 (TAB + (8 + 32 * i + 4 * j + e))) (by decide) (by omega_arith)
+    (by rw [u3.other _ (by decide), u2.other _ (by decide), e9, Offset.add_add]; congr 2; omega_arith)
+    (by rw [u3.wr, u2.wr]; exact hcs.inW (by omega_arith)) fun s4 u4 => WP.block_nil ⟨?_, ?_, fun h' hh => ?_⟩
   · exact h.rest.trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans (u4.rest _)))
   · rw [u4.mem, u3.mem, u2.mem]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith))
   · rw [u4.mem, VG.WriteBytes.writeW8_apply, u3.mem, u2.mem]
     by_cases e0 : h' = 8 + 32 * i + 4 * j + e
     · subst e0
-      rw [iteT rfl, stb_byte e8, tabCur, ite_eq_left (by omega), rawBit,
-        show (8 + 32 * i + 4 * j + e - 8) / 4 / 8 = i by omega, show (8 + 32 * i + 4 * j + e - 8) / 4 % 8 = j by omega]
-    · rw [iteF (Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)), h.tab h' hh]
+      rw [iteT rfl, stb_byte e8, tabCur, ite_eq_left (by omega_arith), rawBit,
+        show (8 + 32 * i + 4 * j + e - 8) / 4 / 8 = i by omega_arith, show (8 + 32 * i + 4 * j + e - 8) / 4 % 8 = j by omega_arith]
+    · rw [iteF (Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith)), h.tab h' hh]
       congr 1
       unfold tabCur
       by_cases c : 8 ≤ h' ∧ h' % 4 = e ∧ ((h' - 8) / 32 < i ∨ (h' - 8) / 32 = i ∧ (h' - 8) % 32 / 4 < j)
-      · rw [ite_eq_left c, ite_eq_left (by omega)]
-      · rw [ite_eq_right c, ite_eq_right (by omega)]
+      · rw [ite_eq_left c, ite_eq_left (by omega_arith)]
+      · rw [ite_eq_right c, ite_eq_right (by omega_arith)]
 
 /-- The loop invariant of `tabBits` from `s0`, before byte `i`. -/
 structure TInv (b : Addr) (sc : Addr) (e : Nat) (f : Nat → Nat) (s0 : State) (i : Nat) (s : State) : Prop where
@@ -262,14 +262,14 @@ theorem tabBody_ok {src e : Nat} (hsrc : 2896 ≤ src) (hsrc' : src + 57 ≤ 409
   unfold tabBody
   simp only [List.cons_append, List.nil_append]
   refine wp_lbz (a := b + BitVec.ofNat 64 (src + i)) (by decide) (by decide)
-    (by rw [h.r4, BitVec.add_zero, Offset.add_add]) (h.ctx.inR (by omega)) fun s1 u1 => ?_
+    (by rw [h.r4, BitVec.add_zero, Offset.add_add]) (h.ctx.inR (by omega_arith)) fun s1 u1 => ?_
   have hc1 : VCtx b s1 := h.ctx.of_rest (u1.rest (ws := [.r7]) (by decide)) (by decide) (by decide)
   have hx : (s1.gpr .r7).toNat = (s0.mem (b + BitVec.ofNat 64 src + BitVec.ofNat 64 i)).toNat := by
     rw [u1.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans (BitVec.isLt _) (by decide)), Offset.add_add]
     congr 1
     refine h.frame _ fun r hr hcon => ?_
     rw [List.mem_singleton.mp hr] at hcon
-    exact Offset.disjoint b (d := src + i) (n := 1) (e := TAB) (k := 1832) (by omega) (by omega) (by omega) _
+    exact Offset.disjoint b (d := src + i) (n := 1) (e := TAB) (k := 1832) (by omega_arith) (by omega_arith) (by omega_arith) _
       (Region.contains_self _ _) hcon
   refine WP.append (wp_range_flatMap (M := isa) (TJInv b s0.mem (b + BitVec.ofNat 64 src) e f i s1)
     (fun j s' hj h' => tabStep_ok he hi hj hc1 hx (by rw [u1.other _ (by decide), h.r9]) h') 8 (Nat.le_refl _) s1
@@ -282,7 +282,7 @@ theorem tabBody_ok {src e : Nat} (hsrc : 2896 ≤ src) (hsrc' : src + 57 ≤ 409
   have hm5 : s5.mem = s2.mem := by rw [u5.mem, u4.mem, u3.mem]
   have r11' : s5.gpr .r11 = BitVec.ofNat 64 (57 - (i + 1)) := by
     rw [u5.gpr, u4.other _ (by decide), u3.other _ (by decide), h2.rest.gpr _ (by decide),
-      u1.other _ (by decide), h.r11, ofNat_sub_one (by omega) (by omega), Nat.sub_sub]
+      u1.other _ (by decide), h.r11, ofNat_sub_one (by omega_arith) (by omega_arith), Nat.sub_sub]
   refine ⟨⟨h.ctx.of_rest hr5 (by decide) (by decide), h.rest.trans hr5, ?_, ?_, r11', ?_, fun h' hh => ?_⟩, ?_⟩
   · rw [u5.other _ (by decide), u4.other _ (by decide), u3.gpr, h2.rest.gpr _ (by decide),
       u1.other _ (by decide), h.r4, Offset.add_add]
@@ -294,9 +294,9 @@ theorem tabBody_ok {src e : Nat} (hsrc : 2896 ≤ src) (hsrc' : src + 57 ≤ 409
     congr 1
     unfold tabCur
     by_cases c : 8 ≤ h' ∧ h' % 4 = e ∧ ((h' - 8) / 32 < i ∨ (h' - 8) / 32 = i ∧ (h' - 8) % 32 / 4 < 8)
-    · rw [ite_eq_left c, ite_eq_left (by omega)]
-    · rw [ite_eq_right c, ite_eq_right (by omega)]
-  · rw [r11', ofNat_ne_zero (by omega)]
+    · rw [ite_eq_left c, ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right c, ite_eq_right (by omega_arith)]
+  · rw [r11', ofNat_ne_zero (by omega_arith)]
 
 theorem tabBits_ok {s : State} (hc : VCtx b s) {src e : Nat} (hsrc : 2896 ≤ src) (hsrc' : src + 57 ≤ 4096)
     (he : e < 4) {f : Nat → Nat} (hf : TabIs b s.mem f) :
@@ -305,7 +305,7 @@ theorem tabBits_ok {s : State} (hc : VCtx b s) {src e : Nat} (hsrc : 2896 ≤ sr
       TabIs b t.mem (tabSet e (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (b + BitVec.ofNat 64 src) 57)) f) := by
   have hT : TAB = 1064 := rfl
   unfold tabBits
-  refine WP.seq (wp_addi (by decide) (by decide) fun s1 u1 => wp_addi (by decide) (by omega) fun s2 u2 =>
+  refine WP.seq (wp_addi (by decide) (by decide) fun s1 u1 => wp_addi (by decide) (by omega_arith) fun s2 u2 =>
     wp_li (by decide) fun s3 u3 => WP.block_nil ?_)
   have hr3 : Rest [.r4, .r9, .r11] s s3 := (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
     (u3.rest (by decide)))
@@ -315,7 +315,7 @@ theorem tabBits_ok {s : State} (hc : VCtx b s) {src e : Nat} (hsrc : 2896 ≤ sr
       by rw [u3.other _ (by decide), u2.gpr, u1.other _ (by decide), hc.ctx.r6, BitVec.add_zero],
       by rw [u3.other _ (by decide), u2.other _ (by decide), u1.gpr, hc.ctx.r6],
       by rw [u3.gpr], Frame.refl _ _, fun h' hh => by
-        rw [hm3, hf h' hh]; congr 1; unfold tabCur; rw [ite_eq_right (by omega)]⟩
+        rw [hm3, hf h' hh]; congr 1; unfold tabCur; rw [ite_eq_right (by omega_arith)]⟩
   refine WP.mono (Q := TInv b (b + BitVec.ofNat 64 src) e f s3 57) (WP.loop (M := isa)
     (fun m s' => ∃ i, m = 57 - i ∧ i < 57 ∧ TInv b (b + BitVec.ofNat 64 src) e f s3 i s') ?_ 57 s3
       ⟨0, rfl, by decide, h0⟩) fun t ht => ⟨ht.ctx, (hr3.mono (by decide)).trans ht.rest, by
@@ -324,13 +324,13 @@ theorem tabBits_ok {s : State} (hc : VCtx b s) {src e : Nat} (hsrc : 2896 ≤ sr
     refine WP.mono (tabBody_ok hsrc hsrc' he hi hb) fun s'' ⟨hb', hz⟩ => ?_
     by_cases h57 : i + 1 = 57
     · exact .inl ⟨by rw [eval_nonzero, hz]; simp [h57], by rw [h57] at hb'; exact hb'⟩
-    · exact .inr ⟨by rw [eval_nonzero, hz]; simp; omega, 57 - (i + 1), by omega, i + 1, rfl, by omega, hb'⟩
+    · exact .inr ⟨by rw [eval_nonzero, hz]; simp; omega_arith, 57 - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, hb'⟩
   · rw [ht.tab h' hh]
     congr 1
     unfold tabCur tabSet
     by_cases c : 8 ≤ h' ∧ h' % 4 = e
-    · rw [ite_eq_left (by omega), ite_eq_left c, hm3, rawBit, Proof.Ed448.scalar_bit s.mem _ (by omega)]
-    · rw [ite_eq_right (by omega), ite_eq_right c]
+    · rw [ite_eq_left (by omega_arith), ite_eq_left c, hm3, rawBit, Proof.Ed448.scalar_bit s.mem _ (by omega_arith)]
+    · rw [ite_eq_right (by omega_arith), ite_eq_right c]
 
 end
 

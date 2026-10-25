@@ -81,7 +81,7 @@ theorem V2.keep {p : Params} (hF : VFacts p) {STK j : Nat} {σ s s' : State} (h 
     (h11 : s'.gpr .r11 = s.gpr .r11) : V2 p STK j σ s' := by
   have hL := h.vc.site.ok
   obtain ⟨hh', e, hi⟩ := h.hint
-  exact ⟨h.vc.keep hk hc, ⟨hh', e, hintIs_keepW hL hk.frame hh (by decide) (by have := hF.k; omega) hi⟩,
+  exact ⟨h.vc.keep hk hc, ⟨hh', e, hintIs_keepW hL hk.frame hh (by decide) (by have := hF.k; omega_arith) hi⟩,
     fun i hi' => polyIs_keepW hL hk.frame (hz i hi') (by decide) rfl (h.z i hi'), by rw [h11]; exact h.r11⟩
 
 theorem flag_and (a b : Bool) : flag a &&& flag b = flag (a && b) := by
@@ -91,8 +91,8 @@ theorem zOk_succ (p : Params) (σ : State) (j : Nat) :
     zOk p σ (j + 1) = (zOk p σ j && decide (normRq [toRq (vZ p (sgOf p σ) j)] < p.γ₁ - p.β)) := by
   simp only [zOk]
   rw [← Bool.decide_and]
-  refine decide_eq_decide.mpr (Iff.intro (fun h => ⟨fun i hi => h i (by omega), h j (by omega)⟩) fun h i hi => ?_)
-  rcases (by omega : i < j ∨ i = j) with hi | rfl
+  refine decide_eq_decide.mpr (Iff.intro (fun h => ⟨fun i hi => h i (by omega_arith), h j (by omega_arith)⟩) fun h i hi => ?_)
+  rcases (by omega_arith : i < j ∨ i = j) with hi | rfl
   exacts [h.1 i hi, h.2]
 
 /-! ## One `z[i]` -/
@@ -109,7 +109,7 @@ theorem bu_m {σ : State} {j : Nat} (hj : j < p.ℓ) :
   refine ⟨⟨rfl, ?_⟩, ⟨rfl, by vsep hF⟩, show ix Reg.r7 ∈ vWb by decide, ?_, hb, hlz, ?_⟩
   · rcases hF.lz with e | e <;> vsep hF [hF.sig, hF.hint, e]
   · rcases hF.lz with e | e <;> vsep hF [hF.sig, hF.hint, e]
-  · rcases hF.lz with e | e <;> rw [e] <;> omega
+  · rcases hF.lz with e | e <;> rw [e] <;> omega_arith
 
 /-- After `z[j]` is unpacked. -/
 abbrev Z1 (p : Params) (STK j : Nat) (σ s : State) : Prop :=
@@ -121,18 +121,18 @@ theorem bu_piece {j : Nat} (hj : j < p.ℓ) :
   have hl := hF.l
   refine ⟨fun σ s _ h => ?_, ?_⟩
   · unfold bitUnpackAt
-    refine bu_okS hP.bitUnpack h.vc.site (by omega) (bu_m hF hj) fun s' k' hz => ⟨h.keep hF k' ?_ ?_ ?_
+    refine bu_okS hP.bitUnpack h.vc.site (by omega_arith) (bu_m hF hj) fun s' k' hz => ⟨h.keep hF k' ?_ ?_ ?_
       (k'.cs .r11 (by decide) (by decide)), ?_⟩
     · rcases hF.lz with e | e <;> vsep hF [vcChk, hF.sig, hF.hint, e]
     · vsep hF
     · intro i hi; vsep hF
     · have e : bytesAt s.mem (lpa (vlay p STK σ) (.r6, p.ctildeLen + lenZ p * j)) (lenZ p) =
           ((sgOf p σ).drop (p.ctildeLen + lenZ p * j)).take (lenZ p) :=
-        sig_slice h.vc (by rw [hF.sig, hF.hint]; rcases hF.lz with e | e <;> rw [e] <;> omega)
+        sig_slice h.vc (by rw [hF.sig, hF.hint]; rcases hF.lz with e | e <;> rw [e] <;> omega_arith)
       rw [e] at hz
       exact hz
   · unfold bitUnpackAt
-    exact rel_of (RelCT.exists_ fun σ => bu_tr hP.bitUnpack (by omega) (bu_m hF hj) fun x y h => h)
+    exact rel_of (RelCT.exists_ fun σ => bu_tr hP.bitUnpack (by omega_arith) (bu_m hF hj) fun x y h => h)
       fun σ₁ _ _ _ _ _ pub h₁ h₂ => ⟨σ₁, vc_twoL pub h₁.vc h₂.vc⟩
 
 /-- After the norm of `z[j]`. -/
@@ -147,7 +147,7 @@ theorem nl_piece {j : Nat} (hj : j < p.ℓ) :
     have hr0 : Reduced s.mem (lpa (vlay p STK σ) (pZ j)) := h.2.1
     have pf : PtrIn (vlay p STK σ) (pZ j) 1024 := ⟨rfl, by vsep hF⟩
     have hb : p.γ₁ - p.β < 2 ^ 32 := hF.nb.1
-    refine nl_ok hP.normLt h.1.vc.site (by omega) (bd := p.γ₁ - p.β) pf hb hr0 fun s' k' hr => ⟨⟨h.1.keep hF k'
+    refine nl_ok hP.normLt h.1.vc.site (by omega_arith) (bd := p.γ₁ - p.β) pf hb hr0 fun s' k' hr => ⟨⟨h.1.keep hF k'
       (by vsep hF [vcChk]) (by vsep hF) (fun i hi => by vsep hF) (k'.cs .r11 (by decide) (by decide)),
       polyIs_keepW h.1.vc.site.ok k'.frame (by vsep hF) (by decide) rfl h.2⟩, ?_⟩
     rw [hr, show polyAt s.mem (lpa (vlay p STK σ) (pZ j)) = _ from h.2.2, flag]
@@ -155,7 +155,7 @@ theorem nl_piece {j : Nat} (hj : j < p.ℓ) :
   · unfold normLtAt
     refine rel_of (Q := fun x y => ∃ σ, Two (vlay p STK σ) vWb STK x y ∧
       Reduced x.mem (lpa (vlay p STK σ) (pZ j)) ∧ Reduced y.mem (lpa (vlay p STK σ) (pZ j)))
-      (RelCT.exists_ fun σ => nl_tr hP.normLt (by omega) (bd := p.γ₁ - p.β)
+      (RelCT.exists_ fun σ => nl_tr hP.normLt (by omega_arith) (bd := p.γ₁ - p.β)
         (⟨rfl, by vsep hF⟩ : PtrIn (vlay p STK σ) (pZ j) 1024) fun x y ⟨T, a, b⟩ => ⟨T.1, T.2.1, T.2.2, a, b⟩)
       fun σ₁ _ _ _ _ _ pub h₁ h₂ => ?_
     have r₂ : Reduced _ (lpa (vlay p STK _) (pZ j)) := h₂.2.1
@@ -169,7 +169,7 @@ theorem and11_piece {j : Nat} : VPiece p STK (Z2 p STK j) (V2 p STK (j + 1)) (.b
   simp only [and11, runBlock_cons, runStep_some, runBlock_nil, isa, exec, Op2.eval, Option.map_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨h.1.1.vc.r11 _, h.1.1.hint, fun i hi => ?_, ?_⟩
-  · rcases (by omega : i < j ∨ i = j) with hi | rfl
+  · rcases (by omega_arith : i < j ∨ i = j) with hi | rfl
     exacts [h.1.1.z i hi, h.1.2]
   · rw [gpr_setReg_self, h.1.1.r11, h.2, flag_and, zOk_succ]
 

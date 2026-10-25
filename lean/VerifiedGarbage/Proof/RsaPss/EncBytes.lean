@@ -42,7 +42,7 @@ theorem eq_range_map {l : List Byte} {n : Nat} {f : Nat → Byte} (hl : l.length
     (h : ∀ i < n, l.getD i 0 = f i) : l = (List.range n).map f := by
   apply List.ext_getElem (by simp [hl])
   intro i h₁ h₂
-  rw [List.getElem_map, List.getElem_range, ← h i (by omega), List.getD_eq_getElem?_getD,
+  rw [List.getElem_map, List.getElem_range, ← h i (by omega_arith), List.getD_eq_getElem?_getD,
     List.getElem?_eq_getElem h₁]
   rfl
 
@@ -76,7 +76,7 @@ theorem db_getD (p : Nat) (salt : List Byte) (j : Nat) :
   · rename_i h
     by_cases hj : j = p
     · subst hj; simp
-    · rw [ifn hj, show j - p = (j - p - 1) + 1 by omega]
+    · rw [ifn hj, show j - p = (j - p - 1) + 1 by omega_arith]
       simp
 
 variable (G : Hash)
@@ -92,43 +92,43 @@ theorem encodeK_eq (hG : Valid G) {n₀ : Byte} {rest mHash salt : List Byte} (h
           (mgf1 G (G.hash (zeros 8 ++ mHash ++ salt)) db) ((0xFF : Byte) >>> (8 * emLen - emBits)))) := by
   have hEL := emLength_eq rest h0
   rw [hb, he] at hEL
-  have hle : emLen ≤ (n₀ :: rest).length := by rw [hEL, List.length_cons]; split <;> omega
+  have hle : emLen ≤ (n₀ :: rest).length := by rw [hEL, List.length_cons]; split <;> omega_arith
   simp only [encodeK, encode, hb, he, hdb, hlo]
-  rw [ifn (by omega)]
+  rw [ifn (by omega_arith)]
   simp only [Option.map_some]
   generalize hgen : G.hash (zeros 8 ++ mHash ++ salt) = h
   have hh : h.length = G.len := by rw [← hgen]; exact hG.2 _
   have hmk : (mgf1 G h db).length = db := mgf1_length hG _ _
   have hdbl : (zeros (emLen - salt.length - G.len - 2) ++ 0x01 :: salt).length = db := by
-    simp only [List.length_append, zeros_length, List.length_cons]; omega
+    simp only [List.length_append, zeros_length, List.length_cons]; omega_arith
   have hX : (clearTop (8 * emLen - emBits) (xorBytes (zeros (emLen - salt.length - G.len - 2) ++ 0x01 :: salt)
       (mgf1 G h db))).length = db := by
     rw [clearTop_length, xorBytes_length, hdbl, hmk, Nat.min_self]
   refine congrArg some (eq_range_map ?_ fun i hi => ?_)
   · simp only [List.length_append, zeros_length, hX, hh, List.length_cons, List.length_nil]
-    simp only [List.length_cons] at hlo hle; omega
+    simp only [List.length_cons] at hlo hle; omega_arith
   simp only [List.length_cons] at hi hlo hle
   simp only [emT, getD_app, List.length_append, zeros_length, hX, hh]
-  have hlodb : lo + db + G.len + 1 = rest.length + 1 := by omega
+  have hlodb : lo + db + G.len + 1 = rest.length + 1 := by omega_arith
   by_cases h1 : i < lo
   · simp only [h1, ↓reduceIte]; exact zeros_getD _ _
   simp only [h1, ↓reduceIte]
   by_cases h2 : i - lo < db
-  · have h2' : i - lo < db + G.len := by omega
+  · have h2' : i - lo < db + G.len := by omega_arith
     simp only [h2, h2', ↓reduceIte, clearTop_getD]
     have hx : ∀ j < db, (xorBytes (zeros (emLen - salt.length - G.len - 2) ++ 1 :: salt) (mgf1 G h db)).getD j 0 =
         (if j < db - salt.length - 1 then 0 else if j = db - salt.length - 1 then 1
           else salt.getD (j - (db - salt.length)) 0) ^^^ (mgf1 G h db).getD j 0 := fun j hj => by
       rw [xorBytes_getD (by rw [hdbl]; exact hj) (by rw [hmk]; exact hj), db_getD,
-        show emLen - salt.length - G.len - 2 = db - salt.length - 1 by omega,
-        show j - (db - salt.length - 1) - 1 = j - (db - salt.length) by omega]
+        show emLen - salt.length - G.len - 2 = db - salt.length - 1 by omega_arith,
+        show j - (db - salt.length - 1) - 1 = j - (db - salt.length) by omega_arith]
     by_cases h3 : i - lo = 0
-    · simp only [h3, ↓reduceIte]; rw [hx 0 (by omega)]
+    · simp only [h3, ↓reduceIte]; rw [hx 0 (by omega_arith)]
     · simp only [h3, ↓reduceIte]; rw [hx _ h2]
   · simp only [h2, ↓reduceIte]
     by_cases h4 : i - lo < db + G.len
     · simp only [h4, ↓reduceIte]
     · simp only [h4, ↓reduceIte]
-      rw [show i - lo - (db + G.len) = 0 by omega]; rfl
+      rw [show i - lo - (db + G.len) = 0 by omega_arith]; rfl
 
 end VG.Proof.RsaPss

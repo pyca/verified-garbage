@@ -35,9 +35,9 @@ theorem XVals.of_exp {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {X :
   have rO := crtExpRanges_arr wx (j := Public.aOne) (by decide) (by decide) (by decide) (by decide) (by decide)
   have lN := slot_le (w := wx) (show Public.aN < 8 by decide)
   have lO := slot_le (w := wx) (show Public.aOne < 8 by decide)
-  exact ⟨by rw [hf.wv_eq (fun r hr => by have := rN r hr; omega) (by omega)]; exact h.n,
-    by rw [hf.word_eq (fun r hr => by have := rN r hr; omega) (by omega)]; exact h.inv,
-    by rw [hf.wv_eq (fun r hr => by have := rO r hr; omega) (by omega)]; exact h.one⟩
+  exact ⟨by rw [hf.wv_eq (fun r hr => by have := rN r hr; omega_arith) (by omega_arith)]; exact h.n,
+    by rw [hf.word_eq (fun r hr => by have := rN r hr; omega_arith) (by omega_arith)]; exact h.inv,
+    by rw [hf.wv_eq (fun r hr => by have := rO r hr; omega_arith) (by omega_arith)]; exact h.one⟩
 
 /-- From the modulus' workspace, `c G mod N` in its `Y` and `R_X mod X` in
 the prime's: the prime's `Y := c^d R_X mod X` if `X` divides `N`, `d` the
@@ -63,19 +63,19 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
-  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  have ho64 : o < 2 ^ 64 := by omega
-  have hoL : o + slot wx 8 ≤ 2 ^ 64 := by omega
+  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
+  have ho64 : o < 2 ^ 64 := by omega_arith
+  have hoL : o + slot wx 8 ≤ 2 ^ 64 := by omega_arith
   simp only [List.append_assoc]
   refine wp_seqs_append (by simp) (by simp [redc]) ?_
   refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = off B o ∧ t.mem = s.mem)
-    (by brun [hg.x0, hdr_enc hsl, hs.ld (d := 8 * sl) (by omega), hslv]) rfl rfl rfl)
+    (by brun [hg.x0, hdr_enc hsl, hs.ld (d := 8 * sl) (by omega_arith), hslv]) rfl rfl rfl)
     fun s₁ ⟨⟨hdi₁, hm₁⟩, k₁⟩ => ?_
   have hc₁ : SubCtx s₁ B Z o w wx mx :=
-    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by have := tabBytes_le_wsTab wx; omega)
+    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by have := tabBytes_le_wsTab wx; omega_arith)
   have hX₁ : XVals s₁ B o wx mx X := ⟨by rw [hm₁]; exact hX.n, by rw [hm₁]; exact hX.inv, by rw [hm₁]; exact hX.one⟩
   refine wp_seqs_append (by simp [redc]) (by simp [expLoop]) ?_
-  refine WP.mono (redc_ok M hc₁ hX₁ hwx2 hwx (by omega) hX1 (j := Public.aY) (by decide))
+  refine WP.mono (redc_ok M hc₁ hX₁ hwx2 hwx (by omega_arith) hX1 (j := Public.aY) (by decide))
     fun s₂ ⟨hc₂, hX₂, hlt₂, hv₂, f₂, k₂⟩ => ?_
   have fx₂ : Frm B [xRange o wx] s₁.mem s₂.mem := f₂.to_x (redcRanges_ok wx) hoL (List.mem_singleton_self _)
   have hb₂ : ∀ d, d + 8 ≤ o → word s₂.mem B d = word s.mem B d := fun d hd => by
@@ -85,21 +85,21 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
       (by decide)
     have := slot_le (w := wx) (show Public.aY < 8 by decide)
     have := hc₁.good.scr.nowrap
-    rw [f₂.wv_eq (fun r hr => by have := rY r hr; omega) (by omega), hm₁]
+    rw [f₂.wv_eq (fun r hr => by have := rY r hr; omega_arith) (by omega_arith), hm₁]
   have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hXodd _
   have hsrc₂ : Src s₂ B Z ep eb := he.congrK (rs := mmRegs ++ [.x0]) (by
     rw [← hm₁] at *
-    exact InScr.of_frm fx₂ fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega)
+    exact InScr.of_frm fx₂ fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_arith)
     ((k₁.trans k₂).mono (by decide))
   -- The exponent's base and the start, in Montgomery form if `X` divides `N`.
   have hxc : X ∣ N → wv s₂.mem (off B o) (slot wx aXc) wx % X = C * 2 ^ (64 * wx) % X := fun hd => by
     apply VG.Proof.Bignum.redc_cancel hR
     rw [Nat.pow_mul] at hv₂
     rw [hv₂, hm₁, ← Nat.mod_mod_of_dvd _ hd, hnY, Nat.mod_mod_of_dvd _ hd, ← Nat.pow_mul]
-  refine WP.mono (crtExpLoop_ok M (Q := X ∣ N) hc₂ hwx2 hwx (by omega) hX₂.n hX₂.inv hXodd hlt₂ hxc
-    (by rw [hY₂]; exact hyl) (fun hd => by rw [hY₂]; exact hyc hd) hsd hsln (by rw [hb₂ _ (by omega)]; exact hep)
-    (by rw [hb₂ _ (by omega)]; exact hel) hL1 hL2 hsrc₂) fun t ⟨hc, hlt, hv, f₃, k₃⟩ => ?_
-  refine ⟨hc, hX₂.of_exp f₃ (by have := hc₂.good.scr.nowrap; omega), hlt, fun hd => ?_, ?_, ?_,
+  refine WP.mono (crtExpLoop_ok M (Q := X ∣ N) hc₂ hwx2 hwx (by omega_arith) hX₂.n hX₂.inv hXodd hlt₂ hxc
+    (by rw [hY₂]; exact hyl) (fun hd => by rw [hY₂]; exact hyc hd) hsd hsln (by rw [hb₂ _ (by omega_arith)]; exact hep)
+    (by rw [hb₂ _ (by omega_arith)]; exact hel) hL1 hL2 hsrc₂) fun t ⟨hc, hlt, hv, f₃, k₃⟩ => ?_
+  refine ⟨hc, hX₂.of_exp f₃ (by have := hc₂.good.scr.nowrap; omega_arith), hlt, fun hd => ?_, ?_, ?_,
     ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   · exact hv hd
   · rw [f₃.word_eq (fun r hr => by
@@ -110,9 +110,9 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
       have := hdr_lt_slot wx aT (show 31 < 32 by decide)
       have := hdr_lt_slot wx 8 (show 31 < 32 by decide)
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [sMaskX, sExp, sExpLen, sI, sTab, sV, sBit, sNib, sEnt, sJ, sFn] <;> omega)
-      (by unfold sMaskX sFn; omega), f₂.word_eq (sMaskX_redc wx) (by unfold sMaskX sFn; omega), hm₁]
+        simp only [sMaskX, sExp, sExpLen, sI, sTab, sV, sBit, sNib, sEnt, sJ, sFn] <;> omega_arith)
+      (by unfold sMaskX sFn; omega_arith), f₂.word_eq (sMaskX_redc wx) (by unfold sMaskX sFn; omega_arith), hm₁]
   · rw [← hm₁]
-    exact fx₂.trans (f₃.to_xT (crtExpRanges_ok wx) (by have := tabBytes_le_wsTab wx; omega) (List.mem_singleton_self _))
+    exact fx₂.trans (f₃.to_xT (crtExpRanges_ok wx) (by have := tabBytes_le_wsTab wx; omega_arith) (List.mem_singleton_self _))
 
 end VG.Proof.Bignum.AArch64

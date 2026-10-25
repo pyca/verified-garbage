@@ -33,8 +33,8 @@ theorem val32_prefix {m : Mem} {base : Addr} {d k r v : Nat} (h : val32 m base d
   have hm : 2 ^ (32 * k) * val32 m base (d + 4 * k) r = 0 := by
     rcases Nat.eq_zero_or_pos (val32 m base (d + 4 * k) r) with h0 | h0
     · rw [h0, Nat.mul_zero]
-    · have := Nat.mul_le_mul_left (2 ^ (32 * k)) h0; omega
-  omega
+    · have := Nat.mul_le_mul_left (2 ^ (32 * k)) h0; omega_arith
+  omega_arith
 
 /-- The ranges `g`'s computation changes: the exponentiation's working space
 below the header, the temporary, `g` in p||q||g and `fG`. -/
@@ -45,7 +45,7 @@ theorem wRanges_apart {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) : E.Apart 
   have bd := G.bounds
   intro o ho
   simp only [wRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-  rcases ho with rfl | rfl | rfl | rfl <;> simp only [aTmp, arr, sPk, fG, fOut, fWitLen, hdr] <;> omega
+  rcases ho with rfl | rfl | rfl | rfl <;> simp only [aTmp, arr, sPk, fG, fOut, fWitLen, hdr] <;> omega_arith
 
 /-- `h^((p − 1)/q) mod p`, as the exponentiation computes it. -/
 def gVal (h p x : Nat) : Nat := h ^ x % p
@@ -69,7 +69,7 @@ theorem Env.Chg.of_outside {E : Env} (v : E.Valid) {os : List (Nat × Nat)} {m m
   · intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     show o + n ≤ 2 ^ 64
-    omega
+    omega_arith
   · intro r hr
     simp only [List.map_cons, List.map_nil, List.mem_singleton] at hr; subst hr
     exact Env.in_range ho h₁ h₂
@@ -226,31 +226,31 @@ theorem gPowCall_regs {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State
     rw [G.e, n64, n32]
     rcases G.lengths with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h, h'] <;> decide
   have slots : ∀ i, i ≤ 9 → slot g.n64 i ≤ 7048 := fun i hi => by
-    simp only [slot, stride]; have := Nat.mul_le_mul hi (show 16 * g.n64 + 8 ≤ 776 by omega); omega
+    simp only [slot, stride]; have := Nat.mul_le_mul hi (show 16 * g.n64 + 8 ≤ 776 by omega_arith); omega_arith
   have cb : contextBytes g.n64 ≤ 7048 := slots 9 (Nat.le_refl _)
   have sl : ∀ i, slot g.n64 i + 8 * g.n64 ≤ slot g.n64 (i + 1) := fun i => by
-    simp only [slot, stride, Nat.succ_mul]; omega
+    simp only [slot, stride, Nat.succ_mul]; omega_arith
   have mod : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).modulus = slot g.n64 0 := rfl
   have bas : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).base = slot g.n64 5 := rfl
   have exn : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).exponent = slot g.n64 8 := rfl
   have res : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).result = slot g.n64 6 := rfl
-  have s0 := slots 0 (by omega); have s5 := slots 5 (by omega); have s6 := slots 6 (by omega)
-  have s8 := slots 8 (by omega); have s9 := slots 9 (by omega); have s1 := slots 1 (by omega)
+  have s0 := slots 0 (by omega_arith); have s5 := slots 5 (by omega_arith); have s6 := slots 6 (by omega_arith)
+  have s8 := slots 8 (by omega_arith); have s9 := slots 9 (by omega_arith); have s1 := slots 1 (by omega_arith)
   have l0 : slot g.n64 0 + 8 * g.n64 ≤ slot g.n64 1 := sl 0
   have l5 : slot g.n64 5 + 8 * g.n64 ≤ slot g.n64 6 := sl 5
   have l6 : slot g.n64 6 + 8 * g.n64 ≤ slot g.n64 7 := sl 6
   have l8 : slot g.n64 8 + 8 * g.n64 ≤ slot g.n64 9 := sl 8
-  have s7 := slots 7 (by omega)
-  have o15 : slot g.n64 1 ≤ slot g.n64 5 := by simp only [slot]; omega
-  have o18 : slot g.n64 1 ≤ slot g.n64 8 := by simp only [slot]; omega
-  have o68 : slot g.n64 6 ≤ slot g.n64 8 := by simp only [slot]; omega
-  have o56 : slot g.n64 5 ≤ slot g.n64 6 := by simp only [slot]; omega
-  have s00 : 64 ≤ slot g.n64 0 := by simp only [slot]; omega
+  have s7 := slots 7 (by omega_arith)
+  have o15 : slot g.n64 1 ≤ slot g.n64 5 := by simp only [slot]; omega_arith
+  have o18 : slot g.n64 1 ≤ slot g.n64 8 := by simp only [slot]; omega_arith
+  have o68 : slot g.n64 6 ≤ slot g.n64 8 := by simp only [slot]; omega_arith
+  have o56 : slot g.n64 5 ≤ slot g.n64 6 := by simp only [slot]; omega_arith
+  have s00 : 64 ≤ slot g.n64 0 := by simp only [slot]; omega_arith
   have low := v.low
   have ss := v.stackScratch
   exact VG.X86.WP.mono_syms (VG.Proof.Dsa.X86.Pow.call_ok S.scr
-    (by rw [S.sp]; exact ⟨by omega, ss.elim (fun h => .inl h) (fun h => .inr (by omega))⟩)
-    (by omega) (by simp only [VG.Impl.Dsa.Layout.usedBytes]; omega) (by omega) (by omega) he.1 he.2.1 S.modv hp1 hodd)
+    (by rw [S.sp]; exact ⟨by omega_arith, ss.elim (fun h => .inl h) (fun h => .inr (by omega_arith))⟩)
+    (by omega_arith) (by simp only [VG.Impl.Dsa.Layout.usedBytes]; omega_arith) (by omega_arith) (by omega_arith) he.1 he.2.1 S.modv hp1 hodd)
     fun u ⟨_, _, K⟩ _ => ⟨K.1 _ (by decide), K.1 _ (by decide)⟩
 
 /-- The exponentiation, and the check `g > 1` up to its branch. -/
@@ -402,27 +402,27 @@ theorem gPow_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (B :
     rw [G.e, n64, n32]
     rcases G.lengths with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h, h'] <;> decide
   have slots : ∀ i, i ≤ 9 → slot g.n64 i ≤ 7048 := fun i hi => by
-    simp only [slot, stride]; have := Nat.mul_le_mul hi (show 16 * g.n64 + 8 ≤ 776 by omega); omega
+    simp only [slot, stride]; have := Nat.mul_le_mul hi (show 16 * g.n64 + 8 ≤ 776 by omega_arith); omega_arith
   have cb : contextBytes g.n64 ≤ 7048 := slots 9 (Nat.le_refl _)
   have sl : ∀ i, slot g.n64 i + 8 * g.n64 ≤ slot g.n64 (i + 1) := fun i => by
-    simp only [slot, stride, Nat.succ_mul]; omega
+    simp only [slot, stride, Nat.succ_mul]; omega_arith
   have mod : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).modulus = slot g.n64 0 := rfl
   have bas : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).base = slot g.n64 5 := rfl
   have exn : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).exponent = slot g.n64 8 := rfl
   have res : (VG.Impl.Dsa.X86.Pow.layout g.n64 g.e).result = slot g.n64 6 := rfl
   rw [mod, bas, exn, res]
-  have s0 := slots 0 (by omega); have s5 := slots 5 (by omega); have s6 := slots 6 (by omega)
-  have s8 := slots 8 (by omega); have s9 := slots 9 (by omega); have s1 := slots 1 (by omega)
+  have s0 := slots 0 (by omega_arith); have s5 := slots 5 (by omega_arith); have s6 := slots 6 (by omega_arith)
+  have s8 := slots 8 (by omega_arith); have s9 := slots 9 (by omega_arith); have s1 := slots 1 (by omega_arith)
   have l0 : slot g.n64 0 + 8 * g.n64 ≤ slot g.n64 1 := sl 0
   have l5 : slot g.n64 5 + 8 * g.n64 ≤ slot g.n64 6 := sl 5
   have l6 : slot g.n64 6 + 8 * g.n64 ≤ slot g.n64 7 := sl 6
   have l8 : slot g.n64 8 + 8 * g.n64 ≤ slot g.n64 9 := sl 8
-  have s7 := slots 7 (by omega)
-  have o15 : slot g.n64 1 ≤ slot g.n64 5 := by simp only [slot]; omega
-  have o18 : slot g.n64 1 ≤ slot g.n64 8 := by simp only [slot]; omega
-  have o68 : slot g.n64 6 ≤ slot g.n64 8 := by simp only [slot]; omega
-  have o56 : slot g.n64 5 ≤ slot g.n64 6 := by simp only [slot]; omega
-  have s00 : 64 ≤ slot g.n64 0 := by simp only [slot]; omega
+  have s7 := slots 7 (by omega_arith)
+  have o15 : slot g.n64 1 ≤ slot g.n64 5 := by simp only [slot]; omega_arith
+  have o18 : slot g.n64 1 ≤ slot g.n64 8 := by simp only [slot]; omega_arith
+  have o68 : slot g.n64 6 ≤ slot g.n64 8 := by simp only [slot]; omega_arith
+  have o56 : slot g.n64 5 ≤ slot g.n64 6 := by simp only [slot]; omega_arith
+  have s00 : 64 ≤ slot g.n64 0 := by simp only [slot]; omega_arith
   refine gPowMid_ok (P := .ite .e _ _) G v B hP hH hE hx hone hp1 hodd hF fun s₉ M => ?_
   have hs₉ : Scr s₉ E.base E.size := M.base.scr
   have Aw := wRanges_apart G v
@@ -435,13 +435,13 @@ theorem gPow_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (B :
     exact absurd hg this
   have hg : 1 < gVal h p x := by simpa using hz
   have glt : gVal h p x < 2 ^ (8 * g.pLen) := by
-    have := Nat.mod_lt (h ^ x) (show 0 < p by omega); unfold gVal; omega
+    have := Nat.mod_lt (h ^ x) (show 0 < p by omega_arith); unfold gVal; omega_arith
   refine WP.seq (VG.X86.WP.mono_syms (storeS_ok hs₉ (o := slot g.n64 6) (dst := sPk + g.pLen + g.qLen)
-    (len := g.pLen) (n := g.n64) (by omega) (by omega) (by omega) (by simp only [sPk]; omega)
-    (by left; simp only [sPk]; omega) (by rw [h2, g₉]; exact glt)) fun s₁₀ ⟨G₁₀, F₁₀, K₁₀⟩ sy₁₀ => ?_)
+    (len := g.pLen) (n := g.n64) (by omega_arith) (by omega_arith) (by omega_arith) (by simp only [sPk]; omega_arith)
+    (by left; simp only [sPk]; omega_arith) (by rw [h2, g₉]; exact glt)) fun s₁₀ ⟨G₁₀, F₁₀, K₁₀⟩ sy₁₀ => ?_)
   rw [h2, g₉] at G₁₀
   have hs₁₀ := hs₉.of_keeps K₁₀ (by decide)
-  refine stImm_end hs₁₀ (o := fG) (v := 1) (by simp only [fG, hdr]; omega) fun s₁₁ g₁₁ m₁₁ rd₁₁ wr₁₁ sy₁₁ => ?_
+  refine stImm_end hs₁₀ (o := fG) (v := 1) (by simp only [fG, hdr]; omega_arith) fun s₁₁ g₁₁ m₁₁ rd₁₁ wr₁₁ sy₁₁ => ?_
   have pk : (sPk + g.pLen + g.qLen, g.pLen) ∈ wRanges g := by simp [wRanges]
   have fg : (fG, 4) ∈ wRanges g := by simp [wRanges]
   have C₁₀ : E.Chg (wRanges g) s.mem s₁₀.mem := C₉.trans (Env.Chg.of_frame F₁₀ fun r hr => by
@@ -456,7 +456,7 @@ theorem gPow_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} (B :
     K₁₁.2.1, K₁₁.2.2, sy⟩
   · rw [m₁₁, Mem.readW_writeW_self32]; simp only [hg, ↓reduceIte]
   · rw [m₁₁, Env.Chg.scratch v ((Env.Chg.refl [(fG, 4)] s₁₀.mem).store (List.mem_singleton_self _) (by decide) _)
-      (by simp only [sPk]; omega) (fun o ho => by
-        simp only [List.mem_singleton] at ho; subst ho; simp only [fG, sPk, hdr]; omega), G₁₀]
+      (by simp only [sPk]; omega_arith) (fun o ho => by
+        simp only [List.mem_singleton] at ho; subst ho; simp only [fG, sPk, hdr]; omega_arith), G₁₀]
 
 end VG.Proof.Dsa.X86.Generation

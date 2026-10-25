@@ -88,10 +88,10 @@ theorem ksqzChk_spec {bs wbs : List (Reg × Nat)} {dst : Ptr} {len : Nat} (h : k
 /-- The 16 bytes of stack of a call of a sponge function, from the layout. -/
 theorem k16 {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true)
     {s1 : State} (hsp : s1.gpr .rsp = s.gpr .rsp) : (below (s1.gpr .rsp) 16).Disjoint ⟨pa s p, l⟩ := by
-  rw [hsp]; exact (L.stkD h).sub_left (below_sub (by omega) (by have := L.dsm; omega))
+  rw [hsp]; exact (L.stkD h).sub_left (below_sub (by omega_arith) (by have := L.dsm; omega_arith))
 
 theorem rate_small {rate : Nat} (h : rate ∈ rates) : rate < 2 ^ 31 := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_arith
 
 /-! ## Zeroing the state -/
 
@@ -126,11 +126,11 @@ theorem zeroSt_ok (b : Reg) (off : Nat) (s : State) (h0 : s.gpr .rax = 0)
     refine WP.mono (zeroStep_ok b (off + 8 * k) s' (by rw [hk'.2.2, hb, e]; exact hw k hk))
       fun s'' ⟨hm, hk''⟩ => ⟨hk'.trans hk'', ?_, fun j hj => ?_⟩
     · rw [hm, hb, e]
-      exact hf.writeW (List.mem_singleton_self _) _ (contains_offset' (by omega) (by omega))
+      exact hf.writeW (List.mem_singleton_self _) _ (contains_offset' (by omega_arith) (by omega_arith))
     · rw [hm, hb, e, ha]
       by_cases hjk : j = k
       · subst hjk; rw [Mem.readW_writeW_self64]
-      · rw [Mem.readW_writeW_sep (lane_sep _ (by omega) hk hjk) (by decide), hz j (by omega)]
+      · rw [Mem.readW_writeW_sep (lane_sep _ (by omega_arith) hk hjk) (by decide), hz j (by omega_arith)]
   · apply Vector.ext
     intro i hi
     simp only [Spec.Sha3.stateAt, Spec.Sha3.zero, Vector.getElem_ofFn, Vector.getElem_replicate]
@@ -147,7 +147,7 @@ theorem kzero_ok {s : State} (L : Lay D rbs wbs s) (hk : kChk (rbs ++ wbs) wbs =
   refine WP.mono (zeroSt_ok .rbx 0 s1 hax fun i hi => ?_) fun s2 ⟨hz, hf, k2⟩ => ?_
   · rw [k1.2.2, hbx]
     have h0 := L.iW w0
-    exact inRegions_sub (off := 8 * i) (l := 8) h0 (by omega) (by decide)
+    exact inRegions_sub (off := 8 * i) (l := 8) h0 (by omega_arith) (by decide)
   · have k : Keep [.rax] s s2 := (k1.trans k2).mono fun r hr => by simpa using hr
     rw [hbx] at hz hf
     have hcs : ∀ r ∈ calleeSaved, s2.gpr r = s.gpr r := fun r hr => k.gpr fun h => by
@@ -172,15 +172,15 @@ theorem kabsArgs {s s1 : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk
   obtain ⟨is, _, _, hl, d0, d1⟩ := kabsChk_spec hc
   obtain ⟨e1, e2, e3, e4, e5, e6⟩ := argsIn6 hA
   exact ⟨e1, e2, e3, e4, e5, e6, hrate, hpos,
-    by omega, L.disj d01, L.disj d0, L.disj d1, k16 L hD i0 hsp, k16 L hD is hsp, k16 L hD i1 hsp⟩
+    by omega_arith, L.disj d01, L.disj d0, L.disj d1, k16 L hD i0 hsp, k16 L hD is hsp, k16 L hD i1 hsp⟩
 
 theorem kabsOk {bs : List (Reg × Nat)} {src : Ptr} {len rate pos : Nat} (hc : kabsChk bs src len = true) (hrate : rate ∈ rates)
     (hpos : pos < rate) : [Arg.ptr (sc 0), .imm rate, .imm pos, .ptr src, .imm len, .ptr (sc 200)].all Arg.ok = true := by
   obtain ⟨_, b1, o1, hl, _, _⟩ := kabsChk_spec hc
   have := rate_small hrate
   simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, decide_true, Bool.and_true,
-    decide_eq_true (show rate < 2 ^ 32 by omega), decide_eq_true (show pos < 2 ^ 32 by omega),
-    decide_eq_true (show len < 2 ^ 32 by omega)]
+    decide_eq_true (show rate < 2 ^ 32 by omega_arith), decide_eq_true (show pos < 2 ^ 32 by omega_arith),
+    decide_eq_true (show len < 2 ^ 32 by omega_arith)]
   decide
 
 theorem kabs_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
@@ -203,7 +203,7 @@ theorem kabs_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rb
       by rw [hcs .rsp (by decide), hsp], ?_⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
   · rw [← hm, ← hsp]
     have := Frame.below_mono (wr := [⟨pa s (sc 0), 200⟩, ⟨pa s (sc 200), 640⟩]) (by simpa using hf)
-      (show 16 ≤ D by omega) (by have := L.dsm; omega)
+      (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)
     exact this
   · intro msg hmsg hpos'
     rw [← hm] at hmsg ⊢
@@ -247,14 +247,14 @@ theorem kpadOk {rate pos suffix : Nat} (hrate : rate ∈ rates) (hpos : pos < ra
     [Arg.ptr (sc 0), .imm rate, .imm pos, .imm suffix, .ptr (sc 200)].all Arg.ok = true := by
   have := rate_small hrate
   simp only [List.all_cons, List.all_nil, Arg.ok, Bool.and_true,
-    decide_eq_true (show rate < 2 ^ 32 by omega), decide_eq_true (show pos < 2 ^ 32 by omega),
-    decide_eq_true (show suffix < 2 ^ 32 by omega)]
+    decide_eq_true (show rate < 2 ^ 32 by omega_arith), decide_eq_true (show pos < 2 ^ 32 by omega_arith),
+    decide_eq_true (show suffix < 2 ^ 32 by omega_arith)]
   decide
 
 theorem b8_ofNat64 {v : Nat} (_hv : v < 256) : BitVec.setWidth 8 (BitVec.ofNat 64 v) = BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem kpad_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
     {rate pos suffix : Nat} (hrate : rate ∈ rates) (hpos : pos < rate) (hs : suffix < 256) :
@@ -274,7 +274,7 @@ theorem kpad_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rb
       by rw [hcs .rsp (by decide), hsp], ?_⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
   · rw [← hm, ← hsp]
     exact Frame.below_mono (wr := [⟨pa s (sc 0), 200⟩, ⟨pa s (sc 200), 640⟩]) (by simpa using hf)
-      (show 16 ≤ D by omega) (by have := L.dsm; omega)
+      (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)
   · intro msg hmsg hpos'
     rw [← hm] at hmsg
     rw [hR msg hmsg hpos', hcx, b8_ofNat64 hs]
@@ -310,14 +310,14 @@ theorem ksqzArgs {s s1 : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk
   obtain ⟨_, id, _, _, hl, d0, d1⟩ := ksqzChk_spec hc
   obtain ⟨e1, e2, e3, e4, e5, e6⟩ := argsIn6 hA
   exact ⟨e1, e2, e3, e4, e5, e6, hrate, Nat.zero_le _,
-    by omega, L.disj d0, L.disj d01, L.disj d1, k16 L hD i0 hsp, k16 L hD id hsp, k16 L hD i1 hsp⟩
+    by omega_arith, L.disj d0, L.disj d01, L.disj d1, k16 L hD i0 hsp, k16 L hD id hsp, k16 L hD i1 hsp⟩
 
 theorem ksqzOk {bs wbs : List (Reg × Nat)} {dst : Ptr} {len rate : Nat} (hc : ksqzChk bs wbs dst len = true) (hrate : rate ∈ rates) :
     [Arg.ptr (sc 0), .imm rate, .imm 0, .ptr dst, .imm len, .ptr (sc 200)].all Arg.ok = true := by
   obtain ⟨_, _, b1, o1, hl, _, _⟩ := ksqzChk_spec hc
   have := rate_small hrate
   simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, decide_true, Bool.and_true,
-    decide_eq_true (show rate < 2 ^ 32 by omega), decide_eq_true (show len < 2 ^ 32 by omega)]
+    decide_eq_true (show rate < 2 ^ 32 by omega_arith), decide_eq_true (show len < 2 ^ 32 by omega_arith)]
   decide
 
 theorem ksqz_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
@@ -337,7 +337,7 @@ theorem ksqz_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rb
       by rw [hcs .rsp (by decide), hsp], ?_⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
   · rw [← hm, ← hsp]
     exact Frame.below_mono (wr := [⟨pa s (sc 0), 200⟩, ⟨pa s dst, len⟩, ⟨pa s (sc 200), 640⟩]) (by simpa using hf)
-      (show 16 ≤ D by omega) (by have := L.dsm; omega)
+      (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)
   · rw [ho, hm]
 
 theorem ksqz_tr (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true) {dst : Ptr} {len rate : Nat}

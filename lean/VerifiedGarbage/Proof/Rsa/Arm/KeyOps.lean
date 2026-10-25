@@ -43,7 +43,7 @@ theorem Ws.subCtx {s : State} {B : BitVec 32} {Z w N o a b : Nat} (h : Ws s B Z 
   have da := arr_disj (w := w) hoa
   have db := arr_disj (w := w) hob
   have hS : S w = 4 * (w + 2) := rfl
-  refine ⟨h.nowrap, by omega, by omega, by omega, by omega, by omega, h.writable⟩
+  refine ⟨h.nowrap, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, h.writable⟩
 
 /-- `sub3 o a b`: `[o] = [a] - [b]` with the borrow in `r11`. -/
 theorem sub3_ok {s : State} {B : BitVec 32} {Z w N o a b : Nat} (h : Ws s B Z w N)
@@ -52,7 +52,7 @@ theorem sub3_ok {s : State} {B : BitVec 32} {Z w N o a b : Nat} (h : Ws s B Z w 
       num t.mem B w o + num s.mem B w b = num s.mem B w a + 2 ^ (32 * w) * (t.gpr .r11).toNat ∧
       (t.gpr .r11).toNat ≤ 1 ∧ Rest opRegs s t := by
   rw [sub3, WP.seq_iff]
-  refine ptr3_ok h (by omega) (by omega) (by omega) fun s3 p0 p10 p12 r3 m3 h3 => ?_
+  refine ptr3_ok h (by omega_arith) (by omega_arith) (by omega_arith) fun s3 p0 p10 p12 r3 m3 h3 => ?_
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
   refine wp_mov (op2_imm (by decide)) fun u u5 => WP.block_nil ?_
   have hu : Ws u B Z w N := (h3.of_upd u4 (by decide) (by decide) (by decide)).of_upd u5 (by decide) (by decide) (by decide)
@@ -69,7 +69,7 @@ theorem sub3_ok {s : State} {B : BitVec 32} {Z w N o a b : Nat} (h : Ws s B Z w 
   have v := inv.value
   rw [u5.gpr, mu] at v
   refine ⟨hu.rest inv.rest, Keep.of_arr (d := 0) (by simpa only [Nat.add_zero, mu] using inv.outside)
-      (by simp only [S]; omega) (by simp), ?_, inv.borrow, restU.trans (inv.rest.mono (by simp))⟩
+      (by simp only [S]; omega_arith) (by simp), ?_, inv.borrow, restU.trans (inv.rest.mono (by simp))⟩
   simpa using v
 
 /-- `sel o a b sl`: `[o] = [b]` if the slot `sl` is 1, `[a]` if it is 0. -/
@@ -80,7 +80,7 @@ theorem sel_ok {s : State} {B : BitVec 32} {Z w N o a b sl : Nat} (h : Ws s B Z 
       num t.mem B w o = (if slot s.mem B sl = 0 then num s.mem B w a else num s.mem B w b) ∧
       Rest opRegs s t := by
   rw [sel, WP.seq_iff]
-  refine ptr3_ok h (by omega) (by omega) (by omega) fun s3 p0 p10 p12 r3 m3 h3 => ?_
+  refine ptr3_ok h (by omega_arith) (by omega_arith) (by omega_arith) fun s3 p0 p10 p12 r3 m3 h3 => ?_
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
   have h4 : Ws s4 B Z w N := h3.of_upd u4 (by decide) (by decide) (by decide)
   refine wp_ldrSlot h4 hsl fun u u5 => WP.block_nil ?_
@@ -100,7 +100,7 @@ theorem sel_ok {s : State} {B : BitVec 32} {Z w N o a b sl : Nat} (h : Ws s B Z 
   have v := inv.value
   rw [bitU, mu] at v
   exact ⟨hu.rest inv.rest, Keep.of_arr (d := 0)
-    (by simpa only [Nat.add_zero, mu] using inv.outside) (by simp only [S]; omega) (by simp), v,
+    (by simpa only [Nat.add_zero, mu] using inv.outside) (by simp only [S]; omega_arith) (by simp), v,
     restU.trans (inv.rest.mono (by simp))⟩
 
 /-- `copy o a`: `[o] = [a]`. -/
@@ -110,7 +110,7 @@ theorem copy_ok {s : State} {B : BitVec 32} {Z w N o a : Nat} (h : Ws s B Z w N)
       num t.mem B w o = num s.mem B w a ∧ Rest opRegs s t ∧
       w32 t.mem (State.addr B) (arr w o + 4 * w) = w32 s.mem (State.addr B) (arr w o + 4 * w) := by
   rw [copy, WP.seq_iff]
-  refine ptr3_ok h (by omega) (by omega) (by omega) fun s3 p0 p10 p12 r3 m3 h3 => ?_
+  refine ptr3_ok h (by omega_arith) (by omega_arith) (by omega_arith) fun s3 p0 p10 p12 r3 m3 h3 => ?_
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
   refine wp_mov (op2_imm (by decide)) fun u u5 => WP.block_nil ?_
   have hu : Ws u B Z w N := (h3.of_upd u4 (by decide) (by decide) (by decide)).of_upd u5 (by decide) (by decide) (by decide)
@@ -127,9 +127,9 @@ theorem copy_ok {s : State} {B : BitVec 32} {Z w N o a : Nat} (h : Ws s B Z w N)
   rw [mu] at v
   have fo := h.fit64 ho
   refine ⟨hu.rest inv.rest, Keep.of_arr (d := 0)
-    (by simpa only [Nat.add_zero, mu] using inv.outside) (by simp only [S]; omega) (by simp), ?_,
+    (by simpa only [Nat.add_zero, mu] using inv.outside) (by simp only [S]; omega_arith) (by simp), ?_,
     restU.trans (inv.rest.mono (by simp)), ?_⟩
   · change val32 _ _ _ _ = _; rw [v]; split <;> rfl
-  · rw [← mu]; exact inv.outside.w32 (by omega) (by simp only [S] at fo; omega)
+  · rw [← mu]; exact inv.outside.w32 (by omega_arith) (by simp only [S] at fo; omega_arith)
 
 end VG.Proof.Rsa.Arm.Keys

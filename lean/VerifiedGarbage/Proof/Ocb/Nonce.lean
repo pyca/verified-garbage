@@ -33,14 +33,14 @@ theorem testBit_beVal (bs : List Byte) (e : Nat) {j : Nat} (hj : j < 8) :
     (Proof.Aes.beVal bs).testBit (8 * e + j) =
       if e < bs.length then (bs.getD (bs.length - 1 - e) 0).getLsbD j else false := by
   split
-  · have hd := Proof.Aes.beVal_digit bs (k := bs.length - 1 - e) (by omega)
-    rw [show bs.length - 1 - (bs.length - 1 - e) = e by omega] at hd
+  · have hd := Proof.Aes.beVal_digit bs (k := bs.length - 1 - e) (by omega_arith)
+    rw [show bs.length - 1 - (bs.length - 1 - e) = e by omega_arith] at hd
     rw [BitVec.getLsbD, ← hd, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul, Nat.testBit_mod_two_pow,
       Nat.testBit_div_two_pow]
     simp [hj, Nat.add_comm]
   · have := Proof.Aes.beVal_lt bs
     rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
-    exact testBit_ge this (by omega)
+    exact testBit_ge this (by omega_arith)
 
 /-- The block `Nonce` of §4.2, before its last 6 bits are cleared. -/
 def nonceN (t : Nat) (nonce : List Byte) : Block :=
@@ -70,47 +70,47 @@ theorem nonceN_byte (t : Nat) (nonce : List Byte) (h1 : 1 ≤ nonce.length) (h15
   have hb : nonce.foldl (fun acc b => 256 * acc + b.toNat) 0 = Proof.Aes.beVal nonce := rfl
   simp only [nonceN, hb, BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_ofNat, getLsbD_one' (show 0 < 128 by decide), hj, decide_true, Bool.true_and,
-    show 8 * (15 - k) + j < 128 by omega]
+    show 8 * (15 - k) + j < 128 by omega_arith]
   rw [testBit_beVal nonce (15 - k) hj]
-  have e8 : 8 * t % 128 = (t % 16) * 2 ^ 3 := by omega
+  have e8 : 8 * t % 128 = (t % 16) * 2 ^ 3 := by omega_arith
   rw [e8, Nat.testBit_mul_two_pow]
   unfold nb nbase
   by_cases hk0 : k = 0
   · subst hk0
     have e16 : 16 * (t % 16) = 2 ^ 4 * (t % 16) := rfl
     simp only [↓reduceIte, BitVec.getLsbD_or, e16, BitVec.getLsbD_ofNat, Nat.testBit_two_pow_mul, hj,
-      decide_true, Bool.true_and, show ¬ 15 < nonce.length by omega, show ¬ 16 - nonce.length ≤ 0 by omega]
+      decide_true, Bool.true_and, show ¬ 15 < nonce.length by omega_arith, show ¬ 16 - nonce.length ≤ 0 by omega_arith]
     by_cases hn : nonce.length = 15
     · simp only [hn, ↓reduceIte, getLsbD_one' (show 0 < 8 by decide)]
-      rcases (show j = 0 ∨ (1 ≤ j ∧ j < 4) ∨ 4 ≤ j by omega) with rfl | ⟨ha, hb⟩ | ha
+      rcases (show j = 0 ∨ (1 ≤ j ∧ j < 4) ∨ 4 ≤ j by omega_arith) with rfl | ⟨ha, hb⟩ | ha
       · simp
-      · simp [show ¬ 120 + j < 121 by omega, show ¬ 3 ≤ 120 + j - 121 by omega, show ¬ 4 ≤ j by omega,
-          show j ≠ 0 by omega]
-      · simp [show ¬ 120 + j < 121 by omega, show 3 ≤ 120 + j - 121 by omega, ha, show j ≠ 0 by omega,
-          show 120 + j - 121 - 3 = j - 4 by omega, show 120 + j - 121 < 128 by omega]
-    · simp only [show (0 = 15 - nonce.length) = False by simp; omega, ↓reduceIte]
-      rcases (show j = 0 ∨ (1 ≤ j ∧ j < 4) ∨ 4 ≤ j by omega) with rfl | ⟨ha, hb⟩ | ha
-      · simp [show ¬ 120 < 8 * nonce.length by omega, show 120 - 8 * nonce.length ≠ 0 by omega]
-      · simp [show ¬ 120 + j < 121 by omega, show ¬ 3 ≤ 120 + j - 121 by omega, show ¬ 4 ≤ j by omega,
-          show ¬ 120 + j < 8 * nonce.length by omega, show 120 + j - 8 * nonce.length ≠ 0 by omega]
-      · simp [show ¬ 120 + j < 121 by omega, show 3 ≤ 120 + j - 121 by omega, ha,
-          show 120 + j - 121 - 3 = j - 4 by omega, show 120 + j - 121 < 128 by omega,
-          show ¬ 120 + j < 8 * nonce.length by omega, show 120 + j - 8 * nonce.length ≠ 0 by omega]
-  · simp only [hk0, ↓reduceIte, show 8 * (15 - k) + j < 121 by omega, decide_true, Bool.not_true,
+      · simp [show ¬ 120 + j < 121 by omega_arith, show ¬ 3 ≤ 120 + j - 121 by omega_arith, show ¬ 4 ≤ j by omega_arith,
+          show j ≠ 0 by omega_arith]
+      · simp [show ¬ 120 + j < 121 by omega_arith, show 3 ≤ 120 + j - 121 by omega_arith, ha, show j ≠ 0 by omega_arith,
+          show 120 + j - 121 - 3 = j - 4 by omega_arith, show 120 + j - 121 < 128 by omega_arith]
+    · simp only [show (0 = 15 - nonce.length) = False by simp; omega_arith, ↓reduceIte]
+      rcases (show j = 0 ∨ (1 ≤ j ∧ j < 4) ∨ 4 ≤ j by omega_arith) with rfl | ⟨ha, hb⟩ | ha
+      · simp [show ¬ 120 < 8 * nonce.length by omega_arith, show 120 - 8 * nonce.length ≠ 0 by omega_arith]
+      · simp [show ¬ 120 + j < 121 by omega_arith, show ¬ 3 ≤ 120 + j - 121 by omega_arith, show ¬ 4 ≤ j by omega_arith,
+          show ¬ 120 + j < 8 * nonce.length by omega_arith, show 120 + j - 8 * nonce.length ≠ 0 by omega_arith]
+      · simp [show ¬ 120 + j < 121 by omega_arith, show 3 ≤ 120 + j - 121 by omega_arith, ha,
+          show 120 + j - 121 - 3 = j - 4 by omega_arith, show 120 + j - 121 < 128 by omega_arith,
+          show ¬ 120 + j < 8 * nonce.length by omega_arith, show 120 + j - 8 * nonce.length ≠ 0 by omega_arith]
+  · simp only [hk0, ↓reduceIte, show 8 * (15 - k) + j < 121 by omega_arith, decide_true, Bool.not_true,
       Bool.false_and, Bool.false_or]
     by_cases hkn : k = 15 - nonce.length
     · simp only [hkn, ↓reduceIte, getLsbD_one' (show 0 < 8 by decide),
-        show ¬ 15 - (15 - nonce.length) < nonce.length by omega, Bool.or_false]
-      rcases (show j = 0 ∨ 0 < j by omega) with rfl | ha
-      · simp [show 15 - (15 - nonce.length) = nonce.length by omega]
-      · simp [show ¬ 8 * (15 - (15 - nonce.length)) + j < 8 * nonce.length by omega,
-          show 8 * (15 - (15 - nonce.length)) + j - 8 * nonce.length ≠ 0 by omega, show j ≠ 0 by omega]
+        show ¬ 15 - (15 - nonce.length) < nonce.length by omega_arith, Bool.or_false]
+      rcases (show j = 0 ∨ 0 < j by omega_arith) with rfl | ha
+      · simp [show 15 - (15 - nonce.length) = nonce.length by omega_arith]
+      · simp [show ¬ 8 * (15 - (15 - nonce.length)) + j < 8 * nonce.length by omega_arith,
+          show 8 * (15 - (15 - nonce.length)) + j - 8 * nonce.length ≠ 0 by omega_arith, show j ≠ 0 by omega_arith]
     · simp only [hkn, ↓reduceIte]
       by_cases hkr : 16 - nonce.length ≤ k
-      · simp [hkr, show 15 - k < nonce.length by omega, show 8 * (15 - k) + j < 8 * nonce.length by omega,
-          show nonce.length - 1 - (15 - k) = k - (16 - nonce.length) by omega]
-      · simp [hkr, show ¬ 15 - k < nonce.length by omega, show ¬ 8 * (15 - k) + j < 8 * nonce.length by omega,
-          show 8 * (15 - k) + j - 8 * nonce.length ≠ 0 by omega]
+      · simp [hkr, show 15 - k < nonce.length by omega_arith, show 8 * (15 - k) + j < 8 * nonce.length by omega_arith,
+          show nonce.length - 1 - (15 - k) = k - (16 - nonce.length) by omega_arith]
+      · simp [hkr, show ¬ 15 - k < nonce.length by omega_arith, show ¬ 8 * (15 - k) + j < 8 * nonce.length by omega_arith,
+          show 8 * (15 - k) + j - 8 * nonce.length ≠ 0 by omega_arith]
 
 /-- The bytes of `~~~63`. -/
 theorem mask63_byte : ∀ k < 16, (~~~(63 : Block)).extractLsb' (8 * (15 - k)) 8 =
@@ -149,15 +149,15 @@ theorem nbase_list (nonce : List Byte) (h1 : 1 ≤ nonce.length) (h15 : nonce.le
   unfold nbase zeros
   rw [List.getD_eq_getElem?_getD]
   by_cases h₁ : k < 15 - nonce.length
-  · rw [List.getElem?_append_left (by simp; omega), List.getElem?_append_left (by simp; omega)]
-    simp [h₁, show k ≠ 15 - nonce.length by omega, show ¬ 16 - nonce.length ≤ k by omega]
+  · rw [List.getElem?_append_left (by simp; omega_arith), List.getElem?_append_left (by simp; omega_arith)]
+    simp [h₁, show k ≠ 15 - nonce.length by omega_arith, show ¬ 16 - nonce.length ≤ k by omega_arith]
   · by_cases h₂ : k = 15 - nonce.length
     · subst h₂
       rw [List.getElem?_append_left (by simp), List.getElem?_append_right (by simp)]
       simp
-    · rw [List.getElem?_append_right (by simp; omega)]
+    · rw [List.getElem?_append_right (by simp; omega_arith)]
       simp only [List.length_append, List.length_replicate, List.length_singleton, h₂, ↓reduceIte,
-        show 16 - nonce.length ≤ k by omega, List.getD_eq_getElem?_getD]
-      congr 2; omega
+        show 16 - nonce.length ≤ k by omega_arith, List.getD_eq_getElem?_getD]
+      congr 2; omega_arith
 
 end VG.Proof.Ocb

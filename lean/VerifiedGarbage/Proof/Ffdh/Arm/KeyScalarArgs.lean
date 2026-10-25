@@ -38,13 +38,7 @@ theorem keyScalarArgs_ok (s : State) {p : Inputs} {slots : List Nat}
     have := p.scalarLeadBound
     unfold Inputs.scalarWidth
     omega
-  refine withRest [.r0, .r1, .r2, .r3, .r12, .lr] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.scalarArgs : Prog isa)).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r0, .r1, .r2, .r3, .r12, .lr] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.scalarArgs VG.Impl.Ffdh.Arm.Domain.st
   ffrun [addr 20 (by decide), addr 32 (by decide), addr 40 (by decide), addr 48 (by decide),
     addr 16 (by decide), r20, r32, r40, r48, w16, h.saved 20 h20, h.saved 32 h32,

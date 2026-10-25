@@ -86,15 +86,15 @@ theorem loop_ok {Bv d c nb : Nat} (hs : Pack.Shape d c nb) (hB : encodable (BitV
       s1.gpr .r5 = s.gpr .r5 ∧ s1.gpr .r6 = s.gpr .r6 ∧ s1.mem = s.mem ∧ s1.rd = s.rd ∧ s1.wr = s.wr ∧
       s1.sp = s.sp) (by run_block [and_self, and_true, true_and]; rfl) fun s1 ⟨g0, g1, g5, g6, m, rd, wr, sp⟩ => ?_)
   have e1 := h.env.same m g5 g6 rd wr sp
-  have a0 : State.addr (s1.gpr .r0) = (spOf σ).at' 840 := by rw [g0, h.env.r6]; exact at_eq hp (by omega)
+  have a0 : State.addr (s1.gpr .r0) = (spOf σ).at' 840 := by rw [g0, h.env.r6]; exact at_eq hp (by omega_arith)
   have a1 : State.addr (s1.gpr .r1) = (spOf σ).A := by rw [g1, h.env.r5]
   let src : Region := ⟨State.addr (s1.gpr .r0), 32 * d⟩
   let t := s1.withRegions [src] [polyR (State.addr (s1.gpr .r1))]
   have hsep : src.Disjoint (polyR (State.addr (s1.gpr .r1))) := by
     show Region.Disjoint ⟨State.addr (s1.gpr .r0), 32 * d⟩ (polyR (State.addr (s1.gpr .r1)))
-    rw [a0, a1]; exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := 32 * d) (by omega))).symm
+    rw [a0, a1]; exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := 32 * d) (by omega_arith))).symm
   have fit0 : (s1.gpr .r0).toNat + 32 * d ≤ 2 ^ 32 := by
-    rw [g0, h.env.r6, BitVec.toNat_add, toNat_ofNat32 (by omega)]; omega
+    rw [g0, h.env.r6, BitVec.toNat_add, toNat_ofNat32 (by omega_arith)]; omega_arith
   have fit1 : (s1.gpr .r1).toNat + 1024 ≤ 2 ^ 32 := by rw [g1, h.env.r5]; exact hp.fa
   obtain ⟨tr, t', he, hpoly, hf, hk⟩ := Pack.unpackLoop_buFin_ok (s := t) (a := Bv - 1) hs hB hB19 hd
     (List.mem_append_left _ (List.mem_singleton_self _)) (List.mem_singleton_self _) hsep fit0 fit1
@@ -102,7 +102,7 @@ theorem loop_ok {Bv d c nb : Nat} (hs : Pack.Shape d c nb) (hB : encodable (BitV
     refine Covers.of_sub fun r hr => ?_
     simp only [t, State.withRegions_rd, State.withRegions_wr, List.mem_append, List.mem_singleton] at hr
     rcases hr with rfl | rfl
-    · exact ⟨(spOf σ).scrR, List.mem_append_right _ (by rw [e1.wr, hp.wr]; simp), 840, a0, by show 840 + 32 * d ≤ 2048; omega⟩
+    · exact ⟨(spOf σ).scrR, List.mem_append_right _ (by rw [e1.wr, hp.wr]; simp), 840, a0, by show 840 + 32 * d ≤ 2048; omega_arith⟩
     · exact ⟨(spOf σ).aR, List.mem_append_right _ (by rw [e1.wr, hp.wr]; simp), 0,
         by rw [a1]; exact (add_ofNat_zero _).symm, by simp⟩
   have hw : Covers t.wr s1.wr := by
@@ -124,7 +124,7 @@ theorem loop_ok {Bv d c nb : Nat} (hs : Pack.Shape d c nb) (hB : encodable (BitV
     rw [← a1]
     have eb : bytesAt t.mem (State.addr (t.gpr .r0)) (32 * d) = H (B σ) (32 * d) := by
       show bytesAt s1.mem (State.addr (s1.gpr .r0)) (32 * d) = _
-      rw [a0, m, ← MlKem.bytesAt_take _ _ (show 32 * d ≤ 640 by omega), h.out, ← H_eq, H_take _ (by omega)]
+      rw [a0, m, ← MlKem.bytesAt_take _ _ (show 32 * d ≤ 640 by omega_arith), h.out, ← H_eq, H_take _ (by omega_arith)]
     rw [eb] at hpoly
     exact hpoly
 
@@ -145,7 +145,7 @@ theorem tail_ok (hg : gam σ = 2 ^ 17 ∨ gam σ = 2 ^ 19) {s : State} (h : J6 1
     refine WP.mono (loop_ok hp (Bv := 131072) (c := 4) (nb := 9) (by constructor <;> decide) (by decide) (by decide)
       (by decide) (by decide) h1) fun s' ⟨he, hpo⟩ => ⟨he, ?_⟩
     rw [Out, hγ]; exact hpo
-  · have hγ : gam σ = 2 ^ 19 := by rw [z1] at e; simp at e; omega
+  · have hγ : gam σ = 2 ^ 19 := by rw [z1] at e; simp at e; omega_arith
     refine WP.mono (loop_ok hp (Bv := 524288) (c := 2) (nb := 5) (by constructor <;> decide) (by decide) (by decide)
       (by decide) (by decide) h1) fun s' ⟨he, hpo⟩ => ⟨he, ?_⟩
     rw [Out, hγ]; exact hpo

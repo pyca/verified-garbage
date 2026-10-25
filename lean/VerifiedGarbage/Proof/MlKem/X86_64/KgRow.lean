@@ -97,7 +97,7 @@ include E
 
 /-- The slots of the saved registers, the MXCSR slot and the table are apart. -/
 theorem slots_in {p : Reg × Nat} (hp : p ∈ KpkeMul.slots) : InRegions σ.wr (Spill.slot (σ.gpr .r8) p.2) 8 :=
-  ⟨cR (σ.gpr .r8), by rw [E.wr]; simp, in_c (by have := DecMul.slots_bound p hp; omega)⟩
+  ⟨cR (σ.gpr .r8), by rw [E.wr]; simp, in_c (by have := DecMul.slots_bound p hp; omega_arith)⟩
 
 /-- After the prologue. -/
 structure P1 (k : Nat) (σ s : State) : Prop where
@@ -144,7 +144,7 @@ include E
 theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (rowIn k) = true)
     {s : State} (h : P1 k σ s) : WP isa (.seq (.block (([.mov .rcx (.reg .rbx)] : List Instr) ++ Bodies.avx2.tab))
       (withMxcsr .rbx oMx (rowIn k))) s (P2 k σ) := by
-  have hk4 : k ≤ 4 := by omega
+  have hk4 : k ≤ 4 := by omega_arith
   have nC := E.nC
   have nA := E.nA
   have nS := E.nS
@@ -154,7 +154,7 @@ theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi,
   have hf1 : Frame [cR (σ.gpr .r8)] σ.mem s.mem := by
     rw [h.mem]
     exact Spill.saveMem_frame_base σ.mem (σ.gpr .r8) σ.gpr KpkeMul.slots (L := 4096)
-      (fun p hp' => by have := DecMul.slots_bound p hp'; omega) (by decide)
+      (fun p hp' => by have := DecMul.slots_bound p hp'; omega_arith) (by decide)
   have hsv : Spill.Saved s.mem (σ.gpr .r8) σ.gpr KpkeMul.slots := by
     rw [h.mem]; exact Spill.saveMem_saved _ _ _ _ (by decide)
   refine WP.seq ?_
@@ -177,7 +177,7 @@ theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi,
     hsv.frame hf2 fun p hp' r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (EncMul.hi_dis_tab _).sub_left (sub_hi (DecMul.slots_bound p hp').1 (by
-        have := (DecMul.slots_bound p hp').2; omega))
+        have := (DecMul.slots_bound p hp').2; omega_arith))
   have h0 : InRegions s2.wr ((σ.gpr .r8) + BitVec.ofNat 64 768) 4 := by
     rw [k12.2.2, h.wr]; exact ⟨_, hcw, in_c (by decide)⟩
   have h4 : InRegions s2.wr ((σ.gpr .r8) + BitVec.ofNat 64 772) 4 := by
@@ -210,7 +210,7 @@ theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi,
     have hf4 : Frame [cR (σ.gpr .r8)] σ.mem s4.mem := by rw [hm4]; exact hf3
     have hx : RowY.CtxG (FRep.u16 512) k (σ.gpr .rsi) (σ.gpr .rdx) (σ.gpr .rcx) (σ.gpr .r8)
         (vecAtW 16 σ.mem (σ.gpr .rsi) k) (vecAt σ.mem (σ.gpr .rdx) k) s4.mem s4.rd s4.wr :=
-      { k1 := by omega
+      { k1 := by omega_arith
         k4 := hk4
         fl := by rw [vecAtW_length]
         gl := by rw [vecAt_length]
@@ -218,29 +218,29 @@ theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi,
           show PolyIsW 16 _ _ _
           rw [vecAtW16_get _ _ hj]
           refine polyIsW16_frame hf4 (fun r hr => ?_) ⟨?_, rfl⟩
-          · simp only [List.mem_singleton] at hr; subst hr; exact hfa (by omega)
+          · simp only [List.mem_singleton] at hr; subst hr; exact hfa (by omega_arith)
           · have := E.redA j hj
-            rwa [show 32 * 16 * j = 512 * j by omega] at this
+            rwa [show 32 * 16 * j = 512 * j by omega_arith] at this
         G := fun j hj => by
           rw [vecAt_get _ _ hj]
-          exact polyIs_frame hf4 (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hfs (by omega))
+          exact polyIs_frame hf4 (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hfs (by omega_arith))
             ⟨E.redS j hj, rfl⟩
-        dF := fun j hj => (E.aE.sub_left (Offset.sub_base (n := 512) _ (by omega))).symm
-        dG := fun j hj => (E.sE.sub_left (Offset.sub_base _ (by omega))).symm
+        dF := fun j hj => (E.aE.sub_left (Offset.sub_base (n := 512) _ (by omega_arith))).symm
+        dG := fun j hj => (E.sE.sub_left (Offset.sub_base _ (by omega_arith))).symm
         dT := E.eC.sub_right (DecMul.sub_c (by decide))
         inF := fun j hj => by
           rw [hsr4, hsw4]
-          exact ⟨⟨σ.gpr .rsi, 512 * k⟩, by simp, Offset.contains_base (n := 512) _ (by omega) (by omega)⟩
+          exact ⟨⟨σ.gpr .rsi, 512 * k⟩, by simp, Offset.contains_base (n := 512) _ (by omega_arith) (by omega_arith)⟩
         inG := fun j hj => by
           rw [hsr4, hsw4]
-          exact ⟨⟨σ.gpr .rdx, 1024 * k⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+          exact ⟨⟨σ.gpr .rdx, 1024 * k⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
         inTab := by rw [hsr4, hsw4]; exact ⟨cR (σ.gpr .r8), by simp, in_c (by decide)⟩
         inT := by rw [hsw4]; exact ⟨pR (σ.gpr .rcx), by simp, Region.contains_self _ _⟩
         tab := by
           rw [hm4]
           exact tabY.frame f3 (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
-            exact Offset.disjoint _ (.inr (by decide)) (by omega) (by omega)) hT2
+            exact Offset.disjoint _ (.inr (by decide)) (by omega_arith) (by omega_arith)) hT2
         red := (polyIs_frame hf4 (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact E.eC)
           ⟨E.redE, rfl⟩).1 }
     refine WP.mono (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8]
@@ -255,9 +255,9 @@ theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi,
     · refine (hsv2.frame f3 fun p hp' r hr => ?_).frame hfe fun p hp' r hr => ?_
       · simp only [List.mem_singleton] at hr; subst hr
         have := DecMul.slots_bound p hp'
-        exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+        exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
       · simp only [List.mem_singleton] at hr; subst hr
-        exact (E.eC.symm.sub_left (DecMul.sub_c (by have := DecMul.slots_bound p hp'; omega)))
+        exact (E.eC.symm.sub_left (DecMul.sub_c (by have := DecMul.slots_bound p hp'; omega_arith)))
     · exact (hf3.mono (by simp)).trans (hfe.mono (by simp))
     · rw [hm4] at hP5
       have he : polyAt s3.mem (σ.gpr .rcx) = polyAt σ.mem (σ.gpr .rcx) :=
@@ -270,7 +270,7 @@ theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi,
     · exact hq4.saved.frame hf5 fun p hp' r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         have := DecMul.slots_bound p hp'
-        exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+        exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
     · exact hq4.frame.trans (hf5.sub fun r hr => ⟨cR (σ.gpr .r8), by simp, by
         simp only [List.mem_singleton] at hr; subst hr; exact DecMul.sub_c (by decide)⟩)
     · exact polyIs_frame hf5 (fun r hr => by
@@ -310,13 +310,13 @@ theorem kgRow_wp {A : Prims} (hA : PrimsOk A) (hn : A.enc12.noCalls = true) {L :
     rw [h3bx]
     exact h2.saved.frame hP3.frame fun p hp' r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact E.kC.symm.sub_left (DecMul.sub_c (by have := DecMul.slots_bound p hp'; omega))
+      exact E.kC.symm.sub_left (DecMul.sub_c (by have := DecMul.slots_bound p hp'; omega_arith))
   rw [DecMul.restore_eq]
   refine WP.mono (Spill.restore_ok .rbx KpkeMul.slots σ.gpr s3 (by decide) (fun p hp' => ?_) hsv3)
     fun s' ⟨g1, g2, hm', _, _⟩ => ⟨⟨Spill.calleeSaved_ok g1 g2 (by decide) (by
       rw [hP3.cs .rsp (by decide), h2.rsp]), ?_⟩, ?_⟩
   · rw [h3bx, hP3.rd, hP3.wr, h2.rd, h2.wr, E.rd, E.wr]
-    exact ⟨cR (σ.gpr .r8), by simp, in_c (by have := DecMul.slots_bound p hp'; omega)⟩
+    exact ⟨cR (σ.gpr .r8), by simp, in_c (by have := DecMul.slots_bound p hp'; omega_arith)⟩
   · rw [hm']
     have hf : Frame [cR (σ.gpr .r8), pR (σ.gpr .rcx), ⟨σ.gpr .rdi, 384⟩] σ.mem s3.mem :=
       (h2.frame.mono (by simp)).trans (hP3.frame.mono (by simp))

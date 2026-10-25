@@ -68,7 +68,7 @@ theorem fresh_wins_lt (n : Nat) (hn : n < 7) (i : Nat) (hi : i < n + 2) : Fresh 
     ⟨h.1, h.2.1, h.2.2, h'.1, h'.2⟩⟩
 
 theorem fresh_wins {n : Nat} (hn : n < 7) (i : Nat) : Fresh (wins n i) := by
-  rw [wins_mod]; exact fresh_wins_lt n hn _ (Nat.mod_lt _ (by omega))
+  rw [wins_mod]; exact fresh_wins_lt n hn _ (Nat.mod_lt _ (by omega_arith))
 
 /-! ## A row and its carry -/
 
@@ -102,7 +102,7 @@ theorem rowCarry_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     rw [gtn, gtn1]
     have h' : 2 ^ (64 * low.length) * ((s.gpr tn).toNat + 2 ^ 64 * (s.gpr tn1).toNat +
         (s₁.gpr .rbp).toNat) < 2 ^ (64 * low.length) * 2 ^ 128 := by
-      rw [Nat.mul_add]; omega
+      rw [Nat.mul_add]; omega_arith
     exact Nat.lt_of_mul_lt_mul_left h'
   refine WP.mono (carryUp_ok s₁ hn.2.2 hc) fun s₂ ⟨e₂, k₂⟩ => ?_
   have hl : regsVal s₂ low = regsVal s₁ low := regsVal_congr fun q hq => k₂.1 q (by
@@ -114,7 +114,7 @@ theorem rowCarry_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       (s₁.gpr .rbp).toNat) = 2 ^ (64 * low.length) * ((s.gpr tn).toNat + 2 ^ 64 * (s.gpr tn1).toNat) +
       2 ^ (64 * low.length) * (s₁.gpr .rbp).toNat := Nat.mul_add _ _ _
   rw [this]
-  omega
+  omega_arith
 
 /-! ## A round -/
 
@@ -140,12 +140,12 @@ theorem prod_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (l
     k₁.1 q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact (fresh_wins hn i).2 q hq |>.2.1)
   have hA := (word s.mem base (a + 8 * i)).isLt
   have hAB : (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b n ≤ (2 ^ 64 - 1) * m :=
-    Nat.mul_le_mul (by omega) (by omega)
-  refine WP.mono (rowCarry_ok hs₁ late hf (d := b) (by rw [hl]; omega) (by
+    Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  refine WP.mono (rowCarry_ok hs₁ late hf (d := b) (by rw [hl]; omega_arith) (by
       rw [← hW, hl, hT₁, c₁, k₁.2.1, hP]
       have : (2 ^ 64 - 1) * m ≤ 2 ^ (64 * n) * 2 ^ 64 := by
-        rw [Nat.mul_comm]; exact Nat.mul_le_mul (by omega) (by omega)
-      omega)) fun s₂ ⟨e₂, k₂⟩ => ?_
+        rw [Nat.mul_comm]; exact Nat.mul_le_mul (by omega_arith) (by omega_arith)
+      omega_arith)) fun s₂ ⟨e₂, k₂⟩ => ?_
   rw [← hW, hl, hT₁, c₁, k₁.2.1] at e₂
   rw [← hW] at k₂
   refine ⟨e₂, hs₁.of_keeps k₂ (by
@@ -185,24 +185,24 @@ theorem redGen_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨this.1, this.2.1, this.2.2.1⟩)
   have hu := (s₃.gpr .rcx).isLt
-  have hum : (s₃.gpr .rcx).toNat * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega) (Nat.le_refl _)
+  have hum : (s₃.gpr .rcx).toNat * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega_arith) (Nat.le_refl _)
   have hmem₃ : s₃.mem = s.mem := k₃.2.1
-  refine WP.mono (rowCarry_ok hs₃ (lateRow M) hf (d := M.mo) (by rw [hl]; omega) (by
+  refine WP.mono (rowCarry_ok hs₃ (lateRow M) hf (d := M.mo) (by rw [hl]; omega_arith) (by
       rw [← hW, hl, hT₃, hmem₃, hm, hP]
       have : (2 ^ 64 - 1) * m ≤ 2 ^ (64 * M.n) * 2 ^ 64 := by
-        rw [Nat.mul_comm]; exact Nat.mul_le_mul (by omega) (by omega)
-      omega)) fun s₄ ⟨e₄, k₄⟩ => ?_
+        rw [Nat.mul_comm]; exact Nat.mul_le_mul (by omega_arith) (by omega_arith)
+      omega_arith)) fun s₄ ⟨e₄, k₄⟩ => ?_
   rw [← hW, hl, hT₃, hmem₃, hm] at e₄
   -- The window's low word, which is zero.
   have hcons := wins_cons M.n i
   have ht0 : (regsVal s (wins M.n i)) % 2 ^ 64 = (s.gpr (win M.n i 0)).toNat := by
-    rw [hcons, regsVal]; omega
+    rw [hcons, regsVal]; omega_arith
   have h₄ : (regsVal s₄ (wins M.n i)) % 2 ^ 64 = (s₄.gpr (win M.n i 0)).toNat := by
-    rw [hcons, regsVal]; omega
+    rw [hcons, regsVal]; omega_arith
   have hlow : (s₄.gpr (win M.n i 0)).toNat = 0 := by
     have h := mont_low (s.gpr (win M.n i 0)).toNat M.minv.toNat m hinv
     rw [← u₃] at h
-    omega
+    omega_arith
   have hrot : 2 ^ 64 * regsVal s₄ (wins M.n (i + 1)) = regsVal s₄ (wins M.n i) := by
     rw [wins_succ, regsVal_append, hcons, regsVal]
     simp only [regsVal, hlow, Nat.mul_zero, Nat.add_zero, Nat.zero_add]

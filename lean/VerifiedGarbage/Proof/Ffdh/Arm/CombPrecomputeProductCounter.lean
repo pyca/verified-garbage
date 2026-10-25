@@ -56,10 +56,7 @@ theorem productNext_raw (s : State) {base : BitVec 32} {len low high : Nat}
     rw [List.mem_singleton] at hr
     subst r
     exact Offset.disjoint _ (by decide) (by decide) (by decide)
-  refine withRest (c:=.block productNext) [.r2,.r3,.r12] ?_ (by
-    intro r hr i hi
-    simp only [instrs,productNext,VG.Impl.Ffdh.Arm.Domain.st,List.mem_cons,List.not_mem_nil,or_false] at hi
-    rcases hi with rfl|rfl|rfl|rfl|rfl|rfl <;> simp [clobbers,dstOf] at * <;> grind) rfl
+  refine withRest_all (c:=.block productNext) [.r2,.r3,.r12] ?_ (by rfl) rfl
   unfold productNext VG.Impl.Ffdh.Arm.Domain.st
   ffrun [a40,a36,read40,read36,write,savedLow,savedHigh,add,keep36,off,BitVec.add_zero,subFlags]
   by_cases eq : low+1=high
@@ -89,10 +86,7 @@ theorem basisNext_raw (s : State) {base : BitVec 32} {len high : Nat}
   have write := locals.space.write (off:=36) (by decide)
   have add : BitVec.ofNat 32 high+BitVec.ofNat 32 high=BitVec.ofNat 32 (2*high) := by
     rw [← BitVec.ofNat_add,Nat.two_mul]
-  refine withRest (c:=.block basisNext) [.r3,.r12] ?_ (by
-    intro r hr i hi
-    simp only [instrs,basisNext,VG.Impl.Ffdh.Arm.Domain.st,List.mem_cons,List.not_mem_nil,or_false] at hi
-    rcases hi with rfl|rfl|rfl|rfl|rfl <;> simp [clobbers,dstOf] at * <;> grind) rfl
+  refine withRest_all (c:=.block basisNext) [.r3,.r12] ?_ (by rfl) rfl
   unfold basisNext VG.Impl.Ffdh.Arm.Domain.st
   ffrun [a36,read,write,saved,add,off,BitVec.add_zero,subFlags]
   by_cases eq : 2*high=32

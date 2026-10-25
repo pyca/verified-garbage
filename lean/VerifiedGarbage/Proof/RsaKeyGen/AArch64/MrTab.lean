@@ -62,13 +62,13 @@ theorem tabRanges_hdr (w : Nat) {i : Nat} (hi : i = kV ∨ i = kBits) : (8 * i, 
   rcases hi with rfl | rfl <;> simp [tabRanges]
 
 theorem tab_end (w : Nat) : slot w aT0 + 128 * (w + 2) = slot w aE := by
-  unfold slot aT0 aE; omega
+  unfold slot aT0 aE; omega_arith
 
 /-- An entry is within the table. -/
 theorem ent_in_tab (w : Nat) {e : Nat} (he : e < 16) :
     slot w aT0 ≤ slot w (aT0 + e) ∧ slot w (aT0 + e) + 8 * (w + 2) ≤ slot w aT0 + 128 * (w + 2) := by
   rw [tab_end]
-  exact ⟨VG.Proof.Bignum.slot_mono w (by omega), slot_lt (by unfold aT0 aE; omega)⟩
+  exact ⟨VG.Proof.Bignum.slot_mono w (by omega_arith), slot_lt (by unfold aT0 aE; omega_arith)⟩
 
 /-- `MrCtx` survives changes within the table's ranges. -/
 theorem MrCtx.of_tab {s t : State} {B : Addr} {Z w c bm : Nat} {rs : List (Nat × Nat)}
@@ -81,7 +81,7 @@ theorem MrCtx.of_tab {s t : State} {B : Addr} {Z w c bm : Nat} {rs : List (Nat �
 theorem hdrStore_wv' (m : Mem) (B : Addr) {w i j : Nat} (v : BitVec 64) (hi : i < 32)
     (hn : slot w j + 8 * w ≤ 2 ^ 64) :
     wv (m.writeW (off B (8 * i)) v) B (slot w j) w = wv m B (slot w j) w :=
-  (writeW_outside m B v (by omega)).wv (by have := hdr_lt_slot w j hi; omega) hn
+  (writeW_outside m B v (by omega_arith)).wv (by have := hdr_lt_slot w j hi; omega_arith) hn
 
 theorem powMod_succ' (b e c : Nat) :
     Spec.Rsa.powMod b (e + 1) c = Spec.Rsa.powMod b e c * Spec.Rsa.powMod b 1 c % c := by
@@ -97,8 +97,8 @@ theorem toEnt_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (hEZ : slot
   have hn := h.scr.nowrap
   have h256 := h.h256
   have hT := tab_fits hEZ he
-  have hsep : slot w a + 8 * (w + 2) ≤ slot w (aT0 + e) := slot_lt (by omega)
-  have hA : slot w a + 8 * (w + 2) ≤ Z := by omega
+  have hsep : slot w a + 8 * (w + 2) ≤ slot w (aT0 + e) := slot_lt (by omega_arith)
+  have hA : slot w a + 8 * (w + 2) ≤ Z := by omega_arith
   simp only [toEnt, seqs]
   rw [List.append_assoc]
   refine WP.seq (WP.block_append_iff.mpr (WP.mono h.ws_ok fun s₁ ⟨⟨h12, h11, m₁, _⟩, k₁⟩ => ?_))
@@ -107,15 +107,15 @@ theorem toEnt_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (hEZ : slot
   have k12 := k₁.trans k₂
   refine WP.mono (WP.keep [.x17] (Q := fun t => t.gpr .x17 = off B (slot w (aT0 + e)) ∧ t.mem = s₂.mem) (by
     brun [(k12.gpr .x0 (by decide)).trans h.x0, hdr_enc (show kV < 32 by decide),
-      (h.scr.congr k12.wr).ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega),
+      (h.scr.congr k12.wr).ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega_arith),
       (by rw [m₂, m₁]; exact hV : word s₂.mem B (8 * kV) = off B (slot w (aT0 + e)))])
     (by decide) (by decide) (by decide +kernel)) fun s₃ ⟨⟨h17, m₃⟩, k₃⟩ => ?_
   have k13 := k12.trans k₃
   have hs₃ := h.scr.congr k13.wr
   refine WP.mono (copyWords_ok ((k₃.gpr .x16 (by decide)).trans h16) h17
-    ((k₂.trans k₃ |>.gpr .x12 (by decide)).trans h12) (by have := h.w1; omega) (by have := h.w2; omega) (by omega)
-    (fun i hi => hs₃.ld (by omega)) (fun i hi => hs₃.st (by omega))
-    (fun i hi b hb => by rw [ofs_off B (by omega)]; omega)) fun t ⟨hv, _, o', _, _, k₄⟩ => ?_
+    ((k₂.trans k₃ |>.gpr .x12 (by decide)).trans h12) (by have := h.w1; omega_arith) (by have := h.w2; omega_arith) (by omega_arith)
+    (fun i hi => hs₃.ld (by omega_arith)) (fun i hi => hs₃.st (by omega_arith))
+    (fun i hi b hb => by rw [ofs_off B (by omega_arith)]; omega_arith)) fun t ⟨hv, _, o', _, _, k₄⟩ => ?_
   rw [m₃, m₂, m₁] at hv o'
   exact ⟨hv, o', (k13.trans k₄).mono (by decide)⟩
 
@@ -127,9 +127,9 @@ theorem nextEnt_ok {s : State} {B : Addr} {Z w X : Nat} (h : Ws s B Z w) (hV : w
   have h256 := h.h256
   refine WP.keep [.x3, .x4] ?_ (by decide) (by decide) (by decide +kernel)
   brun [nextEnt, h.x0, hdr_enc (show kV < 32 by decide), hdr_enc (show sStride < 32 by decide),
-    h.scr.ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega),
-    h.scr.ld (d := 8 * sStride) (by simp only [sStride, sFn]; omega),
-    h.scr.st (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega), hV, h.hS, off_add]
+    h.scr.ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega_arith),
+    h.scr.ld (d := 8 * sStride) (by simp only [sStride, sFn]; omega_arith),
+    h.scr.st (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega_arith), hV, h.hS, off_add]
 
 /-- After `i` entries of the table's loop, from `s₀`: entries `0` to `i + 1`,
 `y = T_(i+1)`, the entry `i + 2` in `kV`, `14 − i` in `kBits`. -/
@@ -154,11 +154,11 @@ theorem tabNext_ok {s : State} {B : Addr} {Z w X n : Nat} (h : Ws s B Z w) (hV :
   refine WP.keep [.x3, .x4] ?_ (by decide) (by decide) (by decide +kernel)
   brun [nextEnt, h.x0, hdr_enc (show kV < 32 by decide), hdr_enc (show sStride < 32 by decide),
     hdr_enc (show kBits < 32 by decide),
-    h.scr.ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega),
-    h.scr.ld (d := 8 * sStride) (by simp only [sStride, sFn]; omega),
-    h.scr.ld (d := 8 * kBits) (by simp only [kBits, kT2, sFn]; omega),
-    h.scr.st (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega),
-    h.scr.st (d := 8 * kBits) (by simp only [kBits, kT2, sFn]; omega), hV, h.hS, off_add,
+    h.scr.ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega_arith),
+    h.scr.ld (d := 8 * sStride) (by simp only [sStride, sFn]; omega_arith),
+    h.scr.ld (d := 8 * kBits) (by simp only [kBits, kT2, sFn]; omega_arith),
+    h.scr.st (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega_arith),
+    h.scr.st (d := 8 * kBits) (by simp only [kBits, kT2, sFn]; omega_arith), hV, h.hS, off_add,
     fun X => (hdrStore_hdr s.mem B X (show kV < 32 by decide) (show kBits < 32 by decide) (by decide)).trans hnb,
     ofNat64_pred hn1 hn']
 
@@ -231,11 +231,11 @@ theorem tabStep_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s₀ s : State} (hw
     have hnw : B.toNat + Z ≤ 2 ^ 64 := hn
     -- The arrays through the header writes.
     have hwv : ∀ j < 28, wv t.mem B (slot w j) w = wv s₂.mem B (slot w j) w := fun j hj => by
-      have := VG.Proof.Bignum.slot_mono w (show j ≤ aE by unfold aE; omega)
+      have := VG.Proof.Bignum.slot_mono w (show j ≤ aE by unfold aE; omega_arith)
       rw [hm, hdrStore_wv' _ _ _ (by decide) (by omega_arith), hdrStore_wv' _ _ _ (by decide) (by omega_arith)]
     -- What the copy keeps: the arrays other than entry `i + 2`.
     have hcp : ∀ j < 28, j ≠ aT0 + (i + 2) → wv s₂.mem B (slot w j) w = wv s₁.mem B (slot w j) w := fun j hj hne => by
-      have := VG.Proof.Bignum.slot_mono w (show j ≤ aE by unfold aE; omega)
+      have := VG.Proof.Bignum.slot_mono w (show j ≤ aE by unfold aE; omega_arith)
       rcases slot_sep (w := w) hne with h | h
       · exact ho₂.wv (Or.inl (by omega_arith)) (by omega_arith)
       · exact ho₂.wv (Or.inr (by omega_arith)) (by omega_arith)
@@ -282,8 +282,8 @@ theorem tabStart_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = (s₂.mem.writeW (off B (8 * kV)) (off B (slot w aT0))).writeW
       (off B (8 * kBits)) (BitVec.ofNat 64 14)) (by
     brun [(k12.gpr .x0 (by decide)).trans h.x0, hdr_enc (show kV < 32 by decide), hdr_enc (show kBits < 32 by decide),
-      hs₂.st (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega),
-      hs₂.st (d := 8 * kBits) (by simp only [kBits, kT2, sFn]; omega), h3]
+      hs₂.st (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega_arith),
+      hs₂.st (d := 8 * kBits) (by simp only [kBits, kT2, sFn]; omega_arith), h3]
     rfl)
     (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ => ⟨by rw [hm, m₂, m₁], (k12.trans k).mono (by decide)⟩
 
@@ -364,7 +364,7 @@ theorem tabHead_ok {s : State} {B : Addr} {Z w c bm b : Nat} (hEZ : slot w aE + 
   have hR1 : wv s₁.mem B (slot w aR1) w = 2 ^ (64 * w) % c := hc₁.r1
   -- Through the last copy and the last `kV` store.
   have hY5 : ∀ j, j < 28 → j ≠ aY → wv t.mem B (slot w j) w = wv s₄.mem B (slot w j) w := fun j hj hne => by
-    have := VG.Proof.Bignum.slot_mono w (show j ≤ aE by unfold aE; omega)
+    have := VG.Proof.Bignum.slot_mono w (show j ≤ aE by unfold aE; omega_arith)
     rw [hft.wv_eq (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rcases slot_sep (w := w) hne with h | h

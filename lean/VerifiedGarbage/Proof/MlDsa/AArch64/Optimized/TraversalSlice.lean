@@ -18,14 +18,14 @@ theorem blockPrefix_get (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hlen : 
       else w[i]! := by
   induction t generalizing i with
   | zero =>
-    rw [blockN_zero, ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [blockN_zero, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)]
   | succ t ih =>
-    rw [blockN_succ, bfly_get _ hlen (by omega) _ hi, ih (i := start + t) (by omega) (by omega) (by omega),
-      ih (i := start + t + len) (by omega) (by omega) (by omega), ih (by omega) (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
+    rw [blockN_succ, bfly_get _ hlen (by omega_arith) _ hi, ih (i := start + t) (by omega_arith) (by omega_arith) (by omega_arith),
+      ih (i := start + t + len) (by omega_arith) (by omega_arith) (by omega_arith), ih (by omega_arith) (by omega_arith) hi]
+    rcases (by omega_arith : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
+      simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 
 def loc (u i e : Nat) : Nat := 32*i+4*u+e
@@ -45,27 +45,27 @@ theorem regBlock_get (w : Poly) {base gap u t : Nat} (hgap : 0<gap)
   induction t generalizing i with
   | zero =>
     simp only [regBlock,List.range_zero,List.foldl_nil,Nat.add_zero]
-    rw [ite_eq_right (by omega),ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_arith),ite_eq_right (by omega_arith)]
   | succ t ih =>
     rw [regBlock,foldl_range_succ]
     change (blockN bfly (regBlock w base gap u z t) (32*gap) z (loc u (base+t) 0) 4)[loc u i e]! = _
-    rw [blockPrefix_get _ (by omega) (by omega) (by unfold loc n; omega) (by unfold loc n; omega)]
+    rw [blockPrefix_get _ (by omega_arith) (by omega_arith) (by unfold loc n; omega_arith) (by unfold loc n; omega_arith)]
     by_cases ha : i=base+t
     · subst i
-      rw [ite_eq_left (by unfold loc; omega),
-        show loc u (base+t) e+32*gap=loc u (base+t+gap) e by unfold loc; omega,
-        ih (by omega) hi, ih (by omega) (by omega)]
-      simp (disch := omega) only [↓ite_eq_left,ite_eq_right]
+      rw [ite_eq_left (by unfold loc; omega_arith),
+        show loc u (base+t) e+32*gap=loc u (base+t+gap) e by unfold loc; omega_arith,
+        ih (by omega_arith) hi, ih (by omega_arith) (by omega_arith)]
+      simp (disch := omega_arith) only [↓ite_eq_left,ite_eq_right]
     · by_cases hd : i=base+t+gap
       · subst i
-        rw [ite_eq_right (by unfold loc; omega),ite_eq_left (by unfold loc; omega),
-          show loc u (base+t+gap) e-32*gap=loc u (base+t) e by unfold loc; omega,
-          ih (by omega) hi,ih (by omega) (by omega)]
-        simp (disch := omega) only [↓ite_eq_left,ite_eq_right]
+        rw [ite_eq_right (by unfold loc; omega_arith),ite_eq_left (by unfold loc; omega_arith),
+          show loc u (base+t+gap) e-32*gap=loc u (base+t) e by unfold loc; omega_arith,
+          ih (by omega_arith) hi,ih (by omega_arith) (by omega_arith)]
+        simp (disch := omega_arith) only [↓ite_eq_left,ite_eq_right]
         rw [Nat.add_sub_cancel]
-      · rw [ite_eq_right (by unfold loc; omega),ite_eq_right (by unfold loc; omega),ih (by omega) hi]
-        have h1 : (base≤i ∧ i<base+t) ↔ (base≤i ∧ i<base+(t+1)) := by omega
-        have h2 : (base+gap≤i ∧ i<base+gap+t) ↔ (base+gap≤i ∧ i<base+gap+(t+1)) := by omega
+      · rw [ite_eq_right (by unfold loc; omega_arith),ite_eq_right (by unfold loc; omega_arith),ih (by omega_arith) hi]
+        have h1 : (base≤i ∧ i<base+t) ↔ (base≤i ∧ i<base+(t+1)) := by omega_arith
+        have h2 : (base+gap≤i ∧ i<base+gap+t) ↔ (base+gap≤i ∧ i<base+gap+(t+1)) := by omega_arith
         simp only [h1,h2]
 
 def regGroupSchedule (u base gap rootIndex : Nat) : List Op :=

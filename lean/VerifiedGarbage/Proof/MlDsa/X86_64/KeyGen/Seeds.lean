@@ -119,14 +119,14 @@ theorem pro_ok {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ) :
   have hp' := hp
   obtain ⟨_, hrd, hwr, d1, d2, d3, d4, d5, d6, r1, r2, r3, r4, k1, k2, k3, k4, n1, n2, n3, n4⟩ := hp'
   have hS : ⟨σ.gpr .rcx, scrLen p⟩ ∈ σ.wr := by rw [hwr]; simp
-  have hs : 888 ≤ scrLen p := by have := hF.k; simp only [scrLen, Spec.MlDsa.scratchWords]; omega
+  have hs : 888 ≤ scrLen p := by have := hF.k; simp only [scrLen, Spec.MlDsa.scratchWords]; omega_arith
   have hs2 : scrLen p < 2 ^ 64 := by
-    have := hF.k; have := hF.l; have := hF.kl; simp only [scrLen, Spec.MlDsa.scratchWords]; omega
+    have := hF.k; have := hF.l; have := hF.kl; simp only [scrLen, Spec.MlDsa.scratchWords]; omega_arith
   have c : ∀ o, o + 8 ≤ 888 → (⟨σ.gpr .rcx, scrLen p⟩ : Region).Contains (σ.gpr .rcx + BitVec.ofNat 64 o) 8 :=
-    fun o ho => contains_offset' (by omega) (by omega)
+    fun o ho => contains_offset' (by omega_arith) (by omega_arith)
   have w : ∀ o, o + 8 ≤ 888 → InRegions σ.wr (σ.gpr .rcx + BitVec.ofNat 64 o) 8 := fun o ho => ⟨_, hS, c o ho⟩
-  have w0 := w 840 (by omega); have w1 := w 848 (by omega); have w2 := w 856 (by omega)
-  have w3 := w 864 (by omega); have w4 := w 872 (by omega); have w5 := w 880 (by omega)
+  have w0 := w 840 (by omega_arith); have w1 := w 848 (by omega_arith); have w2 := w 856 (by omega_arith)
+  have w3 := w 864 (by omega_arith); have w4 := w 872 (by omega_arith); have w5 := w 880 (by omega_arith)
   rw [pro_eq]
   refine WP.mono (WP.mx (noLd_spec (by rfl)) (WP.keep [.rbx, .rbp, .r12, .r13, .r15] (Q := fun s =>
     s.mem = (((((σ.mem.writeW (σ.gpr .rcx + BitVec.ofNat 64 840) (σ.gpr .rbx)).writeW
@@ -138,10 +138,10 @@ theorem pro_ok {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ) :
     (by xrun [w0, w1, w2, w3, w4, w5]) (by decide))) fun s ⟨⟨⟨hm, hbx, hbp, h12, h13, h15⟩, k⟩, hx⟩ => ⟨?_, h15⟩
   have hf : Frame [⟨σ.gpr .rcx, scrLen p⟩] σ.mem s.mem := by
     rw [hm]
-    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 848 (by omega))).writeW (List.mem_singleton_self _) _ (c 856 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 864 (by omega))).writeW (List.mem_singleton_self _) _ (c 872 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 880 (by omega)))
+    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (c 848 (by omega_arith))).writeW (List.mem_singleton_self _) _ (c 856 (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (c 864 (by omega_arith))).writeW (List.mem_singleton_self _) _ (c 872 (by omega_arith))).writeW
+      (List.mem_singleton_self _) _ (c 880 (by omega_arith)))
   have hsp : s.gpr .rsp = σ.gpr .rsp := k.gpr (by decide)
   refine ⟨⟨k.2.1, k.2.2, hsp, fa4 hbx hbp h12 h13, fun j hj => ?_, ?_⟩, ?_, hx⟩
   · simp only [pa, hbx, hm]
@@ -181,7 +181,7 @@ theorem K1.step {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ) 
   have L := h.kc.lay hF hp
   refine ⟨h.kc.step hF hp hP hx h0, by rw [L.keepBytes hP h1]; exact h.hx, by rw [L.keepBytes hP h2]; exact h.sa,
     by rw [L.keepBytes hP h3]; exact h.sb, by rw [L.keepBytes hP h4]; exact h.z, fun k hk => ?_⟩
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
   · rw [L.keepBytes hP a0]; exact h.sa4 0 hk
   · rw [L.keepBytes hP a1]; exact h.sa4 1 hk
   · rw [L.keepBytes hP a2]; exact h.sa4 2 hk
@@ -236,7 +236,7 @@ theorem copyR_ok {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ)
     fun s' ⟨⟨hP, hb⟩, hx⟩ => ⟨⟨h.kc.step hF hp hP.b hx (by layd), by rw [L.keepBytes hP.b (by layd)]; exact h.hx,
       by rw [L.keepBytes hP.b (by layd)]; exact h.sa, by rw [L.keepBytes hP.b (by layd)]; exact h.sb,
       by rw [L.keepBytes hP.b (by layd)]; exact h.z, fun k hk' => ?_⟩, hP.cs .r15 (by decide)⟩
-  rcases (by omega : k < j ∨ k = j) with hk' | rfl
+  rcases (by omega_arith : k < j ∨ k = j) with hk' | rfl
   · rw [L.keepBytes hP.b (by layd)]; exact h.sa4 k hk'
   · rw [hP.pa rbx_cs, hb, ← Proof.MlKem.bytesAt_take s.mem (pa s (sc oHX)) (show 32 ≤ 128 by decide), h.hx, ← rho_eq]
 
@@ -245,7 +245,7 @@ theorem seeds_ok {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ)
   have hk := hF.k; have hl := hF.l
   have L := h.lay hF hp
   unfold seeds
-  refine WP.seq (WP.mono (setKL_ok L (a := p.k) (b := p.ℓ) (by omega) (by omega)) fun s₁ ⟨hP₁, hx₁, hb₁⟩ => ?_)
+  refine WP.seq (WP.mono (setKL_ok L (a := p.k) (b := p.ℓ) (by omega_arith) (by omega_arith)) fun s₁ ⟨hP₁, hx₁, hb₁⟩ => ?_)
   have h₁ := h.step hF hp hP₁.b hx₁ (by layd)
   have L₁ := h₁.lay hF hp
   have e₁ : ∀ o, pa s₁ (sc o) = pa s (sc o) := fun o => hP₁.pa rbx_cs
@@ -294,8 +294,8 @@ theorem setKL_taint : ∀ v < 16, ∀ w < 16, (taint.check (X86_64.Taint.ofRegs 
 theorem seeds_tr {p : Params} (hF : PFacts p) : RelCT isa (Two p) (seeds p) fun _ _ => True := by
   have hk := hF.k; have hl := hF.l
   unfold seeds
-  refine RelCT.seq (Two.step (taintRel [.rbx] (fun x y h => two_rbx h) (setKL_taint p.k (by omega) p.ℓ (by omega)))
-    fun x S => WP.mono (setKL_ok S.lay (a := p.k) (b := p.ℓ) (by omega) (by omega)) fun _ h => ⟨_, h.1.b⟩) ?_
+  refine RelCT.seq (Two.step (taintRel [.rbx] (fun x y h => two_rbx h) (setKL_taint p.k (by omega_arith) p.ℓ (by omega_arith)))
+    fun x S => WP.mono (setKL_ok S.lay (a := p.k) (b := p.ℓ) (by omega_arith) (by omega_arith)) fun _ h => ⟨_, h.1.b⟩) ?_
   refine RelCT.seq (Two.step (RelCT.mono (hash_tr (kgB_bases p) (ps := [((.rbp, 0), 32), (sc oKL, 2)]) (rate := 136)
       (suffix := 31) (out := sc oHX) (len := 128) (by layd) (by decide)) (fun _ _ h => h.lrel) fun _ _ h => h)
     fun x S => WP.mono (hash_okM (ps := [((.rbp, 0), 32), (sc oKL, 2)]) (rate := 136) (suffix := 31)

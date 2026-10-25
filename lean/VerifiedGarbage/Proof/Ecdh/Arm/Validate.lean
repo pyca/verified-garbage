@@ -89,14 +89,14 @@ theorem mont_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hr2' : sv c base s R2P = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.p := hr2
-  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs hf (o := QXM) (a := E) (b := R2P) (by decide) (by decide) (by decide) (by rw [hr2']; exact Nat.mod_lt _ (by omega))) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs hf (o := QXM) (a := E) (b := R2P) (by decide) (by decide) (by decide) (by rw [hr2']; exact Nat.mod_lt _ (by omega_arith))) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have hf₁ := hf.of_rest k₁.rest
   have kP₁ := hM.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have r2₁ : sv c base s₁ R2P = sv c base s R2P :=
     sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   have y₁ : sv c base s₁ QY = sv c base s QY := sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
-  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₁ hf₁ (o := QYM) (a := QY) (b := R2P) (by decide) (by decide) (by decide) (by rw [r2₁, hr2']; exact Nat.mod_lt _ (by omega)))
+  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₁ hf₁ (o := QYM) (a := QY) (b := R2P) (by decide) (by decide) (by decide) (by rw [r2₁, hr2']; exact Nat.mod_lt _ (by omega_arith)))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => h s₂ ?_)
   have x₂ : sv c base s₂ QXM = sv c base s₁ QXM :=
     sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide)
@@ -132,7 +132,7 @@ theorem curve_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
       have : ∀ i ∈ curveSl, i < 45 := by decide
       exact sl_below_wk c hc.n10 (this i hi),
     sl_below_wk c hc.n10 (i := MP) (by decide), sl_below_wk c hc.n10 (i := TMP) (by decide)⟩
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have I : Inv c.MP' base size c.C.p (· ∈ curveSl.map c.sl) ([QXM, QYM, AP, BP].map c.sl)
       (fun o => toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base o c.n)) s := by
     refine ⟨hs, hM, fun x hx => ?_, fun x hx => ?_, fun _ _ => rfl, hf⟩
@@ -193,12 +193,12 @@ theorem select_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have h7 := hc.n10
   have hn := hs.nowrap
   have hap : ∀ {i j}, i ≠ j → c.sl i ≤ c.sl j ∨ c.sl j + 4 * (2 * c.n) ≤ c.sl i := fun h => by
-    have := sl_apart c h; omega
+    have := sl_apart c h; omega_arith
   have hle : ∀ {i}, i < 45 → c.sl i + 4 * (2 * c.n) ≤ size := fun hi => by
-    have := sl_le c h7 hi; omega
+    have := sl_le c h7 hi; omega_arith
   rw [select_eq]
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read (d := c.sl FLAG) (n := 4) (by omega))
+  refine wp_ldr (hs.off_lt (by omega_arith)) (hs.ea (by omega_arith)) (hs.read (d := c.sl FLAG) (n := 4) (by omega_arith))
     fun s₁ u₁ => ?_
   have k₁ : Rest [.r4, .r5, .r10] s s₁ := u₁.rest (by simp)
   have hs₁ := hs.of_rest k₁ (by decide)
@@ -214,9 +214,9 @@ theorem select_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   have hm₁ : s₁.mem = s.mem := u₁.mem
   have O₂' : Outside base (c.sl PX) (8 * c.n) s₁.mem s₂.mem := by
-    rw [show 8 * c.n = 4 * (2 * c.n) by omega]; exact O₂
+    rw [show 8 * c.n = 4 * (2 * c.n) by omega_arith]; exact O₂
   have O₃' : Outside base (c.sl PY) (8 * c.n) s₂.mem s₃.mem := by
-    rw [show 8 * c.n = 4 * (2 * c.n) by omega]; exact O₃
+    rw [show 8 * c.n = 4 * (2 * c.n) by omega_arith]; exact O₃
   refine ⟨hs₂.of_rest k₃ (by decide), k₁.trans ((k₂.mono (by simp)).trans (k₃.mono (by simp))), ?_, ?_, ?_⟩
   · have := O₂'.unch.trans O₃'.unch
     rw [hm₁] at this
@@ -259,8 +259,8 @@ theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have h7 := hc.n10
   have hn := hs.nowrap
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
-  have hF : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
+  have hF : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   rw [validate_eq]
   refine mont_ok hc hs hfar (modP_of hc F.mp) hr2 fun s₂ Mp => ?_
   have F₂ := F.unch h7 hn (fixedOk_slWk h7 (l := [QXM, QYM, TMP]) (by decide)) Mp.unch
@@ -339,10 +339,10 @@ theorem ladLayQ (hc : CfgOk c) : LadLay (Impl.Ecdh.Arm.Cfg.ladderQ c) size 8192 
     ⟨fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 8 * c.C.len by have := hc.len8; omega,
-      show 8 * c.C.len < 2 ^ 16 by have := hc.len_hi; omega⟩,
+    ⟨show 1 ≤ 8 * c.C.len by have := hc.len8; omega_arith,
+      show 8 * c.C.len < 2 ^ 16 by have := hc.len_hi; omega_arith⟩,
     (by have := bitsAt_le c h7 (j := 0) (by decide); have := hc.len_hi;
-        change bitsAt c.n 0 + 8 * c.C.len ≤ 8192; omega), ?_⟩
+        change bitsAt c.n 0 + 8 * c.C.len ≤ 8192; omega_arith), ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
       DX, DY, DZ, TX, TY, TZ]) (by decide)
   · exact map_sl_disj hn (l₁ := [AP, B3P, PX, PY, ONEP])
@@ -420,7 +420,7 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
     have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
     exact this _ h7
@@ -435,10 +435,10 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     · exact lt_of_eq_of_lt F.b3p (hmont _)
     · exact hpx
     · exact hpy
-    · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega))
-    · exact lt_of_eq_of_lt hrx (by omega)
+    · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega_arith))
+    · exact lt_of_eq_of_lt hrx (by omega_arith)
     · exact lt_of_eq_of_lt hry (hmont _)
-    · exact lt_of_eq_of_lt hrz (by omega)
+    · exact lt_of_eq_of_lt hrz (by omega_arith)
   have hR : Q (8 * c.C.len) (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
       (tmv c.C c.n base s (c.sl RZ)) := by
     show Q _ (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ))
@@ -460,7 +460,7 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
       rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWkP h7 (by decide))]
       exact ht₁ t ht)
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega) henc) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
+    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith) henc) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   rw [powWxP_eq] at U₆
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)

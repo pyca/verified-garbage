@@ -29,7 +29,7 @@ theorem crt_narrow_link (base : BitVec 32) (w : Nat) :
   rw [shift, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add, crtN]
   refine congrArg (base + BitVec.ofNat 32 ·) ?_
   simp only [narrowOffset, productBytes, productWords]
-  omega
+  omega_arith
 
 theorem narrowWidth_value {k : Nat} (positive : 0 < k) (small : k < 2 ^ 28) :
     (BitVec.ofNat 32 k + 7) >>> 3 + ((BitVec.ofNat 32 k + 7) >>> 3 - 2) >>> 31 =
@@ -37,7 +37,7 @@ theorem narrowWidth_value {k : Nat} (positive : 0 < k) (small : k < 2 ^ 28) :
   apply BitVec.eq_of_toNat_eq
   simp only [narrowWords, BitVec.ofNat_eq_ofNat, BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_sub,
     BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem crt_narrowAddress_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtShared g bs s) :
     WP isa (.block narrowAddress) s fun t =>
@@ -46,14 +46,14 @@ theorem crt_narrowAddress_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List 
   have size := h.main.toCrtLayoutState.size
   unfold narrowAddress
   refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide)
-    (addr_add (by have := h.stack.nowrap; omega)) (h.stack.read (by decide)) fun u a => ?_
+    (addr_add (by have := h.stack.nowrap; omega_arith)) (h.stack.read (by decide)) fun u a => ?_
   have base : u.gpr .r1 = g.base := a.gpr.trans h.savedMain
   refine wp_ldr (a := off (State.addr g.base) 240) (by decide)
-    (by rw [base]; exact addr_add (by have := main.nowrap; omega))
-    (by rw [a.rd, a.wr]; exact main.read (by omega)) fun v b => ?_
+    (by rw [base]; exact addr_add (by have := main.nowrap; omega_arith))
+    (by rw [a.rd, a.wr]; exact main.read (by omega_arith)) fun v b => ?_
   refine wp_ldr (a := off (State.addr g.base) 48) (by decide)
-    (by rw [b.other .r1 (by decide), base]; exact addr_add (by have := main.nowrap; omega))
-    (by rw [b.rd, b.wr, a.rd, a.wr]; exact main.read (by omega)) fun z c => ?_
+    (by rw [b.other .r1 (by decide), base]; exact addr_add (by have := main.nowrap; omega_arith))
+    (by rw [b.rd, b.wr, a.rd, a.wr]; exact main.read (by omega_arith)) fun z c => ?_
   refine wp_mov (op2_lsl ⟨by decide, by decide⟩) fun y d => ?_
   refine wp_dp (op2_imm (by decide)) fun x e => ?_
   refine wp_dp (op2_reg _ _) fun t f => WP.block_nil ?_
@@ -73,7 +73,7 @@ theorem crt_narrowWidth_ok (s : State) {slot k : Nat} (hs : slot < 4096) (fit : 
       t.gpr .r7 = BitVec.ofNat 32 (narrowWords k) ∧ t.gpr .r3 = 0 ∧ t.mem = s.mem ∧
       Rest [.r1, .r3, .r7] s t := by
   unfold narrowWidth
-  refine wp_loadStack (a := off (State.addr s.sp) slot) hs (addr_add (by omega)) read fun u a => ?_
+  refine wp_loadStack (a := off (State.addr s.sp) slot) hs (addr_add (by omega_arith)) read fun u a => ?_
   refine wp_dp (op2_imm (by decide)) fun v b => ?_
   refine wp_mov (op2_lsr ⟨by decide, by decide⟩) fun z c => ?_
   refine wp_dp (op2_imm (by decide)) fun y d => ?_
@@ -104,15 +104,15 @@ theorem crt_enterNarrow_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   rintro u ⟨ptrU, memU, restU⟩
   have sharedU := h.of_mem memU restU
   rw [WP.seq_iff]
-  refine WP.mono (crt_narrowWidth_ok u (slot := 56 + 8 * j.val + 4) (by omega)
-    (by have := sharedU.stack.nowrap; omega) (sharedU.stack.read (by omega))
-    (by simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega] using sharedU.stack.length j)
-    positive (by omega)) ?_
+  refine WP.mono (crt_narrowWidth_ok u (slot := 56 + 8 * j.val + 4) (by omega_arith)
+    (by have := sharedU.stack.nowrap; omega_arith) (sharedU.stack.read (by omega_arith))
+    (by simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega_arith] using sharedU.stack.length j)
+    positive (by omega_arith)) ?_
   rintro v ⟨widthV, zeroV, memV, restV⟩
   have sharedV := sharedU.of_mem memV restV
   have ptrV : v.gpr .r0 = crtN g.base g.words := (restV.gpr .r0 (by simp)).trans ptrU
   rw [WP.seq_iff]
-  refine WP.mono (setup_frame_ok v sharedV.buffers.context.narrow two (by omega) arrays ptrV widthV zeroV) ?_
+  refine WP.mono (setup_frame_ok v sharedV.buffers.context.narrow two (by omega_arith) arrays ptrV widthV zeroV) ?_
   rintro z ⟨layoutZ, widthZ, ptrZ, frameZ, restZ⟩
   have sharedZ := sharedV.after_narrow (frameZ.mono (by simp)) restZ
   have flagZ := sharedV.acceptance_after_workspace sharedV.narrow_member frameZ restZ

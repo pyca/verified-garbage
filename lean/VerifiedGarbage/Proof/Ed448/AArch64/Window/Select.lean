@@ -45,7 +45,7 @@ theorem digitMask_ok (s : State) {n m : Nat} (hn : n < 16) (hm : m < 16)
   obtain ⟨h11, h10, -, -, -, -, -⟩ := maskReg_ne m hm
   apply WP.of_runBlock
   simp only [digitMask, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
-    show m + 1 < 4096 by omega, show m < 4096 by omega, show (63 : Nat) < 64 from by decide, ite_true,
+    show m + 1 < 4096 by omega_arith, show m < 4096 by omega_arith, show (63 : Nat) < 64 from by decide, ite_true,
     RegUpd.gpr_write, BitVec.setWidth_eq, Ne.symm h11, h10, Ne.symm h10, hx, ite_false,
     Option.some.injEq, exists_eq_left']
   refine ⟨mask_fact n hn m hm, ⟨fun r hr => ?_, rfl, rfl⟩, rfl⟩
@@ -72,21 +72,21 @@ theorem digitMasks_ok (s : State) {n : Nat} (hn : n < 16) (hx : s.gpr .x11 = Bit
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨tm, tk, tmem⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨tm, tk, tmem⟩ => ?_
     have tx : t.gpr .x11 = BitVec.ofNat 64 n := by
       rw [tk.1 _ (by decide)]; exact hx
-    refine WP.mono (digitMask_ok t hn (by omega) tx) fun u ⟨um, uk, umem⟩ =>
+    refine WP.mono (digitMask_ok t hn (by omega_arith) tx) fun u ⟨um, uk, umem⟩ =>
       ⟨fun m hm => ?_, tk.trans (uk.mono ?_), umem.trans tmem⟩
     · by_cases hmk : m = k
       · subst hmk; exact um
       · rw [uk.1 _ ?_]
-        · exact tm m (by omega)
+        · exact tm m (by omega_arith)
         · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-          exact ⟨maskReg_inj k (by omega) m (by omega) hmk, (maskReg_ne m (by omega)).2.1⟩
+          exact ⟨maskReg_inj k (by omega_arith) m (by omega_arith) hmk, (maskReg_ne m (by omega_arith)).2.1⟩
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact maskReg_mem (by omega)
+      · exact maskReg_mem (by omega_arith)
       · exact List.mem_cons_self
 
 theorem Masks16.of_keeps {n : Nat} {rs : List Reg} {s t : State} (h : Masks16 n s) (k : Keeps rs s t)
@@ -107,14 +107,14 @@ theorem selW_step (m : Mem) (base : Addr) (n k w : Nat) :
     selW m base n k w ||| (tw m base (k + 1) w &&& mask (decide (n = k + 1))) = selW m base n (k + 1) w := by
   unfold selW
   by_cases h : n ≤ k
-  · simp only [h, ↓reduceIte, show n ≤ k + 1 by omega, show ¬ n = k + 1 by omega, decide_false,
+  · simp only [h, ↓reduceIte, show n ≤ k + 1 by omega_arith, show ¬ n = k + 1 by omega_arith, decide_false,
       mask, Bool.false_eq_true]
     exact or_and_zero _ _
   · by_cases he : n = k + 1
     · subst he
       simp only [h, ↓reduceIte, Nat.le_refl, decide_true, mask, BitVec.and_allOnes]
       exact BitVec.zero_or
-    · simp only [h, he, ↓reduceIte, show ¬ n ≤ k + 1 by omega, decide_false, mask, Bool.false_eq_true]
+    · simp only [h, he, ↓reduceIte, show ¬ n ≤ k + 1 by omega_arith, decide_false, mask, Bool.false_eq_true]
       exact or_and_zero _ _
 
 theorem selW_zero (m : Mem) (base : Addr) (n w : Nat) :
@@ -122,7 +122,7 @@ theorem selW_zero (m : Mem) (base : Addr) (n w : Nat) :
   unfold selW
   by_cases h : n = 0
   · subst h; simp only [decide_true, mask, ↓reduceIte, BitVec.and_allOnes, Nat.le_refl]
-  · simp only [h, decide_false, mask, Bool.false_eq_true, ↓reduceIte, show ¬ n ≤ 0 by omega]
+  · simp only [h, decide_false, mask, Bool.false_eq_true, ↓reduceIte, show ¬ n ≤ 0 by omega_arith]
     exact BitVec.and_zero
 
 /-- An `and` of `r` into `d`, from the registers. -/
@@ -141,12 +141,12 @@ theorem cand_ok {s : State} {base : Addr} (hs : Scr s base) {n e w : Nat} (he : 
         .logic .orr .x .x9 .x9 .x10]) s fun t =>
       t.gpr .x9 = s.gpr .x9 ||| (tw s.mem base (e + 1) w &&& mask (decide (n = e + 1))) ∧
       Keeps [.x10, .x9] s t ∧ t.mem = s.mem := by
-  obtain ⟨-, h10, -, -, -, -, -⟩ := maskReg_ne (e + 1) (by omega)
+  obtain ⟨-, h10, -, -, -, -, -⟩ := maskReg_ne (e + 1) (by omega_arith)
   rw [show ([ld .x10 (TAB + 192 * (e + 1) + 8 * w), .logic .and .x .x10 .x10 (maskReg (e + 1)),
       .logic .orr .x .x9 .x9 .x10] : List Instr) = [ld .x10 (TAB + 192 * (e + 1) + 8 * w)] ++
       [.logic .and .x .x10 .x10 (maskReg (e + 1)), .logic .orr .x .x9 .x9 .x10] from rfl, WP.block_append_iff]
   refine WP.mono (VG.Proof.Curve448.AArch64.Fast.ld_ok hs .x10 (d := TAB + 192 * (e + 1) + 8 * w)
-    (by simp only [TAB]; omega) (by simp only [TAB]; omega)) fun a ⟨a10, ma, ka⟩ => ?_
+    (by simp only [TAB]; omega_arith) (by simp only [TAB]; omega_arith)) fun a ⟨a10, ma, ka⟩ => ?_
   have am : a.gpr (maskReg (e + 1)) = s.gpr (maskReg (e + 1)) := ka.1 _ (by simpa using h10)
   have a9 : a.gpr .x9 = s.gpr .x9 := ka.1 _ (by decide)
   apply WP.of_runBlock
@@ -170,12 +170,12 @@ theorem cands_ok {s : State} {base : Addr} (hs : Scr s base) {n w : Nat} (hw : w
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨t9, kt, mt⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨t9, kt, mt⟩ => ?_
     have ht : Scr t base := hs.of_keeps kt (by decide)
     have tm : Masks16 n t := hm.of_keeps kt fun m hm => by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨(maskReg_ne m hm).2.1, (maskReg_ne m hm).2.2.1⟩
-    refine WP.mono (cand_ok ht (e := k) (by omega) hw (tm (k + 1) (by omega))) fun u ⟨u9, ku, mu⟩ =>
+    refine WP.mono (cand_ok ht (e := k) (by omega_arith) hw (tm (k + 1) (by omega_arith))) fun u ⟨u9, ku, mu⟩ =>
       ⟨?_, kt.trans ku, mu.trans mt⟩
     rw [u9, t9, mt, selW_step]
 
@@ -183,7 +183,7 @@ theorem cands_ok {s : State} {base : Addr} (hs : Scr s base) {n w : Nat} (hw : w
 def dst (w : Nat) : Nat := slot (6 + w / 8) + 8 * (w % 8)
 
 theorem dst_bounds {w : Nat} (hw : w < 24) : 832 ≤ dst w ∧ dst w + 8 ≤ 1216 ∧ dst w % 8 = 0 := by
-  simp only [dst, slot]; omega
+  simp only [dst, slot]; omega_arith
 
 theorem selectEntryWord_eq (w : Nat) :
     selectEntryWord w = [ld .x9 (TAB + 8 * w), .logic .and .x .x9 .x9 (maskReg 0)] ++
@@ -198,7 +198,7 @@ theorem selectEntryWord_ok {s : State} {base : Addr} (hs : Scr s base) {n w : Na
   rw [show ([ld .x9 (TAB + 8 * w), .logic .and .x .x9 .x9 (maskReg 0)] : List Instr) =
     [ld .x9 (TAB + 8 * w)] ++ [.logic .and .x .x9 .x9 (maskReg 0)] from rfl, WP.block_append_iff]
   refine WP.mono (VG.Proof.Curve448.AArch64.Fast.ld_ok hs .x9 (d := TAB + 8 * w)
-    (by simp only [TAB]; omega) (by simp only [TAB]; omega)) fun a ⟨a9, ma, ka⟩ => ?_
+    (by simp only [TAB]; omega_arith) (by simp only [TAB]; omega_arith)) fun a ⟨a9, ma, ka⟩ => ?_
   refine WP.mono (andReg_ok a .x9 (maskReg 0)) fun b ⟨b9, kb, mb⟩ => ?_
   have hsb : Scr b base := (hs.of_keeps ka (by decide)).of_keeps kb (by decide)
   have b0 : b.gpr .x9 = selW b.mem base n 0 w := by
@@ -211,10 +211,10 @@ theorem selectEntryWord_ok {s : State} {base : Addr} (hs : Scr s base) {n w : Na
   refine WP.mono (cands_ok hsb hw bm 15 (Nat.le_refl _) b0) fun c ⟨c9, kc, mc⟩ => ?_
   have hsc : Scr c base := hsb.of_keeps kc (by decide)
   obtain ⟨_, d2, d3⟩ := dst_bounds hw
-  refine WP.mono (store_ok hsc (d := dst w) (by omega) d3 .x9)
+  refine WP.mono (store_ok hsc (d := dst w) (by omega_arith) d3 .x9)
     fun t ⟨mt, kt⟩ => ⟨?_, ?_⟩
   · rw [mt, c9, mc, mb, ma]
-    simp only [selW, show n ≤ 15 by omega, ↓reduceIte]
+    simp only [selW, show n ≤ 15 by omega_arith, ↓reduceIte]
   · exact (((ka.mono (by decide)).trans (kb.mono (by decide))).trans (kc.mono (by decide))).trans
       (kt.mono (by decide))
 
@@ -222,9 +222,9 @@ theorem tw_write {m : Mem} {base : Addr} {w : Nat} (hw : w < 24) (v : BitVec 64)
     (hw' : w' < 24) : tw (m.writeW (off base (dst w)) v) base e w' = tw m base e w' := by
   obtain ⟨d1, d2, d3⟩ := dst_bounds hw
   unfold tw
-  rw [VG.Proof.X448.AArch64.word_write_aligned _ _ (by omega)
-    (by simp only [TAB]; omega) d3 (by simp only [TAB]; omega), ite_eq_right_iff.mpr]
-  intro h; simp only [TAB] at h; omega
+  rw [VG.Proof.X448.AArch64.word_write_aligned _ _ (by omega_arith)
+    (by simp only [TAB]; omega_arith) d3 (by simp only [TAB]; omega_arith), ite_eq_right_iff.mpr]
+  intro h; simp only [TAB] at h; omega_arith
 
 /-- **The selection** of the entry for the digit `n < 16` in `x11` into slots 6–8. -/
 theorem selectEntry_ok {s : State} {base : Addr} (hs : Scr s base) {n : Nat} (hn : n < 16)
@@ -246,24 +246,24 @@ theorem selectEntry_ok {s : State} {base : Addr} (hs : Scr s base) {n : Nat} (hn
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨t1, t2, t3, kt⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨t1, t2, t3, kt⟩ => ?_
     have ht : Scr t base := hsa.of_keeps kt (by decide)
     have tm : Masks16 n t := am.of_keeps kt fun m hm' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨(maskReg_ne m hm').2.2.1, (maskReg_ne m hm').2.1⟩
-    refine WP.mono (selectEntryWord_ok ht hn (by omega) tm) fun u ⟨um, ku⟩ =>
+    refine WP.mono (selectEntryWord_ok ht hn (by omega_arith) tm) fun u ⟨um, ku⟩ =>
       ⟨fun w hw => ?_, ?_, fun e he w hw => ?_, kt.trans ku⟩
-    · obtain ⟨_, d2, d3⟩ := dst_bounds (show k < 24 by omega)
-      obtain ⟨_, e2, e3⟩ := dst_bounds (show w < 24 by omega)
-      rw [um, VG.Proof.X448.AArch64.word_write_aligned _ _ (by omega)
-        (by omega) d3 e3]
+    · obtain ⟨_, d2, d3⟩ := dst_bounds (show k < 24 by omega_arith)
+      obtain ⟨_, e2, e3⟩ := dst_bounds (show w < 24 by omega_arith)
+      rw [um, VG.Proof.X448.AArch64.word_write_aligned _ _ (by omega_arith)
+        (by omega_arith) d3 e3]
       by_cases hwk : w = k
-      · subst hwk; rw [ite_eq_left rfl, t3 n hn w (by omega)]
-      · rw [ite_eq_right (by simp only [dst, slot]; omega)]; exact t1 w (by omega)
-    · obtain ⟨d1, d2, _⟩ := dst_bounds (show k < 24 by omega)
+      · subst hwk; rw [ite_eq_left rfl, t3 n hn w (by omega_arith)]
+      · rw [ite_eq_right (by simp only [dst, slot]; omega_arith)]; exact t1 w (by omega_arith)
+    · obtain ⟨d1, d2, _⟩ := dst_bounds (show k < 24 by omega_arith)
       rw [um]
-      exact t2.trans ((VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega)).mono
-        (by omega) (by omega))
-    · rw [um, tw_write (by omega) _ e w he hw, t3 e he w hw]
+      exact t2.trans ((VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega_arith)).mono
+        (by omega_arith) (by omega_arith))
+    · rw [um, tw_write (by omega_arith) _ e w he hw, t3 e he w hw]
 
 end VG.Proof.Ed448.AArch64.Window

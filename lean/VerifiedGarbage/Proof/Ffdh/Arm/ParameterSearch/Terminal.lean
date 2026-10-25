@@ -24,14 +24,7 @@ theorem terminal_ok (s : State) {base : BitVec 32} {status : Nat}
     (h : Controller base s) (bound : status = 1 ∨ status = 3) :
     WP isa (.block (VG.Impl.Ffdh.Arm.ParameterSearch.terminal status)) s fun t =>
       t.mem = terminalMem s.mem base status ∧ Rest [.r10, .r11] s t := by
-  refine withRest [.r10, .r11] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block (VG.Impl.Ffdh.Arm.ParameterSearch.terminal status) : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have f := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r10, .r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.terminal VG.Impl.Ffdh.Arm.ParameterSearch.stf terminalMem
   rcases bound with rfl | rfl <;>
     ffrun [controllerAddr h 0 (by decide), controllerAddr h 4 (by decide),

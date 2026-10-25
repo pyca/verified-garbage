@@ -52,7 +52,7 @@ theorem wholeR_mut {W SP D : Addr} {n : Nat} {m m' : Mem} (h : Frame (wholeR W S
 /-- The first `k` bytes of a buffer, as a buffer at the same place. -/
 theorem DBuf.take' {K W SP : Addr} {s : State} {D : Addr} {n k : Nat} (h : DBuf K W SP s D n) (hk : k ≤ n) :
     DBuf K W SP s D k := by
-  have := h.slice (a := 0) (k := k) (by omega)
+  have := h.slice (a := 0) (k := k) (by omega_arith)
   rwa [BitVec.add_zero] at this
 
 /-- The `m` blocks of the data. -/
@@ -138,8 +138,8 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     fun h₁ h₂ => P₂.frame.readW (r := ⟨W + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact L.w_w (a := _) (d := 16) (k := 16) (by omega) h₂ (by decide)
-      · exact L.w_w (a := _) (d := 32) (k := 16) (by omega) h₂ (by decide)
+      · exact L.w_w (a := _) (d := 16) (k := 16) (by omega_arith) h₂ (by decide)
+      · exact L.w_w (a := _) (d := 32) (k := 16) (by omega_arith) h₂ (by decide)
       · exact (hD₁.w.sub_left (Region.sub_prefix (Nat.le_refl _))).symm.sub_left (Lay.wSub h₂)) (by decide)
   have h15₂ : s₂.gpr .r15 = W := P₂.env.r15
   have h13₂ : s₂.gpr .r13 = BitVec.ofNat 64 m := by
@@ -162,13 +162,13 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
       · rw [P₂.env.rsp]; exact h₃.symm
   have kWP : ∀ {d : Nat}, (d + 16 ≤ 16 ∨ (48 ≤ d ∧ d + 16 ≤ 512)) →
       blockAtMem s₃.mem (W + BitVec.ofNat 64 d) = blockAtMem s₁.mem (W + BitVec.ofNat 64 d) := fun hd => by
-    rw [kC ((hD₂.w.sub_right (Lay.wSub (by omega))).symm) (L.w_w (.inl (by omega)) (by omega) (by decide))
-      (L.stk_w' (by omega)), blockAtMem_frame P₂.frame (fun r hr => by
+    rw [kC ((hD₂.w.sub_right (Lay.wSub (by omega_arith))).symm) (L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide))
+      (L.stk_w' (by omega_arith)), blockAtMem_frame P₂.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact L.w_w (a := _) (d := 16) (k := 16) (by omega) (by omega) (by decide)
-      · exact L.w_w (a := _) (d := 32) (k := 16) (by omega) (by omega) (by decide)
-      · exact (hD₁.w.sub_right (Lay.wSub (by omega))).symm)]
+      · exact L.w_w (a := _) (d := 16) (k := 16) (by omega_arith) (by omega_arith) (by decide)
+      · exact L.w_w (a := _) (d := 32) (k := 16) (by omega_arith) (by omega_arith) (by decide)
+      · exact (hD₁.w.sub_right (Lay.wSub (by omega_arith))).symm)]
   have o0₃ : blockAtMem s₃.mem (W + BitVec.ofNat 64 o0O) = O0 := by rw [kWP (by decide), m₁, ho0]
   -- the table, after the first pass and the call
   have tW : ∀ r ∈ [(⟨W + BitVec.ofNat 64 ofsO, 16⟩ : Region), ⟨W + BitVec.ofNat 64 ckO, 16⟩, ⟨D, 16 * m⟩],
@@ -215,11 +215,11 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
       rcases hr with rfl | rfl | rfl
       · exact (L.k_w.sub_left (Region.sub_prefix hRb)).sub_right (Lay.wSub (by decide))
       · exact (L.k_w.sub_left (Region.sub_prefix hRb)).sub_right (Lay.wSub (by decide))
-      · exact hD₁.k.sub_left (Region.sub_prefix hRb)) (by omega), m₁]
+      · exact hD₁.k.sub_left (Region.sub_prefix hRb)) (by omega_arith), m₁]
   have X₄ : ∀ k < m, blockAtMem s₄.mem (D + BitVec.ofNat 64 (16 * k)) =
       G (bytesAt t.mem K (16 * (R + 1))) (blockAtMem t.mem (D + BitVec.ofNat 64 (16 * k)) ^^^ offAt O0 l (k + 1)) :=
     fun k hk => by
-      rw [kB₄ (hD₂.slice (a := 16 * k) (k := 16) (by omega)).w, hcall P₃ k hk, hK, P₂.blk k hk, m₁]
+      rw [kB₄ (hD₂.slice (a := 16 * k) (k := 16) (by omega_arith)).w, hcall P₃ k hk, hK, P₂.blk k hk, m₁]
   have ck₃ : blockAtMem s₃.mem (W + BitVec.ofNat 64 ckO) = ckF2 0 := by
     rw [kC ((hD₂.w.sub_right (Lay.wSub (by decide))).symm) (L.w_w (.inl (by decide)) (by decide) (by decide))
       (L.stk_w' (by decide)), P₂.ck, hckF2₀]

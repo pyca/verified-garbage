@@ -53,7 +53,7 @@ theorem msg_nodup (n : Nat) :
   have key : ∀ c < 4, [msg c, msg (c + 1), msg (c + 2), msg (c + 3), .xmm0, .xmm1, .xmm2, .xmm7].Nodup := by
     decide
   have e : ∀ k, msg (n + k) = msg (n % 4 + k) := fun k => by
-    simp only [msg]; rw [show (n % 4 + k) % 4 = (n + k) % 4 by omega]
+    simp only [msg]; rw [show (n % 4 + k) % 4 = (n + k) % 4 by omega_arith]
   rw [show msg n = msg (n % 4) by simp only [msg, Nat.mod_mod], e 1, e 2, e 3]
   exact key _ (Nat.mod_lt _ (by decide))
 
@@ -89,7 +89,7 @@ theorem schedule_hi (n : Nat) (hn : 4 ≤ n) (s : State) (a b c d : BitVec 128)
   have hd := msg_nodup n
   have hd'' := VG.nodup_reverse hd
   apply WP.of_runBlock
-  simp only [schedule, show ¬ n < 4 by omega, ite_false]
+  simp only [schedule, show ¬ n < 4 by omega_arith, ite_false]
   generalize msg n = x₀ at *
   generalize msg (n + 1) = x₁ at *
   generalize msg (n + 2) = x₂ at *
@@ -130,7 +130,7 @@ theorem schedule_lo (n : Nat) (hn : n < 4) (s : State)
 theorem msg_ne (n k : Nat) (h₁ : k < n) (h₂ : n ≤ k + 3) : msg k ≠ msg n := by
   have hd := msg_nodup k
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
-  rcases (by omega : n = k + 1 ∨ n = k + 2 ∨ n = k + 3) with rfl | rfl | rfl
+  rcases (by omega_arith : n = k + 1 ∨ n = k + 2 ∨ n = k + 3) with rfl | rfl | rfl
   · exact hd.1.1
   · exact hd.1.2.1
   · exact hd.1.2.2.1
@@ -141,7 +141,7 @@ theorem rounds_four (H : HashValue) (M : Block) (n : Nat) :
       roundKW (roundKW (roundKW (roundKW (Spec.Sha256.rounds H M (4 * n)) (K (4 * n)) (W M (4 * n)))
         (K (4 * n + 1)) (W M (4 * n + 1))) (K (4 * n + 2)) (W M (4 * n + 2)))
         (K (4 * n + 3)) (W M (4 * n + 3)) := by
-  rw [show 4 * (n + 1) = 4 * n + 3 + 1 by omega, rounds_succ, rounds_succ, rounds_succ, rounds_succ]
+  rw [show 4 * (n + 1) = 4 * n + 3 + 1 by omega_arith, rounds_succ, rounds_succ, rounds_succ, rounds_succ]
   rfl
 
 theorem kq_quad (n : Nat) (M : Block) :
@@ -225,10 +225,10 @@ theorem load_quad (M : Block) (m : Mem) (bp : Addr) {n : Nat} (hn : n < 4)
   have e : ∀ j, j < 4 → bswap (dword (m.readW (bp + BitVec.ofNat 64 (16 * n)) 128) j) =
       W M (4 * n + j) := by
     intro j hj
-    rw [dword_readW _ _ hj, ← hblk (4 * n + j) (by omega)]
+    rw [dword_readW _ _ hj, ← hblk (4 * n + j) (by omega_arith)]
     refine congrArg (fun a => bswap (m.readW a 32)) ?_
-    exact Offset.add_add_eq _ (by omega)
-  rw [e 0 (by omega), e 1 (by omega), e 2 (by omega), e 3 (by omega)]
+    exact Offset.add_add_eq _ (by omega_arith)
+  rw [e 0 (by omega_arith), e 1 (by omega_arith), e 2 (by omega_arith), e 3 (by omega_arith)]
   rfl
 
 theorem rounds_ok (H : HashValue) (M : Block) (bp scr : BitVec 32) (sB : State)
@@ -245,10 +245,10 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp scr : BitVec 32) (sB : State)
   intro n hn
   induction n with
   | zero =>
-    exact WP.block_nil (M := isa) ⟨h1, h2, fun _ h => absurd h (by omega),
+    exact WP.block_nil (M := isa) ⟨h1, h2, fun _ h => absurd h (by omega_arith),
       fun _ _ => rfl, rfl, rfl, rfl⟩
   | succ n ih =>
-    refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
+    refine WP.seq (WP.mono (ih (by omega_arith)) fun s hs => ?_)
     rw [WP.block_append_iff]
     have hdi : s.gpr .edi = bp := (hs.gpr .edi (by decide)).trans hrdi
     have hsi : s.gpr .esi = scr := (hs.gpr .esi (by decide)).trans hrsi
@@ -258,22 +258,22 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp scr : BitVec 32) (sB : State)
         s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
       by_cases hlo : n < 4
       · have eaB : addr (s.gpr .edi) (16 * n) = bp.setWidth 64 + BitVec.ofNat 64 (16 * n) := by
-          rw [hdi]; exact addr_eq (by omega)
+          rw [hdi]; exact addr_eq (by omega_arith)
         have eaS : addr (s.gpr .esi) 16 = scr.setWidth 64 + BitVec.ofNat 64 16 := by
-          rw [hsi]; exact addr_eq (by omega)
+          rw [hsi]; exact addr_eq (by omega_arith)
         refine WP.mono (schedule_lo n hlo s (by rw [eaB, hs.rd, hs.wr]; exact hin n hlo)
           (by rw [eaS, hs.rd, hs.wr]; exact hinMask))
           fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, fun r hr h0 _ => hx r hr h0, hg, hm, hrd, hwr⟩
         rw [e, eaB, eaS, hs.mem, hmask]
         exact load_quad M sB.mem (bp.setWidth 64) hlo hblk
-      · obtain ⟨i, rfl⟩ : ∃ i, n = i + 4 := ⟨n - 4, by omega⟩
-        refine WP.mono (schedule_hi (i + 4) (by omega) s (quad M i) (quad M (i + 1))
+      · obtain ⟨i, rfl⟩ : ∃ i, n = i + 4 := ⟨n - 4, by omega_arith⟩
+        refine WP.mono (schedule_hi (i + 4) (by omega_arith) s (quad M i) (quad M (i + 1))
           (quad M (i + 2)) (quad M (i + 3)) ?_ ?_ ?_ ?_)
           fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, fun r hr _ h7 => hx r hr h7, hg, hm, hrd, hwr⟩
-        · rw [msg_add4]; exact hs.msgs i (by omega) (by omega)
-        · rw [show i + 4 + 1 = i + 1 + 4 by omega, msg_add4]; exact hs.msgs (i + 1) (by omega) (by omega)
-        · rw [show i + 4 + 2 = i + 2 + 4 by omega, msg_add4]; exact hs.msgs (i + 2) (by omega) (by omega)
-        · rw [show i + 4 + 3 = i + 3 + 4 by omega, msg_add4]; exact hs.msgs (i + 3) (by omega) (by omega)
+        · rw [msg_add4]; exact hs.msgs i (by omega_arith) (by omega_arith)
+        · rw [show i + 4 + 1 = i + 1 + 4 by omega_arith, msg_add4]; exact hs.msgs (i + 1) (by omega_arith) (by omega_arith)
+        · rw [show i + 4 + 2 = i + 2 + 4 by omega_arith, msg_add4]; exact hs.msgs (i + 2) (by omega_arith) (by omega_arith)
+        · rw [show i + 4 + 3 = i + 3 + 4 by omega_arith, msg_add4]; exact hs.msgs (i + 3) (by omega_arith) (by omega_arith)
         · rw [e]; exact schedule_eq M i
     refine WP.mono hsched fun s₁ ⟨hq, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ => ?_
     have o1 := msg_other n .xmm1 (.inr (.inl rfl))
@@ -288,9 +288,9 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp scr : BitVec 32) (sB : State)
         (msg_other k _ (.inr (.inr (.inl rfl)))) (msg_other k _ (.inr (.inr (.inr rfl))))]
       by_cases hkn : k = n
       · subst hkn; exact hq
-      · rw [hx₁ _ (msg_ne n k (by omega) (by omega)) (msg_other k _ (.inl rfl))
+      · rw [hx₁ _ (msg_ne n k (by omega_arith) (by omega_arith)) (msg_other k _ (.inl rfl))
           (msg_other k _ (.inr (.inr (.inr rfl))))]
-        exact hs.msgs k (by omega) (by omega)
+        exact hs.msgs k (by omega_arith) (by omega_arith)
     · exact (hg₂ r hr).trans ((congrFun hg₁ r).trans (hs.gpr r hr))
     · exact hm₂.trans (hm₁.trans hs.mem)
 
@@ -304,9 +304,9 @@ theorem loadState_ok (s : State)
       s'.zf = s.zf ∧ s'.gpr = s.gpr ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have ea0 : addr (s.gpr .ebx) 0 = (s.gpr .ebx).setWidth 64 := by
-    rw [addr_eq (by omega)]; exact BitVec.add_zero _
+    rw [addr_eq (by omega_arith)]; exact BitVec.add_zero _
   have ea16 : addr (s.gpr .ebx) 16 = (s.gpr .ebx).setWidth 64 + BitVec.ofNat 64 16 :=
-    addr_eq (by omega)
+    addr_eq (by omega_arith)
   apply WP.of_runBlock
   simp (config := {decide := true}) only [loadState, runBlock_cons, runStep_some, runBlock_nil,
     exec, XOp.exec, isa, State.load128, ea_at, ea0, ea16, hlo, hhi, ite_true,
@@ -333,9 +333,9 @@ theorem store_ok (s : State) (v : HashValue)
       stateAt s'.mem ((s.gpr .ebx).setWidth 64) = v ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have ea0 : addr (s.gpr .ebx) 0 = (s.gpr .ebx).setWidth 64 := by
-    rw [addr_eq (by omega)]; exact BitVec.add_zero _
+    rw [addr_eq (by omega_arith)]; exact BitVec.add_zero _
   have ea16 : addr (s.gpr .ebx) 16 = (s.gpr .ebx).setWidth 64 + BitVec.ofNat 64 16 :=
-    addr_eq (by omega)
+    addr_eq (by omega_arith)
   apply WP.of_runBlock
   simp (config := {decide := true}) only [store, runBlock_cons, runStep_some, runBlock_nil,
     exec, XOp.exec, isa, State.store128, ea_at, ea0, ea16, hlo, hhi, ite_true,
@@ -349,7 +349,7 @@ theorem store_ok (s : State) (v : HashValue)
     dword_ofDwords_2, dword_ofDwords_3, abef, cdgh]
   apply Vector.ext
   intro j hj
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem saveHash_ok (s : State)

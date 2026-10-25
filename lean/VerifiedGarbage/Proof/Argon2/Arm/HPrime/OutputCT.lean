@@ -223,10 +223,10 @@ theorem chain_rel :
     (F₂ := fun (t : State) => ChainAt s₀' (j + 1) t ∧
       isa.eval .eq t = some (decide (ol s₀' - (32 + 32 * (j + 1)) ≤ 64)))
     fun t₁ t₂ ⟨⟨V, e, hV, i₁⟩, ⟨V', e', hV', i₂⟩⟩ =>
-      ⟨(iter_ok hp hV i₁ (by omega) (by omega)).mono fun _ h => ⟨⟨V, e, hV, h.1⟩, h.2⟩,
-       (iter_ok hp' hV' i₂ (by omega) (by omega)).mono fun _ h => ⟨⟨V', e', hV', h.1⟩, h.2⟩⟩
+      ⟨(iter_ok hp hV i₁ (by omega_arith) (by omega_arith)).mono fun _ h => ⟨⟨V, e, hV, h.1⟩, h.2⟩,
+       (iter_ok hp' hV' i₂ (by omega_arith) (by omega_arith)).mono fun _ h => ⟨⟨V', e', hV', h.1⟩, h.2⟩⟩
   refine it.mono (fun t₁ t₂ ⟨j', hj, _, a₁, a₂⟩ => ?_) fun t₁ t₂ ⟨_, ⟨c₁, f₁⟩, ⟨c₂, f₂⟩⟩ => ?_
-  · have : j' = j := by omega
+  · have : j' = j := by omega_arith
     subst this; exact ⟨a₁, a₂⟩
   · rw [ho] at f₂
     have n₁ := ne_of_eq f₁
@@ -234,10 +234,10 @@ theorem chain_rel :
     refine ⟨by rw [n₁, n₂], fun hf => ?_, fun ht => ?_⟩
     · rw [n₁] at hf
       have : ol s₀ - (32 + 32 * (j + 1)) ≤ 64 := by simpa using hf
-      exact ⟨j + 1, c₁, c₂, by omega, by omega, by omega⟩
+      exact ⟨j + 1, c₁, c₂, by omega_arith, by omega_arith, by omega_arith⟩
     · rw [n₁] at ht
       have : ¬ ol s₀ - (32 + 32 * (j + 1)) ≤ 64 := by simpa using ht
-      exact ⟨_, by omega, j + 1, rfl, by omega, c₁, c₂⟩
+      exact ⟨_, by omega_arith, j + 1, rfl, by omega_arith, c₁, c₂⟩
 
 /-! ## Extending the digest -/
 
@@ -248,7 +248,7 @@ include hp in
 theorem ext_emit {s : State} (h : ExtIn s₀ s) (hol : 32 ≤ ol s₀) :
     WP isa emitPrefix s (ChainAt s₀ 0) := by
   obtain ⟨b, o⟩ := h
-  refine (emit_ok hp b o (by simp only [List.length_nil]; omega)).mono fun t ⟨bt, et, ot, dt⟩ =>
+  refine (emit_ok hp b o (by simp only [List.length_nil]; omega_arith)).mono fun t ⟨bt, et, ot, dt⟩ =>
     ⟨digest s₀ s, s.gpr .r11, by simp [digest, bytesAt], bt, et, ?_, dt⟩
   rw [List.nil_append] at ot
   simpa [chainOut, chainPrefixes] using ot
@@ -292,12 +292,12 @@ theorem last_rel :
       (fun _ _ _ _ r hr => nomatch hr) ⟨_, by taint_decide⟩
       (fun _ h => left_blk hp h)
       (fun _ h => (left_blk hp' h).mono fun _ h => ⟨by rw [← q.scr, ← q.sp, ← ho]; exact h.1, h.2⟩))
-    (next_out_rel hp hp' q (n := ol s₀ - (32 + 32 * j)) (by omega) l₂)).mono ?_ ?_
+    (next_out_rel hp hp' q (n := ol s₀ - (32 + 32 * j)) (by omega_arith) l₂)).mono ?_ ?_
   · intro t₁ t₂ ⟨j', c₁, c₂, m₁, m₂, m₃⟩
-    have : j' = j := by omega
+    have : j' = j := by omega_arith
     subst this; exact ⟨c₁, c₂⟩
   · intro t₁ t₂ ⟨o₁, o₂⟩
-    exact ⟨_, o₁, o₂, by omega, by omega⟩
+    exact ⟨_, o₁, o₂, by omega_arith, by omega_arith⟩
 
 include hp hp' q in
 theorem extend_rel (hol : 65 ≤ ol s₀) :
@@ -307,15 +307,15 @@ theorem extend_rel (hol : 65 ≤ ol s₀) :
   unfold extendDigest
   refine RelCT.seq (rel_wp ((emit_rel q (L := 0)).mono
       (fun _ _ ⟨⟨b₁, o₁⟩, ⟨b₂, o₂⟩⟩ => ⟨⟨b₁, [], o₁, rfl⟩, ⟨b₂, [], o₂, rfl⟩⟩) fun _ _ h => h)
-      (fun _ h => ext_emit hp h (by omega)) (fun _ h => ext_emit hp' h (by omega))) ?_
+      (fun _ h => ext_emit hp h (by omega_arith)) (fun _ h => ext_emit hp' h (by omega_arith))) ?_
   refine RelCT.seq (rel_regs [] (fun _ _ _ _ r hr => nomatch hr) ⟨_, by taint_decide⟩
-    (fun _ h => chain_cmp hp (by omega) h) (fun _ h => chain_cmp hp' (by omega) h)) ?_
+    (fun _ h => chain_cmp hp (by omega_arith) h) (fun _ h => chain_cmp hp' (by omega_arith) h)) ?_
   refine RelCT.seq (RelCT.ite (fun t₁ t₂ ⟨⟨_, f₁⟩, ⟨_, f₂⟩⟩ => by rw [f₁, f₂, ho])
     (rel_nil fun _ _ ⟨⟨⟨c₁, f₁⟩, ⟨c₂, _⟩⟩, ht⟩ => ⟨0, c₁, c₂, by
-      rw [f₁] at ht; have := of_decide_eq_true (Option.some.inj ht); omega,
-      by rw [f₁] at ht; have := of_decide_eq_true (Option.some.inj ht); omega, by omega⟩)
+      rw [f₁] at ht; have := of_decide_eq_true (Option.some.inj ht); omega_arith,
+      by rw [f₁] at ht; have := of_decide_eq_true (Option.some.inj ht); omega_arith, by omega_arith⟩)
     ((chain_rel hp hp' q).mono (fun _ _ ⟨⟨⟨c₁, f₁⟩, ⟨c₂, _⟩⟩, hf⟩ =>
-      ⟨0, by rw [f₁] at hf; have := of_decide_eq_false (Option.some.inj hf); omega, c₁, c₂⟩)
+      ⟨0, by rw [f₁] at hf; have := of_decide_eq_false (Option.some.inj hf); omega_arith, c₁, c₂⟩)
       fun _ _ h => h))
     (last_rel hp hp' q)
 
@@ -323,7 +323,7 @@ include hp in
 theorem ext_cmp {s : State} (h : ExtIn s₀ s) :
     WP isa (.block cmpLeft) s fun t => ExtIn s₀ t ∧ isa.eval .eq t = some (decide (ol s₀ ≤ 64)) := by
   obtain ⟨b, o⟩ := h
-  refine (cmp_ok o (by have := hp.ol_pos; simp only [List.length_nil]; omega)).mono
+  refine (cmp_ok o (by have := hp.ol_pos; simp only [List.length_nil]; omega_arith)).mono
     fun t ⟨cf, k, _⟩ => ⟨⟨b.keeps hp k, o.keeps hp k⟩, ?_⟩
   rw [cf]; simp
 
@@ -337,10 +337,10 @@ theorem finishOutput_rel :
     (fun _ h => ext_cmp hp h) (fun _ h => ext_cmp hp' h)) ?_
   refine RelCT.seq (R := Last s₀ s₀') (RelCT.ite (fun t₁ t₂ ⟨⟨_, f₁⟩, ⟨_, f₂⟩⟩ => by rw [f₁, f₂, ho])
     (rel_nil fun _ _ ⟨⟨⟨⟨b₁, o₁⟩, f₁⟩, ⟨⟨b₂, o₂⟩, _⟩⟩, ht⟩ =>
-      ⟨0, ⟨b₁, [], o₁, rfl⟩, ⟨b₂, [], o₂, rfl⟩, by omega,
-        by rw [f₁] at ht; have := of_decide_eq_true (Option.some.inj ht); omega⟩)
+      ⟨0, ⟨b₁, [], o₁, rfl⟩, ⟨b₂, [], o₂, rfl⟩, by omega_arith,
+        by rw [f₁] at ht; have := of_decide_eq_true (Option.some.inj ht); omega_arith⟩)
     (RelCT.of_pre fun _ _ ⟨⟨⟨_, f₁⟩, _⟩, hf⟩ => (extend_rel hp hp' q (by
-        rw [f₁] at hf; have := of_decide_eq_false (Option.some.inj hf); omega)).mono
+        rw [f₁] at hf; have := of_decide_eq_false (Option.some.inj hf); omega_arith)).mono
       (fun _ _ ⟨⟨⟨e₁, _⟩, ⟨e₂, _⟩⟩, _⟩ => ⟨e₁, e₂⟩) fun _ _ h => h)) ?_
   exact RelCT.mono (RelCT.exists_ fun L => (copyRemaining_rel q (L := L)).mono
     (fun _ _ h => ⟨h.1, h.2.1⟩) fun _ _ h => h) (fun _ _ ⟨L, h⟩ => ⟨L, h⟩) fun _ _ h => h

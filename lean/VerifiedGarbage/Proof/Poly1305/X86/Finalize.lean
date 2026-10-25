@@ -130,7 +130,7 @@ theorem bq_ne {st : BitVec 32} {j k : Nat} (hj : j < 16) (hk : k < 16) (h : j �
   have := congrArg BitVec.toNat he
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at this
   have := (bq st).isLt
-  omega
+  omega_arith
 
 /-- The buffered bytes in the memory the prologue leaves. -/
 theorem F0.byte {s₀ : State} {F : Nat → Nat} {s : State} (h : F0 s₀ F s) {k : Nat} (hk : k < kb s₀) :
@@ -368,7 +368,7 @@ theorem cs_succ (a : Nat → Nat) (k : Nat) : cs a (k + 1) = (a k + cs a k) / 2 
 
 theorem cs_le {a : Nat → Nat} (ha : ∀ i, a i < 2 ^ 33 - 1) : ∀ k, cs a k ≤ 1
   | 0 => Nat.zero_le _
-  | k + 1 => by rw [cs_succ]; have := cs_le ha k; have := ha k; omega
+  | k + 1 => by rw [cs_succ]; have := cs_le ha k; have := ha k; omega_arith
 
 /-- The words of the tag: those of `x + y` modulo `2¹²⁸`. -/
 theorem tag_words (x y : Nat → Nat) {X : Nat}
@@ -410,7 +410,7 @@ theorem tagWord_ok {st o : BitVec 32} {s₁ : State} (hc : Ctx st s₁) (ho : o.
   have hta : ∀ i, ta s₁.mem st i < 2 ^ 33 - 1 := fun i => by
     have := words_lt s₁.mem st i; have := words_lt s₁.mem st (10 + i)
     show words s₁.mem st i + words s₁.mem st (10 + i) < _
-    omega
+    omega_arith
   have hcs : cs (ta s₁.mem st) k ≤ 1 := cs_le hta k
   have htk := hta k
   refine wp_movm (a := addr st (4 * k)) (by rw [ea_at, edi]; rfl)
@@ -548,7 +548,7 @@ theorem fepilogue_ok {s₀ : State} (hp : FPre s₀) {F : Nat → Nat} (hF : Set
       have := words_lt s₁.mem (stp s₀) 0; have := words_lt s₁.mem (stp s₀) 1
       have := words_lt s₁.mem (stp s₀) 2; have := words_lt s₁.mem (stp s₀) 3
       simp only [hw5, val5]
-      omega
+      omega_arith
     have hout : bytesAt s₃.mem ((op s₀).setWidth 64) 16 = bytesAt s₂.mem ((op s₀).setWidth 64) 16 :=
       Poly1305.bytesAt_frame A₃.frame (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hp.st_o.symm) (by decide)

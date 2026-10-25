@@ -34,7 +34,7 @@ theorem seed_bytes (m : Mem) (A : Addr) (b1 b2 : Byte) :
       bytesAt m A 32 ++ [b1] ++ [b2] := by
   refine Proof.MlKem.bytesAt_eq (by simp [Proof.MlKem.bytesAt_length]) fun i hi => ?_
   rw [VG.WriteBytes.writeW8_apply, VG.WriteBytes.writeW8_apply]
-  rcases (by omega : i < 32 ∨ i = 32 ∨ i = 33) with h | rfl | rfl
+  rcases (by omega_arith : i < 32 ∨ i = 32 ∨ i = 33) with h | rfl | rfl
   · have n1 : A + BitVec.ofNat 64 i ≠ A + BitVec.ofNat 64 33 := by intro e; bv_omega
     have n2 : A + BitVec.ofNat 64 i ≠ A + BitVec.ofNat 64 32 := by intro e; bv_omega
     rw [ifn n1, ifn n2]
@@ -55,7 +55,7 @@ theorem integerToBytes_one (x : Nat) : integerToBytes x 1 = [BitVec.ofNat 8 x] :
 def Done (l e r' c' : Nat) : Prop := l * r' + c' < e
 
 theorem rc_eq {l r c e : Nat} (hc : c < l) (h : l * r + c = e) : r = e / l ∧ c = e % l := by
-  have hl : 0 < l := by omega
+  have hl : 0 < l := by omega_arith
   subst h
   constructor
   · rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hc, Nat.zero_add]
@@ -73,9 +73,9 @@ theorem entry_lt {p : Params} (hp : p ∈ params) {e : Nat} (he : e < p.k * p.�
 
 theorem done_all {p : Params} {r c : Nat} (hr : r < p.k) (hc : c < p.ℓ) : Done p.ℓ (p.k * p.ℓ) r c := by
   unfold Done
-  have := Nat.mul_le_mul_left p.ℓ (show r + 1 ≤ p.k by omega)
+  have := Nat.mul_le_mul_left p.ℓ (show r + 1 ≤ p.k by omega_arith)
   rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this
-  omega
+  omega_arith
 
 /-- After the first `e` entries of `Â`, with the hint `h`. -/
 structure S3 (p : Params) (h : List (Vector Bool n)) (e : Nat) (σ st : State) : Prop where
@@ -127,14 +127,14 @@ theorem keep_prev {p : Params} {j e : Nat} (hj : j < e) (he : inB (vB p) (pS (20
   simp only [h2, he, true_and, and_true]
   simp only [oP, bne_self_eq_false, Bool.false_and, beq_self_eq_true, Bool.true_and, Bool.false_or,
     Bool.or_eq_true]
-  exact .inl (decide_eq_true (by omega))
+  exact .inl (decide_eq_true (by omega_arith))
 
 /-- The entries done before `e` are kept by the writes of entry `e`. -/
 theorem keep_done {p : Params} (hp : p ∈ params) {e r' c' : Nat} (he : e < p.k * p.ℓ)
     (hin : inB (vB p) (pS (20 + e)) 1024 = true) (hd : Done p.ℓ e r' c') :
     keepB (vB p) wsB (pA p.ℓ r' c') 1024 = true ∧ keepB (vB p) (wsA e) (pA p.ℓ r' c') 1024 = true := by
   unfold Done at hd
-  have hj := aChk_all p hp _ (show p.ℓ * r' + c' < p.k * p.ℓ by omega)
+  have hj := aChk_all p hp _ (show p.ℓ * r' + c' < p.k * p.ℓ by omega_arith)
   simp only [aChk, Bool.and_eq_true] at hj
   rw [pA_eq]
   exact keep_prev hd hin hj.2
@@ -143,7 +143,7 @@ theorem keep_done {p : Params} (hp : p ∈ params) {e r' c' : Nat} (he : e < p.k
 theorem keep_slot_done {p : Params} (hp : p ∈ params) {e j r' c' : Nat} (hj : j < 4) (he : e ≤ p.k * p.ℓ)
     (hd : Done p.ℓ e r' c') : keepB (vB p) (wsS j) (pA p.ℓ r' c') 1024 = true := by
   unfold Done at hd
-  have hk := aChk_all p hp _ (show p.ℓ * r' + c' < p.k * p.ℓ by omega)
+  have hk := aChk_all p hp _ (show p.ℓ * r' + c' < p.k * p.ℓ by omega_arith)
   simp only [aChk, slotKeep, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hk
   rw [pA_eq]
   exact hk.2.2 j hj
@@ -153,7 +153,7 @@ theorem keep_grp_done {p : Params} (hp : p ∈ params) {e r' c' : Nat} (he : e �
     (hin : inB (vB p) (pS (20 + e)) 4096 = true) (hd : Done p.ℓ e r' c') :
     keepB (vB p) [(pS (20 + e), 4096), (sc (oR4 p), 8192)] (pA p.ℓ r' c') 1024 = true := by
   unfold Done at hd
-  have hk := aChk_all p hp _ (show p.ℓ * r' + c' < p.k * p.ℓ by omega)
+  have hk := aChk_all p hp _ (show p.ℓ * r' + c' < p.k * p.ℓ by omega_arith)
   simp only [aChk, slotKeep, Bool.and_eq_true] at hk
   have h3 := hk.2.1.2
   rw [pA_eq]
@@ -161,7 +161,7 @@ theorem keep_grp_done {p : Params} (hp : p ∈ params) {e r' c' : Nat} (he : e �
   simp only [h3, hin, true_and, and_true]
   simp only [oP, bne_self_eq_false, Bool.false_and, beq_self_eq_true, Bool.true_and, Bool.false_or,
     Bool.or_eq_true]
-  exact .inl (decide_eq_true (by omega))
+  exact .inl (decide_eq_true (by omega_arith))
 
 
 theorem keepChk_spec {p : Params} {ws : List (Ptr × Nat)} (h : keepChk p ws = true) :
@@ -203,7 +203,7 @@ theorem setB2_ok {p : Params} {s : State} (L : Lay (vR p) (vW p) s) (h32 : inB (
 theorem kl_le : ∀ p ∈ params, p.ℓ ≤ 7 ∧ p.k ≤ 8 := by decide
 
 theorem done_succ {l e r' c' : Nat} : Done l (e + 1) r' c' ↔ Done l e r' c' ∨ l * r' + c' = e := by
-  unfold Done; omega
+  unfold Done; omega_arith
 
 theorem aOne_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ)
     {h : List (Vector Bool n)} {e : Nat} (he : e < p.k * p.ℓ) {s : State} (hs : S3 p h e σ s) :
@@ -217,7 +217,7 @@ theorem aOne_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
   obtain ⟨tA, hA, zA⟩ := keepChk_spec kA
   have L := hs.t.lay hp hv
   unfold aOne
-  refine WP.seq (WP.mono (setB2_ok L h32 h33 (e % p.ℓ) (e / p.ℓ) (by omega) (by omega))
+  refine WP.seq (WP.mono (setB2_ok L h32 h33 (e % p.ℓ) (e / p.ℓ) (by omega_arith) (by omega_arith))
     fun s₁ ⟨hP₁, h15₁, hm₁⟩ => ?_)
   have t₁ := hs.t.step hp hv hP₁ tB
   have L₁ := t₁.lay hp hv
@@ -317,9 +317,9 @@ theorem slot_ok {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ) {
   obtain ⟨⟨⟨h32, h33⟩, h3⟩, hk⟩ := hck
   have L := hs.s3.t.lay hp hv
   unfold setSR
-  refine WP.mono (setB2At_ok L (oSB4 + 34 * j) h32 h33 ((e + j) % p.ℓ) ((e + j) / p.ℓ) (by omega) (by omega))
-    fun s₁ ⟨hP₁, h15₁, hm₁⟩ => ⟨hs.s3.keep hp hv hP₁ h15₁ h3 fun _ _ _ _ hd => keep_slot_done hp hj (by omega) hd, fun k hk' => ?_⟩
-  rcases (by omega : k < j ∨ k = j) with hk' | rfl
+  refine WP.mono (setB2At_ok L (oSB4 + 34 * j) h32 h33 ((e + j) % p.ℓ) ((e + j) / p.ℓ) (by omega_arith) (by omega_arith))
+    fun s₁ ⟨hP₁, h15₁, hm₁⟩ => ⟨hs.s3.keep hp hv hP₁ h15₁ h3 fun _ _ _ _ hd => keep_slot_done hp hj (by omega_arith) hd, fun k hk' => ?_⟩
+  rcases (by omega_arith : k < j ∨ k = j) with hk' | rfl
   · rw [L.keepBytes hP₁ (hk k hk'), hs.done k hk']
   · rw [hP₁.pa (show Reg.rbx ∈ bases by decide), hm₁, seed_bytes, hs.s3.rho4 k hj, aSeed, integerToBytes_one,
       integerToBytes_one]
@@ -339,7 +339,7 @@ theorem pa_poly4 (s : State) (e k : Nat) : poly4 (pa s (pS (20 + e))) k = pa s (
   unfold poly4
   simp only [pa]
   rw [BitVec.add_assoc, ← BitVec.ofNat_add, show oP (20 + e) + 1024 * k = oP (20 + (e + k)) by
-    simp only [oP]; omega]
+    simp only [oP]; omega_arith]
 
 theorem aGrp_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ)
     {h : List (Vector Bool n)} {g : Nat} (hck : gChk p (4 * g) = true) {s : State}
@@ -347,14 +347,14 @@ theorem aGrp_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
   have hkl := kl_le p hp
   simp only [gChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hck
   obtain ⟨⟨⟨⟨⟨hsl, hrej⟩, hin⟩, hwa⟩, hG⟩, hl⟩ := hck
-  obtain ⟨hk, kSB, k4, kE⟩ := s3Chk_spec (ex := inGrp p.ℓ (4 * g)) hG fun _ _ _ _ hd => keep_grp_done hp (by omega) hin hd
+  obtain ⟨hk, kSB, k4, kE⟩ := s3Chk_spec (ex := inGrp p.ℓ (4 * g)) hG fun _ _ _ _ hd => keep_grp_done hp (by omega_arith) hin hd
   obtain ⟨tk, hh, zk⟩ := keepChk_spec hk
   unfold aGrp
-  refine WP.seq (WP.mono (slot_ok hp hv (by decide) (by omega) (hsl 0 (by decide))
-    ⟨hs, fun _ h => absurd h (by omega)⟩) fun _ g₁ => ?_)
-  refine WP.seq (WP.mono (slot_ok hp hv (by decide) (by omega) (hsl 1 (by decide)) g₁) fun _ g₂ => ?_)
-  refine WP.seq (WP.mono (slot_ok hp hv (by decide) (by omega) (hsl 2 (by decide)) g₂) fun _ g₃ => ?_)
-  refine WP.seq (WP.mono (slot_ok hp hv (by decide) (by omega) (hsl 3 (by decide)) g₃) fun s₄ g₄ => ?_)
+  refine WP.seq (WP.mono (slot_ok hp hv (by decide) (by omega_arith) (hsl 0 (by decide))
+    ⟨hs, fun _ h => absurd h (by omega_arith)⟩) fun _ g₁ => ?_)
+  refine WP.seq (WP.mono (slot_ok hp hv (by decide) (by omega_arith) (hsl 1 (by decide)) g₁) fun _ g₂ => ?_)
+  refine WP.seq (WP.mono (slot_ok hp hv (by decide) (by omega_arith) (hsl 2 (by decide)) g₂) fun _ g₃ => ?_)
+  refine WP.seq (WP.mono (slot_ok hp hv (by decide) (by omega_arith) (hsl 3 (by decide)) g₃) fun s₄ g₄ => ?_)
   have L₄ := g₄.s3.t.lay hp hv
   obtain ⟨q, h15, hok, hbad⟩ := g₄.s3.ok
   have hseed : ∀ k < 4, seed4 s₄.mem (pa s₄ (sc oSB4)) k =
@@ -378,7 +378,7 @@ theorem aGrp_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
     fun r' c' hd hx => by
       simp only [inGrp, Bool.and_eq_false_iff, decide_eq_false_iff_not] at hx
       unfold Done at hd ⊢
-      omega
+      omega_arith
   refine ⟨g₄.s3.t.step hp hv hP₅ tk, L₄.keepHint hP₅ hh g₄.s3.hint,
     fun i hi => L₄.keepPoly hP₅ (zk i hi) (g₄.s3.z i hi), by rw [L₄.keepBytes hP₅ kSB, g₄.s3.rho],
     fun k hk => by rw [L₄.keepBytes hP₅ (k4 k hk), g₄.s3.rho4 k hk], fun r' hr' c' hc' hd => ?_,
@@ -386,8 +386,8 @@ theorem aGrp_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
   · cases hx : inGrp p.ℓ (4 * g) r' c'
     · exact L₄.keepRed hP₅ (kE r' hr' c' hc' (hout r' c' hd hx) hx) (g₄.s3.red r' hr' c' hc' (hout r' c' hd hx))
     · obtain ⟨g1, g2⟩ := hgrp r' c' hx
-      have := hred₅ (p.ℓ * r' + c' - 4 * g) (by omega)
-      rwa [e₅, show 4 * g + (p.ℓ * r' + c' - 4 * g) = p.ℓ * r' + c' by omega, ← pA_eq] at this
+      have := hred₅ (p.ℓ * r' + c' - 4 * g) (by omega_arith)
+      rwa [e₅, show 4 * g + (p.ℓ * r' + c' - 4 * g) = p.ℓ * r' + c' by omega_arith, ← pA_eq] at this
   · rw [h15₅]
     exact flag_congr (by cases q <;> simp)
   · simp only [Bool.and_eq_true, beq_iff_eq] at hq
@@ -395,21 +395,21 @@ theorem aGrp_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
     · obtain ⟨b, hb⟩ := hok hq.1 r' hr' c' hc' (hout r' c' hd hx)
       exact ⟨b, by rw [hb, L₄.keepPolyAt hP₅ (kE r' hr' c' hc' (hout r' c' hd hx) hx)]⟩
     · obtain ⟨g1, g2⟩ := hgrp r' c' hx
-      obtain ⟨b, hb⟩ := hs1 hq.2 (p.ℓ * r' + c' - 4 * g) (by omega)
-      obtain ⟨er, ec⟩ := rc_eq hc' (show p.ℓ * r' + c' = 4 * g + (p.ℓ * r' + c' - 4 * g) by omega)
-      rw [← er, ← ec, e₅, show 4 * g + (p.ℓ * r' + c' - 4 * g) = p.ℓ * r' + c' by omega, ← pA_eq] at hb
+      obtain ⟨b, hb⟩ := hs1 hq.2 (p.ℓ * r' + c' - 4 * g) (by omega_arith)
+      obtain ⟨er, ec⟩ := rc_eq hc' (show p.ℓ * r' + c' = 4 * g + (p.ℓ * r' + c' - 4 * g) by omega_arith)
+      rw [← er, ← ec, e₅, show 4 * g + (p.ℓ * r' + c' - 4 * g) = p.ℓ * r' + c' by omega_arith, ← pA_eq] at hb
       exact ⟨b, hb⟩
   · cases hq' : q
     · obtain ⟨r', hr', c', hc', hd, hn⟩ := hbad hq'
-      exact ⟨r', hr', c', hc', by unfold Done at hd ⊢; omega, hn⟩
+      exact ⟨r', hr', c', hc', by unfold Done at hd ⊢; omega_arith, hn⟩
     · rw [hq'] at hq
       have h0 : rr = 0 := by
         rcases hrr with h1 | h0
         · rw [h1] at hq; cases hq
         · exact h0
       obtain ⟨k, hk, hn⟩ := hs0 h0
-      obtain ⟨hr, hc⟩ := entry_lt hp (show 4 * g + k < p.k * p.ℓ by omega)
-      exact ⟨_, hr, _, hc, by unfold Done; have := Nat.div_add_mod (4 * g + k) p.ℓ; omega, hn⟩
+      obtain ⟨hr, hc⟩ := entry_lt hp (show 4 * g + k < p.k * p.ℓ by omega_arith)
+      exact ⟨_, hr, _, hc, by unfold Done; have := Nat.div_add_mod (4 * g + k) p.ℓ; omega_arith, hn⟩
 
 /-- After the samplers, with the hint `h`. -/
 structure S4 (p : Params) (h : List (Vector Bool n)) (σ st : State) : Prop where
@@ -484,14 +484,14 @@ theorem copyK_ok {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ) 
   refine WP.mono (copy_ok L (by decide) c1 c2) fun s₁ ⟨hP₁, h15₁, hcp⟩ => ?_
   refine ⟨hs.t.step hp hv hP₁ t3, L.keepHint hP₁ h3 hs.hint, fun i hi => L.keepPoly hP₁ (z3 i hi) (hs.z i hi),
     by rw [L.keepBytes hP₁ c4, hs.rho], fun k hk => ?_, by rw [h15₁, hs.f15]⟩
-  rcases (by omega : k < j ∨ k = j) with hk | rfl
+  rcases (by omega_arith : k < j ∨ k = j) with hk | rfl
   · rw [L.keepBytes hP₁ (c5 k hk), hs.rho4 k hk]
   · rw [hP₁.pa (show Reg.rbx ∈ bases by decide), hcp, hs.t.pkSlice hpk, List.drop_zero]
     rfl
 
 theorem RhoS.s3 {p : Params} {h : List (Vector Bool n)} {σ s : State} (r : RhoS p h 4 σ s) : S3 p h 0 σ s :=
-  ⟨r.t, r.hint, r.z, r.rho, r.rho4, fun r' _ c' _ hd => absurd hd (by unfold Done; omega),
-    true, by rw [r.f15]; exact flag_congr (by simp), fun _ r' _ c' _ hd => absurd hd (by unfold Done; omega),
+  ⟨r.t, r.hint, r.z, r.rho, r.rho4, fun r' _ c' _ hd => absurd hd (by unfold Done; omega_arith),
+    true, by rw [r.f15]; exact flag_congr (by simp), fun _ r' _ c' _ hd => absurd hd (by unfold Done; omega_arith),
     fun hq => absurd hq (by simp)⟩
 
 theorem rhos_ok {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ)
@@ -517,7 +517,7 @@ theorem ballStage_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params
     (WP.mono (ballAt_ok C.ball L₂ c6 c5) fun s' ⟨hP, h15', hr', ho⟩ => ⟨hP, h15', hr', ho⟩))
     fun s₃ ⟨hP₃, hred, rr, hrr, h15₃, hs1, hs0⟩ => ?_
   have hct : bytesAt s₂.mem (pa s₂ (.r13, 0)) p.ctildeLen = vCt p (vSig p σ) := by
-    rw [hs₂.t.sigSlice (by omega), List.drop_zero]; rfl
+    rw [hs₂.t.sigSlice (by omega_arith), List.drop_zero]; rfl
   rw [hct] at hs1 hs0
   have hdone : ∀ r' c', r' < p.k → c' < p.ℓ → Done p.ℓ (p.k * p.ℓ) r' c' := fun _ _ hr hc => done_all hr hc
   have ec : pa s₃ pC = pa s₂ pC := hP₃.pa (show Reg.rbx ∈ bases by decide)
@@ -546,10 +546,10 @@ theorem samples_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) 
   unfold samples
   refine WP.seq (WP.mono (rhos_ok hp hv hs h15) fun s₁ s₁3 => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun g => S3 p h (4 * g) σ) (p.k * p.ℓ / 4) 0
-    (fun g _ hg st hst => aGrp_ok C hp hv (gChk_all p hp g (by omega)) hst) s₁ s₁3) fun s₂ hs₂ => ?_)
+    (fun g _ hg st hst => aGrp_ok C hp hv (gChk_all p hp g (by omega_arith)) hst) s₁ s₁3) fun s₂ hs₂ => ?_)
   rw [Nat.zero_add] at hs₂
   refine WP.seq (WP.mono (seqR_ok (I := fun e => S3 p h e σ) (p.k * p.ℓ % 4) (4 * (p.k * p.ℓ / 4))
-    (fun e _ he st hst => aOne_ok C hp hv (by omega) hst) s₂ hs₂) fun s₃ hs₃ => ?_)
+    (fun e _ he st hst => aOne_ok C hp hv (by omega_arith) hst) s₂ hs₂) fun s₃ hs₃ => ?_)
   rw [Nat.div_add_mod] at hs₃
   exact ballStage_ok C hp hv hs₃
 

@@ -26,10 +26,10 @@ theorem sieve_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Goo
       Keep [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r12, .r13, .r14, .r15] s t := by
   have hn := hg.scr.nowrap
   have hT2 : 8 * kT2 + 8 ≤ slot w aN := hdr_lt_slot w aN (by decide)
-  have hTa : slot w aN + 8 * (w + 2) ≤ slot w aTab := by unfold slot aN aTab; omega
+  have hTa : slot w aN + 8 * (w + 2) ≤ slot w aTab := by unfold slot aN aTab; omega_arith
   have hTa' : 8 * kT2 + 8 ≤ slot w aTab := hdr_lt_slot w aTab (by decide)
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
   unfold sieve
   simp only [List.cons_append, List.nil_append, seqs]
   refine WP.seq ?_
@@ -38,15 +38,15 @@ theorem sieve_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Goo
     fun s₁ ⟨hbx₁, hm₁, k₁⟩ => ?_
   refine WP.mono (tabWrites_ok (hg.scr.congr k₁.2.2) hTZ hbx₁ 256 (Nat.le_refl _)) fun s₂ ⟨htab₂, ho₂, k₂⟩ => ?_
   have hm₂ : ∀ i < 32, word s₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
-    rw [ho₂.word (Or.inl (by have := hdr_lt_slot w aTab hi; omega)) (by omega), hm₁]
+    rw [ho₂.word (Or.inl (by have := hdr_lt_slot w aTab hi; omega_arith)) (by omega_arith), hm₁]
   have hdi₂ : s₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi)
   have hg₂ : Good s₂ B Z w minv := ⟨hg.scr.congr (k₂.2.2.trans k₁.2.2), hdi₂,
     ⟨by rw [hm₂ sW (by decide)]; exact hg.hdr.hw, by rw [hm₂ sMinv (by decide)]; exact hg.hdr.hminv,
-      fun j hj => by rw [hm₂ (sArr j) (by unfold sArr; omega)]; exact hg.hdr.harr j hj⟩⟩
+      fun j hj => by rw [hm₂ (sArr j) (by unfold sArr; omega_arith)]; exact hg.hdr.harr j hj⟩⟩
   have hc₂ : wv s₂.mem B (slot w aN) w = wv s.mem B (slot w aN) w := by
-    rw [ho₂.wv (k := w) (Or.inl (by omega)) (by omega), hm₁]
+    rw [ho₂.wv (k := w) (Or.inl (by omega_arith)) (by omega_arith), hm₁]
   have hst : ∀ i < 32, InRegions s₂.wr (off B (8 * i)) 8 := fun i hi =>
-    hg₂.scr.st (by have := hdr_lt_slot w 8 hi; omega)
+    hg₂.scr.st (by have := hdr_lt_slot w 8 hi; omega_arith)
   refine WP.seq (WP.mono (WP.keep [.rax, .r13] (Q := fun t => t.mem = (s₂.mem.writeW (off B (8 * kT0))
       (BitVec.ofNat 64 13)).writeW (off B (8 * kT2)) (0 : BitVec 64) ∧ t.gpr .r13 = BitVec.ofNat 64 0) (by
     xrun [State.ea, hdr, hdi₂, hdrOff, hst kT0 (by decide), hst kT2 (by decide), sx_ofNat]
@@ -80,7 +80,7 @@ theorem sieve_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Goo
     (WP.mono (tlEntry_ok hZ hw hw' hTa' hTZ (by decide) (by decide) hI₆
       (by simpa only [Nat.mul_zero, Nat.add_zero] using hf₆) hT1₆) fun t₇ ⟨hI₇, hf₇, _⟩ => ?_)
   have hl₇ : InRegions (t₇.rd ++ t₇.wr) (off B (8 * kT2)) 8 :=
-    hI₇.good.scr.ld (by have := hdr_lt_slot w 8 (show kT2 < 32 by decide); omega)
+    hI₇.good.scr.ld (by have := hdr_lt_slot w 8 (show kT2 < 32 by decide); omega_arith)
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (!(anyPre (wv s.mem B (slot w aN) w) 53)) ∧
       t.mem = t₇.mem) (by
     xrun [State.ea, hdr, hI₇.good.rdi, hdrOff, hl₇, hf₇, BitVec.and_self, hc₄]
@@ -110,9 +110,9 @@ theorem oddTest_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     WP isa (.block oddTest) s fun t =>
       t.zf = some (decide (wv s.mem B (slot w aN) w % 2 = 1)) ∧ t.mem = s.mem ∧ Keep [.rax] s t := by
   have hl : InRegions (s.rd ++ s.wr) (off B (8 * sArr aN)) 8 :=
-    hg.scr.ld (by have := hdr_lt_slot w 8 (show sArr aN < 32 by decide); omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 (show sArr aN < 32 by decide); omega_arith)
   have hn : InRegions (s.rd ++ s.wr) (off B (slot w aN)) 8 :=
-    hg.scr.ld (by have := slot_le (w := w) (show aN < 8 by decide); omega)
+    hg.scr.ld (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)
   have he : ((word s.mem B (slot w aN) &&& 1) == 1) = decide (wv s.mem B (slot w aN) w % 2 = 1) := by
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq, decide_eq_true_eq]

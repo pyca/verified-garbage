@@ -37,7 +37,7 @@ theorem shr3_w (k : Nat) (hk : k < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 /-- `head`: `w` into `x12` and its slot, and the arrays' bases. -/
 theorem head_ok {s : State} {B : Addr} {Z k : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B)
@@ -63,12 +63,12 @@ theorem head_ok {s : State} {B : Addr} {Z k : Nat} (hs : Scr s B Z) (h0 : s.gpr 
       (by decide +kernel))
     fun t₁ ⟨⟨h12, hm₁⟩, k₁⟩ => ?_
   · brun [h0, hdr_enc (show sK < 32 by decide), hdr_enc (show sW < 32 by decide),
-      hs.ld (d := 8 * sK) (by omega), hs.st (d := 8 * sW) (by omega), hK, shr3_w k hk]
+      hs.ld (d := 8 * sK) (by omega_arith), hs.st (d := 8 * sW) (by omega_arith), hK, shr3_w k hk]
   have hs₁ := hs.congr k₁.wr
-  refine WP.mono (setBases_ok hs₁ ((k₁.gpr .x0 (by decide)).trans h0) h12 (by unfold sArr; omega))
+  refine WP.mono (setBases_ok hs₁ ((k₁.gpr .x0 (by decide)).trans h0) h12 (by unfold sArr; omega_arith))
     fun t ⟨hb, ho, k₂⟩ => ⟨(k₂.gpr .x12 (by decide)).trans h12, ?_, hb, ?_, (k₁.trans k₂).mono (by decide)⟩
-  · rw [ho.word (by omega) (by omega), hm₁, word_writeW_self]
-  · have hw₁ : Outside B (8 * sW) 8 s.mem t₁.mem := by rw [hm₁]; exact writeW_outside s.mem B _ (by omega)
+  · rw [ho.word (by omega_arith) (by omega_arith), hm₁, word_writeW_self]
+  · have hw₁ : Outside B (8 * sW) 8 s.mem t₁.mem := by rw [hm₁]; exact writeW_outside s.mem B _ (by omega_arith)
     exact (Frm.of_outside hw₁ (by simp)).trans (Frm.of_outside ho (by simp))
 
 /-! ## Byte strings outside the working space -/
@@ -91,8 +91,8 @@ theorem src_of_region {s : State} {B : Addr} {Z : Nat} {p : Addr} {len : Nat}
     (hr : (⟨p, len⟩ : Region) ∈ s.rd ++ s.wr) (hlen : len ≤ 2 ^ 64)
     (hd : (⟨p, len⟩ : Region).Disjoint ⟨B, Z⟩) : Src s B Z p (Spec.Rsa.bytesAt s.mem p len) := by
   have hl : (Spec.Rsa.bytesAt s.mem p len).length = len := by simp [Spec.Rsa.bytesAt]
-  refine ⟨fun i hi => ⟨_, hr, contains_byte p (by omega) hlen⟩, fun i hi => ?_,
-    fun i hi => out_scr hd (contains_byte p (by omega) hlen)⟩
+  refine ⟨fun i hi => ⟨_, hr, contains_byte p (by omega_arith) hlen⟩, fun i hi => ?_,
+    fun i hi => out_scr hd (contains_byte p (by omega_arith) hlen)⟩
   simp [Spec.Rsa.bytesAt]
 
 /-- A region's bytes are in the regions it is one of. -/
@@ -110,9 +110,9 @@ theorem loadArrW_ok {s : State} {B : Addr} {Z k : Nat} {p : Addr} {bs : List Byt
       wv t.mem B (slot ((k + 7) / 8) j) ((k + 7) / 8) = Spec.Rsa.os2ip bs ∧
       Arrays B ((k + 7) / 8) [j] s.mem t.mem ∧ Keep [.x1, .x2, .x3, .x4, .x5, .x6] s t := by
   have := slot_le (w := (k + 7) / 8) hj
-  refine WP.mono (WordIO.loadW_ok hs h1 h2 h8 hk hk1 hk' rfl (by omega) hspan
-    (fun i hi => hsrc.val i (by omega)) (fun i hi => Or.inr (by have := hsrc.out i (by omega); omega)))
-    fun t ⟨h1, h2, h3⟩ => ⟨h1, Arrays.of_outside (List.mem_singleton_self j) h2 (Nat.le_refl _) (by omega), h3⟩
+  refine WP.mono (WordIO.loadW_ok hs h1 h2 h8 hk hk1 hk' rfl (by omega_arith) hspan
+    (fun i hi => hsrc.val i (by omega_arith)) (fun i hi => Or.inr (by have := hsrc.out i (by omega_arith); omega_arith)))
+    fun t ⟨h1, h2, h3⟩ => ⟨h1, Arrays.of_outside (List.mem_singleton_self j) h2 (Nat.le_refl _) (by omega_arith), h3⟩
 
 /-- `loadBE` of bytes outside the working space into array `j`. -/
 theorem loadArr_ok {s : State} {B : Addr} {Z k : Nat} {p : Addr} {bs : List Byte} {j : Nat} (hs : Scr s B Z)
@@ -123,9 +123,9 @@ theorem loadArr_ok {s : State} {B : Addr} {Z k : Nat} {p : Addr} {bs : List Byte
       wv t.mem B (slot ((k + 7) / 8) j) ((k + 7) / 8) = Spec.Rsa.os2ip bs ∧
       Arrays B ((k + 7) / 8) [j] s.mem t.mem ∧ Keep [.x1, .x2, .x3, .x4, .x5, .x6] s t := by
   have := slot_le (w := (k + 7) / 8) hj
-  refine WP.mono (loadBE_ok hs h1 h2 h8 hk hk1 hk' rfl (by omega) (fun i hi => hsrc.rd i (by omega))
-    (fun i hi => hsrc.val i (by omega)) (fun i hi => Or.inr (by have := hsrc.out i (by omega); omega)))
-    fun t ⟨h1, h2, h3⟩ => ⟨h1, Arrays.of_outside (List.mem_singleton_self j) h2 (Nat.le_refl _) (by omega), h3⟩
+  refine WP.mono (loadBE_ok hs h1 h2 h8 hk hk1 hk' rfl (by omega_arith) (fun i hi => hsrc.rd i (by omega_arith))
+    (fun i hi => hsrc.val i (by omega_arith)) (fun i hi => Or.inr (by have := hsrc.out i (by omega_arith); omega_arith)))
+    fun t ⟨h1, h2, h3⟩ => ⟨h1, Arrays.of_outside (List.mem_singleton_self j) h2 (Nat.le_refl _) (by omega_arith), h3⟩
 
 /-! ## `pcLoad` -/
 
@@ -153,13 +153,13 @@ theorem pcHead_ok {s : State} {B : Addr} {Z k : Nat} {np : Addr} (hs : Scr s B Z
   have hw₁ : ∀ i, 8 * i + 8 ≤ 8 * sW ∨ (16 ≤ i ∧ i < 32) → word t₁.mem B (8 * i) = word s.mem B (8 * i) :=
     fun i hi => hf₁.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro _ (rfl | rfl) <;> omega) (by omega)
+      rintro _ (rfl | rfl) <;> omega_arith) (by omega_arith)
   refine WP.mono (WP.keep [.x1, .x2, .x8] (Q := fun t => t.gpr .x1 = np ∧ t.gpr .x2 = BitVec.ofNat 64 k ∧
       t.gpr .x8 = off B (slot ((k + 7) / 8) aN) ∧ t.mem = t₁.mem) (by
     brun [(k₁.gpr .x0 (by decide)).trans h0, hdr_enc (show sN < 32 by decide), hdr_enc (show sK < 32 by decide),
-      hdr_enc (show sArr aN < 32 by decide), hs₁.ld (d := 8 * sN) (by omega),
-      hs₁.ld (d := 8 * sK) (by omega), hs₁.ld (d := 8 * sArr aN) (by omega),
-      hw₁ sN (by omega), hw₁ sK (by omega), hN, hK, hb₁ aN (by decide)])
+      hdr_enc (show sArr aN < 32 by decide), hs₁.ld (d := 8 * sN) (by omega_arith),
+      hs₁.ld (d := 8 * sK) (by omega_arith), hs₁.ld (d := 8 * sArr aN) (by omega_arith),
+      hw₁ sN (by omega_arith), hw₁ sK (by omega_arith), hN, hK, hb₁ aN (by decide)])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h1, h2, h8', hm⟩, k₂⟩ => ?_
   exact ⟨h1, h2, h8', by rw [hm]; exact hW₁, fun j hj => by rw [hm]; exact hb₁ j hj,
     by rw [hm]; exact hf₁, (k₁.trans k₂).mono (by decide)⟩
@@ -247,7 +247,7 @@ theorem pcLoad_ok {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte
       ((word t.mem B (slot ((k + 7) / 8) aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 ∧
       Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t.mem ∧ Keep mmRegs s t :=
   pcLoadWith_ok hs h0 hZ hk1 hk hK hN hnb hnl hodd fun _ ht hsrc _ _ h1 h2 h8 =>
-    loadArr_ok ht (by decide) hZ hsrc hnl (by omega) hk h1 h2 h8
+    loadArr_ok ht (by decide) hZ hsrc hnl (by omega_arith) hk h1 h2 h8
 
 /-- The load a word at a time, for `m` in one region: `w`, the bases, `m`,
 and `-m⁻¹` for the odd `m`. -/
@@ -261,6 +261,6 @@ theorem pcLoadW_ok {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byt
       ((word t.mem B (slot ((k + 7) / 8) aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 ∧
       Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t.mem ∧ Keep mmRegs s t :=
   pcLoadWith_ok hs h0 hZ hk1 hk hK hN hnb hnl hodd fun _ ht hsrc hrd hwr h1 h2 h8 =>
-    loadArrW_ok ht (by decide) hZ hsrc (by rw [hrd, hwr]; exact hnspan) hnl (by omega) hk h1 h2 h8
+    loadArrW_ok ht (by decide) hZ hsrc (by rw [hrd, hwr]; exact hnspan) hnl (by omega_arith) hk h1 h2 h8
 
 end VG.Proof.Bignum.AArch64

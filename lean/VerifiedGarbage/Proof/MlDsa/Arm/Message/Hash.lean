@@ -35,38 +35,38 @@ theorem x0 (L : Lay) : L.X + BitVec.ofNat 64 0 = L.X := BitVec.add_zero _
 theorem x0' (L : Lay) : L.X32 + BitVec.ofNat 32 0 = L.X32 := BitVec.add_zero _
 
 theorem st_ks : Region.Disjoint ⟨L.ST, 200⟩ ⟨L.KS, 640⟩ := by
-  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 200) (k := 640) (by omega) (by omega) (by omega)
+  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 200) (k := 640) (by omega_arith) (by omega_arith) (by omega_arith)
   simpa only [x0] using this
 
 theorem st_mu : Region.Disjoint ⟨L.ST, 200⟩ ⟨L.MU, 64⟩ := by
-  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 840) (k := 64) (by omega) (by omega) (by omega)
+  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 840) (k := 64) (by omega_arith) (by omega_arith) (by omega_arith)
   simpa only [x0] using this
 
 theorem mu_ks : Region.Disjoint ⟨L.MU, 64⟩ ⟨L.KS, 640⟩ :=
-  Offset.disjoint L.X (d := 840) (n := 64) (e := 200) (k := 640) (by omega) (by omega) (by omega)
+  Offset.disjoint L.X (d := 840) (n := 64) (e := 200) (k := 640) (by omega_arith) (by omega_arith) (by omega_arith)
 
-theorem w_st : Within ⟨L.ST, 200⟩ L.W := within_base _ (by omega)
-theorem w_ks : Within ⟨L.KS, 640⟩ L.W := within_off _ (by omega)
-theorem w_mu : Within ⟨L.MU, 64⟩ L.W := within_off _ (by omega)
+theorem w_st : Within ⟨L.ST, 200⟩ L.W := within_base _ (by omega_arith)
+theorem w_ks : Within ⟨L.KS, 640⟩ L.W := within_off _ (by omega_arith)
+theorem w_mu : Within ⟨L.MU, 64⟩ L.W := within_off _ (by omega_arith)
 
 theorem k_st (hL : L.Ok) : L.STK.Disjoint ⟨L.ST, 200⟩ := by
-  have := hL.stk_x (e := 0) (k := 200) (by omega); simpa only [x0] using this
-theorem k_ks (hL : L.Ok) : L.STK.Disjoint ⟨L.KS, 640⟩ := hL.stk_x (by omega)
-theorem k_mu (hL : L.Ok) : L.STK.Disjoint ⟨L.MU, 64⟩ := hL.stk_x (by omega)
+  have := hL.stk_x (e := 0) (k := 200) (by omega_arith); simpa only [x0] using this
+theorem k_ks (hL : L.Ok) : L.STK.Disjoint ⟨L.KS, 640⟩ := hL.stk_x (by omega_arith)
+theorem k_mu (hL : L.Ok) : L.STK.Disjoint ⟨L.MU, 64⟩ := hL.stk_x (by omega_arith)
 
 /-- The 8 bytes a call's frame pushes lie in `STK`. -/
 theorem below_stk {t : State} (hsp : t.sp = L.SP) : Region.Sub (below t 8) L.STK := by
-  simp only [below, hsp]; exact Offset.sub_below _ (by omega) (by omega)
+  simp only [below, hsp]; exact Offset.sub_below _ (by omega_arith) (by omega_arith)
 
 theorem cov_x (hL : L.Ok) {e k : Nat} (h₂ : e + k ≤ 1024) :
     ∃ R ∈ L.rd ++ L.wr, Within ⟨L.X + BitVec.ofNat 64 e, k⟩ R := by
   obtain ⟨R, hR, hw⟩ := hL.covX h₂; exact ⟨R, List.mem_append_right _ hR, hw⟩
 
 theorem cov_x0 (hL : L.Ok) : ∃ R ∈ L.rd ++ L.wr, Within ⟨L.X, 200⟩ R := by
-  have := cov_x hL (e := 0) (k := 200) (by omega); rwa [x0] at this
+  have := cov_x hL (e := 0) (k := 200) (by omega_arith); rwa [x0] at this
 
 theorem cov_xw0 (hL : L.Ok) : ∃ R ∈ L.wr, Within ⟨L.X, 200⟩ R := by
-  have := hL.covX (e := 0) (k := 200) (by omega); rwa [x0] at this
+  have := hL.covX (e := 0) (k := 200) (by omega_arith); rwa [x0] at this
 
 theorem not_pres {r : Reg} (hr : r ∈ preserved) (hl : r ≠ .lr) (rs : List Reg)
     (h : ∀ d ∈ rs, d ∉ preserved ∨ d = .lr := by decide) : r ∉ rs := fun hm => by
@@ -80,7 +80,7 @@ theorem mu_eq (hL : L.Ok) : State.addr (L.X32 + BitVec.ofNat 32 840) = L.MU := h
 
 theorem x32_toNat (hL : L.Ok) {o : Nat} (ho : o < 1024) : (L.X32 + BitVec.ofNat 32 o).toNat = L.X32.toNat + o := by
   have := hL.x32_lt
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- What a call that keeps `Kept` of regions within the first 904 bytes of
 `X` and its frame leaves. -/
@@ -96,8 +96,8 @@ theorem zeroSt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   rw [zeroSt, Impl.MlKem.Arm.zeroState, ← List.singleton_append, WP.block_append_iff]
   refine wp_movImm (d := .r12) (v := 0) (by decide) fun t1 o1 e1 => wp_nil ?_
   have e7 : t1.gpr .r7 = L.X32 := by rw [o1.get .r7, hc.r7]
-  refine WP.mono (Proof.MlKem.Arm.Sample.zeroWords_ok .r7 (s₁ := t1) e1 (by rw [e7]; have := hL.x32_lt; omega)
-    fun k hk => by rw [e7, o1.wr, hc.wr]; exact hL.inW (by omega)) fun t2 h₂ => ?_
+  refine WP.mono (Proof.MlKem.Arm.Sample.zeroWords_ok .r7 (s₁ := t1) e1 (by rw [e7]; have := hL.x32_lt; omega_arith)
+    fun k hk => by rw [e7, o1.wr, hc.wr]; exact hL.inW (by omega_arith)) fun t2 h₂ => ?_
   have hf := h₂.frame
   have hz := h₂.zero
   rw [e7] at hf hz
@@ -140,8 +140,8 @@ theorem kabs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t)
   have bs := below_stk hs1
   have hks := ks_eq hL
   refine absorb_ok (st := L.X32) (scr := L.X32 + BitVec.ofNat 32 200) (data := dp) (rate := 136) (pos := q)
-    (len := n) ⟨e0, e1, e2, e3, e4, e5, by decide, hql, hnl, by rw [hs1]; have := hL.nSP; omega,
-      by have := hL.x32_lt; omega, hfit, by rw [x32_toNat hL (by omega)]; have := hL.x32_lt; omega,
+    (len := n) ⟨e0, e1, e2, e3, e4, e5, by decide, hql, hnl, by rw [hs1]; have := hL.nSP; omega_arith,
+      by have := hL.x32_lt; omega_arith, hfit, by rw [x32_toNat hL (by omega_arith)]; have := hL.x32_lt; omega_arith,
       by simp only [regA, hks]; exact st_ks, by simp only [regA]; exact dS,
       by simp only [regA, hks]; exact dK,
       by simp only [regA]; exact (k_st hL).sub_left bs, by simp only [regA, hks]; exact (k_ks hL).sub_left bs,
@@ -151,7 +151,7 @@ theorem kabs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact cov_xw0 hL
-    · exact hL.covX (e := 200) (by omega)
+    · exact hL.covX (e := 200) (by omega_arith)
   · simp only [regA, hc1.rd, hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -197,8 +197,8 @@ theorem kpad_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t)
   have bs := below_stk hs1
   have hks := ks_eq hL
   refine pad_ok (st := L.X32) (scr := L.X32 + BitVec.ofNat 32 200) (rate := 136) (pos := q)
-    ⟨e0, e1, e2, e3, e4, by decide, hql, by rw [hs1]; have := hL.nSP; omega,
-      by have := hL.x32_lt; omega, by rw [x32_toNat hL (by omega)]; have := hL.x32_lt; omega,
+    ⟨e0, e1, e2, e3, e4, by decide, hql, by rw [hs1]; have := hL.nSP; omega_arith,
+      by have := hL.x32_lt; omega_arith, by rw [x32_toNat hL (by omega_arith)]; have := hL.x32_lt; omega_arith,
       by simp only [regA, hks]; exact st_ks,
       by simp only [regA]; exact (k_st hL).sub_left bs, by simp only [regA, hks]; exact (k_ks hL).sub_left bs,
       ?_⟩ fun s' hk hpost => ?_
@@ -207,7 +207,7 @@ theorem kpad_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact cov_xw0 hL
-    · exact hL.covX (e := 200) (by omega)
+    · exact hL.covX (e := 200) (by omega_arith)
   · simp only [regA, hks] at hk hpost
     refine ⟨hc1.kept hL hk fun r hr => ?_, ?_, fun msg hm hp => ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -248,9 +248,9 @@ theorem ksqz_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   have hmu := mu_eq hL
   refine squeeze_ok (st := L.X32) (scr := L.X32 + BitVec.ofNat 32 200) (out := L.X32 + BitVec.ofNat 32 840)
     (rate := 136) (pos := 0) (len := 64)
-    ⟨e0, e1, e2, e3, e4, e5, by decide, by decide, by decide, by rw [hs1]; have := hL.nSP; omega,
-      by have := hL.x32_lt; omega, by rw [x32_toNat hL (by omega)]; have := hL.x32_lt; omega,
-      by rw [x32_toNat hL (by omega)]; have := hL.x32_lt; omega,
+    ⟨e0, e1, e2, e3, e4, e5, by decide, by decide, by decide, by rw [hs1]; have := hL.nSP; omega_arith,
+      by have := hL.x32_lt; omega_arith, by rw [x32_toNat hL (by omega_arith)]; have := hL.x32_lt; omega_arith,
+      by rw [x32_toNat hL (by omega_arith)]; have := hL.x32_lt; omega_arith,
       by simp only [regA, hmu]; exact st_mu, by simp only [regA, hks]; exact st_ks,
       by simp only [regA, hks, hmu]; exact mu_ks,
       by simp only [regA]; exact (k_st hL).sub_left bs, by simp only [regA, hmu]; exact (k_mu hL).sub_left bs,
@@ -260,8 +260,8 @@ theorem ksqz_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact cov_xw0 hL
-    · exact hL.covX (e := 840) (by omega)
-    · exact hL.covX (e := 200) (by omega)
+    · exact hL.covX (e := 840) (by omega_arith)
+    · exact hL.covX (e := 200) (by omega_arith)
   · simp only [regA, hks, hmu] at hk hout
     refine ⟨hc1.kept hL hk fun r hr => ?_, ?_, by rw [hout, o.mem]⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

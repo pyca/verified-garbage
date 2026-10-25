@@ -22,21 +22,14 @@ def maskShiftResult (bit amount : Nat) (count mask : BitVec 32) : BitVec 32 :=
 theorem maskTest_ok (s : State) (bit : Nat) (encoded : encodable (BitVec.ofNat 32 bit) = true) :
     WP isa (.block [.dp .and .r12 .r9 (.imm (BitVec.ofNat 32 bit)), .cmp .r12 (.imm 0)]) s fun t =>
       (t.z = (s.gpr .r9 &&& BitVec.ofNat 32 bit == 0) ∧ t.mem = s.mem) ∧ Rest [.r12] s t := by
-  refine withRest [.r12] ?_ (by
-    intro r hr i hi
-    simp only [instrs, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl <;> cases r <;> simp_all [clobbers, dstOf]) (by rfl)
+  refine withRest_all [.r12] ?_ (by rfl) (by rfl)
   ffrun [encoded]
   exact congrArg (fun x : BitVec 32 => x == 0) (BitVec.sub_zero (s.gpr .r9 &&& BitVec.ofNat 32 bit))
 
 theorem maskMove_ok (s : State) (amount : Nat) (positive : 0 < amount) (fit : amount < 32) :
     WP isa (.block [.mov .r3 (.shifted .r3 .lsr amount)]) s fun t =>
       (t.gpr .r3 = s.gpr .r3 >>> amount ∧ t.mem = s.mem) ∧ Rest [.r3] s t := by
-  refine withRest [.r3] ?_ (by
-    intro r hr i hi
-    simp only [instrs, List.mem_singleton] at hi
-    subst i
-    cases r <;> simp_all [clobbers, dstOf]) (by rfl)
+  refine withRest_all [.r3] ?_ (by rfl) (by rfl)
   ffrun [(by omega : 1 ≤ amount ∧ amount ≤ 31)]
 
 theorem maskShift_ok (s : State) (bit amount : Nat) (encoded : encodable (BitVec.ofNat 32 bit) = true)

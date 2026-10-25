@@ -41,12 +41,12 @@ theorem wipeStores_run (R : Region) (u : State) (hR : R ∈ u.wr) : ∀ words, 4
         some ({ u with mem := m' }, wipeTrace (u.gpr .r12) words) ∧ Frame [R] u.mem m'
   | 0, _, _ => ⟨u.mem, rfl, Frame.refl _ _⟩
   | w + 1, hwb, hc => by
-    obtain ⟨m', he, hf⟩ := wipeStores_run R u hR w (by omega) fun k hk => hc k (by omega)
+    obtain ⟨m', he, hf⟩ := wipeStores_run R u hR w (by omega_arith) fun k hk => hc k (by omega_arith)
     have hin : InRegions u.wr (State.addr (u.gpr .r12 + BitVec.ofNat 32 (4 * w))) 4 :=
-      ⟨R, hR, hc w (by omega)⟩
-    have hoff : 4 * w < 4096 := by omega
+      ⟨R, hR, hc w (by omega_arith)⟩
+    have hoff : 4 * w < 4096 := by omega_arith
     refine ⟨m'.writeW (State.addr (u.gpr .r12 + BitVec.ofNat 32 (4 * w))) (u.gpr .r2), ?_,
-      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega))⟩
+      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_arith))⟩
     rw [wipeStores_succ, execBlock_append, he]
     simp only [Option.bind_some, execBlock, isa, exec, hoff, ↓reduceIte, State.store32, hin,
       Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, wipeTrace,
@@ -103,7 +103,7 @@ theorem Verified.regScratchWiped {c : Prog isa}
     fun s hs => by
       rw [pre_arm hl] at hs
       obtain ⟨⟨hst, -⟩, -⟩ := hs
-      omega
+      omega_arith
   -- The buffer is below the stack the contract without it reserves, so apart
   -- from its buffers.
   have hdisj : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s →
@@ -117,9 +117,9 @@ theorem Verified.regScratchWiped {c : Prog isa}
     have hbelow : (⟨State.addr s.sp - BitVec.ofNat 64 (stack + bytes), stack + bytes⟩ : Region) ∈
         stackBelow (State.addr s.sp) (stack + bytes) := by
       rw [show stack + bytes = (stack + bytes - 1) + 1 by omega]; simp [stackBelow]
-    rw [addr_sub' (by omega)]
+    rw [addr_sub' (by omega_arith)]
     exact (Region.Disjoint.symm (hres _ hbelow b hb')).sub_right
-      (Offset.sub_below _ (by omega) (by have := hb.2.2.2.2; omega))
+      (Offset.sub_below _ (by omega_arith) (by have := hb.2.2.2.2; omega_arith))
   -- Every run is the code's run from `narrowR`, then the wipe.
   have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃ s₄,
       Exec isa c (narrowR e n bytes r s) t s₃ ∧
@@ -137,10 +137,10 @@ theorem Verified.regScratchWiped {c : Prog isa}
     have h0 := hsb s hs
     have hn := hb.2.2.2.2
     obtain ⟨m', hblk, hfr⟩ := wipe_run ⟨State.addr (s.sp - BitVec.ofNat 32 bytes), n * e.size⟩ s₃ words
-      (by rw [hwr₃, narrowR_wr]; simp) (by have := hb.2.1; omega)
+      (by rw [hwr₃, narrowR_wr]; simp) (by have := hb.2.1; omega_arith)
       (fun k hk' => by
-        rw [hsp₃, addr_add (by rw [sub_toNat' (by omega)]; have := s.sp.isLt; omega)]
-        exact Offset.contains_base _ (by omega) (by omega))
+        rw [hsp₃, addr_add (by rw [sub_toNat' (by omega_arith)]; have := s.sp.isLt; omega_arith)]
+        exact Offset.contains_base _ (by omega_arith) (by omega_arith))
     have he' := Exec.seq he (Exec.block hblk)
     have ha' : abiPreserved (narrowR e n bytes r s)
         { (s₃.setReg .r12 (s₃.sp + BitVec.ofNat 32 0)).setReg .r2 0 with mem := m' } := by

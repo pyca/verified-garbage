@@ -34,7 +34,7 @@ open VG.Impl.Sha3.PPC64LE.Stream (mov)
 /-- A byte, zero-extended, as `lbz` loads it. -/
 theorem setWidth64_toNat (b : Byte) : (b.setWidth 64).toNat = b.toNat := by
   have := b.isLt
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem setWidth64_inj {a b : Byte} (h : a.setWidth 64 = b.setWidth 64) : a = b := by
   have := congrArg (BitVec.setWidth 8) h
@@ -82,9 +82,9 @@ theorem cmp_step {S D : Addr} {len : Nat} {s₀ : State} (hlen : len < 2 ^ 64)
     WP isa (.block cmpBody) s fun s' =>
       CmpInv S D len s₀ (k + 1) s' ∧ (s'.gpr .r26 != 0) = decide (k + 1 ≠ len) := by
   have cS : (⟨S, len⟩ : Region).Contains (S + BitVec.ofNat 64 k) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have cD : (⟨D, len⟩ : Region).Contains (D + BitVec.ofNat 64 k) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have h3 := h.r3; have h4 := h.r4
   rw [Nat.one_mul] at h3 h4
   refine WP.mono (cmpBody_ok h3 h4 h.r26 rfl
@@ -108,10 +108,10 @@ theorem cmp_step {S D : Addr} {len : Nat} {s₀ : State} (hlen : len < 2 ^ 64)
       obtain ⟨h₁, h₂⟩ := BitVec.or_eq_zero_iff.mp h₀
       by_cases e : t = k
       · subst e; exact setWidth64_inj (BitVec.xor_eq_zero_iff.mp h₂)
-      · exact h.eq.mp h₁ t (by omega)
+      · exact h.eq.mp h₁ t (by omega_arith)
     · intro h₁
-      exact BitVec.or_eq_zero_iff.mpr ⟨h.eq.mpr fun t ht => h₁ t (by omega),
-        BitVec.xor_eq_zero_iff.mpr (congrArg _ (h₁ k (by omega)))⟩
+      exact BitVec.or_eq_zero_iff.mpr ⟨h.eq.mpr fun t ht => h₁ t (by omega_arith),
+        BitVec.xor_eq_zero_iff.mpr (congrArg _ (h₁ k (by omega_arith)))⟩
   · rw [r26, count_sub hk]; exact count_nz hk hlen
 
 theorem cmpArgs_ok {K : KemLay} (hK : K.WF) {s : State} {P C : Addr} (h31 : s.gpr .r31 = P)
@@ -122,8 +122,8 @@ theorem cmpArgs_ok {K : KemLay} (hK : K.WF) {s : State} {P C : Addr} (h31 : s.gp
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   have hc := hK.ct
   have hi := hK.cin
-  have e1 : K.oCt < 32768 := by simp only [oCin] at hc hi; omega
-  have e2 : K.ctLen < 32768 := by simp only [oCin] at hi; omega
+  have e1 : K.oCt < 32768 := by simp only [oCin] at hc hi; omega_arith
+  have e2 : K.ctLen < 32768 := by simp only [oCin] at hi; omega_arith
   prun [e1, e2, h31, h28]
   and_intros
   all_goals first
@@ -144,9 +144,9 @@ theorem compare_ok {K : KemLay} (hK : K.WF) {s : State} {P C : Addr} (h31 : s.gp
   have c1 : 0 < K.ctLen := by
     have h1 := hK.du1
     have h2 := hK.k1
-    have : 0 < K.uLen * K.k := Nat.mul_pos (by simp only [KemLay.uLen]; omega) (by omega)
-    simp only [KemLay.ctLen]; omega
-  have c2 : K.ctLen < 2 ^ 64 := by have := hK.cin; simp only [oCin] at this; omega
+    have : 0 < K.uLen * K.k := Nat.mul_pos (by simp only [KemLay.uLen]; omega_arith) (by omega_arith)
+    simp only [KemLay.ctLen]; omega_arith
+  have c2 : K.ctLen < 2 ^ 64 := by have := hK.cin; simp only [oCin] at this; omega_arith
   refine WP.seq (WP.mono (cmpArgs_ok hK h31 h28) fun s₁ ⟨g3, g4, g12, g26, cs, m, rd, wr, sp⟩ => ?_)
   refine wp_loop_nz (CmpInv C (P + BitVec.ofNat 64 K.oCt) K.ctLen s₁) (N := K.ctLen) c1
     (fun k hk s h => cmp_step c2 (by rw [rd, wr]; exact cr) hk h)
@@ -258,11 +258,11 @@ theorem sel_step {X Y Z : Addr} {e : Bool} {s₀ : State}
     WP isa (.block selBody) s fun s' =>
       SelInv X Y Z e s₀ (k + 1) s' ∧ (s'.gpr .r26 != 0) = decide (k + 1 ≠ 32) := by
   have cX : (⟨X, 32⟩ : Region).Contains (X + BitVec.ofNat 64 k) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have cY : (⟨Y, 32⟩ : Region).Contains (Y + BitVec.ofNat 64 k) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have cZ : (⟨Z, 32⟩ : Region).Contains (Z + BitVec.ofNat 64 k) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have h3 := h.r3; have h4 := h.r4; have h5 := h.r5
   rw [Nat.one_mul] at h3 h4 h5
   refine WP.mono (selBody_ok h3 h4 h5 h.r26 h.r12
@@ -281,10 +281,10 @@ theorem sel_step {X Y Z : Addr} {e : Bool} {s₀ : State}
       h.frame _ fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact dX _ cX
     have hY : s.mem (Y + BitVec.ofNat 64 k) = s₀.mem (Y + BitVec.ofNat 64 k) :=
       h.frame _ fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact dY _ cY
-    rw [m, byte_writeW8 _ _ (by omega) (by omega), sel_byte, hX, hY]
+    rw [m, byte_writeW8 _ _ (by omega_arith) (by omega_arith), sel_byte, hX, hY]
     by_cases et : t = k
     · subst et; rw [ite_eq_left rfl]
-    · rw [ite_eq_right et]; exact h.bytes t (by omega)
+    · rw [ite_eq_right et]; exact h.bytes t (by omega_arith)
   · rw [r26, count_sub hk]; exact count_nz hk (by decide)
 
 /-- The loop of `selBody`: the 32 bytes at `X` if `e`, and at `Y` otherwise, into `Z`. -/

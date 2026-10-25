@@ -59,14 +59,14 @@ theorem p2rBody_ok (s : State) (hq : s.gpr .x9 = Qv) (h0 : InRegions (s.rd ++ s.
 theorem p2rX_toNat {x : BitVec 32} (hx : x.toNat < q) : (p2rX x).toNat = x.toNat + 4095 := by
   have hq : q = 8380417 := rfl
   rw [BitVec.toNat_add, toNat_setWidth64, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem t1V_toNat {x : BitVec 32} (hx : x.toNat < q) : (t1V x).toNat = (x.toNat + 4095) / 8192 := by
   have hq : q = 8380417 := rfl
   have e : (p2rX x >>> 13).toNat = (x.toNat + 4095) / 8192 := by
     rw [BitVec.toNat_ushiftRight, p2rX_toNat hx, Nat.shiftRight_eq_div_pow]
   rw [t1V, BitVec.toNat_setWidth, e]
-  omega
+  omega_arith
 
 /-- `v - k` plus `q` if negative, for `v < 2³²` and `k ≤ q`: `v + q - k` if
 `v < k`, else `v - k`. -/
@@ -76,12 +76,12 @@ theorem addQ_sub_toNat {v k : BitVec 64} (hv : v.toNat < 2 ^ 32) (hk : k.toNat �
   have hQ : Qv.toNat = 8380417 := rfl
   have hsub : (v - k).toNat = if v.toNat < k.toNat then 2 ^ 64 - k.toNat + v.toNat else v.toNat - k.toNat := by
     rw [BitVec.toNat_sub]
-    split <;> omega
+    split <;> omega_arith
   have hsh : ((v - k) >>> 63).toNat = if v.toNat < k.toNat then 1 else 0 := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hsub]
-    split <;> omega
+    split <;> omega_arith
   rw [addQ, BitVec.toNat_add, BitVec.toNat_mul, hsh, hsub, hQ]
-  split <;> omega
+  split <;> omega_arith
 
 theorem t0V_toNat {x : BitVec 32} (hx : x.toNat < q) :
     (t0V x).toNat = if (x.toNat + 4095) % 8192 < 4095 then (x.toNat + 4095) % 8192 + q - 4095
@@ -90,13 +90,13 @@ theorem t0V_toNat {x : BitVec 32} (hx : x.toNat < q) :
   have e1 : (p2rX x - (p2rX x >>> 13) <<< 13).toNat = (x.toNat + 4095) % 8192 := by
     have h2 : ((p2rX x >>> 13) <<< 13).toNat = (x.toNat + 4095) / 8192 * 8192 := by
       rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, p2rX_toNat hx, Nat.shiftRight_eq_div_pow,
-        Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega)]
+        Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_arith)]
     rw [BitVec.toNat_sub, h2, p2rX_toNat hx]
-    omega
+    omega_arith
   have hr := Nat.mod_lt (x.toNat + 4095) (show 8192 > 0 by decide)
   have h4095 : (BitVec.ofNat 64 4095).toNat = 4095 := rfl
-  rw [t0V, BitVec.toNat_setWidth, addQ_sub_toNat (by rw [e1]; omega) (by rw [h4095, hq]; omega), e1, h4095]
-  split <;> omega
+  rw [t0V, BitVec.toNat_setWidth, addQ_sub_toNat (by rw [e1]; omega_arith) (by rw [h4095, hq]; omega_arith), e1, h4095]
+  split <;> omega_arith
 
 section
 variable {s₀ : State} (hp : power2RoundK.pre s₀)

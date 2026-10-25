@@ -42,14 +42,14 @@ theorem index_val (x : BitVec 64) {j : Nat} (hj : j < 4) :
   simp only [quarter, BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_shiftLeft]
   by_cases h8 : i < 8
-  · simp only [h8, decide_true, Bool.true_and, show 56 + i < 64 by omega,
-      show ¬ (56 + i < 32 + 8 * j) by omega, decide_false, Bool.not_false,
-      show 8 * (3 - j) + i < 32 by omega]
+  · simp only [h8, decide_true, Bool.true_and, show 56 + i < 64 by omega_arith,
+      show ¬ (56 + i < 32 + 8 * j) by omega_arith, decide_false, Bool.not_false,
+      show 8 * (3 - j) + i < 32 by omega_arith]
     rw [decide_eq_true hi, Bool.true_and]
-    congr 1; omega
+    congr 1; omega_arith
   · simp only [h8, decide_false, Bool.false_and]
     by_cases h : 56 + i < 64
-    · omega
+    · omega_arith
     · simp [h]
 
 theorem index_run (s : State) {j : Nat} (hj : j < 4) :
@@ -57,7 +57,7 @@ theorem index_run (s : State) {j : Nat} (hj : j < 4) :
       t.gpr .r9 = (quarter (lo (s.gpr .r4)) j).setWidth 64 ∧ t.mem = s.mem := by
   rw [← index_val _ hj]
   unfold index
-  brun [show 32 + 8 * j < 64 by omega]
+  brun [show 32 + 8 * j < 64 by omega_arith]
 
 /-! ## Rotations selected by a bit of the index -/
 
@@ -71,14 +71,14 @@ theorem condRot_run (s : State) (x : Reg) {c a : Nat} (hc : c < 64) (ha : a < 32
   have hx12 : Reg.r12 ≠ x := Ne.symm x12
   have hx0 : Reg.r0 ≠ x := Ne.symm x0
   unfold condRot bitMask
-  brun [h0, x0, x9, x11, x12, hx0, hx9, hx11, hx12, ha, show 63 - c < 64 by omega]
+  brun [h0, x0, x9, x11, x12, hx0, hx9, hx11, hx12, ha, show 63 - c < 64 by omega_arith]
   rw [bitMask_eq _ hc, select_eq]
 
 /-- The low two bits of `q`, by `q`'s residue mod 4. -/
 theorem bit01 (q : BitVec 64) :
     q.getLsbD 0 = decide (q.toNat % 4 % 2 = 1) ∧ q.getLsbD 1 = decide (q.toNat % 4 / 2 = 1) := by
   simp only [BitVec.getLsbD, Nat.testBit_zero, Nat.testBit_succ]
-  constructor <;> congr 1 <;> apply propext <;> omega
+  constructor <;> congr 1 <;> apply propext <;> omega_arith
 
 theorem lo_ite {b : Bool} (x y : BitVec 64) : lo (if b then x else y) = if b then lo x else lo y := by
   cases b <;> rfl
@@ -87,7 +87,7 @@ theorem lo_ite {b : Bool} (x y : BitVec 64) : lo (if b then x else y) = if b the
 theorem start_run (s : State) (h0 : s.gpr .r0 = 0#64) {L : Nat} (hL : (s.gpr .r9).toNat % 4 = L) :
     WP isa (.block lookupStart) s fun t =>
       lo (t.gpr .r14) = laneMask L ∧ t.gpr .r10 = 0#64 ∧ t.gpr .r15 = s.gpr .r3 ∧ t.mem = s.mem := by
-  have hl : L < 4 := by omega
+  have hl : L < 4 := by omega_arith
   obtain ⟨b0, b1⟩ := bit01 (s.gpr .r9)
   rw [hL] at b0 b1
   unfold lookupStart
@@ -140,7 +140,7 @@ theorem row_run (u : State) {j : Nat} (hj : j < 4) {q rp S : BitVec 64} {acc lm 
         (w 3).rotateRight 8 ∧
       t.gpr .r9 = q - 4#64 ∧ t.gpr .r15 = rp + 4#64 ∧ t.gpr .r12 = rp + 4#64 - S - 256#64 ∧
       t.mem = u.mem := by
-  have o : ∀ b < 4, planeOff j b < 2 ^ 15 := fun b hb => by unfold planeOff; omega
+  have o : ∀ b < 4, planeOff j b < 2 ^ 15 := fun b hb => by unfold planeOff; omega_arith
   have r0 := hr 0 (by decide)
   have r1 := hr 1 (by decide)
   have r2 := hr 2 (by decide)
@@ -150,7 +150,7 @@ theorem row_run (u : State) {j : Nat} (hj : j < 4) {q rp S : BitVec 64} {acc lm 
   have o2 := o 2 (by decide)
   have o3 := o 3 (by decide)
   have hq : (q >>> 2).toNat < 2 ^ 63 := by
-    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := q.isLt; omega
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := q.isLt; omega_arith
   unfold row rowMask plane
   brun [h9, h15, h3, h0, r0, r1, r2, r3, o0, o1, o2, o3]
   rw [isZero_eq _ hq]
@@ -172,7 +172,7 @@ theorem ofNat_sub_bne {a c : Nat} (ha : a < 2 ^ 64) (hc : c < 2 ^ 64) :
       intro e
       have := congrArg BitVec.toNat e
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat] at this
-      omega
+      omega_arith
     simp [this, h]
 
 theorem ofNat_bne_zero {a : Nat} (ha : a < 2 ^ 64) : (BitVec.ofNat 64 a != 0#64) = !decide (a = 0) := by
@@ -182,7 +182,7 @@ theorem ofNat_bne_zero {a : Nat} (ha : a < 2 ^ 64) : (BitVec.ofNat 64 a != 0#64)
       intro e
       have := congrArg BitVec.toNat e
       simp only [BitVec.toNat_ofNat] at this
-      omega
+      omega_arith
     simp [this, h]
 
 /-- `(q - 4k) >> 2` is zero iff row `k` holds the index. -/
@@ -190,9 +190,9 @@ theorem row_hit (x : Byte) {k : Nat} (hk : k < 64) :
     ((x.setWidth 64 - BitVec.ofNat 64 (4 * k)) >>> 2).toNat = 0 ↔ x.toNat / 4 = k := by
   have := x.isLt
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show 4 * k < 2 ^ 64 by omega),
+    Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show 4 * k < 2 ^ 64 by omega_arith),
     Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 /-- After `k` rows of S-box `j` for the index `idx`, from the lookup's start
 `s₀`. -/
@@ -211,16 +211,15 @@ theorem row_step {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx :
   have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [I.keep.2.1, I.keep.2.2]
   have ha : ∀ b < 4, s₀.gpr .r3 + BitVec.ofNat 64 (4 * k) + BitVec.ofNat 64 (planeOff j b) =
       s₀.gpr .r3 + BitVec.ofNat 64 (1024 * j + 256 * b + 4 * k) := fun b _ =>
-    Offset.add_add_eq _ (by unfold planeOff; omega)
+    Offset.add_add_eq _ (by unfold planeOff; omega_arith)
   have hr : ∀ b < 4, InRegions (u.rd ++ u.wr)
       (s₀.gpr .r3 + BitVec.ofNat 64 (4 * k) + BitVec.ofNat 64 (planeOff j b)) 4 :=
-    fun b hb => by rw [ha b hb, hrd]; exact E.rd _ (by omega)
+    fun b hb => by rw [ha b hb, hrd]; exact E.rd _ (by omega_arith)
   have h3 : u.gpr .r3 = s₀.gpr .r3 := I.keep.gpr (by decide)
   have h0 : u.gpr .r0 = 0#64 := by rw [I.keep.gpr (by decide)]; exact E.zero
   refine WP.mono (WP.keep [.r9, .r10, .r11, .r12, .r15]
     (row_run u hj I.q I.acc I.lane I.rp h3 h0 hr) (by
-      simp [writesOnly, Code.allInstrs_eq, instrs, row, rowMask, plane, dstOf, mReg, qReg, tmp, acc,
-        rowPtr]) rfl) fun u' ⟨⟨a10, a9, a15, a12, am⟩, ak⟩ => ?_
+      rfl) rfl) fun u' ⟨⟨a10, a9, a15, a12, am⟩, ak⟩ => ?_
   refine ⟨⟨?_, ?_, ?_, ?_, I.keep.trans ak |>.mono (by decide), am.trans I.mem⟩, ?_⟩
   · rw [a9, BitVec.sub_sub, show (4#64 : BitVec 64) = BitVec.ofNat 64 4 from rfl, BitVec.ofNat_add_ofNat]
     congr 2
@@ -244,12 +243,12 @@ theorem rows_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx :
     (fun (n : Nat) (v : State) => ∃ k, k < 64 ∧ n = 64 - k ∧ RowInv s₀ j idx k v) ?_ 64 u ⟨0, by decide, rfl, I⟩
   intro n v ⟨k, hk, hn, J⟩
   refine WP.mono (row_step E hj idx hk J) fun v' ⟨J', hz⟩ => ?_
-  rw [eval_nonzero, hz, ofNat_sub_bne (by omega) (by decide)]
+  rw [eval_nonzero, hz, ofNat_sub_bne (by omega_arith) (by decide)]
   by_cases e : k + 1 = 64
   · left
     exact ⟨by rw [e]; rfl, e ▸ J'⟩
   · right
-    exact ⟨by simp; omega, n - 1, by omega, k + 1, by omega, by omega, J'⟩
+    exact ⟨by simp; omega_arith, n - 1, by omega_arith, k + 1, by omega_arith, by omega_arith, J'⟩
 
 /-- The lookup of S-box `j` for the byte `3 - j` of xL's low word. -/
 theorem lookup_run {s : State} (E : LookEnv s) {j : Nat} (hj : j < 4) :
@@ -260,8 +259,7 @@ theorem lookup_run {s : State} (E : LookEnv s) {j : Nat} (hj : j < 4) :
   unfold lookup
   apply WP.seq
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.r9] (index_run s hj) (by simp [writesOnly, Code.allInstrs_eq, instrs, index,
-    dstOf, qReg]) rfl) fun t ⟨⟨t9, tm⟩, tk⟩ => ?_
+  refine WP.mono (WP.keep [.r9] (index_run s hj) (by rfl) rfl) fun t ⟨⟨t9, tm⟩, tk⟩ => ?_
   have hL : (t.gpr .r9).toNat % 4 = idx.toNat % 4 := by rw [t9, BitVec.toNat_setWidth]; simp [idx]
   refine WP.mono (WP.keep [.r10, .r11, .r12, .r14, .r15]
     (start_run t (by rw [tk.gpr (by decide)]; exact E.zero) hL) (by decide) rfl)
@@ -286,8 +284,8 @@ theorem lookup_run {s : State} (E : LookEnv s) {j : Nat} (hj : j < 4) :
   have hq : (v.gpr .r9).toNat % 4 = idx.toNat % 4 := by
     rw [V.q, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     have := idx.isLt
-    rw [Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 64 by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 64 by omega_arith)]
+    omega_arith
   rw [hq] at b0 b1
   refine ⟨?_, (V.keep.trans wk).trans xk |>.mono (by decide), by rw [xm, wm, V.mem]⟩
   rw [x10, wk.gpr (by decide), w10, b0, b1]

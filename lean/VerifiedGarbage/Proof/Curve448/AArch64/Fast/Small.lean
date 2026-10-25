@@ -50,9 +50,9 @@ theorem smallLimb_val (x e : BitVec 64) (hx : x.toNat + 2 ^ 56 ≤ 2 ^ 64) (he :
       x.toNat + 39081 * e.toNat % radix ∧
     (BitVec.ofNat 64 (e.toNat * 10004736 / 2 ^ 64)).toNat = 39081 * e.toNat / radix := by
   have hc : e.toNat * 10004736 / 2 ^ 64 = 39081 * e.toNat / radix := by
-    simp only [radix]; omega
+    simp only [radix]; omega_arith
   rw [hc]
-  have hcl : 39081 * e.toNat / radix < 2 ^ 64 := by simp only [radix]; omega
+  have hcl : 39081 * e.toNat / radix < 2 ^ 64 := by simp only [radix]; omega_arith
   refine ⟨?_, by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hcl⟩
   generalize hl : 39081 * e.toNat % radix = l
   generalize hcc : 39081 * e.toNat / radix = c at hcl
@@ -63,12 +63,12 @@ theorem smallLimb_val (x e : BitVec 64) (hx : x.toNat + 2 ^ 56 ≤ 2 ^ 64) (he :
   have h2 : e.toNat * 39081 % 2 ^ 64 = l + c % 2 ^ 8 * 2 ^ 56 := by
     rw [Nat.mul_comm, ← hm]
     simp only [radix] at hlt ⊢
-    omega
+    omega_arith
   rw [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_shiftLeft,
     BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.mod_eq_of_lt hcl,
     show 39081 % 2 ^ 64 = 39081 by decide, h1, h2]
   simp only [radix] at hlt ⊢
-  omega
+  omega_arith
 
 def K39 : BitVec 64 := BitVec.ofNat 64 39081
 def K8 : BitVec 64 := BitVec.ofNat 64 10004736
@@ -93,8 +93,8 @@ theorem smallLimbStep_ok {t : State} {base : Addr} (ht : Scr t base) {a e i : Na
         (BitVec.ofNat 64 ((word t.mem base (e + 8 * i)).toNat * 10004736 / 2 ^ 64) <<< 56) ∧
       u.gpr (smallC i) = BitVec.ofNat 64 ((word t.mem base (e + 8 * i)).toNat * 10004736 / 2 ^ 64) ∧
       u.mem = t.mem ∧ Keeps [.x24, smallX i, smallC i] t u := by
-  obtain ⟨re, ae, ra, aa⟩ := ld2 ht (d := e + 8 * i) (e := a + 8 * i) (by omega) (by omega) (by omega)
-    (by omega)
+  obtain ⟨re, ae, ra, aa⟩ := ld2 ht (d := e + 8 * i) (e := a + 8 * i) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith)
   obtain ⟨n1, n2, n3⟩ := small_not i hi
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at n1 n2
   obtain ⟨x0, x2, x24, x3, -⟩ := n1
@@ -143,10 +143,10 @@ theorem smallLoop1_ok {s : State} {base : Addr} (hs : Scr s base) {a e : Nat}
   refine ⟨fun i hi => ?_, fun i hi => ?_, um.trans tm, tk.trans (uk.mono fun r hr => ?_)⟩
   · by_cases h : i = n
     · subst h; rw [ux, tm]
-    · rw [uk.1 _ (nk i (by omega) h).1, tx i (by omega)]
+    · rw [uk.1 _ (nk i (by omega_arith) h).1, tx i (by omega_arith)]
   · by_cases h : i = n
     · subst h; rw [uc, tm]
-    · rw [uk.1 _ (nk i (by omega) h).2, tc i (by omega)]
+    · rw [uk.1 _ (nk i (by omega_arith) h).2, tc i (by omega_arith)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · decide
@@ -189,7 +189,7 @@ theorem smallStore_ok {t : State} {base : Addr} (ht : Scr t base) {o i : Nat} (h
     refine WP.mono (add_ok u _ _ _) fun v ⟨vv, vm, vk⟩ => ?_
     have vs : Scr v base := (ht.of_keeps uk (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact ⟨Ne.symm hx3.2.2.2.1, Ne.symm hx3.2.2.2.2⟩)).of_keeps vk
       (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact ⟨Ne.symm hx3.2.2.2.1, Ne.symm hx3.2.2.2.2⟩)
-    refine WP.mono (stw_ok vs _ (d := o + 8 * 4) (by omega) (by omega))
+    refine WP.mono (stw_ok vs _ (d := o + 8 * 4) (by omega_arith) (by omega_arith))
       fun w ⟨ww, wo, wg, wr, wwr⟩ => ⟨fun d hd hs => ?_, by rw [← um, ← vm]; exact wo,
         ⟨fun q hq => ?_, wr.trans (vk.2.1.trans uk.2.1), wwr.trans (vk.2.2.trans uk.2.2)⟩⟩
     · rw [ww d hd hs, vv, vm, um, uk.1 (smallC 7) (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact c7), uv]
@@ -203,7 +203,7 @@ theorem smallStore_ok {t : State} {base : Addr} (ht : Scr t base) {o i : Nat} (h
       WP.block_append_iff]
     refine WP.mono (add_ok t _ _ _) fun u ⟨uv, um, uk⟩ => ?_
     have us : Scr u base := ht.of_keeps uk (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact ⟨Ne.symm hx3.2.2.2.1, Ne.symm hx3.2.2.2.2⟩)
-    refine WP.mono (stw_ok us _ (d := o + 8 * i) (by omega) (by omega))
+    refine WP.mono (stw_ok us _ (d := o + 8 * i) (by omega_arith) (by omega_arith))
       fun w ⟨ww, wo, wg, wr, wwr⟩ => ⟨fun d hd hs => ?_, by rw [← um]; exact wo,
         ⟨fun q hq => ?_, wr.trans uk.2.1, wwr.trans uk.2.2⟩⟩
     · rw [ww d hd hs, uv, um]
@@ -230,20 +230,20 @@ theorem smallLoop2_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho 
   have ts : Scr t base := hs.of_keeps tk (by decide)
   refine WP.mono (smallStore_ok ts hn ho ho8) fun u ⟨uw, uO, uk⟩ => ⟨fun i hi => ?_, fun i hi hni => ?_,
     fun i hi => ?_, ?_, tk.trans (uk.mono fun r hr => ?_)⟩
-  · rw [uw _ (by omega) (by omega)]
+  · rw [uw _ (by omega_arith) (by omega_arith)]
     by_cases h : i = n
     · subst h
       rw [ite_eq_left rfl]
       simp only [smallOut, tx i hn (Nat.le_refl _), tc _ (Nat.mod_lt _ (by decide)), tc 7 (by decide)]
-    · rw [ite_eq_right (by omega)]; exact tv i (by omega)
-  · have := (small_inj n hn i hi (by omega)).1
-    rw [uk.1 _ (by simp [this]), tx i hi (by omega)]
+    · rw [ite_eq_right (by omega_arith)]; exact tv i (by omega_arith)
+  · have := (small_inj n hn i hi (by omega_arith)).1
+    rw [uk.1 _ (by simp [this]), tx i hi (by omega_arith)]
   · by_cases h : i = n
     · subst h; rw [uk.1 _ (by simp [(small_not i hi).2.2.symm]), tc i hi]
     · rw [uk.1 _ (by simp [(small_inj n hn i hi h).2.2.2]), tc i hi]
-  · rw [show 8 * (n + 1) = 8 * n + 8 by omega]
+  · rw [show 8 * (n + 1) = 8 * n + 8 by omega_arith]
     intro x hx
-    rw [uO x (by omega), tO x (by omega)]
+    rw [uO x (by omega_arith), tO x (by omega_arith)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [hr]; exact (small_mem n hn).1
 
@@ -271,14 +271,14 @@ theorem small_ok {s : State} {base : Addr} (hs : Scr s base) {o a e : Nat}
       have hb := fa j hj; have hb' := fe j hj
       simp only [Mb, Ib] at hb hb'
       have := smallLimb_val (word s.mem base (a + 8 * j)) (word s.mem base (e + 8 * j))
-        (by simp only [limbs] at hb; omega) (by simp only [limbs] at hb'; omega)
+        (by simp only [limbs] at hb; omega_arith) (by simp only [limbs] at hb'; omega_arith)
       rw [ux j hj, uc j hj, tm]
       exact this
     have hc : ∀ j < 8, sc (limbs s.mem base e) j < 2 ^ 20 := by
-      intro j hj; have := fe j hj; simp only [sc, Ib, radix] at this ⊢; omega
+      intro j hj; have := fe j hj; simp only [sc, Ib, radix] at this ⊢; omega_arith
     have hsl : sl (limbs s.mem base a) (limbs s.mem base e) i < 2 ^ 58 := by
       have := fa i hi; have := Nat.mod_lt (39081 * limbs s.mem base e i) (show 0 < radix by decide)
-      simp only [sl, Mb, radix] at *; omega
+      simp only [sl, Mb, radix] at *; omega_arith
     change (word w.mem base (o + 8 * i)).toNat = _
     rw [wv i hi]
     simp only [smallOut, smallVal]
@@ -289,9 +289,9 @@ theorem small_ok {s : State} {base : Addr} (hs : Scr s base) {o a e : Nat}
     have cj := hc ((i + 7) % 8) (Nat.mod_lt _ (by decide))
     split
     · rw [BitVec.toNat_add, BitVec.toNat_add, hx, hj, h7]
-      omega
+      omega_arith
     · rw [BitVec.toNat_add, BitVec.toNat_add, hx, hj, show (0 : BitVec 64).toNat = 0 from rfl]
-      omega
+      omega_arith
   · intro x hx
     rw [wo x hx, um, tm]
 

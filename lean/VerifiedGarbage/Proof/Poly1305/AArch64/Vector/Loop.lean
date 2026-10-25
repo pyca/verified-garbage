@@ -84,8 +84,8 @@ theorem setup_eq : setup = Impl.Poly1305.AArch64.Vector.mask ++ (save ++ (loadH 
 theorem rV_sV : ∀ i < 5, 1 ≤ i → ∀ j < 5, 1 ≤ j → rV i ≠ sV j := by decide
 theorem sV_inj : ∀ i < 5, 1 ≤ i → ∀ j < 5, 1 ≤ j → i ≠ j → sV i ≠ sV j := by
   intro i hi h1 j hj h2 hij
-  rcases (show i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl <;>
-    rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_arith) with rfl | rfl | rfl | rfl <;>
+    rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega_arith) with rfl | rfl | rfl | rfl <;>
     first | exact absurd rfl hij | decide
 
 theorem setup_ok {s₀ : State} {R : Nat} (hk : Radix64.Keys R s₀) (hn : 128 ≤ (s₀.gpr .x3).toNat)
@@ -156,7 +156,7 @@ theorem setup_ok {s₀ : State} {R : Nat} (hk : Radix64.Keys R s₀) (hn : 128 �
     · rw [p4.val]
     · rw [p2.val]
   · show val (if c = 0 then L4 else if c = 1 then L3 else if c = 2 then L2 else L1) % P = _
-    rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_arith) with rfl | rfl | rfl | rfl
     · exact p4.val
     · exact p3.val
     · exact p2.val
@@ -185,7 +185,7 @@ theorem setup_ok {s₀ : State} {R : Nat} (hk : Radix64.Keys R s₀) (hn : 128 �
     rw [BitVec.toNat_sub, h64, show (1 : BitVec 64).toNat = 1 from rfl, BitVec.toNat_ofNat]
     have := (s₀.gpr .x3).isLt
     simp only [nq] at *
-    omega
+    omega_arith
   · rw [hrt i hi, w4r i hi c hc]
   · rw [hst j hj h1, t5 j hj h1 c hc, w4r j hj c hc]
   · rw [hft i hi, w4f i hi c hc]
@@ -196,7 +196,7 @@ theorem setup_ok {s₀ : State} {R : Nat} (hk : Radix64.Keys R s₀) (hn : 128 �
     have hl1 : ∀ i < 5, hl t 1 i = 0 := fun i hi => by
       show ln (t.v (hV i)) 1 = _; rw [hvt i hi]; exact z3 i hi
     refine ⟨fun e he i hi => ?_, ?_⟩
-    · rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+    · rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl
       · rw [hl0 i hi]; exact lim_lt (s2.gpr .x4).isLt (s2.gpr .x5).isLt h62 i hi
       · rw [hl1 i hi]; decide
     · have v0 : val (hl t 0) = hval s₀ := by
@@ -215,7 +215,7 @@ theorem group_bytes (m : Mem) (p : Addr) (j : Nat) :
         bytesAt m (p + BitVec.ofNat 64 (64 * j) + BitVec.ofNat 64 (16 * 1)) 16 ++
         bytesAt m (p + BitVec.ofNat 64 (64 * j) + BitVec.ofNat 64 (16 * 2)) 16 ++
         bytesAt m (p + BitVec.ofNat 64 (64 * j) + BitVec.ofNat 64 (16 * 3)) 16) := by
-  rw [show 64 * (j + 1) = 64 * j + 64 from by omega, Poly1305.bytesAt_add]
+  rw [show 64 * (j + 1) = 64 * j + 64 from by omega_arith, Poly1305.bytesAt_add]
   generalize p + BitVec.ofNat 64 (64 * j) = q
   rw [show bytesAt m q 64 = bytesAt m q (16 + (16 + (16 + 16))) from rfl, Poly1305.bytesAt_add,
     Poly1305.bytesAt_add, Poly1305.bytesAt_add]
@@ -232,7 +232,7 @@ theorem step_ok {s₀ s : State} {R : Nat} {M : Mem} {yL yF : Nat → Nat → Na
     fun j' _ => by rw [gAddr, hL.x2]
   refine WP.block_append (WP.mono (group_ok hL.mul hL.mask hL.pad fun j' hj' => by
       rw [ga j' hj', hL.rd, hL.wr, BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact hd _ (by simp only [nq] at hj; omega)) fun t ⟨hg, gk⟩ => ?_)
+      exact hd _ (by simp only [nq] at hj; omega_arith)) fun t ⟨hg, gk⟩ => ?_)
   refine WP.block_cons_iff.mpr ⟨_, rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, rfl, ?_⟩
   refine WP.block_nil_iff.mpr ?_
@@ -246,7 +246,7 @@ theorem step_ok {s₀ s : State} {R : Nat} {M : Mem} {yL yF : Nat → Nat → Na
   · allstep; rw [gt, hL.x9]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    simp only [nq] at *; omega
+    simp only [nq] at *; omega_arith
   · allstep; rw [gt, hL.x7]
   · allstep; rw [gt, hL.x8]
   · allstep; rw [gt, hL.x17]
@@ -280,7 +280,7 @@ theorem step_ok {s₀ s : State} {R : Nat} {M : Mem} {yL yF : Nat → Nat → Na
     · exact hlt e he i hi
     · show val (hl t 0) * R + val (hl t 1) ≡ _ [MOD P]
       refine hstep.trans ?_
-      rw [← Poly1305.absorbAll_append (by rw [Poly1305.length_bytesAt]; omega), group_bytes]
+      rw [← Poly1305.absorbAll_append (by rw [Poly1305.length_bytesAt]; omega_arith), group_bytes]
       simp only [gbytes, ga 0 (by decide), ga 1 (by decide), ga 2 (by decide), ga 3 (by decide), hL.mem,
         List.append_assoc]
       exact Nat.ModEq.refl _
@@ -299,11 +299,11 @@ theorem loop_ok {s₀ s : State} {R : Nat} {M : Mem} {yL yF : Nat → Nat → Na
   refine WP.mono (step_ok hY h hj hd) fun s' h' => ?_
   have hev : isa.eval (.nonzero .x .x9) s' = some (!decide (nq s₀ - 1 - (j + 1) = 0)) := by
     rw [AArch64.eval_nonzero, h'.x9, show (BitVec.ofNat 64 (nq s₀ - 1 - (j + 1)) != 0) =
-      !(BitVec.ofNat 64 (nq s₀ - 1 - (j + 1)) == 0) from rfl, Poly1305.ofNat_beq_zero (by simp only [nq] at *; omega)]
+      !(BitVec.ofNat 64 (nq s₀ - 1 - (j + 1)) == 0) from rfl, Poly1305.ofNat_beq_zero (by simp only [nq] at *; omega_arith)]
   by_cases hl : nq s₀ - 1 - (j + 1) = 0
   · refine .inl ⟨by rw [hev, hl]; rfl, ?_⟩
-    rw [show nq s₀ - 1 = j + 1 by omega]; exact h'
-  · exact .inr ⟨by rw [hev]; simp only [hl, decide_false, Bool.not_false], _, by omega, j + 1, rfl, h',
-      by omega⟩
+    rw [show nq s₀ - 1 = j + 1 by omega_arith]; exact h'
+  · exact .inr ⟨by rw [hev]; simp only [hl, decide_false, Bool.not_false], _, by omega_arith, j + 1, rfl, h',
+      by omega_arith⟩
 
 end VG.Proof.Poly1305.AArch64.Vector

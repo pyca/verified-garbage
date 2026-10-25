@@ -38,13 +38,7 @@ private theorem loadBase_ok (p : MaskStoreData) (s : State) (h : MaskStoreStart 
     WP isa (.block [.ldrSp .r0 0]) s (MaskStoreStart p) := by
   have raw : WP isa (.block [.ldrSp .r0 0]) s fun t =>
       (t.gpr .r0 = p.base ∧ t.mem = s.mem) ∧ Rest [.r0] s t := by
-    refine withRest [.r0] ?_ (by
-      intro r hr i hi
-      have checked : (instrs (.block [.ldrSp .r0 0] : Prog isa)).all (fun i => !(clobbers i r)) = true := by
-        cases r <;> try rfl
-        exact False.elim (hr (by decide))
-      have valid := List.all_eq_true.mp checked i hi
-      cases hc : clobbers i r <;> simp_all) (by rfl)
+    refine withRest_all [.r0] ?_ (by rfl) (by rfl)
     ffrun [BitVec.add_zero, h.1.stackRead, h.1.saved]
   exact WP.mono raw (fun _ post => ⟨h.1.of_mem post.1.2 post.2 post.1.1,
     (post.2.gpr .r5 (by simp)).trans h.2⟩)
@@ -59,13 +53,7 @@ private theorem loadArray_ok (p : MaskStoreData) (s : State) (h : MaskStoreStart
     VG.Arm.addr_add (by have := h.1.workspace.nowrap; omega)
   have raw : WP isa (.block [.ldr .r4 .r0 72]) s fun t =>
       t.gpr .r4 = p.base + BitVec.ofNat 32 (arrAt p.words 1) ∧ Rest [.r4] s t := by
-    refine withRest [.r4] ?_ (by
-      intro r hr i hi
-      have checked : (instrs (.block [.ldr .r4 .r0 72] : Prog isa)).all (fun i => !(clobbers i r)) = true := by
-        cases r <;> try rfl
-        exact False.elim (hr (by decide))
-      have valid := List.all_eq_true.mp checked i hi
-      cases hc : clobbers i r <;> simp_all) (by rfl)
+    refine withRest_all [.r4] ?_ (by rfl) (by rfl)
     ffrun [h.1.ptr, addr72, h.1.workspace.read (off := 72) (by omega), header.array 1 (by decide)]
   exact WP.mono raw (fun _ post => ⟨post.1, (post.2.gpr .r5 (by simp)).trans h.2⟩)
 

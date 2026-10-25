@@ -173,7 +173,7 @@ def PrfsPost (s : State) (N₀ n o wl : Nat) (s' : State) : Prop :=
 theorem out_sub (s : State) {n o i : Nat} (hi : i < n) :
     Region.Sub (toR s (sc (o + 128 * i), 128)) (toR s (sc o, 128 * n)) :=
   show Region.Sub ⟨s.gpr .rbx + BitVec.ofNat 64 (o + 128 * i), 128⟩ ⟨s.gpr .rbx + BitVec.ofNat 64 o, 128 * n⟩ from
-    Offset.sub _ (by omega) (by omega)
+    Offset.sub _ (by omega_arith) (by omega_arith)
 
 /-- After the first `k` outputs. -/
 structure ScInv (s : State) (N₀ n o wl k : Nat) (s' : State) : Prop where
@@ -191,9 +191,9 @@ theorem prfsScalar_lead {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ 
     WP isa (prfsScalar N₀ r o wl) s (ScInv s N₀ n o wl r) := by
   have h := seqR_ok (f := fun i => prf1 (N₀ + i) (sc (o + 128 * i))) (I := ScInv s N₀ n o wl) r 0
     (fun k _ hk s₁ h₁ => by
-      obtain ⟨c1, cs, cj⟩ := hs k (by omega)
+      obtain ⟨c1, cs, cj⟩ := hs k (by omega_arith)
       have L₁ := L.post h₁.post.b hcs
-      refine WP.mono (prf1_ok L₁ hcs (by omega) c1) fun s₂ ⟨hP, hb⟩ => ?_
+      refine WP.mono (prf1_ok L₁ hcs (by omega_arith) c1) fun s₂ ⟨hP, hb⟩ => ?_
       have e₁ : ∀ x, pa s₁ (sc x) = pa s (sc x) := fun x => h₁.post.pa rbx_cs
       refine ⟨PPost.trans h₁.post (hP.weaken fun w hw => ?_) (fun w hw => by
           simp only [prfsW, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -204,8 +204,8 @@ theorem prfsScalar_lead {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ 
         · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
         · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
         · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), fun _ h => h⟩
-        · exact ⟨_, by simp, out_sub s₁ (o := o) (show k < n by omega)⟩
-      · rcases (by omega : j < k ∨ j = k) with hj | rfl
+        · exact ⟨_, by simp, out_sub s₁ (o := o) (show k < n by omega_arith)⟩
+      · rcases (by omega_arith : j < k ∨ j = k) with hj | rfl
         · rw [← e₁, ← hP.pa rbx_cs, L₁.keepBytes hP.b (cj j hj), e₁]; exact h₁.outs j hj
         · rw [← e₁, hb, h₁.sig])
     s ⟨Post.refl _ _, rfl, fun _ h => absurd h (Nat.not_lt_zero _)⟩
@@ -214,19 +214,19 @@ theorem prfsScalar_lead {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ 
 theorem prfsScalar_ok {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {N₀ n o wl : Nat}
     (hN : N₀ + n + 4 ≤ 256) (hc : prfsChk (rbs ++ wbs) wbs n o wl = true) :
     WP isa (prfsScalar N₀ n o wl) s (PrfsPost s N₀ n o wl) :=
-  WP.mono (prfsScalar_lead L hcs (by omega) (Nat.le_refl n) (prfsChk_spec hc).1) fun _ h' => ⟨h'.post, h'.outs⟩
+  WP.mono (prfsScalar_lead L hcs (by omega_arith) (Nat.le_refl n) (prfsChk_spec hc).1) fun _ h' => ⟨h'.post, h'.outs⟩
 
 theorem prfsScalar_trL (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {N₀ r o wl : Nat} (hN : N₀ + r ≤ 256)
     (hs : ∀ i < r, prf1Chk (rbs ++ wbs) wbs (sc (o + 128 * i)) = true) :
     RelCT isa (LRel rbs wbs) (prfsScalar N₀ r o wl) (LRel rbs wbs) := by
   have := seqR_tr (f := fun i => prf1 (N₀ + i) (sc (o + 128 * i))) (R := fun _ => LRel rbs wbs) r 0 fun k _ hk =>
-    prf1_tr hcs (by omega) (hs k (by omega))
+    prf1_tr hcs (by omega_arith) (hs k (by omega_arith))
   exact this
 
 theorem prfsScalar_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {N₀ n o wl : Nat} (hN : N₀ + n + 4 ≤ 256)
     (hc : prfsChk (rbs ++ wbs) wbs n o wl = true) :
     RelCT isa (LRel rbs wbs) (prfsScalar N₀ n o wl) fun _ _ => True :=
-  RelCT.mono (prfsScalar_trL hcs (by omega) fun i hi => ((prfsChk_spec hc).1 i hi).1) (fun _ _ h => h)
+  RelCT.mono (prfsScalar_trL hcs (by omega_arith) fun i hi => ((prfsChk_spec hc).1 i hi).1) (fun _ _ h => h)
     fun _ _ _ => trivial
 
 theorem ctlOk_seqR {f : Nat → Prog isa} (h : ∀ k, ctlOk (f k) = true) : ∀ n a, ctlOk (seqR f a n) = true
@@ -279,9 +279,9 @@ theorem lt64 {a o : Nat} (h : o + a < 2 ^ 32) : a < 2 ^ 64 :=
 
 theorem RawPre.bpre {b : Addr} {n o wl : Nat} {s : State} (h : RawPre b n o wl s) {m : Nat} (hm : m ≤ 4)
     (hmn : m ≤ n) : BPre b wl o m s := by
-  have hs : Region.Sub (oR b o m) (oR b o n) := Region.sub_prefix (by omega)
+  have hs : Region.Sub (oR b o m) (oR b o n) := Region.sub_prefix (by omega_arith)
   refine ⟨h.rbx, h.w, ?_, h.sig, h.dWO.sub_right hs, h.dWS, h.dOS.sub_left hs, hm, h.small⟩
-  have := inRegions_sub h.out (off := 0) (l := 128 * m) (by omega) (lt64 (o := o) (a := 128 * n) (by have := h.so; omega))
+  have := inRegions_sub h.out (off := 0) (l := 128 * m) (by omega_arith) (lt64 (o := o) (a := 128 * n) (by have := h.so; omega_arith))
   rwa [add_ofNat_zero] at this
 
 /-- Between the pieces of `prfsX4`, from `s₀`: `BEnv` but for `r8`–`r10`,
@@ -302,7 +302,7 @@ theorem XEnv.keep {b : Addr} {wl o n : Nat} {s₀ s s' : State} (h : XEnv b wl o
 /-- `XEnv` after a batch writing outputs `d, …, d + m - 1` of `n`. -/
 theorem XEnv.batch {b : Addr} {wl o n d m : Nat} {s₀ s s' : State} (h : XEnv b wl o n s₀ s)
     (e : BEnv b wl (o + 128 * d) m s s') (hs : d + m ≤ n) : XEnv b wl o n s₀ s' := by
-  have hsub : Region.Sub (oR b (o + 128 * d) m) (oR b o n) := Offset.sub _ (by omega) (by omega)
+  have hsub : Region.Sub (oR b (o + 128 * d) m) (oR b o n) := Offset.sub _ (by omega_arith) (by omega_arith)
   refine ⟨e.rd.trans h.rd, e.wr.trans h.wr, fun r hr => (e.cs r (List.mem_append_left _ hr)).trans (h.cs r hr),
     h.frame.trans (e.frame.sub fun r hr => ?_)⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -315,10 +315,10 @@ of `n`. -/
 theorem RawPre.shift {b : Addr} {n o wl : Nat} {s₀ s : State} (h : RawPre b n o wl s₀) (he : XEnv b wl o n s₀ s)
     {d m : Nat} (hle : d + m ≤ n) : RawPre b m (o + 128 * d) wl s := by
   have so := h.so
-  have hsub : Region.Sub (oR b (o + 128 * d) m) (oR b o n) := Offset.sub _ (by omega) (by omega)
+  have hsub : Region.Sub (oR b (o + 128 * d) m) (oR b o n) := Offset.sub _ (by omega_arith) (by omega_arith)
   refine ⟨(he.cs .rbx (by decide)).trans h.rbx, by rw [he.wr]; exact h.w, ?_, by rw [he.rd, he.wr]; exact h.sig,
-    h.dWO.sub_right hsub, h.dWS, h.dOS.sub_left hsub, h.small, by omega⟩
-  have := inRegions_sub h.out (off := 128 * d) (l := 128 * m) (by omega) (lt64 (o := o) (a := 128 * n) (by omega))
+    h.dWO.sub_right hsub, h.dWS, h.dOS.sub_left hsub, h.small, by omega_arith⟩
+  have := inRegions_sub h.out (off := 128 * d) (l := 128 * m) (by omega_arith) (lt64 (o := o) (a := 128 * n) (by omega_arith))
   rw [he.wr, ← Offset.add_add]; exact this
 
 theorem XEnv.sig {b : Addr} {n o wl : Nat} {s₀ s : State} (h : RawPre b n o wl s₀) (he : XEnv b wl o n s₀ s) :
@@ -330,21 +330,21 @@ theorem out_kept {b : Addr} {n o wl : Nat} {s₀ s s' : State} (h : RawPre b n o
     (e : BEnv b wl (o + 128 * d) m s s') (hs : d + m ≤ n) (hk : k < d) :
     bytesAt s'.mem (b + BitVec.ofNat 64 (o + 128 * k)) 128 = bytesAt s.mem (b + BitVec.ofNat 64 (o + 128 * k)) 128 := by
   have so := h.so
-  have hk' : Region.Sub ⟨b + BitVec.ofNat 64 (o + 128 * k), 128⟩ (oR b o n) := Offset.sub _ (by omega) (by omega)
+  have hk' : Region.Sub ⟨b + BitVec.ofNat 64 (o + 128 * k), 128⟩ (oR b o n) := Offset.sub _ (by omega_arith) (by omega_arith)
   have hd : Region.Disjoint ⟨b + BitVec.ofNat 64 (o + 128 * k), 128⟩ (oR b (o + 128 * d) m) :=
-    Offset.disjoint _ (by omega) (by omega) (by omega)
+    Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
   exact bytesAt_frame e.frame (by simpa using ⟨(h.dWO.sub_right hk').symm, hd⟩) (by decide)
 
 theorem zx_ofNat {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- `regs N₀ o`: `r8 := scratch + o`, `r9 := N₀`. -/
 theorem regs_ok {b : Addr} {s : State} (hb : s.gpr .rbx = b) {N₀ o : Nat} (ho : o < 2 ^ 31) (hN : N₀ < 2 ^ 31) :
     WP isa (.block (regs N₀ o)) s fun s' => (s'.gpr .r8 = b + BitVec.ofNat 64 o ∧
       s'.gpr .r9 = BitVec.ofNat 64 N₀ ∧ s'.mem = s.mem) ∧ Keep [.r8, .r9] s s' :=
-  WP.keep _ (by unfold regs; xrun [hb, sx_ofNat ho, zx_ofNat (show N₀ < 2 ^ 32 by omega)]) rfl
+  WP.keep _ (by unfold regs; xrun [hb, sx_ofNat ho, zx_ofNat (show N₀ < 2 ^ 32 by omega_arith)]) rfl
 
 /-- After `i` batches of four of `quads N₀ q o wl`, from `s₀`. -/
 structure QInv (b : Addr) (wl N₀ q o : Nat) (s₀ : State) (i : Nat) (s : State) : Prop where
@@ -365,23 +365,23 @@ theorem quads_ok {fast : Bool} {b : Addr} {wl N₀ q o : Nat} {s : State} (h : R
   refine WP.seq (WP.mono (show WP isa (.block (regs N₀ o ++ ([.mov32 .r10 (.imm (BitVec.ofNat 32 q))] : List Instr))) s
     (QInv b wl N₀ q o s 0) from ?_) fun t h0 => ?_)
   · rw [WP.block_append_iff]
-    refine WP.mono (regs_ok h.rbx (N₀ := N₀) (o := o) (by omega) (by omega)) fun s₁ ⟨⟨h8, h9, hm₁⟩, k₁⟩ => ?_
+    refine WP.mono (regs_ok h.rbx (N₀ := N₀) (o := o) (by omega_arith) (by omega_arith)) fun s₁ ⟨⟨h8, h9, hm₁⟩, k₁⟩ => ?_
     refine WP.mono (WP.keep [.r10] (Q := fun s₂ => s₂.gpr .r10 = BitVec.ofNat 64 q ∧ s₂.mem = s₁.mem)
-      (by xrun [zx_ofNat (show q < 2 ^ 32 by omega)]) rfl) fun s₂ ⟨⟨h10, hm₂⟩, k₂⟩ => ?_
+      (by xrun [zx_ofNat (show q < 2 ^ 32 by omega_arith)]) rfl) fun s₂ ⟨⟨h10, hm₂⟩, k₂⟩ => ?_
     refine ⟨(XEnv.refl.keep hm₁ k₁ (by decide)).keep hm₂ k₂ (by decide), ?_, ?_, by rw [h10, Nat.sub_zero],
-      fun k hk => absurd hk (by omega)⟩
+      fun k hk => absurd hk (by omega_arith)⟩
     · rw [k₂.gpr (by decide), h8]; simp only [Nat.mul_zero, Nat.add_zero]
     · rw [k₂.gpr (by decide), h9]; simp only [Nat.mul_zero, Nat.add_zero]
   refine VG.Proof.Bignum.X86_64.wp_upto (a := 0) (N := q) hq (QInv b wl N₀ q o s) (fun i _ hi t hI => ?_)
     (fun t hI => ⟨hI.env, hI.out⟩) h0
-  have raw := h.shift hI.env (d := 4 * i) (m := 4) (by omega)
+  have raw := h.shift hI.env (d := 4 * i) (m := 4) (by omega_arith)
   have hsig := XEnv.sig h hI.env
-  refine WP.seq (WP.mono (batch_ok (fast := fast) (raw.bpre (by decide) (by decide)) (N₀ := N₀ + 4 * i) (by omega)
+  refine WP.seq (WP.mono (batch_ok (fast := fast) (raw.bpre (by decide) (by decide)) (N₀ := N₀ + 4 * i) (by omega_arith)
     hI.r8 hI.r9) fun t₁ ⟨e₁, r₁⟩ => ?_)
   have h8 : t₁.gpr .r8 = b + BitVec.ofNat 64 (o + 128 * (4 * i)) := (e₁.cs .r8 (by decide)).trans hI.r8
   have h9 : t₁.gpr .r9 = BitVec.ofNat 64 (N₀ + 4 * i) := (e₁.cs .r9 (by decide)).trans hI.r9
   have h10 : t₁.gpr .r10 = BitVec.ofNat 64 (q - i) := (e₁.cs .r10 (by decide)).trans hI.r10
-  have env₁ := hI.env.batch e₁ (by omega)
+  have env₁ := hI.env.batch e₁ (by omega_arith)
   refine WP.mono (WP.keep [.r8, .r9, .r10] (Q := fun t₂ => (t₂.gpr .r8 = b + BitVec.ofNat 64 (o + 128 * (4 * (i + 1))) ∧
       t₂.gpr .r9 = BitVec.ofNat 64 (N₀ + 4 * (i + 1)) ∧ t₂.gpr .r10 = BitVec.ofNat 64 (q - (i + 1)) ∧
       t₂.zf = some (decide (i + 1 = q))) ∧ t₂.mem = t₁.mem) (by
@@ -389,18 +389,18 @@ theorem quads_ok {fast : Bool} {b : Addr} {wl N₀ q o : Nat} {s : State} (h : R
     xrun [h8, h9, h10]
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [show BitVec.signExtend 64 (512 : BitVec 32) = BitVec.ofNat 64 512 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat,
-        show o + 128 * (4 * i) + 512 = o + 128 * (4 * (i + 1)) by omega]
+        show o + 128 * (4 * i) + 512 = o + 128 * (4 * (i + 1)) by omega_arith]
     · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, BitVec.ofNat_add_ofNat,
-        show N₀ + 4 * i + 4 = N₀ + 4 * (i + 1) by omega]
-    · rw [ofNat64_pred (by omega) (by omega), show q - i - 1 = q - (i + 1) by omega]
-    · rw [ofNat64_pred (by omega) (by omega), ofNat64_beq_zero (by omega)]
-      exact decide_eq_decide.mpr (by omega)) rfl) fun t₂ ⟨⟨⟨h8', h9', h10', hz⟩, hm⟩, k⟩ => ⟨hz, env₁.keep hm k (by decide), h8', h9', h10', fun k hk => ?_⟩
+        show N₀ + 4 * i + 4 = N₀ + 4 * (i + 1) by omega_arith]
+    · rw [ofNat64_pred (by omega_arith) (by omega_arith), show q - i - 1 = q - (i + 1) by omega_arith]
+    · rw [ofNat64_pred (by omega_arith) (by omega_arith), ofNat64_beq_zero (by omega_arith)]
+      exact decide_eq_decide.mpr (by omega_arith)) rfl) fun t₂ ⟨⟨⟨h8', h9', h10', hz⟩, hm⟩, k⟩ => ⟨hz, env₁.keep hm k (by decide), h8', h9', h10', fun k hk => ?_⟩
   rw [hm]
-  rcases (by omega : k < 4 * i ∨ 4 * i ≤ k) with hk' | hk'
-  · rw [out_kept h e₁ (by omega) hk']; exact hI.out k hk'
-  · have := r₁ (k - 4 * i) (by omega)
-    rwa [hsig, show o + 128 * (4 * i) + 128 * (k - 4 * i) = o + 128 * k by omega,
-      show N₀ + 4 * i + (k - 4 * i) = N₀ + k by omega] at this
+  rcases (by omega_arith : k < 4 * i ∨ 4 * i ≤ k) with hk' | hk'
+  · rw [out_kept h e₁ (by omega_arith) hk']; exact hI.out k hk'
+  · have := r₁ (k - 4 * i) (by omega_arith)
+    rwa [hsig, show o + 128 * (4 * i) + 128 * (k - 4 * i) = o + 128 * k by omega_arith,
+      show N₀ + 4 * i + (k - 4 * i) = N₀ + k by omega_arith] at this
 
 /-- `prfsX4 N₀ n o wl`: `PRF₂(σ, N₀ + k)` to `scratch + o + 128 k` for each `k < n`. -/
 theorem prfsX4_ok {fast : Bool} {b : Addr} {wl N₀ n o : Nat} {s : State} (h : RawPre b n o wl s)
@@ -420,34 +420,34 @@ theorem prfsX4_ok {fast : Bool} {b : Addr} {wl N₀ n o : Nat} {s : State} (h : 
       XEnv b wl o (4 * q + r) s s₁ ∧ ∀ k < 4 * q, bytesAt s₁.mem (b + BitVec.ofNat 64 (o + 128 * k)) 128 =
         prf 2 (sig b s) (BitVec.ofNat 8 (N₀ + k))) from ?_) fun s₁ ⟨e₁, o₁⟩ => ?_)
   · split
-    · exact WP.block_nil ⟨XEnv.refl, fun k hk => absurd hk (by omega)⟩
-    · have h₀ := h.shift (s := s) XEnv.refl (d := 0) (m := 4 * q) (by omega)
+    · exact WP.block_nil ⟨XEnv.refl, fun k hk => absurd hk (by omega_arith)⟩
+    · have h₀ := h.shift (s := s) XEnv.refl (d := 0) (m := 4 * q) (by omega_arith)
       rw [Nat.mul_zero, Nat.add_zero] at h₀
-      refine WP.mono (quads_ok (fast := fast) h₀ (by omega) (by omega)) fun s₁ ⟨e₁, o₁⟩ =>
+      refine WP.mono (quads_ok (fast := fast) h₀ (by omega_arith) (by omega_arith)) fun s₁ ⟨e₁, o₁⟩ =>
         ⟨⟨e₁.rd, e₁.wr, e₁.cs, e₁.frame.sub fun r' hr' => ?_⟩, o₁⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl
       · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
-      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by omega)⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by omega_arith)⟩
   -- The last `r`.
   have hsig := XEnv.sig h e₁
   split
-  · exact WP.block_nil ⟨e₁, fun k hk => o₁ k (by omega)⟩
-  · have raw := h.shift e₁ (d := 4 * q) (m := r) (by omega)
-    refine WP.seq (WP.mono (regs_ok raw.rbx (N₀ := N₀ + 4 * q) (o := o + 512 * q) (by omega) (by omega))
+  · exact WP.block_nil ⟨e₁, fun k hk => o₁ k (by omega_arith)⟩
+  · have raw := h.shift e₁ (d := 4 * q) (m := r) (by omega_arith)
+    refine WP.seq (WP.mono (regs_ok raw.rbx (N₀ := N₀ + 4 * q) (o := o + 512 * q) (by omega_arith) (by omega_arith))
       fun s₂ ⟨⟨h8, h9, hm₂⟩, k₂⟩ => show WP isa (batch r wl fast) s₂ _ from ?_)
     · have raw₂ : RawPre b r (o + 128 * (4 * q)) wl s₂ := raw.shift (XEnv.refl.keep hm₂ k₂ (by decide)) (d := 0) (m := r)
-        (by omega) |> fun h => by rwa [Nat.mul_zero, Nat.add_zero] at h
-      refine WP.mono (batch_ok (fast := fast) (raw₂.bpre (by omega) (Nat.le_refl _)) (N₀ := N₀ + 4 * q) (by omega)
-        (by rw [h8]; congr 2; omega) h9) fun s₃ ⟨e₃, r₃⟩ => ?_
-      have e₂ := (e₁.keep hm₂ k₂ (by decide)).batch e₃ (by omega)
+        (by omega_arith) |> fun h => by rwa [Nat.mul_zero, Nat.add_zero] at h
+      refine WP.mono (batch_ok (fast := fast) (raw₂.bpre (by omega_arith) (Nat.le_refl _)) (N₀ := N₀ + 4 * q) (by omega_arith)
+        (by rw [h8]; congr 2; omega_arith) h9) fun s₃ ⟨e₃, r₃⟩ => ?_
+      have e₂ := (e₁.keep hm₂ k₂ (by decide)).batch e₃ (by omega_arith)
       refine ⟨e₂, fun k hk => ?_⟩
-      rcases (by omega : k < 4 * q ∨ 4 * q ≤ k) with hk' | hk'
-      · rw [out_kept h e₃ (by omega) hk', hm₂]; exact o₁ k hk'
-      · have := r₃ (k - 4 * q) (by omega)
+      rcases (by omega_arith : k < 4 * q ∨ 4 * q ≤ k) with hk' | hk'
+      · rw [out_kept h e₃ (by omega_arith) hk', hm₂]; exact o₁ k hk'
+      · have := r₃ (k - 4 * q) (by omega_arith)
         rwa [show sig b s₂ = sig b s by rw [show sig b s₂ = sig b s₁ by simp only [sig, hm₂]]; exact hsig,
-          show o + 128 * (4 * q) + 128 * (k - 4 * q) = o + 128 * k by omega,
-          show N₀ + 4 * q + (k - 4 * q) = N₀ + k by omega] at this
+          show o + 128 * (4 * q) + 128 * (k - 4 * q) = o + 128 * k by omega_arith,
+          show N₀ + 4 * q + (k - 4 * q) = N₀ + k by omega_arith] at this
 
 theorem quads_tr {fast : Bool} (N₀ q o wl : Nat) :
     RelCT isa (fun x y => x.gpr .rbx = y.gpr .rbx) (quads N₀ q o wl fast) fun x y => x.gpr .rbx = y.gpr .rbx := by
@@ -491,12 +491,12 @@ theorem batch_xd {fast : Bool} (m wl : Nat) : (batch m wl fast).x86_64Depth = 0 
 
 theorem batch_ctl {fast : Bool} {m : Nat} (wl : Nat) (hm : m < 5) : ctlOk (batch m wl fast) = true :=
   ctlOk_seq (by kernel_rfl) (ctlOk_seq (permute4_ctl fast) (by
-    rcases (by omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl))
+    rcases (by omega_arith : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl))
 
 theorem batch_sp {fast : Bool} {m : Nat} (wl : Nat) (hm : m < 5) :
     (batch m wl fast).all (fun i => !isa.writesSp i) = true :=
   all_seq (by kernel_rfl) (all_seq (permute4_sp fast) (by
-    rcases (by omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl))
+    rcases (by omega_arith : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl))
 
 theorem quads_ctl {fast : Bool} (N₀ q o wl : Nat) : ctlOk (quads N₀ q o wl fast) = true := by
   unfold quads
@@ -519,14 +519,14 @@ theorem prfsX4_ctl {fast : Bool} {wl : Nat} (n N₀ o : Nat) : ctlOk (prfsX4 fas
   refine ctlOk_seq (by split; exacts [rfl, quads_ctl _ _ _ _]) ?_
   split
   · rfl
-  · exact ctlOk_seq (by kernel_rfl) (batch_ctl wl (by have := Nat.mod_lt n (show 0 < 4 by decide); omega))
+  · exact ctlOk_seq (by kernel_rfl) (batch_ctl wl (by have := Nat.mod_lt n (show 0 < 4 by decide); omega_arith))
 
 theorem prfsX4_sp {fast : Bool} {wl : Nat} (n N₀ o : Nat) : (prfsX4 fast N₀ n o wl).all (fun i => !isa.writesSp i) = true := by
   unfold prfsX4
   refine all_seq (by split; exacts [rfl, quads_sp _ _ _ _]) ?_
   split
   · rfl
-  · exact all_seq (by kernel_rfl) (batch_sp wl (by have := Nat.mod_lt n (show 0 < 4 by decide); omega))
+  · exact all_seq (by kernel_rfl) (batch_sp wl (by have := Nat.mod_lt n (show 0 < 4 by decide); omega_arith))
 
 end Prf4
 
@@ -534,7 +534,7 @@ theorem cover_in {X : List Region} {a : Addr} {n : Nat} (h : Covers [⟨a, n⟩]
   h _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
 theorem prfsLead_le (n : Nat) : prfsLead n ≤ n := by
-  unfold prfsLead; split <;> omega
+  unfold prfsLead; split <;> omega_arith
 
 theorem prfsAvx2_ok {fast : Bool} {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {N₀ n o wl : Nat}
     (hN : N₀ + n + 4 ≤ 256) (hc : prfsChk (rbs ++ wbs) wbs n o wl = true) :
@@ -554,18 +554,18 @@ theorem prfsAvx2_ok {fast : Bool} {s : State} (L : Lay rbs wbs s) (hcs : ∀ b �
   have hr := prfsLead_le n
   unfold prfsAvx2
   generalize prfsLead n = r at hr ⊢
-  refine WP.seq (WP.mono (prfsScalar_lead L hcs (by omega) hr fun i hi => hs i (by omega)) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (prfsScalar_lead L hcs (by omega_arith) hr fun i hi => hs i (by omega_arith)) fun s₁ h₁ => ?_)
   have e₁ : s₁.gpr .rbx = s.gpr .rbx := h₁.post.cs .rbx (by decide)
   have hsub : Region.Sub (Prf4.oR (s.gpr .rbx) (o + 128 * r) (n - r)) (Prf4.oR (s.gpr .rbx) o n) :=
-    Offset.sub _ (by omega) (by omega)
+    Offset.sub _ (by omega_arith) (by omega_arith)
   have raw : Prf4.RawPre (s.gpr .rbx) (n - r) (o + 128 * r) wl s₁ := by
     refine ⟨e₁, by rw [h₁.post.wr]; exact i1, ?_, by rw [h₁.post.rd, h₁.post.wr]; exact i3, d1.sub_right hsub, d2,
-      d3.sub_left hsub, hsm, by omega⟩
-    have := inRegions_sub i2 (off := 128 * r) (l := 128 * (n - r)) (by omega) (Prf4.lt64 hb)
+      d3.sub_left hsub, hsm, by omega_arith⟩
+    have := inRegions_sub i2 (off := 128 * r) (l := 128 * (n - r)) (by omega_arith) (Prf4.lt64 hb)
     rw [h₁.post.wr, ← Offset.add_add]; exact this
   have hsig : Prf4.sig (s.gpr .rbx) s₁ = bytesAt s.mem (pa s sigP) 32 := by
     rw [← h₁.sig]; simp only [Prf4.sig, Prf4.sS, pa, e₁]
-  refine WP.mono (Prf4.prfsX4_ok (fast := fast) raw (by omega)) fun s' ⟨e, out⟩ =>
+  refine WP.mono (Prf4.prfsX4_ok (fast := fast) raw (by omega_arith)) fun s' ⟨e, out⟩ =>
     ⟨PPost.trans h₁.post ⟨e.rd, e.wr, e.cs, e.frame.sub fun r' hr' => ?_⟩ (fun w hw => by
       simp only [prfsW, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl | rfl <;> exact rbx_cs) (fun w hw => hw) (fun w hw => hw), fun i hi => ?_⟩
@@ -578,17 +578,17 @@ theorem prfsAvx2_ok {fast : Bool} {s : State} (L : Lay rbs wbs s) (hcs : ∀ b �
         (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
           (List.mem_singleton_self _)))))), ?_⟩
       simp only [toR, pa, e₁]; exact hsub
-  · rcases (by omega : i < r ∨ r ≤ i) with hi' | hi'
+  · rcases (by omega_arith : i < r ∨ r ≤ i) with hi' | hi'
     · rw [bytesAt_frame e.frame (by
         have hk : Region.Sub ⟨s.gpr .rbx + BitVec.ofNat 64 (o + 128 * i), 128⟩ (Prf4.oR (s.gpr .rbx) o n) :=
-          Offset.sub _ (by omega) (by omega)
+          Offset.sub _ (by omega_arith) (by omega_arith)
         have hd : Region.Disjoint ⟨s.gpr .rbx + BitVec.ofNat 64 (o + 128 * i), 128⟩
-            (Prf4.oR (s.gpr .rbx) (o + 128 * r) (n - r)) := Offset.disjoint _ (by omega) (by omega) (by omega)
+            (Prf4.oR (s.gpr .rbx) (o + 128 * r) (n - r)) := Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
         simpa using ⟨(d1.sub_right hk).symm, hd⟩) (by decide)]
       exact h₁.outs i hi'
-    · have := out (i - r) (by omega)
-      rwa [hsig, show o + 128 * r + 128 * (i - r) = o + 128 * i by omega,
-        show N₀ + r + (i - r) = N₀ + i by omega] at this
+    · have := out (i - r) (by omega_arith)
+      rwa [hsig, show o + 128 * r + 128 * (i - r) = o + 128 * i by omega_arith,
+        show N₀ + r + (i - r) = N₀ + i by omega_arith] at this
 
 theorem prfsAvx2_tr {fast : Bool} (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {N₀ n o wl : Nat} (hN : N₀ + n + 4 ≤ 256)
     (hc : prfsChk (rbs ++ wbs) wbs n o wl = true) :
@@ -597,7 +597,7 @@ theorem prfsAvx2_tr {fast : Bool} (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {N
   have hr := prfsLead_le n
   unfold prfsAvx2
   generalize prfsLead n = r at hr ⊢
-  exact RelCT.seq (prfsScalar_trL hcs (by omega) fun i hi => (hs i (by omega)).1)
+  exact RelCT.seq (prfsScalar_trL hcs (by omega_arith) fun i hi => (hs i (by omega_arith)).1)
     (RelCT.mono (Prf4.prfsX4_rtr _ _ _) (fun _ _ h => h.eq (rdOk_in hsg)) fun _ _ _ => trivial)
 
 theorem prfsAvx2_ctl {fast : Bool} (N₀ n o wl : Nat) : ctlOk (prfsAvx2 (fast := fast) N₀ n o wl) = true :=

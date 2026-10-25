@@ -63,8 +63,8 @@ theorem Keep.step {s₀ : State} {base : Addr} {s s' : State} (K : Keep c s₀ b
   ⟨K.ws.of_rk hk h3, K.rk.trans (hk.mono hrs), by rw [hk.gpr _ h14, K.r14], K.fixed.unch h7 K.ws.nowrap hW hU,
     fun x hx => by
       have h := hx (0, size) (List.mem_singleton_self _)
-      have hx' : size ≤ ofs base x := by dsimp only at h; omega
-      rw [hU x (fun w hw => Or.inr (by have := hWs w hw; omega)), K.whole x hx]⟩
+      have hx' : size ≤ ofs base x := by dsimp only at h; omega_arith
+      rw [hU x (fun w hw => Or.inr (by have := hWs w hw; omega_arith)), K.whole x hx]⟩
 
 /-- After the setup. -/
 structure St₀ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (F : BitVec 64) (s : State) : Prop
@@ -155,10 +155,10 @@ theorem tables_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {F : BitVec 64} {s
     fun j w hw => by
       rw [List.mem_singleton.mp hw]
       have := sl_below_bits c h7 (i := FLAG) (by decide) j 0
-      exact Or.inl (by dsimp only; omega)
+      exact Or.inl (by dsimp only; omega_arith)
   refine ⟨K₄, by rw [v₄ (by decide), S.k], by rw [v₄ (by decide), S.d], by rw [v₄ (by decide), S.e],
     by rw [v₄ (by decide), S.rx], by rw [v₄ (by decide), S.ry], by rw [v₄ (by decide), S.rz], ?_, ?_, ?_, ?_⟩
-  · rw [flagW, u₄.word (apF 2) (by omega), u₃.word (apF 1) (by omega), u₂.word (apF 0) (by omega), ← flagW,
+  · rw [flagW, u₄.word (apF 2) (by omega_arith), u₃.word (apF 1) (by omega_arith), u₂.word (apF 0) (by omega_arith), ← flagW,
       S.flag]
   · intro t ht
     rw [tbl_unch u₄ h7 (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht),
@@ -200,13 +200,13 @@ theorem ladPtLay (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) {gx gy : Nat} 
   rz := sl_below_pt h3 h6 (by decide)
   al := ⟨sl_al c _, sl_al c _, sl_al c _, sl_al c _, sl_al c _, sl_al c _, sl_al c _, sl_al c _⟩
   rne := ⟨sl_apart c (by decide), sl_apart c (by decide), sl_apart c (by decide)⟩
-  bits := by show 4096 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega
+  bits := by show 4096 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega_arith
   bitsE := by
     show bitsAt c.n 0 + 8 * c.C.len ≤ 8192
-    rw [bitsAt_eq]; have := hc.len_hi; have := hc.n10; omega
+    rw [bitsAt_eq]; have := hc.len_hi; have := hc.n10; omega_arith
   nbits := by
     show 1 ≤ 8 * c.C.len ∧ 8 * c.C.len < 2 ^ 15
-    have := hc.len_hi; have := hc.len8; have := hc.n10; omega
+    have := hc.len_hi; have := hc.len8; have := hc.n10; omega_arith
 
 theorem powLayP (hc : CfgOk c) : PowLayP c.powP c.n where
   acc := sl_below_own c hc.n10 (by decide)
@@ -215,7 +215,7 @@ theorem powLayP (hc : CfgOk c) : PowLayP c.powP c.n where
   one := sl_below_own c hc.n10 (by decide)
   own := own_below_bits c hc.n10 1
   bits := bitsAt_le c hc.n10 (j := 1) (by decide)
-  nbits := by show 1 ≤ 64 * c.n ∧ 64 * c.n < 2 ^ 15; have := hc.n0; have := hc.n10; omega
+  nbits := by show 1 ≤ 64 * c.n ∧ 64 * c.n < 2 ^ 15; have := hc.n0; have := hc.n10; omega_arith
   acc_tmp := sl_apart c (by decide)
   acc_one := sl_apart c (by decide)
   base_acc := sl_apart c (by decide)
@@ -231,7 +231,7 @@ theorem powLayN (hc : CfgOk c) : PowLayP c.powN c.n where
   one := sl_below_own c hc.n10 (by decide)
   own := own_below_bits c hc.n10 2
   bits := bitsAt_le c hc.n10 (j := 2) (by decide)
-  nbits := by show 1 ≤ 64 * c.n ∧ 64 * c.n < 2 ^ 15; have := hc.n0; have := hc.n10; omega
+  nbits := by show 1 ≤ 64 * c.n ∧ 64 * c.n < 2 ^ 15; have := hc.n0; have := hc.n10; omega_arith
   acc_tmp := sl_apart c (by decide)
   acc_one := sl_apart c (by decide)
   base_acc := sl_apart c (by decide)
@@ -287,7 +287,7 @@ theorem powWx_le (h7 : c.n < 10) : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl PT, 8 *
   have hsz : size = 8192 := rfl
   intro w hw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl | rfl <;> (dsimp only; omega)
+  rcases hw with rfl | rfl | rfl <;> (dsimp only; omega_arith)
 
 theorem tbl_apart_powWx (h7 : c.n < 10) (j t : Nat) :
     ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl PT, 8 * c.n), (own c.n, 64 * c.n)],
@@ -297,7 +297,7 @@ theorem tbl_apart_powWx (h7 : c.n < 10) (j t : Nat) :
   have := own_below_bits c h7 j
   intro w hw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl | rfl <;> (dsimp only; omega)
+  rcases hw with rfl | rfl | rfl <;> (dsimp only; omega_arith)
 
 /-- What the ladder and the power leave, from `s`: `R` holds `[k]P`, `ACC`
 `Z^(p-2)`, and the other slots, the flag and the table of `n - 2` are
@@ -335,7 +335,7 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {gx gy : Nat} (
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F' := S.fixed
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have hlt : ∀ x ∈ [(ladderAt c gx gy).S.a, (ladderAt c gx gy).S.b3, (ladderAt c gx gy).G.x,
       (ladderAt c gx gy).G.y, (ladderAt c gx gy).G.z, (ladderAt c gx gy).R.x, (ladderAt c gx gy).R.y,
       (ladderAt c gx gy).R.z], wordsVal s.mem base x (ladderAt c gx gy).M.n < c.C.p := by
@@ -346,10 +346,10 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {gx gy : Nat} (
     · exact lt_of_eq_of_lt F'.b3p (hmont _)
     · exact hlx
     · exact hly
-    · exact lt_of_eq_of_lt F'.onep (Nat.mod_lt _ (by omega))
-    · exact lt_of_eq_of_lt hrx (by omega)
+    · exact lt_of_eq_of_lt F'.onep (Nat.mod_lt _ (by omega_arith))
+    · exact lt_of_eq_of_lt hrx (by omega_arith)
     · exact lt_of_eq_of_lt hry (hmont _)
-    · exact lt_of_eq_of_lt hrz (by omega)
+    · exact lt_of_eq_of_lt hrz (by omega_arith)
   have hstep := step_rep (L := ladderAt c gx gy) (k := k) hC hP (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
       rw [F'.ap]; exact toM_cmont hc _)
@@ -363,7 +363,7 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {gx gy : Nat} (
     exact rep_infinity' hC
   refine WP.seq (WP.mono (ladderP_ok (L := ladderAt c gx gy) (S := c.SP) hc.fpk hc.fpm (modP hc) hc.p_odd hpR
     (fun h6 => ladPtLay hc h3 h6 hgx hgy) (fun _ => ladLayI hc hgx hgy hgw hgw') S.ws hlt hstep hR
-    (fun t ht => ht₀ t (by have := hc.len_hi; show t < 64 * c.n; change t < 8 * c.C.len at ht; omega)))
+    (fun t ht => ht₀ t (by have := hc.len_hi; show t < 64 * c.n; change t < 8 * c.C.len at ht; omega_arith)))
     fun s₅ ⟨K₅, U₅, L₅, R₅⟩ => ?_)
   rw [Nat.shiftRight_zero] at R₅
   have K₅' : Keep c s₀ base s₅ := S.step h7 K₅ (hU := U₅) (hW := fixedOk_ladWp h3 h7 gx gy)
@@ -380,7 +380,7 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {gx gy : Nat} (
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
       rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_ladWp h3 h7 gx gy 1 t)]
       exact ht₁ t ht)
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
+    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   rw [powWxP_eq] at U₆
   have K₆' : Keep c s₀ base s₆ := K₅'.step h7 K₆ (hU := U₆) (hW := fixedOk_powWx h7) (hWs := powWx_le h7)
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT] → sv c base s₆ i = sv c base s₅ i := fun hi hr =>
@@ -388,19 +388,19 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {gx gy : Nat} (
   have hF := sl_le c h7 (i := FLAG) (by decide)
   have apF₅ : ∀ w ∈ ladWp (ladderAt c gx gy), c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
     rcases apart_ladWp h3 h7 (i := FLAG) (gx := gx) (gy := gy) (by decide) (by decide) w hw with h | h
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_arith)
     · exact Or.inr h
   have apF₆ : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl PT, 8 * c.n), (own c.n, 64 * c.n)],
       c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
     rcases apart_powWx h7 (i := FLAG) (by decide) (by decide) w hw with h | h
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_arith)
     · exact Or.inr h
   have tR : ∀ i ∈ [RX, RY, RZ], tmv c.C c.n base s₆ (c.sl i) = tmv c.C c.n base s₅ (c.sl i) := by
     intro i hi
     show toM _ _ (sv c base s₆ i) = toM _ _ (sv c base s₅ i)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;> rw [e₆ (by decide) (by decide)]
-  refine ⟨K₆', fun hi hl => ?_, by rw [flagW, U₆.word apF₆ (by omega), U₅.word apF₅ (by omega), ← flagW], ?_,
+  refine ⟨K₆', fun hi hl => ?_, by rw [flagW, U₆.word apF₆ (by omega_arith), U₅.word apF₅ (by omega_arith), ← flagW], ?_,
     by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact R₅,
     by rw [e₆ (by decide) (by decide)]; exact lx₅,
     by rw [e₆ (by decide) (by decide)]; exact ly₅,

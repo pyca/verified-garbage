@@ -28,23 +28,23 @@ theorem zeroPrefix_ok {s : State} {B : Addr} {Z e n : Nat}
   | succ n ih =>
     rewrite [zeroPrefix, List.range_succ, List.map_append, List.map_cons, List.map_nil]
     apply WP.block_append
-    refine WP.mono (ih (by omega) (by omega)) fun t ⟨hv, ho, kt⟩ => ?_
+    refine WP.mono (ih (by omega_arith) (by omega_arith)) fun t ⟨hv, ho, kt⟩ => ?_
     have hptr := (kt.gpr .x16 (by decide)).trans h16
     have hz := (kt.gpr .x7 (by decide)).trans h7
-    have enc : (8 * n) % 8 = 0 ∧ 8 * n < 32768 := ⟨by omega, by omega⟩
+    have enc : (8 * n) % 8 = 0 ∧ 8 * n < 32768 := ⟨by omega_arith, by omega_arith⟩
     have hwrap := hs.nowrap
     refine WP.mono (WP.keep [] (Q := fun u =>
       u.mem = t.mem.writeW (off B (e + 8 * n)) (0 : BitVec 64))
-      (by brun [hptr, hz, enc, (hs.congr kt.wr).st (show e + 8 * n + 8 ≤ Z by omega)])
+      (by brun [hptr, hz, enc, (hs.congr kt.wr).st (show e + 8 * n + 8 ≤ Z by omega_arith)])
       rfl rfl rfl) fun u ⟨hum, ku⟩ => ?_
     refine ⟨?_, ?_, (kt.trans ku).mono (by decide)⟩
-    · rw [hum, wv_writeW_top _ _ _ _ _ (by omega), hv]
+    · rw [hum, wv_writeW_top _ _ _ _ _ (by omega_arith), hv]
       rfl
-    · have hx := writeW_outside t.mem B (0 : BitVec 64) (d := e + 8 * n) (by omega)
+    · have hx := writeW_outside t.mem B (0 : BitVec 64) (d := e + 8 * n) (by omega_arith)
       have hu : Outside B (e + 8 * n) 8 t.mem u.mem := by
         intro x h
         exact (congrArg (fun m : Mem => m x) hum).trans (hx x h)
-      exact (ho.mono (by omega) (by omega)).trans (hu.mono (by omega) (by omega))
+      exact (ho.mono (by omega_arith) (by omega_arith)).trans (hu.mono (by omega_arith) (by omega_arith))
 
 theorem advance_ok {s : State} {B : Addr} {e : Nat} (h16 : s.gpr .x16 = off B e) :
     WP isa (.block [.addImm .x .x16 .x16 64]) s fun t =>
@@ -77,19 +77,19 @@ theorem zeroBlockStep_ok {s t : State} {B : Addr} {Z e j n : Nat}
   have hn := hI.scr.nowrap
   apply WP.block_append
   refine WP.mono (zeroTile_ok hI.scr hI.x16
-    ((hI.keep.gpr .x7 (by decide)).trans h7) (by omega))
+    ((hI.keep.gpr .x7 (by decide)).trans h7) (by omega_arith))
     fun a ⟨hav, ha16, hao, ka⟩ => ?_
   refine WP.mono (dec_ok a .x14) fun u ⟨⟨hu14, hum, _⟩, ku⟩ => ?_
   refine ⟨⟨hI.scr.congr (ku.wr.trans ka.wr),
     ((hI.keep.trans ka).trans ku).mono (by decide), ?_, ?_, ?_⟩,
     hu14.trans (congrArg (· - BitVec.ofNat 64 1) (ka.gpr .x14 (by decide)))⟩
-  · exact ((ku.gpr .x16 (by decide)).trans ha16).trans (congrArg (off B) (by omega))
+  · exact ((ku.gpr .x16 (by decide)).trans ha16).trans (congrArg (off B) (by omega_arith))
   · have ho : Outside B (e + 8 * (8 * j)) 64 t.mem u.mem := by
       intro x hx
       exact (congrArg (fun m : Mem => m x) hum).trans (hao x hx)
-    exact (hI.out.mono (by omega) (by omega)).trans (ho.mono (by omega) (by omega))
-  · have hp := hao.wv (d := e) (k := 8 * j) (by omega) (by omega)
-    rw [hum, show 8 * (j + 1) = 8 * j + 8 by omega, wv_add, hp, hI.val, hav]
+    exact (hI.out.mono (by omega_arith) (by omega_arith)).trans (ho.mono (by omega_arith) (by omega_arith))
+  · have hp := hao.wv (d := e) (k := 8 * j) (by omega_arith) (by omega_arith)
+    rw [hum, show 8 * (j + 1) = 8 * j + 8 by omega_arith, wv_add, hp, hI.val, hav]
     rfl
 
 /-- Clear any positive public number of eight-word blocks. -/
@@ -118,23 +118,23 @@ theorem zero_ok {s : State} {B : Addr} {Z e k : Nat}
   refine WP.seq (WP.mono (WP.keep [.x14, .x16]
     (Q := fun u => u.gpr .x16 = off B e ∧ u.gpr .x14 = BitVec.ofNat 64 (2 * k) ∧ u.mem = s.mem)
     (by
-      brun [h8, h12, ofNat_add_ofNat, Square.shr3_ofNat (show 8 * k + 8 * k < 2 ^ 64 by omega)]
+      brun [h8, h12, ofNat_add_ofNat, Square.shr3_ofNat (show 8 * k + 8 * k < 2 ^ 64 by omega_arith)]
       congr 1
-      omega) rfl rfl rfl) fun u ⟨⟨hu16, hu14, hum⟩, ku⟩ => ?_)
+      omega_arith) rfl rfl rfl) fun u ⟨⟨hu16, hu14, hum⟩, ku⟩ => ?_)
   refine WP.seq (WP.mono (zeroBlocks_ok (hs.congr ku.wr) hu16
-    ((ku.gpr .x7 (by decide)).trans h7) hu14 (by omega) (by omega) (by omega))
+    ((ku.gpr .x7 (by decide)).trans h7) hu14 (by omega_arith) (by omega_arith) (by omega_arith))
     fun a hI => ?_)
   change WP isa (.block (zeroPrefix 2)) a _
   refine WP.mono (zeroPrefix_ok hI.scr hI.x16
     ((hI.keep.gpr .x7 (by decide)).trans ((ku.gpr .x7 (by decide)).trans h7))
-    (by omega) (by decide)) fun t ⟨htv, hto, kt⟩ => ?_
+    (by omega_arith) (by decide)) fun t ⟨htv, hto, kt⟩ => ?_
   refine ⟨?_, ?_, ((ku.trans hI.keep).trans kt).mono (by decide)⟩
-  · have hp := hto.wv (d := e) (k := 16 * k) (by omega) (by omega)
-    rw [wv_add, hp, show 16 * k = 8 * (2 * k) by omega, hI.val, htv]
+  · have hp := hto.wv (d := e) (k := 16 * k) (by omega_arith) (by omega_arith)
+    rw [wv_add, hp, show 16 * k = 8 * (2 * k) by omega_arith, hI.val, htv]
     rfl
   · have ho : Outside B e (8 * (8 * (2 * k))) s.mem a.mem := by
       intro x hx
       exact (hI.out x hx).trans (congrArg (fun m : Mem => m x) hum)
-    exact (ho.mono (by omega) (by omega)).trans (hto.mono (by omega) (by omega))
+    exact (ho.mono (by omega_arith) (by omega_arith)).trans (hto.mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Bignum.AArch64.WideLoops

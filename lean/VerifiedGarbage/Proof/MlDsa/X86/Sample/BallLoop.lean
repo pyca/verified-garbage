@@ -90,12 +90,12 @@ structure M1 (s₀ : State) (k : Nat) (s : State) : Prop extends Base L s₀ s w
 theorem quad_add (x p : BitVec 32) (m : Nat) (hx : x = BitVec.ofNat 32 m) :
     x + x + (x + x) + p = p + BitVec.ofNat 32 (4 * m) := by
   rw [hx, ofNat_add_ofNat, ofNat_add_ofNat, BitVec.add_comm]
-  congr 2; omega
+  congr 2; omega_arith
 
 theorem coef_ea {s₀ : State} (hp : QPre s₀) {i : Nat} (hi : i < 256) :
     (L.aP s₀ + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (L.aA s₀) i := by
   have ha := hp.1.a_fit
-  rw [ea_add (by simp only [L] at ha ⊢; omega)]; rfl
+  rw [ea_add (by simp only [L] at ha ⊢; omega_arith)]; rfl
 
 theorem coef_in {s₀ s : State} (hp : QPre s₀) (h : Base L s₀ s) {i : Nat} (hi : i < 256) :
     InRegions (s.rd ++ s.wr) (coeffAddr (L.aA s₀) i) 4 :=
@@ -110,7 +110,7 @@ theorem coef_arg_sep {s₀ : State} (hp : QPre s₀) {i a : Nat} (hi : i < 256) 
 theorem move_ok {s₀ : State} (hp : QPre s₀) {k : Nat} {s : State} (h : BI s₀ k (S' s₀ k) s)
     (hlt : (S' s₀ k).2 < 256) (hax : s.gpr .eax = BitVec.ofNat 32 (j' s₀ k)) (hle : j' s₀ k ≤ (S' s₀ k).2) :
     WP isa (.block bMove) s fun s' => M1 s₀ k s' ∧ eval .e s' = some (!(G s₀).testBit (t' s₀ k)) := by
-  have hj : j' s₀ k < 256 := by omega
+  have hj : j' s₀ k < 256 := by omega_arith
   have eaj := coef_ea hp hj
   have eai := coef_ea hp hlt
   have inj := coef_in hp h.toBase hj
@@ -138,8 +138,8 @@ theorem move_ok {s₀ : State} (hp : QPre s₀) {k : Nat} {s : State} (h : BI s�
     · rw [e10]
       refine ((fa _) _ fun r hr hc => ?_).trans (h.out p hp')
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.1.a_s _ hc ((hp.1.sub_s (o := 840 + p) (n := 1) (by omega)) _ (Region.contains_self _ _))
-    · rw [e10, coeffAt_writeW _ _ hjj hlt, P1, ipoly_set!_get _ _ (by simp only [n]; omega)]
+      exact hp.1.a_s _ hc ((hp.1.sub_s (o := 840 + p) (n := 1) (by omega_arith)) _ (Region.contains_self _ _))
+    · rw [e10, coeffAt_writeW _ _ hjj hlt, P1, ipoly_set!_get _ _ (by simp only [n]; omega_arith)]
       by_cases e : (S' s₀ k).2 = jj
       · rw [ifT e, ifT e]
       · rw [ifF e, ifF e]; exact h.poly jj hjj
@@ -199,12 +199,12 @@ theorem sign_piece (k : Nat) :
 
 theorem st_set {s₀ : State} {k : Nat} (hk : k < 264) (hlt : (S' s₀ k).2 < 256) (hle : j' s₀ k ≤ (S' s₀ k).2) :
     S' s₀ (k + 1) = ((P1 s₀ k).set! (j' s₀ k) (sg s₀ k), (S' s₀ k).2 + 1) := by
-  rw [S', st_succ _ _ hk, bStep, ifT (show (S' s₀ k).2 < n by simp only [n]; omega), ifF (Nat.not_lt.mpr hle)]
+  rw [S', st_succ _ _ hk, bStep, ifT (show (S' s₀ k).2 < n by simp only [n]; omega_arith), ifF (Nat.not_lt.mpr hle)]
 
 theorem shift_ok {s₀ : State} (hp : QPre s₀) {k : Nat} (hk : k < 264) {s : State} (h : M1 s₀ k s)
     (hdx : s.gpr .edx = zw (ofInt (sg s₀ k))) :
     WP isa (.block bShift) s fun s' => BI s₀ k (S' s₀ (k + 1)) s' := by
-  have hj : j' s₀ k < 256 := by have := h.lt; have := h.le; omega
+  have hj : j' s₀ k < 256 := by have := h.lt; have := h.le; omega_arith
   have eaj := coef_ea hp hj
   have inj := hp.1.inA h.wr hj
   have a₁ := h.argEa (i := 1)
@@ -219,7 +219,7 @@ theorem shift_ok {s₀ : State} (hp : QPre s₀) {k : Nat} (hk : k < 264) {s : S
   have ge : 256 - τ s₀ ≤ (S' s₀ k).2 := st_ge (L.Msg s₀) (τ s₀) k
   have hτ := hp.τ_le
   have et : (S' s₀ (k + 1)).2 + τ s₀ - 256 = t' s₀ k + 1 := by
-    rw [st_set hk h.lt h.le]; simp only [t']; omega
+    rw [st_set hk h.lt h.le]; simp only [t']; omega_arith
   have fin : ∀ s' : State, s'.gpr .esp = s.gpr .esp → s'.gpr .esi = s.gpr .esi → s'.gpr .ecx = s.gpr .ecx →
       s'.gpr .ebp = s.gpr .ebp → s'.gpr .edi = s.gpr .edi + 1 → s'.rd = s.rd → s'.wr = s.wr →
       s'.mem = ((s.mem.writeW (coeffAddr (L.aA s₀) (j' s₀ k)) (zw (ofInt (sg s₀ k)))).writeW (argAddr s₀ 1)
@@ -238,14 +238,14 @@ theorem shift_ok {s₀ : State} (hp : QPre s₀) {k : Nat} (hk : k < 264) {s : S
     refine ⟨⟨by rw [e1, h.esp], by rw [e6, h.rd], by rw [e7, h.wr], fw⟩, fun p hp' => ?_, by rw [e2, h.esi],
       by rw [e3, h.ecx], by rw [e4, h.ebp], ?_, fun jj hjj => ?_, ?_, ?_⟩
     · rw [fg.bytes (R := ⟨L.sA s₀, 2048⟩) (by simp only [List.mem_singleton, forall_eq]; exact hp.1.s_g)
-        (show (2048 : Nat) ≤ 2 ^ 64 by decide) (show 840 + p < 2048 by omega)]
+        (show (2048 : Nat) ≤ 2 ^ 64 by decide) (show 840 + p < 2048 by omega_arith)]
       refine (fa _ fun r hr hc => ?_).trans (h.out p hp')
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.1.a_s _ hc ((hp.1.sub_s (o := 840 + p) (n := 1) (by omega)) _ (Region.contains_self _ _))
+      exact hp.1.a_s _ hc ((hp.1.sub_s (o := 840 + p) (n := 1) (by omega_arith)) _ (Region.contains_self _ _))
     · rw [e5, h.edi, st_set hk h.lt h.le, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, ofNat_add_ofNat]
     · rw [coeffAt_eq, fg.readW (coeff_contains _ hjj) (by simp only [List.mem_singleton, forall_eq]; exact hp.1.a_g)
         (by decide), ← coeffAt_eq, coeffAt_writeW _ _ hjj hj, st_set hk h.lt h.le,
-        ipoly_set!_get _ _ (by simp only [n]; omega)]
+        ipoly_set!_get _ _ (by simp only [n]; omega_arith)]
       by_cases e : j' s₀ k = jj
       · rw [ifT e, ifT e]
       · rw [ifF e, ifF e]; exact h.poly jj hjj
@@ -268,7 +268,7 @@ theorem st_skip {s₀ : State} {k : Nat} (hk : k < 264) (hgt : (S' s₀ k).2 < j
   · rw [ifF hl]
 
 theorem st_full {s₀ : State} {k : Nat} (hk : k < 264) (hf : ¬ (S' s₀ k).2 < 256) : S' s₀ (k + 1) = S' s₀ k := by
-  rw [S', st_succ _ _ hk, bStep, ifF (show ¬ (S' s₀ k).2 < n by simp only [n]; omega)]
+  rw [S', st_succ _ _ hk, bStep, ifF (show ¬ (S' s₀ k).2 < n by simp only [n]; omega_arith)]
 
 theorem set_piece (k : Nat) (hk : k < 264) :
     Piece QPre QPub (fun s₀ s => ((BI s₀ k (S' s₀ k) s ∧ (S' s₀ k).2 < 256 ∧
@@ -276,7 +276,7 @@ theorem set_piece (k : Nat) (hk : k < 264) :
         decide ((S' s₀ k).2 < j' s₀ k) = false)
       (fun s₀ s => BI s₀ k (S' s₀ (k + 1)) s) bSet := by
   refine Piece.seq (Piece.taint [.eax, .edi, .ebp, .esp]
-    (fun s₀ s hp ⟨⟨⟨h, hlt, hax⟩, _⟩, hb⟩ => move_ok hp h hlt hax (by simp at hb; omega))
+    (fun s₀ s hp ⟨⟨⟨h, hlt, hax⟩, _⟩, hb⟩ => move_ok hp h hlt hax (by simp at hb; omega_arith))
     (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨h, _, hax⟩, _⟩, _⟩ ⟨⟨⟨h', _, hax'⟩, _⟩, _⟩ r hr => ?_) (by native_taint_decide))
     (Piece.seq (sign_piece k) (Piece.taint [.eax, .edi, .esp] (fun s₀ s hp ⟨h, hdx⟩ => shift_ok hp hk h hdx)
       (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_) (by native_taint_decide)))
@@ -304,9 +304,9 @@ theorem try_piece (k : Nat) (hk : k < 264) :
     · have hs := hp.1.s_fit
       have e0 : (L.sP s₀ + BitVec.ofNat 32 (848 + k) + BitVec.ofNat 32 0).setWidth 64 =
           L.sA s₀ + BitVec.ofNat 64 (840 + (8 + k)) := by
-        rw [ea_add (by simp only [L] at hs ⊢; omega)]; congr 2; omega
-      have i0 := hp.1.inS' h.wr (o := 840 + (8 + k)) (n := 1) (by omega)
-      have v0 := h.out (8 + k) (by omega)
+        rw [ea_add (by simp only [L] at hs ⊢; omega_arith)]; congr 2; omega_arith
+      have i0 := hp.1.inS' h.wr (o := 840 + (8 + k)) (n := 1) (by omega_arith)
+      have v0 := h.out (8 + k) (by omega_arith)
       have hle : (S' s₀ k).2 ≤ 256 := st_le (L.Msg s₀) (τ s₀) k
       apply WP.of_runBlock
       simp only [reduceCtorEq, ↓reduceIte, at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
@@ -315,7 +315,7 @@ theorem try_piece (k : Nat) (hk : k < 264) :
       refine ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.out, by simp [h.esi], by simp [h.ecx], by simp [h.ebp],
         by simp [h.edi], h.poly, h.lo, h.hi⟩, hlt, ?_⟩, ?_⟩
       · exact eq_ofNat_of_toNat (toNat_byte32 _)
-      · simp only [eval, h.edi, toNat_byte32, toNat_ofNat32 (show (S' s₀ k).2 < 2 ^ 32 by omega)]
+      · simp only [eval, h.edi, toNat_byte32, toNat_ofNat32 (show (S' s₀ k).2 < 2 ^ 32 by omega_arith)]
     · simp only [List.mem_singleton] at hr
       subst hr
       rw [h.esi, h'.esi, hq.1.sP hL]
@@ -338,7 +338,7 @@ theorem body_piece (k : Nat) (hk : k < 264) :
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
       Option.bind_some, Option.some.injEq, exists_eq_left']
     refine ⟨⟨⟨h.esp, h.rd, h.wr, h.frame⟩, h.out, h.esi, h.ecx, h.ebp, h.edi, h.poly, h.lo, h.hi⟩, ?_⟩
-    simp only [eval, h.edi, h256, toNat_ofNat32 (show (S' s₀ k).2 < 2 ^ 32 by omega)]
+    simp only [eval, h.edi, h256, toNat_ofNat32 (show (S' s₀ k).2 < 2 ^ 32 by omega_arith)]
   · apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
       State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
@@ -349,7 +349,7 @@ theorem body_piece (k : Nat) (hk : k < 264) :
     · simp only [ite_true, h.ecx]
       exact cnt_next hk
     · simp only [eval, h.ecx]
-      exact cnt_ne hk (by omega)
+      exact cnt_ne hk (by omega_arith)
 
 theorem loop_piece : Piece QPre QPub (fun s₀ s => BI s₀ 0 (S' s₀ 0) s) (fun s₀ s => BI s₀ 264 (S' s₀ 264) s)
     (.loop bBody .ne) :=

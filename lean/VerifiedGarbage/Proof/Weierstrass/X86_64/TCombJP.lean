@@ -71,7 +71,7 @@ theorem selSetupNext_ok (K : TCombCfg) (s : State) {j : Nat} {T : Addr} (hb : s.
   · congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (show K.tblBytes < 2 ^ 64 by omega), Nat.mod_mul_mod]
+    rw [Nat.mod_eq_of_lt (show K.tblBytes < 2 ^ 64 by omega_arith), Nat.mod_mul_mod]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1, hr.2.2,
       ite_false]
@@ -93,25 +93,25 @@ theorem selEntriesFromY_ok {st np : Nat} {q : Nat → Nat} {X : Addr} {a lo : Na
   | 0, _, s, _, _, _, h14, _, h0 => WP.block_nil ⟨h0, h14, YKeep.refl _ _ _⟩
   | h + 1, hh, s, hx, h13, h12, h14, hr, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (selEntriesFromY_ok hn ha h (by omega) s hx h13 h12 h14 (fun e he => hr e (by omega)) h0)
+    refine WP.mono (selEntriesFromY_ok hn ha h (by omega_arith) s hx h13 h12 h14 (fun e he => hr e (by omega_arith)) h0)
       fun s₁ ⟨a₁, c₁, k₁⟩ => ?_
     have n13 : ¬ ((∃ c < np, XReg.xmm13 = selAcc c) ∨ XReg.xmm13 = .xmm11 ∨ XReg.xmm13 = .xmm14 ∨
         XReg.xmm13 = .xmm15) := by
       rintro (⟨c, hc, h⟩ | h | h | h)
-      · exact (selAcc_neY c (by omega)).2.2.1 h.symm
+      · exact (selAcc_neY c (by omega_arith)).2.2.1 h.symm
       all_goals exact absurd h (by decide)
     have n12 : ¬ ((∃ c < np, XReg.xmm12 = selAcc c) ∨ XReg.xmm12 = .xmm11 ∨ XReg.xmm12 = .xmm14 ∨
         XReg.xmm12 = .xmm15) := by
       rintro (⟨c, hc, h⟩ | h | h | h)
-      · exact (selAcc_neY c (by omega)).2.1 h.symm
+      · exact (selAcc_neY c (by omega_arith)).2.1 h.symm
       all_goals exact absurd h (by decide)
-    refine WP.mono (selEntryY_ok (X := X) (m := lo + h + 1) hn (by omega) hh ha
+    refine WP.mono (selEntryY_ok (X := X) (m := lo + h + 1) hn (by omega_arith) hh ha
       (by rw [k₁.gpr _ List.not_mem_nil, hx]) (fun l hl => by rw [k₁.lane _ n13 l, h13 l hl])
       (fun l hl => by rw [k₁.lane _ n12 l, h12 l hl]) c₁
-      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega) c hc)
+      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega_arith) c hc)
       (fun c hc l hl => by rw [a₁ c hc l hl, k₁.mem, Nat.add_sub_cancel])) fun t ⟨a₂, c₂, k₂⟩ =>
       ⟨fun c hc l hl => by rw [a₂ c hc l hl, k₁.mem, ← Nat.add_assoc], by
-        rw [show lo + (h + 1) + 1 = lo + h + 1 + 1 by omega]; exact c₂, k₁.trans k₂⟩
+        rw [show lo + (h + 1) + 1 = lo + h + 1 + 1 by omega_arith]; exact c₂, k₁.trans k₂⟩
 
 /-! ## The selection's state during the addition -/
 
@@ -123,12 +123,12 @@ theorem accVal_congr {m m' : Mem} {X : Addr} {n H a e i : Nat} (ha : a ≤ H) (h
   unfold accVal
   split
   · next h1 =>
-    have h2 := Nat.mul_le_mul_left (16 * n) (show a - 1 + 1 ≤ H by omega)
+    have h2 := Nat.mul_le_mul_left (16 * n) (show a - 1 + 1 ≤ H by omega_arith)
     rw [Nat.mul_succ] at h2
     dsimp only
     exact Mem.readW_congr fun b hb => by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact h _ (by omega)
+      exact h _ (by omega_arith)
   · rfl
 
 /-- The accumulators survive a change of memory that keeps the table's bytes. -/
@@ -137,7 +137,7 @@ theorem AccY.congr {t : State} {m m' : Mem} {X : Addr} {n H a e : Nat} (ha : a �
     (hA : AccY t m X (16 * n) a e ((n + 1) / 2) (qY n)) : AccY t m' X (16 * n) a e ((n + 1) / 2) (qY n) :=
   fun c hc l hl => by
     rw [hA c hc l hl]
-    exact accVal_congr ha (by have := qY_le c h2; omega) h
+    exact accVal_congr ha (by have := qY_le c h2; omega_arith) h
 
 /-- The lanes of a vector register, from `xmm` and `ymmHi`. -/
 theorem lane_congr {s t : State} (hx : t.xmm = s.xmm) (hy : t.ymmHi = s.ymmHi) (r : XReg) (l : Nat) :
@@ -183,7 +183,7 @@ theorem SelI.stab {K : TCombCfg} {base : Addr} {size : Nat} {T : Addr} {j a e : 
     by rw [hk.gpr _ (rbx_not_clob _)]; exact h.rbx, by rw [hsy]; exact h.tsym⟩
   have := h.x.out b hb
   have := h.x.tmp
-  rw [hk.mem _ (Or.inr (by omega)) (Or.inr (by omega))]
+  rw [hk.mem _ (Or.inr (by omega_arith)) (Or.inr (by omega_arith))]
   exact h.x.tblm b hb
 
 /-- A part of the selection (`fprogBI_ok`'s `hside`): from entry
@@ -193,11 +193,11 @@ theorem selChunk_ok (K : TCombCfg) {base : Addr} {size : Nat} {T : Addr} {j a : 
     {t : State} (hi : i < K.nOps) (h : SelI K base size T j a mem (K.chunkLo i) t) :
     WP isa (.block (K.selChunk i)) t fun t' => SelI K base size T j a mem (K.chunkLo (i + 1)) t' ∧
       SideKeep K.M t t' := by
-  have hlo : K.chunkLo i ≤ K.chunkLo (i + 1) := Nat.div_le_div_right (Nat.mul_le_mul_left _ (by omega))
+  have hlo : K.chunkLo i ≤ K.chunkLo (i + 1) := Nat.div_le_div_right (Nat.mul_le_mul_left _ (by omega_arith))
   have hhi : K.chunkLo (i + 1) ≤ K.H := by
     unfold TCombCfg.chunkLo
-    exact Nat.div_le_of_le_mul (by rw [Nat.mul_comm K.nOps]; exact Nat.mul_le_mul_left _ (by omega))
-  have hnp : (K.M.n + 1) / 2 ≤ 11 := by omega
+    exact Nat.div_le_of_le_mul (by rw [Nat.mul_comm K.nOps]; exact Nat.mul_le_mul_left _ (by omega_arith))
+  have hnp : (K.M.n + 1) / 2 ≤ 11 := by omega_arith
   unfold TCombCfg.selChunk
   split
   · next he => exact WP.block_nil ⟨by rw [he]; exact h, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
@@ -208,23 +208,23 @@ theorem selChunk_ok (K : TCombCfg) {base : Addr} {size : Nat} {T : Addr} {j a : 
     have htbe : K.tblBytes = 16 * K.M.n * K.H := rfl
     refine WP.mono_syms (selEntriesFromY_ok (st := 16 * K.M.n) (q := qY K.M.n) (lo := K.chunkLo i) (a := a)
       (X := T + BitVec.ofNat 64 ((j + 1) * K.tblBytes)) hnp
-      (by have := h.x.ha; omega) (K.chunkLo (i + 1) - K.chunkLo i) (by omega) t₁ x₁
+      (by have := h.x.ha; omega_arith) (K.chunkLo (i + 1) - K.chunkLo i) (by omega_arith) t₁ x₁
       (fun l hl => by rw [hl₁]; exact h.x.b13 l hl) (fun l hl => by rw [hl₁]; exact h.x.b12 l hl)
       (fun l hl => by rw [hl₁]; exact h.x.b14 l hl)
       (fun e he c hc => by
         rw [k₁.2.2.1, k₁.2.2.2]
-        refine VG.CallLay.inRegions_sub h.x.reg ?_ (by omega)
-        have := Nat.mul_le_mul_left (16 * K.M.n) (show K.chunkLo i + e + 1 ≤ K.H by omega)
+        refine VG.CallLay.inRegions_sub h.x.reg ?_ (by omega_arith)
+        have := Nat.mul_le_mul_left (16 * K.M.n) (show K.chunkLo i + e + 1 ≤ K.H by omega_arith)
         rw [Nat.mul_succ] at this
         have := qY_le c hn.1
-        omega)
+        omega_arith)
       (fun c hc l hl => by
         rw [hl₁, hm₁]
         exact AccY.congr (n := K.M.n) (H := K.H) h.x.ha hn.1
           (fun b hb => (h.x.tblm b (by rw [htbe]; exact hb)).symm) h.x.acc c hc l hl))
       fun t' ⟨a', c', k'⟩ sy' => ?_
     have hm' : t'.mem = t.mem := by rw [k'.mem, hm₁]
-    have hlo' : K.chunkLo i + (K.chunkLo (i + 1) - K.chunkLo i) = K.chunkLo (i + 1) := by omega
+    have hlo' : K.chunkLo i + (K.chunkLo (i + 1) - K.chunkLo i) = K.chunkLo (i + 1) := by omega_arith
     refine ⟨⟨⟨h.x.ha, fun l hl => ?_, fun l hl => ?_, fun l hl => by rw [← hlo']; exact c' l hl,
       fun c hc l hl => ?_, by rw [k'.rd, k'.wr, k₁.2.2.1, k₁.2.2.2]; exact h.x.reg,
       fun b hb => by rw [hm']; exact h.x.tblm b hb, h.x.out, h.x.tmp⟩,
@@ -232,19 +232,19 @@ theorem selChunk_ok (K : TCombCfg) {base : Addr} {size : Nat} {T : Addr} {j a : 
       by rw [sy', sy₁]; exact h.tsym⟩, ⟨fun r hr => ?_, hm', by rw [k'.rd, k₁.2.2.1], by rw [k'.wr, k₁.2.2.2]⟩⟩
     · rw [k'.lane _ (by
         rintro (⟨c, hc, h'⟩ | h' | h' | h')
-        · exact (selAcc_neY c (by omega)).2.2.1 h'.symm
+        · exact (selAcc_neY c (by omega_arith)).2.2.1 h'.symm
         all_goals exact absurd h' (by decide)), hl₁]
       exact h.x.b13 l hl
     · rw [k'.lane _ (by
         rintro (⟨c, hc, h'⟩ | h' | h' | h')
-        · exact (selAcc_neY c (by omega)).2.1 h'.symm
+        · exact (selAcc_neY c (by omega_arith)).2.1 h'.symm
         all_goals exact absurd h' (by decide)), hl₁]
       exact h.x.b12 l hl
     · have e1 := a' c hc l hl
       rw [hlo', hm₁] at e1
       rw [e1]
       have hq := qY_le c hn.1
-      exact accVal_congr (n := K.M.n) (H := K.H) h.x.ha (by omega)
+      exact accVal_congr (n := K.M.n) (H := K.H) h.x.ha (by omega_arith)
         fun b hb => h.x.tblm b (by rw [htbe]; exact hb)
     · rw [k'.gpr _ List.not_mem_nil, k₁.1 r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
@@ -304,9 +304,9 @@ theorem row_out {K : TCombCfg} {base T : Addr} {size : Nat} {ws : List (BitVec 6
     (hlen : K.J * K.tblBytes ≤ 8 * ws.length) {j : Nat} (hj : j < K.J) :
     ∀ b < K.tblBytes, size ≤ ofs base (T + BitVec.ofNat 64 (j * K.tblBytes) + BitVec.ofNat 64 b) := by
   intro b hb
-  have h1 := Nat.mul_le_mul_right K.tblBytes (show j + 1 ≤ K.J by omega)
+  have h1 := Nat.mul_le_mul_right K.tblBytes (show j + 1 ≤ K.J by omega_arith)
   rw [Nat.succ_mul] at h1
-  have h := hout ((j * K.tblBytes + b) / 8) (by omega) ((j * K.tblBytes + b) % 8) (Nat.mod_lt _ (by decide))
+  have h := hout ((j * K.tblBytes + b) / 8) (by omega_arith) ((j * K.tblBytes + b) % 8) (Nat.mod_lt _ (by decide))
   rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.div_add_mod] at h
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   exact h
@@ -343,7 +343,7 @@ theorem prepNext_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T :
   rw [WP.block_append_iff]
   refine WP.mono_syms (bdigit_ok K hs₁ (k := k) (j := j + 1) (N := K.w * K.J) hw.1 hw.2 hwi
     (by omega_using [hbl, hz', hn]) hb1 b₁ (fun t ht => by rw [k₁.2.1]; exact hI.bits t ht)
-    (Or.inl ⟨rfl, by omega⟩)) fun s₂ ⟨_, r₂, k₂⟩ sy₂ => ?_
+    (Or.inl ⟨rfl, by omega_arith⟩)) fun s₂ ⟨_, r₂, k₂⟩ sy₂ => ?_
   rw [WP.block_append_iff]
   refine WP.mono_syms (decRbxJ_ok (j := j) s₂ (by rw [k₂.1 _ (by decide), b₁])) fun s₃ ⟨b₃, k₃, _, _⟩ sy₃ => ?_
   rw [WP.block_append_iff]
@@ -372,7 +372,7 @@ theorem prepNext_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T :
   · rw [k₅.lane _ (fun ⟨c, hc, h⟩ => (selAcc_neY c (by omega_using [hnp, hc])).2.2.1 h.symm)]; exact b13 l hl
   · rw [k₅.lane _ (fun ⟨c, hc, h⟩ => (selAcc_neY c (by omega_using [hnp, hc])).2.1 h.symm)]; exact b12 l hl
   · rw [k₅.lane _ (fun ⟨c, hc, h⟩ => (selAcc_neY c (by omega_using [hnp, hc])).2.2.2.1 h.symm)]; exact b14 l hl
-  · rw [z₅ c hc l hl, accVal, ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+  · rw [z₅ c hc l hl, accVal, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
   · have hlen := tcombWords_length (n := K.M.n) (R := 2 ^ (64 * K.M.n)) (p := C.p) hV.len hV.lenH
     obtain ⟨r, hr, hc⟩ := hI.tbl.rd
     refine ⟨r, by rw [hrd, hwr]; exact hr, Region.contains_off hc ?_⟩
@@ -441,7 +441,7 @@ theorem finNext_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : 
     have := Nat.mul_le_mul_left K.w (show j + 1 + 1 ≤ K.J by omega_using [hjn]); rwa [Nat.mul_succ] at this
   have hxz : K.E.x + 16 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.x := by
     have := ap (x := K.E.x) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)
-    have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega
+    have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega_arith
   -- The bits of `k` are apart from `E`.
   have hbE : ∀ t < K.w * K.J, ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n),
       (K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)], K.bits + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ K.bits + t :=
@@ -474,7 +474,7 @@ theorem finNext_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : 
     exact I.bits t ht
   rw [WP.block_append_iff]
   refine WP.mono_syms (bdigit_ok K hs₃ (k := k) (j := j + 1) (N := K.w * K.J) hw.1 hw.2 hwi
-    (by omega_using [hbl, hz', hn]) hb1 (by rw [g₃, g₂]; exact b₁) hbits₃ (Or.inl ⟨rfl, by omega⟩))
+    (by omega_using [hbl, hz', hn]) hb1 (by rw [g₃, g₂]; exact b₁) hbits₃ (Or.inl ⟨rfl, by omega_arith⟩))
     fun s₄ ⟨_, r₄, k₄⟩ sy₄ => ?_
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   rw [WP.block_append_iff]
@@ -559,7 +559,7 @@ theorem pipeOk_facts {K : TCombCfg} (hP : K.pipeOk = true) :
   exact ⟨hP.1.1.2, hP.1.2, hP.2⟩
 
 theorem nOps_pos (K : TCombCfg) : 0 < K.nOps := by
-  simp only [TCombCfg.nOps, maddJ, List.length_cons]; omega
+  simp only [TCombCfg.nOps, maddJ, List.length_cons]; omega_arith
 
 /-- Window `j` (`1 ≤ j`, `j + 1 < J`) of the pipelined comb, from `E` holding
 its entry: window `j + 1`'s entry in `E` after it, and `ZF` for `j + 1 = J - 1`. -/
@@ -591,7 +591,7 @@ theorem stepJP_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
   unfold TCombCfg.stepJP
   simp only [Code.inline]
   refine WP.seq (WP.mono (prepNext_ok hL hV hb1 hF hj hjn hI E) fun sp ⟨Ip, Ep, Sp⟩ => ?_)
-  refine tailJ_ok hL hC hM3 hG hV hb1 hB hk hF hj (by omega) Ip Ep rfl
+  refine tailJ_ok hL hC hM3 hG hV hb1 hB hk hF hj (by omega_arith) Ip Ep rfl
     (X := SelX K base size T j (bmag K.w k (j + 1)) s.mem K.H)
     (fun hI₃ hV₃ => WP.mono (maddJI_ok hL.comb.lay hV.unit hL.comb.add hSl
       (SI := fun i t => SelI K base size T j (bmag K.w k (j + 1)) s.mem (K.chunkLo i) t) (N := K.nOps)
@@ -628,7 +628,7 @@ theorem combJP_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
   have hz : wordsVal s₁.mem base K.zero K.M.n = 0 := by
     rw [I₁.unch.wordsVal (tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb]))
       (by have := hle K.zero (by tcomb_mem); omega_using [hn₁, this]), hF.zero]
-  refine WP.seq (WP.mono_syms (tentryJ_ok hL hC hV hpn I₁.scr I₁.mod (i := 1) (by omega) I₁.rbx hb1 (c := true)
+  refine WP.seq (WP.mono_syms (tentryJ_ok hL hC hV hpn I₁.scr I₁.mod (i := 1) (by omega_arith) I₁.rbx hb1 (c := true)
     (Or.inl ⟨rfl, Nat.le_refl 1⟩) I₁.bits hz I₁.tsym I₁.tbl) fun s₂ h₂ sy₂ =>
       WP.seq (WP.mono_syms h₂ fun s₃ E₃ sy₃ => ?_))
   have I₃ : TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s₃ 1 :=
@@ -640,14 +640,14 @@ theorem combJP_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     (Inv := fun r s' => TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s'
       (K.J - 1 - r) ∧ TEntryPostJ K C base size k (K.J - 1 - r) s' s') (n := K.J - 2)
     (fun r s' h1 h2 hi => WP.mono (stepJP_ok hL hC hM3 hG hV hpn hb1 hB hk hF hP (j := K.J - 1 - r)
-      (by omega) (by omega) hi.1 hi.2) fun s'' ⟨h, z⟩ =>
-        ⟨by rw [show K.J - 1 - (r - 1) = K.J - 1 - r + 1 by omega]; exact h, by
-          rw [z]; congr 1; exact decide_eq_decide.mpr (by omega)⟩)
-    (fun s' hi => by rw [Nat.sub_zero] at hi; exact hi) (by omega)
-    (by rw [show K.J - 1 - (K.J - 2) = 1 by omega]; exact ⟨I₃, E₃.self rfl E₃.scr⟩)) fun s₄ ⟨I₄, E₄⟩ => ?_)
-  refine WP.seq (WP.mono (stepJTail_ok hL hC hM3 hG hV hb1 hB hk hF (j := K.J - 1) (by omega) (by omega) I₄ E₄ rfl)
+      (by omega_arith) (by omega_arith) hi.1 hi.2) fun s'' ⟨h, z⟩ =>
+        ⟨by rw [show K.J - 1 - (r - 1) = K.J - 1 - r + 1 by omega_arith]; exact h, by
+          rw [z]; congr 1; exact decide_eq_decide.mpr (by omega_arith)⟩)
+    (fun s' hi => by rw [Nat.sub_zero] at hi; exact hi) (by omega_arith)
+    (by rw [show K.J - 1 - (K.J - 2) = 1 by omega_arith]; exact ⟨I₃, E₃.self rfl E₃.scr⟩)) fun s₄ ⟨I₄, E₄⟩ => ?_)
+  refine WP.seq (WP.mono (stepJTail_ok hL hC hM3 hG hV hb1 hB hk hF (j := K.J - 1) (by omega_arith) (by omega_arith) I₄ E₄ rfl)
     fun s₅ ⟨I₅, _⟩ => ?_)
-  rw [show K.J - 1 + 1 = K.J by omega] at I₅
+  rw [show K.J - 1 + 1 = K.J by omega_arith] at I₅
   exact outJ_ok hL hC hV hpn hB hk hs hM hF I₅
 
 /-- `[k]G` into `A`, in projective coordinates, for `k < kmax` (`BoothOk`),

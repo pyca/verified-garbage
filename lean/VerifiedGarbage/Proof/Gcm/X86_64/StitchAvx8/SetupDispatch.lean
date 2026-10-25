@@ -109,7 +109,7 @@ theorem key_zf (p : Addr) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     have e3 : BitVec.ofNat 64 a = BitVec.ofNat 64 b := (BitVec.add_right_inj p).mp (by simpa using e2)
     have := congrArg BitVec.toNat e3
     simp only [BitVec.toNat_ofNat, Nat.reducePow] at this ha hb
-    omega
+    omega_arith
 
 /-- The first test of the key size: `r10` against `rdi + 160`. -/
 private theorem keyCmp10_ok (s : State) {n : Nat} (hn : n < 2 ^ 32)
@@ -123,9 +123,9 @@ private theorem keyCmp10_ok (s : State) {n : Nat} (hn : n < 2 ^ 32)
   have e : BitVec.signExtend 64 (160 : BitVec 32) = BitVec.ofNat 64 160 := by decide
   refine ⟨?_, ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, fun _ _ _ => rfl⟩⟩
   · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, reduceCtorEq, ite_false, h10, e]
-    rw [key_zf _ (by simp only [Nat.reducePow]; omega) (by decide)]
+    rw [key_zf _ (by simp only [Nat.reducePow]; omega_arith) (by decide)]
     simp only [Option.some.injEq]
-    exact decide_eq_decide.mpr (by omega)
+    exact decide_eq_decide.mpr (by omega_arith)
   · simp [gpr_setReg]
   · simp [gpr_setReg, hr]
 
@@ -141,9 +141,9 @@ private theorem keyCmp12_ok (t : State) {p : Addr} {n : Nat} (hn : n < 2 ^ 32)
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, fun _ _ _ => rfl⟩⟩
   · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, reduceCtorEq, ite_false, h10,
       hax, e, Offset.add_add]
-    rw [key_zf _ (by simp only [Nat.reducePow]; omega) (by decide)]
+    rw [key_zf _ (by simp only [Nat.reducePow]; omega_arith) (by decide)]
     simp only [Option.some.injEq]
-    exact decide_eq_decide.mpr (by omega)
+    exact decide_eq_decide.mpr (by omega_arith)
   · simp [gpr_setReg, hr]
 
 /-- The setup, then the loop for the key size, read back from where the
@@ -155,7 +155,7 @@ theorem dispatch_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {su : List Ins
     (hb : ∀ s t, R s → RaxStep s t → nr s₀ = 12 → WP isa b t Q)
     (hc : ∀ s t, R s → RaxStep s t → nr s₀ = 14 → WP isa c t Q) :
     WP isa (Impl.Gcm.X86_64.StitchAvx8.dispatch su a b c) s₀ Q := by
-  have hn : nr s₀ < 2 ^ 32 := by rcases hp.rounds with h | h | h <;> omega
+  have hn : nr s₀ < 2 ^ 32 := by rcases hp.rounds with h | h | h <;> omega_arith
   unfold Impl.Gcm.X86_64.StitchAvx8.dispatch
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -172,7 +172,7 @@ theorem dispatch_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {su : List Ins
   refine WP.ite (decide (nr s₀ = 12)) (by simp only [eval, hz'])
     (fun he => hb s u hs ht' (by simpa using he)) (fun he => ?_)
   have h12 : nr s₀ ≠ 12 := by simpa using he
-  exact hc s u hs ht' (by rcases hp.rounds with he | he | he <;> omega)
+  exact hc s u hs ht' (by rcases hp.rounds with he | he | he <;> omega_arith)
 
 /-- What the setup leaves holds after reading the key size back. -/
 theorem Ready.rax {s₀ s t : State} {P : Nat → VG.Spec.Gcm.Block} (h : Ready s₀ P s) (ht : RaxStep s t) :
@@ -268,7 +268,7 @@ theorem finish_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPre s�
     · exact hp.p_y
   have saved : ∀ d, d + 8 ≤ 1024 → u.mem.readW (pp s₀ + BitVec.ofNat 64 d) 64 =
       s.mem.readW (pp s₀ + BitVec.ofNat 64 d) 64 := fun d hd =>
-    fu.readW (r := pR s₀) (Offset.contains_base _ hd (by omega)) py (by decide)
+    fu.readW (r := pR s₀) (Offset.contains_base _ hd (by omega_arith)) py (by decide)
   have ur11 : u.gpr .r11 = pp s₀ := by rw [huG, htG _ (by decide) (by decide), hE.r11]
   rw [WP.block_append_iff, WP.block_cons_iff]
   refine ⟨VOp.exec .vzeroupper u, rfl, ?_⟩
@@ -387,7 +387,7 @@ theorem setupPrefix_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) (s : State)
           (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide)
           (by intro r hr; simp only [List.mem_singleton] at hr; subst r
               rw [metaR, gu11]
-              exact Offset.disjoint (pp s₀) (by omega) (by omega) (by decide)) (by decide)
+              exact Offset.disjoint (pp s₀) (by omega_arith) (by omega_arith) (by decide)) (by decide)
       rw [he, hmu]; exact hP k hk
     · rw [hmt, hmv, ← gu11]
       exact (meta_mask u).trans ((hxu _ (by decide) 0 (by decide)).trans h0)
@@ -442,7 +442,7 @@ theorem copyTemplate_ok {s₀ s : State} {P : Nat → Block} {lo : Nat} (hp : SP
       Frame [⟨templateAddr s₀ i, 16⟩] s.mem t.mem := by
   have hw : InRegions s.wr (s.ea (at_ .r11 (640 + 16 * i))) 16 := by
     rw [VG.Proof.Aes.X86_64.AesNi.ea_at, BitVec.ofInt_natCast, hE.wr, hE.r11]
-    exact in_sub hp.p_in (by omega)
+    exact in_sub hp.p_in (by omega_arith)
   have hw' : InRegions s.wr (pp s₀ + BitVec.ofNat 64 (640 + 16 * i)) 16 := by
     simpa only [VG.Proof.Aes.X86_64.AesNi.ea_at, BitVec.ofInt_natCast, hE.r11] using hw
   rw [WP.block_cons_iff]
@@ -460,7 +460,7 @@ theorem copyTemplate_ok {s₀ s : State} {P : Nat → Block} {lo : Nat} (hp : SP
   · simp only [List.mem_singleton] at hr
     subst r
     exact ⟨workR s₀, List.mem_singleton_self _,
-      Offset.sub (pp s₀) (d := 640 + 16 * i) (e := 512) (n := 16) (k := 256) (by omega) (by omega)⟩
+      Offset.sub (pp s₀) (d := 640 + 16 * i) (e := 512) (n := 16) (k := 256) (by omega_arith) (by omega_arith)⟩
   · rw [State.setMem_mem, blockAt_eq, Mem.readW_writeW_self s.mem _ 16 _ (by decide)]
     exact hC
 
@@ -476,9 +476,9 @@ theorem copyTemplates_ok {s₀ : State} {P : Nat → Block} {lo : Nat} (hp : SPr
   | zero => exact WP.block_nil ⟨hE, fun _ h => (Nat.not_lt_zero _ h).elim, .refl _, .refl _ _⟩
   | succ n ih =>
     rw [List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨hEt, hTt, hf, hm⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨hEt, hTt, hf, hm⟩ => ?_
     simp only [List.map_cons, List.map_nil]
-    refine WP.mono (copyTemplate_ok hp hEt n (by omega) (by rw [hf.lane]; exact hC))
+    refine WP.mono (copyTemplate_ok hp hEt n (by omega_arith) (by rw [hf.lane]; exact hC))
       fun u ⟨hEu, hTu, hf', hm'⟩ => ?_
     refine ⟨hEu, fun i hi => ?_, hf.trans hf', hm.trans (hm'.sub fun r hr => ?_)⟩
     · by_cases he : i = n
@@ -486,10 +486,10 @@ theorem copyTemplates_ok {s₀ : State} {P : Nat → Block} {lo : Nat} (hp : SPr
       · exact (VG.Proof.Aes.X86_64.AesNi.blockAt_frame hm' (by
           intro r hr; simp only [List.mem_singleton] at hr; subst r
           exact Offset.disjoint (pp s₀) (d := 640 + 16 * i) (e := 640 + 16 * n)
-            (n := 16) (k := 16) (by omega) (by omega) (by omega))).trans (hTt i (by omega))
+            (n := 16) (k := 16) (by omega_arith) (by omega_arith) (by omega_arith))).trans (hTt i (by omega_arith))
     · simp only [List.mem_singleton] at hr; subst r
       exact ⟨counterR s₀, List.mem_singleton_self _,
-        Offset.sub (pp s₀) (d := 640 + 16 * n) (e := 640) (n := 16) (k := 128) (by omega) (by omega)⟩
+        Offset.sub (pp s₀) (d := 640 + 16 * n) (e := 640) (n := 16) (k := 128) (by omega_arith) (by omega_arith)⟩
 
 theorem seedTemplate_ok {s₀ s : State} {P : Nat → Block} {lo : Nat} (hp : SPre s₀ lo)
     (hE : Env s₀ P s) (n : Nat) (hn : n < 8) (hT : Seeded s₀ n s.mem)
@@ -498,7 +498,7 @@ theorem seedTemplate_ok {s₀ s : State} {P : Nat → Block} {lo : Nat} (hp : SP
       Env s₀ P t ∧ Seeded s₀ (n + 1) t.mem ∧ BufferFrame s t ∧
       Frame [⟨pp s₀ + BitVec.ofNat 64 (652 + 16 * n), 4⟩] s.mem t.mem := by
   refine WP.mono (prepCounter_ok s n (by
-    rw [hE.wr, hE.r11]; exact in_sub hp.p_in (by omega))) fun t ⟨hm, hf⟩ => ?_
+    rw [hE.wr, hE.r11]; exact in_sub hp.p_in (by omega_arith))) fun t ⟨hm, hf⟩ => ?_
   rw [hE.r11, hv] at hm
   have hF : Frame [⟨pp s₀ + BitVec.ofNat 64 (652 + 16 * n), 4⟩] s.mem t.mem := by
     rw [hm]
@@ -507,7 +507,7 @@ theorem seedTemplate_ok {s₀ s : State} {P : Nat → Block} {lo : Nat} (hp : SP
   refine ⟨hE.buffer hf (hF.sub fun r hr => ?_), ?_, hf, hF⟩
   · simp only [List.mem_singleton] at hr; subst r
     exact ⟨workR s₀, List.mem_singleton_self _,
-      Offset.sub (pp s₀) (d := 652 + 16 * n) (e := 512) (n := 4) (k := 256) (by omega) (by omega)⟩
+      Offset.sub (pp s₀) (d := 652 + 16 * n) (e := 512) (n := 4) (k := 256) (by omega_arith) (by omega_arith)⟩
   · intro i hi
     by_cases he : i = n
     · subst i
@@ -517,10 +517,10 @@ theorem seedTemplate_ok {s₀ s : State} {P : Nat → Block} {lo : Nat} (hp : SP
       simpa only [Nat.zero_add, Nat.lt_add_one, Nat.le_refl, ite_true] using
         refreshCounter_ok s.mem (templateAddr s₀ n) (cb s₀) 0 n htn
     · have hk : (if i < n + 1 then i else 0) = (if i < n then i else 0) := by
-        split_ifs <;> omega
+        split_ifs <;> omega_arith
       rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hF (by
         intro r hr; simp only [List.mem_singleton] at hr; subst r
-        exact Offset.disjoint (pp s₀) (by omega) (by omega) (by omega)), hk]
+        exact Offset.disjoint (pp s₀) (by omega_arith) (by omega_arith) (by omega_arith)), hk]
       exact hT i hi
 
 theorem seedTemplates_ok {s₀ : State} {P : Nat → Block} {lo : Nat} (hp : SPre s₀ lo)
@@ -532,14 +532,14 @@ theorem seedTemplates_ok {s₀ : State} {P : Nat → Block} {lo : Nat} (hp : SPr
   | zero => exact WP.block_nil ⟨hE, hT, .refl _, .refl _ _⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨hEt, hTt, hf, hm⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨hEt, hTt, hf, hm⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    refine WP.mono (seedTemplate_ok hp hEt n (by omega) hTt (by
+    refine WP.mono (seedTemplate_ok hp hEt n (by omega_arith) hTt (by
       rw [hf.gpr .r8 (by decide)]; exact hv)) fun u ⟨hEu, hTu, hf', hm'⟩ => ?_
     refine ⟨hEu, hTu, hf.trans hf', hm.trans (hm'.sub fun r hr => ?_)⟩
     simp only [List.mem_singleton] at hr; subst r
     exact ⟨counterR s₀, List.mem_singleton_self _,
-      Offset.sub (pp s₀) (d := 652 + 16 * n) (e := 640) (n := 4) (k := 128) (by omega) (by omega)⟩
+      Offset.sub (pp s₀) (d := 652 + 16 * n) (e := 640) (n := 4) (k := 128) (by omega_arith) (by omega_arith)⟩
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 

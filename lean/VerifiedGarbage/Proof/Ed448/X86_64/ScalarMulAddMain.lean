@@ -59,7 +59,7 @@ theorem decode_acc (m : Mem) (base : Addr) :
 theorem storeSlot_ok {s : State} {base : Addr} (hs : Scr s base) (o : Nat) (ho : o + 56 ≤ 8192) :
     WP isa (.block (stores o W)) s fun t => mv t.mem base o 7 = rem s ∧ Outside base o 56 s.mem t.mem ∧
       (∀ r, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr :=
-  WP.mono (stores_ok hs o W (by rw [W_len]; omega)) fun t ⟨v, o', g, rd, wr⟩ =>
+  WP.mono (stores_ok hs o W (by rw [W_len]; omega_arith)) fun t ⟨v, o', g, rd, wr⟩ =>
     ⟨by rw [W_len] at v; exact v, by rw [W_len] at o'; exact o', g, rd, wr⟩
 
 theorem bytes_far {base p : Addr} {m m' : Mem} {n : Nat} (h : Outside base 0 8192 m m')
@@ -87,7 +87,7 @@ theorem scalarMulAdd_correct {s : State} (hp : scalarMulAddLocal.pre s) :
   rw [WP.block_append_iff]
   refine WP.mono (args_ok (base := base) (by rw [g₁]; exact hbase) (by rw [wr₁]; exact hws))
     fun s₂ ⟨aO₂, aR₂, aK₂, aS₂, o₂, di₂, g₂, rd₂, wr₂⟩ => ?_
-  have hs₂ : Scr s₂ base := ⟨di₂, by rw [wr₂, wr₁]; exact hws, by omega⟩
+  have hs₂ : Scr s₂ base := ⟨di₂, by rw [wr₂, wr₁]; exact hws, by omega_arith⟩
   rw [WP.block_append_iff]
   refine WP.mono (storeK_ok hs₂) fun s₃ ⟨k₃, o₃, g₃, rd₃, wr₃⟩ => ?_
   have hs₃ : Scr s₃ base := ⟨(g₃ _ (by decide)).trans di₂, wr₃ ▸ hs₂.wr, hs₂.nowrap⟩
@@ -170,10 +170,10 @@ theorem scalarMulAdd_correct {s : State} (hp : scalarMulAddLocal.pre s) :
     ⟨by decide, b₁₄, by rw [v₁₄]; rfl, fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _⟩
     (fun k hk => by
       rw [rsi₁₄, Offset.add_add]
-      exact ⟨_, List.mem_append_right _ hs₁₄.wr, contains_sc (by simp only [Impl.X448.X86_64.ACC]; omega)⟩)
+      exact ⟨_, List.mem_append_right _ hs₁₄.wr, contains_sc (by simp only [Impl.X448.X86_64.ACC]; omega_arith)⟩)
     (fun i hi => Or.inr (by
-      rw [rsi₁₄, Proof.X448.X86_64.ofs_off base (by simp only [Impl.X448.X86_64.ACC]; omega)]
-      simp only [Impl.X448.X86_64.ACC, TMP]; omega)))
+      rw [rsi₁₄, Proof.X448.X86_64.ofs_off base (by simp only [Impl.X448.X86_64.ACC]; omega_arith)]
+      simp only [Impl.X448.X86_64.ACC, TMP]; omega_arith)))
     fun s₁₅ ⟨v₁₅, g₁₅, rd₁₅, wr₁₅, o₁₅⟩ => ?_
   have hs₁₅ : Scr s₁₅ base := ⟨(g₁₅ _ (by decide)).trans hs₁₄.rdi, wr₁₅ ▸ hs₁₄.wr, hs₁₄.nowrap⟩
   -- The three reduced inputs.
@@ -197,7 +197,7 @@ theorem scalarMulAdd_correct {s : State} (hp : scalarMulAddLocal.pre s) :
     have := Nat.mod_lt (decodeLE (bytesAt s.mem (s.gpr .rsi) 57)) hL
     have := Nat.mod_lt (decodeLE (bytesAt s.mem (s.gpr .rdx) 57) % L *
       (decodeLE (bytesAt s.mem (s.gpr .rcx) 57) % L)) hL
-    omega)) fun s₁₆ ⟨v₁₆, k₁₆⟩ => ?_
+    omega_arith)) fun s₁₆ ⟨v₁₆, k₁₆⟩ => ?_
   have hs₁₆ : Scr s₁₆ base := hs₁₅.of_keeps k₁₆ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (csub_ok hs₁₆ (by
@@ -207,7 +207,7 @@ theorem scalarMulAdd_correct {s : State} (hp : scalarMulAddLocal.pre s) :
       have := Nat.mod_lt (decodeLE (bytesAt s.mem (s.gpr .rsi) 57)) hL
       have := Nat.mod_lt (decodeLE (bytesAt s.mem (s.gpr .rdx) 57) % L *
         (decodeLE (bytesAt s.mem (s.gpr .rcx) 57) % L)) hL
-      omega)) fun s₁₇ ⟨v₁₇, g₁₇, rd₁₇, wr₁₇, o₁₇⟩ => ?_
+      omega_arith)) fun s₁₇ ⟨v₁₇, g₁₇, rd₁₇, wr₁₇, o₁₇⟩ => ?_
   have hs₁₇ : Scr s₁₇ base := ⟨(g₁₇ _ (by decide)).trans hs₁₆.rdi, wr₁₇ ▸ hs₁₆.wr, hs₁₆.nowrap⟩
   have hout : word s₁₇.mem base OUT = s.gpr .rdi := by
     rw [o₁₇.word (by decide) (by decide), k₁₆.2.1, o₁₅.word (by decide) (by decide), k₁₄.2.1,

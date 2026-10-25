@@ -55,12 +55,12 @@ theorem gv_eq (E : List Byte) (g : Nat) {e : Nat} (_he : e < 8) :
   dsimp only
   split
   · rename_i h
-    have e0 : 12 * g + cb e = 3 * (4 * g + e / 2) := by simp only [cb]; omega
-    have e1 : 12 * g + (cb e + 1) = 3 * (4 * g + e / 2) + 1 := by simp only [cb]; omega
+    have e0 : 12 * g + cb e = 3 * (4 * g + e / 2) := by simp only [cb]; omega_arith
+    have e1 : 12 * g + (cb e + 1) = 3 * (4 * g + e / 2) + 1 := by simp only [cb]; omega_arith
     rw [e0, e1]
   · rename_i h
-    have e0 : 12 * g + cb e = 3 * (4 * g + e / 2) + 1 := by simp only [cb]; omega
-    have e1 : 12 * g + (cb e + 1) = 3 * (4 * g + e / 2) + 2 := by simp only [cb]; omega
+    have e0 : 12 * g + cb e = 3 * (4 * g + e / 2) + 1 := by simp only [cb]; omega_arith
+    have e1 : 12 * g + (cb e + 1) = 3 * (4 * g + e / 2) + 2 := by simp only [cb]; omega_arith
     rw [e0, e1]
 
 /-- Every value of the first `n` groups is less than `q` exactly when every field of the first `4 n` groups of
@@ -69,14 +69,14 @@ theorem gv_all (E : List Byte) (n : Nat) :
     (∀ g < n, ∀ e < 8, gv E g e < q) ↔ ∀ t < 4 * n, field0 E t < q ∧ field1 E t < q := by
   constructor
   · intro h t ht
-    have h0 := h (t / 4) (by omega) (2 * (t % 4)) (by omega)
-    have h1 := h (t / 4) (by omega) (2 * (t % 4) + 1) (by omega)
-    rw [gv_eq _ _ (by omega), itT (by omega), show 4 * (t / 4) + 2 * (t % 4) / 2 = t by omega] at h0
-    rw [gv_eq _ _ (by omega), itF (by omega), show 4 * (t / 4) + (2 * (t % 4) + 1) / 2 = t by omega] at h1
+    have h0 := h (t / 4) (by omega_arith) (2 * (t % 4)) (by omega_arith)
+    have h1 := h (t / 4) (by omega_arith) (2 * (t % 4) + 1) (by omega_arith)
+    rw [gv_eq _ _ (by omega_arith), itT (by omega_arith), show 4 * (t / 4) + 2 * (t % 4) / 2 = t by omega_arith] at h0
+    rw [gv_eq _ _ (by omega_arith), itF (by omega_arith), show 4 * (t / 4) + (2 * (t % 4) + 1) / 2 = t by omega_arith] at h1
     exact ⟨h0, h1⟩
   · intro h g hg e he
     rw [gv_eq _ _ he]
-    have := h (4 * g + e / 2) (by omega)
+    have := h (4 * g + e / 2) (by omega_arith)
     split
     · exact this.1
     · exact this.2
@@ -84,11 +84,11 @@ theorem gv_all (E : List Byte) (n : Nat) :
 theorem msb_sub_q {c : Nat} (hc : c < 4096) : (BitVec.ofNat 32 c - 3329#32).msb = decide (c < q) := by
   rw [q_eq, BitVec.msb_eq_decide, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   by_cases h : c < 3329
-  · rw [decide_eq_true h, decide_eq_true (by omega)]
-  · rw [decide_eq_false h, decide_eq_false (by omega)]
+  · rw [decide_eq_true h, decide_eq_true (by omega_arith)]
+  · rw [decide_eq_false h, decide_eq_false (by omega_arith)]
 
 theorem candN_congr {b b' : Nat → Nat} (h : ∀ t < 12, b t = b' t) {e : Nat} (he : e < 8) : candN b e = candN b' e := by
-  unfold candN; rw [h (cb e) (by simp only [cb]; omega), h (cb e + 1) (by simp only [cb]; omega)]
+  unfold candN; rw [h (cb e) (by simp only [cb]; omega_arith), h (cb e + 1) (by simp only [cb]; omega_arith)]
 
 /-- `∑ i < n, f i · 2ⁱ` is `2ⁿ - 1` exactly when every `f i` is set. -/
 theorem bsum_full (f : Nat → Bool) : ∀ n, bsum f n = 2 ^ n - 1 ↔ ∀ i < n, f i = true
@@ -101,15 +101,15 @@ theorem bsum_full (f : Nat → Bool) : ∀ n, bsum f n = 2 ^ n - 1 ↔ ∀ i < n
     constructor
     · intro h i hi
       cases hf : f n
-      · rw [hf] at h; simp at h; omega
+      · rw [hf] at h; simp at h; omega_arith
       · rw [hf] at h; simp only [Bool.toNat_true, Nat.one_mul] at h
         by_cases hin : i = n
         · rw [hin, hf]
-        · exact ih.mp (by omega) i (by omega)
+        · exact ih.mp (by omega_arith) i (by omega_arith)
     · intro h
-      rw [ih.mpr fun i hi => h i (by omega), h n (by omega)]
+      rw [ih.mpr fun i hi => h i (by omega_arith), h n (by omega_arith)]
       simp only [Bool.toNat_true, Nat.one_mul]
-      omega
+      omega_arith
 
 /-! ## The loop -/
 
@@ -148,7 +148,7 @@ theorem step {i : Nat} (hi : i < 32 * p.k) {s : State} (hI : Inv p s₀ i s) :
       s'.zf = some (s.gpr .rcx - 1 == 0) := by
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 16 := by
     rw [hI.rd, hI.wr, hp.1, hp.2.1, hI.rdi]
-    exact ⟨⟨eP s₀, p.ekLen⟩, by simp, Offset.contains_base _ (by simp only [Params.ekLen]; omega) (by omega)⟩
+    exact ⟨⟨eP s₀, p.ekLen⟩, by simp, Offset.contains_base _ (by simp only [Params.ekLen]; omega_arith) (by omega_arith)⟩
   simp only [ckBody, yb]
   refine wp_vbcast128 (a := s.gpr .rdi) (by rw [ea_at, add_ofNat_zero]) hin fun s1 u1 => ?_
   refine wp_vbin fun s2 u2 => wp_vvar fun s3 u3 => wp_vbin fun s4 u4 => wp_vbin fun s5 u5 =>
@@ -167,25 +167,25 @@ theorem step {i : Nat} (hi : i < 32 * p.k) {s : State} (hI : Inv p s₀ i s) :
     rw [u5.other _ (by decide) l hl, u4.other _ (by decide) l hl, u3.other _ (by decide) l hl,
       u2.other _ (by decide) l hl, u1.other _ (by decide) l hl]
   have hb : ∀ t < 12, (byte L t).toNat = ((E p s₀).getD (12 * i + t) 0).toNat := fun t ht => by
-    rw [← hL, byte, byte_readW _ _ (by omega), hI.rdi, hI.mem, Offset.add_add,
-      bytesAt_getD _ _ (by simp only [Params.ekLen]; omega)]
+    rw [← hL, byte, byte_readW _ _ (by omega_arith), hI.rdi, hI.mem, Offset.add_add,
+      bytesAt_getD _ _ (by simp only [Params.ekLen]; omega_arith)]
   refine ⟨⟨?_, by rw [u8.rd, u7.rd, u6.rd, u5.rd, u4.rd, u3.rd, u2.rd, u1.rd, hI.rd],
     by rw [u8.wr, u7.wr, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr, hI.wr],
     by rw [u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem, hI.mem],
     ((dc_xmm2 c5 u6).gupd u7.lane).gupd u8.lane, fun l hl j hj => ?_⟩, ?_, ?_⟩
   · rw [u8.other _ (by decide), u7.gpr, hg6, hI.rdi,
       show BitVec.signExtend 64 (12 : BitVec 32) = BitVec.ofNat 64 12 by decide, BitVec.add_assoc,
-      ← BitVec.ofNat_add, show 12 * i + 12 = 12 * (i + 1) by omega]
+      ← BitVec.ofNat_add, show 12 * i + 12 = 12 * (i + 1) by omega_arith]
   · rw [u8.lane, u7.lane, u6.val l hl, h2 l hl, h5 l hl]
     simp only [VBinOp.sse]
     rw [dword_pand, dword_psubd _ _ hj, dword_qV4 hj, cand_dword L hl hj, BitVec.msb_and, hI.sg l hl j hj,
       msb_sub_q (candN_lt _ (fun t => (byte L t).isLt) _), candN_congr (b' := fun t => ((E p s₀).getD (12 * i + t) 0).toNat)
-        hb (by omega)]
+        hb (by omega_arith)]
     rw [← Bool.decide_and]
-    refine decide_eq_decide.mpr ⟨fun ⟨h₁, h₂⟩ g hg => ?_, fun h => ⟨fun g hg => h g (by omega), h i (by omega)⟩⟩
+    refine decide_eq_decide.mpr ⟨fun ⟨h₁, h₂⟩ g hg => ?_, fun h => ⟨fun g hg => h g (by omega_arith), h i (by omega_arith)⟩⟩
     by_cases hgi : g = i
     · subst hgi; exact h₂
-    · exact h₁ g (by omega)
+    · exact h₁ g (by omega_arith)
   · rw [u8.gpr, u7.other _ (by decide), hg6]; rfl
   · rw [hz, u7.other _ (by decide), hg6]; rfl
 
@@ -204,17 +204,17 @@ theorem init {Q : State → Prop} (k : ∀ s, Inv p s₀ 0 s → s.gpr .rcx = Bi
     rcases cases4 hj with rfl | rfl | rfl | rfl <;>
       simp only [dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3] <;> decide
   · rw [u3.gpr]; apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_arith
 
 omit hk hp in
 theorem sgn_bit (x : BitVec 128) {m : Nat} (hm : m < 16) :
     (XShiftOp.eval .psrad x 31).getLsbD (8 * m + 7) = (dword x (m / 4)).msb := by
   have e := getLsbD_dword (XShiftOp.eval .psrad x 31) (m / 4) (8 * (m % 4) + 7)
-  rw [decide_eq_true (by omega), Bool.true_and, show 32 * (m / 4) + (8 * (m % 4) + 7) = 8 * m + 7 by omega,
-    dword_psrad31 _ (by omega)] at e
+  rw [decide_eq_true (by omega_arith), Bool.true_and, show 32 * (m / 4) + (8 * (m % 4) + 7) = 8 * m + 7 by omega_arith,
+    dword_psrad31 _ (by omega_arith)] at e
   rw [← e, BitVec.getLsbD_sshiftRight, BitVec.msb_eq_getLsbD_last]
-  simp only [show ¬ (32 ≤ 8 * (m % 4) + 7) by omega, decide_false, Bool.not_false, Bool.true_and,
-    show ¬ (31 + (8 * (m % 4) + 7) < 32) by omega, ↓reduceIte]
+  simp only [show ¬ (32 ≤ 8 * (m % 4) + 7) by omega_arith, decide_false, Bool.not_false, Bool.true_and,
+    show ¬ (31 + (8 * (m % 4) + 7) < 32) by omega_arith, ↓reduceIte]
 
 omit hk hp in
 theorem ckTail_ok (s : State) :
@@ -233,27 +233,27 @@ theorem fin_ok {s : State} (hI : Inv p s₀ (32 * p.k) s) :
   have hf : ∀ i < 32, (s4.ymm .xmm2).getLsbD (8 * i + 7) = acc p s₀ (32 * p.k) (i / 16) (i % 16 / 4) := fun i hi => by
     rw [State.ymm_eq, BitVec.getLsbD_append]
     by_cases h : i < 16
-    · rw [itT (show 8 * i + 7 < 128 by omega), u4.val 0 (by decide), sgn_bit _ h, hI.sg 0 (by decide) _ (by omega),
+    · rw [itT (show 8 * i + 7 < 128 by omega_arith), u4.val 0 (by decide), sgn_bit _ h, hI.sg 0 (by decide) _ (by omega_arith),
         Nat.div_eq_of_lt h, Nat.mod_eq_of_lt h]
-    · rw [itF (show ¬ 8 * i + 7 < 128 by omega), u4.val 1 (by decide), show 8 * i + 7 - 128 = 8 * (i - 16) + 7 by omega,
-        sgn_bit _ (show i - 16 < 16 by omega), hI.sg 1 (by decide) _ (by omega), show i / 16 = 1 by omega,
-        show i % 16 = i - 16 by omega]
+    · rw [itF (show ¬ 8 * i + 7 < 128 by omega_arith), u4.val 1 (by decide), show 8 * i + 7 - 128 = 8 * (i - 16) + 7 by omega_arith,
+        sgn_bit _ (show i - 16 < 16 by omega_arith), hI.sg 1 (by decide) _ (by omega_arith), show i / 16 = 1 by omega_arith,
+        show i % 16 = i - 16 by omega_arith]
   have hb : (s5.gpr .rax).toNat = bsum (fun i => (s4.ymm .xmm2).getLsbD (8 * i + 7)) 32 := by
     rw [u5.gpr, byteMask_eq _ (by decide), BitVec.toNat_ofNat]
     exact Nat.mod_eq_of_lt (Nat.lt_trans (bsum_lt _ 32) (by decide))
   have hl := bsum_lt (fun i => (s4.ymm .xmm2).getLsbD (8 * i + 7)) 32
   have hall : (∀ i < 32, (s4.ymm .xmm2).getLsbD (8 * i + 7) = true) ↔ ekCheck p (E p s₀) = true := by
-    rw [ekCheck_iff p _ (bytesAt_length _ _ _), show 128 * p.k = 4 * (32 * p.k) by omega, ← gv_all]
+    rw [ekCheck_iff p _ (bytesAt_length _ _ _), show 128 * p.k = 4 * (32 * p.k) by omega_arith, ← gv_all]
     constructor
     · intro h g hg e he
-      have := h (16 * (e / 4) + 4 * (e % 4)) (by omega)
-      rw [hf _ (by omega), show (16 * (e / 4) + 4 * (e % 4)) / 16 = e / 4 by omega,
-        show (16 * (e / 4) + 4 * (e % 4)) % 16 / 4 = e % 4 by omega] at this
+      have := h (16 * (e / 4) + 4 * (e % 4)) (by omega_arith)
+      rw [hf _ (by omega_arith), show (16 * (e / 4) + 4 * (e % 4)) / 16 = e / 4 by omega_arith,
+        show (16 * (e / 4) + 4 * (e % 4)) % 16 / 4 = e % 4 by omega_arith] at this
       have := of_decide_eq_true this g hg
-      rwa [show 4 * (e / 4) + e % 4 = e by omega] at this
+      rwa [show 4 * (e / 4) + e % 4 = e by omega_arith] at this
     · intro h i hi
       rw [hf i hi]
-      exact decide_eq_true fun g hg => h g hg _ (by omega)
+      exact decide_eq_true fun g hg => h g hg _ (by omega_arith)
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, h6, hb]
   by_cases hc : ekCheck p (E p s₀) = true
@@ -262,10 +262,10 @@ theorem fin_ok {s : State} (hI : Inv p s₀ (32 * p.k) s) :
     have hne : bsum (fun i => (s4.ymm .xmm2).getLsbD (8 * i + 7)) 32 ≠ 2 ^ 32 - 1 := fun h =>
       hc (hall.mp ((bsum_full _ 32).mp h))
     show _ = 0
-    omega
+    omega_arith
 
 theorem main : WP isa (checkEkAvx2K p.k) s₀ fun s => (s.gpr .rax).setWidth 32 = if ekCheck p (E p s₀) then 1 else 0 :=
-  init hk fun s hI hc => WP.seq (wp_countdown (cnt := .rcx) (N := 32 * p.k) (by omega) (by omega) (Inv p s₀)
+  init hk fun s hI hc => WP.seq (wp_countdown (cnt := .rcx) (N := 32 * p.k) (by omega_arith) (by omega_arith) (Inv p s₀)
     (fun i hi s hI _ => step hk hp hi hI) (fun s hI => fin_ok hI) hI hc)
 
 theorem correct : ∃ t s', Exec isa (checkEkAvx2K p.k) s₀ t s' ∧ abiPreserved s₀ s' ∧ (checkEkC p).post s₀ s' := by

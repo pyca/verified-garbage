@@ -48,7 +48,7 @@ theorem IFrame.trans {base : Addr} {m₁ m₂ m₃ : Mem} (h₁ : IFrame base m�
 
 theorem IFrame.of_outside {base : Addr} {m m' : Mem} {o n : Nat} (h : Outside base o n m m')
     (hr : (64 ≤ o ∧ o + n ≤ 2880) ∨ (RX ≤ o ∧ o + n ≤ RX + 128) ∨ (RY ≤ o ∧ o + n ≤ TAB + 384)) :
-    IFrame base m m' := fun x a b c => h x (by simp only [RX, RY, CAN, TAB] at hr a b c; omega)
+    IFrame base m m' := fun x a b c => h x (by simp only [RX, RY, CAN, TAB] at hr a b c; omega_arith)
 
 theorem IFrame.refl (base : Addr) (m : Mem) : IFrame base m m := fun _ _ _ _ => rfl
 
@@ -107,16 +107,16 @@ theorem KeepIn.trans {base : Addr} {lo hi : Nat} {m₁ m₂ m₃ : Mem} (h₁ : 
     (h₂ : KeepIn base lo hi m₂ m₃) : KeepIn base lo hi m₁ m₃ := fun x a b => (h₂ x a b).trans (h₁ x a b)
 
 theorem KeepIn.of_outside {base : Addr} {lo hi o n : Nat} {m m' : Mem} (h : Outside base o n m m')
-    (hd : hi ≤ o ∨ o + n ≤ lo) : KeepIn base lo hi m m' := fun x a b => h x (by omega)
+    (hd : hi ≤ o ∨ o + n ≤ lo) : KeepIn base lo hi m m' := fun x a b => h x (by omega_arith)
 
 theorem KeepIn.word {base : Addr} {lo hi : Nat} {m m' : Mem} (h : KeepIn base lo hi m m') {d : Nat}
     (hl : lo ≤ d) (hh : d + 8 ≤ hi) (hd : d + 8 ≤ 8192) : word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi' => (h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)]; omega)
-    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi' => (h _ (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_arith)]; omega_arith)
+    (by rw [VG.Proof.X448.AArch64.ofs_off base (by omega_arith)]; omega_arith)).symm).symm
 
 theorem KeepIn.limbs {base : Addr} {o : Nat} {m m' : Mem} (h : KeepIn base o (o + 64) m m') (ho : o + 64 ≤ 8192)
     {i : Nat} (hi : i < 8) : limbs m' base o i = limbs m base o i :=
-  congrArg BitVec.toNat (h.word (by omega) (by omega) (by omega))
+  congrArg BitVec.toNat (h.word (by omega_arith) (by omega_arith) (by omega_arith))
 
 /-- What `tabPre` leaves. -/
 structure PreOut (s : State) (base : Addr) (t : State) : Prop where
@@ -184,15 +184,15 @@ theorem tabPre_ok {s : State} {base : Addr} (hs : Scr s base) :
     have k1 : KeepIn base (slot 9) (slot 9 + 64) s.mem u1.mem := (KeepIn.of_outside o1 (by decide))
     rw [k.limbs (by decide) hi, v2 i hi, k1.limbs (by decide) hi]
   · have k : KeepIn base (slot 19) (slot 19 + 64) u3.mem u.mem := ((((((((KeepIn.of_outside o4 (by decide)).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
-    rw [k.word (by omega) (by omega) (by simp only [slot]; omega)]; exact v3 w hw
+    rw [k.word (by omega_arith) (by omega_arith) (by simp only [slot]; omega_arith)]; exact v3 w hw
   · have k : KeepIn base (slot 20) (slot 20 + 64) u4.mem u.mem := (((((((KeepIn.of_outside o5 (by decide)).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
-    rw [k.word (by omega) (by omega) (by simp only [slot]; omega)]; exact v4 w hw
+    rw [k.word (by omega_arith) (by omega_arith) (by simp only [slot]; omega_arith)]; exact v4 w hw
   · have k : KeepIn base (TAB) (TAB + 64) u5.mem u.mem := ((((((KeepIn.of_outside o6 (by decide)).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
-    rw [k.word (by omega) (by omega) (by simp only [TAB]; omega)]; exact v5 w hw
+    rw [k.word (by omega_arith) (by omega_arith) (by simp only [TAB]; omega_arith)]; exact v5 w hw
   · have k : KeepIn base (TAB + 64) (TAB + 64 + 64) u6.mem u.mem := (((((KeepIn.of_outside o7 (by decide)).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
-    rw [k.word (by omega) (by omega) (by simp only [TAB]; omega)]; exact v6 w hw
+    rw [k.word (by omega_arith) (by omega_arith) (by simp only [TAB]; omega_arith)]; exact v6 w hw
   · have k : KeepIn base (TAB + 128) (TAB + 128 + 64) u7.mem u.mem := ((((KeepIn.of_outside o8 (by decide)).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
-    rw [k.word (by omega) (by omega) (by simp only [TAB]; omega)]; exact v7 w hw
+    rw [k.word (by omega_arith) (by omega_arith) (by simp only [TAB]; omega_arith)]; exact v7 w hw
   · have k : KeepIn base (slot 3) (slot 3 + 64) u8.mem u.mem := (((KeepIn.of_outside o9 (by decide)).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
     have k' : KeepIn base (slot 6) (slot 6 + 64) s.mem u7.mem := (((((((KeepIn.of_outside o1 (by decide)).trans (KeepIn.of_outside o2 (by decide))).trans (KeepIn.of_outside o3 (by decide))).trans (KeepIn.of_outside o4 (by decide))).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide)))
     rw [k.limbs (by decide) hi, v8 i hi, k'.limbs (by decide) hi]
@@ -200,9 +200,9 @@ theorem tabPre_ok {s : State} {base : Addr} (hs : Scr s base) :
     have k' : KeepIn base (slot 7) (slot 7 + 64) s.mem u8.mem := ((((((((KeepIn.of_outside o1 (by decide)).trans (KeepIn.of_outside o2 (by decide))).trans (KeepIn.of_outside o3 (by decide))).trans (KeepIn.of_outside o4 (by decide))).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide)))
     rw [k.limbs (by decide) hi, v9 i hi, k'.limbs (by decide) hi]
   · have k : KeepIn base (slot 5) (slot 5 + 64) u10.mem u.mem := (KeepIn.of_outside o11 (by decide))
-    rw [k.word (by omega) (by omega) (by simp only [slot]; omega)]; exact v10 w hw
+    rw [k.word (by omega_arith) (by omega_arith) (by simp only [slot]; omega_arith)]; exact v10 w hw
   · exact v11 w hw
-  · rw [kw o11 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o10 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o9 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o8 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o7 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o6 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o5 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o4 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o3 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o2 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o1 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd]
+  · rw [kw o11 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd, kw o10 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd, kw o9 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd, kw o8 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd, kw o7 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd, kw o6 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd, kw o5 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd, kw o4 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd, kw o3 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd, kw o2 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd, kw o1 (by simp only [slot, RX, RY, CAN, TAB] at *; omega_arith) hd]
   · exact (((((((((((IFrame.of_outside o1 (by decide)).trans (IFrame.of_outside o2 (by decide))).trans (IFrame.of_outside o3 (by decide))).trans (IFrame.of_outside o4 (by decide))).trans (IFrame.of_outside o5 (by decide))).trans (IFrame.of_outside o6 (by decide))).trans (IFrame.of_outside o7 (by decide))).trans (IFrame.of_outside o8 (by decide))).trans (IFrame.of_outside o9 (by decide))).trans (IFrame.of_outside o10 (by decide))).trans (IFrame.of_outside o11 (by decide)))
   · exact (((((((((((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide))).trans (k4.mono (by decide))).trans (k5.mono (by decide))).trans (k6.mono (by decide))).trans (k7.mono (by decide))).trans (k8.mono (by decide))).trans (k9.mono (by decide))).trans (k10.mono (by decide))).trans (k11.mono (by decide)))
 
@@ -236,19 +236,19 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
     fun d hd hr => hmut.word (by simpa using hr) hd
   have lut : ∀ o, o + 64 ≤ TAB + 192 ∨ TAB + 384 ≤ o → o + 64 ≤ 8192 → ∀ i < 8,
       limbs t.mem base o i = limbs u.mem base o i :=
-    fun o ho ho' i hi => congrArg BitVec.toNat (wut _ (by omega) (by omega))
+    fun o ho ho' i hi => congrArg BitVec.toNat (wut _ (by omega_arith) (by omega_arith))
   -- Every slot of `t`, below `Ib`.
   have slotKeep : ∀ i : Index, i.val ≠ 3 → i.val ≠ 4 → i.val ≠ 5 → i.val ≠ 8 → i.val ≠ 19 → i.val ≠ 20 →
       ∀ j < 8, limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j :=
     fun i h3 h4 h5 h8 h19 h20 j hj => by
       have := i.isLt
-      rw [lut _ (by simp only [slot, TAB]; omega) (by simp only [slot]; omega) j hj]
-      exact congrArg BitVec.toNat (P.keep _ (by simp only [slot]; omega) (by simp only [slot]; omega)
-        (by simp only [slot]; omega) (by simp only [slot]; omega) (by simp only [slot, RX]; omega)
-        (by simp only [slot, RY, CAN]; omega))
+      rw [lut _ (by simp only [slot, TAB]; omega_arith) (by simp only [slot]; omega_arith) j hj]
+      exact congrArg BitVec.toNat (P.keep _ (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith)
+        (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by simp only [slot, RX]; omega_arith)
+        (by simp only [slot, RY, CAN]; omega_arith))
   have wslot : ∀ (o : Nat) (v : Spec.X448.Fe), o + 64 ≤ TAB + 192 → (∀ w < 8, word u.mem base (o + 8 * w) = limb v w) →
       ∀ w < 8, word t.mem base (o + 8 * w) = limb v w := fun o v ho h w hw => by
-    rw [wut _ (by simp only [TAB] at ho; omega) (by omega)]; exact h w hw
+    rw [wut _ (by simp only [TAB] at ho; omega_arith) (by omega_arith)]; exact h w hw
   have z19 := wslot _ _ (by decide) P.z19
   have o20 := wslot _ _ (by decide) P.o20
   have s5 := wslot _ _ (by decide) P.s5
@@ -265,7 +265,7 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
     · exact ib_of_limbs (fun j hj => slotKeep i h6.1 h6.2.1 h6.2.2.1 h6.2.2.2.1 h6.2.2.2.2.1 h6.2.2.2.2.2 j hj)
         (hb i)
     · have hi : i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 8 ∨ i = 19 ∨ i = 20 := by
-        rcases i with ⟨i, hlt⟩; simp only [Fin.ext_iff] at h6 ⊢; omega
+        rcases i with ⟨i, hlt⟩; simp only [Fin.ext_iff] at h6 ⊢; omega_arith
       rcases hi with rfl | rfl | rfl | rfl | rfl | rfl
       · exact ib_of_limbs l3 b6
       · exact ib_of_limbs l4 b7
@@ -296,11 +296,11 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
     have hw : ∀ (c : Nat) (v : Spec.X448.Fe), c < 3 → (∀ w < 8, word u.mem base (TAB + 64 * c + 8 * w) = limb v w) →
         FV t.mem base (TAB + 192 * 0 + 64 * c) = v := fun c v hc h =>
       F_of_words fun w hw => by
-        rw [wut _ (by simp only [TAB]; omega) (by simp only [TAB]; omega), show TAB + 192 * 0 + 64 * c + 8 * w =
-          TAB + 64 * c + 8 * w by omega]
+        rw [wut _ (by simp only [TAB]; omega_arith) (by simp only [TAB]; omega_arith), show TAB + 192 * 0 + 64 * c + 8 * w =
+          TAB + 64 * c + 8 * w by omega_arith]
         exact h w hw
     simp only [TPt]
-    rw [show TAB + 192 * 0 = TAB + 192 * 0 + 64 * 0 by rfl, hw 0 0 (by decide) (fun w hw => by rw [show TAB + 64 * 0 + 8 * w = TAB + 8 * w by omega]; exact P.t0 w hw),
+    rw [show TAB + 192 * 0 = TAB + 192 * 0 + 64 * 0 by rfl, hw 0 0 (by decide) (fun w hw => by rw [show TAB + 64 * 0 + 8 * w = TAB + 8 * w by omega_arith]; exact P.t0 w hw),
       show TAB + 192 * 0 + 64 = TAB + 192 * 0 + 64 * 1 by rfl, hw 1 1 (by decide) P.t1,
       show TAB + 192 * 0 + 128 = TAB + 192 * 0 + 64 * 2 by rfl, hw 2 1 (by decide) P.t2]
   refine ⟨⟨⟨by decide, by decide⟩, ht, benv, fun w hw => ?_, ct, by rw [hP3]; rfl, hP6, rfl,
@@ -308,16 +308,16 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
     F_of_words o20, fun i hi => ?_, fun i hi => ?_, ?_, ?_, ?_, ?_⟩
   · show (word t.mem base (slot 19 + 8 * w)).toNat = 0
     rw [z19 w hw, limb_zero]; rfl
-  · rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+  · rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl
     · refine ⟨e0, fun w hw => ?_⟩
-      rw [tw, wut _ (by simp only [TAB]; omega) (by simp only [TAB]; omega)]
-      have hw' : w = 8 * (w / 8) + w % 8 := by omega
-      rcases (show w / 8 = 0 ∨ w / 8 = 1 ∨ w / 8 = 2 by omega) with h | h | h <;> rw [h] at hw'
-      · rw [show TAB + 192 * 0 + 8 * w = TAB + 8 * (w % 8) by omega, P.t0 _ (by omega)]
+      rw [tw, wut _ (by simp only [TAB]; omega_arith) (by simp only [TAB]; omega_arith)]
+      have hw' : w = 8 * (w / 8) + w % 8 := by omega_arith
+      rcases (show w / 8 = 0 ∨ w / 8 = 1 ∨ w / 8 = 2 by omega_arith) with h | h | h <;> rw [h] at hw'
+      · rw [show TAB + 192 * 0 + 8 * w = TAB + 8 * (w % 8) by omega_arith, P.t0 _ (by omega_arith)]
         exact Nat.lt_trans (limb_lt _ _) (by decide)
-      · rw [show TAB + 192 * 0 + 8 * w = TAB + 64 + 8 * (w % 8) by omega, P.t1 _ (by omega)]
+      · rw [show TAB + 192 * 0 + 8 * w = TAB + 64 + 8 * (w % 8) by omega_arith, P.t1 _ (by omega_arith)]
         exact Nat.lt_trans (limb_lt _ _) (by decide)
-      · rw [show TAB + 192 * 0 + 8 * w = TAB + 128 + 8 * (w % 8) by omega, P.t2 _ (by omega)]
+      · rw [show TAB + 192 * 0 + 8 * w = TAB + 128 + 8 * (w % 8) by omega_arith, P.t2 _ (by omega_arith)]
         exact Nat.lt_trans (limb_lt _ _) (by decide)
     · refine ⟨e1, ?_⟩
       rw [show t.mem = u2.mem from mt]
@@ -326,12 +326,12 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
       have h0 : Bnd Ib u.mem base (slot 3) := ib_of_limbs P.s3 b6
       have h1 : Bnd Ib u.mem base (slot 4) := ib_of_limbs P.s4 b7
       have h2 : Bnd Ib u.mem base (slot 5) := bnd_of_words P.s5
-      rcases (show w / 8 = 0 ∨ w / 8 = 1 ∨ w / 8 = 2 by omega) with h | h | h <;> rw [h]
+      rcases (show w / 8 = 0 ∨ w / 8 = 1 ∨ w / 8 = 2 by omega_arith) with h | h | h <;> rw [h]
       · exact h0 _ (Nat.mod_lt _ (by decide))
       · exact h1 _ (Nat.mod_lt _ (by decide))
       · exact h2 _ (Nat.mod_lt _ (by decide))
-  · rw [lut _ (by simp only [RX, TAB]; omega) (by decide) i hi]; exact P.rx i hi
-  · rw [lut _ (by simp only [RY, CAN, TAB]; omega) (by decide) i hi]; exact P.ry i hi
+  · rw [lut _ (by simp only [RX, TAB]; omega_arith) (by decide) i hi]; exact P.rx i hi
+  · rw [lut _ (by simp only [RY, CAN, TAB]; omega_arith) (by decide) i hi]; exact P.ry i hi
   · rw [gt _ (by decide), k2.1 _ (by decide), g1 _ (by decide), P.regs.1 _ (by decide)]
   · rw [rdt, k2.2.1, rd1, P.regs.2.1]
   · rw [wrt, k2.2.2, wr1, P.regs.2.2]

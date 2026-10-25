@@ -93,7 +93,7 @@ theorem qz_lane (s : State) (r : XReg) (k : Nat) : qword (s.zlane r (k / 2)) (k 
 
 theorem qword_rorQwords (x : BitVec 128) (n : BitVec 8) {i : Nat} (hi : i < 2) :
     qword (rorQwords x n) i = (qword x i).rotateRight (n.toNat % 64) := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp only [rorQwords, qword_app0, qword_app1]
+  rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl <;> simp only [rorQwords, qword_app0, qword_app1]
 
 theorem zlane_vprorq (d a : XReg) (n : BitVec 8) (s : State) (r : XReg) {i : Nat} (hi : i < 4) :
     ((ZOp.vprorq d a n).exec s).zlane r i = if r = d then rorQwords (s.zlane a i) n else s.zlane r i := by
@@ -114,17 +114,17 @@ theorem qword256_append (a b : BitVec 128) {j : Nat} (hj : j < 4) :
   apply BitVec.eq_of_getLsbD_eq; intro m hm
   rw [qword256, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]
   by_cases h2 : j < 2
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true (show 64 * j + m < 128 by omega)), qword, BitVec.getLsbD_extractLsb']
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 64 * j + m < 128 by omega)), qword, BitVec.getLsbD_extractLsb',
-      show 64 * j + m - 128 = 64 * (j - 2) + m by omega]
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true (show 64 * j + m < 128 by omega_arith)), qword, BitVec.getLsbD_extractLsb']
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 64 * j + m < 128 by omega_arith)), qword, BitVec.getLsbD_extractLsb',
+      show 64 * j + m - 128 = 64 * (j - 2) + m by omega_arith]
 
 /-- Quadword `i` of a 128-bit piece of a 256-bit value. -/
 theorem qword_extract256 (Y : BitVec 256) (l : Nat) {i : Nat} (hi : i < 2) :
     qword (Y.extractLsb' (128 * l) 128) i = qword256 Y (2 * l + i) := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [qword, qword256, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 64 * i + j < 128 by omega)]
-  congr 1; omega
+    decide_eq_true (show 64 * i + j < 128 by omega_arith)]
+  congr 1; omega_arith
 
 theorem zlane_vpermq (d a : XReg) (o : BitVec 8) (s : State) (r : XReg) {i : Nat} (hi : i < 4) :
     ((ZOp.vpermq d a o).exec s).zlane r i =
@@ -133,7 +133,7 @@ theorem zlane_vpermq (d a : XReg) (o : BitVec 8) (s : State) (r : XReg) {i : Nat
   simp only [ZOp.exec]
   rw [State.zlane_setZ _ _ _ _ _ _ _ hi]
   split
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
+  · rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
   · rfl
 
 /-- `vpermq` permutes the quadwords of each half. -/
@@ -144,9 +144,9 @@ theorem qz_vpermq (s : State) (d a r : XReg) (o : BitVec 8) {k : Nat} (hk : k < 
   split
   · have hs := sel4_lt o.toNat (k % 4)
     rw [qword_extract256 _ _ (Nat.mod_lt _ (by decide)),
-      show 2 * (k / 2 % 2) + k % 2 = k % 4 by omega, qword256_perm _ _ (Nat.mod_lt _ (by decide)),
+      show 2 * (k / 2 % 2) + k % 2 = k % 4 by omega_arith, qword256_perm _ _ (Nat.mod_lt _ (by decide)),
       qword256_append _ _ hs]
-    split <;> congr 2 <;> omega
+    split <;> congr 2 <;> omega_arith
   · rfl
 
 /-! ## The steps of GB, on each quadword -/
@@ -220,12 +220,12 @@ theorem gb_words (s : State) {h : Nat} (hh : h < 2) :
     words (zrun gbOps s) h = mixColumns (words s h) := by
   apply Vector.ext
   intro j hj
-  have g := gb_qz s (k := 4 * h + j % 4) (by omega)
-  rw [words_get _ _ _ hj, Proof.Argon2.mixColumns_get _ _ hj, words_get _ _ _ (by omega),
-    words_get _ _ _ (by omega), words_get _ _ _ (by omega), words_get _ _ _ (by omega),
-    show j % 4 / 4 = 0 by omega, show (4 + j % 4) / 4 = 1 by omega, show (8 + j % 4) / 4 = 2 by omega,
-    show (12 + j % 4) / 4 = 3 by omega, Nat.mod_mod, show (4 + j % 4) % 4 = j % 4 by omega,
-    show (8 + j % 4) % 4 = j % 4 by omega, show (12 + j % 4) % 4 = j % 4 by omega]
+  have g := gb_qz s (k := 4 * h + j % 4) (by omega_arith)
+  rw [words_get _ _ _ hj, Proof.Argon2.mixColumns_get _ _ hj, words_get _ _ _ (by omega_arith),
+    words_get _ _ _ (by omega_arith), words_get _ _ _ (by omega_arith), words_get _ _ _ (by omega_arith),
+    show j % 4 / 4 = 0 by omega_arith, show (4 + j % 4) / 4 = 1 by omega_arith, show (8 + j % 4) / 4 = 2 by omega_arith,
+    show (12 + j % 4) / 4 = 3 by omega_arith, Nat.mod_mod, show (4 + j % 4) % 4 = j % 4 by omega_arith,
+    show (8 + j % 4) % 4 = j % 4 by omega_arith, show (12 + j % 4) % 4 = j % 4 by omega_arith]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;> simp only [vreg, mixAt] <;> rw [← g]
 
 theorem diag_words (s : State) {h : Nat} (hh : h < 2) :
@@ -233,14 +233,14 @@ theorem diag_words (s : State) {h : Nat} (hh : h < 2) :
   apply Vector.ext
   intro j hj
   have hk : j % 4 < 4 := Nat.mod_lt _ (by decide)
-  rw [words_get _ _ _ hj, Proof.Argon2.rotRows_get _ _ _ hj, words_get _ _ _ (by omega),
-    show (4 * (j / 4) + (j % 4 + 1 * (j / 4)) % 4) / 4 = j / 4 by omega,
-    show (4 * (j / 4) + (j % 4 + 1 * (j / 4)) % 4) % 4 = (j % 4 + j / 4) % 4 by omega]
-  have e4 : (4 * h + j % 4) / 4 = h := by omega
-  have m4 : (4 * h + j % 4) % 4 = j % 4 := by omega
+  rw [words_get _ _ _ hj, Proof.Argon2.rotRows_get _ _ _ hj, words_get _ _ _ (by omega_arith),
+    show (4 * (j / 4) + (j % 4 + 1 * (j / 4)) % 4) / 4 = j / 4 by omega_arith,
+    show (4 * (j / 4) + (j % 4 + 1 * (j / 4)) % 4) % 4 = (j % 4 + j / 4) % 4 by omega_arith]
+  have e4 : (4 * h + j % 4) / 4 = h := by omega_arith
+  have m4 : (4 * h + j % 4) % 4 = j % 4 := by omega_arith
   simp only [diagOps, zrun]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
-    simp (disch := omega) only [vreg, qz_vpermq, e4, m4, sel4_39, sel4_4e, sel4_93, ↓reduceIte,
+    simp (disch := omega_arith) only [vreg, qz_vpermq, e4, m4, sel4_39, sel4_4e, sel4_93, ↓reduceIte,
       reduceCtorEq, Nat.add_zero, Nat.mod_mod]
 
 theorem undiag_words (s : State) {h : Nat} (hh : h < 2) :
@@ -248,15 +248,15 @@ theorem undiag_words (s : State) {h : Nat} (hh : h < 2) :
   apply Vector.ext
   intro j hj
   have hk : j % 4 < 4 := Nat.mod_lt _ (by decide)
-  rw [words_get _ _ _ hj, Proof.Argon2.rotRows_get _ _ _ hj, words_get _ _ _ (by omega),
-    show (4 * (j / 4) + (j % 4 + 3 * (j / 4)) % 4) / 4 = j / 4 by omega,
-    show (4 * (j / 4) + (j % 4 + 3 * (j / 4)) % 4) % 4 = (j % 4 + 3 * (j / 4)) % 4 by omega]
-  have e4 : (4 * h + j % 4) / 4 = h := by omega
-  have m4 : (4 * h + j % 4) % 4 = j % 4 := by omega
+  rw [words_get _ _ _ hj, Proof.Argon2.rotRows_get _ _ _ hj, words_get _ _ _ (by omega_arith),
+    show (4 * (j / 4) + (j % 4 + 3 * (j / 4)) % 4) / 4 = j / 4 by omega_arith,
+    show (4 * (j / 4) + (j % 4 + 3 * (j / 4)) % 4) % 4 = (j % 4 + 3 * (j / 4)) % 4 by omega_arith]
+  have e4 : (4 * h + j % 4) / 4 = h := by omega_arith
+  have m4 : (4 * h + j % 4) % 4 = j % 4 := by omega_arith
   simp only [undiagOps, zrun]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
-    simp (disch := omega) only [vreg, qz_vpermq, e4, m4, sel4_39, sel4_4e, sel4_93, ↓reduceIte,
-      reduceCtorEq, Nat.add_zero, Nat.mod_mod, Nat.mul_zero, Nat.mul_one] <;> congr 1 <;> omega
+    simp (disch := omega_arith) only [vreg, qz_vpermq, e4, m4, sel4_39, sel4_4e, sel4_93, ↓reduceIte,
+      reduceCtorEq, Nat.add_zero, Nat.mod_mod, Nat.mul_zero, Nat.mul_one] <;> congr 1 <;> omega_arith
 
 /-- P on the sixteen words of each half of `zmm0`–`zmm3`. -/
 theorem round_words (s : State) {h : Nat} (hh : h < 2) :

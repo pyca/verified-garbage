@@ -71,18 +71,18 @@ theorem recodeLoad_ok {s : State} {base : Addr} (hs : Scratch s base) {src i : N
   have hshr : BitVec.ofNat 64 i >>> 3 = BitVec.ofNat 64 (i / 8) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
   have hea : base + BitVec.ofNat 64 (i / 8) * BitVec.ofNat 64 1 + BitVec.ofInt 64 (src : Int) =
       off base (src + i / 8) := by
     rw [BitVec.ofInt_natCast, BitVec.mul_one, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm]
   have hrg : InRegions (s.rd ++ s.wr) (off base (src + i / 8)) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hsrc (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hsrc (by omega_arith)⟩
   have hand : BitVec.ofNat 64 i &&& (7 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (i % 8) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, show (7 : BitVec 32).signExtend 64 = BitVec.ofNat 64 7 from rfl,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 7 < 2 ^ 64 by decide),
       show (7 : Nat) = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-    omega
+    omega_arith
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execShift, execAlu, State.load64,
     State.ea, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, RegUpd.mem_setReg,
@@ -122,7 +122,7 @@ theorem condShifts (x : BitVec 64) {b : Nat} (hb : b < 8) :
       if (BitVec.ofNat 64 b &&& (BitVec.ofNat 32 k).signExtend 64 == 0) = true then y else y >>> k
      c 1 (c 2 (c 4 x))).toNat = x.toNat / 2 ^ b := by
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 ∨
-    b = 5 ∨ b = 6 ∨ b = 7 := by omega
+    b = 5 ∨ b = 6 ∨ b = 7 := by omega_arith
   all_goals
     simp only [BitVec.reduceSignExtend, BitVec.reduceAnd, BitVec.reduceBEq, ↓reduceIte, Bool.false_eq_true,
       BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
@@ -136,9 +136,9 @@ theorem bits_mod (X i w : Nat) (hw : w ≤ 56) :
   intro j
   simp only [Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow]
   by_cases hj : j < w
-  · simp only [hj, decide_true, Bool.true_and, show j + i % 8 < 64 by omega]
+  · simp only [hj, decide_true, Bool.true_and, show j + i % 8 < 64 by omega_arith]
     congr 1
-    omega
+    omega_arith
   · simp only [hj, decide_false, Bool.false_and]
 
 theorem recodeBits_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X i : Nat}
@@ -156,7 +156,7 @@ theorem recodeBits_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X 
       .cmov .ne .rbx (.reg .rdx)] ++
     [.mov .rdx (.reg .rbx), .shift .shr .rdx 1, .alu .test .rcx (.imm (BitVec.ofNat 32 1)),
       .cmov .ne .rbx (.reg .rdx)])) from rfl, WP.block_append_iff]
-  refine WP.mono (recodeLoad_ok hs (by omega) hr hi32) fun a ⟨ab, ac, ka⟩ => ?_
+  refine WP.mono (recodeLoad_ok hs (by omega_arith) hr hi32) fun a ⟨ab, ac, ka⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (condShift_ok a 4 (by decide)) fun b ⟨bb, bc, kb⟩ => ?_
   rw [WP.block_append_iff]
@@ -165,22 +165,22 @@ theorem recodeBits_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X 
   refine ⟨?_, (((ka.mono (by decide)).trans (kb.mono (by decide))).trans (kc.mono (by decide))).trans
     (kt.mono (by decide))⟩
   rw [tb, cb, cc, bb, bc, ab, ac]
-  rw [condShifts _ (Nat.mod_lt i (by decide)), hX (i / 8) (by omega)]
+  rw [condShifts _ (Nat.mod_lt i (by decide)), hX (i / 8) (by omega_arith)]
 
 /-- ZF set if the bit `b` (bit 0 of `rbx`) equals the carry `c`. -/
 theorem recodeTest_ok (s : State) {b c : Nat} (hb : (s.gpr .rbx).toNat % 2 = b) (hc1 : c ≤ 1)
     (hc : s.gpr .r8 = BitVec.ofNat 64 c) :
     WP isa (.block recodeTest) s fun t => t.zf = some (decide (b = c)) ∧ Keeps [.rax] s t := by
-  have hb1 : b < 2 := by omega
+  have hb1 : b < 2 := by omega_arith
   have hand : s.gpr .rbx &&& (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 b := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, show (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 from rfl,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide),
-      Nat.mod_eq_of_lt (by omega), show (1 : Nat) = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
+      Nat.mod_eq_of_lt (by omega_arith), show (1 : Nat) = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
     exact hb
   have hz : (BitVec.ofNat 64 b - BitVec.ofNat 64 c == 0) = decide (b = c) := by
-    obtain rfl | rfl : b = 0 ∨ b = 1 := by omega
-    all_goals obtain rfl | rfl : c = 0 ∨ c = 1 := by omega
+    obtain rfl | rfl : b = 0 ∨ b = 1 := by omega_arith
+    all_goals obtain rfl | rfl : c = 0 ∨ c = 1 := by omega_arith
     all_goals decide
   rw [recodeTest]
   apply WP.of_runBlock
@@ -194,16 +194,16 @@ theorem recodeTest_ok (s : State) {b c : Nat} (hb : (s.gpr .rbx).toNat % 2 = b) 
 theorem sext_small {n : Nat} (hn : n < 2 ^ 31) :
     (BitVec.ofNat 32 n).signExtend 64 = BitVec.ofNat 64 n := by
   rw [BitVec.signExtend_eq_setWidth_of_msb_false (by
-    rw [BitVec.msb_eq_false_iff_two_mul_lt, BitVec.toNat_ofNat]; omega)]
+    rw [BitVec.msb_eq_false_iff_two_mul_lt, BitVec.toNat_ofNat]; omega_arith)]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem zext_small {n : Nat} (hn : n < 2 ^ 32) :
     (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- `rbx` = the window `W'` (the `w` bits) plus the carry `c`, CF set if that is below
 `2 ^ (w - 1)`. -/
@@ -214,19 +214,19 @@ theorem recodeW_ok (s : State) {w W c : Nat} (hw : 1 ≤ w ∧ w ≤ 8)
       t.gpr .rbx = BitVec.ofNat 64 (W + c) ∧ t.cf = some (decide (W + c < 2 ^ (w - 1))) ∧
         Keeps [.rbx] s t := by
   have h8 : 2 ^ w ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) hw.2
-  have h8' : 2 ^ (w - 1) ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega)
+  have h8' : 2 ^ (w - 1) ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega_arith)
   have hW : W < 2 ^ w := hb ▸ Nat.mod_lt _ (Nat.two_pow_pos _)
   have hand : s.gpr .rbx &&& (BitVec.ofNat 32 (2 ^ w - 1)).signExtend 64 = BitVec.ofNat 64 W := by
     apply BitVec.eq_of_toNat_eq
-    rw [sext_small (by omega), BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show 2 ^ w - 1 < 2 ^ 64 by omega), Nat.mod_eq_of_lt (by omega),
+    rw [sext_small (by omega_arith), BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (show 2 ^ w - 1 < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (by omega_arith),
       Nat.and_two_pow_sub_one_eq_mod, hb]
   have hadd : BitVec.ofNat 64 W + BitVec.ofNat 64 c = BitVec.ofNat 64 (W + c) := by
     rw [BitVec.ofNat_add]
   have hcf : (BitVec.ofNat 64 (W + c)).toNat < ((BitVec.ofNat 32 (2 ^ (w - 1))).signExtend 64).toNat ↔
       W + c < 2 ^ (w - 1) := by
-    rw [sext_small (by omega), BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+    rw [sext_small (by omega_arith), BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith),
+      Nat.mod_eq_of_lt (by omega_arith)]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, RegUpd.gpr_setReg,
     RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, hand, hc, hadd, hcf, reduceCtorEq, ite_true, ite_false,
@@ -246,12 +246,12 @@ theorem recodeNeg_ok (s : State) {w W : Nat} (hw : w ≤ 8) (hW : W ≤ 2 ^ w + 
   have hsub : BitVec.ofNat 64 (2 ^ w + 1) - BitVec.ofNat 64 W = BitVec.ofNat 64 (2 ^ w + 1 - W) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show 2 ^ w + 1 < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show W < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show 2 ^ w + 1 - W < 2 ^ 64 by omega)]
-    omega
+      Nat.mod_eq_of_lt (show 2 ^ w + 1 < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show W < 2 ^ 64 by omega_arith),
+      Nat.mod_eq_of_lt (show 2 ^ w + 1 - W < 2 ^ 64 by omega_arith)]
+    omega_arith
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
-    State.setReg32, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hb, zext_small (show 2 ^ w + 1 < 2 ^ 32 by omega),
+    State.setReg32, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hb, zext_small (show 2 ^ w + 1 < 2 ^ 32 by omega_arith),
     hsub, reduceCtorEq, ite_true, ite_false, Option.map_some,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
@@ -285,17 +285,17 @@ theorem recodeStore_ok {s : State} {base : Addr} (hs : Scratch s base) {i w dst 
   have hea : base + (BitVec.ofNat 64 i + BitVec.ofNat 64 i) * BitVec.ofNat 64 1 +
       BitVec.ofInt 64 ((2048 + dst : Nat) : Int) = off base (2048 + 2 * i + dst) := by
     rw [BitVec.ofInt_natCast, BitVec.mul_one, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact congrArg (fun n => off base n) (by omega)
+    exact congrArg (fun n => off base n) (by omega_arith)
   have hrg : InRegions s.wr (off base (2048 + 2 * i + dst)) 1 :=
-    ⟨_, hs.wr, Offset.contains_base _ (show 2048 + 2 * i + dst + 1 ≤ 8192 by omega) (by omega)⟩
+    ⟨_, hs.wr, Offset.contains_base _ (show 2048 + 2 * i + dst + 1 ≤ 8192 by omega_arith) (by omega_arith)⟩
   have hw8 : (BitVec.ofNat 64 u).setWidth 8 = BitVec.ofNat 8 u := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, State.store8, State.ea,
     RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags, RegUpd.mem_setReg,
-    RegUpd.mem_arithFlags, RegUpd.rd_setReg, RegUpd.rd_arithFlags, hrsi, hs.rdi, hb, hea, hrg, hw8, sext_small (show w < 2 ^ 31 by omega), reduceCtorEq, ite_true, ite_false,
+    RegUpd.mem_arithFlags, RegUpd.rd_setReg, RegUpd.rd_arithFlags, hrsi, hs.rdi, hb, hea, hrg, hw8, sext_small (show w < 2 ^ 31 by omega_arith), reduceCtorEq, ite_true, ite_false,
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨by rw [BitVec.ofNat_add], trivial, fun r ha hs' => ?_, trivial, trivial⟩
   simp only [ha, hs', ite_false]
@@ -306,8 +306,8 @@ theorem dig_write {m : Mem} {base : Addr} {i dst u : Nat}
       if j = i then u else dig m base dst j := by
   simp only [dig, VG.WriteBytes.writeW8_apply]
   by_cases h : j = i
-  · subst h; simp only [ite_true, BitVec.toNat_ofNat]; omega
-  · rw [ite_eq_right (Offset.add_ofNat_ne base (by omega) (by omega) (by omega)), ite_eq_right h]
+  · subst h; simp only [ite_true, BitVec.toNat_ofNat]; omega_arith
+  · rw [ite_eq_right (Offset.add_ofNat_ne base (by omega_arith) (by omega_arith) (by omega_arith)), ite_eq_right h]
 
 theorem keep_write {m : Mem} {base : Addr} {i dst : Nat}
     (hi : i < 528) (hdst : dst < 2) (v : Byte) (x : Addr)
@@ -315,8 +315,8 @@ theorem keep_write {m : Mem} {base : Addr} {i dst : Nat}
     m.writeW (off base (2048 + 2 * i + dst)) v x = m x := by
   rw [VG.WriteBytes.writeW8_apply, ite_eq_right]
   rintro rfl
-  rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega)] at hx
-  omega
+  rw [VG.Proof.X25519.X86_64.ofs_off' base (by omega_arith)] at hx
+  omega_arith
 
 theorem rsiInc_ok (s : State) {i : Nat} (hi : s.gpr .rsi = BitVec.ofNat 64 i) :
     WP isa (.block [.alu .add .rsi (.imm 1)]) s fun t =>
@@ -341,11 +341,11 @@ theorem recodeStep_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X 
   rw [recodeStep]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (recodeBits_ok hs hsrc hX hi hrsi (by omega)) fun a ⟨ab, ka⟩ => ?_
+  refine WP.mono (recodeBits_ok hs hsrc hX hi hrsi (by omega_arith)) fun a ⟨ab, ka⟩ => ?_
   have hbit : (a.gpr .rbx).toNat % 2 = X / 2 ^ st.i % 2 := by
     rw [ab]; exact bits_mod X st.i 1 (by decide)
   have hwin : (a.gpr .rbx).toNat % 2 ^ w = X / 2 ^ st.i % 2 ^ w := by
-    rw [ab]; exact bits_mod X st.i w (by omega)
+    rw [ab]; exact bits_mod X st.i w (by omega_arith)
   refine WP.mono (recodeTest_ok a hbit hc1 (by rw [ka.1 _ (by decide)]; exact hr8)) fun b ⟨bz, kb⟩ => ?_
   have kab : Keeps recRegs s b := (ka.mono (by decide)).trans (kb.mono (by decide))
   have hbx : b.gpr .rbx = a.gpr .rbx := kb.1 _ (by decide)
@@ -362,14 +362,14 @@ theorem recodeStep_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X 
   · have hne : ¬ X / 2 ^ st.i % 2 = st.c := by simpa using h
     have hlt : X / 2 ^ st.i % 2 ^ w < 2 ^ w := Nat.mod_lt _ (Nat.two_pow_pos _)
     rw [recodeWindow]
-    refine WP.seq (WP.mono (recodeW_ok b (W := X / 2 ^ st.i % 2 ^ w) (by omega) (by rw [hbx]; exact hwin) hc1
+    refine WP.seq (WP.mono (recodeW_ok b (W := X / 2 ^ st.i % 2 ^ w) (by omega_arith) (by rw [hbx]; exact hwin) hc1
       (by rw [hbr8]; exact hr8)) fun c ⟨cb, ccf, kc⟩ => ?_)
     have kbc := kab.trans (kc.mono (by decide))
     have hs' : Scratch c base := hs.of_keeps kbc (by decide)
     have crsi : c.gpr .rsi = BitVec.ofNat 64 st.i := by rw [kc.1 _ (by decide), hbrsi]; exact hrsi
     have h8 : 2 ^ w ≤ 256 := (Nat.pow_le_pow_right (by decide) hw.2 : 2 ^ w ≤ 2 ^ 8)
-    have h8' : 2 ^ (w - 1) ≤ 256 := (Nat.pow_le_pow_right (by decide) (by omega) : 2 ^ (w - 1) ≤ 2 ^ 8)
-    have h1 : 2 ≤ 2 ^ (w - 1) := (Nat.pow_le_pow_right (by decide) (by omega) : 2 ^ 1 ≤ 2 ^ (w - 1))
+    have h8' : 2 ^ (w - 1) ≤ 256 := (Nat.pow_le_pow_right (by decide) (by omega_arith) : 2 ^ (w - 1) ≤ 2 ^ 8)
+    have h1 : 2 ≤ 2 ^ (w - 1) := (Nat.pow_le_pow_right (by decide) (by omega_arith) : 2 ^ 1 ≤ 2 ^ (w - 1))
     refine WP.seq (WP.ite (decide (X / 2 ^ st.i % 2 ^ w + st.c < 2 ^ (w - 1))) (by simp only [eval, ccf])
       (fun hW => ?_) (fun hW => ?_))
     · have hW' : X / 2 ^ st.i % 2 ^ w + st.c < 2 ^ (w - 1) := of_decide_eq_true hW
@@ -379,35 +379,35 @@ theorem recodeStep_ok {s : State} {base : Addr} (hs : Scratch s base) {src nb X 
       refine WP.mono (recodePos_ok c) fun d ⟨d8, db, kd⟩ => ?_
       have kcd := kbc.trans (kd.mono (by decide))
       refine WP.mono (recodeStore_ok (hs'.of_keeps kd (by decide)) (i := st.i) (w := w)
-        (u := X / 2 ^ st.i % 2 ^ w + st.c) (by omega) hdst
-        (by omega) (by rw [kd.1 _ (by decide)]; exact crsi) (by rw [db]; exact cb)) fun t ⟨tr, tm, tg, trd, twr⟩ => ?_
+        (u := X / 2 ^ st.i % 2 ^ w + st.c) (by omega_arith) hdst
+        (by omega_arith) (by rw [kd.1 _ (by decide)]; exact crsi) (by rw [db]; exact cb)) fun t ⟨tr, tm, tg, trd, twr⟩ => ?_
       refine ⟨tr, by rw [tg _ (by decide) (by decide)]; exact d8, fun j hj => ?_, ?_⟩
-      · rw [tm, dig_write (by omega) hdst (by omega) hj, kcd.2.1]
+      · rw [tm, dig_write (by omega_arith) hdst (by omega_arith) hj, kcd.2.1]
         by_cases hji : j = st.i
         · dsimp only; rw [ite_eq_left hji, hji, upd_self]
         · dsimp only; rw [ite_eq_right hji, upd_ne _ _ hji]; exact hu j hj
       · refine ⟨fun r hr => ?_, trd.trans kcd.2.2.1, twr.trans kcd.2.2.2, fun x hx => ?_⟩
         · rw [tg r (fun e => hr (by rw [e]; decide)) (fun e => hr (by rw [e]; decide))]
           exact kcd.1 r hr
-        · rw [tm, keep_write (by omega) hdst _ x hx, kcd.2.1]
+        · rw [tm, keep_write (by omega_arith) hdst _ x hx, kcd.2.1]
     · have hW' : ¬ X / 2 ^ st.i % 2 ^ w + st.c < 2 ^ (w - 1) := by simpa using hW
       have hst : step w X st =
           ⟨st.i + w, 1, upd st.u st.i (2 ^ w + 1 - (X / 2 ^ st.i % 2 ^ w + st.c))⟩ := by
         unfold step; rw [ite_eq_right hne, ite_eq_right hW']
       rw [hst]
-      refine WP.mono (recodeNeg_ok c hw.2 (by omega) cb) fun d ⟨db, d8, kd⟩ => ?_
+      refine WP.mono (recodeNeg_ok c hw.2 (by omega_arith) cb) fun d ⟨db, d8, kd⟩ => ?_
       have kcd := kbc.trans (kd.mono (by decide))
-      refine WP.mono (recodeStore_ok (hs'.of_keeps kd (by decide)) (i := st.i) (w := w) (by omega) hdst
-        (by omega) (by rw [kd.1 _ (by decide)]; exact crsi) db) fun t ⟨tr, tm, tg, trd, twr⟩ => ?_
+      refine WP.mono (recodeStore_ok (hs'.of_keeps kd (by decide)) (i := st.i) (w := w) (by omega_arith) hdst
+        (by omega_arith) (by rw [kd.1 _ (by decide)]; exact crsi) db) fun t ⟨tr, tm, tg, trd, twr⟩ => ?_
       refine ⟨tr, by rw [tg _ (by decide) (by decide)]; exact d8, fun j hj => ?_, ?_⟩
-      · have hlt' : 2 ^ w + 1 - (X / 2 ^ st.i % 2 ^ w + st.c) < 256 := by omega
-        rw [tm, dig_write (by omega) hdst hlt' hj, kcd.2.1]
+      · have hlt' : 2 ^ w + 1 - (X / 2 ^ st.i % 2 ^ w + st.c) < 256 := by omega_arith
+        rw [tm, dig_write (by omega_arith) hdst hlt' hj, kcd.2.1]
         by_cases hji : j = st.i
         · dsimp only; rw [ite_eq_left hji, hji, upd_self]
         · dsimp only; rw [ite_eq_right hji, upd_ne _ _ hji]; exact hu j hj
       · refine ⟨fun r hr => ?_, trd.trans kcd.2.2.1, twr.trans kcd.2.2.2, fun x hx => ?_⟩
         · rw [tg r (fun e => hr (by rw [e]; decide)) (fun e => hr (by rw [e]; decide))]
           exact kcd.1 r hr
-        · rw [tm, keep_write (by omega) hdst _ x hx, kcd.2.1]
+        · rw [tm, keep_write (by omega_arith) hdst _ x hx, kcd.2.1]
 
 end VG.Proof.Ed25519.X86_64

@@ -52,9 +52,9 @@ theorem done_kvw {dst : Nat} (h : dst + P.H.D ≤ 128) :
   kvw_of fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inl (Region.sub_prefix (by omega))
-    · exact .inr (Region.sub_prefix (by omega))
-    · exact .inr (Offset.sub_base _ (by omega))
+    · exact .inl (Region.sub_prefix (by omega_arith))
+    · exact .inr (Region.sub_prefix (by omega_arith))
+    · exact .inr (Offset.sub_base _ (by omega_arith))
 
 /-- `V = HMAC_K(V)`. -/
 theorem hmacV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
@@ -62,12 +62,12 @@ theorem hmacV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       kOf P L t'.mem = kOf P L t.mem ∧ vOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem) := by
   refine WP.mono (hmac_ok (P := P) hL hc (da := L.B + BitVec.ofNat 64 (16 + 64)) (len := P.H.D) (dst := 64)
     (fun u hu => fr_ok hL hu (d := .x2) (by decide) (o := 64) (by decide))
-    (.inl ⟨80, rfl, by omega, by anums⟩) (by anums) (by anums)) fun t' h =>
+    (.inl ⟨80, rfl, by omega_arith, by anums⟩) (by anums) (by anums)) fun t' h =>
     ⟨h.ctx, h.frame.sub (done_kvw (by anums)), bytesAt_frame h.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact hL.stk_scr0 (by anums) (by omega)
-      · exact Offset.disjoint_base _ (by omega) (by anums)
+      · exact hL.stk_scr0 (by anums) (by omega_arith)
+      · exact Offset.disjoint_base _ (by omega_arith) (by anums)
       · exact Offset.disjoint _ (by anums) (by anums) (by anums)) (by anums), h.mac⟩
 
 /-- `K = HMAC_K(m)`, for the message `m` of `len` bytes at `scratch + 2256`. -/
@@ -77,12 +77,12 @@ theorem hmacK_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen
       kOf P L t'.mem = P.mac (kOf P L t.mem) (Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 2256) len) := by
   refine WP.mono (hmac_ok (P := P) hL hc (da := L.scr + BitVec.ofNat 64 2256) (len := len) (dst := 0)
     (fun u hu => scr_ok hL hu (d := .x2) (by decide) (a := 2256) (by decide))
-    (.inr ⟨2256, rfl, by omega, by omega⟩) hlen (by anums)) fun t' h =>
+    (.inr ⟨2256, rfl, by omega_arith, by omega_arith⟩) hlen (by anums)) fun t' h =>
     ⟨h.ctx, h.frame.sub (done_kvw (by anums)), bytesAt_frame h.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact hL.stk_scr0 (by anums) (by omega)
-      · exact Offset.disjoint_base _ (by omega) (by anums)
+      · exact hL.stk_scr0 (by anums) (by omega_arith)
+      · exact Offset.disjoint_base _ (by omega_arith) (by anums)
       · exact Offset.disjoint _ (by anums) (by anums) (by anums)) (by anums), h.mac⟩
 
 /-- The message of a step, `V ‖ b (‖ d ‖ h)`, or, if `wide`, `V ‖ b ‖ d ‖ 0 0 ‖
@@ -108,7 +108,7 @@ theorem msgAny_ok (hL : L.Ok) (hq : L.q = P.Q) (hdn : dn = P.H.D) {t : State}
       have := hB_ge P
       have h8 : (P.hB - 16) % 8 = 0 := by simp only [RfcHash.hB]; split <;> decide
       have := P.wsizes
-      exact ⟨by anums, by omega, by omega, h8, by omega⟩
+      exact ⟨by anums, by omega_arith, by omega_arith, h8, by omega_arith⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact Region.sub_prefix (by anums)
     · cases full
@@ -116,17 +116,17 @@ theorem msgAny_ok (hL : L.Ok) (hq : L.q = P.Q) (hdn : dn = P.H.D) {t : State}
       · obtain ⟨rfl, -⟩ := hho rfl rfl
         have := hB_ge P
         simp only [ite_true, tailOf, hOf, Bool.false_eq_true, ite_false,
-          show 16 + (P.hB - 16) = P.hB by omega] at hb' ⊢
+          show 16 + (P.hB - 16) = P.hB by omega_arith] at hb' ⊢
         exact hb'
   · obtain ⟨hfull, hRW⟩ := hW rfl
     subst hfull
     obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hRW
-    have hq' : 66 ≤ L.q := by omega
-    have hdn' : 64 ≤ dn := by omega
+    have hq' : 66 ≤ L.q := by omega_arith
+    have hdn' : 64 ≤ dn := by omega_arith
     rw [hQ66, hD64]
     refine WP.mono (msgW_ok hL hc h9 h10 h15 (h8 rfl) b (w := P.w) hq' hdn') fun t' ⟨hc', hf', hb'⟩ =>
       ⟨hc', hf'.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩, ?_⟩
-    · simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)
+    · simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_arith)
     · simp only [ite_true]
       rw [hb']
       show _ = Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 80) P.H.D ++ _ ++
@@ -159,7 +159,7 @@ theorem rekey_gen (hL : L.Ok) (hq : L.q = P.Q) (hdn : dn = P.H.D) {t : State}
     · simp only [ite_true]
       cases hRW : P.R.wide
       · have := P.sizesA hRW; anums
-      · have := P.sizesW hRW; omega
+      · have := P.sizesW hRW; omega_arith
   refine WP.seq (WP.mono (hmacK_ok (P := P) hL hcu (len := len) hlen') fun w ⟨hcw, hfw, hvw, hkw⟩ => ?_)
   refine WP.mono (hmacV_ok hL hcw) fun t' ⟨hc', hf', hk', hv'⟩ => ⟨hc', ?_, ?_, ?_⟩
   · exact ((hfu.sub (kvw_of fun r hr => by

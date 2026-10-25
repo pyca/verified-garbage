@@ -59,16 +59,16 @@ theorem q8_ok {s₀ start s : State} {P X : Nat → Block} {y : Block}
     WP isa (.block (q8 (nr s₀) j)) s fun t =>
       StageInv s₀ start P X y c nc (hashCount (nr s₀) (j + 1))
         (decide (nr s₀ ≤ j + 1)) t ∧ FlowFrame workRegs s t := by
-  have hn : nr s₀ < 15 := by rcases hp.rounds with h | h | h <;> omega
-  rcases schedule_cases _ hn hp.rounds j (by omega) hj hjn with
+  have hn : nr s₀ < 15 := by rcases hp.rounds with h | h | h <;> omega_arith
+  rcases schedule_cases _ hn hp.rounds j (by omega_arith) hj hjn with
     ⟨h8, hnext, hlt, hc⟩ | ⟨h8, hnext, he, hc⟩ | ⟨hnext, hlt, hc⟩
-  · rw [hc, hnext, show decide (nr s₀ ≤ j + 1) = false from decide_eq_false (by omega)]
+  · rw [hc, hnext, show decide (nr s₀ ≤ j + 1) = false from decide_eq_false (by omega_arith)]
     exact WP.mono (h.hashStep hp h8 hx) fun t ⟨ht, hf⟩ =>
       ⟨ht, hf.mono (by decide)⟩
   · rw [hc, hnext, he, show decide (nr s₀ ≤ nr s₀) = true from decide_eq_true (Nat.le_refl _)]
     rw [h8] at h
     exact h.finishHash hp
-  · rw [hc, hnext, show decide (nr s₀ ≤ j + 1) = false from decide_eq_false (by omega)]
+  · rw [hc, hnext, show decide (nr s₀ ≤ j + 1) = false from decide_eq_false (by omega_arith)]
     exact WP.block_nil ⟨h, .refl _ _⟩
  
 /-- The counter work appended to the hash work in each AES round. -/
@@ -91,11 +91,11 @@ theorem counters_ok {s₀ start s : State} {P X : Nat → Block} {y : Block}
   · subst j
     exact WP.mono (h.counters hp 4 (by decide) hv) fun t ⟨ht, hf⟩ =>
       ⟨ht, hf.mono (by decide)⟩
-  · have hgt : 2 < j := by omega
-    simp only [counterWork, show ¬(1 ≤ j ∧ j ≤ 2) from by omega, ite_false]
+  · have hgt : 2 < j := by omega_arith
+    simp only [counterWork, show ¬(1 ≤ j ∧ j ≤ 2) from by omega_arith, ite_false]
     have he : counterCount (j + 1) = counterCount j := by
-      simp only [counterCount, show ¬j ≤ 1 from by omega,
-        show ¬j + 1 ≤ 1 from by omega, show j + 1 ≠ 2 from by omega, h2, ite_false]
+      simp only [counterCount, show ¬j ≤ 1 from by omega_arith,
+        show ¬j + 1 ≤ 1 from by omega_arith, show j + 1 ≠ 2 from by omega_arith, h2, ite_false]
     rw [he]
     exact WP.block_nil ⟨h, .refl _ _⟩
 
@@ -136,7 +136,7 @@ theorem roundWork_ok {s₀ start s : State} {P X : Nat → Block} {y : Block}
   | true =>
     have hh : StageInv s₀ start P X y c (counterCount j) (hashCount (nr s₀) j) false s := by
       simpa only [RoundInv, Bool.true_eq, ite_true, Bool.true_and,
-        show decide (nr s₀ ≤ j) = false from decide_eq_false (by omega)] using h
+        show decide (nr s₀ ≤ j) = false from decide_eq_false (by omega_arith)] using h
     rw [roundWork, ite_eq_left rfl, WP.block_append_iff]
     refine WP.mono (q8_ok hp j hj hjn hh (hx rfl))
       fun t ⟨ht, hf⟩ => ?_
@@ -151,7 +151,7 @@ theorem aesPipeline_ok {s₀ start s : State} {P X : Nat → Block} {y : Block}
       (∀ b ∈ aregs, VG.Proof.Aes.X86_64.AesNi.st (t.lane b 0) =
         Spec.Aes.cipher (nr s₀) (sch s₀) (VG.Proof.Aes.X86_64.AesNi.st (s.lane b 0))) ∧
       RoundInv s₀ start P X y c hashing (nr s₀) t := by
-  have hpos : 0 < nr s₀ := by rcases hp.rounds with h | h | h <;> omega
+  have hpos : 0 < nr s₀ := by rcases hp.rounds with h | h | h <;> omega_arith
   refine WP.mono (aesFixed_ok (nr s₀) hpos aregs (by decide) (by decide)
     (roundWork (nr s₀) hashing) (RoundInv s₀ start P X y c hashing)
     (fun _ _ h => h.env.keys hp) (fun j hj hjn s h => ?_)
@@ -160,7 +160,7 @@ theorem aesPipeline_ok {s₀ start s : State} {P X : Nat → Block} {y : Block}
   · refine WP.mono (roundWork_ok hp hashing j hj hjn h hv hx)
       fun t ⟨ht, hf⟩ => ⟨ht, fun b hb l hl => ?_⟩
     exact hf.lane b ((by decide : ∀ r ∈ aregs, r ∉ workRegs) b hb) l (by
-      change l < 1 at hl; omega)
+      change l < 1 at hl; omega_arith)
   · simp only [VG.Proof.Aes.X86_64.AesNi.ea_at, BitVec.ofInt_natCast,
       BitVec.add_zero, h.env.r10, h.env.rdi]
 
@@ -188,8 +188,8 @@ theorem round_bounds : ∀ n < 15, n = 10 ∨ n = 12 ∨ n = 14 →
 theorem RoundInv.first {s₀ start s : State} {P X : Nat → Block} {y : Block} {c : Nat}
     (hp : SPre s₀) (hashing : Bool)
     (h : StageInv s₀ start P X y c 0 0 false s) : RoundInv s₀ start P X y c hashing 1 s := by
-  have hn : nr s₀ < 15 := by rcases hp.rounds with h | h | h <;> omega
-  have h1 : ¬nr s₀ ≤ 1 := by rcases hp.rounds with h | h | h <;> omega
+  have hn : nr s₀ < 15 := by rcases hp.rounds with h | h | h <;> omega_arith
+  have h1 : ¬nr s₀ ≤ 1 := by rcases hp.rounds with h | h | h <;> omega_arith
   simp only [RoundInv, (round_bounds _ hn hp.rounds).1, counterCount,
     Nat.le_refl, ite_true, ite_self, decide_eq_false h1, Bool.and_false]
   exact h
@@ -197,7 +197,7 @@ theorem RoundInv.first {s₀ start s : State} {P X : Nat → Block} {y : Block} 
 theorem RoundInv.last {s₀ start s : State} {P X : Nat → Block} {y : Block} {c : Nat}
     (hp : SPre s₀) {hashing : Bool} (h : RoundInv s₀ start P X y c hashing (nr s₀) s) :
     StageInv s₀ start P X y c 8 (if hashing then 8 else 0) hashing s := by
-  have hn : nr s₀ < 15 := by rcases hp.rounds with h | h | h <;> omega
+  have hn : nr s₀ < 15 := by rcases hp.rounds with h | h | h <;> omega_arith
   simpa only [RoundInv, (round_bounds _ hn hp.rounds).2.1,
     (round_bounds _ hn hp.rounds).2.2, Nat.le_refl, decide_true, Bool.and_true] using h
 
@@ -235,7 +235,7 @@ theorem loads_ok {s₀ s : State} {P : Nat → Block} {c : Nat} (hp : SPre s₀)
     WP isa (.block (Impl.Gcm.X86_64.StitchAvx8.loads 8)) s (CountersIn s₀ c s) :=
   WP.mono (loadCounters_ok s (fun i hi => by
     rw [ea_at, BitVec.ofInt_natCast, hE.rd, hE.wr, hE.r11]
-    exact in_rdwr (in_sub hp.p_in (by omega))) 8 (by decide)) fun t ⟨ht, hf⟩ =>
+    exact in_rdwr (in_sub hp.p_in (by omega_arith))) 8 (by decide)) fun t ⟨ht, hf⟩ =>
     ⟨fun i hi => by rw [ht i hi, ea_at, BitVec.ofInt_natCast, hE.r11]; exact hT.read i hi,
       LdFrame.of_yframe hf⟩
 
@@ -417,26 +417,26 @@ theorem bAddr_add (s₀ : State) (g k : Nat) :
     bAddr s₀ g + BitVec.ofNat 64 (16 * k) = bAddr s₀ (g + k) := by
   simp only [bAddr, Offset.add_add]
   congr 2
-  omega
+  omega_arith
 
 theorem bAddr_toNat {s₀ : State} (hp : SPre s₀) (k : Nat) (hk : k < nb s₀) :
     (bAddr s₀ k).toNat = (dp s₀).toNat + 16 * k := by
   have hw := hp.wrap_d
   rw [bAddr, BitVec.toNat_add, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega : 16 * k < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_arith : 16 * k < 2 ^ 64), Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem srcBlk_false (s₀ : State) (k : Nat) : srcBlk s₀ false k = bAddr s₀ k := by
   simp only [srcBlk, off, Bool.false_eq_true, ite_false, BitVec.add_zero]
 
 /-- In place, the data is the output. -/
 theorem SrcOk.inplace {s₀ : State} (hp : SPre s₀) : SrcOk s₀ false where
-  rd k hk := by rw [srcBlk_false]; exact in_rdwr (in_sub hp.d_in (by omega))
+  rd k hk := by rw [srcBlk_false]; exact in_rdwr (in_sub hp.d_in (by omega_arith))
   sep k hk := by
     rw [srcBlk_false]; have hw := hp.wrap_d
-    exact Offset.base_disjoint (dp s₀) (by omega) (by omega)
+    exact Offset.base_disjoint (dp s₀) (by omega_arith) (by omega_arith)
   p k hk := by
     rw [srcBlk_false]
-    exact hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega))
+    exact hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega_arith))
 
 /-- The data of block `g + j`, at `rdx` at block `g`, and `rbx` as at the start. -/
 theorem srcAddr_eq {s₀ s : State} (ix : Bool) {g : Nat} (hrdx : s.gpr .rdx = bAddr s₀ g)
@@ -452,7 +452,7 @@ theorem srcAddr_eq' {s₀ s : State} (ix : Bool) {c j : Nat}
     (ha : s.gpr .rdx + BitVec.ofNat 64 (16 * j) = bAddr s₀ c)
     (hrbx : s.gpr .rbx = s₀.gpr .rbx) (i : Nat) : srcAddr s ix (16 * (j + i)) = srcBlk s₀ ix (c + i) := by
   have e : s.gpr .rdx + BitVec.ofNat 64 (16 * (j + i)) = bAddr s₀ (c + i) := by
-    rw [show 16 * (j + i) = 16 * j + 16 * i by omega, ← Offset.add_add, ha, bAddr_add]
+    rw [show 16 * (j + i) = 16 * j + 16 * i by omega_arith, ← Offset.add_add, ha, bAddr_add]
   cases ix
   · rw [srcAddr_false, srcBlk_false, e]
   · simp only [srcAddr, srcBlk, off, ite_true, hrbx]
@@ -467,10 +467,10 @@ theorem SrcOk.sepAt {s₀ s : State} {ix : Bool} (hp : SPre s₀) (hS : SrcOk s�
       ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s ix (16 * (j + b)), 16⟩ := by
   intro a b hab hb
   have e : s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)) = bAddr s₀ (c + a) := by
-    rw [show 16 * (j + a) = 16 * j + 16 * a by omega, ← Offset.add_add, ha, bAddr_add]
+    rw [show 16 * (j + a) = 16 * j + 16 * a by omega_arith, ← Offset.add_add, ha, bAddr_add]
   rw [e, srcAddr_eq' ix ha hrbx]
   have hw := hp.wrap_d
-  exact (hS.sep (c + b) (by omega)).sub_left (Offset.sub_base (dp s₀) (by omega))
+  exact (hS.sep (c + b) (by omega_arith)).sub_left (Offset.sub_base (dp s₀) (by omega_arith))
 
 /-- Writes apart from the output and the data keep `DataInv`. -/
 theorem DataInv.frame {s₀ : State} {ix : Bool} {c : Nat} {m m' : Mem} {rs : List Region}
@@ -480,7 +480,7 @@ theorem DataInv.frame {s₀ : State} {ix : Bool} {c : Nat} {m m' : Mem} {rs : Li
   intro k hk
   refine ⟨fun hc => ?_, fun hc => ?_⟩
   · exact (VG.Proof.Aes.X86_64.AesNi.blockAt_frame hf (fun r hr =>
-      (hs r hr).sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega)))).trans
+      (hs r hr).sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega_arith)))).trans
       ((h k hk).1 hc)
   · exact (VG.Proof.Aes.X86_64.AesNi.blockAt_frame hf (fun r hr => hsrc r hr k hk hc)).trans ((h k hk).2 hc)
 
@@ -506,33 +506,33 @@ theorem DataInv.batch {s₀ s t : State} {ix : Bool} {P X : Nat → Block} {y : 
     (hb : BatchPost s₀ s ix P X y c j hashing t) : DataInv s₀ ix (c + 8) t.mem := by
   have addr : ∀ i, s.gpr .rdx + BitVec.ofNat 64 (16 * (j + i)) = bAddr s₀ (c + i) := by
     intro i
-    rw [show 16 * (j + i) = 16 * j + 16 * i by omega, ← Offset.add_add, ha, bAddr_add]
+    rw [show 16 * (j + i) = 16 * j + 16 * i by omega_arith, ← Offset.add_add, ha, bAddr_add]
   have hm : Frame [⟨bAddr s₀ c, 128⟩, workR s₀] s.mem t.mem := by
     simpa only [batchR, ha] using hb.frame
   intro k hk
   refine ⟨fun hk8 => ?_, fun hk8 => ?_⟩
   · by_cases hin : c ≤ k
-    · have hi : k - c < 8 := by omega
+    · have hi : k - c < 8 := by omega_arith
       have hv := hb.data (k - c) hi
-      rw [addr, show c + (k - c) = k by omega] at hv
-      rw [hv, srcAddr_eq' ix ha hbx, show c + (k - c) = k by omega, (h k hk).2 hin]
+      rw [addr, show c + (k - c) = k by omega_arith] at hv
+      rw [hv, srcAddr_eq' ix ha hbx, show c + (k - c) = k by omega_arith, (h k hk).2 hin]
     · rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hm (by
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · have hw := hp.wrap_d
           exact Offset.disjoint (dp s₀) (d := 16 * k) (n := 16) (e := 16 * c) (k := 128)
-            (by omega) (by omega) (by omega)
-        · exact (hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega))).sub_right (work_sub_p s₀))]
-      exact (h k hk).1 (by omega)
+            (by omega_arith) (by omega_arith) (by omega_arith)
+        · exact (hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega_arith))).sub_right (work_sub_p s₀))]
+      exact (h k hk).1 (by omega_arith)
   · rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hm (by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · have hw := hp.wrap_d
-        exact (hS.sep k hk).symm.sub_right (Offset.sub_base (dp s₀) (by omega))
+        exact (hS.sep k hk).symm.sub_right (Offset.sub_base (dp s₀) (by omega_arith))
       · exact (hS.p k hk).sub_right (work_sub_p s₀))]
-    exact (h k hk).2 (by omega)
+    exact (h k hk).2 (by omega_arith)
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -597,7 +597,7 @@ theorem Ready.src {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPre s�
   rw [srcBlk_false]
   exact VG.Proof.Aes.X86_64.AesNi.blockAt_frame h.frame (fun r hr => by
     simp only [List.mem_singleton] at hr; subst r
-    exact hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega)))
+    exact hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * k) (n := 16) (k := 16 * nb s₀) (by omega_arith)))
 
 theorem CoreInv.initial {s₀ s : State} {ix : Bool} {P : Nat → Block}
     (h : ReadyC s₀ P s) (hsrc : ∀ k < nb s₀, blockAt s.mem (srcBlk s₀ ix k) = blk s₀ k) (dec : Bool) :
@@ -622,13 +622,13 @@ theorem CoreInv.batchBounds {s₀ s : State} {ix : Bool} {P : Nat → Block} {de
     (s.gpr .rdx).toNat + 16 * (j + 8) ≤ 2 ^ 64 ∧ Region.Sub (batchR s j) (dR s₀) := by
   refine ⟨fun k hk => ?_, ?_, ?_⟩
   · rw [h.addr, ← Nat.add_assoc, hj]
-    exact in_sub hp.d_in (by omega)
-  · rw [h.cursor, bAddr_toNat hp g (by omega)]
+    exact in_sub hp.d_in (by omega_arith)
+  · rw [h.cursor, bAddr_toNat hp g (by omega_arith)]
     have hw := hp.wrap_d
-    omega
+    omega_arith
   · change Region.Sub ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * j), 128⟩ (dR s₀)
     rw [h.addr, hj]
-    exact Offset.sub_base (dp s₀) (d := 16 * c) (n := 128) (k := 16 * nb s₀) (by omega)
+    exact Offset.sub_base (dp s₀) (d := 16 * c) (n := 128) (k := 16 * nb s₀) (by omega_arith)
 
 /-- What a batch at block `c` needs of its data. -/
 theorem CoreInv.srcBounds {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
@@ -640,8 +640,8 @@ theorem CoreInv.srcBounds {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec 
     (∀ k < 8, Region.Disjoint ⟨srcAddr s ix (16 * (j + k)), 16⟩ (pR s₀)) := by
   have ha : s.gpr .rdx + BitVec.ofNat 64 (16 * j) = bAddr s₀ c := by rw [h.addr, hj]
   refine ⟨fun k hk => ?_, hS.sepAt hp hc ha h.rbx, fun k hk => ?_⟩
-  · rw [srcAddr_eq' ix ha h.rbx]; exact hS.rd _ (by omega)
-  · rw [srcAddr_eq' ix ha h.rbx]; exact hS.p _ (by omega)
+  · rw [srcAddr_eq' ix ha h.rbx]; exact hS.rd _ (by omega_arith)
+  · rw [srcAddr_eq' ix ha h.rbx]; exact hS.p _ (by omega_arith)
 
 theorem CoreInv.bareBatchL {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
     (hp : SPre s₀) (hS : SrcOk s₀ ix) (h : CoreInv s₀ ix P dec c g s) (j : Nat) (hj : g + j = c)

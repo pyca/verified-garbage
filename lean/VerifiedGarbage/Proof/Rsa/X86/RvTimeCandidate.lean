@@ -54,7 +54,7 @@ theorem mmul_stage {g : Geo} (pg : PubG g) {o a b : Nat} (ho : MontIndex o) (ha 
 /-- `candMont_ok`'s product: its precondition. -/
 theorem candMont_pre {g : Geo} {m eLen dLen : Nat} (C : CandidateData g m eLen dLen) {s : State}
     (h : C.Align (alignShifts g eLen dLen) s) : MulPre g mG mG mR2 s := by
-  have positive : 0 < m := by have := C.large; omega
+  have positive : 0 < m := by have := C.large; omega_arith
   unfold CandidateData.Align AI at h
   have mr := h.montReady (m := m) (by simp [liveExp]) (by simp [slotsExp])
     (by simpa only [upd_ne _ _ (by decide : mBase ≠ mY), upd_ne _ _ (by decide : mBase ≠ mG)] using C.value)
@@ -96,22 +96,22 @@ theorem TI.mulPre {m b i : Nat} (h : TI g s0 A AW V live ls m b i s) (L : TableL
     MulPre g mXm mXm mG s := by
   have aboveA (j : Nat) (hj : j ∈ live) (k : Nat) (hk : k ≤ 16) : tableA A g.n m b k j = A j := by
     have := L.above j hj
-    simp only [tableA, show ¬ j < k by omega, ↓reduceIte]
+    simp only [tableA, show ¬ j < k by omega_arith, ↓reduceIte]
   have notX (j : Nat) (hj : j ∈ live) : j ≠ mXm := fun e => L.xm (e ▸ hj)
   unfold TI at h
   have mr := h.montReady (m := m) (by simp [hB]) hI
-    (by rw [upd_ne _ _ (by decide), aboveA _ hB _ (by omega)]; exact value) bound inverse
+    (by rw [upd_ne _ _ (by decide), aboveA _ hB _ (by omega_arith)]; exact value) bound inverse
   refine ⟨_, _, _, _, _, _, _, _, h, mr, by simp, by simp [hG],
     by rw [upd_self]; exact Nat.mod_lt _ positive,
-    by rw [upd_ne _ _ (by decide), aboveA _ hG _ (by omega), base]; exact Nat.mod_lt _ positive, ?_, by decide⟩
+    by rw [upd_ne _ _ (by decide), aboveA _ hG _ (by omega_arith), base]; exact Nat.mod_lt _ positive, ?_, by decide⟩
   intro j hj
   simp only [List.mem_cons, List.mem_append, List.mem_range] at hj
   rcases hj with e | lo | hi
   · exact .inl e
-  · right; simp only [montWrites, List.mem_cons, List.not_mem_nil, or_false]; unfold mXm mAcc; omega
+  · right; simp only [montWrites, List.mem_cons, List.not_mem_nil, or_false]; unfold mXm mAcc; omega_arith
   · have := L.above j hi
     have := notX j hi
-    right; simp only [montWrites, List.mem_cons, List.not_mem_nil, or_false]; unfold mAcc; omega
+    right; simp only [montWrites, List.mem_cons, List.not_mem_nil, or_false]; unfold mAcc; omega_arith
 
 end
 
@@ -163,7 +163,7 @@ theorem tableSteps_trace (pg : PubG g) :
       ∀ {tr ur : List Leak} {sf tf : State},
         Exec isa (VG.Impl.Rsa.X86.RecoverRt.tableSteps k) s tr sf →
         Exec isa (VG.Impl.Rsa.X86.RecoverRt.tableSteps k) t ur tf → tr = ur := by
-  have positive : 0 < m := by have := C.large; omega
+  have positive : 0 < m := by have := C.large; omega_arith
   obtain ⟨vC, oC, bC, iC⟩ := C.montFacts
   obtain ⟨vD, oD, bD, iD⟩ := D.montFacts
   intro k hk
@@ -178,19 +178,19 @@ theorem tableSteps_trace (pg : PubG g) :
     | @seq _ _ _ u _ _ _ e1 e2 =>
       cases et with
       | @seq _ _ _ v _ _ _ f1 f2 =>
-        have eq1 := ih (by omega) s t hs ht e1 f1
+        have eq1 := ih (by omega_arith) s t hs ht e1 f1
         have hu := wp_result (tableSteps_ok liveExp_table (by decide) (by decide) (by decide) vC C.bound iC
-          C.odd positive bC k (by omega) s hs) e1
+          C.odd positive bC k (by omega_arith) s hs) e1
         have hv := wp_result (tableSteps_ok liveExp_table (by decide) (by decide) (by decide) vD C.bound iD
-          D.odd positive bD k (by omega) t ht) f1
-        have eq2 := tableStep_trace pg (by omega) liveExp_table (by decide) (by decide) (by decide)
+          D.odd positive bD k (by omega_arith) t ht) f1
+        have eq2 := tableStep_trace pg (by omega_arith) liveExp_table (by decide) (by decide) (by decide)
           hu vC C.bound iC positive bC hv vD C.bound iD positive bD e2 f2
         rw [eq1, eq2]
 
 theorem table_relCT (pg : PubG g) :
     RelCT isa (fun s t => C.Mont s ∧ D.Mont t) VG.Impl.Rsa.X86.RecoverRt.table
       (fun s t => C.Table s ∧ D.Table t) := by
-  have positive : 0 < m := by have := C.large; omega
+  have positive : 0 < m := by have := C.large; omega_arith
   obtain ⟨_, oC, bC, _⟩ := C.montFacts
   obtain ⟨_, oD, bD, _⟩ := D.montFacts
   refine stage_relCT (fun s t _ _ _ _ ⟨hs, ht⟩ es et => ?_)
@@ -296,11 +296,11 @@ theorem windowBody_trace {g : Geo} (pg : PubG g) {s0 t0 s t : State} {T T' AW AW
   have smallA : E * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W) < 16 := by
     rw [Nat.div_lt_iff_lt_mul hP]
     have := Nat.mod_lt (E * 16 ^ i) hP
-    omega
+    omega_arith
   have smallB : E' * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W) < 16 := by
     rw [Nat.div_lt_iff_lt_mul hP]
     have := Nat.mod_lt (E' * 16 ^ i) hP
-    omega
+    omega_arith
   cases er with
   | @seq _ _ _ s6 _ _ _ e6 e7 =>
   cases fr with
@@ -308,12 +308,12 @@ theorem windowBody_trace {g : Geo} (pg : PubG g) {s0 t0 s t : State} {T T' AW AW
   have entryA : upd T mY (((((b ^ (E * 16 ^ i / 2 ^ (32 * g.W))) ^ 2) ^ 2) ^ 2) ^ 2 * 2 ^ (64 * g.n) % m)
       (E * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W)) =
       b ^ (E * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W)) * 2 ^ (64 * g.n) % m := by
-    rw [upd_ne _ _ (by unfold mY; omega)]
+    rw [upd_ne _ _ (by unfold mY; omega_arith)]
     exact tA _ smallA
   have entryB : upd T' mY (((((b' ^ (E' * 16 ^ i / 2 ^ (32 * g.W))) ^ 2) ^ 2) ^ 2) ^ 2 * 2 ^ (64 * g.n) % m)
       (E' * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W)) =
       b' ^ (E' * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W)) * 2 ^ (64 * g.n) % m := by
-    rw [upd_ne _ _ (by unfold mY; omega)]
+    rw [upd_ne _ _ (by unfold mY; omega_arith)]
     exact tB _ smallB
   have q6 := (mmul_relCT pg (by decide) (by decide) (by decide) (by decide) mulArgs_mY_mY_mXmCheck
     ⟨_, clrTop_mYCheck⟩ _ _ _ _ _ _
@@ -337,11 +337,11 @@ theorem windowBody_trace {g : Geo} (pg : PubG g) {s0 t0 s t : State} {T T' AW AW
 theorem candExp_relCT {g : Geo} {m eLen dLen : Nat} (C D : CandidateData g m eLen dLen) (pg : PubG g) :
     RelCT isa (fun s t => C.Start s ∧ D.Start t) VG.Impl.Rsa.X86.RecoverRt.candExp
       (fun s t => C.Exp s ∧ D.Exp t) := by
-  have positive : 0 < m := by have := C.large; omega
+  have positive : 0 < m := by have := C.large; omega_arith
   have shifts : ∀ {s : State} {k : Nat}, C.Align k s → alignShifts g eLen dLen < 2 ^ 32 :=
-    fun hs => by have := geo_wide g (KS.upper hs); unfold alignShifts; omega
+    fun hs => by have := geo_wide g (KS.upper hs); unfold alignShifts; omega_arith
   have shifts' : ∀ {s : State} {k : Nat}, D.Align k s → alignShifts g eLen dLen < 2 ^ 32 :=
-    fun hs => by have := geo_wide g (KS.upper hs); unfold alignShifts; omega
+    fun hs => by have := geo_wide g (KS.upper hs); unfold alignShifts; omega_arith
   unfold VG.Impl.Rsa.X86.RecoverRt.candExp
   simp only [seqs]
   refine VG.RelCT.seq (R := fun s t => C.Align 0 s ∧ D.Align 0 t)
@@ -352,7 +352,7 @@ theorem candExp_relCT {g : Geo} {m eLen dLen : Nat} (C D : CandidateData g m eLe
   refine VG.RelCT.seq (R := fun s t => C.Align (alignShifts g eLen dLen) s ∧
       D.Align (alignShifts g eLen dLen) t)
     (fixedLoop_relCT (body := VG.Impl.Rsa.X86.RecoverRt.alignBody) (fun k s => C.Align k s)
-      (fun k t => D.Align k t) (by unfold alignShifts; have := C.wide; omega)
+      (fun k t => D.Align k t) (by unfold alignShifts; have := C.wide; omega_arith)
       (fun _ _ _ _ _ _ _ _ ⟨hs, ht⟩ es et =>
         ⟨by unfold CandidateData.Align AI at hs ht; exact pub_trace pg alignBodyCheck hs ht es et, trivial⟩)
       (fun k s hk hs => alignBody_ok hs hk (shifts hs))
@@ -373,12 +373,12 @@ theorem candExp_relCT {g : Geo} {m eLen dLen : Nat} (C D : CandidateData g m eLe
   obtain ⟨tC, vC⟩ := C.windowFacts
   obtain ⟨tD, vD⟩ := D.windowFacts
   refine (fixedLoop_relCT (body := VG.Impl.Rsa.X86.RecoverRt.windowBody) (fun k s => C.Window k s)
-      (fun k t => D.Window k t) (by have := C.count; omega)
+      (fun k t => D.Window k t) (by have := C.count; omega_arith)
       (fun _ _ _ _ _ _ _ _ ⟨hs, ht⟩ es et =>
         ⟨windowBody_trace pg hs tC vC C.inverse ht tD vD D.inverse C.bound C.odd positive es et, trivial⟩)
-      (fun k s hk hs => windowBody_ok hs tC vC C.bound C.inverse C.odd positive hk (by have := C.limit; omega))
+      (fun k s hk hs => windowBody_ok hs tC vC C.bound C.inverse C.odd positive hk (by have := C.limit; omega_arith))
       (fun k t hk ht => windowBody_ok ht tD vD D.bound D.inverse D.odd positive hk
-        (by have := D.limit; omega))).mono
+        (by have := D.limit; omega_arith))).mono
     (fun s t h => h) (fun s t ⟨hs, ht⟩ => ⟨windows_done hs C.wide, windows_done ht D.wide⟩)
 
 end VG.Proof.Rsa.X86.Recover

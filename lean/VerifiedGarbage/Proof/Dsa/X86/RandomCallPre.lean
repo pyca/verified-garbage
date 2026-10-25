@@ -59,7 +59,7 @@ theorem esp_sub4 {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) :
   apply BitVec.eq_of_toNat_eq
   rw [off_rLow_toNat A (by decide), BitVec.toNat_setWidth, BitVec.toNat_sub, he]
   show (2 ^ 32 - 4 + ((rLow s₀).toNat + 24)) % 2 ^ 32 % 2 ^ 64 = _
-  omega
+  omega_arith
 
 theorem esp_ptr {s₀ t : State} (h : Ready s₀ t) {d : Nat} (hd : d < argOff 13) :
     (t.gpr .esp + BitVec.ofNat 32 d).setWidth 64 = off (rLow s₀) (24 + d) := by
@@ -70,12 +70,12 @@ theorem ce_arg {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) (C :
     {i : Nat} (hi : i < 11) : X86.arg (t.callEntry.withRegions rd wr) i = callVal s₀ (t.gpr .esp) i := by
   have he := esp_toNat A h
   have := rLow_fit A (d := 200) (by decide)
-  rw [arg_withRegions, arg_callEntry (by omega) (by omega), h.rf.ptr (by unfold argOff Random.frameBytes; omega)]
+  rw [arg_withRegions, arg_callEntry (by omega_arith) (by omega_arith), h.rf.ptr (by unfold argOff Random.frameBytes; omega_arith)]
   exact C i hi
 
 theorem stk_sub (s₀ : State) {d n : Nat} (h : d + n ≤ 144) :
     Region.Sub ⟨off (rLow s₀) d, n⟩ (rStack s₀) := by
-  rw [rLow_off]; exact Offset.sub_base _ (by omega)
+  rw [rLow_off]; exact Offset.sub_base _ (by omega_arith)
 
 theorem low_sub (s₀ : State) : Region.Sub ⟨rLow s₀, 20⟩ (rStack s₀) := by
   rw [rLow_eq]; exact Offset.sub_base _ (by decide)
@@ -91,59 +91,59 @@ theorem call_pre {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) (C
     esp_ptr h (d := oNonce) (by decide)
   have hnn : (t.gpr .esp + BitVec.ofNat 32 oNonce).toNat = (rLow s₀).toNat + 112 := by
     rw [BitVec.toNat_add, he, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := oNonce) (by decide)]
-    unfold oNonce; omega
+    unfold oNonce; omega_arith
   have ha0 : argAddr (t.callEntry.withRegions (callRd s₀) (callWr s₀)) 0 = off (rLow s₀) 24 := by
     rw [argAddr_withRegions, argAddr_callEntry, esp_ptr h (by decide)]
   have hlow : off (rLow s₀) 20 - 108#64 = (s₀.gpr .esp).setWidth 64 - 232#64 := by
     unfold off rLow
-    bv_omega
+    bv_omega_arith
   have relow : rLow s₀ = ((s₀.gpr .esp).setWidth 64 - 232#64) + 88#64 := by
     unfold rLow
-    bv_omega
+    bv_omega_arith
   have d_out_non : Region.Disjoint (argRegion s₀ 0 (X86.arg s₀ 1).toNat) ⟨off (rLow s₀) 112, (X86.arg s₀ 6).toNat⟩ :=
-    A.stackOutWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackOutWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_out_arg : Region.Disjoint (argRegion s₀ 0 (X86.arg s₀ 1).toNat) ⟨off (rLow s₀) 24, 44⟩ :=
-    A.stackOutWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackOutWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_out_ret : Region.Disjoint (argRegion s₀ 0 (X86.arg s₀ 1).toNat) ⟨off (rLow s₀) 20, 4⟩ :=
-    A.stackOutWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackOutWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_out_low : Region.Disjoint (argRegion s₀ 0 (X86.arg s₀ 1).toNat) ⟨(s₀.gpr .esp).setWidth 64 - 232#64, 108⟩ :=
     A.stackOutWide.symm.sub_right (Region.sub_prefix (by decide))
   have d_key_non : Region.Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) ⟨off (rLow s₀) 112, (X86.arg s₀ 6).toNat⟩ :=
-    A.stackKeyWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackKeyWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_key_arg : Region.Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) ⟨off (rLow s₀) 24, 44⟩ :=
-    A.stackKeyWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackKeyWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_key_ret : Region.Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) ⟨off (rLow s₀) 20, 4⟩ :=
-    A.stackKeyWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackKeyWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_key_low : Region.Disjoint (argRegion s₀ 3 (X86.arg s₀ 4).toNat) ⟨(s₀.gpr .esp).setWidth 64 - 232#64, 108⟩ :=
     A.stackKeyWide.symm.sub_right (Region.sub_prefix (by decide))
   have d_dig_non : Region.Disjoint (argRegion s₀ 7 (X86.arg s₀ 8).toNat) ⟨off (rLow s₀) 112, (X86.arg s₀ 6).toNat⟩ :=
-    A.stackDigestWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackDigestWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_dig_arg : Region.Disjoint (argRegion s₀ 7 (X86.arg s₀ 8).toNat) ⟨off (rLow s₀) 24, 44⟩ :=
-    A.stackDigestWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackDigestWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_dig_ret : Region.Disjoint (argRegion s₀ 7 (X86.arg s₀ 8).toNat) ⟨off (rLow s₀) 20, 4⟩ :=
-    A.stackDigestWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackDigestWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_dig_low : Region.Disjoint (argRegion s₀ 7 (X86.arg s₀ 8).toNat) ⟨(s₀.gpr .esp).setWidth 64 - 232#64, 108⟩ :=
     A.stackDigestWide.symm.sub_right (Region.sub_prefix (by decide))
   have d_scr_non : Region.Disjoint (argRegion s₀ 11 ((X86.arg s₀ 12).toNat * 8)) ⟨off (rLow s₀) 112, (X86.arg s₀ 6).toNat⟩ :=
-    A.stackScratchWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackScratchWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_scr_arg : Region.Disjoint (argRegion s₀ 11 ((X86.arg s₀ 12).toNat * 8)) ⟨off (rLow s₀) 24, 44⟩ :=
-    A.stackScratchWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackScratchWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_scr_ret : Region.Disjoint (argRegion s₀ 11 ((X86.arg s₀ 12).toNat * 8)) ⟨off (rLow s₀) 20, 4⟩ :=
-    A.stackScratchWide.symm.sub_right (stk_sub s₀ (by omega))
+    A.stackScratchWide.symm.sub_right (stk_sub s₀ (by omega_arith))
   have d_scr_low : Region.Disjoint (argRegion s₀ 11 ((X86.arg s₀ 12).toNat * 8)) ⟨(s₀.gpr .esp).setWidth 64 - 232#64, 108⟩ :=
     A.stackScratchWide.symm.sub_right (Region.sub_prefix (by decide))
   have d_non_arg : Region.Disjoint ⟨off (rLow s₀) 112, (X86.arg s₀ 6).toNat⟩ ⟨off (rLow s₀) 24, 44⟩ :=
-    Offset.disjoint _ (by omega) (by omega) (by omega)
+    Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
   have d_ret_non : Region.Disjoint ⟨off (rLow s₀) 20, 4⟩ ⟨off (rLow s₀) 112, (X86.arg s₀ 6).toNat⟩ :=
-    Offset.disjoint _ (by omega) (by omega) (by omega)
+    Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
   have d_ret_arg : Region.Disjoint ⟨off (rLow s₀) 20, 4⟩ ⟨off (rLow s₀) 24, 44⟩ :=
-    Offset.disjoint _ (by omega) (by omega) (by omega)
+    Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
   have d_low_non : Region.Disjoint ⟨(s₀.gpr .esp).setWidth 64 - 232#64, 108⟩ ⟨off (rLow s₀) 112, (X86.arg s₀ 6).toNat⟩ := by
     rw [relow, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact Offset.base_disjoint _ (by omega) (by omega)
+    exact Offset.base_disjoint _ (by omega_arith) (by omega_arith)
   have d_low_arg : Region.Disjoint ⟨(s₀.gpr .esp).setWidth 64 - 232#64, 108⟩ ⟨off (rLow s₀) 24, 44⟩ := by
     rw [relow, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact Offset.base_disjoint _ (by omega) (by omega)
+    exact Offset.base_disjoint _ (by omega_arith) (by omega_arith)
   have d_out_key := A.outKey
   have d_out_dig := A.outDigest
   have d_out_scr := A.outScratch
@@ -154,19 +154,19 @@ theorem call_pre {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) (C
   have b_dig := A.digestBound
   have b_scr := A.scratchBound
   have b_non : (t.gpr .esp + BitVec.ofNat 32 oNonce).toNat + (X86.arg s₀ 6).toNat ≤ 2 ^ 32 := by
-    rw [hnn]; omega
+    rw [hnn]; omega_arith
   have p_len := A.lengths
   have p_out := A.outLength
   have p_key := A.keyLength
   have p_scr : Spec.Dsa.scratchWords (X86.arg s₀ 5).toNat ≤ (X86.arg s₀ 12).toNat := by
-    have := A.scratchLength; unfold Spec.Dsa.randomSignScratchWords at this; omega
+    have := A.scratchLength; unfold Spec.Dsa.randomSignScratchWords at this; omega_arith
   have w_lo : 108 ≤ (t.gpr .esp - 4).toNat := by
     rw [BitVec.toNat_sub, he]; show 108 ≤ (2 ^ 32 - 4 + _) % 2 ^ 32
     have lo := A.stackLow
     rw [rLow_toNat A]
-    omega
+    omega_arith
   have w_hi : (t.gpr .esp - 4).toNat + 4 + 44 ≤ 2 ^ 32 := by
-    rw [BitVec.toNat_sub, he]; show (2 ^ 32 - 4 + _) % 2 ^ 32 + 4 + 44 ≤ 2 ^ 32; omega
+    rw [BitVec.toNat_sub, he]; show (2 ^ 32 - 4 + _) % 2 ^ 32 + 4 + 44 ≤ 2 ^ 32; omega_arith
   sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [ce_arg A h C (callRd s₀) (callWr s₀) (show 0 < 11 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 1 < 11 by decide),

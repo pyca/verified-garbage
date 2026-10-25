@@ -52,21 +52,21 @@ theorem sqrA_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
           2 ^ 128 * ((word s.mem base a).toNat * (word s.mem base (a + 24)).toNat) ∧
       Keeps [.r9, .r10, .r11, .r12, .rax, .rdx, .rbp] s s' := by
   rw [sqrA_eq, WP.block_append_iff]
-  refine WP.mono (movRdx_ok s (readSrc_sc hs (d := a) (by omega))) fun s1 ⟨d1, _, _, k1⟩ => ?_
+  refine WP.mono (movRdx_ok s (readSrc_sc hs (d := a) (by omega_arith))) fun s1 ⟨d1, _, _, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by nd)
   rw [WP.block_append_iff]
   refine WP.mono (clear_ok s1) fun s2 ⟨z2, c2, _, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by nd)
   rw [WP.block_append_iff]
-  refine WP.mono (mulx_ok s2 (readSrc_sc hs2 (by omega)) (noImm_mem _) (by nd))
+  refine WP.mono (mulx_ok s2 (readSrc_sc hs2 (by omega_arith)) (noImm_mem _) (by nd))
     fun s3 ⟨e3, c3, _, k3⟩ => ?_
   have hs3 := hs2.of_keeps k3 (by nd)
   rw [WP.block_append_iff]
-  refine WP.mono (mulAcc_ok s3 (readSrc_sc hs3 (by omega)) (noImm_mem _) (c3.trans c2)
+  refine WP.mono (mulAcc_ok s3 (readSrc_sc hs3 (by omega_arith)) (noImm_mem _) (c3.trans c2)
     (by nd) (by nd) (by nd)) fun s4 ⟨c4, hc4, _, e4, k4⟩ => ?_
   have hs4 := hs3.of_keeps k4 (by nd)
   rw [WP.block_append_iff]
-  refine WP.mono (mulAcc_ok s4 (readSrc_sc hs4 (by omega)) (noImm_mem _) hc4
+  refine WP.mono (mulAcc_ok s4 (readSrc_sc hs4 (by omega_arith)) (noImm_mem _) hc4
     (by nd) (by nd) (by nd)) fun s5 ⟨c5, hc5, _, e5, k5⟩ => ?_
   have z5 : s5.gpr .rbp = 0 := by
     rw [k5.1 _ (by nd), k4.1 _ (by nd), k3.1 _ (by nd), z2]
@@ -105,17 +105,17 @@ theorem sqrB_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
           2 ^ 64 * ((word s.mem base (a + 8)).toNat * (word s.mem base (a + 24)).toNat) ∧
       Keeps [.r11, .r12, .r13, .rax, .rcx, .rdx, .rbp] s s' := by
   rw [sqrB_eq, WP.block_append_iff]
-  refine WP.mono (movRdx_ok s (readSrc_sc hs (d := a + 8) (by omega))) fun s1 ⟨d1, _, _, k1⟩ => ?_
+  refine WP.mono (movRdx_ok s (readSrc_sc hs (d := a + 8) (by omega_arith))) fun s1 ⟨d1, _, _, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by nd)
   rw [WP.block_append_iff]
   refine WP.mono (clear_ok s1) fun s2 ⟨z2, c2, o2, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by nd)
   rw [WP.block_append_iff]
-  refine WP.mono (madd_ok s2 (readSrc_sc hs2 (by omega)) (noImm_mem _) c2 o2 (by nd) (by nd)
+  refine WP.mono (madd_ok s2 (readSrc_sc hs2 (by omega_arith)) (noImm_mem _) c2 o2 (by nd) (by nd)
     (by nd) (by nd) (by nd)) fun s3 ⟨c3, o3, hc3, ho3, e3, k3⟩ => ?_
   have hs3 := hs2.of_keeps k3 (by nd)
   have z3 : s3.gpr .rbp = 0 := by rw [k3.1 _ (by nd), z2]
-  refine WP.mono (maddLast_ok s3 (readSrc_sc hs3 (by omega)) (noImm_mem _) hc3 ho3 z3 (by nd)
+  refine WP.mono (maddLast_ok s3 (readSrc_sc hs3 (by omega_arith)) (noImm_mem _) hc3 ho3 z3 (by nd)
     (by nd) (by nd) (by nd) (by nd)) fun s4 ⟨c4, o4, _, _, e4, k4⟩ => ?_
   refine ⟨?_, (((k1.mono (by nd)).trans (k2.mono (by nd))).trans (k3.mono (by nd))).trans
     (k4.mono (by nd))⟩
@@ -145,13 +145,13 @@ theorem sqrC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
         (s.gpr .r13).toNat + (word s.mem base (a + 16)).toNat * (word s.mem base (a + 24)).toNat ∧
       Keeps [.r13, .r14, .rax, .rdx, .rbp] s s' := by
   rw [sqrC_eq, WP.block_append_iff]
-  refine WP.mono (movRdx_ok s (readSrc_sc hs (d := a + 16) (by omega))) fun s1 ⟨d1, _, _, k1⟩ => ?_
+  refine WP.mono (movRdx_ok s (readSrc_sc hs (d := a + 16) (by omega_arith))) fun s1 ⟨d1, _, _, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by nd)
   rw [WP.block_append_iff]
   refine WP.mono (clear_ok s1) fun s2 ⟨z2, c2, _, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by nd)
   rw [WP.block_append_iff]
-  refine WP.mono (mulAcc_ok s2 (readSrc_sc hs2 (by omega)) (noImm_mem _) c2 (by nd) (by nd)
+  refine WP.mono (mulAcc_ok s2 (readSrc_sc hs2 (by omega_arith)) (noImm_mem _) c2 (by nd) (by nd)
     (by nd)) fun s3 ⟨c3, hc3, _, e3, k3⟩ => ?_
   have z3 : s3.gpr .rbp = 0 := by rw [k3.1 _ (by nd), z2]
   refine WP.mono (carryC_ok s3 hc3 z3) fun s4 ⟨c4, _, _, e4, k4⟩ => ?_
@@ -202,14 +202,14 @@ theorem sqrD_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
   refine WP.mono (clear_ok s) fun s1 ⟨z1, c1, o1, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by nd)
   rw [WP.block_append_iff]
-  refine WP.mono (sqWord_ok hs1 (d := a) (by omega) (by nd)) fun s2 ⟨e2, c2, o2, k2⟩ => ?_
+  refine WP.mono (sqWord_ok hs1 (d := a) (by omega_arith) (by nd)) fun s2 ⟨e2, c2, o2, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by nd)
   rw [WP.block_append_iff]
   refine WP.mono (dblAdd_ok s2 (c2.trans c1) (o2.trans o1) (by nd))
     fun s3 ⟨c3, o3, hc3, ho3, e3, k3⟩ => ?_
   have hs3 := hs2.of_keeps k3 (by nd)
   rw [WP.block_append_iff]
-  refine WP.mono (sqWord_ok hs3 (d := a + 8) (by omega) (by nd)) fun s4 ⟨e4, c4, o4, k4⟩ => ?_
+  refine WP.mono (sqWord_ok hs3 (d := a + 8) (by omega_arith) (by nd)) fun s4 ⟨e4, c4, o4, k4⟩ => ?_
   have hs4 := hs3.of_keeps k4 (by nd)
   rw [WP.block_append_iff]
   refine WP.mono (dblAdd_ok s4 (c4.trans hc3) (o4.trans ho3) (by nd))
@@ -218,7 +218,7 @@ theorem sqrD_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
   refine WP.mono (dblAdd_ok s5 hc5 ho5 (by nd)) fun s6 ⟨c6, o6, hc6, ho6, e6, k6⟩ => ?_
   have hs6 := (hs4.of_keeps k5 (by nd)).of_keeps k6 (by nd)
   rw [WP.block_append_iff]
-  refine WP.mono (sqWord_ok hs6 (d := a + 16) (by omega) (by nd)) fun s7 ⟨e7, c7, o7, k7⟩ => ?_
+  refine WP.mono (sqWord_ok hs6 (d := a + 16) (by omega_arith) (by nd)) fun s7 ⟨e7, c7, o7, k7⟩ => ?_
   have hs7 := hs6.of_keeps k7 (by nd)
   rw [WP.block_append_iff]
   refine WP.mono (dblAdd_ok s7 (c7.trans hc6) (o7.trans ho6) (by nd))
@@ -227,7 +227,7 @@ theorem sqrD_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
   refine WP.mono (dblAdd_ok s8 hc8 ho8 (by nd)) fun s9 ⟨c9, o9, hc9, ho9, e9, k9⟩ => ?_
   have hs9 := (hs7.of_keeps k8 (by nd)).of_keeps k9 (by nd)
   rw [WP.block_append_iff]
-  refine WP.mono (sqWord_ok hs9 (d := a + 24) (by omega) (by nd)) fun s10 ⟨e10, c10, o10, k10⟩ => ?_
+  refine WP.mono (sqWord_ok hs9 (d := a + 24) (by omega_arith) (by nd)) fun s10 ⟨e10, c10, o10, k10⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (dblAdd_ok s10 (c10.trans hc9) (o10.trans ho9) (by nd))
     fun s11 ⟨c11, o11, hc11, ho11, e11, k11⟩ => ?_
@@ -309,7 +309,7 @@ theorem sqr4_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
       simp only [X86_64.fe, val4]
       have := (word s.mem base a).isLt; have := (word s.mem base (a + 8)).isLt
       have := (word s.mem base (a + 16)).isLt; have := (word s.mem base (a + 24)).isLt
-      omega
+      omega_arith
     exact Nat.mul_lt_mul'' h h
   simp only [X86_64.fe, val4, sq_words] at hb ⊢
   simp only [val4] at e4

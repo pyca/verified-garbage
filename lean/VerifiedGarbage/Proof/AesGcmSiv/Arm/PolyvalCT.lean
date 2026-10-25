@@ -175,11 +175,11 @@ theorem rel_env {c : Prog isa} {p : Prm} {τ₁ τ₂ : State} (E₁ : Env p τ�
 
 theorem argByte_eq {p : Prm} (L : Lay p) {s₁ s₂ : State} (E₁ : Env p s₁) (E₂ : Env p s₂) (A₁ : Args p s₁.mem)
     (A₂ : Args p s₂.mem) : ∀ k < 12, s₁.mem (VG.Arm.Taint.argByte s₁ k) = s₂.mem (VG.Arm.Taint.argByte s₂ k) := by
-  refine argMem_of (j := 3) (E₁.sp_eq E₂) (by rw [E₁.sp]; have := L.spf; omega) fun i hi => ?_
+  refine argMem_of (j := 3) (E₁.sp_eq E₂) (by rw [E₁.sp]; have := L.spf; omega_arith) fun i hi => ?_
   have e : ∀ {s : State}, Env p s → Args p s.mem → stackArg s i = if i = 0 then BitVec.ofNat 32 p.al
       else if i = 1 then p.D else BitVec.ofNat 32 p.n := fun {s} E A => by
     rw [Proof.AesGcm.Arm.stackArg_eq, E.sp]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     · exact A.a0
     · exact A.a4
     · exact A.a8
@@ -196,7 +196,7 @@ theorem rel_envArg {c : Prog isa} {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E
   have spf := L.spf
   have hw : ∀ {τ : State}, Env p τ →
       τ.sp.toNat + 12 ≤ 2 ^ 32 ∧ ∀ r ∈ τ.wr, Region.Disjoint ⟨State.addr τ.sp, 12⟩ r := fun E =>
-    ⟨by rw [E.sp]; omega, fun r hr => by rw [E.sp]; exact (E.perm.argw r hr).sub_left (Region.sub_prefix (by decide))⟩
+    ⟨by rw [E.sp]; omega_arith, fun r hr => by rw [E.sp]; exact (E.perm.argw r hr).sub_left (Region.sub_prefix (by decide))⟩
   exact rel_arg (pubRegs rs) 12 (fun r h => by
     rcases List.mem_append.mp h with h | h
     · exact E₁.agree E₂ r h
@@ -204,11 +204,11 @@ theorem rel_envArg {c : Prog isa} {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E
 
 theorem argByte_eq16 {p : Prm} (L : Lay p) {s₁ s₂ : State} (E₁ : Env p s₁) (E₂ : Env p s₂) (A₁ : Args p s₁.mem)
     (A₂ : Args p s₂.mem) : ∀ k < 16, s₁.mem (VG.Arm.Taint.argByte s₁ k) = s₂.mem (VG.Arm.Taint.argByte s₂ k) := by
-  refine argMem_of (j := 4) (E₁.sp_eq E₂) (by rw [E₁.sp]; have := L.spf; omega) fun i hi => ?_
+  refine argMem_of (j := 4) (E₁.sp_eq E₂) (by rw [E₁.sp]; have := L.spf; omega_arith) fun i hi => ?_
   have e : ∀ {s : State}, Env p s → Args p s.mem → stackArg s i = if i = 0 then BitVec.ofNat 32 p.al
       else if i = 1 then p.D else if i = 2 then BitVec.ofNat 32 p.n else p.T := fun {s} E A => by
     rw [Proof.AesGcm.Arm.stackArg_eq, E.sp]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
     · exact A.a0
     · exact A.a4
     · exact A.a8
@@ -226,7 +226,7 @@ theorem rel_envArg16 {c : Prog isa} {p : Prm} (L : Lay p) {τ₁ τ₂ : State} 
   have spf := L.spf
   have hw : ∀ {τ : State}, Env p τ →
       τ.sp.toNat + 16 ≤ 2 ^ 32 ∧ ∀ r ∈ τ.wr, Region.Disjoint ⟨State.addr τ.sp, 16⟩ r := fun E =>
-    ⟨by rw [E.sp]; omega, fun r hr => by rw [E.sp]; exact (E.perm.argw r hr).sub_left (Region.sub_prefix (by decide))⟩
+    ⟨by rw [E.sp]; omega_arith, fun r hr => by rw [E.sp]; exact (E.perm.argw r hr).sub_left (Region.sub_prefix (by decide))⟩
   exact rel_arg (pubRegs rs) 16 (fun r h => by
     rcases List.mem_append.mp h with h | h
     · exact E₁.agree E₂ r h
@@ -310,7 +310,7 @@ theorem derive_rel {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ�
   refine ⟨by rw [ev₁, ev₂], fun hc => ?_⟩
   rw [ev₁] at hc
   have he : i + 1 ≠ p.R / 2 - 1 := by simpa using hc
-  exact ⟨(p.R / 2 - 1) - (i + 1), by omega, i + 1, rfl, by omega, K₁, K₂⟩
+  exact ⟨(p.R / 2 - 1) - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, K₁, K₂⟩
 
 theorem expA_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [])) (.block expandArgs) h).isSome
     = true := ⟨_, by taint_decide⟩
@@ -383,10 +383,10 @@ theorem chunks_rel {p : Prm} (L : Lay p) {σ₁ σ₂ : State} {Q : BitVec 32} {
     RelCT isa (Eq2 τ₁ τ₂) (.loop chunk .ne) TT := by
   refine rel_loop (fun k t₁ t₂ => ∃ d, k = m / 16 - d ∧ d < m / 16 ∧ CInv p σ₁ Q m d t₁ ∧ CInv p σ₂ Q m d t₂)
     (fun k t₁ t₂ ⟨d, hk, hd, J₁, J₂⟩ => ?_) (m / 16 - d) ⟨d, rfl, hd, I₁, I₂⟩
-  refine rel_wpQ (chunk_rel L J₁.abs.env J₂.abs.env (by omega) (by omega) (J₁.src hQ₁ hd) (J₂.src hQ₂ hd)
+  refine rel_wpQ (chunk_rel L J₁.abs.env J₂.abs.env (by omega_arith) (by omega_arith) (J₁.src hQ₁ hd) (J₂.src hQ₂ hd)
       J₁.r4 J₂.r4 J₁.r5 J₂.r5)
-    (chunk_ok L J₁.abs.env (by omega) (by omega) (J₁.src hQ₁ hd) J₁.r4 J₁.r5)
-    (chunk_ok L J₂.abs.env (by omega) (by omega) (J₂.src hQ₂ hd) J₂.r4 J₂.r5) fun a b C₁ C₂ => ?_
+    (chunk_ok L J₁.abs.env (by omega_arith) (by omega_arith) (J₁.src hQ₁ hd) J₁.r4 J₁.r5)
+    (chunk_ok L J₂.abs.env (by omega_arith) (by omega_arith) (J₂.src hQ₂ hd) J₂.r4 J₂.r5) fun a b C₁ C₂ => ?_
   obtain ⟨K₁, z₁⟩ := J₁.step L hQ₁ hd C₁
   obtain ⟨K₂, z₂⟩ := J₂.step L hQ₂ hd C₂
   have ev₁ := eval_ne' z₁
@@ -394,7 +394,7 @@ theorem chunks_rel {p : Prm} (L : Lay p) {σ₁ σ₂ : State} {Q : BitVec 32} {
   refine ⟨by rw [ev₁, ev₂], fun hc => ?_⟩
   rw [ev₁] at hc
   have he : m / 16 - (d + min (m / 16 - d) 64) ≠ 0 := by simpa using hc
-  exact ⟨m / 16 - (d + min (m / 16 - d) 64), by omega, d + min (m / 16 - d) 64, rfl, by omega, K₁, K₂⟩
+  exact ⟨m / 16 - (d + min (m / 16 - d) 64), by omega_arith, d + min (m / 16 - d) 64, rfl, by omega_arith, K₁, K₂⟩
 
 theorem absHead_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [.r4, .r5]))
     (.block wholeLeft) h).isSome = true := ⟨_, by taint_decide⟩
@@ -445,28 +445,28 @@ theorem absorb_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ�
     (absMid_ok L F₁ hm hQ₁' u4₁ u5₁ z₁) (absMid_ok L F₂ hm hQ₂' u4₂ u5₂ z₂)
     fun w₁ w₂ ⟨A₁, r4₁, r5₁⟩ ⟨A₂, r4₂, r5₂⟩ => ?_
   · have h0 : m / 16 ≠ 0 := by simpa using hf
-    exact chunks_rel L hm (hQ₁'.take (by omega)) (hQ₂'.take (by omega)) (d := 0) (by omega)
+    exact chunks_rel L hm (hQ₁'.take (by omega_arith)) (hQ₂'.take (by omega_arith)) (d := 0) (by omega_arith)
       (CInv.zero F₁ u4₁ u5₁) (CInv.zero F₂ u4₂ u5₂)
   -- The last bytes.
   have wC : ∀ {w : State}, Env p w → w.gpr .r4 = Q + BitVec.ofNat 32 (16 * (m / 16)) →
       w.gpr .r5 = BitVec.ofNat 32 (m % 16) → WP isa (.block [.cmp .r5 (Impl.AesGcm.Arm.imm 0)]) w fun u =>
         Env p u ∧ u.gpr .r4 = Q + BitVec.ofNat 32 (16 * (m / 16)) ∧ u.gpr .r5 = BitVec.ofNat 32 (m % 16) ∧
           u.z = decide (m % 16 = 0) ∧ u.rd = w.rd ∧ u.wr = w.wr := fun E h4 h5 =>
-    WP.mono (cmp5_ok (by omega) h5) fun u ⟨z, g, _, sp, rd, wr⟩ =>
+    WP.mono (cmp5_ok (by omega_arith) h5) fun u ⟨z, g, _, sp, rd, wr⟩ =>
       ⟨E.keep (fun r _ => by rw [g]) sp rd wr, by rw [g, h4], by rw [g, h5], z, rd, wr⟩
   refine rel_seq (rel_env A₁.env A₂.env [.r4, .r5] (by simp [r4₁, r4₂, r5₁, r5₂]) absCmp_check)
     (wC A₁.env r4₁ r5₁) (wC A₂.env r4₂ r5₂) fun c₁ c₂ ⟨G₁, c4₁, c5₁, cz₁, crd₁, cwr₁⟩ ⟨G₂, c4₂, c5₂, cz₂, crd₂, cwr₂⟩ => ?_
   refine rel_ite (eval_eq' cz₁) (eval_eq' cz₂) (fun _ => rel_skip) (fun hf => ?_)
   have h0 : m % 16 ≠ 0 := by simpa using hf
-  have ea := hQ₁.addr (j := 16 * (m / 16)) (by omega)
+  have ea := hQ₁.addr (j := 16 * (m / 16)) (by omega_arith)
   have dT : (⟨State.addr (Q + BitVec.ofNat 32 (16 * (m / 16))), m % 16⟩ : Region).Disjoint
       ⟨State.addr p.W, 3760⟩ := by
-    rw [ea]; exact hd.sub_left (Offset.sub_base _ (by omega))
-  have hs₁ := ((hQ₁'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega) (by omega)).of_eq A₁.rd A₁.wr).of_eq crd₁ cwr₁
-  have hs₂ := ((hQ₂'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega) (by omega)).of_eq A₂.rd A₂.wr).of_eq crd₂ cwr₂
+    rw [ea]; exact hd.sub_left (Offset.sub_base _ (by omega_arith))
+  have hs₁ := ((hQ₁'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith) (by omega_arith)).of_eq A₁.rd A₁.wr).of_eq crd₁ cwr₁
+  have hs₂ := ((hQ₂'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith) (by omega_arith)).of_eq A₂.rd A₂.wr).of_eq crd₂ cwr₂
   refine rel_seq (rel_env G₁ G₂ [.r4, .r5] (by simp [c4₁, c4₂, c5₁, c5₂]) absTailPre_check)
-    (absTailPre_ok L G₁ (by omega) (by omega) hs₁.rd hs₁.wrap dT c4₁ c5₁)
-    (absTailPre_ok L G₂ (by omega) (by omega) hs₂.rd hs₂.wrap dT c4₂ c5₂) fun z₁ z₂ T₁ T₂ => ?_
+    (absTailPre_ok L G₁ (by omega_arith) (by omega_arith) hs₁.rd hs₁.wrap dT c4₁ c5₁)
+    (absTailPre_ok L G₂ (by omega_arith) (by omega_arith) hs₂.rd hs₂.wrap dT c4₂ c5₂) fun z₁ z₂ T₁ T₂ => ?_
   exact chunkB_rel L T₁.env T₂.env T₁.r4 T₂.r4 T₁.r5 T₂.r5
 
 theorem lensBlock_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs []) 12) (.block lensBlock) h).isSome

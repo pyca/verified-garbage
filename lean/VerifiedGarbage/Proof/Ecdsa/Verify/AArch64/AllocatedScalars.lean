@@ -42,9 +42,9 @@ theorem mid_with_inverse_ok (hc : CfgOk c)
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge
   have F := hF.fixed
-  have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   have hr2lt : ∀ {m : Mem}, wordsVal m base (c.sl R2N) c.n = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n →
-      wordsVal m base (c.sl R2N) c.n < c.C.n := fun h => by rw [h]; exact Nat.mod_lt _ (by omega)
+      wordsVal m base (c.sl R2N) c.n < c.C.n := fun h => by rw [h]; exact Nat.mod_lt _ (by omega_arith)
   rw [scalars_eq]
   -- The checks.
   refine WP.seq (WP.seq ?_)
@@ -107,11 +107,11 @@ theorem mid_with_inverse_ok (hc : CfgOk c)
     fun s₈ ⟨hs₈, M₈, g₈, rd₈, wr₈, U₈, v₈, lt₈, e₈⟩ sy₈ => ?_)
   have F₈ := F₇.unch h7 hn (fixedOk_slW (by decide)) U₈
   refine WP.seq (WP.mono_syms (mulN_ok hc hs₈ M₈ (o := U) (a := UM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from F₈.one]; omega) (by decide))
+    (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from F₈.one]; omega_arith) (by decide))
     fun s₉ ⟨hs₉, M₉, g₉, rd₉, wr₉, U₉, v₉, lt₉, e₉⟩ sy₉ => ?_)
   have F₉ := F₈.unch h7 hn (fixedOk_slW (by decide)) U₉
   refine WP.mono_syms (mulN_ok hc hs₉ M₉ (o := V) (a := VM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from F₉.one]; omega) (by decide))
+    (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from F₉.one]; omega_arith) (by decide))
     fun s₁₀ ⟨hs₁₀, M₁₀, g₁₀, rd₁₀, wr₁₀, U₁₀, v₁₀, lt₁₀, e₁₀⟩ sy₁₀ => h s₁₀ ?_
   have F₁₀ := F₉.unch h7 hn (fixedOk_slW (by decide)) U₁₀
   -- What changed: the flag and `midW`.
@@ -177,9 +177,9 @@ theorem mid_with_inverse_ok (hc : CfgOk c)
         have h := apart_append (hsep (i:=FLAG) (by decide) (by decide))
           (apart_slW (c:=c) (l:=midW) (i:=FLAG) (by decide)) w hw
         rcases h with h | h
-        · exact Or.inl (by omega)
+        · exact Or.inl (by omega_arith)
         · exact Or.inr h
-      · have := sl_le c h7 (i:=FLAG) (by decide); omega
+      · have := sl_le c h7 (i:=FLAG) (by decide); omega_arith
     rw [he]
     exact flag₂
   · refine unch_whole (hF.unch.trans UW) fun w hw => ?_

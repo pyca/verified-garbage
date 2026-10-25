@@ -48,7 +48,7 @@ structure TabView (tm : Mem → Mem) (W D : Addr) (n : Nat) : Prop where
 /-- GHASH reading the table at `W + 1536`. -/
 theorem TabView.id {W D : Addr} {n : Nat} : TabView (fun m => m) W D n :=
   ⟨fun f hd j hj l hl => f.readW (r := ⟨W + BitVec.ofNat 64 1536 + BitVec.ofNat 64 (64 * j + 16 * l), 16⟩)
-      (Region.contains_self _ _) (fun r hr => (hd r hr).1.sub_left (Offset.sub_base _ (by omega))) (by decide),
+      (Region.contains_self _ _) (fun r hr => (hd r hr).1.sub_left (Offset.sub_base _ (by omega_arith))) (by decide),
     fun _ => Frame.refl _ _⟩
 
 theorem TabOk.view {tm : Mem → Mem} {W D : Addr} {n : Nat} (tv : TabView tm W D n) {m m' : Mem} {H : Block}
@@ -57,7 +57,7 @@ theorem TabOk.view {tm : Mem → Mem} {W D : Addr} {n : Nat} (tv : TabView tm W 
     (hd : ∀ r ∈ rs, (⟨W + BitVec.ofNat 64 1536, 512⟩ : Region).Disjoint r ∧
       (Region.Sub r ⟨W, 1536⟩ ∨ Region.Sub r ⟨D, n⟩)) :
     TabOk (tm m') (W + BitVec.ofNat 64 1536) H g :=
-  fun j hj l hl => by rw [tv.keep f hd j (by omega) l hl]; exact h j hj l hl
+  fun j hj l hl => by rw [tv.keep f hd j (by omega_arith) l hl]; exact h j hj l hl
 
 /-- What a GHASH code leaves, from `s` to `t`, with the table as `tm` sees
 it: what `ghash_ok` says of `ghash`. -/
@@ -106,7 +106,7 @@ theorem ctx_frame {k : Nat} {s₀ : State} {Ctx W SP Np A D : Addr} {nl al n : N
     rcases hr with rfl | rfl | rfl
     · exact C.lay.cw'.sub_left hs
     · exact C.data.ctx.sub_left hs
-    · exact C.t_c.symm.sub_left hs) (by omega)
+    · exact C.t_c.symm.sub_left hs) (by omega_arith)
 
 theorem ctxH_frame {k : Nat} {s₀ : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}
     (C : OneCtx s₀ k Ctx W SP Np A D nl al n) {m : Mem} (f : Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 24] s₀.mem m) :
@@ -117,13 +117,13 @@ theorem ciph_frame' {k : Nat} {s₀ : State} {Ctx W SP Np A D : Addr} {nl al n :
     (C : OneCtx s₀ k Ctx W SP Np A D nl al n) {m : Mem} (f : Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 24] s₀.mem m)
     {R : Nat} (hR : R ≤ 14) : ciphOf m Ctx R = ctxCiph s₀.mem Ctx R := by
   simp only [ciphOf, ctxCiph]
-  rw [ctx_frame C f (Region.sub_prefix (by omega)) (by omega)]
+  rw [ctx_frame C f (Region.sub_prefix (by omega_arith)) (by omega_arith)]
 
 theorem wk_T {W D : Addr} {n : Nat} : Wk W D n ⟨W + BitVec.ofNat 64 1536, 512⟩ :=
   .inr (.inl (Offset.sub W (by decide) (by decide)))
 
 theorem wk_G {W D : Addr} {n : Nat} {o k : Nat} (h : o + k ≤ 1536) : Wk W D n ⟨W + BitVec.ofNat 64 (512 + o), k⟩ :=
-  .inr (.inl (Offset.sub W (by omega) (by omega)))
+  .inr (.inl (Offset.sub W (by omega_arith) (by omega_arith)))
 
 /-- What a table of powers' code `pw` leaves, from `s` to `t`: the table at
 `W + 1536`, as `tm` sees it, for the hash subkey of `s`, nothing else
@@ -165,9 +165,9 @@ theorem front_ok {pw gh : Prog isa} {tm : Mem → Mem} {k : Nat} {s₀ s : State
   have dD := C.dE
   have h32' := h32
   simp only [nb16] at h32'
-  have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega
-  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega
-  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
+  have hg1 : 1 ≤ grp al n := by simp only [grp, nb16]; omega_arith
+  have hg8 : grp al n ≤ 8 := by simp only [grp, nb16]; omega_arith
+  have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega_arith
   have hR' : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   -- The powers.
   refine WP.seq (WP.mono (hpw.run s S.env S.r288 hg1 hg8 S.frame S.rd S.wr)
@@ -181,8 +181,8 @@ theorem front_ok {pw gh : Prog isa} {tm : Mem → Mem} {k : Nat} {s₀ s : State
       (⟨p, j⟩ : Region).Disjoint ⟨W, 2560⟩ → j ≤ 2 ^ 64 → bytesAt m' p j = bytesAt m p j := fun f _ _ h hj =>
     bytesAt_frame f (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.sub_right (Lay.wSub (by decide))) hj
-  have haad₃ : bytesAt s₃.mem A al = bytesAt s₀.mem A al := by rw [dT fT C.aad.w (by omega), haad]
-  have hdat₃ : bytesAt s₃.mem D n = bytesAt s₀.mem D n := by rw [dT fT dD (by omega), hdat]
+  have haad₃ : bytesAt s₃.mem A al = bytesAt s₀.mem A al := by rw [dT fT C.aad.w (by omega_arith), haad]
+  have hdat₃ : bytesAt s₃.mem D n = bytesAt s₀.mem D n := by rw [dT fT dD (by omega_arith), hdat]
   -- `G` zeroed.
   refine WP.seq (WP.mono (zeroG_ok s₃ S₃.env.r15 (S₃.env.perm.wC (by decide)))
     fun s₄ ⟨m₄, g₄, rd₄, wr₄, z₄⟩ => ?_)
@@ -205,19 +205,19 @@ theorem front_ok {pw gh : Prog isa} {tm : Mem → Mem} {k : Nat} {s₀ s : State
   -- The additional data copied to `G`.
   refine WP.seq (WP.seq ?_)
   obtain ⟨s₄', run₄', di₄, si₄, cx₄, g₄', m₄', rd₄', wr₄', z₄'⟩ := copyAArgs_ok s₄ S₄.env.r15 S₄.env.perm.w S₄.r296
-    S₄.r232 S₄.r184 (by omega)
+    S₄.r232 S₄.r184 (by omega_arith)
   refine WP.of_runBlock ⟨s₄', run₄', ?_⟩
-  have hal63 : al < 2 ^ 63 := by omega
+  have hal63 : al < 2 ^ 63 := by omega_arith
   have cp : CopyPre s₄' A (W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1)))) al :=
     ⟨si₄, di₄, cx₄, hal63, by rw [rd₄', wr₄', S₄.rd, S₄.wr]; exact C.aad.rd,
-      by rw [wr₄']; exact S₄.env.perm.wC (by omega),
-      C.aad.w.sub_right (Lay.wSub (by omega))⟩
+      by rw [wr₄']; exact S₄.env.perm.wC (by omega_arith),
+      C.aad.w.sub_right (Lay.wSub (by omega_arith))⟩
   refine WP.mono (copyBytes_ok s₄' cp) fun s₅ ⟨m₅, g₅, rd₅, wr₅, z₅⟩ => ?_
-  have ha₄ : bytesAt s₄.mem A al = bytesAt s₀.mem A al := by rw [dG C.aad.w (by omega), haad₃]
+  have ha₄ : bytesAt s₄.mem A al = bytesAt s₀.mem A al := by rw [dG C.aad.w (by omega_arith), haad₃]
   rw [m₄', ha₄] at m₅
   have fA : Frame [⟨W + BitVec.ofNat 64 (512 + 16 * (4 * grp al n - (nb16 al + nb16 n + 1))), al⟩] s₄.mem s₅.mem := by
     rw [m₅]; exact writeBytes_frame' _ (length_bytesAt _ _ _)
-  have S₅ := S₄.keep dD fA (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact wk_G (by omega))
+  have S₅ := S₄.keep dD fA (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact wk_G (by omega_arith))
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;>
@@ -225,15 +225,15 @@ theorem front_ok {pw gh : Prog isa} {tm : Mem → Mem} {k : Nat} {s₀ s : State
     (rd₅.trans rd₄') (wr₅.trans wr₄')
   have tab₅ := TabOk.view hpw.view tab₄ hg8 fA fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨Offset.disjoint W (.inr (by omega)) (by omega) (by omega), .inl (Offset.sub_base W (by omega))⟩
+    exact ⟨Offset.disjoint W (.inr (by omega_arith)) (by omega_arith) (by omega_arith), .inl (Offset.sub_base W (by omega_arith))⟩
   have hdat₅ : bytesAt s₅.mem D n = bytesAt s₀.mem D n := by
     rw [bytesAt_frame fA (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dD.sub_right (Lay.wSub (by omega))) (by omega),
-      dG dD (by omega), hdat₃]
+      simp only [List.mem_singleton] at hr; subst hr; exact dD.sub_right (Lay.wSub (by omega_arith))) (by omega_arith),
+      dG dD (by omega_arith), hdat₃]
   have zz : ∀ r, r ≠ .xmm2 → r ≠ .xmm4 → ∀ l < 4, s₅.zlane r l = s₃.zlane r l := fun r h₂ h₄ l hl => by
     rw [z₅ r (by simp [h₄]) l hl, z₄' r l, z₄ r (by simp [h₂]) l hl]
   -- The keystream.
-  refine WP.seq (WP.mono (keystream_ok s₅ S₅.env L (hR ▸ S₅.r176) S₅.r280 (by omega) (hR ▸ hR')
+  refine WP.seq (WP.mono (keystream_ok s₅ S₅.env L (hR ▸ S₅.r176) S₅.r280 (by omega_arith) (hR ▸ hR')
     (fun l hl => by rw [zz _ (by decide) (by decide) l hl, z0₃ l hl]))
     fun s₆ ⟨kb, fK, gK, rdK, wrK, zK, m0K⟩ => ?_)
   have S₆ := S₅.keep dD fK (fun r hr => by
@@ -246,9 +246,9 @@ theorem front_ok {pw gh : Prog isa} {tm : Mem → Mem} {k : Nat} {s₀ s : State
   · simp only [List.mem_singleton] at hr; subst hr
     exact ⟨Offset.disjoint W (.inr (by decide)) (by decide) (by decide), .inl (Offset.sub_base W (by decide))⟩
   · rw [zK _ (by decide) l hl, zz _ (by decide) (by decide) l hl, z1₃ l hl]
-  · rw [kb b hb, S₅.j0, ciph_frame' C S₅.frame (by omega), hR]
+  · rw [kb b hb, S₅.j0, ciph_frame' C S₅.frame (by omega_arith), hR]
   · rw [bytesAt_frame fK (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dD.sub_right (Lay.wSub (by decide))) (by omega),
+      simp only [List.mem_singleton] at hr; subst hr; exact dD.sub_right (Lay.wSub (by decide))) (by omega_arith),
       hdat₅]
 
 end VG.Proof.AesGcm.X86_64.Short

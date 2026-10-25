@@ -203,15 +203,15 @@ theorem stqs_ok {s : State} {base : Addr} (hs : Scr s base) {O : Nat} (hO : O % 
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, rfl, rfl, rfl, rfl, rfl⟩)
     fun t ⟨tv, tO, tg, tvv, tr, tw, tsp⟩ => ⟨fun k hk => by rw [tv k hk], tO, tg, tvv, tr, tw, tsp⟩
   have ts : Scr t base := VG.Proof.Curve448.AArch64.Neon.scr_of hs tg tw
-  refine WP.block_cons_iff.mpr ⟨_, exec_stq ts (8 + n) (d := O + 16 * n) (by omega) (by omega),
-    WP.block_nil_iff.mpr ⟨fun k hk => ?_, tO.trans ((st_outside _ _ _ (by omega)).mono (by omega) (by omega)),
+  refine WP.block_cons_iff.mpr ⟨_, exec_stq ts (8 + n) (d := O + 16 * n) (by omega_arith) (by omega_arith),
+    WP.block_nil_iff.mpr ⟨fun k hk => ?_, tO.trans ((st_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith)),
       tg, tvv, tr, tw, tsp⟩⟩
   simp only [setMem_mem]
   by_cases h : k = n
   · subst h; rw [read16_write, tvv]
-  · rw [((st_outside t.mem base (t.v (V (8 + n))) (d := O + 16 * n) (by omega))).read16 (by omega)
-      (by omega)]
-    exact tv k (by omega)
+  · rw [((st_outside t.mem base (t.v (V (8 + n))) (d := O + 16 * n) (by omega_arith))).read16 (by omega_arith)
+      (by omega_arith)]
+    exact tv k (by omega_arith)
 
 theorem ldqs_ok {s : State} {base : Addr} (hs : Scr s base) {O : Nat} (hO : O % 16 = 0) (hO' : O + 128 ≤ 8192) :
     WP isa (.block ((List.range 8).map fun k => ldq (8 + k) (O + 16 * k))) s fun t =>
@@ -226,13 +226,13 @@ theorem ldqs_ok {s : State} {base : Addr} (hs : Scr s base) {O : Nat} (hO : O % 
   refine wp_range_flatMap (M := isa) (N := 8) inv (fun n t hn ⟨tv, tm, tg, tr, tw, tsp⟩ => ?_) 8 (by decide) s
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), rfl, rfl, rfl, rfl, rfl⟩
   have ts : Scr t base := VG.Proof.Curve448.AArch64.Neon.scr_of hs tg tw
-  refine WP.block_cons_iff.mpr ⟨_, exec_ldq ts (8 + n) (d := O + 16 * n) (by omega) (by omega),
+  refine WP.block_cons_iff.mpr ⟨_, exec_ldq ts (8 + n) (d := O + 16 * n) (by omega_arith) (by omega_arith),
     WP.block_nil_iff.mpr ⟨fun k hk => ?_, by rw [RegUpd.mem_setV, tm], by rw [RegUpd.gpr_setV, tg],
       by rw [RegUpd.rd_setV, tr], by rw [RegUpd.wr_setV, tw], by rw [RegUpd.sp_setV, tsp]⟩⟩
   by_cases h : k = n
   · subst h; rw [RegUpd.v_setV_self, tm]
-  · rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega) _ (by omega) (by omega))]
-    exact tv k (by omega)
+  · rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]
+    exact tv k (by omega_arith)
 
 
 /-- The lanes the function keeps `x21`–`x28` in. -/
@@ -333,7 +333,7 @@ theorem save_unstored (base : Addr) {i : Nat}
   simp only [loopOk, CSAVE, XSAVE, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hd hi
   rw [off, Offset.add_sub_add_left] at hlt
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at hlt
-  omega
+  omega_arith
 
 theorem cks_V : ∀ k < 8, (cks.getD k (.x21, .v8, 1)).2.1 = V (8 + k) ∧
     (cks.getD k (.x21, .v8, 1)).1 = Impl.X448.AArch64.Fast.saved k ∧
@@ -391,14 +391,14 @@ theorem save_ok {n k : Nat} {base : Addr} {s : State} (h : CombIn n base k s) :
   have gs : ∀ r, r ≠ .x3 → r ≠ .x12 → s₂.gpr r = s.gpr r := fun r h3 h12 => by rw [g₂, hg, gk r h3 h12]
   have g34 : ∀ r, s₄.gpr r = s₂.gpr r := fun r => by rw [k₄.1 r (by simp), k₃.1 r (by simp)]
   have w4 : ∀ x, (ofs base x < XSAVE ∨ XSAVE + 16 ≤ ofs base x) → s₄.mem x = s₂.mem x := fun x hx => by
-    rw [m₄, VG.Proof.X448.AArch64.writeW_outside _ _ _ (by decide) x (by simp only [XSAVE] at hx ⊢; omega), m₃,
-      VG.Proof.X448.AArch64.writeW_outside _ _ _ (by decide) x (by simp only [XSAVE] at hx ⊢; omega)]
+    rw [m₄, VG.Proof.X448.AArch64.writeW_outside _ _ _ (by decide) x (by simp only [XSAVE] at hx ⊢; omega_arith), m₃,
+      VG.Proof.X448.AArch64.writeW_outside _ _ _ (by decide) x (by simp only [XSAVE] at hx ⊢; omega_arith)]
   have csv : ∀ k < 8, s₅.mem.read (off base (CSAVE + 16 * k)) 16 = s₁.v (V (8 + k)) := fun k hk => by
     rw [← sv₂ k hk, m₅]
     exact Mem.read_congr fun i hi => by
       rw [off_add]
       exact w4 _ (by
-        rw [VG.Proof.X448.AArch64.Base.ofs_off0 base (by simp only [CSAVE]; omega)]; simp only [CSAVE, XSAVE]; omega)
+        rw [VG.Proof.X448.AArch64.Base.ofs_off0 base (by simp only [CSAVE]; omega_arith)]; simp only [CSAVE, XSAVE]; omega_arith)
   have x19w : word s₄.mem base XSAVE = s₂.gpr .x19 := by
     rw [m₄, VG.Proof.X448.AArch64.Base.word_store (d := XSAVE + 8) (e := XSAVE) (by decide) (by decide)
       (by decide) (by decide) _ (by decide), m₃, VG.Proof.X448.AArch64.Base.word_store_self (by decide) (by decide)]
@@ -448,23 +448,23 @@ theorem combBaseFn_ok {n k : Nat} {base : Addr} {s : State} (h : CombIn n base k
   have hs₅ := hS.scr
   -- The memory after the saves.
   have wS : ∀ {d : Nat}, d + 8 ≤ XSAVE → word s₅.mem base d = word s.mem base d := fun hd =>
-    hS.mem.word (Or.inl hd) (Or.inl (by simp only [XSAVE, CSAVE] at hd ⊢; omega))
-      (by simp only [XSAVE] at hd; omega)
+    hS.mem.word (Or.inl hd) (Or.inl (by simp only [XSAVE, CSAVE] at hd ⊢; omega_arith))
+      (by simp only [XSAVE] at hd; omega_arith)
   have bS : BEnv s₅.mem base := fun i j hj => by
     have := i.isLt
     show (word s₅.mem base (slot i.val + 8 * j)).toNat < Ib
-    rw [wS (by simp only [slot, XSAVE]; omega)]; exact h.env i j hj
+    rw [wS (by simp only [slot, XSAVE]; omega_arith)]; exact h.env i j hj
   have zS : ∀ w < 8, limbs s₅.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
     show (word s₅.mem base (slot (19 : Index).val + 8 * w)).toNat = 0
-    rw [wS (by simp only [slot, XSAVE]; omega)]; exact h.zero w hw
+    rw [wS (by simp only [slot, XSAVE]; omega_arith)]; exact h.zero w hw
   have bitsS : Bits n base k s₅.mem := fun q hq => by
-    have e := VG.Proof.X448.AArch64.Base.ofs_off0 base (d := BITS + q) (by simp only [BITS]; omega)
-    rw [hS.mem _ (by rw [e]; simp only [BITS, XSAVE]; omega) (by rw [e]; simp only [BITS, CSAVE]; omega)]
+    have e := VG.Proof.X448.AArch64.Base.ofs_off0 base (d := BITS + q) (by simp only [BITS]; omega_arith)
+    rw [hS.mem _ (by rw [e]; simp only [BITS, XSAVE]; omega_arith) (by rw [e]; simp only [BITS, CSAVE]; omega_arith)]
     exact h.bits q hq
   have tblS : TblAt s₅ base (s₅.syms combSym) := by
     rw [sy5]
     exact h.tbl.of_far (by rw [hS.rd, hS.wr]) fun x hx =>
-      hS.mem x (.inr (by simp only [XSAVE]; omega)) (.inr (by simp only [CSAVE]; omega))
+      hS.mem x (.inr (by simp only [XSAVE]; omega_arith)) (.inr (by simp only [CSAVE]; omega_arith))
   -- The accumulators' setting and the steps, which keep the saved registers.
   refine WP.assoc ?_
   refine WP.seq (WP.mono (WP.storeFrame (Q := StepInv n s₅ base k n) loopStores (WP.seq (WP.mono_syms (init_ok hs₅ h.hn hS.x30)
@@ -482,16 +482,16 @@ theorem combBaseFn_ok {n k : Nat} {base : Addr} {s : State} (h : CombIn n base k
     have wt : ∀ (i : Index), 6 ≤ i.val → ∀ w < 8, word t.mem base (slot i.val + 8 * w) =
         word s₅.mem base (slot i.val + 8 * w) := fun i hi w hw => by
       have := i.isLt
-      exact tOut.word (Or.inr (by simp only [slot]; omega)) (by simp only [slot]; omega)
+      exact tOut.word (Or.inr (by simp only [slot]; omega_arith)) (by simp only [slot]; omega_arith)
     have inv : StepInv n s₅ base k 0 t := by
       refine ⟨Nat.zero_le _, hst, fun i w hw => ?_, fun w hw => ?_, by rw [tc]; rfl, fun q hq => ?_,
         by rw [pA]; exact gOf_ok h.hn, by rw [pB]; exact gOf_ok h.hn, kt.1 _ (by decide), kt.1 _ (by decide),
-        kt.2.1, kt.2.2, fun x h1 _ => tOut x (by omega),
-        tblS.of_far (by rw [kt.2.1, kt.2.2]) fun x hx => tOut x (.inr (by omega)),
+        kt.2.1, kt.2.2, fun x h1 _ => tOut x (by omega_arith),
+        tblS.of_far (by rw [kt.2.1, kt.2.2]) fun x hx => tOut x (.inr (by omega_arith)),
         fun r hr => kt.1 r (VG.Proof.X448.AArch64.Base.notin_keep (by decide) hr)⟩
       · by_cases hi : i.val < 6
         · have hi6 : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by
-            rcases i with ⟨i, hlt⟩; simp only [Fin.ext_iff] at hi ⊢; omega
+            rcases i with ⟨i, hlt⟩; simp only [Fin.ext_iff] at hi ⊢; omega_arith
           rcases hi6 with rfl | rfl | rfl | rfl | rfl | rfl
           · exact VG.Proof.X448.AArch64.Base.bnd_of_words (fun w hw => (tv w hw).1) w hw
           · exact VG.Proof.X448.AArch64.Base.bnd_of_words (fun w hw => (tv w hw).2.1) w hw
@@ -500,11 +500,11 @@ theorem combBaseFn_ok {n k : Nat} {base : Addr} {s : State} (h : CombIn n base k
           · exact VG.Proof.X448.AArch64.Base.bnd_of_words (fun w hw => (tv w hw).2.2.2.2.1) w hw
           · exact VG.Proof.X448.AArch64.Base.bnd_of_words (fun w hw => (tv w hw).2.2.2.2.2) w hw
         · show (word t.mem base (slot i.val + 8 * w)).toNat < Ib
-          rw [wt i (by omega) w hw]; exact bS i w hw
+          rw [wt i (by omega_arith) w hw]; exact bS i w hw
       · show (word t.mem base (slot (19 : Index).val + 8 * w)).toNat = 0
         rw [wt 19 (by decide) w hw]; exact zS w hw
-      · have e := VG.Proof.X448.AArch64.Base.ofs_off0 base (d := BITS + q) (by simp only [BITS]; omega)
-        rw [tOut _ (by rw [e]; simp only [BITS]; omega)]
+      · have e := VG.Proof.X448.AArch64.Base.ofs_off0 base (d := BITS + q) (by simp only [BITS]; omega_arith)
+        rw [tOut _ (by rw [e]; simp only [BITS]; omega_arith)]
         exact bitsS q hq
     have := VG.Proof.X448.AArch64.Base.loop_ok hn57 hS.x30 n t (by rcases h.hn with rfl | rfl <;> decide)
       le_rfl (by rw [Nat.sub_self]; exact inv) (by rw [syt])
@@ -530,10 +530,10 @@ theorem combBaseFn_ok {n k : Nat} {base : Addr} {s : State} (h : CombIn n base k
       tL.mem (off base i) = s₅.mem (off base i) := fun i hi => fL _ (save_unstored base hi)
   have rdL : ∀ k < 8, tL.mem.read (off base (CSAVE + 16 * k)) 16 = s₅.mem.read (off base (CSAVE + 16 * k)) 16 :=
     fun k hk => Mem.read_congr fun i hi => by
-      rw [off_add]; exact mL _ (.inl (by simp only [CSAVE]; omega))
+      rw [off_add]; exact mL _ (.inl (by simp only [CSAVE]; omega_arith))
   have wL : ∀ d, XSAVE ≤ d → d + 8 ≤ XSAVE + 16 → word tL.mem base d = word s₅.mem base d :=
     fun d h1 h2 => Mem.readW_congr fun i hi => by
-      rw [off_add]; exact mL _ (.inr (by simp only [XSAVE] at h1 h2 ⊢; omega))
+      rw [off_add]; exact mL _ (.inr (by simp only [XSAVE] at h1 h2 ⊢; omega_arith))
   have mu' : u.mem = tL.mem := by rw [mu, m₈, m₇, m₆]
   have v6 : ∀ k < 8, s₆.v (V (8 + k)) = s₅.mem.read (off base (CSAVE + 16 * k)) 16 := fun k hk => by
     rw [v₆ k hk, rdL k hk]
@@ -565,7 +565,7 @@ theorem combBaseFn_ok {n k : Nat} {base : Addr} {s : State} (h : CombIn n base k
     exact hS.lane0 k hk8
   · rw [mu', hL.mem x h1 h2]
     have hA : ACC = 3584 := rfl
-    exact hS.mem x (by simp only [XSAVE]; omega) (by simp only [CSAVE]; omega)
+    exact hS.mem x (by simp only [XSAVE]; omega_arith) (by simp only [CSAVE]; omega_arith)
 
 end VG.Proof.Ed448.AArch64.CombBase
 
@@ -717,27 +717,27 @@ local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 theorem bitsAt_lt {m : Mem} {ws : Addr} : ∀ {T : Nat}, IsBits m ws T → bitsAt m ws T < 2 ^ T
   | 0, _ => by simp [bitsAt]
   | T + 1, h => by
-    have ih := bitsAt_lt (T := T) fun i hi => h i (by omega)
-    have hb := h T (by omega)
+    have ih := bitsAt_lt (T := T) fun i hi => h i (by omega_arith)
+    have hb := h T (by omega_arith)
     simp only [bitsAt, Nat.pow_succ]
     have : 2 ^ T * (m (ws + BitVec.ofNat 64 (Spec.Ed448.Comb56.bitsOff + T))).toNat ≤ 2 ^ T * 1 :=
-      Nat.mul_le_mul_left _ (by omega)
-    omega
+      Nat.mul_le_mul_left _ (by omega_arith)
+    omega_arith
 
 theorem bitsAt_bit {m : Mem} {ws : Addr} : ∀ {T : Nat}, IsBits m ws T → ∀ t < T,
     bitsAt m ws T / 2 ^ t % 2 = (m (ws + BitVec.ofNat 64 (Spec.Ed448.Comb56.bitsOff + t))).toNat
   | 0, _, t, ht => absurd ht (Nat.not_lt_zero _)
   | T + 1, h, t, ht => by
-    have hT : IsBits m ws T := fun i hi => h i (by omega)
-    have hb := h T (by omega)
+    have hT : IsBits m ws T := fun i hi => h i (by omega_arith)
+    have hb := h T (by omega_arith)
     simp only [bitsAt]
     rcases Nat.lt_or_ge t T with htT | htT
     · have e : 2 ^ T = 2 ^ t * (2 * 2 ^ (T - t - 1)) := by
-        rw [← Nat.pow_succ', ← Nat.pow_add]; congr 1; omega
+        rw [← Nat.pow_succ', ← Nat.pow_add]; congr 1; omega_arith
       rw [e, Nat.mul_assoc, Nat.add_mul_div_left _ _ (Nat.two_pow_pos t), Nat.mul_assoc,
         Nat.add_mul_mod_self_left]
       exact bitsAt_bit hT t htT
-    · have e : t = T := by omega
+    · have e : t = T := by omega_arith
       subst e
       rw [Nat.add_mul_div_left _ _ (Nat.two_pow_pos t), Nat.div_eq_of_lt (bitsAt_lt hT), Nat.zero_add]
       exact Nat.mod_eq_of_lt hb
@@ -757,10 +757,10 @@ theorem evenNibbles_eq (k : Nat) : ∀ c, evenNibbles k c = evenSum k c
   | c + 1 => by simp only [evenNibbles, evenSum, evenNibbles_eq k c]; rfl
 
 theorem odd_eq (k n : Nat) : (combG n : ℤ) + oddSumZ k n = (oddNibbles k n : Nat) := by
-  rw [VG.Proof.X448.oddSumZ_eq, oddNibbles_eq]; simp only [combG]; push_cast; omega
+  rw [VG.Proof.X448.oddSumZ_eq, oddNibbles_eq]; simp only [combG]; push_cast; omega_arith
 
 theorem even_eq (k n : Nat) : (combG n : ℤ) + evenSumZ k n = (evenNibbles k n : Nat) := by
-  rw [VG.Proof.X448.evenSumZ_eq, evenNibbles_eq]; simp only [combG]; push_cast; omega
+  rw [VG.Proof.X448.evenSumZ_eq, evenNibbles_eq]; simp only [combG]; push_cast; omega_arith
 
 /-- A point representing `[s] B` is `pointEqual` to `pointMul s basePoint`. -/
 theorem pointEqual_of_rep {p : Spec.Ed448.Point} {s : Nat} (h : Rep p ((s : ℤ) • baseAff)) :
@@ -822,9 +822,9 @@ theorem comb_arm (s : State) (hs : combL.pre s) :
       VG.Spec.X448.Field56.accAt, VG.Spec.X448.Field56.accEnd, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hr
     simp only [VG.Spec.X448.Field56.wsBytes] at hi
-    have e := VG.Proof.X448.AArch64.Base.ofs_off0 (s.gpr .x0) (d := i) (by omega)
+    have e := VG.Proof.X448.AArch64.Base.ofs_off0 (s.gpr .x0) (d := i) (by omega_arith)
     have hA : ACC = 3584 := rfl
-    exact ho.mem _ (by rw [e]; omega) (by rw [e]; omega)
+    exact ho.mem _ (by rw [e]; omega_arith) (by rw [e]; omega_arith)
 
 theorem comb_check :
     ∃ h, ((taintS [combSym]).check (Taint.ofRegs [.x0, .x1]) combBaseFn h).isSome = true := by
@@ -868,7 +868,7 @@ theorem satMem2_held : ∀ i < combWords.length,
     have e : (1048576 : BitVec 64).toNat = 1048576 := rfl
     rw [e]
     simp only [Nat.reducePow] at *
-    omega
+    omega_arith
   simp only [satMem2, this, ite_false]
 
 theorem sat_bounded : Bounded satMem2 0x1000 := by

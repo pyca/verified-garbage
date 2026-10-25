@@ -53,8 +53,8 @@ theorem resK_ok {H : Hash} {u : State} {F S : Addr} (Ly : Lay u F S) {V : Nat �
     fun u' ⟨hm, hrd, hwr, hsp, hv, hcs, x11⟩ => ?_
   · oaep_run [chkK, sR, sK, h168, w224, Ly.sp, rk, imm16 hD, sbc_self, BitVec.add_zero, BitVec.or_self]
     refine ⟨trivial, trivial, trivial, trivial, trivial, cs_rfl, ?_⟩
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show 2 * H.D + 2 < 2 ^ 64 by omega)]
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_arith),
+      Nat.mod_eq_of_lt (show 2 * H.D + 2 < 2 ^ 64 by omega_arith)]
   have R' : Rep u'.mem F S V (upd W 28 (((u.gpr .x0).setWidth 32).setWidth 64)) := by rw [hm]; exact R1
   have S' : Step F S [] u u' := ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv], by
     rw [hm]; exact Frame.write (Frame.refl _ _) (List.mem_cons_self ..) _ (cF F (by decide))⟩
@@ -114,7 +114,7 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
       (.seq (.block (([.logic .orr .w .x0 .x0 .x0, .addSp .x9 0, .str .x .x0 .x9 sR] : List Instr) ++ chkK Hl))
         (.ite (.nonzero .x .x11) decFail (decMain Hl Gm)))) u (Fin Hs Gs L g vv m₀) := by
   have hS15 := pv.S15
-  have hP16 : 16 ≤ L.P := by omega
+  have hP16 : 16 ≤ L.P := by omega_arith
   obtain ⟨-, hzF, -, hzDF, hD0⟩ := sizes hH
   have hD64 : Hl.D ≤ 64 := Nat.le_trans hzDF hzF
   have hk64 := hL.k64
@@ -124,33 +124,33 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
     ⟨fun _ _ => rfl, fun _ _ => rfl⟩
   refine WP.mono (privW_ok hL hP16 hc h9 R₀ hpw.slots) fun u1 ⟨hc1, _, R1⟩ => ?_
   have hS1 : Slots L (privW L fun j => word t.mem L.Q (8 * j)) :=
-    hpw.slots.of fun j _ _ h3 => by simp only [privW, upd]; rw [ifn (by omega), ifn (by omega)]
+    hpw.slots.of fun j _ _ h3 => by simp only [privW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]
   refine WP.mono (privR_ok hL hP16 hc1 R1 hS1) fun u2 ⟨hc2, hm2, hr2⟩ => ?_
   have R2 : Rep u2.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (privW L fun j => word t.mem L.Q (8 * j)) :=
     hm2 ▸ R1
   have hA : CallArgs L (privW L fun j => word t.mem L.Q (8 * j)) :=
     ⟨by simp only [privW, upd]; exact hpw.p, fun j hj => by
-      simp only [privW, upd]; rw [ifn (by omega), ifn (by omega)]; exact hpw.args j hj,
+      simp only [privW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]; exact hpw.args j hj,
       by simp [privW, upd], by simp [privW, upd]⟩
   refine WP.seq (WP.mono (priv_call pv hL hP hc2 hr2 R2 hA) fun u3 hcl => ?_)
   have Ly3 := hcl.ctx.lay hL hP16 hcl.rep hS1.scr
   have hk3 : (privW L fun j => word t.mem L.Q (8 * j)) 21 = BitVec.ofNat 64 L.k.toNat := by
     rw [hS1.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.seq (WP.mono (resK_ok (H := Hl) Ly3 hcl.rep hk3 hk1024 (by omega)) fun u4 ⟨Ly4, S4, R4, x11⟩ => ?_)
+  refine WP.seq (WP.mono (resK_ok (H := Hl) Ly3 hcl.rep hk3 hk1024 (by omega_arith)) fun u4 ⟨Ly4, S4, R4, x11⟩ => ?_)
   have hc4 := hcl.ctx.step hL hP16 S4 fun r h => absurd h List.not_mem_nil
   generalize hW4 : upd (privW L fun j => word t.mem L.Q (8 * j)) 28 (((u3.gpr .x0).setWidth 32).setWidth 64) = W4
     at R4
   have hres := resD_of (W := privW L fun j => word t.mem L.Q (8 * j)) hcl.out
   rw [hW4] at hres
-  have hS4 : Slots L W4 := hW4 ▸ hS1.of fun j _ _ h3 => by simp only [upd]; rw [ifn (by omega)]
+  have hS4 : Slots L W4 := hW4 ▸ hS1.of fun j _ _ h3 => by simp only [upd]; rw [ifn (by omega_arith)]
   have hk4 : W4 21 = BitVec.ofNat 64 L.k.toNat := by rw [hS4.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have O4 := hc4.outAt hL hP16 hS4
   have hws : ∀ r ∈ [L.OUT, L.ML], r = L.OUT ∨ r = L.ML := fun r hr => by simpa using hr
   refine WP.ite _ (eval_nonzero u4 .x11) (fun hb => ?_) (fun hb => ?_)
   · -- `k < 2 hLen + 2`: zeros.
     have hkD : L.k.toNat < 2 * Hl.D + 2 := by
-      by_contra hc; rw [x11, ifp (by omega)] at hb; exact absurd hb (by decide)
-    refine WP.mono (decFail_ok Ly4 R4 O4.ho O4.hml hk4 (by omega) hk1024 O4.hw O4.hnw O4.ha O4.hwm O4.ham O4.hom)
+      by_contra hc; rw [x11, ifp (by omega_arith)] at hb; exact absurd hb (by decide)
+    refine WP.mono (decFail_ok Ly4 R4 O4.ho O4.hml hk4 (by omega_arith) hk1024 O4.hw O4.hnw O4.ha O4.hwm O4.ham O4.hom)
       fun u5 ⟨_, S5, hz5, hm5, hx5⟩ => ⟨hc4.step hL hP16 S5 hws, ?_⟩
     rw [decOut_short (resD_len hres) (by rw [hHl]; exact hkD)]
     have hzs := out_zero (m := u5.mem) (o := L.out) (k := L.k.toNat) hz5
@@ -161,7 +161,7 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
     | fault => intro hr; exact ⟨by rw [hx5, fltW, show W4 28 = 2 from hr]; rfl, hzs, hm5⟩
   · -- The decoding.
     have hkD : 2 * Hl.D + 2 ≤ L.k.toNat := by
-      by_contra hc; rw [x11, ifn (by omega)] at hb; exact absurd hb (by decide)
+      by_contra hc; rw [x11, ifn (by omega_arith)] at hb; exact absurd hb (by decide)
     refine WP.mono (decMain_ok hH hG hHh hHl hHv hGh hGl hGv Ly4 R4 hk4 hkD hk1024 (hc4.labAt hL hP16 hS4) O4 hres)
       fun u5 ⟨_, S5, hw5⟩ => ⟨hc4.step hL hP16 S5 hws, ?_⟩
     have hlab := hc4.bytes_ro hL (ro_LAB L)
@@ -200,11 +200,11 @@ theorem dec_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x
   have hpQ := hL.pQ
   have hS := pv.S15
   have hsp := spec_sp h
-  refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
   · show 272 ≤ (s.sp - 16).toNat
-    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega)]
+    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 272 ≤ s.sp.toNat - 16
-    omega
+    omega_arith
   · show WP isa (decBody Hl Gm pv.name pv.code) (entered s) _
     rw [decBody_eq]
     refine WP.seq ?_

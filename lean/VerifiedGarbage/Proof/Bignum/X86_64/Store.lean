@@ -144,19 +144,19 @@ theorem storeBE_ok {s : State} {B : Addr} {Z ed k w : Nat} {out : Addr} {c : Boo
   refine WP.seq (WP.mono (WP.keep [.rdx, .r14] (Q := fun t => t.gpr .rdx = BitVec.ofNat 64 0 ∧
       t.gpr .r14 = out + BitVec.ofNat 64 k ∧ t.mem = s.mem) (by xrun [hsi, hcx]) rfl)
     fun s₁ ⟨⟨hdx, h14, hm₁⟩, k₁⟩ => ?_)
-  refine wp_upto (a := 0) (N := k) (by omega) (SInv s out k (if c then wv s.mem B ed w else 0)) ?_
+  refine wp_upto (a := 0) (N := k) (by omega_arith) (SInv s out k (if c then wv s.mem B ed w else 0)) ?_
     (fun t hI => ⟨?_, ?_, hI.wr, hI.rd, hI.keep⟩)
     ⟨k₁.2.2, k₁.2.1, k₁.mono (by decide), hdx, by rw [h14, Nat.sub_zero], fun h => absurd rfl h,
-      fun j hj => absurd hj (by omega), fun x _ => by rw [hm₁]⟩
+      fun j hj => absurd hj (by omega_arith), fun x _ => by rw [hm₁]⟩
   · intro p _ hp t hI
     exact storeStep_ok hs hbx hcx h15 hk' hw hed hout hsep hp hI
   · apply List.ext_getElem (by simp [Spec.Rsa.i2osp])
     intro i h1 h2
     have hik : i < k := by simpa using h1
     simp only [List.getElem_map, List.getElem_range, Spec.Rsa.i2osp]
-    have := hI.bytes (k - 1 - i) (by omega)
-    rwa [show k - 1 - (k - 1 - i) = i by omega] at this
+    have := hI.bytes (k - 1 - i) (by omega_arith)
+    rwa [show k - 1 - (k - 1 - i) = i by omega_arith] at this
   · intro x hx
-    exact hI.frame x fun j hj => hx _ (by omega)
+    exact hI.frame x fun j hj => hx _ (by omega_arith)
 
 end VG.Proof.Bignum.X86_64

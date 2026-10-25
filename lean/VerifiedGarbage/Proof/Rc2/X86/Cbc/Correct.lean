@@ -22,11 +22,11 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     ivArgs, dataArgs, bufArgs, retIv, retData, retBuf, stackKey, stackIv, stackData, stackBuf, keyFit, ivFit, bufFit, spFit, stackLo, fit⟩ := hs
   have writes (i : Nat) (hi : i + 4 ≤ 512) : InRegions s.wr (addr32 (arg s 4) + BitVec.ofNat 64 i) 4 := by
     rw [hwr]
-    exact ⟨⟨addr32 (arg s 4), 512⟩, by simp, Offset.contains_base _ hi (by omega)⟩
+    exact ⟨⟨addr32 (arg s 4), 512⟩, by simp, Offset.contains_base _ hi (by omega_arith)⟩
   rw [Impl.Rc2.X86.Cbc.cbc]
   apply WP.seq
   obtain ⟨s₀, run₀, buf₀, keep₀⟩ := loadArg_ok s .eax 4 (by
-    rw [hrd, hwr, argAddr_eq s 4 (by omega)]
+    rw [hrd, hwr, argAddr_eq s 4 (by omega_arith)]
     exact ⟨⟨argAddr s 0, 20⟩, by simp, argContains s spFit 4 (by decide)⟩)
   refine WP.of_runBlock ⟨s₀, run₀, ?_⟩
   have g₀ (r : Reg) (hr : r ≠ .eax) := keep₀.reg r (by simpa using hr)
@@ -46,8 +46,8 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
   have args₁ := args_frame saveFrame sp₁ spFit (by simpa using bufArgs)
   have readArgs₁ (i : Nat) (hi : i < 4) : InRegions (s₁.rd ++ s₁.wr) (argAddr s₁ i) 4 := by
     have ptr : argAddr s₁ i = argAddr s i := by unfold argAddr; rw [sp₁]
-    rw [keep₁.rd, keep₁.wr, keep₀.rd, keep₀.wr, hrd, hwr, ptr, argAddr_eq s i (by omega)]
-    exact ⟨⟨argAddr s 0, 20⟩, by simp, argContains s spFit i (by omega)⟩
+    rw [keep₁.rd, keep₁.wr, keep₀.rd, keep₀.wr, hrd, hwr, ptr, argAddr_eq s i (by omega_arith)]
+    exact ⟨⟨argAddr s 0, 20⟩, by simp, argContains s spFit i (by omega_arith)⟩
   obtain ⟨s₂, run₂, key₂, iv₂, data₂, count₂, buf₂, flag₂, keep₂⟩ := setup_ok s₁ readArgs₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   rw [args₁ 0 (by decide)] at key₂
@@ -88,7 +88,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     · simpa only [stackR, dataR, sp₂, data₂] using stackData
     · simpa only [stackR, bufR, sp₂, buf₂] using stackBuf
   apply WP.seq
-  apply WP.mono (maybeLoop_ok d s₂ (arg s 3).toNat (by omega) hp₂
+  apply WP.mono (maybeLoop_ok d s₂ (arg s 3).toNat (by omega_arith) hp₂
     (by simpa using count₂) (by rw [count₂]; exact flag₂))
   intro s₃ h₃
   have rd₃ := h₃.rd.trans rd₂

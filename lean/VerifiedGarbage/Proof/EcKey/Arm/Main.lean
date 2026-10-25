@@ -83,7 +83,7 @@ theorem pkOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
   have v₁ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₁ i = sv c base s i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₁ hi h₁ h₂
   -- `X = XM · 1`.
-  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₁ hf₁ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega))
+  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₁ hf₁ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega_arith))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have hf₂ := hf₁.of_rest k₂.rest
@@ -104,7 +104,7 @@ theorem pkOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     fun hi h₁ h₂ h₃ h₄ => (sv_keep (MP'_n c) rfl h7 hn k₃ hi h₃ h₄).trans (v₂ hi h₁ h₂ h₄)
   -- `Y = YM · 1`.
   refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₃ hf₃ (o := Y) (a := YM) (b := ONE) (by decide) (by decide) (by decide)
-    (by rw [v₃ (by decide) (by decide) (by decide) (by decide) (by decide), hone]; omega))
+    (by rw [v₃ (by decide) (by decide) (by decide) (by decide) (by decide), hone]; omega_arith))
     fun s₄ ⟨k₄, lt₄, e₄⟩ => h s₄ ?_)
   have X₄ : sv c base s₄ X = sv c base s₂ X := by
     rw [sv_keep (MP'_n c) rfl h7 hn k₄ (by decide) (by decide) (by decide),
@@ -149,7 +149,7 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
-  have hfl : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hfl : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   rw [middle_eq]
   refine pkOps_ok hc hs hfar (modP_of hc F.mp) hacc F.one fun s₄ Op => ?_
   have F₄ := F.unch h7 hn (fixedOk_slWk h7 (l := [XM, X, YM, Y, TMP]) (by decide)) Op.unch
@@ -201,9 +201,9 @@ theorem PkPre.setup {s : State} {extra : List Region} (hp : PkPre c s extra) : S
   args := by unfold argsOk; decide
   sc_in := fun h => nomatch h
   wr := by show (⟨ptr s .r2, 8192⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_arith)
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_arith)
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_arith)
   k_sc := hp.d_sc.sub_right (Region.sub_prefix (by decide))
   d_sc := hp.d_sc.sub_right (Region.sub_prefix (by decide))
   e_sc := hp.d_sc.sub_right (Region.sub_prefix (by decide))
@@ -271,16 +271,16 @@ theorem publicKeyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : L
   by_cases hd : 1 ≤ dk c s₀ ∧ dk c s₀ < c.C.n
   · rw [ite_eq_left_of_eq_true _ _ (eq_true hd)]
     by_cases h0 : sv c (scBase Args.publicKey s₀) s₂ RZ = 0
-    · have hok : ok c (scBase Args.publicKey s₀) s₂ = false := decide_eq_false (by rw [hD]; omega)
+    · have hok : ok c (scBase Args.publicKey s₀) s₂ = false := decide_eq_false (by rw [hD]; omega_arith)
       rw [ite_eq_left_of_eq_true _ _ (eq_true (hz.mpr h0))]
       exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
-    · have hok : ok c (scBase Args.publicKey s₀) s₂ = true := decide_eq_true (by rw [hD]; omega)
+    · have hok : ok c (scBase Args.publicKey s₀) s₂ = true := decide_eq_true (by rw [hD]; omega_arith)
       rw [ite_eq_right_of_eq_false _ _ (eq_false (fun h => h0 (hz.mp h)))]
       refine ⟨by rw [rax, hok]; rfl, ?_⟩
       rw [bytes, hok]
       show _ = 4 :: (toBytes c.C.len xv ++ toBytes c.C.len yv)
       rfl
-  · have hok : ok c (scBase Args.publicKey s₀) s₂ = false := decide_eq_false (by rw [hD]; omega)
+  · have hok : ok c (scBase Args.publicKey s₀) s₂ = false := decide_eq_false (by rw [hD]; omega_arith)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
 

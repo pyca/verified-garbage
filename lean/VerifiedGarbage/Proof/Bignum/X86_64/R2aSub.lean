@@ -62,17 +62,17 @@ theorem wstep {s₀ t : State} {B : Addr} {Z ex ec w j k : Nat} {prev next hiP h
   have tbx : t.gpr .rbx = off B ex := (hI.regs _ (by decide)).trans hbx
   have tsi : t.gpr .rsi = off B ec := (hI.regs _ (by decide)).trans hsi
   have tdx : t.gpr .rdx = s₀.gpr .rdx := hI.regs _ (by decide)
-  refine WP.mono (word_ok hI.scr tbx tsi hI.r15 (by omega) (by omega) hc ho d1 d2 d4 d5 d6 d7 d8 d9 d10 d11 d12
+  refine WP.mono (word_ok hI.scr tbx tsi hI.r15 (by omega_arith) (by omega_arith) hc ho d1 d2 d4 d5 d6 d7 d8 d9 d10 d11 d12
     d14 d15 d16) fun t' ⟨c', o', hc', ho', he, hhl', hnx, hm, k'⟩ => ?_
   have hxw : word t.mem B (ex + 8 * j + 8 * k) = word s₀.mem B (ex + 8 * (j + k)) := by
-    rw [show ex + 8 * j + 8 * k = ex + 8 * (j + k) by omega, hI.out.word (by omega) (by omega)]
+    rw [show ex + 8 * j + 8 * k = ex + 8 * (j + k) by omega_arith, hI.out.word (by omega_arith) (by omega_arith)]
   have hcw : word t.mem B (ec + 8 * j + 8 * k) = word s₀.mem B (ec + 8 * (j + k)) := by
-    rw [show ec + 8 * j + 8 * k = ec + 8 * (j + k) by omega, hI.out.word (by omega) (by omega)]
+    rw [show ec + 8 * j + 8 * k = ec + 8 * (j + k) by omega_arith, hI.out.word (by omega_arith) (by omega_arith)]
   have oo : Outside B (ex + 8 * (j + k)) 8 t.mem t'.mem := by
-    rw [hm, show ex + 8 * j + 8 * k = ex + 8 * (j + k) by omega]; exact writeW_outside _ _ _ (by omega)
+    rw [hm, show ex + 8 * j + 8 * k = ex + 8 * (j + k) by omega_arith]; exact writeW_outside _ _ _ (by omega_arith)
   refine ⟨hI.scr.congr k'.2.2, fun r hr => ?_, ?_, k'.2.1.trans hI.rd, k'.2.2.trans hI.wr, ?_,
-    ⟨c', o', hc', ho', by have := Bool.toNat_le o'; omega, ?_⟩,
-    (hI.out.mono (Nat.le_refl _) (by omega)).trans (oo.mono (by omega) (by omega))⟩
+    ⟨c', o', hc', ho', by have := Bool.toNat_le o'; omega_arith, ?_⟩,
+    (hI.out.mono (Nat.le_refl _) (by omega_arith)).trans (oo.mono (by omega_arith) (by omega_arith))⟩
   · have hr' : r ∉ [hiN, .r11, next, prev] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro (rfl | rfl | rfl | rfl)
@@ -84,13 +84,13 @@ theorem wstep {s₀ t : State} {B : Addr} {Z ex ec w j k : Nat} {prev next hiP h
       Ne.symm d19, Ne.symm d20⟩)]; exact hI.rcx
   · have hT : wv t'.mem B ex (j + k + 1) = wv t.mem B ex (j + k) + 2 ^ (64 * (j + k)) *
         (word t'.mem B (ex + 8 * j + 8 * k)).toNat := by
-      have e := wv_writeW_top t.mem B ex (j + k) (word t'.mem B (ex + 8 * j + 8 * k)) (by omega)
-      rw [show ex + 8 * (j + k) = ex + 8 * j + 8 * k by omega, ← hm] at e
+      have e := wv_writeW_top t.mem B ex (j + k) (word t'.mem B (ex + 8 * j + 8 * k)) (by omega_arith)
+      rw [show ex + 8 * (j + k) = ex + 8 * j + 8 * k by omega_arith, ← hm] at e
       exact e
     rw [hT, hnx, hxw, wv_succ s₀.mem B ex, wv_succ s₀.mem B ec]
     rw [hcw, tdx] at he
     have p1 : 2 ^ (64 * (j + k + 1)) = 2 ^ (64 * (j + k)) * 2 ^ 64 := by
-      rw [show 64 * (j + k + 1) = 64 * (j + k) + 64 by omega, Nat.pow_add]
+      rw [show 64 * (j + k + 1) = 64 * (j + k) + 64 by omega_arith, Nat.pow_add]
     rw [p1]
     generalize 2 ^ (64 * (j + k)) = P at *
     have e := congrArg (P * ·) he
@@ -129,11 +129,11 @@ theorem head_ok {s₀ t : State} {B : Addr} {Z ex ec w J : Nat} (hI : TI s₀ B 
   · rw [k.gpr (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro (rfl | rfl) <;> exact hr (by decide)),
       hI.regs r hr]
   · rw [k.gpr (by decide)]; exact hI.r15
-  · have := (t'.gpr .r9).isLt; simp only [Bool.toNat_false]; omega
+  · have := (t'.gpr .r9).isLt; simp only [Bool.toNat_false]; omega_arith
   · rw [hm, k.gpr (by decide), k.gpr (by decide), Nat.add_zero]
     simp only [Bool.toNat_false, Nat.add_zero]
     rw [show (t.gpr .r9).toNat + c.toNat + (t.gpr .r8).toNat = (t.gpr .r9).toNat + 0 + c.toNat + (t.gpr .r8).toNat
-      by omega] at hv
+      by omega_arith] at hv
     exact hv
 
 /-- The carries out of the flags, and the next group (`inc = 4 g`): `ZF` after
@@ -155,22 +155,22 @@ theorem groupTail_ok {s₀ t : State} {B : Addr} {Z ex ec w J g N : Nat} {inc : 
   have ho' : o' = false := by
     cases o'
     · rfl
-    · simp only [Bool.toNat_true] at e₁; have := (t₁.gpr .r9).isLt; omega
+    · simp only [Bool.toNat_true] at e₁; have := (t₁.gpr .r9).isLt; omega_arith
   subst ho'
   have h15 : t₁.gpr .r15 = BitVec.ofNat 64 (4 * J) := (k₁.gpr (by decide)).trans hI.r15
   have h12' : t₁.gpr .r12 = BitVec.ofNat 64 (4 * N) := (k₁.gpr (by decide)).trans ((hI.regs _ (by decide)).trans h12)
   have hadd : BitVec.ofNat 64 (4 * J) + BitVec.ofNat 64 (4 * g) = BitVec.ofNat 64 (4 * (J + g)) := by
     rw [BitVec.ofNat_add_ofNat]
     congr 1
-    omega
+    omega_arith
   have hcmp : (BitVec.ofNat 64 (4 * (J + g)) - BitVec.ofNat 64 (4 * N) == 0) = decide (J + g = N) := by
-    rw [ofNat_sub_beq (by omega) (by omega)]; exact decide_eq_decide.mpr (by omega)
+    rw [ofNat_sub_beq (by omega_arith) (by omega_arith)]; exact decide_eq_decide.mpr (by omega_arith)
   refine WP.mono (WP.keep [.r14, .r15] (Q := fun t' => t'.gpr .r14 = mask c ∧
       t'.gpr .r15 = BitVec.ofNat 64 (4 * (J + g)) ∧ t'.zf = some (decide (J + g = N)) ∧ t'.mem = t₁.mem) (by
     xrun [hc₁.trans hc, h15, h12', hinc]
     exact ⟨rfl, hadd, by rw [hadd]; exact hcmp⟩) rfl) fun t' ⟨⟨h14, h15', hz, hm⟩, k⟩ => ⟨hz, ?_⟩
   have hout : Outside B ex (8 * (4 * (J + g))) s₀.mem t'.mem := by
-    rw [hm, k₁.2.1, show 4 * (J + g) = 4 * J + 4 * g by omega]; exact hI.out
+    rw [hm, k₁.2.1, show 4 * (J + g) = 4 * J + 4 * g by omega_arith]; exact hI.out
   refine ⟨hI.scr.congr (k.2.2.trans k₁.2.2.2), fun r hr => ?_, h15', k.2.1.trans (k₁.2.2.1.trans hI.rd),
     k.2.2.trans (k₁.2.2.2.trans hI.wr), ⟨c, h14, ?_⟩, hout⟩
   · rw [k.gpr (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro (rfl | rfl) <;> exact hr (by decide)),
@@ -181,8 +181,8 @@ theorem groupTail_ok {s₀ t : State} {B : Addr} {Z ex ec w J g N : Nat} {inc : 
     rw [hm, k₁.2.1, g9, g8]
     rw [hcx, Nat.add_zero] at e₁
     simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at e₁
-    rw [show 4 * (J + g) = 4 * J + 4 * g by omega, e₁]
-    omega
+    rw [show 4 * (J + g) = 4 * J + 4 * g by omega_arith, e₁]
+    omega_arith
 
 /-- Tile `i` of a group at tile `J`: words `4 J + 4 i` to `4 J + 4 i + 3`. -/
 theorem tileWords_ok {s₀ t : State} {B : Addr} {Z ex ec w J i : Nat}
@@ -193,21 +193,21 @@ theorem tileWords_ok {s₀ t : State} {B : Addr} {Z ex ec w J i : Nat}
   unfold tileWords
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (wstep (k := 4 * i) hI hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
+  refine WP.mono (wstep (k := 4 * i) hI hbx hsi (by omega_arith) hX hC sep (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t₁ h₁ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (wstep (k := 4 * i + 1) h₁ hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
+  refine WP.mono (wstep (k := 4 * i + 1) h₁ hbx hsi (by omega_arith) hX hC sep (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t₂ h₂ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (wstep (k := 4 * i + 2) h₂ hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
+  refine WP.mono (wstep (k := 4 * i + 2) h₂ hbx hsi (by omega_arith) hX hC sep (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t₃ h₃ => ?_
-  refine WP.mono (wstep (k := 4 * i + 3) h₃ hbx hsi (by omega) hX hC sep (by decide) (by decide) (by decide)
+  refine WP.mono (wstep (k := 4 * i + 3) h₃ hbx hsi (by omega_arith) hX hC sep (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t₄ h₄ => ?_
-  rwa [show 4 * J + (4 * i + 3) + 1 = 4 * J + 4 * (i + 1) by omega] at h₄
+  rwa [show 4 * J + (4 * i + 3) + 1 = 4 * J + 4 * (i + 1) by omega_arith] at h₄
 
 /-- The `g` tiles of a group at tile `J`. -/
 theorem groupWords_ok {s₀ t : State} {B : Addr} {Z ex ec w J : Nat}
@@ -218,8 +218,8 @@ theorem groupWords_ok {s₀ t : State} {B : Addr} {Z ex ec w J : Nat}
   | 0, _, hI => WP.block_nil hI
   | g + 1, hg, hI => by
     rw [groupWords, WP.block_append_iff]
-    exact WP.mono (groupWords_ok hbx hsi hX hC sep g (by omega) hI) fun t' h' =>
-      tileWords_ok h' hbx hsi (by omega) hX hC sep
+    exact WP.mono (groupWords_ok hbx hsi hX hC sep g (by omega_arith) hI) fun t' h' =>
+      tileWords_ok h' hbx hsi (by omega_arith) hX hC sep
 
 /-- A group of `g` tiles at tile `J` (`inc = 4 g`), and `ZF` after the last of `N`. -/
 theorem group_ok {s₀ t : State} {B : Addr} {Z ex ec w J g N : Nat} {inc : BitVec 32} (hI : TI s₀ B Z ex ec w J t)
@@ -232,7 +232,7 @@ theorem group_ok {s₀ t : State} {B : Addr} {Z ex ec w J g N : Nat} {inc : BitV
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (head_ok hI) fun t₀ h₀ => ?_
   rw [WP.block_append_iff]
-  exact WP.mono (groupWords_ok hbx hsi hX hC sep g (by omega) h₀) fun t₁ h₁ => groupTail_ok h₁ hinc h12 hJ hN
+  exact WP.mono (groupWords_ok hbx hsi hX hC sep g (by omega_arith) h₀) fun t₁ h₁ => groupTail_ok h₁ hinc h12 hJ hN
 
 /-- Groups of `g` tiles, `N = g K` tiles in all. -/
 theorem groups_ok {s₀ t : State} {B : Addr} {Z ex ec w g K N : Nat} {inc : BitVec 32}
@@ -282,15 +282,15 @@ theorem tiles_ok {s₀ : State} {B : Addr} {Z ex ec w N : Nat} (h0 : TI s₀ B Z
     WP isa tiles s₀ (TI s₀ B Z ex ec w N) := by
   have h12w : s₀.gpr .r12 = BitVec.ofNat 64 w := by rw [h12, hw]
   unfold tiles
-  refine WP.seq (WP.mono (wTest_ok (j := 5) h0 h12w (by omega) rfl) fun t ⟨hz, hI⟩ => ?_)
+  refine WP.seq (WP.mono (wTest_ok (j := 5) h0 h12w (by omega_arith) rfl) fun t ⟨hz, hI⟩ => ?_)
   refine WP.ite (decide (w % 2 ^ 5 = 0)) (by simp only [eval, hz]) (fun h => ?_) (fun h => ?_)
   · rw [decide_eq_true_eq] at h
-    exact groups_ok (g := 8) (K := N / 8) hI (by rw [VG.Proof.MlKem.X86_64.sx32]; rfl) hbx hsi h12 hw (by decide) (by omega) (by omega) hN hX hC sep
-  refine WP.seq (WP.mono (wTest_ok (j := 4) hI h12w (by omega) rfl) fun t ⟨hz, hI⟩ => ?_)
+    exact groups_ok (g := 8) (K := N / 8) hI (by rw [VG.Proof.MlKem.X86_64.sx32]; rfl) hbx hsi h12 hw (by decide) (by omega_arith) (by omega_arith) hN hX hC sep
+  refine WP.seq (WP.mono (wTest_ok (j := 4) hI h12w (by omega_arith) rfl) fun t ⟨hz, hI⟩ => ?_)
   refine WP.ite (decide (w % 2 ^ 4 = 0)) (by simp only [eval, hz]) (fun h => ?_) (fun _ => ?_)
   · rw [decide_eq_true_eq] at h
-    exact groups_ok (g := 4) (K := N / 4) hI (by rw [VG.Proof.MlKem.X86_64.sx16]; rfl) hbx hsi h12 hw (by decide) (by omega) (by omega) hN hX hC sep
-  · exact groups_ok (g := 1) (K := N) hI (by rw [VG.Proof.MlKem.X86_64.sx4]; rfl) hbx hsi h12 hw (by decide) (by omega) hN0 hN hX hC sep
+    exact groups_ok (g := 4) (K := N / 4) hI (by rw [VG.Proof.MlKem.X86_64.sx16]; rfl) hbx hsi h12 hw (by decide) (by omega_arith) (by omega_arith) hN hX hC sep
+  · exact groups_ok (g := 1) (K := N) hI (by rw [VG.Proof.MlKem.X86_64.sx4]; rfl) hbx hsi h12 hw (by decide) (by omega_arith) hN0 hN hX hC sep
 
 /-- `q̂` into `rdx`, `mc` into `rsi`, no carries: a tile's start. -/
 theorem mulHead_ok {s : State} {B : Addr} {Z ec : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
@@ -309,14 +309,14 @@ theorem top_arith {T P W r9 c r8 q r8' c' V : Nat} (hW : W = P * 2 ^ 64) (hq : q
     (T + P * ((r8' + (2 ^ 64 - q)) % 2 ^ 64) + q * P) % W = V % W := by
   rw [← Nat.mul_mod_mul_left, ← hW]
   generalize hd : 2 ^ 64 - q = d
-  have hqd : q + d = 2 ^ 64 := by omega
+  have hqd : q + d = 2 ^ 64 := by omega_arith
   generalize hA : P * (r8' + d) = A
   have e : T + A + q * P + W * c' = V + W := by
-    rw [← h1, ← hA, hW, show r9 + c + r8 = r8' + 2 ^ 64 * c' by omega, ← hqd]
+    rw [← h1, ← hA, hW, show r9 + c + r8 = r8' + 2 ^ 64 * c' by omega_arith, ← hqd]
     grind
   have hm := Nat.mod_add_div A W
   calc (T + A % W + q * P) % W = (T + A % W + q * P + W * (A / W)) % W := (Nat.add_mul_mod_self_left _ _ _).symm
-    _ = (T + A + q * P) % W := by congr 1; omega
+    _ = (T + A + q * P) % W := by congr 1; omega_arith
     _ = (T + A + q * P + W * c') % W := (Nat.add_mul_mod_self_left _ _ _).symm
     _ = (V + W) % W := by rw [e]
     _ = V % W := Nat.add_mod_right _ _
@@ -353,20 +353,20 @@ theorem mulTop_ok {s₀ t : State} {B : Addr} {Z ex ec w N : Nat} (hI : TI s₀ 
     ea_ix0 t₃ ((k₃.gpr (by decide)).trans tbx) ((k₃.gpr (by decide)).trans t12)
   refine WP.mono (WP.keep [] (Q := fun t' => t'.mem = t₂.mem.writeW (off B (ex + 8 * (4 * N)))
       (t₂.gpr .r8 - s₀.gpr .rdx)) (by
-    xrun [hea, (hs₂.congr k₃.2.2).st (show ex + 8 * (4 * N) + 8 ≤ Z by omega), h8₃, hm₃]) rfl)
+    xrun [hea, (hs₂.congr k₃.2.2).st (show ex + 8 * (4 * N) + 8 ≤ Z by omega_arith), h8₃, hm₃]) rfl)
     fun t' ⟨hm, k'₀⟩ => ?_
   have k' : Keep [.r8] t₂ t' := (k₃.trans k'₀).mono (by decide)
   have hm₂ : t₂.mem = t.mem := k₂.2.1.trans hm₁
   refine ⟨?_, ?_, ?_⟩
-  · rw [hm, hm₂, wv_writeW_top _ _ _ _ _ (by omega), BitVec.toNat_sub]
+  · rw [hm, hm₂, wv_writeW_top _ _ _ _ _ (by omega_arith), BitVec.toNat_sub]
     rw [k₁.gpr (by decide), k₁.gpr (by decide)] at e₂
     have := (s₀.gpr .rdx).isLt
     rw [show (2 ^ 64 - (s₀.gpr .rdx).toNat + (t₂.gpr .r8).toNat) % 2 ^ 64 =
       ((t₂.gpr .r8).toNat + (2 ^ 64 - (s₀.gpr .rdx).toNat)) % 2 ^ 64 by rw [Nat.add_comm]]
-    exact top_arith (P := 2 ^ (64 * (4 * N))) (by rw [← Nat.pow_add]; congr 1) (by omega) hv e₂
+    exact top_arith (P := 2 ^ (64 * (4 * N))) (by rw [← Nat.pow_add]; congr 1) (by omega_arith) hv e₂
   · rw [hm, hm₂]
-    exact (hI.out.mono (Nat.le_refl _) (by omega)).trans
-      ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega))
+    exact (hI.out.mono (Nat.le_refl _) (by omega_arith)).trans
+      ((writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
   · exact ((k₁.trans ⟨k₂.1, k₂.2.2⟩).trans k').mono (by decide)
 
 /-- The tiles and the top word, from the start of a pass: `t + q̂ R ≡ x 2^64 + q̂ mc`. -/
@@ -382,7 +382,7 @@ theorem mulBody_ok {s₀ : State} {B : Addr} {Z w ex ec N : Nat} (hs : Scr s₀ 
   have c0 : s₀.gpr .r12 = BitVec.ofNat 64 (4 * N) := by rw [h12, hw]
   have h0 : TI s₀ B Z ex ec w 0 s₀ := ⟨hs, fun _ _ => rfl, h15, rfl, rfl,
     ⟨false, h14, by rw [h8, h9]; simp [wv]⟩, Outside.refl _ _ _ _⟩
-  refine WP.seq (WP.mono (tiles_ok h0 hbx hsi c0 hw hN0 hN (by omega) hC (by omega)) fun t hT => ?_)
+  refine WP.seq (WP.mono (tiles_ok h0 hbx hsi c0 hw hN0 hN (by omega_arith) hC (by omega_arith)) fun t hT => ?_)
   refine WP.mono (mulTop_ok hT hbx h12 hX hw) fun t' ⟨hv, ho, k'⟩ => ⟨hv, ho, ?_⟩
   have kT : Keep chRegs s₀ t := ⟨hT.regs, hT.rd, hT.wr⟩
   exact (Keep.trans kT k').mono (by decide)

@@ -55,9 +55,9 @@ theorem nafByte_word (k j : Nat) :
   rw [BitVec.toNat_setWidth,nafWord_toNat,Naf5.byte_toNat]
   have hb := Naf5.magnitude_le k j
   cases hn : Naf5.negative k j
-  · simp only [Bool.false_eq_true,ite_false]; omega
+  · simp only [Bool.false_eq_true,ite_false]; omega_arith
   · have hp := Naf5.negative_magnitude_pos k j hn
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_arith
 
 theorem nafStore_ok {s : State} {base : Addr} {size bits k j : Nat}
     (hs : Scr s base size) (hb : bits+257≤size) (hj : j<257)
@@ -66,7 +66,7 @@ theorem nafStore_ok {s : State} {base : Addr} {size bits k j : Nat}
     WP isa (.block [.store8 (tbl bits) .rcx]) s fun t =>
       t.mem=s.mem.writeW (off base (bits+j)) (Naf5.byte k j) ∧ KeepRegs [] s t := by
   have hw : InRegions s.wr (off base (bits+j)) 1 :=
-    ⟨_,hs.wr,hs.contains (by omega) (by decide)⟩
+    ⟨_,hs.wr,hs.contains (by omega_arith) (by decide)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,State.store8,
     ea_tbl hs.rdi hc,hw,hd,nafByte_word,ite_true,Option.some.injEq,exists_eq_left']
@@ -85,7 +85,7 @@ theorem nafInc_ok (s : State) {j : Nat} (hj : j<257) (hc : s.gpr .rbx=BitVec.ofN
   refine ⟨trivial,?_,fun r hr => ?_,rfl,rfl,rfl⟩
   · congr 1
     simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (show j+1<2^64 from by omega)]
+    rw [Nat.mod_eq_of_lt (show j+1<2^64 from by omega_arith)]
     rfl
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_arithFlags,RegUpd.gpr_setReg,hr,ite_false]
@@ -115,20 +115,20 @@ theorem nafPrepStep_ok {s : State} {base : Addr} {size bits k j : Nat}
   have st := sc.of_keeps kt (by decide)
   have mt : t.mem=s.mem.writeW (off base (bits+j)) (Naf5.byte k j) := by
     rw [kt.2.1,kc.2.1,mb,ka.2.1]
-  have O := writeW8_outside s.mem base (Naf5.byte k j) (d:=bits+j) (by have:=hI.scr.nowrap; omega)
+  have O := writeW8_outside s.mem base (Naf5.byte k j) (d:=bits+j) (by have:=hI.scr.nowrap; omega_arith)
   refine ⟨⟨st,?_,ct,?_⟩,cf,?_,?_⟩
   · rw [kt.1 .r8 (by decide),kt.1 .r9 (by decide),kt.1 .r10 (by decide),
       kt.1 .r11 (by decide),kt.1 .r12 (by decide),vc,vb]
-    omega
+    omega_arith
   · intro i hi
     rw [mt]
     by_cases hij : i=j
     · subst i; exact writeW8_self ..
-    · rw [O _ (by rw [ofs_off0 base (d:=bits+i) (by have:=hI.scr.nowrap; omega)]; omega)]
-      exact hI.digits i (by omega)
+    · rw [O _ (by rw [ofs_off0 base (d:=bits+i) (by have:=hI.scr.nowrap; omega_arith)]; omega_arith)]
+      exact hI.digits i (by omega_arith)
   · exact ((((VG.Proof.Mont.X86_64.Keeps.regs ka).mono (by decide)).trans (kb.mono (by simp))).trans
       ((VG.Proof.Mont.X86_64.Keeps.regs kc).mono (by decide))).trans ((VG.Proof.Mont.X86_64.Keeps.regs kt).mono (by decide))
-  · rw [mt]; exact O.mono (by omega) (by omega)
+  · rw [mt]; exact O.mono (by omega_arith) (by omega_arith)
 
 theorem nafPrepInit_ok {s : State} {base : Addr} {size src bits : Nat}
     (hs : Scr s base size) (hsrc : src+32≤size) :
@@ -142,12 +142,12 @@ theorem nafPrepInit_ok {s : State} {base : Addr} {size src bits : Nat}
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,readSrc32,State.setReg32,
     Option.map_some,
     Option.some.injEq,exists_eq_left']
-  refine ⟨⟨?_,?_,rfl,fun i hi => by omega⟩,?_,ka.2.1⟩
+  refine ⟨⟨?_,?_,rfl,fun i hi => by omega_arith⟩,?_,ka.2.1⟩
   · exact ⟨sa.rdi,sa.wr,sa.nowrap⟩
   · simp only [nafVal5,RegUpd.gpr_setReg,ite_true,ite_false,reduceCtorEq]
     change _+2^256*0=wordsVal s.mem base src 4
     simp only [regsVal,List.length_cons,List.length_nil,Nat.reduceAdd] at va
-    omega
+    omega_arith
   · refine ⟨fun r hr => ?_,ka.2.2.1,ka.2.2.2⟩
     have h12 : r≠.r12 := fun h => hr (h ▸ (by decide))
     have hbx : r≠.rbx := fun h => hr (h ▸ (by decide))
@@ -167,10 +167,10 @@ theorem nafPrep_ok {s : State} {base : Addr} {size src bits : Nat}
   refine WP.seq (WP.mono (nafPrepInit_ok (bits:=bits) hs hsrc) fun a ⟨ha,ka,ma⟩ => ?_)
   refine WP.loop (M:=isa) (fun m t => 1≤m ∧ m≤257 ∧ I m t) (fun m t ⟨hm,hm',hi⟩ => ?_)
     257 a ⟨by decide,by decide,ha,ka,?_⟩
-  · have hj : 257-m<257 := by omega
+  · have hj : 257-m<257 := by omega_arith
     have hv : Naf5.residual k (257-m)≤2^256 := by
-      have h := Naf5.residual_bound (Nat.le_of_lt hk) (j:=257-m) (by omega)
-      have hp : 2^(256-(257-m))≤2^256 := Nat.pow_le_pow_right (by decide) (by omega)
+      have h := Naf5.residual_bound (Nat.le_of_lt hk) (j:=257-m) (by omega_arith)
+      have hp : 2^(256-(257-m))≤2^256 := Nat.pow_le_pow_right (by decide) (by omega_arith)
       exact Nat.le_trans h hp
     refine WP.mono (nafPrepStep_ok hi.1 hb hj hv) fun u ⟨hu,cf,ku,ou⟩ => ?_
     have ki := hi.2.1.trans ku
@@ -178,10 +178,10 @@ theorem nafPrep_ok {s : State} {base : Addr} {size src bits : Nat}
     by_cases hm1 : m=1
     · subst m
       exact Or.inl ⟨cf,hu,ki,oi⟩
-    · refine Or.inr ⟨?_,m-1,by omega,by omega,by omega,?_,ki,oi⟩
+    · refine Or.inr ⟨?_,m-1,by omega_arith,by omega_arith,by omega_arith,?_,ki,oi⟩
       · change u.cf=some true
-        rw [cf]; congr 1; exact decide_eq_true (by omega)
-      · rw [show 257-(m-1)=257-m+1 from by omega]
+        rw [cf]; congr 1; exact decide_eq_true (by omega_arith)
+      · rw [show 257-(m-1)=257-m+1 from by omega_arith]
         exact hu
   · rw [ma]; exact Outside.refl _ _ _ _
 

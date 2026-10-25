@@ -134,26 +134,26 @@ theorem load_inv {ρ : Nat → BitVec 64} {s : FState} {eo ep ep' : Env CVal} (h
     (he : Equiv (eo.setReg d (eo.slot off)) ep') :
     FInv (upd ρ (s.2.2.2+1) w) (put d value s.1,put off value s.2.1,out,s.2.2.2+1)
       (eo.setReg d (eo.slot off)) ep' := by
-  refine ⟨he,?_,?_,?_,?_,?_,by dsimp only; omega⟩
-  · rw [upd_lt _ (by have := h.pos; omega)]; exact h.zero
+  refine ⟨he,?_,?_,?_,?_,?_,by dsimp only; omega_arith⟩
+  · rw [upd_lt _ (by have := h.pos; omega_arith)]; exact h.zero
   · dsimp only; intro p hp
     rcases mem_put hp with rfl | ⟨hp,hne⟩
     · exact ⟨_,by simp [Env.setReg],hval⟩
     · obtain ⟨x,hx,hx'⟩ := h.regs p hp
       refine ⟨x,by simp [Env.setReg,hne,hx],?_⟩
-      rw [hx',upd_lt _ (by have := h.regsLe p hp; omega)]
+      rw [hx',upd_lt _ (by have := h.regsLe p hp; omega_arith)]
   · dsimp only; intro p hp
     rcases mem_put hp with rfl | ⟨hp,_⟩
     · exact hval
-    · rw [upd_lt _ (by have := h.memLe p hp; omega)]; exact h.mem p hp
+    · rw [upd_lt _ (by have := h.memLe p hp; omega_arith)]; exact h.mem p hp
   · dsimp only; intro p hp
     rcases mem_put hp with rfl | ⟨hp,_⟩
     · exact hle
-    · have := h.regsLe p hp; omega
+    · have := h.regsLe p hp; omega_arith
   · dsimp only; intro p hp
     rcases mem_put hp with rfl | ⟨hp,_⟩
     · exact hle
-    · have := h.memLe p hp; omega
+    · have := h.memLe p hp; omega_arith
 
 /-- After a store of `r`'s word `x` to `off`, numbered `value`. -/
 theorem store_inv {ρ : Nat → BitVec 64} {s : FState} {eo ep ep' : Env CVal} (h : FInv ρ s eo ep)
@@ -162,26 +162,26 @@ theorem store_inv {ρ : Nat → BitVec 64} {s : FState} {eo ep ep' : Env CVal} (
     (he : Equiv (eo.setSlot off x) ep') :
     FInv (upd ρ (s.2.2.2+1) w) (put r value s.1,put off value s.2.1,out,s.2.2.2+1)
       (eo.setSlot off x) ep' := by
-  refine ⟨he,?_,?_,?_,?_,?_,by dsimp only; omega⟩
-  · rw [upd_lt _ (by have := h.pos; omega)]; exact h.zero
+  refine ⟨he,?_,?_,?_,?_,?_,by dsimp only; omega_arith⟩
+  · rw [upd_lt _ (by have := h.pos; omega_arith)]; exact h.zero
   · dsimp only; intro p hp
     rcases mem_put hp with rfl | ⟨hp,_⟩
     · exact ⟨x,hx,hval⟩
     · obtain ⟨y,hy,hy'⟩ := h.regs p hp
-      exact ⟨y,hy,by rw [hy',upd_lt _ (by have := h.regsLe p hp; omega)]⟩
+      exact ⟨y,hy,by rw [hy',upd_lt _ (by have := h.regsLe p hp; omega_arith)]⟩
   · dsimp only; intro p hp
     rcases mem_put hp with rfl | ⟨hp,hne⟩
     · simp only [Env.setSlot,ite_true]; exact hval
     · simp only [Env.setSlot,hne,ite_false]
-      rw [upd_lt _ (by have := h.memLe p hp; omega)]; exact h.mem p hp
+      rw [upd_lt _ (by have := h.memLe p hp; omega_arith)]; exact h.mem p hp
   · dsimp only; intro p hp
     rcases mem_put hp with rfl | ⟨hp,_⟩
     · exact hle
-    · have := h.regsLe p hp; omega
+    · have := h.regsLe p hp; omega_arith
   · dsimp only; intro p hp
     rcases mem_put hp with rfl | ⟨hp,_⟩
     · exact hle
-    · have := h.memLe p hp; omega
+    · have := h.memLe p hp; omega_arith
 
 /-- After an instruction writing `d` (with `y`, numbered `nv`) and no slot. -/
 theorem write_inv {ρ : Nat → BitVec 64} {s : FState} {eo eo' ep ep' : Env CVal} (h : FInv ρ s eo ep)
@@ -189,21 +189,21 @@ theorem write_inv {ρ : Nat → BitVec 64} {s : FState} {eo eo' ep ep' : Env CVa
     (hs : eo'.slot=eo.slot) (hr : ∀ r,r≠d → eo'.reg r=eo.reg r) (hy : eo'.reg d=some y)
     (hval : y.1=upd ρ (s.2.2.2+1) w nv) (hle : nv≤s.2.2.2+1) (he : Equiv eo' ep') :
     FInv (upd ρ (s.2.2.2+1) w) (put d nv s.1,s.2.1,out,s.2.2.2+1) eo' ep' := by
-  refine ⟨he,?_,?_,?_,?_,?_,by dsimp only; omega⟩
-  · rw [upd_lt _ (by have := h.pos; omega)]; exact h.zero
+  refine ⟨he,?_,?_,?_,?_,?_,by dsimp only; omega_arith⟩
+  · rw [upd_lt _ (by have := h.pos; omega_arith)]; exact h.zero
   · dsimp only; intro p hp
     rcases mem_put hp with rfl | ⟨hp,hne⟩
     · exact ⟨y,hy,hval⟩
     · obtain ⟨x,hx,hx'⟩ := h.regs p hp
-      exact ⟨x,by rw [hr _ hne,hx],by rw [hx',upd_lt _ (by have := h.regsLe p hp; omega)]⟩
+      exact ⟨x,by rw [hr _ hne,hx],by rw [hx',upd_lt _ (by have := h.regsLe p hp; omega_arith)]⟩
   · dsimp only; intro p hp
-    rw [hs,upd_lt _ (by have := h.memLe p hp; omega)]; exact h.mem p hp
+    rw [hs,upd_lt _ (by have := h.memLe p hp; omega_arith)]; exact h.mem p hp
   · dsimp only; intro p hp
     rcases mem_put hp with rfl | ⟨hp,_⟩
     · exact hle
-    · have := h.regsLe p hp; omega
+    · have := h.regsLe p hp; omega_arith
   · dsimp only; intro p hp
-    have := h.memLe p hp; omega
+    have := h.memLe p hp; omega_arith
 
 theorem movz_zero (n : Nat) (a b c d : BitVec 64) (f : Bool) : ((Op.movz 0 n).eval a b c d f).1=0 := by
   simp [Op.eval,Op.useA,Op.useB,Op.useC,Op.useD,Op.useCarry,scalarState,Op.instr,exec,
@@ -262,12 +262,12 @@ theorem fwd_step {ρ : Nat → BitVec 64} {s : FState} {eo ep eo' : Env CVal}
       | some w =>
         have hmem := mem_of_lookup hm
         simp only [hvdef,hm,Option.getD_some]
-        rw [upd_lt _ (by have := h.memLe _ hmem; omega)]
+        rw [upd_lt _ (by have := h.memLe _ hmem; omega_arith)]
         exact h.mem _ hmem
     have hle : value≤s.2.2.2+1 := by
       cases hm : s.2.1.lookup off with
       | none => simp [hvdef,hm]
-      | some w => have := h.memLe _ (mem_of_lookup hm); simp [hvdef,hm]; omega
+      | some w => have := h.memLe _ (mem_of_lookup hm); simp [hvdef,hm]; omega_arith
     -- the scheduled block skips the load, copies a register, or loads
     have hkeep : ∀ r x,(r,value)∈s.1 → eo.reg r=some x →
         Equiv (eo.setReg d (eo.slot off)) (ep.setReg d (x.1,false)) := by
@@ -276,7 +276,7 @@ theorem fwd_step {ρ : Nat → BitVec 64} {s : FState} {eo ep eo' : Env CVal}
       obtain ⟨x',hx',hx''⟩ := h.regs _ hr
       rw [hx] at hx'; cases hx'
       dsimp only
-      rw [hval,hx'',upd_lt _ (by have := h.regsLe _ hr; omega)]
+      rw [hval,hx'',upd_lt _ (by have := h.regsLe _ hr; omega_arith)]
     by_cases hl : s.1.lookup d=some value
     · -- `d` already holds the word
       refine ⟨[],upd ρ (s.2.2.2+1) (eo.slot off).1,ep,?_,rfl,?_⟩
@@ -340,12 +340,12 @@ theorem fwd_step {ρ : Nat → BitVec 64} {s : FState} {eo ep eo' : Env CVal}
         obtain ⟨x',hx',hx''⟩ := h.regs _ hmem
         rw [hx] at hx'; cases hx'
         simp only [hvdef,hm,Option.getD_some]
-        rw [upd_lt _ (by have := h.regsLe _ hmem; omega)]
+        rw [upd_lt _ (by have := h.regsLe _ hmem; omega_arith)]
         exact hx''
     have hle : value≤s.2.2.2+1 := by
       cases hm : s.1.lookup r with
       | none => simp [hvdef,hm]
-      | some w => have := h.regsLe _ (mem_of_lookup hm); simp [hvdef,hm]; omega
+      | some w => have := h.regsLe _ (mem_of_lookup hm); simp [hvdef,hm]; omega_arith
     have hxp := h.equiv.reg r
     rw [hx] at hxp
     cases hy : ep.reg r with
@@ -373,11 +373,11 @@ theorem fwd_step {ρ : Nat → BitVec 64} {s : FState} {eo ep eo' : Env CVal}
       by_cases hmz : ∃ n,op=.movz 0 n
       · obtain ⟨n,rfl⟩ := hmz
         have hy0 : y.1=0 := by rw [hyv]; exact movz_zero _ _ _ _ _ _
-        have hval : y.1=upd ρ (s.2.2.2+1) y.1 0 := by rw [upd_lt _ (by omega),h.zero,hy0]
+        have hval : y.1=upd ρ (s.2.2.2+1) y.1 0 := by rw [upd_lt _ (by omega_arith),h.zero,hy0]
         by_cases hl : s.1.lookup d=some 0
         · refine ⟨[],upd ρ (s.2.2.2+1) y.1,ep,?_,rfl,?_⟩
           · rw [Decoded.instr,fwdStep_movz]; simp [hl]
-          · refine write_inv h hsl hrg hy hval (by omega) ⟨fun r => ?_,fun o => ?_,?_⟩
+          · refine write_inv h hsl hrg hy hval (by omega_arith) ⟨fun r => ?_,fun o => ?_,?_⟩
             · by_cases hr : r=d
               · subst hr
                 obtain ⟨x,hx,hx'⟩ := h.regs _ (mem_of_lookup hl)
@@ -394,7 +394,7 @@ theorem fwd_step {ρ : Nat → BitVec 64} {s : FState} {eo ep eo' : Env CVal}
             · rw [hcar rfl]; exact h.equiv.carry
         · refine ⟨[(Op.movz 0 n).instr d a b c],upd ρ (s.2.2.2+1) y.1,ep₁,?_,hrun,?_⟩
           · rw [Decoded.instr,fwdStep_movz]; simp [hl]
-          · exact write_inv h hsl hrg hy hval (by omega) hrel
+          · exact write_inv h hsl hrg hy hval (by omega_arith) hrel
       · have hop : ∀ n,op≠.movz 0 n := fun n he => hmz ⟨n,he⟩
         refine ⟨[op.instr d a b c],upd ρ (s.2.2.2+1) y.1,ep₁,?_,hrun,?_⟩
         · simp [Decoded.instr,fwdStep_scalar s hop]

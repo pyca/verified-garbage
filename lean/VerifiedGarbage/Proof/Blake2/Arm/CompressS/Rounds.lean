@@ -52,21 +52,21 @@ theorem rotl_rotr (x : BitVec 32) {k : Nat} (hk : k < 32) : (x.rotateRight k).ro
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_rotateLeft, BitVec.getLsbD_rotateRight, Nat.mod_eq_of_lt hk]
-  split <;> (try split) <;> (try simp_all) <;> first | rfl | omega | (congr 1; omega)
+  split <;> (try split) <;> (try simp_all) <;> first | rfl | omega_arith | (congr 1; omega_arith)
 
 theorem rotr_rotl (x : BitVec 32) {k : Nat} (hk : k < 32) : (x.rotateLeft k).rotateRight k = x := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_rotateLeft, BitVec.getLsbD_rotateRight, Nat.mod_eq_of_lt hk]
-  split <;> (try split) <;> (try simp_all) <;> first | rfl | omega | (congr 1; omega)
+  split <;> (try split) <;> (try simp_all) <;> first | rfl | omega_arith | (congr 1; omega_arith)
 
 theorem rotr_eq_rotl (x : BitVec 32) {k : Nat} (hk : 0 < k) (hk' : k < 32) :
     x.rotateRight k = x.rotateLeft (32 - k) := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_rotateLeft, BitVec.getLsbD_rotateRight, Nat.mod_eq_of_lt hk',
-    Nat.mod_eq_of_lt (show 32 - k < 32 by omega)]
-  split <;> (try split) <;> (try simp_all) <;> first | rfl | omega | (congr 1; omega)
+    Nat.mod_eq_of_lt (show 32 - k < 32 by omega_arith)]
+  split <;> (try split) <;> (try simp_all) <;> first | rfl | omega_arith | (congr 1; omega_arith)
 
 theorem rotl_xor (x y : BitVec 32) (k : Nat) : (x ^^^ y).rotateLeft k = x.rotateLeft k ^^^ y.rotateLeft k := by
   apply BitVec.eq_of_getLsbD_eq
@@ -81,9 +81,9 @@ theorem rotl8_rotr1 (x : BitVec 32) : (x.rotateLeft 8).rotateRight 1 = x.rotateL
     show 1 % 32 = 1 from rfl, show 7 % 32 = 7 from rfl]
   by_cases h1 : i < 32 - 1
   · by_cases h2 : 1 + i < 8 <;> by_cases h3 : i < 7 <;>
-      simp [h1, h2, h3, hi, show 1 + i < 32 by omega] <;> first | omega | (congr 1; omega)
+      simp [h1, h2, h3, hi, show 1 + i < 32 by omega_arith] <;> first | omega_arith | (congr 1; omega_arith)
   · by_cases h2 : i - (32 - 1) < 8 <;> by_cases h3 : i < 7 <;> simp [h1, h2, h3, hi] <;>
-      first | omega | (congr 1; omega)
+      first | omega_arith | (congr 1; omega_arith)
 
 /-- `G`'s words for BLAKE2s, in the order the code computes them: with `b` and
 `d` given rotated left by 7 and 8, the code's additions and exclusive ors
@@ -251,15 +251,15 @@ theorem holds_lo {V : BitVec 32} {s : State} {k : Nat} {x : BitVec 32} (h : k < 
 
 theorem holds_mid {V : BitVec 32} {s : State} {k : Nat} {x : BitVec 32} (h₁ : 4 ≤ k) (h₂ : k < 8) :
     Holds V s k x ↔ s.gpr (wreg k) = x.rotateLeft 7 := by
-  simp only [Holds, show ¬ k < 4 by omega, h₂, ↓reduceIte]
+  simp only [Holds, show ¬ k < 4 by omega_arith, h₂, ↓reduceIte]
 
 theorem holds_c {V : BitVec 32} {s : State} {k : Nat} {x : BitVec 32} (h₁ : 8 ≤ k) (h₂ : k < 12) :
     Holds V s k x ↔ s.mem.readW (A V (cOff k)) 32 = x := by
-  simp only [Holds, show ¬ k < 4 by omega, show ¬ k < 8 by omega, h₂, ↓reduceIte]
+  simp only [Holds, show ¬ k < 4 by omega_arith, show ¬ k < 8 by omega_arith, h₂, ↓reduceIte]
 
 theorem holds_hi {V : BitVec 32} {s : State} {k : Nat} {x : BitVec 32} (h₁ : 12 ≤ k) :
     Holds V s k x ↔ s.gpr (wreg k) = x.rotateLeft 8 := by
-  simp only [Holds, show ¬ k < 4 by omega, show ¬ k < 8 by omega, show ¬ k < 12 by omega, ↓reduceIte]
+  simp only [Holds, show ¬ k < 4 by omega_arith, show ¬ k < 8 by omega_arith, show ¬ k < 12 by omega_arith, ↓reduceIte]
 
 /-- Words 8–11 of the work vector, in `scratch[64, 80)`. -/
 abbrev cR (V : BitVec 32) : Region := ⟨State.addr V + BitVec.ofNat 64 64, 16⟩
@@ -296,57 +296,57 @@ theorem wreg_inj (k : Nat) (hk : k < 16) (j : Nat) (hj : j < 16) (h₁ : ¬ (8 �
   · exact absurd h h₂
 
 theorem cOff_A {V : BitVec 32} (fit : V.toNat + 512 ≤ 2 ^ 32) {o : Nat} (ho : o < 512) :
-    A V o = State.addr V + BitVec.ofNat 64 o := A_eq (by omega)
+    A V o = State.addr V + BitVec.ofNat 64 o := A_eq (by omega_arith)
 
 theorem gAt_ok {x y z u : Nat} (hx : x < 4) (hy₁ : 4 ≤ y) (hy : y < 8) (hz₁ : 8 ≤ z) (hz : z < 12)
     (hu₁ : 12 ≤ u) (hu : u < 16) (r i : Nat) {V : BitVec 32} {M : Block 32} {s₀ s : State}
     {v : Work 32} (c : RCtx V M s₀) (h : RI V s₀ v s) :
-    WP isa (gAt r i x y z u) s (RI V s₀ (Spec.Blake2.G Spec.Blake2.s v ⟨x, by omega⟩ ⟨y, by omega⟩
-      ⟨z, by omega⟩ ⟨u, hu⟩ (M (Spec.Blake2.sigmaAt r (2 * i))) (M (Spec.Blake2.sigmaAt r (2 * i + 1))))) := by
+    WP isa (gAt r i x y z u) s (RI V s₀ (Spec.Blake2.G Spec.Blake2.s v ⟨x, by omega_arith⟩ ⟨y, by omega_arith⟩
+      ⟨z, by omega_arith⟩ ⟨u, hu⟩ (M (Spec.Blake2.sigmaAt r (2 * i))) (M (Spec.Blake2.sigmaAt r (2 * i + 1))))) := by
   have sj := (Spec.Blake2.sigmaAt r (2 * i)).isLt
   have sk := (Spec.Blake2.sigmaAt r (2 * i + 1)).isLt
   have fitV := c.fitV
-  have nx := wreg_ne x (by omega)
-  have ny := wreg_ne y (by omega)
-  have nu := wreg_ne u (by omega)
-  have ixy : wreg x ≠ wreg y := fun e => absurd (wreg_inj x (by omega) y (by omega) (by omega) (by omega) e)
-    (by omega)
-  have ixu : wreg x ≠ wreg u := fun e => absurd (wreg_inj x (by omega) u (by omega) (by omega) (by omega) e)
-    (by omega)
-  have iyu : wreg y ≠ wreg u := fun e => absurd (wreg_inj y (by omega) u (by omega) (by omega) (by omega) e)
-    (by omega)
-  have hcz : cOff z < 4096 := by unfold cOff; omega
+  have nx := wreg_ne x (by omega_arith)
+  have ny := wreg_ne y (by omega_arith)
+  have nu := wreg_ne u (by omega_arith)
+  have ixy : wreg x ≠ wreg y := fun e => absurd (wreg_inj x (by omega_arith) y (by omega_arith) (by omega_arith) (by omega_arith) e)
+    (by omega_arith)
+  have ixu : wreg x ≠ wreg u := fun e => absurd (wreg_inj x (by omega_arith) u (by omega_arith) (by omega_arith) (by omega_arith) e)
+    (by omega_arith)
+  have iyu : wreg y ≠ wreg u := fun e => absurd (wreg_inj y (by omega_arith) u (by omega_arith) (by omega_arith) (by omega_arith) e)
+    (by omega_arith)
+  have hcz : cOff z < 4096 := by unfold cOff; omega_arith
   have hV : s.gpr .r12 = V := by rw [h.r12, c.r12]
   -- The message words are unchanged.
   have hm : ∀ j (hj : j < 16), s.mem.readW (A V (4 * j)) 32 = M ⟨j, hj⟩ := fun j hj => by
-    rw [← c.msg j hj, cOff_A fitV (by omega)]
-    refine h.frame.readW (r := ⟨State.addr V, 64⟩) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    rw [← c.msg j hj, cOff_A fitV (by omega_arith)]
+    refine h.frame.readW (r := ⟨State.addr V, 64⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith)) ?_ (by decide)
     simp only [List.mem_singleton, forall_eq]
-    exact (Offset.disjoint_base _ (by omega) (by omega)).symm
+    exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).symm
   have iV : ∀ o, o + 4 ≤ 512 → InRegions (s.rd ++ s.wr) (A V o) 4 := fun o ho =>
     let ⟨r, hr, hc⟩ := c.wV o ho; ⟨r, List.mem_append_right _ (by rw [h.wr]; exact hr), hc⟩
   unfold gAt
   rw [← List.append_nil (g _ _ _ _ _ _)]
-  refine wp_g ixy ixu iyu nx.1 ny.1 nu.1 nx.2 ny.2 nu.2 hcz (by omega) (by omega) hV
-    (iV _ (by omega)) (iV _ (by omega)) (by rw [h.wr]; exact c.wV _ (by unfold cOff; omega))
+  refine wp_g ixy ixu iyu nx.1 ny.1 nu.1 nx.2 ny.2 nu.2 hcz (by omega_arith) (by omega_arith) hV
+    (iV _ (by omega_arith)) (iV _ (by omega_arith)) (by rw [h.wr]; exact c.wV _ (by unfold cOff; omega_arith))
     fun s' w => WP.block_nil ?_
-  have va : s.gpr (wreg x) = v[x]'(by omega) := (holds_lo hx).mp (h.vars x (by omega))
-  have vb : (s.gpr (wreg y)).rotateRight 7 = v[y]'(by omega) := by
-    rw [(holds_mid hy₁ hy).mp (h.vars y (by omega)), rotr_rotl _ (by decide)]
-  have vc : s.mem.readW (A V (cOff z)) 32 = v[z]'(by omega) := (holds_c hz₁ hz).mp (h.vars z (by omega))
+  have va : s.gpr (wreg x) = v[x]'(by omega_arith) := (holds_lo hx).mp (h.vars x (by omega_arith))
+  have vb : (s.gpr (wreg y)).rotateRight 7 = v[y]'(by omega_arith) := by
+    rw [(holds_mid hy₁ hy).mp (h.vars y (by omega_arith)), rotr_rotl _ (by decide)]
+  have vc : s.mem.readW (A V (cOff z)) 32 = v[z]'(by omega_arith) := (holds_c hz₁ hz).mp (h.vars z (by omega_arith))
   have vd : (s.gpr (wreg u)).rotateRight 8 = v[u]'hu := by
     rw [(holds_hi hu₁).mp (h.vars u hu), rotr_rotl _ (by decide)]
   rw [va, vb, vc, vd, hm _ sj, hm _ sk] at w
   have hwm : ∀ k, 8 ≤ k → k < 12 → k ≠ z →
       s'.mem.readW (A V (cOff k)) 32 = s.mem.readW (A V (cOff k)) 32 := fun k h1 h2 hk => by
-    rw [w.mem, cOff_A fitV (by unfold cOff; omega), cOff_A fitV (by unfold cOff; omega)]
-    exact Mem.readW_writeW_sep (Offset.sep _ (by unfold cOff; omega) (by unfold cOff; omega)
-      (by unfold cOff; omega)) (by decide)
+    rw [w.mem, cOff_A fitV (by unfold cOff; omega_arith), cOff_A fitV (by unfold cOff; omega_arith)]
+    exact Mem.readW_writeW_sep (Offset.sep _ (by unfold cOff; omega_arith) (by unfold cOff; omega_arith)
+      (by unfold cOff; omega_arith)) (by decide)
   refine ⟨fun k hk => ?_, by rw [w.other _ (Ne.symm nx.1) (Ne.symm ny.1) (Ne.symm nu.1) (by decide), h.r12],
     by rw [w.rd, h.rd], by rw [w.wr, h.wr], by rw [w.sp, h.sp], ?_⟩
-  · rw [Proof.Blake2.G_get _ v (a := ⟨x, by omega⟩) (b := ⟨y, by omega⟩) (c := ⟨z, by omega⟩) (d := ⟨u, hu⟩)
-      (by dsimp only; omega) (by dsimp only; omega) (by dsimp only; omega) (by dsimp only; omega)
-      (by dsimp only; omega) (by dsimp only; omega) _ _ k hk]
+  · rw [Proof.Blake2.G_get _ v (a := ⟨x, by omega_arith⟩) (b := ⟨y, by omega_arith⟩) (c := ⟨z, by omega_arith⟩) (d := ⟨u, hu⟩)
+      (by dsimp only; omega_arith) (by dsimp only; omega_arith) (by dsimp only; omega_arith) (by dsimp only; omega_arith)
+      (by dsimp only; omega_arith) (by dsimp only; omega_arith) _ _ k hk]
     simp only [Fin.getElem_fin]
     by_cases ey : y = k
     · subst ey; simp only [↓reduceIte]; exact (holds_mid hy₁ hy).mpr w.rb
@@ -364,18 +364,18 @@ theorem gAt_ok {x y z u : Nat} (hx : x < 4) (hy₁ : 4 ≤ y) (hy : y < 8) (hz�
     · have hn : ∀ j < 16, ¬ (8 ≤ j ∧ j < 12) → j ≠ k → wreg k ≠ wreg j := fun j hj hj' hjk e =>
         hjk (wreg_inj k hk j hj hc8 hj' e).symm
       have ho : s'.gpr (wreg k) = s.gpr (wreg k) :=
-        w.other _ (hn x (by omega) (by omega) ex) (hn y (by omega) (by omega) ey) (hn u hu (by omega) eu)
+        w.other _ (hn x (by omega_arith) (by omega_arith) ex) (hn y (by omega_arith) (by omega_arith) ey) (hn u hu (by omega_arith) eu)
           (wreg_ne k hk).2
       unfold Holds at hv ⊢
       split <;> [rw [ho]; skip] <;> rename_i h4 <;> simp only [h4, ↓reduceIte] at hv
       · exact hv
       split <;> [rw [ho]; skip] <;> rename_i h8 <;> simp only [h8, ↓reduceIte] at hv
       · exact hv
-      simp only [show ¬ k < 12 by omega, ↓reduceIte] at hv ⊢; rw [ho]; exact hv
+      simp only [show ¬ k < 12 by omega_arith, ↓reduceIte] at hv ⊢; rw [ho]; exact hv
   · rw [w.mem]
     refine h.frame.writeW (List.mem_singleton_self _) _ ?_
-    rw [cOff_A fitV (by unfold cOff; omega)]
-    exact Offset.contains _ (by unfold cOff; omega) (by unfold cOff; omega) (by omega)
+    rw [cOff_A fitV (by unfold cOff; omega_arith)]
+    exact Offset.contains _ (by unfold cOff; omega_arith) (by unfold cOff; omega_arith) (by omega_arith)
 
 section
 open VG.Spec.Blake2 (G sigmaAt s)

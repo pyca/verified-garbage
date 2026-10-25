@@ -34,27 +34,27 @@ def d2w (c1 c2 : Byte) : BitVec 32 :=
   (BitVec.setWidth 32 (BitVec.setWidth 64 c2)).rotateRight 28 + BitVec.setWidth 32 (BitVec.setWidth 64 c1) >>> 4
 
 theorem b32 (c : Byte) : (BitVec.setWidth 32 (BitVec.setWidth 64 c)).toNat = c.toNat := by
-  rw [BitVec.toNat_setWidth, toNat_setWidth64_8, Nat.mod_eq_of_lt (by have := c.isLt; omega)]
+  rw [BitVec.toNat_setWidth, toNat_setWidth64_8, Nat.mod_eq_of_lt (by have := c.isLt; omega_arith)]
 
 theorem d1w_toNat (c0 c1 : Byte) : (d1w c0 c1).toNat = c0.toNat + 256 * (c1.toNat % 16) := by
   have h0 := c0.isLt
   have e : (BitVec.setWidth 32 (BitVec.setWidth 64 c1) &&& 15).toNat = c1.toNat % 16 := by
     rw [BitVec.toNat_and, b32, show (15 : BitVec 32).toNat = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
   have hr := rotr_toNat (BitVec.setWidth 32 (BitVec.setWidth 64 c1) &&& 15) (r := 24) (by decide)
-    (by rw [e]; have := Nat.mod_lt c1.toNat (show 16 > 0 by decide); omega)
+    (by rw [e]; have := Nat.mod_lt c1.toNat (show 16 > 0 by decide); omega_arith)
   rw [e] at hr
   have := Nat.mod_lt c1.toNat (show 16 > 0 by decide)
   rw [d1w, BitVec.toNat_add, hr, b32]
-  rw [show 32 - 24 = 8 from rfl]; omega
+  rw [show 32 - 24 = 8 from rfl]; omega_arith
 
 theorem d2w_toNat (c1 c2 : Byte) : (d2w c1 c2).toNat = c1.toNat / 16 + 16 * c2.toNat := by
   have h1 := c1.isLt
   have h2 := c2.isLt
   have hr := rotr_toNat (BitVec.setWidth 32 (BitVec.setWidth 64 c2)) (r := 28) (by decide)
-    (by rw [b32]; omega)
+    (by rw [b32]; omega_arith)
   rw [b32] at hr
   rw [d2w, BitVec.toNat_add, hr, shr_toNat, b32]
-  rw [show 32 - 28 = 4 from rfl]; omega
+  rw [show 32 - 28 = 4 from rfl]; omega_arith
 
 theorem sx256 : BitVec.signExtend 64 (256 : BitVec 32) = 256 := by decide
 
@@ -83,26 +83,26 @@ theorem ea_aJ (h : Bool) (s : State) {aP : Addr} {j : Nat} (hbp : s.gpr .rbp = a
   rw [cAddr, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero]
   congr 1
   apply BitVec.eq_of_toNat_eq
-  cases h <;> simp only [BitVec.toNat_mul, BitVec.toNat_ofNat, cw, Bool.false_eq_true, ↓reduceIte] <;> omega
+  cases h <;> simp only [BitVec.toNat_mul, BitVec.toNat_ofNat, cw, Bool.false_eq_true, ↓reduceIte] <;> omega_arith
 
 theorem stored_snoc {h : Bool} {m : Mem} {aP : Addr} {L : List Zq} (hs : Stored h m aP L) (hL : L.length < 256)
     {v : BitVec (cw h)} (hv : v.toNat < q) :
     Stored h (m.writeW (cAddr h aP L.length) v) aP (L ++ [ofNat v.toNat]) := by
   intro k hk
   rw [List.length_append, List.length_singleton] at hk
-  rw [coeffAtW_writeW _ _ _ (show k < 256 by omega) hL]
+  rw [coeffAtW_writeW _ _ _ (show k < 256 by omega_arith) hL]
   by_cases e : L.length = k
   · subst e
     rw [ifp rfl, List.getD_eq_getElem?_getD, List.getElem?_append_right (Nat.le_refl _), Nat.sub_self]
     simp only [List.getElem?_cons_zero, Option.getD_some]
     rw [ofNat_of_lt hv]
-  · rw [ifn e, hs k (by omega), List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
-      List.getElem?_append_left (by omega)]
+  · rw [ifn e, hs k (by omega_arith), List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+      List.getElem?_append_left (by omega_arith)]
 
 theorem ofNat64_succ {j : Nat} (_h : j + 1 < 2 ^ 64) : BitVec.ofNat 64 j + 1 = BitVec.ofNat 64 (j + 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-  omega
+  omega_arith
 
 theorem sxZero : BitVec.signExtend 64 (0 : BitVec 32) = 0 := by decide
 
@@ -110,7 +110,7 @@ theorem sxZero : BitVec.signExtend 64 (0 : BitVec 32) = 0 := by decide
 theorem stored_write {h : Bool} {m : Mem} {aP : Addr} {L : List Zq} (hs : Stored h m aP L) (hL : L.length < 256)
     (v : BitVec (cw h)) : Stored h (m.writeW (cAddr h aP L.length) v) aP L := by
   intro k hk
-  rw [coeffAtW_writeW _ _ _ (show k < 256 by omega) hL, ifn (by omega)]
+  rw [coeffAtW_writeW _ _ _ (show k < 256 by omega_arith) hL, ifn (by omega_arith)]
   exact hs k hk
 
 /-- The coefficients at `aP` may be written. -/
@@ -127,7 +127,7 @@ theorem sw_cw (h : Bool) (x : BitVec 64) (hx : (x.setWidth 32).toNat < q) :
   · rfl
   · simp only [BitVec.toNat_setWidth, cw, ↓reduceIte] at hx ⊢
     have : x.toNat % 2 ^ 16 = x.toNat % 2 ^ 32 % 2 ^ 16 := (Nat.mod_mod_of_dvd _ (by decide)).symm
-    omega
+    omega_arith
 
 /-- The store of `snTry`: what it writes. -/
 theorem snTry_mem (h : Bool) (r : Reg) (s : State) {aP : Addr} {j : Nat} (hbp : s.gpr .rbp = aP)
@@ -163,7 +163,7 @@ theorem snTry_ok (h : Bool) (r : Reg) (s : State) {aP : Addr} {L : List Zq} (hbp
     have e := sw_cw h (s.gpr r) hb
     refine ⟨?_, by rw [hm, ← e]; exact stored_snoc hst hL (by rw [e]; exact hb), hf, k⟩
     rw [hdi', hdi, decide_eq_true hb', List.length_append, List.length_singleton]
-    exact ofNat64_succ (by omega)
+    exact ofNat64_succ (by omega_arith)
   · have hb' : ¬ ((s.gpr r).setWidth 32).toNat < 3329 := by rw [q_eq] at hb; exact hb
     rw [ifn hb]
     refine ⟨?_, by rw [hm]; exact stored_write hst hL _, hf, k⟩
@@ -201,7 +201,7 @@ theorem snMid_ok (h : Bool) (s : State) {aP : Addr} {L : List Zq} (hbp : s.gpr .
       s'.gpr .rdi = BitVec.ofNat 64 (midL L ((s.gpr .r9).setWidth 32).toNat ((s.gpr .r8).setWidth 32).toNat).length ∧
         Stored h s'.mem aP (midL L ((s.gpr .r9).setWidth 32).toNat ((s.gpr .r8).setWidth 32).toNat) ∧
         Frame [cRegion h aP] s.mem s'.mem ∧ Keep [.rdi, .r9, .r8] s s' := by
-  have hl : (s.gpr .rdi).toNat = L.length := by rw [hdi, ofNat64_toNat (by omega)]
+  have hl : (s.gpr .rdi).toNat = L.length := by rw [hdi, ofNat64_toNat (by omega_arith)]
   refine WP.ite (decide (L.length < 256)) (by rw [← hl]; exact hcf) (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
     rw [midL, ifp hb]
@@ -211,8 +211,8 @@ theorem snMid_ok (h : Bool) (s : State) {aP : Addr} {L : List Zq} (hbp : s.gpr .
     generalize hL1 : (if ((s.gpr .r9).setWidth 32).toNat < q then
       L ++ [ofNat ((s.gpr .r9).setWidth 32).toNat] else L) = L1 at hdi2 hst2
     have hL1len : L1.length ≤ 256 := by
-      rw [← hL1]; split <;> (try simp only [List.length_append, List.length_singleton]) <;> omega
-    have hl1 : (s3.gpr .rdi).toNat = L1.length := by rw [hg3, hdi2, ofNat64_toNat (by omega)]
+      rw [← hL1]; split <;> (try simp only [List.length_append, List.length_singleton]) <;> omega_arith
+    have hl1 : (s3.gpr .rdi).toNat = L1.length := by rw [hg3, hdi2, ofNat64_toNat (by omega_arith)]
     have hstep : stepD L ((s.gpr .r9).setWidth 32).toNat ((s.gpr .r8).setWidth 32).toNat =
         if L1.length < 256 then (if ((s.gpr .r8).setWidth 32).toNat < q then
           L1 ++ [ofNat ((s.gpr .r8).setWidth 32).toNat] else L1) else L1 := by
@@ -269,8 +269,8 @@ theorem snBody_ok (h : Bool) (s : State) {aP : Addr} {L : List Zq} (hbp : s.gpr 
         (d2w (s.mem (s.gpr .rsi + BitVec.ofNat 64 1)) (s.mem (s.gpr .rsi + BitVec.ofNat 64 2))).toNat := by
     rw [sampleStepCap, midL, sampleStep_eq, d1w_toNat, d2w_toNat]
     by_cases h : L.length < 256
-    · rw [ifn (show ¬ L.length = n by rw [n_eq]; omega), ifp h]
-    · rw [ifp (show L.length = n by rw [n_eq]; omega), ifn h]
+    · rw [ifn (show ¬ L.length = n by rw [n_eq]; omega_arith), ifp h]
+    · rw [ifp (show L.length = n by rw [n_eq]; omega_arith), ifn h]
   rw [he]
   refine WP.seq (WP.mono (snLoad_ok s h0 h1 h2) fun s1 ⟨⟨h9, h8, hcf, hm1, hdi1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (snMid_ok h s1 (aP := aP) (L := L) (by rw [k1.gpr (by decide), hbp]) (by rw [hdi1, hdi]) hL

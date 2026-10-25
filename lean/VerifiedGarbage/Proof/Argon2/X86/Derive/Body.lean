@@ -32,22 +32,22 @@ open VG
 
 theorem toNat_w (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
   simp only [BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := x.isLt; omega_arith)
 
 theorem disj32 {x y : BitVec 32} {n m : Nat} (h : x.toNat + n ≤ y.toNat ∨ y.toNat + m ≤ x.toNat)
     (hn : x.toNat + n ≤ 2 ^ 32) (hm : y.toNat + m ≤ 2 ^ 32) :
     Region.Disjoint ⟨x.setWidth 64, n⟩ ⟨y.setWidth 64, m⟩ := by
   rcases h with h | h
-  · exact Offset.disjoint_of_le (by simp only [toNat_w]; omega) (by simp only [toNat_w]; omega)
-  · exact (Offset.disjoint_of_le (r₁ := ⟨y.setWidth 64, m⟩) (by simp only [toNat_w]; omega)
-      (by simp only [toNat_w]; omega)).symm
+  · exact Offset.disjoint_of_le (by simp only [toNat_w]; omega_arith) (by simp only [toNat_w]; omega_arith)
+  · exact (Offset.disjoint_of_le (r₁ := ⟨y.setWidth 64, m⟩) (by simp only [toNat_w]; omega_arith)
+      (by simp only [toNat_w]; omega_arith)).symm
 
 theorem contains32 {x y : BitVec 32} {n m : Nat} (h₁ : y.toNat ≤ x.toNat)
     (h₂ : x.toNat + n ≤ y.toNat + m) :
     Region.Contains ⟨y.setWidth 64, m⟩ (x.setWidth 64) n := by
   simp only [Region.Contains]
   rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, toNat_w]; exact h₁), toNat_w, toNat_w]
-  omega
+  omega_arith
 
 theorem sub32 {x y : BitVec 32} {n m : Nat} (h₁ : y.toNat ≤ x.toNat)
     (h₂ : x.toNat + n ≤ y.toNat + m) :
@@ -63,14 +63,14 @@ theorem sub32 {x y : BitVec 32} {n m : Nat} (h₁ : y.toNat ≤ x.toNat)
 theorem sub_nat {x : BitVec 32} {k : Nat} (h : k ≤ x.toNat) :
     (x - BitVec.ofNat 32 k).toNat = x.toNat - k := by
   have := x.isLt
-  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega)]
-  rw [show 2 ^ 32 - k + x.toNat = (x.toNat - k) + 2 ^ 32 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_arith)]
+  rw [show 2 ^ 32 - k + x.toNat = (x.toNat - k) + 2 ^ 32 by omega_arith, Nat.add_mod_right,
+    Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- `x + k`, as a number. -/
 theorem add_nat {x : BitVec 32} {k : Nat} (h : x.toNat + k < 2 ^ 32) :
     (x + BitVec.ofNat 32 k).toNat = x.toNat + k := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega),
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_arith),
     Nat.mod_eq_of_lt h]
 
 end VG.Proof.Argon2.X86.Derive
@@ -188,11 +188,11 @@ theorem disjoint_total {a b : Region} (h : a.Disjoint b) {N : Nat}
     refine h b.base ?_ ?_
     · simp only [Region.Contains]
       rw [BitVec.toNat_sub_of_le (by simpa [BitVec.le_def] using hle)]
-      omega
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+      omega_arith
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
   rcases Nat.le_total a.base.toNat b.base.toNat with hle | hle
-  · have := key h hle hb pb; omega
-  · have := key h.symm hle ha pa; omega
+  · have := key h hle hb pb; omega_arith
+  · have := key h.symm hle ha pa; omega_arith
 
 namespace DPre
 variable {s₀ : State} (hp : DPre s₀)
@@ -222,11 +222,11 @@ theorem blocks_lt : blocksN s₀ * 1024 + 16384 ≤ 2 ^ 32 := by
   have hm := hp.mem_fits
   have hs := hp.scr_fits
   rcases Nat.eq_zero_or_pos (blocksN s₀) with h0 | hpos
-  · omega
+  · omega_arith
   have := disjoint_total hp.mem_scr (N := 2 ^ 32)
-    (by simp only [BitVec.toNat_setWidth, ]; omega)
-    (by simp only [BitVec.toNat_setWidth, ]; omega)
-    (by simp only; omega) (by simp only; omega)
+    (by simp only [BitVec.toNat_setWidth, ]; omega_arith)
+    (by simp only [BitVec.toNat_setWidth, ]; omega_arith)
+    (by simp only; omega_arith) (by simp only; omega_arith)
   simpa using this
 
 end DPre
@@ -285,9 +285,9 @@ theorem E_sub (k : Nat) (hk : k ≤ 160) :
     E s₀ + BitVec.ofNat 32 k = E0 s₀ - BitVec.ofNat 32 (160 - k) := by
   apply BitVec.eq_of_toNat_eq
   have := (E0 s₀).isLt
-  rw [BitVec.toNat_add, sub_toNat hlo, sub_toNat (by omega), BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := k) (by omega)]
-  omega
+  rw [BitVec.toNat_add, sub_toNat hlo, sub_toNat (by omega_arith), BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (a := k) (by omega_arith)]
+  omega_arith
 
 theorem frames_ok {Q : State → Prop} (hsp : NoSp body)
     (hb : WP isa body (entry s₀) fun t => BodyDone s₀ t ∧ Q t)
@@ -303,25 +303,25 @@ theorem frames_ok {Q : State → Prop} (hsp : NoSp body)
     · exact hb i hi
     · simp [Taint.clobbers, Taint.dst, hr]
   have e1 : ((pushed [.ebp] s₀).gpr .esp).toNat = (E0 s₀).toNat - 4 := by
-    rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega)]; rfl
+    rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega_arith)]; rfl
   have e2 : ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat = (E0 s₀).toNat - 8 := by
-    rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega), e1]; rfl
+    rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega_arith), e1]; rfl
   have e3 : ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat = (E0 s₀).toNat - 12 := by
-    rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega), e2]; rfl
+    rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega_arith), e2]; rfl
   have e4 : ((pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp).toNat =
       (E0 s₀).toNat - 16 := by
-    rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega), e3]; rfl
+    rw [pushed_esp, sub_toNat (by simp only [List.length_singleton]; omega_arith), e3]; rfl
   simp only [derive, saved, frames]
-  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega)
+  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) (nf (by decide) (nf (by decide) (nf (by decide) hsp)))) ?_
-  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega)
+  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) (nf (by decide) (nf (by decide) hsp))) ?_
-  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega)
+  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) (nf (by decide) hsp)) ?_
-  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega)
+  refine WP.frame (by simp) (by decide) (by decide) (by simp only [List.length_singleton]; omega_arith)
     (nf (by decide) hsp) ?_
   refine WP.frame (by simp [locals]) (by decide) (by decide)
-    (by simp only [List.length_replicate, locals]; omega) hsp (hb.mono fun t ⟨d, q⟩ => ?_)
+    (by simp only [List.length_replicate, locals]; omega_arith) hsp (hb.mono fun t ⟨d, q⟩ => ?_)
   -- The pops.
   have add4 : ∀ a : Nat, E s₀ + BitVec.ofNat 32 a + BitVec.ofNat 32 (4 * 1) =
       E s₀ + BitVec.ofNat 32 (a + 4) := fun a => by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
@@ -409,7 +409,7 @@ section
 variable {s₀ : State} (hp : DPre s₀)
 include hp
 
-theorem E_toNat : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_toNat (by have := hp.esp_lo; omega)
+theorem E_toNat : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_toNat (by have := hp.esp_lo; omega_arith)
 
 end
 
@@ -444,8 +444,8 @@ theorem entry_frame : Frame [below (E0 s₀) 160] s₀.mem (entry s₀).mem := b
     fun {rs s} hrs hn h₁ h₂ => (pushed_frame hrs hn).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       refine ⟨_, List.mem_singleton_self _, sub32 ?_ ?_⟩
-      · rw [sub_nat hn, sub_nat (by omega)]; omega
-      · rw [sub_nat hn, sub_nat (by omega)]; omega
+      · rw [sub_nat hn, sub_nat (by omega_arith)]; omega_arith
+      · rw [sub_nat hn, sub_nat (by omega_arith)]; omega_arith
   -- The stack pointer after each push.
   have n₁ : ((pushed [.ebp] s₀).gpr .esp).toNat = (s₀.gpr .esp).toNat - 4 :=
     pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo])
@@ -481,7 +481,7 @@ theorem push_keep {rs : List Reg} {s : State} (hrs : .esp ∉ rs) (hn : 4 * rs.l
   refine (pushed_frame hrs hn).readW (r := ⟨a.setWidth 64, 4⟩) (Region.contains_self _ _) ?_ (by decide)
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
-  exact disj32 (.inr (by rw [sub_nat hn]; omega)) ha' (by rw [sub_nat hn]; have := (s.gpr .esp).isLt; omega)
+  exact disj32 (.inr (by rw [sub_nat hn]; omega_arith)) ha' (by rw [sub_nat hn]; have := (s.gpr .esp).isLt; omega_arith)
 
 /-- The word a one-register push writes. -/
 theorem push_word {r : Reg} {s : State} (hr : r ≠ .esp) (hn : 4 ≤ (s.gpr .esp).toNat) {a : BitVec 32}
@@ -538,7 +538,7 @@ theorem entry_saved {j : Nat} (hj : j < 4) : (entry s₀).mem.readW (slot s₀ j
   unfold entry slot
   rw [push_keep (by decide) (by simp only [List.length_replicate]; omega_using [hlo, n₄])
     (by rw [n₄, sl]; omega_using [hlo]) ha]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
   · have ⟨h₁, h₂⟩ := w (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))) (by rw [n₃]; omega_using [hlo])
     rw [push_word (by decide) h₁ h₂, pushed_gpr _ _ (by decide), pushed_gpr _ _ (by decide),
       pushed_gpr _ _ (by decide)]; rfl
@@ -589,32 +589,32 @@ variable {s₀ : State} (hp : DPre s₀)
 include hp
 
 theorem E_hi : (E s₀).toNat + 236 ≤ 2 ^ 32 := by
-  have := hp.esp_hi; have := hp.esp_lo; rw [sub_nat (by omega)]; omega
+  have := hp.esp_hi; have := hp.esp_lo; rw [sub_nat (by omega_arith)]; omega_arith
 
 /-- The locals and the stack below them lie in the stack the contract reserves. -/
 theorem loc_stk {d n : Nat} (h : d + n ≤ 144) :
     Region.Sub ⟨(E s₀ + BitVec.ofNat 32 d).setWidth 64, n⟩ (stkR s₀) := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  have hE : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega)
+  have hE : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega_arith)
   have h1 : (E s₀ + BitVec.ofNat 32 d).toNat = (E0 s₀).toNat - 160 + d := by
-    rw [add_nat (by omega), hE]
-  have h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega)
-  exact sub32 (by rw [h1, h2]; omega) (by rw [h1, h2]; omega)
+    rw [add_nat (by omega_arith), hE]
+  have h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega_arith)
+  exact sub32 (by rw [h1, h2]; omega_arith) (by rw [h1, h2]; omega_arith)
 
 theorem call_stk : Region.Sub (callR s₀) (stkR s₀) := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  have hE : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega)
-  have h1 : (E s₀ - BitVec.ofNat 32 84).toNat = (E0 s₀).toNat - 244 := by rw [sub_nat (by omega), hE]; omega
-  have h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega)
-  exact sub32 (by rw [h1, h2]) (by rw [h1, h2]; omega)
+  have hE : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega_arith)
+  have h1 : (E s₀ - BitVec.ofNat 32 84).toNat = (E0 s₀).toNat - 244 := by rw [sub_nat (by omega_arith), hE]; omega_arith
+  have h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega_arith)
+  exact sub32 (by rw [h1, h2]) (by rw [h1, h2]; omega_arith)
 
 /-- A word of the locals. -/
 theorem loc_in {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 144) :
     InRegions s.wr (addr (E s₀) d) 4 := by
   have := E_hi hp
   rw [h.wr]
-  exact ⟨locR s₀, loc_mem s₀, contains32 (by rw [add_nat (by omega)]; omega)
-    (by rw [add_nat (by omega)]; omega)⟩
+  exact ⟨locR s₀, loc_mem s₀, contains32 (by rw [add_nat (by omega_arith)]; omega_arith)
+    (by rw [add_nat (by omega_arith)]; omega_arith)⟩
 
 theorem loc_in' {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 4 ≤ 144) :
     InRegions (s.rd ++ s.wr) (addr (E s₀) d) 4 :=
@@ -628,16 +628,16 @@ section
 variable {s₀ : State} (hp : DPre s₀)
 include hp
 
-theorem E_nat : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by have := hp.esp_lo; omega)
+theorem E_nat : (E s₀).toNat = (E0 s₀).toNat - 160 := sub_nat (by have := hp.esp_lo; omega_arith)
 
 /-- A range within the 160 bytes the frames use. -/
 theorem frame_stk {d n : Nat} (h : d + n ≤ 160) :
     Region.Sub ⟨(E s₀ + BitVec.ofNat 32 d).setWidth 64, n⟩ (stkR s₀) := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
   have h1 : (E s₀ + BitVec.ofNat 32 d).toNat = (E0 s₀).toNat - 160 + d := by
-    rw [add_nat (by rw [E_nat hp]; omega), E_nat hp]
-  have h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega)
-  exact sub32 (by rw [h1, h2]; omega) (by rw [h1, h2]; omega)
+    rw [add_nat (by rw [E_nat hp]; omega_arith), E_nat hp]
+  have h2 : (E0 s₀ - BitVec.ofNat 32 244).toNat = (E0 s₀).toNat - 244 := sub_nat (by omega_arith)
+  exact sub32 (by rw [h1, h2]; omega_arith) (by rw [h1, h2]; omega_arith)
 
 /-- What lies above the locals is outside the body's regions. -/
 theorem above_disj {a : BitVec 32} {n : Nat} (ha : (E s₀).toNat + 144 ≤ a.toNat)
@@ -653,21 +653,21 @@ theorem above_disj {a : BitVec 32} {n : Nat} (ha : (E s₀).toNat + 144 ≤ a.to
   · exact hm
   · exact hs
   · exact ho
-  · exact disj32 (.inr (by omega)) (by omega) (by omega)
-  · exact disj32 (.inr (by rw [sub_nat (by omega)]; omega)) (by omega)
-      (by rw [sub_nat (by omega)]; omega)
+  · exact disj32 (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+  · exact disj32 (.inr (by rw [sub_nat (by omega_arith)]; omega_arith)) (by omega_arith)
+      (by rw [sub_nat (by omega_arith)]; omega_arith)
 
 theorem Inv.done {s : State} (h : Inv s₀ s) : BodyDone s₀ s := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
   have hE := E_nat hp
-  have hE' : (E0 s₀ - BitVec.ofNat 32 160).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega)
+  have hE' : (E0 s₀ - BitVec.ofNat 32 160).toNat = (E0 s₀).toNat - 160 := sub_nat (by omega_arith)
   refine ⟨h.esp, fun j hj => ?_, ?_⟩
   · have sl : (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat = (E s₀).toNat + (144 + 4 * j) :=
-      add_nat (by have := E_hi hp; omega)
-    have st := frame_stk hp (d := 144 + 4 * j) (n := 4) (by omega)
+      add_nat (by have := E_hi hp; omega_arith)
+    have st := frame_stk hp (d := 144 + 4 * j) (n := 4) (by omega_arith)
     rw [h.frame.readW (r := ⟨slot s₀ j, 4⟩) (Region.contains_self _ _) ?_ (by decide)]
     · exact entry_saved hp hj
-    refine above_disj hp (by rw [sl]; omega) (by rw [sl]; omega) ?_ ?_ ?_
+    refine above_disj hp (by rw [sl]; omega_arith) (by rw [sl]; omega_arith) ?_ ?_ ?_
     · exact ((hp.stk_all _ (by simp)).sub_left st)
     · exact ((hp.stk_all _ (by simp)).sub_left st)
     · exact ((hp.stk_all _ (by simp)).sub_left st)
@@ -675,8 +675,8 @@ theorem Inv.done {s : State} (h : Inv s₀ s) : BodyDone s₀ s := by
     · refine entry_frame hp |>.readW (r := retR s₀) (Region.contains_self _ _) ?_ (by decide)
       intro r hr
       simp only [List.mem_singleton] at hr; subst hr
-      exact disj32 (.inr (by rw [sub_nat (by omega)]; omega)) (by omega) (by rw [sub_nat (by omega)]; omega)
-    refine above_disj hp (by omega) (by omega) ?_ ?_ ?_
+      exact disj32 (.inr (by rw [sub_nat (by omega_arith)]; omega_arith)) (by omega_arith) (by rw [sub_nat (by omega_arith)]; omega_arith)
+    refine above_disj hp (by omega_arith) (by omega_arith) ?_ ?_ ?_
     · exact hp.ret_w _ (by simp)
     · exact hp.ret_w _ (by simp)
     · exact hp.ret_w _ (by simp)
@@ -689,39 +689,39 @@ theorem arg_addr {i : Nat} (hi : i < 18) :
   simp only [addr, argAddr, Impl.Argon2.X86.Derive.argOff, Impl.Argon2.X86.Derive.locals]
   congr 1
   apply BitVec.eq_of_toNat_eq
-  rw [add_nat (by omega), add_nat (by omega)]
+  rw [add_nat (by omega_arith), add_nat (by omega_arith)]
   show (E0 s₀ - BitVec.ofNat 32 160).toNat + _ = (E0 s₀).toNat + _
-  rw [sub_nat (by omega)]; omega
+  rw [sub_nat (by omega_arith)]; omega_arith
 
 theorem arg_word {i : Nat} (hi : i < 18) :
     Region.Sub ⟨argAddr s₀ i, 4⟩ (argR s₀) := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  exact sub32 (by rw [add_nat (by omega), add_nat (by omega)]; omega)
-    (by rw [add_nat (by omega), add_nat (by omega)]; omega)
+  exact sub32 (by rw [add_nat (by omega_arith), add_nat (by omega_arith)]; omega_arith)
+    (by rw [add_nat (by omega_arith), add_nat (by omega_arith)]; omega_arith)
 
 theorem Inv.arg_in {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :
     InRegions (s.rd ++ s.wr) (addr (E s₀) (Impl.Argon2.X86.Derive.argOff i)) 4 := by
   rw [arg_addr hp hi, h.rd, hp.rd]
   exact ⟨argR s₀, by simp, arg_word hp hi (argAddr s₀ i) |> fun _ => by
     have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-    exact contains32 (by rw [add_nat (by omega), add_nat (by omega)]; omega)
-      (by rw [add_nat (by omega), add_nat (by omega)]; omega)⟩
+    exact contains32 (by rw [add_nat (by omega_arith), add_nat (by omega_arith)]; omega_arith)
+      (by rw [add_nat (by omega_arith), add_nat (by omega_arith)]; omega_arith)⟩
 
 theorem Inv.arg {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) :
     s.mem.readW (addr (E s₀) (Impl.Argon2.X86.Derive.argOff i)) 32 = arg s₀ i := by
   have := hp.esp_lo; have := hp.esp_hi; have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
   have hE := E_nat hp
   have ai : (E0 s₀ + BitVec.ofNat 32 (4 + 4 * i)).toNat = (E0 s₀).toNat + 4 + 4 * i := by
-    rw [add_nat (by omega)]; omega
+    rw [add_nat (by omega_arith)]; omega_arith
   rw [arg_addr hp hi]
   have sub := arg_word hp hi
   rw [h.frame.readW (r := ⟨argAddr s₀ i, 4⟩) (Region.contains_self _ _) ?_ (by decide)]
   · refine (entry_frame hp).readW (r := ⟨argAddr s₀ i, 4⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
-    exact disj32 (.inr (by rw [sub_nat (by omega), ai]; omega)) (by rw [ai]; omega)
-      (by rw [sub_nat (by omega)]; omega)
-  refine above_disj hp (by rw [ai]; omega) (by rw [ai]; omega) ?_ ?_ ?_
+    exact disj32 (.inr (by rw [sub_nat (by omega_arith), ai]; omega_arith)) (by rw [ai]; omega_arith)
+      (by rw [sub_nat (by omega_arith)]; omega_arith)
+  refine above_disj hp (by rw [ai]; omega_arith) (by rw [ai]; omega_arith) ?_ ?_ ?_
   · exact (hp.ro_w _ (by simp) _ (by simp)).sub_left sub
   · exact (hp.ro_w _ (by simp) _ (by simp)).sub_left sub
   · exact (hp.ro_w _ (by simp) _ (by simp)).sub_left sub

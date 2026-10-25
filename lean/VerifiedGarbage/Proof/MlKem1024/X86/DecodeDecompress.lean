@@ -96,7 +96,7 @@ theorem b_keep {s : State} (hf : Frame [polyRegion (fA s₀)] (P0 s₀).mem s.me
     (hj : j < (lenV s₀).toNat) : s.mem (bA s₀ + BitVec.ofNat 64 j) = (B s₀).getD j 0 := by
   have hf₁ := pushed_frame (rs := saveRegs) (s := s₀) (by decide) (by rw [saveRegs_len]; exact hp.sp)
   rw [saveRegs_len] at hf₁
-  have l : (bR s₀).len ≤ 2 ^ 64 := by show (lenV s₀).toNat ≤ 2 ^ 64; have := (lenV s₀).isLt; omega
+  have l : (bR s₀).len ≤ 2 ^ 64 := by show (lenV s₀).toNat ≤ 2 ^ 64; have := (lenV s₀).isLt; omega_arith
   rw [bytesAt_getD _ _ hj, hf.bytes (R := bR s₀) (by simpa using hp.b_f) l hj,
     hf₁.bytes (R := bR s₀) (by simpa [← hp.stk_eq] using hp.stk_b.symm) l hj]
 
@@ -130,7 +130,7 @@ structure Fin (s₀ : State) (s : State) : Prop where
   coef : ∀ i < 256, coeffAt s.mem (fA s₀) i = V s₀ i
 
 theorem D.fin {s₀ s : State} {b : Nat} (h : D s₀ b 32 0 s) : Fin s₀ s :=
-  ⟨h.esp, h.rd, h.wr, h.frame, fun i hi => h.coef i (by omega)⟩
+  ⟨h.esp, h.rd, h.wr, h.frame, fun i hi => h.coef i (by omega_arith)⟩
 
 /-- Byte `o` of group `t`, from `esi`. -/
 theorem D.byte {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : D s₀ b t k s) {o : Nat}
@@ -138,9 +138,9 @@ theorem D.byte {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : D s₀ b t k 
   have fb := hp.b_fit
   have e : s.ea (at_ .esi o) = bA s₀ + BitVec.ofNat 64 (b * t + o) := by
     show (s.gpr .esi + BitVec.ofNat 32 o).setWidth 64 = _
-    rw [h.esi, ea_add (by omega)]
+    rw [h.esi, ea_add (by omega_arith)]
   refine ⟨?_, ?_⟩
-  · rw [e]; exact ⟨bR s₀, by rw [h.rd, h.wr, pushed_rd, P0_wr, hp.rd]; simp, contains_at (by omega) fb⟩
+  · rw [e]; exact ⟨bR s₀, by rw [h.rd, h.wr, pushed_rd, P0_wr, hp.rd]; simp, contains_at (by omega_arith) fb⟩
   · rw [e, hp.b_keep h.frame ho]
 
 /-- Coefficient `8 t + k` from `eax = y`. -/
@@ -153,9 +153,9 @@ theorem D.st {s₀ s : State} (hp : Pre s₀) {d b t k : Nat} (hd : dN s₀ = d)
   have ff := hp.f_fit
   have e : s.ea (at_ .edi (4 * k)) = coeffAddr (fA s₀) (8 * t + k) := by
     show (s.gpr .edi + BitVec.ofNat 32 (4 * k)).setWidth 64 = _
-    rw [h.edi, ea_add (by omega)]
-    congr 2; omega
-  have hn : 8 * t + k < n := by rw [n_eq]; omega
+    rw [h.edi, ea_add (by omega_arith)]
+    congr 2; omega_arith
+  have hn : 8 * t + k < n := by rw [n_eq]; omega_arith
   refine decSt_spec hdm k is s Q hy hax
     ⟨polyRegion (fA s₀), by rw [h.wr, P0_wr, hp.wr]; simp, by rw [e]; exact coeff_contains _ hn⟩
     fun s' r m => kk s' ⟨by rw [r.gpr _ (by decide), h.esp], by rw [r.rd, h.rd], by rw [r.wr, h.wr],
@@ -163,10 +163,10 @@ theorem D.st {s₀ s : State} (hp : Pre s₀) {d b t k : Nat} (hd : dN s₀ = d)
       ?_, ?_⟩ (r.gpr _ (by decide))
   · rw [m, e]; exact h.frame.writeW (List.mem_singleton_self _) _ (coeff_contains _ hn)
   · intro i hi
-    rw [m, e, coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega) hn]
+    rw [m, e, coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega_arith) hn]
     by_cases ei : 8 * t + k = i
     · rw [ite_eq_left ei, ← ei, V, hd, hv, dv_eq' hdm hy]
-    · rw [ite_eq_right ei]; exact h.coef i (by omega)
+    · rw [ite_eq_right ei]; exact h.coef i (by omega_arith)
 
 /-- Coefficient `8 t + k`, the field of `ebx = W` at bit `sh`. -/
 theorem D.field {s₀ s : State} (hp : Pre s₀) {d b t k : Nat} (hd : dN s₀ = d) (h : D s₀ b t k s) (ht : t < 32)
@@ -196,13 +196,13 @@ theorem D.cross {s₀ s : State} (hp : Pre s₀) {d b t k : Nat} (hd : dN s₀ =
   have hW' : W < 2 ^ 32 := by rw [← hW]; exact (s.gpr .ebx).isLt
   rw [crossAt, List.append_assoc]
   simp only [List.cons_append, List.nil_append]
-  refine wp_ldb hx fun s₁ o₁ v₁ => wp_and fun s₂ o₂ v₂ => wp_ror (by omega) (by omega) fun s₃ o₃ v₃ => ?_
+  refine wp_ldb hx fun s₁ o₁ v₁ => wp_and fun s₂ o₂ v₂ => wp_ror (by omega_arith) (by omega_arith) fun s₃ o₃ v₃ => ?_
   refine wp_mov fun s₄ o₄ v₄ => wp_shr hsh.1 hsh.2 fun s₅ o₅ v₅ => wp_addr fun s₆ o₆ v₆ => ?_
   have o := (((((o₁.trans o₂).trans o₃).trans o₄).trans o₅).trans o₆)
   have hxe : (s₂.gpr .edx).toNat = x % 2 ^ e := by rw [v₂, toNat_and_mask _ _ he, v₁]
   have hxl : x % 2 ^ e < 2 ^ (32 - m) :=
-    Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos e)) (Nat.pow_le_pow_right (by decide) (by omega))
-  have r := ror_shl (d := m) hm.1 (by omega) (s₂.gpr .edx) hxe hxl
+    Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos e)) (Nat.pow_le_pow_right (by decide) (by omega_arith))
+  have r := ror_shl (d := m) hm.1 (by omega_arith) (s₂.gpr .edx) hxe hxl
   have h32 : 2 ^ d ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by
     have := hp.d_mem; rw [hd] at this; rcases mem_compressWidths1024 this with rfl | rfl <;> decide)
   have hsum : W / 2 ^ sh + x % 2 ^ e * 2 ^ m < 2 ^ 32 := Nat.lt_of_lt_of_le hy h32
@@ -217,7 +217,7 @@ theorem next_spec {s₀ s : State} {b t : Nat} (ht : t < 32) (h : D s₀ b t 8 s
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, nextG, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
-  refine ⟨⟨by simp [h.esp], h.rd, h.wr, ?_, ?_, ?_, h.frame, fun j hj => h.coef j (by rw [Nat.mul_succ] at hj; omega)⟩,
+  refine ⟨⟨by simp [h.esp], h.rd, h.wr, ?_, ?_, ?_, h.frame, fun j hj => h.coef j (by rw [Nat.mul_succ] at hj; omega_arith)⟩,
     ?_⟩
   · simp only [show Reg.esi ≠ Reg.ecx by decide, show Reg.esi ≠ Reg.edi by decide, ite_false, ite_true, h.esi]
     rw [add_ofNat_add, Nat.mul_succ]
@@ -226,7 +226,7 @@ theorem next_spec {s₀ s : State} {b t : Nat} (ht : t < 32) (h : D s₀ b t 8 s
   · simp only [ite_true, h.ecx]
     exact cnt_next ht
   · simp only [eval, h.ecx]
-    exact cnt_ne ht (by omega)
+    exact cnt_ne ht (by omega_arith)
 
 /-! ## `d` = 5: eight coefficients of five bytes -/
 
@@ -245,7 +245,7 @@ theorem step5 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 5) {t : Nat} (ht : 
   simp only [Nat.add_zero] at l0
   unfold unpack5Body
   refine ldW_spec 0 3 (by decide) (fun i => ((B s₀).getD (5 * t + i) 0).toNat) _ s _
-    (fun i hi => by rw [Nat.zero_add]; exact h.byte hp (by omega)) fun s₁ o₁ v₁ => ?_
+    (fun i hi => by rw [Nat.zero_add]; exact h.byte hp (by omega_arith)) fun s₁ o₁ v₁ => ?_
   simp only [pk, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Nat.zero_add, Nat.add_zero, Nat.reduceMul,
     Nat.reducePow] at v₁
   have h₁ := h.of_only o₁ (by decide)
@@ -268,13 +268,13 @@ theorem step5 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 5) {t : Nat} (ht : 
     fun s₇ h₇ e₇ => ?_
   · rw [decodeDecompress5_5 _ hB ht]; refine congrArg (decompress 5) ?_; omega_using [l0, l1, l2, l3, l4]
   refine h₇.cross hp hd ht (k := 6) (by decide) ((congrArg BitVec.toNat ((((((e₇).trans e₆).trans e₅).trans e₄).trans e₃).trans e₂)).trans v₁) (sh := 30) (o := 4)
-    (e := 3) (m := 2) (by decide) (by decide) (by decide) (by decide) (h₇.byte hp (o := 4) (by omega)) ?_ ?_
+    (e := 3) (m := 2) (by decide) (by decide) (by decide) (by decide) (h₇.byte hp (o := 4) (by omega_arith)) ?_ ?_
     fun s₈ h₈ _ => ?_
   · simp only [Nat.reducePow]; omega_using [l0, l1, l2, l3, l4]
   · rw [decodeDecompress5_6 _ hB ht]; refine congrArg (decompress 5) ?_; simp only [Nat.reducePow]
     omega_using [l0, l1, l2, l3, l4]
   refine ldW_spec 4 0 (by decide) (fun i => ((B s₀).getD (5 * t + (4 + i)) 0).toNat) _ s₈ _
-    (fun i hi => h₈.byte hp (by omega)) fun s₉ o₉ v₉ => ?_
+    (fun i hi => h₈.byte hp (by omega_arith)) fun s₉ o₉ v₉ => ?_
   simp only [pk, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Nat.zero_add, Nat.add_zero] at v₉
   refine (h₈.of_only o₉ (by decide)).field hp hd ht (k := 7) (by decide) v₉ (sh := 3) (by decide) ?_
     fun s₁₀ h₁₀ _ => next_spec ht h₁₀
@@ -304,7 +304,7 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {t : Nat} (ht 
   unfold unpack11Body
   -- Bytes 0–3.
   refine ldW_spec 0 3 (by decide) (fun i => ((B s₀).getD (11 * t + i) 0).toNat) _ s _
-    (fun i hi => by rw [Nat.zero_add]; exact h.byte hp (by omega)) fun s₁ o₁ v₁ => ?_
+    (fun i hi => by rw [Nat.zero_add]; exact h.byte hp (by omega_arith)) fun s₁ o₁ v₁ => ?_
   simp only [pk, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Nat.zero_add, Nat.add_zero, Nat.reduceMul,
     Nat.reducePow] at v₁
   have h₁ := h.of_only o₁ (by decide)
@@ -316,14 +316,14 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {t : Nat} (ht 
   · rw [decodeDecompress11_1 _ hB ht]; refine congrArg (decompress 11) ?_
     omega_using [l0, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10]
   refine h₃.cross hp hd ht (k := 2) (by decide) ((congrArg BitVec.toNat ((e₃).trans e₂)).trans v₁) (sh := 22) (o := 4)
-    (e := 1) (m := 10) (by decide) (by decide) (by decide) (by decide) (h₃.byte hp (o := 4) (by omega)) ?_ ?_
+    (e := 1) (m := 10) (by decide) (by decide) (by decide) (by decide) (h₃.byte hp (o := 4) (by omega_arith)) ?_ ?_
     fun s₄ h₄ _ => ?_
   · simp only [Nat.reducePow]; omega_using [l0, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10]
   · rw [decodeDecompress11_2 _ hB ht]; refine congrArg (decompress 11) ?_; simp only [Nat.reducePow]
     omega_using [l0, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10]
   -- Bytes 4–7.
   refine ldW_spec 4 3 (by decide) (fun i => ((B s₀).getD (11 * t + (4 + i)) 0).toNat) _ s₄ _
-    (fun i hi => h₄.byte hp (by omega)) fun s₅ o₅ v₅ => ?_
+    (fun i hi => h₄.byte hp (by omega_arith)) fun s₅ o₅ v₅ => ?_
   simp only [pk, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Nat.zero_add, Nat.add_zero, Nat.reduceMul,
     Nat.reducePow, Nat.reduceAdd] at v₅
   have h₅ := h₄.of_only o₅ (by decide)
@@ -335,14 +335,14 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {t : Nat} (ht 
   · rw [decodeDecompress11_4 _ hB ht]; refine congrArg (decompress 11) ?_
     omega_using [l0, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10]
   refine h₇.cross hp hd ht (k := 5) (by decide) ((congrArg BitVec.toNat ((e₇).trans e₆)).trans v₅) (sh := 23) (o := 8)
-    (e := 2) (m := 9) (by decide) (by decide) (by decide) (by decide) (h₇.byte hp (o := 8) (by omega)) ?_ ?_
+    (e := 2) (m := 9) (by decide) (by decide) (by decide) (by decide) (h₇.byte hp (o := 8) (by omega_arith)) ?_ ?_
     fun s₈ h₈ _ => ?_
   · simp only [Nat.reducePow]; omega_using [l0, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10]
   · rw [decodeDecompress11_5 _ hB ht]; refine congrArg (decompress 11) ?_; simp only [Nat.reducePow]
     omega_using [l0, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10]
   -- Bytes 8–10.
   refine ldW_spec 8 2 (by decide) (fun i => ((B s₀).getD (11 * t + (8 + i)) 0).toNat) _ s₈ _
-    (fun i hi => h₈.byte hp (by omega)) fun s₉ o₉ v₉ => ?_
+    (fun i hi => h₈.byte hp (by omega_arith)) fun s₉ o₉ v₉ => ?_
   simp only [pk, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Nat.zero_add, Nat.add_zero, Nat.reduceMul,
     Nat.reducePow, Nat.reduceAdd] at v₉
   have h₉ := h₈.of_only o₉ (by decide)
@@ -377,12 +377,12 @@ theorem init_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Init (.block ddIn
     have a₀ := P0_argAddr s₀ 0
     have a₂ := P0_argAddr s₀ 2
     have a₃ := P0_argAddr s₀ 3
-    have i₀ := P0_argIn (s₀ := s₀) (n := 4) (i := 0) (by omega) fit (by simp [hp.wr])
-    have i₂ := P0_argIn (s₀ := s₀) (n := 4) (i := 2) (by omega) fit (by simp [hp.wr])
-    have i₃ := P0_argIn (s₀ := s₀) (n := 4) (i := 3) (by omega) fit (by simp [hp.wr])
-    have v₀ := P0_arg hp.sp (n := 4) (i := 0) (by omega) fit hp.stk_a
-    have v₂ := P0_arg hp.sp (n := 4) (i := 2) (by omega) fit hp.stk_a
-    have v₃ := P0_arg hp.sp (n := 4) (i := 3) (by omega) fit hp.stk_a
+    have i₀ := P0_argIn (s₀ := s₀) (n := 4) (i := 0) (by omega_arith) fit (by simp [hp.wr])
+    have i₂ := P0_argIn (s₀ := s₀) (n := 4) (i := 2) (by omega_arith) fit (by simp [hp.wr])
+    have i₃ := P0_argIn (s₀ := s₀) (n := 4) (i := 3) (by omega_arith) fit (by simp [hp.wr])
+    have v₀ := P0_arg hp.sp (n := 4) (i := 0) (by omega_arith) fit hp.stk_a
+    have v₂ := P0_arg hp.sp (n := 4) (i := 2) (by omega_arith) fit hp.stk_a
+    have v₃ := P0_arg hp.sp (n := 4) (i := 3) (by omega_arith) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.reduceMul, Nat.reduceAdd] at a₀ a₂ a₃
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, ddInit5, at_, runBlock_cons, runStep_some, runBlock_nil,
@@ -406,7 +406,7 @@ theorem ecx_piece (d b : Nat) {hc : Taint.Hint VG.X86.Taint.T}
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some, State.setReg,
     Option.some.injEq, exists_eq_left']
   refine ⟨⟨by simp [h.esp], h.rd, h.wr, by simp [h.esi], by simp [h.edi], by simp,
-    (by rw [h.mem]; exact Frame.refl _ _), fun j hj => absurd hj (by omega)⟩, hd⟩
+    (by rw [h.mem]; exact Frame.refl _ _), fun j hj => absurd hj (by omega_arith)⟩, hd⟩
 
 theorem branch_piece {d : Nat} (body : List Instr)
     (hstep : ∀ t < 32, ∀ s₀ s, Pre s₀ → dN s₀ = d → D s₀ d t 0 s →
@@ -445,7 +445,7 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Fin
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')
     Impl.MlKem1024.X86.decodeDecompress :=
   Piece.leaf (fun s₀ => [polyRegion (fA s₀)]) (NoSp.of_all (by decide +kernel))
-    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_arith⟩)
     (fun _ hp r hr => by
       simp only [List.mem_singleton] at hr
       subst hr

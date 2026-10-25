@@ -55,7 +55,7 @@ abbrev below (sp : Addr) (n : Nat) : Region := ⟨sp - BitVec.ofNat 64 n, n⟩
 
 theorem ofNat_split {a b : Nat} (hab : a ≤ b) :
     BitVec.ofNat 64 b = BitVec.ofNat 64 a + BitVec.ofNat 64 (b - a) := by
-  rw [← BitVec.ofNat_add]; congr 1; omega
+  rw [← BitVec.ofNat_add]; congr 1; omega_arith
 
 theorem below_sub {sp : Addr} {a b : Nat} (hab : a ≤ b) (hb : b < 2 ^ 64) :
     Region.Sub (below sp a) (below sp b) := by
@@ -66,8 +66,8 @@ theorem below_call (sp : Addr) {n : Nat} (h₁ : 8 ≤ n) (h₂ : n < 2 ^ 64) :
     (below sp n).Contains (sp - 8) 8 := by
   simp only [Region.Contains]
   rw [show sp - 8 - (sp - BitVec.ofNat 64 n) = BitVec.ofNat 64 (n - 8) from
-    Offset.sub_ofNat_sub_sub_ofNat sp (a := 8) h₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+    Offset.sub_ofNat_sub_sub_ofNat sp (a := 8) h₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 /-- The stack a function called from `sp` uses is below the return address. -/
 theorem below_callee (sp : Addr) (n : Nat) : Region.Sub (below (sp - 8) n) (below sp (n + 8)) := by
@@ -75,7 +75,7 @@ theorem below_callee (sp : Addr) (n : Nat) : Region.Sub (below (sp - 8) n) (belo
   simp only [Region.Contains] at hx ⊢
   rw [show x - (sp - BitVec.ofNat 64 (n + 8)) = x - (sp - 8 - BitVec.ofNat 64 n) by
     rw [BitVec.sub_sub (sp : Addr) 8, BitVec.ofNat_add, BitVec.add_comm (BitVec.ofNat 64 n)]; rfl]
-  omega
+  omega_arith
 
 /-- No instruction writes `rsp`. -/
 abbrev NoSp (c : Prog isa) : Prop := ∀ i ∈ instrs c, Taint.clobbers i .rsp = false
@@ -101,20 +101,20 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     have hc₁ : NoSp c₁ := fun i hi => hc i (List.mem_append_left _ hi)
     have hc₂ : NoSp c₂ := fun i hi => hc i (List.mem_append_right _ hi)
     simp only [Code.depth] at hd ⊢
-    have f₁ := Frame.below_mono (ih₁ hc₁ (by omega)) (b := 8 * max c₁.depth c₂.depth) (by omega)
-      (by omega)
-    have f₂ := Frame.below_mono (ih₂ hc₂ (by omega)) (b := 8 * max c₁.depth c₂.depth) (by omega)
-      (by omega)
+    have f₁ := Frame.below_mono (ih₁ hc₁ (by omega_arith)) (b := 8 * max c₁.depth c₂.depth) (by omega_arith)
+      (by omega_arith)
+    have f₂ := Frame.below_mono (ih₂ hc₂ (by omega_arith)) (b := 8 * max c₁.depth c₂.depth) (by omega_arith)
+      (by omega_arith)
     rw [(Exec.rdwr h₁).2, Exec.gpr hc₁ h₁] at f₂
     exact Frame.trans f₁ f₂
   | iteT _ _ ih =>
     simp only [Code.depth] at hd ⊢
-    exact Frame.below_mono (ih (fun i hi => hc i (List.mem_append_left _ hi)) (by omega)) (by omega)
-      (by omega)
+    exact Frame.below_mono (ih (fun i hi => hc i (List.mem_append_left _ hi)) (by omega_arith)) (by omega_arith)
+      (by omega_arith)
   | iteF _ _ ih =>
     simp only [Code.depth] at hd ⊢
-    exact Frame.below_mono (ih (fun i hi => hc i (List.mem_append_right _ hi)) (by omega)) (by omega)
-      (by omega)
+    exact Frame.below_mono (ih (fun i hi => hc i (List.mem_append_right _ hi)) (by omega_arith)) (by omega_arith)
+      (by omega_arith)
   | loopExit _ _ ih => exact ih hc hd
   | @loopNext body _ _ _ _ _ _ h₁ _ _ ih₁ ih₂ =>
     have f₂ := ih₂ hc hd
@@ -134,8 +134,8 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
       simp only [isa, ret] at hr; split at hr <;> cases hr; rfl
     have f₀ : Frame (s₀.wr ++ [below (s₀.gpr .rsp) (8 * (b.depth + 1))]) s₀.mem s₀.callEntry.mem :=
       Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
-        (below_call _ (by omega) (by omega))
-    have f₁ := ih hc (by omega)
+        (below_call _ (by omega_arith) (by omega_arith))
+    have f₁ := ih hc (by omega_arith)
     simp only [State.callEntry_wr, State.callEntry_rsp] at f₁
     have f₁' : Frame (s₀.wr ++ [below (s₀.gpr .rsp) (8 * (b.depth + 1))]) s₀.callEntry.mem s₂.mem :=
       Frame.sub f₁ fun r hr => by
@@ -143,7 +143,7 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
         · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
         · simp only [List.mem_singleton] at hr; subst hr
           refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
-          rw [show 8 * (b.depth + 1) = 8 * b.depth + 8 by omega]
+          rw [show 8 * (b.depth + 1) = 8 * b.depth + 8 by omega_arith]
           exact below_callee _ _
     rw [hm]; exact Frame.trans f₀ f₁'
 
@@ -171,7 +171,7 @@ theorem WP.call_mx {n : String} {c : Prog isa} {k : Contract isa}
   obtain ⟨t, s₁, he, habi, hpost⟩ := hv _ hpre
   obtain ⟨hr, hwr⟩ := Exec.rdwr he
   simp only [State.withRegions_rd, State.withRegions_wr] at hr hwr
-  have hf := Exec.frameSp he hsp (by omega)
+  have hf := Exec.frameSp he hsp (by omega_arith)
   simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_rsp] at hf
   have he' := Exec.widen he (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
@@ -200,14 +200,14 @@ theorem WP.call_mx {n : String} {c : Prog isa} {k : Contract isa}
   · -- The return address, then the callee.
     have f₀ : Frame (wr ++ [below (s.gpr .rsp) (8 * (c.depth + 1))]) s.mem s.callEntry.mem :=
       Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
-        (below_call _ (by omega) (by omega))
+        (below_call _ (by omega_arith) (by omega_arith))
     have f₁ : Frame (wr ++ [below (s.gpr .rsp) (8 * (c.depth + 1))]) s.callEntry.mem s₁.mem :=
       Frame.sub hf fun r hr => by
         rcases List.mem_append.mp hr with hr | hr
         · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
         · simp only [List.mem_singleton] at hr; subst hr
           refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
-          rw [show 8 * (c.depth + 1) = 8 * c.depth + 8 by omega]
+          rw [show 8 * (c.depth + 1) = 8 * c.depth + 8 by omega_arith]
           exact below_callee _ _
     exact Frame.trans f₀ f₁
   · by_cases hrs : r = .rsp

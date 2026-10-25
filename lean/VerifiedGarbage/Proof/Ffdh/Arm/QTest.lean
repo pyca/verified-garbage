@@ -27,13 +27,7 @@ theorem qTest_ok (s : State) {p : Inputs} {slots : List Nat}
   have v32 := h.saved 32 h32
   change s.mem.readW (off (State.addr s.sp) 28) 32 = BitVec.ofNat 32 p.dom.length at v28
   change s.mem.readW (off (State.addr s.sp) 32) 32 = BitVec.ofNat 32 p.k at v32
-  refine withRest [.r3, .r4] ?_ (by
-    intro r hr i hi
-    have checked : (instrs VG.Impl.Ffdh.Arm.Domain.qTest).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have flag := List.all_eq_true.mp checked i hi
-    cases hi' : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r3, .r4] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.qTest
   ffrun [addr 28 (by decide), addr 32 (by decide), r28, r32, v28, v32, off]
   change ((BitVec.ofNat 32 p.dom.length - BitVec.ofNat 32 p.k - BitVec.ofNat 32 p.k) - 0#32 == 0#32) = !p.hasQ

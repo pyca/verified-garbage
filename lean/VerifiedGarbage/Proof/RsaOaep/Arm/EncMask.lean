@@ -50,10 +50,10 @@ theorem dbB_length {P : EP} (hf : fits h P) (σ : State) : (dbB h P σ).length =
   have hfit : 2 * h.H.D + 2 + P.ml ≤ P.K := hf
   simp only [dbB, List.length_append, List.length_cons, lhB_length, msgB_length, Spec.RsaOaep.zeros,
     List.length_replicate]
-  omega
+  omega_arith
 
 theorem mdbB_length {P : EP} (hf : fits h P) (σ : State) : (mdbB h g P σ).length = P.K - h.H.D - 1 := by
-  rw [mdbB, Proof.Mgf1.xorBytes_length, dbB_length h hf, Proof.Mgf1.mgf1_length g.valid]; omega
+  rw [mdbB, Proof.Mgf1.xorBytes_length, dbB_length h hf, Proof.Mgf1.mgf1_length g.valid]; omega_arith
 
 theorem x0_keep {P : EP} (hg : Geo (P.lay h.H.D) P.scr) {dOff dl : Nat} (hfd : dOff + dl ≤ oBuf) (h0 : 0 < dOff) :
     ∀ σ m m', X0 h P σ m → Frame (mgfW g (P.lay h.H.D) P.scr dOff dl) m m' → X0 h P σ m' :=
@@ -85,9 +85,9 @@ theorem db_vp (P : EP) :
           (P.scr + BitVec.ofNat 32 (oEm + 1))).writeW ((P.lay h.H.D).fr sSrcLen) (BitVec.ofNat 32 h.H.D) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
     prun [dbArgs, atS, sp0, ld, st, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.wFr hg, hc.slotS, a3, r3, v3, arg_lt, sDst_lt, sDstLen_lt, sSrc_lt, sSrcLen_lt,
-      movw_val (show oEm + 1 + h.H.D < 2 ^ 16 by oomega), movw_val (show h.H.D + 1 < 2 ^ 16 by omega),
-      movw_val (show oEm + 1 < 2 ^ 16 by decide), movw_val (show h.H.D < 2 ^ 16 by omega),
-      Offset.ofNat_sub_ofNat (show h.H.D + 1 ≤ P.K by omega), Nat.sub_add_eq]
+      movw_val (show oEm + 1 + h.H.D < 2 ^ 16 by oomega), movw_val (show h.H.D + 1 < 2 ^ 16 by omega_arith),
+      movw_val (show oEm + 1 < 2 ^ 16 by decide), movw_val (show h.H.D < 2 ^ 16 by omega_arith),
+      Offset.ofNat_sub_ofNat (show h.H.D + 1 ≤ P.K by omega_arith), Nat.sub_add_eq]
   refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
   have fr : Frame [slotR (P.lay h.H.D) sDst, slotR (P.lay h.H.D) sDstLen, slotR (P.lay h.H.D) sSrc,
       slotR (P.lay h.H.D) sSrcLen] s.mem t.mem := by
@@ -108,7 +108,7 @@ theorem db_vp (P : EP) :
     rcases hr with rfl | rfl | rfl | rfl <;> exact slotSep (by decide) (by decide) (by decide)
   · rw [emV, ← em.z0]
     exact sbytes_keep fr (dis _ _ (by oomega)) (by oomega) (o := oEm) (n := 1) (f := fun _ => s.mem (sa P.scr oEm))
-      (fun i hi => by rw [show i = 0 by omega, Nat.add_zero]) 0 (by decide)
+      (fun i hi => by rw [show i = 0 by omega_arith, Nat.add_zero]) 0 (by decide)
   · rw [m, slot_ww _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
   · rw [m, Mem.readW_writeW_self32]
   · rw [m, slot_ww _ _ (by decide) (by decide) (by decide), slot_ww _ _ (by decide) (by decide) (by decide),
@@ -150,9 +150,9 @@ theorem seed_vp (P : EP) :
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
     prun [seedArgs, atS, sp0, ld, st, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.wFr hg, hc.slotS, a3, r3, v3, arg_lt,
       sDst_lt, sDstLen_lt, sSrc_lt, sSrcLen_lt,
-      movw_val (show oEm + 1 + h.H.D < 2 ^ 16 by oomega), movw_val (show h.H.D + 1 < 2 ^ 16 by omega),
-      movw_val (show oEm + 1 < 2 ^ 16 by decide), movw_val (show h.H.D < 2 ^ 16 by omega),
-      Offset.ofNat_sub_ofNat (show h.H.D + 1 ≤ P.K by omega), Nat.sub_add_eq]
+      movw_val (show oEm + 1 + h.H.D < 2 ^ 16 by oomega), movw_val (show h.H.D + 1 < 2 ^ 16 by omega_arith),
+      movw_val (show oEm + 1 < 2 ^ 16 by decide), movw_val (show h.H.D < 2 ^ 16 by omega_arith),
+      Offset.ofNat_sub_ofNat (show h.H.D + 1 ≤ P.K by omega_arith), Nat.sub_add_eq]
   refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
   have fr : Frame [slotR (P.lay h.H.D) sDst, slotR (P.lay h.H.D) sDstLen, slotR (P.lay h.H.D) sSrc,
       slotR (P.lay h.H.D) sSrcLen] s.mem t.mem := by
@@ -174,14 +174,14 @@ theorem seed_vp (P : EP) :
     rcases hr with rfl | rfl | rfl | rfl <;> exact slotSep (by decide) (by decide) (by decide)
   · rw [emV, ← z0]
     exact sbytes_keep fr (dis _ _ (by oomega)) (by oomega) (o := oEm) (n := 1) (f := fun _ => s.mem (sa P.scr oEm))
-      (fun i hi => by rw [show i = 0 by omega, Nat.add_zero]) 0 (by decide)
+      (fun i hi => by rw [show i = 0 by omega_arith, Nat.add_zero]) 0 (by decide)
   · rw [m, slot_ww _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
   · rw [m, Mem.readW_writeW_self32]
   · rw [m, slot_ww _ _ (by decide) (by decide) (by decide), slot_ww _ _ (by decide) (by decide) (by decide),
       slot_ww _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
   · rw [m, slot_ww _ _ (by decide) (by decide) (by decide), slot_ww _ _ (by decide) (by decide) (by decide),
       Mem.readW_writeW_self32]
-  · rw [mdbB, Proof.Mgf1.xorBytes_getD (by omega) (by omega)]
+  · rw [mdbB, Proof.Mgf1.xorBytes_getD (by omega_arith) (by omega_arith)]
     exact sbytes_keep fr (dis _ _ (by oomega)) (by oomega) hdb i hi'
 
 /-- `EM` masked, byte by byte. -/
@@ -196,11 +196,11 @@ theorem emB_getD {P : EP} (hf : fits h P) (σ : State) {i : Nat} (hi : i < P.K) 
   cases i with
   | zero => rfl
   | succ i =>
-    rw [List.getD_cons_succ, ite_eq_right (by omega), Proof.Mgf1.getD_append, Proof.Mgf1.xorBytes_length, hsl, hml,
+    rw [List.getD_cons_succ, ite_eq_right (by omega_arith), Proof.Mgf1.getD_append, Proof.Mgf1.xorBytes_length, hsl, hml,
       Nat.min_self, Nat.add_sub_cancel]
     by_cases h1 : i < h.H.D
-    · rw [ite_eq_left h1, ite_eq_left (by omega), Proof.Mgf1.xorBytes_getD (by omega) (by omega)]
-    · rw [ite_eq_right h1, ite_eq_right (by omega)]
+    · rw [ite_eq_left h1, ite_eq_left (by omega_arith), Proof.Mgf1.xorBytes_getD (by omega_arith) (by omega_arith)]
+    · rw [ite_eq_right h1, ite_eq_right (by omega_arith)]
 
 /-- `EM` masked, from `EM` before masking. -/
 theorem mask_vp (P : EP) :
@@ -218,10 +218,10 @@ theorem mask_vp (P : EP) :
   have hD0 := h.D_pos
   have hfit : 2 * h.H.D + 2 + P.ml ≤ P.K := hf
   have P1 := mpOf g hg (so := oEm + 1) (sl := h.H.D) (dOff := oEm + 1 + h.H.D) (dl := P.K - h.H.D - 1) hD0
-    (by omega) (by oomega) (by oomega) (.inl (Nat.le_refl _)) (seed := seedB h P) (seedB_length h P)
+    (by omega_arith) (by oomega) (by oomega) (.inl (Nat.le_refl _)) (seed := seedB h P) (seedB_length h P)
     (x0_keep h g hg (by oomega) (by oomega))
   have P2 := mpOf g hg (so := oEm + 1 + h.H.D) (sl := P.K - h.H.D - 1) (dOff := oEm + 1) (dl := h.H.D)
-    (by omega) hD0 (by oomega) (by oomega) (.inr (Nat.le_refl _)) (seed := mdbB h g P) (mdbB_length h g hf)
+    (by omega_arith) hD0 (by oomega) (by oomega) (.inr (Nat.le_refl _)) (seed := mdbB h g P) (mdbB_length h g hf)
     (x0_keep h g hg (by oomega) (by oomega))
   refine VP.seq (db_vp h P) (VP.seq (mgf_vp g P1 (dstv := fun σ i => (dbB h P σ).getD i 0))
     (VP.seq (seed_vp h g P) ((mgf_vp g P2 (dstv := fun σ i => (seedB h P σ).getD i 0)).mono
@@ -232,8 +232,8 @@ theorem mask_vp (P : EP) :
   rw [ite_eq_right h0]
   by_cases h1 : i < 1 + h.H.D
   · rw [ite_eq_left h1, emV, show oEm + i = oEm + 1 + (i - 1) by oomega]
-    exact hsd _ (by omega)
+    exact hsd _ (by omega_arith)
   · rw [ite_eq_right h1, emV, show oEm + i = oEm + 1 + h.H.D + (i - 1 - h.H.D) by oomega]
-    exact hdb _ (by omega)
+    exact hdb _ (by omega_arith)
 
 end VG.Proof.RsaOaep.Arm.Enc

@@ -57,7 +57,7 @@ theorem phaseWords_ok (h : In Ex base bytes len args s) {bits δ ε : Nat} (hb :
   simp only [List.cons_append, List.nil_append]
   refine wp_movS (hdr_read h hdr_bits) fun t₁ U₁ _ => wp_subi fun t₂ U₂ _ _ => ?_
   have e₂ : t₂.gpr .eax = BitVec.ofNat 32 (bits - δ) := by
-    rw [U₂.gpr, U₁.gpr, hb, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+    rw [U₂.gpr, U₁.gpr, hb, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith) (by omega_arith)]
   have K₂ : Keeps [.eax] s t₂ := U₁.keeps.trans (U₂.keeps.mono (by decide))
   have m₂ : t₂.mem = s.mem := by rw [U₂.mem, U₁.mem]
   refine hdr_store (h.regs K₂ m₂) hdr_k fun t₃ S₃ W₃ k₃ O₃ g₃ _ _ => ?_
@@ -67,16 +67,16 @@ theorem phaseWords_ok (h : In Ex base bytes len args s) {bits δ ε : Nat} (hb :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
     show ((bits - δ) % 2 ^ 32 + 7) % 2 ^ 32 / 2 ^ 3 = _
-    omega
+    omega_arith
   have K₅ : Keeps [.eax] t₃ t₅ := U₄.keeps.trans U₅.keeps
   have m₅ : t₅.mem = t₃.mem := by rw [U₅.mem, U₄.mem]
   refine hdr_store (S₃.inp.regs K₅ m₅) hdr_oct fun t₆ S₆ W₆ k₆ O₆ g₆ _ _ => ?_
   refine wp_movS (hdr_read S₆.inp hdr_k) fun t₇ U₇ _ => wp_cmpi fun t₈ F₈ c₈ _ => wp_sbb_self c₈ fun t₉ U₉ =>
     wp_andi fun t₁₀ U₁₀ => wp_addi fun t₁₁ U₁₁ => ?_
   have kk₆ : w32 t₆.mem base kOff = bits - δ := by
-    rw [k₆.word_eq, m₅, W₃, e₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [k₆.word_eq, m₅, W₃, e₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have e₇ : (t₇.gpr .eax).toNat = bits - δ := by
-    rw [U₇.gpr, kk₆, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [U₇.gpr, kk₆, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have K₁₁ : Keeps [.eax, .ecx] t₆ t₁₁ :=
     ((((U₇.keeps.mono (by decide)).trans (F₈.keeps _)).trans (U₉.keeps.mono (by decide))).trans
       (U₁₀.keeps.mono (by decide))).trans (U₁₁.keeps.mono (by decide))
@@ -86,21 +86,21 @@ theorem phaseWords_ok (h : In Ex base bytes len args s) {bits δ ε : Nat} (hb :
     unfold Spec.Ffdh.primeChecks
     by_cases small : bits - δ < 2049
     · simp only [show decide (bits - δ < (2049 : BitVec 32).toNat) = true from decide_eq_true small,
-        ↓reduceIte, show bits - δ ≤ 2048 by omega]
+        ↓reduceIte, show bits - δ ≤ 2048 by omega_arith]
       rw [BitVec.toNat_add, BitVec.toNat_ofNat]
       show (4294967232 + (128 - ε) % 2 ^ 32) % 2 ^ 32 = 64 - ε
-      omega
+      omega_arith
     · simp only [show decide (bits - δ < (2049 : BitVec 32).toNat) = false from decide_eq_false small,
-        Bool.false_eq_true, ↓reduceIte, show ¬ bits - δ ≤ 2048 by omega]
+        Bool.false_eq_true, ↓reduceIte, show ¬ bits - δ ≤ 2048 by omega_arith]
       rw [BitVec.toNat_add, BitVec.toNat_ofNat]
       show (0 + (128 - ε) % 2 ^ 32) % 2 ^ 32 = 128 - ε
-      omega
+      omega_arith
   refine hdr_store (S₆.inp.regs K₁₁ m₁₁) hdr_cnt fun t S W kt O _ _ _ => ?_
   have S₁₁ : Step Ex base bytes len args t₆ t₁₁ := Step.regs S₆.inp m₁₁ K₁₁
   refine k t ((Step.regs h m₂ K₂).trans (S₃.trans ((Step.regs S₃.inp m₅ K₅).trans (S₆.trans (S₁₁.trans S)))))
     ?_ ?_ ?_ ?_
   · rw [kt.word_eq, m₁₁, kk₆]
-  · rw [kt.word_eq, m₁₁, W₆, e₅, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · rw [kt.word_eq, m₁₁, W₆, e₅, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   · rw [W, e₁₁]
   · exact (by rw [m₂]; exact (Kept.refl _).mono : Kept base len [] [kOff, octOff, cntOff] s.mem t₂.mem).trans
       (k₃.mono.trans ((by rw [m₅]; exact (Kept.refl _).mono : Kept base len [] [kOff, octOff, cntOff] t₃.mem t₅.mem).trans
@@ -123,7 +123,7 @@ theorem onPass_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes 
   have S₁ : Step Ex base bytes len args s u₁ := Step.regs h F₁.mem (F₁.keeps [])
   have st : drawStatus D < 4 := by unfold drawStatus; split <;> decide
   have z : ∀ k, k < 4 → (BitVec.ofNat 32 (drawStatus D) - BitVec.ofNat 32 k == 0) = decide (drawStatus D = k) :=
-    fun k hk => sub_beq (by omega) (by omega)
+    fun k hk => sub_beq (by omega_arith) (by omega_arith)
   refine WP.ite (decide (drawStatus D = 1)) (by show u₁.zf = _; rw [z₁, he]; exact congrArg some (z 1 (by decide)))
     (fun e => ?_) fun e => ?_
   · rcases D with _ | ⟨⟨⟩ | ⟨⟩, r⟩
@@ -144,7 +144,7 @@ theorem onPass_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes 
     · obtain ⟨c, hc, hcl, hr⟩ := hcur false r rfl
       rw [hF r rfl]
       refine WP.mono (reject_ok h₂ Ox₂ U₂ (by rw [m₂, hu]) (by rw [m₂, hc])) fun t R => ?_
-      have : T.length - r.length = c := by rw [← hr, List.length_drop]; omega
+      have : T.length - r.length = c := by rw [← hr, List.length_drop]; omega_arith
       exact R.after S₂ |> fun R' => by simp only [resStatus, resUsed, resOut, this]; exact R'
     · simp [drawStatus] at e
   · rcases D with _ | ⟨⟨⟩ | ⟨⟩, r⟩
@@ -268,7 +268,7 @@ theorem tests_ok (h : In Ex base bytes len args s) {T : List Byte}
     kk₄.trans ku₃.mono
   have S₇ : Step Ex base bytes len args s u₃ := S₆.trans Su₃
   rw [hD₃]
-  have used : T.length - r₃.length = c₃ := by rw [← hr₃, List.length_drop]; omega
+  have used : T.length - r₃.length = c₃ := by rw [← hr₃, List.length_drop]; omega_arith
   simp only [resStatus, resUsed, resOut, used]
   exact accept_ok Su₃.inp (by rw [S₇.esp]; exact Ox.keep rfl S₇.keeps) (by rw [S₇.esp]; exact U.keep rfl S₇.keeps)
     (by rw [kk₅.word_eq, hu]) hc₃ (by rw [kk₅.slot_eq, hp]) hpl

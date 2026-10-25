@@ -50,7 +50,7 @@ theorem copy_run (s : State) (hr : InRegions (s.rd ++ s.wr) (s.gpr .r3 + s.gpr .
   refine WP.mono (WP.keep [.r0, .r8, .r9, .r12] (c := .block copyKey) (Q := fun t =>
       t.gpr .r8 = s.gpr .r8 + 1 ∧ t.gpr .r0 = s.gpr .r8 + 1 - s.gpr .r4 ∧
       t.mem = s.mem.writeW (s.gpr .r6 + s.gpr .r8) (s.mem (s.gpr .r3 + s.gpr .r8))) ?_
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, copyKey, dstOf]) rfl) fun t ⟨⟨a, b, c⟩, d⟩ => ⟨a, b, c, d⟩
+    (by rfl) rfl) fun t ⟨⟨a, b, c⟩, d⟩ => ⟨a, b, c, d⟩
   unfold copyKey
   rrun [hr, hw, lo8_ext]
 
@@ -105,7 +105,7 @@ theorem piStore_run (s : State) {W : Addr} (E : PiEnv W s) (hq : (s.gpr .r10).to
   have h8 : t₁.gpr .r8 = s.gpr .r8 := k₁.gpr (by decide)
   refine WP.mono (WP.keep [.r9] (c := .block storeKey) (Q := fun t =>
       t.mem = t₁.mem.writeW (t₁.gpr .r6 + t₁.gpr .r8) ((t₁.gpr .r11).setWidth 8)) ?_
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, storeKey, dstOf]) rfl) fun t ⟨a, k⟩ =>
+    (by rfl) rfl) fun t ⟨a, k⟩ =>
       ⟨by rw [a, a₁, m₁, h6, h8, lo8_ext], (k₁.trans k).mono (by simp)⟩
   unfold storeKey
   rrun [show InRegions t₁.wr (t₁.gpr .r6 + t₁.gpr .r8) 1 by rw [k₁.2.2, h6, h8]; exact hw]
@@ -124,7 +124,7 @@ theorem fill_run (s : State) {W : Addr} (E : PiEnv W s)
   refine WP.mono (WP.keep [.r9, .r10, .r11] (c := .block fillInput) (Q := fun t =>
       t.gpr .r10 = (s.mem (s.gpr .r6 + s.gpr .r8 - 1#64) + s.mem (s.gpr .r6 + (s.gpr .r8 - s.gpr .r4))).setWidth 64 ∧
       t.mem = s.mem) (by unfold fillInput mask; rrun [hlo, hhi, ext_add])
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, fillInput, mask, dstOf]) rfl) fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
+    (by rfl) rfl) fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
   have h6 : t₁.gpr .r6 = s.gpr .r6 := k₁.gpr (by decide)
   have h8 : t₁.gpr .r8 = s.gpr .r8 := k₁.gpr (by decide)
   apply WP.seq
@@ -135,7 +135,7 @@ theorem fill_run (s : State) {W : Addr} (E : PiEnv W s)
   refine WP.mono (WP.keep [.r0, .r8, .r9] (c := .block fillFinish) (Q := fun t =>
       t.gpr .r8 = t₂.gpr .r8 + 1 ∧ t.gpr .r0 = t₂.gpr .r8 + 1 - 128#64 ∧
       t.mem = t₂.mem.writeW (t₂.gpr .r6 + t₂.gpr .r8) ((t₂.gpr .r11).setWidth 8)) ?_
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, fillFinish, storeKey, dstOf]) rfl)
+    (by rfl) rfl)
     fun t ⟨⟨a, b, c⟩, k⟩ => ⟨by rw [a, h8'], by rw [b, h8'], by rw [c, a₂, m₂, m₁, h6', h8', a₁, lo8_ext, lo8_ext],
       ((k₁.trans k₂).trans k).mono (by simp)⟩
   unfold fillFinish storeKey
@@ -152,7 +152,7 @@ theorem reduce_run (s : State) {W : Addr} (E : PiEnv W s) (hr : InRegions (s.rd 
   refine WP.mono (WP.keep [.r9, .r10] (c := .block reduceInput) (Q := fun t =>
       t.gpr .r10 = (s.mem (s.gpr .r6 + s.gpr .r8) &&& (s.gpr .r12).setWidth 8).setWidth 64 ∧
       t.mem = s.mem) (by unfold reduceInput; rrun [hr, ext_and])
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, reduceInput, dstOf]) rfl) fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
+    (by rfl) rfl) fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
   have h6 : t₁.gpr .r6 = s.gpr .r6 := k₁.gpr (by decide)
   have h8 : t₁.gpr .r8 = s.gpr .r8 := k₁.gpr (by decide)
   refine WP.mono (piStore_run t₁ (E.keep k₁ (by decide) m₁) (by rw [a₁]; exact ext_lt _)
@@ -176,7 +176,7 @@ theorem descend_run (s : State) {W : Addr} (E : PiEnv W s)
       t.gpr .r10 = (s.mem (s.gpr .r6 + (s.gpr .r8 - 1#64) + 1#64) ^^^
         s.mem (s.gpr .r6 + (s.gpr .r8 - 1#64 + s.gpr .r14))).setWidth 64 ∧
       t.mem = s.mem) (by unfold descendInput; rrun [hlo, hhi, ext_xor])
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, descendInput, dstOf]) rfl) fun t₁ ⟨⟨i₁, a₁, m₁⟩, k₁⟩ => ?_
+    (by rfl) rfl) fun t₁ ⟨⟨i₁, a₁, m₁⟩, k₁⟩ => ?_
   have h6 : t₁.gpr .r6 = s.gpr .r6 := k₁.gpr (by decide)
   refine WP.mono (piStore_run t₁ (E.keep k₁ (by decide) m₁) (by rw [a₁]; exact ext_lt _)
     (by rw [k₁.2.2, h6, i₁]; exact hw)) fun t ⟨a, k⟩ =>

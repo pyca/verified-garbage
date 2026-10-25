@@ -34,7 +34,7 @@ theorem checkKernel_ok (hint : Bool) (g : Nat) {s₀ s : State}
     exact HighPack.repeatedWord_lane 8380417 he
   refine WP.seq (WP.mono (checkMiddle_ok hint g b hq') fun u ⟨hu,hum,hu0,hu2,hu12,hc⟩ => ?_)
   have huf := ((hf.trans (CallFrame.ofKeepWide hb)).trans hu)
-  have hu2' : u.gpr .x2=s.gpr .x0 := by rw [hu2,h0]; bv_omega
+  have hu2' : u.gpr .x2=s.gpr .x0 := by rw [hu2,h0]; bv_omega_arith
   have hu1 : u.gpr .x1=s.gpr .x1+BitVec.ofNat 64 3840 := by
     rw [hu.gpr .x1 (by decide),h1]
     rfl

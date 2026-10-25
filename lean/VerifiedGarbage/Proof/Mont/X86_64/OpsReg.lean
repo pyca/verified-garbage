@@ -92,9 +92,9 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
         split
         · rename_i hab
           subst hab
-          exact WP.mono (sqrRX_ok hs hM h4 hr hk (by omega) (by omega) (h4 ▸ hB))
+          exact WP.mono (sqrRX_ok hs hM h4 hr hk (by omega_arith) (by omega_arith) (h4 ▸ hB))
             fun s' ⟨kr, hmem, hlt, he⟩ => ⟨fin s' kr hmem, hlt, he⟩
-        · exact WP.mono (mulRX_ok hs hM h4 hr hk (by omega) (by omega) (by omega) (h4 ▸ hB))
+        · exact WP.mono (mulRX_ok hs hM h4 hr hk (by omega_arith) (by omega_arith) (by omega_arith) (h4 ▸ hB))
             fun s' ⟨kr, hmem, hlt, he⟩ => ⟨fin s' kr hmem, hlt, he⟩
       · cases hk
     · cases hk
@@ -135,8 +135,8 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       by_contra hne
       have : 2 ^ (64 * M.n) * 2 ^ 64 ≤ 2 ^ (64 * M.n) * ((s₂.gpr (win M.n M.n M.n)).toNat +
           2 ^ 64 * (s₂.gpr (win M.n M.n (M.n + 1))).toNat) :=
-        Nat.mul_le_mul_left _ (by omega)
-      omega
+        Nat.mul_le_mul_left _ (by omega_arith)
+      omega_arith
     rw [this, Nat.mul_zero, Nat.add_zero]
   rw [WP.block_append_iff]
   refine WP.mono (csub_ok hs₂ (M := M) (m := m) hlowlen hM.n0 (fresh_low M.n hM.n7) hM.mo hM.tmp hM.sep
@@ -152,7 +152,7 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     · exact absurd h (by decide)
     · exact (fresh_low M.n hM.n7).head.2.2.2.2.2 h.symm
     · exact (fresh_low' M.n hM.n7).2 _ h |>.2.2.2.2 rfl)
-  refine WP.mono (stores_ok _ hs₃ (o := o) (by rw [hlowlen]; omega) (fresh_low' M.n hM.n7).1)
+  refine WP.mono (stores_ok _ hs₃ (o := o) (by rw [hlowlen]; omega_arith) (fresh_low' M.n hM.n7).1)
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   rw [hlowlen] at e₄ O₄
   refine ⟨⟨fun r hr => ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_, ?_⟩
@@ -197,7 +197,7 @@ theorem fresh_top_low {n : Nat} (hn : n < 7) : Fresh (top n :: low n) :=
 theorem low_ne_nil {n : Nat} (hn : n < 7) (h0 : 0 < n) : ∃ t ts, low n = t :: ts := by
   have := low_len_lt n hn
   cases h : low n with
-  | nil => rw [h] at this; simp at this; omega
+  | nil => rw [h] at this; simp at this; omega_arith
   | cons t ts => exact ⟨t, ts, rfl⟩
 
 /-- `[o] = [a] + [b] mod m`. -/
@@ -216,13 +216,13 @@ theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (low_sub_acc_lt _ hM.n7 r hr)))))
   rw [addR, List.append_assoc, List.append_assoc, List.append_assoc,
     List.append_assoc, WP.block_append_iff]
-  refine WP.mono (loads_ok (low M.n) hs (a := a) (by omega) hf.tail) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (loads_ok (low M.n) hs (a := a) (by omega_arith) hf.tail) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (fun h => (hf.tail.2 _ h).2.2.2.2 rfl)
   rw [WP.block_append_iff]
   refine WP.mono (mov32zero_ok s₁ (top M.n)) fun s₂ ⟨z₂, _, k₂⟩ => ?_
   have hs₂ := hs₁.of_keeps k₂ (by simp [(hf.2 _ (List.mem_cons_self ..)).2.2.2.2.symm])
   rw [WP.block_append_iff, hts]
-  refine WP.mono (chainAdd_ok hs₂ (b := b) (by rw [← hts]; omega) (hts ▸ hf.tail))
+  refine WP.mono (chainAdd_ok hs₂ (b := b) (by rw [← hts]; omega_arith) (hts ▸ hf.tail))
     fun s₃ ⟨c, c₃, e₃, k₃⟩ => ?_
   rw [← hts] at e₃ k₃ ⊢
   have hs₃ := hs₂.of_keeps k₃ (fun h => (hf.tail.2 _ h).2.2.2.2 rfl)
@@ -257,7 +257,7 @@ theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     · exact absurd h (by decide)
     · exact hf.head.2.2.2.2.2 h.symm
     · exact (hf.tail.2 _ h).2.2.2.2 rfl)
-  refine WP.mono (stores_ok _ hs₅ (o := o) (by rw [hl]; omega) hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
+  refine WP.mono (stores_ok _ hs₅ (o := o) (by rw [hl]; omega_arith) hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   rw [hl] at e₆ O₆
   refine ⟨⟨fun r hr => ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_⟩
   · have hr' : r ∉ top M.n :: low M.n := fun h => hr (hsub r h)
@@ -297,19 +297,19 @@ theorem masked_ok {size : Nat} : ∀ (k : Nat) {s : State} {base : Addr} {mo tmp
         Option.map_some, State.load64, State.store64, ea_sc, RegUpd.gpr_setReg,
         RegUpd.gpr_arithFlags, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
         RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.mem_arithFlags, reduceCtorEq, ite_true,
-        ite_false, hs.rdi, ld_sc hs (d := mo) (by omega), st_sc hs (d := tmp) (by omega), hx,
+        ite_false, hs.rdi, ld_sc hs (d := mo) (by omega_arith), st_sc hs (d := tmp) (by omega_arith), hx,
         Option.some.injEq, exists_eq_left']
       refine ⟨by cases c <;> simp only [Bool.false_eq_true, ite_false, ite_true, BitVec.and_allOnes,
         BitVec.and_zero, BitVec.ofNat_eq_ofNat], ⟨fun r hr => ?_, rfl, rfl⟩⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun s₁ ⟨m₁, k₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
-    have O₁ : Outside base tmp 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
-    refine WP.mono (masked_ok k c hs₁ (mo := mo + 8) (tmp := tmp + 8) (by omega) (by omega)
-      (by omega) (by rw [k₁.gpr _ (by decide), hx])) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-    refine ⟨?_, k₁.trans k₂, fun x hx => by rw [O₂ x (by omega), O₁ x (by omega)]⟩
-    rw [wordsVal, O₂.word (by omega) (by omega), m₁, word_writeW_self, e₂,
-      O₁.wordsVal (by omega) (by omega)]
+    have O₁ : Outside base tmp 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega_arith)
+    refine WP.mono (masked_ok k c hs₁ (mo := mo + 8) (tmp := tmp + 8) (by omega_arith) (by omega_arith)
+      (by omega_arith) (by rw [k₁.gpr _ (by decide), hx])) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+    refine ⟨?_, k₁.trans k₂, fun x hx => by rw [O₂ x (by omega_arith), O₁ x (by omega_arith)]⟩
+    rw [wordsVal, O₂.word (by omega_arith) (by omega_arith), m₁, word_writeW_self, e₂,
+      O₁.wordsVal (by omega_arith) (by omega_arith)]
     cases c <;> simp [wordsVal]
 
 /-- `[o] = [a] - [b] mod m`. -/
@@ -331,10 +331,10 @@ theorem subR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     exact Or.inr (Or.inr (Or.inr (Or.inr (low_sub_acc_lt _ hM.n7 r (List.mem_cons_of_mem _ hr)))))
   rw [subR, List.append_assoc, List.append_assoc, List.append_assoc,
     List.append_assoc, WP.block_append_iff]
-  refine WP.mono (loads_ok (low M.n) hs (a := a) (by omega) hf.tail) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (loads_ok (low M.n) hs (a := a) (by omega_arith) hf.tail) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (fun h => (hf.tail.2 _ h).2.2.2.2 rfl)
   rw [WP.block_append_iff, hts]
-  refine WP.mono (chainSub_ok hs₁ (b := b) (by rw [← hts]; omega) (hts ▸ hf.tail))
+  refine WP.mono (chainSub_ok hs₁ (b := b) (by rw [← hts]; omega_arith) (hts ▸ hf.tail))
     fun s₂ ⟨c, c₂, e₂, k₂⟩ => ?_
   rw [← hts] at e₂ k₂ ⊢
   have hs₂ := hs₁.of_keeps k₂ (fun h => (hf.tail.2 _ h).2.2.2.2 rfl)
@@ -346,11 +346,11 @@ theorem subR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
   rw [WP.block_append_iff, hts]
-  refine WP.mono (chainAdd_ok hs₄ (b := M.tmp) (by rw [← hts]; omega) (hts ▸ hf.tail))
+  refine WP.mono (chainAdd_ok hs₄ (b := M.tmp) (by rw [← hts]; omega_arith) (hts ▸ hf.tail))
     fun s₅ ⟨c', _, e₅, k₅⟩ => ?_
   rw [← hts] at e₅ k₅ ⊢
   have hs₅ := hs₄.of_keeps k₅ (fun h => (hf.tail.2 _ h).2.2.2.2 rfl)
-  refine WP.mono (stores_ok _ hs₅ (o := o) (by rw [hl]; omega) hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
+  refine WP.mono (stores_ok _ hs₅ (o := o) (by rw [hl]; omega_arith) hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   rw [hl] at e₁ e₂ e₅ e₆ O₆
   have hmem₃ : s₃.mem = s.mem := by rw [k₃.2.1, k₂.2.1, k₁.2.1]
   have hR₄ : regsVal s₄ (low M.n) = regsVal s₂ (low M.n) := by
@@ -374,12 +374,12 @@ theorem subR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     cases c <;> cases c' <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero,
       Nat.mul_one, Nat.add_zero, Bool.false_eq_true, ite_false, ite_true] at e₂ e₅
     · rw [show wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n =
-        (wordsVal s.mem base a M.n - wordsVal s.mem base b M.n) + m by omega, Nat.add_mod_right,
-        Nat.mod_eq_of_lt (by omega)]
-      omega
-    · omega
-    · omega
-    · rw [Nat.mod_eq_of_lt (by omega)]
-      omega
+        (wordsVal s.mem base a M.n - wordsVal s.mem base b M.n) + m by omega_arith, Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
+    · omega_arith
+    · omega_arith
+    · rw [Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
 
 end VG.Proof.Mont.X86_64

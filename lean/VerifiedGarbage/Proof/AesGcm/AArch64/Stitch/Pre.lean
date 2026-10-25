@@ -96,16 +96,16 @@ theorem kpre_of {t : State} {R : Nat} {D : Addr} {n : Nat} (he : Env Ctx St W SP
   have hp : 128 * (n / 128) ≤ n := Nat.mul_div_le n 128
   obtain ⟨e19, e20, e21, -, perm⟩ := he
   subst e19 e20 e21 h23
-  refine ⟨by simp only [Gcm.AArch64.Stitch.rounds, h22, toNat_ofNat_of_lt (show R < 2 ^ 64 by omega)]; exact hR,
-    by rw [hnb]; omega,
+  refine ⟨by simp only [Gcm.AArch64.Stitch.rounds, h22, toNat_ofNat_of_lt (show R < 2 ^ 64 by omega_arith)]; exact hR,
+    by rw [hnb]; omega_arith,
     perm.ctx _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩,
     perm.stW (d := 16) (n := 16) (by decide), perm.stW (d := 48) (n := 16) (by decide),
     by rw [hnb]; exact covers_prefix hd.wr hp _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩,
     perm.wR (d := 512) (n := 192) (by decide), ?_, ?_, ?_, ?_,
     Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
-    by rw [hnb]; change (t.gpr .x23).toNat + 128 * (n / 128) ≤ 2 ^ 64; have := hd.ok.wrap; omega, L.cw,
-    by change (t.gpr .x19).toNat + 704 ≤ 2 ^ 64; have := L.ww; omega,
-    by change (t.gpr .x20).toNat + 64 ≤ 2 ^ 64; have := L.sw; omega, tok⟩
+    by rw [hnb]; change (t.gpr .x23).toNat + 128 * (n / 128) ≤ 2 ^ 64; have := hd.ok.wrap; omega_arith, L.cw,
+    by change (t.gpr .x19).toNat + 704 ≤ 2 ^ 64; have := L.ww; omega_arith,
+    by change (t.gpr .x20).toNat + 64 ≤ 2 ^ 64; have := L.sw; omega_arith, tok⟩
   · simp only [Gcm.AArch64.Stitch.dR, Gcm.AArch64.Stitch.kR, hnb]
     exact hd.ctx.symm.sub_left (Region.sub_prefix hp)
   · simp only [Gcm.AArch64.Stitch.dR, Gcm.AArch64.Stitch.yR, hnb]
@@ -149,7 +149,7 @@ theorem stitch_core {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Add
   have he₁ : Env Ctx St W SP s₁ := hs.env.keep (fun r hr => g₁ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
-  refine WP.ite _ (Proof.Aes.AArch64.Aese.eval_zero e9 (by omega)) (fun h => ?_) (fun h => ?_)
+  refine WP.ite _ (Proof.Aes.AArch64.Aese.eval_zero e9 (by omega_arith)) (fun h => ?_) (fun h => ?_)
   · have hz : n / 128 = 0 := by simpa using h
     have hp : pre n = 0 := by simp only [pre, hz]
     refine WP.block_nil ⟨he₁, fun r hr => g₁ r (by simp at hr; exact hr.2.1), ?_, ?_, ?_, ?_, sp₁, rd₁, wr₁⟩
@@ -159,7 +159,7 @@ theorem stitch_core {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Add
     · rw [m₁]; exact Frame.refl _ _
   · have h1 : 128 ≤ n := by
       have : ¬ n / 128 = 0 := by simpa using h
-      omega
+      omega_arith
     rw [List.nil_append, WP.seq_iff]
     refine WP.mono (htb s₁ he₁ m₁ rd₁ wr₁ g₁) fun t ⟨tok, ft, gt, spt, rdt, wrt⟩ => ?_
     rw [m₁] at ft
@@ -192,7 +192,7 @@ theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {
     SMid Ctx St W SP H x icb R D n c s t' := by
   have hn := hs.data.ok.lt
   have hR := hs.rounds
-  have hRb : 16 * (R + 1) ≤ 256 := by omega
+  have hRb : 16 * (R + 1) ≤ 256 := by omega_arith
   have e20 : t.gpr .x20 = St := het.x20
   have e21 : t.gpr .x21 = Ctx := het.x21
   have e22 : t.gpr .x22 = BitVec.ofNat 64 R := by rw [gt _ (by decide) (by decide), hs.x22]
@@ -201,9 +201,9 @@ theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {
   simp only [Gcm.AArch64.Stitch.stp, Gcm.AArch64.Stitch.dp, Gcm.AArch64.Stitch.nb, Gcm.AArch64.Stitch.kc,
     Gcm.AArch64.Stitch.rounds, Gcm.AArch64.Stitch.icb, Gcm.AArch64.Stitch.ciph, Gcm.AArch64.Stitch.ksch,
     Gcm.AArch64.Stitch.yR, Gcm.AArch64.Stitch.cR, Gcm.AArch64.Stitch.dR, e20, e21, e22, e23, e26,
-    toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (show R < 2 ^ 64 by omega)] at pd pc pf
+    toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (show R < 2 ^ 64 by omega_arith)] at pd pc pf
   have hk : bytesAt t.mem Ctx (16 * (R + 1)) = bytesAt s.mem Ctx (16 * (R + 1)) :=
-    bytesAt_frame ft (fun r hr => (tbl_ctx L r hr).sub_left (Region.sub_prefix hRb)) (by omega)
+    bytesAt_frame ft (fun r hr => (tbl_ctx L r hr).sub_left (Region.sub_prefix hRb)) (by omega_arith)
   have hpn : pre n ≤ n := Nat.mul_div_le n 128
   have hD : ∀ r ∈ [tblR W], (⟨D, pre n⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
@@ -213,7 +213,7 @@ theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {
   rw [hk] at pd
   obtain ⟨hd, hc⟩ := Proof.Gcm.ctr_whole (ks := St + BitVec.ofNat 64 64) (ciph := ciphOf s.mem Ctx R) (icb := icb)
     (Proof.Gcm.ctr_zero _ _ _ _ hcb) (by decide) pd pc
-  rw [show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega] at hd hc
+  rw [show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega_arith] at hd hc
   rw [Nat.zero_add] at hc
   have g' : ∀ r, r ∉ [Reg.x5, .x9, .x10, .x11, .x12, .x13, .x14] → t'.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -223,7 +223,7 @@ theorem smid_of {H : Block} {x : List Byte} {icb : Block} {R : Nat} {D : Addr} {
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> decide)) psp prd pwr, g', ?_, hc, hy, ?_,
     by rw [psp, spt], by rw [prd, rdt], by rw [pwr, wrt]⟩
-  · rw [hd, bytesAt_frame ft hD (by omega)]
+  · rw [hd, bytesAt_frame ft hD (by omega_arith)]
   · refine (ft.mono fun r hr => ?_).trans (pf.mono fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr; simp
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -246,7 +246,7 @@ theorem stitchE_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : N
     Gcm.AArch64.Stitch.hk, Gcm.AArch64.Stitch.y₀, het.x20, het.x21, gt .x23 (by decide) (by decide),
     gt .x26 (by decide) (by decide), hs.x23, hs.x26, toNat_ofNat_of_lt hn, hH, hY] at py
   refine smid_of L hs het ft gt spt rdt wrt q.data q.ctr q.frame q.gpr q.sp q.rd q.wr ?_
-  rw [py, Proof.Gcm.blocksAt_eq, show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega, Spec.Gcm.ghash,
+  rw [py, Proof.Gcm.blocksAt_eq, show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega_arith, Spec.Gcm.ghash,
     Spec.Gcm.ghash, blocks_append hs.xm, Proof.Gcm.ghashFrom_append]
 
 /-- `open`'s interleaved loop. -/
@@ -265,12 +265,12 @@ theorem stitchD_ok (gh : Gh8Ok) {H : Block} {x : List Byte} {icb : Block} {R : N
   have hpn : pre n ≤ n := Nat.mul_div_le n 128
   have hD : bytesAt t.mem D (pre n) = bytesAt s.mem D (pre n) := bytesAt_frame ft (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hs.data.ok.w.sub_left (Region.sub_prefix hpn)).sub_right (Lay.wSub (by decide))) (by omega)
+    exact (hs.data.ok.w.sub_left (Region.sub_prefix hpn)).sub_right (Lay.wSub (by decide))) (by omega_arith)
   simp only [Gcm.AArch64.Stitch.stp, Gcm.AArch64.Stitch.dp, Gcm.AArch64.Stitch.nb, Gcm.AArch64.Stitch.kc,
     Gcm.AArch64.Stitch.hk, Gcm.AArch64.Stitch.y₀, het.x20, het.x21, gt .x23 (by decide) (by decide),
     gt .x26 (by decide) (by decide), hs.x23, hs.x26, toNat_ofNat_of_lt hn, hH, hY] at py
   refine smid_of L hs het ft gt spt rdt wrt q.data q.ctr q.frame q.gpr q.sp q.rd q.wr ?_
-  rw [py, Proof.Gcm.blocksAt_eq, show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega, hD, Spec.Gcm.ghash,
+  rw [py, Proof.Gcm.blocksAt_eq, show 16 * (8 * (n / 128)) = pre n by simp only [pre]; omega_arith, hD, Spec.Gcm.ghash,
     Spec.Gcm.ghash, blocks_append hs.xm, Proof.Gcm.ghashFrom_append]
 
 end
@@ -280,12 +280,12 @@ end
 theorem shl7 {q : Nat} (h : 128 * q < 2 ^ 64) : BitVec.ofNat 64 q <<< 7 = BitVec.ofNat 64 (128 * q) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (show q < 2 ^ 64 by omega)]
-  omega
+    Nat.mod_eq_of_lt (show q < 2 ^ 64 by omega_arith)]
+  omega_arith
 
 theorem whole_eq {u : State} {n : Nat} (h26 : u.gpr .x26 = BitVec.ofNat 64 n) (hn : n < 2 ^ 64) :
     (u.gpr .x26 >>> 7) <<< 7 = BitVec.ofNat 64 (pre n) := by
-  rw [h26, Gcm.AArch64.Stitch.ushr7 hn, shl7 (by have := Nat.mul_div_le n 128; omega)]
+  rw [h26, Gcm.AArch64.Stitch.ushr7 hn, shl7 (by have := Nat.mul_div_le n 128; omega_arith)]
 
 /-- `seal`'s pointers past the first bytes. -/
 theorem afterE_ok {u : State} {D : Addr} {n : Nat} (h23 : u.gpr .x23 = D)
@@ -306,7 +306,7 @@ theorem afterE_ok {u : State} {D : Addr} {n : Nat} (h23 : u.gpr .x23 = D)
     simp [gpr_write, h26]
     rw [e9, Offset.ofNat_sub_ofNat hp]
   · simp [gpr_write, pre]
-    rw [show 128 * (n / 128) % 16 = 0 by omega]
+    rw [show 128 * (n / 128) % 16 = 0 by omega_arith]
 
 /-- `seal`'s pointers for hashing the rest. -/
 theorem absArgsE_ok {u : State} {D : Addr} {n : Nat} (h27 : u.gpr .x27 = D + BitVec.ofNat 64 (pre n))

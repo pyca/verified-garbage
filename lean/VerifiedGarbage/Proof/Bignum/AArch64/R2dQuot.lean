@@ -52,7 +52,7 @@ theorem not_carry (x y : BitVec 64) :
   have := y.isLt
   apply decide_eq_decide.mpr
   simp only [Bool.toNat_true]
-  omega
+  omega_arith
 
 theorem mgq_val {v u a d : Nat} (hd : d < 2 ^ 64) (hn : 2 ^ 63 ≤ d) (hu : u < d) (ha : a < 2 ^ 64)
     (hv : v = (2 ^ 128 - 1) / d - 2 ^ 64) :
@@ -165,7 +165,7 @@ theorem shl3_sub8 {w : Nat} (hw : 1 ≤ w) (hw' : w < 2 ^ 61) :
   rw [r2d_ofNat_shl3 hw']
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem off_sub8 (B : Addr) {e : Nat} (he : 8 ≤ e) : off B e - BitVec.ofNat 64 8 = off B (e - 8) := by
   rw [show off B e = off B (e - 8) + BitVec.ofNat 64 8 by
@@ -186,7 +186,7 @@ theorem r2dQuot_ok {t : State} {B : Addr} {Z w eX eM eV : Nat} (hs : Scr t B Z)
         (word t.mem B (eX + 8 * (w - 2))).toNat) / (word t.mem B (eM + 8 * (w - 1))).toNat) (2 ^ 64 - 1)) ∧
       t'.mem = t.mem ∧ Keep [.x1, .x2, .x3, .x4, .x5, .x13, .x14, .x15, .x16, .x17] t t' := by
   have hn := hs.nowrap
-  have e1 : eX + 8 * (w - 1) - 8 = eX + 8 * (w - 2) := by omega
+  have e1 : eX + 8 * (w - 1) - 8 = eX + 8 * (w - 2) := by omega_arith
   generalize hD : word t.mem B (eM + 8 * (w - 1)) = D at hu hd hv
   generalize hU2 : word t.mem B (eX + 8 * (w - 1)) = U2 at hu
   generalize hU1 : word t.mem B (eX + 8 * (w - 2)) = U1
@@ -194,14 +194,14 @@ theorem r2dQuot_ok {t : State} {B : Addr} {Z w eX eM eV : Nat} (hs : Scr t B Z)
   refine WP.mono (WP.keep [.x1, .x2, .x3, .x4, .x5, .x13, .x14, .x15, .x16, .x17] (Q := fun t' =>
       t'.gpr .x1 = (if decide ((D - U2 &&& D - U2) = 0) then (BitVec.ofNat 16 0).setWidth 64 - BitVec.ofNat 64 1
         else mgq Vw U2 U1 D) ∧ t'.mem = t.mem) (by
-    brun [h11, h9, h12, h6, h7, r2d_exec_tst, r2d_exec_cselc, CondCode.holds, shl3_sub8 (show 1 ≤ w by omega)
-      (show w < 2 ^ 61 by omega), off_add, off_sub8 B (show 8 ≤ eX + 8 * (w - 1) by omega), e1,
-      hs.ld (show eM + 8 * (w - 1) + 8 ≤ Z by omega), hs.ld (show eX + 8 * (w - 1) + 8 ≤ Z by omega),
-      hs.ld (show eX + 8 * (w - 2) + 8 ≤ Z by omega), hs.ld hE, hD, hU2, hU1, hVw, quot, quotHead, quotMG]
+    brun [h11, h9, h12, h6, h7, r2d_exec_tst, r2d_exec_cselc, CondCode.holds, shl3_sub8 (show 1 ≤ w by omega_arith)
+      (show w < 2 ^ 61 by omega_arith), off_add, off_sub8 B (show 8 ≤ eX + 8 * (w - 1) by omega_arith), e1,
+      hs.ld (show eM + 8 * (w - 1) + 8 ≤ Z by omega_arith), hs.ld (show eX + 8 * (w - 1) + 8 ≤ Z by omega_arith),
+      hs.ld (show eX + 8 * (w - 2) + 8 ≤ Z by omega_arith), hs.ld hE, hD, hU2, hU1, hVw, quot, quotHead, quotMG]
     rfl) (by decide) (by decide) (by decide +kernel)) fun t' ⟨⟨h1, hm⟩, k⟩ => ⟨?_, hm, k⟩
   rw [h1]
   have hD' := D.isLt
-  have hd0 : 0 < D.toNat := by omega
+  have hd0 : 0 < D.toNat := by omega_arith
   by_cases he : U2 = D
   · subst he
     simp only [BitVec.sub_self, BitVec.and_self]
@@ -219,16 +219,16 @@ theorem r2dQuot_ok {t : State} {B : Addr} {Z w eX eM eV : Nat} (hs : Scr t B Z)
       rw [BitVec.toNat_sub] at e
       have := U2.isLt
       rw [show (0 : BitVec 64).toNat = 0 from rfl] at e
-      omega
+      omega_arith
     simp only [BitVec.and_self, hne, decide_false, Bool.false_eq_true, ↓reduceIte]
     have hq := mgq_val (v := Vw.toNat) hD' hd hlt U1.isLt hv
     simp only [BitVec.ofNat_toNat, BitVec.setWidth_eq] at hq
     have hlt' : (U2.toNat * 2 ^ 64 + U1.toNat) / D.toNat < 2 ^ 64 := by
       rw [Nat.div_lt_iff_lt_mul hd0]
-      have := Nat.mul_le_mul_right (2 ^ 64) (show U2.toNat + 1 ≤ D.toNat by omega)
+      have := Nat.mul_le_mul_right (2 ^ 64) (show U2.toNat + 1 ≤ D.toNat by omega_arith)
       rw [Nat.add_mul, Nat.one_mul] at this
       have := U1.isLt
-      rw [Nat.mul_comm (2 ^ 64)]; omega
-    rw [Nat.min_eq_left (by omega), ← hq, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+      rw [Nat.mul_comm (2 ^ 64)]; omega_arith
+    rw [Nat.min_eq_left (by omega_arith), ← hq, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 end VG.Proof.Bignum.AArch64

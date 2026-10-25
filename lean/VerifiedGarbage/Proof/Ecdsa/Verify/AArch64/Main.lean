@@ -108,10 +108,10 @@ theorem projectivePrepare_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : 
   have hp := hc.p_ge
   have hpR := hc.p_lt
   have r2 : c.R * c.R % c.C.p < 2 ^ (64 * c.n) :=
-    Nat.lt_trans (Nat.mod_lt _ (by omega)) hpR
+    Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpR
   have mont : c.mont c.C.n < 2 ^ (64 * c.n) :=
-    Nat.lt_trans (Nat.mod_lt _ (by omega)) hpR
-  have sub : c.C.p - c.C.n < 2 ^ (64 * c.n) := by omega
+    Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpR
+  have sub : c.C.p - c.C.n < 2 ^ (64 * c.n) := by omega_arith
   rw [Impl.Ecdsa.Verify.AArch64.Cfg.projectivePrepare, List.append_assoc, WP.block_append_iff]
   refine WP.mono (setSl_ok hc hs (o := XM) (by decide) r2) fun s₁ ⟨e₁,k₁,O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
@@ -161,7 +161,7 @@ theorem projectiveArithmetic_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
     fun hi hl => sv_unch U₁ h7 hn hi (apart_slW hl)
   have M₁ : ModOkA c.MP' size c.C.p s₁.mem base := modP_of hc
     ((v₁ (i := MP) (by decide) (by decide)).trans hmp)
-  refine WP.seq (WP.mono (projectiveConvert_ok hc hs₁ M₁ (by rw [xm₁]; exact Nat.mod_lt _ (by omega)))
+  refine WP.seq (WP.mono (projectiveConvert_ok hc hs₁ M₁ (by rw [xm₁]; exact Nat.mod_lt _ (by omega_arith)))
     fun s₂ ⟨k₂,lt₂,e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₂ i = sv c base s₁ i :=
@@ -184,7 +184,7 @@ theorem projectiveArithmetic_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
     · exact lt₂
     · rw [v₂ (by decide) (by decide) (by decide), v₁ (by decide) (by decide)]; exact hrz
     · rw [v₂ (by decide) (by decide) (by decide), v₁ (by decide) (by decide)]; exact hrx
-    · rw [v₂ (by decide) (by decide) (by decide), acc₁]; exact Nat.mod_lt _ (by omega)
+    · rw [v₂ (by decide) (by decide) (by decide), acc₁]; exact Nat.mod_lt _ (by omega_arith)
   have U₂ : Unch base (slW c [XM, TMP]) s₁.mem s₂.mem := k₂.unch
   have U : Unch base (slW c projectiveAllW) s.mem s₃.mem :=
     ((U₁.trans U₂).trans U₃).mono (by
@@ -243,10 +243,10 @@ theorem projectiveFinal_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     exact sl_ge64 c i) U
   have flag : word t.mem base (c.sl FLAG) = mask A := by
-    rw [U.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
+    rw [U.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)]
     · exact hP.flag
     · exact (apart_slW (c := c) (i := FLAG) (by decide)) w hw |>.elim
-        (fun h => Or.inl (by have := hc.n0; omega)) Or.inr
+        (fun h => Or.inl (by have := hc.n0; omega_arith)) Or.inr
   have wz : sv c base t W = 0 ↔ fx = Fin.ofNat c.C.p (sigR c s₀) * fz := by
     rw [← toM_eq_zero_iff hpR wlt, wval, hP.k]
     change fx - Fin.ofNat c.C.p (sigR c s₀) * fz = 0 ↔ _
@@ -377,7 +377,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg
   have hR := Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hPc _) q1' q2' hsum.symm
   -- The arguments as the specification reads them.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt]; omega
+    rw [length_bytesAt]; omega_arith
   have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * c.C.len)).head? = some (s₀.mem (s₀.gpr .x0)) := by
     rw [peer_bytes]; rfl
   have hxv : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
@@ -390,7 +390,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg
       P = .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by
     show peerPt c _ _ _ = _
     unfold peerPt; rw [dite_eq_left ⟨⟨⟨h.1, h.2.1⟩, h.2.2.1⟩, h.2.2.2⟩]
-  have h16 : 2 * c.C.len = c.C.len + c.C.len := by omega
+  have h16 : 2 * c.C.len = c.C.len + c.C.len := by omega_arith
   have hr : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (2 * c.C.len)).take c.C.len) = sigR c s₀ := by
     rw [h16, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
   have hs : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (2 * c.C.len)).drop c.C.len) = sigS c s₀ := by

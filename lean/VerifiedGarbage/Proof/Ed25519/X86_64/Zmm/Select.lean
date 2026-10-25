@@ -73,7 +73,7 @@ theorem zlane_setV256 (s : State) (d r : XReg) (lo hi : BitVec 128) {i : Nat} (h
   simp only [State.zlane, State.lane, State.setV]
   by_cases h : r = d
   · subst h
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> simp
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> simp
   · simp [h]
 
 /-! ## The masks -/
@@ -93,7 +93,7 @@ theorem eqMaskB_ok (s : State) {v a : Nat} (hv : v < 2 ^ 31) (ha : a < 2 ^ 31)
         have e := BitVec.xor_eq_zero_iff.mp e0
         have := congrArg BitVec.toNat e
         simp only [BitVec.toNat_ofNat] at this
-        omega
+        omega_arith
       · subst h; rw [BitVec.xor_self, BitVec.toNat_zero]; decide
     rw [BitVec.sub_self, h1, hx]
     cases decide (a = v) <;> decide
@@ -120,7 +120,7 @@ theorem zlane_zlo (s : State) (d a b : Nat) (r : XReg) {i : Nat} (hi : i < 4) :
       if r = y d then (if i < 2 then s.zlane (y a) i else s.zlane (y b) (i - 2)) else s.zlane r i := by
   rw [zlane_vshufi32x4 _ _ _ _ _ _ hi]
   split
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
+  · rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
   · rfl
 
 theorem combEqMask_scal (m : Nat) : scalCode (.block (combEqMask m)) = true := rfl
@@ -150,7 +150,7 @@ theorem zmasks_ok (s : State) {a b m : Nat} (hm : m < 2 ^ 31) (ha : a < 2 ^ 31) 
         else cmask (decide (b = m)) ++ cmask (decide (b = m)))
       else if r = y 14 then cmask (decide (b = m)) ++ cmask (decide (b = m)) else s₁.zlane r i := by
     intro r i hi
-    simp only [s₄, zlane_zlo _ _ _ _ _ hi, zlane_dup _ _ _ _ hi, zlane_dup _ _ _ _ (show i - 2 < 4 by omega),
+    simp only [s₄, zlane_zlo _ _ _ _ _ hi, zlane_dup _ _ _ _ hi, zlane_dup _ _ _ _ (show i - 2 < 4 by omega_arith),
       z₃, l₂ _ _ hi, c₃]
     have n1514 : y 15 ≠ y 14 := by decide
     by_cases h15 : r = y 15
@@ -173,8 +173,8 @@ theorem zmasks_ok (s : State) {a b m : Nat} (hm : m < 2 ^ 31) (ha : a < 2 ^ 31) 
 
 theorem qword_load (m : Mem) (a : Addr) {k : Nat} (hk : k < 4) :
     qword ((m.readW a 256).extractLsb' (128 * (k / 2)) 128) (k % 2) = m.readW (a + BitVec.ofNat 64 (8 * k)) 64 := by
-  rw [← qword256_eq, qword256, show 64 * k = 8 * (8 * k) by omega]
-  exact readW_extract _ _ (k := 8 * k) (n := 8) (by omega)
+  rw [← qword256_eq, qword256, show 64 * k = 8 * (8 * k) by omega_arith]
+  exact readW_extract _ _ (k := 8 * k) (n := 8) (by omega_arith)
 
 /-- Piece `c` of the 32 bytes at `rdx + d`, in both halves, kept under the masks `zmm15` in
 `zmm (11 + c)`. -/
@@ -191,14 +191,14 @@ theorem zselLoad_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc
   let s₃ := (ZOp.zbin .vpandq (y 10) (y 10) (y 15)).exec s₂
   let s₄ := (ZOp.zbin .vporq (y (11 + c)) (y (11 + c)) (y 10)).exec s₃
   have h1015 : y 10 ≠ y 15 := by decide
-  have hc10 : y (11 + c) ≠ y 10 := by rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide
-  have hc15 : y (11 + c) ≠ y 15 := by rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide
+  have hc10 : y (11 + c) ≠ y 10 := by rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide
+  have hc15 : y (11 + c) ≠ y 15 := by rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide
   have l₃ : ∀ i < 4, s₃.zlane (y 10) i = w.extractLsb' (128 * (i % 2)) 128 &&& s.zlane (y 15) i := by
     intro i hi
     simp only [s₃, s₂, s₁, zlane_zbin _ _ _ _ _ _ hi, ite_true, zlane_zlo _ _ _ _ _ hi,
-      zlane_setV256 _ _ _ _ _ hi, zlane_setV256 _ _ _ _ _ (show i - 2 < 4 by omega), ite_eq_right h1015.symm,
+      zlane_setV256 _ _ _ _ _ hi, zlane_setV256 _ _ _ _ _ (show i - 2 < 4 by omega_arith), ite_eq_right h1015.symm,
       ZBinOp.sse, XBinOp.eval]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
   have l₄ : ∀ r, ∀ i < 4, s₄.zlane r i = if r = y (11 + c) then
       s.zlane (y (11 + c)) i ||| (w.extractLsb' (128 * (i % 2)) 128 &&& s.zlane (y 15) i)
       else if r = y 10 then w.extractLsb' (128 * (i % 2)) 128 &&& s.zlane (y 15) i else s.zlane r i := by
@@ -222,13 +222,13 @@ theorem zselLoad_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc
       Option.map_some, zlo]
     rfl
   · simp only [zq]
-    rw [show xr (11 + c) = y (11 + c) by rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> rfl,
-      l₄ _ _ (by omega), ite_eq_left rfl, qword_or, qword_and, show (2 * h + k / 2) % 2 = k / 2 by omega,
+    rw [show xr (11 + c) = y (11 + c) by rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> rfl,
+      l₄ _ _ (by omega_arith), ite_eq_left rfl, qword_or, qword_and, show (2 * h + k / 2) % 2 = k / 2 by omega_arith,
       qword_load _ _ hk]
     rfl
   · simp only [not_or, show xr 10 = y 10 from rfl] at hr
     rw [l₄ _ _ hi, ite_eq_right (by
-        rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> exact hr.2),
+        rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> exact hr.2),
       ite_eq_right hr.1]
 
 /-- The magnitude of half `h`. -/
@@ -248,36 +248,36 @@ theorem zselLoads_ok {m : Nat} {X : Addr} : ∀ n ≤ 3, ∀ (s : State), s.gpr 
   | 0, _, s, _, _ => WP.block_nil ⟨fun h _ c _ k _ => by simp, ZVKeep.refl _ _ _⟩
   | n + 1, hn, s, hx, hr => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (zselLoads_ok n (by omega) s hx hr) fun s₁ ⟨a₁, k₁⟩ => ?_
+    refine WP.mono (zselLoads_ok n (by omega_arith) s hx hr) fun s₁ ⟨a₁, k₁⟩ => ?_
     have h15 : ∀ h < 2, ∀ k < 4, zq s₁ (xr 15) h k = zq s (xr 15) h k := fun h hh k hk => by
       simp only [zq]
       rw [k₁.zl _ (by
         rintro (h | ⟨c, hc, h⟩)
         · exact absurd h (by decide)
-        · rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> exact absurd h (by decide)) _
-        (by omega)]
-    refine WP.mono (zselLoad_ok s₁ ((k₁.gpr _ List.not_mem_nil).trans hx) (c := n) (by omega)
-      (by rw [k₁.rd, k₁.wr]; exact hr n (by omega))) fun t ⟨a₂, k₂⟩ => ⟨fun h hh c hc k hk => ?_, ?_⟩
+        · rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> exact absurd h (by decide)) _
+        (by omega_arith)]
+    refine WP.mono (zselLoad_ok s₁ ((k₁.gpr _ List.not_mem_nil).trans hx) (c := n) (by omega_arith)
+      (by rw [k₁.rd, k₁.wr]; exact hr n (by omega_arith))) fun t ⟨a₂, k₂⟩ => ⟨fun h hh c hc k hk => ?_, ?_⟩
     · by_cases hcn : c = n
       · subst hcn
         rw [a₂ h hh k hk, a₁ h hh c hc k hk, h15 h hh k hk, k₁.mem]
         simp only [Nat.lt_irrefl, ↓reduceIte, Nat.lt_succ_self]
       · have hz : ∀ i < 4, t.zlane (xr (11 + c)) i = s₁.zlane (xr (11 + c)) i := k₂.zl _ (by
           rintro (h | h)
-          · rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> exact absurd h (by decide)
+          · rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> exact absurd h (by decide)
           · exact hcn (by
-              rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;>
-              rcases (by omega : n = 0 ∨ n = 1 ∨ n = 2) with rfl | rfl | rfl <;>
+              rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;>
+              rcases (by omega_arith : n = 0 ∨ n = 1 ∨ n = 2) with rfl | rfl | rfl <;>
               first | rfl | exact absurd h (by decide)))
-        rw [show zq t (xr (11 + c)) h k = zq s₁ (xr (11 + c)) h k by simp only [zq]; rw [hz _ (by omega)],
+        rw [show zq t (xr (11 + c)) h k = zq s₁ (xr (11 + c)) h k by simp only [zq]; rw [hz _ (by omega_arith)],
           a₁ h hh c hc k hk]
         by_cases hlt : c < n
-        · simp only [hlt, show c < n + 1 by omega, ↓reduceIte]
-        · simp only [hlt, show ¬ c < n + 1 by omega, ↓reduceIte]
+        · simp only [hlt, show c < n + 1 by omega_arith, ↓reduceIte]
+        · simp only [hlt, show ¬ c < n + 1 by omega_arith, ↓reduceIte]
     · exact k₁.trans (k₂.mono (fun _ h => h) fun r h => by
         rcases h with h | h
         · exact Or.inl h
-        · exact Or.inr ⟨n, by omega, h⟩)
+        · exact Or.inr ⟨n, by omega_arith, h⟩)
 
 /-- The registers the selection writes. -/
 abbrev zselRegs (r : XReg) : Prop := r = xr 10 ∨ (∃ c < 3, r = xr (11 + c)) ∨ r = xr 14 ∨ r = xr 15
@@ -297,14 +297,14 @@ theorem zselEntry_ok {s : State} {X : Addr} {a b m : Nat} (hm1 : 1 ≤ m) (hm : 
   refine WP.mono (zselLoads_ok (X := X) 3 (Nat.le_refl _) s₁ (by rw [k₁.gpr _ (by decide), hx]) (by
       rw [k₁.rd, k₁.wr]; exact hr)) fun t ⟨a₃, k₃⟩ => ⟨fun h hh c hc k hk => ?_, ?_⟩
   · have hne : ∀ i < 4, s₁.zlane (xr (11 + c)) i = s.zlane (xr (11 + c)) i := k₁.zl _ (by
-      rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide)
+      rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> decide)
     have hm15 : zq s₁ (xr 15) h k = cmask (decide (hmag a b h = m)) := by
       simp only [zq]
-      rw [x₁ _ (by omega)]
-      rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;>
-        rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> simp [hmag]
+      rw [x₁ _ (by omega_arith)]
+      rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;>
+        rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> simp [hmag]
     rw [a₃ h hh c hc k hk, ite_eq_left_of_eq_true _ _ (eq_true hc), hm15, k₁.mem,
-      show zq s₁ (xr (11 + c)) h k = zq s (xr (11 + c)) h k by simp only [zq]; rw [hne _ (by omega)],
+      show zq s₁ (xr (11 + c)) h k = zq s (xr (11 + c)) h k by simp only [zq]; rw [hne _ (by omega_arith)],
       hacc h hh c hc k hk]
     exact accQ_step _ _ _ _ _ _ hm1
   · refine k₁.mono (fun _ h => h) (fun r h => ?_) |>.trans (k₃.mono (fun _ h => by simp at h) fun r h => ?_)
@@ -324,14 +324,14 @@ theorem zselEntries_ok {X : Addr} {a b : Nat} (ha : a < 2 ^ 31) (hb : b < 2 ^ 31
       (∀ h < 2, ∀ c < 3, ∀ k < 4, zq t (xr (11 + c)) h k = accQ s.mem X (hmag a b h) n c k) ∧
       ZVKeep [.rcx] zselRegs s t
   | 0, _, s, _, _, _, _, h0 => WP.block_nil ⟨fun h hh c hc k hk => by
-      rw [h0 h hh c hc k hk, accQ, ite_eq_right_of_eq_false _ _ (eq_false (by omega))], ZVKeep.refl _ _ _⟩
+      rw [h0 h hh c hc k hk, accQ, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))], ZVKeep.refl _ _ _⟩
   | n + 1, hn, s, h8, h10, hx, hr, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (zselEntries_ok ha hb n (by omega) s h8 h10 hx (fun e he => hr e (by omega)) h0)
+    refine WP.mono (zselEntries_ok ha hb n (by omega_arith) s h8 h10 hx (fun e he => hr e (by omega_arith)) h0)
       fun s₁ ⟨a₁, k₁⟩ => ?_
-    refine WP.mono (zselEntry_ok (X := X) (m := n + 1) (by omega) hn ha hb
+    refine WP.mono (zselEntry_ok (X := X) (m := n + 1) (by omega_arith) hn ha hb
       (by rw [k₁.gpr _ (by decide), h8]) (by rw [k₁.gpr _ (by decide), h10]) (by rw [k₁.gpr _ (by decide), hx])
-      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr n (by omega) c hc)
+      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr n (by omega_arith) c hc)
       (fun h hh c hc k hk => by rw [a₁ h hh c hc k hk, k₁.mem, Nat.add_sub_cancel])) fun t ⟨a₂, k₂⟩ =>
       ⟨fun h hh c hc k hk => by rw [a₂ h hh c hc k hk, k₁.mem], k₁.trans k₂⟩
 
@@ -345,8 +345,8 @@ theorem zselClear_ok (s : State) :
   refine ⟨fun h hh c hc k hk => ?_, ⟨fun _ _ => by zkeep, by zkeep, by zkeep, by zkeep, fun r hr i hi => ?_,
     by zkeep⟩⟩
   · simp only [zq]
-    rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;>
-      simp only [VOp.exec, zlane_setV256 _ _ _ _ _ (show 2 * h + k / 2 < 4 by omega), y, xr, Nat.reduceAdd,
+    rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;>
+      simp only [VOp.exec, zlane_setV256 _ _ _ _ _ (show 2 * h + k / 2 < 4 by omega_arith), y, xr, Nat.reduceAdd,
         reduceCtorEq, ↓reduceIte, VBinOp.sse, XBinOp.eval, BitVec.xor_self] <;>
       split <;> (try split) <;> exact Ifma.qword_zero _
   · simp only [zselRegs, not_or, not_exists, not_and] at hr
@@ -365,7 +365,7 @@ theorem isZero_ok (s : State) (g : Reg) {a : Nat} (ha : a < 2 ^ 64) (hg : s.gpr 
     by_cases h : a = 0
     · subst h; decide
     · have h1 : (BitVec.signExtend 64 (1 : BitVec 32)).toNat = 1 := by decide
-      rw [h1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, decide_eq_false (by omega),
+      rw [h1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, decide_eq_false (by omega_arith),
         ite_eq_right_iff.mpr (fun h2 => absurd h2 h)]
       simp
   erun [isZero, hg, hM]
@@ -386,20 +386,20 @@ theorem selWord_or (j m c k : Nat) (hm : m ≤ 16) :
   unfold selWord
   by_cases h : 1 ≤ m
   · rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨h, hm⟩), ite_eq_left_of_eq_true _ _ (eq_true h)]
-    split <;> simp [show m ≠ 0 by omega]
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false h)]
-    split <;> simp [show m = 0 by omega]
+    split <;> simp [show m ≠ 0 by omega_arith]
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false h)]
+    split <;> simp [show m = 0 by omega_arith]
 
 theorem qword_zero' (i : Nat) : qword (0#128) i = 0 := Ifma.qword_zero i
 
 theorem qword_load512 (m : Mem) (a : Addr) {i q : Nat} (hi : i < 4) (hq : q < 2) :
     qword ((m.readW a 512).extractLsb' (128 * i) 128) q = m.readW (a + BitVec.ofNat 64 (16 * i + 8 * q)) 64 := by
-  have e := readW_extract m a (w := 512) (k := 16 * i + 8 * q) (n := 8) (by omega)
+  have e := readW_extract m a (w := 512) (k := 16 * i + 8 * q) (n := 8) (by omega_arith)
   rw [← e]
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 64 * q + j < 128 by omega)]
-  congr 1; omega
+    decide_eq_true (show 64 * q + j < 128 by omega_arith)]
+  congr 1; omega_arith
 
 theorem zselect_split : zselect = combSelSetup ++ ([zero 11, zero 12, zero 13] : List Instr) ++
     (List.range 16).flatMap (fun m => zselEntry (m + 1)) ++ isZero .r8 ++
@@ -431,26 +431,26 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
     intro e he c hc
     rw [k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     refine VG.CallLay.inRegions_sub ht.rd ?_ (by decide)
-    simp only [combTblBytes, combEntryBytes, combWordCount]; omega
-  refine WP.mono (zselEntries_ok (X := T + BitVec.ofNat 64 (j * combTblBytes)) (a := a) (b := b) (by omega)
-    (by omega) 16 (by decide) s₂
+    simp only [combTblBytes, combEntryBytes, combWordCount]; omega_arith
+  refine WP.mono (zselEntries_ok (X := T + BitVec.ofNat 64 (j * combTblBytes)) (a := a) (b := b) (by omega_arith)
+    (by omega_arith) 16 (by decide) s₂
     (by rw [k₂.gpr _ List.not_mem_nil, k₁.1 _ (by decide), h8])
     (by rw [k₂.gpr _ List.not_mem_nil, k₁.1 _ (by decide), h10])
     (by rw [k₂.gpr _ List.not_mem_nil, x₁]) hr a₂) fun s₃ ⟨a₃, k₃⟩ => ?_
   have g₃ : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → s₃.gpr r = s.gpr r := fun r h1 h2 h3 => by
     rw [k₃.gpr r (by simpa using h2), k₂.gpr r List.not_mem_nil, k₁.1 r (by simp [h1, h2, h3])]
-  refine WP.mono (zscal (isZero_scal .r8) (isZero_ok s₃ .r8 (a := a) (by omega)
+  refine WP.mono (zscal (isZero_scal .r8) (isZero_ok s₃ .r8 (a := a) (by omega_arith)
     (by rw [g₃ _ (by decide) (by decide) (by decide), h8]))) fun s₄ ⟨⟨r₄, k₄, y₄⟩, z₄⟩ => ?_
   let s₅ := (VOp.vmovq (y 10) .rax).exec s₄
   refine WP.of_runBlock ⟨s₅, by simp only [runBlock_cons, runStep_some, runBlock_nil, exec]; rfl, ?_⟩
-  refine WP.mono (zscal (isZero_scal .r10) (isZero_ok s₅ .r10 (a := b) (by omega)
+  refine WP.mono (zscal (isZero_scal .r10) (isZero_ok s₅ .r10 (a := b) (by omega_arith)
     (by show s₄.gpr .r10 = _; rw [k₄.1 _ (by decide), g₃ _ (by decide) (by decide) (by decide), h10])))
     fun s₆ ⟨⟨r₆, k₆, y₆⟩, z₆⟩ => ?_
   have hz2 : InRegions (s₆.rd ++ s₆.wr) (base + BitVec.ofNat 64 ZK2) 64 := by
     rw [k₆.2.2.1, k₆.2.2.2]
     show InRegions (s₄.rd ++ s₄.wr) _ 64
     rw [k₄.2.2.1, k₄.2.2.2, k₃.rd, k₃.wr, k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]
-    exact ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base base (by unfold ZK2; omega) (by unfold ZK2; omega)⟩
+    exact ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base base (by unfold ZK2; omega_arith) (by unfold ZK2; omega_arith)⟩
   have hrdi : s₆.gpr .rdi = base := by
     rw [k₆.1 _ (by decide)]; show s₄.gpr .rdi = _; rw [k₄.1 _ (by decide), g₃ _ (by decide) (by decide) (by decide),
       hs.rdi]
@@ -482,9 +482,9 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
     intro i hi
     have r6 : s₆.gpr .rax = if b = 0 then 1 else 0 := r₆
     have r4 : s₄.gpr .rax = if a = 0 then 1 else 0 := r₄
-    simp only [u₂, zlane_zlo _ _ _ _ _ hi, ite_true, u₁, zlane_vmovq _ _ _ _ (show i - 2 < 4 by omega),
+    simp only [u₂, zlane_zlo _ _ _ _ _ hi, ite_true, u₁, zlane_vmovq _ _ _ _ (show i - 2 < 4 by omega_arith),
       zlane_vmovq _ _ _ _ hi, show y 10 ≠ y 9 by decide, ite_false, z₆, s₅, r6, r4]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> simp [hmag]
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> simp [hmag]
   have l₃ : ∀ r, r ≠ y 9 → r ≠ y 10 → ∀ i < 4, u₂.zlane r i = s₃.zlane r i := fun r h9 h10 i hi => by
     simp only [u₂, zlane_zlo _ _ _ _ _ hi, h10, ite_false, u₁, zlane_vmovq _ _ _ _ hi, h9, z₆, s₅]
     exact z₄ r i
@@ -492,22 +492,22 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
       if 1 ≤ hmag a b h ∧ hmag a b h ≤ 16 then feWord (combField j (hmag a b h) c) k else 0 := by
     intro h hh c hc k hk
     rw [a₃ h hh c hc k hk, accQ, k₂.mem, k₁.2.1]
-    have hm : hmag a b h ≤ 16 := by simp only [hmag]; split <;> omega
+    have hm : hmag a b h ≤ 16 := by simp only [hmag]; split <;> omega_arith
     by_cases h1 : 1 ≤ hmag a b h
     · rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, hm⟩), ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, hm⟩)]
-      have hw := combTbl_word ht hj h1 hm (i := 4 * c + k) (by omega)
+      have hw := combTbl_word ht hj h1 hm (i := 4 * c + k) (by omega_arith)
       rw [Proof.X25519.X86_64.word, Proof.X25519.X86_64.off] at hw
       rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat,
         show combEntryBytes * (hmag a b h - 1) + 32 * c + 8 * k =
-          combEntryBytes * (hmag a b h - 1) + 8 * (4 * c + k) by omega,
+          combEntryBytes * (hmag a b h - 1) + 8 * (4 * c + k) by omega_arith,
         hw, entryWords_getD _ c k hc hk, combField, combCached_succ j _ h1]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
   have h3 : ∀ c < 3, ∀ i < 4, s₃.zlane (y (11 + c)) i = s₃.zlane (xr (11 + c)) i := fun c hc i _ => by
-    rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> rfl
+    rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> rfl
   refine ⟨fun h hh c hc k hk => ?_, fun h hh k hk => ?_, ⟨fun r hr => ?_, ?_, ?_, ?_, fun r hr i hi => ?_, ?_⟩⟩
-  · have hmh : hmag a b h ≤ 16 := by simp only [hmag]; split <;> omega
+  · have hmh : hmag a b h ≤ 16 := by simp only [hmag]; split <;> omega_arith
     rw [← selWord_or _ _ _ _ hmh, ← hacc h hh c hc k hk]
-    have hi : 2 * h + k / 2 < 4 := by omega
+    have hi : 2 * h + k / 2 < 4 := by omega_arith
     have L1 : ∀ i < 4, u₅.zlane (y 11) i = s₃.zlane (y 11) i ||| u₂.zlane (y 10) i := fun i hi => by
       simp only [u₅, zlane_load _ _ _ _ hi, show y 11 ≠ y 14 by decide, ite_false, u₄, zlane_zbin _ _ _ _ _ _ hi,
         show y 11 ≠ y 12 by decide, u₃, ite_true, ZBinOp.sse, XBinOp.eval, l₃ (y 11) (by decide) (by decide) _ hi]
@@ -518,23 +518,23 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
     have L3 : ∀ i < 4, u₅.zlane (y 13) i = s₃.zlane (y 13) i := fun i hi => by
       simp only [u₅, zlane_load _ _ _ _ hi, show y 13 ≠ y 14 by decide, ite_false, u₄, zlane_zbin _ _ _ _ _ _ hi,
         show y 13 ≠ y 12 by decide, u₃, show y 13 ≠ y 11 by decide, l₃ (y 13) (by decide) (by decide) _ hi]
-    rw [show xr (11 + c) = y (11 + c) by rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> rfl]
+    rw [show xr (11 + c) = y (11 + c) by rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> rfl]
     simp only [zq]
-    rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl
+    rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl
     · rw [L1 _ hi, qword_or, l₂ _ hi]
-      rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;>
-        rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
+      rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;>
+        rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
         simp [hmag, qword_zero']
     · rw [L2 _ hi, qword_or, l₂ _ hi]
-      rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;>
-        rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
+      rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;>
+        rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
         simp [hmag, qword_zero']
     · rw [L3 _ hi]; simp
-  · simp only [zq, u₅, show xr 14 = y 14 from rfl, zlane_load _ _ _ _ (show 2 * h + k / 2 < 4 by omega),
+  · simp only [zq, u₅, show xr 14 = y 14 from rfl, zlane_load _ _ _ _ (show 2 * h + k / 2 < 4 by omega_arith),
       ite_true, w]
-    rw [qword_load512 _ _ (by omega) (Nat.mod_lt _ (by decide)), show s₆.mem = s.mem from m₆,
+    rw [qword_load512 _ _ (by omega_arith) (Nat.mod_lt _ (by decide)), show s₆.mem = s.mem from m₆,
       Offset.add_ofNat_add_ofNat]
-    congr 3; omega
+    congr 3; omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [u₅, State.setZ_gpr, u₄, ZOp.exec_gpr, u₃, u₂, u₁, VOp.exec_gpr]
     rw [k₆.1 r (by simp [hr.1])]

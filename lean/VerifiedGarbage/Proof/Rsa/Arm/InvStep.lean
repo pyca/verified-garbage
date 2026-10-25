@@ -65,7 +65,7 @@ theorem invStep_ok {s : State} {B : BitVec 32} {Z w N A D : Nat} (h : Ws s B Z w
   unfold invX
   have cs3 : slot t3.mem B sC = slot t1.mem B sC := by
     rw [k3.slot hsC (by decide), k2.slot hsC (by decide)]
-  have cb3 : slot t3.mem B sC ≤ 1 := by rw [cs3, c1]; split <;> omega
+  have cb3 : slot t3.mem B sC ≤ 1 := by rw [cs3, c1]; split <;> omega_arith
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sel_ok h3 (by idx) (by idx) (by idx) hN (by idx) (by idx) hsC cb3) fun t4 ⟨h4, k4, e4, r4⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -74,7 +74,7 @@ theorem invStep_ok {s : State} {B : BitVec 32} {Z w N A D : Nat} (h : Ws s B Z w
   have od5 : slot t5.mem B sOdd = slot t1.mem B sOdd := by
     rw [k5.slot hsOdd (by simp), k4.slot hsOdd (by simp), k3.slot hsOdd (by decide), k2.slot hsOdd (by decide)]
   refine WP.mono (sel_ok h5 (by idx) (by idx) (by idx) hN (by idx) (by idx) hsOdd
-    (by rw [od5, o1]; omega)) fun t6 ⟨h6, k6, e6, r6⟩ => ?_
+    (by rw [od5, o1]; omega_arith)) fun t6 ⟨h6, k6, e6, r6⟩ => ?_
   refine WP.mono (halfModP_ok h6 hN15 hN (by idx) (by idx) (by idx)) fun t ⟨h7, k7, e7, r7⟩ => ?_
   refine ⟨h7, k1.mono.trans (k2.mono.trans (k3.mono.trans (k4.mono.trans (k5.mono.trans (k6.mono.trans
     k7.mono))))), fun hNM hZ l2 l3 => ?_, r1.trans (r2.trans (r3.trans (r4.trans (r5.trans (r6.trans r7)))))⟩

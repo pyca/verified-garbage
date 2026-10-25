@@ -106,7 +106,7 @@ structure Ent (Y : Lay) (s₀ s : State) (as : List Arg) (e : State) : Prop wher
   mem : ∀ b, Y.ok b = true → ∀ i < b.len, e.mem (b.addr s₀ + BitVec.ofNat 64 i) = s.mem (b.addr s₀ + BitVec.ofNat 64 i)
 
 theorem argRs_len {n : Nat} (hn : n ≤ 6) : (argRs n).length = n := by
-  simp only [argRs, List.length_reverse, List.length_take, argRegs, List.length_cons, List.length_nil]; omega
+  simp only [argRs, List.length_reverse, List.length_take, argRegs, List.length_cons, List.length_nil]; omega_arith
 
 theorem argRs_ne {n : Nat} (hn : n ≠ 0) (hn' : n ≤ 6) : argRs n ≠ [] := fun h => by
   have := argRs_len hn'; rw [h] at this; exact hn this.symm
@@ -121,24 +121,24 @@ theorem argRs_getD : ∀ n ≤ 6, ∀ i < n, (argRs n).getD ((argRs n).length - 
   decide
 
 theorem ctx_E' {s₀ s : State} (hp : TPre Y s₀) (h : Ctx Y s₀ s) (hN : 96 ≤ Y.stk) :
-    80 ≤ (s.gpr .esp).toNat := ctx_E hp h (N := 80) (by omega)
+    80 ≤ (s.gpr .esp).toNat := ctx_E hp h (N := 80) (by omega_arith)
 
 theorem ent_of {s₀ s s₁ : State} (hp : TPre Y s₀) (hN : 96 ≤ Y.stk) (h₁ : Ctx Y s₀ s₁) (m₁ : s₁.mem = s.mem)
     {as : List Arg} (hn : as.length ≤ 5)
     (v : ∀ i (h₁ : i < argRegs.length) (h₂ : i < as.length), s₁.gpr argRegs[i] = as[i].val s₀) :
     Ent Y s₀ s as (pushed (argRs as.length) s₁).callEntry := by
   have hE := ctx_E' hp h₁ hN
-  have hl := argRs_len (n := as.length) (by omega)
-  have fit : 4 * (argRs as.length).length + 4 ≤ (s₁.gpr .esp).toNat := by rw [hl]; omega
+  have hl := argRs_len (n := as.length) (by omega_arith)
+  have fit : 4 * (argRs as.length).length + 4 ≤ (s₁.gpr .esp).toNat := by rw [hl]; omega_arith
   refine ⟨?_, fun i hi => ?_, ?_, fun b hb i hi => ?_⟩
   · rw [callEntry_esp', h₁.esp, hl]
   · rw [callEntry_arg fit (esp_argRs _) (by rw [hl]; exact hi), List.getElem_eq_getD .esp,
-      argRs_getD as.length (by omega) i hi]
-    rw [← List.getElem_eq_getD (h := by simp [argRegs]; omega) Reg.esp]
-    exact v i (by simp [argRegs]; omega) hi
+      argRs_getD as.length (by omega_arith) i hi]
+    rw [← List.getElem_eq_getD (h := by simp [argRegs]; omega_arith) Reg.esp]
+    exact v i (by simp [argRegs]; omega_arith) hi
   · rw [callEntry_argAddr0, h₁.esp, hl]
   · rw [← m₁]
-    exact ent_keep hp h₁ (esp_argRs _) (by rw [hl]; omega) hb i hi
+    exact ent_keep hp h₁ (esp_argRs _) (by rw [hl]; omega_arith) hb i hi
 
 /-- The regions of the callee's entry, apart from a buffer. -/
 theorem Ent.rgn {s₀ s e : State} {as : List Arg} (he : Ent Y s₀ s as e) (hp : TPre Y s₀) (hN : 96 ≤ Y.stk)
@@ -146,24 +146,24 @@ theorem Ent.rgn {s₀ s e : State} {as : List Arg} (he : Ent Y s₀ s as e) (hp 
     (b.rgn s₀).Disjoint (below (E1 s₀) (4 * as.length)) ∧
       (⟨(e.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (b.rgn s₀) ∧
       (⟨(e.gpr .esp).setWidth 64 - BitVec.ofNat 64 K, K⟩ : Region).Disjoint (b.rgn s₀) := by
-  have hE : 4 * as.length + 4 + K ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega
+  have hE : 4 * as.length + 4 + K ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_arith
   rw [he.esp]
-  exact entry_regions hE (Buf.stkD hp hb (N := 4 * as.length + 4 + K) (by omega))
+  exact entry_regions hE (Buf.stkD hp hb (N := 4 * as.length + 4 + K) (by omega_arith))
 
 /-- The callee's own regions, apart from each other. -/
 theorem Ent.self {s₀ s e : State} {as : List Arg} (he : Ent Y s₀ s as e) (hp : TPre Y s₀) (hN : 96 ≤ Y.stk)
     (hn : as.length ≤ 5) {K : Nat} (hK : K ≤ 56) :
     (⟨(e.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (E1 s₀) (4 * as.length)) ∧
       (⟨(e.gpr .esp).setWidth 64 - BitVec.ofNat 64 K, K⟩ : Region).Disjoint (below (E1 s₀) (4 * as.length)) := by
-  have hE : 4 * as.length + 4 + K ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega
+  have hE : 4 * as.length + 4 + K ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_arith
   rw [he.esp]
   exact entry_self hE
 
 /-- The callee's stack pointer, as a number. -/
 theorem Ent.espNat {s₀ s e : State} {as : List Arg} (he : Ent Y s₀ s as e) (hp : TPre Y s₀) (hN : 96 ≤ Y.stk)
     (hn : as.length ≤ 5) : (e.gpr .esp).toNat = (E1 s₀).toNat - (4 * as.length + 4) ∧ 80 ≤ (E1 s₀).toNat := by
-  have hE : 80 ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega
-  rw [he.esp, sub_toNat (by omega)]
+  have hE : 80 ≤ (E1 s₀).toNat := by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_arith
+  rw [he.esp, sub_toNat (by omega_arith)]
   exact ⟨rfl, hE⟩
 
 /-! ## A call -/
@@ -190,14 +190,14 @@ theorem setup_call (hok : as.all (Arg.ok Y) = true)
 
 theorem call_hd {s₀ s₁ : State} (hp : TPre Y s₀) (hN : 96 ≤ Y.stk) (h₁ : Ctx Y s₀ s₁) (hst : stackUse c ≤ 56)
     (hn : as.length ≤ 5) : 4 * (argRs as.length).length + stackUse c + 4 ≤ (s₁.gpr .esp).toNat := by
-  rw [argRs_len (by omega)]; have := ctx_E' hp h₁ hN; omega
+  rw [argRs_len (by omega_arith)]; have := ctx_E' hp h₁ hN; omega_arith
 
 theorem call_cov {s₀ s₁ : State} (hp : TPre Y s₀) (h₁ : Ctx Y s₀ s₁) (hn : as.length ≤ 5)
     (hr : rB.all Y.ok = true) (hw : wB.all Y.okW = true) :
     Covers (rdR s₀ rB ++ wrR s₀ wB as.length)
         (s₁.rd ++ below (s₁.gpr .esp) (4 * (argRs as.length).length) :: s₁.wr) ∧
       Covers (wrR s₀ wB as.length) (below (s₁.gpr .esp) (4 * (argRs as.length).length) :: s₁.wr) := by
-  rw [argRs_len (by omega)]
+  rw [argRs_len (by omega_arith)]
   refine covers_of (fun r h => ?_) fun r h => ?_
   · obtain ⟨b, hb, rfl⟩ := List.mem_map.mp h
     exact Buf.within hp (List.all_eq_true.mp hr b hb) h₁.rd h₁.wr
@@ -212,16 +212,16 @@ theorem call_fr {s₀ s₁ : State} (hp : TPre Y s₀) (hN : 96 ≤ Y.stk) (h₁
     (hn : as.length ≤ 5) {m m' : Mem}
     (fr : Frame (wrR s₀ wB as.length ++ [below (s₁.gpr .esp) (4 * (argRs as.length).length + stackUse c + 4)]) m m') :
     Frame (FR s₀ wB 80) m m' := by
-  rw [h₁.esp, argRs_len (by omega)] at fr
+  rw [h₁.esp, argRs_len (by omega_arith)] at fr
   refine fr.sub fun r hr => ?_
   simp only [List.mem_append, List.mem_singleton] at hr
   rcases hr with (hr | rfl) | rfl
   · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
-  · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stk_sub hp (by omega) (by omega)⟩
-  · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stk_sub hp (by omega) (by omega)⟩
+  · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stk_sub hp (by omega_arith) (by omega_arith)⟩
+  · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stk_sub hp (by omega_arith) (by omega_arith)⟩
 
 theorem call_W {s₀ : State} (hp : TPre Y s₀) (hN : 96 ≤ Y.stk) (hw : wB.all Y.okW = true) :
-    ∀ r ∈ FR s₀ wB 80, ∃ r' ∈ W Y s₀, Region.Sub r r' := wr_sub hp hw (by omega)
+    ∀ r ∈ FR s₀ wB 80, ∃ r' ∈ W Y s₀, Region.Sub r r' := wr_sub hp hw (by omega_arith)
 
 theorem call_pubs {s₀ s₀' s s' e e' : State} (hq : TPub Y lk s₀ s₀') (hok : as.all (Arg.ok Y) = true)
     (he : Ent Y s₀ s as e) (he' : Ent Y s₀' s' as e') :
@@ -247,7 +247,7 @@ theorem callP_piece (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stackUs
       B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callP Y.sc nm c as) := by
   refine Piece.seq (setup_call as hok tt hA) ?_
-  refine Piece.callWith hv.1 hv.2.1 hsp (argRs_ne hn₀ (by omega)) (esp_argRs _)
+  refine Piece.callWith hv.1 hv.2.1 hsp (argRs_ne hn₀ (by omega_arith)) (esp_argRs _)
     (fun s₀ => rdR s₀ rB) (fun s₀ => wrR s₀ wB as.length)
     (fun s₀ s₁ hp ⟨_, _, h₁, _⟩ => call_hd as hp hN h₁ hst hn)
     (fun s₀ s₁ hp ⟨s, ha, h₁, m₁, v⟩ => ⟨hpre s₀ s _ hp ha (ent_of hp hN h₁ m₁ hn v),
@@ -285,7 +285,7 @@ theorem callPR_piece (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stackU
         k.post (e.withRegions (rdR s₀ rB) (wrR s₀ wB as.length)) s₂) → B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callPR Y.sc nm c as) := by
   refine Piece.seq (setup_call as hok tt hA) ?_
-  refine Piece.callRet hv.1 hv.2.1 hsp (argRs_ne hn₀ (by omega)) (esp_argRs _)
+  refine Piece.callRet hv.1 hv.2.1 hsp (argRs_ne hn₀ (by omega_arith)) (esp_argRs _)
     (fun s₀ => rdR s₀ rB) (fun s₀ => wrR s₀ wB as.length)
     (fun s₀ s₁ hp ⟨_, _, h₁, _⟩ => call_hd as hp hN h₁ hst hn)
     (fun s₀ s₁ hp ⟨s, ha, h₁, m₁, v⟩ => ⟨hpre s₀ s _ hp ha (ent_of hp hN h₁ m₁ hn v),
@@ -322,7 +322,7 @@ theorem call_covRO {s₀ s₁ : State} (hp : TPre Y s₀) (h₁ : Ctx Y s₀ s�
     Covers (rdRO s₀ rB as.length ++ wrRO s₀ wB)
         (s₁.rd ++ below (s₁.gpr .esp) (4 * (argRs as.length).length) :: s₁.wr) ∧
       Covers (wrRO s₀ wB) (below (s₁.gpr .esp) (4 * (argRs as.length).length) :: s₁.wr) := by
-  rw [argRs_len (by omega)]
+  rw [argRs_len (by omega_arith)]
   refine ⟨Covers.of_sub fun r hr' => ?_, Covers.of_sub fun r hr' => ?_⟩
   · rcases List.mem_append.mp hr' with hr' | hr'
     · rcases List.mem_append.mp hr' with hr' | hr'
@@ -347,12 +347,12 @@ theorem call_frRO {s₀ s₁ : State} (hp : TPre Y s₀) (hN : 96 ≤ Y.stk) (h�
     (hn : as.length ≤ 5) {m m' : Mem}
     (fr : Frame (wrRO s₀ wB ++ [below (s₁.gpr .esp) (4 * (argRs as.length).length + stackUse c + 4)]) m m') :
     Frame (FR s₀ wB 80) m m' := by
-  rw [h₁.esp, argRs_len (by omega)] at fr
+  rw [h₁.esp, argRs_len (by omega_arith)] at fr
   refine fr.sub fun r hr => ?_
   rcases List.mem_append.mp hr with hr | hr
   · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
   · rw [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stk_sub hp (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stk_sub hp (by omega_arith) (by omega_arith)⟩
 
 /-- `callPR_piece`, for a function that may not write its arguments. -/
 theorem callPR_pieceRO (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stackUse c ≤ 56)
@@ -372,7 +372,7 @@ theorem callPR_pieceRO (hv : Verified X86.target c k) (hsp : NoSp c) (hst : stac
         k.post (e.withRegions (rdRO s₀ rB as.length) (wrRO s₀ wB)) s₂) → B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (callPR Y.sc nm c as) := by
   refine Piece.seq (setup_call as hok tt hA) ?_
-  refine Piece.callRet hv.1 hv.2.1 hsp (argRs_ne hn₀ (by omega)) (esp_argRs _)
+  refine Piece.callRet hv.1 hv.2.1 hsp (argRs_ne hn₀ (by omega_arith)) (esp_argRs _)
     (fun s₀ => rdRO s₀ rB as.length) (fun s₀ => wrRO s₀ wB)
     (fun s₀ s₁ hp ⟨_, _, h₁, _⟩ => call_hd as hp hN h₁ hst hn)
     (fun s₀ s₁ hp ⟨s, ha, h₁, m₁, v⟩ => ⟨hpre s₀ s _ hp ha (ent_of hp hN h₁ m₁ hn v),

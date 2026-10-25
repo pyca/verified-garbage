@@ -133,29 +133,29 @@ theorem slot_tFrame {d : Nat} (h₁ : 176 ≤ d) (h₂ : d + 8 ≤ 512) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.lay.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact L.lay.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact L.lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.lay.stk_w (by omega)).symm
+  · exact (L.lay.st_w (by decide) (.inr ⟨by omega_arith, by omega_arith⟩)).symm
+  · exact L.lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · exact L.lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact (L.lay.stk_w (by omega_arith)).symm
 
 theorem slot_absFrame {d : Nat} (h₁ : 176 ≤ d) (h₂ : d + 8 ≤ 512) :
     ∀ r ∈ absFrame St W SP 16, (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.lay.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact (L.lay.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact L.lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.lay.stk_w (by omega)).symm
+  · exact (L.lay.st_w (by decide) (.inr ⟨by omega_arith, by omega_arith⟩)).symm
+  · exact (L.lay.st_w (by decide) (.inr ⟨by omega_arith, by omega_arith⟩)).symm
+  · exact L.lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact (L.lay.stk_w (by omega_arith)).symm
 
 theorem slot_crFrame {s : State} {D : Addr} {n d : Nat} (hd : DataW4 Ctx St W SP s D n) (h₁ : 176 ≤ d)
     (h₂ : d + 8 ≤ 512) : ∀ r ∈ crFrame St SP D n, (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (hd.dw.ok.w.sub_right (Lay.wSub (by omega))).symm
-  · exact (L.lay.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact (L.kw.sub_right (Lay.wSub (by omega))).symm
+  · exact (hd.dw.ok.w.sub_right (Lay.wSub (by omega_arith))).symm
+  · exact (L.lay.st_w (by decide) (.inr ⟨by omega_arith, by omega_arith⟩)).symm
+  · exact (L.kw.sub_right (Lay.wSub (by omega_arith))).symm
 
 omit L in
 theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW4 Ctx St W SP s D n) :
@@ -247,7 +247,7 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
   have hlt := hd.dw.ok.lt
   have hx : (a ++ zeros (padLen a.length) ++ c₀).length % 16 = c₀.length % 16 := by
     have := Proof.Gcm.length_pad_mod a.length
-    simp only [List.length_append, Proof.Gcm.length_zeros]; omega
+    simp only [List.length_append, Proof.Gcm.length_zeros]; omega_arith
   simp only [streamText]
   obtain ⟨s₁, run₁, hz₁, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp hbp hlt
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
@@ -269,7 +269,7 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
   have hc₂ : ciphOf s₂.mem Ctx = ciphOf m₀ Ctx := ciph_frame f₂ (ctx_tFrame16 L)
   have hH₂ : blockAt s₂.mem (Ctx + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame f₂ fun r hr => (ctx_tFrame16 L r hr).sub_left (Lay.ctxSub (by decide)), hH]
-  have hD₂ : bytesAt s₂.mem D n = bytesAt m₀ D n := bytesAt_frame f₂ (data_tFrame hd) (by omega)
+  have hD₂ : bytesAt s₂.mem D n = bytesAt m₀ D n := bytesAt_frame f₂ (data_tFrame hd) (by omega_arith)
   have hC₂ : Hyp → Ctr s₂.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb c₀.length :=
     fun hy => ctr_frame f₂ (ctr_tFrame16 L) (hyC hy)
   -- The data, its length and the text so far modulo 16.
@@ -286,7 +286,7 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
   have hne : ∀ y : List Byte, y.length = n → c₀ ++ y ≠ [] := fun y hy e => h0 (by
     have := congrArg List.length e
     rw [List.length_append, hy, List.length_nil] at this
-    omega)
+    omega_arith)
   cases enc
   · -- Decrypting: the ciphertext absorbed, then decrypted.
     simp only [partWith, Bool.false_eq_true, ↓reduceIte]
@@ -307,7 +307,7 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
     have hc₅ : ciphOf s₅.mem Ctx = ciphOf m₀ Ctx := by
       rw [hm₅, ciph_frame ao.frame (ctx_absFrame16 L), hm₃, hc₂]
     have hD₅ : bytesAt s₅.mem D n = bytesAt m₀ D n := by
-      rw [hm₅, bytesAt_frame ao.frame (data_absFrame (yo := 16) (.inr rfl) hd₃.dw.ok) (by omega), hm₃, hD₂]
+      rw [hm₅, bytesAt_frame ao.frame (data_absFrame (yo := 16) (.inr rfl) hd₃.dw.ok) (by omega_arith), hm₃, hD₂]
     refine WP.mono (WP.with_rdwr (crypt_ok L (icb := icb) (P := c₀.length) ⟨he₅, h12₅, hbp₅, hbx₅, hd₅⟩))
       fun s₆ ⟨co, rd₆, wr₆⟩ => ⟨co.env, by rw [rd₆, hrd₅, rd₄, hrd₃, rd₂, hrd₁], by rw [wr₆, hwr₅, wr₄, hwr₃, wr₂, hwr₁],
         (tFrame_st f₂).trans ((hm₃ ▸ absFrame_st ao.frame).trans (hm₅ ▸ crFrame_st co.frame)), fun hy => ⟨?_, ?_, ?_⟩⟩
@@ -360,7 +360,7 @@ theorem streamText_ok (enc : Bool) {Hyp : Prop} {H icb : Block} {D : Addr} {n : 
       exact ctr_frame ao.frame (ctr_absFrame16 L) (hm₅ ▸ C (hC₂ hy))
     · have C := co.out
       rw [hc₃, hm₃, hD₂] at C
-      rw [bytesAt_frame ao.frame (data_absFrame (yo := 16) (.inr rfl) hd₅.dw.ok) (by omega), hm₅]
+      rw [bytesAt_frame ao.frame (data_absFrame (yo := 16) (.inr rfl) hd₅.dw.ok) (by omega_arith), hm₅]
       exact C (hC₂ hy)
 
 end

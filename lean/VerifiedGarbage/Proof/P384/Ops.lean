@@ -68,9 +68,9 @@ theorem opKeepX_wordsVal {base : Addr} {o : Nat} {s s' : State}
   | k + 1, y, ho, ht, hy => by
     simp only [wordsVal]
     have hw : word s'.mem base y = word s.mem base y :=
-      Mem.readW_congr fun i hi => h.mem _ (by rw [ofs_off base (by omega)]; omega)
-        (by rw [ofs_off base (by omega)]; omega)
-    rw [opKeepX_wordsVal h (k := k) (y := y + 8) (by omega) (by omega) (by omega), hw]
+      Mem.readW_congr fun i hi => h.mem _ (by rw [ofs_off base (by omega_arith)]; omega_arith)
+        (by rw [ofs_off base (by omega_arith)]; omega_arith)
+    rw [opKeepX_wordsVal h (k := k) (y := y + 8) (by omega_arith) (by omega_arith) (by omega_arith), hw]
 
 /-- `Inv.update`, for `OpKeepX`. -/
 theorem Inv.updateX {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
@@ -88,12 +88,12 @@ theorem Inv.updateX {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} 
       have := hL.apart x o hx ho hxo
       have := hL.tmp x hx
       have := hL.le x hx
-      exact opKeepX_wordsVal hk (by omega) (by omega) (by omega)
+      exact opKeepX_wordsVal hk (by omega_arith) (by omega_arith) (by omega_arith)
   refine ⟨⟨(hk.gpr _ x0_not_clobX).trans hI.scr.x0, hk.wr ▸ hI.scr.wr, hn, hI.scr.enc⟩,
     ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red, hM.call⟩, ?_, ?_, ?_⟩
   · have := hM.mo
     have := hM.sep
-    rw [opKeepX_wordsVal hk (by omega) (by omega) (by omega)]
+    rw [opKeepX_wordsVal hk (by omega_arith) (by omega_arith) (by omega_arith)]
     exact hM.val
   · intro x hx
     rcases List.mem_cons.mp hx with rfl | hx
@@ -145,9 +145,9 @@ theorem redLoad_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     have h := hm
     simp only [wordsVal] at h
     rw [show P384Mul.c1.toNat = p384 % 2 ^ 64 by decide]
-    omega
+    omega_arith
   rw [redLoad, ← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (ldR_ok hs.ptr (d := M.mo) (by omega) hmo8 .x17) fun s₁ ⟨l₁, k₁, _⟩ => ?_
+  refine WP.mono (ldR_ok hs.ptr (d := M.mo) (by omega_arith) hmo8 .x17) fun s₁ ⟨l₁, k₁, _⟩ => ?_
   have z₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (by decide), hz]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, RegUpd.gpr_write,
@@ -212,10 +212,10 @@ theorem finish_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   rw [hH₂] at e₃
   have hsum : 2 ^ 384 * (regsVal s₃ P384Mul.lowRegs + 2 ^ 384 * (s₃.gpr .x21).toNat) =
       regsVal s P384Mul.accRegs + W * p384 := by
-    rw [e₃, Nat.mul_add, e₂, e₃']; omega
+    rw [e₃, Nat.mul_add, e₂, e₃']; omega_arith
   have hlt : regsVal s P384Mul.accRegs + W * p384 < 2 ^ 384 * (2 * p384) := by
     have h2 : W * p384 < 2 ^ 384 * p384 := Nat.mul_lt_mul_of_pos_right (by simpa using hW) (by decide)
-    omega
+    omega_arith
   rw [← hsum] at hlt
   have hV := Nat.lt_of_mul_lt_mul_left hlt
   -- The sum reduced.

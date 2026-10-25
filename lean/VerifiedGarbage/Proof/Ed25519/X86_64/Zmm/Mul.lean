@@ -40,7 +40,7 @@ theorem outside_readW {m m' : Mem} {b : Addr} {o n : Nat} (h : Outside b o n m m
     m'.readW (b + BitVec.ofNat 64 d) w = m.readW (b + BitVec.ofNat 64 d) w :=
   Mem.readW_congr fun i hi => by
     rw [Offset.add_ofNat_add_ofNat]
-    exact h _ (by simp only [ofs]; rw [off_ofNat _ (by omega)]; omega)
+    exact h _ (by simp only [ofs]; rw [off_ofNat _ (by omega_arith)]; omega_arith)
 
 /-- The halves see no change at `EMX`, which is in the window. -/
 theorem hmem_mx {b : Addr} {m m' : Mem} (h : Outside b EMX 8 m m') {h' : Nat}
@@ -51,18 +51,18 @@ theorem hmem_mx {b : Addr} {m m' : Mem} (h : Outside b EMX 8 m m') {h' : Nat}
   · rename_i hw
     simp only [InWin] at hw
     exact h _ (by
-      simp only [ofs]; rw [off_ofNat _ (by unfold zoff ZB; have := (a - b).isLt; omega)]
-      unfold zoff ZB EMX; omega)
+      simp only [ofs]; rw [off_ofNat _ (by unfold zoff ZB; have := (a - b).isLt; omega_arith)]
+      unfold zoff ZB EMX; omega_arith)
   · rename_i hw
     simp only [InWin] at hw
-    exact h _ (by simp only [ofs]; unfold EMX; omega)
+    exact h _ (by simp only [ofs]; unfold EMX; omega_arith)
 
 theorem ZFrame.outside {s₀ s : State} {b : Addr} (h : ZFrame s₀ b s) : Outside b 1152 5424 s₀.mem s.mem :=
-  fun a ha => h.mem a (by unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZB; omega)
+  fun a ha => h.mem a (by unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZB; omega_arith)
 
 theorem half_lanes {s t : State} (b : Addr) (hz : ∀ r i, i < 4 → t.zlane r i = s.zlane r i) {h : Nat}
     (hh : h < 2) (r l i : Nat) (hl : l < 4) : lanes (Zmm.half b h t) r l i = lanes (Zmm.half b h s) r l i := by
-  simp only [lanes]; rw [qw_half b t _ hl, qw_half b s _ hl]; simp only [zq]; rw [hz _ _ (by omega)]
+  simp only [lanes]; rw [qw_half b t _ hl, qw_half b s _ hl]; simp only [zq]; rw [hz _ _ (by omega_arith)]
 
 /-! ## Before the loop -/
 
@@ -94,18 +94,18 @@ theorem zprep_ok {s : State} {base : Addr} (hs : Scratch s base) :
   refine WP.mono (vload_wp hs₂.rdi (ctx_of hs₂) ha hc hd hb h8 h9 h10) fun s₃ ⟨g₃, rd₃, wr₃, o₃, k₃, u₃⟩ => ?_
   have hs₃ : Scratch s₃ base := ⟨by rw [g₃]; exact hs₂.rdi, by rw [wr₃]; exact hs₂.wr, hs.nowrap⟩
   refine WP.mono (zconsts_ok hs₃ k₃) fun t ⟨hk, mk, k2, ft, qt, gt, rdt, wrt, _⟩ => ?_
-  have ot : Outside base ZB 1856 s₃.mem t.mem := fun a ha => ft a (by unfold ZB at *; omega)
+  have ot : Outside base ZB 1856 s₃.mem t.mem := fun a ha => ft a (by unfold ZB at *; omega_arith)
   have fs₃ : ∀ (i : Slot), i.val < 16 → F s₃.mem base (offset i) = evalOps zConstOps (env s.mem base) i :=
     fun i hi => by
-      rw [Outside_F o₃ (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega)), m₂, ← v₁]
+      rw [Outside_F o₃ (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset]; omega_arith)), m₂, ← v₁]
       rfl
   have fs : ∀ (i : Slot), i.val < 16 → F t.mem base (offset i) = evalOps zConstOps (env s.mem base) i :=
     fun i hi => by
-      rw [Outside_F ot (by simp only [offset]; omega) (Or.inl (by simp only [offset, ZB]; omega)), fs₃ i hi]
+      rw [Outside_F ot (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset, ZB]; omega_arith)), fs₃ i hi]
   have lt : ∀ h < 2, ∀ l < 4, ∀ i < 5, lanes (Zmm.half base h t) 0 l i = lanes s₃ 0 l i :=
     fun h hh l hl i hi => by simp only [lanes, Nat.zero_add]; rw [qt h hh i hi l hl]
   have pt : lanePt s₃ = combG := by
-    have e : ∀ l (hl : l < 4), fe5 (lanes s₃ 0 l) = env s₁.mem base ⟨l, by omega⟩ := fun l hl => by
+    have e : ∀ l (hl : l < 4), fe5 (lanes s₃ 0 l) = env s₁.mem base ⟨l, by omega_arith⟩ := fun l hl => by
       rw [fe5_congr (fun i hi => (u₃ l hl i hi).1), fe5_load, m₂]; rfl
     simp only [lanePt]
     rw [e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide),
@@ -114,9 +114,9 @@ theorem zprep_ok {s : State} {base : Addr} (hs : Scratch s base) :
   have cz := zConst_env (env s.mem base)
   refine ⟨⟨by rw [gt]; exact hs₃.rdi, by rw [wrt]; exact hs₃.wr, hs.nowrap⟩, fun r hr => ?_,
     by rw [rdt, rd₃, rd₂, k₁.rd], by rw [wrt, wr₃, wr₂, k₁.wr], ?_,
-    k₃.of_mq fun d _ h2 => outside_mq ot (Or.inl (by unfold ZB; omega)) (by omega),
+    k₃.of_mq fun d _ h2 => outside_mq ot (Or.inl (by unfold ZB; omega_arith)) (by omega_arith),
     ⟨by rw [gt]; exact hs₃.rdi, by rw [wrt]; exact hs₃.wr, hs.nowrap, mk⟩, hk,
-    fun h hh l hl i hi => by rw [lt h hh l hl i hi]; have := (u₃ l hl i hi).2; omega,
+    fun h hh l hl i hi => by rw [lt h hh l hl i hi]; have := (u₃ l hl i hi).2; omega_arith,
     fun h hh => by rw [lanePt_eq_of (lt h hh)]; exact pt,
     fun h hh => by rw [k2 h hh, fs₃ 15 (by decide)]; exact cz.2.2.2.2,
     by rw [fs 12 (by decide)]; exact cz.2.1, by rw [fs 13 (by decide)]; exact cz.2.2.1,
@@ -125,8 +125,8 @@ theorem zprep_ok {s : State} {base : Addr} (hs : Scratch s base) :
   · rw [m₂] at o₃
     exact (TableFrame.workspace k₁.mem).trans (((TableFrame.table o₃).mono (by decide) (by decide)).trans
       ((TableFrame.table ot).mono (by decide) (by decide)))
-  · rw [ot _ (Or.inl (by rw [bits_far hq]; unfold ZB; omega)), o₃ _ (Or.inl (by rw [bits_far hq]; omega)), m₂,
-      k₁.mem _ (Or.inr (by rw [bits_far hq]; omega))]
+  · rw [ot _ (Or.inl (by rw [bits_far hq]; unfold ZB; omega_arith)), o₃ _ (Or.inl (by rw [bits_far hq]; omega_arith)), m₂,
+      k₁.mem _ (Or.inr (by rw [bits_far hq]; omega_arith))]
 
 /-! ## The multiplication -/
 
@@ -178,16 +178,16 @@ theorem zcomb_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
     { scratch := hs₃
       zok := ⟨hs₃.rdi, hs₃.wr, hs.nowrap, fun sel hsel i hi => by
         have := hmr sel hsel
-        rw [outside_readW o₃ (Or.inr (by unfold ZMASK EMX at *; omega)) (by omega)]
+        rw [outside_readW o₃ (Or.inr (by unfold ZMASK EMX at *; omega_arith)) (by omega_arith)]
         exact z₁.masks sel hsel i hi⟩
       hconsts := fun h hh => by
         show EConsts (hmem base h s₃.mem) base
         rw [hmem_mx o₃ hh]; exact hk₁ h hh
       consts := (k₁.outsideMx k₂.mem).outsideMx k₃.mem
       k2 := fun h hh => by
-        rw [Outside_F o₃ (by unfold ZK2; omega) (Or.inr (by unfold ZK2 EMX; omega))]; exact k2₁ h hh
+        rw [Outside_F o₃ (by unfold ZK2; omega_arith) (Or.inr (by unfold ZK2 EMX; omega_arith))]; exact k2₁ h hh
       bits := fun q hq => by
-        rw [o₃ _ (Or.inl (by rw [bits_far hq]; simp only [EMX]; omega)), b₁ q hq]; exact hb q hq
+        rw [o₃ _ (Or.inl (by rw [bits_far hq]; simp only [EMX]; omega_arith)), b₁ q hq]; exact hb q hq
       tbl := ht.keep hfar keep₃ (by rw [sy₃, sy₂, sy₁])
       far := hfar }
   refine WP.seq (WP.seq (WP.mono_syms (zscal rfl (mov32_wp s₃ .rbx 0))
@@ -219,8 +219,8 @@ theorem zcomb_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
     have ow := hw.frame.outside
     have fw : ∀ (i : Slot), 12 ≤ i.val → i.val < 16 → F w.mem base (offset i) = F s₁.mem base (offset i) :=
       fun i h1 h2 => by
-        rw [Outside_F ow (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega)),
-          Outside_F o₃ (by simp only [offset]; omega) (Or.inl (by simp only [offset, EMX]; omega))]
+        rw [Outside_F ow (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset]; omega_arith)),
+          Outside_F o₃ (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset, EMX]; omega_arith))]
     refine WP.mono (ztail_ok hsw (hw.frame.consts hp) (hw.small 0 (by decide)) (hw.small 1 (by decide))
       hw.valA hw.valB (by rw [fw 12 (by decide) (by decide)]; exact f12)
       (by rw [fw 13 (by decide) (by decide)]; exact f13) (by rw [fw 14 (by decide) (by decide)]; exact f14)
@@ -243,16 +243,16 @@ theorem zcomb_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
   refine WP.seq ?_
   apply WP.loop (fun n t => ZInv s₃ base (26 - n) (zvA S (26 - n)) (zvB S (26 - n)) t ∧ 0 < n ∧ n ≤ 26) (n := 26)
   · intro n t ⟨ht', hn0, hn⟩
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    refine WP.mono (zstep_ok hp hS ht' (by omega)) fun u ⟨uz, hu⟩ => ?_
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_arith⟩
+    refine WP.mono (zstep_ok hp hS ht' (by omega_arith)) fun u ⟨uz, hu⟩ => ?_
     rw [← zvA_succ, ← zvB_succ] at hu
     by_cases hk : k = 0
     · subst hk
       exact Or.inl ⟨by simp only [eval, uz, show 26 - (0 + 1) + 1 = 26 from rfl, decide_true,
         Option.map_some, Bool.not_true], fin u hu⟩
-    · refine Or.inr ⟨by simp only [eval, uz, show ¬ (26 - (k + 1) + 1 = 26) by omega, decide_false,
-        Option.map_some, Bool.not_false], k, by omega, ?_, by omega, by omega⟩
-      rw [show 26 - k = 26 - (k + 1) + 1 by omega]; exact hu
+    · refine Or.inr ⟨by simp only [eval, uz, show ¬ (26 - (k + 1) + 1 = 26) by omega_arith, decide_false,
+        Option.map_some, Bool.not_false], k, by omega_arith, ?_, by omega_arith, by omega_arith⟩
+      rw [show 26 - k = 26 - (k + 1) + 1 by omega_arith]; exact hu
   · exact ⟨i₄, by decide, by decide⟩
 
 end VG.Proof.Ed25519.X86_64.Zmm

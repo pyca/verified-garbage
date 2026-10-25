@@ -55,7 +55,7 @@ theorem ResidentInv.of_temp {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {
       blockAtMem u.mem (W + BitVec.ofNat 64 a) = blockAtMem t.mem (W + BitVec.ofNat 64 a) :=
     blockAtMem_frame fr fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint W (.inl ha) (by omega) (by decide)
+      exact Offset.disjoint W (.inl ha) (by omega_arith) (by decide)
   refine { P with
     env := P.env.keep (fun r hr => g r (by
       simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -75,7 +75,7 @@ theorem ResidentInv.of_temp {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {
   intro k hk
   rw [blockAtMem_frame fr (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hD.slice (a := 16 * k) (k := 16) (by omega)).w.sub_right (Lay.wSub (by decide))), P.blk k hk]
+    exact (hD.slice (a := 16 * k) (k := 16) (by omega_arith)).w.sub_right (Lay.wSub (by decide))), P.blk k hk]
 
 
 /-- One payload block, with both accumulators in registers. -/
@@ -110,7 +110,7 @@ theorem residentStep_ok {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 l
   have run₀ : runBlock isa [.vop (.logic .eor .v3 .v3 v)] s = some u := by orun [VOp.eval]
   have ofs : vBlock (u.v .v3) = offAt O0 l (i + 1) := by
     rw [v_setV_self, vBlock_xor, P.ofs, hv]; rfl
-  have B := (hD.of_eq P.rd P.wr).slice (a := 16 * i) (k := 16) (by omega)
+  have B := (hD.of_eq P.rd P.wr).slice (a := 16 * i) (k := 16) (by omega_arith)
   obtain ⟨t, run, fr, val, ck, v3, x23, x25, x24, g, sp, rd, wr⟩ := residentBlock_ok mode u P.x23
     (B.rd _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
     (B.wr _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
@@ -123,12 +123,12 @@ theorem residentStep_ok {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 l
   · simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide) (by decide)
   · simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨D, 16 * m⟩, by simp, Offset.sub_base D (by omega)⟩
-  · rw [x23, Offset.add_add, show 16 * i + 16 = 16 * (i + 1) by omega]
+    exact ⟨⟨D, 16 * m⟩, by simp, Offset.sub_base D (by omega_arith)⟩
+  · rw [x23, Offset.add_add, show 16 * i + 16 = 16 * (i + 1) by omega_arith]
   · rw [x25]; change s.gpr .x25 + 1#64 = _
     rw [P.x25, ← BitVec.ofNat_add]
   · rw [x24]; change s.gpr .x24 - 1#64 = _
-    rw [P.x24, Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+    rw [P.x24, Offset.ofNat_sub_ofNat (by omega_arith), Nat.sub_sub]
   · rw [v3, ofs]
   · rw [ck, old, ofs]; change ckOp mode (vBlock (s.v .v5)) (X i) _ = _
     rw [P.ck, hck]
@@ -138,10 +138,10 @@ theorem residentStep_ok {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 l
       rw [val, old, ofs]; simp
     · rw [blockAtMem_frame fr (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint D (by omega) (by have := hD.wrap; omega) (by have := hD.wrap; omega)), memu, P.blk k hk]
+        exact Offset.disjoint D (by omega_arith) (by have := hD.wrap; omega_arith) (by have := hD.wrap; omega_arith)), memu, P.blk k hk]
       by_cases hki' : k < i
-      · simp only [ite_eq_left hki', ite_eq_left (show k < i + 1 by omega)]
-      · simp only [ite_eq_right hki', ite_eq_right (show ¬k < i + 1 by omega)]
+      · simp only [ite_eq_left hki', ite_eq_left (show k < i + 1 by omega_arith)]
+      · simp only [ite_eq_right hki', ite_eq_right (show ¬k < i + 1 by omega_arith)]
   · rw [blockAtMem_frame fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (B.w.sub_right (Lay.wSub (W := W) (d := l0O) (n := 16) (by decide))).symm), memu, P.l0]
@@ -153,14 +153,12 @@ theorem residentStep_ok {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 l
 theorem residentStep_keeps (v : VReg) (mode : CkMode) :
     (residentStep v mode).allInstrs keepsCache = true := by
   rw [Code.allInstrs_eq]
-  cases mode <;> simp [residentStep, residentBody, nextBlock, instrs, List.all_append,
-    keepsCache, vdstOf, VOp.dst, Impl.AesGcm.AArch64.ptr]
+  cases mode <;> rfl
 
 theorem batchLast_noV (v : VReg) :
     batchLastIncrement.allInstrs (fun i => decide (vdstOf i ≠ some v)) = true := by
   rw [Code.allInstrs_eq]
-  simp [batchLastIncrement, cachedIncrement, dbl, low1, instrs, List.all_append, vdstOf, ld, st,
-    Impl.AesGcm.AArch64.imm]
+  rfl
 
 theorem residentLoad_ok {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 l : Block}
     {X ckF : Nat → Block} {s t₀ : State}
@@ -205,7 +203,7 @@ theorem residentStore_ok {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 
     rw [blockAtMem_storeV, P.ck]
   · intro k hk
     change blockAtMem m₂ _ = _
-    have B := hD.slice (a := 16 * k) (k := 16) (by omega)
+    have B := hD.slice (a := 16 * k) (k := 16) (by omega_arith)
     rw [blockAtMem_frame fr (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact B.w.sub_right (Lay.wSub (by decide))), P.blk k hk]
@@ -224,7 +222,7 @@ theorem residentCount_ok {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 
   refine ⟨P.of_temp hD (Frame.refl _ _) (fun r hr => ?_) rfl rfl rfl rfl rfl, ?_, rfl⟩
   · have h : r ≠ .x9 := fun h => hr (by simp [ntzRegs, h])
     simp [gpr_write, h]
-  · simp [gpr_write, P.x24, Proof.AesGcm.AArch64.lsr_ofNat _ _ (show m-i < 2^64 by omega)]
+  · simp [gpr_write, P.x24, Proof.AesGcm.AArch64.lsr_ofNat _ _ (show m-i < 2^64 by omega_arith)]
 
 section
 variable {K W D : Addr} {R n : Nat} {SP : Addr} {m : Nat} {O0 l : Block}
@@ -243,8 +241,8 @@ include hm in
  theorem residentLast_ok {s : State} {k : Nat} (hi : 8 * k + 7 < m)
     (P : ResidentInv K W D R n SP m O0 l X ckF t₀ s (8 * k + 7)) (C : LCache l s) :
     WP isa (residentLast mode) s fun t => ResidentInv K W D R n SP m O0 l X ckF t₀ t (8 * k + 7 + 1) ∧ LCache l t := by
-  obtain ⟨tr, u, ex, Q⟩ := batchLastIncrement_ok (k := k) P.env C (by omega)
-    (by simpa only [show 8 * k + 7 + 1 = 8 * k + 8 by omega] using P.x25)
+  obtain ⟨tr, u, ex, Q⟩ := batchLastIncrement_ok (k := k) P.env C (by omega_arith)
+    (by simpa only [show 8 * k + 7 + 1 = 8 * k + 8 by omega_arith] using P.x25)
   have vv (v : VReg) : u.v v = s.v v := Exec.vec (r := v)
     (fun i hi => of_decide_eq_true (List.all_eq_true.mp
       ((Code.allInstrs_eq _ batchLastIncrement) ▸ batchLast_noV v) i hi)) ex
@@ -267,23 +265,23 @@ include hm in
     WP isa (residentBatch mode) t fun u =>
       ResidentInv K W D R n SP m O0 l X ckF t₀ u (8 * (k + 1)) ∧ LCache l u := by
   unfold residentBatch
-  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega) P C .v0
-    (by rw [Proof.Ocb.ntz_odd (by omega)]; exact C.1)) fun t₁ ⟨P₁, C₁⟩ => ?_)
-  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega) P₁ C₁ .v1
-    (by rw [show 8 * k + 1 + 1 = 8 * k + 2 by omega, ntz_eight_two]; exact C₁.2.1)) fun t₂ ⟨P₂, C₂⟩ => ?_)
-  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega) P₂ C₂ .v0
-    (by rw [Proof.Ocb.ntz_odd (by omega)]; exact C₂.1)) fun t₃ ⟨P₃, C₃⟩ => ?_)
-  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega) P₃ C₃ .v2
-    (by rw [show 8 * k + 1 + 1 + 1 + 1 = 8 * k + 4 by omega, ntz_eight_four]; exact C₃.2.2)) fun t₄ ⟨P₄, C₄⟩ => ?_)
-  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega) P₄ C₄ .v0
-    (by rw [Proof.Ocb.ntz_odd (by omega)]; exact C₄.1)) fun t₅ ⟨P₅, C₅⟩ => ?_)
-  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega) P₅ C₅ .v1
-    (by rw [show 8 * k + 1 + 1 + 1 + 1 + 1 + 1 = 8 * k + 6 by omega, ntz_eight_six]; exact C₅.2.1)) fun t₆ ⟨P₆, C₆⟩ => ?_)
-  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega) P₆ C₆ .v0
-    (by rw [Proof.Ocb.ntz_odd (by omega)]; exact C₆.1)) fun t₇ ⟨P₇, C₇⟩ => ?_)
-  refine WP.mono (residentLast_ok (R := R) (n := n) (SP := SP) (k := k) mode hckF hD hm (by omega)
-    (by simpa only [show 8 * k + 1 + 1 + 1 + 1 + 1 + 1 + 1 = 8 * k + 7 by omega] using P₇) C₇) fun u ⟨P₈, C₈⟩ => ?_
-  exact ⟨by simpa only [show 8 * k + 7 + 1 = 8 * (k + 1) by omega] using P₈, C₈⟩
+  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega_arith) P C .v0
+    (by rw [Proof.Ocb.ntz_odd (by omega_arith)]; exact C.1)) fun t₁ ⟨P₁, C₁⟩ => ?_)
+  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega_arith) P₁ C₁ .v1
+    (by rw [show 8 * k + 1 + 1 = 8 * k + 2 by omega_arith, ntz_eight_two]; exact C₁.2.1)) fun t₂ ⟨P₂, C₂⟩ => ?_)
+  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega_arith) P₂ C₂ .v0
+    (by rw [Proof.Ocb.ntz_odd (by omega_arith)]; exact C₂.1)) fun t₃ ⟨P₃, C₃⟩ => ?_)
+  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega_arith) P₃ C₃ .v2
+    (by rw [show 8 * k + 1 + 1 + 1 + 1 = 8 * k + 4 by omega_arith, ntz_eight_four]; exact C₃.2.2)) fun t₄ ⟨P₄, C₄⟩ => ?_)
+  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega_arith) P₄ C₄ .v0
+    (by rw [Proof.Ocb.ntz_odd (by omega_arith)]; exact C₄.1)) fun t₅ ⟨P₅, C₅⟩ => ?_)
+  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega_arith) P₅ C₅ .v1
+    (by rw [show 8 * k + 1 + 1 + 1 + 1 + 1 + 1 = 8 * k + 6 by omega_arith, ntz_eight_six]; exact C₅.2.1)) fun t₆ ⟨P₆, C₆⟩ => ?_)
+  refine WP.seq (WP.mono (residentStep_cached_ok mode hckF hD (by omega_arith) P₆ C₆ .v0
+    (by rw [Proof.Ocb.ntz_odd (by omega_arith)]; exact C₆.1)) fun t₇ ⟨P₇, C₇⟩ => ?_)
+  refine WP.mono (residentLast_ok (R := R) (n := n) (SP := SP) (k := k) mode hckF hD hm (by omega_arith)
+    (by simpa only [show 8 * k + 1 + 1 + 1 + 1 + 1 + 1 + 1 = 8 * k + 7 by omega_arith] using P₇) C₇) fun u ⟨P₈, C₈⟩ => ?_
+  exact ⟨by simpa only [show 8 * k + 7 + 1 = 8 * (k + 1) by omega_arith] using P₈, C₈⟩
 include hm in
  theorem passFast_ok (L : Lay K W) {body : List Instr}
     (hB : BodyOk W body (fun b o => b ^^^ o) (ckOp mode)) {t : State} (hm0 : 0 < m)
@@ -291,7 +289,7 @@ include hm in
     WP isa (passFast mode body) t fun u => PassInv K W D R n SP m O0 l X (fun b o => b ^^^ o) ckF t₀ u m := by
   unfold passFast
   refine WP.seq (WP.mono (passCount_ok P hD hm) fun t₁ ⟨P₁, h9, _⟩ => ?_)
-  refine WP.ite _ (eval_zero h9 (by omega)) (fun hz => ?_) (fun hn => ?_)
+  refine WP.ite _ (eval_zero h9 (by omega_arith)) (fun hz => ?_) (fun hn => ?_)
   · exact passScalar_ok L hB hckF hD hm0 hm P₁
   · have hn : m / 8 ≠ 0 := of_decide_eq_false hn
     refine WP.seq (WP.mono (passCacheInit_ok P₁ hD) fun t₂ ⟨P₂, C₂⟩ => ?_)
@@ -301,24 +299,24 @@ include hm in
       refine WP.loop (M := isa)
         (fun (j : Nat) (u : State) => ∃ k, j = m/8-k ∧ 8 * k + 8 ≤ m ∧
           ResidentInv K W D R n SP m O0 l X ckF t₀ u (8 * k) ∧ LCache l u) ?_
-        (m/8) _ ⟨0, by omega, by omega, P₃, C₃⟩
+        (m/8) _ ⟨0, by omega_arith, by omega_arith, P₃, C₃⟩
       rintro j u ⟨k, rfl, hk, P, C⟩
       refine WP.seq (WP.mono (residentBatch_ok mode hckF hD hm hk P C) fun u₁ ⟨P', C'⟩ => ?_)
       refine WP.mono (residentCount_ok P' hD hm) fun u₂ ⟨P'', h9, hv⟩ => ?_
-      have ev := eval_nonzero h9 (by omega)
+      have ev := eval_nonzero h9 (by omega_arith)
       by_cases he : (m-8 * (k + 1))/8 = 0
       · left
-        exact ⟨ev.trans (by simp [he]), (show k + 1 = m/8 by omega) ▸ P''⟩
+        exact ⟨ev.trans (by simp [he]), (show k + 1 = m/8 by omega_arith) ▸ P''⟩
       · right
-        refine ⟨ev.trans (by simp [he]), m/8-(k + 1), by omega, k + 1, rfl, by omega, P'', ?_⟩
+        refine ⟨ev.trans (by simp [he]), m/8-(k + 1), by omega_arith, k + 1, rfl, by omega_arith, P'', ?_⟩
         simpa only [LCache, hv] using C'
     refine WP.seq (WP.mono loop fun u P' => ?_)
     refine WP.seq (WP.mono (residentStore_ok hD P') fun z Pz => ?_)
-    refine WP.ite _ (eval_zero Pz.x24 (by omega)) (fun hz => ?_) (fun hn => ?_)
+    refine WP.ite _ (eval_zero Pz.x24 (by omega_arith)) (fun hz => ?_) (fun hn => ?_)
     · have hz : m-8 * (m/8) = 0 := of_decide_eq_true hz
-      exact WP.block_nil (by simpa only [show 8 * (m/8) = m by omega] using Pz)
+      exact WP.block_nil (by simpa only [show 8 * (m/8) = m by omega_arith] using Pz)
     · have hn : m-8 * (m/8) ≠ 0 := of_decide_eq_false hn
-      exact passScalar_ok L hB hckF hD (by omega) hm Pz
+      exact passScalar_ok L hB hckF hD (by omega_arith) hm Pz
 
 end
 

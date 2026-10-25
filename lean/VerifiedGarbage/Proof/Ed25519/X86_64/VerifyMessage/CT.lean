@@ -70,20 +70,20 @@ theorem Ctx.ce_bytes {t : State} (hc : Ctx L g mx m₀ t) (hL : L.Ok)
   unfold Spec.Sha512.bytesAt Spec.Ed25519.bytesAt
   refine List.map_congr_left fun i h => ?_
   have hn' := List.mem_range.mp h
-  rw [ce_byte t (by rw [hc.ret]; exact hi.stk hL (by omega)) hn hn']
+  rw [ce_byte t (by rw [hc.ret]; exact hi.stk hL (by omega_arith)) hn hn']
   exact Frame.bytes hc.frame (by
     intro R hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
-    · simpa using hi.scr hL (d := 0) (n := 8192) (by omega)
-    · have hs := hi.stk hL (d := 0) (n := 184) (by omega)
+    · simpa using hi.scr hL (d := 0) (n := 8192) (by omega_arith)
+    · have hs := hi.stk hL (d := 0) (n := 184) (by omega_arith)
       simpa using hs.symm) hn hn'
 
 theorem Ctx.ce_repr (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {iv : Spec.Sha512.HashValue}
     {m : List Byte} (hr : Spec.Sha512.Repr iv t.mem L.scr m) :
     Spec.Sha512.Repr iv t.callEntry.mem L.scr m :=
   Proof.Sha512.Stream.repr_congr (fun i hi => ce_byte t (R := ⟨L.scr, 192⟩)
-    (by rw [hc.ret]; simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega) (by omega))
+    (by rw [hc.ret]; simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega_arith) (by omega_arith))
     (by show (192 : Nat) ≤ 2 ^ 64; decide) hi) hr
 
 abbrev initRd : List Region := []
@@ -94,7 +94,7 @@ theorem init_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArgs
   have hrdi := (gpr_ce t initRd (initWr L) (r := .rdi) (by decide)).trans ha
   refine ⟨rfl, by rw [hrdi]; rfl, ?_⟩
   rw [rsp_ce, hrdi, hc.rsp, sub8]
-  simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega) (by omega)
+  simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega_arith) (by omega_arith)
 
 theorem init_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArgs L t) :
     WP isa (.call Spec.Sha512.init512Api.name (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) t
@@ -104,11 +104,11 @@ theorem init_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArg
   · rintro r hr
     simp only [initRd, initWr, List.nil_append, List.mem_singleton] at hr
     subst hr
-    exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    exact ⟨L.SCR, by simp, within_base _ (by omega_arith)⟩
   · rintro r hr
     simp only [initWr, List.mem_singleton] at hr
     subst hr
-    exact .inr (within_base _ (by omega))
+    exact .inr (within_base _ (by omega_arith))
   · have := hpost
     simp only [Proof.Sha512.initX86_64, (gpr_ce t initRd (initWr L) (r := .rdi) (by decide)).trans ha] at this
     rwa [← hm]
@@ -135,13 +135,13 @@ theorem upd_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
   obtain ⟨hdi, -, hdx, hcx, h8⟩ := upd_regs ha [⟨p, n.toNat⟩] (updWr L)
   simp only [Proof.Sha512.updateX86_64, rsp_ce, hdi, hdx, hcx, h8, hc.rsp, sub8, sub88,
     State.withRegions_rd, State.withRegions_wr]
-  exact ⟨trivial, trivial, Offset.base_disjoint _ (by omega) (by omega),
-    by simpa using hi.scr hL (d := 0) (n := 192) (by omega), hi.scr hL (by omega),
-    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega) (by omega),
-    hL.stk_scr (d := 8) (n := 8) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 192) (by omega) (by omega),
-    by simpa using hi.stk hL (d := 0) (n := 8) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 192) (k := 1376) (by omega) (by omega)⟩
+  exact ⟨trivial, trivial, Offset.base_disjoint _ (by omega_arith) (by omega_arith),
+    by simpa using hi.scr hL (d := 0) (n := 192) (by omega_arith), hi.scr hL (by omega_arith),
+    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega_arith) (by omega_arith),
+    hL.stk_scr (d := 8) (n := 8) (by omega_arith) (by omega_arith),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 192) (by omega_arith) (by omega_arith),
+    by simpa using hi.stk hL (d := 0) (n := 8) (by omega_arith),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 192) (k := 1376) (by omega_arith) (by omega_arith)⟩
 
 theorem upd_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     {prev : List Byte} {count : BitVec 64} {p : Addr} {n : BitVec 64}
@@ -158,13 +158,13 @@ theorem upd_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     rcases hr with rfl | rfl | rfl
     · obtain ⟨R, hR, hsub⟩ := hi
       exact ⟨R, List.mem_append_left _ (List.mem_append_left _ hR), hsub⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_arith)⟩
+    · exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
   · intro r hr
     simp only [updWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact .inr (within_base _ (by omega))
-    · exact .inr (within_off _ (by omega))
+    · exact .inr (within_base _ (by omega_arith))
+    · exact .inr (within_off _ (by omega_arith))
   · obtain ⟨hdi, hsi, hdx, hcx, -⟩ := upd_regs ha [⟨p, n.toNat⟩] (updWr L)
     have h := hpost Spec.Sha512.H0_512 prev
       (by rw [State.withRegions_mem, hdi]; exact hc.ce_repr hL hr) (hsi.trans hcount)
@@ -187,14 +187,14 @@ theorem fin_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : FinArgs L
   simp only [Proof.Sha512.finalizeX86_64, rsp_ce, hdi, hdx, hcx, hc.rsp, sub8, sub88,
     State.withRegions_rd, State.withRegions_wr]
   exact ⟨trivial, trivial,
-    by simpa using (hL.stk_scr (d := 80) (n := 64) (e := 0) (k := 192) (by omega) (by omega)).symm,
-    Offset.base_disjoint _ (by omega) (by omega), hL.stk_scr (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega) (by omega),
-    Offset.disjoint _ (by omega) (by omega) (by omega),
-    hL.stk_scr (d := 8) (n := 8) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 192) (by omega) (by omega),
-    Offset.base_disjoint _ (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 192) (k := 1376) (by omega) (by omega)⟩
+    by simpa using (hL.stk_scr (d := 80) (n := 64) (e := 0) (k := 192) (by omega_arith) (by omega_arith)).symm,
+    Offset.base_disjoint _ (by omega_arith) (by omega_arith), hL.stk_scr (by omega_arith) (by omega_arith),
+    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega_arith) (by omega_arith),
+    Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith),
+    hL.stk_scr (d := 8) (n := 8) (by omega_arith) (by omega_arith),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 192) (by omega_arith) (by omega_arith),
+    Offset.base_disjoint _ (by omega_arith) (by omega_arith),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 192) (k := 1376) (by omega_arith) (by omega_arith)⟩
 
 theorem fin_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : FinArgs L t)
     {message : List Byte} (hmess : message.length < 2 ^ 64)
@@ -208,15 +208,15 @@ theorem fin_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
   · intro r hr
     simp only [finWr, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_arith)⟩
     · exact ⟨L.FR, by simp, 64, by rw [PublicKey.add_add], by show 64 + 64 ≤ 168; decide⟩
-    · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+    · exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
   · intro r hr
     simp only [finWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inr (within_base _ (by omega))
+    · exact .inr (within_base _ (by omega_arith))
     · exact .inl ⟨64, by rw [PublicKey.add_add], by show 64 + 64 ≤ 128; decide⟩
-    · exact .inr (within_off _ (by omega))
+    · exact .inr (within_off _ (by omega_arith))
   · obtain ⟨hdi, hsi, hdx, -⟩ := fin_regs ha [] (finWr L)
     have h := hpost Spec.Sha512.H0_512 message
       (by rw [State.withRegions_mem, hdi]; exact hc.ce_repr hL hr) hmess (hsi.trans hlen)
@@ -240,7 +240,7 @@ theorem hash_ok (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     ⟨L.SIG, by simp [Lay.inputs], within_base _ (by decide)⟩
   have hiA : Input L ⟨L.pk, (32 : BitVec 64).toNat⟩ :=
     ⟨L.PK, by simp [Lay.inputs], within_base _ (by decide)⟩
-  have hiM : Input L L.MSG := ⟨L.MSG, by simp [Lay.inputs], within_base _ (by omega)⟩
+  have hiM : Input L L.MSG := ⟨L.MSG, by simp [Lay.inputs], within_base _ (by omega_arith)⟩
   refine WP.seq (WP.mono (init_step hL hc) fun t₁ ⟨hc₁, hr₁⟩ => ?_)
   refine WP.seq (WP.seq (WP.mono (prefixArgs_ok hc₁ fSignature 0 (by decide) (by decide) L.sig hc₁.pSig)
     fun t₂ ⟨hc₂, hm₂, ha₂⟩ => WP.mono (upd_call v hL hc₂ ha₂ hiR rfl (hm₂ ▸ hr₁))
@@ -278,7 +278,7 @@ def ReduceArgs (L : Lay) (t : State) : Prop :=
 
 theorem reduceArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block reduceArgs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧ ReduceArgs L t' := by
-  have h144 := hc.inFr (d := 144) (by omega) (by omega)
+  have h144 := hc.inFr (d := 144) (by omega_arith) (by omega_arith)
   apply WP.of_runBlock
   simp only [reduceArgs, fScratch, runBlock_cons, runStep_some, runBlock_nil,
     exec, execAlu, readSrc, State.load64, ea_stk,
@@ -303,10 +303,10 @@ theorem reduce_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : Reduce
   simp only [scalarReduceLocal, rsp_ce, hdi, hsi, hdx, hc.rsp, sub8,
     State.withRegions_rd, State.withRegions_wr]
   exact ⟨trivial, trivial,
-    by simpa using hL.stk_scr (d := 80) (n := 64) (e := 0) (k := 8192) (by omega) (by omega),
-    Offset.disjoint _ (by omega) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 8192) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 16) (n := 32) (e := 0) (k := 8192) (by omega) (by omega)⟩
+    by simpa using hL.stk_scr (d := 80) (n := 64) (e := 0) (k := 8192) (by omega_arith) (by omega_arith),
+    Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith),
+    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 8192) (by omega_arith) (by omega_arith),
+    by simpa using hL.stk_scr (d := 16) (n := 32) (e := 0) (k := 8192) (by omega_arith) (by omega_arith)⟩
 
 theorem reduce_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : ReduceArgs L t)
     {digest : List Byte} (hh : Spec.Sha512.bytesAt t.mem (L.B + BitVec.ofNat 64 80) 64 = digest) :
@@ -319,13 +319,13 @@ theorem reduce_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : Reduc
     simp only [reduceRd, reduceWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨L.FR, by simp, 64, by rw [add_add], by show 64 + 64 ≤ 168; decide⟩
-    · exact ⟨L.FR, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.FR, by simp, within_base _ (by omega_arith)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_arith)⟩
   · intro r hr
     simp only [reduceWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact .inl (within_base _ (by omega))
-    · exact .inr (within_base _ (by omega))
+    · exact .inl (within_base _ (by omega_arith))
+    · exact .inr (within_base _ (by omega_arith))
   · obtain ⟨hdi, hsi, -⟩ := reduce_regs ha (reduceRd L) (reduceWr L)
     change Spec.Ed25519.bytesAt s₂.mem _ 32 = Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt _ _ 64) at hpost
     rw [hdi, hsi, State.withRegions_mem, hm] at hpost
@@ -333,7 +333,7 @@ theorem reduce_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : Reduc
         Spec.Sha512.bytesAt t.mem (L.B + BitVec.ofNat 64 80) 64 := by
       apply List.map_congr_left
       intro i hi
-      exact PublicKey.ce_byte t (R := ⟨L.B + BitVec.ofNat 64 80, 64⟩) (i := i) (by rw [hc.ret]; exact Offset.disjoint _ (by omega) (by omega) (by omega))
+      exact PublicKey.ce_byte t (R := ⟨L.B + BitVec.ofNat 64 80, 64⟩) (i := i) (by rw [hc.ret]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
         (by decide : 64 ≤ 2 ^ 64) (List.mem_range.mp hi)
     rw [he, hh] at hpost
     exact hpost
@@ -349,14 +349,14 @@ theorem Ctx.store {t t' : State} (hc : Ctx L g mx m₀ t)
     exact hf.readW (Region.contains_self _ _) (by
       intro r hr
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide)
+      exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
   refine ⟨hrd.trans hc.rd, hwr.trans hc.wr, by rw [hg]; exact hc.rsp,
     fun r hr h => by rw [hg]; exact hc.cs r hr h, by rw [hmx]; exact hc.mx,
-    (keep 144 (by omega) (by omega)).trans hc.pScr,
-    (keep 152 (by omega) (by omega)).trans hc.pSig,
-    (keep 160 (by omega) (by omega)).trans hc.pLen,
-    (keep 168 (by omega) (by omega)).trans hc.pMsg,
-    (keep 176 (by omega) (by omega)).trans hc.pPk,
+    (keep 144 (by omega_arith) (by omega_arith)).trans hc.pScr,
+    (keep 152 (by omega_arith) (by omega_arith)).trans hc.pSig,
+    (keep 160 (by omega_arith) (by omega_arith)).trans hc.pLen,
+    (keep 168 (by omega_arith) (by omega_arith)).trans hc.pMsg,
+    (keep 176 (by omega_arith) (by omega_arith)).trans hc.pPk,
     hc.frame.trans (Frame.sub hf ?_), by rw [hsy]; exact hc.sym, hc.held⟩
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
@@ -369,10 +369,10 @@ theorem extend_ok {t : State} (hc : Ctx L g mx m₀ t) :
       t'.mem.readW (L.B + BitVec.ofNat 64 56) 64 = 0 ∧
       t'.mem.readW (L.B + BitVec.ofNat 64 64) 64 = 0 ∧
       t'.mem.readW (L.B + BitVec.ofNat 64 72) 64 = 0 := by
-  have w0 := hc.inFrW (d := 48) (by omega) (by omega)
-  have w1 := hc.inFrW (d := 56) (by omega) (by omega)
-  have w2 := hc.inFrW (d := 64) (by omega) (by omega)
-  have w3 := hc.inFrW (d := 72) (by omega) (by omega)
+  have w0 := hc.inFrW (d := 48) (by omega_arith) (by omega_arith)
+  have w1 := hc.inFrW (d := 56) (by omega_arith) (by omega_arith)
+  have w2 := hc.inFrW (d := 64) (by omega_arith) (by omega_arith)
+  have w3 := hc.inFrW (d := 72) (by omega_arith) (by omega_arith)
   apply WP.of_runBlock
   simp only [extendChallenge, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32,
     State.setReg32, State.store64, BitVec.xor_self, BitVec.setWidth_zero, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
@@ -434,9 +434,9 @@ def EqArgs (L : Lay) (t : State) : Prop :=
 
 theorem equationArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block equationArgs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧ EqArgs L t' := by
-  have h144 := hc.inFr (d := 144) (by omega) (by omega)
-  have h152 := hc.inFr (d := 152) (by omega) (by omega)
-  have h176 := hc.inFr (d := 176) (by omega) (by omega)
+  have h144 := hc.inFr (d := 144) (by omega_arith) (by omega_arith)
+  have h152 := hc.inFr (d := 152) (by omega_arith) (by omega_arith)
+  have h176 := hc.inFr (d := 176) (by omega_arith) (by omega_arith)
   apply WP.of_runBlock
   simp only [equationArgs, fScratch, fSignature, fPublicKey,
     runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk,
@@ -464,13 +464,13 @@ theorem Ctx.ce_held (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (rd wr : Li
   simp only [Nat.reduceDiv] at hj
   rw [Offset.add_add]
   rw [PublicKey.ce_byte t (R := L.TBL) (by rw [hc.ret]; exact (hL.tk.sub_right (Offset.sub_base _
-    (by decide : 8 + 8 ≤ 184))).symm) (show 16384 ≤ 2 ^ 64 by decide) (show 8 * i + j < 16384 by omega)]
+    (by decide : 8 + 8 ≤ 184))).symm) (show 16384 ≤ 2 ^ 64 by decide) (show 8 * i + j < 16384 by omega_arith)]
   exact Frame.bytes hc.frame (R := L.TBL) (by
     intro R hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
     · exact hL.ts
-    · exact hL.tk) (show 16384 ≤ 2 ^ 64 by decide) (show 8 * i + j < 16384 by omega)
+    · exact hL.tk) (show 16384 ≤ 2 ^ 64 by decide) (show 8 * i + j < 16384 by omega_arith)
 
 theorem eq_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : EqArgs L t) :
     verifyLocal.pre (t.callEntry.withRegions (eqRd L) (eqWr L)) := by
@@ -481,8 +481,8 @@ theorem eq_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : EqArgs L t
   simp only [verifyLocal, rsp_ce, hdi, hsi, hdx, hcx, hc.rsp, sub8, hsy,
     State.withRegions_rd, State.withRegions_wr]
   exact ⟨trivial, trivial, hL.sc L.PK (by simp [Lay.inputs]), hL.sc L.SIG (by simp [Lay.inputs]),
-    by simpa using hL.stk_scr (d := 16) (n := 64) (e := 0) (k := 8192) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 8192) (by omega) (by omega), hL.nc,
+    by simpa using hL.stk_scr (d := 16) (n := 64) (e := 0) (k := 8192) (by omega_arith) (by omega_arith),
+    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 8192) (by omega_arith) (by omega_arith), hL.nc,
     hL.ts, hh⟩
 
 /-- The 8 bytes below the checker's `rsp`, for its calls' return address, are apart from every
@@ -500,14 +500,14 @@ theorem eq_clear (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
   simp only [State.withRegions_rd, State.withRegions_wr, eqRd, eqWr, List.cons_append, List.nil_append,
     List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · have := hL.stk_input (r := L.PK) (by simp [Lay.inputs]) (d := 0) (n := 8) (by omega)
+  · have := hL.stk_input (r := L.PK) (by simp [Lay.inputs]) (d := 0) (n := 8) (by omega_arith)
     rw [e0] at this; exact this.symm
-  · have := hL.stk_input (r := L.SIG) (by simp [Lay.inputs]) (d := 0) (n := 8) (by omega)
+  · have := hL.stk_input (r := L.SIG) (by simp [Lay.inputs]) (d := 0) (n := 8) (by omega_arith)
     rw [e0] at this; exact this.symm
-  · exact Offset.disjoint_base _ (by omega) (by omega)
-  · have := Offset.sub_base L.B (d := 0) (n := 8) (k := 184) (by omega)
+  · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+  · have := Offset.sub_base L.B (d := 0) (n := 8) (k := 184) (by omega_arith)
     rw [e0] at this; exact hL.tk.sub_right this
-  · have := hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 8192) (by omega) (by omega)
+  · have := hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 8192) (by omega_arith) (by omega_arith)
     rw [e0, show L.scr + BitVec.ofNat 64 0 = L.scr by simp] at this
     exact this.symm
 
@@ -532,28 +532,28 @@ theorem eq_call (hq : EqCode fld win) (hL : L.Ok) {t : State} (hc : Ctx L g mx m
   · intro r hr
     simp only [eqRd, eqWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega)⟩
-    · exact ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega)⟩
-    · exact ⟨L.FR, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.TBL, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega_arith)⟩
+    · exact ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega_arith)⟩
+    · exact ⟨L.FR, by simp, within_base _ (by omega_arith)⟩
+    · exact ⟨L.TBL, by simp, within_base _ (by omega_arith)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_arith)⟩
   · intro r hr
     simp only [eqWr, List.mem_singleton] at hr
     subst hr
-    exact .inr (within_base _ (by omega))
+    exact .inr (within_base _ (by omega_arith))
   · obtain ⟨hdi, hsi, hdx, -⟩ := eq_regs ha (eqRd L) (eqWr L)
     change s₂.gpr .rax = Proof.Ed25519.X86_64.signWord (Spec.Ed25519.verifyEquation _ _ _) at hpost
     rw [hg .rax (by decide), hdi, hsi, hdx, State.withRegions_mem] at hpost
     have hpk := hc.ce_bytes hL (r := L.PK)
-      ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega)⟩ (by decide : 32 ≤ 2 ^ 64)
+      ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega_arith)⟩ (by decide : 32 ≤ 2 ^ 64)
     have hsig := hc.ce_bytes hL (r := L.SIG)
-      ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega)⟩ (by decide : 64 ≤ 2 ^ 64)
+      ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega_arith)⟩ (by decide : 64 ≤ 2 ^ 64)
     have he : Spec.Ed25519.bytesAt t.callEntry.mem (L.B + BitVec.ofNat 64 16) 64 =
         Spec.Ed25519.bytesAt t.mem (L.B + BitVec.ofNat 64 16) 64 := by
       apply List.map_congr_left
       intro i hi
       exact PublicKey.ce_byte t (R := ⟨L.B + BitVec.ofNat 64 16, 64⟩) (i := i)
-        (by rw [hc.ret]; exact Offset.disjoint _ (by omega) (by omega) (by omega))
+        (by rw [hc.ret]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
         (by decide : 64 ≤ 2 ^ 64) (List.mem_range.mp hi)
     change Spec.Ed25519.bytesAt _ L.pk 32 = _ at hpk
     change Spec.Ed25519.bytesAt _ L.sig 64 = _ at hsig
@@ -586,7 +586,7 @@ theorem extend_reduced {t : State} (hc : Ctx L g mx m₀ t) {digest : List Byte}
     exact Frame.bytes (R := ⟨L.B + BitVec.ofNat 64 16, 32⟩) hf (by
       intro r hr
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide : 32 ≤ 2 ^ 64)
+      exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide : 32 ≤ 2 ^ 64)
       (List.mem_range.mp hi)
   have hhi := zero_words t'.mem (L.B + BitVec.ofNat 64 48) h0
     (by change t'.mem.readW ((L.B + BitVec.ofNat 64 48) + BitVec.ofNat 64 8) 64 = 0
@@ -643,20 +643,20 @@ theorem Lay.Ok.message_bound {L : Lay} (h : L.Ok) : 64 + L.len.toNat < 2 ^ 64 :=
   have nm := h.nm
   have nc := h.nc
   by_cases hz : L.len.toNat = 0
-  · omega
+  · omega_arith
   by_cases hp : L.msg ≤ L.scr
   · have hn : ¬ L.MSG.Contains L.scr 1 := fun hx => hd _ hx (by simp [Region.Contains])
     simp only [Region.Contains, BitVec.toNat_sub_of_le hp] at hn
     have hp' : L.msg.toNat ≤ L.scr.toNat := hp
-    omega
+    omega_arith
   · have hp' : L.scr ≤ L.msg := by
       change L.scr.toNat ≤ L.msg.toNat
       change ¬ L.msg.toNat ≤ L.scr.toNat at hp
-      omega
-    have hn : ¬ L.SCR.Contains L.msg 1 := fun hx => hd _ (by simp [Region.Contains]; omega) hx
+      omega_arith
+    have hn : ¬ L.SCR.Contains L.msg 1 := fun hx => hd _ (by simp [Region.Contains]; omega_arith) hx
     simp only [Region.Contains, BitVec.toNat_sub_of_le hp'] at hn
     have hp'' : L.scr.toNat ≤ L.msg.toNat := hp'
-    omega
+    omega_arith
 
 def verifyMessageLocal : Contract isa where
   pre s := 184 ≤ (s.gpr .rsp).toNat ∧
@@ -734,18 +734,18 @@ theorem push_base (sp : Addr) :
 
 theorem push_slot (sp : Addr) (j : Nat) (hj : j < 5) :
     sp - BitVec.ofNat 64 (8 * (j + 1)) = sp - BitVec.ofNat 64 184 + BitVec.ofNat 64 (176 - 8 * j) := by
-  have : 8 * (j + 1) < 2 ^ 64 := by omega
+  have : 8 * (j + 1) < 2 ^ 64 := by omega_arith
   bv_omega
 
 theorem push_ctx {s : State} (h : verifyMessageLocal.pre s) :
     Ctx (lay s) s.gpr s.mxcsr s.mem (pushed pushRs s) := by
-  have hn : 8 * pushRs.length ≤ (s.gpr .rsp).toNat := by show 8 * 21 ≤ _; have := h.1; omega
+  have hn : 8 * pushRs.length ≤ (s.gpr .rsp).toNat := by show 8 * 21 ≤ _; have := h.1; omega_arith
   obtain ⟨hf, hw⟩ := pushRegs_mem s pushRs (by decide) hn
   have hw' : ∀ j (hj : j < 5), (pushed pushRs s).mem.readW
-      ((lay s).B + BitVec.ofNat 64 (176 - 8 * j)) 64 = s.gpr (pushRs[j]'(by show j < 21; omega)) := fun j hj => by
-    rw [← hw j (by show j < 21; omega)]; simp only [lay]; rw [push_slot _ j hj]; rfl
+      ((lay s).B + BitVec.ofNat 64 (176 - 8 * j)) 64 = s.gpr (pushRs[j]'(by show j < 21; omega_arith)) := fun j hj => by
+    rw [← hw j (by show j < 21; omega_arith)]; simp only [lay]; rw [push_slot _ j hj]; rfl
   refine ⟨by rw [pushed_rd, h.2.1]; rfl, ?_, ?_, fun r _ hr => pushed_gpr _ _ hr, by rw [pushed_mxcsr],
-    hw' 4 (by omega), hw' 3 (by omega), hw' 2 (by omega), hw' 1 (by omega), hw' 0 (by omega), ?_,
+    hw' 4 (by omega_arith), hw' 3 (by omega_arith), hw' 2 (by omega_arith), hw' 1 (by omega_arith), hw' 0 (by omega_arith), ?_,
     by rw [PublicKey.pushed_syms_eq]; rfl, h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2⟩
   · rw [pushed_wr, h.2.2.1]; simp only [show pushRs.length = 21 from rfl, lay]; rw [push_base]
   · rw [pushed_rsp]; simp only [show pushRs.length = 21 from rfl, lay]; rw [push_base]
@@ -754,7 +754,7 @@ theorem push_ctx {s : State} (h : verifyMessageLocal.pre s) :
     refine ⟨(lay s).STK, by simp, ?_⟩
     simp only [show pushRs.length = 21 from rfl]
     rw [push_base]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_arith)
 
 end VG.Proof.Ed25519.X86_64.VerifyMessage
 end
@@ -781,7 +781,7 @@ theorem verifyMessage_ok (hq : EqCode fld win) (v : Compress) {s : State} (h : v
   have hL := lay_ok h
   have hc := push_ctx h
   refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide)
-    (by show 8 * 21 ≤ _; have := h.1; omega)
+    (by show 8 * 21 ≤ _; have := h.1; omega_arith)
     (WP.mono (body_ok hq v hL hc hL.message_bound)
       fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
   · have hrsp : (popped .r11 pushRs.length u).gpr .rsp = s.gpr .rsp := by
@@ -797,7 +797,7 @@ theorem verifyMessage_ok (hq : EqCode fld win) (v : Compress) {s : State} (h : v
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact hL.rc
-        · exact Offset.disjoint_base _ (by omega) (by omega)
+        · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
   · change (popped .r11 pushRs.length u).gpr .rax = _
     rw [popped_gpr _ _ _ (by decide) (by decide), ho]
     rfl
@@ -912,12 +912,12 @@ theorem init_access (L : Lay) : Access L initRd (initWr L) where
     intro r hr
     simp only [initRd, initWr, List.nil_append, List.mem_singleton] at hr
     subst hr
-    exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    exact ⟨L.SCR, by simp, within_base _ (by omega_arith)⟩
   wsub := by
     intro r hr
     simp only [initWr, List.mem_singleton] at hr
     subst hr
-    exact .inr (within_base _ (by omega))
+    exact .inr (within_base _ (by omega_arith))
 
 theorem upd_access (L : Lay) (p : Addr) (n : BitVec 64) (hi : Input L ⟨p, n.toNat⟩) :
     Access L [⟨p, n.toNat⟩] (updWr L) where
@@ -927,30 +927,30 @@ theorem upd_access (L : Lay) (p : Addr) (n : BitVec 64) (hi : Input L ⟨p, n.to
     rcases hr with rfl | rfl | rfl
     · obtain ⟨R, hR, hs⟩ := hi
       exact ⟨R, List.mem_append_left _ (List.mem_append_left _ hR), hs⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_arith)⟩
+    · exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
   wsub := by
     intro r hr
     simp only [updWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact .inr (within_base _ (by omega))
-    · exact .inr (within_off _ (by omega))
+    · exact .inr (within_base _ (by omega_arith))
+    · exact .inr (within_off _ (by omega_arith))
 
 theorem fin_access (L : Lay) : Access L [] (finWr L) where
   sub := by
     intro r hr
     simp only [finWr, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_arith)⟩
     · exact ⟨L.FR, by simp, 64, by rw [add_add], by show 64 + 64 ≤ 168; decide⟩
-    · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+    · exact ⟨L.SCR, by simp, within_off _ (by omega_arith)⟩
   wsub := by
     intro r hr
     simp only [finWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inr (within_base _ (by omega))
+    · exact .inr (within_base _ (by omega_arith))
     · exact .inl ⟨64, by rw [add_add], by show 64 + 64 ≤ 128; decide⟩
-    · exact .inr (within_off _ (by omega))
+    · exact .inr (within_off _ (by omega_arith))
 
 theorem reduce_access (L : Lay) : Access L (reduceRd L) (reduceWr L) where
   sub := by
@@ -958,30 +958,30 @@ theorem reduce_access (L : Lay) : Access L (reduceRd L) (reduceWr L) where
     simp only [reduceRd, reduceWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨L.FR, by simp, 64, by rw [add_add], by show 64 + 64 ≤ 168; decide⟩
-    · exact ⟨L.FR, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.FR, by simp, within_base _ (by omega_arith)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_arith)⟩
   wsub := by
     intro r hr
     simp only [reduceWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact .inl (within_base _ (by omega))
-    · exact .inr (within_base _ (by omega))
+    · exact .inl (within_base _ (by omega_arith))
+    · exact .inr (within_base _ (by omega_arith))
 
 theorem eq_access (L : Lay) : Access L (eqRd L) (eqWr L) where
   sub := by
     intro r hr
     simp only [eqRd, eqWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega)⟩
-    · exact ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega)⟩
-    · exact ⟨L.FR, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.TBL, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega_arith)⟩
+    · exact ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega_arith)⟩
+    · exact ⟨L.FR, by simp, within_base _ (by omega_arith)⟩
+    · exact ⟨L.TBL, by simp, within_base _ (by omega_arith)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_arith)⟩
   wsub := by
     intro r hr
     simp only [eqWr, List.mem_singleton] at hr
     subst hr
-    exact .inr (within_base _ (by omega))
+    exact .inr (within_base _ (by omega_arith))
 
 end VG.Proof.Ed25519.X86_64.VerifyMessage
 end
@@ -1062,7 +1062,7 @@ theorem hash_ct (v : Compress) : RelCT isa (Two fun _ _ _ => True)
     ((a.seq (upd_ct v (fun _ => 32) Lay.pk (fun _ => 32)
       (fun L => ⟨L.PK, by simp [Lay.inputs], within_base _ (by decide)⟩))).seq
     ((m.seq (upd_ct v (fun _ => 64) Lay.msg Lay.len
-      (fun L => ⟨L.MSG, by simp [Lay.inputs], within_base _ (by omega)⟩))).seq (finalize_ct v))))
+      (fun L => ⟨L.MSG, by simp [Lay.inputs], within_base _ (by omega_arith)⟩))).seq (finalize_ct v))))
 
 end VG.Proof.Ed25519.X86_64.VerifyMessage
 end
@@ -1134,7 +1134,7 @@ theorem ce_challenge {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : 
   apply List.map_congr_left
   intro i hi
   exact PublicKey.ce_byte t (R := ⟨L.B + BitVec.ofNat 64 16, 64⟩) (i := i)
-    (by rw [hc.ret]; exact Offset.disjoint _ (by omega) (by omega) (by omega))
+    (by rw [hc.ret]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
     (by decide : 64 ≤ 2 ^ 64) (List.mem_range.mp hi)
 
 theorem equation_ct (hq : EqCode fld win) : RelCT isa (Two EquationReady)
@@ -1148,15 +1148,15 @@ theorem equation_ct (hq : EqCode fld win) : RelCT isa (Two EquationReady)
     s₁.trans s₂.symm, x₁.trans x₂.symm, r₁.trans r₂.symm, ?_, ?_, ?_, ?_⟩
   · rw [d₁, d₂, State.withRegions_mem, State.withRegions_mem]
     have h₁ := c₁.ce_bytes hL (r := L.PK)
-      ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega)⟩ (by decide : 32 ≤ 2 ^ 64)
+      ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega_arith)⟩ (by decide : 32 ≤ 2 ^ 64)
     have h₂ := c₂.ce_bytes hL (r := L.PK)
-      ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega)⟩ (by decide : 32 ≤ 2 ^ 64)
+      ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega_arith)⟩ (by decide : 32 ≤ 2 ^ 64)
     exact h₁.trans (hi.1.trans h₂.symm)
   · rw [s₁, s₂, State.withRegions_mem, State.withRegions_mem]
     have h₁ := c₁.ce_bytes hL (r := L.SIG)
-      ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega)⟩ (by decide : 64 ≤ 2 ^ 64)
+      ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega_arith)⟩ (by decide : 64 ≤ 2 ^ 64)
     have h₂ := c₂.ce_bytes hL (r := L.SIG)
-      ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega)⟩ (by decide : 64 ≤ 2 ^ 64)
+      ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega_arith)⟩ (by decide : 64 ≤ 2 ^ 64)
     exact h₁.trans (hi.2.2.trans h₂.symm)
   · rw [x₁, x₂, State.withRegions_mem, State.withRegions_mem, ce_challenge c₁ a₁.2,
       ce_challenge c₂ a₂.2, hi.challenge]

@@ -1930,9 +1930,9 @@ theorem foldCall_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} {s₀ : Sta
     · exact sub_disj s₀ (b := 672) (by lit_omega) (by lit_omega) (by lit_omega)
     · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
     · exact (hp.stk_sub (by lit_omega)).symm
-  refine ⟨rsi', by rw [cs' _ (by simp [calleeSaved]), h.r14], by rw [cs' _ (by simp [calleeSaved]), h.r13],
-    by rw [cs' _ (by simp [calleeSaved]), h.r12], by rw [cs' _ (by simp [calleeSaved]), h.rbx],
-    by rw [cs' _ (by simp [calleeSaved]), h.rbp], by rw [cs' _ (by simp [calleeSaved]), h.rsp],
+  refine ⟨rsi', by rw [cs' _ (by decide), h.r14], by rw [cs' _ (by decide), h.r13],
+    by rw [cs' _ (by decide), h.r12], by rw [cs' _ (by decide), h.rbx],
+    by rw [cs' _ (by decide), h.rbp], by rw [cs' _ (by decide), h.rsp],
     by rw [rd', h.rd], by rw [wr', h.wr], h.saved.frame f' dsv, h.fine.trans fw,
     by rw [stateAt_frame f' dst, h.st], fun k hk => ?_, fun hps => ?_⟩
   rotate_left
@@ -2032,18 +2032,18 @@ theorem prologueBF_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp :
     (h.fine.trans ff).sub fun r hr => ?_⟩, ?_, ?_, h.fine.trans ff, ?_, ?_, fun k hk => ?_,
     fun hps => ?_⟩
   · rw [e10, rdi₉, off_sub]
-  · rw [cs .r14 (by simp [calleeSaved]) (by decide), h.r14]
-  · rw [cs .r13 (by simp [calleeSaved]) (by decide), h.r13]
-  · rw [cs .r12 (by simp [calleeSaved]) (by decide), h.r12]
-  · rw [g₁₀ _ (by decide), cs₉ _ (by simp [calleeSaved]), rsp₈]
+  · rw [cs .r14 (by decide) (by decide), h.r14]
+  · rw [cs .r13 (by decide) (by decide), h.r13]
+  · rw [cs .r12 (by decide) (by decide), h.r12]
+  · rw [g₁₀ _ (by decide), cs₉ _ (by decide), rsp₈]
   · rw [m₁₀]
     exact h.saved.frame (by rw [← mm₈]; exact f₉) (d9 (by lit_omega) (by lit_omega))
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨workR s₀, by simp, fun _ h => h⟩
     · exact ⟨stkR s₀, by simp, fun _ h => h⟩
-  · rw [cs .rbx (by simp [calleeSaved]) (by decide), h.rbx]
-  · rw [cs .rbp (by simp [calleeSaved]) (by decide), h.rbp]
+  · rw [cs .rbx (by decide) (by decide), h.rbx]
+  · rw [cs .rbp (by decide) (by decide), h.rbp]
   · rw [m₁₀]
     have hk : bytesAt s₈.mem (off (cx s₀) 672) 32 = otk s₀ := by
       show _ = Spec.ChaCha20Poly1305.polyKeyGen (K s₀) (N s₀)
@@ -2963,7 +2963,7 @@ theorem wholeBlocks_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : AP
     fun s₁ ⟨rdi₁, rsi₁, rdx₁, zf₁, g₁, rd₁, wr₁, m₁⟩ mx₁ => ?_)
   have g₁' : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r := fun r h =>
     g₁ r (calleeSaved_ne h).2.2.2.2 (calleeSaved_ne h).2.2.2.1 (calleeSaved_ne h).2.2.1
-  have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := by rw [g₁' _ (by simp [calleeSaved]), hrsp]
+  have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := by rw [g₁' _ (by decide), hrsp]
   have hk : 16 * (len / 16) ≤ len := Nat.mul_div_le _ _
   have z : s₁.zf = some (decide (len / 16 = 0)) := by
     rw [zf₁, hn, shr4_ofNat hlt]
@@ -3069,14 +3069,14 @@ theorem macRest_ok (copy : Bool) (b : Impl.Poly1305.X86_64.Blocks) {k : Nat} (hk
         (by lit_omega) (by lit_omega) hQ
         (by rw [g₄ _ (by decide), hrdx])
         (by rw [g₄ _ (by decide), hr15])
-        (by rw [g₄' _ (by simp [calleeSaved]), hrsp]) (by rw [rd₄, hrd]) (by rw [wr₄, hwr])
+        (by rw [g₄' _ (by decide), hrsp]) (by rw [rd₄, hrd]) (by rw [wr₄, hwr])
         hsrc (fun h8 => hs.cov_sub (a := 16 * (len / 16)) (n := 8) (by omega_using [h8]) (by rw [rd₄, hrd])
           (by rw [wr₄, hwr]) _ _ ⟨_, List.mem_singleton_self _, self_containsN _ 8⟩)
     · exact padCopy_ok b hk hp (Q := P + BitVec.ofNat 64 (16 * (len / 16))) (t := len % 16)
         (by lit_omega) (by lit_omega) hQ
         (by rw [g₄ _ (by decide), hrdx])
         (by rw [g₄ _ (by decide), hr15])
-        (by rw [g₄' _ (by simp [calleeSaved]), hrsp]) (by rw [rd₄, hrd]) (by rw [wr₄, hwr])
+        (by rw [g₄' _ (by decide), hrsp]) (by rw [rd₄, hrd]) (by rw [wr₄, hwr])
         hsrc hdj
   refine ⟨fun r h => by rw [cs₅ r h, g₄' r h], by rw [rd₅, rd₄], by rw [wr₅, wr₄],
     by rw [← m₄]; exact f₅, by rw [mx₅, mx₄], fun key msg hr => ?_⟩
@@ -3138,8 +3138,8 @@ theorem macPad_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e 
     have cs₄ : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r := fun r h => by
       rw [g₄ r (calleeSaved_ne h).1, cs₃ r h]
     refine WP.mono (macRest_ok c b (k := 1) (.inl rfl) hp hr hs h0
-      (by rw [cs₄ _ (by simp [calleeSaved]), hr15])
-      (by rw [cs₄ _ (by simp [calleeSaved]), hrsp]) (by rw [rd₄, rd₃, rd₂, hrd])
+      (by rw [cs₄ _ (by decide), hr15])
+      (by rw [cs₄ _ (by decide), hrsp]) (by rw [rd₄, rd₃, rd₂, hrd])
       (by rw [wr₄, wr₃, wr₂, hwr]) (by rw [cs₄ p hpc, hP]) (by rw [cs₄ n hnc, hn])
       (by rw [g₄ _ (by decide), rdx₃])) fun s₅ ⟨cs₅, rd₅, wr₅, f₅, mx₅, repr₅⟩ => ?_
     refine ⟨fun r h => by rw [cs₅ r h, cs₄ r h], by rw [rd₅, rd₄, rd₃, rd₂],
@@ -3189,7 +3189,7 @@ open VG.Spec.ChaCha20 (stateAt keystream)
 
 variable {e : Bool}
 
-theorem calleeSaved_rsp : Reg.rsp ∈ calleeSaved := by simp [calleeSaved]
+theorem calleeSaved_rsp : Reg.rsp ∈ calleeSaved := by decide
 
 /-- The invariant survives a part that keeps the callee-saved registers and
 writes only the working space, the data and the stack. -/
@@ -3197,10 +3197,10 @@ theorem Inv.step {s₀ s s' : State} (h : Inv s₀ s) (cs : ∀ r ∈ calleeSave
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) {rs : List Region} (hf : Frame rs s.mem s'.mem)
     (hsub : ∀ r ∈ rs, ∃ r' ∈ [workR s₀, dR s₀, stkR s₀], Region.Sub r r')
     (hsv : ∀ r ∈ rs, (sub s₀ 0 48).Disjoint r) : Inv s₀ s' where
-  r15 := by rw [cs _ (by simp [calleeSaved]), h.r15]
-  r14 := by rw [cs _ (by simp [calleeSaved]), h.r14]
-  r13 := by rw [cs _ (by simp [calleeSaved]), h.r13]
-  r12 := by rw [cs _ (by simp [calleeSaved]), h.r12]
+  r15 := by rw [cs _ (by decide), h.r15]
+  r14 := by rw [cs _ (by decide), h.r14]
+  r13 := by rw [cs _ (by decide), h.r13]
+  r12 := by rw [cs _ (by decide), h.r12]
   rsp := by rw [cs _ calleeSaved_rsp, h.rsp]
   rd := by rw [hrd, h.rd]
   wr := by rw [hwr, h.wr]
@@ -3775,8 +3775,8 @@ theorem cryptPre_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} (hpass : Pa
       have := calleeSaved_ne hr
       rw [cs₆ r hr, k₅ r this.1 (rdx_ne_r8 hr) this.2.1 this.2.2.1 this.2.2.2.1 this.2.2.2.2]
     refine ⟨⟨rdi₆, rsi₆, rdx₆, rcx₆, by rw [cs _ calleeSaved_rsp, h.rsp],
-      by rw [cs _ (by simp [calleeSaved]), h.r13], by rw [cs _ (by simp [calleeSaved]), h.r14],
-      by rw [cs _ (by simp [calleeSaved]), h.r12], by rw [wr₆, wr₅, wr₄, f₃.wr, h.wr], hML⟩, cs,
+      by rw [cs _ (by decide), h.r13], by rw [cs _ (by decide), h.r14],
+      by rw [cs _ (by decide), h.r12], by rw [wr₆, wr₅, wr₄, f₃.wr, h.wr], hML⟩, cs,
       by rw [rd₆, rd₅, rd₄, f₃.rd], s₃.mem, f₃.frame, f₃.data, by rw [m₆, m₅, m₄]⟩
 
 theorem byte_dR {s₀ : State} {k : Nat} (hk : k < L s₀) : (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
@@ -4200,8 +4200,8 @@ theorem macPadLengths_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : 
   refine WP.ite (decide (len % 16 ≠ 0)) (by simp only [eval, zf₃]; cases len % 16 <;> rfl) (fun hz => ?_) (fun hz => ?_)
   · have h0 : len % 16 ≠ 0 := by simpa using hz
     refine WP.mono (macRest_ok (dataCopy b) b (k := 2) (.inr rfl) hp hr hs h0
-      (by rw [cs₃ _ (by simp [calleeSaved]), h.r15])
-      (by rw [cs₃ _ (by simp [calleeSaved]), h.rsp]) (by rw [rd₃, rd₂, h.rd]) (by rw [wr₃, wr₂, h.wr])
+      (by rw [cs₃ _ (by decide), h.r15])
+      (by rw [cs₃ _ (by decide), h.rsp]) (by rw [rd₃, rd₂, h.rd]) (by rw [wr₃, wr₂, h.wr])
       (by rw [cs₃ p hpc, hP]) (by rw [cs₃ n hnc, hn]) rdx₃) fun s₅ ⟨cs₅, rd₅, wr₅, f₅, mx₅, repr₅⟩ => ?_
     refine ⟨mac_inv hp i₃ cs₅ rd₅ wr₅ f₅, fun r h => by rw [cs₅ r h, cs₃ r h],
       f₂.trans (by rw [← m₃]; exact f₅), by rw [mx₅, mx₃, mx₂], fun key msg hr => ?_⟩
@@ -4259,7 +4259,7 @@ theorem seal_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : AP
     h₁.inv.r15 h₁.inv.rsp h₁.inv.rd h₁.inv.wr h₁.rbx (by rw [h₁.rbp]; exact hRDX s₀))
     fun s₂ ⟨cs₂, rd₂, wr₂, f₂, mx₂, r₂⟩ => ?_)
   have i₂ := mac_inv hp h₁.inv cs₂ rd₂ wr₂ f₂
-  refine WP.seq (WP.mono_mx (by decide +kernel) (lengths_ok hp i₂ (by rw [cs₂ _ (by simp [calleeSaved]), h₁.rbp]))
+  refine WP.seq (WP.mono_mx (by decide +kernel) (lengths_ok hp i₂ (by rw [cs₂ _ (by decide), h₁.rbp]))
     fun s₃ ⟨i₃, _, f₃, len₃⟩ mx₃ => ?_)
   have st₃ : stateAt s₃.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [stateAt_frame f₃ (by rdisj_all), stateAt_frame f₂ (by rdisj_all), h₁.st]
@@ -4307,7 +4307,7 @@ theorem open_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : AP
   have i₂ := mac_inv hp h₁.inv cs₂ rd₂ wr₂ f₂
   have D₂ : bytesAt s₂.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame f₂ (by rdisj_all) hL', bytesAt_frame h₁.fine (by rdisj_all) hL']
-  refine WP.seq (WP.mono_mx (by decide +kernel) (lengths_ok hp i₂ (by rw [cs₂ _ (by simp [calleeSaved]),
+  refine WP.seq (WP.mono_mx (by decide +kernel) (lengths_ok hp i₂ (by rw [cs₂ _ (by decide),
     h₁.rbp])) fun s₃ ⟨i₃, _, f₃, len₃⟩ mx₃ => ?_)
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by rw [bytesAt_frame f₃ (by rdisj_all) hL', D₂]
   refine WP.seq (WP.mono (macPadLengths_ok v.poly hp (p := .r14) (n := .r13) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₃
@@ -4321,7 +4321,7 @@ theorem open_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : AP
   refine WP.seq (WP.mono_mx (by decide +kernel) (finalizeTo_ok hp i₆ (out := 48) (.inl (by omega_using [])))
     fun s₇ ⟨cs₇, rd₇, wr₇, rdi₇, rcx₇, f₇, tag₇⟩ mx₇ => ?_)
   refine WP.block_append (WP.mono_mx (by decide +kernel) (compare_ok hp rcx₇
-    (by rw [cs₇ _ (by simp [calleeSaved]), i₆.r12]) (by rw [rd₇, i₆.rd])
+    (by rw [cs₇ _ (by decide), i₆.r12]) (by rw [rd₇, i₆.rd])
     (by rw [wr₇, i₆.wr])) fun s₈ ⟨rax₈, g₈, m₈, rd₈, wr₈⟩ mx₈ => ?_)
   refine WP.mono_mx (by decide +kernel) (restore_ok hp (by rw [g₈ _ (by decide) (by decide), rdi₇])
     (by rw [m₈]; exact i₆.saved.frame f₇ (by rdisj_all))
@@ -4539,7 +4539,7 @@ theorem sealMid_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86_
     h₁.inv.rsp h₁.inv.rd h₁.inv.wr h₁.rbx (by rw [h₁.rbp]; exact hRDX s₀))
     fun s₂ ⟨cs₂, rd₂, wr₂, f₂, _⟩ => ?_)
   have i₂ := mac_inv hp h₁.inv cs₂ rd₂ wr₂ f₂
-  refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by simp [calleeSaved]), h₁.rbp]))
+  refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by decide), h₁.rbp]))
     fun s₃ ⟨i₃, _, f₃, _⟩ => ?_)
   exact cmpIte_ok hf i₃ (ks_frame f₃ (by rdisj_all) hM (ks_frame f₂ (by rdisj_all) hM h₁.ks))
 
@@ -4551,7 +4551,7 @@ theorem openMid_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86_
     h₁.inv.rsp h₁.inv.rd h₁.inv.wr h₁.rbx (by rw [h₁.rbp]; exact hRDX s₀))
     fun s₂ ⟨cs₂, rd₂, wr₂, f₂, _⟩ => ?_)
   have i₂ := mac_inv hp h₁.inv cs₂ rd₂ wr₂ f₂
-  refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by simp [calleeSaved]), h₁.rbp]))
+  refine WP.seq (WP.mono (lengths_ok hp i₂ (by rw [cs₂ _ (by decide), h₁.rbp]))
     fun s₃ ⟨i₃, _, f₃, _⟩ => ?_)
   refine WP.seq (WP.mono (macPadLengths_ok b hp (p := .r14) (n := .r13) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₃
     i₃.r14 (by rw [i₃.r13]; exact hL s₀)) fun s₄ ⟨i₄, _, f₄, _⟩ => ?_)
@@ -4632,8 +4632,8 @@ theorem callM_rel (v : Proof.ChaCha20.X86_64.XorImpl) (m : Nat) :
   have after : ∀ {σ₀ s : State}, APre e σ₀ → XArgsM σ₀ m s →
       WP isa (.call v.callee.name v.callee.code) s (After σ₀) := fun hp a =>
     a.call hp v fun _ _ wr cs _ rsi _ =>
-      ⟨rsi, by rw [cs _ calleeSaved_rsp, a.rsp], by rw [cs _ (by simp [calleeSaved]), a.r13],
-        by rw [cs _ (by simp [calleeSaved]), a.r14], by rw [cs _ (by simp [calleeSaved]), a.r12],
+      ⟨rsi, by rw [cs _ calleeSaved_rsp, a.rsp], by rw [cs _ (by decide), a.r13],
+        by rw [cs _ (by decide), a.r14], by rw [cs _ (by decide), a.r12],
         by rw [wr, a.wr]⟩
   exact (ct.wp fun _ _ h => ⟨after hp h.1, after hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
 
@@ -4810,9 +4810,9 @@ theorem small_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w = 5 �
     WP isa (cryptSmall w) s (After s₀) :=
   WP.mono (cryptSmall_ok hf hw hp h.inv hle h.ks) fun _ c =>
     ⟨c.rsi, by rw [c.cs _ calleeSaved_rsp (by decide), h.inv.rsp],
-      by rw [c.cs _ (by simp [calleeSaved]) (by decide), h.inv.r13],
-      by rw [c.cs _ (by simp [calleeSaved]) (by decide), h.inv.r14],
-      by rw [c.cs _ (by simp [calleeSaved]) (by decide), h.inv.r12], by rw [c.wr, h.inv.wr]⟩
+      by rw [c.cs _ (by decide) (by decide), h.inv.r13],
+      by rw [c.cs _ (by decide) (by decide), h.inv.r14],
+      by rw [c.cs _ (by decide) (by decide), h.inv.r12], by rw [c.wr, h.inv.wr]⟩
 
 end
 

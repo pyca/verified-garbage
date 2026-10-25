@@ -38,9 +38,9 @@ def Wu (s₀ : State) (p : Nat) : BitVec 16 := (coeffAt s₀.mem (s₀.gpr .x0) 
 theorem coeffAt_chunk (m : Mem) (p : Addr) (j : Nat) {k : Nat} (hk : k < 4) :
     coeffAt m p (4 * j + k) = vword (m.read (p + BitVec.ofNat 64 (16 * j)) 16) k := by
   have key : ∀ k, p + BitVec.ofNat 64 (16 * j) + BitVec.ofNat 64 (4 * k) = coeffAddr p (4 * j + k) :=
-    fun k => by rw [ptr_add, coeffAddr]; exact congrArg (p + BitVec.ofNat 64 ·) (by omega)
+    fun k => by rw [ptr_add, coeffAddr]; exact congrArg (p + BitVec.ofNat 64 ·) (by omega_arith)
   rw [read16, vword_ofVWords _ _ _ _ hk]
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
     simp only [List.getElem_cons_zero, List.getElem_cons_succ] <;> rw [key] <;> rfl
 
 /-- The machine's state at the start holds of `s₀`, for regions laid out as `rsU` and `rsN`:
@@ -73,7 +73,7 @@ theorem initU_rel {rs : List Rg} {s₀ : State} {tb : Addr} {tab : Nat} {H : Lis
         show GHd rs s₀ (G.ofCode (slot gw 0 (gi r))) _
         rw [slot_zero]
         trivial
-  · rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl
+  · rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl
     · rw [hc0] at hj
       rw [show ((initUs tab).chunk 0 j).get e = _ from fInU_get j hj e he]
       have ea : caddr rs s₀ 0 j = s₀.gpr .x0 + BitVec.ofNat 64 (16 * j) := by
@@ -81,9 +81,9 @@ theorem initU_rel {rs : List Rg} {s₀ : State} {tb : Addr} {tab : Nat} {H : Lis
       split
       · rename_i hev
         refine (Hd.mk (by decide)).2 ?_
-        rw [eval_mk, Nat.zero_mod, Nat.mod_eq_of_lt (show 4 * j + e / 2 < 512 by omega)]
-        rw [hL, Wu, coeffAt_chunk _ _ _ (show e / 2 < 4 by omega), vword_lo, ea,
-          show 2 * (e / 2) = e by omega]
+        rw [eval_mk, Nat.zero_mod, Nat.mod_eq_of_lt (show 4 * j + e / 2 < 512 by omega_arith)]
+        rw [hL, Wu, coeffAt_chunk _ _ _ (show e / 2 < 4 by omega_arith), vword_lo, ea,
+          show 2 * (e / 2) = e by omega_arith]
       · exact Hd.junk _
     · rw [show ((initUs tab).chunk 1 j).get e = 0 from by
         show slot tw (slot yw 0 j) e = 0; rw [slot_zero, slot_zero]]
@@ -91,7 +91,7 @@ theorem initU_rel {rs : List Rg} {s₀ : State} {tb : Addr} {tab : Nat} {H : Lis
     · rw [hc2] at hj
       have ea : caddr rs s₀ 2 j = tb + BitVec.ofNat 64 (0 + 16 * j) := by
         rw [caddr, h2, Nat.zero_add]
-      have hv := vhalf_table (m := s₀.mem) (p := tb) (off := 0) (N := 64) (H := H) htab (i := j) (by omega) he
+      have hv := vhalf_table (m := s₀.mem) (p := tb) (off := 0) (N := 64) (H := H) htab (i := j) (by omega_arith) he
       rw [show ((initUs tab).chunk 2 j).get e = _ from hT hj he, ea, hv]
       exact Hd.cT _
 
@@ -100,9 +100,9 @@ theorem lrep_redU {m : Mem} {p : Addr} (h : Reduced m p) {i : Nat} (hi : i < 256
     LRep ((coeffAt m p i).extractLsb' 0 16) (polyAt m p)[i]! 3329 := by
   have hv := polyAt_val h (show i < n from hi)
   have hl : (coeffAt m p i).toNat < 3329 := h i hi
-  rw [LRep, toInt_lo (by omega), ← hv]
+  rw [LRep, toInt_lo (by omega_arith), ← hv]
   have hz : ((polyAt m p)[i]!).val < 3329 := ((polyAt m p)[i]!).isLt
-  exact ⟨by omega, by omega, by simp⟩
+  exact ⟨by omega_arith, by omega_arith, by simp⟩
 
 /-- After a run that `outU` accepts, the polynomial at `x0` holds `O`'s coefficients. -/
 theorem polyIs_of_outU {rs : List Rg} {s₀ s : State} {L : Nat → Nat → BitVec 16} {O : Nat → BitVec 16}
@@ -113,22 +113,22 @@ theorem polyIs_of_outU {rs : List Rg} {s₀ s : State} {L : Nat → Nat → BitV
     simpa only [outU, List.all_eq_true, List.mem_range, Nat.beq_eq] using ho
   refine polyIs_of_toNat fun i hi => ?_
   have hi256 : i < 256 := hi
-  have hj : i / 4 < chunks rs 0 := by rw [hc0]; omega
+  have hj : i / 4 < chunks rs 0 := by rw [hc0]; omega_arith
   have ea : caddr rs s₀ 0 (i / 4) = s₀.gpr .x0 + BitVec.ofNat 64 (16 * (i / 4)) := by
     rw [caddr, h0, ptr_zero]
-  have hlo := hr.mem 0 (by rw [hlen]; decide) (i / 4) hj (2 * (i % 4)) (by omega)
-  have hhi := hr.mem 0 (by rw [hlen]; decide) (i / 4) hj (2 * (i % 4) + 1) (by omega)
-  rw [hout _ (by omega) _ (by omega), ite_eq_left (by omega), ea,
-    show 4 * (i / 4) + 2 * (i % 4) / 2 = i by omega] at hlo
-  rw [hout _ (by omega) _ (by omega), ite_eq_right (by omega), ea] at hhi
+  have hlo := hr.mem 0 (by rw [hlen]; decide) (i / 4) hj (2 * (i % 4)) (by omega_arith)
+  have hhi := hr.mem 0 (by rw [hlen]; decide) (i / 4) hj (2 * (i % 4) + 1) (by omega_arith)
+  rw [hout _ (by omega_arith) _ (by omega_arith), ite_eq_left (by omega_arith), ea,
+    show 4 * (i / 4) + 2 * (i % 4) / 2 = i by omega_arith] at hlo
+  rw [hout _ (by omega_arith) _ (by omega_arith), ite_eq_right (by omega_arith), ea] at hhi
   have vlo := (Hd.mk (by decide)).1 hlo
-  rw [eval_mk, Nat.mod_eq_of_lt (show i < 512 by omega)] at vlo
+  rw [eval_mk, Nat.mod_eq_of_lt (show i < 512 by omega_arith)] at vlo
   have vhi : vhalf (s.mem.read (s₀.gpr .x0 + BitVec.ofNat 64 (16 * (i / 4))) 16) (2 * (i % 4) + 1) = 0 := by
     have := (Hd.mk (by decide)).1 hhi
     rw [eval_mk] at this
     exact this
-  rw [show i = 4 * (i / 4) + i % 4 by omega, coeffAt_chunk _ _ _ (Nat.mod_lt _ (by decide)), vword_halves,
-    vhi, vlo, BitVec.toNat_append, show 4 * (i / 4) + i % 4 = i by omega]
+  rw [show i = 4 * (i / 4) + i % 4 by omega_arith, coeffAt_chunk _ _ _ (Nat.mod_lt _ (by decide)), vword_halves,
+    vhi, vlo, BitVec.toNat_append, show 4 * (i / 4) + i % 4 = i by omega_arith]
   rw [show (0 : BitVec 16).toNat = 0 from rfl, Nat.zero_shiftLeft, Nat.zero_or]
   exact hO i hi256
 
@@ -145,15 +145,15 @@ structure InU (sym : String) (H : List Nat) (s : State) : Prop where
 
 /-- A region within the first `n` bytes of a region of `m`. -/
 theorem disjoint_prefix {a b : Addr} {n m k : Nat} (hn : n ≤ m) (h : Region.Disjoint ⟨a, m⟩ ⟨b, k⟩) :
-    Region.Disjoint ⟨a, n⟩ ⟨b, k⟩ := fun x h₁ h₂ => h x (by simp only [Region.Contains] at h₁ ⊢; omega) h₂
+    Region.Disjoint ⟨a, n⟩ ⟨b, k⟩ := fun x h₁ h₂ => h x (by simp only [Region.Contains] at h₁ ⊢; omega_arith) h₂
 
 theorem ctxU {sym : String} {H : List Nat} {s₀ : State} (hi : InU sym H s₀) : Ctx (rsUs sym) s₀ := by
   have h3 : (rsUs sym).length = 3 := rfl
-  have cases3 : ∀ k < (rsUs sym).length, k = 0 ∨ k = 1 ∨ k = 2 := fun k hk => by rw [h3] at hk; omega
+  have cases3 : ∀ k < (rsUs sym).length, k = 0 ∨ k = 1 ∨ k = 2 := fun k hk => by rw [h3] at hk; omega_arith
   have w0 : polyRegion (s₀.gpr .x0) ∈ s₀.wr := by rw [hi.wr]; exact List.mem_cons_self ..
   have w1 : polyRegion (s₀.gpr .x1) ∈ s₀.wr := by rw [hi.wr]; simp
   have c1 : ∀ a, Region.Contains ⟨s₀.gpr .x1, 512⟩ a 16 → (polyRegion (s₀.gpr .x1)).Contains a 16 :=
-    fun a h => by simp only [Region.Contains] at h ⊢; omega
+    fun a h => by simp only [Region.Contains] at h ⊢; omega_arith
   refine Ctx.of (fun k => [polyRegion (s₀.gpr .x0), ⟨s₀.gpr .x1, 512⟩,
       ⟨s₀.syms sym, 512⟩].getD k ⟨0, 0⟩) (by simp [rsUs]) (fun k hk => ?_) (fun k hk => ?_)
     (fun k hk a ha => ?_) (fun k hk hw a ha => ?_) (fun k k' hk hk' hne => ?_)
@@ -188,14 +188,14 @@ structure InN (s : State) : Prop where
 theorem contains_shift {p a : Addr} {d n k K : Nat} (h : Region.Contains ⟨p + BitVec.ofNat 64 d, k⟩ a n)
     (hK : d + k ≤ K) (hK64 : K < 2 ^ 64) : Region.Contains ⟨p, K⟩ a n := by
   simp only [Region.Contains] at h ⊢
-  rw [Offset.sub_add_eq, Offset.toNat_sub_ofNat, Nat.mod_eq_of_lt (show d < 2 ^ 64 by omega)] at h
+  rw [Offset.sub_add_eq, Offset.toNat_sub_ofNat, Nat.mod_eq_of_lt (show d < 2 ^ 64 by omega_arith)] at h
   have := (a - p).isLt
   by_cases hc : d ≤ (a - p).toNat
-  · rw [show 2 ^ 64 - d + (a - p).toNat = (a - p).toNat - d + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)] at h
-    omega
-  · rw [Nat.mod_eq_of_lt (by omega)] at h
-    omega
+  · rw [show 2 ^ 64 - d + (a - p).toNat = (a - p).toNat - d + 2 ^ 64 by omega_arith, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_arith)] at h
+    omega_arith
+  · rw [Nat.mod_eq_of_lt (by omega_arith)] at h
+    omega_arith
 
 theorem contains_self {p : Addr} {n len : Nat} (h : n ≤ len) : Region.Contains ⟨p, len⟩ p n := by
   simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]
@@ -203,7 +203,7 @@ theorem contains_self {p : Addr} {n len : Nat} (h : n ≤ len) : Region.Contains
 
 theorem ctxN {s₀ : State} (hi : InN s₀) : Ctx rsN s₀ := by
   have h3 : rsN.length = 3 := rfl
-  have cases3 : ∀ k < rsN.length, k = 0 ∨ k = 1 ∨ k = 2 := fun k hk => by rw [h3] at hk; omega
+  have cases3 : ∀ k < rsN.length, k = 0 ∨ k = 1 ∨ k = 2 := fun k hk => by rw [h3] at hk; omega_arith
   have w0 : polyRegion (s₀.gpr .x0) ∈ s₀.wr := by rw [hi.wr]; exact List.mem_cons_self ..
   have w1 : polyRegion (s₀.gpr .x1) ∈ s₀.wr := by rw [hi.wr]; simp
   have c1 : ∀ d, d + 16 ≤ 1024 → ∀ a, Region.Contains ⟨s₀.gpr .x1 + BitVec.ofNat 64 d, 512⟩ a 16 →
@@ -263,7 +263,7 @@ theorem ntt_run (s₀ : State) (hi : InN s₀) :
   have hm : ∀ k < 1024, s₁.mem (s₀.gpr .x0 + BitVec.ofNat 64 k) = s₀.mem (s₀.gpr .x0 + BitVec.ofNat 64 k) :=
     fun k hk => h₁.frame _ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact fun h => hi.disj _ (Offset.contains_base _ (show k + 1 ≤ 1024 by omega) (by omega)) h)
+      exact fun h => hi.disj _ (Offset.contains_base _ (show k + 1 ≤ 1024 by omega_arith) (by omega_arith)) h)
   have hp : ∀ i < n, coeffAt s₁.mem (s₀.gpr .x0) i = coeffAt s₀.mem (s₀.gpr .x0) i :=
     fun i hi' => coeffAt_congr hm hi'
   have hpoly : polyAt s₁.mem (s₀.gpr .x0) = polyAt s₀.mem (s₀.gpr .x0) :=

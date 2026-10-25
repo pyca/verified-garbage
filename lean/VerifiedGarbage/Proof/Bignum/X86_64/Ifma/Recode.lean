@@ -40,7 +40,7 @@ theorem bv_lt (m : Mem) (F : Addr) (o : Nat) : ∀ n, bv m F o n < 256 ^ n
   | n + 1 => by
     have := bv_lt m F o n
     have := (m (off F (o + n))).isLt
-    rw [bv, Nat.pow_succ]; omega
+    rw [bv, Nat.pow_succ]; omega_arith
 
 theorem bv_add (m : Mem) (F : Addr) (o n : Nat) :
     ∀ k, bv m F o (n + k) = bv m F o n * 256 ^ k + bv m F (o + n) k
@@ -53,7 +53,7 @@ theorem bv_congr {m m' : Mem} {F : Addr} {o : Nat} :
     ∀ n, (∀ i < n, m' (off F (o + i)) = m (off F (o + i))) → bv m' F o n = bv m F o n
   | 0, _ => rfl
   | n + 1, h => by
-    rw [bv, bv, bv_congr n fun i hi => h i (by omega), h n (by omega)]
+    rw [bv, bv, bv_congr n fun i hi => h i (by omega_arith), h n (by omega_arith)]
 
 /-- The layouts' groups: `P = w G`, `ND = 8 G`. -/
 theorem lay_groups (hl : LayOk l) : l.P = l.w * (l.P / l.w) ∧ l.ND = 8 * (l.P / l.w) := by
@@ -66,7 +66,7 @@ theorem digit_group (hl : LayOk l) {m : Mem} {F : Addr} {o g t : Nat} (hg : g < 
   generalize hG : l.P / l.w = G at hP hN hg
   have hT : l.T ^ 8 = 256 ^ l.w := by rw [Lay.T, ← Nat.pow_mul, Nat.mul_comm, Nat.pow_mul]
   have hTp : 0 < l.T := T_pos hl
-  obtain ⟨r, hr⟩ : ∃ r, G = g + 1 + r := ⟨G - 1 - g, by omega⟩
+  obtain ⟨r, hr⟩ : ∃ r, G = g + 1 + r := ⟨G - 1 - g, by omega_arith⟩
   -- the value: the groups before `g`, group `g`, the rest
   have e1 : l.P = l.w * g + (l.w + l.w * r) := by
     rw [hP, hr, Nat.mul_add, Nat.mul_add, Nat.mul_one, Nat.add_assoc]
@@ -78,13 +78,13 @@ theorem digit_group (hl : LayOk l) {m : Mem} {F : Addr} {o g t : Nat} (hg : g < 
     rw [e1, bv_add, bv_add m F (o + l.w * g) l.w (l.w * r), hH, hv, hLo, Nat.add_mul, Nat.mul_assoc,
       ← Nat.pow_add]
     grind
-  have hd : l.ND - 1 - (8 * g + t) = 8 * r + (7 - t) := by rw [hN, hr]; omega
+  have hd : l.ND - 1 - (8 * g + t) = 8 * r + (7 - t) := by rw [hN, hr]; omega_arith
   have hD : l.T ^ (8 * r) = 256 ^ (l.w * r) := by rw [Nat.pow_mul, hT, ← Nat.pow_mul]
   have q1 : bv m F o l.P / l.T ^ (8 * r) = H * 256 ^ l.w + v := by
     rw [hV, hD, Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.pow_pos (by decide)), Nat.div_eq_of_lt hLlt,
       Nat.zero_add]
   have e2 : H * 256 ^ l.w + v = v + l.T ^ (7 - t) * (H * l.T ^ t * l.T) := by
-    rw [← hT, show 8 = (7 - t) + t + 1 by omega, Nat.pow_succ, Nat.pow_add]; grind
+    rw [← hT, show 8 = (7 - t) + t + 1 by omega_arith, Nat.pow_succ, Nat.pow_add]; grind
   rw [digit, hd, Nat.pow_add, ← Nat.div_div_eq_div_mul, q1, e2, Nat.add_mul_div_left _ _ (Nat.pow_pos hTp),
     Nat.add_mul_mod_self_right]
 
@@ -93,28 +93,28 @@ theorem digit_group (hl : LayOk l) {m : Mem} {F : Addr} {o g t : Nat} (hg : g < 
 /-- Byte `j` of the big-endian value of `n` bytes. -/
 theorem bv_byte (m : Mem) (F : Addr) (o : Nat) {n j : Nat} (hj : j < n) :
     bv m F o n / 256 ^ (n - 1 - j) % 256 = (m (off F (o + j))).toNat := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = j + 1 + k := ⟨n - 1 - j, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, n = j + 1 + k := ⟨n - 1 - j, by omega_arith⟩
   have hr := bv_lt m F (o + (j + 1)) k
   have hb := (m (off F (o + j))).isLt
-  rw [bv_add, show j + 1 + k - 1 - j = k by omega, Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.pow_pos (by decide)),
+  rw [bv_add, show j + 1 + k - 1 - j = k by omega_arith, Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.pow_pos (by decide)),
     Nat.div_eq_of_lt hr, Nat.zero_add, bv]
-  omega
+  omega_arith
 
 /-- With windows of 4 bits, digit `i` of the padded exponent's value is a
 nibble of byte `i / 2` (`nibOf`), as the windows read it without `recode`. -/
 theorem digit_nib (hl : LayOk l) (hw : l.w = 4) {m : Mem} {F : Addr} {o i : Nat} (hi : i < l.ND) :
     digit l (bv m F o l.P) i = nibOf l i (m (off F (o + i / 2))).toNat := by
   obtain ⟨hP, hN⟩ := lay_groups hl
-  have hg : i / 8 < l.P / l.w := by omega
-  have e := digit_group hl (m := m) (F := F) (o := o) hg (show i % 8 < 8 by omega)
-  rw [show 8 * (i / 8) + i % 8 = i by omega] at e
+  have hg : i / 8 < l.P / l.w := by omega_arith
+  have e := digit_group hl (m := m) (F := F) (o := o) hg (show i % 8 < 8 by omega_arith)
+  rw [show 8 * (i / 8) + i % 8 = i by omega_arith] at e
   have hT : l.T = 16 := by simp only [Lay.T, hw]
-  have hb := bv_byte m F (o + l.w * (i / 8)) (n := l.w) (j := i % 8 / 2) (by omega)
-  rw [show o + l.w * (i / 8) + i % 8 / 2 = o + i / 2 by rw [hw]; omega] at hb
+  have hb := bv_byte m F (o + l.w * (i / 8)) (n := l.w) (j := i % 8 / 2) (by omega_arith)
+  rw [show o + l.w * (i / 8) + i % 8 / 2 = o + i / 2 by rw [hw]; omega_arith] at hb
   have hpow : ∀ t < 8, 16 ^ (7 - t) = 256 ^ (4 - 1 - t / 2) * 16 ^ (1 - t % 2) := by decide
   rw [e, hT]
   simp only [nibOf, hw, ite_true] at hb ⊢
-  rw [show i % 2 = i % 8 % 2 by omega, hpow _ (by omega), ← Nat.div_div_eq_div_mul, ← hb]
+  rw [show i % 2 = i % 8 % 2 by omega_arith, hpow _ (by omega_arith), ← Nat.div_div_eq_div_mul, ← hb]
   generalize bv m F (o + 4 * (i / 8)) 4 / 256 ^ (4 - 1 - i % 8 / 2) = X
   rcases Nat.mod_two_eq_zero_or_one (i % 8) with h | h
   · simp only [h, ↓reduceIte, Nat.sub_zero, Nat.pow_one]
@@ -128,10 +128,10 @@ theorem shl8_or {a : Nat} (ha : a < 2 ^ 48) (b : BitVec 8) :
   apply BitVec.eq_of_toNat_eq
   have hb := b.isLt
   rw [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show a <<< 8 < 2 ^ 64 by rw [Nat.shiftLeft_eq]; omega),
-    ← Nat.shiftLeft_add_eq_or_of_lt (show b.toNat < 2 ^ 8 by omega), Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show a <<< 8 < 2 ^ 64 by rw [Nat.shiftLeft_eq]; omega_arith),
+    ← Nat.shiftLeft_add_eq_or_of_lt (show b.toNat < 2 ^ 8 by omega_arith), Nat.shiftLeft_eq,
+    Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- One byte of a group into `rax`. -/
 theorem accStep_ok {s : State} {X : Addr} {a j : Nat} (ha : a < 2 ^ 48) (h8 : s.gpr .r8 = X)
@@ -164,11 +164,11 @@ theorem accum_ok {F : Addr} {o : Nat} :
   | 0, s, _, _, hra, _ => WP.block_nil ⟨hra, VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl, rfl⟩
   | n + 1, s, hn, h8, hra, hrd => by
     rw [accCode, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (accum_ok (by omega) h8 hra fun j hj => hrd j (by omega)) fun t ⟨ra, k, me, mx⟩ => ?_
+    refine WP.mono (accum_ok (by omega_arith) h8 hra fun j hj => hrd j (by omega_arith)) fun t ⟨ra, k, me, mx⟩ => ?_
     have h8t : t.gpr .r8 = off F o := by rw [k.gpr (by decide)]; exact h8
     have hb := bv_lt s.mem F o n
-    refine WP.mono (accStep_ok (j := n) (Nat.lt_of_lt_of_le hb (pow256_le (by omega))) h8t ra
-      (by rw [k.2.1, k.2.2, off_add]; exact hrd n (by omega))) fun t' ⟨ra', k', me', mx'⟩ =>
+    refine WP.mono (accStep_ok (j := n) (Nat.lt_of_lt_of_le hb (pow256_le (by omega_arith))) h8t ra
+      (by rw [k.2.1, k.2.2, off_add]; exact hrd n (by omega_arith))) fun t' ⟨ra', k', me', mx'⟩ =>
       ⟨?_, (k.trans k').mono (by decide), me'.trans me, mx'.trans mx⟩
     rw [ra', bv, me, off_add]
 
@@ -182,10 +182,10 @@ theorem digit_byte (hl : LayOk l) {v k : Nat} (hv : v < 2 ^ 64) :
       BitVec.ofNat 8 (v / 2 ^ k % l.T) := by
   have hT := hl.T_bounds
   have hw := hl.w_bounds
-  rw [se_ofNat (show l.T - 1 < 2 ^ 31 by omega)]
+  rw [se_ofNat (show l.T - 1 < 2 ^ 31 by omega_arith)]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv, Nat.mod_eq_of_lt (show l.T - 1 < 2 ^ 64 by omega),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv, Nat.mod_eq_of_lt (show l.T - 1 < 2 ^ 64 by omega_arith),
     Nat.shiftRight_eq_div_pow, show l.T - 1 = 2 ^ l.w - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
   rfl
 
@@ -211,7 +211,7 @@ theorem digStep_ok (hl : LayOk l) {s : State} {Y : Addr} {v t : Nat} (hv : v < 2
     have hsh : 1 ≤ l.w * (7 - t) ∧ l.w * (7 - t) ≤ 63 := by
       have := hl.w_bounds
       constructor
-      · exact Nat.mul_pos (by omega) (by omega)
+      · exact Nat.mul_pos (by omega_arith) (by omega_arith)
       · exact Nat.le_trans (Nat.mul_le_mul this.2 (Nat.sub_le 7 t)) (by decide)
     refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rdx] (Q := fun s' =>
       s'.mem = s.mem.writeW (Y + BitVec.ofNat 64 t) (BitVec.ofNat 8 (v / l.T ^ (7 - t) % l.T)) ∧
@@ -233,20 +233,20 @@ theorem digits_ok (hl : LayOk l) {F : Addr} {o v : Nat} (hv : v < 2 ^ 64) (hF : 
       VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl⟩
   | n + 1, s, hn, h9, hra, hwr => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (digits_ok hl hv hF (by omega) h9 hra fun t ht => hwr t (by omega))
+    refine WP.mono (digits_ok hl hv hF (by omega_arith) h9 hra fun t ht => hwr t (by omega_arith))
       fun u ⟨bu, ou, ku, xu⟩ => ?_
     have h9u : u.gpr .r9 = off F o := by rw [ku.gpr (by decide)]; exact h9
     have hrau : u.gpr .rax = BitVec.ofNat 64 v := by rw [ku.gpr (by decide)]; exact hra
-    refine WP.mono (digStep_ok hl (t := n) hv (by omega) h9u hrau (by rw [ku.2.2, off_add]; exact hwr n (by omega)))
+    refine WP.mono (digStep_ok hl (t := n) hv (by omega_arith) h9u hrau (by rw [ku.2.2, off_add]; exact hwr n (by omega_arith)))
       fun u' ⟨mu, ku', xu'⟩ => ⟨fun t ht => ?_, ?_, (ku.trans ku').mono (by decide), xu'.trans xu⟩
     · rw [mu, off_add]
       by_cases e : t = n
       · subst e; exact writeB_self _ _ _
-      · rw [writeB_outside u.mem F (d := o + n) _ (by omega) _ (by rw [ofs_off0 F (by omega)]; omega)]
-        exact bu t (by omega)
+      · rw [writeB_outside u.mem F (d := o + n) _ (by omega_arith) _ (by rw [ofs_off0 F (by omega_arith)]; omega_arith)]
+        exact bu t (by omega_arith)
     · rw [mu, off_add]
-      exact (ou.mono (Nat.le_refl _) (by omega)).trans
-        ((writeB_outside u.mem F (d := o + n) _ (by omega)).mono (by omega) (by omega))
+      exact (ou.mono (Nat.le_refl _) (by omega_arith)).trans
+        ((writeB_outside u.mem F (d := o + n) _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
 
 /-! ## The groups -/
 
@@ -284,19 +284,19 @@ theorem recIter_ok (hl : LayOk l) {s₀ t : State} {F : Addr} {e d g : Nat} (hg 
     fun u ⟨⟨ra, me, mx⟩, k⟩ => ?_
   have h8u : u.gpr .r8 = off F (e + l.w * g) := by rw [k.gpr (by decide)]; exact h.r8
   rw [WP.block_append_iff]
-  refine WP.mono (accum_ok (by omega) h8u ra fun j hj => by
-      rw [k.2.1, k.2.2, h.keep.2.1, h.keep.2.2, Nat.add_assoc]; exact hrd _ (by omega))
+  refine WP.mono (accum_ok (by omega_arith) h8u ra fun j hj => by
+      rw [k.2.1, k.2.2, h.keep.2.1, h.keep.2.2, Nat.add_assoc]; exact hrd _ (by omega_arith))
     fun u₁ ⟨ra₁, k₁, me₁, mx₁⟩ => ?_
   -- the group's value, from `s₀`'s bytes
   have hv : bv u.mem F (e + l.w * g) l.w = bv s₀.mem F (e + l.w * g) l.w := by
     rw [me]
-    exact bv_congr _ fun i hi => h.out _ (.inl (by rw [ofs_off0 F (by omega)]; omega))
+    exact bv_congr _ fun i hi => h.out _ (.inl (by rw [ofs_off0 F (by omega_arith)]; omega_arith))
   have hvl : bv u.mem F (e + l.w * g) l.w < 2 ^ 64 :=
-    Nat.lt_of_lt_of_le (bv_lt _ _ _ _) (Nat.le_trans (pow256_le (by omega)) (by decide))
+    Nat.lt_of_lt_of_le (bv_lt _ _ _ _) (Nat.le_trans (pow256_le (by omega_arith)) (by decide))
   have h9 : u₁.gpr .r9 = off F (d + 8 * g) := by rw [k₁.gpr (by decide), k.gpr (by decide)]; exact h.r9
   rw [WP.block_append_iff]
-  refine WP.mono (digits_ok hl hvl (o := d + 8 * g) (by omega) (Nat.le_refl 8) h9 ra₁ fun i hi => by
-      rw [k₁.2.2, k.2.2, h.keep.2.2, Nat.add_assoc]; exact hwr _ (by omega))
+  refine WP.mono (digits_ok hl hvl (o := d + 8 * g) (by omega_arith) (Nat.le_refl 8) h9 ra₁ fun i hi => by
+      rw [k₁.2.2, k.2.2, h.keep.2.2, Nat.add_assoc]; exact hwr _ (by omega_arith))
     fun u₂ ⟨b₂, o₂, k₂, x₂⟩ => ?_
   have h8₂ : u₂.gpr .r8 = off F (e + l.w * g) := by rw [k₂.gpr (by decide), k₁.gpr (by decide)]; exact h8u
   have h9₂ : u₂.gpr .r9 = off F (d + 8 * g) := by rw [k₂.gpr (by decide)]; exact h9
@@ -307,9 +307,9 @@ theorem recIter_ok (hl : LayOk l) {s₀ t : State} {F : Addr} {e d g : Nat} (hg 
     u'.gpr .r8 = off F (e + l.w * (g + 1)) ∧ u'.gpr .r9 = off F (d + 8 * (g + 1)) ∧
       u'.gpr .rcx = BitVec.ofNat 64 (l.P / l.w - (g + 1)) ∧ u'.zf = some (decide (g + 1 = l.P / l.w)) ∧
       u'.mem = u₂.mem ∧ u'.mxcsr = u₂.mxcsr) (by
-    xrun [h8₂, h9₂, hc₂, se_ofNat (show l.w < 2 ^ 31 by omega)]
+    xrun [h8₂, h9₂, hc₂, se_ofNat (show l.w < 2 ^ 31 by omega_arith)]
     have e1 : BitVec.ofNat 64 (l.P / l.w - g) - 1 = BitVec.ofNat 64 (l.P / l.w - (g + 1)) := by
-      rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega)]
+      rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega_arith)]
       congr 1
     and_intros
     · rw [off_add, Nat.mul_succ, Nat.add_assoc]
@@ -321,24 +321,24 @@ theorem recIter_ok (hl : LayOk l) {s₀ t : State} {F : Addr} {e d g : Nat} (hg 
       · simp only [hz, decide_false, beq_eq_false_iff_ne, ne_eq]
         intro h'
         have := congrArg BitVec.toNat h'
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
         change _ = 0 at this
-        omega
+        omega_arith
     all_goals rfl) rfl) fun u' ⟨⟨r8', r9', rc', z', me', mx'⟩, k'⟩ => ⟨z', r8', r9', rc', fun i hi => ?_, ?_,
       (((h.keep.trans k).trans k₁).trans k₂).trans k' |>.mono (by decide), by rw [mx', x₂, mx₁, mx, h.mx]⟩
   · rw [me']
     by_cases hi' : i < 8 * g
-    · rw [o₂ _ (.inl (by rw [ofs_off0 F (by omega)]; omega)), me₁, me]
+    · rw [o₂ _ (.inl (by rw [ofs_off0 F (by omega_arith)]; omega_arith)), me₁, me]
       exact h.dg i hi'
-    · obtain ⟨t', ht', rfl⟩ : ∃ t', t' < 8 ∧ i = 8 * g + t' := ⟨i - 8 * g, by omega, by omega⟩
+    · obtain ⟨t', ht', rfl⟩ : ∃ t', t' < 8 ∧ i = 8 * g + t' := ⟨i - 8 * g, by omega_arith, by omega_arith⟩
       rw [← Nat.add_assoc, b₂ t' ht', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
           have := digit_lt hl (bv u.mem F (e + l.w * g) l.w / 2 ^ 0) 0; have := hl.T_bounds
-          exact Nat.lt_of_lt_of_le (Nat.mod_lt _ (T_pos hl)) (by omega)),
+          exact Nat.lt_of_lt_of_le (Nat.mod_lt _ (T_pos hl)) (by omega_arith)),
         hv, digit_group hl hg ht']
   · rw [me']
     have o₂' := o₂
     rw [me₁, me] at o₂'
-    exact (h.out.mono (Nat.le_refl _) (by omega)).trans (o₂'.mono (by omega) (by omega))
+    exact (h.out.mono (Nat.le_refl _) (by omega_arith)).trans (o₂'.mono (by omega_arith) (by omega_arith))
 
 /-- The loop over the groups. -/
 theorem recLoop_ok (hl : LayOk l) {s₀ : State} {F : Addr} {e d : Nat}
@@ -380,8 +380,8 @@ theorem recode_ok (hl : LayOk l) (hw : l.w ≠ 4) {s : State} {W F : Addr} {p : 
     and_intros
     · apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (a := l.P / l.w) (b := 2 ^ 32) (by omega),
-        Nat.mod_eq_of_lt (a := l.P / l.w) (b := 2 ^ 64) (by omega)]
+      rw [Nat.mod_eq_of_lt (a := l.P / l.w) (b := 2 ^ 32) (by omega_arith),
+        Nat.mod_eq_of_lt (a := l.P / l.w) (b := 2 ^ 64) (by omega_arith)]
     all_goals rfl) rfl) fun t ⟨⟨r8, r9, rc, me, mx⟩, k⟩ => ?_)
   have i₀ : RecInv l t F (l.D * p + l.oE) (l.D * p + l.oD) 0 t :=
     ⟨by rw [Nat.mul_zero, Nat.add_zero]; exact r8, by rw [Nat.mul_zero, Nat.add_zero]; exact r9,
@@ -390,8 +390,8 @@ theorem recode_ok (hl : LayOk l) (hw : l.w ≠ 4) {s : State} {W F : Addr} {p : 
   refine WP.mono (recLoop_ok hl (by omega_using [d1]) (by omega_using [hn, d2])
       (fun i hi => by rw [k.2.1, k.2.2]; exact hrd i hi) (fun i hi => by rw [k.2.2]; exact hwr i hi) i₀)
     fun t' hI => ⟨fun i hi => ?_, ?_, (k.trans hI.keep).mono (by decide), hI.mx.trans mx⟩
-  · rw [hI.dg i (by omega), me]
-  · rw [← me]; exact hI.out.mono (Nat.le_refl _) (by omega)
+  · rw [hI.dg i (by omega_arith), me]
+  · rw [← me]; exact hI.out.mono (Nat.le_refl _) (by omega_arith)
 
 /-- The value of bytes at `o` that hold `bs`. -/
 theorem bv_os2ip (m : Mem) (F : Addr) (o : Nat) (bs : List Byte)
@@ -399,7 +399,7 @@ theorem bv_os2ip (m : Mem) (F : Addr) (o : Nat) (bs : List Byte)
     ∀ n ≤ bs.length, bv m F o n = Spec.Rsa.os2ip (bs.take n)
   | 0, _ => rfl
   | n + 1, hn => by
-    rw [bv, bv_os2ip m F o bs h n (by omega), List.take_add_one, List.getElem?_eq_getElem (by omega),
-      Option.toList_some, os2ip_snoc, h n (by omega), Nat.mul_comm]
+    rw [bv, bv_os2ip m F o bs h n (by omega_arith), List.take_add_one, List.getElem?_eq_getElem (by omega_arith),
+      Option.toList_some, os2ip_snoc, h n (by omega_arith), Nat.mul_comm]
 
 end VG.Proof.Bignum.X86_64.Ifma

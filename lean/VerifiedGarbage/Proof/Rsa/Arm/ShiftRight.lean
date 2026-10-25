@@ -25,7 +25,7 @@ theorem shiftRight_word (x y : BitVec 32) :
   simp only [Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
   have hx := x.isLt
   have hy := y.isLt
-  omega
+  omega_arith
 
 theorem shiftRightStep_ok (s : State) (a a' : Addr)
     (ha : State.addr (s.gpr .r0 + BitVec.ofNat 32 0) = a)
@@ -90,37 +90,37 @@ theorem shiftRightBody_ok {s0 s : State} {base : BitVec 32} {size o n i : Nat}
   have writable (d : Nat) (hd : d + 4 ≤ size) :
       InRegions s.wr (off (State.addr base) d) 4 := by
     rw [inv.rest.wr]
-    exact ⟨_, ctx.writable, Offset.contains_base _ hd (by omega)⟩
+    exact ⟨_, ctx.writable, Offset.contains_base _ hd (by omega_arith)⟩
   have readable (d : Nat) (hd : d + 4 ≤ size) :
       InRegions (s.rd ++ s.wr) (off (State.addr base) d) 4 := by
     obtain ⟨R, hR, hsub⟩ := writable d hd
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
   have alo : State.addr (s.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr base) (o + 4 * i) := by
     rw [inv.ptr, Offset.add_add, Nat.add_zero]
-    exact VG.Arm.addr_add (by omega)
+    exact VG.Arm.addr_add (by omega_arith)
   have ahi : State.addr (s.gpr .r0 + BitVec.ofNat 32 4) = off (State.addr base) (o + 4 * (i + 1)) := by
-    rw [inv.ptr, Offset.add_add, show o + 4 * i + 4 = o + 4 * (i + 1) by omega]
-    exact VG.Arm.addr_add (by omega)
-  refine WP.mono (shiftRightStep_ok s _ _ alo ahi (writable _ (by omega)) (readable _ (by omega))
-    (readable _ (by omega))) ?_
+    rw [inv.ptr, Offset.add_add, show o + 4 * i + 4 = o + 4 * (i + 1) by omega_arith]
+    exact VG.Arm.addr_add (by omega_arith)
+  refine WP.mono (shiftRightStep_ok s _ _ alo ahi (writable _ (by omega_arith)) (readable _ (by omega_arith))
+    (readable _ (by omega_arith))) ?_
   rintro t ⟨value, mem, ptr, count, zero, rest⟩
-  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega)
+  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega_arith)
   rw [← mem] at wr
-  have low := wr.val32 (d := o) (k := i) (by omega) (by omega)
-  have src := inv.outside.w32 (d := o + 4 * i) (by omega) (by omega)
-  have src' := inv.outside.w32 (d := o + 4 * (i + 1)) (by omega) (by omega)
+  have low := wr.val32 (d := o) (k := i) (by omega_arith) (by omega_arith)
+  have src := inv.outside.w32 (d := o + 4 * i) (by omega_arith) (by omega_arith)
+  have src' := inv.outside.w32 (d := o + 4 * (i + 1)) (by omega_arith) (by omega_arith)
   have top : w32 t.mem (State.addr base) (o + 4 * i) = (t.gpr .r3).toNat := by
     rw [mem, w32_write_self]
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, inv.rest.trans rest⟩, ?_⟩
+  refine ⟨⟨by omega_arith, ?_, ?_, ?_, ?_, inv.rest.trans rest⟩, ?_⟩
   · rw [ptr, inv.ptr]
     change base + BitVec.ofNat 32 (o + 4 * i) + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]
     congr 1
   · rw [count, inv.count]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)]
     congr 1
-  · exact (inv.outside.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega))
+  · exact (inv.outside.mono (Nat.le_refl _) (by omega_arith)).trans (wr.mono (by omega_arith) (by omega_arith))
   · change (t.gpr .r3).toNat = w32 s.mem (State.addr base) (o + 4 * i) / 2 +
       2 ^ 31 * (w32 s.mem (State.addr base) (o + 4 * (i + 1)) % 2) at value
     rw [src, src'] at value
@@ -143,11 +143,11 @@ theorem shiftRightBody_ok {s0 s : State} {base : BitVec 32} {size o n i : Nat}
     generalize P * (y % 2) = C at *
     generalize P * (x / 2) = A at *
     generalize P * (x % 2) = Bm at *
-    omega
+    omega_arith
   · rw [zero, inv.count]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith), ofNat_beq_zero (by omega_arith)]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_arith]
 
 theorem shiftRight_ok (s : State) {base : BitVec 32} {size o n : Nat}
     (ctx : ShiftRightCtx s base size o n) (hn : 0 < n)
@@ -158,7 +158,7 @@ theorem shiftRight_ok (s : State) {base : BitVec 32} {size o n : Nat}
   refine WP.loop (M := isa) inv ?_ n s ?_
   · intro k t h
     obtain ⟨i, hik, hk, hi⟩ := h
-    refine WP.mono (shiftRightBody_ok ctx hi (by omega)) ?_
+    refine WP.mono (shiftRightBody_ok ctx hi (by omega_arith)) ?_
     rintro u ⟨hu, hz⟩
     by_cases he : i + 1 = n
     · left
@@ -166,11 +166,11 @@ theorem shiftRight_ok (s : State) {base : BitVec 32} {size o n : Nat}
       change some (!u.z) = some false
       simp only [hz, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, hu⟩
+      refine ⟨?_, k - 1, by omega_arith, i + 1, by omega_arith, by omega_arith, hu⟩
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, hn, ?_⟩
-    refine ⟨by omega, ?_, ?_, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
+  · refine ⟨0, by omega_arith, hn, ?_⟩
+    refine ⟨by omega_arith, ?_, ?_, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
     · simpa only [Nat.mul_zero, Nat.add_zero] using hp
     · simpa only [Nat.sub_zero] using hc
     · simp only [val32, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero]
@@ -183,15 +183,15 @@ theorem ShiftRightInv.result {s t : State} {base : BitVec 32} {o n : Nat}
       (val32 s.mem (State.addr base) o n + 2 ^ (32 * n) * w32 s.mem (State.addr base) (o + 4 * n)) / 2 := by
   have v := h.value
   have low : val32 s.mem (State.addr base) o n % 2 = w32 s.mem (State.addr base) o % 2 := by
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_arith⟩
     rw [val32]
-    omega
+    omega_arith
   have even : 2 ^ (32 * n) % 2 = 0 := by
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_arith⟩
     rw [Nat.pow_mod]; simp
-  rw [Nat.mod_eq_of_lt (by omega : w32 s.mem (State.addr base) (o + 4 * n) < 2)] at v
+  rw [Nat.mod_eq_of_lt (by omega_arith : w32 s.mem (State.addr base) (o + 4 * n) < 2)] at v
   have : (2 ^ (32 * n) * w32 s.mem (State.addr base) (o + 4 * n)) % 2 = 0 := by
     rw [Nat.mul_mod, even, Nat.zero_mul]
-  omega
+  omega_arith
 
 end VG.Proof.Rsa.Arm

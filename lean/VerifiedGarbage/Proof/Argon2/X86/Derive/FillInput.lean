@@ -34,7 +34,7 @@ variable {s₀ : State} (hp : DPre s₀)
 include hp
 
 theorem scr_addr' {o : Nat} (ho : o < 16384) : addr (scrP s₀) o = scrB s₀ + BitVec.ofNat 64 o :=
-  addr_eq (by have := hp.scr_fits; omega)
+  addr_eq (by have := hp.scr_fits; omega_arith)
 
 /-- A word of `scratch` after a store to another, or the same. -/
 theorem sw_store (m : Mem) {a b : Nat} (ha : a + 4 ≤ 16384) (hb : b + 4 ≤ 16384)
@@ -42,8 +42,8 @@ theorem sw_store (m : Mem) {a b : Nat} (ha : a + 4 ≤ 16384) (hb : b + 4 ≤ 16
     sw s₀ (m.writeW (addr (scrP s₀) a) v) b = if a = b then v else sw s₀ m b := by
   by_cases e : a = b
   · subst e; rw [ite_eq_left rfl]; exact Mem.readW_writeW_self32 _ _ _
-  · rw [ite_eq_right e, sw, sw, scr_addr' hp (by omega), scr_addr' hp (by omega)]
-    exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+  · rw [ite_eq_right e, sw, sw, scr_addr' hp (by omega_arith), scr_addr' hp (by omega_arith)]
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
 
 omit hp in
 /-- A word of four zero bytes. -/
@@ -59,16 +59,16 @@ theorem clearAt_ok {s : State} (h : Inv s₀ s) {d : Nat} (hd : d + 1024 ≤ 163
   unfold Impl.Argon2.X86.Derive.clearAt Impl.Argon2.X86.Derive.scratchAt
   refine WP.seq (wp_ldarg hp h (i := 15) (by decide) fun s₁ u₁ => wp_addi fun s₂ u₂ => WP.block_nil ?_)
   have i₂ := (h.upd u₁ (by decide) (by decide)).upd u₂ (by decide) (by decide)
-  have eX : (scrP s₀ + BitVec.ofNat 32 d).setWidth 64 = scrB s₀ + BitVec.ofNat 64 d := scr_addr' hp (by omega)
-  have hX : (scrP s₀ + BitVec.ofNat 32 d).toNat = (scrP s₀).toNat + d := add_nat (by omega)
+  have eX : (scrP s₀ + BitVec.ofNat 32 d).setWidth 64 = scrB s₀ + BitVec.ofNat 64 d := scr_addr' hp (by omega_arith)
+  have hX : (scrP s₀ + BitVec.ofNat 32 d).toNat = (scrP s₀).toNat + d := add_nat (by omega_arith)
   refine (zeroWords_ok i₂ (r := .edx) (by decide) (by decide) (by decide) (by decide) (X := scrP s₀ + BitVec.ofNat 32 d) (n := 256) (R := scrR s₀) (by simp) (scr_mem hp)
-      (off := d) eX (show d + 4 * 256 ≤ 16384 by omega) (show 16384 < 2 ^ 64 by decide) (by omega) (by decide)
+      (off := d) eX (show d + 4 * 256 ≤ 16384 by omega_arith) (show 16384 < 2 ^ 64 by decide) (by omega_arith) (by decide)
       (by rw [u₂.gpr, u₁.gpr])).mono fun t ⟨it, gt, ft, zt⟩ => ⟨it, fun r a b c => ?_, ?_, fun i hi => ?_⟩
   · rw [gt r a b c, u₂.other _ c, u₁.other _ c]
   · rw [show s.mem = s₂.mem by rw [u₂.mem, u₁.mem], ← eX]; exact ft
-  · rw [sw, scr_addr' hp (by omega)]
+  · rw [sw, scr_addr' hp (by omega_arith)]
     refine readW_zero4 fun k hk => ?_
-    have := zt (4 * i + k) (by omega)
+    have := zt (4 * i + k) (by omega_arith)
     rw [eX, BitVec.add_assoc, BitVec.ofNat_add_ofNat] at this
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_assoc]; exact this
 
@@ -103,21 +103,21 @@ theorem hdr_step {m : Mem} {pass lane slice c n : Nat} (hn : n < 7) {u : State} 
     WP isa (.block (.store (at_ .edx (5120 + 8 * n)) .eax :: is)) u Q := by
   have hs := hp.scr_fits
   have ea : addr (u.gpr .edx) (5120 + 8 * n) = scrB s₀ + BitVec.ofNat 64 (5120 + 8 * n) := by
-    rw [hx, scr_addr' hp (by omega)]
+    rw [hx, scr_addr' hp (by omega_arith)]
   have hc : (scrR s₀).Contains (addr (u.gpr .edx) (5120 + 8 * n)) 4 := by
-    rw [ea]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [ea]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   have hc' : (⟨scrB s₀ + BitVec.ofNat 64 5120, 1024⟩ : Region).Contains (addr (u.gpr .edx) (5120 + 8 * n)) 4 := by
-    rw [ea]; exact Offset.contains _ (by omega) (by omega) (by omega)
+    rw [ea]; exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
   refine Wp.wp_stm rfl ⟨_, by rw [h.wr]; exact scr_mem hp, hc⟩ fun t u₁ =>
     k t (h.store (R := scrR s₀) (by simp) hc u₁) u₁.gpr ?_ fun i hi => ?_
   · rw [u₁.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hc'
-  · rw [u₁.mem, hx, sw_store hp _ (by omega) (by omega) (by omega), ha, hw i hi]
+  · rw [u₁.mem, hx, sw_store hp _ (by omega_arith) (by omega_arith) (by omega_arith), ha, hw i hi]
     by_cases e : 5120 + 8 * n = 5120 + 4 * i
-    · rw [ite_eq_left e, ite_eq_left (by omega), show i / 2 = n by omega]
+    · rw [ite_eq_left e, ite_eq_left (by omega_arith), show i / 2 = n by omega_arith]
     · rw [ite_eq_right e]
       by_cases c₁ : i % 2 = 0 ∧ i < 2 * n
-      · rw [ite_eq_left c₁, ite_eq_left (by omega)]
-      · rw [ite_eq_right c₁, ite_eq_right (by omega)]
+      · rw [ite_eq_left c₁, ite_eq_left (by omega_arith)]
+      · rw [ite_eq_right c₁, ite_eq_right (by omega_arith)]
 
 theorem aheader_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
     (ps : Pos s₀ s pass slice lane index) (hc : lw s₀ s counterOff = BitVec.ofNat 32 c) :
@@ -132,7 +132,7 @@ theorem aheader_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
   refine wp_ldarg hp h (i := 15) (by decide) fun s₁ u₁ => ?_
   have i₁ := h.upd u₁ (by decide) (by decide)
   have w₀ : HW s₀ s.mem pass lane slice c 0 s₁.mem := fun i _ => by
-    rw [ite_eq_right (by omega), u₁.mem]
+    rw [ite_eq_right (by omega_arith), u₁.mem]
   -- Word 0: the pass.
   refine wp_ldloc hp i₁ (d := passOff) (by decide) fun s₂ u₂ => ?_
   refine hdr_step hp (n := 0) (by decide) (i₁.upd u₂ (by decide) (by decide)) (by rw [u₂.other _ (by decide), u₁.gpr])
@@ -194,7 +194,7 @@ theorem zero_append32 (x : BitVec 32) : 0#32 ++ x = BitVec.ofNat 64 x.toNat := b
   rw [BitVec.toNat_append, BitVec.toNat_ofNat]
   simp
   have := x.isLt
-  omega
+  omega_arith
 
 /-- The input block's words. -/
 def inWord (s₀ : State) (pass lane slice c : Nat) (i : Nat) : BitVec 32 :=
@@ -210,8 +210,8 @@ theorem input_words {s₀ : State} (hp : DPre s₀) {pass lane slice c : Nat} (h
   intro j hj
   simp only [ofWords, Vector.getElem_ofFn, Proof.Argon2.addressInput, Vector.getElem_set, zeroBlock,
     Vector.getElem_replicate, inWord]
-  rw [ite_eq_right (by omega)]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ 7 ≤ j) with
+  rw [ite_eq_right (by omega_arith)]
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ 7 ≤ j) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | hj7
   · simp [hdr]; rw [zero_append32, Wp.toNat_ofNat_lt h₁]
   · simp [hdr]; rw [zero_append32, Wp.toNat_ofNat_lt h₂]
@@ -220,8 +220,8 @@ theorem input_words {s₀ : State} (hp : DPre s₀) {pass lane slice c : Nat} (h
   · simp [hdr]; rw [zero_append32, ep]
   · simp [hdr]; rw [zero_append32, ek]
   · simp [hdr]; rw [zero_append32, Wp.toNat_ofNat_lt h₄]
-  · rw [ite_eq_right (by omega)]
-    simp (disch := omega) only [ite_eq_right]
+  · rw [ite_eq_right (by omega_arith)]
+    simp (disch := omega_arith) only [ite_eq_right]
     rfl
 
 theorem ofWords_zero : ofWords (fun _ => 0) = zeroBlock := by
@@ -237,10 +237,10 @@ include hp
 /-- A word of `scratch` outside a frame's region of `scratch`. -/
 theorem sw_frame {m m' : Mem} {a n : Nat} (f : Frame [⟨scrB s₀ + BitVec.ofNat 64 a, n⟩] m m') {o : Nat}
     (h : o + 4 ≤ a ∨ a + n ≤ o) (ho : o + 4 ≤ 16384) (hn : a + n ≤ 16384) : sw s₀ m' o = sw s₀ m o := by
-  rw [sw, sw, scr_addr' hp (by omega)]
+  rw [sw, sw, scr_addr' hp (by omega_arith)]
   refine f.readW (r := ⟨scrB s₀ + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_singleton] at hr; subst hr
-  exact Offset.disjoint _ h (by omega) (by omega)
+  exact Offset.disjoint _ h (by omega_arith) (by omega_arith)
 
 /-- The address-generation input block at `scratch + 5120`, and a zero block at `scratch + 7168`. -/
 theorem input_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
@@ -273,11 +273,11 @@ theorem input_ok {s : State} (h : Inv s₀ s) {pass slice lane index c : Nat}
     simp only [sw] at w
     rw [w, inWord]
     by_cases e : i % 2 = 0 ∧ i < 2 * 7
-    · rw [ite_eq_left e, ite_eq_left (by omega)]
-    · rw [ite_eq_right e, ite_eq_right (by omega), ← sw, sw_frame hp f₂ (by omega) (by omega) (by decide)]
+    · rw [ite_eq_left e, ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right e, ite_eq_right (by omega_arith), ← sw, sw_frame hp f₂ (by omega_arith) (by omega_arith) (by decide)]
       exact z₁ i hi
   · rw [blk_of_words (f := fun _ => 0) fun i hi => ?_, ofWords_zero]
-    rw [← sw, sw_frame hp ft (by omega) (by omega) (by decide)]
+    rw [← sw, sw_frame hp ft (by omega_arith) (by omega_arith) (by decide)]
     exact z₂ i hi
 
 end

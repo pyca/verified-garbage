@@ -25,8 +25,8 @@ theorem dot_correct {count : Nat} (hn : 0<count) (hn7 : count≤7) (s : State) (
   obtain ⟨tr,t,he,hk,_,_,hm⟩ := dotStaticCode_words_ok hn hn7 ht htr ha hb hw hsep
   have hv := dotInverseMem_field hn7
     (fun j hj => positiveReduced_iff.mp (hfa j hj)) (fun j hj => positiveReduced_iff.mp (hfb j hj))
-    (fun j hj => hoa.sub_left (VG.Offset.sub_base _ (by omega)))
-    (fun j hj => hob.sub_left (VG.Offset.sub_base _ (by omega)))
+    (fun j hj => hoa.sub_left (VG.Offset.sub_base _ (by omega_arith)))
+    (fun j hj => hob.sub_left (VG.Offset.sub_base _ (by omega_arith)))
   rw [← hm] at hv
   exact ⟨tr,t,he,dotCoreKeep_abi hk,hv⟩
 
@@ -91,7 +91,7 @@ theorem dotSat_reduced (count : Nat) (p : Addr) (hp : p.toNat+1024≤65536) : Re
       have hi' : i<256 := hi
       simp only [BitVec.toNat_sub,BitVec.toNat_add,BitVec.toNat_ofNat,
         show (65536:BitVec 64).toNat=65536 by decide]
-      omega
+      omega_arith
     simp only [constMem,ha,ite_false]
     simp
 
@@ -107,35 +107,35 @@ theorem dot_spec_pre {count : Nat} {s : State} (hc : count≤7)
   sig_pre [dotInverseContract,dotInverseSig,abi,argRegs,inverseConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,InverseTable.expandedWords_length,stackBelow]
   rw [hg0,hg1,hg2,hg3,hsym,hrd,hwr]
-  have he : count*256*4=1024*count := by omega
+  have he : count*256*4=1024*count := by omega_arith
   rw [he]
   refine ⟨rfl,held,by decide,?_,rfl,rfl,?_,?_,?_,?_,?_,by decide,?_,?_,by decide,ha,hb⟩
   · intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
-  · exact Region.disjoint_of_sep (by simp [Region.sep]; omega)
-  · exact Region.disjoint_of_sep (by simp [Region.sep]; omega)
+  · exact Region.disjoint_of_sep (by simp [Region.sep]; omega_arith)
+  · exact Region.disjoint_of_sep (by simp [Region.sep]; omega_arith)
   · exact Region.disjoint_of_sep (by decide)
-  · exact Region.disjoint_of_sep (by simp [Region.sep]; omega)
-  · exact Region.disjoint_of_sep (by simp [Region.sep]; omega)
-  · simp; omega
-  · simp; omega
+  · exact Region.disjoint_of_sep (by simp [Region.sep]; omega_arith)
+  · exact Region.disjoint_of_sep (by simp [Region.sep]; omega_arith)
+  · simp; omega_arith
+  · simp; omega_arith
 
 theorem dot_sat (count : Nat) (hc : count≤7) :
     (dotInverseContract count (abi.withConsts inverseConsts)).pre (dotSat count) := by
   apply dot_spec_pre hc rfl rfl rfl rfl rfl rfl rfl (dotSat_held count)
   · intro j hj i hi
     have hr := dotSat_reduced count (16384+BitVec.ofNat 64 (1024*j)) (by
-      simp only [BitVec.toNat_add,BitVec.toNat_ofNat, show (16384:Addr).toNat=16384 by decide]; omega) i hi
+      simp only [BitVec.toNat_add,BitVec.toNat_ofNat, show (16384:Addr).toNat=16384 by decide]; omega_arith) i hi
     change _<3*8380417
     change _<8380417 at hr
-    omega
+    omega_arith
   · intro j hj i hi
     have hr := dotSat_reduced count (32768+BitVec.ofNat 64 (1024*j)) (by
-      simp only [BitVec.toNat_add,BitVec.toNat_ofNat, show (32768:Addr).toNat=32768 by decide]; omega) i hi
+      simp only [BitVec.toNat_add,BitVec.toNat_ofNat, show (32768:Addr).toNat=32768 by decide]; omega_arith) i hi
     change _<3*8380417
     change _<8380417 at hr
-    omega
+    omega_arith
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse
 
@@ -153,8 +153,8 @@ open VG.Impl.MlDsa.AArch64.Optimized.Inverse (inverseConsts)
 /-- The selected fused dot/inverse kernels have canonical output and positive-lazy inputs. -/
 theorem dot_verified {count : Nat} (hc : count=4 ∨ count=5 ∨ count=7) :
     Verified target (staticCode count) (dotInverseContract count (abi.withConsts inverseConsts)) := by
-  refine Verified.of_correct (dot_correct (by omega) (by omega)) (dot_ct hc)
-    { pre := fun _ h => dot_pre h, post := ?_, pub := ?_, sat := ⟨dotSat count,dot_sat count (by omega)⟩ }
+  refine Verified.of_correct (dot_correct (by omega_arith) (by omega_arith)) (dot_ct hc)
+    { pre := fun _ h => dot_pre h, post := ?_, pub := ?_, sat := ⟨dotSat count,dot_sat count (by omega_arith)⟩ }
   · intro s t _ h
     sig_post [dotInverseContract,dotInverseSig,abi,argRegs,Abi.withConsts,inverseConsts_eq]
     exact h

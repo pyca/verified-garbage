@@ -36,7 +36,7 @@ theorem Base.of_rest {rs : List Reg} {s s' : State} {base : Addr} (hs : Base s b
 
 theorem Base.ea {s : State} {base : Addr} (hs : Base s base) {d : Nat} (hd : d < 8192) :
     State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off base d := by
-  rw [VG.Arm.addr_add (by have := hs.nowrap; omega), hs.r0]
+  rw [VG.Arm.addr_add (by have := hs.nowrap; omega_arith), hs.r0]
 
 /-- The registers the functions restore, and where they are saved. -/
 def saves : List (Reg × Nat) :=
@@ -60,16 +60,16 @@ theorem strs_ok {s : State} {base : Addr} (hs : Base s base) :
     have h0 := hl p List.mem_cons_self
     rw [List.pairwise_cons] at hp
     rw [List.map_cons]
-    refine wp_str (by omega) (hs.ea (by omega)) ⟨_, hs.wr, contains_sc (by omega)⟩ fun s₁ m₁ => ?_
+    refine wp_str (by omega_arith) (hs.ea (by omega_arith)) ⟨_, hs.wr, contains_sc (by omega_arith)⟩ fun s₁ m₁ => ?_
     have hs₁ := hs.of_rest (m₁.rest []) (by decide)
     refine WP.mono (strs_ok hs₁ l (fun q h => hl q (List.mem_cons_of_mem _ h)) hp.2) fun s' ⟨K, O, V⟩ => ?_
-    have O₁ : Outside base p.2 4 s.mem s₁.mem := by rw [m₁.mem]; exact writeW_outside _ _ _ (by omega)
+    have O₁ : Outside base p.2 4 s.mem s₁.mem := by rw [m₁.mem]; exact writeW_outside _ _ _ (by omega_arith)
     refine ⟨(m₁.rest _).trans K, fun x hx => ?_, fun q hq => ?_⟩
     · rw [O x fun q hq => hx q (List.mem_cons_of_mem _ hq), O₁ x (hx p List.mem_cons_self)]
     · rcases List.mem_cons.mp hq with rfl | hq
       · have e : word s'.mem base q.2 = word s₁.mem base q.2 := Mem.readW_congr fun i hi =>
           O _ fun r hr => by
-            rw [ofs_off base (by omega)]; have := hp.1 r hr; omega
+            rw [ofs_off base (by omega_arith)]; have := hp.1 r hr; omega_arith
         rw [e, m₁.mem, word, Mem.readW_writeW_self32]
       · rw [V q hq, m₁.gpr]
 
@@ -83,8 +83,8 @@ theorem ldrs_ok {s : State} {base : Addr} (hs : Base s base) :
     have hp0 := hl p List.mem_cons_self
     rw [List.map_cons, List.nodup_cons] at hnd
     rw [List.map_cons]
-    refine wp_ldr (by omega) (hs.ea (by omega)) (List.mem_append_right _ hs.wr |> fun h =>
-      ⟨_, h, contains_sc (by omega)⟩) fun s₁ u₁ => ?_
+    refine wp_ldr (by omega_arith) (hs.ea (by omega_arith)) (List.mem_append_right _ hs.wr |> fun h =>
+      ⟨_, h, contains_sc (by omega_arith)⟩) fun s₁ u₁ => ?_
     have hs₁ := hs.of_rest (u₁.rest (ws := [p.1]) (by simp)) (by simpa using (h0 p List.mem_cons_self).symm)
     refine WP.mono (ldrs_ok hs₁ l (fun q h => hl q (List.mem_cons_of_mem _ h)) hnd.2
       (fun q h => h0 q (List.mem_cons_of_mem _ h))) fun s' ⟨M, K, V⟩ => ?_
@@ -117,7 +117,7 @@ structure Entered (hasB : Bool) (s : State) (base : Addr) (o a b : Nat) (s₁ : 
 theorem entry_ok {hasB : Bool} {s : State} {base : Addr} {o a b : Nat} (h : Entry hasB s base o a b) :
     WP isa (.block (entryFn hasB)) s (Entered hasB s base o a b) := by
   rw [entryFn, saveFn_eq, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (strs_ok h.base saves (fun p hp => by have := saves_bound p hp; simp only [SAVE] at this; omega)
+  refine WP.mono (strs_ok h.base saves (fun p hp => by have := saves_bound p hp; simp only [SAVE] at this; omega_arith)
     (by decide)) fun s₁ ⟨K₁, O₁, V₁⟩ => ?_
   have hb₁ := h.base.of_rest K₁ (by decide)
   refine wp_movw fun s₂ u₂ => wp_dp (op2_reg _ _) fun s₃ u₃ => wp_dp (op2_reg _ _) fun s₄ u₄ => ?_
@@ -150,7 +150,7 @@ theorem entry_ok {hasB : Bool} {s : State} {base : Addr} {o a b : Nat} (h : Entr
         rw [M']
         refine O₁ x fun p hp => ?_
         have := saves_bound p hp
-        omega }
+        omega_arith }
   cases hasB with
   | false => exact WP.block_nil (ent s₄ (Rest.refl _ _) m₄ (fun h => absurd h (by decide)))
   | true =>
@@ -163,8 +163,8 @@ theorem entry_ok {hasB : Bool} {s : State} {base : Addr} {o a b : Nat} (h : Entr
 
 theorem OpMem.word {base : Addr} {o : Nat} {m m' : Mem} (h : OpMem base o m m') {d : Nat}
     (hs : SAVE ≤ d) (ho : o + 112 ≤ d) (hd : d + 4 ≤ 8192) : word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)
-    (Or.inr (by rw [ofs_off base (by omega)]; omega))).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega_arith)]; omega_arith)
+    (Or.inr (by rw [ofs_off base (by omega_arith)]; omega_arith))).symm).symm
 
 /-- A function: the entry, the operation `op` (which, from the entry's state,
 writes `[o]` related to `[a]` and `[b]` by `r`), and the registers restored. -/
@@ -185,7 +185,7 @@ theorem fn_ok {hasB : Bool} {op : Prog isa} {r : Nat → Nat → Nat → Prop} {
   refine WP.mono (entry_ok h) fun s₁ E => ?_
   have O₁ : Outside base SAVE 24 s.mem s₁.mem := E.mem
   have ea : ∀ {d : Nat}, d + 112 ≤ 3584 → ∀ i < 28, limbs s₁.mem base d i = limbs s.mem base d i :=
-    fun hd _ hi => O₁.limbs (Or.inl (by simp only [SAVE]; omega)) (by omega) hi
+    fun hd _ hi => O₁.limbs (Or.inl (by simp only [SAVE]; omega_arith)) (by omega_arith) hi
   have fa : ∀ {d : Nat}, d + 112 ≤ 3584 → fe s₁.mem base d = fe s.mem base d :=
     fun hd => valN_congr fun _ hi => ea hd _ hi
   rw [WP.seq_iff]
@@ -195,11 +195,11 @@ theorem fn_ok {hasB : Bool} {op : Prog isa} {r : Nat → Nat → Nat → Prop} {
     let hs₂ := E.scr.of_keeps K₂ (by decide)
     ⟨hs₂.r0, hs₂.wr, hs₂.nowrap⟩
   rw [restoreFn_eq]
-  refine WP.mono (ldrs_ok hb₂ saves (fun p hp => by have := saves_bound p hp; simp only [SAVE] at this; omega)
+  refine WP.mono (ldrs_ok hb₂ saves (fun p hp => by have := saves_bound p hp; simp only [SAVE] at this; omega_arith)
     (by decide) (by decide)) fun s₃ ⟨M₃, K₃, V₃⟩ => ?_
   have sv : ∀ p ∈ saves, s₃.gpr p.1 = s.gpr p.1 := fun p hp => by
     have := saves_bound p hp
-    rw [V₃ p hp, M₂.word this.1 (by simp only [SAVE] at this ⊢; omega) (by simp only [SAVE] at this; omega),
+    rw [V₃ p hp, M₂.word this.1 (by simp only [SAVE] at this ⊢; omega_arith) (by simp only [SAVE] at this; omega_arith),
       E.saved p hp]
   have kept : ∀ q, q ∉ [.r4, .r5, .r6, .r7, .r9, .lr, .r12, .r1, .r2, .r3] → s₃.gpr q = s.gpr q :=
     fun q hq => by

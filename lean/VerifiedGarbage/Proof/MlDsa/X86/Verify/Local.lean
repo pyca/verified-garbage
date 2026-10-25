@@ -136,9 +136,9 @@ theorem ifOk_piece {c : Prog isa} (b : State → Bool) (hc : Y.ok (accB Y) = tru
 /-- Two byte strings of `n` bytes are equal exactly when `accB` of all their bytes is 0. -/
 theorem accB_zero {c c' : List Byte} {n : Nat} (h₁ : c.length = n) (h₂ : c'.length = n) :
     c = c' ↔ Decaps.accB c c' n = 0 := by
-  rw [Decaps.accB_eq c c' n (by omega) (by omega), List.take_of_length_le (by omega),
-    List.take_of_length_le (by omega)]
-  exact eq_iff_foldl_or_xor (by omega)
+  rw [Decaps.accB_eq c c' n (by omega_arith) (by omega_arith), List.take_of_length_le (by omega_arith),
+    List.take_of_length_le (by omega_arith)]
+  exact eq_iff_foldl_or_xor (by omega_arith)
 
 /-- The comparison, from the setup. -/
 structure CL (s₀ : State) (a b : Buf) (m : Mem) (k : Nat) (u : State) : Prop where
@@ -157,15 +157,15 @@ theorem cmp_step {s₀ : State} (hp : TPre Y s₀) {a b : Buf} (ha : Y.ok a = tr
   have fa := Buf.fit hp ha
   have fb := Buf.fit hp hb
   have e₁ : u.ea (at_ .edi 0) = Buf.addr s₀ a + BitVec.ofNat 64 k := by
-    simp only [State.ea, at_, h.edi]; rw [ea_add (by omega)]; rfl
+    simp only [State.ea, at_, h.edi]; rw [ea_add (by omega_arith)]; rfl
   have e₂ : u.ea (at_ .ebp 0) = Buf.addr s₀ b + BitVec.ofNat 64 k := by
-    simp only [State.ea, at_, h.ebp]; rw [ea_add (by omega)]; rfl
-  have i₁ := Buf.inRegR (o := k) (n := 1) hp ha h.ctx.rd h.ctx.wr (show k + 1 ≤ a.len by omega)
+    simp only [State.ea, at_, h.ebp]; rw [ea_add (by omega_arith)]; rfl
+  have i₁ := Buf.inRegR (o := k) (n := 1) hp ha h.ctx.rd h.ctx.wr (show k + 1 ≤ a.len by omega_arith)
   refine Decaps.wp_movzx' (by rw [e₁]; exact i₁) fun u₁ o₁ v₁ => ?_
   have c₁ := h.ctx.only o₁ (by decide) (by decide)
   have e₂' : u₁.ea (at_ .ebp 0) = Buf.addr s₀ b + BitVec.ofNat 64 k := by
     rw [← e₂]; simp only [State.ea, at_, o₁.gpr .ebp (by decide)]
-  have i₂ := Buf.inRegR (o := k) (n := 1) hp hb c₁.rd c₁.wr (show k + 1 ≤ b.len by omega)
+  have i₂ := Buf.inRegR (o := k) (n := 1) hp hb c₁.rd c₁.wr (show k + 1 ≤ b.len by omega_arith)
   refine Decaps.wp_movzx' (by rw [e₂']; exact i₂) fun u₂ o₂ v₂ => ?_
   refine Decaps.wp_xorr fun u₃ o₃ v₃ => Decaps.wp_orr fun u₄ o₄ v₄ => wp_addi fun u₅ o₅ v₅ =>
     wp_addi fun u₆ o₆ v₆ => wp_subi_last fun u₇ o₇ v₇ z₇ => ?_
@@ -225,8 +225,8 @@ theorem cmpAnd_piece (hsc : Y.sc = vS) {a b : Buf} (hc : Y.okW (accB Y) = true) 
     (Piece.taint [.edi, .ebp, .ecx] (fun s₀ s₁ hp ⟨s, hs, c₁, m₁, e₁, e₂, e₃, e₄⟩ => ?_)
       (fun s₀ s₀' s s' hp hp' hq ⟨_, _, _, _, e₁, e₂, e₃, _⟩ ⟨_, _, _, _, e₁', e₂', e₃', _⟩ r hr => ?_) t₂) ?_
   · by_cases h0 : a.len = 0
-    · exact absurd (Lay.ok_iff.mp ha).2.1 (by omega)
-    refine (wp_count (N := a.len) (by omega) (CL (Y := Y) s₀ a b s.mem) ⟨c₁, m₁, by rw [e₁]; simp,
+    · exact absurd (Lay.ok_iff.mp ha).2.1 (by omega_arith)
+    refine (wp_count (N := a.len) (by omega_arith) (CL (Y := Y) s₀ a b s.mem) ⟨c₁, m₁, by rw [e₁]; simp,
       by rw [e₂]; simp, by rw [e₃]; simp, by rw [e₄]; rfl⟩ fun k hk u h =>
         cmp_step hp ha hb hl hn hk h).mono fun u h => ⟨s, hs, h⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -253,7 +253,7 @@ theorem cmpAnd_piece (hsc : Y.sc = vS) {a b : Buf} (hc : Y.okW (accB Y) = true) 
       rw [ite_eq_right e]
       have : ¬ ((Decaps.accB (bytesAt s.mem (Buf.addr s₀ a) a.len) (bytesAt s.mem (Buf.addr s₀ b) a.len)
           a.len).setWidth 32).toNat < (1 : BitVec 32).toNat := by
-        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_arith)]
         intro h'
         exact z (BitVec.eq_of_toNat_eq (by simp at h'; simp [h']))
       simp only [this, decide_false]

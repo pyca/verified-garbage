@@ -40,7 +40,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
   have rdwr₁ : s₁.rd ++ s₁.wr = [keyR s₀, lastR s₀, fargsR s₀, fstR s₀, fscrR s₀] := by
     rw [h₁.rd, h₁.wr, hp.rd, hp.wr]; rfl
   have stIn : ∀ d, d + 4 ≤ 8 → InRegions (s₁.rd ++ s₁.wr) (State.addr (FSt s₀) + BitVec.ofNat 64 d) 4 :=
-    fun d hd => by rw [rdwr₁]; exact in_rw (r := fstR s₀) (by simp) (Offset.contains_base _ hd (by omega))
+    fun d hd => by rw [rdwr₁]; exact in_rw (r := fstR s₀) (by simp) (Offset.contains_base _ hd (by omega_arith))
   -- `finMid`.
   refine WP.seq ?_
   simp only [finMid]
@@ -49,7 +49,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
   refine wp_ldr (by decide) (by rw [w₂.gpr, h₁.r1, add0]) (by rw [w₂.rd, w₂.wr]; simpa using stIn 0 (by decide))
     fun s₃ u₃ => ?_
   refine wp_ldr (a := State.addr (FSt s₀) + BitVec.ofNat 64 4) (by decide)
-    (by rw [u₃.other _ (by decide), w₂.gpr, h₁.r1]; exact addr_add (by omega))
+    (by rw [u₃.other _ (by decide), w₂.gpr, h₁.r1]; exact addr_add (by omega_arith))
     (by rw [u₃.rd, u₃.wr, w₂.rd, w₂.wr]; exact stIn 4 (by decide)) fun s₄ u₄ => ?_
   refine wp_eor (op2_reg _ _) fun s₅ u₅ => wp_eor (op2_reg _ _) fun s₆ u₆ => wp_rev fun s₇ u₇ =>
     wp_rev fun s₈ u₈ => WP.block_nil ?_
@@ -64,7 +64,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
       (s₁.mem.writeW (A + BitVec.ofNat 64 112) (FSt s₀)).readW (State.addr (FSt s₀) + BitVec.ofNat 64 d) 32 =
         s₁.mem.readW (State.addr (FSt s₀) + BitVec.ofNat 64 d) 32 := fun d hd =>
     Mem.readW_writeW_sep ((hp.st_scr.sub_right (Offset.sub_base _ (by decide))).sub_left
-      (Offset.sub_base _ (by omega)) |>.sep (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)
+      (Offset.sub_base _ (by omega_arith)) |>.sep (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)
   have ax₈ : s₈.gpr .r0 ++ s₈.gpr .r1 =
       byteRev64 ((s₁.gpr .r5 ++ s₁.gpr .r4) ^^^ s₁.mem.readW (State.addr (FSt s₀)) 64) := by
     have e0 := stSep 0 (by decide)
@@ -92,7 +92,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
       s₉.mem.readW (A + BitVec.ofNat 64 d) 32 = s₈.mem.readW (A + BitVec.ofNat 64 d) 32 := fun d h₁' h₂' =>
     f₉.readW (r := ⟨A + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base _ (by omega) (by omega)) (by decide)
+      exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)) (by decide)
   have rdwr₉ : s₉.rd ++ s₉.wr = [keyR s₀, lastR s₀, fargsR s₀, fstR s₀, fscrR s₀] := by
     rw [same₉.rd, same₉.wr, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, w₂.rd, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr,
       u₃.wr, w₂.wr, rdwr₁]
@@ -100,18 +100,18 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
     rw [same₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, w₂.wr, h₁.wr, hp.wr]
   rw [WP.block_append_iff]
   refine wp_ldr (by decide) (by rw [r10₉, hp.scrAddr (by decide)])
-    (by rw [rdwr₉]; exact in_rw (r := fscrR s₀) (by simp) (Offset.contains_base _ (by decide) (by omega)))
+    (by rw [rdwr₉]; exact in_rw (r := fscrR s₀) (by simp) (Offset.contains_base _ (by decide) (by omega_arith)))
     fun s₁₀ u₁₀ => ?_
   have r2₁₀ : s₁₀.gpr .r2 = FSt s₀ := by
     rw [u₁₀.gpr, outBlock 112 (by decide) (by decide), mem₈, Mem.readW_writeW_self32]
   refine wp_rev fun s₁₁ u₁₁ => wp_rev fun s₁₂ u₁₂ => ?_
   have stW : ∀ d, d + 4 ≤ 8 → InRegions s₁₂.wr (State.addr (FSt s₀) + BitVec.ofNat 64 d) 4 := fun d hd => by
     rw [u₁₂.wr, u₁₁.wr, u₁₀.wr, wr₉]
-    exact in_rw (r := fstR s₀) (by simp) (Offset.contains_base _ hd (by omega))
+    exact in_rw (r := fstR s₀) (by simp) (Offset.contains_base _ hd (by omega_arith))
   refine wp_str (by decide) (by rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), r2₁₀, add0])
     (by simpa using stW 0 (by decide)) fun s₁₃ w₁₃ => ?_
   refine wp_str (a := State.addr (FSt s₀) + BitVec.ofNat 64 4) (by decide)
-    (by rw [w₁₃.gpr, u₁₂.other _ (by decide), u₁₁.other _ (by decide), r2₁₀]; exact addr_add (by omega))
+    (by rw [w₁₃.gpr, u₁₂.other _ (by decide), u₁₁.other _ (by decide), r2₁₀]; exact addr_add (by omega_arith))
     (by rw [w₁₃.wr]; exact stW 4 (by decide)) fun s₁₄ w₁₄ => WP.block_nil ?_
   have r10₁₄ : s₁₄.gpr .r10 = FS s₀ := by
     rw [w₁₄.gpr, w₁₃.gpr, u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide), r10₉]
@@ -126,17 +126,17 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
       s₁₄.mem.readW (A + BitVec.ofNat 64 d) 32 = (savedMem s₀ (FS s₀)).readW (A + BitVec.ofNat 64 d) 32 := by
     intro d h₁' h₂'
     have sd : ∀ e, e + 4 ≤ 8 → Mem.Sep (A + BitVec.ofNat 64 d) (32 / 8) (State.addr (FSt s₀) + BitVec.ofNat 64 e) (32 / 8) :=
-      fun e he => (hp.st_scr.sub_right (Offset.sub_base _ (by omega))).symm.sub_right (Offset.sub_base _ (by omega))
+      fun e he => (hp.st_scr.sub_right (Offset.sub_base _ (by omega_arith))).symm.sub_right (Offset.sub_base _ (by omega_arith))
         |>.sep (Region.contains_self _ _) (Region.contains_self _ _)
     have sd0 := sd 0 (by decide)
     rw [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] at sd0
     rw [mem₁₄, Mem.readW_writeW_sep (sd 4 (by decide)) (by decide), Mem.readW_writeW_sep sd0 (by decide),
-      outBlock d (by omega) (by omega), mem₈, readW_writeW_far _ _ _ (by omega) (by decide) (by omega)]
+      outBlock d (by omega_arith) (by omega_arith), mem₈, readW_writeW_far _ _ _ (by omega_arith) (by decide) (by omega_arith)]
     refine h₁.frame.readW (r := ⟨A + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
-  refine WP.mono (restore_ok r10₁₄ (by omega) fun d h₁' h₂' => by
-      rw [rdwr₁₄]; exact in_rw (r := fscrR s₀) (by simp) (Offset.contains_base _ (by omega) (by omega)))
+    exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+  refine WP.mono (restore_ok r10₁₄ (by omega_arith) fun d h₁' h₂' => by
+      rw [rdwr₁₄]; exact in_rw (r := fscrR s₀) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
     fun s' ⟨hl, sp', m', _, _⟩ => ⟨restored slots hl (by
       rw [sp', w₁₄.sp, w₁₃.sp, u₁₂.sp, u₁₁.sp, u₁₀.sp, same₉.sp, u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, w₂.sp,
         h₁.sp]), ?_⟩
@@ -148,7 +148,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
       simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by decide)⟩).trans
     (h₁.frame.sub scrSub)
   have F₈ : Frame [fscrR s₀] s₀.mem s₈.mem := by
-    rw [mem₈]; exact F₁.writeW (r := fscrR s₀) (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega))
+    rw [mem₈]; exact F₁.writeW (r := fscrR s₀) (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega_arith))
   have hS' : sch s₈ = Spec.TripleDes.scheduleAt s₀.mem (State.addr (FW s₀)) := by
     show Spec.TripleDes.scheduleAt s₈.mem (State.addr (s₈.gpr .r9)) = _
     rw [r9₈]

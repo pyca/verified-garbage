@@ -107,7 +107,7 @@ theorem ce_byte (t : State) {R : Region} (hd : (below (t.gpr .rsp) 8).Disjoint R
     (hR : R.len ≤ 2 ^ 64) {i : Nat} (hi : i < R.len) :
     t.callEntry.mem (R.base + BitVec.ofNat 64 i) = t.mem (R.base + BitVec.ofNat 64 i) :=
   Frame.bytes (rs := [below (t.gpr .rsp) 8])
-    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega)))
+    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega_arith) (by omega_arith)))
     (by simpa using hd.symm) hR hi
 
 /-- The bytes of a region the return address of a call misses, on entry to the callee. -/
@@ -140,7 +140,7 @@ theorem ce_word (hL : L.Ok) (rd wr : List Region) {d : Nat} (h₁ : 32 ≤ d) (h
       t.mem.readW (L.B + BitVec.ofNat 64 d) 64 := by
   have := hL.nB
   rw [State.withRegions_mem, State.callEntry_mem, hc.rsp, sub8]
-  exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+  exact Mem.readW_writeW_sep (Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
 
 end Ctx
 
@@ -164,7 +164,7 @@ theorem stk_in {d n : Nat} (h₁ : d + n ≤ 88) {r : Region} (h : InBuf L r) :
   exact hL.stk_buf h₁ hR hs
 
 theorem scr_in : InBuf L ⟨L.scr, 200 * 8⟩ :=
-  .inr (.inr (.inl (within_base _ (by have := hL.slen17; omega))))
+  .inr (.inr (.inl (within_base _ (by have := hL.slen17; omega_arith))))
 
 end Lay.Ok
 
@@ -194,12 +194,12 @@ structure PbkRegions (L : Lay) (salt : Addr) (sl : BitVec 64) (out : Addr) (ol :
 theorem pbk_e0 (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {salt : Addr} {sl : BitVec 64} {out : Addr}
     {ol : BitVec 64} (ha : PbkArgs L salt sl out ol t) (rd wr : List Region) :
     stackArg (t.callEntry.withRegions rd wr) 0 = ol := by
-  rw [stackArg, stackArgAddr, hc.ce_rsp, add_add, hc.ce_word hL _ _ (by omega) (by omega), ha.a0]
+  rw [stackArg, stackArgAddr, hc.ce_rsp, add_add, hc.ce_word hL _ _ (by omega_arith) (by omega_arith), ha.a0]
 
 theorem pbk_e1 (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {salt : Addr} {sl : BitVec 64} {out : Addr}
     {ol : BitVec 64} (ha : PbkArgs L salt sl out ol t) (rd wr : List Region) :
     stackArg (t.callEntry.withRegions rd wr) 1 = L.scr := by
-  rw [stackArg, stackArgAddr, hc.ce_rsp, add_add, hc.ce_word hL _ _ (by omega) (by omega), ha.a1]
+  rw [stackArg, stackArgAddr, hc.ce_rsp, add_add, hc.ce_word hL _ _ (by omega_arith) (by omega_arith), ha.a1]
 
 theorem pbk_pre' (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {salt : Addr} {sl : BitVec 64} {out : Addr}
     {ol : BitVec 64} (ha : PbkArgs L salt sl out ol t) (hr : PbkRegions L salt sl out ol) :
@@ -211,7 +211,7 @@ theorem pbk_pre' (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {salt : Addr} {sl
       L.B + BitVec.ofNat 64 32 := by
     rw [stackArgAddr, hc.ce_rsp, add_add]
   have es : L.B + BitVec.ofNat 64 24 - BitVec.ofNat 64 24 = L.B := BitVec.add_sub_cancel _ _
-  have t24 : (L.B + BitVec.ofNat 64 24).toNat = L.B.toNat + 24 := toNat_add_ofNat _ (by omega)
+  have t24 : (L.B + BitVec.ofNat 64 24).toNat = L.B.toNat + 24 := toNat_add_ofNat _ (by omega_arith)
   have hs := hr.sw
   simp only [pbkK, pbkG, Spec.Hmac.sha256S, State.withRegions_rd, State.withRegions_wr, e0, e1, ea,
     hc.ce_rsp, es, t24, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.rsi ≠ .rsp),
@@ -219,17 +219,17 @@ theorem pbk_pre' (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {salt : Addr} {sl
     gpr_ce _ _ _ (by decide : Reg.r8 ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.r9 ≠ .rsp), ha.rdi, ha.rsi,
     ha.rdx, ha.rcx, ha.r8, ha.r9]
   have sw : InBuf L ⟨L.scr, 200 * 8⟩ := hL.scr_in
-  refine ⟨by omega, by omega, trivial, trivial, hL.pw_buf hr.ow, hL.pw_buf sw, hr.so, hr.sc, hr.oc,
-    (hL.stk_in (d := 32) (n := 16) (by omega) hr.ow).symm,
-    (hL.stk_in (d := 32) (n := 16) (by omega) sw).symm,
-    hL.stk_pw (by omega), hr.ks.sub_left (Offset.sub_base _ (by omega)),
-    hL.stk_in (by omega) hr.ow, hL.stk_in (by omega) sw, Offset.disjoint _ (by omega) (by omega) (by omega),
-    by simpa using hL.stk_pw (d := 0) (n := 24) (by omega),
-    hr.ks.sub_left (by simpa using Offset.sub_base L.B (d := 0) (n := 24) (k := 88) (by omega)),
-    by simpa using hL.stk_in (d := 0) (n := 24) (by omega) hr.ow,
-    by simpa using hL.stk_in (d := 0) (n := 24) (by omega) sw,
-    Offset.base_disjoint _ (by omega) (by omega), hL.np, hr.ns, hr.no,
-    by have := hL.nc; have := hL.slen17; omega, by decide, hr.ol⟩
+  refine ⟨by omega_arith, by omega_arith, trivial, trivial, hL.pw_buf hr.ow, hL.pw_buf sw, hr.so, hr.sc, hr.oc,
+    (hL.stk_in (d := 32) (n := 16) (by omega_arith) hr.ow).symm,
+    (hL.stk_in (d := 32) (n := 16) (by omega_arith) sw).symm,
+    hL.stk_pw (by omega_arith), hr.ks.sub_left (Offset.sub_base _ (by omega_arith)),
+    hL.stk_in (by omega_arith) hr.ow, hL.stk_in (by omega_arith) sw, Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith),
+    by simpa using hL.stk_pw (d := 0) (n := 24) (by omega_arith),
+    hr.ks.sub_left (by simpa using Offset.sub_base L.B (d := 0) (n := 24) (k := 88) (by omega_arith)),
+    by simpa using hL.stk_in (d := 0) (n := 24) (by omega_arith) hr.ow,
+    by simpa using hL.stk_in (d := 0) (n := 24) (by omega_arith) sw,
+    Offset.base_disjoint _ (by omega_arith) (by omega_arith), hL.np, hr.ns, hr.no,
+    by have := hL.nc; have := hL.slen17; omega_arith, by decide, hr.ol⟩
 
 theorem pbk_sub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : BitVec 64}
     (hr : PbkRegions L salt sl out ol) :
@@ -239,16 +239,16 @@ theorem pbk_sub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : Bi
   simp only [pbkRd, pbkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false]
   rintro r (rfl | rfl | rfl | rfl | rfl)
-  · exact ⟨L.PW, by simp, within_base _ (by omega)⟩
+  · exact ⟨L.PW, by simp, within_base _ (by omega_arith)⟩
   · obtain ⟨R, hR, hw⟩ := hs
     exact ⟨R, by simpa only [Lay.regions, List.mem_cons, List.not_mem_nil, or_false] using hR, hw⟩
-  · exact ⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩
+  · exact ⟨L.FR, by simp, within_fr _ (by omega_arith) (by omega_arith)⟩
   · rcases hr.ow with h | h | h | h
     · exact ⟨_, by simp, h⟩
     · exact ⟨_, by simp, h⟩
     · exact ⟨_, by simp, h⟩
     · exact ⟨_, by simp, h⟩
-  · exact ⟨L.SC, by simp, within_base _ (by have := hL.slen17; omega)⟩
+  · exact ⟨L.SC, by simp, within_base _ (by have := hL.slen17; omega_arith)⟩
 
 theorem pbk_wsub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : BitVec 64}
     (hr : PbkRegions L salt sl out ol) : ∀ r ∈ pbkWr L out ol, InBuf L r := by
@@ -275,10 +275,10 @@ theorem pbk_call (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2Scrat
       gpr_ce _ _ _ (by decide : Reg.r8 ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.r9 ≠ .rsp), ha.rdi, ha.rsi,
       ha.rdx, ha.rcx, ha.r8, ha.r9, RegUpd.setWidth_setWidth_32] at h
     have e₁ : Spec.Sha256.bytesAt t.callEntry.mem L.pw L.pwl.toNat = bytesAt t.mem L.pw L.pwl.toNat :=
-      ce_bytesAt t (by rw [hc.ret]; exact hL.stk_pw (by omega)) (by have := hL.np; omega)
+      ce_bytesAt t (by rw [hc.ret]; exact hL.stk_pw (by omega_arith)) (by have := hL.np; omega_arith)
     have e₂ : Spec.Sha256.bytesAt t.callEntry.mem salt sl.toNat = bytesAt t.mem salt sl.toNat :=
-      ce_bytesAt t (by rw [hc.ret]; exact hr.ks.sub_left (Offset.sub_base _ (by omega)))
-        (by have := hr.ns; omega)
+      ce_bytesAt t (by rw [hc.ret]; exact hr.ks.sub_left (Offset.sub_base _ (by omega_arith)))
+        (by have := hr.ns; omega_arith)
     rw [e₁, e₂] at h
     exact h
 
@@ -302,7 +302,7 @@ theorem blk_in (hL : L.Ok) {i : Nat} (hi : i < L.pp) : InBuf L ⟨blkAt L i, L.r
 theorem r2 (hL : L.Ok) : (L.r + (2 : BitVec 32).signExtend 64).toNat = L.r.toNat + 2 := by
   have := hL.r57
   rw [show (2 : BitVec 32).signExtend 64 = BitVec.ofNat 64 2 from by decide,
-    toNat_add_ofNat _ (by omega)]
+    toNat_add_ofNat _ (by omega_arith)]
 
 theorem sub16 (B : Addr) : B + BitVec.ofNat 64 24 - 16 = B + BitVec.ofNat 64 8 := by bv_omega
 
@@ -313,10 +313,10 @@ theorem romix_pre (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : 
   have hb := blk_in hL hi
   have hv : InBuf L ⟨L.v, L.vlen.toNat * 128⟩ := .inr (.inl (within_base _ (Nat.le_refl _)))
   have hs : InBuf L ⟨L.scr, (L.r.toNat + 2) * 128⟩ :=
-    .inr (.inr (.inl (within_base _ (by have := hL.slen; omega))))
+    .inr (.inr (.inl (within_base _ (by have := hL.slen; omega_arith))))
   have tb : (blkAt L i).toNat = L.b.toNat + 128 * L.r.toNat * i := by
     have := blk_le hL hi; have := hL.nb; have := hL.rpos
-    exact toNat_add_ofNat _ (by omega)
+    exact toNat_add_ofNat _ (by omega_arith)
   simp only [Proof.Scrypt.roMixX86_64, State.withRegions_rd, State.withRegions_wr, hc.ce_rsp, sub16,
     gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.rsi ≠ .rsp),
     gpr_ce _ _ _ (by decide : Reg.rdx ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.rcx ≠ .rsp),
@@ -324,12 +324,12 @@ theorem romix_pre (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : 
     ha.rdx, ha.rcx, ha.r8, ha.r9, r2 hL]
   have kb := Within.sub (within_off L.b (blk_le hL hi))
   have ks := Within.sub (within_base L.scr (n := (L.r.toNat + 2) * 128) (k := L.slen.toNat * 128)
-    (by have := hL.slen; omega))
+    (by have := hL.slen; omega_arith))
   refine ⟨trivial, trivial, hL.bv.sub_left kb, (hL.bc.sub_left kb).sub_right ks, hL.vc.sub_right ks,
-    hL.stk_in (by omega) hb, hL.stk_in (by omega) hv, hL.stk_in (by omega) hs, hL.stk_in (by omega) hb,
-    hL.stk_in (by omega) hv, hL.stk_in (by omega) hs,
-    by rw [tb]; have := blk_le hL hi; have := hL.nb; omega, hL.nv,
-    by have := hL.nc; have := hL.slen; omega, hL.rpos, hL.vmod, Whole.valid_pow hL.valid, trivial⟩
+    hL.stk_in (by omega_arith) hb, hL.stk_in (by omega_arith) hv, hL.stk_in (by omega_arith) hs, hL.stk_in (by omega_arith) hb,
+    hL.stk_in (by omega_arith) hv, hL.stk_in (by omega_arith) hs,
+    by rw [tb]; have := blk_le hL hi; have := hL.nb; omega_arith, hL.nv,
+    by have := hL.nc; have := hL.slen; omega_arith, hL.rpos, hL.vmod, Whole.valid_pow hL.valid, trivial⟩
 
 theorem roMix_nosp : NoSp Impl.Scrypt.X86_64.roMixDirect := by
   have : ((instrs Impl.Scrypt.X86_64.roMixDirect).all fun i => !Taint.clobbers i .rsp) = true := by
@@ -345,14 +345,14 @@ theorem romix_sub (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
   rintro r (rfl | rfl | rfl)
   · exact ⟨L.BB, by simp, within_off _ (blk_le hL hi)⟩
   · exact ⟨L.VV, by simp, within_base _ (Nat.le_refl _)⟩
-  · exact ⟨L.SC, by simp, within_base _ (by have := hL.slen; omega)⟩
+  · exact ⟨L.SC, by simp, within_base _ (by have := hL.slen; omega_arith)⟩
 
 theorem romix_wsub (hL : L.Ok) {i : Nat} (hi : i < L.pp) : ∀ r ∈ romixWr L i, InBuf L r := by
   simp only [romixWr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
   · exact blk_in hL hi
   · exact .inr (.inl (within_base _ (Nat.le_refl _)))
-  · exact .inr (.inr (.inl (within_base _ (by have := hL.slen; omega))))
+  · exact .inr (.inr (.inl (within_base _ (by have := hL.slen; omega_arith))))
 
 theorem romix_call (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : i < L.pp)
     (ha : RomixArgs L (blkAt L i) t) :
@@ -367,8 +367,8 @@ theorem romix_call (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi :
     simp only [Proof.Scrypt.roMixX86_64, State.withRegions_mem, hm,
       gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.rsi ≠ .rsp),
       gpr_ce _ _ _ (by decide : Reg.rcx ≠ .rsp), ha.rdi, ha.rsi, ha.rcx] at h
-    rw [ce_bytesAt t (by rw [hc.ret]; exact hL.stk_in (by omega) (by simpa [Nat.mul_comm] using hb))
-      (by have := hL.blen_lt; have := blk_le hL hi; omega)] at h
+    rw [ce_bytesAt t (by rw [hc.ret]; exact hL.stk_in (by omega_arith) (by simpa [Nat.mul_comm] using hb))
+      (by have := hL.blen_lt; have := blk_le hL hi; omega_arith)] at h
     exact h
 
 end

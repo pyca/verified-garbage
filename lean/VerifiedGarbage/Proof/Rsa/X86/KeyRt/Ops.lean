@@ -59,17 +59,17 @@ theorem selectIn_ok {s : State} (h : RtWs L s B Z len N) {o a : Nat} (ho : o < N
   have fo := h.ws.arr_fit ho
   have sep := arr_disj (w := kw len) hoa
   have hK : 4 * kk len extra ≤ 4 * (kw len + 2) := by
-    have := Bool.toNat_le extra; simp only [kk]; omega
+    have := Bool.toNat_le extra; simp only [kk]; omega_arith
   simp only [S] at fa fo sep
   have hl := lenSrc h
   have hle := h.lenLe
   unfold selectIn
   rw [show count L .edi extra = count L .edi extra ++ [] from (List.append_nil _).symm]
   simp only [List.append_assoc]
-  refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega) fun u₁ K₁ m₁ p₁ _ => ?_)
+  refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega_arith) fun u₁ K₁ m₁ p₁ _ => ?_)
   have hl₁ := hl.keep K₁ (by decide) m₁
   have edi₁ : (u₁.gpr .edi).toNat = B.toNat := by rw [K₁.1 _ (by decide)]; exact h.edi
-  refine arrPtr_ok hl₁ hle edi₁ (by decide) (by decide) (by omega) fun u₂ K₂ m₂ p₂ _ => ?_
+  refine arrPtr_ok hl₁ hle edi₁ (by decide) (by decide) (by omega_arith) fun u₂ K₂ m₂ p₂ _ => ?_
   have hl₂ := hl₁.keep K₂ (by decide) m₂
   refine count_ok hl₂ hle fun u K₃ m₃ c₃ => WP.block_nil ?_
   have K : Keeps [.ebx, .edx, .ebp, .edi] s u :=
@@ -77,12 +77,12 @@ theorem selectIn_ok {s : State} (h : RtWs L s B Z len N) {o a : Nat} (ho : o < N
   have m : u.mem = s.mem := by rw [m₃, m₂, m₁]
   have ecx : u.gpr .ecx = cmask k := by rw [K.1 _ (by decide)]; exact hk
   refine WP.seq (WP.mono (selectLoopX_ok (h.rt.of_keeps K) (x := arr (kw len) a) (d := arr (kw len) o)
-    (N := kk len extra) k (by omega) (by omega) (by omega)
+    (N := kk len extra) k (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [PtrAt, K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁)
     (by rw [PtrAt, K₃.1 _ (by decide)]; exact p₂) c₃ ecx) fun t ⟨O, V, _, Kt⟩ => ?_)
   rw [m] at O V
   have KK : Keeps [.eax, .ebx, .edx, .ebp, .edi] s t := (K.mono (by decide)).trans Kt
-  have O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega)
+  have O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega_arith)
   unfold restoreEdi
   refine wp_movS (h.wsArg.keep KK (by decide) O0).readSrc fun t₁ U _ => WP.block_nil ?_
   have K' : Keeps [.eax, .ebx, .edx, .ebp] s t₁ :=
@@ -104,10 +104,10 @@ theorem copy_ok {s : State} (h : RtWs L s B Z len N) {o a : Nat} (ho : o < N) (h
   have hu := h.keep U.keeps (by decide) (by decide) (by rw [U.mem]; exact Outside.refl _ _ _ _)
   refine WP.mono (selectIn_ok hu ho ha hoa false (k := true) U.gpr) fun t ⟨F, O, V, K⟩ => ?_
   rw [U.mem] at O V
-  refine ⟨F, Keep.of_arr (d := 0) (by simpa using O) (by simp only [S, kk_false]; omega) (by simp), ?_,
+  refine ⟨F, Keep.of_arr (d := 0) (by simpa using O) (by simp only [S, kk_false]; omega_arith) (by simp), ?_,
     (U.keeps.mono (by decide)).trans (K.mono (by decide)), ?_⟩
   · simp only [num, ite_true, kk_false] at V ⊢; exact V
-  · exact O.w32 (by simp only [kk_false]; omega) (by have := h.ws.workspace.nowrap; omega)
+  · exact O.w32 (by simp only [kk_false]; omega_arith) (by have := h.ws.workspace.nowrap; omega_arith)
 
 open VG.Proof.Rsa.X86.Keys (slot) in
 /-- The mask of a header word zero or one: all ones where it is one. -/
@@ -117,8 +117,8 @@ theorem mask_slot {s : State} (h : RtWs L s B Z len N) {sl : Nat} (hs : sl + 4 �
       (0 - BitVec.ofNat 32 (slot s.mem B sl) = cmask (decide (slot s.mem B sl ≠ 0))) ∧
       (BitVec.ofNat 32 (slot s.mem B sl) - 1 = cmask (decide (slot s.mem B sl = 0))) := by
   have := h.ws.hdr_le
-  refine ⟨by rw [readSrc_sc h.ws.workspace (by omega)]; simp [slot, w32], ?_⟩
-  rcases (show slot s.mem B sl = 0 ∨ slot s.mem B sl = 1 by omega) with e | e <;> rw [e] <;> decide
+  refine ⟨by rw [readSrc_sc h.ws.workspace (by omega_arith)]; simp [slot, w32], ?_⟩
+  rcases (show slot s.mem B sl = 0 ∨ slot s.mem B sl = 1 by omega_arith) with e | e <;> rw [e] <;> decide
 
 open VG.Proof.Rsa.X86.Keys (slot) in
 /-- `[o]` set to `[b]` where the header word `sl` is one, else kept. -/
@@ -141,7 +141,7 @@ theorem maskSel_ok {s : State} (h : RtWs L s B Z len N) {o b sl : Nat} (ho : o <
   have mask : v.gpr .ecx = cmask (decide (slot s.mem B sl ≠ 0)) := by rw [V.gpr, U.gpr]; exact m0
   refine WP.mono (selectIn_ok hv ho hb hob false mask) fun t ⟨F, O, V', Kt⟩ => ?_
   rw [mv] at O V'
-  refine ⟨F, Keep.of_arr (d := 0) (by simpa using O) (by simp only [S, kk_false]; omega) (by simp), ?_,
+  refine ⟨F, Keep.of_arr (d := 0) (by simpa using O) (by simp only [S, kk_false]; omega_arith) (by simp), ?_,
     (K.mono (by decide)).trans (Kt.mono (by decide))⟩
   simp only [num, kk_false] at V' ⊢
   rw [V']
@@ -221,7 +221,7 @@ theorem sel_ok {s : State} (h : RtWs L s B Z len N) {o a b sl : Nat} (ho : o < N
     have mask : v.gpr .ecx = cmask (decide (slot s.mem B sl = 0)) := by rw [V.gpr, U.gpr]; exact m1
     refine WP.mono (selectIn_ok hv ho ha hoa false mask) fun t ⟨F, O, V', Kt⟩ => ?_
     rw [mv] at O V'
-    refine ⟨F, Keep.of_arr (d := 0) (by simpa using O) (by simp only [S, kk_false]; omega) (by simp), ?_,
+    refine ⟨F, Keep.of_arr (d := 0) (by simpa using O) (by simp only [S, kk_false]; omega_arith) (by simp), ?_,
       (K.mono (by decide)).trans (Kt.mono (by decide))⟩
     simp only [num, kk_false] at V' ⊢
     rw [V']

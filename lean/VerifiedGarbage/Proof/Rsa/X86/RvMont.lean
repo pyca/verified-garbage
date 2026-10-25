@@ -47,7 +47,7 @@ theorem montHead_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m : Nat}
   unfold VG.Impl.Rsa.X86.RecoverRt.montHead
   simp only [seqs]
   refine WP.seq (WP.mono (h.sub_w (o := aZ) (a := aN) (b := aN)
-    (by decide) (by simp) (by simp) (by decide) (by decide) (by omega)
+    (by decide) (by simp) (by simp) (by decide) (by decide) (by omega_arith)
     (by simp only [List.mem_singleton]; rintro j rfl; decide)) fun s1 ⟨h1, _⟩ => ?_)
   simp only [Nat.sub_self] at h1
   refine WP.seq (WP.mono (h1.copy_w (o := aOne) (a := aZ) (by decide) (by simp) (by decide)
@@ -71,7 +71,7 @@ theorem montHead_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m : Nat}
   rw [vone] at h7
   refine ⟨h7.mono (fun j hj => ⟨?_, rfl⟩) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩), mr7⟩
   simp only [liveH, List.mem_cons, List.not_mem_nil, or_false] at hj ⊢
-  omega
+  omega_arith
 
 
 theorem mont_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m : Nat}
@@ -87,7 +87,7 @@ theorem mont_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m : Nat}
   refine WP.seq (WP.mono (h7.mmul mr7 (o := mXm) (a := mXm) (b := mR2)
     (by decide) (by decide) (by decide) (by decide) (by simp) (by simp)
     (by simpa [AH, upd] using hm)
-    (by simpa [AH, upd, mXm, mR2] using Nat.mod_lt (2 ^ (128 * g.n)) (by omega : 0 < m))
+    (by simpa [AH, upd, mXm, mR2] using Nat.mod_lt (2 ^ (128 * g.n)) (by omega_arith : 0 < m))
     (by decide) (by decide)) fun s8 ⟨X, h8, mr8, _, xlt, xe⟩ => ?_)
   have vx : X = 2 ^ (64 * g.n) % m := mont_one odd xlt (by simpa [AH, upd, mXm, mR2] using xe)
   rw [vx] at h8
@@ -99,7 +99,7 @@ theorem mont_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m : Nat}
   refine WP.mono (h9.subMont mr9 (o := aNg) (a := aN) (b := aO)
     (by decide) (by decide) (by simp) (by simp)
     (by simpa [AH, upd, aN, aZ, aOne, mBase, mR2, mXm, aO, value32] using
-      Nat.le_of_lt (Nat.mod_lt (2 ^ (64 * g.n)) (by omega : 0 < m)))
+      Nat.le_of_lt (Nat.mod_lt (2 ^ (64 * g.n)) (by omega_arith : 0 < m)))
     (by decide)) fun t ⟨ht, mt⟩ => ?_
   refine ⟨ht.mono ?_ (by simp) (by simp), mt⟩
   intro j hj

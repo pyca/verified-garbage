@@ -35,7 +35,7 @@ theorem _root_.VG.Proof.Ffdh.AArch64.In.hlG {D : FD} {mi : BitVec 64} {t : State
 
 theorem _root_.VG.Proof.Ffdh.AArch64.In.hlB {D : FD} {mi : BitVec 64} {t : State} (h : In D mi t) :
     ∀ i < 32, InRegions (t.rd ++ t.wr) (off D.B (8 * i)) 8 :=
-  fun _ hi => h.1.scr.ld (by have := h.1.hZ; omega)
+  fun _ hi => h.1.scr.ld (by have := h.1.hZ; omega_arith)
 
 theorem bit_mask (P : Prop) [Decidable P] : (0 : BitVec 64) - bit P = mask (decide P) := by
   by_cases h : P <;> simp [bit, h, mask]
@@ -151,7 +151,7 @@ theorem o3_o4 {D : FD} {op : Addr} {z : Nat} {t : State} (h : O3 D op z t) :
   have sT := slot_sep (w := D.w) (show aTmp ≠ aY by decide)
   rw [f.wv_eq (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)]
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)]
   exact hY
 
 /-- `storeBE`'s operands. -/
@@ -201,10 +201,10 @@ theorem o5_o6 {D : FD} {op : Addr} {z : Nat} {t : State} (h : O5 D op z t) :
   have hk2 : D.k ≤ 1024 := hb.k2
   have ew' : 8 * D.w ≤ D.k + 7 ∧ D.k ≤ 8 * D.w := hb.ew
   have hsY := slot_le (w := D.w) (show aY < 8 by decide)
-  have hiZ : inner D.w + slot D.w 8 ≤ D.Z := by unfold tabBytes32 at hroom; omega
+  have hiZ : inner D.w + slot D.w 8 ≤ D.Z := by unfold tabBytes32 at hroom; omega_arith
   have h8' : t.gpr .x8 = off D.B (inner D.w + slot D.w aY) := by rw [h8, off_off]
-  refine WP.mono (storeBE_ok (c := decide (fl D z)) (w := D.w) hb.scr h8' h1 h9 h15 (by omega) (by omega)
-    rfl (by omega) (fun j hj => (hd j hj).1) (fun j hj => (hd j hj).2)) fun u ⟨hb', hfr, hwr, hrd, k⟩ => ?_
+  refine WP.mono (storeBE_ok (c := decide (fl D z)) (w := D.w) hb.scr h8' h1 h9 h15 (by omega_arith) (by omega_arith)
+    rfl (by omega_arith) (fun j hj => (hd j hj).1) (fun j hj => (hd j hj).2)) fun u ⟨hb', hfr, hwr, hrd, k⟩ => ?_
   have hF8 := hdr_lt_slot D.w 8 (show sF < 32 by decide)
   refine ⟨⟨?_, (k.gpr .x0 (by decide)).trans hc.x0, ?_, ?_⟩, k.mono (by decide)⟩
   · show (List.range D.k).map (fun i => u.mem (op + BitVec.ofNat 64 i)) = _
@@ -214,9 +214,9 @@ theorem o5_o6 {D : FD} {op : Addr} {z : Nat} {t : State} (h : O5 D op z t) :
     refine Mem.readW_congr fun i hi => (hfr _ fun j hj he => ?_)
     have h1 := (hd j hj).2
     have h2 : ofs D.B (off (FD.G D) (8 * sF) + BitVec.ofNat 64 i) = inner D.w + 8 * sF + i := by
-      rw [off_off, ofs_off _ (by omega)]
+      rw [off_off, ofs_off _ (by omega_arith)]
     rw [he] at h2
-    omega
+    omega_arith
   · rw [hwr, hrd]; exact hI.hlG sF (by decide)
 
 /-- `outMask`: z stored masked by its flag, which is left in `sF`. -/

@@ -90,7 +90,7 @@ theorem blockKey_digest {k : List Byte} (hk : H.B < k.length) :
     blockKey hH.SH.H (hH.SH.H.hash k) = blockKey hH.SH.H k := by
   have hl := hH.hashLen k
   have := hH.hDB
-  simp only [blockKey, hH.hB, hl, show ¬ (H.B < H.D) by omega, ite_false, hk, ite_true]
+  simp only [blockKey, hH.hB, hl, show ¬ (H.B < H.D) by omega_arith, ite_false, hk, ite_true]
 
 /-- The layout of the scratch space. -/
 structure Lay (H : Hash) : Prop where
@@ -103,7 +103,7 @@ structure Lay (H : Hash) : Prop where
 include hH in
 theorem lay : Lay H := by
   have := hH.dims.lso
-  exact ⟨rfl, rfl, by simp only [Hash.lsv]; omega, this.2, rfl⟩
+  exact ⟨rfl, rfl, by simp only [Hash.lsv]; omega_arith, this.2, rfl⟩
 
 /-- `Vars` for `initLong`: our variables in `r20`–`r25`, and the callee-saved
 registers we never write. -/
@@ -141,29 +141,29 @@ section
 variable (hl : Lay H) (p : Addr)
 include hl
 
-theorem wI_sub : Region.Sub ⟨p, H.W + 48⟩ ⟨p, H.lbytes⟩ := Region.sub_prefix (by have := hl.dgsv; rw [hl.lbytes]; rw [hl.ldg] at this; omega)
-theorem wR_sub : Region.Sub ⟨p, H.W⟩ ⟨p, H.lbytes⟩ := Region.sub_prefix (by have := hl.dgsv; rw [hl.lbytes]; rw [hl.ldg] at this; omega)
+theorem wI_sub : Region.Sub ⟨p, H.W + 48⟩ ⟨p, H.lbytes⟩ := Region.sub_prefix (by have := hl.dgsv; rw [hl.lbytes]; rw [hl.ldg] at this; omega_arith)
+theorem wR_sub : Region.Sub ⟨p, H.W⟩ ⟨p, H.lbytes⟩ := Region.sub_prefix (by have := hl.dgsv; rw [hl.lbytes]; rw [hl.ldg] at this; omega_arith)
 theorem stR_sub : Region.Sub ⟨p + BitVec.ofNat 64 H.lst, H.S⟩ ⟨p, H.lbytes⟩ :=
-  Offset.sub_base p (by have := hl.dgsv; rw [hl.lbytes, hl.lst]; rw [hl.ldg] at this; simp only [Hash.S] at *; omega)
+  Offset.sub_base p (by have := hl.dgsv; rw [hl.lbytes, hl.lst]; rw [hl.ldg] at this; simp only [Hash.S] at *; omega_arith)
 theorem dgR_sub : Region.Sub ⟨p + BitVec.ofNat 64 H.ldg, H.FD⟩ ⟨p, H.lbytes⟩ :=
-  Offset.sub_base p (by have := hl.dgsv; rw [hl.lbytes]; omega)
+  Offset.sub_base p (by have := hl.dgsv; rw [hl.lbytes]; omega_arith)
 theorem svR_sub : Region.Sub ⟨p + BitVec.ofNat 64 H.lsv, 48⟩ ⟨p, H.lbytes⟩ :=
   Offset.sub_base p (by rw [hl.lbytes])
 theorem wI_st : Region.Disjoint ⟨p, H.W + 48⟩ ⟨p + BitVec.ofNat 64 H.lst, H.S⟩ :=
-  Offset.base_disjoint p (by rw [hl.lst]) (by have := hl.lsv; have := hl.dgsv; rw [hl.ldg] at this; rw [hl.lst]; simp only [Hash.S] at *; omega)
+  Offset.base_disjoint p (by rw [hl.lst]) (by have := hl.lsv; have := hl.dgsv; rw [hl.ldg] at this; rw [hl.lst]; simp only [Hash.S] at *; omega_arith)
 theorem wI_dg : Region.Disjoint ⟨p, H.W + 48⟩ ⟨p + BitVec.ofNat 64 H.ldg, H.FD⟩ :=
-  Offset.base_disjoint p (by rw [hl.ldg]; omega) (by have := hl.lsv; have := hl.dgsv; omega)
+  Offset.base_disjoint p (by rw [hl.ldg]; omega_arith) (by have := hl.lsv; have := hl.dgsv; omega_arith)
 theorem wI_sv : Region.Disjoint ⟨p, H.W + 48⟩ ⟨p + BitVec.ofNat 64 H.lsv, 48⟩ :=
-  Offset.base_disjoint p (by have := hl.dgsv; rw [hl.ldg] at this; omega) (by have := hl.lsv; omega)
+  Offset.base_disjoint p (by have := hl.dgsv; rw [hl.ldg] at this; omega_arith) (by have := hl.lsv; omega_arith)
 theorem st_dg : Region.Disjoint ⟨p + BitVec.ofNat 64 H.lst, H.S⟩ ⟨p + BitVec.ofNat 64 H.ldg, H.FD⟩ :=
-  Offset.disjoint p (.inl (by rw [hl.ldg, hl.lst])) (by have := hl.lsv; have := hl.dgsv; rw [hl.ldg] at this; rw [hl.lst]; simp only [Hash.S] at *; omega)
-    (by have := hl.lsv; have := hl.dgsv; omega)
+  Offset.disjoint p (.inl (by rw [hl.ldg, hl.lst])) (by have := hl.lsv; have := hl.dgsv; rw [hl.ldg] at this; rw [hl.lst]; simp only [Hash.S] at *; omega_arith)
+    (by have := hl.lsv; have := hl.dgsv; omega_arith)
 theorem st_sv : Region.Disjoint ⟨p + BitVec.ofNat 64 H.lst, H.S⟩ ⟨p + BitVec.ofNat 64 H.lsv, 48⟩ :=
-  Offset.disjoint p (.inl (by have := hl.dgsv; rw [hl.ldg] at this; rw [hl.lst]; simp only [Hash.S] at *; omega))
-    (by have := hl.lsv; have := hl.dgsv; rw [hl.ldg] at this; rw [hl.lst]; simp only [Hash.S] at *; omega)
-    (by have := hl.lsv; omega)
+  Offset.disjoint p (.inl (by have := hl.dgsv; rw [hl.ldg] at this; rw [hl.lst]; simp only [Hash.S] at *; omega_arith))
+    (by have := hl.lsv; have := hl.dgsv; rw [hl.ldg] at this; rw [hl.lst]; simp only [Hash.S] at *; omega_arith)
+    (by have := hl.lsv; omega_arith)
 theorem dg_sv : Region.Disjoint ⟨p + BitVec.ofNat 64 H.ldg, H.FD⟩ ⟨p + BitVec.ofNat 64 H.lsv, 48⟩ :=
-  Offset.disjoint p (.inl hl.dgsv) (by have := hl.lsv; have := hl.dgsv; omega) (by have := hl.lsv; omega)
+  Offset.disjoint p (.inl hl.dgsv) (by have := hl.lsv; have := hl.dgsv; omega_arith) (by have := hl.lsv; omega_arith)
 
 end
 
@@ -173,7 +173,7 @@ include hH in
 theorem init_fdepth : H.init.fdepth ≤ 2 := by
   have := Init.initMain_fdepth hH
   simp only [Hash.init, Code.fdepth, Nat.max_le]
-  omega
+  omega_arith
 
 include hH in
 theorem init_pf : pushFrames H.init = true := by
@@ -187,20 +187,20 @@ theorem correctMain (hp : Pre H s₀) :
   have hN : 0 < H.N ∧ H.N ≤ 64 := hH.dims.N
   have hW : H.W % 8 = 0 ∧ H.W ≤ 1024 := hH.dims.so
   have hB : H.B = 64 ∨ H.B = 128 := hH.dims.B
-  have hB' : H.B ≤ 128 := by omega
+  have hB' : H.B ≤ 128 := by omega_arith
   have hS : H.S = H.N + H.B := rfl
   have hD := hH.hD64
   have hl := lay hH
   have hkB : kl s₀ < 2 ^ 64 := (s₀.gpr .r6).isLt
   have := hp.sp96
-  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by omega) (by omega)
+  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by omega_arith) (by omega_arith)
   have hlst : H.lst + H.S ≤ H.lbytes := by
-    have := hl.dgsv; rw [hl.lbytes, hl.lst]; rw [hl.ldg] at this; simp only [Hash.S] at *; omega
-  have hW' : H.W ≤ H.lbytes := by have := hl.dgsv; rw [hl.lbytes]; rw [hl.ldg] at this; omega
+    have := hl.dgsv; rw [hl.lbytes, hl.lst]; rw [hl.ldg] at this; simp only [Hash.S] at *; omega_arith
+  have hW' : H.W ≤ H.lbytes := by have := hl.dgsv; rw [hl.lbytes]; rw [hl.ldg] at this; omega_arith
   let all : List Region := [inR H s₀, outR H s₀, scR H s₀, below s₀.sp 96]
   have key_keep : ∀ m, Frame all s₀.mem m → bytesAt m (kp s₀) (kl s₀) = K s₀ := by
     intro m hf
-    refine Proof.Sha256.Stream.bytesAt_congr fun i hi => hf.bytes (R := kR s₀) ?_ (by simp; omega) hi
+    refine Proof.Sha256.Stream.bytesAt_congr fun i hi => hf.bytes (R := kR s₀) ?_ (by simp; omega_arith) hi
     simp only [all, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl)
     exacts [hp.k_i, hp.k_o, hp.k_s, hp.sk.symm]
@@ -215,11 +215,11 @@ theorem correctMain (hp : Pre H s₀) :
   -- Save our caller's registers, and set up ours.
   refine WP.seq (save_ok hH.dims.lso (b := .r7) (by decide)
     (fun d hd₁ hd₂ => ⟨scR H s₀, by simp [hp.wr], contains_offset
-      (show d + 8 ≤ H.lbytes by have : d + 8 ≤ H.lsv + 48 := hd₂; rw [hl.lbytes]; omega)
-      (by have : d + 8 ≤ H.lsv + 48 := hd₂; have := hl.lsv; omega)⟩)
+      (show d + 8 ≤ H.lbytes by have : d + 8 ≤ H.lsv + 48 := hd₂; rw [hl.lbytes]; omega_arith)
+      (by have : d + 8 ≤ H.lsv + 48 := hd₂; have := hl.lsv; omega_arith)⟩)
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_)
   refine wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_mov fun s₅ u₅ =>
-    wp_mov fun s₆ u₆ => wp_addi (by rw [hl.lst]; omega) fun s₇ u₇ => wp_mov fun s₈ u₈ => WP.block_nil ?_
+    wp_mov fun s₆ u₆ => wp_addi (by rw [hl.lst]; omega_arith) fun s₇ u₇ => wp_mov fun s₈ u₈ => WP.block_nil ?_
   have hr₈ : Regs s₀ s₈ :=
     ⟨by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁],
       by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁],
@@ -263,7 +263,7 @@ theorem correctMain (hp : Pre H s₀) :
     exact (hd r hr).sub_left (Offset.sub (scr s₀) (show H.lsv ≤ p.2 from ho.1) (show p.2 + 8 ≤ H.lsv + 48 from ho.2))
   -- The streaming state the key is hashed in.
   refine WP.seq (hH.callInit_ok (st := scr s₀ + BitVec.ofNat 64 H.lst) h3₈
-      ⟨by rw [hr₈.sp]; omega, by rw [hr₈.sp]; exact ((sfS _ (stR_sub hl _)).2.2.2).sub_left hsub⟩
+      ⟨by rw [hr₈.sp]; omega_arith, by rw [hr₈.sp]; exact ((sfS _ (stR_sub hl _)).2.2.2).sub_left hsub⟩
     (by rw [hr₈.rd, hr₈.wr, hp.rd, hp.wr]; exact Covers.of_sub fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact cover_off (R := scR H s₀) (by simp) (by exact hlst))
@@ -294,7 +294,7 @@ theorem correctMain (hp : Pre H s₀) :
   have v₁₄ : Vars (H := H) s₀ s₁₄ := v₉.of_keep fun r a b c d e => by
     rw [u₁₄.other r e, u₁₃.other r d, u₁₂.other r c, u₁₁.other r b, u₁₀.other r a]
   have dSW : Region.Disjoint (stR H s₀) ⟨scr s₀, H.W⟩ :=
-    (wI_st hl _).symm.sub_right (Region.sub_prefix (by omega))
+    (wI_st hl _).symm.sub_right (Region.sub_prefix (by omega_arith))
   have dKS := (sfS _ (stR_sub hl _)).2.2.1.symm
   have dKW := (sfS _ (wR_sub hl _)).2.2.1.symm
   refine WP.seq (hH.callUpd_ok (st := scr s₀ + BitVec.ofNat 64 H.lst) (dat := kp s₀) (scr := scr s₀)
@@ -307,7 +307,7 @@ theorem correctMain (hp : Pre H s₀) :
       u₁₀.other _ (by decide), v₉.r24])
     (by rw [u₁₄.gpr, u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide),
       u₁₀.other _ (by decide), v₉.r21])
-    dSW dKS dKW (by rw [g₁₄.sp]; omega)
+    dSW dKS dKW (by rw [g₁₄.sp]; omega_arith)
     (by rw [g₁₄.sp]; exact ((sfS _ (stR_sub hl _)).2.2.2).sub_left hsub)
     (by rw [g₁₄.sp]; exact hp.sk.sub_left hsub)
     (by rw [g₁₄.sp]; exact ((sfS _ (wR_sub hl _)).2.2.2).sub_left hsub)
@@ -346,10 +346,10 @@ theorem correctMain (hp : Pre H s₀) :
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact (st_sv hl _).symm
-    · exact (wI_sv hl _).symm.sub_right (Region.sub_prefix (by omega))
+    · exact (wI_sv hl _).symm.sub_right (Region.sub_prefix (by omega_arith))
     · exact (hp.ss.sub_right (svR_sub hl _)).symm.sub_right hsub)
   -- The key's digest.
-  refine WP.seq (wp_mov fun s₁₆ u₁₆ => wp_mov fun s₁₇ u₁₇ => wp_addi (by rw [hl.ldg]; omega) fun s₁₈ u₁₈ =>
+  refine WP.seq (wp_mov fun s₁₆ u₁₆ => wp_mov fun s₁₇ u₁₇ => wp_addi (by rw [hl.ldg]; omega_arith) fun s₁₈ u₁₈ =>
     wp_mov fun s₁₉ u₁₉ => WP.block_nil ?_)
   have g₁₉ : Regs s₀ s₁₉ :=
     ⟨by rw [u₁₉.rd, u₁₈.rd, u₁₇.rd, u₁₆.rd, g₁₅.rd], by rw [u₁₉.wr, u₁₈.wr, u₁₇.wr, u₁₆.wr, g₁₅.wr],
@@ -359,13 +359,13 @@ theorem correctMain (hp : Pre H s₀) :
     rw [u₁₉.other r d, u₁₈.other r c, u₁₇.other r b, u₁₆.other r a]
   have dSD : Region.Disjoint (stR H s₀) (dgR H s₀) := st_dg hl _
   have dDW : Region.Disjoint (dgR H s₀) ⟨scr s₀, H.W⟩ :=
-    (wI_dg hl _).symm.sub_right (Region.sub_prefix (by omega))
+    (wI_dg hl _).symm.sub_right (Region.sub_prefix (by omega_arith))
   refine WP.seq (hH.callFin_ok (st := scr s₀ + BitVec.ofNat 64 H.lst) (o := scr s₀ + BitVec.ofNat 64 H.ldg)
     (scr := scr s₀)
     (by rw [u₁₉.other _ (by decide), u₁₈.other _ (by decide), u₁₇.other _ (by decide), u₁₆.gpr, v₁₅.r20])
     (by rw [u₁₉.other _ (by decide), u₁₈.gpr, u₁₇.other _ (by decide), u₁₆.other _ (by decide), v₁₅.r21])
     (by rw [u₁₉.gpr, u₁₈.other _ (by decide), u₁₇.other _ (by decide), u₁₆.other _ (by decide), v₁₅.r21])
-    dSD dSW dDW (by rw [g₁₉.sp]; omega)
+    dSD dSW dDW (by rw [g₁₉.sp]; omega_arith)
     (by rw [g₁₉.sp]; exact ((sfS _ (stR_sub hl _)).2.2.2).sub_left hsub)
     (by rw [g₁₉.sp]; exact ((sfS _ (dgR_sub hl _)).2.2.2).sub_left hsub)
     (by rw [g₁₉.sp]; exact ((sfS _ (wR_sub hl _)).2.2.2).sub_left hsub)
@@ -375,7 +375,7 @@ theorem correctMain (hp : Pre H s₀) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact cover_off (R := scR H s₀) (by simp) (by exact hlst)
-      · exact cover_off (R := scR H s₀) (by simp) (by have := hl.dgsv; rw [hl.lbytes] at *; show _ ≤ H.lbytes; rw [hl.lbytes]; omega)
+      · exact cover_off (R := scR H s₀) (by simp) (by have := hl.dgsv; rw [hl.lbytes] at *; show _ ≤ H.lbytes; rw [hl.lbytes]; omega_arith)
       · exact cover_pre (R := scR H s₀) (by simp) (by exact hW'))
     (by
       rw [g₁₉.wr, hp.wr]
@@ -383,14 +383,14 @@ theorem correctMain (hp : Pre H s₀) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact cover_off (R := scR H s₀) (by simp) (by exact hlst)
-      · exact cover_off (R := scR H s₀) (by simp) (by have := hl.dgsv; show _ ≤ H.lbytes; rw [hl.lbytes]; omega)
+      · exact cover_off (R := scR H s₀) (by simp) (by have := hl.dgsv; show _ ≤ H.lbytes; rw [hl.lbytes]; omega_arith)
       · exact cover_pre (R := scR H s₀) (by simp) (by exact hW'))
     fun s₂₀ rd₂₀ wr₂₀ sp₂₀ f₂₀ cs₂₀ hfin₂₀ => ?_)
   rw [g₁₉.sp] at f₂₀
   have g₂₀ : Regs s₀ s₂₀ := ⟨rd₂₀.trans g₁₉.rd, wr₂₀.trans g₁₉.wr, sp₂₀.trans g₁₉.sp⟩
   have v₂₀ : Vars (H := H) s₀ s₂₀ := v₁₉.of_pres cs₂₀
   have hdig : bytesAt s₂₀.mem (scr s₀ + BitVec.ofNat 64 H.ldg) H.D = hH.SH.H.hash (K s₀) := by
-    rw [bytesAt_take _ _ hH.hDF, hfin₂₀ _ (by rw [m₁₉]; exact hrK) (by simp [bytesAt]; omega) (by
+    rw [bytesAt_take _ _ hH.hDF, hfin₂₀ _ (by rw [m₁₉]; exact hrK) (by simp [bytesAt]; omega_arith) (by
       rw [u₁₉.other _ (by decide), u₁₈.other _ (by decide), u₁₇.gpr, u₁₆.other _ (by decide), v₁₅.r24]
       simp [bytesAt]), hH.hashTake]
   have f₂₀' : Frame all s₀.mem s₂₀.mem := f₁₅'.trans (by
@@ -407,11 +407,11 @@ theorem correctMain (hp : Pre H s₀) :
     rintro r (rfl | rfl | rfl | rfl)
     · exact (st_sv hl _).symm
     · exact (dg_sv hl _).symm
-    · exact (wI_sv hl _).symm.sub_right (Region.sub_prefix (by omega))
+    · exact (wI_sv hl _).symm.sub_right (Region.sub_prefix (by omega_arith))
     · exact (hp.ss.sub_right (svR_sub hl _)).symm.sub_right hsub)
   -- HMAC's `init`'s arguments, and our caller's registers restored.
-  refine WP.seq (wp_mov fun s₂₁ u₂₁ => wp_mov fun s₂₂ u₂₂ => wp_addi (by rw [hl.ldg]; omega) fun s₂₃ u₂₃ =>
-    wp_li (by omega) fun s₂₄ u₂₄ => wp_mov fun s₂₅ u₂₅ => ?_)
+  refine WP.seq (wp_mov fun s₂₁ u₂₁ => wp_mov fun s₂₂ u₂₂ => wp_addi (by rw [hl.ldg]; omega_arith) fun s₂₃ u₂₃ =>
+    wp_li (by omega_arith) fun s₂₄ u₂₄ => wp_mov fun s₂₅ u₂₅ => ?_)
   have g₂₅ : Regs s₀ s₂₅ :=
     ⟨by rw [u₂₅.rd, u₂₄.rd, u₂₃.rd, u₂₂.rd, u₂₁.rd, g₂₀.rd], by rw [u₂₅.wr, u₂₄.wr, u₂₃.wr, u₂₂.wr, u₂₁.wr, g₂₀.wr],
       by rw [u₂₅.sp, u₂₄.sp, u₂₃.sp, u₂₂.sp, u₂₁.sp, g₂₀.sp]⟩
@@ -429,14 +429,14 @@ theorem correctMain (hp : Pre H s₀) :
       u₂₁.other _ (by decide), v₂₀.r21]
   have a6 : (s₂₅.gpr .r6).toNat = H.D := by
     rw [u₂₅.other _ (by decide), u₂₄.gpr]
-    exact Proof.MdStream.PPC64LE.toNat_ofNat_lt (by omega)
+    exact Proof.MdStream.PPC64LE.toNat_ofNat_lt (by omega_arith)
   have a7 : s₂₅.gpr .r7 = scr s₀ := by
     rw [u₂₅.gpr, u₂₄.other _ (by decide), u₂₃.other _ (by decide), u₂₂.other _ (by decide),
       u₂₁.other _ (by decide), v₂₀.r21]
   refine restore_ok hH.dims.lso (scr := scr s₀) v₂₅.r21
     (fun d hd₁ hd₂ => ⟨scR H s₀, by simp [g₂₅.rd, g₂₅.wr, hp.wr], contains_offset
-      (show d + 8 ≤ H.lbytes by have : d + 8 ≤ H.lsv + 48 := hd₂; rw [hl.lbytes]; omega)
-      (by have : d + 8 ≤ H.lsv + 48 := hd₂; have := hl.lsv; omega)⟩)
+      (show d + 8 ≤ H.lbytes by have : d + 8 ≤ H.lsv + 48 := hd₂; rw [hl.lbytes]; omega_arith)
+      (by have : d + 8 ≤ H.lsv + 48 := hd₂; have := hl.lsv; omega_arith)⟩)
     s₀.gpr (by rw [m₂₅]; exact sv₂₀) fun s₂₆ hsv ho hmem hrd hwr hsp => ?_
   have hk : ∀ r ∈ preserved, s₂₆.gpr r = s₀.gpr r := preserved_of hsv fun r hr => by
     rw [ho r (by simp only [Hash.savedAt, List.map_cons, List.map_nil]; revert r; decide)]
@@ -460,27 +460,27 @@ theorem correctMain (hp : Pre H s₀) :
       obtain ⟨t, s', he, h₁, h₂⟩ := Init.correct hH hs
       exact ⟨t, s', he, h₁, h₂⟩)
     (rd := [dkR H s₀]) (wr := [inR H s₀, outR H s₀, wI H s₀]) ?_ ?_ ?_ ?_
-    (by have := init_fdepth hH; omega) (init_pf hH)
+    (by have := init_fdepth hH; omega_arith) (init_pf hH)
   · simp only [initG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c3, c4, c5, c6, c7, hH.hS, hH.hB, g₂₆.sp]
     have := hH.hDB
     exact ⟨this, trivial, trivial, hp.i_o, hp.i_s.sub_right wIs, hp.o_s.sub_right wIs, dD.1, dD.2.1,
-      ((wI_dg hl _).sub_right (Region.sub_prefix hH.hDF)).symm, by omega, hp.si, hp.so, dD.2.2.2, dW.2.2.2⟩
+      ((wI_dg hl _).sub_right (Region.sub_prefix hH.hDF)).symm, by omega_arith, hp.si, hp.so, dD.2.2.2, dW.2.2.2⟩
   · rw [g₂₆.rd, g₂₆.wr, hp.rd, hp.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact cover_off (R := scR H s₀) (by simp) (by have := hl.dgsv; have := c6; have := hH.hDF; show _ ≤ H.lbytes; rw [hl.lbytes]; omega)
+    · exact cover_off (R := scR H s₀) (by simp) (by have := hl.dgsv; have := c6; have := hH.hDF; show _ ≤ H.lbytes; rw [hl.lbytes]; omega_arith)
     · exact cover_self (by simp)
     · exact cover_self (by simp)
-    · exact cover_pre (R := scR H s₀) (by simp) (by have := hl.dgsv; rw [hl.ldg] at this; show H.W + 48 ≤ H.lbytes; rw [hl.lbytes]; omega)
+    · exact cover_pre (R := scR H s₀) (by simp) (by have := hl.dgsv; rw [hl.ldg] at this; show H.W + 48 ≤ H.lbytes; rw [hl.lbytes]; omega_arith)
   · rw [g₂₆.wr, hp.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact cover_self (by simp)
     · exact cover_self (by simp)
-    · exact cover_pre (R := scR H s₀) (by simp) (by have := hl.dgsv; rw [hl.ldg] at this; show H.W + 48 ≤ H.lbytes; rw [hl.lbytes]; omega)
+    · exact cover_pre (R := scR H s₀) (by simp) (by have := hl.dgsv; rw [hl.ldg] at this; show H.W + 48 ≤ H.lbytes; rw [hl.lbytes]; omega_arith)
   · intro s₂₇ _ _ sp₂₇ _ cs₂₇ hpost
     simp only [initG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c3, c4, c5, c6]
       at hpost
@@ -496,7 +496,7 @@ theorem initLongMain_fdepth : H.initLongMain.fdepth ≤ 2 := by
   have := hH.finFd
   have := init_fdepth hH
   simp only [Hash.initLongMain, Hash.callInit, Hash.callUpd, Hash.callFin, Hash.callHmacInit, Code.fdepth, Nat.max_le]
-  omega
+  omega_arith
 
 include hH in
 theorem initLongMain_pf : pushFrames H.initLongMain = true := by
@@ -518,10 +518,10 @@ theorem correct {s₀ : State} (hp : (longG hH.SH H.lbytes 144).pre s₀) :
     WP isa H.initLong s₀ fun s' => abiPreserved s₀ s' ∧ (longG hH.SH H.lbytes 144).post s₀ s' := by
   have hpi := pre_inner hH hp
   obtain ⟨_, _, h2, _, _, _, _, _, _, h9, h10, h11, h12, h13⟩ := hp
-  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 144) := below_sub (by omega) (by omega)
+  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 144) := below_sub (by omega_arith) (by omega_arith)
   refine WP.seq (Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
-  refine WP.frameReg (by show 48 ≤ s₀.sp.toNat; omega) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
-    fun s' ⟨hk, hsp, hI, hO⟩ => ?_) (by have := initLongMain_fdepth hH; omega) (initLongMain_pf hH)
+  refine WP.frameReg (by show 48 ≤ s₀.sp.toNat; omega_arith) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
+    fun s' ⟨hk, hsp, hI, hO⟩ => ?_) (by have := initLongMain_fdepth hH; omega_arith) (initLongMain_pf hH)
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, h2] at hR
     have hf : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (below s₀.sp 144) :=
       fun a h => hsub a (Proof.MdStream.PPC64LE.frame_sub s₀.sp a h)

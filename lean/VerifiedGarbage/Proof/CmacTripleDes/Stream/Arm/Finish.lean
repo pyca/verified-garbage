@@ -78,13 +78,13 @@ theorem HPre.of {s₀ : State} (h : finishArm.pre s₀) :
 theorem arg1_eq {s : State} (h : s.sp.toNat + 8 ≤ 2 ^ 32) :
     stackArgAddr s 1 = stackArgAddr s 0 + BitVec.ofNat 64 4 := by
   simp only [stackArgAddr]
-  rw [addr_add (by omega), addr_add (by omega)]
+  rw [addr_add (by omega_arith), addr_add (by omega_arith)]
   simp
 
 theorem arg_in {s : State} (h : s.sp.toNat + 8 ≤ 2 ^ 32) {rs : List Region} (hr : ⟨stackArgAddr s 0, 8⟩ ∈ rs)
     {k : Nat} (hk : k < 2) : InRegions rs (stackArgAddr s k) 4 := by
   refine ⟨_, hr, ?_⟩
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  rcases (by omega_arith : k = 0 ∨ k = 1) with rfl | rfl
   · simpa using Offset.contains_base (stackArgAddr s 0) (d := 0) (n := 4) (k := 8) (by decide) (by decide)
   · rw [arg1_eq h]; exact Offset.contains_base _ (by decide) (by decide)
 
@@ -123,15 +123,15 @@ theorem finishPre_wp {s₀ : State} {St O S : BitVec 32} (hp : HPre s₀ St O S)
   have hSt := hp.fSt
   have hO := hp.fO
   have aO : State.addr (O + BitVec.ofNat 32 0) = State.addr O := by rw [BitVec.add_zero]
-  have aO4 : State.addr (O + BitVec.ofNat 32 4) = State.addr O + BitVec.ofNat 64 4 := addr_add (by omega)
-  have a400 : State.addr (St + BitVec.ofNat 32 400) = State.addr St + BitVec.ofNat 64 400 := addr_add (by omega)
+  have aO4 : State.addr (O + BitVec.ofNat 32 4) = State.addr O + BitVec.ofNat 64 4 := addr_add (by omega_arith)
+  have a400 : State.addr (St + BitVec.ofNat 32 400) = State.addr St + BitVec.ofNat 64 400 := addr_add (by omega_arith)
   have a404 : State.addr (St + BitVec.ofNat 32 404) = State.addr St + BitVec.ofNat 64 400 + BitVec.ofNat 64 4 := by
-    rw [Offset.add_add]; exact addr_add (by omega)
+    rw [Offset.add_add]; exact addr_add (by omega_arith)
   have inSt (d : Nat) (hd : d + 4 ≤ 416) :
       InRegions (s₀.rd ++ s₀.wr) (State.addr St + BitVec.ofNat 64 d) 4 := by
-    rw [hp.rd, hp.wr]; exact ⟨⟨State.addr St, 416⟩, by simp, Offset.contains_base _ hd (by omega)⟩
+    rw [hp.rd, hp.wr]; exact ⟨⟨State.addr St, 416⟩, by simp, Offset.contains_base _ hd (by omega_arith)⟩
   have inO (d : Nat) (hd : d + 4 ≤ 8) : InRegions s₀.wr (State.addr O + BitVec.ofNat 64 d) 4 := by
-    rw [hp.wr]; exact ⟨⟨State.addr O, 8⟩, by simp, Offset.contains_base _ hd (by omega)⟩
+    rw [hp.wr]; exact ⟨⟨State.addr O, 8⟩, by simp, Offset.contains_base _ hd (by omega_arith)⟩
   have dW : (⟨State.addr O, 4⟩ : Region).Disjoint ⟨State.addr St + BitVec.ofNat 64 400 + BitVec.ofNat 64 4, 4⟩ := by
     rw [Offset.add_add]
     exact (hp.st_o.sub_left (Offset.sub_base _ (by decide))).symm.sub_left (Region.sub_prefix (by decide))
@@ -190,7 +190,7 @@ structure HMid (s₀ : State) (St O S : BitVec 32) (s : State) : Prop where
   wr : s.wr = s₀.wr
 
 theorem HPre.aL {s₀ : State} {St O S : BitVec 32} (hp : HPre s₀ St O S) :
-    State.addr (St + BitVec.ofNat 32 408) = State.addr St + BitVec.ofNat 64 408 := addr_add (by have := hp.fSt; omega)
+    State.addr (St + BitVec.ofNat 32 408) = State.addr St + BitVec.ofNat 64 408 := addr_add (by have := hp.fSt; omega_arith)
 
 theorem HPre.fargs {s₀ s : State} {St O S : BitVec 32} {L : Nat} (hp : HPre s₀ St O S) (hL : L ≤ 8)
     (r0 : s.gpr .r0 = St) (r1 : s.gpr .r1 = O) (r2 : s.gpr .r2 = St + BitVec.ofNat 32 408)
@@ -199,7 +199,7 @@ theorem HPre.fargs {s₀ s : State} {St O S : BitVec 32} {L : Nat} (hp : HPre s�
     FArgs s St O (St + BitVec.ofNat 32 408) S L := by
   have hw := hp.fSt
   have pSt : Region.Sub ⟨State.addr (St + BitVec.ofNat 32 408), L⟩ ⟨State.addr St, 416⟩ := by
-    rw [hp.aL]; exact Offset.sub_base _ (by omega)
+    rw [hp.aL]; exact Offset.sub_base _ (by omega_arith)
   have hb : blw4 s = blw4 s₀ := by rw [blw4, sp]
   exact
   { r0 := r0, r1 := r1, r2 := r2, r3 := r3, r12 := r12, len := hL
@@ -213,9 +213,9 @@ theorem HPre.fargs {s₀ s : State} {St O S : BitVec 32} {L : Nat} (hp : HPre s�
     bp := by rw [hb]; exact hp.b_st.sub_right pSt
     bst := by rw [hb]; exact hp.b_o
     bs := by rw [hb]; exact hp.b_s
-    fK := by omega
+    fK := by omega_arith
     fSt := hp.fO
-    fP := by rw [toNat_add_ofNat (by omega)]; omega
+    fP := by rw [toNat_add_ofNat (by omega_arith)]; omega_arith
     fS := hp.fS
     reads := by
       rw [rd, wr, hp.rd, hp.wr]
@@ -223,7 +223,7 @@ theorem HPre.fargs {s₀ s : State} {St O S : BitVec 32} {L : Nat} (hp : HPre s�
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨State.addr St, 416⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
-      · exact ⟨⟨State.addr St, 416⟩, by simp, 408, hp.aL, by simp; omega⟩
+      · exact ⟨⟨State.addr St, 416⟩, by simp, 408, hp.aL, by simp; omega_arith⟩
     writes := by
       rw [wr, hp.wr]
       refine Covers.of_sub fun r hr => ?_
@@ -341,7 +341,7 @@ theorem finish_rel {s₀ s₀' : State} (h0 : finishArm.pre s₀) (h0' : finishA
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         exacts [q2, q4, q5]
-      · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+      · rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl
         · exact q6
         · exact q7) ⟨_, hA⟩
     (fun s e => by rw [e]; exact finPre_wp hp) (fun s e => by rw [e]; exact finPre_wp hp')

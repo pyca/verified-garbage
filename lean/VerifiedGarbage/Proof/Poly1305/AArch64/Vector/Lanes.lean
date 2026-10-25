@@ -45,7 +45,7 @@ theorem exec_ldrq {s : State} {t : VReg} {n : Reg} {off : Nat} (ho : off % 16 = 
 
 theorem exec_umov (s : State) (d : Reg) (n : VReg) {i : Nat} (hi : i < 2) :
     isa.exec (.umov .x d n i) s = some (s.write .x d (vdword (s.v n) i)) := by
-  rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl <;> rfl
+  rcases (show i = 0 ∨ i = 1 by omega_arith) with rfl | rfl <;> rfl
 
 theorem exec_str {s : State} {t n : Reg} {off : Nat} (ho : off % 8 = 0 ∧ off < 4096 * 8)
     (hw : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 8) :
@@ -65,7 +65,7 @@ theorem exec_ldr {s : State} {t n : Reg} {off : Nat} (ho : off % 8 = 0 ∧ off <
 
 theorem ln_map2 (f : (w : Nat) → BitVec w → BitVec w → BitVec w) (x y : BitVec 128) {e : Nat} (he : e < 2) :
     vdword (VArr.d2.map2 f x y) e = f 64 (vdword x e) (vdword y e) := by
-  rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+  rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl
   · exact map2_0 f x y
   · exact map2_1 f x y
 
@@ -109,7 +109,7 @@ theorem ln_sli (y x : BitVec 128) {e : Nat} (he : e < 2) (hy : ln y e < 2 ^ 12) 
       Nat.mod_eq_of_lt hy]
   simp only [ln, ln_map2 _ _ _ he, VShiftOp.eval, hb]
   rw [BitVec.toNat_or, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.or_comm]
-  have hm : (vdword x e).toNat * 2 ^ 12 % 2 ^ 64 = 2 ^ 12 * ((vdword x e).toNat % 2 ^ 52) := by omega
+  have hm : (vdword x e).toNat * 2 ^ 12 % 2 ^ 64 = 2 ^ 12 * ((vdword x e).toNat % 2 ^ 52) := by omega_arith
   rw [hm, ← Nat.two_pow_add_eq_or_of_lt hy, hm.symm, Nat.add_comm]
 
 theorem zip1_0 (x y : BitVec 128) : vdword (VPermOp.eval .zip1 .d2 x y) 0 = vdword x 0 := by
@@ -127,13 +127,13 @@ theorem zip2_1 (x y : BitVec 128) : vdword (VPermOp.eval .zip2 .d2 x y) 1 = vdwo
 /-- Lane `e` of `zip1`/`zip2` of two loaded blocks: word 0 or 1 of block `e`. -/
 theorem zip1_ln (x y : BitVec 128) {e : Nat} (he : e < 2) :
     vdword (VPermOp.eval .zip1 .d2 x y) e = vdword (if e = 0 then x else y) 0 := by
-  rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+  rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl
   · exact zip1_0 x y
   · exact zip1_1 x y
 
 theorem zip2_ln (x y : BitVec 128) {e : Nat} (he : e < 2) :
     vdword (VPermOp.eval .zip2 .d2 x y) e = vdword (if e = 0 then x else y) 1 := by
-  rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+  rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl
   · exact zip2_0 x y
   · exact zip2_1 x y
 
@@ -142,7 +142,7 @@ theorem zip2_ln (x y : BitVec 128) {e : Nat} (he : e < 2) :
 /-- `uzp1 v.4s, x.4s, x.4s`: the low halves of the 64-bit lanes, twice. -/
 theorem wd_uzp_self (x : BitVec 128) {c : Nat} (hc : c < 4) :
     wd (VPermOp.eval .uzp1 .s4 x x) c = ln x (c % 2) % 2 ^ 32 := by
-  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl
+  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_arith) with rfl | rfl | rfl | rfl
   · rw [wd, uzp1_0, show (vword x 0).toNat = _ from vword_lo x 0]
   · rw [wd, uzp1_1, show (vword x 2).toNat = _ from vword_lo x 1]
   · rw [wd, uzp1_2, show (vword x 0).toNat = _ from vword_lo x 0]
@@ -159,7 +159,7 @@ theorem wd_times5 (x y : BitVec 128) {c : Nat} (hc : c < 4) (hx : wd x c < 2 ^ 2
   rw [wd_map2 _ _ _ hc, BitVec.toNat_add, vword_map2 _ _ _ hc]
   simp only [VShiftOp.eval, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
   simp only [wd] at hx ⊢
-  omega
+  omega_arith
 
 /-! ## Inserting lanes -/
 
@@ -170,10 +170,10 @@ theorem vword_setLane (v : BitVec 128) {j c : Nat} (hj : j < 4) (hc : c < 4) (x 
     simp only [ite_true]
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
-    have e1 : ¬ 32 * c + b < 32 * c := by omega
-    have e2 : 32 * c + b - 32 * c = b := by omega
-    have e3 : b < 128 := by omega
-    have h1 : 32 * c + b < 128 := by omega
+    have e1 : ¬ 32 * c + b < 32 * c := by omega_arith
+    have e2 : 32 * c + b - 32 * c = b := by omega_arith
+    have e3 : b < 128 := by omega_arith
+    have h1 : 32 * c + b < 128 := by omega_arith
     simp only [vword, setLane, BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and,
       BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft,
       BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes, h1, e1, e2, e3, decide_false, Bool.not_false,
@@ -181,15 +181,15 @@ theorem vword_setLane (v : BitVec 128) {j c : Nat} (hj : j < 4) (hc : c < 4) (x 
   · simp only [h, ite_false]
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
-    have h1 : 32 * c + b < 128 := by omega
-    have hm : (32 * c + b < 32 * j) ∨ ¬ 32 * c + b - 32 * j < 32 := by omega
+    have h1 : 32 * c + b < 128 := by omega_arith
+    have hm : (32 * c + b < 32 * j) ∨ ¬ 32 * c + b - 32 * j < 32 := by omega_arith
     simp only [vword, setLane, BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and,
       BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft,
       BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes, h1]
     rcases hm with hm | hm
     · simp only [hm, decide_true, Bool.not_true, Bool.false_and, Bool.or_false, Bool.not_false, Bool.and_true]
-    · have hn : ¬ 32 * c + b < 32 * j := by omega
-      have hx' : x.getLsbD (32 * c + b - 32 * j) = false := x.getLsbD_of_ge _ (by omega)
+    · have hn : ¬ 32 * c + b < 32 * j := by omega_arith
+      have hx' : x.getLsbD (32 * c + b - 32 * j) = false := x.getLsbD_of_ge _ (by omega_arith)
       simp only [hn, hm, hx', decide_false, Bool.not_false, Bool.and_false, Bool.and_true, Bool.or_false]
 
 theorem vdword_setLane (v : BitVec 128) {j e : Nat} (hj : j < 2) (he : e < 2) (x : BitVec 64) :
@@ -199,10 +199,10 @@ theorem vdword_setLane (v : BitVec 128) {j e : Nat} (hj : j < 2) (he : e < 2) (x
     simp only [ite_true]
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
-    have e1 : ¬ 64 * e + b < 64 * e := by omega
-    have e2 : 64 * e + b - 64 * e = b := by omega
-    have e3 : b < 128 := by omega
-    have h1 : 64 * e + b < 128 := by omega
+    have e1 : ¬ 64 * e + b < 64 * e := by omega_arith
+    have e2 : 64 * e + b - 64 * e = b := by omega_arith
+    have e3 : b < 128 := by omega_arith
+    have h1 : 64 * e + b < 128 := by omega_arith
     simp only [vdword, setLane, BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and,
       BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft,
       BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes, h1, e1, e2, e3, decide_false, Bool.not_false,
@@ -210,15 +210,15 @@ theorem vdword_setLane (v : BitVec 128) {j e : Nat} (hj : j < 2) (he : e < 2) (x
   · simp only [h, ite_false]
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
-    have h1 : 64 * e + b < 128 := by omega
-    have hm : (64 * e + b < 64 * j) ∨ ¬ 64 * e + b - 64 * j < 64 := by omega
+    have h1 : 64 * e + b < 128 := by omega_arith
+    have hm : (64 * e + b < 64 * j) ∨ ¬ 64 * e + b - 64 * j < 64 := by omega_arith
     simp only [vdword, setLane, BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and,
       BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft,
       BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes, h1]
     rcases hm with hm | hm
     · simp only [hm, decide_true, Bool.not_true, Bool.false_and, Bool.or_false, Bool.not_false, Bool.and_true]
-    · have hn : ¬ 64 * e + b < 64 * j := by omega
-      have hx' : x.getLsbD (64 * e + b - 64 * j) = false := x.getLsbD_of_ge _ (by omega)
+    · have hn : ¬ 64 * e + b < 64 * j := by omega_arith
+      have hx' : x.getLsbD (64 * e + b - 64 * j) = false := x.getLsbD_of_ge _ (by omega_arith)
       simp only [hn, hm, hx', decide_false, Bool.not_false, Bool.and_false, Bool.and_true, Bool.or_false]
 
 end VG.Proof.Poly1305.AArch64.Vector

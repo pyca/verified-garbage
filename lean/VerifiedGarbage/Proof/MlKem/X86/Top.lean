@@ -113,12 +113,12 @@ theorem below_adj {sp : BitVec 32} {a b : Nat} (h : a + b ≤ sp.toNat) :
     (below sp a).Disjoint (below (sp - BitVec.ofNat 32 a) b) := by
   intro x h₁ h₂
   simp only [Region.Contains] at h₁ h₂
-  have hk : b ≤ (sp - BitVec.ofNat 32 a).toNat := by rw [sub_toNat (by omega)]; omega
-  rw [Taint.sub_setWidth (by omega)] at h₁
-  rw [Taint.sub_setWidth hk, Taint.sub_setWidth (by omega)] at h₂
+  have hk : b ≤ (sp - BitVec.ofNat 32 a).toNat := by rw [sub_toNat (by omega_arith)]; omega_arith
+  rw [Taint.sub_setWidth (by omega_arith)] at h₁
+  rw [Taint.sub_setWidth hk, Taint.sub_setWidth (by omega_arith)] at h₂
   have := sp.isLt
   have hE : (sp.setWidth 64).toNat = sp.toNat := by
-    simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega)
+    simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega_arith)
   generalize sp.setWidth 64 = E at *
   bv_omega
 
@@ -129,7 +129,7 @@ theorem ret_below {sp : BitVec 32} {n : Nat} (h : n ≤ sp.toNat) :
   rw [Taint.sub_setWidth h] at h₂
   have := sp.isLt
   have hE : (sp.setWidth 64).toNat = sp.toNat := by
-    simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega)
+    simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega_arith)
   generalize sp.setWidth 64 = E at *
   bv_omega
 
@@ -140,7 +140,7 @@ theorem E1_eq (s₀ : State) : E1 s₀ = E0 s₀ - BitVec.ofNat 32 16 := P0_esp 
 
 theorem toNat_off {x : BitVec 32} {o : Nat} (h : x.toNat + o < 2 ^ 32) :
     (x + BitVec.ofNat 32 o).toNat = x.toNat + o := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_arith), Nat.mod_eq_of_lt h]
 
 namespace TPre
 variable {Y : Lay} {s₀ : State} (hp : TPre Y s₀)
@@ -155,10 +155,10 @@ theorem frame_sub : Region.Sub (frameR s₀) (below (E0 s₀) Y.stk) := below_su
 
 theorem c_sub : Region.Sub (cR Y s₀) (below (E0 s₀) Y.stk) := by
   rw [cR, E1_eq]
-  exact below_inner (by have := hp.sp16; omega) hp.sp
+  exact below_inner (by have := hp.sp16; omega_arith) hp.sp
 
 theorem frame_c : (frameR s₀).Disjoint (cR Y s₀) := by
-  rw [cR, E1_eq]; exact below_adj (by have := hp.sp; have := hp.sp16; omega)
+  rw [cR, E1_eq]; exact below_adj (by have := hp.sp; have := hp.sp16; omega_arith)
 
 theorem ret_c : (retR s₀).Disjoint (cR Y s₀) := (ret_below hp.sp).sub_right hp.c_sub
 
@@ -207,8 +207,8 @@ end TPre
 theorem disj_at {x : BitVec 32} {len a b n k : Nat} (ha : a + n ≤ len) (hb : b + k ≤ len)
     (hx : x.toNat + len ≤ 2 ^ 32) (h : a + n ≤ b ∨ b + k ≤ a) :
     (⟨x.setWidth 64 + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨x.setWidth 64 + BitVec.ofNat 64 b, k⟩ :=
-  fun y h₁ h₂ => sep_at ha hb hx h y (by simp only [Region.Contains] at h₁; omega)
-    (by simp only [Region.Contains] at h₂; omega)
+  fun y h₁ h₂ => sep_at ha hb hx h y (by simp only [Region.Contains] at h₁; omega_arith)
+    (by simp only [Region.Contains] at h₂; omega_arith)
 
 theorem Lay.ok_iff {Y : Lay} {b : Buf} :
     Y.ok b = true ↔ b.arg < Y.n ∧ 0 < b.len ∧ b.off + b.len ≤ Y.alen b.arg := by
@@ -224,17 +224,17 @@ include hp hb
 theorem ptr_nat : (b.ptr s₀).toNat = (X86.arg s₀ b.arg).toNat + b.off := by
   obtain ⟨h₁, h₂, h₃⟩ := Lay.ok_iff.mp hb
   have := hp.fit _ h₁
-  exact toNat_off (by omega)
+  exact toNat_off (by omega_arith)
 
 theorem fit : (b.ptr s₀).toNat + b.len ≤ 2 ^ 32 := by
   obtain ⟨h₁, h₂, h₃⟩ := Lay.ok_iff.mp hb
   have := hp.fit _ h₁
-  rw [ptr_nat hp hb]; omega
+  rw [ptr_nat hp hb]; omega_arith
 
 theorem addr_eq : b.addr s₀ = (X86.arg s₀ b.arg).setWidth 64 + BitVec.ofNat 64 b.off := by
   obtain ⟨h₁, h₂, h₃⟩ := Lay.ok_iff.mp hb
   have := hp.fit _ h₁
-  exact ea_off (by omega)
+  exact ea_off (by omega_arith)
 
 theorem sub : Region.Sub (b.rgn s₀) (argR Y s₀ b.arg) := by
   obtain ⟨h₁, h₂, h₃⟩ := Lay.ok_iff.mp hb
@@ -258,7 +258,7 @@ theorem disj {c : Buf} (hc : Y.ok c = true) (hs : Y.sep b c = true) : (b.rgn s�
     rw [addr_eq hp hb, addr_eq hp hc, ← e]
     simp only [Bool.or_eq_true, decide_eq_true_eq] at hs
     rw [e] at hb₃
-    exact disj_at (len := Y.alen c.arg) (by omega) hc₃ (by rw [← e]; exact hp.fit _ hb₁) hs
+    exact disj_at (len := Y.alen c.arg) (by omega_arith) hc₃ (by rw [← e]; exact hp.fit _ hb₁) hs
   · rename_i e
     exact ((hp.disj _ hb₁ _ hc₁ e hs).sub_left (sub hp hb)).sub_right (sub hp hc)
 
@@ -300,7 +300,7 @@ theorem inRegW (hw' : Y.awr b.arg = true) {s : State} (hw : s.wr = (P0 s₀).wr)
   obtain ⟨h₁, -, h₃⟩ := Lay.ok_iff.mp hb
   refine ⟨argR Y s₀ b.arg, by rw [hw, P0_wr]; exact List.mem_cons_of_mem _ (hp.wr _ h₁ hw'), ?_⟩
   rw [addr_eq hp hb, BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact contains_at (by omega) (hp.fit _ h₁)
+  exact contains_at (by omega_arith) (hp.fit _ h₁)
 
 theorem inRegR {s : State} (hr : s.rd = (P0 s₀).rd) (hw : s.wr = (P0 s₀).wr) {o n : Nat}
     (h : o + n ≤ b.len) : InRegions (s.rd ++ s.wr) (b.addr s₀ + BitVec.ofNat 64 o) n := by
@@ -311,7 +311,7 @@ theorem inRegR {s : State} (hr : s.rd = (P0 s₀).rd) (hw : s.wr = (P0 s₀).wr)
     · exact List.mem_append_left _ (hp.rd _ h₁ e)
     · exact List.mem_append_right _ (List.mem_cons_of_mem _ (hp.wr _ h₁ e))
   · rw [addr_eq hp hb, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact contains_at (by omega) (hp.fit _ h₁)
+    exact contains_at (by omega_arith) (hp.fit _ h₁)
 
 /-- The part of `b` at `o`, within its argument, for a store. -/
 theorem contains (hw' : Y.awr b.arg = true) {o n : Nat} (h : o + n ≤ b.len) :
@@ -319,7 +319,7 @@ theorem contains (hw' : Y.awr b.arg = true) {o n : Nat} (h : o + n ≤ b.len) :
   obtain ⟨h₁, -, h₃⟩ := Lay.ok_iff.mp hb
   refine ⟨argR Y s₀ b.arg, TPre.argW h₁ hw', ?_⟩
   rw [addr_eq hp hb, BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact contains_at (by omega) (hp.fit _ h₁)
+  exact contains_at (by omega_arith) (hp.fit _ h₁)
 
 omit hb in
 theorem frSub {bs : List Buf} (hbs : bs.all Y.okW = true) {N : Nat} (hN : N + 16 ≤ Y.stk) :
@@ -330,7 +330,7 @@ theorem frSub {bs : List Buf} (hbs : bs.all Y.okW = true) {N : Nat} (hN : N + 16
     obtain ⟨h₁, h₂⟩ := Lay.okW_iff.mp (List.all_eq_true.mp hbs c hc)
     exact inW hp h₁ h₂
   · rw [List.mem_singleton] at hr; subst hr
-    exact ⟨cR Y s₀, TPre.cW, below_sub (by omega) (by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega)⟩
+    exact ⟨cR Y s₀, TPre.cW, below_sub (by omega_arith) (by rw [E1_nat s₀ hp.E0_big]; have := hp.sp; omega_arith)⟩
 
 end Buf
 
@@ -366,11 +366,11 @@ theorem ro {b : Buf} (hb : Y.ok b = true) (hro : Y.awr b.arg = false) {i : Nat} 
   have hf := pushed_frame (rs := saveRegs) (s := s₀) (by decide) (by rw [saveRegs_len]; exact hp.E0_big)
   rw [saveRegs_len] at hf
   obtain ⟨h₁, -, -⟩ := Lay.ok_iff.mp hb
-  rw [h.frame.bytes (R := b.rgn s₀) (Buf.roW hp hb hro) (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega) hi]
+  rw [h.frame.bytes (R := b.rgn s₀) (Buf.roW hp hb hro) (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega_arith) hi]
   exact hf.bytes (R := b.rgn s₀) (fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact (((hp.stk_a _ h₁).sub_left hp.frame_sub).sub_right (Buf.sub hp hb)).symm)
-    (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega) hi
+    (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega_arith) hi
 
 theorem roBytes {b : Buf} (hb : Y.ok b = true) (hro : Y.awr b.arg = false) :
     Spec.Sha3.bytesAt s.mem (b.addr s₀) b.len = Spec.Sha3.bytesAt s₀.mem (b.addr s₀) b.len :=

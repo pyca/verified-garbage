@@ -158,7 +158,7 @@ theorem absorb_ok (s : State) (pad : Bool) {R : Nat} (hR : R < 2 ^ 128) (hm : s.
   -- The block, as a number `N`, and its limbs.
   have hN := val5_lim (v s₁ .r18 + 2 ^ 64 * v s₁ .r19)
   have hNlt : v s₁ .r18 + 2 ^ 64 * v s₁ .r19 < 2 ^ 128 := by
-    have := (s₁.gpr .r18).isLt; have := (s₁.gpr .r19).isLt; simp only [v]; omega
+    have := (s₁.gpr .r18).isLt; have := (s₁.gpr .r19).isLt; simp only [v]; omega_arith
   have n0 := lim_lt (v s₁ .r18 + 2 ^ 64 * v s₁ .r19) (j := 0) (by decide)
   have n1 := lim_lt (v s₁ .r18 + 2 ^ 64 * v s₁ .r19) (j := 1) (by decide)
   have n2 := lim_lt (v s₁ .r18 + 2 ^ 64 * v s₁ .r19) (j := 2) (by decide)

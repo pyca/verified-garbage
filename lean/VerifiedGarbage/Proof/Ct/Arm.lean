@@ -59,12 +59,12 @@ theorem step_ok (s₀ s : State) (hp : Pre s₀) (hlen : s₀.gpr .r3 = s₀.gpr
   have hadd (p : BitVec 32) : p + BitVec.ofNat 32 i + 1 = p + BitVec.ofNat 32 (i+1) := by
     rw [BitVec.ofNat_add, ← BitVec.add_assoc]; rfl
   have hpred : BitVec.ofNat 32 ((s₀.gpr .r1).toNat-i) - 1 =
-      BitVec.ofNat 32 ((s₀.gpr .r1).toNat-(i+1)) := by bv_omega
+      BitVec.ofNat 32 ((s₀.gpr .r1).toNat-(i+1)) := by bv_omega_arith
   have hz : (BitVec.ofNat 32 ((s₀.gpr .r1).toNat-i) - 1 == 0) =
       decide (i+1 = (s₀.gpr .r1).toNat) := by
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq, decide_eq_true_eq]
-    bv_omega
+    bv_omega_arith
   have hreadA := reads .r0 (.inl rfl)
   have hreadB := reads .r2 (.inr rfl)
   rw [hrd] at hreadA hreadB
@@ -109,7 +109,7 @@ theorem equal_ok (s₀ s : State) (hp : Pre s₀) (hlen : s₀.gpr .r3 = s₀.gp
     · refine WP.ite true (by simp [eval, hz, he]) (fun _ => WP.block_nil ?_) (by simp)
       simpa only [he, show (0 : BitVec 32).toNat = 0 from rfl] using ht
     · exact WP.ite false (by simp only [eval, hz, beq_eq_false_iff_ne.mpr he]) (by simp)
-        (fun _ => loop_ok s₀ t hp hlen 0 (by bv_omega) ht)
+        (fun _ => loop_ok s₀ t hp hlen 0 (by bv_omega_arith) ht)
   refine WP.mono middle fun u hu => WP.mono (finish_ok u _ hu.2.2.2.2.2) fun v ⟨hmv, hv⟩ => ?_
   refine ⟨hmv.trans hu.2.1, ?_⟩
   unfold Post
@@ -126,7 +126,7 @@ theorem body_ok (s₀ : State) (hp : Pre s₀) :
   have hsub (a b : BitVec 32) : (a-b==0) = (a==b) := by
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq]
-    bv_omega
+    bv_omega_arith
   rw [hsub] at hz
   by_cases he : s₀.gpr .r1 = s₀.gpr .r3
   · exact WP.ite true (by simp [eval, hz, he]) (fun _ => equal_ok s₀ t hp he.symm hg hr hm) (by simp)

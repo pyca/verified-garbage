@@ -38,7 +38,7 @@ open VG.Spec.ChaCha20 (stateAt keystream)
 
 theorem sub_ofNat_ofNat {a b : Nat} (hb : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 (a - b) = BitVec.ofNat 64 b := by
-  rw [Offset.ofNat_sub_ofNat (by omega), show a - (a - b) = b by omega]
+  rw [Offset.ofNat_sub_ofNat (by omega_arith), show a - (a - b) = b by omega_arith]
 
 /-- `stackArgAddr s₀ j`, as `rsp + 8 (j + 1)`. -/
 theorem argAddr_eq (s₀ : State) (j : Nat) :
@@ -49,7 +49,7 @@ theorem in_arg2 {s₀ : State} (hT : SPre s₀) {s : State} (hrd : s.rd = s₀.r
     InRegions (s.rd ++ s.wr) (stackArgAddr s₀ j) 8 := by
   refine ⟨arg2R s₀, by rw [hrd]; simp [hT.g2], ?_⟩
   rcases hj with rfl | rfl
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
   · simp only [stackArgAddr]
     rw [show s₀.gpr .rsp + BitVec.ofNat 64 (8 * (3 + 1)) = s₀.gpr .rsp + BitVec.ofNat 64 (8 * (2 + 1)) +
       BitVec.ofNat 64 8 by rw [BitVec.add_assoc, ← BitVec.ofNat_add]]
@@ -74,7 +74,7 @@ theorem splitArgs_ok {s₀ : State} (hT : SPre s₀) {m : Nat} {s : State} (h : 
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
   have hL9 := (s₀.gpr .r9).isLt
   have hle := h.le
-  have hm : m < 2 ^ 64 := by simp only [L] at hle; omega
+  have hm : m < 2 ^ 64 := by simp only [L] at hle; omega_arith
   have hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
   have ra : s.gpr .rsi - s.gpr .r14 = BitVec.ofNat 64 m := by
     rw [h.rsi, h.r14, off_eq, Offset.add_sub_cancel_left]
@@ -100,7 +100,7 @@ theorem splitArgs_ok {s₀ : State} (hT : SPre s₀) {m : Nat} {s : State} (h : 
       fun r hr => ?_, trivial, trivial, trivial⟩
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ↓reduceIte]
-  · have hk : min m (SL s₀) = m := Nat.min_eq_left (by omega)
+  · have hk : min m (SL s₀) = m := Nat.min_eq_left (by omega_arith)
     apply WP.of_runBlock
     simp only [splitArgs, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
     execCmov, eval, State.load64, ea_at, RegUpd.gpr_setReg, RegUpd.mem_setReg,
@@ -109,7 +109,7 @@ theorem splitArgs_ok {s₀ : State} (hT : SPre s₀) {m : Nat} {s : State} (h : 
     e2, e3, i2, i3, hS2, hS3, ra, s3, em, eS, Option.bind_some, Option.map_some, Option.some.injEq,
     exists_eq_left', hcn, decide_false, Bool.false_eq_true]
     refine ⟨⟨by simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ↓reduceIte, h.rdi], by simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ↓reduceIte, hk],
-      by simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ↓reduceIte, Offset.ofNat_sub_ofNat (show m ≤ SL s₀ by omega)],
+      by simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ↓reduceIte, Offset.ofNat_sub_ofNat (show m ≤ SL s₀ by omega_arith)],
       by simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ↓reduceIte, h.rsi], by simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ↓reduceIte, h.rdx], by simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ↓reduceIte, h.rcx]⟩,
       fun r hr => ?_, trivial, trivial, trivial⟩
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -132,10 +132,10 @@ abbrev wrM (s₀ : State) (m : Nat) : List Region := [⟨off (cx s₀) 64, 64⟩
 /-- `srcM` lies within `src`, at offset `min m src_len`. -/
 theorem srcM_in (s₀ : State) (m : Nat) :
     (srcM s₀ m).base = (spR s₀).base + BitVec.ofNat 64 (min m (SL s₀)) ∧
-      min m (SL s₀) + (srcM s₀ m).len ≤ (spR s₀).len := ⟨rfl, by show min m (SL s₀) + (SL s₀ - m) ≤ SL s₀; omega⟩
+      min m (SL s₀) + (srcM s₀ m).len ≤ (spR s₀).len := ⟨rfl, by show min m (SL s₀) + (SL s₀ - m) ≤ SL s₀; omega_arith⟩
 
 theorem srcM_sub {s₀ : State} (hT : SPre s₀) (m : Nat) : Region.Sub (srcM s₀ m) (spR s₀) :=
-  Offset.sub_base _ (by have := hT.wrap_s; show min m (SL s₀) + (SL s₀ - m) ≤ SL s₀; omega)
+  Offset.sub_base _ (by have := hT.wrap_s; show min m (SL s₀) + (SL s₀ - m) ≤ SL s₀; omega_arith)
 
 theorem srcM_wrap {s₀ : State} (hT : SPre s₀) (m : Nat) :
     (sp s₀ + BitVec.ofNat 64 (min m (SL s₀))).toNat + (SL s₀ - m) ≤ 2 ^ 64 := by
@@ -143,8 +143,8 @@ theorem srcM_wrap {s₀ : State} (hT : SPre s₀) (m : Nat) :
   have hs := (sp s₀ + BitVec.ofNat 64 (min m (SL s₀))).isLt
   have hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
   by_cases h2 : (sp s₀).toNat + min m (SL s₀) < 2 ^ 64
-  · rw [BitVec.toNat_add, toNat_ofNat_lt (show min m (SL s₀) < 2 ^ 64 by omega), Nat.mod_eq_of_lt h2]; omega
-  · omega
+  · rw [BitVec.toNat_add, toNat_ofNat_lt (show min m (SL s₀) < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt h2]; omega_arith
+  · omega_arith
 
 /-- The inline code's precondition, its permissions narrowed to its regions. -/
 theorem SArgs.pre {s₀ : State} (hT : SPre s₀) {m : Nat} (hm : m ≤ L s₀) {s : State} (h : SArgs s₀ m s)
@@ -153,15 +153,15 @@ theorem SArgs.pre {s₀ : State} (hT : SPre s₀) {m : Nat} (hm : m ≤ L s₀) 
   have hp := hT.hp
   have hL9 := (s₀.gpr .r9).isLt
   have hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
-  have eL : (BitVec.ofNat 64 (L s₀ - m)).toNat = L s₀ - m := toNat_ofNat_lt (by simp only [L]; omega)
-  have eS : (BitVec.ofNat 64 (SL s₀ - m)).toNat = SL s₀ - m := toNat_ofNat_lt (by omega)
+  have eL : (BitVec.ofNat 64 (L s₀ - m)).toNat = L s₀ - m := toNat_ofNat_lt (by simp only [L]; omega_arith)
+  have eS : (BitVec.ofNat 64 (SL s₀ - m)).toNat = SL s₀ - m := toNat_ofNat_lt (by omega_arith)
   have sm := srcM_sub hT m
   have dm := dRm_sub s₀ hm
   have c64 := sub_ctx s₀ (k := 64) (n := 64) (by lit_omega)
   have c128 := sub_ctx s₀ (k := 128) (n := 320) (by lit_omega)
   simp only [Proof.ChaCha20.xorSplitX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, hrsp, eL, eS]
-  refine ⟨trivial, trivial, by have := hT.le; omega,
+  refine ⟨trivial, trivial, by have := hT.le; omega_arith,
     (hp.c_d.sub_left c64).sub_right dm,
     sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega),
     ((hp.c_d.symm.sub_right c128).sub_left dm),
@@ -206,19 +206,19 @@ theorem SArgs.inline {s₀ : State} (hT : SPre s₀) {m : Nat} (hm : m ≤ L s�
   have hp := hT.hp
   have hL9 := (s₀.gpr .r9).isLt
   have hSL : SL s₀ < 2 ^ 64 := (stackArg s₀ 3).isLt
-  have eL : (BitVec.ofNat 64 (L s₀ - m)).toNat = L s₀ - m := toNat_ofNat_lt (by simp only [L]; omega)
-  have eS : (BitVec.ofNat 64 (SL s₀ - m)).toNat = SL s₀ - m := toNat_ofNat_lt (by omega)
+  have eL : (BitVec.ofNat 64 (L s₀ - m)).toNat = L s₀ - m := toNat_ofNat_lt (by simp only [L]; omega_arith)
+  have eS : (BitVec.ofNat 64 (SL s₀ - m)).toNat = SL s₀ - m := toNat_ofNat_lt (by omega_arith)
   have hd := xorSplit_depth
   have hw := SArgs.hw hT hm hwr
   have hc := SArgs.hc hT hm hrd hwr
-  refine WP.inlineSp Proof.ChaCha20.X86_64.Avx512Split.xorSplit_correct xorSplit_nosp (by omega)
+  refine WP.inlineSp Proof.ChaCha20.X86_64.Avx512Split.xorSplit_correct xorSplit_nosp (by omega_arith)
     (h.pre hT hm hrsp) hc hw fun s' rd' wr' abi f _ post => hQ s' rd' wr' abi ?_ ?_
   · refine f.sub fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨stkR s₀, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
-      rw [hrsp]; exact below_sub (by omega) (by lit_omega)
+      rw [hrsp]; exact below_sub (by omega_arith) (by lit_omega)
   · simp only [Proof.ChaCha20.xorSplitX86_64, State.withRegions_gpr, State.withRegions_mem, h.rdi, h.rsi,
       h.rdx, h.rcx, h.r8, eL, eS] at post
     exact post
@@ -232,8 +232,8 @@ theorem bytesAt_eq_zip {m : Mem} {p : Addr} {n : Nat} {xs ks : List Byte} (hx : 
   intro k h₁ _
   simp only [bytesAt, List.length_map, List.length_range] at h₁
   simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith, h k h₁]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some,
-    List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_arith), Option.getD_some,
+    List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_arith), Option.getD_some]
 
 theorem zip_get {m : Mem} {p : Addr} {n : Nat} {xs ks : List Byte} (hx : xs.length = n)
     (hks : ks.length = n) (h : bytesAt m p n = List.zipWith (· ^^^ ·) xs ks) {k : Nat} (hk : k < n) :
@@ -241,8 +241,8 @@ theorem zip_get {m : Mem} {p : Addr} {n : Nat} {xs ks : List Byte} (hx : xs.leng
   have hk1 : k < (bytesAt m p n).length := by simp [bytesAt, hk]
   have e := List.getElem_of_eq h hk1
   simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith] at e
-  rw [e, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some,
-    List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [e, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_arith), Option.getD_some,
+    List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_arith), Option.getD_some]
 
 theorem bytesAt_getD (m : Mem) (p : Addr) {n j : Nat} (hj : j < n) :
     (bytesAt m p n).getD j 0 = m (p + BitVec.ofNat 64 j) := by
@@ -254,8 +254,8 @@ theorem getD_split {A B : List Byte} {d j : Nat} (hA : A.length = d) :
     (A ++ B.drop d).getD j 0 = if j < d then A.getD j 0 else B.getD j 0 := by
   simp only [List.getD_eq_getElem?_getD]
   split
-  · rw [List.getElem?_append_left (by omega)]
-  · rw [List.getElem?_append_right (by omega), hA, List.getElem?_drop, show d + (j - d) = j by omega]
+  · rw [List.getElem?_append_left (by omega_arith)]
+  · rw [List.getElem?_append_right (by omega_arith), hA, List.getElem?_drop, show d + (j - d) = j by omega_arith]
 
 /-- After `PTs` is encrypted, before the keystream is wiped. -/
 structure CryptedS (s₀ s : State) (s' : State) : Prop where
@@ -310,7 +310,7 @@ theorem cryptBigSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s�
   have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = s₂.gpr r := fun r hr => abi₃.1 r hr
   refine WP.mono (ptr_ok .rsi .r15 (k := 128) (by lit_omega) s₃) fun s₄ ⟨e4, g₄, rd₄, wr₄, m₄⟩ => ?_
   have r15 : s₃.gpr .r15 = cx s₀ := by
-    rw [cs₃ _ (by simp [calleeSaved]), cs₂ _ (by simp [calleeSaved]), cs₁ _ (by simp [calleeSaved]), h.r15]
+    rw [cs₃ _ (by decide), cs₂ _ (by decide), cs₁ _ (by decide), h.r15]
   -- A byte of the data is in none of the regions but the data's.
   have nctx : ∀ {k a n : Nat}, k < L s₀ → a + n ≤ 1696 → ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
     fun hk ha hc => hp.c_d _ (sub_ctx s₀ ha _ hc) (byte_dR hk)
@@ -349,41 +349,41 @@ theorem cryptBigSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s�
         simp only [List.mem_singleton] at hr; subst hr
         exact fun hc => hT.ndR hj (Region.sub_prefix hML _ hc)
     by_cases hkm : k < mm s₀
-    · rw [ite_eq_right (fun h => by omega), f₃ _ fun r hr => ?_, m₂s, m₁k (nctx hk (by lit_omega)), dx k hkm, hks k hkm]
+    · rw [ite_eq_right (fun h => by omega_arith), f₃ _ fun r hr => ?_, m₂s, m₁k (nctx hk (by lit_omega)), dx k hkm, hks k hkm]
       simp only [wrM, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact nctx hk (by lit_omega)
       · exact fun hc => Offset.disjoint (dp s₀) (d := k) (n := 1) (e := mm s₀) (k := L s₀ - mm s₀)
-          (Or.inl (by omega)) (by simp only [L] at hk; omega) (by simp only [L] at hML ⊢; omega) _
+          (Or.inl (by omega_arith)) (by simp only [L] at hk; omega_arith) (by simp only [L] at hML ⊢; omega_arith) _
           (Region.contains_self _ _) (by simpa only [dRm, off_eq] using hc)
       · exact nctx hk (by lit_omega)
       · exact nstk hk
-    · have hj : k - mm s₀ < L s₀ - mm s₀ := by omega
+    · have hj : k - mm s₀ < L s₀ - mm s₀ := by omega_arith
       have hle := hT.le
-      have e₃ := zip_get (by simp only [List.length_append, List.length_drop, VG.Proof.Poly1305.length_bytesAt]; omega)
+      have e₃ := zip_get (by simp only [List.length_append, List.length_drop, VG.Proof.Poly1305.length_bytesAt]; omega_arith)
         (VG.Proof.ChaCha20.length_keystream _ _) data₃ hj
       have ea : off (dp s₀) (mm s₀) + BitVec.ofNat 64 (k - mm s₀) = dp s₀ + BitVec.ofNat 64 k := by
-        rw [off_eq, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega)]
+        rw [off_eq, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega_arith)]
       rw [ea, getD_split (VG.Proof.Poly1305.length_bytesAt _ _ _),
         m₂s, st₁] at e₃
       have ks : (keystream (VG.Proof.ChaCha20.ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (mm s₀ / 64))
           (L s₀ - mm s₀)).getD (k - mm s₀) 0 =
           (keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0 := by
         obtain ⟨a, ha⟩ := hdvd
-        rw [ha, Nat.mul_div_cancel_left _ (by decide), keystream_skip _ (by omega) hk]
+        rw [ha, Nat.mul_div_cancel_left _ (by decide), keystream_skip _ (by omega_arith) hk]
       rw [e₃, ks]
       refine congrArg (· ^^^ _) ?_
       by_cases hks' : k < SL s₀
-      · have hmS : min (mm s₀) (SL s₀) = mm s₀ := Nat.min_eq_left (by omega)
-        rw [ite_eq_left (show k - mm s₀ < SL s₀ - mm s₀ by omega), ite_eq_left (show mm s₀ ≤ k ∧ k < SL s₀ from ⟨by omega, hks'⟩)]
-        rw [bytesAt_getD _ _ (show k - mm s₀ < SL s₀ - mm s₀ by omega), hmS, BitVec.add_assoc, ← BitVec.ofNat_add,
-          Nat.add_sub_cancel' (by omega), src_k hks']
-      · rw [ite_eq_right (show ¬ (k - mm s₀ < SL s₀ - mm s₀) by omega),
-          ite_eq_right (show ¬ (mm s₀ ≤ k ∧ k < SL s₀) by omega)]
+      · have hmS : min (mm s₀) (SL s₀) = mm s₀ := Nat.min_eq_left (by omega_arith)
+        rw [ite_eq_left (show k - mm s₀ < SL s₀ - mm s₀ by omega_arith), ite_eq_left (show mm s₀ ≤ k ∧ k < SL s₀ from ⟨by omega_arith, hks'⟩)]
+        rw [bytesAt_getD _ _ (show k - mm s₀ < SL s₀ - mm s₀ by omega_arith), hmS, BitVec.add_assoc, ← BitVec.ofNat_add,
+          Nat.add_sub_cancel' (by omega_arith), src_k hks']
+      · rw [ite_eq_right (show ¬ (k - mm s₀ < SL s₀ - mm s₀) by omega_arith),
+          ite_eq_right (show ¬ (mm s₀ ≤ k ∧ k < SL s₀) by omega_arith)]
         rw [bytesAt_getD _ _ hj, ea, m₁k (nctx hk (by lit_omega)), fx _ fun r hr => ?_]
         simp only [List.mem_singleton] at hr; subst hr
-        exact fun hc => Offset.disjoint_base (dp s₀) (d := k) (n := 1) (by omega)
-          (by simp only [L] at hk; omega) _ (Region.contains_self _ _) hc
+        exact fun hc => Offset.disjoint_base (dp s₀) (d := k) (n := 1) (by omega_arith)
+          (by simp only [L] at hk; omega_arith) _ (Region.contains_self _ _) hc
 
 /-! ## The data encrypted, and the keystream wiped -/
 

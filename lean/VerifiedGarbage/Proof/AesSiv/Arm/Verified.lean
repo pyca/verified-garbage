@@ -104,8 +104,8 @@ theorem listed_mem (m : Mem) (a : BitVec 32) {N i : Nat} (hi : i < N) :
     (⟨State.addr (descW m a i 0), (descW m a i 1).toNat⟩ : Region) ∈ Sig.listed 32 m .u8 (State.addr a) N := by
   refine List.mem_map.mpr ⟨i, List.mem_range.mpr hi, ?_⟩
   simp only [descW, State.addr, Elem.size, Nat.mul_one]
-  rw [show i * (2 * (32 / 8)) = 8 * i + 4 * 0 by omega, show (32 / 8 : Nat) = 4 from rfl, BitVec.add_assoc,
-    BitVec.ofNat_add_ofNat, show 8 * i + 4 * 0 + 4 = 8 * i + 4 * 1 by omega]
+  rw [show i * (2 * (32 / 8)) = 8 * i + 4 * 0 by omega_arith, show (32 / 8 : Nat) = 4 from rfl, BitVec.add_assoc,
+    BitVec.ofNat_add_ofNat, show 8 * i + 4 * 0 + 4 = 8 * i + 4 * 1 by omega_arith]
 
 theorem stackArgAddr0 (s : State) : stackArgAddr s 0 = State.addr s.sp := by
   simp [stackArgAddr]
@@ -137,12 +137,12 @@ theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract Arm.abi 
   obtain ⟨bA, bL, -⟩ := bl
   obtain ⟨fA, fL⟩ := fl
   rw [stackArgAddr0] at hrd wArg dArg tArg
-  have hA : (s.gpr .r2).toNat + 8 * (s.gpr .r3).toNat ≤ 2 ^ 32 := by omega
+  have hA : (s.gpr .r2).toNat + 8 * (s.gpr .r3).toNat ≤ 2 ^ 32 := by omega_arith
   have inRd {r : Region} (hr : r ∈ s.rd) : r ∈ s.rd ++ s.wr := List.mem_append_left _ hr
   have inWr {r : Region} (hr : r ∈ s.wr) : r ∈ s.rd ++ s.wr := List.mem_append_right _ hr
-  have e4 : State.addr (s.sp + BitVec.ofNat 32 4) = State.addr s.sp + BitVec.ofNat 64 4 := addr_add (by omega)
-  have e8 : State.addr (s.sp + BitVec.ofNat 32 8) = State.addr s.sp + BitVec.ofNat 64 8 := addr_add (by omega)
-  have e12 : State.addr (s.sp + BitVec.ofNat 32 12) = State.addr s.sp + BitVec.ofNat 64 12 := addr_add (by omega)
+  have e4 : State.addr (s.sp + BitVec.ofNat 32 4) = State.addr s.sp + BitVec.ofNat 64 4 := addr_add (by omega_arith)
+  have e8 : State.addr (s.sp + BitVec.ofNat 32 8) = State.addr s.sp + BitVec.ofNat 64 8 := addr_add (by omega_arith)
+  have e12 : State.addr (s.sp + BitVec.ofNat 32 12) = State.addr s.sp + BitVec.ofNat 64 12 := addr_add (by omega_arith)
   have mC : (⟨State.addr (s.gpr .r0), 512⟩ : Region) ∈ s.rd := by rw [hrd]; exact List.mem_cons_self
   have mA : (⟨State.addr (s.gpr .r2), 8 * (s.gpr .r3).toNat⟩ : Region) ∈ s.rd := by
     rw [hrd, Nat.mul_comm]; exact List.mem_cons_of_mem _ List.mem_cons_self
@@ -196,12 +196,12 @@ theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract Arm.abi 
   obtain ⟨bA, bL, -⟩ := bl
   obtain ⟨fA, fL⟩ := fl
   rw [stackArgAddr0] at hrd wArg dArg
-  have hA : (s.gpr .r2).toNat + 8 * (s.gpr .r3).toNat ≤ 2 ^ 32 := by omega
+  have hA : (s.gpr .r2).toNat + 8 * (s.gpr .r3).toNat ≤ 2 ^ 32 := by omega_arith
   have inRd {r : Region} (hr : r ∈ s.rd) : r ∈ s.rd ++ s.wr := List.mem_append_left _ hr
   have inWr {r : Region} (hr : r ∈ s.wr) : r ∈ s.rd ++ s.wr := List.mem_append_right _ hr
-  have e4 : State.addr (s.sp + BitVec.ofNat 32 4) = State.addr s.sp + BitVec.ofNat 64 4 := addr_add (by omega)
-  have e8 : State.addr (s.sp + BitVec.ofNat 32 8) = State.addr s.sp + BitVec.ofNat 64 8 := addr_add (by omega)
-  have e12 : State.addr (s.sp + BitVec.ofNat 32 12) = State.addr s.sp + BitVec.ofNat 64 12 := addr_add (by omega)
+  have e4 : State.addr (s.sp + BitVec.ofNat 32 4) = State.addr s.sp + BitVec.ofNat 64 4 := addr_add (by omega_arith)
+  have e8 : State.addr (s.sp + BitVec.ofNat 32 8) = State.addr s.sp + BitVec.ofNat 64 8 := addr_add (by omega_arith)
+  have e12 : State.addr (s.sp + BitVec.ofNat 32 12) = State.addr s.sp + BitVec.ofNat 64 12 := addr_add (by omega_arith)
   have mC : (⟨State.addr (s.gpr .r0), 512⟩ : Region) ∈ s.rd := by rw [hrd]; exact List.mem_cons_self
   have mT : (⟨State.addr (stackArg s 2), 16⟩ : Region) ∈ s.rd := by
     rw [hrd]; exact List.mem_cons_of_mem _ List.mem_cons_self
@@ -244,7 +244,7 @@ theorem descW_eq {m m' : Mem} {a : BitVec 32} {N : Nat}
     (h : ∀ k < N * 8, m (State.addr a + BitVec.ofNat 64 k) = m' (State.addr a + BitVec.ofNat 64 k))
     {i j : Nat} (hi : i < N) (hj : j < 2) : descW m' a i j = descW m a i j := by
   have e := Mem.read_congr (m := m) (m' := m') (a := State.addr a + BitVec.ofNat 64 (8 * i + 4 * j))
-    (n := 32 / 8) fun k hk => by rw [Offset.add_add]; exact h _ (by omega)
+    (n := 32 / 8) fun k hk => by rw [Offset.add_add]; exact h _ (by omega_arith)
   simp only [descW, Mem.readW, e]
 
 /-- What two runs of `encrypt` or `decrypt` agree on: the stack pointer, the

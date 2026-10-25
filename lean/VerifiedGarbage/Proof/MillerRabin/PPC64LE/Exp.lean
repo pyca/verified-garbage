@@ -26,17 +26,17 @@ theorem word_digit (m : Mem) (B : Addr) (d n i : Nat) (hi : i < n) :
     (word m B (d + 8 * i)).toNat = val32 m B d (2 * n) / 2 ^ (64 * i) % 2 ^ 64 := by
   have e : val32 m B d (2 * n) = val32 m B d (2 * i) + 2 ^ (32 * (2 * i)) *
       (val32 m B (d + 4 * (2 * i)) 2 + 2 ^ (32 * 2) * val32 m B (d + 4 * (2 * i) + 4 * 2) (2 * (n - i - 1))) := by
-    rw [← val32_append, ← val32_append, show 2 * i + (2 + 2 * (n - i - 1)) = 2 * n by omega]
+    rw [← val32_append, ← val32_append, show 2 * i + (2 + 2 * (n - i - 1)) = 2 * n by omega_arith]
   have hL : val32 m B d (2 * i) < 2 ^ (64 * i) := by
     have := val32_lt m B d (2 * i)
-    rwa [show 32 * (2 * i) = 64 * i by omega] at this
-  rw [word_eq_w32, e, show 32 * (2 * i) = 64 * i by omega, show 4 * (2 * i) = 8 * i by omega,
+    rwa [show 32 * (2 * i) = 64 * i by omega_arith] at this
+  rw [word_eq_w32, e, show 32 * (2 * i) = 64 * i by omega_arith, show 4 * (2 * i) = 8 * i by omega_arith,
     Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hL, Nat.zero_add,
     show (2 : Nat) ^ (32 * 2) = 2 ^ 64 by decide, Nat.add_mul_mod_self_left]
   simp only [val32, Nat.mul_zero, Nat.add_zero]
   have h1 := (m.readW (off B (d + 8 * i)) 32).isLt
   have h2 := (m.readW (off B (d + 8 * i + 4)) 32).isLt
-  exact (Nat.mod_eq_of_lt (by simp only [w32]; omega)).symm
+  exact (Nat.mod_eq_of_lt (by simp only [w32]; omega_arith)).symm
 
 /-- A window state anchored at `u`, from one anchored earlier. -/
 theorem WSt.fresh {rs : List Reg} {s₀ u : State} {B : Addr} {Z w c b : Nat} (h : WSt rs s₀ u B Z w c b) :
@@ -45,7 +45,7 @@ theorem WSt.fresh {rs : List Reg} {s₀ u : State} {B : Addr} {Z w c b : Nat} (h
 
 theorem WSt.join {rs : List Reg} {s₀ u t : State} {B : Addr} {Z w c b : Nat} (h : WSt rs s₀ u B Z w c b)
     (h' : WSt winRegs u t B Z w c b) : WSt rs s₀ t B Z w c b := by
-  have hn : slot w 28 ≤ 2 ^ 64 := by have := h.ctx.hs.nowrap; have := h.ctx.hZ; omega
+  have hn : slot w 28 ≤ 2 ^ 64 := by have := h.ctx.hs.nowrap; have := h.ctx.hZ; omega_arith
   exact h.stepW h'.outs h'.keep (fun _ h => h) (Outs.w32_0 h'.outs (fun r hr => by
     simp only [winRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact slot_lt (by decide)) hn)
@@ -74,12 +74,12 @@ theorem inner_ok {s₀ u : State} {B : Addr} {Z w c b k : Nat} {V : BitVec 64} (
     t.gpr .r25 = u.gpr .r25 ∧ t.gpr .r26 = u.gpr .r26
   refine WP.mono (wp_countdown (body := .seq window (.block [.subi .r27 .r27 1])) (cnt := .r27) (N := 16)
     (by decide) (by decide) I (fun i hi t ⟨ht, t24, t25, t26⟩ _ => ?_) ⟨by simpa using h, by simp [h24], rfl, rfl⟩ h27)
-    fun t ⟨ht, _, t25, t26⟩ => ⟨by rw [show 16 * (k + 1) = 16 * k + 16 by omega]; exact ht, t25, t26⟩
+    fun t ⟨ht, _, t25, t26⟩ => ⟨by rw [show 16 * (k + 1) = 16 * k + 16 by omega_arith]; exact ht, t25, t26⟩
   refine WP.seq (WP.mono (window_ok ht.ws.fresh hc3 hodd ht.y ht.p t24) fun x ⟨hx, xy, xl, x23, x24⟩ => ?_)
   have hd : ((V <<< (4 * i)) >>> 60).toNat =
       VG.Proof.RsaKeyGen.mrE c / 16 ^ (16 * w - 1 - (16 * k + i)) % 16 := by
-    rw [win_digit (k := w - k) (by rw [hV, show w - k - 1 = w - 1 - k by omega]) hi]
-    rw [show 16 * (w - k - 1) + (15 - i) = 16 * w - 1 - (16 * k + i) by omega]
+    rw [win_digit (k := w - k) (by rw [hV, show w - k - 1 = w - 1 - k by omega_arith]) hi]
+    rw [show 16 * (w - k - 1) + (15 - i) = 16 * w - 1 - (16 * k + i) by omega_arith]
   have hrun : wRun c b (VG.Proof.RsaKeyGen.mrE c) (16 * w) (16 * k + i + 1) =
       wWin c b ((V <<< (4 * i)) >>> 60).toNat
         ((wRun c b (VG.Proof.RsaKeyGen.mrE c) (16 * w) (16 * k + i)).1,
@@ -103,12 +103,12 @@ theorem inner_ok {s₀ u : State} {B : Addr} {Z w c b k : Nat} {V : BitVec 64} (
 theorem shl3_ofNat (w : Nat) : BitVec.ofNat 64 w <<< 3 = BitVec.ofNat 64 (8 * w) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem shr1_ofNat (w : Nat) (hw : w ≤ 128) : BitVec.ofNat 64 (2 * w) >>> 1 = BitVec.ofNat 64 w := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 /-- The windows of `E`: `RsaKeyGen.wRun` over all `16 w` windows, from
 `y = R mod c` (`1`) and a clear flag. -/
@@ -141,28 +141,28 @@ theorem windows_ok {s : State} {B : Addr} {Z w c b : Nat} (h : WSt expRegs s s B
   refine WP.mono h3 fun t₃ ⟨⟨b25, m3⟩, k3⟩ => ?_
   have f3 := f2.step (by rw [m3]; exact Outs.refl _ _ _) k3 (by decide) (by rw [m3])
   have e0 : ExpAt s t₃ B Z w c b (16 * 0) :=
-    ⟨f3, by rw [m3, m2, m1, hy]; simp [wRun], by simp [wRun]; omega,
+    ⟨f3, by rw [m3, m2, m1, hy]; simp [wRun], by simp [wRun]; omega_arith,
       by rw [k3.gpr .r23 (by decide), k2.gpr .r23 (by decide), a23]; rfl⟩
   have c26 : t₃.gpr .r26 = BitVec.ofNat 64 w := by rw [k3.gpr .r26 (by decide), k2.gpr .r26 (by decide), a26]
   let I : Nat → State → Prop := fun k t => ExpAt s t B Z w c b (16 * k) ∧
     t.gpr .r25 = off B (slot w aE + 8 * (w - k))
-  refine WP.mono (wp_countdown (cnt := .r26) (N := w) (by omega) (by omega) I
+  refine WP.mono (wp_countdown (cnt := .r26) (N := w) (by omega_arith) (by omega_arith) I
     (fun k hk t ⟨ht, t25⟩ _ => ?_) ⟨e0, by rw [b25, Nat.sub_zero]⟩ c26) fun t ⟨ht, _⟩ => ht
   -- the next word
-  have hy8 : slot w aE + 8 * (w - k) = (slot w aE + 8 * (w - 1 - k)) + 8 := by omega
+  have hy8 : slot w aE + 8 * (w - k) = (slot w aE + 8 * (w - 1 - k)) + 8 := by omega_arith
   have hld : WP isa (.block [.subi .r25 .r25 8, .load .d .r24 .r25 0, .li .r27 16]) t fun u =>
       (u.gpr .r25 = off B (slot w aE + 8 * (w - 1 - k)) ∧
         u.gpr .r24 = word t.mem B (slot w aE + 8 * (w - 1 - k)) ∧ u.gpr .r27 = BitVec.ofNat 64 16 ∧
         u.mem = t.mem) ∧ Keep [.r24, .r25, .r27] t u := by
     refine WP.keep _ ?_ (by decide)
-    prun [t25, hy8, off_sub8, (ht.ws.ctx.hs).ld (show slot w aE + 8 * (w - 1 - k) + 8 ≤ Z by omega)]
+    prun [t25, hy8, off_sub8, (ht.ws.ctx.hs).ld (show slot w aE + 8 * (w - 1 - k) + 8 ≤ Z by omega_arith)]
   refine WP.seq (WP.mono hld fun u ⟨⟨u25, u24, u27, um⟩, ku⟩ => ?_)
   have eu : ExpAt s u B Z w c b (16 * k) :=
     ⟨ht.ws.step (by rw [um]; exact Outs.refl _ _ _) ku (by decide) (by rw [um]), by rw [um]; exact ht.y, ht.lt,
       by rw [ku.gpr .r23 (by decide)]; exact ht.p⟩
   have hV : (word t.mem B (slot w aE + 8 * (w - 1 - k))).toNat =
       VG.Proof.RsaKeyGen.mrE c / 2 ^ (64 * (w - 1 - k)) % 2 ^ 64 := by
-    rw [word_digit _ _ _ _ _ (show w - 1 - k < w by omega)]
+    rw [word_digit _ _ _ _ _ (show w - 1 - k < w by omega_arith)]
     rw [show val32 t.mem B (slot w aE) (2 * w) = arr t.mem B w aE from rfl, ht.ws.consts.e]
   refine WP.seq (WP.mono (inner_ok hk hc3 hodd hV eu u24 u27) fun x ⟨ex, x25, x26⟩ => ?_)
   have hsub : WP isa (.block [.subi .r26 .r26 1]) x fun z =>
@@ -171,7 +171,7 @@ theorem windows_ok {s : State} {B : Addr} {Z w c b : Nat} (h : WSt expRegs s s B
     prun
   refine WP.mono hsub fun z ⟨⟨z26, zm⟩, kz⟩ => ⟨⟨⟨ex.ws.step (by rw [zm]; exact Outs.refl _ _ _) kz (by decide)
     (by rw [zm]), by rw [zm]; exact ex.y, ex.lt, by rw [kz.gpr .r23 (by decide)]; exact ex.p⟩, ?_⟩, ?_⟩
-  · rw [kz.gpr .r25 (by decide), x25, u25, show w - 1 - k = w - (k + 1) by omega]
+  · rw [kz.gpr .r25 (by decide), x25, u25, show w - 1 - k = w - (k + 1) by omega_arith]
   · rw [z26, x26, ku.gpr .r26 (by decide)]
 
 end VG.Proof.MillerRabin.PPC64LE

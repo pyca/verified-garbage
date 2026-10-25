@@ -44,25 +44,25 @@ theorem or_byte (b : Byte) (v : Nat) :
       b ||| BitVec.ofNat 8 v := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_ofNat, show i < 32 by omega,
-    show i < 64 by omega, hi, decide_true, Bool.true_and]
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_ofNat, show i < 32 by omega_arith,
+    show i < 64 by omega_arith, hi, decide_true, Bool.true_and]
 
 theorem and_byte (b : Byte) (v : Nat) :
     BitVec.setWidth 8 (BitVec.setWidth 32 (BitVec.setWidth 64 (BitVec.setWidth 32 b) &&& BitVec.ofNat 64 v)) =
       b &&& BitVec.ofNat 8 v := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_and, BitVec.getLsbD_ofNat, show i < 32 by omega,
-    show i < 64 by omega, hi, decide_true, Bool.true_and]
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_and, BitVec.getLsbD_ofNat, show i < 32 by omega_arith,
+    show i < 64 by omega_arith, hi, decide_true, Bool.true_and]
 
 theorem and63 (b : Byte) :
     BitVec.setWidth 64 (BitVec.setWidth 32 b) &&& BitVec.ofNat 64 63 = BitVec.ofNat 64 (b.toNat % 64) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_ofNat]
   have := b.isLt
-  rw [Nat.mod_eq_of_lt (a := b.toNat) (by omega), Nat.mod_eq_of_lt (a := b.toNat) (by omega),
+  rw [Nat.mod_eq_of_lt (a := b.toNat) (by omega_arith), Nat.mod_eq_of_lt (a := b.toNat) (by omega_arith),
     show (63 : Nat) % 2 ^ 64 = 2 ^ 6 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_arith
 
 theorem one_byte : BitVec.setWidth 8 (BitVec.setWidth 32 (1#64 : BitVec 64)) = (1 : Byte) := by decide
 
@@ -75,15 +75,15 @@ theorem getD_set16 (L : List Byte) (hL : L.length = 16) {o : Nat} (ho : o < 16) 
     (hk : k < 16) : (L.take o ++ [b] ++ L.drop (o + 1)).getD k 0 = if k = o then b else L.getD k 0 := by
   simp only [List.getD_eq_getElem?_getD]
   rcases Nat.lt_trichotomy k o with h | rfl | h
-  · rw [List.getElem?_append_left (by simp; omega), List.getElem?_append_left (by simp; omega),
+  · rw [List.getElem?_append_left (by simp; omega_arith), List.getElem?_append_left (by simp; omega_arith),
       List.getElem?_take_of_lt h]
-    simp [show k ≠ o by omega]
-  · rw [List.getElem?_append_left (by simp; omega), List.getElem?_append_right (by simp; omega)]
-    simp [show min k L.length = k by omega]
-  · rw [List.getElem?_append_right (by simp; omega)]
+    simp [show k ≠ o by omega_arith]
+  · rw [List.getElem?_append_left (by simp; omega_arith), List.getElem?_append_right (by simp; omega_arith)]
+    simp [show min k L.length = k by omega_arith]
+  · rw [List.getElem?_append_right (by simp; omega_arith)]
     simp only [List.length_append, List.length_take, List.length_singleton, List.getElem?_drop,
-      show ¬ k = o by omega, ↓reduceIte]
-    congr 2; omega
+      show ¬ k = o by omega_arith, ↓reduceIte]
+    congr 2; omega_arith
 
 /-- What `nonceBlock` leaves. -/
 structure NoncePost (W : Addr) (t : Nat) (nonce : List Byte) (s s' : State) : Prop where
@@ -111,7 +111,7 @@ theorem nonceHead_ok {W N : Addr} {s : State} (h19 : s.gpr .x19 = W) (hw : Cover
       s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun h₁ h₂ =>
     B₁.frame.readW (r := ⟨W + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      simp only [tmpO]; exact Offset.disjoint W (by omega) (by omega) (by omega)) (by decide)
+      simp only [tmpO]; exact Offset.disjoint W (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
   have r₁ : InRegions (s₁.rd ++ s₁.wr) (W + BitVec.ofNat 64 nO) 8 := by rw [B₁.rd, B₁.wr]; exact in_left (wW (by decide))
   have r₂ : InRegions (s₁.rd ++ s₁.wr) (W + BitVec.ofNat 64 nlO) 8 := by rw [B₁.rd, B₁.wr]; exact in_left (wW (by decide))
   have hN₁ := (kept (d := nO) (by decide) (by decide)).trans hN
@@ -141,10 +141,10 @@ theorem nonceOne_ok {W N : Addr} {s : State} (h19 : s.gpr .x19 = W) (hw : Covers
       (∀ r, r ≠ .x9 → r ≠ .x11 → r ≠ .x14 → s₁.gpr r = s.gpr r) ∧
       s₁.mem = s.mem.writeW (W + BitVec.ofNat 64 (127 - nl)) (1 : Byte) ∧
       s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-  have e1 : W + 128#64 - BitVec.ofNat 64 nl = W + BitVec.ofNat 64 (128 - nl) := Offset.add_ofNat_sub W (by omega)
+  have e1 : W + 128#64 - BitVec.ofNat 64 nl = W + BitVec.ofNat 64 (128 - nl) := Offset.add_ofNat_sub W (by omega_arith)
   have e2 : W + BitVec.ofNat 64 (128 - nl) - 1#64 = W + BitVec.ofNat 64 (127 - nl) := by
-    rw [Offset.add_ofNat_sub W (by omega)]; congr 2; omega
-  have w : InRegions s.wr (W + BitVec.ofNat 64 (127 - nl)) 1 := in_off hw (by omega) (by decide)
+    rw [Offset.add_ofNat_sub W (by omega_arith)]; congr 2; omega_arith
+  have w : InRegions s.wr (W + BitVec.ofNat 64 (127 - nl)) 1 := in_off hw (by omega_arith) (by decide)
   refine ⟨_, by orun [h19, h13, e1, e2, w, write1], ?_, ?_, ?_, fun r a b c => ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_write, h19, h13, e1]
   · simp [gpr_write, h12]
@@ -198,38 +198,38 @@ theorem nonceBlock_ok {K W : Addr} (L : Lay K W) {s : State} (h19 : s.gpr .x19 =
     nonceOne_ok h19₁ (by rw [wr₁]; exact hw) h1 h15 x12₁ x13₁
   have hS₂ : Covers [⟨N, nl⟩] (s₂.rd ++ s₂.wr) := by rw [rd₂, wr₂, rd₁, wr₁]; exact hB.rd
   have hD₂ : Covers [⟨W + BitVec.ofNat 64 (128 - nl), nl⟩] s₂.wr := by
-    rw [wr₂, wr₁]; exact Proof.AesGcm.AArch64.covers_off hw (by omega) (by decide)
-  have hSD : (⟨N, nl⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 (128 - nl), nl⟩ := hB.w.sub_right (Lay.wSub (by omega))
+    rw [wr₂, wr₁]; exact Proof.AesGcm.AArch64.covers_off hw (by omega_arith) (by decide)
+  have hSD : (⟨N, nl⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 (128 - nl), nl⟩ := hB.w.sub_right (Lay.wSub (by omega_arith))
   have f₂ : Frame [⟨W + BitVec.ofNat 64 112, 16⟩] s₁.mem s₂.mem := by
     rw [m₂]
     refine (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_
     rw [show W + BitVec.ofNat 64 (127 - nl) = W + BitVec.ofNat 64 112 + BitVec.ofNat 64 (15 - nl) by
-      rw [Offset.add_add]; congr 2; omega]
-    exact Offset.contains_base _ (by omega) (by omega)
+      rw [Offset.add_add]; congr 2; omega_arith]
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   have eN : bytesAt s₂.mem N nl = bytesAt s.mem N nl := by
     rw [Proof.Cmac.bytesAt_frame f₂ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact hB.w.sub_right (Lay.wSub (by decide))) (by omega),
+        simp only [List.mem_singleton] at hr; subst hr; exact hB.w.sub_right (Lay.wSub (by decide))) (by omega_arith),
       Proof.Cmac.bytesAt_frame f₁ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact hB.w.sub_right (Lay.wSub (by decide))) (by omega)]
+        simp only [List.mem_singleton] at hr; subst hr; exact hB.w.sub_right (Lay.wSub (by decide))) (by omega_arith)]
   unfold nonceBlock
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-  refine WP.seq (WP.mono (copyLoop_ok s₂ x12₂ x11₂ x13₂ (by omega) ⟨by omega, hS₂, hD₂, hSD⟩) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (copyLoop_ok s₂ x12₂ x11₂ x13₂ (by omega_arith) ⟨by omega_arith, hS₂, hD₂, hSD⟩) fun s₃ h₃ => ?_)
   obtain ⟨m₃, _, _, g₃, sp₃, rd₃, wr₃⟩ := h₃
   rw [eN] at m₃
   have h19₃ : s₃.gpr .x19 = W := by
     rw [g₃ _ (by decide), g₂ _ (by decide) (by decide) (by decide), h19₁]
   have wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂, wr₁]
   have fr₃ : Frame [⟨W + BitVec.ofNat 64 (128 - nl), nl⟩] s₂.mem s₃.mem := by
-    rw [m₃]; exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact contains_pre _ (by omega))
+    rw [m₃]; exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact contains_pre _ (by omega_arith))
   have htl₃ : s₃.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 t := by
     have k : ∀ {rs : List Region} {m m' : Mem}, Frame rs m m' →
         (∀ r ∈ rs, (⟨W + BitVec.ofNat 64 tlO, 8⟩ : Region).Disjoint r) →
         m'.readW (W + BitVec.ofNat 64 tlO) 64 = m.readW (W + BitVec.ofNat 64 tlO) 64 :=
       fun h hd => h.readW (r := ⟨W + BitVec.ofNat 64 tlO, 8⟩) (Region.contains_self _ _) hd (by decide)
     rw [k fr₃ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by simp only [tlO]; omega)) (by decide)
-          (by omega)),
+        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by simp only [tlO]; omega_arith)) (by decide)
+          (by omega_arith)),
       k f₂ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)),
       k f₁ (fun r hr => by
@@ -240,28 +240,28 @@ theorem nonceBlock_ok {K W : Addr} (L : Lay K W) {s : State} (h19 : s.gpr .x19 =
   have hlen : (bytesAt s.mem N nl).length = nl := length_bytesAt _ _ _
   have L₁ : bytesAt s₁.mem (W + BitVec.ofNat 64 112) 16 = Spec.Ocb.zeros 16 := bytesAt_of_zero z₁
   have e128 : W + BitVec.ofNat 64 (128 - nl) = W + BitVec.ofNat 64 112 + BitVec.ofNat 64 (16 - nl) := by
-    rw [Offset.add_add, show 112 + (16 - nl) = 128 - nl by omega]
+    rw [Offset.add_add, show 112 + (16 - nl) = 128 - nl by omega_arith]
   have e127 : W + BitVec.ofNat 64 (127 - nl) = W + BitVec.ofNat 64 112 + BitVec.ofNat 64 (15 - nl) := by
-    rw [Offset.add_add, show 112 + (15 - nl) = 127 - nl by omega]
+    rw [Offset.add_add, show 112 + (15 - nl) = 127 - nl by omega_arith]
   have L₂ : bytesAt s₂.mem (W + BitVec.ofNat 64 112) 16 =
       Spec.Ocb.zeros (15 - nl) ++ [1] ++ Spec.Ocb.zeros (nl) := by
-    rw [m₂, e127, bytesAt_writeW8_at _ _ _ (by omega) (by decide), L₁]
-    simp only [Spec.Ocb.zeros, List.take_replicate, List.drop_replicate, show min (15 - nl) 16 = 15 - nl by omega,
-      show 16 - (15 - nl + 1) = nl by omega]
+    rw [m₂, e127, bytesAt_writeW8_at _ _ _ (by omega_arith) (by decide), L₁]
+    simp only [Spec.Ocb.zeros, List.take_replicate, List.drop_replicate, show min (15 - nl) 16 = 15 - nl by omega_arith,
+      show 16 - (15 - nl + 1) = nl by omega_arith]
   have L₃ : bytesAt s₃.mem (W + BitVec.ofNat 64 112) 16 = Spec.Ocb.zeros (15 - nl) ++ [1] ++ bytesAt s.mem N nl := by
-    rw [m₃, e128, bytesAt_writeBytes_at _ _ _ (by omega) (by decide), L₂, hlen]
-    rw [show 16 - nl + nl = 16 by omega]
+    rw [m₃, e128, bytesAt_writeBytes_at _ _ _ (by omega_arith) (by decide), L₂, hlen]
+    rw [show 16 - nl + nl = 16 by omega_arith]
     simp only [Spec.Ocb.zeros, List.take_append, List.take_replicate, List.drop_append, List.drop_replicate,
       List.length_replicate, List.length_append, List.length_singleton, List.append_assoc]
-    simp only [show min (16 - nl) (15 - nl) = 15 - nl by omega, show 16 - nl - (15 - nl) = 1 by omega,
-      show 16 - (15 - nl) = nl + 1 by omega, show 15 - nl + (1 + nl) = 16 by omega]
+    simp only [show min (16 - nl) (15 - nl) = 15 - nl by omega_arith, show 16 - nl - (15 - nl) = 1 by omega_arith,
+      show 16 - (15 - nl) = nl + 1 by omega_arith, show 15 - nl + (1 + nl) = 16 by omega_arith]
     simp only [show 1 - 1 = 0 from rfl, Nat.zero_min, List.replicate_zero, List.nil_append,
-      show 15 - nl - 16 = 0 by omega, List.take_one, List.head?_cons, Option.toList_some,
-      List.drop_eq_nil_of_le (show [(1 : Byte)].length ≤ nl + 1 by simp), show nl - (nl + 1 - 1) = 0 by omega,
+      show 15 - nl - 16 = 0 by omega_arith, List.take_one, List.head?_cons, Option.toList_some,
+      List.drop_eq_nil_of_le (show [(1 : Byte)].length ≤ nl + 1 by simp), show nl - (nl + 1 - 1) = 0 by omega_arith,
       List.append_nil]
   have L₃d : ∀ k < 16, (bytesAt s₃.mem (W + BitVec.ofNat 64 112) 16).getD k 0 = nbase (bytesAt s.mem N nl) k :=
     fun k hk => by
-      have := Proof.Ocb.nbase_list (bytesAt s.mem N nl) (by rw [hlen]; omega) (by rw [hlen]; omega) hk
+      have := Proof.Ocb.nbase_list (bytesAt s.mem N nl) (by rw [hlen]; omega_arith) (by rw [hlen]; omega_arith) hk
       rw [hlen] at this; rw [L₃]; exact this
   have b0 : s₃.mem (W + BitVec.ofNat 64 112) = nbase (bytesAt s.mem N nl) 0 := by
     have := getD_bytesAt_eq s₃.mem (W + BitVec.ofNat 64 112) (k := 0) (n := 16) (by decide)
@@ -292,15 +292,15 @@ theorem nonceBlock_ok {K W : Addr} (L : Lay K W) {s : State} (h19 : s.gpr .x19 =
       unfold nb
       rcases k with _ | k
       · rfl
-      · simp only [List.getD_cons_succ, show k + 1 ≠ 0 by omega, ↓reduceIte]
+      · simp only [List.getD_cons_succ, show k + 1 ≠ 0 by omega_arith, ↓reduceIte]
         rw [List.getD_eq_getElem?_getD, List.getElem?_drop, ← List.getD_eq_getElem?_getD,
-          show 1 + k = k + 1 by omega]
+          show 1 + k = k + 1 by omega_arith]
         exact L₃d (k + 1) hk
   have hlen16 := length_bytesAt s₄.mem (W + BitVec.ofNat 64 112) 16
   have f₃ : Frame [⟨W + BitVec.ofNat 64 tmpO, 16⟩, ⟨W + BitVec.ofNat 64 botO, 8⟩] s.mem s₃.mem :=
     ((f₁.trans f₂).mono (fun r hr => by simp at hr; simp [hr])).trans ((fr₃.sub fun r hr => ⟨_, List.mem_cons_self .., by
         simp only [List.mem_singleton] at hr; subst hr
-        rw [e128]; exact Offset.sub_base _ (by omega)⟩))
+        rw [e128]; exact Offset.sub_base _ (by omega_arith)⟩))
   refine ⟨?_, ?_, ?_, fun r hr => ?_, by rw [sp₄, sp₃, sp₂, sp₁], by rw [rd₄, rd₃, rd₂, rd₁], by rw [wr₄, wr₃']⟩
   · rw [m₄]
     refine ((f₃.writeW (List.mem_cons_self ..) _ ?_).writeW (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _
@@ -313,10 +313,10 @@ theorem nonceBlock_ok {K W : Addr} (L : Lay K W) {s : State} (h19 : s.gpr .x19 =
     apply Proof.Ocb.toBytes_inj
     rw [Proof.Ocb.toBytes_ofBytes hlen16]
     refine Proof.Cmac.ext16 hlen16 (Proof.Ocb.toBytes_length _) fun k hk => ?_
-    rw [L₄d k hk, Proof.Ocb.nonceN_masked_byte _ _ (by omega) (by omega) hk]
+    rw [L₄d k hk, Proof.Ocb.nonceN_masked_byte _ _ (by omega_arith) (by omega_arith) hk]
   · show s₄.mem.readW (W + BitVec.ofNat 64 288) 64 = _
     rw [m₄, Mem.readW_writeW_sep (Offset.sep W (by decide) (by decide) (by decide)) (by decide),
-      Mem.readW_writeW_self64, b15, Proof.Ocb.nonceN_bottom _ _ (by omega) (by omega)]
+      Mem.readW_writeW_self64, b15, Proof.Ocb.nonceN_bottom _ _ (by omega_arith) (by omega_arith)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [g₄ r hr.1 hr.2.1 hr.2.2.1, g₃ r (by simp [Proof.AesGcm.AArch64.loopRegs, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1,
       hr.2.2.2.2.2.1, hr.2.2.2.2.2.2]), g₂ r hr.1 hr.2.2.1 hr.2.2.2.2.2.1, g₁ r hr.1 hr.2.2.2.1 hr.2.2.2.2.1]

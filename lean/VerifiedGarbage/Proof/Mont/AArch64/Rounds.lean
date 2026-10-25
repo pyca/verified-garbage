@@ -61,10 +61,10 @@ theorem rounds_ok {M : Mod} (hn : M.n < 10) {ra rb : Reg} {pa pb : Addr} {sa sb 
         accV M s' k < 2 * m ∧
         Keeps (.x1 :: .x2 :: .x3 :: acc M.n) s s' ∧ (k = 0 → AccInit M s')
   | 0, _, s, _, _, _, _, _, _, _, _, hB, h0 => WP.block_nil ⟨⟨0, by simp [accV, wordsVal]⟩, by
-      simp only [accV, ↓reduceIte]; omega, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, fun _ => h0⟩
+      simp only [accV, ↓reduceIte]; omega_arith, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, fun _ => h0⟩
   | k + 1, hk, s, base, hs, hpa, hpb, hz, hm, hBR, h6, hB, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (rounds_ok hn hra hrb ha hb hmo ha8 hb8 hmo8 hinv hok k (by omega) hs hpa hpb hz hm hBR h6 hB h0)
+    refine WP.mono (rounds_ok hn hra hrb ha hb hmo ha8 hb8 hmo8 hinv hok k (by omega_arith) hs hpa hpb hz hm hBR h6 hB h0)
       fun s₁ ⟨⟨U, eU⟩, hT, k₁, hz0⟩ => ?_
     have hmem : s₁.mem = s.mem := k₁.mem
     have hacc := acc_regs_lt _ hn
@@ -92,11 +92,11 @@ theorem rounds_ok {M : Mod} (hn : M.n < 10) {ra rb : Reg} {pa pb : Addr} {sa sb 
     have hBR₁ : BRegs s₁ pb b M.n := hBR.keep hmem fun r hr => k₁.gpr r (nk r (by
       rcases bRegs_regs r hr with rfl | rfl | rfl | rfl <;> simp))
     have h6₁ : ConstOk M s₁ := h6.keep (k₁.gpr .x6 (nk .x6 (by simp)))
-    refine WP.mono (round_ok hs₁ hn hpa₁ hpb₁ hrb (i := k) (by omega) hb hmo ha8 hb8 hmo8 hz₁ (by rw [hmem, hm])
+    refine WP.mono (round_ok hs₁ hn hpa₁ hpb₁ hrb (i := k) (by omega_arith) hb hmo ha8 hb8 hmo8 hz₁ (by rw [hmem, hm])
       hinv hok hBR₁ h6₁ (by rw [hmem]; exact hB) hT (fun hk0 => hz0 hk0)) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
     rw [hmem] at eu
     rw [accV_succ]
-    refine ⟨⟨U + 2 ^ (64 * k) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_), fun h => absurd h (by omega)⟩
+    refine ⟨⟨U + 2 ^ (64 * k) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_), fun h => absurd h (by omega_arith)⟩
     · calc 2 ^ (64 * (k + 1)) * regsVal s₂ (wins M.n (k + 1))
           = 2 ^ (64 * k) * (2 ^ 64 * regsVal s₂ (wins M.n (k + 1))) := by
             rw [Nat.mul_succ, Nat.pow_add, Nat.mul_assoc]
@@ -105,7 +105,7 @@ theorem rounds_ok {M : Mod} (hn : M.n < 10) {ra rb : Reg} {pa pb : Addr} {sa sb 
             2 ^ (64 * k) * u * m := by rw [eu]; simp only [Nat.mul_add, Nat.mul_assoc]
         _ = (wordsVal s.mem pa a k + 2 ^ (64 * k) * (word s.mem pa (a + 8 * k)).toNat) *
             wordsVal s.mem pb b M.n + (U + 2 ^ (64 * k) * u) * m := by
-            rw [eU, Nat.add_mul, Nat.add_mul]; omega
+            rw [eU, Nat.add_mul, Nat.add_mul]; omega_arith
         _ = _ := by rw [wordsVal_succ_top]
     · simp only [List.mem_cons] at hq ⊢
       rcases hq with h | h | h | h

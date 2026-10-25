@@ -51,12 +51,12 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base) 
   have hs := hw.ws
   have h3 := hw.at3
   rw [vfinish_eq]
-  refine wp_step (ld0_ok hs h3 (by decide) (sl_al c FLAG) (by omega)) ?_
+  refine wp_step (ld0_ok hs h3 (by decide) (sl_al c FLAG) (by omega_arith)) ?_
   refine wp_step (exec_li (by decide)) ?_
   refine wp_step exec_logic ?_
   have hs₁ := hs.write .r10 (word s.mem base (c.sl FLAG))
   have h3₁ := h3.write (d := .r10) (word s.mem base (c.sl FLAG))
-  refine restore_ok ((hs₁.write _ _).write _ _) ((h3₁.write _).write _) (by omega) fun t Kt mt lrt r14t r31t => ?_
+  refine restore_ok ((hs₁.write _ _).write _ _) ((h3₁.write _).write _) (by omega_arith) fun t Kt mt lrt r14t r31t => ?_
   refine wp_step exec_mov (WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_⟩)
   · simp only [write_gpr, ite_true]
     rw [Kt.gpr _ (by decide)]
@@ -99,11 +99,11 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hn3 := hc.n_ge
-  have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   -- `Z^(p-2)`.
   refine WP.seq (WP.mono (pow_ok (P := c.powP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc) rfl
     (powLayP hc) hpR hP.ws hP.rz_lt hP.fixed.onep hP.t₁
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)
+    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith)) fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)
   rw [powWxP_eq] at U₁
   have K₁ : Keep c s₀ base s₁ := hP.toKeep.step h7 k₁ (hU := U₁) (hW := fixedOk_powWx h7) (hWs := powWx_le h7)
   have e₁ : ∀ {i}, i < 45 → i ∉ [ACC, PT] → sv c base s₁ i = sv c base s i := fun hi hr =>
@@ -113,9 +113,9 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
         c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
       have := sl_le c h7 (i := FLAG) (by decide)
       rcases apart_powWx h7 (i := FLAG) (by decide) (by decide) w hw with h | h
-      · exact Or.inl (by omega)
+      · exact Or.inl (by omega_arith)
       · exact Or.inr h
-    rw [flagW, U₁.word apF (by omega), ← flagW]
+    rw [flagW, U₁.word apF (by omega_arith), ← flagW]
   rw [final_eq]
   -- `XM = X · ACC`.
   refine WP.seq (WP.mono (slMul_ok hc.fp hc.fpk hc.fpm h7 K₁.ws (o := XM) (a := RX) (b := ACC) (by decide)
@@ -124,7 +124,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
   -- `X = XM · 1`.
   have one₂ : sv c base s₂ ONE = 1 := (v₂ (by decide) (by decide)).trans K₁.fixed.one
   refine WP.seq (WP.mono (slMul_ok hc.fp hc.fpk hc.fpm h7 K₂.ws (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, U₃, lt₃, e₃⟩ => ?_)
+    (by decide) (by decide) (by rw [one₂]; omega_arith)) fun s₃ ⟨k₃, U₃, lt₃, e₃⟩ => ?_)
   obtain ⟨K₃, f₃, -, v₃⟩ := K₂.call h0 h7 (o := X) (by decide) (by decide) (by decide) k₃ U₃
   have x₃ : Fin.ofNat c.C.p (sv c base s₃ X) =
       tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) := by
@@ -135,7 +135,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
   -- `XN = x R mod n`, `W = XN - r R mod n`.
   have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n := K₃.fixed.r2n
   refine WP.seq (WP.mono (slMul_ok hc.fn hc.fnk hc.fnm h7 K₃.ws (o := XN) (a := X) (b := R2N) (by decide)
-    (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, U₄, lt₄, e₄⟩ => ?_)
+    (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega_arith))) fun s₄ ⟨k₄, U₄, lt₄, e₄⟩ => ?_)
   obtain ⟨K₄, f₄, -, v₄⟩ := K₃.call h0 h7 (o := XN) (by decide) (by decide) (by decide) k₄ U₄
   have rm₄ : sv c base s₄ RM' = sv c base s RM' := by
     rw [v₄ (by decide) (by decide), v₃ (by decide) (by decide), v₂ (by decide) (by decide),
@@ -144,19 +144,19 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
     (by decide) (by decide) lt₄ (by rw [rm₄]; exact hP.rm_lt)) fun s₅ ⟨k₅, U₅, e₅⟩ => ?_)
   obtain ⟨K₅, f₅, -, v₅⟩ := K₄.call h0 h7 (o := W) (by decide) (by decide) (by decide) k₅ U₅
   have w₅ : sv c base s₅ W = 0 ↔ Fin.ofNat c.C.n (sv c base s₃ X) = Fin.ofNat c.C.n (sigR c s₀) := by
-    have hlt : sv c base s₅ W < c.C.n := by rw [e₅]; exact Nat.mod_lt _ (by omega)
-    rw [← toM_eq_zero_iff hnR hlt, e₅, toM_sub (by rw [rm₄]; have := hP.rm_lt; omega), rm₄, hP.rm,
+    have hlt : sv c base s₅ W < c.C.n := by rw [e₅]; exact Nat.mod_lt _ (by omega_arith)
+    rw [← toM_eq_zero_iff hnR hlt, e₅, toM_sub (by rw [rm₄]; have := hP.rm_lt; omega_arith), rm₄, hP.rm,
       toM_r2 hnR (by rw [e₄, r2₃])]
     constructor <;> intro h <;> grind
   -- The checks and the result.
   rw [WP.block_append_iff]
   refine WP.mono (checkNonzero_ok c K₅.ws.ws K₅.ws.at3 (sl_al c RZ) h0
-    (by have := sl_le c h7 (i := RZ) (by decide); omega) hfl) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_
+    (by have := sl_le c h7 (i := RZ) (by decide); omega_arith) hfl) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_
   have K₆ := K₅.step h7 (k₆.rk (rs' := [.r4, .r5])) (hU := O₆.unch) (hW := fixedOk_flag) (hWs := by
     intro w hw; rw [List.mem_singleton.mp hw]; exact hfl)
   rw [WP.block_append_iff]
   refine WP.mono (checkZero_ok c K₆.ws.ws K₆.ws.at3 (sl_al c W) h0
-    (by have := sl_le c h7 (i := W) (by decide); omega) hfl) fun s₇ ⟨f₇, k₇, O₇⟩ => ?_
+    (by have := sl_le c h7 (i := W) (by decide); omega_arith) hfl) fun s₇ ⟨f₇, k₇, O₇⟩ => ?_
   have K₇ := K₆.step h7 (k₇.rk (rs' := [.r4, .r5])) (hU := O₇.unch) (hW := fixedOk_flag) (hWs := by
     intro w hw; rw [List.mem_singleton.mp hw]; exact hfl)
   have z₅ : wordsVal s₅.mem base (c.sl RZ) c.n = sv c base s RZ := by

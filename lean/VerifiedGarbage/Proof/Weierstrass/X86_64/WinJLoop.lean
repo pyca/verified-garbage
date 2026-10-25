@@ -97,9 +97,9 @@ theorem toProjR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
   have ay : ∀ x ∈ [K.R.x, K.R.z], x ≠ K.R.y → x + 8 * K.M.n ≤ K.R.y ∨ K.R.y + 8 * K.M.n ≤ x :=
     fun x hx h => hap x (by simp at hx ⊢; omega_using [hx]) _ (by simp) h
   have vRx : wordsVal s₄.mem base K.R.x K.M.n = wordsVal s₁.mem base K.D.x K.M.n := by
-    rw [O₄.wordsVal (by have := ay _ (by simp) rxy; omega) (by omega), m₃', wx]
+    rw [O₄.wordsVal (by have := ay _ (by simp) rxy; omega_arith) (by omega_arith), m₃', wx]
   have vRz : wordsVal s₄.mem base K.R.z K.M.n = wordsVal s₁.mem base K.D.z K.M.n := by
-    rw [O₄.wordsVal (by have := ay _ (by simp) (Ne.symm ryz); omega) (by omega), m₃', wz]
+    rw [O₄.wordsVal (by have := ay _ (by simp) (Ne.symm ryz); omega_arith) (by omega_arith), m₃', wz]
   have hone' : K.one < 2 ^ (64 * K.M.n) := Nat.lt_trans hone_lt hpn
   have vRy : wordsVal s₄.mem base K.R.y K.M.n =
       if wordsVal s₁.mem base K.D.z K.M.n = 0 then K.one else wordsVal s₁.mem base K.D.y K.M.n := by
@@ -177,7 +177,7 @@ theorem stepLast_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
   have hJ := hL.J
   rw [WinCfg.stepLast]
   simp only [Code.inline]
-  refine WP.seq (WP.mono (decRbx_ok s (by omega) (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (decRbx_ok s (by omega_arith) (by omega_arith) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have hS₁ := hI.st.rbxKeeps hL k₁
   have lt₁ : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₁.mem base x K.M.n < C.p := by
     rw [k₁.2.1]; exact hI.lt
@@ -186,7 +186,7 @@ theorem stepLast_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     have e : ∀ x, tmv C K.M.n base s₁ x = tmv C K.M.n base s x := fun x => by
       show toM _ _ _ = toM _ _ _; rw [k₁.2.1]
     rw [e, e, e]; exact hI.rep
-  refine WP.seq (WP.mono (quadJ_ok hL hp hC hM3 hP hF hS₁ (i := 0) (by omega) b₁ lt₁ rep₁)
+  refine WP.seq (WP.mono (quadJ_ok hL hp hC hM3 hP hF hS₁ (i := 0) (by omega_arith) b₁ lt₁ rep₁)
     fun s₂ ⟨S₂, x₂, l₂, r₂⟩ => ?_)
   refine WP.seq (WP.mono (toProjR_ok hL hp hC hpn hone_lt hone hF S₂ l₂ r₂)
     fun s₅ ⟨S₅, x₅, l₅, r₅⟩ => ?_)
@@ -195,16 +195,16 @@ theorem stepLast_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
   have hbits₅ : ∀ t < 4 * K.J, s₅.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 :=
     fun t ht => by
       have := hL.bits
-      rw [S₅.unch.byte (fun w hw => by have := hL.bits_w w hw; omega) (by have := S₅.scr.nowrap; omega)]
+      rw [S₅.unch.byte (fun w hw => by have := hL.bits_w w hw; omega_arith) (by have := S₅.scr.nowrap; omega_arith)]
       exact hF.bits t ht
   refine WP.seq (WP.mono (winEntryR_ok hL hX (RepA.infinity hC) RepA.negY (P := P) hpn hone_lt hone
-    S₅.scr S₅.mod (i := 0) (by omega) hx₅ hbits₅ hz₅ S₅.tbl) fun s₆ h₆ => WP.seq (WP.mono h₆
+    S₅.scr S₅.mod (i := 0) (by omega_arith) hx₅ hbits₅ hz₅ S₅.tbl) fun s₆ h₆ => WP.seq (WP.mono h₆
       fun s₇ E₇ => ?_))
   have hn := S₅.scr.nowrap
   have S₇ := S₅.next hL E₇.scr (E₇.keep.mono clob_powClob) (E₇.unch.mono (entryW_loopW K))
   have eR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₇.mem base x K.M.n = wordsVal s₅.mem base x K.M.n :=
     fun x hx => E₇.unch.wordsVal (R_apart_entry hL hx) (by
-      have := hL.lay.le x (winOther_mem (pt_other (K := K) (p := K.R) (Or.inl rfl) x hx)); omega)
+      have := hL.lay.le x (winOther_mem (pt_other (K := K) (p := K.R) (Or.inl rfl) x hx)); omega_arith)
   have lt₇ : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₇.mem base x K.M.n < C.p := fun x hx => by
     rw [eR x hx]; exact l₅ x hx
   have rep₇ : Rep C (tmv C K.M.n base s₇ K.R.x) (tmv C K.M.n base s₇ K.R.y)
@@ -212,7 +212,7 @@ theorem stepLast_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     rw [tmv_congr (eR _ (by simp)), tmv_congr (eR _ (by simp)), tmv_congr (eR _ (by simp))]; exact r₅
   refine WP.mono (sumStep_ok hL hp hC hM3 hF S₇ (hC.onCurve_mul hP _) (onCurve_winPt hC hP k 0)
     lt₇ E₇.lt rep₇ E₇.rep.1) fun s₉ ⟨S₉, _, l₉, r₉⟩ => ⟨S₉, l₉, ?_⟩
-  have hadd := win_add hC hP (k := k) (J := K.J) (j := 0) hk8 (by omega)
+  have hadd := win_add hC hP (k := k) (J := K.J) (j := 0) hk8 (by omega_arith)
   rw [hadd] at r₉
   exact r₉
 
@@ -223,7 +223,7 @@ theorem WinFixed.unch {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL 
     (hro : ∀ x ∈ winRo K, ∀ w ∈ W, x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x)
     (hbits : ∀ w ∈ W, K.bits + 4 * K.J ≤ w.1 ∨ w.1 + w.2 ≤ K.bits) : WinFixed K C base s' P k := by
   have e : ∀ x ∈ winRo K, wordsVal s'.mem base x K.M.n = wordsVal s.mem base x K.M.n := fun x hx =>
-    hU.wordsVal (hro x hx) (by have := hL.lay.le x (winRo_slots K x hx); omega)
+    hU.wordsVal (hro x hx) (by have := hL.lay.le x (winRo_slots K x hx); omega_arith)
   have hb := hL.bits
   refine ⟨?_, ?_, fun x hx => by rw [e x hx]; exact hF.ro_lt x hx, by rw [e _ (by simp [winRo])]; exact hF.zero,
     ?_, fun t ht => ?_⟩
@@ -231,7 +231,7 @@ theorem WinFixed.unch {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL 
   · rw [tmv_congr (e _ (by simp [winRo]))]; exact hF.b
   · rw [tmv_congr (e _ (by simp [winRo])), tmv_congr (e _ (by simp [winRo])), tmv_congr (e _ (by simp [winRo]))]
     exact hF.pt
-  · rw [hU.byte (fun w hw => by have := hbits w hw; omega) (by omega)]
+  · rw [hU.byte (fun w hw => by have := hbits w hw; omega_arith) (by omega_arith)]
     exact hF.bits t ht
 
 /-- `[k - 8 Σ_{i<J} 16^i]P` into `R`, for `8 Σ_{i<J} 16^i ≤ k < 16^J` whose bits
@@ -260,8 +260,8 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     have h0 : zmul (m : Int) P = zmul 0 P := by
       rw [zmul_natCast, h, show (0 : Int) = ((0 : Nat) : Int) from rfl, zmul_natCast]
       rw [Spec.Weierstrass.mul]; simp
-    have := hO.zmul_eq hC hP hP0 (by omega) h0
-    omega
+    have := hO.zmul_eq hC hP hP0 (by omega_arith) h0
+    omega_arith
   have pc : ∀ r ∈ powClob K.M.n, r ∈ invClob K.M.n := fun r h => List.mem_cons_of_mem _ h
   rw [WinCfg.windowJ]
   simp only [Code.inline]
@@ -307,7 +307,7 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
   have W3 := setConst_ok hs₃ (n := K.M.n) (o := K.R.z) (x := 0) (le _ (by simp)) (Nat.two_pow_pos _)
   refine WP.mono W3 fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
-  refine WP.mono (mov32Rbx_ok s₄ (j := K.J) (by omega)) fun s₅ ⟨b₅, k₅⟩ => ?_
+  refine WP.mono (mov32Rbx_ok s₄ (j := K.J) (by omega_arith)) fun s₅ ⟨b₅, k₅⟩ => ?_
   have hU : Unch base (loopW K) s.mem s₅.mem := by
     rw [k₅.2.1]
     refine (O₂.unch.trans (O₃.unch.trans O₄.unch)).mono fun w hw => ?_
@@ -326,7 +326,7 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
       ((Keeps.regs k₅).mono (by intro r hr; simp only [List.mem_singleton] at hr; subst hr
                                 simp [powClob]))) hU
   have b64 : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
-    have := le x hx; omega
+    have := le x hx; omega_arith
   have vx : wordsVal s₅.mem base K.R.x K.M.n = 0 := by
     rw [k₅.2.1, O₄.wordsVal axz (b64 _ (by simp)), O₃.wordsVal axy (b64 _ (by simp)), e₂]
   have vy : wordsVal s₅.mem base K.R.y K.M.n = K.one := by
@@ -344,16 +344,16 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
       rw [vz]; exact toM_zero _ _
   refine WP.seq (countLoop_ok (Inv := fun i t => WinInvJ K C base size k P s t (i + 1)) (n := K.J - 1)
     (fun i t h1 h2 hi => WP.mono (winStepJ_ok hL hX hp hC hM3 hO hP hP0 hpn hone_lt hone hF hk8
-      (j := i + 1) (by omega) (by omega)
+      (j := i + 1) (by omega_arith) (by omega_arith)
       (Nat.lt_of_le_of_lt (Nat.add_le_add_right (Nat.mul_le_mul_left _
-        (winE_le_of_le hk8 (by omega) (by omega))) _) hb) hi)
-      fun u ⟨I, z⟩ => ⟨by rw [show i - 1 + 1 = i + 1 - 1 by omega]; exact I,
-        by rw [z]; congr 1; simp only [decide_eq_decide]; omega⟩)
+        (winE_le_of_le hk8 (by omega_arith) (by omega_arith))) _) hb) hi)
+      fun u ⟨I, z⟩ => ⟨by rw [show i - 1 + 1 = i + 1 - 1 by omega_arith]; exact I,
+        by rw [z]; congr 1; simp only [decide_eq_decide]; omega_arith⟩)
     (fun t hi => WP.mono (stepLast_ok hL hX hp hC hM3 hP hpn hone_lt hone hF hk8 hi)
       fun u ⟨S, l, r⟩ => ⟨((B.keep.mono pc).trans Kn).trans (S.keep.mono pc),
         (U₀.trans S.unch).mono fun w hw => by
           simp only [List.mem_append] at hw ⊢; rcases hw with (hw | hw) | hw <;> simp [hw],
         S.mod, l, by rw [← winE_zero]; exact r⟩)
-    (by omega) (by rw [Nat.sub_add_cancel (by omega)]; exact I₅))
+    (by omega_arith) (by rw [Nat.sub_add_cancel (by omega_arith)]; exact I₅))
 
 end VG.Proof.Weierstrass.X86_64

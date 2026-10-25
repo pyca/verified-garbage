@@ -37,10 +37,10 @@ theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K
   apply Vector.ext
   intro i hi
   simp only [Spec.Cast5.scheduleAt, Vector.getElem_ofFn]
-  rw [hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 3 < 128 by omega),
-    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 2 < 128 by omega),
-    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 1 < 128 by omega),
-    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i < 128 by omega)]
+  rw [hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 3 < 128 by omega_arith),
+    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 2 < 128 by omega_arith),
+    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i + 1 < 128 by omega_arith),
+    hf.bytes (R := ⟨K, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) (show 4 * i < 128 by omega_arith)]
 
 /-- The table's words, as the scans read them. -/
 theorem tabAt_of_held {m : Mem} {T : BitVec 32} (h : Held m (T.setWidth 64) s1234) : TabAt m T tab1234 :=
@@ -53,7 +53,7 @@ theorem held_frame {rs : List Region} {m m' : Mem} {T : Addr} (h : Held m T s123
   intro i hi
   rw [s1234_length] at hi
   rw [← h i (by rw [s1234_length]; exact hi)]
-  exact hf.readW (r := ⟨T, 4096⟩) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)
+  exact hf.readW (r := ⟨T, 4096⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith)) hd (by decide)
 
 /-! ## The layout -/
 
@@ -109,10 +109,10 @@ structure LInv (s : State) (m0 : Mem) (up : Bool) (S D : BitVec 32) (k : Spec.Ca
 
 theorem setWidth_blk {D : BitVec 32} {N j : Nat} (hd : D.toNat + 8 * N ≤ 2 ^ 32) (hj : j < N) :
     (D + BitVec.ofNat 32 (8 * j)).setWidth 64 = D.setWidth 64 + BitVec.ofNat 64 (8 * j) :=
-  addr_eq (x := D) (k := 8 * j) (by omega)
+  addr_eq (x := D) (k := 8 * j) (by omega_arith)
 
 theorem sub_blk (P : Addr) {N j : Nat} (hj : j < N) :
-    Region.Sub ⟨P + BitVec.ofNat 64 (8 * j), 8⟩ ⟨P, 8 * N⟩ := Offset.sub_base _ (by omega)
+    Region.Sub ⟨P + BitVec.ofNat 64 (8 * j), 8⟩ ⟨P, 8 * N⟩ := Offset.sub_base _ (by omega_arith)
 
 /-- The regions the loop writes miss the subkeys, the table and the slots
 `32 … 55`. -/
@@ -132,8 +132,8 @@ theorem loopMem_disjoint {s : State} {m0 : Mem} {S D K : BitVec 32} {k : Spec.Ca
 theorem slot32_frame {m m' : Mem} {rs : List Region} {S : BitVec 32} (hfit : S.toNat + 256 ≤ 2 ^ 32)
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, r.Disjoint (slotR S 32 24)) {d : Nat} (h1 : 32 ≤ d) (h2 : d + 4 ≤ 56) :
     m'.readW (addr S d) 32 = m.readW (addr S d) 32 := by
-  rw [addr_off hfit d (by omega)]
-  exact hf.readW (r := slotR S 32 24) (Offset.contains _ h1 (by omega) (by omega))
+  rw [addr_off hfit d (by omega_arith)]
+  exact hf.readW (r := slotR S 32 24) (Offset.contains _ h1 (by omega_arith) (by omega_arith))
     (fun r hr => (hd r hr).symm) (by decide)
 
 /-- `crypt`'s precondition, at block `j`. -/
@@ -155,10 +155,10 @@ theorem LInv.bpre {s u : State} {m0 : Mem} {up : Bool} {S D K : BitVec 32} {k : 
   · rw [h.syms]
     exact tabAt_of_held (held_frame hl.held h.fr fun r hr => ((hd r hr).2.1).symm)
   · have := hl.fitD
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * j) (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * j) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   · rw [h.wr, eD]
-    exact CallLay.inRegions_sub hl.wD (by omega) (by have := hl.fitD; omega)
+    exact CallLay.inRegions_sub hl.wD (by omega_arith) (by have := hl.fitD; omega_arith)
 
 /-! ## The loop over the blocks -/
 
@@ -166,7 +166,7 @@ theorem ofNat_sub_one {a : Nat} (ha : 1 ≤ a) (hb : a < 2 ^ 32) :
     BitVec.ofNat 32 a - BitVec.ofNat 32 1 = BitVec.ofNat 32 (a - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- `advance`: on to the next block. -/
 theorem advance_ok (v : State) {S : BitVec 32} (hsi : v.gpr .esi = S) (hfit : S.toNat + 256 ≤ 2 ^ 32)
@@ -187,12 +187,12 @@ theorem advance_ok (v : State) {S : BitVec 32} (hsi : v.gpr .esi = S) (hfit : S.
 
 theorem dslot_contains (S : BitVec 32) (hfit : S.toNat + 256 ≤ 2 ^ 32) {d : Nat} (h1 : dataOff ≤ d)
     (h2 : d + 4 ≤ 72) : Region.Contains (slotR S dataOff 16) (addr S d) (32 / 8) := by
-  rw [addr_off hfit d (by omega)]; exact Offset.contains _ h1 (by simp only [dataOff] at h2 ⊢; omega) (by decide)
+  rw [addr_off hfit d (by omega_arith)]; exact Offset.contains _ h1 (by simp only [dataOff] at h2 ⊢; omega_arith) (by decide)
 
 /-- A block and another. -/
 theorem blk_disj_blk (P : Addr) {N i j : Nat} (hi : i < N) (hj : j < N) (hN : 8 * N ≤ 2 ^ 32) (hij : i ≠ j) :
     Region.Disjoint ⟨P + BitVec.ofNat 64 (8 * i), 8⟩ ⟨P + BitVec.ofNat 64 (8 * j), 8⟩ :=
-  Offset.disjoint _ (by omega) (by omega) (by omega)
+  Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 /-- One block, then on to the next. -/
 theorem step_ok {s u : State} {m0 : Mem} {up : Bool} {S D K : BitVec 32} {k : Spec.Cast5.Schedule} {n N j : Nat}
@@ -217,15 +217,15 @@ theorem step_ok {s u : State} {m0 : Mem} {up : Bool} {S D K : BitVec 32} {k : Sp
     simp only [blockMem, List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [dataOff] at h1 h2
     rcases hr with rfl | rfl | rfl | rfl
-    · exact ((hl.dDS.sub_left (sub_blk _ hj)).symm.sub_left (slot_sub S (by omega)))
-    · exact hl.dS.sub_left (slot_sub S (by omega))
-    · exact Offset.disjoint _ (by omega) (by omega) (by decide)
-    · exact Offset.disjoint _ (by simp only [kpOff]; omega) (by omega) (by decide)
+    · exact ((hl.dDS.sub_left (sub_blk _ hj)).symm.sub_left (slot_sub S (by omega_arith)))
+    · exact hl.dS.sub_left (slot_sub S (by omega_arith))
+    · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by decide)
+    · exact Offset.disjoint _ (by simp only [kpOff]; omega_arith) (by omega_arith) (by decide)
   have vslot (o : Nat) (h1 : dataOff ≤ o) (h2 : o + 4 ≤ dataOff + 8) :
       v.mem.readW (addr S o) 32 = u.mem.readW (addr S o) 32 := by
-    rw [addr_off hl.fitS o (by simp only [dataOff] at h2; omega)]
+    rw [addr_off hl.fitS o (by simp only [dataOff] at h2; omega_arith)]
     exact vf.readW (r := slotR S o 4)
-      (Offset.contains _ (Nat.le_refl _) (Nat.le_refl _) (by simp only [dataOff] at h2; omega)) (dSl o h1 h2)
+      (Offset.contains _ (Nat.le_refl _) (Nat.le_refl _) (by simp only [dataOff] at h2; omega_arith)) (dSl o h1 h2)
       (by decide)
   have hw : InRegions v.wr (S.setWidth 64) 256 := by rw [hv.wr, h.wr]; exact hl.wS
   refine WP.mono (advance_ok v vsi hl.fitS hw (x := D + BitVec.ofNat 32 (8 * j)) (y := BitVec.ofNat 32 (N - j))
@@ -253,29 +253,29 @@ theorem step_ok {s u : State} {m0 : Mem} {up : Bool} {S D K : BitVec 32} {k : Sp
     rw [blockAt_frame fw (dW _ hdi)]
     by_cases hij : i = j
     · subst hij
-      rw [vb, ite_eq_left (by omega), h.blocks i hi, ite_eq_right (by omega)]
+      rw [vb, ite_eq_left (by omega_arith), h.blocks i hi, ite_eq_right (by omega_arith)]
     · rw [blockAt_frame vf ?_, h.blocks i hi]
       · by_cases hlt : i < j
-        · rw [ite_eq_left hlt, ite_eq_left (by omega)]
-        · rw [ite_eq_right hlt, ite_eq_right (by omega)]
+        · rw [ite_eq_left hlt, ite_eq_left (by omega_arith)]
+        · rw [ite_eq_right hlt, ite_eq_right (by omega_arith)]
       · intro r hr
         simp only [blockMem, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
-        · exact blk_disj_blk _ hi hj (by omega) hij
+        · exact blk_disj_blk _ hi hj (by omega_arith) hij
         · exact hl.dD.sub_left (sub_blk _ hi)
         · exact hdi.sub_right (slot_sub S (by decide))
         · exact hdi.sub_right (slot_sub S (by decide))
   · rw [wm, rd_sep hl.fitS _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32, BitVec.add_assoc,
       Nat.mul_add, BitVec.ofNat_add (8 * j)]
-  · rw [wm, Mem.readW_writeW_self32, ofNat_sub_one (by omega) (by omega), Nat.sub_sub]
-  · rw [wz, ofNat_sub_one (by omega) (by omega)]
+  · rw [wm, Mem.readW_writeW_self32, ofNat_sub_one (by omega_arith) (by omega_arith), Nat.sub_sub]
+  · rw [wz, ofNat_sub_one (by omega_arith) (by omega_arith)]
     by_cases he : j + 1 = N
-    · rw [decide_eq_true he, show N - j - 1 = 0 by omega]; rfl
+    · rw [decide_eq_true he, show N - j - 1 = 0 by omega_arith]; rfl
     · rw [decide_eq_false he]
       have : BitVec.ofNat 32 (N - j - 1) ≠ 0 := fun e => by
         have := congrArg BitVec.toNat e
         rw [BitVec.toNat_ofNat, show (0 : BitVec 32).toNat = 0 from rfl] at this
-        omega
+        omega_arith
       simpa using this
 
 /-- The loop over the blocks, from `j = 0`: afterwards every block is done. -/
@@ -290,7 +290,7 @@ theorem ecbLoop_ok {s u : State} {m0 : Mem} {up : Bool} {S D K : BitVec 32} {k :
     simp only [eval, wz, Option.map_some]
   by_cases he : j + 1 = N
   · exact .inl ⟨by rw [hev, decide_eq_true he]; rfl, he ▸ hw⟩
-  · exact .inr ⟨by rw [hev, decide_eq_false he]; rfl, N - (j + 1), by omega, j + 1, rfl, by omega, hw⟩
+  · exact .inr ⟨by rw [hev, decide_eq_false he]; rfl, N - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, hw⟩
 
 /-! ## The whole function -/
 
@@ -345,7 +345,7 @@ theorem cipher_map (up : Bool) (k : Spec.Cast5.Schedule) (n : Nat) (bs : List Sp
 /-- Argument `i`, as the code reads it. -/
 theorem argAddr_eq (s : State) {i : Nat} (h : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) (hi : i < 5) :
     addr (s.gpr .esp) (4 + 4 * i) = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
-  addr_eq (by omega)
+  addr_eq (by omega_arith)
 
 theorem arg_in {s : State} (h : EPre s) {i : Nat} (hi : i < 5) :
     InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) (4 + 4 * i)) 4 := by
@@ -353,7 +353,7 @@ theorem arg_in {s : State} (h : EPre s) {i : Nat} (hi : i < 5) :
   have hA := h.inA
   rw [e0] at hA
   rw [argAddr_eq s h.spfit hi, show 4 + 4 * i = 4 + 4 * i from rfl, ← Offset.add_add]
-  exact CallLay.inRegions_sub hA (by omega) (by decide)
+  exact CallLay.inRegions_sub hA (by omega_arith) (by decide)
 
 /-- The saved registers. -/
 def savedL : List (Reg × Nat) := [(.ebx, savedOff), (.edi, savedOff + 8), (.ebp, savedOff + 12)]
@@ -387,7 +387,7 @@ def argMem (m : Mem) (S K R D N : BitVec 32) : Mem :=
 theorem argMem_frame (m : Mem) {S : BitVec 32} (hfit : S.toNat + 256 ≤ 2 ^ 32) (K R D N : BitVec 32) :
     Frame [slotR S schedOff 16] m (argMem m S K R D N) := by
   have c (d : Nat) (h1 : schedOff ≤ d) (h2 : d + 4 ≤ 64) : Region.Contains (slotR S schedOff 16) (addr S d) (32 / 8) := by
-    rw [addr_off hfit d (by omega)]; exact Offset.contains _ h1 (by simp only [schedOff] at h2 ⊢; omega) (by decide)
+    rw [addr_off hfit d (by omega_arith)]; exact Offset.contains _ h1 (by simp only [schedOff] at h2 ⊢; omega_arith) (by decide)
   exact (((Frame.refl _ _).writeW List.mem_cons_self _ (c schedOff (by decide) (by decide))).writeW
     List.mem_cons_self _ (c roundsOff (by decide) (by decide))).writeW List.mem_cons_self _
     (c dataOff (by decide) (by decide)) |>.writeW List.mem_cons_self _ (c nOff (by decide) (by decide))
@@ -415,8 +415,8 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
     refine Region.Disjoint.sep h.dAS ?_ ?_
     · have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
         argAddr_eq s (i := 0) h.spfit (by decide)
-      rw [argAddr_eq s h.spfit (by omega), e0, ← Offset.add_add]
-      exact Offset.contains_base _ (by omega) (by omega)
+      rw [argAddr_eq s h.spfit (by omega_arith), e0, ← Offset.add_add]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     · rw [hS]; exact saved_in fitS p hp
   have sK : SM.readW (addr (s.gpr .esp) 4) 32 = K := (argSM 0 (by decide)).trans hK
   have sR : SM.readW (addr (s.gpr .esp) 8) 32 = R := (argSM 1 (by decide)).trans hR
@@ -437,7 +437,7 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
   rw [save_eq]
   refine Spill.save_ok saved (fun p hp => ?_) fun s₂ u₂ => ?_
   · rw [wr_setReg, gpr_setReg_self]
-    exact slot_wr fitS wS (d := p.2) (n := 4) (by have := saved_fits.1 p hp; omega)
+    exact slot_wr fitS wS (d := p.2) (n := 4) (by have := saved_fits.1 p hp; omega_arith)
   have g₂ : s₂.gpr = g := u₂.gpr
   have m₂ : s₂.mem = SM := by rw [u₂.mem]; rfl
   have rd₂ : s₂.rd = s.rd := u₂.rd
@@ -472,7 +472,7 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
       rw [rd_sep h.fitS _ _ (by decide) (by decide) (by decide), rd_sep h.fitS _ _ (by decide) (by decide) (by decide),
         Mem.readW_writeW_self32, ofNat_toNat32]
   have h0 : LInv s m0 up S D (Spec.Cast5.scheduleAt s.mem (K.setWidth 64)) R.toNat N.toNat 0 s₃ := by
-    refine ⟨si₃, sp₃, by rw [m₃]; exact Frame.refl _ _, fun i hi => by rw [m₃, ite_eq_right (by omega)], ?_, ?_, rd₃,
+    refine ⟨si₃, sp₃, by rw [m₃]; exact Frame.refl _ _, fun i hi => by rw [m₃, ite_eq_right (by omega_arith)], ?_, ?_, rd₃,
       wr₃, sy₃⟩
     · rw [m₃]
       simp only [argMem]
@@ -498,7 +498,7 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
       fun s' hr => WP.block_nil ⟨⟨fun r hr' => ?_, ?_⟩, ?_⟩
     · rw [hu.si, hu.rd, hu.wr]
       rw [← saved_eq] at hp
-      exact slot_rd fitS wS (d := p.2) (n := 4) (by have := saved_fits.1 p hp; omega)
+      exact slot_rd fitS wS (d := p.2) (n := 4) (by have := saved_fits.1 p hp; omega_arith)
     · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl | rfl | rfl
       · exact (hr.gpr (.ebx, savedOff) (by decide)).trans (gpr_setReg_of_ne _ _ (by decide))
@@ -537,6 +537,6 @@ theorem ecb_correct (up : Bool) (s : State) (h : EPre s) :
   · have e : N.toNat = 0 := of_decide_eq_true hN0
     refine WP.block_nil ?_
     rw [e]; rw [e] at h0; exact h0
-  · exact ecbLoop_ok hl (by have := of_decide_eq_false hN0; omega) h0
+  · exact ecbLoop_ok hl (by have := of_decide_eq_false hN0; omega_arith) h0
 
 end VG.Proof.Cast5.X86

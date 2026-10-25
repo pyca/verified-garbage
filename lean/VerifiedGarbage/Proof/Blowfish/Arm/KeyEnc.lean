@@ -60,18 +60,18 @@ theorem enc_cipher {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32} {
   have CE : CipherEnv u := by
     refine ⟨by rw [I.r0]; exact E.fitK, fun o ho => ?_⟩
     rw [I.r0, I.wr]
-    exact region_in (inRegions_off E.wrK (by omega))
+    exact region_in (inRegions_off E.wrK (by omega_arith))
   refine WP.mono (cipher_run CE true) fun u' ⟨h, k, m⟩ => ⟨?_, k, m⟩
   rw [h, I.r0, I.sched, ord_true, ← I.halves]; rfl
 
 theorem ksIter_step (key : List Byte) {j : Nat} (hj : j < 521) :
     ksIter key (j + 1) =
       (((ksIter key j).1.set (2 * j) (encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2).1
-          (by omega)).set (2 * j + 1)
-          (encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2).2 (by omega),
+          (by omega_arith)).set (2 * j + 1)
+          (encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2).2 (by omega_arith),
         (encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2).1,
         (encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2).2) := by
-  rw [ksIter_succ, ksStep, set!_eq_set _ (by omega), set!_eq_set _ (by omega)]
+  rw [ksIter_succ, ksStep, set!_eq_set _ (by omega_arith), set!_eq_set _ (by omega_arith)]
 
 /-- The working space's pointer and counter, written. -/
 theorem slots_facts (m : Mem) (Ba : Addr) (P C : BitVec 32) :
@@ -104,7 +104,7 @@ theorem storeP_run (u : State) {B P C : BitVec 32} {Ba Pa : Addr} (hlr : u.gpr .
     Offset.sep Ba (by decide) (by decide) (by decide)
   have sP : ∀ o, o ≤ 4 → Mem.Sep (Ba + BitVec.ofNat 64 40) 4 (Pa + BitVec.ofNat 64 o) 4 := fun o ho =>
     sep_of_disjoint ((dj.sub_left (Offset.sub Ba (d := 40) (n := 4) (e := 36) (k := 8) (by decide)
-      (by decide))).sub_right (Offset.sub_base Pa (d := o) (n := 4) (k := 8) (by omega)))
+      (by decide))).sub_right (Offset.sub_base Pa (d := o) (n := 4) (k := 8) (by omega_arith)))
   have rB := inRegions_pre (n := 4) wB (by decide)
   have rC := inRegions_off (o := 4) (n := 4) wB (by decide)
   rw [Offset.add_add] at rC
@@ -150,20 +150,20 @@ theorem encP_step {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32} {s
   apply WP.seq
   refine WP.mono (enc_cipher E J) fun u₁ ⟨c12, ck, cm⟩ => ?_
   let out := encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2
-  have eB : State.addr (B + BitVec.ofNat 32 36) = State.addr B + BitVec.ofNat 64 36 := addr_add (by omega)
-  have eC : State.addr (B + BitVec.ofNat 32 40) = State.addr B + BitVec.ofNat 64 40 := addr_add (by omega)
+  have eB : State.addr (B + BitVec.ofNat 32 36) = State.addr B + BitVec.ofNat 64 36 := addr_add (by omega_arith)
+  have eC : State.addr (B + BitVec.ofNat 32 40) = State.addr B + BitVec.ofNat 64 40 := addr_add (by omega_arith)
   have e0 : State.addr (K + BitVec.ofNat 32 (4096 + 8 * j) + BitVec.ofNat 32 0) =
       State.addr K + BitVec.ofNat 64 (4096 + 4 * (2 * j)) := by
-    rw [BitVec.add_zero, addr_add (by omega)]; congr 2; omega
+    rw [BitVec.add_zero, addr_add (by omega_arith)]; congr 2; omega_arith
   have e4 : State.addr (K + BitVec.ofNat 32 (4096 + 8 * j) + BitVec.ofNat 32 4) =
       State.addr K + BitVec.ofNat 64 (4096 + 4 * (2 * j)) + BitVec.ofNat 64 4 := by
-    rw [ofs_add, addr_add (by omega), Offset.add_add]; congr 2; omega
+    rw [ofs_add, addr_add (by omega_arith), Offset.add_add]; congr 2; omega_arith
   have dj : Region.Disjoint ⟨State.addr B + BitVec.ofNat 64 36, 8⟩
       ⟨State.addr K + BitVec.ofNat 64 (4096 + 4 * (2 * j)), 8⟩ :=
-    (E.sep.symm.sub_left (Offset.sub_base _ (by decide))).sub_right (Offset.sub_base _ (by omega))
+    (E.sep.symm.sub_left (Offset.sub_base _ (by decide))).sub_right (Offset.sub_base _ (by omega_arith))
   have w₁ : u₁.wr = s₀.wr := by rw [ck.2.2.1, J.wr]
   refine WP.mono (WP.keep [.r11, .r12] (storeP_run u₁ (C := BitVec.ofNat 32 (9 - j))
-    (by rw [ck.gpr (by decide), J.r3]) eB eC e0 e4 (E.wB w₁ (by decide)) (E.wK w₁ (by omega)) dj
+    (by rw [ck.gpr (by decide), J.r3]) eB eC e0 e4 (E.wB w₁ (by decide)) (E.wK w₁ (by omega_arith)) dj
     (by rw [cm]; exact I.ptr) (by rw [cm]; exact I.cnt)) (by decide)) fun u₂ ⟨⟨sm, sz⟩, sk⟩ => ?_
   obtain ⟨M36, M40, MF⟩ := slots_facts (((u₁.mem.writeW (State.addr K + BitVec.ofNat 64 (4096 + 4 * (2 * j)))
     (u₁.gpr .r1)).writeW (State.addr K + BitVec.ofNat 64 (4096 + 4 * (2 * j)) + BitVec.ofNat 64 4) (u₁.gpr .r2)))
@@ -172,8 +172,8 @@ theorem encP_step {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32} {s
   have F2 : Frame [⟨State.addr K, 4168⟩] u₁.mem ((u₁.mem.writeW (State.addr K +
       BitVec.ofNat 64 (4096 + 4 * (2 * j))) (u₁.gpr .r1)).writeW (State.addr K +
       BitVec.ofNat 64 (4096 + 4 * (2 * j)) + BitVec.ofNat 64 4) (u₁.gpr .r2)) :=
-    ((Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))).writeW
-      List.mem_cons_self _ (by rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega))
+    ((Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_arith) (by omega_arith))).writeW
+      List.mem_cons_self _ (by rw [Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
   have FF : Frame [⟨State.addr K, 4168⟩, ⟨State.addr B + BitVec.ofNat 64 36, 8⟩] u.mem u₂.mem := by
     rw [← cm]
     exact (F2.mono (by simp)).trans (MF.mono (by simp))
@@ -181,23 +181,23 @@ theorem encP_step {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32} {s
     rw [scheduleAt_eq_of_frame _ MF (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr
         exact E.sep.sub_right (Offset.sub_base _ (by decide))),
-      Offset.add_add, show 4096 + 4 * (2 * j) + 4 = 4096 + 4 * (2 * j + 1) by omega,
-      scheduleAt_writeW_P _ _ (by omega), scheduleAt_writeW_P _ _ (by omega), cm, J.sched,
-      ksIter_step key (by omega)]
+      Offset.add_add, show 4096 + 4 * (2 * j) + 4 = 4096 + 4 * (2 * j + 1) by omega_arith,
+      scheduleAt_writeW_P _ _ (by omega_arith), scheduleAt_writeW_P _ _ (by omega_arith), cm, J.sched,
+      ksIter_step key (by omega_arith)]
     have h1 : u₁.gpr .r1 = out.1 := congrArg Prod.fst c12
     have h2 : u₁.gpr .r2 = out.2 := congrArg Prod.snd c12
     rw [h1, h2]
-  refine ⟨⟨⟨by omega, by rw [sk.gpr (by decide), ck.gpr (by decide), J.r0],
+  refine ⟨⟨⟨by omega_arith, by rw [sk.gpr (by decide), ck.gpr (by decide), J.r0],
     by rw [sk.gpr (by decide), ck.gpr (by decide), J.r3], hsched, ?_,
     saved_frame J.saved FF E.sep, J.frame.trans (FF.sub fun r hr => ?_), by rw [sk.2.1, ck.2.1, J.rd],
-    by rw [sk.2.2.1, w₁]⟩, by omega, by rw [M36, ofs_add]; congr 2, ?_⟩, ?_⟩
-  · rw [sk.gpr (by decide), sk.gpr (by decide), c12, ksIter_step key (by omega)]
+    by rw [sk.2.2.1, w₁]⟩, by omega_arith, by rw [M36, ofs_add]; congr 2, ?_⟩, ?_⟩
+  · rw [sk.gpr (by decide), sk.gpr (by decide), c12, ksIter_step key (by omega_arith)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Offset.sub_base _ (by decide)⟩
-  · rw [M40]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
-  · rw [sz]; congr 1; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+  · rw [M40]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_arith
+  · rw [sz]; congr 1; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_arith
 
 /-- Writing the working space's pointer and counter keeps an encryption's
 invariant. -/
@@ -224,8 +224,8 @@ theorem encryptP_run {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32}
     WP isa encryptP u (EncInv key K B g s₀ 9) := by
   have fK := E.fitK
   have fB := E.fitB
-  have eB : State.addr (B + BitVec.ofNat 32 36) = State.addr B + BitVec.ofNat 64 36 := addr_add (by omega)
-  have eC : State.addr (B + BitVec.ofNat 32 40) = State.addr B + BitVec.ofNat 64 40 := addr_add (by omega)
+  have eB : State.addr (B + BitVec.ofNat 32 36) = State.addr B + BitVec.ofNat 64 36 := addr_add (by omega_arith)
+  have eC : State.addr (B + BitVec.ofNat 32 40) = State.addr B + BitVec.ofNat 64 40 := addr_add (by omega_arith)
   have rB := E.wB I.wr (o := 36) (n := 4) (by decide)
   have rC := E.wB I.wr (o := 40) (n := 4) (by decide)
   unfold encryptP
@@ -245,8 +245,8 @@ theorem encryptP_run {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32}
     exact ⟨by rw [e]; rfl, e ▸ P'⟩
   · right
     have nz : BitVec.ofNat 32 (9 - (j + 1)) ≠ 0#32 := by
-      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega
-    exact ⟨by rw [beq_eq_false_iff_ne.mpr nz]; rfl, _, by omega, j + 1, by omega, rfl, P'⟩
+      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_arith
+    exact ⟨by rw [beq_eq_false_iff_ne.mpr nz]; rfl, _, by omega_arith, j + 1, by omega_arith, rfl, P'⟩
 
 /-- The offset of S-box entry `sDone j`'s first plane. -/
 def sOff (j : Nat) : Nat := 1024 * (sDone j / 256) + sDone j % 256
@@ -256,11 +256,11 @@ theorem sOff_entry {j : Nat} (h9 : 9 ≤ j) (hj : j < 521) {b k : Nat} (hk : k <
   rw [← entryOff_sbox h9 hj k hk, sOff]
 
 theorem sOff_lt {j : Nat} (h9 : 9 ≤ j) (hj : j < 521) : sOff j ≤ 3326 := by
-  unfold sOff sDone; omega
+  unfold sOff sDone; omega_arith
 
 theorem sOff_succ {j : Nat} (h9 : 9 ≤ j) :
     sOff (j + 1) = if (sOff j + 2) % 256 = 0 then sOff j + 2 + 768 else sOff j + 2 := by
-  unfold sOff sDone; split <;> omega
+  unfold sOff sDone; split <;> omega_arith
 
 /-- The bytes of `x` and `y` into the planes of S-box entries `q` and `q + 1`. -/
 def sWrites (m : Mem) (Ka : Addr) (q : Nat) (x y : BitVec 32) : Mem :=
@@ -277,8 +277,8 @@ theorem low_byte (x : BitVec 32) : x.setWidth 8 = x.extractLsb' 0 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi]
 
 theorem sWrites_sched (m : Mem) (Ka : Addr) {j : Nat} (h9 : 9 ≤ j) (hj : j < 521) (x y : BitVec 32) :
-    scheduleAt (sWrites m Ka (sOff j) x y) Ka = ((scheduleAt m Ka).set (2 * j) x (by omega)).set (2 * j + 1) y
-      (by omega) := by
+    scheduleAt (sWrites m Ka (sOff j) x y) Ka = ((scheduleAt m Ka).set (2 * j) x (by omega_arith)).set (2 * j + 1) y
+      (by omega_arith) := by
   have e : ∀ b k, k < 2 → sOff j + (256 * b + k) = entryOff (2 * j + k) b := fun b k hk => sOff_entry h9 hj hk
   unfold sWrites
   simp only [Proof.Rc4.writeW_byte8]
@@ -292,12 +292,12 @@ theorem sWrites_sched (m : Mem) (Ka : Addr) {j : Nat} (h9 : 9 ≤ j) (hj : j < 5
     show sOff j + 257 = entryOff (2 * j + 1) 1 from e 1 1 (by decide),
     show sOff j + 513 = entryOff (2 * j + 1) 2 from e 2 1 (by decide),
     show sOff j + 769 = entryOff (2 * j + 1) 3 from e 3 1 (by decide)]
-  rw [scheduleAt_write_bytes _ _ (by omega), Nat.add_zero, scheduleAt_write_bytes _ _ (by omega)]
+  rw [scheduleAt_write_bytes _ _ (by omega_arith), Nat.add_zero, scheduleAt_write_bytes _ _ (by omega_arith)]
 
 theorem sWrites_frame (m : Mem) (Ka : Addr) {q : Nat} (hq : q + 770 ≤ 4168) (x y : BitVec 32) :
     Frame [⟨Ka, 4168⟩] m (sWrites m Ka q x y) := by
   have c : ∀ e, e < 770 → Region.Contains ⟨Ka, 4168⟩ (Ka + BitVec.ofNat 64 (q + e)) (8 / 8) :=
-    fun e he => Offset.contains_base _ (by omega) (by omega)
+    fun e he => Offset.contains_base _ (by omega_arith) (by omega_arith)
   unfold sWrites
   exact (((((((((Frame.refl _ m).writeW List.mem_cons_self _ (c 0 (by decide))).writeW List.mem_cons_self _
     (c 256 (by decide))).writeW List.mem_cons_self _ (c 512 (by decide))).writeW List.mem_cons_self _
@@ -352,12 +352,12 @@ theorem sAnd_z (K : BitVec 32) (q : Nat) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
     rw [show (255 % 2 ^ 32 : Nat) = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-    omega
+    omega_arith
   rw [e, BitVec.sub_zero]
   by_cases h : (q + 2) % 256 = 0
   · rw [h]; simp
   · have : BitVec.ofNat 32 ((q + 2) % 256) ≠ 0#32 := by
-      intro e'; have := congrArg BitVec.toNat e'; simp at this; omega
+      intro e'; have := congrArg BitVec.toNat e'; simp at this; omega_arith
     simp [this, h]
 
 theorem storeSTail_run (u : State) {B C : BitVec 32} {Ba : Addr} (hlr : u.gpr .r3 = B)
@@ -393,8 +393,8 @@ theorem encS_step {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32} {s
   have hq := sOff_lt h9 hj
   apply WP.seq
   refine WP.mono (enc_cipher E J) fun u₁ ⟨c12, ck, cm⟩ => ?_
-  have eB : State.addr (B + BitVec.ofNat 32 36) = State.addr B + BitVec.ofNat 64 36 := addr_add (by omega)
-  have eC : State.addr (B + BitVec.ofNat 32 40) = State.addr B + BitVec.ofNat 64 40 := addr_add (by omega)
+  have eB : State.addr (B + BitVec.ofNat 32 36) = State.addr B + BitVec.ofNat 64 36 := addr_add (by omega_arith)
+  have eC : State.addr (B + BitVec.ofNat 32 40) = State.addr B + BitVec.ofNat 64 40 := addr_add (by omega_arith)
   have w₁ : u₁.wr = s₀.wr := by rw [ck.2.2.1, J.wr]
   unfold storeS
   apply WP.seq
@@ -402,8 +402,8 @@ theorem encS_step {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32} {s
     (C := BitVec.ofNat 32 (521 - j))
     (by rw [ck.gpr (by decide), J.r3]) (by rw [ck.gpr (by decide), J.r0]) eB eC
     (region_in (E.wB w₁ (by decide))) (by rw [cm]; exact I.ptr) (by rw [cm]; exact I.cnt)
-    (fun c hc => by rw [ofs_add, addr_add (by omega)])
-    (fun c hc => E.wK w₁ (by omega))) (by decide)) fun u₂ ⟨⟨hm, h12, h11, hz⟩, hk⟩ => ?_
+    (fun c hc => by rw [ofs_add, addr_add (by omega_arith)])
+    (fun c hc => E.wK w₁ (by omega_arith))) (by decide)) fun u₂ ⟨⟨hm, h12, h11, hz⟩, hk⟩ => ?_
   rw [sAnd_z K] at hz
   -- past the other planes after an S-box's last entry
   apply WP.seq
@@ -420,7 +420,7 @@ theorem encS_step {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32} {s
   refine WP.mono hite fun u₃ ⟨g12, gm, gk⟩ => ?_
   have k₃ : Keep cRegs u u₃ := ((ck.trans hk).trans gk).mono (by decide)
   have w₃ : u₃.wr = s₀.wr := by rw [k₃.2.2.1, J.wr]
-  have F8 := sWrites_frame u₁.mem (State.addr K) (q := sOff j) (by omega) (u₁.gpr .r1) (u₁.gpr .r2)
+  have F8 := sWrites_frame u₁.mem (State.addr K) (q := sOff j) (by omega_arith) (u₁.gpr .r1) (u₁.gpr .r2)
   rw [← hm, ← gm] at F8
   refine WP.mono (WP.keep [.r11] (storeSTail_run u₃ (C := BitVec.ofNat 32 (521 - j)) (by rw [k₃.gpr (by decide), J.r3]) eB eC
     (E.wB w₃ (by decide)) (by rw [gk.gpr (by decide), h11])) (by decide)) fun u₄ ⟨⟨tm, tz⟩, tk⟩ => ?_
@@ -441,24 +441,24 @@ theorem encS_step {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32} {s
       congrArg Prod.snd c12
     rw [h1, h2]
   have k₄ : Keep cRegs u u₄ := k₃.trans_sub tk (by decide)
-  refine ⟨⟨⟨by omega, by rw [k₄.gpr (by decide), J.r0], by rw [k₄.gpr (by decide), J.r3], hsched, ?_,
+  refine ⟨⟨⟨by omega_arith, by rw [k₄.gpr (by decide), J.r0], by rw [k₄.gpr (by decide), J.r3], hsched, ?_,
     saved_frame J.saved FF E.sep, J.frame.trans (FF.sub fun r hr => ?_), by rw [k₄.2.1, J.rd],
-    by rw [k₄.2.2.1, J.wr]⟩, by omega, by rw [M36, g12], ?_⟩, ?_⟩
+    by rw [k₄.2.2.1, J.wr]⟩, by omega_arith, by rw [M36, g12], ?_⟩, ?_⟩
   · rw [tk.gpr (by decide), tk.gpr (by decide), gk.gpr (by decide), gk.gpr (by decide), hk.gpr (by decide),
       hk.gpr (by decide), c12, ksIter_step key hj]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Offset.sub_base _ (by decide)⟩
-  · rw [M40]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
-  · rw [tz]; congr 1; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+  · rw [M40]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_arith
+  · rw [tz]; congr 1; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_arith
 
 theorem encryptS_run {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32} {s₀ : State}
     (E : EncEnv K B s₀) {u : State} (I : EncInv key K B g s₀ 9 u) :
     WP isa encryptS u (EncInv key K B g s₀ 521) := by
   have fB := E.fitB
-  have eB : State.addr (B + BitVec.ofNat 32 36) = State.addr B + BitVec.ofNat 64 36 := addr_add (by omega)
-  have eC : State.addr (B + BitVec.ofNat 32 40) = State.addr B + BitVec.ofNat 64 40 := addr_add (by omega)
+  have eB : State.addr (B + BitVec.ofNat 32 36) = State.addr B + BitVec.ofNat 64 36 := addr_add (by omega_arith)
+  have eC : State.addr (B + BitVec.ofNat 32 40) = State.addr B + BitVec.ofNat 64 40 := addr_add (by omega_arith)
   have rB := E.wB I.wr (o := 36) (n := 4) (by decide)
   have rC := E.wB I.wr (o := 40) (n := 4) (by decide)
   unfold encryptS
@@ -478,7 +478,7 @@ theorem encryptS_run {key : List Byte} {K B : BitVec 32} {g : Reg → BitVec 32}
     exact ⟨by rw [e]; rfl, e ▸ P'.enc⟩
   · right
     have nz : BitVec.ofNat 32 (521 - (j + 1)) ≠ 0#32 := by
-      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega
-    exact ⟨by rw [beq_eq_false_iff_ne.mpr nz]; rfl, _, by omega, j + 1, by omega, rfl, P'⟩
+      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_arith
+    exact ⟨by rw [beq_eq_false_iff_ne.mpr nz]; rfl, _, by omega_arith, j + 1, by omega_arith, rfl, P'⟩
 
 end VG.Proof.Blowfish.Arm

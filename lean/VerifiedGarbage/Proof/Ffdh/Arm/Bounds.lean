@@ -22,11 +22,7 @@ open VG.Proof.X25519.Arm (Rest)
 theorem boundTest_ok (s : State) (b : BitVec 16) :
     WP isa (.block (boundTest b)) s fun t =>
       (t.z = decide ((s.gpr .r1).toNat < b.toNat) ∧ t.mem = s.mem) ∧ Rest [.r3, .r12] s t := by
-  refine withRest [.r3, .r12] ?_ (by
-    intro r hr i hi
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [instrs, boundTest, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl | rfl | rfl <;> simp [clobbers, dstOf, Ne.symm hr.1, Ne.symm hr.2]) (by rfl)
+  refine withRest_all [.r3, .r12] ?_ (by rfl) (by rfl)
   have bw : b.toNat < 2 ^ 32 := by have := b.isLt; omega
   have hto : (b.setWidth 32).toNat = b.toNat := by
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt bw]

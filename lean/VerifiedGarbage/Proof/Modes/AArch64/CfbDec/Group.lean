@@ -165,7 +165,7 @@ theorem group_wp (cs : BlockSpec c) (hbw : c.bw = 2) {s₀ : State} {B D : Addr}
     (fun w hw => by rw [wr₆']; exact inA w (by rw [hbw]; exact hw))
     (by simpa only [A,T,H,chainAddr,hbw,Nat.reduceMul] using dAT.symm)
     ⟨by simpa only [Nat.mul_zero,BitVec.add_zero] using a₆,by rw [b₆,o₅ _ d13 d16,data₄]; simp,
-      by rw [t₆,c₅,Nat.sub_zero],fun t ht => by omega,
+      by rw [t₆,c₅,Nat.sub_zero],fun t ht => by omega_arith,
       fun _ _ _ => rfl,Frame.refl _ _,fun _ _ _ _ _ _ => rfl,rfl,rfl⟩)
     fun s₇ h₇ sy₇ => ?_)
   have x15₇ : s₇.gpr .x15 = A + BitVec.ofNat 64 (8*c.bw*cc) := by simpa only [A,T,H,chainAddr,hbw,Nat.reduceMul] using h₇.x15
@@ -230,8 +230,8 @@ theorem group_wp (cs : BlockSpec c) (hbw : c.bw = 2) {s₀ : State} {B D : Addr}
       (cbcPrev (8*c.bw) s₀.mem D iv (c.G*g+j)).getD x 0 from List.getElem_eq_getD 0]
     have hx : x < 8*c.bw := by simpa [bytesAt] using h1
     simp only [bytesAt,List.getElem_map,List.getElem_range,blkAddr]
-    rw [addr_add,show 8*c.buf+8*c.bw*j+x=8*c.buf+(8*c.bw*j+x) by omega,← addr_add]
-    have inp := h₃.inputs (8*c.bw*j+x) (by rw [hbw] at *; have := idx_lt (L:=16) hj; omega)
+    rw [addr_add,show 8*c.buf+8*c.bw*j+x=8*c.buf+(8*c.bw*j+x) by omega_arith,← addr_add]
+    have inp := h₃.inputs (8*c.bw*j+x) (by rw [hbw] at *; have := idx_lt (L:=16) hj; omega_arith)
     -- Replace the fixed byte length only after obtaining the gather equality.
     have inp' : s₃.mem (T+BitVec.ofNat 64 (8*c.bw*j+x)) =
         if 8*c.bw*j+x < 8*c.bw then s.mem (H+BitVec.ofNat 64 (8*c.bw*j+x))
@@ -253,7 +253,7 @@ theorem group_wp (cs : BlockSpec c) (hbw : c.bw = 2) {s₀ : State} {B D : Addr}
       have := Nat.mul_sub_one (8*c.bw) j
       have := Nat.mul_sub_one (8*c.bw) (c.G*g+j)
       have := Nat.mul_add (8*c.bw) (c.G*g) j
-      omega
+      omega_arith
   -- Offsets within the data.
   have eA : ∀ t, D + BitVec.ofNat 64 (8 * c.bw * (c.G * g) + t) = A + BitVec.ofNat 64 t := fun t => by
     rw [← addr_add]
@@ -324,7 +324,7 @@ theorem group_wp (cs : BlockSpec c) (hbw : c.bw = 2) {s₀ : State} {B D : Addr}
     refine (f₄.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact VG.Offset.disjoint_base B (by omega_using []) (by omega_using [hroom, hN, hi10])) (by decide)).trans ?_
-    exact f₃.readW (Region.contains_self _ _) (fun r hr => wS _ (by omega) (by omega_using [hi10]) r (by
+    exact f₃.readW (Region.contains_self _ _) (fun r hr => wS _ (by omega_arith) (by omega_using [hi10]) r (by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl
       · exact List.mem_cons_self

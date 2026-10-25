@@ -102,7 +102,7 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       KeepRegs [.rax, .rcx, .rdx, .r9, .r10, .r11] s s' ∧
       Outside base (M.tmp + 8 * (c % w)) 8 s.mem s'.mem := by
   have hnw := hs.nowrap
-  have hc9 := Nat.mod_lt c (show 0 < w by omega)
+  have hc9 := Nat.mod_lt c (show 0 < w by omega_arith)
   have hok := pAccs_ok (c + w)
   have hsub := hok.2
   have hrdi : Reg.rdi ∉ Reg.rax :: Reg.rcx :: Reg.rdx :: pAccs (c + w) := by
@@ -119,7 +119,7 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       · exact Or.inr (Or.inr (Or.inl h))
       · have := hsub r h; simp only [List.mem_cons, List.not_mem_nil, or_false] at this; grind)
   rw [fCol, hn, WP.block_append_iff]
-  refine WP.mono (pTerms_ok (c + w) _ hs hin (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (pTerms_ok (c + w) _ hs hin (by omega_arith)) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ hrdi
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   split
@@ -133,13 +133,13 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
           .store (sc (M.tmp + 8 * c)) .rcx] ++ [.mov .rax (.mem (sc M.mo)), .mul .rcx,
         .alu .add (pAcc (c + w) 0) (.reg .rax), .alu .adc (pAcc (c + w) 1) (.reg .rdx),
         .alu .adc (pAcc (c + w) 2) (.imm 0)] from rfl, WP.block_append_iff]
-    refine WP.mono (fU_ok hs₁ (pAcc (c + w) 0) M.minv (t := M.tmp + 8 * c) (by omega))
+    refine WP.mono (fU_ok hs₁ (pAcc (c + w) 0) M.minv (t := M.tmp + 8 * c) (by omega_arith))
       fun s₂ ⟨u₂, m₂, k₂⟩ => ?_
     have hs₂ := hs₁.of_keepRegs k₂ (by decide)
     have O₂ : Outside base (M.tmp + 8 * c) 8 s₁.mem s₂.mem := by
       rw [m₂]; exact writeW_outside _ _ _ (by omega_arith)
     have hmo₂ : word s₂.mem base M.mo = word s.mem base M.mo := by
-      rw [O₂.word (by omega) (by omega), hm₁]
+      rw [O₂.word (by omega_arith) (by omega_arith), hm₁]
     have hacc₂ : regsVal s₂ (pAccs (c + w)) = regsVal s₁ (pAccs (c + w)) :=
       regsVal_congr fun r hr => k₂.gpr r (by
         have := hsub r hr
@@ -147,7 +147,7 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
         grind)
     have hlow := regsVal_lt s₁ [pAcc (c + w) 1, pAcc (c + w) 2]
     have hu₂ : (s₂.gpr .rcx).toNat < 2 ^ 64 := (s₂.gpr .rcx).isLt
-    refine WP.mono (pMulAcc_ok hs₂ hok.1 (dx := M.mo) (by omega) (by
+    refine WP.mono (pMulAcc_ok hs₂ hok.1 (dx := M.mo) (by omega_arith) (by
       rw [show [pAcc (c + w) 0, pAcc (c + w) 1, pAcc (c + w) 2] = pAccs (c + w) from rfl, hacc₂, e₁, hmo₂]
       have := Nat.mul_le_mul (Nat.le_of_lt (word s.mem base M.mo).isLt) (Nat.le_of_lt hu₂)
       have : (2 ^ 64 - 1) * (2 ^ 64 - 1) < 2 ^ 128 := by decide
@@ -157,18 +157,18 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     -- The low word is now zero.
     have hz : (s₃.gpr (pAcc (c + w) 0)).toNat = 0 := by
       have e0 : regsVal s₁ (pAccs (c + w)) % 2 ^ 64 = (s₁.gpr (pAcc (c + w) 0)).toNat := by
-        simp only [pAccs, regsVal]; omega
+        simp only [pAccs, regsVal]; omega_arith
       have e3 : regsVal s₃ (pAccs (c + w)) % 2 ^ 64 = (s₃.gpr (pAcc (c + w) 0)).toNat := by
-        simp only [pAccs, regsVal]; omega
+        simp only [pAccs, regsVal]; omega_arith
       have hu : (s₂.gpr .rcx).toNat = (s₁.gpr (pAcc (c + w) 0)).toNat * M.minv.toNat % 2 ^ 64 := u₂
       rw [← e3, e₃, hu, Nat.add_mod, e0, Nat.mul_comm (word s.mem base M.mo).toNat]
       have := mont_low (s₁.gpr (pAcc (c + w) 0)).toNat M.minv.toNat (word s.mem base M.mo).toNat hinv
       rwa [Nat.add_mod, Nat.mod_eq_of_lt (s₁.gpr (pAcc (c + w) 0)).isLt] at this
     refine ⟨?_, ?_, ?_⟩
-    · rw [Nat.zero_add, hcm, hm₃, m₂, word_writeW_self, show c + 1 + w = c + w + 1 by omega, pAccs_succ]
+    · rw [Nat.zero_add, hcm, hm₃, m₂, word_writeW_self, show c + 1 + w = c + w + 1 by omega_arith, pAccs_succ]
       have h3 : regsVal s₃ (pAccs (c + w)) =
           2 ^ 64 * regsVal s₃ [pAcc (c + w) 1, pAcc (c + w) 2, pAcc (c + w) 0] := by
-        simp only [pAccs, regsVal, hz]; omega
+        simp only [pAccs, regsVal, hz]; omega_arith
       rw [← h3, e₃, e₁, Nat.mul_comm (word s.mem base M.mo).toNat]
     · refine ⟨fun r hr => ?_, k₃.2.2.1.trans (k₂.rd.trans k₁.2.2.1), k₃.2.2.2.trans (k₂.wr.trans k₁.2.2.2)⟩
       have h1 := hkeep r hr
@@ -180,16 +180,16 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     · rw [hcm, hm₃]; exact fun x hx => by rw [O₂ x hx, hm₁]
   · rename_i hc'
     have hcm : c % w = c - w := by
-      rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
-    refine WP.mono (pEnd_ok hs₁ (c + w) (t := M.tmp + 8 * (c - w)) (by omega)) fun s₂ ⟨m₂, e₂, k₂⟩ => ?_
+      rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    refine WP.mono (pEnd_ok hs₁ (c + w) (t := M.tmp + 8 * (c - w)) (by omega_arith)) fun s₂ ⟨m₂, e₂, k₂⟩ => ?_
     refine ⟨?_, ?_, ?_⟩
     · rw [Nat.add_zero, hcm, m₂, word_writeW_self, ← e₁, e₂,
-        show c + 1 + w = c + w + 1 by omega]
+        show c + 1 + w = c + w + 1 by omega_arith]
       rfl
     · refine ⟨fun r hr => ?_, k₂.rd.trans k₁.2.2.1, k₂.wr.trans k₁.2.2.2⟩
       have h1 := hkeep r hr
       rw [k₂.gpr r (fun h => h1 (by simp only [List.mem_singleton] at h; simp [h, pAccs])), k₁.1 r h1]
-    · rw [hcm, m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega)
+    · rw [hcm, m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega_arith)
 
 /-! ## The columns' arithmetic -/
 
@@ -247,7 +247,7 @@ theorem mod_two_pass {w c : Nat} (hc : c < 2 * w) :
     c % w = if c < w then c else c - w := by
   split
   · exact Nat.mod_eq_of_lt ‹_›
-  · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+  · rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- The first `n` columns of `mulF`: the words they wrote (`l`: the `u`s and
 the result's low words) where not yet overwritten, and the accumulator,
@@ -391,8 +391,8 @@ theorem mulF_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
-  have hw0 : 0 < w := by omega
-  have hw9 : w ≤ 9 := by omega
+  have hw0 : 0 < w := by omega_arith
+  have hw9 : w ≤ 9 := by omega_arith
   rw [Nat.pow_mul]
   have hnw := hs.nowrap
   have hmo := hM.mo
@@ -422,7 +422,7 @@ theorem mulF_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     (by omega_using [hbT]) hinv₁ h0 (2 * w) (Nat.le_refl _)) fun s₂ ⟨k₂, O₂, _, l, hl64, hlm, e₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   -- The value of the columns.
-  rw [fColSum_total hw, show 2 * w = w + w by omega, hval_add _ 0 w w, Nat.zero_add,
+  rw [fColSum_total hw, show 2 * w = w + w by omega_arith, hval_add _ 0 w w, Nat.zero_add,
     hval_congr (k := 0) (n := w) (g := fun _ => 0) (fun c _ hc => ite_eq_left_iff.mpr fun h => absurd (by omega_using [hc]) h), hval_zero,
     hval_congr (k := w) (n := w) (g := l) (fun c hc _ => ite_eq_right_iff.mpr fun h => absurd h (by omega_using [hc])), Nat.zero_add,
     show (2 ^ 64) ^ (w + w) = (2 ^ 64) ^ w * (2 ^ 64) ^ w by rw [Nat.pow_add]] at e₂
@@ -438,7 +438,7 @@ theorem mulF_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
         simpa only [Nat.zero_add] using hval_shift l w 0 w]
     exact hval_congr fun c _ hc => by
       have := hlm (c + w) (by omega_using [hc]) (by omega_using [])
-      rwa [show (c + w) % w = c by rw [Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]] at this
+      rwa [show (c + w) % w = c by rw [Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]] at this
   have hU : hval l 0 w < (2 ^ 64) ^ w := hval_lt fun c _ hc => hl64 c (by omega_using [hc])
   have hAlt : wordsVal s.mem base a w < (2 ^ 64) ^ w := by rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ w
   have hmlt : m < (2 ^ 64) ^ w := by rw [← hmv, ← Nat.pow_mul]; exact wordsVal_lt _ _ _ w

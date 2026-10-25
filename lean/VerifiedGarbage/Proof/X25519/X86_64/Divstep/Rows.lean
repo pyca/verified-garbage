@@ -157,7 +157,7 @@ theorem term_ok {s : State} {base : Addr} (hs : Scr s base) {x : Nat} (hx : x + 
     have := (s.gpr hi + H + (BitVec.ofBool (decide (2 ^ 64 ≤ (s.gpr lo).toNat + L.toNat))).setWidth 64).isLt
     have := (s.gpr lo + L).isLt
     rw [Nat.mul_comm (s.gpr a).toNat]
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h1, h2, h3, h4⟩ := hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, h1, h2, h3, h4, ↓reduceIte]
@@ -175,7 +175,7 @@ theorem rdi_not_mem {lo hi : Reg} (hL : lo ∉ colRegs) (hH : hi ∉ colRegs) : 
 
 /-- A product of a word below `2⁶³` by a word. -/
 theorem prod63 (a w : BitVec 64) (h : a.toNat ≤ 2 ^ 63) : a.toNat * w.toNat ≤ 2 ^ 63 * (2 ^ 64 - 1) :=
-  Nat.mul_le_mul h (by have := w.isLt; omega)
+  Nat.mul_le_mul h (by have := w.isLt; omega_arith)
 
 /-- Column `c`: `hi:lo = lo + |m₁| ([X + 8c] ^ s₁) + |m₂| ([Y + 8c] ^ s₂)`. -/
 theorem col_ok {s : State} {base : Addr} (hs : Scr s base) {X Y c : Nat} (hX : X + 8 * c + 8 ≤ 4096)
@@ -213,7 +213,7 @@ theorem col_ok {s : State} {base : Addr} (hs : Scr s base) {X Y c : Nat} (hX : X
   have := (s.gpr lo).isLt
   have z : (0 : BitVec 64).toNat = 0 := rfl
   rw [z] at e1
-  omega
+  omega_arith
 
 /-- The columns: `r8–r12 = r8 + |m₁| ([X] ^ s₁) + |m₂| ([Y] ^ s₂)`. -/
 theorem cols_ok {s : State} {base : Addr} (hs : Scr s base) {X Y : Nat} (hX : X + 32 ≤ 4096)
@@ -239,22 +239,22 @@ theorem cols_ok {s : State} {base : Addr} (hs : Scr s base) {X Y : Nat} (hX : X 
         s'.gpr .r15 = s.gpr .r15 ∧ s'.mem = s.mem := fun k =>
     ⟨k.1 _ (by decide), k.1 _ (by decide), k.1 _ (by decide), k.1 _ (by decide), k.2.1⟩
   rw [WP.block_append_iff]
-  refine WP.mono (col_ok (c := 0) hs (by omega) (by omega) (lo := .r8) (hi := .r9) (by decide) (by decide)
+  refine WP.mono (col_ok (c := 0) hs (by omega_arith) (by omega_arith) (lo := .r8) (hi := .r9) (by decide) (by decide)
     (by decide) h1 h2) fun s₁ ⟨e1, k1⟩ => ?_
   have k1' := K (by simp) (by simp) k1
   obtain ⟨a1, b1, c1, d1, m1⟩ := R k1'
   rw [WP.block_append_iff]
-  refine WP.mono (col_ok (c := 1) (hs.of_keeps k1' (by decide)) (by omega) (by omega) (lo := .r9) (hi := .r10)
+  refine WP.mono (col_ok (c := 1) (hs.of_keeps k1' (by decide)) (by omega_arith) (by omega_arith) (lo := .r9) (hi := .r10)
     (by decide) (by decide) (by decide) (a1 ▸ h1) (b1 ▸ h2)) fun s₂ ⟨e2, k2⟩ => ?_
   have k2' := K (by simp) (by simp) k2
   obtain ⟨a2, b2, c2, d2, m2⟩ := R k2'
   rw [WP.block_append_iff]
-  refine WP.mono (col_ok (c := 2) (hs.of_keeps (k1'.trans k2') (by decide)) (by omega) (by omega)
+  refine WP.mono (col_ok (c := 2) (hs.of_keeps (k1'.trans k2') (by decide)) (by omega_arith) (by omega_arith)
     (lo := .r10) (hi := .r11) (by decide) (by decide) (by decide) (a2 ▸ a1 ▸ h1) (b2 ▸ b1 ▸ h2))
     fun s₃ ⟨e3, k3⟩ => ?_
   have k3' := K (by simp) (by simp) k3
   obtain ⟨a3, b3, c3, d3, m3⟩ := R k3'
-  refine WP.mono (col_ok (c := 3) (hs.of_keeps ((k1'.trans k2').trans k3') (by decide)) (by omega) (by omega)
+  refine WP.mono (col_ok (c := 3) (hs.of_keeps ((k1'.trans k2').trans k3') (by decide)) (by omega_arith) (by omega_arith)
     (lo := .r11) (hi := .r12) (by decide) (by decide) (by decide) (a3 ▸ a2 ▸ a1 ▸ h1) (b3 ▸ b2 ▸ b1 ▸ h2))
     fun t ⟨e4, k4⟩ => ⟨?_, ((k1'.trans k2').trans k3').trans (K (by simp) (by simp) k4)⟩
   rw [a1, c1, b1, d1, m1] at e2

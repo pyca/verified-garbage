@@ -56,7 +56,7 @@ structure Env (rd wr : List Region) (src dst rcp : Addr) : Prop where
 
 theorem la_contains (p : Addr) {i k : Nat} (hi : i < 25) (hk : k < 4) :
     (⟨p, 800⟩ : Region).Contains (la p i k) (64 / 8) :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by omega_arith) (by omega_arith)
 
 theorem Env.src_frame {rd wr : List Region} {src dst rcp : Addr} (h : Env rd wr src dst rcp)
     {m m' : Mem} (hf : Frame [⟨dst, 800⟩] m m') {i k : Nat} (hi : i < 25) (hk : k < 4) :
@@ -66,7 +66,7 @@ theorem Env.src_frame {rd wr : List Region} {src dst rcp : Addr} (h : Env rd wr 
 theorem Env.rc_frame {rd wr : List Region} {src dst rcp : Addr} (h : Env rd wr src dst rcp)
     {m m' : Mem} (hf : Frame [⟨dst, 800⟩] m m') {k : Nat} (hk : k < 4) :
     m'.readW (la rcp 0 k) 64 = m.readW (la rcp 0 k) 64 :=
-  hf.readW (Offset.contains_base rcp (show 32 * 0 + 8 * k + 64 / 8 ≤ 32 by omega) (by omega))
+  hf.readW (Offset.contains_base rcp (show 32 * 0 + 8 * k + 64 / 8 ≤ 32 by omega_arith) (by omega_arith))
     (by simpa using h.dst_rc.symm) (by decide)
 
 /-! ## Registers -/
@@ -149,18 +149,18 @@ theorem column_ok (x : Nat) (hx : x < 5) (s : State) (src : Addr) (A : Nat → K
   have m₁ : preg x ∈ [preg x] := by simp
   have w₀ := VW.refl s [preg x]
   unfold column
-  refine wp_ld w₀ hs.rdi (hs.src_in _ (by omega)) fun s₁ u₁ => ?_
+  refine wp_ld w₀ hs.rdi (hs.src_in _ (by omega_arith)) fun s₁ u₁ => ?_
   have w₁ := w₀.upd u₁ m₁
-  refine wp_xld w₁ hs.rdi (hs.src_in _ (by omega)) fun s₂ u₂ => ?_
+  refine wp_xld w₁ hs.rdi (hs.src_in _ (by omega_arith)) fun s₂ u₂ => ?_
   have w₂ := w₁.upd u₂ m₁
-  refine wp_xld w₂ hs.rdi (hs.src_in _ (by omega)) fun s₃ u₃ => ?_
+  refine wp_xld w₂ hs.rdi (hs.src_in _ (by omega_arith)) fun s₃ u₃ => ?_
   have w₃ := w₂.upd u₃ m₁
-  refine wp_xld w₃ hs.rdi (hs.src_in _ (by omega)) fun s₄ u₄ => ?_
+  refine wp_xld w₃ hs.rdi (hs.src_in _ (by omega_arith)) fun s₄ u₄ => ?_
   have w₄ := w₃.upd u₄ m₁
-  refine wp_xld w₄ hs.rdi (hs.src_in _ (by omega)) fun s₅ u₅ => wp_nil ⟨w₄.upd u₅ m₁, fun k hk => ?_⟩
-  simp only [u₅.val k hk, u₄.val k hk, u₃.val k hk, u₂.val k hk, u₁.val k hk, hs.lanes x (by omega) k hk,
-    hs.lanes (x + 5) (by omega) k hk, hs.lanes (x + 10) (by omega) k hk, hs.lanes (x + 15) (by omega) k hk,
-    hs.lanes (x + 20) (by omega) k hk]
+  refine wp_xld w₄ hs.rdi (hs.src_in _ (by omega_arith)) fun s₅ u₅ => wp_nil ⟨w₄.upd u₅ m₁, fun k hk => ?_⟩
+  simp only [u₅.val k hk, u₄.val k hk, u₃.val k hk, u₂.val k hk, u₁.val k hk, hs.lanes x (by omega_arith) k hk,
+    hs.lanes (x + 5) (by omega_arith) k hk, hs.lanes (x + 10) (by omega_arith) k hk, hs.lanes (x + 15) (by omega_arith) k hk,
+    hs.lanes (x + 20) (by omega_arith) k hk]
   rfl
 
 /-- `s'` agrees with `s` but for the vector registers and the flags. -/
@@ -188,11 +188,11 @@ def ColInv (s₀ : State) (A : Nat → KState) (n : Nat) (s : State) : Prop :=
 theorem columns_ok (s₀ : State) (src : Addr) (A : Nat → KState) (hs : Src s₀ src A) :
     WP isa (.block cols) s₀ (ColInv s₀ A 5) := by
   refine wp_range_flatMap (M := isa) (ColInv s₀ A) (fun x s hx ⟨hw, hc⟩ => ?_) 5 (Nat.le_refl _) s₀
-    ⟨Same.refl _, fun _ h => absurd h (by omega)⟩
+    ⟨Same.refl _, fun _ h => absurd h (by omega_arith)⟩
   refine WP.mono (column_ok x hx s src A (hs.same hw)) fun s' ⟨h, hv⟩ => ⟨hw.trans h.same, fun x' hx' k hk => ?_⟩
   by_cases e : x' = x
   · subst e; exact hv k hk
-  · rw [h.other _ (by simpa using preg_ne hx (by omega) e) k hk, hc x' (by omega) k hk]
+  · rw [h.other _ (by simpa using preg_ne hx (by omega_arith) e) k hk, hc x' (by omega_arith) k hk]
 
 /-! ## D -/
 
@@ -204,8 +204,8 @@ theorem dcol_ok (x : Nat) (_hx : x < 5) (s : State) (A : Nat → KState)
     (hc : ∀ x' < 5, ∀ k < 4, q4 s (preg x') k = C (A k) x') :
     WP isa (.block (dcol x)) s fun s' =>
       VW s s' [T, dreg x] ∧ ∀ k < 4, q4 s' (dreg x) k = D (A k) x := by
-  have h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega)
-  have h4 : (x + 4) % 5 < 5 := Nat.mod_lt _ (by omega)
+  have h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega_arith)
+  have h4 : (x + 4) % 5 < 5 := Nat.mod_lt _ (by omega_arith)
   have w₀ := VW.refl s [T, dreg x]
   unfold dcol
   refine wp_vshl (by decide) fun s₁ u₁ => wp_vshr (by decide) fun s₂ u₂ => wp_vor fun s₃ u₃ =>
@@ -224,13 +224,13 @@ def DInv (s₀ : State) (A : Nat → KState) (n : Nat) (s : State) : Prop :=
 theorem dcols_ok (s₀ : State) (A : Nat → KState) (hc : ∀ x < 5, ∀ k < 4, q4 s₀ (preg x) k = C (A k) x) :
     WP isa (.block ((List.range 5).flatMap dcol)) s₀ (DInv s₀ A 5) := by
   refine wp_range_flatMap (M := isa) (DInv s₀ A) (fun x s hx ⟨hw, hcs, hd⟩ => ?_) 5 (Nat.le_refl _) s₀
-    ⟨Same.refl _, hc, fun _ h => absurd h (by omega)⟩
+    ⟨Same.refl _, hc, fun _ h => absurd h (by omega_arith)⟩
   refine WP.mono (dcol_ok x hx s A hcs) fun s' ⟨h, hv⟩ => ⟨hw.trans h.same, fun x' hx' k hk => ?_, fun x' hx' k hk => ?_⟩
   · rw [h.other _ (by simpa using ⟨(T_preg x' hx').symm, preg_dreg x' hx' x hx⟩) k hk, hcs x' hx' k hk]
   · by_cases e : x' = x
     · subst e; exact hv k hk
-    · rw [h.other _ (by simpa using ⟨(T_dreg x' (by omega)).symm, dreg_ne hx (by omega) e⟩) k hk,
-        hd x' (by omega) k hk]
+    · rw [h.other _ (by simpa using ⟨(T_dreg x' (by omega_arith)).symm, dreg_ne hx (by omega_arith) e⟩) k hk,
+        hd x' (by omega_arith) k hk]
 
 /-! ## A plane -/
 
@@ -238,8 +238,8 @@ theorem laneB_ok (x y : Nat) (hx : x < 5) (_hy : y < 5) (s : State) (src : Addr)
     (hs : Src s src A) (hd : ∀ x' < 5, ∀ k < 4, q4 s (dreg x') k = D (A k) x') :
     WP isa (.block (laneB x y)) s fun s' =>
       VW s s' [creg x, T] ∧ ∀ k < 4, q4 s' (creg x) k = B (A k) x y := by
-  have hj : piSrc x y < 25 := by simp only [piSrc]; omega
-  have hk5 : (x + 3 * y) % 5 < 5 := Nat.mod_lt _ (by omega)
+  have hj : piSrc x y < 25 := by simp only [piSrc]; omega_arith
+  have hk5 : (x + 3 * y) % 5 < 5 := Nat.mod_lt _ (by omega_arith)
   have cT : creg x ≠ T := (T_creg x hx).symm
   have w₀ := VW.refl s [creg x, T]
   unfold laneB
@@ -255,10 +255,10 @@ theorem laneB_ok (x y : Nat) (hx : x < 5) (_hy : y < 5) (s : State) (src : Addr)
     rw [hv k hk, B, rotl, h0, ite_eq_left rfl]
   · rename_i h0
     have hr := Proof.Sha3.rhoOff_lt _ hj
-    refine wp_vshl hr fun s₃ u₃ => wp_vshr (by omega) fun s₄ u₄ => wp_vor fun s₅ u₅ =>
+    refine wp_vshl hr fun s₃ u₃ => wp_vshr (by omega_arith) fun s₄ u₄ => wp_vor fun s₅ u₅ =>
       wp_nil ⟨((w₂.upd u₃ (by simp)).upd u₄ (by simp)).upd u₅ (by simp), fun k hk => ?_⟩
     simp only [u₅.val k hk, u₄.val k hk, u₄.other _ cT.symm k hk, u₃.val k hk, u₃.other _ cT k hk, hv k hk]
-    rw [shr_or_shl _ (by omega) hr, B, rotl, ite_eq_right h0]
+    rw [shr_or_shl _ (by omega_arith) hr, B, rotl, ite_eq_right h0]
 
 /-- After the first `n` lanes `B[x]` of plane `y`. -/
 def BInv (s₀ : State) (A : Nat → KState) (y n : Nat) (s : State) : Prop :=
@@ -269,15 +269,15 @@ theorem laneBs_ok (y : Nat) (hy : y < 5) (s₀ : State) (src : Addr) (A : Nat �
     (hd : ∀ x < 5, ∀ k < 4, q4 s₀ (dreg x) k = D (A k) x) :
     WP isa (.block ((List.range 5).flatMap fun x => laneB x y)) s₀ (BInv s₀ A y 5) := by
   refine wp_range_flatMap (M := isa) (BInv s₀ A y) (fun x s hx ⟨hw, hds, hps, hb⟩ => ?_) 5 (Nat.le_refl _) s₀
-    ⟨Same.refl _, hd, fun _ _ _ _ => rfl, fun _ h => absurd h (by omega)⟩
+    ⟨Same.refl _, hd, fun _ _ _ _ => rfl, fun _ h => absurd h (by omega_arith)⟩
   refine WP.mono (laneB_ok x y hx hy s src A (hs.same hw) hds) fun s' ⟨h, hv⟩ =>
     ⟨hw.trans h.same, fun x' hx' k hk => ?_, fun x' hx' k hk => ?_, fun x' hx' k hk => ?_⟩
   · rw [h.other _ (by simpa using ⟨(creg_dreg x hx x' hx').symm, (T_dreg x' hx').symm⟩) k hk, hds x' hx' k hk]
   · rw [h.other _ (by simpa using ⟨preg_creg x' hx' x hx, (T_preg x' hx').symm⟩) k hk, hps x' hx' k hk]
   · by_cases e : x' = x
     · subst e; exact hv k hk
-    · rw [h.other _ (by simpa using ⟨creg_ne hx (by omega) e, (T_creg x' (by omega)).symm⟩) k hk,
-        hb x' (by omega) k hk]
+    · rw [h.other _ (by simpa using ⟨creg_ne hx (by omega_arith) e, (T_creg x' (by omega_arith)).symm⟩) k hk,
+        hb x' (by omega_arith) k hk]
 
 theorem not_eq_xor (v : Lane) : ~~~v = v ^^^ 0xffffffffffffffff := by
   rw [BitVec.xor_comm]; rfl
@@ -285,8 +285,8 @@ theorem not_eq_xor (v : Lane) : ~~~v = v ^^^ 0xffffffffffffffff := by
 /-- The 64-bit element `k` of a 256-bit write, read back. -/
 theorem readW_write256 (m : Mem) (a : Addr) (v : BitVec 256) {k : Nat} (hk : k < 4) :
     (m.writeW a v).readW (a + BitVec.ofNat 64 (8 * k)) 64 = v.extractLsb' (64 * k) 64 := by
-  have e := readW_writeW_inside m a v (k := 8 * k) (n := 8) (by omega) (by decide)
-  rw [show 8 * (8 * k) = 64 * k by omega] at e
+  have e := readW_writeW_inside m a v (k := 8 * k) (n := 8) (by omega_arith) (by decide)
+  rw [show 8 * (8 * k) = 64 * k by omega_arith] at e
   exact e
 
 /-- The column parity of the first `n` planes of the output. -/
@@ -300,8 +300,8 @@ theorem parN_one (A : KState) (rc : Lane) (x : Nat) : parN A rc x 1 = out A rc x
 /-- The column parities of the output, those `C[x]` of the next round. -/
 theorem C_outState (A : KState) (rc : Lane) {x : Nat} (hx : x < 5) : C (outState A rc) x = parN A rc x 5 := by
   have e : ∀ y < 5, (outState A rc)[x + 5 * y]! = out A rc x y := fun y hy => by
-    simp only [outState, show x + 5 * y < 25 by omega, getElem!_pos, Vector.getElem_ofFn,
-      show (x + 5 * y) % 5 = x by omega, show (x + 5 * y) / 5 = y by omega]
+    simp only [outState, show x + 5 * y < 25 by omega_arith, getElem!_pos, Vector.getElem_ofFn,
+      show (x + 5 * y) % 5 = x by omega_arith, show (x + 5 * y) / 5 = y by omega_arith]
   have e0 : (outState A rc)[x]! = out A rc x 0 := by simpa using e 0 (by decide)
   have e1 : (outState A rc)[x + 5]! = out A rc x 1 := by simpa using e 1 (by decide)
   have e2 : (outState A rc)[x + 10]! = out A rc x 2 := by simpa using e 2 (by decide)
@@ -330,8 +330,8 @@ theorem chi_ok (x y : Nat) (hx : x < 5) (hy : y < 5) (s : State) (dst rcp : Addr
       s'.wr = s.wr ∧ (∀ k < 4, q4 s' (preg x) k = parN (A k) rc x (y + 1)) ∧
       ∃ v : BitVec 256, s'.mem = s.mem.writeW (dst + BitVec.ofNat 64 (32 * (x + 5 * y))) v ∧
         ∀ k < 4, v.extractLsb' (64 * k) 64 = out (A k) rc x y := by
-  have h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega)
-  have h2 : (x + 2) % 5 < 5 := Nat.mod_lt _ (by omega)
+  have h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega_arith)
+  have h2 : (x + 2) % 5 < 5 := Nat.mod_lt _ (by omega_arith)
   have bP : ∀ x' < 5, creg x' ≠ preg x := fun x' hx' => (preg_creg x hx x' hx').symm
   unfold chi
   by_cases y0 : y = 0
@@ -378,7 +378,7 @@ theorem chi_ok (x y : Nat) (hx : x < 5) (hy : y < 5) (s : State) (dst rcp : Addr
     refine wp_vxor fun s₄ u₄ => wp_nil ?_
     have hpx : ∀ k < 4, q4 s₂ (preg x) k = parN (A k) rc x y := fun k hk => by
       rw [u₂.other _ (T_preg x hx).symm k hk, u₁.other _ (T_preg x hx).symm k hk]
-      exact hp (by omega) k hk
+      exact hp (by omega_arith) k hk
     refine ⟨by rw [u₄.gpr, g₃, w₂.gpr], fun r h₁ h₂ k hk => ?_, by rw [u₄.rd, r₃, w₂.rd],
       by rw [u₄.wr, w₃, w₂.wr], fun k hk => ?_, s₂.ymm T, by rw [u₄.mem, m₃, w₂.mem], fun k hk => ?_⟩
     · rw [u₄.other r h₂ k hk, q₃, w₂.other r (by simp [h₁, h₂]) k hk]
@@ -402,7 +402,7 @@ theorem chis_ok (y : Nat) (hy : y < 5) (s₀ : State) (src dst rcp : Addr) (A : 
     (hrc : ∀ k < 4, s₀.mem.readW (la rcp 0 k) 64 = rc) (s : State) (hs : ChiInv s₀ A rc dst y 0 s) :
     WP isa (.block ((List.range 5).flatMap fun x => chi x y)) s (ChiInv s₀ A rc dst y 5) := by
   refine wp_range_flatMap (M := isa) (ChiInv s₀ A rc dst y) (fun x s hx hi => ?_) 5 (Nat.le_refl _) s hs
-  have hj : x + 5 * y < 25 := by omega
+  have hj : x + 5 * y < 25 := by omega_arith
   refine WP.mono (chi_ok x y hx hy s dst rcp A rc (by rw [hi.gpr, hrsi]) (by rw [hi.gpr, hrdx])
     (by rw [hi.wr]; exact he.dst_out _ hj) (by rw [hi.rd, hi.wr]; simpa using he.rc_in)
     (fun k hk => by rw [he.rc_frame hi.frame hk, hrc k hk]) hi.bregs
@@ -412,20 +412,20 @@ theorem chis_ok (y : Nat) (hy : y < 5) (s₀ : State) (src dst rcp : Addr) (A : 
     fun x' hx' k hk => by rw [hq _ (T_dreg x' hx').symm (preg_dreg x hx x' hx').symm k hk, hi.dregs x' hx' k hk],
     fun x' hx' k hk => by rw [hq _ (T_creg x' hx').symm (preg_creg x hx x' hx').symm k hk, hi.bregs x' hx' k hk],
     fun x' hx' k hk => ?_, fun hy0 x' hx' hn k hk => ?_, fun j hj' k hk => ?_⟩
-  · rw [hm]; exact hi.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base dst (by omega) (by omega))
+  · rw [hm]; exact hi.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base dst (by omega_arith) (by omega_arith))
   · by_cases e : x' = x
     · subst e; exact hpv k hk
-    · rw [hq _ (T_preg x' (by omega)).symm (preg_ne hx (by omega) e) k hk, hi.pdone x' (by omega) k hk]
-  · rw [hq _ (T_preg x' hx').symm (preg_ne hx hx' (by omega)) k hk, hi.ptodo hy0 x' hx' (by omega) k hk]
+    · rw [hq _ (T_preg x' (by omega_arith)).symm (preg_ne hx (by omega_arith) e) k hk, hi.pdone x' (by omega_arith) k hk]
+  · rw [hq _ (T_preg x' hx').symm (preg_ne hx hx' (by omega_arith)) k hk, hi.ptodo hy0 x' hx' (by omega_arith) k hk]
   · rw [hm]
     by_cases e : j = x + 5 * y
     · subst e
-      rw [← la_eq, readW_write256 _ _ _ hk, hv k hk, show (x + 5 * y) % 5 = x by omega,
-        show (x + 5 * y) / 5 = y by omega]
+      rw [← la_eq, readW_write256 _ _ _ hk, hv k hk, show (x + 5 * y) % 5 = x by omega_arith,
+        show (x + 5 * y) / 5 = y by omega_arith]
     · have := readW_writeW_off s.mem dst v (d := 32 * j + 8 * k) (e := 32 * (x + 5 * y)) (n := 8)
-        (by omega) (by omega) (by omega)
+        (by omega_arith) (by omega_arith) (by omega_arith)
       rw [this]
-      exact hi.lanes j (by omega) k hk
+      exact hi.lanes j (by omega_arith) k hk
 
 /-- After the first `y` planes of the output. -/
 structure PInv (s₀ : State) (A : Nat → KState) (rc : Lane) (dst : Addr) (y : Nat) (s : State) : Prop where
@@ -443,7 +443,7 @@ theorem planes_ok (s₀ : State) (src dst rcp : Addr) (A : Nat → KState) (rc :
     (hd : ∀ x < 5, ∀ k < 4, q4 s₀ (dreg x) k = D (A k) x) :
     WP isa (.block ((List.range 5).flatMap plane)) s₀ (PInv s₀ A rc dst 5) := by
   refine wp_range_flatMap (M := isa) (PInv s₀ A rc dst) (fun y s hy hi => ?_) 5 (Nat.le_refl _) s₀
-    ⟨rfl, rfl, rfl, Frame.refl _ _, hd, fun h => absurd h (by omega), fun _ h => absurd h (by omega)⟩
+    ⟨rfl, rfl, rfl, Frame.refl _ _, hd, fun h => absurd h (by omega_arith), fun _ h => absurd h (by omega_arith)⟩
   unfold plane
   rw [WP.block_append_iff]
   have hs : Src s src A := ⟨by rw [hi.gpr, hrdi], by rw [hi.rd, hi.wr]; exact he.src_in,
@@ -451,10 +451,10 @@ theorem planes_ok (s₀ : State) (src dst rcp : Addr) (A : Nat → KState) (rc :
   refine WP.mono (laneBs_ok y hy s src A hs hi.dregs) fun s₁ ⟨hw, hds, hps, hb⟩ => ?_
   refine WP.mono (chis_ok y hy s₀ src dst rcp A rc he hrsi hrdx hrc s₁
     ⟨hw.gpr.trans hi.gpr, hw.rd.trans hi.rd, hw.wr.trans hi.wr, by rw [hw.mem]; exact hi.frame, hds, hb,
-      fun _ h => absurd h (by omega), fun hy0 x hx _ k hk => by rw [hps x hx k hk]; exact hi.pregs hy0 x hx k hk,
-      fun j hj k hk => by rw [hw.mem]; exact hi.lanes j (by omega) k hk⟩)
+      fun _ h => absurd h (by omega_arith), fun hy0 x hx _ k hk => by rw [hps x hx k hk]; exact hi.pregs hy0 x hx k hk,
+      fun j hj k hk => by rw [hw.mem]; exact hi.lanes j (by omega_arith) k hk⟩)
     fun s₂ h₂ => ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.frame, h₂.dregs, fun _ x hx k hk => h₂.pdone x hx k hk,
-      fun j hj => h₂.lanes j (by omega)⟩
+      fun j hj => h₂.lanes j (by omega_arith)⟩
 
 /-! ## The round -/
 
@@ -505,7 +505,7 @@ theorem round_ok (s : State) (src dst rcp : Addr) (A : Nat → KState) (rc : Lan
     by rw [e₈, h₃.wr, k₂.wr], by rw [e₁, hg, hrsi], by rw [e₂, hg, hrdi], by rw [e₃, hg, hrdx],
     fun r a b c d => by rw [e₄ r a b c d, hg], by rw [e₉, hg, hrdx],
     fun x hx k hk => by rw [eq, h₃.pregs (by decide) x hx k hk, C_outState _ _ hx]⟩
-  rw [e₆, h₃.lanes i (by omega) k hk]
+  rw [e₆, h₃.lanes i (by omega_arith) k hk]
   simp [outState, hi]
 
 end VG.Proof.Sha3.X86_64.X4

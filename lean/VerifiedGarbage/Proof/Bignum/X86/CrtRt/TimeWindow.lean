@@ -70,9 +70,9 @@ theorem nwR_sv3 (h : In Ex base bytes len args s) {m m' : Mem}
   have nb : numBase = 3336 := rfl
   have wo : winOff = 4 := rfl
   have fit : ∀ p ∈ nwR len c, p.1 + p.2 ≤ bytes := fun p hp => wR_fit h c p (wR_sub_nw len c p hp)
-  refine frameR_val32 F R nw (by omega) ?_ fit
+  refine frameR_val32 F R nw (by omega_arith) ?_ fit
   intro p hp; simp only [nwR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl <;> dsimp only <;> omega
+  rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
 
 /-- A window's run: slots 3 and 6 and the table below the modulus, the count `n` in `esi`. -/
 abbrev WinSt (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (c : Ctx) (ks : List Nat)
@@ -95,7 +95,7 @@ theorem nextWindow_wst {n : Nat} (W : WinSt Ex base bytes len args sp c [3, 6] n
     · rw [Y]; exact Hk 6 (by decide)
   · rw [Wn, Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)]
     have := val32_lt s.mem base (lo len (.slot c 8)) (cwc len c)
-    simp only [sv]; omega
+    simp only [sv]; omega_arith
 
 theorem selectWindow_wst {n : Nat} (W : WinSt Ex base bytes len args sp c [3, 6] n s ∧ w32 s.mem base winOff < 16) :
     WP isa (selectWindow c) s (WinSt Ex base bytes len args sp c [3, 6, 7] n) := by
@@ -118,21 +118,21 @@ theorem selectWindow_wst {n : Nat} (W : WinSt Ex base bytes len args sp c [3, 6]
     have t0 : te len c 0 = lo len (.slot .wide 20) := by simp [te]
     have e20 : lo len (.slot .wide 20) = numBase + 20 * st len .wide := rfl
     have estw : st len .wide = 2 * bc len .wide + 32 := rfl
-    omega
+    omega_arith
   refine WP.mono (selectWindow_ok h hw) fun u ⟨O, S, K⟩ => ?_
   have C' := C.keepF (K.mono (by decide) : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u) (by decide) (by decide)
-    (ws := [(lo len (.slot c 7), bc len c)]) (frameR_of_outside O (by omega) (by simp))
-    (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega)
-    (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega)
+    (ws := [(lo len (.slot c 7), bc len c)]) (frameR_of_outside O (by omega_arith) (by simp))
+    (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega_arith)
+    (by intro q hq; simp only [List.mem_singleton] at hq; subst hq; dsimp only; omega_arith)
   refine ⟨⟨M, C', fun j hj => ?_, fun j hj => ?_, A.keep K, (K.1 _ (by decide)).trans sp₀⟩,
     (K.1 _ (by decide)).trans e⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl
-    · simp only [sv]; rw [Outside.val32 O (.inl (by omega)) (by omega)]; exact Hk 3 (by decide)
-    · simp only [sv]; rw [Outside.val32 O (.inl (by omega)) (by omega)]; exact Hk 6 (by decide)
+    · simp only [sv]; rw [Outside.val32 O (.inl (by omega_arith)) (by omega_arith)]; exact Hk 3 (by decide)
+    · simp only [sv]; rw [Outside.val32 O (.inl (by omega_arith)) (by omega_arith)]; exact Hk 6 (by decide)
     · simp only [sv]; rw [S]; exact He _ hw
   · obtain ⟨tj0, tj⟩ := te_le (len := len) (c := c) hj
-    rw [Outside.val32 O (.inr (by omega)) (by omega)]; exact He j hj
+    rw [Outside.val32 O (.inr (by omega_arith)) (by omega_arith)]; exact He j hj
 
 theorem dec_wst {n : Nat} (hn0 : 0 < n) (hn : n < 2 ^ 32) (W : WinSt Ex base bytes len args sp c [3, 6] n s) :
     WP isa (.block [.alu .sub .esi (.imm 1)]) s fun u =>
@@ -171,10 +171,10 @@ theorem windowLoop_relCT (hc : WinChecks c) {N : Nat} (hN : 0 < N) (hN32 : N < 2
       (Both (WinSt Ex base bytes len args sp c [3, 6] 0)) := by
   refine (relCT_countLoop (I := fun j => WinSt Ex base bytes len args sp c [3, 6] (N - j)) hN fun j hj => ?_).mono
     (fun _ _ h => by simpa only [Nat.sub_zero] using h) (fun _ _ h => by simpa only [Nat.sub_self] using h)
-  refine (windowStep_relCT hc (n := N - j) (by omega) (by omega)).mono (fun _ _ h => h) ?_
+  refine (windowStep_relCT hc (n := N - j) (by omega_arith) (by omega_arith)).mono (fun _ _ h => h) ?_
   rintro s t ⟨⟨W₁, z₁⟩, ⟨W₂, z₂⟩⟩
-  have e : N - j - 1 = N - (j + 1) := by omega
-  have d : (N - j = 1) = (j + 1 = N) := propext (by omega)
+  have e : N - j - 1 = N - (j + 1) := by omega_arith
+  have d : (N - j = 1) = (j + 1 = N) := propext (by omega_arith)
   rw [e] at W₁ W₂
   simp only [d] at z₁ z₂
   exact ⟨⟨W₁, z₁⟩, ⟨W₂, z₂⟩⟩
@@ -190,9 +190,9 @@ theorem count_wst (W : TSt Ex base bytes len args sp c [3, 5, 6] 16 s) :
   have K : Keeps [.esi] s s₅ := K₄.trans (a₅.keeps.mono (by decide))
   have m : s₅.mem = s.mem := by rw [a₅.mem, M₄]
   refine ⟨⟨M, C.regs K m, fun j hj => by rw [sv, m]; exact Hk j (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega),
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega_arith),
     fun j hj => by rw [m]; exact He j hj, A.keep K, (K.1 _ (by decide)).trans sp₀⟩, ?_⟩
-  rw [a₅.gpr, e₄, BitVec.ofNat_add_ofNat]; congr 1; omega
+  rw [a₅.gpr, e₄, BitVec.ofNat_add_ofNat]; congr 1; omega_arith
 
 theorem lenCount_wst {l L : Nat} (hl : l < 18) (hL : args l = BitVec.ofNat 32 L)
     (W : TSt Ex base bytes len args sp c [3, 5, 6] 16 s) :
@@ -202,9 +202,9 @@ theorem lenCount_wst {l L : Nat} (hl : l < 18) (hL : args l = BitVec.ofNat 32 L)
   have K : Keeps [.esi] s s₅ := a₄.keeps.trans (a₅.keeps.mono (by decide))
   have m : s₅.mem = s.mem := by rw [a₅.mem, a₄.mem]
   refine ⟨⟨M, C.regs K m, fun j hj => by rw [sv, m]; exact Hk j (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega),
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega_arith),
     fun j hj => by rw [m]; exact He j hj, A.keep K, (K.1 _ (by decide)).trans sp₀⟩, ?_⟩
-  rw [a₅.gpr, a₄.gpr, hL, BitVec.ofNat_add_ofNat]; congr 1; omega
+  rw [a₅.gpr, a₄.gpr, hL, BitVec.ofNat_add_ofNat]; congr 1; omega_arith
 
 /-- A windowed power's runs over the `N` windows `count` sets, from slots 3 and 4 below the modulus. -/
 theorem windowPowerWith_relCT (hc : WinChecks c) {count : List Instr} {N : Nat} (hN0 : 0 < N) (hN32 : N < 2 ^ 32)
@@ -235,7 +235,7 @@ theorem windowPower_relCT (hc : WinChecks c) :
     obtain ⟨⟨_, C, _⟩, _⟩ := h
     have := bc_ge C.inp.lower' c
     have := bc_le C.inp.upper' c
-    omega
+    omega_arith
 
 end
 

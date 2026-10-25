@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate: the branches its leak determines
@@ -92,10 +93,10 @@ theorem mrLoop_rest {c ch a m L : Nat} {r : Rand} {i uni used : Nat} (hgo : i �
   · split at h
     · have := loop_rest mrStep_rest _ _ _ _ h
       simp only [List.length_drop] at this
-      omega
+      omega_arith
     · simp only [Option.some.injEq, Prod.mk.injEq] at h
       obtain ⟨-, rfl⟩ := h
-      simp only [List.length_drop]; omega
+      simp only [List.length_drop]; omega_arith
   · cases h
 
 /-- Miller–Rabin leaves at most the octets it was given. -/
@@ -138,7 +139,7 @@ theorem take_eq_of_map {r₁ r₂ : List Byte} {u₁ u₂ : Nat} (h₁ : u₁ �
   have e := map_toNat_inj h
   have := congrArg List.length e
   simp only [List.length_take] at this
-  exact ⟨by omega, e⟩
+  exact ⟨by omega_arith, e⟩
 
 theorem take_take_of_le {r : List Byte} {a b : Nat} (h : a ≤ b) : (r.take b).take a = r.take a := by
   rw [List.take_take, Nat.min_eq_left h]
@@ -167,8 +168,8 @@ theorem schedOf_eq {L e : Nat} {p₁ p₂ : Option Nat} {r₁ r₂ : List Byte} 
   unfold schedOf
   generalize hc₁ : candidate (8 * L) (os2ip (r₁.take L)) = c₁ at h ⊢
   generalize hc₂ : candidate (8 * L) (os2ip (r₂.take L)) = c₂ at h ⊢
-  have hd₁ : r₁.length - (r₁.drop L).length = L := by simp; omega
-  have hd₂ : r₂.length - (r₂.drop L).length = L := by simp; omega
+  have hd₁ : r₁.length - (r₁.drop L).length = L := by simp; omega_arith
+  have hd₂ : r₂.length - (r₂.drop L).length = L := by simp; omega_arith
   -- What each run leaks and takes.
   have cls : ∀ (c : Nat) (p : Option Nat) (r : Rand), r.length - (r.drop L).length = L →
       (tooClose (8 * L) p c = true ∧ leakOf r (afterDraw (8 * L) e p c (r.drop L)) = [2]) ∨
@@ -211,7 +212,7 @@ theorem schedOf_eq {L e : Nat} {p₁ p₂ : Option Nat} {r₁ r₂ : List Byte} 
   · rcases hp : primalityTest c₂ (r₂.drop L) with _ | ⟨_ | _, rest⟩
     · simp [hp, leakOf] at h
     · simp only [hp, leakOf, Option.map_some, Bool.false_eq_true, ↓reduceIte, List.cons.injEq] at h
-      obtain ⟨hu, e⟩ := take_eq_of_map hk (by have := hrest _ _ _ _ hp; omega) h.2
+      obtain ⟨hu, e⟩ := take_eq_of_map hk (by have := hrest _ _ _ _ hp; omega_arith) h.2
       rw [← hu] at e
       obtain rfl := same e
       rcases g₁ with g₁ | g₁
@@ -222,7 +223,7 @@ theorem schedOf_eq {L e : Nat} {p₁ p₂ : Option Nat} {r₁ r₂ : List Byte} 
   · rcases hp : primalityTest c₁ (r₁.drop L) with _ | ⟨_ | _, rest⟩
     · simp [hp, leakOf] at h
     · simp only [hp, leakOf, Option.map_some, Bool.false_eq_true, ↓reduceIte, List.cons.injEq] at h
-      obtain ⟨hu, e⟩ := take_eq_of_map (by have := hrest _ _ _ _ hp; omega) (by omega) h.2
+      obtain ⟨hu, e⟩ := take_eq_of_map (by have := hrest _ _ _ _ hp; omega_arith) (by omega_arith) h.2
       rw [hu] at e
       obtain rfl := same e
       rcases g₂ with g₂ | g₂
@@ -244,12 +245,12 @@ theorem schedOf_eq {L e : Nat} {p₁ p₂ : Option Nat} {r₁ r₂ : List Byte} 
         simp only [Option.map_some, Option.some.injEq, Prod.mk.injEq]
         cases b₁ <;> cases b₂
         · simp only [leakOf, Option.map_some, Bool.false_eq_true, ↓reduceIte, List.cons.injEq, true_and] at h ⊢
-          obtain ⟨hu, -⟩ := take_eq_of_map (by omega) (by omega) h
-          omega
+          obtain ⟨hu, -⟩ := take_eq_of_map (by omega_arith) (by omega_arith) h
+          omega_arith
         · simp [leakOf] at h
         · simp [leakOf] at h
         · simp only [leakOf, Option.map_some, ↓reduceIte, List.cons.injEq, true_and, and_true] at h ⊢
-          omega
+          omega_arith
 
 /-! ## Miller–Rabin's iterations -/
 
@@ -283,14 +284,14 @@ theorem mr_pass {c ch a m L : Nat} {r : Rand} {i uni used : Nat} (hgo : i ≤ bl
       · rfl
       · have := mrLoop_rest hg hwb hL h
         simp [shapeOf]
-        intro _; omega
+        intro _; omega_arith
     · rw [mrLoop_done c ch a m _ i' u' hg]
       simp [shapeOf]
   · rw [ite_f hm]
     simp only [Bool.not_eq_true] at hm
     rw [hm]
     simp [passS, shapeOf]
-    omega
+    omega_arith
 
 /-- An iteration that goes on, to the state `(i, uni)` that draws at offset
 `u`: one more iteration than from there, and at least one from there. -/
@@ -302,20 +303,20 @@ theorem iters_cont {c ch a m L : Nat} {r : Rand} {i uni u : Nat} (hgo : i ≤ bl
   rcases h : loop (mrStep c ch a m) (i, uni) (r.drop u) with _ | ⟨b, rest⟩
   · simp only [shapeOf, Option.map_none, itersOf]
     refine ⟨?_, Nat.le_add_left 1 _⟩
-    rw [show r.length - (u - L) = r.length - u + L by omega, Nat.add_div_right _ hL]
+    rw [show r.length - (u - L) = r.length - u + L by omega_arith, Nat.add_div_right _ hL]
   · have := mrLoop_rest hgo hwb hL h
     simp only [shapeOf, Option.map_some, itersOf]
     refine ⟨?_, ?_⟩
-    · rw [show r.length - rest.length - (u - L) = r.length - rest.length - u + L by omega, Nat.add_div_right _ hL]
-    · exact (Nat.le_div_iff_mul_le hL).mpr (by omega)
+    · rw [show r.length - rest.length - (u - L) = r.length - rest.length - u + L by omega_arith, Nat.add_div_right _ hL]
+    · exact (Nat.le_div_iff_mul_le hL).mpr (by omega_arith)
 
 /-- The last iteration: one left. -/
 theorem iters_end_none {L rl u : Nat} (hL : 0 < L) (h : rl < u + L) : itersOf L rl none u = 1 := by
-  simp only [itersOf, Nat.add_eq_right, Nat.div_eq_zero_iff]; omega
+  simp only [itersOf, Nat.add_eq_right, Nat.div_eq_zero_iff]; omega_arith
 
 theorem iters_end_some {L rl u : Nat} {b : Bool} {n : Nat} (hL : 0 < L) (h : n + (u + L) = rl) :
     itersOf L rl (some (b, n)) u = 1 := by
-  simp only [itersOf]; rw [show rl - n - u = L by omega, Nat.div_self hL]
+  simp only [itersOf]; rw [show rl - n - u = L by omega_arith, Nat.div_self hL]
 
 /-! ## The schedule, stage by stage -/
 

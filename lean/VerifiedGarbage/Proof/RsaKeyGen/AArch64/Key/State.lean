@@ -92,7 +92,7 @@ theorem KF.of_frm {B : Addr} {W : Nat} {rs : List (Nat × Nat)} {cs : List Rc} {
   fun x hx => h x fun r hr' => by
     obtain ⟨c, hc, h1, h2⟩ := hr r hr'
     have := hx (c.range W) (List.mem_map.mpr ⟨c, hc, rfl⟩)
-    omega
+    omega_arith
 
 theorem KF.of_outside {B : Addr} {W : Nat} {o n : Nat} {cs : List Rc} {m m' : Mem} (h : Outside B o n m m')
     (c : Rc) (hc : c ∈ cs) (h1 : (c.range W).1 ≤ o) (h2 : o + n ≤ (c.range W).1 + (c.range W).2) :
@@ -113,11 +113,11 @@ theorem range_sep_arr {W j : Nat} {c : Rc} (hc : c.ok = true) (hne : c ≠ .arr 
   | arr i =>
     have hij : i ≠ j := fun h => hne (h ▸ rfl)
     have := slot_sep (w := W) hij
-    simp only [Rc.range]; omega
+    simp only [Rc.range]; omega_arith
   | hdr i =>
     simp only [Rc.ok, decide_eq_true_eq] at hc
     have := hdr_lt_slot W j hc
-    simp only [Rc.range]; omega
+    simp only [Rc.range]; omega_arith
 
 /-- A header slot's word, against a part other than it. -/
 theorem range_sep_hdr {W i : Nat} (hi : i < 32) {c : Rc} (hc : c.ok = true) (hne : c ≠ .hdr i) :
@@ -125,10 +125,10 @@ theorem range_sep_hdr {W i : Nat} (hi : i < 32) {c : Rc} (hc : c.ok = true) (hne
   cases c with
   | arr j =>
     have := hdr_lt_slot W j hi
-    simp only [Rc.range]; omega
+    simp only [Rc.range]; omega_arith
   | hdr h =>
     have hij : h ≠ i := fun e => hne (e ▸ rfl)
-    simp only [Rc.range]; omega
+    simp only [Rc.range]; omega_arith
 
 /-- Words of an array the parts do not include. -/
 theorem KF.wv {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m m') (hok : cs.all Rc.ok = true)
@@ -136,7 +136,7 @@ theorem KF.wv {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m 
     (hdk : d + 8 * k ≤ slot W j + 8 * (W + 2)) (hZ : slot W 16 ≤ 2 ^ 64) :
     VG.Proof.Bignum.wv m' B d k = VG.Proof.Bignum.wv m B d k := by
   have := slot_lt (w := W) hj
-  refine Frm.wv_eq h (fun r hr => ?_) (by omega)
+  refine Frm.wv_eq h (fun r hr => ?_) (by omega_arith)
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr
   exact range_sep_arr (List.all_eq_true.mp hok c hc) (fun e => hn (e ▸ hc)) hd hdk
 
@@ -144,26 +144,26 @@ theorem KF.wv {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m 
 theorem KF.arr {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m m') (hok : cs.all Rc.ok = true)
     {j : Nat} (hj : j < 16) (hn : .arr j ∉ cs) (hZ : slot W 16 ≤ 2 ^ 64) :
     VG.Proof.Bignum.wv m' B (slot W j) W = VG.Proof.Bignum.wv m B (slot W j) W :=
-  h.wv hok hj hn (Nat.le_refl _) (by omega) hZ
+  h.wv hok hj hn (Nat.le_refl _) (by omega_arith) hZ
 
 /-- Word `W` of an array the parts do not include. -/
 theorem KF.top {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m m') (hok : cs.all Rc.ok = true)
     {j : Nat} (hj : j < 16) (hn : .arr j ∉ cs) (hZ : slot W 16 ≤ 2 ^ 64) :
     word m' B (slot W j + 8 * W) = word m B (slot W j + 8 * W) := by
   have := slot_lt (w := W) hj
-  refine Frm.word_eq h (fun r hr => ?_) (by omega)
+  refine Frm.word_eq h (fun r hr => ?_) (by omega_arith)
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr
-  exact range_sep_arr (k := 1) (List.all_eq_true.mp hok c hc) (fun e => hn (e ▸ hc)) (by omega) (by omega)
+  exact range_sep_arr (k := 1) (List.all_eq_true.mp hok c hc) (fun e => hn (e ▸ hc)) (by omega_arith) (by omega_arith)
 
 /-- A header slot the parts do not include. -/
 theorem KF.word {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m m') (hok : cs.all Rc.ok = true)
     {i : Nat} (hi : i < 32) (hn : .hdr i ∉ cs) : word m' B (8 * i) = word m B (8 * i) :=
   Frm.word_eq h (fun r hr => by
     obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr
-    exact range_sep_hdr hi (List.all_eq_true.mp hok c hc) (fun e => hn (e ▸ hc))) (by omega)
+    exact range_sep_hdr hi (List.all_eq_true.mp hok c hc) (fun e => hn (e ▸ hc))) (by omega_arith)
 
 theorem Rc.ok_of_mut {c : Rc} (h : c.mut = true) : c.ok = true := by
-  cases c <;> simp only [Rc.mut, Rc.ok, decide_eq_true_eq] at h ⊢ <;> omega
+  cases c <;> simp only [Rc.mut, Rc.ok, decide_eq_true_eq] at h ⊢ <;> omega_arith
 
 theorem all_mut_arr {j : Nat} (hj : j < 16) : [Rc.arr j].all Rc.mut = true := by
   simp only [List.all_cons, List.all_nil, Rc.mut, Bool.and_true, decide_eq_true_eq]; exact hj
@@ -219,7 +219,7 @@ structure KLens (I : KIn) : Prop where
   el8 : I.el ≤ 8
 
 theorem KLens.W {I : KIn} (L : KLens I) : I.W = 2 * (I.pl / 8) := by
-  have := L.pl8; simp only [KIn.W]; omega
+  have := L.pl8; simp only [KIn.W]; omega_arith
 
 /-- The arguments in the header (`entry`). -/
 structure KArgs (m : Mem) (I : KIn) : Prop where
@@ -261,7 +261,7 @@ structure KS (I : KIn) (s₀ : State) (s : State) : Prop where
   keep : Keep kRegs s₀ s
 
 theorem KS.hZ {I : KIn} {s₀ s : State} (h : KS I s₀ s) : slot I.W 16 ≤ 2 ^ 64 := by
-  have := h.ws.hZ; have := h.ws.scr.nowrap; omega
+  have := h.ws.hZ; have := h.ws.scr.nowrap; omega_arith
 
 theorem KS.x0 {I : KIn} {s₀ s : State} (h : KS I s₀ s) : s.gpr .x0 = I.B := h.ws.x0
 
@@ -276,9 +276,9 @@ theorem KS.step {I : KIn} {s₀ s t : State} (h : KS I s₀ s) {cs : List Rc}
   have hok : cs.all Rc.ok = true :=
     List.all_eq_true.mpr fun c hc' => Rc.ok_of_mut (List.all_eq_true.mp hc c hc')
   have hhdr : ∀ i, i < 29 → word t.mem I.B (8 * i) = word s.mem I.B (8 * i) := fun i hi =>
-    hf.word hok (by omega) fun hm => by
+    hf.word hok (by omega_arith) fun hm => by
       have := List.all_eq_true.mp hc _ hm
-      simp only [Rc.mut, decide_eq_true_eq] at this; omega
+      simp only [Rc.mut, decide_eq_true_eq] at this; omega_arith
   have hZ := h.ws.hZ
   have hn := h.ws.scr.nowrap
   have hrng : ∀ r ∈ cs.map (Rc.range I.W), r.1 + r.2 ≤ I.Z ∧ KMut r := fun r hr' => by
@@ -288,14 +288,14 @@ theorem KS.step {I : KIn} {s₀ s t : State} (h : KS I s₀ s) {cs : List Rc}
     | arr i =>
       simp only [Rc.mut, decide_eq_true_eq] at this
       have := slot_lt (w := I.W) this
-      exact ⟨by simp only [Rc.range]; omega, KMut.ofSlot _ _ _⟩
+      exact ⟨by simp only [Rc.range]; omega_arith, KMut.ofSlot _ _ _⟩
     | hdr i =>
       simp only [Rc.mut, decide_eq_true_eq] at this
       have := hdr_lt_slot I.W 16 (show 31 < 32 by decide)
-      exact ⟨by simp only [Rc.range]; omega, KMut.hdr (Or.inr (Or.inr (Or.inr (by unfold sStride sFn; omega))))⟩
+      exact ⟨by simp only [Rc.range]; omega_arith, KMut.hdr (Or.inr (Or.inr (Or.inr (by unfold sStride sFn; omega_arith))))⟩
   have hi : InScr I.B I.Z s.mem t.mem := InScr.of_frm hf fun r hr' => (hrng r hr').1
   exact ⟨h.ws.congr' hf (fun r hr' => (hrng r hr').2) k (not_x0_of_mm hr),
-    h.args.congr fun i hi' => hhdr i (by omega), h.p.congrK hi k, h.q.congrK hi k, h.e.congrK hi k,
+    h.args.congr fun i hi' => hhdr i (by omega_arith), h.p.congrK hi k, h.q.congrK hi k, h.e.congrK hi k,
     h.inScr.trans hi, k.wr.trans h.wr, (h.keep.trans k).mono fun r hr' => by
       rcases List.mem_append.mp hr' with h' | h'
       · exact h'
@@ -314,7 +314,7 @@ theorem KS.hdrW {I : KIn} {s₀ s t : State} (h : KS I s₀ s) {i : Nat} (hi : 2
     KS I s₀ t ∧ KF I.B I.W [.hdr i] s.mem t.mem ∧ word t.mem I.B (8 * i) = v := by
   have hn := h.ws.scr.nowrap
   have := h.ws.h256
-  have o := writeW_outside s.mem I.B v (d := 8 * i) (by omega)
+  have o := writeW_outside s.mem I.B v (d := 8 * i) (by omega_arith)
   rw [← hm] at o
   have f : KF I.B I.W [.hdr i] s.mem t.mem := KF.of_outside o (.hdr i) (List.mem_singleton_self _)
     (by simp [Rc.range]) (by simp [Rc.range])

@@ -70,7 +70,7 @@ theorem gpr_ce (t : State) {r : Reg} {rd wr : List Region} (h : r ∉ linkRegs :
 /-- The working space of the signing function on `μ`: the start of `scratch`. -/
 theorem sScr_sub (p : Params) (s : State) :
     Region.Sub ⟨s.gpr .x7, sScr p⟩ ⟨s.gpr .x7, mScrLen p⟩ :=
-  Region.sub_prefix (by rw [mScr_eq]; simp only [sScr, oE]; omega)
+  Region.sub_prefix (by rw [mScr_eq]; simp only [sScr, oE]; omega_arith)
 
 /-- The saves are apart from it. -/
 theorem sv_sScr {p : Params} (hp : p ∈ params) (s : State) {d n : Nat} (hd : d + n ≤ 88) :
@@ -78,22 +78,22 @@ theorem sv_sScr {p : Params} (hp : p ∈ params) (s : State) {d n : Nat} (hd : d
   show Region.Disjoint ⟨s.gpr .x7 + BitVec.ofNat 64 (oE p) + BitVec.ofNat 64 904 + BitVec.ofNat 64 d, n⟩ _
   rw [add_add, add_add]
   have := oE_lt hp
-  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega) (by omega)
+  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega_arith) (by omega_arith)
 
 theorem mu_sScr {p : Params} (hp : p ∈ params) (s : State) :
     Region.Disjoint ⟨(slay p s).MU, 64⟩ ⟨s.gpr .x7, sScr p⟩ := by
   show Region.Disjoint ⟨s.gpr .x7 + BitVec.ofNat 64 (oE p) + BitVec.ofNat 64 840, 64⟩ _
   rw [add_add]
   have := oE_lt hp
-  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega) (by omega)
+  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega_arith) (by omega_arith)
 
 theorem mu_within (p : Params) (s : State) : Within ⟨(slay p s).MU, 64⟩ ⟨s.gpr .x7, mScrLen p⟩ :=
-  (within_off (slay p s).X (d := 840) (n := 64) (k := 1024) (by omega)).trans (slay_X p s)
+  (within_off (slay p s).X (d := 840) (n := 64) (k := 1024) (by omega_arith)).trans (slay_X p s)
 
 theorem mu_nowrap {L : Lay} (hL : L.Ok) : L.MU.toNat + 64 ≤ 2 ^ 64 := by
   have := hL.nX
   show (L.X + BitVec.ofNat 64 840).toNat + 64 ≤ 2 ^ 64
-  rw [toNat_add_ofNat (by omega)]; omega
+  rw [toNat_add_ofNat (by omega_arith)]; omega_arith
 
 /-- The regions the signing function on `μ` reads and writes. -/
 abbrev signRd (p : Params) (s : State) : List Region :=
@@ -110,11 +110,11 @@ theorem signRegs_of {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : M
   have e2 := hm (.x2, .slot fRnd) (by simp)
   have e3 := hm (.x3, .slot fSig) (by simp)
   have e4 := hm (.x4, .slot fScr) (by simp)
-  rw [hc.slotV (f := fKey) (j := 0) rfl (by omega)] at e0
+  rw [hc.slotV (f := fKey) (j := 0) rfl (by omega_arith)] at e0
   rw [hc.off] at e1
-  rw [hc.slotV (f := fRnd) (j := 5) rfl (by omega)] at e2
-  rw [hc.slotV (f := fSig) (j := 6) rfl (by omega)] at e3
-  rw [hc.slotV (f := fScr) (j := 7) rfl (by omega)] at e4
+  rw [hc.slotV (f := fRnd) (j := 5) rfl (by omega_arith)] at e2
+  rw [hc.slotV (f := fSig) (j := 6) rfl (by omega_arith)] at e3
+  rw [hc.slotV (f := fScr) (j := 7) rfl (by omega_arith)] at e4
   simp only [Lay.vals, slay, List.getD_cons_zero, List.getD_cons_succ] at e0 e2 e3 e4
   exact ⟨e0, e1, e2, e3, e4⟩
 
@@ -151,7 +151,7 @@ theorem signK_pre (hp : p ∈ params) (h : SPre p s) (h8 : (s.gpr .x4).toNat < 2
   · exact mu_nowrap hL
   · exact h.nRnd
   · exact h.nSig
-  · have := h.nScr; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega
+  · have := h.nScr; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega_arith
 
 /-- The call of the signing function on `μ`. -/
 theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ params) (h : SPre p s)
@@ -168,7 +168,7 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
   have hsp1 : t1.sp = s.sp := hc1.sp
   have hd := hS.dle.1
   have hpre := signK_pre hp h h8 hc hA hsp1
-  refine WP.callFV hS.ver.1 hpre ?_ ?_ (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega)
+  refine WP.callFV hS.ver.1 hpre ?_ ?_ (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega_arith)
   · rw [hc1.rd, hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -177,13 +177,13 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
     · exact ⟨_, by simp [slay, h.wr], mu_within p s⟩
     · exact ⟨_, by simp [slay, h.rd], within_self _⟩
     · exact ⟨_, by simp [slay, h.wr], within_self _⟩
-    · exact ⟨⟨s.gpr .x7, mScrLen p⟩, by simp [slay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega)⟩
+    · exact ⟨⟨s.gpr .x7, mScrLen p⟩, by simp [slay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega_arith)⟩
   · rw [hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, by simp [slay, h.wr], within_self _⟩
-    · exact ⟨⟨s.gpr .x7, mScrLen p⟩, by simp [slay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega)⟩
+    · exact ⟨⟨s.gpr .x7, mScrLen p⟩, by simp [slay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega_arith)⟩
   -- After the call.
   have hsv : ∀ d, d + 8 ≤ 88 → s'.mem.readW ((slay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 =
       t1.mem.readW ((slay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 := fun d hd' =>
@@ -192,14 +192,14 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
       rcases hr with rfl | rfl | rfl
       · rw [add_add]
         exact (h.sigScr.symm.sub_left ((within_off (slay p s).X (d := 904 + d) (n := 8) (k := 1024)
-          (by omega)).trans (slay_X p s)).sub)
+          (by omega_arith)).trans (slay_X p s)).sub)
       · exact sv_sScr hp s hd'
       · rw [hsp1]
-        exact (hL.sv_disj (r := below s.sp (16 * c.aarch64Depth)) (.inr (below_sub (by omega) (by decide))) hd'))
+        exact (hL.sv_disj (r := below s.sp (16 * c.aarch64Depth)) (.inr (below_sub (by omega_arith) (by decide))) hd'))
       (by decide)
   refine ⟨⟨hrd.trans hc1.rd, hwr.trans hc1.wr, hsp.trans hc1.sp, (hcs .x28 (by decide) (by decide)).trans hc1.x28,
     fun r hr h28 h30 => (hcs r hr h30).trans (hc1.cs r hr h28 h30), fun r hr => (hvs r hr).trans (hc1.vs r hr),
-    (hsv 0 (by omega)).trans hc1.s28, (hsv 8 (by omega)).trans hc1.s30⟩, ?_⟩
+    (hsv 0 (by omega_arith)).trans hc1.s28, (hsv 8 (by omega_arith)).trans hc1.s30⟩, ?_⟩
   sig_reduce [signContract, signSig, AArch64.abi, AArch64.argRegs, List.range, List.range.loop] at hpost
   simp only [e0, e1, e2, e3, o.mem] at hpost
   exact hpost

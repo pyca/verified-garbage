@@ -68,12 +68,12 @@ def QPub (s₀ s₀' : State) : Prop := PubP L s₀ s₀' ∧ L.Msg s₀ = L.Msg
 theorem QPre.τ_le {s₀ : State} (hp : QPre s₀) : τ s₀ ≤ 60 := by
   have h := hp.2
   simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
-  omega
+  omega_arith
 
 theorem QPre.len {s₀ : State} (hp : QPre s₀) : (arg s₀ 1).toNat < 136 := by
   have h := hp.2
   simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
-  omega
+  omega_arith
 
 /-! ## The loop of `SampleInBall`, from the message -/
 
@@ -106,7 +106,7 @@ theorem st_succ (B : List Byte) (τ : Nat) {k : Nat} (hk : k < 264) :
   simp only [st]
   rw [List.take_add_one, List.getElem?_eq_getElem (by rw [hl]; exact hk), Option.toList_some, bFold_snoc]
   congr 1
-  rw [jb, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [Xb_length]; omega), Option.getD_some,
+  rw [jb, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [Xb_length]; omega_arith), Option.getD_some,
     List.getElem_drop]
 
 theorem st_le (B : List Byte) (τ k : Nat) : (st B τ k).2 ≤ 256 := bFold_le (by simp [n]) _
@@ -149,7 +149,7 @@ theorem zinit_piece : Piece QPre QPub (Out L) (ZI · 0)
       readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₃, i₃, v₃, 
       Option.some.injEq, exists_eq_left']
     exact ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.out⟩, by simp; rfl, by simp,
-      by simp; rfl, by simp, fun j hj => absurd hj (by omega)⟩
+      by simp; rfl, by simp, fun j hj => absurd hj (by omega_arith)⟩
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [h.esp, h'.esp, hq.1.e1]
@@ -159,7 +159,7 @@ theorem zstep {s₀ : State} (hp : QPre s₀) {k : Nat} (hk : k < 256) {s : Stat
       fun s' => ZI s₀ (k + 1) s' ∧ eval .ne s' = some (decide (k + 1 < 256)) := by
   have ha := hp.1.a_fit
   have ea : (L.aP s₀ + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (L.aA s₀) k := by
-    rw [ea_add (by simp only [L] at ha ⊢; omega)]; rfl
+    rw [ea_add (by simp only [L] at ha ⊢; omega_arith)]; rfl
   have hin : InRegions s.wr (coeffAddr (L.aA s₀) k) 4 := hp.1.inA h.wr hk
   have fa : Frame [L.aR s₀] s.mem (s.mem.writeW (coeffAddr (L.aA s₀) k) (0 : BitVec 32)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hk)
@@ -172,18 +172,18 @@ theorem zstep {s₀ : State} (hp : QPre s₀) {k : Nat} (hk : k < 256) {s : Stat
     by simp [h.esi]⟩, fun p hp' => ?_⟩, by simp [h.ebp], by simp [h.eax], ?_, ?_, fun j hj => ?_⟩, ?_⟩
   · refine (fa _ fun r hr hc => ?_).trans (h.out p hp')
     simp only [List.mem_singleton] at hr; subst hr
-    exact hp.1.a_s _ hc ((hp.1.sub_s (o := 840 + p) (n := 1) (by simp only [L] at hp' ⊢; omega)) _
+    exact hp.1.a_s _ hc ((hp.1.sub_s (o := 840 + p) (n := 1) (by simp only [L] at hp' ⊢; omega_arith)) _
       (Region.contains_self _ _))
   · simp only [ite_true]
     rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, add_ofNat_add]; congr 2
   · simp only [ite_true, h.ecx]
     exact cnt_next hk
-  · rw [coeffAt_writeW _ _ (by omega) hk]
+  · rw [coeffAt_writeW _ _ (by omega_arith) hk]
     by_cases e : k = j
     · rw [ifT e]
-    · rw [ifF e]; exact h.zero j (by omega)
+    · rw [ifF e]; exact h.zero j (by omega_arith)
   · simp only [eval, h.ecx]
-    exact cnt_ne hk (by omega)
+    exact cnt_ne hk (by omega_arith)
 
 theorem zero_piece : Piece QPre QPub (Out L) (ZI · 256) bZero :=
   Piece.seq zinit_piece (Piece.countLoop (by decide) (fun k s₀ s => ZI s₀ k s) [.edi]
@@ -197,12 +197,12 @@ theorem zero_piece : Piece QPre QPub (Out L) (ZI · 256) bZero :=
 
 theorem argAddr_eq {s₀ : State} (hp : QPre s₀) {i : Nat} (hi : i < 5) :
     argAddr s₀ i = (E0 s₀).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
-  ea_off (by have := hp.1.sp'; simp only [L, E0] at this ⊢; omega)
+  ea_off (by have := hp.1.sp'; simp only [L, E0] at this ⊢; omega_arith)
 
 /-- The two argument slots of the sign bits, apart. -/
 theorem slots_sep {s₀ : State} (hp : QPre s₀) : Mem.Sep (argAddr s₀ 1) 4 (argAddr s₀ 2) 4 := by
   rw [argAddr_eq hp (by decide), argAddr_eq hp (by decide)]
-  exact Offset.sep _ (by omega) (by omega) (by omega)
+  exact Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem setup_piece : Piece QPre QPub (ZI · 256) (fun s₀ s => BI s₀ 0 (st (L.Msg s₀) (τ s₀) 0) s)
     (.block bSetup) := by
@@ -216,12 +216,12 @@ theorem setup_piece : Piece QPre QPub (ZI · 256) (fun s₀ s => BI s₀ 0 (st (
     have w₁ := h.argInW hp.1 (i := 1) (by decide)
     have w₂ := h.argInW hp.1 (i := 2) (by decide)
     simp only [Nat.reduceMul, Nat.reduceAdd] at a₁ a₂
-    have e0 : (L.sP s₀ + BitVec.ofNat 32 840).setWidth 64 = L.sA s₀ + BitVec.ofNat 64 840 := hp.1.off_eq (by omega)
-    have e4 : (L.sP s₀ + BitVec.ofNat 32 844).setWidth 64 = L.sA s₀ + BitVec.ofNat 64 844 := hp.1.off_eq (by omega)
-    have r0 := hp.1.inS' h.wr (o := 840) (n := 4) (by omega)
-    have r4 := hp.1.inS' h.wr (o := 844) (n := 4) (by omega)
+    have e0 : (L.sP s₀ + BitVec.ofNat 32 840).setWidth 64 = L.sA s₀ + BitVec.ofNat 64 840 := hp.1.off_eq (by omega_arith)
+    have e4 : (L.sP s₀ + BitVec.ofNat 32 844).setWidth 64 = L.sA s₀ + BitVec.ofNat 64 844 := hp.1.off_eq (by omega_arith)
+    have r0 := hp.1.inS' h.wr (o := 840) (n := 4) (by omega_arith)
+    have r4 := hp.1.inS' h.wr (o := 844) (n := 4) (by omega_arith)
     have hb : ∀ b < 8, s.mem (L.sA s₀ + BitVec.ofNat 64 840 + BitVec.ofNat 64 b) = (Xb (L.Msg s₀)).getD b 0 :=
-      fun b hb => by rw [BitVec.add_assoc, ← BitVec.ofNat_add, h.out b (by simp only [L]; omega), out_eq]
+      fun b hb => by rw [BitVec.add_assoc, ← BitVec.ofNat_add, h.out b (by simp only [L]; omega_arith), out_eq]
     have vlo := readW_lo s.mem _ _ hb
     have vhi := readW_hi s.mem _ _ hb
     rw [BitVec.add_assoc, show BitVec.ofNat 64 840 + (4 : BitVec 64) = BitVec.ofNat 64 844 from rfl] at vhi
@@ -241,20 +241,20 @@ theorem setup_piece : Piece QPre QPub (ZI · 256) (fun s₀ s => BI s₀ 0 (st (
       refine ⟨⟨by rw [e1, h.esp], by rw [e6, h.rd], by rw [e7, h.wr], h.frame.trans (f₁.mono (by simp))⟩,
         fun p hp' => ?_, e2, e3, by rw [e4, h.ebp], ?_, fun j hj => ?_, ?_, ?_⟩
       · rw [f₁.bytes (R := ⟨L.sA s₀, 2048⟩) (by simp only [List.mem_singleton, forall_eq]; exact hp.1.s_g)
-          (show (2048 : Nat) ≤ 2 ^ 64 by decide) (show 840 + p < 2048 by omega)]
+          (show (2048 : Nat) ≤ 2 ^ 64 by decide) (show 840 + p < 2048 by omega_arith)]
         rw [h.out p hp', out_eq]
       · rw [e5]
         exact eq_ofNat_of_toNat (by
           rw [BitVec.toNat_sub, show (256 : BitVec 32).toNat = 256 from rfl]
           simp only [τ] at hτ ⊢
-          omega)
+          omega_arith)
       · rw [coeffAt_eq, f₁.readW (coeff_contains _ hj) (by simp only [List.mem_singleton, forall_eq]; exact hp.1.a_g)
           (by decide), ← coeffAt_eq, h.zero j hj,
-          getElem!_pos (Vector.replicate n (0 : Int)) j (by simp only [n]; omega), Vector.getElem_replicate]
+          getElem!_pos (Vector.replicate n (0 : Int)) j (by simp only [n]; omega_arith), Vector.getElem_replicate]
         decide
       · rw [e8, Mem.readW_writeW_sep (slots_sep hp) (by decide), Mem.readW_writeW_self32,
-          show 256 - τ s₀ + τ s₀ - 256 = 0 by omega]
-      · rw [e8, Mem.readW_writeW_self32, show 256 - τ s₀ + τ s₀ - 256 = 0 by omega]
+          show 256 - τ s₀ + τ s₀ - 256 = 0 by omega_arith]
+      · rw [e8, Mem.readW_writeW_self32, show 256 - τ s₀ + τ s₀ - 256 = 0 by omega_arith]
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceMul, Nat.reducePow, bSetup, argOp, outOff, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, readSrc, State.ea, State.load32, State.store32, State.setReg, arithFlags, State.setFlags,

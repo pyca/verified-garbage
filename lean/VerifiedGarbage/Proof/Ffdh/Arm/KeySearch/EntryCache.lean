@@ -38,11 +38,7 @@ theorem entryCache_ok (s : State) {p : KeyPublic sampling} (h : EntryContext p s
   have d36 : State.addr (p.control+BitVec.ofNat 32 36)=off (State.addr p.control) 36 := addr_add (by have := h.controller.space.nowrap; omega)
   have raw : WP isa (.block [.ldrSp .r3 60,.str .r3 .r4 32,.ldrSp .r3 64,.str .r3 .r4 36]) s fun t =>
       t.mem=entryCacheMem p s.mem ∧ Rest [.r3] s t := by
-    refine withRest [.r3] ?_ (by
-      intro r hr i hi
-      simp only [instrs,List.mem_cons,List.not_mem_nil,or_false] at hi
-      have ne : r≠.r3 := by simpa only [List.mem_singleton] using hr
-      rcases hi with rfl|rfl|rfl|rfl <;> simp [clobbers,dstOf,Ne.symm ne]) rfl
+    refine withRest_all [.r3] ?_ (by rfl) rfl
     have kept : s.mem.readW (off (State.addr s.sp) 64) 32 =
         (s.mem.writeW (off (State.addr p.control) 32) p.context).readW (off (State.addr s.sp) 64) 32 := by
       symm

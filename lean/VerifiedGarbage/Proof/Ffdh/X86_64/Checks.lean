@@ -28,12 +28,12 @@ theorem ptrs_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
       t.gpr .r10 = off B (slot w b) ∧ t.gpr .rbp = mask false ∧ t.mem = s.mem ∧
       Keep [.r12, .rbx, .r10, .rbp] s t := by
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
   refine WP.mono (WP.keep [.r12, .rbx, .r10, .rbp] (Q := fun t =>
       t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .rbx = off B (slot w a) ∧
       t.gpr .r10 = off B (slot w b) ∧ t.gpr .rbp = mask false ∧ t.mem = s.mem)
     (by unfold ptrs; xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide),
-      hl (sArr a) (by unfold sArr; omega), hl (sArr b) (by unfold sArr; omega),
+      hl (sArr a) (by unfold sArr; omega_arith), hl (sArr b) (by unfold sArr; omega_arith),
       hg.hdr.hw, hg.hdr.harr a ha, hg.hdr.harr b hb, mask]) rfl)
     fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, k⟩
 
@@ -49,7 +49,7 @@ theorem cmpArr_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
   unfold cmpArr
   simp only [seqs]
   refine WP.seq (WP.mono (ptrs_ok hg hZ ha hb) fun s₁ ⟨h12, hbx, h10, hbp, hm, k₁⟩ => ?_)
-  refine WP.mono (cmpLoop_ok (hg.scr.congr k₁.2.2) hbx h10 h12 hbp hw hw' (by omega) (by omega))
+  refine WP.mono (cmpLoop_ok (hg.scr.congr k₁.2.2) hbx h10 h12 hbp hw hw' (by omega_arith) (by omega_arith))
     fun t ⟨hbp', hm', k'⟩ => ⟨by rw [hbp', hm], hm'.trans hm, (k₁.trans k').mono (by decide)⟩
 
 private theorem mask_and_one (b : Bool) : mask b &&& (1 : BitVec 64) = (if b then 1 else 0) := by
@@ -112,8 +112,8 @@ theorem eqArr_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
     fun t h14 hm k _ => ⟨hs₁.congr k.2.2, k.mono (by decide), hm, h14, by
       rw [(k.gpr (by decide) : t.gpr .rbp = s₁.gpr .rbp), hbp]
       exact ⟨fun _ i hi => absurd hi (Nat.not_lt_zero _), fun _ => rfl⟩⟩
-  refine WP.seq (WP.mono (wordLoop_ok (start := 0) (N := w) (by omega) hw' _ h0
-    (fun j _ hj t hI => xorStep_ok hbx h10 h12 (by omega) (by omega) (by omega) hj hI)) fun s₂ hI => ?_)
+  refine WP.seq (WP.mono (wordLoop_ok (start := 0) (N := w) (by omega_arith) hw' _ h0
+    (fun j _ hj t hI => xorStep_ok hbx h10 h12 (by omega_arith) (by omega_arith) (by omega_arith) hj hI)) fun s₂ hI => ?_)
   refine WP.mono (WP.keep [.rax, .rbp] (Q := fun t =>
       t.gpr .rax = mask (decide (s₂.gpr .rbp = 0)) &&& 1 ∧ t.mem = s₂.mem)
     (by xrun [decide_lt_one]; rfl) rfl) fun t ⟨⟨hax, hm'⟩, k'⟩ => ⟨?_, by rw [hm', hI.mem, hm₁],
@@ -133,9 +133,9 @@ theorem _root_.VG.Proof.Bignum.X86_64.Good.of_outside {s t : State} {G : Addr} {
     (hwr : t.wr = s.wr) (hdi : t.gpr .rdi = s.gpr .rdi) : Good t G Zx w mi := by
   have hn := hg.scr.nowrap
   have hh : ∀ i < 16, word t.mem G (8 * i) = word s.mem G (8 * i) := fun i hi =>
-    hout.word (Or.inl (by omega)) (by omega)
+    hout.word (Or.inl (by omega_arith)) (by omega_arith)
   exact ⟨hg.scr.congr hwr, hdi.trans hg.rdi, ⟨(hh _ (by decide)).trans hg.hdr.hw,
-    (hh _ (by decide)).trans hg.hdr.hminv, fun j hj => (hh _ (by unfold sArr; omega)).trans (hg.hdr.harr j hj)⟩⟩
+    (hh _ (by decide)).trans hg.hdr.hminv, fun j hj => (hh _ (by unfold sArr; omega_arith)).trans (hg.hdr.harr j hj)⟩⟩
 
 /-- `ltP a` (`a ≠ aTmp`): `rax := 2 ⌊[a] / 2⌋ + 1 < m`; only the temporary array
 changes. -/
@@ -157,7 +157,7 @@ theorem ltP_ok {t : State} {G : Addr} {Zx w : Nat} {mi : BitVec 64} (hg : Good t
   have hg₁ : Good t₁ G Zx w mi := hg.of_outside (by omega_arith) ho₁ k₁.2.2 (k₁.gpr (by decide))
   simp only [List.cons_append, List.nil_append, seqs]
   refine WP.seq (WP.mono (WP.keep [.rbx] (Q := fun t' => t'.gpr .rbx = off G (slot w aTmp) ∧ t'.mem = t₁.mem)
-    (by xrun [State.ea, hdr, hg₁.rdi, hdrOff, hg₁.scr.ld (show 8 * sArr aTmp + 8 ≤ Zx by have := hdr_lt_slot w 8 (show sArr aTmp < 32 by decide); omega),
+    (by xrun [State.ea, hdr, hg₁.rdi, hdrOff, hg₁.scr.ld (show 8 * sArr aTmp + 8 ≤ Zx by have := hdr_lt_slot w 8 (show sArr aTmp < 32 by decide); omega_arith),
       hg₁.hdr.harr aTmp (by decide)]) rfl) fun t₂ ⟨⟨h16, hm₂⟩, k₂⟩ => ?_)
   have hs₂ := hg.scr.congr (k₁.trans k₂).2.2
   refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun t' => t'.mem = t₂.mem.writeW (off G (slot w aTmp))
@@ -200,14 +200,14 @@ theorem isOdd_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
     WP isa (seqs (isOdd a)) s fun t =>
       t.gpr .rax = bit (wv s.mem B (slot w a) w % 2 = 1) ∧ t.mem = s.mem ∧ Keep [.rax, .rbx] s t := by
   have sa := Nat.le_trans (slot_le (w := w) ha) hZ
-  have hH := hdr_lt_slot w 8 (show sArr a < 32 by unfold sArr; omega)
+  have hH := hdr_lt_slot w 8 (show sArr a < 32 by unfold sArr; omega_arith)
   unfold isOdd
   simp only [seqs]
   refine WP.mono (WP.keep [.rax, .rbx] (Q := fun t =>
       t.gpr .rax = word s.mem B (slot w a) &&& 1 ∧ t.mem = s.mem)
-    (by xrun [State.ea, hdr, at0, hg.rdi, hdrOff, hg.scr.ld (d := 8 * sArr a) (by omega), hg.hdr.harr a ha,
+    (by xrun [State.ea, hdr, at0, hg.rdi, hdrOff, hg.scr.ld (d := 8 * sArr a) (by omega_arith), hg.hdr.harr a ha,
       show off B (slot w a) + BitVec.ofInt 64 0 = off B (slot w a) from by simp,
-      hg.scr.ld (show slot w a + 8 ≤ Z by omega)]) rfl) fun t ⟨⟨hax, hm⟩, k⟩ => ⟨?_, hm, k⟩
+      hg.scr.ld (show slot w a + 8 ≤ Z by omega_arith)]) rfl) fun t ⟨⟨hax, hm⟩, k⟩ => ⟨?_, hm, k⟩
   rw [hax]
   have e : (word s.mem B (slot w a)).toNat % 2 = wv s.mem B (slot w a) w % 2 := by
     rw [← wv_mod64 _ _ _ hw, Nat.mod_mod_of_dvd _ (by decide)]
@@ -215,7 +215,7 @@ theorem isOdd_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
   rw [BitVec.toNat_and, show (1 : BitVec 64).toNat = 1 from rfl, Nat.and_one_is_mod, e]
   by_cases h : wv s.mem B (slot w a) w % 2 = 1
   · simp [bit, h]
-  · have : wv s.mem B (slot w a) w % 2 = 0 := by omega
+  · have : wv s.mem B (slot w a) w % 2 = 0 := by omega_arith
     simp [bit, this]
 
 /-- `range a` (`a ≠ aTmp`, with the number 1 in `aOne`): `rax` and the slot

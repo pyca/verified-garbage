@@ -30,14 +30,7 @@ theorem exportResultArgs_ok (s : State) {p : Inputs} {slots : List Nat}
   have r32 := h.locals.read (d := 32) (by decide)
   have v4 := h.saved 4 h4
   have v32 := h.saved 32 h32
-  refine withRest [.r2, .r4, .r6] ?_ (by
-    intro r hr i hi
-    have checked : (instrs (.block [.mov .r2 (.imm 6), .ldrSp .r4 4, .ldrSp .r6 32] : Prog isa)).all
-        (fun i => !(clobbers i r)) = true := by
-      cases r <;> try rfl
-      all_goals exact False.elim (hr (by decide))
-    have flag := List.all_eq_true.mp checked i hi
-    cases hi' : clobbers i r <;> simp_all) (by rfl)
+  refine withRest_all [.r2, .r4, .r6] ?_ (by rfl) (by rfl)
   ffrun [addr 4 (by decide), addr 32 (by decide), r4, r32, v4, v32, Inputs.slotValue, off]
 
 theorem exportResult_ok (s : State) {p : Inputs} {slots : List Nat}

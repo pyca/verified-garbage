@@ -50,21 +50,21 @@ theorem eqBit {a b : Nat} (ha : a < 2 ^ 31) (hb : b < 2 ^ 31) :
   · subst h; rw [BitVec.xor_self, ite_eq_left rfl]; decide
   · rw [ite_eq_right h]
     have hx : (BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 b).toNat < 2 ^ 31 := by
-      rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-        Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith),
+        Nat.mod_eq_of_lt (by omega_arith)]
       exact Nat.xor_lt_two_pow ha hb
     have hn : (BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 b).toNat ≠ 0 := fun e => h (by
       have : BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 b = 0#32 := BitVec.eq_of_toNat_eq (by simpa using e)
       have := BitVec.xor_eq_zero_iff.mp this
       have := congrArg BitVec.toNat this
-      rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this)
+      rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)] at this)
     generalize BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 b = x at hx hn
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
     have h1 : (1 : BitVec 32).toNat = 1 := rfl
-    rw [h1, show (2 ^ 32 - 1 + x.toNat) % 2 ^ 32 = x.toNat - 1 by omega]
+    rw [h1, show (2 ^ 32 - 1 + x.toNat) % 2 ^ 32 = x.toNat - 1 by omega_arith]
     show (x.toNat - 1) / 2 ^ 31 = 0
-    exact Nat.div_eq_of_lt (by omega)
+    exact Nat.div_eq_of_lt (by omega_arith)
 
 /-- The byte the padding loop stores. -/
 theorem padByte (b l : Byte) (c d : Prop) [Decidable c] [Decidable d] :
@@ -123,7 +123,7 @@ theorem padStep (hg : Geo L scr) {σ : State} {T : Nat} (hnb : T ≤ 2048) {msg 
   have hB64 := h.B_ge
   have hL := h.L_le
   have fit := hg.fit
-  have hkB := Nat.mod_lt k (show 0 < h.B by omega)
+  have hkB := Nat.mod_lt k (show 0 < h.B by omega_arith)
   have aY : State.addr (scr + BitVec.ofNat 32 (oY + k)) = sa scr (oY + k) := hg.addr (by pomega)
   have rY : InRegions (s.rd ++ s.wr) (sa scr (oY + k)) 1 := hg.rd hs (by pomega)
   have wY : InRegions s.wr (sa scr (oY + k)) 1 := hg.wr hs (by pomega)
@@ -141,14 +141,14 @@ theorem padStep (hg : Geo L scr) {σ : State} {T : Nat} (hnb : T ≤ 2048) {msg 
   rw [ite_eq_right (Nat.lt_irrefl k)] at vY
   have vL := hp.lb (k % h.B) hkB
   have lr1 : BitVec.ofNat 32 (T - k) - 1 = BitVec.ofNat 32 (T - (k + 1)) := by
-    rw [show T - k = (T - (k + 1)) + 1 by omega]
-    exact sub_one_ofNat (by omega)
+    rw [show T - k = (T - (k + 1)) + 1 by omega_arith]
+    exact sub_one_ofNat (by omega_arith)
   prun [padBody, hp.r0, hp.r1, hp.r4, hp.r5, hp.r6, hp.r7, hp.r9, hp.lr, aY, rY, wY, e8, aL8, rL8, vY, vL,
     esh, eq1, eq2, lr1, padByte, h.lg_range, dpVal, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   refine ⟨rfl, ?_, ?_, ?_⟩
   · rw [VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32, Nat.add_assoc]
   · exact VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32 k
-  · rw [VG.Proof.X25519.Arm.ofNat_beq_zero (by omega)]
+  · rw [VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_arith)]
 
 /-- The padding loop: `padY` in `Y`'s `nbm` blocks. -/
 theorem pad_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0 < nbm) {msg : State → List Byte}
@@ -165,7 +165,7 @@ theorem pad_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0
   have hB64 := h.B_ge
   have hL := h.L_le
   have fit := hg.fit
-  have hpos : 0 < nbm * h.B := Nat.mul_pos hnb0 (by omega)
+  have hpos : 0 < nbm * h.B := Nat.mul_pos hnb0 (by omega_arith)
   generalize hT : nbm * h.B = T at hnb hpos hfit hI ⊢
   refine VP.seq (G := fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ PI h scr T (msg σ) 0 s)
     (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun σ s ⟨hc, hi, lb, hy⟩ => ?_) ?_
@@ -176,17 +176,17 @@ theorem pad_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0
       rw [← hT]
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq, h.pow_lg,
-        Nat.mod_eq_of_lt (a := nbm) (by have : nbm ≤ T := hT ▸ Nat.le_mul_of_pos_right nbm (show 0 < h.B by omega); omega)]
+        Nat.mod_eq_of_lt (a := nbm) (by have : nbm ≤ T := hT ▸ Nat.le_mul_of_pos_right nbm (show 0 < h.B by omega_arith); omega_arith)]
     prun [padArgs, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, Ctx.setReg_iff, hc, hi,
       hsl σ _ hi, hsn σ _ hi, movw_val (show oY < 2 ^ 16 by decide), movw_val (show oLen < 2 ^ 16 by decide),
-      movw_val (show h.L < 2 ^ 16 by omega), movw_val (show h.B - 1 < 2 ^ 16 by omega),
+      movw_val (show h.L < 2 ^ 16 by omega_arith), movw_val (show h.B - 1 < 2 ^ 16 by omega_arith),
       movw_val (show 0 < 2 ^ 16 by decide), esh, esl, h.lg_range, dpVal]
     exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, lb, fun i hi' =>
       (hy i hi').trans (ite_eq_right (Nat.not_lt_zero i)).symm⟩
   let I : Nat → State → State → Prop := fun n σ s =>
     n ≤ T ∧ Ctx L scr σ s ∧ Inv σ s.mem ∧ PI h scr T (msg σ) (T - n) s
-  refine (VP.loop (I := I) (fun n => ?_) (T - 1)).mono (fun σ s ⟨hc, hi, hp⟩ => ⟨by omega, hc, hi,
-    by rw [show T - (T - 1 + 1) = 0 by omega]; exact hp⟩) fun _ _ h => h
+  refine (VP.loop (I := I) (fun n => ?_) (T - 1)).mono (fun σ s ⟨hc, hi, hp⟩ => ⟨by omega_arith, hc, hi,
+    by rw [show T - (T - 1 + 1) = 0 by omega_arith]; exact hp⟩) fun _ _ h => h
   refine VP.taint _ (padBody_taint h) (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hn, hc, hi, hp⟩ => ?_
   · obtain ⟨-, -, -, p₁⟩ := h₁
     obtain ⟨-, -, -, p₂⟩ := h₂
@@ -199,11 +199,11 @@ theorem pad_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0
     · rw [p₁.r7, p₂.r7]
     · rw [p₁.r9, p₂.r9]
   generalize hk : T - (n + 1) = k at hp
-  have hkn : k < T := by omega
+  have hkn : k < T := by omega_arith
   refine WP.mono (padStep h hg hnb (hfit σ) hkn hc.st hp)
     fun t ⟨m, rd, wr, sp, r0, r1, lr, r4, r5, r6, r7, r9, z⟩ => ?_
   have fr : Frame [sR scr oY T] s.mem t.mem := by
-    rw [m]; exact frame_byte scr _ _ (by omega) (by omega) (by pomega)
+    rw [m]; exact frame_byte scr _ _ (by omega_arith) (by omega_arith) (by pomega)
   obtain ⟨σ', ok⟩ := hg.ok
   have hc' : Ctx L scr σ t := hc.write fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by pomega))
@@ -218,14 +218,14 @@ theorem pad_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0
     · rw [m, sa_write scr _ _ (by pomega) (by pomega), hp.y i hi']
       by_cases e : i = k
       · subst e; rw [ite_eq_left rfl, ite_eq_left (Nat.lt_succ_self _)]
-      · rw [ite_eq_right (by omega)]
+      · rw [ite_eq_right (by omega_arith)]
         by_cases e' : i < k
-        · rw [ite_eq_left e', ite_eq_left (by omega)]
-        · rw [ite_eq_right e', ite_eq_right (by omega)]
+        · rw [ite_eq_left e', ite_eq_left (by omega_arith)]
+        · rw [ite_eq_right e', ite_eq_right (by omega_arith)]
   refine ⟨by
-    rw [VG.Proof.X25519.Arm.eval_ne, z, show T - (k + 1) = n by omega]
+    rw [VG.Proof.X25519.Arm.eval_ne, z, show T - (k + 1) = n by omega_arith]
     cases n <;> simp, fun h0 => ⟨hc', hI σ _ _ hi fr, fun i hi' => ?_⟩,
-    fun hpos' => ⟨by omega, hc', hI σ _ _ hi fr, by rw [show T - n = k + 1 by omega]; exact pk⟩⟩
-  rw [pk.y i hi', ite_eq_left (by omega)]
+    fun hpos' => ⟨by omega_arith, hc', hI σ _ _ hi fr, by rw [show T - n = k + 1 by omega_arith]; exact pk⟩⟩
+  rw [pk.y i hi', ite_eq_left (by omega_arith)]
 
 end VG.Proof.RsaPss.Arm

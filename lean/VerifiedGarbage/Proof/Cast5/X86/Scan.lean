@@ -44,19 +44,19 @@ theorem acc_succ (tab : Nat → Nat → BitVec 32) (idx : Nat → BitVec 32) {j 
       acc tab idx (j + 1) k := by
   unfold acc
   by_cases h : idx k = BitVec.ofNat 32 j
-  · have hn : (idx k).toNat = j := by rw [h, BitVec.toNat_ofNat]; omega
-    rw [ite_eq_left h, ite_eq_right (by omega), ite_eq_left (by omega), hn]
+  · have hn : (idx k).toNat = j := by rw [h, BitVec.toNat_ofNat]; omega_arith
+    rw [ite_eq_left h, ite_eq_right (by omega_arith), ite_eq_left (by omega_arith), hn]
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [BitVec.getLsbD_or, BitVec.getLsbD_and]
     rw [show (0xFFFFFFFF : BitVec 32) = BitVec.allOnes 32 by decide, BitVec.getLsbD_allOnes]
     simp [hi]
   · have hn : (idx k).toNat ≠ j := fun h' => h (BitVec.eq_of_toNat_eq (by
-      rw [h', BitVec.toNat_ofNat]; omega))
+      rw [h', BitVec.toNat_ofNat]; omega_arith))
     rw [ite_eq_right h, show ∀ y : BitVec 32, y &&& 0 = 0 from fun y => BitVec.eq_of_getLsbD_eq (by simp),
       show ∀ y : BitVec 32, y ||| 0 = y from fun y => BitVec.eq_of_getLsbD_eq (by simp)]
     by_cases h2 : (idx k).toNat < j
-    · rw [ite_eq_left h2, ite_eq_left (by omega)]
-    · rw [ite_eq_right h2, ite_eq_right (by omega)]
+    · rw [ite_eq_left h2, ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right h2, ite_eq_right (by omega_arith)]
 
 /-- What the loop of a scan keeps of a state. -/
 structure LoopKeep (s t : State) : Prop where
@@ -144,10 +144,10 @@ theorem entries_ok {s₀ s : State} {tab : Nat → Nat → BitVec 32} {idx : Nat
   | zero => exact WP.block_nil ⟨h, rfl, rfl, rfl, rfl⟩
   | succ e ih =>
     rw [flatMap_range_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨ht, hg, hm, hrd, hwr⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨ht, hg, hm, hrd, hwr⟩ => ?_
     have hr' : InRegions (t.rd ++ t.wr) (addr (t.gpr .ecx) (16 * e)) 16 := by
-      rw [hrd, hwr, hg]; exact hr e (by omega)
-    refine WP.mono (entry_ok e (by omega) hidx ht hr' (fun k hk => by rw [hm, hg]; exact hv e (by omega) k hk))
+      rw [hrd, hwr, hg]; exact hr e (by omega_arith)
+    refine WP.mono (entry_ok e (by omega_arith) hidx ht hr' (fun k hk => by rw [hm, hg]; exact hv e (by omega_arith) k hk))
       fun u ⟨hu, hug⟩ => ⟨hu, hug.trans hg, ?_⟩
     refine ⟨by rw [hu.keep.mem, ← ht.keep.mem, hm], by rw [hu.keep.rd, ← ht.keep.rd, hrd],
       by rw [hu.keep.wr, ← ht.keep.wr, hwr]⟩
@@ -163,7 +163,7 @@ theorem entry_addr {T : BitVec 32} (hT : T.toNat + 4096 ≤ 2 ^ 32) {q e : Nat} 
     addr (T + BitVec.ofNat 32 (64 * q)) (16 * e) = T.setWidth 64 + BitVec.ofNat 64 (64 * q + 16 * e) := by
   rw [show addr (T + BitVec.ofNat 32 (64 * q)) (16 * e) = addr T (64 * q + 16 * e) by
     simp only [addr, BitVec.add_assoc, BitVec.ofNat_add]]
-  exact addr_eq (by omega)
+  exact addr_eq (by omega_arith)
 
 /-- The entries of the table at `T`, as dwords. -/
 def TabAt (m : Mem) (T : BitVec 32) (tab : Nat → Nat → BitVec 32) : Prop :=
@@ -180,16 +180,16 @@ theorem body_ok {s₀ s : State} {tab : Nat → Nat → BitVec 32} {idx : Nat �
   rw [WP.block_append_iff]
   have hr : ∀ e < 4, InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) (16 * e)) 16 := fun e he => by
     rw [h.keep.rd, h.keep.wr, hecx, entry_addr hfit hq he]
-    exact CallLay.inRegions_sub hT (by omega) (by decide)
+    exact CallLay.inRegions_sub hT (by omega_arith) (by decide)
   have hv : ∀ e < 4, ∀ k < 4,
       s.mem.readW (addr (s.gpr .ecx) (16 * e) + BitVec.ofNat 64 (4 * k)) 32 = tab (4 * q + e) k :=
     fun e he k hk => by
       rw [h.keep.mem, hecx, entry_addr hfit hq he, Offset.add_add,
-        show 64 * q + 16 * e + 4 * k = 16 * (4 * q + e) + 4 * k by omega]
-      exact htab _ (by omega) k hk
+        show 64 * q + 16 * e + 4 * k = 16 * (4 * q + e) + 4 * k by omega_arith]
+      exact htab _ (by omega_arith) k hk
   refine WP.mono (entries_ok hq hidx hr hv 4 (Nat.le_refl _) h) fun t ⟨ht, hg, _, _, _⟩ => ?_
   crun
-  rw [hg, hecx, BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * q + 64 = 64 * (q + 1) by omega]
+  rw [hg, hecx, BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * q + 64 = 64 * (q + 1) by omega_arith]
   exact ⟨ht.keepTo (by loop_keep) rfl rfl rfl rfl, rfl, rfl, rfl⟩
 
 theorem acc_zero (tab : Nat → Nat → BitVec 32) (idx : Nat → BitVec 32) : L (acc tab idx 0) = 0 := by
@@ -250,7 +250,7 @@ theorem scan_ok (s : State) (sym : String) {tab : Nat → Nat → BitVec 32} {id
   have htab' : TabAt u.mem (u.syms sym) tab := fun j hj k hk => by
     rw [hu.syms, ← htab j hj k hk]
     refine hu.frame.readW (r := ⟨(s.syms sym).setWidth 64, 4096⟩) ?_ ?_ (by decide)
-    · exact Offset.contains_base _ (by omega) (by omega)
+    · exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     · intro r hr; rw [List.mem_singleton] at hr; subst hr; exact hdis
   have hfit' : (u.syms sym).toNat + 4096 ≤ 2 ^ 32 := by rw [hu.syms]; exact hfit
   refine WP.seq (WP.mono (start_ok u tab hu0) fun v ⟨hv, hvc, hvd⟩ => ?_)
@@ -261,7 +261,7 @@ theorem scan_ok (s : State) (sym : String) {tab : Nat → Nat → BitVec 32} {id
       ⟨⟨hx, hxc⟩, hxd, hz⟩)
     (fun w ⟨hw, _⟩ => ⟨?_, ?_⟩) ⟨hv, by rw [hvc, hu.syms]; exact (BitVec.add_zero _).symm⟩ (by rw [hvd]; rfl)
   · rw [hw.x1]
-    exact L_congr fun k hk => by rw [acc, ite_eq_left (by have := hidx k hk; omega)]
+    exact L_congr fun k hk => by rw [acc, ite_eq_left (by have := hidx k hk; omega_arith)]
   · exact ⟨fun r a b c => (hw.keep.gpr r a b c).trans (hu.gpr r (by simp [a, b])), hw.keep.x0.trans (by rw [hux]),
       by rw [hw.keep.mem]; exact hu.frame, hw.keep.rd.trans hu.rd, hw.keep.wr.trans hu.wr,
       hw.keep.syms.trans hu.syms⟩

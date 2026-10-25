@@ -65,13 +65,13 @@ theorem wp_down {body : Prog isa} {r : Reg} {N : Nat} (hN : 0 < N) (hN64 : N < 2
     · have h0 : BitVec.ofNat 64 (N - (j + 1)) ≠ 0 := by
         intro h
         have := congrArg BitVec.toNat h
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-        simp at this; omega
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
+        simp at this; omega_arith
       simp only [he, bne_iff_ne, ne_eq, not_false_eq_true, decide_true]; exact h0
   by_cases he : j + 1 = N
   · refine .inl ⟨?_, hQ s' (he ▸ hI')⟩
     rw [hev]; simp [he]
-  · refine .inr ⟨?_, N - (j + 1), by omega, j + 1, rfl, by omega, hI'⟩
+  · refine .inr ⟨?_, N - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, hI'⟩
     rw [hev]; simp [he]
 
 /-! ## The comparison -/
@@ -83,15 +83,15 @@ theorem zext_read1 (m : Mem) (a : Addr) :
   simp only [Mem.read, BitVec.toNat_setWidth, BitVec.toNat_append, BitVec.toNat_ofNat]
   have := (m a).isLt
   simp
-  omega
+  omega_arith
 
 theorem ofNat_sub_one {k j : Nat} (hj : j < k) (hk : k < 2 ^ 64) :
     BitVec.ofNat 64 (k - j) - 1#64 = BitVec.ofNat 64 (k - (j + 1)) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega : k - j < 2 ^ 64), Nat.mod_eq_of_lt (by omega : k - (j + 1) < 2 ^ 64)]
+    Nat.mod_eq_of_lt (by omega_arith : k - j < 2 ^ 64), Nat.mod_eq_of_lt (by omega_arith : k - (j + 1) < 2 ^ 64)]
   simp only [Nat.reducePow, Nat.one_mod]
-  omega
+  omega_arith
 
 theorem ofNat_add_one' (p : Addr) (j : Nat) : p + BitVec.ofNat 64 j + 1#64 = p + BitVec.ofNat 64 (j + 1) := by
   rw [BitVec.add_assoc, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]
@@ -119,7 +119,7 @@ theorem cmp_step {t₀ t : State} {op ip : Addr} {k j : Nat} (hj : j < k) (hk : 
     hI.x13, BitVec.add_zero, ho, hi, Option.some.injEq, exists_eq_left', Nat.zero_mod, and_self,
     show (0 : Nat) < 4096 * 1 by decide, show (1 : Nat) < 4096 by decide]
   rw [zext_read1, zext_read1]
-  refine ⟨ofNat_sub_one hj (by omega), ⟨⟨fun r hr => ?_, hI.keep.rd, hI.keep.wr, hI.keep.sp, hI.keep.v⟩,
+  refine ⟨ofNat_sub_one hj (by omega_arith), ⟨⟨fun r hr => ?_, hI.keep.rd, hI.keep.wr, hI.keep.sp, hI.keep.v⟩,
     hI.mem, ?_, ?_, ?_, ?_⟩⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h8, h10, h11, h12, h13, h14⟩ := hr
@@ -130,7 +130,7 @@ theorem cmp_step {t₀ t : State} {op ip : Addr} {k j : Nat} (hj : j < k) (hk : 
   · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, BitVec.setWidth_eq]
     exact ofNat_add_one' _ _
   · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, BitVec.setWidth_eq]
-    exact ofNat_sub_one hj (by omega)
+    exact ofNat_sub_one hj (by omega_arith)
   · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, BitVec.setWidth_eq]
     rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.or_eq_zero_iff, ← show (0 : BitVec 64) = 0#64 from rfl,
       zext_xor_eq_zero, hI.x14, hI.mem]
@@ -140,7 +140,7 @@ theorem cmp_step {t₀ t : State} {op ip : Addr} {k j : Nat} (hj : j < k) (hk : 
       · exact h1 i hi
       · exact h2
     · intro h
-      exact ⟨fun i hi => h i (by omega), h j (by omega)⟩
+      exact ⟨fun i hi => h i (by omega_arith), h j (by omega_arith)⟩
 
 /-- The comparison of the `k` bytes at `op` and `ip`: `x14` is zero exactly
 when they are equal. -/
@@ -150,9 +150,9 @@ theorem cmpLoop_ok {t : State} {op ip : Addr} {k : Nat} (hk1 : 1 ≤ k) (hk : k 
     (ho : ∀ i < k, InRegions (t.rd ++ t.wr) (op + BitVec.ofNat 64 i) 1)
     (hi : ∀ i < k, InRegions (t.rd ++ t.wr) (ip + BitVec.ofNat 64 i) 1) :
     WP isa cmpLoop t (CmpInv t op ip k k) := by
-  refine wp_down (r := .x13) hk1 (by omega) (CmpInv t op ip k) (fun j hj u hI => ?_) (fun _ h => h)
+  refine wp_down (r := .x13) hk1 (by omega_arith) (CmpInv t op ip k) (fun j hj u hI => ?_) (fun _ h => h)
     ⟨Keep.refl _ _, rfl, by rw [h11, BitVec.add_zero], by rw [h12, BitVec.add_zero], by rw [h13, Nat.sub_zero],
-      ⟨fun _ _ h => absurd h (by omega), fun _ => h14⟩⟩
+      ⟨fun _ _ h => absurd h (by omega_arith), fun _ => h14⟩⟩
   have hrw : u.rd ++ u.wr = t.rd ++ t.wr := by rw [hI.keep.rd, hI.keep.wr]
   exact cmp_step hj hk (hrw ▸ ho j hj) (hrw ▸ hi j hj) hI
 
@@ -205,7 +205,7 @@ theorem write1_apply (m : Mem) (a x : Addr) (b : BitVec (8 * 1)) :
   · have : ¬ (x - a).toNat < 1 := by
       intro h'
       apply h
-      have : (x - a).toNat = 0 := by omega
+      have : (x - a).toNat = 0 := by omega_arith
       have : x - a = 0 := BitVec.eq_of_toNat_eq (by simpa using this)
       rw [← BitVec.sub_add_cancel x a, this]; exact BitVec.zero_add a
     simp only [this, h, ite_false]
@@ -253,7 +253,7 @@ theorem rel_step {t₀ t : State} {op Mb : Addr} {gv : BitVec 64} {eq : Bool} {k
     BitVec.add_zero, ho, hm, hmr, Option.some.injEq, exists_eq_left', Nat.zero_mod, and_self,
     show (0 : Nat) < 4096 * 1 by decide, show (1 : Nat) < 4096 by decide]
   rw [zext_read1]
-  refine ⟨ofNat_sub_one hj (by omega), ⟨⟨fun r hr => ?_, hI.keep.rd, hI.keep.wr, hI.keep.sp, hI.keep.v⟩,
+  refine ⟨ofNat_sub_one hj (by omega_arith), ⟨⟨fun r hr => ?_, hI.keep.rd, hI.keep.wr, hI.keep.sp, hI.keep.v⟩,
     ?_, ?_, ?_, fun i hi => ?_, fun i hi => ?_, fun x hx hx' => ?_⟩⟩
   all_goals simp only [RegUpd.gpr_write, RegUpd.mem_write, reduceCtorEq, ite_false, ite_true,
     BitVec.setWidth_eq, write1_apply]
@@ -263,21 +263,21 @@ theorem rel_step {t₀ t : State} {op Mb : Addr} {gv : BitVec 64} {eq : Bool} {k
     exact hI.keep.gpr r (by simp [h8, h11, h14, h15])
   · exact ofNat_add_one' _ _
   · exact ofNat_add_one' _ _
-  · exact ofNat_sub_one hj (by omega)
-  · rw [ite_neg' (hsep i (by omega) j hj)]
+  · exact ofNat_sub_one hj (by omega_arith)
+  · rw [ite_neg' (hsep i (by omega_arith) j hj)]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [ite_neg' fun h => absurd (hinj i (by omega) j hj h) (by omega)]
+    · rw [ite_neg' fun h => absurd (hinj i (by omega_arith) j hj h) (by omega_arith)]
       exact hI.out i hi
-    · rw [ite_pos' rfl, hI.frame _ (fun i' hi' h => hsep i' (by omega) i hj h.symm)
-        (fun i' hi' h => absurd (hinjM i hj i' (by omega) h) (by omega)), low8,
+    · rw [ite_pos' rfl, hI.frame _ (fun i' hi' h => hsep i' (by omega_arith) i hj h.symm)
+        (fun i' hi' h => absurd (hinjM i hj i' (by omega_arith) h) (by omega_arith)), low8,
         Proof.Rsa.low_and_mask]
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [ite_neg' fun h => absurd (hinjM i (by omega) j hj h) (by omega),
-        ite_neg' fun h => hsep j hj i (by omega) h.symm]
+    · rw [ite_neg' fun h => absurd (hinjM i (by omega_arith) j hj h) (by omega_arith),
+        ite_neg' fun h => hsep j hj i (by omega_arith) h.symm]
       exact hI.m i hi
     · rw [ite_pos' rfl]; rfl
-  · rw [ite_neg' (hx' j (by omega)), ite_neg' (hx j (by omega))]
-    exact hI.frame x (fun i hi => hx i (by omega)) fun i hi => hx' i (by omega)
+  · rw [ite_neg' (hx' j (by omega_arith)), ite_neg' (hx j (by omega_arith))]
+    exact hI.frame x (fun i hi => hx i (by omega_arith)) fun i hi => hx' i (by omega_arith)
 
 /-- The release of the `k` bytes at `Mb` to `op`. -/
 theorem releaseLoop_ok {t : State} {op Mb : Addr} {gv : BitVec 64} {eq : Bool} {k : Nat} (hk1 : 1 ≤ k)
@@ -289,9 +289,9 @@ theorem releaseLoop_ok {t : State} {op Mb : Addr} {gv : BitVec 64} {eq : Bool} {
     (ho : ∀ i < k, InRegions t.wr (op + BitVec.ofNat 64 i) 1)
     (hm : ∀ i < k, InRegions t.wr (Mb + BitVec.ofNat 64 i) 1) :
     WP isa releaseLoop t (RelInv t op Mb gv eq k k) := by
-  refine wp_down (r := .x15) hk1 (by omega) (RelInv t op Mb gv eq k) (fun j hj u hI => ?_) (fun _ h => h)
+  refine wp_down (r := .x15) hk1 (by omega_arith) (RelInv t op Mb gv eq k) (fun j hj u hI => ?_) (fun _ h => h)
     ⟨Keep.refl _ _, by rw [h11, BitVec.add_zero], by rw [h14, BitVec.add_zero], by rw [h15, Nat.sub_zero],
-      fun _ h => absurd h (by omega), fun _ h => absurd h (by omega), fun _ _ _ => rfl⟩
+      fun _ h => absurd h (by omega_arith), fun _ h => absurd h (by omega_arith), fun _ _ _ => rfl⟩
   have hw : u.wr = t.wr := hI.keep.wr
   exact rel_step hj hk h10 h12 hsep hinj hinjM (hw ▸ ho j hj) (hw ▸ hm j hj) hI
 
@@ -300,7 +300,7 @@ theorem add_ofNat_inj (p : Addr) {k : Nat} (hk : k ≤ 2 ^ 64) :
     ∀ i < k, ∀ i' < k, p + BitVec.ofNat 64 i = p + BitVec.ofNat 64 i' → i = i' := by
   intro i hi i' hi' h
   have := congrArg BitVec.toNat ((BitVec.add_right_inj p).mp h)
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)] at this
   exact this
 
 end VG.Proof.Rsa.AArch64

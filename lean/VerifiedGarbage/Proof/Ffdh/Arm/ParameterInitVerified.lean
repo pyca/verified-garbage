@@ -39,13 +39,7 @@ def parameterContract : Contract isa where
 theorem parameter_correct (s : State) (h : keyPre s) :
     ∃ tr t, Exec isa Generation.init s tr t ∧ abiPreserved s t ∧ parameterPost s t := by
   have ws : Workspace s (s.gpr .r0) 128 := ⟨h.2.2, by rw [h.2.1]; simp⟩
-  have run := withRest [.r0, .r2, .r3, .r12] (parameterInit_ok s ws rfl) (by
-    intro r hr i hi
-    have checked : (instrs Generation.init).all (fun i => !(clobbers i r)) = true := by
-      cases r <;> try decide +kernel
-      all_goals exact False.elim (hr (by decide))
-    have flag := List.all_eq_true.mp checked i hi
-    cases hc : clobbers i r <;> simp_all) (by rfl)
+  have run := withRest_all [.r0, .r2, .r3, .r12] (parameterInit_ok s ws rfl) (by rfl) (by rfl)
   obtain ⟨tr, t, exec, post, rest⟩ := run
   refine ⟨tr, t, exec, ⟨?_, rest.sp⟩, ?_⟩
   · intro r hr

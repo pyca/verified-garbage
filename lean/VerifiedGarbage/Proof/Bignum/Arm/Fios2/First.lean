@@ -39,13 +39,13 @@ theorem first_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
   let K : List Reg := firstClobbers
   -- r6 := T₀
   rw [VG.Impl.Bignum.Arm.Fios2.first, WP.seq_iff]
-  refine wp_ldr (a := off (State.addr base) (acc + 0)) (by decide) (ws.ea ptr (by omega)) (ws.read (by omega))
+  refine wp_ldr (a := off (State.addr base) (acc + 0)) (by decide) (ws.ea ptr (by omega_arith)) (ws.read (by omega_arith))
     fun s1 h1 => WP.block_nil ?_
   have k1 : Rest K s s1 := h1.rest (by simp [K])
   -- r6 + 2³² r7 := T₀ + B₀ a₀
   rw [WP.seq_iff]
   refine WP.mono (macAt_ok s1 (ws.congr k1.wr) ((k1.gpr .r12 (by simp [K])).trans source) (k := 0)
-    (by omega) (by decide) (c := .r7) (x := .r1) (by decide) (by decide) (by decide)) ?_
+    (by omega_arith) (by decide) (c := .r7) (x := .r1) (by decide) (by decide) (by decide)) ?_
   rintro s2 ⟨x1, m2, r2⟩
   have k2 : Rest K s s2 := k1.trans (r2.mono (by simp [K]))
   -- q₀ := m' (r6)
@@ -55,32 +55,32 @@ theorem first_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
   -- r6 + 2³² r8 := q₀ M₀ + r6, low word 0
   rw [WP.seq_iff]
   refine WP.mono (macAt_ok s3 (ws.congr k3.wr) ((k3.gpr .r4 (by simp [K])).trans modulus) (k := 0)
-    (by omega) (by decide) (c := .r8) (x := .r2) (by decide) (by decide) (by decide)) ?_
+    (by omega_arith) (by decide) (c := .r8) (x := .r2) (by decide) (by decide) (by decide)) ?_
   rintro s4 ⟨x2, m4, r4⟩
   have k4 : Rest K s s4 := k3.trans (r4.mono (by simp [K]))
   -- r6 := T₁
   rw [WP.seq_iff]
   refine wp_ldr (a := off (State.addr base) (acc + 4)) (by decide)
-    ((ws.congr k4.wr).ea ((k4.gpr .r0 (by simp [K])).trans ptr) (by omega))
-    ((ws.congr k4.wr).read (by omega))
+    ((ws.congr k4.wr).ea ((k4.gpr .r0 (by simp [K])).trans ptr) (by omega_arith))
+    ((ws.congr k4.wr).read (by omega_arith))
     fun s5 h5 => WP.block_nil ?_
   have k5 : Rest K s s5 := k4.trans (h5.rest (by simp [K]))
   -- r6 + 2³² r7 := T₁ + B₁ a₀ + r7
   rw [WP.seq_iff]
   refine WP.mono (macAt_ok s5 (ws.congr k5.wr) ((k5.gpr .r12 (by simp [K])).trans source) (k := 4)
-    (by omega) (by decide) (c := .r7) (x := .r1) (by decide) (by decide) (by decide)) ?_
+    (by omega_arith) (by decide) (c := .r7) (x := .r1) (by decide) (by decide) (by decide)) ?_
   rintro s6 ⟨x3, m6, r6⟩
   have k6 : Rest K s s6 := k5.trans (r6.mono (by simp [K]))
   -- r6 + 2³² r8 := M₁ q₀ + r6 + r8: row i's output word 0
   rw [WP.seq_iff]
   refine WP.mono (macAt_ok s6 (ws.congr k6.wr) ((k6.gpr .r4 (by simp [K])).trans modulus) (k := 4)
-    (by omega) (by decide) (c := .r8) (x := .r2) (by decide) (by decide) (by decide)) ?_
+    (by omega_arith) (by decide) (c := .r8) (x := .r2) (by decide) (by decide) (by decide)) ?_
   rintro s7 ⟨x4, m7, r7⟩
   have k7 : Rest K s s7 := k6.trans (r7.mono (by simp [K]))
   -- r6 + 2³² r5 := B₀ a₁ + r6
   rw [WP.seq_iff]
   refine WP.mono (macAt_ok s7 (ws.congr k7.wr) ((k7.gpr .r12 (by simp [K])).trans source) (k := 0)
-    (by omega) (by decide) (c := .r5) (x := .r9) (by decide) (by decide) (by decide)) ?_
+    (by omega_arith) (by decide) (c := .r5) (x := .r9) (by decide) (by decide) (by decide)) ?_
   rintro s8 ⟨x5, m8, r8⟩
   have k8 : Rest K s s8 := k7.trans (r8.mono (by simp [K]))
   -- q₁ := m' (r6)
@@ -90,7 +90,7 @@ theorem first_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
   -- r6 + 2³² r11 := M₀ q₁ + r6, low word 0
   rw [WP.seq_iff]
   refine WP.mono (macAt_ok s9 (ws.congr k9.wr) ((k9.gpr .r4 (by simp [K])).trans modulus) (k := 0)
-    (by omega) (by decide) (c := .r11) (x := .r10) (by decide) (by decide) (by decide)) ?_
+    (by omega_arith) (by decide) (c := .r11) (x := .r10) (by decide) (by decide) (by decide)) ?_
   rintro s10 ⟨x6, m10, r10⟩
   have k10 : Rest K s s10 := k9.trans (r10.mono (by simp [K]))
   -- the count
@@ -178,7 +178,7 @@ theorem first_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
   have t5 : t.gpr .r5 = s8.gpr .r5 := by
     rw [ht.other .r5 (by decide), r10.gpr .r5 (by simp), h9.other .r5 (by decide)]
   have t11 : t.gpr .r11 = s10.gpr .r11 := ht.other .r11 (by decide)
-  refine ⟨by omega, by omega, ?_, ?_, ?_, ?_, keep .r1 (by simp [K]), rfl, keep .r9 (by simp [K]), rfl,
+  refine ⟨by omega_arith, by omega_arith, ?_, ?_, ?_, ?_, keep .r1 (by simp [K]), rfl, keep .r9 (by simp [K]), rfl,
     by rw [memt, Nat.mul_zero]; exact Outside.refl _ _ _ _, ?_, kt.mono (by simp [K, roundClobbers])⟩
   · rw [keep .r0 (by simp [K]), ptr, Nat.mul_zero, Nat.add_zero]
   · rw [keep .r12 (by simp [K]), source, Nat.mul_zero, Nat.add_zero]
@@ -186,7 +186,7 @@ theorem first_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
   · rw [ht.gpr, dpVal, r10.gpr .lr (by simp), h9.other .lr (by decide), r8.gpr .lr (by simp),
       r7.gpr .lr (by simp), r6.gpr .lr (by simp), h5.other .lr (by decide), r4.gpr .lr (by simp),
       h3.other .lr (by decide), r2.gpr .lr (by simp), h1.other .lr (by decide), count, Nat.sub_zero]
-    exact BitVec.ofNat_sub_ofNat_of_le n 2 (by decide) (by omega)
+    exact BitVec.ofNat_sub_ofNat_of_le n 2 (by decide) (by omega_arith)
   · rw [carries, t7, t8, t5, t11, q0t, q1t]
     simp only [val32, Nat.zero_add, Nat.mul_zero, Nat.add_zero, show 32 * 2 = 64 from rfl]
     rw [show b + 4 = b + 4 from rfl] -- keep the offsets as `total` states them

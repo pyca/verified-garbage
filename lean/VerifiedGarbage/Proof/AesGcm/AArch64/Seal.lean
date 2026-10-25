@@ -154,7 +154,7 @@ theorem entryStash_ok {s : State} {Ctx W : Addr} {k j : Nat} {V : BitVec 64} (hk
       fun s₂ ⟨x28₂, m₂, og₂, sp₂, rd₂, wr₂⟩ => ?_)
   have so (d : Nat) (hd : d + 8 ≤ 248) : s₂.mem.readW (W + BitVec.ofNat 64 d) 64 =
       s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := by
-    rw [m₂, readW_writeW_other _ _ _ (.inl hd) (by omega) (by decide)]
+    rw [m₂, readW_writeW_other _ _ _ (.inl hd) (by omega_arith) (by decide)]
   have g₂ : ∀ r ∈ [Reg.x22, .x23, .x24, .x26, .x27], s₂.gpr r = s₁.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     exact og₂ r (by rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -222,13 +222,13 @@ theorem sealEntry_ok {w : Nat} (hw : w = 1 ∨ w = 2) {extra extraW : List Regio
   obtain ⟨L, perm, hsp, dnW, daW, ddW, dcW, daA, dnd, dad, dcd, wn, wa, wd, hR, nR, aR, dW⟩ := ol
   have hW8 : s.mem.readW (s.sp + BitVec.ofNat 64 (8 * w)) 64 = stackArg s w := rfl
   have hT0 : s.mem.readW (s.sp + BitVec.ofNat 64 0) 64 = stackArg s 0 := rfl
-  have hsp8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * w)) 8 := hsp w (by omega)
-  have hsp0 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8 := hsp 0 (by omega)
+  have hsp8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * w)) 8 := hsp w (by omega_arith)
+  have hsp0 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8 := hsp 0 (by omega_arith)
   have darg : (⟨s.sp + BitVec.ofNat 64 0, 8⟩ : Region).Disjoint (workR (stackArg s w)) := by
     refine daA.sub_left ?_
     show Region.Sub ⟨s.sp + BitVec.ofNat 64 0, 8⟩ ⟨s.sp + BitVec.ofNat 64 (8 * 0), 8 * (w + 1)⟩
-    exact Region.sub_prefix (by omega)
-  exact WP.mono (entryStash_ok (k := 8 * w) (j := 0) (V := stackArg s 0) (by omega) (by decide) hW8 hsp8 hsp0
+    exact Region.sub_prefix (by omega_arith)
+  exact WP.mono (entryStash_ok (k := 8 * w) (j := 0) (V := stackArg s 0) (by omega_arith) (by decide) hW8 hsp8 hsp0
       hT0 darg rfl perm)
     fun s₁ ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ =>
       ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩
@@ -267,9 +267,9 @@ theorem sealRest_ok (v : GcmImpl) {w : Nat} {extra extraW : List Region} {s s₁
   have haad : DataOk (W + BitVec.ofNat 64 16) W s₁ A al :=
     ⟨by rw [rd₁, wr₁]; exact aR, hal ▸ (s.gpr .x5).isLt, wa, daW.sub_right sub16, daW⟩
   have iv₁ : bytesAt s₁.mem Np nl = bytesAt s.mem Np nl :=
-    bytesAt_frame f₁ (keep_of_sub (entryR_work W) dnW) (by omega)
+    bytesAt_frame f₁ (keep_of_sub (entryR_work W) dnW) (by omega_arith)
   have a₁ : bytesAt s₁.mem A al = bytesAt s.mem A al :=
-    bytesAt_frame f₁ (keep_of_sub (entryR_work W) daW) (by omega)
+    bytesAt_frame f₁ (keep_of_sub (entryR_work W) daW) (by omega_arith)
   refine front_ok L v he₁ (fun _ _ => rfl : Kept s₁.gpr s₁) x23₁ (by rw [x24₁, ← h3])
     (by rw [x26₁, ← h3]) x27₁ hnon haad hH₁ sl₁ sl₂ sl₃ sl₄ fun s₂ h₂ => ?_
   rw [iv₁, a₁] at h₂
@@ -303,8 +303,8 @@ theorem sealRest_ok (v : GcmImpl) {w : Nat} {extra extraW : List Region} {s s₁
     rw [ciph_frame h₃.frame kcd hRb, ciph_frame h₂.frame (keep_of_sub (frontFrame_work W) dcW) hRb,
       ciph_frame f₁ (keep_of_sub (entryR_work W) dcW) hRb]
   have hD₂ : bytesAt s₂.mem D n = bytesAt s.mem D n := by
-    rw [bytesAt_frame h₂.frame (keep_of_sub (frontFrame_work W) ddW) (by omega),
-      bytesAt_frame f₁ (keep_of_sub (entryR_work W) ddW) (by omega)]
+    rw [bytesAt_frame h₂.frame (keep_of_sub (frontFrame_work W) ddW) (by omega_arith),
+      bytesAt_frame f₁ (keep_of_sub (entryR_work W) ddW) (by omega_arith)]
   have hc₂ : ciphOf s₂.mem Ctx R = ciphOf s.mem Ctx R := by
     rw [ciph_frame h₂.frame (keep_of_sub (frontFrame_work W) dcW) hRb,
       ciph_frame f₁ (keep_of_sub (entryR_work W) dcW) hRb]
@@ -336,8 +336,8 @@ theorem sealRest_ok (v : GcmImpl) {w : Nat} {extra extraW : List Region} {s s₁
   rw [hm]
   have hdata : bytesAt s₆.mem D n = gctr (ctxCiph s.mem Ctx R)
       (inc32 (Spec.Gcm.j0 (ctxH s.mem Ctx) (bytesAt s.mem Np nl))) (bytesAt s.mem D n) := by
-    rw [bytesAt_frame f₆ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ddt) (by omega),
-      bytesAt_frame f₅ (keep_of_sub (finFrame_work W (.inl rfl)) ddW) (by omega), m₄, o₃, hc₂, hD₂,
+    rw [bytesAt_frame f₆ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ddt) (by omega_arith),
+      bytesAt_frame f₅ (keep_of_sub (finFrame_work W (.inl rfl)) ddW) (by omega_arith), m₄, o₃, hc₂, hD₂,
       Proof.Gcm.gctr_eq]
     rfl
   have hj₄ : blockAt s₄'.mem (W + BitVec.ofNat 64 16) = Spec.Gcm.j0 (ctxH s.mem Ctx) (bytesAt s.mem Np nl) := by
