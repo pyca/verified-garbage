@@ -6,7 +6,7 @@
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The model has no carry, so the numbers are 32-bit digits (the 32-bit words of the numbers, `lwz` and `stw`) in 64-bit registers: a digit times a digit plus a digit and a carry fits in 64 bits. The product is digit-by-digit Montgomery multiplication (CIOS, with `mulld` and the accumulator in the own working space, one row of `[b]` and one of the modulus for each digit of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a 64-bit word at a time.
+/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
 ///
 /// # Safety
 ///
@@ -48,250 +48,147 @@ stw %r11, 3968(%r3)
 lis %r11, -22021
 ori %r11, %r11, 22491
 stw %r11, 3972(%r3)
-li %r11, 0
-stw %r11, 3840(%r3)
-stw %r11, 3844(%r3)
-stw %r11, 3848(%r3)
-stw %r11, 3852(%r3)
-stw %r11, 3856(%r3)
-stw %r11, 3860(%r3)
-stw %r11, 3864(%r3)
-stw %r11, 3868(%r3)
-stw %r11, 3872(%r3)
-stw %r11, 3876(%r3)
+lis %r11, -12547
+ori %r11, %r11, 35257
 stw %r11, 3880(%r3)
+lis %r11, -14681
+ori %r11, %r11, 21904
 stw %r11, 3884(%r3)
-stw %r11, 3888(%r3)
-stw %r11, 3892(%r3)
-stw %r11, 3896(%r3)
-stw %r11, 3900(%r3)
-stw %r11, 3904(%r3)
-stw %r11, 3908(%r3)
-addi %r7, %r3, 3840
-li %r8, 8
+li %r11, 0
+std %r11, 3840(%r3)
+std %r11, 3848(%r3)
+std %r11, 3856(%r3)
+std %r11, 3864(%r3)
+std %r11, 3872(%r3)
+addi %r7, %r3, 3944
+li %r8, 4
 20:
-lwz %r9, 0(%r5)
-li %r10, 0
-lwz %r11, 0(%r6)
-lwz %r12, 0(%r7)
+ld %r9, 0(%r5)
+li %r0, 0
+ld %r11, 0(%r6)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 0(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 4(%r6)
-lwz %r12, 4(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3840(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3840(%r3)
+ld %r11, 8(%r6)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 4(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 8(%r6)
-lwz %r12, 8(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3848(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3848(%r3)
+ld %r11, 16(%r6)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 8(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 12(%r6)
-lwz %r12, 12(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3856(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3856(%r3)
+ld %r11, 24(%r6)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 12(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 16(%r6)
-lwz %r12, 16(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3864(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3864(%r3)
+ld %r10, 3872(%r3)
+addc %r10, %r10, %r0
+std %r10, 3872(%r3)
+li %r12, 0
+addze %r12, %r12
+ld %r11, 3840(%r3)
+ld %r10, 3880(%r3)
+mulld %r9, %r11, %r10
+ld %r10, 0(%r7)
+mulhdu %r0, %r9, %r10
+mulld %r10, %r9, %r10
+addc %r10, %r10, %r11
+addze %r0, %r0
+ld %r11, 8(%r7)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 16(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 20(%r6)
-lwz %r12, 20(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3848(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3840(%r3)
+ld %r11, 16(%r7)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 20(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 24(%r6)
-lwz %r12, 24(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3856(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3848(%r3)
+ld %r11, 24(%r7)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 24(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 28(%r6)
-lwz %r12, 28(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 28(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r12, 32(%r7)
-add %r12, %r12, %r10
-stw %r12, 32(%r7)
-rldicl %r12, %r12, 32, 32
-lwz %r11, 36(%r7)
-add %r11, %r11, %r12
-stw %r11, 36(%r7)
-lwz %r9, 0(%r7)
-lis %r0, -12547
-ori %r0, %r0, 35257
-mulld %r9, %r9, %r0
-rlwinm %r9, %r9, 0, 0, 31
-li %r10, 0
-lwz %r11, 3944(%r3)
-lwz %r12, 0(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 0(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3948(%r3)
-lwz %r12, 4(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 4(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3952(%r3)
-lwz %r12, 8(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 8(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3956(%r3)
-lwz %r12, 12(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 12(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3960(%r3)
-lwz %r12, 16(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 16(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3964(%r3)
-lwz %r12, 20(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 20(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3968(%r3)
-lwz %r12, 24(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 24(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3972(%r3)
-lwz %r12, 28(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 28(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r12, 32(%r7)
-add %r12, %r12, %r10
-stw %r12, 32(%r7)
-rldicl %r12, %r12, 32, 32
-lwz %r11, 36(%r7)
-add %r11, %r11, %r12
-stw %r11, 36(%r7)
-addi %r7, %r7, 4
-addi %r5, %r5, 4
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3864(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3856(%r3)
+ld %r10, 3872(%r3)
+addc %r10, %r10, %r0
+std %r10, 3864(%r3)
+addze %r12, %r12
+std %r12, 3872(%r3)
+addi %r5, %r5, 8
 addi %r8, %r8, -1
 cmpldi %cr0, %r8, 0
 bne %cr0, 20b
-li %r0, 0
-ori %r0, %r0, 65535
-oris %r0, %r0, 65535
-li %r10, 1
-lwz %r11, 3872(%r3)
-lwz %r12, 3944(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3912(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3876(%r3)
-lwz %r12, 3948(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3916(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3880(%r3)
-lwz %r12, 3952(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3920(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3884(%r3)
-lwz %r12, 3956(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3924(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3888(%r3)
-lwz %r12, 3960(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3928(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3892(%r3)
-lwz %r12, 3964(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3932(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3896(%r3)
-lwz %r12, 3968(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3936(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3900(%r3)
-lwz %r12, 3972(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3940(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3904(%r3)
-add %r10, %r10, %r11
+ld %r11, 3840(%r3)
+ld %r12, 0(%r7)
+subfc %r11, %r12, %r11
+std %r11, 3912(%r3)
+ld %r11, 3848(%r3)
+ld %r12, 8(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3920(%r3)
+ld %r11, 3856(%r3)
+ld %r12, 16(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3928(%r3)
+ld %r11, 3864(%r3)
+ld %r12, 24(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3936(%r3)
+ld %r11, 3872(%r3)
+addze %r10, %r11
 li %r11, 0
 subf %r10, %r10, %r11
-ld %r11, 3872(%r3)
+ld %r11, 3840(%r3)
 ld %r12, 3912(%r3)
 xor %r12, %r12, %r11
 and %r12, %r12, %r10
 xor %r11, %r11, %r12
 std %r11, 0(%r4)
-ld %r11, 3880(%r3)
+ld %r11, 3848(%r3)
 ld %r12, 3920(%r3)
 xor %r12, %r12, %r11
 and %r12, %r12, %r10
 xor %r11, %r11, %r12
 std %r11, 8(%r4)
-ld %r11, 3888(%r3)
+ld %r11, 3856(%r3)
 ld %r12, 3928(%r3)
 xor %r12, %r12, %r11
 and %r12, %r12, %r10
 xor %r11, %r11, %r12
 std %r11, 16(%r4)
-ld %r11, 3896(%r3)
+ld %r11, 3864(%r3)
 ld %r12, 3936(%r3)
 xor %r12, %r12, %r11
 and %r12, %r12, %r10
@@ -305,7 +202,7 @@ blr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The model has no carry, so the numbers are 32-bit digits (the 32-bit words of the numbers, `lwz` and `stw`) in 64-bit registers: a digit times a digit plus a digit and a carry fits in 64 bits. The product is digit-by-digit Montgomery multiplication (CIOS, with `mulld` and the accumulator in the own working space, one row of `[b]` and one of the modulus for each digit of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a 64-bit word at a time.
+/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
 ///
 /// # Safety
 ///
@@ -347,118 +244,44 @@ stw %r11, 3968(%r3)
 lis %r11, -22021
 ori %r11, %r11, 22491
 stw %r11, 3972(%r3)
+addi %r7, %r3, 3944
+ld %r11, 0(%r5)
+ld %r12, 0(%r6)
+addc %r11, %r11, %r12
+std %r11, 3840(%r3)
+ld %r11, 8(%r5)
+ld %r12, 8(%r6)
+adde %r11, %r11, %r12
+std %r11, 3848(%r3)
+ld %r11, 16(%r5)
+ld %r12, 16(%r6)
+adde %r11, %r11, %r12
+std %r11, 3856(%r3)
+ld %r11, 24(%r5)
+ld %r12, 24(%r6)
+adde %r11, %r11, %r12
+std %r11, 3864(%r3)
 li %r10, 0
-lwz %r11, 0(%r5)
-lwz %r12, 0(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3840(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 4(%r5)
-lwz %r12, 4(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3844(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 8(%r5)
-lwz %r12, 8(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3848(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 12(%r5)
-lwz %r12, 12(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3852(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 16(%r5)
-lwz %r12, 16(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3856(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 20(%r5)
-lwz %r12, 20(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3860(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 24(%r5)
-lwz %r12, 24(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3864(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 28(%r5)
-lwz %r12, 28(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3868(%r3)
-rldicl %r10, %r11, 32, 32
-stw %r10, 3872(%r3)
-li %r0, 0
-ori %r0, %r0, 65535
-oris %r0, %r0, 65535
-li %r10, 1
-lwz %r11, 3840(%r3)
-lwz %r12, 3944(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3912(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3844(%r3)
-lwz %r12, 3948(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3916(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3848(%r3)
-lwz %r12, 3952(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3920(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3852(%r3)
-lwz %r12, 3956(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3924(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3856(%r3)
-lwz %r12, 3960(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3928(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3860(%r3)
-lwz %r12, 3964(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3932(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3864(%r3)
-lwz %r12, 3968(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3936(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3868(%r3)
-lwz %r12, 3972(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3940(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3872(%r3)
-add %r10, %r10, %r11
+addze %r10, %r10
+std %r10, 3872(%r3)
+ld %r11, 3840(%r3)
+ld %r12, 0(%r7)
+subfc %r11, %r12, %r11
+std %r11, 3912(%r3)
+ld %r11, 3848(%r3)
+ld %r12, 8(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3920(%r3)
+ld %r11, 3856(%r3)
+ld %r12, 16(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3928(%r3)
+ld %r11, 3864(%r3)
+ld %r12, 24(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3936(%r3)
+ld %r11, 3872(%r3)
+addze %r10, %r11
 li %r11, 0
 subf %r10, %r10, %r11
 ld %r11, 3840(%r3)
@@ -493,7 +316,7 @@ blr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The model has no carry, so the numbers are 32-bit digits (the 32-bit words of the numbers, `lwz` and `stw`) in 64-bit registers: a digit times a digit plus a digit and a carry fits in 64 bits. The product is digit-by-digit Montgomery multiplication (CIOS, with `mulld` and the accumulator in the own working space, one row of `[b]` and one of the modulus for each digit of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a 64-bit word at a time.
+/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
 ///
 /// # Safety
 ///
@@ -535,148 +358,40 @@ stw %r11, 3968(%r3)
 lis %r11, -22021
 ori %r11, %r11, 22491
 stw %r11, 3972(%r3)
-li %r0, 0
-ori %r0, %r0, 65535
-oris %r0, %r0, 65535
-li %r10, 1
-lwz %r11, 0(%r5)
-lwz %r12, 3944(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 0(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3840(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 4(%r5)
-lwz %r12, 3948(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 4(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3844(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 8(%r5)
-lwz %r12, 3952(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 8(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3848(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 12(%r5)
-lwz %r12, 3956(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 12(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3852(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 16(%r5)
-lwz %r12, 3960(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 16(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3856(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 20(%r5)
-lwz %r12, 3964(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 20(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3860(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 24(%r5)
-lwz %r12, 3968(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 24(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3864(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 28(%r5)
-lwz %r12, 3972(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 28(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3868(%r3)
-rldicl %r10, %r11, 32, 32
-addi %r10, %r10, -1
-stw %r10, 3872(%r3)
-li %r0, 0
-ori %r0, %r0, 65535
-oris %r0, %r0, 65535
-li %r10, 1
-lwz %r11, 3840(%r3)
-lwz %r12, 3944(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3912(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3844(%r3)
-lwz %r12, 3948(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3916(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3848(%r3)
-lwz %r12, 3952(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3920(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3852(%r3)
-lwz %r12, 3956(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3924(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3856(%r3)
-lwz %r12, 3960(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3928(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3860(%r3)
-lwz %r12, 3964(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3932(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3864(%r3)
-lwz %r12, 3968(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3936(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3868(%r3)
-lwz %r12, 3972(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3940(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3872(%r3)
-add %r10, %r10, %r11
-li %r11, 0
-subf %r10, %r10, %r11
+addi %r7, %r3, 3944
+ld %r11, 0(%r5)
+ld %r12, 0(%r6)
+subfc %r11, %r12, %r11
+std %r11, 3840(%r3)
+ld %r11, 8(%r5)
+ld %r12, 8(%r6)
+subfe %r11, %r12, %r11
+std %r11, 3848(%r3)
+ld %r11, 16(%r5)
+ld %r12, 16(%r6)
+subfe %r11, %r12, %r11
+std %r11, 3856(%r3)
+ld %r11, 24(%r5)
+ld %r12, 24(%r6)
+subfe %r11, %r12, %r11
+std %r11, 3864(%r3)
+subfe %r10, %r10, %r10
+ld %r11, 3840(%r3)
+ld %r12, 0(%r7)
+addc %r11, %r11, %r12
+std %r11, 3912(%r3)
+ld %r11, 3848(%r3)
+ld %r12, 8(%r7)
+adde %r11, %r11, %r12
+std %r11, 3920(%r3)
+ld %r11, 3856(%r3)
+ld %r12, 16(%r7)
+adde %r11, %r11, %r12
+std %r11, 3928(%r3)
+ld %r11, 3864(%r3)
+ld %r12, 24(%r7)
+adde %r11, %r11, %r12
+std %r11, 3936(%r3)
 ld %r11, 3840(%r3)
 ld %r12, 3912(%r3)
 xor %r12, %r12, %r11
@@ -709,7 +424,7 @@ blr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The model has no carry, so the numbers are 32-bit digits (the 32-bit words of the numbers, `lwz` and `stw`) in 64-bit registers: a digit times a digit plus a digit and a carry fits in 64 bits. The product is digit-by-digit Montgomery multiplication (CIOS, with `mulld` and the accumulator in the own working space, one row of `[b]` and one of the modulus for each digit of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a 64-bit word at a time.
+/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
 ///
 /// # Safety
 ///
@@ -751,250 +466,147 @@ stw %r11, 3968(%r3)
 lis %r11, -22021
 ori %r11, %r11, 22491
 stw %r11, 3972(%r3)
-li %r11, 0
-stw %r11, 3840(%r3)
-stw %r11, 3844(%r3)
-stw %r11, 3848(%r3)
-stw %r11, 3852(%r3)
-stw %r11, 3856(%r3)
-stw %r11, 3860(%r3)
-stw %r11, 3864(%r3)
-stw %r11, 3868(%r3)
-stw %r11, 3872(%r3)
-stw %r11, 3876(%r3)
+lis %r11, -13388
+ori %r11, %r11, 3817
 stw %r11, 3880(%r3)
+lis %r11, -1025
+ori %r11, %r11, 48829
 stw %r11, 3884(%r3)
-stw %r11, 3888(%r3)
-stw %r11, 3892(%r3)
-stw %r11, 3896(%r3)
-stw %r11, 3900(%r3)
-stw %r11, 3904(%r3)
-stw %r11, 3908(%r3)
-addi %r7, %r3, 3840
-li %r8, 8
+li %r11, 0
+std %r11, 3840(%r3)
+std %r11, 3848(%r3)
+std %r11, 3856(%r3)
+std %r11, 3864(%r3)
+std %r11, 3872(%r3)
+addi %r7, %r3, 3944
+li %r8, 4
 20:
-lwz %r9, 0(%r5)
-li %r10, 0
-lwz %r11, 0(%r6)
-lwz %r12, 0(%r7)
+ld %r9, 0(%r5)
+li %r0, 0
+ld %r11, 0(%r6)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 0(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 4(%r6)
-lwz %r12, 4(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3840(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3840(%r3)
+ld %r11, 8(%r6)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 4(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 8(%r6)
-lwz %r12, 8(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3848(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3848(%r3)
+ld %r11, 16(%r6)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 8(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 12(%r6)
-lwz %r12, 12(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3856(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3856(%r3)
+ld %r11, 24(%r6)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 12(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 16(%r6)
-lwz %r12, 16(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3864(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3864(%r3)
+ld %r10, 3872(%r3)
+addc %r10, %r10, %r0
+std %r10, 3872(%r3)
+li %r12, 0
+addze %r12, %r12
+ld %r11, 3840(%r3)
+ld %r10, 3880(%r3)
+mulld %r9, %r11, %r10
+ld %r10, 0(%r7)
+mulhdu %r0, %r9, %r10
+mulld %r10, %r9, %r10
+addc %r10, %r10, %r11
+addze %r0, %r0
+ld %r11, 8(%r7)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 16(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 20(%r6)
-lwz %r12, 20(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3848(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3840(%r3)
+ld %r11, 16(%r7)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 20(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 24(%r6)
-lwz %r12, 24(%r7)
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3856(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3848(%r3)
+ld %r11, 24(%r7)
+mulhdu %r10, %r9, %r11
 mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 24(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 28(%r6)
-lwz %r12, 28(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 28(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r12, 32(%r7)
-add %r12, %r12, %r10
-stw %r12, 32(%r7)
-rldicl %r12, %r12, 32, 32
-lwz %r11, 36(%r7)
-add %r11, %r11, %r12
-stw %r11, 36(%r7)
-lwz %r9, 0(%r7)
-lis %r0, -13388
-ori %r0, %r0, 3817
-mulld %r9, %r9, %r0
-rlwinm %r9, %r9, 0, 0, 31
-li %r10, 0
-lwz %r11, 3944(%r3)
-lwz %r12, 0(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 0(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3948(%r3)
-lwz %r12, 4(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 4(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3952(%r3)
-lwz %r12, 8(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 8(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3956(%r3)
-lwz %r12, 12(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 12(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3960(%r3)
-lwz %r12, 16(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 16(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3964(%r3)
-lwz %r12, 20(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 20(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3968(%r3)
-lwz %r12, 24(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 24(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r11, 3972(%r3)
-lwz %r12, 28(%r7)
-mulld %r11, %r9, %r11
-add %r12, %r12, %r11
-add %r12, %r12, %r10
-stw %r12, 28(%r7)
-rldicl %r10, %r12, 32, 32
-lwz %r12, 32(%r7)
-add %r12, %r12, %r10
-stw %r12, 32(%r7)
-rldicl %r12, %r12, 32, 32
-lwz %r11, 36(%r7)
-add %r11, %r11, %r12
-stw %r11, 36(%r7)
-addi %r7, %r7, 4
-addi %r5, %r5, 4
+addc %r11, %r11, %r0
+addze %r10, %r10
+ld %r0, 3864(%r3)
+addc %r11, %r11, %r0
+addze %r0, %r10
+std %r11, 3856(%r3)
+ld %r10, 3872(%r3)
+addc %r10, %r10, %r0
+std %r10, 3864(%r3)
+addze %r12, %r12
+std %r12, 3872(%r3)
+addi %r5, %r5, 8
 addi %r8, %r8, -1
 cmpldi %cr0, %r8, 0
 bne %cr0, 20b
-li %r0, 0
-ori %r0, %r0, 65535
-oris %r0, %r0, 65535
-li %r10, 1
-lwz %r11, 3872(%r3)
-lwz %r12, 3944(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3912(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3876(%r3)
-lwz %r12, 3948(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3916(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3880(%r3)
-lwz %r12, 3952(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3920(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3884(%r3)
-lwz %r12, 3956(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3924(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3888(%r3)
-lwz %r12, 3960(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3928(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3892(%r3)
-lwz %r12, 3964(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3932(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3896(%r3)
-lwz %r12, 3968(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3936(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3900(%r3)
-lwz %r12, 3972(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3940(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3904(%r3)
-add %r10, %r10, %r11
+ld %r11, 3840(%r3)
+ld %r12, 0(%r7)
+subfc %r11, %r12, %r11
+std %r11, 3912(%r3)
+ld %r11, 3848(%r3)
+ld %r12, 8(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3920(%r3)
+ld %r11, 3856(%r3)
+ld %r12, 16(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3928(%r3)
+ld %r11, 3864(%r3)
+ld %r12, 24(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3936(%r3)
+ld %r11, 3872(%r3)
+addze %r10, %r11
 li %r11, 0
 subf %r10, %r10, %r11
-ld %r11, 3872(%r3)
+ld %r11, 3840(%r3)
 ld %r12, 3912(%r3)
 xor %r12, %r12, %r11
 and %r12, %r12, %r10
 xor %r11, %r11, %r12
 std %r11, 0(%r4)
-ld %r11, 3880(%r3)
+ld %r11, 3848(%r3)
 ld %r12, 3920(%r3)
 xor %r12, %r12, %r11
 and %r12, %r12, %r10
 xor %r11, %r11, %r12
 std %r11, 8(%r4)
-ld %r11, 3888(%r3)
+ld %r11, 3856(%r3)
 ld %r12, 3928(%r3)
 xor %r12, %r12, %r11
 and %r12, %r12, %r10
 xor %r11, %r11, %r12
 std %r11, 16(%r4)
-ld %r11, 3896(%r3)
+ld %r11, 3864(%r3)
 ld %r12, 3936(%r3)
 xor %r12, %r12, %r11
 and %r12, %r12, %r10
@@ -1008,7 +620,7 @@ blr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The model has no carry, so the numbers are 32-bit digits (the 32-bit words of the numbers, `lwz` and `stw`) in 64-bit registers: a digit times a digit plus a digit and a carry fits in 64 bits. The product is digit-by-digit Montgomery multiplication (CIOS, with `mulld` and the accumulator in the own working space, one row of `[b]` and one of the modulus for each digit of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a 64-bit word at a time.
+/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
 ///
 /// # Safety
 ///
@@ -1050,118 +662,44 @@ stw %r11, 3968(%r3)
 lis %r11, -22021
 ori %r11, %r11, 22491
 stw %r11, 3972(%r3)
+addi %r7, %r3, 3944
+ld %r11, 0(%r5)
+ld %r12, 0(%r6)
+addc %r11, %r11, %r12
+std %r11, 3840(%r3)
+ld %r11, 8(%r5)
+ld %r12, 8(%r6)
+adde %r11, %r11, %r12
+std %r11, 3848(%r3)
+ld %r11, 16(%r5)
+ld %r12, 16(%r6)
+adde %r11, %r11, %r12
+std %r11, 3856(%r3)
+ld %r11, 24(%r5)
+ld %r12, 24(%r6)
+adde %r11, %r11, %r12
+std %r11, 3864(%r3)
 li %r10, 0
-lwz %r11, 0(%r5)
-lwz %r12, 0(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3840(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 4(%r5)
-lwz %r12, 4(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3844(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 8(%r5)
-lwz %r12, 8(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3848(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 12(%r5)
-lwz %r12, 12(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3852(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 16(%r5)
-lwz %r12, 16(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3856(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 20(%r5)
-lwz %r12, 20(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3860(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 24(%r5)
-lwz %r12, 24(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3864(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 28(%r5)
-lwz %r12, 28(%r6)
-add %r11, %r11, %r12
-add %r11, %r11, %r10
-stw %r11, 3868(%r3)
-rldicl %r10, %r11, 32, 32
-stw %r10, 3872(%r3)
-li %r0, 0
-ori %r0, %r0, 65535
-oris %r0, %r0, 65535
-li %r10, 1
-lwz %r11, 3840(%r3)
-lwz %r12, 3944(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3912(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3844(%r3)
-lwz %r12, 3948(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3916(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3848(%r3)
-lwz %r12, 3952(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3920(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3852(%r3)
-lwz %r12, 3956(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3924(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3856(%r3)
-lwz %r12, 3960(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3928(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3860(%r3)
-lwz %r12, 3964(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3932(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3864(%r3)
-lwz %r12, 3968(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3936(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3868(%r3)
-lwz %r12, 3972(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3940(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3872(%r3)
-add %r10, %r10, %r11
+addze %r10, %r10
+std %r10, 3872(%r3)
+ld %r11, 3840(%r3)
+ld %r12, 0(%r7)
+subfc %r11, %r12, %r11
+std %r11, 3912(%r3)
+ld %r11, 3848(%r3)
+ld %r12, 8(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3920(%r3)
+ld %r11, 3856(%r3)
+ld %r12, 16(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3928(%r3)
+ld %r11, 3864(%r3)
+ld %r12, 24(%r7)
+subfe %r11, %r12, %r11
+std %r11, 3936(%r3)
+ld %r11, 3872(%r3)
+addze %r10, %r11
 li %r11, 0
 subf %r10, %r10, %r11
 ld %r11, 3840(%r3)
@@ -1196,7 +734,7 @@ blr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The model has no carry, so the numbers are 32-bit digits (the 32-bit words of the numbers, `lwz` and `stw`) in 64-bit registers: a digit times a digit plus a digit and a carry fits in 64 bits. The product is digit-by-digit Montgomery multiplication (CIOS, with `mulld` and the accumulator in the own working space, one row of `[b]` and one of the modulus for each digit of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a 64-bit word at a time.
+/// The function zero-extends the offsets, stores the modulus in its own working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by a mask, a word at a time.
 ///
 /// # Safety
 ///
@@ -1238,148 +776,40 @@ stw %r11, 3968(%r3)
 lis %r11, -22021
 ori %r11, %r11, 22491
 stw %r11, 3972(%r3)
-li %r0, 0
-ori %r0, %r0, 65535
-oris %r0, %r0, 65535
-li %r10, 1
-lwz %r11, 0(%r5)
-lwz %r12, 3944(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 0(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3840(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 4(%r5)
-lwz %r12, 3948(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 4(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3844(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 8(%r5)
-lwz %r12, 3952(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 8(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3848(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 12(%r5)
-lwz %r12, 3956(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 12(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3852(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 16(%r5)
-lwz %r12, 3960(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 16(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3856(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 20(%r5)
-lwz %r12, 3964(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 20(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3860(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 24(%r5)
-lwz %r12, 3968(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 24(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3864(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 28(%r5)
-lwz %r12, 3972(%r3)
-add %r11, %r11, %r12
-add %r11, %r11, %r0
-lwz %r12, 28(%r6)
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3868(%r3)
-rldicl %r10, %r11, 32, 32
-addi %r10, %r10, -1
-stw %r10, 3872(%r3)
-li %r0, 0
-ori %r0, %r0, 65535
-oris %r0, %r0, 65535
-li %r10, 1
-lwz %r11, 3840(%r3)
-lwz %r12, 3944(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3912(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3844(%r3)
-lwz %r12, 3948(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3916(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3848(%r3)
-lwz %r12, 3952(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3920(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3852(%r3)
-lwz %r12, 3956(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3924(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3856(%r3)
-lwz %r12, 3960(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3928(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3860(%r3)
-lwz %r12, 3964(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3932(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3864(%r3)
-lwz %r12, 3968(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3936(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3868(%r3)
-lwz %r12, 3972(%r3)
-add %r11, %r11, %r0
-subf %r11, %r12, %r11
-add %r11, %r11, %r10
-stw %r11, 3940(%r3)
-rldicl %r10, %r11, 32, 32
-lwz %r11, 3872(%r3)
-add %r10, %r10, %r11
-li %r11, 0
-subf %r10, %r10, %r11
+addi %r7, %r3, 3944
+ld %r11, 0(%r5)
+ld %r12, 0(%r6)
+subfc %r11, %r12, %r11
+std %r11, 3840(%r3)
+ld %r11, 8(%r5)
+ld %r12, 8(%r6)
+subfe %r11, %r12, %r11
+std %r11, 3848(%r3)
+ld %r11, 16(%r5)
+ld %r12, 16(%r6)
+subfe %r11, %r12, %r11
+std %r11, 3856(%r3)
+ld %r11, 24(%r5)
+ld %r12, 24(%r6)
+subfe %r11, %r12, %r11
+std %r11, 3864(%r3)
+subfe %r10, %r10, %r10
+ld %r11, 3840(%r3)
+ld %r12, 0(%r7)
+addc %r11, %r11, %r12
+std %r11, 3912(%r3)
+ld %r11, 3848(%r3)
+ld %r12, 8(%r7)
+adde %r11, %r11, %r12
+std %r11, 3920(%r3)
+ld %r11, 3856(%r3)
+ld %r12, 16(%r7)
+adde %r11, %r11, %r12
+std %r11, 3928(%r3)
+ld %r11, 3864(%r3)
+ld %r12, 24(%r7)
+adde %r11, %r11, %r12
+std %r11, 3936(%r3)
 ld %r11, 3840(%r3)
 ld %r12, 3912(%r3)
 xor %r12, %r12, %r11
