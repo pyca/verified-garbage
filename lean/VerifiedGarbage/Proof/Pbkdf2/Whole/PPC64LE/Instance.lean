@@ -27,14 +27,17 @@ open VG.Proof.Hmac.Stream.PPC64LE (HashOK finG hmacFrame longFrame initCode)
 open VG.Proof.Pbkdf2.Stream.PPC64LE (iterG)
 
 /-- The functions `pbkdf2` calls, for hash function `H` of instance `I`, with
-blocks of `2 ^ b` bytes. -/
-def fnsOf (H : Hash) (I : Spec.Hmac.Instance) (b : Nat) : Fns where
+blocks of `2 ^ b` bytes, and `iterate`'s code `itC`, with `itW` bytes of
+working space. -/
+def fnsOf (H : Hash) (I : Spec.Hmac.Instance) (b : Nat) (itC : Prog isa) (itW : Nat) : Fns where
   H := H
   Wc := 8 * I.scratch
   hiN := I.initAnyKeyApi.name
   hiC := initCode H I b
   hfN := I.finalizeScratchApi.name
   itN := I.iterateApi.name
+  itC := itC
+  itW := itW
 
 /-- HMAC's `init` uses its frame and the 96 bytes its callees use below it. -/
 theorem sdepth_initCode {H : Hash} (hH : HashOK H) (I : Spec.Hmac.Instance) (b : Nat) (h48 : 48 ≤ hmacFrame I) :
@@ -51,14 +54,17 @@ theorem sdepth_initCode {H : Hash} (hH : HashOK H) (I : Spec.Hmac.Instance) (b :
   omega
 
 /-- The facts about the functions `pbkdf2` calls, from their proofs. -/
-def okOf {H : Hash} (hH : HashOK H) {I : Spec.Hmac.Instance} {b : Nat} (hSH : hH.SH = I.S)
+def okOf {H : Hash} (hH : HashOK H) {I : Spec.Hmac.Instance} {b : Nat} {itC : Prog isa} {itW : Nat}
+    (hSH : hH.SH = I.S)
     (hi : Verified PPC64LE.target (initCode H I b) (I.initAnyKeyContract PPC64LE.abi (96 + hmacFrame I)))
     (hf : ConstantTime isa (finG hH.SH (H.W + 48 + H.FD) 96).pre (finG hH.SH (H.W + 48 + H.FD) 96).pub
       H.finalize)
-    (it : ConstantTime isa (iterG hH.SH (Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes H) 96).pre
-      (iterG hH.SH (Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes H) 96).pub (Impl.Pbkdf2.Stream.PPC64LE.iterate H))
-    (hWc : Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes H ≤ 8 * I.scratch) (hX : hmacFrame I ≤ 4096)
-    (h48 : 48 ≤ hmacFrame I) (reach : (fnsOf H I b).bytes ≤ 4096) : FnsOK (fnsOf H I b) where
+    (itOk : ∀ s, (iterG hH.SH itW 96).pre s →
+      ∃ t s', Exec isa itC s t s' ∧ abiPreserved s s' ∧ (iterG hH.SH itW 96).post s s')
+    (it : ConstantTime isa (iterG hH.SH itW 96).pre (iterG hH.SH itW 96).pub itC)
+    (itFd : itC.fdepth ≤ 2) (itPf : pushFrames itC = true)
+    (hWc : H.W + 48 + H.S + H.FD + H.FD ≤ 8 * I.scratch) (hIt : itW ≤ 8 * I.scratch) (hX : hmacFrame I ≤ 4096)
+    (h48 : 48 ≤ hmacFrame I) (reach : (fnsOf H I b itC itW).bytes ≤ 4096) : FnsOK (fnsOf H I b itC itW) where
   hH := hH
   X := hmacFrame I
   hi := by
@@ -71,8 +77,12 @@ def okOf {H : Hash} (hH : HashOK H) {I : Spec.Hmac.Instance} {b : Nat} (hSH : hH
     rw [e]; exact hi.2.1
   hiSd := sdepth_initCode hH I b h48
   hfCt := hf
+  itOk := itOk
   itCt := it
+  itFd := itFd
+  itPf := itPf
   hWc := hWc
+  hIt := hIt
   hX := hX
   reach := reach
 

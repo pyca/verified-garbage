@@ -14,238 +14,217 @@
 /// * `scratch` must be valid for reads and writes of 1872 bytes.
 /// * The contents of `scratch` on return are unspecified.
 /// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
-/// * None of `key`, `u`, `t` and `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `u`, `t` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_224_iterate(key: *const [u8; 384], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"mflr %r0
 rldicr %r5, %r5, 32, 31
 rldicl %r5, %r5, 32, 32
-stdu %r1, -48(%r1)
-std %r0, 32(%r1)
-std %r20, 224(%r7)
-std %r21, 232(%r7)
-std %r22, 240(%r7)
-std %r23, 248(%r7)
-std %r24, 256(%r7)
-std %r25, 264(%r7)
-addi %r20, %r3, 0
-addi %r21, %r7, 0
-addi %r22, %r5, 0
-addi %r23, %r6, 0
+std %r26, 176(%r7)
+std %r27, 184(%r7)
+std %r28, 192(%r7)
+std %r29, 200(%r7)
+std %r30, 208(%r7)
+std %r31, 216(%r7)
+std %r0, 224(%r7)
+addi %r26, %r7, 232
+addi %r27, %r7, 0
+addi %r28, %r7, 296
+addi %r30, %r6, 0
+addi %r31, %r5, 0
 lwz %r8, 0(%r4)
-stw %r8, 528(%r21)
+stw %r8, 0(%r28)
 lwz %r8, 4(%r4)
-stw %r8, 532(%r21)
+stw %r8, 4(%r28)
 lwz %r8, 8(%r4)
-stw %r8, 536(%r21)
+stw %r8, 8(%r28)
 lwz %r8, 12(%r4)
-stw %r8, 540(%r21)
+stw %r8, 12(%r28)
 lwz %r8, 16(%r4)
-stw %r8, 544(%r21)
+stw %r8, 16(%r28)
 lwz %r8, 20(%r4)
-stw %r8, 548(%r21)
+stw %r8, 20(%r28)
 lwz %r8, 24(%r4)
-stw %r8, 552(%r21)
-cmpldi %cr0, %r22, 0
+stw %r8, 24(%r28)
+li %r8, 128
+stw %r8, 28(%r28)
+li %r8, 0
+stw %r8, 32(%r28)
+stw %r8, 36(%r28)
+stw %r8, 40(%r28)
+stw %r8, 44(%r28)
+stw %r8, 48(%r28)
+stw %r8, 52(%r28)
+stw %r8, 56(%r28)
+stw %r8, 60(%r28)
+stw %r8, 64(%r28)
+stw %r8, 68(%r28)
+stw %r8, 72(%r28)
+stw %r8, 76(%r28)
+stw %r8, 80(%r28)
+stw %r8, 84(%r28)
+stw %r8, 88(%r28)
+stw %r8, 92(%r28)
+stw %r8, 96(%r28)
+stw %r8, 100(%r28)
+stw %r8, 104(%r28)
+stw %r8, 108(%r28)
+li %r29, 156
+rldicl %r8, %r29, 3, 61
+li %r11, 176
+stdbrx %r8, %r26, %r11
+add %r8, %r29, %r29
+add %r8, %r8, %r8
+add %r8, %r8, %r8
+li %r11, 184
+stdbrx %r8, %r26, %r11
+addi %r29, %r3, 0
+cmpldi %cr0, %r31, 0
 beq %cr0, 20f
 22:
-lwz %r8, 0(%r20)
-stw %r8, 272(%r21)
-lwz %r8, 4(%r20)
-stw %r8, 276(%r21)
-lwz %r8, 8(%r20)
-stw %r8, 280(%r21)
-lwz %r8, 12(%r20)
-stw %r8, 284(%r21)
-lwz %r8, 16(%r20)
-stw %r8, 288(%r21)
-lwz %r8, 20(%r20)
-stw %r8, 292(%r21)
-lwz %r8, 24(%r20)
-stw %r8, 296(%r21)
-lwz %r8, 28(%r20)
-stw %r8, 300(%r21)
-lwz %r8, 32(%r20)
-stw %r8, 304(%r21)
-lwz %r8, 36(%r20)
-stw %r8, 308(%r21)
-lwz %r8, 40(%r20)
-stw %r8, 312(%r21)
-lwz %r8, 44(%r20)
-stw %r8, 316(%r21)
-lwz %r8, 48(%r20)
-stw %r8, 320(%r21)
-lwz %r8, 52(%r20)
-stw %r8, 324(%r21)
-lwz %r8, 56(%r20)
-stw %r8, 328(%r21)
-lwz %r8, 60(%r20)
-stw %r8, 332(%r21)
-lwz %r8, 64(%r20)
-stw %r8, 336(%r21)
-lwz %r8, 68(%r20)
-stw %r8, 340(%r21)
-lwz %r8, 72(%r20)
-stw %r8, 344(%r21)
-lwz %r8, 76(%r20)
-stw %r8, 348(%r21)
-lwz %r8, 80(%r20)
-stw %r8, 352(%r21)
-lwz %r8, 84(%r20)
-stw %r8, 356(%r21)
-lwz %r8, 88(%r20)
-stw %r8, 360(%r21)
-lwz %r8, 92(%r20)
-stw %r8, 364(%r21)
-lwz %r8, 96(%r20)
-stw %r8, 368(%r21)
-lwz %r8, 100(%r20)
-stw %r8, 372(%r21)
-lwz %r8, 104(%r20)
-stw %r8, 376(%r21)
-lwz %r8, 108(%r20)
-stw %r8, 380(%r21)
-lwz %r8, 112(%r20)
-stw %r8, 384(%r21)
-lwz %r8, 116(%r20)
-stw %r8, 388(%r21)
-lwz %r8, 120(%r20)
-stw %r8, 392(%r21)
-lwz %r8, 124(%r20)
-stw %r8, 396(%r21)
-lwz %r8, 128(%r20)
-stw %r8, 400(%r21)
-lwz %r8, 132(%r20)
-stw %r8, 404(%r21)
-lwz %r8, 136(%r20)
-stw %r8, 408(%r21)
-lwz %r8, 140(%r20)
-stw %r8, 412(%r21)
-lwz %r8, 144(%r20)
-stw %r8, 416(%r21)
-lwz %r8, 148(%r20)
-stw %r8, 420(%r21)
-lwz %r8, 152(%r20)
-stw %r8, 424(%r21)
-lwz %r8, 156(%r20)
-stw %r8, 428(%r21)
-lwz %r8, 160(%r20)
-stw %r8, 432(%r21)
-lwz %r8, 164(%r20)
-stw %r8, 436(%r21)
-lwz %r8, 168(%r20)
-stw %r8, 440(%r21)
-lwz %r8, 172(%r20)
-stw %r8, 444(%r21)
-lwz %r8, 176(%r20)
-stw %r8, 448(%r21)
-lwz %r8, 180(%r20)
-stw %r8, 452(%r21)
-lwz %r8, 184(%r20)
-stw %r8, 456(%r21)
-lwz %r8, 188(%r20)
-stw %r8, 460(%r21)
-addi %r3, %r21, 272
-li %r4, 128
-addi %r5, %r21, 528
-li %r6, 28
-addi %r7, %r21, 0
-bl {vg_sha512_update_scratch}
-addi %r3, %r21, 272
-li %r4, 156
-addi %r5, %r21, 464
-addi %r6, %r21, 0
-bl {vg_sha512_finalize_scratch}
-lwz %r8, 192(%r20)
-stw %r8, 272(%r21)
-lwz %r8, 196(%r20)
-stw %r8, 276(%r21)
-lwz %r8, 200(%r20)
-stw %r8, 280(%r21)
-lwz %r8, 204(%r20)
-stw %r8, 284(%r21)
-lwz %r8, 208(%r20)
-stw %r8, 288(%r21)
-lwz %r8, 212(%r20)
-stw %r8, 292(%r21)
-lwz %r8, 216(%r20)
-stw %r8, 296(%r21)
-lwz %r8, 220(%r20)
-stw %r8, 300(%r21)
-lwz %r8, 224(%r20)
-stw %r8, 304(%r21)
-lwz %r8, 228(%r20)
-stw %r8, 308(%r21)
-lwz %r8, 232(%r20)
-stw %r8, 312(%r21)
-lwz %r8, 236(%r20)
-stw %r8, 316(%r21)
-lwz %r8, 240(%r20)
-stw %r8, 320(%r21)
-lwz %r8, 244(%r20)
-stw %r8, 324(%r21)
-lwz %r8, 248(%r20)
-stw %r8, 328(%r21)
-lwz %r8, 252(%r20)
-stw %r8, 332(%r21)
-addi %r3, %r21, 272
-li %r4, 128
-addi %r5, %r21, 464
-li %r6, 28
-addi %r7, %r21, 0
-bl {vg_sha512_update_scratch}
-addi %r3, %r21, 272
-li %r4, 156
-addi %r5, %r21, 528
-addi %r6, %r21, 0
-bl {vg_sha512_finalize_scratch}
-lwz %r8, 0(%r23)
-lwz %r9, 528(%r21)
+lwz %r8, 0(%r29)
+stw %r8, 0(%r26)
+lwz %r8, 4(%r29)
+stw %r8, 4(%r26)
+lwz %r8, 8(%r29)
+stw %r8, 8(%r26)
+lwz %r8, 12(%r29)
+stw %r8, 12(%r26)
+lwz %r8, 16(%r29)
+stw %r8, 16(%r26)
+lwz %r8, 20(%r29)
+stw %r8, 20(%r26)
+lwz %r8, 24(%r29)
+stw %r8, 24(%r26)
+lwz %r8, 28(%r29)
+stw %r8, 28(%r26)
+lwz %r8, 32(%r29)
+stw %r8, 32(%r26)
+lwz %r8, 36(%r29)
+stw %r8, 36(%r26)
+lwz %r8, 40(%r29)
+stw %r8, 40(%r26)
+lwz %r8, 44(%r29)
+stw %r8, 44(%r26)
+lwz %r8, 48(%r29)
+stw %r8, 48(%r26)
+lwz %r8, 52(%r29)
+stw %r8, 52(%r26)
+lwz %r8, 56(%r29)
+stw %r8, 56(%r26)
+lwz %r8, 60(%r29)
+stw %r8, 60(%r26)
+addi %r4, %r28, 0
+addi %r3, %r26, 0
+li %r5, 1
+addi %r6, %r27, 0
+bl {vg_sha512_compress}
+ld %r8, 0(%r26)
+li %r11, 0
+stdbrx %r8, %r28, %r11
+ld %r8, 8(%r26)
+li %r11, 8
+stdbrx %r8, %r28, %r11
+ld %r8, 16(%r26)
+li %r11, 16
+stdbrx %r8, %r28, %r11
+lwz %r8, 28(%r26)
+li %r11, 24
+stwbrx %r8, %r28, %r11
+lwz %r8, 192(%r29)
+stw %r8, 0(%r26)
+lwz %r8, 196(%r29)
+stw %r8, 4(%r26)
+lwz %r8, 200(%r29)
+stw %r8, 8(%r26)
+lwz %r8, 204(%r29)
+stw %r8, 12(%r26)
+lwz %r8, 208(%r29)
+stw %r8, 16(%r26)
+lwz %r8, 212(%r29)
+stw %r8, 20(%r26)
+lwz %r8, 216(%r29)
+stw %r8, 24(%r26)
+lwz %r8, 220(%r29)
+stw %r8, 28(%r26)
+lwz %r8, 224(%r29)
+stw %r8, 32(%r26)
+lwz %r8, 228(%r29)
+stw %r8, 36(%r26)
+lwz %r8, 232(%r29)
+stw %r8, 40(%r26)
+lwz %r8, 236(%r29)
+stw %r8, 44(%r26)
+lwz %r8, 240(%r29)
+stw %r8, 48(%r26)
+lwz %r8, 244(%r29)
+stw %r8, 52(%r26)
+lwz %r8, 248(%r29)
+stw %r8, 56(%r26)
+lwz %r8, 252(%r29)
+stw %r8, 60(%r26)
+addi %r4, %r28, 0
+addi %r3, %r26, 0
+li %r5, 1
+addi %r6, %r27, 0
+bl {vg_sha512_compress}
+ld %r8, 0(%r26)
+li %r11, 0
+stdbrx %r8, %r28, %r11
+ld %r8, 8(%r26)
+li %r11, 8
+stdbrx %r8, %r28, %r11
+ld %r8, 16(%r26)
+li %r11, 16
+stdbrx %r8, %r28, %r11
+lwz %r8, 28(%r26)
+li %r11, 24
+stwbrx %r8, %r28, %r11
+lwz %r8, 0(%r28)
+lwz %r9, 0(%r30)
 xor %r8, %r8, %r9
-stw %r8, 0(%r23)
-lwz %r8, 4(%r23)
-lwz %r9, 532(%r21)
+stw %r8, 0(%r30)
+lwz %r8, 4(%r28)
+lwz %r9, 4(%r30)
 xor %r8, %r8, %r9
-stw %r8, 4(%r23)
-lwz %r8, 8(%r23)
-lwz %r9, 536(%r21)
+stw %r8, 4(%r30)
+lwz %r8, 8(%r28)
+lwz %r9, 8(%r30)
 xor %r8, %r8, %r9
-stw %r8, 8(%r23)
-lwz %r8, 12(%r23)
-lwz %r9, 540(%r21)
+stw %r8, 8(%r30)
+lwz %r8, 12(%r28)
+lwz %r9, 12(%r30)
 xor %r8, %r8, %r9
-stw %r8, 12(%r23)
-lwz %r8, 16(%r23)
-lwz %r9, 544(%r21)
+stw %r8, 12(%r30)
+lwz %r8, 16(%r28)
+lwz %r9, 16(%r30)
 xor %r8, %r8, %r9
-stw %r8, 16(%r23)
-lwz %r8, 20(%r23)
-lwz %r9, 548(%r21)
+stw %r8, 16(%r30)
+lwz %r8, 20(%r28)
+lwz %r9, 20(%r30)
 xor %r8, %r8, %r9
-stw %r8, 20(%r23)
-lwz %r8, 24(%r23)
-lwz %r9, 552(%r21)
+stw %r8, 20(%r30)
+lwz %r8, 24(%r28)
+lwz %r9, 24(%r30)
 xor %r8, %r8, %r9
-stw %r8, 24(%r23)
-addi %r22, %r22, -1
-cmpldi %cr0, %r22, 0
+stw %r8, 24(%r30)
+addi %r31, %r31, -1
+cmpldi %cr0, %r31, 0
 bne %cr0, 22b
 b 21f
 20:
 21:
-ld %r20, 224(%r21)
-ld %r22, 240(%r21)
-ld %r23, 248(%r21)
-ld %r24, 256(%r21)
-ld %r25, 264(%r21)
-ld %r21, 232(%r21)
-ld %r0, 32(%r1)
-addi %r1, %r1, 48
+ld %r0, 224(%r27)
+ld %r26, 176(%r27)
+ld %r28, 192(%r27)
+ld %r29, 200(%r27)
+ld %r30, 208(%r27)
+ld %r31, 216(%r27)
+ld %r27, 184(%r27)
 mtlr %r0
 blr",
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
 

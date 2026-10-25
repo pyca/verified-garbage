@@ -85,10 +85,6 @@ theorem b7_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) :
 
 end
 
-theorem iterBytes (H : Hash) : Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes H = H.W + 48 + H.S + H.FD + H.FD := by
-  simp only [Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes, Impl.Pbkdf2.Stream.PPC64LE.Iter.ub,
-    Impl.Pbkdf2.Stream.PPC64LE.Iter.dig, Impl.Pbkdf2.Stream.PPC64LE.Iter.st]
-
 /-- The low word of `c - 1`. -/
 theorem lo_pred (x : BitVec 64) (h : 0 < (x.setWidth 32).toNat) :
     ((x - 1).setWidth 32).toNat = (x.setWidth 32).toNat - 1 := by
@@ -106,7 +102,7 @@ theorem b8_args {k : Nat} {s : State} (h : Inv hF s₀ k s)
     (h7 : s.gpr .r7 = sA s₀ 48) : ItArgs F s (sA s₀ F.st0O) (sA s₀ F.uO) (sA s₀ F.tO) (sA s₀ 48) := by
   have hz := sizes hF; have hl := layout (F := F); have hb := hz.reach
   have hWc := hz.Wc; have hSS := hz.S; have hD := hz.D; have hN := hz.N; have hB := hz.B
-  have hbH := iterBytes F.H
+  have hbH := hF.hIt
   have hsp := sp_toNat hp
   have bs := below48 hp h.kr (n := 96) (by omega_arith)
   have pd : ∀ {a m b n : Nat}, a + m ≤ b ∨ b + n ≤ a → a + m ≤ F.bytes → b + n ≤ F.bytes →
@@ -120,22 +116,22 @@ theorem b8_args {k : Nat} {s : State} (h : Inv hF s₀ k s)
       (sR s₀ o n).base = r'.base + BitVec.ofNat 64 off ∧ off + n ≤ r'.len := fun o n h' => by
     obtain ⟨r', hr', off, e, l⟩ := cv o n h'; exact ⟨r', List.mem_append_right _ hr', off, e, l⟩
   refine ⟨h3, h4, h6, h7, by rw [h.kr.sp, hsp]; have := hp.sp; omega_arith,
-    pd (.inl (by omega_arith)) (by omega_arith) (by omega_arith), pd (.inr (by rw [hbH]; omega_arith)) (by omega_arith) (by rw [hbH]; omega_arith),
-    pd (.inl (by omega_arith)) (by omega_arith) (by omega_arith), pd (.inr (by rw [hbH]; omega_arith)) (by omega_arith) (by rw [hbH]; omega_arith),
-    pd (.inr (by rw [hbH]; omega_arith)) (by omega_arith) (by rw [hbH]; omega_arith),
-    bp (by omega_arith), bp (by omega_arith), bp (by omega_arith), bp (by rw [hbH]; omega_arith), ?_, ?_⟩
+    pd (.inl (by omega_arith)) (by omega_arith) (by omega_arith), pd (.inr (by omega_arith)) (by omega_arith) (by omega_arith),
+    pd (.inl (by omega_arith)) (by omega_arith) (by omega_arith), pd (.inr (by omega_arith)) (by omega_arith) (by omega_arith),
+    pd (.inr (by omega_arith)) (by omega_arith) (by omega_arith),
+    bp (by omega_arith), bp (by omega_arith), bp (by omega_arith), bp (by omega_arith), ?_, ?_⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact cv' F.st0O (2 * F.H.S) (by omega_arith)
     · exact cv' F.uO F.H.D (by omega_arith)
     · exact cv' F.tO F.H.D (by omega_arith)
-    · exact cv' 48 _ (by rw [hbH]; omega_arith)
+    · exact cv' 48 _ (by omega_arith)
   · refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact cv F.tO F.H.D (by omega_arith)
-    · exact cv 48 _ (by rw [hbH]; omega_arith)
+    · exact cv 48 _ (by omega_arith)
 
 /-- The other `c - 1` steps, with `iterate`: `T = T_{k+1}`. -/
 theorem b8_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) {u : List Byte}
@@ -146,14 +142,14 @@ theorem b8_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) {u : List Byte}
       bytesAt t.mem (sA s₀ F.tO) F.H.D = Spec.Pbkdf2.iterate (prf hF s₀) (cc s₀ - 1) u u := by
   have hz := sizes hF; have hl := layout (F := F)
   have hWc := hz.Wc; have hSS := hz.S; have hD := hz.D
-  have hbH := iterBytes F.H
+  have hbH := hF.hIt
   have hK := blockKey_length hF.hH (bytesAt s₀.mem (pw s₀) (pwl s₀))
   refine it_call hF (b8_args hp h h3 h4 h6 h7) fun t a hi => ?_
   refine ⟨h.keep hp a.rd a.wr a.sp (fun r hr => a.cs r (by revert r; decide)) a.frame fun r hr => ?_, ?_⟩
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inr (.inl ⟨_, _, rfl, by omega_arith, by omega_arith⟩)
-    · exact .inl ⟨_, _, rfl, Nat.le_refl _, by rw [hbH]; omega_arith⟩
+    · exact .inl ⟨_, _, rfl, Nat.le_refl _, by omega_arith⟩
     · exact .inr (.inr ⟨96, by rw [h.kr.sp], by omega_arith⟩)
   · have e1 : sA s₀ F.st0O + BitVec.ofNat 64 F.H.S = sA s₀ F.st1O := by
       rw [← VG.Proof.Hmac.Stream.PPC64LE.add_off]; rfl
