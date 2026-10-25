@@ -91,6 +91,18 @@ theorem front_ok {s : State} (h : fnContract.pre s) :
   · rw [jm, ← a11, hS.saved i hi, k1.gpr _ fun h => saved_ne11 i hi (List.mem_singleton.mp h)]
   · rw [jm, ← m1, ← a11]; exact hS.frame
 
+/-- `e`'s bytes, apart from the saved registers. -/
+theorem front_e {s s₃ : State} (h : fnContract.pre s) (fr : Frame [savR (savW (stackArg s 0))] s.mem s₃.mem) :
+    Spec.Rsa.bytesAt s₃.mem (s.gpr .r7) (s.gpr .r8).toNat = Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, dES, -, -, -, -, -, -, nwS, -, -, -, -, -, hsl⟩ := h
+  simp only [Spec.Rsa.publicScratchWords] at hsl
+  have savR_sub : Region.Sub (savR (savW (stackArg s 0))) ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ :=
+    Offset.sub_base _ (by omega)
+  refine VG.Proof.Rsa.rsa_bytes_frame fr (s.gpr .r8).isLt fun r hr => ?_
+  simp only [List.mem_singleton] at hr
+  subst hr
+  exact dES.sub_right savR_sub
+
 theorem pres_cases : ∀ r ∈ preserved, (∀ i < 16, r ≠ PublicChecked.saved i) →
     r ∉ midRegs ∧ r ∉ (([.r11, .r23] : List Reg) ++ ([.r10, .r11, .r27, .r28, .r29] : List Reg)) := by
   decide
@@ -152,12 +164,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
       simp only [List.mem_singleton] at hr
       subst hr
       exact (dPS.sub_left (Region.sub_prefix (by omega))).sub_right savR_sub
-    have hE : Spec.Rsa.bytesAt s₃.mem (s.gpr .r7) (s.gpr .r8).toNat =
-        Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat := by
-      refine VG.Proof.Rsa.rsa_bytes_frame fr3 (s.gpr .r8).isLt fun r hr => ?_
-      simp only [List.mem_singleton] at hr
-      subst hr
-      exact dES.sub_right savR_sub
+    have hE := front_e hpre fr3
     have hX : Spec.Rsa.bytesAt s₃.mem (s.gpr .r9) (s.gpr .r4).toNat =
         Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .r4).toNat := by
       refine VG.Proof.Rsa.rsa_bytes_frame fr3 (s.gpr .r4).isLt fun r hr => ?_

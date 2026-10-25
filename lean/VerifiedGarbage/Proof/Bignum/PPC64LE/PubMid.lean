@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubE
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubSan
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubScan
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -246,12 +246,48 @@ structure M8 (d : PD) (s u : State) (N : Nat) : Prop where
     BitVec.ofNat 64 (if (Spec.Rsa.exponentValid (d.ev s.mem) && decide (d.x s.mem < N)) then 1 else 0)
   res : wv s.mem d.P 0 d.w % 2 = 1 → 2 ^ (64 * (d.w - 1)) ≤ wv s.mem d.P 0 d.w →
     wv s.mem d.P (8 * d.w) d.w = 2 ^ (64 * d.w) * 2 ^ (64 * d.w) % wv s.mem d.P 0 d.w →
-    N = wv s.mem d.P 0 d.w ∧ wv u.mem d.S (slot d.w 4) d.w = d.x s.mem ^ (d.ev s.mem % 2 ^ 33) % N
+    N = wv s.mem d.P 0 d.w ∧ (Spec.Rsa.exponentValid (d.ev s.mem) = true →
+      wv u.mem d.S (slot d.w 4) d.w = d.x s.mem ^ (d.ev s.mem % 2 ^ 33) % N)
   frame : Outside d.S (slot d.w 0) (8 * (8 * (d.w + 2))) s.mem u.mem
 
-theorem mid8_ok {d : PD} {s t : State} {c : Prog isa} {Q : State → Prop} (h : Mid d s) (h5 : M5 d s t)
-    (hQ : ∀ u N, M8 d s u N → WP isa c u Q) :
-    WP isa (.seq (.block minv) (.seq checkX (.seq power c))) t Q := by
+/-- What holds after `checkX`, from `t` after `sanitize`. -/
+def M7 (d : PD) (t s₇ : State) : Prop :=
+  ∃ s₆ : State, ((s₆.gpr .r12).toNat < 2 ^ 32 ∧
+      (Mont.w32 t.mem d.S (slot d.w 0) * (s₆.gpr .r12).toNat + 1) % 2 ^ 32 = 0 ∧ s₆.mem = t.mem) ∧
+    Keep [.r0, .r3, .r4, .r12] t s₆ ∧
+    (s₇.gpr .r26 = s₆.gpr .r26 &&& (BitVec.ofNat 64 0 - BitVec.ofNat 64
+        (if Mont.val32 s₆.mem d.S (slot d.w 4) (2 * d.w) < Mont.val32 s₆.mem d.S (slot d.w 0) (2 * d.w) then 1
+          else 0)) ∧
+      Mont.Outside d.S (slot d.w 3) (8 * d.w) s₆.mem s₇.mem) ∧
+    Keep [.r0, .r3, .r8, .r9, .r14, .r15, .r16, .r17, .r20, .r26] s₆ s₇
+
+theorem mid7_ok {d : PD} {s t : State} (h : Mid d s) (h5 : M5 d s t) :
+    WP isa (.seq (.block minv) checkX) t (M7 d t) := by
+  have hnw := h.scr.nowrap
+  have hwd : d.w = (d.k + 7) / 8 := rfl
+  have hw8 : 8 ≤ d.w := by have := h.k64; omega
+  have hw' : d.w < 2 ^ 31 := by have := h.k1024; omega
+  have e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
+  have e0 := e 0; have e8 := e 8
+  have hh : hdrBytes = 256 := rfl
+  have hZ := h.hZ
+  have k5 := h5.keep
+  have hs₅ := h.scr.congr k5.wr
+  -- `-n⁻¹ mod 2³²`.
+  refine WP.seq (WP.mono (minv_ok hs₅ h5.r10 (by omega) h5.low) fun s₆ ⟨⟨i12, iinv, m6⟩, k6⟩ => ?_)
+  have k56 := k5.trans k6
+  -- Whether the input is below `n`.
+  exact WP.mono (checkX_ok (h.scr.congr k56.wr) (by omega) hw' hZ ((k6.gpr _ (by decide)).trans h5.r10)
+    ((k56.gpr _ (by decide)).trans h.r29) ((k56.gpr _ (by decide)).trans h.r11)
+    (by rw [m6]; exact h5.top)) fun s₇ ⟨⟨c26, out7⟩, k7⟩ => ⟨s₆, ⟨i12, iinv, m6⟩, k6, ⟨c26, out7⟩, k7⟩
+
+/-- From `setup` to the checks. -/
+theorem prep_ok {d : PD} {s : State} (h : Mid d s) :
+    WP isa prep s fun u => ∃ t, M5 d s t ∧ M7 d t u :=
+  mid5_ok h fun t h5 => WP.mono (mid7_ok h h5) fun _ h7 => ⟨t, h5, h7⟩
+
+theorem mid8_ok {d : PD} {s t s₇ : State} {Q : State → Prop} (h : Mid d s) (h5 : M5 d s t)
+    (h7 : M7 d t s₇) (hQ : ∀ u N, M8 d s u N → Q u) : WP isa power s₇ Q := by
   have hnw := h.scr.nowrap
   have hwd : d.w = (d.k + 7) / 8 := rfl
   have hw8 : 8 ≤ d.w := by have := h.k64; omega
@@ -261,14 +297,8 @@ theorem mid8_ok {d : PD} {s t : State} {c : Prog isa} {Q : State → Prop} (h : 
   have hh : hdrBytes = 256 := rfl
   have hZ := h.hZ
   have k5 := h5.keep
-  have hs₅ := h.scr.congr k5.wr
-  -- `-n⁻¹ mod 2³²`.
-  refine WP.seq (WP.mono (minv_ok hs₅ h5.r10 (by omega) h5.low) fun s₆ ⟨⟨i12, iinv, m6⟩, k6⟩ => ?_)
+  obtain ⟨s₆, ⟨i12, iinv, m6⟩, k6, ⟨c26, out7⟩, k7⟩ := h7
   have k56 := k5.trans k6
-  -- Whether the input is below `n`.
-  refine WP.seq (WP.mono (checkX_ok (h.scr.congr k56.wr) (by omega) hw' hZ ((k6.gpr _ (by decide)).trans h5.r10)
-    ((k56.gpr _ (by decide)).trans h.r29) ((k56.gpr _ (by decide)).trans h.r11)
-    (by rw [m6]; exact h5.top)) fun s₇ ⟨⟨c26, out7⟩, k7⟩ => ?_)
   have k57 := k56.trans k7
   have out7' : Outside d.S (slot d.w 3) (8 * d.w) t.mem s₇.mem := by
     rw [← m6]; exact fun x hx => out7 x hx
@@ -283,13 +313,13 @@ theorem mid8_ok {d : PD} {s t : State} {c : Prog isa} {Q : State → Prop} (h : 
   have W7 : Mont.w32 s₇.mem d.S (slot d.w 0) = Mont.w32 t.mem d.S (slot d.w 0) := by
     rw [Mont.Outside.w32 out7 (Or.inl (by omega)) (by omega), m6]
   -- `x^e mod n` into array 4.
-  refine WP.seq (WP.mono (power_ok (E := d.ev s.mem) (h.scr.congr k57.wr) (by omega) hw' hZ
+  refine WP.mono (power_ok (E := d.ev s.mem) (h.scr.congr k57.wr) (by omega) hw' hZ
     ((k7.gpr _ (by decide)).trans ((k6.gpr _ (by decide)).trans h5.r10)) ((k57.gpr _ (by decide)).trans h.r29)
     ((k57.gpr _ (by decide)).trans h.r11) (by rw [k7.gpr .r12 (by decide)]; exact i12)
     (by rw [k7.gpr .r12 (by decide), W7]; exact iinv)
     (by rw [Pre.val32_eq_wv, N7]; exact h5.ge2) (by rw [Pre.val32_eq_wv, N7]; exact h5.odd)
     (by rw [Pre.val32_eq_wv, Pre.val32_eq_wv, N7, R7]; exact h5.rr)
-    (by rw [k7.gpr .r24 (by decide), k6.gpr .r24 (by decide)]; exact h5.r24)) fun s₈ ⟨⟨p8, out8⟩, k8⟩ => ?_)
+    (by rw [k7.gpr .r24 (by decide), k6.gpr .r24 (by decide)]; exact h5.r24)) fun s₈ ⟨⟨p8, out8⟩, k8⟩ => ?_
   simp only [Pre.val32_eq_wv, N7, R7, X7, h5.x] at p8
   refine hQ s₈ (wv t.mem d.S (slot d.w 0) d.w) ⟨(k57.trans k8).mono,
     (k8.gpr _ (by decide)).trans ((k7.gpr _ (by decide)).trans ((k6.gpr _ (by decide)).trans h5.r10)), ?_,
@@ -298,8 +328,10 @@ theorem mid8_ok {d : PD} {s t : State} {c : Prog isa} {Q : State → Prop} (h : 
   · obtain ⟨N5, RR5⟩ := h5.valid hodd htop
     have hRl : wv s.mem d.P (8 * d.w) d.w < wv s.mem d.P 0 d.w := by
       rw [hRR]; exact Nat.mod_lt _ (by omega)
-    refine ⟨N5, p8 ?_⟩
-    rw [RR5 hRl, N5, hRR]
+    refine ⟨N5, fun he => p8 ?_ ?_⟩
+    · simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, decide_eq_true_eq] at he
+      omega
+    · rw [RR5 hRl, N5, hRR]
   · have o8 : Outside d.S (slot d.w 0) (8 * (8 * (d.w + 2))) s₇.mem s₈.mem := fun x hx => out8 x fun r hr => by
       have e2 := e 2; have e5 := e 5; have e6 := e 6; have e7 := e 7
       simp only [powRs, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -341,6 +373,7 @@ theorem midOut_ok {d : PD} {s u : State} {N : Nat} {Q : State → Prop} (h : Mid
     have hev : sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.E d.L)) =
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.E d.L) := by
       unfold PD.ev sat at hlt; unfold sat; omega
+    replace res := res he
     simp only [PD.ev, PD.x] at he hx res
     simp only [he, hv, hx, ↓reduceIte, Option.map_some]
     refine ⟨by rw [t3, hb]; rfl, ?_⟩
@@ -370,8 +403,7 @@ theorem midOut_ok {d : PD} {s u : State} {N : Nat} {Q : State → Prop} (h : Mid
 /-- From `setup` to the output. -/
 theorem mid_ok {d : PD} {s : State} {Q : State → Prop} (h : Mid d s)
     (hQ : ∀ t, MidPost d s t → WP isa (.block PublicChecked.restore) t Q) :
-    WP isa (.seq readE (.seq (.block checkE) (.seq copyPre (.seq loadX (.seq sanitize (.seq (.block minv)
-      (.seq checkX (.seq power (.seq output (.block PublicChecked.restore)))))))))) s Q :=
-  mid5_ok h fun _ h5 => mid8_ok h h5 fun _ _ h8 => midOut_ok h h8 hQ
+    WP isa (.seq prep (.seq power (.seq output (.block PublicChecked.restore)))) s Q :=
+  WP.seq (WP.mono (prep_ok h) fun _ ⟨_, h5, h7⟩ => WP.seq (mid8_ok h h5 h7 fun _ _ h8 => midOut_ok h h8 hQ))
 
 end VG.Proof.Bignum.PPC64LE.Pub

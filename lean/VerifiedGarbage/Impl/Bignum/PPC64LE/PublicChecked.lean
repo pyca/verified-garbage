@@ -13,16 +13,17 @@ words, writes `input^e mod n` (`k` bytes, most significant first) to `out`
 and returns 1, or writes zeros and returns 0 if `e` is not odd and from 3 to
 `2^33 - 1` or the input is not below `n`.
 
-Nothing branches on a value read from memory: the code is the same for every
-`e` and input of the same lengths. `e` is read into `r24`, saturated at
-`2^33`; its 33 bits are scanned from the top, each step a Montgomery square
-and a Montgomery multiplication by the input, the product selected with a
-mask of the bit. The Montgomery multiplications are `MontMul.lean`'s `tail`,
-inline, in its working space (`n` in array 0, `R² mod n` in array 1, its
-accumulator and temporary in arrays 2 and 3, the input and then the square
-in array 4, the power in array 5, `x R mod n` in array 6, 1 in array 7; the
-product in array 1 once `R² mod n` is no longer needed). The
-result is written with a mask of whether `e` and the input are valid.
+Nothing branches on a value read from memory but `e`, which is public: the
+code is the same for every input of the same lengths. `e` is read into
+`r24`, saturated at `2^33`, and its leading zeros skipped (`skip`); with
+`a = x R mod n`, each later bit is a Montgomery square of `a` and, if it is
+set, a Montgomery multiplication by `x R mod n`, but the last, whose
+multiplication is by `x` itself (or 1), which also converts out of
+Montgomery form: for `e = 65537`, sixteen squares and one multiplication.
+The Montgomery multiplications are `MontMul.lean`'s `tail`, inline, in its
+working space (`n` in array 0, `R² mod n` in array 1, its accumulator and
+temporary in arrays 2 and 3, the input and then the result in array 4, `a`
+in array 5, `x R mod n` in array 6, 1 in array 7). The result is written with a mask of whether `e` and the input are valid.
 
 `pre` may hold anything, so before the multiplications `n` is made odd and
 at least 2 and `R² mod n` below it (`sanitize`), which changes nothing in the
@@ -142,19 +143,58 @@ def one : Prog isa :=
   .seq (.block (base .r14 7)) (.seq Precompute.zeroWords
     (.block (base .r14 7 ++ [.li .r0 1, .store .w .r0 .r14 0])))
 
-/-- A step of the scan: `a²` into array 4, `a² x` into array 1 (whose
-`R² mod n` is no longer needed), then `a :=` the one or the other by a mask
-of the top bit of `r24`, which is shifted left. -/
+/-- A step of a scan of a secret exponent (`ModExp.lean`): `a²` into array
+4, `a² x` into array 1 (whose `R² mod n` is no longer needed), then `a :=`
+the one or the other by a mask of the top bit of `r24`, which is shifted
+left. -/
 def step : Prog isa :=
   .seq (montOp 4 5 5) (.seq (montOp 1 4 6)
     (.seq (.block ([.lsr .d .r0 .r24 63, .li .r3 0, .sub .r20 .r3 .r0, .lsl .r24 .r24 1] ++
         base .r8 1 ++ base .r9 4 ++ base .r5 5)) selectAcc))
 
-/-- `x^e mod n` into array 4: `a := R mod n`, `x R mod n` into array 6, the
-33 steps, then out of Montgomery form. -/
+/-- `e`'s leading zeros skipped: `r25 := 33`, then, until a set bit has
+been shifted out of the top of `r24` or `r25` is 0, `r24` shifted left and
+`r25` counted down. Then `r25` is the number of bits after `e`'s first set
+bit, at the top of `r24`. -/
+def skip : Prog isa :=
+  .seq (.block [.li .r25 33])
+    (.loop (.block [.lsr .d .r3 .r24 63, .lsl .r24 .r24 1, .subi .r25 .r25 1, .subi .r3 .r3 1,
+      .logic .and .r3 .r3 .r25]) (.nonzero .d .r3))
+
+/-- `a := x R mod n`: array 6 into array 5, by `selectAcc` with a mask of
+all ones. -/
+def initA : Prog isa :=
+  .seq (.block ([.li .r0 1, .li .r3 0, .sub .r20 .r3 .r0] ++ base .r8 6 ++ base .r9 6 ++ base .r5 5))
+    selectAcc
+
+/-- A bit of `e` after the first but the last: `a := a²`, then `a := a x` if
+the top bit of `r24` is set, which is shifted left. -/
+def bitStep : Prog isa :=
+  .seq (montOp 5 5 5) (.seq (.block [.lsr .d .r3 .r24 63, .lsl .r24 .r24 1])
+    (.ite (.nonzero .d .r3) (montOp 5 5 6) (.block [])))
+
+/-- The last bit of `e`: `a := a²`, then out of Montgomery form into array 4
+by a multiplication by the input (array 4) if the top bit of `r24` is set,
+else by 1. -/
+def lastBit : Prog isa :=
+  .seq (montOp 5 5 5) (.seq (.block [.lsr .d .r3 .r24 63])
+    (.ite (.nonzero .d .r3) (montOp 4 4 5) (montOp 4 7 5)))
+
+/-- The bits after the first, `r25` of them at the top of `r24`. -/
+def bits : Prog isa :=
+  .ite (.nonzero .d .r25)
+    (.seq (.block [.subi .r25 .r25 1])
+      (.seq (.ite (.nonzero .d .r25) (.loop (.seq bitStep (.block [.subi .r25 .r25 1])) (.nonzero .d .r25))
+        (.block [])) lastBit))
+    (montOp 4 7 5)
+
+/-- `x^e mod n` into array 4: 1 in array 7, `x R mod n` into array 6, `e`'s
+leading zeros skipped, `a := x R mod n`, then a square per later bit and a
+multiplication by `x R mod n` per later set bit but the last, which instead
+multiplies by `x` and so converts out of Montgomery form. `e` is public:
+the branches depend on it alone. -/
 def power : Prog isa :=
-  .seq one (.seq (montOp 5 1 7) (.seq (montOp 6 4 1) (.seq (.block [.li .r25 33])
-    (.seq (.loop (.seq step (.block [.subi .r25 .r25 1])) (.nonzero .d .r25)) (montOp 4 5 7)))))
+  .seq one (.seq (montOp 6 4 1) (.seq skip (.seq initA bits)))
 
 /-- The result's `k` bytes, most significant first, masked by `r26`, to
 `out`; `r3 := 1` if valid, else 0. -/
@@ -165,9 +205,12 @@ def output : Prog isa :=
         .addi .r16 .r16 1, .subi .r15 .r15 1])
       (.block [.li .r3 1, .logic .and .r3 .r3 .r26]))
 
+/-- From `e` to the checks: everything before the power. -/
+def prep : Prog isa :=
+  .seq readE (.seq (.block checkE) (.seq copyPre (.seq loadX (.seq sanitize (.seq (.block minv) checkX)))))
+
 /-- `vg_rsa_public_precomputed_checked`. -/
 def publicChecked : Prog isa :=
-  .seq (.block (save ++ setup)) (.seq readE (.seq (.block checkE) (.seq copyPre (.seq loadX (.seq sanitize
-    (.seq (.block minv) (.seq checkX (.seq power (.seq output (.block restore))))))))))
+  .seq (.block (save ++ setup)) (.seq prep (.seq power (.seq output (.block restore))))
 
 end VG.Impl.Bignum.PPC64LE.PublicChecked
