@@ -104,7 +104,8 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.PPC64LE.KeyCheck.cck_verified },
   Spec.Rsa.recoverPrimesApi.artifact PPC64LE.target {
     notes := ["`n` is checked as `vg_rsa_public_precompute` checks it, the only branch on the key \
-        but for the number of candidates tried, which is public. `m = d e - 1` is computed by \
+        but for the number of candidates tried, which is public. `R² mod n` is `64 + w` modular \
+        doublings of `2^(64 (w - 1))` and six Montgomery squares. `m = d e - 1` is computed by \
         binary multiplication. Each candidate `g = 2, 3, …` makes one pass over the `⌈c / 32⌉` \
         32-bit digits of `m` (`c = 8 (e_len + d_len)`, leading zeros included), most significant \
         bit first, fusing the exponentiation with root detection: each bit is a Montgomery square \

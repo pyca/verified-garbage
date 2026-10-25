@@ -36,8 +36,9 @@ checks it (it is public); an invalid modulus writes zeros at once.
   tried and zeros are written: a branch on whether the number of candidates
   tried is 0, which the contract lets leak.
 * Montgomery multiplication's working space is set up for `n`, with `R² mod
-  n` (`vg_rsa_public_precompute`'s doublings), and `R mod n` and `n - R mod
-  n`, the Montgomery forms of 1 and -1, kept in key arrays.
+  n` (`Precompute.r2Hi`: `64 + w` doublings of `2^(64 (w - 1))`, below `n`
+  as its first byte is not zero, then six Montgomery squares), and `R mod n`
+  and `n - R mod n`, the Montgomery forms of 1 and -1, kept in key arrays.
 * For the candidates `g = 2, 3, …`, until one gives the factors or 100 are
   tried (the number of iterations, which the contract lets leak, is the
   only branch on the key): one pass over the `⌈c / 32⌉` digits of `m = M -
@@ -240,7 +241,7 @@ def r2Set : List Instr := [.add .r5 .r10 .r29, .add .r8 .r5 .r29, .add .r9 .r8 .
 /-- 1, `n` in Montgomery array 0 and `-n⁻¹ mod 2³²` into `r12`; `R² mod n`
 with its top digits cleared; `R mod n` (from `1 · R²`) and `n - R mod n`. -/
 def mont : Prog isa := seqs ([.block (setOne aOne), copy mBase aN,
-  .block (mpre ++ VG.Impl.Bignum.PPC64LE.PublicChecked.minv ++ r2Set), VG.Impl.Bignum.PPC64LE.Precompute.r2, .block (mpost ++ clrTop mR2),
+  .block (mpre ++ VG.Impl.Bignum.PPC64LE.PublicChecked.minv ++ r2Set), VG.Impl.Bignum.PPC64LE.Precompute.r2Hi, .block (mpost ++ clrTop mR2),
   copy mXm aOne] ++ mmul iXm iXm iR2 ++ [copy aO mXm, sub3 aNg aN aO])
 
 /-! ## A candidate

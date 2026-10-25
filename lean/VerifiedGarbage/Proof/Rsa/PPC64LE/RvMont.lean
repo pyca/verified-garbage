@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvNumbers
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvMmul
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Fast
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvTop
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
@@ -161,10 +161,22 @@ theorem mont_ok {s0 t : State} (h : NumS s0 t) (hgo : t.gpr .r0 = 0)
     have := VG.Proof.Rsa.KeyWorkspace.arr_mono (w := ww (kK s0)) (show mBase + 8 ≤ nArr by decide)
     rw [← svw] at this; omega_arith
   simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hmv
-  obtain ⟨⟨⟨nodd, n511⟩, -⟩, -⟩ := hmv
+  obtain ⟨⟨⟨nodd, n511⟩, -⟩, nk⟩ := hmv
   have n2 : 2 ≤ nV s0 := Nat.le_trans (Nat.pow_le_pow_right (n := 2) (by decide) (show 1 ≤ 511 by decide)) n511
-  clear n511
   have nlt := nV_lt (s0 := s0)
+  -- `n` is above `2^(64 (wm - 1))`, with `wm ≥ 2`, for `r2Hi`.
+  have hw2 : 2 ≤ wm (kK s0) := by
+    have := (Nat.pow_lt_pow_iff_right (by decide : 1 < 2)).mp (Nat.lt_of_le_of_lt n511 nlt)
+    omega_arith
+  have hNt : 2 ^ (64 * (wm (kK s0) - 1)) < nV s0 := by
+    have e1 : 2 ^ (64 * (wm (kK s0) - 1)) ≤ 256 ^ (kK s0 - 1) := by
+      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+      exact Nat.pow_le_pow_right (by decide) (by simp only [wm]; omega_arith)
+    rcases Nat.lt_or_eq_of_le (Nat.le_trans e1 nk) with h | h
+    · exact h
+    · rw [show 64 * (wm (kK s0) - 1) = (64 * (wm (kK s0) - 1) - 1) + 1 by omega_arith, Nat.pow_succ] at h
+      omega_arith
+  clear n511 nk
   have fit : ∀ j < nArr, arr (ww (kK s0)) j + S (ww (kK s0)) ≤ 2 ^ 64 := fun j hj => h.ws.fit64 hj
   unfold mont
   rw [List.append_assoc]; simp only [List.cons_append, List.nil_append]
@@ -222,10 +234,11 @@ theorem mont_ok {s0 t : State} (h : NumS s0 t) (hgo : t.gpr .r0 = 0)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   have hsM : Scr s3 (off (rvB s0) (oM (kK s0))) (VG.Proof.Bignum.slot (wm (kK s0)) 8) :=
     Scr.sub (hs1.congr (k2'.trans k3').wr) fM (by rw [hsl]; omega_arith)
-  refine WP.mono (r2_ok hsM a8 a9 (by rw [k3'.gpr _ (by decide)]; exact b10) a5
-    (by rw [k3'.gpr _ (by decide), k2'.gpr _ (by decide)]; exact a11) (by omega_arith) (by omega_arith)
-    (by simp only [hsl]; omega_arith)
-    (by rw [val32_rebase, ← aM0, m3, m2, m1]; change 2 ≤ lowV t2.mem s0 mBase; rw [lowN]; omega_arith))
+  refine WP.mono (Pre.r2Hi_ok (N := nV s0) hsM a8 a9 (by rw [k3'.gpr _ (by decide)]; exact b10) a5
+    (by rw [k3'.gpr _ (by decide), k2'.gpr _ (by decide)]; exact a11) hw2 (by omega_arith)
+    (Nat.le_refl _) (by rw [k3'.gpr _ (by decide)]; exact r12lt)
+    (by rw [k3'.gpr _ (by decide), w32_rebase, ← aM0, m3, m2]; exact inv2)
+    (by rw [val32_rebase, ← aM0, m3, m2, m1]; exact lowN) hNt nodd)
     fun s4 ⟨v4, o4, k4⟩ => ?_
   have kk4 : KeyWorkspace.Keep (rvB s0) (ww (kK s0)) [mR2, mR2 + 1, mR2 + 2] [] s3.mem s4.mem := by
     refine keep_of_outside3 (j := mR2) (fun x hx => ?_) (by simp) (by simp) (by simp)
@@ -238,9 +251,8 @@ theorem mont_ok {s0 t : State} (h : NumS s0 t) (hgo : t.gpr .r0 = 0)
     dsimp only
     rw [show mR2 = mBase + 1 from rfl, am 1, hSw] at hx; omega_arith
   have hr2 : lowV s4.mem s0 mR2 = RR s0 * RR s0 % nV s0 := by
-    have := v4; rw [val32_rebase, val32_rebase, ← aM0, m3, m2, m1, ← am 1] at this
-    change lowV s4.mem s0 (mBase + 1) = 2 ^ (128 * wm (kK s0)) % lowV t2.mem s0 mBase at this
-    rw [lowN] at this
+    have := v4; rw [val32_rebase, ← am 1] at this
+    change lowV s4.mem s0 (mBase + 1) = 2 ^ (128 * wm (kK s0)) % nV s0 at this
     rw [show mR2 = mBase + 1 from rfl, this, RR, ← Nat.pow_add, show 64 * wm (kK s0) + 64 * wm (kK s0) =
       128 * wm (kK s0) by omega_arith]
   -- 5.
