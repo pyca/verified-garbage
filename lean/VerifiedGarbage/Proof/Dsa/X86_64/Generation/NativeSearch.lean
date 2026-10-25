@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchInvariant
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
-import VerifiedGarbage.Impl.Sha512.X86_64.Avx2Rolled
 
 /-! # Complete native bounded p search against the specification -/
 

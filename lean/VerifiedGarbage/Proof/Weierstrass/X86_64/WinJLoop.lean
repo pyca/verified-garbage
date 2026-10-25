@@ -6,6 +6,9 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.WindowJ
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJBuild
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
 
 /-!
 # Windows in Jacobian coordinates on x86-64: the last iteration and the loop

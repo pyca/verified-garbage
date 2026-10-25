@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointChecks
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.P384.X86_64.JointLayout
+public import VerifiedGarbage.Impl.P384.X86_64.Joint
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
+public import VerifiedGarbage.Spec.Ecdsa.P384
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 
 /-! Whole-function timing of P-384's joint verification follows the public-input contract. -/
 

@@ -8,7 +8,6 @@ import Mathlib.Order.Lattice
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 
 /-! # FFDH on x86-64: scan the public subgroup order -/
 

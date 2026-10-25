@@ -9,22 +9,12 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Ed25519.X86_64.Field
-import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.X25519.Invert
-import VerifiedGarbage.Proof.X25519.X86_64.AddSub
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Field
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 meta import VerifiedGarbage.Proof.Framework.AddrArith

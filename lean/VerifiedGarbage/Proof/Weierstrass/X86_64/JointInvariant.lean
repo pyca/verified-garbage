@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-! Stable tables and public digits around the shared Jacobian accumulator. -/
 

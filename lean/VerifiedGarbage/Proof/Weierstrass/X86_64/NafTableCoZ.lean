@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableInit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPoint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block

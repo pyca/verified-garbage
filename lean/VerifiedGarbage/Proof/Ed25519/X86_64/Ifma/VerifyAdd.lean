@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
 public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyIfma
 public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
-public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombStage
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Impl.X86_64Scal
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # Ed25519 verification with AVX512_IFMA: adding a table entry in the lanes

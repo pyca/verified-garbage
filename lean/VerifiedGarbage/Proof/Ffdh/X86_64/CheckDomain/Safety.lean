@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
 import VerifiedGarbage.Proof.Bignum.X86_64.Template
-import VerifiedGarbage.Proof.MillerRabin.X86_64.CallTemplate
 
 /-! # Instruction safety of the x86-64 FFDH domain validator -/
 

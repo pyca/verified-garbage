@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-!
 # The Jacobian window method on x86-64: `R = 32 R`

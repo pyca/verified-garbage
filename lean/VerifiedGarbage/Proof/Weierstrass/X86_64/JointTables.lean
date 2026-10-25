@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTable
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableCoZ
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 
 /-! Build the odd peer table and its powers of Z without changing either digit stream. -/
 

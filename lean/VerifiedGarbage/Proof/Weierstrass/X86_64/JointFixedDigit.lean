@@ -2,16 +2,24 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafExternalCopy
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16State
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
 
 /-! A fixed-generator digit updates the same accumulator and preserves the external row. -/
 

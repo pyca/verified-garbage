@@ -15,7 +15,6 @@ import Mathlib.Tactic.Push
 import Mathlib.Data.Nat.Basic
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
-import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # Constant time of DSA modular addition -/
 

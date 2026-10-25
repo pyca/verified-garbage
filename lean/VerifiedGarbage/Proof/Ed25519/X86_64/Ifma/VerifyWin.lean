@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 
 /-!
 # Ed25519 verification with AVX512_IFMA: the windows in the lanes

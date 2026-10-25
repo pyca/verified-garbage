@@ -5,12 +5,15 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPairedTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointTables
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafLayout
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # The joint two-scalar multiplication: timing

@@ -3,7 +3,9 @@ module
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSelect
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicSquares
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicSquares
+public import VerifiedGarbage.Proof.Bignum.CrtExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 
 /-! # Correctness of public windows and zero-digit skipping -/
 

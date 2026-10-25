@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
-import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.EcKey.Validate.X86_64
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate

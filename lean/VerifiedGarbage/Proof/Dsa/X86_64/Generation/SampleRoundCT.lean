@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Round
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Round
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sample
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sample
-import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
 
 /-! # Timing of witness selection, the shared round, and completion policy -/
 

@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Range
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Loads
 import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
-import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 
 /-! # FFDH domain validation on x86-64: the main computation -/
 

@@ -18,8 +18,6 @@ meta import Mathlib.Tactic.TermCongr
 public import Mathlib.Tactic.TermCongr
 import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import Mathlib.Data.Int.ModEq

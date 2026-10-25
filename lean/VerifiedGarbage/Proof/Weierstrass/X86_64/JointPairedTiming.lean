@@ -14,6 +14,12 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 
 /-! Attach the functional invariant to paired field execution at each stage. -/
 

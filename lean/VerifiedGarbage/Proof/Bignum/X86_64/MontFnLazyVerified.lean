@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.MontFnLazy
 
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

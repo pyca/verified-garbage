@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Layout
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # Deterministic ECDSA on x86-64: the messages of steps d, f and h.3

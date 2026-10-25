@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
 public import VerifiedGarbage.Impl.P256.X86_64.Joint
 public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-! P-256's in-place doubler is a doubler of the shared two-scalar loop. -/
 

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 
 /-! # Write a compressed point or a completely cleared output -/
 

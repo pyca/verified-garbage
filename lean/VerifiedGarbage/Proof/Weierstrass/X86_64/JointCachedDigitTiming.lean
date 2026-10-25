@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
@@ -10,9 +10,12 @@ import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryPoint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryFields
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 
 /-! Timing of a peer digit with its precomputed Jacobian powers. -/
 

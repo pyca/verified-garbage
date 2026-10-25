@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Impl.Sha512.X86_64.Avx2Rolled
 
 /-! # A p candidate is constructed and tested entirely by verified native code -/
 

@@ -1,23 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddStep
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddBuild
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddBuild
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacDbls
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacIter
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
-import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddEntry
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Weierstrass.OddWin
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddState
 
 /-!
 # Scalar multiplication by odd 5-bit windows in Jacobian coordinates on x86-64

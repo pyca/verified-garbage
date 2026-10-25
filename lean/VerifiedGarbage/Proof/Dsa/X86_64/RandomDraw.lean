@@ -13,7 +13,6 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
 
 /-! A full scalar draw: copy, account for bytes, compare and update fuel. -/
 @[expose] public section

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
 
 /-!
 # ECDSA verification on x86-64: the whole function

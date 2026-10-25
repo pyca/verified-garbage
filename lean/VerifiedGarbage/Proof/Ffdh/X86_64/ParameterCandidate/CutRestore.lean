@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessCut
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TapeHead
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.ExternalWords
 
 /-! # FFDH parameter generation on x86-64: mask a draw and restore the modulus -/
 

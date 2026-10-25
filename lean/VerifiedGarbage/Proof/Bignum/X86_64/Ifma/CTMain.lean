@@ -12,74 +12,21 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.Bignum.WordStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wSub
-public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-public import VerifiedGarbage.Proof.Rsa.Ranges
 meta import VerifiedGarbage.Proof.Bignum.WordStep
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wSub
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 meta import VerifiedGarbage.Proof.Rsa.Ranges
-import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
-import VerifiedGarbage.Proof.Bignum.CrtMath
-import VerifiedGarbage.Proof.Bignum.LazyMath
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPMq
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-import VerifiedGarbage.Proof.Bignum.X86_64.Double
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Core
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.StepU
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
-import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
-import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
-import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
-import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.StraightY
-import VerifiedGarbage.Proof.Poly1305.Limbs64
 meta import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
 meta import VerifiedGarbage.Proof.Bignum.CrtMath
 meta import VerifiedGarbage.Proof.Bignum.LazyMath
@@ -136,6 +83,14 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
 meta import VerifiedGarbage.Proof.Framework.X86_64.StraightY
 meta import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: `main` in constant time

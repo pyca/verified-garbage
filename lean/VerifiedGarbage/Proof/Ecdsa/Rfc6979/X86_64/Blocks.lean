@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
 
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # Deterministic ECDSA on x86-64: the blocks between the calls

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # Deterministic ECDSA on x86-64: signing with a candidate

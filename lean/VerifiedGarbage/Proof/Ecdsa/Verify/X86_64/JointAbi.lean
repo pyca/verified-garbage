@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.GContract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointContract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64.Joint

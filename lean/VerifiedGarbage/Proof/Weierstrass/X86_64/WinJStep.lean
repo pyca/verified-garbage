@@ -1,14 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Weierstrass.WindowJ
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+public import Mathlib.Algebra.GroupWithZero.Nat
+public import VerifiedGarbage.Proof.Weierstrass.Booth
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.WindowJA
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinQuad
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJBuild
 
 /-!
 # Windows in Jacobian coordinates on x86-64: an iteration

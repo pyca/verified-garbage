@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!

@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Step
 
 /-!
 # Ed25519's comb with AVX512_IFMA: the multiplication

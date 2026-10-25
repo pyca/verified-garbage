@@ -7,7 +7,6 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Tables
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.GContract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified

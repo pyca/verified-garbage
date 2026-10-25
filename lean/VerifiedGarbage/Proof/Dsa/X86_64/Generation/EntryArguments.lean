@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameStores
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameCopies
-import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Save the public ABI arguments before any arithmetic uses their registers -/
 

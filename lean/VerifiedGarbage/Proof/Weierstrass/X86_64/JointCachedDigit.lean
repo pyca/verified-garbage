@@ -1,107 +1,51 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedEntry
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacAdd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacAdd
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Double4
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDoubleForward
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.BitByte
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegSetOrder
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
 public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.Mont.Words128
-public import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-public import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-public import VerifiedGarbage.Proof.Mont.X86_64.Double4
-public import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-public import VerifiedGarbage.Proof.Mont.X86_64.Ops
-public import VerifiedGarbage.Proof.Mont.X86_64.Round
-public import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-public import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-public import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
 public import VerifiedGarbage.Proof.Mont.X86_64.Wide
-public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
-public import VerifiedGarbage.Proof.Weierstrass.TCombWords
-public import VerifiedGarbage.Proof.Weierstrass.Window5
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafAddress
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCache
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryPoint
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPoint
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrep
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableIO
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-import VerifiedGarbage.Proof.Mont.X86_64.Double4
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
-import VerifiedGarbage.Proof.Mont.X86_64.Round
-import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-import VerifiedGarbage.Proof.Weierstrass.JacMul
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.Window5
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafAddress
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCache
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryPoint
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPoint
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrep
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableIO
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+public import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheNeg
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.TCB.Code
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
 
 /-! A public peer digit either leaves the accumulator alone or adds its cached odd multiple. -/
 

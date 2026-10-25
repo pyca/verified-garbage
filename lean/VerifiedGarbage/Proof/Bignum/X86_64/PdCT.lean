@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Bignum.Math
 public import Mathlib.Logic.Relator
 import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

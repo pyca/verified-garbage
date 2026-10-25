@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
-import VerifiedGarbage.Proof.Bignum.ExternalWords
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 

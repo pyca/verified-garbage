@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryArguments
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryDerived
-import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Complete ABI argument initialization before size dispatch -/
 

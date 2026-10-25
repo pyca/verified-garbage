@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
+import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
@@ -11,6 +11,10 @@ import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # The joint loop's doublers in place

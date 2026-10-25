@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsCT
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 
 /-!
 # P-384's point functions on x86-64: their `Verified`

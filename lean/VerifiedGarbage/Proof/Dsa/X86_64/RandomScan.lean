@@ -10,7 +10,6 @@ import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
-import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! Adapt the existing verified width scan to the random sampler. -/
 @[expose] public section

@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import Aesop.BuiltinRules
-import VerifiedGarbage.Proof.Mont.X86_64.Blocks
 
 /-!
 # Inversion by divsteps on x86-64: numbers of several words

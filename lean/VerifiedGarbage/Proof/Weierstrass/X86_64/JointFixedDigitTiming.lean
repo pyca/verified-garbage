@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
@@ -10,17 +10,15 @@ import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedLoad
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedPoint
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedLoad
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedPoint
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointFixed
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 
 /-! Timing of a complete fixed-generator digit, including its public zero case. -/
 

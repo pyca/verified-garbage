@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
-import VerifiedGarbage.Proof.Bignum.ExternalWords
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # FFDH parameter generation on x86-64: reconstruct p from the original prefix -/

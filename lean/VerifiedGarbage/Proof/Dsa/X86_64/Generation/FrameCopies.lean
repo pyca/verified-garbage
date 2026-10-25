@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameCopy
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Copy incoming argument words without modifying unread stack arguments -/
 

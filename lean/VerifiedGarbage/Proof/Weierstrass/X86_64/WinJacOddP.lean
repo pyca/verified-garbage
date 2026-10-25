@@ -4,24 +4,19 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddWin
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddPSel
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOddP
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacDbls
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacIter
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJP
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
-import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddBuild
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-!
 # Odd 5-bit windows on x86-64, each selection woven into the addition before it

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRound
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessMont
-import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
 
 /-! # DSA invokes the same verified windowed Miller–Rabin round as RSA -/
 

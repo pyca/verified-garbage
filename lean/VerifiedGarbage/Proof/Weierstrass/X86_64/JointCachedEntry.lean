@@ -1,30 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInvariant
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedPoint
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedPoint
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
-public import VerifiedGarbage.Proof.Mont.X86_64.CsubR
-public import VerifiedGarbage.Proof.Mont.X86_64.MulF
-public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
-public import VerifiedGarbage.Proof.Mont.X86_64.Sub384
-public import VerifiedGarbage.Proof.Weierstrass.Pow
-public import VerifiedGarbage.Proof.Weierstrass.Window
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
+public import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86_64.MulPX
+public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheNeg
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! Select a cached odd multiple while retaining the accumulator and both scalar streams. -/
 

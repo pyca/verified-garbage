@@ -12,9 +12,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-import VerifiedGarbage.Proof.Mont.X86_64.MulP
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
-import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-!
 # 5-bit windows with an affine table on x86-64
