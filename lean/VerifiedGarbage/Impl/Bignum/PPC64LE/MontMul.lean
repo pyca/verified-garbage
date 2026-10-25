@@ -107,7 +107,7 @@ def zeroAcc : Prog isa :=
 
 /-- `-m⁻¹ mod 2⁶⁴` into `r0`, from `m₀` and `r12 = -m⁻¹ mod 2³²` (`y`): `y (2
 + m₀ y)`; then `w` into `r3` and the rounds' count `r4`. -/
-def setup : List Instr :=
+def montSetup : List Instr :=
   [.load .d .r3 .r10 0, .mul .r3 .r3 .r12, .addi .r3 .r3 2, .mul .r0 .r3 .r12, .lsr .d .r3 .r11 1,
     .addi .r4 .r3 0]
 
@@ -116,44 +116,44 @@ and `r15` at word `j` of `b` or `m` (`k = 0`), or both one word below (`k =
 8`): `x = tⱼ + r17 · sⱼ + c` (the words at `r14 + k` and `r15 + k`, the carry
 `r18`), its low word stored at `r14` and its high word into `r18`, and the
 pointers advanced. -/
-def mac (k : Nat) : List Instr :=
+def montMac (k : Nat) : List Instr :=
   [.load .d .r19 .r15 k, .mulhu .r20 .r17 .r19, .mul .r19 .r17 .r19, .addc .r19 .r19 .r18,
     .addze .r20 .r20, .load .d .r22 .r14 k, .addc .r22 .r22 .r19, .addze .r18 .r20,
     .store .d .r22 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8]
 
 /-- `aᵢ` into `r17`, the pointers at word 0, `w` words left and the carry 0. -/
-def mulHead : List Instr :=
+def montMulHead : List Instr :=
   [.load .d .r17 .r6 0, .addi .r6 .r6 8, .addi .r14 .r8 0, .addi .r15 .r7 0, .addi .r16 .r3 0,
     .li .r18 0]
 
 /-- Word `w` (at `r14`) `+= c`, and its carry into word `w + 1`. -/
-def mulTop : List Instr :=
+def montMulTop : List Instr :=
   [.load .d .r22 .r14 0, .addc .r22 .r22 .r18, .store .d .r22 .r14 0, .li .r22 0, .addze .r22 .r22,
     .store .d .r22 .r14 8]
 
 /-- `T := T + aᵢ b`. -/
-def mulPass : Prog isa :=
-  .seq (.block mulHead) (.seq (countLoop .r16 (mac 0)) (.block mulTop))
+def montMulPass : Prog isa :=
+  .seq (.block montMulHead) (.seq (countLoop .r16 (montMac 0)) (.block montMulTop))
 
 /-- `u = t₀ (-m⁻¹) mod 2⁶⁴` into `r17`, the carry of `t₀ + u m₀` (whose low
 word is 0) into `r18`, the pointers at word 0 and `w - 1` words left. -/
-def redHead : List Instr :=
+def montRedHead : List Instr :=
   [.load .d .r22 .r8 0, .mul .r17 .r22 .r0, .load .d .r19 .r10 0, .mulhu .r20 .r17 .r19,
     .mul .r19 .r17 .r19, .addc .r19 .r19 .r22, .addze .r18 .r20, .addi .r14 .r8 0, .addi .r15 .r10 0,
     .subi .r16 .r3 1]
 
 /-- Words `w` and `w + 1` (above `r14`, at word `w - 1`) plus the carry,
 stored one word down. -/
-def redTop : List Instr :=
+def montRedTop : List Instr :=
   [.load .d .r22 .r14 8, .addc .r22 .r22 .r18, .store .d .r22 .r14 0, .load .d .r22 .r14 16,
     .addze .r22 .r22, .store .d .r22 .r14 8]
 
 /-- `T := (T + u m) / 2⁶⁴`. -/
-def redPass : Prog isa :=
-  .seq (.block redHead) (.seq (countLoop .r16 (mac 8)) (.block redTop))
+def montRedPass : Prog isa :=
+  .seq (.block montRedHead) (.seq (countLoop .r16 (montMac 8)) (.block montRedTop))
 
 /-- One round: `T := (T + aᵢ b + u m) / 2⁶⁴`. -/
-def round : Prog isa := .seq mulPass redPass
+def round : Prog isa := .seq montMulPass montRedPass
 
 /-- The `w` rounds, counted by `r4`. -/
 def rounds : Prog isa :=
@@ -181,7 +181,7 @@ def selectAcc : Prog isa :=
       .addi .r14 .r14 4, .addi .r15 .r15 4, .addi .r16 .r16 4])
 
 /-- The arithmetic, after the bases are loaded. -/
-def tail : Prog isa := .seq zeroAcc (.seq (.block setup) (.seq rounds (.seq subMod selectAcc)))
+def tail : Prog isa := .seq zeroAcc (.seq (.block montSetup) (.seq rounds (.seq subMod selectAcc)))
 
 /-- `vg_rsa_mont_mul(ws, ws_len, o, a, b, scratch)`: `[o] = [a] [b] R⁻¹ mod m`
 for `R = 2^(64 w)`. -/

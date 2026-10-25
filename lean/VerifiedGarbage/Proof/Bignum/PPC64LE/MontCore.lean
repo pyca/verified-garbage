@@ -137,7 +137,7 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     fun hj hne => out₂.val32 (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)
   have m0₂ : Mont.word s₂.mem B (slot w 0) = Mont.word s.mem B (slot w 0) := out₂.word (by omega_arith) (by omega_arith)
   -- `-m⁻¹ mod 2⁶⁴`, `w` and the rounds' count.
-  refine WP.seq (WP.mono (setup_ok (dM := slot w 0) hs₂ (by rw [g₂ .r10 (by decide), i10]) (by rw [g₂ .r11 (by decide), i11]) hw'
+  refine WP.seq (WP.mono (montSetup_ok (dM := slot w 0) hs₂ (by rw [g₂ .r10 (by decide), i10]) (by rw [g₂ .r11 (by decide), i11]) hw'
     (by omega_arith) (by rw [m0₂, ← w32_eq_mod, g₂ .r12 (by decide)]; exact hinv))
     fun s₂' ⟨⟨jinv, j3, j4, jm⟩, k₂'⟩ => ?_)
   have hs₂' := hs₂.congr k₂'.wr
