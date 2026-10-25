@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Fast
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreWrite
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.ByteWords
@@ -70,7 +70,8 @@ def preOut (nb : List Byte) (P : Addr) (pl : Nat) (r : BitVec 64) (m : Mem) : Pr
   | none => r.setWidth 32 = 0 ∧ Spec.Rsa.wordsAt m P pl = List.replicate pl 0
 
 /-- The registers the arithmetic writes. -/
-def coreRegs : List Reg := [.r0, .r3, .r4, .r14, .r15, .r16, .r17, .r18, .r20]
+def coreRegs : List Reg :=
+  [.r0, .r3, .r4, .r6, .r7, .r12, .r14, .r15, .r16, .r17, .r18, .r20, .r22]
 
 /-- From the state after `setup`: `pre` and the return value, with only the
 arrays and `pre` changed. -/
@@ -79,7 +80,7 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
     (h19 : s.gpr .r19 = P) (h6 : s.gpr .r6 = BitVec.ofNat 64 k) (h12 : s.gpr .r12 = N)
     (h10 : s.gpr .r10 = off S (slot w 0)) (h5 : s.gpr .r5 = off S (slot w 1))
     (h8 : s.gpr .r8 = off S (slot w 2)) (h9 : s.gpr .r9 = off S (slot w 3))
-    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (h21 : s.gpr .r21 = S)
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off N i) 1)
     (hNS : ∀ i < k, ∀ x, ofs S x < Z → off N i ≠ x) (hPS : ∀ x, ofs S x < Z → 16 * w ≤ ofs P x) :
     WP isa core s fun t =>
@@ -118,9 +119,10 @@ theorem core_ok {s : State} {P N S : Addr} {Z k w : Nat} (hs : Scr s S Z) (hp : 
       hc₂.mp (by simpa using hb)
     have hf := valid_facts hv hk
     rw [← hw] at hf
-    refine WP.seq (WP.mono (r2_ok hs₂ (by rw [g .r8 (by decide), h8]) (by rw [g .r9 (by decide), h9])
+    refine WP.seq (WP.mono (r2Fast_ok hs₂ (by rw [g .r8 (by decide), h8]) (by rw [g .r9 (by decide), h9])
       (by rw [g .r10 (by decide), h10]) (by rw [g .r5 (by decide), h5]) (by rw [g .r11 (by decide), h11])
-      (by omega_arith) hw' (by omega_arith) (by rw [m₂, hv₁]; omega_arith)) fun s₃ ⟨hx₃, out₃, k₃⟩ => ?_)
+      ((k12.gpr .r21 (by decide)).trans h21) (by omega_arith) hw' (by omega_arith) (by rw [m₂, hv₁]; exact hf.2.2)
+      (by rw [m₂, hv₁]; exact hf.1)) fun s₃ ⟨hx₃, out₃, k₃⟩ => ?_)
     have k13 := k12.trans k₃
     refine WP.seq (WP.mono (write_ok (P := P) (dN := slot w 0) (dX := slot w 1) (hs.congr k13.wr) (hp.congr k13.wr)
       (by rw [k13.gpr .r19 (by decide) |>.trans h19]; simp) (by rw [k13.gpr .r10 (by decide), h10])
@@ -239,7 +241,7 @@ theorem core_C1 {d : PD} {s : State} (h : C1 d s) :
         Keep coreRegs s t := by
   have hb := h.base
   refine WP.mono (core_ok hb.scr hb.pre rfl hb.k64 hb.k1024 hb.hZ hb.r19 hb.r6 hb.r12 hb.r10 hb.r5 hb.r8
-    hb.r9 hb.r11 h.rd h.sep hb.hPS) fun t ⟨⟨ho, hf⟩, k⟩ => ⟨⟨?_, hf⟩, k⟩
+    hb.r9 hb.r11 hb.r21 h.rd h.sep hb.hPS) fun t ⟨⟨ho, hf⟩, k⟩ => ⟨⟨?_, hf⟩, k⟩
   rwa [h.bytesAt] at ho
 
 end VG.Proof.Bignum.PPC64LE.Pre

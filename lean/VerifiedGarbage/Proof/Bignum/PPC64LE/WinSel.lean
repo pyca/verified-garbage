@@ -57,7 +57,7 @@ def pickRegs : List Reg := [.r0, .r3, .r5, .r8, .r9, .r14, .r15, .r16, .r17, .r2
 theorem pick_ok {s : State} {B : Addr} {Z w N j d : Nat} (h : WCtx s B Z w N)
     (h19 : s.gpr .r19 = BitVec.ofNat 64 j) (h18 : s.gpr .r18 = BitVec.ofNat 64 d) (hj : j < 16) (hd : d < 16)
     {o t : Nat} (hot : o = 3 ∧ t = 5 ∨ o = 5 ∧ t = 3) :
-    WP isa (.seq (.block (isDigit ++ entry ++ base .r9 t ++ base .r5 o)) selectAcc) s
+    WP isa (.seq (.block (isDigit ++ entry ++ base .r9 t ++ base .r5 o)) selectAcc64) s
       fun s' => (A s'.mem B w o = (if j = d then A s.mem B w (8 + j) else A s.mem B w t) ∧
         Outside B (slot w o) (8 * (w + 2)) s.mem s'.mem) ∧ Keep pickRegs s s' := by
   have ho : o < 24 := by omega

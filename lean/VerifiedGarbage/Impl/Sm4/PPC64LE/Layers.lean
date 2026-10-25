@@ -169,20 +169,36 @@ def rounds4 (l : Lin) : List Instr :=
 
 /-! ## The round keys' planes -/
 
-/-- Plane `j` of a round key's planes, from the planes of the eight copies of
-the 64-bit word holding it (`h = 0`) and the next one (`h = 1`), in the
-bytes of parity `h`: those bytes copied to the others, and the 16-bit groups
-reversed (the word is little-endian, the state's bytes big-endian). The
-group mask is in `m 1`. -/
-def keySel (h j : Nat) : List Instr :=
-  (if h = 0 then [ldS t2 evenSlot, andR (q j) (q j) t2, rorI t0 (q j) 56]
-   else [ldS t2 oddSlot, andR (q j) (q j) t2, rorI t0 (q j) 8]) ++
-  [xorR (q j) (q j) t0, rorI (q j) (q j) 32] ++ swapIn (q j) 1 16
+/-- The round key `2 m + h`, half `h` of the 64-bit word at `r3`, in the
+low 32 bits of `t1` (the others zero). -/
+def keyWord (h : Nat) : List Instr :=
+  if h = 0 then [.load .d t1 .r3 0, .lis (m 5) 0xFFFF, .ori (m 5) (m 5) 0xFFFF, shrI (m 5) (m 5) 32,
+    andR t1 t1 (m 5)]
+  else [.load .d t1 .r3 0, shrI t1 t1 32]
 
-/-- The planes of round key `2 m + h`, from the word at `r3`. -/
+/-- Its bytes spread to the 16-bit groups, in reverse (the word is
+little-endian, the state's bytes big-endian): bits `16 i … 16 i + 7` of
+`t1` are its byte `3 - i`, the others zero. The halves first, to bits
+`0 … 15` and `32 … 47` (the group mask, in `m 1`), then each byte to its
+group, through the masks of bytes `0` and `4` (`m 3`) and `2` and `6`
+(`m 2`), made from the group mask and the even bytes' one. -/
+def keySpread : List Instr :=
+  [ldS (m 1) grpSlot, rorI t0 t1 48, xorR t1 t1 t0, andR t1 t1 (m 1),
+   ldS (m 2) evenSlot, andR (m 3) (m 2) (m 1), rorI t2 (m 1) 16, andR (m 2) (m 2) t2,
+   rorI t0 t1 16, andR t0 t0 (m 2), rorI t1 t1 40, andR t1 t1 (m 3), xorR t1 t1 t0]
+
+/-- Plane `j`: bit `j` of each group of the spread word (bits `16 i`, the
+mask in `m 4`), filled to its sixteen bits by doubling. -/
+def keyPlane (j : Nat) : List Instr :=
+  (if j = 0 then [andR (q 0) t1 (m 4)] else [rorI (q j) t1 j, andR (q j) (q j) (m 4)]) ++
+  [rorI t0 (q j) 63, xorR (q j) (q j) t0, rorI t0 (q j) 62, xorR (q j) (q j) t0,
+   rorI t0 (q j) 60, xorR (q j) (q j) t0, rorI t0 (q j) 56, xorR (q j) (q j) t0]
+
+/-- The planes of round key `2 m + h`, from the word at `r3`, in `q 0 … q 7`. -/
 def keyLoad (h : Nat) : List Instr :=
-  [.load .d (q 0) .r3 0] ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++
-  setMasks bsMasks ++ zip1 ++ zip2 ++ ortho ++ [ldS (m 1) grpSlot] ++ (List.range 8).flatMap (keySel h)
+  keyWord h ++ keySpread ++
+  [.li (m 4) 1, rorI t0 (m 4) 48, xorR (m 4) (m 4) t0, rorI t0 (m 4) 32, xorR (m 4) (m 4) t0] ++
+  (List.range 8).flatMap keyPlane
 
 /-- Store the planes to the entry at `kr`. -/
 def keyStore : List Instr := (List.range 8).map fun j => .store .d (q j) kr (8 * j)

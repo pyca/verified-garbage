@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.ModExp
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish64
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -150,23 +151,28 @@ theorem WCtx.mont {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) {o a
 
 /-! ## Copies and selections -/
 
-/-- `selectAcc` with the bases already in `r5`, `r8` and `r9`. -/
+theorem mask_eq (b : Bool) : mask b = if b then BitVec.allOnes 64 else 0 := by
+  cases b <;> decide
+
+/-- `selectAcc64` with the bases already in `r5`, `r8` and `r9`. -/
 theorem selectAt_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) {b : Bool} {o a t : Nat}
     (ho : o < 24) (ha : a < 24) (ht : t < 24) (hoa : o ≠ a) (hot : o ≠ t)
     (h5 : s.gpr .r5 = off B (slot w o)) (h8 : s.gpr .r8 = off B (slot w a)) (h9 : s.gpr .r9 = off B (slot w t))
     (h20 : s.gpr .r20 = mask b) :
-    WP isa selectAcc s fun s' =>
+    WP isa selectAcc64 s fun s' =>
       (A s'.mem B w o = (if b then A s.mem B w a else A s.mem B w t) ∧
         Outside B (slot w o) (8 * (w + 2)) s.mem s'.mem) ∧ Keep [.r0, .r3, .r14, .r15, .r16, .r17] s s' := by
   have sep := fun {j k : Nat} (hjk : j ≠ k) => slot_sep (w := w) hjk
   have hO := h.sl ho
   have hA := h.sl ha
   have hT := h.sl ht
-  refine WP.mono (selectAcc_ok h.scr (dA := slot w a) (dT := slot w t) (dO := slot w o) (n := 2 * w) (b := b)
-      h8 h9 h5 h.r11 h20 (by have := h.w2; omega) (by have := h.w31; omega)
+  refine WP.mono (selectAcc64_ok h.scr (dA := slot w a) (dT := slot w t) (dO := slot w o) (w := w) (b := b)
+      h8 h9 h5 h.r11 (by rw [h20, mask_eq]) (by have := h.w2; omega) h.w31
       (by omega) (by omega) (by omega)
       (by have := sep hoa; omega) (by have := sep hot; omega)) fun s' ⟨hv, hout, k⟩ =>
-    ⟨⟨hv, hout.mono (Nat.le_refl _) (by omega)⟩, k⟩
+    ⟨⟨?_, hout.mono (Nat.le_refl _) (by omega)⟩, k⟩
+  simp only [A, ← wordsVal_eq_val32]
+  exact hv
 
 theorem ones_ok (s : State) :
     WP isa (.block ones) s fun t => (t.gpr .r20 = mask true ∧ t.mem = s.mem) ∧ Keep [.r20] s t := by

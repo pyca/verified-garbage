@@ -18,9 +18,11 @@ namespace VG.Artifacts.Rsa.PPC64LE
 def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact PPC64LE.target {
     notes := ["n is checked a byte at a time, then read into the working space a byte at a time. \
-        The model has no carry bit, so numbers are 32-bit digits: R² mod n by `128 w` modular \
-        doublings of 1, each with the borrow of the subtraction of n in the sign bit and selected \
-        with a mask. The nonvolatile registers it uses are saved in the working space's header."]
+        `R² mod n` starts from `2^(64 (w - 1))`, below a valid `n`: `64 + w` modular doublings, \
+        each with the borrow of the subtraction of n in the sign bit and selected with a mask, give \
+        `2^w R mod n`, and six Montgomery squares (radix `2^64`, with the carry bit) raise it to \
+        `2^(64 w) R mod n = R² mod n`. The nonvolatile registers it uses are saved in the working \
+        space's header."]
     code := Impl.Bignum.PPC64LE.Precompute.precompute
     verified := Proof.Bignum.PPC64LE.Pre.precompute_verified },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact PPC64LE.target {
@@ -44,7 +46,8 @@ def artifacts : List Artifact := [
         numbers of `max(2, ⌈len/8⌉)` words for its public length: the input is reduced modulo it a \
         bit at a time, and the exponent is scanned in four-bit windows from the top, four \
         Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry \
-        selected by a masked scan of the whole 16-entry table, so that no address depends on the \
+        selected by a masked scan of the whole 16-entry table on 64-bit words, so that no address \
+        depends on the \
         exponent. `q h + m₂` is a Montgomery product modulo `2^(64 w) - 1` and an addition. The \
         nonvolatile registers it uses are saved in the working space's header."]
     code := Impl.Bignum.PPC64LE.Crt.crt
@@ -64,8 +67,10 @@ def artifacts : List Artifact := [
   Spec.Rsa.crtValuesApi.artifact PPC64LE.target {
     notes := ["`n` is checked as `vg_rsa_public_precompute` checks it; then the checks (`p q = n`, \
         as `n mod p = 0`, `n / p = q` and `p` odd, and `gcd(q, p | 1) = 1`) give a mask, the \
-        arithmetic is the same whatever the key, and the results are stored masked. The model has \
-        no carry bit, so numbers are 32-bit digits. The remainders and quotients are computed by \
+        arithmetic is the same whatever the key, and the results are stored masked. Numbers are \
+        32-bit digits; for an even count of them the subtractions (the borrow in the carry bit), \
+        selections, copies, comparisons and halvings, and the division's shifts, work on 64-bit \
+        words, two digits at a time. The remainders and quotients are computed by \
         bit-serial division, `32 w` steps for `w`-digit numbers, and `qInv` by `64 w` steps of the \
         binary extended Euclidean algorithm modulo `p | 1`, each step's swaps and subtractions \
         under masks. The pointers and lengths stay in nonvolatile registers, saved with the \
@@ -80,8 +85,10 @@ def artifacts : List Artifact := [
         `w`-digit numbers; the comparisons by a subtraction's borrow; `e dP mod (p - 1)` and \
         `e dQ mod (q - 1)` by modular multiplication over the 33 bits of `e`, and `q qInv mod p` \
         over the `32 w` bits of `q`, each step's subtraction under a mask; and `d` by `d < n` and \
-        `d mod (p - 1) = dP`, `d mod (q - 1) = dQ`. The model has no carry bit, so numbers are \
-        32-bit digits. The pointers and lengths stay in nonvolatile registers, saved with the \
+        `d mod (p - 1) = dP`, `d mod (q - 1) = dQ`. Numbers are 32-bit digits; for an even count \
+        of them the subtractions (the borrow in the carry bit), selections, copies, comparisons \
+        and halvings, and the division's shifts, work on 64-bit words, two digits at a time. The \
+        pointers and lengths stay in nonvolatile registers, saved with the \
         others it uses in the working space's header."]
     code := Impl.Rsa.PPC64LE.CheckKey.code
     verified := Proof.Rsa.PPC64LE.KeyCheck.ck_verified },
@@ -105,7 +112,8 @@ def artifacts : List Artifact := [
         `p = gcd(y - 1, n)` by `64 w` steps of the binary extended Euclidean algorithm, `q = n / p` \
         by bit-serial division, the order by a subtraction's borrow, and the factors stored masked \
         by `ok`. Montgomery products are on 64-bit words with the carry bit; the other arithmetic \
-        is on 32-bit digits. The pointers and lengths stay in nonvolatile registers, saved with \
+        is on 32-bit digits, two at a time as 64-bit words (the subtractions' borrow in the carry \
+        bit) for an even count of them. The pointers and lengths stay in nonvolatile registers, saved with \
         the others it uses in the working space's arrays 44–45."]
     code := Impl.Rsa.PPC64LE.Recover.code
     verified := Proof.Rsa.PPC64LE.Recover.rv_verified }]

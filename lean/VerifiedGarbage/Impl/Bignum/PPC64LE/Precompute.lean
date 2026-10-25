@@ -15,10 +15,13 @@ for `R = 2^(64 w)` to `pre` and returns 1, or writes zeros and returns 0 if
 The working space (`scratch`) is laid out as `vg_rsa_mont_mul`'s, with `n`
 in array 0, the accumulator in array 2, the temporary in array 3 and `x` in
 array 1; the nonvolatile registers are saved in its header's words 16–24.
-`R² mod n = 2^(128 w) mod n` is computed from `x = 1` by `128 w` modular
-doublings: the double into the accumulator (`n + 1` digits of 32 bits, as
-`vg_rsa_mont_mul` reads numbers), then `MontMul.lean`'s `subMod` and
-`selectAcc` into `x`.
+`R² mod n = 2^(128 w) mod n` (`r2Fast`) is computed from `x = 2^(64 (w - 1))`,
+which is below a valid `n`, by `64 + w` modular doublings to `2^w R mod n`
+(the double into the accumulator, `n + 1` digits of 32 bits, as
+`vg_rsa_mont_mul` reads numbers, then `MontMul.lean`'s `subMod` and
+`selectAcc` into `x`), then six Montgomery squares (`MontMul.tail`). `r2`,
+`128 w` doublings from 1, is for moduli whose top word may be zero (other
+callers).
 
 `n` is public: timing may depend on it, and the code branches on its
 validity.
@@ -107,6 +110,46 @@ def r2 : Prog isa :=
   .seq one (.seq (.block [.lsl .r4 .r11 6])
     (.loop (.seq doubleMod (.block [.subi .r4 .r4 1])) (.nonzero .d .r4)))
 
+/-! ## `R² mod n` with Montgomery squares -/
+
+/-- `r12 := -n⁻¹ mod 2³²`, from `n`'s low word (`r10`), by Newton's
+iteration (`PublicChecked.minv`, whose file imports this one). -/
+def r2Minv : List Instr :=
+  [.load .d .r0 .r10 0, .load .d .r12 .r10 0] ++
+    (List.range 4).flatMap (fun _ => [.mul .r3 .r0 .r12, .li .r4 2, .sub .r3 .r4 .r3, .mul .r12 .r12 .r3]) ++
+    [.li .r3 0, .sub .r12 .r3 .r12, .lsl .r12 .r12 32, .lsr .d .r12 .r12 32]
+
+/-- `r3 :=` an array's size, `4 (2 w) + 16` bytes, from `2 w` in `r11`. -/
+def r2Stride : List Instr := [.lsl .r3 .r11 2, .addi .r3 .r3 16]
+
+/-- `rd :=` the base of array `j`, from array 0's (`r10`) and the size in `r3`. -/
+def r2Base (rd : Reg) (j : Nat) : List Instr := .addi rd .r10 0 :: List.replicate j (.add rd rd .r3)
+
+/-- `x := 2^(64 (w - 1))`: array 1 (`r5`) zeroed, then its word `w - 1` := 1. -/
+def r2Top : Prog isa :=
+  .seq (.block [.addi .r14 .r5 0]) (.seq zeroWords
+    (.block [.lsl .r14 .r11 2, .add .r14 .r14 .r5, .subi .r14 .r14 8, .li .r0 1, .store .d .r0 .r14 0]))
+
+/-- `x := x² R⁻¹ mod n` in array 1: `MontMul.tail` with the bases from `r10`
+and `r11`. -/
+def r2Sq : Prog isa :=
+  .seq (.block (r2Stride ++ r2Base .r5 1 ++ r2Base .r6 1 ++ r2Base .r7 1 ++ r2Base .r8 2 ++ r2Base .r9 3 ++ [.addi .r4 .r11 0]))
+    tail
+
+/-- `x := R² mod n = 2^(128 w) mod n`, for `n` of `w` words with its top word
+not zero: `x := 2^(64 (w - 1))`, below `n`; `64 + w` doublings to
+`2^w R mod n`; then six Montgomery squares, each doubling the power of 2
+(`(2^e R)² R⁻¹ = 2^(2 e) R`), to `2^(64 w) R mod n`. `pre` (`r19`) is kept in
+`r21` across the squares, which `tail` does not write, and the working
+space's address back in `r21` is array 0's less the header; the bases of
+arrays 1–3 are restored. -/
+def r2Fast : Prog isa :=
+  .seq r2Top (.seq (.block [.lsr .d .r4 .r11 1, .addi .r4 .r4 64])
+    (.seq (.loop (.seq doubleMod (.block [.subi .r4 .r4 1])) (.nonzero .d .r4))
+      (.seq (.block (r2Minv ++ [.addi .r21 .r19 0])) (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq
+        (.block ([.addi .r19 .r21 0, .subi .r21 .r10 hdrBytes] ++ r2Stride ++ r2Base .r5 1 ++ r2Base .r8 2 ++
+          r2Base .r9 3)))))))))))
+
 /-- `w` words from `r15` to `r14`, both advanced past them. -/
 def copyWords : Prog isa :=
   .seq (.block [.lsr .d .r17 .r11 1])
@@ -124,7 +167,7 @@ def zeroPre : Prog isa :=
 /-- Load and check `n`, then write `n` and `R² mod n` to `pre` and return 1,
 or zero `pre` and return 0. -/
 def core : Prog isa :=
-  .seq loadN (.seq check (.ite (.zero .d .r0) (.seq r2 (.seq write (.block [.li .r3 1])))
+  .seq loadN (.seq check (.ite (.zero .d .r0) (.seq r2Fast (.seq write (.block [.li .r3 1])))
     (.seq zeroPre (.block [.li .r3 0]))))
 
 /-- `vg_rsa_public_precompute(pre, pre_len, n, n_len, scratch, scratch_len)`. -/

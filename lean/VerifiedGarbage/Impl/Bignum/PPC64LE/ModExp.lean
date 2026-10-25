@@ -53,14 +53,14 @@ def ones : List Instr := [.li .r20 0, .subi .r20 .r20 1]
 
 /-- `[o] := [a]`, for `o` other than `a`. -/
 def copy (o a : Nat) : Prog isa :=
-  .seq (.block (ones ++ base .r8 a ++ base .r9 a ++ base .r5 o)) selectAcc
+  .seq (.block (ones ++ base .r8 a ++ base .r9 a ++ base .r5 o)) selectAcc64
 
 /-- `r8 :=` the base of table entry `r19`: array `8 + r19`. -/
 def entry : List Instr := [.addi .r8 .r19 8, .mul .r8 .r8 .r29, .add .r8 .r8 .r10]
 
 /-- Table entry `r19 := [6]`. -/
 def toEntry : Prog isa :=
-  .seq (.block (ones ++ entry ++ [.addi .r5 .r8 0] ++ base .r8 6 ++ base .r9 6)) selectAcc
+  .seq (.block (ones ++ entry ++ [.addi .r5 .r8 0] ++ base .r8 6 ++ base .r9 6)) selectAcc64
 
 /-- The table: `T_0 = R mod m`, `T_1 = x R mod m`, then `a := a T_1` into
 each entry from 2 to 15 (`r24` the entry); then `a := T_0`. -/
@@ -78,8 +78,8 @@ def isDigit : List Instr :=
 array 3 `:= j = d ? T_j : [5]`, then array 5 `:= j + 1 = d ? T_(j+1) : [3]`. -/
 def select : Prog isa :=
   .seq (.block [.li .r19 0])
-    (.loop (.seq (.block (isDigit ++ entry ++ base .r9 5 ++ base .r5 3)) (.seq selectAcc
-      (.seq (.block ([.addi .r19 .r19 1] ++ isDigit ++ entry ++ base .r9 3 ++ base .r5 5)) (.seq selectAcc
+    (.loop (.seq (.block (isDigit ++ entry ++ base .r9 5 ++ base .r5 3)) (.seq selectAcc64
+      (.seq (.block ([.addi .r19 .r19 1] ++ isDigit ++ entry ++ base .r9 3 ++ base .r5 5)) (.seq selectAcc64
         (.block [.addi .r19 .r19 1, .subi .r4 .r19 16]))))) (.nonzero .d .r4))
 
 /-- One window, its digit at the top of `r24`: four squares, `a := a T_d`,
