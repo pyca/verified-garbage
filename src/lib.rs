@@ -29,6 +29,8 @@ use asm::aarch64 as arch;
 use asm::arm as arch;
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 use asm::powerpc64le as arch;
+#[cfg(all(target_arch = "riscv64", target_endian = "little"))]
+use asm::riscv64 as arch;
 #[cfg(target_arch = "x86")]
 use asm::x86 as arch;
 #[cfg(target_arch = "x86_64")]
@@ -38,14 +40,15 @@ use asm::x86_64 as arch;
 // width of each architecture's calling convention: the verified assembly is
 // compiled only where both hold (each target's `rustCfg`, in
 // `lean/VerifiedGarbage/TCB/<Target>/Target.lean`), not on aarch64_be, armeb,
-// big-endian powerpc64 or x32. This `compile_error!` and those below each mirror a condition of a
+// big-endian powerpc64 or riscv64, or x32. This `compile_error!` and those below each mirror a condition of a
 // `rustCfg`.
 #[cfg(any(
     all(
         any(
             target_arch = "aarch64",
             target_arch = "arm",
-            target_arch = "powerpc64"
+            target_arch = "powerpc64",
+            target_arch = "riscv64"
         ),
         target_endian = "big"
     ),
