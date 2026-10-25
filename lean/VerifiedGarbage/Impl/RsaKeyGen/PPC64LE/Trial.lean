@@ -12,12 +12,15 @@ in array 0 of the Montgomery working space (`w` words at `r10`, `2 w` in
 (`Impl/RsaKeyGen/TrialTable32.lean`: each entry a prime `s` in its low half
 and `−s⁻¹ mod 2³²` in its high half), as x86's (`Impl/RsaKeyGen/X86/Trial.lean`):
 
-* `digits`: the candidate's `2 w` digits of 32 bits, least significant
+* `digits`: the candidate's `w` words of 64 bits, least significant
   first, each reduced into the accumulator `acc` by Montgomery's reduction
-  by `2³²`: `X = acc + x`, `acc := (X + (X (−s⁻¹) mod 2³²) s) / 2³²`, which
-  keeps `acc < 2 s` and `acc 2^(32 j) ≡` the first `j` digits `(mod s)`
-  (`Proof/RsaKeyGen/Trial32.lean`); the model's 64-bit products and sums
-  never carry out, since `X < 2³³` and `q s < 2⁴⁶`.
+  by `2⁶⁴`: `X = acc + x`, `q = X (−s⁻¹) mod 2⁶⁴` and `acc := (X + q s) /
+  2⁶⁴`, which keeps `acc < 2 s` and `acc 2^(64 j) ≡` the first `j` words
+  `(mod s)` (`Proof/RsaKeyGen/Trial64.lean`). `X` may carry out of 64 bits:
+  its carry `c` and the carry of `X mod 2⁶⁴` plus the low word of `q s`
+  (which sum to a multiple of `2⁶⁴`) are added to the high word of `q s`
+  (below `s`) through CA. `−s⁻¹ mod 2⁶⁴` is the table's `y = −s⁻¹ mod 2³²`
+  after a step of Newton's iteration, `y (2 + s y)`.
 * `entry`: one prime, its flag of `acc ∈ {0, s}` (`s` divides the candidate)
   in `r22`.
 * `trial`: the entries from `r23`, `r24` of them, until one divides: `r24`
@@ -34,17 +37,17 @@ namespace VG.Impl.RsaKeyGen.PPC64LE.Trial
 open VG VG.PPC64LE
 open VG.Impl.Bignum.PPC64LE (countLoop)
 
-/-- One digit at `r5` into `acc` (`r3`), with `s` in `r8` and `−s⁻¹ mod 2³²`
-in `r9`; `r5` advanced. It writes `r0`, `r3`, `r5` and `r6`. -/
+/-- One word at `r5` into `acc` (`r3`), with `s` in `r8` and `−s⁻¹ mod 2⁶⁴`
+in `r9`; `r5` advanced. It writes `r0`, `r3`, `r5`, `r6` and `r7`. -/
 def digit : List Instr :=
-  [.load .w .r0 .r5 0, .add .r0 .r0 .r3, .mul .r6 .r0 .r9, .lsl .r6 .r6 32, .lsr .d .r6 .r6 32,
-    .mul .r6 .r6 .r8, .add .r6 .r6 .r0, .lsr .d .r3 .r6 32, .addi .r5 .r5 4]
+  [.load .d .r0 .r5 0, .addc .r0 .r0 .r3, .mul .r6 .r0 .r9, .mul .r7 .r6 .r8, .mulhu .r6 .r6 .r8,
+    .addze .r6 .r6, .addc .r7 .r7 .r0, .addze .r3 .r6, .addi .r5 .r5 8]
 
-/-- The entry at `r23` into `s` (`r8`) and `−s⁻¹ mod 2³²` (`r9`), `acc := 0`,
-and the digits' address and count. -/
+/-- The entry at `r23` into `s` (`r8`) and `−s⁻¹ mod 2⁶⁴` (`r9`, from the
+entry's `−s⁻¹ mod 2³²`), `acc := 0`, and the words' address and count. -/
 def load : List Instr :=
-  [.load .d .r8 .r23 0, .lsr .d .r9 .r8 32, .lsl .r8 .r8 32, .lsr .d .r8 .r8 32, .li .r3 0,
-    .addi .r5 .r10 0, .addi .r4 .r11 0]
+  [.load .d .r8 .r23 0, .lsr .d .r9 .r8 32, .lsl .r8 .r8 32, .lsr .d .r8 .r8 32, .mul .r6 .r8 .r9,
+    .addi .r6 .r6 2, .mul .r9 .r6 .r9, .li .r3 0, .addi .r5 .r10 0, .lsr .d .r4 .r11 1]
 
 /-- `r22 :=` 1 if `acc` is 0 or `s`, else 0; on to the next entry, `r24`
 counted down, and cleared on a hit. -/
