@@ -297,7 +297,7 @@ def list_groups(binary, modules):
     env = {k: v for k, v in os.environ.items() if k != "VG_CPU_FEATURES"}
     out = subprocess.run(
         [binary, "--bench", "--list", f"/{VG}/"],
-        env={**env, "VG_BENCH_MODULES": modules, "VG_BENCH_NAMES": "1"},
+        env={**env, "VG_BENCH_MODULES": modules, "VG_BENCH_NAMES": "1", "VG_BENCHES": "sha3"},
         check=True,
         stdout=subprocess.PIPE,
         text=True,
@@ -391,7 +391,7 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
             **os.environ,
             "CRITERION_HOME": str(home),
             "VG_BENCH_MODULES": modules,
-            "VG_BENCHES": bench or "",
+            "VG_BENCHES": bench or "sha3",
             "VG_CPU_FEATURES": cpu_features(checkout),
         },
         stdout=subprocess.DEVNULL,
@@ -472,6 +472,21 @@ def main():
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
     p.add_argument("--arch", choices=EXECUTABLES, help="fail unless the binaries are this architecture's")
     args = p.parse_args()
+    # This benchmark-only branch samples runners until one is Neoverse V3.
+    import re
+    cpu = pathlib.Path('/proc/cpuinfo').read_text()
+    implementers = {int(v, 16) for v in re.findall(r'^CPU implementer\s*:\s*(0x[0-9a-fA-F]+)', cpu, re.M)}
+    parts = {int(v, 16) for v in re.findall(r'^CPU part\s*:\s*(0x[0-9a-fA-F]+)', cpu, re.M)}
+    is_v3 = implementers == {0x41} and parts == {0xd84}
+    probe = {'implementers': sorted(hex(v) for v in implementers), 'parts': sorted(hex(v) for v in parts), 'v3': is_v3}
+    print('VG_V3_PROBE ' + json.dumps(probe, sort_keys=True), flush=True)
+    if not is_v3:
+        message = 'Not Neoverse V3: compilation and benchmarks skipped.\n'
+        print(message, flush=True)
+        if args.summary:
+            with args.summary.open('a') as f:
+                f.write('## V3 runner probe\n\n' + json.dumps(probe) + '\n\n' + message)
+        return 0
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
         p.error("--shard must be i/n with 1 <= i <= n")
@@ -496,6 +511,7 @@ def main():
     # also says which benchmark has each group, so that the sides can run
     # one benchmark at a time, if both binaries have head's benchmarks.
     listed, owner = list_groups(binaries["head"], modules["head"])
+    assert set(listed) == {"sha3-224", "sha3-256", "sha3-384", "sha3-512", "shake128", "shake256"}, listed
     if note is not None and binaries["base"] is not None:
         owner = None
     groups = None
