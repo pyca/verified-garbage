@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Framework.OmegaNear
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
@@ -35,7 +35,7 @@ theorem ea_rG {s : State} {r : Reg} {a : Addr} (h : s.gpr r = a) (d : Nat) :
 theorem vreg_lo : ∀ k < 16, ∃ x, vreg k = .lo x := by
   intro k hk
   rcases k with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | k
-  all_goals first | exact ⟨_, rfl⟩ | omega_near
+  all_goals first | exact ⟨_, rfl⟩ | omega_arith
 
 theorem qv_lo {s s' : State} (hx : s'.xmm = s.xmm) (hy : s'.ymmHi = s.ymmHi) {k : Nat} (hk : k < 16) (j : Nat) :
     qv s' (vreg k) j = qv s (vreg k) j := by
@@ -75,14 +75,14 @@ theorem selVec_ok (hl : LayOk l) {s : State} (hc : Ctx (selLim l) s) :
     simp only [List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
     refine WP.mono (run_ok hc (SRel.init s) hσ) fun s' hs => ⟨fun k hk j hj => ?_,
       ⟨fun r hr => hs.gpr hr, hs.mem, hs.rd, hs.wr, hs.mxcsr, hs.flags⟩⟩
-    · rw [hs.reg _ j hj, vi_vreg k (by omega_near), h k hk]
+    · rw [hs.reg _ j hj, vi_vreg k (by omega_arith), h k hk]
       simp only [selTerm, T.eval, ite_true, AmmSym.G.eval]
   · cases h
 
 /-! ## An iteration -/
 
 theorem NB_lt (hl : LayOk l) : l.NB < 2 ^ 31 := by
-  have := hl.D_bounds; omega_near
+  have := hl.D_bounds; omega_arith
 
 /-- The table's entries: `T = 2^w`, 16 or 32. -/
 theorem LayOk.T_bounds (hl : LayOk l) : 16 ≤ l.T ∧ l.T ≤ 32 := by
@@ -99,7 +99,7 @@ theorem selTail_ok (hl : LayOk l) {s : State} {base : Addr} {i : Nat} (hi : i < 
       s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mxcsr = s.mxcsr := by
   have sx := AmmSym.se_ofNat (NB_lt hl)
   have hT := hl.T_bounds
-  have tx := AmmSym.se_ofNat (show l.T < 2 ^ 31 by omega_near)
+  have tx := AmmSym.se_ofNat (show l.T < 2 ^ 31 by omega_arith)
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r8, .rcx] (Q := fun s' =>
     s'.gpr .r8 = base + BitVec.ofNat 64 (l.NB * (i + 1)) ∧ s'.gpr .rcx = BitVec.ofNat 64 (i + 1) ∧
       s'.zf = some (decide (i + 1 = l.T)) ∧ s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧
@@ -108,7 +108,7 @@ theorem selTail_ok (hl : LayOk l) {s : State} {base : Addr} {i : Nat} (hi : i < 
     and_intros
     any_goals rfl
     · rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
-    · rw [ofNat_sub_beq (by omega_near) (by omega_near)]) rfl)
+    · rw [ofNat_sub_beq (by omega_arith) (by omega_arith)]) rfl)
     fun s' ⟨⟨a, b, c, d, e, f, g⟩, k⟩ => ⟨a, b, c, k, d, e, f, g⟩
 
 /-- After entries below `i` of the table at `base`, `v` the entry to read. -/
@@ -144,7 +144,7 @@ theorem selIter_ok (hl : LayOk l) {t₀ t : State} {base : Addr} {v i : Nat} (hv
       .alu .cmp .rcx (.imm (BitVec.ofNat 32 l.T))]) by simp only [selBody, selVec, List.cons_append, List.nil_append],
     WP.block_append_iff]
   have hdx : t.gpr .rdx = BitVec.ofNat 64 v := (h.gpr _ (by decide) (by decide) (by decide)).trans hd
-  refine WP.mono (selMask_ok (by omega_near) (by omega_near) h.rcx hdx) fun t₁ ⟨m₁, k₁, me₁, x₁, y₁, mx₁⟩ => ?_
+  refine WP.mono (selMask_ok (by omega_arith) (by omega_arith) h.rcx hdx) fun t₁ ⟨m₁, k₁, me₁, x₁, y₁, mx₁⟩ => ?_
   have r8₁ : t₁.gpr .r8 = base + BitVec.ofNat 64 (l.NB * i) := by rw [k₁.gpr (by decide)]; exact h.r8
   have hc : Ctx (selLim l) t₁ := fun b d n hn hdn => by
     by_cases b8 : b = .r8
@@ -152,7 +152,7 @@ theorem selIter_ok (hl : LayOk l) {t₀ t : State} {base : Addr} {v i : Nat} (hv
       simp only [selLim, ite_true] at hdn
       rw [r8₁, k₁.2.1, k₁.2.2, h.rd, h.wr, BitVec.add_assoc, ← BitVec.ofNat_add]
       exact hin i hi d n hn hdn
-    · simp only [selLim, b8, ite_false] at hdn; omega_near
+    · simp only [selLim, b8, ite_false] at hdn; omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (selVec_ok hl hc) fun t₂ ⟨v₂, k₂⟩ => ?_
   refine WP.mono (selTail_ok (base := base) hl hi (by rw [k₂.gpr _ (by decide)]; exact r8₁)
@@ -164,7 +164,7 @@ theorem selIter_ok (hl : LayOk l) {t₀ t : State} {base : Addr} {v i : Nat} (hv
   · rw [k₄.2.1, k₂.rd, k₁.2.1, h.rd]
   · rw [k₄.2.2, k₂.wr, k₁.2.2, h.wr]
   · rw [mx₄, k₂.mxcsr, mx₁, h.mxcsr]
-  · rw [qv_lo x₄ y₄ (by omega_near), v₂ k hk j hj, qv_lo x₁ y₁ (by omega_near), m₁, h.acc k hk j hj, me₁, h.mem, r8₁,
+  · rw [qv_lo x₄ y₄ (by omega_arith), v₂ k hk j hj, qv_lo x₁ y₁ (by omega_arith), m₁, h.acc k hk j hj, me₁, h.mem, r8₁,
       selMask_and]
     by_cases hiv : i = v
     · subst hiv
@@ -172,8 +172,8 @@ theorem selIter_ok (hl : LayOk l) {t₀ t : State} {base : Addr} {v i : Nat} (hv
       rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_assoc]
     · simp only [hiv, decide_false, Bool.false_eq_true, ite_false, or_zero64]
       by_cases hlt : v < i
-      · simp only [hlt, show v < i + 1 by omega_near, ite_true]
-      · simp only [hlt, show ¬ v < i + 1 by omega_near, ite_false]
+      · simp only [hlt, show v < i + 1 by omega_arith, ite_true]
+      · simp only [hlt, show ¬ v < i + 1 by omega_arith, ite_false]
 
 /-- The loop over the `T` entries, from entry `T - n`. -/
 theorem selLoop_ok (hl : LayOk l) {t₀ : State} {base : Addr} {v : Nat} (hv : v < l.T)
@@ -186,13 +186,13 @@ theorem selLoop_ok (hl : LayOk l) {t₀ : State} {base : Addr} {v : Nat} (hv : v
   refine WP.loop (M := isa) (body := .block (selBody l)) (c := .ne) (Q := SelInv l t₀ base v l.T)
     (fun n t => 1 ≤ n ∧ n ≤ l.T ∧ SelInv l t₀ base v (l.T - n) t) ?_ n t ⟨h1, h16, hI⟩
   intro n t ⟨h1, h16, hI⟩
-  refine WP.mono (selIter_ok hl hv (by omega_near) hd hin hI) fun t' ⟨hI', hz⟩ => ?_
+  refine WP.mono (selIter_ok hl hv (by omega_arith) hd hin hI) fun t' ⟨hI', hz⟩ => ?_
   simp only [eval, hz, Option.map_some]
   rcases Nat.eq_or_lt_of_le h1 with rfl | hn
-  · rw [show l.T - 1 + 1 = l.T by omega_near] at hI'
-    exact .inl ⟨by simp only [show l.T - 1 + 1 = l.T by omega_near, decide_true, Bool.not_true], hI'⟩
-  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (l.T - n + 1 = l.T) by omega_near), Bool.not_false], n - 1,
-      by omega_near, by omega_near, by omega_near, by rw [show l.T - (n - 1) = l.T - n + 1 by omega_near]; exact hI'⟩
+  · rw [show l.T - 1 + 1 = l.T by omega_arith] at hI'
+    exact .inl ⟨by simp only [show l.T - 1 + 1 = l.T by omega_arith, decide_true, Bool.not_true], hI'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (l.T - n + 1 = l.T) by omega_arith), Bool.not_false], n - 1,
+      by omega_arith, by omega_arith, by omega_arith, by rw [show l.T - (n - 1) = l.T - n + 1 by omega_arith]; exact hI'⟩
 
 /-! ## The whole selection -/
 
@@ -216,9 +216,9 @@ theorem zerosR_ok (hl : LayOk l) {s : State} :
   split at h
   · rename_i σ hσ
     simp only [List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
-    refine WP.mono (run_ok (fun b d n hn hd => absurd hd (by omega_near)) (SRel.init s) hσ) fun s' hs =>
+    refine WP.mono (run_ok (fun b d n hn hd => absurd hd (by omega_arith)) (SRel.init s) hσ) fun s' hs =>
       ⟨fun r hr t ht => ?_, ⟨fun r hr => hs.gpr hr, hs.mem, hs.rd, hs.wr, hs.mxcsr, hs.flags⟩⟩
-    rw [hs.reg _ t ht, vi_vreg r (by omega_near), h r hr]; rfl
+    rw [hs.reg _ t ht, vi_vreg r (by omega_arith), h r hr]; rfl
   · cases h
 
 /-- The digit `select` reads: the quadword at `oV`. -/
@@ -239,7 +239,7 @@ theorem select_ok (hl : LayOk l) {s : State} {B : Addr} {p : Nat} (hp : p < 2) (
   have hD := hl.D_bounds
   obtain ⟨o1, o2, o3⟩ := oV_bounds hl
   have hn := hs.nowrap
-  have hDp : l.D * p ≤ l.D := by rcases (by omega_near : p = 0 ∨ p = 1) with rfl | rfl <;> simp
+  have hDp : l.D * p ≤ l.D := by rcases (by omega_arith : p = 0 ∨ p = 1) with rfl | rfl <;> simp
   have rdS : ∀ d n, 0 < n → d + n ≤ 2 * l.D → InRegions (s.rd ++ s.wr) (off B d) n := fun d n hn hd =>
     let ⟨_, h, c⟩ := hs.region hd hn; ⟨_, List.mem_append_right _ h, c⟩
   let v := nib l s.mem B p
@@ -247,7 +247,7 @@ theorem select_ok (hl : LayOk l) {s : State} {B : Addr} {p : Nat} (hp : p < 2) (
   let base := off B (l.D * p + l.oTab)
   refine WP.seq ?_
   rw [List.append_assoc]
-  refine setOff (c := l.D * p + l.oTab) (by omega_near) fun s₁ u₁ => ?_
+  refine setOff (c := l.D * p + l.oTab) (by omega_arith) fun s₁ u₁ => ?_
   rw [hB] at u₁
   change WP isa (.block (([.mov .rdx (.mem (at_ .rbx (l.D * p + l.oV))),
     .mov32 .rcx (.imm 0)] : List Instr) ++ zerosR l)) s₁ _
@@ -256,7 +256,7 @@ theorem select_ok (hl : LayOk l) {s : State} {B : Addr} {p : Nat} (hp : p < 2) (
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = BitVec.ofNat 64 v ∧
       t.gpr .rcx = BitVec.ofNat 64 0 ∧ t.mem = s.mem ∧ t.xmm = s₁.xmm ∧ t.ymmHi = s₁.ymmHi ∧ t.mxcsr = s.mxcsr) (by
     have hld : InRegions (s₁.rd ++ s₁.wr) (B + BitVec.ofNat 64 (l.D * p + l.oV)) 8 := by
-      rw [u₁.rd, u₁.wr]; exact rdS _ 8 (by decide) (by omega_near)
+      rw [u₁.rd, u₁.wr]; exact rdS _ 8 (by decide) (by omega_arith)
     xrun [ea_rG rbx₁, hld, u₁.mem]
     and_intros
     any_goals rfl
@@ -268,13 +268,13 @@ theorem select_ok (hl : LayOk l) {s : State} {B : Addr} {p : Nat} (hp : p < 2) (
     rw [k₃.rd, k₃.wr, k₂.2.1, k₂.2.2, u₁.rd, u₁.wr, off_add]
     have : l.NB * i + l.NB ≤ l.T * l.NB := by
       rw [Nat.mul_comm l.T, ← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
-    exact rdS _ n hn (by omega_near)
+    exact rdS _ n hn (by omega_arith)
   have dx₃ : s₃.gpr .rdx = BitVec.ofNat 64 v := by rw [k₃.gpr _ (by decide)]; exact dx₂
   have i₀ : SelInv l s₃ base v (l.T - l.T) s₃ := Nat.sub_self l.T ▸ ⟨by
       rw [k₃.gpr _ (by decide), k₂.gpr (by decide), u₁.self]; exact (BitVec.add_zero _).symm,
     by rw [k₃.gpr _ (by decide)]; exact cx₂, fun _ _ _ _ => rfl, rfl, rfl, rfl, rfl,
     fun k hk j hj => by rw [z₃ k hk j hj]; simp⟩
-  refine WP.seq (WP.mono (selLoop_ok hl hv dx₃ hin l.T s₃ (by omega_near) (Nat.le_refl _) i₀) fun s₄ h₄ => ?_)
+  refine WP.seq (WP.mono (selLoop_ok hl hv dx₃ hin l.T s₃ (by omega_arith) (Nat.le_refl _) i₀) fun s₄ h₄ => ?_)
   let Ls : List (Nat × VReg) := (List.range l.R).map fun k => (l.D * p + l.oS + 32 * k, vreg k)
   have rbx₄ : s₄.gpr .rbx = B := by
     rw [h₄.gpr _ (by decide) (by decide) (by decide), k₃.gpr _ (by decide), k₂.gpr (by decide), rbx₁]
@@ -285,38 +285,38 @@ theorem select_ok (hl : LayOk l) {s : State} {B : Addr} {p : Nat} (hp : p < 2) (
     storeCode .rbx Ls by simp only [storeCode, Ls, List.map_map, Function.comp_def]]
   have hL : ∀ x ∈ Ls, l.D * p + l.oS ≤ x.1 ∧ x.1 + 32 ≤ l.D * p + l.oS + l.NB := fun x hx => by
     obtain ⟨k, hk, rfl⟩ := List.mem_map.1 hx
-    rw [List.mem_range] at hk; dsimp only; simp only [Lay.NB]; omega_near
+    rw [List.mem_range] at hk; dsimp only; simp only [Lay.NB]; omega_arith
   refine WP.mono (stores_gen Ls s₄ rbx₄ fun x hx => by
     have := hL x hx
-    rw [wr₄]; exact let ⟨_, h, c⟩ := hs.region (d := x.1) (n := 32) (by omega_near) (by decide);
+    rw [wr₄]; exact let ⟨_, h, c⟩ := hs.region (d := x.1) (n := 32) (by omega_arith) (by decide);
       ⟨_, h, c⟩) fun s' hs' => ?_
   subst hs'
   refine ⟨fun q hq => ?_, ?_, fun r r1 r2 r3 r4 => ?_, rd₄, wr₄, ?_⟩
-  · have hk : q % l.R < l.R := Nat.mod_lt _ (by omega_near)
+  · have hk : q % l.R < l.R := Nat.mod_lt _ (by omega_arith)
     have ht : q / l.R < 4 := Nat.div_lt_of_lt_mul (by simp only [Lay.L] at hq; rw [Nat.mul_comm]; exact hq)
     have e := word_wrList_unique B (e := l.D * p + l.oS + 32 * (q % l.R)) (t := q / l.R)
-      (v := s₄.vy (vreg (q % l.R))) ht (by simp only [Lay.NB] at *; omega_near)
+      (v := s₄.vy (vreg (q % l.R))) ht (by simp only [Lay.NB] at *; omega_arith)
       (Ls.map fun x => (x.1, s₄.vy x.2)) s₄.mem
       (List.mem_map.2 ⟨(l.D * p + l.oS + 32 * (q % l.R), vreg (q % l.R)),
         List.mem_map.2 ⟨q % l.R, List.mem_range.2 hk, rfl⟩, rfl⟩)
       (fun x hx => by
         obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
         obtain ⟨k, hk', rfl⟩ := List.mem_map.1 hy
-        rw [List.mem_range] at hk'; dsimp only; simp only [Lay.NB] at *; omega_near)
+        rw [List.mem_range] at hk'; dsimp only; simp only [Lay.NB] at *; omega_arith)
       (fun x hx he => by
         obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
         obtain ⟨k, hk', rfl⟩ := List.mem_map.1 hy
         rw [List.mem_range] at hk'; dsimp only at he ⊢
-        rw [show k = q % l.R by omega_near])
+        rw [show k = q % l.R by omega_arith])
     have qq := h₄.acc (q % l.R) hk (q / l.R) ht
     simp only [hv, ite_true] at qq
     show (word (wrList s₄.mem B _) B (l.D * p + l.oS + l.off q)).toNat = _
     rw [show l.D * p + l.oS + l.off q = l.D * p + l.oS + 32 * (q % l.R) + 8 * (q / l.R) by
-      unfold Lay.off; omega_near, e]
+      unfold Lay.off; omega_arith, e]
     refine congrArg BitVec.toNat (qq.trans ?_)
     rw [k₃.mem, me₂, off_add]
-    exact congrArg (fun d => s.mem.readW (off B d) 64) (by unfold Lay.off; omega_near)
-  · have o := wrList_outside' B (o := l.D * p + l.oS) (n := l.NB) (by omega_near)
+    exact congrArg (fun d => s.mem.readW (off B d) 64) (by unfold Lay.off; omega_arith)
+  · have o := wrList_outside' B (o := l.D * p + l.oS) (n := l.NB) (by omega_arith)
       (Ls.map fun x => (x.1, s₄.vy x.2)) s₄.mem fun x hx => by
         obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
         exact hL y hy

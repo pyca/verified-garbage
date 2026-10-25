@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # DSA key derivation on 32-bit ARM: constant time
@@ -66,7 +67,7 @@ theorem writeKey_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat}
     (VG.Taint.hintOf taint (Taint.ofRegs [.r12, .r10, .r1, .r4])
       (.seq (Core.sequence [Generate.copyFrom 0, .block (ptr .r1 t2), Generate.copyFrom 0,
         .block [.mov .r1 (.reg .r4)], Generate.copyFrom 0, .block SignVerify.result]) Tail))
-    (by rfl) (Taint.noBase_ofRegs _) (by rfl)) ?_
+    (by kernel_rfl) (Taint.noBase_ofRegs _) (by kernel_rfl)) ?_
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -97,11 +98,11 @@ theorem deriveFailure_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ :
   refine SameTrace.assoc_left (SameTrace.seq (SameTrace.of_relCT (erased_relCT (σ := T0)
       (c₀ := .block [.ldr .r11 .r12 0, .movw .r4 0, .dp .add .lr .r11 (.reg .r4), .mov .r4 (.imm 0)])
       (VG.Taint.hintOf taint T0 (.block [.ldr .r11 .r12 0, .movw .r4 0, .dp .add .lr .r11 (.reg .r4),
-        .mov .r4 (.imm 0)])) (by rfl) (wsT_noBase _ _) (by rfl)) (agree0 h₁ h₂))
+        .mov .r4 (.imm 0)])) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)) (agree0 h₁ h₂))
     (deriveFailureHead_ok h₁ hz₁ hL) (deriveFailureHead_ok h₂ hz₂ hL) fun u₁ u₂ ⟨A₁, L₁, w₁⟩ ⟨A₂, L₂, w₂⟩ => ?_)
   exact SameTrace.of_relCT ((relCT_of_check (σ := Taint.ofRegs []) (h := VG.Taint.hintOf taint (wsT true true)
     (.seq (.seq (.loop (.block [.strb .r4 .r11 0, .dp .add .r11 .r11 (.imm 1), .cmp .r11 (.reg .lr)]) .ne)
-      (.seq (.block [.mov .r0 (.imm 0)]) (.block []))) Tail)) rfl).mono (fun _ _ h => h) fun _ _ _ => trivial)
+      (.seq (.block [.mov .r0 (.imm 0)]) (.block []))) Tail)) (by kernel_rfl)).mono (fun _ _ h => h) fun _ _ _ => trivial)
     (agreeWs true true w₁ w₂ (fun _ => by rw [A₁, A₂, ho]) (fun _ => by rw [L₁, L₂, ho]))
 
 /-- Derivation's operands. -/

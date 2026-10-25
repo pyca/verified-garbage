@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.SigMask
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Alignment masks use fixed addresses and no secret-dependent branches -/
 
@@ -14,6 +15,6 @@ theorem code_trace (marker j : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (.block (code marker j))
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   erased_relCT (.block (code marker j)) (.block (code 0 0)) (.block [])
-    rfl rfl rfl (by decide +kernel)
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 end VG.Proof.RsaKeyGen.X86.SigMask

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Fixed-width precomputation has data-independent arithmetic and copy traces -/
 
@@ -23,8 +24,8 @@ theorem precomputeOut_relCT (n : Nat) :
   have H : RelCT isa (VG.X86.Taint.Agree precomputeOutputTaint) (precomputeOut n)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
     apply erased_relCT (precomputeOut n) (precomputeOut 1)
-      (VG.Taint.hintOf taint precomputeOutputTaint (precomputeOut 1)) rfl rfl rfl
-    rfl
+      (VG.Taint.hintOf taint precomputeOutputTaint (precomputeOut 1)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
+    kernel_rfl
   exact H.mono (fun _ _ h => h) (fun _ _ _ => trivial)
 
 theorem precomputeOutputArgs_ok {s : State} {dst : BitVec 32}

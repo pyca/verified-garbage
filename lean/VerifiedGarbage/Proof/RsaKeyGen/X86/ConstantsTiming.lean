@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingMultiply
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingCopy
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Montgomery constants reuse a prepared call with a candidate-independent trace -/
 
@@ -30,7 +31,7 @@ theorem plainOne_raw (w out : Nat) :
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   erased_relCT (VG.Impl.Mont.X86.Dynamic.one w out) (VG.Impl.Mont.X86.Dynamic.one 1 0)
     (VG.Taint.hintOf taint (roundTaint [.edi]) (Code.erase (VG.Impl.Mont.X86.Dynamic.one 1 0)))
-    rfl rfl rfl (by decide +kernel)
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 theorem subtract_raw (w : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (VG.Impl.RsaKeyGen.X86.Constants.subtract w)
@@ -38,7 +39,7 @@ theorem subtract_raw (w : Nat) :
   erased_relCT (VG.Impl.RsaKeyGen.X86.Constants.subtract w) (VG.Impl.Mont.X86.Dynamic.chainW .sbb 1 0 0 0)
     (.seq (roundTaint [.edi]) (.block [])
       (.seq (roundTaint [.edi, .ebp]) (.block []) (.loop (roundTaint [.edi, .ebp]) (.block []))))
-    rfl rfl rfl (by decide +kernel)
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 theorem plainOne_pair {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} :
     RelCT isa (InputPair g capacity p) (VG.Impl.Mont.X86.Dynamic.one g.w (g.array 6))

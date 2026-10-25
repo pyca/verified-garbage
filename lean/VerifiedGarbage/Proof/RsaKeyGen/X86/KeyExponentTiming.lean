@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyConstantTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ProductTiming
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Private-exponent arithmetic has a fixed secret-independent schedule -/
 
@@ -17,17 +18,15 @@ open VG VG.X86 VG.Proof.Rsa.X86.Keys VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Mont.X86.Dynamic VG.Impl.Rsa.X86.Keys VG.Impl.RsaKeyGen.X86.Key
 
 theorem subtractPair_public (out a b : Nat) : KeyPublic (.block (subtractPair out a b)) := by
-  let reference : Prog isa := .block (subtractPair 0 0 0)
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) (Code.erase reference)
-  refine ⟨hint, workspaceTaint true, ?_, rfl⟩
-  exact (check_of_erase_eq (.block (subtractPair out a b)) reference (workspaceTaint true) hint rfl rfl rfl).trans (by rfl)
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (.block (subtractPair 0 0 0) : Prog isa))),
+      workspaceTaint true, ?_, rfl⟩
+  exact (check_of_erase_eq (.block (subtractPair out a b)) (.block (subtractPair 0 0 0) : Prog isa) (workspaceTaint true) (VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (.block (subtractPair 0 0 0) : Prog isa))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)).trans (by kernel_rfl)
 
 theorem chain_public (n out a b : Nat) : KeyPublic (chainW .adc n out a b) := by
-  let reference : Prog isa := chainW .adc 1 0 0 0
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) (Code.erase reference)
-  let final : VG.X86.Taint.T := rowTaint true
-  refine ⟨hint, final, ?_, by decide +kernel⟩
-  exact (check_of_erase_eq (chainW .adc n out a b) reference (workspaceTaint true) hint rfl rfl rfl).trans (by rfl)
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (chainW .adc 1 0 0 0 : Prog isa))),
+      (rowTaint true : VG.X86.Taint.T), ?_, by decide +kernel⟩
+  exact (check_of_erase_eq (chainW .adc n out a b) (chainW .adc 1 0 0 0 : Prog isa) (workspaceTaint true)
+      (VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (chainW .adc 1 0 0 0 : Prog isa))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)).trans (by kernel_rfl)
 
 theorem complement_public (n : Nat) : KeyPublic (complement n) := by
   exact (show KeyPublic (zerosW (slot n aDen) (n + 2)) from

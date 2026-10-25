@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayInit
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayLoopTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Complete candidate reduction preserves timing privacy for all candidate values -/
 
@@ -31,7 +32,7 @@ theorem init_trace {g : ArrayGeometry} (v : g.Valid) {candidate exponent other o
   intro s t tr ur u z ⟨S, T⟩ E G
   have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block (init g.n g.src))
       (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
-    erased_relCT (.block (init g.n g.src)) (.block (init 0 0)) (.block []) rfl rfl rfl (by decide +kernel)
+    erased_relCT (.block (init g.n g.src)) (.block (init 0 0)) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
   have trace := (raw _ _ _ _ _ _ (S.agree T) E G).1
   exact ⟨trace, (wp_result (init_ok v S positive) E).1, (wp_result (init_ok v T otherPositive) G).1⟩
 

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # The x86 RSA padding functions: their callee `vg_rsa_private_checked`
@@ -115,7 +116,7 @@ theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     exact below_inner (by decide) h.sp
   repeat' apply And.intro
   all_goals first
-    | omega | rfl | trivial | exact h.kv | exact h.el1 | exact h.elK | exact h.pl1 | exact h.plK
+    | omega | kernel_rfl | trivial | exact h.kv | exact h.el1 | exact h.elK | exact h.pl1 | exact h.plK
     | exact h.ql1 | exact h.qlK | exact h.slK | exact oS | exact oA | exact sA
     | (refine wr ?_ ?_ <;> simp <;> fail) | (refine (wr ?_ ?_).symm <;> simp <;> fail)
     | (refine (lo ?_).sub_left ret; simp <;> fail) | (refine (lo ?_).sub_left low; simp <;> fail)

@@ -250,7 +250,7 @@ structure PInv (v : Compress) (s : State) (R : BitVec 64) (EM K : List Byte) (ms
 theorem prf_body {s : State} (hp : DPre s) {R : BitVec 64} {EM K : List Byte} {msg : Nat → List Byte}
     {label : List Nat} {lenC : List Instr} {L dst N : Nat} {count : Src} {t₀ : State}
     (hL : label.length + 4 = L) (hL16 : L ≤ 16) (hd1 : sKDK + 32 ≤ dst) (hd2 : dst + 32 * N ≤ scrBytes)
-    (hN : N ≤ 32) (hK : K.length = 32) (hml : ∀ i, (msg i).length = L)
+    (_hN : N ≤ 32) (hK : K.length = 32) (hml : ∀ i, (msg i).length = L)
     (hmsg : ∀ t i, Ctx s R EM t → i < N → t.gpr .rdi = sc s → t.gpr .rax = BitVec.ofNat 64 i →
       t.gpr .r9 = s.gpr .r8 → WP isa (.block (msgBytes label lenC)) t fun t' =>
         Outside (sc s) sMsg 16 t.mem t'.mem ∧ Spec.Rsa.bytesAt t'.mem (scA s sMsg) L = msg i ∧ Keep [.rdx] t t')

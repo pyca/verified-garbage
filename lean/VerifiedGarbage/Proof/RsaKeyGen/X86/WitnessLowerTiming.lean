@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessLower
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # The witness lower-bound scan has fixed public length and addresses -/
 
@@ -15,6 +16,6 @@ theorem code_trace (n src : Nat) :
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   erased_relCT (code n src) (code 2 0)
     (VG.Taint.hintOf taint (roundTaint [.edi]) (Code.erase (code 2 0)))
-    rfl rfl rfl (by decide +kernel)
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 end VG.Proof.RsaKeyGen.X86.WitnessLower

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyHeaderTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDSelectTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLcmTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Exponent import leaves the public byte pointer available to native arithmetic -/
 
@@ -20,7 +21,7 @@ theorem loadBE_key_trace (n out : Nat) :
     RelCT isa (VG.X86.Taint.Agree (argumentTaint false)) (VG.Impl.Bignum.X86.loadBE n out)
       (VG.X86.Taint.Agree (workspaceTaint true)) := by
   exact erased_relCT (VG.Impl.Bignum.X86.loadBE n out) (VG.Impl.Bignum.X86.loadBE 1 0)
-    (VG.Taint.hintOf taint (argumentTaint false) (VG.Impl.Bignum.X86.loadBE 1 0)) rfl rfl rfl (by rfl)
+    (VG.Taint.hintOf taint (argumentTaint false) (VG.Impl.Bignum.X86.loadBE 1 0)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by rfl)
 
 theorem loadExponent_trace (E : Environment) :
     RelCT isa (InputPair E) (loadExponent E.n) (VG.X86.Taint.Agree (workspaceTaint true)) := by

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Proof.Bignum.X86.PublicDataTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Exponent import exposes only its public pointer and byte count -/
 
@@ -52,7 +53,7 @@ theorem code_trace {base : Addr} {size : Nat} (header : 20 ≤ size) :
   unfold VG.Impl.RsaKeyGen.X86.ExponentImport.code
   refine RelCT.seq (args_pair header) ?_
   apply erased_relCT (VG.Impl.Bignum.X86.loadBE 1 128) (VG.Impl.Bignum.X86.loadBE 1 0)
-    (VG.Taint.hintOf taint VG.Proof.Bignum.X86.loadTaint (VG.Impl.Bignum.X86.loadBE 1 0)) rfl rfl rfl
-  rfl
+    (VG.Taint.hintOf taint VG.Proof.Bignum.X86.loadTaint (VG.Impl.Bignum.X86.loadBE 1 0)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
+  kernel_rfl
 
 end VG.Proof.RsaKeyGen.X86.ExponentImport

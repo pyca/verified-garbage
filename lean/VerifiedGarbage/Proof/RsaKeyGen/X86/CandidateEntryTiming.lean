@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateEntry
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Argument entry leaks only the public cdecl arguments and workspace address -/
 
@@ -46,7 +47,7 @@ theorem enter_trace {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat →
   have copied : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) code (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (τr [.esp, .edi]) (fun _ _ H => H)
       (hc := VG.Taint.hintOf taint (τr [.esp, .edi]) code)
-    rfl
+    kernel_rfl
   have raw : RelCT isa (EntryPair base size p inputs) enter (fun _ _ => True) := RelCT.seq pointer_trace copied
   intro s t tr ur u z ⟨S, T⟩ E G
   obtain ⟨Cu, valuesU, usedU, _, _⟩ := wp_result (enter_ok S) E

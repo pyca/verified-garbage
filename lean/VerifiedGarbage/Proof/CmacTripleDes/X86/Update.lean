@@ -122,7 +122,7 @@ section
 variable {s₀ : State} (hp : UPre s₀)
 include hp
 
-theorem UPre.inScr {d n : Nat} (h : d + n ≤ 640) (hn : 0 < n) :
+theorem UPre.inScr {d n : Nat} (h : d + n ≤ 640) (_hn : 0 < n) :
     InRegions s₀.wr ((S s₀).setWidth 64 + BitVec.ofNat 64 d) n := by
   rw [hp.wr]; exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ h (by omega_arith))
 

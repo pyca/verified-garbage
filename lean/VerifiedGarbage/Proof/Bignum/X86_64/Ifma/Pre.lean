@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Framework.OmegaNear
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
@@ -239,7 +239,7 @@ theorem XVals.of_disj {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {X 
   have hO := slot_le (w := wx) (show Public.aOne < 8 by decide)
   have hd : ∀ d n, d + n ≤ slot wx 8 → ∀ r ∈ rs, o + d + n ≤ r.1 ∨ r.1 + r.2 ≤ o + d := fun d n hd r h' => by
     rcases hr r h' with h | h <;> omega_using [h, hd]
-  exact ⟨by rw [wv_off, hf.wv_eq (hd _ _ (by omega_using [hN])) (by omega_near), ← wv_off]; exact h.n,
+  exact ⟨by rw [wv_off, hf.wv_eq (hd _ _ (by omega_using [hN])) (by omega_arith), ← wv_off]; exact h.n,
     by rw [word_off, hf.word_eq (fun r h' => by have := hd (slot wx Public.aN) 8 (by omega_using [hN]) r h'; omega_using [this])
       (by omega_using [ho, hN]), ← word_off]; exact h.inv,
     by rw [wv_off, hf.wv_eq (hd _ _ (by omega_using [hO])) (by omega_using [ho, hO]), ← wv_off]; exact h.one⟩
@@ -266,7 +266,7 @@ theorem gRanges_lt (w : Nat) : ∀ r ∈ gRanges w, 8 * 22 ≤ r.1 ∧ r.1 + r.2
   have := hdr_lt_slot w Public.aTmp (show 31 < 32 by decide)
   have := hdr_lt_slot w Public.aY (show 31 < 32 by decide)
   simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl) <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_near
+  rintro _ (rfl | rfl | rfl | rfl | rfl) <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith
 
 /-- A prime's part of `pre`'s result: `R_X` in its `aY`, `x R_X` in its `aXc`. -/
 structure PrimeRdy (t : State) (B : Addr) (o wx : Nat) (mx : BitVec 64) (N X C : Nat) : Prop where
@@ -334,6 +334,6 @@ theorem pre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVe
     (fQ.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [preRanges]).trans
       (fP.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [preRanges]),
     kQ.trans kP |>.mono (by decide), ?_⟩
-  rw [mkP, word_off, word_off, fQ.word_eq (fun r hr => by rcases hQd r hr with h | h <;> omega_near) (by omega_using [hpq, hmk, ho64])]
+  rw [mkP, word_off, word_off, fQ.word_eq (fun r hr => by rcases hQd r hr with h | h <;> omega_arith) (by omega_using [hpq, hmk, ho64])]
 
 end VG.Proof.Bignum.X86_64

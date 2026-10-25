@@ -118,7 +118,7 @@ structure MsgInv (s t₀ : State) (o j : Nat) (t : State) : Prop where
   msg : ∀ i < j, byte t.mem (fb s) (o + i) = s.mem (stackArg s 0 + BitVec.ofNat 64 i)
   r10 : t.gpr .r10 = BitVec.ofNat 64 j
 
-theorem msgLoop_ok {s t₀ : State} (hp : EPre s) {o : Nat} (ho' : oEM + 3 ≤ o)
+theorem msgLoop_ok {s t₀ : State} (hp : EPre s) {o : Nat} (_ho' : oEM + 3 ≤ o)
     (hoK : o + (stackArg s 1).toNat ≤ oEM + (s.gpr .rcx).toNat) (hm0 : 0 < (stackArg s 1).toNat)
     (hrd : t₀.rd = s.rd) (hwr : t₀.wr = ⟨fb s, frameBytes⟩ :: s.wr)
     (ho : Outside (fb s) 0 frameBytes s.mem t₀.mem) (hdi : t₀.gpr .rdi = off (fb s) o)

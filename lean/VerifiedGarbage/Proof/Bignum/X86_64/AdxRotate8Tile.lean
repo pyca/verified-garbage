@@ -1,5 +1,5 @@
 module
-import VerifiedGarbage.Proof.Framework.OmegaNear
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
@@ -36,25 +36,25 @@ theorem front_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
   unfold AdxRotate8.tileFront
   refine WP.seq (WP.mono (tileBegin_ok hs hdi hH hZ hc heZ) fun a ⟨va, hp, ho, ma, ka⟩ => ?_)
   refine WP.seq (WP.mono (headN_ok (n := 8) (mi := mi) (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hdi)
-    ((ka.gpr (by decide)).trans hc) hp heZ (by omega_near) (by omega_near)
+    ((ka.gpr (by decide)).trans hc) hp heZ (by omega_arith) (by omega_arith)
     (Nat.le_trans (by decide : 8 * sMinv + 8 ≤ hdrBytes + 16) he)
     (by rw [ma]; exact hH.hminv)) fun b ⟨vb, ob, kb⟩ => ?_)
   have kab := ka.trans kb
-  have hbH : Hdr b.mem B w mi := (ma ▸ hH).of_outside ob (by omega_near)
+  have hbH : Hdr b.mem B w mi := (ma ▸ hH).of_outside ob (by omega_arith)
   refine WP.seq (WP.mono (clearCarry_ok (hs.congr kab.2.2) ((kab.gpr (by decide)).trans hc)
-    (by omega_near) (by omega_near)) fun c ⟨zc, oc, kc⟩ => ?_)
+    (by omega_arith) (by omega_arith)) fun c ⟨zc, oc, kc⟩ => ?_)
   have kabc := kab.trans kc
-  have hcH := hbH.of_outside oc (by omega_near)
+  have hcH := hbH.of_outside oc (by omega_arith)
   have hcP : c.gpr .rbp = off B (slot w aN + 8 * 0) := by
     simpa only [Nat.mul_zero, Nat.add_zero] using ((kb.trans kc).gpr (r := .rbp) (by decide)).trans hp
   have hcO : c.gpr .rsi = off B (e + 8 * 0) := by
     simpa only [Nat.mul_zero, Nat.add_zero] using ((kb.trans kc).gpr (r := .rsi) (by decide)).trans ho
   refine WP.mono (nextBlock_ok (hs.congr kabc.2.2) ((kabc.gpr (by decide)).trans hdi)
-    hcH hZ (by omega_near) hcP hcO) fun t ⟨pt, ot, zt, mt, kt⟩ => ?_
+    hcH hZ (by omega_arith) hcP hcO) fun t ⟨pt, ot, zt, mt, kt⟩ => ?_
   have outb : Outside B e 64 s.mem b.mem := by rw [ma] at ob; exact ob
   have outc : Outside B (e - 8) 72 s.mem c.mem :=
-    (outb.mono (by omega_near) (by omega_near)).trans (oc.mono (by omega_near) (by omega_near))
-  have uc : wv c.mem B e 8 = wv b.mem B e 8 := oc.wv (by omega_near) (by omega_near)
+    (outb.mono (by omega_arith) (by omega_arith)).trans (oc.mono (by omega_arith) (by omega_arith))
+  have uc : wv c.mem B e 8 = wv b.mem B e 8 := oc.wv (by omega_arith) (by omega_arith)
   refine ⟨?_, by rw [mt]; exact zc, pt, ot, ?_, by rw [mt]; exact outc,
     (kabc.trans kt).mono (by decide)⟩
   · intro hi
@@ -62,7 +62,7 @@ theorem front_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
     rw [ma, va, show 64 * 8 = 512 from rfl] at hv
     rw [cols_keep kt (by decide), cols_keep kc (by decide), mt, uc]
     exact hv
-  · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega_near))
+  · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega_arith))
 end VG.Proof.Bignum.X86_64.AdxRotate8
 
 end
@@ -89,30 +89,30 @@ theorem compute_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
       (t.gpr .rax).toNat ≤ 3 ∧ Outside B (e - 8) (8 * (w + 9)) s.mem t.mem ∧ t.gpr .rcx = off B e ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
   unfold AdxRotate8.tileCompute
-  refine WP.seq (WP.mono (front_ok hs hdi hH hZ hw hc he (by omega_near) hsep)
+  refine WP.seq (WP.mono (front_ok hs hdi hH hZ hw hc he (by omega_arith) hsep)
     fun a ⟨va, za, pa, oa, zfa, outa, ka⟩ => ?_)
-  have ha := hH.of_outside outa (by omega_near)
+  have ha := hH.of_outside outa (by omega_arith)
   refine WP.seq (WP.mono (middles_ok (hs.congr ka.2.2) ha ((ka.gpr (by decide)).trans hdi)
     ((ka.gpr (by decide)).trans hc) pa oa zfa za hZ hw he heZ hsep) fun b hb => ?_)
   have ob : Outside B (e - 8) (8 * (w + 9)) a.mem b.mem :=
-    hb.out.outside (by omega_near) (by omega_near) (by omega_near) (by omega_near)
+    hb.out.outside (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
   have outab : Outside B (e - 8) (8 * (w + 9)) s.mem b.mem :=
-    (outa.mono (by omega_near) (by omega_near)).trans ob
-  have hbO : b.gpr .rsi = off B (e + 8 * w) := by rw [hb.rsi]; congr 1; omega_near
-  refine WP.mono (tailCore_ok hb.scr hb.rcx hbO (by omega_near) (by omega_near) (by omega_near) hb.bit)
+    (outa.mono (by omega_arith) (by omega_arith)).trans ob
+  have hbO : b.gpr .rsi = off B (e + 8 * w) := by rw [hb.rsi]; congr 1; omega_arith
+  refine WP.mono (tailCore_ok hb.scr hb.rcx hbO (by omega_arith) (by omega_arith) (by omega_arith) hb.bit)
     fun t ⟨vt, bt, outt, kt⟩ => ?_
-  refine ⟨?_, bt, outab.trans (outt.mono (by omega_near) (by omega_near)),
+  refine ⟨?_, bt, outab.trans (outt.mono (by omega_arith) (by omega_arith)),
     (kt.gpr (by decide)).trans hb.rcx, (ka.trans (hb.keep.trans kt)).mono (by decide)⟩
   intro hi
   have h0 := va hi
   have h1 := hb.val
-  have tm : wv a.mem B (e + 64) (8 * n) = wv s.mem B (e + 64) (8 * n) := outa.wv (by omega_near) (by omega_near)
+  have tm : wv a.mem B (e + 64) (8 * n) = wv s.mem B (e + 64) (8 * n) := outa.wv (by omega_arith) (by omega_arith)
   have nm : wv a.mem B (slot w aN + 64) (8 * n) = wv s.mem B (slot w aN + 64) (8 * n) :=
-    outa.wv (by omega_near) (by omega_near)
-  have topb : wv b.mem B (e + 8 * w) 8 = wv a.mem B (e + 8 * w) 8 := hb.out.wv (by omega_near) (by omega_near) (by omega_near)
-  have topa : wv a.mem B (e + 8 * w) 8 = wv s.mem B (e + 8 * w) 8 := outa.wv (by omega_near) (by omega_near)
-  have oldc : word b.mem B (e - 16) = word s.mem B (e - 16) := outab.word (by omega_near) (by omega_near)
-  have lo : wv t.mem B (e + 64) (8 * n) = wv b.mem B (e + 64) (8 * n) := outt.wv (by omega_near) (by omega_near)
+    outa.wv (by omega_arith) (by omega_arith)
+  have topb : wv b.mem B (e + 8 * w) 8 = wv a.mem B (e + 8 * w) 8 := hb.out.wv (by omega_arith) (by omega_arith) (by omega_arith)
+  have topa : wv a.mem B (e + 8 * w) 8 = wv s.mem B (e + 8 * w) 8 := outa.wv (by omega_arith) (by omega_arith)
+  have oldc : word b.mem B (e - 16) = word s.mem B (e - 16) := outab.word (by omega_arith) (by omega_arith)
+  have lo : wv t.mem B (e + 64) (8 * n) = wv b.mem B (e + 64) (8 * n) := outt.wv (by omega_arith) (by omega_arith)
   rw [za, tm, nm] at h1
   simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at h1
   rw [topb, topa, oldc] at vt
@@ -123,25 +123,25 @@ theorem compute_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
   refine ⟨wv a.mem B e 8, ?_, ?_⟩
   · simpa only [show 64 * 8 = 512 from rfl] using wv_lt a.mem B e 8
   have pw : 2 ^ (64 * w) = 2 ^ (512 * n) * 2 ^ 512 := by
-    rw [show 64 * w = 512 * n + 512 by omega_near, Nat.pow_add]
+    rw [show 64 * w = 512 * n + 512 by omega_arith, Nat.pow_add]
   have output : wv t.mem B (e + 64) w = wv b.mem B (e + 64) (8 * n) +
       2 ^ (512 * n) * wv t.mem B (e + 8 * w) 8 := by
     have hx := wv_add t.mem B (e + 64) (8 * n) 8
-    rw [show 8 * n + 8 = w by omega_near, lo, show 64 * (8 * n) = 512 * n by omega_near,
-      show e + 64 + 8 * (8 * n) = e + 8 * w by omega_near] at hx
+    rw [show 8 * n + 8 = w by omega_arith, lo, show 64 * (8 * n) = 512 * n by omega_arith,
+      show e + 64 + 8 * (8 * n) = e + 8 * w by omega_arith] at hx
     exact hx
   have input : wv s.mem B e (w + 8) =
       wv s.mem B e 8 + 2 ^ 512 * wv s.mem B (e + 64) (8 * n) +
         (2 ^ (512 * n) * 2 ^ 512) * wv s.mem B (e + 8 * w) 8 := by
     have hx := wv_add s.mem B e 8 (8 * n)
-    rw [show 8 + 8 * n = w by omega_near, show 64 * 8 = 512 from rfl, show 8 * 8 = 64 from rfl] at hx
+    rw [show 8 + 8 * n = w by omega_arith, show 64 * 8 = 512 from rfl, show 8 * 8 = 64 from rfl] at hx
     have hy := wv_add s.mem B e w 8
     rw [pw] at hy
     omega_using [hx, hy]
   have modulus : wv s.mem B (slot w aN) w = wv s.mem B (slot w aN) 8 +
       2 ^ 512 * wv s.mem B (slot w aN + 64) (8 * n) := by
     have hx := wv_add s.mem B (slot w aN) 8 (8 * n)
-    rw [show 8 + 8 * n = w by omega_near, show 64 * 8 = 512 from rfl, show 8 * 8 = 64 from rfl] at hx
+    rw [show 8 + 8 * n = w by omega_arith, show 64 * 8 = 512 from rfl, show 8 * 8 = 64 from rfl] at hx
     exact hx
   rw [output, input, modulus, pw]
   exact hv

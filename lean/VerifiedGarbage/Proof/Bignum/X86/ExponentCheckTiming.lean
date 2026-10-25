@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Exponent-validation timing depends only on the public exponent bytes -/
 
@@ -61,7 +62,7 @@ theorem exponentCheck_trace {s t : State} {ep : BitVec 32} {eb : List Byte}
   have Test : RelCT isa (VG.X86.Taint.Agree (τr [.ebx, .edx])) exponentTest (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (τr [.ebx, .edx]) (fun _ _ h => h)
       (hc := VG.Taint.hintOf taint (τr [.ebx, .edx]) exponentTest)
-    rfl
+    kernel_rfl
   cases E with
   | seq E1 E2 =>
     cases F with

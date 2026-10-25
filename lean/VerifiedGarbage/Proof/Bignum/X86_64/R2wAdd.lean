@@ -1,5 +1,5 @@
 module
-import VerifiedGarbage.Proof.Framework.OmegaNear
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
@@ -39,7 +39,7 @@ theorem addHead_ok (s : State) {aT : Addr}
   have := (s.mem.readW aT 64).isLt
   unfold mask
   congr 2
-  exact congrArg _ (decide_eq_decide.mpr (by omega_near))
+  exact congrArg _ (decide_eq_decide.mpr (by omega_arith))
 
 /-- `mov rax, [r10 + 8 r14]; and rax, r11; add rbp, rbp; adc rax, [r8 + 8 r14];
 sbb rbp, rbp; mov [r8 + 8 r14], rax`: `v + 2^64 c' = (mᵢ & mask) + tᵢ + c`. -/
@@ -103,24 +103,24 @@ theorem abStep_ok {s₀ : State} {B : Addr} {Z w em et : Nat} {n : Bool}
   have t12 : t.gpr .r12 = BitVec.ofNat 64 w := (hI.keep.gpr (by decide)).trans h12
   obtain ⟨c, hbp, hval⟩ := hI.val
   rw [WP.block_append_iff]
-  refine WP.mono (addSt_ok t (addr0 t10 hI.r14) (addr0 t8 hI.r14) (hI.scr.ld (by omega_near)) (hI.scr.ld (by omega_near))
-    (hI.scr.st (by omega_near)) hbp t11) fun t₁ ⟨v, c', hm₁, hbp₁, hv₁, k₁⟩ => ?_
+  refine WP.mono (addSt_ok t (addr0 t10 hI.r14) (addr0 t8 hI.r14) (hI.scr.ld (by omega_arith)) (hI.scr.ld (by omega_arith))
+    (hI.scr.st (by omega_arith)) hbp t11) fun t₁ ⟨v, c', hm₁, hbp₁, hv₁, k₁⟩ => ?_
   have t₁14 : t₁.gpr .r14 = BitVec.ofNat 64 j := (k₁.gpr (by decide)).trans hI.r14
   have t₁12 : t₁.gpr .r12 = BitVec.ofNat 64 w := (k₁.gpr (by decide)).trans t12
-  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega_near) (by omega_near)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
+  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega_arith) (by omega_arith)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
   have hx : t.mem.readW (off B (et + 8 * j)) 64 = word s₀.mem B (et + 8 * j) :=
-    hI.out.word (Or.inr (Nat.le_refl _)) (by omega_near)
+    hI.out.word (Or.inr (Nat.le_refl _)) (by omega_arith)
   have hy : t.mem.readW (off B (em + 8 * j)) 64 = word s₀.mem B (em + 8 * j) :=
-    hI.out.word (by omega_near) (by omega_near)
+    hI.out.word (by omega_arith) (by omega_arith)
   rw [hx, hy] at hv₁
   have hmem : t'.mem = t.mem.writeW (off B (et + 8 * j)) v := by rw [hm', hm₁]
   refine ⟨hI.scr.congr (k'.2.2.trans k₁.2.2), ((hI.keep.trans k₁).trans k').mono (by decide), h14, ?_,
     ⟨c', (k'.gpr (by decide)).trans hbp₁, ?_⟩⟩
   · rw [hmem]
     intro x hx'
-    rw [writeW_outside t.mem B v (by omega_near) x (by omega_near)]
-    exact hI.out x (by omega_near)
-  · rw [hmem, wv_writeW_top _ _ _ _ _ (by omega_near)]
+    rw [writeW_outside t.mem B v (by omega_arith) x (by omega_arith)]
+    exact hI.out x (by omega_arith)
+  · rw [hmem, wv_writeW_top _ _ _ _ _ (by omega_arith)]
     simp only [wv]
     rw [pow64_succ]
     cases n <;> simp only [ite_true, ite_false, Bool.false_eq_true, Nat.add_zero] at hval hv₁ ⊢ <;> grind
@@ -137,7 +137,7 @@ theorem addBack_ok {s : State} {B : Addr} {Z w em et : Nat} (hs : Scr s B Z)
       Outside B et (8 * (w + 1)) s.mem t.mem ∧ Keep [.rax, .r11, .rbp, .r14] s t := by
   have hn := hs.nowrap
   unfold addBack
-  refine WP.seq (WP.mono (addHead_ok s (addr0 h8 h12) (hs.ld (by omega_near))) fun t₁ ⟨h11, hbp₁, hm₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (addHead_ok s (addr0 h8 h12) (hs.ld (by omega_arith))) fun t₁ ⟨h11, hbp₁, hm₁, k₁⟩ => ?_)
   generalize hN : decide (2 ^ 63 ≤ (s.mem.readW (off B (et + 8 * w)) 64).toNat) = N at h11
   have t₁10 : t₁.gpr .r10 = off B em := (k₁.gpr (by decide)).trans h10
   have t₁8 : t₁.gpr .r8 = off B et := (k₁.gpr (by decide)).trans h8
@@ -146,18 +146,18 @@ theorem addBack_ok {s : State} {B : Addr} {Z w em et : Nat} (hs : Scr s B Z)
       AbInv t₁ B Z em et N 0 t := fun t h14 hm k _ =>
     ⟨hs.congr (k.2.2.trans k₁.2.2), k.mono (by decide), h14, by rw [hm]; exact Outside.refl _ _ _ _,
       ⟨false, (k.gpr (by decide)).trans hbp₁, by cases N <;> simp [wv]⟩⟩
-  refine WP.seq (WP.mono (wordLoop_ok (start := 0) (N := w) (by omega_near) hw' (AbInv t₁ B Z em et N) h0
+  refine WP.seq (WP.mono (wordLoop_ok (start := 0) (N := w) (by omega_arith) hw' (AbInv t₁ B Z em et N) h0
     (fun j _ hj t hI => abStep_ok t₁10 t₁8 h11 t₁12 hw' hM hT sM hj hI)) fun t₂ hI => ?_)
   obtain ⟨c, hbp₂, hval⟩ := hI.val
   have t₂8 : t₂.gpr .r8 = off B et := (hI.keep.gpr (by decide)).trans t₁8
   have t₂12 : t₂.gpr .r12 = BitVec.ofNat 64 w := (hI.keep.gpr (by decide)).trans t₁12
-  refine WP.mono (addTop_ok t₂ (addr0 t₂8 t₂12) (hI.scr.ld (by omega_near)) (hI.scr.st (by omega_near)) hbp₂)
+  refine WP.mono (addTop_ok t₂ (addr0 t₂8 t₂12) (hI.scr.ld (by omega_arith)) (hI.scr.st (by omega_arith)) hbp₂)
     fun t ⟨v, c', hm, hv, k⟩ => ⟨c', ?_, ?_, ((k₁.trans hI.keep).trans k).mono (by decide)⟩
   · have hx : t₂.mem.readW (off B (et + 8 * w)) 64 = word s.mem B (et + 8 * w) := by
       show word t₂.mem B (et + 8 * w) = _
-      rw [hI.out.word (Or.inr (Nat.le_refl _)) (by omega_near), hm₁]
+      rw [hI.out.word (Or.inr (Nat.le_refl _)) (by omega_arith), hm₁]
     rw [hx] at hv
-    rw [hm, wv_writeW_top _ _ _ _ _ (by omega_near)]
+    rw [hm, wv_writeW_top _ _ _ _ _ (by omega_arith)]
     rw [hm₁] at hval
     have hN' : (2 ^ 63 ≤ (word s.mem B (et + 8 * w)).toNat) = (N = true) := by
       rw [← hN]; simp only [decide_eq_true_eq]
@@ -167,7 +167,7 @@ theorem addBack_ok {s : State} {B : Addr} {Z w em et : Nat} (hs : Scr s B Z)
       grind
   · rw [hm]
     intro x hx
-    rw [writeW_outside t₂.mem B v (by omega_near) x (by omega_near)]
-    rw [hI.out x (by omega_near), hm₁]
+    rw [writeW_outside t₂.mem B v (by omega_arith) x (by omega_arith)]
+    rw [hI.out x (by omega_arith), hm₁]
 
 end VG.Proof.Bignum.X86_64.R2w

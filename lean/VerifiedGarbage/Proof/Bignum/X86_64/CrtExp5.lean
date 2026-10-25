@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Framework.OmegaNear
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 public import VerifiedGarbage.Proof.Bignum.CrtWin5
 import VerifiedGarbage.Proof.Framework.Range
@@ -42,7 +42,7 @@ theorem crtExpRanges5_ok (wx : Nat) :
   intro r hr
   rcases List.mem_cons.mp hr with rfl | hr
   · have := hdr_lt_slot wx 8 (show Crt.sPow < 32 by decide)
-    simp only [Crt.sPow, sFn] at *; omega_near
+    simp only [Crt.sPow, sFn] at *; omega_arith
   · exact crtExpRanges_ok wx r hr
 
 theorem crtExpRanges5_arr (wx : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h2 : j ≠ aTmp) (h3 : j ≠ aY)
@@ -50,7 +50,7 @@ theorem crtExpRanges5_arr (wx : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h
   intro r hr
   rcases List.mem_cons.mp hr with rfl | hr
   · have := hdr_lt_slot wx j (show Crt.sPow < 32 by decide)
-    simp only [Crt.sPow, sFn] at *; omega_near
+    simp only [Crt.sPow, sFn] at *; omega_arith
   · exact crtExpRanges_arr wx hj h1 h2 h3 h4 (n := 32) r hr
 
 /-- Two different header words are disjoint. -/
@@ -77,19 +77,19 @@ theorem CExpCtx.of_frm5 {t t' : State} {P : Addr} {wx : Nat} {minv : BitVec 64} 
   have lN := slot_le (w := wx) (show aN < 8 by decide)
   have lX := slot_le (w := wx) (show Crt.aXc < 8 by decide)
   have hh : ∀ i < 17, word t'.mem P (8 * i) = word t.mem P (8 * i) := fun i hi =>
-    hf.word_eq (fun r hr => Or.inl (by have := crtExpRanges5_ok wx r hr; omega_near))
-      (by have := hdr_lt_slot wx 8 (show i < 32 by omega_near); omega_near)
+    hf.word_eq (fun r hr => Or.inl (by have := crtExpRanges5_ok wx r hr; omega_arith))
+      (by have := hdr_lt_slot wx 8 (show i < 32 by omega_arith); omega_arith)
   exact ⟨⟨hc.good.scr.congr hwr, hdi.trans hc.good.rdi,
     ⟨(hh _ (by decide)).trans hc.good.hdr.hw, (hh _ (by decide)).trans hc.good.hdr.hminv,
-      fun j hj => (hh _ (by unfold sArr; omega_near)).trans (hc.good.hdr.harr j hj)⟩⟩, hc.scrT.congr hwr,
-    by rw [hf.wv_eq (fun r hr => by have := rN r hr; omega_near) (by omega_near)]; exact hc.n,
-    by rw [hf.word_eq (fun r hr => by have := rN r hr; omega_near) (by omega_near)]; exact hc.inv,
-    by rw [hf.wv_eq (fun r hr => by have := rX r hr; omega_near) (by omega_near)]; exact hc.x⟩
+      fun j hj => (hh _ (by unfold sArr; omega_arith)).trans (hc.good.hdr.harr j hj)⟩⟩, hc.scrT.congr hwr,
+    by rw [hf.wv_eq (fun r hr => by have := rN r hr; omega_arith) (by omega_arith)]; exact hc.n,
+    by rw [hf.word_eq (fun r hr => by have := rN r hr; omega_arith) (by omega_arith)]; exact hc.inv,
+    by rw [hf.wv_eq (fun r hr => by have := rX r hr; omega_arith) (by omega_arith)]; exact hc.x⟩
 
 /-- The prime's workspace with room for a table of 32 entries. -/
 theorem SubCtx.scr32 {t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} (h : SubCtx t B Z o w wx minv)
     (hT : o + slot wx 8 + wsTab wx ≤ Z) : Scr t (off B o) (slot wx 8 + tabBytes wx 32) :=
-  h.scr.sub (by simp only [wsTab] at hT; omega_near) (by unfold slot hdrBytes; omega_near)
+  h.scr.sub (by simp only [wsTab] at hT; omega_arith) (by unfold slot hdrBytes; omega_arith)
 
 /-! ## The padding -/
 
@@ -101,9 +101,9 @@ theorem div5_bv {L : Nat} (hL : L < 2 ^ 32) :
     BitVec.ofNat 64 ((0xCCCCCCCCCCCCCCCD : BitVec 64).toNat * (BitVec.ofNat 64 L).toNat / 2 ^ 64) >>> 2 =
       BitVec.ofNat 64 (L / 5) := by
   apply BitVec.eq_of_toNat_eq
-  rw [toNat_ofNat_of_lt (by omega_near : L < 2 ^ 64), BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
+  rw [toNat_ofNat_of_lt (by omega_arith : L < 2 ^ 64), BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
     show (0xCCCCCCCCCCCCCCCD : BitVec 64).toNat = 0xCCCCCCCCCCCCCCCD from rfl, Nat.mul_comm,
-    toNat_ofNat_of_lt (by simp only [Nat.reducePow] at *; omega_near), toNat_ofNat_of_lt (by omega_near), div5_magic hL]
+    toNat_ofNat_of_lt (by simp only [Nat.reducePow] at *; omega_arith), toNat_ofNat_of_lt (by omega_arith), div5_magic hL]
 
 /-- `2 (L mod 5)` from `⌊L / 5⌋` by additions and a subtraction. -/
 theorem mod5x2_bv (L : Nat) :
@@ -114,7 +114,7 @@ theorem mod5x2_bv (L : Nat) :
       BitVec.ofNat 64 (2 * (L % 5)) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega_near
+  omega_arith
 
 /-- `rdx := ⌊L / 5⌋` and `rcx := L`, `L` in `sExpLen`. -/
 theorem padDiv_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n L : Nat}
@@ -142,7 +142,7 @@ theorem padMod_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n L
   refine WP.mono (WP.keep [.rax, .rcx] (Q := fun t' => t'.gpr .rax = BitVec.ofNat 64 (padBits L) ∧
       t'.mem = t.mem.writeW (off P (8 * Crt.sBit)) (BitVec.ofNat 64 (padBits L))) ?_ rfl)
     fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
-  have h2r : (BitVec.ofNat 64 (2 * (L % 5))).toNat = 2 * (L % 5) := toNat_ofNat_of_lt (by omega_near)
+  have h2r : (BitVec.ofNat 64 (2 * (L % 5))).toNat = 2 * (L % 5) := toNat_ofNat_of_lt (by omega_arith)
   have hpad := padBits_eq L
   by_cases h5 : 2 * (L % 5) < 5
   · rw [ite_eq_left h5] at hpad
@@ -151,8 +151,8 @@ theorem padMod_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n L
       h2r, show (5 : BitVec 64).toNat = 5 from rfl, h5]
   · rw [ite_eq_right h5] at hpad
     have e : BitVec.ofNat 64 (2 * (L % 5)) - 5 = BitVec.ofNat 64 (padBits L) := by
-      rw [← hpad]; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_sub, h2r, toNat_ofNat_of_lt (by omega_near)]
-      simp only [show (5 : BitVec 64).toNat = 5 from rfl]; omega_near
+      rw [← hpad]; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_sub, h2r, toNat_ofNat_of_lt (by omega_arith)]
+      simp only [show (5 : BitVec 64).toNat = 5 from rfl]; omega_arith
     xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.st (i := Crt.sBit) (by decide), hdx, hcx, mod5x2_bv, execCmov, eval,
       h2r, show (5 : BitVec 64).toNat = 5 from rfl, h5, e]
 
@@ -244,11 +244,11 @@ theorem imul_eq (a b : BitVec 64) : BitVec.ofInt 64 (a.toInt * b.toInt) = a * b 
 
 theorem shr8_pow {b : Nat} (hb : b < 5) :
     BitVec.ofNat 64 (2 ^ (56 - b)) >>> 8 = BitVec.ofNat 64 (2 ^ (56 - (b + 8))) := by
-  rcases (by omega_near : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl <;> decide
+  rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem shl5_pow {b : Nat} (hb : 5 ≤ b) (hb' : b ≤ 12) :
     BitVec.ofNat 64 (2 ^ (56 - b)) <<< 5 = BitVec.ofNat 64 (2 ^ (56 - (b - 5))) := by
-  rcases (by omega_near : b = 5 ∨ b = 6 ∨ b = 7 ∨ b = 8 ∨ b = 9 ∨ b = 10 ∨ b = 11 ∨ b = 12) with
+  rcases (by omega_arith : b = 5 ∨ b = 6 ∨ b = 7 ∨ b = 8 ∨ b = 9 ∨ b = 10 ∨ b = 11 ∨ b = 12) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem ofNat_add8 (b : Nat) : BitVec.ofNat 64 b + 8 = BitVec.ofNat 64 (b + 8) := by
@@ -256,9 +256,9 @@ theorem ofNat_add8 (b : Nat) : BitVec.ofNat 64 b + 8 = BitVec.ofNat 64 (b + 8) :
 
 theorem ofNat_sub5 {b : Nat} (hb : 5 ≤ b) (hb' : b < 2 ^ 64) : BitVec.ofNat 64 b - 5 = BitVec.ofNat 64 (b - 5) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub, toNat_ofNat_of_lt hb', toNat_ofNat_of_lt (by omega_near),
+  rw [BitVec.toNat_sub, toNat_ofNat_of_lt hb', toNat_ofNat_of_lt (by omega_arith),
     show (5 : BitVec 64).toNat = 5 from rfl]
-  omega_near
+  omega_arith
 
 /-- `CF := b < 5`, `b` in `sBit`. -/
 theorem bitCmp_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n b : Nat}
@@ -317,7 +317,7 @@ theorem takeWin_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n 
   xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.ld (i := Crt.sV) (by decide), hc.ld (i := Crt.sPow) (by decide),
     hc.ld (i := Crt.sBit) (by decide), hc.st (i := Crt.sPow) (by decide), hc.st (i := Crt.sBit) (by decide),
     hc.st (i := Crt.sNib) (by decide), hc.st (i := Crt.sV) (by decide), hp, hv, hbit, shl5_pow hb hb',
-    ofNat_sub5 hb (by omega_near), take_hi hb hb' hr, take_lo hb hb' hr]
+    ofNat_sub5 hb (by omega_arith), take_hi hb hb' hr, take_lo hb hb' hr]
 
 /-- `ZF` once no byte nor bit is left: `L - i + b = 0`. -/
 theorem winEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n L i b : Nat}
@@ -329,25 +329,25 @@ theorem winEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n L
       t'.zf = some (decide (L - i + b = 0)) ∧ t'.mem = t.mem ∧ Keep [.rax] t t' := by
   have e : BitVec.ofNat 64 L - BitVec.ofNat 64 i + BitVec.ofNat 64 b = BitVec.ofNat 64 (L - i + b) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_add, BitVec.toNat_sub, toNat_ofNat_of_lt (by omega_near), toNat_ofNat_of_lt (by omega_near),
-      toNat_ofNat_of_lt (by omega_near), toNat_ofNat_of_lt (by omega_near)]
-    omega_near
+    rw [BitVec.toNat_add, BitVec.toNat_sub, toNat_ofNat_of_lt (by omega_arith), toNat_ofNat_of_lt (by omega_arith),
+      toNat_ofNat_of_lt (by omega_arith), toNat_ofNat_of_lt (by omega_arith)]
+    omega_arith
   refine WP.mono (WP.keep [.rax] (Q := fun t' => t'.zf = some (decide (L - i + b = 0)) ∧ t'.mem = t.mem) ?_ rfl)
     fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
   xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.ld (i := Crt.sExpLen) (by decide), hc.ld (i := Crt.sI) (by decide),
-    hc.ld (i := Crt.sBit) (by decide), hL, hi, hbit, e, ofNat64_beq_zero (show L - i + b < 2 ^ 64 by omega_near)]
+    hc.ld (i := Crt.sBit) (by decide), hL, hi, hbit, e, ofNat64_beq_zero (show L - i + b < 2 ^ 64 by omega_arith)]
 
 /-! ## The window's invariant -/
 
 /-- A store to a header slot is within `expLoop5`'s ranges if the slot is. -/
 theorem frm5_hdrW (m : Mem) (P : Addr) (wx : Nat) {k : Nat} (v : BitVec 64) (hk : (8 * k, 8) ∈ crtExpRanges5 wx)
     (hk' : k < 32) : Frm P (crtExpRanges5 wx) m (m.writeW (off P (8 * k)) v) :=
-  Frm.of_outside (writeW_outside m P v (by omega_near)) hk
+  Frm.of_outside (writeW_outside m P v (by omega_arith)) hk
 
 /-- Words past the header are kept by a store to a header slot. -/
 theorem wv_hdrW (m : Mem) (P : Addr) {k d n : Nat} (v : BitVec 64) (hk : k < 32) (hd : 8 * 32 ≤ d)
     (hn : d + 8 * n ≤ 2 ^ 64) : wv (m.writeW (off P (8 * k)) v) P d n = wv m P d n :=
-  (writeW_outside m P v (by omega_near)).wv (by omega_near) hn
+  (writeW_outside m P v (by omega_arith)).wv (by omega_arith) hn
 
 /-- The table is kept by a store to a header slot but `sTab`. -/
 theorem _root_.VG.Proof.Bignum.CTab.hdrW {m : Mem} {P : Addr} {wx X : Nat} {Q : Prop} {x n k : Nat} (h : CTab m P wx X Q x n)
@@ -355,8 +355,8 @@ theorem _root_.VG.Proof.Bignum.CTab.hdrW {m : Mem} {P : Addr} {wx X : Nat} {Q : 
     CTab (m.writeW (off P (8 * k)) v) P wx X Q x n := by
   have h8 := hdr_lt_slot wx 8 (show 31 < 32 by decide)
   have he : ∀ j < n, wv (m.writeW (off P (8 * k)) v) P (slot wx (8 + j)) wx = wv m P (slot wx (8 + j)) wx :=
-    fun j hj => wv_hdrW m P v hk (by have := slot_mono wx (show 8 ≤ 8 + j by omega_near); omega_near)
-      (by have := ent_le wx hj; omega_near)
+    fun j hj => wv_hdrW m P v hk (by have := slot_mono wx (show 8 ≤ 8 + j by omega_arith); omega_arith)
+      (by have := ent_le wx hj; omega_arith)
   exact ⟨by rw [hdrStore_hdr _ _ _ hk (by decide) hkt]; exact h.tab, fun j hj => (he j hj).symm ▸ h.lt j hj,
     fun hq j hj => (he j hj).symm ▸ h.val hq j hj⟩
 
@@ -393,7 +393,7 @@ theorem W5At.of_mem {t₀ t t' : State} {P : Addr} {wx : Nat} {minv : BitVec 64}
 theorem fill_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop} {x : Nat}
     {ep : Addr} {L : Nat} {eb : List Byte} {i b : Nat} (hL : eb.length = L)
     (hrd : ∀ i < L, InRegions (t₀.rd ++ t₀.wr) (ep + BitVec.ofNat 64 i) 1)
-    (hbytes : ∀ i (h : i < L), t₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_near))
+    (hbytes : ∀ i (h : i < L), t₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_arith))
     (hout : ∀ i < L, slot wx 8 + tabBytes wx 32 ≤ ofs P (ep + BitVec.ofNat 64 i))
     (hb : b < 8) (hiL : i ≤ L) (hfill : b < 5 → i < L) (hI : W5At t₀ P wx minv X Xc Q x ep L eb i b t) :
     WP isa (seqs [.block [.mov .rax (.mem (hdr Crt.sBit)), .alu .cmp .rax (.imm 5)],
@@ -404,23 +404,23 @@ theorem fill_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
   have hY1 := hdr_lt_slot wx aY (show 31 < 32 by decide)
   simp only [seqs]
-  refine WP.seq (WP.mono (bitCmp_ok hI.ctx hI.bit (by omega_near)) fun t₁ ⟨hcf, hm₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (bitCmp_ok hI.ctx hI.bit (by omega_arith)) fun t₁ ⟨hcf, hm₁, k₁⟩ => ?_)
   have hI₁ := hI.of_mem hm₁ k₁ (by decide) (k₁.gpr (by decide))
   refine WP.ite (decide (b < 5)) (by simp only [eval, hcf]) (fun h5 => ?_) (fun h5 => ?_)
   · have h5' : b < 5 := of_decide_eq_true h5
     have hi : i < L := hfill h5'
     have hrdi : InRegions (t₁.rd ++ t₁.wr) (ep + BitVec.ofNat 64 i) 1 := by
       rw [hI₁.keep.2.1, hI₁.keep.2.2]; exact hrd i hi
-    have hbi : t₁.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_near) := by
-      rw [hI₁.frm _ fun r hr => Or.inr (by have := (crtExpRanges5_ok wx r hr).2; have := hout i hi; omega_near)]
+    have hbi : t₁.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_arith) := by
+      rw [hI₁.frm _ fun r hr => Or.inr (by have := (crtExpRanges5_ok wx r hr).2; have := hout i hi; omega_arith)]
       exact hbytes i hi
     have hr : pre eb i % 2 ^ b < 2 ^ b := Nat.mod_lt _ (Nat.two_pow_pos b)
     refine WP.mono (refill_ok hI₁.ctx hI₁.e hI₁.idx hI₁.pow hI₁.v hI₁.bit h5' hr hrdi hbi) fun t₂ ⟨hm₂, k₂⟩ =>
-      ⟨i + 1, b + 8, by omega_near, by omega_near, by omega_near, by omega_near, ?_⟩
-    have hv := (refill_val (P := pre eb i) (b := b) (eb[i]'(by omega_near)).isLt)
-    rw [← pre_succ eb (by omega_near)] at hv
+      ⟨i + 1, b + 8, by omega_arith, by omega_arith, by omega_arith, by omega_arith, ?_⟩
+    have hv := (refill_val (P := pre eb i) (b := b) (eb[i]'(by omega_arith)).isLt)
+    rw [← pre_succ eb (by omega_arith)] at hv
     have hm : t₂.mem = (((t₁.mem.writeW (off P (8 * Crt.sV))
-        (BitVec.ofNat 64 ((256 * (pre eb i % 2 ^ b) + (eb[i]'(by omega_near)).toNat) * 2 ^ (56 - b)))).writeW
+        (BitVec.ofNat 64 ((256 * (pre eb i % 2 ^ b) + (eb[i]'(by omega_arith)).toNat) * 2 ^ (56 - b)))).writeW
           (off P (8 * Crt.sI)) (BitVec.ofNat 64 (i + 1))).writeW (off P (8 * Crt.sPow))
             (BitVec.ofNat 64 (2 ^ (56 - (b + 8))))).writeW (off P (8 * Crt.sBit)) (BitVec.ofNat 64 (b + 8)) := hm₂
     have f₂ : Frm P (crtExpRanges5 wx) t₁.mem t₂.mem := by
@@ -430,9 +430,9 @@ theorem fill_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
         (frm5_hdrW _ P wx _ (by simp [crtExpRanges5]) (by decide))).trans
         (frm5_hdrW _ P wx _ (by simp [crtExpRanges5, crtExpRanges, crtWinRanges]) (by decide))
     have hY : wv t₂.mem P (slot wx aY) wx = wv t₁.mem P (slot wx aY) wx := by
-      rw [hm, wv_hdrW _ _ _ (by decide) (by omega_near) (by omega_near), wv_hdrW _ _ _ (by decide) (by omega_near) (by omega_near),
-        wv_hdrW _ _ _ (by decide) (by omega_near) (by omega_near), wv_hdrW _ _ _ (by decide) (by omega_near) (by omega_near)]
-    have hnT : slot wx 8 + tabBytes wx 32 ≤ 2 ^ 64 := by omega_near
+      rw [hm, wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith), wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith),
+        wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith), wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith)]
+    have hnT : slot wx 8 + tabBytes wx 32 ≤ 2 ^ 64 := by omega_arith
     refine ⟨hI₁.ctx.of_frm5 f₂ k₂.2.2 (k₂.gpr (by decide)), ?_, hY ▸ hI₁.ylt, fun hq => ?_, ?_, ?_, ?_, ?_, ?_, ?_,
       hI₁.frm.trans f₂, (hI₁.keep.trans k₂).mono (by decide)⟩
     · rw [hm]
@@ -441,7 +441,7 @@ theorem fill_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
     · rw [hY, hI₁.y hq, hv.2]
     · rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
         hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
-        word_writeW_self, hv.1, show 64 - (b + 8) = 56 - b by omega_near]
+        word_writeW_self, hv.1, show 64 - (b + 8) = 56 - b by omega_arith]
     · rw [hm, word_writeW_self]
     · rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
     · rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
@@ -453,7 +453,7 @@ theorem fill_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
         hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
         hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact hI₁.len
   · have h5' : ¬ b < 5 := fun h => absurd (decide_eq_true h) (by rw [h5]; decide)
-    exact WP.block_nil ⟨i, b, by omega_near, by omega_near, by omega_near, hiL, hI₁⟩
+    exact WP.block_nil ⟨i, b, by omega_arith, by omega_arith, by omega_arith, hiL, hI₁⟩
 
 /-! ## A window -/
 
@@ -471,9 +471,9 @@ theorem sel_hdr {m m' : Mem} {P : Addr} {wx : Nat} (f : Frm P (selRanges wx) m m
     have := hdr_lt_slot wx Crt.aT hk
     simp only [selRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · simp only; omega_near
-    · simp only [Crt.sEnt, sFn] at h1 ⊢; omega_near
-    · simp only [Crt.sJ, sFn] at h2 ⊢; omega_near) (by omega_near)
+    · simp only; omega_arith
+    · simp only [Crt.sEnt, sFn] at h1 ⊢; omega_arith
+    · simp only [Crt.sJ, sFn] at h2 ⊢; omega_arith) (by omega_arith)
 
 /-- The last window: no byte nor bit left after it. -/
 theorem win5_last {K p L i j b i' b' : Nat} (hK : 5 * K = p + 8 * L) (hib : p + 8 * i = 5 * j + b)
@@ -497,7 +497,7 @@ theorem crtWin5_ok (M : Mont) (Sq : MontS) (S : CrtSel 32) {t₀ t : State} {P :
     {Q : Prop} {x : Nat} {ep : Addr} {L : Nat} {eb : List Byte} (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
     (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hL : eb.length = L) (hL' : L < 2 ^ 31)
     (hrd : ∀ i < L, InRegions (t₀.rd ++ t₀.wr) (ep + BitVec.ofNat 64 i) 1)
-    (hbytes : ∀ i (h : i < L), t₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_near))
+    (hbytes : ∀ i (h : i < L), t₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_arith))
     (hout : ∀ i < L, slot wx 8 + tabBytes wx 32 ≤ ofs P (ep + BitVec.ofNat 64 i))
     {K j : Nat} (hK : 5 * K = padBits L + 8 * L) (hj : j < K) {i b : Nat} (hib : padBits L + 8 * i = 5 * j + b)
     (hb : b < 8) (hiL : i ≤ L) (hI : W5At t₀ P wx minv X Xc Q x ep L eb i b t) :
@@ -509,7 +509,7 @@ theorem crtWin5_ok (M : Mont) (Sq : MontS) (S : CrtSel 32) {t₀ t : State} {P :
   refine WP.mono (fill_ok hL hrd hbytes hout hb hiL (fun h5 => by
     rcases Nat.lt_or_ge i L with h | h
     · exact h
-    · omega_near) hI) fun t₁ ⟨i', b', hb5, hb12, hrel, hiL', hI₁⟩ => ?_
+    · omega_arith) hI) fun t₁ ⟨i', b', hb5, hb12, hrel, hiL', hI₁⟩ => ?_
   have hc := hI₁.ctx
   have hn := hc.scrT.nowrap
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
@@ -536,7 +536,7 @@ theorem crtWin5_ok (M : Mont) (Sq : MontS) (S : CrtSel 32) {t₀ t : State} {P :
     fun t₇ ⟨hm₇, k₇⟩ => ?_
   have hY1 := hdr_lt_slot wx aY (show 31 < 32 by decide)
   have h8 := hdr_lt_slot wx 8 (show 31 < 32 by decide)
-  have hnT : slot wx 8 + tabBytes wx 32 ≤ 2 ^ 64 := by omega_near
+  have hnT : slot wx 8 + tabBytes wx 32 ≤ 2 ^ 64 := by omega_arith
   have f₇ : Frm P (crtExpRanges5 wx) t₆.mem t₇.mem := by
     rw [hm₇]
     exact (((frm5_hdrW _ P wx _ (by simp [crtExpRanges5]) (by decide)).trans
@@ -549,16 +549,16 @@ theorem crtWin5_ok (M : Mont) (Sq : MontS) (S : CrtSel 32) {t₀ t : State} {P :
     exact (((htab₆.hdrW _ (by decide) (by decide) hnT).hdrW _ (by decide) (by decide) hnT).hdrW _ (by decide)
       (by decide) hnT).hdrW _ (by decide) (by decide) hnT
   have hY₇ : wv t₇.mem P (slot wx aY) wx = wv t₆.mem P (slot wx aY) wx := by
-    rw [hm₇, wv_hdrW _ _ _ (by decide) (by omega_near) (by omega_near), wv_hdrW _ _ _ (by decide) (by omega_near)
-      (by omega_near), wv_hdrW _ _ _ (by decide) (by omega_near) (by omega_near),
-      wv_hdrW _ _ _ (by decide) (by omega_near) (by omega_near)]
+    rw [hm₇, wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith), wv_hdrW _ _ _ (by decide) (by omega_arith)
+      (by omega_arith), wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith),
+      wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith)]
   have hh₇ : ∀ k < 32, k ≠ Crt.sPow → k ≠ Crt.sBit → k ≠ Crt.sNib → k ≠ Crt.sV →
       word t₇.mem P (8 * k) = word t₁.mem P (8 * k) := fun k hk h1 h2 h3 h4 => by
     rw [hm₇, hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h4), hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h3),
       hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h2), hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h1), hh16 k hk]
   have hv32 : pre eb i' % 2 ^ b' / 2 ^ (b' - 5) < 32 := by
     rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), show (32 : Nat) = 2 ^ 5 from rfl, ← Nat.pow_add,
-      show 5 + (b' - 5) = b' by omega_near]
+      show 5 + (b' - 5) = b' by omega_arith]
     exact hr
   -- `T := T_v`.
   refine wp_seqs_append S.ne (by simp) ?_
@@ -572,16 +572,16 @@ theorem crtWin5_ok (M : Mont) (Sq : MontS) (S : CrtSel 32) {t₀ t : State} {P :
       have := slot_sep (w := wx) (show aY ≠ Crt.aT by decide)
       simp only [selRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · simp only; omega_near
-      · simp only [Crt.sEnt, sFn]; have := hdr_lt_slot wx aY (show 31 < 32 by decide); omega_near
-      · simp only [Crt.sJ, sFn]; have := hdr_lt_slot wx aY (show 31 < 32 by decide); omega_near) (by omega_near)
+      · simp only; omega_arith
+      · simp only [Crt.sEnt, sFn]; have := hdr_lt_slot wx aY (show 31 < 32 by decide); omega_arith
+      · simp only [Crt.sJ, sFn]; have := hdr_lt_slot wx aY (show 31 < 32 by decide); omega_arith) (by omega_arith)
   have htab₈ : CTab t₈.mem P wx X Q x 32 := htab₇.of_win (f₈.mono (selRanges_sub wx)) hn
   simp only [seqs]
   -- `Y := Y T`.
   have hv := take_val (P := pre eb i') hb5
   refine WP.seq (WP.mono (crtMulT_ok M (Q := Q) (x := x) (E := 32 * (pre eb i' / 2 ^ b'))
     (v := pre eb i' % 2 ^ b' / 2 ^ (b' - 5)) hc₈ hw hw' hR (by rw [hT₈]; exact htab₇.lt _ hv32)
-    (fun hq => by rw [hY₈, hY₇, hYv₆ hq, show ∀ C : Nat, 2 * (2 * (2 * (2 * (2 * C)))) = 32 * C from fun C => by omega_near])
+    (fun hq => by rw [hY₈, hY₇, hYv₆ hq, show ∀ C : Nat, 2 * (2 * (2 * (2 * (2 * C)))) = 32 * C from fun C => by omega_arith])
     (fun hq => by rw [hT₈]; exact htab₇.val hq _ hv32)) fun t₉ ⟨hc₉, hY₉, hYv₉, hh₉, f₉, k₉⟩ => ?_)
   have hh₉' : ∀ k < 32, k ≠ Crt.sEnt → k ≠ Crt.sJ → word t₉.mem P (8 * k) = word t₇.mem P (8 * k) :=
     fun k hk h1 h2 => (hh₉ k hk).trans (sel_hdr f₈ hk h1 h2)
@@ -593,8 +593,8 @@ theorem crtWin5_ok (M : Mont) (Sq : MontS) (S : CrtSel 32) {t₀ t : State} {P :
       (by decide)]; exact hI₁.idx)
     (by rw [hh₉' _ (by decide) (by decide) (by decide), hm₇, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
       hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self])
-    hiL' (by omega_near) (by omega_near)) fun t' ⟨hz, hm', k'⟩ => ⟨by rw [hz]; congr 1; exact decide_eq_decide.mpr (win5_last hK hib hrel hiL' hb5 hb12),
-      i', b' - 5, by omega_near, by omega_near, hiL', ?_⟩
+    hiL' (by omega_arith) (by omega_arith)) fun t' ⟨hz, hm', k'⟩ => ⟨by rw [hz]; congr 1; exact decide_eq_decide.mpr (win5_last hK hib hrel hiL' hb5 hb12),
+      i', b' - 5, by omega_arith, by omega_arith, hiL', ?_⟩
   have fall : Frm P (crtExpRanges5 wx) t₁.mem t'.mem := by
     rw [hm']
     exact ((f16.mono fun r hr => crtExpRanges_sub5 wx r (crtWinRanges_sub wx r hr)).trans f₇).trans
@@ -627,20 +627,20 @@ theorem SubCtx.of_frm5 {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 
     (hwr : t.wr = s.wr) (hdi : t.gpr .rdi = s.gpr .rdi) : SubCtx t B Z o w wx minv := by
   have hn := h.scr.nowrap
   simp only [wsTab] at hT
-  have hL : o + (slot wx 8 + tabBytes wx 32) ≤ 2 ^ 64 := by omega_near
+  have hL : o + (slot wx 8 + tabBytes wx 32) ≤ 2 ^ 64 := by omega_arith
   have hr := crtExpRanges5_ok wx
   have hr' : ∀ r ∈ crtExpRanges5 wx, r.1 + r.2 ≤ slot wx 8 + tabBytes wx 32 := fun r hr' => (hr r hr').2
   have hh : ∀ i < 17, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' =>
-    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega_near))
-      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega_near
-          omega_near)
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega_arith))
+      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
+          omega_arith)
   have hb : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
-    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega_near) (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega_near)
+    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega_arith) (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega_arith)
   exact ⟨h.scr.congr hwr, hdi.trans h.rdi,
     ⟨(hh _ (by decide)).trans h.hdr.hw, (hh _ (by decide)).trans h.hdr.hminv,
-      fun j hj => (hh _ (by unfold sArr; omega_near)).trans (h.hdr.harr j hj)⟩,
+      fun j hj => (hh _ (by unfold sArr; omega_arith)).trans (h.hdr.harr j hj)⟩,
     (hh _ (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
-    fun j hj => (hb _ (by unfold sArr; omega_near)).trans (h.narr j hj), h.lo, h.hi⟩
+    fun j hj => (hb _ (by unfold sArr; omega_arith)).trans (h.narr j hj), h.lo, h.hi⟩
 
 /-- After `j` windows: `padBits L + 8 i = 5 j + b`. -/
 def W5Inv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc : Nat) (Q : Prop) (x : Nat)
@@ -675,7 +675,7 @@ theorem crtExpHead5_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv 
   have hPn := hs32.nowrap
   have hT' := hT
   simp only [wsTab] at hT'
-  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_near
+  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
   have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hodd _
   have hc₀ : CExpCtx s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) 32 :=
     ⟨hc.good, hs32, hn, hinv, rfl⟩
@@ -699,16 +699,16 @@ theorem crtExpHead5_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv 
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
   have hY1 := hdr_lt_slot wx aY (show 31 < 32 by decide)
   have hYe₁ : wv t₁.mem (off B o) (slot wx aY) wx = wv s.mem (off B o) (slot wx aY) wx := by
-    rw [o3.wv (by unfold Crt.sI sFn at *; omega_near) (by omega_near), o2.wv (by unfold Crt.sExpLen sFn at *; omega_near)
-      (by omega_near), o1.wv (by unfold Crt.sExp sFn at *; omega_near) (by omega_near)]
-  refine WP.mono (tabBuild_ok M (Q := Q) (x := x) hc₁ (by decide) (by decide) hw2 (by omega_near) hR hxl hxc
+    rw [o3.wv (by unfold Crt.sI sFn at *; omega_arith) (by omega_arith), o2.wv (by unfold Crt.sExpLen sFn at *; omega_arith)
+      (by omega_arith), o1.wv (by unfold Crt.sExp sFn at *; omega_arith) (by omega_arith)]
+  refine WP.mono (tabBuild_ok M (Q := Q) (x := x) hc₁ (by decide) (by decide) hw2 (by omega_arith) hR hxl hxc
     (by rw [hYe₁]; exact hyl) (fun hq => by rw [hYe₁]; exact hyc hq)) fun t₂ ⟨hc₂, htab₂, hYe₂, hh₂, f₂, k₂⟩ => ?_
   -- The padding.
   have hlen₂ : word t₂.mem (off B o) (8 * Crt.sExpLen) = BitVec.ofNat 64 eb.length := by
     rw [hh₂ _ (by decide) (by decide) (by decide) (by decide), hm₁,
       hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
-  refine WP.mono (padInit_ok hc₂ hlen₂ (by omega_near)) fun t₃ ⟨hm₃, k₃⟩ => ?_
-  have hnT : slot wx 8 + tabBytes wx 32 ≤ 2 ^ 64 := by omega_near
+  refine WP.mono (padInit_ok hc₂ hlen₂ (by omega_arith)) fun t₃ ⟨hm₃, k₃⟩ => ?_
+  have hnT : slot wx 8 + tabBytes wx 32 ≤ 2 ^ 64 := by omega_arith
   have f₃ : Frm (off B o) (crtExpRanges5 wx) t₂.mem t₃.mem := by
     rw [hm₃]
     exact ((frm5_hdrW _ _ wx _ (by simp [crtExpRanges5, crtExpRanges, crtWinRanges]) (by decide)).trans
@@ -721,10 +721,10 @@ theorem crtExpHead5_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv 
     rw [hm₃, hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h3), hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h2),
       hdrStore_hdr _ _ _ (by decide) hk (Ne.symm h1)]
   have hY₃ : wv t₃.mem (off B o) (slot wx aY) wx = wv s.mem (off B o) (slot wx aY) wx := by
-    rw [hm₃, wv_hdrW _ _ _ (by decide) (by omega_near) (by omega_near), wv_hdrW _ _ _ (by decide) (by omega_near)
-      (by omega_near), wv_hdrW _ _ _ (by decide) (by omega_near) (by omega_near), hYe₂, hYe₁]
+    rw [hm₃, wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith), wv_hdrW _ _ _ (by decide) (by omega_arith)
+      (by omega_arith), wv_hdrW _ _ _ (by decide) (by omega_arith) (by omega_arith), hYe₂, hYe₁]
   have h0 : W5Inv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) Q x ep eb.length eb 0 t₃ := by
-    refine ⟨0, padBits eb.length, by omega_near, by have := padBits_lt eb.length; omega_near, by omega_near,
+    refine ⟨0, padBits eb.length, by omega_arith, by have := padBits_lt eb.length; omega_arith, by omega_arith,
       hc₂.of_frm5 f₃ k₃.2.2 (k₃.gpr (by decide)), ?_, hY₃ ▸ hyl, fun hq => ?_, ?_, ?_, ?_, ?_, ?_, ?_, f03,
       ((k₁.trans k₂).trans k₃).mono (by decide)⟩
     · rw [hm₃]
@@ -770,26 +770,26 @@ theorem crtExpLoop5S_ok (M : Mont) (Sq : MontS) (S : CrtSel 32) {s : State} {B :
   have hPn := hs32.nowrap
   have hT' := hT
   simp only [wsTab] at hT'
-  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_near
+  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
   have hR : Nat.Coprime (2 ^ (64 * wx)) X := VG.Proof.Bignum.coprime_pow2 hodd _
   have hout : ∀ i < eb.length, slot wx 8 + tabBytes wx 32 ≤ ofs (off B o) (ep + BitVec.ofNat 64 i) := fun i hi' => by
     have := he.out i hi'
-    rcases ofs_rebase B (ep + BitVec.ofNat 64 i) (o := o) (by omega_near) with ⟨_, h2⟩ | ⟨h1, _⟩
-    · omega_near
-    · omega_near
+    rcases ofs_rebase B (ep + BitVec.ofNat 64 i) (o := o) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩
+    · omega_arith
+    · omega_arith
   rw [expLoop5_eq]
   refine wp_seqs_append (by simp) (by simp) (WP.mono (crtExpHead5_ok M hc hT hw2 hwx hw30 hn hinv hodd hxl hxc hyl
     hyc hsp hsl hep hel hL2) fun t₃ h0 => ?_)
   simp only [seqs]
   -- The windows.
   have hK := win5_dvd eb.length
-  refine wp_upto (a := 0) (N := (padBits eb.length + 8 * eb.length) / 5) (by omega_near)
+  refine wp_upto (a := 0) (N := (padBits eb.length + 8 * eb.length) / 5) (by omega_arith)
     (W5Inv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) Q x ep eb.length eb)
-    (fun j _ hj t ⟨i, b, hib, hb, hiL, hI⟩ => crtWin5_ok M Sq S hw2 (by omega_near) hR rfl (by omega_near) he.rd he.val
-      hout (by omega_near) hj hib hb hiL hI)
+    (fun j _ hj t ⟨i, b, hib, hb, hiL, hI⟩ => crtWin5_ok M Sq S hw2 (by omega_arith) hR rfl (by omega_arith) he.rd he.val
+      hout (by omega_arith) hj hib hb hiL hI)
     (fun t ⟨i, b, hib, hb, hiL, hI⟩ => ?_) h0
-  have hb0 : b = 0 := by omega_near
-  have hiL' : i = eb.length := by omega_near
+  have hb0 : b = 0 := by omega_arith
+  have hiL' : i = eb.length := by omega_arith
   subst hb0 hiL'
   exact ⟨hc.of_frm5 hT hI.frm hI.keep.2.2 (hI.keep.gpr (by decide)), hI.ylt,
     fun hq => by rw [hI.y hq, Nat.pow_zero, Nat.div_one, pre_len], hI.frm, hI.keep⟩

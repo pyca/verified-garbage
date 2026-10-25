@@ -22,8 +22,11 @@ checks. Two ways to run them on less:
 
 * `omega_arith` selects (in)equations between natural numbers, integers or
   bit vectors, and propositional combinations of them, that are connected to
-  the goal (see `relevantFacts`). `bv_omega_arith` clears other hypotheses
-  before preprocessing;
+  the goal (see `relevantFacts`). It tries smaller problems first, since the
+  kernel's check of an `omega` certificate grows with every fact in it: the
+  facts sharing an atom with the goal, then those within two steps of it, then
+  every connected fact. `bv_omega_arith`
+  clears other hypotheses before preprocessing;
 * `omega_using [h₁, …, hₙ]` and `bv_omega_using [h₁, …, hₙ]` use only the
   facts `h₁, …, hₙ` (any terms). `omega_using` passes them directly to
   the solver; `bv_omega_using` clears other hypotheses before preprocessing.
@@ -138,8 +141,13 @@ subterms that are not arithmetic operations, casts or numerals. -/
 partial def atoms (e : Expr) (acc : Std.HashSet Expr) : MetaM (Std.HashSet Expr) := do
   let e := (← instantiateMVars e).consumeMData
   match e.getAppFn.constName?, e.getAppNumArgs with
+  -- `omega` takes `x ^ k` for a `k` with atoms as an atom: its exponent's atoms do not
+  -- connect it to other facts.
+  | some ``HPow.hPow, 6 =>
+    if (← atoms e.appArg! {}).isEmpty then atoms e.appFn!.appArg! acc
+    else return acc.insert e
   | some ``HAdd.hAdd, 6 | some ``HSub.hSub, 6 | some ``HMul.hMul, 6 | some ``HDiv.hDiv, 6
-  | some ``HMod.hMod, 6 | some ``HPow.hPow, 6 | some ``Min.min, 4 | some ``Max.max, 4
+  | some ``HMod.hMod, 6 | some ``Min.min, 4 | some ``Max.max, 4
   | some ``Eq, 3 | some ``Ne, 3 | some ``LE.le, 4 | some ``LT.lt, 4 | some ``GE.ge, 4
   | some ``GT.gt, 4 | some ``Dvd.dvd, 4 | some ``And, 2 | some ``Or, 2 | some ``Iff, 2 =>
     atoms e.appArg! (← atoms e.appFn!.appArg! acc)
@@ -187,8 +195,30 @@ def relevantFacts (hs : Array Expr) (goal : Expr) : MetaM (Array Expr) := do
         changed := true
   return (hs.zip taken).filterMap fun (h, t) => if t then some h else none
 
+/-- `relevantFacts`, taking facts in at most `depth` rounds from the goal. -/
+def relevantFactsDepth (hs : Array Expr) (goal : Expr) (depth : Nat) : MetaM (Array Expr) := do
+  let mut seen ← atoms goal {}
+  if seen.isEmpty then return #[]
+  let mut infos : Array (Std.HashSet Expr × Option Expr) := #[]
+  for h in hs do
+    let ty ← inferType h
+    infos := infos.push (← atoms ty {}, ← definedAtom? ty)
+  let mut taken := Array.replicate hs.size false
+  for _ in [0:depth] do
+    let seen0 := seen
+    let mut changed := false
+    for i in [:infos.size] do
+      if taken[i]! then continue
+      let (as, d) := infos[i]!
+      if match d with | some x => seen0.contains x | none => as.any seen0.contains then
+        taken := taken.set! i true
+        seen := as.fold (·.insert ·) seen
+        changed := true
+    if !changed then break
+  return (hs.zip taken).filterMap fun (h, t) => if t then some h else none
+
 /-- Select arithmetic hypotheses without repeatedly clearing the context. -/
-def omegaArith : TacticM Unit := do
+def omegaArithFull : TacticM Unit := do
   let (facts, all) ← withMainContext do
     let all ← (← getLocalHyps).filterM fun h => do isArithProp (← inferType h)
     pure (← relevantFacts all (← getMainTarget), all)
@@ -205,6 +235,26 @@ def omegaArith : TacticM Unit := do
       catch _ =>
         saved.restore
         omegaFromFacts all
+
+/-- `omega_arith`: `omega` on the facts within one and two rounds of the goal,
+then `omegaArithFull`. -/
+def omegaArith : TacticM Unit := do
+  let stages ← withMainContext do
+    let all ← (← getLocalHyps).filterM fun h => do isArithProp (← inferType h)
+    let goal ← getMainTarget
+    let full ← relevantFacts all goal
+    let mut st : Array (Array Expr) := #[]
+    for d in [1, 2] do
+      let f ← relevantFactsDepth all goal d
+      if f.size < full.size && st.all (·.size < f.size) then st := st.push f
+    pure st
+  for f in stages do
+    let saved ← saveState
+    try
+      omegaFromFacts f (exactTypeOnly := true)
+      return
+    catch _ => saved.restore
+  omegaArithFull
 
 /-- `omega` on the arithmetic facts connected to the goal, once: `omega_arith`
 without its retries, for index bounds (`Framework/GetElem.lean`), where Lean

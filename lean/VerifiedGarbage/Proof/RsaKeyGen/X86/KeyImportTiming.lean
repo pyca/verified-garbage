@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoadTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDSelectTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLcmTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Native key initialization and prime import reveal only public addresses and widths -/
 
@@ -20,7 +21,7 @@ theorem clearArrays_trace (n : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (clearArrays n)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   exact erased_relCT (clearArrays n) (clearArrays 1)
-    (VG.Taint.hintOf taint (workspaceTaint false) (clearArrays 1)) rfl rfl rfl (by rfl)
+    (VG.Taint.hintOf taint (workspaceTaint false) (clearArrays 1)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by rfl)
 
 theorem loadPrime_trace (E : Environment) (i out : Nat) (hi : i < 18) :
     RelCT isa (InputPair E) (loadPrime E.n (4 * i) out)

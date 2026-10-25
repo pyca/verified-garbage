@@ -129,7 +129,7 @@ theorem absorbHead_ct {D : Addr} {n q : Nat} (hn : n ≠ 0) (hq : q ≠ 0) :
     · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
     · rw [← h30]; exact covers_left (hm.env.perm.stC (by decide))
 
-theorem absorbFill_ct {D : Addr} {n q : Nat} (hn : n ≠ 0) (hq : q < 16) :
+theorem absorbFill_ct {D : Addr} {n q : Nat} (hn : n ≠ 0) (_hq : q < 16) :
     CT (AbsI c st w sp yo D n q) (absorbFill yo) :=
   CT.ite (decide (q = 0)) (fun s ⟨_, _, x, _, _, _, hx, hs⟩ => by
       have := eval_zero hs.r26 (by omega_arith); rw [hx] at this; exact this)

@@ -146,7 +146,7 @@ theorem absorbHead_ct {D : BitVec 32} {n q : Nat} (hn : n ≠ 0) (hq : q ≠ 0) 
     · rw [eB]; exact L.stk_st (by decide)
     · rw [eB]; exact covers_left (hm.env.perm.stC (by decide))
 
-theorem absorbFill_ct {D : BitVec 32} {n q : Nat} (hn : n ≠ 0) (hq : q < 16) :
+theorem absorbFill_ct {D : BitVec 32} {n q : Nat} (hn : n ≠ 0) (_hq : q < 16) :
     CT (AbsI c st w sp yo D n q) (absorbFill yo) := by
   refine CT.seq (J := fun s => AbsI c st w sp yo D n q s ∧ s.z = decide (q = 0)) ?_
     (fun s ⟨k7, k8, H, x, hx, hs⟩ => ?_) ?_

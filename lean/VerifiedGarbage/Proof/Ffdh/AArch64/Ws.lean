@@ -118,7 +118,7 @@ theorem _root_.VG.Proof.Bignum.AArch64.SubCtx.of_minv {s t : State} {B : Addr} {
 /-- `wsSetup sl` and the entry into the inner workspace, for a modulus of
 `len` octets (the length in the outer slot `sl`). -/
 theorem wsSetup_ok {s : State} {B : Addr} {Z w : Nat} (h : Outer s B Z w) {sl len : Nat} (hsl : sl < 32)
-    (hne : sl ≠ sWs) (hlen : word s.mem B (8 * sl) = BitVec.ofNat 64 len) (hlen1 : 1 ≤ len) (hlenw : len ≤ 8 * w) :
+    (hne : sl ≠ sWs) (hlen : word s.mem B (8 * sl) = BitVec.ofNat 64 len) (_hlen1 : 1 ≤ len) (hlenw : len ≤ 8 * w) :
     WP isa (.block (wsSetup sl ++ [enter])) s fun t =>
       SubCtx t B Z (inner w) w (wsWords len) (word t.mem (off B (inner w)) (8 * sMinv)) ∧
       word t.mem B (8 * sWs) = off B (inner w) ∧

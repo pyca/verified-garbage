@@ -102,7 +102,7 @@ structure RowInv (base rp : Reg) (s₀ : State) (T : Addr) (k : Nat) (u : State)
 
 /-- The rows from `k` down: `r11` is the doubleword holding `q`. -/
 theorem rows_run {base rp : Reg} (R : ScanRegs base rp) {s₀ : State} {T : Addr} (hT : s₀.gpr base = T)
-    {rows : Nat} (hrows : rows ≤ 32) (hq : (s₀.gpr .r10).toNat < 8 * rows)
+    {rows : Nat} (hrows : rows ≤ 32) (_hq : (s₀.gpr .r10).toNat < 8 * rows)
     (hr : ∀ k < rows, InRegions (s₀.rd ++ s₀.wr) (T + BitVec.ofNat 64 (8 * k)) 8) :
     ∀ k < rows, ∀ u, RowInv base rp s₀ T k u →
       WP isa (.loop (.block (scanRow base rp)) (.nonzero .d .r0)) u fun t =>

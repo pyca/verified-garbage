@@ -30,7 +30,7 @@ local macro "apart" : tactic => `(tactic| (dsimp only [offset] at *; omega_arith
  theorem normalize_ok {s : State} {base : Addr} {size w n p a : Nat} {f : Int}
     (hs : Scr s base size) (hn : 16≤n) (hw : w=2*n) (he : n%2=0) (hz : offset w 15≤size)
     (hm : val32 s.mem base (offset w 2) n=p) (ha : val32 s.mem base (offset w 6) n=a)
-    (top : w32 s.mem base (offset w 6+4*n)=0) (hp : 0<p) (small : a<p)
+    (top : w32 s.mem base (offset w 6+4*n)=0) (_hp : 0<p) (small : a<p)
     (sign : (2^31≤w32 s.mem base (offset w 4+4*n)) ↔ f<0) :
     WP isa (.block (normalize w n)) s fun z =>
       val32 z.mem base (offset w 6) n=normal p a f ∧ w32 z.mem base (offset w 6+4*n)=0 ∧

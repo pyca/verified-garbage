@@ -2621,7 +2621,7 @@ theorem OEnt.data {T : Nat} {s₃ s' : State} (L₃ : LO c dp L R0 R1 A s₁.mem
 
 omit hl hge in
 theorem OEnt.acc {T : Nat} {s₃ : State} (L₃ : LO c dp L R0 R1 A s₁.mem (s.gpr .rsp) T s₃) {a : Nat}
-    (ha : 512 * T + a ≤ L) (ha16 : a % 16 = 0) :
+    (ha : 512 * T + a ≤ L) (_ha16 : a % 16 = 0) :
     absorbAll (rN R0 R1) (absorbAll (rN R0 R1) A (bytesAt s₁.mem dp (512 * T)))
       (bytesAt s₃.mem (dp + BitVec.ofNat 64 (512 * T)) a) % P =
     accumulate (clamp (leNum (key.take 16))) (msg ++ bytesAt s.mem dp (512 * T + a)) := by

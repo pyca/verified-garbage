@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Taint summaries for the RSA inverse workspace operations -/
 
@@ -30,23 +31,25 @@ theorem KeyPublic.seqs {cs : List (Prog isa)} (h : ∀ c ∈ cs, KeyPublic c) : 
       exact (h c (by simp)).seq (ih (fun x hx => h x (by simp [hx])))
 
 theorem sub3_public (n o a b : Nat) : KeyPublic (sub3 n o a b) := by
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (sub3 1 0 1 2))
-  refine ⟨hint, { regs := .ofList [.edi, .ebp, .edx, .esi], flags := false }, ?_, ?_⟩
-  · rw [check_of_erase_eq (sub3 n o a b) (sub3 1 0 1 2) (workspaceTaint true) hint rfl rfl rfl]
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (sub3 1 0 1 2))),
+      { regs := .ofList [.edi, .ebp, .edx, .esi], flags := false }, ?_, ?_⟩
+  · rw [check_of_erase_eq (sub3 n o a b) (sub3 1 0 1 2) (workspaceTaint true)
+      (VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (sub3 1 0 1 2))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)]
     rfl
   · rfl
 
 theorem sel_public (n o a b sl : Nat) : KeyPublic (sel n o a b sl) := by
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (sel 1 0 1 2 100))
-  refine ⟨hint, rowTaint true, ?_, ?_⟩
-  · rw [check_of_erase_eq (sel n o a b sl) (sel 1 0 1 2 100) (workspaceTaint true) hint rfl rfl rfl]
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (sel 1 0 1 2 100))), rowTaint true, ?_, ?_⟩
+  · rw [check_of_erase_eq (sel n o a b sl) (sel 1 0 1 2 100) (workspaceTaint true)
+      (VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (sel 1 0 1 2 100))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)]
     rfl
   · rfl
 
 theorem half_public (n j : Nat) : KeyPublic (half n j) := by
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (half 1 0))
-  refine ⟨hint, { regs := .ofList [.edi, .ebp, .eax, .esi], flags := false }, ?_, by rfl⟩
-  exact (check_of_erase_eq (half n j) (half 1 0) (workspaceTaint true) hint rfl rfl rfl).trans (by rfl)
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (half 1 0))),
+      { regs := .ofList [.edi, .ebp, .eax, .esi], flags := false }, ?_, by rfl⟩
+  exact (check_of_erase_eq (half n j) (half 1 0) (workspaceTaint true)
+      (VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (half 1 0))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)).trans (by kernel_rfl)
 
 theorem bitOf_public (n sl j : Nat) : KeyPublic (.block (bitOf n sl j)) := by
   refine ⟨.block [], workspaceTaint true, ?_, rfl⟩

@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_make_hint`
@@ -51,7 +52,7 @@ theorem mhBody_ok (g : Nat) (s : State) (hM : s.gpr .x5 = BitVec.ofNat 64 (hbMul
         s'.gpr .x0 = s.gpr .x0 + BitVec.ofNat 64 4 ∧ s'.gpr .x1 = s.gpr .x1 + BitVec.ofNat 64 4 ∧
         s'.gpr .x3 = s.gpr .x3 + BitVec.ofNat 64 4 ∧ s'.gpr .x7 = s.gpr .x7 - BitVec.ofNat 64 1) ∧
       Keep [.x0, .x1, .x3, .x7, .x8, .x11, .x12, .x13, .x14] s s' := by
-  refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by rfl) (hv := rfl)
+  refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by kernel_rfl) (hv := rfl)
   unfold mhBody hb hbRaw Impl.MlKem.AArch64.csub
   have hS := @dShift_lt g
   have hm := @dMod_lt g
@@ -129,7 +130,7 @@ theorem mhConsts_ok (s₀ : State) (g : Nat) (hg : IsG g) (s : State) :
   rw [WP.block_append_iff]
   refine WP.mono (movW_ok .x9 _ s₁) fun s₂ ⟨⟨h9, hm₂⟩, k₂⟩ => ?_
   refine WP.mono (VG.Proof.MlDsa.AArch64.Arith.WP.keep [.x8] (Q := fun s' => s'.gpr .x8 = 0 ∧ s'.mem = s₂.mem)
-    (by arun) (by rfl)) fun s₃ ⟨⟨h8, hm₃⟩, k₃⟩ =>
+    (by arun) (by kernel_rfl)) fun s₃ ⟨⟨h8, hm₃⟩, k₃⟩ =>
     ⟨⟨fun r hr => ?_, by rw [hm₃, hm₂, hm₁], fun s'' _ hk => ?_⟩, ((k₁.trans k₂).trans k₃).mono⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -195,7 +196,7 @@ theorem makeHint_correct (s₀ : State) (hp : makeHintK.pre s₀) :
     have e3 : sL.gpr .x3 = s₀.gpr .x3 := k1.get .x3
     rw [zextS_toNat] at hI
     refine (VG.Proof.MlDsa.AArch64.Arith.WP.keep (Q := fun s3 => s3.gpr .x0 = s₂.gpr .x8 ∧ s3.mem = s₂.mem)
-      [.x0] (by arun [Impl.MlKem.AArch64.mov]) (by rfl)).mono fun s3 ⟨⟨h0, hm3⟩, _⟩ => ⟨?_, ?_⟩
+      [.x0] (by arun [Impl.MlKem.AArch64.mov]) (by kernel_rfl)).mono fun s3 ⟨⟨h0, hm3⟩, _⟩ => ⟨?_, ?_⟩
     · refine hintIs_of_toNat fun j hj => ?_
       rw [hm3, ← e3, hI.done .x3 (by simp) j hj]
       apply BitVec.eq_of_toNat_eq

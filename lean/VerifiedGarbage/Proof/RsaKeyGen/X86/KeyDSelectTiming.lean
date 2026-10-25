@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentBranch
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Public exponent branches compose with secret native arithmetic -/
 
@@ -36,11 +37,10 @@ theorem equalExponent_trace (B : Addr) (Z n e : Nat) (value : BitVec 32) :
     RelCT isa (ExponentPair B Z n e) (.block (equalExponent value))
       (ExponentTest B Z n e (decide (e = value.toNat))) := by
   have checked : KeyPublic (.block (equalExponent value)) := by
-    let reference : Prog isa := .block (equalExponent 0)
-    let hint := VG.Taint.hintOf taint (workspaceTaint true) (Code.erase reference)
-    refine ⟨hint, workspaceTaint true, ?_, rfl⟩
-    exact (check_of_erase_eq (.block (equalExponent value)) reference (workspaceTaint true)
-      hint rfl rfl rfl).trans (by rfl)
+    refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (.block (equalExponent 0) : Prog isa))),
+        workspaceTaint true, ?_, rfl⟩
+    exact (check_of_erase_eq (.block (equalExponent value)) (.block (equalExponent 0) : Prog isa) (workspaceTaint true)
+      (VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (.block (equalExponent 0) : Prog isa))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)).trans (by kernel_rfl)
   intro s t tr ur u v P A C
   obtain ⟨trace, agree⟩ := key_public_trace checked _ _ _ _ _ _ P.agree A C
   obtain ⟨hu, Mu, flagU, _⟩ := wp_result (equalExponent_ok P.left value) A

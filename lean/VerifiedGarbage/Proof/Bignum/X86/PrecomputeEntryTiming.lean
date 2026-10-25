@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Saving and restoring registers has a trace fixed by public addresses -/
 
@@ -21,6 +22,6 @@ theorem precomputeEntry_relCT :
   apply VG.RelCT.block_append
   exact VG.RelCT.seq (scratchArgument_relCT 4)
     (checkedProgramChange (τ' := { argumentTaint with regs := .ofList [.esp, .edi, .eax] })
-      (hint := .block []) rfl rfl)
+      (hint := .block []) (by kernel_rfl) (by kernel_rfl))
 
 end VG.Proof.Bignum.X86

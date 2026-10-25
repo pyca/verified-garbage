@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Framework.OmegaNear
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.CrtExp
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
@@ -35,35 +35,35 @@ theorem q_read256 (m : Mem) (a : Addr) {l q : Nat} (hl : l < 2) (hq : q < 2) :
       m.readW (a + BitVec.ofNat 64 (16 * l + 8 * q)) 64 := by
   have e : (if l = 0 then (m.readW a 256).extractLsb' 0 128 else (m.readW a 256).extractLsb' 128 128) =
       (m.readW a 256).extractLsb' (128 * l) 128 := by
-    rcases (by omega_near : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
-  rw [e, q128, qword, extract_extract _ _ _ _ _ (by omega_near), show 128 * l + 64 * q = 8 * (16 * l + 8 * q) by omega_near]
-  exact readW_extract m a (k := 16 * l + 8 * q) (n := 8) (by omega_near)
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
+  rw [e, q128, qword, extract_extract _ _ _ _ _ (by omega_arith), show 128 * l + 64 * q = 8 * (16 * l + 8 * q) by omega_arith]
+  exact readW_extract m a (k := 16 * l + 8 * q) (n := 8) (by omega_arith)
 
 /-- Quadword `q` of a 128-bit read. -/
 theorem q_read128 (m : Mem) (a : Addr) {q : Nat} (hq : q < 2) :
     q128 (m.readW a 128) q = m.readW (a + BitVec.ofNat 64 (8 * q)) 64 := by
-  rw [q128, qword, show 64 * q = 8 * (8 * q) by omega_near]
-  exact readW_extract m a (k := 8 * q) (n := 8) (by omega_near)
+  rw [q128, qword, show 64 * q = 8 * (8 * q) by omega_arith]
+  exact readW_extract m a (k := 8 * q) (n := 8) (by omega_arith)
 
 /-- A 256-bit write of a register, read back a quadword at a time. -/
 theorem read_write256 (m : Mem) (a : Addr) (hi lo : BitVec 128) {l q : Nat} (hl : l < 2) (hq : q < 2) :
     (m.writeW a (hi ++ lo)).readW (a + BitVec.ofNat 64 (16 * l + 8 * q)) 64 = q128 (if l = 0 then lo else hi) q := by
-  have e := readW_writeW_inside m a (hi ++ lo) (k := 16 * l + 8 * q) (n := 8) (by omega_near) (by decide)
+  have e := readW_writeW_inside m a (hi ++ lo) (k := 16 * l + 8 * q) (n := 8) (by omega_arith) (by decide)
   rw [show 8 * 8 = 64 by rfl] at e
   rw [e]
   apply BitVec.eq_of_getLsbD_eq; intro i hi'
   simp only [q128, qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, decide_eq_true hi', Bool.true_and]
-  rcases (by omega_near : l = 0 ∨ l = 1) with rfl | rfl
-  · simp only [show 8 * (16 * 0 + 8 * q) + i < 128 by omega_near, ↓reduceIte]
-    exact congrArg _ (by omega_near)
-  · simp only [show ¬ 8 * (16 * 1 + 8 * q) + i < 128 by omega_near, Nat.one_ne_zero, ↓reduceIte]
-    exact congrArg _ (by omega_near)
+  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
+  · simp only [show 8 * (16 * 0 + 8 * q) + i < 128 by omega_arith, ↓reduceIte]
+    exact congrArg _ (by omega_arith)
+  · simp only [show ¬ 8 * (16 * 1 + 8 * q) + i < 128 by omega_arith, Nat.one_ne_zero, ↓reduceIte]
+    exact congrArg _ (by omega_arith)
 
 /-- A 128-bit write, read back a quadword at a time. -/
 theorem read_write128' (m : Mem) (a : Addr) (v : BitVec 128) {q : Nat} (hq : q < 2) :
     (m.writeW a v).readW (a + BitVec.ofNat 64 (8 * q)) 64 = q128 v q := by
-  have e := readW_writeW_inside m a v (k := 8 * q) (n := 8) (by omega_near) (by decide)
-  rw [show 8 * (8 * q) = 64 * q by omega_near, show 8 * 8 = 64 by rfl] at e
+  have e := readW_writeW_inside m a v (k := 8 * q) (n := 8) (by omega_arith) (by decide)
+  rw [show 8 * (8 * q) = 64 * q by omega_arith, show 8 * 8 = 64 by rfl] at e
   exact e
 
 /-- `n` bytes of the working space are readable and writable. -/
@@ -89,7 +89,7 @@ theorem gOrV_ok (L : VLen) {s : State} {B : Addr} {Z e c : Nat} (hs : Scr s B Z)
   have eA : s.ea (ix b .r14) = off B (e + 8 * c) := ea_ix0 s hb h14
   cases L with
   | l256 =>
-    obtain ⟨iA, -⟩ := inRegionsN hs (d := e + 8 * c) (n := 32) (by simp only [nl] at he; omega_near) (by decide)
+    obtain ⟨iA, -⟩ := inRegionsN hs (d := e + 8 * c) (n := 32) (by simp only [nl] at he; omega_arith) (by decide)
     apply WP.of_runBlock
     simp only [Crt.gatherOrV, runBlock_cons, runStep_some, runBlock_nil, exec, eA, State.load256, iA, ite_true,
       Option.map_some, Option.some.injEq, exists_eq_left']
@@ -97,7 +97,7 @@ theorem gOrV_ok (L : VLen) {s : State} {B : Addr} {Z e c : Nat} (hs : Scr s B Z)
     · simp only [nl] at hl
       simp only [lane_vbin256, State.lane_setV256, ↓reduceIte, show XReg.xmm0 ≠ XReg.xmm1 by decide,
         VBinOp.sse, XBinOp.eval]
-      rcases (by omega_near : l = 0 ∨ l = 1) with rfl | rfl
+      rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
       · simp only [↓reduceIte]
         rw [q128_or, q128_and, show (s.mem.readW (off B (e + 8 * c)) 256).extractLsb' 0 128 =
           (if (0 : Nat) = 0 then (s.mem.readW (off B (e + 8 * c)) 256).extractLsb' 0 128 else
@@ -110,13 +110,13 @@ theorem gOrV_ok (L : VLen) {s : State} {B : Addr} {Z e c : Nat} (hs : Scr s B Z)
           off_add_eq, ← Nat.add_assoc]
     · simp only [lane_vbin256, State.lane_setV256, h0, h1, ↓reduceIte]
   | l128 =>
-    obtain ⟨iA, -⟩ := inRegionsN hs (d := e + 8 * c) (n := 16) (by simp only [nl] at he; omega_near) (by decide)
+    obtain ⟨iA, -⟩ := inRegionsN hs (d := e + 8 * c) (n := 16) (by simp only [nl] at he; omega_arith) (by decide)
     apply WP.of_runBlock
     simp only [Crt.gatherOrV, runBlock_cons, runStep_some, runBlock_nil, exec, eA, State.load128, iA, ite_true,
       Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨fun l hl q hq => ?_, fun y h0 h1 l => ?_, rfl, rfl, rfl, rfl⟩
     · simp only [nl] at hl
-      obtain rfl : l = 0 := by omega_near
+      obtain rfl : l = 0 := by omega_arith
       simp only [lane_vbin128, State.lane_setV128, ↓reduceIte, show XReg.xmm0 ≠ XReg.xmm1 by decide,
         VBinOp.sse, XBinOp.eval]
       rw [q128_or, q128_and, q_read128 _ _ hq, off_add_eq]
@@ -131,14 +131,14 @@ theorem writeW_outsideV (m : Mem) (base : Addr) {d w : Nat} (v : BitVec w) (h : 
   apply Mem.write_apply
   simp only [ofs] at hx
   have : (x - off base d).toNat = (2 ^ 64 - d + (x - base).toNat) % 2 ^ 64 :=
-    Offset.toNat_sub_add x base (by omega_near)
+    Offset.toNat_sub_add x base (by omega_arith)
   rw [this]
   have := (x - base).isLt
   rcases hx with hx | hx
-  · rw [Nat.mod_eq_of_lt (by omega_near)]; omega_near
-  · rw [show 2 ^ 64 - d + (x - base).toNat = (x - base).toNat - d + 2 ^ 64 by omega_near,
-      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_near)]
-    omega_near
+  · rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
+  · rw [show 2 ^ 64 - d + (x - base).toNat = (x - base).toNat - d + 2 ^ 64 by omega_arith,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
 
 /-- `xmm0 := xmm8 & [rcx + 8 r14]`, lane by lane. -/
 theorem gFirstV_ok (L : VLen) {s : State} {B : Addr} {Z e c : Nat} (hs : Scr s B Z)
@@ -150,14 +150,14 @@ theorem gFirstV_ok (L : VLen) {s : State} {B : Addr} {Z e c : Nat} (hs : Scr s B
   have eA : s.ea (ix .rcx .r14) = off B (e + 8 * c) := ea_ix0 s hb h14
   cases L with
   | l256 =>
-    obtain ⟨iA, -⟩ := inRegionsN hs (d := e + 8 * c) (n := 32) (by simp only [nl] at he; omega_near) (by decide)
+    obtain ⟨iA, -⟩ := inRegionsN hs (d := e + 8 * c) (n := 32) (by simp only [nl] at he; omega_arith) (by decide)
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, eA, State.load256, iA, ite_true,
       Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨fun l hl q hq => ?_, fun y h0 _ l => ?_, rfl, rfl, rfl, rfl⟩
     · simp only [nl] at hl
       simp only [State.lane_setV256, ↓reduceIte, VBinOp.sse, XBinOp.eval]
-      rcases (by omega_near : l = 0 ∨ l = 1) with rfl | rfl
+      rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
       · simp only [↓reduceIte]
         rw [q128_and, show (s.mem.readW (off B (e + 8 * c)) 256).extractLsb' 0 128 =
           (if (0 : Nat) = 0 then (s.mem.readW (off B (e + 8 * c)) 256).extractLsb' 0 128 else
@@ -170,13 +170,13 @@ theorem gFirstV_ok (L : VLen) {s : State} {B : Addr} {Z e c : Nat} (hs : Scr s B
           off_add_eq, ← Nat.add_assoc]
     · simp only [State.lane_setV256, h0, ↓reduceIte]
   | l128 =>
-    obtain ⟨iA, -⟩ := inRegionsN hs (d := e + 8 * c) (n := 16) (by simp only [nl] at he; omega_near) (by decide)
+    obtain ⟨iA, -⟩ := inRegionsN hs (d := e + 8 * c) (n := 16) (by simp only [nl] at he; omega_arith) (by decide)
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, eA, State.load128, iA, ite_true,
       Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨fun l hl q hq => ?_, fun y h0 _ l => ?_, rfl, rfl, rfl, rfl⟩
     · simp only [nl] at hl
-      obtain rfl : l = 0 := by omega_near
+      obtain rfl : l = 0 := by omega_arith
       simp only [State.lane_setV128, ↓reduceIte, VBinOp.sse, XBinOp.eval]
       rw [q128_and, q_read128 _ _ hq, off_add_eq]
       simp only [Nat.mul_zero, Nat.add_zero]
@@ -204,7 +204,7 @@ theorem gStoreV_ok (L : VLen) {s : State} {B : Addr} {Z e c n : Nat} (hs : Scr s
       ⟨h1, fun r hr => k.1 r (by simpa using hr), h2, h3, k.2.1, k.2.2⟩
   cases L with
   | l256 =>
-    obtain ⟨-, sO⟩ := inRegionsN hs (d := e + 8 * c) (n := 32) (by simp only [nl] at he; omega_near) (by decide)
+    obtain ⟨-, sO⟩ := inRegionsN hs (d := e + 8 * c) (n := 32) (by simp only [nl] at he; omega_arith) (by decide)
     rw [WP.block_cons_iff]
     refine ⟨{ s with mem := s.mem.writeW (off B (e + 8 * c)) (s.ymm .xmm0) },
       by simp only [exec, eO, State.store256, sO, ite_true], ?_⟩
@@ -215,22 +215,22 @@ theorem gStoreV_ok (L : VLen) {s : State} {B : Addr} {Z e c n : Nat} (hs : Scr s
       rw [Nat.add_assoc (e + 8 * c), show off B (e + 8 * c + (16 * l + 8 * q)) =
         off B (e + 8 * c) + BitVec.ofNat 64 (16 * l + 8 * q) from (off_add_eq _ _ _).symm, State.ymm_eq,
         read_write256 _ _ _ _ hl' hq]
-      rcases (by omega_near : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
-    · rw [hm]; exact writeW_outsideV s.mem B (d := e + 8 * c) (s.ymm .xmm0) (by simp only [nl] at he; omega_near) (by decide)
+      rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
+    · rw [hm]; exact writeW_outsideV s.mem B (d := e + 8 * c) (s.ymm .xmm0) (by simp only [nl] at he; omega_arith) (by decide)
   | l128 =>
-    obtain ⟨-, sO⟩ := inRegionsN hs (d := e + 8 * c) (n := 16) (by simp only [nl] at he; omega_near) (by decide)
+    obtain ⟨-, sO⟩ := inRegionsN hs (d := e + 8 * c) (n := 16) (by simp only [nl] at he; omega_arith) (by decide)
     rw [WP.block_cons_iff]
     refine ⟨{ s with mem := s.mem.writeW (off B (e + 8 * c)) (s.xmm .xmm0) },
       by simp only [exec, eO, State.store128, sO, ite_true], ?_⟩
     refine WP.mono (hadd _ h14) fun t ⟨h1, h2, hm, hl, hrd, hwr⟩ => ⟨fun l hl' q hq => ?_, ?_, h1, h2, hl, hrd, hwr⟩
     · simp only [nl] at hl'
-      obtain rfl : l = 0 := by omega_near
+      obtain rfl : l = 0 := by omega_arith
       rw [hm]
       show (s.mem.writeW (off B (e + 8 * c)) (s.xmm .xmm0)).readW (off B (e + 8 * c + 16 * 0 + 8 * q)) 64 = _
       rw [Nat.mul_zero, Nat.add_zero, show off B (e + 8 * c + 8 * q) = off B (e + 8 * c) + BitVec.ofNat 64 (8 * q)
         from (off_add_eq _ _ _).symm, read_write128' _ _ _ hq]
       rfl
-    · rw [hm]; exact writeW_outsideV s.mem B (d := e + 8 * c) (s.xmm .xmm0) (by simp only [nl] at he; omega_near) (by decide)
+    · rw [hm]; exact writeW_outsideV s.mem B (d := e + 8 * c) (s.xmm .xmm0) (by simp only [nl] at he; omega_arith) (by decide)
 
 /-! ## A chunk of words -/
 
@@ -272,24 +272,24 @@ theorem nl_le (L : VLen) : nl L ≤ 2 := by cases L <;> decide
 /-- The chunk at word `c` of an entry is within the table. -/
 theorem gEntV_le (wx : Nat) {j c : Nat} (L : VLen) (hj : j < 32) (hc : c + 2 * nl L ≤ wx + 2) :
     slot wx (8 + j) + 8 * c + 16 * nl L ≤ slot wx 8 + tabBytes wx 32 := by
-  have := ent_le wx hj; unfold slot at *; omega_near
+  have := ent_le wx hj; unfold slot at *; omega_arith
 
 /-- The chunk at word `c` of `[aT]` is within its array. -/
 theorem gTV_le (wx : Nat) {c : Nat} (L : VLen) (hc : c + 2 * nl L ≤ wx + 2) :
     slot wx Crt.aT + 8 * c + 16 * nl L ≤ slot wx 8 + tabBytes wx 32 := by
   have := slot_succ wx Crt.aT
   have := slot_mono wx (show Crt.aT + 1 ≤ 8 by decide)
-  unfold tabBytes; omega_near
+  unfold tabBytes; omega_arith
 
 theorem gAccV0 (L : VLen) {s : State} {B : Addr} {wx p v c : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx 32))
     (hG : GRegsV B wx p v s) (hp : p < 4) (h14 : s.gpr .r14 = BitVec.ofNat 64 c) (hc : c + 2 * nl L ≤ wx + 2) :
     WP isa (.block [.vbinLoad .vpand L .xmm0 .xmm8 (ix .rcx .r14)]) s (GathAccV s B wx p v c L 0) := by
   have hb := hG.base 0 (by decide)
   rw [Nat.add_zero] at hb
-  refine WP.mono (gFirstV_ok L hs hb h14 (gEntV_le wx (j := 8 * p) L (by omega_near) hc))
+  refine WP.mono (gFirstV_ok L hs hb h14 (gEntV_le wx (j := 8 * p) L (by omega_arith) hc))
     fun t ⟨hx0, hx, hg, hm, hrd, hwr⟩ => ⟨fun l hl q hq => ?_, hx, hg, hm, hrd, hwr⟩
   rw [hx0 l hl q hq, show s.lane .xmm8 l = s.lane (gX 0) l from rfl,
-    hG.msk 0 (by decide) l (by have := nl_le L; omega_near) q hq, BitVec.and_comm]
+    hG.msk 0 (by decide) l (by have := nl_le L; omega_arith) q hq, BitVec.and_comm]
   rfl
 
 theorem gAccV_step (L : VLen) {s t : State} {B : Addr} {wx p v c n : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx 32))
@@ -297,13 +297,13 @@ theorem gAccV_step (L : VLen) {s t : State} {B : Addr} {wx p v c n : Nat} (hs : 
     (hn : n < 7) (hA : GathAccV s B wx p v c L n t) :
     WP isa (.block (Crt.gatherOrV L (gReg (n + 1)) (gX (n + 1)))) t (GathAccV s B wx p v c L (n + 1)) := by
   have hb : t.gpr (gReg (n + 1)) = off B (slot wx (8 + 8 * p + (n + 1))) := by
-    rw [hA.gpr]; exact hG.base _ (by omega_near)
-  have hnx := gX_ne (n + 1) (by omega_near)
+    rw [hA.gpr]; exact hG.base _ (by omega_arith)
+  have hnx := gX_ne (n + 1) (by omega_arith)
   refine WP.mono (gOrV_ok L (hs.congr hA.wr) (Nat.add_assoc 8 (8 * p) (n + 1) ▸ hb) (by rw [hA.gpr]; exact h14)
-      (gEntV_le wx (j := 8 * p + (n + 1)) L (by omega_near) hc))
+      (gEntV_le wx (j := 8 * p + (n + 1)) L (by omega_arith) hc))
     fun t' ⟨hx0, hx, hg, hm, hrd, hwr⟩ => ⟨fun l hl q hq => ?_, fun y h0 h1 l => (hx y h0 h1 l).trans (hA.xmm y h0 h1 l),
       hg.trans hA.gpr, hm.trans hA.mem, hrd.trans hA.rd, hwr.trans hA.wr⟩
-  rw [hx0 l hl q hq, hA.acc l hl q hq, hA.xmm _ hnx.1 hnx.2.1, hG.msk _ (by omega_near) l (by have := nl_le L; omega_near) q hq,
+  rw [hx0 l hl q hq, hA.acc l hl q hq, hA.xmm _ hnx.1 hnx.2.1, hG.msk _ (by omega_arith) l (by have := nl_le L; omega_arith) q hq,
     hA.mem, BitVec.and_comm]
   simp only [gacc, Nat.add_assoc]
 
@@ -339,18 +339,18 @@ theorem gChunkV_ok (L : VLen) {s : State} {B : Addr} {wx p v c n : Nat} (hs : Sc
   refine WP.mono (gOrV_ok L (hs.congr a₇.wr) (x := .xmm7) (by rw [a₇.gpr]; exact hG.bx) (by rw [a₇.gpr]; exact h14)
     hT) fun t₈ ⟨hx0, hx, hg, hm, hrd, hwr⟩ => ?_
   refine WP.mono (gStoreV_ok L (hs.congr (hwr.trans a₇.wr)) (by rw [hg, a₇.gpr]; exact hG.bx)
-    (by rw [hg, a₇.gpr]; exact h14) hT (by cases L <;> simp only [nl] at hn <;> omega_near))
+    (by rw [hg, a₇.gpr]; exact h14) hT (by cases L <;> simp only [nl] at hn <;> omega_arith))
     fun t ⟨hw', ho, h14', hg', hl', hrd', hwr'⟩ => ⟨fun k hk => ?_, by rw [hm, a₇.mem] at ho; exact ho, h14',
       fun r hr => by rw [hg' r hr, hg, a₇.gpr], fun y h0 h1 l => by rw [hl', hx y h0 h1 l, a₇.xmm y h0 h1 l],
       by rw [hrd', hrd, a₇.rd], by rw [hwr', hwr, a₇.wr]⟩
   obtain ⟨l, q, hl, hq, rfl⟩ : ∃ l q, l < nl L ∧ q < 2 ∧ k = 2 * l + q :=
-    ⟨k / 2, k % 2, by omega_near, Nat.mod_lt _ (by decide), by omega_near⟩
-  rw [show slot wx Crt.aT + 8 * (c + (2 * l + q)) = slot wx Crt.aT + 8 * c + 16 * l + 8 * q by omega_near, hw' l hl q hq,
-    hx0 l hl q hq, a₇.acc l hl q hq, a₇.xmm _ (by decide) (by decide), hG.keep l (by omega_near) q hq, a₇.mem,
+    ⟨k / 2, k % 2, by omega_arith, Nat.mod_lt _ (by decide), by omega_arith⟩
+  rw [show slot wx Crt.aT + 8 * (c + (2 * l + q)) = slot wx Crt.aT + 8 * c + 16 * l + 8 * q by omega_arith, hw' l hl q hq,
+    hx0 l hl q hq, a₇.acc l hl q hq, a₇.xmm _ (by decide) (by decide), hG.keep l (by omega_arith) q hq, a₇.mem,
     BitVec.and_comm]
   unfold gvalV
   simp only [show ∀ j, slot wx (8 + 8 * p + j) + 8 * c + 16 * l + 8 * q = slot wx (8 + 8 * p + j) + 8 * (c + (2 * l + q))
-    from fun j => by omega_near, show slot wx Crt.aT + 8 * c + 16 * l + 8 * q = slot wx Crt.aT + 8 * (c + (2 * l + q)) by omega_near]
+    from fun j => by omega_arith, show slot wx Crt.aT + 8 * c + 16 * l + 8 * q = slot wx Crt.aT + 8 * (c + (2 * l + q)) by omega_arith]
 
 /-! ## The chunks of a pass -/
 
@@ -359,7 +359,7 @@ theorem gvalV_congr {m m' : Mem} {B : Addr} {wx p v k : Nat}
     (hT : word m' B (slot wx Crt.aT + 8 * k) = word m B (slot wx Crt.aT + 8 * k)) :
     gvalV m' B wx p v k = gvalV m B wx p v k := by
   unfold gvalV
-  rw [hT, gacc_congr fun j hj => he j (by omega_near)]
+  rw [hT, gacc_congr fun j hj => he j (by omega_arith)]
 
 /-- After the chunks of a pass below word `c`, from `s`. -/
 structure GathInvV (s : State) (B : Addr) (wx p v c : Nat) (t : State) : Prop where
@@ -389,18 +389,18 @@ theorem gStepV_ok (L : VLen) {s t : State} {B : Addr} {wx p v c n : Nat} (hs : S
   refine WP.mono (gChunkV_ok L (hs.congr hI.wr) (hG.congr hI.gpr hI.xmm) hp hI.r14 hc hn)
     fun t' ⟨hv, ho, h14, hg, hx, hrd, hwr⟩ => ⟨⟨by rw [h14, hn, ← BitVec.ofNat_add],
       fun r hr => (hg r hr).trans (hI.gpr r hr), fun y h0 h1 l => (hx y h0 h1 l).trans (hI.xmm y h0 h1 l),
-      hrd.trans hI.rd, hwr.trans hI.wr, (hI.out.mono (Nat.le_refl _) (by omega_near)).trans (ho.mono (by omega_near) (by omega_near)),
+      hrd.trans hI.rd, hwr.trans hI.wr, (hI.out.mono (Nat.le_refl _) (by omega_arith)).trans (ho.mono (by omega_arith) (by omega_arith)),
       fun k hk => ?_⟩, h14⟩
   by_cases hkc : k < c
-  · rw [ho.word (by omega_near) (by omega_near), hI.val k hkc]
-  obtain ⟨i, hi, rfl⟩ : ∃ i, i < 2 * nl L ∧ k = c + i := ⟨k - c, by omega_near, by omega_near⟩
+  · rw [ho.word (by omega_arith) (by omega_arith), hI.val k hkc]
+  obtain ⟨i, hi, rfl⟩ : ∃ i, i < 2 * nl L ∧ k = c + i := ⟨k - c, by omega_arith, by omega_arith⟩
   rw [hv i hi]
   refine gvalV_congr (fun j hj => ?_) ?_
-  · have := ent_le wx (n := 32) (j := 8 * p + j) (by omega_near)
-    have := slot_mono wx (show 8 ≤ 8 + (8 * p + j) by omega_near)
-    rw [show 8 + 8 * p + j = 8 + (8 * p + j) by omega_near]
-    exact hI.out.word (by omega_near) (by unfold slot at *; omega_near)
-  · exact hI.out.word (by omega_near) (by omega_near)
+  · have := ent_le wx (n := 32) (j := 8 * p + j) (by omega_arith)
+    have := slot_mono wx (show 8 ≤ 8 + (8 * p + j) by omega_arith)
+    rw [show 8 + 8 * p + j = 8 + (8 * p + j) by omega_arith]
+    exact hI.out.word (by omega_arith) (by unfold slot at *; omega_arith)
+  · exact hI.out.word (by omega_arith) (by omega_arith)
 
 /-- The four-word chunks of a pass: every word below `4 N`. -/
 theorem gLoopV_ok {s : State} {B : Addr} {wx p v N : Nat} (hs : Scr s B (slot wx 8 + tabBytes wx 32))
@@ -411,18 +411,18 @@ theorem gLoopV_ok {s : State} {B : Addr} {wx p v N : Nat} (hs : Scr s B (slot wx
   refine wp_upto (a := 0) (N := N) hN (fun j => GathInvV s B wx p v (4 * j)) (fun j _ hj t hI => ?_) (fun t h => h)
     (by simpa using GathInvV.init h14)
   rw [WP.block_append_iff]
-  refine WP.mono (gStepV_ok .l256 hs hG hp (c := 4 * j) (by simp only [nl]; omega_near) rfl hI)
+  refine WP.mono (gStepV_ok .l256 hs hG hp (c := 4 * j) (by simp only [nl]; omega_arith) rfl hI)
     fun t' ⟨hI', h14'⟩ => ?_
   have h12' : t'.gpr .r12 = BitVec.ofNat 64 (4 * N) := (hI'.gpr _ (by decide)).trans h12
   have hadd : BitVec.ofNat 64 (4 * j) + BitVec.ofNat 64 4 = BitVec.ofNat 64 (4 * (j + 1)) := by
     rw [← BitVec.ofNat_add]; congr 1
   refine WP.mono (WP.keep [.r14] (Q := fun t'' => t''.zf = some (decide (j + 1 = N)) ∧ t''.mem = t'.mem ∧
       (∀ y l, t''.lane y l = t'.lane y l) ∧ t''.gpr .r14 = t'.gpr .r14) (by
-    xrun [h14', h12', hadd, ofNat_sub_beq (show 4 * (j + 1) < 2 ^ 64 by omega_near) (show 4 * N < 2 ^ 64 by omega_near)]
-    exact ⟨decide_eq_decide.mpr ⟨fun h => by omega_near, fun h => by omega_near⟩, fun _ _ => rfl⟩) rfl) fun t'' ⟨⟨hz, hm, hl, h14''⟩, k⟩ => ⟨hz, ?_⟩
+    xrun [h14', h12', hadd, ofNat_sub_beq (show 4 * (j + 1) < 2 ^ 64 by omega_arith) (show 4 * N < 2 ^ 64 by omega_arith)]
+    exact ⟨decide_eq_decide.mpr ⟨fun h => by omega_arith, fun h => by omega_arith⟩, fun _ _ => rfl⟩) rfl) fun t'' ⟨⟨hz, hm, hl, h14''⟩, k⟩ => ⟨hz, ?_⟩
   have hk : ∀ r, r ≠ .r14 → t''.gpr r = t'.gpr r := fun r hr => k.1 r (by simpa using hr)
   exact ⟨by rw [h14'', h14', hadd], fun r hr => by rw [hk r hr]; exact hI'.gpr r hr,
     fun y h0 h1 l => (hl y l).trans (hI'.xmm y h0 h1 l), k.2.1.trans hI'.rd, k.2.2.trans hI'.wr,
-    by rw [hm]; simpa [nl, Nat.mul_add] using hI'.out, fun k' hk' => by rw [hm]; exact hI'.val k' (by simp only [nl]; omega_near)⟩
+    by rw [hm]; simpa [nl, Nat.mul_add] using hI'.out, fun k' hk' => by rw [hm]; exact hI'.val k' (by simp only [nl]; omega_arith)⟩
 
 end VG.Proof.Bignum.X86_64

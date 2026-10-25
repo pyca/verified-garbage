@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Framework.OmegaNear
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -72,43 +72,43 @@ theorem redcRow_ok {s : State} {B : Addr} {Z e eN eT w n : Nat} {minv : BitVec 6
       Keep [.rdx, .rax, .rsi, .r11, .r12, .r13, .r15, .rcx, .r14, .rbx, .r10, .r8] s t := by
   have hn := hs.nowrap
   unfold redcRow
-  refine WP.seq (WP.mono (WP.vecKeep (by decide) (head_ok hs h8 (by omega_near) hx15))
+  refine WP.seq (WP.mono (WP.vecKeep (by decide) (head_ok hs h8 (by omega_arith) hx15))
     fun s₁ ⟨⟨hdx, hm₁, k₁⟩, hx₁, _⟩ => ?_)
   refine WP.seq (WP.mono (WP.vecKeep (by decide) (row_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans h8)
-    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) (by omega_near) (by omega_near)
-    (by omega_near) (by omega_near) (by omega_near))) fun s₂ ⟨⟨hv, ho, h14, k₂⟩, hx₂, _⟩ => ?_)
+    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (by omega_arith))) fun s₂ ⟨⟨hv, ho, h14, k₂⟩, hx₂, _⟩ => ?_)
   rw [hm₁, hdx] at hv
   rw [hm₁] at ho
   have k12 := k₁.trans k₂
-  have hlow := AdxSquare.redc_low (by omega_near) hinv hv
-  have top : word s₂.mem B (e + 8 * w) = word s.mem B (e + 8 * w) := ho.word (by omega_near) (by omega_near)
+  have hlow := AdxSquare.redc_low (by omega_arith) hinv hv
+  have top : word s₂.mem B (e + 8 * w) = word s.mem B (e + 8 * w) := ho.word (by omega_arith) (by omega_arith)
   have c10 : s₂.gpr .r10 = s.gpr .r10 := k12.gpr (by decide)
   refine WP.seq (WP.mono (WP.vecKeep (by decide) (AdxSquare.redcTail_ok (hs.congr k12.2.2)
-    ((k12.gpr (by decide)).trans h8) h14 (by omega_near))) fun s₃ ⟨⟨lo, hm₃, ht, hc, h8₃, k₃⟩, hx₃, _⟩ => ?_)
+    ((k12.gpr (by decide)).trans h8) h14 (by omega_arith))) fun s₃ ⟨⟨lo, hm₃, ht, hc, h8₃, k₃⟩, hx₃, _⟩ => ?_)
   rw [top, c10] at ht
   rw [c10] at hc
   have out₃ : Outside B (e + 8 * w) 8 s₂.mem s₃.mem := by
-    rw [hm₃]; exact writeW_outside _ _ _ (by omega_near)
+    rw [hm₃]; exact writeW_outside _ _ _ (by omega_arith)
   have allout : Outside B e (8 * (w + 1)) s.mem s₃.mem :=
-    (ho.mono (o' := e) (n' := 8 * (w + 1)) (Nat.le_refl _) (by omega_near)).trans
-      (out₃.mono (o' := e) (n' := 8 * (w + 1)) (by omega_near) (by omega_near))
-  have low₃ : word s₃.mem B e = 0 := (out₃.word (by omega_near) (by omega_near)).trans hlow
-  have pre₃ : wv s₃.mem B e w = wv s₂.mem B e w := out₃.wv (by omega_near) (by omega_near)
+    (ho.mono (o' := e) (n' := 8 * (w + 1)) (Nat.le_refl _) (by omega_arith)).trans
+      (out₃.mono (o' := e) (n' := 8 * (w + 1)) (by omega_arith) (by omega_arith))
+  have low₃ : word s₃.mem B e = 0 := (out₃.word (by omega_arith) (by omega_arith)).trans hlow
+  have pre₃ : wv s₃.mem B e w = wv s₂.mem B e w := out₃.wv (by omega_arith) (by omega_arith)
   have top₃ : word s₃.mem B (e + 8 * w) = lo := by rw [hm₃, word_writeW_self]
   have high₃ : wv s₃.mem B (e + 8 * w + 8) (n - (w + 1)) =
-      wv s.mem B (e + 8 * w + 8) (n - (w + 1)) := allout.wv (by omega_near) (by omega_near)
+      wv s.mem B (e + 8 * w + 8) (n - (w + 1)) := allout.wv (by omega_arith) (by omega_arith)
   have eq : wv s₃.mem B e n + 2 ^ (64 * w) * 2 ^ 64 * (s₃.gpr .r10).toNat =
       wv s.mem B e n + 2 ^ (64 * w) * (s.gpr .r10).toNat +
         (AdxSquare.redcU (word s.mem B e) minv).toNat * wv s.mem B eN w := by
     rw [AdxSquare.wv_at_word _ _ _ _ _ hwn, AdxSquare.wv_at_word s.mem _ _ _ _ hwn, pre₃, top₃, high₃]
     grind
   have shifted : wv s₃.mem B e n = 2 ^ 64 * wv s₃.mem B (e + 8) (n - 1) := by
-    rw [show n = (n - 1) + 1 by omega_near, wv_low, low₃]
+    rw [show n = (n - 1) + 1 by omega_arith, wv_low, low₃]
     simp
   rw [shifted] at eq
   have k123 := k12.trans k₃
   have hx₃' : s₃.xmm .xmm3 = (0 : BitVec 64) ++ off B eT := by rw [hx₃, hx₂, hx₁, hx3]
-  refine WP.mono (endTest_ok h8₃ hx₃' (by omega_near) (by omega_near)) fun t ⟨hz, hm, h8', kt⟩ => ?_
+  refine WP.mono (endTest_ok h8₃ hx₃' (by omega_arith) (by omega_arith)) fun t ⟨hz, hm, h8', kt⟩ => ?_
   refine ⟨(AdxSquare.redcU (word s.mem B e) minv).toNat, (AdxSquare.redcU (word s.mem B e) minv).isLt, ?_, ?_, ?_,
     h8', hz, (k123.trans kt).mono (by decide)⟩
   · rw [hm, kt.gpr (by decide)]
@@ -138,19 +138,19 @@ theorem redcStep_ok {s₀ t : State} {B : Addr} {Z A eN w i : Nat} {minv : BitVe
     WP isa redcRow t fun t' => t'.zf = some (decide (i + 1 = w)) ∧ RedcInv s₀ B Z A eN w (i + 1) t' := by
   have hn := hI.scr.nowrap
   have kp := hI.keep
-  have hN : wv t.mem B eN w = wv s₀.mem B eN w := hI.out.wv (by omega_near) (by omega_near)
-  have hN0 : word t.mem B eN = word s₀.mem B eN := hI.out.word (by omega_near) (by omega_near)
+  have hN : wv t.mem B eN w = wv s₀.mem B eN w := hI.out.wv (by omega_arith) (by omega_arith)
+  have hN0 : word t.mem B eN = word s₀.mem B eN := hI.out.word (by omega_arith) (by omega_arith)
   refine WP.mono (WP.vecKeep (by decide) (redcRow_ok (n := 2 * w - i) (eT := A + 8 * w) hI.scr hI.r8
     ((kp.gpr (by decide)).trans h9) ((kp.gpr (by decide)).trans hbp) (by rw [hI.xmm]; exact hx15)
-    (by rw [hI.xmm]; exact hx3) (by omega_near) hw1 hw (by omega_near) (by omega_near) (by omega_near) (by rw [hN0]; exact hinv)))
+    (by rw [hI.xmm]; exact hx3) (by omega_arith) hw1 hw (by omega_arith) (by omega_arith) (by omega_arith) (by rw [hN0]; exact hinv)))
     fun t' ⟨⟨u, hu, hv, hc, ho, h8', hz, kt⟩, hx', _⟩ => ⟨?_, ?_⟩
   · rw [hz]
     congr 1
-    exact decide_eq_decide.mpr (by omega_near)
-  rw [hN, show A + 8 * i + 8 = A + 8 * (i + 1) by omega_near, show 2 * w - i - 1 = 2 * w - (i + 1) by omega_near] at hv
+    exact decide_eq_decide.mpr (by omega_arith)
+  rw [hN, show A + 8 * i + 8 = A + 8 * (i + 1) by omega_arith, show 2 * w - i - 1 = 2 * w - (i + 1) by omega_arith] at hv
   refine ⟨hI.scr.congr kt.2.2, (kp.trans kt).mono (by decide), hx'.trans hI.xmm, ?_, hc hI.carry, ?_, ?_⟩
   · rw [h8']; congr 1
-  · exact hI.out.trans (ho.mono (o' := A) (n' := 16 * w) (by omega_near) (by omega_near))
+  · exact hI.out.trans (ho.mono (o' := A) (n' := 16 * w) (by omega_arith) (by omega_arith))
   · obtain ⟨q, hq, heq⟩ := hI.val
     refine ⟨q + 2 ^ (64 * i) * u, ?_, ?_⟩
     · rw [pow64_succ]
@@ -186,19 +186,19 @@ theorem redc_ok {s : State} {B : Addr} {Z A eN w : Nat} {minv : BitVec 64} (hs :
     refine ⟨hs.congr k₁.2.2, Keep.refl _ _, rfl, by simpa using (k₁.gpr (by decide)).trans h8, by simp [h10],
       Outside.refl _ _ _ _, 0, by decide, ?_⟩
     simp [h10]
-  refine WP.seq (WP.mono (wp_upto (a := 0) (N := w) (by omega_near) (RedcInv s₁ B Z A eN w)
+  refine WP.seq (WP.mono (wp_upto (a := 0) (N := w) (by omega_arith) (RedcInv s₁ B Z A eN w)
     (fun i _ hi t h => redcStep_ok h9 hbp (by rw [hx₁]; exact hx15) (by rw [hx₁]; exact hx3) hA hsep hw1 hw hi
       hinv h) (fun _ h => h) I0) fun s₂ hI => ?_)
   refine WP.mono (WP.vecKeep (by decide) (AdxSquare.redcFinish_ok hI.scr hI.r8
-    ((hI.keep.gpr (by decide)).trans hbp) (by omega_near))) fun t ⟨⟨hv, ho, kt⟩, hxt, _⟩ => ?_
+    ((hI.keep.gpr (by decide)).trans hbp) (by omega_arith))) fun t ⟨⟨hv, ho, kt⟩, hxt, _⟩ => ?_
   obtain ⟨q, hq, heq⟩ := hI.val
-  rw [show 2 * w - w = w by omega_near, hm₁] at heq
+  rw [show 2 * w - w = w by omega_arith, hm₁] at heq
   have o₁ := hI.out
   rw [hm₁] at o₁
   refine ⟨⟨q, hq, ?_⟩, ?_, ?_, ?_, ((k₁.trans hI.keep).trans kt).mono (by decide)⟩
   · rw [hv]; exact heq
-  · exact (o₁.mono (o' := A) (n' := 16 * w + 16) (Nat.le_refl _) (by omega_near)).trans
-      (ho.mono (o' := A) (n' := 16 * w + 16) (by omega_near) (by omega_near))
+  · exact (o₁.mono (o' := A) (n' := 16 * w + 16) (Nat.le_refl _) (by omega_arith)).trans
+      (ho.mono (o' := A) (n' := 16 * w + 16) (by omega_arith) (by omega_arith))
   · rw [kt.gpr (by decide)]; exact hI.r8
   · rw [hxt, hI.xmm, hx₁]
 

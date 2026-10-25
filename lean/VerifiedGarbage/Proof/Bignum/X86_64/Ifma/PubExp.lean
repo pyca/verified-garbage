@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Framework.OmegaNear
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVec
 public import VerifiedGarbage.Proof.Bignum.PdRanges
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
@@ -57,8 +56,8 @@ theorem low_word {P : Addr} {W d n e : Nat} {m m' : Mem} (h : Outside (off P (sl
     (hn : P.toNat + slot W 8 ≤ 2 ^ 64) (hd : d + n ≤ 48 * (W + 2)) (he : e + 8 ≤ slot W aAcc) :
     word m' P e = word m P e := by
   simp only [slot, aAcc, VG.Impl.Bignum.hdrBytes] at *
-  have f := Frm.of_outside_off (B := P) h (by omega_near) (by omega_near)
-  exact f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only; omega_near)) (by omega_near)
+  have f := Frm.of_outside_off (B := P) h (by omega_arith) (by omega_arith)
+  exact f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only; omega_arith)) (by omega_arith)
 
 /-- `setup`. -/
 theorem setup_ok (hl : PubOk l) {a : State} {P : Addr} {Z : Nat} {minv : BitVec 64}
@@ -76,21 +75,21 @@ theorem setup_ok (hl : PubOk l) {a : State} {P : Addr} {Z : Nat} {minv : BitVec 
   obtain ⟨b1, b2⟩ := hl.area2
   have hoA : oA l = 24 * (l.W + 2) := rfl
   have hs := hg.scr
-  have hn : P.toNat + slot l.W 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega_near
-  have hS8 : slot l.W 8 = slot l.W aAcc + 48 * (l.W + 2) := by unfold slot aAcc; omega_near
-  have hSN : slot l.W aN + 8 * (l.W + 2) ≤ slot l.W aAcc := by unfold slot aN aAcc; omega_near
-  have hSR : slot l.W aR2 = slot l.W aAcc + 16 * (l.W + 2) := by unfold slot aR2 aAcc; omega_near
+  have hn : P.toNat + slot l.W 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
+  have hS8 : slot l.W 8 = slot l.W aAcc + 48 * (l.W + 2) := by unfold slot aAcc; omega_arith
+  have hSN : slot l.W aN + 8 * (l.W + 2) ≤ slot l.W aAcc := by unfold slot aN aAcc; omega_arith
+  have hSR : slot l.W aR2 = slot l.W aAcc + 16 * (l.W + 2) := by unfold slot aR2 aAcc; omega_arith
   have hHdr : ∀ i < 32, 8 * i + 8 ≤ slot l.W aAcc := fun i hi => VG.Proof.Bignum.hdr_lt_slot l.W aAcc hi
   have hF : ∀ j < l.L, l.off j + 8 ≤ l.NB := fun j hj => off_ltN hl.amm hj
   generalize hB : off P (slot l.W aAcc) = B
   have hBo : ∀ d, off B d = off P (slot l.W aAcc + d) := fun d => by rw [← hB, off_off]
   have hwB : ∀ d, d + 8 ≤ 48 * (l.W + 2) → InRegions a.wr (off B d) 8 := fun d hd => by
-    rw [hBo]; exact hs.st (by omega_near)
-  have hnB : (oA l + l.NB) ≤ 48 * (l.W + 2) := by omega_near
+    rw [hBo]; exact hs.st (by omega_arith)
+  have hnB : (oA l + l.NB) ≤ 48 * (l.W + 2) := by omega_arith
   have harr : ∀ j, arr l j = slot l.W j := fun _ => rfl
   have hj : ∀ j < 8, arr l j < 2 ^ 31 := fun j hj => by
     have := VG.Proof.Bignum.slot_le (w := l.W) hj
-    rw [harr]; unfold slot VG.Impl.Bignum.hdrBytes at *; omega_near
+    rw [harr]; unfold slot VG.Impl.Bignum.hdrBytes at *; omega_arith
   unfold setup
   simp only [List.append_assoc]
   -- The base and the mask.
@@ -106,22 +105,22 @@ theorem setup_ok (hl : PubOk l) {a : State} {P : Addr} {Z : Nat} {minv : BitVec 
   rw [WP.block_append_iff]
   have hdi₁ : t₁.gpr .rdi = P := (k₁.gpr (by decide)).trans hg.rdi
   refine WP.mono (ld52_ok hl (s := t₁) (B := B) (H := P) (j := aN) (o := 0) b₁ hdi₁ r12₁ (hj aN (by decide))
-    (fun i hi => by rw [k₁.2.1, k₁.2.2, AmmSym.off_add, harr]; exact hs.ld (by omega_near))
-    (fun q hq => by rw [k₁.2.2]; exact hwB _ (by have := hF q hq; omega_near)) (by omega_near)
+    (fun i hi => by rw [k₁.2.1, k₁.2.2, AmmSym.off_add, harr]; exact hs.ld (by omega_arith))
+    (fun q hq => by rw [k₁.2.2]; exact hwB _ (by have := hF q hq; omega_arith)) (by omega_arith)
     (fun m m' f i hi => by
       rw [harr, word_off, word_off]
       rw [← hB] at f
-      exact low_word f hn (by omega_near) (by omega_near))) fun t₂ ⟨v₂, o₂, k₂, x₂⟩ => ?_
+      exact low_word f hn (by omega_arith) (by omega_arith))) fun t₂ ⟨v₂, o₂, k₂, x₂⟩ => ?_
   rw [harr] at v₂
   rw [m₁, VG.Proof.Bignum.wv_off, Nat.add_zero] at v₂
   -- `k₀`.
   rw [WP.block_append_iff]
   have hm₂ : word t₂.mem P (8 * sMinv) = minv := by
     rw [← hB] at o₂
-    rw [low_word o₂ hn (by omega_near) (hHdr sMinv (by decide)), m₁]; exact hg.hdr.hminv
+    rw [low_word o₂ hn (by omega_arith) (hHdr sMinv (by decide)), m₁]; exact hg.hdr.hminv
   have hdi₂ : t₂.gpr .rdi = P := (k₂.gpr (by decide)).trans hdi₁
   have hl₂ : InRegions (t₂.rd ++ t₂.wr) (off P (8 * sMinv)) 8 := by
-    rw [k₂.2.1, k₂.2.2, k₁.2.1, k₁.2.2]; exact hs.ld (by have := hHdr _ (show sMinv < 32 by decide); omega_near)
+    rw [k₂.2.1, k₂.2.2, k₁.2.1, k₁.2.2]; exact hs.ld (by have := hHdr _ (show sMinv < 32 by decide); omega_arith)
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax] (Q := fun t =>
     t.gpr .rax = BitVec.ofNat 64 (minv.toNat % 2 ^ 52) ∧ t.mem = t₂.mem ∧ t.mxcsr = t₂.mxcsr) (by
       xrun [State.ea, hdr, hdi₂, hdrOff, hl₂, hm₂, (k₂.gpr (by decide)).trans r12₁, AmmSym.and_mask']
@@ -136,73 +135,73 @@ theorem setup_ok (hl : PubOk l) {a : State} {P : Addr} {Z : Nat} {minv : BitVec 
   refine WP.mono (stR_ok (b := .rbx) _ t₃ hb₃ a₃ fun d hd => by
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hd
     rw [List.mem_range] at hi
-    rw [k₃.2.2, k₂.2.2, k₁.2.2]; exact hwB _ (by omega_near)) fun t₄ h₄ => ?_
+    rw [k₃.2.2, k₂.2.2, k₁.2.2]; exact hwB _ (by omega_arith)) fun t₄ h₄ => ?_
   subst h₄
   generalize hM₄ : stMem t₃.mem B (BitVec.ofNat 64 (minv.toNat % 2 ^ 52))
     ((List.range 4).map fun i => l.NB + 8 * i) = M₄
   have o₄ : Outside B l.NB 32 t₃.mem M₄ := by
     rw [← hM₄]
-    refine stMem_outside _ B _ (by omega_near) _ fun d hd => ?_
+    refine stMem_outside _ B _ (by omega_arith) _ fun d hd => ?_
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hd
     rw [List.mem_range] at hi
-    omega_near
+    omega_arith
   have hm₄ : ∀ e, e + 8 ≤ slot l.W aAcc → word M₄ P e = word a.mem P e := fun e he => by
     rw [← hB] at o₄ o₂
-    rw [low_word o₄ hn (by omega_near) he, m₃, low_word o₂ hn (by omega_near) he, m₁]
+    rw [low_word o₄ hn (by omega_arith) he, m₃, low_word o₂ hn (by omega_arith) he, m₁]
   have hdi₄ : t₃.gpr .rdi = P := (k₃.gpr (by decide)).trans hdi₂
   -- `R² mod m` into `A`.
   refine WP.mono (ld52_ok hl (s := { t₃ with mem := M₄ }) (B := B) (H := P) (j := aR2)
     (o := oA l) hb₃ hdi₄ (by rw [k₃.gpr (by decide), k₂.gpr (by decide)]; exact r12₁) (hj aR2 (by decide))
     (fun i hi => by
       show InRegions (t₃.rd ++ t₃.wr) _ 8
-      rw [k₃.2.1, k₃.2.2, k₂.2.1, k₂.2.2, k₁.2.1, k₁.2.2, AmmSym.off_add, harr]; exact hs.ld (by omega_near))
+      rw [k₃.2.1, k₃.2.2, k₂.2.1, k₂.2.2, k₁.2.1, k₁.2.2, AmmSym.off_add, harr]; exact hs.ld (by omega_arith))
     (fun q hq => by
       show InRegions t₃.wr _ 8
-      rw [k₃.2.2, k₂.2.2, k₁.2.2]; exact hwB _ (by have := hF q hq; omega_near)) (by omega_near)
+      rw [k₃.2.2, k₂.2.2, k₁.2.2]; exact hwB _ (by have := hF q hq; omega_arith)) (by omega_arith)
     (fun m m' f i hi => by
       rw [harr, word_off, word_off]
       rw [← hB] at f
-      have f' := Frm.of_outside_off (B := P) f (by unfold slot at *; omega_near) (by unfold slot at *; omega_near)
-      exact f'.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only; omega_near))
-        (by unfold slot at *; omega_near))) fun t₅ ⟨v₅, o₅, k₅, x₅⟩ => ?_
+      have f' := Frm.of_outside_off (B := P) f (by unfold slot at *; omega_arith) (by unfold slot at *; omega_arith)
+      exact f'.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only; omega_arith))
+        (by unfold slot at *; omega_arith))) fun t₅ ⟨v₅, o₅, k₅, x₅⟩ => ?_
   have hR₄ : VG.Proof.Bignum.wv M₄ (off P (arr l aR2)) 0 l.W = VG.Proof.Bignum.wv a.mem P (slot l.W aR2) l.W := by
     rw [wv_off, Nat.add_zero, harr]
     rw [← hB] at o₄ o₂
-    have f₄ := Frm.of_outside_off (B := P) o₄ (by unfold slot at *; omega_near) (by unfold slot at *; omega_near)
-    have f₂ := Frm.of_outside_off (B := P) o₂ (by unfold slot at *; omega_near) (by unfold slot at *; omega_near)
-    rw [f₄.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only; omega_near))
-        (by unfold slot at *; omega_near), m₃,
-      f₂.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only; omega_near))
-        (by unfold slot at *; omega_near), m₁]
+    have f₄ := Frm.of_outside_off (B := P) o₄ (by unfold slot at *; omega_arith) (by unfold slot at *; omega_arith)
+    have f₂ := Frm.of_outside_off (B := P) o₂ (by unfold slot at *; omega_arith) (by unfold slot at *; omega_arith)
+    rw [f₄.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only; omega_arith))
+        (by unfold slot at *; omega_arith), m₃,
+      f₂.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by simp only; omega_arith))
+        (by unfold slot at *; omega_arith), m₁]
   rw [hR₄] at v₅
-  have hlow : ∀ e, e + 8 ≤ oA l → word t₅.mem B e = word M₄ B e := fun e he => o₅.word (.inl he) (by omega_near)
+  have hlow : ∀ e, e + 8 ≤ oA l → word t₅.mem B e = word M₄ B e := fun e he => o₅.word (.inl he) (by omega_arith)
   refine ⟨by rw [k₅.gpr (by decide)]; exact hb₃, by rw [k₅.gpr (by decide), k₃.gpr (by decide), k₂.gpr (by decide)]; exact r12₁,
     fun j hj => ?_, fun i hi => ?_, v₅, ?_, ?_, by rw [x₅]; show t₃.mxcsr = _; rw [x₃, x₂, x₁]⟩
   · have := hF j hj
-    rw [hlow _ (by omega_near), ← hM₄, word_stMem_other B _ (by omega_near) _ _ (fun d hd => by
-      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hd; omega_near) (fun d hd => by
-      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hd; rw [List.mem_range] at hi; omega_near), m₃]
+    rw [hlow _ (by omega_arith), ← hM₄, word_stMem_other B _ (by omega_arith) _ _ (fun d hd => by
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hd; omega_arith) (fun d hd => by
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hd; rw [List.mem_range] at hi; omega_arith), m₃]
     exact v₂ j hj
-  · rw [hlow _ (by omega_near), ← hM₄]
+  · rw [hlow _ (by omega_arith), ← hM₄]
     refine word_stMem B _ _ _ (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩) (fun d hd => ?_) (fun d hd => ?_)
     · obtain ⟨i', hi', rfl⟩ := List.mem_map.mp hd
       rw [List.mem_range] at hi'
       by_cases e : i' = i
       · exact .inl (by rw [e])
-      · omega_near
-    · obtain ⟨i', hi', rfl⟩ := List.mem_map.mp hd; rw [List.mem_range] at hi'; omega_near
+      · omega_arith
+    · obtain ⟨i', hi', rfl⟩ := List.mem_map.mp hd; rw [List.mem_range] at hi'; omega_arith
   · rw [← hB] at o₂ o₄ o₅
-    have f₂ := Frm.of_outside_off (B := P) o₂ (by unfold slot at *; omega_near) (by unfold slot at *; omega_near)
-    have f₄ := Frm.of_outside_off (B := P) o₄ (by unfold slot at *; omega_near) (by unfold slot at *; omega_near)
-    have f₅ := Frm.of_outside_off (B := P) o₅ (by unfold slot at *; omega_near) (by unfold slot at *; omega_near)
+    have f₂ := Frm.of_outside_off (B := P) o₂ (by unfold slot at *; omega_arith) (by unfold slot at *; omega_arith)
+    have f₄ := Frm.of_outside_off (B := P) o₄ (by unfold slot at *; omega_arith) (by unfold slot at *; omega_arith)
+    have f₅ := Frm.of_outside_off (B := P) o₅ (by unfold slot at *; omega_arith) (by unfold slot at *; omega_arith)
     rw [m₁] at f₂
     rw [m₃] at f₄
     refine ((f₂.append f₄).append f₅).widen fun r hr => ?_
     simp only [List.mem_append, List.mem_singleton] at hr
     rcases hr with (rfl | rfl) | rfl
-    · exact ⟨_, List.mem_cons_self .., by simp only; omega_near⟩
-    · exact ⟨_, List.mem_cons_self .., by simp only; omega_near⟩
-    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by simp only; omega_near⟩
+    · exact ⟨_, List.mem_cons_self .., by simp only; omega_arith⟩
+    · exact ⟨_, List.mem_cons_self .., by simp only; omega_arith⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by simp only; omega_arith⟩
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       rw [k₅.gpr (by simp [hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2]),
@@ -232,29 +231,29 @@ theorem finBlock_ok (hl : PubOk l) {s : State} {P : Addr} {Z : Nat} (hs : Scr s 
       VG.Proof.MlKem.X86_64.Keep [.r11, .r8, .rax, .rcx, .rbp, .rbx, .r10, .r12, .rsi] s t := by
   obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := hl.area
   have hoA : oA l = 24 * (l.W + 2) := rfl
-  have hn : P.toNat + slot l.W 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega_near
-  have hS8 : slot l.W 8 = slot l.W aAcc + 48 * (l.W + 2) := by unfold slot aAcc; omega_near
+  have hn : P.toNat + slot l.W 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
+  have hS8 : slot l.W 8 = slot l.W aAcc + 48 * (l.W + 2) := by unfold slot aAcc; omega_arith
   have hHdr : ∀ i < 32, 8 * i + 8 ≤ slot l.W aAcc := fun i hi => VG.Proof.Bignum.hdr_lt_slot l.W aAcc hi
   have hF : ∀ j < l.L, l.off j + 8 ≤ l.NB := fun j hj => off_ltN hl.amm hj
-  have hH' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off P (8 * i)) 8 := fun i hi => hs.ld (by have := hHdr i hi; omega_near)
+  have hH' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off P (8 * i)) 8 := fun i hi => hs.ld (by have := hHdr i hi; omega_arith)
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r11, .r8] (Q := fun t =>
     t.gpr .r11 = off (off P (slot l.W aAcc)) (oA l) ∧ t.gpr .r8 = off P (slot l.W aAcc) ∧ t.mem = s.mem) (by
-    xrun [hB, se_ofNat (show oA l < 2 ^ 31 by omega_near)]
+    xrun [hB, se_ofNat (show oA l < 2 ^ 31 by omega_arith)]
     all_goals rfl) rfl) fun s₁ ⟨⟨r11, r8, me⟩, k₁⟩ => ?_
   have hsep : ∀ m m' : Mem, Outside (off P (slot l.W aAcc)) 0 (8 * (l.W + 1)) m m' → ∀ j < l.L,
       word m' (off (off P (slot l.W aAcc)) (oA l)) (l.off j) = word m (off (off P (slot l.W aAcc)) (oA l)) (l.off j) :=
     fun m m' ho j hj => by
     rw [word_off m' (off P (slot l.W aAcc)) (oA l) (l.off j), word_off m (off P (slot l.W aAcc)) (oA l) (l.off j)]
     have := hF j hj
-    exact ho.word (.inr (by omega_near)) (by unfold slot at *; omega_near)
+    exact ho.word (.inr (by omega_arith)) (by unfold slot at *; omega_arith)
   rw [WP.block_append_iff]
   refine WP.mono (to64_ok r11 r8 (fun j hj => by
       have := hF j hj
-      rw [k₁.2.1, k₁.2.2, off_off, AmmSym.off_add]; exact hs.ld (by omega_near))
-    (fun w hw => by rw [k₁.2.2, AmmSym.off_add]; exact hs.st (by omega_near))
-    (fun j hj => by rw [me, word_off]; exact hL j hj) (by omega_near) hsep) fun s₂ ⟨hw₂, ho₂, k₂, _⟩ => ?_
+      rw [k₁.2.1, k₁.2.2, off_off, AmmSym.off_add]; exact hs.ld (by omega_arith))
+    (fun w hw => by rw [k₁.2.2, AmmSym.off_add]; exact hs.st (by omega_arith))
+    (fun j hj => by rw [me, word_off]; exact hL j hj) (by omega_arith) hsep) fun s₂ ⟨hw₂, ho₂, k₂, _⟩ => ?_
   have hlv : VG.Proof.Bignum.Amm52.lval (fun j => (limbsAt l s₁.mem (off (off P (slot l.W aAcc)) (oA l)) j).toNat) l.L =
       val52 l s.mem (off P (slot l.W aAcc)) (oA l) := VG.Proof.Bignum.Amm52.lval_congr fun j hj => by
     simp only [limbsAt, hj, ↓reduceIte]
@@ -262,13 +261,13 @@ theorem finBlock_ok (hl : PubOk l) {s : State} {P : Addr} {Z : Nat} (hs : Scr s 
   rw [hlv] at hw₂
   rw [me] at ho₂
   have ho₂' : Outside P (slot l.W aAcc) (8 * (l.W + 1)) s.mem s₂.mem :=
-    AmmSym.Outside.rebase ho₂ (by unfold slot at *; omega_near) (by unfold slot at *; omega_near)
+    AmmSym.Outside.rebase ho₂ (by unfold slot at *; omega_arith) (by unfold slot at *; omega_arith)
   have hh : ∀ i < 32, word s₂.mem P (8 * i) = word s.mem P (8 * i) := fun i hi =>
-    ho₂'.word (.inl (hHdr i hi)) (by have := hHdr i hi; omega_near)
+    ho₂'.word (.inl (hHdr i hi)) (by have := hHdr i hi; omega_arith)
   have hdi₂ : s₂.gpr .rdi = P := by rw [k₂.gpr (by decide), k₁.gpr (by decide)]; exact hdi
   have hj : ∀ j < 8, arr l j < 2 ^ 31 := fun j hj => by
     have := VG.Proof.Bignum.slot_le (w := l.W) hj
-    show slot l.W j < 2 ^ 31; unfold slot VG.Impl.Bignum.hdrBytes at *; omega_near
+    show slot l.W j < 2 ^ 31; unfold slot VG.Impl.Bignum.hdrBytes at *; omega_arith
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rbx, .r10, .r12, .rsi] (Q := fun t =>
     t.gpr .rbx = off P (slot l.W aY) ∧ t.gpr .r10 = off P (slot l.W aN) ∧
       t.gpr .r12 = BitVec.ofNat 64 l.W ∧ t.gpr .rsi = off P (slot l.W aTmp) ∧ t.mem = s₂.mem) (by
@@ -279,7 +278,7 @@ theorem finBlock_ok (hl : PubOk l) {s : State} {P : Addr} {Z : Nat} (hs : Scr s 
     all_goals first | rfl | (apply BitVec.eq_of_toNat_eq
                              simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
                              have := hl.area.2.2.2.2.2.2.2.2.2.2.2
-                             rw [Nat.mod_eq_of_lt (a := l.W) (by omega_near), Nat.mod_eq_of_lt (a := l.W) (by omega_near)])) rfl)
+                             rw [Nat.mod_eq_of_lt (a := l.W) (by omega_arith), Nat.mod_eq_of_lt (a := l.W) (by omega_arith)])) rfl)
     fun t ⟨⟨bx, r10, r12, si, me₃⟩, k₃⟩ => ?_
   refine ⟨fun hV => ?_, by rw [me₃]; exact ho₂', by rw [k₃.gpr (by decide), k₂.gpr (by decide)]; exact r8,
     bx, r10, r12, si, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
@@ -301,7 +300,7 @@ theorem fin_ok (hl : PubOk l) {s : State} {P : Addr} {Z N : Nat} (hs : Scr s P Z
         s.mem t.mem ∧ t.gpr .rdi = P ∧ VG.Proof.MlKem.X86_64.Keep VG.Proof.Bignum.X86_64.mmRegs s t := by
   obtain ⟨b1, b2⟩ := hl.area2
   have a12 := hl.area.2.2.2.2.2.2.2.2.2.2.2
-  have hn : P.toNat + slot l.W 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega_near
+  have hn : P.toNat + slot l.W 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
   have lA := VG.Proof.Bignum.slot_le (w := l.W) (show aAcc < 8 by decide)
   have lT := VG.Proof.Bignum.slot_le (w := l.W) (show aTmp < 8 by decide)
   have lY := VG.Proof.Bignum.slot_le (w := l.W) (show aY < 8 by decide)
@@ -318,18 +317,18 @@ theorem fin_ok (hl : PubOk l) {s : State} {P : Addr} {Z N : Nat} (hs : Scr s P Z
     fun s₁ ⟨hacc, ho₁, r8, bx, r10, r12, si, k₁⟩ => ?_)
   have hsW₁ : Scr s₁ P (slot l.W 8) := hsW.congr k₁.2.2
   have hN₁ : VG.Proof.Bignum.wv s₁.mem P (slot l.W aN) l.W = N := by
-    rw [ho₁.wv (by rcases sAN with h | h <;> omega_near) (by omega_near)]; exact hN
-  refine WP.seq (WP.mono (VG.Proof.Bignum.X86_64.subMod_ok hsW₁ r8 r10 si r12 (by omega_near) (by omega_near)
-      (by omega_near) (by omega_near) (by omega_near) (by omega_near) (by omega_near)) fun s₂ ⟨c, lt, hbp, hlt, hD₂, ho₂, k₂⟩ => ?_)
+    rw [ho₁.wv (by rcases sAN with h | h <;> omega_arith) (by omega_arith)]; exact hN
+  refine WP.seq (WP.mono (VG.Proof.Bignum.X86_64.subMod_ok hsW₁ r8 r10 si r12 (by omega_arith) (by omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun s₂ ⟨c, lt, hbp, hlt, hD₂, ho₂, k₂⟩ => ?_)
   have hsW₂ := hsW₁.congr k₂.2.2
   refine WP.mono (VG.Proof.Bignum.X86_64.selectAcc_ok hsW₂ ((k₂.gpr (by decide)).trans r8)
     ((k₂.gpr (by decide)).trans si) ((k₂.gpr (by decide)).trans bx) ((k₂.gpr (by decide)).trans r12) hbp
-    (by omega_near) (by omega_near) (eo := slot l.W aY) (by omega_near) (by omega_near) (by omega_near) (by omega_near) (by omega_near))
+    (by omega_arith) (by omega_arith) (eo := slot l.W aY) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun t ⟨hv, ho₃, k₃⟩ => ?_
   refine ⟨fun hV => ?_, ?_, ?_, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   · have hacc := hacc (by rw [hN]; exact hV)
     have hA₂ : VG.Proof.Bignum.wv s₂.mem P (slot l.W aAcc) l.W = VG.Proof.Bignum.wv s₁.mem P (slot l.W aAcc) l.W :=
-      ho₂.wv (by omega_near) (by omega_near)
+      ho₂.wv (by omega_arith) (by omega_arith)
     rw [VG.Proof.Bignum.wv] at hacc
     rw [hN₁] at hD₂
     have hX := VG.Proof.Bignum.wv_lt s.mem P (slot l.W aN) l.W
@@ -345,9 +344,9 @@ theorem fin_ok (hl : PubOk l) {s : State} {P : Addr} {Z N : Nat} (hs : Scr s P Z
       (List.mem_singleton_self _)).append (Frm.of_outside ho₃ (List.mem_singleton_self _)))).widen fun r hr => ?_
     simp only [List.mem_append, List.mem_singleton] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., by simp only; omega_near⟩
-    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by simp only; omega_near⟩
-    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega_near⟩
+    · exact ⟨_, List.mem_cons_self .., by simp only; omega_arith⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by simp only; omega_arith⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega_arith⟩
   · rw [k₃.gpr (by decide), k₂.gpr (by decide), k₁.gpr (by decide)]; exact hdi
 
 /-! ## The exponentiation by 65537 -/
@@ -364,7 +363,7 @@ theorem mod_of (hl : PubOk l) {m : Mem} {B : Addr} {N : Nat} {minv : BitVec 64}
     fun t ht => hk t ht, Nat.mod_lt _ (by decide), ?_, ?_⟩
   · simp only [limb]
     have hl0 : limbN N 0 < 2 ^ 52 := Nat.mod_lt _ (by decide)
-    rw [hN 0 (by omega_near), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans hl0 (by decide))]
+    rw [hN 0 (by omega_arith), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans hl0 (by decide))]
     have h1 : (N % 2 ^ 64 * minv.toNat + 1) % 2 ^ 52 = 0 :=
       Nat.mod_eq_zero_of_dvd (Nat.dvd_trans (Nat.pow_dvd_pow 2 (by decide : 52 ≤ 64)) (Nat.dvd_of_mod_eq_zero hinv))
     have e1 : N % 2 ^ 64 % 2 ^ 52 = N % 2 ^ 52 := Nat.mod_mod_of_dvd _ (by decide)
@@ -376,9 +375,9 @@ theorem mod_of (hl : PubOk l) {m : Mem} {B : Addr} {N : Nat} {minv : BitVec 64}
     rw [e2, key, Nat.mod_mod, Nat.mod_mod]
     exact h1
   · have : 4 * 2 ^ (64 * l.W) ≤ 2 ^ (52 * l.S) := by
-      rw [show 4 * 2 ^ (64 * l.W) = 2 ^ (64 * l.W + 2) by rw [Nat.pow_add]; omega_near]
-      exact AmmSym.pow2_le (by omega_near)
-    omega_near
+      rw [show 4 * 2 ^ (64 * l.W) = 2 ^ (64 * l.W + 2) by rw [Nat.pow_add]; omega_arith]
+      exact AmmSym.pow2_le (by omega_arith)
+    omega_arith
 
 /-- A change within ranges that a list of ranges covers. -/
 theorem Frm.cover {P : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm P rs m m')
@@ -398,7 +397,7 @@ theorem expAll_blocks {W x : Nat} (hx : ∀ r ∈ VG.Proof.Bignum.expAll W, x < 
   have h6 := hx _ (mem aY (by simp))
   have h7 := hx _ (mem aOne (by simp))
   simp only [slot, aAcc, aTmp, aXm, aY, aOne] at *
-  omega_near
+  omega_arith
 
 /-- `exp65537`: `aY := x^65537 mod m` (as `x^(2^16) x`) for the input `x < m`, when `R2 = R² mod m`. -/
 theorem exp65537_ok (hl : PubOk l) {a : State} {P : Addr} {Z N X R : Nat} {minv : BitVec 64}
@@ -417,10 +416,10 @@ theorem exp65537_ok (hl : PubOk l) {a : State} {P : Addr} {Z N X R : Nat} {minv 
   obtain ⟨b1, b2⟩ := hl.area2
   have hoA : oA l = 24 * (l.W + 2) := rfl
   have hs := hg.scr
-  have hn : P.toNat + slot l.W 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega_near
-  have hS8 : slot l.W 8 = slot l.W aAcc + 48 * (l.W + 2) := by unfold slot aAcc; omega_near
-  have hSX : slot l.W aX + 8 * (l.W + 2) ≤ slot l.W aAcc := by unfold slot aX aAcc; omega_near
-  have hSN : slot l.W aN + 8 * (l.W + 2) ≤ slot l.W aAcc := by unfold slot aN aAcc; omega_near
+  have hn : P.toNat + slot l.W 8 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
+  have hS8 : slot l.W 8 = slot l.W aAcc + 48 * (l.W + 2) := by unfold slot aAcc; omega_arith
+  have hSX : slot l.W aX + 8 * (l.W + 2) ≤ slot l.W aAcc := by unfold slot aX aAcc; omega_arith
+  have hSN : slot l.W aN + 8 * (l.W + 2) ≤ slot l.W aAcc := by unfold slot aN aAcc; omega_arith
   have hHdr : ∀ i < 32, 8 * i + 8 ≤ slot l.W aAcc := fun i hi => VG.Proof.Bignum.hdr_lt_slot l.W aAcc hi
   have hL := (conv_boundsN hl.amm).2.1
   have hNlt : N < 2 ^ (64 * l.W) := by rw [← hNa]; exact VG.Proof.Bignum.wv_lt _ _ _ _
@@ -435,38 +434,38 @@ theorem exp65537_ok (hl : PubOk l) {a : State} {P : Addr} {Z N X R : Nat} {minv 
   have lo₁ : ∀ e, e + 8 ≤ slot l.W aAcc → word s₁.mem P e = word a.mem P e := fun e he =>
     f₁.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact .inl (by simp only; omega_near)) (by omega_near)
+      rcases hr with rfl | rfl <;> exact .inl (by simp only; omega_arith)) (by omega_arith)
   have hdi₁ : s₁.gpr .rdi = P := (k₁.gpr (by decide)).trans hg.rdi
   have hxv : VG.Proof.Bignum.wv s₁.mem (off P (slot l.W aX)) 0 l.W = X := by
     rw [wv_off, Nat.add_zero, ← hXa]
-    exact VG.Proof.Bignum.wv_congr fun i hi => lo₁ _ (by omega_near)
+    exact VG.Proof.Bignum.wv_congr fun i hi => lo₁ _ (by omega_arith)
   have sep : ∀ e, e + 8 ≤ slot l.W aAcc → ∀ m m' : Mem,
       Outside (off P (slot l.W aAcc)) (oA l) (2 * l.NB + 8) m m' → word m' P e = word m P e :=
-    fun e he m m' f => low_word f hn (by omega_near) he
+    fun e he m m' f => low_word f hn (by omega_arith) he
   have e : Env l s₁ (off P (slot l.W aAcc)) P (off P (slot l.W aX)) N (minv.toNat % 2 ^ 52) :=
-    ⟨(hs.congr k₁.2.2).sub (by omega_near) (by omega_near),
+    ⟨(hs.congr k₁.2.2).sub (by omega_arith) (by omega_arith),
       mod_of hl vN hNlt vK (by
         have := hinv
-        rw [← VG.Proof.Bignum.wv_mod64 a.mem P (slot l.W aN) (n := l.W) (by omega_near), hNa] at this
+        rw [← VG.Proof.Bignum.wv_mod64 a.mem P (slot l.W aN) (n := l.W) (by omega_arith), hNa] at this
         exact this),
       hodd, by
-        have : 2 ^ kb l ≤ 2 ^ (64 * (l.W - 1)) := AmmSym.pow2_le (by omega_near)
-        have : 2 ^ kb l < 2 ^ kb l * 2 := by have := Nat.two_pow_pos (kb l); omega_near
-        omega_near,
+        have : 2 ^ kb l ≤ 2 ^ (64 * (l.W - 1)) := AmmSym.pow2_le (by omega_arith)
+        have : 2 ^ kb l < 2 ^ kb l * 2 := by have := Nat.two_pow_pos (kb l); omega_arith
+        omega_arith,
       rfl, by
         have := VG.Proof.Bignum.slot_le (w := l.W) (show aX < 8 by decide)
-        show slot l.W aX < 2 ^ 31; unfold slot VG.Impl.Bignum.hdrBytes at *; omega_near,
-      fun i hi => by rw [k₁.2.1, k₁.2.2, AmmSym.off_add]; exact hs.ld (by omega_near),
-      fun m m' f i hi => by rw [word_off, word_off]; exact sep _ (by omega_near) m m' f⟩
+        show slot l.W aX < 2 ^ 31; unfold slot VG.Impl.Bignum.hdrBytes at *; omega_arith,
+      fun i hi => by rw [k₁.2.1, k₁.2.2, AmmSym.off_add]; exact hs.ld (by omega_arith),
+      fun m m' f i hi => by rw [word_off, word_off]; exact sep _ (by omega_arith) m m' f⟩
   have hA : ∀ j < l.L, limb l s₁.mem (off P (slot l.W aAcc)) (oA l) j < 2 ^ 52 := fun j hj => by
     simp only [limb]; rw [vA j hj]; exact limbN_lt64 _ _
-  have hAv : val52 l s₁.mem (off P (slot l.W aAcc)) (oA l) = R := val52_of vA (by omega_near)
-  refine WP.mono (vec_ok hl e b₁ hdi₁ r12₁ hA (by omega_near)) fun s₂ ⟨la₂, vv₂, o₂, k₂, x₂⟩ => ?_
+  have hAv : val52 l s₁.mem (off P (slot l.W aAcc)) (oA l) = R := val52_of vA (by omega_arith)
+  refine WP.mono (vec_ok hl e b₁ hdi₁ r12₁ hA (by omega_arith)) fun s₂ ⟨la₂, vv₂, o₂, k₂, x₂⟩ => ?_
   -- Back to words.
   have lo₂ : ∀ e, e + 8 ≤ slot l.W aAcc → word s₂.mem P e = word a.mem P e := fun e he => by
     rw [sep e he _ _ o₂, lo₁ e he]
   have hN₂ : VG.Proof.Bignum.wv s₂.mem P (slot l.W aN) l.W = N := by
-    rw [← hNa]; exact VG.Proof.Bignum.wv_congr fun i hi => lo₂ _ (by omega_near)
+    rw [← hNa]; exact VG.Proof.Bignum.wv_congr fun i hi => lo₂ _ (by omega_arith)
   have kk := k₁.trans k₂
   have hfmx : (VG.Impl.Bignum.X86_64.seqs (fin l)).allInstrs (fun i => !loadsMxcsr i) = true := by
     rcases hl with rfl | rfl | rfl <;> decide +kernel
@@ -476,23 +475,23 @@ theorem exp65537_ok (hl : PubOk l) {a : State} {P : Addr} {Z N X R : Nat} {minv 
     rw [fd.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       have := VG.Proof.Bignum.slot_le (w := l.W) (show aAcc < 8 by decide)
-      rcases hr with rfl | rfl | rfl <;> exact .inl (by simp only [slot, aAcc, aTmp, aY] at *; omega_near)) (by omega_near), lo₂ e he]
+      rcases hr with rfl | rfl | rfl <;> exact .inl (by simp only [slot, aAcc, aTmp, aY] at *; omega_arith)) (by omega_arith), lo₂ e he]
   refine ⟨⟨hs.congr (kk.trans kd).2.2, rdid, ⟨by rw [lod _ (hHdr _ (by decide))]; exact hg.hdr.hw,
       by rw [lod _ (hHdr _ (by decide))]; exact hg.hdr.hminv,
-      fun j hj => by rw [lod _ (hHdr _ (by unfold sArr; omega_near))]; exact hg.hdr.harr j hj⟩⟩, fun hX hq => ?_, ?_,
+      fun j hj => by rw [lod _ (hHdr _ (by unfold sArr; omega_arith))]; exact hg.hdr.harr j hj⟩⟩, fun hX hq => ?_, ?_,
     (kk.trans kd).mono (by decide), by rw [mxd, x₂, VG.Proof.Bignum.X86_64.mx_ffff, x₁]⟩
   · obtain ⟨lt, cg⟩ := vv₂ (by rw [hxv]; exact hX)
     rw [vd lt, cg (by rw [hAv]; exact hq), hxv]
     have he' : ex = 2 ^ 16 + 1 := hex.trans (by decide)
     generalize (2 : Nat) ^ 16 = E at he' ⊢
     rw [he', Nat.pow_succ]
-  · have f₂ := Frm.of_outside_off (B := P) o₂ (by unfold slot at *; omega_near) (by unfold slot at *; omega_near)
+  · have f₂ := Frm.of_outside_off (B := P) o₂ (by unfold slot at *; omega_arith) (by unfold slot at *; omega_arith)
     refine ((Frm.cover f₁ fun x hx r hr => ?_).trans (Frm.cover f₂ fun x hx r hr => ?_)).trans
       (Frm.cover fd fun x hx r hr => ?_) <;>
     · have hb := expAll_blocks hx
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       have := VG.Proof.Bignum.slot_le (w := l.W) (show aAcc < 8 by decide)
       simp only [slot, aAcc, aTmp, aXm, aY] at *
-      rcases hr with rfl | rfl | rfl <;> simp only <;> omega_near
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith
 
 end VG.Proof.Bignum.X86_64.Ifma.Pub
