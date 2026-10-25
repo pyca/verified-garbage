@@ -19,12 +19,12 @@ def artifacts : List Artifact := [
     stack := 3144
     verified := Proof.Sm4.X86_64.expandKey_framed },
   Spec.Sm4.ecbEncryptApi.artifact X86_64.target {
-    notes := ["Baseline x86-64: sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups."]
+    notes := ["Baseline x86-64: sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; round-key bytes are rearranged once before broadcast into the bitsliced planes."]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .encrypt)
     stack := 3144
     verified := Proof.Sm4.X86_64.ecb_framed .encrypt },
   Spec.Sm4.ecbDecryptApi.artifact X86_64.target {
-    notes := ["Baseline x86-64: sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups."]
+    notes := ["Baseline x86-64: sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; round-key bytes are rearranged once before broadcast into the bitsliced planes."]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (Impl.Sm4.X86_64.ecb .decrypt)
     stack := 3144
     verified := Proof.Sm4.X86_64.ecb_framed .decrypt },

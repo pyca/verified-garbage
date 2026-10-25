@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
 ///
-/// Baseline x86-64: sixteen counter blocks at a time, encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key schedule's table of round keys is built once per call, inline, and each batch is a call of `vg_sm4_crypt_prepared`.
+/// Baseline x86-64: sixteen counter blocks at a time, encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key schedule's table of round keys is built once per call, inline, rearranging each key word before broadcast, and each batch is a call of `vg_sm4_crypt_prepared`.
 ///
 /// # Safety
 ///
@@ -53,13 +53,6 @@ add rsi, 1024
 movabs r15, 16
 20:
 mov rax, QWORD PTR [rdi]
-mov rbx, rax
-mov rcx, rax
-mov rbp, rax
-mov r10, rax
-mov r11, rax
-mov r12, rax
-mov r13, rax
 movabs r14, 4294901760
 mov QWORD PTR [r9+8], r14
 movabs r14, 280375465148160
@@ -79,55 +72,6 @@ and r14, QWORD PTR [r9+8]
 xor rax, r14
 ror r14, 48
 xor rax, r14
-mov r14, rbx
-shr r14, 16
-xor r14, rbx
-and r14, QWORD PTR [r9+8]
-xor rbx, r14
-ror r14, 48
-xor rbx, r14
-mov r14, rcx
-shr r14, 16
-xor r14, rcx
-and r14, QWORD PTR [r9+8]
-xor rcx, r14
-ror r14, 48
-xor rcx, r14
-mov r14, rbp
-shr r14, 16
-xor r14, rbp
-and r14, QWORD PTR [r9+8]
-xor rbp, r14
-ror r14, 48
-xor rbp, r14
-mov r14, r10
-shr r14, 16
-xor r14, r10
-and r14, QWORD PTR [r9+8]
-xor r10, r14
-ror r14, 48
-xor r10, r14
-mov r14, r11
-shr r14, 16
-xor r14, r11
-and r14, QWORD PTR [r9+8]
-xor r11, r14
-ror r14, 48
-xor r11, r14
-mov r14, r12
-shr r14, 16
-xor r14, r12
-and r14, QWORD PTR [r9+8]
-xor r12, r14
-ror r14, 48
-xor r12, r14
-mov r14, r13
-shr r14, 16
-xor r14, r13
-and r14, QWORD PTR [r9+8]
-xor r13, r14
-ror r14, 48
-xor r13, r14
 mov r14, rax
 shr r14, 8
 xor r14, rax
@@ -135,55 +79,13 @@ and r14, QWORD PTR [r9+16]
 xor rax, r14
 ror r14, 56
 xor rax, r14
-mov r14, rbx
-shr r14, 8
-xor r14, rbx
-and r14, QWORD PTR [r9+16]
-xor rbx, r14
-ror r14, 56
-xor rbx, r14
-mov r14, rcx
-shr r14, 8
-xor r14, rcx
-and r14, QWORD PTR [r9+16]
-xor rcx, r14
-ror r14, 56
-xor rcx, r14
-mov r14, rbp
-shr r14, 8
-xor r14, rbp
-and r14, QWORD PTR [r9+16]
-xor rbp, r14
-ror r14, 56
-xor rbp, r14
-mov r14, r10
-shr r14, 8
-xor r14, r10
-and r14, QWORD PTR [r9+16]
-xor r10, r14
-ror r14, 56
-xor r10, r14
-mov r14, r11
-shr r14, 8
-xor r14, r11
-and r14, QWORD PTR [r9+16]
-xor r11, r14
-ror r14, 56
-xor r11, r14
-mov r14, r12
-shr r14, 8
-xor r14, r12
-and r14, QWORD PTR [r9+16]
-xor r12, r14
-ror r14, 56
-xor r12, r14
-mov r14, r13
-shr r14, 8
-xor r14, r13
-and r14, QWORD PTR [r9+16]
-xor r13, r14
-ror r14, 56
-xor r13, r14
+mov rbx, rax
+mov rcx, rax
+mov rbp, rax
+mov r10, rax
+mov r11, rax
+mov r12, rax
+mov r13, rax
 mov r14, rax
 shr r14, 1
 xor r14, rbx
@@ -374,13 +276,6 @@ mov QWORD PTR [rsi+48], r12
 mov QWORD PTR [rsi+56], r13
 add rsi, 64
 mov rax, QWORD PTR [rdi]
-mov rbx, rax
-mov rcx, rax
-mov rbp, rax
-mov r10, rax
-mov r11, rax
-mov r12, rax
-mov r13, rax
 movabs r14, 4294901760
 mov QWORD PTR [r9+8], r14
 movabs r14, 280375465148160
@@ -400,55 +295,6 @@ and r14, QWORD PTR [r9+8]
 xor rax, r14
 ror r14, 48
 xor rax, r14
-mov r14, rbx
-shr r14, 16
-xor r14, rbx
-and r14, QWORD PTR [r9+8]
-xor rbx, r14
-ror r14, 48
-xor rbx, r14
-mov r14, rcx
-shr r14, 16
-xor r14, rcx
-and r14, QWORD PTR [r9+8]
-xor rcx, r14
-ror r14, 48
-xor rcx, r14
-mov r14, rbp
-shr r14, 16
-xor r14, rbp
-and r14, QWORD PTR [r9+8]
-xor rbp, r14
-ror r14, 48
-xor rbp, r14
-mov r14, r10
-shr r14, 16
-xor r14, r10
-and r14, QWORD PTR [r9+8]
-xor r10, r14
-ror r14, 48
-xor r10, r14
-mov r14, r11
-shr r14, 16
-xor r14, r11
-and r14, QWORD PTR [r9+8]
-xor r11, r14
-ror r14, 48
-xor r11, r14
-mov r14, r12
-shr r14, 16
-xor r14, r12
-and r14, QWORD PTR [r9+8]
-xor r12, r14
-ror r14, 48
-xor r12, r14
-mov r14, r13
-shr r14, 16
-xor r14, r13
-and r14, QWORD PTR [r9+8]
-xor r13, r14
-ror r14, 48
-xor r13, r14
 mov r14, rax
 shr r14, 8
 xor r14, rax
@@ -456,55 +302,13 @@ and r14, QWORD PTR [r9+16]
 xor rax, r14
 ror r14, 56
 xor rax, r14
-mov r14, rbx
-shr r14, 8
-xor r14, rbx
-and r14, QWORD PTR [r9+16]
-xor rbx, r14
-ror r14, 56
-xor rbx, r14
-mov r14, rcx
-shr r14, 8
-xor r14, rcx
-and r14, QWORD PTR [r9+16]
-xor rcx, r14
-ror r14, 56
-xor rcx, r14
-mov r14, rbp
-shr r14, 8
-xor r14, rbp
-and r14, QWORD PTR [r9+16]
-xor rbp, r14
-ror r14, 56
-xor rbp, r14
-mov r14, r10
-shr r14, 8
-xor r14, r10
-and r14, QWORD PTR [r9+16]
-xor r10, r14
-ror r14, 56
-xor r10, r14
-mov r14, r11
-shr r14, 8
-xor r14, r11
-and r14, QWORD PTR [r9+16]
-xor r11, r14
-ror r14, 56
-xor r11, r14
-mov r14, r12
-shr r14, 8
-xor r14, r12
-and r14, QWORD PTR [r9+16]
-xor r12, r14
-ror r14, 56
-xor r12, r14
-mov r14, r13
-shr r14, 8
-xor r14, r13
-and r14, QWORD PTR [r9+16]
-xor r13, r14
-ror r14, 56
-xor r13, r14
+mov rbx, rax
+mov rcx, rax
+mov rbp, rax
+mov r10, rax
+mov r11, rax
+mov r12, rax
+mov r13, rax
 mov r14, rax
 shr r14, 1
 xor r14, rbx

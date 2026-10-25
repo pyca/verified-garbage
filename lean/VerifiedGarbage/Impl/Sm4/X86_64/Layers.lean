@@ -178,10 +178,13 @@ def keySel (h j : Nat) : List Instr :=
    else [andS (q j) oddSlot, movR t0 (q j), rorI t0 8]) ++
   [xorR (q j) t0, rorI (q j) 32] ++ swapIn (q j) t0 grpSlot 16
 
-/-- The planes of round key `2 m + h`, from the word at `rdi`. -/
+/-- The planes of round key `2 m + h`, from the word at `rdi`.
+Rearrange its bytes once, then broadcast to the eight inputs of `ortho`. -/
 def keyLoad (h : Nat) : List Instr :=
-  [.mov (q 0) (.mem (at_ .rdi 0))] ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++
-  setMasks bsMasks ++ zip1 ++ zip2 ++ ortho ++ (List.range 8).flatMap (keySel h)
+  [.mov (q 0) (.mem (at_ .rdi 0))] ++ setMasks bsMasks ++
+  swapIn (q 0) t0 1 16 ++ swapIn (q 0) t0 2 8 ++
+  ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++
+  ortho ++ (List.range 8).flatMap (keySel h)
 
 /-- Store the planes to the entry at `rsi`. -/
 def keyStore : List Instr := (List.range 8).map fun j => .store (slotAt .rsi j) (q j)

@@ -3,3 +3,4 @@ family = "Ciphers"
 specs = ["Sm4", "Cbc"]
 modules = ["src/sm4_cbc.rs"]
 asm = ["sm4_cbc"]
+optimized = { x86_64 = "Rearrange round-key bytes once before bitslice broadcast" }

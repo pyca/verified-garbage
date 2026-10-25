@@ -1303,7 +1303,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ Rearrange round-key bytes once before bitslice broadcast</td>
 
 <td>✅</td>
 
@@ -1323,7 +1323,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ Rearrange round-key bytes once before bitslice broadcast</td>
 
 <td>✅</td>
 
@@ -1343,7 +1343,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ Rearrange round-key bytes once before bitslice broadcast</td>
 
 <td>✅</td>
 
@@ -1363,7 +1363,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ Rearrange round-key bytes once before bitslice broadcast</td>
 
 <td>✅</td>
 
@@ -1383,7 +1383,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ Rearrange round-key bytes once before bitslice broadcast</td>
 
 <td>✅</td>
 
@@ -1549,7 +1549,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ PCLMULQDQ, VPCLMULQDQ, AVX2; GHASH one block at a time with PCLMULQDQ, eight with VPCLMULQDQ</td>
+<td>✅ PCLMULQDQ, VPCLMULQDQ, AVX2; GHASH one block at a time with PCLMULQDQ, eight with VPCLMULQDQ; SM4 key-byte rearrangement before broadcast</td>
 
 <td>✅ AES, PMULL; GHASH with PMULL</td>
 
