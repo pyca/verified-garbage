@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCallPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyTopTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifySat
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCorrect
 
 @[expose] public section
 

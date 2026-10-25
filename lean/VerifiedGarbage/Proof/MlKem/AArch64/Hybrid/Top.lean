@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.MatrixTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.MatrixTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 
 /-!
 # The hashing encapsulation's contract and constant time

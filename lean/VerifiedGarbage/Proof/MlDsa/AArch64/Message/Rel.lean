@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.DecideAt
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: two runs

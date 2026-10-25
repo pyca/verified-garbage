@@ -1,10 +1,9 @@
 module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Absorb
 
-import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import Mathlib.Tactic.NormNum.Pow
 import Mathlib.Tactic.NormNum.OfScientific
@@ -41,8 +40,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
+public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
 
 /-!
 # The checks of the hashing encapsulation's first phase and tail

@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 
 /-!
 # CBC encryption on x86-64 that updates the chaining value, for any core

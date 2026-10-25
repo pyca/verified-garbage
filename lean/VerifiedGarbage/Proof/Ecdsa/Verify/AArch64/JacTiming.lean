@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming

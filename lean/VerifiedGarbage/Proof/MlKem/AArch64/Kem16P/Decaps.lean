@@ -3,22 +3,16 @@ module
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Encrypt
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Noise
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 
 /-! # The decapsulation computing PRF outputs in the matrix is correct
 

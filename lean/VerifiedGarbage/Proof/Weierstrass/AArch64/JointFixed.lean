@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -10,6 +9,10 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntry
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section
 

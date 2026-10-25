@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
 import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Prefix
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Permute
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # The tail of the key generation hashing `ek` during the matrix
 

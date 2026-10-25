@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgRows
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 
 /-! # Key generation hashing `ek` during the matrix: its invariant
 

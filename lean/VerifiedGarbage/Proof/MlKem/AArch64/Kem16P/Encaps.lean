@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 
 /-! # The encapsulation computing PRF outputs in the matrix is correct
 

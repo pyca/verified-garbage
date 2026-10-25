@@ -4,12 +4,12 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgOps
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrix
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DotReady
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgCommon
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTables
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenFinish
@@ -23,7 +23,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
-import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
@@ -42,6 +41,9 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenRow
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
 
 /-! # The 16-bit key generation's steps
 

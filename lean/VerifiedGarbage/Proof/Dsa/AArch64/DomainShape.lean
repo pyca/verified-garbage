@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Dsa.DomainWidths
 import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.Parity
 
 /-! # Functional correctness of the public DSA domain-shape check -/
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.JacMadd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops

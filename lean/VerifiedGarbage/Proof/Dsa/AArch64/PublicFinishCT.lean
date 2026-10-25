@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicPower
 meta import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
-import VerifiedGarbage.Proof.Dsa.AArch64.Power
 
 /-! # Public exponent bytes across the DSA calling convention -/
 

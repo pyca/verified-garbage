@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
 import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
 import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Row
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPair
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Output
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset

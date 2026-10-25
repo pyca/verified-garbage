@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 
 /-!
 # Ed448 verification on AArch64: the points compared

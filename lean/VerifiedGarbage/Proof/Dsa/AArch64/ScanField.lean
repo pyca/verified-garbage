@@ -14,7 +14,6 @@ public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.Significant
 
 /-! # Scanning modulus buffers through the saved DSA fields -/
 

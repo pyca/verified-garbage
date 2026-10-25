@@ -23,6 +23,8 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTSquare
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTSquare
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
 
 /-! # Constant time of the padded folded exponentiation and its fixed suffix -/
 

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedTopTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedSat
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedArtifactDepth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 
 @[expose] public section
 

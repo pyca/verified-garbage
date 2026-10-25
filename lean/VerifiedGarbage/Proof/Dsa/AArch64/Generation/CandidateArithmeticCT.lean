@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
 
 /-! Complete candidate and generator-exponent arithmetic has a public trace. -/

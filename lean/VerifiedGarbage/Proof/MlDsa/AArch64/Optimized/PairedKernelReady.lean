@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFirstLoop
 import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `PairedFinalReturn.lean` -/

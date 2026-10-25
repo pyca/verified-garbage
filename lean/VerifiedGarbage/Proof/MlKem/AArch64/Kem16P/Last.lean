@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Squeeze
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Prf
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FastFinish
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Result
@@ -12,7 +11,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStart
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Restore
 

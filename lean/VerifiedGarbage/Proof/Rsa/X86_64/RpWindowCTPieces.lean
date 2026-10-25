@@ -15,6 +15,8 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowPowers
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
 
 /-! # Recovery windows: constant time of selection and arithmetic -/
 

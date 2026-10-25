@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.URow
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.VRest
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode

@@ -22,6 +22,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
 import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTPieces
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTPieces
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
 
 /-! # Constant time of a folded two-bit window -/
 

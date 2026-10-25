@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
-import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA

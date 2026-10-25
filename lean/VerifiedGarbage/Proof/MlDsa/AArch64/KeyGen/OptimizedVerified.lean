@@ -14,8 +14,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSat
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPrims
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedEntry
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 
 @[expose] public section
 

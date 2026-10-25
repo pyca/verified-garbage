@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
 
 @[expose] public section
 

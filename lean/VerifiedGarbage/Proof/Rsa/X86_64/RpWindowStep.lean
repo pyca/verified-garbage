@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowPowers
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Rsa.RecoverMath
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
@@ -9,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.CrtExp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpExp
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
 
 /-! # Recovery windows: one pair of exponent bits -/
 

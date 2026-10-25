@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
 import VerifiedGarbage.Proof.Dsa.AArch64.Load
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Dsa.AArch64.Power
 
 /-! # Public exponentiation through Montgomery encoding and decoding
 

@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-!
 # ML-DSA on AArch64, `sign_message`: constant time

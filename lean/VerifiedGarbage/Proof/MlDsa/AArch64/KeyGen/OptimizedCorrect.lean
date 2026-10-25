@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRest
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 
 @[expose] public section
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 
 /-!
 # Code that keeps the IV's address in `ivX`

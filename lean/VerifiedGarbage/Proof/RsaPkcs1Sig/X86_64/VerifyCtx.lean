@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.TCB.X86_64.State
 import VerifiedGarbage.Proof.Bignum.X86_64.Words

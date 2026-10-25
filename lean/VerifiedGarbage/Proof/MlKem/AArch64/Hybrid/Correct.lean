@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 
 /-!

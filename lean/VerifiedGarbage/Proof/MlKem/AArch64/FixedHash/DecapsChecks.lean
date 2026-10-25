@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
 import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
@@ -19,6 +19,8 @@ meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
 meta import VerifiedGarbage.TCB.Axioms
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 
 /-! # The checks of the hashing decapsulation, for any permutation (as `KeyGenChecks`) -/
 @[expose] public section

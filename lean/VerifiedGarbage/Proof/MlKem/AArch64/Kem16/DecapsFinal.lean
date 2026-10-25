@@ -1,11 +1,11 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
 
@@ -44,6 +44,10 @@ public import Mathlib.Tactic.Attr.Core
 public import Mathlib.Tactic.ToAdditive
 public import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
+public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # The hashing decapsulation's contract and checks
 

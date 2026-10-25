@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRoots
 
 @[expose] public section

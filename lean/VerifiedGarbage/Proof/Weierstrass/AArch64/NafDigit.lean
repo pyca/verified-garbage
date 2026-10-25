@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 
 @[expose] public section
 

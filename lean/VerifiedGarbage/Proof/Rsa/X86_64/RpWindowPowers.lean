@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Rsa.RecoverMath
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
 
 /-! # Recovery windows: the four powers and their selection -/
 

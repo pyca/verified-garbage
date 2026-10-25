@@ -11,7 +11,6 @@ import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 
 /-! # Testing byte-aligned modulus bit lengths -/
 

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Last
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixPost
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!

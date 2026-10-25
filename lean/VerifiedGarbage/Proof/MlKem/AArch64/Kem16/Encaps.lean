@@ -1,11 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
-public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
+import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
@@ -13,6 +13,14 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
+public import Mathlib.Tactic.IntervalCases
+public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Bounds
+public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.TCB.Artifact
 
 /-! # The 16-bit hashing encapsulation's postcondition
 

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Rsa.AArch64.Div
 
 /-! # The generator's upper endpoint p−1 requires only a low-limb decrement -/
 

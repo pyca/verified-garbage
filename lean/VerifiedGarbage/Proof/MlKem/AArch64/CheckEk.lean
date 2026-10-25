@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLanes
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecInput
-import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLoop
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
