@@ -6,7 +6,7 @@
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `r4`–`r9` and `lr` in its existing working space. Montgomery multiplication scans eighteen packed 32-bit words, assembling each full product from four baseline 16-by-16 `mul` products. Fixed-offset rows keep `r10` and `r11` unchanged and `r12` as the workspace pointer. The accumulator is expanded to half-word digits for the existing mask-selected final subtraction. No stack or CPU extension is used.
+/// The function saves `r4`–`r9` and `lr` in its existing working space. Montgomery multiplication scans packed 32-bit words, assembling each full product from four baseline 16-by-16 `mul` products. Fixed-offset rows keep `r10` and `r11` unchanged and `r12` as the workspace pointer. The accumulator is expanded to half-word digits for the existing mask-selected final subtraction. No stack or CPU extension is used.
 ///
 /// # Safety
 ///
@@ -3192,7 +3192,7 @@ bx lr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `r4`–`r9` and `lr` in its existing working space. Montgomery multiplication scans eighteen packed 32-bit words, assembling each full product from four baseline 16-by-16 `mul` products. Fixed-offset rows keep `r10` and `r11` unchanged and `r12` as the workspace pointer. The accumulator is expanded to half-word digits for the existing mask-selected final subtraction. No stack or CPU extension is used.
+/// The function saves `r4`–`r9` and `lr` in its existing working space. Montgomery multiplication scans packed 32-bit words, assembling each full product from four baseline 16-by-16 `mul` products. Fixed-offset rows keep `r10` and `r11` unchanged and `r12` as the workspace pointer. The accumulator is expanded to half-word digits for the existing mask-selected final subtraction. No stack or CPU extension is used.
 ///
 /// # Safety
 ///
