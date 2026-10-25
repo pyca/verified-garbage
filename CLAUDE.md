@@ -613,7 +613,17 @@ python3 ci/lean_profile.py --by module --top 50   # the costliest modules
 python3 ci/lean_profile.py --module VerifiedGarbage.Proof.Sha256 --json
 python3 ci/lean_profile.py --tests                # with the known-answer tests
 python3 ci/check_lit_imports.py                   # checks evaluating code without its literal
+python3 ci/lean_closure.py rank                   # modules by what CI spends building them
+python3 ci/lean_closure.py rank --by decl         # declarations, likewise
 ```
+
+A proof's own time is not what CI spends on it: a module that the shards
+of a full rebuild share is built by each of them, and one that many changes
+reach is rebuilt by each run. `rank` weighs each module's (or declaration's)
+time by the times CI builds it per commit, replaying the last 200 commits
+of `main` through CI's plan (`--commits`), with its builds in a full
+rebuild beside it (two minutes; no builds): prefer its top rows to
+`lean_profile.py`'s when choosing what to make faster.
 
 A command that generates declarations (`materialize_code`, `taint_summary`,
 `run_cmd`) has no declaration range: its row is its line and the start of
