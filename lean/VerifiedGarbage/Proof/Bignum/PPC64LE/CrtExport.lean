@@ -54,7 +54,7 @@ theorem exportM2_ok {s : State} {BQ BX : Addr} {ZQ ZX wQ wX L : Nat} (hq : Scr s
     (h10 : s.gpr .r10 = off BQ (slot wQ 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wQ + 2)))
     (h23 : s.gpr .r23 = BX) (h27 : s.gpr .r27 = off BX (slot wX 0))
     (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2))) (hL : word s.mem BX oQLen = BitVec.ofNat 64 L)
-    (hL1 : 1 ≤ L) (hLq : L ≤ 8 * wQ) (hLx : L ≤ 8 * wX) (hZQ : slot wQ 8 ≤ ZQ) (hZX : slot wX 8 ≤ ZX)
+    (hL1 : 1 ≤ L) (hLq : L ≤ 8 * wQ) (hLx : L ≤ 8 * wX) (hZQ : slot wQ 24 ≤ ZQ) (hZX : slot wX 8 ≤ ZX)
     (hsep : ∀ x, ofs BX x < ZX → ZQ ≤ ofs BQ x) :
     WP isa exportM2 s fun t =>
       ((∀ i < L, t.mem (off BX (slot wX 1 + i)) = s.mem (off BQ (slot wQ 4 + (L - 1 - i)))) ∧
@@ -62,7 +62,7 @@ theorem exportM2_ok {s : State} {BQ BX : Addr} {ZQ ZX wQ wX L : Nat} (hq : Scr s
   have hnq := hq.nowrap
   have hnx := hx.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
-  have e4 := e wQ 4; have e8 := e wQ 8; have x1 := e wX 1; have x8 := e wX 8
+  have e4 := e wQ 4; have e8 := e wQ 24; have x1 := e wX 1; have x8 := e wX 8
   have hh : hdrBytes = 256 := rfl
   unfold exportM2
   refine WP.seq ?_

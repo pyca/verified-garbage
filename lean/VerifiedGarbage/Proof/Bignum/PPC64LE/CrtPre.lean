@@ -32,7 +32,7 @@ structure PF (s₀ : State) : Prop where
   pk : cpL s₀ < ck s₀
   q1 : 1 ≤ cqL s₀
   qk : cqL s₀ < ck s₀
-  room : slot (cwX s₀) 8 + slot (wsWords (cpL s₀)) 8 + slot (wsWords (cqL s₀)) 8 ≤ cZ s₀
+  room : slot (cwX s₀) 8 + slot (wsWords (cpL s₀)) 24 + slot (wsWords (cqL s₀)) 24 ≤ cZ s₀
   pq : wsWords (cpL s₀) + wsWords (cqL s₀) ≤ cwX s₀
   nw : (cS s₀).toNat + cZ s₀ ≤ 2 ^ 64
   out : Scr s₀ (s₀.gpr .r3) (ck s₀)
@@ -83,8 +83,8 @@ theorem pre_facts {s₀ : State} (h : fnContract.pre s₀) : PF s₀ := by
     rd_of_mem (L := (stackArg s₀ 7).toNat) (by rw [hrd]; simp) (Nat.le_of_eq hqil.symm) (BitVec.isLt _),
     fun i hi => Pub.ne_of_disjoint dQIS (Nat.le_of_lt (BitVec.isLt _)) i (by
       change i < (s₀.gpr .r10).toNat at hi; omega_arith)⟩
-  · show slot (2 * (((s₀.gpr .r6).toNat + 7) / 8)) 8 + slot (wsWords (s₀.gpr .r10).toNat) 8 +
-      slot (wsWords (stackArg s₀ 1).toNat) 8 ≤ (stackArg s₀ 9).toNat * 8
+  · show slot (2 * (((s₀.gpr .r6).toNat + 7) / 8)) 8 + slot (wsWords (s₀.gpr .r10).toNat) 24 +
+      slot (wsWords (stackArg s₀ 1).toNat) 24 ≤ (stackArg s₀ 9).toNat * 8
     unfold slot wsWords hdrBytes; omega_arith
   · show wsWords (s₀.gpr .r10).toNat + wsWords (stackArg s₀ 1).toNat ≤ 2 * (((s₀.gpr .r6).toNat + 7) / 8)
     unfold wsWords; omega_arith

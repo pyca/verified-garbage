@@ -42,7 +42,7 @@ theorem wv_low {m : Mem} {B : Addr} {d wA wX v : Nat} (h : wv m B d wX = v) (hv 
 space at `off BX oA` (the header's word `oB`) holds `P` in array 0 and
 `c^d mod P` in array 4. -/
 theorem phaseP_ok {s : State} {BX I D : Addr} {Z oA wX xj k L Pv oB oLen oD : Nat}
-    (hs : Scr s BX Z) (hA : oA + slot (wsWords L) 8 ≤ Z) (hXA : slot wX 8 ≤ oA)
+    (hs : Scr s BX Z) (hA : oA + slot (wsWords L) 24 ≤ Z) (hXA : slot wX 8 ≤ oA)
     (hwx : wsWords L ≤ wX) (hwX : wX < 2 ^ 31) (hxj : xj < 8)
     (h23 : s.gpr .r23 = BX) (h27 : s.gpr .r27 = off BX (slot wX 0))
     (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
@@ -58,7 +58,7 @@ theorem phaseP_ok {s : State} {BX I D : Addr} {Z oA wX xj k L Pv oB oLen oD : Na
       (Mont.val32 t.mem (off BX oA) (slot (wsWords L) 0) (2 * wsWords L) = Pv ∧
         Mont.val32 t.mem (off BX oA) (slot (wsWords L) 4) (2 * wsWords L) =
           Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem I k) ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
-        Outside BX oA (slot (wsWords L) 8) s.mem t.mem ∧
+        Outside BX oA (slot (wsWords L) 24) s.mem t.mem ∧
         t.gpr .r10 = off (off BX oA) (slot (wsWords L) 0) ∧ t.gpr .r21 = off (off BX oA) (slot (wsWords L) 0) ∧
         t.gpr .r29 = BitVec.ofNat 64 (8 * (wsWords L + 2)) ∧ t.gpr .r11 = BitVec.ofNat 64 (2 * wsWords L)) ∧
       Keep (([.r0, .r3, .r4, .r10, .r11, .r21, .r29] : List Reg) ++ powerRegs) s t := by

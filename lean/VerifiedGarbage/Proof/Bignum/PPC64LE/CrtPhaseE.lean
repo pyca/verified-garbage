@@ -32,8 +32,8 @@ theorem bmask_eq (b : Bool) : bmask b = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if 
 
 /-- `recombineX`, then the output, under the mask of `b` in `r26`. -/
 theorem phaseE_ok {s : State} {BX O : Addr} {Z oP oQ pL qL wX k Qv H M2 : Nat} {b : Bool}
-    (hs : Scr s BX Z) (hPZ : oP + slot (wsWords pL) 8 ≤ Z) (hXP : slot wX 8 ≤ oP)
-    (hQZ : oQ + slot (wsWords qL) 8 ≤ Z) (hXQ : slot wX 8 ≤ oQ)
+    (hs : Scr s BX Z) (hPZ : oP + slot (wsWords pL) 24 ≤ Z) (hXP : slot wX 8 ≤ oP)
+    (hQZ : oQ + slot (wsWords qL) 24 ≤ Z) (hXQ : slot wX 8 ≤ oQ)
     (hpq : wsWords pL + wsWords qL ≤ wX) (hwX : wX < 2 ^ 31)
     (h23 : s.gpr .r23 = BX) (h27 : s.gpr .r27 = off BX (slot wX 0))
     (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))

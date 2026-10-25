@@ -12,9 +12,9 @@ qinv_len, scratch, scratch_len)`, the last ten on the stack: RSADP with the
 key `(p, q, dP, dQ, qInv)` of the modulus `n`, `k = n_len` bytes.
 
 Three working spaces in `scratch`, laid out as the public-key operation's
-(`PublicChecked`), each with its header and eight arrays: `X` at `scratch`,
-of `W = 2 ⌈k / 8⌉` words, then `P` and `Q` of `max(2, ⌈len / 8⌉)` words for
-`p` and `q`.
+(`PublicChecked`), each with its header: `X` at `scratch`, with eight arrays
+of `W = 2 ⌈k / 8⌉` words, then `P` and `Q`, with 24 arrays (for the windows'
+table, `ModExp.powWin`) of `max(2, ⌈len / 8⌉)` words for `p` and `q`.
 
 * In `X`, with the modulus `M = 2^(64 W) - 1` in array 0: `n` (array 1),
   `p` (4), `q` (5), the input (6) and `qInv` (7) are loaded; the input below
@@ -25,7 +25,8 @@ of `W = 2 ⌈k / 8⌉` words, then `P` and `Q` of `max(2, ⌈len / 8⌉)` words 
   0, so that the arithmetic below is the same whatever the key.
 * In `P` (and `Q`): the prime, `c mod p` (`ModArith.reduce` over the input's
   bytes), `R² mod p` (`Precompute.r2`), `-p⁻¹ mod 2³²`, then
-  `m₁ = c^dP mod p` (`ModExp.powSecret` over `dP`'s bytes).
+  `m₁ = c^dP mod p` (`ModExp.powWin`: four-bit windows over `dP`'s bytes,
+  each digit's table entry selected by a masked scan of the table).
 * `h = (m₁ - m₂ mod p) qInv mod p`: `m₂`'s bytes into `X` array 1, reduced
   modulo `p`, subtracted with `subMod` and `p` added back under its borrow
   mask (`addMask`), then two Montgomery multiplications (by `qInv`, then by
@@ -106,8 +107,8 @@ def setupX : List Instr :=
   [.addi .r4 .r6 7, .lsr .d .r4 .r4 3, .lsl .r4 .r4 1] ++ area .r23 ++
     [.addi .r27 .r10 0, .addi .r28 .r29 0, .lsl .r5 .r29 3, .add .r5 .r10 .r5, .store .d .r5 .r23 oBP,
       .load .d .r3 .r23 oPLen] ++ words .r4 .r3 ++
-    [.lsl .r3 .r4 3, .addi .r3 .r3 16, .lsl .r3 .r3 3, .addi .r3 .r3 hdrBytes, .add .r5 .r5 .r3,
-      .store .d .r5 .r23 oBQ]
+    [.lsl .r3 .r4 3, .addi .r3 .r3 16, .lsl .r3 .r3 3, .add .r0 .r3 .r3, .add .r3 .r3 .r0,
+      .addi .r3 .r3 hdrBytes, .add .r5 .r5 .r3, .store .d .r5 .r23 oBQ]
 
 /-- `rd :=` the base of `X`'s array `j`. -/
 def xb (rd : Reg) (j : Nat) : List Instr :=
@@ -189,7 +190,8 @@ def setupP (oB oLen : Nat) : List Instr :=
 
 /-- In a prime's working space, the prime from `X`'s array `xj`, `c mod p` in
 array 4, `R² mod p` in array 1, `-p⁻¹ mod 2³²` in `r12`, then
-`c^d mod p` in array 4 for `d` at `oD` of the prime's length at `oLen`. The
+`c^d mod p` in array 4 for `d` at `oD` of the prime's length at `oLen`
+(`ModExp.powWin`, with its table in arrays 8 to 23). The
 header's words are loaded first, so that the rest computes from registers
 alone. -/
 def power (xj oD oLen : Nat) : Prog isa :=
@@ -199,7 +201,7 @@ def power (xj oD oLen : Nat) : Prog isa :=
   (.seq (.block (PublicChecked.base .r14 4 ++ PublicChecked.base .r15 1)) (.seq copyN
   (.seq (.block (PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3))
   (.seq Precompute.r2 (.seq (.block (PublicChecked.minv ++ [.addi .r30 .r18 0, .addi .r31 .r19 0]))
-    ModExp.powSecret)))))))
+    ModExp.powWin)))))))
 
 /-- `m₂`'s `q_len` bytes, most significant first, from `Q`'s array 4 into
 `X`'s array 1. -/

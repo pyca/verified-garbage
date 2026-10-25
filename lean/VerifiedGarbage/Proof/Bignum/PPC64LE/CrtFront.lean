@@ -58,7 +58,7 @@ structure Front (s₀ s : State) : Prop where
   hDQ : word s.mem (cS s₀) oDQ = off (stackArg s₀ 4) 0
   hQI : word s.mem (cS s₀) oQInv = off (stackArg s₀ 6) 0
   hBP : word s.mem (cS s₀) oBP = off (cS s₀) (slot (cwX s₀) 8)
-  hBQ : word s.mem (cS s₀) oBQ = off (cS s₀) (slot (cwX s₀) 8 + slot (wsWords (cpL s₀)) 8)
+  hBQ : word s.mem (cS s₀) oBQ = off (cS s₀) (slot (cwX s₀) 8 + slot (wsWords (cpL s₀)) 24)
   r23 : s.gpr .r23 = cS s₀
   r10 : s.gpr .r10 = off (cS s₀) (slot (cwX s₀) 0)
   r21 : s.gpr .r21 = off (cS s₀) (slot (cwX s₀) 0)
