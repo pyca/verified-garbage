@@ -51,10 +51,16 @@ structure FnsOK (F : Fns) where
   hiSd : sdepth F.hiC ≤ X + 96
   hfCt : ConstantTime isa (finG hH.SH (F.H.W + 48 + F.H.FD) 96).pre (finG hH.SH (F.H.W + 48 + F.H.FD) 96).pub
     F.H.finalize
-  itCt : ConstantTime isa (iterG hH.SH (Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H) 96).pre
-    (iterG hH.SH (Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H) 96).pub (Impl.Pbkdf2.Stream.PPC64LE.iterate F.H)
+  /-- `iterate`, correct and constant time with `itW` bytes of working space
+  and 96 bytes of stack, in at most two nested frames. -/
+  itOk : ∀ s, (iterG hH.SH F.itW 96).pre s →
+    ∃ t s', Exec isa F.itC s t s' ∧ abiPreserved s s' ∧ (iterG hH.SH F.itW 96).post s s'
+  itCt : ConstantTime isa (iterG hH.SH F.itW 96).pre (iterG hH.SH F.itW 96).pub F.itC
+  itFd : F.itC.fdepth ≤ 2
+  itPf : pushFrames F.itC = true
   /-- The working space of every function we call fits in `Wc` bytes. -/
-  hWc : Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H ≤ F.Wc
+  hWc : F.H.W + 48 + F.H.S + F.H.FD + F.H.FD ≤ F.Wc
+  hIt : F.itW ≤ F.Wc
   hX : X ≤ 4096
   reach : F.bytes ≤ 4096
 
@@ -146,8 +152,6 @@ structure Sz (F : Fns) : Prop where
 theorem sizes : Sz F := by
   have hN := hF.hH.dims.N; have hB := hF.hH.dims.B; have hW := hF.hH.dims.so
   have hb := hF.hWc
-  simp only [Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes, Impl.Pbkdf2.Stream.PPC64LE.Iter.ub,
-    Impl.Pbkdf2.Stream.PPC64LE.Iter.dig, Impl.Pbkdf2.Stream.PPC64LE.Iter.st] at hb
   exact ⟨hN, hB, rfl, ⟨hF.hH.hD0, hF.hH.hDF, hF.hH.hFD64, hF.hH.hDB⟩, hF.hH.hD4, hF.hH.hN4, hW.2, hb, hF.reach⟩
 
 end

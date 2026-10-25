@@ -6,13 +6,14 @@ public import VerifiedGarbage.Spec.Hmac.Generic
 public import VerifiedGarbage.Spec.Pbkdf2
 
 /-!
-# PBKDF2 over any streaming hash function on PPC64LE: the contracts
+# PBKDF2's iteration on PPC64LE, as the whole derivation calls it: the contract
 
-Untrusted: the contract `iterate` is proved against, which implies the
-shared `VG.Spec.Pbkdf2.iterateContract` (`Shared.lean`). `SH` is a streaming
-hash function, `Wi` the bytes of scratch space and `F` the bytes of stack
-below the stack pointer the code and its callees use. `n` is the low 32 bits
-of `r5`.
+Untrusted: the contract of `iterate` that PBKDF2's whole derivation
+(`Proof/Pbkdf2/Whole/PPC64LE/`) calls it with, which the iteration over a
+Merkle–Damgård hash function meets (`Proof/Pbkdf2/PPC64LE/Correct.lean`,
+`correctG`). `SH` is a streaming hash function, `Wi` the bytes of scratch
+space and `F` the bytes of stack below the stack pointer the code and its
+callees may use. `n` is the low 32 bits of `r5`.
 -/
 
 @[expose] public section

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Finalize
-import VerifiedGarbage.Proof.Pbkdf2.Stream.PPC64LE.Iterate
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -203,22 +202,22 @@ structure ItArgs (F : Fns) (s : State) (key u t sc : Addr) : Prop where
   h7 : s.gpr .r7 = sc
   sp : 96 ≤ s.sp.toNat
   d_kt : Region.Disjoint ⟨key, 2 * F.H.S⟩ ⟨t, F.H.D⟩
-  d_ks : Region.Disjoint ⟨key, 2 * F.H.S⟩ ⟨sc, Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H⟩
+  d_ks : Region.Disjoint ⟨key, 2 * F.H.S⟩ ⟨sc, F.itW⟩
   d_ut : Region.Disjoint ⟨u, F.H.D⟩ ⟨t, F.H.D⟩
-  d_us : Region.Disjoint ⟨u, F.H.D⟩ ⟨sc, Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H⟩
-  d_ts : Region.Disjoint ⟨t, F.H.D⟩ ⟨sc, Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H⟩
+  d_us : Region.Disjoint ⟨u, F.H.D⟩ ⟨sc, F.itW⟩
+  d_ts : Region.Disjoint ⟨t, F.H.D⟩ ⟨sc, F.itW⟩
   b_k : (below s.sp 96).Disjoint ⟨key, 2 * F.H.S⟩
   b_u : (below s.sp 96).Disjoint ⟨u, F.H.D⟩
   b_t : (below s.sp 96).Disjoint ⟨t, F.H.D⟩
-  b_s : (below s.sp 96).Disjoint ⟨sc, Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H⟩
-  hc : Covers ([⟨key, 2 * F.H.S⟩, ⟨u, F.H.D⟩] ++ [⟨t, F.H.D⟩, ⟨sc, Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H⟩])
+  b_s : (below s.sp 96).Disjoint ⟨sc, F.itW⟩
+  hc : Covers ([⟨key, 2 * F.H.S⟩, ⟨u, F.H.D⟩] ++ [⟨t, F.H.D⟩, ⟨sc, F.itW⟩])
     (s.rd ++ s.wr)
-  hw : Covers [⟨t, F.H.D⟩, ⟨sc, Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H⟩] s.wr
+  hw : Covers [⟨t, F.H.D⟩, ⟨sc, F.itW⟩] s.wr
 
 theorem ItArgs.pre {s : State} {key u t sc : Addr} (h : ItArgs F s key u t sc) :
-    (iterG hF.hH.SH (Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H) 96).pre (s.callEntry.withRegions
+    (iterG hF.hH.SH F.itW 96).pre (s.callEntry.withRegions
       [⟨key, 2 * hF.hH.SH.stateBytes⟩, ⟨u, hF.hH.SH.digestBytes⟩]
-      [⟨t, hF.hH.SH.digestBytes⟩, ⟨sc, Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H⟩]) := by
+      [⟨t, hF.hH.SH.digestBytes⟩, ⟨sc, F.itW⟩]) := by
   have hS := hF.hH.hS; have hD := hF.hH.hD
   simp only [iterG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_sp, State.callEntry_sp, State.callEntry_gpr s (by decide : Reg.r3 ∉ linkRegs),
@@ -226,33 +225,26 @@ theorem ItArgs.pre {s : State} {key u t sc : Addr} (h : ItArgs F s key u t sc) :
     State.callEntry_gpr s (by decide : Reg.r7 ∉ linkRegs), h.h3, h.h4, h.h6, h.h7, hS, hD]
   exact ⟨trivial, trivial, h.d_kt, h.d_ks, h.d_ut, h.d_us, h.d_ts, h.sp, h.b_k, h.b_u, h.b_t, h.b_s⟩
 
-theorem it_ok : ∀ s, (iterG hF.hH.SH (Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H) 96).pre s → ∃ t s',
-    Exec isa (Impl.Pbkdf2.Stream.PPC64LE.iterate F.H) s t s' ∧ abiPreserved s s' ∧
-      (iterG hF.hH.SH (Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H) 96).post s s' := fun s hs => by
-  obtain ⟨t, s', he, h₁, h₂⟩ := VG.Proof.Pbkdf2.Stream.PPC64LE.Iter.correct hF.hH hs
-  exact ⟨t, s', he, h₁, h₂⟩
+theorem it_ok : ∀ s, (iterG hF.hH.SH F.itW 96).pre s → ∃ t s',
+    Exec isa F.itC s t s' ∧ abiPreserved s s' ∧ (iterG hF.hH.SH F.itW 96).post s s' := hF.itOk
 
 /-- `iterate` with the key's states at `key`, `U` at `u`, `n` in `r5`, `T` at
 `t` and the working space at `sc`. -/
 theorem it_call {s : State} {key u t sc : Addr} (h : ItArgs F s key u t sc) {Q : State → Prop}
-    (hQ : ∀ s', After s ([⟨t, F.H.D⟩, ⟨sc, Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H⟩] ++ [below s.sp 96]) s' →
+    (hQ : ∀ s', After s ([⟨t, F.H.D⟩, ⟨sc, F.itW⟩] ++ [below s.sp 96]) s' →
       (∀ k0, k0.length = F.H.B → hF.hH.SH.Repr s.mem key (xorPad k0 ipad) →
         hF.hH.SH.Repr s.mem (key + BitVec.ofNat 64 F.H.S) (xorPad k0 opad) →
         bytesAt s'.mem t F.H.D = Spec.Pbkdf2.iterate (hmacBlockKey hF.hH.SH.H k0)
           ((s.gpr .r5).setWidth 32).toNat (bytesAt s.mem u F.H.D) (bytesAt s.mem t F.H.D)) → Q s') :
     WP isa F.callIt s Q := by
   have hS := hF.hH.hS; have hD := hF.hH.hD; have hB := hF.hH.hB
-  have hfd : (Impl.Pbkdf2.Stream.PPC64LE.iterate F.H).fdepth ≤ 2 := by
-    have := VG.Proof.Pbkdf2.Stream.PPC64LE.Iter.iterateMain_fdepth hF.hH
-    simp only [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, Code.fdepth, Nat.max_le]; omega_arith
-  have hpf : pushFrames (Impl.Pbkdf2.Stream.PPC64LE.iterate F.H) = true := by
-    simp [Impl.Pbkdf2.Stream.PPC64LE.iterate, Impl.Pbkdf2.Stream.PPC64LE.iterateBody, pushFrames, Instr.isPush,
-      VG.Proof.Pbkdf2.Stream.PPC64LE.Iter.iterateMain_pf hF.hH]
+  have hfd := hF.itFd
+  have hpf := hF.itPf
   have c3 : s.callEntry.gpr .r3 = key := (State.callEntry_gpr _ (by decide)).trans h.h3
   have c4 : s.callEntry.gpr .r4 = u := (State.callEntry_gpr _ (by decide)).trans h.h4
   have c5 : s.callEntry.gpr .r5 = s.gpr .r5 := State.callEntry_gpr _ (by decide)
   have c6 : s.callEntry.gpr .r6 = t := (State.callEntry_gpr _ (by decide)).trans h.h6
-  refine WP.callF (k := iterG hF.hH.SH (Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H) 96) (it_ok hF) (h.pre hF)
+  refine WP.callF (k := iterG hF.hH.SH F.itW 96) (it_ok hF) (h.pre hF)
     (by rw [hS, hD]; exact h.hc) (by rw [hD]; exact h.hw) ?_ (by omega_arith) hpf
   intro s' hrd hwr hsp' hf hcs hpost
   simp only [iterG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c3, c4, c5, c6,
@@ -269,7 +261,7 @@ theorem it_rel {P : State → State → Prop} {key u t sc : Addr}
     RelCT isa P F.callIt fun _ _ => True := by
   have hS := hF.hH.hS; have hD := hF.hH.hD
   refine RelCT.call (it_ok hF) hF.itCt [⟨key, 2 * hF.hH.SH.stateBytes⟩, ⟨u, hF.hH.SH.digestBytes⟩]
-    [⟨t, hF.hH.SH.digestBytes⟩, ⟨sc, Impl.Pbkdf2.Stream.PPC64LE.Iter.bytes F.H⟩] fun s s' hp => ?_
+    [⟨t, hF.hH.SH.digestBytes⟩, ⟨sc, F.itW⟩] fun s s' hp => ?_
   obtain ⟨a, a', e, e5⟩ := h s s' hp
   refine ⟨a.pre hF, a'.pre hF, ?_, by rw [hS, hD]; exact a.hc, by rw [hD]; exact a.hw,
     by rw [hS, hD]; exact a'.hc, by rw [hD]; exact a'.hw⟩

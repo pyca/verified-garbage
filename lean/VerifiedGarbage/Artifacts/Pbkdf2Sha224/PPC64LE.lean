@@ -7,11 +7,11 @@ public import VerifiedGarbage.Proof.Framework.Registration
 /-!
 # PBKDF2-HMAC-SHA-224 (RFC 8018) on PPC64LE: the iteration and the whole derivation
 
-The iteration is the one for every streaming hash function
-(`Impl/Pbkdf2/Stream/PPC64LE.lean`): each step is HMAC's `finalize` over a
-copy of the key's inner state, with two calls each of SHA-224's streaming
-`update` and `finalize`. Its frame saves the link register, and the streaming
-functions it calls use 48 bytes below it.
+The iteration is the one for every Merkle–Damgård hash function
+(`Impl/Pbkdf2/PPC64LE.lean`): each step is two calls of SHA-224's verified
+compression function (`vg_sha256_compress`), on a block laid out once in
+`scratch`, with the padding of a `B + D`-byte message written before the
+loop. It saves the link register in `scratch` and uses no stack.
 
 The whole derivation, `pbkdf2`, is the one for every streaming hash function
 (`Impl/Pbkdf2/Whole/PPC64LE.lean`), calling SHA-224's streaming `update`,
@@ -28,9 +28,8 @@ namespace VG.Artifacts.Pbkdf2Sha224.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Hmac.sha224I.iterateApi.artifact PPC64LE.target {
-    code := Impl.Pbkdf2.Stream.PPC64LE.iterate Proof.Hmac.Stream.PPC64LE.Sha224.hash
-    stack := 96
-    verified := Proof.Pbkdf2.Stream.PPC64LE.Sha224.iterate },
+    code := Proof.Pbkdf2.PPC64LE.Sha224.code
+    verified := Proof.Pbkdf2.PPC64LE.Sha224.iterate },
   Spec.Hmac.sha224I.pbkdf2Api.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch (Proof.Pbkdf2.Whole.PPC64LE.pbkFrame Spec.Hmac.sha224I) .r10
       Proof.Pbkdf2.Whole.PPC64LE.Sha224.F.pbkdf2
