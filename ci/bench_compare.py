@@ -681,4 +681,16 @@ def main():
 
 
 if __name__ == "__main__":
+    # Unproved native microbenchmark; this branch is never a production PR.
+    trial = pathlib.Path(__file__).resolve().parent.parent / "experiments" / "sha3-next"
+    if trial.is_dir():
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = str(pathlib.Path(tmp) / "keccak-trials")
+            subprocess.run(["cc", "-O3", "-I" + str(trial), str(trial / "driver.c"),
+                            str(trial / "generated.S"), "-o", binary], check=True)
+            subprocess.run(["uname", "-a"], check=True)
+            subprocess.run(["lscpu"], check=True)
+            subprocess.run([binary], check=True)
+        sys.exit(0)
     sys.exit(main())
