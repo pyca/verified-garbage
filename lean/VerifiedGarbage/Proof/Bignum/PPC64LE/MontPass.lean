@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontMac
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
 
 /-!
 # Montgomery multiplication on PPC64LE: the two passes of a round

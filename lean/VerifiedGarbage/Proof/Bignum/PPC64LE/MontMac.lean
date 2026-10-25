@@ -2,13 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public meta import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
-public import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
+import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
 public meta import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.MontMul
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Montgomery multiplication on PPC64LE: a multiply-accumulate step
