@@ -59,6 +59,9 @@ pub(crate) mod hmac_sha512_256;
 pub(crate) mod md5;
 
 #[rustfmt::skip]
+pub(crate) mod poly1305;
+
+#[rustfmt::skip]
 pub(crate) mod rc4;
 
 #[rustfmt::skip]
