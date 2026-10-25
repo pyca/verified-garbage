@@ -2,6 +2,12 @@
 //! Verified functions for `riscv64`.
 
 #[rustfmt::skip]
+pub(crate) mod blake2b;
+
+#[rustfmt::skip]
+pub(crate) mod blake2s;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]

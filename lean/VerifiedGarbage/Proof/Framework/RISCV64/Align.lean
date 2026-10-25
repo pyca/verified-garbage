@@ -77,4 +77,18 @@ theorem align_add (p : Addr) (off d : Nat) :
       p + BitVec.ofNat 64 (off + pad (p + BitVec.ofNat 64 off) + d) := by
   rw [BitVec.ofNat_add, BitVec.ofNat_add, BitVec.add_assoc, BitVec.add_assoc, BitVec.add_assoc]
 
+/-- An offset that is a multiple of `k ∣ 8` of an address that is a multiple of 8. -/
+theorem al_add {p : Addr} (hp : p.toNat % 8 = 0) {k d : Nat} (hk : 8 % k = 0) (hd : d % k = 0) :
+    (p + BitVec.ofNat 64 d).toNat % k = 0 := by
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+  have h64 : 2 ^ 64 % k = 0 := by
+    obtain ⟨c, hc⟩ := Nat.dvd_of_mod_eq_zero hk
+    exact Nat.mod_eq_zero_of_dvd ⟨c * 2 ^ 61, by rw [← Nat.mul_assoc, ← hc]⟩
+  have h8 : p.toNat % k = 0 := by
+    obtain ⟨c, hc⟩ := Nat.dvd_of_mod_eq_zero hk
+    obtain ⟨e, he⟩ := Nat.dvd_of_mod_eq_zero hp
+    exact Nat.mod_eq_zero_of_dvd ⟨c * e, by rw [he, hc, Nat.mul_assoc]⟩
+  rw [Nat.mod_mod_of_dvd _ (Nat.dvd_of_mod_eq_zero h64), Nat.add_mod, h8,
+    Nat.mod_mod_of_dvd _ (Nat.dvd_of_mod_eq_zero h64), hd, Nat.add_zero, Nat.zero_mod]
+
 end VG.RISCV64.Align
