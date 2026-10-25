@@ -11,10 +11,10 @@
 //! its timing may depend on the last four bytes of the counter block (the
 //! 32-bit counter, public in OpenSSL, BoringSSL and aws-lc, which split the
 //! blocks where it wraps), but not on the rest of it, the key or the data.
-//! On x86-64 and AArch64 it calls `vg_aes_ctr32` (which increments only the
-//! last 32 bits) on as many blocks at once as the last 32 bits of the counter
-//! block allow, carrying into the first 96 when they wrap around, as
-//! OpenSSL's `CRYPTO_ctr128_encrypt_ctr32` does; elsewhere it calls
+//! On x86-64, AArch64, PPC64LE and RISC-V it calls `vg_aes_ctr32` (which
+//! increments only the last 32 bits) on as many blocks at once as the last 32
+//! bits of the counter block allow, carrying into the first 96 when they wrap
+//! around, as OpenSSL's `CRYPTO_ctr128_encrypt_ctr32` does; elsewhere it calls
 //! `vg_aes_encrypt_blocks` on one block at a time. This module holds
 //! the key schedule and handles a partial last block (§6.5,
 //! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes padded to a block XORs
@@ -33,7 +33,8 @@
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::aes::Backend;
@@ -91,10 +92,11 @@ fn select(f: Features) -> Backend {
     Backend::select_for(f, VG_AES_CTR_AES_FEATURES)
 }
 
-/// The only implementation of AES on ARMv7 and PPC64LE.
+/// The only implementation of AES on ARMv7, PPC64LE and RISC-V.
 #[cfg(any(
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 fn select(f: Features) -> Backend {
     Backend::select(f)

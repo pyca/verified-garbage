@@ -5,6 +5,18 @@
 pub(crate) mod aes;
 
 #[rustfmt::skip]
+pub(crate) mod aes_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod aes_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod aes_ctr;
+
+#[rustfmt::skip]
+pub(crate) mod aes_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod blake2b;
 
 #[rustfmt::skip]
