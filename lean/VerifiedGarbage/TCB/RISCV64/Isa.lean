@@ -69,11 +69,11 @@ Modelling choices:
   exist. The base ISA makes no promise about timing; the Zkt extension
   ("Extension for Data-Independent Execution Latency", "Zkt listings")
   attests data-independent latency for a list of instructions, which
-  includes every computational instruction modelled here (`lui`, `addi`,
-  `andi`, `ori`, `xori`, `slli`, `srli`, `srai`, `add`, `sub`, `sltu`,
-  `and`, `or`, `xor`, `addiw`, `slliw`, `srliw`, `sraiw`, `addw`, `subw`,
-  and, of the M extension, `mul` and `mulhu`: "Multiplication is included;
-  division and remaindering excluded").
+  includes every computational instruction modelled here (`lui`, `auipc`,
+  `addi`, `andi`, `ori`, `xori`, `slli`, `srli`, `srai`, `add`, `sub`,
+  `sltu`, `and`, `or`, `xor`, `addiw`, `slliw`, `srliw`, `sraiw`, `addw`,
+  `subw`, and, of the M extension, `mul` and `mulhu`: "Multiplication is
+  included; division and remaindering excluded").
   As for the other ISAs, the leakage model assumes these take the same time
   whatever their operands; loads, stores and branches leak their addresses
   and conditions, which the taint analysis keeps public.
@@ -105,6 +105,12 @@ Modelling choices:
   bytes`), whose `bytes` bytes become a writable region. `bytes` is a
   multiple of 16 below 2048, which `addi` encodes: less than a page, so that
   the allocation does not move `sp` past a guard page below the stack.
+* A `static` the code reads (`Artifact.consts`) is at the address
+  `State.syms name`, where `name` is its name, which `lla` puts in a
+  register: `auipc` of the high part of the static's distance from the
+  `auipc` itself, then `addi` of the low part, which the linker resolves
+  (see `exec`). No instruction changes `syms`: a static's address is fixed
+  for the run of the program.
 -/
 
 @[expose] public section
@@ -148,6 +154,8 @@ structure State where
   call leaves in `ra`, and what a call may leave in `t0`–`t6` (see
   `TCB/Code.lean`). -/
   unknowns : Nat → BitVec 64 := fun _ => 0
+  /-- The address of each `static` the code can name (`lla`), by name. -/
+  syms : String → BitVec 64 := fun _ => 0
 
 inductive LogicOp | and | or | xor
   deriving DecidableEq, Repr
@@ -211,6 +219,10 @@ inductive Instr
   /-- `addi rd, sp, imm` with `0 ≤ imm < 2048`: a pointer `imm` bytes above
   the stack pointer -/
   | addSp (d : Reg) (imm : Nat)
+  /-- `lla rd, symbol` (`auipc rd, %pcrel_hi(symbol)` then `addi rd, rd,
+  %pcrel_lo(…)`), where `symbol` is the `static` named `name`: `rd ←` its
+  address (see `exec`) -/
+  | lla (d : Reg) (name : String)
   deriving DecidableEq, Repr
 
 /-- Branch conditions: the comparison of a conditional branch. -/
@@ -312,7 +324,34 @@ chapters (which name instructions in lower case):
   multiplication but return the upper XLEN bits of the full 2×XLEN-bit
   product, for signed×signed, unsigned×unsigned, and rs1×unsigned rs2
   multiplication" (the low bits are the same for signed and unsigned
-  operands). -/
+  operands);
+* `lla d name` is the assembler's "load local address" pseudoinstruction
+  (RISC-V Assembly Programmer's Manual, "Load Local Address" and the table of
+  pseudoinstructions: `lla rd, symbol` is `auipc rd, symbol[31:12]` then
+  `addi rd, rd, symbol[11:0]`, with the relocations `R_RISCV_PCREL_HI20` and
+  `R_RISCV_PCREL_LO12_I`), which the linker completes with the static's
+  address `S` (`State.syms name`): RV64I, "Integer Register-Immediate
+  Instructions": "auipc forms a 32-bit offset from the U-immediate, filling
+  in the lowest 12 bits with zeros, sign-extends the result to 64 bits, adds
+  it to the address of the auipc instruction, then places the result in
+  register rd", then `addi` as above. The psABI ("Relocations", "PC-Relative
+  Symbol Addresses") gives the immediates: "HI20: `(symbol_address -
+  hi20_reloc_offset + 0x800) >> 12`", "LO12: `symbol_address -
+  hi20_reloc_offset`" (its low 12 bits, sign-extended by `addi`; "the
+  preceding high 20-bit relocation may have 1 added to it"), where
+  `hi20_reloc_offset` is the address `P` of the `auipc`, so that `rd ← P +
+  (S - P) = S` when `S - P` is within the range they reach: the static and
+  the code are within 2 GiB, as the psABI's medium any code model (`medany`,
+  the Linux targets' default) has them ("Code Models", "Medium Any Code
+  Model": it "allows the code to address the range between -2 GiB and +2 GiB
+  from the current position"), and otherwise the linker reports an error
+  (the same section: "The linker may raise an error if it cannot adjust the
+  instructions to access the target address in the current code model").
+  The linker may relax the pair ("Linker Relaxation", "Global-Pointer
+  Relaxation": the `auipc` "can be removed" and the `addi` "replaced with a
+  global-pointer-relative access instruction", `addi rd, gp, …`, which reads
+  `gp`, never changed, and forms the same address). Either way it writes
+  only `rd`. -/
 def exec : Instr → State → Option State
   | .add d n m, s => some (s.write d (s.gpr n + s.gpr m))
   | .sub d n m, s => some (s.write d (s.gpr n - s.gpr m))
@@ -341,6 +380,7 @@ def exec : Instr → State → Option State
     else none
   | .li d imm, s => if imm12 imm then some (s.write d (BitVec.ofInt 64 imm)) else none
   | .addSp d imm, s => if imm < 2048 then some (s.write d (s.sp + BitVec.ofNat 64 imm)) else none
+  | .lla d name, s => some (s.write d (s.syms name))
   | .lui d imm, s => some (s.write d (sext32 (imm ++ (0 : BitVec 12))))
   | .shift op .d d n sh, s =>
     if sh < 64 then

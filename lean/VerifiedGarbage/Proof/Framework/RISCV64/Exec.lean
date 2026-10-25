@@ -127,6 +127,10 @@ theorem exec_addSp {s : State} {d : Reg} {imm : Nat} (h : imm < 2048) :
     exec (.addSp d imm) s = some (s.write d (s.sp + BitVec.ofNat 64 imm)) := by
   simp only [exec, h, ite_true]
 
+/-- `lla` puts the static's address in `d`. -/
+theorem exec_lla {s : State} {d : Reg} {name : String} :
+    exec (.lla d name) s = some (s.write d (s.syms name)) := rfl
+
 theorem exec_shift_d {op : ShiftOp} {s : State} {d n : Reg} {sh : Nat} (h : sh < 64) :
     exec (.shift op .d d n sh) s = some (s.write d (match op with
       | .sll => s.gpr n <<< sh | .srl => s.gpr n >>> sh | .sra => (s.gpr n).sshiftRight sh)) := by

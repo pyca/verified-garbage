@@ -65,7 +65,8 @@ namespace VG
 
 /-- The part of a `static`'s address a line names: its 4 KB page, or its
 offset in that page (AArch64's `adrp` and `add`), or the whole address as a
-RIP-relative memory operand, `[rip + <sym>]` (x86-64's `lea`). -/
+RIP-relative memory operand, `[rip + <sym>]` (x86-64's `lea`), or as the
+operand of a pseudoinstruction that forms it (RISC-V's `lla`). -/
 inductive SymPart
   | page
   | pageOff
@@ -81,6 +82,9 @@ inductive SymPart
   parenthesis the text opened: `<sym> - 2b)@ha` or `<sym> - 2b)@l`. -/
   | ppcHa
   | ppcLo
+  /-- The bare symbol, `<sym>`, as the operand of RISC-V's `lla`, which the
+  assembler expands to `auipc` and `addi` of its PC-relative address. -/
+  | bare
   deriving DecidableEq, Repr
 
 /-- A line of assembly: text, a call instruction of the function it names,

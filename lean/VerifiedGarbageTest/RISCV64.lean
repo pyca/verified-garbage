@@ -127,4 +127,13 @@ def sCall : State := { s0 with unknowns := fun n => BitVec.ofNat 64 (n + 100) }
 #guard ((call sCall).bind fun s₁ => (ret s₁ s₁).map (·.gpr .ra)) == some 100
 #guard ((call sCall).bind fun s₁ => ret s₁ (s₁.write .ra 0)).isNone
 
+-- `lla` writes the address of the static it names to its register, and
+-- nothing else.
+def sSym : State := { s0 with syms := fun n => if n = "VG_TABLE" then 0x12340 else 0x5000 }
+#guard (exec (.lla .a4 "VG_TABLE") sSym).map (fun s => ([.a4, .a0, .a1, .a2, .a3].map s.gpr,
+    s.sp, s.mem.read 0x1000 16, s.rd, s.wr, s.syms "VG_TABLE")) ==
+  some ([0x12340, 0x1000, 0x80000001f0000001, 4, 0xffffffff01234567], 0x2000,
+    s0.mem.read 0x1000 16, [], [⟨0x1000, 16⟩], 0x12340)
+#guard (exec (.lla .a4 "VG_OTHER") sSym).map (·.gpr .a4) == some 0x5000
+
 end VG.Test.RISCV64

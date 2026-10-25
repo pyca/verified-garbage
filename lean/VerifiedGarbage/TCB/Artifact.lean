@@ -293,8 +293,8 @@ structure Artifact where
   doc : String
   /-- Tables of 64-bit constants the code reads, by name: the emitter writes
   each as a `static` of that name, from which the code forms the table's
-  address (`Abi.sym`; on AArch64, ARMv7 and PPC64LE, `adrSym`; on x86-64, `leaSym`), and
-  checks that every artifact of the target with a table of that name gives
+  address (`Abi.sym`; on AArch64, ARMv7 and PPC64LE, `adrSym`; on RISC-V,
+  `lla`; on x86-64, `leaSym`), and checks that every artifact of the target with a table of that name gives
   the same words (`Rust.checkConsts`). So `contract` is one for the calling convention
   `target.abi.withConsts consts` (`Abi.withConsts`). A table an instruction
   carries (x86-64's `aluTbl`, `Printer.tables`) is written and checked the
