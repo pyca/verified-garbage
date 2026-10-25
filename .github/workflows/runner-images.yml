@@ -118,11 +118,17 @@ jobs:
               pkg-config --exists openssl
               zstd --version
               rustc -vV
-              cargo clippy -V
-              cargo fmt --version
+              # Clippy and rustfmt only where the image has them (the lint
+              # image).
+              if rustup component list --installed | grep -q "^clippy"; then
+                cargo clippy -V
+                cargo fmt --version
+              fi
               command -v "$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n "s/^host: //p")/bin/llvm-cov"
+              # Each C compiler with its OpenSSL (the riscv64 image has no C
+              # compiler proper, cc1: it only links, which cargo run checks).
               for gcc in /usr/bin/*-linux-gnu*-gcc; do
-                if [ -e "$gcc" ]; then
+                if [ -e "$gcc" ] && [ -x "$("$gcc" -print-prog-name=cc1)" ]; then
                   echo "#include <openssl/ssl.h>" | "$gcc" -xc -fsyntax-only -
                 fi
               done
@@ -143,7 +149,7 @@ jobs:
                   qemu-arm "target/$target/debug/hello"
                 done
               fi
-              rustup component remove cargo clippy llvm-tools rustc rust-std rustfmt
+              rustup component list --installed | xargs rustup component remove
             '
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         if: ${{ env.PUBLISH == 'true' }}
