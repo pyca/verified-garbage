@@ -137,19 +137,30 @@ def r2Sq : Prog isa :=
   .seq (.block (r2Stride ++ r2Base .r5 1 ++ r2Base .r6 1 ++ r2Base .r7 1 ++ r2Base .r8 2 ++ r2Base .r9 3 ++ [.addi .r4 .r11 0]))
     tail
 
-/-- `x := R² mod n = 2^(128 w) mod n`, for `n` of `w` words with its top word
-not zero: `x := 2^(64 (w - 1))`, below `n`; `64 + w` doublings to
-`2^w R mod n`; then six Montgomery squares, each doubling the power of 2
-(`(2^e R)² R⁻¹ = 2^(2 e) R`), to `2^(64 w) R mod n`. `pre` (`r19`) is kept in
-`r21` across the squares, which `tail` does not write, and the working
-space's address back in `r21` is array 0's less the header; the bases of
-arrays 1–3 are restored. -/
-def r2Fast : Prog isa :=
+/-- Six Montgomery squares of `x` in array 1 (`r2Sq`), each doubling the
+power of 2 of `x = 2^e R mod n` (`(2^e R)² R⁻¹ = 2^(2 e) R`): from `2^w R mod n`
+to `2^(64 w) R mod n = R² mod n`. -/
+def r2Squares : Prog isa := .seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq r2Sq))))
+
+/-- `64 + w` doublings of `x = 2^(64 (w - 1))` (`r2Top`), counted by `r4`:
+`2^w R mod n`, for `n` above `2^(64 (w - 1))`. -/
+def r2HiDbl : Prog isa :=
   .seq r2Top (.seq (.block [.lsr .d .r4 .r11 1, .addi .r4 .r4 64])
-    (.seq (.loop (.seq doubleMod (.block [.subi .r4 .r4 1])) (.nonzero .d .r4))
-      (.seq (.block (r2Minv ++ [.addi .r21 .r19 0])) (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq
-        (.block ([.addi .r19 .r21 0, .subi .r21 .r10 hdrBytes] ++ r2Stride ++ r2Base .r5 1 ++ r2Base .r8 2 ++
-          r2Base .r9 3)))))))))))
+    (.loop (.seq doubleMod (.block [.subi .r4 .r4 1])) (.nonzero .d .r4)))
+
+/-- `x := R² mod n = 2^(128 w) mod n` in array 1, for `n` of `w` words with its
+top word not zero, `-n⁻¹ mod 2³²` in `r12` and the bases of arrays 1–3 in
+`r5`, `r8` and `r9`: `r2HiDbl`, then `r2Squares`. -/
+def r2Hi : Prog isa := .seq r2HiDbl r2Squares
+
+/-- `r2Hi` for `vg_rsa_public_precompute`, which computes `-n⁻¹ mod 2³²` after
+the doublings and keeps `pre` (`r19`) in `r21` across the squares, which
+`tail` does not write; then the working space's address back in `r21`
+(array 0's less the header) and the bases of arrays 1–3. -/
+def r2Fast : Prog isa :=
+  .seq r2HiDbl (.seq (.block (r2Minv ++ [.addi .r21 .r19 0])) (.seq r2Squares
+    (.block ([.addi .r19 .r21 0, .subi .r21 .r10 hdrBytes] ++ r2Stride ++ r2Base .r5 1 ++ r2Base .r8 2 ++
+      r2Base .r9 3))))
 
 /-- `x := R² mod n = 2^(128 w) mod n` in array 1, for any odd `n` of `w`
 words, with `-n⁻¹ mod 2³²` in `r12` and the bases of arrays 1–3 in `r5`, `r8`

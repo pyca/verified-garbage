@@ -115,22 +115,17 @@ theorem r2Prime_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
       omega) (by decide)) fun s₂ ⟨⟨a4, m2⟩, k2⟩ => ?_)
   have k12 := k1.trans k2
   -- The doublings.
-  let Inv : Nat → State → Prop := fun j t =>
-    val32 t.mem B (slot w 1) (2 * w) = 2 ^ j % N ∧
-      Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep [.r0, .r14, .r17, .r4, .r3, .r15, .r16, .r20] s t
-  refine WP.seq (WP.mono (wp_countdown (cnt := .r4) (N := 64 * w + w) (by omega) (by omega) Inv
-    (fun j _ t ⟨tx, to, tk⟩ _ => ?_) ⟨?_, by rw [m2]; exact O1, k12.mono⟩ a4) fun s₃ ⟨x3, o3, k3⟩ => ?_)
-  · have n0 : val32 t.mem B (slot w 0) (2 * w) = N := by rw [to.val32 (by omega) (by omega), hNd]
-    refine WP.seq (WP.mono (doubleMod_ok (hs.congr tk.wr) ((tk.gpr _ (by decide)).trans h8)
-      ((tk.gpr _ (by decide)).trans h9) ((tk.gpr _ (by decide)).trans h10) ((tk.gpr _ (by decide)).trans h5)
-      ((tk.gpr _ (by decide)).trans h11) (by omega) hw' (by omega) (by rw [tx, n0]; exact Nat.mod_lt _ hN0))
-      fun t₁ ⟨d1, od, kd⟩ => ?_)
-    refine WP.mono (subi_ok t₁ .r4 (by decide)) fun t₂ e2 => ?_
-    subst e2
-    refine ⟨⟨?_, by rw [mem_write]; exact to.trans od, ((tk.trans kd).trans (Keep.write _ _ _)).mono⟩, ?_⟩
-    · rw [mem_write, d1, tx, n0, pow_mod_double]
-    · gsimp; rw [kd.gpr .r4 (by decide)]
-  · rw [m2, x1, Nat.pow_zero, Nat.mod_eq_of_lt (by omega)]
+  have O2 : Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem s₂.mem := by rw [m2]; exact O1
+  refine WP.seq (WP.mono (r2Dbl_ok (N := N) (a := 0) (M := 64 * w + w) (hs.congr k12.wr)
+    ((k12.gpr _ (by decide)).trans h8) ((k12.gpr _ (by decide)).trans h9) ((k12.gpr _ (by decide)).trans h10)
+    ((k12.gpr _ (by decide)).trans h5) ((k12.gpr _ (by decide)).trans h11) (by omega) hw' (by omega)
+    (by rw [O2.val32 (by omega) (by omega), hNd]) hN0
+    (by rw [m2, x1, Nat.pow_zero, Nat.mod_eq_of_lt (by omega)]) a4 (by omega) (by omega))
+    fun s₃' ⟨x3', o3', k3'⟩ => ?_)
+  have x3 : val32 s₃'.mem B (slot w 1) (2 * w) = 2 ^ (64 * w + w) % N := by rw [x3', Nat.zero_add]
+  have o3 := O2.trans o3'
+  have k3 : Keep [.r0, .r14, .r17, .r4, .r3, .r15, .r16, .r20] s s₃' := (k12.trans k3').mono (by decide)
+  generalize s₃' = s₃ at x3 o3 k3
   -- Six squares.
   have n3 : val32 s₃.mem B (slot w 0) (2 * w) = N := by rw [o3.val32 (by omega) (by omega), hNd]
   have I0 : SqP s B Z w N w s₃ := by
