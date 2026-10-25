@@ -3,6 +3,7 @@ import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.TCB.RISCV64.Target
 
 /-!
 # Golden tests for signatures and calling conventions
@@ -161,6 +162,41 @@ def ppcStack : PPC64LE.State :=
 #guard PPC64LE.abi.argArea (List.replicate 8 64) ppcStack == []
 #guard PPC64LE.abi.ret ppcState == 1
 #guard PPC64LE.abi.reserved 48 ppcState == [⟨0xfd0, 48⟩]
+
+def rvState : RISCV64.State where
+  gpr r := match r with
+    | .a0 => 1 | .a1 => 2 | .a2 => 3 | .a3 => 4 | .a4 => 5 | .a5 => 6 | .a6 => 7 | .a7 => 8
+    | _ => 0
+  sp := 0x1000
+  mem _ := 0
+  rd := []
+  wr := []
+
+#guard (RISCV64.abi.args (List.replicate 8 64)).map (· rvState) == some [1, 2, 3, 4, 5, 6, 7, 8]
+#guard (RISCV64.abi.args [64, 32]).map (· rvState) == some [1, 2]
+-- A ninth argument is in memory, at the stack pointer, and the next 8 bytes
+-- above it.
+def rvStack : RISCV64.State :=
+  { rvState with mem := fun a => if a.toNat = 0x1000 then 9 else if a.toNat = 0x1008 then 10 else 0 }
+#guard RISCV64.stackArgAddr rvStack 0 == 0x1000
+#guard RISCV64.stackArg rvStack 0 == 9
+#guard RISCV64.stackArg rvStack 1 == 10
+#guard (RISCV64.abi.args (List.replicate 9 64)).map (· rvStack) == some [1, 2, 3, 4, 5, 6, 7, 8, 9]
+#guard (RISCV64.abi.args (List.replicate 10 64)).map (· rvStack) ==
+  some [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+-- A 32-bit argument in memory is the low half of its 8-byte slot, which the
+-- caller sign-extends.
+#guard (RISCV64.abi.args (List.replicate 8 64 ++ [32, 64])).map (· rvStack) ==
+  some [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+#guard RISCV64.abi.argArea (List.replicate 8 64 ++ [32, 64]) rvStack == [(⟨0x1000, 16⟩, false)]
+#guard (RISCV64.abi.args (List.replicate 8 64 ++ [128])).isNone
+#guard RISCV64.abi.argArea (List.replicate 8 64) rvStack == []
+#guard RISCV64.abi.ret rvState == 1
+#guard RISCV64.abi.reserved 48 rvState == [⟨0xfd0, 48⟩]
+-- Every call is entered with the stack pointer 16-byte aligned.
+example : RISCV64.abi.wf [64] 0 rvState := by simp only [RISCV64.abi]; decide
+example : ¬RISCV64.abi.wf [64] 0 { rvState with sp := 0x1008 } := by simp only [RISCV64.abi]; decide
+example : ¬RISCV64.abi.wf [64] 0x1010 rvState := by simp only [RISCV64.abi]; decide
 
 /-! ### Public arguments are public only in the bits of their width
 
