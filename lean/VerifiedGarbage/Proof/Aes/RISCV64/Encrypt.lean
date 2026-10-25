@@ -63,8 +63,8 @@ theorem Scr.okSlots {s : State} {X : Addr} {N : Nat} (h : Scr s X N) {c : Cfg} (
     (he : c.ext = sb) (hx : c.exts = 0) (hn : 8 * c.slots + 7 ≤ N) (hN : N < 2 ^ 63) : Ok c s where
   slotIn k hk := ⟨_, h.wr, by rw [hb]; exact h.contains (by omega) hN⟩
   extIn k hk := by omega
-  baseAl := by rw [hb]; exact h.al
-  extAl := by rw [he]; exact h.al
+  baseAl _ := by rw [hb]; exact h.al
+  extAl _ := by rw [he]; exact h.al
   slots := by omega
   sep k _ j hj := by omega
 
@@ -73,8 +73,8 @@ theorem Scr.okExts {s : State} {X : Addr} {N : Nat} (h : Scr s X N) {c : Cfg} (h
     (he : c.ext = sb) (hx : c.slots = 0) (hn : 8 * c.exts + 7 ≤ N) (hN : N < 2 ^ 63) : Ok c s where
   slotIn k hk := by omega
   extIn k hk := ⟨_, List.mem_append_right _ h.wr, by rw [he]; exact h.contains (by omega) hN⟩
-  baseAl := by rw [hb]; exact h.al
-  extAl := by rw [he]; exact h.al
+  baseAl _ := by rw [hb]; exact h.al
+  extAl _ := by rw [he]; exact h.al
   slots := by omega
   sep k hk := by omega
 
@@ -203,8 +203,8 @@ theorem ark_cfg_ok {s : State} {X : Addr} (hs : Scr s X 2048) {n : Nat}
     show (⟨X, 2048⟩ : Region).Contains (wordAddr (s.gpr kp) k) 8
     rw [wordAddr, hk, Offset.add_add]
     exact hs.contains (by omega) (by decide)
-  baseAl := hs.al
-  extAl := by
+  baseAl _ := hs.al
+  extAl _ := by
     show (s.gpr kp).toNat % 8 = 0
     rw [hk, hs.base]
     exact align_al_add X h8

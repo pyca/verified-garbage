@@ -6,14 +6,15 @@
 //! are left (`Backend::Avx512`), and with AVX2, 256 (`Backend::Avx2`);
 //! elsewhere on x86-64, and for the rest, 128 at a time with SSE2, then 64.
 //! On AArch64, ECB runs 128 blocks at a time in AdvSIMD registers; on ARMv7,
-//! x86 and PPC64LE, one block at a time.
+//! x86, PPC64LE and RISC-V, one block at a time.
 
 #![cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 #[cfg(target_arch = "x86_64")]
