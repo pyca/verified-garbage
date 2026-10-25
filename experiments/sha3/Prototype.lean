@@ -189,11 +189,28 @@ def variants : List (String × Prog isa) :=
  [("scalar",VG.Impl.Sha3.AArch64.Scalar.unrolledPermute),
  ("ce",permute)] ++
  [("sched1_1_0", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched1_1_0.map Op.instr ++ iota)))), ("sched1_1_1", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched1_1_1.map Op.instr ++ iota)))), ("sched1_2_0", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched1_2_0.map Op.instr ++ iota)))), ("sched1_2_1", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched1_2_1.map Op.instr ++ iota)))), ("sched1_3_0", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched1_3_0.map Op.instr ++ iota)))), ("sched1_3_1", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched1_3_1.map Op.instr ++ iota)))), ("sched2_1_0", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched2_1_0.map Op.instr ++ iota)))), ("sched2_1_1", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched2_1_1.map Op.instr ++ iota)))), ("sched2_2_0", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched2_2_0.map Op.instr ++ iota)))), ("sched2_2_1", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched2_2_1.map Op.instr ++ iota)))), ("sched2_3_0", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched2_3_0.map Op.instr ++ iota)))), ("sched2_3_1", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched2_3_1.map Op.instr ++ iota)))), ("sched3_1_0", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched3_1_0.map Op.instr ++ iota)))), ("sched3_1_1", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched3_1_1.map Op.instr ++ iota)))), ("sched3_2_0", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched3_2_0.map Op.instr ++ iota)))), ("sched3_2_1", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched3_2_1.map Op.instr ++ iota)))), ("sched4_1_0", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched4_1_0.map Op.instr ++ iota)))), ("sched4_1_1", wrap (.block ((List.range 24).flatMap (fun r => constant (VG.Spec.Sha3.RC r) ++ sched4_1_1.map Op.instr ++ iota))))] ++ [1,2,3,4,6,8,12].map (fun u => ("ce_loop" ++ toString u,wrap (counted u)))
+def vectorAdvance : List Instr :=
+ [.vop (.add .d2 .v19 .v19 .v21), .vop (.sub .d2 .v20 .v20 .v21),
+  .umov .x .x27 .v20 0, .umov .x .x28 .v21 0,
+  .sub .x .x26 .x27 .x28, .lsr .x .x26 .x26 63]
+def scalarBulk (roundCode adv : List Instr) : Prog isa :=
+ .seq (.block VG.Impl.Sha3.AArch64.Scalar.Resident.setup)
+ (.seq (.loop (.seq VG.Impl.Sha3.AArch64.Scalar.Resident.xorBlock (.block (roundCode ++ adv))) (.zero .x .x26))
+ (.block VG.Impl.Sha3.AArch64.Scalar.Resident.finish))
+def scalarMemRounds : List Instr :=
+ (List.range 24).flatMap fun r => VG.Impl.Sha3.AArch64.Scalar.memCoreInstrs 0 ++
+ VG.Impl.Sha3.AArch64.Scalar.Control.constant (VG.Spec.Sha3.RC r) ++ [.logic .eor .x .x0 .x0 .x26]
+def bulks : List (String × Prog isa) :=
+ [("bulk_scalar",VG.Impl.Sha3.AArch64.Scalar.Resident.bulk),
+ ("bulk_advance",scalarBulk VG.Impl.Sha3.AArch64.Scalar.unrolledRounds vectorAdvance),
+ ("bulk_mem",.frame (.alloc 16) (scalarBulk scalarMemRounds VG.Impl.Sha3.AArch64.Scalar.Resident.advance) (.free 16)),
+ ("bulk_mem_advance",.frame (.alloc 16) (scalarBulk scalarMemRounds vectorAdvance) (.free 16))]
 def main : IO Unit := do
  IO.FS.writeFile "/tmp/vg-sha3-hillclimb/scalar-ops.txt" (String.intercalate "\n" (VG.Impl.Sha3.AArch64.Scalar.coreOps.map (fun op => toString (repr op))))
  for apple in [true,false] do
   IO.FS.writeFile ("/tmp/vg-sha3-hillclimb/prototypes-" ++ (if apple then "apple" else "linux") ++ ".S")
-   (".text\n" ++ String.join (variants.map fun (n,p) => emitFunction ("trial_"++n) p apple))
+   (".text\n" ++ String.join ((variants ++ bulks).map fun (n,p) => emitFunction ("trial_"++n) p apple))
+ IO.FS.writeFile "/tmp/vg-sha3-hillclimb/bulks.h" (String.join (bulks.map fun (n,_) => "B(trial_" ++ n ++ ")\n"))
  IO.FS.writeFile "/tmp/vg-sha3-hillclimb/variants.h" (String.join (variants.map fun (n,_) =>
   "X(" ++ "trial_" ++ n ++ ")\n"))
 end Trial

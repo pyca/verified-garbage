@@ -3,30 +3,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#define X(n) extern void n(uint64_t *,uint64_t *);
-#include "variants.h"
-#undef X
-struct entry {const char *name; void (*f)(uint64_t *,uint64_t *);};
-#define X(n) {#n,n},
+#define B(n) extern void n(uint64_t *,uint64_t *,uint64_t,const uint8_t *,size_t,uint64_t *,size_t);
+#include "bulks.h"
+#undef B
+struct entry {const char *name; void (*f)(uint64_t *,uint64_t *,uint64_t,const uint8_t *,size_t,uint64_t *,size_t);};
+#define B(n) {#n,n},
 static struct entry entries[]={
-#include "variants.h"
+#include "bulks.h"
 };
-#undef X
+#undef B
 static double now(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+t.tv_nsec*1e-9;}
 int main(void){
- uint64_t expected[25],state[25],scratch[64];
- size_t count=sizeof(entries)/sizeof(*entries);
- for(int test=0;test<32;test++){
-  for(int j=0;j<25;j++)expected[j]=UINT64_C(0x9e3779b97f4a7c15)*(j+1)*(test+1);
-  uint64_t initial[25];memcpy(initial,expected,sizeof initial);
-  entries[0].f(expected,scratch);
-  for(size_t i=1;i<count;i++){memcpy(state,initial,sizeof state);entries[i].f(state,scratch);
-   if(memcmp(expected,state,sizeof state)){fprintf(stderr,"FAIL %s %d\n",entries[i].name,test);return 1;}}
+ uint64_t expected[25],state[25],scratch[80];uint8_t data[168*128];
+ for(size_t i=0;i<sizeof data;i++)data[i]=(uint8_t)(i*37+9);
+ size_t count=sizeof(entries)/sizeof(*entries);size_t rates[]={72,104,136,144,168};
+ for(int r=0;r<5;r++)for(int blocks=1;blocks<20;blocks++){
+  memset(expected,0,sizeof expected);entries[0].f(expected,scratch,0,data,rates[r]*blocks,scratch,rates[r]);
+  for(size_t i=1;i<count;i++){memset(state,0,sizeof state);entries[i].f(state,scratch,0,data,rates[r]*blocks,scratch,rates[r]);
+   if(memcmp(expected,state,sizeof state)){fprintf(stderr,"FAIL %s rate=%zu blocks=%d\n",entries[i].name,rates[r],blocks);return 1;}}
  }
- fprintf(stderr,"All %zu variants match scalar on 32 states\n",count);
- for(int round=0;round<7;round++)for(size_t j=0;j<count;j++){
-  size_t i=(j+round)%count; memset(state,0,sizeof state);
-  double start=now();for(int k=0;k<600000;k++)entries[i].f(state,scratch);
-  double ns=(now()-start)*1e9/600000;printf("%d,%s,%.4f,%llu\n",round,entries[i].name,ns,(unsigned long long)state[0]);
+ fprintf(stderr,"All %zu bulk variants match across all 5 rates and 1..19 blocks\n",count);
+ for(int round=0;round<9;round++)for(int r=0;r<5;r++)for(size_t j=0;j<count;j++){
+  size_t i=(j+round)%count;memset(state,0,sizeof state);
+  double start=now();for(int k=0;k<1000;k++)entries[i].f(state,scratch,0,data,rates[r]*128,scratch,rates[r]);
+  printf("%d,%zu,%s,%.4f,%llu\n",round,rates[r],entries[i].name,(now()-start)*1e9/1000,(unsigned long long)state[0]);
  }
 }
