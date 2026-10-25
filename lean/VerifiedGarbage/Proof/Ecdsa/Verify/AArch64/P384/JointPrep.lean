@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide9
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-! # The recoding of both scalars of P-384's joint verification
 

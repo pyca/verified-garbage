@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Weierstrass.CombW
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Reading one public pair of unsigned two-bit digits. -/
 

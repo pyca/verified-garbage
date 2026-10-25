@@ -27,7 +27,6 @@ public import VerifiedGarbage.Proof.Ed448.Group.Projective
 meta import VerifiedGarbage.Proof.Ed448.Group.Projective
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
@@ -37,28 +36,12 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
-import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X448.AArch64.BitStep
-import VerifiedGarbage.Proof.X448.AArch64.BitWrite
-import VerifiedGarbage.Proof.X448.AArch64.Bits
-import VerifiedGarbage.Proof.X448.AArch64.Decode
-import VerifiedGarbage.Proof.X448.AArch64.DecodeAll
-import VerifiedGarbage.Proof.X448.AArch64.DecodeStore
 import VerifiedGarbage.Proof.X448.AArch64.Finish
-import VerifiedGarbage.Proof.X448.AArch64.Initial
 import VerifiedGarbage.Proof.X448.AArch64.Iter
-import VerifiedGarbage.Proof.X448.AArch64.Weak.BitStep
-import VerifiedGarbage.Proof.X448.Bytes
 meta import VerifiedGarbage.Proof.Curve448.AArch64.AccumSquareBody
 meta import VerifiedGarbage.Proof.Curve448.AArch64.AddEval
 meta import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
@@ -136,6 +119,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Select
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
 
 /-!
 # Ed448's fixed-base comb on AArch64, as a function

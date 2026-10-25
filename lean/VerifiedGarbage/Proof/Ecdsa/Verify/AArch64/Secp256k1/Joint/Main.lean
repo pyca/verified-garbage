@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Points
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Points
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Math
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.State
 
 /-! Full ECDSA verification correctness with the joint public multiplier. -/
 

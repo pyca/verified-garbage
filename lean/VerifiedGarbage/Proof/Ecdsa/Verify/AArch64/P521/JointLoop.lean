@@ -7,7 +7,6 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint

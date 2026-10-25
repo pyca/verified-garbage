@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.TonelliSetup
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DescentLoop
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DescentRound
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Frame
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Weierstrass.RootTonelli
 import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root

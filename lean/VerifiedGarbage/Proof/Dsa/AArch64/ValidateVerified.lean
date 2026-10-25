@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateCT
-import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedABI
 import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingAgreement
 public import VerifiedGarbage.Proof.Framework.Contract

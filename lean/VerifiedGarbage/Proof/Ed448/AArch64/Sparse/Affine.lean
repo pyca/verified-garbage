@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
-import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Table
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Joint
 
 /-! Inline affine addition with the existing verified interleaved field formula. -/

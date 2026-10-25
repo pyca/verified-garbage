@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Core
 public import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Copy
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Iter
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow

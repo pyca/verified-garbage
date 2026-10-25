@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Points
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Points
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Math
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.State
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
 
 /-! Full ECDSA verification correctness with the joint public multiplier. -/
 

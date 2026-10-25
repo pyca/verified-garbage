@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 @[expose] public section

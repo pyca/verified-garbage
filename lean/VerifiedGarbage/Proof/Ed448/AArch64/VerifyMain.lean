@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Window.Result
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Main

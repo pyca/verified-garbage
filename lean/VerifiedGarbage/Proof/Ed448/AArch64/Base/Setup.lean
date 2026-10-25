@@ -7,7 +7,6 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.AArch64.BaseBits
 import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
 import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.X448.AArch64.Bits
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!

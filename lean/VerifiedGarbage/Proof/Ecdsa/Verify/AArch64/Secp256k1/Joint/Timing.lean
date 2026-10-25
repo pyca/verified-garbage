@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.FrontRead
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.FrontRead
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Lit
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Loop
 
 /-! Relate the shared loop's two executions at its public lookup boundary. -/
 

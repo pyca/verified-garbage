@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAdd
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
@@ -13,8 +12,13 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedT
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedField
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import VerifiedGarbage.Proof.Weierstrass.Comb
 
 /-! Digit selection remains unchanged while point arithmetic uses a wider frame.
 The callbacks include the final coordinate copy, so no intermediate scratch

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.DigitLoads
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Magnitude
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.DigitLoads
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Magnitude
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Move
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
+public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Joint
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 
 /-! Leading-zero scanning stops at the first nonzero pair, including the all-zero pair. -/
 
