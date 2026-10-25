@@ -88,7 +88,7 @@ def artifacts : List Artifact := [
         as `n / p = q`, `n mod p = 0` and `p` odd, by bit-serial division, `32 w` steps for \
         `w`-digit numbers; the comparisons by a subtraction's borrow; `e dP mod (p - 1)` and \
         `e dQ mod (q - 1)` by modular multiplication over the 33 bits of `e`, and `q qInv mod p` \
-        over the `32 w` bits of `q`, each step's subtraction under a mask; and `d` by `d < n` and \
+        over the `8 q_len` bits of `q`, each step's subtraction under a mask; and `d` by `d < n` and \
         `d mod (p - 1) = dP`, `d mod (q - 1) = dQ`. Numbers are 32-bit digits; for an even count \
         of them the subtractions (the borrow in the carry bit), selections, copies, comparisons \
         and halvings, and the division's shifts, work on 64-bit words, two digits at a time. The \
