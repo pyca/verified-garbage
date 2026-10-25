@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.WinTable
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.WinSel
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Offset
