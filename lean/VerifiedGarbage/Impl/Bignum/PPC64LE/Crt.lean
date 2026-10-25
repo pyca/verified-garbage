@@ -24,7 +24,7 @@ table, `ModExp.powWin`) of `max(2, ⌈len / 8⌉)` words for `p` and `q`.
   both ways by `subMod`. Under a clear mask `p` and `q` become 3 and `qInv`
   0, so that the arithmetic below is the same whatever the key.
 * In `P` (and `Q`): the prime, `c mod p` (`ModArith.reduce` over the input's
-  bytes), `R² mod p` (`Precompute.r2`), `-p⁻¹ mod 2³²`, then
+  bytes), `-p⁻¹ mod 2³²`, `R² mod p` (`Precompute.r2Prime`), then
   `m₁ = c^dP mod p` (`ModExp.powWin`: four-bit windows over `dP`'s bytes,
   each digit's table entry selected by a masked scan of the table).
 * `h = (m₁ - m₂ mod p) qInv mod p`: `m₂`'s bytes into `X` array 1, reduced
@@ -189,7 +189,7 @@ def setupP (oB oLen : Nat) : List Instr :=
   [.load .d .r3 .r23 oLen] ++ words .r4 .r3 ++ [.load .d .r3 .r23 oB] ++ area .r3
 
 /-- In a prime's working space, the prime from `X`'s array `xj`, `c mod p` in
-array 4, `R² mod p` in array 1, `-p⁻¹ mod 2³²` in `r12`, then
+array 4, `-p⁻¹ mod 2³²` in `r12`, `R² mod p` in array 1 (`Precompute.r2Prime`), then
 `c^d mod p` in array 4 for `d` at `oD` of the prime's length at `oLen`
 (`ModExp.powWin`, with its table in arrays 8 to 23). The
 header's words are loaded first, so that the rest computes from registers
@@ -199,9 +199,9 @@ def power (xj oD oLen : Nat) : Prog isa :=
       .load .d .r19 .r23 oLen, .addi .r14 .r10 0] ++ xb .r15 xj)) (.seq copyN
   (.seq ModArith.reduce
   (.seq (.block (PublicChecked.base .r14 4 ++ PublicChecked.base .r15 1)) (.seq copyN
-  (.seq (.block (PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3))
-  (.seq Precompute.r2 (.seq (.block (PublicChecked.minv ++ [.addi .r30 .r18 0, .addi .r31 .r19 0]))
-    ModExp.powWin)))))))
+  (.seq (.block (PublicChecked.minv ++ [.addi .r30 .r18 0, .addi .r31 .r19 0] ++ PublicChecked.base .r5 1 ++
+      PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3))
+  (.seq Precompute.r2Prime ModExp.powWin))))))
 
 /-- `m₂`'s `q_len` bytes, most significant first, from `Q`'s array 4 into
 `X`'s array 1. -/
@@ -225,7 +225,7 @@ def recombineP : Prog isa :=
   -- into array 1.
   .seq (.block [.load .d .r31 .r23 oQLen])
   (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
-      PublicChecked.base .r9 3)) (.seq Precompute.r2
+      PublicChecked.base .r9 3)) (.seq Precompute.r2Prime
   (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
   (.seq (.block (xb .r30 1)) (.seq ModArith.reduce
   -- `m₁ - m₂ mod p` into array 3, `p` added back under the borrow.

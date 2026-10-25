@@ -19,9 +19,10 @@ array 1; the nonvolatile registers are saved in its header's words 16–24.
 which is below a valid `n`, by `64 + w` modular doublings to `2^w R mod n`
 (the double into the accumulator, `n + 1` digits of 32 bits, as
 `vg_rsa_mont_mul` reads numbers, then `MontMul.lean`'s `subMod` and
-`selectAcc` into `x`), then six Montgomery squares (`MontMul.tail`). `r2`,
-`128 w` doublings from 1, is for moduli whose top word may be zero (other
-callers).
+`selectAcc` into `x`), then six Montgomery squares (`MontMul.tail`). For
+moduli whose top word may be zero, `r2Prime` starts from 1, with `64 w + w`
+doublings (the private key's primes), and `r2`, `128 w` doublings from 1,
+needs no `-n⁻¹ mod 2³²` (other callers).
 
 `n` is public: timing may depend on it, and the code branches on its
 validity.
@@ -149,6 +150,15 @@ def r2Fast : Prog isa :=
       (.seq (.block (r2Minv ++ [.addi .r21 .r19 0])) (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq (.seq r2Sq
         (.block ([.addi .r19 .r21 0, .subi .r21 .r10 hdrBytes] ++ r2Stride ++ r2Base .r5 1 ++ r2Base .r8 2 ++
           r2Base .r9 3)))))))))))
+
+/-- `x := R² mod n = 2^(128 w) mod n` in array 1, for any odd `n` of `w`
+words, with `-n⁻¹ mod 2³²` in `r12` and the bases of arrays 1–3 in `r5`, `r8`
+and `r9`: `x := 1`; `64 w + w` doublings to `2^w R mod n`; then six Montgomery
+squares to `2^(64 w) R mod n`, as in `r2Fast`, counted by `r24`. -/
+def r2Prime : Prog isa :=
+  .seq one (.seq (.block [.lsl .r4 .r11 5, .lsr .d .r3 .r11 1, .add .r4 .r4 .r3])
+    (.seq (.loop (.seq doubleMod (.block [.subi .r4 .r4 1])) (.nonzero .d .r4))
+      (.seq (.block [.li .r24 6]) (.loop (.seq r2Sq (.block [.subi .r24 .r24 1])) (.nonzero .d .r24)))))
 
 /-- `w` words from `r15` to `r14`, both advanced past them. -/
 def copyWords : Prog isa :=
