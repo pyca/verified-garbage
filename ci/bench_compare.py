@@ -461,8 +461,8 @@ def main():
     p.add_argument("--confirm", type=int, default=2,
                    help="runs of each side again for the benchmarks over the threshold")
     p.add_argument("--threshold", type=float, default=0.35)
-    p.add_argument("--warm-up-time", type=float, default=0.1)
-    p.add_argument("--measurement-time", type=float, default=0.3)
+    p.add_argument("--warm-up-time", type=float, default=0.3)
+    p.add_argument("--measurement-time", type=float, default=1.0)
     p.add_argument("--openssl", action="store_true",
                    help="also run OpenSSL's and aws-lc-rs's benchmarks, for reference")
     p.add_argument("--openssl-with-features", action="store_true",
@@ -532,6 +532,10 @@ def main():
             runs = {"base": {}, "head": {}}
             measure(interleaved(rounds, binaries, r), binaries.get, lambda side, r=r: f"{side}-{r}",
                     lambda side, _bench: modules[side], runs)
+            print("VG_KECCAK_ROUND " + json.dumps({"round": r, "results": [
+                {"side": side, "group": group, "size": size, "ns": value}
+                for side, times in runs.items() for (group, size), value in times.items()
+            ]}, sort_keys=True), flush=True)
             keep_fastest(runs)
     except Lacking as e:
         # The first run of either side stops, before any other.
