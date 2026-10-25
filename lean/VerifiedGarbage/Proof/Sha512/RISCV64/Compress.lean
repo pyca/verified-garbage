@@ -5,7 +5,11 @@ public meta import VerifiedGarbage.Proof.Sha512.RISCV64.Rounds
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Contract
 public meta import VerifiedGarbage.Proof.Sha512.RISCV64.Contract
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RISCV64.Words64
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 meta import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RISCV64.Words64
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.Framework.Contract
 public meta import VerifiedGarbage.Proof.Framework.Contract
@@ -274,8 +278,9 @@ theorem var0_inj {j k : Nat} (hj : j < 8) (hk : k < 8) (h : var 0 j = var 0 k) :
   have key : ∀ j < 8, ∀ k < 8, var 0 j = var 0 k → j = k := by decide
   exact key j hj k hk h
 
-theorem var0_ne {k : Nat} (hk : k < 8) : var 0 k ≠ .a0 ∧ var 0 k ≠ T0 ∧ var 0 k ≠ T1 := by
-  have key : ∀ k < 8, var 0 k ≠ .a0 ∧ var 0 k ≠ T0 ∧ var 0 k ≠ T1 := by decide
+theorem var0_ne {k : Nat} (hk : k < 8) :
+    var 0 k ≠ .a0 ∧ var 0 k ≠ T0 ∧ var 0 k ≠ T1 ∧ var 0 k ≠ T2 := by
+  have key : ∀ k < 8, var 0 k ≠ .a0 ∧ var 0 k ≠ T0 ∧ var 0 k ≠ T1 ∧ var 0 k ≠ T2 := by decide
   exact key k hk
 
 theorem var0_pub {k : Nat} (hk : k < 8) : ∀ r ∈ pubRegs, r ≠ var 0 k := by
@@ -292,21 +297,18 @@ structure LdI (s₁ : State) (k : Nat) (s : State) : Prop where
 
 theorem load_step {s₀ s₁ : State} (hp : Pre s₀) (hr0 : s₁.gpr .a0 = st s₀) (hrd : s₁.rd = s₀.rd)
     (hwr : s₁.wr = s₀.wr) {k : Nat} (hk : k < 8) {s : State} (h : LdI s₁ k s) :
-    WP isa (.block (loadLE64b (var 0 k) T0 .a0 (8 * k))) s (LdI s₁ (k + 1)) := by
+    WP isa (.block (Impl.Words64.RISCV64.loadLE64 (var 0 k) T0 T1 .a0 (8 * k))) s (LdI s₁ (k + 1)) := by
   have ne := var0_ne hk
   have h0 : s.gpr .a0 = st s₀ := (h.pub .a0 (by decide)).trans hr0
-  refine WP.mono (loadLE64b_ok ne.1 (by decide) ne.2.1 (by omega)
-    (by rw [h.rd, h.wr, hrd, hwr, h0]; exact hp.in_state hk)) fun s' e => ?_
-  subst e
-  refine ⟨fun j hj => ?_, fun r hr => ?_, h.mem, h.rd, h.wr⟩
+  refine WP.mono (Words64.loadLE64_ok ne.1 (by decide) ne.2.1 (by decide) (by decide) ne.2.2.1
+    (by omega) (by rw [h.rd, h.wr, hrd, hwr, h0]; exact hp.in_state hk)) fun s' u => ?_
+  refine ⟨fun j hj => ?_, fun r hr => ?_, u.mem.trans h.mem, u.rd.trans h.rd, u.wr.trans h.wr⟩
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [RegUpd.gpr_write_of_ne _ _ (fun e => absurd (var0_inj (by omega) hk e) (by omega)),
-        RegUpd.gpr_write_of_ne _ _ (var0_ne (by omega : j < 8)).2.1]
+    · have nj := var0_ne (by omega : j < 8)
+      rw [u.other _ (fun e => absurd (var0_inj (by omega) hk e) (by omega)) nj.2.1 nj.2.2.1]
       exact h.vars j hj
-    · rw [RegUpd.gpr_write_self, h.mem, h0, ← hr0, getElem!_pos _ j hk,
-        stateAt_get _ _ hk]
-  · rw [RegUpd.gpr_write_of_ne _ _ (var0_pub hk r hr),
-      RegUpd.gpr_write_of_ne _ _ fun e => (pubRegs_ne hr).1 e]
+    · rw [u.gpr, h.mem, h0, ← hr0, getElem!_pos _ j hk, stateAt_get _ _ hk]
+  · rw [u.other _ (var0_pub hk r hr) (fun e => (pubRegs_ne hr).1 e) (fun e => (pubRegs_ne hr).2.1 e)]
     exact h.pub r hr
 
 theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hr0 : s.gpr .a0 = st s₀)
@@ -375,44 +377,38 @@ theorem update_step {s₀ s₂ : State} (hp : Pre s₀) (V H : HashValue) (hr0 :
     rw [h.rd, h.wr, hrd, hwr, h0]; exact hp.in_state hk
   unfold updateW
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (loadLE64b_ok (by decide) (by decide) (by decide) (by omega) hin) fun s₁ e₁ => ?_
-  subst e₁
+  refine WP.mono (Words64.loadLE64_ok (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by omega) hin) fun s₁ u₁ => ?_
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_add, Option.some.injEq,
     exists_eq_left']
   -- The state after the addition.
   generalize hs₂' : State.write _ _ _ = s₃
+  have g1 : ∀ r, r ≠ T0 → r ≠ T1 → r ≠ T2 → s₁.gpr r = s.gpr r := u₁.other
   have g0 : s₃.gpr .a0 = st s₀ := by
-    rw [← hs₂', RegUpd.gpr_write_of_ne _ _ (Ne.symm ne.1), RegUpd.gpr_write_of_ne _ _ (by decide),
-      RegUpd.gpr_write_of_ne _ _ (by decide), h0]
+    rw [← hs₂', RegUpd.gpr_write_of_ne _ _ (Ne.symm ne.1), g1 _ (by decide) (by decide) (by decide), h0]
   have gv : s₃.gpr (var 0 k) = V[k]! + H[k]! := by
-    rw [← hs₂', RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ ne.2.1,
-      RegUpd.gpr_write_of_ne _ _ ne.2.2, h.vars k (Nat.le_refl _) hk, RegUpd.gpr_write_self,
-      h0, h.mem, readW_writeUpTo _ _ _ (by omega) hk]
+    rw [← hs₂', RegUpd.gpr_write_self, g1 _ ne.2.1 ne.2.2.1 ne.2.2.2, h.vars k (Nat.le_refl _) hk,
+      u₁.gpr, h0, h.mem, readW_writeUpTo _ _ _ (by omega) hk]
     simp only [Nat.lt_irrefl, ite_false]
     rw [hH k hk]
-  have gm : s₃.mem = s.mem := by rw [← hs₂']; rfl
-  have gwr : s₃.wr = s.wr := by rw [← hs₂']; rfl
-  have grd : s₃.rd = s.rd := by rw [← hs₂']; rfl
-  have gr : ∀ r, r ≠ var 0 k → r ≠ T0 → r ≠ T1 → s₃.gpr r = s.gpr r := fun r h1 h2 h3 => by
-    rw [← hs₂', RegUpd.gpr_write_of_ne _ _ h1, RegUpd.gpr_write_of_ne _ _ h2,
-      RegUpd.gpr_write_of_ne _ _ h3]
-  refine WP.mono (storeLE64_ok (Ne.symm ne.2.1) (by decide) (by omega)
-    (by rw [gwr, h.wr, hwr, g0]; exact hp.out_state hk)) fun s₄ e₄ => ?_
-  subst e₄
-  refine ⟨fun j hj hj' => ?_, fun r hr => ?_, ?_, grd.trans h.rd, gwr.trans h.wr⟩
+  have gm : s₃.mem = s.mem := by rw [← hs₂', RegUpd.mem_write]; exact u₁.mem
+  have gwr : s₃.wr = s.wr := by rw [← hs₂', RegUpd.wr_write]; exact u₁.wr
+  have grd : s₃.rd = s.rd := by rw [← hs₂', RegUpd.rd_write]; exact u₁.rd
+  have gr : ∀ r, r ≠ var 0 k → r ≠ T0 → r ≠ T1 → r ≠ T2 → s₃.gpr r = s.gpr r :=
+    fun r h1 h2 h3 h4 => by rw [← hs₂', RegUpd.gpr_write_of_ne _ _ h1, g1 r h2 h3 h4]
+  refine WP.mono (Words64.storeLE64_ok (Ne.symm ne.2.1) (by decide) (by decide) (by decide) (by omega)
+    (by rw [gwr, h.wr, hwr, g0]; exact hp.out_state hk)) fun s₄ ⟨g₄, m₄, rd₄, wr₄, _⟩ => ?_
+  refine ⟨fun j hj hj' => ?_, fun r hr => ?_, ?_, rd₄.trans (grd.trans h.rd), wr₄.trans (gwr.trans h.wr)⟩
   · have hne : var 0 j ≠ var 0 k := fun e => absurd (var0_inj hj' hk e) (by omega)
-    rw [RegUpd.gpr_write_of_ne _ _ (var0_ne hj').2.1]
-    show s₃.gpr (var 0 j) = _
-    rw [gr _ hne (var0_ne hj').2.1 (var0_ne hj').2.2]
+    have nj := var0_ne hj'
+    rw [g₄ _ nj.2.1 nj.2.2.1, gr _ hne nj.2.1 nj.2.2.1 nj.2.2.2]
     exact h.vars j (by omega) hj'
-  · rw [RegUpd.gpr_write_of_ne _ _ fun e => (pubRegs_ne hr).1 e]
-    show s₃.gpr r = _
-    rw [gr r (var0_pub hk r hr) (fun e => (pubRegs_ne hr).1 e) (fun e => (pubRegs_ne hr).2.1 e)]
+  · have np := pubRegs_ne hr
+    rw [g₄ _ (fun e => np.1 e) (fun e => np.2.1 e),
+      gr r (var0_pub hk r hr) (fun e => np.1 e) (fun e => np.2.1 e) (fun e => np.2.2.1 e)]
     exact h.pub r hr
-  · rw [RegUpd.mem_write]
-    show s₃.mem.writeW _ _ = _
-    rw [gm, h.mem, writeUpTo_succ, g0, gv]
+  · rw [m₄, gm, h.mem, writeUpTo_succ, g0, gv]
     congr 1
     rw [getElem!_pos (Vector.zipWith _ V H) k hk, Vector.getElem_zipWith, getElem!_pos V k hk,
       getElem!_pos H k hk]
@@ -449,7 +445,9 @@ theorem frame_byte {rs : List Region} {m m' : Mem} {R : Region} {x : Addr} (hf :
 theorem frame_be64 {rs : List Region} {m m' : Mem} {R : Region} {p : Addr} {off : Nat}
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, R.Disjoint r) (hc : R.Contains (p + BitVec.ofNat 64 off) 8) :
     be64 m' p off = be64 m p off := by
-  simp only [be64, bytes64, id, frame_byte hf hd (contains_byte' hc (k := 0) (by decide)),
+  have h0 := contains_byte' hc (k := 0) (by decide)
+  rw [Nat.add_zero] at h0
+  simp only [be64, frame_byte hf hd h0,
     frame_byte hf hd (contains_byte' hc (k := 1) (by decide)),
     frame_byte hf hd (contains_byte' hc (k := 2) (by decide)),
     frame_byte hf hd (contains_byte' hc (k := 3) (by decide)),

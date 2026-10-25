@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.Sha512.Stream
 meta import VerifiedGarbage.Proof.Sha512.Stream
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
+import VerifiedGarbage.Proof.Framework.RISCV64.Words64
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
@@ -51,26 +53,29 @@ structure InitI (iv : HashValue) (s₀ : State) (k : Nat) (s : State) : Prop whe
 
 theorem init_step (iv : HashValue) {s₀ : State} (hp : (Proof.Sha512.initRISCV64 iv).pre s₀)
     {k : Nat} (hk : k < 8) {s : State} (h : InitI iv s₀ k s) :
-    WP isa (.block (li64 .t0 .t1 iv[k]! ++ storeLE 8 .t0 .t1 .a0 (8 * k))) s (InitI iv s₀ (k + 1)) := by
+    WP isa (.block (li64 .t0 .t1 iv[k]! ++ Impl.Words64.RISCV64.storeLE64 .t0 .t1 .t2 .a0 (8 * k))) s
+      (InitI iv s₀ (k + 1)) := by
   rw [WP.block_append_iff]
   refine WP.mono (li64_ok (by decide) _) fun s₁ e₁ => ?_
   subst e₁
-  refine WP.mono (storeLE64_ok (by decide) (by decide) (by omega) ?_) fun s₂ e₂ => ?_
+  refine WP.mono (Words64.storeLE64_ok (by decide) (by decide) (by decide) (by decide) (by omega) ?_)
+    fun s₂ ⟨g₂, m₂, rd₂, wr₂, _⟩ => ?_
   · rw [RegUpd.wr_write, RegUpd.wr_write, RegUpd.gpr_write_of_ne _ _ (by decide),
       RegUpd.gpr_write_of_ne _ _ (by decide), h.wr, h.a0, hp.2]
     exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
-  subst e₂
-  refine ⟨?_, h.rd, h.wr, fun j hj => ?_⟩
-  · simp only [RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, h.a0]
-  · simp only [RegUpd.mem_write, RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, h.a0]
+  have ga : s₂.gpr .a0 = s₀.gpr .a0 := by
+    rw [g₂ _ (by decide) (by decide)]; simp only [RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, h.a0]
+  refine ⟨ga, rd₂.trans h.rd, wr₂.trans h.wr, fun j hj => ?_⟩
+  · rw [m₂]
+    simp only [RegUpd.mem_write, RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, h.a0]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
     · rw [readW_writeW_word _ _ _ (by omega) hk (by omega)]
       exact h.words j hj
     · exact Mem.readW_writeW_self64 _ _ _
 
-/-- No instruction of `init` writes a register other than `t0` and `t1`. -/
+/-- No instruction of `init` writes a register other than `t0`, `t1` and `t2`. -/
 def initDst : Option Reg → Bool
-  | some .t0 | some .t1 | none => true
+  | some .t0 | some .t1 | some .t2 | none => true
   | _ => false
 
 theorem init_correct (iv : HashValue) {s₀ : State} (hp : (Proof.Sha512.initRISCV64 iv).pre s₀) :
@@ -80,14 +85,13 @@ theorem init_correct (iv : HashValue) {s₀ : State} (hp : (Proof.Sha512.initRIS
   refine Proof.Sha512.Stream.repr_nil (stateAt_eq fun k hk => ?_)
   rw [h.words k hk, getElem!_pos iv k hk]
 
-theorem init_dst (iv : HashValue) (r : Reg) (hr : r ≠ .t0 ∧ r ≠ .t1) :
+theorem init_dst (iv : HashValue) (r : Reg) (hr : r ≠ .t0 ∧ r ≠ .t1 ∧ r ≠ .t2) :
     ∀ i ∈ instrs (initWith iv), dstOf i ≠ some r := by
   intro i hi e
   have hc : ((instrs (initWith iv)).all fun i => initDst (dstOf i)) = true := by
     simp only [initWith, instrs, List.all_flatMap, List.all_eq_true, List.mem_range]
     intro k _
-    simp [li64, li32, storeLE, dstOf, initDst]
-    rintro a x - (rfl | rfl) <;> rfl
+    simp [li64, li32, Impl.Words64.RISCV64.storeLE64, storeLE32, dstOf, initDst]
   have := List.all_eq_true.mp hc i hi
   rw [e] at this
   revert this hr; cases r <;> decide

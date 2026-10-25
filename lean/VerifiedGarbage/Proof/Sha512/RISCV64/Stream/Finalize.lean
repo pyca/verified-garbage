@@ -15,15 +15,16 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Sha512.RISCV64.Compress
 meta import VerifiedGarbage.Proof.Sha512.RISCV64.Compress
-import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 import VerifiedGarbage.Proof.Sha512.Digest
 meta import VerifiedGarbage.Proof.Sha512.Digest
+import VerifiedGarbage.Proof.Framework.RISCV64.Words64
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 public import VerifiedGarbage.Spec.Sha256
 meta import VerifiedGarbage.Spec.Sha256
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
-public import VerifiedGarbage.Impl.Words.RISCV64.Word64
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
+public import VerifiedGarbage.Impl.Words.RISCV64
 
 /-!
 # Streaming SHA-512 on RISC-V: `finalize`
@@ -44,7 +45,7 @@ SHA-512/256 and SHA-512/224 (`finalize384`, `finalize512_256`,
 namespace VG.Proof.Sha512.RISCV64.Stream.Finalize
 
 open VG VG.RISCV64 VG.Impl.Sha512.RISCV64.Stream VG.WriteBytes VG.RISCV64.ByteLoad
-open VG.Impl.Words.RISCV64 (storeBE loadLE32 loadLE64b)
+open VG.Impl.Words.RISCV64 (storeBE loadLE32)
 open VG.Proof.Sha512.RISCV64.Stream
 open VG.Proof.Sha512.Stream
 open VG.Spec.Sha512 (HashValue stateAt blockAt compress parseBlock bytesAt wordBytes)
@@ -713,20 +714,22 @@ theorem out_step {s₀ : State} (hp : Pre D s₀) (hD64 : D ≤ 64) {sD : State}
   have hP := flat_length (stateAt sD.mem (st s₀)) k (by omega)
   simp only [outW, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (loadLE64b_ok (by decide) (by decide) (by decide) (by omega)
+  refine WP.mono (Words64.loadLE64_ok (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by omega)
     (by rw [hx19]; exact ⟨stR s₀, by simp [h.rd, h.wr, hp.wr],
-      Offset.contains_base _ (by omega) (by omega)⟩)) fun s₁ e₁ => ?_
-  subst e₁
+      Offset.contains_base _ (by omega) (by omega)⟩)) fun s₁ u₁ => ?_
+  have k3 : s₁.gpr .s3 = out s₀ := by rw [u₁.other _ (by decide) (by decide) (by decide), hx21]
   rw [WP.block_append_iff]
   refine WP.mono (storeBE_ok (by decide) (by decide) (by decide) (by decide) (by omega)
     fun j hj => ?_) fun s₃ e₃ => hnext s₃ ?_
-  · rw [RegUpd.gpr_write_of_ne _ _ (by decide), RegUpd.gpr_write_of_ne _ _ (by decide), RegUpd.wr_write,
-      RegUpd.wr_write, hx21]
+  · rw [k3, u₁.wr]
     exact ⟨outR s₀ D, by simp [h.wr, hp.wr], Offset.contains_base _ (by omega) (by omega)⟩
   subst e₃
-  refine ⟨h.rd, h.wr, fun r hr => ?_, h.sp, ?_⟩
-  · have : r ≠ .t1 ∧ r ≠ .t2 := by revert r hr; decide
-    simp only [RegUpd.gpr_write, this.1, this.2, ite_false]
+  refine ⟨u₁.rd.trans h.rd, u₁.wr.trans h.wr, fun r hr => ?_, u₁.sp.trans h.sp, ?_⟩
+  · have : r ≠ .t1 ∧ r ≠ .t2 ∧ r ≠ .t4 := by revert r hr; decide
+    rw [RegUpd.gpr_write_of_ne _ _ this.2.1]
+    show s₁.gpr r = _
+    rw [u₁.other _ this.1 this.2.1 this.2.2]
     exact h.keep r hr
   · have hread : s.mem.readW (st s₀ + BitVec.ofNat 64 (8 * k)) 64 = (stateAt sD.mem (st s₀))[k]'(by omega) := by
       rw [h.mem, (out_frame (D := D) s₀ sD.mem _ (by omega)).readW
@@ -736,8 +739,9 @@ theorem out_step {s₀ : State} (hp : Pre D s₀) (hD64 : D ≤ 64) {sD : State}
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         subst hr'
         exact hp.st_out.sub_left (Offset.sub_base _ (by omega))
-    simp only [RegUpd.mem_write, RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, hx19, hx21,
-      hread, beBytes_wordBytes]
+    rw [RegUpd.mem_write]
+    show writeBytes s₁.mem (s₁.gpr .s3 + _) (beBytes 8 (s₁.gpr .t1)) = _
+    rw [k3, u₁.gpr, u₁.mem, hx19, hread, beBytes_wordBytes]
     rw [h.mem, ← hP, writeBytes_append _ _ _ _ (by rw [hP]; simp [wordBytes]; omega), List.take_add_one,
       List.getElem?_eq_getElem (by simp; omega), Option.toList_some, List.flatMap_append,
       List.flatMap_singleton, Vector.getElem_toList]

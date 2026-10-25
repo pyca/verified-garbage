@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Sha512
 public import VerifiedGarbage.Impl.Words.RISCV64.Word64
+public import VerifiedGarbage.Impl.Words64.RISCV64
 
 /-!
 # SHA-512 compression function: RISC-V implementation
@@ -34,6 +35,7 @@ namespace VG.Impl.Sha512.RISCV64
 
 open VG.RISCV64
 open VG.Impl.Words.RISCV64
+open VG.Impl.Words64.RISCV64 (loadLE64 storeLE64)
 open VG.Spec.Sha512 (K)
 
 /-- The registers holding the working variables. -/
@@ -111,12 +113,12 @@ def rounds : Nat → Prog isa
 
 /-- Load the hash value (`80 % 8 = 0`, so the variables are in the same
 registers after the 80 rounds). -/
-def load : List Instr := (List.range 8).flatMap fun k => loadLE64b (var 0 k) T0 .a0 (8 * k)
+def load : List Instr := (List.range 8).flatMap fun k => loadLE64 (var 0 k) T0 T1 .a0 (8 * k)
 
 /-- Add word `k` of the hash value into its working variable, and store the
 result. -/
 def updateW (k : Nat) : List Instr :=
-  loadLE64b T0 T1 .a0 (8 * k) ++ [.add (var 0 k) (var 0 k) T0] ++ storeLE 8 (var 0 k) T0 .a0 (8 * k)
+  loadLE64 T0 T1 T2 .a0 (8 * k) ++ [.add (var 0 k) (var 0 k) T0] ++ storeLE64 (var 0 k) T0 T1 .a0 (8 * k)
 
 /-- Advance to the next block and decrement the count. -/
 def advance : List Instr := [.addi .a1 .a1 128, .addi .a2 .a2 (-1)]

@@ -43,6 +43,7 @@ namespace VG.Impl.Sha512.RISCV64.Stream
 
 open VG.RISCV64
 open VG.Impl.Words.RISCV64
+open VG.Impl.Words64.RISCV64 (loadLE64 storeLE64)
 open VG.Impl.Sha512.RISCV64 (compress)
 
 /-- `mv d, n` (`addi d, n, 0`). -/
@@ -50,7 +51,7 @@ def mov (d n : Reg) : Instr := .addi d n 0
 
 /-- `init` storing the initial hash value `iv`. -/
 def initWith (iv : Spec.Sha512.HashValue) : Prog isa :=
-  .block ((List.range 8).flatMap fun k => li64 .t0 .t1 iv[k]! ++ storeLE 8 .t0 .t1 .a0 (8 * k))
+  .block ((List.range 8).flatMap fun k => li64 .t0 .t1 iv[k]! ++ storeLE64 .t0 .t1 .t2 .a0 (8 * k))
 
 /-- The bytes of the frame: the compression function's scratch space (144
 bytes), then the saved registers. -/
@@ -148,7 +149,7 @@ def finalizeBody : Prog isa :=
     (.block [.li .s5 0, .addi .s6 .s6 (-1)])))))))
 
 /-- Word `k` of the final hash value to `out`, big-endian. -/
-def outW (k : Nat) : List Instr := loadLE64b .t1 .t2 .s1 (8 * k) ++ storeBE 8 .t1 .t2 .s3 (8 * k)
+def outW (k : Nat) : List Instr := loadLE64 .t1 .t2 .t4 .s1 (8 * k) ++ storeBE 8 .t1 .t2 .s3 (8 * k)
 
 /-- The high half of word `k` (at offset `8 k + 4`, little-endian) to `out`,
 big-endian: the last 4 bytes of SHA-512/224's digest, for `k = 3`. -/
