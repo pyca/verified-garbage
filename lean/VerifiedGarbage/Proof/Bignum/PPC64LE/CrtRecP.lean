@@ -50,7 +50,7 @@ theorem recombineP_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 QI : Nat}
   refine recP1_ok hs hA hXA hw2 hw' h10 h29 h11 h23 h27 h28 hQL hq1 hqx hwX hP hP2 hPodd hm1 hm2
     fun t₁ v0 v1 v4 v7 i12 iinv out1 k1 => ?_
   have hsA := (hs.congr k1.wr).sub hA
-  refine recP2a_ok hsA (by unfold slot; omega_arith) hw2 hw' ((k1.gpr _ (by decide)).trans h10)
+  refine recP2a_ok (bj := 1) hsA (by unfold slot; omega_arith) (by decide) (by decide) (by decide) hw2 hw' ((k1.gpr _ (by decide)).trans h10)
     ((k1.gpr _ (by decide)).trans h21) ((k1.gpr _ (by decide)).trans h29)
     ((k1.gpr _ (by decide)).trans h11) v0 v1 v4 (Nat.mod_lt _ (by omega_arith)) hm1P
     fun t₂ v3 out2 a10 k2 => ?_
