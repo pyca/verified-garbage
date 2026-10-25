@@ -11,14 +11,18 @@
 //! rejects a trailing partial block. On AArch64, ECB runs sixteen blocks at
 //! a time in AdvSIMD registers; on x86-64, one at a time with SSE2; on x86,
 //! one at a time in general-purpose registers; on ARMv7, one at a time in
-//! core registers; on PPC64LE, one at a time in general-purpose registers.
+//! core registers; on PPC64LE, one at a time in general-purpose registers;
+//! on RISC-V, one at a time in general-purpose registers, with the
+//! schedule copied into a 16-byte aligned frame on the stack (key expansion
+//! builds it there), which is zeroed before returning.
 
 #![cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::blowfish::{
