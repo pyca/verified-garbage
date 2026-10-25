@@ -1,0 +1,14 @@
+name: The runner's Node
+description: >
+  The path of the Node binary that runs JavaScript actions on this runner,
+  which GitHub Actions also injects into job containers for JavaScript
+  actions. Not every runner has a Node on `PATH` (RISE's riscv64 runners
+  have none), so the Runner images workflow asks a JavaScript action.
+
+outputs:
+  path:
+    description: The path of the runner's Node binary (`process.execPath`).
+
+runs:
+  using: node24
+  main: index.js
