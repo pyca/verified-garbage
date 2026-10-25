@@ -88,7 +88,10 @@ jobs:
           tags: ${{ env.IMAGE }}
           platforms: ${{ env.PLATFORM }}
           pull: true
-          outputs: ${{ env.PUBLISH == 'true' && 'type=registry,compression=zstd' || 'type=docker' }}
+          # BuildKit's strongest zstd (every layer, the base image's too): the
+          # riscv64 runners pull the image for every job at a few MB/s, so a
+          # slower build of the image pays for itself many times over.
+          outputs: ${{ env.PUBLISH == 'true' && 'type=registry,compression=zstd,compression-level=19,force-compression=true' || 'type=docker' }}
       - id: runner-node
         uses: ./.github/actions/runner-node
       # What CI's jobs need: the runner's Node (which GitHub Actions injects

@@ -413,10 +413,11 @@ jobs:
           # key but build other features, so whichever saved the entry first,
           # the other's built theirs again on every run.
           shared-key: rust
-          # The benchmark crate is outside the library's workspace.
-          workspaces: |
-            . -> target
-            bench -> target
+          # A new generation of entries: those saved before the lints moved to
+          # `rust-lint` held Clippy's artifacts and the benchmark crate's
+          # (AWS-LC's among them), which this job no longer builds, and an
+          # entry that hits its key exactly is never saved again.
+          prefix-key: v1-rust
           save-if: ${{ github.ref == 'refs/heads/main' }}
       # The Benchmarks workflow's dependencies, for its `compare` jobs to
       # restore: pull requests can read only caches saved on their own branch
@@ -539,6 +540,8 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: rust-thumb
+          # As `rust`'s: entries saved before the lints moved held Clippy's.
+          prefix-key: v1-rust
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: rustc -vV
       # libtest's per-test elapsed times are still unstable, including on
