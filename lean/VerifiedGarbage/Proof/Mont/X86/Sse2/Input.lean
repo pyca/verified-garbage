@@ -108,8 +108,7 @@ theorem sq_run (s : State) (hm : 0 < s.mcdt) :
         (XShiftOp.eval .psrlq (singleP (s.gpr .eax) (s.gpr .eax)) 32) := by
   simp only [acc, List.cons_append, List.nil_append, runBlock_cons, exec, runStep_some,
     XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left', mcdt_setXmm, hm, xmm_setXmm, reduceCtorEq,
-    runBlock_nil, gpr_setXmm]
-  exact ⟨trivial, rfl, rfl, rfl, trivial, trivial, trivial, rfl, rfl⟩
+    runBlock_nil, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, singleP, and_self]
 
 /-- `paddq xmm0, xmm0; paddq xmm1, xmm1`. -/
 theorem double_run (s : State) :
@@ -129,8 +128,7 @@ theorem window_run (s : State) (hm : 0 < s.mcdt) :
         (XShiftOp.eval .psrlq (pmuludq (s.xmm .xmm6) (s.xmm .xmm7)) 32) := by
   simp only [acc, List.cons_append, List.nil_append, runBlock_cons, exec, runStep_some,
     XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left', mcdt_setXmm, hm, xmm_setXmm, reduceCtorEq,
-    runBlock_nil, gpr_setXmm, movdqa_eval]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> trivial
+    runBlock_nil, gpr_setXmm, movdqa_eval, mem_setXmm, rd_setXmm, wr_setXmm, and_self]
 
 /-! ## The products of a column -/
 
