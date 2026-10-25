@@ -63,8 +63,11 @@ def Agree (τ : T) (s₁ s₂ : State) : Prop :=
     s₁.mem (s₁.gpr .r30 + BitVec.ofNat 64 k) = s₂.mem (s₂.gpr .r30 + BitVec.ofNat 64 k)
 
 def step (τ : T) : Instr → Option T
-  | .add d n m | .sub d n m | .mul d n m | .mulhu d n m | .logic _ d n m =>
+  | .add d n m | .sub d n m | .mul d n m | .mulhu d n m | .logic _ d n m | .addc d n m
+  | .subc d n m =>
     some (wr τ d (pub τ.regs n && pub τ.regs m))
+  -- They read the carry bit, which is secret (see `Taint`).
+  | .adde d .. | .addze d _ | .sube d .. => some (wr τ d false)
   | .addi d n _ | .subi d n _ | .ori d n _ | .oris d n _ | .rotr _ d n _ | .lsr _ d n _
   | .lsl d n _ => some (wr τ d (pub τ.regs n))
   | .li d _ | .lis d _ | .addSp d _ => some (wr τ d true)
@@ -213,6 +216,18 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨rfl, ha.write d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.1.reg hp.1, ha.1.reg hp.2]
+  -- A carrying instruction writes the register as `write` does, and the carry
+  -- bit, which `Agree` does not relate.
+  | addc d n m | subc d n m =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    refine ⟨rfl, ha.write d (v₁ := BitVec.ofNat 64 _) (v₂ := BitVec.ofNat 64 _) fun hp => ?_⟩
+    simp only [Bool.and_eq_true] at hp
+    rw [ha.1.reg hp.1, ha.1.reg hp.2]
+  | adde d n m | addze d n | sube d n m =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.write d (v₁ := BitVec.ofNat 64 _) (v₂ := BitVec.ofNat 64 _) fun h => by cases h⟩
   | addi d n imm | subi d n imm | li d imm | rotr sz d n sh | lsr sz d n sh | lsl d n sh =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂

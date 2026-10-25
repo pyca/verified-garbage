@@ -65,7 +65,8 @@ theorem Covers.push {xs ys xs' ys' : List Region} (f : Region) (h : Covers (xs +
 /-- The register an instruction writes, if any (a frame's pop writes its
 register). -/
 def dstOf : Instr → Option Reg
-  | .add d .. | .sub d .. | .mul d .. | .mulhu d .. | .addi d .. | .subi d .. | .li d _ | .lis d _ | .ori d .. | .oris d ..
+  | .add d .. | .sub d .. | .mul d .. | .mulhu d .. | .addc d .. | .adde d .. | .addze d _
+  | .subc d .. | .sube d .. | .addi d .. | .subi d .. | .li d _ | .lis d _ | .ori d .. | .oris d ..
   | .logic _ d .. | .rotr _ d .. | .lsr _ d .. | .lsl d .. | .load _ d .. | .lbz d .. | .loadRev _ d ..
   | .mflr d | .pop d | .addSp d _ | .adrSym d _ => some d
   | .store .. | .stb .. | .storeRev .. | .mtlr _ | .push _ | .alloc _ | .free _ => none
