@@ -106,6 +106,21 @@ def double : Prog isa :=
 /-- `x := 2 x mod n`. -/
 def doubleMod : Prog isa := .seq double (.seq subMod selectAcc)
 
+/-- `acc := 2 x + b`, `w + 1` words of 64 bits, for `x` in array 1 (`r5`) and
+the bit `b` in `r20`. -/
+def double64 : Prog isa :=
+  .seq (.block [.addi .r14 .r8 0, .addi .r15 .r5 0, .lsr .d .r17 .r11 1])
+    (.seq (countLoop .r17 [.load .d .r0 .r15 0, .lsl .r3 .r0 1, .add .r3 .r3 .r20, .lsr .d .r20 .r0 63,
+        .store .d .r3 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8])
+      (.block [.store .d .r20 .r14 0]))
+
+/-- `x := 2 x + b mod n` (`b` in `r20`), on words of 64 bits: `double64`, then
+`MontMul.lean`'s `subMod64` and `selectAcc64`. -/
+def dblMod64 : Prog isa := .seq double64 (.seq subMod64 selectAcc64)
+
+/-- `x := 2 x mod n`, on words of 64 bits. -/
+def doubleMod64 : Prog isa := .seq (.block [.li .r20 0]) dblMod64
+
 /-- `x := 2^(128 w) mod n`, by `128 w` doublings counted by `r4`. -/
 def r2 : Prog isa :=
   .seq one (.seq (.block [.lsl .r4 .r11 6])
@@ -164,11 +179,12 @@ def r2Fast : Prog isa :=
 
 /-- `x := R² mod n = 2^(128 w) mod n` in array 1, for any odd `n` of `w`
 words, with `-n⁻¹ mod 2³²` in `r12` and the bases of arrays 1–3 in `r5`, `r8`
-and `r9`: `x := 1`; `64 w + w` doublings to `2^w R mod n`; then six Montgomery
-squares to `2^(64 w) R mod n`, as in `r2Fast`, counted by `r24`. -/
+and `r9`: `x := 1`; `64 w + w` doublings to `2^w R mod n` (`doubleMod64`);
+then six Montgomery squares to `2^(64 w) R mod n`, as in `r2Fast`, counted by
+`r24`. -/
 def r2Prime : Prog isa :=
   .seq one (.seq (.block [.lsl .r4 .r11 5, .lsr .d .r3 .r11 1, .add .r4 .r4 .r3])
-    (.seq (.loop (.seq doubleMod (.block [.subi .r4 .r4 1])) (.nonzero .d .r4))
+    (.seq (.loop (.seq doubleMod64 (.block [.subi .r4 .r4 1])) (.nonzero .d .r4))
       (.seq (.block [.li .r24 6]) (.loop (.seq r2Sq (.block [.subi .r24 .r24 1])) (.nonzero .d .r24)))))
 
 /-- `w` words from `r15` to `r14`, both advanced past them. -/

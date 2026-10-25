@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.MillerRabin.PPC64LE.Round
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish64
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.PublicChecked
 public import VerifiedGarbage.Proof.Bignum.Layout
@@ -15,7 +16,7 @@ public import VerifiedGarbage.Proof.Mont.Words32
 The working space has 28 arrays (`slot w j`, `j < 28`); `Env` is what every
 piece of the round keeps: array 0 at `r10`, the arrays' size in `r29`,
 `2 w` in `r11`, and the working space in `r31`. `sel_ok`: a masked copy by
-`selectAcc` into an array other than its sources.
+`selectAcc64` into an array other than its sources.
 -/
 
 @[expose] public section
@@ -91,7 +92,7 @@ theorem sel_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) {b : Bool} {
   have hO := h.arr ho
   have hA := h.arr ha
   have hT := h.arr ht
-  refine WP.mono (selectAcc_ok e3.hs (dA := slot w a) (dT := slot w t) (dO := slot w o) (n := 2 * w) (b := b)
+  refine WP.mono (selectAcc64_ok32 e3.hs (dA := slot w a) (dT := slot w t) (dO := slot w o) (w := w) (b := b)
       (by rw [k3.gpr .r8 (by decide), k2.gpr .r8 (by decide), a8])
       (by rw [k3.gpr .r9 (by decide), a9]) a5 e3.h11
       (by rw [k13.gpr .r20 (by decide), h20]) (by have := h.hw; omega) (by have := h.hw'; omega)

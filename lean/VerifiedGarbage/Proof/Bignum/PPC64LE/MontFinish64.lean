@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.PowLit
 
@@ -244,5 +245,22 @@ theorem selectAcc64_ok {s : State} {B : Addr} {Z dA dT dO w : Nat} (hs : Scr s B
     cases b
     · simp only [Bool.false_eq_true, ite_false]; rw [wt]
     · simp only [ite_true]; rw [wa]
+
+/-- `selectAcc64_ok` in `selectAcc_ok`'s terms (`MontFinish.lean`): the `2 w`
+digits, and the mask `0 − b`. -/
+theorem selectAcc64_ok32 {s : State} {B : Addr} {Z dA dT dO w : Nat} (hs : Scr s B Z) {b : Bool}
+    (h8 : s.gpr .r8 = off B dA) (h9 : s.gpr .r9 = off B dT) (h5 : s.gpr .r5 = off B dO)
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (h20 : s.gpr .r20 = BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0)) (hn : 1 ≤ 2 * w)
+    (hn' : 2 * w < 2 ^ 32) (hA : dA + 4 * (2 * w) ≤ Z) (hT : dT + 4 * (2 * w) ≤ Z) (hO : dO + 4 * (2 * w) ≤ Z)
+    (dOA : dO + 4 * (2 * w) ≤ dA ∨ dA + 4 * (2 * w) ≤ dO) (dOT : dO + 4 * (2 * w) ≤ dT ∨ dT + 4 * (2 * w) ≤ dO) :
+    WP isa selectAcc64 s fun s' =>
+      val32 s'.mem B dO (2 * w) = (if b then val32 s.mem B dA (2 * w) else val32 s.mem B dT (2 * w)) ∧
+      Outside B dO (4 * (2 * w)) s.mem s'.mem ∧ Keep [.r0, .r3, .r14, .r15, .r16, .r17] s s' := by
+  have hm : BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0) = if b then BitVec.allOnes 64 else 0 := by
+    cases b <;> rfl
+  refine WP.mono (selectAcc64_ok (w := w) hs h8 h9 h5 h11 (h20.trans hm) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) (by omega)) fun s' ⟨hv, hout, k⟩ => ⟨?_, hout.mono (Nat.le_refl _) (by omega), k⟩
+  rw [← wordsVal_eq_val32, ← wordsVal_eq_val32, ← wordsVal_eq_val32, hv]
 
 end VG.Proof.Bignum.PPC64LE

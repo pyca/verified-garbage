@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
+import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish64
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 
 /-!
@@ -24,19 +25,19 @@ open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE
 open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.MillerRabin.PPC64LE
 open VG.Proof.Bignum (slot slot_sep)
 
-/-- `selectAcc` with the bases already in `r5`, `r8` and `r9`. -/
+/-- `selectAcc64` with the bases already in `r5`, `r8` and `r9`. -/
 theorem selectAt_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) {b : Bool} {o a t : Nat}
     (ho : o < 28) (ha : a < 28) (ht : t < 28) (hoa : o ≠ a) (hot : o ≠ t)
     (h5 : s.gpr .r5 = off B (slot w o)) (h8 : s.gpr .r8 = off B (slot w a)) (h9 : s.gpr .r9 = off B (slot w t))
     (h20 : s.gpr .r20 = mask b) :
-    WP isa selectAcc s fun s' =>
+    WP isa selectAcc64 s fun s' =>
       (arr s'.mem B w o = (if b then arr s.mem B w a else arr s.mem B w t) ∧
         Outside B (slot w o) (8 * (w + 2)) s.mem s'.mem) ∧ Keep [.r0, .r3, .r14, .r15, .r16, .r17] s s' := by
   have sep := fun {j k : Nat} (hjk : j ≠ k) => slot_sep (w := w) hjk
   have hO := h.arr ho
   have hA := h.arr ha
   have hT := h.arr ht
-  refine WP.mono (selectAcc_ok h.hs (dA := slot w a) (dT := slot w t) (dO := slot w o) (n := 2 * w) (b := b)
+  refine WP.mono (selectAcc64_ok32 h.hs (dA := slot w a) (dT := slot w t) (dO := slot w o) (w := w) (b := b)
       h8 h9 h5 h.h11 h20 (by have := h.hw; omega_arith) (by have := h.hw'; omega_arith)
       (by omega_arith) (by omega_arith) (by omega_arith)
       (by have := sep hoa; omega_arith) (by have := sep hot; omega_arith)) fun s' ⟨hv, hout, k⟩ =>
