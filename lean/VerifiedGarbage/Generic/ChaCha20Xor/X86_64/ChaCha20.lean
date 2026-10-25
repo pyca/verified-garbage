@@ -19,6 +19,11 @@ adds the `# Safety` items that depend on the target (`Sig.layoutDoc`), from
 
 The stack is 24 bytes for every implementation: the return address of the
 call of `vg_chacha20_xor`, and up to 16 bytes for its own calls.
+
+Its IFMA instance calls `vg_chacha20_xor_avx512` (`XorImpl.split`), as
+`seal_split`'s does: `vg_chacha20_xor_ifma` differs only for 257 to 320
+bytes, which ChaCha20-Poly1305's seal gains from, and standalone ChaCha20 on
+a Zen 4 (EPYC 9V74) ran up to 3.9% slower with it.
 -/
 
 @[expose] public section
@@ -27,13 +32,13 @@ namespace VG.Generic.ChaCha20Xor.X86_64.ChaCha20
 
 def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
   Spec.ChaCha20.applyApi.artifact X86_64.target {
-    suffix := v.suffix
+    suffix := v.split.suffix
     notes := ["This implementation XORs the whole blocks with `" ++
-      v.callee.name ++ "`."]
-    code := Impl.ChaCha20.X86_64.Stream.apply v.callee
+      v.split.callee.name ++ "`."]
+    code := Impl.ChaCha20.X86_64.Stream.apply v.split.callee
     stack := 24
-    verified := Proof.ChaCha20.X86_64.Stream.apply_verified v
-    spSafe := Proof.ChaCha20.X86_64.Stream.apply_spSafe v
-    features := v.features }]
+    verified := Proof.ChaCha20.X86_64.Stream.apply_verified v.split
+    spSafe := Proof.ChaCha20.X86_64.Stream.apply_spSafe v.split
+    features := v.split.features }]
 
 end VG.Generic.ChaCha20Xor.X86_64.ChaCha20

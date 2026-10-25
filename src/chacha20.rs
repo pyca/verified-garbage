@@ -501,7 +501,6 @@ mod tests {
             use crate::arch::chacha20::{
                 VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
                 VG_CHACHA20_APPLY_AVX512VL_FEATURES, VG_CHACHA20_APPLY_IFMA_FEATURES,
-                VG_CHACHA20_XOR_IFMA_FEATURES,
             };
             use crate::cpu::Features;
             let avx2 = VG_CHACHA20_APPLY_AVX2_FEATURES;
@@ -510,17 +509,10 @@ mod tests {
             assert_eq!(Backend::select(avx2), Backend::Avx2);
             assert_eq!(Backend::select(avx512), Backend::Avx512);
             assert_eq!(Backend::select(avx512vl), Backend::Avx512Vl);
-            // `vg_chacha20_xor_ifma`'s five-block tail needs AVX-512VL.
-            let ifma = VG_CHACHA20_APPLY_IFMA_FEATURES;
-            assert_eq!(ifma, VG_CHACHA20_XOR_IFMA_FEATURES);
-            assert_eq!(ifma, Features::all(&[avx512, Features::of(&["avx512vl"])]));
-            assert_eq!(
-                Backend::select(Features::all(&[ifma, super::IFMA])),
-                Backend::Ifma
-            );
+            assert_eq!(VG_CHACHA20_APPLY_IFMA_FEATURES, avx512);
             assert_eq!(
                 Backend::select(Features::all(&[avx512, super::IFMA])),
-                Backend::Avx512
+                Backend::Ifma
             );
             assert_eq!(
                 Backend::select(Features::all(&[avx512vl, super::IFMA])),

@@ -272,8 +272,8 @@ def ifmaSplit : XorImpl where
   poly := .ifma
   fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inr rfl⟩)
 
-/-- The implementation `v`'s `vg_chacha20_poly1305_seal_split` calls:
-`ifmaSplit` for IFMA, otherwise `v`. -/
+/-- The implementation `v`'s `vg_chacha20_poly1305_seal_split` and
+`vg_chacha20_apply` call: `ifmaSplit` for IFMA, otherwise `v`. -/
 def split (v : XorImpl) : XorImpl := match v.poly with
   | .ifma => ifmaSplit
   | _ => v
