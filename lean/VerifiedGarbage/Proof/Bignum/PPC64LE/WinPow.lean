@@ -42,13 +42,13 @@ def winRegs : List Reg := Pub.montRegs ++ selectRegs ++ [.r18, .r24]
 /-- A square of `a` in the context. -/
 theorem sq_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hodd : N % 2 = 1)
     (ha : A s.mem B w 6 < N) {X c : Nat} :
-    WP isa (montOp 6 6 6) s fun t =>
+    WP isa (PublicChecked.sqrOp 6 6) s fun t =>
       (WCtx t B Z w N ∧ Outs B (win w) s.mem t.mem ∧ Fix B w s.mem t.mem ∧ A t.mem B w 6 < N ∧
         (A s.mem B w 6 % N = X ^ c * 2 ^ (64 * w) % N →
           A t.mem B w 6 % N = X ^ (c + c) * 2 ^ (64 * w) % N)) ∧ Keep Pub.montRegs s t := by
   have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
-  exact WP.mono (h.mont (o := 6) (a := 6) (b := 6) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) ha) fun t ⟨⟨ct, lt, e, v, o⟩, k⟩ =>
+  exact WP.mono (h.sqr (o := 6) (a := 6) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) ha) fun t ⟨⟨ct, lt, e, v, o⟩, k⟩ =>
     ⟨⟨ct, o, fun j hj h2 h3 _ h6 => v j hj h2 h3 h6, lt, fun hA => mont_pow hR hA hA e⟩, k⟩
 
 theorem top_nibble (x : BitVec 64) : x >>> 60 = BitVec.ofNat 64 (x.toNat / 2 ^ 60) := by

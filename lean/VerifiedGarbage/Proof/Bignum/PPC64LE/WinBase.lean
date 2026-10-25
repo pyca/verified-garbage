@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.ModExp
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubSqr
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -143,6 +144,21 @@ theorem WCtx.mont {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) {o a
         Outs B (win w) s.mem t.mem) ∧ Keep Pub.montRegs s t := by
   refine WP.mono (Pub.montOpN_ok h.scr (n := 24) (by decide) ho ha hb ho2 ho3 ha2 hb2 h.w2 h.w31 h.hZ h.r10 h.r29
     h.r11 h.r12 h.inv (by rw [show val32 s.mem B (slot w 0) (2 * w) = N from h.n]; exact hB))
+    fun t ⟨⟨hlt, he, out⟩, k⟩ => ?_
+  have op := win_of_mont out (by omega) ho
+  rw [show val32 s.mem B (slot w 0) (2 * w) = N from h.n] at hlt he
+  exact ⟨⟨h.of k (by decide) op, hlt, he, fun j hj h2 h3 hjo => arr_mont out hj h2 h3 hjo h.nw, op⟩, k⟩
+
+/-- `WCtx.mont` for `sqrOp o a` (`a` other than array 3). -/
+theorem WCtx.sqr {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) {o a : Nat} (ho : o < 24) (ha : a < 24)
+    (ho1 : o ≠ 0) (ho2 : o ≠ 2) (ho3 : o ≠ 3) (ha2 : a ≠ 2) (ha3 : a ≠ 3) (hA : A s.mem B w a < N) :
+    WP isa (PublicChecked.sqrOp o a) s fun t =>
+      (WCtx t B Z w N ∧ A t.mem B w o < N ∧
+        A t.mem B w o * 2 ^ (64 * w) % N = A s.mem B w a * A s.mem B w a % N ∧
+        (∀ j < 24, j ≠ 2 → j ≠ 3 → j ≠ o → A t.mem B w j = A s.mem B w j) ∧
+        Outs B (win w) s.mem t.mem) ∧ Keep Pub.montRegs s t := by
+  refine WP.mono (Pub.sqrOpN_ok h.scr (n := 24) (by decide) ho ha ho2 ho3 ha2 ha3 h.w2 h.w31 h.hZ h.r10 h.r29
+    h.r11 h.r12 h.inv (by rw [show val32 s.mem B (slot w 0) (2 * w) = N from h.n]; exact hA))
     fun t ⟨⟨hlt, he, out⟩, k⟩ => ?_
   have op := win_of_mont out (by omega) ho
   rw [show val32 s.mem B (slot w 0) (2 * w) = N from h.n] at hlt he

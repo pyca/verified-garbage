@@ -43,7 +43,8 @@ def artifacts : List Artifact := [
         the key, and the result is stored masked. Each prime has its own working space of 24 \
         numbers of `max(2, ⌈len/8⌉)` words for its public length: the input is reduced modulo it a \
         bit at a time, and the exponent is scanned in four-bit windows from the top, four \
-        Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry \
+        Montgomery squares (a dedicated square that adds each cross product `a_i a_j` once, from \
+        `2 a`) and a multiplication by the table entry `x^d R` per window, the entry \
         selected by a masked scan of the whole 16-entry table, so that no address depends on the \
         exponent. `q h + m₂` is a Montgomery product modulo `2^(64 w) - 1` and an addition. The \
         nonvolatile registers it uses are saved in the working space's header."]

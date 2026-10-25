@@ -85,7 +85,7 @@ def select : Prog isa :=
 /-- One window, its digit at the top of `r24`: four squares, `a := a T_d`,
 then `r24 := r24 << 4`. -/
 def window : Prog isa :=
-  .seq (montOp 6 6 6) (.seq (montOp 6 6 6) (.seq (montOp 6 6 6) (.seq (montOp 6 6 6)
+  .seq (sqrOp 6 6) (.seq (sqrOp 6 6) (.seq (sqrOp 6 6) (.seq (sqrOp 6 6)
     (.seq (.block [.lsr .d .r18 .r24 60]) (.seq select (.seq (montOp 6 6 5) (.block [.lsl .r24 .r24 4])))))))
 
 /-- The two windows of the byte at `r30`, `r30` advanced. -/

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.PPC64LE.Precompute
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.MontSqr
 
 /-!
 # The RSA public-key operation on PPC64LE
@@ -137,6 +138,11 @@ def checkX : Prog isa :=
 def montOp (o a b : Nat) : Prog isa :=
   .seq (.block (base .r5 o ++ base .r6 a ++ base .r7 b ++ base .r8 2 ++ base .r9 3 ++ [.addi .r4 .r11 0]))
     tail
+
+/-- `[o] := [a]² R⁻¹ mod n`: `MontSqr.sqrTail`, with the bases (`a` not array 3,
+which it uses for `2 a`). -/
+def sqrOp (o a : Nat) : Prog isa :=
+  .seq (.block (base .r5 o ++ base .r6 a ++ base .r8 2 ++ base .r9 3 ++ [.addi .r4 .r11 0])) MontSqr.sqrTail
 
 /-- 1 in array 7. -/
 def one : Prog isa :=
