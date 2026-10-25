@@ -23,22 +23,27 @@ def artifacts : List Artifact := [
     verified := Proof.Sm4.PPC64LE.expandKey_framed },
   Spec.Sm4.ecbEncryptApi.artifact PPC64LE.target {
     notes := ["Sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box \
-        circuit (SM4's S-box is an affine map of AES's), with no table lookups. The working space \
-        (3216 bytes, our caller's r14-r31 among them) is on the stack, zeroed before returning."]
+        circuit (SM4's S-box is an affine map of AES's), with no table lookups. Each round key's \
+        planes are made from its word: its bytes spread to the planes' 16-bit groups, then each bit \
+        of a group filled to the group by doubling. The working space (3216 bytes, our caller's \
+        r14-r31 among them) is on the stack, zeroed before returning."]
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .encrypt)
     stack := 3248
     verified := Proof.Sm4.PPC64LE.ecb_framed .encrypt },
   Spec.Sm4.ecbDecryptApi.artifact PPC64LE.target {
     notes := ["Sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box \
-        circuit (SM4's S-box is an affine map of AES's), with no table lookups. The working space \
-        (3216 bytes, our caller's r14-r31 among them) is on the stack, zeroed before returning."]
+        circuit (SM4's S-box is an affine map of AES's), with no table lookups. Each round key's \
+        planes are made from its word: its bytes spread to the planes' 16-bit groups, then each bit \
+        of a group filled to the group by doubling. The working space (3216 bytes, our caller's \
+        r14-r31 among them) is on the stack, zeroed before returning."]
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .decrypt)
     stack := 3248
     verified := Proof.Sm4.PPC64LE.ecb_framed .decrypt },
   (Spec.Sm4.Prepared.prepareApi Impl.Sm4.PPC64LE.layout).artifact PPC64LE.target {
     notes := ["ECB's key setup alone, for the modes: the masks of the round keys' planes, and the 32 \
         round keys bitsliced into the table of the working space, in the order `decrypt` selects, as \
-        sixteen copies each."]
+        sixteen copies each: each round key's bytes spread to the planes' 16-bit groups, then each \
+        bit of a group filled to the group by doubling."]
     code := Impl.Sm4.PPC64LE.prepareKeys
     verified := Proof.Sm4.PPC64LE.prepare_verified },
   (Spec.Sm4.Prepared.cryptApi Impl.Sm4.PPC64LE.layout).artifact PPC64LE.target {
