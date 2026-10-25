@@ -13,7 +13,7 @@ namespace VG.Artifacts.SeedCfb.X86_64
 /-- How the functions compute SEED, and the mode. -/
 def note : String :=
   "Baseline x86-64: through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen blocks \
-  (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups; one block per \
+  (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, grouping the affine layer's parity-specific XOR sums before masking; one block per \
   batch, of which the other fifteen lanes are unused. The schedule is copied into the working space once \
   per call. The mode is the generic CFB of `Impl/Modes/X86_64/`."
 

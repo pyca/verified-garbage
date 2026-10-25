@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Seed.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen blocks (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups; decryption deciphers sixteen blocks per batch; encryption, whose blocks depend on each other, one, with the other fifteen lanes unused. The schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86_64/`.
+/// Baseline x86-64: through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen blocks (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, grouping the affine layer's parity-specific XOR sums before masking; decryption deciphers sixteen blocks per batch; encryption, whose blocks depend on each other, one, with the other fifteen lanes unused. The schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86_64/`.
 ///
 /// The IV's address is kept in `xmm15`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
@@ -590,113 +590,83 @@ mov QWORD PTR [r9+40], r10
 mov QWORD PTR [r9+48], r11
 mov QWORD PTR [r9+56], r12
 mov QWORD PTR [r9+64], r13
-mov rax, QWORD PTR [r9+16]
-and rax, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+32]
+mov rax, QWORD PTR [r9+24]
+xor rax, QWORD PTR [r9+40]
+xor rax, QWORD PTR [r9+48]
+xor rax, QWORD PTR [r9+56]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+and rax, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rax, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov rbx, QWORD PTR [r9+16]
-and rbx, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbx, r14
-xor rbx, QWORD PTR [r9+40]
-mov r14, QWORD PTR [r9+48]
+mov rbx, QWORD PTR [r9+24]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+48]
+mov r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+xor r15, QWORD PTR [r9+64]
+and rbx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbx, r14
-xor rbx, QWORD PTR [r9+56]
-xor rbx, QWORD PTR [r9+64]
-mov rcx, QWORD PTR [r9+8]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor rcx, r14
+xor rbx, r15
+mov rcx, QWORD PTR [r9+16]
 mov r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+and rcx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rcx, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rcx, r14
-xor rcx, QWORD PTR [r9+40]
-xor rcx, QWORD PTR [r9+56]
-mov rbp, QWORD PTR [r9+8]
+xor rcx, r15
+mov rbp, QWORD PTR [r9+24]
+xor rbp, QWORD PTR [r9+64]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
+and rbp, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbp, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rbp, r14
-xor rbp, QWORD PTR [r9+40]
-xor rbp, QWORD PTR [r9+48]
-xor rbp, QWORD PTR [r9+56]
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
+xor rbp, r15
 mov r10, QWORD PTR [r9+8]
-and r10, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+56]
+xor r10, QWORD PTR [r9+24]
+xor r10, QWORD PTR [r9+40]
 mov r14, QWORD PTR [r9+64]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+56]
+and r10, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r10, r14
+xor r10, r15
 mov r11, QWORD PTR [r9+8]
+xor r11, QWORD PTR [r9+16]
+mov r14, QWORD PTR [r9+40]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
 and r11, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor r11, r14
-xor r11, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
 and r14, QWORD PTR [r9+416]
 xor r11, r14
-xor r11, QWORD PTR [r9+48]
-xor r11, QWORD PTR [r9+56]
+xor r11, r15
 mov r12, QWORD PTR [r9+8]
-and r12, QWORD PTR [r9+408]
+xor r12, QWORD PTR [r9+40]
+xor r12, QWORD PTR [r9+48]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+56]
+and r12, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r12, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-xor r12, QWORD PTR [r9+56]
+xor r12, r15
 mov r13, QWORD PTR [r9+16]
+xor r13, QWORD PTR [r9+56]
+xor r13, QWORD PTR [r9+64]
 and r13, QWORD PTR [r9+408]
 xor r13, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
 mov r14, rax
 shr r14, 1
 xor r14, rbx
@@ -1417,113 +1387,83 @@ mov QWORD PTR [r9+40], r10
 mov QWORD PTR [r9+48], r11
 mov QWORD PTR [r9+56], r12
 mov QWORD PTR [r9+64], r13
-mov rax, QWORD PTR [r9+16]
-and rax, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+32]
+mov rax, QWORD PTR [r9+24]
+xor rax, QWORD PTR [r9+40]
+xor rax, QWORD PTR [r9+48]
+xor rax, QWORD PTR [r9+56]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+and rax, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rax, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov rbx, QWORD PTR [r9+16]
-and rbx, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbx, r14
-xor rbx, QWORD PTR [r9+40]
-mov r14, QWORD PTR [r9+48]
+mov rbx, QWORD PTR [r9+24]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+48]
+mov r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+xor r15, QWORD PTR [r9+64]
+and rbx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbx, r14
-xor rbx, QWORD PTR [r9+56]
-xor rbx, QWORD PTR [r9+64]
-mov rcx, QWORD PTR [r9+8]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor rcx, r14
+xor rbx, r15
+mov rcx, QWORD PTR [r9+16]
 mov r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+and rcx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rcx, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rcx, r14
-xor rcx, QWORD PTR [r9+40]
-xor rcx, QWORD PTR [r9+56]
-mov rbp, QWORD PTR [r9+8]
+xor rcx, r15
+mov rbp, QWORD PTR [r9+24]
+xor rbp, QWORD PTR [r9+64]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
+and rbp, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbp, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rbp, r14
-xor rbp, QWORD PTR [r9+40]
-xor rbp, QWORD PTR [r9+48]
-xor rbp, QWORD PTR [r9+56]
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
+xor rbp, r15
 mov r10, QWORD PTR [r9+8]
-and r10, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+56]
+xor r10, QWORD PTR [r9+24]
+xor r10, QWORD PTR [r9+40]
 mov r14, QWORD PTR [r9+64]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+56]
+and r10, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r10, r14
+xor r10, r15
 mov r11, QWORD PTR [r9+8]
+xor r11, QWORD PTR [r9+16]
+mov r14, QWORD PTR [r9+40]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
 and r11, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor r11, r14
-xor r11, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
 and r14, QWORD PTR [r9+416]
 xor r11, r14
-xor r11, QWORD PTR [r9+48]
-xor r11, QWORD PTR [r9+56]
+xor r11, r15
 mov r12, QWORD PTR [r9+8]
-and r12, QWORD PTR [r9+408]
+xor r12, QWORD PTR [r9+40]
+xor r12, QWORD PTR [r9+48]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+56]
+and r12, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r12, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-xor r12, QWORD PTR [r9+56]
+xor r12, r15
 mov r13, QWORD PTR [r9+16]
+xor r13, QWORD PTR [r9+56]
+xor r13, QWORD PTR [r9+64]
 and r13, QWORD PTR [r9+408]
 xor r13, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
 mov r14, rax
 shr r14, 1
 xor r14, rbx
@@ -2244,113 +2184,83 @@ mov QWORD PTR [r9+40], r10
 mov QWORD PTR [r9+48], r11
 mov QWORD PTR [r9+56], r12
 mov QWORD PTR [r9+64], r13
-mov rax, QWORD PTR [r9+16]
-and rax, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+32]
+mov rax, QWORD PTR [r9+24]
+xor rax, QWORD PTR [r9+40]
+xor rax, QWORD PTR [r9+48]
+xor rax, QWORD PTR [r9+56]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+and rax, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rax, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov rbx, QWORD PTR [r9+16]
-and rbx, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbx, r14
-xor rbx, QWORD PTR [r9+40]
-mov r14, QWORD PTR [r9+48]
+mov rbx, QWORD PTR [r9+24]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+48]
+mov r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+xor r15, QWORD PTR [r9+64]
+and rbx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbx, r14
-xor rbx, QWORD PTR [r9+56]
-xor rbx, QWORD PTR [r9+64]
-mov rcx, QWORD PTR [r9+8]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor rcx, r14
+xor rbx, r15
+mov rcx, QWORD PTR [r9+16]
 mov r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+and rcx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rcx, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rcx, r14
-xor rcx, QWORD PTR [r9+40]
-xor rcx, QWORD PTR [r9+56]
-mov rbp, QWORD PTR [r9+8]
+xor rcx, r15
+mov rbp, QWORD PTR [r9+24]
+xor rbp, QWORD PTR [r9+64]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
+and rbp, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbp, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rbp, r14
-xor rbp, QWORD PTR [r9+40]
-xor rbp, QWORD PTR [r9+48]
-xor rbp, QWORD PTR [r9+56]
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
+xor rbp, r15
 mov r10, QWORD PTR [r9+8]
-and r10, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+56]
+xor r10, QWORD PTR [r9+24]
+xor r10, QWORD PTR [r9+40]
 mov r14, QWORD PTR [r9+64]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+56]
+and r10, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r10, r14
+xor r10, r15
 mov r11, QWORD PTR [r9+8]
+xor r11, QWORD PTR [r9+16]
+mov r14, QWORD PTR [r9+40]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
 and r11, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor r11, r14
-xor r11, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
 and r14, QWORD PTR [r9+416]
 xor r11, r14
-xor r11, QWORD PTR [r9+48]
-xor r11, QWORD PTR [r9+56]
+xor r11, r15
 mov r12, QWORD PTR [r9+8]
-and r12, QWORD PTR [r9+408]
+xor r12, QWORD PTR [r9+40]
+xor r12, QWORD PTR [r9+48]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+56]
+and r12, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r12, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-xor r12, QWORD PTR [r9+56]
+xor r12, r15
 mov r13, QWORD PTR [r9+16]
+xor r13, QWORD PTR [r9+56]
+xor r13, QWORD PTR [r9+64]
 and r13, QWORD PTR [r9+408]
 xor r13, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
 mov r14, rax
 shr r14, 1
 xor r14, rbx
@@ -3107,7 +3017,7 @@ ret
 ///
 /// Contract: `VG.Spec.Seed.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen blocks (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups; decryption deciphers sixteen blocks per batch; encryption, whose blocks depend on each other, one, with the other fifteen lanes unused. The schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86_64/`.
+/// Baseline x86-64: through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen blocks (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, grouping the affine layer's parity-specific XOR sums before masking; decryption deciphers sixteen blocks per batch; encryption, whose blocks depend on each other, one, with the other fifteen lanes unused. The schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86_64/`.
 ///
 /// The last ciphertext block is copied to the IV before any block is decrypted.
 ///
@@ -3712,113 +3622,83 @@ mov QWORD PTR [r9+40], r10
 mov QWORD PTR [r9+48], r11
 mov QWORD PTR [r9+56], r12
 mov QWORD PTR [r9+64], r13
-mov rax, QWORD PTR [r9+16]
-and rax, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+32]
+mov rax, QWORD PTR [r9+24]
+xor rax, QWORD PTR [r9+40]
+xor rax, QWORD PTR [r9+48]
+xor rax, QWORD PTR [r9+56]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+and rax, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rax, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov rbx, QWORD PTR [r9+16]
-and rbx, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbx, r14
-xor rbx, QWORD PTR [r9+40]
-mov r14, QWORD PTR [r9+48]
+mov rbx, QWORD PTR [r9+24]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+48]
+mov r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+xor r15, QWORD PTR [r9+64]
+and rbx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbx, r14
-xor rbx, QWORD PTR [r9+56]
-xor rbx, QWORD PTR [r9+64]
-mov rcx, QWORD PTR [r9+8]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor rcx, r14
+xor rbx, r15
+mov rcx, QWORD PTR [r9+16]
 mov r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+and rcx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rcx, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rcx, r14
-xor rcx, QWORD PTR [r9+40]
-xor rcx, QWORD PTR [r9+56]
-mov rbp, QWORD PTR [r9+8]
+xor rcx, r15
+mov rbp, QWORD PTR [r9+24]
+xor rbp, QWORD PTR [r9+64]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
+and rbp, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbp, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rbp, r14
-xor rbp, QWORD PTR [r9+40]
-xor rbp, QWORD PTR [r9+48]
-xor rbp, QWORD PTR [r9+56]
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
+xor rbp, r15
 mov r10, QWORD PTR [r9+8]
-and r10, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+56]
+xor r10, QWORD PTR [r9+24]
+xor r10, QWORD PTR [r9+40]
 mov r14, QWORD PTR [r9+64]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+56]
+and r10, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r10, r14
+xor r10, r15
 mov r11, QWORD PTR [r9+8]
+xor r11, QWORD PTR [r9+16]
+mov r14, QWORD PTR [r9+40]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
 and r11, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor r11, r14
-xor r11, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
 and r14, QWORD PTR [r9+416]
 xor r11, r14
-xor r11, QWORD PTR [r9+48]
-xor r11, QWORD PTR [r9+56]
+xor r11, r15
 mov r12, QWORD PTR [r9+8]
-and r12, QWORD PTR [r9+408]
+xor r12, QWORD PTR [r9+40]
+xor r12, QWORD PTR [r9+48]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+56]
+and r12, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r12, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-xor r12, QWORD PTR [r9+56]
+xor r12, r15
 mov r13, QWORD PTR [r9+16]
+xor r13, QWORD PTR [r9+56]
+xor r13, QWORD PTR [r9+64]
 and r13, QWORD PTR [r9+408]
 xor r13, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
 mov r14, rax
 shr r14, 1
 xor r14, rbx
@@ -4539,113 +4419,83 @@ mov QWORD PTR [r9+40], r10
 mov QWORD PTR [r9+48], r11
 mov QWORD PTR [r9+56], r12
 mov QWORD PTR [r9+64], r13
-mov rax, QWORD PTR [r9+16]
-and rax, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+32]
+mov rax, QWORD PTR [r9+24]
+xor rax, QWORD PTR [r9+40]
+xor rax, QWORD PTR [r9+48]
+xor rax, QWORD PTR [r9+56]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+and rax, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rax, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov rbx, QWORD PTR [r9+16]
-and rbx, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbx, r14
-xor rbx, QWORD PTR [r9+40]
-mov r14, QWORD PTR [r9+48]
+mov rbx, QWORD PTR [r9+24]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+48]
+mov r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+xor r15, QWORD PTR [r9+64]
+and rbx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbx, r14
-xor rbx, QWORD PTR [r9+56]
-xor rbx, QWORD PTR [r9+64]
-mov rcx, QWORD PTR [r9+8]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor rcx, r14
+xor rbx, r15
+mov rcx, QWORD PTR [r9+16]
 mov r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+and rcx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rcx, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rcx, r14
-xor rcx, QWORD PTR [r9+40]
-xor rcx, QWORD PTR [r9+56]
-mov rbp, QWORD PTR [r9+8]
+xor rcx, r15
+mov rbp, QWORD PTR [r9+24]
+xor rbp, QWORD PTR [r9+64]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
+and rbp, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbp, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rbp, r14
-xor rbp, QWORD PTR [r9+40]
-xor rbp, QWORD PTR [r9+48]
-xor rbp, QWORD PTR [r9+56]
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
+xor rbp, r15
 mov r10, QWORD PTR [r9+8]
-and r10, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+56]
+xor r10, QWORD PTR [r9+24]
+xor r10, QWORD PTR [r9+40]
 mov r14, QWORD PTR [r9+64]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+56]
+and r10, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r10, r14
+xor r10, r15
 mov r11, QWORD PTR [r9+8]
+xor r11, QWORD PTR [r9+16]
+mov r14, QWORD PTR [r9+40]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
 and r11, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor r11, r14
-xor r11, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
 and r14, QWORD PTR [r9+416]
 xor r11, r14
-xor r11, QWORD PTR [r9+48]
-xor r11, QWORD PTR [r9+56]
+xor r11, r15
 mov r12, QWORD PTR [r9+8]
-and r12, QWORD PTR [r9+408]
+xor r12, QWORD PTR [r9+40]
+xor r12, QWORD PTR [r9+48]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+56]
+and r12, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r12, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-xor r12, QWORD PTR [r9+56]
+xor r12, r15
 mov r13, QWORD PTR [r9+16]
+xor r13, QWORD PTR [r9+56]
+xor r13, QWORD PTR [r9+64]
 and r13, QWORD PTR [r9+408]
 xor r13, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
 mov r14, rax
 shr r14, 1
 xor r14, rbx
@@ -5366,113 +5216,83 @@ mov QWORD PTR [r9+40], r10
 mov QWORD PTR [r9+48], r11
 mov QWORD PTR [r9+56], r12
 mov QWORD PTR [r9+64], r13
-mov rax, QWORD PTR [r9+16]
-and rax, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+32]
+mov rax, QWORD PTR [r9+24]
+xor rax, QWORD PTR [r9+40]
+xor rax, QWORD PTR [r9+48]
+xor rax, QWORD PTR [r9+56]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+and rax, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rax, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor rax, r14
-mov rbx, QWORD PTR [r9+16]
-and rbx, QWORD PTR [r9+416]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbx, r14
-xor rbx, QWORD PTR [r9+40]
-mov r14, QWORD PTR [r9+48]
+mov rbx, QWORD PTR [r9+24]
+mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+48]
+mov r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+xor r15, QWORD PTR [r9+64]
+and rbx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbx, r14
-xor rbx, QWORD PTR [r9+56]
-xor rbx, QWORD PTR [r9+64]
-mov rcx, QWORD PTR [r9+8]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor rcx, r14
+xor rbx, r15
+mov rcx, QWORD PTR [r9+16]
 mov r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+56]
+and rcx, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rcx, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rcx, r14
-xor rcx, QWORD PTR [r9+40]
-xor rcx, QWORD PTR [r9+56]
-mov rbp, QWORD PTR [r9+8]
+xor rcx, r15
+mov rbp, QWORD PTR [r9+24]
+xor rbp, QWORD PTR [r9+64]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+8]
+xor r15, QWORD PTR [r9+40]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
+and rbp, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor rbp, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor rbp, r14
-xor rbp, QWORD PTR [r9+40]
-xor rbp, QWORD PTR [r9+48]
-xor rbp, QWORD PTR [r9+56]
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor rbp, r14
+xor rbp, r15
 mov r10, QWORD PTR [r9+8]
-and r10, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r10, r14
-xor r10, QWORD PTR [r9+56]
+xor r10, QWORD PTR [r9+24]
+xor r10, QWORD PTR [r9+40]
 mov r14, QWORD PTR [r9+64]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+56]
+and r10, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r10, r14
+xor r10, r15
 mov r11, QWORD PTR [r9+8]
+xor r11, QWORD PTR [r9+16]
+mov r14, QWORD PTR [r9+40]
+mov r15, QWORD PTR [r9+32]
+xor r15, QWORD PTR [r9+48]
+xor r15, QWORD PTR [r9+56]
 and r11, QWORD PTR [r9+408]
-mov r14, QWORD PTR [r9+16]
-and r14, QWORD PTR [r9+408]
-xor r11, r14
-xor r11, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+40]
 and r14, QWORD PTR [r9+416]
 xor r11, r14
-xor r11, QWORD PTR [r9+48]
-xor r11, QWORD PTR [r9+56]
+xor r11, r15
 mov r12, QWORD PTR [r9+8]
-and r12, QWORD PTR [r9+408]
+xor r12, QWORD PTR [r9+40]
+xor r12, QWORD PTR [r9+48]
 mov r14, QWORD PTR [r9+16]
+xor r14, QWORD PTR [r9+24]
+xor r14, QWORD PTR [r9+32]
+mov r15, QWORD PTR [r9+56]
+and r12, QWORD PTR [r9+408]
 and r14, QWORD PTR [r9+416]
 xor r12, r14
-mov r14, QWORD PTR [r9+24]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+32]
-and r14, QWORD PTR [r9+416]
-xor r12, r14
-mov r14, QWORD PTR [r9+40]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-mov r14, QWORD PTR [r9+48]
-and r14, QWORD PTR [r9+408]
-xor r12, r14
-xor r12, QWORD PTR [r9+56]
+xor r12, r15
 mov r13, QWORD PTR [r9+16]
+xor r13, QWORD PTR [r9+56]
+xor r13, QWORD PTR [r9+64]
 and r13, QWORD PTR [r9+408]
 xor r13, QWORD PTR [r9+32]
-mov r14, QWORD PTR [r9+56]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
-mov r14, QWORD PTR [r9+64]
-and r14, QWORD PTR [r9+408]
-xor r13, r14
 mov r14, rax
 shr r14, 1
 xor r14, rbx
