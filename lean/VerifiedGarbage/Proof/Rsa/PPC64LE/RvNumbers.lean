@@ -29,6 +29,9 @@ open VG.Impl.Rsa.PPC64LE.Recover (numbers loads prod prodSet skipBits skipTest n
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 open VG.Proof.Rsa.KeyWorkspace (arr S num)
 
+/-- `m = d e - 1`, when `d e` is odd. -/
+abbrev mV (s0 : State) : Nat := 2 * (dV s0 * eV s0 / 2)
+
 /-- After `numbers`. -/
 structure NumS (s0 t : State) : Prop where
   base : RBase s0 t
@@ -39,7 +42,7 @@ structure NumS (s0 t : State) : Prop where
   r25 : t.gpr .r25 = s0.gpr .r8
   r26 : t.gpr .r26 = BitVec.ofNat 64 (cB s0)
   vN : num t.mem (rvB s0) (ww (kK s0)) aN = nV s0
-  vM : num t.mem (rvB s0) (wW (kK s0)) wM = 2 * (dV s0 * eV s0 / 2)
+  vM : num t.mem (rvB s0) (wW (kK s0)) wM = mV s0
   zK : ∀ j ∈ [aOne, aZ], ∀ i < ww (kK s0) + 2, w32 t.mem (rvB s0) (arr (ww (kK s0)) j + 4 * i) = 0
   go : t.gpr .r0 = 0 ↔ (dV s0 * eV s0 % 2 = 1 ∧ 2 ≤ dV s0 * eV s0)
 

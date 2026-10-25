@@ -18,7 +18,7 @@ working space (`Impl/Bignum/Layout.lean`) for numbers of `⌈n_len / 8⌉`
 words of 64 bits, whose 8 arrays are the key arrays 20–27. The same working
 space read with `W = 2 w + 2` digits has twice the stride, and its array `j`
 is the key arrays `2 j` and `2 j + 1`: there the product `M = d e`, which
-has up to twice the digits of `n`, and its halvings are computed. The
+has up to twice the digits of `n`, is computed. The
 nonvolatile registers are saved in the key arrays 44 and 45, above those the
 function zeroes, as the header's 160 bytes hold its slots.
 
@@ -27,28 +27,31 @@ Montgomery multiplication leaves alone, so that no address or count is
 loaded from memory: `p` in `r21`, `q` in `r23`, `n` in `r24` and `n_len` in
 `r25`; `e`, `e_len`, `d` and `d_len` in `r26`, `r27`, `r28` and `r22` until
 they are read; then `c = 8 (d_len + e_len)` in `r26`, the candidate in
-`r24` and the steps left in `r27`. `n` is checked as `vg_rsa_crt_values`
+`r24`, the digits of `m` left in `r27` and the bits of the digit left in
+`r28`. `n` is checked as `vg_rsa_crt_values`
 checks it (it is public); an invalid modulus writes zeros at once.
 
 * `M = d e` by `mulMod` modulo `2^(32 W - 1)`, over the `8 e_len` bits of
   `e`. If `M` is even or 1 (`d e - 1` odd or not positive), no candidate is
   tried and zeros are written: a branch on whether the number of candidates
   tried is 0, which the contract lets leak.
-* `m = M - 1` (`M` with its low bit cleared) is halved `c` times, each
-  halving and the count `t` of them selected by whether `m` is even:
-  `m = 2^t r` with `r` odd.
 * Montgomery multiplication's working space is set up for `n`, with `R² mod
   n` (`vg_rsa_public_precompute`'s doublings), and `R mod n` and `n - R mod
   n`, the Montgomery forms of 1 and -1, kept in key arrays.
 * For the candidates `g = 2, 3, …`, until one gives the factors or 100 are
   tried (the number of iterations, which the contract lets leak, is the
-  only branch on the key): `y = g^r` (in Montgomery form) by `c` steps of
-  binary exponentiation from the least significant bit of `r`, each a
-  Montgomery product by `g^(2^i)` or 1, chosen under a mask, and a
-  Montgomery square of `g^(2^i)`; then `c` squarings of `y` under masks
-  that stop at `y² = 1` (found), at `y² = -1` or after `t` of them (not
-  found). Each result of Montgomery multiplication has the digits above its
-  `2 ⌈n_len / 8⌉` cleared, so that it is a number of the key working space.
+  only branch on the key): one pass over the `⌈c / 32⌉` digits of `m = M -
+  1` (`M` with its low bit cleared), most significant bit first, fusing the
+  exponentiation `g^m` with the search for a square root of 1. Each bit is
+  a Montgomery square `x = y²` and `x g` (two modular additions or fewer for
+  `g = 2, 3`, the candidate being public, else a Montgomery product), the
+  new `y` selected under a mask of the bit; `y = 1` and `y = -1` are
+  compared, and masks of the bit and `done` keep the root `y` of the first
+  `x = 1` of a run of clear bits, a set bit starting the run again. Only
+  the last run, `m`'s trailing zeros, can leave `ok` set, and its root is
+  the one the search of SP 800-56B Rev. 2 Appendix C.1 finds. Each result
+  of Montgomery multiplication has the digits above its `2 ⌈n_len / 8⌉`
+  cleared, so that it is a number of the key working space.
 * `y` out of Montgomery form, `p = gcd(y - 1, n)` by `inverse`, `q = n /
   p` by the division, the larger first, written under the mask of whether a
   candidate gave them.
@@ -68,8 +71,7 @@ open VG.PPC64LE VG.Impl.Rsa.PPC64LE.Keys VG.Impl.Rsa.PPC64LE.Div
 Bytes 0–39 are the function's slots, 124–132 the shared routines', and 152
 the mask of the result (`CrtValues.sMask`, which `CrtValues.mask` reads). -/
 
-def sTc : Nat := 0
-def sK : Nat := 4
+def sWord : Nat := 0
 def sDone : Nat := 8
 def sOk : Nat := 12
 def sBit : Nat := 16
@@ -82,10 +84,12 @@ def sMask : Nat := CrtValues.sMask
 /-! ## The arrays
 
 With `w` digits: Montgomery multiplication's arrays are 20–27 (its operands
-`n` (20), `R² mod n` (21), `y` (24), `g^(2^i)` (25), the multiplicand (26)
-and the square (27)); `n`, 1, 0, `R mod n`, `n - R mod n`, and two
-temporaries; the division's four. Arrays 0–14 are `inverse`'s, and 44–45
-hold the saved registers. -/
+`n` (20), `R² mod n` (21), `y` (24), `g R mod n` (25), `x g` (26) and the
+square `x` (27)); the new `y` and the root; `n`, 1, 0, `R mod n`, `n - R mod
+n`, and the three temporaries of `addMod` and the order; the division's
+four. Arrays 0–14 are `inverse`'s, the `W` view's array `wM` (the key arrays
+6–7) holds `m` until the candidates are done, and 44–45 hold the saved
+registers. -/
 
 def mBase : Nat := 20
 def mR2 : Nat := 21
@@ -93,13 +97,14 @@ def mY : Nat := 24
 def mG : Nat := 25
 def mXm : Nat := 26
 def mX : Nat := 27
+def aT : Nat := 28
+def aRoot : Nat := 29
 def aN : Nat := 32
 def aOne : Nat := 33
 def aZ : Nat := 34
 def aO : Nat := 35
 def aNg : Nat := 36
 def aW : Nat := 37
-def aU : Nat := 38
 def aQ : Nat := 40
 def aRm : Nat := 41
 def aDv : Nat := 42
@@ -114,18 +119,14 @@ def iG : Nat := 5
 def iXm : Nat := 6
 def iX : Nat := 7
 
-/-- With `W` digits: zero, `e`, `d`, `M`, the modulus of the product, the
-temporaries 5–8 of `mulMod` (and of the halvings), `r` and its copy. -/
+/-- With `W` digits: zero, `e`, `d`, `M`, the modulus of the product, and
+the temporaries 5–8 of `mulMod`. -/
 def wZ : Nat := 0
 def wE : Nat := 1
 def wD : Nat := 2
 def wM : Nat := 3
 def wMod : Nat := 4
 def wT : Nat := 5
-def wH : Nat := 5
-def wU : Nat := 6
-def wR : Nat := 14
-def wRc : Nat := 15
 
 /-! ## Contexts -/
 
@@ -213,23 +214,6 @@ def skipTest : List Instr :=
 /-- `M = d e`, and whether to try candidates. -/
 def numbers : Prog isa := seqs [loads, prod, .block skipBits, sub3 wT wZ wM, .block skipTest]
 
-/-! ## `m = 2^t r` -/
-
-/-- `r := m`, `t := 0`, and the count. -/
-def halfInit : Prog isa := seqs [copy wR wM, .block [.li .r0 0, .store .w .r0 .r31 sTc, .addi .r27 .r26 0]]
-
-/-- The bit of `m` even into `sBit`, and `t +=` it. -/
-def halfBit : List Instr :=
-  bitOf sBit wR ++ [.load .w .r0 .r31 sBit, .li .r3 1, .logic .xor .r0 .r0 .r3, .store .w .r0 .r31 sBit,
-    .load .w .r3 .r31 sTc, .add .r3 .r3 .r0, .store .w .r3 .r31 sTc]
-
-/-- A halving: `m := m / 2` and `t += 1` if `m` is even. -/
-def halfBody : Prog isa := seqs [copy wU wR, copy wH wR, .block [.li .r9 0], half wH, .block halfBit,
-  sel wR wU wH sBit, .block [.subi .r27 .r27 1]]
-
-/-- With `W`, back to `w` after. -/
-def halving : Prog isa := seqs [.block ctxW, halfInit, .loop halfBody (.nonzero .d .r27), .block ctxw]
-
 /-! ## Montgomery multiplication's working space -/
 
 /-- Montgomery multiplication's context: its array 0 into `r10`, `2 ⌈n_len /
@@ -259,49 +243,62 @@ def mont : Prog isa := seqs ([.block (setOne aOne), copy mBase aN,
   .block (mpre ++ VG.Impl.Bignum.PPC64LE.PublicChecked.minv ++ r2Set), VG.Impl.Bignum.PPC64LE.Precompute.r2, .block (mpost ++ clrTop mR2),
   copy mXm aOne] ++ mmul iXm iXm iR2 ++ [copy aO mXm, sub3 aNg aN aO])
 
-/-! ## A candidate -/
+/-! ## A candidate
 
-/-- `g = r24 + 2` into `[mG]`, `y := 1` (in Montgomery form), `r`'s copy
-and the count of its bits. -/
+One pass over the digits of `m`, most significant first, and over each
+digit's bits, most significant first: a bit is a Montgomery square `x = y²`
+and, multiplied by `g`, `x g`, selected by the bit as the new `y`. A set bit
+starts root detection again from the new `y` (`done := y = ±1`, `ok := 0`);
+a clear bit finds the root `y` if `x = 1` while not done, and is done at
+`x = ±1`. Only the last trailing-zero chain can leave `ok` set, and its root
+is `g^r` squared until 1, as SP 800-56B's search finds it
+(`Proof/Rsa/RecoverFused.lean`). -/
+
+/-- `g = r24 + 2` into `[mG]`, `y := 1` (in Montgomery form), the root 0,
+`done := 1`, `ok := 0`, and the count of `m`'s digits, `⌈c / 32⌉`. -/
 def candSet : Prog isa := seqs [copy mG aZ,
   .block (ptr .r5 mG ++ [.addi .r0 .r24 2, .store .w .r0 .r5 0]),
-  copy mY aO, .block ctxW, copy wRc wR, .block (ctxw ++ [.addi .r27 .r26 0])]
+  copy mY aO, copy aRoot aZ,
+  .block [.li .r0 1, .store .w .r0 .r31 sDone, .li .r0 0, .store .w .r0 .r31 sOk, .addi .r27 .r26 31,
+    .lsr .d .r27 .r27 5]]
 
-/-- A bit of `r`: the multiplicand `g^(2^i)` or 1, by the bit of `r`'s copy
-shifted out; `y` times it, and `g^(2^i)` squared. -/
-def expBody : Prog isa := seqs ([.block (ctxW ++ bitOf sBit wRc ++ [.li .r9 0]), half wRc,
-  .block ctxw, sel mXm aO mG sBit] ++ mmul iY iY iXm ++ mmul iG iG iG ++ [.block [.subi .r27 .r27 1]])
+/-- The digit `r27 - 1` of `m` (the `W` view's array `wM`, the key array
+`2 wM`) into `sWord`, and its 32 bits to go into `r28`. -/
+def wordHead : List Instr :=
+  ptr .r5 (2 * wM) ++ [.lsl .r0 .r27 2, .add .r5 .r5 .r0, .subi .r5 .r5 4, .load .w .r0 .r5 0,
+    .store .w .r0 .r31 sWord, .li .r28 32]
 
-/-- `y` to the power `r`. -/
-def expLoop : Prog isa := .loop expBody (.nonzero .d .r27)
+/-- The top bit of `sWord` into `sBit`, and `sWord` shifted left by one. -/
+def bitHead : List Instr :=
+  [.load .w .r0 .r31 sWord, .lsr .d .r3 .r0 31, .store .w .r3 .r31 sBit, .lsl .r0 .r0 1,
+    .store .w .r0 .r31 sWord]
 
-/-- `done := (y = 1) ∨ (y = -1)`, `ok := 0`, `k := 0`, and the count. -/
-def sqInit : List Instr :=
-  [.load .w .r0 .r31 sE1, .load .w .r3 .r31 sE2, .logic .or .r0 .r0 .r3, .store .w .r0 .r31 sDone,
-    .li .r0 0, .store .w .r0 .r31 sOk, .store .w .r0 .r31 sK, .addi .r27 .r26 0]
+/-- `[mXm] := x g`: by modular additions for the candidates 2 and 3, by a
+Montgomery product with `g R mod n` for the others. -/
+def multiply : Prog isa :=
+  .ite (.zero .d .r24) (seqs (addMod mXm mX mX aN aZ aW))
+    (.seq (.block [.subi .r0 .r24 1])
+      (.ite (.zero .d .r0) (seqs (addMod mXm mX mX aN aZ aW ++ addMod mXm mXm mX aN aZ aW))
+        (seqs (mmul iXm iX iG))))
 
-/-- After `x = y²`, with `x = 1` in `sE1` and `x = -1` in `sE2`: the
-squaring is live if not done and `k < t`; it finds `y` if `x = 1`, stops if
-`x = -1` or `k + 1 = t`, and otherwise `y := x` (`sLive`). -/
-def sqMasks : List Instr :=
-  [.load .w .r3 .r31 sK, .load .w .r4 .r31 sTc, .sub .r5 .r3 .r4, .lsr .d .r5 .r5 63,
-    .load .w .r6 .r31 sDone, .li .r0 1, .logic .xor .r7 .r6 .r0, .logic .and .r5 .r5 .r7,
-    .addi .r3 .r3 1, .logic .xor .r3 .r3 .r4, .subi .r3 .r3 1, .lsr .d .r3 .r3 63,
-    .load .w .r4 .r31 sE2, .logic .or .r3 .r3 .r4,
-    .load .w .r4 .r31 sE1, .load .w .r7 .r31 sOk, .logic .and .r8 .r5 .r4, .logic .or .r7 .r7 .r8,
-    .store .w .r7 .r31 sOk,
-    .logic .or .r8 .r4 .r3, .logic .and .r8 .r8 .r5, .logic .or .r6 .r6 .r8, .store .w .r6 .r31 sDone,
-    .logic .xor .r8 .r8 .r0, .logic .and .r8 .r8 .r5, .store .w .r8 .r31 sLive]
+/-- After `t` (the new `y`) is compared with 1 (`sE1`) and -1 (`sE2`), by
+the bit: `live := ¬bit ∧ ¬done ∧ t = 1` (the root is `y`), `ok := (ok ∨
+live) ∧ ¬bit`, `done := (done ∧ ¬bit) ∨ t = ±1`. -/
+def flags : List Instr :=
+  [.load .w .r3 .r31 sBit, .load .w .r4 .r31 sDone, .load .w .r5 .r31 sE1, .load .w .r6 .r31 sE2,
+    .load .w .r7 .r31 sOk, .li .r0 1, .logic .xor .r3 .r3 .r0, .logic .xor .r8 .r4 .r0,
+    .logic .and .r8 .r8 .r3, .logic .and .r8 .r8 .r5, .store .w .r8 .r31 sLive,
+    .logic .or .r7 .r7 .r8, .logic .and .r7 .r7 .r3, .store .w .r7 .r31 sOk,
+    .logic .and .r4 .r4 .r3, .logic .or .r4 .r4 .r5, .logic .or .r4 .r4 .r6, .store .w .r4 .r31 sDone]
 
-/-- `k += 1`, and the count. -/
-def sqNext : List Instr :=
-  [.load .w .r3 .r31 sK, .addi .r3 .r3 1, .store .w .r3 .r31 sK, .subi .r27 .r27 1]
+/-- A bit of `m`. -/
+def bit : Prog isa := seqs ([.block bitHead] ++ mmul iX iY iY ++ [multiply, sel aT mX mXm sBit,
+  eqS sE1 aT aO, eqS sE2 aT aNg, .block flags, sel aRoot aRoot mY sLive, copy mY aT,
+  .block [.subi .r28 .r28 1]])
 
-/-- A squaring under the masks. -/
-def sqBody : Prog isa := seqs (mmul iX iY iY ++ [eqS sE1 mX aO, eqS sE2 mX aNg, .block sqMasks,
-  copy aU mY, sel mY aU mX sLive, .block sqNext])
-
-def sqLoop : Prog isa := .loop sqBody (.nonzero .d .r27)
+/-- A digit of `m`. -/
+def word : Prog isa :=
+  .seq (.block wordHead) (.seq (.loop bit (.nonzero .d .r28)) (.block [.subi .r27 .r27 1]))
 
 /-- The candidates tried `+= 1`, and `r0` nonzero to go on: fewer than 100
 tried and not `ok`. -/
@@ -309,9 +306,9 @@ def candNext : List Instr :=
   [.addi .r24 .r24 1, .subi .r0 .r24 100, .lsr .d .r0 .r0 63, .load .w .r3 .r31 sOk, .li .r4 1,
     .logic .xor .r3 .r3 .r4, .logic .and .r0 .r0 .r3]
 
-/-- A candidate. -/
-def candBody : Prog isa := seqs ([candSet] ++ mmul iG iG iR2 ++ [expLoop, eqS sE1 mY aO, eqS sE2 mY aNg,
-  .block sqInit, sqLoop, .block candNext])
+/-- A candidate: `y :=` the root if `ok`, else 0. -/
+def candBody : Prog isa := seqs ([candSet] ++ mmul iG iG iR2 ++ [.loop word (.nonzero .d .r27),
+  sel mY aZ aRoot sOk, .block candNext])
 
 /-- The candidates, from `r24 = 0`. -/
 def candLoop : Prog isa := .seq (.block [.li .r24 0]) (.loop candBody (.nonzero .d .r0))
@@ -344,8 +341,8 @@ def stores : Prog isa := seqs [
 
 def fin : Prog isa := seqs [finY, gcdSet, inverse, divide, order, stores]
 
-/-- Once `M` is known odd and above 1. -/
-def rest : Prog isa := seqs [halving, mont, candLoop, fin]
+/-- Once `M` is known odd and above 1: `m = M - 1` is even and positive. -/
+def rest : Prog isa := seqs [mont, candLoop, fin]
 
 /-- Once `n` is known valid. -/
 def valid : Prog isa := .seq numbers (.ite (.zero .d .r0) rest fail)
