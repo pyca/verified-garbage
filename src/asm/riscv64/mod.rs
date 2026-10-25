@@ -5,4 +5,7 @@
 pub(crate) mod sha256;
 
 #[rustfmt::skip]
+pub(crate) mod sha3;
+
+#[rustfmt::skip]
 pub(crate) mod zeroize;
