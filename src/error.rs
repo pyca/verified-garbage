@@ -8,7 +8,8 @@
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 // Each module's re-export has a doc of the key lengths it accepts, which
@@ -17,15 +18,19 @@
 ///
 /// Every module whose constructor fails only on the length of the key
 /// returns this one type.
+// No such module is built for RISC-V yet.
+#[cfg(not(target_arch = "riscv64"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvalidKeyLength;
 
+#[cfg(not(target_arch = "riscv64"))]
 impl core::fmt::Display for InvalidKeyLength {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("invalid key length")
     }
 }
 
+#[cfg(not(target_arch = "riscv64"))]
 impl core::error::Error for InvalidKeyLength {}
 
 /// Implements `core::fmt::Display` for the error enum `$ty`, writing `$msg`
@@ -51,14 +56,23 @@ mod tests {
 
     use std::string::ToString;
 
-    /// Every error value of every module has a message.
+    macro_rules! check {
+        ($($e:expr),+ $(,)?) => {
+            $(assert!(!$e.to_string().is_empty(), "{:?}", $e);)+
+        };
+    }
+
+    /// Every error value of every module RISC-V has so far has a message.
+    #[cfg(target_arch = "riscv64")]
     #[test]
     fn errors_display() {
-        macro_rules! check {
-            ($($e:expr),+ $(,)?) => {
-                $(assert!(!$e.to_string().is_empty(), "{:?}", $e);)+
-            };
-        }
+        check!(crate::rc4::Error::InvalidKeyLength);
+    }
+
+    /// Every error value of every module has a message.
+    #[cfg(not(target_arch = "riscv64"))]
+    #[test]
+    fn errors_display() {
         check!(
             super::InvalidKeyLength,
             crate::aes_cbc::Error::IncompleteBlock,

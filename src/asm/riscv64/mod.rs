@@ -17,6 +17,9 @@ pub(crate) mod ct;
 pub(crate) mod md5;
 
 #[rustfmt::skip]
+pub(crate) mod rc4;
+
+#[rustfmt::skip]
 pub(crate) mod sha1;
 
 #[rustfmt::skip]
