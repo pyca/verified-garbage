@@ -143,4 +143,13 @@ def iterate : Prog isa := .seq (.block entry) P.main
 
 end It
 
+/-- The padding of a `B + D`-byte message after its last `D` bytes, with an
+`L`-byte length field: `0x80`, zeros, and the message's length in bits,
+big-endian (`padBE`) or little-endian (`padLE`). -/
+def padBE (B D L : Nat) : List Nat :=
+  0x80 :: List.replicate (B - L - 1 - D) 0 ++ (List.range L).reverse.map fun i => 8 * (B + D) / 256 ^ i % 256
+
+def padLE (B D L : Nat) : List Nat :=
+  0x80 :: List.replicate (B - L - 1 - D) 0 ++ (List.range L).map fun i => 8 * (B + D) / 256 ^ i % 256
+
 end VG.Impl.Pbkdf2.RISCV64
