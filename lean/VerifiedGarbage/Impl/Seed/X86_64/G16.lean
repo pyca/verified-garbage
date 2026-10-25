@@ -111,27 +111,32 @@ def xorRows (rows : List (List Nat)) : List Instr :=
 
 def mLayer : List Instr := xorRows mRows
 
-/-- One term of output word `j` of `pLayer`: input word `i`, at the S-box
-lanes whose row of `P0` or `P1` has it. -/
-def pTerm (j i : Nat) (first : Bool) : List Instr :=
-  let in0 := (p0Rows.getD j []).contains i
-  let in1 := (p1Rows.getD j []).contains i
-  let mask : Option Nat := if in0 && in1 then none else if in0 then some laneSlot0 else some laneSlot1
-  if !(in0 || in1) then []
-  else match mask, first with
-    | none, true => [movS (q j) (spillSlot i)]
-    | none, false => [xorS (q j) (spillSlot i)]
-    | some m, true => [movS (q j) (spillSlot i), andS (q j) m]
-    | some m, false => [movS t0 (spillSlot i), andS t0 m, xorR (q j) t0]
+/-- XOR the input planes `is` into `r`, from their saved slots. -/
+def pXors (r : Reg) (is : List Nat) : List Instr :=
+  match is with
+  | [] => [xorR r r]
+  | i :: rest => movS r (spillSlot i) :: rest.map fun k => xorS r (spillSlot k)
 
-/-- The input words of output word `j`. -/
-def pIns (j : Nat) : List Nat :=
-  (List.range 8).filter fun i => (p0Rows.getD j []).contains i || (p1Rows.getD j []).contains i
-
+/-- Group the parity-specific terms before masking: the common terms need
+no mask, and the three independent XOR sums are computed before the two parity masks. -/
 def pWord (j : Nat) : List Instr :=
-  match pIns j with
-  | [] => [xorR (q j) (q j)]
-  | i :: is => pTerm j i true ++ is.flatMap fun i => pTerm j i false
+  let a := p0Rows.getD j []
+  let b := p1Rows.getD j []
+  let common := a.filter b.contains
+  let only0 := a.filter fun i => !b.contains i
+  let only1 := b.filter fun i => !a.contains i
+  let selected := match only0, only1 with
+    | [], [] => [xorR (q j) (q j)]
+    | _, [] => pXors (q j) only0 ++ [andS (q j) laneSlot0]
+    | [], _ => pXors (q j) only1 ++ [andS (q j) laneSlot1]
+    | _, _ =>
+      pXors (q j) only0 ++ pXors t0 only1 ++
+        (if common.isEmpty then [] else pXors t1 common) ++
+        [andS (q j) laneSlot0, andS t0 laneSlot1, xorR (q j) t0] ++
+        (if common.isEmpty then [] else [xorR (q j) t1])
+  if only0.isEmpty || only1.isEmpty then
+    selected ++ common.map fun i => xorS (q j) (spillSlot i)
+  else selected
 
 def pLayer : List Instr := spillQ ++ (List.range 8).flatMap pWord
 

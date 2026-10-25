@@ -1223,7 +1223,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ Bitsliced affine layers grouping parity-specific XOR sums</td>
 
 <td>✅</td>
 
@@ -1243,7 +1243,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ Bitsliced affine layers grouping parity-specific XOR sums</td>
 
 <td>✅</td>
 
@@ -1263,7 +1263,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ Bitsliced affine layers grouping parity-specific XOR sums</td>
 
 <td>✅</td>
 
@@ -1283,7 +1283,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ Bitsliced affine layers grouping parity-specific XOR sums</td>
 
 <td>✅</td>
 
