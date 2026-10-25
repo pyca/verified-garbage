@@ -20,12 +20,13 @@ y = −1`; then three more squarings, the flag or'ed with `y = −1` under the
 mask of `σ > j`. `P` is a mask: nothing branches on a secret value, and
 `T_d` is selected by a scan of the whole table.
 
-The Montgomery multiplications are `PublicChecked.montOp`'s, inline (the
-model has no carry bit: 32-bit digits, `MontMul.lean`), with array 0 at
-`r10`, the arrays' size in `r29`, `2 w` in `r11` and `-c⁻¹ mod 2³²` (the
-low half of the header's word 7) in `r12`. Copies and the selection are
-`MontMul.selectAcc`'s masked copies, into a different array: `T_d` is
-selected into array 3 and array 5 in turn.
+The Montgomery multiplications are `PublicChecked.montOp`'s, inline
+(`MontMul.lean`), with array 0 at `r10`, the arrays' size in `r29`, `2 w`
+in `r11` and `-c⁻¹ mod 2³²` (the low half of the header's word 7) in `r12`.
+Copies and the selection are `MontMul.selectAcc64`'s masked copies of 64-bit
+words, into a different array: `T_d` is selected into array 3 and array 5 in
+turn. Comparisons `or` the `xor`s of the words, and the borrow of `0 −` that
+`or` (`subfc`) is the mask.
 
 Registers kept across the multiplications: `r23` the flag, `r24` the word
 of `E` being scanned, `r25` its address, `r26` the words left, `r27` the
@@ -75,9 +76,9 @@ def setup : List Instr :=
 
 /-! ## Copies, selections, comparisons -/
 
-/-- `[o] := r20 ? [a] : [t]` (`selectAcc`), for `o` other than `a` and `t`. -/
+/-- `[o] := r20 ? [a] : [t]` (`selectAcc64`), for `o` other than `a` and `t`. -/
 def sel (o a t : Nat) : Prog isa :=
-  .seq (.block (base .r8 a ++ base .r9 t ++ base .r5 o)) selectAcc
+  .seq (.block (base .r8 a ++ base .r9 t ++ base .r5 o)) selectAcc64
 
 /-- `r20 :=` all ones. -/
 def ones : List Instr := [.li .r20 0, .subi .r20 .r20 1]
@@ -90,15 +91,15 @@ def entry : List Instr := [.addi .r8 .r30 aTab, .mul .r8 .r8 .r29, .add .r8 .r8 
 
 /-- Table entry `r30 := [a]`. -/
 def toEntry (a : Nat) : Prog isa :=
-  .seq (.block (ones ++ entry ++ [.addi .r5 .r8 0] ++ base .r8 a ++ base .r9 a)) selectAcc
+  .seq (.block (ones ++ entry ++ [.addi .r5 .r8 0] ++ base .r8 a ++ base .r9 a)) selectAcc64
 
-/-- `d := ` all ones if the `2 w` digits of arrays `a` and `b` are equal,
-else 0: the `or` of their `xor`s is zero. -/
+/-- `d := ` all ones if the `w` words of arrays `a` and `b` are equal,
+else 0: the `or` of their `xor`s is zero, which `0 −` it does not borrow. -/
 def eqMask (d : Reg) (a b : Nat) : Prog isa :=
-  .seq (.block (base .r14 a ++ base .r15 b ++ [.addi .r17 .r11 0, .li .r3 0]))
-    (.seq (countLoop .r17 [.load .w .r0 .r14 0, .load .w .r4 .r15 0, .logic .xor .r0 .r0 .r4,
-        .logic .or .r3 .r3 .r0, .addi .r14 .r14 4, .addi .r15 .r15 4])
-      (.block [.subi .r3 .r3 1, .lsr .d .r3 .r3 63, .li .r0 0, .sub d .r0 .r3]))
+  .seq (.block (base .r14 a ++ base .r15 b ++ [.lsr .d .r17 .r11 1, .li .r3 0]))
+    (.seq (countLoop .r17 [.load .d .r0 .r14 0, .load .d .r4 .r15 0, .logic .xor .r0 .r0 .r4,
+        .logic .or .r3 .r3 .r0, .addi .r14 .r14 8, .addi .r15 .r15 8])
+      (.block [.li .r0 0, .subc .r3 .r0 .r3, .addze .r3 .r0, .sub d .r0 .r3]))
 
 /-! ## The table -/
 
@@ -125,8 +126,8 @@ def isDigit : List Instr :=
 array 3 `:= j = d ? T_j : [5]`, then array 5 `:= j + 1 = d ? T_(j+1) : [3]`. -/
 def select : Prog isa :=
   .seq (.block [.li .r30 0])
-    (.loop (.seq (.block (isDigit ++ entry ++ base .r9 aW ++ base .r5 aT)) (.seq selectAcc
-      (.seq (.block ([.addi .r30 .r30 1] ++ isDigit ++ entry ++ base .r9 aT ++ base .r5 aW)) (.seq selectAcc
+    (.loop (.seq (.block (isDigit ++ entry ++ base .r9 aW ++ base .r5 aT)) (.seq selectAcc64
+      (.seq (.block ([.addi .r30 .r30 1] ++ isDigit ++ entry ++ base .r9 aT ++ base .r5 aW)) (.seq selectAcc64
         (.block [.addi .r30 .r30 1, .subi .r4 .r30 16]))))) (.nonzero .d .r4))
 
 /-- After `y := y T_d`: the flag `P := d ≠ 0 ? (y = 1 ∨ y = −1) : P`. -/
