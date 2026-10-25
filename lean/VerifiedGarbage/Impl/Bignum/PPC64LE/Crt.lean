@@ -30,7 +30,7 @@ table, `ModExp.powWin`) of `max(2, ⌈len / 8⌉)` words for `p` and `q`.
   `m₁ = c^dP mod p` (`ModExp.powWin`: four-bit windows over `dP`'s bytes,
   each digit's table entry selected by a masked scan of the table).
 * `h = (m₁ - m₂ mod p) qInv mod p`: `m₂`'s bytes into `X` array 1, reduced
-  modulo `p`, subtracted with `subMod` and `p` added back under its borrow
+  modulo `p` (`ModArith.reduce64`, a doubling on 64-bit words per bit), subtracted with `subMod` and `p` added back under its borrow
   mask (`addMask`), then two Montgomery multiplications (by `qInv`, then by
   `R² mod p`).
 * In `X`: `q h` exactly (Montgomery multiplication modulo `M`), plus `m₂`
@@ -258,7 +258,7 @@ def recombineP : Prog isa :=
   (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
       PublicChecked.base .r9 3)) (.seq Precompute.r2Prime
   (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
-  (.seq (.block (xb .r30 1)) (.seq ModArith.reduce
+  (.seq (.block (xb .r30 1)) (.seq ModArith.reduce64
   -- `m₁ - m₂ mod p` into array 3, `p` added back under the borrow.
   (.seq (.block (PublicChecked.base .r14 4 ++ [.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
       .store .d .r0 .r14 0] ++ PublicChecked.base .r8 4 ++ PublicChecked.base .r9 3 ++

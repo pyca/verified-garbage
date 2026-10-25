@@ -3403,7 +3403,7 @@ blr",
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
 ///
-/// Montgomery multiplication in radix `2^64` with the carry bit. The checks (`n` as `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a Montgomery product modulo `2^(64 w) - 1`, which is exact, `qInv < p`) give a mask; under a clear mask the primes are replaced by 3 and `qInv` by 0, so that the arithmetic is the same whatever the key, and the result is stored masked. Each prime has its own working space of 24 numbers of `max(2, ⌈len/8⌉)` words for its public length: `R² mod p` is computed from 1 by `64 w + w` modular doublings to `2^w R mod p` and six Montgomery squares; the input, loaded again into `X`, is reduced modulo it a chunk of `w` words at a time from the bottom, by two Montgomery multiplications and a modular subtraction per chunk (with `q ≡ -R^(i+1)`, `C_i q R⁻¹ ≡ -C_i R^i`); and the exponent is scanned in four-bit windows from the top, four Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry selected by a masked scan of the whole 16-entry table on 64-bit words, so that no address depends on the exponent. `q h + m₂` is a Montgomery product modulo `2^(64 w) - 1` and an addition. The nonvolatile registers it uses are saved in the working space's header.
+/// Montgomery multiplication in radix `2^64` with the carry bit. The checks (`n` as `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a Montgomery product modulo `2^(64 w) - 1`, which is exact, `qInv < p`) give a mask; under a clear mask the primes are replaced by 3 and `qInv` by 0, so that the arithmetic is the same whatever the key, and the result is stored masked. Each prime has its own working space of 24 numbers of `max(2, ⌈len/8⌉)` words for its public length: `R² mod p` is computed from 1 by `64 w + w` modular doublings on 64-bit words to `2^w R mod p` and six Montgomery squares; the input, loaded again into `X`, is reduced modulo it a chunk of `w` words at a time from the bottom, by two Montgomery multiplications and a modular subtraction per chunk (with `q ≡ -R^(i+1)`, `C_i q R⁻¹ ≡ -C_i R^i`); and the exponent is scanned in four-bit windows from the top, four Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry selected by a masked scan of the whole 16-entry table on 64-bit words, so that no address depends on the exponent. `m₂ mod p` takes `m₂`'s bits from the top, a modular doubling on 64-bit words each. `q h + m₂` is a Montgomery product modulo `2^(64 w) - 1` and an addition. The nonvolatile registers it uses are saved in the working space's header.
 ///
 /// # Safety
 ///
@@ -4273,59 +4273,56 @@ rldicr %r4, %r11, 5, 58
 rldicl %r3, %r11, 63, 1
 add %r4, %r4, %r3
 236:
+li %r20, 0
 addi %r14, %r8, 0
 addi %r15, %r5, 0
-addi %r17, %r11, 0
-li %r20, 0
+rldicl %r17, %r11, 63, 1
 237:
-lwz %r0, 0(%r15)
-add %r0, %r0, %r0
-add %r0, %r0, %r20
-stw %r0, 0(%r14)
-rldicl %r20, %r0, 32, 32
-addi %r14, %r14, 4
-addi %r15, %r15, 4
+ld %r0, 0(%r15)
+rldicr %r3, %r0, 1, 62
+add %r3, %r3, %r20
+rldicl %r20, %r0, 1, 63
+std %r3, 0(%r14)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 237b
-stw %r20, 0(%r14)
+std %r20, 0(%r14)
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r10, 0
-addi %r17, %r11, 0
-li %r20, 0
+rldicl %r17, %r11, 63, 1
+subfc %r0, %r0, %r0
 238:
-lwz %r0, 0(%r14)
-lwz %r3, 0(%r16)
-subf %r0, %r3, %r0
-subf %r0, %r20, %r0
-stw %r0, 0(%r15)
-rldicl %r20, %r0, 1, 63
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+ld %r0, 0(%r14)
+ld %r3, 0(%r16)
+subfe %r0, %r3, %r0
+std %r0, 0(%r15)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 238b
-lwz %r0, 0(%r14)
-subf %r0, %r20, %r0
-rldicl %r0, %r0, 1, 63
+ld %r0, 0(%r14)
 li %r3, 0
-subf %r20, %r0, %r3
+subfe %r0, %r3, %r0
+subfe %r20, %r20, %r20
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 239:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 239b
@@ -8819,59 +8816,56 @@ rldicr %r4, %r11, 5, 58
 rldicl %r3, %r11, 63, 1
 add %r4, %r4, %r3
 2242:
+li %r20, 0
 addi %r14, %r8, 0
 addi %r15, %r5, 0
-addi %r17, %r11, 0
-li %r20, 0
+rldicl %r17, %r11, 63, 1
 2243:
-lwz %r0, 0(%r15)
-add %r0, %r0, %r0
-add %r0, %r0, %r20
-stw %r0, 0(%r14)
-rldicl %r20, %r0, 32, 32
-addi %r14, %r14, 4
-addi %r15, %r15, 4
+ld %r0, 0(%r15)
+rldicr %r3, %r0, 1, 62
+add %r3, %r3, %r20
+rldicl %r20, %r0, 1, 63
+std %r3, 0(%r14)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2243b
-stw %r20, 0(%r14)
+std %r20, 0(%r14)
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r10, 0
-addi %r17, %r11, 0
-li %r20, 0
+rldicl %r17, %r11, 63, 1
+subfc %r0, %r0, %r0
 2244:
-lwz %r0, 0(%r14)
-lwz %r3, 0(%r16)
-subf %r0, %r3, %r0
-subf %r0, %r20, %r0
-stw %r0, 0(%r15)
-rldicl %r20, %r0, 1, 63
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+ld %r0, 0(%r14)
+ld %r3, 0(%r16)
+subfe %r0, %r3, %r0
+std %r0, 0(%r15)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2244b
-lwz %r0, 0(%r14)
-subf %r0, %r20, %r0
-rldicl %r0, %r0, 1, 63
+ld %r0, 0(%r14)
 li %r3, 0
-subf %r20, %r0, %r3
+subfe %r0, %r3, %r0
+subfe %r20, %r20, %r20
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2245:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2245b
@@ -13367,59 +13361,56 @@ rldicr %r4, %r11, 5, 58
 rldicl %r3, %r11, 63, 1
 add %r4, %r4, %r3
 2448:
+li %r20, 0
 addi %r14, %r8, 0
 addi %r15, %r5, 0
-addi %r17, %r11, 0
-li %r20, 0
+rldicl %r17, %r11, 63, 1
 2449:
-lwz %r0, 0(%r15)
-add %r0, %r0, %r0
-add %r0, %r0, %r20
-stw %r0, 0(%r14)
-rldicl %r20, %r0, 32, 32
-addi %r14, %r14, 4
-addi %r15, %r15, 4
+ld %r0, 0(%r15)
+rldicr %r3, %r0, 1, 62
+add %r3, %r3, %r20
+rldicl %r20, %r0, 1, 63
+std %r3, 0(%r14)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2449b
-stw %r20, 0(%r14)
+std %r20, 0(%r14)
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r10, 0
-addi %r17, %r11, 0
-li %r20, 0
+rldicl %r17, %r11, 63, 1
+subfc %r0, %r0, %r0
 2450:
-lwz %r0, 0(%r14)
-lwz %r3, 0(%r16)
-subf %r0, %r3, %r0
-subf %r0, %r20, %r0
-stw %r0, 0(%r15)
-rldicl %r20, %r0, 1, 63
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+ld %r0, 0(%r14)
+ld %r3, 0(%r16)
+subfe %r0, %r3, %r0
+std %r0, 0(%r15)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2450b
-lwz %r0, 0(%r14)
-subf %r0, %r20, %r0
-rldicl %r0, %r0, 1, 63
+ld %r0, 0(%r14)
 li %r3, 0
-subf %r20, %r0, %r3
+subfe %r0, %r3, %r0
+subfe %r20, %r20, %r20
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2451:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2451b
@@ -13683,60 +13674,57 @@ rldicr %r24, %r24, 56, 7
 addi %r30, %r30, 1
 li %r25, 8
 2466:
-addi %r14, %r8, 0
-addi %r15, %r5, 0
-addi %r17, %r11, 0
 rldicl %r20, %r24, 1, 63
 rldicr %r24, %r24, 1, 62
+addi %r14, %r8, 0
+addi %r15, %r5, 0
+rldicl %r17, %r11, 63, 1
 2467:
-lwz %r0, 0(%r15)
-add %r0, %r0, %r0
-add %r0, %r0, %r20
-stw %r0, 0(%r14)
-rldicl %r20, %r0, 32, 32
-addi %r14, %r14, 4
-addi %r15, %r15, 4
+ld %r0, 0(%r15)
+rldicr %r3, %r0, 1, 62
+add %r3, %r3, %r20
+rldicl %r20, %r0, 1, 63
+std %r3, 0(%r14)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2467b
-stw %r20, 0(%r14)
+std %r20, 0(%r14)
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r10, 0
-addi %r17, %r11, 0
-li %r20, 0
+rldicl %r17, %r11, 63, 1
+subfc %r0, %r0, %r0
 2468:
-lwz %r0, 0(%r14)
-lwz %r3, 0(%r16)
-subf %r0, %r3, %r0
-subf %r0, %r20, %r0
-stw %r0, 0(%r15)
-rldicl %r20, %r0, 1, 63
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+ld %r0, 0(%r14)
+ld %r3, 0(%r16)
+subfe %r0, %r3, %r0
+std %r0, 0(%r15)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2468b
-lwz %r0, 0(%r14)
-subf %r0, %r20, %r0
-rldicl %r0, %r0, 1, 63
+ld %r0, 0(%r14)
 li %r3, 0
-subf %r20, %r0, %r3
+subfe %r0, %r3, %r0
+subfe %r20, %r20, %r20
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 2469:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 2469b

@@ -62,7 +62,7 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
     WP isa (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
       PublicChecked.base .r9 3)) (.seq Precompute.r2Prime
       (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
-      (.seq (.block (xb .r30 1)) (.seq ModArith.reduce c)))))) s Q := by
+      (.seq (.block (xb .r30 1)) (.seq ModArith.reduce64 c)))))) s Q := by
   have hn := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
@@ -131,7 +131,7 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
   have hb : Spec.Rsa.bytesAt s₁₀.mem (off BX (slot wX 1)) qL =
       Spec.Rsa.bytesAt s.mem (off BX (slot wX 1)) qL := by
     rw [hm10]; exact bytesAt_below outB (by omega_arith) (by omega_arith)
-  refine WP.seq (WP.mono (ModArith.reduce_ok (D := off BX (slot wX 1)) (hsA.congr k110.wr) (by omega_arith) hw' (by omega_arith)
+  refine WP.seq (WP.mono (ModArith.reduce64_ok (D := off BX (slot wX 1)) (hsA.congr k110.wr) (by omega_arith) hw' (by omega_arith)
     ((k110.gpr _ (by decide)).trans h10) ((k110.gpr _ (by decide)).trans h29)
     ((k110.gpr _ (by decide)).trans h11) (by rw [v0]; omega_arith)
     (by rw [a30, off_off, Nat.add_zero]) a31 hq1 (by omega_arith)
@@ -169,7 +169,7 @@ theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pro
     WP isa (.seq (.block [.load .d .r31 .r23 oQLen]) (.seq (.block (PublicChecked.minv ++
       PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq Precompute.r2Prime
       (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
-      (.seq (.block (xb .r30 1)) (.seq ModArith.reduce c))))))) s Q := by
+      (.seq (.block (xb .r30 1)) (.seq ModArith.reduce64 c))))))) s Q := by
   have hn := hs.nowrap
   have hQL' : s.mem.readW (off BX 56) 64 = BitVec.ofNat 64 qL := hQL
   refine WP.seq (WP.mono (WP.keep [.r31] (Q := fun t => t.gpr .r31 = BitVec.ofNat 64 qL ∧ t.mem = s.mem) (by
