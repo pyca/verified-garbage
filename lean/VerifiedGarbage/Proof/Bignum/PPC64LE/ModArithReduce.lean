@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithDouble
+import VerifiedGarbage.Proof.Bignum.PPC64LE.Double64
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
@@ -21,7 +22,9 @@ public import VerifiedGarbage.Proof.Mont.Words32
 # Modular arithmetic on PPC64LE: reduction
 
 `reduce_ok`: `x mod m` into array 1, for the `L ≥ 1` bytes of `x` at `D`
-(`r30`, `r31`), most significant first, apart from the working space.
+(`r30`, `r31`), most significant first, apart from the working space; and
+`reduce64_ok`, the same by `doubleBitMod64`. Both are `reduceWith_ok`, for
+any step that does what `doubleBitMod_ok` says (`DbmOk`).
 -/
 
 @[expose] public section
@@ -41,15 +44,28 @@ def RInv (s : State) (B : Addr) (w N c : Nat) (t : State) : Prop :=
     val32 t.mem B (slot w 1) (2 * w) = c % N ∧ t.gpr .r5 = off B (slot w 1) ∧ t.gpr .r8 = off B (slot w 2) ∧
     t.gpr .r9 = off B (slot w 3)
 
+/-- What a step of the reduction does: `doubleBitMod_ok`'s statement. -/
+def DbmOk (dbm : Prog isa) : Prop :=
+  ∀ {s : State} {B : Addr} {Z w : Nat}, Scr s B Z → s.gpr .r8 = off B (slot w 2) → s.gpr .r9 = off B (slot w 3) →
+    s.gpr .r10 = off B (slot w 0) → s.gpr .r5 = off B (slot w 1) → s.gpr .r11 = BitVec.ofNat 64 (2 * w) →
+    1 ≤ w → w < 2 ^ 31 → slot w 4 ≤ Z →
+    val32 s.mem B (slot w 1) (2 * w) < val32 s.mem B (slot w 0) (2 * w) →
+    WP isa dbm s fun t =>
+      val32 t.mem B (slot w 1) (2 * w) =
+        (2 * val32 s.mem B (slot w 1) (2 * w) + (s.gpr .r24 >>> 63).toNat) % val32 s.mem B (slot w 0) (2 * w) ∧
+      t.gpr .r24 = s.gpr .r24 <<< 1 ∧
+      Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧
+      Keep [.r0, .r3, .r14, .r15, .r16, .r17, .r20, .r24] s t
+
 theorem mod_double_bit (c N b : Nat) : (2 * (c % N) + b) % N = (2 * c + b) % N := by
   rw [Nat.add_mod, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, ← Nat.add_mod]
 
-/-- `reduceByte`: the eight bits of the byte at `r30` scanned, `c := 256 c + b`. -/
-theorem reduceByte_ok {s t : State} {B D : Addr} {Z w N c i : Nat} (hs : Scr s B Z) (hw : 1 ≤ w)
+/-- `reduceByteWith`: the eight bits of the byte at `r30` scanned, `c := 256 c + b`. -/
+theorem reduceByteWith_ok {dbm : Prog isa} (hd : DbmOk dbm) {s t : State} {B D : Addr} {Z w N c i : Nat} (hs : Scr s B Z) (hw : 1 ≤ w)
     (hw' : w < 2 ^ 31) (hZ : slot w 4 ≤ Z) (h10 : s.gpr .r10 = off B (slot w 0))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hNd : val32 s.mem B (slot w 0) (2 * w) = N) (hN : 0 < N)
     (ht : RInv s B w N c t) (h30 : t.gpr .r30 = off D i) (hrd : InRegions (t.rd ++ t.wr) (off D i) 1) :
-    WP isa reduceByte t fun t' =>
+    WP isa (reduceByteWith dbm) t fun t' =>
       RInv s B w N (256 * c + (t.mem (off D i)).toNat) t' ∧ t'.gpr .r30 = off D (i + 1) ∧
         t'.gpr .r31 = t.gpr .r31 := by
   have hnw := hs.nowrap
@@ -59,7 +75,7 @@ theorem reduceByte_ok {s t : State} {B D : Addr} {Z w N c i : Nat} (hs : Scr s B
   obtain ⟨kt, ot, tv, t5, t8, t9⟩ := ht
   generalize hb : (t.mem (off D i)).toNat = b
   have hb256 : b < 256 := by rw [← hb]; exact (t.mem (off D i)).isLt
-  unfold reduceByte
+  unfold reduceByteWith
   refine WP.seq (WP.mono (WP.keep [.r24, .r30, .r25] (Q := fun t₁ =>
     t₁.gpr .r24 = BitVec.ofNat 64 b <<< 56 ∧ t₁.gpr .r30 = off D (i + 1) ∧ t₁.gpr .r25 = BitVec.ofNat 64 8 ∧
       t₁.mem = t.mem) ?_ (by decide)) fun t₁ ⟨⟨a24, a30, a25, m1⟩, k1⟩ => ?_)
@@ -74,7 +90,7 @@ theorem reduceByte_ok {s t : State} {B D : Addr} {Z w N c i : Nat} (hs : Scr s B
       k1.gpr .r31 (by decide)⟩ a25)
     fun u ⟨⟨c', hc, hu⟩, u30, u31⟩ => ⟨?_, u30, u31⟩
   · have g : ∀ r ∈ [Reg.r10, .r11], u.gpr r = s.gpr r := fun r hr => ku.gpr r (by revert r; decide)
-    refine WP.seq (WP.mono (doubleBitMod_ok (hs.congr ku.wr) u8 u9 ((g .r10 (by simp)).trans h10) u5
+    refine WP.seq (WP.mono (hd (hs.congr ku.wr) u8 u9 ((g .r10 (by simp)).trans h10) u5
       ((g .r11 (by simp)).trans h11) hw hw' hZ
       (by rw [uv, (ou.val32 (by omega_arith) (by omega_arith)).trans hNd]; exact Nat.mod_lt _ hN))
       fun u₁ ⟨hv, a24', out₁, k'⟩ => ?_)
@@ -110,15 +126,15 @@ theorem reduceByte_ok {s t : State} {B D : Addr} {Z w N c i : Nat} (hs : Scr s B
       omega_arith
     rw [← hc']; exact hu
 
-/-- `reduceScan`: the `L ≥ 1` bytes at `D` (`r30`, `r31`) scanned, most
+/-- `reduceScanWith`: the `L ≥ 1` bytes at `D` (`r30`, `r31`) scanned, most
 significant first, apart from the working space. -/
-theorem reduceScan_ok {s t : State} {B D : Addr} {Z w N L : Nat} (hs : Scr s B Z) (hw : 1 ≤ w)
+theorem reduceScanWith_ok {dbm : Prog isa} (hd : DbmOk dbm) {s t : State} {B D : Addr} {Z w N L : Nat} (hs : Scr s B Z) (hw : 1 ≤ w)
     (hw' : w < 2 ^ 31) (hZ : slot w 4 ≤ Z) (h10 : s.gpr .r10 = off B (slot w 0))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hNd : val32 s.mem B (slot w 0) (2 * w) = N) (hN : 0 < N)
     (hL : 1 ≤ L) (hL' : L < 2 ^ 63) (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
     (hsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x)
     (ht : RInv s B w N 0 t) (h30 : t.gpr .r30 = off D 0) (h31 : t.gpr .r31 = BitVec.ofNat 64 L) :
-    WP isa reduceScan t (RInv s B w N (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L))) := by
+    WP isa (reduceScanWith dbm) t (RInv s B w N (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L))) := by
   have hnw := hs.nowrap
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
   have e1 := e 1; have e4 := e 4
@@ -130,7 +146,7 @@ theorem reduceScan_ok {s t : State} {B D : Addr} {Z w N L : Nat} (hs : Scr s B Z
     refine hu.2.1 _ (Or.inr ?_)
     by_contra hc
     exact hsep i hi (off D i) (by simp only [Mont.ofs, ofs] at hc ⊢; omega_arith) rfl
-  refine WP.seq (WP.mono (reduceByte_ok hs hw hw' hZ h10 h11 hNd hN hu u30
+  refine WP.seq (WP.mono (reduceByteWith_ok hd hs hw hw' hZ h10 h11 hNd hN hu u30
     (by rw [hu.1.rd, hu.1.wr]; exact hrd i hi)) fun u₁ ⟨hu₁, a30, a31⟩ => ?_)
   refine WP.mono (subi_ok u₁ .r31 (by decide)) fun u₂ e => ?_
   subst e
@@ -143,17 +159,17 @@ theorem reduceScan_ok {s t : State} {B D : Addr} {Z w N L : Nat} (hs : Scr s B Z
   · simp only [gpr_write, reduceCtorEq, ↓reduceIte]; exact a30
   · simp only [gpr_write, ↓reduceIte]; rw [a31]
 
-/-- `reduce`: `x mod m` into array 1, for `m` (not zero) in array 0 and the
-`L ≥ 1` bytes of `x` at `D` (`r30`, `r31`), most significant first, apart from
-the working space; only arrays 1–3 change. -/
-theorem reduce_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 1 ≤ w)
+/-- `reduceWith`: `x mod m` into array 1, for `m` (not zero) in array 0 and
+the `L ≥ 1` bytes of `x` at `D` (`r30`, `r31`), most significant first, apart
+from the working space; only arrays 1–3 change. -/
+theorem reduceWith_ok {dbm : Prog isa} (hd : DbmOk dbm) {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 1 ≤ w)
     (hw' : w < 2 ^ 31) (hZ : slot w 4 ≤ Z) (h10 : s.gpr .r10 = off B (slot w 0))
     (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
     (hN : 0 < val32 s.mem B (slot w 0) (2 * w))
     (h30 : s.gpr .r30 = off D 0) (h31 : s.gpr .r31 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L < 2 ^ 63)
     (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
     (hsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
-    WP isa reduce s fun t =>
+    WP isa (reduceWith dbm) s fun t =>
       (val32 t.mem B (slot w 1) (2 * w) =
           Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % val32 s.mem B (slot w 0) (2 * w) ∧
         Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem) ∧ Keep (redRegs ++ ([.r5, .r8, .r9] : List Reg)) s t := by
@@ -161,7 +177,7 @@ theorem reduce_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e4 := e 4
   have hh : hdrBytes = 256 := rfl
-  unfold reduce
+  unfold reduceWith
   refine WP.seq (WP.mono (Pub.base_ok (rd := .r14) (by decide) (by decide) h10 h29 1) fun s₁ ⟨⟨a14, m1⟩, k1⟩ => ?_)
   refine WP.seq (WP.mono (zeroWords_ok (hs.congr k1.wr) a14 ((k1.gpr _ (by decide)).trans h11) hw hw'
     (by omega_arith)) fun s₂ ⟨⟨_, hz, out₂⟩, k₂⟩ => ?_)
@@ -191,7 +207,7 @@ theorem reduce_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 
   have hz5 : val32 s₅.mem B (slot w 1) (2 * w) = 0 := by
     rw [m25, Pre.val32_eq_wv]
     exact (wv_eq_zero_iff _ _ _ _).mpr hz
-  refine WP.mono (reduceScan_ok (s := s₅) (hs.congr k15.wr) hw hw' hZ ((k5.gpr _ (by decide)).trans
+  refine WP.mono (reduceScanWith_ok hd (s := s₅) (hs.congr k15.wr) hw hw' hZ ((k5.gpr _ (by decide)).trans
     ((k14.gpr _ (by decide)).trans h10)) ((k15.gpr _ (by decide)).trans h11) hNd hN hL hL' hrd5 hsep5
     ⟨Keep.refl _ _, Mont.Outside.refl _ _ _ _, by rw [hz5, Nat.zero_mod], (k5.gpr _ (by decide)).trans ((k4.gpr _ (by decide)).trans a5),
       (k5.gpr _ (by decide)).trans a8, a9⟩ ((k15.gpr _ (by decide)).trans h30) ((k15.gpr _ (by decide)).trans h31))
@@ -204,5 +220,33 @@ theorem reduce_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 
     by_contra hc
     exact hsep i hi (off D i) (by simp only [Mont.ofs, ofs] at hc ⊢; omega_arith) rfl
   rw [tv, hbytes]
+
+/-- `reduceWith_ok` by `doubleBitMod`. -/
+theorem reduce_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 1 ≤ w)
+    (hw' : w < 2 ^ 31) (hZ : slot w 4 ≤ Z) (h10 : s.gpr .r10 = off B (slot w 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (hN : 0 < val32 s.mem B (slot w 0) (2 * w))
+    (h30 : s.gpr .r30 = off D 0) (h31 : s.gpr .r31 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L < 2 ^ 63)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
+    WP isa reduce s fun t =>
+      (val32 t.mem B (slot w 1) (2 * w) =
+          Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % val32 s.mem B (slot w 0) (2 * w) ∧
+        Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem) ∧ Keep (redRegs ++ ([.r5, .r8, .r9] : List Reg)) s t :=
+  reduceWith_ok (fun {_ _ _ _} => doubleBitMod_ok) hs hw hw' hZ h10 h29 h11 hN h30 h31 hL hL' hrd hsep
+
+/-- `reduceWith_ok` by `doubleBitMod64`. -/
+theorem reduce64_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw : 1 ≤ w)
+    (hw' : w < 2 ^ 31) (hZ : slot w 4 ≤ Z) (h10 : s.gpr .r10 = off B (slot w 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (hN : 0 < val32 s.mem B (slot w 0) (2 * w))
+    (h30 : s.gpr .r30 = off D 0) (h31 : s.gpr .r31 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L < 2 ^ 63)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
+    WP isa reduce64 s fun t =>
+      (val32 t.mem B (slot w 1) (2 * w) =
+          Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % val32 s.mem B (slot w 0) (2 * w) ∧
+        Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem) ∧ Keep (redRegs ++ ([.r5, .r8, .r9] : List Reg)) s t :=
+  reduceWith_ok (fun {_ _ _ _} => doubleBitMod64_ok) hs hw hw' hZ h10 h29 h11 hN h30 h31 hL hL' hrd hsep
 
 end VG.Proof.Bignum.PPC64LE.ModArith

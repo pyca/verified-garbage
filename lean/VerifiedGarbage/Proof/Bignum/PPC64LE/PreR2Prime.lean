@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Fast
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreDouble
+import VerifiedGarbage.Proof.Bignum.PPC64LE.Double64
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.Bignum.Math
@@ -20,7 +21,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 # The precomputed values of an RSA modulus on PPC64LE: `R² mod n` for any odd `n`
 
 `r2Prime_ok`: `x := 2^(128 w) mod n`, for any odd `n > 1` of `w` words:
-`x := 1`, `64 w + w` doublings to `2^w R mod n`, then six Montgomery squares
+`x := 1`, `64 w + w` doublings (`r2Dbl64_ok`) to `2^w R mod n`, then six Montgomery squares
 (`r2Sq_ok`, counted by `r24`), each doubling the exponent of `2^e R mod n`.
 -/
 
@@ -30,6 +31,38 @@ namespace VG.Proof.Bignum.PPC64LE.Pre
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Bignum.PPC64LE.Precompute
 open VG.Proof.Bignum.PPC64LE
+
+/-- `r2Dbl_ok` on words of 64 bits (`doubleMod64`): `M` doublings counted by `r4`, of `x = 2^a mod N` in array 1, for `N` in
+array 0 and the bases of arrays 1–3 in `r5`, `r8`, `r9`: `x := 2^(a + M) mod N`,
+changing only arrays 1–3. -/
+theorem r2Dbl64_ok {s : State} {B : Addr} {Z w N a M : Nat} (hs : Scr s B Z)
+    (h8 : s.gpr .r8 = off B (slot w 2)) (h9 : s.gpr .r9 = off B (slot w 3))
+    (h10 : s.gpr .r10 = off B (slot w 0)) (h5 : s.gpr .r5 = off B (slot w 1))
+    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 4 ≤ Z)
+    (hN : val32 s.mem B (slot w 0) (2 * w) = N) (hN0 : 0 < N) (hx : val32 s.mem B (slot w 1) (2 * w) = 2 ^ a % N)
+    (h4 : s.gpr .r4 = BitVec.ofNat 64 M) (hM : 0 < M) (hM' : M < 2 ^ 64) :
+    WP isa (.loop (.seq doubleMod64 (.block [.subi .r4 .r4 1])) (.nonzero .d .r4)) s fun t =>
+      val32 t.mem B (slot w 1) (2 * w) = 2 ^ (a + M) % N ∧
+      Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep ([.r0, .r14, .r17, .r4, .r3, .r15, .r16, .r20] : List Reg) s t := by
+  have hnw := hs.nowrap
+  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  have e0 := e 0; have e1 := e 1; have e4 := e 4
+  have hh : hdrBytes = 256 := rfl
+  let Inv : Nat → State → Prop := fun j t =>
+    val32 t.mem B (slot w 1) (2 * w) = 2 ^ (a + j) % N ∧
+      Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep ([.r0, .r14, .r17, .r4, .r3, .r15, .r16, .r20] : List Reg) s t
+  refine wp_countdown (cnt := .r4) (N := M) hM' hM Inv (fun j _ t ⟨tx, to, tk⟩ _ => ?_)
+    ⟨by rw [Nat.add_zero]; exact hx, Mont.Outside.refl _ _ _ _, Keep.refl _ _⟩ h4
+  have n0 : val32 t.mem B (slot w 0) (2 * w) = N := by rw [to.val32 (by omega) (by omega), hN]
+  refine WP.seq (WP.mono (doubleMod64_ok (hs.congr tk.wr) ((tk.gpr _ (by decide)).trans h8)
+    ((tk.gpr _ (by decide)).trans h9) ((tk.gpr _ (by decide)).trans h10) ((tk.gpr _ (by decide)).trans h5)
+    ((tk.gpr _ (by decide)).trans h11) hw hw' hZ (by rw [tx, n0]; exact Nat.mod_lt _ hN0))
+    fun t₁ ⟨d1, od, kd⟩ => ?_)
+  refine WP.mono (subi_ok t₁ .r4 (by decide)) fun t₂ e2 => ?_
+  subst e2
+  refine ⟨⟨?_, by rw [mem_write]; exact to.trans od, ((tk.trans kd).trans (Keep.write _ _ _)).mono (by decide)⟩, ?_⟩
+  · rw [mem_write, d1, tx, n0, pow_mod_double, Nat.add_assoc]
+  · gsimp; rw [kd.gpr .r4 (by decide)]
 
 /-- The registers `r2Prime` writes. -/
 def r2PrimeRegs : List Reg :=
@@ -116,7 +149,7 @@ theorem r2Prime_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have k12 := k1.trans k2
   -- The doublings.
   have O2 : Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem s₂.mem := by rw [m2]; exact O1
-  refine WP.seq (WP.mono (r2Dbl_ok (N := N) (a := 0) (M := 64 * w + w) (hs.congr k12.wr)
+  refine WP.seq (WP.mono (r2Dbl64_ok (N := N) (a := 0) (M := 64 * w + w) (hs.congr k12.wr)
     ((k12.gpr _ (by decide)).trans h8) ((k12.gpr _ (by decide)).trans h9) ((k12.gpr _ (by decide)).trans h10)
     ((k12.gpr _ (by decide)).trans h5) ((k12.gpr _ (by decide)).trans h11) (by omega) hw' (by omega)
     (by rw [O2.val32 (by omega) (by omega), hNd]) hN0

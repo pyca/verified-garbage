@@ -32,18 +32,30 @@ def doubleBit : Prog isa :=
 /-- `x := 2 x + b mod m`, in arrays 1 (`x`), 2 and 3 with `m` in array 0. -/
 def doubleBitMod : Prog isa := .seq doubleBit (.seq subMod selectAcc)
 
-/-- The eight bits of the byte at `r30`, from the top, `r30` advanced. -/
-def reduceByte : Prog isa :=
+/-- `doubleBitMod` on words of 64 bits: the bit into `r20`, then
+`Precompute.dblMod64`. -/
+def doubleBitMod64 : Prog isa := .seq (.block [.lsr .d .r20 .r24 63, .lsl .r24 .r24 1]) Precompute.dblMod64
+
+/-- The eight bits of the byte at `r30`, from the top, `r30` advanced, each
+taken in by `dbm` (`doubleBitMod` or `doubleBitMod64`). -/
+def reduceByteWith (dbm : Prog isa) : Prog isa :=
   .seq (.block [.lbz .r24 .r30 0, .lsl .r24 .r24 56, .addi .r30 .r30 1, .li .r25 8])
-    (.loop (.seq doubleBitMod (.block [.subi .r25 .r25 1])) (.nonzero .d .r25))
+    (.loop (.seq dbm (.block [.subi .r25 .r25 1])) (.nonzero .d .r25))
 
 /-- The `r31` bytes from `r30`, each scanned. -/
-def reduceScan : Prog isa :=
-  .loop (.seq reduceByte (.block [.subi .r31 .r31 1])) (.nonzero .d .r31)
+def reduceScanWith (dbm : Prog isa) : Prog isa :=
+  .loop (.seq (reduceByteWith dbm) (.block [.subi .r31 .r31 1])) (.nonzero .d .r31)
 
 /-- `x mod m` into array 1. -/
-def reduce : Prog isa :=
+def reduceWith (dbm : Prog isa) : Prog isa :=
   .seq (.block (base .r14 1)) (.seq Precompute.zeroWords
-    (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) reduceScan))
+    (.seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (reduceScanWith dbm)))
+
+/-- `x mod m` into array 1, by `doubleBitMod`. -/
+def reduce : Prog isa := reduceWith doubleBitMod
+
+/-- `x mod m` into array 1, by `doubleBitMod64`: for `w` words with `w` the
+number of words of `m` (`r11 = 2 w`). -/
+def reduce64 : Prog isa := reduceWith doubleBitMod64
 
 end VG.Impl.Bignum.PPC64LE.ModArith
