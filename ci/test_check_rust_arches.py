@@ -17,7 +17,8 @@ WORKFLOW = CI.parent / ".github/workflows/ci.yml"
 ALL = ["aarch64", "arm", "powerpc64", "riscv64", "x86", "x86_64"]
 
 # The jobs that run or check the Rust tests.
-RUST_JOBS = ("rust-arches", "rust", "rust-thumb", "cpu-features-times", "rust-cpu-features", "coverage")
+RUST_JOBS = ("rust-arches", "rust", "rust-thumb", "rust-lint", "cpu-features-times", "rust-cpu-features",
+             "coverage")
 
 
 def job(name):
@@ -98,6 +99,9 @@ class Output(unittest.TestCase):
         # ARMv7's one CPU entry, the baseline with VG_CPU_FEATURES=none.
         self.assertEqual([e["arch"] for e in out["cpu"]], ["arm"])
         self.assertTrue(all(e["tests"] for job in ("rust", "thumb", "cpu") for e in out[job]))
+        # ARMv7 and Thumb, each linted.
+        self.assertEqual([e["target"] for e in out["lint"]],
+                         ["armv7-unknown-linux-gnueabihf", "thumbv7neon-unknown-linux-gnueabihf"])
 
     def test_x86_64_takes_the_sde_chips(self):
         out = run("pull_request", "src/asm/x86_64/md5.rs\n")
@@ -109,7 +113,12 @@ class Output(unittest.TestCase):
     def test_nothing(self):
         out = run("pull_request", "lean/A.lean\n")
         self.assertEqual((out["arches"], out["all"]), ([], False))
-        self.assertEqual((out["rust"], out["thumb"], out["cpu"]), ([], [], []))
+        self.assertEqual((out["rust"], out["thumb"], out["cpu"], out["lint"]), ([], [], [], []))
+
+    def test_the_benchmarks_lint_every_target(self):
+        out = run("pull_request", "bench/benches/primitives/md5.rs\n")
+        self.assertEqual((out["arches"], out["rust"], out["thumb"], out["cpu"]), ([], [], [], []))
+        self.assertEqual(out["lint"], run("merge_group")["lint"])
 
     def test_every_job(self):
         full = run("merge_group")
@@ -124,6 +133,8 @@ class Output(unittest.TestCase):
         self.assertEqual([e["shard"] for e in icx], ["1/2", "2/2"])
         self.assertEqual(len({e["runs"] for e in icx}), 1)
         self.assertTrue(all("shards" not in e for e in full["cpu"]))
+        matrix = tomllib.loads((CI / "rust_matrix.toml").read_text())
+        self.assertEqual(full["lint"], matrix["lint"])
 
     def test_bench_is_whether_the_benchmarks_measure_the_arch(self):
         for event in ("merge_group", "push"):
@@ -139,6 +150,7 @@ class Output(unittest.TestCase):
         self.assertEqual((push["arches"], push["all"]), ([], False))
         for job in ("rust", "thumb"):
             self.assertEqual(push[job], [dict(e, tests=False) for e in full[job]])
+        self.assertEqual(push["lint"], full["lint"])
         # The CPU jobs, which build the same tests, once per runner
         # architecture and container: the first of each.
         cpu = [dict(e, tests=False) for e in full["cpu"]]
@@ -168,6 +180,32 @@ class Workflow(unittest.TestCase):
                 self.assertIn(entry["arch"], ALL)
         for entry in matrix["cpu"]:
             self.assertIn(entry.get("arch", "x86_64"), ALL)
+
+    def test_lint_has_every_platform(self):
+        # A target of each platform the `rust` and `thumb` jobs build, and of
+        # each Linux one, which lints the benchmarks.
+        matrix = tomllib.loads((CI / "rust_matrix.toml").read_text())
+        lint = {(e["arch"], e["target"]): e for e in matrix["lint"]}
+        for entry in matrix["rust"]:
+            os = entry["os"]
+            system = "-pc-windows-" if os.startswith("windows") else "-apple-" if os.startswith("macos") else "-linux-"
+            with self.subTest(entry=entry["name"]):
+                found = [e for (arch, target), e in lint.items() if arch == entry["arch"] and system in target]
+                self.assertTrue(found)
+                if system == "-linux-":
+                    self.assertTrue(any(e.get("bench") for e in found))
+        for entry in matrix["thumb"]:
+            self.assertIn((entry["arch"], "thumbv7neon-unknown-linux-gnueabihf"), lint)
+        self.assertEqual(len(lint), len(matrix["lint"]))
+        self.assertTrue(all(e["arch"] in ALL for e in matrix["lint"]))
+
+    def test_only_rust_lint_runs_clippy_and_rustfmt(self):
+        text = WORKFLOW.read_text()
+        self.assertNotIn("cargo clippy", text)
+        self.assertNotIn("cargo fmt", text)
+        self.assertIn("python3 ci/rust_lint.py run", job("rust-lint"))
+        self.assertIn("if: ${{ needs.rust-arches.outputs.lint != '[]' }}", job("rust-lint"))
+        self.assertIn("LINT: ${{ needs.rust-arches.outputs.lint }}", job("rust-lint"))
 
     def test_rust_checkout_has_the_targets_functions(self):
         # The `rust` job checks out only `src/asm/<asm or arch>/`: that must
