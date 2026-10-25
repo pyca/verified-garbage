@@ -48,18 +48,18 @@ theorem signingSubgroup_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G
   have big := S.big
   have Plt := operand_lt_of Ip
   have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by
-    simp only [Impl.Dsa.Layout.t]; omega
-  have ht : Impl.Dsa.Layout.t + pLen < size := by omega
+    simp only [Impl.Dsa.Layout.t]; omega_arith
+  have ht : Impl.Dsa.Layout.t + pLen < size := by omega_arith
   unfold Validate.signingSubgroup
-  refine WP.seq (WP.mono (power_ok (output := Impl.Dsa.Layout.t) S.ws (by omega) S.wp q4 qp qw Ip.toReady
-    Ig.toReady Iq.toReady Ip.value hP hPo ho.1 (by omega) (by decide)) fun v₁ ⟨B₁, St₁⟩ => ?_)
+  refine WP.seq (WP.mono (power_ok (output := Impl.Dsa.Layout.t) S.ws (by omega_arith) S.wp q4 qp qw Ip.toReady
+    Ig.toReady Iq.toReady Ip.value hP hPo ho.1 (by omega_arith) (by decide)) fun v₁ ⟨B₁, St₁⟩ => ?_)
   rw [Ig.value, Iq.value] at B₁
   have S₁ := S.stage St₁
-  refine WP.mono (isOne_ok S₁.ws (by omega) S.wp (localReady S₁.ws ho.1 ht (by decide)))
+  refine WP.mono (isOne_ok S₁.ws (by omega_arith) S.wp (localReady S₁.ws ho.1 ht (by decide)))
     fun v₂ ⟨F₂, St₂⟩ => ⟨?_, ?_, ?_⟩
-  · rw [local_operand S₁.ws (by omega), localVal_of_bytes B₁ (Nat.lt_trans (Nat.mod_lt _ (by omega)) Plt)] at F₂
+  · rw [local_operand S₁.ws (by omega_arith), localVal_of_bytes B₁ (Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Plt)] at F₂
     rw [F₂, St₁.maskW (by decide)]
-  · exact (St₁.keepsScalars (by omega) (by simp only [Impl.Dsa.Layout.t]; omega)).trans
+  · exact (St₁.keepsScalars (by omega_arith) (by simp only [Impl.Dsa.Layout.t]; omega_arith)).trans
       (St₂.keepsScalars (by decide) (by decide))
   · exact (St₁.run (.inr ho)).trans (St₂.run (.inl ⟨rfl, rfl⟩))
 
@@ -75,10 +75,10 @@ theorem signingKey_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y : 
   have fits := S.fits
   unfold Validate.signingKey
   refine WP.seq (WP.mono (domain_ok S Ip Iq Ig Iy hP hPo hQ hQo) fun u ⟨Fu, Lu, Ru⟩ =>
-    WP.mono (signingSubgroup_ok (S.run Ru) (Ip.run Ru (by omega) fits) (Iq.run Ru (by omega) fits)
-      (Ig.run Ru (by omega) fits) hP hPo) fun t ⟨Ft, Kt, Rt⟩ => ?_)
+    WP.mono (signingSubgroup_ok (S.run Ru) (Ip.run Ru (by omega_arith) fits) (Iq.run Ru (by omega_arith) fits)
+      (Ig.run Ru (by omega_arith) fits) hP hPo) fun t ⟨Ft, Kt, Rt⟩ => ?_)
   have L : localVal base t Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
-    rw [Kt _ _ (by decide) (by simp only [Impl.Dsa.Layout.qMinusTwo, Impl.Dsa.Layout.t]; have := S.q32; omega)]
+    rw [Kt _ _ (by decide) (by simp only [Impl.Dsa.Layout.qMinusTwo, Impl.Dsa.Layout.t]; have := S.q32; omega_arith)]
     exact Lu
   refine ⟨?_, L, Ru.toRun.trans Rt⟩
   rw [Ft, Fu, BitVec.and_assoc, mask32_and]

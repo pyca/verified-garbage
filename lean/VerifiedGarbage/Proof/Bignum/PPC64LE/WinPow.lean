@@ -55,7 +55,7 @@ theorem top_nibble (x : BitVec 64) : x >>> 60 = BitVec.ofNat 64 (x.toNat / 2 ^ 6
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat]
   have := x.isLt
-  omega
+  omega_arith
 
 /-- `window`. -/
 theorem window_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hodd : N % 2 = 1)
@@ -78,16 +78,16 @@ theorem window_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hod
   have k14 := ((k1.trans k2).trans k3).trans k4
   have f14 := (f1.trans f2).trans (f3.trans f4)
   have hd := (s.gpr .r24).isLt
-  have hd16 : (s.gpr .r24).toNat / 2 ^ 60 < 16 := by omega
+  have hd16 : (s.gpr .r24).toNat / 2 ^ 60 < 16 := by omega_arith
   refine WP.seq (WP.mono (WP.keep [.r18] (Q := fun t =>
       t.gpr .r18 = BitVec.ofNat 64 ((s.gpr .r24).toNat / 2 ^ 60) ∧ t.mem = s₄.mem)
     (by prun [top_nibble, k14.gpr .r24 (by decide)]) (by decide)) fun s₅ ⟨⟨a18, m5⟩, k5⟩ => ?_)
   have c5 := c4.regs k5 (by decide) m5
   refine WP.seq (WP.mono (select_ok c5 a18 hd16) fun s₆ ⟨⟨a6, v6, c6, o6⟩, k6⟩ => ?_)
   have tab6 : ∀ i < 16, A s₆.mem B w (8 + i) = A s.mem B w (8 + i) := fun i hi => by
-    rw [v6 _ (by omega) (by omega) (by omega), m5, f14 _ (by omega) (by omega) (by omega) (by omega) (by omega)]
+    rw [v6 _ (by omega_arith) (by omega_arith) (by omega_arith), m5, f14 _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
   have A6 : A s₆.mem B w 6 = A s₄.mem B w 6 := by rw [v6 6 (by decide) (by decide) (by decide), m5]
-  rw [m5, f14 _ (by omega) (by omega) (by omega) (by omega) (by omega)] at a6
+  rw [m5, f14 _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)] at a6
   refine WP.seq (WP.mono (c6.mont (o := 6) (a := 6) (b := 5) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by rw [a6]; exact htab _ hd16))
     fun s₇ ⟨⟨c7, l7, e7, v7, o7⟩, k7⟩ => ?_)
@@ -104,7 +104,7 @@ theorem window_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hod
     rw [mt, A6] at *
     rw [A6] at e7
     have := mont_pow hR (e4 (e3 (e2 (e1 hA)))) (by rw [a6]; exact hT _ hd16) e7
-    rw [this, show c + c + (c + c) + (c + c + (c + c)) + (c + c + (c + c) + (c + c + (c + c))) = 16 * c by omega]
+    rw [this, show c + c + (c + c) + (c + c + (c + c)) + (c + c + (c + c) + (c + c + (c + c))) = 16 * c by omega_arith]
   · exact ((((k14.trans k5).trans k6).trans k7).trans kt).mono
 
 /-! ## The exponent -/
@@ -132,11 +132,11 @@ theorem lbz_ok {u : State} {D : Addr} {i : Nat} (h30 : u.gpr .r30 = off D i)
 
 theorem nib_hi {b : Nat} (hb : b < 256) : (BitVec.ofNat 64 b <<< 56).toNat / 2 ^ 60 = b / 16 := by
   rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem nib_lo (b : Nat) : (BitVec.ofNat 64 b <<< 56 <<< 4).toNat / 2 ^ 60 = b % 16 := by
   rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- `byteWin`: the two windows of the byte `b` at `r30`, `c := 256 c + b`. -/
 theorem byteWin_ok {s₀ t₀ u : State} {B D : Addr} {Z w N X RR c i : Nat} (hodd : N % 2 = 1)
@@ -149,7 +149,7 @@ theorem byteWin_ok {s₀ t₀ u : State} {B D : Addr} {Z w N X RR c i : Nat} (ho
   have hb256 : b < 256 := by rw [← hb]; exact (u.mem (off D i)).isLt
   have tab : ∀ {m : Mem}, Fix B w t₀.mem m → ∀ i < 16, A m B w (8 + i) < N ∧
       (RR = 2 ^ (64 * w) * 2 ^ (64 * w) % N → A m B w (8 + i) % N = X ^ i * 2 ^ (64 * w) % N) :=
-    fun hf i hi => by rw [hf (8 + i) (by omega) (by omega) (by omega) (by omega) (by omega)]; exact htab i hi
+    fun hf i hi => by rw [hf (8 + i) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]; exact htab i hi
   unfold byteWin
   refine WP.seq (WP.mono (lbz_ok h30 hrd) fun u₁ ⟨⟨a24, a30, m1⟩, k1⟩ => ?_)
   rw [hb] at a24
@@ -164,7 +164,7 @@ theorem byteWin_ok {s₀ t₀ u : State} {B D : Addr} {Z w N X RR c i : Nat} (ho
     rw [a24, nib_hi hb256] at p1
     have p2 := e3 p1 (fun i hi => (tab (f1.trans f2) i hi).2 hE)
     rw [a24', a24, nib_lo b] at p2
-    rw [p2, show 16 * (16 * c + b / 16) + b % 16 = 256 * c + b by omega]
+    rw [p2, show 16 * (16 * c + b / 16) + b % 16 = 256 * c + b by omega_arith]
   · refine (h.keep.trans (k1.trans (k2.trans k3))).mono fun r hr => ?_
     simp only [List.mem_append] at hr
     rcases hr with h | h | h | h
@@ -211,7 +211,7 @@ theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 :
   -- The bytes.
   let Inv : Nat → State → Prop := fun i u =>
     Run s t₀ u B Z w N X RR (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D i)) ∧ u.gpr .r30 = off D i
-  refine WP.seq (WP.mono (wp_countdown (cnt := .r31) (N := L) (by omega) (by omega) Inv
+  refine WP.seq (WP.mono (wp_countdown (cnt := .r31) (N := L) (by omega_arith) (by omega_arith) Inv
     (fun i hi u ⟨hu, u30⟩ _ => ?_) ⟨by simpa [Spec.Rsa.bytesAt, Spec.Rsa.os2ip] using r0,
       by rw [k0.gpr .r30 (by decide), h30]⟩
     (by rw [k0.gpr .r31 (by decide), h31])) fun u ⟨hu, _⟩ => ?_)
@@ -224,8 +224,8 @@ theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 :
       right
       by_contra hc
       exact hsep i hi (off D i) (by
-        have e24 : slot w 24 = slot w 1 + 23 * (8 * (w + 2)) := by unfold slot; omega
-        simp only [Mont.ofs, ofs] at hc ⊢; omega) rfl
+        have e24 : slot w 24 = slot w 1 + 23 * (8 * (w + 2)) := by unfold slot; omega_arith
+        simp only [Mont.ofs, ofs] at hc ⊢; omega_arith) rfl
     refine WP.seq (WP.mono (byteWin_ok hodd htab hu u30 (by rw [hu.keep.rd, hu.keep.wr]; exact hrd i hi))
       fun u₁ ⟨hu₁, a30, a31⟩ => ?_)
     refine WP.mono (subi_ok u₁ .r31 (by decide)) fun u₂ e => ?_
@@ -237,7 +237,7 @@ theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 :
   -- Out of Montgomery form.
   have t7' : A u.mem B w 7 = 1 := by rw [hu.fix 7 (by decide) (by decide) (by decide) (by decide) (by decide), t7]
   refine WP.mono (hu.ctx.mont (o := 4) (a := 6) (b := 7) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by rw [t7']; omega)) fun t ⟨⟨_, lt, e, _, o⟩, k⟩ =>
+    (by decide) (by decide) (by decide) (by decide) (by rw [t7']; omega_arith)) fun t ⟨⟨_, lt, e, _, o⟩, k⟩ =>
     ⟨⟨fun hE => ?_, hu.out.trans o⟩, (hu.keep.trans k).mono⟩
   rw [t7', Nat.mul_one] at e
   refine (Nat.mod_eq_of_lt lt).symm.trans ?_

@@ -50,14 +50,14 @@ theorem flags_ok {s0 u : State} (w : Ws u (rvB s0) (rvZ s0) (ww (kK s0)) nArr) {
       (rvB s0 + BitVec.ofNat 64 sDone)
       (BitVec.setWidth 32 (b64 done &&& (b64 bit ^^^ 1#64) ||| b64 e1 ||| b64 e2)))
     ?_ (by decide)) fun v ⟨m, kv⟩ => ⟨?_, kv⟩
-  · prun [flags, w.r31, w.scr.ld (show sBit + 4 ≤ rvZ s0 by simp only [sBit]; omega),
-      w.scr.ld (show sDone + 4 ≤ rvZ s0 by simp only [sDone]; omega),
-      w.scr.ld (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega),
-      w.scr.ld (show sE1 + 4 ≤ rvZ s0 by simp only [sE1]; omega),
-      w.scr.ld (show sE2 + 4 ≤ rvZ s0 by simp only [sE2]; omega),
-      w.scr.st (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega),
-      w.scr.st (show sDone + 4 ≤ rvZ s0 by simp only [sDone]; omega),
-      w.scr.st (show sLive + 4 ≤ rvZ s0 by simp only [sLive]; omega),
+  · prun [flags, w.r31, w.scr.ld (show sBit + 4 ≤ rvZ s0 by simp only [sBit]; omega_arith),
+      w.scr.ld (show sDone + 4 ≤ rvZ s0 by simp only [sDone]; omega_arith),
+      w.scr.ld (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega_arith),
+      w.scr.ld (show sE1 + 4 ≤ rvZ s0 by simp only [sE1]; omega_arith),
+      w.scr.ld (show sE2 + 4 ≤ rvZ s0 by simp only [sE2]; omega_arith),
+      w.scr.st (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega_arith),
+      w.scr.st (show sDone + 4 ≤ rvZ s0 by simp only [sDone]; omega_arith),
+      w.scr.st (show sLive + 4 ≤ rvZ s0 by simp only [sLive]; omega_arith),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sBit < 2 ^ 15 by decide),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sDone < 2 ^ 15 by decide),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sOk < 2 ^ 15 by decide),

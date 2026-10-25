@@ -30,7 +30,7 @@ theorem setup_ok {s : State} (h : contract.pre s) : WP isa setup s (Ready s) := 
   intro u entry
   have spU : u.gpr .esp = s.gpr .esp := entry.keep.1 _ (by decide)
   rw [WP.seq_iff]
-  refine WP.mono (symFrame_ok tableSym u (by rw [spU]; have := stack_low h; omega)) ?_
+  refine WP.mono (symFrame_ok tableSym u (by rw [spU]; have := stack_low h; omega_arith)) ?_
   intro v R
   have spV : v.gpr .esp = s.gpr .esp := (R.gpr _ (by decide)).trans spU
   have baseV : v.gpr .ebx = arg s 3 := (R.gpr _ (by decide)).trans entry.base
@@ -60,25 +60,25 @@ theorem setup_ok {s : State} (h : contract.pre s) : WP isa setup s (Ready s) := 
         (geometry h).belowScratch
       exact (sep.sub_left (symbol_sub h)).symm)
   have writable : InRegions v.wr (addr (v.gpr .ebx) 16) 4 := by
-    rw [baseV, trackV.wr, addr_eq (by omega)]
+    rw [baseV, trackV.wr, addr_eq (by omega_arith)]
     exact ⟨scratch s, by
       have wr := (geometry h).wr
       change s.wr = [scratch s, ⟨argAddr s 0, 20⟩] at wr
       rw [wr]; exact List.mem_cons_self,
-      Offset.contains_base _ (by omega) (by decide)⟩
+      Offset.contains_base _ (by omega_arith) (by decide)⟩
   have tableValue : v.gpr .eax = s.syms tableSym := by rw [R.addr, entry.syms]
   unfold saveTable
   refine wp_stm rfl writable fun t T => WP.block_nil ?_
   have frameT : Frame (writes s) s.mem t.mem := by
-    rw [T.mem, baseV, addr_eq (by omega)]
-    exact F.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by decide))
+    rw [T.mem, baseV, addr_eq (by omega_arith)]
+    exact F.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_arith) (by decide))
   have trackT : Tracking s t := ⟨by rw [T.gpr]; exact spV, T.rd.trans trackV.rd,
     T.wr.trans trackV.wr, frameT⟩
   refine ⟨trackT, ?_, ?_⟩
   · have length : (domain s).length = (arg s 1).toNat := by
       simp only [domain, Spec.Rsa.bytesAt, List.length_map, List.length_range]
     refine ⟨by rw [T.gpr]; exact baseV, trackT.stack, trackT.args h 0 (by decide), ?_, ?_, ?_, ?_, ?_,
-      ?_, ?_, ?_, table_fit h, by have := stack_bound h; omega, ?_, (geometry h).pLen.1, (geometry h).pLen.2⟩
+      ?_, ?_, ?_, table_fit h, by have := stack_bound h; omega_arith, ?_, (geometry h).pLen.1, (geometry h).pLen.2⟩
     · rw [trackT.args h 1 (by decide), length, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · rw [trackT.args h 2 (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · have read := CallLay.inRegions_sub (read_args h) (off := 0) (l := 12) (by decide) (by decide)
@@ -90,7 +90,7 @@ theorem setup_ok {s : State} (h : contract.pre s) : WP isa setup s (Ready s) := 
         have wr := (geometry h).wr
         change s.wr = [scratch s, ⟨argAddr s 0, 20⟩] at wr
         rw [wr]; exact List.mem_cons_self), by
-        rw [addr_eq (by omega)]; exact Offset.contains_base _ (by omega) (by decide)⟩
+        rw [addr_eq (by omega_arith)]; exact Offset.contains_base _ (by omega_arith) (by decide)⟩
     · rw [T.mem, baseV, Mem.readW_writeW_self32, tableValue]
     · rw [trackT.rd, trackT.wr, length]
       exact read_domain h
@@ -102,7 +102,7 @@ theorem setup_ok {s : State} (h : contract.pre s) : WP isa setup s (Ready s) := 
     · rw [length]; exact (geometry h).domBound
     · rw [length]; exact (geometry h).dLen
   · rw [T.mem, baseV]
-    exact savedV.writeW_addr bound (fun p hp => fits.1 p hp) (by omega)
+    exact savedV.writeW_addr bound (fun p hp => fits.1 p hp) (by omega_arith)
       (by decide) _
 
 end VG.Proof.Ffdh.X86.VettedValidation
