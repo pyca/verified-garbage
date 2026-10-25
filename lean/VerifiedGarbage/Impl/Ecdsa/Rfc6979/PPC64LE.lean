@@ -33,7 +33,7 @@ space of HMAC's and `H`'s functions, and the message of steps d, f and h.3.
 
 1. `h = bits2octets(digest)`: the leftmost `Q` bytes, minus `n` if they are
    at least `n` (a conditional subtraction, as `2^(8 Q) < 2n`), by 32-bit
-   digits, as the model has no carry (as in `Impl/Mont/PPC64LE.lean`): the
+   digits, without the carry bit (as in `Impl/Mont/PPC64LE.lean`): the
    digits of the digest to `V`'s place, those of the difference to `K`'s
    (before steps b and c set them), and the one the borrow selects,
    big-endian, to `h`.

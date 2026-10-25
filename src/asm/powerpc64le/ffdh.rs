@@ -4,7 +4,7 @@
 
 /// Initialize native finite-field Diffie–Hellman parameter generation. Validates 512..=8192 bits and generator 2 or 5. Returns 1 and initializes the controller's attempt limit, output width, entropy budget and first entropy request; returns 0 and clears those four words on invalid parameters. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.parameterInitContract`.
 ///
-/// The model has no carry bit, so `bits` is first checked to be below `2^14` (a branch on a public value), and the bounds are then sign bits of 64-bit differences.
+/// `bits` is first checked to be below `2^14` (a branch on a public value), and the bounds are then sign bits of 64-bit differences, without the carry bit.
 ///
 /// # Safety
 ///
@@ -78,7 +78,7 @@ blr",
 
 /// Initialize native finite-field Diffie–Hellman key generation. Returns 1 for a domain width in 64..=1024 bytes, initializing the rejection budgets and first entropy request; returns 0 and clears the first four state words otherwise. The remaining state words are private workspace. Contract: `VG.Spec.Ffdh.keyInitContract`.
 ///
-/// The model has no carry bit, so `p_len` is first checked to be below `2^11` (a branch on a public value), and the bounds are then sign bits of 64-bit differences.
+/// `p_len` is first checked to be below `2^11` (a branch on a public value), and the bounds are then sign bits of 64-bit differences, without the carry bit.
 ///
 /// # Safety
 ///
@@ -11796,7 +11796,7 @@ blr",
 
 /// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
 ///
-/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key`, in a frame of 128 bytes holding its stack arguments at offset 96, within a frame saving the link register. The model has no carry bit: the tape is short when `len − p_len` is negative and `len` is below `2^63`. Timing depends on the domain, the controller's public words and the attempts' statuses.
+/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key`, in a frame of 128 bytes holding its stack arguments at offset 96, within a frame saving the link register. Without the carry bit, the tape is short when `len − p_len` is negative and `len` is below `2^63`. Timing depends on the domain, the controller's public words and the attempts' statuses.
 ///
 /// # Safety
 ///

@@ -19,13 +19,13 @@ namespace VG.Artifacts.Ffdh.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Ffdh.parameterInitApi.artifact PPC64LE.target {
-    notes := ["The model has no carry bit, so `bits` is first checked to be below `2^14` (a branch \
-        on a public value), and the bounds are then sign bits of 64-bit differences."]
+    notes := ["`bits` is first checked to be below `2^14` (a branch on a public value), and the \
+        bounds are then sign bits of 64-bit differences, without the carry bit."]
     code := Impl.Ffdh.PPC64LE.Generation.init
     verified := Proof.Ffdh.PPC64LE.Generation.init_verified },
   Spec.Ffdh.keyInitApi.artifact PPC64LE.target {
-    notes := ["The model has no carry bit, so `p_len` is first checked to be below `2^11` (a branch \
-        on a public value), and the bounds are then sign bits of 64-bit differences."]
+    notes := ["`p_len` is first checked to be below `2^11` (a branch on a public value), and the \
+        bounds are then sign bits of 64-bit differences, without the carry bit."]
     code := Impl.Ffdh.PPC64LE.KeyGeneration.init
     verified := Proof.Ffdh.PPC64LE.KeyGeneration.init_verified },
   Spec.Ffdh.checkPublicApi.artifact PPC64LE.target {
@@ -94,7 +94,7 @@ def artifacts : List Artifact := [
     notes := ["The whole key search runs in verified code: both rejection budgets, the octets each \
         attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key`, in \
         a frame of 128 bytes holding its stack arguments at offset 96, within a frame saving the link \
-        register. The model has no carry bit: the tape is short when `len − p_len` is negative and \
+        register. Without the carry bit, the tape is short when `len − p_len` is negative and \
         `len` is below `2^63`. Timing depends on the domain, the controller's public words and the \
         attempts' statuses."]
     code := Proof.Ffdh.PPC64LE.KeyGeneration.keyCode

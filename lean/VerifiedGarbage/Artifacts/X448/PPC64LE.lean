@@ -11,8 +11,7 @@ namespace VG.Artifacts.X448.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.X448.x448Api.artifact PPC64LE.target {
-    notes := ["The function uses only volatile registers. The model has no carry bit, \
-      so field elements are fourteen 32-bit limbs, one to a word of `scratch`, multiplied row \
+    notes := ["The function uses only volatile registers. Field elements are fourteen 32-bit limbs, one to a word of `scratch`, multiplied row \
       by row with `mulld` (each step `a_i b_j + acc + carry` fits in 64 bits) and reduced with \
       `2^448 = 2^224 + 1` (mod p); the inversion is square-and-multiply over the public bits of \
       `p - 2`."]

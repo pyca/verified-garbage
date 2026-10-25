@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
 ///
-/// The function uses only volatile registers. The model has no carry bit, so field elements are fourteen 32-bit limbs, one to a word of `scratch`, multiplied row by row with `mulld` (each step `a_i b_j + acc + carry` fits in 64 bits) and reduced with `2^448 = 2^224 + 1` (mod p); the inversion is square-and-multiply over the public bits of `p - 2`.
+/// The function uses only volatile registers. Field elements are fourteen 32-bit limbs, one to a word of `scratch`, multiplied row by row with `mulld` (each step `a_i b_j + acc + carry` fits in 64 bits) and reduced with `2^448 = 2^224 + 1` (mod p); the inversion is square-and-multiply over the public bits of `p - 2`.
 ///
 /// # Safety
 ///
