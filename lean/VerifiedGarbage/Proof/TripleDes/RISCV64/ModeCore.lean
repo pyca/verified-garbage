@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Modes.RISCV64.Core
 public import VerifiedGarbage.Impl.TripleDes.RISCV64.Ecb
 public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-public import VerifiedGarbage.Proof.TripleDes.RISCV64.BlockOk
+import VerifiedGarbage.Proof.TripleDes.RISCV64.BlockOk
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.RISCV64.Loops
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.TripleDes.RISCV64.Block
 
 /-!
 # Triple DES's core for the modes on RISC-V

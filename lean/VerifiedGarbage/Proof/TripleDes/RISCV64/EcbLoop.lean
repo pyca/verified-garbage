@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.RISCV64.ModeCore
-import VerifiedGarbage.Proof.TripleDes.EcbMemory
+import VerifiedGarbage.Proof.TripleDes.RISCV64.ModeCore
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.TripleDes.RISCV64.BlockOk
+public import VerifiedGarbage.Impl.TripleDes.RISCV64.Ecb
+public import VerifiedGarbage.Proof.Modes.RISCV64.Core
+public import VerifiedGarbage.Proof.TripleDes.RISCV64.Block
 
 /-!
 # ECB's loop

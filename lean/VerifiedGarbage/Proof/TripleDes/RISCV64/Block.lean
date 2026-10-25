@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.TripleDes.RISCV64.Bytes
 import VerifiedGarbage.Proof.TripleDes.RISCV64.Permutation
 import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.TripleDes.Bytes
-import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec

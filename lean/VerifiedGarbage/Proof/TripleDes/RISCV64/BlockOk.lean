@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.TripleDes.RISCV64.Bytes
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # A block, from start to end -/
 

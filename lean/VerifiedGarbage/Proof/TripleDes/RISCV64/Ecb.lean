@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.RISCV64.EcbLoop
 public import VerifiedGarbage.Proof.Modes.RISCV64.Seq
-import VerifiedGarbage.Proof.TripleDes.EcbMemory
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.RISCV64.BigFrame
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.TripleDes.RISCV64.ModeCore
 
 /-!
 # Triple DES ECB on RISC-V

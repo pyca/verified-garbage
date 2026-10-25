@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.RISCV64.Ecb
+import VerifiedGarbage.Proof.TripleDes.RISCV64.Ecb
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.TripleDes.RISCV64.FunctionsLit
 meta import VerifiedGarbage.Proof.TripleDes.RISCV64.Ecb
@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.TripleDes.RISCV64.FunctionsLit
+public import VerifiedGarbage.Proof.Modes.RISCV64.Seq
+public import VerifiedGarbage.Proof.TripleDes.RISCV64.EcbLoop
 
 /-!
 # Triple DES ECB on RISC-V meets its contract

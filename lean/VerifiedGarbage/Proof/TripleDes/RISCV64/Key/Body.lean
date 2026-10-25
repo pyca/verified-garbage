@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.RISCV64.Key.Loop
+import VerifiedGarbage.Proof.TripleDes.RISCV64.Key.Loop
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.TripleDes.Bytes
@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.TripleDes.RISCV64.Key.Steps
 
 /-!
 # The three components

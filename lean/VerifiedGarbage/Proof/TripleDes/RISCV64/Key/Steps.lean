@@ -7,11 +7,9 @@ import VerifiedGarbage.Proof.TripleDes.RISCV64.Bytes
 import VerifiedGarbage.Proof.TripleDes.RISCV64.Permutation
 import VerifiedGarbage.Proof.TripleDes.KeySchedule
 import VerifiedGarbage.Proof.TripleDes.Word
-import VerifiedGarbage.Proof.TripleDes.Core
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
-import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 
 /-!
