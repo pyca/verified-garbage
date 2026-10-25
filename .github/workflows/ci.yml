@@ -407,7 +407,7 @@ jobs:
       # The dependencies (built with opt-level 3) are most of the build.
       # Only main saves, so pull requests restore main's entries instead of
       # filling the cache quota with their own.
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           # Not shared with `rust-cpu-features`: those jobs compute the same
           # key but run no clippy, so when one of them saved the entry first,
@@ -554,7 +554,7 @@ jobs:
 
       - name: Install Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component clippy --target thumbv7neon-unknown-linux-gnueabihf
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: rust-thumb
           save-if: ${{ github.ref == 'refs/heads/main' }}
@@ -684,7 +684,7 @@ jobs:
           rm sde.tar.xz
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal --component llvm-tools
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: rust-cpu-features
           save-if: ${{ github.ref == 'refs/heads/main' }}
