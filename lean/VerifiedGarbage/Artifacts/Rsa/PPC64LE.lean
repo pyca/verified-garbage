@@ -44,7 +44,8 @@ def artifacts : List Artifact := [
         the primes are replaced by 3 and `qInv` by 0, so that the arithmetic is the same whatever \
         the key, and the result is stored masked. Each prime has its own working space of 24 \
         numbers of `max(2, ⌈len/8⌉)` words for its public length: the input is reduced modulo it a \
-        bit at a time, and the exponent is scanned in four-bit windows from the top, four \
+        bit at a time, `R² mod p` is computed from 1 by `64 w + w` modular doublings to \
+        `2^w R mod p` and six Montgomery squares, and the exponent is scanned in four-bit windows from the top, four \
         Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry \
         selected by a masked scan of the whole 16-entry table on 64-bit words, so that no address \
         depends on the \
