@@ -38,8 +38,9 @@ def stripConsts (K : List (String × List (BitVec 64))) (s : State) : State :=
 /-- What `abi.withConsts K` adds to the calling convention's well-formedness. -/
 def ConstsOk (K : List (String × List (BitVec 64))) (st : Nat) (s : State) : Prop :=
   s.rd.drop (s.rd.length - K.length) = constRegs K s ∧ Abi.constsHeld s.mem (fun name => s.syms name) K ∧
-    ∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ abi.ptrBits ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
-      ∀ r ∈ abi.reserved st s, t.Disjoint r
+    (∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ abi.ptrBits ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
+      ∀ r ∈ abi.reserved st s, t.Disjoint r) ∧
+    ∀ t ∈ constRegs K s, t.base.toNat % 64 = 0
 
 @[simp] theorem stripConsts_gpr (K : List (String × List (BitVec 64))) (s : State) :
     (stripConsts K s).gpr = s.gpr := rfl
@@ -145,7 +146,7 @@ theorem narrowK_pre (hk : (sig.words abi.ptrBits).length < 6)
     (hs : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes)).pre s)
     (hl : Sig.noLists sig.params = true) :
     (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack).pre (narrow sig e n bytes s) := by
-  obtain ⟨hs', hd, hh, ht⟩ := pre_consts.mp hs
+  obtain ⟨hs', hd, hh, ht, hal⟩ := pre_consts.mp hs
   have hn := narrow_pre (nm := nm) hk hb hst hs' hl
   have hwf := ((pre_regs (by omega_arith) hl).mp hs').1
   simp only [stripConsts_gpr] at hwf
@@ -153,7 +154,7 @@ theorem narrowK_pre (hk : (sig.words abi.ptrBits).length < 6)
   have hR := reserved_below (stack := stack) (bytes := bytes) (by omega_arith) s
   have hscr : s.gpr .rsp - BitVec.ofNat 64 bytes + 8 = s.gpr .rsp - BitVec.ofNat 64 (bytes - 8) :=
     sub_add_eight _ (by omega_arith)
-  refine pre_consts.mpr ⟨by rw [stripConsts_narrow]; exact hn, hd, hh, fun t ht' => ⟨(ht t ht').1, ?_, ?_⟩⟩
+  refine pre_consts.mpr ⟨by rw [stripConsts_narrow]; exact hn, hd, hh, fun t ht' => ⟨(ht t ht').1, ?_, ?_⟩, hal⟩
   · intro r hr
     rcases List.mem_append.mp hr with hr | hr
     · exact (ht t ht').2.1 r hr

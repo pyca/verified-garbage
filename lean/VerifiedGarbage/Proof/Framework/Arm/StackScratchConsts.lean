@@ -52,8 +52,9 @@ def stripConsts (K : List (String × List (BitVec 64))) (s : State) : State :=
 /-- What `abi.withConsts K` adds to the calling convention's well-formedness. -/
 def ConstsOk (K : List (String × List (BitVec 64))) (st : Nat) (s : State) : Prop :=
   s.rd.drop (s.rd.length - K.length) = constRegs K s ∧ Abi.constsHeld s.mem (symAddr s) K ∧
-    ∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ abi.ptrBits ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
-      ∀ r ∈ abi.reserved st s, t.Disjoint r
+    (∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ abi.ptrBits ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
+      ∀ r ∈ abi.reserved st s, t.Disjoint r) ∧
+    ∀ t ∈ constRegs K s, t.base.toNat % 64 = 0
 
 section
 variable {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
@@ -149,7 +150,7 @@ theorem symAddr_eq_iff {s₁ s₂ : State} : symAddr s₁ name = symAddr s₂ na
 /-- The table does not wrap around the 32-bit address space. -/
 theorem ConstsOk.fit (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
     (s.syms name).toNat + 8 * ws.length ≤ 2 ^ 32 := by
-  have h1 := (h.2.2 ⟨symAddr s name, 8 * ws.length⟩ (List.mem_map_of_mem (f := fun c =>
+  have h1 := (h.2.2.1 ⟨symAddr s name, 8 * ws.length⟩ (List.mem_map_of_mem (f := fun c =>
     (⟨symAddr s c.1, 8 * c.2.length⟩ : Region)) hc)).1
   have e : (symAddr s name).toNat = (s.syms name).toNat := by
     simp only [symAddr, BitVec.toNat_setWidth]
@@ -296,7 +297,7 @@ theorem narrowC_pre (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     {s : State} (hs : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s) :
     (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack leak).pre
       (narrowC sig e n bytes m (c₀ :: cs) s) := by
-  obtain ⟨hs', hd, hh, ht⟩ := pre_consts.mp hs
+  obtain ⟨hs', hd, hh, ht, hal⟩ := pre_consts.mp hs
   have hn := narrow_pre (nm := nm) hcl hN hloc hb hpre hs'
   obtain ⟨hsp₂, -, -, hf⟩ := narrow_facts (nm := nm) (e := e) (n := n) hcl hN hloc hb hs'
   have hsy := narrowC_syms sig e n bytes m (c₀ :: cs) s
@@ -313,7 +314,7 @@ theorem narrowC_pre (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
       stack + bytes - a + k ≤ stack + bytes →
       t.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 a, k⟩ := fun t ht' _ _ ha hk =>
     ((ht t ht').2.2 _ (reserved_below (by omega_using [hb1]) s)).sub_right (Offset.sub_below _ ha hk)
-  refine pre_consts.mpr ⟨?_, ?_, ?_, fun t ht' => ?_⟩
+  refine pre_consts.mpr ⟨?_, ?_, ?_, fun t ht' => ?_, by rw [constRegs_congr hsy]; exact hal⟩
   · rw [stripConsts_narrowC]; exact hn
   · rw [narrowC_rd_drop, constRegs_congr hsy]
   · -- The tables are outside the frame.
@@ -368,7 +369,7 @@ theorem withStackScratchC_run {c : Prog isa} (hcl : ScratchOnStack sig) (hN : ns
         (setArgsTrace bytes (s.sp - BitVec.ofNat 32 bytes) m ++ t) (popState bytes s s₃) ∧
       abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
       (popState bytes s s₃).gpr = s₃.gpr := by
-  obtain ⟨hs', hdrop, -, -⟩ := pre_consts.mp hs
+  obtain ⟨hs', hdrop, -, -, -⟩ := pre_consts.mp hs
   obtain ⟨hrun, hrd', hwr', -, -, -, -, -⟩ := argsState_run hs' hN hb
   obtain ⟨hsp₂, hg, -, -⟩ := narrow_facts (nm := "") (e := e) (n := n) hcl hN hloc hb hs'
   obtain ⟨hb1, hb2, hb3, hb4, -⟩ := hb

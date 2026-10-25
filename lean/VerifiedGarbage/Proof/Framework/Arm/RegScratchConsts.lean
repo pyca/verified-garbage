@@ -55,14 +55,14 @@ theorem sp_bound_consts (hb : FitsR bytes e n) {s : State}
 theorem narrowR_consts {K : List (String × List (BitVec 64))} (hb : FitsR bytes e n) {s : State}
     (hsb : stack + bytes ≤ s.sp.toNat) (h : ConstsOk K (stack + bytes) s) :
     ConstsOk K stack (narrowR e n bytes r s) := by
-  obtain ⟨hd, hh, ht⟩ := h
+  obtain ⟨hd, hh, ht, hal⟩ := h
   obtain ⟨hb0, -, -, -, hb4⟩ := hb
   have hsp : State.addr (s.sp - BitVec.ofNat 32 bytes) = State.addr s.sp - BitVec.ofNat 64 bytes :=
     addr_sub' (by omega_arith)
   have htR : ∀ t ∈ constRegs K s, ∀ {a k : Nat}, a ≤ stack + bytes → stack + bytes - a + k ≤ stack + bytes →
       t.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 a, k⟩ := fun t ht' _ _ ha hk =>
     ((ht t ht').2.2 _ (reserved_below (by omega_arith) s)).sub_right (Offset.sub_below _ ha hk)
-  refine ⟨hd, hh, fun t ht' => ⟨(ht t ht').1, fun q hq => ?_, fun q hq => ?_⟩⟩
+  refine ⟨hd, hh, fun t ht' => ⟨(ht t ht').1, fun q hq => ?_, fun q hq => ?_⟩, hal⟩
   · rcases List.mem_append.mp hq with hq | hq
     · exact (ht t ht').2.1 q hq
     · simp only [List.mem_singleton] at hq; subst hq
