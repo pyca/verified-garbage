@@ -1784,3 +1784,169 @@ addi sp, sp, 608
 ret",
     )
 }
+
+/// Absorbs data into a SHA-3 or SHAKE computation: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it then represents that message followed by the `len` bytes at `data`. Returns the position after them, `(pos + len) % rate`.
+///
+/// Contract: `VG.Spec.Sha3.absorbContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
+///
+/// The state and the data are accessed a byte at a time, since the contract states no alignment for them. Keeps the permutation's scratch space, and the registers it saves, in a frame of 560 bytes on the stack, above the permutation's own frame.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        r"addi sp, sp, -560
+addi t0, sp, 0
+sd ra, 512(t0)
+sd s2, 520(t0)
+sd s3, 528(t0)
+sd s4, 536(t0)
+sd s5, 544(t0)
+sd s6, 552(t0)
+addi s2, a0, 0
+addi s3, a1, 0
+addi s4, a2, 0
+addi s5, a3, 0
+addi s6, a4, 0
+beqz s6, 20f
+22:
+lbu t1, 0(s5)
+add t2, s2, s4
+lbu t3, 0(t2)
+xor t1, t1, t3
+sb t1, 0(t2)
+addi s5, s5, 1
+addi s4, s4, 1
+addi s6, s6, -1
+sub t1, s4, s3
+beqz t1, 23f
+j 24f
+23:
+addi s4, zero, 0
+addi a0, s2, 0
+addi a1, sp, 0
+call {vg_keccak_f1600}
+24:
+bnez s6, 22b
+j 21f
+20:
+21:
+addi a0, s4, 0
+addi t0, sp, 0
+ld ra, 512(t0)
+ld s2, 520(t0)
+ld s3, 528(t0)
+ld s4, 536(t0)
+ld s5, 544(t0)
+ld s6, 552(t0)
+addi sp, sp, 560
+ret",
+        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+    )
+}
+
+/// Pads a SHA-3 or SHAKE message: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it becomes the state after absorbing that message with the domain-separation suffix (the low byte of `suffix`, with the first bit of the padding: `0x06` for SHA-3, `0x1f` for SHAKE) and `pad10*1`.
+///
+/// Contract: `VG.Spec.Sha3.padContract`. Constant time: only the pointers, `rate`, `pos` and `suffix` may affect timing, not the state.
+///
+/// Keeps the permutation's scratch space, and the return address, in a frame of 528 bytes on the stack, above the permutation's own frame.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
+/// * `state` must not overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
+    core::arch::naked_asm!(
+        r"addi sp, sp, -528
+addi t0, sp, 0
+sd ra, 512(t0)
+add t1, a0, a2
+lbu t2, 0(t1)
+xor t2, t2, a3
+sb t2, 0(t1)
+add t1, a0, a1
+addi t1, t1, -1
+lbu t2, 0(t1)
+xori t2, t2, 128
+sb t2, 0(t1)
+addi a1, sp, 0
+call {vg_keccak_f1600}
+addi t0, sp, 0
+ld ra, 512(t0)
+addi sp, sp, 528
+ret",
+        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+    )
+}
+
+/// Squeezes output from a padded SHA-3 or SHAKE state: writes to `out` the `outlen` bytes of the output of the sponge with rate `rate` from the state `*state` (FIPS 202 Algorithm 8, steps 7 to 10), from byte `pos` of that output on; leaves in `*state` a state, and returns a position, from which the output continues after them. Start from the state `vg_keccak_pad` leaves and position 0.
+///
+/// Contract: `VG.Spec.Sha3.squeezeContract`. Constant time: only the pointers, `rate`, `pos` and `outlen` may affect timing, not the state.
+///
+/// The state and the output are accessed a byte at a time, since the contract states no alignment for them. Keeps the permutation's scratch space, and the registers it saves, in a frame of 560 bytes on the stack, above the permutation's own frame.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `out` must be valid for reads and writes of `outlen` bytes.
+/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` at most `rate`.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 1168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
+    core::arch::naked_asm!(
+        r"addi sp, sp, -560
+addi t0, sp, 0
+sd ra, 512(t0)
+sd s2, 520(t0)
+sd s3, 528(t0)
+sd s4, 536(t0)
+sd s5, 544(t0)
+sd s6, 552(t0)
+addi s2, a0, 0
+addi s3, a1, 0
+addi s4, a2, 0
+addi s5, a3, 0
+addi s6, a4, 0
+beqz s6, 20f
+22:
+sub t1, s4, s3
+beqz t1, 23f
+j 24f
+23:
+addi s4, zero, 0
+addi a0, s2, 0
+addi a1, sp, 0
+call {vg_keccak_f1600}
+24:
+add t2, s2, s4
+lbu t1, 0(t2)
+sb t1, 0(s5)
+addi s5, s5, 1
+addi s4, s4, 1
+addi s6, s6, -1
+bnez s6, 22b
+j 21f
+20:
+21:
+addi a0, s4, 0
+addi t0, sp, 0
+ld ra, 512(t0)
+ld s2, 520(t0)
+ld s3, 528(t0)
+ld s4, 536(t0)
+ld s5, 544(t0)
+ld s6, 552(t0)
+addi sp, sp, 560
+ret",
+        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+    )
+}
