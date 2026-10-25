@@ -55,11 +55,11 @@ theorem exportMasked_truncated_ok (s : State) {base dst : BitVec 32} {len w o k 
   refine WP.mono (maskOutput_ok u hk countFits dstFit
     (by rw [restU.wr]; exact write) (by rw [restU.sp]; exact stackFit)
     (by rw [restU.rd, restU.wr, restU.sp]; exact read) flagU outputU
-    ((restU.gpr .r6 (by simp)).trans count)) ?_
+    ((restU.gpr .r6 (by decide)).trans count)) ?_
   rintro t ⟨value, status, frameT, restT⟩
   rw [bytes] at value
   exact ⟨value, status, frameU.trans frameT,
-    (restU.mono (by simp [roundClobbers])).trans (restT.mono (by simp [roundClobbers]))⟩
+    (restU.mono (by decide)).trans (restT.mono (by decide))⟩
 
 theorem exportMasked_ok (s : State) {base dst : BitVec 32} {len w o k : Nat} {accepted : Bool}
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)

@@ -55,6 +55,7 @@ theorem crtBody_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) : WP isa 
   refine WP.mono (start_ok' h) fun u hu => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono hu fun t1 h1 => ?_
+  rw [VG.Impl.Rsa.X86.Keys.seqs.eq_2]
   exact crtChecks_ok' h1 h.qLen
 
 /-! ## The checks of `d` -/

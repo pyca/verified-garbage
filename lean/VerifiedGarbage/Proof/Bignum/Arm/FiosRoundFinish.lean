@@ -58,6 +58,6 @@ theorem finishRound_ok (s v : State) {base : BitVec 32} {size tmp a b mod acc n 
     change (BitVec.ofNat 32 (n-i) - BitVec.ofNat 32 1 == 0) = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
     simp only [show n-i-1=0 ↔ i+1=n by omega]
-  · exact keepV.trans (keepT.mono (by simp [roundClobbers]))
+  · exact keepV.trans (keepT.mono (by decide))
 
 end VG.Proof.Bignum.Arm.Fios

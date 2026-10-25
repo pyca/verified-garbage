@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Select3
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.X86.SseLanes
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Lanes
 import VerifiedGarbage.Proof.Mont.Words128
@@ -204,17 +205,25 @@ theorem chunk3_ok {t : State} {W : Addr} {L x y d : Nat} (hw : Ws t W L) (hx : x
   let s₄ := s₃.setXmm .xmm1 (XBinOp.eval .pand (XBinOp.eval .pxor Y X) (t.xmm .xmm7))
   let s₅ := s₄.setXmm .xmm0 (sel128 t.mem W y x (t.xmm .xmm7))
   let s₆ : State := { s₅ with mem := t.mem.writeW (off W d) (sel128 t.mem W y x (t.xmm .xmm7)) }
+  -- The frame of the vector writes by their lemmas: unifying the states would unfold them.
+  have g₁ : s₁.gpr = t.gpr := RegUpd.gpr_setXmm _ _ _
+  have r₁ : s₁.rd = t.rd := RegUpd.rd_setXmm _ _ _
+  have w₁ : s₁.wr = t.wr := RegUpd.wr_setXmm _ _ _
+  have g₅ : s₅.gpr = t.gpr := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.gpr_setXmm]
+  have w₅ : s₅.wr = t.wr := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.wr_setXmm]
+  have eb₁ : s₁.ea (at_ .ebx 0) = off W y := by rw [State.ea, g₁]; exact eb
+  have rb₁ : InRegions (s₁.rd ++ s₁.wr) (off W y) 16 := by rw [r₁, w₁]; exact rb
+  have ei₅ : s₅.ea (at_ .edi 0) = off W d := by rw [State.ea, g₅]; exact ei
+  have wi₅ : InRegions s₅.wr (off W d) 16 := by rw [w₅]; exact wi
   simp only [List.cons_append]
   refine cons (s' := s₁) (by simp only [exec, ep, State.load128, rp, ite_true, Option.map_some]; rfl) ?_
   refine cons (s' := s₂) (by
-    simp only [exec, show s₁.ea (at_ .ebx 0) = off W y from eb, State.load128,
-      (show InRegions (s₁.rd ++ s₁.wr) (off W y) 16 from rb), ite_true, Option.map_some]; rfl) ?_
+    simp only [exec, eb₁, State.load128, rb₁, ite_true, Option.map_some]; rfl) ?_
   refine cons (s' := s₃) rfl ?_
   refine cons (s' := s₄) rfl ?_
   refine cons (s' := s₅) rfl ?_
   refine cons (s' := s₆) (by
-    simp only [exec, show s₅.ea (at_ .edi 0) = off W d from ei, State.store128,
-      (show InRegions s₅.wr (off W d) 16 from wi), ite_true]; rfl) ?_
+    simp only [exec, ei₅, State.store128, wi₅, ite_true]; rfl) ?_
   refine wp_addXm rfl fun u₁ a₁ x₁ => wp_addXm rfl fun u₂ a₂ x₂ => wp_addXm rfl fun u₃ a₃ x₃ =>
     wp_subXm rfl fun u₄ a₄ z₄ x₄ => ?_
   refine k u₄ (by rw [a₄.mem, a₃.mem, a₂.mem, a₁.mem]) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_

@@ -35,10 +35,9 @@ open VG VG.X86 VG.Impl.Dsa.X86.Comb VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic
 open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 
 theorem contextStart_check {n e : Nat} (h : Supported n e) :
-    (VG.Taint.check taint (workspaceTaint false) (contextStart n)
-      (VG.Taint.hintOf taint (workspaceTaint false) (contextStart n))).map
+    ∃ hint, (VG.Taint.check taint (workspaceTaint false) (contextStart n) hint).map
       (taint.le (workspaceTaint false))=some true := by
-  rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> taint_decide
+  rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> exact ⟨_, by taint_decide⟩
 
 structure PublicSetupInput (n e m : Nat) (base : Addr) (s : State) : Prop where
   scr : Scr s base (layout n e).size
@@ -50,7 +49,7 @@ theorem publicSetup_relCT {n e : Nat} (h : Supported n e) (base : Addr) (m : Nat
       (setup n) (VG.X86.Taint.Agree (workspaceTaint false)) := by
   have shape : 0<n ∧ contextBytes n≤(layout n e).size ∧ slot n 0+4*(2*n-1)+4≤(layout n e).size := by
     rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide
-  obtain ⟨τ₀,C₀,L₀⟩ := Option.map_eq_some_iff.mp (contextStart_check h)
+  obtain ⟨τ₀,C₀,L₀⟩ := Option.map_eq_some_iff.mp (contextStart_check h).choose_spec
   unfold setup seed
   refine RelCT.seq (R := VG.X86.Taint.Agree (workspaceTaint false)) ?_ (repeatSquaresAt_relCT _ _ _ _ _)
   refine RelCT.seq (R := fun (s t : State) => Context n m base (layout n e).size s ∧ Context n m base (layout n e).size t) ?_ ?_

@@ -59,12 +59,12 @@ theorem crt_addWide_ok (s : State) {base : BitVec 32} {size o b w : Nat}
   simp only [Nat.one_mul, Nat.add_zero] at value
   rw [memU] at outside
   have frame := outside_workspace outside h.outputFits
-  have rest : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans
-    (restV.mono (by simp [loopClobbers, roundClobbers]))
+  have rest : Rest roundClobbers s v := (restU.mono (by decide)).trans
+    (restV.mono (by decide))
   refine WP.mono (restoreBase_ok v (by rw [rest.rd, rest.wr, rest.sp]; exact h.stackRead)
     (saved_base_kept frame h.stackSep h.saved rest.sp)) ?_
   rintro t ⟨ptrT, memT, restT⟩
   exact ⟨by rw [memT]; exact value, by rw [memT]; exact outside, by rw [memT]; exact frame,
-    ptrT, rest.trans (restT.mono (by simp [roundClobbers]))⟩
+    ptrT, rest.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

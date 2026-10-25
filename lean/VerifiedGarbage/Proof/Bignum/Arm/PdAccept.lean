@@ -64,6 +64,6 @@ theorem pdAccept_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R 
   rintro t ⟨accepted, frameT, restT⟩
   rw [restU.sp] at frameT
   exact ⟨accepted, (frameU.mono (by simp)).trans (frameT.mono (by simp)),
-    restU.trans (restT.mono (by simp [roundClobbers]))⟩
+    restU.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

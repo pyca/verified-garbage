@@ -40,9 +40,9 @@ theorem r2TopBitReady_ok (s : State) {base : BitVec 32} {len w : Nat}
     (show arrAt w 4 + 8 * w - 4 + 4 ≤ arrAt w 4 + 8 * w by omega)
   have keeps := outside_array_keeps arrayOutside (len := len) (by have := h.workspace.nowrap; omega)
   have frame := outside_workspace arrayOutside (size := 8 * len) (by omega)
-  have fullRest : Rest roundClobbers s t := rest.mono (by simp [roundClobbers])
+  have fullRest : Rest roundClobbers s t := rest.mono (by decide)
   have ready := h.after_array (by decide : 4 ≠ 0) keeps frame fullRest
-    ((rest.gpr .r0 (by simp)).trans h.ptr)
+    ((rest.gpr .r0 (by decide)).trans h.ptr)
   refine ⟨ready.1, ?_, ready.2, frame, fullRest⟩
   rw [numAt_native, mem]
   exact val32_write_top_bit s.mem (State.addr base) (by omega) (by have := h.workspace.nowrap; omega)

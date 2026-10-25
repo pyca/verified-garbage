@@ -33,11 +33,11 @@ theorem crt_enterPrime_ok (s : State) {base child : BitVec 32} {size childSize s
   rintro u ⟨width, childPtr, memU, restU⟩
   refine WP.mono (crt_primeEnter_ok u (childWs.congr restU.wr) childFit childPtr) ?_
   rintro t ⟨ptrT, zero, memT, restT⟩
-  rw [memU, restU.gpr .r0 (by simp), ptr] at memT
+  rw [memU, restU.gpr .r0 (by decide), ptr] at memT
   have outside := writeW32_outside s.mem (State.addr child) (d := 216) base (by decide)
   rw [← memT] at outside
-  exact ⟨ptrT, (restT.gpr .r7 (by simp)).trans width, zero,
+  exact ⟨ptrT, (restT.gpr .r7 (by decide)).trans width, zero,
     by rw [memT, Mem.readW_writeW_self32], outside, outside_workspace outside childFit,
-    (restU.mono (by simp)).trans (restT.mono (by simp))⟩
+    (restU.mono (by decide)).trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

@@ -256,34 +256,34 @@ theorem fgUpdAt_ok {P : InvCfg} {nf ng t : Nat} {base : Addr} {size p : Nat} (hL
   have hp' : p < 2 ^ (64 * (P.L - 1)) := by rw [eL, Nat.add_sub_cancel]; exact hp
   rw [WP.block_append_iff]
   refine WP.mono (fHalf_ok hs h12 (w := .x4) (w' := .x5) (by decide) (by decide) h4 h5 huv
-    (T := t) (x := P.sF) (y := P.sG) (dst := nf) (L := P.L) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (T := t) (x := P.sF) (y := P.sG) (dst := nf) (L := P.L) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])
+    (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])
     hF hG hf hg hp' hdf) fun s₁ ⟨e₁, k₁, U₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   have rF : wordsVal s₁.mem base P.sF P.L = wordsVal s.mem base P.sF P.L :=
-    Unch.wv2 U₁ (Or.inl (show P.sF + 8 * P.L ≤ t by omega_arith)) (Or.inl (show P.sF + 8 * P.L ≤ nf by omega_arith))
-      (by omega_arith)
+    Unch.wv2 U₁ (Or.inl (show P.sF + 8 * P.L ≤ t by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])) (Or.inl (show P.sF + 8 * P.L ≤ nf by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]))
+      (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])
   have rG : wordsVal s₁.mem base P.sG P.L = wordsVal s.mem base P.sG P.L :=
-    Unch.wv2 U₁ (Or.inl (show P.sG + 8 * P.L ≤ t by omega_arith)) (Or.inl (show P.sG + 8 * P.L ≤ nf by omega_arith))
-      (by omega_arith)
+    Unch.wv2 U₁ (Or.inl (show P.sG + 8 * P.L ≤ t by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])) (Or.inl (show P.sG + 8 * P.L ≤ nf by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]))
+      (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])
   rw [WP.block_append_iff]
   refine WP.mono (fHalf_ok hs₁ (by rw [k₁.gpr _ (by decide), h12]) (w := .x6) (w' := .x7) (by decide) (by decide)
     (by rw [k₁.gpr _ (by decide)]; exact h6) (by rw [k₁.gpr _ (by decide)]; exact h7) hqr
-    (T := t) (x := P.sF) (y := P.sG) (dst := ng) (L := P.L) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (T := t) (x := P.sF) (y := P.sG) (dst := ng) (L := P.L) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])
+    (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])
     (by rw [rF]; exact hF) (by rw [rG]; exact hG) hf hg hp' hdg) fun s₂ ⟨e₂, k₂, U₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have rNF : wordsVal s₂.mem base nf P.L = wordsVal s₁.mem base nf P.L :=
-    Unch.wv2 U₂ (Or.inl (show nf + 8 * P.L ≤ t by omega_arith)) (Or.inl (show nf + 8 * P.L ≤ ng by omega_arith))
-      (by omega_arith)
+    Unch.wv2 U₂ (Or.inl (show nf + 8 * P.L ≤ t by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])) (Or.inl (show nf + 8 * P.L ≤ ng by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]))
+      (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])
   rw [WP.block_append_iff]
-  refine WP.mono (copyW_ok hs₂ (dst := P.sF) (src := nf) (by omega_arith) (by omega_arith) P.L (by omega_arith) (by omega_arith)
-    (by omega_arith)) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+  refine WP.mono (copyW_ok hs₂ (dst := P.sF) (src := nf) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) P.L (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])
+    (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  have rNG : wordsVal s₃.mem base ng P.L = wordsVal s₂.mem base ng P.L := O₃.wordsVal (by omega_arith) (by omega_arith)
-  refine WP.mono (copyW_ok hs₃ (dst := P.sG) (src := ng) (by omega_arith) (by omega_arith) P.L (by omega_arith) (by omega_arith)
-    (by omega_arith)) fun t' ⟨e₄, k₄, O₄⟩ => ⟨?_, ?_, ?_, ?_⟩
-  · rw [O₄.wordsVal (by omega_arith) (by omega_arith), e₃, rNF]; exact e₁
+  have rNG : wordsVal s₃.mem base ng P.L = wordsVal s₂.mem base ng P.L := O₃.wordsVal (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])
+  refine WP.mono (copyW_ok hs₃ (dst := P.sG) (src := ng) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) P.L (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])
+    (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn])) fun t' ⟨e₄, k₄, O₄⟩ => ⟨?_, ?_, ?_, ?_⟩
+  · rw [O₄.wordsVal (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]) (by omega_using [hnf, hng, htt, hte, hnf8, hng8, ht8, eL, eF, eG, n4, htbl, htbl8, hn]), e₃, rNF]; exact e₁
   · rw [e₄, rNG]; exact e₂
   · exact (k₁.trans k₂).trans ((k₃.trans k₄).mono (by decide))
   · refine ((U₁.trans U₂).trans (O₃.unch.trans O₄.unch)).mono fun w hw => ?_
@@ -374,7 +374,6 @@ theorem batch_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
   have hn := hs.nowrap
   obtain ⟨eL, eF, eG, eA, eB, eNF, eNG, eT⟩ := slots P
   have n4 := hL.n4; have htbl := hL.tbl; have htbl8 := hL.tbl8
-  have hp : p < 2 ^ (64 * P.M.n) := hM.val ▸ wordsVal_lt _ _ _ _
   obtain ⟨buv, bqr⟩ := Divstep.msteps_bnd I.d I.f I.g 59
   obtain ⟨mf, mg⟩ := Divstep.msteps_mat (d := I.d) (g := I.g) hf1 59
   rw [InvCfg.batch]
@@ -387,7 +386,7 @@ theorem batch_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
   have z₃ : s₃.gpr .x12 = 0 := by rw [c12]; rfl
   have m₃ : s₃.mem = s.mem := by rw [k₃.mem, m₂]
   rw [WP.block_append_iff]
-  refine WP.mono (fgUpd_ok hL hs₃ hp z₃ (u := _) (v := _) (q := _) (r := _)
+  refine WP.mono (fgUpd_ok hL hs₃ (hM.val ▸ wordsVal_lt _ _ _ _ : p < 2 ^ (64 * P.M.n)) z₃ (u := _) (v := _) (q := _) (r := _)
     (by rw [k₃.gpr _ (by decide)]; exact hU) (by rw [k₃.gpr _ (by decide)]; exact hV)
     (by rw [k₃.gpr _ (by decide)]; exact hQ) (by rw [k₃.gpr _ (by decide)]; exact hR) buv bqr
     (by rw [m₃]; exact hI.f) (by rw [m₃]; exact hI.g) hf hg ⟨_, mf.symm⟩ ⟨_, mg.symm⟩)
@@ -720,7 +719,6 @@ theorem batchS_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size)
   obtain ⟨eL, eF, eG, eA, -, -, -, -⟩ := slots P
   obtain ⟨eB, eNF, eNG, eT⟩ := slotsS P
   have n4 := hL.n4; have htbl := hL.tbl; have htbl8 := hL.tbl8
-  have hp : p < 2 ^ (64 * P.M.n) := hM.val ▸ wordsVal_lt _ _ _ _
   obtain ⟨buv, bqr⟩ := Divstep.msteps_bnd I.d I.f I.g 59
   obtain ⟨mf, mg⟩ := Divstep.msteps_mat (d := I.d) (g := I.g) hf1 59
   rw [InvCfg.batchS]
@@ -734,7 +732,7 @@ theorem batchS_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size)
   have m₃ : s₃.mem = s.mem := by rw [k₃.mem, m₂]
   rw [WP.block_append_iff]
   refine WP.mono (fgUpdAt_ok hL hs₃ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-    (by omega_arith) (by omega_arith) (by omega_arith) hp z₃ (u := _) (v := _) (q := _) (r := _)
+    (by omega_arith) (by omega_arith) (by omega_arith) (hM.val ▸ wordsVal_lt _ _ _ _ : p < 2 ^ (64 * P.M.n)) z₃ (u := _) (v := _) (q := _) (r := _)
     (by rw [k₃.gpr _ (by decide)]; exact hU) (by rw [k₃.gpr _ (by decide)]; exact hV)
     (by rw [k₃.gpr _ (by decide)]; exact hQ) (by rw [k₃.gpr _ (by decide)]; exact hR) buv bqr
     (by rw [m₃]; exact hI.f) (by rw [m₃]; exact hI.g) hf hg ⟨_, mf.symm⟩ ⟨_, mg.symm⟩)

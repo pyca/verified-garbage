@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem_multiply_ntts`
@@ -84,7 +86,7 @@ theorem body_ok (h3 : s.gpr .r3 = x3) (h4 : s.gpr .r4 = x4) (h5 : s.gpr .r5 = x5
             (s.mem.readW x6 32).setWidth 64)).setWidth 32)).writeW (x3 + BitVec.ofNat 64 4)
           ((red ((s.mem.readW x4 32).setWidth 64 * (s.mem.readW (x5 + BitVec.ofNat 64 4) 32).setWidth 64 +
             (s.mem.readW (x4 + BitVec.ofNat 64 4) 32).setWidth 64 * (s.mem.readW x5 32).setWidth 64)).setWidth 32) := by
-  crun [mulBody, reduce, barrett, fixup, red, bar, fixq, kept, h3, h4, h5, h6, h8, h9, h11, if0, if1, ig0,
+  crunr [mulBody, reduce, barrett, fixup, red, bar, fixq, kept, h3, h4, h5, h6, h8, h9, h11, if0, if1, ig0,
     ig1, iγ, o0, o1, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
 
@@ -267,7 +269,7 @@ theorem tail_ok {s : State} :
         s'.gpr .r6 = s.gpr .r6 ∧ s'.gpr .r8 = C ∧ s'.gpr .r9 = 3329 ∧ s'.gpr .r11 = 128 ∧
         (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ s'.lr = s.lr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
         s'.sp = s.sp := by
-  crun [consts, kept, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
+  crunr [consts, kept, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   decide
 
 theorem setup_ok {s₀ : State} (hp : Pre s₀) :

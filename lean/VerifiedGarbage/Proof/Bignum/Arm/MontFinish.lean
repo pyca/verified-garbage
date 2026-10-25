@@ -36,7 +36,7 @@ theorem montFinish_ok (s : State) {base : BitVec 32} {size out acc mod tmp n : N
   refine WP.mono (csub_ok u cu hn p0 p10 p12 p9 lr count carry (by rw [mem]; exact hT)) ?_
   rintro t ⟨value, outside, rest⟩
   rw [mem] at value outside
-  exact ⟨value, outside, (keep.mono (by simp [roundClobbers])).trans
-    (rest.mono (by simp [subLoopClobbers, roundClobbers]))⟩
+  exact ⟨value, outside, (keep.mono (by decide)).trans
+    (rest.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

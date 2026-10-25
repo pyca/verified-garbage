@@ -52,9 +52,9 @@ theorem maskOutput_ok (s : State) {dst : BitVec 32} {k : Nat} {accepted : Bool}
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]
   rw [length] at bytes
   refine wp_mov (op2_reg _ _) fun t a => WP.block_nil ?_
-  refine ⟨?_, ?_, ?_, (restU.mono (by simp)).trans ((restV.mono (by simp)).trans (a.rest (by simp)))⟩
+  refine ⟨?_, ?_, ?_, (restU.mono (by decide)).trans ((restV.mono (by decide)).trans (a.rest (by decide)))⟩
   · rw [a.mem]; exact bytes
-  · rw [a.gpr, restV.gpr .r4 (by simp), bit]
+  · rw [a.gpr, restV.gpr .r4 (by decide), bit]
   · rw [a.mem]
     rw [memU] at frame
     exact frame

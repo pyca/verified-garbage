@@ -59,7 +59,7 @@ theorem tooth_ok (s : State) {src : BitVec 32} {bs : List Byte} {k N d a j : Nat
     split
     · rw [←List.getElem_eq_getD 0]
     · rfl
-  have old : u.gpr .r10=BitVec.ofNat 32 a := (restU.gpr .r10 (by simp)).trans digit
+  have old : u.gpr .r10=BitVec.ofNat 32 a := (restU.gpr .r10 (by decide)).trans digit
   have operand : (if j=0 then Op2.reg .r11 else .shifted .r11 .lsl j).eval u =
       some (u.gpr .r11<<<j) := by
     by_cases h : j=0
@@ -71,12 +71,12 @@ theorem tooth_ok (s : State) {src : BitVec 32} {bs : List Byte} {k N d a j : Nat
   refine ⟨?_,?_,two.mem.trans (one.mem.trans memU),?_⟩
   · rw [two.gpr]
     change v.gpr .r9+v.gpr .r7=_
-    rw [one.other .r9 (by decide),one.other .r7 (by decide),restU.gpr .r9 (by simp),
-      restU.gpr .r7 (by simp),index,stride,←BitVec.ofNat_add]
+    rw [one.other .r9 (by decide),one.other .r7 (by decide),restU.gpr .r9 (by decide),
+      restU.gpr .r7 (by decide),index,stride,←BitVec.ofNat_add]
   · rw [two.other .r10 (by decide),one.gpr]
     change u.gpr .r10 ||| (u.gpr .r11<<<j)=_
     rw [old,result,appendBit digitBound (value_lt _ _ _) tooth]
-  · exact ((restU.mono (by simp [clobbers])).trans (one.rest (by simp [clobbers]))).trans
-      (two.rest (by simp [clobbers]))
+  · exact ((restU.mono (by decide)).trans (one.rest (by decide))).trans
+      (two.rest (by decide))
 
 end VG.Proof.Bignum.Arm.CombDigit

@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Framework.OmegaNear
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
@@ -94,7 +95,7 @@ theorem loadStep_ok {s₀ : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs 
     (hk : bs.length = k) (hk' : k < 2 ^ 31) (hw : w = (k + 7) / 8) (hed : ed + 8 * w ≤ Z)
     (hbx : s₀.gpr .rbx = off B ed)
     (hsrc : ∀ i < k, InRegions (s₀.rd ++ s₀.wr) (src + BitVec.ofNat 64 i) 1)
-    (hbytes : ∀ i (h : i < k), s₀.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega_arith))
+    (hbytes : ∀ i (h : i < k), s₀.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega_near))
     (hsep : ∀ i < k, ofs B (src + BitVec.ofNat 64 i) < ed ∨ ed + 8 * w ≤ ofs B (src + BitVec.ofNat 64 i))
     {i : Nat} (hi : i < k) {t : State} (hI : LInv s₀ B Z ed k w src bs i t) :
     WP isa (.seq (.block loadByte) (.seq (.ite .e (.block storeWord) (.block []))
@@ -102,23 +103,23 @@ theorem loadStep_ok {s₀ : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs 
       t'.zf = some (decide (i + 1 = k)) ∧ LInv s₀ B Z ed k w src bs (i + 1) t' := by
   have hn := hI.scr.nowrap
   have tbx : t.gpr .rbx = off B ed := (hI.keep.gpr (by decide)).trans hbx
-  have hr7 : (8 - (k - i) % 8) % 8 ≤ 7 := by omega_arith
+  have hr7 : (8 - (k - i) % 8) % 8 ≤ 7 := by omega_near
   have hax : (t.gpr .rax).toNat < 2 ^ 56 := by
     rw [hI.rax]
     have : 256 ^ ((8 - (k - i) % 8) % 8) ≤ 256 ^ 7 := Nat.pow_le_pow_right (by decide) hr7
     have := Nat.mod_lt (pre bs i) (show 0 < 256 ^ ((8 - (k - i) % 8) % 8) by exact Nat.pow_pos (by decide))
     have : (256 : Nat) ^ 7 = 2 ^ 56 := by decide
-    omega_arith
-  have hb : t.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega_arith) := by
+    omega_near
+  have hb : t.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega_near) := by
     rw [hI.out _ (hsep i hi)]; exact hbytes i hi
   have hld : InRegions (t.rd ++ t.wr) (src + BitVec.ofNat 64 i) 1 := by
     rw [hI.keep.2.1, hI.keep.2.2]; exact hsrc i hi
-  refine WP.seq (WP.mono (loadByte_ok (p := k - i) (by omega_arith) (by omega_arith) hI.rdx hax hI.r14 hld hb)
+  refine WP.seq (WP.mono (loadByte_ok (p := k - i) (by omega_near) (by omega_near) hI.rdx hax hI.r14 hld hb)
     fun t₁ ⟨hdx₁, hax₁, h14₁, hz₁, hm₁, k₁⟩ => ?_)
-  have hpre := pre_succ bs (i := i) (by omega_arith)
+  have hpre := pre_succ bs (i := i) (by omega_near)
   -- The new partial word.
   have hax₁' : (t₁.gpr .rax).toNat = pre bs (i + 1) % 256 ^ ((8 - (k - i) % 8) % 8 + 1) := by
-    rw [hax₁, hI.rax, hpre, VG.Proof.Bignum.bytes_mod_step _ _ _ (bs[i]'(by omega_arith)).isLt]
+    rw [hax₁, hI.rax, hpre, VG.Proof.Bignum.bytes_mod_step _ _ _ (bs[i]'(by omega_near)).isLt]
     grind
   have hs₁ := hI.scr.congr k₁.2.2
   have tbx₁ : t₁.gpr .rbx = off B ed := (k₁.gpr (by decide)).trans tbx
@@ -126,19 +127,19 @@ theorem loadStep_ok {s₀ : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs 
   have hwords : ∀ q < w, k - i ≤ 8 * q → word t.mem B (ed + 8 * q) =
       BitVec.ofNat 64 (pre bs (i + 1) / 256 ^ (8 * q - (k - (i + 1)))) := by
     intro q hq hle
-    rw [hI.words q hq hle, hpre, show 8 * q - (k - (i + 1)) = 8 * q - (k - i) + 1 by omega_arith,
-      VG.Proof.Bignum.bytes_div_step _ _ _ (bs[i]'(by omega_arith)).isLt]
+    rw [hI.words q hq hle, hpre, show 8 * q - (k - (i + 1)) = 8 * q - (k - i) + 1 by omega_near,
+      VG.Proof.Bignum.bytes_div_step _ _ _ (bs[i]'(by omega_near)).isLt]
   by_cases hz : (k - i - 1) % 8 = 0
   · -- A word is complete: it is stored.
     refine WP.seq (WP.ite true (by simp [eval, hz₁, hz]) (fun _ => ?_) (by simp))
-    refine WP.mono (storeWord_ok hs₁ (p := k - i - 1) (by omega_arith) hdx₁ tbx₁ (by omega_arith))
+    refine WP.mono (storeWord_ok hs₁ (p := k - i - 1) (by omega_near) hdx₁ tbx₁ (by omega_near))
       fun t₂ ⟨hm₂, hax₂, k₂⟩ => ?_
     refine WP.mono (WP.keep [.rdx] (c := .block [.alu .test .rdx (.reg .rdx)])
       (Q := fun t' => t'.zf = some (decide (i + 1 = k)) ∧ t'.mem = t₂.mem ∧
         t'.gpr .rdx = BitVec.ofNat 64 (k - i - 1)) (by
         xrun [(k₂.gpr (by decide) : t₂.gpr .rdx = t₁.gpr .rdx), hdx₁, test_eq,
-          ofNat64_beq_zero (show k - i - 1 < 2 ^ 64 by omega_arith)]
-        exact decide_eq_decide.mpr ⟨fun _ => by omega_arith, fun _ => by omega_arith⟩) rfl)
+          ofNat64_beq_zero (show k - i - 1 < 2 ^ 64 by omega_near)]
+        exact decide_eq_decide.mpr ⟨fun _ => by omega_near, fun _ => by omega_near⟩) rfl)
       fun t' ⟨⟨hz', hm', hdx'⟩, k'⟩ => ⟨hz', ?_⟩
     refine ⟨hs₁.congr (k'.2.2.trans k₂.2.2), ((hI.keep.trans k₁).trans (k₂.trans k')).mono (by decide),
       ?_, ?_, ?_, ?_, ?_⟩
@@ -146,39 +147,39 @@ theorem loadStep_ok {s₀ : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs 
     · rw [(k'.gpr (by decide) : t'.gpr .r14 = t₂.gpr .r14), (k₂.gpr (by decide) : t₂.gpr .r14 = t₁.gpr .r14),
         h14₁, BitVec.add_assoc, ofNat_add_one]
     · rw [(k'.gpr (by decide) : t'.gpr .rax = t₂.gpr .rax), hax₂,
-        show (8 - (k - (i + 1)) % 8) % 8 = 0 by omega_arith, Nat.pow_zero, Nat.mod_one]; rfl
+        show (8 - (k - (i + 1)) % 8) % 8 = 0 by omega_near, Nat.pow_zero, Nat.mod_one]; rfl
     · intro q hq hle
       rw [hm', hm₂, hm₁]
       by_cases hq' : 8 * q = k - i - 1
-      · have : q = (k - i - 1) / 8 := by omega_arith
+      · have : q = (k - i - 1) / 8 := by omega_near
         subst this
-        rw [word_writeW_self, show 8 * ((k - i - 1) / 8) - (k - (i + 1)) = 0 by omega_arith, Nat.pow_zero,
+        rw [word_writeW_self, show 8 * ((k - i - 1) / 8) - (k - (i + 1)) = 0 by omega_near, Nat.pow_zero,
           Nat.div_one]
         apply BitVec.eq_of_toNat_eq
-        rw [hax₁', BitVec.toNat_ofNat, show (8 - (k - i) % 8) % 8 + 1 = 8 by omega_arith,
+        rw [hax₁', BitVec.toNat_ofNat, show (8 - (k - i) % 8) % 8 + 1 = 8 by omega_near,
           VG.Proof.Bignum.pow256_8]
-      · rw [(writeW_outside t.mem B _ (by omega_arith)).word (by omega_arith) (by omega_arith)]
-        exact hwords q hq (by omega_arith)
+      · rw [(writeW_outside t.mem B _ (by omega_near)).word (by omega_near) (by omega_near)]
+        exact hwords q hq (by omega_near)
     · rw [hm', hm₂, hm₁]
       intro x hx
-      rw [writeW_outside t.mem B _ (by omega_arith) x (by omega_arith)]
+      rw [writeW_outside t.mem B _ (by omega_near) x (by omega_near)]
       exact hI.out x hx
   · -- No word is complete.
     refine WP.seq (WP.ite false (by simp [eval, hz₁, hz]) (by simp) (fun _ => WP.block_nil ?_))
     refine WP.mono (WP.keep [.rdx] (c := .block [.alu .test .rdx (.reg .rdx)])
       (Q := fun t' => t'.zf = some (decide (i + 1 = k)) ∧ t'.mem = t₁.mem ∧
         t'.gpr .rdx = BitVec.ofNat 64 (k - i - 1)) (by
-        xrun [hdx₁, test_eq, ofNat64_beq_zero (show k - i - 1 < 2 ^ 64 by omega_arith)]
-        exact decide_eq_decide.mpr ⟨fun _ => by omega_arith, fun _ => by omega_arith⟩) rfl)
+        xrun [hdx₁, test_eq, ofNat64_beq_zero (show k - i - 1 < 2 ^ 64 by omega_near)]
+        exact decide_eq_decide.mpr ⟨fun _ => by omega_near, fun _ => by omega_near⟩) rfl)
       fun t' ⟨⟨hz', hm', hdx'⟩, k'⟩ => ⟨hz', ?_⟩
     refine ⟨hs₁.congr k'.2.2, ((hI.keep.trans k₁).trans k').mono (by decide), ?_, ?_, ?_, ?_, ?_⟩
     · rw [hdx']; congr 1
     · rw [(k'.gpr (by decide) : t'.gpr .r14 = t₁.gpr .r14), h14₁, BitVec.add_assoc, ofNat_add_one]
     · rw [(k'.gpr (by decide) : t'.gpr .rax = t₁.gpr .rax), hax₁',
-        show (8 - (k - i) % 8) % 8 + 1 = (8 - (k - (i + 1)) % 8) % 8 by omega_arith]
+        show (8 - (k - i) % 8) % 8 + 1 = (8 - (k - (i + 1)) % 8) % 8 by omega_near]
     · intro q hq hle
       rw [hm', hm₁]
-      exact hwords q hq (by omega_arith)
+      exact hwords q hq (by omega_near)
     · rw [hm', hm₁]; exact hI.out
 
 /-- `loadBE`: the `k` bytes at `rsi`, most significant first, as the

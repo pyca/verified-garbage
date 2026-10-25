@@ -81,6 +81,7 @@ theorem St.pdivHdr {q : Nat} (cert : Cert (.block (VG.Impl.Rsa.Arm.Recover.clrW 
     have h1 := h.same1 k1 (by decide) n1 r1.sp r1.rd r1.wr
     have c1 : s1.mem.readW (off (State.addr P.B) 16) 32 = BitVec.ofNat 32 P.W := by
       rw [← h1.cnt]; simp only [slot, w32, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    rw [← List.append_nil (VG.Impl.Rsa.Arm.CrtValues.divHdr _ _ _ _)]
     refine VG.Proof.Rsa.Arm.CrtValues.divHdr_ok hw1 (by simp only [nArr] at hq; omega) (by decide) (by decide)
       (by decide) c1 fun t hwt k2 d2 r2 => WP.block_nil ⟨⟨e, ?_, hwt⟩, d2, ?_⟩
     · have hds : ∀ d ∈ ([0, 4, 8, 12] : List Nat), SlotOk d := by decide

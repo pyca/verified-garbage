@@ -40,8 +40,8 @@ theorem wideProductBody_ok (s : State) {s0 : State} {base : BitVec 32} {size o a
   rintro t ⟨mem, zero, restT⟩
   obtain ⟨outsideT, aPtr, oPtr, count, bPtr, width⟩ := wideProductNext_memory mem
   have outsideAll := h.outside.trans (outsideRow.trans (Outs.of_outside outsideT (by simp)))
-  refine ⟨⟨by omega, (restT.gpr .r0 (by simp)).trans ptr, ?_, ?_, ?_, ?_, ?_, outsideAll, ?_,
-    restU.trans (restT.mono (by simp [roundClobbers]))⟩, ?_⟩
+  refine ⟨⟨by omega, (restT.gpr .r0 (by decide)).trans ptr, ?_, ?_, ?_, ?_, ?_, outsideAll, ?_,
+    restU.trans (restT.mono (by decide))⟩, ?_⟩
   · rw [aPtr]
     change base + BitVec.ofNat 32 (a + 4 * i) + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]

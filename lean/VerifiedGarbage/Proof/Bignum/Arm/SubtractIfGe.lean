@@ -53,21 +53,21 @@ theorem subtractIfGe_ok (s : State) {base : BitVec 32} {size out a b tmp n : Nat
   refine WP.mono (selectPrepare_ok u) ?_
   rintro v ⟨vp0, vp10, vp12, vc, keep⟩
   have saved : u.gpr .r7 = BitVec.ofNat 32 n :=
-    (inv.rest.gpr .r7 (by simp [subLoopClobbers])).trans savedCount
+    (inv.rest.gpr .r7 (by decide)).trans savedCount
   have ready : SelectCtx v base size out tmp a n :=
     { selCtx with writable := by rw [keep.wr, inv.rest.wr]; exact selCtx.writable }
   have p0v : v.gpr .r0 = base + BitVec.ofNat 32 out := by
-    rw [vp0, inv.rest.gpr .r9 (by simp [subLoopClobbers]), p9]
+    rw [vp0, inv.rest.gpr .r9 (by decide), p9]
   have p10v : v.gpr .r10 = base + BitVec.ofNat 32 tmp := by
     rw [vp10, inv.outPtr, saved, rewind32]
   have p12v : v.gpr .r12 = base + BitVec.ofNat 32 a := by
     rw [vp12, inv.aPtr, saved, rewind32]
-  have bv : v.gpr .r11 = u.gpr .r11 := keep.regs .r11 (by simp)
+  have bv : v.gpr .r11 = u.gpr .r11 := keep.regs .r11 (by decide)
   refine WP.mono (selectAliasRow_ok v ready hn p0v p10v p12v (vc.trans saved)
     (by rw [bv]; exact inv.borrow)) ?_
   intro t h
   have bt : t.gpr .r11 = u.gpr .r11 :=
-    (h.rest.gpr .r11 (by simp [selectLoopClobbers])).trans bv
+    (h.rest.gpr .r11 (by decide)).trans bv
   refine ⟨?_, by rw [bt]; exact bit, ?_, ?_⟩
   · rw [h.value, bv, bit, keep.mem, oldA]
     split <;> simp_all only [Nat.one_ne_zero, ↓reduceIte]
@@ -76,7 +76,7 @@ theorem subtractIfGe_ok (s : State) {base : BitVec 32} {size out a b tmp n : Nat
       rw [keep.mem]; exact Outs.of_outside inv.outside (by simp)
     exact f.trans (Outs.of_outside h.outside (by simp))
   · have k : Rest [.r0, .r10, .r12, .lr] u v := ⟨keep.regs, keep.rd, keep.wr, keep.sp⟩
-    exact inv.rest.trans ((k.mono (by simp [subLoopClobbers])).trans
-      (h.rest.mono (by simp [subLoopClobbers, selectLoopClobbers])))
+    exact inv.rest.trans ((k.mono (by decide)).trans
+      (h.rest.mono (by decide)))
 
 end VG.Proof.Bignum.Arm

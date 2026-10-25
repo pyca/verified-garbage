@@ -36,8 +36,8 @@ theorem pdFail_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : 
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]
   simp only [Bool.false_eq_true, ite_false, length] at bytes
   refine wp_mov (op2_imm (by decide)) fun t a => WP.block_nil ?_
-  refine ⟨a.gpr, ?_, ?_, (restU.mono (by simp [roundClobbers])).trans
-    ((restV.mono (by simp [roundClobbers])).trans (a.rest (by simp [roundClobbers])))⟩
+  refine ⟨a.gpr, ?_, ?_, (restU.mono (by decide)).trans
+    ((restV.mono (by decide)).trans (a.rest (by decide)))⟩
   · rw [a.mem]; exact bytes
   · rw [a.mem]
     rw [memU] at frame

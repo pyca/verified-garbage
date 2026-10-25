@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86.TimingReadonly
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Full-width equality scans use public addresses and counters -/
 
@@ -21,21 +22,21 @@ def equalRegisters : List Reg := [.esi, .ecx, .ebp, .edi]
 theorem equalZero_relCT {g : Geometry} :
     RelCT isa (Pair g equalRegisters) (.block [.mov .ebx (.imm 0)]) (Pair g equalRegisters) := by
   refine readonly_relCT (checkedProgramChange (hint := .block [])
-    (τ' := roundTaint (.ebx :: equalRegisters)) rfl rfl) ?_
+    (τ' := roundTaint (.ebx :: equalRegisters)) (by kernel_rfl) (by kernel_rfl)) ?_
   intro s _
   exact wp_movS rfl fun t T _ => WP.block_nil ⟨T.mem, T.keeps.mono (by decide)⟩
 
 theorem equalLoop_raw : RelCT isa (VG.X86.Taint.Agree (roundTaint equalRegisters))
     (.loop (.block equalBody) .ne) (VG.X86.Taint.Agree (roundTaint equalRegisters)) :=
   checkedProgramChange (τ' := roundTaint equalRegisters true)
-    (hint := VG.Taint.hintOf taint (roundTaint equalRegisters) (.loop (.block equalBody) .ne)) rfl rfl
+    (hint := VG.Taint.hintOf taint (roundTaint equalRegisters) (.loop (.block equalBody) .ne)) (by kernel_rfl) (by kernel_rfl)
 
 theorem equalFinish_raw (result : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi]))
       (.block [.mov .eax (.imm 0), .alu .sub .ebx (.imm 1), .alu .adc .eax (.imm 0), .store (slot result) .eax])
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   erased_relCT _ (.block [.mov .eax (.imm 0), .alu .sub .ebx (.imm 1),
-    .alu .adc .eax (.imm 0), .store (slot 0) .eax]) (.block []) rfl rfl rfl rfl
+    .alu .adc .eax (.imm 0), .store (slot 0) .eax]) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
 theorem equal_trace {g : Geometry} (v : g.Valid) (result a b : Nat) (ai : a < 28) (bi : b < 28) :
     RelCT isa (Pair g [.edi]) (equal result a b) (VG.X86.Taint.Agree (roundTaint [.edi])) := by

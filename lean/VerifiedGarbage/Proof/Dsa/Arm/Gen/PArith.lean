@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: p and `(p − 1) / q`
 
@@ -48,13 +49,13 @@ structure PArithCerts (L Lq : Nat) : Prop where
   st : Cert7 (storeBE L aP sPBE L)
 
 theorem pArithCerts_128 : PArithCerts 128 20 :=
-  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 128 aP sPBE 128), rfl⟩⟩
+  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 128 aP sPBE 128), by kernel_rfl⟩⟩
 
 theorem pArithCerts_256 : PArithCerts 256 32 :=
-  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 256 aP sPBE 256), rfl⟩⟩
+  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 256 aP sPBE 256), by kernel_rfl⟩⟩
 
 theorem pArithCerts_384 : PArithCerts 384 32 :=
-  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 384 aP sPBE 384), rfl⟩⟩
+  ⟨⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 384 aP sPBE 384), by kernel_rfl⟩⟩
 
 /-- The candidate p from X and q. -/
 abbrev pVal (x q : Nat) : Nat := x + 1 - x % (2 * q)
@@ -104,13 +105,13 @@ theorem pLoads_vp {xb qb : List Byte}
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; rcases hj with rfl | rfl <;> decide, rfl⟩)
         (fun d hd => ⟨hd, rfl⟩), x⟩) ?_
   refine VP.seq ((loadS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.CrtValues.load aQt), rfl⟩ rfl (by decide) (by exact hx) hxl (by omega_arith) (by omega_arith)).mono
+    (VG.Impl.Rsa.Arm.CrtValues.load aQt), by kernel_rfl⟩ rfl (by decide) (by exact hx) hxl (by omega_arith) (by omega_arith)).mono
     (fun _ _ h => h) fun _ _ h => h.1) ?_
   refine VP.seq ((loadS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.CrtValues.load aX), rfl⟩ rfl (by decide) (by exact hx) hxl (by omega_arith) (by omega_arith)).mono
+    (VG.Impl.Rsa.Arm.CrtValues.load aX), by kernel_rfl⟩ rfl (by decide) (by exact hx) hxl (by omega_arith) (by omega_arith)).mono
     (fun _ _ h => h) fun _ _ h => h.1) ?_
   exact loadS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.CrtValues.load aDv), rfl⟩ rfl (by decide) (by exact hqc) hql (by omega_arith) (by omega_arith)
+    (VG.Impl.Rsa.Arm.CrtValues.load aDv), by kernel_rfl⟩ rfl (by decide) (by exact hqc) hql (by omega_arith) (by omega_arith)
 
 theorem pDivide_vp {x q : Nat} (hpos : 0 < q)
     (hlq : G.pLen = 128 ∨ G.pLen = 256 ∨ G.pLen = 384) :
@@ -119,7 +120,7 @@ theorem pDivide_vp {x q : Nat} (hpos : 0 < q)
         .block (wRegs G.pLen)])
       (St G (cD c G x q) X) := by
   refine VP.seq (divHdr_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-    (.block (VG.Impl.Rsa.Arm.CrtValues.divHdr aQt aRm aDv aDt)), rfl⟩ (by decide) (by decide) (by decide)
+    (.block (VG.Impl.Rsa.Arm.CrtValues.divHdr aQt aRm aDv aDt)), by kernel_rfl⟩ (by decide) (by decide) (by decide)
     (by decide) (by simp) (by arr_simp) (by simp)) ?_
   refine VP.seq (div_vp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by simp) (by simp) (by simp; decide) (by arr_simp; exact hpos)) ?_
@@ -134,15 +135,15 @@ theorem pPm1_vp {x q : Nat} :
         VG.Impl.Rsa.Arm.Keys.sel aS aZero aDv slOdd, VG.Impl.Rsa.Arm.Keys.sub3 aPm1 aT aS])
       (St G (cM c x q) X) := by
   refine VP.seq (sub3_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.Keys.sub3 aT aX aRm), rfl⟩ (by decide) (by simp) (by simp) (by decide) (by decide)
+    (VG.Impl.Rsa.Arm.Keys.sub3 aT aX aRm), by kernel_rfl⟩ (by decide) (by simp) (by simp) (by decide) (by decide)
     (by arr_simp; exact Nat.mod_le _ _)) ?_
   refine VP.seq (bitOf_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-    (.block (VG.Impl.Rsa.Arm.Keys.bitOf slOdd aQt)), rfl⟩ (by simp) (by decide)) ?_
+    (.block (VG.Impl.Rsa.Arm.Keys.bitOf slOdd aQt)), by kernel_rfl⟩ (by simp) (by decide)) ?_
   refine VP.seq (sel_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.Keys.sel aS aZero aDv slOdd), rfl⟩ (by decide) (by simp) (by simp) (by decide) (by decide)
+    (VG.Impl.Rsa.Arm.Keys.sel aS aZero aDv slOdd), by kernel_rfl⟩ (by decide) (by simp) (by simp) (by decide) (by decide)
     (by simp) (by arr_simp; exact Nat.le_of_lt_succ (Nat.mod_lt _ (by decide)))) ?_
   refine (sub3_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.Keys.sub3 aPm1 aT aS), rfl⟩ (by decide) (by simp) (by simp) (by decide) (by decide)
+    (VG.Impl.Rsa.Arm.Keys.sub3 aPm1 aT aS), by kernel_rfl⟩ (by decide) (by simp) (by simp) (by decide) (by decide)
     (by
       arr_simp
       split
@@ -186,13 +187,13 @@ theorem pTail_vp {x q : Nat} (cert : Cert7 (storeBE G.pLen aP sPBE G.pLen)) (hq 
     rw [VG.Proof.Dsa.Generation.pReduction_generatorExponent x hq, Nat.div_div_eq_div_mul, Nat.mul_comm q 2]
   have hM : x - x % q - (if x / q % 2 = 0 then 0 else q) = pVal x q - 1 := by rw [pm, pv]; omega_arith
   refine VP.seq (copy_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.Keys.copy aP aPm1), rfl⟩ (by decide) (by simp) (by decide)) ?_
+    (VG.Impl.Rsa.Arm.Keys.copy aP aPm1), by kernel_rfl⟩ (by decide) (by simp) (by decide)) ?_
   refine VP.seq (orOne_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-    (.block (VG.Impl.Rsa.Arm.Keys.orOne aP)), rfl⟩ (by simp)) ?_
+    (.block (VG.Impl.Rsa.Arm.Keys.orOne aP)), by kernel_rfl⟩ (by simp)) ?_
   refine VP.seq (copy_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-    (VG.Impl.Rsa.Arm.Keys.copy aE aQt), rfl⟩ (by decide) (by simp) (by decide)) ?_
+    (VG.Impl.Rsa.Arm.Keys.copy aE aQt), by kernel_rfl⟩ (by decide) (by simp) (by decide)) ?_
   refine VP.seq (clrLow_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-    (.block (VG.Impl.Rsa.Arm.Keys.clrLow aE)), rfl⟩ (by simp)) ?_
+    (.block (VG.Impl.Rsa.Arm.Keys.clrLow aE)), by kernel_rfl⟩ (by simp)) ?_
   refine (storeBE_vp cert rfl (by simp) (by omega_arith) (by omega_arith) (by simp only [sPBE, sK, sA, wa]; omega_arith)
     (cl' := rest) fun y hy => by exact hrest y hy).mono (fun _ _ h => h) fun σ s ⟨h, xx⟩ =>
       ⟨h.mono (fun o ho => ⟨ho, rfl⟩) (fun y hy => ?_) (fun j hj => ?_) (fun d hd => absurd hd (by simp)), xx⟩

@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Proof.MlKem.Arith
 meta import Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem_add` and `vg_mlkem_sub`
@@ -53,14 +55,14 @@ include h3 h4 h5 h8 ia ib oa
 theorem addBody_ok :
     WP isa (.block addBody) s (Step s x y c ((fixq ((s.mem.readW x 32).setWidth 64 +
       (s.mem.readW y 32).setWidth 64 - 3329)).setWidth 32)) := by
-  crun [addBody, fixup, accTail, Step, fixq, h3, h4, h5, h8, ia, ib, oa, preserved,
+  crunr [addBody, fixup, accTail, Step, fixq, h3, h4, h5, h8, ia, ib, oa, preserved,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
 
 theorem subBody_ok :
     WP isa (.block subBody) s (Step s x y c ((fixq ((s.mem.readW x 32).setWidth 64 -
       (s.mem.readW y 32).setWidth 64)).setWidth 32)) := by
-  crun [subBody, fixup, accTail, Step, fixq, h3, h4, h5, h8, ia, ib, oa, preserved,
+  crunr [subBody, fixup, accTail, Step, fixq, h3, h4, h5, h8, ia, ib, oa, preserved,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
 

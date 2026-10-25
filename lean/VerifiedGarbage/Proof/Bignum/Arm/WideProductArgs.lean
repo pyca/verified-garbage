@@ -45,8 +45,8 @@ theorem wideProductArgs_ok (s : State) {base : BitVec 32} {size a b o n : Nat}
       j.other .r0 (by decide), h.other .r0 (by decide)]; exact addr 136 (by omega))
     (by rw [d.rd, d.wr, c.rd, c.wr, l.rd, l.wr, j.rd, j.wr, h.rd, h.wr]; exact ws.read (by omega)) fun t e => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, ?_, e.mem.trans (d.mem.trans (c.mem.trans (l.mem.trans (j.mem.trans h.mem)))),
-    (h.rest (by simp)).trans ((j.rest (by simp)).trans ((l.rest (by simp)).trans
-      ((c.rest (by simp)).trans ((d.rest (by simp)).trans (e.rest (by simp))))))⟩
+    (h.rest (by decide)).trans ((j.rest (by decide)).trans ((l.rest (by decide)).trans
+      ((c.rest (by decide)).trans ((d.rest (by decide)).trans (e.rest (by decide))))))⟩
   · rw [e.gpr, d.mem, c.mem, l.mem, j.mem, h.mem]; exact oPtr
   · rw [e.other .r12 (by decide), d.other .r12 (by decide), c.other .r12 (by decide),
       l.other .r12 (by decide), j.other .r12 (by decide), h.gpr]; exact bPtr

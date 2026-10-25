@@ -55,7 +55,7 @@ theorem crt_setupMain_ok (s : State) {base : BitVec 32} {len w : Nat}
   obtain ⟨p, q, product, compare, modulus, outside⟩ := result
   have frameT := outside_workspace outside (size := 8 * len) (by have := stateU.size; omega)
   exact ⟨⟨crt_links_layout stateU outside, p, q, product, compare, modulus⟩,
-    (restT.gpr .r0 (by simp)).trans ptrU, frameU.trans frameT,
-    restU.trans (restT.mono (by simp [roundClobbers]))⟩
+    (restT.gpr .r0 (by decide)).trans ptrU, frameU.trans frameT,
+    restU.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

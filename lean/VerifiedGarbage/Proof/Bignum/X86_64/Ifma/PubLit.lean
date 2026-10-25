@@ -23,6 +23,12 @@ here instead.
 
 namespace VG.Proof.Bignum.X86_64.Ifma.Pub
 
+-- The vector code of each size, which its constant-time check (`pubT`)
+-- evaluates too.
+materialize_code exp2048 := Impl.Rsa.X86_64.PubIfma.exp65537 Impl.Rsa.X86_64.PubIfma.pay2048
+materialize_code exp3072 := Impl.Rsa.X86_64.PubIfma.exp65537 Impl.Rsa.X86_64.PubIfma.pay3072
+materialize_code exp4096 := Impl.Rsa.X86_64.PubIfma.exp65537 Impl.Rsa.X86_64.PubIfma.pay4096
+
 materialize_code pubIfma := Impl.Rsa.X86_64.PubIfma.checked Mont.adxSquare.mm
 
 end VG.Proof.Bignum.X86_64.Ifma.Pub

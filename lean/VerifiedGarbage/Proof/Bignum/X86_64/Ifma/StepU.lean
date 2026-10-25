@@ -38,9 +38,9 @@ def expStartU (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p r : Nat) : T :=
   else if r = uuN l p 0 then .bc (k0U l p)
   else .reg r
 
-def checkStartU (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) : Bool :=
+noncomputable def checkStartU (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) : Bool :=
   match ESym.init.run (limU l) (ammStartU l p) with
-  | some σ => (List.range 32).all (fun r => T.beq (σ.reg r) (expStartU l p r))
+  | some σ => (List.range 32).all (fun r => T.beqK (σ.reg r) (expStartU l p r))
   | none => false
 
 theorem checkStartU_2048 : ∀ p < lay2048.nl, checkStartU lay2048 p = true := by decide +kernel
@@ -61,7 +61,7 @@ theorem run_ammStartU (hu : UOk l) {p : Nat} (hp : p < l.nl) :
   · rename_i σ hσ
     refine ⟨σ, hσ, fun r hr => ?_⟩
     simp only [List.all_eq_true, List.mem_range] at h
-    exact T.eq_of_beq (h r hr)
+    exact T.eq_of_beqK (h r hr)
   · cases h
 
 /-- Lane `p`'s first role and the look-ahead's registers of the start. -/

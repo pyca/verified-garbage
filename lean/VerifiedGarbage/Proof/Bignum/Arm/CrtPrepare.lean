@@ -42,6 +42,6 @@ theorem crt_prepare_ok (s : State) {base np : BitVec 32} {size w k : Nat} {nb : 
   rw [rest.sp] at frameT
   exact ⟨ready, saved, valueT.trans value,
     ((frameU.trans frameV').mono (by simp)).trans (frameT.mono (by simp)),
-    rest.trans (restT.mono (by simp [roundClobbers]))⟩
+    rest.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

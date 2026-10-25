@@ -50,17 +50,17 @@ theorem setup_ok (s : State) {base : BitVec 32} {len w : Nat}
   have outU := writeW_outside s.mem (State.addr base) (d := 48) (BitVec.ofNat 64 w) (by decide)
   rw [← memU] at outU
   rw [WP.seq_iff]
-  refine WP.mono (setupArgs_ok u ((restU.gpr .r7 (by simp)).trans count)) ?_
+  refine WP.mono (setupArgs_ok u ((restU.gpr .r7 (by decide)).trans count)) ?_
   rintro v ⟨saved, vp, vc, stride, remaining, memV, restV⟩
-  have up : u.gpr .r0 = base := (restU.gpr .r0 (by simp)).trans ptr
+  have up : u.gpr .r0 = base := (restU.gpr .r0 (by decide)).trans ptr
   rw [up] at saved vp vc
   rw [WP.seq_iff]
   refine WP.mono (setBases_ok v (ws.congr (restV.wr.trans restU.wr)) fits vp vc remaining stride
-    ((restV.gpr .r3 (by simp)).trans ((restU.gpr .r3 (by simp)).trans zero))) ?_
+    ((restV.gpr .r3 (by decide)).trans ((restU.gpr .r3 (by decide)).trans zero))) ?_
   intro z bases
   refine wp_mov (op2_reg _ _) fun t h => WP.block_nil ?_
   have memT : t.mem = z.mem := h.mem
-  have baseT : t.gpr .r0 = base := by rw [h.gpr, bases.rest.gpr .r8 (by simp), saved]
+  have baseT : t.gpr .r0 = base := by rw [h.gpr, bases.rest.gpr .r8 (by decide), saved]
   have widthT : word t.mem (State.addr base) 48 = BitVec.ofNat 64 w := by
     rw [memT, bases.outside.word (d := 48) (by decide) (by decide), memV, memU, word_writeW_self]
   have wT : wOf t.mem (State.addr base) = w := by
@@ -77,8 +77,8 @@ theorem setup_ok (s : State) {base : BitVec 32} {len w : Nat}
   · have outZ := bases.outside
     rw [memV] at outZ
     rw [memT]
-    exact (Outs.of_outside outU (by simp)).trans (Outs.of_outside outZ (by simp))
-  · exact (restU.mono (by simp)).trans (restV.trans
-      ((bases.rest.mono (by simp)).trans (h.rest (by simp))))
+    exact (Outs.of_outside outU (by decide)).trans (Outs.of_outside outZ (by decide))
+  · exact (restU.mono (by decide)).trans (restV.trans
+      ((bases.rest.mono (by decide)).trans (h.rest (by decide))))
 
 end VG.Proof.Bignum.Arm

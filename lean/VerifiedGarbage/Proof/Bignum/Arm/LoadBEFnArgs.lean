@@ -33,8 +33,8 @@ theorem loadBEFnTail_ok (s : State) {base : BitVec 32} {size w : Nat}
   · rw [u4.other .r3 (by decide), u3.gpr]
   · rw [u4.gpr, u3.other .r5 (by decide), u2.other .r5 (by decide), u1.other .r5 (by decide)]
   · rw [u4.mem, u3.mem, u2.mem, u1.mem]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
-      ((u3.rest (by simp)).trans (u4.rest (by simp))))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
+      ((u3.rest (by decide)).trans (u4.rest (by decide))))
 
 theorem loadBEFnArgs_ok (s : State) {base : BitVec 32} {size w o : Nat} {arr : Nat → Nat} {inv : BitVec 32}
     (ws : Workspace s base size) (fit : 128 ≤ size) (header : NativeHeader s.mem base w arr inv)
@@ -47,9 +47,9 @@ theorem loadBEFnArgs_ok (s : State) {base : BitVec 32} {size w o : Nat} {arr : N
   refine WP.mono (loadArray_ok s .r5 .r2 ws (by omega) ptr index (header.array o ho)) ?_
   rintro u ⟨array, mem, rest⟩
   refine WP.mono (loadBEFnTail_ok u (ws.congr rest.wr) (by omega)
-    ((rest.gpr .r0 (by simp)).trans ptr) (by rw [mem]; exact header.count)) ?_
+    ((rest.gpr .r0 (by decide)).trans ptr) (by rw [mem]; exact header.count)) ?_
   rintro t ⟨count, zero, out, memT, keep⟩
-  exact ⟨out.trans array, (keep.gpr .r5 (by simp)).trans array, count, zero, memT.trans mem,
-    (rest.mono (by simp)).trans (keep.mono (by simp))⟩
+  exact ⟨out.trans array, (keep.gpr .r5 (by decide)).trans array, count, zero, memT.trans mem,
+    (rest.mono (by decide)).trans (keep.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

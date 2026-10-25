@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86.TaintErase
 public import VerifiedGarbage.Impl.Mont.X86.Dynamic
 public import VerifiedGarbage.Impl.Mont.X86.Exponent
 public import VerifiedGarbage.Impl.Mont.X86.Power
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Taint checks for runtime-modulus Montgomery arithmetic on x86
@@ -69,31 +70,31 @@ theorem mul_check (counter : Bool) (M : VG.Impl.Mont.Mod) (inv acc out a b : Nat
     VG.Taint.check taint (workspaceTaint counter) (Dynamic.mul M inv acc out a b) (mulHint counter) =
       some (rowTaint counter) := by
   exact (check_of_erase_eq (Dynamic.mul M inv acc out a b) (Dynamic.mul eraseMod 0 0 0 0 0) (workspaceTaint counter) (mulHint counter) rfl
-    (by cases counter <;> rfl) (by cases counter <;> rfl)).trans (by cases counter <;> rfl)
+    (by cases counter <;> rfl) (by cases counter <;> kernel_rfl)).trans (by cases counter <;> kernel_rfl)
 
 theorem add_check (counter : Bool) (M : VG.Impl.Mont.Mod) (acc out a b : Nat) :
     VG.Taint.check taint (workspaceTaint counter) (Dynamic.addW M acc out a b) (addHint counter) =
       some (rowTaint counter) := by
   exact (check_of_erase_eq (Dynamic.addW M acc out a b) (Dynamic.addW eraseMod 0 0 0 0) (workspaceTaint counter) (addHint counter) rfl
-    (by cases counter <;> rfl) (by cases counter <;> rfl)).trans (by cases counter <;> rfl)
+    (by cases counter <;> rfl) (by cases counter <;> kernel_rfl)).trans (by cases counter <;> kernel_rfl)
 
 theorem zeros_check (counter : Bool) (o k : Nat) :
     VG.Taint.check taint (workspaceTaint counter) (Dynamic.zerosW o k) (zerosHint counter) =
       some (zerosTaint counter) := by
   exact (check_of_erase_eq (Dynamic.zerosW o k) (Dynamic.zerosW 0 1) (workspaceTaint counter) (zerosHint counter) rfl
-    (by cases counter <;> rfl) (by cases counter <;> rfl)).trans (by cases counter <;> rfl)
+    (by cases counter <;> rfl) (by cases counter <;> kernel_rfl)).trans (by cases counter <;> kernel_rfl)
 
 theorem one_check (counter : Bool) (n out : Nat) :
     VG.Taint.check taint (workspaceTaint counter) (Dynamic.one n out) (oneHint counter) =
       some (zerosTaint counter) := by
   exact (check_of_erase_eq (Dynamic.one n out) (Dynamic.one 1 0) (workspaceTaint counter) (oneHint counter) rfl
-    (by cases counter <;> rfl) (by cases counter <;> rfl)).trans (by cases counter <;> rfl)
+    (by cases counter <;> rfl) (by cases counter <;> kernel_rfl)).trans (by cases counter <;> kernel_rfl)
 
 theorem selectProduct_check (M : VG.Impl.Mont.Mod) (out product mask : Nat) :
     VG.Taint.check taint (workspaceTaint true) (Dynamic.selectProduct M out product mask) selectHint =
       some (rowTaint true) := by
   exact (check_of_erase_eq (Dynamic.selectProduct M out product mask) (Dynamic.selectProduct eraseMod 0 0 0)
-    (workspaceTaint true) selectHint rfl rfl rfl).trans rfl
+    (workspaceTaint true) selectHint rfl rfl (by kernel_rfl)).trans (by kernel_rfl)
 
 theorem check_append {M : ISA} (A : VG.Taint M) (τ : A.T) (a b : List M.Instr) :
     A.checkBlock τ (a ++ b) = (A.checkBlock τ a).bind (A.checkBlock · b) := by

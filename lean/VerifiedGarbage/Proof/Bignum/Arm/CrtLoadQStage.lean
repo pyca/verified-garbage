@@ -54,10 +54,10 @@ theorem crt_loadQStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
     ((sharedU.acceptance_after_workspace (by simp [crtRegions]) frameV restV).trans (acceptance_after_base_save frameU restU))
   have frameVLive := crt_workspace_frame sharedU.buffers.workspace sharedU.buffers.storageFits (by simp [crtRegions]) frameV'
   rw [restU.sp] at frameVLive
-  have restUV : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans restV
+  have restUV : Rest roundClobbers s v := (restU.mono (by decide)).trans restV
   rw [restUV.sp] at frameT
   exact ⟨sharedT, readyT, prime, (eqQ.number h.buffers.context.arraysFit (by decide : 0 < 8)).trans value, flag,
     (frameU.mono (by simp [crtLiveMutable])).trans (frameVLive.trans (frameT.mono (by simp [crtLiveMutable]))),
-    restUV.trans (restT.mono (by simp [roundClobbers]))⟩
+    restUV.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

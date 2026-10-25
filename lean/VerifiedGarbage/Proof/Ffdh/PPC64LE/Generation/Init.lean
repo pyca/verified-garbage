@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-! # Native FFDH parameter-generation initialization on PPC64LE: correctness, constant time -/
 
@@ -33,7 +35,7 @@ instance (bits g : Nat) : Decidable (initValid bits g) := by unfold initValid; i
 theorem high_ok (s : State) :
     WP isa (.block high) s fun t => t.gpr .r12 = s.gpr .r4 >>> 14 ∧ t.mem = s.mem := by
   unfold high
-  crun
+  crunr
 
 theorem zext {g : Nat} (hg : g < 2 ^ 32) :
     (BitVec.ofNat 32 g >>> 0).setWidth 64 = BitVec.ofNat 64 g := by
@@ -47,7 +49,7 @@ theorem validate_ok (s : State) {n g : Nat} (hx : s.gpr .r4 = BitVec.ofNat 64 n)
     WP isa (.block validate) s fun t =>
       t.gpr .r12 = BitVec.ofNat 64 (if initValid n g then 1 else 0) ∧ t.mem = s.mem := by
   unfold validate lt
-  crun [hx, hg, List.cons_append, List.nil_append]
+  crunr [hx, hg, List.cons_append, List.nil_append]
   rw [zext hgl, lt_bit (by omega) (by decide), lt_bit (by omega) (by decide),
     lt_bit (by omega) (by decide), lt_bit (by omega) (by decide), lt_bit (by omega) (by decide),
     lt_bit (by omega) (by decide)]
@@ -57,7 +59,7 @@ theorem validate_ok (s : State) {n g : Nat} (hx : s.gpr .r4 = BitVec.ofNat 64 n)
 theorem clear_ok {s : State} (h : StateWr s) :
     WP isa (.block clear) s fun t => t.gpr .r3 = 0 ∧ t.mem = initWritten s.mem (s.gpr .r3) 0 0 0 0 := by
   unfold clear initWritten
-  crun [st0 h, st h 8 (by decide), st h 16 (by decide), st h 24 (by decide)]
+  crunr [st0 h, st h 8 (by decide), st h 16 (by decide), st h 24 (by decide)]
   rfl
 
 theorem shift_ofNat (n k : Nat) : (BitVec.ofNat 64 n) <<< k = BitVec.ofNat 64 (n * 2 ^ k) := by
@@ -90,7 +92,7 @@ theorem initialize_ok {s : State} {bits : Nat} (h : StateWr s) (hx : s.gpr .r4 =
     simp only [Nat.reducePow]
     omega
   unfold initializeState initWritten
-  crun [hx, hw, hm, hc, hr, st0 h, st h 8 (by decide), st h 16 (by decide), st h 24 (by decide)]
+  crunr [hx, hw, hm, hc, hr, st0 h, st h 8 (by decide), st h 16 (by decide), st h 24 (by decide)]
   rfl
 
 def initPre (s : State) : Prop := s.rd = [] ∧ StateWr s

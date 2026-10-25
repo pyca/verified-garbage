@@ -34,8 +34,10 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.WinLay
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
 
 /-!
 # ECDSA verification over p192 on x86-64: `Verified`
@@ -61,11 +63,23 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p192 s := by
   obtain ⟨h1, h2, h3, h4, h5, -, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h7, by simp [TblsHeld, Cfg.combConsts, p192, Abi.constsHeld, Abi.constRegions]⟩
 
+/-- `verifyP192` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`), and its checks of every instruction
+(`EraseChecks`). -/
+def verifyP192Erased : Prog isa := Code.erase verifyP192
+
+materialize_shared verifyP192Erased
+
+theorem verify_inlineOk : verifyP192.InlineOk = true :=
+  Code.inlineOk_of_erase (show verifyP192Erased.InlineOk = true by lit_decide)
+
 theorem verify_x86 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyP192.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL p192_tbls (pre_of hs) p192_mulBase.2
-  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := verifyP192) (by lit_decide)
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := verifyP192)
+    (Code.rspMxcsr_of_erase (show verifyP192Erased.allInstrs _ = true by lit_decide))
+  have F := (Exec.regions he (Code.noCalls_inline verify_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, hrs, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
@@ -83,13 +97,6 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r rfl
       exact hrs) (by decide)
-
-/-- `verifyP192` without its displacements, as a literal of shared blocks
-(`materialize_shared`): what its constant-time check analyses
-(`Proof/Framework/X86_64/TaintErase.lean`). -/
-def verifyP192Erased : Prog isa := Code.erase verifyP192
-
-materialize_shared verifyP192Erased
 
 theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifyP192 := by
   refine VG.Taint.constantTime_mapBlocks (c' := verifyP192Erased) taintS_eraseInv
@@ -113,7 +120,7 @@ theorem implies8 : verifyX86_64.Implies (Spec.Ecdsa.P192.inst.verifyContract X86
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target verifyP192 (Spec.Ecdsa.P192.inst.verifyContract X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (verify_x86 hL hI) verify_ct implies8
+  Verified.of_inline_ct verify_inlineOk (verify_x86 hL hI) verify_ct implies8
     (fun _ h => Sig.clear_of_pre h) fun _ _ _ _ _ hp => hp
 
 end VG.Proof.Ecdsa.Verify.X86_64.P192

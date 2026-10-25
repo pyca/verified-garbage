@@ -40,15 +40,15 @@ theorem top_ok (s : State) {base : BitVec 32} {size d : Nat}
       (by rw [h.other .r0 (by decide)];exact ws.ea ptr (by omega))
       (by rw [h.rd,h.wr];exact ws.read (by omega)) fun v k => WP.block_nil ?_
     exact ⟨(k.other .r3 (by decide)).trans h.gpr,by rw [k.gpr,h.mem],
-      k.mem.trans h.mem,(h.rest (by simp)).trans (k.rest (by simp))⟩
+      k.mem.trans h.mem,(h.rest (by decide)).trans (k.rest (by decide))⟩
   refine WP.mono loads ?_
   rintro u ⟨low,high,memU,restU⟩
-  have carry : u.gpr .r11=s.gpr .r11 := restU.gpr .r11 (by simp)
+  have carry : u.gpr .r11=s.gpr .r11 := restU.gpr .r11 (by decide)
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok u .r11 (by rw [low,high,carry];dsimp only [w32] at bound;omega)) ?_
   rintro v ⟨value,frame⟩
   have pv : v.gpr .r0=base+BitVec.ofNat 32 d :=
-    (frame.regs .r0 (by simp)).trans ((restU.gpr .r0 (by simp)).trans ptr)
+    (frame.regs .r0 (by decide)).trans ((restU.gpr .r0 (by decide)).trans ptr)
   have mv : v.mem=s.mem := frame.mem.trans memU
   have wv : v.wr=s.wr := frame.wr.trans restU.wr
   have wsv := ws.congr wv
@@ -67,7 +67,7 @@ theorem top_ok (s : State) {base : BitVec 32} {size d : Nat}
   · rw [ht.gpr,dpVal,hb.gpr,ha.gpr,pv]
     exact Offset.add_add _ _ _
   · have rv : Rest [.r3,.r4] s v := restU.trans ⟨frame.regs,frame.rd,frame.wr,frame.sp⟩
-    exact (rv.mono (by simp)).trans ((ha.rest _).trans
-      ((hb.rest _).trans (ht.rest (by simp))))
+    exact (rv.mono (by decide)).trans ((ha.rest _).trans
+      ((hb.rest _).trans (ht.rest (by decide))))
 
 end VG.Proof.Bignum.Arm.FusedReduction

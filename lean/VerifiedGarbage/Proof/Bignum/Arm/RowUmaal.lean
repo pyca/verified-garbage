@@ -164,13 +164,13 @@ theorem rowProduct_regs (s : State) :
   refine ⟨_, rfl, ?_, ?_, ?_⟩
   · simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
     change s2.gpr .r2 = _
-    rw [frame2.regs .r2 (by simp), b0]
+    rw [frame2.regs .r2 (by decide), b0]
   · simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
     change s2.gpr .r6 = _
-    rw [frame2.regs .r6 (by simp), b1]
+    rw [frame2.regs .r6 (by decide), b1]
   · simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
     change s2.gpr .r7 = _
-    rw [p01, frame1.regs .r1 (by simp), b1]
+    rw [p01, frame1.regs .r1 (by decide), b1]
 
 theorem toNat_hi {lo hi : BitVec 32} {v : Nat} (h : lo.toNat + hi.toNat * 2 ^ 32 = v) :
     hi = BitVec.ofNat 32 (v / 2 ^ 32) := by
@@ -203,12 +203,12 @@ theorem rowMac_ok (s : State)
   apply WP.block_append_iff.mpr
   refine WP.mono (addWord_ok s .r5 (by omega)) ?_
   rintro u ⟨sum, fu⟩
-  have c11 : u.gpr .r11 = s.gpr .r11 := fu.regs .r11 (by simp)
+  have c11 : u.gpr .r11 = s.gpr .r11 := fu.regs .r11 (by decide)
   refine WP.mono (addCarry_ok u (by rw [sum, c11]; omega)) ?_
   rintro t ⟨sum', ft⟩
-  have r4 : t.gpr .r4 = u.gpr .r4 := ft.regs .r4 (by simp)
+  have r4 : t.gpr .r4 = u.gpr .r4 := ft.regs .r4 (by decide)
   refine ⟨⟨u.gpr .r3, by rw [r4, sum], by rw [sum', r4, c11]⟩, ?_⟩
-  exact (fu.mono (by simp)).trans (ft.mono (by simp))
+  exact (fu.mono (by decide)).trans (ft.mono (by decide))
 
 /-- A run of `row`'s step at `k`: its trace, the memory it may access, and
 the state it ends in but for its flags. -/
@@ -240,7 +240,7 @@ theorem rowStepAt_fwd {k : Nat} (hk : k < 4096) {x : BitVec 32} {s s' : State} {
   have t₂0 : t₂ = [] := execBlock_noMem (by decide) (Exec.block_iff.mp e₂)
   subst t₂0
   have g0 : s₂.gpr .r0 = s.gpr .r0 := by
-    rw [f₂.regs .r0 (by simp)]; simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
+    rw [f₂.regs .r0 (by decide)]; simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
   have m₂ : s₂.mem = s.mem := f₂.mem
   -- the accumulator word
   obtain ⟨hr₃, rfl, rfl⟩ := ldr_block hk e₃
@@ -250,7 +250,7 @@ theorem rowStepAt_fwd {k : Nat} (hk : k < 4096) {x : BitVec 32} {s s' : State} {
     simp only [s₃, gpr_setReg, ↓reduceIte, g0, m₂, accW]
   have c3 : s₃.gpr .r11 = s.gpr .r11 := by
     simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
-    rw [f₂.regs .r11 (by simp)]; simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
+    rw [f₂.regs .r11 (by decide)]; simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
   have p3 : (s₃.gpr .r3).toNat + (s₃.gpr .r4).toNat * 2 ^ 32 = (inW k s).toNat * x.toNat := by
     simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [prod, Nat.mul_comm]; simp only [gpr_setReg, ↓reduceIte]
@@ -260,7 +260,7 @@ theorem rowStepAt_fwd {k : Nat} (hk : k < 4096) {x : BitVec 32} {s s' : State} {
   have t₄0 : t₄ = [] := execBlock_noMem (by decide) (Exec.block_iff.mp e₄)
   subst t₄0
   have g40 : s₄.gpr .r0 = s.gpr .r0 := by
-    rw [f₄.regs .r0 (by simp)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]; exact g0
+    rw [f₄.regs .r0 (by decide)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]; exact g0
   obtain ⟨hw₅, rfl, rfl⟩ := str_block hk e₅
   have lo3 : s₄.gpr .r3 = BitVec.ofNat 32 (stepSum k x s) := by
     refine toNat_lo (hi := s₄.gpr .r11) ?_
@@ -284,15 +284,15 @@ theorem rowStepAt_fwd {k : Nat} (hk : k < 4096) {x : BitVec 32} {s s' : State} {
       simp only [gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [f₂.regs r (by simp [h2, h3, h4, h5, h6, h7, h8])]
     simp only [gpr_setReg, h2, ↓reduceIte]
-  have k5 : s₄.gpr .r5 = accW k s := by rw [f₄.regs _ (by simp)]; exact a3
+  have k5 : s₄.gpr .r5 = accW k s := by rw [f₄.regs _ (by decide)]; exact a3
   have k2 : s₄.gpr .r2 = inW k s &&& mask16 := by
-    rw [f₄.regs _ (by simp)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
+    rw [f₄.regs _ (by decide)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [v2, p9]; simp only [gpr_setReg, ↓reduceIte]
   have k6 : s₄.gpr .r6 = inW k s >>> 16 := by
-    rw [f₄.regs _ (by simp)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
+    rw [f₄.regs _ (by decide)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [v6]; simp only [gpr_setReg, ↓reduceIte]
   have k7 : s₄.gpr .r7 = (x &&& mask16) * (inW k s >>> 16) := by
-    rw [f₄.regs _ (by simp)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
+    rw [f₄.regs _ (by decide)]; simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [v7, p1]; simp only [gpr_setReg, ↓reduceIte]
   have wr₄ : s₄.wr = s.wr := by rw [f₄.wr]; exact f₂.wr
   refine ⟨by simp [g0, g40], hr₁, by rw [g40, wr₄] at hw₅; exact hw₅, ?_⟩

@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.OmegaNear
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
@@ -111,9 +112,9 @@ theorem rows_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr 
   have hAT : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot aAcc aTmp; omega_using []
   have hg0 : hdrBytes ≤ slot w aAcc := by unfold slot; omega_using []
   have sbX : slot w b + 8 * (w + 2) ≤ slot w aAcc ∨ slot w aTmp + 8 * (w + 2) ≤ slot w b := by
-    have := slot_sep (w := w) hb1; have := slot_sep (w := w) hb2; unfold slot aAcc aTmp at *; omega_arith
+    have := slot_sep (w := w) hb1; have := slot_sep (w := w) hb2; unfold slot aAcc aTmp at *; omega_near
   have saX : slot w a + 8 * (w + 2) ≤ slot w aAcc ∨ slot w aTmp + 8 * (w + 2) ≤ slot w a := by
-    have := slot_sep (w := w) ha1; have := slot_sep (w := w) ha2; unfold slot aAcc aTmp at *; omega_arith
+    have := slot_sep (w := w) ha1; have := slot_sep (w := w) ha2; unfold slot aAcc aTmp at *; omega_near
   have sNX : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega_using []
   have hN0 : 0 < wv s.mem B (slot w aN) w := by omega_using [hB]
   refine wp_upto (a := 0) (N := w) (by omega_using [hw1]) (RowsInv s B Z w a b) ?_ (fun _ h => h)
@@ -171,7 +172,7 @@ theorem adxSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : 
     WP isa (.block (setup b)) s fun t => t.gpr .r9 = off B (slot w b) ∧
       t.gpr .r10 = off B (slot w aN) ∧ t.gpr .r8 = off B (slot w aAcc + 16) ∧ t.gpr .rbx = BitVec.ofNat 64 w ∧
       t.mem = s.mem ∧ Keep [.r9, .r10, .r8, .rbx] s t :=
-  adxSetupV_ok hs hdi hH hZ (hH.opAt hb) (by omega_arith)
+  adxSetupV_ok hs hdi hH hZ (hH.opAt hb) (by omega_near)
 
 /-- `finishBases co`: `w`, the result `aTmp`, `aAcc` and `o` from the header,
 for the slot `sArr co` holding the base of `o`. -/
@@ -219,11 +220,11 @@ theorem fused_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
   have hTs := sl aTmp (by decide)
   have sNX : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega_using []
   have soX : slot w o + 8 * (w + 2) ≤ slot w aAcc ∨ slot w aTmp + 8 * (w + 2) ≤ slot w o := by
-    have := slot_sep (w := w) ho1; have := slot_sep (w := w) ho2; unfold slot aAcc aTmp at *; omega_arith
+    have := slot_sep (w := w) ho1; have := slot_sep (w := w) ho2; unfold slot aAcc aTmp at *; omega_near
   have sbX : slot w b + 8 * (w + 2) ≤ slot w aAcc ∨ slot w aTmp + 8 * (w + 2) ≤ slot w b := by
-    have := slot_sep (w := w) hb1; have := slot_sep (w := w) hb2; unfold slot aAcc aTmp at *; omega_arith
+    have := slot_sep (w := w) hb1; have := slot_sep (w := w) hb2; unfold slot aAcc aTmp at *; omega_near
   have saX : slot w a + 8 * (w + 2) ≤ slot w aAcc ∨ slot w aTmp + 8 * (w + 2) ≤ slot w a := by
-    have := slot_sep (w := w) ha1; have := slot_sep (w := w) ha2; unfold slot aAcc aTmp at *; omega_arith
+    have := slot_sep (w := w) ha1; have := slot_sep (w := w) ha2; unfold slot aAcc aTmp at *; omega_near
   have hN0 : 0 < wv s.mem B (slot w aN) w := by omega_using [hB]
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hs.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
@@ -295,12 +296,12 @@ theorem fused_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
   · have o₃ : Outside B (slot w aAcc) (16 * (w + 2)) s.mem s₃.mem := fun x hx =>
       (hR.out x hx).trans (ho₂ x (by omega_using [hx]))
     have o₅ : Outside B (slot w aAcc) (16 * (w + 2)) s.mem s₅.mem := fun x hx =>
-      (ho₅ x (by omega_arith)).trans (o₃ x hx)
+      (ho₅ x (by omega_near)).trans (o₃ x hx)
     intro x hx
     have h1 := hx aAcc (by simp)
     have h2 := hx aTmp (by simp)
     have h3 := hx o (by simp)
-    exact (hot x (by omega_arith)).trans (o₅ x (by omega_arith))
+    exact (hot x (by omega_near)).trans (o₅ x (by omega_near))
 
 theorem rotr2_toNat (x : BitVec 64) : (x.rotateRight 2).toNat = x.toNat / 4 + x.toNat % 4 * 2 ^ 62 := by
   rw [BitVec.toNat_rotateRight]

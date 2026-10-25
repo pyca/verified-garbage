@@ -70,7 +70,7 @@ theorem crt_acceptInput_ok (s : State) {base src : BitVec 32} {len w k : Nat} {b
   refine ⟨readyT, (eq.number fits (by decide : 0 < 8)).trans modulusV,
     (eq.number fits (by decide : 1 < 8)).trans inputV, ?_,
     ((frameU.trans frameV).mono (by simp)).trans (frameT.mono (by simp)),
-    rest.trans (restT.mono (by simp [roundClobbers])), mainT⟩
+    rest.trans (restT.mono (by decide)), mainT⟩
   rw [saved, flag]
   by_cases valid : Spec.Rsa.os2ip bs < numAt s.mem (State.addr base) w 0 <;> simp [valid]
 

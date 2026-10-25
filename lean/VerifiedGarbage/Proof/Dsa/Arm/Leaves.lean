@@ -10,6 +10,7 @@ meta import VerifiedGarbage.Impl.Dsa.Arm.SignVerify
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # DSA on 32-bit ARM: the parts whose traces a taint analysis checks
@@ -53,19 +54,19 @@ theorem pointer_relCT (p : Pointer) : RelCT isa (VG.Arm.Taint.Agree T0) (.block 
   cases p with
   | input f =>
     exact erased_relCT (c₀ := .block [.ldr .r11 .r12 0])
-      (VG.Taint.hintOf taint T0 (.block [.ldr .r11 .r12 0])) rfl (wsT_noBase _ _) rfl
+      (VG.Taint.hintOf taint T0 (.block [.ldr .r11 .r12 0])) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)
   | «local» o =>
-    exact erased_relCT (c₀ := .block (ptr .r11 0)) (VG.Taint.hintOf taint T0 (.block (ptr .r11 0))) rfl
-      (wsT_noBase _ _) rfl
+    exact erased_relCT (c₀ := .block (ptr .r11 0)) (VG.Taint.hintOf taint T0 (.block (ptr .r11 0))) (by kernel_rfl)
+      (wsT_noBase _ _) (by kernel_rfl)
   | signatureS =>
     exact erased_relCT (c₀ := .block (Core.pointer .signatureS))
-      (VG.Taint.hintOf taint T0 (.block (Core.pointer .signatureS))) rfl (wsT_noBase _ _) rfl
+      (VG.Taint.hintOf taint T0 (.block (Core.pointer .signatureS))) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)
 
 theorem loadZeros_relCT (k : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T10) (.block ((List.range k).flatMap fun j => [.mov .r4 (.imm 0), .str .r4 .r10 (4 * j)]))
       (VG.Arm.Taint.Agree T10) :=
   flatMap_relCT _ _ fun _ => erased_relCT (c₀ := .block [.mov .r4 (.imm 0), .str .r4 .r10 0])
-    (VG.Taint.hintOf taint T10 (.block [.mov .r4 (.imm 0), .str .r4 .r10 0])) rfl T10_noBase rfl
+    (VG.Taint.hintOf taint T10 (.block [.mov .r4 (.imm 0), .str .r4 .r10 0])) (by kernel_rfl) T10_noBase (by kernel_rfl)
 
 theorem zeroPad_relCT (k : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T10) (zeroPad k) (VG.Arm.Taint.Agree T10) := by
@@ -73,7 +74,7 @@ theorem zeroPad_relCT (k : Nat) :
   split
   · exact loadZeros_relCT k
   · exact erased_relCT (c₀ := zeroPadLoop 1)
-      (VG.Taint.hintOf taint T10 (zeroPadLoop 1)) rfl T10_noBase rfl
+      (VG.Taint.hintOf taint T10 (zeroPadLoop 1)) (by kernel_rfl) T10_noBase (by kernel_rfl)
 
 theorem loadComponent_relCT (len n out : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T1) (loadComponent len n out) (VG.Arm.Taint.Agree T10) := by
@@ -83,10 +84,10 @@ theorem loadComponent_relCT (len n out : Nat) :
       (ptrLoop .r10 [.ldr .r4 .r8 0, .rev .r4 .r4, .str .r4 .r10 0, .dp .sub .r8 .r8 (.imm 4), bump .r10 4]))
     (VG.Taint.hintOf taint T1 (.seq (.block ([.movw .r8 0, .dp .add .r8 .r11 (.reg .r8)] ++ ptr .r10 0 ++ ptr .r9 0))
       (ptrLoop .r10 [.ldr .r4 .r8 0, .rev .r4 .r4, .str .r4 .r10 0, .dp .sub .r8 .r8 (.imm 4), bump .r10 4])))
-    rfl (wsT_noBase _ _) rfl
+    (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)
 
 theorem store_relCT (len output : Nat) : RelCT isa (VG.Arm.Taint.Agree T0) (Core.store len output) (VG.Arm.Taint.Agree T0) :=
-  erased_relCT (c₀ := Core.store 4 0) (VG.Taint.hintOf taint T0 (Core.store 4 0)) rfl (wsT_noBase _ _) rfl
+  erased_relCT (c₀ := Core.store 4 0) (VG.Taint.hintOf taint T0 (Core.store 4 0)) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)
 
 /-- A constant's words: each stored through `r10`, which stays public. -/
 theorem setConstWords_relCT (k x : Nat) :
@@ -99,13 +100,13 @@ theorem setConstWords_relCT (k x : Nat) :
   · exact RelCT.block_nil (fun _ _ h => h)
   · exact erased_relCT (c₀ := .block [.movw .r4 0, .movt .r4 (BitVec.ofNat 16 (x >>> (32 * j) >>> 16)), .str .r4 .r10 0])
       (VG.Taint.hintOf taint T10 (.block [.movw .r4 0, .movt .r4 (BitVec.ofNat 16 (x >>> (32 * j) >>> 16)),
-        .str .r4 .r10 0])) rfl T10_noBase rfl
+        .str .r4 .r10 0])) (by kernel_rfl) T10_noBase (by kernel_rfl)
 
 theorem setConst_relCT (k o x : Nat) : RelCT isa (VG.Arm.Taint.Agree T0) (Dynamic.setConst k o x) (VG.Arm.Taint.Agree T10) := by
   unfold Dynamic.setConst
   refine RelCT.seq (zeros_relCT false false k o) (RelCT.block_append (RelCT.seq ?_ (setConstWords_relCT k x)))
-  exact erased_relCT (c₀ := .block (ptr .r10 0)) (VG.Taint.hintOf taint T0 (.block (ptr .r10 0))) rfl
-    (wsT_noBase _ _) rfl
+  exact erased_relCT (c₀ := .block (ptr .r10 0)) (VG.Taint.hintOf taint T0 (.block (ptr .r10 0))) (by kernel_rfl)
+    (wsT_noBase _ _) (by kernel_rfl)
 
 /-- Fewer public registers. -/
 theorem agree_weaken {τ σ : taint.T} (h : taint.le σ τ = true) {s₁ s₂ : State} (A : VG.Arm.Taint.Agree τ s₁ s₂) :
@@ -118,11 +119,11 @@ theorem relCT_weaken {P : State → State → Prop} {c : Prog isa} {τ σ : tain
 
 theorem checkRange_relCT (k a m flag : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T0) (checkRange k a m flag) (VG.Arm.Taint.Agree T0) :=
-  erased_relCT (c₀ := checkRange 1 0 0 0) (VG.Taint.hintOf taint T0 (checkRange 1 0 0 0)) rfl (wsT_noBase _ _) rfl
+  erased_relCT (c₀ := checkRange 1 0 0 0) (VG.Taint.hintOf taint T0 (checkRange 1 0 0 0)) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)
 
 theorem lessThan_relCT (k a b : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T0) (lessThan k a b) (VG.Arm.Taint.Agree T0) :=
-  erased_relCT (c₀ := lessThan 1 0 0) (VG.Taint.hintOf taint T0 (lessThan 1 0 0)) rfl (wsT_noBase _ _) rfl
+  erased_relCT (c₀ := lessThan 1 0 0) (VG.Taint.hintOf taint T0 (lessThan 1 0 0)) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)
 
 theorem lessThanConstant_relCT (k a tmp x : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T0) (lessThanConstant k a tmp x) (VG.Arm.Taint.Agree T0) :=
@@ -133,24 +134,24 @@ theorem lowerTwo_relCT (n : Nat) :
   RelCT.seq (lessThanConstant_relCT _ _ _ _)
     (erased_relCT (c₀ := .block (allOnes ++ [.dp .eor .r2 .r2 (.reg .r4)] ++ Validate.accumulate))
       (VG.Taint.hintOf taint T0 (.block (allOnes ++ [.dp .eor .r2 .r2 (.reg .r4)] ++ Validate.accumulate)))
-      rfl (wsT_noBase _ _) rfl)
+      (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl))
 
 theorem equalAcc_relCT (k a b : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T0) (.seq (equal k a b) (.block Validate.accumulate)) (VG.Arm.Taint.Agree T0) :=
   erased_relCT (c₀ := .seq (equal 1 0 0) (.block Validate.accumulate))
-    (VG.Taint.hintOf taint T0 (.seq (equal 1 0 0) (.block Validate.accumulate))) rfl (wsT_noBase _ _) rfl
+    (VG.Taint.hintOf taint T0 (.seq (equal 1 0 0) (.block Validate.accumulate))) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)
 
 theorem checkZero_relCT (k a flag : Nat) (want : Bool) :
     RelCT isa (VG.Arm.Taint.Agree T0) (checkZero k a flag want) (VG.Arm.Taint.Agree T0) := by
   cases want
-  · exact erased_relCT (c₀ := checkZero 1 0 0 false) (VG.Taint.hintOf taint T0 (checkZero 1 0 0 false)) rfl
-      (wsT_noBase _ _) rfl
-  · exact erased_relCT (c₀ := checkZero 1 0 0 true) (VG.Taint.hintOf taint T0 (checkZero 1 0 0 true)) rfl
-      (wsT_noBase _ _) rfl
+  · exact erased_relCT (c₀ := checkZero 1 0 0 false) (VG.Taint.hintOf taint T0 (checkZero 1 0 0 false)) (by kernel_rfl)
+      (wsT_noBase _ _) (by kernel_rfl)
+  · exact erased_relCT (c₀ := checkZero 1 0 0 true) (VG.Taint.hintOf taint T0 (checkZero 1 0 0 true)) (by kernel_rfl)
+      (wsT_noBase _ _) (by kernel_rfl)
 
 theorem subWords_relCT (k o a b : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T0) (subWords k o a b) (VG.Arm.Taint.Agree T0) :=
-  erased_relCT (c₀ := subWords 1 0 0 0) (VG.Taint.hintOf taint T0 (subWords 1 0 0 0)) rfl (wsT_noBase _ _) rfl
+  erased_relCT (c₀ := subWords 1 0 0 0) (VG.Taint.hintOf taint T0 (subWords 1 0 0 0)) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)
 
 theorem modulusMinus_relCT (n amount : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T0) (modulusMinus n amount) (VG.Arm.Taint.Agree T0) :=
@@ -170,11 +171,11 @@ theorem reduceHead_relCT (input : Pointer) (count : Core.Count) :
   | imm len =>
     exact RelCT.block_append (RelCT.seq (pointer_relCT input)
       (erased_relCT (c₀ := .block (Core.countEnd (.imm 0))) (VG.Taint.hintOf taint T0 (.block (Core.countEnd (.imm 0))))
-        rfl (wsT_noBase _ _) rfl))
+        (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)))
   | field f =>
     exact RelCT.block_append (RelCT.seq (pointer_relCT input)
       (erased_relCT (c₀ := .block (Core.countEnd (.field .p))) (VG.Taint.hintOf taint T0
-        (.block (Core.countEnd (.field .p)))) rfl (wsT_noBase _ _) rfl))
+        (.block (Core.countEnd (.field .p)))) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)))
 
 theorem doubles_eraseOff (n k : Nat) : Code.eraseOff (doubles n k) = Code.eraseOff (doubles 1 k) := by
   unfold doubles
@@ -200,7 +201,7 @@ theorem reduceStream_relCT (n : Nat) :
 
 theorem storeComponent_relCT (len input : Nat) :
     RelCT isa (VG.Arm.Taint.Agree T1) (storeComponent len input) (VG.Arm.Taint.Agree T0) :=
-  erased_relCT (c₀ := storeComponent 4 0) (VG.Taint.hintOf taint T1 (storeComponent 4 0)) rfl (wsT_noBase _ _) rfl
+  erased_relCT (c₀ := storeComponent 4 0) (VG.Taint.hintOf taint T1 (storeComponent 4 0)) (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)
 
 theorem block_relCT_T0 (is : List Instr) (h : (taint.checkBlock T0 is).map (taint.le T0) = some true) :
     RelCT isa (VG.Arm.Taint.Agree T0) (.block is) (VG.Arm.Taint.Agree T0) :=
@@ -212,11 +213,11 @@ theorem outBlock_relCT (qLen : Nat) (second : Bool) :
       (VG.Arm.Taint.Agree T0) := by
   cases second
   · exact erased_relCT (c₀ := .block (SignVerify.outputPointer 0 false ++ [.ldr .r3 .r12 0]))
-      (VG.Taint.hintOf taint T0 (.block (SignVerify.outputPointer 0 false ++ [.ldr .r3 .r12 0]))) rfl
-      (wsT_noBase _ _) rfl
+      (VG.Taint.hintOf taint T0 (.block (SignVerify.outputPointer 0 false ++ [.ldr .r3 .r12 0]))) (by kernel_rfl)
+      (wsT_noBase _ _) (by kernel_rfl)
   · exact erased_relCT (c₀ := .block (SignVerify.outputPointer 0 true ++ [.ldr .r3 .r12 0]))
-      (VG.Taint.hintOf taint T0 (.block (SignVerify.outputPointer 0 true ++ [.ldr .r3 .r12 0]))) rfl
-      (wsT_noBase _ _) rfl
+      (VG.Taint.hintOf taint T0 (.block (SignVerify.outputPointer 0 true ++ [.ldr .r3 .r12 0]))) (by kernel_rfl)
+      (wsT_noBase _ _) (by kernel_rfl)
 
 theorem result_relCT : RelCT isa (VG.Arm.Taint.Agree T0) (.block SignVerify.result) (VG.Arm.Taint.Agree T0) :=
   relCT_of_check (h := .block []) rfl

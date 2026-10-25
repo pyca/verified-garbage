@@ -38,7 +38,7 @@ theorem subStep_ok (s : State) (o a b : Addr)
   rw [WP.seq_iff]
   refine WP.mono (subBorrow_ok s2 (by rw [cc]; exact hc)) ?_
   rintro s3 ⟨value, carry, keep⟩
-  have ptr : s3.gpr .r0 = s.gpr .r0 := (keep.regs .r0 (by simp)).trans
+  have ptr : s3.gpr .r0 = s.gpr .r0 := (keep.regs .r0 (by decide)).trans
     ((u2.other .r0 (by decide)).trans (u1.other .r0 (by decide)))
   refine wp_str (a := o) (by decide) (by rw [ptr]; exact ho)
     (by rw [keep.wr, u2.wr, u1.wr]; exact wo) fun t ut => WP.block_nil ?_
@@ -48,7 +48,7 @@ theorem subStep_ok (s : State) (o a b : Addr)
   · rw [ut.gpr]; exact carry
   · rw [ut.mem, keep.mem, u2.mem, u1.mem, ut.gpr]
   · have k3 : Rest [.r3, .r4, .r5, .r11] s2 s3 := ⟨keep.regs, keep.rd, keep.wr, keep.sp⟩
-    exact (u1.rest (by simp [subClobbers])).trans ((u2.rest (by simp [subClobbers])).trans
-      ((k3.mono (by simp [subClobbers])).trans (ut.rest _)))
+    exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
+      ((k3.mono (by decide)).trans (ut.rest _)))
 
 end VG.Proof.Bignum.Arm

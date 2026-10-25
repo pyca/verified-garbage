@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.ByteStep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on PPC64LE: before the seeds
 
@@ -103,7 +104,7 @@ theorem pre_vp {V : Nat → BitVec 64} {LS : List Nat} {B N L : Nat} (md : MdStr
     VP (fun σ s => GI G 176 σ V LS s ∧ X σ) (.block (padInit G.qLen))
       (St G { V := V, LS := LS, cl := [(sMsg + G.qLen, padTail md G.qLen)] } X) := by
   refine VP.pub (G := G) (fun σ s h => ⟨h.1.r28, by rw [h.1.sp, ← h.1.hG]; rfl⟩) []
-    ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block (padInit G.qLen)), rfl⟩
+    ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block (padInit G.qLen)), by kernel_rfl⟩
     (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s ⟨gi, x⟩ => ?_
   have big := gi.scrBig
   have fit := gi.scrFit

@@ -69,7 +69,7 @@ theorem quotientStage_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n 
       change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
       rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
       simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
-    · exact (keep.mono (by simp [roundClobbers])).trans
-        ((sv.rest.mono (by simp [roundClobbers])).trans (rest.mono (by simp [roundClobbers])))
+    · exact (keep.mono (by decide)).trans
+        ((sv.rest.mono (by decide)).trans (rest.mono (by decide)))
 
 end VG.Proof.Bignum.Arm

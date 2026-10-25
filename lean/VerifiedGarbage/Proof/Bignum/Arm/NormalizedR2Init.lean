@@ -77,9 +77,9 @@ theorem normalizedR2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
   have outside4 := outside.mono (o' := arrAt w 4) (n' := 8 * w) (by omega) (by omega)
   have frameV := outside_workspace outside4 fit4
   have keeps := outside_array_keeps outside4 (len := len) (by have := ready.workspace.nowrap; omega)
-  have keepV : Rest roundClobbers u v := restV.mono (by simp [roundClobbers])
+  have keepV : Rest roundClobbers u v := restV.mono (by decide)
   obtain ⟨readyV, modV⟩ := ready.after_array (by decide : 4 ≠ 0) keeps frameV keepV
-    ((restV.gpr .r0 (by simp)).trans ready.ptr)
+    ((restV.gpr .r0 (by decide)).trans ready.ptr)
   have value : numAt v.mem (State.addr base) w 4 = 2 ^ (64 * (w - 1)) := by
     rw [memV]; exact normalizedSeed_value u.mem (State.addr base) hw (by have hn := ready.workspace.nowrap; simp only [State.addr, BitVec.toNat_setWidth] ; omega) zero
   have twoV := keeps_array_word (d := 0) (bits := 32) keeps fits
@@ -98,6 +98,6 @@ theorem normalizedR2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
   rintro t ⟨memT, restT⟩
   obtain ⟨loopT, frameT, numberT, modT⟩ := loop.after_count memT restT
   exact ⟨loopT, numberT.trans value, modT.trans (modV.trans modulus),
-    frame.trans (frameV.trans frameT), rest.trans (keepV.trans (restT.mono (by simp [roundClobbers])))⟩
+    frame.trans (frameV.trans frameT), rest.trans (keepV.trans (restT.mono (by decide)))⟩
 
 end VG.Proof.Bignum.Arm

@@ -43,22 +43,22 @@ theorem r2PublicPrepare_ok (s : State) {base : BitVec 32} {len w M : Nat}
   have fits : arrAt w 8 ≤ 8 * len := ready.width ▸ ready.layout.2.2.1
   have op (i : Nat) (hi : i = 0 ∨ i = 4 ∨ i = 7) : Operand i := by
     rcases hi with rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
-  have oldTop := (keeps_array_num keeps fits (op 4 (by simp)) (by decide)).trans top
-  have oldTwo := keeps_array_word (d := 0) (bits := 32) keeps fits (op 7 (by simp)) (by decide) (by omega)
+  have oldTop := (keeps_array_num keeps fits (op 4 (by decide)) (by decide)).trans top
+  have oldTwo := keeps_array_word (d := 0) (bits := 32) keeps fits (op 7 (by decide)) (by decide) (by omega)
   simp only [Nat.add_zero] at oldTwo
   have oldTwoNat := congrArg BitVec.toNat oldTwo
   change w32 v.mem (State.addr base) (arrAt w 7) = w32 u.mem (State.addr base) (arrAt w 7) at oldTwoNat
   have readyV := (ready.after_array (by decide : 3 ≠ 0) keeps frameV restV layoutV.ptr).1
-  have modV := (keeps_array_num keeps fits (op 0 (by simp)) (by decide)).trans modulus
+  have modV := (keeps_array_num keeps fits (op 0 (by decide)) (by decide)).trans modulus
   refine wp_subs (op2_imm (by decide)) fun z keep zero => WP.block_nil ?_
-  have readyZ := readyV.of_mem keep.mem (keep.rest (ws := [.r11]) (by simp))
+  have readyZ := readyV.of_mem keep.mem (keep.rest (ws := [.r11]) (by decide))
     ((keep.other .r0 (by decide)).trans readyV.ptr)
   have modZ : numAt z.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 := by
     rw [keep.mem]; exact modV
   have frameZ : Frame [⟨State.addr base, 8 * len⟩] s.mem z.mem := by
     rw [keep.mem]; exact frame.trans frameV
   have restZ : Rest roundClobbers s z :=
-    rest.trans (restV.trans ((keep.rest (ws := [.r11]) (by simp)).mono (by simp [roundClobbers])))
+    rest.trans (restV.trans ((keep.rest (ws := [.r11]) (by decide)).mono (by decide)))
   refine ⟨⟨readyZ, ?_, ?_, modZ.trans initialM, ?_⟩, frameZ, restZ⟩
   · rw [keep.mem]; exact oldTop
   · rw [keep.mem, oldTwoNat]; exact two

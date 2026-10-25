@@ -43,12 +43,12 @@ theorem crt_padModulus_ok (s : State) {base : BitVec 32} {size len w d : Nat}
   refine WP.mono (exportPadded_ok v (hu.main.congr restV.wr)
     (by rw [memV]; exact hu.layout.layout) (w := w) (by rw [memV]; exact hu.layout.width)
     operand.isLt (k := 2 * w + 2) (by omega) write sep (by rw [memV]; exact zeroU)
-    ((restV.gpr .r0 (by simp)).trans hu.ptr) indexV outV) ?_
+    ((restV.gpr .r0 (by decide)).trans hu.ptr) indexV outV) ?_
   rintro t ⟨value, outside, ptrT, restT⟩
   rw [memV, numberU] at value
   rw [memV] at outside
   exact ⟨by simpa only [show 2 * w + (2 * w + 2) = 4 * w + 2 by omega] using value,
     outsideU.trans (outside.mono (Nat.le_refl _) (by omega)), ptrT,
-    restU.trans ((restV.mono (by simp [roundClobbers])).trans restT)⟩
+    restU.trans ((restV.mono (by decide)).trans restT)⟩
 
 end VG.Proof.Bignum.Arm

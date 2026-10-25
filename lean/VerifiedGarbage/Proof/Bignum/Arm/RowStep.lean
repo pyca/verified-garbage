@@ -139,9 +139,9 @@ theorem rowProduct_ok (s : State) (x : BitVec 32)
   rintro s2 ⟨p00, p10, p01, p11, frame2⟩
   let y := s.gpr .r2
   have ha0 : (s2.gpr .r1).toNat = x.toNat % 65536 := by
-    rw [frame2.regs .r1 (by simp), frame1.regs .r1 (by simp), h1, toNat_and_mask16]
+    rw [frame2.regs .r1 (by decide), frame1.regs .r1 (by decide), h1, toNat_and_mask16]
   have ha1 : (s2.gpr .r10).toNat = x.toNat / 65536 := by
-    rw [frame2.regs .r10 (by simp), frame1.regs .r10 (by simp), h10, toNat_shr]
+    rw [frame2.regs .r10 (by decide), frame1.regs .r10 (by decide), h10, toNat_shr]
   have hb0 : (s1.gpr .r2).toNat = y.toNat % 65536 := by
     rw [b0, h9, toNat_and_mask16]
   have hb1 : (s1.gpr .r6).toNat = y.toNat / 65536 := by rw [b1, toNat_shr]
@@ -150,20 +150,20 @@ theorem rowProduct_ok (s : State) (x : BitVec 32)
   have lt (a b : Nat) (ha : a < 65536) (hb : b < 65536) : a * b < 2 ^ 32 :=
     Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le ha (Nat.le_of_lt hb) (by omega)) (by decide)
   have v00 : (s2.gpr .r3).toNat = x.toNat % 65536 * (y.toNat % 65536) := by
-    rw [p00, frame1.regs .r1 (by simp), toNat_mul_lt] <;>
-      rw [← frame1.regs .r1 (by simp), ← frame2.regs .r1 (by simp), ha0, hb0]
+    rw [p00, frame1.regs .r1 (by decide), toNat_mul_lt] <;>
+      rw [← frame1.regs .r1 (by decide), ← frame2.regs .r1 (by decide), ha0, hb0]
     exact lt _ _ (by omega) (by omega)
   have v10 : (s2.gpr .r5).toNat = x.toNat / 65536 * (y.toNat % 65536) := by
-    rw [p10, frame1.regs .r10 (by simp), toNat_mul_lt] <;>
-      rw [← frame1.regs .r10 (by simp), ← frame2.regs .r10 (by simp), ha1, hb0]
+    rw [p10, frame1.regs .r10 (by decide), toNat_mul_lt] <;>
+      rw [← frame1.regs .r10 (by decide), ← frame2.regs .r10 (by decide), ha1, hb0]
     exact lt _ _ (by omega) (by omega)
   have v01 : (s2.gpr .r7).toNat = x.toNat % 65536 * (y.toNat / 65536) := by
-    rw [p01, frame1.regs .r1 (by simp), toNat_mul_lt] <;>
-      rw [← frame1.regs .r1 (by simp), ← frame2.regs .r1 (by simp), ha0, hb1]
+    rw [p01, frame1.regs .r1 (by decide), toNat_mul_lt] <;>
+      rw [← frame1.regs .r1 (by decide), ← frame2.regs .r1 (by decide), ha0, hb1]
     exact lt _ _ (by omega) (by omega)
   have v11 : (s2.gpr .r4).toNat = x.toNat / 65536 * (y.toNat / 65536) := by
-    rw [p11, frame1.regs .r10 (by simp), toNat_mul_lt] <;>
-      rw [← frame1.regs .r10 (by simp), ← frame2.regs .r10 (by simp), ha1, hb1]
+    rw [p11, frame1.regs .r10 (by decide), toNat_mul_lt] <;>
+      rw [← frame1.regs .r10 (by decide), ← frame2.regs .r10 (by decide), ha1, hb1]
     exact lt _ _ (by omega) (by omega)
   have total := partials_value x y
   have bound : x.toNat * y.toNat < 2 ^ 64 :=
@@ -173,7 +173,7 @@ theorem rowProduct_ok (s : State) (x : BitVec 32)
     (by rw [v00, v11, v10]; omega)) ?_
   rintro s3 ⟨sum3, frame3⟩
   have r7 : (s3.gpr .r7).toNat = x.toNat % 65536 * (y.toNat / 65536) := by
-    rw [frame3.regs .r7 (by simp), v01]
+    rw [frame3.regs .r7 (by decide), v01]
   refine WP.mono (addCross_ok s3 .r7 (by decide)
     (by rw [sum3, v00, v11, v10, r7]; omega)) ?_
   rintro s4 ⟨sum4, frame4⟩
@@ -182,8 +182,7 @@ theorem rowProduct_ok (s : State) (x : BitVec 32)
     omega
   · refine (frame1.macFrame.mono ?_).trans ((frame2.macFrame.mono ?_).trans
       ((frame3.mono ?_).trans (frame4.mono ?_)))
-    all_goals intro r hr; cases r <;>
-      simp_all only [List.mem_cons, List.not_mem_nil, reduceCtorEq, or_false, false_or]
+    all_goals decide
 
 abbrev rowClobbers : List Reg := [.r2, .r3, .r4, .r5, .r6, .r7, .r8, .r11]
 
@@ -207,7 +206,7 @@ theorem rowStepAt_ok (s : State) (k : Nat) (hk : k < 4096) (a b : Addr) (x : Bit
     (by rw [u1.other .r10 (by decide), h10]) (by rw [u1.other .r9 (by decide), h9])) ?_
   rintro s2 ⟨prod, frame2⟩
   have ptr2 : s2.gpr .r0 = s.gpr .r0 :=
-    (frame2.regs .r0 (by simp)).trans (u1.other .r0 (by decide))
+    (frame2.regs .r0 (by decide)).trans (u1.other .r0 (by decide))
   rw [WP.seq_iff]
   refine wp_ldr (a := a) hk (by rw [ptr2]; exact ha)
     (by
@@ -217,7 +216,7 @@ theorem rowStepAt_ok (s : State) (k : Nat) (hk : k < 4096) (a b : Addr) (x : Bit
   have mem3 : s3.mem = s.mem := u3.mem.trans (frame2.mem.trans u1.mem)
   have acc3 : s3.gpr .r5 = s.mem.readW a 32 := by rw [u3.gpr, frame2.mem, u1.mem]
   have carry3 : s3.gpr .r11 = s.gpr .r11 :=
-    (u3.other .r11 (by decide)).trans ((frame2.regs .r11 (by simp)).trans (u1.other .r11 (by decide)))
+    (u3.other .r11 (by decide)).trans ((frame2.regs .r11 (by decide)).trans (u1.other .r11 (by decide)))
   have prod3 : (s3.gpr .r3).toNat + (s3.gpr .r4).toNat * 2 ^ 32 =
       x.toNat * (s.mem.readW b 32).toNat := by
     rw [u3.other .r3 (by decide), u3.other .r4 (by decide), prod, u1.gpr]
@@ -226,11 +225,11 @@ theorem rowStepAt_ok (s : State) (k : Nat) (hk : k < 4096) (a b : Addr) (x : Bit
   apply WP.block_append_iff.mpr
   refine WP.mono (addWord_ok s3 .r5 (by rw [prod3, acc3]; omega)) ?_
   rintro s4 ⟨sum4, frame4⟩
-  have carry4 : s4.gpr .r11 = s.gpr .r11 := (frame4.regs .r11 (by simp)).trans carry3
+  have carry4 : s4.gpr .r11 = s.gpr .r11 := (frame4.regs .r11 (by decide)).trans carry3
   refine WP.mono (addCarry_ok s4 (by rw [sum4, prod3, acc3, carry4]; exact hb)) ?_
   rintro s5 ⟨sum5, frame5⟩
   have ptr5 : s5.gpr .r0 = s.gpr .r0 :=
-    (frame5.regs .r0 (by simp)).trans ((frame4.regs .r0 (by simp)).trans
+    (frame5.regs .r0 (by decide)).trans ((frame4.regs .r0 (by decide)).trans
       ((u3.other .r0 (by decide)).trans ptr2))
   refine wp_str (a := a) hk (by rw [ptr5]; exact ha)
     (by rw [frame5.wr, frame4.wr, u3.wr, frame2.wr, u1.wr]; exact hwrite) fun s6 u6 => WP.block_nil ?_
@@ -248,7 +247,7 @@ theorem rowStepAt_ok (s : State) (k : Nat) (hk : k < 4096) (a b : Addr) (x : Bit
     have r5 : Rest rowClobbers s4 s5 := ⟨fun r hr => frame5.regs r (by
         intro h; apply hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
         rcases h with h | h <;> simp [h]), frame5.rd, frame5.wr, frame5.sp⟩
-    exact (u1.rest (by simp)).trans (r2.trans ((u3.rest (by simp)).trans (r4.trans (r5.trans
+    exact (u1.rest (by decide)).trans (r2.trans ((u3.rest (by decide)).trans (r4.trans (r5.trans
       (u6.rest _)))))
 
 /-- The step at the pointers themselves. -/

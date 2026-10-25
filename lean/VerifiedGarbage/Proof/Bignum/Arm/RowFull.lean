@@ -68,7 +68,7 @@ theorem rowFull_ok (s : State) {base : BitVec 32} {size o b n : Nat}
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [whole, vtop]; exact total
     · exact (inv.outside.mono (Nat.le_refl _) (by omega)).trans (outside.mono (by omega) (by omega))
-    · exact (keep.gpr .r0 (by simp)).trans inv.outPtr
-    · exact inv.rest.trans (keep.mono (by simp [loopClobbers]))
+    · exact (keep.gpr .r0 (by decide)).trans inv.outPtr
+    · exact inv.rest.trans (keep.mono (by decide))
 
 end VG.Proof.Bignum.Arm

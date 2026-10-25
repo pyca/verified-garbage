@@ -35,10 +35,10 @@ theorem finishCursor_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n 
   · rw [count,h.count,BitVec.ofNat_sub_ofNat_of_le _ _ (by have := h.index;omega) (by have := h.progress;have := h.index;omega)]
     congr 1
     have := h.progress;have := h.index;omega
-  · rw [rt.gpr .r1 (by simp)];exact h.scalar
-  · rw [rt.gpr .r2 (by simp)];exact h.quotient
+  · rw [rt.gpr .r1 (by decide)];exact h.scalar
+  · rw [rt.gpr .r2 (by decide)];exact h.quotient
   · rw [mem];exact h.outside
-  · rw [mem,rt.gpr .r7 (by simp),rt.gpr .r8 (by simp)];exact h.value
-  · exact h.rest.trans (rt.mono (by simp [roundClobbers]))
+  · rw [mem,rt.gpr .r7 (by decide),rt.gpr .r8 (by decide)];exact h.value
+  · exact h.rest.trans (rt.mono (by decide))
 
 end VG.Proof.Bignum.Arm.FiosFixed

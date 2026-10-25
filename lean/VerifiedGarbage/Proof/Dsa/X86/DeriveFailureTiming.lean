@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Invalid-domain clearing has a fixed public byte count -/
 
@@ -40,7 +41,7 @@ theorem deriveFailure_relCT (pLen qLen : Nat) (base : Addr) (size : Nat) (hz : L
   dsimp only [List.foldr]
   refine RelCT.seq (R := VG.X86.Taint.Agree failureTaint) ?_
     (RelCT.seq (checkedProgramChange (τ' := { failureTaint with flags := true })
-      (hint := .loop failureTaint (.block [])) rfl rfl) (RelCT.block_nil (fun _ _ h => h)))
+      (hint := .loop failureTaint (.block [])) (by kernel_rfl) (by kernel_rfl)) (RelCT.block_nil (fun _ _ h => h)))
   intro s t tr ur sf tf ⟨S, T, P⟩ E F
   have G : s.gpr .edi = t.gpr .edi := BitVec.eq_of_toNat_eq (S.edi_toNat.trans T.edi_toNat.symm)
   have Agree : VG.X86.Taint.Agree (workspaceTaint false) s t := by
@@ -51,7 +52,7 @@ theorem deriveFailure_relCT (pLen qLen : Nat) (base : Addr) (size : Nat) (hz : L
         .mov .ecx (.imm (BitVec.ofNat 32 (3 * pLen + 2 * qLen))), .mov .eax (.imm 0)])
       (VG.X86.Taint.Agree (workspaceTaint false)) :=
     erased_relCT _ (.block [.mov .esi (.mem (sc 0)), .mov .ecx (.imm 0), .mov .eax (.imm 0)])
-      (.block []) rfl rfl rfl rfl
+      (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
   obtain ⟨Ps, Cs, As, Ks⟩ := wp_result (deriveFailureHead_ok S hz) E
   obtain ⟨Pt, Ct, At, Kt⟩ := wp_result (deriveFailureHead_ok T hz) F
   refine ⟨(Head _ _ _ _ _ _ Agree E F).1, ?_⟩

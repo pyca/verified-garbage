@@ -124,7 +124,7 @@ theorem sized_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
         cases ert with
         | seq eit eat =>
           have initial := agreeV hs.1 ht.1 hs.2.1 ht.2.1 (hs.2.2.trans ht.2.2.symm)
-          have first := (RelCT.taint (A:=sseTaint) τV (fun _ _ h => h) beforeCheck _ _ _ _ _ _ initial ebs ebt).1
+          have first := (RelCT.taint (A:=sseTaint) τV (fun _ _ h => h) beforeCheck.choose_spec _ _ _ _ _ _ initial ebs ebt).1
           have rs := wp_result (before_ready hs len) ebs
           have rt := wp_result (before_ready ht len) ebt
           have middle := (InvTiming.dispatch_relCT _ _ _ _ _ _
@@ -134,7 +134,7 @@ theorem sized_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
           have fs := after_inverse rs is
           have ft := after_inverse rt it
           have finalAgree := agreeV fs.1 ft.1 fs.2.argsOk ft.2.argsOk (fs.2.stack.trans ft.2.stack.symm)
-          have last := (RelCT.taint (A:=sseTaint) τV (fun _ _ h => h) afterCheck _ _ _ _ _ _ finalAgree eas eat).1
+          have last := (RelCT.taint (A:=sseTaint) τV (fun _ _ h => h) afterCheck.choose_spec _ _ _ _ _ _ finalAgree eas eat).1
           exact ⟨by rw [first,middle,last],trivial⟩
 
 /-- What the runs of `sized` from the states themselves need: the inputs, `esp`, and the arguments apart

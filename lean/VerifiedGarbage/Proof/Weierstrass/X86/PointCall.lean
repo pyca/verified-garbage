@@ -196,7 +196,7 @@ theorem callB_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hsp : NoSp 
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h1, h2, h3⟩ := hr
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
-    cases r <;> simp_all
+    revert h1 h2 h3; cases r <;> decide
   · by_cases hzx : (below (s.gpr .esp) 20).Contains x 1
     · have h1 : 8192 ≤ ofs base x := by
         have hn' := hs.nowrap

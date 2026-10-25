@@ -32,26 +32,26 @@ theorem advance_inv {s0 s u : State} {x q base : BitVec 32} {size acc b mod n i 
   rintro t ⟨p0,p12,p4,count,zero,mem,rt⟩
   have small : n<2^32 := by have := ctx.workspace.nowrap;have := ctx.accFits;omega
   refine ⟨⟨bound,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩,?_⟩
-  · rw [p0,rs.gpr .r0 (by simp [pairClobbers]),inv.outPtr,Offset.add_add]
+  · rw [p0,rs.gpr .r0 (by decide),inv.outPtr,Offset.add_add]
     congr 2
     omega
-  · rw [p12,rs.gpr .r12 (by simp [pairClobbers]),inv.bPtr,Offset.add_add]
+  · rw [p12,rs.gpr .r12 (by decide),inv.bPtr,Offset.add_add]
     congr 2
     omega
-  · rw [p4,rs.gpr .r4 (by simp [pairClobbers]),inv.mPtr,Offset.add_add]
+  · rw [p4,rs.gpr .r4 (by decide),inv.mPtr,Offset.add_add]
     congr 2
     omega
-  · rw [count,rs.gpr .lr (by simp [pairClobbers]),inv.count,
+  · rw [count,rs.gpr .lr (by decide),inv.count,
       BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
     congr 1
     omega
-  · rw [rt.gpr .r1 (by simp),rs.gpr .r1 (by simp [pairClobbers]),inv.scalar]
-  · rw [rt.gpr .r2 (by simp),rs.gpr .r2 (by simp [pairClobbers]),inv.quotient]
+  · rw [rt.gpr .r1 (by decide),rs.gpr .r1 (by decide),inv.scalar]
+  · rw [rt.gpr .r2 (by decide),rs.gpr .r2 (by decide),inv.quotient]
   · rw [mem];exact outside
-  · rw [mem,rt.gpr .r7 (by simp),rt.gpr .r8 (by simp)];exact value
-  · exact inv.rest.trans ((rs.mono (by simp [pairClobbers,roundClobbers])).trans
-      (rt.mono (by simp [roundClobbers])))
-  · rw [zero,rs.gpr .lr (by simp [pairClobbers]),inv.count,
+  · rw [mem,rt.gpr .r7 (by decide),rt.gpr .r8 (by decide)];exact value
+  · exact inv.rest.trans ((rs.mono (by decide)).trans
+      (rt.mono (by decide)))
+  · rw [zero,rs.gpr .lr (by decide),inv.count,
       BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega),ofNat_beq_zero (by omega)]
     simp only [show n-(i+1)-k=0 ↔ i+k+1=n by omega]
 

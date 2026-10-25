@@ -38,15 +38,14 @@ def columnIndex : VG.X86.Taint.T := { regs := .ofList [.edi,.esi], flags := fals
 theorem columnCopy_relCT (n tab src : Nat) :
     RelCT isa (VG.X86.Taint.Agree columnIndex) (VG.Impl.Mont.X86.Comb.copyToComb n tab src)
       (VG.X86.Taint.Agree columnIndex) := by
-  exact erased_relCT _ (VG.Impl.Mont.X86.Comb.copyToComb 1 0 0)
-    (VG.Taint.hintOf taint columnIndex (VG.Impl.Mont.X86.Comb.copyToComb 1 0 0))
-    rfl rfl (by decide) (by taint_decide)
+  refine erased_relCT _ (VG.Impl.Mont.X86.Comb.copyToComb 1 0 0) ?h rfl rfl ?hh ?L
+  case L => taint_decide
+  case hh => decide
 
 theorem columnSquares_check {n e : Nat} (h : Supported n e) :
-    (VG.Taint.check taint (workspaceTaint false) (repeatSquares n 5 (rows e))
-      (VG.Taint.hintOf taint (workspaceTaint false) (repeatSquares n 5 (rows e)))).map
+    ∃ hint, (VG.Taint.check taint (workspaceTaint false) (repeatSquares n 5 (rows e)) hint).map
       (taint.le (workspaceTaint false))=some true := by
-  rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> taint_decide
+  rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> exact ⟨_, by taint_decide⟩
 
 theorem columnAdvance_relCT (base : Addr) (size i : Nat) (hz : 32≤size) (hi : i<4) :
     RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧ w32 s.mem base 28=2^i ∧ w32 t.mem base 28=2^i)
@@ -81,7 +80,7 @@ theorem publicColumnStep_relCT {n e : Nat} (h : Supported n e) (base : Addr) (m 
       (RelCT.seq (R := VG.X86.Taint.Agree columnIndex)
         (checkedProgramChange (hint := .block []) rfl rfl) (RelCT.block_nil (fun _ _ h => h)))))
   intro s t tr ur sf tf ⟨S,T⟩ Es Et
-  obtain ⟨τ,check,le⟩ := Option.map_eq_some_iff.mp (columnSquares_check h)
+  obtain ⟨τ,check,le⟩ := Option.map_eq_some_iff.mp (columnSquares_check h).choose_spec
   have CT := checkedProgramChange check le
   have DI : s.gpr .edi=t.gpr .edi := BitVec.eq_of_toNat_eq (S.ctx.scr.edi_toNat.trans T.ctx.scr.edi_toNat.symm)
   have A := agree_regs (rs := [.edi]) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact DI)

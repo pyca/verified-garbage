@@ -55,20 +55,20 @@ theorem publicPrepare_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen
   rintro u ⟨limbs, zero, memU, restU⟩
   rw [WP.seq_iff]
   refine WP.mono (setup_frame_ok u (h.buffers.workspace.congr restU.wr) hw hw' fits
-    ((restU.gpr .r0 (by simp)).trans h.ptr) limbs zero) ?_
+    ((restU.gpr .r0 (by decide)).trans h.ptr) limbs zero) ?_
   rintro v ⟨layoutV, widthV, ptrV, frameV, restV⟩
   rw [memU] at frameV
-  have rv : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans restV
+  have rv : Rest roundClobbers s v := (restU.mono (by decide)).trans restV
   have stackV := h.stack.after_workspace frameV rv
   refine WP.mono (pcInputs_ok v stackV.pcStack) ?_
   rintro t ⟨source, count, memT, restT⟩
-  have rest : Rest roundClobbers s t := rv.trans (restT.mono (by simp [roundClobbers]))
+  have rest : Rest roundClobbers s t := rv.trans (restT.mono (by decide))
   have frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by rw [memT]; exact frameV
   have stack := h.stack.after_workspace frame rest
   have buffers := h.buffers.after_workspace frame rest
   have input : PrecomputeInput base np len (Spec.Rsa.modulusWords k) k t :=
     ⟨⟨buffers.workspace, by rw [memT]; exact layoutV, by rw [memT]; exact widthV,
-      (restT.gpr .r0 (by simp)).trans ptrV,
+      (restT.gpr .r0 (by decide)).trans ptrV,
       by simpa only [VG.Proof.Mont.off, BitVec.add_zero] using stack.read (d := 0) (by decide) (by decide),
       stack.separate.sub_left (Region.sub_prefix (by decide)), stack.savedBase⟩,
       by have := buffers.minLength; omega, bytesFit, buffers.modulus.fits, buffers.modulus.read,

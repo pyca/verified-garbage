@@ -26,7 +26,7 @@ theorem sub64High_ok (s : State) :
   · rw [u3.gpr, dpVal, u2.gpr, dpVal, u2.other .r5 (by decide),
       u1.gpr, u1.other .r4 (by decide), u1.other .r5 (by decide)]
   · rw [u3.mem, u2.mem, u1.mem]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (u3.rest (by simp)))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide)))
 
 theorem sub64_ok (s : State) :
     WP isa (.block sub64) s fun t =>
@@ -38,9 +38,9 @@ theorem sub64_ok (s : State) :
   refine WP.mono (sub64High_ok u) ?_
   rintro t ⟨high, mem, rest⟩
   refine ⟨?_, mem.trans kept.mem, ?_⟩
-  · rw [high, rest.gpr .r2 (by simp), low, borrow, kept.regs .r4 (by simp)]
+  · rw [high, rest.gpr .r2 (by decide), low, borrow, kept.regs .r4 (by decide)]
     exact sub64_value _ _ _
   · exact (show Rest [.r2, .r5] s u from ⟨kept.regs, kept.rd, kept.wr, kept.sp⟩).mono
-      (by simp) |>.trans (rest.mono (by simp))
+      (by decide) |>.trans (rest.mono (by decide))
 
 end VG.Proof.Bignum.Arm

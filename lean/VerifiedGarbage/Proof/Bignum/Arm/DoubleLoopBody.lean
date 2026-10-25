@@ -31,7 +31,7 @@ theorem doubleLoopMultiply_ok (s : State) {base : BitVec 32} {len w c : Nat}
     refine ⟨⟨h.workspace.congr rest.wr, ?_, ?_, ?_, out, scalar, operand, ?_, ?_⟩, ?_⟩
     · rw [mem]; exact h.layout
     · rw [mem]; exact h.width
-    · exact (rest.gpr .r0 (by simp)).trans h.ptr
+    · exact (rest.gpr .r0 (by decide)).trans h.ptr
     · rw [mem]; exact h.inverse
     · rw [mem]; exact h.operand
     · rw [mem]; exact h.two
@@ -43,7 +43,7 @@ theorem doubleLoopMultiply_ok (s : State) {base : BitVec 32} {len w c : Nat}
     (by rw [mem, rest.sp]; exact h.saved)) ?_
   rintro t ⟨bound, value, keeps, frame, keep, ptr⟩
   rw [mem] at bound value keeps frame
-  have fullRest := (rest.mono (by simp [roundClobbers])).trans keep
+  have fullRest := (rest.mono (by decide)).trans keep
   have state := h.after_double bound keeps frame fullRest ptr
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have oldM := keeps_array_num keeps fits
@@ -66,6 +66,6 @@ theorem doubleLoopBody_ok (s : State) {base : BitVec 32} {len w c : Nat}
   rintro t ⟨mem, zero, keep⟩
   obtain ⟨state, frameT, number, modT⟩ := ready.after_count mem keep
   exact ⟨state, number.trans value, modT.trans modulus, zero, frame.trans frameT,
-    rest.trans (keep.mono (by simp [roundClobbers]))⟩
+    rest.trans (keep.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

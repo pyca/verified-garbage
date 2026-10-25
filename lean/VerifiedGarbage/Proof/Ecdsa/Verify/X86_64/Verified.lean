@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.VerifyErased
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
@@ -99,8 +100,8 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyP256.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
-  verify_x86_of (p256_ok hI) hL (p256_tbls hL hT) rfl (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
-    (by lit_decide) (by lit_decide) s hs
+  verify_x86_of (p256_ok hI) hL (p256_tbls hL hT) rfl (fun _ => pre_of) (fun _ _ => id) rfl verifyP256_noRsp
+    verifyP256_inlineOk verifyP256_noMxcsr s hs
 
 theorem verify_checks : VerifyChecks p256 p256Table where
   comb := {
@@ -175,7 +176,7 @@ theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target verifyP256
       (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts) 8) :=
-  Verified.of_inline (k₀ := verifyK₀) (by lit_decide) (fun s hs => verify_x86 hL hT hI s (implies.pre _ hs))
+  Verified.of_inline (k₀ := verifyK₀) verifyP256_inlineOk (fun s hs => verify_x86 hL hT hI s (implies.pre _ hs))
     (verify_ct hL hT hI) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
 

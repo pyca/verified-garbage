@@ -31,11 +31,10 @@ def publicPowerBranches (M : Mod) (acc out : Nat) : Prog isa :=
 theorem publicPowerBranches_relCT (M : Mod) (acc out : Nat) :
     RelCT isa (VG.X86.Taint.Agree publicPowerFlags) (publicPowerBranches M acc out)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
-  apply erased_relCT (publicPowerBranches M acc out)
-    (publicPowerBranches {n:=1,mo:=0,tmp:=16,minv:=0} 64 128)
-    (VG.Taint.hintOf taint publicPowerFlags (publicPowerBranches {n:=1,mo:=0,tmp:=16,minv:=0} 64 128))
-    rfl rfl rfl
-  taint_decide
+  refine erased_relCT (publicPowerBranches M acc out)
+    (publicPowerBranches {n:=1,mo:=0,tmp:=16,minv:=0} 64 128) ?h rfl rfl ?hh ?L
+  case L => taint_decide
+  case hh => rfl
 
 theorem publicPower_relCT (M : Mod) (acc out : Nat) (base : Addr) (size : Nat)
     (fit : M.mo+4*(2*M.n-1)+4≤size) :
@@ -53,10 +52,9 @@ theorem repeatSquaresAt_relCT (M : Mod) (inv acc out count : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false))
       (repeatSquaresWith (mul M inv acc out out out) count)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
-  apply erased_relCT (repeatSquaresWith (mul M inv acc out out out) count)
-    (repeatSquaresWith (mul {n:=1,mo:=0,tmp:=16,minv:=0} 4 64 128 128 128) 6)
-    (VG.Taint.hintOf taint (workspaceTaint false)
-      (repeatSquaresWith (mul {n:=1,mo:=0,tmp:=16,minv:=0} 4 64 128 128 128) 6)) rfl rfl rfl
-  taint_decide
+  refine erased_relCT (repeatSquaresWith (mul M inv acc out out out) count)
+    (repeatSquaresWith (mul {n:=1,mo:=0,tmp:=16,minv:=0} 4 64 128 128 128) 6) ?h rfl rfl ?hh ?L
+  case L => taint_decide
+  case hh => rfl
 
 end VG.Proof.Mont.X86.Dynamic

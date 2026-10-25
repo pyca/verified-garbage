@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.OmegaNear
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxLazy8
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
@@ -193,9 +194,9 @@ theorem group_ok {s₀ t : State} {B : Addr} {Z eT eN eo i h : Nat} {bit : Bool}
 /-- `0 - x` for a word `x ≤ 1` is the mask of `x = 1`. -/
 theorem neg_bit_mask {x : BitVec 64} (h : x.toNat ≤ 1) : 0 - x = mask (decide (x.toNat = 1)) := by
   rcases Nat.lt_or_ge x.toNat 1 with h0 | h1
-  · have : x = 0 := BitVec.eq_of_toNat_eq (by simp; omega_arith)
+  · have : x = 0 := BitVec.eq_of_toNat_eq (by simp; omega_near)
     subst this; rfl
-  · have : x = 1 := BitVec.eq_of_toNat_eq (by simp; omega_arith)
+  · have : x = 1 := BitVec.eq_of_toNat_eq (by simp; omega_near)
     subst this; rfl
 
 /-- `lazyLoads co`: `w`, and the bases of `T` and `o`. -/
@@ -267,17 +268,17 @@ theorem lazy8V_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
     · exact h
     · have : 2 ^ (64 * w) * 2 ^ 64 ≤ 2 ^ (64 * w) * ((word s.mem B (slot w aTmp + 8 * w)).toNat +
           2 ^ 64 * (word s.mem B (slot w aTmp + 8 * w + 8)).toNat) :=
-        Nat.mul_le_mul_left _ (by have := Nat.mul_le_mul_left (2 ^ 64) h; omega_arith)
+        Nat.mul_le_mul_left _ (by have := Nat.mul_le_mul_left (2 ^ 64) h; omega_near)
       have : 2 ^ (64 * w) * 2 ^ 64 ≥ 2 * 2 ^ (64 * w) := by
         rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by decide)
-      omega_arith
+      omega_near
   rw [hT1, Nat.mul_zero, Nat.add_zero] at hTlt
   have hTw : (word s.mem B (slot w aTmp + 8 * w)).toNat ≤ 1 := by
     rcases Nat.lt_or_ge (word s.mem B (slot w aTmp + 8 * w)).toNat 2 with h | h
-    · omega_arith
+    · omega_near
     · have : 2 ^ (64 * w) * 2 ≤ 2 ^ (64 * w) * (word s.mem B (slot w aTmp + 8 * w)).toNat :=
         Nat.mul_le_mul_left _ h
-      omega_arith
+      omega_near
   generalize hbit : decide ((word s.mem B (slot w aTmp + 8 * w)).toNat = 1) = bit
   unfold Adx.lazy8
   refine WP.seq (WP.mono (lazyLoads_ok hs hdi hH hZ (hv.at po) (hv.lt po))
@@ -314,7 +315,7 @@ theorem lazy8V_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
     refine WP.mono (count8_ok t₂ (r := .r12) (by decide) ((k12.gpr (by decide)).trans hI.r14)
       (N := n) (by rw [(k12.gpr (by decide) : t₂.gpr .r12 = t.gpr .r12), t12, hwN]) (by omega_using [hw, hi, hwN])
       (by omega_using [hw, hwN])) fun t' ⟨hz, h14', hm', k'⟩ => ⟨hz, ?_, ?_, h14'⟩
-    · rw [show 8 * (i + 1) = 8 * i + 4 + 4 by omega_arith]
+    · rw [show 8 * (i + 1) = 8 * i + 4 + 4 by omega_near]
       obtain ⟨c₂, b₂, v₂⟩ := L₂.val
       exact ⟨L₂.scr.congr k'.2.2, by rw [hm']; exact L₂.out,
         ⟨c₂, (k'.gpr (by decide)).trans b₂, by rw [hm']; exact v₂⟩⟩
@@ -324,7 +325,7 @@ theorem lazy8V_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
     rw [← hwN, hm₁] at hval
     have hout := hI.lr.out
     rw [← hwN, hm₁] at hout
-    refine ⟨?_, Arrays.of_outside (j := o) (by simp) hout (Nat.le_refl _) (by omega_arith),
+    refine ⟨?_, Arrays.of_outside (j := o) (by simp) hout (Nat.le_refl _) (by omega_near),
       (k₁.trans hI.keep).mono (by simp [lazyRegs, mmRegs])⟩
     rw [wv_top2, hT1, Nat.mul_zero, Nat.add_zero]
     refine VG.Proof.Bignum.lazy_sub (wv_lt _ _ _ _) (Bool.toNat_le c) hTw hTlt ?_
@@ -332,7 +333,7 @@ theorem lazy8V_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
     simp only [mv] at hval
     by_cases h1 : (word s.mem B (slot w aTmp + 8 * w)).toNat = 1
     · simp only [h1, decide_true, ite_true, Nat.one_mul] at hval ⊢; exact hval
-    · have h0 : (word s.mem B (slot w aTmp + 8 * w)).toNat = 0 := by omega_arith
+    · have h0 : (word s.mem B (slot w aTmp + 8 * w)).toNat = 0 := by omega_near
       simp only [h0, Nat.zero_mul, Nat.add_zero] at hval ⊢
       simpa using hval
 

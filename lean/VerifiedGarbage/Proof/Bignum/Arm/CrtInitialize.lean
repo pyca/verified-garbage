@@ -28,11 +28,11 @@ theorem crt_initialize_ok (s : State) {base np : BitVec 32} {size w k : Nat} {nb
   rintro u ⟨count, zero, memU, restU⟩
   rw [h.width] at count
   refine WP.mono (crt_setupAll_ok u (h.context.congr restU.wr)
-    ((restU.gpr .r0 (by simp)).trans h.ptr) count zero) ?_
+    ((restU.gpr .r0 (by decide)).trans h.ptr) count zero) ?_
   rintro t ⟨main, p, q, ptr, frame, restT⟩
   rw [memU] at frame
   have frame := crt_regions_frame h.workspace h.storageFits frame
-  have rest : Rest roundClobbers s t := (restU.mono (by simp [roundClobbers])).trans restT
+  have rest : Rest roundClobbers s t := (restU.mono (by decide)).trans restT
   have source := h.source.after_frame frame rest
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stackSeparate)
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.sourceSeparate)

@@ -54,6 +54,6 @@ theorem crt_factorProduct_ok (s : State) {base : BitVec 32} {size o a b cp cq w 
       omega
     · exact hx _ (by simp)
   exact ⟨value, (Outs.of_outside outsideU (by simp)).trans ((Outs.of_outside outsideV (by simp)).trans widened),
-    ptrT, frameU.trans (frameV.trans frameT), restU.trans ((restV.mono (by simp [roundClobbers])).trans restT)⟩
+    ptrT, frameU.trans (frameV.trans frameT), restU.trans ((restV.mono (by decide)).trans restT)⟩
 
 end VG.Proof.Bignum.Arm

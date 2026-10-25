@@ -41,21 +41,21 @@ theorem first_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
       (by rw [h.other .r0 (by decide)]; simpa only [Nat.add_zero] using ws.ea ptr (imm:=0) (by omega))
       (by rw [h.rd,h.wr]; exact ws.read accFit) fun v k => WP.block_nil ?_
     exact ⟨(k.other .r2 (by decide)).trans h.gpr,
-      by rw [k.gpr,h.mem],k.mem.trans h.mem,(h.rest (by simp)).trans (k.rest (by simp))⟩
+      by rw [k.gpr,h.mem],k.mem.trans h.mem,(h.rest (by decide)).trans (k.rest (by decide))⟩
   refine WP.mono args ?_
   rintro u ⟨input,accumulator,memU,restU⟩
   rw [WP.seq_iff]
   refine WP.mono (mac_ok u) ?_
   rintro v ⟨value,frame⟩
   have r0 : v.gpr .r0=base+BitVec.ofNat 32 acc :=
-    (frame.regs .r0 (by simp [clobbers])).trans ((restU.gpr .r0 (by simp)).trans ptr)
+    (frame.regs .r0 (by decide)).trans ((restU.gpr .r0 (by decide)).trans ptr)
   have r1 : v.gpr .r1=s.gpr .r1 :=
-    (frame.regs .r1 (by simp [clobbers])).trans (restU.gpr .r1 (by simp))
+    (frame.regs .r1 (by decide)).trans (restU.gpr .r1 (by decide))
   have r12 : v.gpr .r12=base+BitVec.ofNat 32 mod :=
-    (frame.regs .r12 (by simp [clobbers])).trans ((restU.gpr .r12 (by simp)).trans source)
+    (frame.regs .r12 (by decide)).trans ((restU.gpr .r12 (by decide)).trans source)
   have lr : v.gpr .lr=BitVec.ofNat 32 n :=
-    (frame.regs .lr (by simp [clobbers])).trans ((restU.gpr .lr (by simp)).trans count)
-  rw [restU.gpr .r1 (by simp),input,accumulator,restU.gpr .r11 (by simp),carry] at value
+    (frame.regs .lr (by decide)).trans ((restU.gpr .lr (by decide)).trans count)
+  rw [restU.gpr .r1 (by decide),input,accumulator,restU.gpr .r11 (by decide),carry] at value
   simp only [show (0:BitVec 32).toNat=0 from rfl,Nat.add_zero] at value
   have high : 2^32*(v.gpr .r4).toNat=(s.gpr .r1).toNat*w32 s.mem (State.addr base) mod+
       w32 s.mem (State.addr base) acc := by
@@ -63,9 +63,9 @@ theorem first_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
     have low := (v.gpr .r3).isLt
     dsimp only [w32] at cancel ⊢
     omega
-  have kept : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans
+  have kept : Rest roundClobbers s v := (restU.mono (by decide)).trans
     ((show Rest clobbers u v from ⟨frame.regs,frame.rd,frame.wr,frame.sp⟩).mono
-      (by simp [clobbers,roundClobbers]))
+      (by decide))
   unfold VG.Impl.Bignum.Arm.FusedReduction.firstNext
   refine wp_mov (op2_reg _ _) fun a ha => ?_
   refine wp_dp (op2_imm (by decide)) fun b hb => ?_
@@ -79,7 +79,7 @@ theorem first_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
   · rw [ht.other .r1 (by decide),hb.other .r1 (by decide),ha.other .r1 (by decide)]; exact r1
   · rw [ht.other .r11 (by decide),hb.other .r11 (by decide),ha.gpr]; exact high
   · rw [ht.mem,hb.mem,ha.mem,frame.mem,memU]
-  · exact kept.trans ((ha.rest (by simp [roundClobbers])).trans
-      ((hb.rest (by simp [roundClobbers])).trans (ht.rest (by simp [roundClobbers]))))
+  · exact kept.trans ((ha.rest (by decide)).trans
+      ((hb.rest (by decide)).trans (ht.rest (by decide))))
 
 end VG.Proof.Bignum.Arm.FusedReduction

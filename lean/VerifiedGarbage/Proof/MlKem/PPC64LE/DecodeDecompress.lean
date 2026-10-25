@@ -39,6 +39,8 @@ public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Spec.MlKem
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem_decode_decompress`
@@ -92,7 +94,7 @@ theorem body1_ok (h3 : s.gpr .r3 = x) (h6 : s.gpr .r6 = y) (h11 : s.gpr .r11 = c
   have o6 := oc 6 (by decide)
   have o7 := oc 7 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at o0 o1 o2 o3 o4 o5 o6 o7
-  crun [dd1Body, dd1Bit, decompressTo, Keep, dec, h3, h6, h11, h9, ib, o0, o1, o2, o3, o4, o5, o6, o7,
+  crunr [dd1Body, dd1Bit, decompressTo, Keep, dec, h3, h6, h11, h9, ib, o0, o1, o2, o3, o4, o5, o6, o7,
     preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append,
     List.range, List.range.loop, List.flatMap_cons, List.flatMap_nil, List.append_nil]
   simp [Mem.writeW, setWidth_zero_append]
@@ -102,7 +104,7 @@ theorem body4_ok (h3 : s.gpr .r3 = x) (h6 : s.gpr .r6 = y) (h11 : s.gpr .r11 = c
     WP isa (.block dd4Body) s fun s' =>
       s'.gpr .r3 = x + 1 ∧ s'.gpr .r6 = y + 8 ∧ s'.gpr .r11 = c - 1 ∧ Keep s s' ∧
       s'.mem = ((s.mem.writeW y ((dec 4 ((s.mem x).setWidth 64 <<< 60 >>> 60)).setWidth 32)).writeW (y + BitVec.ofNat 64 4) ((dec 4 ((s.mem x).setWidth 64 >>> 4)).setWidth 32)) := by
-  crun [dd4Body, decompressTo, Keep, dec, h3, h6, h11, h9, ib, o0, o1,
+  crunr [dd4Body, decompressTo, Keep, dec, h3, h6, h11, h9, ib, o0, o1,
     preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, setWidth_zero_append]
 
@@ -122,7 +124,7 @@ theorem body10_ok (h3 : s.gpr .r3 = x) (h6 : s.gpr .r6 = y) (h11 : s.gpr .r11 = 
   have o2 := oc 2 (by decide)
   have o3 := oc 3 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at b0 o0 o1 o2 o3
-  crun [dd10Body, dd10Byte, dd10Field, decompressTo, Keep, dec, G10, h3, h6, h11, h9, b0, b1, b2, b3, b4,
+  crunr [dd10Body, dd10Byte, dd10Field, decompressTo, Keep, dec, G10, h3, h6, h11, h9, b0, b1, b2, b3, b4,
     o0, o1, o2, o3, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append,
     List.nil_append]
   simp [Mem.writeW, setWidth_zero_append]
@@ -133,6 +135,15 @@ end
 
 theorem byte64 (b : Byte) : (b.setWidth 64).toNat = b.toNat := by
   rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := b.isLt; omega_arith)
+
+/-- A byte added above the low `k` bits of a doubleword whose value fits in them. -/
+theorem toNat_add_shl {a : BitVec 64} {b : Byte} {k n : Nat} (ha : a.toNat = n) (hn : n < 2 ^ k)
+    (hk : 2 ^ k * 2 ^ 8 ≤ 2 ^ 64) : (a + b.setWidth 64 <<< k).toNat = n + 2 ^ k * b.toNat := by
+  have hb := b.isLt
+  have hl : 2 ^ k * (b.toNat + 1) ≤ 2 ^ k * 2 ^ 8 := Nat.mul_le_mul_left _ hb
+  rw [Nat.mul_succ] at hl
+  rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, byte64, Nat.shiftLeft_eq, ha, Nat.mul_comm b.toNat,
+    Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- The `w`-bit field of `c` at bit `p`, as a pair of shifts extracts it. -/
 theorem ext_toNat (c : BitVec 64) {w p : Nat} (hp : p + w ≤ 64) :
@@ -168,14 +179,9 @@ theorem g10_toNat (s : State) (x : BitVec 64) :
   have b2 := (s.mem (x + BitVec.ofNat 64 2)).isLt
   have b3 := (s.mem (x + BitVec.ofNat 64 3)).isLt
   have b4 := (s.mem (x + BitVec.ofNat 64 4)).isLt
-  simp only [G10, BitVec.toNat_add, BitVec.toNat_shiftLeft, byte64, Nat.shiftLeft_eq]
-  generalize (s.mem x).toNat = a0 at *
-  generalize (s.mem (x + BitVec.ofNat 64 1)).toNat = a1 at *
-  generalize (s.mem (x + BitVec.ofNat 64 2)).toNat = a2 at *
-  generalize (s.mem (x + BitVec.ofNat 64 3)).toNat = a3 at *
-  generalize (s.mem (x + BitVec.ofNat 64 4)).toNat = a4 at *
-  simp only [Nat.reducePow] at *
-  omega_arith
+  simp only [Nat.reducePow] at b0 b1 b2 b3 b4
+  refine toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (byte64 _) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)
+  all_goals (simp only [Nat.reducePow]; omega_arith)
 
 theorem bit_val (b : Byte) {j : Nat} (hj : j < 8) :
     (dec 1 (b.setWidth 64 <<< (64 - 1 - j) >>> (64 - 1))).setWidth 32 =

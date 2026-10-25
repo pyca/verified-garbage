@@ -37,6 +37,6 @@ theorem r2NormalizedCountState_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (r2NormalizedCount_ok s h.workspace size h.ptr header.count) ?_
   rintro u ⟨mem, keep⟩
   obtain ⟨next, frame, number, modulus⟩ := loop.after_count mem keep
-  exact ⟨next, number.trans top, modulus, frame, keep.mono (by simp [roundClobbers])⟩
+  exact ⟨next, number.trans top, modulus, frame, keep.mono (by decide)⟩
 
 end VG.Proof.Bignum.Arm

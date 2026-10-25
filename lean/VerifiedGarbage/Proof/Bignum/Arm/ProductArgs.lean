@@ -28,17 +28,17 @@ theorem productArgs_ok (s : State) {base : BitVec 32} {size tmp a b acc n : Nat}
   have w1 := ws.congr u1.wr
   refine wp_ldr (a := off (State.addr base) a) (by decide)
     (w1.ea (u1.gpr.trans ma) (by omega)) (w1.read ha) fun s2 u2 => ?_
-  have k2 : Rest [.r1] s s2 := (u1.rest (by simp)).trans (u2.rest (by simp))
-  have p2 : s2.gpr .r0 = base + BitVec.ofNat 32 tmp := (k2.gpr .r0 (by simp)).trans ptr
+  have k2 : Rest [.r1] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
+  have p2 : s2.gpr .r0 = base + BitVec.ofNat 32 tmp := (k2.gpr .r0 (by decide)).trans ptr
   have w2 := ws.congr k2.wr
   refine wp_ldr (a := off (State.addr base) tmp) (by decide) (w2.ea p2 (by omega))
     (w2.read (by omega)) fun s3 u3 => ?_
-  have k3 : Rest [.r1, .lr] s s3 := (k2.mono (by simp_all)).trans (u3.rest (by simp))
-  have p3 : s3.gpr .r0 = base + BitVec.ofNat 32 tmp := (k3.gpr .r0 (by simp)).trans ptr
+  have k3 : Rest [.r1, .lr] s s3 := (k2.mono (by simp_all)).trans (u3.rest (by decide))
+  have p3 : s3.gpr .r0 = base + BitVec.ofNat 32 tmp := (k3.gpr .r0 (by decide)).trans ptr
   have w3 := ws.congr k3.wr
   refine wp_ldr (by decide) (w3.ea p3 (by omega)) (w3.read (by omega)) fun s4 u4 => ?_
-  have k4 : Rest [.r1, .lr, .r12] s s4 := (k3.mono (by simp_all)).trans (u4.rest (by simp))
-  have p4 : s4.gpr .r0 = base + BitVec.ofNat 32 tmp := (k4.gpr .r0 (by simp)).trans ptr
+  have k4 : Rest [.r1, .lr, .r12] s s4 := (k3.mono (by simp_all)).trans (u4.rest (by decide))
+  have p4 : s4.gpr .r0 = base + BitVec.ofNat 32 tmp := (k4.gpr .r0 (by decide)).trans ptr
   have w4 := ws.congr k4.wr
   refine wp_ldr (by decide) (w4.ea p4 (by omega)) (w4.read (by omega)) fun s5 u5 => ?_
   refine wp_mov (op2_imm (by decide)) fun t u6 => WP.block_nil ?_
@@ -50,6 +50,6 @@ theorem productArgs_ok (s : State) {base : BitVec 32} {size tmp a b acc n : Nat}
   · rw [u6.other .lr (by decide), u5.other .lr (by decide), u4.other .lr (by decide),
       u3.gpr, u2.mem, u1.mem, mn]
   · rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  · exact (k4.mono (by simp_all)).trans ((u5.rest (by simp)).trans (u6.rest (by simp)))
+  · exact (k4.mono (by simp_all)).trans ((u5.rest (by decide)).trans (u6.rest (by decide)))
 
 end VG.Proof.Bignum.Arm

@@ -72,22 +72,22 @@ theorem csub_ok (s : State) {base : BitVec 32} {size out acc mod tmp n : Nat}
     rw [choice]
     change (if (u.gpr .r11).toNat ≤ w32 u.mem (State.addr base) (acc + 4 * n) then 0 else 1) = _
     rw [oldTop]
-  have ksv : Rest subLoopClobbers s v := inv.rest.trans (keepv.mono (by simp [subLoopClobbers]))
+  have ksv : Rest subLoopClobbers s v := inv.rest.trans (keepv.mono (by decide))
   rw [WP.seq_iff]
   refine WP.mono (selectPrepare_ok v) ?_
   rintro w ⟨wp0, wp10, wp12, wc, keepw⟩
   have kw : Rest [.r0, .r10, .r12, .lr] v w := ⟨keepw.regs, keepw.rd, keepw.wr, keepw.sp⟩
-  have ksw : Rest subLoopClobbers s w := ksv.trans (kw.mono (by simp [subLoopClobbers]))
+  have ksw : Rest subLoopClobbers s w := ksv.trans (kw.mono (by decide))
   have memw : w.mem = u.mem := keepw.mem.trans memv
-  have saved : v.gpr .r7 = BitVec.ofNat 32 n := (ksv.gpr .r7 (by simp [subLoopClobbers])).trans savedCount
+  have saved : v.gpr .r7 = BitVec.ofNat 32 n := (ksv.gpr .r7 (by decide)).trans savedCount
   have bp0 : w.gpr .r0 = base + BitVec.ofNat 32 out := by
-    rw [wp0, ksv.gpr .r9 (by simp [subLoopClobbers]), p9]
+    rw [wp0, ksv.gpr .r9 (by decide), p9]
   have bp10 : w.gpr .r10 = base + BitVec.ofNat 32 tmp := by
-    rw [wp10, keepv.gpr .r0 (by simp), inv.outPtr, saved, rewind32]
+    rw [wp10, keepv.gpr .r0 (by decide), inv.outPtr, saved, rewind32]
   have bp12 : w.gpr .r12 = base + BitVec.ofNat 32 acc := by
-    rw [wp12, keepv.gpr .r10 (by simp), inv.aPtr, saved, rewind32]
+    rw [wp12, keepv.gpr .r10 (by decide), inv.aPtr, saved, rewind32]
   have bc : w.gpr .lr = BitVec.ofNat 32 n := wc.trans saved
-  have bit : w.gpr .r11 = v.gpr .r11 := keepw.regs .r11 (by simp)
+  have bit : w.gpr .r11 = v.gpr .r11 := keepw.regs .r11 (by decide)
   have selectCtx : SubCtx w base size out tmp acc n :=
     ⟨nowrap, ctx.outFits, ctx.sub.outFits, ctx.sub.aFits, ctx.sepOutTmp, ctx.sepOutAcc,
       by rw [ksw.wr]; exact ctx.sub.writable⟩
@@ -102,6 +102,6 @@ theorem csub_ok (s : State) {base : BitVec 32} {size out acc mod tmp n : Nat}
       rw [memw]
       exact Outs.of_outside inv.outside (by simp)
     exact first.trans (Outs.of_outside sel.outside (by simp))
-  · exact ksw.trans (sel.rest.mono (by simp [subLoopClobbers, selectLoopClobbers]))
+  · exact ksw.trans (sel.rest.mono (by decide))
 
 end VG.Proof.Bignum.Arm

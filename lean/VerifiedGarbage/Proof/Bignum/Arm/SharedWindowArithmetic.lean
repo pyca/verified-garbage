@@ -35,20 +35,20 @@ theorem sharedWindowInit_ok {base : BitVec 32} {len w : Nat} {P : State → Prop
   rintro u ⟨readyU, oneU, _, keepsU, frameU, restU⟩
   change numAt u.mem (State.addr base) w 7 = 1 at oneU
   have modU := (h.after_array (by decide) keepsU frameU restU readyU.ptr).2.trans modulus
-  have inputU := (keeps_array_num keepsU fits (op 1 (by simp)) (by decide)).trans input
-  have r2U := keeps_array_num keepsU fits (op 4 (by simp)) (by decide)
+  have inputU := (keeps_array_num keepsU fits (op 1 (by decide)) (by decide)).trans input
+  have r2U := keeps_array_num keepsU fits (op 4 (by decide)) (by decide)
   have pU := K.stable frameU restU hp
   rw [WP.seq_iff]
-  refine WP.mono (K.op_ok u 6 4 7 readyU pU (op 6 (by simp)) (op 4 (by simp)) (op 7 (by simp)) (by decide)
+  refine WP.mono (K.op_ok u 6 4 7 readyU pU (op 6 (by decide)) (op 4 (by decide)) (op 7 (by decide)) (by decide)
     (by rw [oneU]; exact readyU.modulus)) ?_
   rintro v ⟨readyV, modV, boundV, valueV, keepsV, pV, frameV, restV⟩
   rw [modU] at modV boundV valueV
   rw [oneU, Nat.mul_one, r2U, r2value] at valueV
   have powerV := mont_cancel coprime valueV
-  have oneV := (keeps_array_num keepsV fits (op 7 (by simp)) (by decide)).trans oneU
-  have inputV := (keeps_array_num keepsV fits (op 1 (by simp)) (by decide)).trans inputU
-  have r2V := (keeps_array_num keepsV fits (op 4 (by simp)) (by decide)).trans r2U
-  refine WP.mono (K.op_ok v 5 1 4 readyV pV (op 5 (by simp)) (op 1 (by simp)) (op 4 (by simp)) (by decide)
+  have oneV := (keeps_array_num keepsV fits (op 7 (by decide)) (by decide)).trans oneU
+  have inputV := (keeps_array_num keepsV fits (op 1 (by decide)) (by decide)).trans inputU
+  have r2V := (keeps_array_num keepsV fits (op 4 (by decide)) (by decide)).trans r2U
+  refine WP.mono (K.op_ok v 5 1 4 readyV pV (op 5 (by decide)) (op 1 (by decide)) (op 4 (by decide)) (by decide)
     (by rw [modV, r2V]; exact r2bound)) ?_
   rintro t ⟨readyT, modT, boundT, valueT, keepsT, pT, frameT, restT⟩
   rw [modV] at modT boundT valueT
@@ -56,9 +56,9 @@ theorem sharedWindowInit_ok {base : BitVec 32} {len w : Nat} {P : State → Prop
   have encoded : numAt t.mem (State.addr base) w 5 % M = x * 2 ^ (64 * w) % M := by
     apply mont_cancel coprime
     rw [valueT, Nat.mul_mod, r2value, ← Nat.mul_mod, Nat.mul_assoc]
-  have powerT := keeps_array_num keepsT fits (op 6 (by simp)) (by decide)
-  have oneT := (keeps_array_num keepsT fits (op 7 (by simp)) (by decide)).trans oneV
-  have r2T := (keeps_array_num keepsT fits (op 4 (by simp)) (by decide)).trans r2V
+  have powerT := keeps_array_num keepsT fits (op 6 (by decide)) (by decide)
+  have oneT := (keeps_array_num keepsT fits (op 7 (by decide)) (by decide)).trans oneV
+  have r2T := (keeps_array_num keepsT fits (op 4 (by decide)) (by decide)).trans r2V
   have r2Exact : numAt s.mem (State.addr base) w 4 = 2 ^ (128 * w) % M := by
     rw [Nat.mod_eq_of_lt r2bound, ← Nat.pow_add,
       show 64 * w + 64 * w = 128 * w by omega] at r2value

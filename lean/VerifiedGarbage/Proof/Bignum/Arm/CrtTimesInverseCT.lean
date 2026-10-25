@@ -39,22 +39,22 @@ theorem crt_timesInverse_ct {base src : BitVec 32} {len w k M1 M2 : Nat} {bs1 bs
     have positive : 0 < M := by have := h.ready.modulus; rw [h.modulus] at this; omega
     refine WP.mono (savedOperand_ok s h.ready h.source (by decide : 1 < 8) (by decide) h.positive h.fits) ?_
     rintro t ⟨ready, _, keeps, _, _⟩
-    have modulus := (keeps_array_num keeps fits (op 0 (by simp)) (by decide)).trans h.modulus
-    have r2 := (keeps_array_num keeps fits (op 4 (by simp)) (by decide)).trans h.r2
+    have modulus := (keeps_array_num keeps fits (op 0 (by decide)) (by decide)).trans h.modulus
+    have r2 := (keeps_array_num keeps fits (op 4 (by decide)) (by decide)).trans h.r2
     exact ⟨ready, by rw [modulus, r2]; exact Nat.mod_lt _ positive⟩
   have first := (relCT_keep_sp load (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨loadWP s h.1, loadWP t h.2.1⟩)
   have encode : RelCT isa (fun (s t : State) => s.sp = t.sp ∧ Q 4 s ∧ Q 4 t)
       (montOp 1 1 4) (fun _ _ => True) :=
-    (montOp_ct (op 1 (by simp)) (op 1 (by simp)) (op 4 (by simp)) fit).mono
+    (montOp_ct (op 1 (by decide)) (op 1 (by decide)) (op 4 (by decide)) fit).mono
       (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ _ => trivial)
   have encodeWP (s : State) (h : Q 4 s) : WP isa (montOp 1 1 4) s (Q 1) := by
-    refine WP.mono (montOp_ok s h.1 (op 1 (by simp)) (op 1 (by simp)) (op 4 (by simp)) (by decide) h.2) ?_
+    refine WP.mono (montOp_ok s h.1 (op 1 (by decide)) (op 1 (by decide)) (op 4 (by decide)) (by decide) h.2) ?_
     rintro t ⟨ready, modulus, bound, _, _, _, _⟩
     exact ⟨ready, by rw [modulus]; exact bound⟩
   have second := (relCT_keep_sp encode (fun _ _ h => h.1)).wp
     (fun s t h => ⟨encodeWP s h.2.1, encodeWP t h.2.2⟩)
-  exact first.seq (second.seq ((montOp_ct (op 5 (by simp)) (op 5 (by simp)) (op 1 (by simp)) fit).mono
+  exact first.seq (second.seq ((montOp_ct (op 5 (by decide)) (op 5 (by decide)) (op 1 (by decide)) fit).mono
     (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ _ => trivial)))
 
 end VG.Proof.Bignum.Arm

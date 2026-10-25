@@ -55,7 +55,7 @@ theorem pd_entry_ready (s : State) {base dst np ep xp : BitVec 32} {len k eLen N
       exact InRegions_append_cons.mpr (Or.inr bytes.read)
     · exact (rsa_bytes_frame frame (by have := bytes.fits; omega)
         (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep.symm)).trans bytes.bytes
-  refine ⟨⟨?_, ?_, ptr, h.sourceFit, ?_, h.modulusSeparate.symm, ?_, ?_, ?_⟩, frame, ?_, rest.mono (by simp [roundClobbers])⟩
+  refine ⟨⟨?_, ?_, ptr, h.sourceFit, ?_, h.modulusSeparate.symm, ?_, ?_, ?_⟩, frame, ?_, rest.mono (by decide)⟩
   · refine ⟨⟨h.workspace.nowrap, ?_⟩, h.minLength, h.maxLength, h.space, h.exponentPositive, h.exponentFits,
       keepBytes h.exponent h.stackExponent, keepBytes h.input h.stackInput,
       h.outputFit, ?_, h.exponentSeparate, h.inputSeparate, h.outputSeparate, ?_, ?_, ?_⟩
@@ -74,7 +74,7 @@ theorem pd_entry_ready (s : State) {base dst np ep xp : BitVec 32} {len k eLen N
     · rw [rest.sp]; exact savedBase
     · rw [rest.sp]; exact savedOutput.trans h.output
     · rw [rest.sp, savedSource]
-      exact (savedAll (.r2, 8) (by simp [pcAllSaved])).trans h.source
+      exact (savedAll (.r2, 8) (by decide)).trans h.source
     · rw [rest.sp]; exact savedCount.trans h.count
     · rw [rest.sp, outside_read32 outside (d := 56) (by decide) (by decide)]
       change (pcPushed s).mem.readW (off (State.addr (pcPushed s).sp) 56) 32 = ep

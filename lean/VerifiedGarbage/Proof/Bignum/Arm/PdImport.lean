@@ -66,13 +66,13 @@ theorem pdImport_ok (s : State) {base pp : BitVec 32} {len w : Nat}
     ((moved.other .r4 (by decide)).trans h.source)) ?_
   rintro v ⟨readyV, first, _, frameV, restV, sourceV⟩
   rw [moved.mem] at first frameV
-  have rv : Rest roundClobbers s v := (moved.rest (by simp [roundClobbers])).trans restV
+  have rv : Rest roundClobbers s v := (moved.rest (by decide)).trans restV
   have header := nativeHeader_of_layout v.mem base nowrap (Nat.le_refl _) readyV.layout
   rw [readyV.width] at header
   rw [WP.seq_iff]
   refine WP.mono (precomputeOutAdvance_ok v readyV.workspace (by omega) readyV.ptr header.count) ?_
   rintro z ⟨sourceZ, indexZ, memZ, restZ⟩
-  have readyZ := readyV.of_mem memZ restZ ((restZ.gpr .r0 (by simp)).trans readyV.ptr)
+  have readyZ := readyV.of_mem memZ restZ ((restZ.gpr .r0 (by decide)).trans readyV.ptr)
   refine WP.mono (importArrayLayout_ok z readyZ (by decide : 4 < 8) secondFit
     (by rw [restZ.rd, restZ.wr, rv.rd, rv.wr]; exact secondRead) secondSep indexZ
     (by rw [sourceZ, sourceV])) ?_
@@ -87,6 +87,6 @@ theorem pdImport_ok (s : State) {base pp : BitVec 32} {len w : Nat}
     (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 0) (by decide : 0 ≠ 4)
   rw [memZ] at firstT
   exact ⟨readyT, firstT.trans first, second, frameV.trans frameT,
-    rv.trans ((restZ.mono (by simp [roundClobbers])).trans restT)⟩
+    rv.trans ((restZ.mono (by decide)).trans restT)⟩
 
 end VG.Proof.Bignum.Arm

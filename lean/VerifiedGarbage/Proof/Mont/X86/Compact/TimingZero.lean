@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Rt.Zero
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Mont.X86.Compact.TimingLift
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Zeroing a compact product leaks only public pointers and width -/
 
@@ -18,7 +19,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Dsa.X86
 theorem accPointer_relCT {g : Geometry} (v : g.Valid) :
     RelCT isa (Pair g [.edi]) (.block Compact.accPtr) (Pair g [.ebp, .edi]) := by
   refine lift_readonly v (checkedProgramChange (hint := .block [])
-    (τ' := timingTaint [.edi, .ebp] true) rfl rfl) ?_
+    (τ' := timingTaint [.edi, .ebp] true) (by kernel_rfl) (by kernel_rfl)) ?_
   intro s
   unfold Compact.accPtr
   refine wp_movS rfl fun a A _ => wp_addS rfl fun t B _ => WP.block_nil ?_
@@ -28,7 +29,7 @@ theorem zeroCounter_relCT {g : Geometry} (v : g.Valid) :
     RelCT isa (Pair g [.esi, .ebp, .edi])
       (.block [.alu .add .esi (.imm 4), .mov .eax (.imm 0)]) (Pair g [.esi, .ebp, .edi]) := by
   refine lift_readonly v (checkedProgramChange (hint := .block [])
-    (τ' := timingTaint [.esi, .ebp, .edi, .eax] true) rfl rfl) ?_
+    (τ' := timingTaint [.esi, .ebp, .edi, .eax] true) (by kernel_rfl) (by kernel_rfl)) ?_
   intro s
   refine wp_addS rfl fun a A _ => wp_movS rfl fun t B _ => WP.block_nil ?_
   exact ⟨B.mem.trans A.mem, (A.keeps.mono (by decide)).trans (B.keeps.mono (by decide))⟩
@@ -37,7 +38,7 @@ theorem zeroLoopPointer_relCT : RelCT isa
     (VG.X86.Taint.Agree (timingTaint [.esi, .ebp, .edi]))
     (.loop (.block zeroBody) .ne) (VG.X86.Taint.Agree (timingTaint [.esi, .ebp, .edi])) :=
   checkedProgramChange (τ' := timingTaint [.esi, .ebp, .edi] true)
-    (hint := VG.Taint.hintOf taint (timingTaint [.esi, .ebp, .edi]) (.loop (.block zeroBody) .ne)) rfl rfl
+    (hint := VG.Taint.hintOf taint (timingTaint [.esi, .ebp, .edi]) (.loop (.block zeroBody) .ne)) (by kernel_rfl) (by kernel_rfl)
 
 theorem zero_trace {g : Geometry} (v : g.Valid) :
     RelCT isa (Pair g [.edi]) Compact.zeroAcc

@@ -63,7 +63,7 @@ theorem precomputeOut_ok (s : State) {base dst : BitVec 32} {len w : Nat}
     moved.gpr ((moved.other .r4 (by decide)).trans output)) ?_
   rintro v ⟨firstValue, firstFrame, baseV, dstV, restV⟩
   rw [moved.mem] at firstValue firstFrame
-  have rv : Rest roundClobbers s v := (moved.rest (by simp [roundClobbers])).trans restV
+  have rv : Rest roundClobbers s v := (moved.rest (by decide)).trans restV
   have unchanged : WorkspaceEq (State.addr base) (8 * len) s.mem v.mem :=
     WorkspaceEq.of_frame (by omega) firstFrame (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact firstSep)
   have layoutV := unchanged.layout layout
@@ -73,12 +73,12 @@ theorem precomputeOut_ok (s : State) {base dst : BitVec 32} {len w : Nat}
   rw [WP.seq_iff]
   refine WP.mono (precomputeOutAdvance_ok v (ws.congr rv.wr) (by omega) baseV header.count) ?_
   rintro z ⟨dstZ, indexZ, memZ, restZ⟩
-  have rz : Rest roundClobbers s z := rv.trans (restZ.mono (by simp [roundClobbers]))
+  have rz : Rest roundClobbers s z := rv.trans (restZ.mono (by decide))
   rw [WP.seq_iff]
   refine WP.mono (exportArray_ok z (ws.congr rz.wr) (by rw [memZ]; exact layoutV)
     (by rw [memZ]; exact widthV) (o := 4) (by decide) (by rw [dst2Nat]; omega)
     (by rw [rz.wr]; exact secondWrite) secondSep
-    ((restZ.gpr .r0 (by simp)).trans baseV) indexZ (by rw [dstZ, dstV])) ?_
+    ((restZ.gpr .r0 (by decide)).trans baseV) indexZ (by rw [dstZ, dstV])) ?_
   rintro a ⟨secondValue, secondFrame, _, _, restA⟩
   have ra := rz.trans restA
   rw [dst2Addr, memZ] at secondValue
@@ -95,7 +95,7 @@ theorem precomputeOut_ok (s : State) {base dst : BitVec 32} {len w : Nat}
     exact ⟨⟨State.addr dst, 16 * w⟩, by simp, secondSub⟩)
   rw [memZ] at secondWhole
   refine wp_mov (op2_imm (by decide)) fun t result => WP.block_nil ?_
-  refine ⟨result.gpr, ?_, ?_, ra.trans (result.rest (by simp [roundClobbers]))⟩
+  refine ⟨result.gpr, ?_, ?_, ra.trans (result.rest (by decide))⟩
   · rw [result.mem]
     apply wordsAt_two_reads
     · exact congrArg BitVec.toNat firstKept

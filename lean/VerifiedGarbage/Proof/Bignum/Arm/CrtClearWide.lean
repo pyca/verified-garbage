@@ -40,12 +40,12 @@ theorem crt_clearWide_ok (s : State) {base : BitVec 32} {size slot w o : Nat}
   have outside := inv.outside
   rw [memU] at outside
   have frame := outside_workspace outside outFit
-  have restUV : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans
-    (inv.rest.mono (by simp [roundClobbers]))
+  have restUV : Rest roundClobbers s v := (restU.mono (by decide)).trans
+    (inv.rest.mono (by decide))
   refine WP.mono (restoreBase_ok v (by rw [restUV.rd, restUV.wr, restUV.sp]; exact stackRead)
     (saved_base_kept frame stackSep saved restUV.sp)) ?_
   rintro t ⟨ptrT, memT, restT⟩
   exact ⟨by rw [memT]; exact inv.value, by rw [memT]; exact outside,
-    by rw [memT]; exact frame, ptrT, restUV.trans (restT.mono (by simp [roundClobbers]))⟩
+    by rw [memT]; exact frame, ptrT, restUV.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

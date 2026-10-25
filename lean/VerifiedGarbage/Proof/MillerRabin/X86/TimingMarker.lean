@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # The secret exponent marker is read at its fixed public-width address -/
 
@@ -18,12 +19,12 @@ theorem markerPointer_trace {g : Geometry} (v : g.Valid) :
   refine RelCT.block_append (RelCT.seq
     (pointer_pair_relCT v .ebp aExponent (by decide) (by decide) [.edi] (by decide))
     (RelCT.block_append (RelCT.seq (words_pair_relCT v [.ebp, .edi] (by decide)) ?_)))
-  exact (checkedProgramChange (hint := .block []) (τ' := roundTaint [.edi, .ebp, .esi, .eax] true) rfl rfl).mono
+  exact (checkedProgramChange (hint := .block []) (τ' := roundTaint [.edi, .ebp, .esi, .eax] true) (by kernel_rfl) (by kernel_rfl)).mono
     (fun _ _ H => H.2.2) (fun _ _ H => H)
 
 theorem markerCalc_trace : RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi, .ebp]))
     (.block markerCalc) (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  checkedProgramChange (hint := .block []) (τ' := roundTaint [.edi, .ebp]) rfl rfl
+  checkedProgramChange (hint := .block []) (τ' := roundTaint [.edi, .ebp]) (by kernel_rfl) (by kernel_rfl)
 
 theorem lastSquares_trace {g : Geometry} (v : g.Valid) :
     RelCT isa (Pair g [.edi]) (.block lastSquares) (VG.X86.Taint.Agree (roundTaint [.edi])) := by

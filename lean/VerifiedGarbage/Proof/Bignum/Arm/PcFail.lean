@@ -41,8 +41,8 @@ theorem pcFail_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
   rw [mem, show 4 * (4 * w) = 16 * w by omega] at frame
   refine wp_mov (op2_imm (by decide)) fun t result => WP.block_nil ?_
   refine ⟨result.gpr, ?_, by rw [result.mem]; exact frame,
-    (rest.mono (by simp [roundClobbers])).trans
-      ((inv.rest.mono (by simp [roundClobbers])).trans (result.rest (by simp [roundClobbers])))⟩
+    (rest.mono (by decide)).trans
+      ((inv.rest.mono (by decide)).trans (result.rest (by decide)))⟩
   apply wordsAt_zero_read
   rw [result.mem, show 8 * (2 * Spec.Rsa.modulusWords k) = 4 * (4 * w) by dsimp [w]; omega]
   have read := read_eq_val32 v.mem (State.addr dst) (4 * w) 0

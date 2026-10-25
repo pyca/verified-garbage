@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.Arm.Compress
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: SHA-1 and SHA-256
 
@@ -55,10 +56,10 @@ def sha1Ok : HashOk sha1 where
   H := Spec.Sha1.hash
   hash msg h := (Proof.Sha1.hash_eq msg).trans (hash_blk _ _ h)
   cert1 L := ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8])
-    (.block (scr 128 .r0 sState ++ ivStore sha1.iv ++ scr 128 .r1 sMsg ++ scr 128 .r3 sA)), rfl⟩
+    (.block (scr 128 .r0 sState ++ ivStore sha1.iv ++ scr 128 .r1 sMsg ++ scr 128 .r3 sA)), by kernel_rfl⟩
   cert3 L dst := ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0, .r8])
     (.block (scr 128 .r6 192 ++ VG.Impl.MdStream.Arm.out32 5 true ++ [.mov .r9 (.imm (BitVec.ofNat 32 (128 / 4)))])),
-    rfl⟩
+    by kernel_rfl⟩
 
 def sha256Ok : HashOk sha256 where
   P := Impl.Sha256.Arm.Stream.params
@@ -83,9 +84,9 @@ def sha256Ok : HashOk sha256 where
   H := Spec.Sha256.hash
   hash msg h := (Proof.Sha256.hash_eq msg).trans (hash_blk _ _ h)
   cert1 L := ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8])
-    (.block (scr 128 .r0 sState ++ ivStore sha256.iv ++ scr 128 .r1 sMsg ++ scr 128 .r3 sA)), rfl⟩
+    (.block (scr 128 .r0 sState ++ ivStore sha256.iv ++ scr 128 .r1 sMsg ++ scr 128 .r3 sA)), by kernel_rfl⟩
   cert3 L dst := ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0, .r8])
     (.block (scr 128 .r6 192 ++ VG.Impl.MdStream.Arm.out32 8 true ++ [.mov .r9 (.imm (BitVec.ofNat 32 (128 / 4)))])),
-    rfl⟩
+    by kernel_rfl⟩
 
 end VG.Proof.Dsa.Arm.Gen

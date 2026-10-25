@@ -81,7 +81,7 @@ theorem dispatch_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P'
   refine choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) body64_check guard64_check
     (choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) body96_check guard96_check
       (choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) body128_check guard128_check ?_))
-  exact (RelCT.taint (A:=sseTaint) τ (fun _ _ h => agree h.1.1.ws.ws.workspace h.2.1.ws.ws.workspace h.1.2 h.2.2) fallback_check).mono
+  exact (RelCT.taint (A:=sseTaint) τ (fun _ _ h => agree h.1.1.ws.ws.workspace h.2.1.ws.ws.workspace h.1.2 h.2.2) fallback_check.choose_spec).mono
     (fun _ _ h => h) (fun _ _ _ => trivial)
 
 end VG.Proof.Rsa.X86.InvTiming

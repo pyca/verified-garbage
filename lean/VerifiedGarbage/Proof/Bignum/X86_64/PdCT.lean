@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.OmegaNear
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCTExp
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
@@ -132,9 +133,9 @@ theorem pdMm_ctw : RelCT isa (Two DAw) (M.mm aXm aX aR2) (Two DB) := by
   rintro q t ⟨xb, σ, g, hg₀, hN₀, hinv₀, -, hone₀, hR⟩
   have hk1 := g.1.k1
   have hk2 := g.1.k2
-  have hn : q.1.B.toNat + slot ((q.1.k + 7) / 8) 8 ≤ 2 ^ 64 := by have := g.1.scr.nowrap; have := g.1.z; omega_arith
-  refine WP.mono (mmN_ok M (o := aXm) (a := aX) (b := aR2) hg₀ g.1.z (by omega_arith)
-    (by omega_arith) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have hn : q.1.B.toNat + slot ((q.1.k + 7) / 8) 8 ≤ 2 ^ 64 := by have := g.1.scr.nowrap; have := g.1.z; omega_near
+  refine WP.mono (mmN_ok M (o := aXm) (a := aX) (b := aR2) hg₀ g.1.z (by omega_near)
+    (by omega_near) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) hN₀ hinv₀ (by rw [hR]; exact g.1.rlt)) fun t' ⟨hg, hn', hinv, hlt, _, ha, k⟩ =>
     ⟨xb, σ, g.step (arrays_pdAll ha) k (ha.hslot (by decide)), hg, hn', hinv, hlt, ?_⟩
   rw [ha.wv_of_not_mem (by decide) (by decide) hn]; exact hone₀
@@ -154,10 +155,10 @@ theorem db_pre {q : DPub × BitVec 64} {t : State} (h : DB q t) : PExpPre (DPub.
   have hR := VG.Proof.Bignum.coprime_pow2 g.1.odd (64 * ((q.1.k + 7) / 8))
   obtain ⟨x, hx⟩ := exists_mont hR g.1.n1 (wv t.mem q.1.B (slot ((q.1.k + 7) / 8) aXm) ((q.1.k + 7) / 8))
   have he := g.1.e.congrK g.inScr g.2.2.1
-  exact ⟨_, x, ⟨hg, hn, hinv, rfl⟩, ⟨g.1.z, show 2 ≤ ((q.1.k + 7) / 8) by omega_arith,
-    show ((q.1.k + 7) / 8) < 2 ^ 31 by omega_arith, hR, hlt, hx⟩,
+  exact ⟨_, x, ⟨hg, hn, hinv, rfl⟩, ⟨g.1.z, show 2 ≤ ((q.1.k + 7) / 8) by omega_near,
+    show ((q.1.k + 7) / 8) < 2 ^ 31 by omega_near, hR, hlt, hx⟩,
     (g.fixed sE (by decide)).trans g.1.hE, (g.fixed sElen (by decide)).trans g.1.hL, g.1.L1,
-    src_esrc he g.1.el (show q.1.len < 2 ^ 31 by omega_arith)⟩
+    src_esrc he g.1.el (show q.1.len < 2 ^ 31 by omega_near)⟩
 
 /-- After the exponentiation, by `e - 1`. -/
 def DC (q : DPub × BitVec 64) (t : State) : Prop :=
@@ -180,12 +181,12 @@ theorem pdExp_ct : RelCT isa (Two DB) (Precomputed.expLoop M.mm) (Two DC) := by
     hsrc.2.1 hsrc.2.2.1 hsrc.bytes hsrc.2.2.2.2) fun t' ⟨hc', hy, f₀, k⟩ => ?_
   have f : Frm q.1.B (pExpRanges ((q.1.k + 7) / 8)) t.mem t'.mem := f₀
   have hE : Spec.Rsa.os2ip (evenLast q.1.eb) ≠ 0 := by
-    have := os2ip_evenLast g.1.eodd; have := g.1.e3; omega_arith
+    have := os2ip_evenLast g.1.eodd; have := g.1.e3; omega_near
   rcases hy with ⟨h0, -⟩ | ⟨-, -, Y, hY, hYN, hYc⟩
   · exact absurd h0 hE
   exact ⟨xb, σ, X, x, g.step (f.mono (pExpRanges_pdAll _)) k
       (f.word_eq (pExpRanges_hdr _ (by decide) (by decide) (by decide) (by decide) (by decide))
-        (by unfold sMask sFn; omega_arith)), hc', by rw [← hY] at hYN; exact hYN, by rw [← hY] at hYc; exact hYc⟩
+        (by unfold sMask sFn; omega_near)), hc', by rw [← hY] at hYN; exact hYN, by rw [← hY] at hYc; exact hYc⟩
 
 /-- After the last multiplication. -/
 def DD (q : DPub × BitVec 64) (t : State) : Prop :=
@@ -200,7 +201,7 @@ theorem pdFinal_ct (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) fun _ _ => Tr
   have hk1 := g.1.k1
   have hk2 := g.1.k2
   have hR := VG.Proof.Bignum.coprime_pow2 g.1.odd (64 * ((q.1.k + 7) / 8))
-  refine WP.mono (FoldedPublic.final_factor_ok M (x := x) (e := Spec.Rsa.os2ip (evenLast q.1.eb)) hc.good g.1.z (by omega_arith) (by omega_arith) hc.n hc.inv hR rfl
+  refine WP.mono (FoldedPublic.final_factor_ok M (x := x) (e := Spec.Rsa.os2ip (evenLast q.1.eb)) hc.good g.1.z (by omega_near) (by omega_near) hc.n hc.inv hR rfl
     hYN hYc) fun t' ⟨hg, _, ha, k⟩ => ?_
   have f : Frm q.1.B (finRanges ((q.1.k + 7) / 8)) t.mem t'.mem := Frm.of_arrays ha (by simp [finRanges])
   exact ⟨xb, σ, g.step (f.mono (by simp [finRanges, pdAll, pExpRanges, pBitRanges, bitRanges])) k
@@ -209,7 +210,7 @@ theorem pdFinal_ct (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) fun _ _ => Tr
         have := hdr_lt_slot ((q.1.k + 7) / 8) aTmp (show sMask < 32 by decide)
         have := hdr_lt_slot ((q.1.k + 7) / 8) aY (show sMask < 32 by decide)
         simp only [finRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> omega_arith) (by unfold sMask sFn; omega_arith)), hg⟩
+        rcases hr with rfl | rfl | rfl <;> omega_near) (by unfold sMask sFn; omega_near)), hg⟩
 
 /-! ## The load and the checks -/
 
@@ -253,17 +254,17 @@ theorem ldCopy_ok {p : CPubD} {t : State} (h : LW p t) {c j : Nat} (hc : c ≤ (
   have hn := hs.nowrap
   have hsl := slot_le (w := (p.d.k + 7) / 8) hj
   have hge := hdr_lt_slot ((p.d.k + 7) / 8) j (show 31 < 32 by decide)
-  have hA : ∀ i < 8, 8 * sArr i + 8 ≤ slot ((p.d.k + 7) / 8) j := fun i hi => by unfold sArr; omega_arith
-  refine WP.mono (copyWords_ok (S := p.pp) (eS := 8 * c) hsi hbx h12 (by omega_arith) (by omega_arith) (by omega_arith)
-    (fun i hi => by rw [show 8 * c + 8 * i = 8 * (c + i) by omega_arith]; exact hpr _ (by omega_arith))
-    (fun i hi => hs.st (by omega_arith))
+  have hA : ∀ i < 8, 8 * sArr i + 8 ≤ slot ((p.d.k + 7) / 8) j := fun i hi => by unfold sArr; omega_near
+  refine WP.mono (copyWords_ok (S := p.pp) (eS := 8 * c) hsi hbx h12 (by omega_near) (by omega_near) (by omega_near)
+    (fun i hi => by rw [show 8 * c + 8 * i = 8 * (c + i) by omega_near]; exact hpr _ (by omega_near))
+    (fun i hi => hs.st (by omega_near))
     (fun i hi b hb => Or.inr (by
-      have := hps (8 * c + 8 * i + b) (by omega_arith)
-      rw [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; omega_arith))) fun t' ⟨_, _, ho, k⟩ => ?_
+      have := hps (8 * c + 8 * i + b) (by omega_near)
+      rw [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; omega_near))) fun t' ⟨_, _, ho, k⟩ => ?_
   refine ⟨⟨h₀.congr (Frm.of_outside ho (List.mem_singleton_self _))
-    (fun r hr => by rw [List.mem_singleton.mp hr]; left; omega_arith) k (by decide),
-    by rw [ho.word (by unfold sW; omega_arith) (by unfold sW; omega_arith)]; exact hW,
-    fun i hi => by rw [ho.word (d := 8 * sArr i) (Or.inl (hA i hi)) (by unfold sArr; omega_arith)]; exact hb i hi⟩, k⟩
+    (fun r hr => by rw [List.mem_singleton.mp hr]; left; omega_near) k (by decide),
+    by rw [ho.word (by unfold sW; omega_near) (by unfold sW; omega_near)]; exact hW,
+    fun i hi => by rw [ho.word (d := 8 * sArr i) (Or.inl (hA i hi)) (by unfold sArr; omega_near)]; exact hb i hi⟩, k⟩
 
 /-! ## The whole function -/
 
@@ -316,7 +317,7 @@ theorem ce2_lh {p : CPubD} {t : State} (h : CE2 p t) : LH p t := by
   have := c.hk1
   have := c.hk2
   subst hB hZ hk hpp
-  exact ⟨c.hs.congr k.2.2, hdi, by dsimp only; unfold slot hdrBytes; omega_arith, c.hk1, c.hk2, by rw [hK, ofNat_toNat64], hN,
+  exact ⟨c.hs.congr k.2.2, hdi, by dsimp only; unfold slot hdrBytes; omega_near, c.hk1, c.hk2, by rw [hK, ofNat_toNat64], hN,
     fun i hi => by rw [k.2.1, k.2.2]; exact c.hpr i hi, c.hps⟩
 
 /-- What `fail` needs after the load. -/
@@ -332,7 +333,7 @@ theorem cl_fail {p : CPubD} {t : State} (h : CL p t) :
   have := c.hk2
   subst hB hZ hk hop
   have x := Fixed.of_frm f (pdLoadRanges_fixed _)
-  exact ⟨c.hs.congr (k₁.trans k).2.2, (k.gpr (by decide)).trans hdi, by dsimp only; omega_arith, c.hk1, c.hk2,
+  exact ⟨c.hs.congr (k₁.trans k).2.2, (k.gpr (by decide)).trans hdi, by dsimp only; omega_near, c.hk1, c.hk2,
     (x sOut (by decide)).trans hO, by rw [x sK (by decide), hK, ofNat_toNat64]⟩
 
 /-- `rest`'s hypotheses after the load, for values that pass the checks. -/
@@ -347,9 +348,9 @@ theorem cl_rest {p : CPubD} {t : State} (h : CL p t) (he : isa.eval .e t = some 
       (wv t.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aN) (((s.gpr .rsi).toNat + 7) / 8))
       (wv t.mem (stackArg s 2) (slot (((s.gpr .rsi).toNat + 7) / 8) aR2) (((s.gpr .rsi).toNat + 7) / 8)) = true := by
     rw [hN, hR]; simp only [eval, hz, Option.some.injEq] at he; simpa using he
-  rw [← chk_eq (by omega_arith)] at hchk
-  obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega_arith) hchk
-  have hp := pdPre_of c hdi hO hK hE hL hIn ho₁ k₁ hW hb f k₂ hodd hN1 (checks_big (by omega_arith) hchk) hRN hev
+  rw [← chk_eq (by omega_near)] at hchk
+  obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega_near) hchk
+  have hp := pdPre_of c hdi hO hK hE hL hIn ho₁ k₁ hW hb f k₂ hodd hN1 (checks_big (by omega_near) hchk) hRN hev
   rw [hN, hR] at hp
   exact ⟨_, hp⟩
 

@@ -54,7 +54,8 @@ theorem select_value_step {s0 s t : State} {base : BitVec 32} {size o a b n i : 
   have top : w32 t.mem (State.addr base) (o + 4 * i) = if (s0.gpr .r11).toNat = 0 then
       w32 s0.mem (State.addr base) (a + 4 * i) else w32 s0.mem (State.addr base) (b + 4 * i) := by
     rw [hm, w32_write_self, bit]
-    split <;> first | exact aold | exact bold
+    split
+    exacts [aold, bold]
   refine ⟨(inv.outside.mono (Nat.le_refl _) (by omega_arith)).trans (wr.mono (by omega_arith) (by omega_arith)), ?_⟩
   rw [val32_succ, low, top, inv.value]
   split <;> rw [val32_succ]

@@ -45,7 +45,7 @@ theorem sqCount_ok (s : State) {base : BitVec 32} {size M c : Nat} (ws : Workspa
     change (BitVec.ofNat 32 c - BitVec.ofNat 32 1 == 0) = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
     simp only [show c - 1 = 0 ↔ c = 1 by omega]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (u3.rest _))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest _))
 
 theorem crossArgs_ok (s : State) {base : BitVec 32} {size M A C P : Nat} (ws : Workspace s base size)
     (fit : M + 24 ≤ size) (p0 : s.gpr .r0 = base + BitVec.ofNat 32 M)
@@ -98,8 +98,8 @@ theorem crossArgs_ok (s : State) {base : BitVec 32} {size M A C P : Nat} (ws : W
   · rw [u9.other .r0 (by decide), u8.gpr, u7.gpr, u6.other .r3 (by decide), u5.gpr,
       u4.other .r3 (by decide), g3]
   · rw [u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem, v6, v4]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans
-      ((u5.rest _).trans ((u6.rest (by simp)).trans ((u7.rest _).trans ((u8.rest (by simp)).trans (u9.rest (by simp)))))))))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans ((u4.rest (by decide)).trans
+      ((u5.rest _).trans ((u6.rest (by decide)).trans ((u7.rest _).trans ((u8.rest (by decide)).trans (u9.rest (by decide)))))))))
 
 /-- The row's scalar. -/
 theorem crossScalar_ok (s : State) {base : BitVec 32} {size A : Nat} (ws : Workspace s base size)
@@ -108,7 +108,7 @@ theorem crossScalar_ok (s : State) {base : BitVec 32} {size A : Nat} (ws : Works
       t.gpr .r1 = s.mem.readW (off (State.addr base) A) 32 ∧ t.mem = s.mem ∧ Rest [.r1] s t := by
   unfold crossScalar
   refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea ws.nowrap p2 (imm := 0) (by omega))
-    (ws.read fit) fun t u => WP.block_nil ⟨u.gpr, u.mem, u.rest (by simp)⟩
+    (ws.read fit) fun t u => WP.block_nil ⟨u.gpr, u.mem, u.rest (by decide)⟩
 
 /-- The row's carry stored above it. -/
 theorem crossCarry_ok (s : State) {base : BitVec 32} {size d : Nat} (ws : Workspace s base size)
@@ -165,9 +165,9 @@ theorem crossRound_ok (s : State) {k : Nat} (h : CrossInv m0 base size out a mod
   have ctx : RowCtx s3 base size o (a + 4 * (k + 1)) len :=
     ⟨nowrap, by omega_arith, by omega_arith, by omega_arith, e3.workspace.writable⟩
   rw [WP.seq_iff]
-  refine WP.mono (row_ok s3 ctx (by omega_arith) ((r3.gpr .r0 (by simp)).trans g0)
-    (by rw [r3.gpr .r12 (by simp), g12, show a + 4 * k + 4 = a + 4 * (k + 1) by omega_arith])
-    ((r3.gpr .lr (by simp)).trans glr)) ?_
+  refine WP.mono (row_ok s3 ctx (by omega_arith) ((r3.gpr .r0 (by decide)).trans g0)
+    (by rw [r3.gpr .r12 (by decide), g12, show a + 4 * k + 4 = a + 4 * (k + 1) by omega_arith])
+    ((r3.gpr .lr (by decide)).trans glr)) ?_
   intro s4 ri
   have e4 := e3.next (Outs.of_outside (ri.outside.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith)
     (by omega_arith)) (by simp)) ri.rest
@@ -224,7 +224,7 @@ theorem crossRound_ok (s : State) {k : Nat} (h : CrossInv m0 base size out a mod
     rw [show n + 2 - k = (n + 1 - k) + 1 by omega_arith] at z
     exact val32_zero_head z
   have row := ri.value
-  rw [(r3.gpr .r11 (by simp)).trans g11, g1] at row
+  rw [(r3.gpr .r11 (by decide)).trans g11, g1] at row
   change _ = _ + w32 s2.mem (State.addr base) (a + 4 * k) * _ + (0 : BitVec 32).toNat at row
   rw [aw, show a + 4 * (k + 1) = a + 4 * (k + 1) from rfl] at row
   have vt : val32 t.mem (State.addr base) (M + 24) (2 * n + 2) = val32 s5.mem (State.addr base) (M + 24) (2 * n + 2) := by
@@ -245,10 +245,10 @@ theorem crossRound_ok (s : State) {k : Nat} (h : CrossInv m0 base size out a mod
     have z' := val32_zero_tail z
     rwa [show M + 24 + 4 * (k + n) + 4 * 1 = M + 24 + 4 * (k + 1 + n) by omega_arith] at z'
   · rw [z7, hlen]; simp only [show n - 1 - k = 1 ↔ k + 2 = n by omega_arith]
-  · exact (r1.mono (by simp [roundClobbers])).trans ((r2.mono (by simp [roundClobbers])).trans
-      ((r3.mono (by simp [roundClobbers])).trans ((ri.rest.mono (by simp [loopClobbers, roundClobbers])).trans
-      ((r5.mono (by simp [roundClobbers])).trans ((r6.mono (by simp [roundClobbers])).trans
-      (r7.mono (by simp [roundClobbers])))))))
+  · exact (r1.mono (by decide)).trans ((r2.mono (by decide)).trans
+      ((r3.mono (by decide)).trans ((ri.rest.mono (by decide)).trans
+      ((r5.mono (by decide)).trans ((r6.mono (by decide)).trans
+      (r7.mono (by decide)))))))
 
 theorem crossRows_ok (s : State) (h : CrossInv m0 base size out a mod M n inv 0 s) :
     WP isa crossRows s fun t => CrossInv m0 base size out a mod M n inv (n - 1) t ∧

@@ -36,17 +36,17 @@ theorem digitArgs_ok (s : State) {base source table : BitVec 32} {len w bytes N 
     (by rw [two.rd,two.wr,one.rd,one.wr]; exact ready.workspace.read (by omega)) fun c three => ?_
   refine wp_dp (op2_imm (by decide)) fun d four => ?_
   have kept : Rest [.r4,.r5,.r6,.r7,.r8] s d :=
-    ((one.rest (by simp)).trans (two.rest (by simp))).trans
-      ((three.rest (by simp)).trans (four.rest (by simp)))
+    ((one.rest (by decide)).trans (two.rest (by decide))).trans
+      ((three.rest (by decide)).trans (four.rest (by decide)))
   refine wp_ldr (a:=off (State.addr base) 204) (by decide)
-    (by rw [kept.gpr .r0 (by simp)]; exact addr 204 (by decide))
+    (by rw [kept.gpr .r0 (by decide)]; exact addr 204 (by decide))
     (by rw [kept.rd,kept.wr]; exact ready.workspace.read (by omega)) fun e five => ?_
   refine wp_ldr (a:=off (State.addr base) 136) (by decide)
-    (by rw [five.other .r0 (by decide),kept.gpr .r0 (by simp)]; exact addr 136 (by decide))
+    (by rw [five.other .r0 (by decide),kept.gpr .r0 (by decide)]; exact addr 136 (by decide))
     (by rw [five.rd,five.wr,kept.rd,kept.wr]; exact ready.workspace.read (by omega)) fun t six => WP.block_nil ?_
   have memD : d.mem=s.mem := four.mem.trans (three.mem.trans (two.mem.trans one.mem))
   refine ⟨?_,?_,?_,?_,?_,six.mem.trans (five.mem.trans memD),
-    (kept.trans (five.rest (by simp))).trans (six.rest (by simp))⟩
+    (kept.trans (five.rest (by decide))).trans (six.rest (by decide))⟩
   · rw [six.other .r4 (by decide),five.other .r4 (by decide),four.other .r4 (by decide),
       three.other .r4 (by decide),two.other .r4 (by decide),one.gpr,controls.sourcePtr]
   · rw [six.other .r5 (by decide),five.other .r5 (by decide),four.other .r5 (by decide),

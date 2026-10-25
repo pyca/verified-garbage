@@ -35,6 +35,6 @@ theorem prepareAcceptedPrime_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (preparePrime_ok u ready countFits) ?_
   rintro t ⟨done, modulus, r2, frameT, restT⟩
   rw [number, value] at modulus r2
-  exact ⟨done, modulus, r2, frameU.trans frameT, (restU.mono (by simp [roundClobbers])).trans restT⟩
+  exact ⟨done, modulus, r2, frameU.trans frameT, (restU.mono (by decide)).trans restT⟩
 
 end VG.Proof.Bignum.Arm

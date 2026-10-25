@@ -58,7 +58,7 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
     (by rw [h3.rd, h3.wr, h2.rd, h2.wr, h1.rd, h1.wr]; exact ws.read (by omega_arith))
     fun s4 h4 => WP.block_nil ?_
   have K4 : Rest [.r1, .r2, .r3, .r4] s s4 :=
-    (h1.rest (by simp)).trans ((h2.rest (by simp)).trans ((h3.rest (by simp)).trans (h4.rest (by simp))))
+    (h1.rest (by decide)).trans ((h2.rest (by decide)).trans ((h3.rest (by decide)).trans (h4.rest (by decide))))
   have m4 : s4.mem = s.mem := h4.mem.trans (h3.mem.trans (h2.mem.trans h1.mem))
   have b4 : s4.gpr .r1 = s.mem.readW (off (State.addr base) (bb + 4)) 32 := by
     rw [h4.other .r1 (by decide), h3.other .r1 (by decide), h2.other .r1 (by decide), h1.gpr]
@@ -75,11 +75,11 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
   -- row i's top: r4:r3 += r7, r8
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok s4 .r7 (by
-    rw [t3, t4, K4.gpr .r7 (by simp)]; simp only [w32] at bound; omega_arith)) ?_
+    rw [t3, t4, K4.gpr .r7 (by decide)]; simp only [w32] at bound; omega_arith)) ?_
   rintro s5 ⟨v5, f5⟩
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok s5 .r8 (by
-    rw [v5, t3, t4, K4.gpr .r7 (by simp), f5.regs .r8 (by simp), K4.gpr .r8 (by simp)]
+    rw [v5, t3, t4, K4.gpr .r7 (by decide), f5.regs .r8 (by decide), K4.gpr .r8 (by decide)]
     simp only [w32] at bound; omega_arith)) ?_
   rintro s6 ⟨v6, f6⟩
   -- row i + 1's last word
@@ -90,11 +90,11 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
   refine WP.mono (Fios.umaal_ok s7 .r3 .r11 .r2 .r10 (by decide)) ?_
   rintro s8 ⟨v8, f8⟩
   have K8 : Rest [.r1, .r2, .r3, .r4, .r5, .r11] s s8 :=
-    (K4.mono (by simp)).trans ((macFrame_rest f5).mono (by simp) |>.trans
-      ((macFrame_rest f6).mono (by simp) |>.trans ((macFrame_rest f7).mono (by simp) |>.trans
-        ((macFrame_rest f8).mono (by simp)))))
+    (K4.mono (by decide)).trans ((macFrame_rest f5).mono (by decide) |>.trans
+      ((macFrame_rest f6).mono (by decide) |>.trans ((macFrame_rest f7).mono (by decide) |>.trans
+        ((macFrame_rest f8).mono (by decide)))))
   have m8 : s8.mem = s.mem := f8.mem.trans (f7.mem.trans (f6.mem.trans (f5.mem.trans m4)))
-  have p8 : s8.gpr .r0 = base + BitVec.ofNat 32 d := (K8.gpr .r0 (by simp)).trans pd
+  have p8 : s8.gpr .r0 = base + BitVec.ofNat 32 d := (K8.gpr .r0 (by decide)).trans pd
   have ws8 := ws.congr K8.wr
   -- store it, then row i + 1's top: r4:r3 := the high word, += r5, r11
   rw [WP.seq_iff]
@@ -113,13 +113,13 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
   rintro s12 ⟨v12, f12⟩
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok s12 .r11 (by
-    rw [v12, hi11, z11, c5, f12.regs .r11 (by simp), c11]
+    rw [v12, hi11, z11, c5, f12.regs .r11 (by decide), c11]
     have := (s8.gpr .r5).isLt; have := (s8.gpr .r11).isLt; change _ + 0 * _ + _ + _ < _; omega_arith)) ?_
   rintro s13 ⟨v13, f13⟩
   have f1213 := f12.trans f13
   have m13 : s13.mem = s9.mem := f1213.mem.trans (h11.mem.trans h10.mem)
   have p13 : s13.gpr .r0 = base + BitVec.ofNat 32 d := by
-    rw [f1213.regs .r0 (by simp), h11.other .r0 (by decide), h10.other .r0 (by decide), h9.gpr, p8]
+    rw [f1213.regs .r0 (by decide), h11.other .r0 (by decide), h10.other .r0 (by decide), h9.gpr, p8]
   have w13 : s13.wr = s.wr := by rw [f1213.wr, h11.wr, h10.wr, h9.wr, K8.wr]
   refine wp_str (a := off (State.addr base) (d + 4)) (by decide) ((ws.congr w13).ea p13 (by omega_arith))
     (by rw [w13]; exact ws.write (by omega_arith)) fun s14 h14 => ?_
@@ -131,24 +131,24 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
   · rw [ht.mem, h15.mem, h14.gpr, h14.mem, m13, h9.mem, m8]
   · -- the arithmetic
     have e7 : s6.gpr .r9 = s.gpr .r9 := by
-      rw [f6.regs .r9 (by simp), f5.regs .r9 (by simp), K4.gpr .r9 (by simp)]
+      rw [f6.regs .r9 (by decide), f5.regs .r9 (by decide), K4.gpr .r9 (by decide)]
     have e10 : s7.gpr .r10 = s.gpr .r10 := by
-      rw [f7.regs .r10 (by simp), f6.regs .r10 (by simp), f5.regs .r10 (by simp), K4.gpr .r10 (by simp)]
-    have e1 : s6.gpr .r1 = s4.gpr .r1 := by rw [f6.regs .r1 (by simp), f5.regs .r1 (by simp)]
+      rw [f7.regs .r10 (by decide), f6.regs .r10 (by decide), f5.regs .r10 (by decide), K4.gpr .r10 (by decide)]
+    have e1 : s6.gpr .r1 = s4.gpr .r1 := by rw [f6.regs .r1 (by decide), f5.regs .r1 (by decide)]
     have e2 : s7.gpr .r2 = s4.gpr .r2 := by
-      rw [f7.regs .r2 (by simp), f6.regs .r2 (by simp), f5.regs .r2 (by simp)]
+      rw [f7.regs .r2 (by decide), f6.regs .r2 (by decide), f5.regs .r2 (by decide)]
     have e5 : s6.gpr .r5 = s.gpr .r5 := by
-      rw [f6.regs .r5 (by simp), f5.regs .r5 (by simp), K4.gpr .r5 (by simp)]
+      rw [f6.regs .r5 (by decide), f5.regs .r5 (by decide), K4.gpr .r5 (by decide)]
     have e11 : s7.gpr .r11 = s.gpr .r11 := by
-      rw [f7.regs .r11 (by simp), f6.regs .r11 (by simp), f5.regs .r11 (by simp), K4.gpr .r11 (by simp)]
-    have e8 : s5.gpr .r8 = s.gpr .r8 := (f5.regs .r8 (by simp)).trans (K4.gpr .r8 (by simp))
-    have r4 : s8.gpr .r4 = s6.gpr .r4 := (f8.regs .r4 (by simp)).trans (f7.regs .r4 (by simp))
-    rw [t3n, t4n, K4.gpr .r7 (by simp)] at v5
+      rw [f7.regs .r11 (by decide), f6.regs .r11 (by decide), f5.regs .r11 (by decide), K4.gpr .r11 (by decide)]
+    have e8 : s5.gpr .r8 = s.gpr .r8 := (f5.regs .r8 (by decide)).trans (K4.gpr .r8 (by decide))
+    have r4 : s8.gpr .r4 = s6.gpr .r4 := (f8.regs .r4 (by decide)).trans (f7.regs .r4 (by decide))
+    rw [t3n, t4n, K4.gpr .r7 (by decide)] at v5
     rw [v5, e8] at v6
     rw [e1, b4n, e7, e5] at v7
     rw [e2, mm4n, e10, e11] at v8
-    have r5' : s8.gpr .r5 = s7.gpr .r5 := f8.regs .r5 (by simp)
-    rw [v12, hi11, z11, c5, f12.regs .r11 (by simp), c11] at v13
+    have r5' : s8.gpr .r5 = s7.gpr .r5 := f8.regs .r5 (by decide)
+    rw [v12, hi11, z11, c5, f12.regs .r11 (by decide), c11] at v13
     unfold carries
     rw [r4] at v13
     rw [show (0 : BitVec 32).toNat = 0 from rfl, Nat.zero_mul, Nat.add_zero] at v13
@@ -157,9 +157,9 @@ theorem top_ok (s : State) {base : BitVec 32} {size d bb mm : Nat}
   · rw [ht.gpr, dpVal, h15.gpr, h14.gpr, p13]
     exact Offset.add_add _ _ _
   · have k11 : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r11] s s11 :=
-      (K8.mono (by simp)).trans ((h9.rest _).trans ((h10.rest (by simp)).trans (h11.rest (by simp))))
+      (K8.mono (by decide)).trans ((h9.rest _).trans ((h10.rest (by decide)).trans (h11.rest (by decide))))
     have k13 : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r11] s s13 :=
-      k11.trans ((macFrame_rest f1213).mono (by simp))
-    exact k13.trans ((h14.rest _).trans ((h15.rest _).trans (ht.rest (by simp))))
+      k11.trans ((macFrame_rest f1213).mono (by decide))
+    exact k13.trans ((h14.rest _).trans ((h15.rest _).trans (ht.rest (by decide))))
 
 end VG.Proof.Bignum.Arm.Fios2

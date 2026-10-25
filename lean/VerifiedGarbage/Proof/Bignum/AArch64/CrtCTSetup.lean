@@ -42,14 +42,14 @@ theorem checks_ct : ChecksCT := by
   unfold ChecksCT checks
   simp only [List.append_assoc]
   refine two_map id (fun _ _ h => h.ck) ?_
-  refine RelCT.seqs_append (by simp [pqProduct, zeroAccs]) (by simp [eqCheck]) (RelCT.seq pq_ct ?_)
-  refine RelCT.seqs_append (by simp [eqCheck]) (by simp) (RelCT.seq eq_ct ?_)
-  refine RelCT.seqs_append (by simp) (by simp [qinvCheck]) (RelCT.seq (two_piece [.x0] (pins_ckr _)
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq pq_ct ?_)
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq eq_ct ?_)
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq (two_piece [.x0] (pins_ckr _)
     (by taint_decide) fun p s h => enterP_ck h) ?_)
-  refine RelCT.seqs_append (by simp [qinvCheck]) (by simp [primeFix]) (RelCT.seq qinv_ct ?_)
-  refine RelCT.seqs_append (by simp [primeFix]) (by simp) (RelCT.seq fixP_ct ?_)
-  refine RelCT.seqs_append (by simp) (by simp [primeFix]) (RelCT.seq leaveEnterQ_ck ?_)
-  refine RelCT.seqs_append (by simp [primeFix]) (by simp) (RelCT.seq fixQ_ct ?_)
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq qinv_ct ?_)
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq fixP_ct ?_)
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq leaveEnterQ_ck ?_)
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq fixQ_ct ?_)
   exact two_taint [.x0] (pins_ckr _) (by taint_decide)
 
 end VG.Proof.Bignum.AArch64

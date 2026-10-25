@@ -46,10 +46,10 @@ theorem code_ok (s : State) {src : BitVec 32} {bs : List Byte} {N i d : Nat}
     have nextBound : (j+1)*d≤5*d := Nat.mul_le_mul_right d (by omega)
     refine WP.mono (tooth_ok t (source.of_mem h.mem h.rest) widthBound size
       (by omega) widthFit (by omega) (prefixValue_lt bs N i d j) hj
-      ((h.rest.gpr .r4 (by simp [clobbers])).trans ptr)
-      ((h.rest.gpr .r5 (by simp [clobbers])).trans length)
-      h.index ((h.rest.gpr .r8 (by simp [clobbers])).trans width)
-      ((h.rest.gpr .r7 (by simp [clobbers])).trans stride) h.digit) ?_
+      ((h.rest.gpr .r4 (by decide)).trans ptr)
+      ((h.rest.gpr .r5 (by decide)).trans length)
+      h.index ((h.rest.gpr .r8 (by decide)).trans width)
+      ((h.rest.gpr .r7 (by decide)).trans stride) h.digit) ?_
     rintro u ⟨index,digit,mem,rest⟩
     refine ⟨?_,digit,mem.trans h.mem,h.rest.trans rest⟩
     simpa only [Nat.add_mul,Nat.one_mul,Nat.add_assoc] using index
@@ -58,7 +58,7 @@ theorem code_ok (s : State) {src : BitVec 32} {bs : List Byte} {N i d : Nat}
   refine wp_mov (op2_reg _ _) fun a one => ?_
   refine wp_mov (op2_imm (by decide)) fun b two => WP.block_nil ?_
   have init : GatherInv s bs N i d 0 b := by
-    refine ⟨?_,?_,two.mem.trans one.mem,(one.rest (by simp [clobbers])).trans (two.rest (by simp [clobbers]))⟩
+    refine ⟨?_,?_,two.mem.trans one.mem,(one.rest (by decide)).trans (two.rest (by decide))⟩
     · simpa only [Nat.zero_mul,Nat.add_zero] using (two.other .r9 (by decide)).trans (one.gpr.trans row)
     · exact two.gpr
   rw [WP.seq_iff]
@@ -79,7 +79,7 @@ theorem code_ok (s : State) {src : BitVec 32} {bs : List Byte} {N i d : Nat}
   refine wp_mov (op2_reg _ _) fun t last => WP.block_nil ?_
   have result : t.gpr .r11=BitVec.ofNat 32 (prefixValue bs N i d 5) := last.gpr.trans h5.digit
   have bounded : prefixValue bs N i d 5<32 := prefixValue_lt bs N i d 5
-  refine ⟨result,?_,last.mem.trans h5.mem,h5.rest.trans (last.rest (by simp [clobbers]))⟩
+  refine ⟨result,?_,last.mem.trans h5.mem,h5.rest.trans (last.rest (by decide))⟩
   rw [result,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
   exact bounded
 

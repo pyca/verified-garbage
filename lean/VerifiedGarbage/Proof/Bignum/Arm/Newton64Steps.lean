@@ -25,7 +25,7 @@ theorem newton64Load_ok (s : State) (a b : Addr)
   refine wp_ldr (a := a) (by decide) pa ra fun s1 u1 => ?_
   refine wp_ldr (a := b) (by decide) (by rw [u1.other .r0 (by decide)]; exact pb)
     (by rw [u1.rd, u1.wr]; exact rb) fun t u2 => WP.block_nil ?_
-  refine ⟨?_, u2.mem.trans u1.mem, (u1.rest (by simp)).trans (u2.rest (by simp))⟩
+  refine ⟨?_, u2.mem.trans u1.mem, (u1.rest (by decide)).trans (u2.rest (by decide))⟩
   rw [u2.gpr, u2.other .r2 (by decide), u1.gpr, u1.mem]
 
 theorem newton64Subtract_ok (s : State) :
@@ -36,7 +36,7 @@ theorem newton64Subtract_ok (s : State) :
   refine wp_mov (op2_imm (by decide)) fun u h => WP.block_nil ?_
   refine WP.mono (sub64_ok u) ?_
   rintro t ⟨val, mem, rest⟩
-  refine ⟨?_, mem.trans h.mem, (h.rest (by simp)).trans (rest.mono (by simp))⟩
+  refine ⟨?_, mem.trans h.mem, (h.rest (by decide)).trans (rest.mono (by decide))⟩
   rw [val, h.gpr, h.other .r3 (by decide), h.other .r4 (by decide)]
   rfl
 
@@ -47,7 +47,7 @@ theorem newton64Finish_ok (s : State) :
   unfold newton64Finish
   refine wp_mov (op2_reg _ _) fun u h => ?_
   refine wp_mov (op2_reg _ _) fun t j => WP.block_nil ?_
-  refine ⟨?_, j.mem.trans h.mem, (h.rest (by simp)).trans (j.rest (by simp))⟩
+  refine ⟨?_, j.mem.trans h.mem, (h.rest (by decide)).trans (j.rest (by decide))⟩
   rw [j.gpr, j.other .r1 (by decide), h.gpr, h.other .r4 (by decide)]
 
 end VG.Proof.Bignum.Arm

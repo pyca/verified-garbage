@@ -29,7 +29,7 @@ theorem byte_ok {base ep : BitVec 32} {len w M E c : Nat} {P : State → Prop} {
   rw [WP.seq_iff]
   refine WP.mono (byteHead_ok s h pointer read) ?_
   rintro u ⟨ready, headerU, frameU, restU⟩
-  have ru : Rest roundClobbers s u := restU.mono (by simp [roundClobbers])
+  have ru : Rest roundClobbers s u := restU.mono (by decide)
   have pu := K.stable frameU ru hp
   rw [WP.seq_iff]
   refine WP.mono (bits_ok K u ready pu (s.mem (State.addr ep)).isLt) ?_
@@ -38,7 +38,7 @@ theorem byte_ok {base ep : BitVec 32} {len w M E c : Nat} {P : State → Prop} {
     ((headerV 128 (by decide)).trans ((headerU 128 (by decide)).trans pointer))
     ((headerV 132 (by decide)).trans ((headerU 132 (by decide)).trans count))) ?_
   rintro t ⟨final, ptr, counter, zero, frameT, restT⟩
-  have rt : Rest roundClobbers v t := restT.mono (by simp [roundClobbers])
+  have rt : Rest roundClobbers v t := restT.mono (by decide)
   exact ⟨final, K.stable frameT rt pv, ptr, counter, zero,
     (frameU.mono (by simpa using K.workspace)).trans (frameV.trans (frameT.mono (by simpa using K.workspace))),
     ru.trans (restV.trans rt)⟩

@@ -82,13 +82,13 @@ theorem exponentScan_ok (s : State) {ep : BitVec 32} {eb : List Byte}
   rw [exponentScan, WP.seq_iff]
   refine wp_mov (op2_imm (by decide)) fun u a => ?_
   refine wp_mov (op2_imm (by decide)) fun v b => WP.block_nil ?_
-  have rest : Rest [.r3, .r4] s v := (a.rest (by simp)).trans (b.rest (by simp))
+  have rest : Rest [.r3, .r4] s v := (a.rest (by decide)).trans (b.rest (by decide))
   have mem := b.mem.trans a.mem
   refine WP.mono (exponentLoop_ok v positive countFit sourceFit
     (by rw [rest.rd, rest.wr]; exact read) (by rw [mem]; exact bytes)
-    ((rest.gpr .r1 (by simp)).trans ptr) ((rest.gpr .lr (by simp)).trans count)
+    ((rest.gpr .r1 (by decide)).trans ptr) ((rest.gpr .lr (by decide)).trans count)
     ((b.other .r3 (by decide)).trans a.gpr) b.gpr) ?_
   rintro t ⟨lo, hi, memT, restT⟩
-  exact ⟨lo, hi, memT.trans mem, (rest.mono (by simp [exponentClobbers])).trans restT⟩
+  exact ⟨lo, hi, memT.trans mem, (rest.mono (by decide)).trans restT⟩
 
 end VG.Proof.Bignum.Arm

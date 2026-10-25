@@ -58,8 +58,8 @@ theorem crt_narrowAddress_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List 
   refine wp_dp (op2_imm (by decide)) fun x e => ?_
   refine wp_dp (op2_reg _ _) fun t f => WP.block_nil ?_
   have mem : t.mem = s.mem := f.mem.trans (e.mem.trans (d.mem.trans (c.mem.trans (b.mem.trans a.mem))))
-  refine ⟨?_, mem, (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans
-    ((d.rest (by simp)).trans ((e.rest (by simp)).trans (f.rest (by simp))))))⟩
+  refine ⟨?_, mem, (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
+    ((d.rest (by decide)).trans ((e.rest (by decide)).trans (f.rest (by decide))))))⟩
   rw [f.gpr, dpVal, e.gpr, e.other .r0 (by decide), dpVal, d.gpr, d.other .r0 (by decide), c.gpr,
     c.other .r0 (by decide), b.gpr, b.mem, a.mem, h.main.modulus,
     h.main.toCrtLayoutState.nativeCount main]
@@ -81,8 +81,8 @@ theorem crt_narrowWidth_ok (s : State) {slot k : Nat} (hs : slot < 4096) (fit : 
   refine wp_dp (op2_reg _ _) fun r f => ?_
   refine wp_mov (op2_imm (by decide)) fun t i => WP.block_nil ?_
   refine ⟨?_, i.gpr, i.mem.trans (f.mem.trans (e.mem.trans (d.mem.trans (c.mem.trans (b.mem.trans a.mem))))),
-    (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans ((d.rest (by simp)).trans
-      ((e.rest (by simp)).trans ((f.rest (by simp)).trans (i.rest (by simp)))))))⟩
+    (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans ((d.rest (by decide)).trans
+      ((e.rest (by decide)).trans ((f.rest (by decide)).trans (i.rest (by decide)))))))⟩
   rw [i.other .r7 (by decide), f.gpr, dpVal, e.gpr, e.other .r7 (by decide), d.gpr, dpVal,
     d.other .r7 (by decide), c.gpr, b.gpr, dpVal, a.gpr, count]
   exact narrowWidth_value positive small
@@ -110,7 +110,7 @@ theorem crt_enterNarrow_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     positive (by omega_arith)) ?_
   rintro v ⟨widthV, zeroV, memV, restV⟩
   have sharedV := sharedU.of_mem memV restV
-  have ptrV : v.gpr .r0 = crtN g.base g.words := (restV.gpr .r0 (by simp)).trans ptrU
+  have ptrV : v.gpr .r0 = crtN g.base g.words := (restV.gpr .r0 (by decide)).trans ptrU
   rw [WP.seq_iff]
   refine WP.mono (setup_frame_ok v sharedV.buffers.context.narrow two (by omega_arith) arrays ptrV widthV zeroV) ?_
   rintro z ⟨layoutZ, widthZ, ptrZ, frameZ, restZ⟩
@@ -120,8 +120,8 @@ theorem crt_enterNarrow_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   rintro t ⟨memT, frameT, restT⟩
   rw [ptrZ] at memT
   obtain ⟨sharedT, readyT⟩ := crt_selectedWidth_ready sharedZ sharedZ.buffers.context.narrow ⟨layoutZ, widthZ⟩
-    sharedZ.narrow_member ((restT.gpr .r0 (by simp)).trans ptrZ) memT frameT restT
-  have restUV : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans (restV.mono (by simp [roundClobbers]))
+    sharedZ.narrow_member ((restT.gpr .r0 (by decide)).trans ptrZ) memT frameT restT
+  have restUV : Rest roundClobbers s v := (restU.mono (by decide)).trans (restV.mono (by decide))
   have restUZ := restUV.trans restZ
   rw [memV, memU] at frameZ
   have flagT := acceptance_after_base_save frameT restT

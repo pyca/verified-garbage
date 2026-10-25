@@ -83,7 +83,7 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
     omega_arith
   refine WP.mono (top_ok v ws (d := d) (by omega_arith) (by omega_arith) (by omega_arith) iv.outPtr iv.bPtr iv.mPtr bound) ?_
   rintro t ⟨v0, v1, v2, mem, value, pt, rest⟩
-  refine ⟨⟨u.gpr .r2, u.gpr .r10, ?_⟩, ?_, ?_, iv.rest.trans (rest.mono (by simp [roundClobbers]))⟩
+  refine ⟨⟨u.gpr .r2, u.gpr .r10, ?_⟩, ?_, ?_, iv.rest.trans (rest.mono (by decide))⟩
   · rw [e8, e12, oldT0, oldT1, eb, em, oldB, oldM, iv.scalar1, iv.quotient1] at value
     have stored := three_words (m := v.mem) (o := acc) (k := n - 2) v0 v1 v2 nowrap (by omega_arith) rfl
     rw [← mem, show n - 2 + 3 = n + 1 by omega_arith] at stored

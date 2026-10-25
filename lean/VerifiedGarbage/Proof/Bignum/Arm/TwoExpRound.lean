@@ -40,8 +40,8 @@ theorem round_ok {base : BitVec 32} {len w M E V c : Nat} {P : State → Prop} {
   refine WP.mono (expShift_ok u stateU.ready.workspace (by omega) stateU.ready.ptr byteU) ?_
   rintro v ⟨memV, restV⟩
   obtain ⟨stateV, frameV⟩ := stateU.after_header (d := 200) (by decide) (by decide) memV restV
-    ((restV.gpr .r0 (by simp)).trans stateU.ready.ptr)
-  have rv : Rest roundClobbers u v := restV.mono (by simp [roundClobbers])
+    ((restV.gpr .r0 (by decide)).trans stateU.ready.ptr)
+  have rv : Rest roundClobbers u v := restV.mono (by decide)
   have pv := K.stable frameV rv pu
   have byteV : v.mem.readW (off (State.addr base) 200) 32 = BitVec.ofNat 32 (V + V) := by
     rw [memV, Mem.readW_writeW_self32]
@@ -53,8 +53,8 @@ theorem round_ok {base : BitVec 32} {len w M E V c : Nat} {P : State → Prop} {
   refine WP.mono (expDecrement_ok v stateV.ready.workspace (by omega) stateV.ready.ptr hc hc' countV) ?_
   rintro t ⟨memT, flag, restT⟩
   obtain ⟨stateT, frameT⟩ := stateV.after_header (d := 192) (by decide) (by decide) memT restT
-    ((restT.gpr .r0 (by simp)).trans stateV.ready.ptr)
-  have rt : Rest roundClobbers v t := restT.mono (by simp [roundClobbers])
+    ((restT.gpr .r0 (by decide)).trans stateV.ready.ptr)
+  have rt : Rest roundClobbers v t := restT.mono (by decide)
   refine ⟨stateT, K.stable frameT rt pv, ?_, ?_, flag, ?_,
     frameU.trans ((frameV.mono (by simpa using K.workspace)).trans
       (frameT.mono (by simpa using K.workspace))), restU.trans (rv.trans rt)⟩

@@ -60,12 +60,12 @@ theorem setSmallFnBody_ok (s : State) {base : BitVec 32} {len o : Nat}
   refine WP.mono (setSmall_ok u ctx (by omega) p0 p4 count zero) ?_
   rintro t ⟨value, low, outside, keep⟩
   rw [mem] at outside
-  rw [rest.gpr .r5 (by simp)] at value low
+  rw [rest.gpr .r5 (by decide)] at value low
   have eq : 4 * (2 * w) = 8 * w := by omega
   rw [eq] at outside
   exact ⟨by simpa only [numAt_native] using value, low, outside,
     outside_workspace outside (by omega),
-    (rest.mono (by simp [roundClobbers])).trans (keep.mono (by simp [roundClobbers]))⟩
+    (rest.mono (by decide)).trans (keep.mono (by decide))⟩
 
 theorem setSmallFn_ok (s : State) {base : BitVec 32} {len o : Nat}
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
@@ -86,6 +86,6 @@ theorem setSmallFn_ok (s : State) {base : BitVec 32} {len o : Nat}
     (by rw [rest.rd, rest.wr, rest.sp]; exact read) (saved_base_kept frame sep saved rest.sp)) ?_
   rintro t ⟨out, mem, keep⟩
   rw [← mem] at value low outside frame
-  exact ⟨value, low, outside, frame, rest.trans (keep.mono (by simp [roundClobbers])), out⟩
+  exact ⟨value, low, outside, frame, rest.trans (keep.mono (by decide)), out⟩
 
 end VG.Proof.Bignum.Arm

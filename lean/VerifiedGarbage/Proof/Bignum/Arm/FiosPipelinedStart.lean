@@ -42,6 +42,6 @@ theorem start_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n start :
   · rw [mem];exact h.outside
   · rw [mem,rest.gpr .r8 (by decide)]
     exact start_prefix h.value product
-  · exact h.rest.trans (rest.mono (by simp [roundClobbers]))
+  · exact h.rest.trans (rest.mono (by decide))
 
 end VG.Proof.Bignum.Arm.FiosPipelined

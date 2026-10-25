@@ -55,15 +55,15 @@ theorem generalSumCore_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (
     List.not_mem_nil, or_false, not_or] at hnd
   have le : ∀ x ∈ combWs K, x + 8 * K.M.n ≤ size := fun x hx => hL.lay.le x (combWs_slots K x hx)
   have al : ∀ x ∈ combWs K, x % 8 = 0 := fun x hx => hA.sl x (combWs_slots K x hx)
-  have axd := hL.apart₂ (x := K.A.x) (y := K.D.x) (by comb_mem) (by comb_mem) (by grind)
-  have ayd := hL.apart₂ (x := K.A.y) (y := K.D.y) (by comb_mem) (by comb_mem) (by grind)
-  have azd := hL.apart₂ (x := K.A.z) (y := K.D.z) (by comb_mem) (by comb_mem) (by grind)
-  have axy := hL.apart₂ (x := K.A.x) (y := K.A.y) (by comb_mem) (by comb_mem) (by grind)
-  have axz := hL.apart₂ (x := K.A.x) (y := K.A.z) (by comb_mem) (by comb_mem) (by grind)
-  have ayz := hL.apart₂ (x := K.A.y) (y := K.A.z) (by comb_mem) (by comb_mem) (by grind)
-  have dxay := hL.apart₂ (x := K.D.x) (y := K.A.y) (by comb_mem) (by comb_mem) (by grind)
-  have dxaz := hL.apart₂ (x := K.D.x) (y := K.A.z) (by comb_mem) (by comb_mem) (by grind)
-  have dyaz := hL.apart₂ (x := K.D.y) (y := K.A.z) (by comb_mem) (by comb_mem) (by grind)
+  have axd := hL.apart₂ (x := K.A.x) (y := K.D.x) (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have ayd := hL.apart₂ (x := K.A.y) (y := K.D.y) (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have azd := hL.apart₂ (x := K.A.z) (y := K.D.z) (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have axy := hL.apart₂ (x := K.A.x) (y := K.A.y) (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have axz := hL.apart₂ (x := K.A.x) (y := K.A.z) (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have ayz := hL.apart₂ (x := K.A.y) (y := K.A.z) (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have dxay := hL.apart₂ (x := K.D.x) (y := K.A.y) (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have dxaz := hL.apart₂ (x := K.D.x) (y := K.A.z) (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have dyaz := hL.apart₂ (x := K.D.y) (y := K.A.z) (by comb_mem) (by comb_mem) (by nd_find hnd)
   have hs₁ := k₁.scr hs
   rw [copyPt, List.append_assoc, WP.block_append_iff]
   have b64 : ∀ x ∈ combWs K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
@@ -83,9 +83,9 @@ theorem generalSumCore_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (
     (al _ (by comb_mem)) (o := K.A.z) (a := K.D.z) (azd.imp (fun h => by omega_using [h]) id)
   refine WP.mono W4 fun s₄ h₄ => ?_
   obtain ⟨e₄, k₄, O₄⟩ := h₄
-  have dyax := hL.apart₂ (x := K.D.y) (y := K.A.x) (by comb_mem) (by comb_mem) (by grind)
-  have dzax := hL.apart₂ (x := K.D.z) (y := K.A.x) (by comb_mem) (by comb_mem) (by grind)
-  have dzay := hL.apart₂ (x := K.D.z) (y := K.A.y) (by comb_mem) (by comb_mem) (by grind)
+  have dyax := hL.apart₂ (x := K.D.y) (y := K.A.x) (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have dzax := hL.apart₂ (x := K.D.z) (y := K.A.x) (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have dzay := hL.apart₂ (x := K.D.z) (y := K.A.y) (by comb_mem) (by comb_mem) (by nd_find hnd)
   have hDx : K.D.x ∈ rcbW { K.S with b3 := K.neg } K.D ++ rcbR { K.S with b3 := K.neg } K.A K.E := by simp [rcbW]
   have hDy : K.D.y ∈ rcbW { K.S with b3 := K.neg } K.D ++ rcbR { K.S with b3 := K.neg } K.A K.E := by simp [rcbW]
   have hDz : K.D.z ∈ rcbW { K.S with b3 := K.neg } K.D ++ rcbR { K.S with b3 := K.neg } K.A K.E := by simp [rcbW]

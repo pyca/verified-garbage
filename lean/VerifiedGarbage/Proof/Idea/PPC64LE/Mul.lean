@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-!
 # IDEA on PPC64LE: ⊙ without branches
@@ -36,7 +38,7 @@ theorem mul_ok (s : State) (h0 : s.gpr .r0 = 65535) :
       t.gpr .r12 = (Spec.Idea.mul ((s.gpr .r11).setWidth 16) ((s.gpr .r12).setWidth 16)).setWidth 64 ∧
       t.mem = s.mem := by
   unfold mulCode
-  crun [h0]
+  crunr [h0]
   have hA : ((s.gpr .r11 - 1#64 &&& 65535#64) + 1#64).toNat =
       Spec.Idea.residue ((s.gpr .r11).setWidth 16) := prep_toNat _ 65535#64 rfl
   have hB : ((s.gpr .r12 - 1#64 &&& 65535#64) + 1#64).toNat =

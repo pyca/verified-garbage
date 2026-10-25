@@ -28,8 +28,8 @@ theorem rowBody_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
     rcases readB with ⟨R, hR, hsub⟩
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
   rw [rowBody, WP.seq_iff]
-  refine WP.mono (rowStep_ok s _ _ x (by rw [inv.rest.gpr .r1 (by simp), h1])
-    (by rw [inv.rest.gpr .r10 (by simp), h10]) (by rw [inv.rest.gpr .r9 (by simp), h9]) (row_addr ctx inv.outPtr (by omega))
+  refine WP.mono (rowStep_ok s _ _ x (by rw [inv.rest.gpr .r1 (by decide), h1])
+    (by rw [inv.rest.gpr .r10 (by decide), h10]) (by rw [inv.rest.gpr .r9 (by decide), h9]) (row_addr ctx inv.outPtr (by omega))
     (row_addr ctx inv.inPtr (by omega)) readB'
     (row_writable ctx inv.rest.wr (by omega))) ?_
   rintro s1 ⟨v1, m1, k1⟩
@@ -37,25 +37,25 @@ theorem rowBody_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
   refine WP.mono (rowAdvance_ok s1) ?_
   rintro s2 ⟨p0, p12, cnt, zero, mem, k2⟩
   have count1 : s1.gpr .lr = BitVec.ofNat 32 (n - i) :=
-    (k1.gpr .lr (by simp [rowClobbers])).trans inv.count
+    (k1.gpr .lr (by decide)).trans inv.count
   have count2 : s2.gpr .lr = BitVec.ofNat 32 (n - (i + 1)) := by
     rw [cnt, count1]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
     congr 1
   refine ⟨⟨by omega, ?_, ?_, count2, ?_, ?_, ?_⟩, ?_⟩
-  · rw [p0, k1.gpr .r0 (by simp [rowClobbers]), inv.outPtr]
+  · rw [p0, k1.gpr .r0 (by decide), inv.outPtr]
     change base + BitVec.ofNat 32 (o + 4 * i) + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]
     congr 1
-  · rw [p12, k1.gpr .r12 (by simp [rowClobbers]), inv.inPtr]
+  · rw [p12, k1.gpr .r12 (by decide), inv.inPtr]
     change base + BitVec.ofNat 32 (b + 4 * i) + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]
     congr 1
   · rw [mem]; exact outside
-  · rw [mem, k2.gpr .r11 (by simp)]; exact value
+  · rw [mem, k2.gpr .r11 (by decide)]; exact value
   · refine inv.rest.trans ((k1.mono ?_).trans (k2.mono ?_))
-    all_goals intro r hr; cases r <;> simp_all [rowClobbers, stepClobbers]
+    all_goals decide
   · rw [zero, count1]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]

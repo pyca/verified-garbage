@@ -34,6 +34,6 @@ theorem round_law : MontPipeline.RoundLaw VG.Impl.Bignum.Arm.FiosFast.round := b
     rw [memU,scalar] at quotient
     rw [memU] at outsideV
     exact finishRound_ok s v ctx hdr hi hT hB quotient ptrV outsideV
-      ((restU.mono (by simp [roundClobbers])).trans keepV)
+      ((restU.mono (by decide)).trans keepV)
 
 end VG.Proof.Bignum.Arm.FiosFast

@@ -57,6 +57,6 @@ theorem fusedStage_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i :
       rw [memU,scalar] at value
       rw [memU] at outside
       exact ⟨value,hdr.of_outside outside (by omega) (by have := ctx.workspace.nowrap;omega),
-        pointer,outside,(restU.mono (by simp [roundClobbers])).trans rest⟩
+        pointer,outside,(restU.mono (by decide)).trans rest⟩
 
 end VG.Proof.Bignum.Arm

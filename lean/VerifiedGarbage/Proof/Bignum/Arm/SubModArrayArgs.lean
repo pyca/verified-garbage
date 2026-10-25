@@ -30,7 +30,7 @@ theorem subModArrayArgs_ok (s : State) {base : BitVec 32} {size w o a b : Nat}
   rintro t ⟨out, first, second, count, mem, rest⟩
   have modulus : u.gpr .r9 = base + BitVec.ofNat 32 (arr 0) :=
     load.gpr.trans (header.array 0 (by decide))
-  exact ⟨out, first, second, (rest.gpr .r9 (by simp)).trans modulus, count, mem.trans load.mem,
-    (load.rest (by simp)).trans (rest.mono (by simp))⟩
+  exact ⟨out, first, second, (rest.gpr .r9 (by decide)).trans modulus, count, mem.trans load.mem,
+    (load.rest (by decide)).trans (rest.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

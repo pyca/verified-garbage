@@ -69,13 +69,13 @@ theorem transferArray_ok (s : State) {base src : BitVec 32} {len slen w o a : Na
   have outside := frame_array_outside (by omega : arrAt w o + 8 * w < 2 ^ 64) frameV
   have frame := outside_workspace outside (size := 8 * len) (by omega)
   have keeps := outside_array_prefix_keeps outside (by omega : 8 * len < 2 ^ 64) (by omega : 8 * w ≤ 8 * (w + 2))
-  have rest : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans restV
+  have rest : Rest roundClobbers s v := (restU.mono (by decide)).trans restV
   refine WP.mono (restoreBase_ok v (by rw [rest.rd, rest.wr, rest.sp]; exact dst.stackRead)
     (saved_base_kept frame dst.stackSep dst.saved rest.sp)) ?_
   rintro t ⟨ptrT, memT, restT⟩
   have keepsT : Keeps (State.addr base) len w o s.mem t.mem := by rw [memT]; exact keeps
   have frameT : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by rw [memT]; exact frame
-  have restAll := rest.trans (restT.mono (by simp [roundClobbers]))
+  have restAll := rest.trans (restT.mono (by decide))
   exact ⟨dst.after_array keepsT frameT restAll ptrT, by unfold numAt; rw [memT, value],
     keepsT, frameT, restAll⟩
 

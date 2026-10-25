@@ -19,23 +19,27 @@ theorem uzp1_byte (x y : BitVec 128) {i : Nat} (hi : i < 16) :
     vbyte (VPermOp.eval .uzp1 .b16 x y) i =
       if i < 8 then vbyte x (2*i) else vbyte y (2*(i-8)) := by
   simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_map, List.length_range,
-    vbyte_ofVBytes _ hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [List.range, List.range.loop, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
-      List.getD_cons_zero, List.getD_cons_succ, Nat.reduceMul, Nat.reduceSub, Nat.reduceLT, ite_true,
-      ite_false, narrowByte]
+    vbyte_ofVBytes _ hi, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi,
+    Option.map_some, Option.getD_some]
+  split
+  · rw [List.getElem?_append_left (by simp; omega), List.getElem?_map, List.getElem?_range (by omega),
+      Option.map_some, Option.getD_some, narrowByte]
+  · rw [List.getElem?_append_right (by simp; omega), List.getElem?_map, List.length_map, List.length_range,
+      List.getElem?_range (by omega), Option.map_some, Option.getD_some, narrowByte]
+    congr 1; omega
 
 theorem uzp2_byte (x y : BitVec 128) {i : Nat} (hi : i < 16) :
     vbyte (VPermOp.eval .uzp2 .b16 x y) i =
       if i < 8 then vbyte x (2*i+1) else vbyte y (2*(i-8)+1) := by
   simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_map, List.length_range,
-    vbyte_ofVBytes _ hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [List.range, List.range.loop, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
-      List.getD_cons_zero, List.getD_cons_succ, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, ite_true,
-      ite_false, narrowByte]
+    vbyte_ofVBytes _ hi, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi,
+    Option.map_some, Option.getD_some]
+  split
+  · rw [List.getElem?_append_left (by simp; omega), List.getElem?_map, List.getElem?_range (by omega),
+      Option.map_some, Option.getD_some, narrowByte]
+  · rw [List.getElem?_append_right (by simp; omega), List.getElem?_map, List.length_map, List.length_range,
+      List.getElem?_range (by omega), Option.map_some, Option.getD_some, narrowByte]
+    congr 1; omega
 
 def gatherBytes (x y : BitVec 128) : BitVec 128 :=
   let t := VPermOp.eval .uzp1 .b16 x y

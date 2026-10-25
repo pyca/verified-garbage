@@ -28,39 +28,39 @@ theorem crt_links_ok (s : State) {base : BitVec 32} {size w : Nat}
   rw [links, linksTail, WP.seq_iff]
   refine WP.mono (crt_linkStride_ok s ws (by omega) ptr count) ?_
   rintro u ⟨widthU, stepU, currentU, memU, restU⟩
-  have ptrU := (restU.gpr .r0 (by simp)).trans ptr
+  have ptrU := (restU.gpr .r0 (by decide)).trans ptr
   rw [WP.seq_iff]
   refine WP.mono (crt_linkStep_ok u (ws.congr restU.wr) (by omega : 224 + 4 ≤ size) (by decide) ptrU
     (currentU.trans (BitVec.add_zero base).symm)
     stepU widthU (by simp [pOffset] : pOffset w = 0 + stride w)) ?_
   rintro v ⟨ptrV, currentV, stepV, widthV, memV, restV⟩
-  have restSV := restU.trans (restV.mono (by simp))
+  have restSV := restU.trans (restV.mono (by decide))
   rw [WP.seq_iff]
   refine WP.mono (crt_linkStep_ok v (ws.congr restSV.wr) (by omega : 228 + 4 ≤ size) (by decide) ptrV
     currentV stepV widthV (by simp only [qOffset, pOffset]; omega : qOffset w = pOffset w + stride w)) ?_
   rintro z ⟨ptrZ, currentZ, stepZ, widthZ, memZ, restZ⟩
-  have restSZ := restSV.trans (restZ.mono (by simp))
+  have restSZ := restSV.trans (restZ.mono (by decide))
   rw [WP.seq_iff]
   refine WP.mono (crt_linkStep_ok z (ws.congr restSZ.wr) (by omega : 232 + 4 ≤ size) (by decide) ptrZ
     currentZ stepZ widthZ (by simp only [productOffset, qOffset]; omega : productOffset w = qOffset w + stride w)) ?_
   rintro q ⟨ptrQ, currentQ, _, widthQ, memQ, restQ⟩
-  have restSQ := restSZ.trans (restQ.mono (by simp))
+  have restSQ := restSZ.trans (restQ.mono (by decide))
   rw [WP.seq_iff]
   refine WP.mono (crt_productStride_ok q widthQ) ?_
   rintro r ⟨stepR, memR, restR⟩
-  have restSR := restSQ.trans (restR.mono (by simp))
-  have ptrR := (restR.gpr .r0 (by simp)).trans ptrQ
-  have currentR := (restR.gpr .r2 (by simp)).trans currentQ
-  have widthR := (restR.gpr .r7 (by simp)).trans widthQ
+  have restSR := restSQ.trans (restR.mono (by decide))
+  have ptrR := (restR.gpr .r0 (by decide)).trans ptrQ
+  have currentR := (restR.gpr .r2 (by decide)).trans currentQ
+  have widthR := (restR.gpr .r7 (by decide)).trans widthQ
   rw [WP.seq_iff]
   refine WP.mono (crt_linkStep_ok r (ws.congr restSR.wr) (by omega : 236 + 4 ≤ size) (by decide) ptrR
     currentR stepR widthR (rfl : compareOffset w = productOffset w + productBytes w)) ?_
   rintro v2 ⟨ptrV2, currentV2, stepV2, widthV2, memV2, restV2⟩
-  have restSV2 := restSR.trans (restV2.mono (by simp))
+  have restSV2 := restSR.trans (restV2.mono (by decide))
   refine WP.mono (crt_linkStep_ok v2 (ws.congr restSV2.wr) (by omega : 240 + 4 ≤ size) (by decide) ptrV2
     currentV2 stepV2 widthV2 (rfl : modulusOffset w = compareOffset w + productBytes w)) ?_
   rintro t ⟨_, _, _, _, memT, restT⟩
-  refine ⟨?_, restSV2.trans (restT.mono (by simp))⟩
+  refine ⟨?_, restSV2.trans (restT.mono (by decide))⟩
   rw [memT, memV2, memR, memQ, memZ, memV, memU]
   rfl
 

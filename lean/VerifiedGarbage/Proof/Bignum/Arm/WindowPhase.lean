@@ -56,8 +56,8 @@ theorem expByteNext_mem (s : State) {base ep : BitVec 32} {len w c : Nat}
     change BitVec.ofNat 32 c - BitVec.ofNat 32 1 = _
     exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith)
   refine ⟨by rw [g.mem, f.mem, e.mem, memZ, value], ?_,
-    (a.rest (by simp)).trans ((b.rest (by simp)).trans ((d.rest _).trans ((e.rest (by simp)).trans
-      ((f.rest (by simp)).trans (g.rest _)))))⟩
+    (a.rest (by decide)).trans ((b.rest (by decide)).trans ((d.rest _).trans ((e.rest (by decide)).trans
+      ((f.rest (by decide)).trans (g.rest _)))))⟩
   rw [zeroT, zero, ← f.gpr, value, ofNat_beq_zero (by omega_arith)]
   exact decide_eq_decide.mpr (by omega_arith)
 
@@ -96,8 +96,8 @@ theorem windowByteStep_ok (t : State) {base ep : BitVec 32} {len w M x j : Nat} 
       Nat.div_eq_of_lt v256, Nat.add_zero]⟩, by rw [Nat.pow_zero, Nat.mul_one]; exact byteU, countU⟩ v256) ?_
   rintro y ⟨⟨A', p', stateY, sumY⟩, keepsY, frameY, restY⟩
   rw [show 8 * j + 8 = 8 * (j + 1) by omega_arith] at stateY
-  have ptrY := (keepsY 128 (by simp)).trans ((keepsU 128 (by simp)).trans ptr)
-  have countY := (keepsY 132 (by simp)).trans ((keepsU 132 (by simp)).trans counter)
+  have ptrY := (keepsY 128 (by decide)).trans ((keepsU 128 (by decide)).trans ptr)
+  have countY := (keepsY 132 (by decide)).trans ((keepsU 132 (by decide)).trans counter)
   refine WP.mono (expByteNext_mem y stateY.power.ready (c := eb.length - j) (by omega_arith) (by omega_arith) ptrY countY) ?_
   rintro z ⟨memZ, zero, restZ⟩
   have ctl : CtlOnly base y.mem z.mem := by
@@ -105,7 +105,7 @@ theorem windowByteStep_ok (t : State) {base ep : BitVec 32} {len w M x j : Nat} 
   have fits := stateY.fits
   have nowrap := stateY.power.ready.workspace.nowrap
   obtain ⟨powerZ, frameZ⟩ := stateY.power.after_ctl ctl restZ
-    ((restZ.gpr .r0 (by simp)).trans stateY.power.ready.ptr)
+    ((restZ.gpr .r0 (by decide)).trans stateY.power.ready.ptr)
   obtain ⟨ptrZ, counterZ⟩ := two_writes y.mem base (d := 128) (e := 132)
     (ep + BitVec.ofNat 32 j + 1) (BitVec.ofNat 32 (eb.length - j - 1)) (by decide) (by decide) (by decide)
   rw [← memZ] at ptrZ counterZ
@@ -179,8 +179,8 @@ theorem phaseTable_ok (u : State) {base ep : BitVec 32} {len w M x : Nat} {eb : 
       Frame [⟨State.addr base, 8 * len⟩] u.mem v.mem ∧ Rest roundClobbers u v := by
   refine WP.mono (tableBuild_ok u ready.power fits) ?_
   rintro v ⟨powerV, tableV, keepsV, frameV, restV⟩
-  refine ⟨⟨powerV, tableV, fits, by rw [keepsV 128 (by simp), ready.pointer, BitVec.add_zero],
-    by rw [keepsV 132 (by simp), ready.count, Nat.sub_zero], ready.countFit, ready.sourceFit,
+  refine ⟨⟨powerV, tableV, fits, by rw [keepsV 128 (by decide), ready.pointer, BitVec.add_zero],
+    by rw [keepsV 132 (by decide), ready.count, Nat.sub_zero], ready.countFit, ready.sourceFit,
     by rw [restV.rd, restV.wr]; exact ready.read, ready.separate, ?_⟩, frameV, restV⟩
   intro i hi
   rw [frameV.bytes (R := ⟨State.addr ep, eb.length⟩)
@@ -198,7 +198,7 @@ theorem phaseReset_ok (v : State) {base ep : BitVec 32} {len w M x : Nat} {eb : 
   rintro z ⟨memZ, restZ⟩
   have ctl : CtlOnly base v.mem z.mem := by
     rw [memZ]; exact ctl_write2 _ _ _ _ (by decide) (by decide) (by decide) (by decide)
-  obtain ⟨powerZ, frameZ⟩ := h.power.after_ctl ctl restZ ((restZ.gpr .r0 (by simp)).trans h.power.ready.ptr)
+  obtain ⟨powerZ, frameZ⟩ := h.power.after_ctl ctl restZ ((restZ.gpr .r0 (by decide)).trans h.power.ready.ptr)
   obtain ⟨digitZ, pendingZ⟩ := two_writes v.mem base (d := 196) (e := 204)
     (BitVec.ofNat 32 0) (BitVec.ofNat 32 0) (by decide) (by decide) (by decide)
   rw [← memZ] at digitZ pendingZ
@@ -206,8 +206,8 @@ theorem phaseReset_ok (v : State) {base ep : BitVec 32} {len w M x : Nat} {eb : 
     rw [memZ]; exact KeepsExp.of_writes _ _ _ _ (Or.inr rfl) (by decide) (Or.inl (by decide)) (by decide)
   have stateZ : WinState base len w M x 0 0 0 z :=
     ⟨powerZ, h.table.after_ctl ctl fits nowrap (by decide), fits, digitZ, pendingZ, by decide, by decide⟩
-  refine ⟨⟨⟨0, 0, stateZ, by rw [pre_zero]⟩, by rw [keepsZ 128 (by simp), h.pointer, BitVec.add_zero],
-    by rw [keepsZ 132 (by simp), h.count, Nat.sub_zero], h.countFit, h.sourceFit,
+  refine ⟨⟨⟨0, 0, stateZ, by rw [pre_zero]⟩, by rw [keepsZ 128 (by decide), h.pointer, BitVec.add_zero],
+    by rw [keepsZ 132 (by decide), h.count, Nat.sub_zero], h.countFit, h.sourceFit,
     by rw [restZ.rd, restZ.wr]; exact h.read, h.separate, ?_⟩, frameZ, rest_round restZ⟩
   intro i hi
   rw [frameZ.bytes (R := ⟨State.addr ep, eb.length⟩)

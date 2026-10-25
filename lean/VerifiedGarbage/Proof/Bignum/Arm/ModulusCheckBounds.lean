@@ -32,7 +32,7 @@ theorem modulusCheckBounds_ok (s : State) :
       h2.other .r6 (by decide), h1.other .r6 (by decide), h4.other .r1 (by decide),
       h3.other .r1 (by decide), h2.other .r1 (by decide), h1.other .r1 (by decide)]
   · rw [h7.mem, h6.mem, h5.mem, h4.mem, h3.mem, h2.mem, h1.mem]
-  · exact (h1.rest (by simp)).trans ((h2.rest (by simp)).trans ((h3.rest (by simp)).trans
-      ((h4.rest (by simp)).trans ((h5.rest (by simp)).trans ((h6.rest (by simp)).trans (h7.rest (by simp)))))))
+  · exact (h1.rest (by decide)).trans ((h2.rest (by decide)).trans ((h3.rest (by decide)).trans
+      ((h4.rest (by decide)).trans ((h5.rest (by decide)).trans ((h6.rest (by decide)).trans (h7.rest (by decide)))))))
 
 end VG.Proof.Bignum.Arm

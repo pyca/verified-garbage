@@ -31,7 +31,7 @@ theorem crt_importQResidue_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List
   refine WP.mono (crt_qSource_ok s h) ?_
   rintro u ⟨qptr, memU, restU⟩
   have sharedU := h.of_mem memU restU
-  have readyU := ready.of_mem memU restU ((restU.gpr .r0 (by simp)).trans ready.ptr)
+  have readyU := ready.of_mem memU restU ((restU.gpr .r0 (by decide)).trans ready.ptr)
   have poweredU : CrtPoweredState (crtP g.base g.words) (workspaceWords g.words) g.words P v u.mem := by rw [memU]; exact powered
   have input : TransferArrayInput (crtP g.base g.words) (crtQ g.base g.words)
       (workspaceWords g.words) (workspaceWords g.words) g.words u :=
@@ -41,6 +41,6 @@ theorem crt_importQResidue_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List
   have sharedT := sharedU.after_p (frame.mono (by simp)) rest ⟨readyT.layout, readyT.width⟩
   have poweredT := poweredU.after_transfer readyU readyT.ptr keeps frame rest
   rw [memU] at value frame
-  exact ⟨sharedT, readyT, poweredT, value, frame, (restU.mono (by simp [roundClobbers])).trans rest⟩
+  exact ⟨sharedT, readyT, poweredT, value, frame, (restU.mono (by decide)).trans rest⟩
 
 end VG.Proof.Bignum.Arm

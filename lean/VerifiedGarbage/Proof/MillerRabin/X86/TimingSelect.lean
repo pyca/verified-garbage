@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86.TimingReadonly
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Masked selection reads every word at the same public addresses -/
 
@@ -25,7 +26,7 @@ theorem loadMask_relCT {g : Geometry} (v : g.Valid) :
 theorem selectLoop_raw : RelCT isa (VG.X86.Taint.Agree (roundTaint copyRegisters))
     (.loop (.block selectBody) .ne) (VG.X86.Taint.Agree (roundTaint copyRegisters)) :=
   checkedProgramChange (τ' := roundTaint copyRegisters true)
-    (hint := VG.Taint.hintOf taint (roundTaint copyRegisters) (.loop (.block selectBody) .ne)) rfl rfl
+    (hint := VG.Taint.hintOf taint (roundTaint copyRegisters) (.loop (.block selectBody) .ne)) (by kernel_rfl) (by kernel_rfl)
 
 theorem selectEntry_trace {g : Geometry} (v : g.Valid) (j : Nat) (digit : j < 16) :
     RelCT isa (Pair g [.edi]) (selectEntry j) (VG.X86.Taint.Agree (roundTaint copyRegisters)) := by

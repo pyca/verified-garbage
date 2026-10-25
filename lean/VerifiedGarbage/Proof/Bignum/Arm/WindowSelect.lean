@@ -53,13 +53,13 @@ theorem selectAt_ok (s : State) {s0 : State} {base : BitVec 32} {len w o a b : N
   have frame := outside_workspace outside (size := 8 * len) (by omega)
   have keeps := outside_array_keeps outside (len := len) (by have := ws.nowrap; omega)
   have restV : Rest roundClobbers s0 v :=
-    rest.trans (inv.rest.mono (by simp [roundClobbers, selectLoopClobbers]))
+    rest.trans (inv.rest.mono (by decide))
   refine WP.mono (restoreBase_ok v
     (by rw [restV.rd, restV.wr, restV.sp]; exact h.stackRead)
     (saved_base_kept frame h.stackSep h.saved restV.sp)) ?_
   rintro t ⟨ptrT, memT, restT⟩
   rw [← memT] at frame keeps outside value
-  have restT' := restV.trans (restT.mono (by simp [roundClobbers]))
+  have restT' := restV.trans (restT.mono (by decide))
   exact ⟨(h.after_array ho0 keeps frame restT' ptrT).1, value, outside, keeps, frame, restT'⟩
 
 /-- Arrays outside the written one keep their numbers. -/
@@ -107,8 +107,8 @@ theorem entryCopyArgs_ok (s : State) {base : BitVec 32} {len w a j : Nat}
     rw [e.gpr, d.mem, c.mem, b.mem, a1.mem, entry]
   refine ⟨?_, ?_, ?_, by rw [f.other .r0 (by decide)]; exact r0, by rw [f.gpr]; exact r0,
     f.mem.trans (e.mem.trans (d.mem.trans (c.mem.trans (b.mem.trans a1.mem)))),
-    (a1.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans
-      ((d.rest (by simp)).trans ((e.rest (by simp)).trans (f.rest (by simp))))))⟩
+    (a1.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
+      ((d.rest (by decide)).trans ((e.rest (by decide)).trans (f.rest (by decide))))))⟩
   · rw [f.other .r11 (by decide), e.other .r11 (by decide), d.other .r11 (by decide),
       c.other .r11 (by decide), b.other .r11 (by decide), a1.gpr]
   · rw [f.other .r12 (by decide), e.other .r12 (by decide), d.other .r12 (by decide),
@@ -147,8 +147,8 @@ theorem scanArgs_ok (s : State) {base : BitVec 32} {len w j : Nat}
     (by rw [d.rd, d.wr, c.rd, c.wr, b.rd, b.wr, a.rd, a.wr]; exact h.workspace.read (by omega))
     fun t e => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, e.mem.trans (d.mem.trans (c.mem.trans (b.mem.trans a.mem))),
-    (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans
-      ((d.rest (by simp)).trans (e.rest (by simp)))))⟩
+    (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
+      ((d.rest (by decide)).trans (e.rest (by decide)))))⟩
   · rw [e.gpr, d.mem, c.mem, b.mem, a.mem]
     exact header.array 1 (by decide)
   · rw [e.other .r10 (by decide), d.other .r10 (by decide), c.other .r10 (by decide),
@@ -170,7 +170,7 @@ theorem entryCopy_ok (s : State) {base : BitVec 32} {len w a j : Nat}
   rw [entryCopy, WP.seq_iff]
   refine WP.mono (entryCopyArgs_ok s h ha entry) ?_
   rintro u ⟨bit, p12, count, p0, p10, memU, restU⟩
-  refine WP.mono (selectAt_ok u h memU (restU.mono (by simp [roundClobbers])) fits (by omega) (by omega)
+  refine WP.mono (selectAt_ok u h memU (restU.mono (by decide)) fits (by omega) (by omega)
     (by omega) (by omega) p0 p10 p12 count (by rw [bit]; decide)) ?_
   rintro t ⟨ready, value, outside, keeps, frame, rest⟩
   rw [bit] at value

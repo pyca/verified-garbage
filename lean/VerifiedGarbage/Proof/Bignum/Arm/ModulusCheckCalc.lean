@@ -28,7 +28,7 @@ theorem modulusCheckCalc_ok (s : State) (hf : (s.gpr .r1).toNat < 256)
   rintro u ⟨low, top, mem, rest⟩
   refine WP.mono (modulusCheckFinish_ok u) ?_
   rintro t ⟨zero, memT, keep⟩
-  rw [low, top, rest.gpr .r2 (by simp), modulusCheck_value _ _ _ hf hk hk'] at zero
-  exact ⟨zero, memT.trans mem, (rest.mono (by simp)).trans (keep.mono (by simp))⟩
+  rw [low, top, rest.gpr .r2 (by decide), modulusCheck_value _ _ _ hf hk hk'] at zero
+  exact ⟨zero, memT.trans mem, (rest.mono (by decide)).trans (keep.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

@@ -41,8 +41,8 @@ theorem setupArgs_ok (s : State) {w : Nat} (count : s.gpr .r7 = BitVec.ofNat 32 
     change BitVec.ofNat 32 (w + 2) * BitVec.ofNat 32 8 = _
     rw [← BitVec.ofNat_mul, Nat.mul_comm]
   · rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
-      ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans
-        ((u5.rest (by simp)).trans (u6.rest (by simp))))))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
+      ((u3.rest (by decide)).trans ((u4.rest (by decide)).trans
+        ((u5.rest (by decide)).trans (u6.rest (by decide))))))
 
 end VG.Proof.Bignum.Arm
