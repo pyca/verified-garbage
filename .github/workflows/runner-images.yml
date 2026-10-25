@@ -12,11 +12,13 @@ on:
   pull_request:
     paths:
       - .github/workflows/runner-images.yml
+      - .github/actions/runner-node/**
       - ci/runner.Dockerfile
   push:
     branches: [main]
     paths:
       - .github/workflows/runner-images.yml
+      - .github/actions/runner-node/**
       - ci/runner.Dockerfile
 
 permissions: {}
@@ -85,6 +87,8 @@ jobs:
           platforms: ${{ env.PLATFORM }}
           pull: true
           outputs: ${{ env.PUBLISH == 'true' && 'type=registry,compression=zstd' || 'type=docker' }}
+      - id: runner-node
+        uses: ./.github/actions/runner-node
       # What CI's jobs need: the runner's Node (which GitHub Actions injects
       # into the container for JS actions), a toolchain that builds and runs
       # for the host and each installed target, and one that rustup can update
@@ -94,9 +98,10 @@ jobs:
         env:
           PULL: ${{ env.PUBLISH == 'true' && 'always' || 'never' }}
           RUN_OPTIONS: ${{ matrix.image.run-options }}
+          RUNNER_NODE: ${{ steps.runner-node.outputs.path }}
         run: |
           docker run --rm --platform "$PLATFORM" --pull="$PULL" $RUN_OPTIONS \
-            -v "$(readlink -f "$(command -v node)")":/runner-node:ro \
+            -v "$(readlink -f "$RUNNER_NODE")":/runner-node:ro \
             "$IMAGE" \
             sh -euxc '
               /runner-node -e "console.log(process.version, process.arch)"
