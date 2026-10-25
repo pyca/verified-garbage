@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Words.RISCV64
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.TCB.RISCV64.Isa
 import all Init.Data.Nat.Bitwise.Basic
 
@@ -29,7 +30,12 @@ and `rotr_shifts`, a rotation as two word shifts.
 
 namespace VG.RISCV64.ByteLoad
 
-open VG.Impl.Words.RISCV64
+open VG.Impl.Words.RISCV64 VG.WriteBytes
+
+/-- The low `w` bytes of `x`, most significant first, as `storeBE` stores
+them. -/
+def beBytes (w : Nat) (x : BitVec 64) : List Byte :=
+  (List.range w).map fun j => (x >>> (8 * (w - 1 - j))).setWidth 8
 
 /-- The big-endian word of the bytes at `p + off`, …, `p + off + 3`. -/
 def beWord (m : Mem) (p : Addr) (off : Nat) : BitVec 32 :=
@@ -269,5 +275,63 @@ theorem li32_ok {d : Reg} (w : BitVec 32) :
   simp only [li32, runBlock_cons, runStep_some, runBlock_nil, exec_lui, exec_addiw (lo12_imm w),
     RegUpd.gpr_write_self, lo32_sext, li32_val, RegUpd.write_write, Option.some.injEq,
     exists_eq_left']
+
+/-- A write of the same value. -/
+theorem write_self (s : State) (r : Reg) : s.write r (s.gpr r) = s := by
+  simp only [State.write]
+  cases s
+  simp only [State.mk.injEq, and_true]
+  funext x; split <;> simp_all
+
+theorem writeW_byte (m : Mem) (a : Addr) (b : Byte) : m.writeW a b = m.write a 1 b := rfl
+
+theorem beBytes_length (w : Nat) (x : BitVec 64) : (beBytes w x).length = w := by simp [beBytes]
+
+theorem take_beBytes_succ {w k : Nat} (x : BitVec 64) (hk : k < w) :
+    (beBytes w x).take (k + 1) = (beBytes w x).take k ++ [(x >>> (8 * (w - 1 - k))).setWidth 8] := by
+  rw [List.take_add_one, List.getElem?_eq_getElem (by rw [beBytes_length]; exact hk)]
+  simp [beBytes]
+
+/-- The first `k` steps of `storeBE`. -/
+theorem storeBE_prefix {v tmp n : Reg} {off w : Nat} (htv : tmp ≠ v) (htn : tmp ≠ n)
+    (hw8 : w ≤ 8) (ho : off + w ≤ 2048) (h : ∀ j < w, InRegions s.wr (s.gpr n + BitVec.ofNat 64 (off + j)) 1) :
+    ∀ k ≤ w, WP isa (.block ((List.range k).flatMap fun j =>
+        [.shift .srl .d tmp v (8 * (w - 1 - j)), .store .b tmp n (off + j)])) s (· =
+      { s with mem := writeBytes s.mem (s.gpr n + BitVec.ofNat 64 off) ((beBytes w (s.gpr v)).take k) }.write
+        tmp (if k = 0 then s.gpr tmp else s.gpr v >>> (8 * (w - k)))) := by
+  intro k hk
+  induction k with
+  | zero =>
+    refine WP.block_nil ?_
+    simp only [List.take_zero, writeBytes_nil, ite_true]
+    exact (write_self _ _).symm
+  | succ k ih =>
+    rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
+    refine WP.mono (ih (by omega)) fun s₁ e => ?_
+    subst e
+    have hin := h k (by omega)
+    apply WP.of_runBlock
+    simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, runBlock_cons, runStep_some,
+      exec_shift_d (show 8 * (w - 1 - k) < 64 by omega), RegUpd.gpr_write,
+      Ne.symm htv, ite_false, RegUpd.write_write]
+    rw [exec_store_b (show off + k < 2048 by omega) (by
+      simp only [RegUpd.gpr_write, Ne.symm htn, ite_false, RegUpd.wr_write]; exact hin)]
+    simp only [RegUpd.gpr_write, Ne.symm htn, ite_true, ite_false, runStep_some, runBlock_nil,
+      Option.some.injEq, exists_eq_left', RegUpd.mem_write, RegUpd.write_mem]
+    rw [take_beBytes_succ _ (by omega), writeBytes_snoc _ _ _ _ (by
+      simp only [List.length_take, beBytes_length]; omega), writeW_byte]
+    simp only [List.length_take, beBytes_length, Nat.min_eq_left (show k ≤ w by omega),
+      Nat.add_one_ne_zero, ite_false, show w - (k + 1) = w - 1 - k by omega]
+    rw [show s.gpr n + BitVec.ofNat 64 off + BitVec.ofNat 64 k = s.gpr n + BitVec.ofNat 64 (off + k) by
+      rw [BitVec.ofNat_add, BitVec.add_assoc]]
+
+theorem storeBE_ok {v tmp n : Reg} {off w : Nat} (htv : tmp ≠ v) (htn : tmp ≠ n) (hw : 0 < w)
+    (hw8 : w ≤ 8) (ho : off + w ≤ 2048) (h : ∀ j < w, InRegions s.wr (s.gpr n + BitVec.ofNat 64 (off + j)) 1) :
+    WP isa (.block (storeBE w v tmp n off)) s (· =
+      { s with mem := writeBytes s.mem (s.gpr n + BitVec.ofNat 64 off) (beBytes w (s.gpr v)) }.write
+        tmp (s.gpr v)) := by
+  refine WP.mono (storeBE_prefix htv htn hw8 ho h w (Nat.le_refl _)) fun s' e => ?_
+  rw [e, List.take_of_length_le (by rw [beBytes_length]), ite_eq_right_of_eq_false _ _ (by simp; omega),
+    Nat.sub_self, Nat.mul_zero, BitVec.ushiftRight_zero]
 
 end VG.RISCV64.ByteLoad

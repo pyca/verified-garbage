@@ -13,8 +13,9 @@ are emitted with the shared contracts of `Spec/`, which imply it
 terms of `Spec/Sha256.lean`.
 
 The return address is in `ra`, which the target's calling convention
-requires to be preserved (`VG.RISCV64.abiPreserved`), not on the stack, so
-no region needs to be kept disjoint from it.
+requires to be preserved (`VG.RISCV64.abiPreserved`), not on the stack.
+`update` and `finalize` keep their working space in a frame of 144 bytes
+below the stack pointer, which must not overlap their buffers.
 -/
 
 @[expose] public section
@@ -45,5 +46,67 @@ def compressRISCV64 : Contract RISCV64.isa where
   pub s₁ s₂ :=
     s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧
     s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.sp = s₂.sp
+
+open RISCV64 in
+/-- RISC-V contract for `vg_sha256_init(state: *mut [u8; 96])` (`iv` is
+`H0`) and `vg_sha224_init` (`iv` is `H0_224`): makes the streaming state at
+`state` represent the empty message, hashed from `iv`.
+
+The code may write `state` (96 bytes). The pointer is public. -/
+def initFromRISCV64 (iv : HashValue) : Contract RISCV64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .a0, 96⟩
+    s.rd = [] ∧ s.wr = [state]
+  post s s' := ReprFrom iv s'.mem (s.gpr .a0) []
+  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.sp = s₂.sp
+
+open RISCV64 in
+/-- RISC-V contract for
+`vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize)`:
+if the streaming state at `state` represents a message `m` of `count` bytes
+(modulo 2⁶⁴), hashed from any initial hash value `iv`, then afterwards it
+represents `m` followed by the `len` bytes at `data`, from `iv`.
+
+The code may read `data` (`len` bytes) and read and write `state` (96
+bytes). These may not overlap each other, nor the 144 bytes below the stack
+pointer (its frame), which do not wrap around. The stack pointer is 16-byte
+aligned. The pointers, `count` and `len` are public; the state and the data
+are secret. -/
+def updateRISCV64 : Contract RISCV64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .a0, 96⟩
+    let data : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
+    let stack : Region := ⟨s.sp - 144, 144⟩
+    s.rd = [data] ∧ s.wr = [state] ∧ data.Disjoint state ∧
+    s.sp.toNat % 16 = 0 ∧ 144 ≤ s.sp.toNat ∧ stack.Disjoint state ∧ stack.Disjoint data
+  post s s' := ∀ iv m, ReprFrom iv s.mem (s.gpr .a0) m → s.gpr .a1 = BitVec.ofNat 64 m.length →
+    ReprFrom iv s'.mem (s.gpr .a0) (m ++ bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
+  pub s₁ s₂ :=
+    s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.sp = s₂.sp
+
+open RISCV64 in
+/-- RISC-V contract for `vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32])`
+(`n = 8`) and `vg_sha224_finalize` (`n = 7`): if the streaming state at
+`state` represents a message `m` of `count` bytes (modulo 2⁶⁴), hashed from
+the initial hash value `iv`, writes the first `n` words (`4 n` bytes) of the
+final hash value of `m` from `iv` to `out`.
+
+The code may read and write `state` (96 bytes, whose contents on exit are
+unspecified) and `out` (`4 n` bytes). These may not overlap each other, nor
+the 144 bytes below the stack pointer (its frame), which do not wrap around.
+The stack pointer is 16-byte aligned. The pointers and `count` are public;
+the state is secret. -/
+def finalizeNRISCV64 (n : Nat) : Contract RISCV64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .a0, 96⟩
+    let out : Region := ⟨s.gpr .a2, 4 * n⟩
+    let stack : Region := ⟨s.sp - 144, 144⟩
+    s.rd = [] ∧ s.wr = [state, out] ∧ state.Disjoint out ∧
+    s.sp.toNat % 16 = 0 ∧ 144 ≤ s.sp.toNat ∧ stack.Disjoint state ∧ stack.Disjoint out
+  post s s' := ∀ iv m, ReprFrom iv s.mem (s.gpr .a0) m → s.gpr .a1 = BitVec.ofNat 64 m.length →
+    bytesAt s'.mem (s.gpr .a2) (4 * n) = (Spec.Sha256.finalHash iv m).take (4 * n)
+  pub s₁ s₂ :=
+    s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.sp = s₂.sp
 
 end VG.Proof.Sha256

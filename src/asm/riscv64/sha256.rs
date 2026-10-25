@@ -2,6 +2,316 @@
 //! Verified `sha256` functions for `riscv64`.
 #![allow(dead_code)]
 
+/// Starts a SHA-224 computation: makes the SHA-256 streaming state `*state` represent the empty message, hashed from the initial hash value of SHA-224 (`VG.Spec.Sha256.H0_224`). Continue with `vg_sha256_update` and `vg_sha256_finalize`, and take the first 28 bytes of the final hash value as the digest.
+///
+/// Contract: `VG.Spec.Sha256.init224Contract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.ReprFrom`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `state` must not wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
+    core::arch::naked_asm!(
+        r"lui t0, 790618
+addiw t0, t0, -296
+sb t0, 0(a0)
+srli t1, t0, 8
+sb t1, 1(a0)
+srli t1, t0, 16
+sb t1, 2(a0)
+srli t1, t0, 24
+sb t1, 3(a0)
+lui t0, 223181
+addiw t0, t0, 1287
+sb t0, 4(a0)
+srli t1, t0, 8
+sb t1, 5(a0)
+srli t1, t0, 16
+sb t1, 6(a0)
+srli t1, t0, 24
+sb t1, 7(a0)
+lui t0, 198414
+addiw t0, t0, -745
+sb t0, 8(a0)
+srli t1, t0, 8
+sb t1, 9(a0)
+srli t1, t0, 16
+sb t1, 10(a0)
+srli t1, t0, 24
+sb t1, 11(a0)
+lui t0, 1011942
+addiw t0, t0, -1735
+sb t0, 12(a0)
+srli t1, t0, 8
+sb t1, 13(a0)
+srli t1, t0, 16
+sb t1, 14(a0)
+srli t1, t0, 24
+sb t1, 15(a0)
+lui t0, 1047553
+addiw t0, t0, -1231
+sb t0, 16(a0)
+srli t1, t0, 8
+sb t1, 17(a0)
+srli t1, t0, 16
+sb t1, 18(a0)
+srli t1, t0, 24
+sb t1, 19(a0)
+lui t0, 427393
+addiw t0, t0, 1297
+sb t0, 20(a0)
+srli t1, t0, 8
+sb t1, 21(a0)
+srli t1, t0, 16
+sb t1, 22(a0)
+srli t1, t0, 24
+sb t1, 23(a0)
+lui t0, 413593
+addiw t0, t0, -89
+sb t0, 24(a0)
+srli t1, t0, 8
+sb t1, 25(a0)
+srli t1, t0, 16
+sb t1, 26(a0)
+srli t1, t0, 24
+sb t1, 27(a0)
+lui t0, 782245
+addiw t0, t0, -92
+sb t0, 28(a0)
+srli t1, t0, 8
+sb t1, 29(a0)
+srli t1, t0, 16
+sb t1, 30(a0)
+srli t1, t0, 24
+sb t1, 31(a0)
+ret",
+    )
+}
+
+/// Finishes a SHA-224 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from the initial hash value of SHA-224 (as `vg_sha224_init` starts it), writes the SHA-224 digest of that message (28 bytes, `VG.Spec.Sha256.sha224`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// Keeps its working space, and the registers it saves, in a frame of 144 bytes on the stack.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 144 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r"addi sp, sp, -144
+addi t0, sp, 0
+sd ra, 80(t0)
+sd s1, 88(t0)
+sd s2, 96(t0)
+sd s3, 104(t0)
+sd s4, 112(t0)
+sd s5, 120(t0)
+sd s6, 128(t0)
+addi s1, a0, 0
+addi s2, t0, 0
+addi s3, a2, 0
+addi s4, a1, 0
+andi s5, s4, 63
+addi t1, zero, 128
+add t3, s1, s5
+sb t1, 32(t3)
+addi s5, s5, 1
+addi s6, s5, 7
+srli s6, s6, 6
+20:
+addi t2, zero, 64
+beqz s6, 21f
+j 22f
+21:
+addi t2, zero, 56
+22:
+addi t1, zero, 0
+sub t2, t2, s5
+beqz t2, 23f
+25:
+add t3, s1, s5
+sb t1, 32(t3)
+addi s5, s5, 1
+addi t2, t2, -1
+bnez t2, 25b
+j 24f
+23:
+24:
+beqz s6, 26f
+j 27f
+26:
+slli t1, s4, 3
+srli t3, t1, 56
+sb t3, 88(s1)
+srli t3, t1, 48
+sb t3, 89(s1)
+srli t3, t1, 40
+sb t3, 90(s1)
+srli t3, t1, 32
+sb t3, 91(s1)
+srli t3, t1, 24
+sb t3, 92(s1)
+srli t3, t1, 16
+sb t3, 93(s1)
+srli t3, t1, 8
+sb t3, 94(s1)
+srli t3, t1, 0
+sb t3, 95(s1)
+27:
+addi a1, s1, 32
+addi a0, s1, 0
+addi a2, zero, 1
+addi a3, s2, 0
+call {vg_sha256_compress}
+addi s5, zero, 0
+addi s6, s6, -1
+beqz s6, 20b
+lbu t1, 0(s1)
+lbu t2, 1(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 2(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 3(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 0(s3)
+srli t2, t1, 16
+sb t2, 1(s3)
+srli t2, t1, 8
+sb t2, 2(s3)
+srli t2, t1, 0
+sb t2, 3(s3)
+lbu t1, 4(s1)
+lbu t2, 5(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 6(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 7(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 4(s3)
+srli t2, t1, 16
+sb t2, 5(s3)
+srli t2, t1, 8
+sb t2, 6(s3)
+srli t2, t1, 0
+sb t2, 7(s3)
+lbu t1, 8(s1)
+lbu t2, 9(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 10(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 11(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 8(s3)
+srli t2, t1, 16
+sb t2, 9(s3)
+srli t2, t1, 8
+sb t2, 10(s3)
+srli t2, t1, 0
+sb t2, 11(s3)
+lbu t1, 12(s1)
+lbu t2, 13(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 14(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 15(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 12(s3)
+srli t2, t1, 16
+sb t2, 13(s3)
+srli t2, t1, 8
+sb t2, 14(s3)
+srli t2, t1, 0
+sb t2, 15(s3)
+lbu t1, 16(s1)
+lbu t2, 17(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 18(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 19(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 16(s3)
+srli t2, t1, 16
+sb t2, 17(s3)
+srli t2, t1, 8
+sb t2, 18(s3)
+srli t2, t1, 0
+sb t2, 19(s3)
+lbu t1, 20(s1)
+lbu t2, 21(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 22(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 23(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 20(s3)
+srli t2, t1, 16
+sb t2, 21(s3)
+srli t2, t1, 8
+sb t2, 22(s3)
+srli t2, t1, 0
+sb t2, 23(s3)
+lbu t1, 24(s1)
+lbu t2, 25(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 26(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 27(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 24(s3)
+srli t2, t1, 16
+sb t2, 25(s3)
+srli t2, t1, 8
+sb t2, 26(s3)
+srli t2, t1, 0
+sb t2, 27(s3)
+ld ra, 80(s2)
+ld s1, 88(s2)
+ld s3, 104(s2)
+ld s4, 112(s2)
+ld s5, 120(s2)
+ld s6, 128(s2)
+ld s2, 96(s2)
+addi sp, sp, 144
+ret",
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+    )
+}
+
 /// The SHA-256 compression function (FIPS 180-4 §6.2.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
 ///
 /// Contract: `VG.Spec.Sha256.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
@@ -4112,5 +4422,465 @@ j 21f
 21:
 ld s0, 64(a3)
 ret",
+    )
+}
+
+/// Starts a SHA-256 computation: makes the streaming state `*state` represent the empty message.
+///
+/// Contract: `VG.Spec.Sha256.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha256.Repr`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `state` must not wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
+    core::arch::naked_asm!(
+        r"lui t0, 434334
+addiw t0, t0, 1639
+sb t0, 0(a0)
+srli t1, t0, 8
+sb t1, 1(a0)
+srli t1, t0, 16
+sb t1, 2(a0)
+srli t1, t0, 24
+sb t1, 3(a0)
+lui t0, 767611
+addiw t0, t0, -379
+sb t0, 4(a0)
+srli t1, t0, 8
+sb t1, 5(a0)
+srli t1, t0, 16
+sb t1, 6(a0)
+srli t1, t0, 24
+sb t1, 7(a0)
+lui t0, 247535
+addiw t0, t0, 882
+sb t0, 8(a0)
+srli t1, t0, 8
+sb t1, 9(a0)
+srli t1, t0, 16
+sb t1, 10(a0)
+srli t1, t0, 24
+sb t1, 11(a0)
+lui t0, 677119
+addiw t0, t0, 1338
+sb t0, 12(a0)
+srli t1, t0, 8
+sb t1, 13(a0)
+srli t1, t0, 16
+sb t1, 14(a0)
+srli t1, t0, 24
+sb t1, 15(a0)
+lui t0, 332005
+addiw t0, t0, 639
+sb t0, 16(a0)
+srli t1, t0, 8
+sb t1, 17(a0)
+srli t1, t0, 16
+sb t1, 18(a0)
+srli t1, t0, 24
+sb t1, 19(a0)
+lui t0, 634967
+addiw t0, t0, -1908
+sb t0, 20(a0)
+srli t1, t0, 8
+sb t1, 21(a0)
+srli t1, t0, 16
+sb t1, 22(a0)
+srli t1, t0, 24
+sb t1, 23(a0)
+lui t0, 129086
+addiw t0, t0, -1621
+sb t0, 24(a0)
+srli t1, t0, 8
+sb t1, 25(a0)
+srli t1, t0, 16
+sb t1, 26(a0)
+srli t1, t0, 24
+sb t1, 27(a0)
+lui t0, 376333
+addiw t0, t0, -743
+sb t0, 28(a0)
+srli t1, t0, 8
+sb t1, 29(a0)
+srli t1, t0, 16
+sb t1, 30(a0)
+srli t1, t0, 24
+sb t1, 31(a0)
+ret",
+    )
+}
+
+/// Absorbs data into a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
+///
+/// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// Keeps its working space, and the registers it saves, in a frame of 144 bytes on the stack.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 144 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r"addi sp, sp, -144
+addi t0, sp, 0
+sd ra, 80(t0)
+sd s1, 88(t0)
+sd s2, 96(t0)
+sd s3, 104(t0)
+sd s4, 112(t0)
+sd s5, 120(t0)
+sd s6, 128(t0)
+addi s1, a0, 0
+addi s2, t0, 0
+addi s3, a2, 0
+addi s4, a3, 0
+andi s5, a1, 63
+beqz s4, 20f
+22:
+addi t0, zero, 0
+beqz s5, 23f
+addi t2, zero, 64
+sub t2, t2, s5
+srli t1, s4, 6
+beqz t1, 25f
+j 26f
+25:
+add t1, s4, s5
+srli t1, t1, 6
+beqz t1, 27f
+j 28f
+27:
+addi t2, s4, 0
+28:
+26:
+sub s4, s4, t2
+29:
+lbu t1, 0(s3)
+add t3, s1, s5
+sb t1, 32(t3)
+addi s3, s3, 1
+addi s5, s5, 1
+addi t2, t2, -1
+bnez t2, 29b
+addi t1, s5, -64
+beqz t1, 210f
+j 211f
+210:
+addi a1, s1, 32
+addi s5, zero, 0
+addi t0, zero, 1
+211:
+j 24f
+23:
+srli t1, s4, 6
+beqz t1, 212f
+addi a1, s3, 0
+addi s3, s3, 64
+addi s4, s4, -64
+addi t0, zero, 1
+j 213f
+212:
+addi t2, zero, 64
+sub t2, t2, s5
+srli t1, s4, 6
+beqz t1, 214f
+j 215f
+214:
+add t1, s4, s5
+srli t1, t1, 6
+beqz t1, 216f
+j 217f
+216:
+addi t2, s4, 0
+217:
+215:
+sub s4, s4, t2
+218:
+lbu t1, 0(s3)
+add t3, s1, s5
+sb t1, 32(t3)
+addi s3, s3, 1
+addi s5, s5, 1
+addi t2, t2, -1
+bnez t2, 218b
+addi t1, s5, -64
+beqz t1, 219f
+j 220f
+219:
+addi a1, s1, 32
+addi s5, zero, 0
+addi t0, zero, 1
+220:
+213:
+24:
+beqz t0, 221f
+addi a0, s1, 0
+addi a2, zero, 1
+addi a3, s2, 0
+call {vg_sha256_compress}
+j 222f
+221:
+222:
+bnez s4, 22b
+j 21f
+20:
+21:
+ld ra, 80(s2)
+ld s1, 88(s2)
+ld s3, 104(s2)
+ld s4, 112(s2)
+ld s5, 120(s2)
+ld s6, 128(s2)
+ld s2, 96(s2)
+addi sp, sp, 144
+ret",
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+    )
+}
+
+/// Finishes a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (32 bytes) to `*out`. The SHA-256 digest is all of it; the SHA-224 digest is its first 28 bytes.
+///
+/// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// Keeps its working space, and the registers it saves, in a frame of 144 bytes on the stack.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 144 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r"addi sp, sp, -144
+addi t0, sp, 0
+sd ra, 80(t0)
+sd s1, 88(t0)
+sd s2, 96(t0)
+sd s3, 104(t0)
+sd s4, 112(t0)
+sd s5, 120(t0)
+sd s6, 128(t0)
+addi s1, a0, 0
+addi s2, t0, 0
+addi s3, a2, 0
+addi s4, a1, 0
+andi s5, s4, 63
+addi t1, zero, 128
+add t3, s1, s5
+sb t1, 32(t3)
+addi s5, s5, 1
+addi s6, s5, 7
+srli s6, s6, 6
+20:
+addi t2, zero, 64
+beqz s6, 21f
+j 22f
+21:
+addi t2, zero, 56
+22:
+addi t1, zero, 0
+sub t2, t2, s5
+beqz t2, 23f
+25:
+add t3, s1, s5
+sb t1, 32(t3)
+addi s5, s5, 1
+addi t2, t2, -1
+bnez t2, 25b
+j 24f
+23:
+24:
+beqz s6, 26f
+j 27f
+26:
+slli t1, s4, 3
+srli t3, t1, 56
+sb t3, 88(s1)
+srli t3, t1, 48
+sb t3, 89(s1)
+srli t3, t1, 40
+sb t3, 90(s1)
+srli t3, t1, 32
+sb t3, 91(s1)
+srli t3, t1, 24
+sb t3, 92(s1)
+srli t3, t1, 16
+sb t3, 93(s1)
+srli t3, t1, 8
+sb t3, 94(s1)
+srli t3, t1, 0
+sb t3, 95(s1)
+27:
+addi a1, s1, 32
+addi a0, s1, 0
+addi a2, zero, 1
+addi a3, s2, 0
+call {vg_sha256_compress}
+addi s5, zero, 0
+addi s6, s6, -1
+beqz s6, 20b
+lbu t1, 0(s1)
+lbu t2, 1(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 2(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 3(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 0(s3)
+srli t2, t1, 16
+sb t2, 1(s3)
+srli t2, t1, 8
+sb t2, 2(s3)
+srli t2, t1, 0
+sb t2, 3(s3)
+lbu t1, 4(s1)
+lbu t2, 5(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 6(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 7(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 4(s3)
+srli t2, t1, 16
+sb t2, 5(s3)
+srli t2, t1, 8
+sb t2, 6(s3)
+srli t2, t1, 0
+sb t2, 7(s3)
+lbu t1, 8(s1)
+lbu t2, 9(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 10(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 11(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 8(s3)
+srli t2, t1, 16
+sb t2, 9(s3)
+srli t2, t1, 8
+sb t2, 10(s3)
+srli t2, t1, 0
+sb t2, 11(s3)
+lbu t1, 12(s1)
+lbu t2, 13(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 14(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 15(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 12(s3)
+srli t2, t1, 16
+sb t2, 13(s3)
+srli t2, t1, 8
+sb t2, 14(s3)
+srli t2, t1, 0
+sb t2, 15(s3)
+lbu t1, 16(s1)
+lbu t2, 17(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 18(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 19(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 16(s3)
+srli t2, t1, 16
+sb t2, 17(s3)
+srli t2, t1, 8
+sb t2, 18(s3)
+srli t2, t1, 0
+sb t2, 19(s3)
+lbu t1, 20(s1)
+lbu t2, 21(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 22(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 23(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 20(s3)
+srli t2, t1, 16
+sb t2, 21(s3)
+srli t2, t1, 8
+sb t2, 22(s3)
+srli t2, t1, 0
+sb t2, 23(s3)
+lbu t1, 24(s1)
+lbu t2, 25(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 26(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 27(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 24(s3)
+srli t2, t1, 16
+sb t2, 25(s3)
+srli t2, t1, 8
+sb t2, 26(s3)
+srli t2, t1, 0
+sb t2, 27(s3)
+lbu t1, 28(s1)
+lbu t2, 29(s1)
+slli t2, t2, 8
+or t1, t1, t2
+lbu t2, 30(s1)
+slli t2, t2, 16
+or t1, t1, t2
+lbu t2, 31(s1)
+slli t2, t2, 24
+or t1, t1, t2
+srli t2, t1, 24
+sb t2, 28(s3)
+srli t2, t1, 16
+sb t2, 29(s3)
+srli t2, t1, 8
+sb t2, 30(s3)
+srli t2, t1, 0
+sb t2, 31(s3)
+ld ra, 80(s2)
+ld s1, 88(s2)
+ld s3, 104(s2)
+ld s4, 112(s2)
+ld s5, 120(s2)
+ld s6, 128(s2)
+ld s2, 96(s2)
+addi sp, sp, 144
+ret",
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
 }

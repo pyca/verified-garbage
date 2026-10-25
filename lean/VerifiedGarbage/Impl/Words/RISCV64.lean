@@ -47,6 +47,11 @@ def storeLE32 (v tmp n : Reg) (off : Nat) : List Instr :=
    .shift .srl .d tmp v 16, .store .b tmp n (off + 2),
    .shift .srl .d tmp v 24, .store .b tmp n (off + 3)]
 
+/-- Store the low `w` bytes of `v` at `off(n)`, big-endian (most significant
+first), a byte at a time; `tmp` is clobbered. `tmp` is neither `v` nor `n`. -/
+def storeBE (w : Nat) (v tmp n : Reg) (off : Nat) : List Instr :=
+  (List.range w).flatMap fun j => [.shift .srl .d tmp v (8 * (w - 1 - j)), .store .b tmp n (off + j)]
+
 /-- The upper 20 bits of `w` for `lui`, rounded so that the low 12 bits are a
 signed immediate (`lo12`). -/
 def hi20 (w : BitVec 32) : BitVec 20 := BitVec.ofNat 20 ((w.toNat + 2048) / 4096)
