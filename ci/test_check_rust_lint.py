@@ -50,7 +50,7 @@ class Targets(unittest.TestCase):
         # The lint image's toolchain (ci/runner.Dockerfile's amd64 case), so
         # that its jobs download nothing until stable changes.
         text = (CI / "runner.Dockerfile").read_text()
-        m = re.search(r"amd64\) host=(\S+?); \\\n\s+targets=(\S+?) ;;", text)
+        m = re.search(r"amd64\) host=(\S+?);[^\n]* \\\n\s+targets=(\S+?) ;;", text)
         self.assertIsNotNone(m)
         host, targets = m.group(1), m.group(2).split(",")
         self.assertEqual(sorted([host, *targets]), sorted(e["target"] for e in LINT))

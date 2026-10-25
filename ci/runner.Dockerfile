@@ -29,11 +29,14 @@ ENV LANG=C.UTF-8
 # updates with EXDEV. Allow rustup to copy the files in that case.
 ENV RUSTUP_PERMIT_COPY_RENAME=1
 
-# Don't unpack things nothing in CI uses: static OpenSSL, gcc's LTO backend,
-# and the sanitizer runtimes (hard deps of libgcc-dev).
+# Don't unpack things nothing in CI uses: static OpenSSL and glibc (rustc
+# links dynamically; libc_nonshared.a, which libc.so names, stays), gcc's LTO
+# backend, and the sanitizer runtimes (hard deps of libgcc-dev).
 RUN printf '%s\n' \
     'path-exclude=/usr/lib/*/libcrypto.a' \
     'path-exclude=/usr/lib/*/libssl.a' \
+    'path-exclude=/usr/lib/*/libc.a' \
+    'path-exclude=/usr/lib/*/libm.a' \
     'path-exclude=/usr/libexec/gcc/*/*/lto1' \
     'path-exclude=/usr/libexec/gcc-cross/*/*/lto1' \
     'path-exclude=/usr/bin/*-lto-dump-*' \
@@ -57,7 +60,10 @@ RUN printf '%s\n' \
 #   (see ci/arm32-run);
 # * in lint, the cross-compiler, libc and OpenSSL of each other Linux
 #   target's architecture;
-# * gcc and libc6-dev, rustc's linker (with binutils' readelf);
+# * gcc and libc6-dev, rustc's linker (with binutils' readelf), but in
+#   riscv64 not gcc's C compiler proper (cc1): its jobs only link, and the
+#   benchmarks, whose build scripts compile C, are not built for riscv64
+#   (ci/bench_arches.py's PLATFORMS);
 # * git and ca-certificates, for actions/checkout;
 # * python3, for the coverage export and the benchmark comparison;
 # * zstd, for actions/cache (through Swatinem/rust-cache);
@@ -67,7 +73,8 @@ RUN case "$(dpkg --print-architecture)" in \
         i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
         arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
         ppc64el) foreign=; packages= ;; \
-        riscv64) foreign=; packages= ;; \
+        riscv64) foreign=; packages=; \
+            echo 'path-exclude=/usr/libexec/gcc/*/*/cc1' > /etc/dpkg/dpkg.cfg.d/excludes-cc1 ;; \
         amd64) foreign="i386 arm64 armhf ppc64el riscv64"; \
             packages="gcc-i686-linux-gnu gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu"; \
             for a in $foreign; do packages="$packages libc6-dev:$a libssl-dev:$a"; done ;; \
@@ -100,16 +107,20 @@ RUN case "$(dpkg --print-architecture)" in \
 # half of the compressed image (RISE's riscv64 runners, which keep no images,
 # pull it for every job at a few MB/s). Keep all files recorded in rustup's
 # component manifests, though: deleting even unused files prevents rustup
-# from uninstalling or updating the toolchain.
+# from uninstalling or updating the toolchain. Empty, too, the toolchain's
+# documentation and the shared libraries in its lib/ but rustc's own
+# (librustc_driver, libLLVM): rustc's proc macros, which only building rustc
+# loads. Only the lint image needs clippy and rustfmt.
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
-RUN case "$(dpkg --print-architecture)" in \
+RUN components=llvm-tools && \
+    case "$(dpkg --print-architecture)" in \
         i386) host=i686-unknown-linux-gnu; targets= ;; \
         arm64) host=aarch64-unknown-linux-gnu; targets=armv7-unknown-linux-gnueabihf,thumbv7neon-unknown-linux-gnueabihf ;; \
         ppc64el) host=powerpc64le-unknown-linux-gnu; targets= ;; \
         riscv64) host=riscv64gc-unknown-linux-gnu; targets= ;; \
-        amd64) host=x86_64-unknown-linux-gnu; \
+        amd64) host=x86_64-unknown-linux-gnu; components=clippy,rustfmt,llvm-tools; \
             targets=i686-unknown-linux-gnu,aarch64-unknown-linux-gnu,armv7-unknown-linux-gnueabihf,thumbv7neon-unknown-linux-gnueabihf,powerpc64le-unknown-linux-gnu,riscv64gc-unknown-linux-gnu,aarch64-apple-darwin,x86_64-pc-windows-msvc ;; \
     esac && \
     url="https://static.rust-lang.org/rustup/dist/$host/rustup-init" && \
@@ -117,7 +128,7 @@ RUN case "$(dpkg --print-architecture)" in \
     python3 -c 'import sys, urllib.request; sys.stdout.write(urllib.request.urlopen(sys.argv[1]).read().decode().split()[0] + "  /tmp/rustup-init\n")' "$url.sha256" | sha256sum -c - && \
     chmod +x /tmp/rustup-init && \
     /tmp/rustup-init -y --no-modify-path --profile minimal --default-host "$host" \
-        --default-toolchain stable --component clippy,rustfmt,llvm-tools \
+        --default-toolchain stable --component "$components" \
         ${targets:+--target "$targets"} && \
     rm /tmp/rustup-init && \
     sysroot="$(rustc --print sysroot)" && \
@@ -139,6 +150,12 @@ RUN case "$(dpkg --print-architecture)" in \
         case "${f#bin/}" in \
             llvm-cov|llvm-profdata) ;; \
             rust-lld) if [ "$host" != x86_64-unknown-linux-gnu ]; then : > "$f"; fi ;; \
+            *) if [ -f "$f" ]; then : > "$f"; fi ;; \
+        esac; \
+    done && \
+    for f in "$sysroot"/share/doc/rust/* "$sysroot"/lib/lib*.so; do \
+        case "${f##*/}" in \
+            librustc_driver-*|libLLVM*) ;; \
             *) if [ -f "$f" ]; then : > "$f"; fi ;; \
         esac; \
     done && \
