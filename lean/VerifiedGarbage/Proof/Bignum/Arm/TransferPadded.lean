@@ -91,13 +91,13 @@ theorem transferPadded_ok (s : State) {base src : BitVec 32} {len slen w v o a :
   have outside := frame_array_outside (by omega : arrAt w o + 8 * v < 2 ^ 64) frameZ
   have frame := outside_workspace outside (size := 8 * len) (by omega)
   have keeps := outside_array_prefix_keeps outside (by omega : 8 * len < 2 ^ 64) (by omega : 8 * v ≤ 8 * (w + 2))
-  have rest : Rest roundClobbers s z := (restU.mono (by simp [roundClobbers])).trans restZ
+  have rest : Rest roundClobbers s z := (restU.mono (by decide)).trans restZ
   refine WP.mono (restoreBase_ok z (by rw [rest.rd, rest.wr, rest.sp]; exact dst.stackRead)
     (saved_base_kept frame dst.stackSep dst.saved rest.sp)) ?_
   rintro t ⟨ptrT, memT, restT⟩
   have keepsT : Keeps (State.addr base) len w o s.mem t.mem := by rw [memT]; exact keeps
   have frameT : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by rw [memT]; exact frame
-  have restAll := rest.trans (restT.mono (by simp [roundClobbers]))
+  have restAll := rest.trans (restT.mono (by decide))
   refine ⟨dst.after_array keepsT frameT restAll ptrT, ?_, keepsT, frameT, restAll⟩
   have zero := h.cleared
   rw [show 2 * w + 2 = 2 * v + ((2 * w - 2 * v) + 2) by omega] at zero

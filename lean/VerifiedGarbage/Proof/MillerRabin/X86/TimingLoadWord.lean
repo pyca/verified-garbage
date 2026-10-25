@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.WordPointer
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Exponent loads use the public word counter, even for a secret exponent -/
 
@@ -18,7 +19,7 @@ theorem wordPointer_trace {g : Geometry} (v : g.Valid) :
   unfold wordPointer
   refine RelCT.block_append (RelCT.seq
     (pointer_pair_relCT v .ebp aExponent (by decide) (by decide) [.edi] (by decide)) ?_)
-  exact (checkedProgramChange (hint := .block []) (τ' := roundTaint [.edi]) rfl rfl).mono
+  exact (checkedProgramChange (hint := .block []) (τ' := roundTaint [.edi]) (by kernel_rfl) (by kernel_rfl)).mono
     (fun _ _ H => H.2.2) (fun _ _ H => H)
 
 theorem wordPointer_relCT {g : Geometry} (v : g.Valid) (q : Nat) (positive : 0 < q) (bound : q ≤ g.words) :
@@ -45,6 +46,6 @@ theorem loadWord_trace {g : Geometry} (v : g.Valid) (q : Nat) (positive : 0 < q)
   change RelCT isa _ (.block (wordPointer ++ [.mov .eax (.mem (at_ .ebp 0)), .store (slot sValue) .eax,
     .mov .eax (.imm 8), .store (slot sWindows) .eax])) _
   exact RelCT.block_append (RelCT.seq (wordPointer_relCT v q positive bound)
-    (checkedProgramChange (hint := .block []) (τ' := roundTaint [.edi, .ebp, .eax]) rfl rfl))
+    (checkedProgramChange (hint := .block []) (τ' := roundTaint [.edi, .ebp, .eax]) (by kernel_rfl) (by kernel_rfl)))
 
 end VG.Proof.MillerRabin.X86

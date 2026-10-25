@@ -81,7 +81,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -101,7 +101,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -221,7 +221,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -241,7 +241,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -261,7 +261,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -281,7 +281,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1003,7 +1003,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans selecting four entries at a time</td>
 
 <td>✅</td>
 
@@ -1023,7 +1023,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans selecting four entries at a time</td>
 
 <td>✅</td>
 
@@ -1043,7 +1043,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans selecting four entries at a time</td>
 
 <td>✅</td>
 
@@ -1063,7 +1063,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2 scans selecting four entries at a time</td>
 
 <td>✅</td>
 

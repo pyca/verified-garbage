@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessLoadTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSaveTiming
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # The entry and the import leak only public pointers and the candidate's width -/
 
@@ -62,7 +63,7 @@ theorem enter_trace {E : Environment} (v : E.Valid) {c : Nat} {entropy : List By
       (.block (copy 2 28 ++ (copy 3 32 ++ (copy 1 40 ++ (copy 4 44 ++ [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 152) .eax])))))
       (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
     erased_relCT _ (.block (copy 2 28 ++ (copy 3 32 ++ (copy 1 40 ++ (copy 4 44 ++
-      [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 152) .eax]))))) (.block []) rfl rfl rfl (by decide +kernel)
+      [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 152) .eax]))))) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
   have raw : RelCT isa (EntryPair E c entropy) (.block enter) (fun _ _ => True) := by
     unfold enter
     simp only [List.append_assoc]
@@ -75,7 +76,7 @@ theorem enter_trace {E : Environment} (v : E.Valid) {c : Nat} {entropy : List By
 theorem source_trace (x : Nat) : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi]))
     (.block [.mov .esi (.reg .edi), .alu .add .esi (.imm (BitVec.ofNat 32 x))])
     (VG.X86.Taint.Agree (τr [.esp, .edi, .esi])) :=
-  erased_relCT _ (.block [.mov .esi (.reg .edi), .alu .add .esi (.imm 0)]) (.block []) rfl rfl rfl
+  erased_relCT _ (.block [.mov .esi (.reg .edi), .alu .add .esi (.imm 0)]) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
     (by decide +kernel)
 
 theorem load_trace {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} (odd : c % 2 = 1) :

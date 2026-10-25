@@ -41,7 +41,7 @@ theorem expRound_ok (s : State) {base : BitVec 32} {len w M x E V c : Nat}
   refine WP.mono (expShift_ok u stateU.ready.workspace (by omega) stateU.ready.ptr byteU) ?_
   rintro v ⟨memV, restV⟩
   obtain ⟨stateV, frameV⟩ := stateU.after_header (d := 200) (by decide) (by decide) memV restV
-    ((restV.gpr .r0 (by simp)).trans stateU.ready.ptr)
+    ((restV.gpr .r0 (by decide)).trans stateU.ready.ptr)
   have byteV : v.mem.readW (VG.Proof.Mont.off (State.addr base) 200) 32 = BitVec.ofNat 32 (V + V) := by
     rw [memV, Mem.readW_writeW_self32]
   have countV : v.mem.readW (VG.Proof.Mont.off (State.addr base) 192) 32 = BitVec.ofNat 32 c := by
@@ -52,9 +52,9 @@ theorem expRound_ok (s : State) {base : BitVec 32} {len w M x E V c : Nat}
   refine WP.mono (expDecrement_ok v stateV.ready.workspace (by omega) stateV.ready.ptr hc hc' countV) ?_
   rintro t ⟨memT, flag, restT⟩
   obtain ⟨stateT, frameT⟩ := stateV.after_header (d := 192) (by decide) (by decide) memT restT
-    ((restT.gpr .r0 (by simp)).trans stateV.ready.ptr)
+    ((restT.gpr .r0 (by decide)).trans stateV.ready.ptr)
   refine ⟨stateT, ?_, ?_, flag, ?_, frameU.trans (frameV.trans frameT),
-    restU.trans ((restV.mono (by simp [roundClobbers])).trans (restT.mono (by simp [roundClobbers])))⟩
+    restU.trans ((restV.mono (by decide)).trans (restT.mono (by decide)))⟩
   · have outside := writeW32_outside v.mem (State.addr base) (d := 192) (BitVec.ofNat 32 (c - 1)) (by decide)
     rw [← memT] at outside
     rw [outside_read32 outside (d := 200) (by decide) (by decide)]

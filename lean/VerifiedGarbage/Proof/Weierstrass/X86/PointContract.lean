@@ -79,8 +79,8 @@ theorem prePt_of {C : Spec.Weierstrass.Point.Curve} (hk3 : 3 ≤ C.k) (hk6 : C.k
     simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one,
       Nat.add_zero, Bool.false_eq_true] at q0 q1 q2 ⊢ <;>
     first
-    | (rw [← e _ (by omega_arith)]; assumption)
-    | (rw [← e _ (by omega_arith), show Spec.Weierstrass.Point.elemBytes C.k * 2 = 2 * Spec.Weierstrass.Point.elemBytes C.k by omega_arith]; assumption)
+    | (rw [← e _ (by omega_arith)]; with_reducible assumption)
+    | (rw [← e _ (by omega_arith), show Spec.Weierstrass.Point.elemBytes C.k * 2 = 2 * Spec.Weierstrass.Point.elemBytes C.k by omega_arith]; with_reducible assumption)
     | (rw [← e _ (by omega_arith)]; exact ha)
     | (rw [← e _ (by omega_arith)]; exact hb)
 

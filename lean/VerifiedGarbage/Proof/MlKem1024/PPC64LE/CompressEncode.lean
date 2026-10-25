@@ -40,6 +40,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-!
 # ML-KEM-1024 on PPC64LE: `vg_mlkem1024_compress_encode`
@@ -126,7 +128,7 @@ theorem body5_ok (h3 : s.gpr .r3 = x) (h5 : s.gpr .r5 = y) (h11 : s.gpr .r11 = c
   have o3 := ob 3 (by decide)
   have o4 := ob 4 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at i0 i1 i2 i3 i4 i5 i6 i7 o0
-  crun [ce5Body, ce5Coeff, ce5Store, compressAt, Keep, V5, A, fld, cmpV4, h3, h5, h11, h9, h10,
+  crunr [ce5Body, ce5Coeff, ce5Store, compressAt, Keep, V5, A, fld, cmpV4, h3, h5, h11, h9, h10,
     i0, i1, i2, i3, i4, i5, i6, i7, o0, o1, o2, o3, o4, preserved, List.forall_mem_cons,
     List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
@@ -178,7 +180,7 @@ theorem body11_ok (h3 : s.gpr .r3 = x) (h5 : s.gpr .r5 = y) (h11 : s.gpr .r11 = 
   have o9 := ob 9 (by decide)
   have o10 := ob 10 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at i0 i1 i2 i3 i4 i5 i6 i7 o0
-  crun [ce11Body, ce11Coeff, ce11CoeffHi, ce5Store, ce11Store, compressAt, Keep, V11a, V11b, A, fld, cmpV4,
+  crunr [ce11Body, ce11Coeff, ce11CoeffHi, ce5Store, ce11Store, compressAt, Keep, V11a, V11b, A, fld, cmpV4,
     h3, h5, h11, h9, h10, i0, i1, i2, i3, i4, i5, i6, i7, o0, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10,
     preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
@@ -605,7 +607,7 @@ theorem setup_li4 {s : State} {m n : Nat} (hm : m < 2 ^ 15) (hn : n < 2 ^ 15) :
       s'.gpr .r9 = BitVec.ofNat 64 m ∧ s'.gpr .r10 = 261888 ∧ s'.gpr .r11 = BitVec.ofNat 64 n ∧
         s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r5 = s.gpr .r5 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
         s'.sp = s.sp ∧ s'.lr = s.lr ∧ (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.mem = s.mem := by
-  crun [biasConst1024, hm, hn, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
+  crunr [biasConst1024, hm, hn, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
     List.cons_append, List.nil_append]
   decide
 
@@ -615,7 +617,7 @@ theorem setup_11 {s : State} :
       s'.gpr .r9 = 322542 ∧ s'.gpr .r10 = 261888 ∧ s'.gpr .r11 = BitVec.ofNat 64 32 ∧
         s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r5 = s.gpr .r5 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
         s'.sp = s.sp ∧ s'.lr = s.lr ∧ (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.mem = s.mem := by
-  crun [biasConst1024, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
+  crunr [biasConst1024, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
     List.cons_append, List.nil_append]
   decide
 

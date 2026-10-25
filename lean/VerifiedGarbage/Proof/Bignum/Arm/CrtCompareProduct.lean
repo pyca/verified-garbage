@@ -50,11 +50,11 @@ theorem crt_compareProduct_ok (s : State) {base : BitVec 32} {size o a b w : Nat
   rintro v ⟨value, outside, restV⟩
   rw [memU] at value outside
   have frame := outside_workspace outside h.subtraction.outFits
-  have rest : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans restV
+  have rest : Rest roundClobbers s v := (restU.mono (by decide)).trans restV
   refine WP.mono (restoreBase_ok v (by rw [rest.rd, rest.wr, rest.sp]; exact h.stackRead)
     (saved_base_kept frame h.stackSep h.saved rest.sp)) ?_
   rintro t ⟨ptrT, memT, restT⟩
-  exact ⟨(restT.gpr .r11 (by simp)).trans value, by rw [memT]; exact outside,
-    by rw [memT]; exact frame, ptrT, rest.trans (restT.mono (by simp [roundClobbers]))⟩
+  exact ⟨(restT.gpr .r11 (by decide)).trans value, by rw [memT]; exact outside,
+    by rw [memT]; exact frame, ptrT, rest.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

@@ -31,14 +31,14 @@ theorem step_ok (s : State) (a acc b : Addr) (x : BitVec 32)
     (by rw [u1.other .r10 (by decide), h10]) (by rw [u1.other .r9 (by decide), h9])) ?_
   rintro s2 ⟨prod, frame2⟩
   have ptr2 : s2.gpr .r0 = s.gpr .r0 :=
-    (frame2.regs .r0 (by simp)).trans (u1.other .r0 (by decide))
+    (frame2.regs .r0 (by decide)).trans (u1.other .r0 (by decide))
   rw [WP.seq_iff]
   refine wp_ldr (a := acc) (by decide) (by rw [ptr2]; exact hacc)
     (by rw [frame2.rd, frame2.wr, u1.rd, u1.wr]; exact haccRead) fun s3 u3 => WP.block_nil ?_
   have mem3 : s3.mem = s.mem := u3.mem.trans (frame2.mem.trans u1.mem)
   have acc3 : s3.gpr .r5 = s.mem.readW acc 32 := by rw [u3.gpr, frame2.mem, u1.mem]
   have carry3 : s3.gpr .r11 = s.gpr .r11 :=
-    (u3.other .r11 (by decide)).trans ((frame2.regs .r11 (by simp)).trans (u1.other .r11 (by decide)))
+    (u3.other .r11 (by decide)).trans ((frame2.regs .r11 (by decide)).trans (u1.other .r11 (by decide)))
   have prod3 : (s3.gpr .r3).toNat + (s3.gpr .r4).toNat * 2 ^ 32 =
       x.toNat * (s.mem.readW b 32).toNat := by
     rw [u3.other .r3 (by decide), u3.other .r4 (by decide), prod, u1.gpr]
@@ -47,11 +47,11 @@ theorem step_ok (s : State) (a acc b : Addr) (x : BitVec 32)
   apply WP.block_append_iff.mpr
   refine WP.mono (addWord_ok s3 .r5 (by rw [prod3, acc3]; omega)) ?_
   rintro s4 ⟨sum4, frame4⟩
-  have carry4 : s4.gpr .r11 = s.gpr .r11 := (frame4.regs .r11 (by simp)).trans carry3
+  have carry4 : s4.gpr .r11 = s.gpr .r11 := (frame4.regs .r11 (by decide)).trans carry3
   refine WP.mono (addCarry_ok s4 (by rw [sum4, prod3, acc3, carry4]; exact hb)) ?_
   rintro s5 ⟨sum5, frame5⟩
   have ptr5 : s5.gpr .r0 = s.gpr .r0 :=
-    (frame5.regs .r0 (by simp)).trans ((frame4.regs .r0 (by simp)).trans
+    (frame5.regs .r0 (by decide)).trans ((frame4.regs .r0 (by decide)).trans
       ((u3.other .r0 (by decide)).trans ptr2))
   refine wp_str (a := a) (by decide) (by rw [ptr5]; exact ha)
     (by rw [frame5.wr, frame4.wr, u3.wr, frame2.wr, u1.wr]; exact hwrite) fun s6 u6 => WP.block_nil ?_
@@ -69,7 +69,7 @@ theorem step_ok (s : State) (a acc b : Addr) (x : BitVec 32)
     have r5 : Rest rowClobbers s4 s5 := ⟨fun r hr => frame5.regs r (by
         intro h; apply hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
         rcases h with h | h <;> simp [h]), frame5.rd, frame5.wr, frame5.sp⟩
-    exact (u1.rest (by simp)).trans (r2.trans ((u3.rest (by simp)).trans (r4.trans (r5.trans
+    exact (u1.rest (by decide)).trans (r2.trans ((u3.rest (by decide)).trans (r4.trans (r5.trans
       (u6.rest _)))))
 
 

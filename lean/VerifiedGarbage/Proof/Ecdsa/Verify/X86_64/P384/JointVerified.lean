@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointErased
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -109,22 +110,22 @@ include hL hT hI hO
 theorem jointVerify_x86 (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s',Exec isa jointVerifyP384.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
   verify_abi_of_wp hs (jointVerify_p384_ok hL hT hI hO (pre_of hs))
-    (by rw [Code.allInstrs_inline]; lit_decide) (Code.noCalls_inline (by lit_decide))
+    (by rw [Code.allInstrs_inline]; exact jointVerifyP384_rspMxcsr) (Code.noCalls_inline jointVerifyP384_inlineOk)
 
 theorem jointVerify_x86_adx (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s',Exec isa jointVerifyP384Adx.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
   verify_abi_of_wp hs (jointVerify_p384_adx_ok hL hT hI hO (pre_of_x hs))
-    (by rw [Code.allInstrs_inline]; lit_decide) (Code.noCalls_inline (by lit_decide))
+    (by rw [Code.allInstrs_inline]; exact jointVerifyP384Adx_rspMxcsr) (Code.noCalls_inline jointVerifyP384Adx_inlineOk)
 
 theorem jointVerify_verified : Verified X86_64.target jointVerifyP384
     (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts) 8) :=
-  Verified.of_inline (k₀ := verifyK₀) (by lit_decide) (fun s hs => jointVerify_x86 hL hT hI hO s (implies.pre _ hs))
+  Verified.of_inline (k₀ := verifyK₀) jointVerifyP384_inlineOk (fun s hs => jointVerify_x86 hL hT hI hO s (implies.pre _ hs))
     (jointVerify_ct hL hT hI hO) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
 
 theorem jointVerify_verified_adx : Verified X86_64.target jointVerifyP384Adx
     (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384v.combConsts) 8) :=
-  Verified.of_inline (k₀ := verifyK₀) (by lit_decide) (fun s hs => jointVerify_x86_adx hL hT hI hO s (implies.pre _ hs))
+  Verified.of_inline (k₀ := verifyK₀) jointVerifyP384Adx_inlineOk (fun s hs => jointVerify_x86_adx hL hT hI hO s (implies.pre _ hs))
     (jointVerify_adx_ct hL hT hI hO) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
     fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
 

@@ -24,26 +24,21 @@ open VG.Impl.Rsa.X86.RecoverRt
 theorem nilCheck : (VG.Taint.check sseTaint τA (.block []) (VG.Taint.hintOf sseTaint τA (.block []))).isSome = true := by
   taint_decide
 
-theorem numbersCheck : (VG.Taint.check sseTaint τA numbers (VG.Taint.hintOf sseTaint τA numbers)).isSome = true := by
-  taint_decide
+theorem numbersCheck : ∃ hint, (VG.Taint.check sseTaint τA numbers hint).isSome = true := ⟨_, by taint_decide⟩
 
 theorem halfInitCheck : (VG.Taint.check sseTaint τA halfInit (VG.Taint.hintOf sseTaint τA halfInit)).isSome = true := by
   taint_decide
 
-theorem halfBodyCheck : (VG.Taint.check sseTaint τA halfBody (VG.Taint.hintOf sseTaint τA halfBody)).isSome = true := by
-  taint_decide
+theorem halfBodyCheck : ∃ hint, (VG.Taint.check sseTaint τA halfBody hint).isSome = true := ⟨_, by taint_decide⟩
 
-theorem montHeadCheck : (VG.Taint.check sseTaint τA montHead (VG.Taint.hintOf sseTaint τA montHead)).isSome = true := by
-  taint_decide
+theorem montHeadCheck : ∃ hint, (VG.Taint.check sseTaint τA montHead hint).isSome = true := ⟨_, by taint_decide⟩
 
-theorem montTailCheck : (VG.Taint.check sseTaint τA montTail (VG.Taint.hintOf sseTaint τA montTail)).isSome = true := by
-  taint_decide
+theorem montTailCheck : ∃ hint, (VG.Taint.check sseTaint τA montTail hint).isSome = true := ⟨_, by taint_decide⟩
 
 theorem candInitCheck : (VG.Taint.check sseTaint τA (.block [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc VG.Impl.Rsa.X86.Recover.sCand) .eax]) (VG.Taint.hintOf sseTaint τA (.block [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc VG.Impl.Rsa.X86.Recover.sCand) .eax]))).isSome = true := by
   taint_decide
 
-theorem alignStartCheck : (VG.Taint.check sseTaint τA alignStart (VG.Taint.hintOf sseTaint τA alignStart)).isSome = true := by
-  taint_decide
+theorem alignStartCheck : ∃ hint, (VG.Taint.check sseTaint τA alignStart hint).isSome = true := ⟨_, by taint_decide⟩
 
 theorem alignBodyCheck : (VG.Taint.check sseTaint τA alignBody (VG.Taint.hintOf sseTaint τA alignBody)).isSome = true := by
   taint_decide
@@ -54,8 +49,7 @@ theorem tableStartCheck : (VG.Taint.check sseTaint τA tableStart (VG.Taint.hint
 theorem windowCountCheck : (VG.Taint.check sseTaint τA (.block VG.Impl.Rsa.X86.Recover.windowCount) (VG.Taint.hintOf sseTaint τA (.block VG.Impl.Rsa.X86.Recover.windowCount))).isSome = true := by
   taint_decide
 
-theorem windowNextCheck : (VG.Taint.check sseTaint τA windowNext (VG.Taint.hintOf sseTaint τA windowNext)).isSome = true := by
-  taint_decide
+theorem windowNextCheck : ∃ hint, (VG.Taint.check sseTaint τA windowNext hint).isSome = true := ⟨_, by taint_decide⟩
 
 theorem cntNextCheck : (VG.Taint.check sseTaint τA (.block VG.Impl.Rsa.X86.Recover.cntNext) (VG.Taint.hintOf sseTaint τA (.block VG.Impl.Rsa.X86.Recover.cntNext))).isSome = true := by
   taint_decide

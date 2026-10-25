@@ -124,10 +124,67 @@ theorem T.eq_of_beq : ∀ {a b : T}, T.beq a b = true → a = b := by
   | or a b iha ihb =>
     intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true] at h
     rw [iha h.1, ihb h.2]
+/-- `T.beq` by the recursor, which the kernel reduces in one step at each
+node, rather than through `T.beq`'s `brecOn` (`checkStep`). -/
+noncomputable def T.beqK (a : T) : T → Bool :=
+  T.rec (motive := fun _ => T → Bool)
+    (fun r b => T.casesOn (motive := fun _ => Bool) b (fun r' => Nat.beq r r') false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
+    (fun b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) true (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
+    (fun g b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun g' => G.beq g g') (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
+    (fun _ ih b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun a' => ih a') (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
+    (fun r d b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun r' d' => decide (r = r') && Nat.beq d d') (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
+    (fun h _ _ _ ihc iha ihb b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun h' c' a' b' => (h == h') && ihc c' && iha a' && ihb b') (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
+    (fun _ _ iha ihb b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun a' b' => iha a' && ihb b') (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
+    (fun _ n iha b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun a' n' => iha a' && Nat.beq n n') (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
+    (fun _ iha b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun a' => iha a') (fun _ _ _ => false) (fun _ _ => false) (fun _ _ => false))
+    (fun _ _ n iha ihb b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun a' b' n' => iha a' && ihb b' && Nat.beq n n') (fun _ _ => false) (fun _ _ => false))
+    (fun _ _ iha ihb b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun a' b' => iha a' && ihb b') (fun _ _ => false))
+    (fun _ _ iha ihb b => T.casesOn (motive := fun _ => Bool) b (fun _ => false) false (fun _ => false) (fun _ => false) (fun _ _ => false) (fun _ _ _ _ => false) (fun _ _ => false) (fun _ _ => false) (fun _ => false) (fun _ _ _ => false) (fun _ _ => false) (fun a' b' => iha a' && ihb b'))
+    a
+
+theorem T.beqK_eq : ∀ a b : T, T.beqK a b = T.beq a b := by
+  intro a
+  induction a with
+  | reg r => intro b; cases b <;> rfl
+  | zero => intro b; cases b <;> rfl
+  | lane0 g => intro b; cases b <;> rfl
+  | bc a iha => intro b; cases b <;> first | rfl | exact iha _
+  | ld r d => intro b; cases b <;> rfl
+  | mad x c a b ihc iha ihb =>
+    intro t; cases t with
+    | mad x' c' a' b' =>
+      show ((x == x') && T.beqK c c' && T.beqK a a' && T.beqK b b') = ((x == x') && T.beq c c' && T.beq a a' && T.beq b b')
+      rw [ihc, iha, ihb]
+    | _ => rfl
+  | add a b iha ihb =>
+    intro t; cases t with
+    | add a' b' => show (T.beqK a a' && T.beqK b b') = (T.beq a a' && T.beq b b'); rw [iha, ihb]
+    | _ => rfl
+  | shr a n iha =>
+    intro t; cases t with
+    | shr a' n' => show (T.beqK a a' && Nat.beq n n') = (T.beq a a' && Nat.beq n n'); rw [iha]
+    | _ => rfl
+  | low a iha => intro b; cases b <;> first | rfl | exact iha _
+  | align a b n iha ihb =>
+    intro t; cases t with
+    | align a' b' n' =>
+      show (T.beqK a a' && T.beqK b b' && Nat.beq n n') = (T.beq a a' && T.beq b b' && Nat.beq n n')
+      rw [iha, ihb]
+    | _ => rfl
+  | and a b iha ihb =>
+    intro t; cases t with
+    | and a' b' => show (T.beqK a a' && T.beqK b b') = (T.beq a a' && T.beq b b'); rw [iha, ihb]
+    | _ => rfl
+  | or a b iha ihb =>
+    intro t; cases t with
+    | or a' b' => show (T.beqK a a' && T.beqK b b') = (T.beq a a' && T.beq b b'); rw [iha, ihb]
+    | _ => rfl
+
+theorem T.eq_of_beqK {a b : T} (h : T.beqK a b = true) : a = b := T.eq_of_beq (by rw [← T.beqK_eq]; exact h)
 /-- The run of step `i` gives `expReg i` in the 32 registers and loads `rax`. -/
-def checkStep (i : Nat) : Bool :=
+noncomputable def checkStep (i : Nat) : Bool :=
   match ESym.init.run (lim l) (ammStep l i) with
-  | some σ => (List.range 32).all (fun r => T.beq (σ.reg r) (expReg l i r)) &&
+  | some σ => (List.range 32).all (fun r => T.beqK (σ.reg r) (expReg l i r)) &&
       G.beq σ.rax (.ld .r9 (l.D * (l.nl - 1) + 32 * i))
   | none => false
 
@@ -169,7 +226,7 @@ theorem run_ammStep {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : AmmOk l) {i : Nat
   · rename_i σ hσ
     refine ⟨σ, hσ, fun r hr => ?_⟩
     simp only [Bool.and_eq_true, List.all_eq_true, List.mem_range] at h
-    exact T.eq_of_beq (h.1 r hr)
+    exact T.eq_of_beqK (h.1 r hr)
   · cases h
 
 end VG.Proof.Bignum.X86_64.Ifma

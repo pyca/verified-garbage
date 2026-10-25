@@ -67,13 +67,13 @@ theorem step_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n start i 
     (restU.mono (by rcases hn with rfl|rfl <;> simp [clobbers])).trans
       (restV.mono (by rcases hp with rfl|rfl <;> simp [clobbers]))
   refine ⟨by omega,by omega,?_,?_,?_,?_,?_,?_,outside,?_,?_⟩
-  · rw [rest.gpr .r0 (by simp [clobbers])];exact h.outPtr
-  · rw [rest.gpr .r12 (by simp [clobbers])];exact h.bPtr
-  · rw [rest.gpr .r4 (by simp [clobbers])];exact h.mPtr
-  · rw [rest.gpr .lr (by simp [clobbers])];exact h.count
-  · rw [rest.gpr .r1 (by simp [clobbers])];exact h.scalar
-  · rw [rest.gpr .r2 (by simp [clobbers])];exact h.quotient
+  · rw [rest.gpr .r0 (by decide)];exact h.outPtr
+  · rw [rest.gpr .r12 (by decide)];exact h.bPtr
+  · rw [rest.gpr .r4 (by decide)];exact h.mPtr
+  · rw [rest.gpr .lr (by decide)];exact h.count
+  · rw [rest.gpr .r1 (by decide)];exact h.scalar
+  · rw [rest.gpr .r2 (by decide)];exact h.quotient
   · exact step_prefix h.value productFinal cancel stored
-  · exact h.rest.trans (rest.mono (by simp [clobbers,roundClobbers]))
+  · exact h.rest.trans (rest.mono (by decide))
 
 end VG.Proof.Bignum.Arm.FiosPipelined

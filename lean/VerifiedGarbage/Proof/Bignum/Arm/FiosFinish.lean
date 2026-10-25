@@ -81,6 +81,6 @@ theorem finish_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n : Nat}
     congr 2
     omega
   · exact (inv.outside.mono (Nat.le_refl _) (by omega)).trans (outside.mono (by omega) (by omega))
-  · exact inv.rest.trans (rest.mono (by simp [roundClobbers]))
+  · exact inv.rest.trans (rest.mono (by decide))
 
 end VG.Proof.Bignum.Arm.Fios

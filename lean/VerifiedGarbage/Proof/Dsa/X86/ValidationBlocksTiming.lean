@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Dsa.X86.Validate
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Constant-time validation masks and fixed constants -/
 
@@ -18,7 +19,7 @@ theorem setConst_relCT (k out value : Nat) :
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   unfold setConstW
   refine RelCT.seq (erased_relCT (σ := workspaceTaint false) _ (zerosW 0 1)
-    (VG.Taint.hintOf taint (workspaceTaint false) (Code.erase (zerosW 0 1))) rfl rfl rfl rfl) ?_
+    (VG.Taint.hintOf taint (workspaceTaint false) (Code.erase (zerosW 0 1))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)) ?_
   apply blockFlatMap_relCT
   intro j
   split
@@ -39,7 +40,7 @@ theorem lowerTwo_relCT (n : Nat) :
   unfold Validate.lowerTwo
   refine RelCT.seq (lessThanConstant_relCT n (slot n 5) (slot n 7) 2) ?_
   exact erased_relCT _ (.block ([.alu .xor .eax (.imm (BitVec.allOnes 32)), .mov .edx (.reg .eax)] ++ andFlag 0))
-    (.block []) rfl rfl rfl rfl
+    (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
 theorem rangeMask_relCT (n : Nat) (aboveOne : Bool) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false))
@@ -61,6 +62,6 @@ theorem modulusMinus_relCT (n amount : Nat) :
   unfold modulusMinus
   refine RelCT.seq (setConst_relCT _ _ _) ?_
   exact erased_relCT _ (chainW .sbb 1 0 0 0)
-    (VG.Taint.hintOf taint (workspaceTaint false) (Code.erase (chainW .sbb 1 0 0 0))) rfl rfl rfl rfl
+    (VG.Taint.hintOf taint (workspaceTaint false) (Code.erase (chainW .sbb 1 0 0 0))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
 end VG.Proof.Dsa.X86

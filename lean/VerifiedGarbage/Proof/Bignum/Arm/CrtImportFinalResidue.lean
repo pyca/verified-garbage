@@ -30,7 +30,7 @@ theorem crt_importFinalResidue_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → 
   refine WP.mono (crt_qSource_ok s h) ?_
   rintro u ⟨qptr, memU, restU⟩
   have sharedU := h.of_mem memU restU
-  have readyU := ready.of_mem memU restU ((restU.gpr .r0 (by simp)).trans ready.ptr)
+  have readyU := ready.of_mem memU restU ((restU.gpr .r0 (by decide)).trans ready.ptr)
   have input : TransferArrayInput g.base (crtQ g.base g.words)
       (workspaceWords g.words) (workspaceWords g.words) g.words u :=
     ⟨readyU, sharedU.buffers.context.q, sharedU.q, qptr, h.buffers.context.sepMQ.symm⟩
@@ -47,6 +47,6 @@ theorem crt_importFinalResidue_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → 
     (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp] : Operand 0) (by decide : 0 ≠ 1)
   have sharedT := sharedU.after_main (frame.mono (by simp)) rest mainT modulus
   rw [memU] at value frame
-  exact ⟨sharedT, readyT, value, frame, (restU.mono (by simp [roundClobbers])).trans rest⟩
+  exact ⟨sharedT, readyT, value, frame, (restU.mono (by decide)).trans rest⟩
 
 end VG.Proof.Bignum.Arm

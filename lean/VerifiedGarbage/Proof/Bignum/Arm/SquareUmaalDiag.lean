@@ -40,7 +40,7 @@ theorem diagStepU_ok (s : State) {base : BitVec 32} {size A T : Nat} (ws : Works
   refine WP.mono (macU_ok s3) ?_
   rintro s4 ⟨mac4, f4⟩
   have q0 : s4.gpr .r0 = s.gpr .r0 := by
-    rw [f4.regs .r0 (by simp [clobbers]), u3.other .r0 (by decide), u2.other .r0 (by decide),
+    rw [f4.regs .r0 (by decide), u3.other .r0 (by decide), u2.other .r0 (by decide),
       u1.other .r0 (by decide)]
   have mem4 : s4.mem = s.mem := by rw [f4.mem, u3.mem, u2.mem, u1.mem]
   have wr4 : s4.wr = s.wr := by rw [f4.wr, u3.wr, u2.wr, u1.wr]
@@ -99,16 +99,16 @@ theorem diagStepU_ok (s : State) {base : BitVec 32} {size A T : Nat} (ws : Works
   · rw [u10.gpr, u9.other .r0 (by decide), u8.other .r0 (by decide), u7.other .r0 (by decide),
       u6.other .r0 (by decide), u5.gpr, q0]
   · rw [u10.gpr, u9.other .r12 (by decide), u8.other .r12 (by decide), u7.other .r12 (by decide),
-      u6.other .r12 (by decide), u5.gpr, f4.regs .r12 (by simp [clobbers]), u3.other .r12 (by decide),
+      u6.other .r12 (by decide), u5.gpr, f4.regs .r12 (by decide), u3.other .r12 (by decide),
       u2.other .r12 (by decide), u1.other .r12 (by decide)]
   · rw [u10.gpr, u9.other .lr (by decide), u8.other .lr (by decide), u7.other .lr (by decide),
-      u6.other .lr (by decide), u5.gpr, f4.regs .lr (by simp [clobbers]), u3.other .lr (by decide),
+      u6.other .lr (by decide), u5.gpr, f4.regs .lr (by decide), u3.other .lr (by decide),
       u2.other .lr (by decide), u1.other .lr (by decide)]
-  · have k4 : Rest roundClobbers s3 s4 := ⟨fun r hr => f4.regs r (by intro h; apply hr; cases r <;> simp_all [clobbers]),
+  · have k4 : Rest roundClobbers s3 s4 := ⟨fun r hr => f4.regs r (by revert hr; cases r <;> decide),
       f4.rd, f4.wr, f4.sp⟩
-    exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (k4.trans
-      ((u5.rest _).trans ((u6.rest (by simp)).trans ((u7.rest (by simp)).trans ((u8.rest (by simp)).trans
-      ((u9.rest (by simp)).trans (u10.rest _)))))))))
+    exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans (k4.trans
+      ((u5.rest _).trans ((u6.rest (by decide)).trans ((u7.rest (by decide)).trans ((u8.rest (by decide)).trans
+      ((u9.rest (by decide)).trans (u10.rest _)))))))))
 
 theorem diagLoopBodyU_ok {s0 s : State} {base : BitVec 32} {size T A n i : Nat}
     (ctx : DiagCtx s0 base size T A n) (inv : DiagLoopInv s0 base T A n i s) (hi : i < n) :
@@ -143,7 +143,7 @@ theorem diagLoopBodyU_ok {s0 s : State} {base : BitVec 32} {size T A n i : Nat}
     congr 1
   · rw [mem]
     exact (inv.outside.mono (Nat.le_refl _) (by omega_arith)).trans (o1.mono (by omega_arith) (by omega_arith))
-  · rw [mem, r2.gpr .r11 (by simp), show 2 * (i + 1) = 2 * i + 2 by omega_arith, val32_append s1.mem _ T (2 * i) 2,
+  · rw [mem, r2.gpr .r11 (by decide), show 2 * (i + 1) = 2 * i + 2 by omega_arith, val32_append s1.mem _ T (2 * i) 2,
       val32_append s0.mem _ T (2 * i) 2, show T + 4 * (2 * i) = T + 8 * i by omega_arith]
     simp only [val32, diagSum, Nat.mul_zero, Nat.add_zero]
     rw [show T + 8 * i + 4 = T + 8 * i + 4 from rfl, low, ← tw0, ← tw1, ← aw,
@@ -152,7 +152,7 @@ theorem diagLoopBodyU_ok {s0 s : State} {base : BitVec 32} {size T A n i : Nat}
     have e2 := v1
     generalize 2 ^ (64 * i) = P at *
     grind
-  · exact inv.rest.trans (r1.trans (r2.mono (by simp [roundClobbers])))
+  · exact inv.rest.trans (r1.trans (r2.mono (by decide)))
   · rw [z, plr, inv.count]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_arith), ofNat_beq_zero (by omega_arith)]
@@ -232,7 +232,7 @@ theorem sqDiagPhaseU_ok (s : State) (h : DblInv m0 base size out a mod M n inv s
     rw [show 2 * n = 2 * n from rfl, v]
     omega_arith
   · rw [di.outside.val32 (by omega_arith) (by omega_arith), ms]; exact h.top
-  · exact (r1.mono (by simp [roundClobbers])).trans ((r2.mono (by simp [roundClobbers])).trans di.rest)
+  · exact (r1.mono (by decide)).trans ((r2.mono (by decide)).trans di.rest)
 
 end
 

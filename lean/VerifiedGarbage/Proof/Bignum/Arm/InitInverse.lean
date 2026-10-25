@@ -36,7 +36,7 @@ theorem initInverse_ok (s : State) {base : BitVec 32} {size d : Nat}
     (by simpa using ws.ea (imm := 0) ptr (by omega))
     (ws.ea ptr (by omega)) (ws.read (by omega)) (ws.read (by omega)) (pair ▸ odd)) ?_
   rintro u ⟨inverse, mem, rest⟩
-  have savedU : u.gpr .r12 = base := (rest.gpr .r12 (by simp [newtonClobbers])).trans saved
+  have savedU : u.gpr .r12 = base := (rest.gpr .r12 (by decide)).trans saved
   have wsU := ws.congr rest.wr
   rw [WP.seq_iff]
   refine WP.mono (store64_ok u .r2 .r11 .r12 56 (off (State.addr base) 56) (by decide)
@@ -51,7 +51,7 @@ theorem initInverse_ok (s : State) {base : BitVec 32} {size d : Nat}
   refine ⟨u.gpr .r11 ++ u.gpr .r2, ?_, ?_, ?_, ?_⟩
   · rw [pair]; exact inverse
   · rw [moved.mem, stored, mem]
-  · rw [moved.gpr, keep.gpr .r12 (by simp), savedU]
-  · exact (rest.mono (by simp)).trans ((keep.mono (by simp)).trans (moved.rest (by simp)))
+  · rw [moved.gpr, keep.gpr .r12 (by decide), savedU]
+  · exact (rest.mono (by decide)).trans ((keep.mono (by decide)).trans (moved.rest (by decide)))
 
 end VG.Proof.Bignum.Arm

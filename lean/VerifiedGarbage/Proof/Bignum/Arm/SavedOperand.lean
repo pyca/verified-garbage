@@ -26,12 +26,12 @@ theorem savedOperand_ok (s : State) {base src : BitVec 32} {len w k ps cs o : Na
   rw [savedOperand, WP.seq_iff]
   refine WP.mono (savedOperandArgs_ok s source) ?_
   rintro u ⟨ptrU, countU, memU, restU⟩
-  have ready := h.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ptr)
+  have ready := h.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ptr)
   refine WP.mono (importOperand_ok u ready ho ho0 positive fit source.source.fits
     (by rw [restU.rd, restU.wr]; exact source.source.read) source.sourceSeparate ptrU countU) ?_
   rintro t ⟨done, value, keeps, frame, rest⟩
   rw [memU, source.source.bytes] at value
   rw [memU] at keeps frame
-  exact ⟨done, value, keeps, frame, (restU.mono (by simp [roundClobbers])).trans rest⟩
+  exact ⟨done, value, keeps, frame, (restU.mono (by decide)).trans rest⟩
 
 end VG.Proof.Bignum.Arm

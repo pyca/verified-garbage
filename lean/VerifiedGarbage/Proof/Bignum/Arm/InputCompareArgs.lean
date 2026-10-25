@@ -41,8 +41,8 @@ theorem inputCompareArgs_ok (s : State) {base : BitVec 32} {size w : Nat}
     (by rw [d.rd, d.wr, c.rd, c.wr, b.rd, b.wr, a.rd, a.wr]; exact ws.read (by omega)) fun p e => ?_
   refine wp_mov (op2_imm (by decide)) fun t f => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, f.gpr, f.mem.trans (e.mem.trans (d.mem.trans (c.mem.trans (b.mem.trans a.mem)))),
-    (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans
-      ((d.rest (by simp)).trans ((e.rest (by simp)).trans (f.rest (by simp))))))⟩
+    (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
+      ((d.rest (by decide)).trans ((e.rest (by decide)).trans (f.rest (by decide))))))⟩
   · rw [f.other .r0 (by decide), e.gpr, d.mem, c.mem, b.mem, a.mem]
     exact header.array 3 (by decide)
   · rw [f.other .r10 (by decide), e.other .r10 (by decide), d.other .r10 (by decide),

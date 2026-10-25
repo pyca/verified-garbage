@@ -41,7 +41,7 @@ theorem montCallFn_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have savedBase : u.mem.readW (State.addr u.sp) 32 = base := by
     rw [memU, restU.sp]
     change (callPushed s).mem.readW (State.addr (s.sp - 40)) 32 = base
-    simpa only [BitVec.add_zero] using (savedPush (.r0, 0) (by simp [callAllSaved])).trans h.ptr
+    simpa only [BitVec.add_zero] using (savedPush (.r0, 0) (by decide)).trans h.ptr
   have callReady : CallBodyReady base len w o a b u := ⟨ready, stackRead, stackSep, savedBase⟩
   have body := montCallArithmetic_ok u callReady ho ha hb
   refine WP.mono body ?_

@@ -135,7 +135,7 @@ theorem wsNew_ok {s : State} {B : Addr} {Z o len : Nat} {slotWs slotLen : Nat} (
   have f₃ : Frm (off B o) [(8 * sLink, 8), (8 * sW, 8), (8 * sArr 0, 64)]
       (s.mem.writeW (off B (8 * slotWs)) (off B o)) t.mem := by
     rw [hm']
-    exact ((Frm.of_outside o2 (by simp)).trans (Frm.of_outside o3 (by simp))).trans (Frm.of_outside ho₄ (by simp))
+    exact ((Frm.of_outside o2 (by decide)).trans (Frm.of_outside o3 (by decide))).trans (Frm.of_outside ho₄ (by decide))
   have hL : ∀ r ∈ [(8 * sLink, 8), (8 * sW, 8), (8 * sArr 0, 64)], r.1 + r.2 ≤ 8 * 17 := by
     simp [sLink, sW, sArr, sFn]
   have ho64 : o < 2 ^ 64 := by omega_arith

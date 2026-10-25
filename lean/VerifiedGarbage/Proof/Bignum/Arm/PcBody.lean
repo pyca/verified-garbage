@@ -45,15 +45,15 @@ theorem pcBody_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
   · intro valid
     refine WP.mono (pcValid_ok (kernel := kernel) u (ws.congr rest.wr) stackU hk hk' space srcFit
       (by rw [rest.rd, rest.wr]; exact read) srcSep dstFit (by rw [rest.wr]; exact write) dstSep
-      ((rest.gpr .r0 (by simp)).trans ptr) ((rest.gpr .r6 (by simp)).trans count)
+      ((rest.gpr .r0 (by decide)).trans ptr) ((rest.gpr .r6 (by decide)).trans count)
       (by rw [mem]; exact valid)) ?_
     rintro t ⟨result, words, frameT, keep⟩
     rw [mem] at words frameT
     rw [publicPrecompute_some (bytesAt_length _ _ _) valid]
-    exact ⟨⟨result, words⟩, frameT, (rest.mono (by simp [roundClobbers])).trans keep⟩
+    exact ⟨⟨result, words⟩, frameT, (rest.mono (by decide)).trans keep⟩
   · intro invalid
     refine WP.mono (pcFail_ok u stackU hk hk' dstFit (by rw [rest.wr]; exact write)
-      ((rest.gpr .r6 (by simp)).trans count)) ?_
+      ((rest.gpr .r6 (by decide)).trans count)) ?_
     rintro t ⟨result, words, frameT, keep⟩
     rw [mem] at frameT
     have failed : Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (State.addr src) k) = none := by

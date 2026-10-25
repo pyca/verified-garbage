@@ -15,7 +15,8 @@
     target_arch = "aarch64",
     target_arch = "x86",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 /// Defines a BLAKE2 hash function with blocks of `$block` bytes (sixteen
@@ -237,11 +238,11 @@ macro_rules! blake2 {
             /// not depend on where, or whether, `mac` differs from it (its
             /// length is public). `mac` must be the whole digest, of `N`
             /// bytes; a truncated one is rejected.
-            pub fn verify(self, mac: &[u8]) -> Result<(), $crate::hmac::InvalidMac> {
+            pub fn verify(self, mac: &[u8]) -> Result<(), $crate::invalid_mac::InvalidMac> {
                 if $crate::ct::eq(&self.finalize(), mac) {
                     Ok(())
                 } else {
-                    Err($crate::hmac::InvalidMac)
+                    Err($crate::invalid_mac::InvalidMac)
                 }
             }
 
@@ -290,7 +291,7 @@ pub(super) use blake2;
 mod tests {
     use super::super::blake2b::Blake2b;
     use super::super::blake2s::Blake2s;
-    use crate::hmac::InvalidMac;
+    use crate::invalid_mac::InvalidMac;
 
     /// `verify`, run by a computation of `mac`, accepts `mac` and rejects
     /// any other: one with a bit flipped in its first, a middle or its last

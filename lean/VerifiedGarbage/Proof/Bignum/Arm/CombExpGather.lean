@@ -33,18 +33,18 @@ theorem gather_ok {base source table : BitVec 32} {len w N M g E i : Nat} {bs : 
   rw [WP.seq_iff]
   refine WP.mono (digitArgs_ok s h.ready controls counter fits) ?_
   rintro u ⟨src,byteLen,row,stride,width,memU,restU⟩
-  have ru : Rest roundClobbers s u := restU.mono (by simp [roundClobbers])
+  have ru : Rest roundClobbers s u := restU.mono (by decide)
   have frameU : Frame [⟨State.addr base,8*len⟩] s.mem u.mem := by rw [memU]; exact Frame.refl _ _
   have pu := A.stable frameU ru hp
-  have powerU := h.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ready.ptr)
+  have powerU := h.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ready.ptr)
   refine WP.mono (CombDigit.code_digit_ok u (bytes.of_mem memU restU) widthBound size positions widthFit
     bound src byteLen row stride width) ?_
   rintro t ⟨digit,digitBound,memT,restT⟩
-  have rt : Rest roundClobbers u t := restT.mono (by simp [CombDigit.clobbers,roundClobbers])
+  have rt : Rest roundClobbers u t := restT.mono (by decide)
   have frameT : Frame [⟨State.addr base,8*len⟩] u.mem t.mem := by rw [memT]; exact Frame.refl _ _
   have mem : t.mem=s.mem := memT.trans memU
   have rest := ru.trans rt
-  refine ⟨powerU.of_mem memT restT ((restT.gpr .r0 (by simp [CombDigit.clobbers])).trans powerU.ready.ptr),
+  refine ⟨powerU.of_mem memT restT ((restT.gpr .r0 (by decide)).trans powerU.ready.ptr),
     A.stable frameT rt pu,?_,?_,digit,digitBound,mem,rest⟩
   · exact controls.after_header (by intro d hd; rw [mem])
   · change t.mem.readW _ _=_

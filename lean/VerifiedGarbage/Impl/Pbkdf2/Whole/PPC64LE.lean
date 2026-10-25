@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Pbkdf2.Stream.PPC64LE
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE
 
 /-!
 # PBKDF2-HMAC over any streaming hash function: PPC64LE implementation of the whole derivation
@@ -42,8 +42,9 @@ open VG.Impl.Hmac.Stream.PPC64LE.Hash (cp32)
 /-- The functions PBKDF2 calls, for one hash function: its streaming
 functions (`H`, with their sizes), the bytes of working space the functions
 we call get (`Wc`), and HMAC's `init` for a key of any length (with its
-code), HMAC's `finalize` with its working space as an argument and PBKDF2's
-`iterate`, with their names. -/
+code), HMAC's `finalize` with its working space as an argument, and PBKDF2's
+`iterate` (with its code and the bytes of working space it uses), with their
+names. -/
 structure Fns where
   H : Hash
   Wc : Nat
@@ -51,6 +52,8 @@ structure Fns where
   hiC : Prog isa
   hfN : String
   itN : String
+  itC : Prog isa
+  itW : Nat
 
 namespace Fns
 
@@ -79,7 +82,7 @@ def callHi : Prog isa := .call F.hiN F.hiC
 def callHf : Prog isa := .call F.hfN F.H.finalize
 
 /-- A call of `iterate`. -/
-def callIt : Prog isa := .call F.itN (Stream.PPC64LE.iterate F.H)
+def callIt : Prog isa := .call F.itN F.itC
 
 /-- Our caller's registers into `scratch`, which `r21` then holds; the
 arguments into the registers that keep them; HMAC's `init`'s arguments. -/

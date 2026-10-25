@@ -22,12 +22,12 @@ def runtimeTaint : VG.X86.Taint.T := {
 def Public (c : Prog isa) : Prop := ∃ hint out,
   VG.Taint.check sseTaint runtimeTaint c hint = some out ∧ sseTaint.le runtimeTaint out = true
 
-theorem of_check {c : Prog isa} {hint : VG.Taint.Hint VG.X86.Taint.T}
-    (checked : (VG.Taint.check sseTaint runtimeTaint c hint).isSome = true)
-    (lower : (VG.Taint.check sseTaint runtimeTaint c hint).all (sseTaint.le runtimeTaint) = true) : Public c := by
+/-- `Public c` from one evaluation of the check: it succeeds, and its result is at least `runtimeTaint`. -/
+theorem of_any {c : Prog isa} {hint : VG.Taint.Hint VG.X86.Taint.T}
+    (checked : (VG.Taint.check sseTaint runtimeTaint c hint).any (sseTaint.le runtimeTaint) = true) : Public c := by
   cases result : VG.Taint.check sseTaint runtimeTaint c hint with
   | none => rw [result] at checked; cases checked
-  | some out => exact ⟨hint, out, result, by simpa only [result, Option.all_some] using lower⟩
+  | some out => exact ⟨hint, out, result, by simpa only [result, Option.any_some] using checked⟩
 
 theorem Public.seq {a b : Prog isa} (ha : Public a) (hb : Public b) : Public (.seq a b) := by
   obtain ⟨ah, ao, ac, al⟩ := ha

@@ -21,17 +21,16 @@ def privateInputs : VG.X86.Taint.T :=
   { regs := .ofList [.edi], flags := false }
 
 theorem private_core_check {n e : Nat} (h : Supported n e) :
-    (VG.Taint.check taint privateInputs (core false n e)
-      (VG.Taint.hintOf taint privateInputs (core false n e))).map
+    ∃ hint, (VG.Taint.check taint privateInputs (core false n e) hint).map
       (taint.le privateInputs) = some true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> taint_decide
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact ⟨_, by taint_decide⟩
 
 /-- All arithmetic workspace values, including the private exponent and masks,
 are secret. Only fixed workspace addresses and loop counters control execution. -/
 theorem private_core_relCT {n e : Nat} (h : Supported n e) :
     RelCT isa (VG.X86.Taint.Agree privateInputs) (core false n e)
       (VG.X86.Taint.Agree privateInputs) := by
-  obtain ⟨τ, checked, retained⟩ := Option.map_eq_some_iff.mp (private_core_check h)
+  obtain ⟨τ, checked, retained⟩ := Option.map_eq_some_iff.mp (private_core_check h).choose_spec
   exact VG.Proof.Dsa.X86.checkedProgramChange checked retained
 
 end VG.Proof.Dsa.X86.Comb

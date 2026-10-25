@@ -60,8 +60,8 @@ theorem bit_ok (s : State) {src : BitVec 32} {bs : List Byte} {k N : Nat}
     · intro _
       rw [WP.seq_iff]
       refine WP.mono (load_ok u (source.of_mem memU restU) (by omega) size
-        ((restU.gpr .r4 (by simp)).trans ptr) ((restU.gpr .r5 (by simp)).trans length)
-        ((restU.gpr .r9 (by simp)).trans index) (by omega)) ?_
+        ((restU.gpr .r4 (by decide)).trans ptr) ((restU.gpr .r5 (by decide)).trans length)
+        ((restU.gpr .r9 (by decide)).trans index) (by omega)) ?_
       rintro v ⟨byte,count,zeroV,memV,restV⟩
       rw [WP.seq_iff]
       refine WP.mono (optionalShift_ok v (by omega) count zeroV) ?_
@@ -72,15 +72,15 @@ theorem bit_ok (s : State) {src : BitVec 32} {bs : List Byte} {k N : Nat}
         change z.gpr .r11 &&& 1 = _
         rw [shifted,byte,shiftedBit]
         simp only [dite_eq_left inside]
-      · exact (((restU.mono (by simp)).trans restV).trans
-          (restZ.mono (by simp))).trans (last.rest (by simp))
+      · exact (((restU.mono (by decide)).trans restV).trans
+          (restZ.mono (by decide))).trans (last.rest (by decide))
     · intro impossible; cases impossible
   · have condition : isa.eval .ne u=some false := by change some (!u.z)=_; simp [zero,inside]
     apply WP.ite false condition
     · intro impossible; cases impossible
     · intro _
       refine wp_mov (op2_imm (by decide)) fun t last => WP.block_nil ?_
-      refine ⟨?_,last.mem.trans memU,(restU.mono (by simp)).trans (last.rest (by simp))⟩
+      refine ⟨?_,last.mem.trans memU,(restU.mono (by decide)).trans (last.rest (by decide))⟩
       rw [last.gpr]
       simp only [dite_eq_right inside]
       rfl

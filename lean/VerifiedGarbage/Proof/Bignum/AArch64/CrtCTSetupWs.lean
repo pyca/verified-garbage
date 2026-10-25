@@ -359,16 +359,16 @@ theorem setup_ct : SetupCT := by
   unfold SetupCT
   rw [primesSetup_eq]
   -- `p`'s workspace.
-  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_piece (Ψ := SS1) [.x0]
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq (two_piece (Ψ := SS1) [.x0]
     (pins_of (fun p _ => p.B) fun p s h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.sst.2) (by taint_decide)
     fun p s h => stage1_ok h) ?_)
-  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_piece
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq (two_piece
     (Ψ := fun p t => SA p t ∧ t.gpr .x0 = p.B) [.x0, .x4]
     (pins_ws (fun p => off p.B (offP p.w)) fun p s h => ⟨h.2.1, h.2.2⟩) (by taint_decide)
     fun p s h => wsP_ok h) ?_)
   -- `q`'s workspace.
-  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (RelCT.block_append
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq (RelCT.block_append
     (l₁ := ([ldh .x5 sWsP] : List Instr)) (l₂ := wsEndT) (RelCT.seq (two_piece (Ψ := SS2) [.x0]
     (pins_of (fun p _ => p.B) fun p s h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.2) (by taint_decide)
@@ -376,23 +376,23 @@ theorem setup_ct : SetupCT := by
     (pins_of (fun p _ => off p.B (offP p.w)) fun p s h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.2.2) (by taint_decide)
     fun p s h => stage3_ok h))) ?_)
-  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_piece (Ψ := SBr (·.B)) [.x0, .x4]
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq (two_piece (Ψ := SBr (·.B)) [.x0, .x4]
     (pins_ws (fun p => off p.B (offQ p.w p.pl)) fun p s h => ⟨h.2.1, h.2.2⟩) (by taint_decide)
     fun p s h => wsQ_ok h) ?_)
   -- Into `p`'s workspace: `p` and `qInv`.
-  refine RelCT.seqs_append (by simp) (by simp [loadArr]) (RelCT.seq (two_piece
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq (two_piece
     (Ψ := SBr fun p => off p.B (offP p.w)) [.x0] (pins_sbr _) (by taint_decide) fun p s h => enterP_ok h) ?_)
-  refine RelCT.seqs_append (by simp [loadArr]) (by simp [loadArr]) (RelCT.seq (two_post
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq (two_post
     (Ψ := SBr fun p => off p.B (offP p.w)) (two_map
     (fun p : SetupPub => (⟨⟨p.B, p.Z, offP p.w, p.w, wsWords p.pl⟩, p.pp, p.pl⟩ : BPub)) (fun p s h => (lpreP h).1)
     loadArr_ct_pN) fun p s h => loadP1_ok h) ?_)
-  refine RelCT.seqs_append (by simp [loadArr]) (by simp) (RelCT.seq (two_post
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq (two_post
     (Ψ := SBr fun p => off p.B (offP p.w)) (two_map
     (fun p : SetupPub => (⟨⟨p.B, p.Z, offP p.w, p.w, wsWords p.pl⟩, p.ip, p.pl⟩ : BPub)) (fun p s h => (lpreP h).2)
     loadArr_ct_pI) fun p s h => loadP2_ok h) ?_)
   -- Into `q`'s workspace: `q`.
-  refine RelCT.seqs_append (by simp) (by simp [loadArr]) (RelCT.seq leaveEnterQ_ct ?_)
-  refine RelCT.seqs_append (by simp [loadArr]) (by simp) (RelCT.seq (two_post
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq leaveEnterQ_ct ?_)
+  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq (two_post
     (Ψ := SBr fun p => off p.B (offQ p.w p.pl)) (two_map
     (fun p : SetupPub => (⟨⟨p.B, p.Z, offQ p.w p.pl, p.w, wsWords p.ql⟩, p.qp, p.ql⟩ : BPub))
     (fun p s h => lpreQ h) loadArr_ct_qN)

@@ -54,9 +54,9 @@ theorem jacComb_init_values_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
   have al : ∀ x ∈ combWs K.toComb, x % 8 = 0 := fun x hx => hA.sl x (combWs_slots _ x hx)
   have b64 : ∀ x ∈ combWs K.toComb, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
     have := le x hx; omega_using [this, hn]
-  have axy := hL.comb.apart₂ (x := K.A.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have axz := hL.comb.apart₂ (x := K.A.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have ayz := hL.comb.apart₂ (x := K.A.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by grind)
+  have axy := hL.comb.apart₂ (x := K.A.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have axz := hL.comb.apart₂ (x := K.A.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have ayz := hL.comb.apart₂ (x := K.A.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
   dsimp only [TCombCfg.toComb] at axy axz ayz
   have hsl : ∀ x ∈ combWs K.toComb, K.bits + K.kbytes + 8 * K.zw ≤ x ∨ x + 8 * K.M.n ≤ K.bits + K.kbytes :=
     fun x hx => hL.bits_sl x (List.mem_cons_of_mem _ (combWs_slots _ x hx))

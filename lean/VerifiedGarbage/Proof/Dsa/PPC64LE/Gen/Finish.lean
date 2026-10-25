@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.ByteStep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Frame
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on PPC64LE: the exit
 
@@ -143,7 +144,7 @@ theorem outZero_vp {g : Geo} {c : Cfg} {F : State → State → Prop} (hF : ∀ 
   refine VP.seq (G := M) ?_ (VP.seq (G := P₃) ?_ ?_)
   · refine VP.pub (SS.pub (c := fun _ => c) fun σ s h => (hF σ s h).1) []
       ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
-        (.block [ld .r3 fOut, .li .r5 (2 * G.pLen + G.qLen)]), rfl⟩
+        (.block [ld .r3 fOut, .li .r5 (2 * G.pLen + G.qLen)]), by kernel_rfl⟩
       (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s hs => ?_
     obtain ⟨h, x⟩ := hF σ s hs
     have hE := h.gi.hEnd_le
@@ -158,7 +159,7 @@ theorem outZero_vp {g : Geo} {c : Cfg} {F : State → State → Prop} (hF : ∀ 
     refine ⟨⟨h.of_keep ⟨k.gpr, k.rd, k.wr⟩ rfl k.sp, x⟩, ?_, (Upd.write _ _ _).gpr⟩
     rw [(Upd.write _ .r5 _).other .r3 (by decide), (Upd.write _ _ _).gpr]
   · refine VP.pub (G := G) (fun σ t h => ⟨h.1.1.gi.r28, by rw [h.1.1.gi.sp, ← h.1.1.gi.hG]; rfl⟩) [.r3, .r5]
-      ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r3, .r5]) zeroN, rfl⟩
+      ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r3, .r5]) zeroN, by kernel_rfl⟩
       (fun σ₁ σ₂ s₁ s₂ ⟨_, a3, a5⟩ ⟨_, b3, b5⟩ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
@@ -185,7 +186,7 @@ theorem outZero_vp {g : Geo} {c : Cfg} {F : State → State → Prop} (hF : ∀ 
       rw [this]; simp
   · refine VP.pub (G := G) (fun σ u ⟨t, ⟨h, _⟩, K, sp, _⟩ => ⟨(K.gpr (by decide)).trans h.gi.r28, by
         rw [sp, h.gi.sp, ← h.gi.hG]; rfl⟩) []
-      ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block [.li .r3 0]), rfl⟩
+      ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block [.li .r3 0]), by kernel_rfl⟩
       (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ u ⟨t, ⟨h, x⟩, K, sp, f, ho⟩ =>
       WP.wr (exec_li (show 0 < 2 ^ 15 by decide)) fun u' v sp' _ => WP.block_nil ⟨h.gi.fo (ws := [.r0, .r3, .r5] ++ [.r3])
         (K.trans ⟨fun r hr => v.other r (by simpa using hr), v.rd, v.wr⟩) (by rw [sp', sp])
@@ -206,7 +207,7 @@ theorem outCopy_vp {g : Geo} {c : Cfg} {a : Spec.Dsa.Params} {F : State → Stat
   refine VP.seq (G := P₃) (VP.seq (G := M) ?_ ?_) ?_
   · refine VP.pub (SS.pub (c := fun _ => c) fun σ s h => (hF σ s h).1) []
       ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
-        (.block ([scr .r3 sPacked] ++ [ld .r4 fOut] ++ [.li .r5 (2 * G.pLen + G.qLen)])), rfl⟩
+        (.block ([scr .r3 sPacked] ++ [ld .r4 fOut] ++ [.li .r5 (2 * G.pLen + G.qLen)])), by kernel_rfl⟩
       (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s hs => ?_
     obtain ⟨h, x⟩ := hF σ s hs
     have hE := h.gi.hEnd_le
@@ -231,7 +232,7 @@ theorem outCopy_vp {g : Geo} {c : Cfg} {a : Spec.Dsa.Params} {F : State → Stat
     · rw [(Upd.write _ .r5 _).other .r4 (by decide), (Upd.write _ _ _).gpr]
   · refine VP.pub (G := G) (fun σ t h => ⟨h.1.1.gi.r28, by rw [h.1.1.gi.sp, ← h.1.1.gi.hG]; rfl⟩) [.r3, .r4, .r5]
       ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r3, .r4, .r5])
-        (.loop (.block VG.Impl.MlKem.PPC64LE.copyBody) (.nonzero .d .r5)), rfl⟩
+        (.loop (.block VG.Impl.MlKem.PPC64LE.copyBody) (.nonzero .d .r5)), by kernel_rfl⟩
       (fun σ₁ σ₂ s₁ s₂ ⟨_, a3, a4, a5⟩ ⟨_, b3, b4, b5⟩ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
@@ -255,7 +256,7 @@ theorem outCopy_vp {g : Geo} {c : Cfg} {a : Spec.Dsa.Params} {F : State → Stat
     have e := h.sb _ hcl; dsimp only at e; exact e
   · refine VP.pub (G := G) (fun σ u ⟨t, ⟨h, _⟩, K, sp, _⟩ => ⟨(K.gpr (by decide)).trans h.gi.r28, by
         rw [sp, h.gi.sp, ← h.gi.hG]; rfl⟩) []
-      ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block [.li .r3 1]), rfl⟩
+      ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block [.li .r3 1]), by kernel_rfl⟩
       (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ u ⟨t, ⟨h, x⟩, K, sp, f, ho⟩ =>
       WP.wr (exec_li (show 1 < 2 ^ 15 by decide)) fun u' v sp' _ => WP.block_nil
         ⟨h.gi.fo (ws := [.r3, .r4, .r5, .r6] ++ [.r3])

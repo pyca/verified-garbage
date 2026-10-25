@@ -11,7 +11,8 @@
     target_arch = "aarch64",
     target_arch = "x86",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 #[cfg(target_arch = "x86_64")]
@@ -21,7 +22,7 @@ use crate::arch::blake2s::{
 };
 use crate::arch::blake2s::{vg_blake2s_finalize, vg_blake2s_init, vg_blake2s_update};
 
-pub use crate::hmac::InvalidMac;
+pub use crate::invalid_mac::InvalidMac;
 
 super::blake2::blake2!(
     /// An incremental BLAKE2s computation of an `N`-byte digest.

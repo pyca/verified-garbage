@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: one `h` of the generator search
 
@@ -169,12 +170,12 @@ theorem gPow_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.p
   have vG : KU c.A aG r aG = r := by kv_simp
   have vO' : KU c.A aG r aOne = 1 := by kv_simp; exact hOv
   refine VP.seq (ltS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-      (VG.Impl.Rsa.Arm.Keys.sub3 aTmp aOne aG), rfl⟩
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (.block [.str .r11 .r8 slG]), rfl⟩
+      (VG.Impl.Rsa.Arm.Keys.sub3 aTmp aOne aG), by kernel_rfl⟩
+    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (.block [.str .r11 .r8 slG]), by kernel_rfl⟩
     (by simp [hO]) (by simp) (by decide) (by decide) (by simp only [List.mem_cons, not_or]; exact ⟨by decide, hTl⟩)
     (by decide)) ?_
   refine VP.seq (slotCmp_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-      (.block [.ldr .r1 .r8 slG, .cmp .r1 (.imm 0)]), rfl⟩ (by simp)
+      (.block [.ldr .r1 .r8 slG, .cmp .r1 (.imm 0)]), by kernel_rfl⟩ (by simp)
       (by kv_simp; exact b2le _)) ?_
   have kG : ∀ j ∈ c0.live, j ∈ aG :: c.live ∧ KU c.A aG r j = c0.A j := fun j hj => by
     have : j ≠ aG := fun e => hGl (e ▸ hj)
@@ -247,30 +248,30 @@ theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
   refine VP.seq (G := fun σ s => (St G c X σ s ∧ s.gpr .r4 = G.hs + BitVec.ofNat 32 i) ∧
       s.gpr .r6 = BitVec.ofNat 32 G.pLen)
     (VP.taint [] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs []) (.block [.movw .r6 (BitVec.ofNat 16 1)]),
-      rfl⟩ (fun _ _ _ _ _ _ r hr => absurd hr (by simp)) fun σ s ⟨⟨h, x⟩, r4⟩ => wp_movw fun t u => WP.block_nil
+      by kernel_rfl⟩ (fun _ _ _ _ _ _ r hr => absurd hr (by simp)) fun σ s ⟨⟨h, x⟩, r4⟩ => wp_movw fun t u => WP.block_nil
         ⟨⟨⟨h.of_rest (u.rest (ws := [.r6]) (by simp)) u.mem, x⟩, by rw [u.other _ (by decide), r4]⟩,
           by rw [u.gpr, setWidth_ofNat16 (by omega_arith)]⟩) ?_
   refine VP.seq ((loadAt_vp (c := c) (X := X) (src := G.hs + BitVec.ofNat 32 i) (bs := hAt G i)
     ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r4, .r6, .r7, .r8, .r9])
-      (VG.Impl.Rsa.Arm.CrtValues.load aH), rfl⟩ (by decide) hal hpL (by omega_arith)
+      (VG.Impl.Rsa.Arm.CrtValues.load aH), by kernel_rfl⟩ (by decide) hal hpL (by omega_arith)
     fun σ s ⟨h, _⟩ => h.gi.hSrc hi hpL).mono (fun σ s ⟨⟨h, r4⟩, r6⟩ => ⟨h, r4, r6⟩) fun _ _ h => h.1) ?_
   rw [hhv]
   -- 1 < h, h < p − 1 and both.
   refine VP.seq (ltS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-      (VG.Impl.Rsa.Arm.Keys.sub3 aTmp aOne aH), rfl⟩
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (.block [.str .r11 .r8 slLo]), rfl⟩
+      (VG.Impl.Rsa.Arm.Keys.sub3 aTmp aOne aH), by kernel_rfl⟩
+    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (.block [.str .r11 .r8 slLo]), by kernel_rfl⟩
     (by simp [hO]) (by simp) (by decide) (by decide) (by simp only [List.mem_cons, not_or]; exact ⟨by decide, hTl⟩)
     (by decide)) ?_
   refine VP.seq (ltS_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-      (VG.Impl.Rsa.Arm.Keys.sub3 aTmp aH aPm1), rfl⟩
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (.block [.str .r11 .r8 slHi]), rfl⟩
+      (VG.Impl.Rsa.Arm.Keys.sub3 aTmp aH aPm1), by kernel_rfl⟩
+    ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) (.block [.str .r11 .r8 slHi]), by kernel_rfl⟩
     (by simp) (by simp [hM]) (by decide) (by decide) (by simp only [List.mem_cons, not_or]; exact ⟨by decide, hTl⟩)
     (by decide)) ?_
   have b2le : ∀ b : Bool, b2n b ≤ 1 := fun b => by cases b <;> decide
   have b2one : ∀ p : Prop, [Decidable p] → (b2n (decide p) = 1 ↔ p) := fun p _ => by
     by_cases hp' : p <;> simp [b2n, hp']
   refine VP.seq (andCmp_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9])
-      (.block (VG.Impl.Rsa.Arm.Keys.andS slLo slLo slHi ++ [.ldr .r1 .r8 slLo, .cmp .r1 (.imm 0)])), rfl⟩
+      (.block (VG.Impl.Rsa.Arm.Keys.andS slLo slLo slHi ++ [.ldr .r1 .r8 slLo, .cmp .r1 (.imm 0)])), by kernel_rfl⟩
     (by decide) (by simp) (by simp) (by kv_simp; exact b2le _) (by kv_simp; exact b2le _)) ?_
   have vO : KU c.A aH hv aOne = 1 := by kv_simp; exact hOv
   have vH : KU c.A aH hv aH = hv := by kv_simp

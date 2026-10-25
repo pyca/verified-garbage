@@ -55,7 +55,7 @@ theorem selectArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have ctx : SelectCtx u base (8 * len) (arrAt w o) (arrAt w a) (arrAt w b) (2 * w) :=
     ⟨ws.nowrap, by omega, by omega, by omega, array_select_separate w o a, array_select_separate w o b,
       by rw [restU.wr]; exact ws.writable⟩
-  have bitU := restU.gpr .r11 (by simp)
+  have bitU := restU.gpr .r11 (by decide)
   rw [WP.seq_iff]
   refine WP.mono (selectAliasRow_ok u ctx (by omega) p0 p10 p12 count (by rw [bitU]; exact bit)) ?_
   intro v inv
@@ -66,14 +66,14 @@ theorem selectArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have frame := outside_workspace outside (size := 8 * len) (by omega)
   have keeps := outside_array_keeps outside (len := len) (by have := ws.nowrap; omega)
   have kl := keeps_layout layout (by rw [width]; exact keeps)
-  have restUV : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans
-    (inv.rest.mono (by simp [roundClobbers, selectLoopClobbers]))
+  have restUV : Rest roundClobbers s v := (restU.mono (by decide)).trans
+    (inv.rest.mono (by decide))
   refine WP.mono (restoreBase_ok v
     (by rw [restUV.rd, restUV.wr, restUV.sp]; exact stackRead)
     (saved_base_kept frame stackSep saved restUV.sp)) ?_
   rintro t ⟨ptrT, memT, restT⟩
   exact ⟨by rw [memT]; exact kl.2, by rw [memT]; exact kl.1.trans width,
     by rw [memT]; exact value, by rw [memT]; exact outside, by rw [memT]; exact frame,
-    restUV.trans (restT.mono (by simp [roundClobbers])), ptrT⟩
+    restUV.trans (restT.mono (by decide)), ptrT⟩
 
 end VG.Proof.Bignum.Arm

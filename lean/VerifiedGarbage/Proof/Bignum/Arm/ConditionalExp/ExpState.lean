@@ -45,10 +45,8 @@ theorem ExpState.after_y {s t : State} {base : BitVec 32} {len w M x E F : Nat}
 theorem ExpState.of_mem {s t : State} {base : BitVec 32} {len w M x E : Nat} {rs : List Reg}
     (h : ExpState ok base len w M x E s) (mem : t.mem = s.mem)
     (rest : VG.Proof.X25519.Arm.Rest rs s t) (ptr : t.gpr .r0 = base) : ExpState ok base len w M x E t := by
-  refine ⟨h.ready.of_mem mem rest ptr, ?_, h.coprime, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    first | (rw [mem]; assumption) | (rw [mem]; exact h.modulus) | (rw [mem]; exact h.inputBound) |
-      (rw [mem]; exact h.inputValue) | (rw [mem]; exact h.powerBound) | (rw [mem]; exact h.powerValue) |
-      (rw [mem]; exact h.one) | (rw [mem]; exact h.r2)
+  refine ⟨h.ready.of_mem mem rest ptr, ?_, h.coprime, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [mem]
+  exacts [h.modulus, h.inputBound, h.inputValue, h.powerBound, h.powerValue, h.one, h.r2]
 
 theorem ExpState.after_header {s t : State} {base : BitVec 32} {len w M x E d : Nat} {value : BitVec 32}
     {rs : List Reg} (h : ExpState ok base len w M x E s) (hd : 128 ≤ d) (hd' : d + 4 ≤ 256)

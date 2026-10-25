@@ -30,11 +30,12 @@ private theorem narrowByte (b : BitVec 8) : (b.setWidth 128).setWidth 8 = b := b
 theorem zip1_byte (x y : BitVec 128) {i : Nat} (hi : i < 16) :
     vbyte (VPermOp.eval .zip1 .b16 x y) i = if i % 2 = 0 then vbyte x (i/2) else vbyte y (i/2) := by
   simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_map, List.length_range,
-    vbyte_ofVBytes _ hi]
+    vbyte_ofVBytes _ hi, Nat.reduceDiv]
+  simp only [List.range, List.range.loop, List.map_cons, List.map_nil, List.flatMap_cons,
+    List.flatMap_nil, List.cons_append, List.nil_append, List.getD_cons_zero, List.getD_cons_succ]
   rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [List.range, List.range.loop, List.map_cons, List.map_nil, List.flatMap_cons,
-      List.flatMap_nil, List.cons_append, List.nil_append, List.getD_cons_zero, List.getD_cons_succ,
+    simp only [List.getD_cons_zero, List.getD_cons_succ,
       Nat.reduceDiv, Nat.reduceMod, Nat.reduceEqDiff, ite_true, ite_false, narrowByte]
 
 /-- A 32-bit lane consists of four little-endian bytes. -/

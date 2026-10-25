@@ -38,6 +38,6 @@ theorem expByte_ok (s : State) {base ep : BitVec 32} {len w M x E c : Nat}
     ((headerV 132 (by decide)).trans ((headerU 132 (by decide)).trans count))) ?_
   rintro t ⟨final, ptr, counter, zero, frameT, restT⟩
   exact ⟨final, ptr, counter, zero, frameU.trans (frameV.trans frameT),
-    (restU.mono (by simp [roundClobbers])).trans (restV.trans (restT.mono (by simp [roundClobbers])))⟩
+    (restU.mono (by decide)).trans (restV.trans (restT.mono (by decide)))⟩
 
 end VG.Proof.Bignum.Arm.ConditionalExp

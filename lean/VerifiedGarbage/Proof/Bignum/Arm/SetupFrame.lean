@@ -38,7 +38,7 @@ theorem setup_frame_ok (s : State) {base : BitVec 32} {len w : Nat}
   have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
   refine WP.mono (setup_ok s ws hw hw' fits ptr count zero) ?_
   rintro t ⟨layout, width, ptr, outside, rest⟩
-  refine ⟨layout, width, ptr, outs_workspace outside ?_, rest.mono (by simp [roundClobbers])⟩
+  refine ⟨layout, width, ptr, outs_workspace outside ?_, rest.mono (by decide)⟩
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> omega

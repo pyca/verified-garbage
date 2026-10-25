@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.Search
 import VerifiedGarbage.Proof.Dsa.X86.Generation.TimingFlags
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Two runs of one geometry's search and result leak the same -/
 
@@ -47,7 +48,7 @@ theorem finish_ct {g : Geo} {E : Env} (v : E.Valid) :
     refine RelCT.seq (both_post (Ψ := fun _ t => ∀ r ∈ [Reg.esp, .edi, .ebx, .esi, .ecx],
         t.gpr r = outPins E .esi (2 * g.pLen + g.qLen) r)
       (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins (h.1.base hb))
-        (tcheckE _ _ (.block ([.mov .ebx (.mem (sc 0))] ++ scr .esi 0 ++ [.mov .ecx (.imm 0)])) rfl
+        (tcheckE _ _ (.block ([.mov .ebx (.mem (sc 0))] ++ scr .esi 0 ++ [.mov .ecx (.imm 0)])) (by kernel_rfl)
           (by decide +kernel) (by decide +kernel))) fun R t h => ?_)
       (both_agree _ _ (fun _ _ h => h) (tcheck _ _ (by decide +kernel)))
     have B := h.1.base hb
@@ -66,7 +67,7 @@ theorem finish_ct {g : Geo} {E : Env} (v : E.Valid) :
     refine RelCT.seq (both_post (Ψ := fun _ t => ∀ r ∈ [Reg.esp, .edi, .esi, .ecx, .eax],
         t.gpr r = outPins E .edx (2 * g.pLen + g.qLen) r)
       (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins (h.1.base hb))
-        (tcheckE _ _ (.block [.mov .esi (.mem (sc 0)), .mov .ecx (.imm 0), .mov .eax (.imm 0)]) rfl
+        (tcheckE _ _ (.block [.mov .esi (.mem (sc 0)), .mov .ecx (.imm 0), .mov .eax (.imm 0)]) (by kernel_rfl)
           (by decide +kernel) (by decide +kernel))) fun R t h => ?_)
       (both_agree _ _ (fun _ _ h => h) (tcheck _ _ (by decide +kernel)))
     have B := h.1.base hb

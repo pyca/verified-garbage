@@ -68,6 +68,6 @@ theorem crt_loadPBody_ok (s : State) {base pp qp : BitVec 32} {len w k : Nat} {p
   exact ⟨readyT, (eq.number fits (by decide : 0 < 8)).trans primeZ,
     (eq.number fits (by decide : 1 < 8)).trans inverseZ, by rw [saved, flag, old],
     (frame.mono (by simp)).trans (frameT.mono (by simp)),
-    rest.trans (restT.mono (by simp [roundClobbers]))⟩
+    rest.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

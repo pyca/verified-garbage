@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on PPC64LE: the key working space set up
 
@@ -59,7 +60,7 @@ variable {G : GP} {c : Cfg} {X : State → Prop}
 /-- The key working space's registers. -/
 theorem ksEnter_vp : VP (St G c X) (.block (ksRegs G.pLen)) (KSt G c X) := by
   refine VP.pub (SS.pub (c := fun _ => c) fun σ s h => h.1) [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
-    (Taint.ofRegs [.r28]) (.block (ksRegs G.pLen)), rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
+    (Taint.ofRegs [.r28]) (.block (ksRegs G.pLen)), by kernel_rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
     fun σ s ⟨h, x⟩ => ?_
   have l := h.lens
   have kb15 : kB G.pLen < 2 ^ 15 := by rcases l with e | e | e <;> rw [e] <;> decide
@@ -76,7 +77,7 @@ theorem ksEnter_vp : VP (St G c X) (.block (ksRegs G.pLen)) (KSt G c X) := by
 /-- Every array zeroed, then `[aOne] = 1`. -/
 theorem ksSetup_vp :
     VP (KSt G c X) ksSetup (fun σ t => KSt G { c with A := A0, live := allArrs } X σ t ∧ TopAll G t.mem) := by
-  refine ks_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31]) ksSetup, rfl⟩
+  refine ks_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31]) ksSetup, by kernel_rfl⟩
     (fun σ s h => ⟨h.1.1, h.2⟩) fun σ s ⟨⟨h, x⟩, kr⟩ => ?_
   have hw := h.ws kr
   have l := h.lens

@@ -40,8 +40,8 @@ theorem exponentAccumulate_ok (s : State) {p : Addr}
   · have subzero : s7.gpr .r5 - (0 : BitVec 32) = s7.gpr .r5 := BitVec.sub_zero _
     rw [zero, subzero, g.gpr, f.other .r4 (by decide), e.other .r4 (by decide), high]
   · rw [h.mem, g.mem, f.mem, e.mem, d.mem, c.mem, b.mem, a.mem]
-  · exact (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans
-      ((d.rest (by simp)).trans ((e.rest (by simp)).trans ((f.rest (by simp)).trans
-      ((g.rest (by simp)).trans (h.rest (by simp))))))))
+  · exact (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
+      ((d.rest (by decide)).trans ((e.rest (by decide)).trans ((f.rest (by decide)).trans
+      ((g.rest (by decide)).trans (h.rest (by decide))))))))
 
 end VG.Proof.Bignum.Arm

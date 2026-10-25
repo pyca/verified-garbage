@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubLit
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVec
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
@@ -26,6 +27,7 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubLit
 
 /-!
 # `vg_rsa_public_precomputed_checked_ifma`: constant time

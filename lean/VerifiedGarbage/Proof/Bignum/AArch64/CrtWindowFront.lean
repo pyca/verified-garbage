@@ -97,7 +97,7 @@ theorem front_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
         (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
           (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :=
   wp_seqs_append (by simp [nSetup]) (by simp [checks]) (wp_seqs_append (by simp [nSetup])
-    (by simp [VG.Impl.Rsa.AArch64.WindowFive.primesSetup]) (WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ =>
+    (by decide) (WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ =>
       WP.mono (setupPart_ok h hwide hr) fun _ ⟨_, _, hr'⟩ =>
         WP.mono (checksPart_ok h hwide hv hr') fun _ ⟨mp', mq', hr''⟩ => ⟨minv, mp', mq', hr''⟩))
 

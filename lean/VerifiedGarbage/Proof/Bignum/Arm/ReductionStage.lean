@@ -54,6 +54,6 @@ theorem reductionStage_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n
         simp only [show (0 : BitVec 32).toNat = 0 from rfl, Nat.add_zero]
       refine ⟨result, ?_, hdr.of_outside outside (by omega) (by omega), ptop, outside, ?_⟩
       · exact round_cancel hInv (coefficient_value inv s.mem (State.addr base) acc (n + 1)) result
-      · exact (keep.mono (by simp [roundClobbers])).trans (rest.mono (by simp [loopClobbers, roundClobbers]))
+      · exact (keep.mono (by decide)).trans (rest.mono (by decide))
 
 end VG.Proof.Bignum.Arm

@@ -41,7 +41,7 @@ against `p`, which comes before anything that writes them.
    512 entries of the table of small primes (1024 above 1024 bits), by
    `trial` (the shared `Trial.trial`, whose count is in `hTrial`; it writes
    `r22`–`r24`, so `out` and `out_len` are saved around it), 3 if one
-   divides `c`; then `montPrep` and RSA's witnesses (`Witness.millerRabin`)
+   divides `c`; then `montPrepHi` (`c` has its top bit set) and RSA's witnesses (`Witness.millerRabin`)
    from `rand` after the candidate, with `rand`, its length, the octets
    read, a witness's octets (`out_len`) and the uniform witnesses needed
    (`checksW w`) in the header. Their status (`hStat`: 0 if `rand` ran out,
@@ -62,7 +62,7 @@ open VG.PPC64LE VG.Impl.Bignum VG.Impl.Bignum.PPC64LE
 open VG.Impl.Bignum.PPC64LE.PublicChecked (base)
 open VG.Impl.Bignum.PPC64LE.Precompute (loadN)
 open VG.Impl.MillerRabin.PPC64LE.Search (ldh sth geFlag hWsLen hRand hRandLen hUsed hStat hChecks hK hW
-  hStride montPrep)
+  hStride montPrepHi)
 
 /-- Right-nested sequencing. -/
 def seqs : List (Prog isa) → Prog isa
@@ -269,7 +269,7 @@ def testResult : Prog isa :=
 /-- Once `gcd(c − 1, e) = 1`: trial division, then Miller–Rabin. -/
 def test (trial : Prog isa) (name : String) (round : Prog isa) : Prog isa :=
   seqs [.block testArgs, trialDiv trial,
-    .ite (.nonzero .d .r22) (finish 3) (seqs [montPrep, Witness.millerRabin name round, testResult])]
+    .ite (.nonzero .d .r22) (finish 3) (seqs [montPrepHi, Witness.millerRabin name round, testResult])]
 
 /-! ## `vg_rsa_keygen_candidate` -/
 

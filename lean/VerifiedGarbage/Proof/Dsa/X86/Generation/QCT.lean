@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.HashCT
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
 import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Two runs of q from the same seed leak the same -/
 
@@ -31,7 +32,7 @@ theorem copyIn_ct {E : Env} (v : E.Valid) {w : Nat} (hw : w + 4 ≤ 73728) (dst 
         else if r = .ecx then BitVec.ofNat 32 n else baseVal E r)
     (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins h.1)
       (tcheckE _ _ (.block ([.mov .esi (.mem (sc 0))] ++ scr .ebx 0 ++ [.mov .ecx (.imm (BitVec.ofNat 32 0))]))
-        rfl (by decide +kernel) (by decide +kernel))) fun x s h => ?_)
+        (by kernel_rfl) (by decide +kernel) (by decide +kernel))) fun x s h => ?_)
     (both_agree [.esp, .edi, .esi, .ebx, .ecx] _ (fun _ _ h => h)
       (tcheck _ _ (by decide +kernel)))
   simp only [List.cons_append, List.nil_append, scr]
@@ -85,7 +86,7 @@ theorem qPart_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
       Spec.Rsa.bytesAt t.mem (off E.base (sPk + g.pLen)) g.H.N =
         VG.Proof.Ffdh.ParameterCandidate.shapedOctets (Spec.Dsa.seedHash (8 * g.qLen) (chunk E a.1)) 7)
     (both_agree [.esp, .edi] (fun _ => baseVal E) (fun a t h => by obtain ⟨s, _, Q, _⟩ := h; exact qAt_pins Q)
-      (tcheckE _ _ (.block (orByte 0 0x80 ++ orByte 0 1)) rfl (by decide +kernel) (by decide +kernel)))
+      (tcheckE _ _ (.block (orByte 0 0x80 ++ orByte 0 1)) (by kernel_rfl) (by decide +kernel) (by decide +kernel)))
     fun a t h => by
       obtain ⟨s, hs, Q, H⟩ := h
       exact WP.mono (q3_ok G v Q H) fun u h' => ⟨s, hs, h'⟩) ?_

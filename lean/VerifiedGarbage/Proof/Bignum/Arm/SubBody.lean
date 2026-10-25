@@ -65,7 +65,7 @@ theorem subBody_ok {s0 s : State} {base : BitVec 32} {size o a b n i : Nat}
   · rw [mem2]; exact outside
   · rw [mem2, keep2.gpr .r11 (by simp)]; exact prefixValue
   · refine inv.rest.trans ((keep.mono ?_).trans (keep2.mono ?_))
-    all_goals intro r hr; cases r <;> simp_all [subClobbers, subLoopClobbers]
+    all_goals decide
   · rw [zero, uc]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]

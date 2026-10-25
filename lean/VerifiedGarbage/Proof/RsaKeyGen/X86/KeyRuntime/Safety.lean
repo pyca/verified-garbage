@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
 open VG VG.X86
 
-theorem body_noSp : NoSp VG.Impl.RsaKeyGen.X86.KeyRuntime.body := NoSp.of_all (by rfl)
+theorem body_noSp : NoSp VG.Impl.RsaKeyGen.X86.KeyRuntime.body := NoSp.of_all (by decide +kernel)
 
 theorem code_sp : (VG.Impl.RsaKeyGen.X86.KeyRuntime.code).all (fun i => !isa.writesSp i) = true := by
   apply Code.all_of_allInstrs

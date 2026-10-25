@@ -41,6 +41,6 @@ theorem r2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
   rintro t ⟨mem, keep⟩
   obtain ⟨next, frameT, number, modT⟩ := loop.after_count mem keep
   exact ⟨next, number.trans one, modT.trans modulus, frame.trans frameT,
-    rest.trans (keep.mono (by simp [roundClobbers]))⟩
+    rest.trans (keep.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

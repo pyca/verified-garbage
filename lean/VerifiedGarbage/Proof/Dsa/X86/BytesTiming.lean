@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Impl.Dsa.X86.Bytes
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Component loads and masked stores have secret-independent traces -/
 
@@ -20,7 +21,7 @@ theorem cursor_relCT (len : Nat) :
       (VG.X86.Taint.Agree cursorTaint) :=
   erased_relCT _ (.block [.mov .ebx (.reg .esi), .alu .add .ebx (.imm 0)])
     (VG.Taint.hintOf taint (workspaceTaint true) (.block [.mov .ebx (.reg .esi), .alu .add .ebx (.imm 0)]))
-    rfl rfl rfl rfl
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
 theorem loadComponent_relCT (len n out : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint true)) (loadComponent len n out)
@@ -31,7 +32,7 @@ theorem loadComponent_relCT (len n out : Nat) :
         [.mov .eax (.mem (at_ .ebx 0)), .bswap .eax, .store (at_ .ebp 0) .eax, .alu .sub .ebx (.imm 4)])
       (VG.Taint.hintOf taint cursorTaint (Code.erase (VG.Impl.Mont.X86.Dynamic.wordLoop 1
         [.mov .eax (.mem (at_ .ebx 0)), .bswap .eax, .store (at_ .ebp 0) .eax, .alu .sub .ebx (.imm 4)])))
-      rfl rfl rfl rfl
+      (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
   · unfold zeroPad
     split
     · apply blockFlatMap_relCT
@@ -52,6 +53,6 @@ theorem storeComponent_relCT (len input : Nat) :
     (VG.Taint.hintOf taint cursorTaint (Code.erase (VG.Impl.Mont.X86.Dynamic.wordLoop 1
       [.mov .eax (.mem (at_ .ebp 0)), .alu .and .eax (.reg .ecx), .bswap .eax, .store (at_ .ebx 0) .eax,
         .alu .sub .ebx (.imm 4)])))
-    rfl rfl rfl rfl
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
 end VG.Proof.Dsa.X86

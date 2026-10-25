@@ -33,7 +33,7 @@ theorem halfLoop_relCT {g : Geo} (pg : PubG g) (s0 t0 : State) (A B : Nat → Na
     RelCT isa (fun s t => HI g s0 A m c 0 s ∧ HI g t0 B r c 0 t)
       (.loop VG.Impl.Rsa.X86.RecoverRt.halfBody .ne) (fun s t => HI g s0 A m c c s ∧ HI g t0 B r c c t) :=
   fixedLoop_relCT (fun k s => HI g s0 A m c k s) (fun k t => HI g t0 B r c k t) positive
-    (fun _ _ _ _ _ _ _ _ ⟨hs, ht⟩ es et => ⟨by unfold HI at hs ht; exact pub_trace pg halfBodyCheck hs ht es et, trivial⟩)
+    (fun _ _ _ _ _ _ _ _ ⟨hs, ht⟩ es et => ⟨by unfold HI at hs ht; exact pub_trace pg halfBodyCheck.choose_spec hs ht es et, trivial⟩)
     (fun _ _ hk hs => halfBody_ok hs hk bound) (fun _ _ hk ht => halfBody_ok ht hk bound)
 
 theorem halving_relCT (g : CallGeometry) (pg : PubG g.toGeo) (s0 t0 : State)
@@ -77,7 +77,7 @@ theorem mont_relCT {g : Geo} (pg : PubG g) {s0 t0 : State} {A B AW BW V W : Nat 
   | @seq _ _ _ u _ _ _ e1 er =>
     cases et with
     | @seq _ _ _ v _ _ _ f1 fr =>
-      have eq1 := pub_trace pg montHeadCheck hs ht e1 f1
+      have eq1 := pub_trace pg montHeadCheck.choose_spec hs ht e1 f1
       obtain ⟨hu, mu⟩ := wp_result (montHead_ok hs vA bA oA lA) e1
       obtain ⟨hv, mv⟩ := wp_result (montHead_ok ht vB bB oB lB) f1
       cases er with
@@ -96,7 +96,7 @@ theorem mont_relCT {g : Geo} (pg : PubG g) {s0 t0 : State} {A B AW BW V W : Nat 
             (by simpa [AH, upd] using lB)
             (by simpa [AH, upd, mXm, mR2] using Nat.mod_lt (2 ^ (128 * g.n)) (by omega : 0 < m'))
             (by decide) (by decide)) f2
-          have eq3 := pub_trace pg montTailCheck hx hy e3 f3
+          have eq3 := pub_trace pg montTailCheck.choose_spec hx hy e3 f3
           exact ⟨by rw [eq1, eq2, eq3], trivial⟩
 
 end VG.Proof.Rsa.X86.Recover

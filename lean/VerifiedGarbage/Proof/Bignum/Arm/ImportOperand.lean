@@ -30,8 +30,8 @@ theorem importOperand_ok (s : State) {base src : BitVec 32} {len w o k : Nat}
   have enc : ∀ i : Fin 8, encodable (BitVec.ofNat 32 i.val) = true := by decide
   rw [importOperand, WP.seq_iff]
   refine wp_mov (op2_imm (enc ⟨o, ho⟩)) fun u a => WP.block_nil ?_
-  have restU : Rest [.r2] s u := a.rest (by simp)
-  have ready := h.of_mem a.mem restU ((restU.gpr .r0 (by simp)).trans h.ptr)
+  have restU : Rest [.r2] s u := a.rest (by decide)
+  have ready := h.of_mem a.mem restU ((restU.gpr .r0 (by decide)).trans h.ptr)
   refine WP.mono (loadBEFn_ok u ready.workspace ready.layout ready.width ho positive fit sourceFit
     (by rw [a.rd, a.wr]; exact read) sep ready.ptr a.gpr
     ((a.other .r4 (by decide)).trans source) ((a.other .r6 (by decide)).trans count)
@@ -39,7 +39,7 @@ theorem importOperand_ok (s : State) {base src : BitVec 32} {len w o k : Nat}
   rintro t ⟨value, outside, frame, restT, ptr⟩
   rw [a.mem] at value outside frame
   have keeps := outside_array_keeps outside (len := len) (by have := h.workspace.nowrap; omega)
-  have rest : Rest roundClobbers s t := (restU.mono (by simp [roundClobbers])).trans restT
+  have rest : Rest roundClobbers s t := (restU.mono (by decide)).trans restT
   exact ⟨(h.after_array ho0 keeps frame rest ptr).1, value, keeps, frame, rest⟩
 
 end VG.Proof.Bignum.Arm

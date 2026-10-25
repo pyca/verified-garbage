@@ -57,14 +57,14 @@ theorem wideProductRow_ok (s : State) {s0 : State} {base : BitVec 32} {size o a 
   rw [aOld, bOld] at value
   have whole := product_row_value (by omega : i + (n + 2) ≤ m + n + 2) (by omega) outside h.value value
   have frame := outside_workspace outside (size := size) (by omega)
-  have restSV : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans
-    (restV.mono (by simp [roundClobbers, loopClobbers]))
+  have restSV : Rest roundClobbers s v := (restU.mono (by decide)).trans
+    (restV.mono (by decide))
   have rest := h.rest.trans restSV
   have frameAll := (ctx.frame h.outside).trans frame
   refine WP.mono (restoreBase_ok v (by rw [rest.rd, rest.wr, rest.sp]; exact ctx.stackRead)
     (saved_base_kept frameAll ctx.stackSep ctx.saved rest.sp)) ?_
   rintro t ⟨ptr, memT, restT⟩
   exact ⟨by rw [memT]; exact whole, by rw [memT]; exact outside, ptr,
-    restSV.trans (restT.mono (by simp [roundClobbers]))⟩
+    restSV.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

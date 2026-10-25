@@ -28,7 +28,7 @@ theorem crt_comparePointers_ok (s : State) {base a b : BitVec 32} {size : Nat}
     (by rw [h.rd, h.wr]; exact ws.read fit) fun t j => WP.block_nil ?_
   exact ⟨(j.other .r10 (by decide)).trans (h.gpr.trans first),
     by rw [j.gpr, h.mem]; exact second,
-    j.mem.trans h.mem, (h.rest (by simp)).trans (j.rest (by simp))⟩
+    j.mem.trans h.mem, (h.rest (by decide)).trans (j.rest (by decide))⟩
 
 theorem crt_compareArgs_ok (s : State) {base dst a b : BitVec 32} {size w : Nat}
     (ws : Workspace s base size) (fit : 244 ≤ size) (ptr : s.gpr .r0 = base)
@@ -42,9 +42,9 @@ theorem crt_compareArgs_ok (s : State) {base dst a b : BitVec 32} {size w : Nat}
   refine WP.mono (crt_comparePointers_ok s ws fit ptr first second) ?_
   rintro u ⟨firstU, secondU, memU, restU⟩
   refine WP.mono (crt_clearWideArgs_ok u (dst := dst) (w := w) (ws.congr restU.wr) (by omega) (by omega) (by decide)
-    ((restU.gpr .r0 (by simp)).trans ptr) (by rw [memU]; exact count) (by rw [memU]; exact link)) ?_
+    ((restU.gpr .r0 (by decide)).trans ptr) (by rw [memU]; exact count) (by rw [memU]; exact link)) ?_
   rintro t ⟨ptrT, countT, _, memT, restT⟩
-  exact ⟨ptrT, (restT.gpr .r10 (by simp)).trans firstU, (restT.gpr .r12 (by simp)).trans secondU,
-    countT, memT.trans memU, (restU.mono (by simp)).trans (restT.mono (by simp))⟩
+  exact ⟨ptrT, (restT.gpr .r10 (by decide)).trans firstU, (restT.gpr .r12 (by decide)).trans secondU,
+    countT, memT.trans memU, (restU.mono (by decide)).trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

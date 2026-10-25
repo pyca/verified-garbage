@@ -29,7 +29,7 @@ theorem crt_failArgs_ok (s : State) {g : CrtGeometry} (h : CrtCallStack g s) :
   refine wp_mov (op2_imm (by decide)) fun t a => WP.block_nil ?_
   exact ⟨(a.other .r0 (by decide)).trans (output.trans h.output),
     (a.other .lr (by decide)).trans (count.trans h.count), a.gpr, a.mem.trans mem,
-    (rest.mono (by simp)).trans (a.rest (by simp))⟩
+    (rest.mono (by decide)).trans (a.rest (by decide))⟩
 
 theorem crt_fail_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtBodyInput g bs s) :
     WP isa PublicFn.fail s fun t => t.gpr .r0 = 0 ∧
@@ -49,8 +49,8 @@ theorem crt_fail_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h 
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]
   simp only [Bool.false_eq_true, ite_false, length] at bytes
   refine wp_mov (op2_imm (by decide)) fun t a => WP.block_nil ?_
-  refine ⟨a.gpr, ?_, ?_, (restU.mono (by simp [roundClobbers])).trans
-    ((restV.mono (by simp [roundClobbers])).trans (a.rest (by simp [roundClobbers])))⟩
+  refine ⟨a.gpr, ?_, ?_, (restU.mono (by decide)).trans
+    ((restV.mono (by decide)).trans (a.rest (by decide)))⟩
   · rw [a.mem]; exact bytes
   · rw [a.mem, memU] at *; exact frame
 

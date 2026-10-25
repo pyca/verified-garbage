@@ -54,7 +54,7 @@ theorem sqDoubleArgs_ok (s : State) {base : BitVec 32} {size M n : Nat} (ws : Wo
     change base + BitVec.ofNat 32 M + BitVec.ofNat 32 24 = _
     rw [Offset.add_add]
   · rw [u4.mem, u3.mem, u2.mem, u1.mem]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest (by simp))))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans (u4.rest (by decide))))
 
 section
 variable {m0 : Mem} {base : BitVec 32} {size out a mod M n : Nat} {inv : BitVec 32}
@@ -96,8 +96,8 @@ theorem sqDouble_ok (s : State) (h : CrossInv m0 base size out a mod M n inv (n 
   · rw [sh.result.1, ms, lowS, p11]
     exact Nat.mod_eq_of_lt (sqCross_double_lt m0 (State.addr base) a n (by omega))
   · rw [sh.outside.val32 (by omega) (by omega), ms]; exact topS
-  · exact (r1.mono (by simp [roundClobbers])).trans ((r2.mono (by simp [roundClobbers])).trans
-      (sh.rest.mono (by simp [roundClobbers])))
+  · exact (r1.mono (by decide)).trans ((r2.mono (by decide)).trans
+      (sh.rest.mono (by decide)))
 
 end
 

@@ -57,11 +57,11 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
   rintro t ⟨sharedT, readyT, frameT, restT⟩
   have eqT := sharedV.workspace_eq_after_base (sharedV.child kind).2.1 member frameT
   have flag := (acceptance_after_base_save frameT restT).trans (flagV.trans flagU)
-  have restUV : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans restV
+  have restUV : Rest roundClobbers s v := (restU.mono (by decide)).trans restV
   rw [restU.sp] at frameV
   rw [restUV.sp] at frameT
   exact ⟨sharedT, readyT, powered.congr eqT, flag,
     (frameU.mono (by simp)).trans ((frameV.mono (by simp)).trans (frameT.mono (by simp))),
-    restUV.trans (restT.mono (by simp [roundClobbers]))⟩
+    restUV.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

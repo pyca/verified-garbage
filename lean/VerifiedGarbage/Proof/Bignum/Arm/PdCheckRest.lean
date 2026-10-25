@@ -54,10 +54,10 @@ theorem pdCheckRest_ok (s : State) {base : BitVec 32} {len w N R : Nat}
   refine WP.mono (pdOdd_ok z hz.ready hz.stackFit hz.read savedZ) ?_
   rintro t ⟨accepted, zero, memT, restT⟩
   rw [hz.modulus] at accepted zero
-  have readyT := hz.ready.of_mem memT restT ((restT.gpr .r0 (by simp)).trans hz.ready.ptr)
+  have readyT := hz.ready.of_mem memT restT ((restT.gpr .r0 (by decide)).trans hz.ready.ptr)
   have ht := hz.after readyT restT (by rw [memT]; exact hz.modulus) (by rw [memT]; exact hz.r2)
-  have rest : Rest roundClobbers s t := (restU.mono (by simp [roundClobbers])).trans
-    (restV.trans ((restZ.mono (by simp [roundClobbers])).trans (restT.mono (by simp [roundClobbers]))))
+  have rest : Rest roundClobbers s t := (restU.mono (by decide)).trans
+    (restV.trans ((restZ.mono (by decide)).trans (restT.mono (by decide))))
   rw [restV.sp, restU.sp] at frameZ
   refine ⟨ht, accepted, zero, ?_, rest⟩
   rw [memT]

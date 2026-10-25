@@ -77,6 +77,6 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
     (pEqT.number h.buffers.context.arraysFit (by decide)).trans value,
     ((qU.congr qEqV).congr qEqX).congr qEqT, flag,
     (frameU.mono (by simp [crtLiveMutable])).trans (frameVLive.trans (frameXLive.trans (frameT.mono (by simp [crtLiveMutable])))),
-    (restU.mono (by simp [roundClobbers])).trans (restV.trans (restX.trans (restT.mono (by simp [roundClobbers]))))⟩
+    (restU.mono (by decide)).trans (restV.trans (restX.trans (restT.mono (by decide))))⟩
 
 end VG.Proof.Bignum.Arm

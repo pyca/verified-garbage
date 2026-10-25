@@ -53,7 +53,7 @@ theorem exportBuffer_ok (s : State) {src dst : BitVec 32} {n k : Nat} {accepted 
   rintro v ⟨bytes, frame, _, restV⟩
   rw [memU] at bytes frame
   have rest : Rest [.r0, .r1, .r2, .r5, .lr] s v :=
-    (restU.mono (by simp)).trans (restV.mono (by simp))
+    (restU.mono (by decide)).trans (restV.mono (by decide))
   exact ⟨bytes, frame, rest⟩
 
 theorem exportBufferMasked_ok (s : State) {src dst : BitVec 32} {n k : Nat} {accepted : Bool}
@@ -76,11 +76,11 @@ theorem exportBufferMasked_ok (s : State) {src dst : BitVec 32} {n k : Nat} {acc
   refine WP.mono (maskOutput_ok v h.positive h.countFits h.outputFits
     (by rw [rest.wr]; exact h.write) (by rw [rest.sp]; exact h.stackFits)
     (by rw [rest.rd, rest.wr, rest.sp]; exact h.stackRead) flag
-    ((rest.gpr .r4 (by simp)).trans h.output) ((rest.gpr .r6 (by simp)).trans h.count)) ?_
+    ((rest.gpr .r4 (by decide)).trans h.output) ((rest.gpr .r6 (by decide)).trans h.count)) ?_
   rintro t ⟨value, status, frameT, restT⟩
   rw [bytes] at value
   refine ⟨?_, status, frame.trans frameT,
-    (rest.mono (by simp [roundClobbers])).trans (restT.mono (by simp [roundClobbers]))⟩
+    (rest.mono (by decide)).trans (restT.mono (by decide))⟩
   cases accepted with
   | false => exact value
   | true =>

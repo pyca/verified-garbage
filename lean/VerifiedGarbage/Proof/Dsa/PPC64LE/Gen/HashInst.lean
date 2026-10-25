@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.Md
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on PPC64LE: SHA-1 and SHA-256
 
@@ -70,9 +71,9 @@ def sha1Ok : HashOk sha1 where
   H := Spec.Sha1.hash
   hash msg h := (Proof.Sha1.hash_eq msg).trans (hash_blk _ _ h)
   cert1 L := ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
-    (.block (ivStore sha1.iv ++ [scr .r26 sState, scr .r27 (wB L), scr .r4 sMsg])), rfl⟩
+    (.block (ivStore sha1.iv ++ [scr .r26 sState, scr .r27 (wB L), scr .r4 sMsg])), by kernel_rfl⟩
   cert3 dst := ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r26])
-    (.block ([.addi .r28 .r28 dst] ++ VG.Impl.MdStream.PPC64LE.out32 5 true ++ [.subi .r28 .r28 dst])), rfl⟩
+    (.block ([.addi .r28 .r28 dst] ++ VG.Impl.MdStream.PPC64LE.out32 5 true ++ [.subi .r28 .r28 dst])), by kernel_rfl⟩
 
 def sha256Ok : HashOk sha256 where
   P := sha256Params
@@ -98,9 +99,9 @@ def sha256Ok : HashOk sha256 where
   H := Spec.Sha256.hash
   hash msg h := (Proof.Sha256.hash_eq msg).trans (hash_blk _ _ h)
   cert1 L := ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
-    (.block (ivStore sha256.iv ++ [scr .r26 sState, scr .r27 (wB L), scr .r4 sMsg])), rfl⟩
+    (.block (ivStore sha256.iv ++ [scr .r26 sState, scr .r27 (wB L), scr .r4 sMsg])), by kernel_rfl⟩
   cert3 dst := ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r26])
-    (.block ([.addi .r28 .r28 dst] ++ VG.Impl.MdStream.PPC64LE.out32 8 true ++ [.subi .r28 .r28 dst])), rfl⟩
+    (.block ([.addi .r28 .r28 dst] ++ VG.Impl.MdStream.PPC64LE.out32 8 true ++ [.subi .r28 .r28 dst])), by kernel_rfl⟩
 
 theorem sha1_length (bs : List Byte) : (Spec.Sha1.hash bs).length = 20 := by
   rw [Proof.Sha1.hash_eq]; exact Proof.Sha1.md.digest_length _

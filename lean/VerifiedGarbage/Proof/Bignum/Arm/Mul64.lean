@@ -29,8 +29,8 @@ theorem mul64Cross_ok (s : State) :
       u2.other .r4 (by decide), u2.other .r5 (by decide), u1.gpr,
       u1.other .r4 (by decide), u1.other .r2 (by decide), u1.other .r10 (by decide)]
   · rw [u4.mem, u3.mem, u2.mem, u1.mem]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
-      ((u3.rest (by simp)).trans (u4.rest (by simp))))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
+      ((u3.rest (by decide)).trans (u4.rest (by decide))))
 
 theorem mul64_ok (s : State) :
     WP isa (.block mul64) s fun t =>
@@ -42,11 +42,11 @@ theorem mul64_ok (s : State) :
   refine WP.mono (mul64Cross_ok u) ?_
   rintro t ⟨value, mem, rest⟩
   refine ⟨?_, mem.trans kept.mem, ?_⟩
-  · rw [value, rest.gpr .r3 (by simp), kept.regs .r1 (by simp [clobbers]),
-      kept.regs .r2 (by simp [clobbers]), kept.regs .r10 (by simp [clobbers]),
-      kept.regs .r11 (by simp [clobbers])]
+  · rw [value, rest.gpr .r3 (by decide), kept.regs .r1 (by decide),
+      kept.regs .r2 (by decide), kept.regs .r10 (by decide),
+      kept.regs .r11 (by decide)]
     exact mul64_value _ _ _ _ _ _ product
   · exact (show Rest clobbers s u from ⟨kept.regs, kept.rd, kept.wr, kept.sp⟩).trans
-      (rest.mono (by simp [clobbers]))
+      (rest.mono (by decide))
 
 end VG.Proof.Bignum.Arm

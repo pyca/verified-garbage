@@ -32,9 +32,9 @@ theorem crt_addWideArgs_ok (s : State) {base dst src : BitVec 32} {size w : Nat}
   rintro v ⟨out, width, _, memV, restV⟩
   refine WP.mono (crt_addWideScalars_ok v width) ?_
   rintro t ⟨countT, one, zero, memT, restT⟩
-  exact ⟨(restT.gpr .r0 (by simp)).trans out,
-    (restT.gpr .r12 (by simp)).trans ((restV.gpr .r12 (by simp)).trans (a.gpr.trans input)),
+  exact ⟨(restT.gpr .r0 (by decide)).trans out,
+    (restT.gpr .r12 (by decide)).trans ((restV.gpr .r12 (by decide)).trans (a.gpr.trans input)),
     countT, one, zero, memT.trans (memV.trans a.mem),
-    (a.rest (by simp)).trans ((restV.mono (by simp)).trans (restT.mono (by simp)))⟩
+    (a.rest (by decide)).trans ((restV.mono (by decide)).trans (restT.mono (by decide)))⟩
 
 end VG.Proof.Bignum.Arm

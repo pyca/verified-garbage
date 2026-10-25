@@ -46,6 +46,6 @@ theorem crt_setupPrime_ok (s : State) {base child : BitVec 32} {size len slot w 
   have frameT := outs_workspace outsideT (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> omega :
     ∀ r ∈ [(48, 8), (64, 64)], r.1 + r.2 ≤ 8 * len)
   exact ⟨layoutT, widthT, ptrT, linkT, frameU.trans frameT,
-    (restU.mono (by simp [roundClobbers])).trans (restT.mono (by simp [roundClobbers]))⟩
+    (restU.mono (by decide)).trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

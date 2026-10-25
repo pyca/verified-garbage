@@ -28,9 +28,9 @@ theorem saveDigit_ok {base source table : BitVec 32} {len w bytes N M g E i : Na
   refine wp_str (a:=off (State.addr base) 196) (by decide)
     (by rw [h.ready.ptr]; exact addr_add (by have := h.ready.workspace.nowrap; omega))
     (h.ready.workspace.write (by omega)) fun t update => WP.block_nil ?_
-  have rest : Rest roundClobbers s t := (update.rest []).mono (by simp)
+  have rest : Rest roundClobbers s t := (update.rest []).mono (by decide)
   obtain ⟨powerT,frame⟩ := h.after_header (d:=196) (by decide) (by decide) update.mem (update.rest [])
-    ((update.rest []).gpr .r0 (by simp) |>.trans h.ready.ptr)
+    ((update.rest []).gpr .r0 (by decide) |>.trans h.ready.ptr)
   have outside := writeW32_outside s.mem (State.addr base) (d:=196) (s.gpr .r11) (by decide)
   rw [←update.mem] at outside
   have controlsT : Controls base source table bytes N t := by

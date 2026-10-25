@@ -33,7 +33,7 @@ theorem montPipelineOp_ok (round : Prog isa) (law : MontPipeline.LoopLaw round) 
   rw [MontPipeline.op, WP.seq_iff]
   refine WP.mono (montOpArgs_ok s ho.1 ha.1 hb.1) ?_
   rintro u ⟨po, pa, pb, memU, restU⟩
-  have ready := h.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ptr)
+  have ready := h.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ptr)
   have body := MontPipeline.fnBody_ok round law u ready.workspace ready.layout ho ha hb ready.ptr po pa pb
     (by rw [ready.width]; exact ready.inverse) (by rw [ready.width, memU]; exact operand)
   simp only [ready.width] at body
@@ -45,8 +45,8 @@ theorem montPipelineOp_ok (round : Prog isa) (law : MontPipeline.LoopLaw round) 
   rintro t ⟨ptr, memT, restT⟩
   rw [memU] at bound value keeps frame
   rw [← memT] at bound value keeps frame
-  have rest : Rest roundClobbers s t := (restU.mono (by simp [roundClobbers])).trans
-    (restV.trans (restT.mono (by simp [roundClobbers])))
+  have rest : Rest roundClobbers s t := (restU.mono (by decide)).trans
+    (restV.trans (restT.mono (by decide)))
   obtain ⟨final, modulus⟩ := h.after_array ho0 keeps frame rest ptr
   exact ⟨final, modulus, bound, value, keeps, frame, rest⟩
 

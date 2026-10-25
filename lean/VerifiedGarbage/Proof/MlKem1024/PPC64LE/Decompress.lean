@@ -40,6 +40,8 @@ meta import Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.MlKem
 public import VerifiedGarbage.Spec.MlKem.Poly
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-!
 # ML-KEM-1024 on PPC64LE: `vg_mlkem1024_decode_decompress`
@@ -62,7 +64,7 @@ open VG VG.PPC64LE VG.Impl.MlKem.PPC64LE VG.Impl.MlKem1024.PPC64LE
 open VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem VG.Proof.MlKem.PPC64LE
-open VG.Proof.MlKem.PPC64LE.DecodeDecompress (dec Keep byte64 ext_toNat)
+open VG.Proof.MlKem.PPC64LE.DecodeDecompress (dec Keep byte64 ext_toNat toNat_add_shl)
 open VG.Proof.MlKem.PPC64LE.CompressEncode (dsel)
 
 /-! ## The loop bodies -/
@@ -122,7 +124,7 @@ theorem body5_ok (h3 : s.gpr .r3 = x) (h6 : s.gpr .r6 = y) (h11 : s.gpr .r11 = c
   have o6 := oc 6 (by decide)
   have o7 := oc 7 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at b0 o0 o1 o2 o3 o4 o5 o6 o7
-  crun [dd5Body, ddByteAt, dd5Field, decompressTo, Keep, dec, G5, h3, h6, h11, h9, b0, b1, b2, b3,
+  crunr [dd5Body, ddByteAt, dd5Field, decompressTo, Keep, dec, G5, h3, h6, h11, h9, b0, b1, b2, b3,
     b4, o0, o1, o2, o3, o4, o5, o6, o7, preserved, List.forall_mem_cons, List.not_mem_nil,
     false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, setWidth_zero_append]
@@ -161,7 +163,7 @@ theorem body11_ok (h3 : s.gpr .r3 = x) (h6 : s.gpr .r6 = y) (h11 : s.gpr .r11 = 
   have o6 := oc 6 (by decide)
   have o7 := oc 7 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at b0 o0 o1 o2 o3 o4 o5 o6 o7
-  crun [dd11Body, ddByteAt, ddByteAtHi, dd11Field, dd11FieldHi, decompressTo, Keep, dec, G11a, G11b, h3, h6, h11, h9, b0, b1,
+  crunr [dd11Body, ddByteAt, ddByteAtHi, dd11Field, dd11FieldHi, decompressTo, Keep, dec, G11a, G11b, h3, h6, h11, h9, b0, b1,
     b2, b3, b4, b5, b6, b7, b8, b9, b10, o0, o1, o2, o3, o4, o5, o6, o7, preserved,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, setWidth_zero_append]
@@ -197,14 +199,9 @@ theorem g5_toNat (s : State) (x : BitVec 64) :
   have b2 := (s.mem (x + BitVec.ofNat 64 2)).isLt
   have b3 := (s.mem (x + BitVec.ofNat 64 3)).isLt
   have b4 := (s.mem (x + BitVec.ofNat 64 4)).isLt
-  simp only [G5, BitVec.toNat_add, BitVec.toNat_shiftLeft, byte64, Nat.shiftLeft_eq]
-  generalize (s.mem x).toNat = a0 at *
-  generalize (s.mem (x + BitVec.ofNat 64 1)).toNat = a1 at *
-  generalize (s.mem (x + BitVec.ofNat 64 2)).toNat = a2 at *
-  generalize (s.mem (x + BitVec.ofNat 64 3)).toNat = a3 at *
-  generalize (s.mem (x + BitVec.ofNat 64 4)).toNat = a4 at *
-  simp only [Nat.reducePow] at *
-  omega_arith
+  simp only [Nat.reducePow] at b0 b1 b2 b3 b4
+  refine toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (byte64 _) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)
+  all_goals (simp only [Nat.reducePow]; omega_arith)
 
 /-- The doubleword of the first six bytes of a group. -/
 theorem g11a_toNat (s : State) (x : BitVec 64) :
@@ -219,15 +216,9 @@ theorem g11a_toNat (s : State) (x : BitVec 64) :
   have b3 := (s.mem (x + BitVec.ofNat 64 3)).isLt
   have b4 := (s.mem (x + BitVec.ofNat 64 4)).isLt
   have b5 := (s.mem (x + BitVec.ofNat 64 5)).isLt
-  simp only [G11a, BitVec.toNat_add, BitVec.toNat_shiftLeft, byte64, Nat.shiftLeft_eq]
-  generalize (s.mem x).toNat = a0 at *
-  generalize (s.mem (x + BitVec.ofNat 64 1)).toNat = a1 at *
-  generalize (s.mem (x + BitVec.ofNat 64 2)).toNat = a2 at *
-  generalize (s.mem (x + BitVec.ofNat 64 3)).toNat = a3 at *
-  generalize (s.mem (x + BitVec.ofNat 64 4)).toNat = a4 at *
-  generalize (s.mem (x + BitVec.ofNat 64 5)).toNat = a5 at *
-  simp only [Nat.reducePow] at *
-  omega_arith
+  simp only [Nat.reducePow] at b0 b1 b2 b3 b4 b5
+  refine toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (byte64 _) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)
+  all_goals (simp only [Nat.reducePow]; omega_arith)
 
 /-- The doubleword of the last six bytes of a group. -/
 theorem g11b_toNat (s : State) (x : BitVec 64) :
@@ -243,15 +234,9 @@ theorem g11b_toNat (s : State) (x : BitVec 64) :
   have b8 := (s.mem (x + BitVec.ofNat 64 8)).isLt
   have b9 := (s.mem (x + BitVec.ofNat 64 9)).isLt
   have b10 := (s.mem (x + BitVec.ofNat 64 10)).isLt
-  simp only [G11b, BitVec.toNat_add, BitVec.toNat_shiftLeft, byte64, Nat.shiftLeft_eq]
-  generalize (s.mem (x + BitVec.ofNat 64 5)).toNat = a5 at *
-  generalize (s.mem (x + BitVec.ofNat 64 6)).toNat = a6 at *
-  generalize (s.mem (x + BitVec.ofNat 64 7)).toNat = a7 at *
-  generalize (s.mem (x + BitVec.ofNat 64 8)).toNat = a8 at *
-  generalize (s.mem (x + BitVec.ofNat 64 9)).toNat = a9 at *
-  generalize (s.mem (x + BitVec.ofNat 64 10)).toNat = a10 at *
-  simp only [Nat.reducePow] at *
-  omega_arith
+  simp only [Nat.reducePow] at b5 b6 b7 b8 b9 b10
+  refine toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (toNat_add_shl (byte64 _) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)) ?_ (by decide)
+  all_goals (simp only [Nat.reducePow]; omega_arith)
 
 theorem f5_val (G : BitVec 64) {k : Nat} (hk : k < 8) :
     (dec 5 (G <<< (64 - 5 - 5 * k) >>> (64 - 5))).setWidth 32 =

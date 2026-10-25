@@ -45,7 +45,7 @@ theorem publicControls_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLe
   rw [PublicFn.controls, WP.seq_iff]
   refine WP.mono (publicControlArgs_ok s h.stack) ?_
   rintro u ⟨ptr, count, memU, restU⟩
-  have hu := h.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ready.ptr)
+  have hu := h.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ready.ptr)
   refine WP.mono (expControls_ok u hu.ready) ?_
   rintro t ⟨ready, pointer, counter, arrays, frame, restT⟩
   have ht := hu.after_arrays ready arrays frame restT
@@ -53,6 +53,6 @@ theorem publicControls_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLe
   rw [count] at counter
   have phase := publicPhaseInput t ht pointer counter
   rw [memU] at frame
-  exact ⟨ht, phase, frame, (restU.mono (by simp [roundClobbers])).trans (restT.mono (by simp))⟩
+  exact ⟨ht, phase, frame, (restU.mono (by decide)).trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

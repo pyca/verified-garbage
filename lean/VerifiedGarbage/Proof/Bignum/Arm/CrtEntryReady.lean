@@ -60,7 +60,7 @@ theorem crt_entry_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
       rw [rest.sp]; exact savedOutput.trans h.output
     · change t.mem.readW (off (State.addr t.sp) 12) 32 = _
       rw [rest.sp, outside_read32 outside (d := 12) (by decide) (by decide)]
-      exact (savedAll (.r3, 12) (by simp [pcAllSaved])).trans h.count
+      exact (savedAll (.r3, 12) (by decide)).trans h.count
     · intro i
       change t.mem.readW (off (State.addr t.sp) (56 + 8 * i.val)) 32 = _
       rw [rest.sp, outside_read32 outside (d := 56 + 8 * i.val) (by omega) (by have := i.isLt; omega),
@@ -74,12 +74,12 @@ theorem crt_entry_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
       exact h.length i
   refine ⟨⟨⟨h.workspace.nowrap, by rw [rest.wr]; exact List.mem_cons_of_mem _ h.workspace.writable⟩,
     ⟨crt_entry_buffers h frame rest, stack, ptr, source.trans h.modulus, count.trans h.count, ?_, ?_⟩⟩,
-    frame, ?_, rest.mono (by simp [roundClobbers])⟩
+    frame, ?_, rest.mono (by decide)⟩
   · change t.mem.readW (State.addr t.sp) 32 = _
     rw [rest.sp]; exact savedBase
   · change t.mem.readW (off (State.addr t.sp) 8) 32 = _
     rw [rest.sp, outside_read32 outside (d := 8) (by decide) (by decide)]
-    exact (savedAll (.r2, 8) (by simp [pcAllSaved])).trans h.modulus
+    exact (savedAll (.r2, 8) (by decide)).trans h.modulus
   · rw [rest.sp]; exact savedCallee
 
 end VG.Proof.Bignum.Arm

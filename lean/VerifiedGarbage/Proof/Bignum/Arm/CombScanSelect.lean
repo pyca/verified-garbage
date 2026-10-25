@@ -98,12 +98,12 @@ theorem select_ok (s : State) {s0 : State} {base table : BitVec 32} {len w M g N
   have outside := frame_outside narrow (by have := h.workspace.nowrap; omega)
   have frame := outside_workspace outside arrayFits
   have keeps := outside_array_keeps outside (by have := h.workspace.nowrap; omega : 8*len<2^64)
-  have restV : Rest roundClobbers s0 v := rest.trans (inv.rest.mono (by simp [roundClobbers,selectLoopClobbers]))
+  have restV : Rest roundClobbers s0 v := rest.trans (inv.rest.mono (by decide))
   refine WP.mono (restoreBase_ok v (by rw [restV.rd,restV.wr,restV.sp]; exact h.stackRead)
     (saved_base_kept frame h.stackSep h.saved restV.sp)) ?_
   rintro t ⟨ptrT,memT,restT⟩
   rw [←memT] at value outside frame keeps
-  have allRest := restV.trans (restT.mono (by simp [roundClobbers]))
+  have allRest := restV.trans (restT.mono (by decide))
   exact ⟨(h.after_array (by decide) keeps frame allRest ptrT).1,value,outside,keeps,frame,allRest⟩
 
 end VG.Proof.Bignum.Arm.CombScan

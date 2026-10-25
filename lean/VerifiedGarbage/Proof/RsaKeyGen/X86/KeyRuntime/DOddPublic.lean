@@ -15,8 +15,7 @@ namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
 open VG.Impl.RsaKeyGen.X86.KeyRuntime
 
 theorem dOdd_public : Public dOdd := by
-  refine of_check (hint := ?hint) ?check ?lower
+  refine of_any (hint := ?hint) ?check
   case check => taint_decide
-  case lower => taint_decide
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

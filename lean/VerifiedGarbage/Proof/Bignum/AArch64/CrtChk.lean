@@ -54,7 +54,7 @@ theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {o
   unfold checks
   simp only [List.append_assoc]
   -- `p q`.
-  refine wp_seqs_append (by simp [pqProduct, zeroAccs]) (by simp) ?_
+  refine wp_seqs_append (by decide) (by decide) ?_
   refine WP.mono (pqProduct_ok hg (by omega_using [hw28]) hsP hsQ (by rw [← word_off]; exact hwsP.hdr.hw)
     (by rw [← word_off]; exact hwsQ.hdr.hw) (by rw [← word_off, hwsP.hdr.harr _ (by decide), off_off])
     (by rw [← word_off, hwsQ.hdr.harr _ (by decide), off_off]) hlo hop hoq
@@ -72,7 +72,7 @@ theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {o
     rw [ho₁.wv (Or.inl (by omega_using [this])) (by omega_arith)]; exact hN
   rw [← wv_off, ← wv_off, hP, hQ] at hpq₁
   -- `p q = n`.
-  refine wp_seqs_append (by simp [eqCheck]) (by simp) ?_
+  refine wp_seqs_append (by decide) (by decide) ?_
   refine WP.mono (eqCheck_ok hg₁ (by omega_using [hlo, hop, hoq]) (by omega_using [hwq, hwq']) (by omega_using [hw28]))
       fun s₂ ⟨hM₂, ho₂, k₂⟩ => ?_
   rw [hpq₁, hN₁, hb₁ _ (by decide), hM, mask_and] at hM₂
@@ -97,7 +97,7 @@ theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {o
   have hs₂ := hs.congr (k₁.trans k₂).wr
   have hdi₂ : s₂.gpr .x0 = B := ((k₁.trans k₂).gpr .x0 (by decide)).trans hg.x0
   -- Into `p`'s workspace: `qInv < p`.
-  refine wp_seqs_append (by simp) (by simp [qinvCheck]) ?_
+  refine wp_seqs_append (by decide) (by decide) ?_
   refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = off B op ∧ t.mem = s₂.mem)
     (by brun [enterP, hdi₂, hdr_enc (show sWsP < 32 by decide), hs₂.ld (show 8 * sWsP + 8 ≤ Z by
       have := hdr_lt_slot w 8 (show sWsP < 32 by decide); omega_using [hlo, hop, hoq,
@@ -105,7 +105,7 @@ theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {o
     fun s₃ ⟨⟨hdi₃, hm₃⟩, k₃⟩ => ?_
   have hs₃ := hs₂.congr k₃.wr
   have hwsP₃ : WsAt s₃.mem B op wp mp := by rw [hm₃]; exact hwsP.of_words fun i hi => hpw₂ i (by omega_using [hi])
-  refine wp_seqs_append (by simp [qinvCheck]) (by simp [primeFix]) ?_
+  refine wp_seqs_append (by decide) (by decide) ?_
   refine WP.mono (qinvCheck_ok hs₃ hdi₃ hwsP₃.hdr (by omega_using [hop, hoq])
       (by unfold Public.sMask sFn; omega_using [hlo, hacc, hA0]) (by omega_using [hwp])
     (by omega_using [hw28, hwp']) hwsP₃.link) fun s₄ ⟨hM₄, ho₄, k₄⟩ => ?_
@@ -132,7 +132,7 @@ theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {o
     simp only [keyMask, Bool.and_eq_true, decide_eq_true_eq] at h
     exact odd_of_mul_odd (by rw [Nat.mul_comm]; exact h.1.2) hodd
   -- `p := M ? p : 3`.
-  refine wp_seqs_append (by simp [primeFix]) (by simp) ?_
+  refine wp_seqs_append (by decide) (by decide) ?_
   refine WP.mono (primeFix_ok hcP₄ hwp hwp' (by omega_using [hw28]) hM₄
     (by rw [wv_off, (show wv s₄.mem B (op + slot wp Public.aN) wp = wv s.mem B (op + slot wp Public.aN) wp from
       wv_congr fun i hi => hab₄ _ (by omega_using [hlo]) (by
@@ -156,7 +156,7 @@ theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {o
     rw [hb₅ _ (by unfold sWsQ sFn; omega_arith), hb₄ _ (Or.inr (by unfold sWsQ Public.sMask sFn; omega_using []))
       (by unfold sWsQ sFn; omega_using [])]; exact hsQ₂
   -- Into `q`'s workspace.
-  refine wp_seqs_append (by simp) (by simp [primeFix]) ?_
+  refine wp_seqs_append (by decide) (by decide) ?_
   refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = off B oq ∧ t.mem = s₅.mem)
     (by brun [leave, enterQ, hcP₅.x0, hdr_enc (show sLink < 32 by decide), hdr_enc (show sWsQ < 32 by decide),
       hcP₅.ld' (show sLink < 32 by decide), hcP₅.link', hcP₅.ldn (show sWsQ < 32 by decide), hsQ₅])
@@ -176,7 +176,7 @@ theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {o
   have hcQ₆ := SubCtx.mk' (hs.congr kk6.wr) hH₆ hwsQ₆ hdi₆ (by omega_using [hlo, hop]) (by have := tabBytes_le_wsTab wq; omega)
   have hM₆ : word s₆.mem B (8 * Public.sMask) = mask (keyMask m0 N P Q QI) := by
     rw [hm₆, hb₅ _ (by unfold Public.sMask sFn; omega_using [hlo, hacc, hA0])]; exact hM₄
-  refine wp_seqs_append (by simp [primeFix]) (by simp) ?_
+  refine wp_seqs_append (by decide) (by decide) ?_
   refine WP.mono (primeFix_ok hcQ₆ hwq hwq' (by omega_using [hw28]) hM₆
     (by rw [hm₆, wv_off, wv_congr fun i hi => hq₅ _ (by omega_using []) (by
         have := slot_le (w := wq) (show Public.aN < 8 by decide); omega_using [hoq, hn, hi, this]),

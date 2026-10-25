@@ -99,6 +99,7 @@ theorem divSet_vp {E : State → Prop} (F : FinishInputs P := legacyFinish P) : 
   refine clrW_ok hw (j := aDv) (by decide) (by decide) fun s1 hw1 k1 n1 z1 r1 => ?_
   have h1 := h.same1 k1 (by decide) n1 (by simp) (h.r8_of r1) r1.sp r1.rd r1.wr
   have c1 : s1.mem.readW (off (State.addr P.B) 16) 32 = BitVec.ofNat 32 P.w := h1.cnt
+  rw [← List.append_nil (VG.Impl.Rsa.Arm.CrtValues.divHdr _ _ _ _)]
   refine VG.Proof.Rsa.Arm.CrtValues.divHdr_ok hw1 (by decide) (by decide) (by decide) (by decide) c1
     fun t hwt k2 d2 r2 => WP.block_nil ⟨⟨e, ?_, hwt⟩, d2, ?_⟩
   · have hds : ∀ d ∈ ([0, 4, 8, 12] : List Nat), SlotOk d := by decide

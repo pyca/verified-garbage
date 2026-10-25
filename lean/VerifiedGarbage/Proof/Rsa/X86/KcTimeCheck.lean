@@ -24,18 +24,15 @@ def argSpan (full : Bool) : Nat := 4 * (VG.Impl.Rsa.X86.KeyCheck.scratchArg full
 def τV (full : Bool) : VG.X86.Taint.T := { regs := .ofList [.edi, .esp], flags := false, argLen := argSpan full }
 
 theorem sizedCheckFull :
-    (VG.Taint.check sseTaint (τV true) (VG.Impl.Rsa.X86.KeyCheckRt.sized true)
-      (VG.Taint.hintOf sseTaint (τV true) (VG.Impl.Rsa.X86.KeyCheckRt.sized true))).isSome = true := by
-  taint_decide
+    ∃ hint, (VG.Taint.check sseTaint (τV true) (VG.Impl.Rsa.X86.KeyCheckRt.sized true) hint).isSome = true :=
+  ⟨_, by taint_decide⟩
 
 theorem sizedCheckCrt :
-    (VG.Taint.check sseTaint (τV false) (VG.Impl.Rsa.X86.KeyCheckRt.sized false)
-      (VG.Taint.hintOf sseTaint (τV false) (VG.Impl.Rsa.X86.KeyCheckRt.sized false))).isSome = true := by
-  taint_decide
+    ∃ hint, (VG.Taint.check sseTaint (τV false) (VG.Impl.Rsa.X86.KeyCheckRt.sized false) hint).isSome = true :=
+  ⟨_, by taint_decide⟩
 
 theorem sizedCheck (full : Bool) :
-    (VG.Taint.check sseTaint (τV full) (VG.Impl.Rsa.X86.KeyCheckRt.sized full)
-      (VG.Taint.hintOf sseTaint (τV full) (VG.Impl.Rsa.X86.KeyCheckRt.sized full))).isSome = true := by
+    ∃ hint, (VG.Taint.check sseTaint (τV full) (VG.Impl.Rsa.X86.KeyCheckRt.sized full) hint).isSome = true := by
   cases full
   · exact sizedCheckCrt
   · exact sizedCheckFull

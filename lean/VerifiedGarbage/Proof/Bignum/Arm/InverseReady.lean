@@ -60,7 +60,7 @@ theorem initInverse_ready_r2 (s : State) {base : BitVec 32} {len w : Nat}
     rw [mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by decide))
   refine ⟨⟨ws.congr rest.wr, kl.2, kl.1.trans width, result, ?_, ?_, ?_, ?_, ?_⟩,
-    number, frame, rest.mono (by simp [newtonClobbers, roundClobbers]), ?_⟩
+    number, frame, rest.mono (by decide), ?_⟩
   · rw [outside.word (d := arrAt w 0) (by right; simp [arrAt, Spec.Rsa.Mont.hdrBytes]) (by have := ws.nowrap; omega)]
     change (_ * (t.mem.readW (off (State.addr base) 56) 64).toNat + 1) % 2 ^ 64 = 0
     rw [mem, Mem.readW_writeW_self64]

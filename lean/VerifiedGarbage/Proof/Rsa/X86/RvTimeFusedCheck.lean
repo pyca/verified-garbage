@@ -33,21 +33,18 @@ theorem fusedSmallStartCheck : (VG.Taint.check sseTaint τA (fusedSmallStart)
     (VG.Taint.hintOf sseTaint τA (fusedSmallStart))).isSome = true := by
   taint_decide
 
-theorem fusedSmallStepCheck : (VG.Taint.check sseTaint τA (fusedSmallStep)
-    (VG.Taint.hintOf sseTaint τA (fusedSmallStep))).isSome = true := by
-  taint_decide
+theorem fusedSmallStepCheck : ∃ hint, (VG.Taint.check sseTaint τA (fusedSmallStep)
+    hint).isSome = true := ⟨_, by taint_decide⟩
 
-theorem fusedSmall7Check : (VG.Taint.check sseTaint τA (fusedSmall7)
-    (VG.Taint.hintOf sseTaint τA (fusedSmall7))).isSome = true := by
-  taint_decide
+theorem fusedSmall7Check : ∃ hint, (VG.Taint.check sseTaint τA (fusedSmall7)
+    hint).isSome = true := ⟨_, by taint_decide⟩
 
 theorem fusedBeforeCheck : (VG.Taint.check sseTaint τA (fusedBefore)
     (VG.Taint.hintOf sseTaint τA (fusedBefore))).isSome = true := by
   taint_decide
 
-theorem fusedAfterCheck : (VG.Taint.check sseTaint τA (fusedAfter)
-    (VG.Taint.hintOf sseTaint τA (fusedAfter))).isSome = true := by
-  taint_decide
+theorem fusedAfterCheck : ∃ hint, (VG.Taint.check sseTaint τA (fusedAfter)
+    hint).isSome = true := ⟨_, by taint_decide⟩
 
 theorem fusedInitCheck : (VG.Taint.check sseTaint τA (fusedInit)
     (VG.Taint.hintOf sseTaint τA (fusedInit))).isSome = true := by

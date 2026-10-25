@@ -102,9 +102,9 @@ theorem tcombJOut_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
   have b64 : ∀ x ∈ combSlots K.toComb, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
     have := hle x hx; omega_using [this, hn]
   have ex₃ : wordsVal s₃.mem base K.A.x K.M.n = wordsVal s₂.mem base K.A.x K.M.n :=
-    O₃.wordsVal (hL.comb.apart₂ (by tcomb_mem) (by tcomb_mem) (by grind)) (b64 _ (by tcomb_mem))
+    O₃.wordsVal (hL.comb.apart₂ (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)) (b64 _ (by tcomb_mem))
   have ez₃ : wordsVal s₃.mem base K.A.z K.M.n = wordsVal s₂.mem base K.A.z K.M.n :=
-    O₃.wordsVal (hL.comb.apart₂ (by tcomb_mem) (by tcomb_mem) (by grind)) (b64 _ (by tcomb_mem))
+    O₃.wordsVal (hL.comb.apart₂ (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)) (b64 _ (by tcomb_mem))
   have UA : Unch base [(K.A.y, 8 * K.M.n)] s₂.mem s₃.mem := O₃.unch
   have hmoW := tcombW_mo hL hM
   have hAyW : (K.A.y, 8 * K.M.n) ∈ tcombW K := List.mem_append_left _ (by

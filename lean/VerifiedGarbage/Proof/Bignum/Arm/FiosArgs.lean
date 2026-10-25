@@ -30,25 +30,25 @@ theorem args_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : Nat} 
   refine wp_ldr (a:=off (State.addr base) (a+4*i)) (by decide)
     (w1.ea (off:=a+4*i) (imm:=0) (u1.gpr.trans hdr.aPtr) (by omega))
     (w1.read haf) fun s2 u2 => ?_
-  have k2 : Rest [.r1] s s2 := (u1.rest (by simp)).trans (u2.rest (by simp))
-  have p2 : s2.gpr .r0=base+BitVec.ofNat 32 tmp := (k2.gpr .r0 (by simp)).trans ptr
+  have k2 : Rest [.r1] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
+  have p2 : s2.gpr .r0=base+BitVec.ofNat 32 tmp := (k2.gpr .r0 (by decide)).trans ptr
   have w2 := ws.congr k2.wr
   refine wp_ldr (a:=off (State.addr base) tmp) (by decide) (w2.ea p2 (by omega))
     (w2.read (by omega)) fun s3 u3 => ?_
-  have k3 : Rest [.r1,.lr] s s3 := (k2.mono (by simp_all)).trans (u3.rest (by simp))
-  have p3 : s3.gpr .r0=base+BitVec.ofNat 32 tmp := (k3.gpr .r0 (by simp)).trans ptr
+  have k3 : Rest [.r1,.lr] s s3 := (k2.mono (by simp_all)).trans (u3.rest (by decide))
+  have p3 : s3.gpr .r0=base+BitVec.ofNat 32 tmp := (k3.gpr .r0 (by decide)).trans ptr
   have w3 := ws.congr k3.wr
   refine wp_ldr (by decide) (w3.ea p3 (by omega)) (w3.read (by omega)) fun s4 u4 => ?_
-  have k4 : Rest [.r1,.lr,.r12] s s4 := (k3.mono (by simp_all)).trans (u4.rest (by simp))
-  have p4 : s4.gpr .r0=base+BitVec.ofNat 32 tmp := (k4.gpr .r0 (by simp)).trans ptr
+  have k4 : Rest [.r1,.lr,.r12] s s4 := (k3.mono (by simp_all)).trans (u4.rest (by decide))
+  have p4 : s4.gpr .r0=base+BitVec.ofNat 32 tmp := (k4.gpr .r0 (by decide)).trans ptr
   have w4 := ws.congr k4.wr
   refine wp_ldr (by decide) (w4.ea p4 (by omega)) (w4.read (by omega)) fun s5 u5 => ?_
-  have k5 : Rest [.r1,.lr,.r12,.r4] s s5 := (k4.mono (by simp_all)).trans (u5.rest (by simp))
-  have p5 : s5.gpr .r0=base+BitVec.ofNat 32 tmp := (k5.gpr .r0 (by simp)).trans ptr
+  have k5 : Rest [.r1,.lr,.r12,.r4] s s5 := (k4.mono (by simp_all)).trans (u5.rest (by decide))
+  have p5 : s5.gpr .r0=base+BitVec.ofNat 32 tmp := (k5.gpr .r0 (by decide)).trans ptr
   have w5 := ws.congr k5.wr
   refine wp_ldr (by decide) (w5.ea p5 (by omega)) (w5.read (by omega)) fun s6 u6 => ?_
-  have k6 : Rest [.r1,.lr,.r12,.r4,.r2] s s6 := (k5.mono (by simp_all)).trans (u6.rest (by simp))
-  have p6 : s6.gpr .r0=base+BitVec.ofNat 32 tmp := (k6.gpr .r0 (by simp)).trans ptr
+  have k6 : Rest [.r1,.lr,.r12,.r4,.r2] s s6 := (k5.mono (by simp_all)).trans (u6.rest (by decide))
+  have p6 : s6.gpr .r0=base+BitVec.ofNat 32 tmp := (k6.gpr .r0 (by decide)).trans ptr
   have w6 := ws.congr k6.wr
   refine wp_ldr (by decide) (w6.ea p6 (by omega)) (w6.read (by omega)) fun s7 u7 => ?_
   refine wp_mov (op2_imm (by decide)) fun s8 u8 => ?_
@@ -71,7 +71,7 @@ theorem args_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : Nat} 
       u3.gpr,u2.mem,u1.mem,hdr.count]
   · rw [u9.other .r7 (by decide),u8.gpr]
   · rw [u9.mem,u8.mem,u7.mem,u6.mem,u5.mem,u4.mem,u3.mem,u2.mem,u1.mem]
-  · exact (k6.mono (by simp_all)).trans ((u7.rest (by simp)).trans
-      ((u8.rest (by simp)).trans (u9.rest (by simp))))
+  · exact (k6.mono (by simp_all)).trans ((u7.rest (by decide)).trans
+      ((u8.rest (by decide)).trans (u9.rest (by decide))))
 
 end VG.Proof.Bignum.Arm.Fios

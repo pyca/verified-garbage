@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem_inv_ntt`
@@ -75,7 +77,7 @@ theorem ibfly_ok (h5 : s.gpr .r5 = x) (h6 : s.gpr .r6 = y) (h7 : s.gpr .r7 = z) 
       s'.mem = (s.mem.writeW x ((fixq ((s.mem.readW x 32).setWidth 64 + (s.mem.readW y 32).setWidth 64 -
             3329)).setWidth 32)).writeW y
           ((red (z * fixq ((s.mem.readW y 32).setWidth 64 - (s.mem.readW x 32).setWidth 64))).setWidth 32) := by
-  crun [ibflyBody, reduce, barrett, fixup, red, bar, fixq, kept, h5, h6, h7, h8, h9, h11, ia, ib, oa, ob,
+  crunr [ibflyBody, reduce, barrett, fixup, red, bar, fixq, kept, h5, h6, h7, h8, h9, h11, ia, ib, oa, ob,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
 
@@ -141,7 +143,7 @@ theorem bpre_ok (h4 : s.gpr .r4 = x4) (h5 : s.gpr .r5 = x5) (h10 : s.gpr .r10 = 
         s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r8 = s.gpr .r8 ∧ s'.gpr .r9 = s.gpr .r9 ∧
         (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ s'.lr = s.lr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
         s'.wr = s.wr ∧ s'.sp = s.sp := by
-  crun [kept, h4, h5, h10, i4, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
+  crunr [kept, h4, h5, h10, i4, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
   simp [Mem.readW, Mem.read]
 
 end
@@ -225,7 +227,7 @@ theorem lpost_ok (h10 : s.gpr .r10 = x10) :
         s'.gpr .r4 = s.gpr .r4 ∧ s'.gpr .r8 = s.gpr .r8 ∧ s'.gpr .r9 = s.gpr .r9 ∧
         (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ s'.lr = s.lr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
         s'.wr = s.wr ∧ s'.sp = s.sp := by
-  crun [kept, h10, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
+  crunr [kept, h10, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
 
 end
 
@@ -272,7 +274,7 @@ theorem scale_ok (h5 : s.gpr .r5 = x) (h7 : s.gpr .r7 = y) (h8 : s.gpr .r8 = C) 
       s'.gpr .r7 = y ∧ s'.gpr .r8 = C ∧ s'.gpr .r9 = 3329 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
       s'.lr = s.lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       s'.mem = s.mem.writeW x ((red ((s.mem.readW x 32).setWidth 64 * y)).setWidth 32) := by
-  crun [scaleBody, reduce, barrett, fixup, red, bar, fixq, kept, h5, h7, h8, h9, h11, ia, oa,
+  crunr [scaleBody, reduce, barrett, fixup, red, bar, fixq, kept, h5, h7, h8, h9, h11, ia, oa,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
 
@@ -317,7 +319,7 @@ theorem tail_ok {s : State} :
       fun s' => s'.gpr .r3 = s.gpr .r3 + BitVec.ofNat 64 1024 ∧ s'.gpr .r4 = s.gpr .r4 + 508 ∧
         s'.gpr .r8 = C ∧ s'.gpr .r9 = 3329 ∧ s'.gpr .r10 = 8 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
         s'.lr = s.lr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  crun [consts, kept, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
+  crunr [consts, kept, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   decide
 
 theorem setup_ok {s₀ : State} (hp : Pre s₀) :

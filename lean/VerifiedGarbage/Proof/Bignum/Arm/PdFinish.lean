@@ -30,7 +30,7 @@ theorem pdFinish_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R 
   rw [PublicFn.finish, WP.seq_iff]
   refine WP.mono (publicOutputArgs_ok s h.stack) ?_
   rintro u ⟨index, output, count, memU, restU⟩
-  have ready := h.ready.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ready.ptr)
+  have ready := h.ready.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ready.ptr)
   have dims := pc_dimensions h.buffers.minLength h.buffers.maxLength h.buffers.space
   refine WP.mono (exportMasked_truncated_ok u ready.workspace ready.layout ready.width (by decide : 6 < 8)
     (by have := h.buffers.minLength; omega) dims.2.2.2.1
@@ -43,7 +43,7 @@ theorem pdFinish_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R 
   rw [memU] at bytes
   rw [memU] at frame
   refine ⟨?_, status, frame,
-    (restU.mono (by simp [roundClobbers])).trans restT⟩
+    (restU.mono (by decide)).trans restT⟩
 
   intro good bound
   have valueFit : Spec.Rsa.Mont.numAt s.mem (State.addr base) (Spec.Rsa.modulusWords k) 6 < 2 ^ (8 * k) := by

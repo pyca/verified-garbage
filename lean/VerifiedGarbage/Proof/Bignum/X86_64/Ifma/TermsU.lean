@@ -86,9 +86,9 @@ def expRegU (p i r : Nat) : T :=
 
 /-- The run of lane `p`'s step `i` gives `expRegU p i` in the 32 registers,
 and loads `rax` but in the last step. -/
-def checkStepU (p i : Nat) : Bool :=
+noncomputable def checkStepU (p i : Nat) : Bool :=
   match ESym.init.run (limU l) (ammStepU l p i) with
-  | some σ => (List.range 32).all (fun r => T.beq (σ.reg r) (expRegU l p i r)) &&
+  | some σ => (List.range 32).all (fun r => T.beqK (σ.reg r) (expRegU l p i r)) &&
       (if l.S ≤ i + 1 then G.beq σ.rax (.gpr .rax) else G.beq σ.rax (.ld .r9 (l.D * p + l.off (i + 1))))
   | none => false
 
@@ -141,7 +141,7 @@ theorem run_ammStepU (hu : UOk l) {p i : Nat} (hp : p < l.nl) (hi : i < l.S) :
   · rename_i σ hσ
     refine ⟨σ, hσ, fun r hr => ?_, ?_⟩
     · simp only [Bool.and_eq_true, List.all_eq_true, List.mem_range] at h
-      exact T.eq_of_beq (h.1 r hr)
+      exact T.eq_of_beqK (h.1 r hr)
     · simp only [Bool.and_eq_true] at h
       split at h <;> rename_i hl <;> simp only [hl, ite_true, ite_false] <;> exact G.eq_of_beq h.2
   · cases h

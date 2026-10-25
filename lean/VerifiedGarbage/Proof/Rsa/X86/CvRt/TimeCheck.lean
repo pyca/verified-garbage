@@ -27,11 +27,9 @@ def afterInverse : Prog isa := .seq (VG.Impl.Rsa.X86.Keys.seqs VG.Impl.Rsa.X86.C
     (.seq VG.Impl.Rsa.X86.CrtValuesRt.divQ VG.Impl.Rsa.X86.CrtValuesRt.stores))
 
 theorem beforeCheck :
-    (VG.Taint.check sseTaint τV beforeInverse (VG.Taint.hintOf sseTaint τV beforeInverse)).isSome=true := by
-  taint_decide
+    ∃ hint,(VG.Taint.check sseTaint τV beforeInverse hint).isSome=true := ⟨_, by taint_decide⟩
 
 theorem afterCheck :
-    (VG.Taint.check sseTaint τV afterInverse (VG.Taint.hintOf sseTaint τV afterInverse)).isSome=true := by
-  taint_decide
+    ∃ hint,(VG.Taint.check sseTaint τV afterInverse hint).isSome=true := ⟨_, by taint_decide⟩
 
 end VG.Proof.Rsa.X86.CrtValuesRt

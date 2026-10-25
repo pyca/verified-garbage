@@ -129,7 +129,7 @@ theorem triangle_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
         have hsub : ∀ r ∈
             ((([.x8, .x9, .x10, .x12, .x15, .x7] ++ [.x14, .x16]) ++ []) ++ [.x8, .x12]) ++
               rawRegs ++ VG.Impl.Bignum.AArch64.ProductEight.regs ++ [.x8, .x9, .x10, .x12, .x15, .x7],
-            r ∈ mmRegs ∨ r ∈ VG.Impl.Bignum.AArch64.ProductEight.regs := by decide
+            r ∈ mmRegs ∨ r ∈ VG.Impl.Bignum.AArch64.ProductEight.regs := by decide +kernel
         exact (hsub r h).elim hrmm hrs)
 
 

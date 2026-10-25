@@ -49,15 +49,15 @@ theorem inputCompareLayout_ok (s : State) {base : BitVec 32} {len w : Nat}
   rw [memU, show 4 * (2 * w) = 8 * w by omega] at outside
   have frame := outside_workspace outside (size := 8 * len) (by omega)
   have keeps := outside_array_keeps outside (len := len) (by have := h.workspace.nowrap; omega)
-  have restUV : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans
-    (restV.mono (by simp [roundClobbers, subLoopClobbers]))
+  have restUV : Rest roundClobbers s v := (restU.mono (by decide)).trans
+    (restV.mono (by decide))
   refine WP.mono (restoreBase_ok v
     (by rw [restUV.rd, restUV.wr, restUV.sp]; exact h.stackRead)
     (saved_base_kept frame h.stackSep h.saved restUV.sp)) ?_
   rintro t ⟨ptr, memT, restT⟩
   rw [← memT] at frame keeps
-  have rest := restUV.trans (restT.mono (by simp [roundClobbers]))
+  have rest := restUV.trans (restT.mono (by decide))
   exact ⟨h.after_array keeps frame rest ptr,
-    (restT.gpr .r11 (by simp)).trans value, keeps, frame, rest⟩
+    (restT.gpr .r11 (by decide)).trans value, keeps, frame, rest⟩
 
 end VG.Proof.Bignum.Arm

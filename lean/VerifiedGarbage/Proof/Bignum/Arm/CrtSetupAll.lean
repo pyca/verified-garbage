@@ -41,7 +41,7 @@ theorem crt_setupAll_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (crt_leavePrime_ok v ctxV.p (by omega) ptrP linkP) ?_
   rintro z ⟨ptrZ, memZ, restZ⟩
   have mainZ : CrtMainState base len w z.mem := memZ ▸ mainV
-  have restSZ := restSV.trans (restZ.mono (by simp [roundClobbers]))
+  have restSZ := restSV.trans (restZ.mono (by decide))
   have ctxZ := h.congr restSZ.wr
   rw [WP.seq_iff]
   refine WP.mono (crt_setupPrime_ok z ctxZ.main ctxZ.q (by omega) (by omega : 228 + 4 ≤ 8 * len)
@@ -58,6 +58,6 @@ theorem crt_setupAll_ok (s : State) {base : BitVec 32} {len w : Nat}
   have frame : Frame (crtRegions base len w) s.mem r.mem := (frameU.mono (by simp [crtRegions])).trans
     ((frameP.mono (by simp [crtRegions])).trans (frameQ.mono (by simp [crtRegions])))
   exact ⟨memT ▸ mainR, memT ▸ pR, memT ▸ qR, ptrT, by rw [memT]; exact frame,
-    restSR.trans (restT.mono (by simp [roundClobbers]))⟩
+    restSR.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

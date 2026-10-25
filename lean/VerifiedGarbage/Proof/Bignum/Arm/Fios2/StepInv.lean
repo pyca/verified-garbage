@@ -47,13 +47,13 @@ theorem step_inv {s0 s : State} {a0 q0 a1 q1 base : BitVec 32} {size acc b mod n
       val32 s.mem (State.addr base) acc j + 2 ^ (32 * j) * (t.gpr .r6).toNat := by
     rw [val32_succ, low, top]
   have keep (r : Reg) (h : r ∉ [.r3, .r5, .r6, .r7, .r8, .r11]) : t.gpr r = s.gpr r := rest.gpr r h
-  refine ⟨by omega, by omega, (keep .r0 (by simp)).trans inv.outPtr,
-    (keep .r12 (by simp)).trans inv.bPtr, (keep .r4 (by simp)).trans inv.mPtr,
-    (keep .lr (by simp)).trans inv.count, (keep .r1 (by simp)).trans inv.scalar0,
-    (keep .r2 (by simp)).trans inv.quotient0, (keep .r9 (by simp)).trans inv.scalar1,
-    (keep .r10 (by simp)).trans inv.quotient1,
+  refine ⟨by omega, by omega, (keep .r0 (by decide)).trans inv.outPtr,
+    (keep .r12 (by decide)).trans inv.bPtr, (keep .r4 (by decide)).trans inv.mPtr,
+    (keep .lr (by decide)).trans inv.count, (keep .r1 (by decide)).trans inv.scalar0,
+    (keep .r2 (by decide)).trans inv.quotient0, (keep .r9 (by decide)).trans inv.scalar1,
+    (keep .r10 (by decide)).trans inv.quotient1,
     (inv.outside.mono (Nat.le_refl _) (by omega)).trans (writes.mono (by omega) (by omega)), ?_,
-    inv.rest.trans (rest.mono (by simp [roundClobbers]))⟩
+    inv.rest.trans (rest.mono (by decide))⟩
   refine value_extend inv.value ?_ stored
   rw [show acc + 4 * (j + 2) = acc + 4 * j + 8 by omega, show b + 4 * (j + 2) = b + 4 * j + 8 by omega,
     show mod + 4 * (j + 2) = mod + 4 * j + 8 by omega, show b + 4 * (j + 1) = b + 4 * j + 4 by omega,

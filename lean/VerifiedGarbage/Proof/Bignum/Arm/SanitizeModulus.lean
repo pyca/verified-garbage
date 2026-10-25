@@ -51,12 +51,12 @@ theorem sanitizeModulus_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (sanitizeBit_ok u (ws.congr restU.wr) (by omega) ptrU) ?_
   rintro v ⟨loaded, memV, restV⟩
   rw [oldBit] at loaded
-  have restUV : Rest roundClobbers s v := restU.trans (restV.mono (by simp [roundClobbers]))
+  have restUV : Rest roundClobbers s v := restU.trans (restV.mono (by decide))
   have savedV : v.mem.readW (State.addr v.sp) 32 = base := by
     rw [memV, restV.sp]
     exact saved_base_kept frameU stackSep saved restU.sp
   refine WP.mono (selectArray_ok (w := w) v (ws.congr restUV.wr) (by rw [memV]; exact layoutU)
-    (by rw [memV]; exact widthU) ((restV.gpr .r0 (by simp)).trans ptrU)
+    (by rw [memV]; exact widthU) ((restV.gpr .r0 (by decide)).trans ptrU)
     (by decide : 0 < 8) (by decide : 7 < 8) (by decide : 0 < 8) (by rw [loaded]; exact bit)
     (by rw [restUV.rd, restUV.wr, restUV.sp]; exact stackRead) (by rw [restUV.sp]; exact stackSep)
     savedV) ?_

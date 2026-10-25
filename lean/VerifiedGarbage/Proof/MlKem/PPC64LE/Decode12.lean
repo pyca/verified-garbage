@@ -26,6 +26,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem_decode12`
@@ -73,7 +75,7 @@ theorem body_ok {s : State} {x y c : BitVec 64} (h3 : s.gpr .r3 = x) (h4 : s.gpr
     fun m v => hsep m v 1 (by decide)
   have s2 : ∀ (m : Mem) (v : BitVec 32), (m.write y 4 v) (x + 2#64) = m (x + 2#64) :=
     fun m v => hsep m v 2 (by decide)
-  crun [decode12Body, decode12Lo, decode12Hi, fixup, Step, fieldLo, fieldHi, fixq, h3, h4, h5, h8, i0, i1, i2,
+  crunr [decode12Body, decode12Lo, decode12Hi, fixup, Step, fieldLo, fieldHi, fixq, h3, h4, h5, h8, i0, i1, i2,
     o0, o1, s1, s2, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append,
     List.nil_append]
   simp [Mem.writeW, setWidth_zero_append]

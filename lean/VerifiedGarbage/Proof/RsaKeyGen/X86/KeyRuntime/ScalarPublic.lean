@@ -15,13 +15,11 @@ namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
 open VG.Impl.RsaKeyGen.X86.Key
 
 theorem dZero_public : Public dZero := by
-  refine of_check (hint := ?hint) ?check ?lower
+  refine of_any (hint := ?hint) ?check
   case check => taint_decide
-  case lower => taint_decide
 
 theorem retry_public : Public retry := by
-  refine of_check (hint := ?hint) ?check ?lower
+  refine of_any (hint := ?hint) ?check
   case check => taint_decide
-  case lower => taint_decide
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

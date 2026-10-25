@@ -73,11 +73,11 @@ theorem sqFinish_ok (s : State) (h : RedInv m0 base size out a mod M n inv n s) 
   have ctx : CsubCtx s4 base size out (M + 24 + 4 * n) mod M n :=
     ⟨⟨nowrap, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, e4.workspace.writable⟩,
       by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
-  have p0 : s4.gpr .r0 = base + BitVec.ofNat 32 M := by rw [r4.gpr .r0 (by simp), g0, q0]
+  have p0 : s4.gpr .r0 = base + BitVec.ofNat 32 M := by rw [r4.gpr .r0 (by decide), g0, q0]
   have p12 : s4.gpr .r12 = base + BitVec.ofNat 32 mod := by
-    rw [r4.gpr .r12 (by simp), r3.gpr .r12 (by simp), q12]
-  have p9 : s4.gpr .r9 = base + BitVec.ofNat 32 out := by rw [r4.gpr .r9 (by simp), g9]
-  have p7 : s4.gpr .r7 = BitVec.ofNat 32 n := by rw [r4.gpr .r7 (by simp), g7]
+    rw [r4.gpr .r12 (by decide), r3.gpr .r12 (by decide), q12]
+  have p9 : s4.gpr .r9 = base + BitVec.ofNat 32 out := by rw [r4.gpr .r9 (by decide), g9]
+  have p7 : s4.gpr .r7 = BitVec.ofNat 32 n := by rw [r4.gpr .r7 (by decide), g7]
   refine WP.mono (csub_ok s4 ctx (by omega_arith) p0 g10 p12 p9 glr p7 g11 (by rw [N4]; exact bound)) ?_
   rintro t ⟨result, outs, rest⟩
   have hpos : 0 < val32 m0 (State.addr base) mod n := Nat.lt_of_le_of_lt (Nat.zero_le _) env.operand
@@ -95,9 +95,9 @@ theorem sqFinish_ok (s : State) (h : RedInv m0 base size out a mod M n inv n s) 
         rcases hr with rfl | rfl <;> simp only at h1 h2 ⊢ <;> omega_arith
     rw [ms3] at A
     exact A.trans B
-  · exact (r1.mono (by simp [roundClobbers])).trans ((r2.mono (by simp [roundClobbers])).trans
-      ((r3.mono (by simp [roundClobbers])).trans ((r4.mono (by simp [roundClobbers])).trans
-      (rest.mono (by simp [subLoopClobbers, roundClobbers])))))
+  · exact (r1.mono (by decide)).trans ((r2.mono (by decide)).trans
+      ((r3.mono (by decide)).trans ((r4.mono (by decide)).trans
+      (rest.mono (by decide)))))
 
 /-- The square from `MontFn.bases`' registers. -/
 theorem sqBody_ok (s : State) (h : SqEnv s.mem base size out a mod M n inv s)

@@ -57,6 +57,6 @@ theorem crt_finishStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   rw [sharedV.product_read, memV, value] at bytes
   rw [memV] at frameT
   exact ⟨bytes, status, (frameU.mono (by simp)).trans (frameT.mono (by simp)),
-    restU.trans ((restV.mono (by simp [roundClobbers])).trans restT)⟩
+    restU.trans ((restV.mono (by decide)).trans restT)⟩
 
 end VG.Proof.Bignum.Arm

@@ -41,13 +41,13 @@ theorem pcPrepare_frame_ready (s : State) {base dst src : BitVec 32} {len k : Na
   rintro u ⟨limbs, zero, memU, restU⟩
   rw [WP.seq_iff]
   refine WP.mono (setup_frame_ok u (h.workspace.congr restU.wr) hw hw' fits
-    ((restU.gpr .r0 (by simp)).trans h.ptr) limbs zero) ?_
+    ((restU.gpr .r0 (by decide)).trans h.ptr) limbs zero) ?_
   rintro v ⟨layoutV, widthV, ptrV, frameV, restV⟩
   rw [memU] at frameV
-  have rv : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans restV
+  have rv : Rest roundClobbers s v := (restU.mono (by decide)).trans restV
   refine WP.mono (pcInputs_ok v (h.stack.after_workspace frameV rv)) ?_
   rintro z ⟨sourceZ, countZ, memZ, restZ⟩
-  have rz : Rest roundClobbers s z := rv.trans (restZ.mono (by simp [roundClobbers]))
+  have rz : Rest roundClobbers s z := rv.trans (restZ.mono (by decide))
   have frameZ : Frame [⟨State.addr base, 8 * len⟩] s.mem z.mem := by rw [memZ]; exact frameV
   have stackZ := h.stack.after_workspace frameZ rz
   have inputZ := rsa_bytes_frame frameZ (by have := h.maxLength; omega : k < 2 ^ 64)
@@ -58,7 +58,7 @@ theorem pcPrepare_frame_ready (s : State) {base dst src : BitVec 32} {len k : Na
     h.toPcBuffers.congr rz, stackZ⟩
   · rw [memZ]; exact layoutV
   · rw [memZ]; exact widthV
-  · exact (restZ.gpr .r0 (by simp)).trans ptrV
+  · exact (restZ.gpr .r0 (by decide)).trans ptrV
   · simpa only [VG.Proof.Mont.off, BitVec.add_zero] using stackZ.read (d := 0) (by decide)
   · exact stackZ.separate.sub_left (Region.sub_prefix (by decide))
   · rw [rz.rd, rz.wr]; exact h.readable

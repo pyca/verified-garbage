@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.MdStream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Sha256.Stream
-public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.PowLit

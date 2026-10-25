@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Constant-time clearing on public shape rejection -/
 
@@ -76,7 +77,7 @@ theorem signFailure_relCT (base : Addr) (size : Nat) (hz : Layout.saved ≤ size
   dsimp only [ite_true, List.foldr]
   refine RelCT.seq (failureHead_relCT base size hz) (RelCT.seq ?_ (RelCT.block_nil (fun _ _ h => h)))
   exact checkedProgramChange (τ' := { failureTaint with flags := true })
-    (hint := .loop failureTaint (.block [])) rfl rfl
+    (hint := .loop failureTaint (.block [])) (by kernel_rfl) (by kernel_rfl)
 
 theorem verifyFailure_relCT :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (Entry.failure false)

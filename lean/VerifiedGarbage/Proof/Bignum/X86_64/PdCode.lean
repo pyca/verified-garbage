@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.OmegaNear
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -175,25 +176,25 @@ theorem pdCtx_of {s : State} (h : pdContract.pre s) : PdCtx s := by
   have hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
   have hpre : (⟨s.gpr .rdx, (s.gpr .rcx).toNat * 8⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-  refine ⟨hk1, hk2, hL1, hL2, hpl, by omega_arith, hs,
-    ⟨⟨stackArgAddr s 0, 32⟩, by rw [hrd]; simp, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩,
+  refine ⟨hk1, hk2, hL1, hL2, hpl, by omega_near, hs,
+    ⟨⟨stackArgAddr s 0, 32⟩, by rw [hrd]; simp, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_near⟩,
     ⟨⟨stackArgAddr s 0, 32⟩, by rw [hrd]; simp,
-      by rw [stackArgAddr_two]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
+      by rw [stackArgAddr_two]; exact Offset.contains_base _ (by omega_near) (by omega_near)⟩,
     fun m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := b) (by omega_arith) (by omega_arith)); omega_arith)),
-    fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
-    fun j hj => out_scr dps (contains_byte _ (by omega_arith) (by omega_arith)),
-    src_of_region (by rw [hrd]; simp) (by omega_arith) des,
-    src_of_region (by rw [hrd, ← hil]; simp) (by omega_arith) (by rw [← hil]; exact dis),
-    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega_arith) (by omega_arith)⟩,
-    fun j hj => out_scr dOs (contains_byte _ (by omega_arith) (by omega_arith)),
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := b) (by omega_near) (by omega_near)); omega_near)),
+    fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega_near) (by omega_near)⟩,
+    fun j hj => out_scr dps (contains_byte _ (by omega_near) (by omega_near)),
+    src_of_region (by rw [hrd]; simp) (by omega_near) des,
+    src_of_region (by rw [hrd, ← hil]; simp) (by omega_near) (by rw [← hil]; exact dis),
+    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega_near) (by omega_near)⟩,
+    fun j hj => out_scr dOs (contains_byte _ (by omega_near) (by omega_near)),
     ⟨⟨stackArg s 0, (stackArg s 1).toNat⟩, by rw [hrd]; simp,
-      by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩,
+      by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_near⟩,
     ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by rw [hwr]; simp,
-      by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith⟩,
+      by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_near⟩,
     fun b hb => ?_⟩
-  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_arith) (by omega_arith)
-  exact ⟨out_scr dRs hc, fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega_arith) (by omega_arith))⟩
+  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_near) (by omega_near)
+  exact ⟨out_scr dRs hc, fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega_near) (by omega_near))⟩
 
 /-- `pre`'s words after the entry, as before it. -/
 theorem pre_wv_entry {s t₁ : State} (c : PdCtx s)
@@ -201,7 +202,7 @@ theorem pre_wv_entry {s t₁ : State} (c : PdCtx s)
     (he : e + 8 * (((s.gpr .rsi).toNat + 7) / 8) ≤ 16 * (((s.gpr .rsi).toNat + 7) / 8)) :
     wv t₁.mem (s.gpr .rdx) e (((s.gpr .rsi).toNat + 7) / 8) = wv s.mem (s.gpr .rdx) e (((s.gpr .rsi).toNat + 7) / 8) :=
   wv_congr fun i hi => Mem.readW_congr fun b hb => i₁ _ (by
-    have := c.hps (e + 8 * i + b) (by omega_arith); rwa [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat])
+    have := c.hps (e + 8 * i + b) (by omega_near); rwa [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat])
 
 /-- `rest`'s hypotheses, after the entry and the load, for values that pass
 the checks. -/
@@ -229,10 +230,10 @@ theorem pdPre_of {s t₁ t₂ : State} (c : PdCtx s) (hdi : t₁.gpr .rdi = stac
   have hk1 := c.hk1
   have hk2 := c.hk2
   have hn := c.hs.nowrap
-  have hz : slot (((s.gpr .rsi).toNat + 7) / 8) 8 ≤ (stackArg s 3).toNat * 8 := by unfold slot hdrBytes; omega_arith
+  have hz : slot (((s.gpr .rsi).toNat + 7) / 8) 8 ≤ (stackArg s 3).toNat * 8 := by unfold slot hdrBytes; omega_near
   have x₂ := Fixed.of_frm f₂ (pdLoadRanges_fixed _)
   have i₂ : InScr (stackArg s 2) ((stackArg s 3).toNat * 8) s.mem t₂.mem :=
-    (InScr.of_outside ho₁ (by omega_arith)).trans (InScr.of_frm f₂ fun r hr => (pdLoadRanges_le _ r hr).trans hz)
+    (InScr.of_outside ho₁ (by omega_near)).trans (InScr.of_frm f₂ fun r hr => (pdLoadRanges_le _ r hr).trans hz)
   have kk := k₁.trans k₂
   exact
     { scr := c.hs.congr kk.2.2, rdi := (k₂.gpr (by decide)).trans hdi, z := hz, k1 := hk1, k2 := hk2,

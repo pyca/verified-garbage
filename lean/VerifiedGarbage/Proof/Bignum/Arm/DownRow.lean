@@ -49,29 +49,29 @@ theorem code_ok (s : State) {base : BitVec 32} {size o b n : Nat}
     writable := by rw [rest1.wr]; exact ctx.writable }
   have inv1 : LoopInv s1 x base o b n 0 s1 := by
     refine ⟨by omega,?_,?_,?_,Outside.refl _ _ _ _,?_,Rest.refl _ _⟩
-    · simpa only [Nat.mul_zero,Nat.add_zero] using (rest1.gpr .r0 (by simp)).trans hp0
-    · simpa only [Nat.mul_zero,Nat.add_zero] using (rest1.gpr .r12 (by simp)).trans hp12
-    · simpa only [Nat.sub_zero] using (rest1.gpr .lr (by simp)).trans hcount
+    · simpa only [Nat.mul_zero,Nat.add_zero] using (rest1.gpr .r0 (by decide)).trans hp0
+    · simpa only [Nat.mul_zero,Nat.add_zero] using (rest1.gpr .r12 (by decide)).trans hp12
+    · simpa only [Nat.sub_zero] using (rest1.gpr .lr (by decide)).trans hcount
     · simp only [val32,Nat.mul_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add]
   rw [WP.seq_iff]
   refine WP.mono (loop_ok ctx1 inv1 hn h1 h10 h9) ?_
   intro t ht
   refine wp_dp (op2_lsl (by decide)) fun u hu => WP.block_nil ?_
   have r1 : u.gpr .r1=s.gpr .r1 := by
-    rw [hu.gpr,dpVal,ht.rest.gpr .r1 (by simp),ht.rest.gpr .r10 (by simp),h1,h10]
+    rw [hu.gpr,dpVal,ht.rest.gpr .r1 (by decide),ht.rest.gpr .r10 (by decide),h1,h10]
     exact join16 _
   refine ⟨ht.index,?_,?_,?_,?_,?_,?_⟩
   · rw [hu.other .r0 (by decide)]; exact ht.outPtr
   · rw [hu.other .r12 (by decide)]; exact ht.inPtr
   · rw [hu.other .lr (by decide)]; exact ht.count
   · rw [hu.mem,←mem1]; exact ht.outside
-  · rw [hu.mem,hu.other .r11 (by decide),←mem1,←rest1.gpr .r11 (by simp)]
+  · rw [hu.mem,hu.other .r11 (by decide),←mem1,←rest1.gpr .r11 (by decide)]
     exact ht.value
   · refine ⟨fun r hr => ?_,?_,?_,?_⟩
     · by_cases e : r=.r1
       · subst e; exact r1
-      · rw [hu.other r e,ht.rest.gpr r (by cases r <;> simp_all [loopClobbers]),
-          rest1.gpr r (by cases r <;> simp_all [loopClobbers])]
+      · rw [hu.other r e,ht.rest.gpr r (by revert hr e; cases r <;> decide),
+          rest1.gpr r (by revert hr e; cases r <;> decide)]
     · rw [hu.rd,ht.rest.rd,rest1.rd]
     · rw [hu.wr,ht.rest.wr,rest1.wr]
     · rw [hu.sp,ht.rest.sp,rest1.sp]

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Zero
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Sub
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Select
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # The native-word loops have public addresses and public bounds -/
 
@@ -57,25 +58,25 @@ theorem zeroLoop_relCT : RelCT isa (VG.X86.Taint.Agree (timingTaint [.ebp, .esi]
     (VG.X86.Taint.Agree (timingTaint [.ebp, .esi])) :=
   checkedProgramChange (τ' := timingTaint [.ebp, .esi] true)
     (hint := VG.Taint.hintOf taint (timingTaint [.ebp, .esi])
-      (.loop (.block VG.Proof.Mont.X86.Rt.zeroBody) .ne)) rfl rfl
+      (.loop (.block VG.Proof.Mont.X86.Rt.zeroBody) .ne)) (by kernel_rfl) (by kernel_rfl)
 
 theorem pairLoop_relCT_raw : RelCT isa (VG.X86.Taint.Agree (timingTaint [.edi, .ebp, .ecx, .esi]))
     (.loop (.block Rt.pairStep) .ne)
     (VG.X86.Taint.Agree (timingTaint [.edi, .ebp, .ecx, .esi])) :=
   checkedProgramChange (τ' := timingTaint [.edi, .ebp, .ecx, .esi] true)
     (hint := VG.Taint.hintOf taint (timingTaint [.edi, .ebp, .ecx, .esi])
-      (.loop (.block Rt.pairStep) .ne)) rfl rfl
+      (.loop (.block Rt.pairStep) .ne)) (by kernel_rfl) (by kernel_rfl)
 
 theorem subLoop_relCT : RelCT isa (VG.X86.Taint.Agree (timingTaint [.ebp, .esi, .ebx, .edi]))
     (.loop (.block VG.Proof.Mont.X86.Rt.subBody) .ne)
     (VG.X86.Taint.Agree (timingTaint [.ebp, .esi, .ebx, .edi])) :=
   checkedProgramChange (τ' := timingTaint [.edx, .ebp, .esi, .ebx, .edi] true)
     (hint := VG.Taint.hintOf taint (timingTaint [.ebp, .esi, .ebx, .edi])
-      (.loop (.block VG.Proof.Mont.X86.Rt.subBody) .ne)) rfl rfl
+      (.loop (.block VG.Proof.Mont.X86.Rt.subBody) .ne)) (by kernel_rfl) (by kernel_rfl)
 
 theorem selectLoop_relCT : RelCT isa (VG.X86.Taint.Agree (timingTaint [.ebp, .esi, .edi]))
     (.loop (.block selBody) .ne) (VG.X86.Taint.Agree (timingTaint [.ebp, .esi, .edi])) :=
   checkedProgramChange (τ' := timingTaint [.ebp, .esi, .edi] true)
-    (hint := VG.Taint.hintOf taint (timingTaint [.ebp, .esi, .edi]) (.loop (.block selBody) .ne)) rfl rfl
+    (hint := VG.Taint.hintOf taint (timingTaint [.ebp, .esi, .edi]) (.loop (.block selBody) .ne)) (by kernel_rfl) (by kernel_rfl)
 
 end VG.Proof.Mont.X86.Compact

@@ -29,7 +29,7 @@ theorem exponentAdvance_ok (s : State) {c : Nat} (hc : 0 < c) (hc' : c < 2 ^ 32)
     exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)
   exact ⟨by rw [b.other .r1 (by decide), a.gpr]; rfl, b.gpr.trans value,
     by rw [zero, value, ofNat_beq_zero (by omega)]; exact decide_eq_decide.mpr (by omega),
-    b.mem.trans a.mem, (a.rest (by simp)).trans (b.rest (by simp))⟩
+    b.mem.trans a.mem, (a.rest (by decide)).trans (b.rest (by decide))⟩
 
 theorem exponentByte_ok (s : State) {p : BitVec 32} {x c : Nat} {b : Byte}
     (hc : 0 < c) (hc' : c < 2 ^ 32)
@@ -45,10 +45,10 @@ theorem exponentByte_ok (s : State) {p : BitVec 32} {x c : Nat} {b : Byte}
   rw [exponentByte, WP.seq_iff]
   refine WP.mono (exponentConsume_ok s (by rw [ptr]; simp) read byte low high) ?_
   rintro u ⟨lowU, highU, memU, restU⟩
-  refine WP.mono (exponentAdvance_ok u hc hc' ((restU.gpr .lr (by simp)).trans count)) ?_
+  refine WP.mono (exponentAdvance_ok u hc hc' ((restU.gpr .lr (by decide)).trans count)) ?_
   rintro t ⟨ptrT, countT, zero, memT, restT⟩
-  exact ⟨(restT.gpr .r3 (by simp)).trans lowU, (restT.gpr .r4 (by simp)).trans highU,
-    by rw [ptrT, restU.gpr .r1 (by simp), ptr], countT, zero, memT.trans memU,
-    (restU.mono (by simp)).trans (restT.mono (by simp))⟩
+  exact ⟨(restT.gpr .r3 (by decide)).trans lowU, (restT.gpr .r4 (by decide)).trans highU,
+    by rw [ptrT, restU.gpr .r1 (by decide), ptr], countT, zero, memT.trans memU,
+    (restU.mono (by decide)).trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

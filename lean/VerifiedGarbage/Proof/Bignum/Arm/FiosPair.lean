@@ -48,46 +48,46 @@ theorem pair_ok (s : State) {base : BitVec 32} {size a m d : Nat}
   rw [WP.seq_iff]
   refine WP.mono (umaal_ok u0 .r6 .r7 .r3 .r1 (by decide)) ?_
   rintro v0 ⟨vp0,rv0⟩
-  rw [ua0,ut0,ru0.gpr .r1 (by simp),ru0.gpr .r7 (by simp)] at vp0
+  rw [ua0,ut0,ru0.gpr .r1 (by decide),ru0.gpr .r7 (by decide)] at vp0
   have rV0 : Rest pairClobbers s v0 :=
-    (ru0.mono (by simp [pairClobbers])).trans ((framed rv0).mono (by simp [pairClobbers]))
+    (ru0.mono (by decide)).trans ((framed rv0).mono (by decide))
   rw [WP.seq_iff]
   refine WP.mono (loadsA_ok v0 .r10 (by decide) (ws.congr rV0.wr) (by decide) (by decide) fa fd
-    ((rV0.gpr .r12 (by simp [pairClobbers])).trans pa)
-    ((rV0.gpr .r0 (by simp [pairClobbers])).trans pd)) ?_
+    ((rV0.gpr .r12 (by decide)).trans pa)
+    ((rV0.gpr .r0 (by decide)).trans pd)) ?_
   rintro u1 ⟨ua1,ut1,mu1,ru1⟩
   rw [WP.seq_iff]
   refine WP.mono (umaal_ok u1 .r10 .r7 .r3 .r1 (by decide)) ?_
   rintro v1 ⟨vp1,rv1⟩
   have mv0 : v0.mem=s.mem := rv0.mem.trans mu0
-  rw [ua1,ut1,mv0,ru1.gpr .r1 (by simp),rV0.gpr .r1 (by simp [pairClobbers]),
-    ru1.gpr .r7 (by simp)] at vp1
+  rw [ua1,ut1,mv0,ru1.gpr .r1 (by decide),rV0.gpr .r1 (by decide),
+    ru1.gpr .r7 (by decide)] at vp1
   have rV1 : Rest pairClobbers s v1 :=
-    rV0.trans ((ru1.mono (by simp [pairClobbers])).trans ((framed rv1).mono (by simp [pairClobbers])))
+    rV0.trans ((ru1.mono (by decide)).trans ((framed rv1).mono (by decide)))
   have mv1 : v1.mem=s.mem := rv1.mem.trans (mu1.trans mv0)
   rw [WP.seq_iff]
   refine WP.mono (loadsM_ok v1 (ws.congr rV1.wr) (by decide) (by omega)
-    ((rV1.gpr .r4 (by simp [pairClobbers])).trans pm)) ?_
+    ((rV1.gpr .r4 (by decide)).trans pm)) ?_
   rintro n0 ⟨nm0,mn0,rn0⟩
   simp only [Nat.add_zero] at nm0
   rw [WP.seq_iff]
   refine WP.mono (umaal_ok n0 .r6 .r8 .r5 .r2 (by decide)) ?_
   rintro c0 ⟨vc0,rc0⟩
   have n0lo : n0.gpr .r6=v0.gpr .r6 := by
-    rw [rn0.gpr .r6 (by simp),rv1.regs .r6 (by simp),ru1.gpr .r6 (by simp)]
+    rw [rn0.gpr .r6 (by decide),rv1.regs .r6 (by decide),ru1.gpr .r6 (by decide)]
   have cr0 : v1.gpr .r8=s.gpr .r8 := by
-    rw [rv1.regs .r8 (by simp),ru1.gpr .r8 (by simp),rv0.regs .r8 (by simp),ru0.gpr .r8 (by simp)]
-  rw [nm0,mv1,rn0.gpr .r2 (by simp),rV1.gpr .r2 (by simp [pairClobbers]),n0lo,
-    rn0.gpr .r8 (by simp),cr0] at vc0
+    rw [rv1.regs .r8 (by decide),ru1.gpr .r8 (by decide),rv0.regs .r8 (by decide),ru0.gpr .r8 (by decide)]
+  rw [nm0,mv1,rn0.gpr .r2 (by decide),rV1.gpr .r2 (by decide),n0lo,
+    rn0.gpr .r8 (by decide),cr0] at vc0
   have rC0 : Rest pairClobbers s c0 :=
-    rV1.trans ((rn0.mono (by simp [pairClobbers])).trans ((framed rc0).mono (by simp [pairClobbers])))
+    rV1.trans ((rn0.mono (by decide)).trans ((framed rc0).mono (by decide)))
   have mc0 : c0.mem=s.mem := rc0.mem.trans (mn0.trans mv1)
   have cp0 : c0.gpr .r7=v1.gpr .r7 := by
-    rw [rc0.regs .r7 (by simp),rn0.gpr .r7 (by simp)]
+    rw [rc0.regs .r7 (by decide),rn0.gpr .r7 (by decide)]
   rw [WP.seq_iff]
   change WP isa (.block [.str .r6 .r0 0]) c0 _
   refine wp_str (a:=off (State.addr base) d) (by decide)
-    (by simpa only [Nat.add_zero] using ((ws.congr rC0.wr).ea ((rC0.gpr .r0 (by simp [pairClobbers])).trans pd) (imm:=0) (by omega)))
+    (by simpa only [Nat.add_zero] using ((ws.congr rC0.wr).ea ((rC0.gpr .r0 (by decide)).trans pd) (imm:=0) (by omega)))
     (by rw [rC0.wr];exact ws.write (by omega)) fun st hst => WP.block_nil ?_
   rw [WP.seq_iff]
   have rST : Rest pairClobbers s st := rC0.trans (hst.rest _)
@@ -98,22 +98,22 @@ theorem pair_ok (s : State) {base : BitVec 32} {size a m d : Nat}
       s.mem.readW (off (State.addr base) (m+4)) 32 :=
     outside_read32 outside (by rcases sep with h|h <;> omega) (by have := ws.nowrap;omega)
   refine WP.mono (loadsM_ok st (ws.congr rST.wr) (by decide) fm
-    ((rST.gpr .r4 (by simp [pairClobbers])).trans pm)) ?_
+    ((rST.gpr .r4 (by decide)).trans pm)) ?_
   rintro n1 ⟨nm1,mn1,rn1⟩
   rw [WP.seq_iff]
   refine WP.mono (umaal_ok n1 .r10 .r8 .r5 .r2 (by decide)) ?_
   rintro c1 ⟨vc1,rc1⟩
   have n1lo : n1.gpr .r10=v1.gpr .r10 := by
-    rw [rn1.gpr .r10 (by simp),hst.gpr,rc0.regs .r10 (by simp),rn0.gpr .r10 (by simp)]
-  rw [nm1,oldM1,rn1.gpr .r2 (by simp),rST.gpr .r2 (by simp [pairClobbers]),
-    n1lo,rn1.gpr .r8 (by simp),hst.gpr] at vc1
+    rw [rn1.gpr .r10 (by decide),hst.gpr,rc0.regs .r10 (by decide),rn0.gpr .r10 (by decide)]
+  rw [nm1,oldM1,rn1.gpr .r2 (by decide),rST.gpr .r2 (by decide),
+    n1lo,rn1.gpr .r8 (by decide),hst.gpr] at vc1
   have rC1 : Rest pairClobbers s c1 :=
-    rST.trans ((rn1.mono (by simp [pairClobbers])).trans ((framed rc1).mono (by simp [pairClobbers])))
+    rST.trans ((rn1.mono (by decide)).trans ((framed rc1).mono (by decide)))
   have mc1 : c1.mem=s.mem.writeW (off (State.addr base) d) (c0.gpr .r6) :=
     rc1.mem.trans (mn1.trans mst)
-  have out0 : c1.gpr .r6=c0.gpr .r6 := by rw [rc1.regs .r6 (by simp),rn1.gpr .r6 (by simp),hst.gpr]
+  have out0 : c1.gpr .r6=c0.gpr .r6 := by rw [rc1.regs .r6 (by decide),rn1.gpr .r6 (by decide),hst.gpr]
   have cp1 : c1.gpr .r7=v1.gpr .r7 := by
-    rw [rc1.regs .r7 (by simp),rn1.gpr .r7 (by simp),hst.gpr,cp0]
+    rw [rc1.regs .r7 (by decide),rn1.gpr .r7 (by decide),hst.gpr,cp0]
   have value : (c1.gpr .r6).toNat+2^32*(c1.gpr .r10).toNat+
       2^64*((c1.gpr .r7).toNat+(c1.gpr .r8).toNat)=
       (s.gpr .r1).toNat*(w32 s.mem (State.addr base) a+2^32*w32 s.mem (State.addr base) (a+4))+
@@ -129,7 +129,7 @@ theorem pair_ok (s : State) {base : BitVec 32} {size a m d : Nat}
     omega
   change WP isa (.block [.str .r10 .r0 4]) c1 _
   refine wp_str (a:=off (State.addr base) (d+4)) (by decide)
-    ((ws.congr rC1.wr).ea ((rC1.gpr .r0 (by simp [pairClobbers])).trans pd) (by omega))
+    ((ws.congr rC1.wr).ea ((rC1.gpr .r0 (by decide)).trans pd) (by omega))
     (by rw [rC1.wr];exact ws.write (by omega)) fun t ht => WP.block_nil ?_
   exact ⟨by rw [ht.gpr];exact value,
     by rw [ht.mem,mc1,←out0,ht.gpr],rC1.trans (ht.rest _)⟩

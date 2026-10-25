@@ -26,8 +26,8 @@ theorem newton_ok {u : State} {rest : List Instr} {Q : State → Prop}
     WP isa (.block (newton ++ rest)) u Q := by
   simp only [newton, List.cons_append, List.nil_append]
   refine wp_mul fun u1 v1 => wp_mov (op2_imm (by decide)) fun u2 v2 => wp_dp (op2_reg _ _) fun u3 v3 =>
-    wp_mul fun u4 v4 => k u4 ((v1.rest (by simp)).trans ((v2.rest (by simp)).trans ((v3.rest (by simp)).trans
-      (v4.rest (by simp))))) (by rw [v4.mem, v3.mem, v2.mem, v1.mem]) ?_
+    wp_mul fun u4 v4 => k u4 ((v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
+      (v4.rest (by decide))))) (by rw [v4.mem, v3.mem, v2.mem, v1.mem]) ?_
   rw [v4.gpr, v3.gpr, v3.other _ (by decide), dpVal, v2.gpr, v2.other _ (by decide), v2.other _ (by decide),
     v1.gpr, v1.other _ (by decide)]
   rfl
@@ -44,9 +44,9 @@ theorem redc_ok {u : State} {h acc s sv : Nat} (r5 : (u.gpr .r5).toNat = h) (hh 
   refine wp_dp (op2_reg _ _) fun u1 v1 => wp_mul fun u2 v2 => wp_mov (op2_lsl (by decide)) fun u3 v3 =>
     wp_mov (op2_lsr (by decide)) fun u4 v4 => wp_mul fun u5 v5 => wp_dp (op2_reg _ _) fun u6 v6 =>
       wp_mov (op2_lsr (by decide)) fun u7 v7 => ?_
-  have k7 : Rest [.r2, .r5, .r6] u u7 := (v1.rest (by simp)).trans ((v2.rest (by simp)).trans
-    ((v3.rest (by simp)).trans ((v4.rest (by simp)).trans ((v5.rest (by simp)).trans ((v6.rest (by simp)).trans
-      (v7.rest (by simp)))))))
+  have k7 : Rest [.r2, .r5, .r6] u u7 := (v1.rest (by decide)).trans ((v2.rest (by decide)).trans
+    ((v3.rest (by decide)).trans ((v4.rest (by decide)).trans ((v5.rest (by decide)).trans ((v6.rest (by decide)).trans
+      (v7.rest (by decide)))))))
   have m7 : u7.mem = u.mem := by rw [v7.mem, v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]
   have ha : acc < 2 ^ 32 := by omega
   -- `X = h + acc`, `q = X sv mod 2^16`.

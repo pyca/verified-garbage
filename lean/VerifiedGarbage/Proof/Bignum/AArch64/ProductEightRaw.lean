@@ -17,22 +17,10 @@ open VG.Proof.MlKem.AArch64 (Keep)
 
 theorem saved_lane_exists : ∀ r ∈ VG.Impl.Bignum.AArch64.ProductEight.regs,
     ∃ v, (r, v, 0) ∈ savedLanes := by
-  intro r hr
-  cases r <;> simp_all only [VG.Impl.Bignum.AArch64.ProductEight.regs,
-    VG.Impl.Bignum.AArch64.BlockedRedc.saved, VG.Impl.Bignum.AArch64.BlockedRedc.aa,
-    List.mem_append, List.mem_cons, List.mem_nil_iff, reduceCtorEq, or_false, false_or]
-  all_goals first
-    | exact ⟨.v16, by decide⟩
-    | exact ⟨.v17, by decide⟩
-    | exact ⟨.v18, by decide⟩
-    | exact ⟨.v19, by decide⟩
-    | exact ⟨.v20, by decide⟩
-    | exact ⟨.v21, by decide⟩
-    | exact ⟨.v22, by decide⟩
-    | exact ⟨.v23, by decide⟩
-    | exact ⟨.v24, by decide⟩
-    | exact ⟨.v25, by decide⟩
-    | exact ⟨.v26, by decide⟩
+  have h : ∀ r ∈ VG.Impl.Bignum.AArch64.ProductEight.regs,
+      (r, ((savedLanes.find? (·.1 == r)).map (·.2.1)).getD .v0, 0) ∈ savedLanes := by
+    decide +kernel
+  exact fun r hr => ⟨_, h r hr⟩
 
 /-- Exact full product in the existing scratch arrays, with every saved
 scalar register restored before returning. No arithmetic input bound is needed. -/
@@ -134,7 +122,7 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
         have hsub : ∀ r ∈
             ((([.x8, .x9, .x10, .x12, .x15, .x7] ++ [.x14, .x16]) ++ []) ++ [.x8, .x12]) ++
               rawRegs ++ VG.Impl.Bignum.AArch64.ProductEight.regs ++ [.x8, .x9, .x10, .x12, .x15, .x7],
-            r ∈ mmRegs ∨ r ∈ VG.Impl.Bignum.AArch64.ProductEight.regs := by decide
+            r ∈ mmRegs ∨ r ∈ VG.Impl.Bignum.AArch64.ProductEight.regs := by decide +kernel
         exact (hsub r h).elim hrmm hrs)
 
 

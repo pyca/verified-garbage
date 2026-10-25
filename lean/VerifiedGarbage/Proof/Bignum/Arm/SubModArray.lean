@@ -78,12 +78,12 @@ theorem subModArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   rw [memV] at outside
   have frameZ := outside_workspace outside (by omega : arrAt w o + 4 * (2 * w + 2) ≤ 8 * len)
   have keepsZ := outside_array_prefix_keeps outside (by omega : 8 * len < 2 ^ 64) (by omega)
-  have restUZ : Rest roundClobbers u z := (restV.mono (by simp [roundClobbers])).trans restZ
+  have restUZ : Rest roundClobbers u z := (restV.mono (by decide)).trans restZ
   refine WP.mono (restoreBase_ok z (by rw [restUZ.rd, restUZ.wr, restUZ.sp]; exact readyU.stackRead)
     (saved_base_kept frameZ readyU.stackSep readyU.saved restUZ.sp)) ?_
   rintro t ⟨ptrT, memT, restT⟩
   rw [← memT] at keepsZ frameZ
-  have rest : Rest roundClobbers u t := restUZ.trans (restT.mono (by simp [roundClobbers]))
+  have rest : Rest roundClobbers u t := restUZ.trans (restT.mono (by decide))
   exact ⟨(readyU.after_array ho0 keepsZ frameZ rest ptrT).1,
     by rw [numAt_native, memT]; exact value,
     fun i hi sep => (keepsZ i hi sep).trans (keepsU i hi sep), frameU.trans frameZ, restU.trans rest⟩

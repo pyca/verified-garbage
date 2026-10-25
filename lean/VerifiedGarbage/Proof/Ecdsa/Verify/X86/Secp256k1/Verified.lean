@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Secp256k1.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Verified
@@ -19,7 +21,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Verified
@@ -132,11 +136,22 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-/-- Constant time by taint tracking, with the hints computed in compiled code
-(`native_taint_decide`): the interpreter ran the analysis that computes them
-for longer than the kernel checks it. -/
-theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifySecp256k1 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by native_taint_decide)
+/-! The multiplication modulo `p`, analysed once from what is public on entry
+to its calls (`τVTop` from the verifier's code, `τVPoint` from the point
+functions'), in place of each call. Summaries of the other field functions,
+called less often, cost more than they save. -/
+
+taint_summary mulPSum : taint τVTop
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.secp256k1p.k Spec.Weierstrass.Mont.secp256k1p.m)
+taint_summary mulPPointSum : taint τVPoint
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.secp256k1p.k Spec.Weierstrass.Mont.secp256k1p.m)
+
+/-- Constant time by taint tracking, with the summaries of the
+multiplication in place of the analysis of each of its calls. -/
+theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifySecp256k1 := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ verifySecp256k1 h).isSome = true := by
+    native_taint_decide_sum [mulPSum, mulPPointSum]
+  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/

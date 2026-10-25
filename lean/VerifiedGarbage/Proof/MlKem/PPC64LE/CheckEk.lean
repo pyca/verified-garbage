@@ -33,6 +33,8 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Spec.MlKem
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-!
 # ML-KEM on PPC64LE: `vg_mlkem768_check_ek`
@@ -74,7 +76,7 @@ theorem body_ok {s : State} {x c a : BitVec 64} (h3 : s.gpr .r3 = x) (h4 : s.gpr
     (i0 : InRegions (s.rd ++ s.wr) x 1) (i1 : InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 1) 1)
     (i2 : InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 2) 1) :
     WP isa (.block checkEkBody) s (Step s x c a) := by
-  crun [checkEkBody, countBad, Step, bad, fld0, fld1, h3, h4, h5, i0, i1, i2, preserved,
+  crunr [checkEkBody, countBad, Step, bad, fld0, fld1, h3, h4, h5, i0, i1, i2, preserved,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [setWidth_zero_append]
 
@@ -207,7 +209,7 @@ theorem end_ok {s : State} {n : Nat} (h5 : s.gpr .r5 = BitVec.ofNat 64 n) :
     WP isa (.block [.li .r6 0, .sub .r6 .r6 .r5, .lsr .d .r6 .r6 63, .li .r3 1, .sub .r3 .r3 .r6]) s fun s' =>
       s'.gpr .r3 = BitVec.ofNat 64 1 - (BitVec.ofNat 64 0 - BitVec.ofNat 64 n) >>> 63 ∧ s'.sp = s.sp ∧
         s'.lr = s.lr ∧ ∀ r ∈ preserved, s'.gpr r = s.gpr r := by
-  crun [h5, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
+  crunr [h5, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
 
 theorem loop_ok {s₀ : State} (hp : Pre s₀) :
     WP isa checkEk s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧ s'.lr = s₀.lr ∧
