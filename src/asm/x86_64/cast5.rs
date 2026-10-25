@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cast5.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key bytes.
 ///
-/// Key expansion keeps `x` and `z` in `scratch` and makes the four main lookups of each line of §2.4 together by a scan of the static `VG_CAST5_S5678`, entry `i` the four dwords `S8[i], S7[i], S6[i], S5[i]`, like the scans of ECB; a group of four lines makes its four extra lookups by one more scan. Only `key_len` decides the number of bytes copied.
+/// Key expansion keeps `x` and `z` in `scratch` and makes the four main lookups of each line of §2.4 together by a scan of the static `VG_CAST5_S5678`, entry `i` the four dwords `S8[i], S7[i], S6[i], S5[i]`, like the scans of ECB; a group of four lines makes its four extra lookups by one more scan. Each scan selects among four adjacent entries using SSE2 masks before updating its result. Only `key_len` decides the number of bytes copied.
 ///
 /// # Safety
 ///
@@ -51,30 +51,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 22:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -97,30 +102,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 23:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -153,30 +163,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 24:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -209,30 +224,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 25:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -265,30 +285,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 26:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -321,30 +346,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 27:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -367,30 +397,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 28:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -419,30 +454,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 29:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -471,30 +511,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 210:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -523,30 +568,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 211:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -575,30 +625,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 212:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -621,30 +676,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 213:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -677,30 +737,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 214:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -733,30 +798,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 215:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -789,30 +859,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 216:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -845,30 +920,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 217:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -891,30 +971,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 218:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -943,30 +1028,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 219:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -995,30 +1085,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 220:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1047,30 +1142,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 221:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1099,30 +1199,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 222:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1145,30 +1250,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 223:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1201,30 +1311,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 224:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1257,30 +1372,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 225:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1313,30 +1433,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 226:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1369,30 +1494,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 227:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1415,30 +1545,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 228:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1467,30 +1602,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 229:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1519,30 +1659,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 230:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1571,30 +1716,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 231:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1623,30 +1773,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 232:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1669,30 +1824,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 233:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1725,30 +1885,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 234:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1781,30 +1946,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 235:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1837,30 +2007,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 236:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1893,30 +2068,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 237:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1939,30 +2119,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 238:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -1991,30 +2176,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 239:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -2043,30 +2233,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 240:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -2095,30 +2290,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 241:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -2143,7 +2343,7 @@ ret
 ///
 /// Contract: `VG.Spec.Cast5.ecbEncryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
 ///
-/// Each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, entry `i` the four dwords `S4[i], S3[i], S2[i], S1[i]`: every entry is loaded in order, compared with the four indices in the lanes of an SSE2 register (`pcmpeqd`) and kept under the resulting mask, so the four lookups of a round function are made together and no secret is an address. The rotation by the secret `Kr` is five rotations by 1, 2, 4, 8 and 16, each kept or not under a mask. One block at a time, rounds three at a time; the callee-saved registers are saved in `scratch`.
+/// Each S-box lookup scans the whole static `VG_CAST5_S1234` table, whose entry `i` contains `S4[i], S3[i], S2[i], S1[i]`. SSE2 XOR/AND masks select among four adjacent entries using the low two index bits, and `pcmpeqd` compares the remaining bits with the public group number. Every entry is loaded in order, so no secret is an address. The four lookups of a round function are made together. The rotation by secret `Kr` uses five masked rotations by 1, 2, 4, 8 and 16. One block at a time, rounds three at a time; callee-saved registers are saved in `scratch`.
 ///
 /// # Safety
 ///
@@ -2246,30 +2446,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 24:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -2353,30 +2558,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 25:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -2460,30 +2670,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 26:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -2573,30 +2788,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 29:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -2637,7 +2857,7 @@ ret
 ///
 /// Contract: `VG.Spec.Cast5.ecbDecryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
 ///
-/// Each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, entry `i` the four dwords `S4[i], S3[i], S2[i], S1[i]`: every entry is loaded in order, compared with the four indices in the lanes of an SSE2 register (`pcmpeqd`) and kept under the resulting mask, so the four lookups of a round function are made together and no secret is an address. The rotation by the secret `Kr` is five rotations by 1, 2, 4, 8 and 16, each kept or not under a mask. One block at a time, rounds three at a time; the callee-saved registers are saved in `scratch`.
+/// Each S-box lookup scans the whole static `VG_CAST5_S1234` table, whose entry `i` contains `S4[i], S3[i], S2[i], S1[i]`. SSE2 XOR/AND masks select among four adjacent entries using the low two index bits, and `pcmpeqd` compares the remaining bits with the public group number. Every entry is loaded in order, so no secret is an address. The four lookups of a round function are made together. The rotation by secret `Kr` uses five masked rotations by 1, 2, 4, 8 and 16. One block at a time, rounds three at a time; callee-saved registers are saved in `scratch`.
 ///
 /// # Safety
 ///
@@ -2745,30 +2965,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 25:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -2854,30 +3079,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 27:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -2961,30 +3191,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 28:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1
@@ -3068,30 +3303,35 @@ pxor xmm1, xmm1
 pxor xmm2, xmm2
 pcmpeqd xmm3, xmm3
 psrld xmm3, 31
+movdqa xmm4, xmm0
+pand xmm4, xmm3
+pxor xmm6, xmm6
+psubd xmm6, xmm4
+movdqa xmm4, xmm0
+psrld xmm4, 1
+pand xmm4, xmm3
+pxor xmm7, xmm7
+psubd xmm7, xmm4
+movdqa xmm8, xmm0
+psrld xmm8, 2
 29:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+movdqu xmm4, XMMWORD PTR [r10]
 movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
+pxor xmm5, xmm4
+pand xmm5, xmm6
+pxor xmm4, xmm5
+movdqu xmm9, XMMWORD PTR [r10+32]
 movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
+pxor xmm5, xmm9
+pand xmm5, xmm6
+pxor xmm9, xmm5
+pxor xmm9, xmm4
+pand xmm9, xmm7
+pxor xmm4, xmm9
+movdqa xmm5, xmm8
+pcmpeqd xmm5, xmm2
+pand xmm4, xmm5
+por xmm1, xmm4
 paddd xmm2, xmm3
 add r10, 64
 sub r11, 1

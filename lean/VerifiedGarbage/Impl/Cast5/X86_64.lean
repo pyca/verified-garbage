@@ -11,17 +11,20 @@ A lookup in an S-box never uses a secret as an address: the four lookups a
 round function makes, `S1[Ia]`, `S2[Ib]`, `S3[Ic]` and `S4[Id]`, are made at
 once by a *scan* of a table of 256 entries of 16 bytes, entry `i` the four
 dwords `S4[i], S3[i], S2[i], S1[i]` (`VG_CAST5_S1234`), in SSE2 registers: the
-indices are the four dword lanes of `xmm0`, `pcmpeqd` with the entry's number
-in every lane (`xmm2`) gives a mask that is all ones in the lanes whose index
-it is, and the entry is ANDed with it and ORed into the result, `xmm1`; every
-entry is loaded, in order. Key expansion scans `VG_CAST5_S5678` the same way,
-entry `i` the dwords `S8[i], S7[i], S6[i], S5[i]`.
+indices are the four dword lanes of `xmm0`. The low two bits form masks
+that select among four adjacent entries using XOR and AND. The remaining
+six bits are compared with the public group number by `pcmpeqd`; the
+selected entry is masked and ORed into `xmm1`. All four entries are loaded
+at fixed addresses in every iteration. Key expansion scans
+`VG_CAST5_S5678` the same way, entry `i` the dwords `S8[i], S7[i], S6[i], S5[i]`.
 
 The rotation by the secret amount `Kr` (§2.2) is five rotations by 1, 2, 4, 8
 and 16, each kept or not by a mask made from a bit of `Kr` (`rotate`).
 
-Registers of the scan: the table in `r10`, the count of groups of four
-entries left in `r11`, `xmm0`–`xmm5`.
+Registers of the scan: `r10` holds the table, `r11` counts the 64 groups
+of four entries; `xmm0` keeps the original indices, `xmm8` their high bits,
+`xmm6` and `xmm7` the low-bit selection masks, `xmm2` the group number,
+`xmm3` ones, `xmm1` the result, and `xmm4`, `xmm5` and `xmm9` working values.
 -/
 
 @[expose] public section
@@ -38,25 +41,35 @@ def imm (n : Nat) : Src := .imm (BitVec.ofNat 32 n)
 
 /-! ## The scan -/
 
-/-- Entry `e` of the four at `r10`: its mask, from the indices in `xmm0` and the
-entry's number in every lane of `xmm2`, ANDed with it and ORed into `xmm1`;
-then the next number. -/
-def scanEntry (e : Nat) : List Instr :=
-  [.xop (.bin .movdqa .xmm4 .xmm0), .xop (.bin .pcmpeqd .xmm4 .xmm2),
-   .movdquLoad .xmm5 (at_ .r10 (16 * e)), .xop (.bin .pand .xmm5 .xmm4),
-   .xop (.bin .por .xmm1 .xmm5), .xop (.bin .paddd .xmm2 .xmm3)]
+/-- Four entries selected by the low two index bits, then masked by the
+remaining bits. Every table entry is read at its fixed address. -/
+def scanTile : List Instr :=
+  [.movdquLoad .xmm4 (at_ .r10 0), .movdquLoad .xmm5 (at_ .r10 16),
+   .xop (.bin .pxor .xmm5 .xmm4), .xop (.bin .pand .xmm5 .xmm6), .xop (.bin .pxor .xmm4 .xmm5),
+   .movdquLoad .xmm9 (at_ .r10 32), .movdquLoad .xmm5 (at_ .r10 48),
+   .xop (.bin .pxor .xmm5 .xmm9), .xop (.bin .pand .xmm5 .xmm6), .xop (.bin .pxor .xmm9 .xmm5),
+   .xop (.bin .pxor .xmm9 .xmm4), .xop (.bin .pand .xmm9 .xmm7), .xop (.bin .pxor .xmm4 .xmm9),
+   .xop (.bin .movdqa .xmm5 .xmm8), .xop (.bin .pcmpeqd .xmm5 .xmm2),
+   .xop (.bin .pand .xmm4 .xmm5), .xop (.bin .por .xmm1 .xmm4), .xop (.bin .paddd .xmm2 .xmm3)]
 
 /-- Four entries, then on to the next four (ZF is set after the last). -/
 def scanBody : List Instr :=
-  (List.range 4).flatMap scanEntry ++ ([.alu .add .r10 (imm 64), .alu .sub .r11 (imm 1)] : List Instr)
+  scanTile ++ ([.alu .add .r10 (imm 64), .alu .sub .r11 (imm 1)] : List Instr)
+
+/-- The two low-bit selection masks, the high-bit indices and scan counters. -/
+def scanStart (sym : String) : List Instr :=
+  [.leaSym .r10 sym, .mov32 .r11 (imm 64), .xop (.bin .pxor .xmm1 .xmm1),
+   .xop (.bin .pxor .xmm2 .xmm2), .xop (.bin .pcmpeqd .xmm3 .xmm3), .xop (.shift .psrld .xmm3 31),
+   .xop (.bin .movdqa .xmm4 .xmm0), .xop (.bin .pand .xmm4 .xmm3),
+   .xop (.bin .pxor .xmm6 .xmm6), .xop (.bin .psubd .xmm6 .xmm4),
+   .xop (.bin .movdqa .xmm4 .xmm0), .xop (.shift .psrld .xmm4 1), .xop (.bin .pand .xmm4 .xmm3),
+   .xop (.bin .pxor .xmm7 .xmm7), .xop (.bin .psubd .xmm7 .xmm4),
+   .xop (.bin .movdqa .xmm8 .xmm0), .xop (.shift .psrld .xmm8 2)]
 
 /-- The table `sym` at the indices in the lanes of `xmm0` (each less than
-256), into the lanes of `xmm1`. Clobbers `r10`, `r11`, `xmm1`–`xmm5` and the
-flags. -/
+256), into the lanes of `xmm1`. Clobbers `r10`, `r11`, `xmm1`–`xmm9` and flags. -/
 def scan (sym : String) : Prog isa :=
-  .seq (.block [.leaSym .r10 sym, .mov32 .r11 (imm 64), .xop (.bin .pxor .xmm1 .xmm1),
-      .xop (.bin .pxor .xmm2 .xmm2), .xop (.bin .pcmpeqd .xmm3 .xmm3), .xop (.shift .psrld .xmm3 31)])
-    (.loop (.block scanBody) .ne)
+  .seq (.block (scanStart sym)) (.loop (.block scanBody) .ne)
 
 /-- `xmm0` := the dwords `lo₀, hi₀, lo₁, hi₁`, from the quadwords `lo₀ | hi₀ << 32`
 in `r9` and `lo₁ | hi₁ << 32` in `r`. -/

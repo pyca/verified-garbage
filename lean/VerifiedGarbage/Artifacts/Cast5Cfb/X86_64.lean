@@ -14,7 +14,7 @@ namespace VG.Artifacts.Cast5Cfb.X86_64
 def note : String :=
   "Baseline x86-64: one block at a time, through the generic CFB of `Impl/Modes/X86_64/` over CAST5's ECB \
   block code (inlined): each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, \
-  so no secret is an address. The subkeys are copied into the working space once per call; the number \
+  selecting among four adjacent entries with SSE2 masks before updating the running result, so no secret is an address. The subkeys are copied into the working space once per call; the number \
   of rounds stays in `rsi`; the 240-byte working space on the stack is zeroed on return."
 
 def artifacts : List Artifact := [
