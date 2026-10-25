@@ -23,11 +23,14 @@
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ed448::{
     VG_ED448_PUBLIC_KEY_SHA3_FEATURES, VG_ED448_SIGN_CACHED_SHA3_FEATURES,
-    VG_ED448_VERIFY_SHA3_FEATURES, vg_ed448_public_key_lazy, vg_ed448_public_key_sha3,
-    vg_ed448_sign_cached_lazy, vg_ed448_sign_cached_sha3, vg_ed448_verify_lazy,
+    VG_ED448_VERIFY_SHA3_FEATURES, vg_ed448_public_key_sha3, vg_ed448_sign_cached_sha3,
     vg_ed448_verify_sha3,
 };
 use crate::arch::ed448::{vg_ed448_public_key, vg_ed448_sign_cached, vg_ed448_verify};
+#[cfg(all(target_arch = "aarch64", any(not(target_vendor = "apple"), test)))]
+use crate::arch::ed448::{
+    vg_ed448_public_key_lazy, vg_ed448_sign_cached_lazy, vg_ed448_verify_lazy,
+};
 #[cfg(not(target_arch = "x86_64"))]
 use crate::hashes::sha3::Backend;
 use crate::zeroize::zeroize;
@@ -162,7 +165,7 @@ impl VerifyingKey {
         let mut scratch = [0u64; 1024];
         let verify = match backend() {
             Backend::Scalar => vg_ed448_verify,
-            #[cfg(target_arch = "aarch64")]
+            #[cfg(all(target_arch = "aarch64", any(not(target_vendor = "apple"), test)))]
             Backend::Lazy => vg_ed448_verify_lazy,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ed448_verify_adx,
@@ -227,7 +230,7 @@ impl SigningKey {
         unsafe {
             match backend() {
                 Backend::Scalar => vg_ed448_public_key(&mut public, seed, &mut scratch),
-                #[cfg(target_arch = "aarch64")]
+                #[cfg(all(target_arch = "aarch64", any(not(target_vendor = "apple"), test)))]
                 Backend::Lazy => vg_ed448_public_key_lazy(&mut public, seed, &mut scratch),
                 #[cfg(target_arch = "x86_64")]
                 Backend::Adx => vg_ed448_public_key_adx(&mut public, seed, &mut scratch),
@@ -278,7 +281,7 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
     let mut scratch = [0u64; 1024];
     let sign = match backend() {
         Backend::Scalar => vg_ed448_sign_cached,
-        #[cfg(target_arch = "aarch64")]
+        #[cfg(all(target_arch = "aarch64", any(not(target_vendor = "apple"), test)))]
         Backend::Lazy => vg_ed448_sign_cached_lazy,
         #[cfg(target_arch = "x86_64")]
         Backend::Adx => vg_ed448_sign_cached_adx,

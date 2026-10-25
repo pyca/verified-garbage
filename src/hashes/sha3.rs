@@ -33,15 +33,21 @@ use core::mem::MaybeUninit;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::sha3::{
     VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES, VG_KECCAK_PAD_SHA3_FEATURES,
-    VG_KECCAK_SQUEEZE_SHA3_FEATURES, vg_keccak_absorb_scratch_lazy, vg_keccak_absorb_scratch_sha3,
-    vg_keccak_pad_lazy, vg_keccak_pad_sha3, vg_keccak_squeeze_lazy, vg_keccak_squeeze_sha3,
+    VG_KECCAK_SQUEEZE_SHA3_FEATURES, vg_keccak_absorb_scratch_sha3, vg_keccak_pad_sha3,
+    vg_keccak_squeeze_sha3,
+};
+
+#[cfg(all(target_arch = "aarch64", any(not(target_vendor = "apple"), test)))]
+use crate::arch::sha3::{
+    vg_keccak_absorb_scratch_lazy, vg_keccak_pad_lazy, vg_keccak_squeeze_lazy,
 };
 
 /// The selected permutation, shared by every phase of a sponge.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     Scalar,
-    #[cfg(target_arch = "aarch64")]
+    // Keep Apple production dispatch at two cases; its unit tests still exercise Lazy.
+    #[cfg(all(target_arch = "aarch64", any(not(target_vendor = "apple"), test)))]
     Lazy,
     #[cfg(target_arch = "aarch64")]
     Sha3,
@@ -69,9 +75,12 @@ impl Backend {
         }
         #[cfg(all(target_arch = "aarch64", not(feature = "cpu-features-env")))]
         {
-            if cfg!(target_vendor = "apple") {
+            #[cfg(target_vendor = "apple")]
+            {
                 Self::select(crate::cpu::detected(), true, false)
-            } else {
+            }
+            #[cfg(not(target_vendor = "apple"))]
+            {
                 Self::Lazy
             }
         }
@@ -92,12 +101,13 @@ impl Backend {
                 },
             )
         {
-            Self::Sha3
-        } else if !apple && features.contains(crate::cpu::Features::of(&["neon"])) {
-            Self::Lazy
-        } else {
-            Self::Scalar
+            return Self::Sha3;
         }
+        #[cfg(any(not(target_vendor = "apple"), test))]
+        if !apple && features.contains(crate::cpu::Features::of(&["neon"])) {
+            return Self::Lazy;
+        }
+        Self::Scalar
     }
 }
 
@@ -137,6 +147,7 @@ impl<const RATE: usize> Sponge<RATE> {
     }
 
     /// Absorbs `data`.
+    #[cfg_attr(all(target_arch = "aarch64", target_vendor = "apple"), inline(always))]
     fn absorb(&mut self, data: &[u8]) {
         let backend = self.backend();
         // Uninitialized: the contract holds whatever the scratch holds, so
@@ -167,7 +178,7 @@ impl<const RATE: usize> Sponge<RATE> {
                     data.len(),
                     scratch.as_mut_ptr(),
                 ),
-                #[cfg(target_arch = "aarch64")]
+                #[cfg(all(target_arch = "aarch64", any(not(target_vendor = "apple"), test)))]
                 Backend::Lazy => vg_keccak_absorb_scratch_lazy(
                     &mut self.state,
                     RATE,
@@ -191,6 +202,7 @@ impl<const RATE: usize> Sponge<RATE> {
 
     /// Pads the message with the domain-separation suffix `suffix`, ready
     /// to squeeze its output.
+    #[cfg_attr(all(target_arch = "aarch64", target_vendor = "apple"), inline(always))]
     fn pad(mut self, suffix: u32) -> Squeezer<RATE> {
         let backend = self.backend();
         // SAFETY: as in `absorb`: `RATE` is one of the rates of FIPS 202 and
@@ -201,7 +213,7 @@ impl<const RATE: usize> Sponge<RATE> {
         unsafe {
             match backend {
                 Backend::Scalar => vg_keccak_pad(&mut self.state, RATE, self.pos, suffix),
-                #[cfg(target_arch = "aarch64")]
+                #[cfg(all(target_arch = "aarch64", any(not(target_vendor = "apple"), test)))]
                 Backend::Lazy => vg_keccak_pad_lazy(&mut self.state, RATE, self.pos, suffix),
                 #[cfg(target_arch = "aarch64")]
                 Backend::Sha3 => vg_keccak_pad_sha3(&mut self.state, RATE, self.pos, suffix),
@@ -242,6 +254,7 @@ impl<const RATE: usize> Drop for Squeezer<RATE> {
 
 impl<const RATE: usize> Squeezer<RATE> {
     /// Writes the next `out.len()` bytes of output to `out`.
+    #[cfg_attr(all(target_arch = "aarch64", target_vendor = "apple"), inline(always))]
     fn squeeze(&mut self, out: &mut [u8]) {
         // SAFETY: `RATE` is one of the rates of FIPS 202 and `self.pos` is at
         // most `RATE`. `self.state` is valid for reads and writes of 200
@@ -255,7 +268,7 @@ impl<const RATE: usize> Squeezer<RATE> {
                 Backend::Scalar => {
                     vg_keccak_squeeze(&mut self.state, RATE, self.pos, out.as_mut_ptr(), out.len())
                 }
-                #[cfg(target_arch = "aarch64")]
+                #[cfg(all(target_arch = "aarch64", any(not(target_vendor = "apple"), test)))]
                 Backend::Lazy => vg_keccak_squeeze_lazy(
                     &mut self.state,
                     RATE,
@@ -302,11 +315,13 @@ macro_rules! sha3 {
             }
 
             /// Absorbs `data`.
+            #[cfg_attr(all(target_arch = "aarch64", target_vendor = "apple"), inline(always))]
             pub fn update(&mut self, data: &[u8]) {
                 self.0.absorb(data);
             }
 
             /// Pads the message and returns its digest.
+            #[cfg_attr(all(target_arch = "aarch64", target_vendor = "apple"), inline(always))]
             pub fn finalize(self) -> [u8; $output] {
                 let mut digest = [0; $output];
                 self.0.pad(SHA3_SUFFIX).squeeze(&mut digest);
@@ -355,6 +370,7 @@ macro_rules! shake {
 
         impl $reader {
             /// Writes the next `out.len()` bytes of output to `out`.
+            #[cfg_attr(all(target_arch = "aarch64", target_vendor = "apple"), inline(always))]
             pub fn squeeze(&mut self, out: &mut [u8]) {
                 self.0.squeeze(out);
             }
@@ -376,18 +392,21 @@ macro_rules! shake {
             }
 
             /// Absorbs `data`.
+            #[cfg_attr(all(target_arch = "aarch64", target_vendor = "apple"), inline(always))]
             pub fn update(&mut self, data: &[u8]) {
                 self.0.absorb(data);
             }
 
             /// Pads the message and returns a reader of its output, which
             /// can be squeezed in pieces.
+            #[cfg_attr(all(target_arch = "aarch64", target_vendor = "apple"), inline(always))]
             pub fn finalize_xof(self) -> $reader {
                 $reader(self.0.pad(SHAKE_SUFFIX))
             }
 
             /// Pads the message and fills `out` with the first `out.len()`
             /// bytes of output.
+            #[cfg_attr(all(target_arch = "aarch64", target_vendor = "apple"), inline(always))]
             pub fn finalize(self, out: &mut [u8]) {
                 self.finalize_xof().squeeze(out);
             }
