@@ -18,9 +18,11 @@ namespace VG.Artifacts.Rsa.PPC64LE
 def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact PPC64LE.target {
     notes := ["n is checked a byte at a time, then read into the working space a byte at a time. \
-        The model has no carry bit, so numbers are 32-bit digits: R² mod n by `128 w` modular \
-        doublings of 1, each with the borrow of the subtraction of n in the sign bit and selected \
-        with a mask. The nonvolatile registers it uses are saved in the working space's header."]
+        `R² mod n` starts from `2^(64 (w - 1))`, below a valid `n`: `64 + w` modular doublings, \
+        each with the borrow of the subtraction of n in the sign bit and selected with a mask, give \
+        `2^w R mod n`, and six Montgomery squares (radix `2^64`, with the carry bit) raise it to \
+        `2^(64 w) R mod n = R² mod n`. The nonvolatile registers it uses are saved in the working \
+        space's header."]
     code := Impl.Bignum.PPC64LE.Precompute.precompute
     verified := Proof.Bignum.PPC64LE.Pre.precompute_verified },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact PPC64LE.target {

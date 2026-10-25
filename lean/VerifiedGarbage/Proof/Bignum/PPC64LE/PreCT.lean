@@ -10,7 +10,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Fast
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreWrite
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -148,7 +148,7 @@ theorem T34 {d : PD} {s : State} (h : C3 d s) : WP isa check2 s (C4 d) := by
     ⟨hb.keep k, by rw [m]; exact hv, a⟩
 
 theorem TA {d : PD} {s : State} (h : C4 d s ∧ s.gpr .r0 = 0) :
-    WP isa (.seq r2 (.seq write (.block [.li .r3 1]))) s (C5 d) := by
+    WP isa (.seq r2Fast (.seq write (.block [.li .r3 1]))) s (C5 d) := by
   obtain ⟨⟨hb, hv, h0⟩, hz⟩ := h
   have hval := h0.mp hz
   have hf := valid_facts hval hb.k64
@@ -159,15 +159,18 @@ theorem TA {d : PD} {s : State} (h : C4 d s ∧ s.gpr .r0 = 0) :
   have e : ∀ j, slot d.w j = hdrBytes + j * (8 * (d.w + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
   have hZ := hb.hZ
-  refine WP.seq (WP.mono (r2_ok hb.scr hb.r8 hb.r9 hb.r10 hb.r5 hb.r11 (by omega) hw' (by omega)
-    (by rw [hv]; omega)) fun s₃ ⟨_, _, k₃⟩ => ?_)
-  have hb₃ := hb.keep k₃
-  refine WP.seq (WP.mono (write_ok (P := d.P) (dN := slot d.w 0) (dX := slot d.w 1) hb₃.scr hb₃.pre
-    (by rw [hb₃.r19]; simp) hb₃.r10 hb₃.r5 hb₃.r11 (by omega) hw' (by omega) (by omega) (Nat.le_refl _)
-    hb.hPS) fun s₄ ⟨_, k₄⟩ => ?_)
+  rw [← hwd] at hf
+  refine WP.seq (WP.mono (r2Fast_ok hb.scr hb.r8 hb.r9 hb.r10 hb.r5 hb.r11 hb.r21 (by omega) hw' hZ
+    (by rw [hv]; exact hf.2.2) (by rw [hv]; exact hf.1)) fun s₃ ⟨_, _, k₃⟩ => ?_)
+  have g : ∀ r ∈ [Reg.r19, .r10, .r5, .r11, .r21], s₃.gpr r = s.gpr r := fun r hr =>
+    k₃.gpr r (by revert r hr; decide)
+  refine WP.seq (WP.mono (write_ok (P := d.P) (dN := slot d.w 0) (dX := slot d.w 1) (hb.scr.congr k₃.wr)
+    (hb.pre.congr k₃.wr) (by rw [g .r19 (by decide), hb.r19]; simp) (by rw [g .r10 (by decide), hb.r10])
+    (by rw [g .r5 (by decide), hb.r5]) (by rw [g .r11 (by decide), hb.r11]) (by omega) hw' (by omega) (by omega)
+    (Nat.le_refl _) hb.hPS) fun s₄ ⟨_, k₄⟩ => ?_)
   refine WP.mono (WP.keep [.r3] (Q := fun _ => True) (by prun; exact ⟨_, rfl⟩) (by decide)) fun t ⟨_, k₅⟩ => ?_
   show t.gpr .r21 = d.S
-  rw [k₅.gpr .r21 (by decide), k₄.gpr .r21 (by decide), hb₃.r21]
+  rw [k₅.gpr .r21 (by decide), k₄.gpr .r21 (by decide), g .r21 (by decide), hb.r21]
 
 theorem TB {d : PD} {s : State} (h : C4 d s ∧ s.gpr .r0 ≠ 0) :
     WP isa (.seq zeroPre (.block [.li .r3 0])) s (C5 d) := by
