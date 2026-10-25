@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Contract
 
 /-!
 # PBKDF2 over any streaming hash function on RISC-V, the whole derivation: correctness

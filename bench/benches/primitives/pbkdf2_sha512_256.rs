@@ -16,7 +16,8 @@ pub const USES: &[&str] = &[
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 pub fn bench(c: &mut Criterion) {
     use openssl::hash::MessageDigest;
@@ -38,6 +39,7 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 )))]
 pub fn bench(_: &mut Criterion) {}

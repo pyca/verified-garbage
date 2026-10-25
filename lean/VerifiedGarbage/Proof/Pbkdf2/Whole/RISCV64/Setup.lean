@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Calls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
 import VerifiedGarbage.Proof.Sha256.Stream

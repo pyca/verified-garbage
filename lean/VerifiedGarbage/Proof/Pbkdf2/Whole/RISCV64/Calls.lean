@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.InitMain
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Finalize
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
-import VerifiedGarbage.Proof.Framework.Covers
 
 /-!
 # PBKDF2 over any streaming hash function on RISC-V, the whole derivation: the calls

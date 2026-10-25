@@ -1,18 +1,20 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Whole.RISCV64
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Contract
+import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.RISCV64.Calls
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Calls
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Hash
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Common
-public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Framework.RISCV64.Call
+public import VerifiedGarbage.Spec.Hmac.Generic
 
 /-!
 # PBKDF2 over any streaming hash function on RISC-V, the whole derivation: the layout

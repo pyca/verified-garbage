@@ -68,6 +68,30 @@ pub(crate) mod hmac_sha512_256;
 pub(crate) mod md5;
 
 #[rustfmt::skip]
+pub(crate) mod pbkdf2_md5;
+
+#[rustfmt::skip]
+pub(crate) mod pbkdf2_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod pbkdf2_sha224;
+
+#[rustfmt::skip]
+pub(crate) mod pbkdf2_sha256;
+
+#[rustfmt::skip]
+pub(crate) mod pbkdf2_sha384;
+
+#[rustfmt::skip]
+pub(crate) mod pbkdf2_sha512;
+
+#[rustfmt::skip]
+pub(crate) mod pbkdf2_sha512_224;
+
+#[rustfmt::skip]
+pub(crate) mod pbkdf2_sha512_256;
+
+#[rustfmt::skip]
 pub(crate) mod poly1305;
 
 #[rustfmt::skip]

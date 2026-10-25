@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Block
 import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Loop
 import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Contract
 
 /-!
 # PBKDF2 over any streaming hash function on RISC-V, the whole derivation: constant time

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Correct
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Contract
 
 /-!
 # PBKDF2 over any streaming hash function on RISC-V, the whole derivation: the shared contract

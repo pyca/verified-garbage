@@ -410,7 +410,7 @@ theorem tail_ok {H : Md P.B P.N L} {c : BitVec 64} {s : State} (h : St P Wi H s�
     (k : ∀ s', St P Wi H s₀ (c - 1) s' →
       bytesAt s'.mem (tp s₀) P.D = xorBytes (bytesAt s.mem (tp s₀) P.D) (bytesAt s.mem (blk P s₀) P.D) →
       bytesAt s'.mem (blk P s₀) P.D = bytesAt s.mem (blk P s₀) P.D → Q s') :
-    WP isa (.block (P.xorT ++ [.addi .s6 .s6 (-1)])) s Q := by
+    WP isa (.block (P.xorT ++ ([.addi .s6 .s6 (-1)] : List Instr))) s Q := by
   have hDB := hz.DB
   have hD := hz.DN
   have hN := hz.N64

@@ -33,7 +33,8 @@ pub(crate) fn eq(a: &[u8], b: &[u8]) -> bool {
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 macro_rules! assert_verify_len {
     ($n:expr) => {
@@ -51,7 +52,8 @@ macro_rules! assert_verify_len {
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 pub(crate) use assert_verify_len;
 

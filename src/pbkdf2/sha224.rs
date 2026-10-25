@@ -12,7 +12,7 @@
 //! AArch64 selects `vg_pbkdf2_hmac_sha224_sha2` when the SHA-256
 //! instructions are available.
 //!
-//! On ARMv7, x86 and PPC64LE, the whole derivation is the one for every
+//! On ARMv7, x86, PPC64LE and RISC-V, the whole derivation is the one for every
 //! streaming hash function, calling SHA-224's `init`, SHA-256's verified streaming
 //! functions, HMAC-SHA-224's `init` and `finalize` and
 //! `vg_pbkdf2_hmac_sha224_iterate` (contract
@@ -25,7 +25,8 @@
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::pbkdf2_sha224::vg_pbkdf2_hmac_sha224;
