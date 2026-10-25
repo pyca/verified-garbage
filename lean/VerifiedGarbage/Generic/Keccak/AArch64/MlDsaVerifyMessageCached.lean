@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.AArch64.MlDsaModes
+
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -34,33 +36,36 @@ def notes : List String :=
     `vg_keccak_pad`, `vg_keccak_squeeze`) in that 1 KiB, and calls the verification function on it, which \
     uses the rest of `scratch`."]
 
-def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
+def artifactsOne (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   ((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")).artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
+    suffix := v.callee.mldsaSuffix
+    features := Proof.Sha3.AArch64.mldsaFeatures v
     consts := selectedConsts v
     notes := notes
-    code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (Spec.MlDsa.verify44Api.name ++ v.callee.suffix)
+    code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (Spec.MlDsa.verify44Api.name ++ v.callee.mldsaSuffix)
       (selectedCode v Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
     stack := 16
-    verified := selected_cached_message_verified v (.inl rfl) (Spec.MlDsa.verify44Api.name ++ v.callee.suffix) },
+    verified := selected_cached_message_verified v (.inl rfl) (Spec.MlDsa.verify44Api.name ++ v.callee.mldsaSuffix) },
   ((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")).artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
+    suffix := v.callee.mldsaSuffix
+    features := Proof.Sha3.AArch64.mldsaFeatures v
     consts := selectedConsts v
     notes := notes
-    code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (Spec.MlDsa.verify65Api.name ++ v.callee.suffix)
+    code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (Spec.MlDsa.verify65Api.name ++ v.callee.mldsaSuffix)
       (selectedCode v Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
     stack := 16
-    verified := selected_cached_message_verified v (.inr (.inl rfl)) (Spec.MlDsa.verify65Api.name ++ v.callee.suffix) },
+    verified := selected_cached_message_verified v (.inr (.inl rfl)) (Spec.MlDsa.verify65Api.name ++ v.callee.mldsaSuffix) },
   ((Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")).artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
+    suffix := v.callee.mldsaSuffix
+    features := Proof.Sha3.AArch64.mldsaFeatures v
     consts := selectedConsts v
     notes := notes
-    code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (Spec.MlDsa.verify87Api.name ++ v.callee.suffix)
+    code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee (Spec.MlDsa.verify87Api.name ++ v.callee.mldsaSuffix)
       (selectedCode v Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
     stack := 16
-    verified := selected_cached_message_verified v (.inr (.inr rfl)) (Spec.MlDsa.verify87Api.name ++ v.callee.suffix) }]
+    verified := selected_cached_message_verified v (.inr (.inr rfl)) (Spec.MlDsa.verify87Api.name ++ v.callee.mldsaSuffix) }]
+
+def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
+  (Proof.Sha3.AArch64.mldsaModes v).flatMap artifactsOne
 
 end VG.Generic.Keccak.AArch64.MlDsaVerifyMessageCached

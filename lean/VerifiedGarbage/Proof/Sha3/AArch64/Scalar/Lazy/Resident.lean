@@ -1,10 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Loop
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Bulk
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBoundary
-public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
+import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
 
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Xor
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Advance
@@ -23,6 +23,13 @@ import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.NormNum.Pow
 import Mathlib.Data.Finset.Attr
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lazy
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # The scalar resident absorber: the loop over whole blocks

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Sha3.AArch64.MlDsaModes
+
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedSelected
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
@@ -559,34 +561,37 @@ def notes : List String :=
     `vg_keccak_pad`, `vg_keccak_squeeze`) in that 1 KiB, and calls the signing function on it, which \
     uses the rest of `scratch`."]
 
-def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
+def artifactsOne (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.signMessage44Api.artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
+    suffix := v.callee.mldsaSuffix
+    features := Proof.Sha3.AArch64.mldsaFeatures v
     notes := notes
     consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
-    code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign44Api.name ++ v.callee.suffix)
+    code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign44Api.name ++ v.callee.mldsaSuffix)
       (Impl.MlDsa.AArch64.Sign.Optimized.signWith v.callee (Proof.MlDsa.AArch64.Sign.primsWith v.callee) Spec.MlDsa.mlDsa44
         (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks Spec.MlDsa.mlDsa44)) Spec.MlDsa.mlDsa44
     stack := 16
     verified := signMessage_verified v (signFn v (List.mem_cons_self ..)) (List.mem_cons_self ..) },
   Spec.MlDsa.signMessage65Api.artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
+    suffix := v.callee.mldsaSuffix
+    features := Proof.Sha3.AArch64.mldsaFeatures v
     notes := notes
     consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
-    code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign65Api.name ++ v.callee.suffix)
+    code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign65Api.name ++ v.callee.mldsaSuffix)
       (Proof.MlDsa.AArch64.Sign.CachedSelected.code v Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
     stack := 16
     verified := Proof.MlDsa.AArch64.Sign.CachedSelected.message_verified v (.inl rfl) _ },
   Spec.MlDsa.signMessage87Api.artifact AArch64.target {
-    suffix := v.callee.suffix
-    features := v.features
+    suffix := v.callee.mldsaSuffix
+    features := Proof.Sha3.AArch64.mldsaFeatures v
     notes := notes
     consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
-    code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign87Api.name ++ v.callee.suffix)
+    code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign87Api.name ++ v.callee.mldsaSuffix)
       (Proof.MlDsa.AArch64.Sign.CachedSelected.code v Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
     stack := 16
     verified := Proof.MlDsa.AArch64.Sign.CachedSelected.message_verified v (.inr rfl) _ }]
+
+def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
+  (Proof.Sha3.AArch64.mldsaModes v).flatMap artifactsOne
 
 end VG.Generic.Keccak.AArch64.MlDsaSignMessage

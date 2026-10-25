@@ -27,7 +27,7 @@ open VG.AArch64 VG.Impl.MlDsa.AArch64.Call
 
 /-- The AArch64 primitives. -/
 def primsWith (c : Impl.Sha3.AArch64.Callee) : Prims where
-  suffix := c.suffix
+  suffix := c.mldsaSuffix
   ntt := Arith.Neon.ntt
   invNtt := Arith.Neon.nttInv
   mul := Arith.mul

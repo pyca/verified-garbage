@@ -363,7 +363,7 @@ arch = "aarch64"
 os = "ubuntu-26.04-arm"
 runs = """
 - | aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs sm4_gcm cpu
-neon | chacha20
+neon | chacha20 sha3 shake mlkem mldsa ed448
 aes | aes_gcm aes_gcm_siv
 sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep_pairs
 sha2 | dsa_parameters rsa_oaep_pairs

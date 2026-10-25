@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
 import Mathlib.Data.Finset.Attr
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.NormNum.Abs
@@ -17,6 +18,11 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Sha3.AArch64
 
 def artifacts : List Artifact := [
+  Spec.Sha3.permuteApi.artifact AArch64.target {
+    suffix := "_lazy"
+    notes := ["Scalar Keccak with deferred lane rotations and one final layout restoration."]
+    code := Impl.Sha3.AArch64.Scalar.Lazy.permute
+    verified := Proof.Sha3.AArch64.Scalar.Lazy.permute_verified },
   Spec.Sha3.permuteApi.artifact AArch64.target {
     suffix := "_sha3"
     notes := ["Uses the Arm SHA-3 instructions."]

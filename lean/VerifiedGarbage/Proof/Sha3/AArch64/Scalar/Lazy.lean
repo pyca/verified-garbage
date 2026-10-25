@@ -114,39 +114,27 @@ theorem plan_layout (p : Plan)
   rw [rotateRight_undo _ _ hb] at ht
   exact ht
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
 theorem plans_symbolic : ∀ (r : Fin 24), ∀ i < 25, outputExpr (plans[r.val]' (by exact r.isLt)) i = referenceExpr i := by decide +kernel
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
 theorem plans_shape : ∀ r : Fin 24,
     (plan r).input.length = 25 ∧ (plan r).output.length = 25 ∧
     (plan r).finish = (plan r).output ∧
     (∀ entry ∈ (plan r).output, entry.2 < 64) ∧
     (∀ op ∈ (plan r).core, Good op) ∧ Good (plan r).iota := by decide +kernel
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
 theorem plans_iota : ∀ r : Fin 24,
     let lane := (plan r).output.getD 0 (.x0, 0)
     (plan r).iota = .xorRor lane.1 lane.1 (plan r).constantReg lane.2 ∧
     (∀ entry ∈ (plan r).output, entry.1 ≠ (plan r).constantReg) := by decide +kernel
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
 theorem plans_transition : ∀ r : Fin 23,
     (plan ⟨r.val, by omega⟩).finish = (plan ⟨r.val+1, by omega⟩).input := by decide +kernel
 
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
 theorem plans_lane_zero : ∀ r : Fin 24, ∀ i < 25,
     ((plan r).output.getD i (.x0, 0)).1 =
       ((plan r).output.getD 0 (.x0, 0)).1 ↔ i = 0 := by decide +kernel
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
 theorem normalize_symbolic : ∀ i < 25,
     ((symRun normalize (symbolicLayout (plan ⟨23, by decide⟩).finish)).regs
       (laneReg i)).rotateNormal 0 = (Expr.reg (laneReg i)).rotateNormal 0 := by decide +kernel
@@ -155,13 +143,9 @@ theorem normalize_symbolic : ∀ i < 25,
 def stageLayout (n : Nat) : Layout :=
   if h : n < 24 then (plan ⟨n, h⟩).input else (plan ⟨23, by decide⟩).finish
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
 theorem plans_stage : ∀ r : Fin 24, (plan r).finish = stageLayout (r.val+1) := by
   decide +kernel
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
 theorem normalize_good : ∀ op ∈ normalize, Good op := by decide +kernel
 
 

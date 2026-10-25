@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Sequence
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Sequence
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
@@ -17,6 +17,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import Mathlib.Tactic.ToExpr
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Round
 
 @[expose] public section
 namespace VG.Proof.Sha3.AArch64.Scalar.Lazy
@@ -78,13 +80,9 @@ theorem permute_correct (s : State) (hs : VG.Proof.Sha3.permuteAArch64.pre s) :
   Boundary.wrap_correct (.block permutationCore) (fun orig A s _ hs => core_state orig A s hs)
     s (VG.Proof.Sha3.AArch64.pre_of s hs)
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem permute_noCalls : permute.noCalls = true := by decide +kernel
+theorem permute_noCalls : permute.noCalls = true := by lit_decide
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem permute_noFrames : permute.noFrames = true := by decide +kernel
+theorem permute_noFrames : permute.noFrames = true := by lit_decide
 
 theorem permute_ct : ConstantTime isa VG.Proof.Sha3.permuteAArch64.pre
     VG.Proof.Sha3.permuteAArch64.pub permute := by

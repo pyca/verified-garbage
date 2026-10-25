@@ -33,14 +33,16 @@ use core::mem::MaybeUninit;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::sha3::{
     VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES, VG_KECCAK_PAD_SHA3_FEATURES,
-    VG_KECCAK_SQUEEZE_SHA3_FEATURES, vg_keccak_absorb_scratch_sha3, vg_keccak_pad_sha3,
-    vg_keccak_squeeze_sha3,
+    VG_KECCAK_SQUEEZE_SHA3_FEATURES, vg_keccak_absorb_scratch_lazy, vg_keccak_absorb_scratch_sha3,
+    vg_keccak_pad_lazy, vg_keccak_pad_sha3, vg_keccak_squeeze_lazy, vg_keccak_squeeze_sha3,
 };
 
 /// The selected permutation, shared by every phase of a sponge.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     Scalar,
+    #[cfg(target_arch = "aarch64")]
+    Lazy,
     #[cfg(target_arch = "aarch64")]
     Sha3,
 }
@@ -70,7 +72,7 @@ impl Backend {
             if cfg!(target_vendor = "apple") {
                 Self::select(crate::cpu::detected(), true, false)
             } else {
-                Self::Scalar
+                Self::Lazy
             }
         }
         #[cfg(not(target_arch = "aarch64"))]
@@ -91,6 +93,8 @@ impl Backend {
             )
         {
             Self::Sha3
+        } else if !apple && features.contains(crate::cpu::Features::of(&["neon"])) {
+            Self::Lazy
         } else {
             Self::Scalar
         }
@@ -164,6 +168,15 @@ impl<const RATE: usize> Sponge<RATE> {
                     scratch.as_mut_ptr(),
                 ),
                 #[cfg(target_arch = "aarch64")]
+                Backend::Lazy => vg_keccak_absorb_scratch_lazy(
+                    &mut self.state,
+                    RATE,
+                    self.pos,
+                    data.as_ptr(),
+                    data.len(),
+                    scratch.as_mut_ptr(),
+                ),
+                #[cfg(target_arch = "aarch64")]
                 Backend::Sha3 => vg_keccak_absorb_scratch_sha3(
                     &mut self.state,
                     RATE,
@@ -188,6 +201,8 @@ impl<const RATE: usize> Sponge<RATE> {
         unsafe {
             match backend {
                 Backend::Scalar => vg_keccak_pad(&mut self.state, RATE, self.pos, suffix),
+                #[cfg(target_arch = "aarch64")]
+                Backend::Lazy => vg_keccak_pad_lazy(&mut self.state, RATE, self.pos, suffix),
                 #[cfg(target_arch = "aarch64")]
                 Backend::Sha3 => vg_keccak_pad_sha3(&mut self.state, RATE, self.pos, suffix),
             }
@@ -240,6 +255,14 @@ impl<const RATE: usize> Squeezer<RATE> {
                 Backend::Scalar => {
                     vg_keccak_squeeze(&mut self.state, RATE, self.pos, out.as_mut_ptr(), out.len())
                 }
+                #[cfg(target_arch = "aarch64")]
+                Backend::Lazy => vg_keccak_squeeze_lazy(
+                    &mut self.state,
+                    RATE,
+                    self.pos,
+                    out.as_mut_ptr(),
+                    out.len(),
+                ),
                 #[cfg(target_arch = "aarch64")]
                 Backend::Sha3 => vg_keccak_squeeze_sha3(
                     &mut self.state,
@@ -420,6 +443,24 @@ mod tests {
         use super::Backend;
         use crate::cpu::Features;
         for apple in [false, true] {
+            assert_eq!(
+                Backend::select(Features::of(&["neon"]), apple, false),
+                if apple {
+                    Backend::Scalar
+                } else {
+                    Backend::Lazy
+                }
+            );
+            for requested in [false, true] {
+                assert_eq!(
+                    Backend::select(Features::of(&["neon", "sha3"]), apple, requested),
+                    if apple || requested {
+                        Backend::Sha3
+                    } else {
+                        Backend::Lazy
+                    }
+                );
+            }
             for requested in [false, true] {
                 assert_eq!(
                     Backend::select(Features::of(&[]), apple, requested),
@@ -435,6 +476,42 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// Exercise the new scalar ABI directly on every AArch64 host, including
+    /// Apple's, against the established scalar sponge at all rate boundaries.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn lazy_sponge_matches_scalar() {
+        fn check<const RATE: usize>() {
+            use super::{Backend, SHA3_SUFFIX, SHAKE_SUFFIX, Sponge};
+            let msg: [u8; 3 * 168 + 1] = core::array::from_fn(|i| (i * 37 + 11) as u8);
+            for len in [0, 1, RATE - 1, RATE, RATE + 1, 2 * RATE, 3 * RATE + 1] {
+                for split in [0, 1.min(len), len / 2, len] {
+                    for suffix in [SHA3_SUFFIX, SHAKE_SUFFIX] {
+                        let mut outputs = [[0u8; 2 * 168 + 1]; 2];
+                        for (backend, out) in [Backend::Scalar, Backend::Lazy]
+                            .into_iter()
+                            .zip(&mut outputs)
+                        {
+                            let mut sponge = Sponge::<RATE>::new();
+                            sponge.backend = Some(backend);
+                            sponge.absorb(&msg[..split]);
+                            sponge.absorb(&msg[split..len]);
+                            let mut reader = sponge.pad(suffix);
+                            reader.squeeze(&mut out[..RATE - 1]);
+                            reader.squeeze(&mut out[RATE - 1..]);
+                        }
+                        assert_eq!(outputs[0], outputs[1]);
+                    }
+                }
+            }
+        }
+        check::<72>();
+        check::<104>();
+        check::<136>();
+        check::<144>();
+        check::<168>();
     }
 
     /// Every way of splitting a message into two updates, or into single

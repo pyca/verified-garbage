@@ -40,6 +40,10 @@ pub(crate) enum Backend {
     /// time; elsewhere, one entry of the matrix at a time), with scalar
     /// Keccak.
     Scalar,
+    #[cfg(target_arch = "aarch64")]
+    Lazy,
+    #[cfg(target_arch = "aarch64")]
+    X2Sha3KeccakLazy,
     /// AArch64 with the SHA-3 extension: paired SHAKE with
     /// `vg_keccak_f1600_x2_sha3`, and arithmetic with NEON, hashing one
     /// state at a time with the scalar permutation `vg_keccak_f1600` (the
@@ -80,6 +84,8 @@ impl Backend {
         if f.contains(sha3) {
             return if apple {
                 Backend::X2Sha3KeccakSha3
+            } else if f.contains(crate::cpu::Features::of(&["neon"])) {
+                Backend::X2Sha3KeccakLazy
             } else {
                 Backend::X2Sha3
             };
@@ -91,6 +97,10 @@ impl Backend {
         #[cfg(target_arch = "x86_64")]
         if f.contains(avx2) {
             return Backend::Avx2;
+        }
+        #[cfg(target_arch = "aarch64")]
+        if !apple && f.contains(crate::cpu::Features::of(&["neon"])) {
+            return Backend::Lazy;
         }
         Backend::Scalar
     }
@@ -125,8 +135,14 @@ macro_rules! ml_kem {
         encaps: $encaps:path,
         decaps: $decaps:path,
         encaps_h: $encaps_h:path,
+        keygen_lazy: $keygen_lazy:path,
+        keygen_x2_sha3_keccak_lazy: $keygen_x2_sha3_keccak_lazy:path,
         keygen_x2_sha3: ($keygen_x2_sha3:path, $keygen_x2_sha3_features:path),
+        encaps_lazy: $encaps_lazy:path,
+        encaps_x2_sha3_keccak_lazy: $encaps_x2_sha3_keccak_lazy:path,
         encaps_x2_sha3: ($encaps_x2_sha3:path, $encaps_x2_sha3_features:path),
+        decaps_lazy: $decaps_lazy:path,
+        decaps_x2_sha3_keccak_lazy: $decaps_x2_sha3_keccak_lazy:path,
         decaps_x2_sha3: ($decaps_x2_sha3:path, $decaps_x2_sha3_features:path),
         keygen_x2_sha3_keccak_sha3: ($keygen_x2_sha3_keccak_sha3:path, $keygen_x2_sha3_keccak_sha3_features:path $(,)?),
         encaps_x2_sha3_keccak_sha3: ($encaps_x2_sha3_keccak_sha3:path, $encaps_x2_sha3_keccak_sha3_features:path $(,)?),
@@ -334,6 +350,12 @@ macro_rules! ml_kem {
                     match backend {
                         Backend::Scalar => $encaps(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
+                        Backend::Lazy => $encaps_lazy(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
+
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::X2Sha3KeccakLazy => $encaps_x2_sha3_keccak_lazy(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
+
+                        #[cfg(target_arch = "aarch64")]
                         Backend::X2Sha3 => $encaps_x2_sha3(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
                         Backend::X2Sha3KeccakSha3 => {
@@ -447,6 +469,12 @@ macro_rules! ml_kem {
                     match backend {
                         Backend::Scalar => $keygen(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
+                        Backend::Lazy => $keygen_lazy(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
+
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::X2Sha3KeccakLazy => $keygen_x2_sha3_keccak_lazy(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
+
+                        #[cfg(target_arch = "aarch64")]
                         Backend::X2Sha3 => $keygen_x2_sha3(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
                         Backend::X2Sha3KeccakSha3 => {
@@ -529,6 +557,12 @@ macro_rules! ml_kem {
                 let r = unsafe {
                     match backend {
                         Backend::Scalar => $decaps(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::Lazy => $decaps_lazy(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::X2Sha3KeccakLazy => $decaps_x2_sha3_keccak_lazy(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+
                         #[cfg(target_arch = "aarch64")]
                         Backend::X2Sha3 => $decaps_x2_sha3(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
@@ -623,7 +657,7 @@ macro_rules! ml_kem {
                     let ek = base.encapsulation_key();
                     // SAFETY: as above.
                     let (k, mut ct) = unsafe { ek.encapsulate_with(&m, Backend::Scalar) }.unwrap();
-                    for backend in [Backend::X2Sha3, Backend::X2Sha3KeccakSha3] {
+                    for backend in [Backend::Lazy, Backend::X2Sha3, Backend::X2Sha3KeccakLazy, Backend::X2Sha3KeccakSha3] {
                         // SAFETY: the CPU has the SHA-3 extension, which
                         // every paired instance needs (`SHA3`).
                         let dk = unsafe { $DecapsulationKey::from_seed_with(&seed, backend) }.unwrap();
@@ -637,7 +671,7 @@ macro_rules! ml_kem {
                     // SAFETY: as above.
                     let rejected = unsafe { base.decapsulate_with(&ct, Backend::Scalar) }.unwrap();
                     assert_ne!(rejected, k);
-                    for backend in [Backend::X2Sha3, Backend::X2Sha3KeccakSha3] {
+                    for backend in [Backend::Lazy, Backend::X2Sha3, Backend::X2Sha3KeccakLazy, Backend::X2Sha3KeccakSha3] {
                         // SAFETY: as above.
                         assert_eq!(unsafe { base.decapsulate_with(&ct, backend) }.unwrap(), rejected);
                     }
@@ -704,13 +738,17 @@ mod aarch64_tests {
         );
         assert_eq!(
             Backend::select(required, empty, empty, required, false),
-            Backend::X2Sha3
+            Backend::X2Sha3KeccakLazy
         );
         for available in [empty, Features::of(&["neon"]), Features::of(&["sha3"])] {
             for apple in [false, true] {
                 assert_eq!(
                     Backend::select(available, empty, empty, required, apple),
-                    Backend::Scalar
+                    if !apple && available.contains(Features::of(&["neon"])) {
+                        Backend::Lazy
+                    } else {
+                        Backend::Scalar
+                    }
                 );
             }
         }

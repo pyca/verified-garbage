@@ -23,7 +23,8 @@
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ed448::{
     VG_ED448_PUBLIC_KEY_SHA3_FEATURES, VG_ED448_SIGN_CACHED_SHA3_FEATURES,
-    VG_ED448_VERIFY_SHA3_FEATURES, vg_ed448_public_key_sha3, vg_ed448_sign_cached_sha3,
+    VG_ED448_VERIFY_SHA3_FEATURES, vg_ed448_public_key_lazy, vg_ed448_public_key_sha3,
+    vg_ed448_sign_cached_lazy, vg_ed448_sign_cached_sha3, vg_ed448_verify_lazy,
     vg_ed448_verify_sha3,
 };
 use crate::arch::ed448::{vg_ed448_public_key, vg_ed448_sign_cached, vg_ed448_verify};
@@ -73,19 +74,30 @@ fn backend() -> Backend {
 /// functions use, if the CPU has the features of every instance calling it.
 #[cfg(not(target_arch = "x86_64"))]
 fn backend() -> Backend {
+    let selected = Backend::detected();
     #[cfg(target_arch = "aarch64")]
-    if !crate::cpu::detected().contains(
-        const {
-            crate::cpu::Features::all(&[
-                VG_ED448_PUBLIC_KEY_SHA3_FEATURES,
-                VG_ED448_SIGN_CACHED_SHA3_FEATURES,
-                VG_ED448_VERIFY_SHA3_FEATURES,
-            ])
-        },
-    ) {
-        return Backend::Scalar;
+    return supported_backend(selected, crate::cpu::detected());
+    #[cfg(not(target_arch = "aarch64"))]
+    selected
+}
+
+#[cfg(target_arch = "aarch64")]
+fn supported_backend(selected: Backend, features: crate::cpu::Features) -> Backend {
+    if selected == Backend::Sha3
+        && !features.contains(
+            const {
+                crate::cpu::Features::all(&[
+                    VG_ED448_PUBLIC_KEY_SHA3_FEATURES,
+                    VG_ED448_SIGN_CACHED_SHA3_FEATURES,
+                    VG_ED448_VERIFY_SHA3_FEATURES,
+                ])
+            },
+        )
+    {
+        Backend::Scalar
+    } else {
+        selected
     }
-    Backend::detected()
 }
 
 /// The longest context RFC 8032 allows.
@@ -150,6 +162,8 @@ impl VerifyingKey {
         let mut scratch = [0u64; 1024];
         let verify = match backend() {
             Backend::Scalar => vg_ed448_verify,
+            #[cfg(target_arch = "aarch64")]
+            Backend::Lazy => vg_ed448_verify_lazy,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ed448_verify_adx,
             #[cfg(target_arch = "aarch64")]
@@ -213,6 +227,8 @@ impl SigningKey {
         unsafe {
             match backend() {
                 Backend::Scalar => vg_ed448_public_key(&mut public, seed, &mut scratch),
+                #[cfg(target_arch = "aarch64")]
+                Backend::Lazy => vg_ed448_public_key_lazy(&mut public, seed, &mut scratch),
                 #[cfg(target_arch = "x86_64")]
                 Backend::Adx => vg_ed448_public_key_adx(&mut public, seed, &mut scratch),
                 #[cfg(target_arch = "aarch64")]
@@ -262,6 +278,8 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
     let mut scratch = [0u64; 1024];
     let sign = match backend() {
         Backend::Scalar => vg_ed448_sign_cached,
+        #[cfg(target_arch = "aarch64")]
+        Backend::Lazy => vg_ed448_sign_cached_lazy,
         #[cfg(target_arch = "x86_64")]
         Backend::Adx => vg_ed448_sign_cached_adx,
         #[cfg(target_arch = "aarch64")]
@@ -296,6 +314,30 @@ mod tests {
     #[test]
     fn backends() {
         let _ = backend();
+        #[cfg(target_arch = "aarch64")]
+        {
+            use crate::cpu::Features;
+            assert_eq!(
+                supported_backend(Backend::Sha3, Features(0)),
+                Backend::Scalar
+            );
+            assert_eq!(supported_backend(Backend::Lazy, Features(0)), Backend::Lazy);
+            assert_eq!(
+                supported_backend(Backend::Scalar, Features(0)),
+                Backend::Scalar
+            );
+            assert_eq!(
+                supported_backend(
+                    Backend::Sha3,
+                    Features::all(&[
+                        VG_ED448_PUBLIC_KEY_SHA3_FEATURES,
+                        VG_ED448_SIGN_CACHED_SHA3_FEATURES,
+                        VG_ED448_VERIFY_SHA3_FEATURES,
+                    ])
+                ),
+                Backend::Sha3
+            );
+        }
         #[cfg(target_arch = "x86_64")]
         {
             use crate::cpu::Features;

@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Lit
-public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
 import Mathlib.Tactic.NormNum.OfScientific
 import Mathlib.Tactic.NormNum.DivMod
 import Mathlib.Tactic.NormNum.Abs
@@ -40,6 +39,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 meta import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # The scalar Keccak backend with its resident absorb
