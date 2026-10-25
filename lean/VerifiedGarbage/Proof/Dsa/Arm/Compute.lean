@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Dsa.Arm.SigningKey
 import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
 public import VerifiedGarbage.Impl.Dsa.Arm.SignVerify
 public import VerifiedGarbage.Proof.Dsa.Arm.Verify
@@ -51,7 +52,7 @@ theorem signCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   simp only [SignVerify.signCompute, Core.sequence, List.foldr]
-  refine WP.seq (WP.mono (PublicValidation.call_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
+  refine WP.seq (WP.mono (signingKey_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
   have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
     fun I => I.run Rn₁ (by omega) fits
   refine WP.seq (WP.mono (privateKey_ok (Sc.run Rn₁) (r₁ Ip) (r₁ Iq) (r₁ Ig) (r₁ Iy) (r₁ Ix) (r₁ Ik) hP hPo)
@@ -73,7 +74,13 @@ theorem signCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X
       S₃] at F₅
     rw [F₅, F₄, M₃, F₂, F₁, BitVec.and_assoc, BitVec.and_assoc, BitVec.and_assoc, mask32_and, mask32_and,
       mask32_and]
-    exact congrArg _ (mask32_iff (by simp only [↓reduceIte, signChecks, and_assoc]))
+    apply congrArg _ (mask32_iff ?_)
+    have H := signingPublicChecks_consistent (P := P) (Q := Q) (G := G) (Y := Y) (X := X)
+      (A := ((0 < X ∧ X < Q) ∧ (0 < K ∧ K < Q))) hP
+    have H' := and_congr H (Iff.rfl :
+      (rValue P Q G K ≠ 0 ∧ sValue P Q G X K D ≠ 0) ↔
+        (rValue P Q G K ≠ 0 ∧ sValue P Q G X K D ≠ 0))
+    simpa only [↓reduceIte, signChecks, and_assoc] using H'
   · rw [St₅.localVal_eq (by omega) (by omega) (by omega) (by omega),
       St₄.localVal_eq (by omega) (by omega) (by omega) (by omega), R₃]
   · rw [St₅.localVal_eq (by omega) (by omega) (by omega) (by omega),

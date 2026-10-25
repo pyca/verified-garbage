@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Dsa.Arm.SigningKeyTrace
 import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
 import VerifiedGarbage.Proof.Dsa.Arm.ScheduleTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.Body
@@ -40,9 +41,9 @@ theorem signCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
   have Lt : Impl.Dsa.Layout.t = 14944 := rfl
   simp only [SignVerify.signCompute, Core.sequence, List.foldr]
-  refine SameTrace.seq (PublicValidation.call_trace X mp mq mg my D₁ D₂)
-    (PublicValidation.call_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
-    (PublicValidation.call_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
+  refine SameTrace.seq (signingKey_trace X mp mq mg my D₁ D₂)
+    (signingKey_ok X.C₁.S (X.C₁.inp mp) (X.C₁.inp mq) (X.C₁.inp mg) (X.C₁.inp my) D₁.hP D₁.hPo D₁.hQ D₁.hQo)
+    (signingKey_ok X.C₂.S (X.C₂.inp mp) (X.C₂.inp mq) (X.C₂.inp mg) (X.C₂.inp my) D₂.hP D₂.hPo D₂.hQ D₂.hQo)
     fun u₁ u₂ ⟨_, L₁, A₁⟩ ⟨_, L₂, A₂⟩ => ?_
   have X₁ := X.run A₁ A₂
   refine SameTrace.seq (privateKey_trace X₁ mp mq mg my mx mk D₁ D₂)
