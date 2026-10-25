@@ -24,13 +24,15 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.PPC64LE.Precompute.precompute
     verified := Proof.Bignum.PPC64LE.Pre.precompute_verified },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact PPC64LE.target {
-    notes := ["The model has no carry bit, so numbers are 32-bit digits, in Montgomery form with \
-        `R = 2^(64 w)`. `e` is read a byte at a time into a register saturated at `2^33`, and its 33 \
-        bits are scanned from the top, each a square and a multiplication by the input with the \
-        product selected by a mask of the bit, so the code is the same for every `e` of the same \
-        length. `pre` is made safe before any arithmetic (`n` forced odd with its top word not zero, \
-        `R² mod n` zeroed unless below `n`), which leaves the values of a valid modulus unchanged. \
-        The nonvolatile registers it uses are saved in the working space's header."]
+    notes := ["Montgomery multiplication in radix `2^64` with the carry bit, `R = 2^(64 w)`. `e` is \
+        read a byte at a time into a register saturated at `2^33`; the scan starts at its first set \
+        bit with the input in Montgomery form, then each later bit is a Montgomery square and, if \
+        set, a multiplication by the input in Montgomery form, but the last, whose multiplication is \
+        by the ordinary input (or 1), which also converts out of Montgomery form: for 65537, sixteen \
+        squares and one multiplication. The branches depend only on `e`, which is public. `pre` is \
+        made safe before any arithmetic (`n` forced odd with its top word not zero, `R² mod n` zeroed \
+        unless below `n`), which leaves the values of a valid modulus unchanged. The nonvolatile \
+        registers it uses are saved in the working space's header."]
     code := Impl.Bignum.PPC64LE.PublicChecked.publicChecked
     verified := Proof.Bignum.PPC64LE.Pub.publicChecked_verified },
   Spec.Rsa.privateCrtApi.artifact PPC64LE.target {
