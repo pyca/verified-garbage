@@ -56,9 +56,9 @@ theorem hUpd_ok {t : State} (h : Base S vf s t) {m : List Byte} (hr : hH.SH.Repr
   have k₂ : Only [.r3, .r7] t t₂ := (o₁.trans o₂).mono
   have b₂ := h.only F k₂
   refine WP.mono (upd_ok F hH b₂ (dat := off (S s) d) (len := len) (by rw [o₂.get .r3, e₁, h.r14])
-    (by rw [k₂.get .r5, h5]) (by rw [k₂.get .r6, h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by unfold oRsa at hl; omega)])
+    (by rw [k₂.get .r5, h5]) (by rw [k₂.get .r6, h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by unfold oRsa at hl; omega_arith)])
     (by rw [e₂, o₁.get .r14, h.r14]) (Covers.right (by rw [b₂.wr]; exact sc_cov F hl))
-    (sdis (.inr (by omega)) hl (by omega)) (sdis (.inr (by omega)) hl (by omega)) (cR_dis F hl))
+    (sdis (.inr (by omega_arith)) hl (by omega_arith)) (sdis (.inr (by omega_arith)) hl (by omega_arith)) (cR_dis F hl))
     fun t' ⟨b, g, sm, r⟩ => ⟨b, fun r hr => by rw [g r hr, pres_of k₂ (by decide) r hr], (Same.of_mem k₂.mem _).trans sm,
       ?_⟩
   have := r m (by rw [k₂.mem]; exact hr) (by rw [k₂.get .r4, h4])

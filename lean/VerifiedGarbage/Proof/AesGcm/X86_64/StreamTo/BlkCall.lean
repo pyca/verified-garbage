@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Impl.Gcm.X86_64
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the call of the whole blocks

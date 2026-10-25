@@ -26,10 +26,10 @@ theorem lt64 {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
     (BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63 = b64 (decide (a < b)) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a) (by omega), Nat.mod_eq_of_lt (a := b) (by omega)]
+    BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a) (by omega_arith), Nat.mod_eq_of_lt (a := b) (by omega_arith)]
   by_cases h : a < b
-  · simp only [h, decide_true, b2n, ite_true]; omega
-  · simp only [h, decide_false, b2n, Bool.false_eq_true, ite_false]; omega
+  · simp only [h, decide_true, b2n, ite_true]; omega_arith
+  · simp only [h, decide_false, b2n, Bool.false_eq_true, ite_false]; omega_arith
 
 /-- The top bit of `(a + 1 xor b) - 1`: `a + 1 = b`. -/
 theorem eq64 {a b : Nat} (ha : a + 1 < 2 ^ 63) (hb : b < 2 ^ 63) :
@@ -37,11 +37,11 @@ theorem eq64 {a b : Nat} (ha : a + 1 < 2 ^ 63) (hb : b < 2 ^ 63) :
   have e : BitVec.ofNat 64 a + 1#64 = BitVec.ofNat 64 (a + 1) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   rw [e]
   have hx : (BitVec.ofNat 64 (a + 1) ^^^ BitVec.ofNat 64 b).toNat = (a + 1) ^^^ b := by
-    rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a + 1) (by omega),
-      Nat.mod_eq_of_lt (a := b) (by omega)]
+    rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a + 1) (by omega_arith),
+      Nat.mod_eq_of_lt (a := b) (by omega_arith)]
   have hlt : (a + 1) ^^^ b < 2 ^ 63 := Nat.xor_lt_two_pow ha hb
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub, hx,
@@ -50,12 +50,12 @@ theorem eq64 {a b : Nat} (ha : a + 1 < 2 ^ 63) (hb : b < 2 ^ 63) :
   · subst h; rw [Nat.xor_self]; simp [b2n]
   · have hne : BitVec.ofNat 64 (a + 1) ^^^ BitVec.ofNat 64 b ≠ 0#64 := fun h' => h (by
       have := congrArg BitVec.toNat (BitVec.xor_eq_zero_iff.mp h')
-      rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a + 1) (by omega),
-        Nat.mod_eq_of_lt (a := b) (by omega)] at this
+      rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a + 1) (by omega_arith),
+        Nat.mod_eq_of_lt (a := b) (by omega_arith)] at this
       exact this)
     have : (a + 1) ^^^ b ≠ 0 := fun h' => hne (BitVec.eq_of_toNat_eq (by rw [hx, h']; rfl))
     simp only [h, decide_false, b2n, Bool.false_eq_true, ite_false]
-    omega
+    omega_arith
 
 /-- The masks of a squaring, on words. -/
 theorem masks64 (a q done ok e1 e2 : Bool) :
@@ -94,7 +94,7 @@ theorem sqMasks_ok {s0 u : State} (w : Ws u (rvB s0) (rvZ s0) (ww (kK s0)) nArr)
           (BitVec.ofNat 32 (b2n (!done && decide (k < t) && !e1 && !(e2 || decide (k + 1 = t))))) ∧
       Keep [.r0, .r3, .r4, .r5, .r6, .r7, .r8] u v := by
   have hz : 160 ≤ rvZ s0 := w.hdr_le
-  have L := lt64 (a := k) (b := t) (by omega) ht
+  have L := lt64 (a := k) (b := t) (by omega_arith) ht
   have E := eq64 (a := k) (b := t) hk ht
   refine WP.mono (WP.keep [.r0, .r3, .r4, .r5, .r6, .r7, .r8] (Q := fun x => x.mem =
     ((u.mem.writeW (rvB s0 + BitVec.ofNat 64 sOk)
@@ -116,15 +116,15 @@ theorem sqMasks_ok {s0 u : State} (w : Ws u (rvB s0) (rvZ s0) (ww (kK s0)) nArr)
             1#64) &&&
           ((BitVec.ofNat 64 k - BitVec.ofNat 64 t) >>> 63 &&& (BitVec.ofNat 64 (b2n done) ^^^ 1#64)))))
     ?_ (by decide)) fun v ⟨m, kv⟩ => ⟨?_, kv⟩
-  · prun [sqMasks, w.r31, w.scr.ld (show sK + 4 ≤ rvZ s0 by simp only [sK]; omega),
-      w.scr.ld (show sTc + 4 ≤ rvZ s0 by simp only [sTc]; omega),
-      w.scr.ld (show sDone + 4 ≤ rvZ s0 by simp only [sDone]; omega),
-      w.scr.ld (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega),
-      w.scr.ld (show sE1 + 4 ≤ rvZ s0 by simp only [sE1]; omega),
-      w.scr.ld (show sE2 + 4 ≤ rvZ s0 by simp only [sE2]; omega),
-      w.scr.st (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega),
-      w.scr.st (show sDone + 4 ≤ rvZ s0 by simp only [sDone]; omega),
-      w.scr.st (show sLive + 4 ≤ rvZ s0 by simp only [sLive]; omega),
+  · prun [sqMasks, w.r31, w.scr.ld (show sK + 4 ≤ rvZ s0 by simp only [sK]; omega_arith),
+      w.scr.ld (show sTc + 4 ≤ rvZ s0 by simp only [sTc]; omega_arith),
+      w.scr.ld (show sDone + 4 ≤ rvZ s0 by simp only [sDone]; omega_arith),
+      w.scr.ld (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega_arith),
+      w.scr.ld (show sE1 + 4 ≤ rvZ s0 by simp only [sE1]; omega_arith),
+      w.scr.ld (show sE2 + 4 ≤ rvZ s0 by simp only [sE2]; omega_arith),
+      w.scr.st (show sOk + 4 ≤ rvZ s0 by simp only [sOk]; omega_arith),
+      w.scr.st (show sDone + 4 ≤ rvZ s0 by simp only [sDone]; omega_arith),
+      w.scr.st (show sLive + 4 ≤ rvZ s0 by simp only [sLive]; omega_arith),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sK < 2 ^ 15 by decide),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sTc < 2 ^ 15 by decide),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sDone < 2 ^ 15 by decide),

@@ -1,6 +1,6 @@
 name: Runner images
 
-# Builds the images CI's x86, ARMv7 and PPC64LE jobs run in
+# Builds the images CI's x86, ARMv7, PPC64LE and RISC-V jobs run in
 # (ci/runner.Dockerfile), each natively on a 64-bit runner of its
 # architecture, and checks them; pushes to main, and the weekly rebuild that
 # picks up new packages and Rust releases, publish them to GHCR.
@@ -12,11 +12,13 @@ on:
   pull_request:
     paths:
       - .github/workflows/runner-images.yml
+      - .github/actions/runner-node/**
       - ci/runner.Dockerfile
   push:
     branches: [main]
     paths:
       - .github/workflows/runner-images.yml
+      - .github/actions/runner-node/**
       - ci/runner.Dockerfile
 
 permissions: {}
@@ -37,6 +39,9 @@ jobs:
           - {tag: "verified-garbage-runner:armv7-cross", platform: "linux/arm64", os: ubuntu-26.04-arm}
           # For PPC64LE's tests, on the ppc64le runner they run on.
           - {tag: "verified-garbage-runner:ppc64le", platform: "linux/ppc64le", os: ubuntu-24.04-ppc64le}
+          # For RISC-V's tests, on the riscv64 runner they run on (RISE's, as
+          # pyca/infra's riscv64 images use).
+          - {tag: "verified-garbage-runner:riscv64", platform: "linux/riscv64", os: ubuntu-24.04-riscv}
     name: ${{ matrix.image.tag }}
     runs-on: ${{ matrix.image.os }}
     timeout-minutes: 20
@@ -82,6 +87,8 @@ jobs:
           platforms: ${{ env.PLATFORM }}
           pull: true
           outputs: ${{ env.PUBLISH == 'true' && 'type=registry,compression=zstd' || 'type=docker' }}
+      - id: runner-node
+        uses: ./.github/actions/runner-node
       # What CI's jobs need: the runner's Node (which GitHub Actions injects
       # into the container for JS actions), a toolchain that builds and runs
       # for the host and each installed target, and one that rustup can update
@@ -91,9 +98,10 @@ jobs:
         env:
           PULL: ${{ env.PUBLISH == 'true' && 'always' || 'never' }}
           RUN_OPTIONS: ${{ matrix.image.run-options }}
+          RUNNER_NODE: ${{ steps.runner-node.outputs.path }}
         run: |
           docker run --rm --platform "$PLATFORM" --pull="$PULL" $RUN_OPTIONS \
-            -v "$(readlink -f "$(command -v node)")":/runner-node:ro \
+            -v "$(readlink -f "$RUNNER_NODE")":/runner-node:ro \
             "$IMAGE" \
             sh -euxc '
               /runner-node -e "console.log(process.version, process.arch)"

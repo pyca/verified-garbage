@@ -13,7 +13,7 @@ def helper (pLen qLen : Nat)
     (v : Verified Arm.target (Impl.Dsa.Arm.PublicValidation.body pLen qLen)
       (Spec.Dsa.PublicValidation.contract (Impl.Dsa.Arm.PublicValidation.layout pLen qLen) Arm.abi)) : Artifact :=
   (Spec.Dsa.PublicValidation.api (Impl.Dsa.Arm.PublicValidation.layout pLen qLen)).artifact Arm.target {
-    notes := ["The domain and subgroup checks shared by signing and verification. \
+    notes := ["The full domain and subgroup checks used by verification. \
       Callee-saved registers reside in workspace bytes 168–203, apart from the nested arithmetic helpers' saves."]
     code := Impl.Dsa.Arm.PublicValidation.body pLen qLen
     verified := v }

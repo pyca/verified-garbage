@@ -30,15 +30,15 @@ theorem stat_eq {i K : Nat} (hi : i < 2 ^ 62) (hK : K < 2 ^ 62) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat]
-    split <;> omega
+    split <;> omega_arith
   have e2 : ∀ n, n < 2 ^ 64 → BitVec.ofNat 64 n >>> 63 = BitVec.ofNat 64 (n / 2 ^ 63) := fun n hn => by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-      Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (by omega_arith)]
   rw [e1]
   split
-  · rw [e2 _ (by omega), Nat.div_eq_of_lt (by omega)]; rfl
-  · rw [e2 _ (by omega), show (2 ^ 64 - (i + 2 - K)) / 2 ^ 63 = 1 by omega]; rfl
+  · rw [e2 _ (by omega_arith), Nat.div_eq_of_lt (by omega_arith)]; rfl
+  · rw [e2 _ (by omega_arith), show (2 ^ 64 - (i + 2 - K)) / 2 ^ 63 = 1 by omega_arith]; rfl
 
 /-- What `round` leaves: the round's state `u` (`RcPost`), and the status
 and count stored over it. -/
@@ -62,7 +62,7 @@ theorem roundCount_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a i K : Nat}
   refine WP.seq (WP.mono (roundCall_ok R h ha hac hsp hstk) fun u hu => ?_)
   have hs : Scr u B (8 * L) := hu.prep.env.hs
   have h31 : u.gpr .r31 = B := hu.prep.env.h31
-  have l160 : InRegions u.wr (B + BitVec.ofNat 64 160) 8 := hs.st (d := 160) (by omega)
+  have l160 : InRegions u.wr (B + BitVec.ofNat 64 160) 8 := hs.st (d := 160) (by omega_arith)
   refine WP.ite (decide ((if Spec.MillerRabin.round c a then 1 else 0) = 0))
     (eval_zero_ofNat u .r3 (by split <;> decide) hu.r3) (fun hb => ?_) (fun hb => ?_)
   · have hf : Spec.MillerRabin.round c a = false := by
@@ -74,12 +74,12 @@ theorem roundCount_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a i K : Nat}
   · have ht : Spec.MillerRabin.round c a = true := by
       cases hr : Spec.MillerRabin.round c a <;> simp_all
     have rI : u.mem.readW (B + BitVec.ofNat 64 176) 64 = BitVec.ofNat 64 i :=
-      (keeps_word hu.keeps (d := 176) (by omega) (by kept_tac)).trans hI
+      (keeps_word hu.keeps (d := 176) (by omega_arith) (by kept_tac)).trans hI
     have rK : u.mem.readW (B + BitVec.ofNat 64 168) 64 = BitVec.ofNat 64 K :=
-      (keeps_word hu.keeps (d := 168) (by omega) (by kept_tac)).trans hK
-    have l176 : InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 176) 8 := hs.ld (d := 176) (by omega)
-    have l168 : InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 168) 8 := hs.ld (d := 168) (by omega)
-    have s176 : InRegions u.wr (B + BitVec.ofNat 64 176) 8 := hs.st (d := 176) (by omega)
+      (keeps_word hu.keeps (d := 168) (by omega_arith) (by kept_tac)).trans hK
+    have l176 : InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 176) 8 := hs.ld (d := 176) (by omega_arith)
+    have l168 : InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 168) 8 := hs.ld (d := 168) (by omega_arith)
+    have s176 : InRegions u.wr (B + BitVec.ofNat 64 176) 8 := hs.st (d := 176) (by omega_arith)
     refine WP.mono (WP.keep [.r3, .r4, .r5] (Q := fun t => t.mem =
       (u.mem.writeW (B + BitVec.ofNat 64 176) (BitVec.ofNat 64 (i + 1))).writeW (B + BitVec.ofNat 64 160)
         (BitVec.ofNat 64 (if i + 1 < K then 4 else 1))) ?_ (by decide))

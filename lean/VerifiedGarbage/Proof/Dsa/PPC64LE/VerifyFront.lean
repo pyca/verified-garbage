@@ -73,7 +73,7 @@ theorem layOf_ok {s : State} (h : vContract.pre s) : (layOf s).Ok := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, nw, hv, -, -, hsw⟩ := h
   simp only [Spec.Dsa.scratchWords] at hsw
   simp only [Spec.Dsa.lengthsValid] at hv
-  exact ⟨by simp only [layOf]; omega, by simp only [layOf]; omega, by simp only [layOf]; omega, nw⟩
+  exact ⟨by simp only [layOf]; omega_arith, by simp only [layOf]; omega_arith, by simp only [layOf]; omega_arith, nw⟩
 
 /-- `capD`'s value: `min(x, 64)`. -/
 theorem cap_eq (x : BitVec 64) :
@@ -84,19 +84,19 @@ theorem cap_eq (x : BitVec 64) :
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
       simp only [BitVec.toNat_ofNat]
-      omega
+      omega_arith
     rw [e, BitVec.sub_self, BitVec.zero_ushiftRight, BitVec.sub_self, BitVec.and_zero, BitVec.xor_zero]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, Nat.min_eq_left (by omega), Nat.mod_eq_of_lt hx]
+    rw [BitVec.toNat_ofNat, Nat.min_eq_left (by omega_arith), Nat.mod_eq_of_lt hx]
   · have e : 0#64 - (0#64 - x >>> 6) >>> 63 = BitVec.allOnes 64 := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
         BitVec.toNat_allOnes]
       simp only [Nat.reducePow] at *
-      omega
+      omega_arith
     rw [e, BitVec.and_allOnes, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, Nat.min_eq_right (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.min_eq_right (by omega_arith)]
     rfl
 
 /-- `capD`: `r4 := min(digest_len, 64)`. -/
@@ -114,7 +114,7 @@ theorem pack_entry (x y : BitVec 64) {d : Nat} (hx : x.toNat < 2 ^ 16) (hy : y.t
   rw [pack_toNat hx hy (by decide) hd]
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
   simp only [Nat.reducePow] at *
-  omega
+  omega_arith
 
 /-- After the registers are saved: the key, the signature and the digest into
 `r27`, `r28` and `r26`, and the lengths into `r2`. -/
@@ -133,7 +133,7 @@ theorem front_tail (s : State) (h5 : (s.gpr .r5).toNat < 2 ^ 16) (h6 : (s.gpr .r
   have v6 : v.gpr .r6 = s.gpr .r6 := (kv.gpr .r6 (by decide)).trans (ku.gpr .r6 (by decide))
   refine WP.mono (WP.keep [.r4, .r0, .r2] (Q := fun w =>
       w.gpr .r2 = pack (s.gpr .r5).toNat (s.gpr .r6).toNat 0 (min (s.gpr .r10).toNat 64) ∧ w.mem = v.mem)
-    (by prun [b4, v5, v6, pack_entry _ _ h5 h6 (show min (s.gpr .r10).toNat 64 < 2 ^ 16 by omega)]) (by decide))
+    (by prun [b4, v5, v6, pack_entry _ _ h5 h6 (show min (s.gpr .r10).toNat 64 < 2 ^ 16 by omega_arith)]) (by decide))
     fun w ⟨⟨c2, mw⟩, kw⟩ => ⟨⟨(kw.gpr .r27 (by decide)).trans ((kv.gpr .r27 (by decide)).trans a27),
       (kw.gpr .r28 (by decide)).trans ((kv.gpr .r28 (by decide)).trans a28),
       (kw.gpr .r26 (by decide)).trans ((kv.gpr .r26 (by decide)).trans a26), c2, mw.trans (mv.trans mu)⟩,
@@ -155,8 +155,8 @@ theorem front_ok {s : State} (h : vContract.pre s) :
         Outside (stackArg s 0) 0 256 s.mem t.mem) ∧ Keep entryRegs s t := by
   have hL := layOf_ok h
   have hZ := hL.z256
-  have hpl : (s.gpr .r5).toNat < 2 ^ 16 := by have := hL.pl; simp only [layOf] at this; omega
-  have hql : (s.gpr .r6).toNat < 2 ^ 16 := by have := hL.ql; simp only [layOf] at this; omega
+  have hpl : (s.gpr .r5).toNat < 2 ^ 16 := by have := hL.pl; simp only [layOf] at this; omega_arith
+  have hql : (s.gpr .r6).toNat < 2 ^ 16 := by have := hL.ql; simp only [layOf] at this; omega_arith
   obtain ⟨-, hrd, hwr, -, -, -, -, -, -, -, nw, -, -, -, -⟩ := h
   unfold Verify.entry
   simp only [List.append_assoc]
@@ -166,7 +166,7 @@ theorem front_ok {s : State} (h : vContract.pre s) :
     Scr.of_mem (by rw [ht, hwr]; simp [layOf]) nw
   have hin : ∀ i < 19, InRegions s₁.wr (off (savW (s₁.gpr .r11)) (8 * i)) 8 := fun i hi => by
     rw [← saveOff_eq, a11]
-    exact (hscr s₁ k1.wr).st (d := 104 + 8 * i) (by simp only [layOf] at hZ ⊢; omega)
+    exact (hscr s₁ k1.wr).st (d := 104 + 8 * i) (by simp only [layOf] at hZ ⊢; omega_arith)
   refine WP.block_append (WP.mono (save_ok s₁ hin) fun s₂ hS => ?_)
   have k12 := k1.trans hS.keep
   have h21 : s₂.gpr .r21 = stackArg s 0 := hS.r21.trans a11
@@ -182,7 +182,7 @@ theorem front_ok {s : State} (h : vContract.pre s) :
   rw [e .r9 (by decide) (by decide)] at t26
   rw [e .r5 (by decide) (by decide), e .r6 (by decide) (by decide), e .r10 (by decide) (by decide)] at t2
   have t21 : t.gpr .r21 = stackArg s 0 := (kt.gpr .r21 (by decide)).trans h21
-  refine ⟨⟨Regs.of_pack hL t21 t27 t28 t26 t2 (by decide) (by omega), hscr t k.wr, t2, fun i hi => ?_, ?_⟩,
+  refine ⟨⟨Regs.of_pack hL t21 t27 t28 t26 t2 (by decide) (by omega_arith), hscr t k.wr, t2, fun i hi => ?_, ?_⟩,
     k.mono (by decide)⟩
   · rw [mt]
     show s₂.mem.readW (stackArg s 0 + BitVec.ofNat 64 (104 + 8 * i)) 64 = _

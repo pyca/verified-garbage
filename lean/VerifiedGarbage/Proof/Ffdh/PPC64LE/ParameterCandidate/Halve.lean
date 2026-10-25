@@ -27,15 +27,15 @@ theorem low_flag (x : BitVec 64) : (x &&& 1#64) ^^^ 1#64 = 0#64 ↔ x.toNat % 2 
   have e : x &&& 1#64 = BitVec.ofNat 64 (x.toNat % 2) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.and_one_is_mod]
-    omega
+    omega_arith
   rw [e]
   rcases Nat.mod_two_eq_zero_or_one x.toNat with h | h <;> rw [h] <;> decide
 
 theorem wv_mod_two (m : Mem) (p : Addr) (d : Nat) {w : Nat} (hw : 1 ≤ w) :
     wv m p d w % 2 = (word m p d).toNat % 2 := by
-  have e := VG.Proof.RsaKeyGen.testBit_wv m p d w 0 (by omega)
+  have e := VG.Proof.RsaKeyGen.testBit_wv m p d w 0 (by omega_arith)
   simp only [Nat.zero_div, Nat.mul_zero, Nat.add_zero, Nat.zero_mod, Nat.testBit_zero, decide_eq_decide] at e
-  omega
+  omega_arith
 
 /-- The registers `halveQ` writes. -/
 def hqRegs : List Reg := [.r3, .r4, .r5, .r6]
@@ -62,25 +62,25 @@ theorem halveQ_ok {p : PP} {s : State} {w x : Nat} (hs : St p s) (h10 : s.gpr .r
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       Nat.shiftRight_eq_div_pow]
-    omega
+    omega_arith
   let Inv : Nat → State → Prop := fun i t =>
     (t.gpr .r5 = off p.B (256 + 8 * i) ∧ (∀ j < i, word t.mem p.B (256 + 8 * j) = halfW s.mem p.B 256 j) ∧
       (∀ j, i ≤ j → j < w → word t.mem p.B (256 + 8 * j) = word s.mem p.B (256 + 8 * j)) ∧
       Frm p.B [(256, 8 * w)] s.mem t.mem) ∧ Keep hqRegs s t
-  refine WP.seq (WP.mono (wp_countdown (cnt := .r6) (N := w - 1) (by omega) (by omega) Inv
+  refine WP.seq (WP.mono (wp_countdown (cnt := .r6) (N := w - 1) (by omega_arith) (by omega_arith) Inv
     (fun i hi t ⟨⟨t5, tlo, thi, tf⟩, kt⟩ _ => ?_)
     ⟨⟨by rw [u5], fun j hj => absurd hj (Nat.not_lt_zero _), fun j _ _ => by rw [um],
       by rw [um]; exact Frm.refl _ _ _⟩, ku.mono (by decide)⟩ u6) fun t ht => ?_)
   · have hsc : Scr t p.B (8 * p.n) := hs.scr.congr kt.wr
-    have l0 : InRegions (t.rd ++ t.wr) (off p.B (256 + 8 * i)) 8 := hsc.ld (by omega)
-    have l1 : InRegions (t.rd ++ t.wr) (off p.B (256 + 8 * (i + 1))) 8 := hsc.ld (by omega)
-    have s0 : InRegions t.wr (off p.B (256 + 8 * i)) 8 := hsc.st (by omega)
+    have l0 : InRegions (t.rd ++ t.wr) (off p.B (256 + 8 * i)) 8 := hsc.ld (by omega_arith)
+    have l1 : InRegions (t.rd ++ t.wr) (off p.B (256 + 8 * (i + 1))) 8 := hsc.ld (by omega_arith)
+    have s0 : InRegions t.wr (off p.B (256 + 8 * i)) 8 := hsc.st (by omega_arith)
     have e8 : off p.B (256 + 8 * i) + BitVec.ofNat 64 8 = off p.B (256 + 8 * (i + 1)) := by
       rw [show off p.B (256 + 8 * i) + BitVec.ofNat 64 8 = off (off p.B (256 + 8 * i)) 8 from rfl, off_off,
-        show 256 + 8 * i + 8 = 256 + 8 * (i + 1) by omega]
-    have r0 : t.mem.readW (off p.B (256 + 8 * i)) 64 = word s.mem p.B (256 + 8 * i) := thi i (by omega) (by omega)
+        show 256 + 8 * i + 8 = 256 + 8 * (i + 1) by omega_arith]
+    have r0 : t.mem.readW (off p.B (256 + 8 * i)) 64 = word s.mem p.B (256 + 8 * i) := thi i (by omega_arith) (by omega_arith)
     have r1 : t.mem.readW (off p.B (256 + 8 * (i + 1))) 64 = word s.mem p.B (256 + 8 * (i + 1)) :=
-      thi (i + 1) (by omega) (by omega)
+      thi (i + 1) (by omega_arith) (by omega_arith)
     refine WP.mono (WP.keep [.r3, .r4, .r5, .r6] (Q := fun u => u.gpr .r5 = off p.B (256 + 8 * (i + 1)) ∧
         u.mem = t.mem.writeW (off p.B (256 + 8 * i)) (halfW s.mem p.B 256 i) ∧
         u.gpr .r6 = t.gpr .r6 - BitVec.ofNat 64 1) ?_ (by decide))
@@ -89,32 +89,32 @@ theorem halveQ_ok {p : PP} {s : State} {w x : Nat} (hs : St p s) (h10 : s.gpr .r
     · intro j hj
       rw [um]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-      · rw [word, rw_off _ _ _ (by omega) (by omega) (by omega)]; exact tlo j hj
+      · rw [word, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; exact tlo j hj
       · exact rw_self _ _ _
     · intro j hj hj'
-      rw [um, word, rw_off _ _ _ (by omega) (by omega) (by omega)]
-      exact thi j (by omega) hj'
+      rw [um, word, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
+      exact thi j (by omega_arith) hj'
     · rw [um]
-      exact frm_writeW tf _ ⟨_, List.mem_singleton_self _, by dsimp only; omega, by dsimp only; omega⟩ (by omega)
+      exact frm_writeW tf _ ⟨_, List.mem_singleton_self _, by dsimp only; omega_arith, by dsimp only; omega_arith⟩ (by omega_arith)
   obtain ⟨⟨t5, tlo, thi, tf⟩, kt⟩ := ht
   have hsc : Scr t p.B (8 * p.n) := hs.scr.congr kt.wr
-  have lT : InRegions (t.rd ++ t.wr) (off p.B (256 + 8 * (w - 1))) 8 := hsc.ld (by omega)
-  have sT : InRegions t.wr (off p.B (256 + 8 * (w - 1))) 8 := hsc.st (by omega)
+  have lT : InRegions (t.rd ++ t.wr) (off p.B (256 + 8 * (w - 1))) 8 := hsc.ld (by omega_arith)
+  have sT : InRegions t.wr (off p.B (256 + 8 * (w - 1))) 8 := hsc.st (by omega_arith)
   have rT : t.mem.readW (off p.B (256 + 8 * (w - 1))) 64 = word s.mem p.B (256 + 8 * (w - 1)) :=
-    thi (w - 1) (by omega) (by omega)
+    thi (w - 1) (by omega_arith) (by omega_arith)
   have h31 : t.gpr .r31 = p.B := (kt.gpr .r31 (by decide)).trans hs.r31
   have t10 : t.gpr .r10 = off p.B 256 := (kt.gpr .r10 (by decide)).trans h10
-  have lB : InRegions (t.rd ++ t.wr) (p.B + BitVec.ofNat 64 200) 8 := hsc.ld (d := 200) (by omega)
-  have sB : InRegions t.wr (p.B + BitVec.ofNat 64 200) 8 := hsc.st (d := 200) (by omega)
-  have l0 : InRegions (t.rd ++ t.wr) (off p.B 256) 8 := hsc.ld (by omega)
+  have lB : InRegions (t.rd ++ t.wr) (p.B + BitVec.ofNat 64 200) 8 := hsc.ld (d := 200) (by omega_arith)
+  have sB : InRegions t.wr (p.B + BitVec.ofNat 64 200) 8 := hsc.st (d := 200) (by omega_arith)
+  have l0 : InRegions (t.rd ++ t.wr) (off p.B 256) 8 := hsc.ld (by omega_arith)
   have rB : ∀ v : BitVec 64, (t.mem.writeW (off p.B (256 + 8 * (w - 1))) v).readW (p.B + BitVec.ofNat 64 200) 64 =
       word s.mem p.B 200 := fun v => by
-    rw [rw_off _ _ _ (by omega) (by omega) (by omega)]
-    exact tf.word_eq (fun r hr => by rw [List.mem_singleton] at hr; subst hr; dsimp only; omega) (by omega)
+    rw [rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
+    exact tf.word_eq (fun r hr => by rw [List.mem_singleton] at hr; subst hr; dsimp only; omega_arith) (by omega_arith)
   have r0 : ∀ v : BitVec 64, (t.mem.writeW (off p.B (256 + 8 * (w - 1))) v).readW (off p.B 256) 64 =
       halfW s.mem p.B 256 0 := fun v => by
-    rw [show off p.B 256 = off p.B (256 + 8 * 0) from rfl, rw_off _ _ _ (by omega) (by omega) (by omega)]
-    exact tlo 0 (by omega)
+    rw [show off p.B 256 = off p.B (256 + 8 * 0) from rfl, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
+    exact tlo 0 (by omega_arith)
   refine WP.mono (WP.keep [.r3, .r4, .r5] (Q := fun u => u.mem =
       (t.mem.writeW (off p.B (256 + 8 * (w - 1))) (word s.mem p.B (256 + 8 * (w - 1)) >>> 1)).writeW
         (p.B + BitVec.ofNat 64 200) (word s.mem p.B 200 ||| ((halfW s.mem p.B 256 0 &&& 1#64) ^^^ 1#64))) ?_
@@ -123,21 +123,21 @@ theorem halveQ_ok {p : PP} {s : State} {w x : Nat} (hs : St p s) (h10 : s.gpr .r
     prun [t5, t10, h31, BitVec.add_zero, lT, sT, rT, lB, sB, l0, rB, r0]
   have hv : wv u.mem p.B 256 w = x / 2 := by
     rw [← hx]
-    refine Proof.Ffdh.ParameterCandidate.wv_half (by omega) (fun j hj => ?_) ?_
-    · rw [um, word, rw_off _ _ _ (by omega) (by omega) (by omega), rw_off _ _ _ (by omega) (by omega) (by omega)]
-      exact tlo j (by omega)
-    · rw [um, word, rw_off _ _ _ (by omega) (by omega) (by omega), rw_self]
+    refine Proof.Ffdh.ParameterCandidate.wv_half (by omega_arith) (fun j hj => ?_) ?_
+    · rw [um, word, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
+      exact tlo j (by omega_arith)
+    · rw [um, word, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_self]
   refine ⟨hv, ?_, ?_⟩
-  · have e := wv_mod_two u.mem p.B 256 (w := w) (by omega)
-    have t0 : t.mem.readW (p.B + BitVec.ofNat 64 256) 64 = halfW s.mem p.B 256 0 := tlo 0 (by omega)
-    rw [hv, um, word, rw_off _ _ _ (by omega) (by omega) (by omega), rw_off _ _ _ (by omega) (by omega) (by omega),
+  · have e := wv_mod_two u.mem p.B 256 (w := w) (by omega_arith)
+    have t0 : t.mem.readW (p.B + BitVec.ofNat 64 256) 64 = halfW s.mem p.B 256 0 := tlo 0 (by omega_arith)
+    rw [hv, um, word, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
       t0] at e
     simp only [word, off, hBad, Nat.reduceMul, um, rw_self, BitVec.or_eq_zero_iff, low_flag]
     rw [e]
   · rw [um]
     refine frm_writeW (frm_writeW (tf.mono fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self) _
-        ⟨_, List.mem_cons_self, by dsimp only; omega, by dsimp only; omega⟩ (by omega)) _
-      ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by decide, by decide⟩ (by omega)
+        ⟨_, List.mem_cons_self, by dsimp only; omega_arith, by dsimp only; omega_arith⟩ (by omega_arith)) _
+      ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by decide, by decide⟩ (by omega_arith)
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

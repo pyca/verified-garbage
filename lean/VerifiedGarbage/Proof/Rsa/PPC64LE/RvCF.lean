@@ -61,10 +61,10 @@ theorem keep_in' {B : Addr} {v : Nat} {js ds : List Nat} {m m' : Mem}
     val32 m' B (arr v j + 4 * i) n = val32 m B (arr v j + 4 * i) n := by
   have hS : S v = 4 * (v + 2) := rfl
   have h160 : 160 ≤ arr v j := Nat.le_add_right _ _
-  refine keep_apart k (fun l hl => ?_) (fun e he => .inl (Nat.le_trans (hd e he) (by omega))) (by omega)
+  refine keep_apart k (fun l hl => ?_) (fun e he => .inl (Nat.le_trans (hd e he) (by omega_arith))) (by omega_arith)
   rcases Nat.lt_or_gt_of_ne (hj l hl) with h | h
-  · have := VG.Proof.Rsa.KeyWorkspace.arr_end (w := v) h; omega
-  · have := VG.Proof.Rsa.KeyWorkspace.arr_end (w := v) h; omega
+  · have := VG.Proof.Rsa.KeyWorkspace.arr_end (w := v) h; omega_arith
+  · have := VG.Proof.Rsa.KeyWorkspace.arr_end (w := v) h; omega_arith
 
 /-- A step on the candidates' arrays and slots keeps `CF`. -/
 theorem CF.of_keep {s0 u v : State} (h : CF s0 u) {js ds : List Nat}
@@ -83,7 +83,7 @@ theorem CF.of_keep {s0 u v : State} (h : CF s0 u) {js ds : List Nat}
   have g : ∀ r, r ∈ [.r12, .r21, .r23, .r25, .r26, .r31] → v.gpr r = u.gpr r := fun r hr' =>
     k.gpr r fun hm => hr r hm hr'
   have low : ∀ j, j ∉ wrJ → j < nArr → lowV v.mem s0 j = lowV u.mem s0 j := fun j hj' hn => by
-    have := keep_in' kk (nj j hj') hd4 (i := 0) (n := 2 * wm (kK s0)) (by omega) (fit j hn)
+    have := keep_in' kk (nj j hj') hd4 (i := 0) (n := 2 * wm (kK s0)) (by omega_arith) (fit j hn)
     simpa only [Nat.mul_zero, Nat.add_zero] using this
   have nm : ∀ j, j ∉ wrJ → j < nArr → num v.mem (rvB s0) (ww (kK s0)) j = num u.mem (rvB s0) (ww (kK s0)) j :=
     fun j hj' hn => kk.num (nj j hj') (fun d hd' => hd4 d hd') (fit j hn)
@@ -100,10 +100,10 @@ theorem CF.of_keep {s0 u v : State} (h : CF s0 u) {js ds : List Nat}
       rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     rw [svw]; exact VG.Proof.Rsa.KeyWorkspace.arr_end this
   · rw [g _ (by simp)]
-    have := keep_in' kk (nj mBase (by decide)) hd4 (i := 0) (n := 1) (by omega) (fit mBase (by decide))
+    have := keep_in' kk (nj mBase (by decide)) hd4 (i := 0) (n := 1) (by omega_arith) (fit mBase (by decide))
     simp only [val32, Nat.mul_zero, Nat.add_zero] at this
     rw [this]; exact h.inv
-  · have := keep_in' kk (nj aZ (by decide)) hd4 (i := i) (n := 1) (by omega) (fit aZ (by decide))
+  · have := keep_in' kk (nj aZ (by decide)) hd4 (i := i) (n := 1) (by omega_arith) (fit aZ (by decide))
     simp only [val32, Nat.mul_zero, Nat.add_zero] at this
     rw [this]; exact h.zZ i hi
   · have hW : wW (kK s0) = 2 * ww (kK s0) + 2 := rfl
@@ -144,11 +144,11 @@ theorem keepW_key {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
     dsimp only at a0 a1 ⊢
     have e0 : arr (2 * w + 2) j = arr w (2 * j) := by simp only [arr, S]; grind
     have e1 : arr w (2 * j + 1) = arr w (2 * j) + S w := VG.Proof.Rsa.KeyWorkspace.arr_succ _ _
-    have e2 : S (2 * w + 2) = 2 * S w := by simp only [S]; omega
+    have e2 : S (2 * w + 2) = 2 * S w := by simp only [S]; omega_arith
     rw [e0, e2]; rw [e1] at a1
     generalize arr w (2 * j) = A at *
     generalize S w = T at *
-    omega
+    omega_arith
   · exact hx _ (by simp only [KeyWorkspace.ranges, List.mem_append, List.mem_map]; exact .inr ⟨d, hd, rfl⟩)
 
 end VG.Proof.Rsa.PPC64LE.Recover

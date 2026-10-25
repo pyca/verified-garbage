@@ -3,6 +3,13 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Correct
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
+public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
+public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # ML-DSA signing on x86-64: verified

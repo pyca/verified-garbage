@@ -47,7 +47,7 @@ theorem dOne_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1)
   refine notSE h1 k1 (d := X7) (a := X0) (ba := by rw [g1]; exact flag01 _) (k := fun t2 h2 k2 f2 r2 => ?_)
   obtain ⟨F2, k2, g2, p2⟩ := k2.fx
   have c6 : F2 X6 ≤ 1 := by rw [p2 X6 (by decide), p1 X6 (by decide)]; exact b6
-  have c7 : F2 X7 ≤ 1 := by rw [g2]; omega
+  have c7 : F2 X7 ≤ 1 := by rw [g2]; omega_arith
   have c4' : F2 X4 ≤ 1 := by rw [p2 X4 (by decide), p1 X4 (by decide)]; exact b4
   refine selSE h2 k2 (d := X6) (a := X6) (b := X7) (c := X4) (ba := c6) (bb := c7) (bc := c4')
     (k := fun t3 h3 k3 f3 r3 => WP.block_nil ?_)
@@ -90,7 +90,7 @@ theorem dEven_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1
   obtain ⟨F2, k2, g2, p2⟩ := k2.fx
   rw [wp_seqs_cons (by simp)]
   refine andNotSE h2 k2 (d := X2) (a := X1) (b := X0) (ba := by rw [g2]; exact flag01 _)
-    (bb := by rw [p2 X0 (by decide), g1]; omega) (k := fun t3 h3 k3 f3 r3 => WP.block_nil ?_)
+    (bb := by rw [p2 X0 (by decide), g1]; omega_arith) (k := fun t3 h3 k3 f3 r3 => WP.block_nil ?_)
   obtain ⟨F3, k3, g3, p3⟩ := k3.fx
   have vG : F3 X2 = if good (V aL) then 1 else 0 := by
     rw [g3, g2, p2 X0 (by decide), g1, three]
@@ -127,12 +127,12 @@ theorem dEven_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1
     rw [p7 X3 (by decide), p6 X3 (by decide), p3 X3 (by decide), p2 X3 (by decide), p1 X3 (by decide), b3]
   have c6 : F7 X6 ≤ 1 := by rw [v6]; exact b6
   have c1 : F7 X1 ≤ 1 := by rw [g7]; exact flag01 _
-  have c3 : F7 X3 ≤ 1 := by rw [v3]; omega
+  have c3 : F7 X3 ≤ 1 := by rw [v3]; omega_arith
   refine selSE h7 k7 (d := X6) (a := X1) (b := X6) (c := X3) (ba := c1) (bb := c6) (bc := c3)
     (k := fun t8 h8 k8 f8 r8 => WP.block_nil ?_)
   obtain ⟨F8, k8, g8, p8⟩ := k8.fx
   have v3' : F8 X3 = V aE % 2 := by rw [p8 X3 (by decide), v3]
-  refine WP.mono (selE h8 k8 (o := aD) (a := 3) (b := aS) (sl := X3) (bit := by rw [v3']; omega))
+  refine WP.mono (selE h8 k8 (o := aD) (a := 3) (b := aS) (sl := X3) (bit := by rw [v3']; omega_arith))
     fun t ⟨ht, kt, ft, rt⟩ => ?_
   obtain ⟨V9, kt, e9, o9⟩ := kt.vx
   refine ⟨ht, ⟨V9, F8, kt, fun j hj hn => ?_, fun d a b c e => ?_, ⟨V5 3, l5, by rw [← g5]; exact d5, ?_⟩, ?_⟩,
@@ -191,7 +191,7 @@ theorem dPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (h
   have e3 : V3 aE = V aE := by rw [o3 _ (by decide), e2]
   have l3 : V3 aL = V aL := by rw [o3 _ (by decide), l2]
   have w3 : F3 X3 = V aE % 2 := by rw [p3 X3 (by decide) (by decide) (by decide), y3]
-  refine WP.mono (dEven_ok h3 k3 one3 three3 zero3 (by rw [w3, e3]) (by rw [z6, x6]; split <;> split <;> omega))
+  refine WP.mono (dEven_ok h3 k3 one3 three3 zero3 (by rw [w3, e3]) (by rw [z6, x6]; split <;> split <;> omega_arith))
     fun t ⟨ht, ⟨V4, F4, k4, o4, p4, ⟨x', xl', xd', vD⟩, z6'⟩, f4, r4⟩ => ?_
   simp only [e3, l3] at xl' xd' vD z6'
   refine ⟨ht, ⟨V4, F4, k4, fun j hj hn => ?_, fun d a b c d3 d4 d5 d6 d7 => ?_, ?_, ?_, ?_, ?_⟩,
@@ -214,7 +214,7 @@ theorem dPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (h
     rcases Nat.mod_two_eq_zero_or_one (V aE) with a | a
     · have ok' : good (V aL) ∧ Nat.gcd (V aE) (mL (V aL)) = 1 := by
         rcases ok with ⟨a', _⟩ | ⟨_, g1, g2⟩
-        · omega
+        · omega_arith
         · exact ⟨g1, g2⟩
       simp only [a, show ¬ (0 = 1) by decide, ↓reduceIte]
       have g := ok'.2
@@ -227,14 +227,14 @@ theorem dPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 4 ≤ w) (h
           rcases ok with ⟨_, (⟨_, h⟩ | ⟨b', _⟩)⟩ | ⟨a', _⟩
           · exact h
           · exact absurd b b'
-          · omega
+          · omega_arith
         simp only [b, ↓reduceIte, Nat.one_ne_zero]
         exact inverse_one' hL
       · have ok' : ¬ V aL < 2 ∧ Nat.gcd (V aL % V aE) (V aE) = 1 := by
           rcases ok with ⟨_, (⟨b', _⟩ | ⟨_, hL, g⟩)⟩ | ⟨a', _⟩
           · exact absurd b' b
           · rw [mE_of a b] at g; exact ⟨hL, g⟩
-          · omega
+          · omega_arith
         simp only [b, ↓reduceIte]
         rw [mE_of a b] at xd xl vDo
         rw [vDo]

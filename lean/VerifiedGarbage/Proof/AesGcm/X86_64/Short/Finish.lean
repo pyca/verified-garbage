@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
 
 /-!
 # AES-GCM on x86-64 with AVX-512: the end of a long `seal`

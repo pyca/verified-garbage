@@ -33,10 +33,10 @@ theorem x11_val {w : Nat} (hw : w < 2 ^ 31) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
   simp only [BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show 8 * (w + 2) < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show 16 < 2 ^ 64 by decide),
-    show 2 ^ 64 - 16 + 8 * (w + 2) = 8 * w + 2 ^ 64 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (show 8 * w < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show 2 * w < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show 8 * (w + 2) < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show 16 < 2 ^ 64 by decide),
+    show 2 ^ 64 - 16 + 8 * (w + 2) = 8 * w + 2 ^ 64 by omega_arith, Nat.add_mod_right,
+    Nat.mod_eq_of_lt (show 8 * w < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show 2 * w < 2 ^ 64 by omega_arith)]
+  omega_arith
 
 /-- Three programs then a fourth, regrouped. -/
 theorem wp_reassoc3 {a b c d : Prog isa} {s : State} {Q : State → Prop}
@@ -65,7 +65,7 @@ theorem xfer_ok {s : State} {BX : Addr} {Z oA wA wX j : Nat} (hs : Scr s BX Z) (
   have hh : hdrBytes = 256 := rfl
   have eA4 := e wA 4; have eA8 := e wA 8
   have sXj := slot_le (w := wX) hj
-  refine WP.seq (WP.mono (zeroWords_ok hs h14 h11 (by omega) hwX (by omega)) fun s₁ ⟨⟨_, hz, out1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (zeroWords_ok hs h14 h11 (by omega_arith) hwX (by omega_arith)) fun s₁ ⟨⟨_, hz, out1⟩, k1⟩ => ?_)
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (xb_ok (rd := .r14) (by decide) (by decide) ((k1.gpr _ (by decide)).trans h27)
@@ -76,20 +76,20 @@ theorem xfer_ok {s : State} {BX : Addr} {Z oA wA wX j : Nat} (hs : Scr s BX Z) (
   have k13 := (k1.trans k2).trans k3
   refine WP.mono (copySub_ok (a := oA + slot wA 4) (b := slot wX j) (w := wA) (hs.congr k13.wr)
     (by rw [k13.gpr _ (by decide), h15, off_off]) ((k3.gpr _ (by decide)).trans a14) a11 hw1
-    (by omega) (by omega) (by omega) (by omega)) fun t ⟨⟨hw, out4⟩, k4⟩ => ⟨⟨?_, ?_⟩, (k13.trans k4).mono⟩
+    (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun t ⟨⟨hw, out4⟩, k4⟩ => ⟨⟨?_, ?_⟩, (k13.trans k4).mono⟩
   · rw [m3, m2] at hw out4
     have hsrc : ∀ i < wA, word s₁.mem BX (oA + slot wA 4 + 8 * i) = word s.mem BX (oA + slot wA 4 + 8 * i) :=
-      fun i hi => out1.word (Or.inr (by omega)) (by omega)
+      fun i hi => out1.word (Or.inr (by omega_arith)) (by omega_arith)
     have hsplit := wv_add t.mem BX (slot wX j) wA (wX - wA)
-    rw [show wA + (wX - wA) = wX by omega] at hsplit
+    rw [show wA + (wX - wA) = wX by omega_arith] at hsplit
     have hlo : wv t.mem BX (slot wX j) wA = wv s.mem BX (oA + slot wA 4) wA :=
       wv_congr2 fun i hi => (hw i hi).trans (hsrc i hi)
     have hhi : wv t.mem BX (slot wX j + 8 * wA) (wX - wA) = 0 := (wv_eq_zero_iff _ _ _ _).mpr fun q hq => by
-      rw [out4.word (Or.inr (by omega)) (by omega), show slot wX j + 8 * wA + 8 * q = slot wX j + 8 * (wA + q) by omega]
-      exact hz _ (by omega)
+      rw [out4.word (Or.inr (by omega_arith)) (by omega_arith), show slot wX j + 8 * wA + 8 * q = slot wX j + 8 * (wA + q) by omega_arith]
+      exact hz _ (by omega_arith)
     rw [Pre.val32_eq_wv, Pre.val32_eq_wv, wv_off, hsplit, hlo, hhi, Nat.mul_zero, Nat.add_zero]
   · rw [m3, m2] at out4
-    exact out1.trans (out4.mono (by omega) (by omega))
+    exact out1.trans (out4.mono (by omega_arith) (by omega_arith))
 
 /-- `r22 := r11`, `p`'s form: `2 w_A` in both, `w_A` in `r4`. -/
 theorem midP_ok {t : State} {wA : Nat} (h11 : t.gpr .r11 = BitVec.ofNat 64 (2 * wA))
@@ -98,8 +98,8 @@ theorem midP_ok {t : State} {wA : Nat} (h11 : t.gpr .r11 = BitVec.ofNat 64 (2 * 
       (t'.gpr .r22 = BitVec.ofNat 64 (2 * wA) ∧ t'.gpr .r11 = BitVec.ofNat 64 (2 * wA) ∧ t'.mem = t.mem) ∧
         Keep [.r11, .r22] t t' := by
   refine WP.keep _ ?_ (by decide)
-  prun [h11, h4, shl_ofNat (show wA * 2 ^ 1 < 2 ^ 64 by omega), BitVec.add_zero]
-  congr 1; omega
+  prun [h11, h4, shl_ofNat (show wA * 2 ^ 1 < 2 ^ 64 by omega_arith), BitVec.add_zero]
+  congr 1; omega_arith
 
 /-- `r22 := r11`, `q`'s form. -/
 theorem midQ_ok {t : State} {wA : Nat} (h11 : t.gpr .r11 = BitVec.ofNat 64 (2 * wA)) :

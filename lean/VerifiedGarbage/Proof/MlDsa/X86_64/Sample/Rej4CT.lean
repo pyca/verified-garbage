@@ -9,31 +9,15 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
-import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes

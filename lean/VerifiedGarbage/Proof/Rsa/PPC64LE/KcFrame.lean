@@ -73,16 +73,16 @@ theorem KBase.of_keep {B : Addr} {Z : Nat} {s0 s t : State} (h : KBase B Z s0 s)
   refine ⟨kr.sp.trans h.sp, kr.lr.trans h.lr, kr.rd.trans h.rd, kr.wr.trans h.wr, fun x hx => ?_,
     fun i hi => ?_, (kr.gpr _ hr).trans h.r31⟩
   · rw [← h.frame x hx]
-    exact k.out (Z := Z) hjs (fun d hd => by have := hds d hd; omega) hx
+    exact k.out (Z := Z) hjs (fun d hd => by have := hds d hd; omega_arith) hx
   · rw [← h.hdr i hi]
     refine Mem.readW_congr fun b hb => ?_
     rw [off, Offset.add_add]
     refine k _ fun r hr => ?_
-    rw [ofs, Mem.sub_ofNat_toNat _ (by omega)]
+    rw [ofs, Mem.sub_ofNat_toNat _ (by omega_arith)]
     simp only [KeyWorkspace.ranges, List.mem_append, List.mem_map] at hr
     rcases hr with ⟨j, -, rfl⟩ | ⟨d, hd, rfl⟩
-    · left; simp only [KeyWorkspace.arr, KeyWorkspace.hdr]; omega
-    · left; have := hds d hd; dsimp only; omega
+    · left; simp only [KeyWorkspace.arr, KeyWorkspace.hdr]; omega_arith
+    · left; have := hds d hd; dsimp only; omega_arith
 
 /-- A step that writes only bytes from 160 on, within the working space, keeps `KBase`. -/
 theorem KBase.of_outside {B : Addr} {Z : Nat} {s0 s t : State} (h : KBase B Z s0 s) {n : Nat}
@@ -90,13 +90,13 @@ theorem KBase.of_outside {B : Addr} {Z : Nat} {s0 s t : State} (h : KBase B Z s0
     (kr : Keep rs s t) (hr : .r31 ∉ rs := by decide) : KBase B Z s0 t := by
   refine ⟨kr.sp.trans h.sp, kr.lr.trans h.lr, kr.rd.trans h.rd, kr.wr.trans h.wr, fun x hx => ?_,
     fun i hi => ?_, (kr.gpr _ hr).trans h.r31⟩
-  · rw [← h.frame x hx]; exact o x (Or.inr (by omega))
+  · rw [← h.frame x hx]; exact o x (Or.inr (by omega_arith))
   · rw [← h.hdr i hi]
     refine Mem.readW_congr fun b hb => ?_
     rw [off, Offset.add_add]
     refine o _ (Or.inl ?_)
-    rw [ofs, Mem.sub_ofNat_toNat _ (by omega)]
-    omega
+    rw [ofs, Mem.sub_ofNat_toNat _ (by omega_arith)]
+    omega_arith
 
 /-- The stack arguments are `s0`'s. -/
 theorem KBase.stackArg {B : Addr} {Z K oS na : Nat} {s0 s : State} (h : KBase B Z s0 s)
@@ -108,8 +108,8 @@ theorem KBase.stackArg {B : Addr} {Z K oS na : Nat} {s0 s : State} (h : KBase B 
   rw [show s0.sp + BitVec.ofNat 64 (32 + 8 * (8 + i)) + BitVec.ofNat 64 b =
     stackArgAddr s0 0 + BitVec.ofNat 64 (8 * i + b) by
       rw [stackArgAddr, BitVec.add_assoc, BitVec.add_assoc, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat]
-      congr 2; omega]
-  exact Offset.contains_base _ (by omega) (by omega)
+      congr 2; omega_arith]
+  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- The stack argument `i` is readable. -/
 theorem KPre.arg_rd {s0 s : State} {B : Addr} {Z K oS na : Nat} (h : KPre s0 B Z K oS na)
@@ -119,8 +119,8 @@ theorem KPre.arg_rd {s0 s : State} {B : Addr} {Z K oS na : Nat} (h : KPre s0 B Z
   refine ⟨_, List.mem_append_left _ (hrd ▸ h.args), ?_⟩
   simp only [stackArgAddr, hsp]
   rw [show s0.sp + BitVec.ofNat 64 (32 + 8 * (8 + i)) = stackArgAddr s0 0 + BitVec.ofNat 64 (8 * i) by
-    rw [stackArgAddr, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega]
-  exact Offset.contains_base _ (by omega) (by omega)
+    rw [stackArgAddr, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith]
+  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- `stackArg r i`: the stack argument `i` into `r`. -/
 theorem KPre.stackArg_ok {s0 s : State} {B : Addr} {Z K oS na : Nat} (h : KPre s0 B Z K oS na)
@@ -155,7 +155,7 @@ theorem kEntryMem_frame {s0 : State} {B : Addr} {Z : Nat} (hnw : B.toNat + Z ≤
     ∀ x, Z ≤ ofs B x → kEntryMem s0 B x = s0.mem x := by
   intro x hx
   have o : ∀ (m : Mem) (d : Nat) (v : BitVec 64), d + 8 ≤ 120 → (m.writeW (off B d) v) x = m x :=
-    fun m d v hd => writeW_outside m B (d := d) v (by omega) x (Or.inr (by omega))
+    fun m d v hd => writeW_outside m B (d := d) v (by omega_arith) x (Or.inr (by omega_arith))
   simp only [kEntryMem]
   rw [o _ 112 _ (by decide), o _ 104 _ (by decide), o _ 96 _ (by decide), o _ 88 _ (by decide), o _ 80 _ (by decide),
       o _ 72 _ (by decide), o _ 64 _ (by decide), o _ 56 _ (by decide), o _ 48 _ (by decide), o _ 40 _ (by decide),
@@ -166,7 +166,7 @@ theorem kEntryMem_hdr (s0 : State) (B : Addr) :
   intro i hi
   simp only [kEntryMem]
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11
-      ∨ i = 12 ∨ i = 13 ∨ i = 14 by omega) with
+      ∨ i = 12 ∨ i = 13 ∨ i = 14 by omega_arith) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp (disch := decide) only [kSaved, Nat.mul_zero, Nat.reduceMul, CrtValues.readW_sep,
     Mem.readW_writeW_self64]
@@ -185,15 +185,15 @@ theorem save_ok {s0 : State} {B : Addr} {Z K oS na : Nat} (h : KPre s0 B Z K oS 
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r31] (Q := fun s => s.mem = kEntryMem s0 B ∧ s.gpr .r31 = B) ?_ (by decide))
     fun s ⟨⟨m, r31⟩, kk⟩ => ?_
-  · prun [hs.st (d := 0) (n := 8) (by omega), hs.st (d := 8) (n := 8) (by omega),
-      hs.st (d := 16) (n := 8) (by omega), hs.st (d := 24) (n := 8) (by omega), hs.st (d := 32) (n := 8) (by omega),
-      hs.st (d := 40) (n := 8) (by omega), hs.st (d := 48) (n := 8) (by omega), hs.st (d := 56) (n := 8) (by omega),
-      hs.st (d := 64) (n := 8) (by omega), hs.st (d := 72) (n := 8) (by omega), hs.st (d := 80) (n := 8) (by omega),
-      hs.st (d := 88) (n := 8) (by omega), hs.st (d := 96) (n := 8) (by omega), hs.st (d := 104) (n := 8) (by omega),
-      hs.st (d := 112) (n := 8) (by omega)]
+  · prun [hs.st (d := 0) (n := 8) (by omega_arith), hs.st (d := 8) (n := 8) (by omega_arith),
+      hs.st (d := 16) (n := 8) (by omega_arith), hs.st (d := 24) (n := 8) (by omega_arith), hs.st (d := 32) (n := 8) (by omega_arith),
+      hs.st (d := 40) (n := 8) (by omega_arith), hs.st (d := 48) (n := 8) (by omega_arith), hs.st (d := 56) (n := 8) (by omega_arith),
+      hs.st (d := 64) (n := 8) (by omega_arith), hs.st (d := 72) (n := 8) (by omega_arith), hs.st (d := 80) (n := 8) (by omega_arith),
+      hs.st (d := 88) (n := 8) (by omega_arith), hs.st (d := 96) (n := 8) (by omega_arith), hs.st (d := 104) (n := 8) (by omega_arith),
+      hs.st (d := 112) (n := 8) (by omega_arith)]
     exact ⟨rfl, BitVec.add_zero _⟩
   · have K := (k1.trans kk).mono (rs' := [.r11, .r31])
-    exact k s ⟨K.sp, K.lr, K.rd, K.wr, fun x hx => by rw [m]; exact kEntryMem_frame h.nowrap (by omega) x hx,
+    exact k s ⟨K.sp, K.lr, K.rd, K.wr, fun x hx => by rw [m]; exact kEntryMem_frame h.nowrap (by omega_arith) x hx,
       fun i hi => by rw [m]; exact kEntryMem_hdr s0 B i hi, r31⟩ K
 
 /-- `restore`: the saved registers from the header. -/
@@ -223,12 +223,12 @@ theorem restore_ok {B : Addr} {Z : Nat} {s0 t : State} (h : KBase B Z s0 t) (hwr
   have e14 := h.hdr 14 (by decide)
   simp only [kSaved, Nat.reduceMul] at e0 e1 e2 e3 e4 e5 e6 e7 e8 e9 e10 e11 e12 e13 e14
   refine WP.keep _ ?_ (by decide)
-  prun [restore, h.r31, hs.ld (d := 0) (n := 8) (by omega), hs.ld (d := 8) (n := 8) (by omega),
-      hs.ld (d := 16) (n := 8) (by omega), hs.ld (d := 24) (n := 8) (by omega), hs.ld (d := 32) (n := 8) (by omega),
-      hs.ld (d := 40) (n := 8) (by omega), hs.ld (d := 48) (n := 8) (by omega), hs.ld (d := 56) (n := 8) (by omega),
-      hs.ld (d := 64) (n := 8) (by omega), hs.ld (d := 72) (n := 8) (by omega), hs.ld (d := 80) (n := 8) (by omega),
-      hs.ld (d := 88) (n := 8) (by omega), hs.ld (d := 96) (n := 8) (by omega), hs.ld (d := 104) (n := 8) (by omega),
-      hs.ld (d := 112) (n := 8) (by omega), e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14]
+  prun [restore, h.r31, hs.ld (d := 0) (n := 8) (by omega_arith), hs.ld (d := 8) (n := 8) (by omega_arith),
+      hs.ld (d := 16) (n := 8) (by omega_arith), hs.ld (d := 24) (n := 8) (by omega_arith), hs.ld (d := 32) (n := 8) (by omega_arith),
+      hs.ld (d := 40) (n := 8) (by omega_arith), hs.ld (d := 48) (n := 8) (by omega_arith), hs.ld (d := 56) (n := 8) (by omega_arith),
+      hs.ld (d := 64) (n := 8) (by omega_arith), hs.ld (d := 72) (n := 8) (by omega_arith), hs.ld (d := 80) (n := 8) (by omega_arith),
+      hs.ld (d := 88) (n := 8) (by omega_arith), hs.ld (d := 96) (n := 8) (by omega_arith), hs.ld (d := 104) (n := 8) (by omega_arith),
+      hs.ld (d := 112) (n := 8) (by omega_arith), e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14]
   exact e0
 
 end VG.Proof.Rsa.PPC64LE.KeyCheck

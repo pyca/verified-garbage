@@ -96,11 +96,11 @@ theorem rRanges_ok {s : State} {L : Lay} {key nonce dig : Addr} {b : Bool} (hL :
     (e2.hs.congr k2.wr) (by decide) (by decide)
     (by decide) ((k2.gpr .r10 (by decide)).trans e2.h10) ((k2.gpr .r29 (by decide)).trans e2.h29)
     ((k2.gpr .r11 (by decide)).trans e2.h11) (by rw [m2]; exact (show 0 < arr s₁.mem L.Q 4 0 by rw [m1]; exact hq))
-    (by rw [a30]; exact (BitVec.add_zero _).symm) a31 (by omega) (by omega)
+    (by rw [a30]; exact (BitVec.add_zero _).symm) a31 (by omega_arith) (by omega_arith)
     (fun i hi => by
       rw [k12.rd, k12.wr]
-      exact (ScrL.bufN hs hL (n := L.pl) (by omega)).ld (show i + 1 ≤ L.pl by omega))
-    (buf_apartQ L (by omega))) fun s₃ ⟨⟨v1, o3⟩, k3⟩ => ?_)
+      exact (ScrL.bufN hs hL (n := L.pl) (by omega_arith)).ld (show i + 1 ≤ L.pl by omega_arith))
+    (buf_apartQ L (by omega_arith))) fun s₃ ⟨⟨v1, o3⟩, k3⟩ => ?_)
   rw [m21] at v1
   have k13 := k12.trans k3
   have o3' : Outside L.Q (slot 4 1) (24 * (4 + 2)) s.mem s₃.mem := by rw [← m21]; exact o3
@@ -127,30 +127,30 @@ theorem rRanges_ok {s : State} {L : Lay} {key nonce dig : Addr} {b : Bool} (hL :
   have Q7 := Q6.step k7 (by decide)
   have k17 := k16.trans k7
   refine WP.seq (WP.mono (loadQ_ok (j := 6) Q7 hL (by decide) (by decide) (hn.keep k17.rd k17.wr) b12 b6
-      (by omega) (by omega)) fun s₈ ⟨⟨Q8, v6, top6, o8, qa8⟩, k8⟩ => ?_)
+      (by omega_arith) (by omega_arith)) fun s₈ ⟨⟨Q8, v6, top6, o8, qa8⟩, k8⟩ => ?_)
   refine WP.seq (WP.mono (ptrX_ok Q8.regs) fun s₉ ⟨⟨c12, c6, m9⟩, k9⟩ => ?_)
   have Q9 := Q8.step k9 (by decide)
   have k19 := (k17.trans k8).trans k9
   refine WP.seq (WP.mono (loadQ_ok (j := 5) Q9 hL (by decide) (by decide)
-      ((hk.keep k19.rd k19.wr).sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega)) c12 c6
-      (by omega) (by omega)) fun s₁₀ ⟨⟨Q10, v5, top5, o10, qa10⟩, k10⟩ => ?_)
+      ((hk.keep k19.rd k19.wr).sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_arith)) c12 c6
+      (by omega_arith) (by omega_arith)) fun s₁₀ ⟨⟨Q10, v5, top5, o10, qa10⟩, k10⟩ => ?_)
   have k110 := k19.trans k10
   have ae : ∀ {m m' : Mem} {o n : Nat}, Outside L.Q (slot 4 o) n m m' → n ≤ 48 → ∀ j, j < 28 → j ≠ o →
       arr m' L.Q 4 j = arr m L.Q 4 j := fun h hn' j hj ho =>
-    Outside.arrEq (h.mono (Nat.le_refl _) (by omega)) hj ho hnw
+    Outside.arrEq (h.mono (Nat.le_refl _) (by omega_arith)) hj ho hnw
   have qa3 : QArr L s.mem s₃.mem := QArr.of o3' (Nat.le_refl _) (by rw [e71]; decide)
   have qa7 : QArr L s.mem s₇.mem := by
     rw [m7, ← m4] at *
-    exact (qa3.trans (QArr.of o5 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega))).trans
-      (QArr.of o6 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega))
+    exact (qa3.trans (QArr.of o5 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith))).trans
+      (QArr.of o6 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith))
   have qa9 : QArr L s.mem s₉.mem := by rw [m9]; exact qa7.trans qa8
   have qa10' : QArr L s.mem s₁₀.mem := qa9.trans qa10
   -- `hMask` into `r22`.
   have h21 : s₁₀.gpr .r21 = L.S := Q10.regs.r21
   have hld : InRegions (s₁₀.rd ++ s₁₀.wr) (s₁₀.gpr .r21 + BitVec.ofNat 64 hMask) 8 := by
-    rw [h21]; exact Q10.scr.ld (show hMask + 8 ≤ L.Z by simp only [hMask]; omega)
+    rw [h21]; exact Q10.scr.ld (show hMask + 8 ≤ L.Z by simp only [hMask]; omega_arith)
   have hw10 : word s₁₀.mem L.S hMask = mask b := by
-    rw [Outside.word (qa10'.qbody.body hL) (Or.inl (by simp only [hMask]; omega)) (by simp only [hMask]; omega)]
+    rw [Outside.word (qa10'.qbody.body hL) (Or.inl (by simp only [hMask]; omega_arith)) (by simp only [hMask]; omega_arith)]
     exact hm
   refine WP.seq (WP.mono (WP.keep [.r22] (Q := fun u => u.gpr .r22 = mask b ∧ u.mem = s₁₀.mem)
     (by prun [exec_ld (by decide) hld]; rw [h21, ← hw10]) (by decide)) fun s₁₁ ⟨⟨a22, m11⟩, k11⟩ => ?_)
@@ -158,58 +158,58 @@ theorem rRanges_ok {s : State} {L : Lay} {key nonce dig : Addr} {b : Bool} (hL :
   -- The values in arrays 0, 5, 6 and 9.
   have A0 : arr s₁₁.mem L.Q 4 0 = arrQ s.mem L 0 := by rw [m11]; exact qa10'.arr0
   have A6 : arr s₁₁.mem L.Q 4 6 = kOf s.mem L nonce := by
-    rw [m11, ae o10 (by omega) 6 (by decide) (by decide), m9]
+    rw [m11, ae o10 (by omega_arith) 6 (by decide) (by decide), m9]
     refine v6.trans ?_
     rw [kOf, hn.bytes (qa7.qbody.body hL) hZ]
   have A5 : arr s₁₁.mem L.Q 4 5 = xOf s.mem L key := by
     rw [m11]
     refine v5.trans ?_
-    rw [xOf, (hk.sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega)).bytes (qa9.qbody.body hL) hZ]
+    rw [xOf, (hk.sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_arith)).bytes (qa9.qbody.body hL) hZ]
   have A9 : arr s₁₁.mem L.Q 4 9 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem L.Buf L.pl) % arrQ s.mem L 0 := by
-    rw [m11, ae o10 (by omega) 9 (by decide) (by decide), m9, ae o8 (by omega) 9 (by decide) (by decide), m7,
-      ae o6 (by omega) 9 (by decide) (by decide), v9, m4]
+    rw [m11, ae o10 (by omega_arith) 9 (by decide) (by decide), m9, ae o8 (by omega_arith) 9 (by decide) (by decide), m7,
+      ae o6 (by omega_arith) 9 (by decide) (by decide), v9, m4]
     exact v1
   have z7' : arr s₁₁.mem L.Q 4 7 = 0 := by
-    rw [m11, ae o10 (by omega) 7 (by decide) (by decide), m9, ae o8 (by omega) 7 (by decide) (by decide), m7]
+    rw [m11, ae o10 (by omega_arith) 7 (by decide) (by decide), m9, ae o8 (by omega_arith) 7 (by decide) (by decide), m7]
     exact z7
   have top6' : word s₁₁.mem L.Q (slot 4 6 + 8 * 4) = 0 := by
-    rw [m11, Outside.word o10 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega), m9]; exact top6
+    rw [m11, Outside.word o10 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith), m9]; exact top6
   -- The ranges and `r ≠ 0`.
   refine WP.seq (WP.mono (inRange_ok Q11.inq.env (a := 6) (b := b) (by decide) (by decide) top6' z7' a22)
     fun s₁₂ ⟨⟨b22, o12⟩, k12'⟩ => ?_)
   have Q12 := Q11.step k12' (by decide)
   have top5' : word s₁₂.mem L.Q (slot 4 5 + 8 * 4) = 0 := by
-    rw [Outside.word o12 (by simp only [slot_eq]; omega) (by simp only [slot_eq]; omega), m11]; exact top5
+    rw [Outside.word o12 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith), m11]; exact top5
   refine WP.seq (WP.mono (inRange_ok Q12.inq.env (a := 5) (b := _) (by decide) (by decide) top5'
-    (by rw [ae o12 (by omega) 7 (by decide) (by decide)]; exact z7') b22) fun s₁₃ ⟨⟨c22, o13⟩, k13'⟩ => ?_)
+    (by rw [ae o12 (by omega_arith) 7 (by decide) (by decide)]; exact z7') b22) fun s₁₃ ⟨⟨c22, o13⟩, k13'⟩ => ?_)
   have Q13 := Q12.step k13' (by decide)
   refine WP.seq (WP.mono (nonZero_ok Q13.inq.env (a := 9) (c := 0) (by decide)
-    (by rw [ae o13 (by omega) 7 (by decide) (by decide), ae o12 (by omega) 7 (by decide) (by decide)]; exact z7')
+    (by rw [ae o13 (by omega_arith) 7 (by decide) (by decide), ae o12 (by omega_arith) 7 (by decide) (by decide)]; exact z7')
     c22) fun s₁₄ ⟨⟨d22, m14⟩, k14'⟩ => ?_)
   have Q14 := Q13.step k14' (by decide)
   -- The mask to `hMask`.
   have h21' : s₁₄.gpr .r21 = L.S := Q14.regs.r21
-  have hst : InRegions s₁₄.wr (L.S + BitVec.ofNat 64 hMask) 8 := Q14.scr.st (by simp only [hMask]; omega)
+  have hst : InRegions s₁₄.wr (L.S + BitVec.ofNat 64 hMask) 8 := Q14.scr.st (by simp only [hMask]; omega_arith)
   have he : exec (.store .d .r22 .r21 hMask) s₁₄ =
       some { s₁₄ with mem := s₁₄.mem.writeW (L.S + BitVec.ofNat 64 hMask) (s₁₄.gpr .r22) } := by
     rw [exec_std (by decide) (by rw [h21']; exact hst), h21']
   refine WP.mono (WP.keep [] (Q := fun u => u.mem = s₁₄.mem.writeW (L.S + BitVec.ofNat 64 hMask) (s₁₄.gpr .r22))
     (by prun [he]) (by decide)) fun t ⟨mt, kt⟩ => ?_
   have wo : Outside L.S hMask 8 s₁₄.mem t.mem := by
-    rw [mt]; exact writeW_outside s₁₄.mem L.S (d := hMask) _ (by simp only [hMask]; omega)
+    rw [mt]; exact writeW_outside s₁₄.mem L.S (d := hMask) _ (by simp only [hMask]; omega_arith)
   have wq : ∀ j, j < 28 → arr t.mem L.Q 4 j = arr s₁₄.mem L.Q 4 j := fun j hj =>
-    Outside.val32 (mask_keepQ hL wo) (Or.inl (by simp only [slot_eq]; omega)) (by simp only [slot_eq]; omega)
+    Outside.val32 (mask_keepQ hL wo) (Or.inl (by simp only [slot_eq]; omega_arith)) (by simp only [slot_eq]; omega_arith)
   have kall := ((((k110.trans k11).trans k12').trans k13').trans k14').trans kt
   have mo : ∀ {m m' : Mem} {o n : Nat}, Outside L.Q (slot 4 o) n m m' → 1 ≤ o → slot 4 o + n ≤ slot 4 10 →
       Outside L.Q (slot 4 1) (slot 4 10 - slot 4 1) m m' := fun h h1 h2 =>
-    h.mono (by simp only [slot_eq]; omega) (by simp only [slot_eq] at h2 ⊢; omega)
+    h.mono (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq] at h2 ⊢; omega_arith)
   refine ⟨⟨Q14.step kt (by decide), ?_, ?_, ⟨s₁₄.mem, ?_, wo⟩⟩, kall.mono (by decide)⟩
   · show arr t.mem L.Q 4 9 = _
-    rw [wq 9 (by decide), m14, ae o13 (by omega) 9 (by decide) (by decide),
-      ae o12 (by omega) 9 (by decide) (by decide), A9]
-  · rw [mt, word_writeW_self, d22, ae o13 (by omega) 9 (by decide) (by decide),
-      ae o12 (by omega) 9 (by decide) (by decide), ae o12 (by omega) 5 (by decide) (by decide),
-      ae o12 (by omega) 0 (by decide) (by decide), A9, A6, A5, A0]
+    rw [wq 9 (by decide), m14, ae o13 (by omega_arith) 9 (by decide) (by decide),
+      ae o12 (by omega_arith) 9 (by decide) (by decide), A9]
+  · rw [mt, word_writeW_self, d22, ae o13 (by omega_arith) 9 (by decide) (by decide),
+      ae o12 (by omega_arith) 9 (by decide) (by decide), ae o12 (by omega_arith) 5 (by decide) (by decide),
+      ae o12 (by omega_arith) 0 (by decide) (by decide), A9, A6, A5, A0]
     simp only [Bool.and_assoc, Bool.decide_and]
   · rw [m14, m11, m9, m7, m4] at *
     exact (((((((mo o3' (Nat.le_refl _) (by decide)).trans (mo o5 (by decide) (by decide))).trans

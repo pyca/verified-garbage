@@ -19,7 +19,6 @@ meta import VerifiedGarbage.Impl.AesGcm.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.TCB.X86_64.Isa
 meta import VerifiedGarbage.TCB.X86_64.State
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec

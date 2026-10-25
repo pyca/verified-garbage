@@ -67,7 +67,7 @@ theorem mulStep_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {A Bm i : Nat}
   -- `[aMm] := bit ? [aMa] : 0`.
   rw [WP.seq_iff]
   refine WP.mono (sel_ok h1 (o := aMm) (a := aZero) (b := aMa) (sl := sOdd) (by decide) (by decide) (by decide)
-    nArr_le (by decide) (by decide) (by decide) (by rw [bit1]; omega)) fun t2 ⟨h2, k2, v2, r2⟩ => ?_
+    nArr_le (by decide) (by decide) (by decide) (by rw [bit1]; omega_arith)) fun t2 ⟨h2, k2, v2, r2⟩ => ?_
   have ks2 : KS t2.mem B w (upd V aMm (if Bm / 2 ^ i % 2 = 0 then 0 else A * 2 ^ i % 2 ^ (32 * w))) F := by
     refine ks1.step k2 (fit_of h1) (fun j hj hn => ?_) (fun j hj => ?_) (fun _ _ _ => rfl)
       (fun d hd => by simp at hd) (fun hd => absurd hd (by decide))

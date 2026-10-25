@@ -52,7 +52,7 @@ theorem stat_zero {n : Nat} (hn : n < 2 ^ 60) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at this
     have h0 : (0 : BitVec 64).toNat = 0 := rfl
     rw [h0] at this
-    omega
+    omega_arith
 
 /-- Between the draw and the test of `hStat`. -/
 def MrMid (p : PP) (mb N i u : Nat) (t : State) : Prop :=
@@ -78,14 +78,14 @@ theorem mrHeadBlk_ok {p : PP} {mb N : Nat} {res : Option (Bool × List Byte)} {i
   have hsub : BitVec.ofNat 64 p.r.length - BitVec.ofNat 64 u = BitVec.ofNat 64 (p.r.length - u) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r3, .r4] (Q := fun t => t.gpr .r3 = BitVec.ofNat 64 (p.r.length - u) ∧
       t.gpr .r4 = BitVec.ofNat 64 ((mb + 7) / 8) ∧ t.mem = s.mem) ?_ (by decide)) fun s₁ ⟨⟨a3, a4, m₁⟩, k₁⟩ => ?_
   · simp only [ldh, hRandLen, hUsed, Impl.MillerRabin.PPC64LE.Search.hK]
     prun [h.m.st.r31, h.m.st.ld (d := 144) (by decide), h.m.st.ld (d := 152) (by decide),
       h.m.st.ld (d := 216) (by decide), h.m.st.args.rlen', hU, hKw, hsub]
-  exact WP.mono (geFlag_ok a3 a4 (by omega) (by omega)) fun s₂ ⟨⟨a5, m₂⟩, k₂⟩ => ⟨⟨a5, m₂.trans m₁⟩, k₁.trans k₂⟩
+  exact WP.mono (geFlag_ok a3 a4 (by omega_arith) (by omega_arith)) fun s₂ ⟨⟨a5, m₂⟩, k₂⟩ => ⟨⟨a5, m₂.trans m₁⟩, k₁.trans k₂⟩
 
 /-- The head: room for a witness, and the draw if there is. -/
 theorem mrHead_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × List Byte)} {i u : Nat} {s : State}
@@ -102,7 +102,7 @@ theorem mrHead_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
     (eval_zero_ofNat s₂ .r5 (by split <;> decide) a5) (fun hb => ?_) (fun hb => ?_)
   · -- No room: `hStat := 0`.
     have hr : p.r.length < u + (mb + 7) / 8 := by
-      by_contra hc; simp only [decide_eq_true_eq] at hb; rw [ite_eq_left (by omega)] at hb; exact absurd hb (by decide)
+      by_contra hc; simp only [decide_eq_true_eq] at hb; rw [ite_eq_left (by omega_arith)] at hb; exact absurd hb (by decide)
     have st₂ : St p s₂ := h.m.st.step (by rw [m12]; exact Frm.refl _ _ _) k12
     have l160 : InRegions s₂.wr (p.B + BitVec.ofNat 64 160) 8 := st₂.st (d := 160) (by decide)
     refine WP.mono (WP.keep [.r3] (Q := fun t => t.mem = s₂.mem.writeW (p.B + BitVec.ofNat 64 160) (BitVec.ofNat 64 0))
@@ -118,11 +118,11 @@ theorem mrHead_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
     simp only [word, off]; rw [tm, rw_self]
   · -- A draw.
     have hr : u + (mb + 7) / 8 ≤ p.r.length := by
-      by_contra hc; simp only [decide_eq_false_iff_not] at hb; exact hb (by rw [ite_eq_right (by omega)])
+      by_contra hc; simp only [decide_eq_false_iff_not] at hb; exact hb (by rw [ite_eq_right (by omega_arith)])
     have M₂ : MSt p mb N s₂ := h.m.frm (rs := []) (by rw [m12]; exact Frm.refl _ _ _) (by simp) k12 (by decide)
       (k12.gpr _ (by decide)) (k12.gpr _ (by decide)) (k12.gpr _ (by decide))
     refine WP.mono (draw_ok R M₂ (by rw [m12]; exact h.used) hr (by rw [m12]; exact h.idx)
-      (by rw [m12]; exact h.stat) (by have := h.ik; unfold Spec.Ffdh.primeChecks at this; split at this <;> omega))
+      (by rw [m12]; exact h.stat) (by have := h.ik; unfold Spec.Ffdh.primeChecks at this; split at this <;> omega_arith))
       fun t ⟨mt, ut, st, it⟩ => ⟨mt, Or.inr ⟨hr, ut, st, it⟩⟩
 
 theorem wp_then {a b c : Prog isa} {s : State} {P Q : State → Prop} (h : WP isa (.seq a b) s P)
@@ -149,9 +149,9 @@ theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
   have hik := h.ik
   have hN3 := h.m.prep.c3
   have hodd := h.m.prep.odd
-  have hK64 : Spec.Ffdh.primeChecks mb ≤ 128 := by unfold Spec.Ffdh.primeChecks; split <;> omega
+  have hK64 : Spec.Ffdh.primeChecks mb ≤ 128 := by unfold Spec.Ffdh.primeChecks; split <;> omega_arith
   have hres := h.rest
-  rw [show Spec.Ffdh.primeChecks mb - i = (Spec.Ffdh.primeChecks mb - i - 1) + 1 by omega] at hres
+  rw [show Spec.Ffdh.primeChecks mb - i = (Spec.Ffdh.primeChecks mb - i - 1) + 1 by omega_arith] at hres
   refine wp_then (mrHead_ok R h) fun t ⟨M, hmid⟩ => ?_
   have l160 : InRegions (t.rd ++ t.wr) (p.B + BitVec.ofNat 64 160) 8 := M.st.ld (d := 160) (by decide)
   refine WP.mono (WP.keep [.r3] (Q := fun v => v.gpr .r3 = word t.mem p.B 160 - BitVec.ofNat 64 4 ∧
@@ -162,12 +162,12 @@ theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
   have ev : ∀ k, k < 2 ^ 60 → word t.mem p.B 160 = BitVec.ofNat 64 k →
       isa.eval (.zero .d .r3) v = some (decide (k = 4)) := fun k hk he => by
     rw [eval_zero, v3, he, stat_zero hk]
-  have hm : 1 ≤ mb := by omega
+  have hm : 1 ≤ mb := by omega_arith
   rcases hmid with ⟨hr, h0⟩ | ⟨hr, hu, hs, hi⟩
   · -- No room for a witness.
     rw [cw_short hbl hm hr] at hres
     have hg : mrGo p.r mb N i u = false := by
-      simp only [mrGo, Bool.and_eq_false_iff, decide_eq_false_iff_not]; exact Or.inl (by omega)
+      simp only [mrGo, Bool.and_eq_false_iff, decide_eq_false_iff_not]; exact Or.inl (by omega_arith)
     rw [hg]
     refine ⟨(ev 0 (by decide) h0).trans (by decide), fun _ => ⟨M', fun _ => by rw [hw]; exact h0, fun b rest hb => ?_⟩,
       fun h => absurd h (by decide)⟩
@@ -185,9 +185,9 @@ theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
       · simp only [hk, ↓reduceIte, decide_true] at hs ⊢
         refine ⟨(ev 4 (by decide) hs).trans (by decide), fun h => absurd h (by decide),
           fun _ => ⟨M', by rw [hw]; exact hu, by rw [hw]; exact hi, by rw [hw]; exact hs, hr, hk, ?_⟩⟩
-        rw [show Spec.Ffdh.primeChecks mb - (i + 1) = Spec.Ffdh.primeChecks mb - i - 1 by omega]; exact hres
+        rw [show Spec.Ffdh.primeChecks mb - (i + 1) = Spec.Ffdh.primeChecks mb - i - 1 by omega_arith]; exact hres
       · simp only [hk, ↓reduceIte, decide_false] at hs ⊢
-        rw [show Spec.Ffdh.primeChecks mb - i - 1 = 0 by omega, checkWitnesses] at hres
+        rw [show Spec.Ffdh.primeChecks mb - i - 1 = 0 by omega_arith, checkWitnesses] at hres
         refine ⟨(ev 1 (by decide) hs).trans (by decide), fun _ => ⟨M', fun hn => (by rw [← hres] at hn; cases hn),
           fun b rest hb => ?_⟩, fun h => absurd h (by decide)⟩
         rw [← hres, Option.some.injEq, Prod.mk.injEq] at hb
@@ -203,7 +203,7 @@ theorem mrIter_ok (R : RoundImpl) {p : PP} {mb N : Nat} {res : Option (Bool × L
     simp only [hrg, hrg', ↓reduceIte, decide_false, Bool.not_false, Bool.true_or] at hs hi hres ⊢
     refine ⟨(ev 4 (by decide) hs).trans (by decide), fun h => absurd h (by decide),
       fun _ => ⟨M', by rw [hw]; exact hu, by rw [hw]; exact hi, by rw [hw]; exact hs, hr, hik, ?_⟩⟩
-    rw [show Spec.Ffdh.primeChecks mb - i = Spec.Ffdh.primeChecks mb - i - 1 + 1 by omega]; exact hres
+    rw [show Spec.Ffdh.primeChecks mb - i = Spec.Ffdh.primeChecks mb - i - 1 + 1 by omega_arith]; exact hres
 
 /-- The witness loop's start: `hIdx := 0`, `hStat := 4`. -/
 theorem mrInit_ok {p : PP} {mb N u : Nat} {s : State} (h : MSt p mb N s)
@@ -226,13 +226,13 @@ theorem mrInit_ok {p : PP} {mb N u : Nat} {s : State} (h : MSt p mb N s)
   have M := h.frm hf hfr kt (by decide) (kt.gpr _ (by decide)) (kt.gpr _ (by decide)) (kt.gpr _ (by decide))
   have t152 : word t.mem p.B 152 = BitVec.ofNat 64 u := by
     simp only [word, off] at hu ⊢
-    rw [tm, rw_off _ _ _ (by omega) (by omega) (by omega), rw_off _ _ _ (by omega) (by omega) (by omega)]
+    rw [tm, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
     exact hu
   have t160 : word t.mem p.B 160 = BitVec.ofNat 64 4 := by
     simp only [word, off]; rw [tm, rw_self]
   have t176 : word t.mem p.B 176 = BitVec.ofNat 64 0 := by
-    simp only [word, off]; rw [tm, rw_off _ _ _ (by omega) (by omega) (by omega), rw_self]
-  have hK : 0 < Spec.Ffdh.primeChecks mb := by unfold Spec.Ffdh.primeChecks; split <;> omega
+    simp only [word, off]; rw [tm, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_self]
+  have hK : 0 < Spec.Ffdh.primeChecks mb := by unfold Spec.Ffdh.primeChecks; split <;> omega_arith
   exact ⟨M, t152, t176, t160, hul, hK, by rw [Nat.sub_zero]⟩
 
 /-- The witnesses of `N`, drawn from octet `u` of the tape. -/

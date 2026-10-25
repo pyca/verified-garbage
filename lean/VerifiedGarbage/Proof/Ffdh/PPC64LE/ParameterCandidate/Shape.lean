@@ -55,49 +55,49 @@ theorem shapeP_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) (hrl : 
   have h11 := hp.r11
   have htop := hp.topW
   generalize hwd : wOf p.bits = w at h10 h11 htop ⊢
-  have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega
-  have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega
-  have hLw : p.L ≤ 8 * w := by simp only [wOf, PP.L] at hwd ⊢; omega
-  have hZ : slot w 0 + 8 * w ≤ p.Z := by simp only [slot, hdrBytes, PP.Z, PP.L] at hn ⊢; omega
-  have hL1 : 1 ≤ p.L := by simp only [PP.L]; omega
+  have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega_arith
+  have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega_arith
+  have hLw : p.L ≤ 8 * w := by simp only [wOf, PP.L] at hwd ⊢; omega_arith
+  have hZ : slot w 0 + 8 * w ≤ p.Z := by simp only [slot, hdrBytes, PP.Z, PP.L] at hn ⊢; omega_arith
+  have hL1 : 1 ≤ p.L := by simp only [PP.L]; omega_arith
   unfold shapeP
   refine WP.seq (WP.mono (shapeHead_ok h) fun u ⟨⟨u12, u6, um⟩, ku⟩ => ?_)
   have hrd : ∀ i < p.L, InRegions (u.rd ++ u.wr) (off p.rp i) 1 := fun i hi => by
-    rw [ku.rd, ku.wr]; exact h.bufs.rdR i (by omega)
+    rw [ku.rd, ku.wr]; exact h.bufs.rdR i (by omega_arith)
   refine WP.seq (WP.mono (loadN_ok (h.scr.congr ku.wr) ((ku.gpr .r10 (by decide)).trans h10) u12 u6
-    ((ku.gpr .r11 (by decide)).trans h11) hL1 hLw (by omega) (by simp [slot, hdrBytes]) hZ hrd
-    (fun i hi => h.bufs.sepR i (by omega))) fun v ⟨vv, vo, kv⟩ => ?_)
+    ((ku.gpr .r11 (by decide)).trans h11) hL1 hLw (by omega_arith) (by simp [slot, hdrBytes]) hZ hrd
+    (fun i hi => h.bufs.sepR i (by omega_arith))) fun v ⟨vv, vo, kv⟩ => ?_)
   have kuv := ku.trans kv
   rw [um, Pre.val32_eq_wv, h.take_bytes hrl] at vv
   have h0 : slot w 0 = 256 := by simp [slot, hdrBytes]
   -- The top word's mask, from the header.
-  have hk1 : 1 ≤ p.bits + 64 - 64 * w := by simp only [wOf] at hwd; omega
-  have hk2 : p.bits + 64 - 64 * w ≤ 64 := by simp only [wOf] at hwd; omega
+  have hk1 : 1 ≤ p.bits + 64 - 64 * w := by simp only [wOf] at hwd; omega_arith
+  have hk2 : p.bits + 64 - 64 * w ≤ 64 := by simp only [wOf] at hwd; omega_arith
   generalize hkd : p.bits + 64 - 64 * w = k at htop hk1 hk2
   have tv : v.mem.readW (p.B + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (2 ^ k - 1) := by
     show word v.mem p.B 192 = _
-    rw [Outside.word vo (by omega) (by omega), um]; exact htop
+    rw [Outside.word vo (by omega_arith) (by omega_arith), um]; exact htop
   have e5 : off p.B (slot w 0 + 8 * w) - BitVec.ofNat 64 8 = off p.B (slot w 0 + 8 * (w - 1)) := by
-    simp only [off]; rw [Offset.add_ofNat_sub _ (by omega)]; congr 2; omega
+    simp only [off]; rw [Offset.add_ofNat_sub _ (by omega_arith)]; congr 2; omega_arith
   have sT : InRegions v.wr (off p.B (slot w 0 + 8 * (w - 1))) 8 := by
-    rw [kuv.wr]; exact h.scr.st (by omega)
+    rw [kuv.wr]; exact h.scr.st (by omega_arith)
   have lT : InRegions (v.rd ++ v.wr) (off p.B (slot w 0 + 8 * (w - 1))) 8 := by
-    rw [kuv.rd, kuv.wr]; exact h.scr.ld (by omega)
-  have sA : InRegions v.wr (off p.B (slot w 0)) 8 := by rw [kuv.wr]; exact h.scr.st (by omega)
+    rw [kuv.rd, kuv.wr]; exact h.scr.ld (by omega_arith)
+  have sA : InRegions v.wr (off p.B (slot w 0)) 8 := by rw [kuv.wr]; exact h.scr.st (by omega_arith)
   have lA : InRegions (v.rd ++ v.wr) (off p.B (slot w 0)) 8 := by
-    rw [kuv.rd, kuv.wr]; exact h.scr.ld (by omega)
+    rw [kuv.rd, kuv.wr]; exact h.scr.ld (by omega_arith)
   have eA : ∀ x : BitVec 64, (v.mem.writeW (off p.B (slot w 0 + 8 * (w - 1))) x).readW (off p.B (slot w 0)) 64 =
-      v.mem.readW (off p.B (slot w 0)) 64 := fun x => rw_off _ _ _ (by omega) (by omega) (by omega)
+      v.mem.readW (off p.B (slot w 0)) 64 := fun x => rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)
   have ebit : (BitVec.ofNat 64 (2 ^ k - 1)) >>> 1 + BitVec.ofNat 64 1 = BitVec.ofNat 64 (2 ^ (k - 1)) := by
-    obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
+    obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega_arith⟩
     rw [Nat.add_sub_cancel, Nat.pow_succ]
-    have : 2 ^ j ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by omega)
+    have : 2 ^ j ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by omega_arith)
     have : 1 ≤ 2 ^ j := Nat.one_le_two_pow
     generalize 2 ^ j = P at *
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       Nat.shiftRight_eq_div_pow]
-    omega
+    omega_arith
   have l192 : InRegions (v.rd ++ v.wr) (p.B + BitVec.ofNat 64 192) 8 := by
     rw [kuv.rd, kuv.wr]; exact h.ld (d := 192) (by decide)
   refine WP.mono (WP.keep [.r4, .r5, .r6] (Q := fun t => t.mem =
@@ -110,24 +110,24 @@ theorem shapeP_ok {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits s) (hrl : 
     prun [(kuv.gpr .r10 (by decide)).trans h10, (kuv.gpr .r11 (by decide)).trans h11,
       (kuv.gpr .r31 (by decide)).trans h.r31, Proof.MillerRabin.PPC64LE.shl2_ofNat, e5, sT, lT, sA, lA, eA,
       l192, tv, ebit, BitVec.add_zero]
-  · have hb : 64 * (w - 1) + k = p.bits := by simp only [wOf] at hwd; omega
+  · have hb : 64 * (w - 1) + k = p.bits := by simp only [wOf] at hwd; omega_arith
     rw [← hb, ← vv]
-    refine Proof.Ffdh.ParameterCandidate.wv_shape (by omega) hk1 hk2 ?_ ?_ fun j hj0 hj => ?_
+    refine Proof.Ffdh.ParameterCandidate.wv_shape (by omega_arith) hk1 hk2 ?_ ?_ fun j hj0 hj => ?_
     · simp only [word, off] at tm ⊢; rw [tm, rw_self]; rfl
     · simp only [word, off] at tm ⊢
-      rw [tm, rw_off _ _ _ (by omega) (by omega) (by omega), rw_self]
+      rw [tm, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_self]
     · simp only [word, off] at tm ⊢
-      rw [tm, rw_off _ _ _ (by omega) (by omega) (by omega), rw_off _ _ _ (by omega) (by omega) (by omega)]
+      rw [tm, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
   · rw [um] at vo
     have hr : ∀ a, a + 8 ≤ 8 * w → ∃ r ∈ [(slot w 0, 8 * w)], r.1 ≤ slot w 0 + a ∧ slot w 0 + a + 8 ≤ r.1 + r.2 :=
-      fun a ha => ⟨_, List.mem_singleton_self _, by dsimp only; omega, by dsimp only; omega⟩
+      fun a ha => ⟨_, List.mem_singleton_self _, by dsimp only; omega_arith, by dsimp only; omega_arith⟩
     simp only [off] at tm
     rw [tm]
     have f1 := frm_writeW (Frm.of_outside vo (List.mem_singleton_self _)) (a := slot w 0 + 8 * (w - 1))
       ((v.mem.readW (p.B + BitVec.ofNat 64 (slot w 0 + 8 * (w - 1))) 64 &&& BitVec.ofNat 64 (2 ^ k - 1)) |||
-        BitVec.ofNat 64 (2 ^ (k - 1))) (hr _ (by omega)) (by omega)
+        BitVec.ofNat 64 (2 ^ (k - 1))) (hr _ (by omega_arith)) (by omega_arith)
     have f2 := frm_writeW f1 (a := slot w 0 + 0)
-      (v.mem.readW (p.B + BitVec.ofNat 64 (slot w 0)) 64 ||| BitVec.ofNat 64 1) (hr _ (by omega)) (by omega)
+      (v.mem.readW (p.B + BitVec.ofNat 64 (slot w 0)) 64 ||| BitVec.ofNat 64 1) (hr _ (by omega_arith)) (by omega_arith)
     simpa only [Nat.add_zero] using f2
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

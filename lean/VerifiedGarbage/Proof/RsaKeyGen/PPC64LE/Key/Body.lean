@@ -96,7 +96,7 @@ theorem body_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at this
     exact Nat.lt_of_lt_of_le this (by
       rw [show (2 : Nat) ^ 64 = 256 ^ 8 by decide]; exact Nat.pow_le_pow_right (by decide) el8)
-  have hW : 32 * kW s0 = 16 * kL s0 := by omega
+  have hW : 32 * kW s0 = 16 * kL s0 := by omega_arith
   rw [body_eq, wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (setup_ok h ha.r22) fun t1 ⟨b1, w1, k1, r1⟩ => ?_
   have a1 := ha.of_keep r1
@@ -133,7 +133,7 @@ theorem body_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   have h22 : t4.gpr .r22 = BitVec.ofNat 64 (kL s0) := by
     rw [a4.r22]; exact VG.Proof.Rsa.PPC64LE.CrtValues.ofNat_toNat64 _
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (lcmPart_ok w4 k4 h22 (by omega) (by omega) hW (by rw [vPm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hP)
+  refine WP.mono (lcmPart_ok w4 k4 h22 (by omega_arith) (by omega_arith) hW (by rw [vPm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hP)
     (by rw [vQm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hQ)
     (by vsimp [o4, one3]) (by vsimp [o4, o3, two3]) (by vsimp [o4, three3]) (by vsimp [o4, zero3]))
     fun t5 ⟨w5, ⟨V5, F5, k5, o5, p5, vL⟩, f5, r5⟩ => ?_
@@ -142,7 +142,7 @@ theorem body_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   rw [vPm, vQm] at vL
   -- `d`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (dPart_ok w5 k5 (by omega) (by vsimp [o5, o4, e3]; exact hel) (by vsimp [o5, o4, one3])
+  refine WP.mono (dPart_ok w5 k5 (by omega_arith) (by vsimp [o5, o4, e3]; exact hel) (by vsimp [o5, o4, one3])
     (by vsimp [o5, o4, two3]) (by vsimp [o5, o4, three3]) (by vsimp [o5, o4, zero3]))
     fun t6 ⟨w6, ⟨V6, F6, k6, o6, p6, x3, x5, x6, vD⟩, f6, r6⟩ => ?_
   have b6 := b5.of_phase f6 r6
@@ -175,7 +175,7 @@ theorem body_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   have vP9 : V9 aP = kP s0 := by vsimp [o9, o8, vP7]
   have vQ9 : V9 aQ = kQ s0 := by vsimp [o9, o8, vQ7]
-  refine WP.mono (nPart_ok w9 k9 (by rw [a9.r22, ← a4.r22]; exact h22) (by omega) (by omega) hW
+  refine WP.mono (nPart_ok w9 k9 (by rw [a9.r22, ← a4.r22]; exact h22) (by omega_arith) (by omega_arith) hW
     (by rw [vP9]; exact hP) (by rw [vQ9]; exact hQ) (by vsimp [o9, o8, o7, o6, o5, o4, zero3]))
     fun t10 ⟨w10, ⟨V10, k10, o10, vN⟩, f10, r10⟩ => ?_
   have b10 := b9.of_phase f10 r10
@@ -190,7 +190,7 @@ theorem body_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
   have g7 : F9 X7 = if (if okv (eIn s0) (kLc s0) then 1 else 0) = 1 ∧ V6 aD < 2 ^ (8 * kL s0) + 1 then 1 else 0 := by
     vsimp [p9, p8, x7]
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (maskPart_ok w10 k10 (by rw [g0]; omega) (flag_le g1) (by rw [g3]; omega) (flag_le g5)
+  refine WP.mono (maskPart_ok w10 k10 (by rw [g0]; omega_arith) (flag_le g1) (by rw [g3]; omega_arith) (flag_le g5)
     (flag_le g6) (flag_le g7)) fun t11 ⟨w11, ⟨V11, F11, k11, o11, p11, x8⟩, f11, r11⟩ => ?_
   have b11 := b10.of_phase f11 r11
   have a11 := a10.of_keep r11

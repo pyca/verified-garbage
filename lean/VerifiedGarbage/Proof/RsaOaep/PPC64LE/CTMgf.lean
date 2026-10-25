@@ -93,19 +93,19 @@ theorem xorOut_base {ac : State × Nat} {t : State} (h : MgfR S vf Pre Pub G.D s
   have hfd := hf.fd
   obtain ⟨⟨s, P, p, b⟩, -, -, h26, h27, -, h29, hc⟩ := h
   have hdc := Nat.min_le_left G.D (dstLen - ac.2 * G.D)
-  have hn0 : 0 < min G.D (dstLen - ac.2 * G.D) := by omega
+  have hn0 : 0 < min G.D (dstLen - ac.2 * G.D) := by omega_arith
   refine WP.seq (WP.mono (xorHead_ok (G := G) (S := S s) (dst := dst) (dstLen := dstLen) (done := ac.2 * G.D)
     (by omega) b.r14 (by rw [h26, (X.S p)]) h27 h29 hc (by omega)) fun t₁ ⟨k₁, x11, x12, x9⟩ => ?_)
   have b₁ := b.only (X.fits P) k₁
-  refine WP.mono (xorLoop_ok (p := off (S s) (dst + ac.2 * G.D)) (q := off (S s) oDig) hn0 (by omega) x11 x12 x9
+  refine WP.mono (xorLoop_ok (p := off (S s) (dst + ac.2 * G.D)) (q := off (S s) oDig) hn0 (by omega_arith) x11 x12 x9
     (fun j hj => by
-      rw [off_add, k₁.rd, k₁.wr, b.wr, b.rd]; exact sc_inR (X.fits P) (by omega) _)
-    (sc_w (X.fits P) (by rw [k₁.wr, b.wr]) (by omega))
+      rw [off_add, k₁.rd, k₁.wr, b.wr, b.rd]; exact sc_inR (X.fits P) (by omega_arith) _)
+    (sc_w (X.fits P) (by rw [k₁.wr, b.wr]) (by omega_arith))
     (fun j hj i hi => by
-      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega))
+      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith))
     (fun i hi j hj hij => by
-      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)))
-    fun t₂ ⟨k₂, x₂⟩ => ⟨s, P, p, b₁.wb (X.fits P) k₂ (by rw [xorAt_length]; omega) x₂⟩
+      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega_arith) (by omega_arith) (by omega_arith)))
+    fun t₂ ⟨k₂, x₂⟩ => ⟨s, P, p, b₁.wb (X.fits P) k₂ (by rw [xorAt_length]; omega_arith) x₂⟩
 
 include X cG hf in
 theorem round_ct :
@@ -152,8 +152,8 @@ theorem round_ct :
     obtain ⟨s, P, p, b⟩ := hm.1
     exact ⟨s, P, ⟨X.fits P, b, by rw [h3, (X.S p)], by rw [h5, (X.S p)], by rw [h6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)],
       by rw [h7, (X.S p)], Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) (by omega)),
-      sdis (.inl (by omega)) (by omega) (by omega), sdis (.inl (by omega)) (by omega) (by omega),
-      cR_dis (X.fits P) (by omega)⟩, p⟩
+      sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith), sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith),
+      cR_dis (X.fits P) (by omega_arith)⟩, p⟩
   refine two_seq (Ψ := M) (upd_ct (S := S) (vf := vf) cG fun t₁ t₂ ⟨ac, h₁, h₂⟩ => ?_) (fun ac t h => ?_) ?_
   · obtain ⟨s₁, -, A₁, p₁⟩ := uargs h₁
     obtain ⟨s₂, -, A₂, p₂⟩ := uargs h₂
@@ -173,7 +173,7 @@ theorem round_ct :
   refine two_seq (Ψ := U₂) (ctr_taint (pins_mono (mgfR_pins X fun _ _ h => h))) (fun ac t h => ?_) ?_
   · obtain ⟨s, P, p, b⟩ := h.1
     have hc : ac.2 < 2 ^ 32 := by
-      have := h.2.2.2.2.2.2.2; have := Nat.le_mul_of_pos_right ac.2 hD0; omega
+      have := h.2.2.2.2.2.2.2; have := Nat.le_mul_of_pos_right ac.2 hD0; omega_arith
     exact WP.mono (ctr_ok (X.fits P) b h.2.2.2.2.2.1 hc) fun t' ⟨b', g', _, x3, x4, x5, x6, x7⟩ =>
       ⟨h.keep ⟨s, P, p, b'⟩ (pres g'), by rw [x3, (X.S p)], by rw [x4, h.2.2.1], by rw [x5, (X.S p)], x6, by rw [x7, (X.S p)]⟩
   have cargs : ∀ {ac : State × Nat} {t : State}, U₂ ac t →
@@ -181,9 +181,9 @@ theorem round_ct :
     obtain ⟨hm, h3, -, h5, h6, h7⟩ := h
     obtain ⟨s, P, p, b⟩ := hm.1
     exact ⟨s, P, ⟨X.fits P, b, by rw [h3, (X.S p)], by rw [h5, (X.S p)], by rw [h6]; rfl, by rw [h7, (X.S p)],
-      Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) (by omega)),
-      sdis (.inr (by omega)) (by omega) (by omega), sdis (.inl (by omega)) (by omega) (by omega),
-      cR_dis (X.fits P) (by omega)⟩, p⟩
+      Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) (by omega_arith)),
+      sdis (.inr (by omega_arith)) (by omega_arith) (by omega_arith), sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith),
+      cR_dis (X.fits P) (by omega_arith)⟩, p⟩
   refine two_seq (Ψ := M) (upd_ct (S := S) (vf := vf) cG fun t₁ t₂ ⟨ac, h₁, h₂⟩ => ?_) (fun ac t h => ?_) ?_
   · obtain ⟨s₁, -, A₁, p₁⟩ := cargs h₁
     obtain ⟨s₂, -, A₂, p₂⟩ := cargs h₂
@@ -274,7 +274,7 @@ theorem mgfXor_ctS : RelCT isa (Two (MgfA S vf Pre Pub src srcLen dst dstLen)) (
     have hlt : (ac.2 + 1) * G.D < dstLen := by simpa using ht
     obtain ⟨s, V, P, p, I, hn⟩ := h₁
     obtain ⟨s', V', P', p', I', -⟩ := h₂
-    exact ⟨dstLen - (ac.2 + 1) * G.D, by omega, (ac.1, ac.2 + 1), ⟨⟨s, V, P, p, I, hlt⟩, rfl⟩,
+    exact ⟨dstLen - (ac.2 + 1) * G.D, by omega_arith, (ac.1, ac.2 + 1), ⟨⟨s, V, P, p, I, hlt⟩, rfl⟩,
       ⟨⟨s', V', P', p', I', hlt⟩, rfl⟩⟩
   refine RelCT.seq (two_post (Ψ := fun a t => L (a, 0) t) (mgfHead_taint fun a t₁ t₂ h₁ h₂ => ?_)
     (fun a t h => ?_)) ((RelCT.loop (fun n => Two (Ln n)) step (dstLen - 0 * G.D)).mono
@@ -287,7 +287,7 @@ theorem mgfXor_ctS : RelCT isa (Two (MgfA S vf Pre Pub src srcLen dst dstLen)) (
     have k₂ : Only [.r28, .r29] t t₂ := (o₁.trans o₂).mono
     exact ⟨s, view t.mem (S s), P, p, ⟨b.only (X.fits P) k₂, by rw [k₂.get .r24, h24, (X.S p)], by rw [k₂.get .r25, h25],
       by rw [k₂.get .r26, h26, (X.S p)], by rw [k₂.get .r27, h27], by rw [o₂.get .r28, e₁], by rw [e₂, Nat.zero_mul],
-      fun o _ => by rw [mixV, ifn (by omega), k₂.mem]⟩, by omega⟩
+      fun o _ => by rw [mixV, ifn (by omega_arith), k₂.mem]⟩, by omega_arith⟩
 
 end
 

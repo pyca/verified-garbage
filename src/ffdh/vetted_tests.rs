@@ -190,7 +190,13 @@ fn vetted_generation_preserves_entropy_refills_and_uncapped_fallback() {
     assert_eq!(x, draw);
 }
 
-#[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64"))]
+#[cfg(any(
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "powerpc64"
+))]
 #[test]
 fn vetted_domain_validation_checks_complete_components() {
     for p in modp_groups().into_iter().chain(ffdhe_groups()) {

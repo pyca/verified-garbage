@@ -49,7 +49,7 @@ theorem bytesAt_out {B I : Addr} {Z o n k : Nat} {m m' : Mem} (h : Outside B o n
 
 theorem wv_low_mod2 (m : Mem) (p : Addr) (d : Nat) {n : Nat} (hn : 1 ≤ n) :
     wv m p d n % 2 = (word m p d).toNat % 2 := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = 1 + k := ⟨n - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, n = 1 + k := ⟨n - 1, by omega_arith⟩
   rw [wv_add]
   simp only [wv, Nat.zero_add, Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_one]
   rw [show (2 : Nat) ^ 64 = 2 * 2 ^ 63 from rfl, Nat.mul_assoc, Nat.add_mul_mod_self_left]
@@ -91,35 +91,35 @@ theorem powerA_ok {s : State} {BX I D : Addr} {Z oA wA wX xj k L Pv oD oLen : Na
   refine WP.mono (WP.keep [.r30, .r31, .r18, .r19, .r14] (Q := fun t => t.gpr .r30 = off I 0 ∧
     t.gpr .r31 = BitVec.ofNat 64 k ∧ t.gpr .r18 = off D 0 ∧ t.gpr .r19 = BitVec.ofNat 64 L ∧
     t.gpr .r14 = off BX (oA + slot wA 0) ∧ t.mem = s.mem) (by
-      prun [h23, h10, oIn, oNLen, hs.ld (show 24 + 8 ≤ Z by omega), hs.ld (show 16 + 8 ≤ Z by omega),
-        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oD < 2 ^ 15 by omega, show oD % 4 = 0 by omega⟩,
-        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oLen < 2 ^ 15 by omega, show oLen % 4 = 0 by omega⟩,
-        hs.ld (show oD + 8 ≤ Z by omega), hs.ld (show oLen + 8 ≤ Z by omega), hI', hK', hD', hL',
+      prun [h23, h10, oIn, oNLen, hs.ld (show 24 + 8 ≤ Z by omega_arith), hs.ld (show 16 + 8 ≤ Z by omega_arith),
+        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oD < 2 ^ 15 by omega_arith, show oD % 4 = 0 by omega_arith⟩,
+        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oLen < 2 ^ 15 by omega_arith, show oLen % 4 = 0 by omega_arith⟩,
+        hs.ld (show oD + 8 ≤ Z by omega_arith), hs.ld (show oLen + 8 ≤ Z by omega_arith), hI', hK', hD', hL',
         BitVec.add_zero, off_off]) rfl) fun s₁ ⟨⟨a30, a31, a18, a19, a14, m1⟩, k1⟩ => ?_
   refine WP.mono (xb_ok (rd := .r15) (by decide) (by decide) ((k1.gpr _ (by decide)).trans h27)
     ((k1.gpr _ (by decide)).trans h28) xj) fun s₂ ⟨⟨a15, m2⟩, k2⟩ => ?_
   have k12 := k1.trans k2
   refine WP.seq (WP.mono (copySub_ok (hs.congr k12.wr) a15 ((k2.gpr _ (by decide)).trans a14)
-    ((k12.gpr _ (by decide)).trans h11) (by omega) hw' (by omega) (by omega) (by omega))
+    ((k12.gpr _ (by decide)).trans h11) (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₄ ⟨⟨hw3, out3⟩, k3⟩ => ?_)
   have k14 := k12.trans k3
   rw [m2, m1] at hw3 out3
   have hsA := (hs.congr k14.wr).sub hA
   have hv0 : val32 s₄.mem (off BX oA) (slot wA 0) (2 * wA) = Pv := by
     rw [Pre.val32_eq_wv, wv_off, ← hP]; exact wv_congr2 fun i hi => hw3 i hi
-  refine WP.seq (WP.mono (ModArith.reduce_ok hsA (by omega) hw' (by omega) ((k14.gpr _ (by decide)).trans h10)
-    ((k14.gpr _ (by decide)).trans h29) ((k14.gpr _ (by decide)).trans h11) (by omega)
+  refine WP.seq (WP.mono (ModArith.reduce_ok hsA (by omega_arith) hw' (by omega_arith) ((k14.gpr _ (by decide)).trans h10)
+    ((k14.gpr _ (by decide)).trans h29) ((k14.gpr _ (by decide)).trans h11) (by omega_arith)
     ((k3.gpr _ (by decide)).trans ((k2.gpr _ (by decide)).trans a30))
     ((k3.gpr _ (by decide)).trans ((k2.gpr _ (by decide)).trans a31)) hk hk'
     (fun i hi => by rw [k14.rd, k14.wr]; exact hrdI i hi)
-    (fun i hi x hx => hsepI i hi x (by rw [ofs_sub hx (by omega)]; omega))) fun t ⟨⟨h1, out5⟩, k5⟩ => ?_)
+    (fun i hi x hx => hsepI i hi x (by rw [ofs_sub hx (by omega_arith)]; omega_arith))) fun t ⟨⟨h1, out5⟩, k5⟩ => ?_)
   have out5' : Outside (off BX oA) (slot wA 1) (24 * (wA + 2)) s₄.mem t.mem := fun x hx => out5 x hx
-  have hb : Spec.Rsa.bytesAt s₄.mem I k = Spec.Rsa.bytesAt s.mem I k := bytesAt_out out3 (by omega) hsepI
+  have hb : Spec.Rsa.bytesAt s₄.mem I k = Spec.Rsa.bytesAt s.mem I k := bytesAt_out out3 (by omega_arith) hsepI
   refine hc t ?_ ?_ ?_ ((k5.gpr _ (by decide)).trans ((k3.gpr _ (by decide)).trans ((k2.gpr _ (by decide)).trans a18)))
     ((k5.gpr _ (by decide)).trans ((k3.gpr _ (by decide)).trans ((k2.gpr _ (by decide)).trans a19)))
     (k14.trans k5).mono
-  · rw [Pre.val32_eq_wv, out5'.wv (Or.inl (by omega)) (by omega), ← Pre.val32_eq_wv, hv0]
+  · rw [Pre.val32_eq_wv, out5'.wv (Or.inl (by omega_arith)) (by omega_arith), ← Pre.val32_eq_wv, hv0]
   · rw [h1, hb, hv0]
-  · exact (out3.mono (by omega) (by omega)).trans (out_sub out5' (by omega) (by omega) (by omega))
+  · exact (out3.mono (by omega_arith) (by omega_arith)).trans (out_sub out5' (by omega_arith) (by omega_arith) (by omega_arith))
 
 end VG.Proof.Bignum.PPC64LE.Crt

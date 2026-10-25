@@ -2,9 +2,8 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop16
 public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop16
-import VerifiedGarbage.Proof.MlKem.X86_64.DcTop16
 public import VerifiedGarbage.Proof.MlKem.X86_64.Narrow
-public import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
+public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16Tail
 
 /-!
 # ML-KEM on x86-64: the top-level functions of each implementation

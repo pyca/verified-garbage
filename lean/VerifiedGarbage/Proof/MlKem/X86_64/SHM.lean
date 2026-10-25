@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
 meta import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4CT

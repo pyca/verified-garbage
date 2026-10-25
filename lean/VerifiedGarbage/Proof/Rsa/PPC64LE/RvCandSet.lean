@@ -59,7 +59,7 @@ theorem ofNat_add2 (j : Nat) :
     (BitVec.ofNat 64 j + BitVec.ofNat 64 2).setWidth 32 = BitVec.ofNat 32 (j + 2) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem arrW (w j : Nat) : arr (2 * w + 2) j = arr w (2 * j) := by
   simp only [arr, S]; grind
@@ -94,7 +94,7 @@ theorem cand0_ok {s0 u : State} (h : CF s0 u) (hn : NOk s0) {j : Nat} (hj : j < 
     fun u1 ⟨ws1, kk1, v1, k1, _⟩ => ?_
   have c1 := h.of_keep kk1 (by decide) (by simp) k1 ws1
   have z1 : num u1.mem (rvB s0) (ww (kK s0)) mG = 0 := by
-    rw [v1]; exact val32_zeros fun i hi => h.zZ i (by omega)
+    rw [v1]; exact val32_zeros fun i hi => h.zZ i (by omega_arith)
   -- Its low digit `:= g`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil ([Instr.addi .r0 .r24 2, .store .w .r0 .r5 0]),
     ← List.append_assoc]
@@ -103,10 +103,10 @@ theorem cand0_ok {s0 u : State} (h : CF s0 u) (hn : NOk s0) {j : Nat} (hj : j < 
   · refine WP.mono (WP.keep [.r0] ?_ (by decide)) fun u' ⟨m, k⟩ => ⟨m, k.mono⟩
     have e24 : v.gpr .r24 = BitVec.ofNat 64 j := by rw [kv.gpr _ (by decide), k1.gpr _ (by decide)]; exact h24
     prun [v5, vm, e24, (ws1.scr.congr kv.wr).st (show arr (ww (kK s0)) mG + 4 ≤ rvZ s0 by
-      have := ws1.arr_fit (j := mG) (by decide); simp only [S] at this; omega), ofNat_add2 j]
+      have := ws1.arr_fit (j := mG) (by decide); simp only [S] at this; omega_arith), ofNat_add2 j]
   have c2 := c1.of_keep kk2 (by decide) (by simp) k2 ws2
   have g2 : num u2.mem (rvB s0) (ww (kK s0)) mG = j + 2 := by
-    rw [v2, z1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [v2, z1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   -- `y := 1`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok ws2 (o := mY) (a := aO) (by decide) (by decide) (by decide) (by decide))
@@ -114,14 +114,14 @@ theorem cand0_ok {s0 u : State} (h : CF s0 u) (hn : NOk s0) {j : Nat} (hj : j < 
   have c3 := c2.of_keep kk3 (by decide) (by simp) k3 ws3
   -- `r`'s copy.
   rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil VG.Impl.Rsa.PPC64LE.Recover.ctxW]
-  refine ctxW_ok ws3 (by omega) (Nat.le_trans svW (Nat.le_trans (Nat.le_add_right _ _) svZ))
+  refine ctxW_ok ws3 (by omega_arith) (Nat.le_trans svW (Nat.le_trans (Nat.le_add_right _ _) svZ))
     fun u4 ws4 m4 k4 => WP.block_nil ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok ws4 (o := wRc) (a := wR) (by decide) (by decide) (by decide) (by decide))
     fun u5 ⟨ws5, kk5, v5, k5, _⟩ => ?_
   rw [show seqs [Code.block (VG.Impl.Rsa.PPC64LE.Recover.ctxw ++ [.addi .r27 .r26 0])] =
     .block (VG.Impl.Rsa.PPC64LE.Recover.ctxw ++ [.addi .r27 .r26 0]) from rfl]
-  refine ctxw_ok ws5 (by omega) (by rw [← svw]; omega) fun u6 ws6 m6 k6 => ?_
+  refine ctxw_ok ws5 (by omega_arith) (by rw [← svw]; omega_arith) fun u6 ws6 m6 k6 => ?_
   refine WP.mono (WP.keep [.r27] (Q := fun x => x.gpr .r27 = u6.gpr .r26 ∧ x.mem = u6.mem) (by prun [BitVec.add_zero])
     (by decide)) fun u7 ⟨⟨a27, m7⟩, k7⟩ => ?_
   have kk5' : KeyWorkspace.Keep (rvB s0) (ww (kK s0)) [30, 31] [] u3.mem u7.mem := by
@@ -141,7 +141,7 @@ theorem cand0_ok {s0 u : State} (h : CF s0 u) (hn : NOk s0) {j : Nat} (hj : j < 
     rw [K.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ (by decide), k1.gpr _ (by decide)]; exact h24
   have R27 : u7.gpr .r27 = BitVec.ofNat 64 (cB s0) := by rw [a27, ← k7.gpr _ (by decide)]; exact c7.r26
   -- `g R mod n`.
-  have hn0 : 0 < nV s0 := by have := hn.big; omega
+  have hn0 : 0 < nV s0 := by have := hn.big; omega_arith
   refine WP.mono (mmul_ok c7.base c7.ws (o := iG) (a := iG) (b := iR2) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) c7.r12 c7.inv
     (by rw [c7.vMN]; exact (show lowV u7.mem s0 mR2 < nV s0 by rw [c7.vR2]; exact Nat.mod_lt _ hn0)))
@@ -150,7 +150,7 @@ theorem cand0_ok {s0 u : State} (h : CF s0 u) (hn : NOk s0) {j : Nat} (hj : j < 
   change num t.mem (rvB s0) (ww (kK s0)) mG < lowV u7.mem s0 mBase at lt8
   change num t.mem (rvB s0) (ww (kK s0)) mG * RR s0 % lowV u7.mem s0 mBase =
     lowV u7.mem s0 mG * lowV u7.mem s0 mR2 % lowV u7.mem s0 mBase at eq8
-  rw [c7.vMN, c7.vR2, low_of_lt (by rw [G7]; have := hn.big; omega), G7, Nat.mul_mod_mod, ← Nat.mul_assoc] at eq8
+  rw [c7.vMN, c7.vR2, low_of_lt (by rw [G7]; have := hn.big; omega_arith), G7, Nat.mul_mod_mod, ← Nat.mul_assoc] at eq8
   rw [c7.vMN] at lt8
   have G8 := VG.Proof.Bignum.mont_cancel hn.coprime eq8
   rw [Nat.mod_eq_of_lt lt8] at G8

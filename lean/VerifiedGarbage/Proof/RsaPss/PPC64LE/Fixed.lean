@@ -34,7 +34,7 @@ theorem bytes_same {S : Addr} {t t' : State} {rgs : List (Nat × Nat)} (h : Same
   simp only [Spec.Sha256.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  have := h (d + i) (by omega) fun p hp => by have := hr p hp; omega
+  have := h (d + i) (by omega_arith) fun p hp => by have := hr p hp; omega_arith
   simp only [view] at this
   rw [← off_off] at this
   exact this
@@ -60,22 +60,22 @@ theorem hashFixedG_ok (hD : H.D = D) {sl : Nat} (h19 : vf s .r19 = BitVec.ofNat 
     rw [b.vs .r19 (by decide), h19, hD, BitVec.ofNat_add_ofNat]; congr 1; omega
   refine WP.seq (WP.mono (hInit_ok F hH h) fun t₁ ⟨b₁, g₁, s₁, r₁⟩ => ?_)
   refine WP.seq (wp_li (by decide) fun t₂ o₂ e₂ => wp_addi (h := by decide) fun t₃ o₃ e₃ =>
-    wp_addi (h := by omega) fun t₄ o₄ e₄ => wp_nil ?_)
+    wp_addi (h := by omega_arith) fun t₄ o₄ e₄ => wp_nil ?_)
   have k₄ : Only [.r4, .r5, .r6] t₁ t₄ := (o₂.trans (o₃.trans o₄)).mono
   have b₄ := b₁.only F k₄
   refine WP.seq (WP.mono (hUpd_ok F hH b₄ (m := []) (by rw [k₄.mem]; exact r₁) (by rw [o₄.get .r4, o₃.get .r4, e₂]; rfl)
     (d := oY) (len := 8 + D + sl) (by rw [o₄.get .r5, e₃, o₂.get .r14, b₁.r14])
-    (by rw [e₄, o₃.get .r19, o₂.get .r19, g19 b₁]) (Nat.le_refl _) (by omega)) fun t₅ ⟨b₅, g₅, s₅, r₅⟩ => ?_)
-  refine WP.seq (wp_addi (h := by omega) fun t₆ o₆ e₆ => wp_nil ?_)
+    (by rw [e₄, o₃.get .r19, o₂.get .r19, g19 b₁]) (Nat.le_refl _) (by omega_arith)) fun t₅ ⟨b₅, g₅, s₅, r₅⟩ => ?_)
+  refine WP.seq (wp_addi (h := by omega_arith) fun t₆ o₆ e₆ => wp_nil ?_)
   have b₆ := b₅.only F o₆
   refine WP.mono (hFin_ok F hH b₆ (m := [] ++ Spec.Sha256.bytesAt t₄.mem (off (S s) oY) (8 + D + sl))
     (by rw [o₆.mem]; exact r₅) (by rw [e₆, g19 b₅, List.nil_append, Spec.Sha256.bytesAt]; simp)
-    (by simp [Spec.Sha256.bytesAt]; omega)) fun t' ⟨b', g', s', r'⟩ => ⟨b', fun r hr => ?_, ?_, ?_⟩
+    (by simp [Spec.Sha256.bytesAt]; omega_arith)) fun t' ⟨b', g', s', r'⟩ => ⟨b', fun r hr => ?_, ?_, ?_⟩
   · rw [g' r hr, pres_of o₆ (by decide) r hr, g₅ r hr, pres_of k₄ (by decide) r hr, g₁ r hr]
   · exact (((s₁.mono (by simp)).trans ((Same.of_mem k₄.mem _).trans (s₅.mono (by simp)))).trans
       (Same.of_mem o₆.mem _)).trans s'
   · obtain ⟨_, hSt, _, _, _, _⟩ := offs
-    rw [r', List.nil_append, k₄.mem, bytes_same s₁ (by omega) (by simp; omega)]
+    rw [r', List.nil_append, k₄.mem, bytes_same s₁ (by omega_arith) (by simp; omega_arith)]
 
 end
 

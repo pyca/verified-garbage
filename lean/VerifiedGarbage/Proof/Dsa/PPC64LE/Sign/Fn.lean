@@ -63,36 +63,36 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
       (⟨A, n⟩ : Region).Disjoint ⟨stackArg s 1, (stackArg s 2).toNat * 8⟩ → A.toNat + n ≤ 2 ^ 64 → n < 2 ^ 64 →
       k ≤ n → ∀ t : State, t.rd = s.rd → t.wr = s.wr → Src t (slayOf s) A k :=
     fun hm hd hnw hn hk t hr hw => ⟨fun i hi => ⟨_, by rw [hr, hw]; exact hm,
-      Offset.contains_base _ (by omega) (by omega)⟩, fun i hi => Pub.ne_of_disjoint hd (by omega) i (by omega)⟩
+      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩, fun i hi => Pub.ne_of_disjoint hd (by omega_arith) i (by omega_arith)⟩
   have h4 : (s.gpr .r4).toNat = 2 * (slayOf s).ql := hol
   have h6 : (s.gpr .r6).toNat = 3 * (slayOf s).pl + 2 * (slayOf s).ql := hkl
   have srcK := mkSrc (A := s.gpr .r5) (k := 3 * (slayOf s).pl + 2 * (slayOf s).ql)
-    (List.mem_append_left _ (by rw [hrd]; simp)) dKS nwK (s.gpr .r6).isLt (by omega)
+    (List.mem_append_left _ (by rw [hrd]; simp)) dKS nwK (s.gpr .r6).isLt (by omega_arith)
   have srcK3 : ∀ t : State, t.rd = s.rd → t.wr = s.wr → Src t (slayOf s) (s.gpr .r5) (3 * (slayOf s).pl + (slayOf s).ql) :=
-    fun t hr hw => (srcK t hr hw).take (by omega)
+    fun t hr hw => (srcK t hr hw).take (by omega_arith)
   have srcN := mkSrc (A := s.gpr .r8) (k := (slayOf s).ql) (List.mem_append_left _ (by rw [hrd]; simp)) dNS nwN
     (s.gpr .r9).isLt (Nat.le_refl _)
   have srcD := mkSrc (A := s.gpr .r10) (k := (stackArg s 0).toNat) (List.mem_append_left _ (by rw [hrd]; simp))
     dDS nwD (stackArg s 0).isLt (Nat.le_refl _)
   have srcO := mkSrc (A := s.gpr .r3) (k := 2 * (slayOf s).ql) (List.mem_append_right _ (by rw [hwr]; simp)) dOS nwO
-    (s.gpr .r4).isLt (by omega)
+    (s.gpr .r4).isLt (by omega_arith)
   have scrO : ∀ t : State, t.wr = s.wr → Scr t (s.gpr .r3) (2 * (slayOf s).ql) := fun t ht =>
-    Scr.of_mem (by rw [ht, hwr, ← h4]; simp) (by omega)
+    Scr.of_mem (by rw [ht, hwr, ← h4]; simp) (by omega_arith)
   -- A change in `out` keeps the saved registers.
   have outSep : ∀ {m m' : Mem}, Outside (s.gpr .r3) 0 (2 * (slayOf s).ql) m m' → ∀ i < 19,
       word m' (slayOf s).S (saveOff i) = word m (slayOf s).S (saveOff i) := fun ho i hi =>
     Outside.word_sep (Zp := 2 * (slayOf s).ql) ho (fun x hx => by
         by_contra hc
         exact (srcO s rfl rfl).sep (VG.Proof.Bignum.ofs (s.gpr .r3) x)
-          (by simp only [VG.Proof.Bignum.ofs] at hc ⊢; omega) x hx (off_ofs _ x))
-      (by omega) (by simp only [saveOff]; omega) hL.nowrap
+          (by simp only [VG.Proof.Bignum.ofs] at hc ⊢; omega_arith) x hx (off_ofs _ x))
+      (by omega_arith) (by simp only [saveOff]; omega_arith) hL.nowrap
   -- The specification's values.
   have hkey : Spec.Dsa.privateKeyBytes (s.gpr .r7).toNat (s.gpr .r9).toNat
       (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat) =
       ⟨⟨pOf s.mem (slayOf s) (s.gpr .r5), qOf s.mem (slayOf s) (s.gpr .r5), gOf s.mem (slayOf s) (s.gpr .r5)⟩,
         yOf s.mem (slayOf s) (s.gpr .r5), some (xOf s.mem (slayOf s) (s.gpr .r5))⟩ := by
-    rw [VG.Proof.Dsa.privateKeyBytes_at s.mem (s.gpr .r5) (by simp only [slayOf] at h6; omega),
-      VG.Proof.Dsa.publicKeyBytes_at s.mem (s.gpr .r5) (by simp only [slayOf] at h6; omega)]
+    rw [VG.Proof.Dsa.privateKeyBytes_at s.mem (s.gpr .r5) (by simp only [slayOf] at h6; omega_arith),
+      VG.Proof.Dsa.publicKeyBytes_at s.mem (s.gpr .r5) (by simp only [slayOf] at h6; omega_arith)]
     rfl
   have hspec : ∀ {n : Nat}, VG.Proof.Dsa.shapeValid (pOf s.mem (slayOf s) (s.gpr .r5)) (qOf s.mem (slayOf s) (s.gpr .r5)) →
       Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .r5)) = 8 * n →
@@ -122,13 +122,13 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
   refine WP.seq (WP.mono (sfront_ok hpre) fun s₁ ⟨⟨hr₁, scr₁, r2₁, hout₁, sav₁, out₁⟩, k₁⟩ => ?_)
   have hwr' : ∀ u : State, ScrL u (slayOf s) → ∀ i < 19, InRegions u.wr (off (savW (stackArg s 1)) (8 * i)) 8 :=
     fun u hu i hi => by
-      rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [slayOf] at hZ ⊢; omega)
+      rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [slayOf] at hZ ⊢; omega_arith)
   have Out₁ : Outside (slayOf s).S 0 (slayOf s).Z s.mem s₁.mem :=
-    out₁.mono (Nat.le_refl _) (by simp only [slayOf] at hZ ⊢; omega)
+    out₁.mono (Nat.le_refl _) (by simp only [slayOf] at hZ ⊢; omega_arith)
   obtain ⟨ep₁, eq₁, eg₁, ey₁⟩ := key_kept (srcK3 s rfl rfl) Out₁
   have hKs : KeyOk s₁.mem (slayOf s) (s.gpr .r5) ↔ KeyOk s.mem (slayOf s) (s.gpr .r5) := by
     simp only [KeyOk, ep₁, eq₁, eg₁, ey₁]
-  refine WP.seq (checkKey_ok hL scr₁ hr₁ r2₁ (by omega) (srcK3 s₁ k₁.rd k₁.wr) (fun t hK hc Bd kc => ?_)
+  refine WP.seq (checkKey_ok hL scr₁ hr₁ r2₁ (by omega_arith) (srcK3 s₁ k₁.rd k₁.wr) (fun t hK hc Bd kc => ?_)
     (fun t hn Bd hrt scrt kc => ?_))
   · have kt := k₁.trans kc
     have Kd := Kept.ofBody hL Bd
@@ -136,10 +136,10 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
     have Ot : Outside (slayOf s).S 0 (slayOf s).Z s.mem t.mem := Out₁.trans Kd.out
     have hq8 : Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .r5)) =
         8 * (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .r5)) / 8) := by
-      have := hKt.1.1; unfold Spec.Dsa.supportedSizes at this; omega
+      have := hKt.1.1; unfold Spec.Dsa.supportedSizes at this; omega_arith
     have hn32 : Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .r5)) / 8 ≤ 32 := by
-      have := hKt.1.1; unfold Spec.Dsa.supportedSizes at this; omega
-    refine WP.mono (sbody_ok hL hK hc Kd (srcK t kt.rd kt.wr) (srcN t kt.rd kt.wr) (by omega)
+      have := hKt.1.1; unfold Spec.Dsa.supportedSizes at this; omega_arith
+    refine WP.mono (sbody_ok hL hK hc Kd (srcK t kt.rd kt.wr) (srcN t kt.rd kt.wr) (by omega_arith)
       ((srcD t kt.rd kt.wr).take (Nat.min_le_left _ _)) ((Body.hOut Bd).trans hout₁) (scrO t kt.wr)
       (srcO t kt.rd kt.wr)) fun u ⟨⟨ob, r3u, ⟨m, Km, Om⟩, h21u, scru⟩, ku⟩ => ?_
     refine WP.mono (sfinish_ok h21u (hwr' u scru)
@@ -147,7 +147,7 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
       (kt.trans ku)) fun w ⟨hab, w3, wm⟩ => ⟨hab, ?_⟩
     have ex : xOf t.mem (slayOf s) (s.gpr .r5) = xOf s.mem (slayOf s) (s.gpr .r5) := by
       simp only [xOf]
-      rw [((srcK s rfl rfl).sub (o := 3 * (slayOf s).pl + (slayOf s).ql) (k := (slayOf s).ql) (by omega)).kept Ot]
+      rw [((srcK s rfl rfl).sub (o := 3 * (slayOf s).pl + (slayOf s).ql) (k := (slayOf s).ql) (by omega_arith)).kept Ot]
     have ek : kOf t.mem (slayOf s) (s.gpr .r8) = kOf s.mem (slayOf s) (s.gpr .r8) := by
       simp only [kOf]; rw [(srcN s rfl rfl).kept Ot]
     rw [ep₁, eq₁, eg₁, ey₁, ex, ek] at ob r3u
@@ -156,7 +156,7 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
         Spec.Rsa.bytesAt s.mem (s.gpr .r10)
           (min (stackArg s 0).toNat (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .r5)) / 8)) := by
       rw [show min (min (stackArg s 0).toNat 64) (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .r5)) / 8) =
-        min (stackArg s 0).toNat (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .r5)) / 8) by omega]
+        min (stackArg s 0).toNat (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .r5)) / 8) by omega_arith]
       exact ((srcD s rfl rfl).take (Nat.min_le_left _ _)).kept Ot
     rw [ed] at ob r3u
     have hres := hspec hKt.1 hq8
@@ -178,7 +178,7 @@ theorem sign_correct (s : State) (h : sContract.pre s) :
       by_cases hs : VG.Proof.Dsa.shapeValid (pOf s.mem (slayOf s) (s.gpr .r5)) (qOf s.mem (slayOf s) (s.gpr .r5))
       · have hq8 : Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .r5)) =
             8 * (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .r5)) / 8) := by
-          have := hs.1; unfold Spec.Dsa.supportedSizes at this; omega
+          have := hs.1; unfold Spec.Dsa.supportedSizes at this; omega_arith
         rw [hspec hs hq8]
         split
         · rename_i hx; exact absurd ⟨hs, hx.1⟩ hn'

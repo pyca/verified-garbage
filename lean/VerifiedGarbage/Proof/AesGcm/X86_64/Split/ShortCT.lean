@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortRun
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!

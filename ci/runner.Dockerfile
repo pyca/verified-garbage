@@ -1,4 +1,4 @@
-# The Linux userspaces CI runs its 32-bit and PPC64LE jobs in, built by
+# The Linux userspaces CI runs its 32-bit, PPC64LE and RISC-V jobs in, built by
 # .github/workflows/runner-images.yml, each natively on a 64-bit runner:
 # * linux/386 (i686), on an x86-64 runner: x86's tests, natively;
 # * linux/arm64 (armv7-cross), on an ARM64 runner: ARMv7's and Thumb's tests,
@@ -6,7 +6,8 @@
 #   has AArch32 and under QEMU when it doesn't (as some runners' cores have
 #   none, and can start no 32-bit container at all), and ARMv7's
 #   benchmarks, cross-compiled and run natively;
-# * linux/ppc64le (ppc64le), on a ppc64le runner: PPC64LE's tests, natively.
+# * linux/ppc64le (ppc64le), on a ppc64le runner: PPC64LE's tests, natively;
+# * linux/riscv64 (riscv64), on a riscv64 runner: RISC-V's tests, natively.
 ARG TARGETARCH
 ARG TARGETVARIANT
 
@@ -58,6 +59,7 @@ RUN case "$(dpkg --print-architecture)" in \
         i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
         arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
         ppc64el) foreign=; packages= ;; \
+        riscv64) foreign=; packages= ;; \
         *) echo "unsupported architecture: $(dpkg --print-architecture)" >&2; exit 1 ;; \
     esac && \
     if [ -n "$foreign" ]; then dpkg --add-architecture "$foreign"; fi && \
@@ -91,6 +93,7 @@ RUN case "$(dpkg --print-architecture)" in \
         i386) host=i686-unknown-linux-gnu; targets= ;; \
         arm64) host=aarch64-unknown-linux-gnu; targets=armv7-unknown-linux-gnueabihf,thumbv7neon-unknown-linux-gnueabihf ;; \
         ppc64el) host=powerpc64le-unknown-linux-gnu; targets= ;; \
+        riscv64) host=riscv64gc-unknown-linux-gnu; targets= ;; \
     esac && \
     url="https://static.rust-lang.org/rustup/dist/$host/rustup-init" && \
     python3 -c 'import sys, urllib.request; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' "$url" /tmp/rustup-init && \
@@ -124,6 +127,7 @@ RUN case "$(dpkg --print-architecture)" in \
 # pkg-config finds the armhf OpenSSL for openssl-sys (the benchmarks).
 FROM base AS image-386
 FROM base AS image-ppc64le
+FROM base AS image-riscv64
 FROM base AS image-arm64
 COPY arm32-run /usr/local/bin/arm32-run
 ENV CARGO_BUILD_TARGET=armv7-unknown-linux-gnueabihf \

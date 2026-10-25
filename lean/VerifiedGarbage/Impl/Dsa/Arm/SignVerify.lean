@@ -26,7 +26,7 @@ def writeScalar (qLen input : Nat) (second : Bool) : Prog isa :=
 def result : List Instr := [.ldr .r0 .r12 (Layout.field .mask), .dp .and .r0 .r0 (.imm 1)]
 
 def signCompute (pLen qLen : Nat) : Prog isa := Core.sequence [
-  PublicValidation.call pLen qLen,
+  Validate.signingKey pLen qLen,
   Validate.privateKey pLen qLen,
   Core.sign pLen qLen,
   .seq (Validate.zero qLen (.local r) true) (Validate.zero qLen (.local s) true)]

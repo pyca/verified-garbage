@@ -109,8 +109,8 @@ theorem bytes_keepR {L : Lay} (hL : OkW L vWb) {W : List (Nat × Nat × Nat)} {m
 
 theorem vfit {p : Params} {STK : Nat} {σ : State} (hL : OkW (vlay p STK σ) vWb) (i : Nat) (hi : i < 5) :
     (vlay p STK σ).size i ≤ 2 ^ 64 := by
-  have := hL.fit i (by simp only [vlay, List.length_cons, List.length_nil]; omega)
-  omega
+  have := hL.fit i (by simp only [vlay, List.length_cons, List.length_nil]; omega_arith)
+  omega_arith
 
 theorem VC.keep {p : Params} {STK : Nat} {σ s s' : State} (h : VC p STK σ s) {W : List (Nat × Nat × Nat)}
     (hk : Kept ((vlay p STK σ).RL W) s s') (hc : vcChk p STK W = true) : VC p STK σ s' := by
@@ -140,10 +140,10 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
     rw [show (vlay p STK σ).buf 0 = reg (vScr σ) (scrLen p) from rfl, hp.wr]
     exact List.mem_singleton_self _
   have wS : ∀ {o n : Nat}, o + n ≤ 32768 → InRegions σ.wr (vScr σ + BitVec.ofNat 64 o) n := fun {o n} h =>
-    Lay.covers (L := vlay p STK σ) (o := o) (l := n) w0 (by rw [vlay_size0]; omega) _ _
+    Lay.covers (L := vlay p STK σ) (o := o) (l := n) w0 (by rw [vlay_size0]; omega_arith) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [pro, WP.block_append_iff]
-  refine WP.mono (topSave_ok (.inl rfl) rfl fun o _ h₂ => wS (by omega))
+  refine WP.mono (topSave_ok (.inl rfl) rfl fun o _ h₂ => wS (by omega_arith))
     fun s₁ ⟨sav, fr, g₁, lr₁, rd₁, wr₁, sp₁⟩ => ?_
   have g3 : s₁.gpr .r3 = vPk σ := g₁ _ (by decide)
   have g4 : s₁.gpr .r4 = vMu σ := g₁ _ (by decide)
@@ -164,7 +164,7 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
          simp only [RegUpd.gpr_write, a24, a28, a29, a30, a31, ite_false])
   have hin : ∀ {i l : Nat}, i = 2 ∨ i = 3 ∨ i = 4 → l = (vlay p STK σ).size i →
       bytesAt s₁.mem ((vlay p STK σ).A i 0) l = bytesAt σ.mem ((vlay p STK σ).A i 0) l := fun {i l} hi hl => by
-    refine Proof.MlKem.bytesAt_frame fr (fun r hr => ?_) (by rw [hl]; exact vfit hL i (by omega))
+    refine Proof.MlKem.bytesAt_frame fr (fun r hr => ?_) (by rw [hl]; exact vfit hL i (by omega_arith))
     rw [List.mem_singleton] at hr; subst hr
     rw [saveR_vlay p STK σ]
     refine disjW' (i := i) (o := 0) (l := l) (j := 0) (o' := 840) (l' := 72) hL ?_ (.inr (.inl (by decide)))
@@ -172,7 +172,7 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
     rcases hi with rfl | rfl | rfl <;> vsep hF [vlay, Lay.size]
   obtain ⟨ep, em, es⟩ := inputs_eq p STK σ
   refine WP.mono hmv fun s ⟨g30, g29, g28, g31, g24, cs, m, rd, wr, sp⟩ => ⟨⟨⟨hL, rfl, by decide, by decide,
-    by rw [vlay_size0]; omega, rfl, by rw [sp, sp₁]; rfl, hSTK, by rw [sp, sp₁]; exact hp.stk, g31, g30, g29, g28,
+    by rw [vlay_size0]; omega_arith, rfl, by rw [sp, sp₁]; rfl, hSTK, by rw [sp, sp₁]; exact hp.stk, g31, g30, g29, g28,
     fun i hi hi1 => ?_, fun i hi hi1 => ?_⟩, rd.trans rd₁, wr.trans wr₁, sp.trans sp₁,
     fun r hr hs => (cs r hr hs).trans (g₁ r (by rintro rfl; simp [preserved] at hr)), by rw [m]; exact sav,
     ?_, ?_, ?_⟩, g24⟩
@@ -184,7 +184,7 @@ theorem vpro_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 48 ≤ STK) {σ
     · exact absurd rfl hi1
   · show _ ∈ s.rd ++ s.wr
     rw [rd, rd₁, wr, wr₁, hp.rd, hp.wr]
-    rcases (by omega : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, vlay]
+    rcases (by omega_arith : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, vlay]
   · rw [m, hin (i := 2) (l := p.pkLen) (.inl rfl) rfl]; exact ep
   · rw [m, hin (i := 3) (l := 64) (.inr (.inl rfl)) rfl]; exact em
   · rw [m, hin (i := 4) (l := p.sigLen) (.inr (.inr rfl)) rfl]; exact es

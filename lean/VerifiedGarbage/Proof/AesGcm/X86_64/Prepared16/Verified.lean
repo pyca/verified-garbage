@@ -3,18 +3,18 @@ module
 public import VerifiedGarbage.Spec.Gcm.Prepared16
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
-public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
+import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16
 public import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksVerified
 import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCryptCT
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+public import VerifiedGarbage.Spec.Gcm.Contract
 
 /-! # Sixteen prepared powers: Prepared-context sealing and streaming contracts -/
 

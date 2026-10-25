@@ -28,7 +28,7 @@ theorem off_sub (p : Addr) {a b : Nat} (h : b ≤ a) :
     off p a - BitVec.ofNat 64 b = off p (a - b) := by
   simp only [off]
   rw [show BitVec.ofNat 64 a = BitVec.ofNat 64 (a - b) + BitVec.ofNat 64 b by
-    rw [BitVec.ofNat_add_ofNat]; congr 1; omega, ← BitVec.add_assoc, BitVec.add_sub_cancel]
+    rw [BitVec.ofNat_add_ofNat]; congr 1; omega_arith, ← BitVec.add_assoc, BitVec.add_sub_cancel]
 
 theorem w32_sep (m : Mem) (B : Addr) {d e : Nat} (v : BitVec 32) (h : d + 4 ≤ e ∨ e + 4 ≤ d)
     (hd : d + 4 ≤ 2 ^ 64) (he : e + 4 ≤ 2 ^ 64) : w32 (m.writeW (off B e) v) B d = w32 m B d := by
@@ -47,29 +47,29 @@ theorem setTop_ok {s : State} {B : Addr} {Z v N j : Nat} (h : Ws s B Z v N) (hj 
   have := h.wle
   have hs := h.scr
   rw [setTop, List.append_assoc]
-  refine ptr_ok h (r := .r5) (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega) ?_
+  refine ptr_ok h (r := .r5) (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega_arith) ?_
   rw [WP.block_append_iff]
   let d := arr v j + 4 * (v - 1)
   have ea : off B (arr v j + 4 * v) - 4#64 = off B d := by
-    rw [off_sub _ (by omega)]; congr 1; omega
+    rw [off_sub _ (by omega_arith)]; congr 1; omega_arith
   have ev : (1#64 <<< 31).setWidth 32 = BitVec.ofNat 32 (2 ^ 31) := by decide
   refine WP.mono (WP.keep [.r0, .r5] (Q := fun t => t.mem = s.mem.writeW (off B d) (BitVec.ofNat 32 (2 ^ 31)))
     ?_ (by decide)) fun t ⟨m, kt⟩ => ?_
   · prun [h.r29, shl2_ofNat, ea, exec_store_w (show Reg.r5 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
-      hs.st (d := d) (n := 4) (by omega), BitVec.add_zero, ev]
-  · have o : Outside B d 4 s.mem t.mem := by rw [m]; exact writeW32_outside _ _ _ (by omega)
+      hs.st (d := d) (n := 4) (by omega_arith), BitVec.add_zero, ev]
+  · have o : Outside B d 4 s.mem t.mem := by rw [m]; exact writeW32_outside _ _ _ (by omega_arith)
     have K : Keep [.r0, .r5] s t := ((Keep.write _ _ _).trans kt).mono
-    refine k t (h.of_keep K) (KeyWorkspace.Keep.of_arr (o := j) (d := 4 * (v - 1)) o (by omega) (by simp)) ?_ K
-    obtain ⟨u, rfl⟩ : ∃ u, v = u + 1 := ⟨v - 1, by omega⟩
+    refine k t (h.of_keep K) (KeyWorkspace.Keep.of_arr (o := j) (d := 4 * (v - 1)) o (by omega_arith) (by simp)) ?_ K
+    obtain ⟨u, rfl⟩ : ∃ u, v = u + 1 := ⟨v - 1, by omega_arith⟩
     simp only [num]
     rw [val32_append t.mem B (arr (u + 1) j) u 1]
     have lo : val32 t.mem B (arr (u + 1) j) u = 0 := by
-      rw [← CrtValues.val32_of_zero (m := s.mem) (B := B) (d := arr (u + 1) j) (n := u) (fun i hi => hz i (by omega))]
+      rw [← CrtValues.val32_of_zero (m := s.mem) (B := B) (d := arr (u + 1) j) (n := u) (fun i hi => hz i (by omega_arith))]
       refine val32_congr fun i hi => congrArg BitVec.toNat (Mem.readW_congr fun b hb => o _ ?_)
-      rw [ofs_off B (by omega)]; omega
+      rw [ofs_off B (by omega_arith)]; omega_arith
     have hi : val32 t.mem B (arr (u + 1) j + 4 * u) 1 = 2 ^ 31 := by
       simp only [val32, Nat.mul_zero, Nat.add_zero]
-      rw [m, show arr (u + 1) j + 4 * u = d by omega, w32_write_self]
+      rw [m, show arr (u + 1) j + 4 * u = d by omega_arith, w32_write_self]
       rfl
     rw [lo, hi, Nat.zero_add, ← Nat.pow_add]
     congr 1
@@ -87,36 +87,36 @@ theorem clrTop_ok {s : State} {B : Addr} {Z v N j : Nat} (h : Ws s B Z v N) (hj 
   have := h.wle
   have hs := h.scr
   rw [clrTop, List.append_assoc]
-  refine ptr_ok h (r := .r5) (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega) ?_
+  refine ptr_ok h (r := .r5) (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega_arith) ?_
   rw [WP.block_append_iff]
   let d := arr v j + 4 * (v - 2)
   have ea : off B (arr v j + 4 * v) - 8#64 = off B d := by
-    rw [off_sub _ (by omega)]; congr 1; omega
+    rw [off_sub _ (by omega_arith)]; congr 1; omega_arith
   refine WP.mono (WP.keep [.r0, .r5] (Q := fun t => t.mem =
     (s.mem.writeW (off B d) (0 : BitVec 32)).writeW (off B (d + 4)) (0 : BitVec 32)) ?_ (by decide))
     fun t ⟨m, kt⟩ => ?_
   · prun [h.r29, shl2_ofNat, ea, exec_store_w (show Reg.r5 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
       exec_store_w (show Reg.r5 ≠ .r0 by decide) (show 4 < 2 ^ 15 by decide),
-      hs.st (d := d) (n := 4) (by omega), hs.st (d := d + 4) (n := 4) (by omega), BitVec.add_zero, off_add]
+      hs.st (d := d) (n := 4) (by omega_arith), hs.st (d := d + 4) (n := 4) (by omega_arith), BitVec.add_zero, off_add]
     rfl
-  · have o1 : Outside B d 4 s.mem (s.mem.writeW (off B d) (0 : BitVec 32)) := writeW32_outside _ _ _ (by omega)
+  · have o1 : Outside B d 4 s.mem (s.mem.writeW (off B d) (0 : BitVec 32)) := writeW32_outside _ _ _ (by omega_arith)
     have o2 : Outside B (d + 4) 4 (s.mem.writeW (off B d) (0 : BitVec 32)) t.mem := by
-      rw [m]; exact writeW32_outside _ _ _ (by omega)
-    have o : Outside B d 8 s.mem t.mem := (o1.mono (by omega) (by omega)).trans (o2.mono (by omega) (by omega))
+      rw [m]; exact writeW32_outside _ _ _ (by omega_arith)
+    have o : Outside B d 8 s.mem t.mem := (o1.mono (by omega_arith) (by omega_arith)).trans (o2.mono (by omega_arith) (by omega_arith))
     have K : Keep [.r0, .r5] s t := ((Keep.write _ _ _).trans kt).mono
-    refine k t (h.of_keep K) (KeyWorkspace.Keep.of_arr (o := j) (d := 4 * (v - 2)) o (by omega) (by simp)) o ?_ K
-    obtain ⟨u, rfl⟩ : ∃ u, v = u + 2 := ⟨v - 2, by omega⟩
+    refine k t (h.of_keep K) (KeyWorkspace.Keep.of_arr (o := j) (d := 4 * (v - 2)) o (by omega_arith) (by simp)) o ?_ K
+    obtain ⟨u, rfl⟩ : ∃ u, v = u + 2 := ⟨v - 2, by omega_arith⟩
     simp only [num, Nat.add_sub_cancel]
     rw [val32_append t.mem B (arr (u + 2) j) u 2]
     have lo : val32 t.mem B (arr (u + 2) j) u = val32 s.mem B (arr (u + 2) j) u :=
       val32_congr fun i hi => congrArg BitVec.toNat (Mem.readW_congr fun b hb => o _ (by
-        rw [ofs_off B (by omega)]; omega))
+        rw [ofs_off B (by omega_arith)]; omega_arith))
     have z1 : w32 t.mem B (arr (u + 2) j + 4 * u) = 0 := by
-      rw [show arr (u + 2) j + 4 * u = d by simp only [d]; omega, m, w32_sep _ _ _ (by omega) (by omega) (by omega),
+      rw [show arr (u + 2) j + 4 * u = d by simp only [d]; omega_arith, m, w32_sep _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
         w32_write_self]
       rfl
     have z2 : w32 t.mem B (arr (u + 2) j + 4 * u + 4) = 0 := by
-      rw [show arr (u + 2) j + 4 * u + 4 = d + 4 by simp only [d]; omega, m, w32_write_self]
+      rw [show arr (u + 2) j + 4 * u + 4 = d + 4 by simp only [d]; omega_arith, m, w32_write_self]
       rfl
     have hi : val32 t.mem B (arr (u + 2) j + 4 * u) 2 = 0 := by
       simp only [val32, z1, z2, Nat.mul_zero, Nat.add_zero]
@@ -135,17 +135,17 @@ theorem clrW_ok {s : State} {B : Addr} {Z v N j : Nat} (h : Ws s B Z v N) (hj : 
   have := h.wle
   have hs := h.scr
   rw [clrW, List.append_assoc]
-  refine ptr_ok h (r := .r5) (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega) ?_
+  refine ptr_ok h (r := .r5) (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega_arith) ?_
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r0, .r5] (Q := fun t => t.mem = s.mem.writeW (off B (arr v j + 4 * v)) (0 : BitVec 32))
     ?_ (by decide))
     fun t ⟨m, kt⟩ => ?_
   · prun [h.r29, shl2_ofNat, exec_store_w (show Reg.r5 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
-      hs.st (d := arr v j + 4 * v) (n := 4) (by omega), BitVec.add_zero, off_add]
+      hs.st (d := arr v j + 4 * v) (n := 4) (by omega_arith), BitVec.add_zero, off_add]
     rfl
-  · have o : Outside B (arr v j + 4 * v) 4 s.mem t.mem := by rw [m]; exact writeW32_outside _ _ _ (by omega)
+  · have o : Outside B (arr v j + 4 * v) 4 s.mem t.mem := by rw [m]; exact writeW32_outside _ _ _ (by omega_arith)
     have K : Keep [.r0, .r5] s t := ((Keep.write _ _ _).trans kt).mono
-    refine k t (h.of_keep K) (KeyWorkspace.Keep.of_arr (o := j) (d := 4 * v) o (by omega) (by simp)) o ?_ K
+    refine k t (h.of_keep K) (KeyWorkspace.Keep.of_arr (o := j) (d := 4 * v) o (by omega_arith) (by simp)) o ?_ K
     rw [m, w32_write_self]
     rfl
 

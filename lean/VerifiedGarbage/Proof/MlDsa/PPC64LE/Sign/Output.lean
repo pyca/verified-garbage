@@ -49,7 +49,7 @@ theorem zrange_of_norm {m : Mem} {a : Addr} {f : Poly} (h : PolyIs m a f) {B γ 
   rw [getElem!_pos f i hi] at this
   rw [coeff_val h hi]
   simp only [normZq] at this
-  omega
+  omega_arith
 
 /-! ## The hint -/
 
@@ -66,7 +66,7 @@ theorem hintAt_of {m : Mem} {a : Addr} {k : Nat} {f : Nat → Vector Bool n}
   simp only [Nat.mul_zero, Nat.zero_add, List.getD_cons_zero] at e
   have ea : coeffAt m a (256 * i + j) = coeffAt m (a + BitVec.ofNat 64 (1024 * i)) j := by
     simp only [coeffAt]
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * i + 4 * j = 4 * (256 * i + j) by omega]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * i + 4 * j = 4 * (256 * i + j) by omega_arith]
   rw [Vector.getElem_ofFn, ea, e, getElem!_pos (f i) j hj]
   cases (f i)[j] <;> decide
 
@@ -79,7 +79,7 @@ theorem SL_hint (p : Params) (STK : Nat) (σ : State) (i : Nat) :
     SL p STK σ (5 + i) = SL p STK σ 5 + BitVec.ofNat 64 (1024 * i) := by
   simp only [SL, Lay.A, oP, BitVec.add_assoc, ← BitVec.ofNat_add]
   congr 2
-  omega
+  omega_arith
 
 /-! ## The signature -/
 
@@ -117,7 +117,7 @@ theorem OI.keep {p : Params} {STK : Nat} {σ : State} {κ : Nat} {s s' : State} 
   have hL := h.k.sc.site.ok
   have h0 : 0 ∈ sWb2 := by decide
   exact ⟨h.k.keep hk c1, fun r hr => famR_keep hL h0 hk.frame c2 (fun j _ hj => h.z j hj) r (Nat.zero_le _) hr,
-    fun i hi => hintIs_keepW hL hk.frame (sepAll_sub c3 (by unfold oP; omega) (by unfold oP; omega)) h0 (h.h i hi),
+    fun i hi => hintIs_keepW hL hk.frame (sepAll_sub c3 (by unfold oP; omega_arith) (by unfold oP; omega_arith)) h0 (h.h i hi),
     h.pass, (hk.cs .r24 (by decide)).trans h.r24⟩
 
 /-- `ssep`, with the checks of the signature. -/
@@ -135,12 +135,12 @@ theorem outCopy_ok {σ : State} {κ : Nat} {s : State} (h : OI p STK σ κ s)
     WP isa (copy .r31 oCT .r28 0 (cLen p)) s (OS p STK σ κ 0) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   have hsh : sigH p = cLen p + zLen p * p.ℓ := rfl
-  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega) hl.2
-  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
-  have hc : 0 < cLen p ∧ cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega_arith) hl.2
+  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_arith
+  have hc : 0 < cLen p ∧ cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_arith
   refine WP.mono (copyS h.k.sc.site (sb := .r31) (so := oCT) (db := .r28) (dO := 0) (len := cLen p)
     ⟨sptr_ok rfl (by decide), by osep hF⟩ ⟨sptr_ok rfl (by decide), by osep hF⟩ (show ix Reg.r28 ∈ sWb2 by decide)
-    (by decide) (by decide) (by omega) hc.1 (by osep hF)) fun s1 ⟨k1, b1⟩ => ⟨h.keep k1 (by osep hF), ?_⟩
+    (by decide) (by decide) (by omega_arith) hc.1 (by osep hF)) fun s1 ⟨k1, b1⟩ => ⟨h.keep k1 (by osep hF), ?_⟩
   rw [Nat.mul_zero, Nat.add_zero]
   show bytesAt s1.mem (lpa (slay2 p STK σ) (.r28, 0)) (cLen p) = _
   have e : bytesAt s.mem (lpa (slay2 p STK σ) (.r31, oCT)) (cLen p) = CTv p σ κ := hct
@@ -151,8 +151,8 @@ theorem packZ_ok {σ : State} {κ r : Nat} (hr : r < p.ℓ) {s : State} (h : OS 
     WP isa (packZ P p r) s (OS p STK σ κ (r + 1)) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   have hsh : sigH p = cLen p + zLen p * p.ℓ := rfl
-  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega) hl.2
-  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega_arith) hl.2
+  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_arith
   have hz := hF.lz; have hsg := hF.sig
   have hzr := h.o.z r hr
   have hm : zLen p * r + zLen p ≤ zLen p * p.ℓ := by
@@ -166,7 +166,7 @@ theorem packZ_ok {σ : State} {κ r : Nat} (hr : r < p.ℓ) {s : State} (h : OS 
     hzr.1 (zrange_of_norm hzr hpz (Nat.sub_le _ _)) fun s' k' hb' => ?_
   refine ⟨h.o.keep k' (by osep hF), ?_⟩
   have e0 := bytes_keepW h.o.k.sc.site.ok k'.frame (i := 4) (o := 0) (l := cLen p + zLen p * r) (by osep hF)
-    (by decide) (by omega)
+    (by decide) (by omega_arith)
   have e1 : polyAt s.mem (lpa (slay2 p STK σ) (yP p r)) = Zv p σ κ r := hzr.2
   rw [e1] at hb'
   have b2 : bytesAt s'.mem ((slay2 p STK σ).A 4 0 + BitVec.ofNat 64 (cLen p + zLen p * r)) (zLen p) =
@@ -185,27 +185,27 @@ omit hP hS in
 theorem hbp_m {σ : State} : KeyGen.HbpOk (slay2 p STK σ) sWb2 (pS 5) (256 * p.k) p.ω (.r28, sigH p) (p.ω + p.k) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   have hsh : sigH p = cLen p + zLen p * p.ℓ := rfl
-  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega) hl.2
-  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega_arith) hl.2
+  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_arith
   have hz := hF.lz; have hsg := hF.sig; have hom := hF.om
   exact ⟨⟨sptr_ok rfl (by decide), by osep hF⟩, ⟨sptr_ok rfl (by clt hF), by osep hF⟩,
-    show ix Reg.r28 ∈ sWb2 by decide, by osep hF, by rw [Nat.add_sub_cancel_left]; exact hF.hip, by omega,
-    by rw [Nat.add_sub_cancel_left], ⟨by omega, by clt hF, by omega, by omega, by omega⟩⟩
+    show ix Reg.r28 ∈ sWb2 by decide, by osep hF, by rw [Nat.add_sub_cancel_left]; exact hF.hip, by omega_arith,
+    by rw [Nat.add_sub_cancel_left], ⟨by omega_arith, by clt hF, by omega_arith, by omega_arith, by omega_arith⟩⟩
 
 theorem hpack_ok {σ : State} {κ : Nat} {s : State} (h : OS p STK σ κ p.ℓ s) :
     WP isa (hintBitPackAt P (Impl.MlDsa.PPC64LE.Sign.hP 0) (256 * p.k) p.ω (.r28, sigH p) (p.ω + p.k)) s fun s' =>
       IK p STK σ s' ∧ bytesAt s'.mem ((slay2 p STK σ).A 4 0) p.sigLen = sigV p σ κ ∧ s'.gpr .r24 = 1 := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   have hsh : sigH p = cLen p + zLen p * p.ℓ := rfl
-  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega) hl.2
-  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega_arith) hl.2
+  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_arith
   have hz := hF.lz; have hsg := hF.sig; have hom := hF.om
   unfold hintBitPackAt
   refine KeyGen.hbp_ok hP.hintBitPack h.o.k.sc.site hS (hbp_m hF)
     (by rw [Nat.add_sub_cancel_left]; exact hones_ok h.o) fun s' k' hb' =>
     ⟨h.o.k.keep k' (by osep hF), ?_, (k'.cs .r24 (by decide)).trans h.o.r24⟩
   have e0 := bytes_keepW h.o.k.sc.site.ok k'.frame (i := 4) (o := 0) (l := cLen p + zLen p * p.ℓ) (by osep hF)
-    (by decide) (by omega)
+    (by decide) (by omega_arith)
   rw [Nat.add_sub_cancel_left, hintAt_of (f := Hv p σ κ) fun i hi => by
     have := h.o.h i hi; rwa [SL_hint] at this] at hb'
   have b2 : bytesAt s'.mem ((slay2 p STK σ).A 4 0 + BitVec.ofNat 64 (cLen p + zLen p * p.ℓ)) (p.ω + p.k) =
@@ -222,7 +222,7 @@ theorem output_ok {σ : State} {κ : Nat} {s : State} (h : OI p STK σ κ s)
   unfold output
   refine WP.seq (WP.mono (outCopy_ok hF h hct) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (wp_seqR (I := fun r => OS p STK σ κ r) p.ℓ 0
-    (fun r _ hr s h => packZ_ok hP hF hS (by omega) h) s1 h1) fun s2 h2 => ?_)
+    (fun r _ hr s h => packZ_ok hP hF hS (by omega_arith) h) s1 h1) fun s2 h2 => ?_)
   rw [Nat.zero_add] at h2
   exact hpack_ok hP hF hS h2
 
@@ -244,7 +244,7 @@ theorem liftG {P Q₀ Q : State → State → Prop} {c : Prog isa}
 theorem coeff_hint {m : Mem} {a : Addr} {i j : Nat} :
     coeffAt m a (256 * i + j) = coeffAt m (a + BitVec.ofNat 64 (1024 * i)) j := by
   simp only [coeffAt]
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * i + 4 * j = 4 * (256 * i + j) by omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * i + 4 * j = 4 * (256 * i + j) by omega_arith]
 
 /-- Two memories holding the same hint have the same coefficients. -/
 theorem coeffs_eq {mx my : Mem} {a : Addr} {k : Nat} {F : Nat → Vector Bool n}
@@ -254,7 +254,7 @@ theorem coeffs_eq {mx my : Mem} {a : Addr} {k : Nat} {F : Nat → Vector Bool n}
       (List.range (256 * k)).map (fun c => (coeffAt my a c).toNat) := by
   refine List.map_congr_left fun c hc => ?_
   rw [List.mem_range] at hc
-  have hi : c / 256 < k := by omega
+  have hi : c / 256 < k := by omega_arith
   have hj : c % 256 < 256 := Nat.mod_lt _ (by decide)
   have e : c = 256 * (c / 256) + c % 256 := (Nat.div_add_mod c 256).symm
   rw [e, coeff_hint, coeff_hint]
@@ -293,8 +293,8 @@ theorem outCopy_tr :
 theorem packZ_tr {r : Nat} (hr : r < p.ℓ) : RelCT isa (OR p STK r) (packZ P p r) (OR p STK (r + 1)) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   have hsh : sigH p = cLen p + zLen p * p.ℓ := rfl
-  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega) hl.2
-  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  have hzl : zLen p * p.ℓ ≤ 640 * 7 := Nat.mul_le_mul (by rcases hF.lz with e | e <;> omega_arith) hl.2
+  have hcl : cLen p ≤ 64 := by rcases hF.ct with e | e | e <;> omega_arith
   have hz := hF.lz; have hsg := hF.sig
   have m : ∀ σ, KeyGen.BpOk (slay2 p STK σ) sWb2 (yP p r) (p.γ₁ - 1) p.γ₁ (.r28, sigZ p r) (zLen p) := fun σ =>
     have hm : zLen p * r + zLen p ≤ zLen p * p.ℓ := by
@@ -347,7 +347,7 @@ theorem output_tr :
       ∀ i < p.k, Hv p σ₁ κ₁ i = Hv p σ₂ κ₂ i) (output P p) fun _ _ => True := by
   unfold output
   refine RelCT.seq (outCopy_tr hF) (RelCT.seq ?_ (hpack_tr hP hF hS))
-  simpa using rr_seqR (R := fun r => OR p STK r) p.ℓ 0 fun r _ hr => packZ_tr hP hF hS (by omega)
+  simpa using rr_seqR (R := fun r => OR p STK r) p.ℓ 0 fun r _ hr => packZ_tr hP hF hS (by omega_arith)
 end
 
 end VG.Proof.MlDsa.PPC64LE.Sign

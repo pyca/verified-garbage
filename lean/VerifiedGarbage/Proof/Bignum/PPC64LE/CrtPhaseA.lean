@@ -36,8 +36,8 @@ theorem pq_lt {P Q pL qL k w : Nat} (hP : P < 256 ^ pL) (hQ : Q < 256 ^ qL) (hp 
   have h1 : P * Q < 256 ^ pL * 256 ^ qL := Nat.mul_lt_mul_of_lt_of_lt hP hQ
   rw [← Nat.pow_add, VG.Proof.Bignum.pow256_eq] at h1
   have h2 : 2 ^ (8 * (pL + qL)) * 2 ≤ 2 ^ (64 * w) := by
-    rw [← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by omega)
-  omega
+    rw [← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
+  omega_arith
 
 /-- `checks`, in `X` as `checksA_ok` and `checksB_ok` need it. -/
 theorem checks_ok {s : State} {BX Na : Addr} {Z w k : Nat} {nb : List Byte}
@@ -47,7 +47,7 @@ theorem checks_ok {s : State} {BX Na : Addr} {Z w k : Nat} {nb : List Byte}
     (hN : word s.mem BX oN = off Na 0) (hNL : word s.mem BX oNLen = BitVec.ofNat 64 k)
     (hk : 64 ≤ k) (hk' : k ≤ 1024) (hlen : nb.length = k)
     (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off Na i) 1)
-    (hb : ∀ i (h : i < k), s.mem (off Na i) = nb[i]'(by omega))
+    (hb : ∀ i (h : i < k), s.mem (off Na i) = nb[i]'(by omega_arith))
     (hM : Mont.val32 s.mem BX (slot w 0) (2 * w) = 2 ^ (64 * w) - 1)
     (hM0 : word s.mem BX (slot w 0) = BitVec.allOnes 64)
     (hn1 : Mont.val32 s.mem BX (slot w 1) (2 * w) = Spec.Rsa.os2ip nb)
@@ -88,20 +88,20 @@ theorem checks_ok {s : State} {BX Na : Addr} {Z w k : Nat} {nb : List Byte}
       (k3.gpr _ (by decide)).trans b10⟩, (k2.trans k3).mono⟩
   · rw [u4, o2.val32 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only <;> omega) (by omega)]; rfl
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)]; rfl
   · rw [u5, o2.val32 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only <;> omega) (by omega)]; rfl
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)]; rfl
   · rw [u7, o2.val32 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only <;> omega) (by omega)]; rfl
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith) (by omega_arith)]; rfl
   · intro x hx
     have hx' : Mont.ofs BX x < slot w 2 ∨ slot w 2 + 6 * (8 * (w + 2)) ≤ Mont.ofs BX x := hx
     rw [o3 x (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only <;> omega), o2 x (fun r hr => by
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith), o2 x (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only <;> omega)]
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith)]
 
 /-- `loadX` and `checks`, from the header's buffers (`k` bytes of `n` and the
 input, `pL` of `p` and `qInv`, `qL` of `q`, apart from the working space). -/
@@ -151,18 +151,18 @@ theorem phaseA_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z k pL qL : Nat}
   have e : ∀ j, slot (2 * ((k + 7) / 8)) j = hdrBytes + j * (8 * (2 * ((k + 7) / 8) + 2)) := fun _ => rfl
   have e0 := e 0; have e2 := e 2; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
-  refine WP.seq (WP.mono (loadX_ok hs hZ (by omega) (by omega) h23 h10 h21 h29 h11 hNa hK hPa hPL hQa hQL hIa hQIa
-    (by omega) (by omega) hp (by omega) hq (by omega) rN sN rP sP rQ sQ rI sI rQI sQI)
+  refine WP.seq (WP.mono (loadX_ok hs hZ (by omega_arith) (by omega_arith) h23 h10 h21 h29 h11 hNa hK hPa hPL hQa hQL hIa hQIa
+    (by omega_arith) (by omega_arith) hp (by omega_arith) hq (by omega_arith) rN sN rP sP rQ sQ rI sI rQI sQI)
     fun s₁ ⟨⟨v0, w0, v1, v4, v5, v6, v7, t1, t6, t7, O1, a10⟩, k1⟩ => ?_)
-  have hd : ∀ d, d + 8 ≤ 256 → word s₁.mem BX d = word s.mem BX d := fun d hd => O1.word (Or.inl hd) (by omega)
+  have hd : ∀ d, d + 8 ≤ 256 → word s₁.mem BX d = word s.mem BX d := fun d hd => O1.word (Or.inl hd) (by omega_arith)
   have hQb : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Qa qL) < 256 ^ qL := by
     have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem Qa qL)
     rwa [VG.Proof.Bignum.bytesAt_length] at this
   have hPb : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem Pa pL) < 256 ^ pL := by
     have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem Pa pL)
     rwa [VG.Proof.Bignum.bytesAt_length] at this
-  have hw : 16 * k ≤ 64 * (2 * ((k + 7) / 8)) := by omega
-  refine WP.mono (checks_ok (nb := Spec.Rsa.bytesAt s.mem Na k) (hs.congr k1.wr) hZ (by omega) (by omega)
+  have hw : 16 * k ≤ 64 * (2 * ((k + 7) / 8)) := by omega_arith
+  refine WP.mono (checks_ok (nb := Spec.Rsa.bytesAt s.mem Na k) (hs.congr k1.wr) hZ (by omega_arith) (by omega_arith)
     ((k1.gpr _ (by decide)).trans h23) a10 ((k1.gpr _ (by decide)).trans h21)
     ((k1.gpr _ (by decide)).trans h29) ((k1.gpr _ (by decide)).trans h11)
     (by rw [hd _ (by decide)]; exact hNa) (by rw [hd _ (by decide)]; exact hK) hk hk'
@@ -171,17 +171,17 @@ theorem phaseA_ok {s : State} {BX Na Pa Qa Ia QIa : Addr} {Z k pL qL : Nat}
       rw [O1 _ (Or.inr ?_)]
       · simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
       · by_contra hc
-        exact sN i hi _ (by omega) rfl)
+        exact sN i hi _ (by omega_arith) rfl)
     v0 w0 v1 t1 t6 t7 (by rw [v5]; have := pq_lt (P := 1) (pL := 1) (by
-        rw [VG.Proof.Bignum.pow256_eq]; exact Nat.one_lt_two_pow (by omega)) hQb (by omega) hqk hw; omega)
+        rw [VG.Proof.Bignum.pow256_eq]; exact Nat.one_lt_two_pow (by omega_arith)) hQb (by omega_arith) hqk hw; omega_arith)
     (by rw [v4, v5]; exact pq_lt hPb hQb hpk hqk hw))
     fun t ⟨⟨t26, u4, u5, u7, o2, t10⟩, k2⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, t10⟩, (k1.trans k2).mono⟩
   · rw [t26, v6, v4, v5, v7]
-  · rw [Pre.val32_eq_wv, o2.wv (Or.inl (by omega)) (by omega), ← Pre.val32_eq_wv, v0]
-  · rw [o2.word (Or.inl (by omega)) (by omega), w0]
+  · rw [Pre.val32_eq_wv, o2.wv (Or.inl (by omega_arith)) (by omega_arith), ← Pre.val32_eq_wv, v0]
+  · rw [o2.word (Or.inl (by omega_arith)) (by omega_arith), w0]
   · rw [u4, v6, v4, v5, v7]
   · rw [u5, v6, v4, v5, v7]
   · rw [u7, v6, v4, v5, v7]
-  · exact O1.trans (o2.mono (by omega) (by omega))
+  · exact O1.trans (o2.mono (by omega_arith) (by omega_arith))
 
 end VG.Proof.Bignum.PPC64LE.Crt

@@ -57,7 +57,7 @@ theorem V2.keep {p : Params} (hF : VFacts p) {STK j : Nat} {σ s s' : State} (h 
     V2 p STK j σ s' := by
   have hL := h.vc.site.ok
   obtain ⟨hh', e, hi⟩ := h.hint
-  exact ⟨h.vc.keep hk hc, ⟨hh', e, hintIs_keepW hL hk.frame hh (by decide) (by have := hF.k; omega) hi⟩,
+  exact ⟨h.vc.keep hk hc, ⟨hh', e, hintIs_keepW hL hk.frame hh (by decide) (by have := hF.k; omega_arith) hi⟩,
     fun i hi' => polyIs_keepW hL hk.frame (hz i hi') (by decide) rfl (h.z i hi'),
     by rw [hk.cs _ (by decide)]; exact h.r24⟩
 
@@ -68,8 +68,8 @@ theorem zOk_succ (p : Params) (σ : State) (j : Nat) :
     zOk p σ (j + 1) = (zOk p σ j && decide (normRq [toRq (vZ p (sgOf p σ) j)] < p.γ₁ - p.β)) := by
   simp only [zOk]
   rw [← Bool.decide_and]
-  refine decide_eq_decide.mpr (Iff.intro (fun h => ⟨fun i hi => h i (by omega), h j (by omega)⟩) fun h i hi => ?_)
-  rcases (by omega : i < j ∨ i = j) with hi | rfl
+  refine decide_eq_decide.mpr (Iff.intro (fun h => ⟨fun i hi => h i (by omega_arith), h j (by omega_arith)⟩) fun h i hi => ?_)
+  rcases (by omega_arith : i < j ∨ i = j) with hi | rfl
   exacts [h.1 i hi, h.2]
 
 /-! ## One `z[i]` -/
@@ -83,12 +83,12 @@ theorem bu_m {σ : State} {j : Nat} (hj : j < p.ℓ) :
     BuOk (vlay p STK σ) vWb (.r28, p.ctildeLen + lenZ p * j) (lenZ p) (p.γ₁ - 1) p.γ₁ (pZ j) := by
   have hl := hF.l
   obtain ⟨hb, hlz, hg⟩ := hF.bu
-  refine ⟨⟨vptr_ok rfl ?_, ?_⟩, ⟨vptr_ok rfl (by unfold oP; omega), by vsep hF⟩, show ix Reg.r31 ∈ vWb by decide,
+  refine ⟨⟨vptr_ok rfl ?_, ?_⟩, ⟨vptr_ok rfl (by unfold oP; omega_arith), by vsep hF⟩, show ix Reg.r31 ∈ vWb by decide,
     ?_, hb, hlz, ?_⟩
-  · rcases hF.ct with e | e | e <;> rcases hF.lz with e' | e' <;> rw [e, e'] <;> omega
+  · rcases hF.ct with e | e | e <;> rcases hF.lz with e' | e' <;> rw [e, e'] <;> omega_arith
   · rcases hF.lz with e | e <;> vsep hF [hF.sig, hF.hint, e]
   · rcases hF.lz with e | e <;> vsep hF [hF.sig, hF.hint, e]
-  · rcases hF.lz with e | e <;> rw [e] <;> omega
+  · rcases hF.lz with e | e <;> rw [e] <;> omega_arith
 
 /-- After `z[j]` is unpacked. -/
 abbrev Z1 (p : Params) (STK j : Nat) (σ s : State) : Prop :=
@@ -106,7 +106,7 @@ theorem bu_piece {j : Nat} (hj : j < p.ℓ) :
     · intro i hi; vsep hF
     · have e : bytesAt s.mem (lpa (vlay p STK σ) (.r28, p.ctildeLen + lenZ p * j)) (lenZ p) =
           ((sgOf p σ).drop (p.ctildeLen + lenZ p * j)).take (lenZ p) :=
-        sig_slice h.vc (by rw [hF.sig, hF.hint]; rcases hF.lz with e | e <;> rw [e] <;> omega)
+        sig_slice h.vc (by rw [hF.sig, hF.hint]; rcases hF.lz with e | e <;> rw [e] <;> omega_arith)
       rw [e] at hz
       exact hz
   · unfold bitUnpackAt
@@ -120,7 +120,7 @@ abbrev Z2 (p : Params) (STK j : Nat) (σ s : State) : Prop :=
 theorem nl_piece {j : Nat} (hj : j < p.ℓ) :
     VPiece p STK (Z1 p STK j) (Z2 p STK j) (normLtAt P (pZ j) (p.γ₁ - p.β)) := by
   have hl := hF.l
-  have pf : ∀ σ, PtrIn (vlay p STK σ) (pZ j) 1024 := fun σ => ⟨vptr_ok rfl (by unfold oP; omega), by vsep hF⟩
+  have pf : ∀ σ, PtrIn (vlay p STK σ) (pZ j) 1024 := fun σ => ⟨vptr_ok rfl (by unfold oP; omega_arith), by vsep hF⟩
   refine ⟨fun σ s _ h => ?_, ?_⟩
   · unfold normLtAt
     have hr0 : Reduced s.mem (lpa (vlay p STK σ) (pZ j)) := h.2.1
@@ -147,7 +147,7 @@ theorem and24z_piece {j : Nat} : VPiece p STK (Z2 p STK j) (V2 p STK (j + 1)) (.
   obtain ⟨hh, e, hi⟩ := h.1.1.hint
   refine ⟨h.1.1.vc.regs2 hr, ⟨hh, e, by rw [hr.mem]; exact hi⟩, fun i hi' => ?_, ?_⟩
   · rw [hr.mem]
-    rcases (by omega : i < j ∨ i = j) with hi' | rfl
+    rcases (by omega_arith : i < j ∨ i = j) with hi' | rfl
     exacts [h.1.1.z i hi', h.1.2]
   · rw [e24, h.1.1.r24, h.2, flag_and, zOk_succ]
 

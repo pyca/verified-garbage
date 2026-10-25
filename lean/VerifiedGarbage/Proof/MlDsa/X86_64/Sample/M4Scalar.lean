@@ -8,7 +8,6 @@ import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Squeeze
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4CT
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4`

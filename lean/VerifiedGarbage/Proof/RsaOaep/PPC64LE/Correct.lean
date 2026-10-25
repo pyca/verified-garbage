@@ -79,16 +79,16 @@ theorem checks_done {t : State} (E : Entered s t) : WP isa (checks H G) t (Done 
   have hk2 := P.k2
   have ek : kk s = (s.gpr .r6).toNat := rfl
   have b := E.base
-  refine WP.seq (wp_li (by omega) fun t₁ o₁ e₁ => wp_sub fun t₂ o₂ e₂ => wp_lsr fun t₃ o₃ e₃ => wp_nil ?_)
+  refine WP.seq (wp_li (by omega_arith) fun t₁ o₁ e₁ => wp_sub fun t₂ o₂ e₂ => wp_lsr fun t₃ o₃ e₃ => wp_nil ?_)
   have k₃ : Only [.r3] t t₃ := (o₁.trans (o₂.trans o₃)).mono
   have b₃ := b.only P.fits k₃
   have r3 : (t₃.gpr .r3 != 0) = decide (kk s < 2 * H.D + 2) := by
     rw [e₃, e₂, e₁, o₁.get .r15, b.r15, ← ofNat_toNat (s.gpr .r6)]
-    exact ne_zero_ltBit (by omega) (by omega)
+    exact ne_zero_ltBit (by omega_arith) (by omega_arith)
   refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done hHl P b₃
-    (by rw [r3] at hc; simp at hc; omega)) (fun hc => ?_)
-  have hk : 2 * H.D + 2 ≤ kk s := by rw [r3] at hc; simp at hc; omega
-  refine WP.seq (wp_li (by omega) fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ => wp_sub fun t₆ o₆ e₆ =>
+    (by rw [r3] at hc; simp at hc; omega_arith)) (fun hc => ?_)
+  have hk : 2 * H.D + 2 ≤ kk s := by rw [r3] at hc; simp at hc; omega_arith
+  refine WP.seq (wp_li (by omega_arith) fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ => wp_sub fun t₆ o₆ e₆ =>
     wp_lsr fun t₇ o₇ e₇ => wp_lsr fun t₈ o₈ e₈ => wp_or fun t₉ o₉ e₉ => wp_nil ?_)
   have k₉ : Only [.r3, .r4] t₃ t₉ := (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans o₉))))).mono
   have b₉ := b₃.only P.fits k₉
@@ -96,15 +96,15 @@ theorem checks_done {t : State} (E : Entered s t) : WP isa (checks H G) t (Done 
     rw [e₉, e₈, o₇.get .r10, o₆.get .r10, o₅.get .r10, o₄.get .r10, k₃.get .r10, E.r10, o₈.get .r4, e₇, e₆,
       o₅.get .r10, o₄.get .r10, k₃.get .r10, E.r10, e₅, o₄.get .r15, k₃.get .r15, b.r15, e₄,
       ← ofNat_toNat (s.gpr .r6), ← ofNat_toNat (stackArg s 1), Offset.ofNat_sub_ofNat hk]
-    exact msgBit (by omega) (stackArg s 1).isLt
+    exact msgBit (by omega_arith) (stackArg s 1).isLt
   have E₉ : Entered s t₉ := ⟨b₉, by rw [k₉.get .r9, k₃.get .r9]; exact E.r9,
     by rw [k₉.get .r10, k₃.get .r10]; exact E.r10, by rw [k₉.get .r11, k₃.get .r11]; exact E.r11⟩
   refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done hHl P b₉
-    (by rw [r3'] at hc; simp at hc; omega)) (fun hc => main_done hH hG hHh hHl hGh hGl hGv P E₉
-    (by rw [r3'] at hc; simp at hc; omega))
+    (by rw [r3'] at hc; simp at hc; omega_arith)) (fun hc => main_done hH hG hHh hHl hGh hGl hGv P E₉
+    (by rw [r3'] at hc; simp at hc; omega_arith))
 
 theorem code_ok : WP isa (encrypt H G) s (Post Hs Gs s) := by
-  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; omega) ?_
+  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; omega_arith) ?_
   refine WP.seq (WP.mono (entry_ok P) fun t E => WP.seq (WP.mono (checks_done hH hG hHh hHl hGh hGl hGv P E)
     fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv) fun w ⟨habi, h3, hm⟩ => ⟨habi, fun hc => ?_⟩))
   rw [freed_mem, freed_gpr, hm, h3]

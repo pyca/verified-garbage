@@ -42,13 +42,13 @@ theorem load_ok {s : State} {B P : Addr} {Z w N j L : Nat} (h : Ws s B Z w N) (h
   have hS : S w = 4 * (w + 2) := rfl
   have := h.wle
   rw [load, WP.seq_iff]
-  refine ptr_ok h (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega) ?_
+  refine ptr_ok h (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega_arith) ?_
   have hb : WP isa (.block [.add .r5 .r5 .r8, .subi .r5 .r5 1]) (s.write .r5 (off B (arr w j))) fun u =>
       (u.gpr .r5 = off B (arr w j + L - 1) ∧ u.gpr .r6 = off P 0 ∧ u.gpr .r8 = BitVec.ofNat 64 L ∧
         u.mem = s.mem) ∧ Keep [.r5] (s.write .r5 (off B (arr w j))) u := by
     refine WP.keep _ ?_ (by decide)
     prun [h6, h8, off_add]
-    refine ⟨off_sub1 _ (by omega), by simp [off]⟩
+    refine ⟨off_sub1 _ (by omega_arith), by simp [off]⟩
   refine WP.mono hb fun s₃ ⟨⟨j5, j6, j8, jm⟩, k₃⟩ => ?_
   have k₀ : Keep [.r5] s s₃ := ((Keep.write _ _ _).trans k₃).mono
   have hs₃ := h.scr.congr k₀.wr
@@ -60,9 +60,9 @@ theorem load_ok {s : State} {B P : Addr} {Z w N j L : Nat} (h : Ws s B Z w N) (h
       (∀ p, L ≤ p → p < 4 * w → t.mem (off B (arr w j + p)) = 0) ∧
       Keep [.r0, .r5, .r6, .r8] s t
   refine WP.mono (wp_countdown (body := .block ([.lbz .r0 .r6 0, .stb .r0 .r5 0, .addi .r6 .r6 1,
-      .subi .r5 .r5 1] ++ ([.subi .r8 .r8 1] : List Instr))) (cnt := .r8) (N := L) (by omega)
-    (by omega) Inv (fun i hi t ⟨t5, t6, tout, tb, tz, tk⟩ _ => ?_)
-    ⟨by rw [j5]; rfl, j6, by rw [jm]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega),
+      .subi .r5 .r5 1] ++ ([.subi .r8 .r8 1] : List Instr))) (cnt := .r8) (N := L) (by omega_arith)
+    (by omega_arith) Inv (fun i hi t ⟨t5, t6, tout, tb, tz, tk⟩ _ => ?_)
+    ⟨by rw [j5]; rfl, j6, by rw [jm]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega_arith),
       fun p _ hp => by rw [jm]; exact hz p hp, k₀.mono⟩ j8)
     fun t ⟨_, _, tout, tb, tz, tk⟩ => ⟨h.of_keep tk, ?_, ?_, tk, tout⟩
   · have hst : WP isa (.block [.lbz .r0 .r6 0, .stb .r0 .r5 0, .addi .r6 .r6 1, .subi .r5 .r5 1,
@@ -72,13 +72,13 @@ theorem load_ok {s : State} {B P : Addr} {Z w N j L : Nat} (h : Ws s B Z w N) (h
               (off B (arr w j + L - 1 - i) - BitVec.ofNat 64 1)).write .r8 (t.gpr .r8 - BitVec.ofNat 64 1) := by
       prun [t5, t6, exec_lbz' (show Reg.r6 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
         exec_stb (show Reg.r5 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
-        (by rw [tk.rd, tk.wr]; exact hP i (by omega) : InRegions (t.rd ++ t.wr) (off P i) 1),
-        (h.scr.congr tk.wr).st (d := arr w j + L - 1 - i) (n := 1) (by omega)]
+        (by rw [tk.rd, tk.wr]; exact hP i (by omega_arith) : InRegions (t.rd ++ t.wr) (off P i) 1),
+        (h.scr.congr tk.wr).st (d := arr w j + L - 1 - i) (n := 1) (by omega_arith)]
     refine WP.mono hst fun t' e => ?_
     subst e
-    have ha : arr w j + L - 1 - i = arr w j + (L - 1 - i) := by omega
+    have ha : arr w j + L - 1 - i = arr w j + (L - 1 - i) := by omega_arith
     have hw1 := write1_outside t.mem B (d := arr w j + L - 1 - i)
-      (((t.mem.read (off P i) 1).setWidth 64).setWidth 8) (by omega)
+      (((t.mem.read (off P i) 1).setWidth 64).setWidth 8) (by omega_arith)
     have hPi : t.mem (off P i) = s.mem (off P i) := by
       refine tout _ (Or.inr ?_)
       have := (off P i - B).isLt
@@ -86,25 +86,25 @@ theorem load_ok {s : State} {B P : Addr} {Z w N j L : Nat} (h : Ws s B Z w N) (h
       exact hsep i (by omega) (off P i) (by simp only [ofs] at hc ⊢; omega) rfl
     refine ⟨⟨?_, by gsimp, ?_, ?_, ?_, ?_⟩, by gsimp⟩
     · have h160 : 160 ≤ arr w j := Nat.le_add_right _ _
-      gsimp; rw [off_sub1 (a := arr w j + L - 1 - i) _ (by omega),
-        show arr w j + L - 1 - i - 1 = arr w j + L - 1 - (i + 1) by omega]
-    · gsimp; exact tout.trans (hw1.mono (o' := arr w j) (n' := 4 * w) (by omega) (by omega))
+      gsimp; rw [off_sub1 (a := arr w j + L - 1 - i) _ (by omega_arith),
+        show arr w j + L - 1 - i - 1 = arr w j + L - 1 - (i + 1) by omega_arith]
+    · gsimp; exact tout.trans (hw1.mono (o' := arr w j) (n' := 4 * w) (by omega_arith) (by omega_arith))
     · intro c hc
       gsimp
       rcases Nat.lt_succ_iff_lt_or_eq.mp hc with hc | rfl
-      · rw [hw1 _ (by rw [Mont.ofs_off0 B (by omega)]; omega)]; exact tb c hc
+      · rw [hw1 _ (by rw [Mont.ofs_off0 B (by omega_arith)]; omega_arith)]; exact tb c hc
       · rw [← ha, write1_self, read_one', hPi]
     · intro p hp hp'
       gsimp
-      rw [hw1 _ (by rw [Mont.ofs_off0 B (by omega)]; omega)]; exact tz p hp hp'
+      rw [hw1 _ (by rw [Mont.ofs_off0 B (by omega_arith)]; omega_arith)]; exact tz p hp hp'
     · exact tk.trans' (((((((Keep.write _ _ _).trans (Keep.mem _ _)).trans (Keep.write _ _ _)).trans
         (Keep.write _ _ _)).trans (Keep.write _ _ _))).mono)
-  · exact KeyWorkspace.Keep.of_arr (d := 0) (by simpa using tout) (by omega) (by simp)
+  · exact KeyWorkspace.Keep.of_arr (d := 0) (by simpa using tout) (by omega_arith) (by simp)
   · change val32 _ _ _ _ = _
-    rw [← val32_off, val32_zero_extension t.mem (off B (arr w j)) (k := L) (by omega) fun p hp hp' => by
-        rw [off_add]; exact tz p hp (by omega),
+    rw [← val32_off, val32_zero_extension t.mem (off B (arr w j)) (k := L) (by omega_arith) fun p hp hp' => by
+        rw [off_add]; exact tz p hp (by omega_arith),
       reversed_read s.mem t.mem P (off B (arr w j)) L fun c hc => by
-        rw [off_add, show arr w j + c = arr w j + (L - 1 - (L - 1 - c)) by omega, tb _ (by omega)]]
+        rw [off_add, show arr w j + c = arr w j + (L - 1 - (L - 1 - c)) by omega_arith, tb _ (by omega_arith)]]
 
 /-- A byte under a mask of all ones or zero. -/
 theorem mask_byte (x : BitVec (8 * 1)) (b : Bool) :
@@ -117,7 +117,7 @@ theorem mask_byte (x : BitVec (8 * 1)) (b : Bool) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth]
     have := x.isLt
-    omega
+    omega_arith
 
 /-- `storeBytes j`: array `j`'s low `L` bytes to the `L` bytes at `O`, most
 significant first, masked by `r9` (the mask of `b`). -/
@@ -134,13 +134,13 @@ theorem storeBytes_ok {s : State} {B O : Addr} {Z w N j L : Nat} (h : Ws s B Z w
   have hS : S w = 4 * (w + 2) := rfl
   have := h.wle
   rw [storeBytes, WP.seq_iff]
-  refine ptr_ok h (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega) ?_
+  refine ptr_ok h (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega_arith) ?_
   have hb : WP isa (.block [.add .r6 .r6 .r8, .subi .r6 .r6 1]) (s.write .r6 (off B (arr w j))) fun u =>
       (u.gpr .r6 = off B (arr w j + L - 1) ∧ u.gpr .r5 = off O 0 ∧ u.gpr .r8 = BitVec.ofNat 64 L ∧
         u.gpr .r9 = s.gpr .r9 ∧ u.mem = s.mem) ∧ Keep [.r6] (s.write .r6 (off B (arr w j))) u := by
     refine WP.keep _ ?_ (by decide)
     prun [h5, h8, off_add]
-    refine ⟨off_sub1 _ (by have : 160 ≤ arr w j := Nat.le_add_right _ _; omega), by simp [off]⟩
+    refine ⟨off_sub1 _ (by have : 160 ≤ arr w j := Nat.le_add_right _ _; omega_arith), by simp [off]⟩
   refine WP.mono hb fun s₃ ⟨⟨j6, j5, j8, j9, jm⟩, k₃⟩ => ?_
   have k₀ : Keep [.r6] s s₃ := ((Keep.write _ _ _).trans k₃).mono
   have h160 : 160 ≤ arr w j := Nat.le_add_right _ _
@@ -151,8 +151,8 @@ theorem storeBytes_ok {s : State} {B O : Addr} {Z w N j L : Nat} (h : Ws s B Z w
       Keep [.r0, .r5, .r6, .r8] s t
   refine WP.mono (wp_countdown (body := .block ([.lbz .r0 .r6 0, .logic .and .r0 .r0 .r9, .stb .r0 .r5 0,
       .addi .r5 .r5 1, .subi .r6 .r6 1] ++ ([.subi .r8 .r8 1] : List Instr))) (cnt := .r8) (N := L)
-    (by omega) (by omega) Inv (fun i hi t ⟨t6, t5, tout, tb, tk⟩ _ => ?_)
-    ⟨by rw [j6]; rfl, j5, by rw [jm]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega),
+    (by omega_arith) (by omega_arith) Inv (fun i hi t ⟨t6, t5, tout, tb, tk⟩ _ => ?_)
+    ⟨by rw [j6]; rfl, j5, by rw [jm]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega_arith),
       k₀.mono⟩ j8)
     fun t ⟨_, _, tout, tb, tk⟩ => ⟨h.of_keep tk, tb, tout, tk⟩
   have t9 : t.gpr .r9 = s.gpr .r9 := tk.gpr _ (by decide)
@@ -165,20 +165,20 @@ theorem storeBytes_ok {s : State} {B O : Addr} {Z w N j L : Nat} (h : Ws s B Z w
     refine WP.keep _ ?_ (by decide)
     prun [t6, t5, t9, h9, exec_lbz' (show Reg.r6 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
       exec_stb (show Reg.r5 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
-      (h.scr.congr tk.wr).ld (d := arr w j + L - 1 - i) (n := 1) (by omega),
+      (h.scr.congr tk.wr).ld (d := arr w j + L - 1 - i) (n := 1) (by omega_arith),
       (by rw [tk.wr]; exact hO i hi : InRegions t.wr (off O i) 1), mask_byte]
   refine WP.mono hst fun t' ⟨⟨l6, l5, l8, lm⟩, lk⟩ => ⟨⟨?_, l5, ?_, ?_, tk.trans' lk⟩, l8⟩
-  · rw [l6, off_sub1 _ (by omega), show arr w j + L - 1 - i - 1 = arr w j + L - 1 - (i + 1) by omega]
+  · rw [l6, off_sub1 _ (by omega_arith), show arr w j + L - 1 - i - 1 = arr w j + L - 1 - (i + 1) by omega_arith]
   · have hw1 := write1_outside t.mem O (d := i) (if b then t.mem.read (off B (arr w j + L - 1 - i)) 1 else 0)
-      (by omega)
-    rw [lm]; exact (tout.mono (o' := 0) (n' := i + 1) (by omega) (by omega)).trans
-      (hw1.mono (o' := 0) (n' := i + 1) (by omega) (by omega))
+      (by omega_arith)
+    rw [lm]; exact (tout.mono (o' := 0) (n' := i + 1) (by omega_arith) (by omega_arith)).trans
+      (hw1.mono (o' := 0) (n' := i + 1) (by omega_arith) (by omega_arith))
   · have hw1 := write1_outside t.mem O (d := i) (if b then t.mem.read (off B (arr w j + L - 1 - i)) 1 else 0)
-      (by omega)
+      (by omega_arith)
     intro c hc
     rw [lm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hc with hc | rfl
-    · rw [hw1 _ (by rw [Mont.ofs_off0 O (by omega)]; omega)]; exact tb c hc
+    · rw [hw1 _ (by rw [Mont.ofs_off0 O (by omega_arith)]; omega_arith)]; exact tb c hc
     · rw [write1_self]
       -- The byte read is the array's, which no output byte overlaps.
       have ha : t.mem (off B (arr w j + L - 1 - c)) = s.mem (off B (arr w j + L - 1 - c)) := by
@@ -187,13 +187,13 @@ theorem storeBytes_ok {s : State} {B O : Addr} {Z w N j L : Nat} (h : Ws s B Z w
         have hx : off O (ofs O (off B (arr w j + L - 1 - c))) = off B (arr w j + L - 1 - c) := by
           simp only [off, ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]
           rw [BitVec.add_comm]; exact BitVec.sub_add_cancel _ _
-        exact hsep _ (by omega) _ (by rw [Mont.ofs_off0 B (by omega)]; omega) hx
+        exact hsep _ (by omega_arith) _ (by rw [Mont.ofs_off0 B (by omega_arith)]; omega_arith) hx
       have r1 : ∀ (m : Mem) (a : Addr), m.read a 1 = m a := fun m a =>
         BitVec.eq_of_toNat_eq (by rw [read_toNat_succ]; simp [Mem.read])
       cases b
       · rfl
       · simp only [ite_true]
-        rw [show arr w j + (L - 1 - c) = arr w j + L - 1 - c by omega, ← ha, r1]
+        rw [show arr w j + (L - 1 - c) = arr w j + L - 1 - c by omega_arith, ← ha, r1]
 
 /-- `zeroBytes`: the `L` bytes at `O` := 0. -/
 theorem zeroBytes_ok {s : State} {O : Addr} {L : Nat} (h5 : s.gpr .r5 = O)
@@ -213,9 +213,9 @@ theorem zeroBytes_ok {s : State} {O : Addr} {L : Nat} (h5 : s.gpr .r5 = O)
     t.gpr .r5 = off O i ∧ t.gpr .r0 = 0 ∧ Outside O 0 i s.mem t.mem ∧ (∀ c < i, t.mem (off O c) = 0) ∧
       Keep [.r0, .r5, .r8] s t
   refine WP.mono (wp_countdown (body := .block ([.stb .r0 .r5 0, .addi .r5 .r5 1] ++
-      ([.subi .r8 .r8 1] : List Instr))) (cnt := .r8) (N := L) (by omega) (by omega) Inv
+      ([.subi .r8 .r8 1] : List Instr))) (cnt := .r8) (N := L) (by omega_arith) (by omega_arith) Inv
     (fun i hi t ⟨t5, t0, tout, tz, tk⟩ _ => ?_)
-    ⟨u5, u0, by rw [um]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega), ku.mono⟩ u8)
+    ⟨u5, u0, by rw [um]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega_arith), ku.mono⟩ u8)
     fun t ⟨_, _, tout, tz, tk⟩ => ⟨tz, tout, tk⟩
   have hst : WP isa (.block [.stb .r0 .r5 0, .addi .r5 .r5 1, .subi .r8 .r8 1]) t fun t' =>
       (t'.gpr .r5 = off O (i + 1) ∧ t'.gpr .r0 = 0 ∧ t'.gpr .r8 = t.gpr .r8 - BitVec.ofNat 64 1 ∧
@@ -225,14 +225,14 @@ theorem zeroBytes_ok {s : State} {O : Addr} {L : Nat} (h5 : s.gpr .r5 = O)
       (by rw [tk.wr]; exact hO i hi : InRegions t.wr (off O i) 1)]
     rfl
   refine WP.mono hst fun t' ⟨⟨l5, l0, l8, lm⟩, lk⟩ => ⟨⟨l5, l0, ?_, ?_, tk.trans' lk.mono⟩, l8⟩
-  · have hw1 := write1_outside t.mem O (d := i) 0 (by omega)
-    rw [lm]; exact (tout.mono (o' := 0) (n' := i + 1) (by omega) (by omega)).trans
-      (hw1.mono (o' := 0) (n' := i + 1) (by omega) (by omega))
-  · have hw1 := write1_outside t.mem O (d := i) 0 (by omega)
+  · have hw1 := write1_outside t.mem O (d := i) 0 (by omega_arith)
+    rw [lm]; exact (tout.mono (o' := 0) (n' := i + 1) (by omega_arith) (by omega_arith)).trans
+      (hw1.mono (o' := 0) (n' := i + 1) (by omega_arith) (by omega_arith))
+  · have hw1 := write1_outside t.mem O (d := i) 0 (by omega_arith)
     intro c hc
     rw [lm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hc with hc | rfl
-    · rw [hw1 _ (by rw [Mont.ofs_off0 O (by omega)]; omega)]; exact tz c hc
+    · rw [hw1 _ (by rw [Mont.ofs_off0 O (by omega_arith)]; omega_arith)]; exact tz c hc
     · rw [write1_self]
 
 /-- The `L` bytes at `O` reversed from array `j`'s low bytes: its number modulo
@@ -242,11 +242,11 @@ theorem bytes_of_store {m m' : Mem} {B O : Addr} {w j L : Nat} (hL : L ≤ 4 * w
     Spec.Rsa.bytesAt m' O L = Spec.Rsa.i2osp (num m B w j % 256 ^ L) L := by
   have hr := reversed_read m' m O (off B (arr w j)) L fun c hc => by
     rw [off_add]
-    have := hb (L - 1 - c) (by omega)
-    rw [show L - 1 - (L - 1 - c) = c by omega] at this
+    have := hb (L - 1 - c) (by omega_arith)
+    rw [show L - 1 - (L - 1 - c) = c by omega_arith] at this
     rw [← this]
   have e := read_toNat_add m (4 * w - L) L (off B (arr w j))
-  rw [show 4 * w - L + L = 4 * w by omega, read_eq_val32] at e
+  rw [show 4 * w - L + L = 4 * w by omega_arith, read_eq_val32] at e
   have hlt := (m.read (off B (arr w j)) L).isLt
   have hval : num m B w j % 256 ^ L = (m.read (off B (arr w j)) L).toNat := by
     change val32 _ _ _ _ % _ = _

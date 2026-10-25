@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Init
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckPublicVerified
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.CheckDomainVerified
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.VettedValidation.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.ExchangeVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Derive.Verified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.CheckPrivate.Verified
@@ -37,14 +37,17 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.PPC64LE.Domain.checkPublic
     verified := Proof.Ffdh.PPC64LE.Domain.cp_verified },
   Spec.Ffdh.checkDomainApi.artifact PPC64LE.target {
-    notes := ["p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
+    consts := Impl.Ffdh.PPC64LE.VettedValidation.tableConsts
+    notes := ["An exact full-domain comparison recognizes the ten certified MODP/FFDHE groups, preserving \
+        the link register and original arguments without scratch or stack writes. Every miss falls \
+        back to the complete validator: p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
         working space of `w = ⌈p_len / 8⌉` words; g and q are compared with p by a subtraction's borrow \
         and with 0, 1 and p − 1 by equality masks over all the words, and q's oddness is its last \
         octet's; `q ∣ p − 1` is `p mod q = 1`, p's octets reduced modulo q by doublings; `g^q mod p` is \
         computed by RSA's bit-serial exponentiation (`R² mod p` by doublings) and compared with 1. The \
         nonvolatile registers are saved in the working space's header."]
-    code := Impl.Ffdh.PPC64LE.Domain.checkDomain
-    verified := Proof.Ffdh.PPC64LE.Domain.cd_verified },
+    code := Impl.Ffdh.PPC64LE.VettedValidation.code
+    verified := Proof.Ffdh.PPC64LE.VettedValidation.verified },
   Spec.Ffdh.exchangeApi.artifact PPC64LE.target {
     notes := ["p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
         working space of `w = ⌈p_len / 8⌉` words, whose address is the second argument on the stack; \

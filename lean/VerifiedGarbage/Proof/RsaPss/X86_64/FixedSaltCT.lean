@@ -5,10 +5,6 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
 import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHash
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import VerifiedGarbage.Proof.RsaPss.MgfBytes
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-! The fixed-salt tail leaks only the requested, public salt length. -/
 

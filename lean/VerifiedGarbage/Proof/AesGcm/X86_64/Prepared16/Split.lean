@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchSplit16
 import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-! # Sixteen prepared powers: `seal_split` for a key context of `vg_aes_gcm_prepare16`

@@ -56,11 +56,11 @@ theorem pw1_ok {t : State} {BX I D : Addr} {Z oA wX xj k L oB oLen oD : Nat} (hs
   refine WP.mono (WP.keep [.r30, .r31, .r18, .r19, .r14] (Q := fun u => u.gpr .r30 = off I 0 ∧
     u.gpr .r31 = BitVec.ofNat 64 k ∧ u.gpr .r18 = off D 0 ∧ u.gpr .r19 = BitVec.ofNat 64 L ∧
     u.gpr .r14 = off BX (oA + slot (wsWords L) 0) ∧ u.mem = s₁.mem) (by
-      prun [(k1.gpr _ (by decide)).trans h23, a10, oIn, oNLen, hs1.ld (show 24 + 8 ≤ Z by omega),
-        hs1.ld (show 16 + 8 ≤ Z by omega),
-        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oD < 2 ^ 15 by omega, show oD % 4 = 0 by omega⟩,
-        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oLen < 2 ^ 15 by omega, show oLen % 4 = 0 by omega⟩,
-        hs1.ld (show oD + 8 ≤ Z by omega), hs1.ld (show oLen + 8 ≤ Z by omega), hI', hK', hD', hL'',
+      prun [(k1.gpr _ (by decide)).trans h23, a10, oIn, oNLen, hs1.ld (show 24 + 8 ≤ Z by omega_arith),
+        hs1.ld (show 16 + 8 ≤ Z by omega_arith),
+        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oD < 2 ^ 15 by omega_arith, show oD % 4 = 0 by omega_arith⟩,
+        exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oLen < 2 ^ 15 by omega_arith, show oLen % 4 = 0 by omega_arith⟩,
+        hs1.ld (show oD + 8 ≤ Z by omega_arith), hs1.ld (show oLen + 8 ≤ Z by omega_arith), hI', hK', hD', hL'',
         BitVec.add_zero, off_off]) rfl) fun s₂ ⟨⟨a30, a31, a18, a19, a14, _⟩, k2⟩ => ?_
   have k12 := k1.trans k2
   refine WP.mono (xb_ok (rd := .r15) (by decide) (by decide) ((k12.gpr _ (by decide)).trans h27)
@@ -96,12 +96,12 @@ theorem pins98 : Pins (At C0 crtF 98)
     have e8 : slot (cwX s₀) 8 = 256 + 8 * (8 * (cwX s₀ + 2)) := rfl
     refine mid1A_ok hP F fun t X _ k1 => ?_
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
-      X.out.word (Or.inl hd) (by omega)
-    exact pw1_ok (F.scr.congr k1.wr) (by omega) ((k1.gpr _ (by decide)).trans F.r23)
+      X.out.word (Or.inl hd) (by omega_arith)
+    exact pw1_ok (F.scr.congr k1.wr) (by omega_arith) ((k1.gpr _ (by decide)).trans F.r23)
       ((k1.gpr _ (by decide)).trans F.r27) ((k1.gpr _ (by decide)).trans F.r28) (by decide) (by decide)
       (by decide) (by rw [hd _ (by decide)]; exact F.hBP) (by rw [hd _ (by decide)]; exact F.hPL)
       (by rw [hd _ (by decide)]; exact F.hIn) (by rw [hd _ (by decide)]; exact F.hNL)
-      (by rw [hd _ (by decide)]; exact F.hDP) p1 (by omega)
+      (by rw [hd _ (by decide)]; exact F.hDP) p1 (by omega_arith)
   · obtain ⟨eS, eX, eP, -, eoP, -, ek, ep, -⟩ := layout_eq h h'
     obtain ⟨-, -, -, -, -, -, e7, -, -, e2, -⟩ := data_vals h h'
     simp only [eS, eX, eP, eoP, ek, ep, e7, e2]
@@ -123,12 +123,12 @@ theorem pins150 : Pins (At C0 crtF 150)
     refine mid1A_ok hP F fun t₁ X _ k1 => mid1B_ok hP F X k1 (by decide) (by decide) (by decide)
       fun t Y k2 => ?_
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
-      Y.out.word (Or.inl hd) (by omega)
-    exact pw1_ok (F.scr.congr k2.wr) (by omega) ((k2.gpr _ (by decide)).trans F.r23)
+      Y.out.word (Or.inl hd) (by omega_arith)
+    exact pw1_ok (F.scr.congr k2.wr) (by omega_arith) ((k2.gpr _ (by decide)).trans F.r23)
       ((k2.gpr _ (by decide)).trans F.r27) ((k2.gpr _ (by decide)).trans F.r28) (by decide) (by decide)
       (by decide) (by rw [hd _ (by decide)]; exact F.hBQ) (by rw [hd _ (by decide)]; exact F.hQL)
       (by rw [hd _ (by decide)]; exact F.hIn) (by rw [hd _ (by decide)]; exact F.hNL)
-      (by rw [hd _ (by decide)]; exact F.hDQ) q1 (by omega)
+      (by rw [hd _ (by decide)]; exact F.hDQ) q1 (by omega_arith)
   · obtain ⟨eS, eX, -, eQ, -, eoQ, ek, -, eq⟩ := layout_eq h h'
     obtain ⟨-, -, -, -, -, -, e7, -, -, -, e4, -⟩ := data_vals h h'
     simp only [eS, eX, eQ, eoQ, ek, eq, e7, e4]
@@ -154,9 +154,9 @@ theorem ex1_ok {t : State} {BQ BX : Addr} {Z wQ wX L : Nat} (hx : Scr t BX Z) (h
   refine WP.mono (WP.keep [.r15, .r17] (Q := fun s₂ => s₂.gpr .r15 = off BQ (slot wQ 4 + (L - 1)) ∧
     s₂.gpr .r17 = BitVec.ofNat 64 L ∧ s₂.mem = s₁.mem) ?_ (by decide)) fun s₂ ⟨⟨b15, b17, _⟩, k2⟩ => ?_
   · have hL' : s₁.mem.readW (off BX 56) 64 = BitVec.ofNat 64 L := by rw [m1]; exact hL
-    prun [a15, (k1.gpr .r23 (by decide)).trans h23, oQLen, (hx.congr k1.wr).ld (show 56 + 8 ≤ Z by omega), hL',
+    prun [a15, (k1.gpr .r23 (by decide)).trans h23, oQLen, (hx.congr k1.wr).ld (show 56 + 8 ≤ Z by omega_arith), hL',
       off_add, BitVec.add_zero]
-    rw [off_sub1 _ (by omega)]; congr 2; omega
+    rw [off_sub1 _ (by omega_arith)]; congr 2; omega_arith
   have k12 := k1.trans k2
   refine WP.mono (xb_ok (rd := .r16) (by decide) (by decide) (k12.gpr _ (by decide) |>.trans h27)
     (k12.gpr _ (by decide) |>.trans h28) 1) fun u ⟨⟨b16, _⟩, k3⟩ => ?_
@@ -173,8 +173,8 @@ theorem pins201 : Pins (At C0 crtF 201) [.r15, .r16, .r17, .r23] := by
     have e8 : slot (cwX s₀) 8 = 256 + 8 * (8 * (cwX s₀ + 2)) := rfl
     refine mid1_ok hP F fun t _ _ _ _ _ _ _ _ t10 t29 O1 k1 => ?_
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
-      O1.word (Or.inl hd) (by omega)
-    exact ex1_ok (F.scr.congr k1.wr) (by omega) t10 t29 ((k1.gpr _ (by decide)).trans F.r23)
+      O1.word (Or.inl hd) (by omega_arith)
+    exact ex1_ok (F.scr.congr k1.wr) (by omega_arith) t10 t29 ((k1.gpr _ (by decide)).trans F.r23)
       ((k1.gpr _ (by decide)).trans F.r27) ((k1.gpr _ (by decide)).trans F.r28)
       (by rw [hd _ (by decide)]; exact F.hQL) q1
   · obtain ⟨eS, eX, -, eQ, -, eoQ, -, -, eq⟩ := layout_eq h h'
@@ -198,29 +198,29 @@ theorem pins204 : Pins (At C0 crtF 204) [.r10, .r11, .r21, .r23, .r27, .r28, .r2
     have dP : cwP s₀ = wsWords (cpL s₀) := rfl
     have dQ : cwQ s₀ = wsWords (cqL s₀) := rfl
     have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 8 := rfl
-    have hqw : cqL s₀ ≤ 8 * cwQ s₀ := by unfold cwQ wsWords; omega
-    have hwQ : cwQ s₀ ≤ cwX s₀ := by have := hP.pq; unfold cwQ; omega
+    have hqw : cqL s₀ ≤ 8 * cwQ s₀ := by unfold cwQ wsWords; omega_arith
+    have hwQ : cwQ s₀ ≤ cwX s₀ := by have := hP.pq; unfold cwQ; omega_arith
     refine mid1_ok hP F fun t _ _ _ _ _ _ _ _ t10 t29 O1 k1 => ?_
     have hs := F.scr.congr k1.wr
     have h23 := (k1.gpr _ (by decide)).trans F.r23
     have hd : ∀ d, d + 8 ≤ 256 → word t.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
-      O1.word (Or.inl hd) (by omega)
-    refine WP.seq (WP.mono (exportM2_ok (L := cqL s₀) (hs.sub (show oQa s₀ + slot (cwQ s₀) 8 ≤ cZ s₀ by omega))
-      (Scr.le hs (show slot (cwX s₀) 8 ≤ cZ s₀ by omega)) t10 t29 h23 ((k1.gpr _ (by decide)).trans F.r27)
-      ((k1.gpr _ (by decide)).trans F.r28) (by rw [hd _ (by decide)]; exact F.hQL) q1 hqw (by omega)
+      O1.word (Or.inl hd) (by omega_arith)
+    refine WP.seq (WP.mono (exportM2_ok (L := cqL s₀) (hs.sub (show oQa s₀ + slot (cwQ s₀) 8 ≤ cZ s₀ by omega_arith))
+      (Scr.le hs (show slot (cwX s₀) 8 ≤ cZ s₀ by omega_arith)) t10 t29 h23 ((k1.gpr _ (by decide)).trans F.r27)
+      ((k1.gpr _ (by decide)).trans F.r28) (by rw [hd _ (by decide)]; exact F.hQL) q1 hqw (by omega_arith)
       (Nat.le_refl _) (Nat.le_refl _) (fun x hx => by
-        rcases ofs_rebase (cS s₀) x (o := oQa s₀) (by omega) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega))
+        rcases ofs_rebase (cS s₀) x (o := oQa s₀) (by omega_arith) with ⟨_, h2⟩ | ⟨_, h2⟩ <;> omega_arith))
       fun u₁ ⟨⟨_, o1⟩, k2⟩ => ?_)
     have hd1 : ∀ d, d + 8 ≤ 256 → word u₁.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd' => by
-      rw [o1.word (Or.inl (by omega)) (by omega)]; exact hd d hd'
+      rw [o1.word (Or.inl (by omega_arith)) (by omega_arith)]; exact hd d hd'
     refine WP.seq (WP.mono (setupP_ok (oA := oPa s₀) (hs.congr k2.wr) ((k2.gpr _ (by decide)).trans h23) (by decide) (by decide)
-      (by omega) (by rw [hd1 _ (by decide)]; exact F.hBP) (by rw [hd1 _ (by decide)]; exact F.hPL) p1 (by omega))
+      (by omega_arith) (by rw [hd1 _ (by decide)]; exact F.hBP) (by rw [hd1 _ (by decide)]; exact F.hPL) p1 (by omega_arith))
       fun u₂ ⟨⟨a10, a21, a29, a11, _, m2⟩, k3⟩ => ?_)
     have k23 := k2.trans k3
     have hQL' : u₂.mem.readW (off (cS s₀) 56) 64 = BitVec.ofNat 64 (cqL s₀) := by
       rw [m2]; exact (hd1 56 (by decide)).trans F.hQL
     refine WP.mono (WP.keep [.r31] (Q := fun v => v.gpr .r31 = BitVec.ofNat 64 (cqL s₀)) (by
-      prun [(k23.gpr .r23 (by decide)).trans h23, oQLen, ((hs.congr k2.wr).congr k3.wr).ld (show 56 + 8 ≤ cZ s₀ by omega),
+      prun [(k23.gpr .r23 (by decide)).trans h23, oQLen, ((hs.congr k2.wr).congr k3.wr).ld (show 56 + 8 ≤ cZ s₀ by omega_arith),
         hQL']) rfl) fun v ⟨a31, k4⟩ => ?_
     simp only [List.map_cons, List.map_nil, a31, k4.gpr .r10 (by decide), k4.gpr .r11 (by decide),
       k4.gpr .r21 (by decide), k4.gpr .r23 (by decide), k4.gpr .r27 (by decide), k4.gpr .r28 (by decide),
@@ -258,11 +258,11 @@ theorem pins249 : Pins (At C0 crtF 249) [.r11, .r14, .r15, .r22, .r23, .r27, .r2
   · have hn := hP.nw; have room := hP.room; have p1 := hP.p1; have pk := hP.pk; have k1024 := hP.k1024
     have e8 : slot (cwX s₀) 8 = 256 + 8 * (8 * (cwX s₀ + 2)) := rfl
     have hd : ∀ d, d + 8 ≤ 256 → word u.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
-      R.out.word (Or.inl hd) (by omega)
-    refine WP.mono (blk_ok (j := 7) (oA := oPa s₀) _ (fun t h11 h4 => midP_ok h11 h4 (wsWords_lt (by omega)))
-      (F.scr.congr k.wr) ((k.gpr _ (by decide)).trans F.r23) (by decide) (by decide) (by omega)
-      (by rw [hd _ (by decide)]; exact F.hBP) (by rw [hd _ (by decide)]; exact F.hPL) p1 (by omega)
-      (by have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl; omega) ((k.gpr _ (by decide)).trans F.r27) ((k.gpr _ (by decide)).trans F.r28))
+      R.out.word (Or.inl hd) (by omega_arith)
+    refine WP.mono (blk_ok (j := 7) (oA := oPa s₀) _ (fun t h11 h4 => midP_ok h11 h4 (wsWords_lt (by omega_arith)))
+      (F.scr.congr k.wr) ((k.gpr _ (by decide)).trans F.r23) (by decide) (by decide) (by omega_arith)
+      (by rw [hd _ (by decide)]; exact F.hBP) (by rw [hd _ (by decide)]; exact F.hPL) p1 (by omega_arith)
+      (by have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl; omega_arith) ((k.gpr _ (by decide)).trans F.r27) ((k.gpr _ (by decide)).trans F.r28))
       fun v ⟨⟨a14, a11, a22, a15, _⟩, k'⟩ => ?_
     simp only [List.map_cons, List.map_nil, a14, a11, a22, a15, k'.gpr .r23 (by decide), k'.gpr .r27 (by decide),
       k'.gpr .r28 (by decide), (k.gpr _ (by decide)).trans F.r23, (k.gpr _ (by decide)).trans F.r27,
@@ -285,27 +285,27 @@ theorem pins255 : Pins (At C0 crtF 255) [.r11, .r14, .r15, .r22, .r23, .r27, .r2
     have dP : cwP s₀ = wsWords (cpL s₀) := rfl
     have dQ : cwQ s₀ = wsWords (cqL s₀) := rfl
     have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
-    have hwX : cwX s₀ < 2 ^ 31 := by have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl; omega
-    have hwP : 2 ≤ cwP s₀ := by unfold cwP wsWords; omega
+    have hwX : cwX s₀ < 2 ^ 31 := by have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl; omega_arith
+    have hwP : 2 ≤ cwP s₀ := by unfold cwP wsWords; omega_arith
     have hs := F.scr.congr k.wr
     have h23 := (k.gpr _ (by decide)).trans F.r23
     have h27 := (k.gpr _ (by decide)).trans F.r27
     have h28 := (k.gpr _ (by decide)).trans F.r28
     have hd : ∀ d, d + 8 ≤ 256 → word u.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
-      R.out.word (Or.inl hd) (by omega)
-    refine WP.seq (WP.mono (blk_ok (j := 7) (oA := oPa s₀) _ (fun t h11 h4 => midP_ok h11 h4 (wsWords_lt (by omega)))
-      hs h23 (by decide) (by decide) (by omega) (by rw [hd _ (by decide)]; exact F.hBP)
-      (by rw [hd _ (by decide)]; exact F.hPL) p1 (by omega) hwX h27 h28)
+      R.out.word (Or.inl hd) (by omega_arith)
+    refine WP.seq (WP.mono (blk_ok (j := 7) (oA := oPa s₀) _ (fun t h11 h4 => midP_ok h11 h4 (wsWords_lt (by omega_arith)))
+      hs h23 (by decide) (by decide) (by omega_arith) (by rw [hd _ (by decide)]; exact F.hBP)
+      (by rw [hd _ (by decide)]; exact F.hPL) p1 (by omega_arith) hwX h27 h28)
       fun v₁ ⟨⟨a14, a11, a22, a15, m1⟩, k1⟩ => ?_)
-    refine WP.seq (WP.mono (xfer_ok (hs.congr k1.wr) (show oPa s₀ + slot (cwP s₀) 8 ≤ cZ s₀ by omega)
-      (Nat.le_of_eq doP.symm) (by decide) (by omega) (by omega) hwX a14 a11 a22 a15
+    refine WP.seq (WP.mono (xfer_ok (hs.congr k1.wr) (show oPa s₀ + slot (cwP s₀) 8 ≤ cZ s₀ by omega_arith)
+      (Nat.le_of_eq doP.symm) (by decide) (by omega_arith) (by omega_arith) hwX a14 a11 a22 a15
       ((k1.gpr _ (by decide)).trans h27) ((k1.gpr _ (by decide)).trans h28)) fun v₂ ⟨⟨_, out2⟩, k2⟩ => ?_)
     have k12 := k1.trans k2
     have hd2 : ∀ d, d + 8 ≤ 256 → word v₂.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd' => by
-      rw [out2.word (Or.inl (by omega)) (by omega), m1]; exact hd d hd'
+      rw [out2.word (Or.inl (by omega_arith)) (by omega_arith), m1]; exact hd d hd'
     refine WP.mono (blk_ok (j := 6) (oA := oQa s₀) _ (fun t h11 _ => midQ_ok h11) (hs.congr k12.wr)
-      ((k12.gpr _ (by decide)).trans h23) (by decide) (by decide) (by omega)
-      (by rw [hd2 _ (by decide)]; exact F.hBQ) (by rw [hd2 _ (by decide)]; exact F.hQL) q1 (by omega) hwX
+      ((k12.gpr _ (by decide)).trans h23) (by decide) (by decide) (by omega_arith)
+      (by rw [hd2 _ (by decide)]; exact F.hBQ) (by rw [hd2 _ (by decide)]; exact F.hQL) q1 (by omega_arith) hwX
       ((k12.gpr _ (by decide)).trans h27) ((k12.gpr _ (by decide)).trans h28))
       fun v ⟨⟨b14, b11, b22, b15, _⟩, k3⟩ => ?_
     simp only [List.map_cons, List.map_nil, b14, b11, b22, b15, k3.gpr .r23 (by decide), k3.gpr .r27 (by decide),
@@ -331,18 +331,18 @@ theorem pins274 : Pins (At C0 crtF 274) [.r10, .r23, .r27, .r28, .r29] := by
     have dQ : cwQ s₀ = wsWords (cqL s₀) := rfl
     have doP : oPa s₀ = slot (cwX s₀) 8 := rfl
     have doQ : oQa s₀ = slot (cwX s₀) 8 + slot (cwP s₀) 8 := rfl
-    have hwX : cwX s₀ < 2 ^ 31 := by have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl; omega
+    have hwX : cwX s₀ < 2 ^ 31 := by have dX : cwX s₀ = 2 * ((ck s₀ + 7) / 8) := rfl; omega_arith
     obtain ⟨-, -, -, -, -, mQb, -⟩ := masked_facts hP
     have hs := F.scr.congr k.wr
     have h23 := (k.gpr _ (by decide)).trans F.r23
     have h27 := (k.gpr _ (by decide)).trans F.r27
     have h28 := (k.gpr _ (by decide)).trans F.r28
     have hd : ∀ d, d + 8 ≤ 256 → word u.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd =>
-      R.out.word (Or.inl hd) (by omega)
-    refine WP.seq (WP.mono (recombineX_ok (oP := oPa s₀) (oQ := oQa s₀) hs (by omega) (Nat.le_of_eq doP.symm)
-      (by omega) (by omega) pq hwX h23 h27 h28 (by rw [hd _ (by decide)]; exact F.hBP)
+      R.out.word (Or.inl hd) (by omega_arith)
+    refine WP.seq (WP.mono (recombineX_ok (oP := oPa s₀) (oQ := oQa s₀) hs (by omega_arith) (Nat.le_of_eq doP.symm)
+      (by omega_arith) (by omega_arith) pq hwX h23 h27 h28 (by rw [hd _ (by decide)]; exact F.hBP)
       (by rw [hd _ (by decide)]; exact F.hPL) (by rw [hd _ (by decide)]; exact F.hBQ)
-      (by rw [hd _ (by decide)]; exact F.hQL) p1 (by omega) q1 (by omega) R.v0 R.w0 R.v5 mQb R.h4 R.q4)
+      (by rw [hd _ (by decide)]; exact F.hQL) p1 (by omega_arith) q1 (by omega_arith) R.v0 R.w0 R.v5 mQb R.h4 R.q4)
       fun v₁ ⟨⟨_, o1⟩, k1⟩ => ?_)
     have O1 : Outside (cS s₀) (slot (cwX s₀) 2) (6 * (8 * (cwX s₀ + 2))) u.mem v₁.mem := by
       intro x hx
@@ -350,9 +350,9 @@ theorem pins274 : Pins (At C0 crtF 274) [.r10, .r23, .r27, .r28, .r29] := by
       change ofs (cS s₀) x < r.1 ∨ r.1 + r.2 ≤ ofs (cS s₀) x
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       change ofs (cS s₀) x < slot (cwX s₀) 2 ∨ slot (cwX s₀) 2 + 6 * (8 * (cwX s₀ + 2)) ≤ ofs (cS s₀) x at hx
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only <;> simp only [e] at hx ⊢ <;> omega
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only <;> simp only [e] at hx ⊢ <;> omega_arith
     have hd1 : ∀ d, d + 8 ≤ 256 → word v₁.mem (cS s₀) d = word s.mem (cS s₀) d := fun d hd' => by
-      rw [O1.word (Or.inl (by omega)) (by omega)]; exact hd d hd'
+      rw [O1.word (Or.inl (by omega_arith)) (by omega_arith)]; exact hd d hd'
     have hs1 := hs.congr k1.wr
     have e0 : off (cS s₀) 0 = cS s₀ := BitVec.add_zero _
     have hO' : v₁.mem.readW (cS s₀) 64 = off (s₀.gpr .r3) 0 := by
@@ -360,14 +360,14 @@ theorem pins274 : Pins (At C0 crtF 274) [.r10, .r23, .r27, .r28, .r29] := by
       rw [← e0]; exact h0
     have ld0 : InRegions (v₁.rd ++ v₁.wr) (cS s₀) 8 := by
       have e0' : Mont.off (cS s₀) 0 = cS s₀ := BitVec.add_zero _
-      have := hs1.ld (show 0 + 8 ≤ cZ s₀ by omega); rwa [e0'] at this
+      have := hs1.ld (show 0 + 8 ≤ cZ s₀ by omega_arith); rwa [e0'] at this
     have hK' : v₁.mem.readW (off (cS s₀) 16) 64 = BitVec.ofNat 64 (ck s₀) := by
       show word v₁.mem (cS s₀) 16 = _; rw [hd1 16 (by decide)]; exact F.hNL
     refine WP.mono (WP.keep [.r10, .r29, .r27, .r28] (Q := fun t =>
       t.gpr .r10 = off (cS s₀) (slot (cwX s₀) 0) ∧ t.gpr .r29 = BitVec.ofNat 64 (8 * (cwX s₀ + 2)) ∧
         t.gpr .r27 = off (s₀.gpr .r3) 0 ∧ t.gpr .r28 = BitVec.ofNat 64 (ck s₀)) (by
       prun [(k1.gpr .r27 (by decide)).trans h27, (k1.gpr .r28 (by decide)).trans h28,
-        (k1.gpr .r23 (by decide)).trans h23, oOut, oNLen, ld0, hs1.ld (show 16 + 8 ≤ cZ s₀ by omega), hO', hK',
+        (k1.gpr .r23 (by decide)).trans h23, oOut, oNLen, ld0, hs1.ld (show 16 + 8 ≤ cZ s₀ by omega_arith), hO', hK',
         BitVec.add_zero]) (by decide)) fun v ⟨⟨a10, a29, a27, a28⟩, k2⟩ => ?_
     simp only [List.map_cons, List.map_nil, a10, a29, a27, a28, k2.gpr .r23 (by decide), k1.gpr .r23 (by decide),
       h23]

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.X448.X86_64.Inv
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
 
 /-! End-to-end joint multiplication, including runtime table construction. -/
 

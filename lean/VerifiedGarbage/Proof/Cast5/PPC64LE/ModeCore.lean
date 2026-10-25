@@ -166,7 +166,7 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
   -- Our caller's registers to their slots.
   refine Spill.save_ok (b := sb) (by decide) modeSaved_ok (fun p hp => by
     have := modeSaved_lt p hp
-    exact ⟨_, by rw [wr₂]; exact hW, by rw [b₂]; exact Offset.contains_base _ (by omega) (by omega)⟩) ?_
+    exact ⟨_, by rw [wr₂]; exact hW, by rw [b₂]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) ?_
   rw [b₂]
   generalize hM : Spill.saveMem s₂.mem B s₂.gpr modeSaved = M
   have sv : Spill.Saved B s₂.gpr modeSaved M := by rw [← hM]; exact Spill.saveMem_saved modeSaved_fits _ _ _
@@ -205,7 +205,7 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
       c255 := c₇
       trd := by rw [t₇, rd₇, wr₇]; exact hk.tbl
       held := by rw [t₇, m₇]; exact held_frame hk.held fM htM
-      inP := ⟨_, by rw [wr₇]; exact hW, fun off ho => Offset.contains_base _ (by omega) (by omega)⟩
+      inP := ⟨_, by rw [wr₇]; exact hW, fun off ho => Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
       inK := by rw [rd₇, wr₇]; exact hk.key
       kfit := hk.kfit }
   -- The block function.
@@ -216,12 +216,12 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
     rw [← m₇] at sv
     exact sv.frame hv.frame fun p hp r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base _ (by have := modeSaved_lt p hp; omega) (by have := modeSaved_lt p hp; omega)
+      exact Offset.disjoint_base _ (by have := modeSaved_lt p hp; omega_arith) (by have := modeSaved_lt p hp; omega_arith)
   -- Our caller's registers back, and `r29`, `r30`.
   refine Spill.restore_ok (b := sb) (by decide) bv modeSaved_ok modeSaved_restorable (fun p hp => by
     have := modeSaved_lt p hp
     exact ⟨_, by rw [hv.keep.2.1, hv.keep.2.2, rd₇, wr₇]; exact List.mem_append_right _ hW,
-      Offset.contains_base _ (by omega) (by omega)⟩) svv fun w R => ?_
+      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) svv fun w R => ?_
   refine wp_mr fun x₁ e₁ => wp_mr fun x₂ e₂ => wp_nil fun syF => ?_
   have gw : ∀ r, r ≠ .r29 → r ≠ .r30 → x₂.gpr r = w.gpr r := fun r h29 h30 => by
     rw [e₂.other r h30, e₁.other r h29]
@@ -269,7 +269,7 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
     have hb : Spec.Aes.bytesAt M B 8 = Spec.Aes.bytesAt s.mem B 8 :=
       bytesAt_frame fM fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.base_disjoint _ (by decide) (by omega)
+        exact Offset.base_disjoint _ (by decide) (by omega_arith)
     have hkk : Spec.Cast5.scheduleAt M (s.gpr .r3) = k := by rw [scheduleAt_frame fM hkM, hk.sched]
     rw [ea, show 4 * 2 = 8 from rfl, memF, Proof.Cast5.bytesAt_eq, hv.blk, m₇, dirCipher_bytes, hkk,
       ← ofFn_bytesAt M B, hb, ofFn_bytesAt]

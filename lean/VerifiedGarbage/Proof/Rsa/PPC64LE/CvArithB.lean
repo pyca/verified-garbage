@@ -103,7 +103,7 @@ theorem partB_ok {s : State} {B : Addr} {Z w P Q : Nat} (h : Ws s B Z w nArr)
   have nm6 : num t6.mem B w aNM + num t6.mem B w aM = 2 ^ (32 * w) := by
     rw [m6]
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b6 with e | e <;>
-      rw [e] at v6 <;> simp only [modOf] at v6 ⊢ <;> omega
+      rw [e] at v6 <;> simp only [modOf] at v6 ⊢ <;> omega_arith
   have z6 : num t6.mem B w aZero = 0 := by rw [k6.num (by decide) (by simp) (fit _ (by decide)), z5]
   have bank6 : bank t6.mem B w 0 = (num t6.mem B w 0, num t6.mem B w aM, 1, 0) := by
     have e0 : num t6.mem B w 0 = num t1.mem B w 0 := by
@@ -141,10 +141,10 @@ theorem partB_ok {s : State} {B : Addr} {Z w P Q : Nat} (h : Ws s B Z w nArr)
   rw [List.append_assoc, ← List.append_nil (andS sMask sMask sE3)]
   refine andS_ok h8 (by decide) (by decide) (by decide) (by rw [so]; exact bo) (by rw [s1]; exact b1)
     fun t9 h9 k9 e9 r9 => ?_
-  refine andS_ok h9 (by decide) (by decide) (by decide) (by rw [e9]; split <;> omega)
+  refine andS_ok h9 (by decide) (by decide) (by decide) (by rw [e9]; split <;> omega_arith)
     (by rw [k9.slot (by decide) (by decide), s2]; exact b2) fun t10 h10 k10 e10 r10 => ?_
-  refine andS_ok h10 (by decide) (by decide) (by decide) (by rw [e10]; split <;> omega)
-    (by rw [k10.slot (by decide) (by decide), k9.slot (by decide) (by decide), e8]; split <;> omega)
+  refine andS_ok h10 (by decide) (by decide) (by decide) (by rw [e10]; split <;> omega_arith)
+    (by rw [k10.slot (by decide) (by decide), k9.slot (by decide) (by decide), e8]; split <;> omega_arith)
     fun t h11 k11 e11 r11 => WP.block_nil ?_
   have n7 : ∀ j, j < nArr → num t.mem B w j = num t8.mem B w j := fun j hj => by
     rw [k11.num (by simp) (by simp; decide) (fit _ hj), k10.num (by simp) (by simp; decide) (fit _ hj),
@@ -159,7 +159,7 @@ theorem partB_ok {s : State} {B : Addr} {Z w P Q : Nat} (h : Ws s B Z w nArr)
       n7 1 (by decide), n8 1 (by decide)]
     by_cases a : slot s.mem B sPodd = 1 <;> by_cases b : slot s.mem B sE1 = 1 <;>
       by_cases c : slot s.mem B sE2 = 1 <;> by_cases d : num t7.mem B w 1 = 1 <;> simp [a, b, c, d]
-  · have H := v7 nm6 z6 (by rw [m6]; simp only [modOf]; omega) (by rw [m6]; exact h1M) bank6
+  · have H := v7 nm6 z6 (by rw [m6]; simp only [modOf]; omega_arith) (by rw [m6]; exact h1M) bank6
     rw [m6, q6] at H
     rw [n7 1 (by decide), n7 3 (by decide), n8 1 (by decide), n8 3 (by decide)]
     exact H

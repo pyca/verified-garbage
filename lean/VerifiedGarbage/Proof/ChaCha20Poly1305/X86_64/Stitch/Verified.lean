@@ -38,6 +38,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): `bulk` is constant time

@@ -86,9 +86,9 @@ theorem subModP_ok {s : State} {B : Addr} {Z w N o a b : Nat} (h : Ws s B Z w N)
     rw [k3.num (by idx) (by simp) fT1, k2.num (by simp) (by simp; decide) fT1]
   rw [t13] at v4
   rw [s2, z3, n3] at v3
-  refine subMod_impl (P := 2 ^ (32 * w)) (by omega) hb' v1 (val32_lt _ _ _ _) b1 ?_ v4 (val32_lt _ _ _ _) b4
+  refine subMod_impl (P := 2 ^ (32 * w)) (by omega_arith) hb' v1 (val32_lt _ _ _ _) b1 ?_ v4 (val32_lt _ _ _ _) b4
   rw [v3]
-  split <;> omega
+  split <;> omega_arith
 
 /-- The halving of `[aT3]` modulo `m` into `[o]`. -/
 def halfModP (o : Nat) : List (Prog isa) := [
@@ -99,8 +99,8 @@ def halfModP (o : Nat) : List (Prog isa) := [
 theorem xor_bits {x y : BitVec 64} (hx : x.toNat ≤ 1) (hy : y.toNat ≤ 1) :
     (x ^^^ y).toNat = (x.toNat + y.toNat) % 2 := by
   rw [BitVec.toNat_xor]
-  rcases (show x.toNat = 0 ∨ x.toNat = 1 by omega) with e | e <;>
-    rcases (show y.toNat = 0 ∨ y.toNat = 1 by omega) with f | f <;> rw [e, f] <;> decide
+  rcases (show x.toNat = 0 ∨ x.toNat = 1 by omega_arith) with e | e <;>
+    rcases (show y.toNat = 0 ∨ y.toNat = 1 by omega_arith) with f | f <;> rw [e, f] <;> decide
 
 theorem halfModP_ok {s : State} {B : Addr} {Z w N o : Nat} (h : Ws s B Z w N)
     (hN15 : 15 ≤ N) (hN : N ≤ 256) (ho : o < N) (hoT3 : o ≠ aT3) (hoT4 : o ≠ aT4) :
@@ -114,7 +114,7 @@ theorem halfModP_ok {s : State} {B : Addr} {Z w N o : Nat} (h : Ws s B Z w N)
   rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil (bitOf sB aT3)]
   refine bitOf_ok h (by idx) hN hsB fun t1 h1 k1 s1 r1 => WP.block_nil ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have b1 : slot t1.mem B sB ≤ 1 := by rw [s1]; omega
+  have b1 : slot t1.mem B sB ≤ 1 := by rw [s1]; omega_arith
   refine WP.mono (sel_ok h1 (by idx) (by idx) (by idx) hN (by idx) (by idx) hsB b1)
     fun t2 ⟨h2, k2, v2, r2⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -127,15 +127,15 @@ theorem halfModP_ok {s : State} {B : Addr} {Z w N o : Nat} (h : Ws s B Z w N)
       (t4.gpr .r9 = t3.gpr .r9 ^^^ (t3.mem.readW (off B sB) 32).setWidth 64 ∧ t4.mem = t3.mem) ∧
         Keep [.r0, .r9] t3 t4 := by
     refine WP.keep _ ?_ (by decide)
-    prun [h3.r31, h3.scr.ld (show sB + 4 ≤ Z by simp only [sB] at hsB ⊢; omega),
+    prun [h3.r31, h3.scr.ld (show sB + 4 ≤ Z by simp only [sB] at hsB ⊢; omega_arith),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sB < 2 ^ 15 by decide)]
   refine WP.mono hx fun t4 ⟨⟨u9, m4⟩, k4⟩ => ?_
   have h5 : Ws t4 B Z w N := h3.of_keep k4
   have c4 : (t4.gpr .r9).toNat = ((t3.gpr .r9).toNat + num s.mem B w aT3 % 2) % 2 := by
     have e : (t3.mem.readW (off B sB) 32).toNat = num s.mem B w aT3 % 2 := by
       change slot t3.mem B sB = _; rw [sB3, s1]
-    rw [u9, xor_bits b3 (by rw [toNat_ext32, e]; omega), toNat_ext32, e]
-  refine WP.mono (half_ok h5 ho hN (by rw [c4]; omega)) fun t ⟨h6, k6, v6, r6⟩ => ?_
+    rw [u9, xor_bits b3 (by rw [toNat_ext32, e]; omega_arith), toNat_ext32, e]
+  refine WP.mono (half_ok h5 ho hN (by rw [c4]; omega_arith)) fun t ⟨h6, k6, v6, r6⟩ => ?_
   rw [m4] at k6 v6
   refine ⟨h6, (k1.join k2 (js := [aT4, o]) (ds := [sB])).join (k3.join k6 (js := [aT4, o]) (ds := [sB]))
       (js := [aT4, o]) (ds := [sB]), fun hNM hZ => ?_,
@@ -150,7 +150,7 @@ theorem halfModP_ok {s : State} {B : Addr} {Z w N o : Nat} (h : Ws s B Z w N)
   rw [x2] at v3
   rw [s1, z1, n1] at v2
   rw [v6, c4]
-  refine halfMod_impl (P := 2 ^ (32 * w)) (by omega) (val32_lt _ _ _ _) ?_ v3 (val32_lt _ _ _ _) b3 rfl
-  rw [v2]; split <;> omega
+  refine halfMod_impl (P := 2 ^ (32 * w)) (by omega_arith) (val32_lt _ _ _ _) ?_ v3 (val32_lt _ _ _ _) b3 rfl
+  rw [v2]; split <;> omega_arith
 
 end VG.Proof.Rsa.PPC64LE.Keys

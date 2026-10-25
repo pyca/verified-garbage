@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
-import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract

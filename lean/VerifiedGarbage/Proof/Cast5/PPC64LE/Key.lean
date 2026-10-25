@@ -137,7 +137,7 @@ theorem ofNat_sub_one64 {a : Nat} (ha : 1 ≤ a) (hb : a < 2 ^ 64) :
     BitVec.ofNat 64 a - 1#64 = BitVec.ofNat 64 (a - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem key_wp {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s) := by
   obtain ⟨n, hnn⟩ : ∃ n, (s.gpr .r4).toNat = n := ⟨_, rfl⟩
@@ -157,7 +157,7 @@ theorem key_wp {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s) := by
   have inC : ∀ {off w : Nat}, off + w ≤ 256 → InRegions s.wr (cb + BitVec.ofNat 64 off) w :=
     fun hw => ⟨⟨cb, 256⟩, hscr, Offset.contains_base _ hw (by omega_arith)⟩
   have hw : ∀ p ∈ allSlots, InRegions s.wr (cb + BitVec.ofNat 64 p.2) 8 := fun p hp =>
-    inC (by have := allSlots_lt p hp; omega)
+    inC (by have := allSlots_lt p hp; omega_arith)
   have sub144 : Region.Sub ⟨cb + BitVec.ofNat 64 64, 144⟩ ⟨cb, 256⟩ := Offset.sub_base _ (by decide)
   unfold expandKey
   apply WP.seq
@@ -274,12 +274,12 @@ theorem key_wp {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s) := by
     have hl := restoreSlots_lt p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint_base _ (by omega) (by omega)
+    · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
     · exact (dKS.symm.sub_left (slot_sub _ hl))
   refine Spill.restore_ok (by decide) r6 restoreSlots_ok (by decide) (fun p hp => ?_) hsv fun s' R => ?_
   · rw [ku.2.1, ku.2.2, rdw, wrw]
     exact ⟨_, List.mem_append_right _ hscr, Offset.contains_base _
-      (by have := restoreSlots_lt p hp; omega) (by have := restoreSlots_lt p hp; omega)⟩
+      (by have := restoreSlots_lt p hp; omega_arith) (by have := restoreSlots_lt p hp; omega_arith)⟩
   refine WP.cons exec_mtlr (wp_nil ⟨?_, fun r hr => ?_, ?_⟩)
   · show Spec.Cast5.scheduleAt s'.mem (s.gpr .r5) = _
     rw [R.mem, hkb, hkp, hnn, scheduleAt_keys hk.mem.keys (by rw [kws, halves_length]), kws,

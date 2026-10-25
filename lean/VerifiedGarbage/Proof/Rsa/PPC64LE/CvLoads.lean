@@ -32,10 +32,10 @@ theorem val32_of_zero {m : Mem} {B : Addr} : ∀ {d n : Nat}, (∀ i < n, w32 m 
     val32 m B d n = 0
   | _, 0, _ => rfl
   | d, n + 1, h => by
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_arith)
     rw [Nat.mul_zero, Nat.add_zero] at h0
     rw [val32, h0, val32_of_zero fun i hi => by
-      rw [show d + 4 + 4 * i = d + 4 * (i + 1) by omega]; exact h (i + 1) (by omega)]
+      rw [show d + 4 + 4 * i = d + 4 * (i + 1) by omega_arith]; exact h (i + 1) (by omega_arith)]
 
 /-- `load j` from `L` bytes at `P`, readable and apart from the working space. -/
 theorem ldIn_ok {s0 s : State} (h : Base s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cvW s0) nArr) {j : Nat}
@@ -47,11 +47,11 @@ theorem ldIn_ok {s0 s : State} (h : Base s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cvW
       num t.mem (cvB s0) (cvW s0) j = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem P L) ∧
       Outside (cvB s0) (arr (cvW s0) j) (4 * cvW s0) s.mem t.mem ∧ Keep [.r0, .r5, .r6, .r8] s t := by
   have hc : ∀ i < L, (⟨P, L⟩ : Region).Contains (off P i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_arith) (by omega_arith)
   have hv : val32 s.mem (cvB s0) (arr (cvW s0) j) (cvW s0) = 0 := hz
   refine WP.mono (load_ok hw hj (by decide) h6 h8 hL hLw
     (fun i hi => ⟨_, List.mem_append_left _ (h.rd ▸ hrd), hc i hi⟩)
-    (fun i hi x hx e => by have := past_of_disjoint hd (hc i hi); rw [e] at this; omega)
+    (fun i hi x hx e => by have := past_of_disjoint hd (hc i hi); rw [e] at this; omega_arith)
     (fun p hp => by rw [← off_add]; exact byte_zero_of_val32 hv hp))
     fun t ⟨ht, k, v, kt, o⟩ => ⟨Base.of_keep h k (by simpa using hj) (by simp) kt.sp kt.lr kt.rd kt.wr
       (kt.gpr _ (by decide)), ht, ?_, o, kt⟩
@@ -89,16 +89,16 @@ theorem num_out {m m' : Mem} {B : Addr} {w a b : Nat} (o : Outside B (arr w a) (
     (fb : arr w b + S w ≤ 2 ^ 64) : num m' B w b = num m B w b := by
   have hS : S w = 4 * (w + 2) := rfl
   have := VG.Proof.Rsa.KeyWorkspace.arr_disj (w := w) hab
-  exact o.val32 (by omega) (by omega)
+  exact o.val32 (by omega_arith) (by omega_arith)
 
 /-- An array's extra digit, which a load keeps. -/
 theorem top_out {m m' : Mem} {B : Addr} {w a b : Nat} (o : Outside B (arr w a) (4 * w) m m')
     (fb : arr w b + S w ≤ 2 ^ 64) : w32 m' B (arr w b + 4 * w) = w32 m B (arr w b + 4 * w) := by
   have hS : S w = 4 * (w + 2) := rfl
   by_cases hab : a = b
-  · subst hab; exact o.w32 (by omega) (by omega)
+  · subst hab; exact o.w32 (by omega_arith) (by omega_arith)
   · have := VG.Proof.Rsa.KeyWorkspace.arr_disj (w := w) hab
-    exact o.w32 (by omega) (by omega)
+    exact o.w32 (by omega_arith) (by omega_arith)
 
 /-- `loads`: `n`, `p`, `q` and `d` into their arrays. -/
 theorem loads_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cvW s0) nArr)
@@ -113,7 +113,7 @@ theorem loads_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (cvB
   have hs : Scr s (cvB s0) (cvZ s0) := hw.scr
   have fit : ∀ j < nArr, arr (cvW s0) j + S (cvW s0) ≤ 2 ^ 64 := fun j hj => hw.fit64 hj
   have zn : ∀ j < nArr, num s.mem (cvB s0) (cvW s0) j = 0 := fun j hj =>
-    val32_of_zero fun i hi => hz j hj i (by omega)
+    val32_of_zero fun i hi => hz j hj i (by omega_arith)
   have hk1 : 64 ≤ (s0.gpr .r10).toNat := hk
   have hk2 : (s0.gpr .r10).toNat ≤ 4 * cvW s0 := hkw
   rw [loads, wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -125,7 +125,7 @@ theorem loads_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (cvB
   have hb0 := h.of_regs ak am
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (ldIn_ok hb0 (hw.of_keep ak) (j := aDQ) (L := (s0.gpr .r10).toNat) (by decide) a6 (by rw [a8]; exact ofNat_toNat64 _)
-    (by omega) (by omega) (by rw [hrd]; simp) dn wn (by rw [am]; exact zn _ (by decide)))
+    (by omega_arith) (by omega_arith) (by rw [hrd]; simp) dn wn (by rw [am]; exact zn _ (by decide)))
     fun t1 ⟨b1, w1, v1, o1, k1⟩ => ?_
   -- `p`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -137,7 +137,7 @@ theorem loads_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (cvB
   have b2 := b1.of_regs k2 m2
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (ldIn_ok b2 (w1.of_keep k2) (j := aP) (L := (PPC64LE.stackArg s0 1).toNat) (by decide) c6 (by rw [c8]; exact ofNat_toNat64 _)
-    p1 (by omega) (by rw [hrd]; simp) dp wp ?_) fun t3 ⟨b3, w3, v3, o3, k3⟩ => ?_
+    p1 (by omega_arith) (by rw [hrd]; simp) dp wp ?_) fun t3 ⟨b3, w3, v3, o3, k3⟩ => ?_
   · rw [m2, num_out o1 (by decide) (fit _ (by decide)), am]; exact zn _ (by decide)
   -- `q`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
@@ -149,7 +149,7 @@ theorem loads_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (cvB
   have b4 := b3.of_regs k4 m4
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (ldIn_ok b4 (w3.of_keep k4) (j := aQ) (L := (PPC64LE.stackArg s0 3).toNat) (by decide) c6' (by rw [c8']; exact ofNat_toNat64 _)
-    q1 (by omega) (by rw [hrd]; simp) dq wq ?_) fun t5 ⟨b5, w5, v5, o5, k5⟩ => ?_
+    q1 (by omega_arith) (by rw [hrd]; simp) dq wq ?_) fun t5 ⟨b5, w5, v5, o5, k5⟩ => ?_
   · rw [m4, num_out o3 (by decide) (fit _ (by decide)), m2, num_out o1 (by decide) (fit _ (by decide)), am]
     exact zn _ (by decide)
   -- `d`.
@@ -162,7 +162,7 @@ theorem loads_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (cvB
   have b6 := b5.of_regs k6 m6
   rw [show seqs [load aD] = load aD from rfl]
   refine WP.mono (ldIn_ok b6 (w5.of_keep k6) (j := aD) (L := (PPC64LE.stackArg s0 5).toNat) (by decide) c6'' (by rw [c8'']; exact ofNat_toNat64 _)
-    d1 (by omega) (by rw [hrd]; simp) dd wd ?_) fun t ⟨b7, w7, v7, o7, k7⟩ => ?_
+    d1 (by omega_arith) (by rw [hrd]; simp) dd wd ?_) fun t ⟨b7, w7, v7, o7, k7⟩ => ?_
   · rw [m6, num_out o5 (by decide) (fit _ (by decide)), m4, num_out o3 (by decide) (fit _ (by decide)), m2,
       num_out o1 (by decide) (fit _ (by decide)), am]
     exact zn _ (by decide)
@@ -178,6 +178,6 @@ theorem loads_ok {s0 s : State} (h : Base s0 s) (ha : Args s0 s) (hw : Ws s (cvB
       num_out o3 (Ne.symm b) (F _ hj), m2, num_out o1 (Ne.symm a) (F _ hj), am]
     exact zn j hj
   · rw [top_out o7 (F _ hj), m6, top_out o5 (F _ hj), m4, top_out o3 (F _ hj), m2, top_out o1 (F _ hj), am]
-    exact hz j hj _ (by omega)
+    exact hz j hj _ (by omega_arith)
 
 end VG.Proof.Rsa.PPC64LE.CrtValues

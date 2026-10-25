@@ -29,7 +29,6 @@ meta import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Impl.Gcm.X86_64
 meta import VerifiedGarbage.Impl.Gcm.X86_64
 
 /-!

@@ -2,13 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 public meta import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
+import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 public meta import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 public meta import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
+public meta import Lean.Elab.Tactic.ElabTerm
 
 /-!
 # ML-KEM on x86-64: the control flow and the stack pointer of the top-level functions with 16-bit polynomials

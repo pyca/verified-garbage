@@ -66,7 +66,7 @@ theorem rcPre_ok {d : RcD} {s : State} (h : RC d s) :
   obtain ⟨hp, ha, hac, hsp, hstk⟩ := h
   have e := hp.env
   have l56 : InRegions (s.rd ++ s.wr) (d.B + BitVec.ofNat 64 56) 8 := e.hs.ld (d := 56) (by
-    have := e.hZ; simp only [slot, hdrBytes] at this; omega)
+    have := e.hZ; simp only [slot, hdrBytes] at this; omega_arith)
   refine WP.assoc' (WP.seq (WP.mono (WP.keep [.r12] (Q := fun u => u.gpr .r12 = (word s.mem d.B 56 <<< 32) >>> 32 ∧
       u.mem = s.mem) (by simp only [minv32, ldh, hMinv]; prun [e.h31, l56]) (by decide))
     fun u ⟨⟨u12, um⟩, ku⟩ => ?_))
@@ -88,11 +88,11 @@ theorem rc_pre {d : RcD} {s : State} (h : RCm d s) :
   obtain ⟨p₂, h5, r3₂, r4₂, hsp, hstk⟩ := h
   have e := p₂.env
   have hnw := e.hs.nowrap
-  have hL64 : d.L < 2 ^ 64 := by omega
+  have hL64 : d.L < 2 ^ 64 := by omega_arith
   sig_pre [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig, PPC64LE.abi, PPC64LE.argRegs]
   simp only [r3₂, r4₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hL64, Nat.mul_comm d.L 8]
-  exact ⟨hsp, trivial, hstk, by omega, p₂.layout, p₂.prepared (by
-    show val32 s.mem d.B (slot d.w 5) (2 * d.w) < d.c; rw [h5]; exact Nat.mod_lt _ (by have := p₂.c3; omega))⟩
+  exact ⟨hsp, trivial, hstk, by omega_arith, p₂.layout, p₂.prepared (by
+    show val32 s.mem d.B (slot d.w 5) (2 * d.w) < d.c; rw [h5]; exact Nat.mod_lt _ (by have := p₂.c3; omega_arith))⟩
 
 theorem rc_pub {d : RcD} {s₁ s₂ : State} (h₁ : RCm d s₁) (h₂ : RCm d s₂) (hsp : s₁.sp = s₂.sp) :
     (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176).pub
@@ -125,7 +125,7 @@ theorem rcCall_ct (R : RoundImpl) : RelCT isa (Two RCm) (.call R.name R.code) (T
   · have h31 := h.1.env.h31
     exact WP.callAny (k := Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 176) R.verified.1
       (rd := []) (wr := [⟨d.B, 8 * d.L⟩]) (rc_pre h) (rc_covers h.1) (fun _ _ => scr_covers h.1.env.hs)
-      (fun s' _ _ _ _ hcs _ => (hcs .r31 (by decide)).trans h31) (by have := R.stack; omega)
+      (fun s' _ _ _ _ hcs _ => (hcs .r31 (by decide)).trans h31) (by have := R.stack; omega_arith)
 
 theorem pins_RCc : Pins RCc [.r31] := by
   rintro d s₁ s₂ h₁ h₂ r hr

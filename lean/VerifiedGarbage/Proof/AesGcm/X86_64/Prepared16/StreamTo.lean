@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Spec.Gcm.Prepared16
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
-public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
+import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16To
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
@@ -16,6 +15,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 import VerifiedGarbage.Proof.AesGcm.ScratchTo
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 
 /-! # Sixteen prepared powers: Prepared-context StreamTo contracts -/
 

@@ -32,29 +32,13 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Gcm.X86_64
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
 import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Gcm.Ctr
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 meta import VerifiedGarbage.Impl.Gcm.X86_64
 meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds

@@ -92,12 +92,12 @@ theorem unpackLoop_buFin_ok {B d c nb : Nat} (hs : Shape d c nb) (hB19 : B ≤ 2
   unfold inNum at hy'
   have hbm := bm_toNat (b := BitVec.ofNat 64 B)
     (x := BitVec.ofNat 64 (inNum s.mem (s.gpr .r10) d / 2 ^ (d * i) % 2 ^ d))
-    (by rw [BitVec.toNat_ofNat]; omega) (by rw [BitVec.toNat_ofNat]; omega)
+    (by rw [BitVec.toNat_ofNat]; omega_arith) (by rw [BitVec.toNat_ofNat]; omega_arith)
   rw [hc i hi, buWord, BitVec.toNat_setWidth, hbm, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show B < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show _ < 2 ^ 64 by omega),
+    Nat.mod_eq_of_lt (show B < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show _ < 2 ^ 64 by omega_arith),
     Nat.mod_eq_of_lt (show (B + q - inNum s.mem (s.gpr .r10) d / 2 ^ (d * i) % 2 ^ d) % q < 2 ^ 32 from
-      Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega)) (by omega)),
-    toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi, hd, ofInt_sub (by omega)]
+      Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_arith)) (by omega_arith)),
+    toRq, Vector.getElem_map, bitUnpack_get _ _ _ hi, hd, ofInt_sub (by omega_arith)]
 
 /-- The loop of `BitUnpack` for `γ₁ = 2¹⁷` is constant time, with `r10` and
 `r11` public. -/
@@ -157,28 +157,28 @@ theorem bu_wp {s₀ : State} (hp : BuPre s₀) : WP isa Impl.MlDsa.PPC64LE.Pack.
   · have e6 : lo s₁ .r6 = lo s₀ .r6 := by simp only [lo]; rw [k₁.gpr (by decide)]
     rw [e6] at e
     exact go (d := 3) (c := 8) (nb := 3) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show lo s₀ .r5 = 2 by omega]; decide) s₂ h₂
+      (by rw [show lo s₀ .r5 = 2 by omega_arith]; decide) s₂ h₂
   have e6 : ∀ s, Same s₁ s → lo s .r6 = lo s₀ .r6 := fun s h => by
     simp only [lo]; rw [h.1.gpr (by decide), k₁.gpr (by decide)]
   rw [e6 s₁ ⟨Keep.refl _ _, rfl⟩] at n2
   refine sel_ok .r6 (by decide) 4 (by decide) (by decide) _ _ s₂ (fun s₃ h₃ e => ?_) (fun s₃ h₃ n4 => ?_)
   · rw [e6 s₂ h₂] at e
     exact go (d := 4) (c := 2) (nb := 1) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show lo s₀ .r5 = 4 by omega]; decide) s₃ (h₂.trans h₃)
+      (by rw [show lo s₀ .r5 = 4 by omega_arith]; decide) s₃ (h₂.trans h₃)
   rw [e6 s₂ h₂] at n4
   refine sel_ok .r6 (by decide) 4096 (by decide) (by decide) _ _ s₃ (fun s₄ h₄ e => ?_) (fun s₄ h₄ n4096 => ?_)
   · rw [e6 s₃ (h₂.trans h₃)] at e
     exact go (d := 13) (c := 8) (nb := 13) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show lo s₀ .r5 = 4095 by omega]; decide) s₄ ((h₂.trans h₃).trans h₄)
+      (by rw [show lo s₀ .r5 = 4095 by omega_arith]; decide) s₄ ((h₂.trans h₃).trans h₄)
   rw [e6 s₃ (h₂.trans h₃)] at n4096
   refine sel_ok .r6 (by decide) 131072 (by decide) (by decide) _ _ s₄ (fun s₅ h₅ e => ?_) (fun s₅ h₅ n17 => ?_)
   · rw [e6 s₄ ((h₂.trans h₃).trans h₄)] at e
     exact go (d := 18) (c := 4) (nb := 9) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show lo s₀ .r5 = 131071 by omega]; decide) s₅ (((h₂.trans h₃).trans h₄).trans h₅)
+      (by rw [show lo s₀ .r5 = 131071 by omega_arith]; decide) s₅ (((h₂.trans h₃).trans h₄).trans h₅)
   · rw [e6 s₄ ((h₂.trans h₃).trans h₄)] at n17
-    have e : lo s₀ .r6 = 524288 := by omega
+    have e : lo s₀ .r6 = 524288 := by omega_arith
     exact go (d := 20) (c := 2) (nb := 5) (by constructor <;> decide) e (by decide) (by decide)
-      (by rw [show lo s₀ .r5 = 524287 by omega]; decide) s₅ (((h₂.trans h₃).trans h₄).trans h₅)
+      (by rw [show lo s₀ .r5 = 524287 by omega_arith]; decide) s₅ (((h₂.trans h₃).trans h₄).trans h₅)
 
 theorem bitUnpack_ct :
     ConstantTime isa (bitUnpackContract PPC64LE.abi).pre (bitUnpackContract PPC64LE.abi).pub
@@ -248,8 +248,8 @@ theorem t1_wp {s₀ : State} (hp : T1Pre s₀) :
   refine polyIs_of_toNat fun i hi => ?_
   have hy : inNum s₀.mem (s₀.gpr .r3) 10 / 2 ^ (10 * i) % 2 ^ 10 < 2 ^ 10 := Nat.mod_lt _ (by decide)
   rw [hc i hi, t1Word, BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show _ < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show _ < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega), Vector.getElem_map,
+    Nat.mod_eq_of_lt (show _ < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show _ < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_arith), Vector.getElem_map,
     simpleBitUnpack_get _ _ hi, show bitlen t1Max = 10 by decide, ofInt_t1 hy]
 
 theorem unpackT1_ct :

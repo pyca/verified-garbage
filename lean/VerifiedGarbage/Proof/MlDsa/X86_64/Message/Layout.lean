@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: where everything is

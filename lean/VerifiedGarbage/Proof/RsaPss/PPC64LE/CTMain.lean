@@ -63,8 +63,8 @@ theorem call_ct : RelCT isa (Two fun a t => ∃ s, PreP D s ∧ PubK a s ∧ AtC
   · rw [c₁.g5, c₂.g5, c₁.g6, c₂.g6, words_entry c₁.base.mem P₁.kp ((P₁.sp).sub_left (sc_sub P₁)) P₁.wp,
       words_entry c₂.base.mem P₂.kp ((P₂.sp).sub_left (sc_sub P₂)) P₂.wp, p₁.1.w, p₂.1.w]
   · rw [c₁.g7, c₂.g7, c₁.g8, c₂.g8,
-      bytes_entry c₁.base.mem P₁.ke ((P₁.es.symm).sub_left (sc_sub P₁)) (by have := P₁.we; omega),
-      bytes_entry c₂.base.mem P₂.ke ((P₂.es.symm).sub_left (sc_sub P₂)) (by have := P₂.we; omega), p₁.1.e, p₂.1.e]
+      bytes_entry c₁.base.mem P₁.ke ((P₁.es.symm).sub_left (sc_sub P₁)) (by have := P₁.we; omega_arith),
+      bytes_entry c₂.base.mem P₂.ke ((P₂.es.symm).sub_left (sc_sub P₂)) (by have := P₂.we; omega_arith), p₁.1.e, p₂.1.e]
 
 end
 
@@ -90,7 +90,7 @@ theorem bl_after {a s t : State} (P : PreP Gs.len s) (p : PubK a s) (c : AfterCa
   have hk2 : kk s ≤ 1024 := P.k2
   have e21 : dbLen Gs.len s = dbLen Gs.len a := g.v .r21 (by decide)
   have hdb : (dbLen Gs.len (reE s t.mem)).toNat = kk s - loN s - Gs.len - 1 := by
-    rw [L.hdb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [L.hdb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   have e : dbLen Gs.len (reE s t.mem) = dbLen Gs.len s := by
     unfold dbLen; rw [lo_reE P c.mem]; rfl
   rw [← e21, ← e, hdb, ← p.1.g .r10 (by decide)]
@@ -135,7 +135,7 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
       isa.eval (.nonzero .d .r3) t = some false → E2 a t := fun {a t} ⟨⟨⟨s, P, p, E, h0⟩, c⟩, hc⟩ => by
     rw [eval_nonzero, c] at hc
     have : ¬ kk a - loN a < Gs.len + 2 := by simpa using hc
-    exact ⟨s, P, p, E, h0, by rw [p.1.pKk, p.1.pLoN p.2]; omega⟩
+    exact ⟨s, P, p, E, h0, by rw [p.1.pKk, p.1.pLoN p.2]; omega_arith⟩
   -- The salt length expected.
   let E3 := fun (a t : State) => E2 a t ∧ t.gpr .r4 = if anyL a = 0 then a.gpr .r10 else 0
   refine two_seq (Ψ := E3) (expLen_taint (pk_pins (an := id) (fun a t hp =>
@@ -160,7 +160,7 @@ theorem checks_ct : RelCT isa (Two (En Gs.len)) (checks H) fun _ _ => True := by
     have hn : ¬ kk a - loN a - (Gs.len + 2) < (if anyL a = 0 then a.gpr .r10 else 0).toNat := by simpa using hc
     refine ⟨s, P, p, E.before, h0, hem, fun ha => ?_⟩
     rw [← p.1.pAny, ifp ha, ← p.1.g .r10 (by decide), ← p.1.pKk, ← p.1.pLoN p.2] at hn
-    omega
+    omega_arith
   exact (main_ct hH cH hGh hGl hGv).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, e4 h₁, e4 h₂⟩) fun _ _ h => h
 
 include hH cH hGh hGl hGv in

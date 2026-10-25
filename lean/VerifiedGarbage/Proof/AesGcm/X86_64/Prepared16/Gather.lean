@@ -3,14 +3,14 @@ module
 public import VerifiedGarbage.Spec.Gcm.Prepared16
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
-public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
+import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16To
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
 
 /-! # Sixteen prepared powers: Prepared-context Gather contracts -/
 

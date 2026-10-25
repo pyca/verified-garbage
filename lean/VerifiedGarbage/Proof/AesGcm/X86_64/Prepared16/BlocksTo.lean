@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.BlocksVerified
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
 

@@ -22,7 +22,6 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Impl.AesGcm.X86_64.Short
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.TCB.X86_64.Isa

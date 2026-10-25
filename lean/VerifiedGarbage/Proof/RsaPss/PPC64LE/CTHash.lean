@@ -43,9 +43,9 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep Two Pins two_post wp_li wp_addi wp_
 abbrev PreL (D : Nat) (s : State) : Prop := Lay D s (lo s).toNat (dbLen D s).toNat ((cm s).setWidth 8)
 
 theorem Lay.canon {D lN dN : Nat} {c : Byte} {s : State} (L : Lay D s lN dN c) : PreL D s := by
-  have h1 : (lo s).toNat = lN := by rw [L.hlo, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := L.l1; omega)]
+  have h1 : (lo s).toNat = lN := by rw [L.hlo, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := L.l1; omega_arith)]
   have h2 : (dbLen D s).toNat = dN := by
-    rw [L.hdb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := L.hk; have := L.k2; omega)]
+    rw [L.hdb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := L.hk; have := L.k2; omega_arith)]
   have h3 : (cm s).setWidth 8 = c := by rw [L.hc, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
   show Lay D s (lo s).toNat (dbLen D s).toNat ((cm s).setWidth 8)
   rw [h1, h2, h3]; exact L
@@ -83,7 +83,7 @@ theorem BL.dn {a t : State} (h : BL D a t) :
     1 ≤ (dbLen D a).toNat ∧ (lo a).toNat + (dbLen D a).toNat + D + 1 ≤ 1024 ∧ 0 < D ∧ D ≤ 64 := by
   obtain ⟨s, L, -⟩ := h.lay
   have := L.hk; have := L.k2
-  exact ⟨L.d1, by omega, L.D0, L.D64⟩
+  exact ⟨L.d1, by omega_arith, L.D0, L.D64⟩
 
 end
 
@@ -162,16 +162,16 @@ theorem copyN_wp {ac : State × Nat} {u : State} (h : LoopR D ac u) {a b : Nat}
   have F := hfits hH
   obtain ⟨_, hSt, _, _, _, hR⟩ := offs
   have hB : oBk = 4608 := rfl
-  have hS1 : 0 < H.S := by have := hH.dims.N; simp only [Hash.S]; omega
+  have hS1 : 0 < H.S := by have := hH.dims.N; simp only [Hash.S]; omega_arith
   obtain ⟨s, P, g, b'⟩ := h.1
   have L := agree_lay P g
   have k : ∀ {u' : State}, Base Sp (vP D) s u' → Keep [.r4, .r5, .r6, .r7] u u' → LoopR D ac u' := fun b'' k =>
     h.keep ⟨s, P, g, b''⟩ fun r hr => k.gpr r (by revert r; decide)
   rcases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · exact WP.mono (copyN_ok L b' (a := oSt) (b := oBk) (n := H.S) hS1 (by omega) (by omega) (by omega)
-      (.inl (by omega)) (by decide) (by decide)) fun u' ⟨b'', k', _⟩ => k b'' k'
-  · exact WP.mono (copyN_ok L b' (a := oBk) (b := oSt) (n := H.S) hS1 (by omega) (by omega) (by omega)
-      (.inr (by omega)) (by decide) (by decide)) fun u' ⟨b'', k', _⟩ => k b'' k'
+  · exact WP.mono (copyN_ok L b' (a := oSt) (b := oBk) (n := H.S) hS1 (by omega_arith) (by omega_arith) (by omega_arith)
+      (.inl (by omega_arith)) (by decide) (by decide)) fun u' ⟨b'', k', _⟩ => k b'' k'
+  · exact WP.mono (copyN_ok L b' (a := oBk) (b := oSt) (n := H.S) hS1 (by omega_arith) (by omega_arith) (by omega_arith)
+      (.inr (by omega_arith)) (by decide) (by decide)) fun u' ⟨b'', k', _⟩ => k b'' k'
 
 /-- The loop's invariant, with the lengths left. -/
 abbrev LoopN (D n : Nat) (ac : State × Nat) (u : State) : Prop := LoopR D ac u ∧ n = (dbLen D ac.1).toNat - ac.2
@@ -199,7 +199,7 @@ theorem round_two (n : Nat) :
   -- `finalize` after `8 + hLen + L` bytes.
   let A4 := fun (ac : State × Nat) (u : State) => LoopN H.D n ac u ∧
     u.gpr .r4 = BitVec.ofNat 64 ac.2 + BitVec.ofNat 64 (8 + H.D)
-  refine two_seq (Ψ := A4) (lr1_taint H (pin0 fun _ _ h => h.1)) (fun ac u h => wp_addi (h := by omega)
+  refine two_seq (Ψ := A4) (lr1_taint H (pin0 fun _ _ h => h.1)) (fun ac u h => wp_addi (h := by omega_arith)
     fun u' o e => wp_nil ⟨⟨h.1.keep (h.1.1.only' o) fun r hr => o.gpr r (by revert r; decide), h.2⟩,
       by rw [e, h.1.2.2.1]⟩) ?_
   let A3 := fun (ac : State × Nat) (u : State) => A4 ac u ∧ u.gpr .r3 = off (Sp ac.1) oSt ∧
@@ -218,7 +218,7 @@ theorem round_two (n : Nat) :
   · obtain ⟨s, P, g, b⟩ := h.1
     obtain ⟨sl, x25, hs⟩ := h.2.1
     have hb := h.1.dn
-    exact WP.mono (select_ok (agree_lay P g) rfl b h.2.2.1 x25 (by have := h.2.2.2.2; omega) hs)
+    exact WP.mono (select_ok (agree_lay P g) rfl b h.2.2.1 x25 (by have := h.2.2.2.2; omega_arith) hs)
       fun u' ⟨b', k', _⟩ => ⟨h.keep ⟨s, P, g, b'⟩ fun r hr => k'.gpr r (by revert r; decide), hn⟩
   -- The state back.
   refine two_seq (Ψ := LoopN H.D n) (copyN_taint oBk oSt H.S (pin14 fun _ _ h => h.1))
@@ -228,7 +228,7 @@ theorem round_two (n : Nat) :
     u.gpr .r4 = BitVec.ofNat 64 ac.2 + BitVec.ofNat 64 (8 + H.D) ∧
     u.gpr .r5 = off (Sp ac.1) (oY + 8 + H.D + ac.2) ∧ u.gpr .r6 = BitVec.ofNat 64 1
   refine two_seq (Ψ := A6) (lr2_taint H (pin0 fun _ _ h => h.1)) (fun ac u h => ?_) ?_
-  · refine wp_addi (h := by omega) fun u₁ o₁ e₁ => wp_addi (h := by omega) fun u₂ o₂ e₂ => wp_add fun u₃ o₃ e₃ =>
+  · refine wp_addi (h := by omega_arith) fun u₁ o₁ e₁ => wp_addi (h := by omega_arith) fun u₂ o₂ e₂ => wp_add fun u₃ o₃ e₃ =>
       wp_li (by decide) fun u₄ o₄ e₄ => wp_nil ?_
     have k₄ : Only [.r4, .r5, .r6] u u₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
     refine ⟨⟨h.1.keep (h.1.1.only' k₄) fun r hr => k₄.gpr r (by revert r; decide), h.2⟩, ?_, ?_, e₄⟩
@@ -242,13 +242,13 @@ theorem round_two (n : Nat) :
         by rw [o'.get .r5, h.2.2.1], by rw [o'.get .r6, h.2.2.2]⟩, x3, x7⟩
   have h6 : ∀ {ac : State × Nat} {u : State}, A7 ac u → (u.gpr .r6).toNat = 1 := fun h => by rw [h.1.2.2.2]; rfl
   have hb7 : ∀ {ac : State × Nat} {u : State}, A7 ac u → oY + 8 + H.D + ac.2 + 1 ≤ oRsa := fun h => by
-    have := h.1.1.1.2.2.2.2; have := h.1.1.1.1.dn; omega
+    have := h.1.1.1.2.2.2.2; have := h.1.1.1.1.dn; omega_arith
   refine two_seq (Ψ := LoopN H.D n) (two_seq (Ψ := A7) (updRegs_taint (pin0 fun _ _ h => h.1.1)) w7
       (upd_two hH cH (an := Prod.fst) (o := fun ac => oY + 8 + H.D + ac.2) (len := fun _ => 1)
-        (fun ac u h => ⟨h.1.1.1.1, by omega, hb7 h, h.2.1, h.1.2.2.1, h6 h, h.2.2⟩)
+        (fun ac u h => ⟨h.1.1.1.1, by omega_arith, hb7 h, h.2.1, h.1.2.2.1, h6 h, h.2.2⟩)
         (fun ac u₁ u₂ h₁ h₂ => by rw [h₁.1.2.1, h₂.1.2.1])))
     (fun ac u h => WP.seq (WP.mono (w7 ac u h) fun u' h' => WP.mono (upd_wp hH h'.1.1.1.1
-      (o := oY + 8 + H.D + ac.2) (len := 1) (by omega) (hb7 h') h'.2.1 h'.1.2.2.1 (h6 h') h'.2.2)
+      (o := oY + 8 + H.D + ac.2) (len := 1) (by omega_arith) (hb7 h') h'.2.1 h'.1.2.2.1 (h6 h') h'.2.2)
       fun u'' ⟨b'', g''⟩ => ⟨h'.1.1.1.keep b'' (pres_three g''), h'.1.1.2⟩)) ?_
   -- The counters.
   let Po := fun (ac : State × Nat) (u : State) => BL H.D ac.1 u ∧
@@ -262,15 +262,15 @@ theorem round_two (n : Nat) :
     · obtain ⟨sl, x25, hs⟩ := h.1.2.1
       exact ⟨sl, by rw [o₂.get .r25, o₁.get .r25, x25], hs⟩
     · rw [o₂.get .r26, e₁, h.1.2.2.1, BitVec.ofNat_add]
-    · rw [e₂, o₁.get .r27, h.1.2.2.2.1, Offset.ofNat_sub_ofNat (by have := h.1.2.2.2.2; omega)]
+    · rw [e₂, o₁.get .r27, h.1.2.2.2.1, Offset.ofNat_sub_ofNat (by have := h.1.2.2.2.2; omega_arith)]
   have hfin := two_post (Φ := LoopN H.D n) (Ψ := Po) (lr3_taint (pin0 fun _ _ h => h.1)) w8
   refine hfin.mono (fun _ _ h => h) fun u₁ u₂ ⟨ac, h₁, h₂⟩ => ?_
   refine ⟨by rw [eval_nonzero, eval_nonzero, h₁.2.2.2.1, h₂.2.2.2.1], fun _ => trivial, fun ht => ?_⟩
   rw [eval_nonzero, h₁.2.2.2.1] at ht
   have hb := h₁.1.dn
   have hne : (dbLen H.D ac.1).toNat - ac.2 - 1 ≠ 0 := fun h0 => by rw [h0] at ht; simp at ht
-  have hlt : ac.2 + 1 < (dbLen H.D ac.1).toNat := by omega
-  refine ⟨(dbLen H.D ac.1).toNat - (ac.2 + 1), by have := h₁.2.2.2.2.2; omega, (ac.1, ac.2 + 1),
+  have hlt : ac.2 + 1 < (dbLen H.D ac.1).toNat := by omega_arith
+  refine ⟨(dbLen H.D ac.1).toNat - (ac.2 + 1), by have := h₁.2.2.2.2.2; omega_arith, (ac.1, ac.2 + 1),
     ⟨⟨h₁.1, h₁.2.1, h₁.2.2.1, by rw [h₁.2.2.2.1, Nat.sub_sub], hlt⟩, rfl⟩,
     ⟨⟨h₂.1, h₂.2.1, h₂.2.2.1, by rw [h₂.2.2.2.1, Nat.sub_sub], hlt⟩, rfl⟩⟩
 
@@ -301,7 +301,7 @@ theorem hashAny_ct : RelCT isa (Two fun a t => BL D a t ∧ S25 t) (hashAny H) f
     t.gpr .r6 = BitVec.ofNat 64 (8 + H.D)
   refine two_seq (Ψ := U) (anyUpd_taint H (bl_pins (fun _ _ h => h.1) [])) (fun a t h => ?_) ?_
   · refine wp_li (by decide) fun t₁ o₁ e₁ => wp_addi (h := by decide) fun t₂ o₂ e₂ =>
-      wp_li (by omega) fun t₃ o₃ e₃ => wp_nil ?_
+      wp_li (by omega_arith) fun t₃ o₃ e₃ => wp_nil ?_
     have k₃ : Only [.r4, .r5, .r6] t t₃ := (o₁.trans (o₂.trans o₃)).mono
     exact ⟨⟨h.1.only' k₃, h.2.keep (k₃.get .r25)⟩, by rw [o₃.get .r4, o₂.get .r4, e₁],
       by rw [o₃.get .r5, e₂, o₁.get .r14, h.1.r14], e₃⟩
@@ -310,13 +310,13 @@ theorem hashAny_ct : RelCT isa (Two fun a t => BL D a t ∧ S25 t) (hashAny H) f
     WP.mono (updRegs_wpG (lOk _) h.1.1) fun t' ⟨b', o', x3, x7⟩ => ⟨⟨⟨b', h.1.2.keep (o'.get .r25)⟩,
       by rw [o'.get .r4, h.2.1], by rw [o'.get .r5, h.2.2.1], by rw [o'.get .r6, h.2.2.2]⟩, x3, x7⟩
   have h6 : ∀ {a t : State}, U' a t → (t.gpr .r6).toNat = 8 + H.D := fun h => by
-    rw [h.1.2.2.2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [h.1.2.2.2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   refine two_seq (Ψ := Φ₀) (two_seq (Ψ := U') (updRegs_taint (bl_pins (fun _ _ h => h.1.1) [])) wU
       (upd_two hH cH (an := id) (o := fun _ => oY) (len := fun _ => 8 + H.D)
-        (fun a t h => ⟨h.1.1.1, by decide, by omega, h.2.1, h.1.2.2.1, h6 h, h.2.2⟩)
+        (fun a t h => ⟨h.1.1.1, by decide, by omega_arith, h.2.1, h.1.2.2.1, h6 h, h.2.2⟩)
         (fun a t₁ t₂ h₁ h₂ => by rw [h₁.1.2.1, h₂.1.2.1])))
     (fun a t h => WP.seq (WP.mono (wU a t h) fun t' h' => WP.mono (upd_wp hH h'.1.1.1 (o := oY) (len := 8 + H.D)
-      (by decide) (by omega) h'.2.1 h'.1.2.2.1 (h6 h') h'.2.2) fun _ ⟨b'', g''⟩ =>
+      (by decide) (by omega_arith) h'.2.1 h'.1.2.2.1 (h6 h') h'.2.2) fun _ ⟨b'', g''⟩ =>
         ⟨b'', h'.1.1.2.keep (g'' .r25 (by decide))⟩)) ?_
   -- The counters, and the loop.
   refine two_seq (Ψ := fun a u => LoopR H.D (a, 0) u) (loopInit_taint (bl_pins (fun _ _ h => h.1) []))
@@ -326,7 +326,7 @@ theorem hashAny_ct : RelCT isa (Two fun a t => BL D a t ∧ S25 t) (hashAny H) f
     have hb := h.1.dn
     exact ⟨h.1.only' k₂, h.2.keep (k₂.get .r25), by rw [o₂.get .r26, e₁],
       by rw [e₂, o₁.get .r21, h.1.v (r := .r21), Nat.sub_zero]; exact (ofNat_toNat _).symm,
-      show 0 < (dbLen H.D a).toNat by omega⟩
+      show 0 < (dbLen H.D a).toNat by omega_arith⟩
   exact (RelCT.exists_ (P := fun n => Two (LoopN H.D n)) fun n => RelCT.loop _ (round_two hH cH rfl) n).mono
     (fun u₁ u₂ ⟨a, h₁, h₂⟩ => ⟨_, (a, 0), ⟨h₁, rfl⟩, ⟨h₂, rfl⟩⟩) fun _ _ h => h
 

@@ -7,8 +7,6 @@ public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on x86-64: correctness
