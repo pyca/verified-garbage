@@ -220,6 +220,51 @@ class Repo(unittest.TestCase):
                 closure.ROOT, shards.LEAN = old_root, old_lean
 
 
+class Rank(unittest.TestCase):
+    # Two sinks import the shared hub H publicly; Leaf is imported by nothing.
+    imps = {**hub("H", 20), "X": ["H"], "Y": ["H"], "Leaf": []}
+    times = dict.fromkeys(imps, 300.0)
+
+    def test_commits_and_the_modules_they_changed(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Repo().repo(d)
+            git = lambda *a: subprocess.run(["git", "-C", d, *a], check=True, capture_output=True)
+            for f, text in (("lean/VerifiedGarbage/B.lean", "-- b\n"), ("README.md", "x\n"),
+                            ("lean/lean-toolchain", "v\n")):
+                (root / f).write_text(text)
+                git("add", ".")
+                git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", f)
+            with mock.patch.object(closure, "ROOT", root):
+                mods = {"VerifiedGarbage.A", "VerifiedGarbage.B"}
+                commits = closure.commits_changed("HEAD", 10, mods)
+        # Oldest first; the README's commit changed no Lean source; the
+        # toolchain's rebuilds everything.
+        self.assertEqual([c for _, c in commits], [mods, {"VerifiedGarbage.B"}, mods])
+
+    def test_a_shared_module_counts_each_shard_and_each_rebuild(self):
+        vis = {m: (list(v), []) for m, v in self.imps.items()}
+        commits = [("1", {"H3"}), ("2", {"Leaf"})]
+        per_commit, full = closure.builds(self.imps, vis, self.times, commits)
+        # A change to H3 rebuilds H, X and Y: H3 once, by its own runner or
+        # by each shard that needs it.
+        self.assertGreaterEqual(per_commit["H3"], 0.5)
+        self.assertEqual(per_commit["Leaf"], 0.5)
+        self.assertEqual(per_commit["H4"], 0.0)
+        self.assertEqual(full["Leaf"], 1)
+        self.assertEqual(full["H"], max(full.values()))
+
+    def test_rank_weighs_time_by_builds(self):
+        vis = {m: (list(v), []) for m, v in self.imps.items()}
+        rows = [{"module": "H", "kernel": 1.0, "elab": 1.0, "blocked": 9.0},
+                {"module": "Leaf", "kernel": 3.0, "elab": 0.0, "blocked": 0.0},
+                {"module": "Gone", "kernel": 9.0, "elab": 0.0, "blocked": 0.0}]
+        ranked = closure.rank(self.imps, vis, self.times, [("1", {"H"}), ("2", {"H"})], rows)
+        self.assertEqual([r["module"] for r in ranked], ["H", "Leaf"])
+        self.assertEqual(ranked[0]["time"], 2.0)
+        self.assertEqual(ranked[0]["per_commit"], 2.0 * ranked[0]["builds_per_commit"])
+        self.assertEqual(ranked[1]["per_commit"], 0.0)
+
+
 class Schedule(unittest.TestCase):
     def test_plan_is_schedule_of_the_stale_modules(self):
         imps = {"A": [], "B": ["A"]}

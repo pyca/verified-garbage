@@ -45,6 +45,19 @@ module without either the median.
       that merges the modules A, B, … (NEW among them or not) takes their
       times together, less `IMPORT_TIME` for each but one, and a run that
       built one of them builds NEW.
+  lean_closure.py rank [--by module|decl] [--commits N] [--top N]
+                       [--module PREFIX ...] [--json] [--metrics DIR]
+      where a faster proof saves CI the most: each module's time times the
+      times CI builds it. A module the shards of a full rebuild share is
+      built by each of them, and a module many changes reach is rebuilt by
+      each run: the last N commits of `origin/main` that changed the Lean
+      sources (200), replayed on today's imports through CI's plan
+      (`lean_shards.schedule`), count each module's builds per commit
+      (each shard that builds it counts); `full` is
+      how many shards build it in a full rebuild. `--by decl` weighs each
+      declaration's time in the profile by its module's builds. Times are
+      the CI metrics' when METRICS has runs, else the restored build
+      cache's profile (`lean_profile.py`), each plus `IMPORT_TIME`.
 
 Every command reads the repository of the working directory (`--repo` for
 another).
@@ -321,19 +334,99 @@ def score(base, new, times, runs, branch=None, merges=None, base_vis=None, new_v
     return rows
 
 
+def commits_changed(ref: str, count: int, mods) -> list[tuple[str, set[str]]]:
+    """The last `count` commits of `ref`'s first-parent history that changed
+    the Lean sources, oldest first, each with the modules of `mods` it
+    changed: all of them for a change to `lean_shards.INPUTS`."""
+    out = subprocess.run(
+        ["git", "-C", str(ROOT), "log", "--first-parent", "--format=@%H", "--name-only", f"-{count}", ref,
+         "--", "lean/"], capture_output=True, text=True, check=True).stdout
+    every = {f"lean/{name}" for name in shards.INPUTS}
+    commits = []
+    for line in out.splitlines():
+        if line.startswith("@"):
+            commits.append((line[1:], set()))
+        elif line in every:
+            commits[-1][1].update(mods)
+        elif line.endswith(".lean") and line.startswith("lean/"):
+            commits[-1][1].add(".".join(pathlib.PurePosixPath(line).relative_to("lean").with_suffix("").parts))
+    commits.reverse()
+    return [(c, changed & set(mods)) for c, changed in commits]
+
+
+def builds(imps, vis, times, commits, modes=None) -> tuple[dict[str, float], dict[str, int]]:
+    """How many times CI builds each module per commit of `commits` (the
+    modules each changed), planned by `lean_shards.schedule` on the imports
+    `imps` (whose `lean_shards.visibility` is `vis`, and meta imports
+    `modes`): each shard builds the stale modules of its part; and how many
+    shards build each module in a full rebuild."""
+    closure = shards.closures(imps)
+    read = shards.reads(imps, closure, vis, modes)
+    readers: dict[str, set[str]] = {}
+    for m, r in read.items():
+        for y in r:
+            readers.setdefault(y, set()).add(m)
+    count: dict[str, float] = dict.fromkeys(imps, 0.0)
+    plans: dict[frozenset[str], dict[str, int]] = {}
+
+    def built(stale):
+        # Commits that rebuild everything plan the same build.
+        key = frozenset(stale)
+        if key not in plans:
+            _, _, (_, _, parts) = shards.schedule(imps, closure, stale, times)
+            out: dict[str, int] = {}
+            for part in parts or [stale]:
+                for m in part:
+                    if m in stale:
+                        out[m] = out.get(m, 0) + 1
+            plans[key] = out
+        return plans[key]
+
+    for _, changed in commits:
+        if changed:
+            stale = set(changed).union(*(readers.get(y, ()) for y in changed))
+            for m, n in built(stale).items():
+                count[m] += n
+    per_commit = {m: n / max(len(commits), 1) for m, n in count.items()}
+    return per_commit, built(set(imps))
+
+
+def rank(imps, vis, times, commits, rows, modes=None) -> list[dict]:
+    """The profile's `rows` (a module's or a declaration's), each with its
+    module's builds per commit and in a full rebuild, and what CI spends
+    on it: its time times each."""
+    per_commit, full = builds(imps, vis, times, commits, modes)
+    out = []
+    for r in rows:
+        if r["module"] not in imps:
+            continue
+        t = lean_profile.total(r)
+        out.append({**r, "time": t, "builds_per_commit": per_commit[r["module"]], "full": full.get(r["module"], 0),
+                    "per_commit": t * per_commit[r["module"]], "full_rebuild": t * full.get(r["module"], 0)})
+    out.sort(key=lambda r: (-r["per_commit"], -r["full_rebuild"], r["module"], r.get("decl", "")))
+    return out
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("profile").add_argument("--build", type=pathlib.Path, default=None)
-    for name in ("sinks", "dominators", "score"):
+    for name in ("sinks", "dominators", "score", "rank"):
         sub.add_parser(name)
     for p in sub.choices.values():
         p.add_argument("--repo", type=pathlib.Path, default=None)
         p.add_argument("--metrics", type=pathlib.Path, default=None)
-    for name in ("sinks", "dominators", "score"):
+    for name in ("sinks", "dominators", "score", "rank"):
         p = sub.choices[name]
         if name != "score":
             p.add_argument("--top", type=int, default=30)
+    rk = sub.choices["rank"]
+    rk.add_argument("--by", choices=("module", "decl"), default="module")
+    rk.add_argument("--commits", type=int, default=200)
+    rk.add_argument("--ref", default="origin/main")
+    rk.add_argument("--module", action="append", default=[], metavar="PREFIX")
+    rk.add_argument("--json", action="store_true")
+    rk.add_argument("--build", type=pathlib.Path, default=None)
     sub.choices["dominators"].add_argument("sink")
     sc = sub.choices["score"]
     sc.add_argument("--base", default="origin/main")
@@ -352,6 +445,8 @@ def main(argv=None) -> int:
         n = save_profile(args.build or ROOT / "lean/.lake/build/lib/lean", args.metrics / "profile.json")
         print(f"{n} modules' profiles in {args.metrics / 'profile.json'}", file=sys.stderr)
         return 0
+    if args.cmd == "rank":
+        return rank_main(args)
     runs = load_runs(args.metrics)
     if not runs:
         raise SystemExit(f"no CI metrics under {args.metrics}: run `ci_metrics.py fetch {args.metrics} 30`")
@@ -416,6 +511,35 @@ def main(argv=None) -> int:
         if runs_rows:
             delta = sum(n["time"] - b["time"] for _, b, n in runs_rows)
             print(f"{len(runs_rows)} runs: {delta:+.0f} s in all")
+    return 0
+
+
+def rank_main(args) -> int:
+    build = args.build or ROOT / "lean/.lake/build/lib/lean"
+    rows, _, _ = lean_profile.collect(build, [], tests=True)
+    if not rows:
+        raise SystemExit(f"no profiles under {build}: restore the CI build cache (lean/README.md)")
+    profile = {r["module"]: lean_profile.total(r) for r in lean_profile.by_module(rows)}
+    times = latest_times(load_runs(args.metrics) if args.metrics.is_dir() else [], profile)
+    modes: dict[str, dict] = {}
+    imps, vis, _ = shards.source_info(shards.modules(), import_modes=modes)
+    imps = {m: list(dict.fromkeys(v)) for m, v in imps.items()}
+    commits = commits_changed(args.ref, args.commits, imps)
+    print(f"replaying {len(commits)} commits of {args.ref}", file=sys.stderr)
+    if args.by == "module":
+        rows = lean_profile.by_module(rows)
+    rows = [r for r in rows if not args.module or r["module"].startswith(tuple(args.module))]
+    ranked = rank(imps, vis, times, commits, rows, modes)
+    if args.json:
+        json.dump(ranked, sys.stdout, indent=1)
+        print()
+        return 0
+    print(f"{'per commit':>10} {'full':>8} {'time':>7} {'builds':>6} {'shards':>6}  "
+          + ("module" if args.by == "module" else "declaration (module)"))
+    for r in ranked[:args.top]:
+        what = r["module"] if args.by == "module" else f"{r['decl']} ({r['module']})"
+        print(f"{r['per_commit']:10.2f} {r['full_rebuild']:8.0f} {r['time']:7.1f} {r['builds_per_commit']:6.2f} "
+              f"{r['full']:6d}  {what}")
     return 0
 
 
