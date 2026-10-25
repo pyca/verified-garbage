@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Math
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Loop
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Math
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.LoopOps
 
 /-! Recover the public digit after the two complete doublings. -/
 

@@ -1,17 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Main
+import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Main
 public import VerifiedGarbage.Spec.EcKey.P384
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Ecdh.AArch64.P384.CheckVerified
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Contract
+public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Contract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-! # Instantiate shared compression with P384's field configuration -/
 

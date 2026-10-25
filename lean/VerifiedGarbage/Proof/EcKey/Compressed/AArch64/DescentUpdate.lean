@@ -5,8 +5,8 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
-public import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-! # The field updates in one P-224 descent round -/
 

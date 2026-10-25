@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.AArch64.Result
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
 
 /-! # Complete public-key algebraic validation, with the original rejection policy -/
 

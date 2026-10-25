@@ -54,11 +54,11 @@ theorem be_bytes (b0 b1 b2 b3 : BitVec 8) :
     BitVec.getLsbD_append]
   by_cases h8 : i < 8 <;> by_cases h16 : i < 16 <;> by_cases h24 : i < 24 <;>
     by_cases h32 : i < 32 <;>
-    simp (disch := omega) only [h8, h16, h24, h32, BitVec.getLsbD_of_ge, decide_true, decide_false,
+    simp (disch := omega_arith) only [h8, h16, h24, h32, BitVec.getLsbD_of_ge, decide_true, decide_false,
       Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false, Bool.or_false, Bool.false_or,
       Bool.not_true, Bool.not_false, ite_true, ite_false, hi, Nat.sub_sub, Nat.reduceAdd,
-      show i - 8 < 64 by omega, show i - 16 < 64 by omega, show i - 24 < 64 by omega,
-      show (i - 8 < 8) ↔ i < 16 by omega, show (i - 16 < 8) ↔ i < 24 by omega]
+      show i - 8 < 64 by omega_arith, show i - 16 < 64 by omega_arith, show i - 24 < 64 by omega_arith,
+      show (i - 8 < 8) ↔ i < 16 by omega_arith, show (i - 16 < 8) ↔ i < 24 by omega_arith]
 
 set_option linter.unusedSimpArgs false in
 theorem le_bytes (b0 b1 b2 b3 : BitVec 8) :
@@ -70,11 +70,11 @@ theorem le_bytes (b0 b1 b2 b3 : BitVec 8) :
     BitVec.getLsbD_append]
   by_cases h8 : i < 8 <;> by_cases h16 : i < 16 <;> by_cases h24 : i < 24 <;>
     by_cases h32 : i < 32 <;>
-    simp (disch := omega) only [h8, h16, h24, h32, BitVec.getLsbD_of_ge, decide_true, decide_false,
+    simp (disch := omega_arith) only [h8, h16, h24, h32, BitVec.getLsbD_of_ge, decide_true, decide_false,
       Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false, Bool.or_false, Bool.false_or,
       Bool.not_true, Bool.not_false, ite_true, ite_false, hi, Nat.sub_sub, Nat.reduceAdd,
-      show i - 8 < 64 by omega, show i - 16 < 64 by omega, show i - 24 < 64 by omega,
-      show (i - 8 < 8) ↔ i < 16 by omega, show (i - 16 < 8) ↔ i < 24 by omega]
+      show i - 8 < 64 by omega_arith, show i - 16 < 64 by omega_arith, show i - 24 < 64 by omega_arith,
+      show (i - 8 < 8) ↔ i < 16 by omega_arith, show (i - 16 < 8) ↔ i < 24 by omega_arith]
 
 /-- Byte `k` of a register's low word, as a right shift leaves it. -/
 theorem byte_shift (x : BitVec 64) (k : Nat) (hk : k < 4) :
@@ -82,7 +82,7 @@ theorem byte_shift (x : BitVec 64) (k : Nat) (hk : k < 4) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_extractLsb']
-  simp [hi, show 8 * k + i < 32 by omega]
+  simp [hi, show 8 * k + i < 32 by omega_arith]
 
 /-- The low word of a constant `li32` loads. -/
 theorem li32_val (w : BitVec 32) : (hi20 w ++ (0 : BitVec 12)) + BitVec.ofInt 32 (lo12 w) = w := by
@@ -93,11 +93,11 @@ theorem li32_val (w : BitVec 32) : (hi20 w ++ (0 : BitVec 12)) + BitVec.ofInt 32
   simp only [BitVec.toNat_ofNat, show (0 : BitVec 12).toNat = 0 from rfl, Nat.or_zero,
     Nat.shiftLeft_eq, Nat.reducePow, Nat.reduceAdd]
   split
-  · rw [BitVec.toNat_ofInt]; omega
-  · rw [BitVec.toNat_ofInt]; omega
+  · rw [BitVec.toNat_ofInt]; omega_arith
+  · rw [BitVec.toNat_ofInt]; omega_arith
 
 theorem lo12_imm (w : BitVec 32) : imm12 (lo12 w) := by
-  unfold lo12 imm12; split <;> omega
+  unfold lo12 imm12; split <;> omega_arith
 
 /-- A word rotated right by `r < 32`, as `srliw`, `slliw` and `xor` (or `or`)
 compute it in the low word: the two shifts' bits do not overlap. -/
@@ -109,7 +109,7 @@ theorem rotr_shifts (x : BitVec 32) {r : Nat} (h : r < 32) :
     BitVec.getLsbD_rotateRight, Nat.mod_eq_of_lt h]
   by_cases hr : i < 32 - r
   · simp [hr, hi]
-  · simp [hr, hi, BitVec.getLsbD_of_ge x (r + i) (by omega)]
+  · simp [hr, hi, BitVec.getLsbD_of_ge x (r + i) (by omega_arith)]
 
 /-! ## Memory -/
 
@@ -132,7 +132,7 @@ theorem write4 (m : Mem) (a : Addr) (v : BitVec 32) :
   · have h1 : ¬ (y - 1).toNat < 1 := by bv_omega
     have h2 : ¬ (y - 2).toNat < 1 := by bv_omega
     have h3 : ¬ (y - 3).toNat < 1 := by bv_omega
-    simp only [h1, h2, h3, show ¬ y.toNat < 1 by omega, show ¬ y.toNat < 4 by omega, ite_false]
+    simp only [h1, h2, h3, show ¬ y.toNat < 1 by omega_arith, show ¬ y.toNat < 4 by omega_arith, ite_false]
 
 /-- `write4` at the offsets of `storeLE32`. -/
 theorem write4_off (m : Mem) (p : Addr) (off : Nat) (v : BitVec 32) :
@@ -170,7 +170,7 @@ theorem contains_byte {r : Region} {p : Addr} {off : Nat} (h : r.Contains (p + B
     {k : Nat} (hk : k < 4) : r.Contains (p + BitVec.ofNat 64 (off + k)) 1 := by
   refine h.byte ?_
   rw [BitVec.ofNat_add, ← BitVec.add_assoc, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- Every byte of a 4-byte access within the regions. -/
 theorem in_byte {rs : List Region} {p : Addr} {off : Nat} (h : InRegions rs (p + BitVec.ofNat 64 off) 4)
@@ -194,8 +194,8 @@ theorem loadBE32_ok {d tmp n : Reg} {off : Nat} (hdn : d ≠ n) (htn : tmp ≠ n
   rw [Nat.add_zero] at h0
   apply WP.of_runBlock
   simp only [loadBE32, runBlock_cons, runStep_some, runBlock_nil,
-    exec_load_b (show off < 2048 by omega), exec_load_b (show off + 1 < 2048 by omega),
-    exec_load_b (show off + 2 < 2048 by omega), exec_load_b (show off + 3 < 2048 by omega),
+    exec_load_b (show off < 2048 by omega_arith), exec_load_b (show off + 1 < 2048 by omega_arith),
+    exec_load_b (show off + 2 < 2048 by omega_arith), exec_load_b (show off + 3 < 2048 by omega_arith),
     exec_shift_d (show 24 < 64 by decide), exec_shift_d (show 16 < 64 by decide),
     exec_shift_d (show 8 < 64 by decide), exec_logic, RegUpd.gpr_write, RegUpd.mem_write,
     RegUpd.rd_write, RegUpd.wr_write, h0, h1, h2, h3, hdt, Ne.symm hdt, Ne.symm hdn, Ne.symm htn,
@@ -219,8 +219,8 @@ theorem loadLE32_ok {d tmp n : Reg} {off : Nat} (hdn : d ≠ n) (htn : tmp ≠ n
   rw [Nat.add_zero] at h0
   apply WP.of_runBlock
   simp only [loadLE32, runBlock_cons, runStep_some, runBlock_nil,
-    exec_load_b (show off < 2048 by omega), exec_load_b (show off + 1 < 2048 by omega),
-    exec_load_b (show off + 2 < 2048 by omega), exec_load_b (show off + 3 < 2048 by omega),
+    exec_load_b (show off < 2048 by omega_arith), exec_load_b (show off + 1 < 2048 by omega_arith),
+    exec_load_b (show off + 2 < 2048 by omega_arith), exec_load_b (show off + 3 < 2048 by omega_arith),
     exec_shift_d (show 24 < 64 by decide), exec_shift_d (show 16 < 64 by decide),
     exec_shift_d (show 8 < 64 by decide), exec_logic, RegUpd.gpr_write, RegUpd.mem_write,
     RegUpd.rd_write, RegUpd.wr_write, h0, h1, h2, h3, hdt, Ne.symm hdt, Ne.symm hdn, Ne.symm htn,
@@ -244,8 +244,8 @@ theorem storeLE32_ok {v tmp n : Reg} {off : Nat} (htv : tmp ≠ v) (htn : tmp �
   rw [Nat.add_zero] at h0
   apply WP.of_runBlock
   simp only [storeLE32, runBlock_cons, runStep_some, runBlock_nil,
-    exec_store_b (show off < 2048 by omega), exec_store_b (show off + 1 < 2048 by omega),
-    exec_store_b (show off + 2 < 2048 by omega), exec_store_b (show off + 3 < 2048 by omega),
+    exec_store_b (show off < 2048 by omega_arith), exec_store_b (show off + 1 < 2048 by omega_arith),
+    exec_store_b (show off + 2 < 2048 by omega_arith), exec_store_b (show off + 3 < 2048 by omega_arith),
     exec_shift_d (show 24 < 64 by decide), exec_shift_d (show 16 < 64 by decide),
     exec_shift_d (show 8 < 64 by decide), RegUpd.gpr_write, RegUpd.mem_write,
     RegUpd.rd_write, RegUpd.wr_write, h0, h1, h2, h3, Ne.symm htv, Ne.symm htn,
@@ -307,21 +307,21 @@ theorem storeBE_prefix {v tmp n : Reg} {off w : Nat} (htv : tmp ≠ v) (htn : tm
     exact (write_self _ _).symm
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun s₁ e => ?_
+    refine WP.mono (ih (by omega_arith)) fun s₁ e => ?_
     subst e
-    have hin := h k (by omega)
+    have hin := h k (by omega_arith)
     apply WP.of_runBlock
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, runBlock_cons, runStep_some,
-      exec_shift_d (show 8 * (w - 1 - k) < 64 by omega), RegUpd.gpr_write,
+      exec_shift_d (show 8 * (w - 1 - k) < 64 by omega_arith), RegUpd.gpr_write,
       Ne.symm htv, ite_false, RegUpd.write_write]
-    rw [exec_store_b (show off + k < 2048 by omega) (by
+    rw [exec_store_b (show off + k < 2048 by omega_arith) (by
       simp only [RegUpd.gpr_write, Ne.symm htn, ite_false, RegUpd.wr_write]; exact hin)]
     simp only [RegUpd.gpr_write, Ne.symm htn, ite_true, ite_false, runStep_some, runBlock_nil,
       Option.some.injEq, exists_eq_left', RegUpd.mem_write, RegUpd.write_mem]
-    rw [take_beBytes_succ _ (by omega), writeBytes_snoc _ _ _ _ (by
-      simp only [List.length_take, beBytes_length]; omega), writeW_byte]
-    simp only [List.length_take, beBytes_length, Nat.min_eq_left (show k ≤ w by omega),
-      Nat.add_one_ne_zero, ite_false, show w - (k + 1) = w - 1 - k by omega]
+    rw [take_beBytes_succ _ (by omega_arith), writeBytes_snoc _ _ _ _ (by
+      simp only [List.length_take, beBytes_length]; omega_arith), writeW_byte]
+    simp only [List.length_take, beBytes_length, Nat.min_eq_left (show k ≤ w by omega_arith),
+      Nat.add_one_ne_zero, ite_false, show w - (k + 1) = w - 1 - k by omega_arith]
     rw [show s.gpr n + BitVec.ofNat 64 off + BitVec.ofNat 64 k = s.gpr n + BitVec.ofNat 64 (off + k) by
       rw [BitVec.ofNat_add, BitVec.add_assoc]]
 
@@ -331,7 +331,7 @@ theorem storeBE_ok {v tmp n : Reg} {off w : Nat} (htv : tmp ≠ v) (htn : tmp �
       { s with mem := writeBytes s.mem (s.gpr n + BitVec.ofNat 64 off) (beBytes w (s.gpr v)) }.write
         tmp (s.gpr v)) := by
   refine WP.mono (storeBE_prefix htv htn hw8 ho h w (Nat.le_refl _)) fun s' e => ?_
-  rw [e, List.take_of_length_le (by rw [beBytes_length]), ite_eq_right_of_eq_false _ _ (by simp; omega),
+  rw [e, List.take_of_length_le (by rw [beBytes_length]), ite_eq_right_of_eq_false _ _ (by simp; omega_arith),
     Nat.sub_self, Nat.mul_zero, BitVec.ushiftRight_zero]
 
 end VG.RISCV64.ByteLoad

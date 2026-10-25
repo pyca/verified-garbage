@@ -34,7 +34,7 @@ theorem scan_ok {src table : Addr} {k : Nat} {dom : List Byte}
         8 + 3 * g.len + (gs.flatMap Group.bytes).length := by
       rw [List.flatMap_cons, List.length_append, VG.Proof.Ffdh.VettedTableFacts.groupBytes_length]
     rw [scan, WP.seq_iff]
-    refine WP.mono_syms (record_ok h g sym data.1 (by rw [total] at fit; omega)) ?_
+    refine WP.mono_syms (record_ok h g sym data.1 (by rw [total] at fit; omega_arith)) ?_
     rintro u ⟨zero, memU, restU⟩ symU
     refine WP.ite (decide (g.len = k ∧ dom = g.domain.take dom.length))
       (by
@@ -52,10 +52,10 @@ theorem scan_ok {src table : Addr} {k : Nat} {dom : List Byte}
           table + BitVec.ofNat 64 (offset + 8 + 3 * g.len) := by
         rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
         congr 2
-        omega
+        omega_arith
       rw [ptr] at tail
       refine WP.mono (ih (offset + 8 + 3 * g.len) u (h.after memU restU)
-        (by rw [symU]; exact sym) tail (by rw [total] at fit; omega)) ?_
+        (by rw [symU]; exact sym) tail (by rw [total] at fit; omega_arith)) ?_
       rintro t ⟨value, memT, restT⟩
       exact ⟨by simpa only [recognizeList, ite_eq_right (of_decide_eq_false miss)] using value,
         memT.trans memU, keep_trans restU restT⟩

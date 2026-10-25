@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.TimingDigits
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.TimingDigits
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.RecodePair
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Joint
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
 meta import VerifiedGarbage.Impl.Ed448.WnafWide
 public import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.TimingAdd
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 
 /-! Scalar recoding has fixed work; the subsequent sparse loop uses only its public result. -/
 

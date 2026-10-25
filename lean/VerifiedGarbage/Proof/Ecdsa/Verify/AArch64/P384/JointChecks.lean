@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide9Timing
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Checks

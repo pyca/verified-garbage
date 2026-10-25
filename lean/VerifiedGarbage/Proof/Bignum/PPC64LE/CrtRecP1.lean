@@ -11,7 +11,8 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCopy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtExport
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Prime
+import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithReduce
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -59,7 +60,7 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
       (t.gpr .r12).toNat < 2 ^ 32 → (w32 t.mem (off BX oA) (slot wP 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 →
       Outside BX oA (slot wP 24) s.mem t.mem → Keep powerRegs s t → WP isa c t Q) :
     WP isa (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
-      PublicChecked.base .r9 3)) (.seq Precompute.r2
+      PublicChecked.base .r9 3)) (.seq Precompute.r2Prime
       (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
       (.seq (.block (xb .r30 1)) (.seq ModArith.reduce c)))))) s Q := by
   have hn := hs.nowrap
@@ -89,9 +90,10 @@ theorem recP1'_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pr
   have hm4 : s₄.mem = s.mem := by rw [m4, m3, m2', m1']
   have g12 : s₄.gpr .r12 = s₁.gpr .r12 := by
     rw [k4.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ (by decide)]
-  refine WP.seq (WP.mono (r2_ok (hsA.congr k14.wr) ((k4.gpr _ (by decide)).trans a8) a9
+  refine WP.seq (WP.mono (Pre.r2Prime_ok (hsA.congr k14.wr) ((k4.gpr _ (by decide)).trans a8) a9
     ((k14.gpr _ (by decide)).trans h10) ((k4.gpr _ (by decide)).trans ((k3.gpr _ (by decide)).trans a5))
-    ((k14.gpr _ (by decide)).trans h11) (by omega_arith) hw' (by omega_arith) (by rw [hm4, hP]; exact hP2))
+    ((k14.gpr _ (by decide)).trans h11) hw2 hw' (by simp only [e]; omega_arith) (by rw [g12]; exact i12)
+    (by rw [g12, hm4]; exact iinv) (by rw [hm4, hP]; exact hP2) (by rw [hm4, hP]; exact hPodd))
     fun s₅ ⟨r1, out5, k5⟩ => ?_)
   have k15 := k14.trans k5
   rw [hm4, hP] at r1
@@ -165,7 +167,7 @@ theorem recP1_ok {s : State} {BX : Addr} {Z oA wP wX qL Pv m1 m2 : Nat} {c : Pro
       (t.gpr .r12).toNat < 2 ^ 32 → (w32 t.mem (off BX oA) (slot wP 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 →
       Outside BX oA (slot wP 24) s.mem t.mem → Keep powerRegs s t → WP isa c t Q) :
     WP isa (.seq (.block [.load .d .r31 .r23 oQLen]) (.seq (.block (PublicChecked.minv ++
-      PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq Precompute.r2
+      PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3)) (.seq Precompute.r2Prime
       (.seq (.block (PublicChecked.base .r14 7 ++ PublicChecked.base .r15 1)) (.seq copyN
       (.seq (.block (xb .r30 1)) (.seq ModArith.reduce c))))))) s Q := by
   have hn := hs.nowrap

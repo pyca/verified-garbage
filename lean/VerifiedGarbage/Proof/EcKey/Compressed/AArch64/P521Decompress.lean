@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Candidate
+import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
+import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Candidate
 import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 public import VerifiedGarbage.Spec.EcKey.P521
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Ecdh.AArch64.P521.CheckVerified
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Impl.EcKey.Compressed.AArch64
@@ -17,6 +16,14 @@ meta import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Contract
+public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
+public import VerifiedGarbage.Impl.EcKey.Compressed.Root
+public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressContract
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMiddle
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 
 /-! # Instantiate shared compression with P521's field configuration -/
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Local
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
 

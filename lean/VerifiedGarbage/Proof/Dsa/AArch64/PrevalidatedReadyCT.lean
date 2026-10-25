@@ -1,14 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReadyCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedBodyCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.BodyCT
-import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReadyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedBodyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.BodyCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Dsa.SizeBounds
+public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
+public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
+public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingShapeCT
 
 /-! # The public schedule after independent verifying-workspace initialization -/
 

@@ -35,7 +35,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.GContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw

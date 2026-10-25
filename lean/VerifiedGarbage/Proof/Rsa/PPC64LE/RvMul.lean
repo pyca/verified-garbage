@@ -33,11 +33,11 @@ theorem two_n_le {s0 : State} : 2 * nV s0 ≤ 2 ^ (32 * ww (kK s0)) := by
   have := nV_lt (s0 := s0)
   have e : 2 ^ (32 * ww (kK s0)) = 2 ^ (32 * (2 * wm (kK s0))) * 2 ^ 64 := by
     have hww : ww (kK s0) = 2 * wm (kK s0) + 2 := rfl
-    rw [← Nat.pow_add, show 32 * ww (kK s0) = 32 * (2 * wm (kK s0)) + 64 by omega]
+    rw [← Nat.pow_add, show 32 * ww (kK s0) = 32 * (2 * wm (kK s0)) + 64 by omega_arith]
   rw [e]
   have : 2 ≤ 2 ^ 64 := by decide
   calc 2 * nV s0 ≤ 2 ^ 64 * nV s0 := Nat.mul_le_mul_right _ this
-    _ ≤ 2 ^ (32 * (2 * wm (kK s0))) * 2 ^ 64 := by rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by omega)
+    _ ≤ 2 ^ (32 * (2 * wm (kK s0))) * 2 ^ 64 := by rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by omega_arith)
 
 /-- `[mXm] := x g`. -/
 theorem multiply_ok {s0 u : State} (hn : NOk s0) (c : CF s0 u) {j x : Nat} (h24 : u.gpr .r24 = BitVec.ofNat 64 j)
@@ -45,13 +45,13 @@ theorem multiply_ok {s0 u : State} (hn : NOk s0) (c : CF s0 u) {j x : Nat} (h24 
     (hG : num u.mem (rvB s0) (ww (kK s0)) mG = (j + 2) * RR s0 % nV s0) :
     WP isa multiply u fun t => CF s0 t ∧ KeyWorkspace.Keep (rvB s0) (ww (kK s0)) mulJ [sC] u.mem t.mem ∧
       num t.mem (rvB s0) (ww (kK s0)) mXm = x * (j + 2) % nV s0 * RR s0 % nV s0 ∧ Keep mmRegs u t := by
-  have hn0 : 0 < nV s0 := by have := hn.big; omega
+  have hn0 : 0 < nV s0 := by have := hn.big; omega_arith
   have fit : ∀ j < nArr, arr (ww (kK s0)) j + S (ww (kK s0)) ≤ 2 ^ 64 := fun _ hj => c.ws.fit64 hj
-  have z0 : num u.mem (rvB s0) (ww (kK s0)) aZ = 0 := val32_zeros fun i hi => c.zZ i (by omega)
+  have z0 : num u.mem (rvB s0) (ww (kK s0)) aZ = 0 := val32_zeros fun i hi => c.zZ i (by omega_arith)
   have Xl : num u.mem (rvB s0) (ww (kK s0)) mX < nV s0 := by rw [hX]; exact Nat.mod_lt _ hn0
   have tn := two_n_le (s0 := s0)
   unfold multiply
-  refine WP.ite (decide (j = 0)) (eval_zero_ofNat u .r24 (by omega) h24) (fun h0 => ?_) (fun h0 => ?_)
+  refine WP.ite (decide (j = 0)) (eval_zero_ofNat u .r24 (by omega_arith) h24) (fun h0 => ?_) (fun h0 => ?_)
   · -- `g = 2`.
     have j0 : j = 0 := of_decide_eq_true h0
     refine WP.mono (addMod_ok c.ws (o := mXm) (a := mX) (b := mX) (m := aN) (z := aZ) (t := aW) (by decide)
@@ -68,16 +68,16 @@ theorem multiply_ok {s0 u : State} (hn : NOk s0) (c : CF s0 u) {j x : Nat} (h24 
     · prun [h24]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      omega
+      omega_arith
     have c1 := c.of_keep (show KeyWorkspace.Keep (rvB s0) (ww (kK s0)) [] [] u.mem u1.mem by
       rw [m1]; exact KeyWorkspace.Keep.refl _ _ _ _ _) (by simp) (by simp) k0 (c.ws.of_keep k0)
     have X1 : num u1.mem (rvB s0) (ww (kK s0)) mX = x * RR s0 % nV s0 := by rw [m1]; exact hX
     have G1 : num u1.mem (rvB s0) (ww (kK s0)) mG = (j + 2) * RR s0 % nV s0 := by rw [m1]; exact hG
     have z1 : num u1.mem (rvB s0) (ww (kK s0)) aZ = 0 := by rw [m1]; exact z0
     have Xl1 : num u1.mem (rvB s0) (ww (kK s0)) mX < nV s0 := by rw [X1]; exact Nat.mod_lt _ hn0
-    refine WP.ite (decide (j - 1 = 0)) (eval_zero_ofNat u1 .r0 (by omega) a0) (fun h1 => ?_) (fun h1 => ?_)
+    refine WP.ite (decide (j - 1 = 0)) (eval_zero_ofNat u1 .r0 (by omega_arith) a0) (fun h1 => ?_) (fun h1 => ?_)
     · -- `g = 3`.
-      have j1 : j = 1 := by have := of_decide_eq_true h1; omega
+      have j1 : j = 1 := by have := of_decide_eq_true h1; omega_arith
       rw [wp_seqs_append (by simp [addMod]) (by simp [addMod])]
       refine WP.mono (addMod_ok c1.ws (o := mXm) (a := mX) (b := mX) (m := aN) (z := aZ) (t := aW) (by decide)
         (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -97,7 +97,7 @@ theorem multiply_ok {s0 u : State} (hn : NOk s0) (c : CF s0 u) {j x : Nat} (h24 
             (by decide)) (kk3.mono (by decide) (by decide)), ?_,
           ((k0.mono (rs' := mmRegs) (by decide)).trans ((k2.trans k3).mono (rs' := mmRegs) (by decide))).mono
             (by decide)⟩
-      have z2 : num u2.mem (rvB s0) (ww (kK s0)) aZ = 0 := val32_zeros fun i hi => c2.zZ i (by omega)
+      have z2 : num u2.mem (rvB s0) (ww (kK s0)) aZ = 0 := val32_zeros fun i hi => c2.zZ i (by omega_arith)
       rw [v3 z2 (by rw [c2.vN, V2]; exact Nat.mod_lt _ hn0) (by rw [c2.vN, X2]; exact Nat.mod_lt _ hn0)
         (by rw [c2.vN]; exact tn), c2.vN, V2, X2, j1, Nat.mod_add_mod, ← Nat.mul_two, ← Nat.mul_add_one,
         FusedMont.scale]

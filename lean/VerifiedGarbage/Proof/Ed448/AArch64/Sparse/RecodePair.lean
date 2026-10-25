@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.JointDigits
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.BufferFrame
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
-import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Iter

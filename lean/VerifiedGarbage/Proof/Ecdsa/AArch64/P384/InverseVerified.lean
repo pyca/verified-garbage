@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 public import VerifiedGarbage.Proof.Framework.Pratt
-public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -20,6 +19,7 @@ meta import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
 
 /-!
 # `vg_p384_inv_mod_p` and `_n` on AArch64: `Verified`

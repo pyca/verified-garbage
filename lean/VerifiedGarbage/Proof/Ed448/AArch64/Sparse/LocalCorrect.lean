@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Local
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Correct
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Timing
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Timing
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Ed448.WnafWide.Limit
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Main
+public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.AffineSpec
+import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.TCB.Artifact
 
 /-! The sparse equation meets the local correctness, ABI and timing interface. -/
 

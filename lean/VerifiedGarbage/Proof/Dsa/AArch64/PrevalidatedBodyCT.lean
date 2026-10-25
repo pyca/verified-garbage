@@ -2,16 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.BodyCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedBody
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedComputeCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
-public import VerifiedGarbage.Proof.Dsa.AArch64.ComputeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedComputeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
+import VerifiedGarbage.Proof.Dsa.AArch64.ComputeCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
 import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
+public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 
 /-! # Constant time through validation, computation and the ABI return -/
 

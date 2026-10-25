@@ -1,10 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedMain
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPost
+import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedMain
+import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedCT
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPost
 import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingAgreement
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
+public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABI
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingPublic
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReturn
+public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
 
 /-! # The prevalidated verifier meets its shared ABI and leakage contract -/
 

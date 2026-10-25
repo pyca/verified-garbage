@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateEntry
+import VerifiedGarbage.Proof.Dsa.AArch64.ValidateEntry
+public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedFields
+public import VerifiedGarbage.Spec.Dsa
 
 /-! # Argument capture and public-domain validation for a complete verifying attempt -/
 

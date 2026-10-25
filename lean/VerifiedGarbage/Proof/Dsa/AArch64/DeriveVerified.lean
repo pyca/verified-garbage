@@ -8,11 +8,12 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABI
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # AArch64 DSA key derivation verified against the shared contract -/
 

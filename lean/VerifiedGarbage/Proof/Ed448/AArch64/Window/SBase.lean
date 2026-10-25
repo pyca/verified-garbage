@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
 import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Select
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow

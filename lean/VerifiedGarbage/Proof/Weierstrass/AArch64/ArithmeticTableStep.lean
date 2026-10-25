@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import VerifiedGarbage.Proof.Weierstrass.Comb
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

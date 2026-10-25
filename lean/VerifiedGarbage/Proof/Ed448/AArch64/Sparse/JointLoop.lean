@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.JointStep
-import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Recode
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
 public import VerifiedGarbage.Proof.Framework.Semantics

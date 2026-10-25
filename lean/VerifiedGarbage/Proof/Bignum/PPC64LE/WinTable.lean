@@ -49,16 +49,16 @@ theorem table_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hN :
   generalize hRRd : A s.mem B w 1 = RR at hRR
   unfold table
   -- 1 in array 7.
-  refine WP.seq (WP.mono (Pub.oneP_ok h.scr (by have := h.w2; omega) h.w31
-    (Nat.le_trans (by unfold slot; omega) h.hZ) h.r10 h.r29 h.r11) fun s₁ ⟨⟨h7, out1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (Pub.oneP_ok h.scr (by have := h.w2; omega_arith) h.w31
+    (Nat.le_trans (by unfold slot; omega_arith) h.hZ) h.r10 h.r29 h.r11) fun s₁ ⟨⟨h7, out1⟩, k1⟩ => ?_)
   replace h7 : A s₁.mem B w 7 = 1 := h7
-  have o1 : Outside B (slot w 7) (8 * (w + 2)) s.mem s₁.mem := out1.mono (Nat.le_refl _) (by omega)
+  have o1 : Outside B (slot w 7) (8 * (w + 2)) s.mem s₁.mem := out1.mono (Nat.le_refl _) (by omega_arith)
   have c1 := h.of k1 (by decide) (win_of_out o1 (by decide) (by decide))
   have R1 : A s₁.mem B w 1 = RR := by rw [arr_out o1 (by decide) (by decide) hn, hRRd]
   have X1 : A s₁.mem B w 4 = X := by rw [arr_out o1 (by decide) (by decide) hn, hX]
   -- `T_0 = R mod m`.
   refine WP.seq (WP.mono (c1.mont (o := 8) (a := 1) (b := 7) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by rw [h7]; omega)) fun s₂ ⟨⟨c2, lt2, e2, v2, o2⟩, k2⟩ => ?_)
+    (by decide) (by decide) (by decide) (by decide) (by rw [h7]; omega_arith)) fun s₂ ⟨⟨c2, lt2, e2, v2, o2⟩, k2⟩ => ?_)
   rw [h7, Nat.mul_one, R1] at e2
   have T0 : RR = 2 ^ (64 * w) * 2 ^ (64 * w) % N → A s₂.mem B w 8 % N = X ^ 0 * 2 ^ (64 * w) % N :=
     fun hE => by
@@ -93,7 +93,7 @@ theorem table_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hN :
     rw [m5]; exact arr_out o4 hj h6 hn
   have tab2 : TabUpTo s₅.mem B w N X RR 2 := by
     intro i hi
-    rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
+    rcases (show i = 0 ∨ i = 1 by omega_arith) with rfl | rfl
     · rw [K 8 (by decide) (by decide), E3]; exact ⟨lt2, T0⟩
     · rw [K 9 (by decide) (by decide)]; exact ⟨lt3, T1⟩
   have a5 : A s₅.mem B w 6 = A s₃.mem B w 9 := by rw [m5, a4]
@@ -119,8 +119,8 @@ theorem table_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hN :
       prun [(ku.gpr .r24 (by decide)).trans t24, BitVec.add_zero]
     refine WP.seq (WP.mono hblk fun v ⟨⟨v19, vm⟩, kv⟩ => ?_)
     have cv := cu.regs kv (by decide) vm
-    refine WP.seq (WP.mono (toEntry_ok cv v19 (by omega)) fun x ⟨⟨xe, xo⟩, kx⟩ => ?_)
-    have cx := cv.of kx (by decide) (win_of_out xo (by omega) (by omega))
+    refine WP.seq (WP.mono (toEntry_ok cv v19 (by omega_arith)) fun x ⟨⟨xe, xo⟩, kx⟩ => ?_)
+    have cx := cv.of kx (by decide) (win_of_out xo (by omega_arith) (by omega_arith))
     have hend : WP isa (.block [.addi .r24 .r24 1, .subi .r4 .r24 16]) x fun y =>
         (y.gpr .r24 = BitVec.ofNat 64 (2 + k) + BitVec.ofNat 64 1 ∧
           y.gpr .r4 = BitVec.ofNat 64 (2 + k) + BitVec.ofNat 64 1 - BitVec.ofNat 64 16 ∧ y.mem = x.mem) ∧
@@ -131,35 +131,35 @@ theorem table_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) (hN :
       fun j hj h2 h3 h6 he => by rw [arr_out xo hj he hn, vm, vu j hj h2 h3 h6]
     have pw : RR = 2 ^ (64 * w) * 2 ^ (64 * w) % N → A u.mem B w 6 % N = X ^ (2 + k) * 2 ^ (64 * w) % N :=
       fun hE => by
-        rw [mont_pow hR (t6 hE) (by rw [t9]; exact T1 hE) eu, show 1 + k + 1 = 2 + k by omega]
+        rw [mont_pow hR (t6 hE) (by rw [t9]; exact T1 hE) eu, show 1 + k + 1 = 2 + k by omega_arith]
     refine WP.mono hend fun y ⟨⟨y24, y4, ym⟩, ky⟩ =>
       ⟨⟨cx.regs ky (by decide) ym, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
-    · rw [ym]; exact (ot.trans ou).trans (by rw [← vm]; exact win_of_out xo (by omega) (by omega))
+    · rw [ym]; exact (ot.trans ou).trans (by rw [← vm]; exact win_of_out xo (by omega_arith) (by omega_arith))
     · rw [y24, ← BitVec.ofNat_add, Nat.add_assoc]
-    · rw [ym, M 1 (by decide) (by decide) (by decide) (by decide) (by omega), t1]
-    · rw [ym, M 4 (by decide) (by decide) (by decide) (by decide) (by omega), t4]
-    · rw [ym, M 7 (by decide) (by decide) (by decide) (by decide) (by omega), t7]
-    · rw [ym, M 9 (by decide) (by decide) (by decide) (by decide) (by omega), t9]
+    · rw [ym, M 1 (by decide) (by decide) (by decide) (by decide) (by omega_arith), t1]
+    · rw [ym, M 4 (by decide) (by decide) (by decide) (by decide) (by omega_arith), t4]
+    · rw [ym, M 7 (by decide) (by decide) (by decide) (by decide) (by omega_arith), t7]
+    · rw [ym, M 9 (by decide) (by decide) (by decide) (by decide) (by omega_arith), t9]
     · intro i hi
       rw [ym]
-      rcases Nat.lt_succ_iff_lt_or_eq.mp (show i < 2 + k + 1 by omega) with hi | rfl
-      · rw [M (8 + i) (by omega) (by omega) (by omega) (by omega) (by omega)]
+      rcases Nat.lt_succ_iff_lt_or_eq.mp (show i < 2 + k + 1 by omega_arith) with hi | rfl
+      · rw [M (8 + i) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
         exact ttab i hi
       · rw [xe, vm]
         exact ⟨lu, pw⟩
-    · rw [ym, arr_out xo (by decide) (by omega) hn, vm]; exact lu
+    · rw [ym, arr_out xo (by decide) (by omega_arith) hn, vm]; exact lu
     · intro hE
-      rw [ym, arr_out xo (by decide) (by omega) hn, vm, pw hE, show 2 + k = 1 + (k + 1) by omega]
+      rw [ym, arr_out xo (by decide) (by omega_arith) hn, vm, pw hE, show 2 + k = 1 + (k + 1) by omega_arith]
     · exact ((((kt.trans ku).trans kv).trans kx).trans ky).mono
     · rw [y4, ← BitVec.ofNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_arith
   · -- `a := T_0`.
     refine WP.mono (copy_ok ct (o := 6) (a := 8) (by decide) (by decide) (by decide)) fun u ⟨⟨ua, uo⟩, ku⟩ =>
       ⟨⟨ct.of ku (by decide) (win_of_out uo (by decide) (by decide)),
         ot.trans (win_of_out uo (by decide) (by decide)), by rw [arr_out uo (by decide) (by decide) hn, t1],
         by rw [arr_out uo (by decide) (by decide) hn, t4], by rw [arr_out uo (by decide) (by decide) hn, t7],
         by rw [ua, arr_out uo (by decide) (by decide) hn], fun i hi => ?_⟩, (kt.trans ku).mono⟩
-    rw [arr_out uo (by omega) (by omega) hn]
+    rw [arr_out uo (by omega_arith) (by omega_arith) hn]
     exact ttab i hi
 
 end VG.Proof.Bignum.PPC64LE.Win

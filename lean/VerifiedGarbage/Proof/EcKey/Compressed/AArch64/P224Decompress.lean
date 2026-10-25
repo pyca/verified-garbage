@@ -1,18 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Tonelli
+import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
+import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Tonelli
 import VerifiedGarbage.Proof.P224.Sqrt
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneTaint
-import VerifiedGarbage.Proof.Weierstrass.Sqrt
 public import VerifiedGarbage.Spec.EcKey.P224
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.AArch64.P224Literals
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Ecdh.AArch64.P224.CheckVerified
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P224Literals
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -21,6 +19,13 @@ meta import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Contract
+public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
+public import VerifiedGarbage.Impl.EcKey.Compressed.Root
+public import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressContract
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMiddle
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 
 /-! # Instantiate shared compression with P224's field configuration -/
 

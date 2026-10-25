@@ -48,29 +48,29 @@ theorem signCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X
   have big := Sc.big
   have fits := Sc.fits
   have Qlt := operand_lt_of Iq
-  have qlt : ∀ x, x % Q < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega)) Qlt
+  have qlt : ∀ x, x % Q < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Qlt
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   simp only [SignVerify.signCompute, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (signingKey_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
   have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
-    fun I => I.run Rn₁ (by omega) fits
+    fun I => I.run Rn₁ (by omega_arith) fits
   refine WP.seq (WP.mono (privateKey_ok (Sc.run Rn₁) (r₁ Ip) (r₁ Iq) (r₁ Ig) (r₁ Iy) (r₁ Ix) (r₁ Ik) hP hPo)
     fun u₂ ⟨F₂, K₂, Rn₂⟩ => ?_)
   have r₂ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₂ base size p len v :=
-    fun I => (r₁ I).run Rn₂ (by omega) fits
+    fun I => (r₁ I).run Rn₂ (by omega_arith) fits
   have L₂ : localVal base u₂ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
-    rw [K₂ _ _ (by decide) (by simp only [Impl.Dsa.Layout.qMinusTwo, Impl.Dsa.Layout.t]; omega), L₁]
+    rw [K₂ _ _ (by decide) (by simp only [Impl.Dsa.Layout.qMinusTwo, Impl.Dsa.Layout.t]; omega_arith), L₁]
   refine WP.seq (WP.mono (sign_ok (Sc.run (Rn₁.trans Rn₂)) (r₂ Ip) (r₂ Iq) (r₂ Ig) (r₂ Ix) (r₂ Ik) (r₂ Id)
     (by rw [countValue_run Rn₂, countValue_run Rn₁, hc]) L₂ hP hPo hQ hQo) fun u₃ ⟨R₃, S₃, M₃, Rn₃⟩ => ?_)
   have Sc₃ := Sc.run ((Rn₁.trans Rn₂).trans Rn₃)
-  refine WP.seq (WP.seq (WP.mono (zero_ok Sc₃.ws (by omega) Sc.wq
-    (localReady (o := Impl.Dsa.Layout.r) (len := qLen) Sc₃.ws (by omega) (by omega) (by omega)) true)
-    fun u₄ ⟨F₄, St₄⟩ => WP.mono (zero_ok (St₄.ws Sc₃.ws) (by omega) Sc.wq
-      (localReady (o := Impl.Dsa.Layout.s) (len := qLen) (St₄.ws Sc₃.ws) (by omega) (by omega) (by omega)) true)
+  refine WP.seq (WP.seq (WP.mono (zero_ok Sc₃.ws (by omega_arith) Sc.wq
+    (localReady (o := Impl.Dsa.Layout.r) (len := qLen) Sc₃.ws (by omega_arith) (by omega_arith) (by omega_arith)) true)
+    fun u₄ ⟨F₄, St₄⟩ => WP.mono (zero_ok (St₄.ws Sc₃.ws) (by omega_arith) Sc.wq
+      (localReady (o := Impl.Dsa.Layout.s) (len := qLen) (St₄.ws Sc₃.ws) (by omega_arith) (by omega_arith) (by omega_arith)) true)
     fun u₅ ⟨F₅, St₅⟩ => WP.block_nil ⟨?_, ?_, ?_, ?_⟩))
-  · rw [local_operand Sc₃.ws (by omega), R₃] at F₄
-    rw [local_operand (St₄.ws Sc₃.ws) (by omega), St₄.localVal_eq (by omega) (by omega) (by omega) (by omega),
+  · rw [local_operand Sc₃.ws (by omega_arith), R₃] at F₄
+    rw [local_operand (St₄.ws Sc₃.ws) (by omega_arith), St₄.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
       S₃] at F₅
     rw [F₅, F₄, M₃, F₂, F₁, BitVec.and_assoc, BitVec.and_assoc, BitVec.and_assoc, mask32_and, mask32_and,
       mask32_and]
@@ -81,10 +81,10 @@ theorem signCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X
       (rValue P Q G K ≠ 0 ∧ sValue P Q G X K D ≠ 0) ↔
         (rValue P Q G K ≠ 0 ∧ sValue P Q G X K D ≠ 0))
     simpa only [↓reduceIte, signChecks, and_assoc] using H'
-  · rw [St₅.localVal_eq (by omega) (by omega) (by omega) (by omega),
-      St₄.localVal_eq (by omega) (by omega) (by omega) (by omega), R₃]
-  · rw [St₅.localVal_eq (by omega) (by omega) (by omega) (by omega),
-      St₄.localVal_eq (by omega) (by omega) (by omega) (by omega), S₃]
+  · rw [St₅.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+      St₄.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), R₃]
+  · rw [St₅.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+      St₄.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), S₃]
   · exact (((Rn₁.trans Rn₂).trans Rn₃).trans (St₄.run (.inl ⟨rfl, rfl⟩))).trans (St₅.run (.inl ⟨rfl, rfl⟩))
 
 /-- Every check of a verification. -/
@@ -108,10 +108,10 @@ theorem verifyCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y
   simp only [SignVerify.verifyCompute, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (PublicValidation.call_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
   have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
-    fun I => I.run Rn₁ (by omega) fits
+    fun I => I.run Rn₁ (by omega_arith) fits
   have Sc₁ := Sc.run Rn₁
-  refine WP.seq (WP.seq (WP.mono (range_ok Sc₁.ws (by omega) Sc.wq (r₁ Iq).toReady (r₁ Ir).toReady false)
-    fun u₂ ⟨F₂, St₂⟩ => WP.mono (range_ok (St₂.ws Sc₁.ws) (by omega) Sc.wq
+  refine WP.seq (WP.seq (WP.mono (range_ok Sc₁.ws (by omega_arith) Sc.wq (r₁ Iq).toReady (r₁ Ir).toReady false)
+    fun u₂ ⟨F₂, St₂⟩ => WP.mono (range_ok (St₂.ws Sc₁.ws) (by omega_arith) Sc.wq
       ((r₁ Iq).next Sc₁ St₂ (.inl ⟨rfl, rfl⟩)).toReady ((r₁ Is).next Sc₁ St₂ (.inl ⟨rfl, rfl⟩)).toReady false)
     fun u₃ ⟨F₃, St₃⟩ => ?_))
   rw [(r₁ Iq).value, (r₁ Ir).value] at F₂
@@ -120,17 +120,17 @@ theorem verifyCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y
   have r₃ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₃ base size p len v :=
     fun I => ((r₁ I).next Sc₁ St₂ (.inl ⟨rfl, rfl⟩)).next (Sc₁.stage St₂) St₃ (.inl ⟨rfl, rfl⟩)
   have L₃ : localVal base u₃ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
-    rw [St₃.localVal_eq (by decide) (by omega) (by omega) (by omega),
-      St₂.localVal_eq (by decide) (by omega) (by omega) (by omega), L₁]
+    rw [St₃.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith),
+      St₂.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith), L₁]
   have C₃ : countValue base u₃ Core.digestPrefix = c := by
-    rw [countValue_stage St₃ (by omega), countValue_stage St₂ (by omega), countValue_run Rn₁, hc]
+    rw [countValue_stage St₃ (by omega_arith), countValue_stage St₂ (by omega_arith), countValue_run Rn₁, hc]
   refine WP.seq (WP.mono (verify_ok Sc₃ (r₃ Ip) (r₃ Iq) (r₃ Ig) (r₃ Iy) (r₃ Ir) (r₃ Is) (r₃ Id) C₃ L₃ hP hPo hQ hQo)
     fun u₄ ⟨V₄, M₄, Rn₄⟩ => ?_)
   have Sc₄ := Sc₃.run Rn₄
-  refine WP.seq (WP.mono (equalValues_ok Sc₄.ws (by omega) Sc.wq
-    (localReady (o := Impl.Dsa.Layout.u) Sc₄.ws (by omega) (by omega) (by omega)) ((r₃ Ir).run Rn₄ (by omega) fits).toReady)
+  refine WP.seq (WP.mono (equalValues_ok Sc₄.ws (by omega_arith) Sc.wq
+    (localReady (o := Impl.Dsa.Layout.u) Sc₄.ws (by omega_arith) (by omega_arith) (by omega_arith)) ((r₃ Ir).run Rn₄ (by omega_arith) fits).toReady)
     fun u₅ ⟨F₅, St₅⟩ => WP.block_nil ⟨?_, ?_⟩)
-  · rw [local_operand Sc₄.ws (by omega), V₄, ((r₃ Ir).run Rn₄ (by omega) fits).value] at F₅
+  · rw [local_operand Sc₄.ws (by omega_arith), V₄, ((r₃ Ir).run Rn₄ (by omega_arith) fits).value] at F₅
     rw [F₅, M₄, F₃, F₂, F₁, BitVec.and_assoc, BitVec.and_assoc, BitVec.and_assoc, mask32_and, mask32_and,
       mask32_and]
     exact congrArg _ (mask32_iff (by simp only [Bool.false_eq_true, ↓reduceIte, verifyChecks]))

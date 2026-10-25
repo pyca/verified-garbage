@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Moves
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Moves
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.State
 
 /-! The constants and affine input points remain unchanged during joint multiplication. -/
 

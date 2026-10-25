@@ -35,7 +35,6 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Proof.RsaKeyGen.Table
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 import VerifiedGarbage.Impl.RsaOaep.AArch64
-import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.AArch64
 meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops

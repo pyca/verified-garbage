@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Hash
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
-public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Calls
+import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Calls
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Local
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
 
 /-!
 # Ed448 verification on AArch64: the frame's body

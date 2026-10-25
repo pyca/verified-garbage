@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.TimingPair
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse
 import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Normalize
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Persist
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyStages
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Front

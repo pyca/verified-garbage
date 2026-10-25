@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingStep
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticTable
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 
