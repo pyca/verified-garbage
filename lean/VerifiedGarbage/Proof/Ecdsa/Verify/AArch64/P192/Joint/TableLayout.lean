@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Inputs
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Moves
 
 /-! The fifteen projective table entries fit beside the existing arithmetic workspace. -/
 

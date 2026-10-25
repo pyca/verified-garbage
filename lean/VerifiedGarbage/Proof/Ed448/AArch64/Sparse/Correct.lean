@@ -3,16 +3,23 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Joint
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Cross
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Normalize
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Equation
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Persist
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Equation
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Persist
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Result
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyStages
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Ed448.WnafWide.Limit
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Iter
 import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Front
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! Complete sparse verification: decoding, the unreduced joint equation,
 cofactoring, canonical checks and restoration of every callee-saved register. -/

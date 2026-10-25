@@ -7,14 +7,9 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.X448.Bytes
 meta import VerifiedGarbage.Proof.Curve448.AArch64.AccumSquareBody
 meta import VerifiedGarbage.Proof.Curve448.AArch64.AddEval
 meta import VerifiedGarbage.Proof.Curve448.AArch64.Bounds

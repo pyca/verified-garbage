@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddField
 import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAdd
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
+import VerifiedGarbage.Proof.Weierstrass.Comb
 
 @[expose] public section
 

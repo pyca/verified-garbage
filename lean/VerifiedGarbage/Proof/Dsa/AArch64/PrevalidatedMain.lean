@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReturn
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedReturn
-import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
+import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedReturn
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingShape
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
 
 /-! # Functional correctness of the complete AArch64 DSA verification program -/
 

@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameCopies
 import VerifiedGarbage.Proof.Framework.AArch64.StackStore
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Save the public ABI arguments before any arithmetic uses their registers -/
 

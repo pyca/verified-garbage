@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDouble
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep

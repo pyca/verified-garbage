@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
-public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
+import VerifiedGarbage.Proof.Dsa.AArch64.ValidateOperands
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
 public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
 public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingShape
 
 /-! # Establishing all verifying operands after public domain acceptance -/
 

@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNaf9
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafExec
@@ -16,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-! # The public width-nine recoding of a scalar of `n` words
 

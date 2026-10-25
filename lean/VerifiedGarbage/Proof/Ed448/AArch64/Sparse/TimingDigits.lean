@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.TimingTrim
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.TimingTrim
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.JointDigits
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Joint
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
 meta import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
 meta import VerifiedGarbage.Impl.Ed448.WnafWide
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.TimingAdd
 
 /-! Complete relational timing for the sparse multiplier once recoding is complete. -/
 

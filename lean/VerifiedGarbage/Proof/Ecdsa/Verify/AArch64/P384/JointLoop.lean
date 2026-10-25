@@ -6,7 +6,6 @@ public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDouble
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD

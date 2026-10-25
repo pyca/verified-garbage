@@ -1,8 +1,7 @@
 module
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedReadyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
+import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedReadyCT
 
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingReadyCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -13,6 +12,13 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSign
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
+public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingPublic
+public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
 
 /-! # Constant time of the complete verifying entry point -/
 

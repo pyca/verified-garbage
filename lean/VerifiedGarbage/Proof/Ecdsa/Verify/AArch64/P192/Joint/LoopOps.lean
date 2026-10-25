@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Fetch
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Fetch
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Digit
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ed25519.AArch64.Step
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.TableLayout
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Math
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Table
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Math
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.State
 
 /-! A public digit addition, including the zero-pair case. -/
 

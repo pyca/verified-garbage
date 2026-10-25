@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Trim
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Trim
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.JointInit
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Core
+public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.JointLoop
 
 /-! Complete joint multiplication from the two public signed digit streams. -/
 

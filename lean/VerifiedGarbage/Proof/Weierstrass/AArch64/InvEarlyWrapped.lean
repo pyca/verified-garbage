@@ -6,7 +6,6 @@ public import Mathlib.Tactic.FieldSimp
 public import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyAllocatedMain
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

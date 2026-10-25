@@ -11,6 +11,7 @@ meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
 meta import VerifiedGarbage.Impl.Ed448.WnafWide
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! Full sparse verification timing depends only on public scalar values and addresses. -/
 

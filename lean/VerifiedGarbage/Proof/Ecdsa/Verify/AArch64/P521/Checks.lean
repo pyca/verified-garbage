@@ -13,97 +13,19 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedTiming
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Impl.Ecdh.P521.AArch64
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Ecdsa.Projective
 import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedMul
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
-import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-import VerifiedGarbage.Proof.Mont.AArch64.Chain
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
-import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.DeadOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ForwardOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddC
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Weierstrass.CoZTable
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Spec.Weierstrass.Mul
 meta import VerifiedGarbage.Impl.Ecdh.P521.AArch64
 meta import VerifiedGarbage.Proof.EcKey.PublicKey
@@ -191,6 +113,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 meta import VerifiedGarbage.Proof.Weierstrass.CoZTable
 meta import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 meta import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PackedNaf
 
 /-!
 # ECDSA verification over P-521 on AArch64: what taint tracking checks

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafTiming
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.AArch64
+import VerifiedGarbage.Impl.Ecdsa.Verify.P384.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
@@ -176,6 +176,16 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 meta import VerifiedGarbage.Proof.Weierstrass.CoZTable
 meta import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 meta import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Impl.AArch64Instrs
+public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.PrepTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WindowTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
 # ECDSA verification over P-384 on AArch64: what taint tracking checks

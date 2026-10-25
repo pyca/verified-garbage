@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedChecks
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead9
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead

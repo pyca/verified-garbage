@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.RootPow
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Frame
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 
 /-! # The two fixed powers that initialize P-224's descent -/

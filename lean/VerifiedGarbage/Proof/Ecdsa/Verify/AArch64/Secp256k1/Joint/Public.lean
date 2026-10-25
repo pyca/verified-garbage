@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Timing
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Timing
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Prefix
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Points
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Math
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.State
 
 /-! Verification timing uses only inputs public in the existing ECDSA specification. -/
 

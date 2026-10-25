@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedEntry
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedChecks
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
