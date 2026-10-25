@@ -35,7 +35,17 @@ pub fn vectors_dir() -> Option<PathBuf> {
 }
 
 /// Every test vector file, sorted by name; `None` if the vectors are not
-/// available.
+/// available. For the RSA tests.
+#[cfg(all(
+    any(
+        target_arch = "x86_64",
+        target_arch = "x86",
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "powerpc64"
+    ),
+    feature = "alloc"
+))]
 pub fn all_files() -> Option<Vec<String>> {
     let mut names: Vec<String> = std::fs::read_dir(vectors_dir()?)
         .expect("reading the Wycheproof directory")
@@ -233,7 +243,15 @@ impl<'de> Deserialize<'de> for Hex {
     }
 }
 
-/// Untyped fields, for tests that only look at the file structure.
+/// Untyped fields, for tests that only look at the file structure (the
+/// compressed points').
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 pub type Fields = serde_json::Map<String, serde_json::Value>;
 
 impl<P, T> TestFile<P, T> {
