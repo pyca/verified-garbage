@@ -29,9 +29,9 @@ theorem compare_record {s : State} {src table : Addr} {k offset : Nat} {dom : Li
       VG.Impl.Ffdh.PPC64LE.VettedValidation.compare) s fun t =>
       (t.gpr .r10 = 0 ↔ dom = g.domain.take dom.length) ∧
       t.mem = s.mem ∧ Keep clobbers s t := by
-  have size : dom.length ≤ 3 * g.len := by rw [width]; rcases h.shape with hh | hh <;> omega
-  have positive : 0 < dom.length := by rcases h.shape with hh | hh <;> have := h.lower <;> omega
-  have small : dom.length < 2 ^ 64 := by rcases h.shape with hh | hh <;> have := h.upper <;> omega
+  have size : dom.length ≤ 3 * g.len := by rw [width]; rcases h.shape with hh | hh <;> omega_arith
+  have positive : 0 < dom.length := by rcases h.shape with hh | hh <;> have := h.lower <;> omega_arith
+  have small : dom.length < 2 ^ 64 := by rcases h.shape with hh | hh <;> have := h.upper <;> omega_arith
   have ptr : (table + BitVec.ofNat 64 offset) + BitVec.ofNat 64 8 =
       table + BitVec.ofNat 64 (offset + 8) := by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   rw [WP.seq_iff]
@@ -41,11 +41,11 @@ theorem compare_record {s : State} {src table : Addr} {k offset : Nat} {dom : Li
     ((restU.gpr (r := .r4) (by decide)).trans h.length) ?_ ?_) ?_
   · intro j hj
     rw [restU.gpr (r := .r3) (by decide), h.source, restU.2.1, restU.2.2]
-    exact CallLay.inRegions_sub h.read (off := j) (l := 1) (by omega) small
+    exact CallLay.inRegions_sub h.read (off := j) (l := 1) (by omega_arith) small
   · intro j hj
     rw [source, restU.2.1, restU.2.2, ← ptr]
-    exact CallLay.inRegions_sub data.read (off := j) (l := 1) (by omega)
-      (by have := data.lenFit; omega)
+    exact CallLay.inRegions_sub data.read (off := j) (l := 1) (by omega_arith)
+      (by have := data.lenFit; omega_arith)
   · rintro t ⟨only, result⟩
     refine ⟨?_, only.mem.trans memU, keep_trans restU
       (show Keep clobbers u t from ⟨only.gpr, only.rd, only.wr⟩)⟩

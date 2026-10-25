@@ -31,7 +31,7 @@ theorem tableOfBytes (gs : List Group) (ptr : Addr) (s : State)
       rw [List.flatMap_cons, List.length_append, length]
     have domainLength : g.domain.length = 3 * g.len := by
       simp only [Group.domain, List.length_append, VG.Proof.Rsa.i2osp_length]
-      omega
+      omega_arith
     have headerLength : (wordBytes g.len ++ wordBytes g.bits).length = 8 := by
       simp only [wordBytes, List.length_append, List.length_map, List.length_range]
     have domain : (((g :: gs).flatMap Group.bytes).drop 8).take (3 * g.len) = g.domain := by
@@ -42,17 +42,17 @@ theorem tableOfBytes (gs : List Group) (ptr : Addr) (s : State)
       rw [List.flatMap_cons, ← length, List.drop_left, List.take_length]
     have part (d n : Nat) (size : d + n ≤ ((g :: gs).flatMap Group.bytes).length) :
         InRegions (s.rd ++ s.wr) (ptr + BitVec.ofNat 64 d) n :=
-      CallLay.inRegions_sub read size (by omega)
+      CallLay.inRegions_sub read size (by omega_arith)
     have slice (d n : Nat) (size : d + n ≤ ((g :: gs).flatMap Group.bytes).length) :
         Spec.Rsa.bytesAt s.mem (ptr + BitVec.ofNat 64 d) n =
           (((g :: gs).flatMap Group.bytes).drop d).take n := by
       rw [← VG.Proof.Dsa.bytesAt_slice s.mem ptr size, bytes]
     have v := valid g (by simp)
-    refine ⟨⟨v.1, v.2, part 8 (3 * g.len) (by rw [total]; omega),
-      (slice 8 (3 * g.len) (by rw [total]; omega)).trans domain⟩, ?_⟩
+    refine ⟨⟨v.1, v.2, part 8 (3 * g.len) (by rw [total]; omega_arith),
+      (slice 8 (3 * g.len) (by rw [total]; omega_arith)).trans domain⟩, ?_⟩
     exact ih _ (part _ _ (by rw [total]))
       ((slice _ _ (by rw [total])).trans tailBytes)
-      (by rw [total] at bound; omega) (fun g hg => valid g (by simp [hg]))
+      (by rw [total] at bound; omega_arith) (fun g hg => valid g (by simp [hg]))
 
 private theorem singleton_held {name : String} {words : List (BitVec 64)}
     {s : State} {stack : Nat} (hc : ConstsOk [(name, words)] stack s) :

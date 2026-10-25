@@ -28,26 +28,26 @@ theorem compare_record {base src sp table : BitVec 32} {k offset : Nat} {dom : L
     (fit : offset + 8 + 3 * g.len ≤ 17744) (width : g.len = k) :
     WP isa (.seq (.block (compareArgs offset)) VG.Impl.RsaPkcs1Sig.X86.compare) s fun t =>
       (t.gpr .ebp = 0 ↔ dom = g.domain.take dom.length) ∧ t.mem = s.mem ∧ Keeps clobbers s t := by
-  have size : dom.length ≤ 3 * g.len := by rw [width]; rcases h.shape with hh | hh <;> omega
-  have positive : 0 < dom.length := by rcases h.shape with hh | hh <;> have := h.lower <;> omega
-  have small : dom.length < 2 ^ 32 := by rcases h.shape with hh | hh <;> have := h.upper <;> omega
+  have size : dom.length ≤ 3 * g.len := by rw [width]; rcases h.shape with hh | hh <;> omega_arith
+  have positive : 0 < dom.length := by rcases h.shape with hh | hh <;> have := h.lower <;> omega_arith
+  have small : dom.length < 2 ^ 32 := by rcases h.shape with hh | hh <;> have := h.upper <;> omega_arith
   have ptr : (byteAddr table + BitVec.ofNat 64 offset) + BitVec.ofNat 64 8 =
       byteAddr (table + BitVec.ofNat 32 (offset + 8)) := by
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact (addr_eq (by have := h.tableFits; omega)).symm
+    exact (addr_eq (by have := h.tableFits; omega_arith)).symm
   have refRead := CallLay.inRegions_sub data.read (off := 0) (l := dom.length)
-    (by omega) (by have := data.lenFit; omega)
+    (by omega_arith) (by have := data.lenFit; omega_arith)
   simp only [BitVec.add_zero, ptr] at refRead
   rw [WP.seq_iff]
   refine WP.mono (args_ok h) ?_
   rintro u ⟨first, second, count, memU, restU⟩
   refine WP.mono (VG.Proof.RsaPkcs1Sig.X86.compare_ok u positive small h.sourceFits ?_ ?_ ?_
     first second count) ?_
-  · have ht : table.toNat + (offset + 8) < 2 ^ 32 := by have := h.tableFits; omega
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show offset + 8 < 2 ^ 32 by omega),
+  · have ht : table.toNat + (offset + 8) < 2 ^ 32 := by have := h.tableFits; omega_arith
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show offset + 8 < 2 ^ 32 by omega_arith),
       Nat.mod_eq_of_lt ht]
     have := h.tableFits
-    omega
+    omega_arith
   · rw [restU.2.1, restU.2.2]; exact h.read
   · rw [restU.2.1, restU.2.2]; exact refRead
   · rintro t ⟨result, memT, restT⟩

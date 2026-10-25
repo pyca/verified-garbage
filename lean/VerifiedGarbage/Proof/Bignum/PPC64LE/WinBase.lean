@@ -32,9 +32,9 @@ abbrev mask (b : Bool) : BitVec 64 := BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b 
 
 theorem slot_lt {w j k : Nat} (h : j < k) : slot w j + 8 * (w + 2) ≤ slot w k := by
   unfold slot
-  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ k by omega)
+  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ k by omega_arith)
   rw [Nat.add_mul, Nat.one_mul] at this
-  omega
+  omega_arith
 
 /-- Arrays 1 to 23: everything `powWin` may write. -/
 def win (w : Nat) : List (Nat × Nat) := [(slot w 1, 23 * (8 * (w + 2)))]
@@ -61,7 +61,7 @@ theorem WCtx.sl {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) {j : N
   Nat.le_trans (slot_lt hj) h.hZ
 
 theorem WCtx.nw {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) : B.toNat + slot w 24 ≤ 2 ^ 64 := by
-  have := h.scr.nowrap; have := h.hZ; omega
+  have := h.scr.nowrap; have := h.hZ; omega_arith
 
 /-- An array apart from an array that changed. -/
 theorem arr_out {B : Addr} {w o j : Nat} {m m' : Mem} (h : Outside B (slot w o) (8 * (w + 2)) m m')
@@ -69,7 +69,7 @@ theorem arr_out {B : Addr} {w o j : Nat} {m m' : Mem} (h : Outside B (slot w o) 
   have := slot_sep (w := w) hne
   have := slot_lt (w := w) hj
   exact (Outs.of_outside h (List.mem_singleton_self _)).val32
-    (fun r hr => by rw [List.mem_singleton] at hr; subst hr; omega) (by omega)
+    (fun r hr => by rw [List.mem_singleton] at hr; subst hr; omega_arith) (by omega_arith)
 
 /-- An array apart from those of a Montgomery multiplication into `o`. -/
 theorem arr_mont {B : Addr} {w o j : Nat} {m m' : Mem}
@@ -77,26 +77,26 @@ theorem arr_mont {B : Addr} {w o j : Nat} {m m' : Mem}
     (hj : j < 24) (h2 : j ≠ 2) (h3 : j ≠ 3) (ho : j ≠ o) (hn : B.toNat + slot w 24 ≤ 2 ^ 64) :
     A m' B w j = A m B w j := by
   have := slot_lt (w := w) hj
-  refine h.val32 (fun r hr => ?_) (by omega)
+  refine h.val32 (fun r hr => ?_) (by omega_arith)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · have := slot_sep (w := w) h2; omega
-  · have := slot_sep (w := w) h3; omega
-  · have := slot_sep (w := w) ho; omega
+  · have := slot_sep (w := w) h2; omega_arith
+  · have := slot_sep (w := w) h3; omega_arith
+  · have := slot_sep (w := w) ho; omega_arith
 
 theorem slot_win {w o : Nat} (h1 : 1 ≤ o) (h24 : o < 24) :
     slot w 1 ≤ slot w o ∧ slot w o + 8 * (w + 2) ≤ slot w 1 + 23 * (8 * (w + 2)) := by
   have := slot_lt (w := w) h24
-  have e24 : slot w 24 = slot w 1 + 23 * (8 * (w + 2)) := by unfold slot; omega
-  refine ⟨?_, by omega⟩
-  unfold slot; have := Nat.mul_le_mul_right (8 * (w + 2)) h1; omega
+  have e24 : slot w 24 = slot w 1 + 23 * (8 * (w + 2)) := by unfold slot; omega_arith
+  refine ⟨?_, by omega_arith⟩
+  unfold slot; have := Nat.mul_le_mul_right (8 * (w + 2)) h1; omega_arith
 
 theorem win_of_out {B : Addr} {w o : Nat} {m m' : Mem} (h : Outside B (slot w o) (8 * (w + 2)) m m')
     (h1 : 1 ≤ o) (h24 : o < 24) : Outs B (win w) m m' := fun x hx => h x (by
   have hx' := hx _ (List.mem_singleton_self _)
   have := slot_win (w := w) h1 h24
   simp only [Mont.ofs, ofs] at hx' ⊢
-  omega)
+  omega_arith)
 
 theorem win_of_mont {B : Addr} {w o : Nat} {m m' : Mem}
     (h : Outs B [(slot w 2, 8 * (w + 2)), (slot w 3, 8 * (w + 2)), (slot w o, 8 * (w + 2))] m m')
@@ -106,9 +106,9 @@ theorem win_of_mont {B : Addr} {w o : Nat} {m m' : Mem}
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · have := slot_win (w := w) (o := 2) (by decide) (by decide); simp only [Mont.ofs] at *; omega
-  · have := slot_win (w := w) (o := 3) (by decide) (by decide); simp only [Mont.ofs] at *; omega
-  · have := slot_win (w := w) h1 h24; simp only [Mont.ofs] at *; omega)
+  · have := slot_win (w := w) (o := 2) (by decide) (by decide); simp only [Mont.ofs] at *; omega_arith
+  · have := slot_win (w := w) (o := 3) (by decide) (by decide); simp only [Mont.ofs] at *; omega_arith
+  · have := slot_win (w := w) h1 h24; simp only [Mont.ofs] at *; omega_arith)
 
 /-- The context after code that writes only arrays 1–23 and none of
 `ctxRegs`. -/
@@ -116,19 +116,19 @@ theorem WCtx.of {s t : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) {rs 
     (hrs : ∀ r ∈ ctxRegs, r ∉ rs) (o : Outs B (win w) s.mem t.mem) : WCtx t B Z w N := by
   have hn := h.nw
   have s0 := slot_lt (w := w) (show 0 < 24 by decide)
-  have e1 : slot w 1 = slot w 0 + 8 * (w + 2) := by unfold slot; omega
+  have e1 : slot w 1 = slot w 0 + 8 * (w + 2) := by unfold slot; omega_arith
   have g := fun r hr => k.gpr r (hrs r hr)
   have a0 : ∀ r ∈ win w, slot w 0 + 4 * (2 * w) ≤ r.1 ∨ r.1 + r.2 ≤ slot w 0 := fun r hr => by
-    rw [win, List.mem_singleton] at hr; subst hr; simp only; omega
+    rw [win, List.mem_singleton] at hr; subst hr; simp only; omega_arith
   refine ⟨h.scr.congr k.wr, h.w2, h.w31, h.hZ, (g .r10 (by decide)).trans h.r10,
     (g .r29 (by decide)).trans h.r29, (g .r11 (by decide)).trans h.r11,
     by rw [g .r12 (by decide)]; exact h.r12, ?_, ?_⟩
   · have := h.w2
-    have := o.val32 (d := slot w 0) (k := 1) (fun r hr => by have := a0 r hr; omega) (by omega)
+    have := o.val32 (d := slot w 0) (k := 1) (fun r hr => by have := a0 r hr; omega_arith) (by omega_arith)
     rw [g .r12 (by decide), show w32 t.mem B (slot w 0) = w32 s.mem B (slot w 0) by simpa [val32] using this]
     exact h.inv
   · rw [← h.n]
-    exact o.val32 a0 (by omega)
+    exact o.val32 a0 (by omega_arith)
 
 theorem WCtx.regs {s t : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) {rs : List Reg} (k : Keep rs s t)
     (hrs : ∀ r ∈ ctxRegs, r ∉ rs) (hm : t.mem = s.mem) : WCtx t B Z w N :=
@@ -145,7 +145,7 @@ theorem WCtx.mont {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) {o a
   refine WP.mono (Pub.montOpN_ok h.scr (n := 24) (by decide) ho ha hb ho2 ho3 ha2 hb2 h.w2 h.w31 h.hZ h.r10 h.r29
     h.r11 h.r12 h.inv (by rw [show val32 s.mem B (slot w 0) (2 * w) = N from h.n]; exact hB))
     fun t ⟨⟨hlt, he, out⟩, k⟩ => ?_
-  have op := win_of_mont out (by omega) ho
+  have op := win_of_mont out (by omega_arith) ho
   rw [show val32 s.mem B (slot w 0) (2 * w) = N from h.n] at hlt he
   exact ⟨⟨h.of k (by decide) op, hlt, he, fun j hj h2 h3 hjo => arr_mont out hj h2 h3 hjo h.nw, op⟩, k⟩
 
@@ -168,8 +168,8 @@ theorem selectAt_ok {s : State} {B : Addr} {Z w N : Nat} (h : WCtx s B Z w N) {b
   have hT := h.sl ht
   refine WP.mono (selectAcc64_ok h.scr (dA := slot w a) (dT := slot w t) (dO := slot w o) (w := w) (b := b)
       h8 h9 h5 h.r11 (by rw [h20, mask_eq]) (by have := h.w2; omega) h.w31
-      (by omega) (by omega) (by omega)
-      (by have := sep hoa; omega) (by have := sep hot; omega)) fun s' ⟨hv, hout, k⟩ =>
+      (by omega_arith) (by omega_arith) (by omega_arith)
+      (by have := sep hoa; omega_arith) (by have := sep hot; omega_arith)) fun s' ⟨hv, hout, k⟩ =>
     ⟨⟨?_, hout.mono (Nat.le_refl _) (by omega)⟩, k⟩
   simp only [A, ← wordsVal_eq_val32]
   exact hv
@@ -257,8 +257,8 @@ theorem toEntry_ok {s : State} {B : Addr} {Z w N j : Nat} (h : WCtx s B Z w N)
   have c5 := c4.regs k5 (by decide) m5
   have k15 := (((k1.trans k2).trans k3).trans k4).trans k5
   have hm : t₅.mem = s.mem := by rw [m5, m4, m3, m2, m1]
-  refine WP.mono (selectAt_ok c5 (b := true) (o := 8 + j) (a := 6) (t := 6) (by omega) (by decide) (by decide)
-    (by omega) (by omega) (by rw [k5.gpr .r5 (by decide), k4.gpr .r5 (by decide), a5])
+  refine WP.mono (selectAt_ok c5 (b := true) (o := 8 + j) (a := 6) (t := 6) (by omega_arith) (by decide) (by decide)
+    (by omega_arith) (by omega_arith) (by rw [k5.gpr .r5 (by decide), k4.gpr .r5 (by decide), a5])
     (by rw [k5.gpr .r8 (by decide), b8]) b9
     (by rw [k5.gpr .r20 (by decide), k4.gpr .r20 (by decide), k3.gpr .r20 (by decide),
       k2.gpr .r20 (by decide), h20])) fun t ⟨⟨hv, hout⟩, k⟩ => ?_

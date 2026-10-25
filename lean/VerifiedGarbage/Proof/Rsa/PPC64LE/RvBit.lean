@@ -40,19 +40,19 @@ theorem bitHead_ok {s0 u : State} (w : Ws u (rvB s0) (rvZ s0) (ww (kK s0)) nArr)
   refine WP.mono (WP.keep [.r0, .r3] (Q := fun x => x.mem =
     (u.mem.writeW (off (rvB s0) sBit) ((BitVec.ofNat 64 W >>> 31).setWidth 32)).writeW (off (rvB s0) sWord)
       ((BitVec.ofNat 64 W <<< 1).setWidth 32)) ?_ (by decide)) fun v ⟨m, kv⟩ => ⟨?_, ?_, ?_, kv⟩
-  · prun [bitHead, w.r31, w.scr.ld (show sWord + 4 ≤ rvZ s0 by simp only [sWord]; omega),
-      w.scr.st (show sBit + 4 ≤ rvZ s0 by simp only [sBit]; omega),
-      w.scr.st (show sWord + 4 ≤ rvZ s0 by simp only [sWord]; omega),
+  · prun [bitHead, w.r31, w.scr.ld (show sWord + 4 ≤ rvZ s0 by simp only [sWord]; omega_arith),
+      w.scr.st (show sBit + 4 ≤ rvZ s0 by simp only [sBit]; omega_arith),
+      w.scr.st (show sWord + 4 ≤ rvZ s0 by simp only [sWord]; omega_arith),
       exec_load_w (show Reg.r31 ≠ .r0 by decide) (show sWord < 2 ^ 15 by decide),
       exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sBit < 2 ^ 15 by decide),
       exec_store_w (show Reg.r31 ≠ .r0 by decide) (show sWord < 2 ^ 15 by decide), ld_slot hW]
   · rw [m]
     exact KeyWorkspace.Keep.trans (keep_slot _ _ (by simp) (by decide)) (keep_slot _ _ (by simp) (by decide))
   · rw [m, slot_wne _ _ _ (by decide) (by decide) (by decide), slot_write_self, BitVec.toNat_setWidth,
-      BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+      BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith),
+      Nat.mod_eq_of_lt (by omega_arith)]
   · rw [m, slot_write_self, BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (a := W) (by omega), Nat.mod_mod_of_dvd _ (by decide)]
+      Nat.mod_eq_of_lt (a := W) (by omega_arith), Nat.mod_mod_of_dvd _ (by decide)]
 
 /-- The flags after a bit, as `Fused.step` has them. -/
 theorem step_ok_flag (bit done ok e1 : Bool) :
@@ -67,13 +67,13 @@ theorem bit_ok {s0 u : State} (hn : NOk s0) {j : Nat} (hj : j < 100) {st : Fused
       t.gpr .r27 = u.gpr .r27 := by
   have c := h.cf
   have hz : 160 ≤ rvZ s0 := c.ws.hdr_le
-  have hn0 : 0 < nV s0 := by have := hn.big; omega
-  have hn1 : 1 < nV s0 := by have := hn.big; omega
+  have hn0 : 0 < nV s0 := by have := hn.big; omega_arith
+  have hn1 : 1 < nV s0 := by have := hn.big; omega_arith
   have fit : ∀ j < nArr, arr (ww (kK s0)) j + S (ww (kK s0)) ≤ 2 ^ 64 := fun _ hj => c.ws.fit64 hj
   have Wl : W < 2 ^ 32 := by rw [← hW]; exact (u.mem.readW _ 32).isLt
   have vl : st.value < nV s0 := h.bnd.1
   generalize hb : decide (W / 2 ^ 31 = 1) = b
-  have bW : W / 2 ^ 31 = b2n b := by rw [← hb]; by_cases e : W / 2 ^ 31 = 1 <;> simp [e, b2n] <;> omega
+  have bW : W / 2 ^ 31 = b2n b := by rw [← hb]; by_cases e : W / 2 ^ 31 = 1 <;> simp [e, b2n] <;> omega_arith
   have Yl : num u.mem (rvB s0) (ww (kK s0)) mY < nV s0 := by rw [h.vY]; exact Nat.mod_lt _ hn0
   unfold bit
   simp only [List.cons_append, List.nil_append]
@@ -179,7 +179,7 @@ theorem bit_ok {s0 u : State} (hn : NOk s0) {j : Nat} (hj : j < 100) {st : Fused
   have live7 : slot u7.mem (rvB s0) sLive = b2n (!b && !st.done && decide (v = 1)) := by
     rw [m7, slot_wne _ _ _ (by decide) (by decide) (by decide), slot_wne _ _ _ (by decide) (by decide) (by decide),
       slot_write_self, BitVec.toNat_ofNat]
-    have := b2n_le (!b && !st.done && decide (v = 1)); omega
+    have := b2n_le (!b && !st.done && decide (v = 1)); omega_arith
   -- The root.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sel_self_ok ws7 (o := aRoot) (b := mY) (sl := sLive) (by decide) (by decide) (by decide)
@@ -264,14 +264,14 @@ theorem bit_ok {s0 u : State} (hn : NOk s0) {j : Nat} (hj : j < 100) {st : Fused
   · rw [sl9 sOk (by simp), m7, slot_wne _ _ _ (by decide) (by decide) (by decide), slot_write_self,
       BitVec.toNat_ofNat, (Fused.step_flags (nV s0) (j + 2) b st).2, hx, step_ok_flag]
     have := b2n_le ((st.root.isSome || (!st.done && decide (v = 1) && !b)) && !b)
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_arith)]
     cases b
     · rw [ev rfl]
     · simp
   · rw [sl9 sDone (by simp), m7, slot_write_self, BitVec.toNat_ofNat, (Fused.step_flags (nV s0) (j + 2) b st).1,
       hx, hv]
     have := b2n_le (st.done && !b || decide (v = 1) || decide (v = nV s0 - 1))
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_arith)]
     cases b
     · rw [ev rfl]; simp
     · simp

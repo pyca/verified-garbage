@@ -21,20 +21,20 @@ theorem signingSubgroup_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : N
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have Lt : Impl.Dsa.Layout.t = 14944 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega
+  have ho : 4960 ≤ Impl.Dsa.Layout.t ∧ Impl.Dsa.Layout.t + pLen ≤ 15712 := by omega_arith
   have pt : PtrOk (.local Impl.Dsa.Layout.t) := (by decide : Impl.Dsa.Layout.t < 2 ^ 16)
   unfold Validate.signingSubgroup
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X.C₁.inp mg).toReady (X.C₂.inp mg).toReady (X.C₁.inp mq).toReady
       (X.E _ mp) (X.E _ mg) (X.E _ mq)
       (X.C₂.inp mq).toReady q4 qp qw)
-    (power_ok (output := Impl.Dsa.Layout.t) X.C₁.S.ws (by omega) X.C₁.S.wp q4 qp qw (X.C₁.inp mp).toReady
-      (X.C₁.inp mg).toReady (X.C₁.inp mq).toReady (X.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega) (by decide))
-    (power_ok (output := Impl.Dsa.Layout.t) X.C₂.S.ws (by omega) X.C₁.S.wp q4 qp qw (X.C₂.inp mp).toReady
-      (X.C₂.inp mg).toReady (X.C₂.inp mq).toReady (X.C₂.inp mp).value D₂.hP D₂.hPo ho.1 (by omega) (by decide))
+    (power_ok (output := Impl.Dsa.Layout.t) X.C₁.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₁.inp mp).toReady
+      (X.C₁.inp mg).toReady (X.C₁.inp mq).toReady (X.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega_arith) (by decide))
+    (power_ok (output := Impl.Dsa.Layout.t) X.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₂.inp mp).toReady
+      (X.C₂.inp mg).toReady (X.C₂.inp mq).toReady (X.C₂.inp mp).value D₂.hP D₂.hPo ho.1 (by omega_arith) (by decide))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
   have X₁ := X.run (St₁.run (.inr ho)) (St₂.run (.inr ho))
-  exact isOne_trace X₁.C₁.S.ws X₁.C₂.S.ws (by omega) (by omega) pt
+  exact isOne_trace X₁.C₁.S.ws X₁.C₂.S.ws (by omega_arith) (by omega_arith) pt
     (ptrEq_local X₁.C₁.S.ws X₁.C₂.S.ws _)
 
 theorem signingKey_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {ins : List (Pointer × Nat)}
