@@ -536,7 +536,7 @@ def sampleRV : Prog RISCV64.isa :=
   (.ite (.ltu .t0 .t1) (.block [])
     (.loop (.block [
       .add .a0 .a1 .a2, .sub .a3 .a4 .a5, .addw .a6 .a7 .t0, .subw .t1 .t2 .t3,
-      .sltu .t4 .t5 .t6, .logic .and .s0 .s1 .s2, .logic .or .s3 .s4 .s5,
+      .sltu .t4 .t5 .t6, .mul .a0 .a1 .a2, .mulhu .a3 .a4 .a5, .logic .and .s0 .s1 .s2, .logic .or .s3 .s4 .s5,
       .logic .xor .s6 .s7 .s8, .addi .s9 .s10 2047, .addi .s11 .ra (-2048), .addiw .a0 .a0 (-1),
       .logicImm .and .a1 .a1 255, .logicImm .or .a2 .a2 (-2048), .logicImm .xor .a3 .a3 (-1),
       .li .a4 (-1), .li .a4 2047, .lui .a5 0x6a09e, .lui .a5 0xfffff,
@@ -570,6 +570,8 @@ def sampleRV : Prog RISCV64.isa :=
   "addw a6, a7, t0",
   "subw t1, t2, t3",
   "sltu t4, t5, t6",
+  "mul a0, a1, a2",
+  "mulhu a3, a4, a5",
   "and s0, s1, s2",
   "or s3, s4, s5",
   "xor s6, s7, s8",

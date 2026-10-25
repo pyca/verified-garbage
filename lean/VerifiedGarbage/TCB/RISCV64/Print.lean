@@ -45,6 +45,8 @@ def Instr.asm : Instr → List String
   | .addw d n m => [s!"addw {d.name}, {n.name}, {m.name}"]
   | .subw d n m => [s!"subw {d.name}, {n.name}, {m.name}"]
   | .sltu d n m => [s!"sltu {d.name}, {n.name}, {m.name}"]
+  | .mul d n m => [s!"mul {d.name}, {n.name}, {m.name}"]
+  | .mulhu d n m => [s!"mulhu {d.name}, {n.name}, {m.name}"]
   | .logic op d n m => [s!"{op.name} {d.name}, {n.name}, {m.name}"]
   | .addi d n imm => [s!"addi {d.name}, {n.name}, {imm}"]
   | .addiw d n imm => [s!"addiw {d.name}, {n.name}, {imm}"]

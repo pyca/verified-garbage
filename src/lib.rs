@@ -61,6 +61,12 @@ compile_error!(
     "the verified assembly needs a little-endian target with its architecture's usual pointer width (not, e.g., aarch64_be, powerpc64 or x32)"
 );
 
+// The RISC-V model's multiplies are the M extension's (see
+// `lean/VerifiedGarbage/TCB/RISCV64/Isa.lean`), which every RV64 target Rust
+// has enables.
+#[cfg(all(target_arch = "riscv64", not(target_feature = "m")))]
+compile_error!("64-bit RISC-V needs the M extension (e.g. riscv64gc-unknown-linux-gnu)");
+
 // The 32-bit x86 model's baseline is i686 with SSE2 (see
 // `lean/VerifiedGarbage/TCB/X86/Isa.lean`): older CPUs' `mul` is not constant
 // time.

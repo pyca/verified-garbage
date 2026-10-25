@@ -49,7 +49,7 @@ pub(crate) mod arm;
 #[rustfmt::skip]
 pub(crate) mod powerpc64le;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
 #[rustfmt::skip]
 pub(crate) mod riscv64;
 

@@ -5,11 +5,12 @@ public import VerifiedGarbage.TCB.Code
 /-!
 # 64-bit RISC-V machine model
 
-**Trusted.** A model of the subset of RV64I used by our implementations.
+**Trusted.** A model of the subset of RV64IM used by our implementations.
 Each instruction's semantics here must agree with The RISC-V Instruction Set
 Manual, Volume I: Unprivileged Architecture (Version 20250508), chapters "RV32I
-Base Integer Instruction Set" and "RV64I Base Integer Instruction Set" (whose
-sections the docstrings cite by title); when adding an instruction, cite the
+Base Integer Instruction Set", "RV64I Base Integer Instruction Set" and "M
+Extension for Integer Multiplication and Division" (whose sections the
+docstrings cite by title); when adding an instruction, cite the
 section that defines it. The calling convention and linkage are the RISC-V
 ELF psABI's (RISC-V ABIs Specification, Version 1.0: "RISC-V Calling
 Conventions" and "RISC-V ELF Specification"; see `Target.lean`).
@@ -70,10 +71,17 @@ Modelling choices:
   attests data-independent latency for a list of instructions, which
   includes every computational instruction modelled here (`lui`, `addi`,
   `andi`, `ori`, `xori`, `slli`, `srli`, `srai`, `add`, `sub`, `sltu`,
-  `and`, `or`, `xor`, `addiw`, `slliw`, `srliw`, `sraiw`, `addw`, `subw`).
+  `and`, `or`, `xor`, `addiw`, `slliw`, `srliw`, `sraiw`, `addw`, `subw`,
+  and, of the M extension, `mul` and `mulhu`: "Multiplication is included;
+  division and remaindering excluded").
   As for the other ISAs, the leakage model assumes these take the same time
   whatever their operands; loads, stores and branches leak their addresses
   and conditions, which the taint analysis keeps public.
+* The multiplies are the M extension's `mul` and `mulhu`, the low and the
+  high 64 bits of the unsigned 128-bit product: `rustCfg` requires the
+  extension (`target_feature = "m"`, which every RV64 target Rust has,
+  RV64GC's among them, enables), so they are not CPU features to detect.
+  `mulh`, `mulhsu`, `mulw` and the divisions are not modelled.
 * Calls are `call` (the pseudoinstruction `auipc ra, …; jalr ra, …(ra)`,
   which the linker may relax to `jal ra, …`; psABI, "Procedure Calls")
   and returns `ret` (`jalr x0, 0(ra)`; RV32I, "Unconditional Jumps"). The
@@ -160,6 +168,10 @@ inductive Instr
   | subw (d n m : Reg)
   /-- `sltu rd, rs1, rs2`: 1 if `n < m` as unsigned numbers, else 0 -/
   | sltu (d n m : Reg)
+  /-- `mul rd, rs1, rs2`: the low 64 bits of the product -/
+  | mul (d n m : Reg)
+  /-- `mulhu rd, rs1, rs2`: the high 64 bits of the unsigned product -/
+  | mulhu (d n m : Reg)
   /-- `and`/`or`/`xor rd, rs1, rs2` -/
   | logic (op : LogicOp) (d n m : Reg)
   /-- `addi rd, rs1, imm`, `-2048 ≤ imm < 2048` (`mv rd, rs1` is `imm = 0`) -/
@@ -293,7 +305,14 @@ chapters (which name instructions in lower case):
   zero-extends the 32-bit value from memory for RV64I. lh and lhu are defined
   analogously for 16-bit values, as are lb and lbu for 8-bit values. The sd,
   sw, sh, and sb instructions store 64-bit, 32-bit, 16-bit, and 8-bit values
-  from the low bits of register rs2 to memory respectively". -/
+  from the low bits of register rs2 to memory respectively";
+* M, "Multiplication Operations": "mul performs an XLEN-bit×XLEN-bit
+  multiplication of rs1 by rs2 and places the lower XLEN bits in the
+  destination register. mulh, mulhu, and mulhsu perform the same
+  multiplication but return the upper XLEN bits of the full 2×XLEN-bit
+  product, for signed×signed, unsigned×unsigned, and rs1×unsigned rs2
+  multiplication" (the low bits are the same for signed and unsigned
+  operands). -/
 def exec : Instr → State → Option State
   | .add d n m, s => some (s.write d (s.gpr n + s.gpr m))
   | .sub d n m, s => some (s.write d (s.gpr n - s.gpr m))
@@ -302,6 +321,9 @@ def exec : Instr → State → Option State
   | .subw d n m, s =>
     some (s.write d (sext32 ((s.gpr n).setWidth 32 - (s.gpr m).setWidth 32)))
   | .sltu d n m, s => some (s.write d (if s.gpr n < s.gpr m then 1 else 0))
+  | .mul d n m, s => some (s.write d (s.gpr n * s.gpr m))
+  | .mulhu d n m, s =>
+    some (s.write d (BitVec.ofNat 64 ((s.gpr n).toNat * (s.gpr m).toNat / 2 ^ 64)))
   | .logic op d n m, s =>
     let a := s.gpr n
     let b := s.gpr m
@@ -446,8 +468,8 @@ abbrev isa : ISA where
   writesSp _ := false
   push := push
   pop := pop
-  -- Every modelled instruction is in RV64I, the base of
-  -- `riscv64gc-unknown-linux-gnu` (RV64GC) and of every other RV64 target.
+  -- Every modelled instruction is in RV64IM: RV64I, the base of every RV64
+  -- target, and the M extension, which `rustCfg` requires.
   requires _ := []
 
 end VG.RISCV64
