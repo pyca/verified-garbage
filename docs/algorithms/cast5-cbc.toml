@@ -3,4 +3,4 @@ family = "Ciphers"
 specs = ["Cast5", "Cbc"]
 modules = ["src/cast5_cbc.rs"]
 asm = ["cast5_cbc"]
-optimized = { x86_64 = "SSE2 scans with paired entries" }
+optimized = { x86_64 = "SSE2 scans selecting four entries at a time" }

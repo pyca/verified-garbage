@@ -3,4 +3,4 @@ family = "Ciphers"
 specs = ["Cast5", "Ofb"]
 modules = ["src/cast5_ofb.rs"]
 asm = ["cast5_ofb"]
-optimized = { x86_64 = "SSE2 scans with paired entries" }
+optimized = { x86_64 = "SSE2 scans selecting four entries at a time" }
