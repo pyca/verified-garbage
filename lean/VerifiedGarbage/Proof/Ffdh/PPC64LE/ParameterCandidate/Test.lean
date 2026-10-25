@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # An FFDH parameter candidate on PPC64LE: the test of a modulus
 
-`montPrep_mst`: `montPrep` after `phase` gives `MSt`, the state the
+`montPrep_mst`: `montPrepHi` after `phase` gives `MSt`, the state the
 witnesses need; `testCore_ok`: then `millerRabin` ends in `MrEnd`.
 -/
 
@@ -21,11 +21,20 @@ open VG.Proof.Bignum VG.Proof.Bignum.PPC64LE
 open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 open VG.Proof.MillerRabin.PPC64LE (Env arr RoundImpl)
 
-/-- `montPrep`: the Montgomery constants of the modulus `N` in array 0. -/
+/-- A modulus of `mb` bits lies above `2^(64 (w − 1))`, for its `w` words. -/
+theorem top_lt {mb N : Nat} (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (hN3 : 3 ≤ N) :
+    2 ^ (64 * (wOf mb - 1)) < N := by
+  have hv : N - 1 ≠ 0 := by omega
+  rw [Spec.RsaKeyGen.bitLength, if_neg hv] at hbl
+  have h1 : 2 ^ (mb - 1) ≤ N - 1 := (Nat.le_log2 hv).mp (by omega)
+  have h2 : 2 ^ (64 * (wOf mb - 1)) ≤ 2 ^ (mb - 1) := Nat.pow_le_pow_right (by decide) (by simp only [wOf]; omega)
+  omega
+
+/-- `montPrepHi`: the Montgomery constants of the modulus `N` in array 0. -/
 theorem montPrep_mst {p : PP} {mb N : Nat} {s : State} (h : St p s) (hp : Ph p mb s)
     (hm1 : 511 ≤ mb) (hm2 : mb ≤ p.bits) (hn : wv s.mem p.B (slot (wOf mb) 0) (wOf mb) = N)
-    (hodd : N % 2 = 1) (hN3 : 3 ≤ N) :
-    WP isa montPrep s fun t => MSt p mb N t ∧ Frm p.B (mutR p.n) s.mem t.mem ∧
+    (hodd : N % 2 = 1) (hN3 : 3 ≤ N) (hNt : 2 ^ (64 * (wOf mb - 1)) < N) :
+    WP isa montPrepHi s fun t => MSt p mb N t ∧ Frm p.B (mutR p.n) s.mem t.mem ∧
       word t.mem p.B 152 = word s.mem p.B 152 := by
   have hdn := h.dims.n
   have hb2 := h.dims.b2
@@ -41,7 +50,7 @@ theorem montPrep_mst {p : PP} {mb N : Nat} {s : State} (h : St p s) (hp : Ph p m
     simp only [saveBytes, PP.Z]; omega_arith
   have env : Env s p.B (8 * p.n) (wOf mb) := ⟨h.scr, hp.r10, hp.r29, hp.r11, h.r31, by omega_arith, hw128, by simp only [PP.Z] at hZ; omega_arith⟩
   have harr : arr s.mem p.B (wOf mb) 0 = N := by rw [arr, Pre.val32_eq_wv]; exact hn
-  refine WP.mono (montPrep_ok env harr hodd hN3) fun t ⟨⟨envt, nt, inv, _, _, r1, r9, r10, e, l, outs⟩, k⟩ => ?_
+  refine WP.mono (montPrepHi_ok env harr hodd hN3 hNt) fun t ⟨⟨envt, nt, inv, _, _, r1, r9, r10, e, l, outs⟩, k⟩ => ?_
   have fo : Frm p.B (mpRanges (wOf mb)) s.mem t.mem := outs
   have hf : Frm p.B (mutR p.n) s.mem t.mem := Frm.toMut fo fun r hr => by
     simp only [mpRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -68,9 +77,9 @@ theorem testCore_ok (R : RoundImpl) {p : PP} {mb N u : Nat} {s : State} (h : St 
     (hm1 : 511 ≤ mb) (hm2 : mb ≤ p.bits) (hn : wv s.mem p.B (slot (wOf mb) 0) (wOf mb) = N)
     (hbl : Spec.RsaKeyGen.bitLength (N - 1) = mb) (hodd : N % 2 = 1) (hN3 : 3 ≤ N)
     (hu : word s.mem p.B 152 = BitVec.ofNat 64 u) (hul : u ≤ p.r.length) :
-    WP isa (.seq montPrep (millerRabin R.name R.code)) s
+    WP isa (.seq montPrepHi (millerRabin R.name R.code)) s
       (MrEnd p mb N (VG.Proof.Ffdh.ParameterCandidate.checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u))) :=
-  WP.seq (WP.mono (montPrep_mst h hp hm1 hm2 hn hodd hN3) fun _ ⟨M, _, h152⟩ =>
+  WP.seq (WP.mono (montPrep_mst h hp hm1 hm2 hn hodd hN3 (top_lt hbl hN3)) fun _ ⟨M, _, h152⟩ =>
     millerRabin_ok R hbl M (h152.trans hu) hul)
 
 /-- Before a modulus's Montgomery constants: what `testCore_ok` asks. -/
@@ -87,7 +96,7 @@ structure TCPre (p : PP) (mb N u : Nat) (s : State) : Prop where
   ul : u ≤ p.r.length
 
 theorem TCPre.core (R : RoundImpl) {p : PP} {mb N u : Nat} {s : State} (h : TCPre p mb N u s) :
-    WP isa (.seq montPrep (millerRabin R.name R.code)) s
+    WP isa (.seq montPrepHi (millerRabin R.name R.code)) s
       (MrEnd p mb N (VG.Proof.Ffdh.ParameterCandidate.checkWitnesses N (Spec.Ffdh.primeChecks mb) (p.r.drop u))) :=
   testCore_ok R h.st h.ph h.mb1 h.mb2 h.n h.bl h.odd h.n3 h.used h.ul
 

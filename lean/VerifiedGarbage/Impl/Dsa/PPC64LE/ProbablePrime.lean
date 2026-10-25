@@ -30,7 +30,8 @@ Search.lean`). Those are the only bytes of `ws` the test changes.
 3. Trial division (`Impl/RsaKeyGen/PPC64LE/Trial.lean`): 2 if a prime
    divides `c`.
 4. Montgomery arithmetic modulo `c` and Miller–Rabin's exponent
-   (`Search.montPrep`), and the blinded Miller–Rabin loop
+   (`Search.montPrepHi`, or `Search.montPrep` for 160 bits, whose top word
+   is zero), and the blinded Miller–Rabin loop
    (`Impl/MillerRabin/PPC64LE/Blinded.lean`): 0, 1 or 2.
 5. The registers back (`ws` is `r31 − keyOff`), and `used := ` the octets
    read, unless the tape ran out.
@@ -147,15 +148,23 @@ def exit : Prog isa :=
   .seq (.block ([ldh .r3 hStat, ldh .r5 hUsed, .subi .r9 .r31 keyOff] ++ restore))
     (.ite (.zero .d .r3) (.block []) (.block [.store .d .r5 .r7 0]))
 
+/-- Whether a candidate of `bits` bits lies above `2^(64 (w - 1))`, as
+`montPrepHi` needs: every size but 160 (whose top word is zero). -/
+def hi (bits : Nat) : Bool := decide (64 * (words bits - 1) < bits - 1)
+
+/-- Montgomery arithmetic modulo `c`: `montPrepHi` when `c`'s top word is not
+zero (`hi`), else `montPrep`. -/
+def prep (bits : Nat) : Prog isa := if hi bits then montPrepHi else montPrep
+
 /-- Trial division, then 2 if a prime divides `c`, else the Miller–Rabin
 tests. -/
-def body (name : String) (roundCode : Prog isa) : Prog isa :=
+def body (bits : Nat) (name : String) (roundCode : Prog isa) : Prog isa :=
   .seq (RsaKeyGen.PPC64LE.Trial.trial hCnt)
-    (.ite (.zero .d .r22) (.seq montPrep (MillerRabin.PPC64LE.Blinded.millerRabin name roundCode))
+    (.ite (.zero .d .r22) (.seq (prep bits) (MillerRabin.PPC64LE.Blinded.millerRabin name roundCode))
       (.block [.li .r3 2, sth .r3 hStat]))
 
 /-- `vg_dsa_probable_prime_{bits}`, calling the round `name`. -/
 def code (bits : Nat) (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (.block (save ++ setup bits)) (.seq (loadC bits) (.seq (body name roundCode) exit))
+  .seq (.block (save ++ setup bits)) (.seq (loadC bits) (.seq (body bits name roundCode) exit))
 
 end VG.Impl.Dsa.PPC64LE.ProbablePrime

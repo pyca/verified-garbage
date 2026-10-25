@@ -13,7 +13,9 @@ def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
   Spec.Ffdh.parameterCandidateApi.artifact PPC64LE.target {
     suffix := v.suffix
     notes := ["The candidate's shape, congruence and trial division use the verified bignum \
-        code shared with the prime search. Both primes use the shared `vg_miller_rabin_round` \
+        code shared with the prime search. Each prime's `R² mod N` takes `64 + w` modular \
+        doublings from `2^(64 (w − 1))` and six Montgomery squares (`N` has exactly its \
+        bit length). Both primes use the shared `vg_miller_rabin_round` \
         with fixed four-bit windows, with 64 or 128 witnesses for each, every witness drawn from \
         `rand`. Every value is public: branches follow the tape, the shape and the witnesses' \
         results. The nonvolatile registers it uses are saved at the end of `scratch`; the round \

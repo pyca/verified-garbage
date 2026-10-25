@@ -31,7 +31,7 @@ AArch64's (`Impl/Ffdh/AArch64/ParameterCandidate.lean`), in the steps of
 3. For q and then p, each with its own word count `w = ⌈mb / 64⌉` (`mb` its
    bit length: `bits − 1` or `bits`): the header (`w`, the arrays'
    addresses and size, and `−N⁻¹ mod 2⁶⁴` by Newton's iteration), `R² mod N`
-   (`Precompute.r2`), `R mod N` into array 9 and `N − R mod N` into array 10,
+   (`Precompute.r2Hi`: N lies above `2^(64 (w − 1))`), `R mod N` into array 9 and `N − R mod N` into array 10,
    Miller–Rabin's exponent (`expSetup`); then witnesses: each the next
    `⌈mb / 8⌉` octets of `rand`, cut to `mb` bits, rejected unless `x ≥ 2` and
    `(x | 1) < N`, else in Montgomery form in array 5, and the shared round
@@ -156,7 +156,7 @@ def halveQ : Prog isa :=
 
 /-- The test of q (in array 0) or of p (loaded again). -/
 def test (q : Bool) (name : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (phase q) (.seq (if q then .block [] else shapeP) (.seq montPrep (millerRabin name roundCode)))
+  .seq (phase q) (.seq (if q then .block [] else shapeP) (.seq montPrepHi (millerRabin name roundCode)))
 
 /-! ## `vg_ffdh_parameter_candidate` -/
 

@@ -132,9 +132,9 @@ def mrOf (d : TD) : MrD :=
   ⟨d.q, d.mb, d.N, checkWitnesses d.N (Spec.Ffdh.primeChecks d.mb) (d.q.r.drop d.u), 0, d.u⟩
 
 theorem testCore_ct (R : RoundImpl) :
-    RelCT isa (Two TC) (.seq montPrep (millerRabin R.name R.code)) (Two ME) :=
+    RelCT isa (Two TC) (.seq montPrepHi (millerRabin R.name R.code)) (Two ME) :=
   RelCT.seq (two_post (two_taint _ pins_TC (by taint_decide)) (Ψ := fun d => MI0 (mrOf d)) fun _ _ ⟨sv, toc, h⟩ =>
-      WP.mono (montPrep_mst h.st h.ph h.mb1 h.mb2 h.n h.odd h.n3) fun _ ⟨M, _, h152⟩ =>
+      WP.mono (montPrep_mst h.st h.ph h.mb1 h.mb2 h.n h.odd h.n3 (top_lt h.bl h.n3)) fun _ ⟨M, _, h152⟩ =>
         ⟨⟨sv, toc, M, h152.trans h.used⟩, h.ul, rfl, rfl, h.bl⟩)
     (two_map mrOf (fun _ _ h => h) (millerRabin_ct R))
 

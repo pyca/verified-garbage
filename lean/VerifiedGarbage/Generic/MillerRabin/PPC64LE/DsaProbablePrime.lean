@@ -22,7 +22,9 @@ def helper (v : RoundImpl) (bits : Nat)
     notes := ["The candidate's big-endian octets are loaded into RSA's Montgomery working space of at \
       least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial \
       division by the shared table of 32-bit primes and their inverses (Montgomery reduction by \
-      2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws \
+      2^32 of the candidate's 32-bit digits) returns at the first divisor. `R² mod c` takes \
+      `64 + w` modular doublings from `2^(64 (w − 1))` and six Montgomery squares, but for 160 \
+      bits, whose top word is zero, `128 w` doublings from 1. The blinded loop draws \
       each witness from the tape, cut to the candidate's width, forces a non-uniform draw into \
       range rather than rejecting it, and calls the shared Miller–Rabin round."]
     code := Impl.Dsa.PPC64LE.ProbablePrime.code bits v.name v.code

@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.Prime.Load
 `code_ct`: two runs from states with the same public data `PD` (the
 arguments, the stack pointer, the table's address, the candidate and the
 tape: the contract's public data) leak the same trace. Each piece is the
-taint analysis's (the entry, the candidate's load, `montPrep`, the blocks
+taint analysis's (the entry, the candidate's load, `prep`, the blocks
 that store the status), or relates the runs by correctness: trial division
 (`trial_ct`), the blinded loop (`millerRabin_ct`), and the branches on trial
 division's result and on the status, which are functions of the candidate
@@ -38,7 +38,7 @@ namespace VG.Proof.Dsa.PPC64LE.Prime
 open VG VG.PPC64LE VG.Proof.Bignum.PPC64LE
 open VG.Impl.Dsa.PPC64LE.ProbablePrime
 open VG.Impl.RsaKeyGen
-open VG.Impl.MillerRabin.PPC64LE.Search (ldh sth hStat hUsed montPrep)
+open VG.Impl.MillerRabin.PPC64LE.Search (ldh sth hStat hUsed)
 open VG.Proof.Bignum (word off slot)
 open VG.Impl.Bignum (hdrBytes)
 open VG.Proof.MillerRabin.PPC64LE (Env arr RoundImpl)
@@ -78,7 +78,7 @@ def E2t (bits : Nat) (d : PD) (u : State) : Prop :=
       u.mem = s.mem) ∧ (∀ r, r ∉ trialRegs → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp ∧
       u.syms = s.syms
 
-/-- After `montPrep`. -/
+/-- After `prep`. -/
 def E2m (bits : Nat) (d : PD) (v : State) : Prop :=
   ∃ σ, P0 bits d σ ∧
     BCtx v (wsB σ) (keyWords bits) (words bits) (cand bits σ) (σ.gpr .r5) (σ.gpr .r6).toNat
@@ -126,7 +126,7 @@ theorem pins_env' {α : Type} {Φ : α → State → Prop} (B : α → Addr) (L 
 
 /-- The body. -/
 theorem body_ct (Ri : RoundImpl) (bits : Nat) :
-    RelCT isa (Two (E2 bits)) (body Ri.name Ri.code) fun _ _ => True := by
+    RelCT isa (Two (E2 bits)) (body bits Ri.name Ri.code) fun _ _ => True := by
   have pE : Pins (E2 bits) [.r10, .r11, .r29, .r31] :=
     pins_env' dB (fun _ => keyWords bits) (fun _ => words bits) PD.sp fun _ _ h => h.env
   have pT : Pins (E2t bits) [.r10, .r11, .r29, .r31] :=
@@ -145,7 +145,8 @@ theorem body_ct (Ri : RoundImpl) (bits : Nat) :
   refine two_ite (fun d u₁ u₂ ⟨σ₁, s₁, p₁, _, ⟨a22, _⟩, _⟩ ⟨σ₂, s₂, p₂, _, ⟨b22, _⟩, _⟩ => ?_) ?_ ?_
   · rw [VG.PPC64LE.eval_zero, VG.PPC64LE.eval_zero, a22, b22, p₁.2.2.2.2.2.2.2.2.2.2.1,
       p₂.2.2.2.2.2.2.2.2.2.2.1]
-  · refine RelCT.seq (two_post (Ψ := E2m bits) (two_taint _ (Pins.of_imp pT fun _ _ h => h.1) (by taint_decide))
+  · refine RelCT.seq (two_post (Ψ := E2m bits) (two_taint _ (Pins.of_imp pT fun _ _ h => h.1)
+      (by unfold prep; split <;> taint_decide))
       fun d u ⟨h, _⟩ => ?_) ?_
     · obtain ⟨σ, p, b⟩ := h.bin
       exact WP.mono (montPrep_ctx b) fun v ⟨bc, hu, ht, vsp, _⟩ => ⟨σ, p, bc, hu, ht, vsp⟩
