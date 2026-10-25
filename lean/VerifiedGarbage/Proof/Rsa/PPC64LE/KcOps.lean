@@ -134,16 +134,17 @@ theorem cnt33_ok (u : State) :
   refine WP.keep _ ?_ (by decide)
   prun [cnt33]
 
-theorem cntW_ok {u : State} {B : Addr} {Z w N : Nat} (h : Ws u B Z w N) :
-    WP isa (.block cntW) u fun u' =>
-      (u'.gpr .r4 = BitVec.ofNat 64 (32 * w) ∧ u'.mem = u.mem) ∧ Keep [.r4] u u' := by
-  have wl := h.wle
+/-- `8 a` steps, from `q_len = a` in `r21`. -/
+theorem cntQ_ok {u : State} {a : Nat} (h : u.gpr .r21 = BitVec.ofNat 64 a) (ha : a < 2 ^ 61) :
+    WP isa (.block cntQ) u fun u' =>
+      (u'.gpr .r4 = BitVec.ofNat 64 (8 * a) ∧ u'.mem = u.mem) ∧ Keep [.r4] u u' := by
   refine WP.keep _ ?_ (by decide)
-  have e : BitVec.ofNat 64 w <<< 5 = BitVec.ofNat 64 (32 * w) := by
+  have := ha
+  have e : BitVec.ofNat 64 a <<< 3 = BitVec.ofNat 64 (8 * a) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
     omega_arith
-  prun [cntW, h.r29, e]
+  prun [cntQ, h, e]
 
 /-- `mulA y x m cnt`: `[aA] := ([y] mod 2^k) [x] mod [m]`, `k` the count `cnt` sets. -/
 theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
@@ -151,7 +152,7 @@ theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (hy : y ∈ live) (hx : x ∈ live) (hm : m ∈ live) (hz : aZ ∈ live) (hA0 : A aZ = 0)
     (hmi : MulIdx nArr aZ aY aX aA m aT) (hxY : x ≠ aY)
     (hfree : ∀ j ∈ live, j = aA ∨ j ∉ mulArrs aY aX aA aT) (hk : 0 < k) (hk' : k < 2 ^ 64)
-    (hcnt : ∀ u : State, Ws u g.B g.Z g.w nArr → WP isa (.block cnt) u fun u' =>
+    (hcnt : ∀ u : State, Ws u g.B g.Z g.w nArr → Keep bodyRegs s0 u → WP isa (.block cnt) u fun u' =>
       (u'.gpr .r4 = BitVec.ofNat 64 k ∧ u'.mem = u.mem) ∧ Keep [.r4] u u') :
     WP isa (seqs (mulA y x m cnt)) s fun t => ∃ R,
       (A x < A m → 2 * A m ≤ 2 ^ (32 * g.w) → R = A y % 2 ^ k * A x % A m) ∧
@@ -177,7 +178,7 @@ theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   refine WP.mono (h2.copy_ok (o := aA) (a := aZ) (by decide)
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hz)) (by decide)) fun t3 h3 => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (hcnt t3 h3.ws) fun t4 ⟨⟨c4, m4⟩, u4⟩ => ?_
+  refine WP.mono (hcnt t3 h3.ws h3.regs) fun t4 ⟨⟨c4, m4⟩, u4⟩ => ?_
   have k4 : KeyWorkspace.Keep g.B g.w [] [] t3.mem t4.mem := by
     rw [m4]; exact KeyWorkspace.Keep.refl _ _ _ _ _
   have h4 := h3.next (h3.ws.of_keep u4) k4 (by simp) (by simp) u4 (by decide)

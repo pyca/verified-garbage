@@ -164,7 +164,9 @@ theorem ck_valid {s0 s : State} (h0 : ckP.pre s0) (hb : KBase (ckB s0) (ckZ s0) 
   rw [wp_seqs_append (by simp [start]) (by simp [crtChecks, eqA])]
   refine WP.mono (start_ok (g := g) (v := v) l7.ws a7 (l7.top _ (by decide))) fun t8 ⟨X₁, X₂, hX, g8⟩ => ?_
   rw [wp_seqs_append (by simp [crtChecks, eqA]) (by simp [dChecks, ltA])]
-  refine WP.mono (crtChecks_ok g8) fun t9 ⟨R₁, R₂, R₃, hR₁, hR₂, hR₃, g9⟩ => ?_
+  have wl : (kK s0 + 3) / 4 ≤ 1024 := g8.ws.wle
+  refine WP.mono (crtChecks_ok g8 ⟨(PPC64LE.stackArg s0 1).toNat, q1, by omega_arith, lt_pow8_of_len _ (len_bytes _ _ _),
+    ((R6.of_keep k7).r21).trans (CrtValues.ofNat_toNat64 _)⟩) fun t9 ⟨R₁, R₂, R₃, hR₁, hR₂, hR₃, g9⟩ => ?_
   rw [wp_seqs_append (by simp [dChecks, ltA]) (by simp)]
   refine WP.mono (dChecks_ok g9) fun t10 ⟨Y₁, Y₂, hY₁, hY₂, A, live, g10⟩ => ?_
   rw [show seqs [.block ret] = .block ret from rfl]

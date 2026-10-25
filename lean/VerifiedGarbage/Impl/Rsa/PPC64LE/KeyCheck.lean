@@ -27,8 +27,8 @@ header's `sMask`, which is returned:
   clearing their low bits gives `p - 1` and `q - 1`.
 * `dP < p - 1`, `dQ < q - 1` and `qInv < p`: the borrow of a subtraction.
 * `e dP ≡ 1 (mod p - 1)`, `e dQ ≡ 1 (mod q - 1)`: `mulMod` over the 33 bits
-  of `e`, compared with 1; `q qInv ≡ 1 (mod p)`: `mulMod` over the `32 w`
-  bits of `q`.
+  of `e`, compared with 1; `q qInv ≡ 1 (mod p)`: `mulMod` over the
+  `8 q_len` bits of `q`.
 
 `vg_rsa_check_key` then checks `d < n` (a borrow), and `d ≡ 1/e` modulo
 `p - 1` and `q - 1` by comparing `d mod (p - 1)` and `d mod (q - 1)` (two
@@ -138,8 +138,8 @@ def mulA (y x m : Nat) (cnt : List Instr) : List (Prog isa) :=
 
 /-- `33` steps, for `e < 2^33`. -/
 def cnt33 : List Instr := [.li .r4 33]
-/-- `32 w` steps. -/
-def cntW : List Instr := [.lsl .r4 .r29 5]
+/-- `8 q_len` steps, for `q < 2^(8 q_len)`. -/
+def cntQ : List Instr := [.lsl .r4 .r21 3]
 
 /-- `1`, the mask `p` odd, and `n` divided by `p`. -/
 def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP)] ++ divA aN aP
@@ -150,7 +150,7 @@ def crtChecks : List (Prog isa) := eqA aVQ aQ ++ eqA aVR aZ ++
   [copy aM1 aP, .block (clrLow aM1), copy aM2 aQ, .block (clrLow aM2)] ++
   ltA aDP aM1 ++ mulA aE aDP aM1 cnt33 ++ eqA aA aOne ++
   ltA aDQ aM2 ++ mulA aE aDQ aM2 cnt33 ++ eqA aA aOne ++
-  ltA aQI aP ++ mulA aQ aQI aP cntW ++ eqA aA aOne
+  ltA aQI aP ++ mulA aQ aQI aP cntQ ++ eqA aA aOne
 
 /-- The checks of `d`: `d < n`, `d mod (p - 1) = dP` and `d mod (q - 1) = dQ`. -/
 def dChecks : List (Prog isa) :=
