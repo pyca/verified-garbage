@@ -18,19 +18,15 @@
 ///
 /// Every module whose constructor fails only on the length of the key
 /// returns this one type.
-// No such module is built for RISC-V yet.
-#[cfg(not(target_arch = "riscv64"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct InvalidKeyLength;
 
-#[cfg(not(target_arch = "riscv64"))]
 impl core::fmt::Display for InvalidKeyLength {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("invalid key length")
     }
 }
 
-#[cfg(not(target_arch = "riscv64"))]
 impl core::error::Error for InvalidKeyLength {}
 
 /// Implements `core::fmt::Display` for the error enum `$ty`, writing `$msg`
@@ -67,6 +63,9 @@ mod tests {
     #[test]
     fn errors_display() {
         check!(
+            super::InvalidKeyLength,
+            crate::aes_cbc::Error::IncompleteBlock,
+            crate::aes_cbc::Error::InvalidKeyLength,
             crate::aes_ecb::Error::IncompleteBlock,
             crate::aes_ecb::Error::InvalidKeyLength,
             crate::rc4::Error::InvalidKeyLength,
