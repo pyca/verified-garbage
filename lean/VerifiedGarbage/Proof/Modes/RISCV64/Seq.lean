@@ -87,26 +87,32 @@ theorem total_ge (hL : Layout c) : coreSlot + 1 ≤ c.total := by
   have := hL.buf_ge; have := buf_le4 hL; have := hL.bw
   simp only [coreSlot] at *; omega_arith
 
-theorem fb_toNat {s₀ : State} (hp : SeqPre c M s₀) : (Fb s₀ c).toNat = s₀.sp.toNat - 8 * c.total := by
-  have := hp.spFit
+theorem fb_toNat' {s₀ : State} (hfit : 8 * c.total ≤ s₀.sp.toNat) :
+    (Fb s₀ c).toNat = s₀.sp.toNat - 8 * c.total := by
   rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (by omega_arith)]
 
-/-- The frame, from inside `bigFrame`. -/
-theorem scrIn_of {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.total) s₀ t) :
-    ScrIn t (Fb s₀ c) c.total := by
-  have hf := fb_toNat hp
-  have he := hp.layout.even
-  have hs := hp.spAl
-  have hsp := hp.spFit
+theorem fb_toNat {s₀ : State} (hp : SeqPre c M s₀) : (Fb s₀ c).toNat = s₀.sp.toNat - 8 * c.total :=
+  fb_toNat' hp.spFit
+
+/-- The frame, from inside `bigFrame`, for any function in the modes' frame. -/
+theorem scrIn_of' {s₀ t : State} (hs : s₀.sp.toNat % 16 = 0) (hsp : 8 * c.total ≤ s₀.sp.toNat)
+    (hL : Layout c) (ht : FrameAt (8 * c.total) s₀ t) : ScrIn t (Fb s₀ c) c.total := by
+  have hf := fb_toNat' hsp
+  have he := hL.even
   have := s₀.sp.isLt
-  have hg := total_ge hp.layout
+  have hg := total_ge hL
   refine ⟨by rw [hf]; omega_arith, by rw [hf]; omega_arith, ?_, ?_⟩
   · have e : Fb s₀ c = t.sp := ht.sp.symm
     rw [e]; exact ht.low (by simp only [coreSlot] at hg; omega_arith)
   · intro o w h0 ho hc
     have e : Fb s₀ c = t.sp := ht.sp.symm
     rw [e]; exact ht.inFrame o w h0 ho hc
+
+/-- The frame, from inside `bigFrame`. -/
+theorem scrIn_of {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.total) s₀ t) :
+    ScrIn t (Fb s₀ c) c.total :=
+  scrIn_of' hp.spAl hp.spFit hp.layout ht
 
 /-- A slot of the mode, in its lowest region. -/
 theorem slot_low {s : State} {B : Addr} {k : Nat} (hS : ScrIn s B c.total) (hL : Layout c) (hk : k < coreSlot) :
@@ -223,11 +229,24 @@ structure Entered (c : Core) (s₀ t s : State) : Prop where
 /-- The registers the entry writes are not kept, but for `s1`–`s4`. -/
 theorem kept_ne_entry : ∀ r ∈ kept, r ≠ .t0 ∧ r ≠ .t1 ∧ r ≠ .t2 := by decide
 
-theorem entry_wp {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.total) s₀ t) :
-    WP isa (.block (Core.entry ++ c.ivIn)) t (Entered c s₀ t) := by
-  have hL := hp.layout
-  have hbw := bw_le hL
-  have hS := scrIn_of hp ht
+/-- After `Core.entry`, from `t` in the frame: the frame's base in `sb`,
+the second and fourth arguments in `s1`, `s2` and `s3`, the caller's
+`s1`–`s4` in their slots, and the rest as on entry but for `t0`. -/
+structure Saves (c : Core) (s₀ t s : State) : Prop where
+  b : s.gpr sb = Fb s₀ c
+  s1 : s.gpr .s1 = s₀.gpr .a1
+  s2 : s.gpr .s2 = s₀.gpr .a1
+  s3 : s.gpr .s3 = s₀.gpr .a3
+  other : ∀ r, r ≠ .t0 → r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = t.wr
+  saved : ∀ i < 4, s.mem.readW (slotA (Fb s₀ c) (Core.savedSlot i)) 64 = s₀.gpr (Core.savedRegs.getD i .s1)
+  frame : Frame [modeR (Fb s₀ c)] s₀.mem s.mem
+
+/-- The caller's `s1`–`s4` saved, for any function in the modes' frame. -/
+theorem saves_wp {s₀ t : State} (hL : Layout c) (hS : ScrIn t (Fb s₀ c) c.total)
+    (ht : FrameAt (8 * c.total) s₀ t) :
+    WP isa (.block Core.entry) t (Saves c s₀ t) := by
   have hg := total_ge hL
   have h6 : coreSlot = 6 := rfl
   have hsv : ∀ i < 4, Core.savedSlot i < coreSlot := fun i hi => by slot_omega
@@ -236,7 +255,7 @@ theorem entry_wp {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.to
   have hw : ∀ i < 4, InRegions t.wr (slotA (Fb s₀ c) (Core.savedSlot i)) 8 := fun i hi =>
     slot_low hS hL (hsv i hi)
   have g₀ : ∀ r, t.gpr r = s₀.gpr r := fun r => by rw [ht.gpr]
-  simp only [Core.entry, Core.ivIn, range4_map, Core.savedRegs, List.getD_cons_zero, List.getD_cons_succ,
+  simp only [Core.entry, range4_map, Core.savedRegs, List.getD_cons_zero, List.getD_cons_succ,
     List.cons_append, List.nil_append, mov]
   refine wp_addSp (imm := 0) (by decide) fun s₁ u₁ => ?_
   have b₁ : s₁.gpr .t0 = Fb s₀ c := by rw [u₁.gpr, BitVec.add_zero, ht.sp]
@@ -255,26 +274,8 @@ theorem entry_wp {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.to
       (s₀.gpr .s3)).writeW (slotA (Fb s₀ c) (Core.savedSlot 3)) (s₀.gpr .s4) := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₄.gpr, u₃.gpr, u₂.gpr, ht.mem,
       v₁ .s1 (by decide), v₁ .s2 (by decide), v₁ .s3 (by decide), v₁ .s4 (by decide)]
-  refine wp_mv fun s₆ u₆ => wp_mv fun s₇ u₇ => wp_mv fun s₈ u₈ => wp_mv fun s₉ u₉ => ?_
+  refine wp_mv fun s₆ u₆ => wp_mv fun s₇ u₇ => wp_mv fun s₈ u₈ => wp_mv fun s₉ u₉ => WP.block_nil ?_
   have m₉ : s₉.mem = s₅.mem := by rw [u₉.mem, u₈.mem, u₇.mem, u₆.mem]
-  have rd₉ : s₉.rd = s₀.rd := by
-    rw [u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, ht.rd]
-  have wr₉ : s₉.wr = t.wr := by rw [u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  have b₉ : s₉.gpr sb = Fb s₀ c := by
-    rw [show sb = .s4 from rfl] at u₆ ⊢
-    rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, g₅, b₁]
-  have s2₉ : s₉.gpr .s2 = P s₀ := by
-    rw [u₉.other _ (by decide), u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), g₅, v₁ _ (by decide)]
-  have a2₉ : s₉.gpr .a2 = Dp s₀ := by
-    rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide),
-      g₅, v₁ _ (by decide)]
-  have s1₉ : s₉.gpr .s1 = P s₀ := by
-    rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.other _ (by decide), g₅, v₁ _ (by decide)]
-  have s3₉ : s₉.gpr .s3 = s₀.gpr .a3 := by
-    rw [u₉.gpr, u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), g₅, v₁ _ (by decide)]
-  have keep₉ : ∀ r ∈ kept, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → s₉.gpr r = s₀.gpr r :=
-    fun r hr h1 h2 h3 h4 => by
-      rw [u₉.other r h3, u₈.other r h2, u₇.other r h1, u₆.other r h4, g₅, v₁ r (kept_ne_entry r hr).1]
   -- The saved values.
   have sv₅ : ∀ i < 4, s₅.mem.readW (slotA (Fb s₀ c) (Core.savedSlot i)) 64 =
       s₀.gpr (Core.savedRegs.getD i .s1) := by
@@ -295,31 +296,55 @@ theorem entry_wp {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.to
     exact ((((Frame.refl _ _).writeW List.mem_cons_self _ (slot_mode (hsv 0 (by decide)))).writeW
       List.mem_cons_self _ (slot_mode (hsv 1 (by decide)))).writeW List.mem_cons_self _
       (slot_mode (hsv 2 (by decide)))).writeW List.mem_cons_self _ (slot_mode (hsv 3 (by decide)))
+  refine ⟨?_, ?_, ?_, ?_, fun r h0 h1 h2 h3 h4 => ?_, ?_, ?_, fun i hi => by rw [m₉]; exact sv₅ i hi,
+    by rw [m₉]; exact f₅⟩
+  · rw [show sb = .s4 from rfl] at u₆ ⊢
+    rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, g₅, b₁]
+  · rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.other _ (by decide), g₅, v₁ _ (by decide)]
+  · rw [u₉.other _ (by decide), u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), g₅, v₁ _ (by decide)]
+  · rw [u₉.gpr, u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), g₅, v₁ _ (by decide)]
+  · rw [u₉.other r h3, u₈.other r h2, u₇.other r h1, u₆.other r h4, g₅, v₁ r h0]
+  · rw [u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, ht.rd]
+  · rw [u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
+
+theorem entry_wp {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.total) s₀ t) :
+    WP isa (.block (Core.entry ++ c.ivIn)) t (Entered c s₀ t) := by
+  have hL := hp.layout
+  have hbw := bw_le hL
+  have hS := scrIn_of hp ht
+  have hg := total_ge hL
+  have h6 : coreSlot = 6 := rfl
+  rw [WP.block_append_iff]
+  refine WP.mono (saves_wp hL hS ht) fun s₉ h₉ => ?_
+  have hsv : ∀ i < 4, Core.savedSlot i < coreSlot := fun i hi => by slot_omega
+  have keep₉ : ∀ r ∈ kept, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → s₉.gpr r = s₀.gpr r :=
+    fun r hr h1 h2 h3 h4 => h₉.other r (kept_ne_entry r hr).1 h1 h2 h3 h4
+  simp only [Core.ivIn, mov]
   -- The IV to the chaining value.
-  have hS₉ : ScrIn s₉ (Fb s₀ c) c.total := hS.congr wr₉
+  have hS₉ : ScrIn s₉ (Fb s₀ c) c.total := hS.congr h₉.wr
   refine opsCode_wp c (ws := [.chn]) (copyBlk_ok (List.mem_singleton_self _) fun _ => rfl)
-    (ivAreasOk hp hS₉ b₉ s2₉ (fun l hl e => by simp at hl; subst hl; cases e)
-      (by rw [rd₉, wr₉]; obtain ⟨ws, hws⟩ := ht.wr; rw [hws]
+    (ivAreasOk hp hS₉ h₉.b h₉.s2 (fun l hl e => by simp at hl; subst hl; cases e)
+      (by rw [h₉.rd, h₉.wr]; obtain ⟨ws, hws⟩ := ht.wr; rw [hws]
           rcases List.mem_append.mp hp.ivRd with h | h
           · exact List.mem_append_left _ h
           · exact List.mem_append_right _ (List.mem_append_right _ h)))
     fun s₁₁ a₁₁ f₁₁ g₁₁ rd₁₁ wr₁₁ => wp_mv fun s₁₂ u₁₂ => WP.block_nil ?_
-  rw [m₉] at a₁₁ f₁₁
   have chnOnly : ∀ {R : Region}, R.Disjoint (chnRegion c (Fb s₀ c)) →
       ∀ r ∈ areaRegions (fun _ => 4 * c.bw) (ivAreas c (P s₀) (Fb s₀ c)) [.chn], R.Disjoint r := fun h r hr => by
     simp only [areaRegions, ivAreas, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h
   have g : ∀ r, r ≠ .t0 → r ≠ .t1 → r ≠ .t2 → r ≠ .s2 → s₁₂.gpr r = s₉.gpr r := fun r h0 h1 h2 hs => by
     rw [u₁₂.other r hs, g₁₁ r h0 h1 h2]
-  refine ⟨by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact b₉,
-    by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact s1₉,
-    by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact s3₉,
-    by rw [u₁₂.gpr, g₁₁ _ (by decide) (by decide) (by decide), a2₉],
+  refine ⟨by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact h₉.b,
+    by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact h₉.s1,
+    by rw [g _ (by decide) (by decide) (by decide) (by decide)]; exact h₉.s3,
+    by rw [u₁₂.gpr, g₁₁ _ (by decide) (by decide) (by decide),
+      h₉.other _ (by decide) (by decide) (by decide) (by decide) (by decide)],
     fun r hr h1 h2 h3 h4 => by
       rw [g r (kept_ne_entry r hr).1 (kept_ne_entry r hr).2.1 (kept_ne_entry r hr).2.2 h2,
         keep₉ r hr h1 h2 h3 h4],
-    by rw [u₁₂.rd, rd₁₁, rd₉], by rw [u₁₂.wr, wr₁₁, wr₉], fun i hi => ?_, ?_, ?_⟩
-  · rw [u₁₂.mem, ← sv₅ i hi]
+    by rw [u₁₂.rd, rd₁₁, h₉.rd], by rw [u₁₂.wr, wr₁₁, h₉.wr], fun i hi => ?_, ?_, ?_⟩
+  · rw [u₁₂.mem, ← h₉.saved i hi]
     exact f₁₁.readW (Region.contains_self _ _) (chnOnly
       (VG.Offset.disjoint _ (.inl (by slot_omega)) (by slot_omega) (by slot_omega))) (by decide)
   · refine List.map_congr_left fun i hi => ?_
@@ -327,18 +352,18 @@ theorem entry_wp {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.to
     have e := a₁₁ .chn i hi
     simp only [cont, ivAreas] at e
     rw [u₁₂.mem, e, copyBlk_apply (by decide), ite_eq_left ⟨rfl, hi⟩]
-    exact f₅.bytes (R := ivR s₀ c) (fun r hr => by
+    exact h₉.frame.bytes (R := ivR s₀ c) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.ivScr.sub_right (Region.sub_prefix (by omega_arith))) (by show 4 * c.bw ≤ 2 ^ 64; omega_arith) hi
   · rw [u₁₂.mem]
-    refine f₅.trans (f₁₁.sub fun r hr => ?_)
+    refine h₉.frame.trans (f₁₁.sub fun r hr => ?_)
     simp only [areaRegions, ivAreas, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr
     exact ⟨_, List.mem_singleton_self _, VG.Offset.sub_base _ (by slot_omega)⟩
 
 /-! ## The exit -/
 
-theorem restore_wp {s₀ u : State} (hp : SeqPre c M s₀) (hS : ScrIn u (Fb s₀ c) c.total)
+theorem restore_wp {s₀ u : State} (hL : Layout c) (hS : ScrIn u (Fb s₀ c) c.total)
     (hb : u.gpr sb = Fb s₀ c)
     (hsv : ∀ i < 4, u.mem.readW (slotA (Fb s₀ c) (Core.savedSlot i)) 64 = s₀.gpr (Core.savedRegs.getD i .s1))
     {is : List Instr} {Q : State → Prop}
@@ -347,7 +372,6 @@ theorem restore_wp {s₀ u : State} (hp : SeqPre c M s₀) (hS : ScrIn u (Fb s�
       (∀ r, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → r ≠ .t3 → u'.gpr r = u.gpr r) →
       u'.mem = u.mem → u'.rd = u.rd → u'.wr = u.wr → WP isa (.block is) u' Q) :
     WP isa (.block (Core.restore ++ is)) u Q := by
-  have hL := hp.layout
   have hg := total_ge hL
   have h6 : coreSlot = 6 := rfl
   have hsv' : ∀ i < 4, Core.savedSlot i < coreSlot := fun i hi => by slot_omega
@@ -554,7 +578,7 @@ theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} 
   apply WP.seq
   cases hiv : M.ivOut
   · rw [show (if false = true then c.ivBack else []) = [] by simp, List.nil_append, ← List.append_nil Core.restore]
-    refine restore_wp hp hS₄ h₄.b sv₄ fun u g1 g2 g3 g4 g3' g m rdu wru => WP.block_nil ?_
+    refine restore_wp hL hS₄ h₄.b sv₄ fun u g1 g2 g3 g4 g3' g m rdu wru => WP.block_nil ?_
     refine WP.mono (wipe_wp hL (hS₄.congr wru) g3') fun s' ⟨z, f, g', rd', wr'⟩ =>
       ⟨abi s' (by rw [g' _ (by decide) (by decide) (by decide), g1])
         (by rw [g' _ (by decide) (by decide) (by decide), g2]) (by rw [g' _ (by decide) (by decide) (by decide), g3])
@@ -591,7 +615,7 @@ theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} 
       rw [g₆ r h0 h1 h2, u₅.other r h3]
     have b₆ : s₆.gpr sb = Fb s₀ c := by
       rw [g₆' _ (by decide) (by decide) (by decide) (by decide)]; exact h₄.b
-    refine restore_wp hp (hS₄.congr (by rw [wr₆, u₅.wr])) b₆ sv₆ fun u g1 g2 g3 g4 g3' g m rdu wru => WP.block_nil ?_
+    refine restore_wp hL (hS₄.congr (by rw [wr₆, u₅.wr])) b₆ sv₆ fun u g1 g2 g3 g4 g3' g m rdu wru => WP.block_nil ?_
     refine WP.mono (wipe_wp hL (hS₄.congr (by rw [wru, wr₆, u₅.wr])) g3') fun s' ⟨z, f, g', rd', wr'⟩ =>
       ⟨abi s' (by rw [g' _ (by decide) (by decide) (by decide), g1])
         (by rw [g' _ (by decide) (by decide) (by decide), g2]) (by rw [g' _ (by decide) (by decide) (by decide), g3])

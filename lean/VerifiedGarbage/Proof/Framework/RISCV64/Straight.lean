@@ -195,8 +195,8 @@ not overlap the slots. -/
 structure Ok (c : Cfg) (s : State) : Prop where
   slotIn : ∀ k < c.slots, InRegions s.wr (wordAddr (s.gpr c.base) k) 8
   extIn : ∀ k < c.exts, InRegions (s.rd ++ s.wr) (wordAddr (s.gpr c.ext) k) 8
-  baseAl : (s.gpr c.base).toNat % 8 = 0
-  extAl : (s.gpr c.ext).toNat % 8 = 0
+  baseAl : 0 < c.slots → (s.gpr c.base).toNat % 8 = 0
+  extAl : 0 < c.exts → (s.gpr c.ext).toNat % 8 = 0
   slots : 8 * c.slots < 2 ^ 64
   sep : ∀ k < c.slots, ∀ j < c.exts,
     Mem.Sep (wordAddr (s.gpr c.base) k) 8 (wordAddr (s.gpr c.ext) j) 8
@@ -208,8 +208,8 @@ theorem Ok.congr {c : Cfg} {s s' : State} (h : Ok c s) (hb : s'.gpr c.base = s.g
     (he : s'.gpr c.ext = s.gpr c.ext) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Ok c s' where
   slotIn k hk := by rw [hb, hwr]; exact h.slotIn k hk
   extIn k hk := by rw [he, hrd, hwr]; exact h.extIn k hk
-  baseAl := by rw [hb]; exact h.baseAl
-  extAl := by rw [he]; exact h.extAl
+  baseAl h0 := by rw [hb]; exact h.baseAl h0
+  extAl h0 := by rw [he]; exact h.extAl h0
   slots := h.slots
   sep k hk j hj := by rw [hb, he]; exact h.sep k hk j hj
 
@@ -447,14 +447,14 @@ theorem step_ok (hD : D.Sound R) (hR : ∀ a x y, R a x → R a y → x = y) {e 
         obtain ⟨r, hr, hc⟩ := hok.slotIn k hlt
         have hin : InRegions (s.rd ++ s.wr) (wordAddr (s.gpr c.base) k) 8 :=
           ⟨r, List.mem_append_right _ hr, hc⟩
-        refine ⟨_, exec_load_d ho (wordAddr_al hok.baseAl k ho) hin, ?_⟩
+        refine ⟨_, exec_load_d ho (wordAddr_al (hok.baseAl (by omega)) k ho) hin, ?_⟩
         exact (post_write (a := .v a) hok hrel (hrel.slot k a hlt ha) hd.1 hd.2).writes
           fun r h => by simp [dst, h]
       · rename_i k hk
         obtain ⟨a, ha, rfl⟩ := Option.map_eq_some_iff.mp h
         obtain ⟨hb, hoff, ho, hlt⟩ := loc_some_ext hk
         subst hb hoff
-        refine ⟨_, exec_load_d ho (wordAddr_al hok.extAl k ho) (hok.extIn k hlt), ?_⟩
+        refine ⟨_, exec_load_d ho (wordAddr_al (hok.extAl (by omega)) k ho) (hok.extIn k hlt), ?_⟩
         exact (post_write (a := .v a) hok hrel (hrel.ext k a hlt ha) hd.1 hd.2).writes
           fun r h => by simp [dst, h]
       · cases h
@@ -468,7 +468,7 @@ theorem step_ok (hD : D.Sound R) (hR : ∀ a x y, R a x → R a y → x = y) {e 
       obtain ⟨hb, hoff, ho, hlt⟩ := loc_some_slot hk
       subst hb hoff
       have hin := hok.slotIn k hlt
-      refine ⟨_, exec_store_d ho (wordAddr_al hok.baseAl k ho) hin, ?_⟩
+      refine ⟨_, exec_store_d ho (wordAddr_al (hok.baseAl (by omega)) k ho) hin, ?_⟩
       have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (wordAddr (s.gpr c.base) j) (64 / 8)
           (wordAddr (s.gpr c.base) k) (64 / 8) := fun j hj hjk =>
         slot_sep _ (by have := hok.slots; omega) (by have := hok.slots; omega) hjk

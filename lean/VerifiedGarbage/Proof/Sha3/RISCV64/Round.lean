@@ -137,8 +137,8 @@ theorem round_ok {sR dR : Reg} (hc : check sR dR = true) (hk : keeps sR dR = tru
   have hok : Ok (cfg sR dR) s :=
     { slotIn := fun j hj => by simp only [cfg] at hj ⊢; rw [hd]; exact he.dst_out j hj
       extIn := fun j hj => by simp only [cfg] at hj ⊢; rw [hs]; exact he.src_in j hj
-      baseAl := by simp only [cfg]; rw [hd]; exact hdal
-      extAl := by simp only [cfg]; rw [hs]; exact hsal
+      baseAl := fun _ => by simp only [cfg]; rw [hd]; exact hdal
+      extAl := fun _ => by simp only [cfg]; rw [hs]; exact hsal
       slots := by simp only [cfg]; decide
       sep := fun j hj i hi => by
         simp only [cfg] at hj hi ⊢; rw [hd, hs]

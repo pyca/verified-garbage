@@ -125,8 +125,8 @@ theorem keyStore_ok {s : State} {X : Addr} (hs : Scr s X 2048) {off : Nat}
         rw [wordAddr, hb, Offset.add_add]
         exact hs.contains (by simp only [storeCfg] at hk; omega) (by decide)⟩
       extIn := fun k hk => by simp [storeCfg] at hk
-      baseAl := hal
-      extAl := hal
+      baseAl := fun _ => hal
+      extAl := fun _ => hal
       slots := by simp [storeCfg]
       sep := fun k _ j hj => by simp [storeCfg] at hj }
   let V : Nat → BitVec 64 := fun k => s.gpr (q k)
