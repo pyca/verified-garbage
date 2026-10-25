@@ -437,6 +437,45 @@ mod tests {
         }
     }
 
+    /// Compare scalar and SHA3-instruction sponges at every rate boundary,
+    /// with split updates and multi-block output.
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn scalar_sponge_matches_sha3() {
+        if super::Backend::select(crate::cpu::detected(), true, true) != super::Backend::Sha3 {
+            return;
+        }
+        fn check<const RATE: usize>() {
+            use super::{Backend, SHA3_SUFFIX, SHAKE_SUFFIX, Sponge};
+            let msg: [u8; 3 * 168 + 1] = core::array::from_fn(|i| (i * 37 + 11) as u8);
+            for len in [0, 1, RATE - 1, RATE, RATE + 1, 2 * RATE, 3 * RATE + 1] {
+                for split in [0, 1.min(len), len / 2, len] {
+                    for suffix in [SHA3_SUFFIX, SHAKE_SUFFIX] {
+                        let mut outputs = [[0u8; 2 * 168 + 1]; 2];
+                        for (backend, out) in [Backend::Scalar, Backend::Sha3]
+                            .into_iter()
+                            .zip(&mut outputs)
+                        {
+                            let mut sponge = Sponge::<RATE>::new();
+                            sponge.backend = Some(backend);
+                            sponge.absorb(&msg[..split]);
+                            sponge.absorb(&msg[split..len]);
+                            let mut reader = sponge.pad(suffix);
+                            reader.squeeze(&mut out[..RATE - 1]);
+                            reader.squeeze(&mut out[RATE - 1..]);
+                        }
+                        assert_eq!(outputs[0], outputs[1]);
+                    }
+                }
+            }
+        }
+        check::<72>();
+        check::<104>();
+        check::<136>();
+        check::<144>();
+        check::<168>();
+    }
+
     /// Every way of splitting a message into two updates, or into single
     /// bytes after the split, gives the same digest as one update, for
     /// every length up to past two blocks, through `HashFunction`.
