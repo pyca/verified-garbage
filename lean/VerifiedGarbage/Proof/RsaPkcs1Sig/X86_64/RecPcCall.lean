@@ -7,10 +7,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: the call

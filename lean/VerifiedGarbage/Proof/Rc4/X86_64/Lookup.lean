@@ -4,12 +4,8 @@ public import VerifiedGarbage.Impl.Rc4.X86_64
 import VerifiedGarbage.Proof.Rc4.Qword
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Rc4.Memory
-import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 public import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Rc4.Table
 public import VerifiedGarbage.TCB.Mem
 public import Init.Data.BitVec.Basic
 public import VerifiedGarbage.TCB.X86_64.State

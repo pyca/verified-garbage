@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
 
 /-!
 # ML-DSA on x86-64, `verify_message`: the verification functions on `μ` it calls

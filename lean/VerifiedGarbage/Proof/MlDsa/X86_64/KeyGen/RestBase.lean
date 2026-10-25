@@ -8,6 +8,12 @@ meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp
 meta import VerifiedGarbage.Proof.MlDsa.DecideAt
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+meta import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
+meta import VerifiedGarbage.Spec.MlKem.Kpke16
+meta import VerifiedGarbage.Spec.MlKem.KpkeMul
 
 /-!
 # ML-DSA key generation on x86-64: after the samplers

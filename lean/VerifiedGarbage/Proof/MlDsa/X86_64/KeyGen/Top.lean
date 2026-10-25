@@ -10,6 +10,16 @@ meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
 meta import VerifiedGarbage.Proof.MlDsa.DecideAt
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
+import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Spec.Sha3.Contract
+meta import VerifiedGarbage.Proof.MlKem.KPke
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+meta import VerifiedGarbage.Spec.MlKem.Kpke16
+meta import VerifiedGarbage.Spec.MlKem.KpkeMul
 
 /-!
 # ML-DSA key generation on x86-64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`

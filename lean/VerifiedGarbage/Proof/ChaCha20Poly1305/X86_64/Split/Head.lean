@@ -6,11 +6,9 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!

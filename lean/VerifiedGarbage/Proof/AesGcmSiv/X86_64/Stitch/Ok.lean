@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
 
 /-!
 # AES-GCM-SIV's interleaved loop: the powers, and the whole loop

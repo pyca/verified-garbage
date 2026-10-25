@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.Params
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.RsaPss.MgfBytes
 
 
 /-!

@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: the blocks left

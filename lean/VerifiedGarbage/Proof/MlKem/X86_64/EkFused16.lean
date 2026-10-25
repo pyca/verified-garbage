@@ -13,7 +13,6 @@ meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key in the matrix's fragments, with 16-bit polynomials

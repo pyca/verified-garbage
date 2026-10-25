@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
 
 /-!
 # ML-DSA signing on x86-64: its code without the arithmetic, as literals

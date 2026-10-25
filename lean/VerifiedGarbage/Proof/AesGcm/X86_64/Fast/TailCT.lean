@@ -8,7 +8,6 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 meta import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!

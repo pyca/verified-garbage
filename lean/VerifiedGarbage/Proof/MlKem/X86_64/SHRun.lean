@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 
 /-!
 # ML-KEM on x86-64: `Sample4.sampleH`, the runs of the loop on three seeds

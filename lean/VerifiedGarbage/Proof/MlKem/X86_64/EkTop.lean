@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
-import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
 
 
 /-!

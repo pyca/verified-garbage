@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyPadding
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedFront
 import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
-import VerifiedGarbage.Proof.RsaPss.MgfBytes
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Sha256.StateMem
 
 @[expose] public section
 

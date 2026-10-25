@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.MlKem.HSponge
 public import VerifiedGarbage.Impl.MlKem.X86_64.KeyGenH16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-import VerifiedGarbage.Proof.MlKem.PolyW
 import Mathlib.Tactic.Conv
 
 /-!

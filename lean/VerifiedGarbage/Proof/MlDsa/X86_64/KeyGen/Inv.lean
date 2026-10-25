@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
-import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 
 /-!
 # ML-DSA key generation on x86-64: what holds throughout, and pieces

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit

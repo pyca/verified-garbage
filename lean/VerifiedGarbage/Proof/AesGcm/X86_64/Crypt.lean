@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # AES-GCM on x86-64: counter mode over a piece (`crypt`)

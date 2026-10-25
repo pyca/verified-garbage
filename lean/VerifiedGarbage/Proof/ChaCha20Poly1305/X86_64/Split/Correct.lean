@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Crypt
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealSplit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Pre
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
-import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.TaintBatch
