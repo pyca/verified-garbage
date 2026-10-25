@@ -11,37 +11,46 @@ working space of `Impl/Bignum/Layout.lean`: a header of 32 words, then eight
 arrays of `w + 2` words, the modulus `m` in array 0, the accumulator in
 array 2 and a temporary in array 3.
 
-The model has no carry bit, so the numbers are read as `n = 2 w` 32-bit
-digits (the words are little-endian), and every product of two digits plus
-two more digits fits in 64 bits: `(2³² - 1)² + 2 (2³² - 1) = 2⁶⁴ - 1`. The
-multiplication is finely integrated operand scanning (FIOS) in radix `2³²`:
-for each digit `aᵢ` of `a`, with `T` the accumulator (`n + 1` digits),
+The multiplication is coarsely integrated operand scanning (CIOS) in radix
+`2⁶⁴`, with the carries through `XER`'s CA (`addc`, `addze`). The
+accumulator `T` is `w + 1` words between rounds, and `w + 2` within one: for
+each word `aᵢ` of `a`,
 
-* `u = (t₀ + aᵢ b₀) (-m⁻¹) mod 2³²`, so that `T + aᵢ b + u m` is a multiple
-  of `2³²`;
-* one pass over the digits computes `T := (T + aᵢ b + u m) / 2³²`, with two
-  carries: `x = tⱼ + aᵢ bⱼ + c₁` (`c₁ := x / 2³²`) and `y = (x mod 2³²) + u mⱼ
-  + c₂` (`c₂ := y / 2³²`), whose low digit is stored one digit down;
-* the top digit `tₙ` takes both carries.
+* one pass computes `T := T + aᵢ b`: for each word `bⱼ`, the 128-bit `tⱼ +
+  aᵢ bⱼ + c` (which fits: `(2⁶⁴ - 1)² + 2 (2⁶⁴ - 1) = 2¹²⁸ - 1`), its low
+  word stored as `tⱼ` and its high word the next carry `c`; then `t_w + c`
+  into word `w` and its carry into word `w + 1`;
+* `u = t₀ (-m⁻¹) mod 2⁶⁴`, so that `T + u m` is a multiple of `2⁶⁴`;
+* a second pass computes `T := (T + u m) / 2⁶⁴` the same way, each word
+  stored one word down, and words `w`, `w + 1` plus the carry stored at `w -
+  1`, `w`.
 
-After the `n` rounds, `T < 2 m` and `T 2^(64 w) ≡ a b (mod m)`; `T - m` is
+`-m⁻¹ mod 2⁶⁴` is computed from the header's `-m⁻¹ mod 2³²` (`y`) by one
+step of Newton's iteration, `y (2 + m₀ y) mod 2⁶⁴`, since `m₀ y (2 + m₀ y)
++ 1 = (m₀ y + 1)²`.
+
+After the `w` rounds, `T < 2 m` and `T 2^(64 w) ≡ a b (mod m)`. Then, on the
+numbers as `n = 2 w` 32-bit digits (the words are little-endian), `T - m` is
 computed into the temporary, digit by digit with the borrow in the sign bit
 of a 64-bit difference, and the borrow out of the top digit selects `T` or
 `T - m` with a mask.
 
-Every loop counts a register down from a public count (`n`), every address
-is a pointer plus a constant, and the pointers are the header's (loaded once,
-at the start, before any store) advanced by 4 per digit, so only the
-pointers and `w` affect timing.
+Every loop counts a register down from a public count (`w`, `w - 1`, `n`),
+every address is a pointer plus a constant, and the pointers are the
+header's (loaded once, at the start, before any store) advanced by 8 per
+word (4 per digit), so only the pointers and `w` affect timing.
 
 The code takes a scratch buffer (`r8`, 72 bytes) where it saves the
 nonvolatile `r14`–`r22`, keeping its address in `r21`.
 
 Registers: `r5` `o`'s base, `r6` (advancing over) `a`, `r7` `b`'s base, `r8`
 the accumulator's, `r9` the temporary's, `r10` `m`'s, `r11` `n`, `r12`
-`-m⁻¹ mod 2³²`, `r4` the rounds left; in a round, `r14`–`r16` the pointers
-into the accumulator, `b` and `m`, `r17` the digits left, `r18` `aᵢ`, `r19`
-`u`, `r20` `c₁`, `r22` `c₂`, and `r0`, `r3` temporaries.
+`-m⁻¹ mod 2³²`; in the rounds, `r0` `-m⁻¹ mod 2⁶⁴`, `r3` `w`, `r4` the
+rounds left, `r14` the pointer into the accumulator, `r15` into `b` or `m`,
+`r16` the words left, `r17` `aᵢ` or `u`, `r18` the carry, `r19`, `r20` a
+product's low and high words, `r22` a word of the accumulator; in the
+final subtraction, `r14`–`r16` the pointers, `r17` the digits left, `r20`
+the borrow and the mask, and `r0`, `r3` temporaries.
 -/
 
 @[expose] public section
@@ -96,39 +105,57 @@ def zeroAcc : Prog isa :=
 
 /-! ## A round -/
 
-/-- `aᵢ` into `r18`, then digit 0: `x = t₀ + aᵢ b₀`, `c₁ = x / 2³²`, `u = (x
-mod 2³²) (-m⁻¹) mod 2³²`, and `c₂ = (x mod 2³² + u m₀) / 2³²` (the low digit
-is 0); the pointers at digit 0 and `r17 := n - 1`. -/
-def head : List Instr :=
-  [.load .w .r18 .r6 0, .addi .r6 .r6 4,
-    .load .w .r0 .r8 0, .load .w .r3 .r7 0, .mul .r3 .r18 .r3, .add .r0 .r0 .r3,
-    .lsr .d .r20 .r0 32, .lsr .w .r0 .r0 0, .mul .r19 .r0 .r12, .lsr .w .r19 .r19 0,
-    .load .w .r3 .r10 0, .mul .r3 .r19 .r3, .add .r0 .r0 .r3, .lsr .d .r22 .r0 32,
-    .addi .r14 .r8 0, .addi .r15 .r7 0, .addi .r16 .r10 0, .subi .r17 .r11 1]
+/-- `-m⁻¹ mod 2⁶⁴` into `r0`, from `m₀` and `r12 = -m⁻¹ mod 2³²` (`y`): `y (2
++ m₀ y)`; then `w` into `r3` and the rounds' count `r4`. -/
+def setup : List Instr :=
+  [.load .d .r3 .r10 0, .mul .r3 .r3 .r12, .addi .r3 .r3 2, .mul .r0 .r3 .r12, .lsr .d .r3 .r11 1,
+    .addi .r4 .r3 0]
 
-/-- Digit `j` (the pointers at digit `j - 1`): `x = tⱼ + aᵢ bⱼ + c₁`, `c₁ = x
-/ 2³²`, `y = x mod 2³² + u mⱼ + c₂`, `c₂ = y / 2³²`, and `y mod 2³²` stored
-as digit `j - 1`. -/
-def step : List Instr :=
-  [.load .w .r0 .r14 4, .load .w .r3 .r15 4, .mul .r3 .r18 .r3, .add .r0 .r0 .r3,
-    .add .r0 .r0 .r20, .lsr .d .r20 .r0 32, .lsr .w .r0 .r0 0,
-    .load .w .r3 .r16 4, .mul .r3 .r19 .r3, .add .r0 .r0 .r3, .add .r0 .r0 .r22,
-    .lsr .d .r22 .r0 32, .store .w .r0 .r14 0,
-    .addi .r14 .r14 4, .addi .r15 .r15 4, .addi .r16 .r16 4]
+/-- A multiply-accumulate step, the accumulator's pointer `r14` at word `j`
+and `r15` at word `j` of `b` or `m` (`k = 0`), or both one word below (`k =
+8`): `x = tⱼ + r17 · sⱼ + c` (the words at `r14 + k` and `r15 + k`, the carry
+`r18`), its low word stored at `r14` and its high word into `r18`, and the
+pointers advanced. -/
+def mac (k : Nat) : List Instr :=
+  [.load .d .r19 .r15 k, .mulhu .r20 .r17 .r19, .mul .r19 .r17 .r19, .addc .r19 .r19 .r18,
+    .addze .r20 .r20, .load .d .r22 .r14 k, .addc .r22 .r22 .r19, .addze .r18 .r20,
+    .store .d .r22 .r14 0, .addi .r14 .r14 8, .addi .r15 .r15 8]
 
-/-- The top digit `tₙ` (the accumulator's pointer at digit `n - 1`): `x = tₙ +
-c₁`, `y = x mod 2³² + c₂`, `y mod 2³²` stored as digit `n - 1`, and `x / 2³² +
-y / 2³²` as digit `n`. -/
-def top : List Instr :=
-  [.load .w .r0 .r14 4, .add .r0 .r0 .r20, .lsr .d .r20 .r0 32, .lsr .w .r0 .r0 0,
-    .add .r0 .r0 .r22, .store .w .r0 .r14 0, .lsr .d .r0 .r0 32, .add .r0 .r0 .r20,
-    .store .w .r0 .r14 4]
+/-- `aᵢ` into `r17`, the pointers at word 0, `w` words left and the carry 0. -/
+def mulHead : List Instr :=
+  [.load .d .r17 .r6 0, .addi .r6 .r6 8, .addi .r14 .r8 0, .addi .r15 .r7 0, .addi .r16 .r3 0,
+    .li .r18 0]
 
-/-- One round: `T := (T + aᵢ b + u m) / 2³²`. -/
-def round : Prog isa :=
-  .seq (.block head) (.seq (countLoop .r17 step) (.block top))
+/-- Word `w` (at `r14`) `+= c`, and its carry into word `w + 1`. -/
+def mulTop : List Instr :=
+  [.load .d .r22 .r14 0, .addc .r22 .r22 .r18, .store .d .r22 .r14 0, .li .r22 0, .addze .r22 .r22,
+    .store .d .r22 .r14 8]
 
-/-- The `n` rounds, counted by `r4`. -/
+/-- `T := T + aᵢ b`. -/
+def mulPass : Prog isa :=
+  .seq (.block mulHead) (.seq (countLoop .r16 (mac 0)) (.block mulTop))
+
+/-- `u = t₀ (-m⁻¹) mod 2⁶⁴` into `r17`, the carry of `t₀ + u m₀` (whose low
+word is 0) into `r18`, the pointers at word 0 and `w - 1` words left. -/
+def redHead : List Instr :=
+  [.load .d .r22 .r8 0, .mul .r17 .r22 .r0, .load .d .r19 .r10 0, .mulhu .r20 .r17 .r19,
+    .mul .r19 .r17 .r19, .addc .r19 .r19 .r22, .addze .r18 .r20, .addi .r14 .r8 0, .addi .r15 .r10 0,
+    .subi .r16 .r3 1]
+
+/-- Words `w` and `w + 1` (above `r14`, at word `w - 1`) plus the carry,
+stored one word down. -/
+def redTop : List Instr :=
+  [.load .d .r22 .r14 8, .addc .r22 .r22 .r18, .store .d .r22 .r14 0, .load .d .r22 .r14 16,
+    .addze .r22 .r22, .store .d .r22 .r14 8]
+
+/-- `T := (T + u m) / 2⁶⁴`. -/
+def redPass : Prog isa :=
+  .seq (.block redHead) (.seq (countLoop .r16 (mac 8)) (.block redTop))
+
+/-- One round: `T := (T + aᵢ b + u m) / 2⁶⁴`. -/
+def round : Prog isa := .seq mulPass redPass
+
+/-- The `w` rounds, counted by `r4`. -/
 def rounds : Prog isa :=
   .loop (.seq round (.block [.subi .r4 .r4 1])) (.nonzero .d .r4)
 
@@ -154,7 +181,7 @@ def selectAcc : Prog isa :=
       .addi .r14 .r14 4, .addi .r15 .r15 4, .addi .r16 .r16 4])
 
 /-- The arithmetic, after the bases are loaded. -/
-def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq subMod selectAcc))
+def tail : Prog isa := .seq zeroAcc (.seq (.block setup) (.seq rounds (.seq subMod selectAcc)))
 
 /-- `vg_rsa_mont_mul(ws, ws_len, o, a, b, scratch)`: `[o] = [a] [b] R⁻¹ mod m`
 for `R = 2^(64 w)`. -/

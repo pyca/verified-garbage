@@ -13,8 +13,8 @@ def artifacts (v : RoundImpl) : List Artifact := [
   (Spec.MillerRabin.roundApi Spec.MillerRabin.compact).artifact target {
     suffix := v.suffix
     notes := ["Fixed four-bit windows and a full masked scan of all sixteen powers, each a masked copy \
-        into arrays 3 and 5 in turn. The model has no carry bit, so the Montgomery products are \
-        `vg_rsa_mont_mul`'s finely integrated operand scanning in radix 2^32, inline. Four \
+        into arrays 3 and 5 in turn. The Montgomery products are `vg_rsa_mont_mul`'s coarsely \
+        integrated operand scanning in radix 2^64, inline. Four \
         unconditional squares precede each window; three final squares mask their flag updates with \
         the threshold derived from the prepared exponent marker. The result is returned without \
         branching on it. The nonvolatile registers it uses are saved in a 176-byte stack frame."]

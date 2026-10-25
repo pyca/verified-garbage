@@ -67,11 +67,6 @@ theorem slot_eq (w j : Nat) : arrAt w j = slot w j := rfl
 theorem numAt_eq (m : Mem) (B : Addr) (w j : Nat) : numAt m B w j = val32 m B (slot w j) (2 * w) := by
   rw [← wordsVal_eq_val32, ← read_eq_wordsVal]; rfl
 
-/-- A digit is the low half of the word there. -/
-theorem w32_eq_mod (m : Mem) (B : Addr) (d : Nat) : w32 m B d = (word m B d).toNat % 2 ^ 32 := by
-  have h2 : w32 m B d < 2 ^ 32 := (m.readW (off B d) 32).isLt
-  rw [word_eq_w32, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt h2]
-
 /-- A store to the scratch buffer leaves the working space. -/
 theorem frame_outside {m m' : Mem} {B S : Addr} {Z : Nat} (hf : Frame [savR S] m m')
     (hd : (⟨B, Z⟩ : Region).Disjoint (savR S)) : Mont.Outside B Z (2 ^ 64) m m' := by
