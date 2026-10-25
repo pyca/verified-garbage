@@ -26,6 +26,15 @@ pub(crate) mod blake2s;
 pub(crate) mod blowfish;
 
 #[rustfmt::skip]
+pub(crate) mod blowfish_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod blowfish_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod blowfish_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]

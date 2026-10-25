@@ -10,7 +10,8 @@
 //! the modes' generic OFB over the inlined ECB code, one block at a time (on
 //! AArch64, one per batch of the ECB code's sixteen), reading the schedule
 //! where it is (on ARMv7, calling the verified `vg_blowfish_ecb_encrypt` for
-//! each block). This module holds the schedule and handles a partial last block
+//! each block; on RISC-V, from a copy in a 16-byte aligned stack frame, zeroed
+//! before returning). This module holds the schedule and handles a partial last block
 //! (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output
 //! block, whose first bytes it XORs into the rest of the input.
 
@@ -19,7 +20,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::blowfish::vg_blowfish_expand_key;
