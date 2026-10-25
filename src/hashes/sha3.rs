@@ -30,11 +30,17 @@ use crate::arch::sha3::vg_keccak_absorb_scratch;
 #[cfg(target_arch = "aarch64")]
 use core::mem::MaybeUninit;
 
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(
+    target_arch = "aarch64",
+    any(target_vendor = "apple", feature = "cpu-features-env", test)
+))]
 use crate::arch::sha3::{
     VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES, VG_KECCAK_PAD_SHA3_FEATURES,
-    VG_KECCAK_SQUEEZE_SHA3_FEATURES, vg_keccak_absorb_scratch_sha3, vg_keccak_pad_sha3,
-    vg_keccak_squeeze_sha3,
+    VG_KECCAK_SQUEEZE_SHA3_FEATURES,
+};
+#[cfg(target_arch = "aarch64")]
+use crate::arch::sha3::{
+    vg_keccak_absorb_scratch_sha3, vg_keccak_pad_sha3, vg_keccak_squeeze_sha3,
 };
 
 #[cfg(all(target_arch = "aarch64", any(not(target_vendor = "apple"), test)))]
@@ -88,7 +94,10 @@ impl Backend {
         Self::Scalar
     }
 
-    #[cfg(target_arch = "aarch64")]
+    #[cfg(all(
+        target_arch = "aarch64",
+        any(target_vendor = "apple", feature = "cpu-features-env", test)
+    ))]
     fn select(features: crate::cpu::Features, apple: bool, requested: bool) -> Self {
         if (apple || requested)
             && features.contains(
