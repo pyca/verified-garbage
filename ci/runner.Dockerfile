@@ -83,9 +83,12 @@ RUN case "$(dpkg --print-architecture)" in \
 # toolchain has every component and target the jobs install, so that they
 # download nothing until stable changes. Deduplicate libLLVM and strip the
 # big binaries (with llvm-strip; GNU strip breaks them), as the other runner
-# images do. Keep all files recorded in rustup's component manifests:
-# deleting even unused files prevents rustup from uninstalling or updating
-# the toolchain.
+# images do. Of llvm-tools, CI runs only llvm-cov and llvm-profdata, and
+# rustc links with the C compiler on these hosts, never rust-lld: empty the
+# others, which were half of the compressed image (RISE's riscv64 runners,
+# which keep no images, pull it for every job at a few MB/s). Keep all files
+# recorded in rustup's component manifests, though: deleting even unused
+# files prevents rustup from uninstalling or updating the toolchain.
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
@@ -115,8 +118,14 @@ RUN case "$(dpkg --print-architecture)" in \
              "$sysroot/bin/rustfmt" "$sysroot/bin/cargo-fmt" \
              "$sysroot"/lib/librustc_driver-*.so "$sysroot"/lib/libLLVM.so.* \
              "$CARGO_HOME/bin/rustup" \
-             bin/rust-lld bin/llvm-cov bin/llvm-profdata; do \
+             bin/llvm-cov bin/llvm-profdata; do \
         if [ -f "$f" ]; then bin/llvm-strip --strip-all "$f"; fi; \
+    done && \
+    for f in bin/*; do \
+        case "${f#bin/}" in \
+            llvm-cov|llvm-profdata) ;; \
+            *) if [ -f "$f" ]; then : > "$f"; fi ;; \
+        esac; \
     done && \
     rustc -vV && cargo -V
 
