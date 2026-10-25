@@ -181,7 +181,7 @@ def lastBit : Prog isa :=
     (.ite (.nonzero .d .r3) (montOp 4 4 5) (montOp 4 7 5)))
 
 /-- The bits after the first, `r25` of them at the top of `r24`. -/
-def scan : Prog isa :=
+def bits : Prog isa :=
   .ite (.nonzero .d .r25)
     (.seq (.block [.subi .r25 .r25 1])
       (.seq (.ite (.nonzero .d .r25) (.loop (.seq bitStep (.block [.subi .r25 .r25 1])) (.nonzero .d .r25))
@@ -194,7 +194,7 @@ multiplication by `x R mod n` per later set bit but the last, which instead
 multiplies by `x` and so converts out of Montgomery form. `e` is public:
 the branches depend on it alone. -/
 def power : Prog isa :=
-  .seq one (.seq (montOp 6 4 1) (.seq skip (.seq initA scan)))
+  .seq one (.seq (montOp 6 4 1) (.seq skip (.seq initA bits)))
 
 /-- The result's `k` bytes, most significant first, masked by `r26`, to
 `out`; `r3 := 1` if valid, else 0. -/

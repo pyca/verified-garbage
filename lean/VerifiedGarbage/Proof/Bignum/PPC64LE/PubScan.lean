@@ -437,7 +437,7 @@ theorem power_ok {s : State} {B : Addr} {Z w E : Nat} (hs : Scr s B Z) (hw2 : 2 
       split <;> omega
     rw [hb] at hY
     rw [← hY, Nat.mod_eq_of_lt uY]
-  unfold scan
+  unfold bits
   refine WP.ite (decide (32 - i ≠ 0)) (by rw [eval_nonzero, h25', ne_zero_iff, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (by omega)]) (fun hp => ?_) (fun hp => ?_)
   · simp only [ne_eq, decide_eq_true_eq] at hp
