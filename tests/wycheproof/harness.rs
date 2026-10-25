@@ -219,7 +219,8 @@ pub struct TestFile<P, T> {
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Hex(pub Vec<u8>);
@@ -229,7 +230,8 @@ pub struct Hex(pub Vec<u8>);
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 impl<'de> Deserialize<'de> for Hex {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
