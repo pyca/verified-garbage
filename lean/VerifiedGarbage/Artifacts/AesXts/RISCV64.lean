@@ -1,0 +1,48 @@
+module
+
+public import VerifiedGarbage.Proof.AesXts.RISCV64.Verified
+public import VerifiedGarbage.Proof.AesXts.RISCV64.Unit.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.AesXts.RISCV64.Lit
+
+/-!
+# XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on RISC-V
+
+A registration file (see `TCB/Emit.lean`): the artifacts it lists are
+emitted. RISC-V has one implementation of the block functions, so these are
+not generic over them. A call (`jal`) stores nothing in memory, and the
+return address is saved in the scratch buffer, so no stack is used.
+-/
+
+@[expose] public section
+
+namespace VG.Artifacts.AesXts.RISCV64
+
+open VG.Proof.AesXts.RISCV64
+
+def artifacts : List Artifact := [
+  Spec.Xts.aesEncryptApi.artifact RISCV64.target {
+    notes := [
+      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."]
+    code := Impl.AesXts.RISCV64.encrypt
+    verified := encrypt_verified },
+  Spec.Xts.aesDecryptApi.artifact RISCV64.target {
+    notes := [
+      "This implementation deciphers one block at a time with `vg_aes_decrypt_blocks`."]
+    code := Impl.AesXts.RISCV64.decrypt
+    verified := decrypt_verified },
+  Spec.Xts.aesEncryptUnitApi.artifact RISCV64.target {
+    notes := [
+      "This implementation enciphers the tweak value and the data with `vg_aes_xts_encrypt` (the tweak value " ++
+        "as one block from a zero tweak), and steals ciphertext by swapping bytes of the last two blocks in place."]
+    code := Impl.AesXts.RISCV64Unit.encrypt
+    verified := Unit.encrypt_verified },
+  Spec.Xts.aesDecryptUnitApi.artifact RISCV64.target {
+    notes := [
+      "This implementation enciphers the tweak value with `vg_aes_xts_encrypt` (as one block from a zero " ++
+        "tweak), deciphers the data with `vg_aes_xts_decrypt`, and steals ciphertext by swapping bytes of the " ++
+        "last two blocks in place."]
+    code := Impl.AesXts.RISCV64Unit.decrypt
+    verified := Unit.decrypt_verified }]
+
+end VG.Artifacts.AesXts.RISCV64
