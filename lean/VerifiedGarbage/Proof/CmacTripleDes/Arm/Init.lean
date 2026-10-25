@@ -98,11 +98,11 @@ section
 variable {s₀ : State} (hp : IPre s₀)
 include hp
 
-theorem IPre.inScr {d n : Nat} (h : d + n ≤ 640) (hn : 0 < n) :
+theorem IPre.inScr {d n : Nat} (h : d + n ≤ 640) (_hn : 0 < n) :
     InRegions s₀.wr (State.addr (Sc s₀) + BitVec.ofNat 64 d) n := by
   rw [hp.wr]; exact in_rw (r := iscrR s₀) (by simp) (Offset.contains_base _ h (by have := hp.scr_fit; omega_arith))
 
-theorem IPre.inOut {d n : Nat} (h : d + n ≤ 400) (hn : 0 < n) :
+theorem IPre.inOut {d n : Nat} (h : d + n ≤ 400) (_hn : 0 < n) :
     InRegions s₀.wr (State.addr (O s₀) + BitVec.ofNat 64 d) n := by
   rw [hp.wr]; exact in_rw (r := outR s₀) (by simp) (Offset.contains_base _ h (by have := hp.out_fit; omega_arith))
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Data conversion, comparison and masking traces depend only on addresses -/
 
@@ -22,28 +23,28 @@ theorem loadBE_relCT (n out : Nat) :
     RelCT isa (VG.X86.Taint.Agree loadTaint) (loadBE n out)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   apply erased_relCT (loadBE n out) (loadBE 1 0)
-    (VG.Taint.hintOf taint loadTaint (loadBE 1 0)) rfl rfl rfl
-  rfl
+    (VG.Taint.hintOf taint loadTaint (loadBE 1 0)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
+  kernel_rfl
 
 theorem storeBE_relCT (src : Nat) :
     RelCT isa (VG.X86.Taint.Agree storeTaint) (storeBE src)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   apply erased_relCT (storeBE src) (storeBE 0)
-    (VG.Taint.hintOf taint storeTaint (storeBE 0)) rfl rfl rfl
-  rfl
+    (VG.Taint.hintOf taint storeTaint (storeBE 0)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
+  kernel_rfl
 
 theorem inputCompare_relCT (n : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (PublicContext.inputCompare n)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   apply erased_relCT (PublicContext.inputCompare n) (PublicContext.inputCompare 1)
-    (VG.Taint.hintOf taint (workspaceTaint false) (PublicContext.inputCompare 1)) rfl rfl rfl
-  rfl
+    (VG.Taint.hintOf taint (workspaceTaint false) (PublicContext.inputCompare 1)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
+  kernel_rfl
 
 theorem maskResult_relCT (n : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (PublicFn.maskResult n)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   apply erased_relCT (PublicFn.maskResult n) (PublicFn.maskResult 1)
-    (VG.Taint.hintOf taint (workspaceTaint false) (PublicFn.maskResult 1)) rfl rfl rfl
-  rfl
+    (VG.Taint.hintOf taint (workspaceTaint false) (PublicFn.maskResult 1)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
+  kernel_rfl
 
 end VG.Proof.Bignum.X86

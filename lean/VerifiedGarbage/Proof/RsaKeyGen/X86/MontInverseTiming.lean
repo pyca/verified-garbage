@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.MontInverse
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Full inverse setup uses a fixed native multiplication schedule -/
 
@@ -14,6 +15,6 @@ theorem code_trace (modulus inverse : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (code modulus inverse)
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   erased_relCT (code modulus inverse) (code 0 0)
-    (.seq (roundTaint [.edi]) (.block []) (.block [])) rfl rfl rfl (by decide +kernel)
+    (.seq (roundTaint [.edi]) (.block []) (.block [])) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 end VG.Proof.RsaKeyGen.X86.MontInverse

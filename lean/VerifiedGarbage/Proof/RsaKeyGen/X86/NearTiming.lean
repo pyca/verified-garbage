@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Near
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # The RSA separation threshold comparison has no secret-dependent control -/
 
@@ -15,6 +16,6 @@ theorem code_trace (n src : Nat) :
       (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
   erased_relCT (code n src) (code 0 0)
     (VG.Taint.hintOf taint (τr [.esp, .edi]) (code 0 0))
-    rfl rfl rfl (by decide +kernel)
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 end VG.Proof.RsaKeyGen.X86.Near

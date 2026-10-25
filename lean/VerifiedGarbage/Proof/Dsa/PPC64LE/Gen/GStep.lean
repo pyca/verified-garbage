@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on PPC64LE: one `h` of the generator search
 
@@ -97,7 +98,7 @@ theorem hPtrK_vp {H : Addr} (hH : fH ∈ c.LS) (hHv : c.V fH = H) :
     VP (KSt G c X) (.block [ld .r6 fH, .li .r8 G.pLen])
       (fun σ s => KSt G c X σ s ∧ s.gpr .r6 = H ∧ s.gpr .r8 = BitVec.ofNat 64 G.pLen) := by
   refine VP.pub (SS.pub fun σ s h => h.1.1) [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
-    (.block [ld .r6 fH, .li .r8 G.pLen]), rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
+    (.block [ld .r6 fH, .li .r8 G.pLen]), by kernel_rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
     fun σ s ⟨⟨h, x⟩, kr⟩ => ?_
   have l := h.lens
   have hE := h.gi.hEnd_le
@@ -155,10 +156,11 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
   -- Into the key working space; `aH` := 0, then `h`.
   refine VP.seq ksEnter_vp ?_
   refine VP.seq (copy_vp (o := aH) (a := aZero) ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
-    (Taint.ofRegs [.r28, .r29, .r30, .r31]) (copy aH aZero), rfl⟩ (by decide) hZ (by decide)) ?_
+    (Taint.ofRegs [.r28, .r29, .r30, .r31]) (copy aH aZero), by kernel_rfl⟩ (by decide) hZ (by decide)) ?_
   refine VP.seq (hPtrK_vp hH hHv) ?_
   refine VP.seq (loadZ_vp (j := aH) (n := G.pLen) (bs := hAt G i) ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
-      (Taint.ofRegs [.r28, .r29, .r30, .r31, .r6, .r8]) (VG.Impl.Rsa.PPC64LE.CrtValues.load aH), rfl⟩
+      (Taint.ofRegs [.r28, .r29, .r30, .r31, .r6,
+          .r8]) (VG.Impl.Rsa.PPC64LE.CrtValues.load aH), by kernel_rfl⟩
     (by decide) List.mem_cons_self (by g_simp; exact hZv)
     (by rcases l with e | e | e <;> rw [e] <;> decide)
     (by simp only [GP.w]; rcases l with e | e | e <;> rw [e] <;> decide) fun σ s h => ?_) ?_
@@ -167,18 +169,20 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
   rw [hhv]
   -- `1 < h`, `h < p − 1` and both.
   refine VP.seq (ltS_vp (d := slLo) (a := aOne) (b := aH) ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
-      (Taint.ofRegs [.r28, .r29, .r30, .r31]) (sub3 aTmp aOne aH), rfl⟩
-    ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31]) (.block (stBorrow slLo)), rfl⟩
+      (Taint.ofRegs [.r28, .r29, .r30, .r31]) (sub3 aTmp aOne aH), by kernel_rfl⟩
+    ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31]) (.block (stBorrow slLo)),
+        by kernel_rfl⟩
     (by simp [hO]) (by simp) (by decide) (by decide)
     (by simp only [List.mem_cons, not_or]; exact ⟨by decide, by decide, hTl⟩) ⟨by decide, by decide⟩) ?_
   refine VP.seq (ltS_vp (d := slHi) (a := aH) (b := aPm1) ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
-      (Taint.ofRegs [.r28, .r29, .r30, .r31]) (sub3 aTmp aH aPm1), rfl⟩
-    ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31]) (.block (stBorrow slHi)), rfl⟩
+      (Taint.ofRegs [.r28, .r29, .r30, .r31]) (sub3 aTmp aH aPm1), by kernel_rfl⟩
+    ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31]) (.block (stBorrow slHi)),
+        by kernel_rfl⟩
     (by simp) (by simp [hM]) (by decide) (by decide)
     (by simp only [List.mem_cons, not_or]; exact ⟨by decide, by decide, hTl⟩) ⟨by decide, by decide⟩) ?_
   refine VP.seq (andCmp_vp (d := slLo) (a := slLo) (b := slHi) ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
       (Taint.ofRegs [.r28, .r29, .r30, .r31])
-      (.block (andS slLo slLo slHi ++ ([.load .w .r0 .r31 slLo] : List Instr))), rfl⟩
+      (.block (andS slLo slLo slHi ++ ([.load .w .r0 .r31 slLo] : List Instr))), by kernel_rfl⟩
     ⟨by decide, by decide⟩ (by simp) (by simp) (by g_simp; exact ite01_le _) (by g_simp; exact ite01_le _)) ?_
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_ ?_
   · -- Out of range: nothing more.

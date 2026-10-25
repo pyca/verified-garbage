@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateBits
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Candidate-bit forcing uses fixed public workspace addresses -/
 
@@ -14,6 +15,6 @@ theorem code_trace (w out : Nat) :
     RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block (code w out))
       (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
   erased_relCT (.block (code w out)) (.block (code 0 0)) (.block [])
-    rfl rfl rfl (by decide +kernel)
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 end VG.Proof.RsaKeyGen.X86.CandidateBits

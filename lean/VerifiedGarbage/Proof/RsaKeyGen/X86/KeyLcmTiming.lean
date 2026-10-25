@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyConstantTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPrimesTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionTiming
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Native LCM arithmetic reveals neither factor nor any intermediate bit -/
 
@@ -16,23 +17,17 @@ open VG VG.X86 VG.Proof.Rsa.X86.Keys VG.Proof.Mont.X86.Dynamic
 open VG.Impl.RsaKeyGen.X86.Key
 
 theorem evenFlag_public (n input : Nat) : KeyPublic (.block (evenFlag n input)) := by
-  let reference : Prog isa := .block [
-    .mov .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0),
-    .alu .xor .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax]
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) reference
-  refine ⟨hint, workspaceTaint true, ?_, rfl⟩
-  exact (check_of_erase_eq (.block (evenFlag n input)) reference
-    (workspaceTaint true) hint rfl rfl rfl).trans (by rfl)
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (.block [ .mov .eax (.mem (VG.Impl.Mont.X86.sc 0)),
+      .alu .and .eax (.imm 0), .alu .xor .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)), workspaceTaint true, ?_, rfl⟩
+  exact (check_of_erase_eq (.block (evenFlag n input)) (.block [ .mov .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0), .alu .xor .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)
+    (workspaceTaint true) (VG.Taint.hintOf taint (workspaceTaint true) (.block [ .mov .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0), .alu .xor .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)).trans (by kernel_rfl)
 
 theorem oddFlag_public (n input : Nat) : KeyPublic (.block (oddFlag n input)) := by
-  let reference : Prog isa := .block [
-    .mov .eax (.imm 0), .alu .sub .eax (.reg .ebx),
-    .alu .and .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0),
-    .store (VG.Impl.Mont.X86.sc 0) .eax]
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) reference
-  refine ⟨hint, workspaceTaint true, ?_, rfl⟩
-  exact (check_of_erase_eq (.block (oddFlag n input)) reference
-    (workspaceTaint true) hint rfl rfl rfl).trans (by rfl)
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (.block [ .mov .eax (.imm 0),
+      .alu .sub .eax (.reg .ebx), .alu .and .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)), workspaceTaint true, ?_, rfl⟩
+  exact (check_of_erase_eq (.block (oddFlag n input)) (.block [ .mov .eax (.imm 0), .alu .sub .eax (.reg .ebx), .alu .and .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)
+    (workspaceTaint true) (VG.Taint.hintOf taint (workspaceTaint true) (.block [ .mov .eax (.imm 0),
+        .alu .sub .eax (.reg .ebx), .alu .and .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)).trans (by kernel_rfl)
 
 theorem oddSecond_public (n : Nat) : KeyPublic (oddSecond n) := by
   unfold oddSecond

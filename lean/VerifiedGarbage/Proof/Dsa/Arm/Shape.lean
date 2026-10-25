@@ -276,7 +276,7 @@ theorem combine_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
     exact writeW32_outside _ _ _ (by omega_arith)
 
 /-- `[32]` = whether `[slot 0]` and `[32]` are both odd. -/
-theorem parity_ok {s : State} {base : Addr} {size n : Nat} (hs : Ws s base size) (hz : 4960 ≤ size) (hn : 0 < n)
+theorem parity_ok {s : State} {base : Addr} {size n : Nat} (hs : Ws s base size) (hz : 4960 ≤ size) (_hn : 0 < n)
     (hn48 : n ≤ 48) :
     WP isa (.block (Shape.parity n)) s fun t =>
       hdr base t 32 = mask32 (w32 s.mem base (slot n 0) % 2 = 1 ∧ (hdr base s 32).toNat % 2 = 1) ∧

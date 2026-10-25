@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.HalfPass
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # A masked exponent halving always visits every native word -/
 
@@ -15,6 +16,6 @@ theorem code_trace (n src out : Nat) :
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   erased_relCT (code n src out) (code 1 0 0)
     (VG.Taint.hintOf taint (roundTaint [.edi]) (Code.erase (code 1 0 0)))
-    rfl rfl rfl (by decide +kernel)
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 end VG.Proof.RsaKeyGen.X86.HalfPass

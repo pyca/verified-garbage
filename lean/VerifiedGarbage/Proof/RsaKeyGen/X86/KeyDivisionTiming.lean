@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionTimingOps
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # The entire native division wrapper hides both operands -/
 
@@ -15,19 +16,18 @@ open VG.Impl.RsaKeyGen.X86.Key
 theorem divisionLoad_public (n src divisor : Nat) : KeyPublic (divisionLoad n src divisor) := by
   unfold divisionLoad VG.Impl.Rsa.X86.Keys.seqs
   refine KeyPublic.seq ?_ ((copyWords_public ..).seq (copyWords_public ..))
-  let reference : Prog isa := .block [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax]
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) reference
-  refine ⟨hint, zeroTaint true, ?_, by decide +kernel⟩
-  exact (check_of_erase_eq _ reference (workspaceTaint true) hint rfl rfl rfl).trans (by rfl)
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (.block [.mov .eax (.imm 0),
+      .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)), zeroTaint true, ?_, by decide +kernel⟩
+  exact (check_of_erase_eq _ (.block [.mov .eax (.imm 0),
+      .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa) (workspaceTaint true) (VG.Taint.hintOf taint (workspaceTaint true) (.block [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)).trans (by kernel_rfl)
 
 theorem divisionCompute_public (n : Nat) : KeyPublic (divisionCompute n) := by
   obtain ⟨bodyHint, body⟩ := divisionStep_check n (VG.Impl.Rsa.X86.Keys.slot n 0)
     (VG.Impl.Rsa.X86.Keys.slot n 1) (VG.Impl.Rsa.X86.Keys.slot n 2) (VG.Impl.Rsa.X86.Keys.slot n 3)
-  let loopHint : VG.Taint.Hint VG.X86.Taint.T := .loop (workspaceTaint true) bodyHint
   have loop : VG.Taint.check taint (workspaceTaint true)
       (.loop (VG.Impl.Rsa.X86.Div.step n (VG.Impl.Rsa.X86.Keys.slot n 0)
         (VG.Impl.Rsa.X86.Keys.slot n 1) (VG.Impl.Rsa.X86.Keys.slot n 2)
-        (VG.Impl.Rsa.X86.Keys.slot n 3)) .ne) loopHint = some counterEndTaint := by
+        (VG.Impl.Rsa.X86.Keys.slot n 3)) .ne) (.loop (workspaceTaint true) bodyHint : VG.Taint.Hint VG.X86.Taint.T) = some counterEndTaint := by
     change (if taint.le (workspaceTaint true) (workspaceTaint true) then
       (VG.Taint.check taint (workspaceTaint true) _ bodyHint).bind
         (fun t => if taint.le (workspaceTaint true) t && taint.condPub t .ne then some t else none)
@@ -40,10 +40,10 @@ theorem divisionCompute_public (n : Nat) : KeyPublic (divisionCompute n) := by
         (.block [.mov .esi (.imm 0)]) (.block []) = some (workspaceTaint true) := rfl
     exact (check_of_erase_eq (.block [.mov .esi (.imm (BitVec.ofNat 32 (32 * n)))])
       (.block [.mov .esi (.imm 0)]) (workspaceTaint true) (.block []) rfl rfl rfl).trans simple
-  refine ⟨.seq (workspaceTaint true) (.seq (workspaceTaint true) (zerosHint true) (.block [])) loopHint,
+  refine ⟨.seq (workspaceTaint true) (.seq (workspaceTaint true) (zerosHint true) (.block [])) (.loop (workspaceTaint true) bodyHint : VG.Taint.Hint VG.X86.Taint.T),
     counterEndTaint, ?_, rfl⟩
   exact exponent_check_seq taint
-    (exponent_check_seq taint (zeros_check true _ _) (by rfl) countCheck) (by rfl) loop
+    (exponent_check_seq taint (zeros_check true _ _) (by kernel_rfl) countCheck) (by kernel_rfl) loop
 
 theorem divisionStore_public (n quotient remainder : Nat) : KeyPublic (divisionStore n quotient remainder) := by
   exact (copyWords_public ..).seq (copyWords_public ..)

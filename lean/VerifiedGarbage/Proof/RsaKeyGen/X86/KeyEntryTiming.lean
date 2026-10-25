@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEntry
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Copying the eighteen native key arguments has a public address trace -/
 
@@ -44,7 +45,7 @@ theorem enter_trace {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat →
   have copied : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (copies 18) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (τr [.esp, .edi]) (fun _ _ H => H)
       (hc := VG.Taint.hintOf taint (τr [.esp, .edi]) (copies 18))
-    rfl
+    kernel_rfl
   exact RelCT.seq pointer_trace copied
 
 end VG.Proof.RsaKeyGen.X86.KeyArgs

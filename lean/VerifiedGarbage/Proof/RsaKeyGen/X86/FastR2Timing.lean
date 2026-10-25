@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Mont.X86.PowerTiming
 import VerifiedGarbage.Proof.Dsa.X86.ValidationBlocksTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Fast R² setup has only public loop counts and fixed operand addresses -/
 
@@ -22,7 +23,7 @@ theorem doublesAt_trace (M : VG.Impl.Mont.Mod) (e acc out : Nat) :
       (VG.Impl.Mont.X86.Dynamic.doubleLoop M acc out))
     (.seq (.block [.mov .esi (.imm 1)])
       (VG.Impl.Mont.X86.Dynamic.doubleLoop { n := 1, mo := 0, tmp := 0, minv := 0 } 0 0))
-    (.seq (workspaceTaint true) (.block []) (.loop (workspaceTaint true) doubleHint)) rfl rfl rfl
+    (.seq (workspaceTaint true) (.block []) (.loop (workspaceTaint true) doubleHint)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
   decide +kernel
 
 theorem doubles_trace (M : VG.Impl.Mont.Mod) (acc out : Nat) :

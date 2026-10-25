@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ProductTiming
 import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Factor preparation keeps values and choices secret on i686 -/
 
@@ -62,13 +63,10 @@ theorem halfIf_public (n j : Nat) : KeyPublic (halfIf n j) := by
   · exact sel_public ..
 
 theorem bothEven_public (n : Nat) : KeyPublic (.block (bothEven n)) := by
-  let reference : Prog isa := .block [
-    .mov .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .or .eax (.mem (VG.Impl.Mont.X86.sc 0)),
-    .alu .and .eax (.imm 0), .alu .xor .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax]
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) reference
-  refine ⟨hint, workspaceTaint true, ?_, rfl⟩
-  exact (check_of_erase_eq (.block (bothEven n)) reference
-    (workspaceTaint true) hint rfl rfl rfl).trans (by rfl)
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (.block [ .mov .eax (.mem (VG.Impl.Mont.X86.sc 0)),
+      .alu .or .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0), .alu .xor .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)), workspaceTaint true, ?_, rfl⟩
+  exact (check_of_erase_eq (.block (bothEven n)) (.block [ .mov .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .or .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0), .alu .xor .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)
+    (workspaceTaint true) (VG.Taint.hintOf taint (workspaceTaint true) (.block [ .mov .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .or .eax (.mem (VG.Impl.Mont.X86.sc 0)), .alu .and .eax (.imm 0), .alu .xor .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)).trans (by kernel_rfl)
 
 theorem halveStep_public (n : Nat) : KeyPublic (halveStep n) := by
   unfold halveStep
@@ -83,12 +81,11 @@ theorem halveStep_public (n : Nat) : KeyPublic (halveStep n) := by
 
 theorem twos_loop_public (n : Nat) : KeyPublic (.loop (twoStep n) .ne) := by
   obtain ⟨hint, out, checked, preserves⟩ := halveStep_public n
-  let bodyHint : VG.Taint.Hint VG.X86.Taint.T := .seq (workspaceTaint true) hint (.block [])
-  have body : VG.Taint.check taint (workspaceTaint true) (twoStep n) bodyHint = some counterEndTaint :=
-    exponent_check_seq taint checked preserves (by rfl)
-  refine ⟨.loop (workspaceTaint true) bodyHint, counterEndTaint, ?_, rfl⟩
+  have body : VG.Taint.check taint (workspaceTaint true) (twoStep n) (.seq (workspaceTaint true) hint (.block []) : VG.Taint.Hint VG.X86.Taint.T) = some counterEndTaint :=
+    exponent_check_seq taint checked preserves (by kernel_rfl)
+  refine ⟨.loop (workspaceTaint true) (.seq (workspaceTaint true) hint (.block []) : VG.Taint.Hint VG.X86.Taint.T), counterEndTaint, ?_, rfl⟩
   change (if taint.le (workspaceTaint true) (workspaceTaint true) then
-    (VG.Taint.check taint (workspaceTaint true) _ bodyHint).bind
+    (VG.Taint.check taint (workspaceTaint true) _ (.seq (workspaceTaint true) hint (.block []) : VG.Taint.Hint VG.X86.Taint.T)).bind
       (fun t => if taint.le (workspaceTaint true) t && taint.condPub t .ne then some t else none)
     else none) = _
   rw [body]

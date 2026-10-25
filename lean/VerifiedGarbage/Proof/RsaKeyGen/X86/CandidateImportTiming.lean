@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoadTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Complete candidate construction keeps all random bytes secret -/
 
@@ -17,6 +18,6 @@ theorem code_trace (w out : Nat) :
       (VG.X86.Taint.Agree VG.Proof.RsaKeyGen.X86.Import.publicState) := by
   refine RelCT.seq (VG.Proof.RsaKeyGen.X86.Import.load_trace (2 * w) out) ?_
   exact erased_relCT (.block (CandidateBits.code w out)) (.block (CandidateBits.code 0 0)) (.block [])
-    rfl rfl rfl (by decide +kernel)
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 end VG.Proof.RsaKeyGen.X86.CandidateImport

@@ -41,7 +41,7 @@ at `off BX oP` (`P` in array 0, `m₁ < P` in array 4), `qInv < P` in `X`'s
 array 7: `h` into `p`'s array 4. -/
 theorem phaseD_ok {s : State} {BX : Addr} {Z oP oQ wX pL qL Pv m1 M2 QI : Nat}
     (hs : Scr s BX Z) (hPZ : oP + slot (wsWords pL) 24 ≤ Z) (hXP : slot wX 8 ≤ oP)
-    (hQZ : oQ + slot (wsWords qL) 24 ≤ Z) (hXQ : slot wX 8 ≤ oQ) (hPQ : oP + slot (wsWords pL) 24 ≤ oQ)
+    (hQZ : oQ + slot (wsWords qL) 24 ≤ Z) (hXQ : slot wX 8 ≤ oQ) (_hPQ : oP + slot (wsWords pL) 24 ≤ oQ)
     (hwP : wsWords pL ≤ wX) (hwQ : wsWords qL ≤ wX) (hwX : wX < 2 ^ 31)
     (h10 : s.gpr .r10 = off (off BX oQ) (slot (wsWords qL) 0))
     (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wsWords qL + 2))) (h23 : s.gpr .r23 = BX)

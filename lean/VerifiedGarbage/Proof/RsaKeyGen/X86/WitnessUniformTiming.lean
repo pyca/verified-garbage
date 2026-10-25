@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessUniform
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessLowerTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Uniform-witness classification scans the same addresses for every input -/
 
@@ -15,13 +16,13 @@ theorem mark_trace (src : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (.block (VG.Impl.RsaKeyGen.X86.WitnessOdd.mark src))
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   erased_relCT (.block (VG.Impl.RsaKeyGen.X86.WitnessOdd.mark src))
-    (.block (VG.Impl.RsaKeyGen.X86.WitnessOdd.mark 0)) (.block []) rfl rfl rfl (by decide +kernel)
+    (.block (VG.Impl.RsaKeyGen.X86.WitnessOdd.mark 0)) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 theorem restore_trace (src : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (.block (VG.Impl.RsaKeyGen.X86.WitnessOdd.restore src))
       (VG.X86.Taint.Agree (roundTaint [.edi])) :=
   erased_relCT (.block (VG.Impl.RsaKeyGen.X86.WitnessOdd.restore src))
-    (.block (VG.Impl.RsaKeyGen.X86.WitnessOdd.restore 0)) (.block []) rfl rfl rfl (by decide +kernel)
+    (.block (VG.Impl.RsaKeyGen.X86.WitnessOdd.restore 0)) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 theorem less_trace (w src modulus : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (VG.Impl.Dsa.X86.lessThan w src modulus)
@@ -30,7 +31,7 @@ theorem less_trace (w src modulus : Nat) :
     (.seq (roundTaint [.edi]) (.block [])
       (.seq (roundTaint [.edi])
         (.seq (roundTaint [.edi, .ebp]) (.block []) (.loop (roundTaint [.edi, .ebp]) (.block []))) (.block [])))
-    rfl rfl rfl (by decide +kernel)
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
 theorem code_trace (w src modulus : Nat) :
     RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (code w src modulus)

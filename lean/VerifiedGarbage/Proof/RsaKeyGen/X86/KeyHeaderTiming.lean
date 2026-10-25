@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInputPair
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Public pointers and lengths reloaded from the retained key header -/
 
@@ -38,7 +39,7 @@ theorem headerPair_trace (E : Environment) (i j : Nat) (hi : i < 18) (hj : j < 1
   intro s t tr ur u v P A C
   have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (headerPair exporting i j)
       (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
-    erased_relCT _ (headerPair exporting 0 0) (.block []) rfl rfl rfl (by cases exporting <;> rfl)
+    erased_relCT _ (headerPair exporting 0 0) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by cases exporting <;> kernel_rfl)
   obtain ⟨leftPointer, leftCount, leftKeeps⟩ := wp_result (headerPair_ok P.left hi hj exporting) A
   obtain ⟨rightPointer, rightCount, rightKeeps⟩ := wp_result (headerPair_ok P.right hi hj exporting) C
   refine ⟨(raw _ _ _ _ _ _ P.agree A C).1, agree_regs ?_⟩

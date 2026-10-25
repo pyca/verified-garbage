@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: the exit
 
@@ -143,7 +144,7 @@ theorem outZero_vp {g : Geo} {c : Cfg} {F : State → State → Prop} (hF : ∀ 
       (fun σ s h => (hF σ s h).1.fixedV (by simp [fixedWords])) fun σ s t h u => ⟨s, hF σ s h, u⟩) ?_
   refine VP.taint [.r0] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0])
       (seqs [.block [.mov .r3 (.imm 0), .movw .lr (BitVec.ofNat 16 5)],
-        .loop (.block zeroStep) .ne, .block [.mov .r0 (.imm 0)]]), rfl⟩ (fun σ₁ σ₂ s₁ s₂ ⟨_, _, u₁⟩ ⟨_, _, u₂⟩ r hr => ?_) fun σ t ⟨s, ⟨h, x⟩, u⟩ => ?_
+        .loop (.block zeroStep) .ne, .block [.mov .r0 (.imm 0)]]), by kernel_rfl⟩ (fun σ₁ σ₂ s₁ s₂ ⟨_, _, u₁⟩ ⟨_, _, u₂⟩ r hr => ?_) fun σ t ⟨s, ⟨h, x⟩, u⟩ => ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; rw [u₁.gpr, u₂.gpr]
   have gi := h.gi
   have hol := gi.outLen
@@ -178,20 +179,15 @@ theorem outCopy_vp {g : Geo} {c : Cfg} {a : Spec.Dsa.Params} {F : State → Stat
     VP F (seqs [.block [ld .r0 fOut], .block (scr g.pLen .r1 sPacked ++ ([.movw .lr (BitVec.ofNat 16 (2 * g.pLen + g.qLen))] : List Instr)),
       VG.Impl.Bignum.Arm.copyBytes, .block [.mov .r0 (.imm 1)]]) (fun σ t => FO G (some a) σ t ∧ X σ) := by
   -- After the pointers and the count.
-  let P₂ : State → State → Prop := fun σ t => ∃ s, St G c X σ s ∧ Rest [.r0, .r1, .r12, .lr] s t ∧
-    t.mem = s.mem ∧ t.gpr .r0 = G.out ∧ t.gpr .r1 = G.scr + BitVec.ofNat 32 sPacked ∧
-    t.gpr .lr = BitVec.ofNat 32 G.outLen
   -- After the copy.
-  let P₃ : State → State → Prop := fun σ t => ∃ s, St G c X σ s ∧ Rest [.r0, .r1, .r2, .r12, .lr] s t ∧
-    Frame [G.rOut] s.mem t.mem ∧ Spec.Rsa.bytesAt t.mem (State.addr G.out) G.outLen =
-      Spec.Dsa.encodeParams G.pLen G.qLen a
   have hlen := VG.Proof.Dsa.Generation.encodeParams_length G.pLen G.qLen a
   refine VP.seq (G := fun σ t => ∃ s, St G c X σ s ∧ Upd s t .r0 G.out)
     (ld_vp (o := fOut) (fun σ s h => (hF σ s h).1) (by decide) (by decide)
       (fun σ s h => (hF σ s h).1.fixedV (by simp [fixedWords])) fun σ s t h u => ⟨s, hF σ s h, u⟩)
-    (VP.seq (G := P₂) ?_ (VP.seq (G := P₃) ?_ ?_))
+    (VP.seq (G := (fun σ t => ∃ s, St G c X σ s ∧ Rest [.r0, .r1, .r12, .lr] s t ∧ t.mem = s.mem ∧ t.gpr .r0 = G.out ∧ t.gpr .r1 = G.scr + BitVec.ofNat 32 sPacked ∧ t.gpr .lr = BitVec.ofNat 32 G.outLen : State → State → Prop)) ?_ (VP.seq (G := (fun σ t => ∃ s, St G c X σ s ∧ Rest [.r0, .r1, .r2, .r12, .lr] s t ∧ Frame [G.rOut] s.mem t.mem ∧ Spec.Rsa.bytesAt t.mem (State.addr G.out) G.outLen = Spec.Dsa.encodeParams G.pLen G.qLen a : State → State → Prop)) ?_ ?_))
   · refine VP.taint [.r0, .r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0, .r8])
-        (.block (scr 128 .r1 0 ++ [.movw .lr (BitVec.ofNat 16 5)])), rfl⟩ (fun σ₁ σ₂ s₁ s₂ ⟨_, h₁, u₁⟩ ⟨_, h₂, u₂⟩ r hr => ?_) fun σ t ⟨s, ⟨h, x⟩, u⟩ => ?_
+        (.block (scr 128 .r1 0 ++ [.movw .lr (BitVec.ofNat 16 5)])), by kernel_rfl⟩ (fun σ₁ σ₂ s₁ s₂ ⟨_, h₁,
+            u₁⟩ ⟨_, h₂, u₂⟩ r hr => ?_) fun σ t ⟨s, ⟨h, x⟩, u⟩ => ?_
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [u₁.gpr, u₂.gpr]
@@ -230,7 +226,8 @@ theorem outCopy_vp {g : Geo} {c : Cfg} {a : Spec.Dsa.Params} {F : State → Stat
       fun t ⟨rd', fr, _, rest⟩ => ⟨s, ⟨h, x⟩, (R.mono (by simp)).trans (rest.mono (by simp)), by rw [← M]; exact fr, ?_⟩
     rw [bytesAt_of_read rd', M, ad, hol, ← hlen]
     have e := h.sb _ hcl; dsimp only at e; exact e
-  · refine VP.taint [] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs []) (.block [.mov .r0 (.imm 1)]), rfl⟩
+  · refine VP.taint [] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs []) (.block [.mov .r0 (.imm 1)]),
+      by kernel_rfl⟩
       (fun _ _ _ _ _ _ r hr => absurd hr (by simp)) fun σ t ⟨s, ⟨h, x⟩, R, fr, ho⟩ =>
       wp_mov (op2_imm (by decide)) fun t' u => WP.block_nil ⟨h.gi.fo (R.trans (u.rest (by simp)))
         (by rw [u.mem]; exact fr) (by rw [u.mem, ho]; rfl) (by rw [u.gpr]; rfl), x⟩

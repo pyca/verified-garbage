@@ -56,7 +56,7 @@ theorem p2rBody_ok (s : State) (hq : s.gpr .x9 = Qv) (h0 : InRegions (s.rd ++ s.
   unfold p2rBody
   arun [h0, h1, h2, hq, t1V, t0V, List.map_cons, List.map_nil]
 
-theorem p2rX_toNat {x : BitVec 32} (hx : x.toNat < q) : (p2rX x).toNat = x.toNat + 4095 := by
+theorem p2rX_toNat {x : BitVec 32} (_hx : x.toNat < q) : (p2rX x).toNat = x.toNat + 4095 := by
   have hq : q = 8380417 := rfl
   rw [BitVec.toNat_add, toNat_setWidth64, BitVec.toNat_ofNat]
   omega_arith

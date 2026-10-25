@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyInverse
 public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
 import VerifiedGarbage.Proof.Rsa.X86.InverseTiming
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # The inverse wrapper's complete schedule is independent of its inputs -/
 
@@ -13,20 +14,17 @@ open VG VG.X86 VG.Proof.Rsa.X86.Keys VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Rsa.X86.Keys VG.Impl.RsaKeyGen.X86.Key
 
 theorem copyWords_public (n src dst : Nat) : KeyPublic (VG.Impl.Rsa.X86.Div.copyWords n src dst) := by
-  let reference := VG.Impl.Rsa.X86.Div.copyWords 1 0 0
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) (Code.erase reference)
-  let out : VG.X86.Taint.T := { regs := .ofList [.edi, .esi, .ebp, .edx, .ecx], flags := true }
-  refine ⟨hint, out, ?_, by decide +kernel⟩
-  exact (check_of_erase_eq (VG.Impl.Rsa.X86.Div.copyWords n src dst) reference
-    (workspaceTaint true) hint rfl rfl rfl).trans (by rfl)
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (VG.Impl.Rsa.X86.Div.copyWords 1 0 0))),
+      ({ regs := .ofList [.edi, .esi, .ebp, .edx, .ecx], flags := true } : VG.X86.Taint.T), ?_, by decide +kernel⟩
+  exact (check_of_erase_eq (VG.Impl.Rsa.X86.Div.copyWords n src dst) (VG.Impl.Rsa.X86.Div.copyWords 1 0 0)
+    (workspaceTaint true) (VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (VG.Impl.Rsa.X86.Div.copyWords 1 0 0))) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)).trans (by kernel_rfl)
 
 theorem setOne_public (n j : Nat) : KeyPublic (.block (setOne n j)) := by
-  let reference : Prog isa := .block [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax]
-  let hint := VG.Taint.hintOf taint (workspaceTaint true) reference
-  let out : VG.X86.Taint.T := { regs := .ofList [.edi, .esi, .eax], flags := false }
-  refine ⟨hint, out, ?_, by decide +kernel⟩
-  exact (check_of_erase_eq (.block (setOne n j)) reference
-    (workspaceTaint true) hint rfl rfl rfl).trans (by rfl)
+  refine ⟨(VG.Taint.hintOf taint (workspaceTaint true) (.block [.mov .eax (.imm 0),
+      .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)), ({ regs := .ofList [.edi, .esi, .eax], flags := false } : VG.X86.Taint.T), ?_, by decide +kernel⟩
+  exact (check_of_erase_eq (.block (setOne n j)) (.block [.mov .eax (.imm 0), .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)
+    (workspaceTaint true) (VG.Taint.hintOf taint (workspaceTaint true) (.block [.mov .eax (.imm 0),
+        .store (VG.Impl.Mont.X86.sc 0) .eax] : Prog isa)) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)).trans (by kernel_rfl)
 
 theorem inverseBank_public (n : Nat) : KeyPublic (inverseBank n) := by
   unfold inverseBank

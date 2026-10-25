@@ -368,7 +368,7 @@ theorem openChk_ok (hF : ShortFacts) {gh : Prog isa} {tm : Mem → Mem} {k : Nat
 /-- After `openChk`: the data decrypted if the tags match, and `rax` the
 comparison's result. -/
 theorem openTail_ok {k : Nat} {s₀ s : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J : Block} {t K : Nat}
-    (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hal5 : al < 512) (hn5 : n < 512)
+    (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (_hal5 : al < 512) (hn5 : n < 512)
     (h32 : nb16 al + nb16 n < 32) (O : OpenChk s₀ Ctx W SP A D R al n J t K s) :
     WP isa (.seq (.ite .e (.block []) (.seq (.block textArgs) (xorText false)))
         (.block [.mov .rax (.mem (at_ .r15 auxO))])) s fun s' =>

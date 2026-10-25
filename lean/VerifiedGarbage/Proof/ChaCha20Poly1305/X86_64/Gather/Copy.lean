@@ -67,7 +67,7 @@ theorem getD_bytesAt (m : Mem) (p : Addr) {n j : Nat} (h : j < n) :
 
 /-- Copying bytes `[a, a + c)` again, after the first `i ≥ a`: the first
 `max i (a + c)`. -/
-theorem redo (m : Mem) (S D : Addr) {i a c : Nat} (ha : a ≤ i) (hi : i < 2 ^ 63) (hc : a + c < 2 ^ 63) :
+theorem redo (m : Mem) (S D : Addr) {i a c : Nat} (ha : a ≤ i) (_hi : i < 2 ^ 63) (hc : a + c < 2 ^ 63) :
     writeBytes (writeBytes m D (bytesAt m S i)) (D + BitVec.ofNat 64 a) (bytesAt m (S + BitVec.ofNat 64 a) c) =
       writeBytes m D (bytesAt m S (max i (a + c))) := by
   funext x

@@ -101,11 +101,11 @@ section
 variable {s₀ : State} (hp : FPre s₀)
 include hp
 
-theorem FPre.inScr {d n : Nat} (h : d + n ≤ 640) (hn : 0 < n) :
+theorem FPre.inScr {d n : Nat} (h : d + n ≤ 640) (_hn : 0 < n) :
     InRegions s₀.wr ((FS s₀).setWidth 64 + BitVec.ofNat 64 d) n := by
   rw [hp.wr]; exact in_rw (r := fscrR s₀) (by simp) (Offset.contains_base _ h (by omega_arith))
 
-theorem FPre.inKey {d n : Nat} (h : d + n ≤ 400) (hn : 0 < n) :
+theorem FPre.inKey {d n : Nat} (h : d + n ≤ 400) (_hn : 0 < n) :
     InRegions (s₀.rd ++ s₀.wr) ((FW s₀).setWidth 64 + BitVec.ofNat 64 d) n := by
   rw [hp.rd]; exact in_rw (r := keyR s₀) (by simp) (Offset.contains_base _ h (by omega_arith))
 
