@@ -692,5 +692,8 @@ if __name__ == "__main__":
             subprocess.run(["uname", "-a"], check=True)
             subprocess.run(["lscpu"], check=True)
             subprocess.run([binary], check=True)
+            subprocess.run(["cc", "-O3", "-I" + str(trial), str(trial / "bulk-driver.c"),
+                            str(trial / "generated.S"), "-o", binary], check=True)
+            subprocess.run([binary], check=True)
         sys.exit(0)
     sys.exit(main())

@@ -58,16 +58,24 @@ for i,(rid,kind,args,aux) in enumerate(nodes):
    instructions.append(f'.bicRor .x .x{p} .x{a} .x{b} {aux}' if kind=='bic' else f'.logicRor .eor .x .x{p} .x{a} .x{b} {aux}')
 # Store directly to original state pointer saved in v16 by scalar boundary.
 # Easier normalize result with stack array then existing scalar finish via load.
-ptr,tmp=sorted(free)[:2]
-instructions+=[f'.umov .x .x{ptr} .v30 0']
-for i,r in enumerate(state_regs):
- p,o=physical[vals[r][0]],vals[r][1]
- if o: instructions.append(f'.ror .x .x{tmp} .x{p} {(64-o)%64}');p=tmp
- instructions.append(f'.str .x .x{p} .x{ptr} {8*i}')
+# Normalize the final layout using a parallel copy, keeping the 25 lanes in GPRs.
+tmp=min(free)
+remaining={r:(physical[vals[r][0]],(64-vals[r][1])%64) for r in state_regs}
+while remaining:
+ sources={p for p,_ in remaining.values()}
+ choices=[r for r in remaining if r not in sources or remaining[r][0]==r]
+ if choices:
+  d=choices[0];p,o=remaining.pop(d)
+  if o:instructions.append(f'.ror .x .x{d} .x{p} {o}')
+  elif d!=p:instructions.append(f'.addImm .x .x{d} .x{p} 0')
+ else:
+  p=next(iter(remaining.values()))[0]
+  instructions.append(f'.addImm .x .x{tmp} .x{p} 0')
+  remaining={d:((tmp if src==p else src),o) for d,(src,o) in remaining.items()}
 print(len(nodes),len(instructions),'instructions')
 (root/'lazy-instrs.txt').write_text('\n'.join(instructions))
 
-header="""import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
+header="""import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
 import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
 import VerifiedGarbage.TCB.AArch64.Print
 open VG VG.AArch64
@@ -94,17 +102,24 @@ for i,part in enumerate(parts):header+=f'def chunk{i} : List Instr := '+part+'\n
 header+='def body : List Instr := ['+','.join(f'chunk{i}' for i in range(len(parts)))+'].flatten\n'
 header+="""def variants : List (String × Prog isa) :=
  [("scalar", VG.Impl.Sha3.AArch64.Scalar.unrolledPermute),
- ("lazy",.block (VG.Impl.Sha3.AArch64.Scalar.Boundary.save ++ VG.Impl.Sha3.AArch64.Scalar.Boundary.load ++ body ++ VG.Impl.Sha3.AArch64.Scalar.Boundary.restore))]
+ ("lazy",.block (VG.Impl.Sha3.AArch64.Scalar.Boundary.save ++ VG.Impl.Sha3.AArch64.Scalar.Boundary.load ++ body ++ VG.Impl.Sha3.AArch64.Scalar.Boundary.store ++ VG.Impl.Sha3.AArch64.Scalar.Boundary.restore))]
+def bulks : List (String × Prog isa) :=
+ [("bulk_scalar",VG.Impl.Sha3.AArch64.Scalar.Resident.bulk),
+ ("bulk_lazy",.seq (.block VG.Impl.Sha3.AArch64.Scalar.Resident.setup)
+  (.seq (.loop (.seq VG.Impl.Sha3.AArch64.Scalar.Resident.xorBlock
+    (.block (body ++ VG.Impl.Sha3.AArch64.Scalar.Resident.advance))) (.zero .x .x26))
+    (.block VG.Impl.Sha3.AArch64.Scalar.Resident.finish)))]
 def main : IO Unit := do
  for apple in [true,false] do
   let symPrefix := if apple then "_" else ""
   let mut result := ".text\\n"
-  for (name,body) in variants do
+  for (name,body) in variants ++ bulks do
    let symbol := symPrefix ++ "trial_" ++ name
    result := result ++ ".p2align 6\\n.globl " ++ symbol ++ "\\n" ++ symbol ++ ":\\n" ++ String.intercalate "\\n" ((printer.function body).map fun l => match l with
     | .text s => s | _ => "UNEXPECTED") ++ "\\n"
   IO.FS.writeFile ("/tmp/vg-sha3-next/lazy-" ++ (if apple then "apple" else "linux") ++ ".S") result
  IO.FS.writeFile "/tmp/vg-sha3-next/lazy-variants.h" (String.join (variants.map fun (n,_) => "X(trial_" ++ n ++ ")\\n"))
+ IO.FS.writeFile "/tmp/vg-sha3-next/lazy-bulks.h" (String.join (bulks.map fun (n,_) => "B(trial_" ++ n ++ ")\\n"))
 end Lazy
 def main := Lazy.main
 """
