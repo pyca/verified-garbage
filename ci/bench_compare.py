@@ -681,6 +681,7 @@ def main():
 
 
 if __name__ == "__main__":
+    from pathlib import Path
     # Unproved, isolated experiment branch only; never part of a production PR.
     trial = Path(__file__).resolve().parent.parent / "experiments" / "sha3"
     if trial.is_dir():
