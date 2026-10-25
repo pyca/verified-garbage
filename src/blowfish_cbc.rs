@@ -14,15 +14,18 @@
 //! one block at a time, on AArch64 through the ECB code's batch of sixteen
 //! blocks, which deciphers sixteen blocks at once (encryption, which is
 //! sequential, one per batch), on ARMv7 calling the verified
-//! `vg_blowfish_ecb_encrypt` or `vg_blowfish_ecb_decrypt` for each block. This
-//! module checks the lengths and holds the schedule.
+//! `vg_blowfish_ecb_encrypt` or `vg_blowfish_ecb_decrypt` for each block, on
+//! RISC-V one block at a time from a copy of the schedule in a 16-byte aligned
+//! stack frame, zeroed before returning. This module checks the lengths and
+//! holds the schedule.
 
 #![cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::blowfish::vg_blowfish_expand_key;

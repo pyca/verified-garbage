@@ -68,6 +68,11 @@ mod tests {
             crate::aes_cbc::Error::InvalidKeyLength,
             crate::aes_ecb::Error::IncompleteBlock,
             crate::aes_ecb::Error::InvalidKeyLength,
+            crate::blowfish_cbc::Error::IncompleteBlock,
+            crate::blowfish_cbc::Error::InvalidKeyLength,
+            crate::blowfish_ecb::Error::IncompleteBlock,
+            crate::blowfish_ecb::Error::InvalidKeyLength,
+            crate::blowfish_ecb::Error::OutputTooSmall,
             crate::rc4::Error::InvalidKeyLength,
         );
     }
