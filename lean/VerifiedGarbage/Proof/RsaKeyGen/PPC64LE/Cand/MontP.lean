@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # A candidate on PPC64LE: the candidate prepared
 
-`prep_ok`: `montPrep` (`montPrep_ok`) on the layout `setup` wrote (`Lay`)
+`prep_ok`: `montPrepHi` (`montPrepHi_ok`) on the layout `setup` wrote (`Lay`)
 leaves the working space `Prep`ared for the rounds.
 -/
 
@@ -19,18 +19,18 @@ leaves the working space `Prep`ared for the rounds.
 namespace VG.Proof.RsaKeyGen.PPC64LE.Cand
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE
-open VG.Impl.MillerRabin.PPC64LE.Search (montPrep)
-open VG.Proof.MillerRabin.PPC64LE.Search (Prep montPrep_ok mpRanges mpRegs)
+open VG.Impl.MillerRabin.PPC64LE.Search (montPrepHi)
+open VG.Proof.MillerRabin.PPC64LE.Search (Prep montPrepHi_ok mpRanges mpRegs)
 open VG.Proof.MillerRabin.PPC64LE (Env arr)
 open VG.Proof.Bignum (slot)
 
 theorem prep_ok {s : State} {B : Addr} {L w c : Nat} (h : Env s B (8 * L) w) (hl : Lay s.mem B L w)
-    (hn : arr s.mem B w 0 = c) (hodd : c % 2 = 1) (h3 : 3 ≤ c) :
-    WP isa montPrep s fun t => (Prep t B L w c ∧ Outs B (mpRanges w) s.mem t.mem) ∧ Keep mpRegs s t := by
+    (hn : arr s.mem B w 0 = c) (hodd : c % 2 = 1) (h3 : 3 ≤ c) (hct : 2 ^ (64 * (w - 1)) < c) :
+    WP isa montPrepHi s fun t => (Prep t B L w c ∧ Outs B (mpRanges w) s.mem t.mem) ∧ Keep mpRegs s t := by
   have hnw := h.hs.nowrap
   have hZ := h.hZ
   rw [slot_lin] at hZ
-  refine WP.mono (montPrep_ok h hn hodd h3) fun t ⟨⟨e, n, inv, _, _, r1, r9, r10, ee, l, o⟩, k⟩ => ⟨⟨?_, o⟩, k⟩
+  refine WP.mono (montPrepHi_ok h hn hodd h3 hct) fun t ⟨⟨e, n, inv, _, _, r1, r9, r10, ee, l, o⟩, k⟩ => ⟨⟨?_, o⟩, k⟩
   have ow : ∀ d, d + 8 ≤ 56 ∨ (64 ≤ d ∧ d + 8 ≤ 256) → word t.mem B d = word s.mem B d := fun d hd =>
     o.word (fun x hx => by
       simp only [mpRanges, VG.Impl.MillerRabin.PPC64LE.aE, List.mem_cons, List.not_mem_nil, or_false] at hx

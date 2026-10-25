@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Sel
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Minv
 import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Search.Copy
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Fast
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFinish
@@ -18,10 +19,12 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # A prime search on PPC64LE: a modulus's Montgomery constants
 
-`montPrep_ok`: for an odd `N ≥ 3` in array 0, `−N⁻¹ mod 2⁶⁴` in header word
+`montPrepWith_ok`: for an odd `N ≥ 3` in array 0, `−N⁻¹ mod 2⁶⁴` in header word
 7 (its low half in `r12`), `R² mod N` in array 1, `R mod N` in array 9 (by
 way of array 6), `N − R mod N` in array 10, and Miller–Rabin's exponent in
-array 27 (`expSetup_ok`), `R = 2^(64 w)`.
+array 27 (`expSetup_ok`), `R = 2^(64 w)`, given a computation of `R² mod
+N` (`R2Ok`); `montPrep_ok` with `Precompute.r2` (`128 w` doublings), and
+`montPrepHi_ok` with `Precompute.r2Hi`, for `N` above `2^(64 (w − 1))`.
 -/
 
 @[expose] public section
@@ -51,9 +54,27 @@ theorem wv_shift {m m' : Mem} {B : Addr} {d d' w : Nat}
   | zero => rfl
   | succ k ih => rw [wv, wv, ih fun i hi => h i (by omega_arith), h k (by omega_arith)]
 
-theorem montPrep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Env s B Z w) (hn : arr s.mem B w 0 = N)
-    (hodd : N % 2 = 1) (hN3 : 3 ≤ N) :
-    WP isa montPrep s fun t =>
+/-- The registers `montPrep`'s computation of `R² mod N` may write: not
+`Env`'s, nor `r12`. -/
+def r2Regs : List Reg :=
+  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22]
+
+/-- A computation of `R² mod N` into array 1 for `montPrepWith`, for an odd
+`N ≥ 3` in array 0 with `P w N`: from the bases of arrays 1–3 in `r5`, `r8`
+and `r9` and `−N⁻¹ mod 2³²` in `r12`, writing only arrays 1–3 and `r2Regs`. -/
+def R2Ok (r2c : Prog isa) (P : Nat → Nat → Prop) : Prop :=
+  ∀ {s : State} {B : Addr} {Z w N : Nat}, Env s B Z w → s.gpr .r5 = off B (slot w 1) →
+    s.gpr .r8 = off B (slot w 2) → s.gpr .r9 = off B (slot w 3) → (s.gpr .r12).toNat < 2 ^ 32 →
+    (w32 s.mem B (slot w 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0 →
+    val32 s.mem B (slot w 0) (2 * w) = N → N % 2 = 1 → 3 ≤ N → P w N →
+    WP isa r2c s fun t => val32 t.mem B (slot w 1) (2 * w) = 2 ^ (128 * w) % N ∧
+      Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep r2Regs s t
+
+/-- `montPrepWith r2c`, for `r2c` computing `R² mod N` under `P w N`. -/
+theorem montPrepWith_ok {r2c : Prog isa} {P : Nat → Nat → Prop} (hr2 : R2Ok r2c P) {s : State} {B : Addr}
+    {Z w N : Nat} (h : Env s B Z w) (hn : arr s.mem B w 0 = N) (hodd : N % 2 = 1) (hN3 : 3 ≤ N)
+    (hP : P w N) :
+    WP isa (montPrepWith r2c) s fun t =>
       (Env t B Z w ∧ arr t.mem B w 0 = N ∧
         ((word t.mem B (slot w 0)).toNat * (word t.mem B 56).toNat + 1) % 2 ^ 64 = 0 ∧
         (t.gpr .r12).toNat < 2 ^ 32 ∧ (w32 t.mem B (slot w 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 ∧
@@ -76,7 +97,7 @@ theorem montPrep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Env s B Z w) (hn :
     simp only [wv, Nat.mul_zero, Nat.add_zero, Nat.zero_add, Nat.pow_zero, Nat.one_mul] at e
     have : (word s.mem B (slot w 0)).toNat = (VG.Proof.Bignum.word s.mem B (slot w 0)).toNat := rfl
     omega_arith
-  unfold montPrep
+  unfold montPrepWith
   -- `−N⁻¹`, and the arrays' addresses.
   refine WP.seq ?_
   simp only [List.append_assoc]
@@ -102,11 +123,13 @@ theorem montPrep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Env s B Z w) (hn :
     o14.word (by simp only [es]; omega_arith) (by simp only [es]; omega_arith)
   -- `R² mod N`.
   have hN4v : val32 s₄.mem B (slot w 0) (2 * w) = N := n₄
-  have hN2₄ : 2 ≤ val32 s₄.mem B (slot w 0) (2 * w) := by
-    show 2 ≤ arr s₄.mem B w 0
-    omega_arith
-  refine WP.seq (WP.mono (r2_ok e₄.hs ((k₄.gpr .r8 (by decide)).trans a8) a9 e₄.h10 (((k₃.trans k₄).gpr .r5 (by decide)).trans a5) e₄.h11 (by omega_arith)
-    (by omega_arith) (by simp only [es]; omega_arith) hN2₄) fun s₅ ⟨r₅, o₅, k₅⟩ => ?_)
+  have h12₄ : s₄.gpr .r12 = (v <<< 32) >>> 32 := (((k₂.trans k₃).trans k₄).gpr .r12 (by decide)).trans h12₁
+  obtain ⟨i12, iinv⟩ := r12_inv hv
+  have hw32 : ∀ m : Mem, w32 m B (slot w 0) = (word m B (slot w 0)).toNat % 2 ^ 32 := fun m => by
+    have h2 : w32 m B (slot w 0) < 2 ^ 32 := (m.readW (off B (slot w 0)) 32).isLt
+    rw [word_eq_w32, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt h2]
+  refine WP.seq (WP.mono (hr2 e₄ (((k₃.trans k₄).gpr .r5 (by decide)).trans a5) ((k₄.gpr .r8 (by decide)).trans a8)
+    a9 (by rw [h12₄]; exact i12) (by rw [h12₄, hw32, wd₄]; exact iinv) hN4v hodd hN3 hP) fun s₅ ⟨r₅, o₅, k₅⟩ => ?_)
   have e₅ : Env s₅ B Z w := e₄.keep k₅ (by decide)
   -- 1 in array 7.
   refine WP.seq (WP.mono (Pub.oneP_ok e₅.hs (by omega_arith) (by omega_arith) (by simp only [es]; omega_arith) e₅.h10 e₅.h29 e₅.h11)
@@ -122,13 +145,9 @@ theorem montPrep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Env s B Z w) (hn :
     rw [o₆.word (by simp only [es]; omega_arith) (by simp only [es]; omega_arith),
       o₅.word (by simp only [es]; omega_arith) (by simp only [es]; omega_arith), wd₄]
   have r1₆ : val32 s₆.mem B (slot w 1) (2 * w) = 2 ^ (64 * w) * 2 ^ (64 * w) % N := by
-    rw [o₆.val32 (by simp only [es]; omega_arith) (by simp only [es]; omega_arith), r₅, hN4v, ← Nat.pow_add]
+    rw [o₆.val32 (by simp only [es]; omega_arith) (by simp only [es]; omega_arith), r₅, ← Nat.pow_add]
     congr 2; omega_arith
   have h12₆ : s₆.gpr .r12 = (v <<< 32) >>> 32 := ((((k₂.trans k₃).trans k₄).trans k₅).trans k₆).gpr .r12 (by decide) |>.trans h12₁
-  obtain ⟨i12, iinv⟩ := r12_inv hv
-  have hw32 : ∀ m : Mem, w32 m B (slot w 0) = (word m B (slot w 0)).toNat % 2 ^ 32 := fun m => by
-    have h2 : w32 m B (slot w 0) < 2 ^ 32 := (m.readW (off B (slot w 0)) 32).isLt
-    rw [word_eq_w32, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt h2]
   -- `R mod N` in array 6, the product of `R² mod N` and 1.
   refine WP.seq (WP.mono (Pub.montOp_ok e₆.hs (o := 6) (a := 1) (b := 7) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by omega_arith) (by omega_arith) (by simp only [es]; omega_arith) e₆.h10 e₆.h29
@@ -269,5 +288,47 @@ theorem montPrep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Env s B Z w) (hn :
       (hsq oE ⟨(slot w aE, 8 * (w + 2)), by simp [mpRanges], by omega_arith, by omega_arith⟩)
   · exact ((((((((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans k810).trans k₁₁).trans
       ((k₁₂.trans k₁₃).trans k₁₄)).trans (k₁₅.trans kE)).mono (by decide)
+
+/-- `Precompute.r2`: `128 w` doublings, for any `N ≥ 2`. -/
+theorem r2_r2Ok : R2Ok Precompute.r2 fun _ _ => True := by
+  intro s B Z w N h h5 h8 h9 _ _ hN _ hN3 _
+  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  have hZ := h.hZ
+  refine WP.mono (r2_ok h.hs h8 h9 h.h10 h5 h.h11 (by have := h.hw; omega_arith) (by have := h.hw'; omega_arith)
+    (by simp only [es] at hZ ⊢; omega_arith) (by omega_arith)) fun t ⟨r, o, k⟩ => ⟨by rw [r, hN], o, k.mono (by decide)⟩
+
+/-- `Precompute.r2Hi`: `64 + w` doublings and six Montgomery squares, for `N`
+above `2^(64 (w − 1))`. -/
+theorem r2Hi_r2Ok : R2Ok Precompute.r2Hi fun w N => 2 ^ (64 * (w - 1)) < N := by
+  intro s B Z w N h h5 h8 h9 i12 iinv hN hodd _ hNt
+  have es : ∀ j, slot w j = 256 + j * (8 * (w + 2)) := fun _ => rfl
+  have hZ := h.hZ
+  exact WP.mono (Pre.r2Hi_ok h.hs h8 h9 h.h10 h5 h.h11 (by have := h.hw; omega_arith) (by have := h.hw'; omega_arith)
+    (by simp only [es] at hZ ⊢; omega_arith) i12 iinv hN hNt hodd) fun t ⟨r, o, k⟩ => ⟨r, o, k.mono (by decide)⟩
+
+theorem montPrep_ok {s : State} {B : Addr} {Z w N : Nat} (h : Env s B Z w) (hn : arr s.mem B w 0 = N)
+    (hodd : N % 2 = 1) (hN3 : 3 ≤ N) :
+    WP isa montPrep s fun t =>
+      (Env t B Z w ∧ arr t.mem B w 0 = N ∧
+        ((word t.mem B (slot w 0)).toNat * (word t.mem B 56).toNat + 1) % 2 ^ 64 = 0 ∧
+        (t.gpr .r12).toNat < 2 ^ 32 ∧ (w32 t.mem B (slot w 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 ∧
+        arr t.mem B w 1 = 2 ^ (64 * w) * 2 ^ (64 * w) % N ∧ arr t.mem B w 9 = 2 ^ (64 * w) % N ∧
+        arr t.mem B w 10 = N - 2 ^ (64 * w) % N ∧ arr t.mem B w aE = mrE N ∧
+        t.mem.readW (off B (slot w aE + 8 * w)) 64 = BitVec.twoPow 64 (mrA N % 64) ∧
+        Outs B (mpRanges w) s.mem t.mem) ∧ Keep mpRegs s t :=
+  montPrepWith_ok r2_r2Ok h hn hodd hN3 trivial
+
+/-- `montPrep_ok` for `montPrepHi`, for `N` above `2^(64 (w − 1))`. -/
+theorem montPrepHi_ok {s : State} {B : Addr} {Z w N : Nat} (h : Env s B Z w) (hn : arr s.mem B w 0 = N)
+    (hodd : N % 2 = 1) (hN3 : 3 ≤ N) (hNt : 2 ^ (64 * (w - 1)) < N) :
+    WP isa montPrepHi s fun t =>
+      (Env t B Z w ∧ arr t.mem B w 0 = N ∧
+        ((word t.mem B (slot w 0)).toNat * (word t.mem B 56).toNat + 1) % 2 ^ 64 = 0 ∧
+        (t.gpr .r12).toNat < 2 ^ 32 ∧ (w32 t.mem B (slot w 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0 ∧
+        arr t.mem B w 1 = 2 ^ (64 * w) * 2 ^ (64 * w) % N ∧ arr t.mem B w 9 = 2 ^ (64 * w) % N ∧
+        arr t.mem B w 10 = N - 2 ^ (64 * w) % N ∧ arr t.mem B w aE = mrE N ∧
+        t.mem.readW (off B (slot w aE + 8 * w)) 64 = BitVec.twoPow 64 (mrA N % 64) ∧
+        Outs B (mpRanges w) s.mem t.mem) ∧ Keep mpRegs s t :=
+  montPrepWith_ok r2Hi_r2Ok h hn hodd hN3 hNt
 
 end VG.Proof.MillerRabin.PPC64LE.Search

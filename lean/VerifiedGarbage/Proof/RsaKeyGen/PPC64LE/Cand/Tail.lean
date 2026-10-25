@@ -328,7 +328,7 @@ structure T3 (s0 : State) (w c : Nat) (s : State) : Prop where
 
 theorem prepS {s0 s : State} {w c : Nat} (h : T2 s0 w c s)
     (hoc : Spec.RsaKeyGen.obviouslyComposite (64 * w) c = false) :
-    WP isa VG.Impl.MillerRabin.PPC64LE.Search.montPrep s (T3 s0 w c) := by
+    WP isa VG.Impl.MillerRabin.PPC64LE.Search.montPrepHi s (T3 s0 w c) := by
   have hp := h.ctx.bx.pre
   have e := h.env
   have hnw := e.hs.nowrap
@@ -340,7 +340,10 @@ theorem prepS {s0 s : State} {w c : Nat} (h : T2 s0 w c s)
   have hfS := hp.fS
   have hcB := cB_fit hp
   have hrl := (PPC64LE.stackArg s0 0).isLt
-  refine WP.mono (prep_ok e h.lay h.arr0 h.tc.shape.1 (by have := h.tc.c8 hw4; omega)) fun t₃ ⟨⟨p₃, o₃⟩, k₃⟩ => ?_
+  refine WP.mono (prep_ok e h.lay h.arr0 h.tc.shape.1 (by have := h.tc.c8 hw4; omega) (by
+    have := h.tc.shape.2.1
+    have : 2 ^ (64 * (w - 1)) < 2 ^ (64 * w - 2) := Nat.pow_lt_pow_right (by decide) (by omega)
+    omega)) fun t₃ ⟨⟨p₃, o₃⟩, k₃⟩ => ?_
   have c₃ := h.ctx.step k₃.sp k₃.rd k₃.wr (frame_outs o₃ (fun x hx => by
     simp only [VG.Proof.MillerRabin.PPC64LE.Search.mpRanges, VG.Impl.MillerRabin.PPC64LE.aE, List.mem_cons,
       List.not_mem_nil, or_false] at hx

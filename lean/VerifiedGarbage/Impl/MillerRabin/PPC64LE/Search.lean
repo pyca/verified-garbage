@@ -20,7 +20,9 @@ and 16 are the caller's.
   table's first 53 entries, for FFDH and DSA).
 * `montPrep`: the modulus's Montgomery constants (`−N⁻¹` by Newton's
   iteration, `R² mod N`, `R mod N`, `N − R mod N`) and Miller–Rabin's
-  exponent (`expSetup`).
+  exponent (`expSetup`); `montPrepHi`, for a modulus whose top word is not
+  zero, `R² mod N` by `64 + w` doublings and six Montgomery squares
+  (`Precompute.r2Hi`) rather than `128 w` doublings (`Precompute.r2`).
 * `millerRabin`: witnesses drawn from the tape, `hK` octets each cut by
   `hTop`, the round called for those in range, until one fails (`hStat :=
   2`), `hChecks` pass (`hStat := 1`) or the tape runs out (`hStat := 0`).
@@ -119,15 +121,23 @@ def minv32 : List Instr := [ldh .r12 hMinv, .lsl .r12 .r12 32, .lsr .d .r12 .r12
 def regsBack : List Instr :=
   [.addi .r10 .r31 hdrBytes, ldh .r11 hW, .lsl .r11 .r11 1, ldh .r29 hStride] ++ minv32
 
-/-- `−N⁻¹`, `R² mod N` into array 1, `R mod N` into array 6 (the product of
-`R² mod N` and 1, in array 7), `N − R mod N` into array 10, `R mod N`
-copied into array 9, and the exponent. -/
-def montPrep : Prog isa :=
-  .seq (.block (minv64 ++ base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2
+/-- `−N⁻¹`, `R² mod N` into array 1 (by `r2c`, with the bases of arrays 1–3
+in `r5`, `r8` and `r9` and `−N⁻¹ mod 2³²` in `r12`), `R mod N` into array 6
+(the product of `R² mod N` and 1, in array 7), `N − R mod N` into array 10,
+`R mod N` copied into array 9, and the exponent. -/
+def montPrepWith (r2c : Prog isa) : Prog isa :=
+  .seq (.block (minv64 ++ base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq r2c
     (.seq PublicChecked.one (.seq (montOp 6 1 7)
       (.seq (.block (base .r8 0 ++ base .r9 10 ++ base .r10 6)) (.seq subMod
         (.seq (.block ([.addi .r10 .r31 hdrBytes] ++ base .r15 6 ++ base .r14 9)) (.seq copyWords
           VG.Impl.MillerRabin.PPC64LE.expSetup)))))))
+
+/-- `montPrepWith`, `R² mod N` by `128 w` doublings. -/
+def montPrep : Prog isa := montPrepWith Precompute.r2
+
+/-- `montPrepWith`, `R² mod N` by `Precompute.r2Hi`, for `N` above
+`2^(64 (w − 1))`. -/
+def montPrepHi : Prog isa := montPrepWith Precompute.r2Hi
 
 /-- An accepted witness (array 4) in Montgomery form into array 5 (with
 `−N⁻¹`'s low half from the header in `r12`), and the round called; its
