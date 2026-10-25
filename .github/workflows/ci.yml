@@ -441,9 +441,11 @@ jobs:
       # or on main, and that workflow does not run on main. A new stable Rust
       # changes the key (ci/bench_cache_key.sh), so every push to main looks
       # it up, without downloading, and builds only on a miss. ARMv7's too,
-      # cross-compiled in the armv7-cross image, as that workflow builds it.
+      # cross-compiled in the armv7-cross image, as that workflow builds it;
+      # not those of the architectures it does not measure (`bench`, see
+      # ci/rust_arches.py).
       - id: bench-cache-key
-        if: ${{ matrix.rust == 'stable' && runner.os == 'Linux' && github.event_name == 'push' }}
+        if: ${{ matrix.bench && matrix.rust == 'stable' && runner.os == 'Linux' && github.event_name == 'push' }}
         run: echo "key=$(sh ci/bench_cache_key.sh bench)" >> "$GITHUB_OUTPUT"
       - id: bench-cache
         if: ${{ steps.bench-cache-key.outputs.key }}

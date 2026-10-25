@@ -9,6 +9,7 @@ import sys
 import tomllib
 import unittest
 
+import bench_arches
 import rust_arches
 
 CI = Path(__file__).resolve().parent
@@ -124,6 +125,15 @@ class Output(unittest.TestCase):
         self.assertEqual(len({e["runs"] for e in icx}), 1)
         self.assertTrue(all("shards" not in e for e in full["cpu"]))
 
+    def test_bench_is_whether_the_benchmarks_measure_the_arch(self):
+        for event in ("merge_group", "push"):
+            out = run(event)
+            with self.subTest(event=event):
+                for e in out["rust"]:
+                    self.assertEqual(e["bench"], e["arch"] in bench_arches.PLATFORMS, e["name"])
+                self.assertEqual({e["arch"] for e in out["rust"] if not e["bench"]}, {"riscv64"})
+                self.assertTrue(all("bench" not in e for job in ("thumb", "cpu") for e in out[job]))
+
     def test_push_builds_one_job_per_cache(self):
         push, full = run("push"), run("merge_group")
         self.assertEqual((push["arches"], push["all"]), ([], False))
@@ -168,6 +178,10 @@ class Workflow(unittest.TestCase):
                 target = entry.get("asm", entry["arch"])
                 self.assertEqual(rust_arches.ARCHES.get(target), entry["arch"])
         self.assertIn("/src/asm/${{ matrix.asm || matrix.arch }}/", job("rust"))
+
+    def test_only_benchmarked_arches_cache_the_benchmarks_dependencies(self):
+        self.assertIn("if: ${{ matrix.bench && matrix.rust == 'stable' && runner.os == 'Linux' "
+                      "&& github.event_name == 'push' }}", job("rust"))
 
     def test_jobs_read_their_matrices(self):
         for name, output in (("rust", "rust"), ("rust-thumb", "thumb"), ("rust-cpu-features", "cpu")):

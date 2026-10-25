@@ -26,13 +26,18 @@ tests into one cache per platform, the first entry of each (see `cache_of`).
 It prints, for $GITHUB_OUTPUT, `arches=<JSON list>` (those tested),
 `all=true` or `all=false` (whether that is every architecture), and each
 job's matrix (`rust=`, `thumb=`, `cpu=`): the JSON list of its entries,
-each with `tests`, and each CPU with shards as one entry per shard.
+each with `tests`, and each CPU with shards as one entry per shard. Each
+`rust` entry also has `bench`: whether the Benchmarks workflow measures its
+architecture (ci/bench_arches.py's `PLATFORMS`), for which a push to main
+caches the benchmarks' dependencies.
 """
 
 import json
 from pathlib import Path
 import sys
 import tomllib
+
+import bench_arches
 
 MATRIX = Path(__file__).resolve().parent / "rust_matrix.toml"
 JOBS = ("rust", "thumb", "cpu")
@@ -151,6 +156,8 @@ def output(matrix, selected, tests=True):
     for job in JOBS:
         keep = [dict(e, tests=tests) for e in entries(matrix, job)
                 if not tests or arch_of(e) in selected]
+        if job == "rust":
+            keep = [dict(e, bench=arch_of(e) in bench_arches.PLATFORMS) for e in keep]
         if not tests and job == "cpu":
             first = {}
             for e in keep:
