@@ -18,9 +18,9 @@ def notes : List String := ["The function saves `r4`–`r11` in its own working 
   with `mul` and the accumulator in the own working space), and every result is reduced by a \
   conditional subtraction selected by a mask."]
 
-/-- The P-521 product scans packed words while retaining the curve ABI. -/
+/-- The larger curves’ product scans packed words while retaining the curve ABI. -/
 def packedNotes : List String := ["The function saves `r4`–`r9` and `lr` in its existing working \
-  space. Montgomery multiplication scans eighteen packed 32-bit words, assembling each full \
+  space. Montgomery multiplication scans packed 32-bit words, assembling each full \
   product from four baseline 16-by-16 `mul` products. Fixed-offset rows keep `r10` and `r11` \
   unchanged and `r12` as the workspace pointer. The accumulator is expanded to half-word \
   digits for the existing mask-selected final subtraction. No stack or CPU extension is used."]
@@ -75,7 +75,7 @@ def artifacts : List Artifact := [
     code := subFn p256n.k p256n.m
     verified := p256n_sub_verified },
   p384p.mulApi.artifact Arm.target {
-    notes := notes
+    notes := packedNotes
     code := mulFn p384p.k p384p.m
     verified := p384p_mul_verified },
   p384p.addApi.artifact Arm.target {
@@ -87,7 +87,7 @@ def artifacts : List Artifact := [
     code := subFn p384p.k p384p.m
     verified := p384p_sub_verified },
   p384n.mulApi.artifact Arm.target {
-    notes := notes
+    notes := packedNotes
     code := mulFn p384n.k p384n.m
     verified := p384n_mul_verified },
   p384n.addApi.artifact Arm.target {

@@ -80,8 +80,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List A
     notes := ["The function uses the generic Weierstrass setup, \
       field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the \
       callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` \
-      during the calls); field elements are thirty-two 16-bit digits in Montgomery form, multiplied by digit-by-digit \
-      Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of \
+      during the calls); field elements are sixteen packed 32-bit words in Montgomery form, multiplied by word-by-word \
+      Montgomery multiplication (CIOS, with four half-word `mul` products per word product and the accumulator in `scratch`, in calls of \
       `vg_brainpoolp512r1_mul_mod_p` and the other functions of `brainpoolp512r1_mont`) with a final \
       conditional subtraction. The peer's key is checked without branches (its first byte, both \
       coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's \

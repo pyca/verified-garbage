@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.Arm
 
-/-! Packed 32-bit P-521 arithmetic, using baseline half-word products.
+/-! Packed 32-bit Montgomery arithmetic, using baseline half-word products.
 All row accesses have fixed offsets, so r12 remains the workspace base and
 r10/r11 remain available to curve callers. -/
 
@@ -54,7 +54,7 @@ def round (M : Mod) (acc : Nat) : List Instr :=
   row acc .r12 M.mo (2 * M.n) ++ shift acc (2 * M.n) ++
   [.dp .add .r1 .r1 (.imm 4), .subs .r9 .r9 (.imm 1)]
 
-/-- Convert 19 packed words to half-word digits for the existing reducer. -/
+/-- Convert packed words to half-word digits for the existing reducer. -/
 def expand (acc dst n : Nat) : List Instr :=
   [.movw .r6 0xffff] ++ (List.range n).flatMap fun j =>
     digitAt .r12 acc j ++ [.str .r7 .r12 (dst + 4 * j)]

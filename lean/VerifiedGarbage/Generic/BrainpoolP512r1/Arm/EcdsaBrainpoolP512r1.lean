@@ -84,8 +84,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List A
     notes := ["The function saves the callee-saved registers \
       `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls). Field \
       elements and scalars are \
-      thirty-two 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery \
-      multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of \
+      sixteen packed 32-bit words in Montgomery form, multiplied by word-by-word Montgomery \
+      multiplication (CIOS, with four half-word `mul` products per word product and the accumulator in `scratch`, in calls of \
       `vg_brainpoolp512r1_mul_mod_p` and the other functions of `brainpoolp512r1_mont`) with a final \
       conditional subtraction. `[k]G` is a double-and-add ladder over all 512 bits of `k`, with \
       the complete addition formulas of Renes, Costello and Batina for every addition and \
@@ -98,8 +98,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List A
     notes := ["The function is `vg_ecdsa_brainpoolp512r1_sign`'s setup, \
       field arithmetic, ladder and inversions, with `vg_ecdh_brainpoolp512r1`'s checks of the public key: it \
       saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`; field elements and \
-      scalars are thirty-two 16-bit digits in Montgomery form, multiplied by digit-by-digit \
-      Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of \
+      scalars are sixteen packed 32-bit words in Montgomery form, multiplied by word-by-word \
+      Montgomery multiplication (CIOS, with four half-word `mul` products per word product and the accumulator in `scratch`, in calls of \
       `vg_brainpoolp512r1_mul_mod_p` and the other functions of `brainpoolp512r1_mont`) with a final \
       conditional subtraction. The key is checked without branches (its first byte, both \
       coordinates below `p`, and the curve's equation), and the second ladder multiplies the \

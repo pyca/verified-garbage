@@ -304,15 +304,15 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s)
   unfold mulFn
   split
   · rename_i hn
-    subst n
-    refine fn_ok (R := fun mem => wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat 9 < m ∧
-      wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat 9 * 2 ^ (64 * 9) % m =
-        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat 9 *
-          wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat 9 % m)
+    refine fn_ok (R := fun mem => wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n < m ∧
+      wordsVal mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat n * 2 ^ (64 * n) % m =
+        wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r2).toNat n *
+          wordsVal s.mem (State.addr (s.gpr .r0)) (s.gpr .r3).toNat n % m)
       hM (by decide) hp fun s1 e => ?_
-    refine WP.mono (Packed.mulR_ok e.scr e.mod rfl (opLay hM hp) e.ra e.rb e.ro
-      (by change wordsVal _ _ _ 9 < m; rw [e.val hM hp.b]; exact hb)) fun t ⟨keep, bound, value⟩ => ?_
-    have eq : (mod 9 m).n = 9 := rfl
+    refine WP.mono (Packed.mulR_ok e.scr e.mod rfl (by change 0 < n; omega)
+      (by change n < 128; omega) (opLay hM hp) e.ra e.rb e.ro
+      (by change wordsVal _ _ _ n < m; rw [e.val hM hp.b]; exact hb)) fun t ⟨keep, bound, value⟩ => ?_
+    have eq : (mod n m).n = n := rfl
     rw [eq, e.val hM hp.a, e.val hM hp.b] at value
     exact ⟨keep, bound, value⟩
   · exact mulFn16_ok hM hp hb

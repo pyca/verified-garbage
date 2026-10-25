@@ -75,8 +75,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP384r1.curve) : List A
     notes := ["The function is `vg_ecdsa_brainpoolp384r1_sign`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
       saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in \
-      `lr` (in `r10` during the calls); field elements are twenty-four 16-bit digits in Montgomery form, multiplied by \
-      digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in \
+      `lr` (in `r10` during the calls); field elements are twelve packed 32-bit words in Montgomery form, multiplied by \
+      word-by-word Montgomery multiplication (CIOS, with four half-word `mul` products per word product and the accumulator in \
       `scratch`, in calls of `vg_brainpoolp384r1_mul_mod_p` and the other functions of `brainpoolp384r1_mont`) \
       with a final conditional subtraction; `[d]G` is a double-and-add ladder over \
       all 384 bits of `d`, with the complete addition formulas of Renes, Costello and Batina for \
