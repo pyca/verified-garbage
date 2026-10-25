@@ -11,8 +11,10 @@ namespace VG.Artifacts.RsaKeyGen.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.RsaKeyGen.keyApi.artifact PPC64LE.target {
-    notes := ["On the working space of the RSA key routines, in 32-bit digits (the model has no \
-        carry bit), with no branch but the loops', whose counts depend only on the lengths: \
+    notes := ["On the working space of the RSA key routines, in 32-bit digits (its subtractions, \
+        with the borrow in the carry bit, selections, copies, comparisons and halvings, and the \
+        division's shifts, on 64-bit words for an even count of digits), with no branch but the \
+        loops', whose counts depend only on the lengths: \
         `p` and `q` swapped under the mask of `p < q`; `lcm(p − 1, q − 1)` as \
         `(p − 1)(q − 1)` (bit-serial multiplication) divided by `gcd(p − 1, q − 1)`, its power \
         of two found by `8 p_len` halving steps under masks and its odd part by the binary \

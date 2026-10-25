@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCandSet
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvMul
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RvFlags
-import VerifiedGarbage.Proof.Rsa.PPC64LE.RvSel
+import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyOps
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyHalf
 import VerifiedGarbage.Proof.Rsa.PPC64LE.InvParts
 import VerifiedGarbage.Proof.Rsa.RecoverMath

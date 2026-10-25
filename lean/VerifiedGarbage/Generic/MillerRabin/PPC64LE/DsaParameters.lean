@@ -15,7 +15,9 @@ def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
     suffix := v.suffix
     notes := ["The complete bounded parameter search runs in verified code: seed hashing by calls \
         of `vg_sha1_compress` or `vg_sha256_compress` on one padded block, q and p built in the key \
-        working space of the RSA key routines in `scratch`, the probable-prime tests of each size \
+        working space of the RSA key routines in `scratch` (its subtractions, selections and \
+        division on 64-bit words with the carry bit for an even count of 32-bit digits), the \
+        probable-prime tests of each size \
         over the same Miller–Rabin round, `g` by RSA's fixed-window power in the P space, the domain \
         check of `vg_dsa_check_parameters`, and the output copied or zeroed. The search's state is \
         kept in a header of `scratch`, whose address stays in `r28`. The three input tapes are public \
