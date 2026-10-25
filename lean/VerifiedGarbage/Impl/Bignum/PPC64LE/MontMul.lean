@@ -98,18 +98,15 @@ def bases : List Instr := args ++ loads
 def countLoop (cnt : Reg) (body : List Instr) : Prog isa :=
   .loop (.block (body ++ ([.subi cnt cnt 1] : List Instr))) (.nonzero .d cnt)
 
-/-- The accumulator's first `w + 1` words (its digits `0` to `n + 1`) := 0. -/
+/-- The start of the arithmetic: `-m⁻¹ mod 2⁶⁴` into `r0`, from `m₀` and `r12 =
+-m⁻¹ mod 2³²` (`y`): `y (2 + m₀ y)`; `w` into `r3` and the rounds' count `r4`;
+then the accumulator's first `w + 1` words (its digits `0` to `n + 1`) := 0. -/
 def zeroAcc : Prog isa :=
-  .seq (.block [.addi .r14 .r8 0, .lsr .d .r17 .r11 1, .addi .r17 .r17 1, .li .r0 0])
-    (countLoop .r17 [.store .d .r0 .r14 0, .addi .r14 .r14 8])
+  .seq (.block [.load .d .r3 .r10 0, .mul .r3 .r3 .r12, .addi .r3 .r3 2, .mul .r0 .r3 .r12,
+      .lsr .d .r3 .r11 1, .addi .r4 .r3 0, .addi .r14 .r8 0, .addi .r17 .r3 1, .li .r22 0])
+    (countLoop .r17 [.store .d .r22 .r14 0, .addi .r14 .r14 8])
 
 /-! ## A round -/
-
-/-- `-m⁻¹ mod 2⁶⁴` into `r0`, from `m₀` and `r12 = -m⁻¹ mod 2³²` (`y`): `y (2
-+ m₀ y)`; then `w` into `r3` and the rounds' count `r4`. -/
-def montSetup : List Instr :=
-  [.load .d .r3 .r10 0, .mul .r3 .r3 .r12, .addi .r3 .r3 2, .mul .r0 .r3 .r12, .lsr .d .r3 .r11 1,
-    .addi .r4 .r3 0]
 
 /-- A multiply-accumulate step, the accumulator's pointer `r14` at word `j`
 and `r15` at word `j` of `b` or `m` (`k = 0`), or both one word below (`k =
@@ -181,7 +178,7 @@ def selectAcc : Prog isa :=
       .addi .r14 .r14 4, .addi .r15 .r15 4, .addi .r16 .r16 4])
 
 /-- The arithmetic, after the bases are loaded. -/
-def tail : Prog isa := .seq zeroAcc (.seq (.block montSetup) (.seq rounds (.seq subMod selectAcc)))
+def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq subMod selectAcc))
 
 /-- `vg_rsa_mont_mul(ws, ws_len, o, a, b, scratch)`: `[o] = [a] [b] R⁻¹ mod m`
 for `R = 2^(64 w)`. -/

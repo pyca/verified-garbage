@@ -9,7 +9,7 @@ meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Fios32
+import VerifiedGarbage.Proof.Bignum.Minv32
 
 /-!
 # The Miller–Rabin round on PPC64LE: constant time
@@ -94,7 +94,7 @@ theorem front_C1 {d : FD} {s : State} (h : C0 d s) : WP isa (.block (Impl.Miller
       rw [w32_eq_mod, w32_eq_mod]
       simp only [VG.Proof.Bignum.word]
       rw [wd₁ (by omega), wd₁ (by omega)]
-      exact VG.Proof.Bignum.Fios32.minv_low hinv)) fun s₂ ⟨⟨hm2, _⟩, k2⟩ => ?_
+      exact VG.Proof.Bignum.Minv32.minv_low hinv)) fun s₂ ⟨⟨hm2, _⟩, k2⟩ => ?_
   exact ⟨hm2.h10, hm2.h11, hm2.h29, hm2.h31, (k2.gpr .r21 (by decide)).trans hS.r21⟩
 
 theorem fn_rel : RelCT isa (Two C0) Impl.MillerRabin.PPC64LE.round fun _ _ => True := by

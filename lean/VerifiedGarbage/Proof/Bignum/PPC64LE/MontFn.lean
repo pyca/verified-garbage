@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontSave
 public import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Bignum.Fios32
+import VerifiedGarbage.Proof.Bignum.Minv32
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.Words32
 
@@ -182,7 +182,7 @@ theorem pre_saved {s₀ s₁ : State} (h : fnContract.pre s₀) (hS : Saved s₀
     rw [← hwd, ← hBd]
     simp only [wOf, wordAt, Spec.Rsa.Mont.wWord, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [w₁ (d := slot w 0) (by omega), w₁ (d := 56) (by omega), w32_eq_mod, w32_eq_mod]
-    exact Fios32.minv_low hinv
+    exact Minv32.minv_low hinv
   · rw [v₁ hb, v₁ (by decide)]; rw [numAt_eq, numAt_eq] at hB; exact hB
 
 theorem args_P {d : FnData} {s : State} (h : P1 d s) :

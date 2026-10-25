@@ -10,8 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # Montgomery multiplication on PPC64LE: the rounds
 
-`montSetup_ok`: `-m⁻¹ mod 2⁶⁴` from `-m⁻¹ mod 2³²` by a step of Newton's
-iteration, and `w`. A round (`round_ok`) replaces the accumulator `T` (`w +
+A round (`round_ok`) replaces the accumulator `T` (`w +
 1` words) with `(T + aᵢ b + u m) / 2⁶⁴`, for the word `aᵢ` at the pointer
 `r6`, which it advances; the `w` rounds (`rounds_ok`) leave `T < 2m` with `T
 2^(64 w) ≡ a b (mod m)`.
@@ -23,43 +22,6 @@ namespace VG.Proof.Bignum.PPC64LE
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Impl.Bignum.PPC64LE
 open VG.Proof.Bignum (round_lt round_step round_sum_lt)
-
-/-! ## `-m⁻¹ mod 2⁶⁴` -/
-
-/-- A step of Newton's iteration: `m y ≡ -1 (mod 2³²)` gives `m y (2 + m y) ≡
--1 (mod 2⁶⁴)`, since `m y (2 + m y) + 1 = (m y + 1)²`. -/
-theorem mont_newton64 (m y : BitVec 64) (h : (m.toNat % 2 ^ 32 * y.toNat + 1) % 2 ^ 32 = 0) :
-    (m.toNat * ((m * y + BitVec.ofNat 64 2) * y).toNat + 1) % 2 ^ 64 = 0 := by
-  have e : m * ((m * y + BitVec.ofNat 64 2) * y) + 1#64 = (m * y + 1#64) * (m * y + 1#64) := by
-    grind
-  have hq : (m * y + 1#64).toNat % 2 ^ 32 = 0 := by
-    have hm : m.toNat % 2 ^ 32 * y.toNat % 2 ^ 32 = m.toNat * y.toNat % 2 ^ 32 := by
-      rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod]
-    rw [BitVec.toNat_add, BitVec.toNat_mul, show (1#64).toNat = 1 from rfl]
-    omega
-  have e' := congrArg BitVec.toNat e
-  rw [BitVec.toNat_add, BitVec.toNat_mul m, BitVec.toNat_mul (m * y + 1#64)] at e'
-  obtain ⟨q, hq'⟩ : ∃ q, (m * y + 1#64).toNat = 2 ^ 32 * q := ⟨_, (Nat.div_add_mod _ _).symm.trans (by rw [hq, Nat.add_zero])⟩
-  rw [hq', show 2 ^ 32 * q * (2 ^ 32 * q) = 2 ^ 64 * (q * q) by grind, Nat.mul_mod_right,
-    show (1#64).toNat = 1 from rfl, Nat.mod_add_mod] at e'
-  exact e'
-
-theorem mont_toNat_ofNat_shr1' {n : Nat} (hn : n < 2 ^ 63) : BitVec.ofNat 64 (2 * n) >>> 1 = BitVec.ofNat 64 n := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega_arith
-
-/-- `montSetup`: `-m⁻¹ mod 2⁶⁴` into `r0`, `w` into `r3` and `r4`. -/
-theorem montSetup_ok {s : State} {B : Addr} {Z dM w : Nat} (hs : Scr s B Z) (h10 : s.gpr .r10 = off B dM)
-    (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w)) (hw : w < 2 ^ 31) (hM : dM + 8 ≤ Z)
-    (hinv : ((word s.mem B dM).toNat % 2 ^ 32 * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0) :
-    WP isa (.block montSetup) s fun s' =>
-      (((word s.mem B dM).toNat * (s'.gpr .r0).toNat + 1) % 2 ^ 64 = 0 ∧ s'.gpr .r3 = BitVec.ofNat 64 w ∧
-        s'.gpr .r4 = BitVec.ofNat 64 w ∧ s'.mem = s.mem) ∧ Keep [.r0, .r3, .r4] s s' := by
-  refine WP.keep _ ?_ (by decide)
-  unfold montSetup
-  prun [h10, h11, hs.ld hM, BitVec.add_zero, mont_toNat_ofNat_shr1' (show w < 2 ^ 63 by omega_arith)]
-  exact mont_newton64 _ _ hinv
 
 /-! ## A round -/
 
