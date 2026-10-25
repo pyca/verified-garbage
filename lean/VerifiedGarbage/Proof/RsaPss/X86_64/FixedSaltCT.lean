@@ -5,6 +5,9 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
 import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHash
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 
 /-! The fixed-salt tail leaks only the requested, public salt length. -/
 

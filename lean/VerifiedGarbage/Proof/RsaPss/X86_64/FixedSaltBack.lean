@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 
 /-! Verification's fixed-length salt input, built without a masked shift. -/
 

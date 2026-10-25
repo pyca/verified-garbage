@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Step
 import VerifiedGarbage.Proof.X448.AArch64.Iter
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 
 /-! The in-place public recoder preserves future input bits and completed digits. -/
 

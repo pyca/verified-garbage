@@ -2,15 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.X448.AArch64.BitBody
-public import VerifiedGarbage.Proof.X448.AArch64.Counters
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.X448.BaseAdd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Ed448 verification on AArch64: one window of the challenge

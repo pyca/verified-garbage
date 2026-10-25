@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTWindow
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTWindow
 import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
 import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTLoop
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
@@ -15,6 +15,9 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedLoop
 import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
+public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverFolded
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
 
 /-! # Public loop counts for the folded scan -/
 

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
 public import VerifiedGarbage.Proof.Poly1305.Spec
-public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Impl.X86_64Scal
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the blocks of Poly1305

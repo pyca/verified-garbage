@@ -33,6 +33,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! ## `JointPrep` -/
 

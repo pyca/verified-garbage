@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Bignum.X86_64.Template
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-!

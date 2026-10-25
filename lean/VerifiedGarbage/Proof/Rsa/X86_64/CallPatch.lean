@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 
 /-!
 # The RSA functions' postconditions do not read the return address

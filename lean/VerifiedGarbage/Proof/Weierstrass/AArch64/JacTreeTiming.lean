@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! The public tree carries exact paired field values and fixed loop counters. -/
 

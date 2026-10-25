@@ -8,7 +8,6 @@ public import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 

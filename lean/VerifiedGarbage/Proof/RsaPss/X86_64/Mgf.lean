@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 import Mathlib.Tactic.Set
 
 /-!

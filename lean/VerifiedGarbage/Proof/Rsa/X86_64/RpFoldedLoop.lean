@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedWindow
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowStep
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedWindow
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowStep
 import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowPowers
 
 /-! # The padded scan with a continuation for the captured root -/
 

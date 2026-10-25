@@ -43,21 +43,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Sse
 meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
@@ -75,6 +63,8 @@ meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ChaCha20-Poly1305 on x86-64: the calls

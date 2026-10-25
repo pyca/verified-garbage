@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCapture
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCapture
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Rsa.RecoverMath
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCompare
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
 
 /-! # One square of the uninterrupted exponentiation accumulator -/
 

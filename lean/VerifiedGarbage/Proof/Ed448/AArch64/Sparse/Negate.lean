@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Joint
-public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.SubAlias
+import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.SubAlias
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
 
 /-! Negation of a selected public entry, using the proven in-place difference. -/
 

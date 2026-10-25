@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-public import VerifiedGarbage.Proof.EcKey.Compressed.Parity
-import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-! # The canonical root's parity mismatch mask -/
 

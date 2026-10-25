@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
-import VerifiedGarbage.Proof.Weierstrass.Words
 @[expose] public section
 namespace VG.Proof.Weierstrass.AArch64.PubNafWide
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass.AArch64.PubNaf

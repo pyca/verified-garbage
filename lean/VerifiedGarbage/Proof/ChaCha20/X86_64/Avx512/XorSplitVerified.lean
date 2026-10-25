@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn
 public import VerifiedGarbage.Spec.ChaCha20.OutOfPlace
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
-import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitFn

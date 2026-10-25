@@ -12,26 +12,17 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.MdStream.AArch64.Words
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
-import VerifiedGarbage.Proof.Mont.AArch64.Csub
 import VerifiedGarbage.Proof.Mont.AArch64.Rounds
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Spec.Ecdsa.P256
 import VerifiedGarbage.Spec.Weierstrass.Mul
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc

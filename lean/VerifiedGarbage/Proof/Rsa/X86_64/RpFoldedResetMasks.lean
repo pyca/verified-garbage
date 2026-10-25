@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.RpSq
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv

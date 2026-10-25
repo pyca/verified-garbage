@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTPieces
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTPieces
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
 import VerifiedGarbage.Proof.Rsa.RecoverMath
-import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCTPieces
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCapture
@@ -14,6 +12,8 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCapture
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCompare
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
+public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverFolded
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
 
 /-! # Constant-time uninterrupted squaring and masked root capture -/
 

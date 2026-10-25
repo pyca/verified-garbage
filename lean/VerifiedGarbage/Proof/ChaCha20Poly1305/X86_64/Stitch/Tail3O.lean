@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the last 257 to 511 bytes of `open`

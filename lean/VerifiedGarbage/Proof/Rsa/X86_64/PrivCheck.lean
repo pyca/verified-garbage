@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!

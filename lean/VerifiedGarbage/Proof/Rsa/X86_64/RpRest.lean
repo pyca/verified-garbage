@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpFin
 import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
 import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
 import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
-import VerifiedGarbage.Spec.Rsa.Contract
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: `rest`

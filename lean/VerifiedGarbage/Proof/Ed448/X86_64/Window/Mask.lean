@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.X448.X86_64.Env
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
 import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
 
 /-! Expanded scalar bits preserved by verification's point operations. -/

@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtMid
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.RsaPss.MgfBytes
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 
 /-!
 # RSASSA-PSS verification on x86-64: `M'` and its hash in two runs

@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # Deterministic ECDSA on AArch64: scalars longer than the hash

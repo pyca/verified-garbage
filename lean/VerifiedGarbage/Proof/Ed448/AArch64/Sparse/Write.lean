@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
-public import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 
 /-! Store one signed digit and advance its bounded public counter. -/
 

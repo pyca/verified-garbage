@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
 
 /-!
 # Ed448 verification on AArch64: the windows

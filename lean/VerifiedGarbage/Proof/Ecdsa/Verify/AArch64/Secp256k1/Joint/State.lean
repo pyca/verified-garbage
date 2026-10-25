@@ -1,15 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Sum
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Copy
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Math
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.AArch64.Joint

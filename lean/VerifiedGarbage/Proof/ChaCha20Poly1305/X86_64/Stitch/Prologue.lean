@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Bulk
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the prologue with the last bytes' block

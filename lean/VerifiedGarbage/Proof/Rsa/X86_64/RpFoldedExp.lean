@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedLoop
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedSquare
 
 /-! # The folded scan, its fixed suffix, and root extraction -/
 

@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindow
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 @[expose] public section
 

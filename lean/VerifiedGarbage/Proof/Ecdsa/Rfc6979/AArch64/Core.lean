@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
 
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # Deterministic ECDSA on AArch64: signing with a candidate

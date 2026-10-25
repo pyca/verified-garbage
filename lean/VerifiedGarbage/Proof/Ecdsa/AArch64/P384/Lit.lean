@@ -8,6 +8,11 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Impl.P384.Ops
+import VerifiedGarbage.Impl.Weave
+import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+meta import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 
 /-!
 # ECDSA over P-384 on AArch64: the code as a literal

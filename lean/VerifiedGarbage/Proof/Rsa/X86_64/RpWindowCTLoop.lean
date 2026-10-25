@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTPieces
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowCTPieces
 import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
-import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
@@ -20,6 +18,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowLoop
 import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowStep
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowLoop
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowStep
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowPowers
 
 /-! # Recovery windows: public loop counts and secret exponent prefixes -/
 

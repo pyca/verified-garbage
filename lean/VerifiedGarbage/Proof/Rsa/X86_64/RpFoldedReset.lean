@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedResetMasks
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCompare
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedResetMasks
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCompare
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedTrack
+public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverFolded
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Rsa.RecoverFolded
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
 
 /-! # The root tracker after the multiplication by a window's power -/
 

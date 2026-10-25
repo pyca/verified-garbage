@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.TableLayout
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.Math
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Math
 
 /-! Building the joint digit-pair table with the existing complete addition. -/
 
