@@ -61,6 +61,8 @@ yours to keep:
 
 <th>PPC64LE</th>
 
+<th>RISC-V</th>
+
 </tr>
 
 <tr>
@@ -78,6 +80,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -97,6 +101,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -114,6 +120,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -133,6 +141,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -150,6 +160,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -169,6 +181,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -186,6 +200,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -205,6 +221,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -222,6 +240,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -241,6 +261,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -259,6 +281,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -276,6 +300,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -301,6 +327,8 @@ yours to keep:
 
 <th>PPC64LE</th>
 
+<th>RISC-V</th>
+
 </tr>
 
 <tr>
@@ -318,6 +346,8 @@ yours to keep:
 <td>✅ AES-NI</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -337,6 +367,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -354,6 +386,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -373,6 +407,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -390,6 +426,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -409,6 +447,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -426,6 +466,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -445,6 +487,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -462,6 +506,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -481,6 +527,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -498,6 +546,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -523,6 +573,8 @@ yours to keep:
 
 <th>PPC64LE</th>
 
+<th>RISC-V</th>
+
 </tr>
 
 <tr>
@@ -540,6 +592,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -559,6 +613,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -576,6 +632,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -595,6 +653,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -612,6 +672,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -631,6 +693,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -648,6 +712,8 @@ yours to keep:
 <td>✅ AES-NI</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -667,6 +733,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -684,6 +752,8 @@ yours to keep:
 <td>✅ AES-NI</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -703,6 +773,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -720,6 +792,8 @@ yours to keep:
 <td>✅ AES-NI</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -739,6 +813,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -756,6 +832,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -775,6 +853,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -792,6 +872,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -811,6 +893,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -828,6 +912,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -847,6 +933,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -864,6 +952,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -883,6 +973,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -900,6 +992,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -919,6 +1013,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -936,6 +1032,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -955,6 +1053,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -972,6 +1072,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -991,6 +1093,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1008,6 +1112,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1027,6 +1133,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1044,6 +1152,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1063,6 +1173,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1080,6 +1192,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1099,6 +1213,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1116,6 +1232,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1135,6 +1253,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1152,6 +1272,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1171,6 +1293,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1188,6 +1312,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1207,6 +1333,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1224,6 +1352,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1243,6 +1373,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1260,6 +1392,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1285,6 +1419,8 @@ yours to keep:
 
 <th>PPC64LE</th>
 
+<th>RISC-V</th>
+
 </tr>
 
 <tr>
@@ -1302,6 +1438,8 @@ yours to keep:
 <td>✅ AES-NI</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1321,6 +1459,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1338,6 +1478,8 @@ yours to keep:
 <td>✅ AES-NI, PCLMULQDQ</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1357,6 +1499,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1374,6 +1518,8 @@ yours to keep:
 <td>✅ AES-NI</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1393,6 +1539,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1410,6 +1558,8 @@ yours to keep:
 <td>✅ PCLMULQDQ</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1435,6 +1585,8 @@ yours to keep:
 
 <th>PPC64LE</th>
 
+<th>RISC-V</th>
+
 </tr>
 
 <tr>
@@ -1452,6 +1604,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1471,6 +1625,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1488,6 +1644,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1507,6 +1665,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1524,6 +1684,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1543,6 +1705,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1560,6 +1724,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1579,6 +1745,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1596,6 +1764,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1615,6 +1785,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1633,6 +1805,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1650,6 +1824,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1675,6 +1851,8 @@ yours to keep:
 
 <th>PPC64LE</th>
 
+<th>RISC-V</th>
+
 </tr>
 
 <tr>
@@ -1693,6 +1871,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1710,6 +1890,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1735,6 +1917,8 @@ yours to keep:
 
 <th>PPC64LE</th>
 
+<th>RISC-V</th>
+
 </tr>
 
 <tr>
@@ -1752,6 +1936,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1771,6 +1957,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1788,6 +1976,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1807,6 +1997,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1824,6 +2016,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1843,6 +2037,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1860,6 +2056,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1879,6 +2077,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1896,6 +2096,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1915,6 +2117,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1932,6 +2136,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1951,6 +2157,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1968,6 +2176,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1993,6 +2203,8 @@ yours to keep:
 
 <th>PPC64LE</th>
 
+<th>RISC-V</th>
+
 </tr>
 
 <tr>
@@ -2010,6 +2222,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2029,6 +2243,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2046,6 +2262,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2065,6 +2283,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2082,6 +2302,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2101,6 +2323,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2118,6 +2342,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2137,6 +2363,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2154,6 +2382,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2173,6 +2403,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2190,6 +2422,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2209,6 +2443,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2227,6 +2463,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2244,6 +2482,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2269,6 +2509,8 @@ yours to keep:
 
 <th>PPC64LE</th>
 
+<th>RISC-V</th>
+
 </tr>
 
 <tr>
@@ -2286,6 +2528,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2305,6 +2549,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2322,6 +2568,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2347,6 +2595,8 @@ yours to keep:
 
 <th>PPC64LE</th>
 
+<th>RISC-V</th>
+
 </tr>
 
 <tr>
@@ -2364,6 +2614,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2383,6 +2635,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2400,6 +2654,8 @@ yours to keep:
 <td>✅ SHA extensions</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -2419,6 +2675,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2437,6 +2695,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -2454,6 +2714,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 

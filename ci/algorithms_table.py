@@ -39,7 +39,14 @@ BEGIN = "<!-- BEGIN ci/algorithms_table.py: edit docs/algorithms/, then run it -
 END = "<!-- END ci/algorithms_table.py -->\n"
 
 # The architectures, in table order: Rust's name and the table's.
-ARCHES = {"x86_64": "x86-64", "aarch64": "ARM64", "arm": "ARMv7", "x86": "x86", "powerpc64": "PPC64LE"}
+ARCHES = {
+    "x86_64": "x86-64",
+    "aarch64": "ARM64",
+    "arm": "ARMv7",
+    "x86": "x86",
+    "powerpc64": "PPC64LE",
+    "riscv64": "RISC-V",
+}
 
 # The directory of an architecture's generated modules, src/asm/<dir>/, where
 # it is not the architecture's name (the verified code is little-endian only).
