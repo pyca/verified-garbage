@@ -29166,13 +29166,13 @@ ret
 }
 
 /// The CPU features `vg_chacha20_apply_ifma` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_APPLY_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512vl"]);
+pub(crate) const VG_CHACHA20_APPLY_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f"]);
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor_ifma`.
+/// This implementation XORs the whole blocks with `vg_chacha20_xor_avx512`.
 ///
 /// # Safety
 ///
@@ -29180,7 +29180,7 @@ pub(crate) const VG_CHACHA20_APPLY_IFMA_FEATURES: crate::cpu::Features = crate::
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx` and `avx512f` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_ifma(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -29266,7 +29266,7 @@ mov rcx, rbx
 add rcx, 256
 add rbp, rdx
 sub r12, rdx
-call {vg_chacha20_xor_ifma}
+call {vg_chacha20_xor_avx512}
 jmp 211f
 210:
 211:
@@ -29326,7 +29326,7 @@ mov eax, 0
 21:
 ret
 .p2align 6",
-        vg_chacha20_xor_ifma = sym super::chacha20::vg_chacha20_xor_ifma,
+        vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
 }
