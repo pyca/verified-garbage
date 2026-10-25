@@ -34,6 +34,7 @@ VerifiedGarbage/
                     writing or checking `src/asm/`
     X86_64/         ISA model, printer, System V ABI target
     PPC64LE/        ISA model, printer, ELFv2 ABI target (64-bit little-endian PowerPC)
+    RISCV64/        ISA model, printer, psABI target (64-bit RISC-V, RV64I)
   Spec/         Algorithm specifications and contracts (trusted, must be reviewed)
   Impl/         Implementations: `Prog`s over an ISA model (untrusted)
   Proof/        Proofs and intermediate proof artifacts (untrusted)
