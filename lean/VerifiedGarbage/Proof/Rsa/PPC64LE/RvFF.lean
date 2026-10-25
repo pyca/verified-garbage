@@ -21,8 +21,8 @@ open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
 /-- The last candidate tried, whether it found the factors, and its `y`. -/
 abbrev jL (s0 : State) : Nat := nt s0 - 1
-abbrev okB (s0 : State) : Bool := (sqst s0 (jL s0) (cB s0)).2.2
-abbrev yV (s0 : State) : Nat := (sqst s0 (jL s0) (cB s0)).1
+abbrev okB (s0 : State) : Bool := (fres s0 (jL s0)).isSome
+abbrev yV (s0 : State) : Nat := (fres s0 (jL s0)).getD 0
 
 /-- The slots the finish writes but the mask. -/
 abbrev ffD : List Nat := [VG.Impl.Rsa.PPC64LE.Keys.sOdd, VG.Impl.Rsa.PPC64LE.Keys.sB, VG.Impl.Rsa.PPC64LE.Keys.sC, sLt]

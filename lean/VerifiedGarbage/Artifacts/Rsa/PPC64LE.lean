@@ -93,16 +93,19 @@ def artifacts : List Artifact := [
   Spec.Rsa.recoverPrimesApi.artifact PPC64LE.target {
     notes := ["`n` is checked as `vg_rsa_public_precompute` checks it, the only branch on the key \
         but for the number of candidates tried, which is public. `m = d e - 1` is computed by \
-        schoolbook multiplication and halved bit by bit `8 (e_len + d_len)` times, each halving \
-        selected by a mask of the low bit, so its count `t` of factors 2 takes no branch. Each \
-        candidate `g = 2, 3, …` is raised to `r = m / 2^t` by Montgomery multiplication over all \
-        `8 (e_len + d_len)` bits of `r`'s bound, the multiplicand selected by a mask of each bit, \
-        and squared as many times, each squaring's result kept or dropped by masks of `done`, \
-        `ok` and `k < t`. `p = gcd(y - 1, n)` by `64 w` steps of the binary extended Euclidean \
-        algorithm, `q = n / p` by bit-serial division, the order by a subtraction's borrow, and \
-        the factors stored masked by `ok`. The model has no carry bit, so numbers are 32-bit \
-        digits. The pointers and lengths stay in nonvolatile registers, saved with the others it \
-        uses in the working space's arrays 44–45."]
+        binary multiplication. Each candidate `g = 2, 3, …` makes one pass over the `⌈c / 32⌉` \
+        32-bit digits of `m` (`c = 8 (e_len + d_len)`, leading zeros included), most significant \
+        bit first, fusing the exponentiation with root detection: each bit is a Montgomery square \
+        `x = y²` and `x g` (modular additions for the public candidates 2 and 3, a Montgomery \
+        product for the others), the new `y` selected by a mask of the bit. A set bit starts root \
+        detection again from the new `y` (`done := y = ±1`, `ok := 0`); a clear bit keeps the old \
+        `y` as the root under a mask when `x = 1` and not done. Only the trailing zeros of `m` \
+        can leave `ok` set, with the root of SP 800-56B Rev. 2 Appendix C.1's search. \
+        `p = gcd(y - 1, n)` by `64 w` steps of the binary extended Euclidean algorithm, `q = n / p` \
+        by bit-serial division, the order by a subtraction's borrow, and the factors stored masked \
+        by `ok`. Montgomery products are on 64-bit words with the carry bit; the other arithmetic \
+        is on 32-bit digits. The pointers and lengths stay in nonvolatile registers, saved with \
+        the others it uses in the working space's arrays 44–45."]
     code := Impl.Rsa.PPC64LE.Recover.code
     verified := Proof.Rsa.PPC64LE.Recover.rv_verified }]
 

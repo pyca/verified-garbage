@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvHalving
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvNumbers
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvMmul
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
@@ -25,7 +25,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 namespace VG.Proof.Rsa.PPC64LE.Recover
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys VG.Proof.Rsa
-open VG.Impl.Rsa.PPC64LE.Recover (mont mpre mpost r2Set mBase mR2 mXm aN aOne aZ aO aNg nArr iXm iR2 sTc wR)
+open VG.Impl.Rsa.PPC64LE.Recover (mont mpre mpost r2Set mBase mR2 mXm aN aOne aZ aO aNg nArr iXm iR2 wM)
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
@@ -92,8 +92,7 @@ structure MontS (s0 t : State) : Prop where
   vNg : num t.mem (rvB s0) (ww (kK s0)) aNg = nV s0 - RR s0 % nV s0
   vOne : num t.mem (rvB s0) (ww (kK s0)) aOne = 1
   zZ : ∀ i < ww (kK s0) + 2, w32 t.mem (rvB s0) (arr (ww (kK s0)) aZ + 4 * i) = 0
-  vR : num t.mem (rvB s0) (wW (kK s0)) wR = (Spec.Rsa.splitTwos (mV s0)).2
-  vT : slot t.mem (rvB s0) sTc = (Spec.Rsa.splitTwos (mV s0)).1
+  vM : num t.mem (rvB s0) (wW (kK s0)) wM = mV s0
   odd : dV s0 * eV s0 % 2 = 1
   two : 2 ≤ dV s0 * eV s0
 
@@ -132,10 +131,10 @@ theorem arr_apart {v j a b : Nat} (h : j < a ∨ b ≤ j) {d n : Nat} (hd : arr 
   · exact .inl (Nat.le_trans (VG.Proof.Rsa.KeyWorkspace.arr_end h) hd)
   · exact .inr (Nat.le_trans hn (VG.Proof.Rsa.KeyWorkspace.arr_mono h))
 
-theorem arrW14 (w : Nat) : arr (2 * w + 2) 14 = arr w 28 := by
+theorem arrW3 (w : Nat) : arr (2 * w + 2) 3 = arr w 6 := by
   simp only [arr, S, KeyWorkspace.hdr]; omega_arith
 
-theorem arrW14_end (w : Nat) : arr w 28 + 4 * (2 * w + 2) ≤ arr w 30 := by
+theorem arrW3_end (w : Nat) : arr w 6 + 4 * (2 * w + 2) ≤ arr w 8 := by
   simp only [arr, S, KeyWorkspace.hdr]; omega_arith
 
 theorem off_add (p : Addr) (a b : Nat) : off p a + BitVec.ofNat 64 b = off p (a + b) := by
@@ -146,8 +145,9 @@ abbrev mtRegs : List Reg :=
   [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r29]
 
 /-- `mont`: the Montgomery constants of `n`. -/
-theorem mont_ok {s0 t : State} (h : HalvS s0 t) (hmv : Spec.Rsa.modulusValid (nV s0) (kK s0) = true) :
-    WP isa mont t (MontS s0) := by
+theorem mont_ok {s0 t : State} (h : NumS s0 t) (hgo : t.gpr .r0 = 0)
+    (hmv : Spec.Rsa.modulusValid (nV s0) (kK s0) = true) : WP isa mont t (MontS s0) := by
+  obtain ⟨odd, two⟩ := h.go.mp hgo
   have z := h.base.sz
   have w1 := z.w1; have w2 := z.w2; have svZ := z.svZ; have nw := z.nw; have svw := z.svw
   have hww : ww (kK s0) = 2 * wm (kK s0) + 2 := rfl
@@ -371,8 +371,7 @@ theorem mont_ok {s0 t : State} (h : HalvS s0 t) (hmv : Spec.Rsa.modulusValid (nV
     by rw [KK.num (by decide) (by simp) (fit aN (by decide))]; exact h.vN,
     by rw [lowK mBase (by decide) (by decide)]; exact lowN6,
     by rw [lowK mR2 (by decide) (by decide)]; exact R26, hO9, by omega_arith,
-    by rw [K1L.num (by decide) (by simp) (fit aOne (by decide))]; exact one1, fun i hi => ?_, ?_,
-    by rw [KK.slot (e := sTc) (by decide) (by simp)]; exact h.vT, h.odd, h.two⟩
+    by rw [K1L.num (by decide) (by simp) (fit aOne (by decide))]; exact one1, fun i hi => ?_, ?_, odd, two⟩
   · have : j < nArr := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
@@ -385,15 +384,14 @@ theorem mont_ok {s0 t : State} (h : HalvS s0 t) (hmv : Spec.Rsa.modulusValid (nV
     simp only [val32, Nat.mul_zero, Nat.add_zero] at this
     rw [this]; exact h.zK aZ (by simp) i hi
   · have hW : wW (kK s0) = 2 * ww (kK s0) + 2 := rfl
-    have e1 := arrW14 (ww (kK s0)); have e2 := arrW14_end (ww (kK s0))
-    have f30 := fit 30 (by decide)
-    change val32 t9.mem (rvB s0) (arr (wW (kK s0)) 14) (wW (kK s0)) = _
+    have e1 := arrW3 (ww (kK s0)); have e2 := arrW3_end (ww (kK s0))
+    change val32 t9.mem (rvB s0) (arr (wW (kK s0)) 3) (wW (kK s0)) = _
     rw [hW, e1]
-    have e3 := VG.Proof.Rsa.KeyWorkspace.arr_end (w := ww (kK s0)) (show 30 < 31 by decide)
-    have f31 := fit 31 (by decide)
-    have hjs : ∀ j ∈ [aOne, mBase, mR2, mR2 + 1, mR2 + 2, mXm, aO, aNg], j < 28 ∨ 30 ≤ j := by decide
+    have f8 := VG.Proof.Rsa.KeyWorkspace.arr_mono (w := ww (kK s0)) (show 8 ≤ aN by decide)
+    have fN := fit aN (by decide)
+    have hjs : ∀ j ∈ [aOne, mBase, mR2, mR2 + 1, mR2 + 2, mXm, aO, aNg], j < 6 ∨ 8 ≤ j := by decide
     rw [keep_apart KK (fun j hj => arr_apart (hjs j hj) (Nat.le_refl _) e2) (by simp)
-      (Nat.le_trans e2 (Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) e3) (Nat.le_trans (Nat.le_add_right _ _) f31)))]
-    rw [← e1, ← hW]; exact h.vR
+      (Nat.le_trans e2 (Nat.le_trans f8 (Nat.le_trans (Nat.le_add_right _ _) fN)))]
+    rw [← e1, ← hW]; exact h.vM
 
 end VG.Proof.Rsa.PPC64LE.Recover
