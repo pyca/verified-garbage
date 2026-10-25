@@ -52,6 +52,15 @@ asm = "powerpc64le"
 rust = "stable"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:ppc64le" }
 
+# RISC-V: natively on a riscv64 runner (RISE's, as pyca/infra's riscv64
+# images use), in the same Dockerfile's image for it.
+[[rust]]
+name = "Linux, RISC-V"
+os = "ubuntu-24.04-riscv"
+arch = "riscv64"
+rust = "stable"
+container = { image = "ghcr.io/pyca/verified-garbage-runner:riscv64" }
+
 [[rust]]
 name = "macOS, AArch64"
 os = "macos-latest"
