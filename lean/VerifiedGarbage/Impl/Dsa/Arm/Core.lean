@@ -28,9 +28,9 @@ def pointer : Pointer → List Instr
 def load (n len dst : Nat) (p : Pointer) : Prog isa :=
   .seq (.block (pointer p)) (loadComponent len n dst)
 
-/-- Every operation restores its modulus and Montgomery constants. -/
+/-- Nonmultiplicative operations need the modulus and inverse, but no R². -/
 def setup (len : Nat) (modulus : Field) : Prog isa :=
-  .seq (load ((len + 7) / 8) len (modS ((len + 7) / 8)) (.input modulus)) (Context.call ((len + 7) / 8))
+  .seq (load ((len + 7) / 8) len (modS ((len + 7) / 8)) (.input modulus)) (Context.light ((len + 7) / 8))
 
 /-- Internal results are not masked until the final signature output. -/
 def store (len output : Nat) : Prog isa :=

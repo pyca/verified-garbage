@@ -24,6 +24,10 @@ def save (n : Nat) : List Instr :=
 
 def restore (n : Nat) : List Instr := (slots n).map fun (r, o) => .ldr r .r12 o
 
+/-- Addition, subtraction and byte reduction do not use Montgomery R² or one.
+Only establish the inverse required by the shared arithmetic invariant. -/
+def light (n : Nat) : Prog isa := .block (setupInverse (modS n))
+
 def body (n : Nat) : Prog isa :=
   .seq (.block (save n)) (.seq (contextSetup n) (.block (restore n)))
 

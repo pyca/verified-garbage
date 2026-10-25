@@ -34,8 +34,8 @@ theorem doubles_noCalls (n k : Nat) : (doubles n k).noCalls = true := by
   split <;> simp only [countedDouble, addDigits, csubD, ptrLoop, Code.noCalls, Bool.and_self]
 
 theorem reduceBody_noFrames (n : Nat) : (reduceBody n).noFrames = true := by
-  simp only [reduceBody, Impl.Dsa.Arm.Context.call, Impl.Dsa.Arm.Context.body, contextSetup, reduceStream, streamStep, reduceStep, addD, addDigits,
-    csubD, Dynamic.zeros, ptrLoop, one, powerTwo, Code.noFrames, Bool.and_self, Bool.and_true, Bool.true_and]
+  simp only [reduceBody, Impl.Dsa.Arm.Context.light, reduceStream, streamStep, reduceStep, addD, addDigits,
+    csubD, Dynamic.zeros, ptrLoop, Code.noFrames, Bool.and_self, Bool.and_true, Bool.true_and]
   exact Code.noFrames_of_noCalls (doubles_noCalls n 8)
 
 /-! ## Products -/
