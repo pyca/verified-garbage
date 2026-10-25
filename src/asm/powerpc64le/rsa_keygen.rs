@@ -16274,17 +16274,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 263:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 263b
@@ -16312,17 +16312,17 @@ add %r5, %r5, %r29
 addi %r14, %r8, 0
 addi %r15, %r9, 0
 addi %r16, %r5, 0
-addi %r17, %r11, 0
+rldicl %r17, %r11, 63, 1
 264:
-lwz %r0, 0(%r15)
-lwz %r3, 0(%r14)
+ld %r0, 0(%r15)
+ld %r3, 0(%r14)
 xor %r3, %r3, %r0
 and %r3, %r3, %r20
 xor %r3, %r3, %r0
-stw %r3, 0(%r16)
-addi %r14, %r14, 4
-addi %r15, %r15, 4
-addi %r16, %r16, 4
+std %r3, 0(%r16)
+addi %r14, %r14, 8
+addi %r15, %r15, 8
+addi %r16, %r16, 8
 addi %r17, %r17, -1
 cmpldi %cr0, %r17, 0
 bne %cr0, 264b
