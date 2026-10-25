@@ -13,7 +13,7 @@ import rust_arches
 
 CI = Path(__file__).resolve().parent
 WORKFLOW = CI.parent / ".github/workflows/ci.yml"
-ALL = ["aarch64", "arm", "powerpc64", "x86", "x86_64"]
+ALL = ["aarch64", "arm", "powerpc64", "riscv64", "x86", "x86_64"]
 
 # The jobs that run or check the Rust tests.
 RUST_JOBS = ("rust-arches", "rust", "rust-thumb", "cpu-features-times", "rust-cpu-features", "coverage")
@@ -32,6 +32,7 @@ class Arches(unittest.TestCase):
         self.assertEqual(rust_arches.arches(["src/asm/x86_64/md5.rs"]), ["x86_64"])
         self.assertEqual(rust_arches.arches(["src/asm/x86/md5.rs"]), ["x86"])
         self.assertEqual(rust_arches.arches(["src/asm/powerpc64le/sha256.rs"]), ["powerpc64"])
+        self.assertEqual(rust_arches.arches(["src/asm/riscv64/chacha20.rs"]), ["riscv64"])
         self.assertEqual(
             rust_arches.arches(["src/asm/arm/md5.rs", "src/asm/aarch64/sha256.rs", "lean/X.lean"]),
             ["aarch64", "arm"],
@@ -40,7 +41,7 @@ class Arches(unittest.TestCase):
     def test_shared(self):
         for path in [
             "src/asm/mod.rs",
-            "src/asm/riscv64/md5.rs",
+            "src/asm/mips64/md5.rs",
             "src/md5.rs",
             "src/cpu.rs",
             "tests/main.rs",

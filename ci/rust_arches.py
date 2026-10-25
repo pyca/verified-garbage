@@ -43,6 +43,7 @@ ARCHES = {
     "aarch64": "aarch64",
     "arm": "arm",
     "powerpc64le": "powerpc64",
+    "riscv64": "riscv64",
     "x86": "x86",
     "x86_64": "x86_64",
 }

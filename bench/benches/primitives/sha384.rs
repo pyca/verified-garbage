@@ -1,10 +1,6 @@
 //! SHA-384.
 
 use criterion::Criterion;
-use openssl::hash::MessageDigest;
-use verified_garbage::hashes::sha384::Sha384;
-
-use crate::{hash_group_sizes, transcript_group};
 
 pub const USES: &[&str] = &["sha384", "sha512"];
 
@@ -16,7 +12,28 @@ pub const USES: &[&str] = &["sha384", "sha512"];
 pub(crate) const SHA384_SIZES: [usize; 11] =
     [32, 48, 64, 100, 111, 112, 128, 256, 512, 1024, 16384];
 
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
+)))]
+pub fn bench(_: &mut Criterion) {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 pub fn bench(c: &mut Criterion) {
+    use openssl::hash::MessageDigest;
+    use verified_garbage::hashes::sha384::Sha384;
+
+    use crate::{hash_group_sizes, transcript_group};
+
     hash_group_sizes(
         c,
         "sha384",

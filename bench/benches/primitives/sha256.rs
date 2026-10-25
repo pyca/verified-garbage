@@ -1,10 +1,6 @@
 //! SHA-256.
 
 use criterion::Criterion;
-use openssl::hash::MessageDigest;
-use verified_garbage::hashes::sha256::Sha256;
-
-use crate::{hash_group_sizes, transcript_group};
 
 pub const USES: &[&str] = &["sha256"];
 
@@ -14,7 +10,28 @@ pub const USES: &[&str] = &["sha256"];
 /// up to four blocks.
 const SHA256_SIZES: [usize; 10] = [32, 55, 56, 64, 100, 128, 192, 256, 1024, 16384];
 
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
+)))]
+pub fn bench(_: &mut Criterion) {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
 pub fn bench(c: &mut Criterion) {
+    use openssl::hash::MessageDigest;
+    use verified_garbage::hashes::sha256::Sha256;
+
+    use crate::{hash_group_sizes, transcript_group};
+
     hash_group_sizes(
         c,
         "sha256",
