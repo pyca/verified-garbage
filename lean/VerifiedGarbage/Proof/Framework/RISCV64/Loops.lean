@@ -47,7 +47,8 @@ theorem ofNat_bne_zero' {a : Nat} (ha : a < 2 ^ 64) :
     rw [decide_eq_false h, Bool.not_false]
     exact bne_iff_ne.mpr this
 
-theorem copyLoop_ok {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ dst) (h3 : tmp ≠ cnt)
+/-- `copyLoop_ok`, with the destination pointer advanced past the bytes copied. -/
+theorem copyLoop_adv {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ dst) (h3 : tmp ≠ cnt)
     (h4 : src ≠ dst) (h5 : src ≠ cnt) (h6 : dst ≠ cnt) (s : State) {N : Nat} (hN : 0 < N)
     (hN' : N < 2 ^ 64) (hc : s.gpr cnt = BitVec.ofNat 64 N)
     (hr : ∀ i < N, InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 i) 1)
@@ -55,7 +56,8 @@ theorem copyLoop_ok {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ dst
     (hsep : Mem.Sep (s.gpr dst) N (s.gpr src) N) :
     WP isa (copyLoop tmp src dst cnt) s fun t =>
       (∀ i < N, t.mem (s.gpr dst + BitVec.ofNat 64 i) = s.mem (s.gpr src + BitVec.ofNat 64 i)) ∧
-      Frame [⟨s.gpr dst, N⟩] s.mem t.mem ∧ Keep [tmp, src, dst, cnt] s t := by
+      Frame [⟨s.gpr dst, N⟩] s.mem t.mem ∧ Keep [tmp, src, dst, cnt] s t ∧
+      t.gpr dst = s.gpr dst + BitVec.ofNat 64 N := by
   refine WP.loop (M := isa) (fun n t => ∃ k, n = N - k ∧ CopyInv tmp src dst cnt N s k t) ?_ N s
     ⟨0, rfl, hN, by simp, by simp, by simp [hc], fun j hj => absurd hj (by omega), Frame.refl _ _,
       Keep.refl _ _⟩
@@ -96,10 +98,22 @@ theorem copyLoop_ok {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ dst
   have hkeep : Keep [tmp, src, dst, cnt] s u := (I.keep.trans uk).mono (by simp)
   rw [Steps.eval_nonzero, hc', ofNat_bne_zero' (by omega)]
   by_cases e : k + 1 = N
-  · refine .inl ⟨by simp [e], fun i hi => hcopied i (by omega), hframe, hkeep⟩
+  · refine .inl ⟨by simp [e], fun i hi => hcopied i (by omega), hframe, hkeep, ?_⟩
+    rw [ud, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.add_add, e]
   · refine .inr ⟨by simp; omega, N - (k + 1), by omega, k + 1, rfl, by omega, ?_, ?_, hc', hcopied, hframe, hkeep⟩
     · rw [us, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.add_add]
     · rw [ud, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.add_add]
+
+theorem copyLoop_ok {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ dst) (h3 : tmp ≠ cnt)
+    (h4 : src ≠ dst) (h5 : src ≠ cnt) (h6 : dst ≠ cnt) (s : State) {N : Nat} (hN : 0 < N)
+    (hN' : N < 2 ^ 64) (hc : s.gpr cnt = BitVec.ofNat 64 N)
+    (hr : ∀ i < N, InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 i) 1)
+    (hw : ∀ i < N, InRegions s.wr (s.gpr dst + BitVec.ofNat 64 i) 1)
+    (hsep : Mem.Sep (s.gpr dst) N (s.gpr src) N) :
+    WP isa (copyLoop tmp src dst cnt) s fun t =>
+      (∀ i < N, t.mem (s.gpr dst + BitVec.ofNat 64 i) = s.mem (s.gpr src + BitVec.ofNat 64 i)) ∧
+      Frame [⟨s.gpr dst, N⟩] s.mem t.mem ∧ Keep [tmp, src, dst, cnt] s t :=
+  WP.mono (copyLoop_adv h1 h2 h3 h4 h5 h6 s hN hN' hc hr hw hsep) fun _ ⟨a, b, c, _⟩ => ⟨a, b, c⟩
 
 /-- After `k` doublewords of `fillLoop` from `s₀`. -/
 structure FillInv (v ptr cnt : Reg) (N : Nat) (s₀ : State) (k : Nat) (s : State) : Prop where
