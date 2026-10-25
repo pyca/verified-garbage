@@ -27,10 +27,6 @@
 //! names `sha3`, since it is not faster there. ML-DSA and ML-KEM independently select their paired
 //! SHA3 implementations whenever the detected features support them.
 
-// No RISC-V module chooses among implementations yet, so detection is only
-// used by the tests there.
-#![cfg_attr(target_arch = "riscv64", allow(dead_code))]
-
 use core::sync::atomic::{AtomicU32, Ordering};
 
 /// The features detection knows, by their Rust `target_feature` names: bit
