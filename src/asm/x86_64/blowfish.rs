@@ -1165,38 +1165,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdx+r8*1]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+256]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+512]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+768]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -1208,8 +1191,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -1217,8 +1203,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -1226,8 +1215,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -1235,8 +1227,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -1270,38 +1265,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+1024]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+1280]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+1536]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+1792]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -1313,8 +1291,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -1322,8 +1303,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -1331,8 +1315,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -1340,8 +1327,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -1375,38 +1365,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+2048]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+2304]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+2560]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+2816]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -1418,8 +1391,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -1427,8 +1403,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -1436,8 +1415,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -1445,8 +1427,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -1480,38 +1465,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+3072]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+3328]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+3584]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+3840]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -1523,8 +1491,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -1532,8 +1503,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -1541,8 +1515,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -1550,8 +1527,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -1618,38 +1598,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdx+r8*1]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+256]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+512]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+768]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -1661,8 +1624,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -1670,8 +1636,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -1679,8 +1648,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -1688,8 +1660,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -1723,38 +1698,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+1024]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+1280]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+1536]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+1792]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -1766,8 +1724,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -1775,8 +1736,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -1784,8 +1748,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -1793,8 +1760,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -1828,38 +1798,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+2048]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+2304]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+2560]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+2816]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -1871,8 +1824,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -1880,8 +1836,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -1889,8 +1848,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -1898,8 +1860,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -1933,38 +1898,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+3072]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+3328]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+3584]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdx+r8*1+3840]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -1976,8 +1924,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -1985,8 +1936,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -1994,8 +1948,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -2003,8 +1960,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -2069,7 +2029,7 @@ ret
 ///
 /// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
 ///
-/// One block at a time with SSE2: each S-box lookup scans the 256 entries of its four byte planes, 16 at a time, keeping the bytes of the entry that is the index under masks computed from it, so no address depends on the data or the schedule. Each output block goes through 16 bytes of working space on the stack, zeroed before returning.
+/// One block at a time with SSE2: each S-box lookup scans the 256 entries of its four byte planes, 16 at a time, reusing one combined byte mask across the four planes, so no address depends on the data or the schedule. Each output block goes through 16 bytes of working space on the stack, zeroed before returning.
 ///
 /// # Safety
 ///
@@ -2139,38 +2099,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdi+r8*1]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+256]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+512]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+768]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -2182,8 +2125,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -2191,8 +2137,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -2200,8 +2149,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -2209,8 +2161,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -2244,38 +2199,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+1024]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+1280]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+1536]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+1792]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -2287,8 +2225,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -2296,8 +2237,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -2305,8 +2249,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -2314,8 +2261,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -2349,38 +2299,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+2048]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+2304]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+2560]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+2816]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -2392,8 +2325,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -2401,8 +2337,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -2410,8 +2349,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -2419,8 +2361,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -2454,38 +2399,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+3072]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+3328]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+3584]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+3840]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -2497,8 +2425,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -2506,8 +2437,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -2515,8 +2449,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -2524,8 +2461,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -2573,7 +2513,7 @@ ret
 ///
 /// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
 ///
-/// One block at a time with SSE2: each S-box lookup scans the 256 entries of its four byte planes, 16 at a time, keeping the bytes of the entry that is the index under masks computed from it, so no address depends on the data or the schedule. Each output block goes through 16 bytes of working space on the stack, zeroed before returning.
+/// One block at a time with SSE2: each S-box lookup scans the 256 entries of its four byte planes, 16 at a time, reusing one combined byte mask across the four planes, so no address depends on the data or the schedule. Each output block goes through 16 bytes of working space on the stack, zeroed before returning.
 ///
 /// # Safety
 ///
@@ -2643,38 +2583,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdi+r8*1]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+256]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+512]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+768]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -2686,8 +2609,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -2695,8 +2621,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -2704,8 +2633,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -2713,8 +2645,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -2748,38 +2683,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+1024]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+1280]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+1536]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+1792]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -2791,8 +2709,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -2800,8 +2721,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -2809,8 +2733,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -2818,8 +2745,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -2853,38 +2783,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+2048]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+2304]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+2560]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+2816]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -2896,8 +2809,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -2905,8 +2821,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -2914,8 +2833,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -2923,8 +2845,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24
@@ -2958,38 +2883,21 @@ paddw xmm7, xmm13
 pxor xmm7, xmm3
 psubw xmm7, xmm13
 psraw xmm7, 15
+pand xmm6, xmm15
+psllw xmm7, 8
+por xmm6, xmm7
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+3072]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm8, xmm12
-por xmm8, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+3328]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm9, xmm12
-por xmm9, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+3584]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm10, xmm12
-por xmm10, xmm5
 movdqu xmm12, XMMWORD PTR [rdi+r8*1+3840]
-movdqa xmm5, xmm12
-pand xmm12, xmm15
-psrlw xmm5, 8
 pand xmm12, xmm6
-pand xmm5, xmm7
 por xmm11, xmm12
-por xmm11, xmm5
 paddw xmm4, xmm14
 add r8, 16
 sub r9, 1
@@ -3001,8 +2909,11 @@ por xmm8, xmm12
 movdqa xmm12, xmm8
 psrld xmm12, 16
 por xmm8, xmm12
-pslld xmm8, 16
-psrld xmm8, 16
+movdqa xmm12, xmm8
+psrld xmm12, 8
+por xmm8, xmm12
+pslld xmm8, 24
+psrld xmm8, 24
 pshufd xmm12, xmm9, 78
 por xmm9, xmm12
 pshufd xmm12, xmm9, 177
@@ -3010,8 +2921,11 @@ por xmm9, xmm12
 movdqa xmm12, xmm9
 psrld xmm12, 16
 por xmm9, xmm12
-pslld xmm9, 16
-psrld xmm9, 16
+movdqa xmm12, xmm9
+psrld xmm12, 8
+por xmm9, xmm12
+pslld xmm9, 24
+psrld xmm9, 24
 pshufd xmm12, xmm10, 78
 por xmm10, xmm12
 pshufd xmm12, xmm10, 177
@@ -3019,8 +2933,11 @@ por xmm10, xmm12
 movdqa xmm12, xmm10
 psrld xmm12, 16
 por xmm10, xmm12
-pslld xmm10, 16
-psrld xmm10, 16
+movdqa xmm12, xmm10
+psrld xmm12, 8
+por xmm10, xmm12
+pslld xmm10, 24
+psrld xmm10, 24
 pshufd xmm12, xmm11, 78
 por xmm11, xmm12
 pshufd xmm12, xmm11, 177
@@ -3028,8 +2945,11 @@ por xmm11, xmm12
 movdqa xmm12, xmm11
 psrld xmm12, 16
 por xmm11, xmm12
-pslld xmm11, 16
-psrld xmm11, 16
+movdqa xmm12, xmm11
+psrld xmm12, 8
+por xmm11, xmm12
+pslld xmm11, 24
+psrld xmm11, 24
 pslld xmm9, 8
 pslld xmm10, 16
 pslld xmm11, 24

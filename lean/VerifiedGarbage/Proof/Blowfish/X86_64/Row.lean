@@ -55,9 +55,9 @@ def rowK (r : Nat) : BitVec 128 := ofWords fun w => BitVec.ofNat 16 (16 * r + 2 
 /-- The index in every word. -/
 def bcast (x : Byte) : BitVec 128 := ofWords fun _ => x.setWidth 16
 
-theorem masks_run (u : State) (x : Byte) {r : Nat} (hr : r < 16) (hk : u.xmm kReg = rowK r)
+theorem wordMasks_run (u : State) (x : Byte) {r : Nat} (hr : r < 16) (hk : u.xmm kReg = rowK r)
     (hx : u.xmm idxReg = bcast x) (h1 : u.xmm onesReg = wordsOf 1) :
-    ∃ u', runBlock isa masks u = some u' ∧
+    ∃ u', runBlock isa wordMasks u = some u' ∧
       (∀ w < 8, word (u'.xmm mEven) w = if x.toNat = 16 * r + 2 * w then BitVec.allOnes 16 else 0) ∧
       (∀ w < 8, word (u'.xmm mOdd) w = if x.toNat = 16 * r + 2 * w + 1 then BitVec.allOnes 16 else 0) ∧
       (∀ d, d ≠ mEven → d ≠ mOdd → u'.xmm d = u.xmm d) ∧ u' = { u with xmm := u'.xmm } := by
@@ -81,6 +81,32 @@ theorem masks_run (u : State) (x : Byte) {r : Nat} (hr : r < 16) (hk : u.xmm kRe
   · simp only [u', ops, List.foldl, XOp.exec, xmm_setXmm_of_ne _ _ h1, xmm_setXmm_of_ne _ _ h2]
   · simp only [u', ops, List.foldl, XOp.exec, State.setXmm]
 
+theorem masks_run (u : State) (x : Byte) {r : Nat} (hr : r < 16) (hk : u.xmm kReg = rowK r)
+    (hx : u.xmm idxReg = bcast x) (h1 : u.xmm onesReg = wordsOf 1)
+    (hl : u.xmm lowReg = wordsOf 0xFF) :
+    ∃ u', runBlock isa masks u = some u' ∧
+      (∀ w < 8, word (u'.xmm mEven) w = byteMask x.toNat (16 * r + 2 * w)) ∧
+      (∀ d, d ≠ mEven → d ≠ mOdd → u'.xmm d = u.xmm d) ∧ u' = { u with xmm := u'.xmm } := by
+  obtain ⟨v, run, hE, hO, keep, eq⟩ := wordMasks_run u x hr hk hx h1
+  let ops : List XOp := [.bin .pand mEven lowReg, .shift .psllw mOdd 8, .bin .por mEven mOdd]
+  let u' := ops.foldl (fun t op => op.exec t) v
+  refine ⟨u', ?_, fun w hw => ?_, fun d hE hO => ?_, ?_⟩
+  · rw [masks, runBlock_append, run]
+    exact runXops ops v
+  · simp (disch := decide) only [u', ops, List.foldl, XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne,
+      XBinOp.eval]
+    rw [word_or, word_pand, keep lowReg (by decide) (by decide), hl]
+    rw [hE w hw]
+    simp only [XShiftOp.eval, show (8 : BitVec 8).toNat = 8 by rfl, show ¬ 15 < 8 by decide, ite_false]
+    rw [word_ofWords _ hw, hO w hw, wordsOf, word_ofWords _ hw]
+    simp only [byteMask]
+    by_cases he : x.toNat = 16 * r + 2 * w <;>
+      by_cases ho : x.toNat = 16 * r + 2 * w + 1 <;> simp [he, ho]
+  · simp only [u', ops, List.foldl, XOp.exec, xmm_setXmm_of_ne _ _ hE, xmm_setXmm_of_ne _ _ hO]
+    exact keep d hE hO
+  · simp only [u', ops, List.foldl, XOp.exec, State.setXmm]
+    rw [eq]
+
 theorem accReg_ne : ∀ b < 4, accReg b ≠ tmp ∧ accReg b ≠ tmp2 ∧ accReg b ≠ mEven ∧ accReg b ≠ mOdd ∧
     accReg b ≠ lowReg ∧ accReg b ≠ kReg ∧ accReg b ≠ idxReg ∧ accReg b ≠ onesReg ∧ accReg b ≠ sixteenReg ∧
     accReg b ≠ xL ∧ accReg b ≠ xR ∧ accReg b ≠ fReg := by decide
@@ -93,25 +119,21 @@ theorem exec_movdquLoad {s : State} {d : XReg} {m : MemOp} (h : InRegions (s.rd 
 theorem plane_run (u : State) (sch : Reg) (j : Nat) {b : Nat} (hb : b < 4)
     (hR : InRegions (u.rd ++ u.wr) (u.ea (rowMem sch j b)) 16) :
     ∃ u', runBlock isa (plane sch j b) u = some u' ∧
-      u'.xmm (accReg b) = (u.xmm (accReg b) |||
-        ((u.mem.readW (u.ea (rowMem sch j b)) 128 &&&
-          u.xmm lowReg) &&& u.xmm mEven)) |||
-        (XShiftOp.eval .psrlw (u.mem.readW (u.ea (rowMem sch j b)) 128) (BitVec.ofNat 8 8) &&& u.xmm mOdd) ∧
+      u'.xmm (accReg b) = u.xmm (accReg b) |||
+        (u.mem.readW (u.ea (rowMem sch j b)) 128 &&& u.xmm mEven) ∧
       (∀ d, d ≠ tmp → d ≠ tmp2 → d ≠ accReg b → u'.xmm d = u.xmm d) ∧
       u' = { u with xmm := u'.xmm } := by
   obtain ⟨n1, n2, n3, n4, n5, -⟩ := accReg_ne b hb
   let T := u.mem.readW (u.ea (rowMem sch j b)) 128
   let u₁ := u.setXmm tmp T
-  let ops : List XOp := [.bin .movdqa tmp2 tmp, .bin .pand tmp lowReg, .shift .psrlw tmp2 (BitVec.ofNat 8 8),
-    .bin .pand tmp mEven, .bin .pand tmp2 mOdd, .bin .por (accReg b) tmp, .bin .por (accReg b) tmp2]
+  let ops : List XOp := [.bin .pand tmp mEven, .bin .por (accReg b) tmp]
   refine ⟨ops.foldl (fun t op => op.exec t) u₁, ?_, ?_, fun d h1 h2 h3 => ?_, ?_⟩
   · rw [plane, runBlock_cons, exec_movdquLoad hR, runStep_some]
     exact runXops ops u₁
   · simp (disch := first | decide | with_reducible assumption | exact Ne.symm ‹_›) only [ops, u₁, List.foldl, XOp.exec,
       xmm_setXmm_self, xmm_setXmm_of_ne, XBinOp.eval]
     rfl
-  · simp (disch := decide) only [ops, u₁, List.foldl, XOp.exec, xmm_setXmm_of_ne _ _ h1, xmm_setXmm_of_ne _ _ h2,
-      xmm_setXmm_of_ne _ _ h3]
+  · simp (disch := decide) only [ops, u₁, List.foldl, XOp.exec, xmm_setXmm_of_ne _ _ h1, xmm_setXmm_of_ne _ _ h3]
   · simp only [ops, u₁, List.foldl, XOp.exec, State.setXmm]
 
 theorem cat_run {a b : List Instr} {s s₁ s₂ : State} (h₁ : runBlock isa a s = some s₁)
@@ -176,8 +198,7 @@ structure PlaneInv (sch : Reg) (S : Addr) (x : Byte) (j : Nat) (u₀ : State) (r
 
 theorem plane_step {sch : Reg} {S : Addr} {x : Byte} {j : Nat} {u₀ : State} (E : ScanEnv sch S x j u₀)
     {r : Nat} (hr : r < 16) {u : State} (I : RowInv sch S x j u₀ r u) {mE mO : BitVec 128}
-    (hE : ∀ w < 8, word mE w = if x.toNat = 16 * r + 2 * w then BitVec.allOnes 16 else 0)
-    (hO : ∀ w < 8, word mO w = if x.toNat = 16 * r + 2 * w + 1 then BitVec.allOnes 16 else 0)
+    (hE : ∀ w < 8, word mE w = byteMask x.toNat (16 * r + 2 * w))
     {b : Nat} (hb : b < 4) {t : State} (P : PlaneInv sch S x j u₀ r u t mE mO b) :
     ∃ t', runBlock isa (plane sch j b) t = some t' ∧ PlaneInv sch S x j u₀ r u t' mE mO (b + 1) := by
   have hg : t.gpr = u.gpr := by rw [P.eq]
@@ -194,9 +215,8 @@ theorem plane_step {sch : Reg} {S : Addr} {x : Byte} {j : Nat} {u₀ : State} (E
   · rw [keep _ (by decide) (by decide) (Ne.symm n4), P.mO]
   · by_cases h : b' = b
     · subst h
-      rw [hacc, P.todo _ (Nat.le_refl _) hb, P.mE, P.mO,
-        show t.xmm lowReg = wordsOf 0xFF by rw [P.keep _ (by decide), I.xmm _ (by decide), E.low]]
-      refine row_acc _ x _ _ _ (fun e he => ?_) hE hO
+      rw [hacc, P.todo _ (Nat.le_refl _) hb, P.mE]
+      refine row_acc _ x _ _ (fun e he => ?_) hE
       rw [ea, byte_readW128 _ _ he, hm, pl, Offset.add_add, Nat.add_assoc]
     · have ne : accReg b' ≠ accReg b := by
         have : ∀ a < 4, ∀ c < 4, a ≠ c → accReg a ≠ accReg c := by decide
@@ -250,17 +270,17 @@ theorem row_run {sch : Reg} {S : Addr} {x : Byte} {j : Nat} {u₀ : State} (E : 
     {r : Nat} (hr : r < 16) {u : State} (I : RowInv sch S x j u₀ r u) :
     ∃ u', runBlock isa (row sch j) u = some u' ∧ RowInv sch S x j u₀ (r + 1) u' ∧
       u'.zf = some (BitVec.ofNat 64 (16 - (r + 1)) == 0) := by
-  obtain ⟨u₁, r₁, hE, hO, k₁, e₁⟩ := masks_run u x hr I.k (by rw [I.xmm _ (by decide), E.idx])
-    (by rw [I.xmm _ (by decide), E.ones])
+  obtain ⟨u₁, r₁, hE, k₁, e₁⟩ := masks_run u x hr I.k (by rw [I.xmm _ (by decide), E.idx])
+    (by rw [I.xmm _ (by decide), E.ones]) (by rw [I.xmm _ (by decide), E.low])
   have P0 : PlaneInv sch S x j u₀ r u u₁ (u₁.xmm mEven) (u₁.xmm mOdd) 0 := by
     refine ⟨e₁, rfl, rfl, fun _ h => absurd h (by omega_arith), fun b' _ h => ?_, fun d hd => ?_, ?_⟩
     · rw [k₁ _ (accReg_ne b' h).2.2.1 (accReg_ne b' h).2.2.2.1]; exact I.acc b' h
     · exact k₁ d (fun e => hd (e ▸ by decide)) (fun e => hd (e ▸ by decide))
     · rw [k₁ _ (by decide) (by decide)]; exact I.k
-  obtain ⟨p1, rp1, P1⟩ := plane_step E hr I hE hO (b := 0) (by decide) P0
-  obtain ⟨p2, rp2, P2⟩ := plane_step E hr I hE hO (b := 1) (by decide) P1
-  obtain ⟨p3, rp3, P3⟩ := plane_step E hr I hE hO (b := 2) (by decide) P2
-  obtain ⟨p4, rp4, P4⟩ := plane_step E hr I hE hO (b := 3) (by decide) P3
+  obtain ⟨p1, rp1, P1⟩ := plane_step E hr I hE (b := 0) (by decide) P0
+  obtain ⟨p2, rp2, P2⟩ := plane_step E hr I hE (b := 1) (by decide) P1
+  obtain ⟨p3, rp3, P3⟩ := plane_step E hr I hE (b := 2) (by decide) P2
+  obtain ⟨p4, rp4, P4⟩ := plane_step E hr I hE (b := 3) (by decide) P3
   have g4 : p4.gpr = u.gpr := by rw [P4.eq]
   have s4 : p4.xmm sixteenReg = wordsOf 16 := by rw [P4.keep _ (by decide), I.xmm _ (by decide), E.sixteen]
   obtain ⟨v, rv, xv, r8v, r9v, zv, gv, ev⟩ := rowTail_run p4
