@@ -12,8 +12,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.PPC64LE.ModExpPow
-public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
+import VerifiedGarbage.Proof.Bignum.PPC64LE.WinPow
 
 /-!
 # The RSA private-key operation on PPC64LE: a prime's power, the exponent
@@ -33,7 +32,7 @@ open VG.Proof.Bignum.PPC64LE
 `P` in array 0 and `x < P` in array 1, for the `L` bytes at `D` (from the
 header's words `oD` and `oLen`): `x^d mod P` into array 4. -/
 theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x : Nat}
-    (hs : Scr s BX Z) (hA : oA + slot wA 8 ≤ Z) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
+    (hs : Scr s BX Z) (hA : oA + slot wA 24 ≤ Z) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
     (h10 : s.gpr .r10 = off (off BX oA) (slot wA 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wA + 2)))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wA))
     (h18 : s.gpr .r18 = off D 0) (h19 : s.gpr .r19 = BitVec.ofNat 64 L) (hL : 1 ≤ L)
@@ -44,14 +43,14 @@ theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x : Nat}
     WP isa (.seq (.block (PublicChecked.base .r14 4 ++ PublicChecked.base .r15 1)) (.seq copyN
       (.seq (.block (PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++ PublicChecked.base .r9 3))
       (.seq Precompute.r2 (.seq (.block (PublicChecked.minv ++ ([.addi .r30 .r18 0, .addi .r31 .r19 0] : List Instr)))
-        ModExp.powSecret))))) s fun t =>
+        ModExp.powWin))))) s fun t =>
       (val32 t.mem (off BX oA) (slot wA 0) (2 * wA) = Pv ∧
         val32 t.mem (off BX oA) (slot wA 4) (2 * wA) = x ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
-        Outside BX oA (slot wA 8) s.mem t.mem) ∧ Keep powerRegs s t := by
+        Outside BX oA (slot wA 24) s.mem t.mem) ∧ Keep powerRegs s t := by
   have hn := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
-  have eA0 := e wA 0; have eA1 := e wA 1; have eA4 := e wA 4; have eA8 := e wA 8
+  have eA0 := e wA 0; have eA1 := e wA 1; have eA4 := e wA 4; have eA8 := e wA 24
   have hsA := hs.sub hA
   have hnA := hsA.nowrap
   refine WP.seq ?_
@@ -102,7 +101,7 @@ theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x : Nat}
   refine WP.mono (Pub.minv_ok (hsA.congr k17.wr) ((k17.gpr _ (by decide)).trans h10) (by omega_arith) hlow)
     fun s₈ ⟨⟨i12, iinv, m8⟩, k8⟩ => ?_
   have k18 := k17.trans k8
-  have outH : Outside BX oA (slot wA 8) s.mem s₈.mem := by
+  have outH : Outside BX oA (slot wA 24) s.mem s₈.mem := by
     rw [m8]
     exact (out_sub out3 (by omega_arith) (by omega_arith) (by omega_arith)).trans
       (out_sub (fun y hy => out7 y hy) (by omega_arith) (by omega_arith) (by omega_arith))
@@ -115,32 +114,34 @@ theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x : Nat}
   have hb : Spec.Rsa.bytesAt s₉.mem D L = Spec.Rsa.bytesAt s.mem D L := by
     rw [m9]; exact bytesAt_out outH hA hsepD
   rw [← hm9] at v0' v4' h1 iinv
-  refine WP.mono (ModExp.powSecret_ok (hsA.congr k19.wr) hw2 hw' (Nat.le_refl _)
+  refine WP.mono (Win.powWin_ok (hsA.congr k19.wr) hw2 hw' (Nat.le_refl _)
     ((k19.gpr _ (by decide)).trans h10) ((k19.gpr _ (by decide)).trans h29)
     ((k19.gpr _ (by decide)).trans h11) (by rw [k9.gpr _ (by decide)]; exact i12)
     (by rw [k9.gpr _ (by decide)]; exact iinv) (by rw [v0']; exact hP2) (by rw [v0']; exact hPodd)
     (by rw [h1, v0']; exact Nat.mod_lt _ (by omega_arith)) a30 a31 hL hL'
     (fun i hi => by rw [k19.rd, k19.wr]; exact hrdD i hi)
     (fun i hi y hy => hsepD i hi y (by rw [ofs_sub hy (by omega_arith)]; omega_arith))) fun t ⟨⟨hpow, out10⟩, k10⟩ => ?_
-  have hpr : ∀ r ∈ Pub.powRs wA, slot wA 0 + 4 * (2 * wA) ≤ r.1 ∨ r.1 + r.2 ≤ slot wA 0 := by
+  have hpr : ∀ r ∈ Win.win wA, slot wA 0 + 4 * (2 * wA) ≤ r.1 ∨ r.1 + r.2 ≤ slot wA 0 := by
     intro r hr
-    simp only [Pub.powRs, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> left <;> simp only [e] <;> omega_arith
+    rw [Win.win, List.mem_singleton] at hr
+    subst hr
+    left; simp only [e]; omega_arith
   refine ⟨⟨?_, ?_, ?_⟩, (k19.trans k10).mono⟩
   · rw [out10.val32 hpr (by omega_arith), v0']
   · rw [hpow (by rw [h1, v0', ← Nat.pow_add, ← Nat.two_mul, ← Nat.mul_assoc]), v4', v0', hb]
   · refine outH.trans ?_
     rw [← m9]
     refine outs_sub out10 (fun r hr => ?_) (by omega_arith) (by omega_arith)
-    simp only [Pub.powRs, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [e] <;> omega_arith
+    rw [Win.win, List.mem_singleton] at hr
+    subst hr
+    simp only [e]; omega_arith
 
 /-- `power xj oD oLen`, in the working space `off BX oA` of `w_A` words: for
 the prime `P` (`w_A` words of `X`'s array `xj`) and the input (`k` bytes at
 `I`), array 4 holds `c^d mod P` for the exponent `d` (`L` bytes at `D`), with
 the input, `D` and `L` from the header. -/
 theorem power_ok {s : State} {BX I D : Addr} {Z oA wA wX xj k L Pv oD oLen : Nat}
-    (hs : Scr s BX Z) (hA : oA + slot wA 8 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
+    (hs : Scr s BX Z) (hA : oA + slot wA 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wA) (hw' : wA < 2 ^ 31)
     (hwx : wA ≤ wX) (hxj : xj < 8)
     (h10 : s.gpr .r10 = off (off BX oA) (slot wA 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wA + 2)))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wA)) (h23 : s.gpr .r23 = BX)
@@ -157,7 +158,7 @@ theorem power_ok {s : State} {BX I D : Addr} {Z oA wA wX xj k L Pv oD oLen : Nat
       (val32 t.mem (off BX oA) (slot wA 0) (2 * wA) = Pv ∧
         val32 t.mem (off BX oA) (slot wA 4) (2 * wA) =
           Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem I k) ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
-        Outside BX oA (slot wA 8) s.mem t.mem) ∧ Keep powerRegs s t := by
+        Outside BX oA (slot wA 24) s.mem t.mem) ∧ Keep powerRegs s t := by
   have eX8 : slot wX 8 = hdrBytes + 8 * (8 * (wX + 2)) := rfl
   have hh : hdrBytes = 256 := rfl
   unfold power

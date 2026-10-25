@@ -52,7 +52,7 @@ theorem wp_reassoc3 {a b c d : Prog isa} {s : State} {Q : State → Prop}
 /-- `zeroWords`, `xb r14 j`, `r11 := r22`, `copyN`: `w_A` words of a prime's
 array 4 (`r15`) into `X`'s array `j` (`r14`), zero-extended to `w_X` words
 (`r11`), for `2 w_A` in `r22`. -/
-theorem xfer_ok {s : State} {BX : Addr} {Z oA wA wX j : Nat} (hs : Scr s BX Z) (hA : oA + slot wA 8 ≤ Z)
+theorem xfer_ok {s : State} {BX : Addr} {Z oA wA wX j : Nat} (hs : Scr s BX Z) (hA : oA + slot wA 24 ≤ Z)
     (hXA : slot wX 8 ≤ oA) (hj : j < 8) (hw1 : 1 ≤ wA) (hwx : wA ≤ wX) (hwX : wX < 2 ^ 31)
     (h14 : s.gpr .r14 = off BX (slot wX j)) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wX))
     (h22 : s.gpr .r22 = BitVec.ofNat 64 (2 * wA)) (h15 : s.gpr .r15 = off (off BX oA) (slot wA 4))
@@ -63,7 +63,7 @@ theorem xfer_ok {s : State} {BX : Addr} {Z oA wA wX j : Nat} (hs : Scr s BX Z) (
   have hn := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
-  have eA4 := e wA 4; have eA8 := e wA 8
+  have eA4 := e wA 4; have eA8 := e wA 24
   have sXj := slot_le (w := wX) hj
   refine WP.seq (WP.mono (zeroWords_ok hs h14 h11 (by omega_arith) hwX (by omega_arith)) fun s₁ ⟨⟨_, hz, out1⟩, k1⟩ => ?_)
   refine WP.seq ?_

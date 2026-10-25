@@ -56,8 +56,8 @@ spaces at `off BX oP` and `off BX oQ`, from the header with their lengths),
 `q` in `X`'s array 5 (`w_X` words, at least `w_P + w_Q`) and
 `M = 2^(64 w_X) - 1` in its array 0: `q h + m₂` into `X`'s array 4. -/
 theorem recombineX_ok {s : State} {BX : Addr} {Z oP oQ pL qL wX Qv H M2 : Nat}
-    (hs : Scr s BX Z) (hPZ : oP + slot (wsWords pL) 8 ≤ Z) (hXP : slot wX 8 ≤ oP)
-    (hQZ : oQ + slot (wsWords qL) 8 ≤ Z) (hXQ : slot wX 8 ≤ oQ)
+    (hs : Scr s BX Z) (hPZ : oP + slot (wsWords pL) 24 ≤ Z) (hXP : slot wX 8 ≤ oP)
+    (hQZ : oQ + slot (wsWords qL) 24 ≤ Z) (hXQ : slot wX 8 ≤ oQ)
     (hpq : wsWords pL + wsWords qL ≤ wX) (hwX : wX < 2 ^ 31)
     (h23 : s.gpr .r23 = BX) (h27 : s.gpr .r27 = off BX (slot wX 0))
     (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
@@ -78,8 +78,8 @@ theorem recombineX_ok {s : State} {BX : Addr} {Z oP oQ pL qL wX Qv H M2 : Nat}
   have hh : hdrBytes = 256 := rfl
   have eX0 := e wX 0; have eX2 := e wX 2; have eX3 := e wX 3; have eX4 := e wX 4; have eX5 := e wX 5
   have eX6 := e wX 6; have eX7 := e wX 7; have eX8 := e wX 8
-  have eP4 := e (wsWords pL) 4; have eP8 := e (wsWords pL) 8
-  have eQ4 := e (wsWords qL) 4; have eQ8 := e (wsWords qL) 8
+  have eP4 := e (wsWords pL) 4; have eP8 := e (wsWords pL) 24
+  have eQ4 := e (wsWords qL) 4; have eQ8 := e (wsWords qL) 24
   have hwP : 2 ≤ wsWords pL := by unfold wsWords; omega_arith
   have hwQ : 2 ≤ wsWords qL := by unfold wsWords; omega_arith
   unfold recombineX

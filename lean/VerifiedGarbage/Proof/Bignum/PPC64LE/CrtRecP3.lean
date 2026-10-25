@@ -40,7 +40,7 @@ theorem mont_chain {P R a q x5 x4 : Nat} (hR : Nat.Coprime R P) (h5 : x5 * R % P
 `r12`): `qInv` (`w_P` words of `X`'s array 7) into array 6, then
 `a qInv R⁻¹ mod p` into array 5 and `a qInv mod p` into array 4. -/
 theorem recP3_ok {s : State} {BX : Addr} {Z oA wP wX Pv a QI : Nat}
-    (hs : Scr s BX Z) (hA : oA + slot wP 8 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wP) (hw' : wP < 2 ^ 31)
+    (hs : Scr s BX Z) (hA : oA + slot wP 24 ≤ Z) (hXA : slot wX 8 ≤ oA) (hw2 : 2 ≤ wP) (hw' : wP < 2 ^ 31)
     (h10 : s.gpr .r10 = off (off BX oA) (slot wP 0)) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (wP + 2)))
     (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * wP))
     (h27 : s.gpr .r27 = off BX (slot wX 0)) (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
@@ -53,16 +53,16 @@ theorem recP3_ok {s : State} {BX : Addr} {Z oA wP wX Pv a QI : Nat}
     WP isa (.seq (.block (PublicChecked.base .r14 6 ++ xb .r15 7)) (.seq copyN
       (.seq (PublicChecked.montOp 5 3 6) (PublicChecked.montOp 4 5 7)))) s fun t =>
       (val32 t.mem (off BX oA) (slot wP 4) (2 * wP) = a * QI % Pv ∧
-        Outside BX oA (slot wP 8) s.mem t.mem) ∧ Keep (.r14 :: .r15 :: Pub.montRegs) s t := by
+        Outside BX oA (slot wP 24) s.mem t.mem) ∧ Keep (.r14 :: .r15 :: Pub.montRegs) s t := by
   have hn := hs.nowrap
   have e : ∀ w j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ _ => rfl
   have hh : hdrBytes = 256 := rfl
   have eA0 := e wP 0; have eA2 := e wP 2; have eA3 := e wP 3; have eA4 := e wP 4; have eA5 := e wP 5
-  have eA6 := e wP 6; have eA7 := e wP 7; have eA8 := e wP 8
+  have eA6 := e wP 6; have eA7 := e wP 7; have eA8 := e wP 24
   have sX7 := slot_le (w := wX) (show 7 < 8 by decide)
   have hsA := hs.sub hA
   have hnA := hsA.nowrap
-  have hA' : oA + slot wP 8 ≤ 2 ^ 64 := by omega_arith
+  have hA' : oA + slot wP 24 ≤ 2 ^ 64 := by omega_arith
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r14) (by decide) (by decide) h10 h29 6) fun s₁ ⟨⟨a14, m1⟩, k1⟩ => ?_
@@ -88,7 +88,7 @@ theorem recP3_ok {s : State} {BX : Addr} {Z oA wP wX Pv a QI : Nat}
     o3.w32 (Or.inl (by omega_arith)) (by omega_arith)
   have g12 : s₃.gpr .r12 = s.gpr .r12 := k13.gpr _ (by decide)
   refine WP.seq (WP.mono (Pub.montOp_ok (o := 5) (a := 3) (b := 6) (hsA.congr k13.wr) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (Nat.le_refl _)
+    (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (by unfold slot; omega_arith)
     ((k13.gpr _ (by decide)).trans h10) ((k13.gpr _ (by decide)).trans h29)
     ((k13.gpr _ (by decide)).trans h11) (by rw [g12]; exact h12) (by rw [g12, w0]; exact hinv)
     (by rw [v6, v0]; exact hQP)) fun s₄ ⟨⟨l5, e5, o4⟩, k4⟩ => ?_)
@@ -113,7 +113,7 @@ theorem recP3_ok {s : State} {BX : Addr} {Z oA wP wX Pv a QI : Nat}
     rw [Mont.ofs_off (off BX oA) (d := slot wP 0) (i := i) (by omega_arith)]; omega_arith
   have g12' : s₄.gpr .r12 = s.gpr .r12 := k14.gpr _ (by decide)
   refine WP.mono (Pub.montOp_ok (o := 4) (a := 5) (b := 7) (hsA.congr k14.wr) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (Nat.le_refl _)
+    (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (by unfold slot; omega_arith)
     ((k14.gpr _ (by decide)).trans h10) ((k14.gpr _ (by decide)).trans h29)
     ((k14.gpr _ (by decide)).trans h11) (by rw [g12']; exact h12) (by rw [g12', w0']; exact hinv)
     (by rw [v7', v0']; exact Nat.mod_lt _ (by omega_arith))) fun t ⟨⟨l4, e4, o5⟩, k5⟩ => ⟨⟨?_, ?_⟩, (k14.trans k5).mono⟩

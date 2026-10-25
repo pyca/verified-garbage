@@ -36,16 +36,17 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.PPC64LE.PublicChecked.publicChecked
     verified := Proof.Bignum.PPC64LE.Pub.publicChecked_verified },
   Spec.Rsa.privateCrtApi.artifact PPC64LE.target {
-    notes := ["The model has no carry bit, so numbers are 32-bit digits. The checks (`n` as \
+    notes := ["Montgomery multiplication in radix `2^64` with the carry bit. The checks (`n` as \
         `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a Montgomery \
         product modulo `2^(64 w) - 1`, which is exact, `qInv < p`) give a mask; under a clear mask \
         the primes are replaced by 3 and `qInv` by 0, so that the arithmetic is the same whatever \
-        the key, and the result is stored masked. Each prime has its own working space of \
-        `max(2, ⌈len/8⌉)` words for its public length: the input is reduced modulo it a bit at a \
-        time, and every bit of the exponent is scanned from the top, a Montgomery square and a \
-        multiplication selected by a mask of the bit. `q h + m₂` is a Montgomery product modulo \
-        `2^(64 w) - 1` and an addition. The nonvolatile registers it uses are saved in the \
-        working space's header."]
+        the key, and the result is stored masked. Each prime has its own working space of 24 \
+        numbers of `max(2, ⌈len/8⌉)` words for its public length: the input is reduced modulo it a \
+        bit at a time, and the exponent is scanned in four-bit windows from the top, four \
+        Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry \
+        selected by a masked scan of the whole 16-entry table, so that no address depends on the \
+        exponent. `q h + m₂` is a Montgomery product modulo `2^(64 w) - 1` and an addition. The \
+        nonvolatile registers it uses are saved in the working space's header."]
     code := Impl.Bignum.PPC64LE.Crt.crt
     verified := Proof.Bignum.PPC64LE.Crt.crt_verified },
   Spec.Rsa.privateCheckedApi.artifact PPC64LE.target {

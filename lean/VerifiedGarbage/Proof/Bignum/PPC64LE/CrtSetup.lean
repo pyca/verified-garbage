@@ -132,7 +132,7 @@ theorem setupX_ok {s : State} {S : Addr} {Z k pL : Nat} (hs : Scr s S Z) (hZ : 2
         t.gpr .r11 = BitVec.ofNat 64 (2 * (2 * ((k + 7) / 8))) ∧
         t.gpr .r27 = off S (slot (2 * ((k + 7) / 8)) 0) ∧ t.gpr .r28 = BitVec.ofNat 64 (8 * (2 * ((k + 7) / 8) + 2)) ∧
         word t.mem S oBP = off S (slot (2 * ((k + 7) / 8)) 8) ∧
-        word t.mem S oBQ = off S (slot (2 * ((k + 7) / 8)) 8 + slot (wsWords pL) 8) ∧
+        word t.mem S oBQ = off S (slot (2 * ((k + 7) / 8)) 8 + slot (wsWords pL) 24) ∧
         Outside S 96 16 s.mem t.mem) ∧
       Keep [.r0, .r3, .r4, .r5, .r10, .r11, .r21, .r27, .r28, .r29] s t := by
   have hn := hs.nowrap
@@ -173,16 +173,19 @@ theorem setupX_ok {s : State} {S : Addr} {Z k pL : Nat} (hs : Scr s S Z) (hZ : 2
   rw [WP.block_append_iff]
   refine WP.mono (words_ok a3 hp hp') fun s₄ ⟨⟨b4, m4⟩, k4⟩ => ?_
   have k14 := k13.trans k4
-  have e3 : ((BitVec.ofNat 64 (wsWords pL * 2 ^ 3) + BitVec.ofNat 64 16) <<< 3) + BitVec.ofNat 64 256 =
-      BitVec.ofNat 64 (slot (wsWords pL) 8) := by
+  have e3 : (BitVec.ofNat 64 (wsWords pL * 2 ^ 3) + BitVec.ofNat 64 16) <<< 3 +
+      ((BitVec.ofNat 64 (wsWords pL * 2 ^ 3) + BitVec.ofNat 64 16) <<< 3 +
+        (BitVec.ofNat 64 (wsWords pL * 2 ^ 3) + BitVec.ofNat 64 16) <<< 3) + BitVec.ofNat 64 256 =
+      BitVec.ofNat 64 (slot (wsWords pL) 24) := by
     have : wsWords pL < 2 ^ 57 + 1 := by unfold wsWords; omega_arith
     rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ← BitVec.ofNat_add,
-      shl_ofNat (show (wsWords pL * 2 ^ 3 + 16) * 2 ^ 3 < 2 ^ 64 by omega_arith), ← BitVec.ofNat_add]
-    congr 1; unfold slot hdrBytes; omega_arith
-  have e5' : off S (slot (2 * ((k + 7) / 8)) 8) + BitVec.ofNat 64 (slot (wsWords pL) 8) =
-      off S (slot (2 * ((k + 7) / 8)) 8 + slot (wsWords pL) 8) := off_add _ _ _
-  refine WP.mono (WP.keep [.r3, .r5] (Q := fun t => t.mem = s₄.mem.writeW (S + BitVec.ofNat 64 104)
-      (off S (slot (2 * ((k + 7) / 8)) 8 + slot (wsWords pL) 8))) (by
+      shl_ofNat (show (wsWords pL * 2 ^ 3 + 16) * 2 ^ 3 < 2 ^ 64 by omega_arith), ← BitVec.ofNat_add,
+      ← BitVec.ofNat_add, ← BitVec.ofNat_add]
+    exact congrArg (BitVec.ofNat 64) (by unfold slot hdrBytes; omega_arith)
+  have e5' : off S (slot (2 * ((k + 7) / 8)) 8) + BitVec.ofNat 64 (slot (wsWords pL) 24) =
+      off S (slot (2 * ((k + 7) / 8)) 8 + slot (wsWords pL) 24) := off_add _ _ _
+  refine WP.mono (WP.keep [.r0, .r3, .r5] (Q := fun t => t.mem = s₄.mem.writeW (S + BitVec.ofNat 64 104)
+      (off S (slot (2 * ((k + 7) / 8)) 8 + slot (wsWords pL) 24))) (by
     prun [b4, (k4.gpr .r5 (by decide)).trans a5, (k14.gpr .r23 (by decide)).trans h23, oBQ, hdrBytes,
       shl_ofNat (show wsWords pL * 2 ^ 3 < 2 ^ 64 by have := wsWords_lt hp'; omega_arith), e3, e5',
       (hs.congr k14.wr).st (show 104 + 8 ≤ Z by omega_arith)]) (by decide)) fun t ⟨tm, k5⟩ => ?_
