@@ -349,7 +349,7 @@ ret
 ///
 /// Contract: `VG.Spec.Idea.invertKeyContract`. Constant time: only pointers may affect timing, not the subkeys, including those that are 0 or 1.
 ///
-/// Baseline x86-64: each inverse is `a ^ (2^16 - 1)` modulo 2^16 + 1, fifteen squarings and multiplications by `mul`, each reduced without branches.
+/// Baseline x86-64: each inverse is `a ^ (2^16 - 1)` modulo 2^16 + 1, fifteen squarings and multiplications by `imul`, each reduced without branches.
 ///
 /// # Safety
 ///
@@ -372,7 +372,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -391,7 +391,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -434,7 +434,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -453,7 +453,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -490,7 +490,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -509,7 +509,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -550,7 +550,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -569,7 +569,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -607,7 +607,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -626,7 +626,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -666,7 +666,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -685,7 +685,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -722,7 +722,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -741,7 +741,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -782,7 +782,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -801,7 +801,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -839,7 +839,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -858,7 +858,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -898,7 +898,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -917,7 +917,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -954,7 +954,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -973,7 +973,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1014,7 +1014,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1033,7 +1033,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1071,7 +1071,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1090,7 +1090,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1130,7 +1130,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1149,7 +1149,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1186,7 +1186,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1205,7 +1205,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1246,7 +1246,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1265,7 +1265,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1303,7 +1303,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1322,7 +1322,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1362,7 +1362,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1381,7 +1381,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1408,7 +1408,7 @@ ret
 ///
 /// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
 ///
-/// Baseline x86-64, a block at a time in general-purpose registers: each multiplication modulo 2^16 + 1 is a `mul` and a reduction without branches.
+/// Baseline x86-64, a block at a time in general-purpose registers: each multiplication modulo 2^16 + 1 is a `imul` and a reduction without branches.
 ///
 /// # Safety
 ///
@@ -1452,7 +1452,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1472,7 +1472,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1499,7 +1499,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1521,7 +1521,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1549,7 +1549,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1569,7 +1569,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1596,7 +1596,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1618,7 +1618,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1646,7 +1646,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1666,7 +1666,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1693,7 +1693,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1715,7 +1715,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1743,7 +1743,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1763,7 +1763,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1790,7 +1790,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1812,7 +1812,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1840,7 +1840,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1860,7 +1860,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1887,7 +1887,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1909,7 +1909,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1937,7 +1937,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1957,7 +1957,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -1984,7 +1984,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2006,7 +2006,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2034,7 +2034,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2054,7 +2054,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2081,7 +2081,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2103,7 +2103,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2131,7 +2131,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2151,7 +2151,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2178,7 +2178,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2200,7 +2200,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2228,7 +2228,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16
@@ -2249,7 +2249,7 @@ add rax, 1
 sub rdx, 1
 and rdx, 65535
 add rdx, 1
-mul rdx
+imul rax, rdx
 mov rdx, rax
 and rdx, 65535
 shr rax, 16

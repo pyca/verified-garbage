@@ -22,12 +22,12 @@ def artifacts : List Artifact := [
     stack := 0
     verified := Proof.Idea.X86_64.expandKey_verified },
   Spec.Idea.invertKeyApi.artifact X86_64.target {
-    notes := ["Baseline x86-64: each inverse is `a ^ (2^16 - 1)` modulo 2^16 + 1, fifteen squarings and multiplications by `mul`, each reduced without branches."]
+    notes := ["Baseline x86-64: each inverse is `a ^ (2^16 - 1)` modulo 2^16 + 1, fifteen squarings and multiplications by `imul`, each reduced without branches."]
     code := Impl.Idea.X86_64.invertKey
     stack := 0
     verified := Proof.Idea.X86_64.invertKey_verified },
   Spec.Idea.ecbApi.artifact X86_64.target {
-    notes := ["Baseline x86-64, a block at a time in general-purpose registers: each multiplication modulo 2^16 + 1 is a `mul` and a reduction without branches."]
+    notes := ["Baseline x86-64, a block at a time in general-purpose registers: each multiplication modulo 2^16 + 1 is a `imul` and a reduction without branches."]
     code := Impl.StackScratch.X86_64.withStackScratch 24 .rcx Impl.Idea.X86_64.ecb
     stack := 24
     verified := Proof.Idea.X86_64.ecb_framed }]
