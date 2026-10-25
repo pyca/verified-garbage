@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on PPC64LE: byte loops
 
@@ -159,7 +160,7 @@ theorem copyS_vp {F Q : State → State → Prop} {c : State → Cfg} {dst src n
       Spec.Rsa.bytesAt t.mem (G.sa dst) n = Spec.Rsa.bytesAt s.mem (G.sa src) n → Q σ t) :
     VP F (copyS dst src n) Q := by
   refine VP.pub (SS.pub hF) [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
-    (copyS 512 576 8), rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s hs => ?_
+    (copyS 512 576 8), by kernel_rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s hs => ?_
   have h := hF σ s hs
   have gi := h.gi
   have fit := gi.scrFit
@@ -213,10 +214,10 @@ theorem copyIn_vp {F Q : State → State → Prop} {c : State → Cfg} {o dst n 
   let M : State → State → Prop := fun σ t => ∃ s, F σ s ∧ SS G STK σ (c σ) t ∧ Keep [.r3, .r4, .r5] s t ∧
     t.sp = s.sp ∧ t.mem = s.mem ∧ t.gpr .r3 = P ∧ t.gpr .r4 = G.sa dst ∧ t.gpr .r5 = BitVec.ofNat 64 n
   refine VP.seq (G := M) (VP.pub (SS.pub hF) [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
-    (.block ([ld .r3 o] ++ [scr .r4 dst] ++ [.li .r5 n])), rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
+    (.block ([ld .r3 o] ++ [scr .r4 dst] ++ [.li .r5 n])), by kernel_rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
     fun σ s hs => ?_) (VP.pub (G := G) (fun σ t ⟨_, _, h, _⟩ => ⟨h.gi.r28, by
       rw [h.gi.sp, ← h.gi.hG]; rfl⟩) [.r3, .r4, .r5] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
-      (Taint.ofRegs [.r28, .r3, .r4, .r5]) (.loop (.block VG.Impl.MlKem.PPC64LE.copyBody) (.nonzero .d .r5)), rfl⟩
+      (Taint.ofRegs [.r28, .r3, .r4, .r5]) (.loop (.block VG.Impl.MlKem.PPC64LE.copyBody) (.nonzero .d .r5)), by kernel_rfl⟩
     (fun σ₁ σ₂ s₁ s₂ ⟨_, _, _, _, _, _, a3, a4, a5⟩ ⟨_, _, _, _, _, _, b3, b4, b5⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl

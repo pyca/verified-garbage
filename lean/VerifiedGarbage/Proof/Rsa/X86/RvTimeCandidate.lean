@@ -290,7 +290,7 @@ theorem windowBody_trace {g : Geo} (pg : PubG g) {s0 t0 s t : State} {T T' AW AW
   | @seq _ _ _ s5 _ _ _ e5 er =>
   cases fr with
   | @seq _ _ _ t5 _ _ _ f5 fr =>
-  have q5 := pub_trace pg windowNextCheck h4 j4 e5 f5
+  have q5 := pub_trace pg windowNextCheck.choose_spec h4 j4 e5 f5
   have h5 := wp_result (windowNext_ok h4 (by decide) (by decide) (Nat.mod_lt _ hP)) e5
   have j5 := wp_result (windowNext_ok j4 (by decide) (by decide) (Nat.mod_lt _ hP)) f5
   have smallA : E * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W) < 16 := by
@@ -345,7 +345,7 @@ theorem candExp_relCT {g : Geo} {m eLen dLen : Nat} (C D : CandidateData g m eLe
   unfold VG.Impl.Rsa.X86.RecoverRt.candExp
   simp only [seqs]
   refine VG.RelCT.seq (R := fun s t => C.Align 0 s ∧ D.Align 0 t)
-    (pub_relCT (P := C.Start) (Q := D.Start) (P' := C.Align 0) (Q' := D.Align 0) pg alignStartCheck
+    (pub_relCT (P := C.Start) (Q := D.Start) (P' := C.Align 0) (Q' := D.Align 0) pg alignStartCheck.choose_spec
       (fun _ hs => KS.stage hs) (fun _ ht => KS.stage ht)
       (fun s hs => alignStart_ok hs C.zero C.candidate C.ae C.ad C.wide C.rb)
       (fun t ht => alignStart_ok ht D.zero D.candidate D.ae D.ad D.wide D.rb)) ?_

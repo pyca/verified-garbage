@@ -32,15 +32,15 @@ theorem jacComb_sum_copy_ok {K : TCombCfg} {C : Curve} {base : Addr} {size : Nat
     List.not_mem_nil, or_false, not_or] at hnd
   have le : ∀ x ∈ combWs K.toComb, x + 8 * K.M.n ≤ size := fun x hx => hL.lay.le x (combWs_slots K.toComb x hx)
   have al : ∀ x ∈ combWs K.toComb, x % 8 = 0 := fun x hx => hA.sl x (combWs_slots K.toComb x hx)
-  have axd : K.A.x+8*K.M.n ≤ K.D.x ∨ K.D.x+8*K.M.n ≤ K.A.x := hL.apart₂ (x := K.A.x) (y := K.D.x) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have ayd : K.A.y+8*K.M.n ≤ K.D.y ∨ K.D.y+8*K.M.n ≤ K.A.y := hL.apart₂ (x := K.A.y) (y := K.D.y) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have azd : K.A.z+8*K.M.n ≤ K.D.z ∨ K.D.z+8*K.M.n ≤ K.A.z := hL.apart₂ (x := K.A.z) (y := K.D.z) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have axy : K.A.x+8*K.M.n ≤ K.A.y ∨ K.A.y+8*K.M.n ≤ K.A.x := hL.apart₂ (x := K.A.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have axz : K.A.x+8*K.M.n ≤ K.A.z ∨ K.A.z+8*K.M.n ≤ K.A.x := hL.apart₂ (x := K.A.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have ayz : K.A.y+8*K.M.n ≤ K.A.z ∨ K.A.z+8*K.M.n ≤ K.A.y := hL.apart₂ (x := K.A.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have dxay : K.D.x+8*K.M.n ≤ K.A.y ∨ K.A.y+8*K.M.n ≤ K.D.x := hL.apart₂ (x := K.D.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have dxaz : K.D.x+8*K.M.n ≤ K.A.z ∨ K.A.z+8*K.M.n ≤ K.D.x := hL.apart₂ (x := K.D.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have dyaz : K.D.y+8*K.M.n ≤ K.A.z ∨ K.A.z+8*K.M.n ≤ K.D.y := hL.apart₂ (x := K.D.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by grind)
+  have axd : K.A.x+8*K.M.n ≤ K.D.x ∨ K.D.x+8*K.M.n ≤ K.A.x := hL.apart₂ (x := K.A.x) (y := K.D.x) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have ayd : K.A.y+8*K.M.n ≤ K.D.y ∨ K.D.y+8*K.M.n ≤ K.A.y := hL.apart₂ (x := K.A.y) (y := K.D.y) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have azd : K.A.z+8*K.M.n ≤ K.D.z ∨ K.D.z+8*K.M.n ≤ K.A.z := hL.apart₂ (x := K.A.z) (y := K.D.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have axy : K.A.x+8*K.M.n ≤ K.A.y ∨ K.A.y+8*K.M.n ≤ K.A.x := hL.apart₂ (x := K.A.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have axz : K.A.x+8*K.M.n ≤ K.A.z ∨ K.A.z+8*K.M.n ≤ K.A.x := hL.apart₂ (x := K.A.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have ayz : K.A.y+8*K.M.n ≤ K.A.z ∨ K.A.z+8*K.M.n ≤ K.A.y := hL.apart₂ (x := K.A.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have dxay : K.D.x+8*K.M.n ≤ K.A.y ∨ K.A.y+8*K.M.n ≤ K.D.x := hL.apart₂ (x := K.D.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have dxaz : K.D.x+8*K.M.n ≤ K.A.z ∨ K.A.z+8*K.M.n ≤ K.D.x := hL.apart₂ (x := K.D.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have dyaz : K.D.y+8*K.M.n ≤ K.A.z ∨ K.A.z+8*K.M.n ≤ K.D.y := hL.apart₂ (x := K.D.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
   have hs₁ := k₁.scr hs
   rw [← hn4]
   rw [copyPt, List.append_assoc, WP.block_append_iff]
@@ -61,9 +61,9 @@ theorem jacComb_sum_copy_ok {K : TCombCfg} {C : Curve} {base : Addr} {size : Nat
     (al _ (by tcomb_mem)) (o := K.A.z) (a := K.D.z) (azd.imp (fun h => by omega_using [h]) id)
   refine WP.mono W4 fun s₄ h₄ => ?_
   obtain ⟨e₄, k₄, O₄⟩ := h₄
-  have dyax : K.D.y+8*K.M.n ≤ K.A.x ∨ K.A.x+8*K.M.n ≤ K.D.y := hL.apart₂ (x := K.D.y) (y := K.A.x) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have dzax : K.D.z+8*K.M.n ≤ K.A.x ∨ K.A.x+8*K.M.n ≤ K.D.z := hL.apart₂ (x := K.D.z) (y := K.A.x) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have dzay : K.D.z+8*K.M.n ≤ K.A.y ∨ K.A.y+8*K.M.n ≤ K.D.z := hL.apart₂ (x := K.D.z) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by grind)
+  have dyax : K.D.y+8*K.M.n ≤ K.A.x ∨ K.A.x+8*K.M.n ≤ K.D.y := hL.apart₂ (x := K.D.y) (y := K.A.x) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have dzax : K.D.z+8*K.M.n ≤ K.A.x ∨ K.A.x+8*K.M.n ≤ K.D.z := hL.apart₂ (x := K.D.z) (y := K.A.x) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
+  have dzay : K.D.z+8*K.M.n ≤ K.A.y ∨ K.A.y+8*K.M.n ≤ K.D.z := hL.apart₂ (x := K.D.z) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)
   have hDx : K.D.x ∈ [K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.A K.E := by simp
   have hDy : K.D.y ∈ [K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.A K.E := by simp
   have hDz : K.D.z ∈ [K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.A K.E := by simp

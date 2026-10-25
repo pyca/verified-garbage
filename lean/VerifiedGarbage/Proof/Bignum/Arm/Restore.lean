@@ -60,22 +60,22 @@ theorem mont_restore_ok (s : State) (g : Reg → BitVec 32)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [u8.other .r5 (by decide), u7.other .r5 (by decide), u6.other .r5 (by decide), u5.other .r5 (by decide), u4.other .r5 (by decide), u3.other .r5 (by decide), u2.other .r5 (by decide), u1.gpr]
-      exact saved (.r5, 4) (by simp [montSaved])
+      exact saved (.r5, 4) (by decide)
     · rw [u8.other .r6 (by decide), u7.other .r6 (by decide), u6.other .r6 (by decide), u5.other .r6 (by decide), u4.other .r6 (by decide), u3.other .r6 (by decide), u2.gpr, u1.mem]
-      exact saved (.r6, 8) (by simp [montSaved])
+      exact saved (.r6, 8) (by decide)
     · rw [u8.other .r7 (by decide), u7.other .r7 (by decide), u6.other .r7 (by decide), u5.other .r7 (by decide), u4.other .r7 (by decide), u3.gpr, u2.mem, u1.mem]
-      exact saved (.r7, 12) (by simp [montSaved])
+      exact saved (.r7, 12) (by decide)
     · rw [u8.other .r8 (by decide), u7.other .r8 (by decide), u6.other .r8 (by decide), u5.other .r8 (by decide), u4.gpr, u3.mem, u2.mem, u1.mem]
-      exact saved (.r8, 16) (by simp [montSaved])
+      exact saved (.r8, 16) (by decide)
     · rw [u8.other .r9 (by decide), u7.other .r9 (by decide), u6.other .r9 (by decide), u5.gpr, u4.mem, u3.mem, u2.mem, u1.mem]
-      exact saved (.r9, 20) (by simp [montSaved])
+      exact saved (.r9, 20) (by decide)
     · rw [u8.other .r10 (by decide), u7.other .r10 (by decide), u6.gpr, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-      exact saved (.r10, 24) (by simp [montSaved])
+      exact saved (.r10, 24) (by decide)
     · rw [u8.other .r11 (by decide), u7.gpr, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-      exact saved (.r11, 28) (by simp [montSaved])
+      exact saved (.r11, 28) (by decide)
     · rw [u8.gpr, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-      exact saved (.lr, 32) (by simp [montSaved])
+      exact saved (.lr, 32) (by decide)
   · rw [u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  · exact (u1.rest (by simp [roundClobbers])).trans ((u2.rest (by simp [roundClobbers])).trans ((u3.rest (by simp [roundClobbers])).trans ((u4.rest (by simp [roundClobbers])).trans ((u5.rest (by simp [roundClobbers])).trans ((u6.rest (by simp [roundClobbers])).trans ((u7.rest (by simp [roundClobbers])).trans ((u8.rest (by simp [roundClobbers])))))))))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans ((u6.rest (by decide)).trans ((u7.rest (by decide)).trans ((u8.rest (by decide)))))))))
 
 end VG.Proof.Bignum.Arm

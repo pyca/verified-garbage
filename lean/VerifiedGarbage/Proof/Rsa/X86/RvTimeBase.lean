@@ -118,7 +118,7 @@ end
 
 /-- A piece checked by `τA` leaks the same trace from two stages. -/
 theorem pub_trace {g : Geo} (pg : PubG g) {c : Prog isa}
-    (hc : (VG.Taint.check sseTaint τA c (VG.Taint.hintOf sseTaint τA c)).isSome = true)
+    {hint : VG.Taint.Hint sseTaint.T} (hc : (VG.Taint.check sseTaint τA c hint).isSome = true)
     {s0 t0 s t : State} {A B AW BW V W : Nat → Nat} {al bl aw bw sl tl : List Nat}
     (h : KS g s0 A al AW aw V sl s) (j : KS g t0 B bl BW bw W tl t)
     {tr ur : List Leak} {sf tf : State} (es : Exec isa c s tr sf) (et : Exec isa c t ur tf) : tr = ur :=
@@ -244,7 +244,7 @@ theorem KS.stage {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {live liveW ls 
 
 /-- A piece checked by `τA`, between stages, with each run's correctness. -/
 theorem pub_relCT {g : Geo} (pg : PubG g) {c : Prog isa}
-    (hc : (VG.Taint.check sseTaint τA c (VG.Taint.hintOf sseTaint τA c)).isSome = true)
+    {hint : VG.Taint.Hint sseTaint.T} (hc : (VG.Taint.check sseTaint τA c hint).isSome = true)
     {P Q P' Q' : State → Prop} (hP : ∀ s, P s → MulPost g s) (hQ : ∀ t, Q t → MulPost g t)
     (left : ∀ s, P s → WP isa c s P') (right : ∀ t, Q t → WP isa c t Q') :
     RelCT isa (fun s t => P s ∧ Q t) c (fun s t => P' s ∧ Q' t) :=
@@ -255,7 +255,7 @@ theorem pub_relCT {g : Geo} (pg : PubG g) {c : Prog isa}
 
 /-- A piece checked by `τA` from two stages. -/
 theorem pub_relCT' {g : Geo} (pg : PubG g) {c : Prog isa}
-    (hc : (VG.Taint.check sseTaint τA c (VG.Taint.hintOf sseTaint τA c)).isSome = true)
+    {hint : VG.Taint.Hint sseTaint.T} (hc : (VG.Taint.check sseTaint τA c hint).isSome = true)
     {P Q : State → Prop} (hP : ∀ s, P s → MulPost g s) (hQ : ∀ t, Q t → MulPost g t) :
     RelCT isa (fun s t => P s ∧ Q t) c (fun _ _ => True) := fun s t _ _ _ _ ⟨hs, ht⟩ es et => by
   obtain ⟨_, _, _, _, _, _, _, h⟩ := hP s hs

@@ -31,7 +31,7 @@ theorem twiceArgs_ready (s : State) {base : BitVec 32} {len w M E : Nat}
     WP isa (.block (montOpArgs 1 5 6)) s (DoubleFnReady base len w 1 5 6) := by
   refine WP.mono (montOpArgs_ok s (o := 1) (a := 5) (b := 6) (by decide) (by decide) (by decide)) ?_
   rintro u ⟨po, pa, pb, mem, rest⟩
-  have ready := h.ready.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ready.ptr)
+  have ready := h.ready.of_mem mem rest ((rest.gpr .r0 (by decide)).trans h.ready.ptr)
   refine ⟨⟨ready.workspace, ready.layout, ready.width, ready.ptr, po, pa, pb, ready.inverse, ?_⟩, ?_⟩
   · rw [mem, h.modulus]; exact h.bound
   · rw [mem]; exact h.two_low
@@ -63,7 +63,7 @@ theorem twice_ok (s : State) {base : BitVec 32} {len w M E : Nat}
   rw [twice, VG.Impl.Bignum.Arm.TwoExp.candidate, WP.seq_iff]
   refine WP.mono (montOpArgs_ok s (o := 1) (a := 5) (b := 6) (by decide) (by decide) (by decide)) ?_
   rintro u ⟨po, pa, pb, memU, restU⟩
-  have ready := h.ready.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ready.ptr)
+  have ready := h.ready.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ready.ptr)
   have doubleReady : DoubleFnReady base len w 1 5 6 u := by
     refine ⟨⟨ready.workspace, ready.layout, ready.width, ready.ptr, po, pa, pb,
       ready.inverse, ?_⟩, ?_⟩
@@ -76,7 +76,7 @@ theorem twice_ok (s : State) {base : BitVec 32} {len w M E : Nat}
     ready.stackRead ready.stackSep ready.saved) ?_
   rintro t ⟨bound, value, keeps, frame, restT, ptr⟩
   rw [memU] at bound value keeps frame
-  have rest : Rest roundClobbers s t := (restU.mono (by simp [roundClobbers])).trans restT
+  have rest : Rest roundClobbers s t := (restU.mono (by decide)).trans restT
   obtain ⟨readyT, modulusT⟩ := h.ready.after_array (by decide : 1 ≠ 0) keeps frame rest ptr
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
   have unchanged (i : Nat) (hi : Spec.Rsa.Mont.Operand i) (hne : i ≠ 1) :=

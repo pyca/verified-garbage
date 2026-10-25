@@ -28,6 +28,6 @@ theorem exponentCheck_ok (s : State) {ep : BitVec 32} {eb : List Byte}
   refine WP.mono (exponentTest_ok u) ?_
   rintro t ⟨value, memT, restT⟩
   rw [lo, hi, exponentTest_value] at value
-  exact ⟨value, memT.trans memU, restU.trans (restT.mono (by simp [exponentClobbers]))⟩
+  exact ⟨value, memT.trans memU, restU.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

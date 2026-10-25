@@ -73,6 +73,6 @@ theorem crt_productStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
     ((eqChild _ sharedU.buffers.context.q (by simp [crtRegions])).number h.buffers.context.arraysFit (by decide)).trans
       (qEq.number h.buffers.context.arraysFit (by decide)), flagT,
     (frame.mono (by simp [crtLiveMutable])).trans frameTLive,
-    rest.trans (restT.mono (by simp [roundClobbers]))⟩
+    rest.trans (restT.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

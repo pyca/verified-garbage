@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: one hash of X
 
@@ -33,8 +34,8 @@ abbrev seedPlus (G : GP) (sd : List Byte) (v : Nat) : List Byte := Spec.Dsa.enco
 theorem addBE_cert {n : Nat} (hn : n = 20 ∨ n = 32) :
     ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0]) (addBE n) hc).isSome = true := by
   rcases hn with rfl | rfl
-  · exact ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0]) (addBE 20), rfl⟩
-  · exact ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0]) (addBE 32), rfl⟩
+  · exact ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0]) (addBE 20), by kernel_rfl⟩
+  · exact ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0]) (addBE 32), by kernel_rfl⟩
 
 /-- `offset + j` added to the seed at `sMsg`. -/
 theorem seedAdd_vp {L j off : Nat} (hL : L = G.pLen) (hq : G.qLen = 20 ∨ G.qLen = 32)
@@ -52,7 +53,7 @@ theorem seedAdd_vp {L j off : Nat} (hL : L = G.pLen) (hq : G.qLen = 20 ∨ G.qLe
       s.gpr .r1 = BitVec.ofNat 32 off) ?_
     (VP.seq (G := fun σ s => (St G c X σ s ∧ s.gpr .r0 = G.scr + BitVec.ofNat 32 (G.qLen - 1)) ∧
       s.gpr .r1 = BitVec.ofNat 32 (off + j)) ?_ ?_))
-  · refine VP.taint [.r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8]) (.block (scr 128 .r0 19)), rfl⟩
+  · refine VP.taint [.r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8]) (.block (scr 128 .r0 19)), by kernel_rfl⟩
       (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.r8, h₂.1.r8]) fun σ s ⟨h, x⟩ => ?_
     rw [← List.append_nil (scr _ _ _)]
@@ -63,7 +64,7 @@ theorem seedAdd_vp {L j off : Nat} (hL : L = G.pLen) (hq : G.qLen = 20 ∨ G.qLe
       (fun σ s h => (h.1.1.slotV hO).trans hOv) fun σ s t ⟨⟨h, x⟩, r0⟩ u =>
         ⟨⟨⟨h.of_rest (u.rest (ws := [.r1]) (by simp)) u.mem, x⟩, by rw [u.other _ (by decide), r0]⟩, u.gpr⟩
   · refine VP.taint [.r1] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r1])
-        (.block [.dp .add .r1 .r1 (.imm (BitVec.ofNat 32 0))]), rfl⟩
+        (.block [.dp .add .r1 .r1 (.imm (BitVec.ofNat 32 0))]), by kernel_rfl⟩
       (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2]) fun σ s ⟨⟨⟨h, x⟩, r0⟩, r1⟩ => ?_
     refine wp_dp (op2_imm (encodable_lt hj)) fun t u => WP.block_nil

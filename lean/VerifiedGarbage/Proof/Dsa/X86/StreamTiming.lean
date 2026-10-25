@@ -7,6 +7,13 @@ import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Mont.X86.Instr
+meta import VerifiedGarbage.Proof.Dsa.X86.BytesTiming
+meta import VerifiedGarbage.Proof.Dsa.X86.StreamStep
+meta import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+meta import VerifiedGarbage.Proof.Mont.X86.WordOps
+meta import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # Secret-independent byte reduction
@@ -46,8 +53,10 @@ theorem zeros_pair {n size len j : Nat} {base : Addr} {src : Src} (hj : j = 6 �
   have hsz : slot n j + 4 * (2 * n) ≤ size := by rcases hj with rfl | rfl <;> omega
   have T : RelCT isa (VG.X86.Taint.Agree (workspaceTaint true)) (zerosW (slot n j) (2 * n))
       (VG.X86.Taint.Agree (workspaceTaint true)) :=
-    erased_relCT _ (zerosW 0 1) (VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (zerosW 0 1)))
-      rfl rfl rfl rfl
+    by
+      refine erased_relCT _ (zerosW 0 1) ?h rfl rfl ?hh ?L
+      case L => taint_decide
+      case hh => rfl
   have T' : RelCT isa (StreamPair n size len base src) (zerosW (slot n j) (2 * n))
       (VG.X86.Taint.Agree (workspaceTaint true)) := T.mono (fun _ _ P => P.agree) (fun _ _ h => h)
   refine (T'.wpDep
@@ -99,11 +108,11 @@ theorem streamLoop_relCT (n : Nat) :
       (.seq (.block [.alu .add .ebx (.reg .esi), .alu .cmp .esi (.reg .ebx)])
         (.ite .e (.block []) (.loop (streamStep n) .ne)))
       (VG.X86.Taint.Agree (workspaceTaint true)) :=
-  erased_relCT _ (.seq (.block [.alu .add .ebx (.reg .esi), .alu .cmp .esi (.reg .ebx)])
-      (.ite .e (.block []) (.loop (streamStep 1) .ne)))
-    (VG.Taint.hintOf taint cursorTaint (Code.erase (.seq (.block [.alu .add .ebx (.reg .esi), .alu .cmp .esi (.reg .ebx)])
-      (.ite .e (.block []) (.loop (streamStep 1) .ne)))))
-    rfl rfl rfl rfl
+  by
+  refine erased_relCT _ (.seq (.block [.alu .add .ebx (.reg .esi), .alu .cmp .esi (.reg .ebx)])
+      (.ite .e (.block []) (.loop (streamStep 1) .ne))) ?h rfl rfl ?hh ?L
+  case L => taint_decide
+  case hh => rfl
 
 theorem reduceStream_relCT {n size len : Nat} {base : Addr} {src : Src} (hf : LenForm src)
     (hn : 0 < n) (hz : contextBytes n ≤ size) :

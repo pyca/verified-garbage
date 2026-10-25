@@ -125,7 +125,7 @@ theorem mac_ok (s : State) :
   rintro s3 ⟨value, frame3⟩
   refine ⟨?_, frame1.macFrame.trans ((frame2.mono ?_).trans (frame3.mono ?_))⟩
   · rw [value, sum, prod, acc1, carry2]
-  all_goals intro r hr; cases r <;> simp_all [clobbers]
+  all_goals decide
 
 /-- The multiply-accumulate is a fixed sequence without memory accesses. -/
 theorem mac_ct : ConstantTime isa (fun _ => True) (fun _ _ => True) (.block mac) := by

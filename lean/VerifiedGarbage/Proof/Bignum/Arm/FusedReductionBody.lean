@@ -82,7 +82,7 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
       w32 v.mem (State.addr base) (acc+4*n+4*j)=w32 s.mem (State.addr base) (acc+4*n+4*j) :=
     outside.w32 (by omega_arith) (by have := ws.nowrap;omega_arith)
   have fitTop : acc+4*(n-1)+12≤size := by omega_arith
-  have native : Rest roundClobbers u v := (row.rest.mono (by simp [DownRow.loopClobbers,roundClobbers]))
+  have native : Rest roundClobbers u v := (row.rest.mono (by decide))
   have rest : Rest roundClobbers s v := restU.trans native
   have workspaceV := ws.congr rest.wr
   refine WP.mono (top_ok v workspaceV fitTop row.outPtr ?_) ?_
@@ -112,6 +112,6 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc mod n : Nat}
       omega_arith
     · exact (outside.mono (Nat.le_refl _) (by omega_arith)).trans
         (outTop.mono (by omega_arith) (by omega_arith))
-    · exact rest.trans (restT.mono (by simp [roundClobbers]))
+    · exact rest.trans (restT.mono (by decide))
 
 end VG.Proof.Bignum.Arm.FusedReduction

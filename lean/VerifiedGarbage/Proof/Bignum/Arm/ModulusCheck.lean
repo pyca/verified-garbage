@@ -33,12 +33,12 @@ theorem modulusCheck_ok (s : State) {src : BitVec 32} {k : Nat}
   have firstNat : (u.gpr .r1).toNat = (s.mem (State.addr src)).toNat := by rw [first, byteNat]
   have lastNat : (u.gpr .r2).toNat = (s.mem (State.addr src + BitVec.ofNat 64 (k - 1))).toNat := by rw [last, byteNat]
   have countNat : (u.gpr .r6).toNat = k := by
-    rw [rest.gpr .r6 (by simp), count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [rest.gpr .r6 (by decide), count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   refine WP.mono (modulusCheckCalc_ok u (by rw [firstNat]; exact (s.mem _).isLt)
     (by rw [countNat]; exact hk) (by rw [countNat]; exact hk')) ?_
   rintro t ⟨zero, memT, keep⟩
   rw [firstNat, lastNat, countNat] at zero
-  refine ⟨?_, memT.trans mem, (rest.mono (by simp)).trans (keep.mono (by simp))⟩
+  refine ⟨?_, memT.trans mem, (rest.mono (by decide)).trans (keep.mono (by decide))⟩
   rw [VG.Proof.Bignum.modulusValid_iff (bytesAt_length _ _ _) hk hk']
   simpa only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, BitVec.add_zero] using zero
 

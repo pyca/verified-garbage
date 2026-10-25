@@ -92,6 +92,6 @@ theorem round_law : MontPipeline.PairLaw VG.Impl.Bignum.Arm.Fios2.round := by
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 2 == 0) = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
     simp only [show n - i - 2 = 0 ↔ i + 2 = n by omega]
-  · exact restU.trans (keepV.trans (keepT.mono (by simp [roundClobbers])))
+  · exact restU.trans (keepV.trans (keepT.mono (by decide)))
 
 end VG.Proof.Bignum.Arm.Fios2

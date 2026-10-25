@@ -9,6 +9,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: the key working space set up
 
@@ -39,7 +40,7 @@ variable {G : GP} {c : Cfg} {X : State → Prop}
 
 theorem ksSetup_vp :
     VP (St G c X) ksSetup (St G { c with A := A0, live := allArrs, KV := KU c.KV 16 G.w, kls := [16] } X) := by
-  refine ks_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) ksSetup, rfl⟩
+  refine ks_vp ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r7, .r8, .r9]) ksSetup, by kernel_rfl⟩
     (fun σ s h => h.1) fun σ s ⟨h, x⟩ => ?_
   have hw := h.ws
   have l := h.lens

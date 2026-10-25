@@ -81,8 +81,8 @@ theorem tableStart_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine wp_mov (op2_lsl (by decide)) fun q d => ?_
   refine wp_dp (op2_reg _ _) fun t e => WP.block_nil ?_
   refine ⟨?_, e.mem.trans (d.mem.trans (c.mem.trans (b.mem.trans a.mem))),
-    (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans
-      ((d.rest (by simp)).trans (e.rest (by simp)))))⟩
+    (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
+      ((d.rest (by decide)).trans (e.rest (by decide)))))⟩
   rw [e.gpr, dpVal, d.other .r12 (by decide), c.other .r12 (by decide), b.other .r12 (by decide), a.gpr,
     d.gpr, c.gpr, dpVal, b.gpr, a.mem, header.array 7 (by decide), header.count]
   change base + BitVec.ofNat 32 (arrAt w 7) + (BitVec.ofNat 32 w + BitVec.ofNat 32 2) <<< 3 = _
@@ -153,8 +153,8 @@ theorem entryNext_ok (s : State) {base : BitVec 32} {len w j : Nat}
   · rw [f4.mem, f3.mem, f2.mem, f.mem, memY, value]
   · rw [zz, congrFun f3.gpr .r1, value]
     exact index_next j hj
-  · exact (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans
-      ((d.rest (by simp)).trans ((e.rest _).trans ((f.rest (by simp)).trans ((f2.rest (by simp)).trans
+  · exact (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
+      ((d.rest (by decide)).trans ((e.rest _).trans ((f.rest (by decide)).trans ((f2.rest (by decide)).trans
         ((f3.rest _).trans (f4.rest _))))))))
 
 /-- The table's first entry and index 0. -/
@@ -171,14 +171,14 @@ theorem tableInit_ok (s : State) {base : BitVec 32} {len w : Nat} (h : Arithmeti
   apply WP.block_append_iff.mpr
   refine WP.mono (tableStart_ok s h) ?_
   rintro u ⟨r12, memU, restU⟩
-  have r0u : u.gpr .r0 = s.gpr .r0 := restU.gpr .r0 (by simp)
+  have r0u : u.gpr .r0 = s.gpr .r0 := restU.gpr .r0 (by decide)
   refine wp_str (a := off (State.addr base) 220) (by decide) (by rw [r0u]; exact addr 220 (by omega_arith))
     (by rw [restU.wr]; exact h.workspace.write (by omega_arith)) fun v a => ?_
   refine wp_mov (op2_imm (by decide)) fun z b => ?_
   refine wp_str (a := off (State.addr base) 228) (by decide)
     (by rw [b.other .r0 (by decide), congrFun a.gpr .r0, r0u]; exact addr 228 (by omega_arith))
     (by rw [b.wr, a.wr, restU.wr]; exact h.workspace.write (by omega_arith)) fun t c => WP.block_nil ?_
-  refine ⟨?_, restU.trans ((a.rest _).trans ((b.rest (by simp)).trans (c.rest _)))⟩
+  refine ⟨?_, restU.trans ((a.rest _).trans ((b.rest (by decide)).trans (c.rest _)))⟩
   rw [c.mem, b.mem, a.mem, memU, b.gpr, r12]
   rfl
 
@@ -204,8 +204,8 @@ theorem scanBit_ok (s : State) {base : BitVec 32} {len w d j : Nat}
   refine wp_dp (op2_imm (by decide)) fun q e => ?_
   refine wp_mov (op2_lsr (by decide)) fun t f => WP.block_nil ?_
   refine ⟨?_, f.mem.trans (e.mem.trans (c.mem.trans (b.mem.trans a.mem))),
-    (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans
-      ((e.rest (by simp)).trans (f.rest (by simp)))))⟩
+    (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
+      ((e.rest (by decide)).trans (f.rest (by decide)))))⟩
   rw [f.gpr, e.gpr, dpVal, c.gpr, dpVal, b.other .r1 (by decide), a.gpr, digit, b.gpr, a.mem, index]
   exact mask_bit d hd j hj
 
@@ -227,7 +227,7 @@ theorem windowReset_ok (s : State) {base : BitVec 32} {len w : Nat} (h : Arithme
   refine wp_str (a := off (State.addr base) 204) (by decide)
     (by rw [congrFun b.gpr .r0, a.other .r0 (by decide)]; exact addr 204 (by omega_arith))
     (by rw [b.wr, a.wr]; exact h.workspace.write (by omega_arith)) fun t c => WP.block_nil ?_
-  refine ⟨?_, (a.rest (by simp)).trans ((b.rest _).trans (c.rest _))⟩
+  refine ⟨?_, (a.rest (by decide)).trans ((b.rest _).trans (c.rest _))⟩
   rw [c.mem, b.mem, a.mem, congrFun b.gpr .r1, a.gpr]
   rfl
 
@@ -297,8 +297,8 @@ theorem windowBitValue_ok (s : State) {base : BitVec 32} {len w V p q : Nat}
   · rw [g4.mem, g3.mem, g2.mem, g1.mem, memK, count]
   · rw [zz, congrFun g3.gpr .r1, count]
     exact pending_next q hq
-  · exact (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans
-      ((d.rest (by simp)).trans ((e.rest (by simp)).trans ((f.rest _).trans ((g1.rest (by simp)).trans
-        ((g2.rest (by simp)).trans ((g3.rest _).trans (g4.rest _)))))))))
+  · exact (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
+      ((d.rest (by decide)).trans ((e.rest (by decide)).trans ((f.rest _).trans ((g1.rest (by decide)).trans
+        ((g2.rest (by decide)).trans ((g3.rest _).trans (g4.rest _)))))))))
 
 end VG.Proof.Bignum.Arm

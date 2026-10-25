@@ -33,24 +33,24 @@ theorem init_ct :
     have fits : arrAt w 8 ≤ 8 * len := h.1.ready.width ▸ h.1.ready.layout.2.2.1
     refine WP.mono (smallConst_ok s (1 : BitVec 32) h.1.ready (o := 7) (by decide) (by decide) (by decide) (by decide)) ?_
     rintro t ⟨ready, one, _, keeps, frame, rest⟩
-    have r2 := keeps_array_num keeps fits (q := 4) (op 4 (by simp)) (by decide)
+    have r2 := keeps_array_num keeps fits (q := 4) (op 4 (by decide)) (by decide)
     have modulus := keeps_array_num keeps fits (q := 0) (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
     exact ⟨⟨ready, by rw [r2, modulus]; exact h.1.r2bound⟩, A.stable frame rest h.2, one⟩
   have first (s : State) (h : Q s) : WP isa (A.op 6 4 7) s fun t => ExpInitReady base len w t ∧ P t := by
     have fits : arrAt w 8 ≤ 8 * len := h.1.ready.width ▸ h.1.ready.layout.2.2.1
-    refine WP.mono (A.op_ok s 6 4 7 h.1.ready h.2.1 (op 6 (by simp)) (op 4 (by simp)) (op 7 (by simp))
+    refine WP.mono (A.op_ok s 6 4 7 h.1.ready h.2.1 (op 6 (by decide)) (op 4 (by decide)) (op 7 (by decide))
       (by decide) (by rw [h.2.2]; exact h.1.ready.modulus)) ?_
     rintro t ⟨ready, modulus, _, _, keeps, pt, _, _⟩
-    have r2 := keeps_array_num keeps fits (q := 4) (op 4 (by simp)) (by decide)
+    have r2 := keeps_array_num keeps fits (q := 4) (op 4 (by decide)) (by decide)
     exact ⟨⟨ready, by rw [r2, modulus]; exact h.1.r2bound⟩, pt⟩
   unfold VG.Impl.Bignum.Arm.SharedWindow.init
   refine relCT_chain ((smallConst_ct (1 : BitVec 32) (o := 7) (by decide) (by decide) (by decide)).mono
     (fun _ _ h => ⟨h.1.1.ready, h.2.1.1.ready, h.2.2⟩) (fun _ _ h => h)) one one ?_
-  refine relCT_chain ((ct.op_ct 6 4 7 (op 6 (by simp)) (op 4 (by simp)) (op 7 (by simp))).mono
+  refine relCT_chain ((ct.op_ct 6 4 7 (op 6 (by decide)) (op 4 (by decide)) (op 7 (by decide))).mono
     (fun _ _ h => ⟨⟨h.1.1.ready, h.1.2.1, by rw [h.1.2.2]; exact h.1.1.ready.modulus⟩,
       ⟨h.2.1.1.ready, h.2.1.2.1, by rw [h.2.1.2.2]; exact h.2.1.1.ready.modulus⟩, h.2.2⟩)
     (fun _ _ h => h)) first first ?_
-  exact (ct.op_ct 5 1 4 (op 5 (by simp)) (op 1 (by simp)) (op 4 (by simp))).mono
+  exact (ct.op_ct 5 1 4 (op 5 (by decide)) (op 1 (by decide)) (op 4 (by decide))).mono
     (fun _ _ h => ⟨⟨h.1.1.ready, h.1.2, h.1.1.r2bound⟩,
       ⟨h.2.1.1.ready, h.2.1.2, h.2.1.1.r2bound⟩, h.2.2⟩) (fun _ _ h => h)
 

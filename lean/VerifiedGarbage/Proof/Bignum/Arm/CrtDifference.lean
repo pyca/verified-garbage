@@ -38,19 +38,19 @@ theorem crt_difference_ok (s : State) {base : BitVec 32} {len w M : Nat}
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
   have positive : 0 < M := by have := h.ready.modulus; rw [h.modulus] at this; omega
   rw [difference, WP.seq_iff]
-  refine WP.mono (reduceOperand_ok s h.ready (op 1 (by simp)) (by decide) (by decide) h.modulus h.odd h.r2 h.one) ?_
+  refine WP.mono (reduceOperand_ok s h.ready (op 1 (by decide)) (by decide) (by decide) h.modulus h.odd h.r2 h.one) ?_
   rintro u ⟨readyU, modU, reduced, keepsU, frameU, restU⟩
-  have first := keeps_array_num keepsU fits (op 6 (by simp)) (by decide)
-  have r2U := (keeps_array_num keepsU fits (op 4 (by simp)) (by decide)).trans h.r2
-  have oneU := (keeps_array_num keepsU fits (op 7 (by simp)) (by decide)).trans h.one
-  refine WP.mono (subModArray_ok u readyU (op 5 (by simp)) (op 6 (by simp)) (op 1 (by simp))
+  have first := keeps_array_num keepsU fits (op 6 (by decide)) (by decide)
+  have r2U := (keeps_array_num keepsU fits (op 4 (by decide)) (by decide)).trans h.r2
+  have oneU := (keeps_array_num keepsU fits (op 7 (by decide)) (by decide)).trans h.one
+  refine WP.mono (subModArray_ok u readyU (op 5 (by decide)) (op 6 (by decide)) (op 1 (by decide))
     (by decide) (by decide) (by decide) (by rw [first, modU]; exact h.bound)
     (by rw [reduced, modU]; exact Nat.mod_lt _ positive)) ?_
   rintro t ⟨readyT, value, keepsT, frameT, restT⟩
   rw [first, modU, reduced] at value
-  exact ⟨readyT, value, (keeps_array_num keepsT fits (op 0 (by simp)) (by decide)).trans modU,
-    (keeps_array_num keepsT fits (op 4 (by simp)) (by decide)).trans r2U,
-    (keeps_array_num keepsT fits (op 7 (by simp)) (by decide)).trans oneU,
+  exact ⟨readyT, value, (keeps_array_num keepsT fits (op 0 (by decide)) (by decide)).trans modU,
+    (keeps_array_num keepsT fits (op 4 (by decide)) (by decide)).trans r2U,
+    (keeps_array_num keepsT fits (op 7 (by decide)) (by decide)).trans oneU,
     frameU.trans frameT, restU.trans restT⟩
 
 end VG.Proof.Bignum.Arm

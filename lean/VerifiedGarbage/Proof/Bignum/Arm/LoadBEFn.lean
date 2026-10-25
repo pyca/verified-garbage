@@ -64,14 +64,14 @@ theorem loadBEFnBody_ok (s : State) {base src : BitVec 32} {len w o k : Nat}
     change (a - State.addr base).toNat + 1 ≤ 8 * len
     omega
   refine WP.mono (loadBE_ok u hk (by omega) (by omega) srcFit (by rw [dstNat]; omega)
-    readU write sepDst p0 ((rest.gpr .r4 (by simp)).trans source) p5
-    ((rest.gpr .r6 (by simp)).trans count) limbs zero) ?_
+    readU write sepDst p0 ((rest.gpr .r4 (by decide)).trans source) p5
+    ((rest.gpr .r6 (by decide)).trans count) limbs zero) ?_
   rintro t ⟨value, frame, keep⟩
   rw [native_array_num t.mem (by omega), mem] at value
   rw [dstAddr, mem, show 4 * (2 * w) = 8 * w by omega] at frame
   have outside := frame_array_outside (by omega) frame
   exact ⟨value, outside, outside_workspace outside (by omega),
-    (rest.mono (by simp [roundClobbers])).trans (keep.mono (by simp [roundClobbers]))⟩
+    (rest.mono (by decide)).trans (keep.mono (by decide))⟩
 
 theorem loadBEFn_ok (s : State) {base src : BitVec 32} {len w o k : Nat}
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
@@ -96,6 +96,6 @@ theorem loadBEFn_ok (s : State) {base src : BitVec 32} {len w o k : Nat}
     (saved_base_kept frame stackSep saved rest.sp)) ?_
   rintro t ⟨out, mem, keep⟩
   rw [← mem] at value outside frame
-  exact ⟨value, outside, frame, rest.trans (keep.mono (by simp [roundClobbers])), out⟩
+  exact ⟨value, outside, frame, rest.trans (keep.mono (by decide)), out⟩
 
 end VG.Proof.Bignum.Arm

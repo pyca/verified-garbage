@@ -42,6 +42,6 @@ theorem compareWordStep_ok (s : State) (a b : Addr)
       u3.other .lr (by decide), u2.other .lr (by decide), u1.other .lr (by decide)]
   · rw [z7, u6.other .lr (by decide), u5.other .lr (by decide), u4.other .lr (by decide),
       u3.other .lr (by decide), u2.other .lr (by decide), u1.other .lr (by decide)]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans
-      ((u4.rest (by simp)).trans ((u5.rest (by simp)).trans ((u6.rest (by simp)).trans (u7.rest (by simp)))))))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
+      ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans ((u6.rest (by decide)).trans (u7.rest (by decide)))))))
 end VG.Proof.Bignum.Arm

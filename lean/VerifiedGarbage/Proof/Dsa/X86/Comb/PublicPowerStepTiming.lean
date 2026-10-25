@@ -28,15 +28,14 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Proof.Mont.X86.Comb (TableAt)
 
 theorem powerDigits_check {n e : Nat} (h : Supported n e) :
-    (VG.Taint.check taint (workspaceTaint false) (VG.Impl.Mont.X86.Comb.powerDigits n e)
-      (VG.Taint.hintOf taint (workspaceTaint false) (VG.Impl.Mont.X86.Comb.powerDigits n e))).map
+    ∃ hint, (VG.Taint.check taint (workspaceTaint false) (VG.Impl.Mont.X86.Comb.powerDigits n e) hint).map
       (taint.le (workspaceTaint false))=some true := by
-  rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> taint_decide
+  rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> exact ⟨_, by taint_decide⟩
 
 theorem powerDigits_relCT {n e : Nat} (h : Supported n e) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (VG.Impl.Mont.X86.Comb.powerDigits n e)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
-  obtain ⟨τ,check,le⟩ := Option.map_eq_some_iff.mp (powerDigits_check h)
+  obtain ⟨τ,check,le⟩ := Option.map_eq_some_iff.mp (powerDigits_check h).choose_spec
   exact checkedProgramChange check le
 
 structure PublicPowerState (n e m g E x : Nat) (base : Addr) (s : State) : Prop where

@@ -29,7 +29,7 @@ theorem publicFinish_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen 
   rw [PublicFn.finish, WP.seq_iff]
   refine WP.mono (publicOutputArgs_ok s h.stack) ?_
   rintro u ⟨index, output, count, memU, restU⟩
-  have ready := h.ready.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ready.ptr)
+  have ready := h.ready.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ready.ptr)
   have dims := pc_dimensions h.buffers.minLength h.buffers.maxLength h.buffers.space
   refine WP.mono (exportMasked_ok u ready.workspace ready.layout ready.width (by decide : 6 < 8)
     (by have := h.buffers.minLength; omega) dims.2.2.2.1 (by rw [memU]; exact h.valueFit)
@@ -42,6 +42,6 @@ theorem publicFinish_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen 
   rw [memU, h.value] at bytes
   rw [memU] at frame
   exact ⟨by simpa only [decide_eq_true_eq] using bytes, status, frame,
-    (restU.mono (by simp [roundClobbers])).trans restT⟩
+    (restU.mono (by decide)).trans restT⟩
 
 end VG.Proof.Bignum.Arm

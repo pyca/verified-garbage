@@ -28,13 +28,13 @@ theorem reductionArgs_ok (s : State) {base : BitVec 32} {size top acc mod n : Na
   have w1 := ws.congr u1.wr
   have p1 := (u1.other .r0 (by decide)).trans ptr
   refine wp_ldr (by decide) (w1.ea p1 (by omega)) (w1.read (by omega)) fun s2 u2 => ?_
-  have k2 : Rest [.lr, .r12] s s2 := (u1.rest (by simp)).trans (u2.rest (by simp))
+  have k2 : Rest [.lr, .r12] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
   have w2 := ws.congr k2.wr
-  have p2 := (k2.gpr .r0 (by simp)).trans ptr
+  have p2 := (k2.gpr .r0 (by decide)).trans ptr
   refine wp_ldr (by decide) (w2.ea p2 (by omega)) (w2.read (by omega)) fun s3 u3 => ?_
-  have k3 : Rest [.lr, .r12, .r1] s s3 := (k2.mono (by simp_all)).trans (u3.rest (by simp))
+  have k3 : Rest [.lr, .r12, .r1] s s3 := (k2.mono (by simp_all)).trans (u3.rest (by decide))
   have w3 := ws.congr k3.wr
-  have p3 := (k3.gpr .r0 (by simp)).trans ptr
+  have p3 := (k3.gpr .r0 (by decide)).trans ptr
   refine wp_ldr (by decide) (w3.ea p3 (by omega)) (w3.read (by omega)) fun s4 u4 => ?_
   have w4 := w3.congr u4.wr
   have p4 : s4.gpr .r0 = base + BitVec.ofNat 32 acc := by
@@ -52,7 +52,7 @@ theorem reductionArgs_ok (s : State) {base : BitVec 32} {size top acc mod n : Na
   · rw [u7.other .lr (by decide), u6.other .lr (by decide), u5.other .lr (by decide),
       u4.other .lr (by decide), u3.other .lr (by decide), u2.other .lr (by decide), u1.gpr, mn]
   · rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  · exact (k3.mono (by simp_all)).trans ((u4.rest (by simp)).trans ((u5.rest (by simp)).trans
-      ((u6.rest (by simp)).trans (u7.rest (by simp)))))
+  · exact (k3.mono (by simp_all)).trans ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans
+      ((u6.rest (by decide)).trans (u7.rest (by decide)))))
 
 end VG.Proof.Bignum.Arm

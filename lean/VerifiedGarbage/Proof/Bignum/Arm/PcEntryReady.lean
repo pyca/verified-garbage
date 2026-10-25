@@ -50,7 +50,7 @@ theorem pc_entry_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
     frameEntry.sub (by intro r hr; simp only [List.mem_singleton] at hr; subst r
                        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩)
   have savedCallee := pcEntry_callee_saved (pc_push_callee_saved s h.stackFit) mem
-  refine ⟨?_, pushFrame.trans frameEntryFull, ?_, rest.mono (by simp [roundClobbers])⟩
+  refine ⟨?_, pushFrame.trans frameEntryFull, ?_, rest.mono (by decide)⟩
   · refine ⟨⟨⟨h.workspace.nowrap, ?_⟩, h.minLength, h.maxLength, h.space, h.sourceFits, ?_,
       h.sourceSeparate, h.outputFits, ?_, h.outputSeparate⟩, ?_, ptr,
       source.trans h.source, count.trans h.count⟩
@@ -68,9 +68,9 @@ theorem pc_entry_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
       · rw [rest.sp]; exact savedBase
       · rw [rest.sp]; exact savedOutput.trans h.output
       · rw [rest.sp, outside_read32 outside (d := 8) (by decide) (by decide)]
-        exact (savedAll (.r2, 8) (by simp [pcAllSaved])).trans h.source
+        exact (savedAll (.r2, 8) (by decide)).trans h.source
       · rw [rest.sp, outside_read32 outside (d := 12) (by decide) (by decide)]
-        exact (savedAll (.r3, 12) (by simp [pcAllSaved])).trans h.count
+        exact (savedAll (.r3, 12) (by decide)).trans h.count
   · rw [rest.sp]; exact savedCallee
 
 end VG.Proof.Bignum.Arm

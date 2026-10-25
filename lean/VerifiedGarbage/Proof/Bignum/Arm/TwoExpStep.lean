@@ -56,7 +56,7 @@ theorem digit_ok (s : State) {base : BitVec 32} {len w V : Nat}
   refine wp_mov (op2_lsr (by decide)) fun v b => ?_
   refine wp_dp (op2_imm (by decide)) fun t c => WP.block_nil ?_
   refine ⟨?_, c.mem.trans (b.mem.trans a.mem),
-    (a.rest (by simp)).trans ((b.rest (by simp)).trans (c.rest (by simp)))⟩
+    (a.rest (by decide)).trans ((b.rest (by decide)).trans (c.rest (by decide)))⟩
   rw [c.gpr, dpVal, b.gpr, a.gpr, byte]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv,
@@ -80,8 +80,8 @@ theorem bit_ok {base : BitVec 32} {len w M E V : Nat} {P : State → Prop} {regi
   rw [WP.seq_iff]
   refine WP.mono (digit_ok v powerV.ready hv ((hdrV 200 (by decide)).trans ((hdrU 200 (by decide)).trans byte))) ?_
   rintro z ⟨digit, memZ, restZ⟩
-  have rz : Rest roundClobbers v z := restZ.mono (by simp [roundClobbers])
-  have powerZ := powerV.of_mem memZ restZ ((restZ.gpr .r0 (by simp)).trans powerV.ready.ptr)
+  have rz : Rest roundClobbers v z := restZ.mono (by decide)
+  have powerZ := powerV.of_mem memZ restZ ((restZ.gpr .r0 (by decide)).trans powerV.ready.ptr)
   have frameZ : Frame [⟨State.addr base, 8 * len⟩] v.mem z.mem := by rw [memZ]; exact Frame.refl _ _
   have pz := K.stable frameZ rz pv
   have bitBound : V / 128 % 2 < 2 := Nat.mod_lt _ (by decide)

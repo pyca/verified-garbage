@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.CopyLoop
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Array copies visit the same native-word addresses for every candidate -/
 
@@ -19,7 +20,7 @@ def copyRegisters : List Reg := [.esi, .ebx, .ebp, .edi]
 theorem copyLoop_raw : RelCT isa (VG.X86.Taint.Agree (roundTaint copyRegisters))
     (.loop (.block copyBody) .ne) (VG.X86.Taint.Agree (roundTaint copyRegisters)) :=
   checkedProgramChange (τ' := roundTaint copyRegisters true)
-    (hint := VG.Taint.hintOf taint (roundTaint copyRegisters) (.loop (.block copyBody) .ne)) rfl rfl
+    (hint := VG.Taint.hintOf taint (roundTaint copyRegisters) (.loop (.block copyBody) .ne)) (by kernel_rfl) (by kernel_rfl)
 
 theorem copy_trace {g : Geometry} (v : g.Valid) (dst src : Nat) (di : dst < 28) (si : src < 28) :
     RelCT isa (Pair g [.edi]) (copy dst src) (VG.X86.Taint.Agree (roundTaint copyRegisters)) := by

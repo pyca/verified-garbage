@@ -35,10 +35,10 @@ theorem expBit_ok (s : State) {base : BitVec 32} {len w M x E V : Nat}
   rw [WP.seq_iff]
   refine WP.mono (expBitTest_ok u square.ready.workspace (by omega) square.ready.ptr hv byteU) ?_
   rintro v ⟨flag, memV, restV⟩
-  have stateV := square.of_mem memV restV ((restV.gpr .r0 (by simp)).trans square.ready.ptr)
+  have stateV := square.of_mem memV restV ((restV.gpr .r0 (by decide)).trans square.ready.ptr)
   have keepV : Keeps (State.addr base) len w 6 s.mem v.mem := by rw [memV]; exact keepsU
   have frameV : Frame [⟨State.addr base, 8 * len⟩] s.mem v.mem := by rw [memV]; exact frameU
-  have rest : Rest roundClobbers s v := restU.trans (restV.mono (by simp [roundClobbers]))
+  have rest : Rest roundClobbers s v := restU.trans (restV.mono (by decide))
   by_cases bit : V / 128 % 2 = 0
   · refine WP.ite false (by simp [eval, flag, bit]) (by simp) (fun _ => WP.block_nil ?_)
     exact ⟨by simpa only [bit, Nat.add_zero] using stateV, keepV, frameV, rest⟩

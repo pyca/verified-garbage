@@ -20,6 +20,7 @@ public import VerifiedGarbage.Impl.Mont.X86.CombTable
 public import VerifiedGarbage.Impl.Mont.X86
 public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.Proof.Framework.Slots
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! A direct lookup's trace depends only on its public index and workspace address. -/
 
@@ -51,7 +52,7 @@ def copyAfterRead (n tab : Nat) : List Instr :=
 theorem copyAfterRead_relCT (n tab : Nat) :
     RelCT isa (VG.X86.Taint.Agree loadedIndex) (.block (copyAfterRead n tab)) (VG.X86.Taint.Agree copyPointers) := by
   exact erased_relCT (.block (copyAfterRead n tab)) (.block (copyAfterRead 1 0)) (.block [])
-    rfl rfl rfl (by taint_decide)
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by taint_decide)
 
 theorem copyLoop_relCT (dst : Nat) :
     RelCT isa (VG.X86.Taint.Agree copyPointers)
@@ -59,7 +60,7 @@ theorem copyLoop_relCT (dst : Nat) :
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   exact erased_relCT _ (VG.Impl.Mont.X86.Comb.copyLoop (at_ .ecx 0) (at_ .ebp 0))
     (VG.Taint.hintOf taint copyPointers (VG.Impl.Mont.X86.Comb.copyLoop (at_ .ecx 0) (at_ .ebp 0)))
-    rfl rfl (by decide) (by taint_decide)
+    (by kernel_rfl) (by kernel_rfl) (by decide) (by taint_decide)
 
 theorem publicSelect_relCT (base : Addr) (size n tab dst : Nat) (hz : 8≤size) :
     RelCT isa (WordPair base size) (VG.Impl.Mont.X86.Comb.publicSelect n tab dst)

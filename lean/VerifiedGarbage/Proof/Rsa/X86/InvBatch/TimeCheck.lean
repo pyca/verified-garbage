@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
 public import VerifiedGarbage.Proof.Rsa.X86.WorkspaceTaint
+import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Impl.Rsa.X86.InvBatch
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Rsa.X86.WorkspaceTaint
 
 /-! # Constant-time checks for complete active-width inversion kernels
@@ -13,10 +15,16 @@ without repeating the invariant search in `hintOf`.
 These long unrolled blocks use 32-instruction certificate intervals. More
 frequent checked intermediate taints reduce kernel evaluation compared with
 `taint_decide`'s default 1024/256 intervals; every instruction and loop
-invariant is still checked by the same analysis. -/
+invariant is still checked by the same analysis.
+
+The kernel reads the 2048-bit kernel's code from a literal
+(`materialize_flat_code`) rather than rebuilding it from the generators; the
+wider kernels' literals are too deep for the kernel to check. -/
 @[expose] public section
 namespace VG.Proof.Rsa.X86.InvBatch
 open VG VG.X86
+
+materialize_flat_code body64 := VG.Impl.Rsa.X86.InvBatch.body 64 32
 
 theorem body64_check :
     ∃ hint, (VG.Taint.check taint (WorkspaceTaint.dom (VG.Impl.Rsa.X86.InvBatch.offset 64 15))

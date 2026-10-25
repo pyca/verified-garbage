@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Shape
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # DSA on 32-bit ARM: the traces of the entry, the dispatch and the exit
@@ -58,7 +59,7 @@ theorem widthMatch_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen
   unfold Entry.widthMatch
   refine SameTrace.seq (SameTrace.of_relCT (erased_relCT (σ := T0) (c₀ := .block [.ldr .r4 .r12 0, .movw .r5 0,
       .cmp .r4 (.reg .r5)]) (VG.Taint.hintOf taint T0 (.block [.ldr .r4 .r12 0, .movw .r5 0, .cmp .r4 (.reg .r5)]))
-      rfl (wsT_noBase _ _) rfl) (agree0 h₁ h₂))
+      (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)) (agree0 h₁ h₂))
     (matchOne_ok (d := 100) h₁ (by decide) (by omega) bp) (matchOne_ok (d := 100) h₂ (by decide) (by omega) bp)
     fun u₁ u₂ ⟨Z₁, R₁, _⟩ ⟨Z₂, R₂, _⟩ => ?_
   have w₁ := h₁.of_rest R₁ (by decide)
@@ -66,7 +67,7 @@ theorem widthMatch_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen
   refine SameTrace.ite (by rw [eval_eq, eval_eq, Z₁, Z₂, hp₁, hp₂]) (fun _ => ?_) (fun _ => ?_)
   · exact SameTrace.of_relCT (erased_relCT (σ := T0) (c₀ := .block [.ldr .r4 .r12 0, .movw .r5 0,
       .cmp .r4 (.reg .r5)]) (VG.Taint.hintOf taint T0 (.block [.ldr .r4 .r12 0, .movw .r5 0, .cmp .r4 (.reg .r5)]))
-      rfl (wsT_noBase _ _) rfl) (agree0 w₁ w₂)
+      (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)) (agree0 w₁ w₂)
   · exact SameTrace.of_relCT (block_relCT_T0 _ rfl) (agree0 w₁ w₂)
 
 theorem widthDispatch_trace (signing : Bool) (widths : List (Nat × Nat))
@@ -133,7 +134,7 @@ theorem failure_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat} 
       (failureHead_ok h₁ hz₁) (failureHead_ok h₂ hz₂) fun u₁ u₂ ⟨A₁, L₁, w₁⟩ ⟨A₂, L₂, w₂⟩ => ?_)
     exact SameTrace.of_relCT ((relCT_of_check (σ := Taint.ofRegs []) (h := VG.Taint.hintOf taint (wsT true true)
       (.seq (.seq (.loop (.block [.strb .r4 .r11 0, .dp .add .r11 .r11 (.imm 1), .cmp .r11 (.reg .lr)]) .ne)
-        (.seq (.block [.mov .r0 (.imm 0)]) (.block []))) Tail)) rfl).mono (fun _ _ h => h) fun _ _ _ => trivial)
+        (.seq (.block [.mov .r0 (.imm 0)]) (.block []))) Tail)) (by kernel_rfl)).mono (fun _ _ h => h) fun _ _ _ => trivial)
       (agreeWs true true w₁ w₂ (fun _ => by rw [A₁, A₂, ho rfl]) (fun _ => by rw [L₁, L₂, ho rfl, hq rfl]))
 
 end VG.Proof.Dsa.Arm

@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.OmegaNear
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
@@ -133,7 +134,7 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
   have hxc₃ : wv s₃.mem (off B op) (slot wx aXc) wx = wv s₁.mem (off B op) (slot wx aXc) wx := by
     have := slot_sep (w := wx) (show aXc ≠ aChunk by decide)
     have := slot_le (w := wx) (show aXc < 8 by decide)
-    exact ho₃.wv (by omega_arith) (by omega_using [hz₁, this])
+    exact ho₃.wv (by omega_near) (by omega_using [hz₁, this])
   -- `aChunk := m_q R_p² R_p^-1 = m_q R_p`.
   refine WP.seq (WP.mono (M.mm_ok (o := aChunk) (a := aChunk) (b := aXc) hc₃.good (Nat.le_refl _) hwx2
     (by omega_using [hw28, hwx]) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hX₃.inv
@@ -164,17 +165,17 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
         r₁.wv_eq (fun r hr => by have := rY r hr; omega_using [this]) (by omega_using [lY, hz₄])]
   have hM₄ : word s₄.mem (off B op) (8 * sMaskX) = mask c := by
     have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega_using []
-    rw [ho₄c.word (.inl (by omega_arith)) (by omega_arith), ha₄.hslot (by decide), ho₃.word (.inl (by omega_arith)) (by omega_arith),
-      r₁.word_eq hrm (by omega_arith)]; exact hmask
+    rw [ho₄c.word (.inl (by omega_near)) (by omega_near), ha₄.hslot (by decide), ho₃.word (.inl (by omega_near)) (by omega_near),
+      r₁.word_eq hrm (by omega_near)]; exact hmask
   have hlt₄' : wv s₄.mem (off B op) (slot wx aXc) wx < X := by rw [hv₄c]; exact hlt₄
   have f04 : Frm B [xRange op wx] s.mem s₄.mem := (f₁.trans fx₃).trans fx₄
   have hb₄ : ∀ d, d + 8 ≤ op → word s₄.mem B d = word s.mem B d := fun d hd => f04.x_below hd ho64
   have i04 : InScr B Z s.mem s₄.mem :=
-    InScr.of_frm f04 fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_arith
+    InScr.of_frm f04 fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_near
   -- `h`.
-  refine wp_seqs_append (by simp [subModArr]) (by simp) (WP.mono (hTail_ok M hc₄ (by omega_arith) hX₄ hw28 hwx2 hwx
-    (by rw [hY₄]; exact hyl) hlt₄' hM₄ (by rw [hb₄ _ (by unfold sQinv sFn; omega_arith)]; exact hqp)
-    (by rw [hb₄ _ (by unfold sPlen sFn; omega_arith)]; exact hql)
+  refine wp_seqs_append (by simp [subModArr]) (by simp) (WP.mono (hTail_ok M hc₄ (by omega_near) hX₄ hw28 hwx2 hwx
+    (by rw [hY₄]; exact hyl) hlt₄' hM₄ (by rw [hb₄ _ (by unfold sQinv sFn; omega_near)]; exact hqp)
+    (by rw [hb₄ _ (by unfold sPlen sFn; omega_near)]; exact hql)
     (hqs.congrK i04 (((k₁.trans k₂).trans k₃).trans k₄)) hq1 hq2 hqw hqi)
     fun s₅ ⟨hc₅, hX₅, hlt₅, hh₅, fx₅, k₅, _⟩ => ?_)
   refine WP.mono (leaveBack_ok hg hc₅ (f04.trans fx₅) hlo) fun t ⟨hg', hm', k'⟩ => ?_
@@ -191,7 +192,7 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
         rw [hv₁, ← Nat.mod_mod_of_dvd _ (hc hct), hN.r2, Nat.mod_mod_of_dvd _ (hc hct), e2, ← Nat.pow_add])
     apply VG.Proof.Bignum.mont_cancel hRx
     rw [hv₄c, hm₄, hC₃, hxc₃, Nat.mul_mod, h1, ← Nat.mul_mod, Nat.mul_assoc _ (2 ^ (64 * wx)), ← Nat.pow_add]
-    congr 3; omega_arith
+    congr 3; omega_near
   · by_cases h : r = .rdi
     · subst h; rw [hg'.rdi, hg.rdi]
     · exact kall.1 r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)

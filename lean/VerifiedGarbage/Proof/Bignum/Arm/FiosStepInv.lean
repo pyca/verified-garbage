@@ -51,6 +51,6 @@ theorem body_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n i : Nat}
     simp only [val32,Nat.mul_zero,Nat.add_zero]
     omega
   exact advance_inv ctx inv (Or.inl rfl) (by omega)
-    (rest.mono (by simp [pairClobbers])) outside (prefix_extend inv.value segment stored)
+    (rest.mono (by decide)) outside (prefix_extend inv.value segment stored)
 
 end VG.Proof.Bignum.Arm.Fios

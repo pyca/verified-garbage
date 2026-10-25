@@ -71,7 +71,7 @@ theorem fusedMulSuffix_relCT {g : Geo} {n j : Nat} (pg : PubG g) :
     C.positive rfl C.xl (by rw [C.candidate]; exact C.limit)) e1
   obtain ⟨_,hv⟩ := wp_result (fusedMultiply_ok ht D.value D.modulus D.zero D.bound D.inverse
     D.positive rfl D.xl (by rw [D.candidate]; exact D.limit)) f1
-  exact ⟨by rw [eq1,pub_trace pg fusedAfterCheck hu hv e2 f2],trivial⟩
+  exact ⟨by rw [eq1,pub_trace pg fusedAfterCheck.choose_spec hu hv e2 f2],trivial⟩
 
 theorem fusedBit_relCT {g : Geo} (pg : PubG g) {s0 t0 : State} {A B AW BW V W : Nat → Nat}
     {n k : Nat} {st tt : VG.Proof.Rsa.Fused.State}

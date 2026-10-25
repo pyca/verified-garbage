@@ -45,7 +45,7 @@ theorem rowSplit_ok (s : State) :
   · rw [u3.other .r10 (by decide), u2.gpr, u1.other .r1 (by decide)]
   · rw [u3.other .r9 (by decide), u2.other .r9 (by decide), u1.gpr]
   · rw [u3.mem, u2.mem, u1.mem]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (u3.rest (by simp)))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide)))
 
 /-- The pair loop, from the invariant after `i` words with `n - i` even and
 nonzero, runs to the end of the row. -/
@@ -86,10 +86,10 @@ and to the flags. -/
 theorem RowLoopInv.of_rest {s1 s t : State} {x base : BitVec 32} {o b n i : Nat}
     (inv : RowLoopInv s1 x base o b n i s) (hr : Rest [.r2] s t) (hm : t.mem = s.mem)
     (h11 : t.gpr .r11 = s.gpr .r11) : RowLoopInv s1 x base o b n i t :=
-  ⟨inv.index, by rw [hr.gpr .r0 (by simp)]; exact inv.outPtr,
-    by rw [hr.gpr .r12 (by simp)]; exact inv.inPtr, by rw [hr.gpr .lr (by simp)]; exact inv.count,
+  ⟨inv.index, by rw [hr.gpr .r0 (by decide)]; exact inv.outPtr,
+    by rw [hr.gpr .r12 (by decide)]; exact inv.inPtr, by rw [hr.gpr .lr (by decide)]; exact inv.count,
     by rw [hm]; exact inv.outside, by rw [hm, h11]; exact inv.value,
-    inv.rest.trans (hr.mono (by simp [stepClobbers]))⟩
+    inv.rest.trans (hr.mono (by decide))⟩
 
 /-- A nonempty row computes the full scalar product plus the original
 accumulator and carry. The final carry is kept separately, so the theorem
@@ -110,14 +110,14 @@ theorem row_ok (s : State) {base : BitVec 32} {size o b n : Nat}
   let x := s.gpr .r1
   have init : RowLoopInv s1 x base o b n 0 s1 := by
     refine ⟨by omega, ?_, ?_, ?_, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
-    · rw [rest1.gpr .r0 (by simp)]
+    · rw [rest1.gpr .r0 (by decide)]
       simpa only [Nat.mul_zero, Nat.add_zero] using hp0
-    · rw [rest1.gpr .r12 (by simp)]
+    · rw [rest1.gpr .r12 (by decide)]
       simpa only [Nat.mul_zero, Nat.add_zero] using hp12
-    · rw [rest1.gpr .lr (by simp)]
+    · rw [rest1.gpr .lr (by decide)]
       simpa only [Nat.sub_zero] using hcount
     · simp only [val32, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add]
-  have lr1 : s1.gpr .lr = BitVec.ofNat 32 n := (rest1.gpr .lr (by simp)).trans hcount
+  have lr1 : s1.gpr .lr = BitVec.ofNat 32 n := (rest1.gpr .lr (by decide)).trans hcount
   -- The parity of the count.
   refine wp_dp (op2_imm (by decide)) fun s2 u2 => wp_cmp (op2_imm (by decide)) fun s3 f3 hz3 =>
     WP.block_nil ?_
@@ -125,7 +125,7 @@ theorem row_ok (s : State) {base : BitVec 32} {size o b n : Nat}
     rw [hz3, u2.gpr, dpVal, lr1, ofNat_and_one hn32, sub_zero32,
       ofNat_beq_zero (by omega)]
   have inv3 : RowLoopInv s1 x base o b n 0 s3 :=
-    init.of_rest ((u2.rest (by simp)).trans (f3.rest _)) (by rw [f3.mem, u2.mem])
+    init.of_rest ((u2.rest (by decide)).trans (f3.rest _)) (by rw [f3.mem, u2.mem])
       (by rw [f3.gpr, u2.other .r11 (by decide)])
   -- An odd count takes its first word alone.
   rw [WP.seq_iff]
@@ -157,20 +157,20 @@ theorem row_ok (s : State) {base : BitVec 32} {size o b n : Nat}
       exact cast (congrArg (fun i => RowLoopInv s1 x base o b n i t1) e) inv1
   refine wp_dp (op2_lsl (by decide)) fun u hu => WP.block_nil ?_
   have r1 : u.gpr .r1 = s.gpr .r1 := by
-    rw [hu.gpr, dpVal, ht.rest.gpr .r1 (by simp), ht.rest.gpr .r10 (by simp), h1, h10]
+    rw [hu.gpr, dpVal, ht.rest.gpr .r1 (by decide), ht.rest.gpr .r10 (by decide), h1, h10]
     exact join16 _
   refine ⟨ht.index, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hu.other .r0 (by decide)]; exact ht.outPtr
   · rw [hu.other .r12 (by decide)]; exact ht.inPtr
   · rw [hu.other .lr (by decide)]; exact ht.count
   · rw [hu.mem, ← mem1]; exact ht.outside
-  · rw [hu.mem, hu.other .r11 (by decide), ← mem1, ← rest1.gpr .r11 (by simp)]
+  · rw [hu.mem, hu.other .r11 (by decide), ← mem1, ← rest1.gpr .r11 (by decide)]
     exact ht.value
   · refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
     · by_cases e : r = .r1
       · subst e; exact r1
-      · rw [hu.other r e, ht.rest.gpr r (by cases r <;> simp_all [loopClobbers]),
-          rest1.gpr r (by cases r <;> simp_all [loopClobbers])]
+      · rw [hu.other r e, ht.rest.gpr r (by revert hr e; cases r <;> decide),
+          rest1.gpr r (by revert hr e; cases r <;> decide)]
     · rw [hu.rd, ht.rest.rd, rest1.rd]
     · rw [hu.wr, ht.rest.wr, rest1.wr]
     · rw [hu.sp, ht.rest.sp, rest1.sp]

@@ -34,11 +34,11 @@ theorem equalBuffers_ok (s : State) {base : BitVec 32} {size o a b n : Nat}
     ⟨ctx.nowrap, ctx.outFits, ctx.aFits, ctx.bFits, ctx.sepA, ctx.sepB, by rw [restU.wr]; exact ctx.writable⟩
   rw [WP.seq_iff]
   refine WP.mono (subCompareRow_ok u ctxU hn
-    ((restU.gpr .r0 (by simp)).trans hp0) ((restU.gpr .r10 (by simp)).trans hp10)
-    ((restU.gpr .r12 (by simp)).trans hp12) ((restU.gpr .lr (by simp)).trans count) zero) ?_
+    ((restU.gpr .r0 (by decide)).trans hp0) ((restU.gpr .r10 (by decide)).trans hp10)
+    ((restU.gpr .r12 (by decide)).trans hp12) ((restU.gpr .lr (by decide)).trans count) zero) ?_
   rintro v ⟨less, inv⟩
   have width : v.gpr .r8 = BitVec.ofNat 32 n :=
-    (inv.rest.gpr .r8 (by simp [subLoopClobbers])).trans (saved.trans count)
+    (inv.rest.gpr .r8 (by decide)).trans (saved.trans count)
   rw [memU] at less
   rw [WP.seq_iff]
   refine WP.mono (equalReverse_ok v) ?_
@@ -59,7 +59,7 @@ theorem equalBuffers_ok (s : State) {base : BitVec 32} {size o a b n : Nat}
   rintro t ⟨greater, outsideT, restT⟩
   rw [aOld, bOld] at greater
   have first : t.gpr .r6 = (if val32 s.mem (State.addr base) a n < val32 s.mem (State.addr base) b n then 1 else 0) :=
-    (restT.gpr .r6 (by simp [subLoopClobbers])).trans (bit.trans less)
+    (restT.gpr .r6 (by decide)).trans (bit.trans less)
   refine WP.mono (equalFinish_ok t first greater) ?_
   rintro final ⟨result, memFinal, restFinal⟩
   have outsideV := inv.outside
@@ -67,8 +67,8 @@ theorem equalBuffers_ok (s : State) {base : BitVec 32} {size o a b n : Nat}
   rw [keep.mem] at outsideT
   have restZ : Rest [.r0, .r6, .r7, .r10, .r11, .r12, .lr] v z := ⟨keep.regs, keep.rd, keep.wr, keep.sp⟩
   exact ⟨result, by rw [memFinal]; exact outsideV.trans outsideT,
-    (restU.mono (by simp [roundClobbers])).trans ((inv.rest.mono (by simp [roundClobbers, subLoopClobbers])).trans
-      ((restZ.mono (by simp [roundClobbers])).trans ((restT.mono (by simp [roundClobbers, subLoopClobbers])).trans
-        (restFinal.mono (by simp [roundClobbers])))))⟩
+    (restU.mono (by decide)).trans ((inv.rest.mono (by decide)).trans
+      ((restZ.mono (by decide)).trans ((restT.mono (by decide)).trans
+        (restFinal.mono (by decide)))))⟩
 
 end VG.Proof.Bignum.Arm

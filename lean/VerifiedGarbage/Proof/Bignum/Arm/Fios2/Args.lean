@@ -35,9 +35,9 @@ theorem args_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : Nat} 
     (by rw [u2.other .r3 (by decide)]; exact w1.ea a1 (by omega))
     (by rw [u2.rd, u2.wr]; exact w1.read (by omega)) fun s3 u3 => ?_
   have k3 : Rest [.r1, .r3, .r9] s s3 :=
-    (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (u3.rest (by simp)))
+    (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide)))
   have m3 : s3.mem = s.mem := u3.mem.trans (u2.mem.trans u1.mem)
-  have p3 : s3.gpr .r0 = base + BitVec.ofNat 32 tmp := (k3.gpr .r0 (by simp)).trans ptr
+  have p3 : s3.gpr .r0 = base + BitVec.ofNat 32 tmp := (k3.gpr .r0 (by decide)).trans ptr
   have w3 := ws.congr k3.wr
   refine wp_ldr (by decide) (w3.ea p3 (by omega)) (w3.read (by omega)) fun s4 u4 => ?_
   have p4 : s4.gpr .r0 = base + BitVec.ofNat 32 tmp := (u4.other .r0 (by decide)).trans p3
@@ -87,11 +87,11 @@ theorem args_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : Nat} 
   · rw [u13.other .r8 (by decide), u12.other .r8 (by decide), u11.gpr]
   · rw [u13.other .r5 (by decide), u12.gpr]
   · rw [u13.mem, u12.mem, u11.mem, u10.mem, mem9]
-  · exact (k3.mono (by simp [roundClobbers])).trans ((u4.rest (by simp [roundClobbers])).trans
-      ((u5.rest (by simp [roundClobbers])).trans ((u6.rest (by simp [roundClobbers])).trans
-        ((u7.rest (by simp [roundClobbers])).trans ((u8.rest (by simp [roundClobbers])).trans
-          ((u9.rest (by simp [roundClobbers])).trans ((u10.rest (by simp [roundClobbers])).trans
-            ((u11.rest (by simp [roundClobbers])).trans ((u12.rest (by simp [roundClobbers])).trans
-              (u13.rest (by simp [roundClobbers])))))))))))
+  · exact (k3.mono (by decide)).trans ((u4.rest (by decide)).trans
+      ((u5.rest (by decide)).trans ((u6.rest (by decide)).trans
+        ((u7.rest (by decide)).trans ((u8.rest (by decide)).trans
+          ((u9.rest (by decide)).trans ((u10.rest (by decide)).trans
+            ((u11.rest (by decide)).trans ((u12.rest (by decide)).trans
+              (u13.rest (by decide)))))))))))
 
 end VG.Proof.Bignum.Arm.Fios2

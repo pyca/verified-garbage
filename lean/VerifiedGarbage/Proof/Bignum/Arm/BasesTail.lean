@@ -40,10 +40,10 @@ theorem basesTail_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc w 
   have w5 := w4.congr u5.wr
   refine wp_ldr (by decide) (w5.ea p5 (by omega)) (w5.read (by omega)) fun t u6 => WP.block_nil ?_
   have keep : Rest [.r5, .r6, .r7, .r11, .r12] s t :=
-    (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans
-      ((u4.rest (by simp)).trans ((u5.rest (by simp)).trans (u6.rest (by simp))))))
-  refine ⟨⟨?_, ?_, ?_, (keep.gpr .r8 (by simp)).trans pa, (keep.gpr .r9 (by simp)).trans pb,
-    (keep.gpr .r10 (by simp)).trans po, ?_, ?_⟩, ?_, keep⟩
+    (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
+      ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (u6.rest (by decide))))))
+  refine ⟨⟨?_, ?_, ?_, (keep.gpr .r8 (by decide)).trans pa, (keep.gpr .r9 (by decide)).trans pb,
+    (keep.gpr .r10 (by decide)).trans po, ?_, ?_⟩, ?_, keep⟩
   · rw [u6.other .r5 (by decide), u5.other .r5 (by decide), u4.other .r5 (by decide),
       u3.other .r5 (by decide), u2.other .r5 (by decide), u1.gpr, mt]
   · rw [u6.other .r6 (by decide), u5.other .r6 (by decide), u4.other .r6 (by decide),

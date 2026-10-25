@@ -25,19 +25,19 @@ theorem publicModulus_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen
   rw [PublicFn.modulus, WP.seq_iff]
   refine WP.mono (pcInputs_ok s h.stack.pcStack) ?_
   rintro u ⟨source, count, memU, restU⟩
-  have hu := h.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ptr)
+  have hu := h.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ptr)
   rw [WP.seq_iff]
   refine WP.mono (modulusCheck_ok u hu.buffers.minLength hu.buffers.maxLength hu.buffers.modulus.fits
     hu.buffers.modulus.read source count) ?_
   rintro v ⟨flag, memV, restV⟩
   rw [hu.buffers.modulus.bytes] at flag
-  have hv := hu.of_mem memV restV ((restV.gpr .r0 (by simp)).trans hu.ptr)
-  have rest : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans
-    (restV.mono (by simp [roundClobbers]))
+  have hv := hu.of_mem memV restV ((restV.gpr .r0 (by decide)).trans hu.ptr)
+  have rest : Rest roundClobbers s v := (restU.mono (by decide)).trans
+    (restV.mono (by decide))
   refine WP.ite (Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k) (by change some v.z = _; rw [flag]) ?_ ?_
   · intro valid
     have input : PublicValidInput base dst np ep xp len k eLen nb eb xb v :=
-      ⟨hv, valid, (restV.gpr .r4 (by simp)).trans source, (restV.gpr .r6 (by simp)).trans count⟩
+      ⟨hv, valid, (restV.gpr .r4 (by decide)).trans source, (restV.gpr .r6 (by decide)).trans count⟩
     refine WP.mono (publicValid_ok v input exponent) ?_
     rintro t ⟨result, frame, restT⟩
     rw [memV, memU, rest.sp] at frame

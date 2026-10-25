@@ -42,13 +42,13 @@ theorem newton64_ok (s : State) (a b : Addr)
   rintro t ⟨value, mem5, r5⟩
   refine ⟨?_, mem5.trans (mem4.trans (mem3.trans (mem2.trans mem1))), ?_⟩
   · rw [value, v4, v3, v2, m1,
-      r3.gpr .r10 (by simp), r3.gpr .r1 (by simp),
-      r2.gpr .r10 (by simp [clobbers]), r2.gpr .r1 (by simp [clobbers]),
-      r1.gpr .r10 (by simp), r1.gpr .r1 (by simp),
+      r3.gpr .r10 (by decide), r3.gpr .r1 (by decide),
+      r2.gpr .r10 (by decide), r2.gpr .r1 (by decide),
+      r1.gpr .r10 (by decide), r1.gpr .r1 (by decide),
       BitVec.mul_comm (s.mem.readW b 32 ++ s.mem.readW a 32)]
-  · exact (r1.mono (by simp [newtonClobbers])).trans
-      ((r2.mono (by simp [newtonClobbers, clobbers])).trans
-        ((r3.mono (by simp [newtonClobbers])).trans
-          ((r4.mono (by simp [newtonClobbers, clobbers])).trans (r5.mono (by simp [newtonClobbers])))))
+  · exact (r1.mono (by decide)).trans
+      ((r2.mono (by decide)).trans
+        ((r3.mono (by decide)).trans
+          ((r4.mono (by decide)).trans (r5.mono (by decide)))))
 
 end VG.Proof.Bignum.Arm

@@ -26,10 +26,9 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Proof.Mont.X86.Comb (TableAt)
 
 theorem powerInit_check {n e : Nat} (h : Supported n e) :
-    (VG.Taint.check taint (workspaceTaint false) (VG.Impl.Mont.X86.Comb.powerInit n e (context n))
-      (VG.Taint.hintOf taint (workspaceTaint false) (VG.Impl.Mont.X86.Comb.powerInit n e (context n)))).map
+    ∃ hint, (VG.Taint.check taint (workspaceTaint false) (VG.Impl.Mont.X86.Comb.powerInit n e (context n)) hint).map
       (taint.le (workspaceTaint false))=some true := by
-  rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> taint_decide
+  rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> exact ⟨_, by taint_decide⟩
 
 structure PublicPowerInput (n e m g x : Nat) (base : Addr) (s : State) : Prop where
   ctx : Context n m base (layout n e).size s
@@ -47,7 +46,7 @@ theorem publicPower_relCT {n e : Nat} (h : Supported n e) (base : Addr) (m g x :
     (RelCT.seq (R := VG.X86.Taint.Agree (workspaceTaint false)) (checkedProgramChange (mul_check false _ _ _ _ _ _) rfl)
       (RelCT.block_nil (fun _ _ h => h))))
   · intro s t tr ur sf tf ⟨S,T⟩ Es Et
-    obtain ⟨τ,check,le⟩ := Option.map_eq_some_iff.mp (powerInit_check h)
+    obtain ⟨τ,check,le⟩ := Option.map_eq_some_iff.mp (powerInit_check h).choose_spec
     have CT := checkedProgramChange check le
     have DI : s.gpr .edi=t.gpr .edi := BitVec.eq_of_toNat_eq (S.ctx.scr.edi_toNat.trans T.ctx.scr.edi_toNat.symm)
     have A := agree_regs (rs := [.edi]) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact DI)

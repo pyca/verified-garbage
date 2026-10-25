@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.St
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: copies from the tapes
 
@@ -29,7 +30,7 @@ variable {G : GP}
 
 theorem copyBytes_cert :
     ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r1, .lr]) VG.Impl.Bignum.Arm.copyBytes hc).isSome = true :=
-  ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0, .r1, .lr]) VG.Impl.Bignum.Arm.copyBytes, rfl⟩
+  ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r0, .r1, .lr]) VG.Impl.Bignum.Arm.copyBytes, by kernel_rfl⟩
 
 /-- A copy by `copyBytes`, from `src` to `dst`, with its pointers and length known. -/
 theorem copyBytes_vp {P Q : State → State → Prop} {src dst : BitVec 32} {n : Nat}
@@ -62,7 +63,7 @@ theorem copyR_vp {P Q : State → State → Prop} {c : State → Cfg} {L dst n o
   refine VP.seq (G := P₂) (VP.block_append (G := fun σ t => ∃ s, P σ s ∧ Upd s t .r1 x)
     (ld_vp hF ho h4 hx fun σ s t hs u => ⟨s, hs, u⟩) ?_) ?_
   · refine VP.taint [.r1, .r8] ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r1, .r8])
-        (.block (scr 128 .r0 0 ++ [.movw .lr (BitVec.ofNat 16 5)])), rfl⟩
+        (.block (scr 128 .r0 0 ++ [.movw .lr (BitVec.ofNat 16 5)])), by kernel_rfl⟩
       (fun σ₁ σ₂ s₁ s₂ ⟨_, h₁, u₁⟩ ⟨_, h₂, u₂⟩ r hr => ?_) fun σ t ⟨s, hs, u⟩ => ?_
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl

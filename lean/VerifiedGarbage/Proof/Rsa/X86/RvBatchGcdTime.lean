@@ -97,7 +97,7 @@ open VG.Proof.Rsa (sub32)
   exact batchChoose_relCT (len := 256) (words := 66) pg odd (by decide) (by decide) batchChoice256Check body66_check
     (batchChoose_relCT (len := 384) (words := 98) pg odd (by decide) (by decide) batchChoice384Check body98_check
       (batchChoose_relCT (len := 512) (words := 130) pg odd (by decide) (by decide) batchChoice512Check body130_check
-        (pub_relCT' pg scalarGcdCheck (fun _ h => KS.stage h) (fun _ h => KS.stage h))))
+        (pub_relCT' pg scalarGcdCheck.choose_spec (fun _ h => KS.stage h) (fun _ h => KS.stage h))))
 
  theorem factors_relCT {g : Geo} (pg : PubG g) {s0 t0 : State} {A B V W : Nat → Nat}
     {m y z : Nat} (modA : A aN=m) (modB : B aN=m)
@@ -109,11 +109,11 @@ open VG.Proof.Rsa (sub32)
       VG.Impl.Rsa.X86.RecoverRt.factors (fun _ _ => True) := by
   unfold VG.Impl.Rsa.X86.RecoverRt.factors
   simp only [seqs]
-  refine VG.RelCT.seq (pub_relCT pg gcdSetCheck (fun _ h => KS.stage h) (fun _ h => KS.stage h)
+  refine VG.RelCT.seq (pub_relCT pg gcdSetCheck.choose_spec (fun _ h => KS.stage h) (fun _ h => KS.stage h)
     (fun _ h => gcdSet_ok h modA valueA zeroA oneA)
     (fun _ h => gcdSet_ok h modB valueB zeroB oneB)) ?_
   refine VG.RelCT.seq (stage_relCT (batchGcd_relCT pg odd)
     (fun _ h => batchGcd_ok h odd hm) (fun _ h => batchGcd_ok h odd hm)) ?_
-  exact pub_relCT' pg factorTailCheck (fun _ h => KS.stage h) (fun _ h => KS.stage h)
+  exact pub_relCT' pg factorTailCheck.choose_spec (fun _ h => KS.stage h) (fun _ h => KS.stage h)
 
 end VG.Proof.Rsa.X86.Recover

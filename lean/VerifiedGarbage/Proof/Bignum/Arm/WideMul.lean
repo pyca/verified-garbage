@@ -128,7 +128,7 @@ theorem wideMul_ok (s : State) :
       frame2.regs .r3 (by simp), frame2.regs .r4 (by simp), frame2.regs .r6 (by simp),
       frame2.regs .r9 (by simp), p, cross, a0, a1, b0, b1, mask1]
     exact wide_value _ _
-  all_goals intro r hr; cases r <;> simp_all [clobbers]
+  all_goals decide
 
 /-- No branches or memory addresses depend on either operand. -/
 theorem wideMul_ct : ConstantTime isa (fun _ => True) (fun _ _ => True) (.block wideMul) := by

@@ -69,7 +69,7 @@ theorem neg_fields_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk v j : N
     exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
   all_goals
     simp only [FOp.run,Function.update_apply,ez]
-    simp (disch := grind) only [ite_eq_right,ite_true]
+    simp (disch := nd_find hn) only [ite_eq_right,ite_true]
   · have esub : 0-tmv C K.M.n base s K.E.y = -tmv C K.M.n base s K.E.y := by grind
     by_cases hsign : Window5.nib v j<16
     · simpa only [hsign,decide_true,ite_true,esub] using he.jac.negY

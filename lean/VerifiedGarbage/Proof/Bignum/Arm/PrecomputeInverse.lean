@@ -40,7 +40,7 @@ theorem precomputeInverse_r2_ok (s : State) {base : BitVec 32} {len w : Nat}
     (by rw [rest.sp]; exact stackSep) (by rw [mem, rest.sp]; exact saved)) ?_
   rintro t ⟨ready, number, frame, keep, r2⟩
   rw [mem] at number frame r2
-  exact ⟨ready, number, frame, (rest.mono (by simp [roundClobbers])).trans keep, r2⟩
+  exact ⟨ready, number, frame, (rest.mono (by decide)).trans keep, r2⟩
 
 theorem precomputeInverse_ok (s : State) {base : BitVec 32} {len w : Nat}
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)

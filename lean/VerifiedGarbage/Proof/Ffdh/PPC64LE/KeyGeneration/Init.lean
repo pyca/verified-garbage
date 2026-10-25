@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-! # Native FFDH key-generation initialization on PPC64LE: correctness, constant time -/
 
@@ -27,28 +29,28 @@ open VG.Impl.Ffdh.PPC64LE.Generation (lt clear)
 theorem high_ok (s : State) :
     WP isa (.block high) s fun t => t.gpr .r12 = s.gpr .r4 >>> 11 ∧ t.mem = s.mem := by
   unfold high
-  crun
+  crunr
 
 /-- `validate`: with `p_len < 2^11`, `r12` is 1 exactly for a width in `64..=1024`. -/
 theorem validate_ok (s : State) {n : Nat} (hx : s.gpr .r4 = BitVec.ofNat 64 n) (hn : n < 2 ^ 11) :
     WP isa (.block validate) s fun t =>
       t.gpr .r12 = BitVec.ofNat 64 (if 64 ≤ n ∧ n ≤ 1024 then 1 else 0) ∧ t.mem = s.mem := by
   unfold validate lt
-  crun [hx, List.cons_append, List.nil_append]
+  crunr [hx, List.cons_append, List.nil_append]
   rw [lt_bit (by omega) (by decide), lt_bit (by omega) (by decide)]
   split_ifs <;> first | rfl | (exfalso; omega)
 
 theorem clear_ok {s : State} (h : StateWr s) :
     WP isa (.block clear) s fun t => t.gpr .r3 = 0 ∧ t.mem = initWritten s.mem (s.gpr .r3) 0 0 0 0 := by
   unfold clear initWritten
-  crun [st0 h, st h 8 (by decide), st h 16 (by decide), st h 24 (by decide)]
+  crunr [st0 h, st h 8 (by decide), st h 16 (by decide), st h 24 (by decide)]
   rfl
 
 theorem initialize_ok {s : State} (h : StateWr s) :
     WP isa (.block initializeState) s fun t => t.gpr .r3 = 1 ∧
       t.mem = initWritten s.mem (s.gpr .r3) 128 128 (s.gpr .r4) (s.gpr .r4) := by
   unfold initializeState initWritten
-  crun [st0 h, st h 8 (by decide), st h 16 (by decide), st h 24 (by decide)]
+  crunr [st0 h, st h 8 (by decide), st h 16 (by decide), st h 24 (by decide)]
   rfl
 
 def initPre (s : State) : Prop := s.rd = [] ∧ StateWr s

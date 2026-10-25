@@ -73,7 +73,7 @@ theorem montCallArithmetic_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
     refine WP.mono body ?_
     rintro t ⟨lt, value, keeps, frame, rt⟩
     rw [mem] at lt value keeps frame
-    exact ⟨lt, value, keeps, frame, (rest.mono (by simp)).trans rt⟩
+    exact ⟨lt, value, keeps, frame, (rest.mono (by decide)).trans rt⟩
   · intro _
     have body := montFnBody_ok u ready.input.workspace ready.input.layout ho ha hb ready.input.ptr
       ready.input.outIndex ready.input.aIndex ready.input.bIndex
@@ -83,6 +83,6 @@ theorem montCallArithmetic_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
     refine WP.mono body ?_
     rintro t ⟨lt, value, keeps, frame, rt⟩
     rw [mem] at lt value keeps frame
-    exact ⟨lt, value, keeps, frame, (rest.mono (by simp)).trans rt⟩
+    exact ⟨lt, value, keeps, frame, (rest.mono (by decide)).trans rt⟩
 
 end VG.Proof.Bignum.Arm

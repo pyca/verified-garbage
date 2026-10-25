@@ -41,7 +41,7 @@ private theorem firstLoads_ok (s : State) {base : BitVec 32} {size a m d : Nat}
   · rw [hw.other .r5 (by decide),hv.gpr,hu.mem]
   · rw [hw.gpr,hv.mem,hu.mem]
   · rw [hw.mem,hv.mem,hu.mem]
-  · exact (hu.rest (by simp)).trans ((hv.rest (by simp)).trans (hw.rest (by simp)))
+  · exact (hu.rest (by decide)).trans ((hv.rest (by decide)).trans (hw.rest (by decide)))
 
 theorem first_ok (s : State) {base : BitVec 32} {size a m d n : Nat}
     (ws : Workspace s base size) (fa : a+4≤size) (fm : m+4≤size) (fd : d+4≤size)
@@ -69,7 +69,7 @@ theorem first_ok (s : State) {base : BitVec 32} {size a m d n : Nat}
   rintro v ⟨vp,rv⟩
   have vp' : (v.gpr .r6).toNat+2^32*(v.gpr .r7).toNat=
       w32 s.mem (State.addr base) d+(s.gpr .r1).toNat*w32 s.mem (State.addr base) a := by
-    rw [ua,ud,ru.gpr .r1 (by simp),ru.gpr .r7 (by simp),c7] at vp
+    rw [ua,ud,ru.gpr .r1 (by decide),ru.gpr .r7 (by decide),c7] at vp
     simpa only [w32,show (0 : BitVec 32).toNat=0 from rfl,Nat.add_zero,Nat.zero_add,Nat.mul_comm,Nat.add_comm] using vp
   have low : v.gpr .r6=BitVec.ofNat 32
       (w32 s.mem (State.addr base) d+(s.gpr .r1).toNat*w32 s.mem (State.addr base) a) := by
@@ -81,15 +81,15 @@ theorem first_ok (s : State) {base : BitVec 32} {size a m d n : Nat}
   refine wp_mul fun w hw => WP.block_nil ?_
   have q : w.gpr .r2=s.gpr .r2*BitVec.ofNat 32
       (w32 s.mem (State.addr base) d+(s.gpr .r1).toNat*w32 s.mem (State.addr base) a) := by
-    rw [hw.gpr,rv.regs .r2 (by simp),ru.gpr .r2 (by simp),low]
+    rw [hw.gpr,rv.regs .r2 (by decide),ru.gpr .r2 (by decide),low]
   rw [WP.seq_iff]
   refine WP.mono (umaal_ok w .r6 .r8 .r5 .r2 (by decide)) ?_
   rintro z ⟨zc,rz⟩
   have zc' : (z.gpr .r6).toNat+2^32*(z.gpr .r8).toNat=
       w32 s.mem (State.addr base) m*(w.gpr .r2).toNat+(v.gpr .r6).toNat := by
-    rw [hw.other .r5 (by decide),rv.regs .r5 (by simp),um,
-      hw.other .r6 (by decide),hw.other .r8 (by decide),rv.regs .r8 (by simp),
-      ru.gpr .r8 (by simp),c8] at zc
+    rw [hw.other .r5 (by decide),rv.regs .r5 (by decide),um,
+      hw.other .r6 (by decide),hw.other .r8 (by decide),rv.regs .r8 (by decide),
+      ru.gpr .r8 (by decide),c8] at zc
     simpa only [w32,show (0 : BitVec 32).toNat=0 from rfl,Nat.add_zero] using zc
   have z0 : z.gpr .r6=0 := by
     apply BitVec.eq_of_toNat_eq
@@ -112,16 +112,16 @@ theorem first_ok (s : State) {base : BitVec 32} {size a m d n : Nat}
   have value : 2^32*((z.gpr .r7).toNat+(z.gpr .r8).toNat)=
       w32 s.mem (State.addr base) d+(s.gpr .r1).toNat*w32 s.mem (State.addr base) a+
         (w.gpr .r2).toNat*w32 s.mem (State.addr base) m := by
-    rw [rz.regs .r7 (by simp),hw.other .r7 (by decide)]
+    rw [rz.regs .r7 (by decide),hw.other .r7 (by decide)]
     rw [z0] at zc'
     change 0+2^32*(z.gpr .r8).toNat=_ at zc'
     rw [Nat.mul_comm (w32 s.mem (State.addr base) m) (w.gpr .r2).toNat] at zc'
     omega
   have rests : Rest [.r2,.r3,.r5,.r6,.r7,.r8] s z :=
-    (ru.mono (by simp)).trans
-      ((show Rest [.r6,.r7] u v from ⟨rv.regs,rv.rd,rv.wr,rv.sp⟩).mono (by simp) |>.trans
-        ((hw.rest (by simp)).trans
-          ((show Rest [.r6,.r8] w z from ⟨rz.regs,rz.rd,rz.wr,rz.sp⟩).mono (by simp))))
+    (ru.mono (by decide)).trans
+      ((show Rest [.r6,.r7] u v from ⟨rv.regs,rv.rd,rv.wr,rv.sp⟩).mono (by decide) |>.trans
+        ((hw.rest (by decide)).trans
+          ((show Rest [.r6,.r8] w z from ⟨rz.regs,rz.rd,rz.wr,rz.sp⟩).mono (by decide))))
   have mz : z.mem=s.mem := rz.mem.trans (hw.mem.trans (rv.mem.trans mu))
   change WP isa (.block VG.Impl.Bignum.Arm.Fios.firstNext) z _
   unfold VG.Impl.Bignum.Arm.Fios.firstNext
@@ -132,23 +132,23 @@ theorem first_ok (s : State) {base : BitVec 32} {size a m d n : Nat}
   · rw [ht.other .r7 (by decide),ht.other .r8 (by decide),h2.other .r7 (by decide),
       h2.other .r8 (by decide),h1.other .r7 (by decide),h1.other .r8 (by decide),
       ht.other .r2 (by decide),h2.other .r2 (by decide),h1.other .r2 (by decide),
-      rz.regs .r2 (by simp)]
+      rz.regs .r2 (by decide)]
     exact value
-  · rw [ht.other .r2 (by decide),h2.other .r2 (by decide),h1.other .r2 (by decide),rz.regs .r2 (by simp)]
+  · rw [ht.other .r2 (by decide),h2.other .r2 (by decide),h1.other .r2 (by decide),rz.regs .r2 (by decide)]
     exact q
   · rw [ht.other .r0 (by decide),h2.other .r0 (by decide),h1.other .r0 (by decide),
-      rests.gpr .r0 (by simp),pd]
+      rests.gpr .r0 (by decide),pd]
   · rw [ht.other .r12 (by decide),h2.other .r12 (by decide),h1.gpr,dpVal,
-      rests.gpr .r12 (by simp),pa]
+      rests.gpr .r12 (by decide),pa]
     exact Offset.add_add _ _ _
-  · rw [ht.other .r4 (by decide),h2.gpr,dpVal,h1.other .r4 (by decide),rests.gpr .r4 (by simp),pm]
+  · rw [ht.other .r4 (by decide),h2.gpr,dpVal,h1.other .r4 (by decide),rests.gpr .r4 (by decide),pm]
     exact Offset.add_add _ _ _
-  · rw [ht.gpr,h2.other .lr (by decide),h1.other .lr (by decide),rests.gpr .lr (by simp),cnt]
+  · rw [ht.gpr,h2.other .lr (by decide),h1.other .lr (by decide),rests.gpr .lr (by decide),cnt]
     exact BitVec.ofNat_sub_ofNat_of_le n 1 (by decide) (by omega)
-  · rw [ht.other .r1 (by decide),h2.other .r1 (by decide),h1.other .r1 (by decide),rests.gpr .r1 (by simp)]
+  · rw [ht.other .r1 (by decide),h2.other .r1 (by decide),h1.other .r1 (by decide),rests.gpr .r1 (by decide)]
   · rw [ht.mem,h2.mem,h1.mem,mz]
-  · exact (rests.mono (by simp [roundClobbers])).trans
-      ((h1.rest (by simp [roundClobbers])).trans
-        ((h2.rest (by simp [roundClobbers])).trans (ht.rest (by simp [roundClobbers]))))
+  · exact (rests.mono (by decide)).trans
+      ((h1.rest (by decide)).trans
+        ((h2.rest (by decide)).trans (ht.rest (by decide))))
 
 end VG.Proof.Bignum.Arm.Fios

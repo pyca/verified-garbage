@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on PPC64LE: p and `(p − 1) / q`
 
@@ -111,13 +112,13 @@ theorem pLoads_vp {xb qb : List Byte}
   have w1 : 4 * G.w = G.pLen := by simp only [GP.w]; omega
   refine VP.seq ksEnter_vp (VP.seq ksSetup_vp ?_)
   refine VP.seq (loadS_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31, .r6, .r8])
-    (VG.Impl.Rsa.PPC64LE.CrtValues.load aQt), rfl⟩ (by decide) (by simp [aQt]) rfl (by exact hx) hxl (by omega) (by omega)
+    (VG.Impl.Rsa.PPC64LE.CrtValues.load aQt), by kernel_rfl⟩ (by decide) (by simp [aQt]) rfl (by exact hx) hxl (by omega) (by omega)
     (by decide) (by omega)) ?_
   refine VP.seq (loadS_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31, .r6, .r8])
-    (VG.Impl.Rsa.PPC64LE.CrtValues.load aX), rfl⟩ (by decide) (by simp [aX]) rfl (by exact hx) hxl (by omega) (by omega)
+    (VG.Impl.Rsa.PPC64LE.CrtValues.load aX), by kernel_rfl⟩ (by decide) (by simp [aX]) rfl (by exact hx) hxl (by omega) (by omega)
     (by decide) (by omega)) ?_
   refine (loadS_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31, .r6, .r8])
-    (VG.Impl.Rsa.PPC64LE.CrtValues.load aDv), rfl⟩ (by decide) (by simp [aDv]) rfl (by exact hqc) hql (by omega)
+    (VG.Impl.Rsa.PPC64LE.CrtValues.load aDv), by kernel_rfl⟩ (by decide) (by simp [aDv]) rfl (by exact hqc) hql (by omega)
     (by omega) (by decide) (by omega)).mono (fun _ _ h => h) fun σ s ⟨⟨⟨h, x⟩, kr⟩, top⟩ => ⟨⟨⟨h.mono
       (fun o ho => ⟨ho, rfl⟩) (fun y hy => hy) (fun j hj => ⟨?_, rfl⟩) (fun d hd => ⟨hd, rfl⟩), x⟩, kr⟩, top⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
@@ -127,7 +128,7 @@ theorem pDivide_vp {x q : Nat} (hpos : 0 < q) :
     VP (fun σ s => KSt G (cL c x q) X σ s ∧ TopAll G s.mem) (VG.Impl.Rsa.PPC64LE.Div.div aQt aRm aDv aDt)
       (KSt G (cD c x q) X) := by
   refine (div_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
-    (VG.Impl.Rsa.PPC64LE.Div.div aQt aRm aDv aDt), rfl⟩ (by decide) (by decide) (by decide) (by decide)
+    (VG.Impl.Rsa.PPC64LE.Div.div aQt aRm aDv aDt), by kernel_rfl⟩ (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp)
     (by simp [aDt, aDv, aX, aQt, aOne, aZero]) (by arr_simp; exact hpos)).mono (fun _ _ h => h) fun σ s ⟨⟨h, x⟩, kr⟩ => ⟨⟨h.mono
     (fun o ho => ⟨ho, rfl⟩) (fun y hy => hy) (fun j hj => ?_) (fun d hd => ⟨hd, rfl⟩), x⟩, kr⟩
@@ -140,15 +141,15 @@ theorem pPm1_vp {x q : Nat} :
         sub3 aPm1 aT aS])
       (KSt G (cM c x q) X) := by
   refine VP.seq (sub3_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
-    (sub3 aT aX aRm), rfl⟩ (by decide) (by simp [aX]) (by simp [aRm]) (by decide) (by decide)
+    (sub3 aT aX aRm), by kernel_rfl⟩ (by decide) (by simp [aX]) (by simp [aRm]) (by decide) (by decide)
     (by arr_simp; exact Nat.mod_le _ _)) ?_
   refine VP.seq (bitOf_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
-    (.block (bitOf slOdd aQt)), rfl⟩ (by simp [aQt]) (by decide)) ?_
+    (.block (bitOf slOdd aQt)), by kernel_rfl⟩ (by simp [aQt]) (by decide)) ?_
   refine VP.seq (sel_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
-    (sel aS aZero aDv slOdd), rfl⟩ (by decide) (by simp [aZero]) (by simp [aDv]) (by decide) (by decide)
+    (sel aS aZero aDv slOdd), by kernel_rfl⟩ (by decide) (by simp [aZero]) (by simp [aDv]) (by decide) (by decide)
     (by simp) (by arr_simp; exact Nat.le_of_lt_succ (Nat.mod_lt _ (by decide)))) ?_
   refine (sub3_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
-    (sub3 aPm1 aT aS), rfl⟩ (by decide) (by simp [aT]) (by simp [aS]) (by decide) (by decide)
+    (sub3 aPm1 aT aS), by kernel_rfl⟩ (by decide) (by simp [aT]) (by simp [aS]) (by decide) (by decide)
     (by
       arr_simp
       split
@@ -187,20 +188,20 @@ theorem pTail_vp {x q : Nat} (hq : 2 ^ (8 * G.qLen - 1) ≤ q)
   have hkB : sE + G.pLen ≤ kB G.pLen := by rcases hlq with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
   have eB : eBytes G.pLen G.qLen ≤ G.pLen := by simp only [eBytes]; omega
   refine VP.seq (copy_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
-    (copy aP aPm1), rfl⟩ (by decide) (by simp [aPm1]) (by decide)) ?_
+    (copy aP aPm1), by kernel_rfl⟩ (by decide) (by simp [aPm1]) (by decide)) ?_
   refine VP.seq (orOne_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
-    (.block (orOne aP)), rfl⟩ (by simp [aP])) ?_
+    (.block (orOne aP)), by kernel_rfl⟩ (by simp [aP])) ?_
   refine VP.seq (copy_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
-    (copy aE aQt), rfl⟩ (by decide) (by simp [aQt]) (by decide)) ?_
+    (copy aE aQt), by kernel_rfl⟩ (by decide) (by simp [aQt]) (by decide)) ?_
   refine VP.seq (clrLow_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
-    (.block (clrLow aE)), rfl⟩ (by simp [aE])) ?_
+    (.block (clrLow aE)), by kernel_rfl⟩ (by simp [aE])) ?_
   refine VP.seq (storeS_vp (o := sPBE) (n := G.pLen) ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
-    (Taint.ofRegs [.r28, .r29, .r30, .r31, .r5, .r8, .r9]) (VG.Impl.Rsa.PPC64LE.CrtValues.storeBytes aP), rfl⟩
+    (Taint.ofRegs [.r28, .r29, .r30, .r31, .r5, .r8, .r9]) (VG.Impl.Rsa.PPC64LE.CrtValues.storeBytes aP), by kernel_rfl⟩
     (by simp [aP]) (by omega) (by omega) (by decide) (by omega)
     (fun σ s ⟨h, _⟩ => by have := h.gi.wBig; have := h.gi.kBig; simp only [ClOk, List.length_replicate]; omega)
     (cl' := rest) fun y hy => ⟨(hrest y hy).1, (hrest y hy).2.1⟩) ?_
   refine (storeS_vp (o := sE) (n := eBytes G.pLen G.qLen) ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
-    (Taint.ofRegs [.r28, .r29, .r30, .r31, .r5, .r8, .r9]) (VG.Impl.Rsa.PPC64LE.CrtValues.storeBytes aE), rfl⟩
+    (Taint.ofRegs [.r28, .r29, .r30, .r31, .r5, .r8, .r9]) (VG.Impl.Rsa.PPC64LE.CrtValues.storeBytes aE), by kernel_rfl⟩
     (by simp [aE]) (by simp only [eBytes]; omega) (by omega) (by decide) (by omega)
     (fun σ s ⟨h, _⟩ => by have := h.gi.wBig; have := h.gi.kBig; simp only [ClOk, List.length_replicate]; omega)
     (cl' := (sPBE, Spec.Rsa.i2osp (pVal x q) G.pLen) :: rest) fun y hy => ?_).mono (fun _ _ h => h)

@@ -18,7 +18,6 @@ meta import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 namespace VG.Proof.Rsa.X86.InvTiming
 open VG VG.X86
  theorem fallback_check :
-    (VG.Taint.check sseTaint τ (VG.Impl.Rsa.X86.KeyRt.inverse VG.Impl.Rsa.X86.CrtValuesRt.lay)
-      (VG.Taint.hintOf sseTaint τ (VG.Impl.Rsa.X86.KeyRt.inverse VG.Impl.Rsa.X86.CrtValuesRt.lay))).isSome=true := by
-  taint_decide
+    ∃ hint,(VG.Taint.check sseTaint τ (VG.Impl.Rsa.X86.KeyRt.inverse VG.Impl.Rsa.X86.CrtValuesRt.lay)
+      hint).isSome=true := ⟨_, by taint_decide⟩
 end VG.Proof.Rsa.X86.InvTiming

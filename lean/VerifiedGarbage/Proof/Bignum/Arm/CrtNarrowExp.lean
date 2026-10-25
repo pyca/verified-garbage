@@ -57,12 +57,12 @@ theorem crt_exponentArgs_ok (s : State) {base ep : BitVec 32} {len v M x eLen es
     (by rw [a.sp]; exact addr_add (by have := h.stackFit; omega)) (by rw [a.rd, a.wr]; exact h.countRead)
     fun t b => WP.block_nil ?_
   exact ⟨by rw [b.other .r1 (by decide), a.gpr, h.pointer], by rw [b.gpr, a.mem, h.count],
-    b.mem.trans a.mem, (a.rest (by simp)).trans (b.rest (by simp))⟩
+    b.mem.trans a.mem, (a.rest (by decide)).trans (b.rest (by decide))⟩
 
 theorem NarrowExpInput.of_mem {s t : State} {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}
     (h : NarrowExpInput base ep len v M x eLen es eb s) (mem : t.mem = s.mem) (rest : Rest [.r1, .r2] s t) :
     NarrowExpInput base ep len v M x eLen es eb t := by
-  refine ⟨h.ready.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ready.ptr), by rw [mem]; exact h.modulus, h.odd,
+  refine ⟨h.ready.of_mem mem rest ((rest.gpr .r0 (by decide)).trans h.ready.ptr), by rw [mem]; exact h.modulus, h.odd,
     by rw [mem]; exact h.input, by rw [mem]; exact h.r2, by rw [rest.sp]; exact h.stackFit, h.slotSmall,
     by rw [rest.rd, rest.wr, rest.sp]; exact h.pointerRead, by rw [rest.rd, rest.wr, rest.sp]; exact h.countRead,
     by rw [mem, rest.sp]; exact h.pointer, by rw [mem, rest.sp]; exact h.count,
@@ -77,7 +77,7 @@ theorem crt_narrowControls_ready (s : State) {base ep : BitVec 32} {len v M x eL
       Rest roundClobbers s t := by
   refine WP.mono (expControls_ok s h.ready) ?_
   rintro t ⟨ready, pointer, count, arrays, frame, rest⟩
-  have restT : Rest roundClobbers s t := rest.mono (by simp)
+  have restT : Rest roundClobbers s t := rest.mono (by decide)
   have exponent := h.exponent.after_frame frame restT
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.separate)
   have positive : 0 < M := by have := h.ready.modulus; rw [h.modulus] at this; omega
@@ -108,6 +108,6 @@ theorem crt_narrowExp_ok (s : State) {base ep : BitVec 32} {len v M x eLen es : 
   refine WP.mono (kernel.correct z input h.tableFits) ?_
   rintro t ⟨ready, value, _, _, _, frameT, restT⟩
   rw [memU] at frameZ
-  exact ⟨ready, value, frameZ.trans frameT, (restU.mono (by simp [roundClobbers])).trans (restZ.trans restT)⟩
+  exact ⟨ready, value, frameZ.trans frameT, (restU.mono (by decide)).trans (restZ.trans restT)⟩
 
 end VG.Proof.Bignum.Arm

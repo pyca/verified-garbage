@@ -33,7 +33,7 @@ theorem smallConstArgs_ok (s : State) (o value : BitVec 32)
   refine wp_mov (op2_imm ho) fun u h => ?_
   refine wp_mov (op2_imm hv) fun t j => WP.block_nil ?_
   exact ⟨(j.other .r2 (by decide)).trans h.gpr, j.gpr, j.mem.trans h.mem,
-    (h.rest (by simp)).trans (j.rest (by simp))⟩
+    (h.rest (by decide)).trans (j.rest (by decide))⟩
 
 theorem smallConst_ok (s : State) {base : BitVec 32} {len w o : Nat} (value : BitVec 32)
     (h : ArithmeticReady base len w s) (ho : o < 8) (ho0 : o ≠ 0)
@@ -46,11 +46,11 @@ theorem smallConst_ok (s : State) {base : BitVec 32} {len w o : Nat} (value : Bi
   rw [smallConst, WP.seq_iff]
   refine WP.mono (smallConstArgs_ok s _ value encO encV) ?_
   rintro u ⟨index, val, mem, rest⟩
-  have ready := h.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ptr)
+  have ready := h.of_mem mem rest ((rest.gpr .r0 (by decide)).trans h.ptr)
   refine WP.mono (ArithmeticReady.setSmall u ready ho ho0 index) ?_
   rintro t ⟨next, number, low, keeps, frame, keep⟩
   rw [val] at number low
   rw [mem] at keeps frame
-  exact ⟨next, number, low, keeps, frame, (rest.mono (by simp [roundClobbers])).trans keep⟩
+  exact ⟨next, number, low, keeps, frame, (rest.mono (by decide)).trans keep⟩
 
 end VG.Proof.Bignum.Arm

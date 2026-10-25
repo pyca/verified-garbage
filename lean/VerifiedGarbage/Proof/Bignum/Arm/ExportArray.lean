@@ -64,9 +64,9 @@ theorem exportArray_ok (s : State) {base dst : BitVec 32} {len w o : Nat}
   rw [srcAddr, mem] at value
   rw [mem] at frame
   refine ⟨by rw [moved.mem]; exact value, by rw [moved.mem]; exact frame, ?_, ?_, ?_⟩
-  · rw [moved.gpr, keep.gpr .r5 (by simp), saved]
-  · rw [moved.other .r4 (by decide), keep.gpr .r4 (by simp), rest.gpr .r4 (by simp), output]
-  · exact (rest.mono (by simp [roundClobbers])).trans
-      ((keep.mono (by simp [roundClobbers])).trans (moved.rest (by simp [roundClobbers])))
+  · rw [moved.gpr, keep.gpr .r5 (by decide), saved]
+  · rw [moved.other .r4 (by decide), keep.gpr .r4 (by decide), rest.gpr .r4 (by decide), output]
+  · exact (rest.mono (by decide)).trans
+      ((keep.mono (by decide)).trans (moved.rest (by decide)))
 
 end VG.Proof.Bignum.Arm

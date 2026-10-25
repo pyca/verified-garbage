@@ -149,7 +149,7 @@ theorem squareOp_ok (s : State) {base : BitVec 32} {len w o a : Nat}
   rw [squareOp, WP.seq_iff]
   refine WP.mono (montOpArgs_ok s ho.1 ha.1 ha.1) ?_
   rintro u ⟨po, pa, pb, memU, restU⟩
-  have ready := h.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ptr)
+  have ready := h.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ptr)
   have body := squareBody_ok u ready.workspace ready.layout ho ha ready.ptr po pa pb
     (by rw [ready.width]; exact ready.inverse) (by rw [ready.width, memU]; exact operand)
     ready.stackRead ready.stackSep ready.saved
@@ -162,8 +162,8 @@ theorem squareOp_ok (s : State) {base : BitVec 32} {len w o a : Nat}
   rintro t ⟨ptr, memT, restT⟩
   rw [memU] at bound value keeps frame
   rw [← memT] at bound value keeps frame
-  have rest : Rest roundClobbers s t := (restU.mono (by simp [roundClobbers])).trans
-    (restV.trans (restT.mono (by simp [roundClobbers])))
+  have rest : Rest roundClobbers s t := (restU.mono (by decide)).trans
+    (restV.trans (restT.mono (by decide)))
   obtain ⟨final, modulus⟩ := h.after_array ho0 keeps frame rest ptr
   exact ⟨final, modulus, bound, value, keeps, frame, rest⟩
 

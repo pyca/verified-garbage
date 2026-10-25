@@ -45,10 +45,10 @@ theorem code_ok (s : State) :
   · rw [low13, high13]
     simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq] using VG.Proof.RsaKeyGen.Arm.Cand.pw_val (s.gpr .r1).toNat
   · rw [u13.mem, u12.mem, u11.mem, u10.mem, u9.mem, u8.mem, m7, m6, m5, m4, m3, u2.mem, u1.mem]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
-      (((k3.trans (k4.trans (k5.trans (k6.trans k7)))).mono (by simp)).trans
-        ((u8.rest (by simp)).trans ((u9.rest (by simp)).trans ((u10.rest (by simp)).trans
-          ((u11.rest (by simp)).trans ((u12.rest (by simp)).trans (u13.rest (by simp)))))))))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
+      (((k3.trans (k4.trans (k5.trans (k6.trans k7)))).mono (by decide)).trans
+        ((u8.rest (by decide)).trans ((u9.rest (by decide)).trans ((u10.rest (by decide)).trans
+          ((u11.rest (by decide)).trans ((u12.rest (by decide)).trans (u13.rest (by decide)))))))))
 
 theorem code_word_ok (s : State) :
     WP isa (.block VG.Impl.Bignum.Arm.TwoPower.code) s fun t =>

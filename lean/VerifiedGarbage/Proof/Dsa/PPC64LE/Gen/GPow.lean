@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Bytes
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSLoad
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.KSStore
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Test
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on PPC64LE: `h^((p − 1) / q) mod p` as a piece
 
@@ -130,7 +131,7 @@ theorem powA_vp {pv : Nat} (hPc : (sPBE, Spec.Rsa.i2osp pv G.pLen) ∈ c.cl) (hp
     (hp2 : 2 ≤ pv) (hcl : ∀ x ∈ c.cl, Apart pB (pZ G.pLen) x) :
     VP (St G c X) (powA G.pLen) (PA G c X pv) := by
   refine VP.pub (SS.pub fun σ s h => h.1) [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
-    (powA G.pLen), rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s ⟨h, x⟩ => ?_
+    (powA G.pLen), by kernel_rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s ⟨h, x⟩ => ?_
   have gi := h.gi
   have ⟨pb, _⟩ := gi.pBig
   have l := gi.lens3
@@ -157,7 +158,7 @@ abbrev PE (G : GP) (c : Cfg) (X : State → Prop) (pv : Nat) (H : Addr) (σ s : 
 theorem hPtr_vp {pv : Nat} {H : Addr} (hH : fH ∈ c.LS) (hHv : c.V fH = H) :
     VP (PA G c X pv) (.block [ld .r12 fH, .li .r6 G.pLen]) (PE G c X pv H) := by
   refine VP.pub (SS.pub fun σ s h => h.1.1) [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28])
-    (.block [ld .r12 fH, .li .r6 G.pLen]), rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
+    (.block [ld .r12 fH, .li .r6 G.pLen]), by kernel_rfl⟩ (fun _ _ _ _ _ _ _ h => absurd h (by simp))
     fun σ s ⟨⟨h, x⟩, en, a21, a23, v0, z0, v1⟩ => ?_
   have l := h.lens
   have hE := h.gi.hEnd_le
@@ -242,7 +243,7 @@ theorem gStore_vp {g : Nat} (hg : g < 2 ^ (8 * G.pLen)) (hcl : ∀ x ∈ c.cl, A
       (St G { c with cl := (sG, Spec.Rsa.i2osp g G.pLen) :: c.cl } X) := by
   refine VP.pub (SS.pub fun σ s h => h.1.1) [.r10, .r29] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64
     (Taint.ofRegs [.r28, .r10, .r29]) (.seq (.block [scr .r12 sG, .li .r6 G.pLen]) (VG.Impl.Dsa.PPC64LE.storeBE 4)),
-    rfl⟩ (fun σ₁ σ₂ s₁ s₂ ⟨_, e₁, _⟩ ⟨_, e₂, _⟩ r hr => by
+    by kernel_rfl⟩ (fun σ₁ σ₂ s₁ s₂ ⟨_, e₁, _⟩ ⟨_, e₂, _⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [e₁.h10, e₂.h10]

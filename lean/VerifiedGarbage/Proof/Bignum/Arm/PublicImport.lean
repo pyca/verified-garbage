@@ -22,7 +22,7 @@ theorem publicImport_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen 
   rw [PublicFn.importInput, WP.seq_iff]
   refine WP.mono (publicInputArgs_ok s h.stack) ?_
   rintro u ⟨source, count, memU, restU⟩
-  have hu := h.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ready.ptr)
+  have hu := h.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ready.ptr)
   have dims := pc_dimensions hu.buffers.minLength hu.buffers.maxLength hu.buffers.space
   refine WP.mono (importOperand_ok u hu.ready (by decide : 1 < 8) (by decide)
     (by have := hu.buffers.minLength; omega) dims.2.2.2.1 hu.buffers.input.fits
@@ -31,6 +31,6 @@ theorem publicImport_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen 
   rw [hu.buffers.input.bytes] at value
   have ht := hu.after_array ready keeps frameT restT (by decide) (by decide)
   rw [memU] at frameT
-  exact ⟨⟨ht, value⟩, frameT, (restU.mono (by simp [roundClobbers])).trans restT⟩
+  exact ⟨⟨ht, value⟩, frameT, (restU.mono (by decide)).trans restT⟩
 
 end VG.Proof.Bignum.Arm

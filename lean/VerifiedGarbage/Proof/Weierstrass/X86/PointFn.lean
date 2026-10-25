@@ -197,7 +197,7 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hF : FnOk S) (ho
       rw [u₄.gpr, hsaved]
     · have hr' : r ∉ [Reg.eax, .ecx, .edx] := by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp_all
+        rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
       rw [u₄.other _ hb, K.gpr r hr', g₁ r (by simp_all) hb]
   · -- The return address.
     rw [m₄]

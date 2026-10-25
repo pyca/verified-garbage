@@ -39,9 +39,9 @@ theorem next_ok {base source table : BitVec 32} {len w bytes N M g E i : Nat}
     omega
   refine WP.mono (expDecrement_ok s h.ready.workspace (by omega) h.ready.ptr (by omega) fits counter) ?_
   rintro t ⟨mem,flag,rest⟩
-  have r : Rest roundClobbers s t := rest.mono (by simp [roundClobbers])
+  have r : Rest roundClobbers s t := rest.mono (by decide)
   obtain ⟨powerT,frame⟩ := h.after_header (d:=192) (by decide) (by decide) mem rest
-    ((rest.gpr .r0 (by simp)).trans h.ready.ptr)
+    ((rest.gpr .r0 (by decide)).trans h.ready.ptr)
   refine ⟨powerT,A.stable frame r hp,controls.after_counter mem,?_,?_,
     frame.mono (by simpa using A.workspace),r⟩
   · change t.mem.readW (off (State.addr base) 192) 32=BitVec.ofNat 32 i

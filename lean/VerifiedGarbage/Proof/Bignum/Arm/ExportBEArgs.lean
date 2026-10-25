@@ -25,8 +25,8 @@ theorem exportBETail_ok (s : State) {k : Nat} (hk : 0 < k) (count : s.gpr .r6 = 
   refine wp_dp (op2_imm (by decide)) fun q d => ?_
   refine wp_mov (op2_reg _ _) fun t e => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, e.mem.trans (d.mem.trans (c.mem.trans (b.mem.trans a.mem))),
-    (a.rest (by simp)).trans ((b.rest (by simp)).trans ((c.rest (by simp)).trans
-      ((d.rest (by simp)).trans (e.rest (by simp)))))⟩
+    (a.rest (by decide)).trans ((b.rest (by decide)).trans ((c.rest (by decide)).trans
+      ((d.rest (by decide)).trans (e.rest (by decide)))))⟩
   · rw [e.gpr, d.other .r4 (by decide), c.other .r4 (by decide), b.other .r4 (by decide), a.other .r4 (by decide)]
   · rw [e.other .r1 (by decide), d.gpr, dpVal, c.gpr, dpVal, b.other .r1 (by decide),
       a.other .r1 (by decide), b.other .r6 (by decide), a.other .r6 (by decide), count]
@@ -48,10 +48,10 @@ theorem exportBEArgs_ok (s : State) {base : BitVec 32} {size w o k : Nat}
   rw [exportBEArgs, WP.block_append_iff]
   refine WP.mono (loadArray_ok s .r1 .r2 ws (by omega) ptr index (header.array o ho)) ?_
   rintro u ⟨array, mem, rest⟩
-  refine WP.mono (exportBETail_ok u hk ((rest.gpr .r6 (by simp)).trans count)) ?_
+  refine WP.mono (exportBETail_ok u hk ((rest.gpr .r6 (by decide)).trans count)) ?_
   rintro t ⟨out, src, countT, saved, memT, keep⟩
   rw [array] at src
-  exact ⟨out.trans (rest.gpr .r4 (by simp)), src, countT, saved.trans ((rest.gpr .r0 (by simp)).trans ptr),
-    memT.trans mem, (rest.mono (by simp)).trans (keep.mono (by simp))⟩
+  exact ⟨out.trans (rest.gpr .r4 (by decide)), src, countT, saved.trans ((rest.gpr .r0 (by decide)).trans ptr),
+    memT.trans mem, (rest.mono (by decide)).trans (keep.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

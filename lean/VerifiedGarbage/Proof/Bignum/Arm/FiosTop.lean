@@ -37,24 +37,24 @@ theorem top_ok (s : State) {base : BitVec 32} {size d : Nat}
       (by rw [h.other .r0 (by decide)];exact ws.ea ptr (by omega))
       (by rw [h.rd,h.wr];exact ws.read (by omega)) fun v k => WP.block_nil ?_
     exact ⟨(k.other .r3 (by decide)).trans h.gpr,by rw [k.gpr,h.mem],
-      k.mem.trans h.mem,(h.rest (by simp)).trans (k.rest (by simp))⟩
+      k.mem.trans h.mem,(h.rest (by decide)).trans (k.rest (by decide))⟩
   refine WP.mono loads ?_
   rintro u ⟨low,high,memU,restU⟩
-  have carry7 : u.gpr .r7=s.gpr .r7 := restU.gpr .r7 (by simp)
-  have carry8 : u.gpr .r8=s.gpr .r8 := restU.gpr .r8 (by simp)
+  have carry7 : u.gpr .r7=s.gpr .r7 := restU.gpr .r7 (by decide)
+  have carry8 : u.gpr .r8=s.gpr .r8 := restU.gpr .r8 (by decide)
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok u .r7 (by
     rw [low,high,carry7];dsimp only [w32] at bound;omega)) ?_
   rintro v ⟨value7,frame7⟩
   have carry8v : v.gpr .r8=s.gpr .r8 :=
-    (frame7.regs .r8 (by simp)).trans carry8
+    (frame7.regs .r8 (by decide)).trans carry8
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok v .r8 (by
     rw [value7,low,high,carry7,carry8v];dsimp only [w32] at bound;omega)) ?_
   rintro z ⟨value8,frame8⟩
   have frame := frame7.trans frame8
   have pz : z.gpr .r0=base+BitVec.ofNat 32 d :=
-    (frame.regs .r0 (by simp)).trans ((restU.gpr .r0 (by simp)).trans ptr)
+    (frame.regs .r0 (by decide)).trans ((restU.gpr .r0 (by decide)).trans ptr)
   have mz : z.mem=s.mem := frame.mem.trans memU
   have wz : z.wr=s.wr := frame.wr.trans restU.wr
   have wsz := ws.congr wz
@@ -73,8 +73,8 @@ theorem top_ok (s : State) {base : BitVec 32} {size d : Nat}
   · rw [ht.gpr,dpVal,hb.gpr,ha.gpr,pz]
     exact Offset.add_add _ _ _
   · have rz : Rest [.r3,.r4] s z := restU.trans ⟨frame.regs,frame.rd,frame.wr,frame.sp⟩
-    exact (rz.mono (by simp)).trans ((ha.rest _).trans
-      ((hb.rest _).trans (ht.rest (by simp))))
+    exact (rz.mono (by decide)).trans ((ha.rest _).trans
+      ((hb.rest _).trans (ht.rest (by decide))))
 
 theorem top_memory_outside {s t : State} {base : BitVec 32} {size d : Nat}
     (ws : Workspace s base size) (fit : d+8≤size)

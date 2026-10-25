@@ -35,7 +35,7 @@ theorem smallConstLayout_ok (s : State) {base : BitVec 32} {len w o : Nat} (valu
   refine WP.mono (smallConstArgs_ok s _ value encO encV) ?_
   rintro u ⟨index, val, mem, rest⟩
   have body := setSmallFn_ok u (ws.congr rest.wr) (by rw [mem]; exact layout) ho
-    ((rest.gpr .r0 (by simp)).trans ptr) index
+    ((rest.gpr .r0 (by decide)).trans ptr) index
     (by rw [rest.rd, rest.wr, rest.sp]; exact stackRead) (by rw [rest.sp]; exact stackSep)
     (by rw [mem, rest.sp]; exact saved)
   have widthU : wOf u.mem (State.addr base) = w := by rw [mem]; exact width
@@ -47,6 +47,6 @@ theorem smallConstLayout_ok (s : State) {base : BitVec 32} {len w o : Nat} (valu
   have keeps := outside_array_keeps outside (len := len) (by have := ws.nowrap; omega)
   have kl := keeps_layout layout (by rw [width]; exact keeps)
   exact ⟨kl.2, kl.1.trans width, number, outside, frame,
-    (rest.mono (by simp [roundClobbers])).trans keep, out⟩
+    (rest.mono (by decide)).trans keep, out⟩
 
 end VG.Proof.Bignum.Arm

@@ -29,7 +29,7 @@ theorem publicFailArgs_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLe
   refine wp_mov (op2_imm (by decide)) fun t a => WP.block_nil ?_
   exact ⟨(a.other .r0 (by decide)).trans (output.trans h.savedOutput),
     (a.other .lr (by decide)).trans (count.trans h.savedCount), a.gpr, a.mem.trans mem,
-    (rest.mono (by simp)).trans (a.rest (by simp))⟩
+    (rest.mono (by decide)).trans (a.rest (by decide))⟩
 
 theorem publicFail_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen : Nat} {nb eb xb : List Byte}
     (h : PublicBodyInput base dst np ep xp len k eLen nb eb xb s) :
@@ -50,8 +50,8 @@ theorem publicFail_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen : 
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]
   simp only [Bool.false_eq_true, ite_false, length] at bytes
   refine wp_mov (op2_imm (by decide)) fun t a => WP.block_nil ?_
-  refine ⟨a.gpr, ?_, ?_, (restU.mono (by simp [roundClobbers])).trans
-    ((restV.mono (by simp [roundClobbers])).trans (a.rest (by simp [roundClobbers])))⟩
+  refine ⟨a.gpr, ?_, ?_, (restU.mono (by decide)).trans
+    ((restV.mono (by decide)).trans (a.rest (by decide)))⟩
   · rw [a.mem]; exact bytes
   · rw [a.mem]
     rw [memU] at frame

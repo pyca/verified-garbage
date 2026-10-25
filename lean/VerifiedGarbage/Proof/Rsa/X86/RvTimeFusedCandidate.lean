@@ -37,7 +37,7 @@ theorem fusedCandStart_relCT :
   | @seq _ _ _ u1 _ _ _ e1 e2 =>
   cases f12 with
   | @seq _ _ _ v1 _ _ _ f1 f2 =>
-  have eq1 := pub_trace pg alignStartCheck hs ht e1 f1
+  have eq1 := pub_trace pg alignStartCheck.choose_spec hs ht e1 f1
   have hu1 := wp_result (alignStart_ok hs C.zero C.candidate C.ae C.ad C.wide C.rb) e1
   have hv1 := wp_result (alignStart_ok ht D.zero D.candidate D.ae D.ad D.wide D.rb) f1
   have shifts : alignShifts g eLen dLen<2^32 := by

@@ -34,7 +34,7 @@ theorem doubleProduct_ok (s : State) {base : BitVec 32} {size out tmp a b mod ac
   rintro u ⟨value, hdr, ptr, outside, rest⟩
   refine wp_dp (op2_imm (by decide)) fun t h => WP.block_nil ?_
   have mem := h.mem
-  have kept : Rest roundClobbers s t := rest.trans (h.rest (by simp [roundClobbers]))
+  have kept : Rest roundClobbers s t := rest.trans (h.rest (by decide))
   have out : u.mem.readW (off (State.addr base) (tmp + 24)) 32 = base + BitVec.ofNat 32 out := by
     rw [outside_read32 outside (d := tmp + 24) (by omega) (by omega)]
     exact ready.outPtr

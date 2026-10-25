@@ -274,7 +274,7 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hF
     · subst h; rw [u₃.gpr, hv]
     · rw [u₃.other _ h]
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      exact cs' r (by cases r <;> simp_all [calleeSaved])
+      exact cs' r (by revert hr; cases r <;> decide)
   · rw [m₃]
     refine fun x hx => (O₂ x hx).trans ?_
     by_cases hzx : ofs base x < 8192

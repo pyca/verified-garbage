@@ -44,8 +44,8 @@ theorem subModBuffers_ok (s : State) {base : BitVec 32} {size o a b m n : Nat}
       by rw [keepU.wr]; exact ctx.writable⟩
   rw [WP.seq_iff]
   refine WP.mono (subRow_ok u ctxU hn
-    ((restU.gpr .r0 (by simp)).trans p0) ((restU.gpr .r10 (by simp)).trans p10)
-    ((restU.gpr .r12 (by simp)).trans p12) ((restU.gpr .lr (by simp)).trans count)
+    ((restU.gpr .r0 (by decide)).trans p0) ((restU.gpr .r10 (by decide)).trans p10)
+    ((restU.gpr .r12 (by decide)).trans p12) ((restU.gpr .lr (by decide)).trans count)
     (by rw [zero]; decide)) ?_
   intro v inv
   have value := inv.value
@@ -65,10 +65,10 @@ theorem subModBuffers_ok (s : State) {base : BitVec 32} {size o a b m n : Nat}
   have rowZ : RowCtx z base size o m n :=
     ⟨row.nowrap, row.outFits, row.inFits, row.separate,
       by rw [keepZ.wr, inv.rest.wr, keepU.wr]; exact row.writable⟩
-  have outZ := out.trans ((inv.rest.gpr .r7 (by simp [subLoopClobbers])).trans (saved.trans p0))
-  have modZ := modPtr.trans ((inv.rest.gpr .r9 (by simp [subLoopClobbers])).trans
-    ((restU.gpr .r9 (by simp)).trans p9))
-  have countZ := widthZ.trans ((inv.rest.gpr .r8 (by simp [subLoopClobbers])).trans (width.trans count))
+  have outZ := out.trans ((inv.rest.gpr .r7 (by decide)).trans (saved.trans p0))
+  have modZ := modPtr.trans ((inv.rest.gpr .r9 (by decide)).trans
+    ((restU.gpr .r9 (by decide)).trans p9))
+  have countZ := widthZ.trans ((inv.rest.gpr .r8 (by decide)).trans (width.trans count))
   have fit : val32 z.mem (State.addr base) o (n + 2) +
       (z.gpr .r1).toNat * val32 z.mem (State.addr base) m n + (z.gpr .r11).toNat <
         2 ^ (32 * (n + 2)) := by
@@ -88,7 +88,7 @@ theorem subModBuffers_ok (s : State) {base : BitVec 32} {size o a b m n : Nat}
   rw [keepZ.mem] at outsideT
   exact ⟨low.trans result, low ▸ bound,
     (outside.mono (Nat.le_refl _) (by omega)).trans outsideT,
-    (restU.mono (by simp [roundClobbers])).trans ((inv.rest.mono (by simp [roundClobbers, subLoopClobbers])).trans
-      ((restZ.mono (by simp [roundClobbers])).trans (restT.mono (by simp [roundClobbers, loopClobbers]))))⟩
+    (restU.mono (by decide)).trans ((inv.rest.mono (by decide)).trans
+      ((restZ.mono (by decide)).trans (restT.mono (by decide))))⟩
 
 end VG.Proof.Bignum.Arm

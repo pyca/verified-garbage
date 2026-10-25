@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: before the seeds
 
@@ -114,11 +115,11 @@ theorem pre_vp {V : Nat → BitVec 32} {LS : List Nat} {B N L : Nat} (md : MdStr
       wRegs G.pLen ++ padInit G.pLen G.qLen)) := by
     rcases hlq with ⟨e1, e2⟩ | ⟨e1, e2⟩ | ⟨e1, e2⟩ <;> rw [e1, e2]
     · exact ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8]) (.block ([.movw .r12 (BitVec.ofNat 16
-        (sK 128)), .dp .add .r8 .r8 (.reg .r12)] ++ wRegs 128 ++ padInit 128 20)), rfl⟩
+        (sK 128)), .dp .add .r8 .r8 (.reg .r12)] ++ wRegs 128 ++ padInit 128 20)), by kernel_rfl⟩
     · exact ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8]) (.block ([.movw .r12 (BitVec.ofNat 16
-        (sK 256)), .dp .add .r8 .r8 (.reg .r12)] ++ wRegs 256 ++ padInit 256 32)), rfl⟩
+        (sK 256)), .dp .add .r8 .r8 (.reg .r12)] ++ wRegs 256 ++ padInit 256 32)), by kernel_rfl⟩
     · exact ⟨VG.Taint.hintOfSize VG.Arm.taint 256 (Taint.ofRegs [.r8]) (.block ([.movw .r12 (BitVec.ofNat 16
-        (sK 384)), .dp .add .r8 .r8 (.reg .r12)] ++ wRegs 384 ++ padInit 384 32)), rfl⟩
+        (sK 384)), .dp .add .r8 .r8 (.reg .r12)] ++ wRegs 384 ++ padInit 384 32)), by kernel_rfl⟩
   refine VP.taint [.r8] cert
     (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2])
     fun σ s ⟨⟨gi, x⟩, r8⟩ => ?_

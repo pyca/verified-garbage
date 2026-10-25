@@ -44,12 +44,12 @@ theorem montInit_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n :
   have outsideU := initMeta_outside s (base := State.addr base) (by omega : tmp + 32 ≤ 2 ^ 64)
   rw [← memU] at outsideU
   rw [WP.seq_iff]
-  refine WP.mono (prepareZero_ok u ((restU.gpr .r7 (by simp)).trans regs.count)) ?_
+  refine WP.mono (prepareZero_ok u ((restU.gpr .r7 (by decide)).trans regs.count)) ?_
   rintro v ⟨ptrV, countV, zeroV, memV, restV⟩
   have cv : ZeroCtx v base size acc (n + 2) := ⟨nowrap, ctx.accFits, by
     rw [restV.wr, restU.wr]; exact ⟨_, ctx.workspace.writable, Region.contains_self _ _⟩⟩
   have pv : v.gpr .r0 = base + BitVec.ofNat 32 acc :=
-    ptrV.trans ((restU.gpr .r6 (by simp)).trans regs.accPtr)
+    ptrV.trans ((restU.gpr .r6 (by decide)).trans regs.accPtr)
   rw [WP.seq_iff]
   refine WP.mono (zero_ok v cv (by omega) pv countV zeroV) ?_
   intro w zw
@@ -58,9 +58,9 @@ theorem montInit_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n :
   rw [memV] at outsideW
   have headerW := headerU.of_outside outsideW (by omega) (by omega)
   have outputW := outside_read32 outsideW (d := tmp + 24) (by omega) (by omega)
-  have kept : Rest roundClobbers s t := (restU.mono (by simp [roundClobbers])).trans
-    ((restV.mono (by simp [roundClobbers])).trans
-      ((zw.rest.mono (by simp [roundClobbers])).trans (ut.rest (by simp [roundClobbers]))))
+  have kept : Rest roundClobbers s t := (restU.mono (by decide)).trans
+    ((restV.mono (by decide)).trans
+      ((zw.rest.mono (by decide)).trans (ut.rest (by decide))))
   have outside : Outs (State.addr base) [(acc, 4 * (n + 2)), (tmp, 32)] s.mem t.mem := by
     rw [ut.mem]
     exact (Outs.of_outside outsideU (by simp)).trans (Outs.of_outside outsideW (by simp))
@@ -79,7 +79,7 @@ theorem montInit_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n :
   refine ⟨⟨⟨ctx.congr kept.wr, ⟨inv, ?_, ?_⟩, ?_, ?_, ?_⟩, ?_, ?_⟩, outside, kept⟩
   · rw [ut.mem]; exact headerW
   · rw [oldM]; exact hInv
-  · rw [ut.gpr, zw.rest.gpr .r5 (by simp), restV.gpr .r5 (by simp), restU.gpr .r5 (by simp), regs.tmpPtr]
+  · rw [ut.gpr, zw.rest.gpr .r5 (by decide), restV.gpr .r5 (by decide), restU.gpr .r5 (by decide), regs.tmpPtr]
   · rw [oldM, ut.mem, zw.value]
     omega
   · rw [oldB, oldM]; exact hB

@@ -64,8 +64,9 @@ def Run (g : CallGeometry) (sp : BitVec 32) (s : State) : Prop :=
 
 theorem sized_relCT (g : CallGeometry) (sp : BitVec 32) :
     RelCT isa (Both (Run g sp)) (sized g.full) fun _ _ => True :=
+  let ⟨_, hc⟩ := sizedCheck g.full
   RelCT.taint (A := sseTaint) (τV g.full)
-    (fun _ _ h => agreeV h.1.1 h.2.1 h.1.2.1 h.2.2.1 (h.1.2.2.trans h.2.2.2.symm)) (sizedCheck g.full)
+    (fun _ _ h => agreeV h.1.1 h.2.1 h.1.2.1 h.2.2.1 (h.1.2.2.trans h.2.2.2.symm)) hc
 
 /-- What the runs of `sized` from the states themselves need: the inputs, `esp`, and the arguments apart
 from what the body writes. -/

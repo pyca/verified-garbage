@@ -50,8 +50,8 @@ theorem load_ok (s : State) {src : BitVec 32} {bs : List Byte} {k : Nat}
   refine wp_dp (op2_imm (by decide)) fun c three => ?_
   refine wp_dp (op2_reg _ _) fun d four => ?_
   have kept : Rest loadClobbers s d :=
-    (((one.rest (by simp [loadClobbers])).trans (two.rest (by simp [loadClobbers]))).trans
-      (three.rest (by simp [loadClobbers]))).trans (four.rest (by simp [loadClobbers]))
+    (((one.rest (by decide)).trans (two.rest (by decide))).trans
+      (three.rest (by decide))).trans (four.rest (by decide))
   have address : d.gpr .r12 = src + BitVec.ofNat 32 (bs.length-1-k/8) := by
     rw [four.gpr,three.gpr,two.gpr,one.gpr]
     change c.gpr .r4 + (a.gpr .r5 - (s.gpr .r9 >>> 3) - 1) = _
@@ -70,7 +70,7 @@ theorem load_ok (s : State) {src : BitVec 32} {bs : List Byte} {k : Nat}
   have count : f.gpr .r2 = BitVec.ofNat 32 (k%8) := by
     rw [six.gpr]
     change e.gpr .r9 &&& 7 = _
-    rw [five.other .r9 (by decide),kept.gpr .r9 (by simp [loadClobbers]),index,rem]
+    rw [five.other .r9 (by decide),kept.gpr .r9 (by decide),index,rem]
   refine ⟨?_,(congrArg (fun f => f .r2) seven.gpr).trans count,?_,?_,?_⟩
   · rw [seven.gpr,six.other .r11 (by decide),five.gpr]
     rw [four.mem,three.mem,two.mem,one.mem,source.bytes _ (by omega)]
@@ -78,7 +78,7 @@ theorem load_ok (s : State) {src : BitVec 32} {bs : List Byte} {k : Nat}
     change (BitVec.ofNat 32 (k%8) - BitVec.ofNat 32 0 == 0) = _
     rw [BitVec.sub_zero,ofNat_beq_zero (by omega)]
   · exact seven.mem.trans (six.mem.trans (five.mem.trans (four.mem.trans (three.mem.trans (two.mem.trans one.mem)))))
-  · exact ((kept.trans (five.rest (by simp [loadClobbers]))).trans
-      (six.rest (by simp [loadClobbers]))).trans (seven.rest _)
+  · exact ((kept.trans (five.rest (by decide))).trans
+      (six.rest (by decide))).trans (seven.rest _)
 
 end VG.Proof.Bignum.Arm.CombDigit

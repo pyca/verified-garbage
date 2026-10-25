@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.OmegaNear
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Framework.Offset
@@ -45,21 +46,21 @@ theorem LPre.zero {j sp sl : Nat} {p : BPub} {s : State} (h : LPre j sp sl p s) 
   have hi := hc.hi
   have hlo := hc.lo
   have h8 := hdr_lt_slot p.x.w 8 (show 31 < 32 by decide)
-  have h256 : 256 ≤ slot p.x.wx 8 := by unfold slot hdrBytes; omega_arith
+  have h256 : 256 ≤ slot p.x.wx 8 := by unfold slot hdrBytes; omega_near
   have hJ := slot_le (w := p.x.wx) hj
   have hJ0 := hdr_lt_slot p.x.wx j (show 31 < 32 by decide)
-  have ho64 : p.x.o < 2 ^ 64 := by omega_arith
+  have ho64 : p.x.o < 2 ^ 64 := by omega_near
   have hr : ∀ r ∈ [(slot p.x.wx j, 8 * (p.x.wx + 2))], 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot p.x.wx 8 := by
-    simp only [List.mem_singleton, forall_eq]; omega_arith
-  refine WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega_arith) (by omega_arith) hj) fun t ⟨_, ho₁, k₁⟩ => ?_
+    simp only [List.mem_singleton, forall_eq]; omega_near
+  refine WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega_near) (by omega_near) hj) fun t ⟨_, ho₁, k₁⟩ => ?_
   have f₁ : Frm (off p.x.B p.x.o) [(slot p.x.wx j, 8 * (p.x.wx + 2))] s.mem t.mem := Frm.of_outside ho₁ (by simp)
   have hb : ∀ i < 32, word t.mem p.x.B (8 * i) = word s.mem p.x.B (8 * i) := fun i hi' =>
-    f₁.word_below (fun r hr' => (hr r hr').2) (by omega_arith) ho64 (by omega_arith)
+    f₁.word_below (fun r hr' => (hr r hr').2) (by omega_near) ho64 (by omega_near)
   refine ⟨minv, bs, hc.of_frm f₁ hr k₁.2.2 (k₁.gpr (by decide)), hw2, hwx, hw30, hj, hsp, hsl,
     (hb sp hsp).trans hp, (hb sl hsl).trans hl, hbl, hsrc.congrK ?_ k₁, hk1, hk', hkw⟩
-  exact InScr.of_frm (f₁.rebase ho64 fun r hr' => by have := (hr r hr').2; omega_arith) fun r hr' => by
+  exact InScr.of_frm (f₁.rebase ho64 fun r hr' => by have := (hr r hr').2; omega_near) fun r hr' => by
     simp only [shiftRanges, List.map_cons, List.map_nil, List.mem_singleton] at hr'
-    subst hr'; simp only; omega_arith
+    subst hr'; simp only; omega_near
 
 theorem pins_lpre {j sp sl : Nat} : Pins (LPre j sp sl) [.rdi] :=
   pins_of (fun p _ => off p.x.B p.x.o) fun _ _ ⟨_, _, hc, _⟩ r hr => by
@@ -102,7 +103,7 @@ theorem loadArr_ct {j sp sl : Nat} (hj : j < 8) {hc₁ hc₂ : VG.Taint.Hint VG.
     have hn := hc.scr.nowrap
     have hi := hc.hi
     have hl₁ : InRegions (s.rd ++ s.wr) (off (off p.x.B p.x.o) (8 * sLink)) 8 :=
-      hc.good.scr.ld (by have := hdr_lt_slot p.x.wx 8 (show sLink < 32 by decide); omega_arith)
+      hc.good.scr.ld (by have := hdr_lt_slot p.x.wx 8 (show sLink < 32 by decide); omega_near)
     exact WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = p.x.B ∧ t.mem = s.mem)
       (by xrun [State.ea, hdr, hc.rdi, hdrOff, hl₁, hc.link]) rfl)
       fun t ⟨⟨hax, hm⟩, k⟩ => ⟨h.mem hm k (by decide), hax⟩
@@ -112,14 +113,14 @@ theorem loadArr_ct {j sp sl : Nat} (hj : j < 8) {hc₁ hc₂ : VG.Taint.Hint VG.
     have hlo := hc.lo
     have h8 := hdr_lt_slot p.x.w 8 (show 31 < 32 by decide)
     have hl₁ : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off p.x.B p.x.o) (8 * i)) 8 := fun i hi' =>
-      hc.good.scr.ld (by have := hdr_lt_slot p.x.wx 8 hi'; omega_arith)
+      hc.good.scr.ld (by have := hdr_lt_slot p.x.wx 8 hi'; omega_near)
     have hln : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.x.B (8 * i)) 8 := fun i hi' =>
-      hc.scr.ld (by omega_arith)
+      hc.scr.ld (by omega_near)
     unfold LRegs; rw [← hbl]
     exact WP.mono (WP.keep [.rsi, .rcx, .rbx] (Q := fun t => t.gpr .rsi = p.ptr ∧
         t.gpr .rcx = BitVec.ofNat 64 bs.length ∧ t.gpr .rbx = off (off p.x.B p.x.o) (slot p.x.wx j))
       (by xrun [State.ea, hdr, ws, hc.rdi, hax, hdrOff, hln sp hsp, hp, hln sl hsl, hl,
-        hl₁ (sArr j) (by unfold sArr; omega_arith), hc.hdr.harr j hj]) rfl) fun t h => h.1
+        hl₁ (sArr j) (by unfold sArr; omega_near), hc.hdr.harr j hj]) rfl) fun t h => h.1
 
 theorem loadArr_ct_pN : LoadCT Public.aN sP sPlen := loadArr_ct (by decide) (by taint_decide) (by taint_decide)
 

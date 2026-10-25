@@ -29,14 +29,14 @@ theorem crt_body_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h 
   have nb : Spec.Rsa.bytesAt s.mem (State.addr g.modulus) g.length = bs 0 := (h.buffers.source 0).bytes
   change u.z = Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr g.modulus) g.length)) g.length at flag
   rw [nb] at flag
-  have hu := h.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ptr)
-    ((rest.gpr .r4 (by simp)).trans h.source) ((rest.gpr .r6 (by simp)).trans h.count)
+  have hu := h.of_mem mem rest ((rest.gpr .r0 (by decide)).trans h.ptr)
+    ((rest.gpr .r4 (by decide)).trans h.source) ((rest.gpr .r6 (by decide)).trans h.count)
   refine WP.ite (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length) (by change some u.z = _; rw [flag]) ?_ ?_
   · intro valid
     refine WP.mono ((crt_valid_ok (kernel := kernel)) u hu.buffers hu.stack hu.ptr hu.count hu.saved hu.modulusPtr valid) ?_
     rintro t ⟨written, frame, restT⟩
     rw [mem, rest.sp] at frame
-    exact ⟨written, frame, (rest.mono (by simp [roundClobbers])).trans restT⟩
+    exact ⟨written, frame, (rest.mono (by decide)).trans restT⟩
   · intro invalid
     refine WP.mono (crt_fail_ok u hu) ?_
     rintro t ⟨status, bytes, frame, restT⟩

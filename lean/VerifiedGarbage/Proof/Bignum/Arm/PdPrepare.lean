@@ -27,18 +27,18 @@ theorem pdPrepareCore_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen
   rintro u ⟨limbs, zero, memU, restU⟩
   rw [WP.seq_iff]
   refine WP.mono (setup_frame_ok u (h.buffers.workspace.congr restU.wr) hw hw' fits
-    ((restU.gpr .r0 (by simp)).trans h.ptr) limbs zero) ?_
+    ((restU.gpr .r0 (by decide)).trans h.ptr) limbs zero) ?_
   rintro v ⟨layoutV, widthV, ptrV, frameV, restV⟩
   rw [memU] at frameV
-  have rv : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans restV
+  have rv : Rest roundClobbers s v := (restU.mono (by decide)).trans restV
   have stackV := h.stack.after_workspace frameV rv
   refine WP.mono (pcInputs_ok v stackV.pcStack) ?_
   rintro t ⟨source, _, memT, restT⟩
-  have rest : Rest roundClobbers s t := rv.trans (restT.mono (by simp [roundClobbers]))
+  have rest : Rest roundClobbers s t := rv.trans (restT.mono (by decide))
   have frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by rw [memT]; exact frameV
   have stack := h.stack.after_workspace frame rest
   have buffers := h.buffers.after_workspace frame rest
-  have body := h.after_workspace frame rest ((restT.gpr .r0 (by simp)).trans ptrV)
+  have body := h.after_workspace frame rest ((restT.gpr .r0 (by decide)).trans ptrV)
   have input : PdImportInput base np len (Spec.Rsa.modulusWords k) t :=
     ⟨⟨⟨buffers.workspace, by rw [memT]; exact layoutV, by rw [memT]; exact widthV,
       body.ptr⟩,
@@ -55,10 +55,10 @@ theorem pdPrepare_ok (s : State) {base dst pp ep xp : BitVec 32} {len k eLen N R
   rw [PdFn.prepare, WP.seq_iff]
   refine WP.mono (pcInputs_ok s h.stack.pcStack) ?_
   rintro u ⟨_, count, mem, rest⟩
-  have hu := h.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ptr)
+  have hu := h.of_mem mem rest ((rest.gpr .r0 (by decide)).trans h.ptr)
   refine WP.mono (pdPrepareCore_ok u hu count) ?_
   rintro t ⟨body, input, frame, keep⟩
   rw [mem] at frame
-  exact ⟨body, input, frame, (rest.mono (by simp [roundClobbers])).trans keep⟩
+  exact ⟨body, input, frame, (rest.mono (by decide)).trans keep⟩
 
 end VG.Proof.Bignum.Arm

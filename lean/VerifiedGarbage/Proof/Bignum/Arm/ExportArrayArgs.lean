@@ -28,7 +28,7 @@ theorem exportArrayTail_ok (s : State) {base : BitVec 32} {size w : Nat}
   refine wp_mov (op2_lsl (by decide)) fun z l => ?_
   refine wp_mov (op2_reg _ _) fun t q => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, q.mem.trans (l.mem.trans (j.mem.trans h.mem)),
-    (h.rest (by simp)).trans ((j.rest (by simp)).trans ((l.rest (by simp)).trans (q.rest (by simp))))⟩
+    (h.rest (by decide)).trans ((j.rest (by decide)).trans ((l.rest (by decide)).trans (q.rest (by decide))))⟩
   · rw [q.other .lr (by decide), l.gpr, j.gpr, h.mem, width, BitVec.shiftLeft_eq_mul_twoPow]
     change BitVec.ofNat 32 w * BitVec.ofNat 32 8 = _
     rw [← BitVec.ofNat_mul, Nat.mul_comm]
@@ -47,9 +47,9 @@ theorem exportArrayArgs_ok (s : State) {base : BitVec 32} {size w o : Nat}
   refine WP.mono (loadArray_ok s .r1 .r2 ws (by omega) ptr index (header.array o ho)) ?_
   rintro u ⟨array, mem, rest⟩
   refine WP.mono (exportArrayTail_ok u (ws.congr rest.wr) (by omega)
-    ((rest.gpr .r0 (by simp)).trans ptr) (by rw [mem]; exact header.count)) ?_
+    ((rest.gpr .r0 (by decide)).trans ptr) (by rw [mem]; exact header.count)) ?_
   rintro t ⟨count, saved, out, memT, keep⟩
-  exact ⟨out.trans (rest.gpr .r4 (by simp)), (keep.gpr .r1 (by simp)).trans array,
-    count, saved, memT.trans mem, (rest.mono (by simp)).trans (keep.mono (by simp))⟩
+  exact ⟨out.trans (rest.gpr .r4 (by decide)), (keep.gpr .r1 (by decide)).trans array,
+    count, saved, memT.trans mem, (rest.mono (by decide)).trans (keep.mono (by decide))⟩
 
 end VG.Proof.Bignum.Arm

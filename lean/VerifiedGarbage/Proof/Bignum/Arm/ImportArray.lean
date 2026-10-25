@@ -59,15 +59,15 @@ theorem importArray_ok (s : State) {base src : BitVec 32} {len w o : Nat}
   refine WP.mono (copyBuffer_ok z (by omega) srcFit (by rw [dstNat]; omega) (by omega)
     (by rw [restZ.rd, restZ.wr, rest.rd, rest.wr]; exact read)
     (by rw [restZ.wr]; exact write) sepDst (destZ.trans p1) (sourceZ.trans (p0.trans source))
-    ((restZ.gpr .lr (by simp)).trans count)) ?_
+    ((restZ.gpr .lr (by decide)).trans count)) ?_
   rintro v ⟨value, frame, _, keep⟩
   refine wp_mov (op2_reg _ _) fun t moved => WP.block_nil ?_
   rw [dstAddr, memZ, mem] at value
   rw [dstAddr, memZ, mem] at frame
   refine ⟨by rw [moved.mem]; exact value, by rw [moved.mem]; exact frame, ?_, ?_, ?_⟩
-  · rw [moved.gpr, keep.gpr .r5 (by simp), restZ.gpr .r5 (by simp), saved]
-  · rw [moved.other .r4 (by decide), keep.gpr .r4 (by simp), restZ.gpr .r4 (by simp), rest.gpr .r4 (by simp), source]
-  · exact ((rest.mono (by simp [roundClobbers])).trans (restZ.mono (by simp [roundClobbers]))).trans
-      ((keep.mono (by simp [roundClobbers])).trans (moved.rest (by simp [roundClobbers])))
+  · rw [moved.gpr, keep.gpr .r5 (by decide), restZ.gpr .r5 (by decide), saved]
+  · rw [moved.other .r4 (by decide), keep.gpr .r4 (by decide), restZ.gpr .r4 (by decide), rest.gpr .r4 (by decide), source]
+  · exact ((rest.mono (by decide)).trans (restZ.mono (by decide))).trans
+      ((keep.mono (by decide)).trans (moved.rest (by decide)))
 
 end VG.Proof.Bignum.Arm

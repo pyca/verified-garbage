@@ -82,7 +82,7 @@ theorem callBodyReady_of_entry (s : State) {base : BitVec 32} {len w o a b : Nat
     exact h.stackWorkspace.sub_left (Region.sub_prefix (by decide))
   · rw [mem, rest.sp]
     change (callPushed s).mem.readW (State.addr (s.sp - 40)) 32 = base
-    simpa only [BitVec.add_zero] using (saved (.r0, 0) (by simp [callAllSaved])).trans h.ptr
+    simpa only [BitVec.add_zero] using (saved (.r0, 0) (by decide)).trans h.ptr
 
 theorem montCallFn_ct {base : BitVec 32} {len w o a b : Nat}
     (ho : Operand o) (ha : Operand a) (hb : Operand b) :

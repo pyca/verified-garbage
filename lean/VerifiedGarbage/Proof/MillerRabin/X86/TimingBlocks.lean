@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Secret digit and flag arithmetic has no secret-dependent trace -/
 
@@ -26,6 +27,6 @@ theorem windowEnd_relCT : RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi]))
 
 theorem maskIndex_relCT (j : Nat) : RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi]))
     (.block (maskIndex j)) (VG.X86.Taint.Agree (roundTaint [.edi])) :=
-  erased_relCT (.block (maskIndex j)) (.block (maskIndex 0)) (.block []) rfl rfl rfl rfl
+  erased_relCT (.block (maskIndex j)) (.block (maskIndex 0)) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
 
 end VG.Proof.MillerRabin.X86

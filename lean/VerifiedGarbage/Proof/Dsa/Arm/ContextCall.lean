@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # Calls of shared ARMv7 Montgomery setup -/
 
@@ -48,7 +49,7 @@ theorem light_relCT (n : Nat) :
       (VG.Arm.Taint.Agree (wsT true false)) :=
   erased_relCT (c₀ := .block (setupInverse 0))
     (VG.Taint.hintOf taint (wsT true false) (.block (setupInverse 0)))
-    rfl (wsT_noBase _ _) (by decide)
+    (by kernel_rfl) (wsT_noBase _ _) (by decide)
 
 theorem light_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat}
     (W₁ : Ws s₁ base size₁) (W₂ : Ws s₂ base size₂) (h11 : s₁.gpr .r11 = s₂.gpr .r11) :

@@ -26,7 +26,7 @@ theorem pdBody_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : 
   rw [PdFn.body, WP.seq_iff]
   refine WP.mono (publicExponentArgs_ok s h.stack) ?_
   rintro u ⟨pointer, count, memU, restU⟩
-  have hu := h.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ptr)
+  have hu := h.of_mem memU restU ((restU.gpr .r0 (by decide)).trans h.ptr)
   have length := hu.buffers.exponent.length
   rw [WP.seq_iff]
   refine WP.mono (exponentCheck_ok u
@@ -36,13 +36,13 @@ theorem pdBody_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : 
     (by rw [length]; exact hu.buffers.exponent.read) hu.buffers.exponent.byte pointer
     (by rw [length]; exact count)) ?_
   rintro v ⟨status, memV, restV⟩
-  have hv := hu.of_mem memV restV ((restV.gpr .r0 (by simp [exponentClobbers])).trans hu.ptr)
+  have hv := hu.of_mem memV restV ((restV.gpr .r0 (by decide)).trans hu.ptr)
   rw [WP.seq_iff]
   refine WP.mono (exponentFlag_ok v status) ?_
   rintro z ⟨zero, memZ, restZ⟩
-  have hz := hv.of_mem memZ restZ ((restZ.gpr .r0 (by simp)).trans hv.ptr)
-  have rest : Rest roundClobbers s z := (restU.mono (by simp [roundClobbers])).trans
-    ((restV.mono (by simp [roundClobbers, exponentClobbers])).trans (restZ.mono (by simp [roundClobbers])))
+  have hz := hv.of_mem memZ restZ ((restZ.gpr .r0 (by decide)).trans hv.ptr)
+  have rest : Rest roundClobbers s z := (restU.mono (by decide)).trans
+    ((restV.mono (by decide)).trans (restZ.mono (by decide)))
   have mem : z.mem = s.mem := memZ.trans (memV.trans memU)
   refine WP.ite (!Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb)) (by change some z.z = _; rw [zero]) ?_ ?_
   · intro invalid

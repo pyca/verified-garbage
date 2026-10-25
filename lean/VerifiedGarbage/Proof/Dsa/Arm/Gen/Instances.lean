@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Stack
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on ARMv7: the three geometries
 
@@ -109,38 +110,38 @@ def geo3 (v : RoundImpl) : Geo := geo 384 32 sha256 v
 theorem certs1 (v : RoundImpl) : GStepCerts (geo1 v) :=
   gStepCerts 128 16 28 rfl rfl rfl rfl rfl rfl
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (scr 128 .r0 (sA + modS 16)) (ptr .r1 aP) 128), rfl⟩
+      (copyN (scr 128 .r0 (sA + modS 16)) (ptr .r1 aP) 128), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (scr 128 .r0 (sA + baseS 16)) (ptr .r1 aH) 128), rfl⟩
+      (copyN (scr 128 .r0 (sA + baseS 16)) (ptr .r1 aH) 128), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (scr 128 .r0 (sA + expS 16)) (ptr .r1 aE) (4 * 28)), rfl⟩
+      (copyN (scr 128 .r0 (sA + expS 16)) (ptr .r1 aE) (4 * 28)), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (ptr .r0 aG) (scr 128 .r1 (sA + resS 16)) 128), rfl⟩
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 128 aG sG 128), rfl⟩
+      (copyN (ptr .r0 aG) (scr 128 .r1 (sA + resS 16)) 128), by kernel_rfl⟩
+    ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 128 aG sG 128), by kernel_rfl⟩
 
 theorem certs2 (v : RoundImpl) : GStepCerts (geo2 v) :=
   gStepCerts 256 32 57 rfl rfl rfl rfl rfl rfl
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (scr 256 .r0 (sA + modS 32)) (ptr .r1 aP) 256), rfl⟩
+      (copyN (scr 256 .r0 (sA + modS 32)) (ptr .r1 aP) 256), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (scr 256 .r0 (sA + baseS 32)) (ptr .r1 aH) 256), rfl⟩
+      (copyN (scr 256 .r0 (sA + baseS 32)) (ptr .r1 aH) 256), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (scr 256 .r0 (sA + expS 32)) (ptr .r1 aE) (4 * 57)), rfl⟩
+      (copyN (scr 256 .r0 (sA + expS 32)) (ptr .r1 aE) (4 * 57)), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (ptr .r0 aG) (scr 256 .r1 (sA + resS 32)) 256), rfl⟩
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 256 aG sG 256), rfl⟩
+      (copyN (ptr .r0 aG) (scr 256 .r1 (sA + resS 32)) 256), by kernel_rfl⟩
+    ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 256 aG sG 256), by kernel_rfl⟩
 
 theorem certs3 (v : RoundImpl) : GStepCerts (geo3 v) :=
   gStepCerts 384 48 89 rfl rfl rfl rfl rfl rfl
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (scr 384 .r0 (sA + modS 48)) (ptr .r1 aP) 384), rfl⟩
+      (copyN (scr 384 .r0 (sA + modS 48)) (ptr .r1 aP) 384), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (scr 384 .r0 (sA + baseS 48)) (ptr .r1 aH) 384), rfl⟩
+      (copyN (scr 384 .r0 (sA + baseS 48)) (ptr .r1 aH) 384), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (scr 384 .r0 (sA + expS 48)) (ptr .r1 aE) (4 * 89)), rfl⟩
+      (copyN (scr 384 .r0 (sA + expS 48)) (ptr .r1 aE) (4 * 89)), by kernel_rfl⟩
     ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9])
-      (copyN (ptr .r0 aG) (scr 384 .r1 (sA + resS 48)) 384), rfl⟩
-    ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 384 aG sG 384), rfl⟩
+      (copyN (ptr .r0 aG) (scr 384 .r1 (sA + resS 48)) 384), by kernel_rfl⟩
+    ⟨VG.Taint.hintOfSize VG.Arm.taint 4096 (Taint.ofRegs [.r7, .r8, .r9]) (storeBE 384 aG sG 384), by kernel_rfl⟩
 
 def geoOk1 (v : RoundImpl) : GeoOk (geo1 v) 128 20 where
   HO := sha1Ok

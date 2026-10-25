@@ -27,14 +27,20 @@ open VG VG.AArch64
 abbrev untouched : List Reg := [.x26, .x27, .x28]
 
 /-- Whether every instruction of `c` outside the functions it calls
-satisfies `p`. -/
+satisfies `p`. A block is walked with `List.rec`, which the kernel evaluates
+faster than `List.all` (as `Code.allInstrs`). -/
 def topAll (p : Instr → Bool) : Prog isa → Bool
-  | .block is => is.all p
+  | .block is => List.rec (motive := fun _ => Bool) true (fun i _ ih => p i && ih) is
   | .seq a b => topAll p a && topAll p b
   | .ite _ t e => topAll p t && topAll p e
   | .loop b _ => topAll p b
   | .call _ _ => true
   | .frame i b j => p i && topAll p b && p j
+
+theorem topAll_block (p : Instr → Bool) (is : List Instr) : topAll p (.block is) = is.all p := by
+  induction is with
+  | nil => rfl
+  | cons i is ih => exact congrArg (p i && ·) ih
 
 /-- Whether no instruction outside the functions `c` calls writes a register
 of `untouched`. -/
@@ -64,7 +70,7 @@ theorem gpr_top {r : Reg} (hr : r ∉ linkRegs) {c : Prog isa} {s s' : State} {t
   | block h =>
     exact execBlock_keep (fun s : State => s.gpr r) (ok := fun i => keepsReg r i = true)
       (fun hi he => exec_gpr (by simpa [keepsReg] using hi) he)
-      (List.all_eq_true.mp (by simpa only [topAll] using hc)) h
+      (List.all_eq_true.mp (by rwa [topAll_block] at hc)) h
   | seq _ _ ih₁ ih₂ =>
     simp only [topAll, Bool.and_eq_true] at hc
     simp only [Code.calls, List.all_append, Bool.and_eq_true] at hb
@@ -104,7 +110,9 @@ theorem untouched_keep {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec 
         topAll p c = true → topAll q c = true := by
       intro p q hpq c
       induction c with
-      | block is => simp only [topAll, List.all_eq_true]; exact fun h i hi => hpq i (h i hi)
+      | block is =>
+        rw [topAll_block, topAll_block, List.all_eq_true, List.all_eq_true]
+        exact fun h i hi => hpq i (h i hi)
       | seq a b iha ihb | ite _ a b iha ihb =>
         simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨iha h.1, ihb h.2⟩
       | loop b _ ih => exact ih

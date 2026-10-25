@@ -64,7 +64,7 @@ theorem fusedSmall_relCT {g : Geo} {n j : Nat} (pg : PubG g)
     (fun k t => SmallI g D.s0 D.A D.AW D.V n (D.A mX) (j+2) (k+1) t)
     (show 0<j+1 by omega)
     (fun _ _ _ _ _ _ _ _ ⟨hs,ht⟩ es et =>
-      ⟨pub_trace pg fusedSmallStepCheck hs.1 ht.1 es et,trivial⟩)
+      ⟨pub_trace pg fusedSmallStepCheck.choose_spec hs.1 ht.1 es et,trivial⟩)
     (fun k s hk hs => by
       simpa only [show j+2-(k+1+1)=j+1-(k+1) from by omega] using
         fusedSmallStep_ok hs C.value C.modulus C.zero C.bound C.inverse C.positive rfl C.xl
@@ -107,7 +107,7 @@ theorem fusedMultiply_relCT {g : Geo} {n j : Nat} (pg : PubG g)
       (fun _ _ => True) := by
     apply VG.RelCT.iteCold
     refine VG.RelCT.ite (fun s t ⟨_,_,cs,ct⟩ => by change s.cf.map (!·)=t.cf.map (!·); rw [cs,ct]) ?_ ?_
-    · exact (pub_relCT' pg fusedSmall7Check (fun _ h => KS.stage h) (fun _ h => KS.stage h)).mono
+    · exact (pub_relCT' pg fusedSmall7Check.choose_spec (fun _ h => KS.stage h) (fun _ h => KS.stage h)).mono
         (fun _ _ h => ⟨h.1.1,h.1.2.1⟩) (fun _ _ _ => trivial)
     · exact (fusedSmall_relCT pg C D).mono
         (fun _ _ h => ⟨h.1.1,h.1.2.1⟩) (fun _ _ _ => trivial)

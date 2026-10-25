@@ -46,15 +46,15 @@ theorem pcValid_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
   rintro u ⟨limbs, zero, memU, restU⟩
   rw [WP.seq_iff]
   refine WP.mono (setup_frame_ok u (ws.congr restU.wr) hw hw' fits
-    ((restU.gpr .r0 (by simp)).trans ptr) limbs zero) ?_
+    ((restU.gpr .r0 (by decide)).trans ptr) limbs zero) ?_
   rintro v ⟨layoutV, widthV, ptrV, frameV, restV⟩
   rw [memU] at frameV
-  have rv : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans restV
+  have rv : Rest roundClobbers s v := (restU.mono (by decide)).trans restV
   have stackV := stack.after_workspace frameV rv
   rw [WP.seq_iff]
   refine WP.mono (pcInputs_ok v stackV) ?_
   rintro z ⟨sourceZ, countZ, memZ, restZ⟩
-  have rz : Rest roundClobbers s z := rv.trans (restZ.mono (by simp [roundClobbers]))
+  have rz : Rest roundClobbers s z := rv.trans (restZ.mono (by decide))
   have frameZ : Frame [⟨State.addr base, 8 * len⟩] s.mem z.mem := by rw [memZ]; exact frameV
   have stackZ := stack.after_workspace frameZ rz
   have inputZ := rsa_bytes_frame frameZ (by omega : k < 2 ^ 64)
@@ -65,7 +65,7 @@ theorem pcValid_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
   rw [WP.seq_iff]
   refine WP.mono (kernel.correct z (ws.congr rz.wr) (by rw [memZ]; exact layoutV)
     (by rw [memZ]; exact widthV) (by omega) bytesFit srcFit
-    (by rw [rz.rd, rz.wr]; exact read) srcSep ((restZ.gpr .r0 (by simp)).trans ptrV)
+    (by rw [rz.rd, rz.wr]; exact read) srcSep ((restZ.gpr .r0 (by decide)).trans ptrV)
     sourceZ countZ stackReadZ stackSepZ stackZ.savedBase
     (by rw [inputZ]; exact large) (by rw [inputZ]; exact odd) countFit) ?_
   rintro a ⟨ready, modulus, r2value, frameA, restA⟩
@@ -76,10 +76,10 @@ theorem pcValid_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
   rw [WP.seq_iff]
   refine WP.mono (pcOutput_ok a stackA) ?_
   rintro b ⟨outputB, memB, restB⟩
-  have rb : Rest roundClobbers s b := ra.trans (restB.mono (by simp [roundClobbers]))
+  have rb : Rest roundClobbers s b := ra.trans (restB.mono (by decide))
   refine WP.mono (precomputeOut_ok b (ws.congr rb.wr) (by rw [memB]; exact ready.layout)
     (by rw [memB]; exact ready.width) dstFit (by rw [rb.wr]; exact write) dstSep
-    ((restB.gpr .r0 (by simp)).trans ready.ptr) outputB) ?_
+    ((restB.gpr .r0 (by decide)).trans ready.ptr) outputB) ?_
   rintro t ⟨result, words, frameT, restT⟩
   rw [memB, modulus, r2value] at words
   rw [memB] at frameT

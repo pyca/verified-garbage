@@ -49,7 +49,7 @@ theorem step_ok (s : State) {base : BitVec 32} {size a m d : Nat}
     · rw [hw.other .r5 (by decide),hv.gpr,hu.mem]
     · rw [hw.gpr,hv.mem,hu.mem]
     · rw [hw.mem,hv.mem,hu.mem]
-    · exact (hu.rest (by simp)).trans ((hv.rest (by simp)).trans (hw.rest (by simp)))
+    · exact (hu.rest (by decide)).trans ((hv.rest (by decide)).trans (hw.rest (by decide)))
   refine WP.mono loads ?_
   rintro u ⟨ua,um,ud,mu,ru⟩
   rw [WP.seq_iff]
@@ -62,19 +62,19 @@ theorem step_ok (s : State) {base : BitVec 32} {size a m d : Nat}
       (s.gpr .r1).toNat*w32 s.mem (State.addr base) a+
       (s.gpr .r2).toNat*w32 s.mem (State.addr base) m+
       w32 s.mem (State.addr base) (d+4)+(s.gpr .r7).toNat+(s.gpr .r8).toNat := by
-    rw [rv.regs .r5 (by simp),rv.regs .r2 (by simp),rv.regs .r8 (by simp)] at wc
-    rw [ru.gpr .r1 (by simp),ru.gpr .r7 (by simp),ua,ud] at vp
-    rw [ru.gpr .r2 (by simp),ru.gpr .r8 (by simp),um] at wc
-    rw [rw'.regs .r7 (by simp)]
+    rw [rv.regs .r5 (by decide),rv.regs .r2 (by decide),rv.regs .r8 (by decide)] at wc
+    rw [ru.gpr .r1 (by decide),ru.gpr .r7 (by decide),ua,ud] at vp
+    rw [ru.gpr .r2 (by decide),ru.gpr .r8 (by decide),um] at wc
+    rw [rw'.regs .r7 (by decide)]
     dsimp only [w32]
     have h := two_products vp wc
     simpa only [Nat.mul_comm] using h
   have rests : Rest [.r3,.r5,.r6,.r7,.r8] s w :=
-    (ru.mono (by simp)).trans
-      ((show Rest [.r6,.r7] u v from ⟨rv.regs,rv.rd,rv.wr,rv.sp⟩).mono (by simp) |>.trans
-        ((show Rest [.r6,.r8] v w from ⟨rw'.regs,rw'.rd,rw'.wr,rw'.sp⟩).mono (by simp)))
+    (ru.mono (by decide)).trans
+      ((show Rest [.r6,.r7] u v from ⟨rv.regs,rv.rd,rv.wr,rv.sp⟩).mono (by decide) |>.trans
+        ((show Rest [.r6,.r8] v w from ⟨rw'.regs,rw'.rd,rw'.wr,rw'.sp⟩).mono (by decide)))
   have memW : w.mem=s.mem := rw'.mem.trans (rv.mem.trans mu)
-  have ptrW : w.gpr .r0=base+BitVec.ofNat 32 d := (rests.gpr .r0 (by simp)).trans pd
+  have ptrW : w.gpr .r0=base+BitVec.ofNat 32 d := (rests.gpr .r0 (by decide)).trans pd
   change WP isa (.block [.str .r6 .r0 0]) w _
   refine wp_str (a:=off (State.addr base) d) (by decide)
     (by simpa only [Nat.add_zero] using (ws.congr rests.wr).ea ptrW (imm:=0) (by omega))

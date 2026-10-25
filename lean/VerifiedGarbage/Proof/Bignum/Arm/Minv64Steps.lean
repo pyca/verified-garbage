@@ -31,8 +31,8 @@ theorem minv64Start_ok (s : State) (a b : Addr)
   refine wp_mov (op2_reg _ _) fun t j => WP.block_nil ?_
   refine ⟨?_, j.mem.trans (h.mem.trans mem), ?_⟩
   · rw [j.gpr, j.other .r1 (by decide), h.gpr, h.other .r11 (by decide), val]
-  · exact (rest.mono (by simp [newtonClobbers])).trans
-      ((h.rest (by simp [newtonClobbers])).trans (j.rest (by simp [newtonClobbers])))
+  · exact (rest.mono (by decide)).trans
+      ((h.rest (by decide)).trans (j.rest (by decide)))
 
 theorem minv64End_ok (s : State) :
     WP isa (.block minv64End) s fun t =>
@@ -48,9 +48,9 @@ theorem minv64End_ok (s : State) :
   · rw [val, u3.gpr, u3.other .r4 (by decide), u3.other .r3 (by decide),
       u2.gpr, u2.other .r3 (by decide), u1.gpr, u1.other .r10 (by decide)]
     rfl
-  · exact (u1.rest (by simp [newtonClobbers])).trans
-      ((u2.rest (by simp [newtonClobbers])).trans
-        ((u3.rest (by simp [newtonClobbers])).trans (rest.mono (by simp [newtonClobbers]))))
+  · exact (u1.rest (by decide)).trans
+      ((u2.rest (by decide)).trans
+        ((u3.rest (by decide)).trans (rest.mono (by decide))))
 
 /-- The machine iteration doubles the number of correct inverse bits. -/
 theorem newton64_step_ok (s : State) (a b : Addr) {j : Nat}

@@ -50,7 +50,7 @@ theorem finishArgs_ok (s : State) {base : BitVec 32} {size tmp out acc mod n : N
   · rw [u6.other .lr (by decide), u5.gpr, u4.other .r7 (by decide),
       u3.other .r7 (by decide), u2.other .r7 (by decide), u1.gpr, mn]
   · rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans
-      ((u4.rest (by simp)).trans ((u5.rest (by simp)).trans (u6.rest (by simp))))))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
+      ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (u6.rest (by decide))))))
 
 end VG.Proof.Bignum.Arm

@@ -38,19 +38,19 @@ theorem expInit_ok (s : State) {base : BitVec 32} {len w M x : Nat}
   rintro u ⟨readyU, oneU, _, keepsU, frameU, restU⟩
   change numAt u.mem (State.addr base) w 7 = 1 at oneU
   have modU := (h.after_array (by decide) keepsU frameU restU readyU.ptr).2.trans modulus
-  have inputU := (keeps_array_num keepsU fits (op 1 (by simp)) (by decide)).trans input
-  have r2U := keeps_array_num keepsU fits (op 4 (by simp)) (by decide)
+  have inputU := (keeps_array_num keepsU fits (op 1 (by decide)) (by decide)).trans input
+  have r2U := keeps_array_num keepsU fits (op 4 (by decide)) (by decide)
   rw [WP.seq_iff]
-  refine WP.mono (montOp_ok u readyU (op 6 (by simp)) (op 4 (by simp)) (op 7 (by simp)) (by decide)
+  refine WP.mono (montOp_ok u readyU (op 6 (by decide)) (op 4 (by decide)) (op 7 (by decide)) (by decide)
     (by rw [oneU]; exact readyU.modulus)) ?_
   rintro v ⟨readyV, modV, boundV, valueV, keepsV, frameV, restV⟩
   rw [modU] at modV boundV valueV
   rw [oneU, Nat.mul_one, r2U] at valueV
   have powerV (ho : ok) := mont_cancel coprime (valueV.trans (r2value ho))
-  have oneV := (keeps_array_num keepsV fits (op 7 (by simp)) (by decide)).trans oneU
-  have inputV := (keeps_array_num keepsV fits (op 1 (by simp)) (by decide)).trans inputU
-  have r2V := (keeps_array_num keepsV fits (op 4 (by simp)) (by decide)).trans r2U
-  refine WP.mono (montOp_ok v readyV (op 5 (by simp)) (op 1 (by simp)) (op 4 (by simp)) (by decide)
+  have oneV := (keeps_array_num keepsV fits (op 7 (by decide)) (by decide)).trans oneU
+  have inputV := (keeps_array_num keepsV fits (op 1 (by decide)) (by decide)).trans inputU
+  have r2V := (keeps_array_num keepsV fits (op 4 (by decide)) (by decide)).trans r2U
+  refine WP.mono (montOp_ok v readyV (op 5 (by decide)) (op 1 (by decide)) (op 4 (by decide)) (by decide)
     (by rw [modV, r2V]; exact r2bound)) ?_
   rintro t ⟨readyT, modT, boundT, valueT, keepsT, frameT, restT⟩
   rw [modV] at modT boundT valueT
@@ -59,9 +59,9 @@ theorem expInit_ok (s : State) {base : BitVec 32} {len w M x : Nat}
     intro ho
     apply mont_cancel coprime
     rw [valueT, Nat.mul_mod, r2value ho, ← Nat.mul_mod, Nat.mul_assoc]
-  have powerT := keeps_array_num keepsT fits (op 6 (by simp)) (by decide)
-  have oneT := (keeps_array_num keepsT fits (op 7 (by simp)) (by decide)).trans oneV
-  have r2T := (keeps_array_num keepsT fits (op 4 (by simp)) (by decide)).trans r2V
+  have powerT := keeps_array_num keepsT fits (op 6 (by decide)) (by decide)
+  have oneT := (keeps_array_num keepsT fits (op 7 (by decide)) (by decide)).trans oneV
+  have r2T := (keeps_array_num keepsT fits (op 4 (by decide)) (by decide)).trans r2V
   have r2Exact : ok → numAt s.mem (State.addr base) w 4 = 2 ^ (128 * w) % M := by
     intro ho
     have rv := r2value ho

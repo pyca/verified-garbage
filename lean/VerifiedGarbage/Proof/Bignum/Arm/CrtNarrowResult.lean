@@ -38,7 +38,7 @@ theorem crt_leaveNarrow_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     (by rw [b.rd, b.wr, a.rd, a.wr]; exact main.read slotFit) fun t c => WP.block_nil ?_
   exact ⟨by rw [c.other .r1 (by decide), b.other .r1 (by decide), a.gpr],
     by rw [c.gpr, b.mem, a.mem, link], c.mem.trans (b.mem.trans a.mem),
-    (a.rest (by simp)).trans ((b.rest (by simp)).trans (c.rest (by simp)))⟩
+    (a.rest (by decide)).trans ((b.rest (by decide)).trans (c.rest (by decide)))⟩
 
 theorem crt_narrowResult_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
     {slot v M x value : Nat} (h : CrtShared g bs s)
@@ -79,7 +79,7 @@ theorem crt_narrowResult_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
   have childWsU := childWs.congr restU.wr
   have reducedU : CrtReducedState child (workspaceWords g.words) g.words M x u.mem := by rw [memU]; exact reduced
   obtain ⟨sharedZ, selected⟩ := crt_selectedWidth_ready sharedU childWsU reducedU.layout member
-    ((restZ.gpr .r0 (by simp)).trans childU) memZ frameZ restZ
+    ((restZ.gpr .r0 (by decide)).trans childU) memZ frameZ restZ
   have eqC := sharedU.workspace_eq_after_base childWsU member frameZ
   have eqN := sharedU.workspace_eq_after_base (sharedU.buffers.context.narrow) sharedU.narrow_member frameZ
   have reducedZ := reducedU.congr eqC
@@ -90,7 +90,7 @@ theorem crt_narrowResult_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
   have resultZ : numAt z.mem (State.addr (crtN g.base g.words)) v 6 = value := by
     rw [← result, ← memU]; exact eqN.number fitsN (by decide)
   have narrowR1 : z.gpr .r1 = crtN g.base g.words := by
-    rw [restZ.gpr .r1 (by simp), narrowU, ready.ptr]
+    rw [restZ.gpr .r1 (by decide), narrowU, ready.ptr]
   have arith : ArithmeticReady child (workspaceWords g.words) g.words z :=
     ⟨selected.workspace, reducedZ.layout.layout, reducedZ.layout.width, selected.ptr, reducedZ.inverse,
       by rw [reducedZ.modulus]; exact reducedZ.positive, selected.stackRead, selected.stackSep, selected.saved⟩
@@ -113,7 +113,7 @@ theorem crt_narrowResult_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
   have flag := (sharedZ.acceptance_after_workspace member frameT restT).trans
     ((acceptance_after_base_save frameZ restZ).trans (by rw [restU.sp, memU]))
   rw [restU.sp, memU] at frameZ
-  have restUZ : Rest roundClobbers s z := (restU.mono (by simp [roundClobbers])).trans (restZ.mono (by simp [roundClobbers]))
+  have restUZ : Rest roundClobbers s z := (restU.mono (by decide)).trans (restZ.mono (by decide))
   exact ⟨sharedT, selectedT, powered, flag, (frameZ.mono (by simp)).trans (frameT.mono (by simp)),
     restUZ.trans restT⟩
 

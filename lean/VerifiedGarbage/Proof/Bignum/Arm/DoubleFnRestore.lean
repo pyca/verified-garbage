@@ -40,7 +40,7 @@ theorem doubleFnRestore_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   refine WP.mono (restoreBase_ok u readU savedU) ?_
   rintro t ⟨ptr, mem, keep⟩
   rw [← mem] at bound value keeps frame
-  exact ⟨bound, value, keeps, frame, rest.trans (keep.mono (by simp [roundClobbers])), ptr⟩
+  exact ⟨bound, value, keeps, frame, rest.trans (keep.mono (by decide)), ptr⟩
 
 theorem doubleFnRestore_ct {base : BitVec 32} {len w o a b : Nat}
     (ho : Operand o) (ha : Operand a) (hb : Operand b)

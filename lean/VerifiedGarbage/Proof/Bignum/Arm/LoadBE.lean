@@ -39,10 +39,10 @@ theorem loadBE_ok (s : State) {src dst : BitVec 32} {n k : Nat}
     ⟨dstFit, by omega, write⟩ (by omega) (by simpa using p0) count zero) ?_
   intro u zi
   rw [WP.seq_iff]
-  refine WP.mono (loadBEreverseArgs_ok u hk ((zi.rest.gpr .r6 (by simp)).trans p6)) ?_
+  refine WP.mono (loadBEreverseArgs_ok u hk ((zi.rest.gpr .r6 (by decide)).trans p6)) ?_
   rintro v ⟨dptr, sptr, len, memV, restV⟩
   have keep : Rest [.r0, .r1, .r2, .lr] s v :=
-    (zi.rest.mono (by simp)).trans (restV.mono (by simp))
+    (zi.rest.mono (by decide)).trans (restV.mono (by decide))
   have frameV : Frame [⟨State.addr dst, 4 * n⟩] s.mem v.mem := by rw [memV]; exact zi.frame
   have vr : InRegions (v.rd ++ v.wr) (State.addr src) k := by rw [keep.rd, keep.wr]; exact read
   have vw : InRegions v.wr (State.addr dst) k := by
@@ -53,8 +53,8 @@ theorem loadBE_ok (s : State) {src dst : BitVec 32} {n k : Nat}
     (sep.sub_right (Region.sub_prefix fit))
   refine WP.mono (reverseBytes_ok v ctx hk
     (sptr.trans (congrArg (fun x => x + BitVec.ofNat 32 (k - 1))
-      ((zi.rest.gpr .r4 (by simp)).trans p4)))
-    (dptr.trans ((zi.rest.gpr .r5 (by simp)).trans p5)) len) ?_
+      ((zi.rest.gpr .r4 (by decide)).trans p4)))
+    (dptr.trans ((zi.rest.gpr .r5 (by decide)).trans p5)) len) ?_
   intro t ri
   have input : Spec.Rsa.bytesAt v.mem (State.addr src) k = Spec.Rsa.bytesAt s.mem (State.addr src) k := by
     unfold Spec.Rsa.bytesAt

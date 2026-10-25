@@ -25,8 +25,8 @@ theorem Post.prefix {s u t : State} {base : BitVec 32} {acc b mod n : Nat}
     (h : Post u base acc b mod n t) (mem : u.mem=s.mem) (rest : Rest [] s u) :
     Post s base acc b mod n t := by
   obtain ⟨value,ptr,outside,rt⟩ := h
-  refine ⟨?_,ptr,?_,(rest.mono (by simp)).trans rt⟩
-  · simpa only [mem,rest.gpr .r1 (by simp)] using value
+  refine ⟨?_,ptr,?_,(rest.mono (by decide)).trans rt⟩
+  · simpa only [mem,rest.gpr .r1 (by decide)] using value
   · simpa only [mem] using outside
 
 theorem choose_ok (s : State) (n k : Nat) (hn : n<2^32) (hk : k<2^32)

@@ -32,8 +32,10 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.WinLay
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
 
 /-!
 # ECDSA verification over secp256k1 on x86-64: `Verified`
@@ -59,13 +61,26 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre secp256k1 s := by
   obtain ⟨h1, h2, h3, h4, h5, -, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h7, by simp [TblsHeld, Cfg.combConsts, secp256k1, Abi.constsHeld, Abi.constRegions]⟩
 
+/-- `verifySecp256k1` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`), and its checks of every instruction
+(`EraseChecks`). -/
+def verifySecp256k1Erased : Prog isa := Code.erase verifySecp256k1
+
+materialize_shared verifySecp256k1Erased
+
+theorem verify_inlineOk : verifySecp256k1.InlineOk = true :=
+  Code.inlineOk_of_erase (show verifySecp256k1Erased.InlineOk = true by lit_decide)
+
 theorem verify_x86 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifySecp256k1.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (secp256k1_ok hI) hL secp256k1_tbls (pre_of hs) secp256k1_mulBase.2
-  have hok : verifySecp256k1.InlineOk = true := by lit_decide
+  have hok := verify_inlineOk
   have hsp := Code.clobbers_rsp_of_inlineOk hok
   have hmx : verifySecp256k1.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
-    rw [Code.allInstrs_inline]; lit_decide
+    rw [Code.allInstrs_inline]
+    exact Code.allInstrs_of_erase (fun i => by rw [Instr.loadsMxcsr_erase])
+      (show verifySecp256k1Erased.allInstrs _ = true by lit_decide)
   have F := (Exec.regions he (Code.noCalls_inline hok)).2.2
   obtain ⟨-, hwr, -, -, -, hrs, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
@@ -84,13 +99,6 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r rfl
       exact hrs) (by decide)
-
-/-- `verifySecp256k1` without its displacements, as a literal of shared blocks
-(`materialize_shared`): what its constant-time check analyses
-(`Proof/Framework/X86_64/TaintErase.lean`). -/
-def verifySecp256k1Erased : Prog isa := Code.erase verifySecp256k1
-
-materialize_shared verifySecp256k1Erased
 
 theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifySecp256k1 := by
   refine VG.Taint.constantTime_mapBlocks (c' := verifySecp256k1Erased) taintS_eraseInv
@@ -114,7 +122,7 @@ theorem implies8 : verifyX86_64.Implies (Spec.Ecdsa.Secp256k1.inst.verifyContrac
 
 theorem verify_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target verifySecp256k1 (Spec.Ecdsa.Secp256k1.inst.verifyContract X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (verify_x86 hL hI) verify_ct implies8
+  Verified.of_inline_ct verify_inlineOk (verify_x86 hL hI) verify_ct implies8
     (fun _ h => Sig.clear_of_pre h) fun _ _ _ _ _ hp => hp
 
 end VG.Proof.Ecdsa.Verify.X86_64.Secp256k1

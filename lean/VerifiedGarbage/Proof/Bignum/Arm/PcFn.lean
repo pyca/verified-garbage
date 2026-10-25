@@ -58,22 +58,22 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     exact List.mem_cons_self
   refine WP.mono (pc_restore_ok v s.gpr fit read saved) ?_
   rintro t ⟨restored, memT, restT⟩
-  have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by simp [pcCalleeSaved])
+  have ret : t.gpr .r0 = v.gpr .r0 := restT.gpr .r0 (by decide)
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
     have ne : r ≠ .r12 := by intro he; subst r; simp [preserved] at hr
     rw [popped_gpr ne]
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact restored (.r4, 16) (by simp [pcCalleeSaved])
-    · exact restored (.r5, 20) (by simp [pcCalleeSaved])
-    · exact restored (.r6, 24) (by simp [pcCalleeSaved])
-    · exact restored (.r7, 28) (by simp [pcCalleeSaved])
-    · exact restored (.r8, 32) (by simp [pcCalleeSaved])
-    · exact restored (.r9, 36) (by simp [pcCalleeSaved])
-    · exact restored (.r10, 40) (by simp [pcCalleeSaved])
-    · exact restored (.r11, 44) (by simp [pcCalleeSaved])
-    · exact restored (.lr, 52) (by simp [pcCalleeSaved])
+    · exact restored (.r4, 16) (by decide)
+    · exact restored (.r5, 20) (by decide)
+    · exact restored (.r6, 24) (by decide)
+    · exact restored (.r7, 28) (by decide)
+    · exact restored (.r8, 32) (by decide)
+    · exact restored (.r9, 36) (by decide)
+    · exact restored (.r10, 40) (by decide)
+    · exact restored (.r11, 44) (by decide)
+    · exact restored (.lr, 52) (by decide)
   · rw [popped_sp, restT.sp, spV]
     exact BitVec.sub_add_cancel _ _
   · simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), popped_mem, memT, ret]

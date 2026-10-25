@@ -40,7 +40,7 @@ theorem sqAnchor_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s) :
   have hu := h.of_mem mem rest
   refine wp_ldr (a := off (State.addr base) 80) (by decide) (by rw [p]; exact VG.Arm.addr_add (by omega_arith))
     (hu.read (by omega_arith)) fun t ut => WP.block_nil ?_
-  exact ⟨ut.gpr.trans hu.metaNow, ut.mem.trans mem, rest.trans (ut.rest (by simp))⟩
+  exact ⟨ut.gpr.trans hu.metaNow, ut.mem.trans mem, rest.trans (ut.rest (by decide))⟩
 
 end
 
@@ -140,7 +140,7 @@ theorem sqMeta_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
     have h8 : Outside (State.addr base) M 24 s6.mem t.mem := by rw [m8]; exact o 20 (by decide) _ _
     exact h0.trans (h2.trans (h3.trans (h4.trans (h6.trans h8))))
   · exact (u1.rest _).trans ((u2.rest _).trans ((u3.rest _).trans ((u4.rest _).trans
-      ((u5.rest (by simp)).trans ((u6.rest _).trans ((u7.rest (by simp)).trans (u8.rest _)))))))
+      ((u5.rest (by decide)).trans ((u6.rest _).trans ((u7.rest (by decide)).trans (u8.rest _)))))))
 
 theorem sqZeroArgs_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
     (p6 : s.gpr .r6 = base + BitVec.ofNat 32 M) (p7 : s.gpr .r7 = BitVec.ofNat 32 n) :
@@ -163,7 +163,7 @@ theorem sqZeroArgs_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
     change BitVec.ofNat 32 (n * 2 ^ 1) + BitVec.ofNat 32 2 = _
     rw [BitVec.ofNat_add_ofNat, show n * 2 ^ 1 + 2 = 2 * n + 2 by omega_arith]
   · rw [u4.mem, u3.mem, u2.mem, u1.mem]
-  · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest (by simp))))
+  · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans (u4.rest (by decide))))
 
 theorem sqInit_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
     (p6 : s.gpr .r6 = base + BitVec.ofNat 32 M) (p7 : s.gpr .r7 = BitVec.ofNat 32 n)
@@ -176,8 +176,8 @@ theorem sqInit_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
   rintro u ⟨md, next, cnt, tptr, outU, restU⟩
   have hu := h.next (Outs.of_outside (outU.mono (o' := M) (n' := 4 * (2 * n + 8)) (Nat.le_refl _) (by omega_arith)) (by simp)) restU
   rw [WP.seq_iff]
-  refine WP.mono (sqZeroArgs_ok u hu ((restU.gpr .r6 (by simp)).trans p6)
-    ((restU.gpr .r7 (by simp)).trans p7)) ?_
+  refine WP.mono (sqZeroArgs_ok u hu ((restU.gpr .r6 (by decide)).trans p6)
+    ((restU.gpr .r7 (by decide)).trans p7)) ?_
   rintro v ⟨p0, plr, p3, memV, restV⟩
   have hv := hu.of_mem memV restV
   have cv : ZeroCtx v base size (M + 24) (2 * n + 2) :=
@@ -199,8 +199,8 @@ theorem sqInit_ok (s : State) (h : SqEnv m0 base size out a mod M n inv s)
   · have z := zt.value
     rw [show 2 * n + 2 = n + (n + 2) by omega_arith] at z
     simpa only [Nat.zero_add, Nat.sub_zero] using val32_zero_tail z
-  · exact (restU.mono (by simp [roundClobbers])).trans ((restV.mono (by simp [roundClobbers])).trans
-      (zt.rest.mono (by simp [roundClobbers])))
+  · exact (restU.mono (by decide)).trans ((restV.mono (by decide)).trans
+      (zt.rest.mono (by decide)))
 
 end
 

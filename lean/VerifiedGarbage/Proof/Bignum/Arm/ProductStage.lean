@@ -45,6 +45,6 @@ theorem productStage_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i
     refine ⟨?_, hdr.of_outside outside (by omega) (by omega), ptop, outside, ?_⟩
     · rw [value, mem, scalar, carry]
       simp only [show (0 : BitVec 32).toNat = 0 from rfl, Nat.add_zero, w32]
-    · exact (keep.mono (by simp [roundClobbers])).trans (rest.mono (by simp [loopClobbers, roundClobbers]))
+    · exact (keep.mono (by decide)).trans (rest.mono (by decide))
 
 end VG.Proof.Bignum.Arm

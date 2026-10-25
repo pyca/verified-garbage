@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.ArithCall
 import VerifiedGarbage.Proof.Dsa.Arm.PowCall
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # DSA on 32-bit ARM: the arithmetic's traces
@@ -108,7 +109,7 @@ theorem setup_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n m�
     fun u₁ u₂ ⟨w₁, V₁, _⟩ ⟨w₂, V₂, _⟩ => ?_
   have ct : RelCT isa (VG.Arm.Taint.Agree T0) (Context.light n) (VG.Arm.Taint.Agree T0) :=
     erased_relCT (c₀ := .block (setupInverse 0))
-      (VG.Taint.hintOf taint T0 (.block (setupInverse 0))) rfl (wsT_noBase _ _) (by decide)
+      (VG.Taint.hintOf taint T0 (.block (setupInverse 0))) (by kernel_rfl) (wsT_noBase _ _) (by decide)
   exact SameTrace.of_relCT ct (agree0 w₁ w₂)
 
 /-- After the setup of an operation, its operands' pointers are still the same. -/

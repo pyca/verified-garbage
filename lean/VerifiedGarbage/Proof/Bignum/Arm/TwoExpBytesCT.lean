@@ -35,7 +35,7 @@ theorem byte_ct {base ep : BitVec 32} {len w M1 M2 E1 E2 : Nat} {b1 b2 : Byte}
     refine WP.mono (byteHead_ok s h.1.power h.1.pointer h.1.read) ?_
     rintro t ⟨state, _, frame, rest⟩
     rw [h.1.byte] at state
-    exact ⟨state, K.stable frame (rest.mono (by simp [roundClobbers])) h.2⟩
+    exact ⟨state, K.stable frame (rest.mono (by decide)) h.2⟩
   have bits (s : State) {M E : Nat} {b : Byte} (h : BitState base len w M E b.toNat 0 s ∧ P s) :
       WP isa (VG.Impl.Bignum.Arm.TwoExp.bits K.square K.twice) s (ArithmeticReady base len w) :=
     WP.mono (bits_ok K s h.1 h.2 b.isLt) fun _ k => k.1.ready

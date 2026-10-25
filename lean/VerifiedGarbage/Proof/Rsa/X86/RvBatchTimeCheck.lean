@@ -29,16 +29,13 @@ theorem batchChoice512Check : (VG.Taint.check sseTaint τA (.block (VG.Impl.Rsa.
     (VG.Taint.hintOf sseTaint τA (.block (VG.Impl.Rsa.X86.GcdBatch.choice 512)))).isSome=true := by
   taint_decide
 
-theorem scalarGcdCheck : (VG.Taint.check sseTaint τA (VG.Impl.Rsa.X86.KeyRt.gcd VG.Impl.Rsa.X86.RecoverRt.nar)
-    (VG.Taint.hintOf sseTaint τA (VG.Impl.Rsa.X86.KeyRt.gcd VG.Impl.Rsa.X86.RecoverRt.nar))).isSome=true := by
-  taint_decide
+theorem scalarGcdCheck : ∃ hint, (VG.Taint.check sseTaint τA (VG.Impl.Rsa.X86.KeyRt.gcd VG.Impl.Rsa.X86.RecoverRt.nar)
+    hint).isSome=true := ⟨_, by taint_decide⟩
 
-theorem gcdSetCheck : (VG.Taint.check sseTaint τA (VG.Impl.Rsa.X86.RecoverRt.gcdSet)
-    (VG.Taint.hintOf sseTaint τA (VG.Impl.Rsa.X86.RecoverRt.gcdSet))).isSome=true := by
-  taint_decide
+theorem gcdSetCheck : ∃ hint, (VG.Taint.check sseTaint τA (VG.Impl.Rsa.X86.RecoverRt.gcdSet)
+    hint).isSome=true := ⟨_, by taint_decide⟩
 
-theorem factorTailCheck : (VG.Taint.check sseTaint τA (VG.Impl.Rsa.X86.Keys.seqs [VG.Impl.Rsa.X86.RecoverRt.divSet, VG.Impl.Rsa.X86.KeyRt.div VG.Impl.Rsa.X86.RecoverRt.nar VG.Impl.Rsa.X86.Recover.aQ VG.Impl.Rsa.X86.Recover.aRm VG.Impl.Rsa.X86.Recover.aDv VG.Impl.Rsa.X86.Recover.aDt, VG.Impl.Rsa.X86.RecoverRt.order])
-    (VG.Taint.hintOf sseTaint τA (VG.Impl.Rsa.X86.Keys.seqs [VG.Impl.Rsa.X86.RecoverRt.divSet, VG.Impl.Rsa.X86.KeyRt.div VG.Impl.Rsa.X86.RecoverRt.nar VG.Impl.Rsa.X86.Recover.aQ VG.Impl.Rsa.X86.Recover.aRm VG.Impl.Rsa.X86.Recover.aDv VG.Impl.Rsa.X86.Recover.aDt, VG.Impl.Rsa.X86.RecoverRt.order]))).isSome=true := by
-  taint_decide
+theorem factorTailCheck : ∃ hint, (VG.Taint.check sseTaint τA (VG.Impl.Rsa.X86.Keys.seqs [VG.Impl.Rsa.X86.RecoverRt.divSet, VG.Impl.Rsa.X86.KeyRt.div VG.Impl.Rsa.X86.RecoverRt.nar VG.Impl.Rsa.X86.Recover.aQ VG.Impl.Rsa.X86.Recover.aRm VG.Impl.Rsa.X86.Recover.aDv VG.Impl.Rsa.X86.Recover.aDt, VG.Impl.Rsa.X86.RecoverRt.order])
+    hint).isSome=true := ⟨_, by taint_decide⟩
 
 end VG.Proof.Rsa.X86.Recover

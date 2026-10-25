@@ -19,6 +19,8 @@ meta import VerifiedGarbage.Spec.Ct.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 
 /-!
 # Constant-time byte comparison on PPC64LE
@@ -97,7 +99,7 @@ theorem step_ok (s₀ s : State) (hp : contract.pre s₀)
     t.gpr .r8 = BitVec.ofNat 64 (i + 1) ∧
     t.gpr .r7 = (diff s₀.mem (s₀.gpr .r3) (s₀.gpr .r5) (i + 1)).setWidth 64 ∧
     t.gpr .r9 = BitVec.ofNat 64 (i + 1) - s₀.gpr .r4) ?_ (by rfl)) ?_
-  · crun [h3, h4, h5, hx, ha, hm, hA, hB, hadd, ← BitVec.setWidth_or, ← BitVec.setWidth_xor]
+  · crunr [h3, h4, h5, hx, ha, hm, hA, hB, hadd, ← BitVec.setWidth_or, ← BitVec.setWidth_xor]
     simp only [read_byte, diff]
   · intro t ⟨⟨h3', hm', hx', ha', hz⟩, hk'⟩
     exact ⟨⟨hk.trans hk', h3', hm', hx', ha'⟩, hz⟩
@@ -134,7 +136,7 @@ theorem finish_ok (s : State) (d : Byte) (ha : s.gpr .r7 = d.setWidth 64) :
     WP isa finish s fun t => t.mem = s.mem ∧
       (t.gpr .r3).setWidth 32 = if d = 0 then 1 else 0 := by
   unfold finish
-  crun [ha]
+  crunr [ha]
   exact result64 d
 
 theorem equal_ok (s₀ s : State) (hp : contract.pre s₀)
@@ -144,7 +146,7 @@ theorem equal_ok (s₀ s : State) (hp : contract.pre s₀)
   have start : WP isa (.block [.li .r8 0]) s (Inv s₀ 0) := by
     refine WP.mono (keep (Q := fun t => t.gpr .r3 = s₀.gpr .r3 ∧ t.mem = s₀.mem ∧
       t.gpr .r8 = 0 ∧ t.gpr .r7 = 0) ?_ (by rfl)) ?_
-    · crun [h3, hm, ha]
+    · crunr [h3, hm, ha]
     · intro t ⟨⟨h3', hm', hx', ha'⟩, hk'⟩
       exact ⟨hk.trans hk', h3', hm', hx', ha'⟩
   unfold equal
@@ -173,7 +175,7 @@ theorem correct (s₀ : State) (hp : contract.pre s₀) :
         t.gpr .r9 = s₀.gpr .r4 - s₀.gpr .r6) := by
     refine WP.mono (keep (Q := fun t => t.gpr .r3 = s₀.gpr .r3 ∧ t.mem = s₀.mem ∧
         t.gpr .r7 = 0 ∧ t.gpr .r9 = s₀.gpr .r4 - s₀.gpr .r6) ?_ (by rfl)) ?_
-    · crun
+    · crunr
     · intro t ⟨h, hk⟩; exact ⟨hk, h⟩
   unfold eq
   refine WP.seq (WP.mono start fun t ⟨hk, h3, hm, ha, hz⟩ => ?_)
@@ -183,7 +185,7 @@ theorem correct (s₀ : State) (hp : contract.pre s₀) :
   · refine WP.ite false (by simp only [VG.PPC64LE.eval, State.read, BitVec.setWidth_eq, hz,
       sub_zero, beq_eq_false_iff_ne.mpr he]) (by simp) (fun _ => ?_)
     have hn : (s₀.gpr .r4).toNat ≠ (s₀.gpr .r6).toNat := fun h => he (BitVec.eq_of_toNat_eq h)
-    crun [hm, contract, lengths_ne _ _ _ hn, BitVec.setWidth_zero]
+    crunr [hm, contract, lengths_ne _ _ _ hn, BitVec.setWidth_zero]
 
 def sat : State where
   gpr _ := 0

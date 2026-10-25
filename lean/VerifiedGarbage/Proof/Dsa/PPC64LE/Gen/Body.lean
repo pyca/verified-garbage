@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Entry
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.SLoop
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # DSA parameter generation on PPC64LE: the body
 
@@ -61,13 +62,13 @@ abbrev A1 (G : GP) (σ s : State) : Prop := s.gpr .r11 = G.scr ∧ s.sp = G.sp �
 theorem entry_vp : VP (AE G) (.block entry) (E1 G) := by
   rw [show entry = [.addSp .r11 (96 + 8 * 2), .load .d .r11 .r11 0] ++ entryRest from rfl]
   refine VP.block_append (G := A1 G) (VP.taint [] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [])
-      (.block [.addSp .r11 (96 + 8 * 2), .load .d .r11 .r11 0]), rfl⟩
+      (.block [.addSp .r11 (96 + 8 * 2), .load .d .r11 .r11 0]), by kernel_rfl⟩
       (fun σ₁ σ₂ s₁ s₂ ⟨e₁, _, g₁⟩ ⟨e₂, _, g₂⟩ => by
         subst e₁ e₂
         show (mkG s₁).sp = (mkG s₂).sp
         rw [g₁, g₂])
       (fun _ _ _ _ _ _ r hr => absurd hr (by simp)) fun σ u ⟨hu, pre, hG⟩ => ?_)
-    (VP.taint [.r11] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r11]) (.block entryRest), rfl⟩
+    (VP.taint [.r11] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r11]) (.block entryRest), by kernel_rfl⟩
       (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2.1, h₂.2.1])
       (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1, h₂.1]) fun σ s h => h.2.2)
@@ -91,7 +92,7 @@ theorem cmpP_vp {x : Nat} (hx : x ≤ 2 ^ 15) :
   have e : ∀ σ s, E1 G σ s → s.gpr .r5 = BitVec.ofNat 64 G.pLen := fun σ s h => by
     rw [h.2]; exact toNat_eq_ofNat (by rw [← h.1.hG]; rfl)
   refine VP.taint [.r5] ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r5])
-      (.block [.subi .r0 .r5 x]), rfl⟩ (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by
+      (.block [.subi .r0 .r5 x]), by kernel_rfl⟩ (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by
         have e₁ : σ₁.sp = G.sp := by rw [← h₁.1.hG]; rfl
         have e₂ : σ₂.sp = G.sp := by rw [← h₂.1.hG]; rfl
         rw [h₁.1.sp, h₂.1.sp, e₁, e₂])
@@ -160,7 +161,7 @@ structure Done (G : GP) (R : Option Spec.Dsa.Params) (σ t : State) : Prop where
 theorem restore_vp {R : Option Spec.Dsa.Params} :
     VP (fun σ t => FO G R σ t ∧ True) (.block restore) (Done G R) := by
   refine VP.pub (G := G) (fun σ s h => ⟨h.1.r28, by rw [h.1.sp, ← h.1.hG]; rfl⟩) []
-    ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block restore), rfl⟩
+    ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block restore), by kernel_rfl⟩
     (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s ⟨h, _⟩ => ?_
   exact WP.mono h.restore fun t ⟨abi, m, r3⟩ => ⟨h.pre, h.hG, abi, by rw [m]; exact h.out, by rw [r3]; exact h.r3⟩
 

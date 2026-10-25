@@ -42,10 +42,10 @@ theorem startCount_ok {base source table : BitVec 32} {len w bytes N M g E : Nat
     (by rw [first.wr]; exact h.ready.workspace.write (by omega)) fun t last => WP.block_nil ?_
   have mem : t.mem=s.mem.writeW (off (State.addr base) 192) (BitVec.ofNat 32 (Spec.Rsa.FixedBaseComb.rows N)) := by
     rw [last.mem,first.mem,first.gpr,controls.spacing]
-  have rest : Rest [.r1] s t := (first.rest (by simp)).trans (last.rest _)
+  have rest : Rest [.r1] s t := (first.rest (by decide)).trans (last.rest _)
   obtain ⟨powerT,frame⟩ := h.after_header (d:=192) (by decide) (by decide) mem rest
-    ((rest.gpr .r0 (by simp)).trans h.ready.ptr)
-  have r : Rest roundClobbers s t := rest.mono (by simp [roundClobbers])
+    ((rest.gpr .r0 (by decide)).trans h.ready.ptr)
+  have r : Rest roundClobbers s t := rest.mono (by decide)
   refine ⟨powerT,A.stable frame r hp,controls.after_counter mem,?_,
     frame.mono (by simpa using A.workspace),r⟩
   change t.mem.readW (off (State.addr base) 192) 32=_
@@ -69,11 +69,11 @@ theorem initial_ok {base source table : BitVec 32} {len w bytes N M g : Nat}
   change numAt u.mem (State.addr base) w 7=1 at oneU
   have pu := A.stable frameU restU hp
   have modU := (ready.after_array (by decide) keepsU frameU restU readyU.ptr).2.trans modulus
-  have r2U := (keeps_array_num keepsU fits (operand 4 (by simp)) (by decide)).trans r2
+  have r2U := (keeps_array_num keepsU fits (operand 4 (by decide)) (by decide)).trans r2
   have controlsU := controls.after_header (TwoExp.header_of_keeps ready keepsU)
   rw [WP.seq_iff]
-  refine WP.mono (A.op_ok u 6 4 7 readyU pu (operand 6 (by simp)) (operand 4 (by simp))
-    (operand 7 (by simp)) (by decide) (by rw [oneU]; exact readyU.modulus)) ?_
+  refine WP.mono (A.op_ok u 6 4 7 readyU pu (operand 6 (by decide)) (operand 4 (by decide))
+    (operand 7 (by decide)) (by decide) (by rw [oneU]; exact readyU.modulus)) ?_
   rintro v ⟨readyV,modV,boundV,valueV,keepsV,pv,frameV,restV⟩
   rw [modU] at modV boundV valueV
   rw [oneU,Nat.mul_one,r2U] at valueV
@@ -84,8 +84,8 @@ theorem initial_ok {base source table : BitVec 32} {len w bytes N M g : Nat}
   have power : Power base len w M g 0 v := by
     refine ⟨readyV,modV,coprime,boundV,?_,?_,?_⟩
     · simpa only [Nat.pow_zero,Nat.one_mul] using encodedOne
-    · exact (keeps_array_num keepsV fits (operand 7 (by simp)) (by decide)).trans oneU
-    · exact (keeps_array_num keepsV fits (operand 4 (by simp)) (by decide)).trans r2U
+    · exact (keeps_array_num keepsV fits (operand 7 (by decide)) (by decide)).trans oneU
+    · exact (keeps_array_num keepsV fits (operand 4 (by decide)) (by decide)).trans r2U
   have controlsV := controlsU.after_header (TwoExp.header_of_keeps readyU keepsV)
   refine WP.mono (startCount_ok A v power pv controlsV) ?_
   rintro t ⟨powerT,pt,controlsT,counterT,frameT,restT⟩
