@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `CommitTailSponge.lean` -/
 

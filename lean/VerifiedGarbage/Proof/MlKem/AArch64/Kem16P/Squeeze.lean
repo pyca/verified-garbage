@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Slot
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Squeeze
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Start
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitCall
 
 /-!
 # The three main squeezes of a pair computing PRF outputs

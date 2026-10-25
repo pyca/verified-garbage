@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 
 /-!
 # `vg_rsa_public_checked` and `vg_rsa_public_precomputed_checked` on x86-64

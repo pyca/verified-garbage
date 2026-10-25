@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseL
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 @[expose] public section
 

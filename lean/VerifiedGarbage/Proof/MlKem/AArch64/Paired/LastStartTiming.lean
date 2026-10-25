@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastPrepare
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired

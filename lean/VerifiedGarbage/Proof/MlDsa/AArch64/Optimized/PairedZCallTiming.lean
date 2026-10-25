@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 
 /-! ## From `PairedZCall.lean` -/
 

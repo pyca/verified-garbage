@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.RsaPss.CtPad
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 
 /-!
 # RSASSA-PSS on x86-64: hashing a message of secret length

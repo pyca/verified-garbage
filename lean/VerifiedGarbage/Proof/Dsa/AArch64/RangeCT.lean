@@ -24,7 +24,6 @@ meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Dsa.AArch64.RangeLow
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RangeLow
 
 /-! # Fixed-trace scalar range scans -/

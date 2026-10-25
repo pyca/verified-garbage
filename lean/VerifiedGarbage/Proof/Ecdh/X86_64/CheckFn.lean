@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-!
 # `vg_<curve>_check_point` on x86-64: correctness

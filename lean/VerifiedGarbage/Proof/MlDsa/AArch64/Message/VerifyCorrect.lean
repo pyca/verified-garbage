@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-!
 # ML-DSA on AArch64, `verify_message`: correctness

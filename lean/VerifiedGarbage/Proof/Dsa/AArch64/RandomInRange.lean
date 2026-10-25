@@ -9,7 +9,6 @@ public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 
 /-! Whole range-check correctness, including reads of the sampler's frame. -/
 @[expose] public section

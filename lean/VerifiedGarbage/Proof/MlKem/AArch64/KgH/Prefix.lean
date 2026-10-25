@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Inv
 import VerifiedGarbage.Proof.MlKem.AArch64.KgH.NoiseK
-import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgOps
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
-import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Row
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.First
 

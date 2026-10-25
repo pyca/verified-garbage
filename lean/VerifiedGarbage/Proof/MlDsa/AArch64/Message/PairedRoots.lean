@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
 
 @[expose] public section
 

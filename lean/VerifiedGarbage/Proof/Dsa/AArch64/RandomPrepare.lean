@@ -16,7 +16,6 @@ import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
-import VerifiedGarbage.Proof.Dsa.AArch64.Significant
 
 /-! Initialization of the sampler, including its exact memory effects. -/
 @[expose] public section

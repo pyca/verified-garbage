@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowStep
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowStep
 import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpExp
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowPowers
 
 /-! # Recovery windows: the padded exponent and the complete exponentiation -/
 

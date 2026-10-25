@@ -8,7 +8,6 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
 
 @[expose] public section
 

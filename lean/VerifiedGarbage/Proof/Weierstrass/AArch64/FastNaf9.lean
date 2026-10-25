@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
 import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem

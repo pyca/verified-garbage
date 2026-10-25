@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashNonce
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskPrefixTailTiming
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseC
 
 @[expose] public section
 

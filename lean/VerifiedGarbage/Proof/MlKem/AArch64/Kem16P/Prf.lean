@@ -9,12 +9,12 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.X3
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! # The padded block of `PRF₂(r, N)`, written word by word
 

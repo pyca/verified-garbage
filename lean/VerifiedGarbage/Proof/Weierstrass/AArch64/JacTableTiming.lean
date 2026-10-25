@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! Exact field equality through public in-scratch table transfers. -/
 

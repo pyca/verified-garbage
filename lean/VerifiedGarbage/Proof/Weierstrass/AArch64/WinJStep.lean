@@ -1,17 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJNorm
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJNorm
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CopyKeep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
+import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
 import VerifiedGarbage.Proof.Weierstrass.WindowJ
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Proof.Weierstrass.JacMadd
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.WindowJA
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJBuild
 
 /-!
 # Windows in Jacobian coordinates on AArch64: an iteration

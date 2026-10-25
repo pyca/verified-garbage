@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Loop
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 
 import VerifiedGarbage.Proof.MlKem.PolyW
-import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Ready
 
 /-! # The fused dot product of 16-bit polynomials in 1024-byte buffers
 

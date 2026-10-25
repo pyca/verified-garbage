@@ -6,13 +6,16 @@ import VerifiedGarbage.Proof.MlKem.AArch64.AddSubW
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Dec
 import VerifiedGarbage.Proof.MlKem.AArch64.Widen16
 import VerifiedGarbage.Proof.MlKem.AArch64.Narrow16
-public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Result
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Loop
 import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 import VerifiedGarbage.Proof.MlKem.AArch64.DotW
+public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ops16
 
 /-! # The building blocks of the 16-bit `encaps` and `decaps`
 

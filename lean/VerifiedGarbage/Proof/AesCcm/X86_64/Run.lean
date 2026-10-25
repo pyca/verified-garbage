@@ -12,7 +12,6 @@ public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 import VerifiedGarbage.Impl.AesCcm.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-CCM on x86-64: running straight-line blocks

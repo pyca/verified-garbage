@@ -11,7 +11,6 @@ public import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
 
 /-! The copied ISA bytes encode precisely the specification's candidate. -/
 @[expose] public section

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WinSelect
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJNorm
 
 /-!
 # Windows in Jacobian coordinates on AArch64: the last iteration and the loop

@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.AllWith
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutPair
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.At
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
 
 /-! # Complete paired sampling of all secrets and retained errors -/
 @[expose] public section

@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 
 /-! ## From `PairedHintCall.lean` -/
 

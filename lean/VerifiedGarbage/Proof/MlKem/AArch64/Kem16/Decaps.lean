@@ -1,10 +1,10 @@
 module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
@@ -17,12 +17,22 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Bounds
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # The 16-bit decapsulation's postcondition and `J(z ‖ c)`
 

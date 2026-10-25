@@ -7,7 +7,6 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-! ## From `CachedCopyBody.lean` -/
 

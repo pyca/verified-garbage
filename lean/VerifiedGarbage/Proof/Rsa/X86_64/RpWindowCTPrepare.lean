@@ -7,6 +7,8 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
 meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
+import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpWindowBase
 
 /-! # Recovery windows: constant-time table preparation -/
 

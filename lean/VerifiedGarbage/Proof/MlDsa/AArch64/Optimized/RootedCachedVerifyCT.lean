@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRoots
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-! ## From `RootedCachedVerifyRel.lean` -/
 

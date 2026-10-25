@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # The 16-bit key generation's invariants
 

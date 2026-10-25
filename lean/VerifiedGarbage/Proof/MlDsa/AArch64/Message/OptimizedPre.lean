@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
 
 @[expose] public section
 

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 @[expose] public section
 

@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
 
 /-! ## From `CachedMatrixExpansion.lean` -/
 

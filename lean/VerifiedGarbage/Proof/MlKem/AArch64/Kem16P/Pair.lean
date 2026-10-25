@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Squeeze
-import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Pair
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
@@ -9,8 +8,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Result
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SpecPost
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Begin
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
 

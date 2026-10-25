@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Last

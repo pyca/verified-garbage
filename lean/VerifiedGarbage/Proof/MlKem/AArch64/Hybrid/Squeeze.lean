@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitCall
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Squeeze
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Start
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitCall
 
 /-!
 # The three main squeezes of a hashing pair

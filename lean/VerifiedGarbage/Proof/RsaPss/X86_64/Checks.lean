@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaPss.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.RegSetOrder
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

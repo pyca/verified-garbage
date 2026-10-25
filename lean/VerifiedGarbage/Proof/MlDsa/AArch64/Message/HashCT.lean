@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: two runs of the hashing

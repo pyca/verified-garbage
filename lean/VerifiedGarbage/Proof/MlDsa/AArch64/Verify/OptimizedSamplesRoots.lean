@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamples
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 
 @[expose] public section

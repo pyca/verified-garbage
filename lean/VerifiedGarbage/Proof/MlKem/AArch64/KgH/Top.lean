@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Correct
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Timing
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
@@ -12,6 +11,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Inv
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
 import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Prefix
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 
 /-! # The key generation hashing `ek` during the matrix: constant time
 

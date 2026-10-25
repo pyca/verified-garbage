@@ -27,6 +27,7 @@ meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Decaps
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Decaps
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
 
 /-!
 # `vg_mlkem768_decaps` and `vg_mlkem1024_decaps` computing PRF outputs in the matrix

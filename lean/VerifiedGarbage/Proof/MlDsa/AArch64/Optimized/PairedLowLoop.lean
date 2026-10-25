@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## `PairedLowPassFlags` -/

@@ -16,7 +16,6 @@ import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # The public NAF's recoding, for any word count

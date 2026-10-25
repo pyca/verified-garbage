@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Noise
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.URow
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemUContext
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.VRest
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.URow

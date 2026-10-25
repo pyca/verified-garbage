@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 
 /-! Correctness of the sampler's right-to-left range check. -/
 @[expose] public section

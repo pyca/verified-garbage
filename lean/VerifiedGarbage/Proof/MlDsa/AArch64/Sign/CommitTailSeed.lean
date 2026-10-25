@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
-import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## The core loop -/
 

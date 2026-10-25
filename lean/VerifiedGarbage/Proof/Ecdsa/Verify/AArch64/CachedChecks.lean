@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacTiming

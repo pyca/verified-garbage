@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Weierstrass.Words
 
 @[expose] public section
 

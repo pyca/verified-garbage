@@ -23,9 +23,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFive
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStore
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixed
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
 public import VerifiedGarbage.Impl.Mont.Mod
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
 public import VerifiedGarbage.Impl.Weierstrass.Slots
@@ -37,6 +34,10 @@ public import VerifiedGarbage.Proof.Weierstrass.Law3
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.TCB.Code
+public import VerifiedGarbage.TCB.Mem
 
 @[expose] public section
 

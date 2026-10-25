@@ -6,10 +6,10 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyPair
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Offsets
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
 
 /-! # Execute a pair using only the public scratch allocation -/
 @[expose] public section

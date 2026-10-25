@@ -4,11 +4,13 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Store
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Select
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
 import VerifiedGarbage.Proof.X448.BaseAdd
+public import VerifiedGarbage.Impl.X448.AArch64.Common
+public import VerifiedGarbage.Proof.Framework.AArch64.Footprint
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # Ed448 verification on AArch64: the table of `[n](-A)`

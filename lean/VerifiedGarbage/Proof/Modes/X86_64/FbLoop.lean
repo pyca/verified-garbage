@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Modes.Fb
 public import VerifiedGarbage.Impl.Modes.X86_64.Fb
-public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 public import VerifiedGarbage.Proof.Modes.X86_64.Group
 import VerifiedGarbage.Proof.Modes.X86_64.Words
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.X86_64Scal
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # OFB and CFB on x86-64, for any core: the data loop

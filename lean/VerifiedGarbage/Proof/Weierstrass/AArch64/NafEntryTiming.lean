@@ -35,6 +35,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 
 @[expose] public section
 

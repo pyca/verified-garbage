@@ -13,6 +13,7 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 
 /-!
 # Ed448 verification on AArch64: one window of the challenge

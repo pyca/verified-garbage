@@ -5,12 +5,11 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
 public import VerifiedGarbage.Proof.MlKem.Mem16
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitCall
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.At
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
 
 /-! # Complete paired-noise operation -/
 @[expose] public section

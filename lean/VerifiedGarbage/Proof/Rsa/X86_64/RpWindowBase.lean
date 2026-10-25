@@ -1,12 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.X86_64.RpExp
-import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Rsa.X86_64.RpSq
-import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.CrtExp
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
 
