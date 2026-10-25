@@ -33,8 +33,8 @@ against `p`, which comes before anything that writes them.
 4. `gcd(c − 1, e)`: 3 if `e` is even; nothing for `e = 1`; otherwise
    `(c − 1) mod e`, bit by bit from the top, then 128 steps of a binary gcd
    on words with masks (`Proof/RsaKeyGen/Gcd.lean`); 3 unless it is 1.
-   The model has no carry bit: `ltU` compares 64-bit numbers by their top
-   bits and the borrow of their low 63 bits.
+   Without the carry bit, `ltU` compares 64-bit numbers by their top bits
+   and the borrow of their low 63 bits.
 5. The prime test, as `Spec.RsaKeyGen.candidateStep` does it after the check
    of `gcd(c − 1, e)` (which does not draw from `rand`, so its place before
    or after trial division changes nothing): trial division by the first

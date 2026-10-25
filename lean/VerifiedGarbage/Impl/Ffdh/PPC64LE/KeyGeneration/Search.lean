@@ -11,8 +11,8 @@ first four state words are the budgets, the width and the next request; the
 rest are private working space, whose base is kept in the callee-saved
 `r31` (the caller's `r31` saved in word 4). The loop runs in a frame saving
 the link register, which the calls change; each attempt in a frame of 128
-bytes holding its three stack arguments at offset 96. The model has no carry
-bit: the tape is short when `len − p_len` is negative and `len` is below
+bytes holding its three stack arguments at offset 96. Without the carry bit,
+the tape is short when `len − p_len` is negative and `len` is below
 `2^63`.
 
 `vg_ffdh_generate_key_search(x = r3, x_len = r4, y = r5, y_len = r6,

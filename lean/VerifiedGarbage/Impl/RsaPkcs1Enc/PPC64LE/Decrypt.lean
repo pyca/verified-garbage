@@ -35,8 +35,8 @@ draft-irtf-cfrg-rsa-guidance-10 §7.2:
    everything (`out`, and `len` to `*msg_len`) is masked by `r = 1`. The
    function returns `r`.
 
-The model has no carry bit: every comparison is of numbers below `2^63`, by
-the top bit of their difference (`lsr r, r, 63`), and every selection is by
+Without the carry bit, every comparison is of numbers below `2^63`, by the
+top bit of their difference (`lsr r, r, 63`), and every selection is by
 a mask, `0 - bit`. Every address and branch depends only on the pointers,
 the lengths and the counters. `out`'s and `AM`'s bytes are all read,
 whichever is returned.

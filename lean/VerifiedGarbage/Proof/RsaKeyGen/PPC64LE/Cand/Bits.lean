@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # A candidate on PPC64LE: comparisons and selections on words
 
-The model has no carry bit. `ltU d a b` compares two 64-bit numbers by their
+Without the carry bit, `ltU d a b` compares two 64-bit numbers by their
 top bits and the borrow of their low 63 bits (`ltU_val`); a mask `0 − f` of
 a flag `f ∈ {0, 1}` selects between two words by `y ^ ((x ^ y) & mask)`
 (`sel_mask`). `gcdStep_ok`: one step of the binary gcd, as

@@ -5,8 +5,8 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 /-! # Native FFDH parameter generation on PPC64LE: validation and limits
 
 `vg_ffdh_parameter_generation_init(state = r3, bits = r4, generator = r5)`.
-The model has no carry bit, so the comparisons are the sign bits of 64-bit
-differences of small numbers: `bits` is first checked to be below `2^14`
+The comparisons are the sign bits of 64-bit differences of small numbers,
+without the carry bit: `bits` is first checked to be below `2^14`
 (its bits from 14 up zero), a branch on a public value; then, with
 `lt c` the sign bit of `x − c`, 1 exactly when `x < c`,
 

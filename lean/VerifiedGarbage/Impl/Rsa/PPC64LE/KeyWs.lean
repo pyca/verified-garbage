@@ -11,8 +11,8 @@ numbers in the caller's working space, laid out as on ARMv7
 `w + 2` digits of 32 bits, array `j` at byte `hdr + j S` with the stride
 `S = 4 (w + 2)`. Numbers are `w` digits, least significant first; the
 digits after them are the division's extra digit and the halving's incoming
-digit. The model has no carry bit, so a sum or difference of two digits is
-computed in 64 bits, its carry or borrow in the upper half.
+digit. A sum or difference of two digits is computed in 64 bits, its carry
+or borrow in the upper half, without the carry bit.
 
 The base `B` is in `r31`, the stride in `r30` and `w` in `r29`, which the
 operations here leave alone: they compute every address from them (`ptr`),

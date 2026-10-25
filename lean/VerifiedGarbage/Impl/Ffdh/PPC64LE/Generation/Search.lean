@@ -12,8 +12,8 @@ width, the entropy cap and the next request; the rest are private working
 space, whose base is kept in the callee-saved `r31` (the caller's `r31`
 saved in word 4). The loop runs in a frame saving the link register, which
 the calls change; each candidate in a frame of 112 bytes holding its stack
-argument at offset 96. The model has no carry bit, so the comparisons are
-the sign bits of differences of numbers below `2^63`.
+argument at offset 96. The comparisons are the sign bits of differences of
+numbers below `2^63`, without the carry bit.
 
 `vg_ffdh_generate_parameters(out = r3, out_len = r4, used = r5, bits = r6,
 generator = r7, rand = r8, rand_len = r9, scratch = r10,

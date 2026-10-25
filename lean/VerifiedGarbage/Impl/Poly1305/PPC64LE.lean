@@ -6,9 +6,9 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 # Poly1305: PPC64LE implementation
 
 The AArch64 implementation's algorithm (`Impl/Poly1305/AArch64.lean`), as in
-poly1305-donna-32: the model has no carry bit, so the arithmetic is in radix
-`2²⁶`: the accumulator `h` and the clamped `r` are five 26-bit limbs (`h = h0
-+ 2²⁶ h1 + … + 2¹⁰⁴ h4`), their products are 64-bit `mulld`s, and carries are
+poly1305-donna-32, without the carry bit: the arithmetic is in radix `2²⁶`:
+the accumulator `h` and the clamped `r` are five 26-bit limbs (`h = h0 + 2²⁶
+h1 + … + 2¹⁰⁴ h4`), their products are 64-bit `mulld`s, and carries are
 shifts and masks.
 
 The state (`r3`, 128 bytes, see `VG.Spec.Poly1305.Buffered`):

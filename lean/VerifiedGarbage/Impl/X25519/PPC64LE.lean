@@ -8,8 +8,8 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 `vg_x25519(out = r3, scalar = r4, point = r5, scratch = r6)`.
 
 The ARMv7 implementation's algorithm (`Impl/X25519/Arm.lean`), in 64-bit
-registers. The model has no carry bit, and its only multiplication used here
-is `mulld` (the low 64 bits of a product), so a field element is eight 32-bit
+registers, without the carry bit. Its only multiplication is `mulld` (the
+low 64 bits of a product), so a field element is eight 32-bit
 limbs `x0 + 2³² x1 + … + 2²²⁴ x7`, each in a word of the working space: a
 product of two limbs and two more limbs fits in 64 bits. Every element is any
 number below `2²⁵⁶`, standing for its residue modulo `p = 2²⁵⁵ - 19`; only
