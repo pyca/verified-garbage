@@ -87,13 +87,28 @@ theorem saved_in : ∀ q ∈ P.saved, P.CW ≤ q.2 ∧ q.2 + 8 ≤ P.CW + 56 := 
 
 theorem ofInt7 : BitVec.ofNat 64 7 = BitVec.ofInt 64 7 := rfl
 
+/-- After the entry block: `n` zero-extended in `a2`. -/
+structure Entry (s₀ s : State) : Prop where
+  a2 : s.gpr .a2 = BitVec.ofNat 64 (nn s₀)
+  other : ∀ r, r ≠ .a2 → s.gpr r = s₀.gpr r
+  mem : s.mem = s₀.mem
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+
+theorem entry_ok (s₀ : State) : WP isa (.block It.entry) s₀ (Entry s₀) :=
+  wp_sll (by decide) fun s₁ u₁ => wp_srl (by decide) fun s₂ u₂ => WP.block_nil
+    ⟨by rw [u₂.gpr, u₁.gpr, zext32], fun r h => by rw [u₂.other r h, u₁.other r h],
+      by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr], by rw [u₂.sp, u₁.sp]⟩
+
 section
 variable (hp : Pre P Wi s₀) (hz : Sizes P Wi)
 include hp hz
 
 /-- The prologue: the loop invariant with `n` steps left. -/
-theorem prologue_ok {H : Md P.B P.N L} (hpad : P.pad.map (BitVec.ofNat 8) = H.tailPad P.D) :
-    WP isa (.block P.prologue) s₀ (Inv P Wi H s₀ (nn s₀)) := by
+theorem prologue_ok {H : Md P.B P.N L} (hpad : P.pad.map (BitVec.ofNat 8) = H.tailPad P.D) {e : State}
+    (he : Entry s₀ e) :
+    WP isa (.block P.prologue) e (Inv P Wi H s₀ (nn s₀)) := by
   have hN := hz.N64
   have hB := hz.B128
   have hDB := hz.DB
@@ -104,26 +119,28 @@ theorem prologue_ok {H : Md P.B P.N L} (hpad : P.pad.map (BitVec.ofNat 8) = H.ta
   have hpd := pad_le (scr s₀)
   simp only [It.prologue, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_addi (imm := 7) (by decide) fun s₁ u₁ => wp_andi (by decide) fun s₂ u₂ => ?_
-  have a4₂ : s₂.gpr .a4 = sc s₀ := by rw [u₂.gpr, u₁.gpr, ofInt7, Align.align_eq]
-  have g₂ : ∀ r, r ≠ .a4 → s₂.gpr r = s₀.gpr r := fun r h => by rw [u₂.other r h, u₁.other r h]
+  have a4₂ : s₂.gpr .a4 = sc s₀ := by rw [u₂.gpr, u₁.gpr, he.other _ (by decide), ofInt7, Align.align_eq]
+  have g₂ : ∀ r, r ≠ .a4 → r ≠ .a2 → s₂.gpr r = s₀.gpr r := fun r h h' => by
+    rw [u₂.other r h, u₁.other r h, he.other r h']
   show WP isa (.block (Spill.saveCode .a4 P.saved ++ _)) s₂ _
   refine Spill.save_ok (by rw [a4₂]; exact sc_al) (saved_fits hz).1
-    (fun q hq => ⟨scR Wi s₀, by rw [u₂.wr, u₁.wr, hp.wr]; simp, by
+    (fun q hq => ⟨scR Wi s₀, by rw [u₂.wr, u₁.wr, he.wr, hp.wr]; simp, by
       rw [a4₂]; exact sc_contains hz (by have := saved_in q hq; omega)⟩) ?_
   refine wp_mv fun s₄ u₄ => wp_addi (by simp only [It.hvO]; omega) fun s₅ u₅ =>
     wp_addi (by simp only [It.blkO, It.hvO]; omega) fun s₆ u₆ => wp_mv fun s₇ u₇ => wp_mv fun s₈ u₈ =>
-    wp_sll (by decide) fun s₉ u₉ => wp_srl (by decide) fun s₁₀ u₁₀ => ?_
+    wp_mv fun s₁₀ u₁₀ => ?_
   -- The registers.
-  have G6 : ∀ r, r ≠ .a4 → r ≠ .s2 → r ≠ .s1 → r ≠ .s3 → s₆.gpr r = s₀.gpr r := fun r h0 h1 h2 h3 =>
-    (u₆.other r h3).trans ((u₅.other r h2).trans ((u₄.other r h1).trans (g₂ r h0)))
-  have G8 : ∀ r, r ≠ .a4 → r ≠ .s2 → r ≠ .s1 → r ≠ .s3 → r ≠ .s4 → r ≠ .s5 → s₈.gpr r = s₀.gpr r :=
-    fun r h0 h1 h2 h3 h4 h5 => (u₈.other r h5).trans ((u₇.other r h4).trans (G6 r h0 h1 h2 h3))
-  have G : ∀ r, r ≠ .a4 → r ≠ .s2 → r ≠ .s1 → r ≠ .s3 → r ≠ .s4 → r ≠ .s5 → r ≠ .s6 →
-      s₁₀.gpr r = s₀.gpr r := fun r h0 h1 h2 h3 h4 h5 h6 =>
-    (u₁₀.other r h6).trans ((u₉.other r h6).trans (G8 r h0 h1 h2 h3 h4 h5))
+  have G6 : ∀ r, r ≠ .a4 → r ≠ .s2 → r ≠ .s1 → r ≠ .s3 → r ≠ .a2 → s₆.gpr r = s₀.gpr r :=
+    fun r h0 h1 h2 h3 ha => (u₆.other r h3).trans ((u₅.other r h2).trans ((u₄.other r h1).trans (g₂ r h0 ha)))
+  have G8 : ∀ r, r ≠ .a4 → r ≠ .s2 → r ≠ .s1 → r ≠ .s3 → r ≠ .s4 → r ≠ .s5 → r ≠ .a2 →
+      s₈.gpr r = s₀.gpr r :=
+    fun r h0 h1 h2 h3 h4 h5 ha => (u₈.other r h5).trans ((u₇.other r h4).trans (G6 r h0 h1 h2 h3 ha))
+  have G : ∀ r, r ≠ .a4 → r ≠ .s2 → r ≠ .s1 → r ≠ .s3 → r ≠ .s4 → r ≠ .s5 → r ≠ .s6 → r ≠ .a2 →
+      s₁₀.gpr r = s₀.gpr r := fun r h0 h1 h2 h3 h4 h5 h6 ha =>
+    (u₁₀.other r h6).trans (G8 r h0 h1 h2 h3 h4 h5 ha)
   have a4₄ : s₄.gpr .a4 = sc s₀ := (u₄.other _ (by decide)).trans a4₂
   have T : ∀ r, r ≠ .s4 → r ≠ .s5 → r ≠ .s6 → s₁₀.gpr r = s₆.gpr r := fun r h4 h5 h6 =>
-    (u₁₀.other r h6).trans ((u₉.other r h6).trans ((u₈.other r h5).trans (u₇.other r h4)))
+    (u₁₀.other r h6).trans ((u₈.other r h5).trans (u₇.other r h4))
   have e2 : s₁₀.gpr .s2 = sc s₀ := by
     rw [T _ (by decide) (by decide) (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr]
     exact a4₂
@@ -132,26 +149,28 @@ theorem prologue_ok {H : Md P.B P.N L} (hpad : P.pad.map (BitVec.ofNat 8) = H.ta
   have e3 : s₁₀.gpr .s3 = blk P s₀ := by
     rw [T _ (by decide) (by decide) (by decide), u₆.gpr, u₅.other _ (by decide), a4₄]
   have e4 : s₁₀.gpr .s4 = key s₀ := by
-    rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr,
-      G6 _ (by decide) (by decide) (by decide) (by decide)]
+    rw [u₁₀.other _ (by decide), u₈.other _ (by decide), u₇.gpr,
+      G6 _ (by decide) (by decide) (by decide) (by decide) (by decide)]
   have e5 : s₁₀.gpr .s5 = tp s₀ := by
-    rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr, u₇.other _ (by decide),
-      G6 _ (by decide) (by decide) (by decide) (by decide)]
+    rw [u₁₀.other _ (by decide), u₈.gpr, u₇.other _ (by decide),
+      G6 _ (by decide) (by decide) (by decide) (by decide) (by decide)]
   have e6 : s₁₀.gpr .s6 = BitVec.ofNat 64 (nn s₀) := by
-    rw [u₁₀.gpr, u₉.gpr, G8 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), zext32]
+    rw [u₁₀.gpr, u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
+      u₄.other _ (by decide)]
+    exact (u₂.other _ (by decide)).trans ((u₁.other _ (by decide)).trans he.a2)
   have ea1 : s₁₀.gpr .a1 = up s₀ :=
-    G _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    G _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   -- The memory and regions.
   have m₁₀ : s₁₀.mem = Spill.saveMem s₀.mem (sc s₀) s₂.gpr P.saved := by
-    rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem]
+    rw [u₁₀.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem]
     show Spill.saveMem s₂.mem (s₂.gpr .a4) s₂.gpr P.saved = _
-    rw [u₂.mem, u₁.mem, a4₂]
+    rw [u₂.mem, u₁.mem, he.mem, a4₂]
   have rd₁₀ : s₁₀.rd = s₀.rd := by
-    rw [u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd]; exact u₂.rd.trans u₁.rd
+    rw [u₁₀.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd]; exact u₂.rd.trans (u₁.rd.trans he.rd)
   have wr₁₀ : s₁₀.wr = s₀.wr := by
-    rw [u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr]; exact u₂.wr.trans u₁.wr
+    rw [u₁₀.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr]; exact u₂.wr.trans (u₁.wr.trans he.wr)
   have sp₁₀ : s₁₀.sp = s₀.sp := by
-    rw [u₁₀.sp, u₉.sp, u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp]; exact u₂.sp.trans u₁.sp
+    rw [u₁₀.sp, u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp]; exact u₂.sp.trans (u₁.sp.trans he.sp)
   have eD : blk P s₀ + BitVec.ofNat 64 P.D = sc s₀ + BitVec.ofNat 64 (P.blkO + P.D) := Offset.add_add _ _ _
   have S1 : Region.Sub ⟨sc s₀ + BitVec.ofNat 64 P.CW, 56⟩ (scR Wi s₀) := sc_sub (by omega)
   have S2 : Region.Sub ⟨blk P s₀, P.D⟩ (scR Wi s₀) := by
@@ -208,9 +227,8 @@ theorem prologue_ok {H : Md P.B P.N L} (hpad : P.pad.map (BitVec.ofNat 8) = H.ta
     rw [← hM₁]
     intro q hq
     rw [Spill.saveMem_saved (saved_fits hz) s₀.mem (sc s₀) s₂.gpr q hq]
-    refine g₂ _ ?_
     simp only [It.saved, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> decide
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact g₂ _ (by simp) (by simp)
   have blkU : bytesAt s''.mem (blk P s₀) P.D = bytesAt s₀.mem (up s₀) P.D := by
     rw [VG.Proof.Pbkdf2.Memory.frame_bytesAt f₃ (one d₂₃) (by omega)]
     have := bytesAt_writeBytes_self M₁ (blk P s₀) (bytesAt M₁ (up s₀) P.D) (by rw [bytesAt_length]; omega)
@@ -230,7 +248,7 @@ theorem prologue_ok {H : Md P.B P.N L} (hpad : P.pad.map (BitVec.ofNat 8) = H.ta
     nv := fun r hr => by
       rw [g'' r (by revert r; decide), g' r (by revert r; decide)]
       exact G r (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
-        (by revert r; decide) (by revert r; decide) (by revert r; decide)
+        (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
     fr := (f₁.sub (sub S1)).trans ((f₂.sub (sub S2)).trans (f₃.sub (sub S3)))
     saved := (saved₁.frame_in saved_in f₂ (one dsv₂)).frame_in saved_in f₃ (one dsv₃)
     pad := by
@@ -323,8 +341,9 @@ structure HashOk (P : It) (Wi : Nat) (S : StreamingHash) (H : Md P.B P.N L) (iv 
 theorem correct {P : It} {Wi : Nat} {S : StreamingHash} {H : Md P.B P.N L} {iv : H.HV}
     (ho : HashOk P Wi S H iv) (hf : CalleeOk H P.CW P.cmpC) {s₀ : State} (hp : Pre P Wi s₀) :
     WP isa P.iterate s₀ fun s' => abiPreserved s₀ s' ∧ (iterK S Wi).post s₀ s' := by
-  unfold It.iterate
-  refine WP.seq (WP.mono (prologue_ok hp ho.sizes ho.pad) fun s₁ h => ?_)
+  unfold It.iterate It.main
+  refine WP.seq (WP.mono (entry_ok s₀) fun e he => ?_)
+  refine WP.seq (WP.mono (prologue_ok hp ho.sizes ho.pad he) fun s₁ h => ?_)
   exact WP.seq (WP.mono (loop_ok hp ho.sizes ho.reloc hf ho.out h) fun s₂ h₂ =>
     epilogue_ok hp ho.sizes ho.link h₂)
 

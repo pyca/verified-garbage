@@ -35,7 +35,7 @@ contract does not state, so they are accessed a byte at a time. Every
 address and branch depends only on the pointers and `n`.
 
 `n` is a 32-bit argument, which the calling convention sign-extends: the
-prologue zero-extends it.
+entry block zero-extends it, in place, before anything else depends on it.
 -/
 
 @[expose] public section
@@ -110,7 +110,7 @@ the block: `U`, then the padding. -/
 def prologue : List Instr :=
   [.addi .a4 .a4 7, .logicImm .and .a4 .a4 (-8)] ++ P.save ++
     [mov .s2 .a4, .addi .s1 .a4 P.hvO, .addi .s3 .a4 P.blkO, mov .s4 .a0, mov .s5 .a3,
-      .shift .sll .d .s6 .a2 32, .shift .srl .d .s6 .s6 32] ++
+      mov .s6 .a2] ++
     cp .a1 .s3 0 0 P.D ++ P.padCode
 
 /-- Compress the block into the hash value. -/
@@ -131,10 +131,15 @@ def body : Prog isa :=
   (.seq P.compressAt
     (.block (P.out ++ P.xorT ++ [.addi .s6 .s6 (-1)])))))
 
-def iterate : Prog isa :=
+def main : Prog isa :=
   .seq (.block P.prologue)
   (.seq (.ite (.zero .s6) (.block []) (.loop P.body (.nonzero .s6)))
     (.block P.restore))
+
+/-- `n` zero-extended. -/
+def entry : List Instr := [.shift .sll .d .a2 .a2 32, .shift .srl .d .a2 .a2 32]
+
+def iterate : Prog isa := .seq (.block entry) P.main
 
 end It
 
