@@ -59,14 +59,20 @@ theorem run_append {a b : List Instr} {s s₁ s₂ : State}
 theorem signExtend_one : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
 theorem signExtend_mask : BitVec.signExtend 64 (65535 : BitVec 32) = 65535 := by decide
 
+/-- The low product is shared by signed and unsigned multiplication. -/
+theorem lowProduct (a b : BitVec 64) :
+    a * b = BitVec.ofNat 64 (a.toNat * b.toNat) := by
+  simp only [BitVec.ofNat_mul, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
 /-- `mulCode` on the machine. -/
 theorem mul_run (s : State) : ∃ s', runBlock isa mulCode s = some s' ∧
     s'.gpr .rdx = (Spec.Idea.mul ((s.gpr .rax).setWidth 16) ((s.gpr .rdx).setWidth 16)).setWidth 64 ∧
     Keep [.rax, .rdx] s s' := by
-  simp only [mulCode, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, execMul,
+  simp only [mulCode, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, execImul,
     readSrc, isa, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
     ↓reduceIte, reduceCtorEq, Nat.reduceLeDiff, and_self, Option.map_some, signExtend_one,
-    signExtend_mask, Option.bind_some, Option.some.injEq, exists_eq_left']
+    signExtend_mask, BitVec.ofInt_mul, BitVec.ofInt_toInt,
+    lowProduct, Option.bind_some, Option.some.injEq, exists_eq_left']
   have hm : (65535 : BitVec 64).toNat = 65535 := rfl
   have hA := prep_toNat (s.gpr .rax) 65535 hm
   have hB := prep_toNat (s.gpr .rdx) 65535 hm

@@ -3,3 +3,4 @@ family = "Ciphers"
 specs = ["Idea", "Cbc"]
 modules = ["src/idea_cbc.rs"]
 asm = ["idea_cbc"]
+optimized = { x86_64 = "low-product multiplication" }

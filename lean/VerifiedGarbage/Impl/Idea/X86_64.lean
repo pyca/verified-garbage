@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Idea.Key
 
 `mulCode` computes `rdx := rax ⊙ rdx` on the low 16 bits of each, using
 only `rax` and `rdx`: each operand `x` becomes `((x - 1) & 0xffff) + 1`, its
-residue in `1 … 2¹⁶` (0 stands for 2¹⁶); `mul` (whose timing does not depend
+residue in `1 … 2¹⁶` (0 stands for 2¹⁶); `imul` (whose timing does not depend
 on its operands) gives the product `p ≤ 2³²`; and since `2¹⁶ ≡ -1`,
 `p ≡ lo - hi` modulo 2¹⁶ + 1 for `lo = p & 0xffff`, `hi = p >> 16`, which
 the code corrects to `0 … 2¹⁶` by adding `2¹⁶ + 1` times the sign bit of the
@@ -57,7 +57,7 @@ clobbering `rax`. -/
 def mulCode : List Instr := [
   .alu .sub .rax (.imm 1), .alu .and .rax (.imm 0xffff), .alu .add .rax (.imm 1),
   .alu .sub .rdx (.imm 1), .alu .and .rdx (.imm 0xffff), .alu .add .rdx (.imm 1),
-  .mul .rdx,
+  .imul .rax .rdx,
   .mov .rdx (.reg .rax), .alu .and .rdx (.imm 0xffff), .shift .shr .rax 16,
   .alu .sub .rdx (.reg .rax),
   .mov .rax (.reg .rdx), .shift .shr .rax 63,

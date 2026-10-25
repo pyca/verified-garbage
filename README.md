@@ -1103,7 +1103,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ low-product multiplication</td>
 
 <td>✅</td>
 
@@ -1123,7 +1123,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ low-product multiplication</td>
 
 <td>✅</td>
 
@@ -1143,7 +1143,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ low-product multiplication</td>
 
 <td>✅</td>
 
@@ -1163,7 +1163,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ low-product multiplication</td>
 
 <td>✅</td>
 
