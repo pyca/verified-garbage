@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtExport
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Prime
+import VerifiedGarbage.Proof.Bignum.PPC64LE.ModArithReduce
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Framework.Offset
 

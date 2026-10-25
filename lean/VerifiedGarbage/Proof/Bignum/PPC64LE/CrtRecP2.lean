@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtRecP1
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtAdd
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtCheck
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
@@ -19,7 +18,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 # The RSA private-key operation on PPC64LE: `m₁ - m₂ mod p`
 
 `recP2a_ok`: in `p`'s working space, `(m₁ + p - b) mod p` into array 3, for
-`m₁` in array 4 and `b` in array 1, both below `p`.
+`m₁` in array 4 and `b` in array `bj`, both below `p`.
 -/
 
 @[expose] public section
@@ -46,22 +45,29 @@ theorem subAdd_val {A B P T T' N c : Nat} (hA : A < P) (hB : B < P) (hP : P < 2 
 
 /-- `recombineP`'s middle: `(m₁ + p - b) mod p` into array 3, changing only
 arrays 3 and 4 (above `m₁`). -/
-theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b : Nat} {c : Prog isa} {Q : State → Prop}
-    (hs : Scr s B Z) (hZ : slot w 8 ≤ Z) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
+theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b bj : Nat} {c : Prog isa} {Q : State → Prop}
+    (hs : Scr s B Z) (hZ : slot w 8 ≤ Z) (hbj : bj < 8) (hbj3 : bj ≠ 3) (hbj4 : bj ≠ 4) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
     (h10 : s.gpr .r10 = off B (slot w 0)) (h21 : s.gpr .r21 = off B (slot w 0))
     (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
-    (hP : val32 s.mem B (slot w 0) (2 * w) = Pv) (hb : val32 s.mem B (slot w 1) (2 * w) = b)
+    (hP : val32 s.mem B (slot w 0) (2 * w) = Pv) (hb : val32 s.mem B (slot w bj) (2 * w) = b)
     (hm1 : val32 s.mem B (slot w 4) (2 * w) = m1) (hbP : b < Pv) (hm1P : m1 < Pv)
     (hc : ∀ t, val32 t.mem B (slot w 3) (2 * w) = (m1 + Pv - b) % Pv →
       Outs B [(slot w 3, 8 * (w + 2)), (slot w 4, 8 * (w + 2))] s.mem t.mem →
       t.gpr .r10 = off B (slot w 0) → Keep [.r0, .r3, .r8, .r9, .r10, .r14, .r15, .r16, .r17, .r20, .r24] s t → WP isa c t Q) :
     WP isa (.seq (.block (PublicChecked.base .r14 4 ++ ([.add .r14 .r14 .r29, .subi .r14 .r14 16, .li .r0 0,
       .store .d .r0 .r14 0] : List Instr) ++ PublicChecked.base .r8 4 ++ PublicChecked.base .r9 3 ++
-      PublicChecked.base .r10 1)) (.seq subMod (.seq (.block (([.addi .r10 .r21 0] : List Instr) ++
+      PublicChecked.base .r10 bj)) (.seq subMod (.seq (.block (([.addi .r10 .r21 0] : List Instr) ++
       PublicChecked.base .r15 3 ++ PublicChecked.base .r16 0)) (.seq addMask c)))) s Q := by
   have hnw := hs.nowrap
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
-  have e0 := e 0; have e1 := e 1; have e3 := e 3; have e4 := e 4; have e8 := e 8
+  have e0 := e 0; have e1 := e bj; have e1' : slot w bj + 8 * (w + 2) ≤ slot w 8 := by
+    simp only [e]; have := Nat.mul_le_mul_right (8 * (w + 2)) (show bj + 1 ≤ 8 by omega_arith); rw [Nat.add_mul, Nat.one_mul] at this; omega_arith
+  have e1'' : bj < 3 ∨ 4 < bj := by omega_arith
+  have e1s : slot w bj + 8 * (w + 2) ≤ slot w 3 ∨ slot w 4 + 8 * (w + 2) ≤ slot w bj := by
+    rcases e1'' with h | h
+    · left; simp only [e]; have := Nat.mul_le_mul_right (8 * (w + 2)) (show bj + 1 ≤ 3 by omega_arith); rw [Nat.add_mul, Nat.one_mul] at this; omega_arith
+    · right; simp only [e]; have := Nat.mul_le_mul_right (8 * (w + 2)) (show 5 ≤ bj by omega_arith); omega_arith
+  have e3 := e 3; have e4 := e 4; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
   refine WP.seq ?_
   simp only [List.append_assoc]
@@ -88,17 +94,17 @@ theorem recP2a_ok {s : State} {B : Addr} {Z w Pv m1 b : Nat} {c : Prog isa} {Q :
     ((k13.gpr _ (by decide)).trans h29) 3) fun s₄ ⟨⟨a9, m4⟩, k4⟩ => ?_
   have k14 := k13.trans k4
   refine WP.mono (Pub.base_ok (rd := .r10) (by decide) (by decide) ((k14.gpr _ (by decide)).trans h10)
-    ((k14.gpr _ (by decide)).trans h29) 1) fun s₅ ⟨⟨a10, m5⟩, k5⟩ => ?_
+    ((k14.gpr _ (by decide)).trans h29) bj) fun s₅ ⟨⟨a10, m5⟩, k5⟩ => ?_
   have k15 := k14.trans k5
   have hm5 : s₅.mem = s₂.mem := by rw [m5, m4, m3]
-  refine WP.seq (WP.mono (subMod_ok (n := 2 * w) (dA := slot w 4) (dT := slot w 3) (dM := slot w 1)
+  refine WP.seq (WP.mono (subMod_ok (n := 2 * w) (dA := slot w 4) (dT := slot w 3) (dM := slot w bj)
     (hs.congr k15.wr) ((k5.gpr _ (by decide)).trans ((k4.gpr _ (by decide)).trans a8))
     ((k5.gpr _ (by decide)).trans a9) a10
     ((k15.gpr _ (by decide)).trans h11) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     (by omega_arith)) fun s₆ ⟨⟨cc, hcc, hD, h20⟩, out6, k6⟩ => ?_)
   have k16 := k15.trans k6
   rw [hm5] at hD h20 out6
-  have v1 : val32 s₂.mem B (slot w 1) (2 * w) = b := by rw [ow'.val32 (Or.inl (by omega_arith)) (by omega_arith), hb]
+  have v1 : val32 s₂.mem B (slot w bj) (2 * w) = b := by rw [ow'.val32 (by omega_arith) (by omega_arith), hb]
   have v4 : val32 s₂.mem B (slot w 4) (2 * w) = m1 := by rw [ow'.val32 (Or.inl (by omega_arith)) (by omega_arith), hm1]
   have v0 : val32 s₂.mem B (slot w 0) (2 * w) = Pv := by rw [ow'.val32 (Or.inl (by omega_arith)) (by omega_arith), hP]
   have h0 : w32 s₂.mem B (slot w 4 + 4 * (2 * w)) = 0 := by

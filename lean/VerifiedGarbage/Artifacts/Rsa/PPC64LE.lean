@@ -43,9 +43,11 @@ def artifacts : List Artifact := [
         product modulo `2^(64 w) - 1`, which is exact, `qInv < p`) give a mask; under a clear mask \
         the primes are replaced by 3 and `qInv` by 0, so that the arithmetic is the same whatever \
         the key, and the result is stored masked. Each prime has its own working space of 24 \
-        numbers of `max(2, ⌈len/8⌉)` words for its public length: the input is reduced modulo it a \
-        bit at a time, `R² mod p` is computed from 1 by `64 w + w` modular doublings to \
-        `2^w R mod p` and six Montgomery squares, and the exponent is scanned in four-bit windows from the top, four \
+        numbers of `max(2, ⌈len/8⌉)` words for its public length: `R² mod p` is computed from 1 by \
+        `64 w + w` modular doublings to `2^w R mod p` and six Montgomery squares; the input, loaded \
+        again into `X`, is reduced modulo it a chunk of `w` words at a time from the bottom, by two \
+        Montgomery multiplications and a modular subtraction per chunk (with `q ≡ -R^(i+1)`, \
+        `C_i q R⁻¹ ≡ -C_i R^i`); and the exponent is scanned in four-bit windows from the top, four \
         Montgomery squares and a multiplication by the table entry `x^d R` per window, the entry \
         selected by a masked scan of the whole 16-entry table on 64-bit words, so that no address \
         depends on the \
