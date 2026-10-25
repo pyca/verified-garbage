@@ -8073,7 +8073,7 @@ blr",
 ///
 /// Contract: `VG.Spec.RsaKeyGen.candidateContract`. Timing may depend on the pointers, the lengths, `e`, and on what became of the candidate: for a probable prime, on how many octets of `rand` were read; for a candidate rejected for being too close to `p`, on nothing else; for a candidate rejected otherwise, on the octets of `rand` read. Not on `p`, or on the candidate if it is accepted.
 ///
-/// On the Montgomery working space of RSA's functions at `scratch`, in 64-bit words: the check against `p` under masks; `gcd(c − 1, e)` by `(c − 1) mod e` bit by bit, then a binary gcd on words under masks; trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits), which returns at the first divisor; then RSA's witnesses from `rand`, each in Montgomery form for a call of the shared `vg_miller_rabin_round`, whose 176 bytes of frames lie below this function's 224. Branches release only the checks and witness results allowed by the RSA candidate contract.
+/// On the Montgomery working space of RSA's functions at `scratch`, in 64-bit words: the check against `p` under masks; `gcd(c − 1, e)` by `(c − 1) mod e` bit by bit, then a binary gcd on words under masks; trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^64 of the candidate's 64-bit words), which returns at the first divisor; then RSA's witnesses from `rand`, each in Montgomery form for a call of the shared `vg_miller_rabin_round`, whose 176 bytes of frames lie below this function's 224. Branches release only the checks and witness results allowed by the RSA candidate contract.
 ///
 /// # Safety
 ///
@@ -9018,19 +9018,22 @@ ld %r8, 0(%r23)
 rldicl %r9, %r8, 32, 32
 rldicr %r8, %r8, 32, 31
 rldicl %r8, %r8, 32, 32
+mulld %r6, %r8, %r9
+addi %r6, %r6, 2
+mulld %r9, %r6, %r9
 li %r3, 0
 addi %r5, %r10, 0
-addi %r4, %r11, 0
+rldicl %r4, %r11, 63, 1
 228:
-lwz %r0, 0(%r5)
-add %r0, %r0, %r3
+ld %r0, 0(%r5)
+addc %r0, %r0, %r3
 mulld %r6, %r0, %r9
-rldicr %r6, %r6, 32, 31
-rldicl %r6, %r6, 32, 32
-mulld %r6, %r6, %r8
-add %r6, %r6, %r0
-rldicl %r3, %r6, 32, 32
-addi %r5, %r5, 4
+mulld %r7, %r6, %r8
+mulhdu %r6, %r6, %r8
+addze %r6, %r6
+addc %r7, %r7, %r0
+addze %r3, %r6
+addi %r5, %r5, 8
 addi %r4, %r4, -1
 cmpldi %cr0, %r4, 0
 bne %cr0, 228b

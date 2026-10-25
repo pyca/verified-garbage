@@ -44578,7 +44578,7 @@ blr",
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
+/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^64 of the candidate's 64-bit words) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
 ///
 /// # Safety
 ///
@@ -44691,19 +44691,22 @@ ld %r8, 0(%r23)
 rldicl %r9, %r8, 32, 32
 rldicr %r8, %r8, 32, 31
 rldicl %r8, %r8, 32, 32
+mulld %r6, %r8, %r9
+addi %r6, %r6, 2
+mulld %r9, %r6, %r9
 li %r3, 0
 addi %r5, %r10, 0
-addi %r4, %r11, 0
+rldicl %r4, %r11, 63, 1
 23:
-lwz %r0, 0(%r5)
-add %r0, %r0, %r3
+ld %r0, 0(%r5)
+addc %r0, %r0, %r3
 mulld %r6, %r0, %r9
-rldicr %r6, %r6, 32, 31
-rldicl %r6, %r6, 32, 32
-mulld %r6, %r6, %r8
-add %r6, %r6, %r0
-rldicl %r3, %r6, 32, 32
-addi %r5, %r5, 4
+mulld %r7, %r6, %r8
+mulhdu %r6, %r6, %r8
+addze %r6, %r6
+addc %r7, %r7, %r0
+addze %r3, %r6
+addi %r5, %r5, 8
 addi %r4, %r4, -1
 cmpldi %cr0, %r4, 0
 bne %cr0, 23b
@@ -46136,7 +46139,7 @@ blr",
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
+/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^64 of the candidate's 64-bit words) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
 ///
 /// # Safety
 ///
@@ -46249,19 +46252,22 @@ ld %r8, 0(%r23)
 rldicl %r9, %r8, 32, 32
 rldicr %r8, %r8, 32, 31
 rldicl %r8, %r8, 32, 32
+mulld %r6, %r8, %r9
+addi %r6, %r6, 2
+mulld %r9, %r6, %r9
 li %r3, 0
 addi %r5, %r10, 0
-addi %r4, %r11, 0
+rldicl %r4, %r11, 63, 1
 23:
-lwz %r0, 0(%r5)
-add %r0, %r0, %r3
+ld %r0, 0(%r5)
+addc %r0, %r0, %r3
 mulld %r6, %r0, %r9
-rldicr %r6, %r6, 32, 31
-rldicl %r6, %r6, 32, 32
-mulld %r6, %r6, %r8
-add %r6, %r6, %r0
-rldicl %r3, %r6, 32, 32
-addi %r5, %r5, 4
+mulld %r7, %r6, %r8
+mulhdu %r6, %r6, %r8
+addze %r6, %r6
+addc %r7, %r7, %r0
+addze %r3, %r6
+addi %r5, %r5, 8
 addi %r4, %r4, -1
 cmpldi %cr0, %r4, 0
 bne %cr0, 23b
@@ -47694,7 +47700,7 @@ blr",
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
+/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^64 of the candidate's 64-bit words) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
 ///
 /// # Safety
 ///
@@ -47807,19 +47813,22 @@ ld %r8, 0(%r23)
 rldicl %r9, %r8, 32, 32
 rldicr %r8, %r8, 32, 31
 rldicl %r8, %r8, 32, 32
+mulld %r6, %r8, %r9
+addi %r6, %r6, 2
+mulld %r9, %r6, %r9
 li %r3, 0
 addi %r5, %r10, 0
-addi %r4, %r11, 0
+rldicl %r4, %r11, 63, 1
 23:
-lwz %r0, 0(%r5)
-add %r0, %r0, %r3
+ld %r0, 0(%r5)
+addc %r0, %r0, %r3
 mulld %r6, %r0, %r9
-rldicr %r6, %r6, 32, 31
-rldicl %r6, %r6, 32, 32
-mulld %r6, %r6, %r8
-add %r6, %r6, %r0
-rldicl %r3, %r6, 32, 32
-addi %r5, %r5, 4
+mulld %r7, %r6, %r8
+mulhdu %r6, %r6, %r8
+addze %r6, %r6
+addc %r7, %r7, %r0
+addze %r3, %r6
+addi %r5, %r5, 8
 addi %r4, %r4, -1
 cmpldi %cr0, %r4, 0
 bne %cr0, 23b
@@ -49252,7 +49261,7 @@ blr",
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
+/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^64 of the candidate's 64-bit words) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
 ///
 /// # Safety
 ///
@@ -49365,19 +49374,22 @@ ld %r8, 0(%r23)
 rldicl %r9, %r8, 32, 32
 rldicr %r8, %r8, 32, 31
 rldicl %r8, %r8, 32, 32
+mulld %r6, %r8, %r9
+addi %r6, %r6, 2
+mulld %r9, %r6, %r9
 li %r3, 0
 addi %r5, %r10, 0
-addi %r4, %r11, 0
+rldicl %r4, %r11, 63, 1
 23:
-lwz %r0, 0(%r5)
-add %r0, %r0, %r3
+ld %r0, 0(%r5)
+addc %r0, %r0, %r3
 mulld %r6, %r0, %r9
-rldicr %r6, %r6, 32, 31
-rldicl %r6, %r6, 32, 32
-mulld %r6, %r6, %r8
-add %r6, %r6, %r0
-rldicl %r3, %r6, 32, 32
-addi %r5, %r5, 4
+mulld %r7, %r6, %r8
+mulhdu %r6, %r6, %r8
+addze %r6, %r6
+addc %r7, %r7, %r0
+addze %r3, %r6
+addi %r5, %r5, 8
 addi %r4, %r4, -1
 cmpldi %cr0, %r4, 0
 bne %cr0, 23b
@@ -50810,7 +50822,7 @@ blr",
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
+/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^64 of the candidate's 64-bit words) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
 ///
 /// # Safety
 ///
@@ -50923,19 +50935,22 @@ ld %r8, 0(%r23)
 rldicl %r9, %r8, 32, 32
 rldicr %r8, %r8, 32, 31
 rldicl %r8, %r8, 32, 32
+mulld %r6, %r8, %r9
+addi %r6, %r6, 2
+mulld %r9, %r6, %r9
 li %r3, 0
 addi %r5, %r10, 0
-addi %r4, %r11, 0
+rldicl %r4, %r11, 63, 1
 23:
-lwz %r0, 0(%r5)
-add %r0, %r0, %r3
+ld %r0, 0(%r5)
+addc %r0, %r0, %r3
 mulld %r6, %r0, %r9
-rldicr %r6, %r6, 32, 31
-rldicl %r6, %r6, 32, 32
-mulld %r6, %r6, %r8
-add %r6, %r6, %r0
-rldicl %r3, %r6, 32, 32
-addi %r5, %r5, 4
+mulld %r7, %r6, %r8
+mulhdu %r6, %r6, %r8
+addze %r6, %r6
+addc %r7, %r7, %r0
+addze %r3, %r6
+addi %r5, %r5, 8
 addi %r4, %r4, -1
 cmpldi %cr0, %r4, 0
 bne %cr0, 23b
