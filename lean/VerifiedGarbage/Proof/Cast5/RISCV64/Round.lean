@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Cast5.Round
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
-import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 public import VerifiedGarbage.Proof.Cast5.RISCV64.Run
 public import VerifiedGarbage.Proof.Cast5.Table

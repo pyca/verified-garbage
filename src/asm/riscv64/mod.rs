@@ -38,10 +38,16 @@ pub(crate) mod blowfish_cfb;
 pub(crate) mod blowfish_ofb;
 
 #[rustfmt::skip]
+pub(crate) mod cast5;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]
 pub(crate) mod chacha20poly1305;
+
+#[rustfmt::skip]
+pub(crate) mod consts;
 
 #[rustfmt::skip]
 pub(crate) mod ct;

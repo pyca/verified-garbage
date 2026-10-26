@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Align
 import VerifiedGarbage.Proof.Cast5.RISCV64.Block
 import VerifiedGarbage.Proof.Cast5.RISCV64.Ecb

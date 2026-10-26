@@ -78,11 +78,25 @@ impl Cast5Ecb {
     }
 
     /// The subkeys, for the modes built on CAST5 (`crate::cast5_cbc`, …).
+    #[cfg(any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "x86",
+        target_arch = "arm",
+        all(target_arch = "powerpc64", target_endian = "little")
+    ))]
     pub(crate) fn schedule(&self) -> &[u8; 128] {
         &self.schedule
     }
 
     /// The number of rounds, 12 or 16, for the modes built on CAST5.
+    #[cfg(any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "x86",
+        target_arch = "arm",
+        all(target_arch = "powerpc64", target_endian = "little")
+    ))]
     pub(crate) fn rounds(&self) -> usize {
         self.rounds
     }
