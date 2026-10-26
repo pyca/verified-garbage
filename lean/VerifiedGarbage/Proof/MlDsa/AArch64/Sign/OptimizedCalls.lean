@@ -45,12 +45,13 @@ theorem inverseReady_layout {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State}
     (hfit : (s.syms "VG_MLDSA_INV_FOLDED").toNat+3904≤2^64)
     (hsep : ∀ r∈[Inverse.outputRegion (pa s f),Inverse.outputRegion (pa s scratch)],
       (Inverse.tableRegion (s.syms "VG_MLDSA_INV_FOLDED")).Disjoint r)
+    (hal : (s.syms "VG_MLDSA_INV_FOLDED").toNat%64=0)
     (ht : Covers [Inverse.tableRegion (s.syms "VG_MLDSA_INV_FOLDED")] (s.rd++s.wr))
     (hf : Reduced s.mem (pa s f)) : Inverse.InverseCallReady f scratch s := by
   have hcov := ip_cov L hc
   simp only [ipChk,Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨hsepbuf,hfread⟩,hsread⟩,_⟩,_⟩ := hc
-  exact ⟨L.nwp hfread,L.nwp hsread,held,hfit,hsep,L.disj hsepbuf,hf,
+  exact ⟨L.nwp hfread,L.nwp hsread,held,hfit,hsep,hal,L.disj hsepbuf,hf,
     Covers.cons ht hcov.1,hcov.2⟩
 
 theorem inverseAt_layout {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State}
