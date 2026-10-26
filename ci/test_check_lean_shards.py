@@ -670,7 +670,24 @@ class Packing(unittest.TestCase):
         self.assertEqual(targets, [sinks, []])
 
     def test_restored_modules_weigh_as_much_by_their_number(self):
+        import math
         import random
+
+        def summed(count, sinks, closure, cost, path, reuse):
+            # Packing as it was, summing every module a sink adds.
+            built, loads, longest = [set() for _ in range(count)], [0.0] * count, [0.0] * count
+            targets = [[] for _ in range(count)]
+            for s in sinks:
+                added = [math.fsum(cost[m] for m in closure[s] - part) for part in built]
+                best = min(range(count), key=lambda i: (
+                    shards.estimate(loads[i] + added[i], max(longest[i], path[s]))
+                    + reuse * added[i] / shards.PARALLELISM, i))
+                built[best] |= closure[s]
+                loads[best] += added[best]
+                longest[best] = max(longest[best], path[s])
+                targets[best].append(s)
+            return targets, built
+
         rng = random.Random(3)
         for _ in range(10):
             imps = {str(i): [str(j) for j in range(i) if rng.random() < .1] for i in range(60)}
@@ -678,10 +695,24 @@ class Packing(unittest.TestCase):
             cost = {m: rng.choice([shards.UP_TO_DATE, 1.0, 7.5, 40.0]) for m in imps}
             path = shards.paths(imps, cost)
             sinks = sorted(imps, key=lambda m: -sum(cost[x] for x in closure[m]))[:12]
-            rebuilt = {m: frozenset(x for x in closure[m] if cost[x] != shards.UP_TO_DATE) for m in sinks}
             for reuse in shards.REUSE_WEIGHTS:
-                self.assertEqual(shards.pack(4, sinks, closure, cost, path, reuse),
-                                 shards.pack(4, sinks, closure, cost, path, reuse, rebuilt))
+                _, targets, built = shards.pack(4, sinks, closure, cost, path, reuse)
+                self.assertEqual((targets, built), summed(4, sinks, closure, cost, path, reuse))
+
+    def test_worker_processes_pack_as_one_process_does(self):
+        import random
+        rng = random.Random(5)
+        bases = [f"b{i}" for i in range(6)]
+        imps = {**{b: [] for b in bases},
+                **{str(i): rng.sample(bases, 2) for i in range(120)}}
+        closure = shards.closures(imps)
+        times = {m: rng.uniform(100, 300) for m in imps}
+        with mock.patch.object(shards._Packings, "PARALLEL_SINKS", 10 ** 9):
+            alone = shards.schedule(imps, closure, set(imps), times)
+        with mock.patch.object(shards._Packings, "PARALLEL_SINKS", 0):
+            together = shards.schedule(imps, closure, set(imps), times)
+        self.assertEqual(alone, together)
+        self.assertTrue(alone[2][1])
 
     @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
     def test_every_weight_is_a_candidate_and_counts_outside_the_work_bound_are_not(self):

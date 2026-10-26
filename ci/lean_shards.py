@@ -86,6 +86,7 @@ import functools
 import heapq
 import json
 import math
+import multiprocessing
 import os
 import pathlib
 import re
@@ -614,6 +615,74 @@ def read_json(path: str) -> dict:
     return json.loads(p.read_text()) if p.is_file() else {}
 
 
+class _Sinks:
+    """What packing reads of each sink, the same for every count and weight.
+
+    A build restores the modules it does not rebuild, at `UP_TO_DATE` each:
+    packing weighs each sink's rebuilt modules (`rebuilt`) one by one, and
+    counts its restored ones (`restored`, a bit mask), which takes a
+    fraction of the time of subtracting its whole closure from each shard.
+    """
+
+    def __init__(self, sinks, closure, cost):
+        self.rebuilt = {s: frozenset(m for m in closure[s] if cost[m] != UP_TO_DATE) for s in sinks}
+        kept = {s: closure[s] - self.rebuilt[s] for s in sinks}
+        index = {m: i for i, m in enumerate(sorted(set().union(*kept.values())))}
+        self.restored = {}
+        for s in sinks:
+            bits = bytearray((len(index) + 7) // 8)
+            for m in kept[s]:
+                i = index[m]
+                bits[i >> 3] |= 1 << (i & 7)
+            self.restored[s] = int.from_bytes(bits, "little")
+
+
+# What `_Packings`' worker processes pack: set before they start, which
+# they inherit (forked) rather than receive.
+_PACKING = None
+
+
+def _pack_one(task):
+    n, reuse = task
+    sinks, closure, cost, path, prepared = _PACKING
+    return pack(n, sinks, closure, cost, path, reuse, prepared)
+
+
+class _Packings:
+    """Each count's packings, one per reuse weight. With many sinks (a
+    packing then takes a large part of a second) and CPUs to spare, worker
+    processes pack them at once, forked when first needed; the packings are
+    the same as one after another."""
+
+    # Fewer sinks pack in less time than forking takes.
+    PARALLEL_SINKS = 200
+
+    def __init__(self, sinks, closure, cost, path, prepared):
+        global _PACKING
+        _PACKING = (sinks, closure, cost, path, prepared)
+        self.pool = None
+        cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count() or 1
+        self.workers = min(len(REUSE_WEIGHTS), cpus)
+        if (len(sinks) < self.PARALLEL_SINKS
+                or "fork" not in multiprocessing.get_all_start_methods()):
+            self.workers = 1
+
+    def __call__(self, n):
+        tasks = [(n, reuse) for reuse in REUSE_WEIGHTS]
+        if self.workers == 1:
+            return [_pack_one(t) for t in tasks]
+        if self.pool is None:
+            self.pool = multiprocessing.get_context("fork").Pool(self.workers)
+        return self.pool.map(_pack_one, tasks, chunksize=1)
+
+    def close(self):
+        global _PACKING
+        if self.pool is not None:
+            self.pool.terminate()
+            self.pool.join()
+        _PACKING = None
+
+
 def pack(
     count: int,
     sinks: list[str],
@@ -621,7 +690,7 @@ def pack(
     cost: dict[str, float],
     path: dict[str, float],
     reuse: float = 1.0,
-    rebuilt: dict[str, frozenset[str]] | None = None,
+    prepared: "_Sinks | None" = None,
 ) -> tuple[list[float], list[list[str]], list[set[str]]]:
     """`sinks` (largest first) packed into `count` shards: each shard's
     estimated time, its sinks, and the modules it builds. `reuse` weighs
@@ -635,20 +704,18 @@ def pack(
     # again for every target, shard, and candidate count.
     unit = next(iter(cost.values()), 0.0)
     uniform = all(t == unit for t in cost.values())
-    # The modules a build restores take `UP_TO_DATE` each: weigh only the
-    # rebuilt ones (`rebuilt`, each sink's) one by one, the others by their
-    # number, which makes packing several times faster.
-    if rebuilt is None:
-        rebuilt = {s: frozenset(m for m in closure[s] if cost[m] != UP_TO_DATE) for s in sinks}
+    if prepared is None:
+        prepared = _Sinks(sinks, closure, cost)
+    rebuilt, restored = prepared.rebuilt, prepared.restored
+    # The restored modules of each shard's sinks, as a bit mask.
+    kept = [0] * count
     for s in sinks:
         if uniform:
             added = [unit * len(closure[s] - shard) for shard in shards]
         else:
-            added = []
-            for shard in shards:
-                fresh = rebuilt[s] - shard
-                restored = len(closure[s] - shard) - len(fresh)
-                added.append(sum(map(cost.__getitem__, fresh)) + UP_TO_DATE * restored)
+            added = [sum(map(cost.__getitem__, rebuilt[s] - shard))
+                     + UP_TO_DATE * (restored[s] & ~mask).bit_count()
+                     for shard, mask in zip(shards, kept)]
         # The work a sink adds counts on its own too, not only through the
         # estimate: a shard whose chain hides it would otherwise take sinks
         # whose imports another shard builds already, and build them again.
@@ -657,6 +724,7 @@ def pack(
             key=lambda i: (estimate(loads[i] + added[i], max(longest[i], path[s])) + reuse * added[i] / PARALLELISM, i),
         )
         shards[best] |= closure[s]
+        kept[best] |= restored[s]
         loads[best] += added[best]
         longest[best] = max(longest[best], path[s])
         targets[best].append(s)
@@ -845,7 +913,7 @@ def schedule(
     total = {m: math.fsum(cost[x] for x in required[m]) for m in rebuild_targets(stale, closure)}
     sinks = sorted(total, key=lambda m: (-total[m], m))
     needed = set().union(*(required[m] for m in sinks))
-    rebuilt = {m: required[m] & stale for m in sinks}
+    prepared = _Sinks(sinks, required, cost)
     # Include the same cached imports in the solo estimate as in the shards.
     simulator = _BuildGraph(imps, {m: cost[m] for m in needed})
     solo = simulator.time()
@@ -882,6 +950,7 @@ def schedule(
     # Start with more shards to establish a tight finish-time bound early.
     # A lower bound already outside the tolerance cannot become competitive
     # as the fastest time decreases, so it need not be simulated.
+    packings = _Packings(sinks, required, cost, path, prepared)
     for n in range(min(MAX_SHARDS, len(sinks)), 1, -1):
         # However they are packed, n shards build all the work between them,
         # and one builds the longest chain: no packing makes a count whose
@@ -890,8 +959,7 @@ def schedule(
             if diagnostics is not None:
                 diagnostics["candidates"].append({"shards": n, "excluded": "work_bound"})
             continue
-        for reuse in REUSE_WEIGHTS:
-            bounds, targets, built = pack(n, sinks, required, cost, path, reuse, rebuilt)
+        for reuse, (bounds, targets, built) in zip(REUSE_WEIGHTS, packings(n)):
             candidate = {"shards": n, "reuse": reuse, "lower_bound_finish_s": max(bounds) + SHARD_OVERHEAD}
             if diagnostics is not None:
                 diagnostics["candidates"].append(candidate)
@@ -914,6 +982,7 @@ def schedule(
             candidate.update({"finish_s": max(loads) + SHARD_OVERHEAD, "module_work_s": repeated})
             candidates.append((max(loads) + SHARD_OVERHEAD, repeated, n, (loads, targets, built)))
             fastest = min(fastest, max(loads) + SHARD_OVERHEAD)
+    packings.close()
     # Work counts shared dependencies again on each runner. Within the
     # latency tolerance, prefer less work, then fewer runners, then latency.
     # The weights only pack a count's shards: of each count, take the
