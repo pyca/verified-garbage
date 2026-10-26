@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.Limbs
+public import VerifiedGarbage.Proof.X25519.Limbs -- shake: keep (re-exported below for the PPC64LE proofs' `open`s)
 
 /-!
 # X25519 on PPC64LE: numbers of 32-bit limbs

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.RISCV64.Main
 public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.X25519.RISCV64.CT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
