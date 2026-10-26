@@ -75,13 +75,13 @@ theorem SpSafe.of_all {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = tru
 theorem exec_rsp {i : Instr} {s s' : State} (hw : isa.writesSp i = false) (h : exec i s = some s') :
     s'.gpr .rsp = s.gpr .rsp := by
   refine exec_gpr ?_ h
-  cases i <;> first
-    | (simp only [exec, reduceCtorEq] at h; done)
-    | (simp only [Instr.dst, Bool.or_eq_false_iff, beq_eq_false_iff_ne, ne_eq,
-        reduceCtorEq, Option.some.injEq] at hw
-       simp only [Taint.clobbers, Taint.dstOf, Bool.or_eq_false_iff,
-         beq_eq_false_iff_ne, ne_eq, reduceCtorEq, Option.some.injEq]
-       first | exact hw | exact ⟨fun h => hw.1 h.symm, fun h => hw.2 h.symm⟩ | decide)
+  cases i
+  case mulx hi lo _ =>
+    simp only [Bool.or_eq_false_iff, beq_eq_false_iff_ne, ne_eq] at hw
+    simp only [Taint.clobbers, Bool.or_eq_false_iff, beq_eq_false_iff_ne, ne_eq]
+    exact ⟨fun h => hw.1 h.symm, fun h => hw.2 h.symm⟩
+  case push | pop | alloc | free => simp only [exec, reduceCtorEq] at h
+  all_goals first | exact hw | decide
 
 /-- A frame restores `rsp`. -/
 theorem frame_rsp {i j : Instr} {s s₁ s₂ s' : State} (hp : isa.push i s = some s₁)

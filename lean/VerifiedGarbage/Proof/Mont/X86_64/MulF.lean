@@ -208,15 +208,105 @@ its own `u_c m₀`. -/
 def fColSum (w : Nat) (A B Mw l : Nat → Nat) (c : Nat) : Nat :=
   prodCol w A B c + redCol w l Mw c + if c < w then l c * Mw 0 else 0
 
+theorem hval_zero : ∀ k n, hval (fun _ => 0) k n = 0
+  | _, 0 => rfl
+  | k, n + 1 => by rw [hval, hval_zero (k + 1) n]
+
+theorem hval_add_fun (f g : Nat → Nat) : ∀ k n, hval (fun c => f c + g c) k n = hval f k n + hval g k n
+  | _, 0 => rfl
+  | k, n + 1 => by
+    rw [hval, hval, hval, hval_add_fun f g (k + 1) n, Nat.mul_add]
+    simp only [Nat.add_assoc, Nat.add_left_comm]
+
+theorem hval_mul_left (a : Nat) (f : Nat → Nat) : ∀ k n, hval (fun c => a * f c) k n = a * hval f k n
+  | _, 0 => rfl
+  | k, n + 1 => by
+    rw [hval, hval, hval_mul_left a f (k + 1) n, Nat.mul_add, Nat.mul_left_comm]
+
+theorem hval_sum (L : List Nat) (F : Nat → Nat → Nat) (k n : Nat) :
+    hval (fun c => (L.map fun i => F i c).sum) k n = (L.map fun i => hval (F i) k n).sum := by
+  induction L with
+  | nil => exact hval_zero k n
+  | cons i L ih =>
+    simp only [List.map_cons, List.sum_cons]
+    rw [hval_add_fun (F i) (fun c => (L.map fun i => F i c).sum), ih]
+
+theorem sum_map_filter {α} (L : List α) (p : α → Bool) (f : α → Nat) :
+    ((L.filter p).map f).sum = (L.map fun x => if p x then f x else 0).sum := by
+  induction L with
+  | nil => rfl
+  | cons x L ih => by_cases h : p x <;> simp [h, ih]
+
+theorem hval_eq_sum (f : Nat → Nat) : ∀ n, hval f 0 n = ((List.range n).map fun i => (2 ^ 64) ^ i * f i).sum
+  | 0 => rfl
+  | n + 1 => by
+    rw [hval_succ_last, hval_eq_sum f n, List.range_succ, List.map_append, List.sum_append, Nat.zero_add]
+    simp
+
+/-- Row `i` of a product's columns: `X^i f i · g`. -/
+theorem hval_row (w i : Nat) (hi : i < w) (a : Nat) (g : Nat → Nat) :
+    hval (fun c => if i ≤ c ∧ c - i < w then a * g (c - i) else 0) 0 (2 * w) =
+      (2 ^ 64) ^ i * (a * hval g 0 w) := by
+  rw [show 2 * w = i + (w + (w - i)) by omega, hval_add, hval_add,
+    hval_congr (g := fun _ => 0) (fun c _ hc => ite_eq_right_iff.mpr fun h => absurd h (by omega)), hval_zero,
+    hval_congr (k := 0 + i + w) (g := fun _ => 0) (fun c hc _ => ite_eq_right_iff.mpr fun h => absurd h (by omega)), hval_zero,
+    Nat.zero_add, Nat.mul_zero, Nat.add_zero, Nat.zero_add,
+    hval_congr (k := i) (g := fun c => a * g (c - i)) (fun c hc hc' => ite_eq_left_iff.mpr fun h => absurd (by omega) h),
+    show i = 0 + i from (Nat.zero_add i).symm, hval_shift, hval_mul_left]
+  simp only [Nat.add_sub_cancel, Nat.zero_add]
+
+theorem sum_map_mul_right {α} (L : List α) (f : α → Nat) (b : Nat) :
+    (L.map f).sum * b = (L.map fun x => f x * b).sum := by
+  induction L with
+  | nil => exact Nat.zero_mul b
+  | cons x L ih => simp only [List.map_cons, List.sum_cons, Nat.add_mul, ih]
+
+theorem sum_range_ite_eq (x : Nat → Nat) (c : Nat) : ∀ w,
+    ((List.range w).map fun k => if k = c then x k else 0).sum = if c < w then x c else 0
+  | 0 => rfl
+  | w + 1 => by
+    rw [List.range_succ, List.map_append, List.sum_append, sum_range_ite_eq x c w]
+    by_cases h : c < w
+    · simp [h, show c < w + 1 by omega, show w ≠ c by omega]
+    · by_cases h' : w = c
+      · subst h'; simp
+      · simp [h, h', show ¬ c < w + 1 by omega]
+
+theorem sum_map_add_map {α} (L : List α) (f g : α → Nat) :
+    (L.map f).sum + (L.map g).sum = (L.map fun x => f x + g x).sum := by
+  induction L with
+  | nil => rfl
+  | cons x L ih => simp only [List.map_cons, List.sum_cons, ← ih]; omega
+
+theorem hval_prodCol (w : Nat) (f g : Nat → Nat) :
+    hval (prodCol w f g) 0 (2 * w) = hval f 0 w * hval g 0 w := by
+  have : prodCol w f g = fun c => ((List.range w).map fun i =>
+      if i ≤ c ∧ c - i < w then f i * g (c - i) else 0).sum := by
+    funext c; rw [prodCol, sum_map_filter]; simp only [decide_eq_true_eq]
+  rw [this, hval_sum, hval_eq_sum f, sum_map_mul_right]
+  refine congrArg List.sum (List.map_congr_left fun i hi => ?_)
+  rw [hval_row w i (List.mem_range.mp hi), Nat.mul_assoc]
+
 /-- All `2w` columns: `A B + U m`. -/
 theorem fColSum_total (hw : w = 8 ∨ w = 9) (A B Mw l : Nat → Nat) :
     hval (fColSum w A B Mw l) 0 (2 * w) = hval A 0 w * hval B 0 w + hval l 0 w * hval Mw 0 w := by
-  rcases hw with rfl | rfl <;>
-  simp only [hval, fColSum, prodCol, redCol, List.range, List.range.loop, List.filter_cons, List.filter_nil,
-    decide_eq_true_eq, Nat.reduceLeDiff, Nat.reduceLT, Nat.reduceSub, Nat.reduceAdd, and_true, and_false,
-    ↓reduceIte, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero, Nat.zero_add]
-  all_goals generalize 2 ^ 64 = X
-  all_goals grind
+  have hw0 : 0 < w := by omega
+  have : fColSum w A B Mw l = fun c => prodCol w A B c + prodCol w l Mw c := by
+    funext c
+    rw [fColSum, Nat.add_assoc]
+    congr 1
+    unfold redCol prodCol
+    rw [sum_map_filter, sum_map_filter, show l c * Mw 0 = l c * Mw (c - c) by rw [Nat.sub_self],
+      ← sum_range_ite_eq (fun k => l k * Mw (c - k)) c w, sum_map_add_map]
+    refine congrArg List.sum (List.map_congr_left fun k _ => ?_)
+    simp only [decide_eq_true_eq]
+    by_cases h : k = c
+    · subst h; simp [hw0]
+    · by_cases h' : k < c ∧ c - k < w
+      · simp [h', h, show k ≤ c by omega]
+      · simp only [h', h, ite_false, Nat.add_zero]
+        exact (ite_eq_right_iff.mpr fun h'' => absurd ⟨by omega, h''.2⟩ h').symm
+  rw [this, hval_add_fun, hval_prodCol, hval_prodCol]
 
 /-- A column's terms' sum, from the words they read. -/
 theorem pSum_fTerms {m : Mem} {base : Addr} {M : Mod} {a b c : Nat} {A B Mw l : Nat → Nat} (hn : M.n = w)
@@ -359,10 +449,6 @@ theorem fCols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base s
       generalize (2 ^ 64) ^ n = Q
       rw [Nat.add_assoc, ← Nat.mul_add, ← Nat.add_assoc, ← e', Nat.mul_add]
       simp only [↓reduceIte, Nat.add_assoc]
-
-theorem hval_zero : ∀ k n, hval (fun _ => 0) k n = 0
-  | _, 0 => rfl
-  | k, n + 1 => by rw [hval, hval_zero (k + 1) n]
 
 /-- The arithmetic of `mulF`: from the columns' value `A B + U m =
 X^w W + X^(2w) acc` (`X = 2⁶⁴`), `acc ≤ 1` and `W + X^w acc < 2m`. -/

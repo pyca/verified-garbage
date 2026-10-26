@@ -706,11 +706,11 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     (h : exec i s = some s') : s'.gpr r = s.gpr r := by
   cases hd : Taint.dstOf i with
   | some d =>
+    have hc : Taint.clobbers i d = true := by cases i <;> cases hd <;> exact beq_self_eq_true _
     refine (Taint.exec_nonstore hd h).2.2.2 r fun h' => ?_
-    subst h'
-    cases i <;> simp_all [Taint.clobbers, Taint.dstOf]
+    rw [h', hc] at hi; cases hi
   | none =>
-    cases i <;> simp only [Taint.dstOf, reduceCtorEq] at hd
+    cases i <;> cases hd
     · simp only [exec, State.store64] at h; split at h <;> cases h; rfl
     · simp only [exec, State.store32] at h; split at h <;> cases h; rfl
     · simp only [exec, State.store8] at h; split at h <;> cases h; rfl

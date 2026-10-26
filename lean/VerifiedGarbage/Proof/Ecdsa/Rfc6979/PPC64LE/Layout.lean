@@ -419,7 +419,7 @@ theorem entered_sp (dn q : Nat) (s : State) :
   show s.sp - 48 - BitVec.ofNat 64 (256 + (lay dn q s).e) =
     s.sp - BitVec.ofNat 64 (400 + (lay dn q s).e) + BitVec.ofNat 64 96
   generalize (lay dn q s).e = e
-  simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
+  simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega_using []
 
 theorem entered_wr (dn q : Nat) (s : State) :
     (entered (lay dn q s).e s).wr = (lay dn q s).FR :: (lay dn q s).LR :: s.wr := by
@@ -429,9 +429,9 @@ theorem entered_wr (dn q : Nat) (s : State) :
     ⟨s.sp - BitVec.ofNat 64 (400 + (lay dn q s).e) + BitVec.ofNat 64 (384 + (lay dn q s).e), 16⟩ :: s.wr
   generalize (lay dn q s).e = e
   have h₁ : s.sp - 48 - BitVec.ofNat 64 (256 + e) + 32 = s.sp - BitVec.ofNat 64 (400 + e) + BitVec.ofNat 64 128 := by
-    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
+    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega_using []
   have h₂ : s.sp - 48 + 32 = s.sp - BitVec.ofNat 64 (400 + e) + BitVec.ofNat 64 (384 + e) := by
-    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
+    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega_using []
   rw [h₁, h₂, show 256 + e - 32 = 224 + e by omega]
 
 /-- A 64-bit `write` is a `writeW`. -/
@@ -454,11 +454,11 @@ theorem entered_mem (dn q : Nat) (s : State) :
         s.lr).writeW (s.sp - BitVec.ofNat 64 (400 + (lay dn q s).e) + BitVec.ofNat 64 96) (s.sp - 48)
   generalize (lay dn q s).e = e
   have h₁ : s.sp - 48 = s.sp - BitVec.ofNat 64 (400 + e) + BitVec.ofNat 64 (352 + e) := by
-    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
+    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega_using []
   have h₂ : s.sp - 48 + 32 = s.sp - BitVec.ofNat 64 (400 + e) + BitVec.ofNat 64 (384 + e) := by
-    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
+    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega_using []
   have h₃ : s.sp - 48 - BitVec.ofNat 64 (256 + e) = s.sp - BitVec.ofNat 64 (400 + e) + BitVec.ofNat 64 96 := by
-    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega
+    simp only [← BitVec.ofNat_add_ofNat]; generalize BitVec.ofNat 64 e = E; bv_omega_using []
   rw [h₃, h₂, write8, write8, write8, ← h₁]
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
