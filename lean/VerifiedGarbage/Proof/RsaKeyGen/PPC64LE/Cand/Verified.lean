@@ -45,8 +45,8 @@ theorem tab_of {s : State} (hc : CIn s) (h : ConstsOk TrialTable32.consts 400 s)
   have hm : (TrialTable32.symbol, TrialTable32.packed) ∈ TrialTable32.consts := by rw [consts_eq]; simp
   have hreg : (⟨s.syms TrialTable32.symbol, 8 * 1024⟩ : Region) ∈ constRegs TrialTable32.consts s := by
     rw [consts_eq, constRegs, Abi.constRegions_cons, Abi.constRegions_nil, packed_length]; simp
-  have hw := (h.2.2 _ hreg).2.1
-  have hr := (h.2.2 _ hreg).2.2
+  have hw := (h.2.2.1 _ hreg).2.1
+  have hr := (h.2.2.1 _ hreg).2.2
   refine ⟨packed_length ▸ h.fit hm, packed_length ▸ h.mem_rd hm, fun i hi => h.readW hm (by rw [packed_length]; exact hi),
     fun ρ hρ => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hρ

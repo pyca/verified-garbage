@@ -98,7 +98,7 @@ private theorem singleton_disjoint {name : String} {words : List (BitVec 64)}
     ∀ r ∈ s.wr, (⟨s.syms name, 8 * words.length⟩ : Region).Disjoint r := by
   have member : (⟨s.syms name, 8 * words.length⟩ : Region) ∈ constRegs [(name, words)] s :=
     List.mem_cons_self
-  exact (hc.2.2 _ member).2.1
+  exact (hc.2.2.1 _ member).2.1
 
 theorem consts_table_after {s t : State} {stack : Nat} {B : Addr} {Z : Nat} {rs : List Reg}
     (hc : ConstsOk tableConsts stack s) (frame : Frame [⟨B, Z⟩] s.mem t.mem)

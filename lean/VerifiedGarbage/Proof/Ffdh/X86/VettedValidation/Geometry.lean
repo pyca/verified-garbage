@@ -74,7 +74,7 @@ theorem scratch_room {s : State} (h : contract.pre s) : 48 ≤ (scratch s).len :
 private theorem singleton_fit {name : String} {words : List (BitVec 64)} {s : State} {st : Nat}
     (h : ConstsOk [(name, words)] st s) :
     (s.syms name).toNat + 8 * words.length ≤ 2 ^ 32 := by
-  have fit := (h.2.2 ⟨symAddr s name, 8 * words.length⟩ List.mem_cons_self).1
+  have fit := (h.2.2.1 ⟨symAddr s name, 8 * words.length⟩ List.mem_cons_self).1
   change (symAddr s name).toNat + 8 * words.length ≤ 2 ^ 32 at fit
   simpa only [symAddr, BitVec.toNat_setWidth,
     Nat.mod_eq_of_lt (Nat.lt_trans (s.syms name).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using fit

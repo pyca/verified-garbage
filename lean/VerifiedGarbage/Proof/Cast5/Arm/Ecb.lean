@@ -297,7 +297,7 @@ theorem ConstsOk.rd1 (h : ConstsOk [(name, ws)] st s) :
 /-- No writable region overlaps it. -/
 theorem ConstsOk.wr1 (h : ConstsOk [(name, ws)] st s) :
     ∀ r ∈ s.wr, Region.Disjoint ⟨State.addr (s.syms name), 8 * ws.length⟩ r :=
-  (h.2.2 _ List.mem_cons_self).2.1
+  (h.2.2.1 _ List.mem_cons_self).2.1
 
 end
 
