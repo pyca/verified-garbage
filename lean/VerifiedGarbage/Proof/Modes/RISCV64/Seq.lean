@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Loops
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 public import VerifiedGarbage.Proof.Framework.RISCV64.BigFrame
 
 /-!
@@ -487,10 +488,10 @@ theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} 
   have hS := scrIn_of hp ht
   obtain ⟨ws, hws⟩ := ht.wr
   -- The entry and the key.
-  refine WP.seq (WP.mono (entry_wp hp ht) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.of_syms (WP.mono (entry_wp hp ht) fun s₁ h₁ sy₁ => ?_))
   have wr₁ : s₁.wr = ws ++ s₀.wr := by rw [h₁.wr, hws]
   refine WP.seq (WP.mono (cs.prepare_wp h₁.b (hS.congr h₁.wr) m1
-    (cs.keyArgs_congr hk h₁.keep h₁.rd ⟨ws, wr₁⟩
+    (cs.keyArgs_congr hk h₁.keep h₁.rd ⟨ws, wr₁⟩ (sy₁.trans ht.syms)
       (h₁.frame.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, m1, modeScr⟩)))
     fun s₂ ⟨ready₂, b₂, kept₂, f₂, rd₂, wr₂⟩ => ?_)

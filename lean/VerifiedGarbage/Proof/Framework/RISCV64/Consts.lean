@@ -117,6 +117,24 @@ theorem pub_consts {s₁ s₂ : State} :
       · rintro ⟨⟨⟨hp, hs⟩, hl⟩, ha, hd⟩; exact ⟨⟨⟨hp, hl⟩, ha, hd⟩, hs⟩
       · rintro ⟨⟨⟨hp, hl⟩, ha, hd⟩, hs⟩; exact ⟨⟨⟨hp, hs⟩, hl⟩, ha, hd⟩
 
+/-- A postcondition does not depend on the readable regions. -/
+theorem post_stripConsts {K : List (String × List (BitVec 64))} {s s' : State} :
+    (sig.contract abi pre post wa st leak).post (stripConsts K s) s' ↔
+      (sig.contract abi pre post wa st leak).post s s' := by
+  dsimp only [Sig.contract]
+  cases h : abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
+  | none => simp
+  | some vals => dsimp only; rw [args_stripConsts h]; exact Iff.rfl
+
+/-- Nor does what is public. -/
+theorem pub_stripConsts {K : List (String × List (BitVec 64))} {s₁ s₂ : State} :
+    (sig.contract abi pre post wa st leak).pub (stripConsts K s₁) (stripConsts K s₂) ↔
+      (sig.contract abi pre post wa st leak).pub s₁ s₂ := by
+  dsimp only [Sig.contract]
+  cases h : abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
+  | none => simp
+  | some vals => dsimp only; rw [args_stripConsts h, args_stripConsts h]; exact Iff.rfl
+
 end
 
 section

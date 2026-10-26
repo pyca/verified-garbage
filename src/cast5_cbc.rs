@@ -10,16 +10,17 @@
 //! one to continue from, the last ciphertext block, in constant time: their
 //! timing depends on none of the key, the chaining value and the data. Both are
 //! the modes' generic CBC over CAST5's table-scanning block code, one block at
-//! a time: on x86, x86-64, AArch64 and PPC64LE over the block code itself, on
-//! ARMv7 calling the verified `vg_cast5_ecb_encrypt` or `vg_cast5_ecb_decrypt`
-//! for each block. This module checks the lengths and holds the subkeys.
+//! a time: on x86, x86-64, AArch64, PPC64LE and RISC-V over the block code
+//! itself, on ARMv7 calling the verified `vg_cast5_ecb_encrypt` or
+//! `vg_cast5_ecb_decrypt` for each block. This module checks the lengths and holds the subkeys.
 
 #![cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::cast5_cbc::{vg_cast5_cbc_decrypt_chained, vg_cast5_cbc_encrypt_chained};
