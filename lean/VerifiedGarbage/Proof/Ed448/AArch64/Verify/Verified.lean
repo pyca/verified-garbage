@@ -316,6 +316,7 @@ theorem spec_pre {s : State} (hsp : 352 ≤ s.sp.toNat)
     (hfit : (s.syms baseSym).toNat + 8 * baseWords.length ≤ 2 ^ 64)
     (hdw : ∀ r ∈ s.wr, Region.Disjoint ⟨s.syms baseSym, 8 * baseWords.length⟩ r)
     (hds : Region.Disjoint ⟨s.syms baseSym, 8 * baseWords.length⟩ ⟨s.sp - 352#64, 352⟩)
+    (hal : (s.syms baseSym).toNat % 64 = 0)
     (hrest : (⟨s.gpr .x0, 57⟩ : Region).Disjoint ⟨s.gpr .x6, 8192⟩ ∧
       (⟨s.gpr .x1, (s.gpr .x2).toNat⟩ : Region).Disjoint ⟨s.gpr .x6, 8192⟩ ∧
       (⟨s.gpr .x3, (s.gpr .x4).toNat⟩ : Region).Disjoint ⟨s.gpr .x6, 8192⟩ ∧
@@ -334,13 +335,13 @@ theorem spec_pre {s : State} (hsp : 352 ≤ s.sp.toNat)
     VG.Proof.Ed448.AArch64.Sparse.baseConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
   obtain ⟨r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14⟩ := hrest
-  exact ⟨hsp, by rw [hrd]; rfl, hheld, hfit, hdw, hds, by rw [hrd]; rfl, hw, r1, r2, r3, r4, r5, r6, r7,
+  exact ⟨hsp, by rw [hrd]; rfl, hheld, hfit, hdw, hds, hal, by rw [hrd]; rfl, hw, r1, r2, r3, r4, r5, r6, r7,
     r8, r9, r10, r11, r12, r13, r14⟩
 
 theorem sat : ∃ s, (Spec.Ed448.verifyContract (AArch64.abi.withConsts baseConsts) 352).pre s := by
   have hl := baseWords_length
   refine ⟨satState, spec_pre (by decide) (by rw [hl]; rfl) rfl satMem_held (by rw [hl]; decide) ?_
-    (by rw [hl]; exact Region.disjoint_of_sep (by decide)) ?_⟩
+    (by rw [hl]; exact Region.disjoint_of_sep (by decide)) (by decide) ?_⟩
   · rw [hl]
     simp only [satState, List.mem_cons, List.not_mem_nil, or_false]
     rintro r rfl; exact Region.disjoint_of_sep (by decide)
@@ -360,7 +361,7 @@ theorem verify_implies : vLocal.Implies
       Spec.Ed448.scratchWords, AArch64.abi, AArch64.argRegs,
       VG.Proof.Ed448.AArch64.Sparse.baseConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at h
-    obtain ⟨hsp, hd, held, fit, hdw, hds, ht, hw, pc, cc, mc, sc, kp, kx, km, ks, kc, np, -, -, ns, nc⟩ := h
+    obtain ⟨hsp, hd, held, fit, hdw, hds, -, ht, hw, pc, cc, mc, sc, kp, kx, km, ks, kc, np, -, -, ns, nc⟩ := h
     refine ⟨?_, hw, pc, cc, mc, sc, kp, kx, km, ks, kc, np, ns, nc, hsp, held, fit, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · intro r hr

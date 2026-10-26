@@ -550,6 +550,7 @@ theorem spec_pre {s : State} (hsp : 352 ≤ s.sp.toNat)
     (hfit : (s.syms bSym).toNat + 8 * bWords.length ≤ 2 ^ 64)
     (hdw : Region.Disjoint ⟨s.syms bSym, 8 * bWords.length⟩ ⟨s.gpr .x4, 8192⟩)
     (hds : Region.Disjoint ⟨s.syms bSym, 8 * bWords.length⟩ ⟨s.sp - 352#64, 352⟩)
+    (hal : (s.syms bSym).toNat % 64 = 0)
     (hrest : (⟨s.gpr .x0, 32⟩ : Region).Disjoint ⟨s.gpr .x4, 8192⟩ ∧
       (⟨s.gpr .x1, (s.gpr .x2).toNat⟩ : Region).Disjoint ⟨s.gpr .x4, 8192⟩ ∧
       (⟨s.gpr .x3, 64⟩ : Region).Disjoint ⟨s.gpr .x4, 8192⟩ ∧
@@ -564,7 +565,7 @@ theorem spec_pre {s : State} (hsp : 352 ≤ s.sp.toNat)
     Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts,
     Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11⟩ := hrest
-  refine ⟨hsp, by rw [hrd]; rfl, hheld, hfit, fun r hr => ?_, hds, by rw [hrd]; rfl, hw, r1, r2, r3,
+  refine ⟨hsp, by rw [hrd]; rfl, hheld, hfit, fun r hr => ?_, hds, hal, by rw [hrd]; rfl, hw, r1, r2, r3,
     r4, r5, r6, r7, r8, r9, r10, r11⟩
   rw [hw, List.mem_singleton] at hr
   rw [hr]; exact hdw
@@ -575,7 +576,7 @@ theorem verifyMessage_implies : verifyMessageLocal.Implies
     sig_pre [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
       Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts,
       Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨hsp, hd, held, fit, hdw, hds, ht, hw, pc, mc, sc, kp, km, ks, kc, np, nm, ns, nc⟩ := h
+    obtain ⟨hsp, hd, held, fit, hdw, hds, -, ht, hw, pc, mc, sc, kp, km, ks, kc, np, nm, ns, nc⟩ := h
     simp only [bWords_length, Nat.reduceMul] at hd held fit hdw hds
     refine ⟨?_, hw, pc, mc, sc, kp, km, ks, kc, np, nm, ns, nc, hsp, held, fit, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
@@ -608,7 +609,7 @@ theorem verifyMessage_implies : verifyMessageLocal.Implies
     refine ⟨verifySatState, spec_pre (by decide) (by rw [hl]; rfl) rfl
       (fun i hi => bSatMem_held i (by rw [hl] at hi; exact hi)) (by rw [hl]; decide)
       (by rw [hl]; exact Region.disjoint_of_sep (by decide))
-      (by rw [hl]; exact Region.disjoint_of_sep (by decide)) ?_⟩
+      (by rw [hl]; exact Region.disjoint_of_sep (by decide)) (by decide) ?_⟩
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
