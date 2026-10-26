@@ -114,8 +114,11 @@ jobs:
               /runner-node -e "console.log(process.version, process.arch)"
               git --version
               python3 -V
-              openssl version
-              pkg-config --exists openssl
+              # OpenSSL where the benchmarks are built (not riscv64).
+              if command -v openssl; then
+                openssl version
+                pkg-config --exists openssl
+              fi
               zstd --version
               rustc -vV
               # Clippy and rustfmt only where the image has them (the lint
