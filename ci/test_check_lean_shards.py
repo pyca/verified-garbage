@@ -652,6 +652,50 @@ class RebuildFrontier(unittest.TestCase):
                     self.assertEqual(part, set().union(*(closure[t] for t in ts)))
 
 
+class Packing(unittest.TestCase):
+    @mock.patch.object(shards, "PARALLELISM", 1.0)
+    def test_a_heavier_reuse_weight_keeps_a_sink_with_its_imports(self):
+        # Four sinks import one base. Weighing the work a sink adds as time
+        # alone, the last joins the idle shard and builds the base again;
+        # weighing it twice, it joins the shard building the base already.
+        imps = {"base": [], **{f"s{i}": ["base"] for i in range(4)}}
+        closure = shards.closures(imps)
+        cost = {"base": 100.0, **{f"s{i}": 50.0 for i in range(4)}}
+        path = shards.paths(imps, cost)
+        sinks = [f"s{i}" for i in range(4)]
+        _, targets, built = shards.pack(2, sinks, closure, cost, path)
+        self.assertEqual(targets, [["s0", "s1", "s2"], ["s3"]])
+        self.assertIn("base", built[1])
+        _, targets, built = shards.pack(2, sinks, closure, cost, path, reuse=2.0)
+        self.assertEqual(targets, [sinks, []])
+
+    def test_restored_modules_weigh_as_much_by_their_number(self):
+        import random
+        rng = random.Random(3)
+        for _ in range(10):
+            imps = {str(i): [str(j) for j in range(i) if rng.random() < .1] for i in range(60)}
+            closure = shards.closures(imps)
+            cost = {m: rng.choice([shards.UP_TO_DATE, 1.0, 7.5, 40.0]) for m in imps}
+            path = shards.paths(imps, cost)
+            sinks = sorted(imps, key=lambda m: -sum(cost[x] for x in closure[m]))[:12]
+            rebuilt = {m: frozenset(x for x in closure[m] if cost[x] != shards.UP_TO_DATE) for m in sinks}
+            for reuse in shards.REUSE_WEIGHTS:
+                self.assertEqual(shards.pack(4, sinks, closure, cost, path, reuse),
+                                 shards.pack(4, sinks, closure, cost, path, reuse, rebuilt))
+
+    @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
+    def test_every_weight_is_a_candidate_and_counts_outside_the_work_bound_are_not(self):
+        imps = {"base": [], **{f"s{i}": ["base"] for i in range(30)}}
+        times = {"base": 10.0, **{f"s{i}": 100.0 for i in range(30)}}
+        d = {}
+        shards.schedule(imps, shards.closures(imps), set(imps), times, d)
+        packed = [c for c in d["candidates"] if "reuse" in c]
+        self.assertEqual({c["reuse"] for c in packed}, set(shards.REUSE_WEIGHTS))
+        bounded = [c["shards"] for c in d["candidates"] if c.get("excluded") == "work_bound"]
+        self.assertTrue(bounded)
+        self.assertFalse({c["shards"] for c in packed} & set(bounded))
+
+
 class Refinement(unittest.TestCase):
     def example(self, imps, cost, targets, limit):
         closure = shards.closures(imps)
