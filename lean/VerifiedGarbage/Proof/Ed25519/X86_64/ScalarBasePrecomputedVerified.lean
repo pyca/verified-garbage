@@ -154,7 +154,8 @@ theorem scalarBase_spec_pre8 {s : State}
     (f0 : (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64) (f1 : (s.gpr .rsi).toNat + 32 ≤ 2 ^ 64)
     (f2 : (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64) (hsp : 8 ≤ (s.gpr .rsp).toNat)
     (ht : CombHeld s [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rsp, 8⟩])
-    (hq : Region.Disjoint ⟨s.syms combSym, 40448⟩ ⟨s.gpr .rsp - 8#64, 8⟩) :
+    (hq : Region.Disjoint ⟨s.syms combSym, 40448⟩ ⟨s.gpr .rsp - 8#64, 8⟩)
+    (hal : (s.syms combSym).toNat % 64 = 0) :
     (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8).pre s := by
   sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig, Spec.Ed25519.scratchWords,
     X86_64.abi, X86_64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
@@ -162,7 +163,7 @@ theorem scalarBase_spec_pre8 {s : State}
   obtain ⟨held, fit, hdw⟩ := ht
   exact ⟨hsp, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]),
-    hdw _ (by simp), hq, by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, q1, q2, q3, f0, f1, f2⟩
+    hdw _ (by simp), hq, hal, by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, q1, q2, q3, f0, f1, f2⟩
 
 theorem scalarBase_sat8 :
     (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts) 8).pre baseSatStateT := by
@@ -172,6 +173,7 @@ theorem scalarBase_sat8 :
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
     (by decide) (by decide) ⟨combSatMem_held, by decide, ?_⟩ (Region.disjoint_of_sep (by decide))
+    (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
 
