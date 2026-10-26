@@ -62,7 +62,7 @@ private theorem layout_legacy {p : KeyPublic sampling} {s : State} (h : KeyInput
   have constantStack (r : Region) (hr : r ∈ constRegs (KeyConstants.consts sampling) s) :
       (⟨State.addr s.sp - BitVec.ofNat 64 (stackUse sampling), (stackUse sampling)⟩ : Region).Disjoint r := by
     apply Region.Disjoint.symm
-    apply (hc.2.2 r hr).2.2
+    apply (hc.2.2.1 r hr).2.2
     simp only [abi, stackBelow]
     exact List.mem_cons_self
   refine ⟨rdFull, wr, ?_, ?_, ?_, ?_⟩
@@ -83,7 +83,7 @@ private theorem layout_legacy {p : KeyPublic sampling} {s : State} (h : KeyInput
         simp only [State.addr, BitVec.toNat_setWidth]
         exact Nat.mod_eq_of_lt (Nat.lt_trans s.sp.isLt (by decide))
       rw [eq]; omega
-    · exact (hc.2.2 r constant).1
+    · exact (hc.2.2.1 r constant).1
   · simp only [writes, List.pairwise_cons, List.Pairwise.nil, List.mem_cons,
       List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, false_implies, and_true]
     exact ⟨⟨xy, xu, xs, xc⟩, ⟨⟨yu, ys, yc⟩, ⟨⟨us, uc⟩, ⟨sc, fun _ => trivial⟩⟩⟩⟩
@@ -108,7 +108,7 @@ private theorem layout_legacy {p : KeyPublic sampling} {s : State} (h : KeyInput
       · exact dc.symm
       · exact rc.symm
       · simpa only [inControl, inArgs, argsBytes_legacy uncached, State.addr] using ca
-    · exact ((hc.2.2 r constant).2.1 w (by rw [wr]; simpa only [writes, inX, inY, inUsed, inScratch, inControl, State.addr, List.mem_cons, List.not_mem_nil, or_false] using hw)).symm
+    · exact ((hc.2.2.1 r constant).2.1 w (by rw [wr]; simpa only [writes, inX, inY, inUsed, inScratch, inControl, State.addr, List.mem_cons, List.not_mem_nil, or_false] using hw)).symm
   · intro r hr
     simp only [writes, reads_legacy uncached, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl | rfl | rfl | rfl) | ((rfl | rfl | rfl) | constant)
