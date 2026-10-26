@@ -41,7 +41,9 @@ theorem cYX_taint : Cert (copy aY aX) := ⟨_, by taint_decide⟩
 theorem cY0_taint : Cert (copy aY aT0) := ⟨_, by taint_decide⟩
 
 theorem tabCnt_taint : Cert (.block tabCnt) := ⟨_, by taint_decide⟩
-theorem shift_taint : Cert tabShift := ⟨_, by taint_decide⟩
+theorem tabCopy_taint (j : Nat) (hj : j < 14) : Cert (copy (aT0 + j + 2) aY) := by
+  have cases : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 := by omega
+  rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
 theorem cnt_taint : Cert (.block cntNext) := ⟨_, by taint_decide⟩
 
 theorem winCnt_taint : Cert (.block winCnt) := ⟨_, by taint_decide⟩

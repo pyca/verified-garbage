@@ -2609,7 +2609,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ umaal</td>
+<td>✅ umaal; Miller–Rabin powers written directly to their final table slots</td>
 
 <td>✅</td>
 

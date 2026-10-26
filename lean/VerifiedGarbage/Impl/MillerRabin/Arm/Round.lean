@@ -23,7 +23,7 @@ Fixed windows of four bits over the prepared exponent `E = (c − 1) / 2^σ`
 
 1. The table `T_k = x^k` (`k < 16`, in Montgomery form, array `11 + k`):
    `T_0 := 1`, `T_1 := x` (copies of arrays 9 and 5), then 14 times
-   `y := y x` and the entries 2–15 shifted down one, `y` into entry 15.
+   `y := y x`, with each result copied directly to its final entry 2–15.
 2. `y := 1` and, over the `16 w` windows of `E` from the top (its 32-bit
    words from the top, eight windows each, the word shifted left four bits
    a window), four squarings, each or'ing the flag with `y = −1`; `T_d` for
@@ -113,16 +113,16 @@ def tabInit : List (Prog isa) :=
   [.block ctx, seqs (copyClr aT0 9), .block (Rsa.Arm.Recover.clrTop aX), copy (aT0 + 1) aX, copy aY aX,
     .block tabCnt]
 
-/-- `[aT0 + k] := [aT0 + k + 1]` for `n` entries from `k`, then `[aT0 + 15] := [aY]`. -/
-def shiftFrom : Nat → Nat → Prog isa
-  | _, 0 => copy (aT0 + 15) aY
-  | k, n + 1 => .seq (copy (aT0 + k) (aT0 + k + 1)) (shiftFrom (k + 1) n)
+/-- Build entry `j + 2` once, directly in its final table slot. -/
+def tabStep (j : Nat) (fios : Bool := false) : Prog isa :=
+  seqs [seqs (mulY (fios := fios) aX), copy (aT0 + j + 2) aY, .block cntNext]
 
-/-- The entries 2–15 shifted down one, `y` into entry 15. -/
-def tabShift : Prog isa := shiftFrom 2 13
+/-- Public, fixed entry indices avoid shifting the completed table. -/
+def tabBuildFrom (fios : Bool) : Nat → Nat → Prog isa
+  | _, 0 => .block []
+  | j, n + 1 => .seq (tabStep j (fios := fios)) (tabBuildFrom fios (j + 1) n)
 
-/-- One entry: `y := y x`, the shift and the count. -/
-def tabStep (fios : Bool := false) : Prog isa := seqs [seqs (mulY (fios := fios) aX), tabShift, .block cntNext]
+def tabBuild (fios : Bool := false) : Prog isa := tabBuildFrom fios 0 14
 
 /-! ## Squarings -/
 
@@ -215,7 +215,7 @@ def lowBits : List Instr :=
 
 /-- The round's body: the flag returned in `r0`. -/
 def body (fios : Bool := false) : Prog isa :=
-  seqs [seqs tabInit, .loop (tabStep (fios := fios)) .ne, seqs winInit, .loop (word (fios := fios)) .ne, .block lowBits, (sqLoop (fios := fios)),
+  seqs [seqs tabInit, tabBuild (fios := fios), seqs winInit, .loop (word (fios := fios)) .ne, .block lowBits, (sqLoop (fios := fios)),
     .block [.ldr .r0 .r8 sF]]
 
 /-- `vg_miller_rabin_round`. -/

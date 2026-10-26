@@ -11,8 +11,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 The scan (`St.pscan`): `T_d` into array 5 for the digit `d` at the top of
 `sV`, through the masks of all 16 entries, the selection so far alternating
 between arrays 8 and 5 (`hold`): before entry `j`, it is `T_d` if `d < j`,
-else `T_0` (`selv`). The table's shift (`St.pshift`): entries 2–15 shifted
-down one, `y` into entry 15 (`shiftArr`).
+else `T_0` (`selv`).
 -/
 
 @[expose] public section
@@ -124,70 +123,6 @@ theorem St.pscan (hT : ∀ k < 16, aT0 + k ∈ L) (hX : aX ∉ L) (hM : aM1 ∉ 
     · rfl
   rw [show hold (1 + 1) = aM1 from rfl, e1]
   exact h1
-
-end
-
-/-! ## The table's shift -/
-
-/-- Entries `k`–14 shifted down one, `y` into entry 15. -/
-def shiftArr (A : Nat → Nat) (k : Nat) (i : Nat) : Nat :=
-  if aT0 + k ≤ i ∧ i < aT0 + 15 then A (i + 1) else if i = aT0 + 15 then A aY else A i
-
-theorem shiftArr_step (A : Nat → Nat) (k : Nat) (hk : 2 ≤ k) (hk2 : k < 15) (i : Nat) :
-    shiftArr (upd A (aT0 + k) (A (aT0 + k + 1))) (k + 1) i = shiftArr A k i := by
-  unfold shiftArr upd
-  have e0 : aT0 = 11 := rfl
-  have e6 : aY = 6 := rfl
-  rcases (by omega : i < aT0 + k ∨ i = aT0 + k ∨ (aT0 + k < i ∧ i < aT0 + 15) ∨ i = aT0 + 15 ∨ aT0 + 15 < i)
-    with c | c | c | c | c
-  · simp (disch := omega) only [↓ite_eq_right]
-  · subst c
-    simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-  · subst c
-    simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-  · simp (disch := omega) only [↓ite_eq_right]
-
-section
-variable {P : MP} {σ s : State} {L : List Nat} {V : Nat → Nat} {LS : List Nat}
-
-theorem shiftFrom_ok (hL : ∀ k < 16, aT0 + k ∈ L) (hY : aY ∈ L) :
-    ∀ n k, k + n = 15 → 2 ≤ k → ∀ (A : Nat → Nat) s, KS P σ A L V LS s → Ws s P.B P.Z P.W nArr →
-      WP isa (shiftFrom k n) s fun t => KS P σ (shiftArr A k) L V LS t ∧ Ws t P.B P.Z P.W nArr
-  | 0, k, hkn, _, A, s, h, hw => by
-    have : k = 15 := by omega
-    subst this
-    rw [shiftFrom]
-    refine WP.mono (h.copy_ok hw (by decide) (h.live_lt _ hY) (by decide)) fun t ⟨ht, hwt, _⟩ => ⟨?_, hwt⟩
-    rw [h.arrs aY hY] at ht
-    refine ht.mono (fun i hi => ⟨List.mem_cons_of_mem _ hi, ?_⟩) (fun e he => ⟨he, rfl⟩)
-    unfold shiftArr upd
-    have e0 : aT0 = 11 := rfl
-    by_cases h1 : i = aT0 + 15
-    · subst h1; simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-    · simp (disch := omega) only [↓ite_eq_right]
-  | n + 1, k, hkn, hk, A, s, h, hw => by
-    rw [shiftFrom, WP.seq_iff]
-    have hb : aT0 + k + 1 ∈ L := hL (k + 1) (by omega)
-    refine WP.mono (h.copy_ok hw (o := aT0 + k) (tab_mem k (by omega)) (h.live_lt _ hb) (by omega))
-      fun s1 ⟨h1, hw1, _⟩ => ?_
-    rw [h.arrs _ hb] at h1
-    have h1' : KS P σ (upd A (aT0 + k) (A (aT0 + k + 1))) L V LS s1 :=
-      h1.mono (fun i hi => ⟨List.mem_cons_of_mem _ hi, rfl⟩) (fun e he => ⟨he, rfl⟩)
-    refine WP.mono (shiftFrom_ok hL hY n (k + 1) (by omega) (by omega) _ s1 h1' hw1) fun t ⟨ht, hwt⟩ => ⟨?_, hwt⟩
-    exact ht.mono (fun i hi => ⟨hi, shiftArr_step A k hk (by omega) i⟩) (fun e he => ⟨he, rfl⟩)
-
-end
-
-section
-variable {P : MP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}
-  {LS : List Nat}
-
-/-- The table's shift. -/
-theorem St.pshift (hL : ∀ k < 16, aT0 + k ∈ L) (hY : aY ∈ L) :
-    VP (St P E A L V LS) tabShift (St P E (fun σ => shiftArr (A σ) 2) L V LS) :=
-  VP.kv shift_taint (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ =>
-    WP.mono (shiftFrom_ok hL hY 13 2 rfl (le_refl _) (A σ) s h hw) fun _ ⟨ht, hwt⟩ => ⟨e, ht, hwt⟩
 
 end
 
