@@ -79,7 +79,7 @@ theorem consts_pi {st : Nat} {s : State} (hc : ConstsOk piConsts st s) :
       s.rd.drop (s.rd.length - 1) = [⟨State.addr (s.syms piSym), 256⟩] ∧
       PiHeld s.mem (State.addr (s.syms piSym)) ∧
       ∀ r ∈ abi.reserved st s, (⟨State.addr (s.syms piSym), 256⟩ : Region).Disjoint r := by
-  obtain ⟨hd, hh, ht⟩ := hc
+  obtain ⟨hd, hh, ht, -⟩ := hc
   have e : constRegs piConsts s = [⟨State.addr (s.syms piSym), 256⟩] := by
     rw [constRegs, piConsts_eq, Abi.constRegions_cons, Abi.constRegions_nil, piQuads_length]; rfl
   have hl : piConsts.length = 1 := rfl
