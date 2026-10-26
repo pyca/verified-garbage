@@ -12,7 +12,7 @@
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `schedule` must be valid for reads and writes of 128 bytes.
-/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes, and aligned for `u64`.
 /// * `key_len` must be in 5..=16.
 /// * The contents of `scratch` on return are unspecified.
 /// * `schedule` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
@@ -1320,7 +1320,7 @@ ret",
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes, and aligned for `u64`.
 /// * `rounds` must be 12 or 16.
 /// * The contents of `scratch` on return are unspecified.
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
@@ -1612,7 +1612,7 @@ ret",
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes, and aligned for `u64`.
 /// * `rounds` must be 12 or 16.
 /// * The contents of `scratch` on return are unspecified.
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).

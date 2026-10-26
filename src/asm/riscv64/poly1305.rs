@@ -10,7 +10,7 @@
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must be valid for reads and writes of 128 bytes, and aligned for `u64`.
 /// * `key` must be valid for reads of 32 bytes.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may wrap around the end of the address space (no Rust object does).
@@ -141,7 +141,7 @@ ret",
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must be valid for reads and writes of 128 bytes, and aligned for `u64`.
 /// * `blocks` must be valid for reads of `16 * n` bytes.
 /// * `state` must not overlap `blocks` (distinct Rust objects never do).
 /// * Neither `state` nor `blocks` may wrap around the end of the address space (no Rust object does).
@@ -442,7 +442,7 @@ ret",
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must be valid for reads and writes of 128 bytes, and aligned for `u64`.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).
@@ -877,7 +877,7 @@ ret",
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must be valid for reads and writes of 128 bytes, and aligned for `u64`.
 /// * `out` must be valid for reads and writes of 16 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
@@ -1221,9 +1221,9 @@ ret",
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `state` must be valid for reads and writes of 128 bytes, and aligned for `u64`.
 /// * `out` must be valid for reads and writes of 16 bytes.
-/// * `scratch` must be valid for reads and writes of 128 bytes.
+/// * `scratch` must be valid for reads and writes of 128 bytes, and aligned for `u64`.
 /// * The contents of `state` on return are unspecified.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
