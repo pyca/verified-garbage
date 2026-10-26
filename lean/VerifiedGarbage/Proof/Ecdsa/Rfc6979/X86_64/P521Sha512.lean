@@ -48,7 +48,8 @@ theorem spec_pre {s : State}
     (ng : (s.gpr .rdx).toNat + 64 ≤ 2 ^ 64) (nc : (s.gpr .rcx).toNat + 8192 ≤ 2 ^ 64)
     (hsp : 384 ≤ (s.gpr .rsp).toNat)
     (ht : TblHeld s [⟨s.gpr .rdi, 132⟩, ⟨s.gpr .rcx, 8192⟩, ⟨s.gpr .rsp, 8⟩,
-      ⟨s.gpr .rsp - BitVec.ofNat 64 384, 384⟩]) :
+      ⟨s.gpr .rsp - BitVec.ofNat 64 384, 384⟩])
+    (hal : (s.syms "VG_P521_COMB").toNat % 64 = 0) :
     (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 384).pre s := by
   sig_pre [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
       Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
@@ -57,7 +58,7 @@ theorem spec_pre {s : State}
   obtain ⟨held, fit, hdw⟩ := ht
   exact ⟨hsp, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]),
-    hdw _ (by simp), hdw _ (by simp), by rw [hrd]; rfl, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc,
+    hdw _ (by simp), hdw _ (by simp), hal, by rw [hrd]; rfl, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc,
     no, nd, ng, nc⟩
 
 theorem sat_spec : (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 384).pre (satState 66 64 satMem [⟨0x100000, 764928⟩]) := by
@@ -71,7 +72,7 @@ theorem sat_spec : (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract (X86_64.abi.
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
-    (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩
+    (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩ (by decide)
   · decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
@@ -82,7 +83,7 @@ theorem implies : (rfcX86_64 Impl.Ecdsa.X86_64.p521.combConsts Spec.Ecdsa.Rfc697
       Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
       X86_64.abi, X86_64.argRegs, p521_combConsts, Abi.withConsts, p521_constRegions,
       Abi.constsHeld, stackBelow] at h
-    obtain ⟨hsp, hd, hheld, hfit, hdw, hdr, hds, ht, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd,
+    obtain ⟨hsp, hd, hheld, hfit, hdw, hdr, hds, -, ht, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd,
       ng, nc⟩ := h
     refine ⟨hsp, ?_, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, fun c hc => ?_,
       fun T hT => ?_⟩

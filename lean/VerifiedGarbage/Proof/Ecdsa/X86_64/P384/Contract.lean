@@ -80,7 +80,8 @@ theorem spec_pre {s : State}
     (f0 : (s.gpr .rdi).toNat + 96 ≤ 2 ^ 64) (f1 : (s.gpr .rsi).toNat + 48 ≤ 2 ^ 64)
     (f2 : (s.gpr .rdx).toNat + 48 ≤ 2 ^ 64) (f3 : (s.gpr .rcx).toNat + 48 ≤ 2 ^ 64)
     (f4 : (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64)
-    (ht : TblHeld s [⟨s.gpr .rdi, 96⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .rsp, 8⟩]) :
+    (ht : TblHeld s [⟨s.gpr .rdi, 96⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .rsp, 8⟩])
+    (hal : (s.syms "VG_P384_COMB").toNat % 64 = 0) :
     (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts)).pre s := by
   sig_pre [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
     Spec.P384.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p384_combConsts,
@@ -88,7 +89,7 @@ theorem spec_pre {s : State}
   obtain ⟨held, fit, hdw⟩ := ht
   exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]),
-    hdw _ (by simp), by rw [hrd]; rfl, hw, h1, h2, h3, h4, h5, h6, h7, r1, r2, r3, r4, r5, f0, f1, f2, f3, f4⟩
+    hdw _ (by simp), hal, by rw [hrd]; rfl, hw, h1, h2, h3, h4, h5, h6, h7, r1, r2, r3, r4, r5, f0, f1, f2, f3, f4⟩
 
 theorem sat_spec : (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts)).pre
     satState := by
@@ -102,7 +103,7 @@ theorem sat_spec : (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p38
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
-    (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩
+    (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩ (by decide)
   all_goals rw [hl]
   · decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -114,7 +115,7 @@ theorem implies :
     sig_pre [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
       Spec.P384.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p384_combConsts,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨hd, hheld, hfit, hdw, hdr, ht, hw, h1, h2, h3, h4, h5, h6, h7, r1, -, -, -, r5, h8, -, -, -, h9⟩ := h
+    obtain ⟨hd, hheld, hfit, hdw, hdr, -, ht, hw, h1, h2, h3, h4, h5, h6, h7, r1, -, -, -, r5, h8, -, -, -, h9⟩ := h
     refine ⟨?_, hw, h4, h1, h2, h3, h5, h6, h7, r1, r5, h8, h9, hheld, hfit, fun r hr => ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

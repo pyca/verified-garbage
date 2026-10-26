@@ -316,7 +316,7 @@ theorem implies : mbK.Implies (C.mulBaseContract (X86_64.abi.withConsts p384.com
     sig_pre [Spec.Weierstrass.MulBase.Curve.mulBaseContract, Spec.Weierstrass.MulBase.sig,
       X86_64.abi, X86_64.argRegs, p384_combConsts, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at h
-    obtain ⟨hd, hheld, hfit, hdw, hdr, ht, hw, hret, hws, hco⟩ := h
+    obtain ⟨hd, hheld, hfit, hdw, hdr, -, ht, hw, hret, hws, hco⟩ := h
     refine ⟨?_, hw, hret, hws, ⟨hheld, hfit, fun r hr => ?_⟩, hco⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
