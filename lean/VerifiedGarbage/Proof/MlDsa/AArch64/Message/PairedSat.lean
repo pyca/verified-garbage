@@ -43,8 +43,8 @@ theorem signSatWith_roots (p : Params) (hp : Ok3 p) (m : Mem)
     (hi : ∀j<488,m.readW (1052480+BitVec.ofNat 64 (8*j)) 64=
       Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD j 0) :
     StaticRoots 16 (signSatWith p m) := by
-  refine ⟨⟨hf,by dsimp [signSatWith]; decide,?_,?_,?_⟩,
-    ⟨hi,by dsimp [signSatWith]; decide,?_,?_,?_⟩⟩
+  refine ⟨⟨hf,by dsimp [signSatWith]; decide,?_,?_,?_,by dsimp [signSatWith]; decide⟩,
+    ⟨hi,by dsimp [signSatWith]; decide,?_,?_,?_,by dsimp [signSatWith]; decide⟩⟩
   · apply Covers.one
     exact ⟨⟨1048576,3904⟩,by simp [signSatWith],Region.contains_self _ _⟩
   · rcases hp with rfl|rfl|rfl
@@ -79,7 +79,7 @@ theorem signSatWith_paired (p : Params) (hp : Ok3 p) (m : Mem)
     (hr : ∀j<512,m.readW (1056384+BitVec.ofNat 64 (8*j)) 64=
       Impl.MlDsa.AArch64.Optimized.Paired.expandedWords.getD j 0) :
     PairedRoots 16 (signSatWith p m) := by
-  refine ⟨hr,by dsimp [signSatWith]; decide,?_,?_,?_⟩
+  refine ⟨hr,by dsimp [signSatWith]; decide,?_,?_,?_,by dsimp [signSatWith]; decide⟩
   · apply Covers.one
     exact ⟨⟨1056384,4096⟩,by simp [signSatWith],Region.contains_self _ _⟩
   · rcases hp with rfl|rfl|rfl

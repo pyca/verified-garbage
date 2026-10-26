@@ -28,7 +28,7 @@ theorem staticRoots_pre {p : Params} {S : Nat} {s : State} (hS : 0<S)
     nttConsts_eq,Inverse.inverseConsts_eq,Abi.constRegions,Abi.constsHeld,
     TableConstants.staticNttWords_length,InverseTable.expandedWords_length,stackBelow]
   refine ⟨hsp,?_,hr.forward.held,hr.inverse.held,hr.forward.fit,hr.forward.writable,
-    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,?_,hw,
+    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,hr.forward.aligned,hr.inverse.aligned,?_,hw,
     d1,d2,d3,d4,d5,d6,k1,k2,k3,k4,n1,n2,n3,n4⟩
   · rw [hrd]; rfl
   · rw [hrd]; rfl
@@ -55,7 +55,7 @@ theorem keyGenSatWith_pre {p : Params} (hp : p=mlDsa44∨p=mlDsa65∨p=mlDsa87) 
       all_goals sig_and_intros
       all_goals first | rfl | exact Region.disjoint_of_sep (by decide) | decide
     · simp only [keyGenSatWith,List.mem_cons]; exact .inl True.intro
-  · refine ⟨⟨hf,?_,?_,?_,?_⟩,⟨hi,?_,?_,?_,?_⟩⟩
+  · refine ⟨⟨hf,?_,?_,?_,?_,by dsimp [keyGenSatWith]; decide⟩,⟨hi,?_,?_,?_,?_,by dsimp [keyGenSatWith]; decide⟩⟩
     · dsimp [keyGenSatWith,Sign.optimizedSignSat,Sign.optimizedSignSatWith]; decide
     · apply Covers.one
       exact ⟨⟨1048576,3904⟩,by simp [keyGenSatWith],Region.contains_self _ _⟩

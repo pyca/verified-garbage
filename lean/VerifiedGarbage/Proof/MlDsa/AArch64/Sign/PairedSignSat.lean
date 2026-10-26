@@ -32,7 +32,7 @@ theorem pairedRoots_pre {p : Params} {S : Nat} {s : State} (hS : 0<S)
     nttConsts_eq,Inverse.inverseConsts_eq,Abi.constRegions,Abi.constsHeld,
     TableConstants.staticNttWords_length,InverseTable.expandedWords_length,PairedTable.expandedWords_length,stackBelow]
   refine ⟨hsp,?_,hr.forward.held,hr.inverse.held,rp.held,hr.forward.fit,hr.forward.writable,
-    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,rp.fit,rp.writable,rp.stack,?_,hw,
+    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,rp.fit,rp.writable,rp.stack,hr.forward.aligned,hr.inverse.aligned,rp.aligned,?_,hw,
     d1,d2,d3,d4,d5,d6,d7,k1,k2,k3,k4,k5,n1,n2,n3,n4,n5⟩
   · rw [hrd]; rfl
   · rw [hrd]; rfl
@@ -70,8 +70,8 @@ theorem pairedSignSatWith_pre (p : Params) (hp : Ok3 p) (m : Mem)
     all_goals refine ⟨List.subset_append_left _ _, ?_⟩
     all_goals sig_and_intros
     all_goals first | rfl | exact Region.disjoint_of_sep (by decide) | decide
-  · refine ⟨⟨hf,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide)⟩,
-      ⟨hi,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide)⟩⟩
+  · refine ⟨⟨hf,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; decide⟩,
+      ⟨hi,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; decide⟩⟩
     · apply Covers.one
       exact ⟨⟨1048576,3904⟩,by simp [pairedSignSatWith],Region.contains_self _ _⟩
     · rcases hp with rfl|rfl|rfl
@@ -86,7 +86,7 @@ theorem pairedSignSatWith_pre (p : Params) (hp : Ok3 p) (m : Mem)
       all_goals simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
       all_goals sig_and_intros
       all_goals first | rfl | exact Region.disjoint_of_sep (by decide)
-  · refine ⟨hr,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide)⟩
+  · refine ⟨hr,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; decide⟩
     · apply Covers.one
       exact ⟨⟨1056384,4096⟩,by simp [pairedSignSatWith],Region.contains_self _ _⟩
     · rcases hp with rfl|rfl|rfl

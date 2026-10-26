@@ -58,12 +58,12 @@ structure SPre (p : Params) (s : State) : Prop where
     VG.Proof.MlDsa.AArch64.Sign.pairedSignRootConsts_eq,Abi.constRegions,Abi.constsHeld,
     TableConstants.staticNttWords_length,InverseTable.expandedWords_length,PairedTable.expandedWords_length,stackBelow,
     List.range,List.range.loop] at h
-  obtain ⟨hsp,hd,hf,hi,hpair,hff,hfw,hfs,hif,hiw,his,hpf,hpw,hps,ht,hw,d1,d2,d3,d4,d5,d6,d7,d8,d9,
+  obtain ⟨hsp,hd,hf,hi,hpair,hff,hfw,hfs,hif,hiw,his,hpf,hpw,hps,hfa,hia,hpa,ht,hw,d1,d2,d3,d4,d5,d6,d7,d8,d9,
     k1,k2,k3,k4,k5,k6,n1,n2,n3,n4,n5,n6⟩ := h
   have hrd : s.rd=[rKey s p.skLen,rMsg s,rCtx s,⟨s.gpr .x5,32⟩]++rootRegions s := by
     rw [← List.take_append_drop (s.rd.length-3) s.rd,ht,hd]
   refine ⟨hsp,hrd,hw,d1,d2,d3,d4,d5,d6,d7,d8,d9,k1,k2,k3,k4,k5,k6,
-    n1,n2,n3,n4,n5,n6,⟨⟨hf,hff,?_,hfw,hfs⟩,⟨hi,hif,?_,hiw,his⟩⟩,⟨hpair,hpf,?_,hpw,hps⟩⟩
+    n1,n2,n3,n4,n5,n6,⟨⟨hf,hff,?_,hfw,hfs,hfa⟩,⟨hi,hif,?_,hiw,his,hia⟩⟩,⟨hpair,hpf,?_,hpw,hps,hpa⟩⟩
   · apply Covers.one
     refine ⟨⟨s.syms "VG_MLDSA_NTT_EXPANDED",3904⟩,?_,Region.contains_self _ _⟩
     rw [hrd]; simp [rootRegions]
