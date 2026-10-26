@@ -179,7 +179,7 @@ theorem cin_of_pre {n : Nat} (s : State)
   obtain ⟨h₀, hk⟩ := (pre_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
     (cs := []) (sig := Spec.Dsa.generateParametersSig)).mp h
   have c := cin0_of_pre (stripConsts kT s) h₀
-  obtain ⟨hd, held, ht⟩ := hk
+  obtain ⟨hd, held, ht, -⟩ := hk
   have e : constRegs [(Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed)] s = _ :=
     constRegs_kT s
   rw [e] at ht hd
