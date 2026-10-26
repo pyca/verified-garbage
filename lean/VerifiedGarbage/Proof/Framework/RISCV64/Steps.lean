@@ -165,6 +165,22 @@ theorem wp_sd {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
   refine WP.cons (s' := { s with mem := s.mem.writeW a (s.gpr t) }) ?_ (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩)
   rw [exec_store_d ho (by rw [ha]; exact hal) (by rw [ha]; exact hout), ha]
 
+theorem wp_sw {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
+    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hal : a.toNat % 4 = 0) (hout : InRegions s.wr a 4)
+    (k : ∀ s', Mupd s s' (s.mem.writeW a ((s.gpr t).setWidth 32)) → WP isa (.block is) s' Q) :
+    WP isa (.block (.store .w t n off :: is)) s Q := by
+  refine WP.cons (s' := { s with mem := s.mem.writeW a ((s.gpr t).setWidth 32) }) ?_
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩)
+  rw [exec_store_w ho (by rw [ha]; exact hal) (by rw [ha]; exact hout), ha]
+
+theorem wp_lwu {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
+    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hal : a.toNat % 4 = 0)
+    (hin : InRegions (s.rd ++ s.wr) a 4)
+    (k : ∀ s', Upd s s' t ((s.mem.readW a 32).setWidth 64) → WP isa (.block is) s' Q) :
+    WP isa (.block (.load .w t n off :: is)) s Q := by
+  refine WP.cons (s' := s.write t ((s.mem.readW a 32).setWidth 64)) ?_ (k _ (Upd.write _ _ _))
+  rw [exec_load_w ho (by rw [ha]; exact hal) (by rw [ha]; exact hin), ha]
+
 theorem wp_ld {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
     (ha : s.gpr n + BitVec.ofNat 64 off = a) (hal : a.toNat % 8 = 0)
     (hin : InRegions (s.rd ++ s.wr) a 8)
