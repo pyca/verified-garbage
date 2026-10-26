@@ -42,6 +42,7 @@ structure EncInv (key : List Byte) (S : Addr) (s₀ : State) (j : Nat) (u : Stat
 structure EncEnv (S : Addr) (s₀ : State) : Prop where
   sch : s₀.gpr .a7 = S
   al : S.toNat % 4 = 0
+  al8 : S.toNat % 8 = 0
   wS : Writable s₀.wr S
 
 theorem ord_true : ord true = id := rfl
@@ -54,10 +55,14 @@ theorem enc_cipher {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s�
         encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2 ∧
         Keep cRegs u u' ∧ u'.mem = u.mem := by
   have LE : LookEnv u := by
-    refine ⟨fun o _ ho => ?_, by rw [I.keep.gpr (by decide), E.sch]; exact E.al⟩
-    rw [I.keep.gpr (by decide), E.sch, I.keep.2.1, I.keep.2.2]
-    obtain ⟨r, hr, hc⟩ := E.wS o 4 ho (by omega)
-    exact ⟨r, List.mem_append_right _ hr, hc⟩
+    refine ⟨fun o _ ho => ?_, fun o _ ho => ?_, by rw [I.keep.gpr (by decide), E.sch]; exact E.al,
+      by rw [I.keep.gpr (by decide), E.sch]; exact E.al8⟩
+    · rw [I.keep.gpr (by decide), E.sch, I.keep.2.1, I.keep.2.2]
+      obtain ⟨r, hr, hc⟩ := E.wS o 4 ho (by omega)
+      exact ⟨r, List.mem_append_right _ hr, hc⟩
+    · rw [I.keep.gpr (by decide), E.sch, I.keep.2.1, I.keep.2.2]
+      obtain ⟨r, hr, hc⟩ := E.wS o 8 ho (by omega)
+      exact ⟨r, List.mem_append_right _ hr, hc⟩
   refine WP.mono (cipher_run LE true) fun u' ⟨h, k, m⟩ => ⟨?_, k, m⟩
   have e1 := congrArg Prod.fst I.halves
   have e2 := congrArg Prod.snd I.halves
