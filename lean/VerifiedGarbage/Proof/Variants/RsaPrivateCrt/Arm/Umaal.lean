@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm.Base
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtUmaal
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 public meta import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.Order.Basic
+import Mathlib.Data.Int.ModEq
+import Mathlib.Util.CompileInductive
 
 /-!
 # `vg_rsa_private_crt` on ARMv7 with `umaal`: the variant's code and proofs

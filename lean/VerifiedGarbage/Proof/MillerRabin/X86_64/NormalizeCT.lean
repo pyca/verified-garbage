@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset

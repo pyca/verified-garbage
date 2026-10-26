@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Sha3.Contract
-public import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Conv
 
 /-!
 # The SHA-3 sponge: arithmetic and bytes, for every target

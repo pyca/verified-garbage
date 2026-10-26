@@ -12,7 +12,7 @@ import Mathlib.Tactic.NormNum.Pow
 import Mathlib.Tactic.NormNum.Inv
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Callee

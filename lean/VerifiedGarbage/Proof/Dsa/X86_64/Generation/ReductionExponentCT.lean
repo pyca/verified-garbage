@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToDual
 
 /-! # Constant time of the saved generator-exponent calculation -/
 

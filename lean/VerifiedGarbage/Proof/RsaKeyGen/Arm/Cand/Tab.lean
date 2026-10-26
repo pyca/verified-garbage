@@ -8,11 +8,11 @@ import Mathlib.Algebra.GroupWithZero.Nat
 public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit

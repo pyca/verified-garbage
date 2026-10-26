@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
-public import Mathlib.Algebra.Field.ZMod
-public import Mathlib.RingTheory.AdjoinRoot
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.RingTheory.AdjoinRoot
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!

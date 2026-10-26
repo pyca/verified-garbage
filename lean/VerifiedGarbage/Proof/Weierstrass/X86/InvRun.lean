@@ -1,14 +1,14 @@
 module
-public import Mathlib.Algebra.Order.Ring.Abs
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Ring
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
 
 import VerifiedGarbage.Proof.Weierstrass.X86.InvBatch
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Divstep.Word32Def
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words

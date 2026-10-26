@@ -6,6 +6,11 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyClearExport
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDSelectTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import Mathlib.Data.Nat.Init
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.ToAdditive
 
 /-! # All seven masked key outputs have a public address trace -/
 

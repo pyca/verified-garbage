@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Ops
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Framework.Block
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-!
 # X25519 on x86-64: squaring with BMI2 and ADX

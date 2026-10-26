@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Blake2.X86.LitB
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
 meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
 
 /-!
 # Argon2 H′ on x86 (32-bit): the calls, in two runs

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
 public import VerifiedGarbage.Proof.Ed25519.Arm.Field
 import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

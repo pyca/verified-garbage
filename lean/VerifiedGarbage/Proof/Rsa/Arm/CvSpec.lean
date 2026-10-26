@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.CrtValuesMath
 public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem

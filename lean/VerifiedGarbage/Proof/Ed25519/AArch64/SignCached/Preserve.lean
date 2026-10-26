@@ -17,7 +17,7 @@ import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.RegionsSub

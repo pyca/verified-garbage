@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.X448.Radix16Bytes
 public import VerifiedGarbage.Proof.X448.Arm.Field
 import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

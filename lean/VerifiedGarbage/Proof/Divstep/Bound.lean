@@ -3,6 +3,14 @@ module
 public import VerifiedGarbage.Proof.Divstep.Hull
 public import VerifiedGarbage.Proof.Divstep.Steps
 import VerifiedGarbage.Proof.Divstep.Incl
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Algebra.Order.Ring.Rat
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Tactic.NormNum.Ineq
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Positivity
 
 /-!
 # The divstep bound: runs of the relaxed iteration

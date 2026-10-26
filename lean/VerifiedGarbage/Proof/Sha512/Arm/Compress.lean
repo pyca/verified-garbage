@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
 meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-512 compression function on ARMv7: the whole function

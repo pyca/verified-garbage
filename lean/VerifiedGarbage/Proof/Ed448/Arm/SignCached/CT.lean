@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.CT
-public import Mathlib.Logic.Function.Basic
+import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Impl.Ed448.Arm.SignCached
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit

@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Dsa.Generate
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BackendCorrect

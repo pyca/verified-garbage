@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDouble
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import Mathlib.Data.Nat.Prime.Defs
-public import Mathlib.Tactic.ClearExcept
+import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop

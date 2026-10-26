@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
-public import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.Tactic.NormNum.Prime
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
 public import VerifiedGarbage.Proof.Framework.Lit

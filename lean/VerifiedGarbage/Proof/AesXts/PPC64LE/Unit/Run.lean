@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.AesCbc.Mem
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Loop
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.AesXts.PPC64LEUnit
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 public import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Call

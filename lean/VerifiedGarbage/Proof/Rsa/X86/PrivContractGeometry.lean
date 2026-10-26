@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivGeometry
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Weierstrass
 

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Random
 
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
 import Mathlib.Tactic.Push
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

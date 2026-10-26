@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 public import VerifiedGarbage.Spec.Dsa

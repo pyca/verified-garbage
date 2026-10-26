@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Seed.AArch64.Modes
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Seed.AArch64.Lit

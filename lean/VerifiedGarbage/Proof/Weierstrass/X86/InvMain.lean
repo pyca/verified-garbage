@@ -5,15 +5,18 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvInit
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRun
 import VerifiedGarbage.Proof.Divstep.Tc32
 import VerifiedGarbage.Proof.Divstep.Iter
-public import Mathlib.Data.Nat.Prime.Basic
+import Mathlib.Data.Nat.Prime.Basic
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
-public import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Algebra.Order.Ring.Abs
 public import Mathlib.Data.BitVec
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Divstep.Alg32
 import VerifiedGarbage.Proof.Weierstrass.X86.InvCount
 import VerifiedGarbage.Proof.Divstep.Batch
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Positivity
 
 /-! # Soundness of the 256-bit divstep inversion -/
 

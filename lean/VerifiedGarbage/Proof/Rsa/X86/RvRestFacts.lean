@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 import VerifiedGarbage.Proof.Rsa.RecoverMath
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Bounds and split-exponent facts for the recovery body -/
 

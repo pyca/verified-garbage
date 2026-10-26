@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSubgroup
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+import Mathlib.Data.Nat.Basic
 
 /-! # Lift phase footprints to the full native parameter-search workspace -/
 

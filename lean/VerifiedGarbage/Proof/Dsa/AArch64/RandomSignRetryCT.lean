@@ -4,9 +4,9 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
 
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
 public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch

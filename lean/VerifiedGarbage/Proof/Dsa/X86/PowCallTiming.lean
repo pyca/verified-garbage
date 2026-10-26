@@ -1,10 +1,10 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Weierstrass
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.X86.Target
 

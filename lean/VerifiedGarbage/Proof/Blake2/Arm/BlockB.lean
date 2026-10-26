@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Impl.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

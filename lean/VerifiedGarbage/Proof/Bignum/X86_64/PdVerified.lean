@@ -1,7 +1,7 @@
 module
-public import Mathlib.Data.Int.GCD
-public import Mathlib.Tactic.Set
-public import Mathlib.Util.CompileInductive
+import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.Set
+import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Sig

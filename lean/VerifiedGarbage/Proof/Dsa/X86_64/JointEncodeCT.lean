@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT

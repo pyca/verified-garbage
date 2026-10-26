@@ -10,9 +10,9 @@ public import Init.Omega.Int
 public import Init.Omega.LinearCombo
 public import VerifiedGarbage.Spec.Rsa
 public import Aesop.BuiltinRules
-public import Mathlib.Logic.Function.Iterate
-public import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.Basic
+import Mathlib.Logic.Function.Iterate
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! Single-pass binary exponentiation and root detection. A set bit starts

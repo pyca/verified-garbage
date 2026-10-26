@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySized
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
+import Mathlib.Data.Nat.Init
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.ToAdditive
 
 /-! # The native seven-port result is the shared encoded key operation -/
 

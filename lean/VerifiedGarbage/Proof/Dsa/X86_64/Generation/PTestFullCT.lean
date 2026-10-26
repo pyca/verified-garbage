@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCallCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrimeCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Full-width candidates proceed to the shared native primality call -/
 

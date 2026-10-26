@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryReady
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnSpecialized
 import VerifiedGarbage.Proof.Framework.Omega
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel

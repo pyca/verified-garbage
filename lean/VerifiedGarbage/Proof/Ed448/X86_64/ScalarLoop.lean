@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToDual
 
 /-!
 # Ed448 scalar arithmetic on x86-64: the loop over the words

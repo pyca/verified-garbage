@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.State
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToAdditive
 
 /-! Saving the static table address establishes the read-only scan context. -/
 

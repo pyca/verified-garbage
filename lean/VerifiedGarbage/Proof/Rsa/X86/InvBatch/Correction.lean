@@ -12,8 +12,8 @@ public import VerifiedGarbage.Proof.Rsa.Divstep.InvCorrectDef
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatch.State
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
-public import Mathlib.Algebra.Group.Int.Defs
-public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+import Mathlib.Algebra.Group.Int.Defs
+import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatch.Defs

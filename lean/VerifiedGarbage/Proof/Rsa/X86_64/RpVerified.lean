@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Rsa.X86_64.RpCT8
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets

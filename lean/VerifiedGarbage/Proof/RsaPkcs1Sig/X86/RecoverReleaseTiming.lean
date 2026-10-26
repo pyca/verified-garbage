@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivLoopTiming
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigest
 public import VerifiedGarbage.Spec.Weierstrass.Point
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.SplitIfs
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBlocksTiming
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBlocksTiming

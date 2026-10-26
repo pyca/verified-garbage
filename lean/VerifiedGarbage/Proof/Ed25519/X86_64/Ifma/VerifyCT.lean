@@ -22,6 +22,8 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyLit
 meta import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # Ed25519 verification with AVX512_IFMA: the windows' trace

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Dsa

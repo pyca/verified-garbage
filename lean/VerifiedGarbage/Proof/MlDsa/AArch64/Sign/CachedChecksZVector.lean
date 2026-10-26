@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZLayout
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZCheck
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import Mathlib.Tactic.FinCases
 
 /-! ## From `CachedChecksZ.lean` -/
 

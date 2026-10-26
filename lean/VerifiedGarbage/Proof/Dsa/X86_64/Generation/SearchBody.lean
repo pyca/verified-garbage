@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PAttempt
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Algebra.NeZero
+import Mathlib.Data.Int.ModEq
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # The complete p body returns the persistent state needed by its next iteration -/
 

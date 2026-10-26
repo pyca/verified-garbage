@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Framework.Omega
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Divstep.TcS
-public import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
 import VerifiedGarbage.Proof.Divstep.Packed
@@ -16,6 +16,10 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import Aesop.BuiltinRules
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 
 /-!
 # Inversion by divsteps on x86-64: a batch

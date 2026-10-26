@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-public import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack

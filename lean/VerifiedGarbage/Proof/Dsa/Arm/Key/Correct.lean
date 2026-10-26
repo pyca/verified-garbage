@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Key.Body
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Random
 import VerifiedGarbage.Proof.Mont.Words32
+import Mathlib.Tactic.ToDual
 
 /-!
 # DSA key generation on 32-bit ARM: correctness

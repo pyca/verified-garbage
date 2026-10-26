@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Impl.X448.AArch64.Field56
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
-public import Mathlib.Logic.Function.Basic
+import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Spec.X448
 public import VerifiedGarbage.TCB.Code
 

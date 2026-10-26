@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
-public import Mathlib.Tactic.ClearExcept
+import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
 public import VerifiedGarbage.Proof.Weierstrass.CombW

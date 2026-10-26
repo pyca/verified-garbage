@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Impl.Sha512.X86.Stream
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86.Lit
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
 
 /-!
 # Streaming SHA-512 on x86 (32-bit): `init`

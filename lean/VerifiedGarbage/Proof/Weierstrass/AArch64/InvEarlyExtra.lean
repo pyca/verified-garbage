@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

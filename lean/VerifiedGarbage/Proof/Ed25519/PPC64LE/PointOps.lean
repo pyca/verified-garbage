@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldProg
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Spec.Ed25519.Point32

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack

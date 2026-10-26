@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.MdStream.PPC64LE.Words
 import VerifiedGarbage.Proof.Sha256.Digest
 import VerifiedGarbage.Proof.MdStream.Prefix
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import Mathlib.Data.List.Nodup
+import Mathlib.Data.List.Nodup
 public import VerifiedGarbage.Impl.Sha256.PPC64LE
 
 /-!

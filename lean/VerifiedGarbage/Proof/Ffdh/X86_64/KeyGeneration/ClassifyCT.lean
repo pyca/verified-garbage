@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # The attempt's classification branches on its status alone -/
 

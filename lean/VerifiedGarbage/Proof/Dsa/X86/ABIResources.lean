@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
 public import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Stack and scratch resources for the cdecl entry programs -/
 

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import Mathlib.Logic.Relator
+import Mathlib.Logic.Relator
 import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.Set
 

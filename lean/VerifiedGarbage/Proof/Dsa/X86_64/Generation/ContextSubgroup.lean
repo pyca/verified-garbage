@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometrySubgroup
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Nat.Basic
 
 /-! # The persistent search state supplies every precondition of the q phase -/
 

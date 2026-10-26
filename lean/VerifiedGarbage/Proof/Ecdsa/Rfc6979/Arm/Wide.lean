@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import Batteries.Logic
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract

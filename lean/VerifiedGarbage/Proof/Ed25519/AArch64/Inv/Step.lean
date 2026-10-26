@@ -5,6 +5,13 @@ public import VerifiedGarbage.Proof.Divstep.BatchBasic
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Ed25519.Word64
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.Positivity.Core
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 
 /-! # The inversion modulo `p` on AArch64: the batches' invariant
 

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.EntryCache
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Util.CompileInductive
 
 /-! The same entry snapshot optionally retains the two cached-context arguments. -/
 

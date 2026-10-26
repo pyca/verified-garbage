@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Lit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Permutation
 import VerifiedGarbage.Proof.TripleDes.Core
 import VerifiedGarbage.Proof.Framework.Mem
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 

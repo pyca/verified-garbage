@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Ring
 
 /-!
 # The Montgomery ladder on the u-coordinates of twisted Edwards points

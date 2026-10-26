@@ -24,7 +24,7 @@ meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import Mathlib.Tactic.TermCongr
-public import Mathlib.Tactic.TermCongr
+import Mathlib.Tactic.TermCongr
 import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
 meta import Mathlib.Data.Int.ModEq

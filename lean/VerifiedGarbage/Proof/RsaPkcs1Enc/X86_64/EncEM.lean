@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncLoops
 import VerifiedGarbage.Proof.Framework.Omega

@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Tab
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Words
 import VerifiedGarbage.Proof.Rsa.Arm.RvBase
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.Basic
 
 /-! # The Miller–Rabin round on ARMv7: the windows
 

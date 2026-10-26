@@ -6,8 +6,8 @@ public import VerifiedGarbage.Proof.Bignum.CrtExp
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Framing the DSA child workspaces -/

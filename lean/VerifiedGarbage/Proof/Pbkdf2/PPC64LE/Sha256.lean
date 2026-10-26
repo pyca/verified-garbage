@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Pbkdf2.PPC64LE.Correct
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Md
 meta import VerifiedGarbage.Spec.Pbkdf2.Generic
-public import Mathlib.Data.List.Nodup
+import Mathlib.Data.List.Nodup
 public import VerifiedGarbage.Impl.Sha256.PPC64LE
 public import VerifiedGarbage.Impl.Sha256.PPC64LE.Md
 public import VerifiedGarbage.Proof.Framework.Semantics

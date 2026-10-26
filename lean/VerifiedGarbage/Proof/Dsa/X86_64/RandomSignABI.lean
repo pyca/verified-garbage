@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract

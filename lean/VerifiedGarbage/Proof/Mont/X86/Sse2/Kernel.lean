@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Mont.X86.Square.FinalMath
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Columns
+import Mathlib.Util.CompileInductive
 
 /-! # The kernel
 

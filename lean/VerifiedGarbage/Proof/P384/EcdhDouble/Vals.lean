@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.P384.EcdhDouble
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.P256.EcdhDouble.Arithmetic
-public import Mathlib.Logic.Function.Basic
+import Mathlib.Logic.Function.Basic
 
 /-!
 # The values of P-384's raw doubling

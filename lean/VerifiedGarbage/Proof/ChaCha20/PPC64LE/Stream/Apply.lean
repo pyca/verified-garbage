@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming ChaCha20 on PPC64LE: `apply`, correctness

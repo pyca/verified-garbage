@@ -26,6 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+import Mathlib.Data.Int.ModEq
 
 /-! # Initialize candidate-reduction scratch while retaining source bytes and frame arguments -/
 

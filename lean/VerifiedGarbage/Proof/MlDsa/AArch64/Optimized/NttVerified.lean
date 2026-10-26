@@ -9,6 +9,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableArtifact
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
+import Mathlib.Tactic.SplitIfs
 
 /-! ## From `NttContract.lean` -/
 

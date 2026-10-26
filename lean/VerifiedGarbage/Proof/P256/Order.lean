@@ -10,7 +10,7 @@ import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
 import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-!
 # P-256: `G` has order `n`

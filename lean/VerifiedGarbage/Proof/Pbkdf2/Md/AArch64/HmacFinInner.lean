@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
 import VerifiedGarbage.Proof.Hmac.Generic.Common
+import Mathlib.Tactic.Conv
 
 /-!
 # HMAC over any Merkle–Damgård hash function on AArch64: `finalize` up to the inner digest

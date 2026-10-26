@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Divstep.Tc32Words
 public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvRed
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
 
 /-! # A coefficient matrix row followed by reduction with a loaded inverse -/
 

@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
-public import Mathlib.Tactic.IntervalCases
+import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Bounds
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps

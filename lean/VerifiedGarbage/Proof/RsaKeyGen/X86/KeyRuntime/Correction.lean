@@ -8,6 +8,13 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCorrectionGeometry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionGeometry
 import VerifiedGarbage.Proof.Rsa.X86.DivLoop
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
+import Mathlib.Data.Nat.Init
+import Mathlib.Logic.Function.Basic
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Exact small correction for the quotient-based private exponent -/
 

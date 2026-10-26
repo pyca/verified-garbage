@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!

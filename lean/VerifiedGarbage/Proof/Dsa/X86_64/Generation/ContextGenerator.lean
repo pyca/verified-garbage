@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryGenerator
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchMemory
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Algebra.Group.Monoid
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToDual
 
 /-! # Saved p and exponent bytes supply the complete generator search -/
 

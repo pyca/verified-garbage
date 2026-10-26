@@ -2,8 +2,8 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 public import VerifiedGarbage.Spec.MlDsa.BoundedFour

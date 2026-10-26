@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import Mathlib.Data.List.Basic
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit

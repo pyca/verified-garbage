@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Store
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

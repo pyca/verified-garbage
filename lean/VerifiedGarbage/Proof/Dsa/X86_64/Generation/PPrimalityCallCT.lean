@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Dsa.Encoding
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Instantiate the public width guard and primality call for a p candidate -/
 

@@ -6,8 +6,8 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Impl.AesOcb.X86_64
 import VerifiedGarbage.Proof.AesCcm.X86_64.Env

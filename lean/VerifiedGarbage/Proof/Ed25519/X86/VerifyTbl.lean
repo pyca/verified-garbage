@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.ReadHalves
 public import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate

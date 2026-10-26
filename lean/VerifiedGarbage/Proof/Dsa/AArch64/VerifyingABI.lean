@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Bignum.Octets
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # The shared verification contract as machine-level resources -/
 

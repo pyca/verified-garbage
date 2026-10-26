@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: `SampleNTT` up to its loop

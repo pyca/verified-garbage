@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityCTState
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Data.Int.ModEq
 
 /-! # The p-search counter and entropy cursor determine each public attempt -/
 

@@ -3,10 +3,10 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.RoundTail
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

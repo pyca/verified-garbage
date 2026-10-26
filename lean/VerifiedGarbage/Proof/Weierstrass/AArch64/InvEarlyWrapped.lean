@@ -2,8 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
-public import Mathlib.Tactic.FieldSimp
-public import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyAllocatedMain
 

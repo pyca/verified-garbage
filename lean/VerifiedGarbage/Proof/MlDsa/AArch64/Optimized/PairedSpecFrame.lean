@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.InstancePriority
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit

@@ -15,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Cold
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES-GCM `seal_split` on x86-64: one to three whole blocks at `src`

@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundStatus
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundCall
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundResult
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Basic.IsEmpty.Defs
 
 /-! # FFDH parameter generation on x86-64: run only an accepted witness -/
 

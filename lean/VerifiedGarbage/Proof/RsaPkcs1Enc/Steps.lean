@@ -5,12 +5,12 @@ public import VerifiedGarbage.Spec.RsaPkcs1Enc
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!

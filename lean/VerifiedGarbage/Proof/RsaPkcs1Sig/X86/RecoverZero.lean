@@ -1,8 +1,8 @@
 module
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Weierstrass
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord

@@ -4,10 +4,10 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStores
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToAdditive
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

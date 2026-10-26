@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Impl.EcKey.Compressed.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.TCB.Code
 

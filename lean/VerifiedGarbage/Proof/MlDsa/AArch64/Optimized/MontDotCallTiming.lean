@@ -2,8 +2,8 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem

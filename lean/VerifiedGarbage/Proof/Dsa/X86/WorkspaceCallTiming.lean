@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.ToDual
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! Relational timing at the common cdecl workspace boundary. -/
 

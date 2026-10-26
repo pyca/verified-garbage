@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterBody
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Complete finite native DSA parameter search -/
 

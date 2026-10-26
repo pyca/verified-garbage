@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
-public import Mathlib.Data.List.Dedup
+import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 

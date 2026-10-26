@@ -12,8 +12,8 @@ import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Resolving the packed DSA key into component pointers -/

@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.X25519.Edwards.Ladder
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X25519.AArch64.Ops
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # X25519 of the base point on AArch64: the engine

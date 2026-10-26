@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline

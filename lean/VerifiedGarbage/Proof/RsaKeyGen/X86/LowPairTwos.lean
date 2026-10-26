@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Rsa.RecoverMath
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.LowPair
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
 
 /-! # The native pair scan finds the word containing the exponent's lowest set bit -/
 

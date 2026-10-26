@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract

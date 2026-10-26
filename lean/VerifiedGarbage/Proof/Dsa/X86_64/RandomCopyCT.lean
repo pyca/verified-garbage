@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

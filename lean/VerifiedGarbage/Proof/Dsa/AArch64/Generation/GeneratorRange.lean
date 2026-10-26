@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorRange
 public import VerifiedGarbage.Proof.Rsa.Ranges
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorLoads

@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
+public import Mathlib.Data.Nat.Basic
 public import Mathlib.Algebra.Group.Monoid
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
@@ -19,6 +19,9 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 -- Proofs inside exposed definitions (structure values) use these: Lean needs them public.
 public import VerifiedGarbage.Proof.Bignum.Octets -- shake: keep
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
 
 /-! # Concrete generator plan over the saved p and exponent buffers -/
 

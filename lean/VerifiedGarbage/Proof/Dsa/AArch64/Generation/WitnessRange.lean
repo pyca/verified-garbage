@@ -5,8 +5,8 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch

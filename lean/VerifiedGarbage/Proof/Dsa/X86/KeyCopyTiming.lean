@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 import VerifiedGarbage.Proof.Framework.KernelRfl

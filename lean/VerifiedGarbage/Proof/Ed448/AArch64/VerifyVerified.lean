@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Front
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Windows
 public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.Tactic.NormNum.Prime
 public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit

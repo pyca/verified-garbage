@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
 
 /-! Exact public top-byte mask, including widths divisible by eight. -/
 @[expose] public section

@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Square.Packed
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Impl.Mont.X86
+import Mathlib.Util.CompileInductive
 
 @[expose] public section
 

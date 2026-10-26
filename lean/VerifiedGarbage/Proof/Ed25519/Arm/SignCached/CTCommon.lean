@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarMulAddVerified
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified

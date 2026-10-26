@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.ABIEntry
 import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
 import VerifiedGarbage.Proof.Framework.Sig
-public import Mathlib.Data.Nat.GCD.Basic
+import Mathlib.Data.Nat.GCD.Basic
 public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Environment
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.MrCounts

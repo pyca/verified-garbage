@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToDual
 
 /-! A fixed-length scalar mask preserves success bytes and zeroes failure bytes. -/
 @[expose] public section

@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Data.List.Nodup
+import Mathlib.Data.List.Nodup
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad

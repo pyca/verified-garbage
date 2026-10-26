@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Argon2.Arm.Words
 import VerifiedGarbage.Proof.Argon2.Arm.Rounds
 import VerifiedGarbage.Proof.Argon2.Permutation
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Argon2 compression on ARMv7: correctness

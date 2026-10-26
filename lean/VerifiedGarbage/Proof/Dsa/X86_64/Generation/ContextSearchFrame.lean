@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSearch
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Nat.Basic
 
 /-! # Lift the bounded prime search back to the persistent generation state -/
 

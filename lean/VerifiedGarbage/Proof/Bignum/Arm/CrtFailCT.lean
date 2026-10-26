@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMasked
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Basic.IsEmpty.Defs
 
 /-! # Invalid-key output clearing has a public trace -/
 

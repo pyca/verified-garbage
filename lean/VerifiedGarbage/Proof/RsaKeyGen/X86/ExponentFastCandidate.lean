@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentFilter
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Framework.Taint
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack

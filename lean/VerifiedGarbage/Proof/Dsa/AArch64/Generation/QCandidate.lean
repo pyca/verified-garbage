@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract

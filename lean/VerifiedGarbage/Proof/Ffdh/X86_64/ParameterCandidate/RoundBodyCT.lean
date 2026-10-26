@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawLoopCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundRunCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawLoop
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # FFDH parameter generation on x86-64: timing of a complete policy iteration -/
 

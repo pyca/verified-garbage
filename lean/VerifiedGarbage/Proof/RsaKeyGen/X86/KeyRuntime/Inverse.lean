@@ -13,6 +13,14 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseLoad
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+import Mathlib.Data.Nat.Init
+import Mathlib.Logic.Function.Basic
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToAdditive
 
 /-! # All key-generation inversions reuse the shared runtime inverse proof -/
 

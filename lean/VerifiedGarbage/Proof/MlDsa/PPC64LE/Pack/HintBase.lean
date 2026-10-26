@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Spec.MlDsa.Poly
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Bytes
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.PPC64LE.Isa

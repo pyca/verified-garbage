@@ -10,8 +10,8 @@ import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontCT
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
 public import VerifiedGarbage.Proof.Framework.Contract
 

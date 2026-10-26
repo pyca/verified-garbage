@@ -11,6 +11,11 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Lit
+import Mathlib.Algebra.Order.Group.Int
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 
 /-!
 # Inversion by divsteps on AArch64: a batch

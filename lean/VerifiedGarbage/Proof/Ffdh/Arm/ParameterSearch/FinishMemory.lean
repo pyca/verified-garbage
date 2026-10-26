@@ -9,6 +9,7 @@ public import Init.Data.BitVec.BasicAux
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Arm.Isa
+import Mathlib.Util.CompileInductive
 
 /-! The final u64 consumption store preserves the prime, controller and saved registers. -/
 

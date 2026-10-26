@@ -7,7 +7,7 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.Scalar
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.ScalarBit
 public import VerifiedGarbage.Proof.X448.PPC64LE.Field

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToDual
 
 /-! # Complete actual-width scanning for DSA's public moduli -/
 

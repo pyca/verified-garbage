@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
 
 /-!
 # RSASSA-PSS on x86-64: MGF1

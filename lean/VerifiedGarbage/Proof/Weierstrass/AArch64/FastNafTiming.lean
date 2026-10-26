@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafLoop
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafDigits
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section

@@ -13,7 +13,7 @@ import Mathlib.Tactic.Push
 import Mathlib.Data.Nat.Basic
 import Mathlib.Algebra.NeZero
 import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Spec.Weierstrass

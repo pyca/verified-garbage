@@ -24,6 +24,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
+import Mathlib.Data.Int.ModEq
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: constant time

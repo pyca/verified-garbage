@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
 import VerifiedGarbage.Proof.Bignum.Octets
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Dsa.AArch64.Run

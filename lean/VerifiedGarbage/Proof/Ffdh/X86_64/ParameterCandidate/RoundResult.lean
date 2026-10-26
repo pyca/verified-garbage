@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundState
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundStatus
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
+import Mathlib.Basic.IsEmpty.Defs
 
 /-! # FFDH parameter generation on x86-64: composite or next accepted round -/
 

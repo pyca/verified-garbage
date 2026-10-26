@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTCode
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Data.Nat.Basic
 
 /-! # Constant time of the complete RSA candidate with the shared call -/
 

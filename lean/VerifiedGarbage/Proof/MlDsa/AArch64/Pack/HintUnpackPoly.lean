@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_hint_bit_unpack`, one polynomial

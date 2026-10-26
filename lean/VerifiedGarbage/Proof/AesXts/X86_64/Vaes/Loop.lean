@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Data.List.Induction
 
 /-!
 # One-pass XTS-AES on x86-64: eight blocks at a time

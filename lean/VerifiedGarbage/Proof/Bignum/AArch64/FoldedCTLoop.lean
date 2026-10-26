@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedLoop
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCTExp
 public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch

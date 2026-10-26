@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset

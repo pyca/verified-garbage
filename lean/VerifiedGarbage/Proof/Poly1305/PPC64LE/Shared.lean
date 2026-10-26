@@ -10,7 +10,7 @@ public import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Poly1305.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline

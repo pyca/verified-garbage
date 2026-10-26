@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Sign
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Weierstrass
 

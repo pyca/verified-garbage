@@ -21,6 +21,9 @@ public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Draw
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Result
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
 public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # `vg_ffdh_parameter_candidate_sieved` on i686 against its contract -/
 

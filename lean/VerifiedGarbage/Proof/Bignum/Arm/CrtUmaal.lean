@@ -1,7 +1,7 @@
 module
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
 import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineRounds
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFios
 public import VerifiedGarbage.Proof.Framework.Arm.Contract

@@ -1,5 +1,5 @@
 module
-public import Mathlib.Data.Int.GCD
+import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignMain
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy

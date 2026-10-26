@@ -16,10 +16,10 @@ import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.Ring.RingNF
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Algebra.Group.Int.Defs
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

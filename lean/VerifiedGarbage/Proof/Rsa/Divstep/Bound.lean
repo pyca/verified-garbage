@@ -2,6 +2,14 @@ module
 
 import VerifiedGarbage.Proof.Divstep.Iter
 public import VerifiedGarbage.Proof.Divstep.Bound
+import Mathlib.Algebra.Order.Ring.Basic
+import Mathlib.Algebra.Order.Ring.Rat
+import Mathlib.Tactic.NormNum.Ineq
+import Mathlib.Tactic.Positivity.Core
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Positivity
 
 /-! # Uniform divstep convergence for RSA-sized operands
 

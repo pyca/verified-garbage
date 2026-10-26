@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDTrivial
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRetry
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentBranch
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFinalExponent
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Reuse the unchanged scalar key controls in the runtime workspace -/
 

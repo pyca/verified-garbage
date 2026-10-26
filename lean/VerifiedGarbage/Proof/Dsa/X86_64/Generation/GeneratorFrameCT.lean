@@ -8,6 +8,9 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoadsCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorArguments
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.ToDual
 
 /-! # Bind public generator inputs through the persistent frame -/
 

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Validate
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Reuse the complete verified domain checker inside parameter generation -/
 

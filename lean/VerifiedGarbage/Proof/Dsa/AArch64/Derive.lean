@@ -20,6 +20,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Set
+import Mathlib.Data.Int.GCD
 
 /-! # Functional correctness of AArch64 DSA key derivation -/
 

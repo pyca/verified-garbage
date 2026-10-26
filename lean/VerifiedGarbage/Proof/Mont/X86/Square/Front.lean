@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Mont.X86.Rt.Front
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Save
 public import VerifiedGarbage.Proof.Mont.X86.Rt.RowFull
 import VerifiedGarbage.Proof.Mont.X86.Square.FinalMath
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Args

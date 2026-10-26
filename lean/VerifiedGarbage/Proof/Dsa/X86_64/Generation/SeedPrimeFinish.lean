@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorFinish
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Bounded p search, generator search, and final validation form one native continuation -/
 

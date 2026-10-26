@@ -5,6 +5,13 @@ import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Tactic.NormNum.Ineq
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Data.BitVec
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Linarith
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # A signed matrix row with one extra input bit -/
 

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Sample
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: the loop of `SampleNTT`

@@ -46,6 +46,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarMulAddEngine`. -/
 

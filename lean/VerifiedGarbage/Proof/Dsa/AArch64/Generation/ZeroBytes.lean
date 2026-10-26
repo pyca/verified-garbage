@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Dsa.AArch64.Run

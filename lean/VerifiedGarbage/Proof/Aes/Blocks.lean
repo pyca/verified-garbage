@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Proof.Framework.Mem
-public import Mathlib.Data.List.Induction
+import Mathlib.Data.List.Induction
 
 /-!
 # Blocks as bytes, and the counter blocks of `inc₃₂`

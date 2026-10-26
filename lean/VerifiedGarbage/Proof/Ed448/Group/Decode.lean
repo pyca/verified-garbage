@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Group.Projective
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # Decoded points are on the curve

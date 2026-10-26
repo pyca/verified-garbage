@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
 import VerifiedGarbage.Proof.Dsa.X86.CallReduceTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Domain checking and derivation use fixed arithmetic schedules -/
 

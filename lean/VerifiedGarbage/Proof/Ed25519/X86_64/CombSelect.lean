@@ -8,7 +8,7 @@ public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.X25519.X86_64.Lit
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset

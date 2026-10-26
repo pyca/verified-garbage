@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Algebra.GroupWithZero.Nat
+public import Mathlib.Algebra.NeZero
+import Mathlib.Data.Nat.Basic
 
 /-! # The accepted subgroup supplies the bounded p-search preconditions -/
 

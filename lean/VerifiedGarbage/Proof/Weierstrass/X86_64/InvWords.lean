@@ -6,10 +6,10 @@ public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Divstep.Tc
 public import VerifiedGarbage.Proof.Weierstrass.InvMask
 public import VerifiedGarbage.Proof.Framework.Omega
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Positivity
-public import Mathlib.Tactic.Ring
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 public import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Framework.RegionsSub

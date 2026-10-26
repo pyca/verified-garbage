@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
 meta import VerifiedGarbage.Spec.ChaCha20Poly1305
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.ContractPost
 meta import VerifiedGarbage.Proof.Framework.ContractPost
@@ -65,6 +65,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import Mathlib.Algebra.Order.Ring.Nat
+import Mathlib.Algebra.Order.Sub.Basic
+import Mathlib.Data.Nat.Cast.Order.Basic
+import Mathlib.Tactic.Ring
 
 /-!
 # ChaCha20-Poly1305 on x86-64: the calls

@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 @[expose] public section
 

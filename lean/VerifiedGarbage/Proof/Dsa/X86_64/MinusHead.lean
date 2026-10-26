@@ -5,7 +5,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-! # The first limb of DSA modulus-minus constants -/
 

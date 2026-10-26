@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exponentiate
 public import VerifiedGarbage.Proof.Mont.X86.Inverse
 public import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Set
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! # Public RSA at a run-time width, from the inputs to the result
 

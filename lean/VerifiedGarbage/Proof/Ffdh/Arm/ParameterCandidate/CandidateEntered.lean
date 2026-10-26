@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateGuard
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Algebra.GroupWithZero.Basic
+import Mathlib.Algebra.GroupWithZero.Nat
 
 /-! Complete candidate execution after reserving the common AAPCS frame. -/
 

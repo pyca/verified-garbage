@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvWindowTable
 import VerifiedGarbage.Proof.Rsa.X86.RvCount
 import VerifiedGarbage.Proof.Rsa.X86.RvMont
 import VerifiedGarbage.Proof.Bignum.Math
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame

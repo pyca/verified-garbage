@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import Mathlib.Tactic.SplitIfs
 
 /-! ## From `BoundedFourMaskLoop.lean` -/
 

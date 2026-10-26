@@ -1,5 +1,5 @@
 module
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 

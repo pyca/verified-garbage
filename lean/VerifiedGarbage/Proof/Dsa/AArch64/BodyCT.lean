@@ -9,6 +9,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
 
 /-! # Constant time through validation, computation and the ABI return -/
 

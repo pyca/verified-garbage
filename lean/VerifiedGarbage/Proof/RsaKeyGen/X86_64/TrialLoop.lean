@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 
 /-!

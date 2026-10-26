@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Cmac.Mem
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.AesCbc.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.AesCbc.Spec

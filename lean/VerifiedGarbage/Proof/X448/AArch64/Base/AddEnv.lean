@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
 import VerifiedGarbage.Proof.X448.BaseAdd
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # X448 of the base point on AArch64: the addition's environment is `addPt`

@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Tactic.FinCases
 
 /-! ## From `CachedLoopFrame.lean` -/
 

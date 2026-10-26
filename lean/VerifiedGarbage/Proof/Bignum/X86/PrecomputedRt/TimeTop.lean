@@ -15,6 +15,9 @@ public import VerifiedGarbage.TCB.Artifact
 meta import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.X86.Isa
 meta import VerifiedGarbage.TCB.X86.Isa
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # The trace of precomputed public RSA at a run-time width, from the entry to the return
 

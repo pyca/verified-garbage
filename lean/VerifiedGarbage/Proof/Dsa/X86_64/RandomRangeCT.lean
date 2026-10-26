@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

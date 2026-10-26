@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit

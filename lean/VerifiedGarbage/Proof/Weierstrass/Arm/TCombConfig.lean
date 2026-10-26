@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombInputs
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Weierstrass.Env
+import Mathlib.Tactic.SplitIfs
 
 /-! Side conditions for a fixed-base comb, independent of its input scalar. -/
 

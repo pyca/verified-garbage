@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Framework.X86.SseLanes
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.Sse
 

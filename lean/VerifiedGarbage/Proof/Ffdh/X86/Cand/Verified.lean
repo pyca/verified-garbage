@@ -5,9 +5,12 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Top
 public import VerifiedGarbage.Spec.Weierstrass.Point
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # `vg_ffdh_parameter_candidate_sieved` on i686, verified -/
 

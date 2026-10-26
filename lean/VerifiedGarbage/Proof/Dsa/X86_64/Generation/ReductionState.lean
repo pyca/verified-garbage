@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 
 /-! # Public workspace invariants between the reduction's arithmetic pieces -/
 

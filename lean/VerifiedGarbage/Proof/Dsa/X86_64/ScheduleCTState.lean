@@ -1,5 +1,5 @@
 module
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
 

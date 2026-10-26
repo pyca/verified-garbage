@@ -10,6 +10,10 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.Arith
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Tactic.FinCases
+import Mathlib.Data.Fintype.Fin
 
 /-! ## `PairedLowPassFlags` -/
 

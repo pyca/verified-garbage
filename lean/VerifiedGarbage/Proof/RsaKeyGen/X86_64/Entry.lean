@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 

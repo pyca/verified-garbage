@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Impl.Dsa.X86.CombGenerate
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! The comb checker branches on public shape and public parameter values. -/
 

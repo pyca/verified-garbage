@@ -3,8 +3,8 @@ module
 import VerifiedGarbage.Proof.X448.X86.CT
 public import VerifiedGarbage.Proof.X448.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.X448.X86.Contract
 import Mathlib.Tactic.SplitIfs
 

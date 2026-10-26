@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 import VerifiedGarbage.Proof.Ed448.X86.SignCached.Calls
 import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Body

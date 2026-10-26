@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Key.Verified
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Ecb.Call
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem

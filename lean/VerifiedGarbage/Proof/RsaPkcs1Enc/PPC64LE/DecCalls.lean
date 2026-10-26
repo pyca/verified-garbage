@@ -8,7 +8,7 @@ meta import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
-public import Mathlib.Data.List.Nodup
+import Mathlib.Data.List.Nodup
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies

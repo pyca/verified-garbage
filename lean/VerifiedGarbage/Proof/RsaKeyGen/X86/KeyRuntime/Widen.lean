@@ -6,6 +6,9 @@ import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Widening between banks reuses the shared clear and copy operations -/
 

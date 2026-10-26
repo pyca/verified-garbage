@@ -5,9 +5,9 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PackPart
 public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub

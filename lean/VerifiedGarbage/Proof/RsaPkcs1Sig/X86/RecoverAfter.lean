@@ -1,5 +1,5 @@
 module
-public import Mathlib.Logic.Function.Basic
+import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRelease
 public import VerifiedGarbage.Spec.Weierstrass
 

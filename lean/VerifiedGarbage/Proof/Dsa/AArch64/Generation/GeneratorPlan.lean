@@ -6,10 +6,10 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Table

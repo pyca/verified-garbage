@@ -10,7 +10,7 @@ import Mathlib.Tactic.Push
 import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

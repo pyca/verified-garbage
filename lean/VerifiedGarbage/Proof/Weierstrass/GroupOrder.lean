@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Group
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-public import Mathlib.GroupTheory.Perm.Cycle.Type
-public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.GroupTheory.Perm.Cycle.Type
+import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # A curve of prime order, from the order of its base point

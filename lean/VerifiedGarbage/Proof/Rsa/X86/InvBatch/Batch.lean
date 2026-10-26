@@ -5,14 +5,17 @@ import VerifiedGarbage.Proof.Rsa.X86.InvBatch.Words
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Weierstrass.X86.InvLayout
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-public import Mathlib.Algebra.Group.Int.Defs
-public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+import Mathlib.Algebra.Group.Int.Defs
+import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 
 /-! # One complete matrix batch of the RSA inverse -/
 

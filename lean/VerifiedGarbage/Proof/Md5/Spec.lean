@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Md5
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!

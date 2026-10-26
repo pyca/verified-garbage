@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ed448.WnafWide.Table
 public import VerifiedGarbage.Proof.X448.BaseAdd
 public import VerifiedGarbage.Proof.Ed448.WnafWide.Recoding
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-! The joint signed loop represents both complete unreduced scalars. -/
 

@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.Comb
 public import VerifiedGarbage.Proof.X448.BaseTable
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-! The table and scalar arithmetic of the four-column, 456-bit fixed-base comb. -/
 

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Weierstrass.Point
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Impl.NatPairs
-public import Mathlib.Logic.Function.Basic
+import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm

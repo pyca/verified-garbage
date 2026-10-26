@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Align
 public import VerifiedGarbage.Impl.Aes.RISCV64.Ctr32
 public import VerifiedGarbage.Proof.Aes.RISCV64.Encrypt
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
+import Mathlib.Data.List.Induction
 
 /-!
 # One group of counter-mode blocks on RISC-V

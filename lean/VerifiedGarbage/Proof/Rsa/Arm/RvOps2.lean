@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp

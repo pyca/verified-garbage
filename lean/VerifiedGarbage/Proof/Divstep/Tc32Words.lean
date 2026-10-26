@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Data.BitVec
-public import Mathlib.Algebra.Order.Ring.Abs
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.NormNum
+import Mathlib.Data.Int.ModEq
+import Mathlib.Data.BitVec
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
 public import Mathlib.Tactic.Ring
 
 /-! # Signed 32-bit words, shifts, and matrix combinations -/

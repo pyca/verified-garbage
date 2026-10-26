@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
+import Mathlib.Tactic.SplitIfs
 
 /-! Each masked table word reads both operands, stores only the destination,
 and advances both pointers by eight. The mask is never used as an address. -/

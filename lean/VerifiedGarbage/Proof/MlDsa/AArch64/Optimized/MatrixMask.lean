@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import Mathlib.Tactic.SplitIfs
 
 /-! ## From `MatrixMaskGroup.lean` -/
 

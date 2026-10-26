@@ -1,5 +1,5 @@
 module
-public import Mathlib.Algebra.Field.ZMod
+import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RingTheory.AdjoinRoot
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Spec

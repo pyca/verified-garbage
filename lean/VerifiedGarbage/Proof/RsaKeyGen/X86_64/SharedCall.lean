@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Bignum.X86_64.Template
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
 # The candidate's Montgomery multiplications as calls

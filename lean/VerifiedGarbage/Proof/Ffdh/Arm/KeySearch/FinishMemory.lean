@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Output
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+import Mathlib.Util.CompileInductive
 
 /-! Storing the consumed-byte count preserves the key pair, retry sampling,
 and the saved registers needed for the controller's return. -/

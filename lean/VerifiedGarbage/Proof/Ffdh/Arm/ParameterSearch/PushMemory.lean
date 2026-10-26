@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Layout
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Push
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import Mathlib.Util.CompileInductive
 
 /-! The native saved-register push preserves the entropy tape and every public policy word. -/
 

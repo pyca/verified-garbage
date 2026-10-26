@@ -5,8 +5,8 @@ import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Util.CompileInductive
+import Mathlib.Logic.Function.Basic
+import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.X448.AArch64.Base
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.PowLit

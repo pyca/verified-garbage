@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryGenerator
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
 
 /-! # Saved p and exponent bytes supply the complete generator search -/
 

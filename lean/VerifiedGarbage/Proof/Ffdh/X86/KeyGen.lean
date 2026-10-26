@@ -21,6 +21,9 @@ public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 import VerifiedGarbage.Proof.Ffdh.ScanAt
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # `vg_ffdh_generate_key` on i686: the key pair

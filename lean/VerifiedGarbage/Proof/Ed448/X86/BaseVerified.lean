@@ -1,6 +1,6 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal

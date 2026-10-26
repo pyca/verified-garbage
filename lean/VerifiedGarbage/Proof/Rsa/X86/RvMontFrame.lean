@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # The arrays recovery's Montgomery products write -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBodyCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PolicyLoopCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Rounds
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # FFDH parameter generation on x86-64: timing of a complete primality policy -/
 

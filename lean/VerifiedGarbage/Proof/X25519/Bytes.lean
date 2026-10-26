@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.Ladder
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # X25519: byte strings, numbers and words

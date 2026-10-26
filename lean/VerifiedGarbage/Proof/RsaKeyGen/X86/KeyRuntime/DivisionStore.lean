@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionStore
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # The shared division bank exports quotient and remainder through one copy loop -/
 

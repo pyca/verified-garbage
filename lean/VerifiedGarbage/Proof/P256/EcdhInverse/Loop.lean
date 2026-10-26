@@ -5,6 +5,9 @@ import Mathlib.Tactic.FieldSimp
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 
 @[expose] public section
 

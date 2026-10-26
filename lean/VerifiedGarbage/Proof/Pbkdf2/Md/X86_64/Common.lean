@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Sha256.Stream
+import Mathlib.Tactic.Conv
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: what the proofs share

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoad
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

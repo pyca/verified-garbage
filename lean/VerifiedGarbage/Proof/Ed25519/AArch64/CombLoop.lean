@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # The comb's loop

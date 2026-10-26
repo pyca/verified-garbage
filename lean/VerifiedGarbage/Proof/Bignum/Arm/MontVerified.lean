@@ -7,7 +7,7 @@ public import VerifiedGarbage.Spec.Rsa.Mont
 meta import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.TCB.Arm.Target
 public import Batteries.Logic
-public import Mathlib.Util.CompileInductive
+import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit

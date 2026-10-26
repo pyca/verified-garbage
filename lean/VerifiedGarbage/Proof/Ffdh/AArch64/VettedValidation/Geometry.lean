@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Contract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
 
 /-! The existing domain-check ABI supplies the recognizer's buffer geometry. -/
 @[expose] public section

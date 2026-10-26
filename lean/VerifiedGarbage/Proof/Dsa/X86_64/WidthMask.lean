@@ -9,7 +9,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-! # Equality masks for supported DSA modulus widths -/
 

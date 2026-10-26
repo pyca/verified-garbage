@@ -14,6 +14,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.Bytes
 import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+import Mathlib.Tactic.ToDual
 
 /-! # DSA parameter generation on ARMv7: numbers into the key working space
 

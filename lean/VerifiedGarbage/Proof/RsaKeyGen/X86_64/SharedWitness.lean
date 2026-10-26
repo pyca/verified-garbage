@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
 # A candidate on x86-64: one round of Miller–Rabin

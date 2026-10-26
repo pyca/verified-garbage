@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuildTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Tauto
 
 /-! Shared field values through odd-table setup, cache construction and the seed. -/
 

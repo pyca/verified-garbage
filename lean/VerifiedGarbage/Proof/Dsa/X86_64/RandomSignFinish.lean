@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-! All exits clear failed output, wipe the nonce, and publish consumption. -/
 @[expose] public section

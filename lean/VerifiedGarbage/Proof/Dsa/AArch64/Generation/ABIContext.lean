@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Table
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToDual
 
 /-! # Canonical persistent arguments obtained from the public ABI -/
 

@@ -14,7 +14,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import Mathlib.Algebra.Order.Field.Basic
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Spec.Ed448
 
 /-! The bounded word arithmetic implementing one public recoding step. -/

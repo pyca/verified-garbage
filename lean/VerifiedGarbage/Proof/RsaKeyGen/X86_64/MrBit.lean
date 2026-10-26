@@ -3,7 +3,7 @@ public import VerifiedGarbage.Impl.MillerRabin.X86_64.Layout
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-!

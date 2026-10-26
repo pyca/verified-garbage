@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedWindow
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedState
 import VerifiedGarbage.Proof.Rsa.X86.RvOps

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningInput
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Argument capture and public-domain validation for a complete signing attempt -/
 

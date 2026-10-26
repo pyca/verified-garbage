@@ -11,7 +11,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Tactic.Push
 import Mathlib.Data.Nat.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 
 /-! ## State -/
 

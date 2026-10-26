@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
 
 @[expose] public section
 

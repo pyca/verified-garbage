@@ -9,6 +9,13 @@ import VerifiedGarbage.Proof.Rsa.X86.DivCount
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
+import Mathlib.Data.Nat.Init
+import Mathlib.Logic.Function.Basic
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Computing Montgomery R squared inside the recovery workspace
 

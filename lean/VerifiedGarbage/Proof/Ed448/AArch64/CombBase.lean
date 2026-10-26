@@ -120,6 +120,8 @@ public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # Ed448's fixed-base comb on AArch64, as a function

@@ -6,6 +6,11 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
 import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import Mathlib.Data.Nat.Init
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
 
 /-! ## DEven -/
 

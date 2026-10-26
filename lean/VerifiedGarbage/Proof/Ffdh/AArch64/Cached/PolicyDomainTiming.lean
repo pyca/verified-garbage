@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyDomain
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecognizeTiming
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToDual
 
 /-! Checked public domains discharge all leading-zero and recognition timing premises. -/
 @[expose] public section

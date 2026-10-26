@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.AesCcm.AArch64.Header
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 
 /-! # The eight-block loop and the remaining-block loop -/
 

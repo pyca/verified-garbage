@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifySpec
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackWord
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeDispatch
 import VerifiedGarbage.Proof.Mont.X86.Instr
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Weierstrass.Point
 

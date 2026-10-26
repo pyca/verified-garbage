@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-public import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MultiplyInverse

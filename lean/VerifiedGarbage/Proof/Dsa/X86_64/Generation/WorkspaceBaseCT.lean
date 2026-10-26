@@ -12,6 +12,7 @@ meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Recover the arithmetic base from the persistent frame -/
 

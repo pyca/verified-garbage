@@ -6,8 +6,8 @@ public import Init.Core
 public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Time
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 

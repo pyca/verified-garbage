@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 public import VerifiedGarbage.Spec.Mgf1
 
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract

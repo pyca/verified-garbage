@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.X25519.X86.Contract
 import VerifiedGarbage.Proof.X25519.X86.Lit
 public import VerifiedGarbage.Impl.X25519.X86.Fn
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

@@ -9,7 +9,7 @@ import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Data.Nat.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: the arguments

@@ -13,7 +13,7 @@ import Mathlib.Tactic.SetLike
 import Mathlib.Tactic.Finiteness.Attr
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Idea.X86.Lit

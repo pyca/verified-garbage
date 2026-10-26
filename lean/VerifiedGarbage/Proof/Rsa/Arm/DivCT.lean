@@ -10,9 +10,13 @@ import VerifiedGarbage.Proof.Rsa.Arm.DivStep
 import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rsa.KeyMath
+import Mathlib.Data.Nat.Init
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
 
 /-! # Fixed-iteration division is constant-time for all secret array contents -/
 

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.PowTiming
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Dsa.X86.PowBody
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.ToDual
 
 /-! # Correctness and secrecy of callable IA-32 exponentiation -/
 

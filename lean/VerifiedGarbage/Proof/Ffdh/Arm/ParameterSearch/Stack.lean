@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Int.ModEq
 
 /-! The full parameter search uses 24 saved bytes and 24 outgoing bytes above the 184-byte candidate. -/
 

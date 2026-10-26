@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-public import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Proof.X448.AArch64.Main
 import VerifiedGarbage.Proof.Ed448.Scalar

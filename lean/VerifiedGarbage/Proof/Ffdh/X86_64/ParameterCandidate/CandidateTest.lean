@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # FFDH parameter generation on x86-64: the complete candidate test -/
 

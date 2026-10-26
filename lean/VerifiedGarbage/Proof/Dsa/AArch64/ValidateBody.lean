@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Result
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Complete public-key algebraic validation, with the original rejection policy -/
 

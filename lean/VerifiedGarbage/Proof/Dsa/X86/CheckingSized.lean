@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Dsa.X86.Result
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # The domain checker rejects bad shapes and returns the algebraic mask -/
 

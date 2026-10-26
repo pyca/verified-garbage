@@ -12,6 +12,9 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionLoad
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionStore
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Quotient and remainder share the runtime RSA division kernel
 

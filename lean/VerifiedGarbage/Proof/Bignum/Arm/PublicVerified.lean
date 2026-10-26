@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Bignum.Arm.PublicContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import Batteries.Logic
-public import Mathlib.Util.CompileInductive
+import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit

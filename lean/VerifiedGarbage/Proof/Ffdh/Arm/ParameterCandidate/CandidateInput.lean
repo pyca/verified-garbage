@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
+import Mathlib.Algebra.GroupWithZero.Basic
+import Mathlib.Algebra.GroupWithZero.Nat
 
 /-! The public signature supplies all permissions, incoming words and 184 bytes of stack. -/
 

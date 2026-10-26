@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
+import Mathlib.Basic.Logic.Basic
 
 /-!
 # The randomized signer's body (32-bit ARM)

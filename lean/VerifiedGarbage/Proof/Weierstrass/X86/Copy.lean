@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.X86.Csub
 import VerifiedGarbage.Proof.Mont.X86.Instr
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 

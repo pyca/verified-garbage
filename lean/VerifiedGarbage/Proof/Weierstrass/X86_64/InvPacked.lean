@@ -11,6 +11,12 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Tactic.NormNum.Ineq
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # Inversion by divsteps on x86-64: packed divsteps

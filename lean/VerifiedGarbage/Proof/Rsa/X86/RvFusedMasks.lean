@@ -4,11 +4,11 @@ import VerifiedGarbage.Proof.Rsa.X86.RvFusedFlags
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 public import Aesop.BuiltinRules
-public import Mathlib.Logic.Function.Iterate
-public import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Iterate
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Spec.Weierstrass

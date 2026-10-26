@@ -2,7 +2,7 @@ module
 
 import Mathlib.Data.Int.ModEq
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!

@@ -28,6 +28,10 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
 
 /-! # Load the selected generator candidate from the persistent frame and evaluate it -/
 

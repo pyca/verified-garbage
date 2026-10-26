@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextGenerator
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSlice
 import VerifiedGarbage.Proof.Dsa.Encoding
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Complete generator search on an accepted native p candidate -/
 

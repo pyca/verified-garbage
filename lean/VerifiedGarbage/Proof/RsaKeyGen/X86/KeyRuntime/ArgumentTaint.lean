@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Public
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ContextArgument
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallGeometry
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Public original arguments in a workspace-only arithmetic run -/
 

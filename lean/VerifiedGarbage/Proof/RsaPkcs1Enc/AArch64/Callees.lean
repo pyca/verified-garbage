@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Rsa.AArch64
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
+import Mathlib.Data.List.Basic
 
 /-!
 # `vg_rsa_public_checked` as encryption's callee on AArch64

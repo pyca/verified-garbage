@@ -1,5 +1,5 @@
 module
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSafety
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 

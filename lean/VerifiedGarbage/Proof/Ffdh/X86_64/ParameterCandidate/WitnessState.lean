@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # FFDH parameter generation on x86-64: rejection-loop state -/
