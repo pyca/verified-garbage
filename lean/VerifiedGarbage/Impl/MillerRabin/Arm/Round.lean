@@ -113,13 +113,16 @@ def tabInit : List (Prog isa) :=
   [.block ctx, seqs (copyClr aT0 9), .block (Rsa.Arm.Recover.clrTop aX), copy (aT0 + 1) aX, copy aY aX,
     .block tabCnt]
 
-/-- Choose a final slot using the public number of entries left. -/
-def tabCopyFrom : Nat → Nat → Prog isa
-  | j, 0 => copy (aT0+j+2) aY
-  | j, n+1 => .seq (.block (FiosFast.choose (BitVec.ofNat 32 (14-j))))
-      (.ite .eq (copy (aT0+j+2) aY) (tabCopyFrom (j+1) n))
+/-- Address the final slot directly from the public number of entries left. -/
+def tabCopyArgs : List Instr :=
+  [.mov .r0 (.imm 27), .dp .sub .r0 .r0 (.reg .lr), .mul .r0 .r0 .r7,
+   .dp .add .r0 .r0 (.reg .r8), .dp .add .r0 .r0 (.imm (BitVec.ofNat 32 hdr))]
 
-def tabCopy : Prog isa := .seq (.block [.ldr .lr .r8 sK]) (tabCopyFrom 0 13)
+def tabCopyStore : Prog isa :=
+  .seq (.block (tabCopyArgs ++ ptr .r10 aY ++ ptr .r12 aY ++
+    [.mov .lr (.reg .r9), .mov .r11 (.imm 0)])) copyWords
+
+def tabCopy : Prog isa := .seq (.block [.ldr .lr .r8 sK]) tabCopyStore
 
 /-- One product and one final-slot copy, keeping the arithmetic in a loop. -/
 def tabStep (fios : Bool := false) : Prog isa :=

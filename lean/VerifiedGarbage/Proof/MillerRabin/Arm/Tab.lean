@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.Arm.RvBase
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Bignum.Arm.FiosFastChoice
+import VerifiedGarbage.Proof.Bignum.Arm.CopyWords
 
 /-! # The Miller–Rabin round on ARMv7: the table
 
@@ -77,40 +77,63 @@ theorem AT_step {P : MP} {σ : State} {i : Nat} (hi : i < 14) :
       simp only [upd, he, hY, hX, AT, tabEnt, ↓reduceIte, hbound]
 
 
-/-- Select one final slot from the public count, without duplicating products. -/
-private theorem tab_copy_from {P : MP} {σ s : State} {A : Nat → Nat} {L : List Nat}
+/-- The count addresses one final slot, then the existing copy loop preserves the stage. -/
+private theorem tab_copy_store {P : MP} {σ s : State} {A : Nat → Nat} {L : List Nat}
     {V : Nat → Nat} {LS : List Nat} (h : KS P σ A L V LS s) (hw : Ws s P.B P.Z P.W nArr)
-    (ha : aY ∈ L) (i j n : Nat) (lo : j ≤ i) (hi : i ≤ j+n) (bound : j+n < 14)
-    (count : s.gpr .lr = BitVec.ofNat 32 (14-i)) :
-    WP isa (tabCopyFrom j n) s fun t =>
+    (ha : aY ∈ L) (i : Nat) (hi : i<14) (count : s.gpr .lr=BitVec.ofNat 32 (14-i)) :
+    WP isa tabCopyStore s fun t =>
       KS P σ (upd A (aT0+i+2) (num s.mem P.B P.W aY)) ((aT0+i+2)::L) V LS t ∧
       Ws t P.B P.Z P.W nArr := by
-  induction n generalizing j s with
-  | zero =>
-    have eq : j=i := by omega
-    subst j
-    exact WP.mono (h.copy_ok hw (by simp [wJs,aT0]; omega) (h.live_lt _ ha)
-      (by simp only [aT0,aY]; omega)) fun _ ht => ⟨ht.1,ht.2.1⟩
-  | succ n ih =>
-    rw [tabCopyFrom,WP.seq_iff]
-    have enc : encodable (BitVec.ofNat 32 (14-j)) = true := by
-      have cases : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5 ∨ j=6 ∨ j=7 ∨ j=8 ∨ j=9 ∨ j=10 ∨ j=11 ∨ j=12 ∨ j=13 := by omega
-      rcases cases with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide
-    refine WP.mono (VG.Proof.Bignum.Arm.FiosFast.choose_ok s (14-i) (14-j)
-      (by omega) (by omega) enc count) ?_
-    rintro u ⟨z,mem,rest⟩
-    have hu := h.of_rest rest mem
-    have hwu := hw.rest rest
-    refine WP.ite u.z rfl ?_ ?_
-    · intro yes
-      have eq : j=i := by have := of_decide_eq_true (z.symm.trans yes); omega
-      subst j
-      exact WP.mono (hu.copy_ok hwu (by simp [wJs,aT0]; omega) (hu.live_lt _ ha)
-        (by simp only [aT0,aY]; omega)) fun t ht => by simpa only [mem] using And.intro ht.1 ht.2.1
-    · intro no
-      have ne : j ≠ i := by intro eq; subst j; simp at z; simp [z] at no
-      exact WP.mono (ih hu hwu (j+1) (by omega) (by omega) (by omega)
-        (by rw [rest.gpr .lr (by simp),count])) fun t ht => by simpa only [mem] using ht
+  rw [tabCopyStore,WP.seq_iff]
+  simp only [tabCopyArgs,List.append_assoc,List.cons_append,List.nil_append]
+  refine wp_mov (op2_imm (by decide)) fun s1 u1 => ?_
+  refine wp_dp (op2_reg _ _) fun s2 u2 => ?_
+  refine wp_mul fun s3 u3 => ?_
+  refine wp_dp (op2_reg _ _) fun s4 u4 => ?_
+  refine wp_dp (op2_imm (by decide)) fun s5 u5 => ?_
+  have index : s2.gpr .r0=BitVec.ofNat 32 (aT0+i+2) := by
+    rw [u2.gpr,dpVal,u1.gpr,u1.other .lr (by decide),count]
+    change BitVec.ofNat 32 27-BitVec.ofNat 32 (14-i)=_
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+    congr 1
+    simp only [aT0]
+    omega
+  have r5 : Rest [.r0] s s5 := (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
+    ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans (u5.rest (by simp)))))
+  have mem5 : s5.mem=s.mem := by rw [u5.mem,u4.mem,u3.mem,u2.mem,u1.mem]
+  have hw5 : Ws s5 P.B P.Z P.W nArr := hw.rest r5 (by decide) (by decide) (by decide)
+  have p0 : s5.gpr .r0=P.B+BitVec.ofNat 32 (arr P.W (aT0+i+2)) := by
+    rw [u5.gpr,dpVal,u4.gpr,dpVal,u3.gpr,index,
+      u3.other .r8 (by decide),u2.other .r8 (by decide),u1.other .r8 (by decide),
+      u2.other .r7 (by decide),u1.other .r7 (by decide),hw.r7,hw.r8]
+    exact ptr_val _ _ _
+  refine ptr_ok hw5 (r := .r10) (by decide) (j := aY) (by decide) fun s6 p10 r6 mem6 hw6 => ?_
+  refine ptr_ok hw6 (r := .r12) (by decide) (j := aY) (by decide) fun s7 p12 r7 mem7 hw7 => ?_
+  refine wp_mov (op2_reg _ _) fun s8 u8 => ?_
+  refine wp_mov (op2_imm (by decide)) fun u u9 => WP.block_nil ?_
+  have hu : Ws u P.B P.Z P.W nArr := (hw7.of_upd u8 (by decide) (by decide) (by decide)).of_upd u9 (by decide) (by decide) (by decide)
+  have mu : u.mem=s.mem := by rw [u9.mem,u8.mem,mem7,mem6,mem5]
+  have restU : Rest opRegs s u := (r5.mono (by simp)).trans ((r6.mono (by simp)).trans
+    ((r7.mono (by simp)).trans ((u8.rest (by simp)).trans (u9.rest (by simp)))))
+  have ho : aT0+i+2<nArr := by simp only [aT0,nArr]; omega
+  have ha' := h.live_lt _ ha
+  have hoa : aT0+i+2≠aY := by simp only [aT0,aY]; omega
+  refine WP.mono (copyWords_ok u (hu.subCtx ho ha' ha' hoa hoa) hw.wpos
+    (by rw [u9.other _ (by decide),u8.other _ (by decide),r7.gpr .r0 (by decide),r6.gpr .r0 (by decide),p0])
+    (by rw [u9.other _ (by decide),u8.other _ (by decide),r7.gpr .r10 (by decide),p10])
+    (by rw [u9.other _ (by decide),u8.other _ (by decide),p12])
+    (by rw [u9.other _ (by decide),u8.gpr,hw7.r9])) ?_
+  intro t inv
+  have value := inv.value
+  rw [mu] at value
+  have keep : Keep P.B P.W [aT0+i+2] [] s.mem t.mem := Keep.of_arr (d := 0)
+    (by simpa only [Nat.add_zero,mu] using inv.outside) (by simp only [S]; omega) (by simp)
+  have numeq : num t.mem P.B P.W (aT0+i+2)=num s.mem P.B P.W aY := by
+    change val32 _ _ _ _=_
+    rw [value]
+    split <;> rfl
+  have rest := restU.trans (inv.rest.mono (by simp))
+  exact ⟨h.write1 keep (by simp [wJs,aT0]; omega) (by simp) rest.sp rest.rd rest.wr numeq (by simp),hu.rest inv.rest⟩
 
 private theorem St.ptabCopy {P : MP} {E : State → Prop} {A : State → Nat → Nat}
     {L : List Nat} {V : State → Nat → Nat} {LS : List Nat} (i : Nat) (hi : i<14)
@@ -122,7 +145,7 @@ private theorem St.ptabCopy {P : MP} {E : State → Prop} {A : State → Nat →
   · refine VP.kv tabCopyLoad_taint (fun _ _ h => h.2.2) fun σ s ⟨e,h,hw⟩ => ?_
     refine h.ldr hw hk (r := .lr) (by decide) fun t ht hwt u => WP.block_nil ⟨⟨e,ht,hwt⟩,?_⟩
     rw [u.gpr,vk σ e]
-  · refine VP.taint [.lr,.r7,.r8,.r9] tabCopyFrom_taint ?_ ?_
+  · refine VP.taint [.lr,.r7,.r8,.r9] tabCopyStore_taint ?_ ?_
     · intro σ₁ σ₂ s₁ s₂ h₁ h₂ r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl|rfl|rfl|rfl
@@ -131,7 +154,7 @@ private theorem St.ptabCopy {P : MP} {E : State → Prop} {A : State → Nat →
       · rw [h₁.1.2.2.r8,h₂.1.2.2.r8]
       · rw [h₁.1.2.2.r9,h₂.1.2.2.r9]
     · intro σ s ⟨⟨e,h,hw⟩,count⟩
-      exact WP.mono (tab_copy_from h hw ha i 0 13 (by omega) (by omega) (by decide) count)
+      exact WP.mono (tab_copy_store h hw ha i hi count)
         fun t ⟨ht,hwt⟩ => ⟨e,by rwa [h.arrs aY ha] at ht,hwt⟩
 
 /-- One fixed, public entry index. -/
