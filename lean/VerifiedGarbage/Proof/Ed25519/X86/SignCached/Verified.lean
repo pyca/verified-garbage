@@ -125,7 +125,7 @@ theorem sat : (Spec.Ed25519.signCachedContract (X86.abi.withConsts combConsts) 2
     Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
-  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, ?_⟩
+  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, by decide, ?_⟩
   · rw [hl]
     intro r hr
     change r ∈ [⟨0x1000, 64⟩, ⟨0x5000, 8192⟩, ⟨0x9004, 24⟩] at hr
@@ -182,7 +182,7 @@ theorem signWide_implies :
     sig_pre [Spec.Ed25519.signCachedContract, Spec.Ed25519.signCachedSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨h280, hsp, hd, held, hfit, hdw, tret, tstk, ht, hw, os, op, om, oc, oa, sc, -, pc, -,
+    obtain ⟨h280, hsp, hd, held, hfit, hdw, tret, tstk, -, ht, hw, os, op, om, oc, oa, sc, -, pc, -,
       mc, -, ca, ro, rs, rp, rm, rc, -, ko, ks, kp, km, kc, -, f0, f1, f2, f3, f5, hk⟩ := h
     refine ⟨?_, hw, os, op, om, oa, oc, ko, ro, sc, pc, mc, ca.symm, rs, rp, rm, rc, ks, kp, km, kc,
       f0, f1, f2, f3, f5, h280, by omega, hk, held, hfit, ?_⟩
