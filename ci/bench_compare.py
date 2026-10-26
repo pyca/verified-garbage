@@ -475,8 +475,8 @@ def main():
     # Benchmark-only experiment: native, Lean-emitted scalar kernels, before
     # the unchanged production baseline measurements. Never part of the PR.
     experiment = pathlib.Path(__file__).resolve().parent.parent / "experiments" / "argon2"
-    subprocess.run(["cc", "-O3", str(experiment / "bench.c"),
-                    str(experiment / "prototypes-linux.S"), "-o", "/tmp/argon2-kernels"], check=True)
+    subprocess.run(["cc", "-O3", str(experiment / "mixed-bench.c"),
+                    str(experiment / "prototypes-linux.S"), str(experiment / "mixed-linux.S"), "-o", "/tmp/argon2-kernels"], check=True)
     subprocess.run(["/tmp/argon2-kernels"], check=True)
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
