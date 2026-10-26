@@ -28,12 +28,12 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
   have small : n<2^32 := by have := ctx.workspace.nowrap;have := ctx.accFits;omega
   have ws (u : State) (r : Rest [] s u) : Fios.Ctx u base size acc b mod n :=
     ⟨ctx.workspace.congr r.wr,ctx.accFits,ctx.bFits,ctx.mFits,ctx.accB,ctx.accM⟩
-  have fixed (u : State) (r : Rest [] s u) (mem : u.mem=s.mem) (special : n=16 ∨ n=32) :
+  have fixed (u : State) (r : Rest [] s u) (mem : u.mem=s.mem) (special : n=16 ∨ n=32 ∨ n=64 ∨ n=128) :
       WP isa (VG.Impl.Bignum.Arm.FiosPipelined.code n) u (Post s base acc b mod n) := by
     refine WP.mono (FiosPipelined.code_ok u (ws u r) positive even
-      (by rcases special with rfl|rfl <;> decide)
-      (by rcases special with rfl|rfl <;> decide)
-      (by rcases special with rfl|rfl <;> decide)
+      (by rcases special with rfl|rfl|rfl|rfl <;> decide)
+      (by rcases special with rfl|rfl|rfl|rfl <;> decide)
+      (by rcases special with rfl|rfl|rfl|rfl <;> decide)
       (by rw [r.gpr .r0 (by simp)];exact ptr)
       (by rw [r.gpr .r12 (by simp)];exact source)
       (by rw [r.gpr .r4 (by simp)];exact modulus)
@@ -72,8 +72,29 @@ theorem code_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
     · intro selected
       have eq : n=32 := of_decide_eq_true (z2.symm.trans selected)
       subst n
-      exact fixed v (r1.trans r2) (m2.trans m1) (Or.inr rfl)
+      exact fixed v (r1.trans r2) (m2.trans m1) (Or.inr (Or.inl rfl))
     · intro _
-      exact general v (r1.trans r2) (m2.trans m1)
+      rw [WP.seq_iff]
+      refine WP.mono (choose_ok v n 64 small (by decide) (by decide)
+        (by rw [r2.gpr .lr (by simp), r1.gpr .lr (by simp)]; exact count)) ?_
+      rintro w ⟨z3,m3,r3⟩
+      refine WP.ite w.z rfl ?_ ?_
+      · intro selected
+        have eq : n=64 := of_decide_eq_true (z3.symm.trans selected)
+        subst n
+        exact fixed w ((r1.trans r2).trans r3) (m3.trans (m2.trans m1)) (Or.inr (Or.inr (Or.inl rfl)))
+      · intro _
+        rw [WP.seq_iff]
+        refine WP.mono (choose_ok w n 128 small (by decide) (by decide)
+          (by rw [r3.gpr .lr (by simp), r2.gpr .lr (by simp), r1.gpr .lr (by simp)]; exact count)) ?_
+        rintro x ⟨z4,m4,r4⟩
+        refine WP.ite x.z rfl ?_ ?_
+        · intro selected
+          have eq : n=128 := of_decide_eq_true (z4.symm.trans selected)
+          subst n
+          exact fixed x (((r1.trans r2).trans r3).trans r4) (m4.trans (m3.trans (m2.trans m1)))
+            (Or.inr (Or.inr (Or.inr rfl)))
+        · intro _
+          exact general x (((r1.trans r2).trans r3).trans r4) (m4.trans (m3.trans (m2.trans m1)))
 
 end VG.Proof.Bignum.Arm.FiosFast

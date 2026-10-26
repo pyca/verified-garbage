@@ -2609,7 +2609,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ umaal</td>
+<td>✅ umaal; Pipelined UMAAL scans for 512-, 1024-, 2048- and 4096-bit prime candidates</td>
 
 <td>✅</td>
 

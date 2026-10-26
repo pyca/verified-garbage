@@ -38,7 +38,7 @@ pub fn bench(c: &mut Criterion) {
     // ARM measures the fixed prime-candidate work that shares FFDH's kernel.
     // Keep the larger randomized key-generation groups off its job.
     if cfg!(target_arch = "arm") {
-        bench_candidate(c, &[512, 1024], admitted_prime);
+        bench_candidate(c, &[512, 1024, 2048, 4096], admitted_prime);
         return;
     }
     // The primes of keys of 2048, 3072 and 4096 bits; the ids' size is the

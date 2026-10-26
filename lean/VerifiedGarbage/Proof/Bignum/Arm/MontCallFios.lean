@@ -21,6 +21,23 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
+private theorem pipelined_pairs_stack (n start : Nat) :
+    FrameStack.armStack (FiosPipelined.pairs start n) = 0 := by
+  induction n generalizing start with
+  | zero => rfl
+  | succ n ih =>
+    have pair : FrameStack.armStack (FiosPipelined.pair start) = 0 := rfl
+    rw [FiosPipelined.pairs, FrameStack.armStack, pair, ih]
+    rfl
+
+private theorem pipelined_stack (n : Nat) : FrameStack.armStack (FiosPipelined.code n) = 0 := by
+  simp only [FiosPipelined.code, FrameStack.armStack, pipelined_pairs_stack]
+  rfl
+
+private theorem fast_stack : FrameStack.armStack FiosFast.code = 0 := by
+  simp only [FiosFast.code, FrameStack.armStack, pipelined_stack]
+  rfl
+
 theorem montCallFios_law
     (law : MontPipeline.RoundLaw FiosFast.round)
     (ctLaw : MontPipeline.RoundCTLaw FiosFast.round) :
@@ -36,7 +53,13 @@ theorem montCallFios_law
     intro base len w o a b ho ha hb fit s t tr1 tr2 u v h e1 e2
     exact MontPipeline.fnBody_ct FiosFast.round (MontPipeline.RoundLaw.loop law) (MontPipeline.RoundCTLaw.loop law ctLaw) ho ha hb fit
       s t tr1 tr2 u v ⟨h.1.input,h.2.1.input⟩ e1 e2
-  stack := rfl
+  stack := by
+    have round : FrameStack.armStack FiosFast.round = 0 := by
+      simp only [FiosFast.round, FrameStack.armStack, fast_stack]
+      rfl
+    simp only [MontCallFios.arithmetic, MontPipeline.fnBody, MontPipeline.body,
+      MontPipeline.core, MontPipeline.rounds, FrameStack.armStack, round]
+    rfl
 
 def montCallFios_backend
     (law : MontPipeline.RoundLaw FiosFast.round)

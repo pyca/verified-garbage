@@ -20,7 +20,7 @@ namespace VG.Proof.Bignum.Arm.FiosPipelined
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.Bignum.Arm.Fios
 
 theorem code_ok (s : State) {base : BitVec 32} {size acc b mod n : Nat}
-    (ctx : Ctx s base size acc b mod n) (positive : 4≤n) (even : n%2=0) (bound : n≤32)
+    (ctx : Ctx s base size acc b mod n) (positive : 4≤n) (even : n%2=0) (bound : n≤128)
     (h4 : encodable (BitVec.ofNat 32 (4*(n-2)))=true)
     (h1 : encodable (BitVec.ofNat 32 (n-2))=true)
     (ptr : s.gpr .r0=base+BitVec.ofNat 32 acc)
