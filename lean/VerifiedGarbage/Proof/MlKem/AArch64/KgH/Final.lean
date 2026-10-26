@@ -142,7 +142,7 @@ theorem keyGenH768_sat : ∃ s, keyGenH768Contract.pre s := by
      | decide
      | exact Region.disjoint_of_sep (by decide)
   · change ConstsOk constants 128 (addTables VG.Proof.MlKem.AArch64.KeyGen.sat)
-    refine ⟨?_, tableMem_held, ?_⟩
+    refine ⟨?_, tableMem_held, ?_, ?_⟩
     · rfl
     · intro r hr
       rw [constants_regions] at hr
@@ -158,6 +158,10 @@ theorem keyGenH768_sat : ∃ s, keyGenH768Contract.pre s := by
             change q ∈ [below (0x100000:Addr) 128] at hq
             rw [List.mem_singleton.mp hq]
             exact Region.disjoint_of_sep (by decide))
+    · intro r hr
+      rw [constants_regions] at hr
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+      all_goals first | contradiction | decide
 
 theorem keyGenP768_verified (v : Proof.Sha3.AArch64.Permutation) :
     Verified AArch64.target (Kem16P.keyGen (fixedHash v.callee) v.callee lay768) keyGenH768Contract := by
@@ -217,7 +221,7 @@ theorem keyGenH1024_sat : ∃ s, keyGenH1024Contract.pre s := by
      | decide
      | exact Region.disjoint_of_sep (by decide)
   · change ConstsOk constants 128 (addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat)
-    refine ⟨?_, tableMem_held, ?_⟩
+    refine ⟨?_, tableMem_held, ?_, ?_⟩
     · rfl
     · intro r hr
       rw [constants_regions] at hr
@@ -233,6 +237,10 @@ theorem keyGenH1024_sat : ∃ s, keyGenH1024Contract.pre s := by
             change q ∈ [below (0x100000:Addr) 128] at hq
             rw [List.mem_singleton.mp hq]
             exact Region.disjoint_of_sep (by decide))
+    · intro r hr
+      rw [constants_regions] at hr
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+      all_goals first | contradiction | decide
 
 theorem keyGenP1024_verified (v : Proof.Sha3.AArch64.Permutation) :
     Verified AArch64.target (Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024) keyGenH1024Contract := by
