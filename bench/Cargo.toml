@@ -20,6 +20,7 @@ openssl-sys = { version = "0.9.117", optional = true }
 foreign-types = { version = "0.3", optional = true }
 
 [features]
+default = ["openssl-argon2"]
 # OpenSSL 3.2+ supplies Argon2; the benchmark runners use 3.0.
 # On a supported host, use `cargo bench --features openssl-argon2` and
 # `cargo test --features openssl-argon2 --test argon2` for the comparison.

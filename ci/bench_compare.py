@@ -472,6 +472,10 @@ def main():
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
     p.add_argument("--arch", choices=EXECUTABLES, help="fail unless the binaries are this architecture's")
     args = p.parse_args()
+    args.rounds = 3
+    subprocess.run(["rustc", "-vV"], check=True)
+    args.warm_up_time = 0.2
+    args.measurement_time = 1.0
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
         p.error("--shard must be i/n with 1 <= i <= n")
@@ -673,6 +677,12 @@ def main():
         lines.append(f"No benchmark slowed down by more than {args.threshold:.0%}.")
     report = "\n".join(lines) + "\n"
 
+    for estimate in sorted(work.rglob("estimates.json")):
+        if estimate.parent.name == "new":
+            sample = estimate.with_name("sample.json")
+            print("ARGON2_RAW " + json.dumps({"path": str(estimate.relative_to(work)),
+                "estimates": json.loads(estimate.read_text()),
+                "samples": json.loads(sample.read_text()) if sample.exists() else None}))
     print(report)
     if args.summary:
         with args.summary.open("a") as f:
