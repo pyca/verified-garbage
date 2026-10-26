@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Framework.X86.Syms
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Impl.Ffdh.X86.Candidate
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame

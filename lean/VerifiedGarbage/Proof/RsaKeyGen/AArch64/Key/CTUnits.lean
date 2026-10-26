@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.RelClasses
 
 /-!
 # An RSA key from its primes on AArch64: constant time, the key routines

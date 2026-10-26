@@ -5,10 +5,10 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.AesOcb.Scratch
 public import Batteries.Logic
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.AesOcb.Arm
 public import VerifiedGarbage.Proof.AesOcb.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit

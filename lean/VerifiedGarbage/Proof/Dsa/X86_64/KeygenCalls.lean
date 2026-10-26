@@ -1,8 +1,8 @@
 module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Set
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline

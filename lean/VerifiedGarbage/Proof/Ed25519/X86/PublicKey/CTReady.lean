@@ -23,7 +23,7 @@ import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Tactic.Push
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
@@ -33,6 +33,8 @@ import VerifiedGarbage.Proof.Sha512.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Offset
 -- Proofs inside exposed definitions (structure values) use these: Lean needs them public.
 public import VerifiedGarbage.Proof.Framework.AddrArith -- shake: keep
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.Order.RelClasses
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.Setup`. -/
 

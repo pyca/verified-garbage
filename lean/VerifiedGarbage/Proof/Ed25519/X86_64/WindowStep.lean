@@ -20,6 +20,9 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.X25519.X86_64.Lit
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-! Merged from `Proof.Ed25519.X86_64.WindowTables`. -/
 

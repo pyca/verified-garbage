@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyChoice
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
 
 /-! One record either caps the exponent and stops, or advances without changing memory. -/
 @[expose] public section

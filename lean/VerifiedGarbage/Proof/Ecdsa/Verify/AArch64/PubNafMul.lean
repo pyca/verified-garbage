@@ -1,5 +1,5 @@
 module
-public import Mathlib.Tactic.ClearExcept
+import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State

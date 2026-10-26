@@ -6,6 +6,7 @@ public meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CTDefs
 import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Prepare
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import Mathlib.Tactic.ToDual
 
 /-!
 # Preparing leaks only public data (x86)

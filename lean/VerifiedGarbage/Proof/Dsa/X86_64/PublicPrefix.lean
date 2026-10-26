@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.Zero
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
 import VerifiedGarbage.Proof.Dsa.Encoding

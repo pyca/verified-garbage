@@ -6,9 +6,9 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvCount
 import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
-public import Mathlib.Data.BitVec
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Ring
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words

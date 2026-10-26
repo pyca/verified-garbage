@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-! The descending joint loop represents the complete unreduced scalar pair. -/
 

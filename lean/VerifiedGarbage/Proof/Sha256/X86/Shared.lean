@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 public import VerifiedGarbage.Proof.Sha256.X86.Contract
 meta import VerifiedGarbage.Proof.Sha256.X86.Contract
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 meta import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.MdStream.X86.Finalize
 meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
@@ -73,6 +73,7 @@ public import VerifiedGarbage.Impl.Sha256.X86
 meta import VerifiedGarbage.Impl.Sha256.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.X86.Call
+import Mathlib.Tactic.Conv
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): `init`

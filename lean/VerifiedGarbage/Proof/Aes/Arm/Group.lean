@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Bytes
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # One group of counter-mode blocks on ARMv7

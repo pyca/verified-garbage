@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.PushedArguments
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.PushMemory
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
+import Mathlib.Algebra.GroupWithZero.Basic
+import Mathlib.Algebra.GroupWithZero.Nat
 
 /-! The unchanged public signature provides all inputs for the verified native search function. -/
 

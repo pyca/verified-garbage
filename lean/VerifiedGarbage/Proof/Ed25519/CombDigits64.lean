@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.CombTable16
 public import VerifiedGarbage.Proof.Ed25519.CombDigits
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # A comb of one table per digit

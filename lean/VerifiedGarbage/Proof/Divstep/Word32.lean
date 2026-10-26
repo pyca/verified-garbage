@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.NormNum
-public import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Divstep.Word32Bits
-public import Mathlib.Data.BitVec
+import Mathlib.Data.BitVec
 public import VerifiedGarbage.Proof.Divstep.Word32Def
 import VerifiedGarbage.Proof.Framework.Omega
 

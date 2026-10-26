@@ -6,15 +6,15 @@ import VerifiedGarbage.Proof.Divstep.Word32
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
-public import Mathlib.Algebra.Group.Monoid
+import Mathlib.Algebra.Group.Monoid
 public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 public import VerifiedGarbage.Proof.Mont.Words
-public import Mathlib.Data.BitVec
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Ring
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! # Thirty low-word divsteps produce the full transition matrix -/

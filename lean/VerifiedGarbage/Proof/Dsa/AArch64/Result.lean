@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Returning the DSA acceptance bit in the AAPCS64 result register -/

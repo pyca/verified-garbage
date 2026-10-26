@@ -1,5 +1,5 @@
 module
-public import Mathlib.Data.List.Dedup
+import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastSeal
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen

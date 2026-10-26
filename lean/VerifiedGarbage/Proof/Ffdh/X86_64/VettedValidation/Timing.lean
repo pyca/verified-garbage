@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.VettedValidation
+import Mathlib.Basic.IsEmpty.Defs
 
 /-! The fast path and the selected general fallback preserve the API's timing policy. -/
 

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import Mathlib.Tactic.SplitIfs
 
 /-! # Preserve independent paired-sampler streams and checkpoints -/
 @[expose] public section

@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.CrtMath

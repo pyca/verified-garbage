@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControl
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchLoop
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStatus
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

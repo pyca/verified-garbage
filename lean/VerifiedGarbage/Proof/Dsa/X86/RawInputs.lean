@@ -3,6 +3,9 @@ public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.Layout
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Paired component loading without assuming a valid modulus -/
 

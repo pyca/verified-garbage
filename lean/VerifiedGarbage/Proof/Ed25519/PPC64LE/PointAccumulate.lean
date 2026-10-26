@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 import VerifiedGarbage.Proof.X25519.PPC64LE.Cswap
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.PointMul
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 public import VerifiedGarbage.Proof.Framework.Block

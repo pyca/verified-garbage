@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-! # Loading DSA's padded components into a child workspace -/
 

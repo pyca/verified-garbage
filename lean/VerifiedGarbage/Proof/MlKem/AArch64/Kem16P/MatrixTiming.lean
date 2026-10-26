@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import Mathlib.Tactic.ToDual
 
 /-!
 # The matrix computing PRF outputs leaks only public pointers and `ρ`

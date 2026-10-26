@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
 
 /-! Byte slices retain readability and scratch separation; read-only inputs may overlap. -/
 @[expose] public section

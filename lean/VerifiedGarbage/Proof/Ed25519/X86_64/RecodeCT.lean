@@ -24,6 +24,8 @@ meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
 meta import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # The recoding: what its trace depends on

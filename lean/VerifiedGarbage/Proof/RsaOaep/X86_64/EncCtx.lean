@@ -4,7 +4,7 @@ public import VerifiedGarbage.Spec.RsaOaep
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint

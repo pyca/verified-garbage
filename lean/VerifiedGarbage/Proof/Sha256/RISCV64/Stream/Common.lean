@@ -18,6 +18,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.RISCV64.Isa
+import Mathlib.Data.List.Nodup
 
 /-!
 # Streaming SHA-256 on RISC-V: common lemmas

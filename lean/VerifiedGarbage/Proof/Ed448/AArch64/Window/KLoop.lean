@@ -7,6 +7,8 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # Ed448 verification on AArch64: the windows of the challenge

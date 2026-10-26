@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.MlKem.X86.Top
 public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
 
 /-!
 # ML-DSA signing on x86 (32-bit): the setting of the proof

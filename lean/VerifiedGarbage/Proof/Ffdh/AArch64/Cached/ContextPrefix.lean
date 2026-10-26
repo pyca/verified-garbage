@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Context
 import VerifiedGarbage.Proof.Mont.WordsCanonical
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
 
 /-! The canonical context contains exact, unreduced-width p and reduced R² limbs. -/
 @[expose] public section

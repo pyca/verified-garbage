@@ -9,6 +9,7 @@ pub const USES: &[&str] = &["x25519"];
     target_arch = "x86",
     target_arch = "arm",
     target_arch = "aarch64",
+    target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub fn bench(c: &mut Criterion) {
@@ -150,6 +151,7 @@ pub fn bench(c: &mut Criterion) {
     target_arch = "x86",
     target_arch = "arm",
     target_arch = "aarch64",
+    target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 )))]
 pub fn bench(_: &mut Criterion) {}

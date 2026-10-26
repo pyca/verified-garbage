@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-! Merged from `Proof.Ed25519.AArch64.PointEqualCT`. -/
 

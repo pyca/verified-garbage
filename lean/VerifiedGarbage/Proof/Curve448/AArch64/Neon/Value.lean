@@ -12,6 +12,8 @@ import Mathlib.Data.Rat.Cast.Order
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.TacticTemplate
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Ring
 
 /-!
 # The value and bounds of `mul2`'s results

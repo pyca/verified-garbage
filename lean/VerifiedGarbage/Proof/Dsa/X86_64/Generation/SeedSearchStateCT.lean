@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchInitCT
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Int.ModEq
 
 /-! # Instantiate the public prime-search state from actual persistent-frame words -/
 

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Widen
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Finish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! Execute the full native function while keeping its saved frame read-only during search. -/
 

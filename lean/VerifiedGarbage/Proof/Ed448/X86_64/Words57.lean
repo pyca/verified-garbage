@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Spec.Ed448.Contract
 
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp

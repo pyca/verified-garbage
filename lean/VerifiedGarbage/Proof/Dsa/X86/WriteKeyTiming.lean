@@ -11,6 +11,9 @@ public import VerifiedGarbage.Proof.Dsa.X86.KeyCopyFrame
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Dsa.X86.KeyPartsTiming
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Serialization uses only public layout information for its trace -/
 

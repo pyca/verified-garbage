@@ -1,5 +1,5 @@
 module
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
 public import VerifiedGarbage.Proof.RsaKeyGen.Slots

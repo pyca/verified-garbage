@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructTest
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptBlocksCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityCTState
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Return the verified p-test result to the bounded search controller -/
 

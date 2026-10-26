@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import Mathlib.Util.CompileInductive
 
 /-! Incoming ARM stack words remain readable while the controller retains
 its arguments in separate packed-u64 workspace. -/

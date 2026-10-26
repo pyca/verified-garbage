@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCallPre
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.ToDual
 
 /-!
 # Calling the supplied-nonce signer (x86)

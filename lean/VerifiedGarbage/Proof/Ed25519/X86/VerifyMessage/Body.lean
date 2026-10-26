@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Args
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
-public import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.Tactic.NormNum.Prime
 public import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit

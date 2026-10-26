@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Ed448.PPC64LE.VChecks
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Hash
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Prune
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignNonce
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.PPC64LE.Ladder

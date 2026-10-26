@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.SetLike
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Contract
 

@@ -10,10 +10,10 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Exact recoding, including the carry beyond bit 455. -/

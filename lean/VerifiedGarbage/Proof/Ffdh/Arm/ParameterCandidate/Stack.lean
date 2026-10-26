@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.StackPieces
 import VerifiedGarbage.Proof.Ffdh.Arm.CallerRows
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.Basic
 
 /-! The candidate frame and shared round require at most 184 bytes of stack. -/
 

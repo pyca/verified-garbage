@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Data.Int.ModEq
 
 /-! # Initialize generator range-check scratch while retaining source bytes and frame arguments -/
 

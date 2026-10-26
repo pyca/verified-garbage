@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on AArch64: the butterflies of `NTT` and `NTT⁻¹`

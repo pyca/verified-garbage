@@ -10,8 +10,8 @@ meta import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Init
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms

@@ -12,10 +12,10 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.ChaCha20.Contract
 meta import VerifiedGarbage.Spec.ChaCha20.Contract
-public import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.Conv
 import all Init.Data.Nat.Bitwise.Basic
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 public import VerifiedGarbage.Proof.ChaCha20.Spec

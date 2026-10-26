@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import Mathlib.Tactic.SplitIfs
 
 /-! ## `NafTableState` -/
 

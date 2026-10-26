@@ -1,6 +1,7 @@
 module
 
 public meta import Lean.Elab.Tactic.Basic
+public import Lean.Meta.Tactic.Simp.BuiltinSimprocs
 public meta import Lean.Elab.MacroArgUtil
 public meta import Lean.Elab.Syntax
 

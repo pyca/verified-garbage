@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

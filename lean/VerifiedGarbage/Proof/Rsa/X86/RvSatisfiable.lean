@@ -1,6 +1,6 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Set
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract

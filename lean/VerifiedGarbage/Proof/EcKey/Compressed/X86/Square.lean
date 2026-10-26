@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 import VerifiedGarbage.Proof.Weierstrass.RootPowers
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.Ecdsa.X86
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words

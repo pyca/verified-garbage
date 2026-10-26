@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvHalfStep
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # The public number of halving iterations -/
 

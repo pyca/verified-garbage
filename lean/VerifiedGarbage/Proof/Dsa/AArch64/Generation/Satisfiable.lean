@@ -2,8 +2,8 @@ module
 public import VerifiedGarbage.Spec.Dsa.Generate
 import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Dsa.AArch64.Run

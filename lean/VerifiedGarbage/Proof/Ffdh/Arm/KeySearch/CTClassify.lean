@@ -18,6 +18,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Compare
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Compare
+import Mathlib.Util.CompileInductive
 
 /-! Native classification branches depend only on the disclosed attempt
 status, with no additional dependence on the private scalar or public value. -/

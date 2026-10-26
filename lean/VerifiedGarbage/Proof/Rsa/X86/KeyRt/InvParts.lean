@@ -4,9 +4,9 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 public import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.KeyBits32
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.KeyMath

@@ -22,9 +22,9 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvEntry
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvCheck
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RvLoads
 public import Aesop.BuiltinRules
-public import Mathlib.Logic.Function.Iterate
-public import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.Basic
+import Mathlib.Logic.Function.Iterate
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.RvLoads
 
 /-!

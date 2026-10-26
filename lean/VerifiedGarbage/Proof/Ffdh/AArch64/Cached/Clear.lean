@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
 
 /-! Rejected attempts clear every byte through the existing verified zero-byte loop. -/
 @[expose] public section

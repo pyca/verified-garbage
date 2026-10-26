@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcTail
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+import Mathlib.Basic.IsEmpty.Defs
+import Mathlib.Data.Int.GCD
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: correctness

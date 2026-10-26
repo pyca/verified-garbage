@@ -4,6 +4,13 @@ public import VerifiedGarbage.Proof.Divstep.Alg
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Tactic.NormNum.Ineq
+import Mathlib.Tactic.Positivity.Core
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 
 /-!
 # Inversion by batches of divsteps: signed coefficients

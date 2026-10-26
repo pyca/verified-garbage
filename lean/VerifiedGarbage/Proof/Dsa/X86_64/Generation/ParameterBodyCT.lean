@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterCTState
 public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAttempt
+import Mathlib.Basic.IsEmpty.Defs
+import Mathlib.Data.Int.ModEq
 
 /-! # One public seed attempt advances the outer search and witness cursor -/
 

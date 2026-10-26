@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowKernel
 import VerifiedGarbage.Proof.Bignum.Arm.CrtContract
 public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit

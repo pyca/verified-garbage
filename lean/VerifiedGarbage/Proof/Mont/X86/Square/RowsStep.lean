@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Framework.Taint
 public import Init.Prelude
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.TCB.Mem
+import Mathlib.Util.CompileInductive
 
 @[expose] public section
 

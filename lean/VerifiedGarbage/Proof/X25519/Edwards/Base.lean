@@ -10,6 +10,7 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.FieldSimp
 
 /-! Scalar clamping and the Edwards-to-Montgomery map, shared by fixed-base implementations. -/
 

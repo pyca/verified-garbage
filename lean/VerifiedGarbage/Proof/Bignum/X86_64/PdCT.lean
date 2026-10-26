@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
-public import Mathlib.Logic.Relator
+import Mathlib.Logic.Relator
 import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset

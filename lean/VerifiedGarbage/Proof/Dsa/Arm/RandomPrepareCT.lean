@@ -10,6 +10,7 @@ meta import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
 meta import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepare
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.ToDual
 
 /-!
 # Preparing leaks only public data (32-bit ARM)

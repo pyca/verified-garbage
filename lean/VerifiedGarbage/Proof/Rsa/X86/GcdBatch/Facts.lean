@@ -4,9 +4,12 @@ import Mathlib.Algebra.Order.Ring.Abs
 public import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Loop
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
 import VerifiedGarbage.Proof.Divstep.Tc32
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Divstep.Steps
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
 
 /-! # Arithmetic bounds for all RSA GCD batches -/
 

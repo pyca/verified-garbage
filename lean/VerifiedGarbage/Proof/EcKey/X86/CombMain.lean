@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.X86.Main
-public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Nat.Find
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.Lit

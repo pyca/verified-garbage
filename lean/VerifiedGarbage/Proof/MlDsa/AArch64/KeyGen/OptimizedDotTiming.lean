@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotValue
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDot
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlKem.Arith
+import Mathlib.Tactic.Conv
 
 @[expose] public section
 

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import Mathlib.Tactic.FinCases
 
 /-! ## From `OptimizedPairedLowLayout.lean` -/
 

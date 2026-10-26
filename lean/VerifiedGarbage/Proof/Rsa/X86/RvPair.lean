@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
 public import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Framework.X86.RelCT

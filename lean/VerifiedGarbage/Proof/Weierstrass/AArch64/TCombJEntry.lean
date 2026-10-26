@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Tactic.ClearExcept
+import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.Booth

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructPlan
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.Dsa.Generation.PDomain
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Data.Nat.Basic
 
 /-! # Instantiate native primality for each full-width p candidate -/
 

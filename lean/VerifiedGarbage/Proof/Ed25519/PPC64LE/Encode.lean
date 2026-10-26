@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldVerified
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.SpecConv
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Freeze
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
 public import VerifiedGarbage.Proof.Framework.Block

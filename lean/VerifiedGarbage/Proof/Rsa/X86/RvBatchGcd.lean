@@ -8,6 +8,11 @@ import VerifiedGarbage.Proof.Rsa.X86.RvArguments
 import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.FrameBase
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Algebra.NeZero
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.Basic
+import Mathlib.Data.Int.ModEq
 
 /-! # Batched GCD inside the prime-recovery workspace -/
 

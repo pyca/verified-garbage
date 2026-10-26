@@ -9,9 +9,9 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
 public import Mathlib.Algebra.Group.Int.Defs
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Impl.X25519.X86
@@ -21,6 +21,10 @@ import VerifiedGarbage.Spec.Weierstrass.Mont
 import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.TCB.X86.State
 public import VerifiedGarbage.Proof.Mont.Words32
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Data.BitVec
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Linarith
 
 /-! # The signed multiword divstep matrix row -/
 

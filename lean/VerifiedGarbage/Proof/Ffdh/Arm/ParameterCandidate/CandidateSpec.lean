@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateResidue
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ScreenedStream
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Option.Basic
 
 /-! The native controller's Boolean result is exactly the already merged candidate specification. -/
 

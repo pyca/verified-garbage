@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.Scalar
+import Mathlib.Tactic.ToDual
 
 @[expose] public section
 

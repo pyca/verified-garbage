@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!

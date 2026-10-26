@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Private-call resources depend only on the eighteen cdecl arguments -/
 

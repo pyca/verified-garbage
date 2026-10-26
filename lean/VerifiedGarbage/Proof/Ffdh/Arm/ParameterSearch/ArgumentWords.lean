@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Arguments
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallLayout
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import Mathlib.Util.CompileInductive
 
 /-! Read the candidate's AAPCS arguments using the shared native stack-word lemmas. -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateArgContext
 public import VerifiedGarbage.Proof.Mont.Words
 
 import VerifiedGarbage.Proof.MillerRabin.X86.Caller
+import Mathlib.Tactic.Set
 
 /-! # Native argument copying retains the used-output pointer through every round -/
 

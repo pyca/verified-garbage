@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: the outputs

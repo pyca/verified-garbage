@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
+import Mathlib.Util.CompileInductive
 
 /-! Exhaustion tests both native halves of the attempt counter. -/
 

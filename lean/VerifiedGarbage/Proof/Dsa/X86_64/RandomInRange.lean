@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-! Whole range-check correctness, including reads of the sampler's frame. -/
 @[expose] public section

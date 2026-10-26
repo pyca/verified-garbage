@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CandidateCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # FFDH parameter generation on x86-64: timing of the callable body -/
 

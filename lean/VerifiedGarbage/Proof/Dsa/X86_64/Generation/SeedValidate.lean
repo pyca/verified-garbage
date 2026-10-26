@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Validate
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Apply the final domain check without leaving the native seed controller -/
 

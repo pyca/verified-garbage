@@ -7,6 +7,11 @@ public import VerifiedGarbage.Impl.P256.EcdhInverse
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
+import Mathlib.Algebra.Ring.Int.Defs
+import Mathlib.Data.Nat.Cast.Basic
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 @[expose] public section
 

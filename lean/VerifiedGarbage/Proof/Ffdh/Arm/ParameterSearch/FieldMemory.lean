@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.PolicyMemory
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Util.CompileInductive
 
 /-! Updating packed native fields preserves every unrelated complete policy word. -/
 

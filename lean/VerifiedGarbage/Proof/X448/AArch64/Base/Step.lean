@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Select
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.X448.BaseAdd
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # X448 of the base point on AArch64: one step of the comb

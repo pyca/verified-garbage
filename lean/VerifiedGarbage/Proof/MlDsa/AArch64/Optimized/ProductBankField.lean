@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
+import Mathlib.Basic.IsEmpty.Defs
+import Mathlib.Data.Int.ModEq
 
 /-! Complete q and then the remaining p witnesses, or return an early rejection. -/
 

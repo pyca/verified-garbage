@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.TCB.X86.Isa
+public import Mathlib.Data.Nat.Basic
 
 /-! # Instantiate checked private RSA with the verified baseline i686 callees -/
 

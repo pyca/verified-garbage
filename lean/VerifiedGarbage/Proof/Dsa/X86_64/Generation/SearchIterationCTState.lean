@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchBodyReadyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchTailReadyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStable
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Int.ModEq
 
 /-! # Retrying a p iteration advances a public counter and an exact witness cursor -/
 

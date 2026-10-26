@@ -6,11 +6,11 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRoots
 import Mathlib.Tactic.FinCases
 import Mathlib.Data.Fintype.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.Tactic.LinearCombination
+import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Weierstrass.Complete
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula

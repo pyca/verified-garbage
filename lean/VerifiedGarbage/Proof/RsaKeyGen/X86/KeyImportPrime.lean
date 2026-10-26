@@ -6,6 +6,11 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyIO
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Nat.Init
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.ToAdditive
 
 /-! # Prime import through the retained public key arguments -/
 

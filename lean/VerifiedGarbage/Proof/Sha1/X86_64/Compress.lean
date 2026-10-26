@@ -24,6 +24,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-1 compression function on x86-64: the message schedule and the rounds

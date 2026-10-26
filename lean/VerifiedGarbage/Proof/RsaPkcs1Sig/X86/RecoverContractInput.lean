@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Spec.Weierstrass
+import Mathlib.Tactic.ToDual
 
 /-! # Decode the shared verifier precondition into its frame and input geometry -/
 

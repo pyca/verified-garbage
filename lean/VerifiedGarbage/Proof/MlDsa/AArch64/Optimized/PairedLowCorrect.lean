@@ -17,6 +17,9 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Arith
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Data.Fintype.Fin
+import Mathlib.Tactic.FinCases
 
 /-! ## `PairedLowAllFields` -/
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Weierstrass.Rcb
 

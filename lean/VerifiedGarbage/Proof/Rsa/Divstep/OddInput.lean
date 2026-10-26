@@ -4,6 +4,12 @@ public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
 import VerifiedGarbage.Proof.Rsa.Divstep.Bound
 public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Divstep.Steps
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Tactic.NormNum.Ineq
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Positivity
 
 /-! # Making a divstep input odd without division -/
 

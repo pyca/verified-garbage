@@ -8,9 +8,12 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ffdh.X86.CheckDomainTop
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Geometry
 public import VerifiedGarbage.Spec.Weierstrass.Point
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! Reuse the original verified register-save prefix before recognizing standard domains. -/
 

@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopState
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
+import Mathlib.Tactic.Conv
 
 /-! # Continue or finish the primality loop after one complete draw -/
 

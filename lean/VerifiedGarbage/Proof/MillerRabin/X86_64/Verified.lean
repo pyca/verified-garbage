@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.Slots
-public import Mathlib.Data.Nat.GCD.Basic
-public import Mathlib.Tactic.Set
+import Mathlib.Data.Nat.GCD.Basic
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont

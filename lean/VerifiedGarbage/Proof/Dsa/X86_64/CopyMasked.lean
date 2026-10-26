@@ -9,7 +9,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-! # Fixed-length masked signature output -/
 

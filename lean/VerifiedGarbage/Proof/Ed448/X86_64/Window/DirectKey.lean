@@ -13,7 +13,7 @@ import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Data.Nat.Totient
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToAdditive
 
 /-! Direct lookup of a public verification digit in the projective table. -/
 

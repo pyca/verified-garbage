@@ -7,6 +7,9 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Data.List.Basic
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the output

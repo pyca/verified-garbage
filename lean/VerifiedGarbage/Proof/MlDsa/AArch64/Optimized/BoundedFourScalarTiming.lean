@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

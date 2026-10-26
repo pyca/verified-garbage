@@ -6,6 +6,9 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.RsaKeyGen.TopWord32
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Read the high modulus word through its public runtime address -/
 

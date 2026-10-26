@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Spec.Weierstrass.Point
-public import Mathlib.Tactic.ClearExcept
+import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.Weierstrass.OddWin

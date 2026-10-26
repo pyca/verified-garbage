@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
+import Mathlib.Util.CompileInductive
 
 /-! Candidate argument construction retains public controller fields and register arguments. -/
 

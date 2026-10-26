@@ -4266,19 +4266,27 @@ xor a3, a3, t4
 slli t1, a3, 32
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -4286,50 +4294,58 @@ addi t2, zero, 0
 addi t0, a7, 0
 addi t0, t0, 0
 211:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, 0
 addi t4, t4, -256
 bnez t4, 211b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -4337,19 +4353,27 @@ or a5, t2, t2
 slli t1, a3, 40
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -4357,50 +4381,58 @@ addi t2, zero, 0
 addi t0, a7, 512
 addi t0, t0, 512
 212:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -512
 addi t4, t4, -768
 bnez t4, 212b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -4408,19 +4440,27 @@ add a5, a5, t2
 slli t1, a3, 48
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -4428,50 +4468,58 @@ addi t2, zero, 0
 addi t0, a7, 1024
 addi t0, t0, 1024
 213:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -1024
 addi t4, t4, -1280
 bnez t4, 213b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -4479,19 +4527,27 @@ xor a5, a5, t2
 slli t1, a3, 56
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -4499,50 +4555,58 @@ addi t2, zero, 0
 addi t0, a7, 1536
 addi t0, t0, 1536
 214:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -1536
 addi t4, t4, -1792
 bnez t4, 214b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -4579,19 +4643,27 @@ xor a3, a3, t4
 slli t1, a3, 32
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -4599,50 +4671,58 @@ addi t2, zero, 0
 addi t0, a7, 0
 addi t0, t0, 0
 217:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, 0
 addi t4, t4, -256
 bnez t4, 217b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -4650,19 +4730,27 @@ or a5, t2, t2
 slli t1, a3, 40
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -4670,50 +4758,58 @@ addi t2, zero, 0
 addi t0, a7, 512
 addi t0, t0, 512
 218:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -512
 addi t4, t4, -768
 bnez t4, 218b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -4721,19 +4817,27 @@ add a5, a5, t2
 slli t1, a3, 48
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -4741,50 +4845,58 @@ addi t2, zero, 0
 addi t0, a7, 1024
 addi t0, t0, 1024
 219:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -1024
 addi t4, t4, -1280
 bnez t4, 219b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -4792,19 +4904,27 @@ xor a5, a5, t2
 slli t1, a3, 56
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -4812,50 +4932,58 @@ addi t2, zero, 0
 addi t0, a7, 1536
 addi t0, t0, 1536
 220:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -1536
 addi t4, t4, -1792
 bnez t4, 220b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -4989,19 +5117,27 @@ xor a3, a3, t4
 slli t1, a3, 32
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -5009,50 +5145,58 @@ addi t2, zero, 0
 addi t0, a7, 0
 addi t0, t0, 0
 25:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, 0
 addi t4, t4, -256
 bnez t4, 25b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -5060,19 +5204,27 @@ or a5, t2, t2
 slli t1, a3, 40
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -5080,50 +5232,58 @@ addi t2, zero, 0
 addi t0, a7, 512
 addi t0, t0, 512
 26:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -512
 addi t4, t4, -768
 bnez t4, 26b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -5131,19 +5291,27 @@ add a5, a5, t2
 slli t1, a3, 48
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -5151,50 +5319,58 @@ addi t2, zero, 0
 addi t0, a7, 1024
 addi t0, t0, 1024
 27:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -1024
 addi t4, t4, -1280
 bnez t4, 27b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -5202,19 +5378,27 @@ xor a5, a5, t2
 slli t1, a3, 56
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -5222,50 +5406,58 @@ addi t2, zero, 0
 addi t0, a7, 1536
 addi t0, t0, 1536
 28:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -1536
 addi t4, t4, -1792
 bnez t4, 28b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -5387,19 +5579,27 @@ xor a3, a3, t4
 slli t1, a3, 32
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -5407,50 +5607,58 @@ addi t2, zero, 0
 addi t0, a7, 0
 addi t0, t0, 0
 25:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, 0
 addi t4, t4, -256
 bnez t4, 25b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -5458,19 +5666,27 @@ or a5, t2, t2
 slli t1, a3, 40
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -5478,50 +5694,58 @@ addi t2, zero, 0
 addi t0, a7, 512
 addi t0, t0, 512
 26:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -512
 addi t4, t4, -768
 bnez t4, 26b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -5529,19 +5753,27 @@ add a5, a5, t2
 slli t1, a3, 48
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -5549,50 +5781,58 @@ addi t2, zero, 0
 addi t0, a7, 1024
 addi t0, t0, 1024
 27:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -1024
 addi t4, t4, -1280
 bnez t4, 27b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
@@ -5600,19 +5840,27 @@ xor a5, a5, t2
 slli t1, a3, 56
 srli t1, t1, 56
 addi t6, zero, 255
-srliw t4, t6, 24
-slliw t3, t6, 8
+srli t4, t6, 56
+slli t3, t6, 8
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
-srliw t4, t6, 16
-slliw t3, t6, 16
+srli t4, t6, 48
+slli t3, t6, 16
 xor t4, t4, t3
 xor t4, t4, t6
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t6, t6, t4
+srli t4, t6, 32
+slli t3, t6, 32
+xor t4, t4, t3
+xor t4, t4, t6
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t6, t6, t4
@@ -5620,50 +5868,58 @@ addi t2, zero, 0
 addi t0, a7, 1536
 addi t0, t0, 1536
 28:
-srli t3, t1, 2
+srli t3, t1, 3
 addi t3, t3, -1
 srai t3, t3, 63
 and t3, t3, t6
-addi t1, t1, -4
-lwu t4, 0(t0)
+addi t1, t1, -8
+ld t4, 0(t0)
 and t4, t4, t3
 or t2, t2, t4
-lwu t4, 256(t0)
+ld t4, 256(t0)
 and t4, t4, t3
-srliw t5, t4, 24
-slliw t4, t4, 8
+srli t5, t4, 56
+slli t4, t4, 8
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 512(t0)
+ld t4, 512(t0)
 and t4, t4, t3
-srliw t5, t4, 16
-slliw t4, t4, 16
+srli t5, t4, 48
+slli t4, t4, 16
 xor t4, t4, t5
 or t2, t2, t4
-lwu t4, 768(t0)
+ld t4, 768(t0)
 and t4, t4, t3
-srliw t5, t4, 8
-slliw t4, t4, 24
+srli t5, t4, 40
+slli t4, t4, 24
 xor t4, t4, t5
 or t2, t2, t4
-addi t0, t0, 4
+addi t0, t0, 8
 sub t4, t0, a7
 addi t4, t4, -1536
 addi t4, t4, -1792
 bnez t4, 28b
-srliw t4, t2, 8
-slliw t3, t2, 24
+srli t4, t2, 8
+slli t3, t2, 56
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 63
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4
-srliw t4, t2, 16
-slliw t3, t2, 16
+srli t4, t2, 16
+slli t3, t2, 48
 xor t4, t4, t3
 xor t4, t4, t2
 slli t3, t1, 62
+srai t3, t3, 63
+and t4, t4, t3
+xor t2, t2, t4
+srli t4, t2, 32
+slli t3, t2, 32
+xor t4, t4, t3
+xor t4, t4, t2
+slli t3, t1, 61
 srai t3, t3, 63
 and t4, t4, t3
 xor t2, t2, t4

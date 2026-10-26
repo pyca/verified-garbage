@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! Complete native ARMv7 safe-prime parameter generation satisfies the existing public correctness contract. -/
 

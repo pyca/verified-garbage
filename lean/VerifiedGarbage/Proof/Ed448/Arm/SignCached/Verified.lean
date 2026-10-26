@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ed448.Arm.SignCached.CT
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import Mathlib.Logic.Function.Basic
+import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Impl.Ed448.Arm.SignCached
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit

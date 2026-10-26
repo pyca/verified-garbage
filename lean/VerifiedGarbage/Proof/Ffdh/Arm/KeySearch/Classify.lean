@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Policy
+import Mathlib.Util.CompileInductive
 
 /-! Composition of entropy consumption with acceptance and the two kinds of rejection. -/
 

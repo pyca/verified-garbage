@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
+import Mathlib.Data.List.Basic
 
 /-! # Sixteen prepared powers: Prepared-context Gather contracts -/
 

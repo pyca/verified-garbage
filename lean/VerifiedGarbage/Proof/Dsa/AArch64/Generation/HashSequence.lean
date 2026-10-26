@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashStep
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Basic
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset

@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.X448.BaseAdd
 import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-! Generate eight odd multiples using one doubling and seven projective additions. -/
 

@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ExponentTail
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Basic.IsEmpty.Defs
+import Mathlib.Data.Int.ModEq
 
 /-! One native exponent halving with its bounded countdown. -/
 

@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Both signature scalar writes preserve the acceptance mask -/
 

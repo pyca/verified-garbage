@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
 public import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 

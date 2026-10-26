@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignNoSp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFnInput
 import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 import VerifiedGarbage.Proof.Rsa.X86.PrivFnInput
+import Mathlib.Tactic.ToDual
 
 /-! # Stack bound and instruction safety for every CRT-backed signing variant -/
 

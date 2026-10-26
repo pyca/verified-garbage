@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Weierstrass.Layout
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: constant time, up to the number of candidates

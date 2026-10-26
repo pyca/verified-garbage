@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Finish
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.X448.BaseAdd
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # X448 of the base point on AArch64: the whole function

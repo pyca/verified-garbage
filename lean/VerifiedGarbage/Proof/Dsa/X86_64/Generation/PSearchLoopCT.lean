@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCTState
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchIterationCT
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Int.ModEq
 
 /-! # Timing of the bounded native p search, including its exact retry cursor -/
 

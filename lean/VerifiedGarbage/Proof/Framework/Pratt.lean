@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.Data.Nat.Prime.Defs
-public import Mathlib.Data.Nat.Find
-public import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import Mathlib.Data.Finset.Card
 
 /-!
 # Pratt certificates

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorEvaluateCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorWorkspaceCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Encoding
+public import Mathlib.Data.Nat.Basic
 
 /-! # Instantiate range timing with the exact generator inputs and computed output -/
 

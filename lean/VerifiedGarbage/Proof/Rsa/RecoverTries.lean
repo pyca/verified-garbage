@@ -6,7 +6,7 @@ import Mathlib.Order.RelClasses
 import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-!
 # `recoverPrimes`: the number of tries

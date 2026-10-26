@@ -7,6 +7,9 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionLoad
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Load the shared division bank at the public runtime width -/
 

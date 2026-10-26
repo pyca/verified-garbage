@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometrySubgroup
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSeed
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSubgroup
+import Mathlib.Data.Int.ModEq
 
 /-! # Public seed-attempt inputs exclude unused frame words -/
 

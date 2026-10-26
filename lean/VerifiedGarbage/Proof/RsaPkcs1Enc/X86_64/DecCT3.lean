@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCTBase
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPrf
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time, `CL` and `AM`

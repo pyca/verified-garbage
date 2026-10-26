@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PBuild
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Preserve public candidate bytes and persistent arguments across hashing -/
 

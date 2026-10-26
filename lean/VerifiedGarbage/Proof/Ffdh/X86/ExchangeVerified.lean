@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Ffdh.X86.ExchangeCT
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.Sig
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Impl.Ffdh.X86.Domain
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 public import VerifiedGarbage.Proof.Ffdh.X86.ABI

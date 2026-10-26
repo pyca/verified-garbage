@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.RsaOaep.Scan
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.GetElem
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

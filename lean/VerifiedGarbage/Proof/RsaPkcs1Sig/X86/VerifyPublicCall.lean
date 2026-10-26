@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Sig
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI

@@ -4,6 +4,11 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseLoad
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseFrame
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
+import Mathlib.Data.Nat.Init
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.ToAdditive
 
 /-! # Run a small inverse without disturbing a modulus-width RSA workspace -/
 

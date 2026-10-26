@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import Mathlib.Tactic.TermCongr
+import Mathlib.Tactic.TermCongr
 import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.Set
 

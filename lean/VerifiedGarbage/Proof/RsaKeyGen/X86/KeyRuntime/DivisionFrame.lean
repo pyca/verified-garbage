@@ -4,6 +4,14 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ArrayDivision
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageCover
 import VerifiedGarbage.Proof.Rsa.WordRanges
+import Mathlib.Data.Nat.Init
+import Mathlib.Logic.Function.Basic
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToAdditive
 
 /-! # Runtime division preserves the key's persistent values and header -/
 

@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Proof.Dsa.Arm.Session
 public import VerifiedGarbage.Proof.Dsa.Arm.Shape
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # DSA domain checks on 32-bit ARM: correctness

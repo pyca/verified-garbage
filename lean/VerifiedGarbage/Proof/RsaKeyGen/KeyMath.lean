@@ -6,10 +6,11 @@ public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
+import Mathlib.Data.Nat.Init
 
 /-!
 # An RSA key from its primes: the arithmetic

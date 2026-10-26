@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Aes
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega

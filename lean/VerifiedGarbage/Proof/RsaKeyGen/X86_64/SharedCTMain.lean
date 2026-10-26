@@ -12,6 +12,9 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Basic.IsEmpty.Defs
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Constant time of RSA's loop with a callable shared round -/
 

@@ -3,6 +3,8 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
 
 import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces2
 import VerifiedGarbage.Proof.Rsa.Arm.RvBase
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.Basic
 
 /-! # The Miller–Rabin round on ARMv7: a run of squarings
 

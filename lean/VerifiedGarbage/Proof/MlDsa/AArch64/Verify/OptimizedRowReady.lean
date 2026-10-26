@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowEnd
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.DecideAt
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

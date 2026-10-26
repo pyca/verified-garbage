@@ -1,6 +1,6 @@
 module
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Set
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Proof.Framework.Contract

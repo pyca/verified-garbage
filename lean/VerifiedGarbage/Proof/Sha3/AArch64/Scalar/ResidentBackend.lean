@@ -14,7 +14,7 @@ import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.NormNum.Pow
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToAdditive
 public import Aesop.BuiltinRules
 public meta import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Offset

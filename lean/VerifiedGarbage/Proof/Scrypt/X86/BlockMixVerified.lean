@@ -42,6 +42,8 @@ import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Scrypt.Memory
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
 
 @[expose] public section
 

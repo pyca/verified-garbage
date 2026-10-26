@@ -9,6 +9,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintDecompose
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlKem.Arith
+import Mathlib.Tactic.FinCases
 
 /-! ## From `OptimizedPairedHintLayout.lean` -/
 

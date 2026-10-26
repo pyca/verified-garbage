@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTHalve
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateHalve
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateTest
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Core
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Sample
 import VerifiedGarbage.Proof.Bignum.Octets
-public import Mathlib.Tactic.TermCongr
+import Mathlib.Tactic.TermCongr
 import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract

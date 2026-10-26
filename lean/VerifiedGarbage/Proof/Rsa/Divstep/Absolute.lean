@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.Data.Int.ModEq
-public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+import Mathlib.Algebra.Order.Group.Unbundled.Abs
 import Mathlib.Algebra.Order.Ring.Int
 
 /-! # Recovering an absolute value from its low-word residue -/

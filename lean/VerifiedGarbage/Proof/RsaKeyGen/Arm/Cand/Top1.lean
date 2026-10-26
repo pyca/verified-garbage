@@ -5,10 +5,10 @@ public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Sig
 import Mathlib.Tactic.Finiteness.Attr
 public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit

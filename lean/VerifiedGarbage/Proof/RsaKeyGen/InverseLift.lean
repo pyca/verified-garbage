@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Data.Int.Basic
+import Mathlib.Data.Int.Basic
 
 /-! # A one-step negative-inverse lift expressed in native-word parts -/
 

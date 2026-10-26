@@ -2,8 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
 public import VerifiedGarbage.Proof.Dsa.Arm.Contract

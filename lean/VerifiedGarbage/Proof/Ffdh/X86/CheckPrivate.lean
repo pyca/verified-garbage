@@ -16,6 +16,9 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 public import VerifiedGarbage.Proof.Framework.RelCTChain
 public import VerifiedGarbage.Spec.Ffdh
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # `vg_ffdh_check_private` on i686: the checks

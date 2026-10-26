@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
+import Mathlib.Util.CompileInductive
 
 /-! Exact native halves of the initialized retry counters and domain width. -/
 

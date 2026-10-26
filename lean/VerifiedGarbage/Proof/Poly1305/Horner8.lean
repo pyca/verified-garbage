@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Ring
 public import Mathlib.Data.Nat.ModEq
 public import VerifiedGarbage.Proof.Poly1305.Horner
 

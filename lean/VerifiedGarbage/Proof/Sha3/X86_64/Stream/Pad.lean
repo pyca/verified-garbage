@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.Conv
 
 /-!
 # SHA-3 on x86-64: `pad`

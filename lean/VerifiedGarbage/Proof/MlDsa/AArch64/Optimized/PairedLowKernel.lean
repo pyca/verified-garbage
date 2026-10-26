@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Arith
+import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Data.Fin.Basic
 
 /-! ## `PairedLowKernel` -/
 

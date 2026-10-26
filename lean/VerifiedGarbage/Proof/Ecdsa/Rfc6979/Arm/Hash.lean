@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the hash function

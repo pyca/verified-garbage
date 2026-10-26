@@ -28,6 +28,7 @@
     target_arch = "x86",
     target_arch = "arm",
     target_arch = "aarch64",
+    target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
@@ -173,6 +174,7 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
 /// `X25519(scalar, 9)`, with the ladder.
 #[cfg(any(
     target_arch = "arm",
+    target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 fn base(scalar: &[u8; 32]) -> [u8; 32] {

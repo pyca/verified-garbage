@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
 
 /-!
 # HMAC over any streaming hash function on x86 (32-bit): the functions we call

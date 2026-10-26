@@ -8,9 +8,9 @@ import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.Push
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time, the context

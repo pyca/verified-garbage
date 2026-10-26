@@ -1,8 +1,8 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.Dsa.X86.Entry
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit

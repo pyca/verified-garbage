@@ -1,9 +1,9 @@
 module
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
 public import VerifiedGarbage.Proof.Bignum.Amm52
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rsa.Contract

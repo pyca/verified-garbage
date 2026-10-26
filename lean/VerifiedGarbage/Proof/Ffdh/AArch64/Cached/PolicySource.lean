@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
 
 /-! Select q's public bytes when present, otherwise p's public bytes. -/
 @[expose] public section

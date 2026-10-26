@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncTail
-public import Mathlib.Data.Int.GCD
+import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
 import VerifiedGarbage.Proof.Framework.Omega

@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Idea.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # IDEA ECB on AArch64

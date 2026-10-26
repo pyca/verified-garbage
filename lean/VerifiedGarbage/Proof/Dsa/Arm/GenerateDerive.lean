@@ -15,6 +15,8 @@ public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCompute
 public import VerifiedGarbage.Proof.Dsa.Arm.GenerateEntry
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomFrame
 public import VerifiedGarbage.Proof.Dsa.Arm.Session
+import Mathlib.Basic.Logic.Basic
+import Mathlib.Logic.Function.Basic
 
 /-!
 # DSA key derivation on 32-bit ARM: correctness

@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
 public import VerifiedGarbage.Spec.Mgf1
 
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract

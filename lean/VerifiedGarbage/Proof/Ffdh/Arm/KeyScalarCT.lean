@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyBound
 public import VerifiedGarbage.TCB.Arm.Isa
+import Mathlib.Util.CompileInductive
 
 /-! The complete scalar sampler leaks only the public domain bound and buffer layout. -/
 

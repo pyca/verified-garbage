@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
 import VerifiedGarbage.Proof.Framework.AArch64.Call
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Positivity
 
 @[expose] public section
 

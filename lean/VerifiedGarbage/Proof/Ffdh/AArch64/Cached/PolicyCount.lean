@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
 
 /-! Count the significant bits of the public first nonzero bound byte. -/
 @[expose] public section

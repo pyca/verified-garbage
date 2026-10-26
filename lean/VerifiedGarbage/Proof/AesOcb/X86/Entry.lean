@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES-OCB on x86: the arguments and the entry

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Math
 public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Ring
 
 /-!
 # Which limbs each product multiplies

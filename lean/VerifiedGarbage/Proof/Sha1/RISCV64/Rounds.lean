@@ -11,6 +11,7 @@ public import VerifiedGarbage.Impl.Sha1.RISCV64
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.RISCV64.Isa
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-1 compression function on RISC-V: the message schedule and the rounds

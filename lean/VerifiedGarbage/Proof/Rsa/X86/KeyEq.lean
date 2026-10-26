@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

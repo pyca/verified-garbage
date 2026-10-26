@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Mont.X86.StaticSquare.InputProducts
 import VerifiedGarbage.Proof.Mont.X86.Square.ColumnMath
 public import VerifiedGarbage.Proof.Mont.ColumnSquare
 public import VerifiedGarbage.Proof.Mont.Words32
+import Mathlib.Util.CompileInductive
 
 /-! # Bounds and cancellation for a complete scalar column -/
 

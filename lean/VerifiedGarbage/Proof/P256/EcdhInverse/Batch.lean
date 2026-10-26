@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Words
 import VerifiedGarbage.Proof.P256.EcdhInverse.RawUpdate
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Update
-public import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Positivity
 public import VerifiedGarbage.Proof.Divstep.Alg
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch

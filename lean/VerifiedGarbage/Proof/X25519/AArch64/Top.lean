@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # X25519 on AArch64: the whole function

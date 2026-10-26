@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTMontOne
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.RelClasses
 
 /-! Call exactly the selected shared RSA primality kernel and reuse its timing proof. -/
 

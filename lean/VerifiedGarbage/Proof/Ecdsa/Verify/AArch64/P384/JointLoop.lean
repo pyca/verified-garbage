@@ -1,8 +1,8 @@
 module
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDoubleD
 public import VerifiedGarbage.Proof.Weierstrass.Joint
-public import Mathlib.Data.Nat.Prime.Defs
-public import Mathlib.Tactic.ClearExcept
+import Mathlib.Data.Nat.Prime.Defs
+import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms

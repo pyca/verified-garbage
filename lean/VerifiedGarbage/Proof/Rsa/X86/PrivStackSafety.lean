@@ -3,7 +3,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
 
 import VerifiedGarbage.Proof.Rsa.X86.PrivFnInput
 import VerifiedGarbage.Proof.Rsa.X86.PrivNoSp
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Stack bounds and stack-pointer safety of the complete checked private wrapper -/

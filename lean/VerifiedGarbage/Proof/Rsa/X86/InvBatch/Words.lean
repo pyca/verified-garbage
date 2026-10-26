@@ -8,10 +8,10 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Matrix
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
-public import Mathlib.Data.BitVec
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Ring
+import Mathlib.Data.BitVec
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Divstep.Word32
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Start

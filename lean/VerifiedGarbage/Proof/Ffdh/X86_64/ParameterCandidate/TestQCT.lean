@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrimeCheckCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Data.Nat.GCD.Basic
 
 /-! # FFDH parameter generation on x86-64: timing of q followed by p -/
 

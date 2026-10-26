@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-public import Mathlib.Util.CompileInductive
+import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Weierstrass

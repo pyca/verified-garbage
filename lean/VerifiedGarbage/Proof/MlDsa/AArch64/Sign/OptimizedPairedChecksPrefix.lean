@@ -40,6 +40,7 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.FinCases
 
 /-! ## From `OptimizedChecksPrefix.lean` -/
 

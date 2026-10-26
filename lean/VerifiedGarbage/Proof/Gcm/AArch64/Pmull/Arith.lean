@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ops
-public import Mathlib.Tactic.LinearCombination
-public import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring.RingNF
 
 /-!
 # GHASH with PMULL: the arithmetic

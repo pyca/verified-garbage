@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.AesCcm.Scratch
 public import VerifiedGarbage.Impl.AesCcm.X86
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
 public import VerifiedGarbage.Proof.AesCcm.X86.Contract
-public import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.AesCcm.X86.Open
 import VerifiedGarbage.Proof.AesCcm.X86.Seal
 import VerifiedGarbage.Proof.AesGcm.X86.Top

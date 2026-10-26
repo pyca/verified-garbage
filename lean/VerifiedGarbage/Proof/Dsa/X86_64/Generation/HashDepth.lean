@@ -4,10 +4,10 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeDepth
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Split
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Macs
 public import VerifiedGarbage.Proof.Poly1305.Pair
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import Mathlib.Tactic.Ring
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: a group of four blocks

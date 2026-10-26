@@ -1,5 +1,5 @@
 module
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.Rsa.Ranges

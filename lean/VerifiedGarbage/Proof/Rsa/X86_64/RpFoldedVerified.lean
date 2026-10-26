@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 import VerifiedGarbage.Proof.Rsa.X86_64.Implies8
 import VerifiedGarbage.Proof.Rsa.X86_64.CallPatch
 import VerifiedGarbage.Proof.Rsa.X86_64.RpFoldedCode
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Impl.Rsa.X86_64.RecoverFolded
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont

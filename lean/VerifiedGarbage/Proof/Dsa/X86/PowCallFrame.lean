@@ -3,8 +3,8 @@ module
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 import VerifiedGarbage.Proof.Dsa.X86.PowMul
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Mont.X86.Words

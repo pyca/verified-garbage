@@ -10,6 +10,7 @@ public import VerifiedGarbage.Spec.Poly1305
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Step
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+import Mathlib.Tactic.Ring
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the last group and the end

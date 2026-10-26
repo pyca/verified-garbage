@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.OnPass
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Basic.IsEmpty.Defs
 
 /-! The selected shared Miller–Rabin round updates native status and success count. -/
 

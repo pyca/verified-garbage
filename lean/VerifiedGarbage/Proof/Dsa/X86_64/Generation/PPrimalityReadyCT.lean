@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstruct
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Encoding
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Construction preserves the public primality inputs and entropy cursor -/
 

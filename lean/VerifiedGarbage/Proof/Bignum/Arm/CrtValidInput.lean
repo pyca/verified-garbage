@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtBegin
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage

@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Divstep.WordBasic
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.Divstep.WordDef
-public import Mathlib.Data.BitVec
+import Mathlib.Data.BitVec
 
 /-!
 # Divsteps on 64-bit words

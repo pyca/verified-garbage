@@ -10,6 +10,7 @@ import Mathlib.Tactic.Module
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Verification with windows: the arithmetic of the digits and the equation

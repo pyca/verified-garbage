@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Sig

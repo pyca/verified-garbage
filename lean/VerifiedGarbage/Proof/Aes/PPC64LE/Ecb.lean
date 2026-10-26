@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Aes.PPC64LE.Keys
-public import Mathlib.Data.List.Induction
+import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Encrypt
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 

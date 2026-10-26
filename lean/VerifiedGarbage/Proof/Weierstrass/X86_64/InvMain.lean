@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvBatch
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 import VerifiedGarbage.Proof.Divstep.Iter
-public import Mathlib.Data.Nat.Prime.Basic
-public import Mathlib.Tactic.FieldSimp
+import Mathlib.Data.Nat.Prime.Basic
+import Mathlib.Tactic.FieldSimp
 public import VerifiedGarbage.Proof.Weierstrass.InvMask
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvRed
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
@@ -16,6 +16,9 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Positivity
 
 /-!
 # Inversion by divsteps on x86-64: the whole inversion

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchCTState
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Algebra.NeZero
 
 /-! # Enter each p attempt using only the retained public search words -/
 

@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Set
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Spec.Weierstrass

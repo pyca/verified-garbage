@@ -3,8 +3,8 @@ module
 import VerifiedGarbage.Proof.Ed448.X86.VerifyCT
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.Set
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal

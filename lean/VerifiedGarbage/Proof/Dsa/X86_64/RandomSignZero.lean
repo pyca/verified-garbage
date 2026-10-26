@@ -11,7 +11,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-! Zero the signature output on all randomized-signing failure paths. -/
 @[expose] public section

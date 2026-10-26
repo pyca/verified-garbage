@@ -3,6 +3,9 @@ public import VerifiedGarbage.Proof.Divstep.Alg32Def
 
 import VerifiedGarbage.Proof.Divstep.Tc32Red
 import VerifiedGarbage.Proof.Divstep.Tc32Words
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
 
 /-! # Finishing a 32-bit divstep reduction with one conditional subtraction -/
 

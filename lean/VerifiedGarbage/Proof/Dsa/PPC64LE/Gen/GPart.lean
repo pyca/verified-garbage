@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Dsa.Generation.Chunks
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.ToDual
 
 /-! # DSA parameter generation on PPC64LE: the search for g
 

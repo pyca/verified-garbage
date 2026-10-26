@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvBatch.Layout
 import VerifiedGarbage.Proof.Rsa.X86.InvBatch.AbHalf
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Half
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-public import Mathlib.Algebra.Group.Int.Defs
-public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+import Mathlib.Algebra.Group.Int.Defs
+import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
 public import VerifiedGarbage.Proof.Mont.X86.Loop
 public import VerifiedGarbage.Proof.Weierstrass.Unch

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Mont.X86.Csub
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Ring
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32

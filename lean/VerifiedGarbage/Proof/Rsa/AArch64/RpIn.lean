@@ -7,7 +7,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.Push
 import Mathlib.Data.Nat.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

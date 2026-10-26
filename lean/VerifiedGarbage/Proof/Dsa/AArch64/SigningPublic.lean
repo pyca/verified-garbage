@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.SigningInitialize
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
 
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Public observations used to relate two complete signing calls
 

@@ -8,7 +8,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-! Read a complete draw's first byte and apply its public bit mask. -/
 @[expose] public section

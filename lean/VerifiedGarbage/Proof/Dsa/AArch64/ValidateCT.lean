@@ -33,6 +33,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateInitialize
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ValidateEntry
 public import VerifiedGarbage.Proof.Dsa.AArch64.ValidateEntry
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Constant time of the AArch64 DSA domain check
 

@@ -1,6 +1,6 @@
 module
-public import Mathlib.Logic.Function.Basic
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Verify
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.RelCT

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.Proof.X448.Ladder
 public import VerifiedGarbage.Proof.X25519.Bytes
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # X448: byte encodings

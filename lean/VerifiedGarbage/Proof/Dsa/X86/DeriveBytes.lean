@@ -14,6 +14,9 @@ public import VerifiedGarbage.Proof.Dsa.X86.Execution
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 import VerifiedGarbage.Proof.Dsa.X86.DeriveCompute
 import VerifiedGarbage.Proof.Dsa.X86.WriteKey
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
 
 /-! # Derivation writes the original domain, the computed public key, and x -/
 

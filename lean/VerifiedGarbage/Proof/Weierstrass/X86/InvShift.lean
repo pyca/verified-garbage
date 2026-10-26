@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
 import VerifiedGarbage.Proof.Mont.X86.Ops
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
 import VerifiedGarbage.Proof.Mont.X86.Instr
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.X86.Taint

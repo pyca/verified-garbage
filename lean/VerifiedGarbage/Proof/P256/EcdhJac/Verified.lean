@@ -7,12 +7,12 @@ import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
 import VerifiedGarbage.Proof.P256.EcdhInverse.Inverse
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
-public import Mathlib.Data.BitVec
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.LinearCombination
-public import Mathlib.Tactic.Positivity
-public import Mathlib.Tactic.Ring
+import Mathlib.Data.BitVec
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Update
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 public import VerifiedGarbage.Proof.P256.EcdhJac.DbluCertificate

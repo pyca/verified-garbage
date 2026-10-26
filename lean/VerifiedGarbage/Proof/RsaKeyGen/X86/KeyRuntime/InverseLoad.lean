@@ -7,6 +7,9 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseLoad
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Load a prime, exponent or full-width inverse bank without specializing code -/
 

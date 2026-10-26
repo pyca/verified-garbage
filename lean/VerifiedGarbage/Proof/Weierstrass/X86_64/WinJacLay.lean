@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import Mathlib.Logic.Function.Basic
+import Mathlib.Logic.Function.Basic
 
 /-!
 # The Jacobian window method: where it keeps its numbers

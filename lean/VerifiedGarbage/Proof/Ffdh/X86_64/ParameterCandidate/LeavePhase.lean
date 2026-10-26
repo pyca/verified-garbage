@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # FFDH parameter generation on x86-64: return to the retained outer state -/
 

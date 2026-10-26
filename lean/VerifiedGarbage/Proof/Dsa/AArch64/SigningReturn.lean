@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.SigningInitialize
 import VerifiedGarbage.Proof.Dsa.AArch64.Failure
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.DomainWidths
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Both signing branches return the packed byte specification -/
 

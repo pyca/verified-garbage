@@ -7,7 +7,7 @@ import Mathlib.Algebra.GroupWithZero.Nat
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # FFDH key generation on x86-64: reuse the exchange output workspace -/

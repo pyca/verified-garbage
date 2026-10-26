@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

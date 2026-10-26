@@ -1,5 +1,5 @@
 module
-public import Mathlib.Tactic.IntervalCases
+import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit

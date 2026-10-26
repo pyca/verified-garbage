@@ -1,5 +1,5 @@
 module
-public import Mathlib.Data.Int.GCD
+import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Dsa.AArch64.Run

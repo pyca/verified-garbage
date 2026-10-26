@@ -97,7 +97,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.JacMul
 meta import VerifiedGarbage.Spec.Weierstrass.Mul
 public import VerifiedGarbage.Proof.Divstep.Alg
 meta import VerifiedGarbage.Proof.Divstep.Alg
-public import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Algebra.GroupWithZero.Nat
 meta import Mathlib.Algebra.GroupWithZero.Nat
 public import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Framework.Semantics
@@ -115,6 +115,10 @@ public import VerifiedGarbage.TCB.Mem
 meta import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.Impl.Mont.Mod
 meta import VerifiedGarbage.Impl.Mont.Mod
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Positivity
 
 @[expose] public section
 

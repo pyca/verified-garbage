@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.X448.X86.Carry
 public import VerifiedGarbage.Impl.Ed448.X86.Scalar
 public import VerifiedGarbage.Proof.X448.X86.Swap
 import VerifiedGarbage.Proof.Framework.Range
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.KeyEqNormalize
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import Batteries.Tactic.Alias
 
 /-! Compare packed arrays in one read-only pass, preserving the existing scratch contract. -/
 

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Spec.Pbkdf2
-public import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.OmegaLit

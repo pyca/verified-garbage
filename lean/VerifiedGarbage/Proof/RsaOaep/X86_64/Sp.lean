@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-public import Mathlib.Data.Int.GCD
+import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.RsaOaep.X86_64
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract

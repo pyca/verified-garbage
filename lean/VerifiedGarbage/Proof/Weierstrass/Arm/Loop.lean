@@ -3,7 +3,7 @@ public import VerifiedGarbage.Impl.Weierstrass.Arm
 public import VerifiedGarbage.Proof.Mont.Arm.Words
 
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

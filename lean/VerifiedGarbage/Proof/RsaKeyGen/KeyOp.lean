@@ -9,8 +9,9 @@ import Mathlib.Order.RelClasses
 import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Attr.Core
 
 /-!
 # An RSA key from its primes: `keyFromPrimes` as `vg_rsa_keygen_key` computes it

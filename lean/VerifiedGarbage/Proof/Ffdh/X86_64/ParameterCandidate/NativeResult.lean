@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ResultBridge
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Basic.IsEmpty.Defs
 
 /-! # FFDH parameter generation on x86-64: the public status and consumed prefix -/
 

@@ -4,6 +4,12 @@ public import VerifiedGarbage.Proof.Divstep.Alg32Def
 import VerifiedGarbage.Proof.Divstep.Mred32
 import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Tactic.NormNum.Ineq
+import Mathlib.Tactic.Positivity.Core
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
 
 /-! # Signed Montgomery reduction on multiword values -/
 

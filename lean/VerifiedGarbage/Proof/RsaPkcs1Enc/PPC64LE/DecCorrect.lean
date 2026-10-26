@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import VerifiedGarbage.Proof.Rsa.PrivCheck
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Data.List.Basic
 
 /-!
 # `vg_rsa_pkcs1_decrypt` on PPC64LE: correctness

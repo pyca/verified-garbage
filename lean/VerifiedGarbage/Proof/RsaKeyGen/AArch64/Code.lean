@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
 # A candidate on AArch64: correctness

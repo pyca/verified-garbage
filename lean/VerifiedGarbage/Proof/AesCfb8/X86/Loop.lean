@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES-CFB8 on x86: the contracts, and the loop

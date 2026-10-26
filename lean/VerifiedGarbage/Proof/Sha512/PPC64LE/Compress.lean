@@ -14,6 +14,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.Semantics
+import Mathlib.Data.List.Nodup
 
 /-!
 # SHA-512 compression function on PPC64LE: the whole function

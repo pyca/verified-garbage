@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBody
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundRun
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # FFDH parameter generation on x86-64: the uniform Miller–Rabin policy loop -/
 

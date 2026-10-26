@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.B0
 public import VerifiedGarbage.Proof.AesCcm.Ctr
 import VerifiedGarbage.Proof.Cmac.Frame
-public import Mathlib.Data.List.Induction
+import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Impl.AesCcm.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env

@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
 import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

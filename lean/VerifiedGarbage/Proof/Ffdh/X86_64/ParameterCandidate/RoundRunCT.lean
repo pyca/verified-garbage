@@ -14,6 +14,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundStatus
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundCall
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # FFDH parameter generation on x86-64: timing of an optional sampled round -/
 
