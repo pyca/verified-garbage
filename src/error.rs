@@ -76,6 +76,8 @@ mod tests {
             crate::rc4::Error::InvalidKeyLength,
             crate::triple_des_ecb::Error::IncompleteBlock,
             crate::triple_des_ecb::Error::InvalidKeyLength,
+            crate::x25519::Error::Randomness,
+            crate::x25519::Error::ZeroSharedSecret,
         );
     }
 
