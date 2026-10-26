@@ -11,7 +11,7 @@
 //! `vg_pbkdf2_hmac_sha256_avx2` with AVX2. AArch64 selects
 //! `vg_pbkdf2_hmac_sha256_sha2` when the SHA-256 instructions are available.
 //!
-//! On ARMv7, x86 and PPC64LE, the whole derivation is the one for every streaming hash
+//! On ARMv7, x86, PPC64LE and RISC-V, the whole derivation is the one for every streaming hash
 //! function, calling SHA-256's verified streaming functions, HMAC-SHA-256's
 //! `init` and `finalize` and `vg_pbkdf2_hmac_sha256_iterate` (contract
 //! `VG.Spec.Hmac.Instance.iterateContract`), the one PBKDF2 iteration for
@@ -23,7 +23,8 @@
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::pbkdf2_sha256::vg_pbkdf2_hmac_sha256;
