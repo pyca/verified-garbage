@@ -12,19 +12,21 @@ open VG VG.AArch64 VG.Impl.Argon2.AArch64
 uses it; rotations never read that temporary. -/
 inductive Op where
   | add (a b : Reg)
+  | addOnce (a b : Reg)
   | rotate (d a : Reg) (n : Nat)
   deriving DecidableEq
 
 def lower : Op → List Instr
   | .add a b => addMul a b .x17
+  | .addOnce a b => addMulOnce a b .x17
   | .rotate d a n => [.logic .eor .x d d a, .ror .x d d n]
 
 def Good : Op → Prop
-  | .add a b => a ≠ .x17 ∧ b ≠ .x17
+  | .add a b | .addOnce a b => a ≠ .x17 ∧ b ≠ .x17
   | .rotate d a n => d ≠ .x17 ∧ a ≠ .x17 ∧ 1 ≤ n ∧ n ≤ 63
 
 def step (f : Reg → BitVec 64) : Op → Reg → BitVec 64
-  | .add a b => fun r => if r = a then Spec.Argon2.addMul (f a) (f b) else f r
+  | .add a b | .addOnce a b => fun r => if r = a then Spec.Argon2.addMul (f a) (f b) else f r
   | .rotate d a n => fun r => if r = d then (f d ^^^ f a).rotateRight n else f r
 
 def run (ops : List Op) (f : Reg → BitVec 64) := ops.foldl step f
@@ -39,6 +41,14 @@ theorem one_ok (op : Op) (hg : Good op) (f : Reg → BitVec 64) (s : State)
   cases op with
   | add a b =>
     refine (addMul_ok hg.1 hg.2 s).mono ?_
+    rintro t ⟨ha, hk, hm, hrd, hwr, hv⟩
+    refine ⟨?_, hm, hrd, hwr, hv⟩
+    · intro r hrt
+      by_cases h : r = a
+      · subst r; simpa only [step, ite_true, hr _ hg.1, hr _ hg.2] using ha
+      · simpa only [step, h, ite_false] using (hk r h hrt).trans (hr r hrt)
+  | addOnce a b =>
+    refine (addMulOnce_ok hg.1 hg.2 s).mono ?_
     rintro t ⟨ha, hk, hm, hrd, hwr, hv⟩
     refine ⟨?_, hm, hrd, hwr, hv⟩
     · intro r hrt
@@ -80,7 +90,7 @@ def Expr.eval (f : Reg → BitVec 64) : Expr → BitVec 64
   | .rotate d a n => (d.eval f ^^^ a.eval f).rotateRight n
 
 def symStep (f : Reg → Expr) : Op → Reg → Expr
-  | .add a b => fun r => if r = a then .add (f a) (f b) else f r
+  | .add a b | .addOnce a b => fun r => if r = a then .add (f a) (f b) else f r
   | .rotate d a n => fun r => if r = d then .rotate (f d) (f a) n else f r
 
 def symRun (ops : List Op) (f : Reg → Expr) := ops.foldl symStep f
@@ -102,10 +112,13 @@ def gbOps (q : Reg × Reg × Reg × Reg) : List Op :=
   let (a,b,c,d) := q
   halfOps a b c d 32 24 ++ halfOps a b c d 16 63
 
+def chainOp (i : Nat) (a b : Reg) : Op :=
+  if i % 2 = 1 then .addOnce a b else .add a b
+
 def halfGroup (qs : List (Reg × Reg × Reg × Reg)) (r1 r2 : Nat) : List Op :=
-  qs.map (fun (a,b,_,_) => .add a b) ++
+  qs.zipIdx.map (fun ((a,b,_,_),i) => chainOp i a b) ++
   qs.map (fun (a,_,_,d) => .rotate d a r1) ++
-  qs.map (fun (_,_,c,d) => .add c d) ++
+  qs.zipIdx.map (fun ((_,_,c,d),i) => chainOp i c d) ++
   qs.map (fun (_,b,c,_) => .rotate b c r2)
 
 def groupOps (qs : List (Reg × Reg × Reg × Reg)) : List Op :=
@@ -158,9 +171,18 @@ theorem same_values (f : Reg → BitVec 64) (r : Reg) :
   rw [hc]
   exact same_group_values true _ r
 
+theorem lower_chainOp (i : Nat) (a b : Reg) :
+    lower (chainOp i a b) = chainAdd i a b := by
+  unfold chainOp chainAdd
+  split <;> rfl
+
+theorem lower_rotate (d a : Reg) (n : Nat) :
+    lower (.rotate d a n) = [.logic .eor .x d d a, .ror .x d d n] := rfl
+
 theorem lower_halfGroup (qs : List (Reg × Reg × Reg × Reg)) (r1 r2 : Nat) :
     (halfGroup qs r1 r2).flatMap lower = halfGBs qs r1 r2 := by
-  simp [halfGroup, halfGBs, lower, List.flatMap_append, List.flatMap_map]
+  simp only [halfGroup, halfGBs, List.flatMap_append, List.flatMap_map,
+    lower_chainOp, lower_rotate]
 
 theorem lower_gbOps (q : Reg × Reg × Reg × Reg) :
     (gbOps q).flatMap lower = gb q.1 q.2.1 q.2.2.1 q.2.2.2 .x17 := by

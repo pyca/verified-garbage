@@ -55,6 +55,30 @@ theorem addMul_ok {a b t : Reg} (hat : a ≠ t) (hbt : b ≠ t) (s : State) :
   rw [RegUpd.gpr_write_of_ne _ _ _ h1, RegUpd.gpr_write_of_ne _ _ _ h1,
     RegUpd.gpr_write_of_ne _ _ _ h2]
 
+theorem addMulOnce_value (a b : BitVec 64) :
+    a + b + (a.setWidth 32).setWidth 64 * (b.setWidth 32).setWidth 64 +
+      (a.setWidth 32).setWidth 64 * (b.setWidth 32).setWidth 64 =
+      Spec.Argon2.addMul a b := by
+  rw [low32, low32, Spec.Argon2.addMul, BitVec.mul_assoc]
+  generalize (a &&& 0xffffffff) * (b &&& 0xffffffff) = p
+  grind
+
+/-- The single-product form has the same modular arithmetic and frame. -/
+theorem addMulOnce_ok {a b t : Reg} (hat : a ≠ t) (hbt : b ≠ t) (s : State) :
+    WP isa (.block (addMulOnce a b t)) s fun u =>
+      u.gpr a = Spec.Argon2.addMul (s.gpr a) (s.gpr b) ∧
+      (∀ r, r ≠ a → r ≠ t → u.gpr r = s.gpr r) ∧
+      u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.v = s.v := by
+  apply WP.of_runBlock
+  simp only [addMulOnce, runBlock_cons, runStep_some, runBlock_nil, exec, State.read,
+    RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ _ hat.symm, RegUpd.gpr_write_of_ne _ _ _ hat,
+    RegUpd.gpr_write_of_ne _ _ _ hbt, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.v_write,
+    Option.some.injEq, exists_eq_left', BitVec.setWidth_eq]
+  refine ⟨addMulOnce_value _ _, ?_, trivial, trivial, trivial, trivial⟩
+  intro r h1 h2
+  rw [RegUpd.gpr_write_of_ne _ _ _ h1, RegUpd.gpr_write_of_ne _ _ _ h1,
+    RegUpd.gpr_write_of_ne _ _ _ h1, RegUpd.gpr_write_of_ne _ _ _ h2]
+
 /-- A register XOR followed by one of GB's rotations. -/
 theorem xorRotate_ok {a d : Reg} (n : Nat)
     (hn : 1 ≤ n) (hn' : n ≤ 63) (s : State) :

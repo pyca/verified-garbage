@@ -26,6 +26,15 @@ open VG.AArch64
 product of the low halves to one operand, `t` to `b` and `a` to itself. -/
 def addMul (a b t : Reg) : List Instr := [.umaddl t a b b, .umaddl a a b a, .add .x a a t]
 
+/-- One low-half product with three additions. Interleaving this with the
+multiply-add form balances the multiplier and integer-add pipelines. -/
+def addMulOnce (a b t : Reg) : List Instr :=
+  [.umull t a b, .add .x a a b, .add .x a a t, .add .x a a t]
+
+/-- Alternate the two equivalent arithmetic forms among independent chains. -/
+def chainAdd (i : Nat) (a b : Reg) : List Instr :=
+  if i % 2 = 1 then addMulOnce a b .x17 else addMul a b .x17
+
 /-- Half of GB, parameterized by its two rotation counts. -/
 def halfGB (a b c d t : Reg) (r1 r2 : Nat) : List Instr :=
   addMul a b t ++
@@ -49,9 +58,9 @@ def gbOn (a b c d : Fin 16) : Prog isa := .block (gb (lane a) (lane b) (lane c) 
 /-- Four independent GB chains, advanced one addition or rotation stage at
 once. Every BlaMka step consumes `x17` before the next step reuses it. -/
 def halfGBs (qs : List (Reg × Reg × Reg × Reg)) (r1 r2 : Nat) : List Instr :=
-  qs.flatMap (fun (a, b, _, _) => addMul a b .x17) ++
+  qs.zipIdx.flatMap (fun ((a, b, _, _), i) => chainAdd i a b) ++
   qs.flatMap (fun (a, _, _, d) => [.logic .eor .x d d a, .ror .x d d r1]) ++
-  qs.flatMap (fun (_, _, c, d) => addMul c d .x17) ++
+  qs.zipIdx.flatMap (fun ((_, _, c, d), i) => chainAdd i c d) ++
   qs.flatMap (fun (_, b, c, _) => [.logic .eor .x b b c, .ror .x b b r2])
 
 def gbGroup (qs : List (Reg × Reg × Reg × Reg)) : Prog isa :=
