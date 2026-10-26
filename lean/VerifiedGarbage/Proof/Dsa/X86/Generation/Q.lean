@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+import Mathlib.Tactic.Set
 
 /-! # q from a seed: hashed, shaped, and tested -/
 

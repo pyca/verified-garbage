@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Util.CompileInductive
 
 /-!
 # The ABI of the curve functions on AArch64

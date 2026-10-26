@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
+import Mathlib.Tactic.SplitIfs
 
 /-! # Native FFDH parameter-generation initialization on PPC64LE: correctness, constant time -/
 

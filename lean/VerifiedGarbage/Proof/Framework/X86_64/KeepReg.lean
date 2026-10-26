@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import Mathlib.Util.CompileInductive
 
 /-!
 # Registers kept through SSE registers
