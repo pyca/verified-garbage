@@ -171,13 +171,11 @@ jobs:
       # The dependencies (aws-lc-sys, criterion, ...) are the same for every
       # configuration and shard of an architecture, and about a third of the
       # job; ci.yml's `rust` job saves them on main whenever the key changes.
-      - id: cache-key
-        run: echo "key=$(sh head/ci/bench_cache_key.sh head/bench)" >> "$GITHUB_OUTPUT"
-      - name: Restore the dependencies' build
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          path: bench-target
-          key: ${{ steps.cache-key.outputs.key }}
+          repository: C2SP/wycheproof
+          path: wycheproof
+          persist-credentials: false
       - name: Benchmark base and head
         env:
           MODULES: ${{ matrix.modules }}
@@ -191,9 +189,4 @@ jobs:
           OPENSSL: ${{ inputs.openssl && '--openssl' || '' }}
           OPENSSL_WITH_FEATURES: ${{ inputs.openssl_with_features && '--openssl-with-features' || '' }}
           IA32CAP: ${{ inputs.openssl_ia32cap }}
-        run: |
-          # OpenSSL and aws-lc read it; the library does not.
-          if [ -n "$IA32CAP" ]; then export OPENSSL_ia32cap="$IA32CAP"; fi
-          # The `openssl` crate needs Homebrew's OpenSSL on macOS.
-          if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
-          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL $OPENSSL_WITH_FEATURES
+        run: python3 head/ci/rsa_test_confirm.py
