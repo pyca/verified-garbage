@@ -103,7 +103,8 @@ RUN case "$(dpkg --print-architecture)" in \
 # big binaries (with llvm-strip; GNU strip breaks them), as the other runner
 # images do. Of llvm-tools, CI runs only llvm-cov and llvm-profdata, and
 # rustc links with the C compiler, but for x86-64 Linux, the lint image's
-# host, with rust-lld (through gcc-ld/ld.lld): empty the others, which were
+# host, and riscv64, whose job links with it (ci.yml), with rust-lld
+# (through gcc-ld/ld.lld): empty the others, which were
 # half of the compressed image (RISE's riscv64 runners, which keep no images,
 # pull it for every job at a few MB/s). Keep all files recorded in rustup's
 # component manifests, though: deleting even unused files prevents rustup
@@ -149,7 +150,7 @@ RUN components=llvm-tools && \
     for f in bin/*; do \
         case "${f#bin/}" in \
             llvm-cov|llvm-profdata) ;; \
-            rust-lld) if [ "$host" != x86_64-unknown-linux-gnu ]; then : > "$f"; fi ;; \
+            rust-lld) case "$host" in x86_64-*|riscv64*) ;; *) : > "$f" ;; esac ;; \
             *) if [ -f "$f" ]; then : > "$f"; fi ;; \
         esac; \
     done && \
