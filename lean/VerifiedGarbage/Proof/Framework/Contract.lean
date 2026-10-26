@@ -1,6 +1,7 @@
 module
 
-public import Mathlib.Tactic.CasesM
+public import Lean.Elab.Command
+public meta import Lean.Elab.Command
 public import Lean.Meta.Eqns
 public meta import Lean.Meta.Eqns
 public import VerifiedGarbage.Proof.Framework.Mem

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.KernelList
-public import Mathlib.Util.CompileInductive
+import Mathlib.Util.CompileInductive
 public import Lean.Elab.Tactic.Basic
 public meta import Lean.Elab.Tactic.Basic
 public import Lean.Meta.Eval

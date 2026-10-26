@@ -7,6 +7,7 @@ public import Batteries.Data.List.Basic
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+import Mathlib.Util.CompileInductive
 
 /-!
 # Taint tracking for PPC64LE, with public slots in the writable regions

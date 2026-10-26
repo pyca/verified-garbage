@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Aes.Blocks
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # CMAC: doubling a block in four 32-bit words
