@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
+public import VerifiedGarbage.Impl.Bignum.Arm.R2Normalized
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
 public import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
@@ -330,7 +331,7 @@ def clrTop (j : Nat) : List Instr := Rsa.Arm.Recover.clrTop j
 /-- The working space, `−c⁻¹`, `R² mod c` (array 4), `c`'s top words cleared,
 and the stride. -/
 def montA : Prog isa :=
-  seqs [.block montSet, setup, precomputeInverse, r2, .block (ctx ++ clrTop mBase), .block mont0, .block strideW]
+  seqs [.block montSet, setup, precomputeInverse, r2Public, .block (ctx ++ clrTop mBase), .block mont0, .block strideW]
 
 /-- `R mod c` (array 9, from `1 · R²`) and `c − R mod c` (array 10). -/
 def montB : Prog isa :=

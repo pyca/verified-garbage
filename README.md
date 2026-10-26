@@ -2563,7 +2563,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>✅ umaal</td>
+<td>✅ umaal; Normalized Montgomery setup for prime candidates</td>
 
 <td>✅ SHA extensions</td>
 
@@ -2609,7 +2609,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ umaal</td>
+<td>✅ umaal; Normalized Montgomery setup for prime candidates</td>
 
 <td>✅</td>
 

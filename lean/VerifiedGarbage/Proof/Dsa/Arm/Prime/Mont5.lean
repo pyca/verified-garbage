@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Mont1
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
-import VerifiedGarbage.Proof.Bignum.Arm.R2CT
+import VerifiedGarbage.Proof.Bignum.Arm.R2PublicCT
+import VerifiedGarbage.Proof.Bignum.Arm.R2Public
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Seqs
 import VerifiedGarbage.Proof.Rsa.Arm.RvMont4
@@ -91,14 +92,15 @@ theorem pinv_vp {E : State → Prop} : VP (SC P E) VG.Impl.Bignum.Arm.precompute
 theorem countFits {σ : State} (pre : In P σ) : 128 * P.w < 2 ^ 32 := by have := pre.w4; omega
 
 /-- `r2`. -/
-theorem r2_vp {E : State → Prop} : VP (SD P E) VG.Impl.Bignum.Arm.r2 (SE P E) := by
+theorem r2_vp {E : State → Prop} : VP (SD P E) VG.Impl.Bignum.Arm.r2Public (SE P E) := by
   refine VP.ofImp (p := 128 * P.w < 2 ^ 32) (fun σ s h => countFits h.1.2.pre) fun cf => ?_
-  refine VP.of_ct (fun σ₁ σ₂ => (r2_ct cf).mono (fun s t h => ⟨h.1.2.1, h.2.2.1, ?_⟩) fun _ _ _ => trivial)
+  refine VP.of_ct (fun σ₁ σ₂ => (r2Public_ct (M := P.cand) cf).mono (fun s t h =>
+    ⟨⟨h.1.2.1,h.1.2.2.trans h.1.1.2.pre.cand⟩,⟨h.2.2.1,h.2.2.2.trans h.2.1.2.pre.cand⟩,?_⟩) fun _ _ _ => trivial)
     fun σ s h => ?_
   · rw [h.1.1.2.sp, h.1.1.2.pre.sp, h.2.1.2.sp, h.2.1.2.pre.sp]
   obtain ⟨⟨e, k⟩, ar, n0⟩ := h
   have pre := k.pre
-  refine WP.mono (r2_ok s ar cf) fun t ⟨dl, v4, n0', f, rest⟩ => ⟨⟨⟨e, ?_⟩, ?_, by rw [n0', n0]⟩, by rw [v4, n0]⟩
+  refine WP.mono (r2Public_ok s ar cf) fun t ⟨dl, v4, n0', f, rest⟩ => ⟨⟨⟨e, ?_⟩, ?_, by rw [n0', n0]⟩, by rw [v4, n0]⟩
   · have kp := keep_of_frameM pre f
     refine k.core kp (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega) (by simp) rest.sp
       rest.rd rest.wr (k.arrs_keep kp (fun j hj hj' => by

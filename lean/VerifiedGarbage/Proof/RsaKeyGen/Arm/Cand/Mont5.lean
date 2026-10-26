@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont1
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
-import VerifiedGarbage.Proof.Bignum.Arm.R2CT
+import VerifiedGarbage.Proof.Bignum.Arm.R2ShapeCT
+import VerifiedGarbage.Proof.Bignum.Arm.R2Public
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Seqs
 import VerifiedGarbage.Proof.Rsa.Arm.RvMont4
@@ -88,15 +89,28 @@ theorem pinv_vp {E : State → Prop} : VP (SC P E) VG.Impl.Bignum.Arm.precompute
 
 theorem countFits {σ : State} (pre : In P σ) : 128 * P.w < 2 ^ 32 := by have := pre.w4; omega
 
+theorem cv_normalized {σ : State} (pre : In P σ) : 2 ^ (64*P.w-1) < cv P σ := by
+  have bound := (cv_shape pre).2.1
+  have width : 8*P.L=64*P.w := by have := pre.L_eq; omega
+  rw [width] at bound
+  have power : 2 ^ (64*P.w-1) = 2 * 2 ^ (64*P.w-2) := by
+    rw [show 64*P.w-1=(64*P.w-2)+1 by have := pre.w4; omega, Nat.pow_add]
+    omega
+  have pos := Nat.two_pow_pos (64*P.w-2)
+  omega
+
 /-- `r2`. -/
-theorem r2_vp {E : State → Prop} : VP (SD P E) VG.Impl.Bignum.Arm.r2 (SE P E) := by
+theorem r2_vp {E : State → Prop} : VP (SD P E) VG.Impl.Bignum.Arm.r2Public (SE P E) := by
   refine VP.ofImp (p := 128 * P.w < 2 ^ 32) (fun σ s h => countFits h.1.2.pre) fun cf => ?_
-  refine VP.of_ct (fun σ₁ σ₂ => (r2_ct cf).mono (fun s t h => ⟨h.1.2.1, h.2.2.1, ?_⟩) fun _ _ _ => trivial)
-    fun σ s h => ?_
-  · rw [h.1.1.2.sp, h.1.1.2.pre.sp, h.2.1.2.sp, h.2.1.2.pre.sp]
+  refine VP.of_ct (fun σ₁ σ₂ s t tr1 tr2 u v h e1 e2 => ?_) fun σ s h => ?_
+  · have shape : (2 ^ (64*P.w-1)<cv P σ₁) = (2 ^ (64*P.w-1)<cv P σ₂) := by
+      simp only [cv_normalized h.1.1.2.pre,cv_normalized h.2.1.2.pre]
+    exact ⟨(r2Shape_ct cf shape) s t tr1 tr2 u v
+      ⟨⟨h.1.2.1,h.1.2.2⟩,⟨h.2.2.1,h.2.2.2⟩,
+        by rw [h.1.1.2.sp,h.1.1.2.pre.sp,h.2.1.2.sp,h.2.1.2.pre.sp]⟩ e1 e2 |>.1,trivial⟩
   obtain ⟨⟨e, k⟩, ar, n0⟩ := h
   have pre := k.pre
-  refine WP.mono (r2_ok s ar cf) fun t ⟨dl, v4, n0', f, rest⟩ => ⟨⟨⟨e, ?_⟩, ?_, by rw [n0', n0]⟩, by rw [v4, n0]⟩
+  refine WP.mono (r2Public_ok s ar cf) fun t ⟨dl, v4, n0', f, rest⟩ => ⟨⟨⟨e, ?_⟩, ?_, by rw [n0', n0]⟩, by rw [v4, n0]⟩
   · have kp := keep_of_frameM pre f
     refine k.core kp (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega) (by simp) rest.sp
       rest.rd rest.wr (k.arrs_keep kp (fun j hj hj' => by

@@ -3,3 +3,4 @@ family = "RSA"
 specs = ["RsaKeyGen", "MillerRabin"]
 modules = ["src/rsa_keygen.rs"]
 asm = ["rsa_keygen", "rsa_mont"]
+optimized = { arm = "Normalized Montgomery setup for prime candidates" }

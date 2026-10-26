@@ -3,3 +3,5 @@ family = "DSA"
 specs = ["Dsa"]
 modules = ["src/dsa.rs"]
 asm = ["dsa"]
+
+optimized = { arm = "Normalized Montgomery setup for prime candidates" }
