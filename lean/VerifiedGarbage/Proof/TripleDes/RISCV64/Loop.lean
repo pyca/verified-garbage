@@ -53,7 +53,7 @@ structure LoopInv (keys : DesSchedule) (direction : Direction) (base : Addr)
   wr : s.wr = origin.wr
   sp : s.sp = origin.sp
   regs : ∀ q ∈ roundStepKept, s.gpr q = origin.gpr q
-  frame : Frame [spillRegion origin] origin.mem s.mem
+  mem : s.mem = origin.mem
 
 structure LoopPost (keys : DesSchedule) (direction : Direction)
     (origin : State) (v : BitVec 32 × BitVec 32) (s : State) : Prop where
@@ -63,48 +63,35 @@ structure LoopPost (keys : DesSchedule) (direction : Direction)
   wr : s.wr = origin.wr
   sp : s.sp = origin.sp
   regs : ∀ q ∈ roundStepKept, s.gpr q = origin.gpr q
-  frame : Frame [spillRegion origin] origin.mem s.mem
+  mem : s.mem = origin.mem
 
-/-- What the rounds need of the pass's keys: readable, aligned, apart from
-the spills, and the pass's round keys. -/
+/-- What the rounds need of the pass's keys: readable, aligned, and the
+pass's round keys. -/
 structure KeysAt (keys : DesSchedule) (direction : Direction) (base : Addr) (s : State) :
     Prop where
   read : ∀ j < 16, InRegions (s.rd ++ s.wr) (keyAddr base direction j) 8
   al : ∀ j < 16, (keyAddr base direction j).toNat % 8 = 0
-  sep : ∀ j < 16, (⟨keyAddr base direction j, 8⟩ : Region).Disjoint (spillRegion s)
   keys : ∀ j < 16, (s.mem.readW (keyAddr base direction j) 64).setWidth 48 =
     roundKey keys direction j
 
 theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
     (origin : State) (v : BitVec 32 × BitVec 32)
-    (hok : Ok sboxCfg origin) (hkeys : KeysAt keys direction base origin)
+    (hready : FeiReady origin) (hkeys : KeysAt keys direction base origin)
     (n : Nat) (s : State) (hs : LoopInv keys direction base origin v n s) :
     WP isa (.block (roundBody ++ roundAdvance)) s (fun s' =>
       (isa.eval (.nonzero cnt) s' = some false ∧ LoopPost keys direction origin v s') ∨
       (isa.eval (.nonzero cnt) s' = some true ∧ ∃ m < n, LoopInv keys direction base origin v m s')) := by
   have hj : 16 - n < 16 := by omega_using [hs.positive]
-  have hwork : spillRegion s = spillRegion origin := by
-    simp only [spillRegion, hs.regs sb (by decide)]
-  have hokS : Ok sboxCfg s := hok.congr
-    (hs.regs sb (by decide)) (hs.regs sb (by decide)) hs.rd hs.wr
+  have hreadyS : FeiReady s := hready.congr (hs.regs sb (by decide)) hs.wr hs.mem
   have hreadS : InRegions (s.rd ++ s.wr) (s.gpr kp) 8 := by
     rw [hs.rd, hs.wr, hs.pointer]; exact hkeys.read _ hj
   have halS : (s.gpr kp).toNat % 8 = 0 := by rw [hs.pointer]; exact hkeys.al _ hj
-  have hsepS : (⟨s.gpr kp, 8⟩ : Region).Disjoint (spillRegion s) := by
-    rw [hs.pointer, hwork]
-    exact hkeys.sep _ hj
   have hk : (s.mem.readW (s.gpr kp) 64).setWidth 48 = roundKey keys direction (16 - n) := by
-    rw [hs.pointer]
-    have hmem := hs.frame.readW (a := keyAddr base direction (16 - n)) (w := 64)
-      (r := ⟨keyAddr base direction (16 - n), 8⟩)
-      (Region.contains_self _ _) (fun q hq => by
-        obtain rfl := List.mem_singleton.mp hq
-        exact hkeys.sep _ hj) (by decide)
-    exact (congrArg (BitVec.setWidth 48) hmem).trans (hkeys.keys _ hj)
-  obtain ⟨s', run, left, right, ptr, count, flag, rd, wr, sp, regs, frame⟩ :=
+    rw [hs.pointer, hs.mem]
+    exact hkeys.keys _ hj
+  obtain ⟨s', run, left, right, ptr, count, flag, rd, wr, sp, mem, regs⟩ :=
     roundStep_ok s _ _ (s.mem.readW (s.gpr kp) 64) n hs.positive
-      (by omega_using [hs.bounded]) hs.left hs.right rfl hokS hreadS halS hsepS
-      hs.counter
+      (by omega_using [hs.bounded]) hs.left hs.right rfl hreadyS hreadS halS hs.counter
   have hidx : 16 - (n - 1) = 16 - n + 1 := by
     omega_using [hs.positive, hs.bounded]
   have hleft : s'.gpr lReg = (roundPrefix keys direction (16 - (n - 1)) v).1.setWidth 64 := by
@@ -118,9 +105,7 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
         Spec.TripleDes.roundFunction (roundPrefix keys direction (16 - n) v).2 key).setWidth 64) hk
     exact (right.trans hval).trans (congrArg (fun pair => pair.2.setWidth 64)
       (VG.Proof.TripleDes.roundPrefix_succ keys direction (16 - n) v).symm)
-  have hframe : Frame [spillRegion origin] origin.mem s'.mem := by
-    rw [hwork] at frame
-    exact hs.frame.trans frame
+  have hframe : s'.mem = origin.mem := mem.trans hs.mem
   have hregs : ∀ q ∈ roundStepKept, s'.gpr q = origin.gpr q :=
     fun q hq => (regs q hq).trans (hs.regs q hq)
   refine WP.of_runBlock ⟨s', run, ?_⟩
@@ -142,7 +127,7 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
 /-- The complete sixteen-round loop, in either key order. -/
 theorem roundsLoop_ok (keys : DesSchedule) (direction : Direction) (base : Addr)
     (origin : State) (v : BitVec 32 × BitVec 32)
-    (hok : Ok sboxCfg origin)
+    (hready : FeiReady origin)
     (hl : origin.gpr lReg = v.1.setWidth 64) (hr : origin.gpr rReg = v.2.setWidth 64)
     (hptr : origin.gpr kp = keyAddr base direction 0)
     (hcount : origin.gpr cnt = BitVec.ofNat 64 16)
@@ -153,9 +138,9 @@ theorem roundsLoop_ok (keys : DesSchedule) (direction : Direction) (base : Addr)
   apply WP.loop (M := isa) (body := .block (roundBody ++ roundAdvance))
     (c := .nonzero cnt) (Q := LoopPost keys direction origin v)
     (LoopInv keys direction base origin v)
-    (loopStep keys direction base origin v hok hkeys)
+    (loopStep keys direction base origin v hready hkeys)
     16 origin
   exact ⟨by decide, by decide, hl, hr, hcount, hptr, hstep, rfl, rfl, rfl,
-    fun _ _ => rfl, Frame.refl _ _⟩
+    fun _ _ => rfl, rfl⟩
 
 end VG.Proof.TripleDes.RISCV64

@@ -1,11 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.RISCV64.SboxTable
+import VerifiedGarbage.Proof.TripleDes.RISCV64.FeistelLit
 public import VerifiedGarbage.Impl.TripleDes.RISCV64.ExpandKey
 public import VerifiedGarbage.Impl.TripleDes.RISCV64.Ecb
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Taint
-meta import VerifiedGarbage.Proof.TripleDes.RISCV64.SboxTable
+meta import VerifiedGarbage.Proof.TripleDes.RISCV64.FeistelLit
 meta import VerifiedGarbage.Impl.TripleDes.RISCV64.ExpandKey
 meta import VerifiedGarbage.Impl.TripleDes.RISCV64.Ecb
 meta import VerifiedGarbage.Proof.Framework.Lit

@@ -36,11 +36,11 @@ abbrev wAt (D : Addr) (b : Nat) : Addr := D + BitVec.ofNat 64 (8 * b)
 `n` blocks at `D`, writable and apart from it. -/
 structure Env (B D : Addr) (n : Nat) (ws : List Region) : Prop where
   al : B.toNat % 16 = 0
-  fit : B.toNat + 640 ≤ 2 ^ 64
-  frame : (⟨B, 640⟩ : Region) ∈ ws
+  fit : B.toNat + 944 ≤ 2 ^ 64
+  frame : (⟨B, 944⟩ : Region) ∈ ws
   data : (⟨D, 8 * n⟩ : Region) ∈ ws
   dataFit : D.toNat + 8 * n ≤ 2 ^ 64
-  sep : (⟨D, 8 * n⟩ : Region).Disjoint ⟨B, 640⟩
+  sep : (⟨D, 8 * n⟩ : Region).Disjoint ⟨B, 944⟩
 
 /-- After `j` blocks, from `s₀`, before the loop. -/
 structure EInv (k : Schedule) (d : Direction) (B D : Addr) (n : Nat) (s₀ : State) (j : Nat)
@@ -79,24 +79,24 @@ theorem step_ok {k : Schedule} {d : Direction} {B D : Addr} {n : Nat} {s₀ : St
   have ptr₁ : u₁.gpr .s2 = wAt D j := (h₁.regs .s2 (by decide)).trans I.ptr
   refine wp_addi (by decide) fun u₂ h₂ => wp_subi (by decide) fun u₃ h₃ => WP.block_nil ?_
   have hb₁ : u₁.gpr sb = B := (h₁.regs sb (by decide)).trans I.b
-  have hfr : Frame [⟨wAt D j, 8⟩, ⟨B + BitVec.ofNat 64 56, 192⟩] u.mem u₁.mem := by
+  have hfr : Frame [⟨wAt D j, 8⟩, ⟨B + BitVec.ofNat 64 56, 504⟩] u.mem u₁.mem := by
     have h := h₁.frame
     simp only [I.ptr, BitVec.add_zero, workRegion, I.b] at h
     exact h
   have m₃ : u₃.mem = u₁.mem := by rw [h₃.mem, h₂.mem]
   have frameOut : ∀ {R : Region}, Region.Sub R ⟨D, 8 * n⟩ → R.Disjoint ⟨wAt D j, 8⟩ →
-      ∀ r ∈ [(⟨wAt D j, 8⟩ : Region), ⟨B + BitVec.ofNat 64 56, 192⟩], R.Disjoint r :=
+      ∀ r ∈ [(⟨wAt D j, 8⟩ : Region), ⟨B + BitVec.ofNat 64 56, 504⟩], R.Disjoint r :=
     fun hR hj r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hj
       · exact (E.sep.sub_left hR).sub_right (Offset.sub_base _ (by decide))
-  have slotOut : ∀ i < 4, ∀ r ∈ [(⟨wAt D j, 8⟩ : Region), ⟨B + BitVec.ofNat 64 56, 192⟩],
+  have slotOut : ∀ i < 4, ∀ r ∈ [(⟨wAt D j, 8⟩ : Region), ⟨B + BitVec.ofNat 64 56, 504⟩],
       Region.Disjoint ⟨slotA B i, 8⟩ r := fun i hi r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ((E.sep.sub_left hsub).sub_right
-        (Offset.sub_base B (d := 8 * i) (n := 8) (k := 640) (by omega))).symm
+        (Offset.sub_base B (d := 8 * i) (n := 8) (k := 944) (by omega))).symm
     · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)
   refine ⟨⟨by omega, ?_, ?_, ?_, ?_, fun r hr h2 h3 => ?_, ?_, ?_, ?_, fun i hi => ?_,
     fun b hb => ?_, fun b h1 h2 => ?_⟩, ?_⟩

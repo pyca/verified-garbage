@@ -11,13 +11,16 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+public import VerifiedGarbage.Impl.TripleDes.RISCV64.Feistel
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # A block
 
 `block_ok`: `block d dp doff` replaces the block at `doff(dp)` with its
 encryption (or decryption) under the schedules' copy in the frame at `sb`,
-writing only the block and the frame's slots 7–30, and keeps the registers
+writing only the block and the frame's slots 7–69, and keeps the registers
 a caller expects preserved, `a0` and `ra`.
 -/
 
@@ -45,16 +48,17 @@ theorem blockResult_core (keys : Schedule) (direction : Direction) (b : Block) :
   · exact (VG.Proof.TripleDes.encryptBlock_eq_cores keys b).symm
   · exact (VG.Proof.TripleDes.decryptBlock_eq_cores keys b).symm
 
-/-- The frame's slots 7–30: the saved registers and the spills. -/
-def workRegion (s : State) : Region := ⟨s.gpr sb + BitVec.ofNat 64 56, 192⟩
+/-- The frame's slots 7–69: the saved registers and the round function's
+constants. -/
+def workRegion (s : State) : Region := ⟨s.gpr sb + BitVec.ofNat 64 56, 504⟩
 
-/-- What the block needs: the block at `doff(dp)` and the frame of 80
+/-- What the block needs: the block at `doff(dp)` and the frame of 118
 slots at `sb`, with the schedules' copy from byte `keyOff` on. -/
 structure BlockPre (k : Schedule) (dp : Reg) (doff : Nat) (s : State) : Prop where
   dpKept : dp ∈ passKept
   doffLt : doff + 8 ≤ 2048
   al : (s.gpr sb).toNat % 8 = 0
-  wr : ∀ o < 80, InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * o)) 8
+  wr : ∀ o < 118, InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * o)) 8
   keys : Spec.TripleDes.scheduleAt s.mem (s.gpr sb + BitVec.ofNat 64 keyOff) = k
   data : InRegions s.wr (s.gpr dp + BitVec.ofNat 64 doff) 8
   sep : (⟨s.gpr dp + BitVec.ofNat 64 doff, 8⟩ : Region).Disjoint (workRegion s)
@@ -77,33 +81,30 @@ structure BlockPost (k : Schedule) (d : Direction) (dp : Reg) (doff : Nat) (s t 
 theorem savedSlots_fits : Spill.Fits savedSlots := by decide
 theorem savedSlots_restorable : Spill.Restorable sb savedSlots := by decide
 
-theorem savedSlots_in : ∀ p ∈ savedSlots, 56 ≤ p.2 ∧ p.2 + 8 ≤ 56 + 64 := by decide
+theorem savedSlots_in : ∀ p ∈ savedSlots, 56 ≤ p.2 ∧ p.2 + 8 ≤ 56 + 48 := by decide
 
 /-- A word of the frame, `8 o` bytes on. -/
 theorem slot_eq (B : Addr) (o : Nat) : B + BitVec.ofNat 64 (8 * o) = wordAddr B o := rfl
 
 /-- The schedules' copy, for the rounds. -/
 theorem keysAt_of {k : Schedule} {s : State} (hal : (s.gpr sb).toNat % 8 = 0)
-    (hwr : ∀ o < 80, InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * o)) 8)
+    (hwr : ∀ o < 118, InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * o)) 8)
     (hk : Spec.TripleDes.scheduleAt s.mem (s.gpr sb + BitVec.ofNat 64 keyOff) = k)
     (c : Nat) (hc : c < 3) (d : Direction) :
     KeysAt (Spec.TripleDes.componentSchedule k c) d
       (componentBase (s.gpr sb + BitVec.ofNat 64 keyOff) c) s := by
   have haddr : ∀ j < 16, keyAddr (componentBase (s.gpr sb + BitVec.ofNat 64 keyOff) c) d j =
-      s.gpr sb + BitVec.ofNat 64 (8 * (32 + 16 * c + (if d = .encrypt then j else 15 - j))) := by
+      s.gpr sb + BitVec.ofNat 64 (8 * (70 + 16 * c + (if d = .encrypt then j else 15 - j))) := by
     intro j hj
     simp only [keyAddr, componentBase, keyOff, Offset.add_ofNat_add_ofNat]
     exact congrArg (fun n => s.gpr sb + BitVec.ofNat 64 n) (by split <;> omega)
   have hj' : ∀ j < 16, (if d = .encrypt then j else 15 - j) < 16 := fun j hj => by split <;> omega
-  refine ⟨fun j hj => ?_, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩
+  refine ⟨fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩
   · rw [haddr j hj]
     have := hj' j hj
-    obtain ⟨r, hr, hc'⟩ := hwr (32 + 16 * c + (if d = .encrypt then j else 15 - j)) (by omega)
+    obtain ⟨r, hr, hc'⟩ := hwr (70 + 16 * c + (if d = .encrypt then j else 15 - j)) (by omega)
     exact ⟨r, List.mem_append_right _ hr, hc'⟩
   · rw [haddr j hj]; exact Spill.al8 hal (by omega)
-  · rw [haddr j hj]
-    have := hj' j hj
-    exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
   · rw [haddr j hj]
     have h := VG.Proof.TripleDes.componentSchedule_readW s.mem
       (s.gpr sb + BitVec.ofNat 64 keyOff) c (if d = .encrypt then j else 15 - j) hc (hj' j hj)
@@ -113,20 +114,12 @@ theorem keysAt_of {k : Schedule} {s : State} (hal : (s.gpr sb).toNat % 8 = 0)
     exact congrArg (fun n => (s.mem.readW (s.gpr sb + BitVec.ofNat 64 n) 64).setWidth 48)
       (by simp only [keyOff]; omega)
 
-theorem sboxCfg_ok {s : State} (hal : (s.gpr sb).toNat % 8 = 0)
-    (hwr : ∀ o < 80, InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * o)) 8) : Ok sboxCfg s where
-  slotIn k hk := hwr k (by simp only [sboxCfg] at hk; omega)
-  extIn k hk := by simp [sboxCfg] at hk
-  baseAl _ := hal
-  extAl h := by simp [sboxCfg] at h
-  slots := by decide
-  sep k _ j hj := by simp [sboxCfg] at hj
-
 theorem ready_of {k : Schedule} {s : State} (hal : (s.gpr sb).toNat % 8 = 0)
-    (hwr : ∀ o < 80, InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * o)) 8)
-    (hk : Spec.TripleDes.scheduleAt s.mem (s.gpr sb + BitVec.ofNat 64 keyOff) = k) :
+    (hwr : ∀ o < 118, InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * o)) 8)
+    (hk : Spec.TripleDes.scheduleAt s.mem (s.gpr sb + BitVec.ofNat 64 keyOff) = k)
+    (hc : ConstsAt s) :
     Ready (Spec.TripleDes.componentSchedule k) (s.gpr sb + BitVec.ofNat 64 keyOff) s :=
-  ⟨sboxCfg_ok hal hwr, rfl, fun c hc d => keysAt_of hal hwr hk c hc d⟩
+  ⟨⟨hal, fun o ho => hwr o (by omega), hc⟩, rfl, fun c hc d => keysAt_of hal hwr hk c hc d⟩
 
 /-- IP of the block at `doff(dp)` in the halves. -/
 theorem blockLoad_ok (dp : Reg) (doff : Nat) (hdp : dp ∈ passKept) (ho : doff + 8 ≤ 2048)

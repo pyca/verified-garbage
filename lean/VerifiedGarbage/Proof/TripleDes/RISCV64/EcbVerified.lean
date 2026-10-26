@@ -24,9 +24,9 @@ public import VerifiedGarbage.Proof.TripleDes.RISCV64.EcbLoop
 /-!
 # Triple DES ECB on RISC-V meets its contract
 
-The proof is written against `ecbC`, which states the frame of 640 bytes
+The proof is written against `ecbC`, which states the frame of 944 bytes
 below the stack pointer, and moved to the shared contracts of
-`Spec/TripleDes/Contract.lean` with `stack := 640`.
+`Spec/TripleDes/Contract.lean` with `stack := 944`.
 -/
 
 @[expose] public section
@@ -41,10 +41,10 @@ def ecbC (d : Direction) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .a0, 384⟩
     let data : Region := ⟨s.gpr .a1, 8 * (s.gpr .a2).toNat⟩
-    let stack : Region := ⟨s.sp - 640, 640⟩
+    let stack : Region := ⟨s.sp - 944, 944⟩
     s.rd = [key] ∧ s.wr = [data] ∧ key.Disjoint data ∧
       (s.gpr .a1).toNat + 8 * (s.gpr .a2).toNat ≤ 2 ^ 64 ∧
-      s.sp.toNat % 16 = 0 ∧ 640 ≤ s.sp.toNat ∧ stack.Disjoint key ∧ stack.Disjoint data
+      s.sp.toNat % 16 = 0 ∧ 944 ≤ s.sp.toNat ∧ stack.Disjoint key ∧ stack.Disjoint data
   post s s' :=
     Spec.TripleDes.blocksAt s'.mem (s.gpr .a1) (s.gpr .a2).toNat =
       Spec.TripleDes.ecb (Spec.TripleDes.scheduleAt s.mem (s.gpr .a0)) d
@@ -94,14 +94,14 @@ def ecbSat : State where
   wr := [⟨0x3000, 0⟩]
 
 theorem encrypt_verified :
-    Verified RISCV64.target Ecb.encrypt (Spec.TripleDes.ecbEncryptContract RISCV64.abi 640) := by
+    Verified RISCV64.target Ecb.encrypt (Spec.TripleDes.ecbEncryptContract RISCV64.abi 944) := by
   refine Verified.of_correct (k := ecbC .encrypt) (ecb_ok .encrypt) encrypt_ct ?_
   contract_implies [Spec.TripleDes.ecbEncryptContract, Spec.TripleDes.ecbContract,
     Spec.TripleDes.ecbSig, Spec.TripleDes.ecbPost, RISCV64.abi, RISCV64.argRegs, ecbC] [ecbSat]
     using ecbSat
 
 theorem decrypt_verified :
-    Verified RISCV64.target Ecb.decrypt (Spec.TripleDes.ecbDecryptContract RISCV64.abi 640) := by
+    Verified RISCV64.target Ecb.decrypt (Spec.TripleDes.ecbDecryptContract RISCV64.abi 944) := by
   refine Verified.of_correct (k := ecbC .decrypt) (ecb_ok .decrypt) decrypt_ct ?_
   contract_implies [Spec.TripleDes.ecbDecryptContract, Spec.TripleDes.ecbContract,
     Spec.TripleDes.ecbSig, Spec.TripleDes.ecbPost, RISCV64.abi, RISCV64.argRegs, ecbC] [ecbSat]
