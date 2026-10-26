@@ -181,7 +181,7 @@ theorem sat_consts : ConstsOk TrialTable32.consts 400 satState := by
   have held := satMem_held
   rw [consts_eq]
   generalize TrialTable32.packed = W at hl held ⊢
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
   · rw [constRegs, Abi.constRegions_cons, Abi.constRegions_nil, hl]; rfl
   · intro c hc
     simp only [List.mem_singleton] at hc
@@ -199,6 +199,11 @@ theorem sat_consts : ConstsOk TrialTable32.consts 400 satState := by
       simp only [stackBelow, List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr
       exact Region.disjoint_of_sep (by decide)
+  · rw [constRegs, Abi.constRegions_cons, Abi.constRegions_nil, hl]
+    intro t ht
+    simp only [List.mem_singleton] at ht
+    subst ht
+    decide
 
 theorem sat : contract.pre satState := by
   unfold contract Spec.RsaKeyGen.candidateContract

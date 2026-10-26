@@ -151,7 +151,7 @@ theorem key_sat : (Spec.Cast5.expandKeyContract (abi.withConsts keyConsts)).pre 
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Spec.Cast5.validKey]
   subst e
   rw [hl]
-  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, rfl, rfl,
+  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, rfl, rfl,
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     by decide, by decide, by decide, by decide, by decide⟩
   change r ∈ [⟨0x2000, 128⟩, ⟨0x3000, 256⟩] at hr

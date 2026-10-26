@@ -158,6 +158,11 @@ theorem ConstsOk.fit (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
   dsimp only at h1
   rwa [abi_ptrBits, e] at h1
 
+/-- The table's address is a multiple of 64. -/
+theorem ConstsOk.aligned (h : ConstsOk K st s) (hc : (name, ws) ∈ K) : (symAddr s name).toNat % 64 = 0 :=
+  h.2.2.2 ⟨symAddr s name, 8 * ws.length⟩ (List.mem_map_of_mem (f := fun c =>
+    (⟨symAddr s c.1, 8 * c.2.length⟩ : Region)) hc)
+
 /-- An address in the table, from the static's address in 32 bits. -/
 theorem symAddr_add {x : BitVec 32} (h : (s.syms name).toNat + x.toNat < 2 ^ 32) :
     State.addr (s.syms name + x) = symAddr s name + BitVec.ofNat 64 x.toNat := by

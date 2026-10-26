@@ -65,7 +65,7 @@ private theorem precomputeSat_aux (W : List (BitVec 64)) (length : W.length=2218
     | (apply Region.disjoint_of_sep;decide +kernel)
     | (change Spec.Ffdh.domainValid 64 (Spec.Rsa.bytesAt (precomputeMem W) 0x3000 128)=true
        rw [precomputeSat_domain W];exact Sat.domain_valid)
- · refine ⟨?_,?_,?_⟩
+ · refine ⟨?_,?_,?_,?_⟩
    · simp only [precomputeSat,precomputeBase,constRegs,Abi.constRegions,List.map_cons,List.map_nil,length]
      rfl
    · intro c hc i hi
@@ -85,6 +85,11 @@ private theorem precomputeSat_aux (W : List (BitVec 64)) (length : W.length=2218
        all_goals apply Region.disjoint_of_sep;decide
      · intro q hq
        simp only [abi,stackBelow,List.not_mem_nil] at hq
+   · intro r hr
+     simp only [constRegs,Abi.constRegions,List.mem_map,List.mem_singleton] at hr
+     obtain ⟨c,rfl,rfl⟩:=hr
+     dsimp only [precomputeSat]
+     decide
 
 theorem precompute_shared_sat : ∃s,(Spec.Ffdh.generationPrecomputeContract (abi.withConsts Policy.tableConsts)).pre s :=
  precomputeSat_aux Policy.tableWords Policy.tableWords_length

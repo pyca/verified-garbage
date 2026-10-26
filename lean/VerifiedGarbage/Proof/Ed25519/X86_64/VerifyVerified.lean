@@ -1435,7 +1435,7 @@ theorem verify_implies :
     sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq, Abi.withConsts,
       Abi.constRegions, Abi.constsHeld, stackBelow, baseOddWords_length] at h
-    obtain ⟨hd, hheld, -, hdw, -, ht, hw, h1, h2, h3, -, -, -, r4, -, -, -, f4⟩ := h
+    obtain ⟨hd, hheld, -, hdw, -, -, ht, hw, h1, h2, h3, -, -, -, r4, -, -, -, f4⟩ := h
     refine ⟨?_, hw, h1, h2, h3, r4, f4, hdw _ (by rw [hw]; simp), hheld⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post s t _ h := by

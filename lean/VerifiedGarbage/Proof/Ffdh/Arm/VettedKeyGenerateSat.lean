@@ -78,7 +78,11 @@ private theorem satAux (W : List (BitVec 64)) (length : W.length = 2218) :
     dsimp only [stackArgAddr, stripConsts, State.withRegions, attemptSat, attemptBase]
     repeat' apply And.intro
     all_goals first | rfl | decide | (apply Region.disjoint_of_sep; decide)
-  · refine ⟨?_, ?_, ?_⟩
+  · refine ⟨?_, ?_, ?_, fun r hr => by
+      simp only [constRegs, Abi.constRegions, List.mem_map, List.mem_singleton] at hr
+      obtain ⟨c, rfl, rfl⟩ := hr
+      dsimp only [symAddr, attemptSat]
+      decide⟩
     · simp only [attemptSat, attemptBase, constRegs, Abi.constRegions, symAddr, List.map_cons, List.map_nil, length]
       rfl
     · intro c hc i hi

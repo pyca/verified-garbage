@@ -225,7 +225,7 @@ theorem x25519Base_written [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) 
     sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at hs
-    exact hs.2.2.2.2.2.2.2.1
+    exact hs.2.2.2.2.2.2.2.2.1
   obtain ⟨t', s'', he', -, -, htail⟩ := x25519Base_correct hl
   obtain ⟨-, rfl⟩ := Exec.det he he'
   simp [Sig.writtenWithin, AArch64.abi, AArch64.argRegs, Abi.withConsts, combConsts_eq,

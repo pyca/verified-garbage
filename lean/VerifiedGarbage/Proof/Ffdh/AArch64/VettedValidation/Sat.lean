@@ -34,7 +34,7 @@ private theorem shared_sat_aux (W : List (BitVec 64)) (length : W.length=2218) :
       | rfl
       | decide +kernel
       | (apply Region.disjoint_of_sep;decide +kernel)
-  · refine ⟨?_,?_,?_⟩
+  · refine ⟨?_,?_,?_,?_⟩
     · simp only [satState,constRegs,Abi.constRegions,List.map_cons,List.map_nil,length]
       rfl
     · intro c hc i hi
@@ -55,6 +55,11 @@ private theorem shared_sat_aux (W : List (BitVec 64)) (length : W.length=2218) :
         decide
       · intro q hq
         simp only [abi,stackBelow,List.not_mem_nil] at hq
+    · intro r hr
+      simp only [constRegs,Abi.constRegions,List.mem_map,List.mem_singleton] at hr
+      obtain ⟨c,rfl,rfl⟩:=hr
+      dsimp only [satState]
+      decide
 
 theorem shared_sat : ∃s,(Spec.Ffdh.checkDomainContract (abi.withConsts Policy.tableConsts)).pre s :=
   shared_sat_aux Policy.tableWords Cached.Policy.tableWords_length

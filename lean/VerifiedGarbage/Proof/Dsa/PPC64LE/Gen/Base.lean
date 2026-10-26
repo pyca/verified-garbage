@@ -167,6 +167,7 @@ structure CIn (STK : Nat) (s : State) : Prop where
   tO : (mkG s).rTab.Disjoint (mkG s).rOut
   tC : (mkG s).rTab.Disjoint (mkG s).rScr
   tB : (mkG s).rTab.Disjoint (rBelow s STK)
+  tAl : (mkG s).tab.toNat % 64 = 0
 
 /-- The table's regions under `abi.withConsts kT`. -/
 theorem constRegs_kT (s : State) : constRegs kT s = [(mkG s).rTab] := by
@@ -179,10 +180,10 @@ theorem cin_of_pre {n : Nat} (s : State)
   obtain ⟨h₀, hk⟩ := (pre_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
     (cs := []) (sig := Spec.Dsa.generateParametersSig)).mp h
   have c := cin0_of_pre (stripConsts kT s) h₀
-  obtain ⟨hd, held, ht, -⟩ := hk
+  obtain ⟨hd, held, ht, hal⟩ := hk
   have e : constRegs [(Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed)] s = _ :=
     constRegs_kT s
-  rw [e] at ht hd
+  rw [e] at ht hd hal
   obtain ⟨tFit, tW, tR⟩ := ht _ (List.mem_cons_self (l := []))
   have hrd : s.rd = (stripConsts kT s).rd ++
       s.rd.drop (s.rd.length - [(Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed)].length) :=
@@ -191,6 +192,7 @@ theorem cin_of_pre {n : Nat} (s : State)
   have hw : s.wr = [(mkG s).rOut, (mkG s).rScr] := c.wr
   exact ⟨c.spLo, c.spHi, hrd, hw, c.oS, c.oH, c.oW, c.oC, c.oA, c.sC, c.hC, c.wC, c.cA, c.bO, c.bS, c.bH, c.bW,
     c.bC, c.bA, c.nO, c.nS, c.nH, c.nW, c.nC, c.lens, c.outLen, c.seedsMod, c.hsMod, c.scrLen, held, tFit,
-    tW _ (by rw [hw]; simp), tW _ (by rw [hw]; simp), tR _ (by simp [abi, stackBelow])⟩
+    tW _ (by rw [hw]; simp), tW _ (by rw [hw]; simp), tR _ (by simp [abi, stackBelow]),
+    hal _ (List.mem_cons_self (l := []))⟩
 
 end VG.Proof.Dsa.PPC64LE.Gen

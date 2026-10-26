@@ -325,7 +325,7 @@ theorem SS.tConsts (h : SS G 176 σ c s) (hy : s.syms = σ.syms) (u : Nat) : Con
   have e4 : (BitVec.ofNat 64 (wWords G.pLen)).toNat = wWords G.pLen := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wWords_lt lens; omega)]
   have hfU : fUsedOut + 8 ≤ G.scrLen * 8 := by simp only [fUsedOut]; have := gi.hEnd_le; simp only [hEnd] at this; omega
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
   · rw [constRegs_kT, et]; rfl
   · intro k hk i hi
     simp only [kT, Impl.RsaKeyGen.TrialTable32.consts, List.mem_cons, List.not_mem_nil, or_false] at hk
@@ -355,6 +355,10 @@ theorem SS.tConsts (h : SS G 176 σ c s) (hy : s.syms = σ.syms) (u : Nat) : Con
         rw [gi.sp]; rfl
       rw [this, List.mem_singleton] at hr
       subst hr; exact hB
+  · intro t ht
+    rw [constRegs_kT, et, List.mem_singleton] at ht
+    subst ht
+    have := gi.pre.tAl; rw [gi.hG] at this; exact this
 
 /-- The test's arguments meet its precondition. -/
 theorem SS.tPre (h : SS G 176 σ c s) (hy : s.syms = σ.syms) {L : Spec.Dsa.ProbablePrime.Layout} {u : Nat}
