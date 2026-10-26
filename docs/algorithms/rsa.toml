@@ -3,4 +3,4 @@ family = "RSA"
 specs = ["Rsa"]
 modules = ["src/rsa/mod.rs", "src/rsa/privatekey.rs"]
 asm = ["rsa", "rsa_mont"]
-optimized = { arm = "Fused multiply-add for key-workspace array addresses" }
+optimized = { x86 = "SSE2 Montgomery columns reusing operand loads with shuffles", arm = "Fused multiply-add for key-workspace array addresses" }

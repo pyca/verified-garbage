@@ -233,20 +233,17 @@ theorem quad_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L
   have hm : 0 < t.mcdt := I.mcdt ▸ E.mcdt
   have ex0 := ea_w I.ws I.esi (d := 0) (by omega_arith)
   have ey0 := ea_w I.ws I.edi (d := 0) (by omega_arith)
-  have ex4 := ea_w I.ws I.esi (d := 4) (by omega_arith)
-  have ey4 := ea_w I.ws I.edi (d := 4) (by omega_arith)
   rw [quadBody]
-  obtain ⟨t1, run1, o1, a1, b1⟩ := quadMul_run t hm
+  obtain ⟨t1, run1, o1, a1, b1⟩ := quadLastMul_run t hm
     (by rw [ex0]; exact ws_read I.ws (by omega_arith)) (by rw [ey0]; exact ws_read I.ws (by omega_arith))
-    (by rw [ex4]; exact ws_read I.ws (by omega_arith)) (by rw [ey4]; exact ws_read I.ws (by omega_arith))
   refine WP.block_append (WP.of_runBlock ⟨t1, run1, ?_⟩)
   refine wp_advCmp fun u esi edi ebp oth cf mem rd wr mcdt xmm => ?_
   have hl := dhigh_le s0.mem W x y j
   have hH := E.hH
-  have s1 := quad_sums I.sums (by omega_arith) a1 b1
-  rw [ex0, ey0, ex4, ey4, Nat.add_zero, Nat.add_zero, off_8, off_8, off_8, off_8, I.mem, pw_d0,
+  have s1 := quadLast_sums I.sums (by omega_arith) a1 b1
+  rw [ex0, ey0, Nat.add_zero, Nat.add_zero, off_4, off_4, off_8, off_8, off_12, off_12, I.mem, pw_d0,
     pw_d _ _ _ _ _ 8 (j + 2) (by omega_arith), pw_d _ _ _ _ _ 4 (j + 1) (by omega_arith),
-    pw_dd _ _ _ _ _ 4 8 (j + 3) (by omega_arith)] at s1
+    pw_d _ _ _ _ _ 12 (j + 3) (by omega_arith)] at s1
   have I' := I.step 4 (by omega_arith) (I.ws.of_wr (by rw [wr, o1.wr])) (by rw [esi, o1.gpr]; rfl) (by rw [edi, o1.gpr]; rfl)
     (by rw [ebp, o1.gpr]; rfl) E.hn (by rw [xmm, rsum_four, rsum_four]; refine s1.of_eq ?_ ?_ <;> omega_arith)
     (fun r h0 h1 h2 h3 => by rw [oth r h1 h2 h3, o1.gpr]) (by rw [rd, o1.rd]) (by rw [wr, o1.wr])
