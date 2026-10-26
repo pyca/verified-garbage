@@ -59,7 +59,7 @@ theorem Sig.clear_of_pre_consts {c : String × List (BitVec 64)} {cs : List (Str
   · obtain ⟨hwf, hrd, hwr, _, hres, _⟩ := h
     have hh : hole (s.gpr .rsp) ∈ (abi.withConsts (c :: cs)).reserved 8 s := by
       simp [abi, Abi.withConsts, stackBelow, hole]
-    obtain ⟨-, hdrop, -, hct⟩ := hwf
+    obtain ⟨-, hdrop, -, hct, -⟩ := hwf
     intro r hr
     rcases List.mem_append.mp hr with hr | hr
     · rw [← List.take_append_drop (s.rd.length - (c :: cs).length) s.rd] at hr
@@ -91,11 +91,11 @@ theorem Sig.pre_stack0 {c : String × List (BitVec 64)} {cs : List (String × Li
   simp only [Sig.contract] at h ⊢
   split at h
   · exact h.elim
-  · obtain ⟨⟨hw, hdrop, hheld, hct⟩, hrd, hwr, hpw, hres, hb, hp⟩ := h
+  · obtain ⟨⟨hw, hdrop, hheld, hct, hal⟩, hrd, hwr, hpw, hres, hb, hp⟩ := h
     have hsub : ∀ r ∈ (abi.withConsts (c :: cs)).reserved 0 s, r ∈ (abi.withConsts (c :: cs)).reserved 8 s := by
       intro r hr; simp only [abi, Abi.withConsts, stackBelow, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       exact .inl hr
-    refine ⟨⟨?_, hdrop, hheld, fun t ht => ⟨(hct t ht).1, (hct t ht).2.1, fun r hr => (hct t ht).2.2 r (hsub r hr)⟩⟩,
+    refine ⟨⟨?_, hdrop, hheld, fun t ht => ⟨(hct t ht).1, (hct t ht).2.1, fun r hr => (hct t ht).2.2 r (hsub r hr)⟩, hal⟩,
       hrd, hwr, hpw, fun r hr => hres r (hsub r hr), hb, hp⟩
     exact abi_wf0 _ s hw
 
