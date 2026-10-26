@@ -243,7 +243,7 @@ theorem pairedZ_pre_intro {s : State} (h : ZSpecPre s)
     (pairedZContract (abi.withConsts pairedConsts)).pre s := by
   sig_pre [pairedZContract,pairedZSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow]
-  exact ⟨by rw [h.rd]; rfl,held,fitTable,h.tableSep,by rw [h.rd]; rfl,h.wr,
+  exact ⟨by rw [h.rd]; rfl,held,fitTable,h.tableSep,h.tableAl,by rw [h.rd]; rfl,h.wr,
     h.commonData,h.commonWork,h.secretData,h.secretWork,
     h.dataWork,fit0,fit1,fit2,fit4,h.products,h.data,h.boundLow,h.boundHigh⟩
 
@@ -317,7 +317,7 @@ theorem zSatWith_pre (m : Mem)
     (hdata : ∀j<2,Reduced m (pairPolyPtr 12288 j)) :
     (pairedZContract (abi.withConsts pairedConsts)).pre (zSatWith m) := by
   apply pairedZ_pre_intro (s:=zSatWith m) ?_ held (by dsimp only [zSatWith]; decide) (by dsimp only [zSatWith]; decide) (by dsimp only [zSatWith]; decide) (by dsimp only [zSatWith]; decide) (by dsimp only [zSatWith]; decide)
-  refine ⟨rfl,rfl,?_,?_,?_,?_,?_,?_,?_,hprod,hdata,by dsimp only [zSatWith]; decide,by dsimp only [zSatWith]; decide⟩
+  refine ⟨rfl,rfl,?_,?_,?_,?_,?_,?_,?_,hprod,hdata,by dsimp only [zSatWith]; decide,by dsimp only [zSatWith]; decide,by dsimp only [zSatWith]; decide⟩
   · intro i hi
     refine (held i hi).trans ?_
     rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by rw [PairedTable.expandedWords_length]; exact hi),

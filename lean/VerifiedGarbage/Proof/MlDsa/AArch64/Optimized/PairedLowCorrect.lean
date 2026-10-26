@@ -474,7 +474,7 @@ theorem pairedLow_pre_intro {s : State} (h : LowSpecPre s)
     (pairedLowContract (abi.withConsts pairedConsts)).pre s := by
   sig_pre [pairedLowContract,pairedLowSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow]
-  exact ⟨by rw [h.rd]; rfl,held,fitTable,h.tableSep,by rw [h.rd]; rfl,h.wr,
+  exact ⟨by rw [h.rd]; rfl,held,fitTable,h.tableSep,h.tableAl,by rw [h.rd]; rfl,h.wr,
     h.commonData,h.commonAux,h.commonWork,h.secretData,h.secretAux,h.secretWork,
     h.dataAux,h.dataWork,h.auxWork,fit0,fit1,fit2,fit3,fit4,h.products,h.data,h.gamma,h.boundLow,h.boundHigh⟩
 
@@ -506,7 +506,7 @@ theorem lowSatWith_pre (m : Mem)
     (hdata : ∀j<2,Reduced m (pairPolyPtr 12288 j)) :
     (pairedLowContract (abi.withConsts pairedConsts)).pre (lowSatWith m) := by
   apply pairedLow_pre_intro (s:=lowSatWith m) ?_ held (by dsimp only [lowSatWith]; decide) (by dsimp only [lowSatWith]; decide) (by dsimp only [lowSatWith]; decide) (by dsimp only [lowSatWith]; decide) (by dsimp only [lowSatWith]; decide) (by dsimp only [lowSatWith]; decide)
-  refine ⟨rfl,rfl,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,hprod,hdata,by dsimp only [lowSatWith]; decide,by dsimp only [lowSatWith]; decide,by dsimp only [lowSatWith]; decide⟩
+  refine ⟨rfl,rfl,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,hprod,hdata,by dsimp only [lowSatWith]; decide,by dsimp only [lowSatWith]; decide,by dsimp only [lowSatWith]; decide,by dsimp only [lowSatWith]; decide⟩
   · intro i hi
     refine (held i hi).trans ?_
     rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by rw [PairedTable.expandedWords_length]; exact hi),
