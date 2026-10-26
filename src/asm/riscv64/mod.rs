@@ -20,6 +20,9 @@ pub(crate) mod aes_ctr;
 pub(crate) mod aes_ofb;
 
 #[rustfmt::skip]
+pub(crate) mod aes_xts;
+
+#[rustfmt::skip]
 pub(crate) mod blake2b;
 
 #[rustfmt::skip]
