@@ -8,28 +8,29 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
 use verified_garbage::ed448::{Error, VerifyingKey};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-struct PublicKey {
-    curve: String,
-    pk: Hex,
+crate::json_struct! {
+    struct PublicKey {
+        curve: String = "curve",
+        pk: Hex = "pk",
+    }
 }
 
-#[derive(Deserialize)]
-struct Group {
-    #[serde(rename = "publicKey")]
-    public_key: PublicKey,
+crate::json_struct! {
+    struct Group {
+        public_key: PublicKey = "publicKey",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    msg: Hex,
-    sig: Hex,
+crate::json_struct! {
+    struct Case {
+        msg: Hex = "msg",
+        sig: Hex = "sig",
+    }
 }
 
 #[test]

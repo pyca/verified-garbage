@@ -38,8 +38,8 @@ name = "tests"
 path = "tests/main.rs"
 
 [dev-dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# Parses the JSON test vector files (`tests/json.rs`).
+miniserde = "0.1"
 
 # The Wycheproof tests parse ~100 MB of JSON; optimize dependencies (but not
 # this crate) in test builds.

@@ -12,18 +12,16 @@
 
 use core::num::NonZeroU32;
 
-use serde::Deserialize;
-
 use super::harness::{self, Expectation, Fields, Hex};
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Case {
-    password: Hex,
-    salt: Hex,
-    iteration_count: u32,
-    dk_len: usize,
-    dk: Hex,
+crate::json_struct! {
+    struct Case {
+        password: Hex = "password",
+        salt: Hex = "salt",
+        iteration_count: u32 = "iterationCount",
+        dk_len: usize = "dkLen",
+        dk: Hex = "dk",
+    }
 }
 
 /// Every vector of `name` must derive exactly its key (the files only have

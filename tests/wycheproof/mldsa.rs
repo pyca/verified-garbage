@@ -22,7 +22,6 @@
 /// `$module` and its key types.
 macro_rules! mldsa_tests {
     ($n:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
-        use serde::Deserialize;
         use verified_garbage::$module::{Error, $SigningKey, $VerifyingKey};
 
         use super::harness::{self, Expectation, Hex};
@@ -30,40 +29,35 @@ macro_rules! mldsa_tests {
 
         type Sig = [u8; $VerifyingKey::SIGNATURE_SIZE];
 
-        #[derive(Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        struct SignGroup {
-            private_seed: Hex,
-            #[serde(default)]
-            public_key: Option<Hex>,
+        crate::json_struct! {
+            struct SignGroup {
+                private_seed: Hex = "privateSeed",
+                public_key: Option<Hex> = "publicKey",
+            }
         }
 
-        #[derive(Deserialize)]
-        struct Sign {
-            #[serde(default)]
-            msg: Option<Hex>,
-            #[serde(default)]
-            ctx: Option<Hex>,
-            #[serde(default)]
-            mu: Option<Hex>,
-            #[serde(default)]
-            rnd: Option<Hex>,
-            #[serde(default)]
-            sig: Option<Hex>,
+        crate::json_struct! {
+            struct Sign {
+                msg: Option<Hex> = "msg",
+                ctx: Option<Hex> = "ctx",
+                mu: Option<Hex> = "mu",
+                rnd: Option<Hex> = "rnd",
+                sig: Option<Hex> = "sig",
+            }
         }
 
-        #[derive(Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        struct VerifyGroup {
-            public_key: Hex,
+        crate::json_struct! {
+            struct VerifyGroup {
+                public_key: Hex = "publicKey",
+            }
         }
 
-        #[derive(Deserialize)]
-        struct Verify {
-            msg: Hex,
-            #[serde(default)]
-            ctx: Option<Hex>,
-            sig: Hex,
+        crate::json_struct! {
+            struct Verify {
+                msg: Hex = "msg",
+                ctx: Option<Hex> = "ctx",
+                sig: Hex = "sig",
+            }
         }
 
         #[test]

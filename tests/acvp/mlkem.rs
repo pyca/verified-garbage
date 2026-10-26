@@ -14,41 +14,37 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-struct File<T> {
-    #[serde(rename = "testGroups")]
-    groups: Vec<Group<T>>,
+crate::json_struct! {
+    struct File<T> {
+        groups: Vec<Group<T>> = "testGroups",
+    }
 }
 
-#[derive(Deserialize)]
-struct Group<T> {
-    #[serde(rename = "parameterSet")]
-    parameter_set: String,
-    function: Option<String>,
-    tests: Vec<T>,
+crate::json_struct! {
+    struct Group<T> {
+        parameter_set: String = "parameterSet",
+        function: Option<String> = "function",
+        tests: Vec<T> = "tests",
+    }
 }
 
-#[derive(Deserialize)]
-pub struct KeyGen {
-    pub d: String,
-    pub z: String,
-    pub ek: String,
-    pub dk: String,
+crate::json_struct! {
+    pub struct KeyGen {
+        pub d: String = "d",
+        pub z: String = "z",
+        pub ek: String = "ek",
+        pub dk: String = "dk",
+    }
 }
 
-#[derive(Deserialize)]
-pub struct EncapDecap {
-    pub ek: String,
-    #[serde(default)]
-    pub m: String,
-    #[serde(default)]
-    pub c: String,
-    #[serde(default)]
-    pub k: String,
-    #[serde(rename = "testPassed")]
-    pub passed: Option<bool>,
+crate::json_struct! {
+    pub struct EncapDecap {
+        pub ek: String = "ek",
+        pub m: String = "m" or default,
+        pub c: String = "c" or default,
+        pub k: String = "k" or default,
+        pub passed: Option<bool> = "testPassed",
+    }
 }
 
 pub fn unhex(s: &str) -> Vec<u8> {
@@ -65,8 +61,8 @@ pub fn array<const N: usize>(s: &str) -> [u8; N] {
 
 /// The tests of the groups of a file for the parameter set `name`, with the
 /// function `function` (if any).
-fn tests<T: for<'a> Deserialize<'a>>(text: &str, name: &str, function: Option<&str>) -> Vec<T> {
-    let file: File<T> = serde_json::from_str(text).unwrap();
+fn tests<T: crate::json::FromJson>(text: &str, name: &str, function: Option<&str>) -> Vec<T> {
+    let file: File<T> = crate::json::from_str(name, text);
     let groups: Vec<_> = file
         .groups
         .into_iter()

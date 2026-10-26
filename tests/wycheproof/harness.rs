@@ -17,8 +17,7 @@ use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use serde::Deserialize;
-use serde::de::DeserializeOwned;
+use crate::json::{self, FromJson, Value};
 
 /// The environment variable pointing at a checkout of
 /// <https://github.com/C2SP/wycheproof>. A relative path is relative to the
@@ -154,8 +153,7 @@ macro_rules! require_vectors {
 }
 
 /// The expected outcome of a test.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Expectation {
     /// The operation must succeed with the given result.
     Valid,
@@ -165,52 +163,96 @@ pub enum Expectation {
     Acceptable,
 }
 
-/// A note describing a test flag.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Note {
-    /// The class of bug the flagged tests look for.
-    pub bug_type: Option<String>,
-    /// A description of the flag.
-    pub description: Option<String>,
+impl FromJson for Expectation {
+    fn from_json(v: &Value) -> Self {
+        let name = String::from_json(v);
+        [
+            ("valid", Expectation::Valid),
+            ("invalid", Expectation::Invalid),
+            ("acceptable", Expectation::Acceptable),
+        ]
+        .into_iter()
+        .find_map(|(n, e)| (n == name).then_some(e))
+        .unwrap_or_else(|| panic!("unknown result {name:?}"))
+    }
+}
+
+crate::json_struct! {
+    /// A note describing a test flag.
+    #[derive(Debug, Clone)]
+    pub struct Note {
+        /// The class of bug the flagged tests look for.
+        pub bug_type: Option<String> = "bugType",
+        /// A description of the flag.
+        pub description: Option<String> = "description",
+    }
 }
 
 /// One test.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
 pub struct Test<T> {
     /// The test's id, unique within the file.
     pub tc_id: u64,
-    #[serde(default)]
     pub comment: String,
     /// Usually keys into [`TestFile::notes`].
-    #[serde(default)]
     pub flags: Vec<String>,
     pub result: Expectation,
-    /// The algorithm-specific fields.
-    #[serde(flatten)]
+    /// The algorithm-specific fields, read from the test's object too.
     pub case: T,
 }
 
+impl<T: FromJson> FromJson for Test<T> {
+    fn from_json(v: &Value) -> Self {
+        let o = json::object(v);
+        Test {
+            tc_id: json::field(o, "tcId"),
+            comment: json::field_or_default(o, "comment"),
+            flags: json::field_or_default(o, "flags"),
+            result: json::field(o, "result"),
+            case: T::from_json(v),
+        }
+    }
+}
+
 /// A group of tests sharing parameters (key, sizes, …).
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct TestGroup<P, T> {
-    /// The algorithm-specific group fields.
-    #[serde(flatten)]
+    /// The algorithm-specific group fields, read from the group's object
+    /// too.
     pub params: P,
     pub tests: Vec<Test<T>>,
 }
 
+impl<P: FromJson, T: FromJson> FromJson for TestGroup<P, T> {
+    fn from_json(v: &Value) -> Self {
+        TestGroup {
+            params: P::from_json(v),
+            tests: json::field(json::object(v), "tests"),
+        }
+    }
+}
+
 /// A test vector file.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
 pub struct TestFile<P, T> {
     pub algorithm: Option<String>,
     pub schema: String,
     pub number_of_tests: usize,
-    #[serde(default)]
     pub notes: BTreeMap<String, Note>,
     pub test_groups: Vec<TestGroup<P, T>>,
+}
+
+impl<P: FromJson, T: FromJson> FromJson for TestFile<P, T> {
+    fn from_json(v: &Value) -> Self {
+        let o = json::object(v);
+        TestFile {
+            algorithm: json::field(o, "algorithm"),
+            schema: json::field(o, "schema"),
+            number_of_tests: json::field(o, "numberOfTests"),
+            notes: json::field_or_default(o, "notes"),
+            test_groups: json::field(o, "testGroups"),
+        }
+    }
 }
 
 /// Bytes, written in hex in the test vector files.
@@ -233,20 +275,20 @@ pub struct Hex(pub Vec<u8>);
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-impl<'de> Deserialize<'de> for Hex {
-    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-        let s = String::deserialize(d)?;
+impl FromJson for Hex {
+    fn from_json(v: &Value) -> Self {
+        let s = String::from_json(v);
         let bytes = (0..s.len())
             .step_by(2)
             .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
             .collect::<Result<Vec<u8>, _>>()
-            .map_err(serde::de::Error::custom)?;
-        Ok(Hex(bytes))
+            .unwrap_or_else(|e| panic!("{s:?}: {e}"));
+        Hex(bytes)
     }
 }
 
-/// Untyped fields, for tests that only look at the file structure (the
-/// compressed points').
+/// Fields a test does not read (the compressed points' group and test
+/// fields): only checked to be an object.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -255,7 +297,22 @@ impl<'de> Deserialize<'de> for Hex {
     all(target_arch = "powerpc64", target_endian = "little"),
     target_arch = "riscv64"
 ))]
-pub type Fields = serde_json::Map<String, serde_json::Value>;
+pub struct Fields;
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+impl FromJson for Fields {
+    fn from_json(v: &Value) -> Self {
+        json::object(v);
+        Fields
+    }
+}
 
 impl<P, T> TestFile<P, T> {
     /// Every test, with its group.
@@ -374,8 +431,8 @@ impl Count {
 /// Parse a test vector file and check that it is internally consistent:
 /// the number of tests matches `numberOfTests` and test ids are unique.
 /// (Not every flag is described in `notes` upstream, so that is not checked.)
-pub fn parse<P: DeserializeOwned, T: DeserializeOwned>(name: &str, json: &str) -> TestFile<P, T> {
-    let file: TestFile<P, T> = serde_json::from_str(json).unwrap_or_else(|e| panic!("{name}: {e}"));
+pub fn parse<P: FromJson, T: FromJson>(name: &str, text: &str) -> TestFile<P, T> {
+    let file: TestFile<P, T> = json::from_str(name, text);
     let mut ids = HashSet::new();
     let mut count = 0;
     for (_, t) in file.tests() {
@@ -388,7 +445,7 @@ pub fn parse<P: DeserializeOwned, T: DeserializeOwned>(name: &str, json: &str) -
 
 /// Load and validate the test vector file `name` (e.g. `"aes_gcm_test.json"`).
 /// Tests calling this must start with `require_vectors!()`.
-pub fn load<P: DeserializeOwned, T: DeserializeOwned>(name: &str) -> TestFile<P, T> {
+pub fn load<P: FromJson, T: FromJson>(name: &str) -> TestFile<P, T> {
     let path = vectors_dir()
         .expect("Wycheproof vectors not available; use require_vectors!()")
         .join(name);

@@ -20,17 +20,15 @@
 mod blake2b;
 mod blake2s;
 
-use serde::Deserialize;
-
-/// A vector of the file: the digest `out` of `input` with the key `key` (none
-/// if empty), all hex.
-#[derive(Deserialize)]
-struct Raw {
-    hash: String,
-    #[serde(rename = "in")]
-    input: String,
-    key: String,
-    out: String,
+crate::json_struct! {
+    /// A vector of the file: the digest `out` of `input` with the key `key` (none
+    /// if empty), all hex.
+    struct Raw {
+        hash: String = "hash",
+        input: String = "in",
+        key: String = "key",
+        out: String = "out",
+    }
 }
 
 /// A vector, decoded.
@@ -50,8 +48,10 @@ fn unhex(s: &str) -> Vec<u8> {
 
 /// The vectors of the function `hash` (`"blake2b"` or `"blake2s"`).
 fn vectors(hash: &str) -> Vec<Vector> {
-    let raw: Vec<Raw> =
-        serde_json::from_str(include_str!("../../vectors/blake2-kat/blake2-kat.json")).unwrap();
+    let raw: Vec<Raw> = crate::json::from_str(
+        "blake2-kat.json",
+        include_str!("../../vectors/blake2-kat/blake2-kat.json"),
+    );
     raw.into_iter()
         .filter(|v| v.hash == hash)
         .map(|v| Vector {

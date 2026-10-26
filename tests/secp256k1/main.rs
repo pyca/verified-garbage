@@ -8,27 +8,30 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
 use verified_garbage::ecdh::PrivateKey;
 use verified_garbage::ecdsa::{Error, Secp256k1, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha256::Sha256;
 
-#[derive(Deserialize)]
-struct Case {
-    d: String,
-    m: String,
-    signature: String,
+crate::json_struct! {
+    struct Case {
+        d: String = "d",
+        m: String = "m",
+        signature: String = "signature",
+    }
 }
 
-#[derive(Deserialize)]
-struct Vectors {
-    valid: Vec<Case>,
+crate::json_struct! {
+    struct Vectors {
+        valid: Vec<Case> = "valid",
+    }
 }
 
 fn vectors() -> Vec<Case> {
-    serde_json::from_str::<Vectors>(include_str!("../../vectors/secp256k1-ecdsa/ecdsa.json"))
-        .unwrap()
-        .valid
+    crate::json::from_str::<Vectors>(
+        "ecdsa.json",
+        include_str!("../../vectors/secp256k1-ecdsa/ecdsa.json"),
+    )
+    .valid
 }
 
 fn hex<const N: usize>(s: &str) -> [u8; N] {

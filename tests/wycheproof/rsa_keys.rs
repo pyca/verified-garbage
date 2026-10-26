@@ -24,34 +24,35 @@
 
 use std::collections::BTreeMap;
 
-use serde::Deserialize;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
 use super::harness::{self, Count, Hex, TestFile};
 use crate::require_vectors;
 
-#[derive(Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Key {
-    modulus: Hex,
-    private_exponent: Hex,
-    public_exponent: Hex,
-    prime1: Option<Hex>,
-    prime2: Option<Hex>,
-    exponent1: Option<Hex>,
-    exponent2: Option<Hex>,
-    coefficient: Option<Hex>,
-    other_prime_infos: Option<serde::de::IgnoredAny>,
+crate::json_struct! {
+    #[derive(Clone)]
+    struct Key {
+        modulus: Hex = "modulus",
+        private_exponent: Hex = "privateExponent",
+        public_exponent: Hex = "publicExponent",
+        prime1: Option<Hex> = "prime1",
+        prime2: Option<Hex> = "prime2",
+        exponent1: Option<Hex> = "exponent1",
+        exponent2: Option<Hex> = "exponent2",
+        coefficient: Option<Hex> = "coefficient",
+        other_prime_infos: Option<crate::json::Value> = "otherPrimeInfos",
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    private_key: Option<Key>,
+crate::json_struct! {
+    struct Group {
+        private_key: Option<Key> = "privateKey",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {}
+crate::json_struct! {
+    struct Case {}
+}
 
 /// `x` without its leading zero bytes (the vectors write numbers in DER's
 /// form, with a zero byte before a top bit that is set).

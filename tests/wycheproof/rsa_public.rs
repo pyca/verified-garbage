@@ -20,7 +20,6 @@
     feature = "alloc"
 ))]
 
-use serde::Deserialize;
 use verified_garbage::hashes::HashFunction;
 use verified_garbage::hashes::{
     sha3::Sha3_224, sha3::Sha3_256, sha3::Sha3_384, sha3::Sha3_512, sha224::Sha224, sha256::Sha256,
@@ -31,24 +30,25 @@ use verified_garbage::rsa::{Error, PublicKey};
 use super::harness::{self, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Public {
-    modulus: Hex,
-    public_exponent: Hex,
+crate::json_struct! {
+    struct Public {
+        modulus: Hex = "modulus",
+        public_exponent: Hex = "publicExponent",
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    public_key: Public,
-    sha: String,
+crate::json_struct! {
+    struct Group {
+        public_key: Public = "publicKey",
+        sha: String = "sha",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    msg: Hex,
-    sig: Hex,
+crate::json_struct! {
+    struct Case {
+        msg: Hex = "msg",
+        sig: Hex = "sig",
+    }
 }
 
 /// `x` without its leading zero bytes (the vectors write numbers in DER's

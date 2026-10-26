@@ -16,24 +16,24 @@
     target_arch = "riscv64"
 ))]
 
-use serde::Deserialize;
 use verified_garbage::chacha20::ChaCha20;
 
 use super::harness::{self, Count, Expectation};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    iv_size: usize,
+crate::json_struct! {
+    struct Group {
+        iv_size: usize = "ivSize",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    key: String,
-    iv: String,
-    msg: String,
-    ct: String,
+crate::json_struct! {
+    struct Case {
+        key: String = "key",
+        iv: String = "iv",
+        msg: String = "msg",
+        ct: String = "ct",
+    }
 }
 
 fn unhex(s: &str) -> Vec<u8> {

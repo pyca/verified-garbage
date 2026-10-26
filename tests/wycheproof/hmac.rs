@@ -10,23 +10,23 @@
     target_arch = "riscv64"
 ))]
 
-use serde::Deserialize;
 use verified_garbage::hmac::{Hmac, HmacHash};
 
 use super::harness::{self, Expectation, Hex};
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    key_size: usize,
-    tag_size: usize,
+crate::json_struct! {
+    struct Group {
+        key_size: usize = "keySize",
+        tag_size: usize = "tagSize",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    key: Hex,
-    msg: Hex,
-    tag: Hex,
+crate::json_struct! {
+    struct Case {
+        key: Hex = "key",
+        msg: Hex = "msg",
+        tag: Hex = "tag",
+    }
 }
 
 /// Checks every vector of `name` with `Hmac<H>`, whose `new` is passed in:

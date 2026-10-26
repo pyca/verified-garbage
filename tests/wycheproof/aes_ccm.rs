@@ -14,26 +14,26 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
 use verified_garbage::aes_ccm::{AesCcm, Error};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    tag_size: usize,
+crate::json_struct! {
+    struct Group {
+        tag_size: usize = "tagSize",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    key: Hex,
-    iv: Hex,
-    aad: Hex,
-    msg: Hex,
-    ct: Hex,
-    tag: Hex,
+crate::json_struct! {
+    struct Case {
+        key: Hex = "key",
+        iv: Hex = "iv",
+        aad: Hex = "aad",
+        msg: Hex = "msg",
+        ct: Hex = "ct",
+        tag: Hex = "tag",
+    }
 }
 
 /// Decrypts `c` under `key` with a `T`-byte tag, leaving the result in

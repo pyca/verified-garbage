@@ -16,41 +16,42 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
 use verified_garbage::aes_siv::{AesSiv, Error};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct DaeadGroup {
-    key_size: usize,
+crate::json_struct! {
+    struct DaeadGroup {
+        key_size: usize = "keySize",
+    }
 }
 
-#[derive(Deserialize)]
-struct DaeadCase {
-    key: Hex,
-    aad: Hex,
-    msg: Hex,
-    ct: Hex,
+crate::json_struct! {
+    struct DaeadCase {
+        key: Hex = "key",
+        aad: Hex = "aad",
+        msg: Hex = "msg",
+        ct: Hex = "ct",
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct AeadGroup {
-    key_size: usize,
-    tag_size: usize,
+crate::json_struct! {
+    struct AeadGroup {
+        key_size: usize = "keySize",
+        tag_size: usize = "tagSize",
+    }
 }
 
-#[derive(Deserialize)]
-struct AeadCase {
-    key: Hex,
-    iv: Hex,
-    aad: Hex,
-    msg: Hex,
-    ct: Hex,
-    tag: Hex,
+crate::json_struct! {
+    struct AeadCase {
+        key: Hex = "key",
+        iv: Hex = "iv",
+        aad: Hex = "aad",
+        msg: Hex = "msg",
+        ct: Hex = "ct",
+        tag: Hex = "tag",
+    }
 }
 
 /// Checks one vector: the key, the components, the plaintext, the

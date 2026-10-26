@@ -14,22 +14,23 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
 use verified_garbage::ecdh::{Error, P256, PrivateKey};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-struct Group {
-    curve: String,
+crate::json_struct! {
+    struct Group {
+        curve: String = "curve",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    public: Hex,
-    private: Hex,
-    shared: Hex,
+crate::json_struct! {
+    struct Case {
+        public: Hex = "public",
+        private: Hex = "private",
+        shared: Hex = "shared",
+    }
 }
 
 /// A private key of up to 33 bytes (Wycheproof writes them as signed

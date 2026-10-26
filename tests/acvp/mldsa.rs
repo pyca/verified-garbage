@@ -20,47 +20,41 @@
 /// `verified_garbage::mldsa87`) and its key types.
 macro_rules! mldsa_tests {
     ($name:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
-        use serde::Deserialize;
         use verified_garbage::hashes::sha3::Shake256;
         use verified_garbage::$module::{Error, $SigningKey, $VerifyingKey};
 
-        #[derive(Deserialize)]
-        struct File<T> {
-            #[serde(rename = "testGroups")]
-            groups: Vec<Group<T>>,
+        crate::json_struct! {
+            struct File<T> {
+                groups: Vec<Group<T>> = "testGroups",
+            }
         }
 
-        #[derive(Deserialize)]
-        struct Group<T> {
-            #[serde(rename = "parameterSet")]
-            parameter_set: String,
-            #[serde(rename = "signatureInterface", default)]
-            interface: String,
-            #[serde(rename = "preHash", default)]
-            pre_hash: String,
-            #[serde(rename = "externalMu", default)]
-            external_mu: bool,
-            tests: Vec<T>,
+        crate::json_struct! {
+            struct Group<T> {
+                parameter_set: String = "parameterSet",
+                interface: String = "signatureInterface" or default,
+                pre_hash: String = "preHash" or default,
+                external_mu: bool = "externalMu" or default,
+                tests: Vec<T> = "tests",
+            }
         }
 
-        #[derive(Deserialize)]
-        struct KeyGen {
-            seed: String,
-            pk: String,
+        crate::json_struct! {
+            struct KeyGen {
+                seed: String = "seed",
+                pk: String = "pk",
+            }
         }
 
-        #[derive(Deserialize)]
-        struct SigVer {
-            pk: String,
-            #[serde(default)]
-            message: String,
-            #[serde(default)]
-            context: String,
-            #[serde(default)]
-            mu: String,
-            signature: String,
-            #[serde(rename = "testPassed")]
-            passed: bool,
+        crate::json_struct! {
+            struct SigVer {
+                pk: String = "pk",
+                message: String = "message" or default,
+                context: String = "context" or default,
+                mu: String = "mu" or default,
+                signature: String = "signature",
+                passed: bool = "testPassed",
+            }
         }
 
         fn unhex(s: &str) -> Vec<u8> {
@@ -72,8 +66,8 @@ macro_rules! mldsa_tests {
         }
 
         /// The groups of the parameter set in the vendored file `json`.
-        fn groups<T: serde::de::DeserializeOwned>(json: &str) -> Vec<Group<T>> {
-            let file: File<T> = serde_json::from_str(json).unwrap();
+        fn groups<T: crate::json::FromJson>(json: &str) -> Vec<Group<T>> {
+            let file: File<T> = crate::json::from_str($name, json);
             let groups: Vec<Group<T>> = file
                 .groups
                 .into_iter()

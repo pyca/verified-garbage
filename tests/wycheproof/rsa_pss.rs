@@ -19,7 +19,6 @@
     feature = "alloc"
 ))]
 
-use serde::Deserialize;
 use verified_garbage::hashes::{
     md5::Md5, sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512,
     sha512_224::Sha512_224, sha512_256::Sha512_256,
@@ -30,50 +29,52 @@ use verified_garbage::rsa_pss::{Hash, SaltLength, sign, verify};
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Public {
-    modulus: Hex,
-    public_exponent: Hex,
+crate::json_struct! {
+    struct Public {
+        modulus: Hex = "modulus",
+        public_exponent: Hex = "publicExponent",
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct VerifyGroup {
-    public_key: Public,
-    sha: String,
-    mgf_sha: String,
-    s_len: usize,
+crate::json_struct! {
+    struct VerifyGroup {
+        public_key: Public = "publicKey",
+        sha: String = "sha",
+        mgf_sha: String = "mgfSha",
+        s_len: usize = "sLen",
+    }
 }
 
-#[derive(Deserialize)]
-struct SigCase {
-    msg: Hex,
-    sig: Hex,
+crate::json_struct! {
+    struct SigCase {
+        msg: Hex = "msg",
+        sig: Hex = "sig",
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Crt {
-    modulus: Hex,
-    private_exponent: Hex,
-    public_exponent: Hex,
-    prime1: Hex,
-    prime2: Hex,
-    exponent1: Hex,
-    exponent2: Hex,
-    coefficient: Hex,
+crate::json_struct! {
+    struct Crt {
+        modulus: Hex = "modulus",
+        private_exponent: Hex = "privateExponent",
+        public_exponent: Hex = "publicExponent",
+        prime1: Hex = "prime1",
+        prime2: Hex = "prime2",
+        exponent1: Hex = "exponent1",
+        exponent2: Hex = "exponent2",
+        coefficient: Hex = "coefficient",
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CrtGroup {
-    private_key: Crt,
+crate::json_struct! {
+    struct CrtGroup {
+        private_key: Crt = "privateKey",
+    }
 }
 
-#[derive(Deserialize)]
-struct MsgCase {
-    msg: Hex,
+crate::json_struct! {
+    struct MsgCase {
+        msg: Hex = "msg",
+    }
 }
 
 /// `x` without its leading zero bytes.

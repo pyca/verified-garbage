@@ -31,41 +31,43 @@
 
 use std::collections::BTreeMap;
 
-use serde::Deserialize;
 use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
 use super::harness::{self, Count, Expectation, Hex, TestFile};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Key {
-    public_exponent: Hex,
-    prime1: Option<Hex>,
-    prime2: Option<Hex>,
-    modulus: Option<Hex>,
-    private_exponent: Option<Hex>,
-    exponent1: Option<Hex>,
-    exponent2: Option<Hex>,
-    coefficient: Option<Hex>,
-    other_prime_infos: Option<serde_json::Value>,
+crate::json_struct! {
+    struct Key {
+        public_exponent: Hex = "publicExponent",
+        prime1: Option<Hex> = "prime1",
+        prime2: Option<Hex> = "prime2",
+        modulus: Option<Hex> = "modulus",
+        private_exponent: Option<Hex> = "privateExponent",
+        exponent1: Option<Hex> = "exponent1",
+        exponent2: Option<Hex> = "exponent2",
+        coefficient: Option<Hex> = "coefficient",
+        other_prime_infos: Option<crate::json::Value> = "otherPrimeInfos",
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    private_key: Option<Key>,
+crate::json_struct! {
+    struct Group {
+        private_key: Option<Key> = "privateKey",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {}
+crate::json_struct! {
+    struct Case {}
+}
 
-#[derive(Deserialize)]
-struct PrimalityGroup {}
+crate::json_struct! {
+    struct PrimalityGroup {}
+}
 
-#[derive(Deserialize)]
-struct PrimalityCase {
-    value: Hex,
+crate::json_struct! {
+    struct PrimalityCase {
+        value: Hex = "value",
+    }
 }
 
 /// A prime, with the file it is from, the key's other prime and its public

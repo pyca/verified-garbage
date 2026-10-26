@@ -12,30 +12,31 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
 use verified_garbage::ecdsa::{Error, P192, VerifyingKey};
 use verified_garbage::hashes::sha256::Sha256;
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-struct Key {
-    curve: String,
-    uncompressed: Hex,
+crate::json_struct! {
+    struct Key {
+        curve: String = "curve",
+        uncompressed: Hex = "uncompressed",
+    }
 }
 
-#[derive(Deserialize)]
-struct Group {
-    #[serde(rename = "publicKey")]
-    public_key: Key,
-    sha: String,
+crate::json_struct! {
+    struct Group {
+        public_key: Key = "publicKey",
+        sha: String = "sha",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    msg: Hex,
-    sig: Hex,
+crate::json_struct! {
+    struct Case {
+        msg: Hex = "msg",
+        sig: Hex = "sig",
+    }
 }
 
 #[test]

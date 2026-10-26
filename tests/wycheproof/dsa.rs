@@ -12,31 +12,31 @@
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
-use serde::Deserialize;
 use verified_garbage::dsa::PublicKey;
 use verified_garbage::hashes::{sha224::Sha224, sha256::Sha256};
 
-#[derive(Deserialize)]
-struct Key {
-    p: Hex,
-    q: Hex,
-    g: Hex,
-    y: Hex,
-    #[serde(rename = "keySize")]
-    bits: usize,
+crate::json_struct! {
+    struct Key {
+        p: Hex = "p",
+        q: Hex = "q",
+        g: Hex = "g",
+        y: Hex = "y",
+        bits: usize = "keySize",
+    }
 }
 
-#[derive(Deserialize)]
-struct Group {
-    #[serde(rename = "publicKey")]
-    public_key: Key,
-    sha: String,
+crate::json_struct! {
+    struct Group {
+        public_key: Key = "publicKey",
+        sha: String = "sha",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    msg: Hex,
-    sig: Hex,
+crate::json_struct! {
+    struct Case {
+        msg: Hex = "msg",
+        sig: Hex = "sig",
+    }
 }
 
 fn pad(value: &[u8], width: usize) -> Vec<u8> {

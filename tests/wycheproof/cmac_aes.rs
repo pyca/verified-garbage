@@ -13,25 +13,25 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
 use verified_garbage::cmac::InvalidKeyLength;
 use verified_garbage::cmac::aes::AesCmac;
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    key_size: usize,
-    tag_size: usize,
+crate::json_struct! {
+    struct Group {
+        key_size: usize = "keySize",
+        tag_size: usize = "tagSize",
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    key: Hex,
-    msg: Hex,
-    tag: Hex,
+crate::json_struct! {
+    struct Case {
+        key: Hex = "key",
+        msg: Hex = "msg",
+        tag: Hex = "tag",
+    }
 }
 
 #[test]
