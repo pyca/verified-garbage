@@ -1411,12 +1411,13 @@ theorem verify_spec_pre {s : State}
       s.mem.readW (s.syms baseOddSym + BitVec.ofNat 64 (8 * i)) 64 = baseOddWords.getD i 0)
     (fit : (s.syms baseOddSym).toNat + 16384 ≤ 2 ^ 64)
     (td : Region.Disjoint ⟨s.syms baseOddSym, 16384⟩ ⟨s.gpr .rcx, 8192⟩)
-    (tr : Region.Disjoint ⟨s.syms baseOddSym, 16384⟩ ⟨s.gpr .rsp, 8⟩) :
+    (tr : Region.Disjoint ⟨s.syms baseOddSym, 16384⟩ ⟨s.gpr .rsp, 8⟩)
+    (hal : (s.syms baseOddSym).toNat % 64 = 0) :
     (Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts)).pre s := by
   sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
     Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq, Abi.withConsts,
     Abi.constRegions, Abi.constsHeld, stackBelow, baseOddWords_length]
-  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; simp only [List.mem_singleton, forall_eq]; exact td, tr,
+  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; simp only [List.mem_singleton, forall_eq]; exact td, tr, hal,
     by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, r4, f0, f1, f2, f3⟩
 
 theorem verify_sat :
@@ -1426,6 +1427,7 @@ theorem verify_sat :
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (by decide) (by decide) (by decide) (by decide)
     verifySatMem_held (by decide) (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+    (by decide)
 
 theorem verify_implies :
     verifyLocal.Implies (Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts baseOddConsts)) where
