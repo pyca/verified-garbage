@@ -949,7 +949,7 @@ else but the flags. -/
 theorem exec_nonstore_xmm {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : State}
     (h : exec i s = some s') :
     s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ ∀ r, r ≠ d → s'.gpr r = s.gpr r := by
-  cases i <;> simp only [dstOf, Option.some.injEq, reduceCtorEq] at hd <;> subst hd
+  cases i <;> cases hd
   case mov src =>
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
@@ -968,7 +968,7 @@ theorem exec_nonstore_xmm {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : 
     split
     · exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
     · exact ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
-  case shift32 op _ n =>
+  case shift32 op n =>
     simp only [exec, execShift32] at h
     split at h
     · cases op <;> simp only [Option.some.injEq] at h <;> subst h <;>
@@ -1024,7 +1024,7 @@ theorem exec_nonstore_xmm {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : 
   case bswap =>
     simp only [exec, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
-  case shift op _ n =>
+  case shift op n =>
     simp only [exec, execShift] at h
     split at h
     · cases op <;> simp only [Option.some.injEq] at h <;> subst h <;>
