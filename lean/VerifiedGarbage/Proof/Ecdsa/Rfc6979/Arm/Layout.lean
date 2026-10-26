@@ -103,7 +103,7 @@ structure Ok : Prop where
   ng : L.dg.toNat + dn ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
   nB : 240 + 4 * L.e ≤ L.sp.toNat
-  tables : ∀ r∈L.TBLs,r.base.toNat+r.len≤2^32 ∧ ∀ w∈[L.OUT,L.SCR,L.STK],r.Disjoint w
+  tables : ∀ r∈L.TBLs,r.base.toNat+r.len≤2^32 ∧ (∀ w∈[L.OUT,L.SCR,L.STK],r.Disjoint w) ∧ r.base.toNat%64=0
 
 end Lay
 
@@ -379,7 +379,7 @@ theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide hHigh : Bool} {s : State}
   rw [lay_tbls] at hr
   obtain ⟨c,hc,rfl⟩ := List.mem_map.mp hr
   have tc := tables c hc
-  refine ⟨?_,tc.2.2⟩
+  refine ⟨?_,tc.2.2.1,tc.2.2.2⟩
   simpa only [toNat_addr] using tc.2.1
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

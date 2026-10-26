@@ -193,10 +193,10 @@ theorem core_tables (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀
     obtain rfl := List.mem_singleton.mp hr
     exact ⟨L.STK,by simp,(fun _ h => h)⟩)
   simp only [core_syms hc hcs,State.withRegions_mem,State.callEntry_mem]
-  refine ⟨?_,?_,?_⟩
+  refine ⟨?_,?_,?_,?_⟩
   · intro i hi
     rw [frame.readW (r := ⟨State.addr (L.sy c.1),8*c.2.length⟩)
-      (Offset.contains_base _ (by omega_arith) (by omega_arith)) ht.2 (by decide)]
+      (Offset.contains_base _ (by omega_arith) (by omega_arith)) ht.2.1 (by decide)]
     exact hc.held c hcs i hi
   · simpa only [toNat_addr] using ht.1
   · intro r hr
@@ -204,8 +204,9 @@ theorem core_tables (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀
     rcases hr with rfl|rfl
     · have e : (⟨State.addr L.out,2*P.Q⟩ : Region)=L.OUT := by rw [Lay.OUT,hk.1]
       rw [e]
-      exact ht.2 _ (by simp)
-    · exact ht.2 _ (by simp)
+      exact ht.2.1 _ (by simp)
+    · exact ht.2.1 _ (by simp)
+  · exact ht.2.2
 
 theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) (hr : CoreRegs L t) :
     (coreK P.R.E P.R.coreConsts).pre ((pushed [.r12, .lr] t).callEntry.withRegions (coreRd P L) (coreWr P L)) := by
