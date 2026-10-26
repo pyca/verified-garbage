@@ -26,7 +26,7 @@ and everything they import. Unchanged downstream modules need not bind
 otherwise independent rebuilds to the same shard. The targets are packed
 by the time to rebuild their imports, largest first, each into the shard
 where the estimate it leaves, plus the work it adds there (as time on a
-runner), is the least:
+runner, weighed by each of `REUSE_WEIGHTS` in turn), is the least:
 a shard with a long chain takes other work only until it would finish after
 the chain, and a sink goes where much of what it imports is built already,
 rather than building it again elsewhere, unless that shard is the slower by
@@ -39,8 +39,10 @@ first that builds it), so the shards' outputs together are the whole build. A pl
 is only an estimate: whatever the shards leave unbuilt, the job that
 assembles their outputs (the last shard to finish, normally) builds.
 
-For each useful count up to MAX_SHARDS, a dependency-constrained simulation
-estimates the packing's build time, including serial phases that cannot
+For each useful count up to MAX_SHARDS (one whose shards could finish
+within SLACK of the fastest plan if they shared the work evenly) and each
+reuse weight, a dependency-constrained simulation estimates the packing's
+build time, including serial phases that cannot
 overlap the parallel work. Compare those times plus SHARD_OVERHEAD with a
 single runner's time; among plans within SLACK of the fastest, choose the
 least total module work (counting duplicated imports), then fewer runners.
@@ -84,6 +86,7 @@ import functools
 import heapq
 import json
 import math
+import multiprocessing
 import os
 import pathlib
 import re
@@ -118,6 +121,14 @@ SLACK = 0.05
 # module times add up to 5.4 times their builds' wall times). The simulation
 # has ceil(PARALLELISM) slots sharing this throughput when all are occupied.
 PARALLELISM = 5.4
+# How heavily packing weighs the work a sink adds to a shard (modules the
+# shard does not build yet), against the shard's estimated time: 1 is that
+# work as time on a runner, more makes a sink rather join the shards that
+# build its imports already. Which weight packs best depends on the
+# rebuild (in a full rebuild of CI's, 8 halved the work built twice and
+# finished 9% sooner, but 12 left one shard much slower): the plan tries
+# each and keeps the fastest by the simulation.
+REUSE_WEIGHTS = (1.0, 2.0, 4.0, 6.0, 8.0)
 # The time to check that a module is up to date, and to build one the
 # manifest has no time for when it has none at all.
 UP_TO_DATE = 0.02
@@ -604,15 +615,86 @@ def read_json(path: str) -> dict:
     return json.loads(p.read_text()) if p.is_file() else {}
 
 
+class _Sinks:
+    """What packing reads of each sink, the same for every count and weight.
+
+    A build restores the modules it does not rebuild, at `UP_TO_DATE` each:
+    packing weighs each sink's rebuilt modules (`rebuilt`) one by one, and
+    counts its restored ones (`restored`, a bit mask), which takes a
+    fraction of the time of subtracting its whole closure from each shard.
+    """
+
+    def __init__(self, sinks, closure, cost):
+        self.rebuilt = {s: frozenset(m for m in closure[s] if cost[m] != UP_TO_DATE) for s in sinks}
+        kept = {s: closure[s] - self.rebuilt[s] for s in sinks}
+        index = {m: i for i, m in enumerate(sorted(set().union(*kept.values())))}
+        self.restored = {}
+        for s in sinks:
+            bits = bytearray((len(index) + 7) // 8)
+            for m in kept[s]:
+                i = index[m]
+                bits[i >> 3] |= 1 << (i & 7)
+            self.restored[s] = int.from_bytes(bits, "little")
+
+
+# What `_Packings`' worker processes pack: set before they start, which
+# they inherit (forked) rather than receive.
+_PACKING = None
+
+
+def _pack_one(task):
+    n, reuse = task
+    sinks, closure, cost, path, prepared = _PACKING
+    return pack(n, sinks, closure, cost, path, reuse, prepared)
+
+
+class _Packings:
+    """Each count's packings, one per reuse weight. With many sinks (a
+    packing then takes a large part of a second) and CPUs to spare, worker
+    processes pack them at once, forked when first needed; the packings are
+    the same as one after another."""
+
+    # Fewer sinks pack in less time than forking takes.
+    PARALLEL_SINKS = 200
+
+    def __init__(self, sinks, closure, cost, path, prepared):
+        global _PACKING
+        _PACKING = (sinks, closure, cost, path, prepared)
+        self.pool = None
+        cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count() or 1
+        self.workers = min(len(REUSE_WEIGHTS), cpus)
+        if (len(sinks) < self.PARALLEL_SINKS
+                or "fork" not in multiprocessing.get_all_start_methods()):
+            self.workers = 1
+
+    def __call__(self, n):
+        tasks = [(n, reuse) for reuse in REUSE_WEIGHTS]
+        if self.workers == 1:
+            return [_pack_one(t) for t in tasks]
+        if self.pool is None:
+            self.pool = multiprocessing.get_context("fork").Pool(self.workers)
+        return self.pool.map(_pack_one, tasks, chunksize=1)
+
+    def close(self):
+        global _PACKING
+        if self.pool is not None:
+            self.pool.terminate()
+            self.pool.join()
+        _PACKING = None
+
+
 def pack(
     count: int,
     sinks: list[str],
     closure: dict[str, frozenset[str]],
     cost: dict[str, float],
     path: dict[str, float],
+    reuse: float = 1.0,
+    prepared: "_Sinks | None" = None,
 ) -> tuple[list[float], list[list[str]], list[set[str]]]:
     """`sinks` (largest first) packed into `count` shards: each shard's
-    estimated time, its sinks, and the modules it builds."""
+    estimated time, its sinks, and the modules it builds. `reuse` weighs
+    the work a sink adds to a shard (see `REUSE_WEIGHTS`)."""
     shards: list[set[str]] = [set() for _ in range(count)]
     loads = [0.0] * count
     longest = [0.0] * count
@@ -622,19 +704,27 @@ def pack(
     # again for every target, shard, and candidate count.
     unit = next(iter(cost.values()), 0.0)
     uniform = all(t == unit for t in cost.values())
+    if prepared is None:
+        prepared = _Sinks(sinks, closure, cost)
+    rebuilt, restored = prepared.rebuilt, prepared.restored
+    # The restored modules of each shard's sinks, as a bit mask.
+    kept = [0] * count
     for s in sinks:
         if uniform:
             added = [unit * len(closure[s] - shard) for shard in shards]
         else:
-            added = [math.fsum(map(cost.__getitem__, closure[s] - shard)) for shard in shards]
+            added = [sum(map(cost.__getitem__, rebuilt[s] - shard))
+                     + UP_TO_DATE * (restored[s] & ~mask).bit_count()
+                     for shard, mask in zip(shards, kept)]
         # The work a sink adds counts on its own too, not only through the
         # estimate: a shard whose chain hides it would otherwise take sinks
         # whose imports another shard builds already, and build them again.
         best = min(
             range(count),
-            key=lambda i: (estimate(loads[i] + added[i], max(longest[i], path[s])) + added[i] / PARALLELISM, i),
+            key=lambda i: (estimate(loads[i] + added[i], max(longest[i], path[s])) + reuse * added[i] / PARALLELISM, i),
         )
         shards[best] |= closure[s]
+        kept[best] |= restored[s]
         loads[best] += added[best]
         longest[best] = max(longest[best], path[s])
         targets[best].append(s)
@@ -823,6 +913,7 @@ def schedule(
     total = {m: math.fsum(cost[x] for x in required[m]) for m in rebuild_targets(stale, closure)}
     sinks = sorted(total, key=lambda m: (-total[m], m))
     needed = set().union(*(required[m] for m in sinks))
+    prepared = _Sinks(sinks, required, cost)
     # Include the same cached imports in the solo estimate as in the shards.
     simulator = _BuildGraph(imps, {m: cost[m] for m in needed})
     solo = simulator.time()
@@ -859,33 +950,49 @@ def schedule(
     # Start with more shards to establish a tight finish-time bound early.
     # A lower bound already outside the tolerance cannot become competitive
     # as the fastest time decreases, so it need not be simulated.
+    packings = _Packings(sinks, required, cost, path, prepared)
     for n in range(min(MAX_SHARDS, len(sinks)), 1, -1):
-        bounds, targets, built = pack(n, sinks, required, cost, path)
-        candidate = {"shards": n, "lower_bound_finish_s": max(bounds) + SHARD_OVERHEAD}
-        if diagnostics is not None:
-            diagnostics["candidates"].append(candidate)
-        if any(not ts for ts in targets):
-            # An empty target list would invoke an unscoped `lake build`.
-            candidate["excluded"] = "empty_targets"
+        # However they are packed, n shards build all the work between them,
+        # and one builds the longest chain: no packing makes a count whose
+        # bound is outside the tolerance competitive.
+        if estimate(unique_work / n, max(path[m] for m in sinks)) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+            if diagnostics is not None:
+                diagnostics["candidates"].append({"shards": n, "excluded": "work_bound"})
             continue
-        if max(bounds) + SHARD_OVERHEAD > fastest * (1 + SLACK):
-            candidate["excluded"] = "lower_bound"
-            continue
-        loads = []
-        for part in built:
-            loads.append(simulator.time(part))
-            if loads[-1] + SHARD_OVERHEAD > fastest * (1 + SLACK):
-                break
-        if len(loads) != len(built) or max(loads) + SHARD_OVERHEAD > fastest * (1 + SLACK):
-            candidate["excluded"] = "simulated_finish"
-            continue
-        repeated = math.fsum(cost[m] for part in built for m in part)
-        candidate.update({"finish_s": max(loads) + SHARD_OVERHEAD, "module_work_s": repeated})
-        candidates.append((max(loads) + SHARD_OVERHEAD, repeated, n, (loads, targets, built)))
-        fastest = min(fastest, max(loads) + SHARD_OVERHEAD)
+        for reuse, (bounds, targets, built) in zip(REUSE_WEIGHTS, packings(n)):
+            candidate = {"shards": n, "reuse": reuse, "lower_bound_finish_s": max(bounds) + SHARD_OVERHEAD}
+            if diagnostics is not None:
+                diagnostics["candidates"].append(candidate)
+            if any(not ts for ts in targets):
+                # An empty target list would invoke an unscoped `lake build`.
+                candidate["excluded"] = "empty_targets"
+                continue
+            if max(bounds) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+                candidate["excluded"] = "lower_bound"
+                continue
+            loads = []
+            for part in built:
+                loads.append(simulator.time(part))
+                if loads[-1] + SHARD_OVERHEAD > fastest * (1 + SLACK):
+                    break
+            if len(loads) != len(built) or max(loads) + SHARD_OVERHEAD > fastest * (1 + SLACK):
+                candidate["excluded"] = "simulated_finish"
+                continue
+            repeated = math.fsum(cost[m] for part in built for m in part)
+            candidate.update({"finish_s": max(loads) + SHARD_OVERHEAD, "module_work_s": repeated})
+            candidates.append((max(loads) + SHARD_OVERHEAD, repeated, n, (loads, targets, built)))
+            fastest = min(fastest, max(loads) + SHARD_OVERHEAD)
+    packings.close()
     # Work counts shared dependencies again on each runner. Within the
     # latency tolerance, prefer less work, then fewer runners, then latency.
-    chosen = min((c for c in candidates if c[0] <= fastest * (1 + SLACK)),
+    # The weights only pack a count's shards: of each count, take the
+    # fastest packing (then the least work), so that more weights do not
+    # make a slower plan more likely.
+    best = {}
+    for c in candidates:
+        if c[2] not in best or (c[0], c[1]) < (best[c[2]][0], best[c[2]][1]):
+            best[c[2]] = c
+    chosen = min((c for c in best.values() if c[0] <= fastest * (1 + SLACK)),
                  key=lambda c: (c[1], c[2], c[0]))
     packed = chosen[3]
     if chosen[2]:
