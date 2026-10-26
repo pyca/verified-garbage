@@ -41,7 +41,7 @@ theorem rfcCombSat_spec (I : Spec.Ecdsa.Rfc6979.Instance)
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
   simp only [hI, hS, Spec.Ecdsa.P256.inst, Spec.P256.curve, esp, sy, aa]
-  refine ⟨by decide, by decide, ?_, held, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨by decide, by decide, ?_, held, ?_, ?_, ?_, ?_, by decide, ?_⟩
   · rw [p256W_length]; rfl
   · rw [p256W_length]; decide
   · rw [p256W_length]
@@ -73,7 +73,7 @@ theorem comb_implies (I : Spec.Ecdsa.Rfc6979.Instance)
       X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     simp only [hI, hS, Spec.Ecdsa.P256.inst, Spec.P256.curve] at h
-    obtain ⟨lo, sp, hd, held, fit, dw, rt, st, ht, wr,
+    obtain ⟨lo, sp, hd, held, fit, dw, rt, st, -, ht, wr,
       od, og, oc, oa, dc, da, gc, ga, ca, ro, rd, rg, rc, ra,
       ko, kd, kg, kc, ka, no, nd, ng, nc⟩ := h
     change (rfcWide I 272 p256Comb.combConsts).pre s
