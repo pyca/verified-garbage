@@ -75,13 +75,14 @@ theorem verifyEquation_spec_pre {s : State}
     (h3 : Region.Disjoint ⟨s.gpr .x2, 57⟩ ⟨s.gpr .x3, 8192⟩)
     (f0 : (s.gpr .x0).toNat + 57 ≤ 2 ^ 64) (f1 : (s.gpr .x1).toNat + 114 ≤ 2 ^ 64)
     (f2 : (s.gpr .x2).toNat + 57 ≤ 2 ^ 64) (f3 : (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64)
-    (ht : CombHeld s [⟨s.gpr .x3, 8192⟩]) :
+    (ht : CombHeld s [⟨s.gpr .x3, 8192⟩])
+    (hal : (s.syms combSym).toNat % 64 = 0) :
     (Spec.Ed448.verifyEquationContract (AArch64.abi.withConsts combConsts)).pre s := by
   sig_pre [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig, Spec.Ed448.scratchWords,
     AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
-  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1,
+  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, hal, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1,
     f2, f3⟩
 
 theorem verifyEquation_sat :
@@ -91,7 +92,7 @@ theorem verifyEquation_sat :
       BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := satMem_held
   refine verifyEquation_spec_pre (by rw [hl]; rfl) rfl (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
-    (by decide) (by decide) ⟨held, ?_, ?_⟩
+    (by decide) (by decide) ⟨held, ?_, ?_⟩ (by decide)
   all_goals rw [hl]
   · decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -103,7 +104,7 @@ theorem verifyEquation_implies :
     sig_pre [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig, Spec.Ed448.scratchWords,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at h
-    obtain ⟨hd, hheld, hfit, hdw, ht, hw, h1, h2, h3, -, -, -, h4⟩ := h
+    obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, h1, h2, h3, -, -, -, h4⟩ := h
     refine ⟨?_, hw, h1, h2, h3, h4, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post s t _ h := by

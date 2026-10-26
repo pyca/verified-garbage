@@ -49,13 +49,14 @@ theorem spec_pre {s : State}
     (h2 : Region.Disjoint ⟨s.gpr .x0, 97⟩ ⟨s.gpr .x2, 8192⟩)
     (h3 : Region.Disjoint ⟨s.gpr .x1, 48⟩ ⟨s.gpr .x2, 8192⟩)
     (f0 : (s.gpr .x0).toNat + 97 ≤ 2 ^ 64) (f1 : (s.gpr .x1).toNat + 48 ≤ 2 ^ 64)
-    (f2 : (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64) (ht : TblHeld s [⟨s.gpr .x0, 97⟩, ⟨s.gpr .x2, 8192⟩]) :
+    (f2 : (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64) (ht : TblHeld s [⟨s.gpr .x0, 97⟩, ⟨s.gpr .x2, 8192⟩])
+    (hal : (s.syms p384.tsym).toNat % 64 = 0) :
     (Spec.EcKey.P384.inst.publicKeyContract (AArch64.abi.withConsts p384.combConsts)).pre s := by
   sig_pre [Spec.EcKey.P384.inst, Spec.EcKey.Instance.publicKeyContract,
     Spec.EcKey.Instance.publicKeySig, Spec.P384.curve, Spec.EcKey.scratchWords, AArch64.abi,
     AArch64.argRegs, p384_combConsts, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
-  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1, f2⟩
+  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, hal, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1, f2⟩
 
 /-- A state satisfying the precondition: the tables at `0x100000`. -/
 def satState : State where
@@ -74,7 +75,7 @@ theorem sat_spec :
       BitVec.ofNat 64 (8 * i)) 64 = p384.combWords.getD i 0 := satMem_held
   refine spec_pre (by rw [hl]; rfl) rfl (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
-    (by decide) ⟨held, ?_, ?_⟩
+    (by decide) ⟨held, ?_, ?_⟩ (by decide)
   all_goals rw [hl]
   · decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -87,7 +88,7 @@ theorem implies : pkAArch64.Implies
       Spec.EcKey.Instance.publicKeySig, Spec.P384.curve, Spec.EcKey.scratchWords, AArch64.abi,
       AArch64.argRegs, p384_combConsts, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at h
-    obtain ⟨hd, hheld, hfit, hdw, ht, hw, h1, h2, h3, h4, -, h5⟩ := h
+    obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, h1, h2, h3, h4, -, h5⟩ := h
     refine ⟨?_, hw, h2, h1, h3, h4, h5, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by
