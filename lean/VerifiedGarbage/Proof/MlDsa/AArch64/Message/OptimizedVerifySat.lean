@@ -22,7 +22,7 @@ theorem vPre_spec {p : Params} {s : State} (h : VPre p s) :
     List.range,List.range.loop]
   refine ⟨h.sp,?_,h.roots.forward.held,h.roots.inverse.held,h.roots.forward.fit,
     h.roots.forward.writable,h.roots.forward.stack,h.roots.inverse.fit,
-    h.roots.inverse.writable,h.roots.inverse.stack,?_,h.wr,
+    h.roots.inverse.writable,h.roots.inverse.stack,h.roots.forward.aligned,h.roots.inverse.aligned,?_,h.wr,
     h.pkScr,h.msgScr,h.ctxScr,h.sigScr,
     h.stkPk,h.stkMsg,h.stkCtx,h.stkSig,h.stkScr,
     h.nPk,h.nMsg,h.nCtx,h.nSig,h.nScr⟩

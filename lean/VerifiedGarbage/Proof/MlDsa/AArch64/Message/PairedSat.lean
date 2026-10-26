@@ -24,7 +24,7 @@ theorem sPre_spec {p : Params} {s : State} (h : SPre p s) :
     List.range,List.range.loop]
   refine ⟨h.sp,?_,h.roots.forward.held,h.roots.inverse.held,h.paired.held,h.roots.forward.fit,
     h.roots.forward.writable,h.roots.forward.stack,h.roots.inverse.fit,
-    h.roots.inverse.writable,h.roots.inverse.stack,h.paired.fit,h.paired.writable,h.paired.stack,?_,h.wr,
+    h.roots.inverse.writable,h.roots.inverse.stack,h.paired.fit,h.paired.writable,h.paired.stack,h.roots.forward.aligned,h.roots.inverse.aligned,h.paired.aligned,?_,h.wr,
     h.skSig,h.skScr,h.msgSig,h.msgScr,h.ctxSig,h.ctxScr,h.rndSig,h.rndScr,h.sigScr,
     h.stkSk,h.stkMsg,h.stkCtx,h.stkRnd,h.stkSig,h.stkScr,
     h.nSk,h.nMsg,h.nCtx,h.nRnd,h.nSig,h.nScr⟩
