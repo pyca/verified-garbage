@@ -67,8 +67,8 @@ theorem optimizedSignSatWith_pre (p : Params) (hp : Ok3 p) (m : Mem)
     all_goals refine ⟨List.subset_append_left _ _, ?_⟩
     all_goals sig_and_intros
     all_goals first | rfl | exact Region.disjoint_of_sep (by decide) | decide
-  · refine ⟨⟨hf,by dsimp [optimizedSignSatWith]; decide,?_,?_,by dsimp [optimizedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [optimizedSignSatWith]; decide⟩,
-      ⟨hi,by dsimp [optimizedSignSatWith]; decide,?_,?_,by dsimp [optimizedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [optimizedSignSatWith]; decide⟩⟩
+  · refine ⟨⟨hf,by dsimp [optimizedSignSatWith]; decide,?_,?_,by dsimp [optimizedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [optimizedSignSatWith]; try decide⟩,
+      ⟨hi,by dsimp [optimizedSignSatWith]; decide,?_,?_,by dsimp [optimizedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [optimizedSignSatWith]; try decide⟩⟩
     · apply Covers.one
       exact ⟨⟨1048576,3904⟩,by simp [optimizedSignSatWith],Region.contains_self _ _⟩
     · rcases hp with rfl|rfl|rfl

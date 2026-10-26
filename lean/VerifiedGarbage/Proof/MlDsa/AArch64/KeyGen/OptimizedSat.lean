@@ -55,7 +55,7 @@ theorem keyGenSatWith_pre {p : Params} (hp : p=mlDsa44∨p=mlDsa65∨p=mlDsa87) 
       all_goals sig_and_intros
       all_goals first | rfl | exact Region.disjoint_of_sep (by decide) | decide
     · simp only [keyGenSatWith,List.mem_cons]; exact .inl True.intro
-  · refine ⟨⟨hf,?_,?_,?_,?_,by dsimp [keyGenSatWith]; decide⟩,⟨hi,?_,?_,?_,?_,by dsimp [keyGenSatWith]; decide⟩⟩
+  · refine ⟨⟨hf,?_,?_,?_,?_,by dsimp [keyGenSatWith]; try decide⟩,⟨hi,?_,?_,?_,?_,by dsimp [keyGenSatWith]; try decide⟩⟩
     · dsimp [keyGenSatWith,Sign.optimizedSignSat,Sign.optimizedSignSatWith]; decide
     · apply Covers.one
       exact ⟨⟨1048576,3904⟩,by simp [keyGenSatWith],Region.contains_self _ _⟩

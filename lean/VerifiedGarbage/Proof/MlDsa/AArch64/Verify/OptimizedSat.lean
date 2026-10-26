@@ -33,8 +33,8 @@ theorem verifySatWith_roots (p : Params) (hp : Ok3 p) (m : Mem)
     (hi : ∀j<488,m.readW (1052480+BitVec.ofNat 64 (8*j)) 64=
       Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD j 0) :
     StaticRoots 16 (verifySatWith p m) := by
-  refine ⟨⟨hf,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; decide⟩,
-    ⟨hi,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; decide⟩⟩
+  refine ⟨⟨hf,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; try decide⟩,
+    ⟨hi,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; try decide⟩⟩
   · apply Covers.one
     exact ⟨⟨1048576,3904⟩,by simp [verifySatWith],Region.contains_self _ _⟩
   · rcases hp with rfl|rfl|rfl

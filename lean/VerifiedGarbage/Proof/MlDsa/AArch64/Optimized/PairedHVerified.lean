@@ -527,7 +527,7 @@ theorem hintSatWith_pre (m : Mem)
     (hdata : ∀j<2,ResponseDecomposed m (pairPolyPtr 12288 j) (pairPolyPtr 16384 j) 95232) :
     (pairedHintContract (abi.withConsts pairedConsts)).pre (hintSatWith m) := by
   apply pairedHint_pre_intro (s:=hintSatWith m) ?_ held (by dsimp only [hintSatWith]; decide) (by dsimp only [hintSatWith]; decide) (by dsimp only [hintSatWith]; decide) (by dsimp only [hintSatWith]; decide) (by dsimp only [hintSatWith]; decide) (by dsimp only [hintSatWith]; decide)
-  refine ⟨rfl,rfl,?_,?_,?_,?_,?_,?_,?_,?_,?_,hprod,hdata,rfl,by dsimp only [hintSatWith]; decide,by dsimp only [hintSatWith]; decide⟩
+  refine ⟨rfl,rfl,?_,?_,?_,?_,?_,?_,?_,?_,?_,hprod,hdata,rfl,by dsimp only [hintSatWith]; decide,by dsimp only [hintSatWith]; try decide⟩
   · intro i hi
     refine (held i hi).trans ?_
     rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by rw [PairedTable.expandedWords_length]; exact hi),

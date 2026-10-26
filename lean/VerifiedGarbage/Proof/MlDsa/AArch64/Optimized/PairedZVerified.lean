@@ -317,7 +317,7 @@ theorem zSatWith_pre (m : Mem)
     (hdata : ∀j<2,Reduced m (pairPolyPtr 12288 j)) :
     (pairedZContract (abi.withConsts pairedConsts)).pre (zSatWith m) := by
   apply pairedZ_pre_intro (s:=zSatWith m) ?_ held (by dsimp only [zSatWith]; decide) (by dsimp only [zSatWith]; decide) (by dsimp only [zSatWith]; decide) (by dsimp only [zSatWith]; decide) (by dsimp only [zSatWith]; decide)
-  refine ⟨rfl,rfl,?_,?_,?_,?_,?_,?_,?_,hprod,hdata,by dsimp only [zSatWith]; decide,by dsimp only [zSatWith]; decide,by dsimp only [zSatWith]; decide⟩
+  refine ⟨rfl,rfl,?_,?_,?_,?_,?_,?_,?_,hprod,hdata,by dsimp only [zSatWith]; decide,by dsimp only [zSatWith]; decide,by dsimp only [zSatWith]; try decide⟩
   · intro i hi
     refine (held i hi).trans ?_
     rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by rw [PairedTable.expandedWords_length]; exact hi),

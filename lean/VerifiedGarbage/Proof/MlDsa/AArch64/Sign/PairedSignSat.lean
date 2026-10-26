@@ -70,8 +70,8 @@ theorem pairedSignSatWith_pre (p : Params) (hp : Ok3 p) (m : Mem)
     all_goals refine ⟨List.subset_append_left _ _, ?_⟩
     all_goals sig_and_intros
     all_goals first | rfl | exact Region.disjoint_of_sep (by decide) | decide
-  · refine ⟨⟨hf,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; decide⟩,
-      ⟨hi,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; decide⟩⟩
+  · refine ⟨⟨hf,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; try decide⟩,
+      ⟨hi,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; try decide⟩⟩
     · apply Covers.one
       exact ⟨⟨1048576,3904⟩,by simp [pairedSignSatWith],Region.contains_self _ _⟩
     · rcases hp with rfl|rfl|rfl
@@ -86,7 +86,7 @@ theorem pairedSignSatWith_pre (p : Params) (hp : Ok3 p) (m : Mem)
       all_goals simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
       all_goals sig_and_intros
       all_goals first | rfl | exact Region.disjoint_of_sep (by decide)
-  · refine ⟨hr,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; decide⟩
+  · refine ⟨hr,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; try decide⟩
     · apply Covers.one
       exact ⟨⟨1056384,4096⟩,by simp [pairedSignSatWith],Region.contains_self _ _⟩
     · rcases hp with rfl|rfl|rfl
