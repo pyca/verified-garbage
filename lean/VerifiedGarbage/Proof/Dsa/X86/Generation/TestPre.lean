@@ -241,7 +241,8 @@ theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base
       Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) m (off E.base sPP) =
         Spec.Dsa.ProbablePrime.candidateAt (VG.Impl.Dsa.X86.ProbablePrime.layout bits) s.mem (off E.base sPP) :=
     fun m F => cand_frame v lay (k := 24) (by decide) (by simpa [spU] using F)
-  refine ⟨by omega_arith, by omega_arith, by rw [symT]; rfl, ?_, ?_, trivial, by rw [Nat.mul_comm 8 ppWords],
+  refine ⟨by omega_arith, by omega_arith, by rw [symT]; rfl, ?_, ?_, fun t ht => by
+    simp only [List.mem_singleton] at ht; subst ht; dsimp only; rw [symT]; exact v.tableAligned, trivial, by rw [Nat.mul_comm 8 ppWords],
     (ws.symm.sub_left subWS).sub_right randSub, wsUO, (ss.sub_left subWS).sub_right subArgs,
     (ws.sub_left randSub).sub_right subUO, (wk.sub_left randSub).sub_right subArgs,
     (ss.sub_left subUO).sub_right subArgs,

@@ -34,6 +34,8 @@ structure CallFacts (s : State) : Prop where
   tableFar : ∀ t ∈ Abi.constRegions (fun name => (s.syms name).setWidth 64) VG.Impl.RsaKeyGen.TrialTable32.consts,
     t.base.toNat + t.len ≤ 2 ^ 32 ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
     t.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ∧ t.Disjoint (reservedRegion s)
+  tableAligned : ∀ t ∈ Abi.constRegions (fun name => (s.syms name).setWidth 64)
+    VG.Impl.RsaKeyGen.TrialTable32.consts, t.base.toNat % 64 = 0
   rdPrefix : s.rd.take (s.rd.length - 1) = [(⟨(arg s 4).setWidth 64, (arg s 5).toNat⟩ : Region), (⟨(arg s 6).setWidth 64, (arg s 7).toNat⟩ : Region), (⟨(arg s 8).setWidth 64, (arg s 9).toNat⟩ : Region)]
   wr : s.wr = [(⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩ : Region), (⟨(arg s 10).setWidth 64, (arg s 11).toNat * 8⟩ : Region), ⟨argAddr s 0, 48⟩]
   outSeeds : (⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩ : Region).Disjoint (⟨(arg s 4).setWidth 64, (arg s 5).toNat⟩ : Region)

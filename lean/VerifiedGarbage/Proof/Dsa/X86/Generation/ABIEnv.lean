@@ -150,7 +150,7 @@ theorem CallFacts.valid {s : State} (F : CallFacts s) : (callEnv s).Valid := by
     F.seedsWhole, F.hsWhole, by rw [spNat]; omega, ?_, by rw [ws, F.outRegion]; exact F.outScr,
     fun r mem => ⟨(tapes r mem).1, (tapes r mem).2.1, (tapes r mem).2.2.sub_right F.stackSub⟩,
     by rw [F.outRegion]; exact F.stackOut.symm.sub_right F.stackSub,
-    by rw [ws]; exact F.stackScr.symm.sub_right F.stackSub, ?_, ?_, ?_, ?_⟩
+    by rw [ws]; exact F.stackScr.symm.sub_right F.stackSub, ?_, ?_, ?_, ?_, ?_⟩
   · change (callEnv s).sp.toNat ≤ ((arg s 10).setWidth 64).toNat ∨
       ((arg s 10).setWidth 64).toNat + (arg s 11).toNat * 8 + 200 ≤ (callEnv s).sp.toNat
     rw [spNat, toNat_wide]
@@ -166,5 +166,6 @@ theorem CallFacts.valid {s : State} (F : CallFacts s) : (callEnv s).Valid := by
     · rw [F.wr]; exact List.mem_cons_of_mem _ List.mem_cons_self
     · rw [F.outRegion]; exact T.2.1 _ (by rw [F.wr]; exact List.mem_cons_self)
     · exact T.2.2.2.sub_right F.stackSub
+  · exact F.tableAligned _ (by rw [ProbablePrime.table_regions]; exact List.mem_cons_self)
 
 end VG.Proof.Dsa.X86.Generation
