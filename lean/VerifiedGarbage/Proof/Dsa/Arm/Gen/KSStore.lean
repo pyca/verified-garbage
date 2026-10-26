@@ -37,17 +37,7 @@ theorem SS.ptr_ok (h : SS G σ c s) {r : Reg} (hr : r ∉ [.r7, .r8, .r9]) {j : 
     WP isa (.block (ptr r j ++ rest)) s Q := by
   have r7 : r ≠ .r7 := fun e => hr (by simp [e])
   have r8 : r ≠ .r8 := fun e => hr (by simp [e])
-  unfold ptr
-  refine wp_mov (op2_imm (encodable_lt hj)) fun s1 u1 => ?_
-  refine wp_mul fun s2 u2 => ?_
-  refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
-  refine wp_dp (op2_imm (by decide)) fun t u4 => ?_
-  have rest : Rest [r] s t :=
-    (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest (by simp))))
-  refine k t ?_ rest (by rw [u4.mem, u3.mem, u2.mem, u1.mem])
-  rw [u4.gpr, dpVal, u3.gpr, dpVal, u2.gpr, u1.gpr, u2.other .r8 r8.symm, u1.other .r8 r8.symm,
-    u1.other .r7 r7.symm, h.r7, h.r8]
-  exact ptr_val _ _ _
+  exact ptr_regs_ok r7 r8 hj h.r7 h.r8 k
 
 end
 
@@ -79,7 +69,8 @@ theorem storeBE_vp {L j o n : Nat} (cert : Cert7 (storeBE L j o n)) (hL : L = G.
   have as : State.addr (G.scr + BitVec.ofNat 32 o) = G.sa o := gi.saddr (by omega)
   have va := h.arrs.get hj
   unfold storeBE
-  refine WP.seq (h.ptr_ok (r := .r1) (by decide) (by simp only [nArrs] at hjN; omega) fun s₁ p₁ R₁ m₁ => ?_)
+  simp only [List.append_assoc]
+  refine WP.seq (h.ptr_ok (r := .r1) (j := j) (by decide) (by simp only [nArrs] at hjN; omega) fun s₁ p₁ R₁ m₁ => ?_)
   refine wp_movw fun s₂ u₂ => ?_
   refine wp_dp (op2_reg _ _) fun s₃ u₃ => ?_
   have r8₃ : s₃.gpr .r8 = G.KB := by

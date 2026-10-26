@@ -2669,7 +2669,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ umaal</td>
+<td>✅ umaal; Fused multiply-add for key-workspace array addresses</td>
 
 <td>✅</td>
 

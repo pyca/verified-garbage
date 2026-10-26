@@ -26,6 +26,7 @@ theorem ptr3_ok {s : State} {B : BitVec 32} {Z w N o a b : Nat} (h : Ws s B Z w 
       t.gpr .r12 = B + BitVec.ofNat 32 (arr w b) → Rest [.r0, .r10, .r12] s t → t.mem = s.mem →
       Ws t B Z w N → WP isa (.block rest) t Q) :
     WP isa (.block (ptr .r0 o ++ ptr .r10 a ++ ptr .r12 b ++ rest)) s Q := by
+  simp only [List.append_assoc]
   refine ptr_ok h (by decide) ho fun s1 p1 r1 m1 h1 => ?_
   refine ptr_ok h1 (by decide) ha fun s2 p2 r2 m2 h2 => ?_
   refine ptr_ok h2 (by decide) hb fun t p3 r3 m3 h3 => ?_

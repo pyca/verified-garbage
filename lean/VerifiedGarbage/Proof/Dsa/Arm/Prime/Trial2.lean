@@ -108,7 +108,7 @@ theorem trial_vp {E : State → Prop} :
       rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, ofNat_toNat_lt this]
       simp only [nT]
       by_cases h35 : 35 ≤ P.W <;> simp [h35] <;> omega_arith
-    refine ptr_ok hw8 (r := .r12) (by decide) (by decide) fun s9 p9 k9 m9 hw9 => WP.block_nil ?_
+    refine ptr_ok hw8 (r := .r12) (j := aTab) (by decide) (by decide) fun s9 p9 k9 m9 hw9 => WP.block_nil ?_
     have to0 : TO P.B P.Z P.W s1.mem s9 0 s9 := ⟨hw9, by rw [m9, m8], Rest.refl _ _,
       by rw [p9, Nat.mul_zero, Nat.add_zero], by rw [k9.gpr _ (by decide), lr8, Nat.sub_zero],
       by rw [k9.gpr _ (by decide), u8.gpr]; rfl⟩

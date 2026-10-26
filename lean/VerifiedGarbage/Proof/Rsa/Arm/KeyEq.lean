@@ -22,6 +22,7 @@ theorem eqS_ok {s : State} {B : BitVec 32} {Z w N d a b t : Nat} (h : Ws s B Z w
     WP isa (eqS d a b t) s fun u => Ws u B Z w N ∧ Keep B w [t] [sT, d] s.mem u.mem ∧
       slot u.mem B d = (if num s.mem B w a = num s.mem B w b then 1 else 0) ∧ Rest opRegs s u := by
   rw [eqS, WP.seq_iff]
+  simp only [List.append_assoc]
   refine ptr_ok h (by decide) (by omega) fun s1 first rest1 mem1 h1 => ?_
   refine ptr_ok h1 (by decide) (by omega) fun s2 second rest2 mem2 h2 => ?_
   refine wp_mov (op2_reg _ _) fun s3 u3 => ?_
