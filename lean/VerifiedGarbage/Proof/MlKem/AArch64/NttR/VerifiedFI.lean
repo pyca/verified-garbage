@@ -58,7 +58,7 @@ theorem inFI_of_pre {s : State} (h : fastInvContract.pre s) : InFI s := by
   sig_pre [nttInv16Contract, inPlace16Contract, inPlace16Sig, AArch64.abi, AArch64.argRegs, tablesI_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
   rw [tabWordsI_length] at h
-  obtain ⟨hd, held, fit, hdw, ht, hw, hdis, -, -, red⟩ := h
+  obtain ⟨hd, held, fit, hdw, -, ht, hw, hdis, -, -, red⟩ := h
   have hw0 : (⟨s.gpr .x0, 512⟩ : Region) ∈ s.wr := by rw [hw]; exact List.mem_cons_self
   refine ⟨hw0, red, fun j hj => by rw [held j (by omega), tabWordsI_get j hj], ?_, (hdw _ hw0).symm⟩
   apply Covers.of_mem
