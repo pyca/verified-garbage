@@ -358,161 +358,161 @@ ldr x16, [x3, #1144]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1024]
@@ -550,161 +550,161 @@ ldr x16, [x3, #1272]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1152]
@@ -742,161 +742,161 @@ ldr x16, [x3, #1400]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1280]
@@ -934,161 +934,161 @@ ldr x16, [x3, #1528]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1408]
@@ -1126,161 +1126,161 @@ ldr x16, [x3, #1656]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1536]
@@ -1318,161 +1318,161 @@ ldr x16, [x3, #1784]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1664]
@@ -1510,161 +1510,161 @@ ldr x16, [x3, #1912]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1792]
@@ -1702,161 +1702,161 @@ ldr x16, [x3, #2040]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1920]
@@ -1894,161 +1894,161 @@ ldr x16, [x3, #1928]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1024]
@@ -2086,161 +2086,161 @@ ldr x16, [x3, #1944]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1040]
@@ -2278,161 +2278,161 @@ ldr x16, [x3, #1960]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1056]
@@ -2470,161 +2470,161 @@ ldr x16, [x3, #1976]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1072]
@@ -2662,161 +2662,161 @@ ldr x16, [x3, #1992]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1088]
@@ -2854,161 +2854,161 @@ ldr x16, [x3, #2008]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1104]
@@ -3046,161 +3046,161 @@ ldr x16, [x3, #2024]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1120]
@@ -3238,161 +3238,161 @@ ldr x16, [x3, #2040]
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #32
+eor x14, x14, x1
+ror x14, x14, #32
+eor x15, x15, x2
+ror x15, x15, #32
+eor x16, x16, x4
+ror x16, x16, #32
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #24
+eor x6, x6, x10
+ror x6, x6, #24
+eor x7, x7, x11
+ror x7, x7, #24
+eor x8, x8, x12
+ror x8, x8, #24
 umaddl x17, w0, w5, x5
 umaddl x0, w0, w5, x0
 add x0, x0, x17
+umaddl x17, w1, w6, x6
+umaddl x1, w1, w6, x1
+add x1, x1, x17
+umaddl x17, w2, w7, x7
+umaddl x2, w2, w7, x2
+add x2, x2, x17
+umaddl x17, w4, w8, x8
+umaddl x4, w4, w8, x4
+add x4, x4, x17
 eor x13, x13, x0
 ror x13, x13, #16
+eor x14, x14, x1
+ror x14, x14, #16
+eor x15, x15, x2
+ror x15, x15, #16
+eor x16, x16, x4
+ror x16, x16, #16
 umaddl x17, w9, w13, x13
 umaddl x9, w9, w13, x9
 add x9, x9, x17
+umaddl x17, w10, w14, x14
+umaddl x10, w10, w14, x10
+add x10, x10, x17
+umaddl x17, w11, w15, x15
+umaddl x11, w11, w15, x11
+add x11, x11, x17
+umaddl x17, w12, w16, x16
+umaddl x12, w12, w16, x12
+add x12, x12, x17
 eor x5, x5, x9
 ror x5, x5, #63
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #32
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
-eor x6, x6, x10
-ror x6, x6, #24
-umaddl x17, w1, w6, x6
-umaddl x1, w1, w6, x1
-add x1, x1, x17
-eor x14, x14, x1
-ror x14, x14, #16
-umaddl x17, w10, w14, x14
-umaddl x10, w10, w14, x10
-add x10, x10, x17
 eor x6, x6, x10
 ror x6, x6, #63
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #32
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
-eor x7, x7, x11
-ror x7, x7, #24
-umaddl x17, w2, w7, x7
-umaddl x2, w2, w7, x2
-add x2, x2, x17
-eor x15, x15, x2
-ror x15, x15, #16
-umaddl x17, w11, w15, x15
-umaddl x11, w11, w15, x11
-add x11, x11, x17
 eor x7, x7, x11
 ror x7, x7, #63
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #32
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
-eor x8, x8, x12
-ror x8, x8, #24
-umaddl x17, w4, w8, x8
-umaddl x4, w4, w8, x4
-add x4, x4, x17
-eor x16, x16, x4
-ror x16, x16, #16
-umaddl x17, w12, w16, x16
-umaddl x12, w12, w16, x12
-add x12, x12, x17
 eor x8, x8, x12
 ror x8, x8, #63
 umaddl x17, w0, w6, x6
 umaddl x0, w0, w6, x0
 add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #32
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #24
-umaddl x17, w0, w6, x6
-umaddl x0, w0, w6, x0
-add x0, x0, x17
-eor x16, x16, x0
-ror x16, x16, #16
-umaddl x17, w11, w16, x16
-umaddl x11, w11, w16, x11
-add x11, x11, x17
-eor x6, x6, x11
-ror x6, x6, #63
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #32
 eor x13, x13, x1
 ror x13, x13, #32
+eor x14, x14, x2
+ror x14, x14, #32
+eor x15, x15, x4
+ror x15, x15, #32
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #24
 eor x7, x7, x12
 ror x7, x7, #24
+eor x8, x8, x9
+ror x8, x8, #24
+eor x5, x5, x10
+ror x5, x5, #24
+umaddl x17, w0, w6, x6
+umaddl x0, w0, w6, x0
+add x0, x0, x17
 umaddl x17, w1, w7, x7
 umaddl x1, w1, w7, x1
 add x1, x1, x17
+umaddl x17, w2, w8, x8
+umaddl x2, w2, w8, x2
+add x2, x2, x17
+umaddl x17, w4, w5, x5
+umaddl x4, w4, w5, x4
+add x4, x4, x17
+eor x16, x16, x0
+ror x16, x16, #16
 eor x13, x13, x1
 ror x13, x13, #16
+eor x14, x14, x2
+ror x14, x14, #16
+eor x15, x15, x4
+ror x15, x15, #16
+umaddl x17, w11, w16, x16
+umaddl x11, w11, w16, x11
+add x11, x11, x17
 umaddl x17, w12, w13, x13
 umaddl x12, w12, w13, x12
 add x12, x12, x17
+umaddl x17, w9, w14, x14
+umaddl x9, w9, w14, x9
+add x9, x9, x17
+umaddl x17, w10, w15, x15
+umaddl x10, w10, w15, x10
+add x10, x10, x17
+eor x6, x6, x11
+ror x6, x6, #63
 eor x7, x7, x12
 ror x7, x7, #63
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #32
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
-eor x8, x8, x9
-ror x8, x8, #24
-umaddl x17, w2, w8, x8
-umaddl x2, w2, w8, x2
-add x2, x2, x17
-eor x14, x14, x2
-ror x14, x14, #16
-umaddl x17, w9, w14, x14
-umaddl x9, w9, w14, x9
-add x9, x9, x17
 eor x8, x8, x9
 ror x8, x8, #63
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #32
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
-eor x5, x5, x10
-ror x5, x5, #24
-umaddl x17, w4, w5, x5
-umaddl x4, w4, w5, x4
-add x4, x4, x17
-eor x15, x15, x4
-ror x15, x15, #16
-umaddl x17, w10, w15, x15
-umaddl x10, w10, w15, x10
-add x10, x10, x17
 eor x5, x5, x10
 ror x5, x5, #63
 str x0, [x3, #1136]

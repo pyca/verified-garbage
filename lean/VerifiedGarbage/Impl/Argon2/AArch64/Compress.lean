@@ -46,12 +46,26 @@ def lane (j : Fin 16) : Reg := lanes[j]
 /-- GB on words `a,b,c,d` of the row or column in registers. -/
 def gbOn (a b c d : Fin 16) : Prog isa := .block (gb (lane a) (lane b) (lane c) (lane d) .x17)
 
-/-- P on the sixteen registers. -/
+/-- Four independent GB chains, advanced one addition or rotation stage at
+once. Every BlaMka step consumes `x17` before the next step reuses it. -/
+def halfGBs (qs : List (Reg × Reg × Reg × Reg)) (r1 r2 : Nat) : List Instr :=
+  qs.flatMap (fun (a, b, _, _) => addMul a b .x17) ++
+  qs.flatMap (fun (a, _, _, d) => [.logic .eor .x d d a, .ror .x d d r1]) ++
+  qs.flatMap (fun (_, _, c, d) => addMul c d .x17) ++
+  qs.flatMap (fun (_, b, c, _) => [.logic .eor .x b b c, .ror .x b b r2])
+
+def gbGroup (qs : List (Reg × Reg × Reg × Reg)) : Prog isa :=
+  .block (halfGBs qs 32 24 ++ halfGBs qs 16 63)
+
+/-- P on the sixteen registers, interleaving the four independent chains
+within each half-round without additional registers or memory accesses. -/
 def permute : Prog isa :=
-  .seq (gbOn 0 4 8 12) <| .seq (gbOn 1 5 9 13) <|
-  .seq (gbOn 2 6 10 14) <| .seq (gbOn 3 7 11 15) <|
-  .seq (gbOn 0 5 10 15) <| .seq (gbOn 1 6 11 12) <|
-  .seq (gbOn 2 7 8 13) (gbOn 3 4 9 14)
+  .seq (gbGroup [(lane 0, lane 4, lane 8, lane 12),
+    (lane 1, lane 5, lane 9, lane 13), (lane 2, lane 6, lane 10, lane 14),
+    (lane 3, lane 7, lane 11, lane 15)])
+    (gbGroup [(lane 0, lane 5, lane 10, lane 15),
+      (lane 1, lane 6, lane 11, lane 12), (lane 2, lane 7, lane 8, lane 13),
+      (lane 3, lane 4, lane 9, lane 14)])
 
 /-- Load word `j` of the row or column selected by `index` from the permuted
 scratch block. -/
