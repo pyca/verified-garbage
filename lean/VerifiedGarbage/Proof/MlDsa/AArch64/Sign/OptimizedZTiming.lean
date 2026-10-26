@@ -43,7 +43,7 @@ theorem responseProduct_ready {p : Params} {S : Nat} {σ s : State} {out secret 
   simp only [responseProductChk,Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨ho,ha⟩,hb⟩,hsc⟩,hwo⟩,hws⟩,hoa⟩,hob⟩,hos⟩,has⟩,hbs⟩ := hc
   refine productReady_layout hs.1.lay ho ha hb hsc hwo hws hoa hob hos has hbs
-    hs.2.inverse.held hs.2.inverse.fit ?_ hs.2.inverse.readable hf hg
+    hs.2.inverse.held hs.2.inverse.fit ?_ hs.2.inverse.readable hf hg hs.2.inverse.aligned
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl

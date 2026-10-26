@@ -52,6 +52,7 @@ structure ProductCallReady (out a b scratch : Ptr) (s : State) : Prop where
   readable : Covers ([outputRegion (pa s a),outputRegion (pa s b),
     tableRegion (s.syms "VG_MLDSA_INV_FOLDED")]++[outputRegion (pa s out),outputRegion (pa s scratch)]) (s.rd++s.wr)
   writable : Covers [outputRegion (pa s out),outputRegion (pa s scratch)] s.wr
+  tableAligned : (s.syms "VG_MLDSA_INV_FOLDED").toNat%64=0
 
 theorem productAt_pre {s s1 : State} {out a b scratch : Ptr}
     (h : ProductCallReady out a b scratch s) (h1 : Args (productArgs out a b scratch) s s1)
@@ -64,7 +65,7 @@ theorem productAt_pre {s s1 : State} {out a b scratch : Ptr}
     Abi.constRegions,Abi.constsHeld,InverseTable.expandedWords_length,stackBelow]
   simp only [hy,Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r3 h1,
     Args.mem h1,Arg.val]
-  exact ⟨rfl,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),rfl,rfl,h.outA,h.outB,h.outScratch,h.aScratch,
+  exact ⟨rfl,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),h.tableAligned,rfl,rfl,h.outA,h.outB,h.outScratch,h.aScratch,
     h.bScratch,h.outFit,h.aFit,h.bFit,h.scratchFit,h.positiveA,h.positiveB⟩
 
 theorem productArgs_ok {out a b scratch : Ptr}

@@ -50,6 +50,7 @@ structure DotCallReady (count : Nat) (out a b scratch : Ptr) (s : State) : Prop 
   readable : Covers ([dotFamilyRegion (pa s a) count,dotFamilyRegion (pa s b) count,
     tableRegion (s.syms "VG_MLDSA_INV_FOLDED")]++[outputRegion (pa s out),outputRegion (pa s scratch)]) (s.rd++s.wr)
   writable : Covers [outputRegion (pa s out),outputRegion (pa s scratch)] s.wr
+  tableAligned : (s.syms "VG_MLDSA_INV_FOLDED").toNat%64=0
 
 theorem dotAt_pre {s s1 : State} {count : Nat} {out a b scratch : Ptr}
     (h : DotCallReady count out a b scratch s) (h1 : Args (dotArgs out a b scratch) s s1)
@@ -64,7 +65,7 @@ theorem dotAt_pre {s s1 : State} {count : Nat} {out a b scratch : Ptr}
     Args.mem h1,Arg.val]
   have he : count*256*4=1024*count := by omega
   rw [he]
-  exact ⟨rfl,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),rfl,rfl,h.outA,h.outB,h.outScratch,h.aScratch,
+  exact ⟨rfl,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),h.tableAligned,rfl,rfl,h.outA,h.outB,h.outScratch,h.aScratch,
     h.bScratch,h.outFit,h.aFit,h.bFit,h.scratchFit,h.positiveA,h.positiveB⟩
 
 theorem dotArgs_ok {out a b scratch : Ptr}
