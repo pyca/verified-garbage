@@ -82,15 +82,16 @@ def argBytes : Nat := if c.rounds then 8 else 4
 end
 
 /-- What a mode needs of the tables `K` its core reads: held, readable,
-within the address space and apart from the writable regions and the `st`
-bytes of stack below the stack pointer. -/
+within the address space, apart from the writable regions and the `st`
+bytes of stack below the stack pointer, and at multiples of 64. -/
 def TabsOk (K : List (String × List (BitVec 64))) (st : Nat) (s : State) : Prop :=
   Abi.constsHeld s.mem (fun n => State.addr (s.syms n)) K ∧
-    ∀ t ∈ tabRegs K s, t ∈ s.rd ∧ t.base.toNat + t.len ≤ 2 ^ 32 ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
-      t.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 st, st⟩
+    (∀ t ∈ tabRegs K s, t ∈ s.rd ∧ t.base.toNat + t.len ≤ 2 ^ 32 ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
+      t.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 st, st⟩) ∧
+    ∀ t ∈ tabRegs K s, t.base.toNat % 64 = 0
 
 theorem tabsOk_nil (st : Nat) (s : State) : TabsOk [] st s :=
-  ⟨fun _ h => absurd h List.not_mem_nil, fun _ h => absurd h List.not_mem_nil⟩
+  ⟨fun _ h => absurd h List.not_mem_nil, fun _ h => absurd h List.not_mem_nil, fun _ h => absurd h List.not_mem_nil⟩
 
 section
 variable (c : Core) (S : CoreSpec c)
