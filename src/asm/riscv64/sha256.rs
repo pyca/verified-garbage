@@ -322,7 +322,7 @@ ret",
 ///
 /// * `state` must be valid for reads and writes of 32 bytes.
 /// * `blocks` must be valid for reads of `64 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 560 bytes.
+/// * `scratch` must be valid for reads and writes of 560 bytes, and aligned for `u64`.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
 /// * None of `state`, `blocks` and `scratch` may wrap around the end of the address space (no Rust object does).
