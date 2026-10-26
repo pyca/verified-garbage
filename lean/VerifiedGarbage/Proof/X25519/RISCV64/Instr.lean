@@ -72,7 +72,7 @@ theorem wp_lw {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
   subst ha
   exact WP.cons (exec_load_w ho hal hin) (k _ (Upd.write _ _ _))
 
-theorem wp_sw {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
+theorem wp_stw {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
     (ha : s.gpr n + BitVec.ofNat 64 off = a) (hal : a.toNat % 4 = 0) (hout : InRegions s.wr a 4)
     (k : ∀ s', Mupd s s' (s.mem.writeW a ((s.gpr t).setWidth 32)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store .w t n off :: is)) s Q := by

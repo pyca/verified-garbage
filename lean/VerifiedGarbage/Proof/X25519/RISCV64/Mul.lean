@@ -166,7 +166,7 @@ theorem row_ok (hA : acc + 64 ≤ 2048) {x y : Nat} (hx : x + 32 ≤ acc) (hy : 
   · -- The carry, and the next row.
     have hc3 : Ctx b s3 := hc2.of_rest hp.rest (by decide)
     have e9' : s3.gpr .a6 = b + BitVec.ofNat 64 (4 * i) := by rw [hp.rest.gpr _ (by decide), e9]
-    refine wp_sw (a := b + BitVec.ofNat 64 (4 * i + (acc + 32))) (by omega_arith)
+    refine wp_stw (a := b + BitVec.ofNat 64 (4 * i + (acc + 32))) (by omega_arith)
       (by rw [e9', Offset.add_add]) (al4 hc3.al (by omega_arith)) (hc3.inW (by omega_arith)) fun s4 u4 => ?_
     refine wp_addi (by decide) fun s5 u5 => wp_subi (by decide) fun s6 u6 => ?_
     refine WP.block_nil ?_

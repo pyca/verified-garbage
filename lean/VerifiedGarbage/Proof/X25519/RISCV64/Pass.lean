@@ -36,7 +36,7 @@ theorem carryStep_ok {rb : Reg} {off : Nat} {s : State} {a : Addr}
       Rest [.a4, .a5] s s' := by
   unfold carryStep
   refine wp_add fun s1 u1 => ?_
-  refine wp_sw (a := a) ho (by rw [u1.other _ hrb]; exact ha) hal
+  refine wp_stw (a := a) ho (by rw [u1.other _ hrb]; exact ha) hal
     (by rw [u1.wr]; exact hw) fun s2 u2 => ?_
   refine wp_srl (by decide) fun s3 u3 => WP.block_nil ?_
   have e1 : (s1.gpr .a4).toNat = (s.gpr .a4).toNat + (s.gpr .a5).toNat := by

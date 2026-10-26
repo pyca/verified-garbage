@@ -83,7 +83,7 @@ theorem sw0_ok {b : Addr} {s : State} (hc : Ctx b s) {t : Reg} {d : Nat} (hd : d
     (k : ∀ s', Mupd s s' (s.mem.writeW (b + BitVec.ofNat 64 d) ((s.gpr t).setWidth 32)) →
       WP isa (.block is) s' Q) :
     WP isa (.block (.store .w t .a3 d :: is)) s Q :=
-  wp_sw (by omega_using [hd]) (by rw [hc.a3]) (al4 hc.al hd4) (hc.inW hd) k
+  wp_stw (by omega_using [hd]) (by rw [hc.a3]) (al4 hc.al hd4) (hc.inW hd) k
 
 theorem ldSrc_ok {b : Addr} {o k : Nat} {s : State} (hc : Ctx b s) (hd : o + 4 * k + 4 ≤ 2048)
     (ho4 : o % 4 = 0) :
