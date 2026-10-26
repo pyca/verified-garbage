@@ -886,6 +886,7 @@ theorem verifyMessage_spec_pre {s : State} (lo : 280 ≤ (s.gpr .esp).toNat)
     (ta : Region.Disjoint ⟨(s.syms Impl.Ed25519.X86.bSym).setWidth 64, 1920⟩ ⟨argAddr s 0, 20⟩)
     (tr : Region.Disjoint ⟨(s.syms Impl.Ed25519.X86.bSym).setWidth 64, 1920⟩ ⟨(s.gpr .esp).setWidth 64, 4⟩)
     (tk : Region.Disjoint ⟨(s.syms Impl.Ed25519.X86.bSym).setWidth 64, 1920⟩ ⟨(s.gpr .esp).setWidth 64 - 280#64, 280⟩)
+    (hal : ((s.syms Impl.Ed25519.X86.bSym).setWidth 64).toNat % 64 = 0)
     (d0s : Region.Disjoint ⟨(arg s 0).setWidth 64, 32⟩ ⟨(arg s 4).setWidth 64, 8192⟩)
     (d0a : Region.Disjoint ⟨(arg s 0).setWidth 64, 32⟩ ⟨argAddr s 0, 20⟩)
     (d1s : Region.Disjoint ⟨(arg s 1).setWidth 64, (arg s 2).toNat⟩ ⟨(arg s 4).setWidth 64, 8192⟩)
@@ -910,7 +911,7 @@ theorem verifyMessage_spec_pre {s : State} (lo : 280 ≤ (s.gpr .esp).toNat)
     Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, bConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld]
   simp only [bWords_length, Nat.reduceMul]
-  refine ⟨lo, sp, by rw [hrd]; rfl, held, fit, fun r hr => ?_, tr, tk, by rw [hrd]; rfl, hw, d0s, d0a, d1s,
+  refine ⟨lo, sp, by rw [hrd]; rfl, held, fit, fun r hr => ?_, tr, tk, hal, by rw [hrd]; rfl, hw, d0s, d0a, d1s,
     d1a, d3s, d3a, dsa, r0, r1, r3, r4, ra, k0, k1, k3, k4, ka, f0, f1, f3, f4⟩
   rw [hw] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -928,7 +929,7 @@ theorem verifyMessage_sat :
   have esp : verifySatState.gpr .esp = 0x8000 := rfl
   have sy : verifySatState.syms Impl.Ed25519.X86.bSym = 0x100000 := rfl
   refine verifyMessage_spec_pre ?_ ?_ ?_ (by rw [sy]; exact verifySatMem_held) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
     simp only [a0, a1, a2, a3, a4, e, esp, sy] <;>
     first | rfl | decide | exact Region.disjoint_of_sep (by decide)
 
@@ -938,7 +939,7 @@ theorem verifyWide_implies :
     sig_pre [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, bConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld] at h
-    obtain ⟨lo, sp, hd, held, fit, dw, tr, tk, ht, hw, d0s, -, d1s, -, d3s, -, dsa, r0, r1, r3, r4, -,
+    obtain ⟨lo, sp, hd, held, fit, dw, tr, tk, -, ht, hw, d0s, -, d1s, -, d3s, -, dsa, r0, r1, r3, r4, -,
       k0, k1, k3, k4, -, f0, f1, f3, f4⟩ := h
     simp only [bWords_length, Nat.reduceMul] at hd held fit dw tr tk
     simp only [verifyWide, verifyMessageLocal, MsgTbl]
