@@ -41,7 +41,10 @@ theorem cYX_taint : Cert (copy aY aX) := ⟨_, by taint_decide⟩
 theorem cY0_taint : Cert (copy aY aT0) := ⟨_, by taint_decide⟩
 
 theorem tabCnt_taint : Cert (.block tabCnt) := ⟨_, by taint_decide⟩
-theorem shift_taint : Cert tabShift := ⟨_, by taint_decide⟩
+theorem tabCopyLoad_taint : Cert (.block [.ldr .lr .r8 sK]) := ⟨_, by taint_decide⟩
+theorem tabCopyStore_taint :
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.lr,.r7,.r8,.r9])
+      tabCopyStore hc).isSome = true := ⟨_, by taint_decide⟩
 theorem cnt_taint : Cert (.block cntNext) := ⟨_, by taint_decide⟩
 
 theorem winCnt_taint : Cert (.block winCnt) := ⟨_, by taint_decide⟩
