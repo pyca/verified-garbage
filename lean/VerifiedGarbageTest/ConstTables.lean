@@ -34,7 +34,7 @@ theorem pre_facts {s : State} (h : contract.pre s) :
       s.mem.readW (s.syms "VG_TEST_TABLE" + BitVec.ofNat 64 8) 64 = 42 := by
   sig_pre [contract, sig, consts, Abi.withConsts, Abi.constRegions, Abi.constsHeld, abi, argRegs,
     stackBelow, tbl] at h
-  obtain ⟨hd, hheld, -, -, ht, hw⟩ := h
+  obtain ⟨hd, hheld, -, -, -, ht, hw⟩ := h
   refine ⟨?_, hw, hheld 1 (by decide)⟩
   rw [← List.take_append_drop (s.rd.length - 1) s.rd, hd, ht]; rfl
 

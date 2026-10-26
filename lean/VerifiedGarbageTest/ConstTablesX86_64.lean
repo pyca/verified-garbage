@@ -90,7 +90,7 @@ theorem verified : Verified target code contract := by
   · refine ⟨sat, ?_⟩
     sig_pre [contract, sig, consts, Abi.withConsts, Abi.constRegions, Abi.constsHeld, abi, argRegs,
       stackBelow, tbl, sat]
-    exact ⟨by decide, by decide, Region.disjoint_of_sep (by decide)⟩
+    exact ⟨by decide, by decide, Region.disjoint_of_sep (by decide), by decide⟩
 
 def artifact : Artifact where
   target := target
