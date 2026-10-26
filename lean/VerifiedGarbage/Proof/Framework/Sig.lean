@@ -256,7 +256,7 @@ theorem Sig.forall_mem_const_align_cons {b : Addr} {n : Nat} {ts : List Region} 
 is a multiple of any `d` dividing both 64 and `k`. -/
 theorem Sig.const_aligned {b : Addr} (hb : b.toNat % 64 = 0) {d k : Nat} (hd : d ∣ 64)
     (hk : d ∣ k) : (b + BitVec.ofNat 64 k).toNat % d = 0 := by
-  have h64 : d ∣ 2 ^ 64 := Nat.dvd_trans hd (by decide)
+  have h64 := Nat.dvd_trans hd (Nat.pow_dvd_pow 2 (by decide : 6 ≤ 64))
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ h64]
   exact Nat.mod_eq_zero_of_dvd
     (Nat.dvd_add (Nat.dvd_trans hd (Nat.dvd_of_mod_eq_zero hb)) ((Nat.dvd_mod_iff h64).2 hk))
