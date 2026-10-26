@@ -74,25 +74,17 @@ def offW : Nat := 24
 def acc (x : XReg) : List Instr :=
   [.xop (.bin .paddq .xmm0 x), .xop (.shift .psrlq x 32), .xop (.bin .paddq .xmm1 x)]
 
-/-- The products `X_j Y_j` of four words, `esi` at `X_j` and `edi` at `Y_j`,
-reading a fifth: `movdqu` reads words `j` to `j + 3` (`pmuludq` multiplies
-words `j` and `j + 2`) and, 4 bytes on, `j + 1` to `j + 4`. -/
-def quadMul : List Instr :=
-  [.movdquLoad .xmm2 (at_ .esi 0), .movdquLoad .xmm3 (at_ .edi 0), .pmuludq .xmm2 .xmm3,
-    .movdquLoad .xmm4 (at_ .esi 4), .movdquLoad .xmm5 (at_ .edi 4), .pmuludq .xmm4 .xmm5] ++
-    acc .xmm2 ++ acc .xmm4
-
-/-- Four products while a fifth word follows: the pointers up 16 bytes and
-the count of bytes left, `ebp`, down 16; CF clear if at least five words
-remain. -/
-def quadBody : List Instr :=
-  quadMul ++ [.alu .add .esi (.imm 16), .alu .add .edi (.imm 16), .alu .sub .ebp (.imm 16), .alu .cmp .ebp (.imm 20)]
-
 /-- The products of four words, reading only them: `pshufd` moves words
 `j + 1` and `j + 3` to doublewords 0 and 2. -/
 def quadLastMul : List Instr :=
   [.movdquLoad .xmm2 (at_ .esi 0), .movdquLoad .xmm3 (at_ .edi 0), .xop (.pshufd .xmm4 .xmm2 0x31),
     .xop (.pshufd .xmm5 .xmm3 0x31), .pmuludq .xmm2 .xmm3, .pmuludq .xmm4 .xmm5] ++ acc .xmm2 ++ acc .xmm4
+
+/-- Four products while a fifth word follows: the pointers up 16 bytes and
+the count of bytes left, `ebp`, down 16; CF clear if at least five words
+remain. -/
+def quadBody : List Instr :=
+  quadLastMul ++ [.alu .add .esi (.imm 16), .alu .add .edi (.imm 16), .alu .sub .ebp (.imm 16), .alu .cmp .ebp (.imm 20)]
 
 /-- The last four products. -/
 def quadLast : List Instr :=

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Rsa.MontMul.mulContract`. Constant time but for the address and length of `ws`, `n` and the offsets: timing does not depend on the numbers.
 ///
-/// Product scanning with SSE2: PMULUDQ multiplies two pairs of 32-bit words at once and PADDQ accumulates each column's products and their high halves in 64-bit lanes, in an MCDT frame (Intel's MXCSR prologue and epilogue). Each column folds the lanes, adds the carry, and stores a quotient digit or a word of the result; equal operand offsets select a square's half of the products, doubled, and the diagonal. The final subtraction's result is selected by a mask. Pointers, counts and the column index control the loops; they are in registers or in a frame of 28 bytes of parameters, computed from the arguments.
+/// Product scanning with SSE2: PMULUDQ multiplies two pairs of 32-bit words at once and PADDQ accumulates each column's products and their high halves in 64-bit lanes. Four-word groups use two 128-bit operand loads and PSHUFD for the odd words, inside an MCDT frame (Intel's MXCSR prologue and epilogue). Each column folds the lanes, adds the carry, and stores a quotient digit or a word of the result; equal operand offsets select a square's half of the products, doubled, and the diagonal. The final subtraction's result is selected by a mask. Pointers, counts and the column index control the loops; they are in registers or in a frame of 28 bytes of parameters, computed from the arguments.
 ///
 /// # Safety
 ///
@@ -109,9 +109,9 @@ jmp 27f
 28:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -195,9 +195,9 @@ jmp 218f
 219:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -334,9 +334,9 @@ jmp 228f
 229:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -418,9 +418,9 @@ jmp 237f
 238:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -539,9 +539,9 @@ jmp 247f
 248:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -642,9 +642,9 @@ jmp 260f
 261:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -788,9 +788,9 @@ jmp 270f
 271:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -889,9 +889,9 @@ jmp 281f
 282:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -1173,9 +1173,9 @@ jmp 27f
 28:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -1259,9 +1259,9 @@ jmp 218f
 219:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -1398,9 +1398,9 @@ jmp 228f
 229:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -1482,9 +1482,9 @@ jmp 237f
 238:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -1603,9 +1603,9 @@ jmp 247f
 248:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -1706,9 +1706,9 @@ jmp 260f
 261:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -1852,9 +1852,9 @@ jmp 270f
 271:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32
@@ -1953,9 +1953,9 @@ jmp 281f
 282:
 movdqu xmm2, XMMWORD PTR [esi]
 movdqu xmm3, XMMWORD PTR [edi]
+pshufd xmm4, xmm2, 49
+pshufd xmm5, xmm3, 49
 pmuludq xmm2, xmm3
-movdqu xmm4, XMMWORD PTR [esi+4]
-movdqu xmm5, XMMWORD PTR [edi+4]
 pmuludq xmm4, xmm5
 paddq xmm0, xmm2
 psrlq xmm2, 32

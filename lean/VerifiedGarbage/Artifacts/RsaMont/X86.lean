@@ -19,7 +19,8 @@ def runtime : Artifact :=
   Spec.Rsa.MontMul.mulApi.artifact X86.target {
     stack := 56
     notes := ["Product scanning with SSE2: PMULUDQ multiplies two pairs of 32-bit words at once and \
-      PADDQ accumulates each column's products and their high halves in 64-bit lanes, in an MCDT frame \
+      PADDQ accumulates each column's products and their high halves in 64-bit lanes. Four-word \
+      groups use two 128-bit operand loads and PSHUFD for the odd words, inside an MCDT frame \
       (Intel's MXCSR prologue and epilogue). Each column folds the lanes, adds the carry, and stores a \
       quotient digit or a word of the result; equal operand offsets select a square's half of the \
       products, doubled, and the diagonal. The final subtraction's result is selected by a mask. \

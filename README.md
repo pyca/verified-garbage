@@ -2671,7 +2671,7 @@ yours to keep:
 
 <td>✅ umaal; Fused multiply-add for key-workspace array addresses</td>
 
-<td>✅</td>
+<td>✅ SSE2 Montgomery columns reusing operand loads with shuffles</td>
 
 <td>✅</td>
 

@@ -12,7 +12,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # The products of the `pmuludq` kernel
 
-`quadMul` and `quadLastMul` (four products), `pairMul` (two) and `single`
+`quadLastMul` (four products), `pairMul` (two) and `single`
 (one), stated on the state they leave (`SseOnly`: only `xmm0` to `xmm5`
 change, and `eax` for `single`) and on the sums' lanes (`Sums`): the
 products added to `xmm0` modulo `2⁶⁴`, their high words to `xmm1`. Each
@@ -96,50 +96,6 @@ theorem dword_read128 (m : Mem) (a : Addr) {j : Nat} (hj : j < 4) :
 
 theorem add_ofNat_add (a : Addr) (d e : Nat) : a + BitVec.ofNat 64 d + BitVec.ofNat 64 e = a + BitVec.ofNat 64 (d + e) := by
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-
-/-! ## `quadMul` -/
-
-theorem quadMul_run (s : State) (hm : 0 < s.mcdt)
-    (h1 : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi 0)) 16) (h2 : InRegions (s.rd ++ s.wr) (s.ea (at_ .edi 0)) 16)
-    (h3 : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi 4)) 16) (h4 : InRegions (s.rd ++ s.wr) (s.ea (at_ .edi 4)) 16) :
-    ∃ t, runBlock isa quadMul s = some t ∧ SseOnly s t ∧
-      t.xmm .xmm0 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm0)
-        (pmuludq (s.mem.readW (s.ea (at_ .esi 0)) 128) (s.mem.readW (s.ea (at_ .edi 0)) 128)))
-        (pmuludq (s.mem.readW (s.ea (at_ .esi 4)) 128) (s.mem.readW (s.ea (at_ .edi 4)) 128)) ∧
-      t.xmm .xmm1 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm1) (XShiftOp.eval .psrlq
-        (pmuludq (s.mem.readW (s.ea (at_ .esi 0)) 128) (s.mem.readW (s.ea (at_ .edi 0)) 128)) 32))
-        (XShiftOp.eval .psrlq
-          (pmuludq (s.mem.readW (s.ea (at_ .esi 4)) 128) (s.mem.readW (s.ea (at_ .edi 4)) 128)) 32) := by
-  simp only [quadMul, acc, List.cons_append, List.nil_append, runBlock_cons, exec, State.load128, h1, h2,
-    Option.map_some, runStep_some, XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left',
-    rd_setXmm, wr_setXmm, mem_setXmm, ea_setXmm, h3, h4, mcdt_setXmm, hm, xmm_setXmm, reduceCtorEq, runBlock_nil]
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
-    simp only [xmm_setXmm, reduceCtorEq, ↓reduceIte, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm,
-      cf_setXmm, zf_setXmm, mcdt_setXmm]
-
-/-- The four products of `quadMul`, for `esi` at `x` and `edi` at `y` (the
-second reads at `x'` and `y'`, four bytes on). -/
-theorem quad_sums {s t : State} {S H : Nat} (hs : Sums (s.xmm .xmm0) (s.xmm .xmm1) S H)
-    (hH : H + 4 * 2 ^ 32 < 2 ^ 64) {x y x' y' : Addr}
-    (h0 : t.xmm .xmm0 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm0)
-      (pmuludq (s.mem.readW x 128) (s.mem.readW y 128))) (pmuludq (s.mem.readW x' 128) (s.mem.readW y' 128)))
-    (h1 : t.xmm .xmm1 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm1) (XShiftOp.eval .psrlq
-      (pmuludq (s.mem.readW x 128) (s.mem.readW y 128)) 32))
-      (XShiftOp.eval .psrlq (pmuludq (s.mem.readW x' 128) (s.mem.readW y' 128)) 32)) :
-    Sums (t.xmm .xmm0) (t.xmm .xmm1)
-      (S + pw s.mem x y + pw s.mem (x + 8) (y + 8) + pw s.mem x' y' + pw s.mem (x' + 8) (y' + 8))
-      (H + pw s.mem x y / 2 ^ 32 + pw s.mem (x + 8) (y + 8) / 2 ^ 32 + pw s.mem x' y' / 2 ^ 32 +
-        pw s.mem (x' + 8) (y' + 8) / 2 ^ 32) := by
-  have a1 := hs.addMul (u := s.mem.readW x 128) (v := s.mem.readW y 128) (by omega)
-  have q0 := Nat.div_lt_iff_lt_mul (k := 2 ^ 32) (x := (dword (s.mem.readW x 128) 0).toNat *
-    (dword (s.mem.readW y 128) 0).toNat) (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.mem.readW x 128) 0) (dword (s.mem.readW y 128) 0); omega)
-  have q2 := Nat.div_lt_iff_lt_mul (k := 2 ^ 32) (x := (dword (s.mem.readW x 128) 2).toNat *
-    (dword (s.mem.readW y 128) 2).toNat) (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.mem.readW x 128) 2) (dword (s.mem.readW y 128) 2); omega)
-  have a2 := a1.addMul (u := s.mem.readW x' 128) (v := s.mem.readW y' 128) (by omega)
-  rw [h0, h1]
-  simp only [dword_read128 _ _ (show 0 < 4 by decide), dword_read128 _ _ (show 2 < 4 by decide),
-    Nat.mul_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero, show 4 * 2 = 8 from rfl] at a2
-  exact a2
 
 /-! ## `quadLastMul` -/
 
