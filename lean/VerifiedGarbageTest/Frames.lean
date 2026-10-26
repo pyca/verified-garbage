@@ -247,12 +247,20 @@ def rvAlloc : Option RISCV64.State := RISCV64.push (.alloc 112) rv
 -- hardware (`addi sp, sp, 16`), without reloading the register.
 #guard (rvPush.bind fun s₁ => (RISCV64.pop (.free 16) s₁ s₁).map fun s =>
     (s.sp, s.gpr .s1, s.wr.map (·.base))) == some (0x1000, 0, [0x8000])
--- The allocation faults unless its size is a multiple of 16 below 2048, which `addi`
--- encodes, or if it would wrap around the address space.
+-- The allocation faults unless its size is a multiple of 16 of at most 4064 (one `addi`
+-- below 2048, two from 2048 on), or if it would wrap around the address space.
 #guard (RISCV64.push (.alloc 0) rv).isNone && (RISCV64.push (.alloc 120) rv).isNone
-#guard (RISCV64.push (.alloc 2048) rv).isNone
-#guard (RISCV64.push (.alloc 2032) rv).isSome
+#guard (RISCV64.push (.alloc 2032) rv).isSome && (RISCV64.push (.alloc 2048) rv).isSome
+#guard (RISCV64.push (.alloc 4064) { rv with sp := 0x8000 }).isSome
+#guard (RISCV64.push (.alloc 4080) { rv with sp := 0x8000 }).isNone
 #guard (RISCV64.push (.alloc 112) { rv with sp := 96 }).isNone
+#guard (RISCV64.push (.alloc 4064) rv).isSome && (RISCV64.push (.alloc 4064) { rv with sp := 4048 }).isNone
+-- A frame of 2048 bytes or more is released like any other, and `free` of a size above
+-- 4064 faults.
+#guard ((RISCV64.push (.alloc 2304) rv).bind fun s₁ => (RISCV64.pop (.free 2304) s₁ s₁).map fun s =>
+    (s.sp, s.wr.map (·.base))) == some (0x1000, [0x8000])
+#guard ((RISCV64.push (.alloc 2304) rv).map fun s => (s.sp, s.wr.map (·.len))) == some (0x700, [2304, 8])
+#guard (RISCV64.pop (.free 4080) { rv with wr := ⟨rv.sp, 4080⟩ :: rv.wr } { rv with wr := ⟨rv.sp, 4080⟩ :: rv.wr }).isNone
 -- Neither is an instruction of a block.
 #guard (RISCV64.exec (.alloc 112) rv).isNone && (RISCV64.exec (.free 112) rv).isNone
 
