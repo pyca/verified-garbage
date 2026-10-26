@@ -36,7 +36,7 @@ theorem pairedZ_pre {s : State}
     (h : (pairedZContract (abi.withConsts pairedConsts)).pre s) : ZSpecPre s := by
   sig_pre [pairedZContract,pairedZSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow] at h
-  obtain ⟨hdrop,hheld,_,hsep,htake,hwr,hcd,hcw,hsd,hsw,hdw,_,_,_,_,hprod,hdata,hbl,hbh⟩ := h
+  obtain ⟨hdrop,hheld,_,hsep,_,htake,hwr,hcd,hcw,hsd,hsw,hdw,_,_,_,_,hprod,hdata,hbl,hbh⟩ := h
   refine ⟨?_,hwr,?_,hsep,hcd,hcw,hsd,hsw,hdw,hprod,hdata,hbl,hbh⟩
   · rw [←List.take_append_drop (s.rd.length-1) s.rd,htake,hdrop]
     rfl

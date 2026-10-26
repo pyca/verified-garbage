@@ -38,7 +38,7 @@ theorem pairedHint_pre {s : State}
     (h : (pairedHintContract (abi.withConsts pairedConsts)).pre s) : HintSpecPre s := by
   sig_pre [pairedHintContract,pairedHintSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow] at h
-  obtain ⟨hdrop,hheld,_,hsep,htake,hwr,hcd,hcw,hsd,hsw,had,haw,hdw,_,_,_,_,_,hprod,hgamma,hbound,hdecomp⟩ := h
+  obtain ⟨hdrop,hheld,_,hsep,_,htake,hwr,hcd,hcw,hsd,hsw,had,haw,hdw,_,_,_,_,_,hprod,hgamma,hbound,hdecomp⟩ := h
   refine ⟨?_,hwr,?_,hsep,hcd,hcw,hsd,hsw,had.symm,haw,hdw,hprod,hdecomp,hbound,hgamma⟩
   · rw [←List.take_append_drop (s.rd.length-1) s.rd,htake,hdrop]
     rfl

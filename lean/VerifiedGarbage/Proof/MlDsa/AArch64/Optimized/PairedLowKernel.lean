@@ -191,7 +191,7 @@ theorem pairedLow_pre {s : State}
     (h : (pairedLowContract (abi.withConsts pairedConsts)).pre s) : LowSpecPre s := by
   sig_pre [pairedLowContract,pairedLowSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow] at h
-  obtain ⟨hdrop,hheld,_,hsep,htake,hwr,hcd,hca,hcw,hsd,hsa,hsw,hda,hdw,haw,_,_,_,_,_,hprod,hdata,hgamma,hbl,hbh⟩ := h
+  obtain ⟨hdrop,hheld,_,hsep,_,htake,hwr,hcd,hca,hcw,hsd,hsa,hsw,hda,hdw,haw,_,_,_,_,_,hprod,hdata,hgamma,hbl,hbh⟩ := h
   refine ⟨?_,hwr,?_,hsep,hcd,hca,hcw,hsd,hsa,hsw,hda,hdw,haw,hprod,hdata,hgamma,hbl,hbh⟩
   · rw [←List.take_append_drop (s.rd.length-1) s.rd,htake,hdrop]
     rfl
