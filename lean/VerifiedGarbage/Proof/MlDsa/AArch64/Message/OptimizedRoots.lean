@@ -44,7 +44,7 @@ theorem sign_pre_extend {p : Params} {s : State}
   obtain ⟨d3,d4,d5,d6,d7,h⟩ := h
   obtain ⟨k1,k2,k3,k4,k5,n1,n2,n3,n4,n5⟩ := h
   exact ⟨sp,by rw [hd]; rfl,hr.forward.held,hr.inverse.held,hr.forward.fit,hr.forward.writable,
-    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,by rw [hd]; rfl,
+    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,hr.forward.aligned,hr.inverse.aligned,by rw [hd]; rfl,
     wr,d1,d2,d3,d4,d5,d6,d7,k1,k2,k3,k4,k5,n1,n2,n3,n4,n5⟩
 
 /-- Reborrowing for the inner signer retains both tables and narrows only
@@ -55,7 +55,7 @@ theorem roots_reborrow {s : State} {rd wr : List Region} (h : StaticRoots 16 s)
   have transfer {nm : String} {ws : List (BitVec 64)} (ht : StaticTable 16 nm ws s)
       (hm : (⟨s.syms nm,3904⟩ : Region)∈rd) :
       StaticTable 16 nm ws (s.callEntry.withRegions rd wr) := by
-    refine ⟨ht.held,ht.fit,?_,?_,ht.stack⟩
+    refine ⟨ht.held,ht.fit,?_,?_,ht.stack,ht.aligned⟩
     · apply Covers.one
       exact ⟨⟨s.syms nm,3904⟩,List.mem_append_left _ hm,Region.contains_self _ _⟩
     · intro r hmem

@@ -33,7 +33,7 @@ theorem combSign_pre {s : State} (h : combSignSpec.pre s) :
     Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-  obtain ⟨lo, sp, hdrop, held, fit, dw, _ret, st, _take, wr,
+  obtain ⟨lo, sp, hdrop, held, fit, dw, _ret, st, -, _take, wr,
     od, oh, ok, os, oa, ds, _da, hs, _ha, ks, _ka, sa,
     ro, _rd, _rh, _rk, rs, _ra, _so, sd, sh, sk, _ss, _sa,
     fo, fd, fh, fk, fs⟩ := h

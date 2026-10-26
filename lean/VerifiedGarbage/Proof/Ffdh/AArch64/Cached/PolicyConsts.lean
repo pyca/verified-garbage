@@ -26,7 +26,7 @@ private theorem singletonRegion {name : String} {words : List (BitVec 64)} {st :
  (hc : ConstsOk [(name,words)] st s) :
  (s.syms name).toNat+8*words.length≤2^64 ∧
  (∀ r∈s.wr,(⟨s.syms name,8*words.length⟩ : Region).Disjoint r) := by
- have h := hc.2.2 (⟨s.syms name,8*words.length⟩ : Region) List.mem_cons_self
+ have h := hc.2.2.1 (⟨s.syms name,8*words.length⟩ : Region) List.mem_cons_self
  exact ⟨h.1,h.2.1⟩
 
 private theorem singletonHeld {name : String} {words : List (BitVec 64)} {st : Nat} {s : State}

@@ -371,7 +371,7 @@ theorem fb_implies {postX : State → State → Prop} {post : Spec.Cast5.ofbSig.
     sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbSig,
       Spec.Cast5.ofbPre, X86_64.abi, X86_64.argRegs, ecbConsts_eq, Abi.withConsts, Abi.constRegions,
       Abi.constsHeld, stackBelow, s1234_length, Curry.withScratch] at h
-    obtain ⟨hdr, hheld, hfit, hdw, -, htk, hw, dKV, dKD, dKS, dVD, dVS, dDS, -, spV, spD, spS, fK, -, fD, fS,
+    obtain ⟨hdr, hheld, hfit, hdw, -, -, htk, hw, dKV, dKD, dKS, dVD, dVS, dDS, -, spV, spD, spS, fK, -, fD, fS,
       hr⟩ := h
     refine ⟨?_, hw, hheld, hfit, hdw _ (by rw [hw]; exact List.mem_cons_self),
       hdw _ (by rw [hw]; exact List.mem_cons_of_mem _ List.mem_cons_self),

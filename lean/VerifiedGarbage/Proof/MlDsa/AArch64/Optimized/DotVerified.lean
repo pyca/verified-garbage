@@ -109,7 +109,7 @@ theorem dot_spec_pre {count : Nat} {s : State} (hc : count≤7)
   rw [hg0,hg1,hg2,hg3,hsym,hrd,hwr]
   have he : count*256*4=1024*count := by omega_arith
   rw [he]
-  refine ⟨rfl,held,by decide,?_,rfl,rfl,?_,?_,?_,?_,?_,by decide,?_,?_,by decide,ha,hb⟩
+  refine ⟨rfl,held,by decide,?_,by decide,rfl,rfl,?_,?_,?_,?_,?_,by decide,?_,?_,by decide,ha,hb⟩
   · intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)

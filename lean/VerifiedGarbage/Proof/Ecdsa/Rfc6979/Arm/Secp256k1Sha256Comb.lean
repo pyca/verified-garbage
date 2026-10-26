@@ -34,7 +34,7 @@ theorem rfcComb_sat : rfcCombSpec.pre rfcCombSat := by
   subst s
   rw [comb_words_length]
   rw [comb_words_length] at held
-  refine ⟨by decide,by decide,by decide,held,by decide,?_,?_,by decide,by decide,?_⟩
+  refine ⟨by decide,by decide,by decide,held,by decide,?_,?_,by decide,by decide,by decide,?_⟩
   · intro r hr
     change r∈[⟨0x10000,64⟩,⟨0,8192⟩] at hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -49,14 +49,14 @@ theorem implies : (rfcArm Spec.Ecdsa.Rfc6979.Secp256k1Sha256.inst 240 secp256k1C
       Spec.Ecdsa.Rfc6979.Instance.signSig,Spec.Ecdsa.Secp256k1.inst,Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,
       abi,argRegs,reduceClassify,Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts,
       Abi.constRegions,Abi.constsHeld,stackBelow] at h
-    obtain ⟨sp,_spf,drop,held,fit,apart,stk,take,wr,od,oh,os,ds,hs,so,sd,sh,ss,fo,fd,fh,fs⟩ := h
+    obtain ⟨sp,_spf,drop,held,fit,apart,stk,al,take,wr,od,oh,os,ds,hs,so,sd,sh,ss,fo,fd,fh,fs⟩ := h
     refine ⟨?_,wr,od,oh,os,ds,hs,so,sd,sh,ss,fo,fd,fh,fs,sp,?_⟩
     · rw [← List.take_append_drop (s.rd.length-1) s.rd,take,drop]
       rfl
     · intro c hc
       simp only [secp256k1CombConsts,List.mem_cons,List.not_mem_nil,or_false] at hc
       subst c
-      refine ⟨held,fit,?_⟩
+      refine ⟨held,fit,?_,al⟩
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl|rfl|rfl

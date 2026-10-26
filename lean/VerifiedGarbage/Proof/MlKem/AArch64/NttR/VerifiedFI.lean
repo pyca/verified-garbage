@@ -58,7 +58,7 @@ theorem inFI_of_pre {s : State} (h : fastInvContract.pre s) : InFI s := by
   sig_pre [nttInv16Contract, inPlace16Contract, inPlace16Sig, AArch64.abi, AArch64.argRegs, tablesI_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
   rw [tabWordsI_length] at h
-  obtain ⟨hd, held, fit, hdw, ht, hw, hdis, -, -, red⟩ := h
+  obtain ⟨hd, held, fit, hdw, -, ht, hw, hdis, -, -, red⟩ := h
   have hw0 : (⟨s.gpr .x0, 512⟩ : Region) ∈ s.wr := by rw [hw]; exact List.mem_cons_self
   refine ⟨hw0, red, fun j hj => by rw [held j (by omega), tabWordsI_get j hj], ?_, (hdw _ hw0).symm⟩
   apply Covers.of_mem
@@ -139,11 +139,12 @@ theorem fastInv_pre {s : State} (hrd : s.rd = [⟨s.syms name, 928⟩])
     (red : ReducedW 16 s.mem (s.gpr .x0))
     (held : ∀ i < tabWords.length, s.mem.readW (s.syms name + BitVec.ofNat 64 (8 * i)) 64 = tabWords.getD i 0)
     (fitT : (s.syms name).toNat + 928 ≤ 2 ^ 64)
-    (hdw : ∀ r ∈ s.wr, (⟨s.syms name, 928⟩ : Region).Disjoint r) : fastInvContract.pre s := by
+    (hdw : ∀ r ∈ s.wr, (⟨s.syms name, 928⟩ : Region).Disjoint r) (hal : (s.syms name).toNat % 64 = 0) :
+    fastInvContract.pre s := by
   sig_pre [nttInv16Contract, inPlace16Contract, inPlace16Sig, AArch64.abi, AArch64.argRegs, tablesI_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   rw [tabWordsI_length]
-  exact ⟨by rw [hrd]; rfl, fun i hi => held i (by rw [tabWordsI_length]; exact hi), fitT, hdw,
+  exact ⟨by rw [hrd]; rfl, fun i hi => held i (by rw [tabWordsI_length]; exact hi), fitT, hdw, hal,
     by rw [hrd]; rfl, hw, hdis, f0, f1, red⟩
 
 def satStateI : State where
@@ -159,7 +160,7 @@ theorem fastInv_sat : ∃ s, fastInvContract.pre s :=
   ⟨satStateI, fastInv_pre rfl rfl (Region.disjoint_of_sep (by decide)) (by decide) (by decide) satMemI_reduced
     satMemI_held (by decide) (fun r hr => by
       simp only [satStateI, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide))⟩
+      rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)) (by decide)⟩
 
 theorem fastInv_verified : Verified target invFast fastInvContract :=
   Verified.of_correct fastInv_correct fastInv_ct (Contract.Implies.refl fastInv_sat)

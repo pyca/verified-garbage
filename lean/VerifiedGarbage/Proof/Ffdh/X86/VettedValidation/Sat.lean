@@ -92,6 +92,10 @@ theorem sat : ∃ s, contract.pre s :=
   ⟨satState tableWords, pre_consts.mpr ⟨satPre tableWords, satLayout tableWords
     VG.Proof.Ffdh.VettedTableFacts.tableWords_length, satHeld tableWords
     VG.Proof.Ffdh.VettedTableFacts.tableWords_length, satRegions tableWords
-    VG.Proof.Ffdh.VettedTableFacts.tableWords_length⟩⟩
+    VG.Proof.Ffdh.VettedTableFacts.tableWords_length, fun r hr => by
+      simp only [constRegs, Abi.constRegions, List.mem_map, List.mem_singleton] at hr
+      obtain ⟨c, rfl, rfl⟩ := hr
+      dsimp only [symAddr, satState]
+      decide⟩⟩
 
 end VG.Proof.Ffdh.X86.VettedValidation

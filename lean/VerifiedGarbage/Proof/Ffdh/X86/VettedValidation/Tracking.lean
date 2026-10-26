@@ -49,7 +49,7 @@ private theorem singleton_regions {name : String} {words : List (BitVec 64)} {s 
     (h : ConstsOk [(name, words)] st s) :
     (∀ r ∈ s.wr, (⟨symAddr s name, 8 * words.length⟩ : Region).Disjoint r) ∧
     (∀ r ∈ abi.reserved st s, (⟨symAddr s name, 8 * words.length⟩ : Region).Disjoint r) :=
-  (h.2.2 ⟨symAddr s name, 8 * words.length⟩ List.mem_cons_self).2
+  (h.2.2.1 ⟨symAddr s name, 8 * words.length⟩ List.mem_cons_self).2
 
 theorem table_separate {s : State} (h : contract.pre s) :
     ∀ r ∈ writes s, (⟨symAddr s tableSym, 17744⟩ : Region).Disjoint r := by

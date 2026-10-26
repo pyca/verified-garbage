@@ -469,7 +469,7 @@ theorem ofb_pre {post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits} (s : State)
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.ofbSig, Spec.Cast5.ofbPre, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
     s1234_length, Curry.withScratch] at h
-  obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
+  obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
     -, dRV, dRD, dRS, -, dBK, dBV, dBD, dBS, -, fK, fV, fD, fS, nv⟩ := h
   have hrd : s.rd = [keyA s, tabA s] := by
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, htake, hdrop]; rfl
@@ -604,7 +604,7 @@ theorem cfb_pre {post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits} (s : State)
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cfbSig, Spec.Cast5.cfbPre, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
     s1234_length, Curry.withScratch] at h
-  obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
+  obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
     -, dRV, dRD, dRS, -, dBK, dBV, dBD, dBS, -, fK, fV, fD, fS, nv⟩ := h
   have hrd : s.rd = [keyA s, tabA s] := by
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, htake, hdrop]; rfl
@@ -799,7 +799,7 @@ theorem cbcC_pre {post : Spec.Cast5.cbcChainedSig.Post X86.abi.ptrBits} (s : Sta
   sig_pre [Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig, Proof.Cast5.cbcChainedPre, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
     s1234_length, Curry.withScratch] at h
-  obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
+  obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dKV, dKD, dKS, -, dVD, dVS, dVA, dDS, dDA, dSA,
     -, dRV, dRD, dRS, -, dBK, dBV, dBD, dBS, -, fK, fV, fD, fS, nv⟩ := h
   have hrd : s.rd = [keyA s, tabA s] := by
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, htake, hdrop]; rfl

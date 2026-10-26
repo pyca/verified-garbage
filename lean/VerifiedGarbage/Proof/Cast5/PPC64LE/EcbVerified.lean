@@ -78,7 +78,7 @@ theorem ConstsOk.rd1 (h : ConstsOk [(name, ws)] st s) : (⟨s.syms name, 8 * ws.
 /-- No writable region overlaps it. -/
 theorem ConstsOk.wr1 (h : ConstsOk [(name, ws)] st s) :
     ∀ r ∈ s.wr, Region.Disjoint ⟨s.syms name, 8 * ws.length⟩ r :=
-  (h.2.2 _ List.mem_cons_self).2.1
+  (h.2.2.1 _ List.mem_cons_self).2.1
 
 end
 
@@ -203,7 +203,7 @@ theorem ecb_sat (up : Bool) : (Spec.Cast5.ecbContract (abi.withConsts ecbConsts)
     Abi.constRegions, Abi.constsHeld, stackBelow]
   subst e
   rw [hl]
-  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, rfl, rfl,
+  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, rfl, rfl,
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     by decide, by decide, by decide, by decide⟩
   change r ∈ [⟨0x2000, 0⟩, ⟨0x3000, 256⟩] at hr

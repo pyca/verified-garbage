@@ -175,7 +175,7 @@ theorem ecb_implies (up : Bool) :
   pre s h := by
     sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes, ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length] at h
-    obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, htake, hwr, dKD, dKS, dDS, dDA, dSA, -, dRD, dRS, -, dBK, dBD,
+    obtain ⟨h4, hsp, hdrop, held, fitT, dTw, -, dTB, -, htake, hwr, dKD, dKS, dDS, dDA, dSA, -, dRD, dRS, -, dBK, dBD,
       dBS, -, fK, fD, fS, nv⟩ := h
     have be : below (s.gpr .esp) 4 = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 4, 4⟩ := by
       simp only [below, Taint.sub_setWidth h4]

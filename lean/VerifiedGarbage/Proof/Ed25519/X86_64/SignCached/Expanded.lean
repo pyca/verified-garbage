@@ -299,7 +299,7 @@ theorem sat_localE : signLocalE.pre satStateTE := by
     rintro r (rfl | rfl | rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
 
 /-- The shared contract's precondition, from `signLocalE`'s. -/
-theorem signE_spec_pre {s : State} (h : signLocalE.pre s) :
+theorem signE_spec_pre {s : State} (h : signLocalE.pre s) (hal : (s.syms Impl.Ed25519.X86_64.combSym).toNat % 64 = 0) :
     (Spec.Ed25519.signExpandedContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 264).pre s := by
   obtain ⟨h264, hrd, hw, o1, o2, o3, o4, k1, r1, n1, c1, c2, c3, k2, k3, k4, r2, r3, r4, k5, r5, n3, n4,
     n2, n5, pk, held, fit, hdw⟩ := h
@@ -308,7 +308,7 @@ theorem signE_spec_pre {s : State} (h : signLocalE.pre s) :
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length]
   exact ⟨h264, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]),
-    hdw _ (by simp), hdw _ (by simp), by rw [hrd]; rfl, hw, o1, o2, o3, o4, c1, c2, c3, r1, r2, r3, r4, r5,
+    hdw _ (by simp), hdw _ (by simp), hal, by rw [hrd]; rfl, hw, o1, o2, o3, o4, c1, c2, c3, r1, r2, r3, r4, r5,
     k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, pk⟩
 
 theorem impliesE :
@@ -318,7 +318,7 @@ theorem impliesE :
     sig_pre [Spec.Ed25519.signExpandedContract, Spec.Ed25519.signExpandedSig,
       Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length] at h
-    obtain ⟨h264, hd, held, fit, hdw, hdr, hdk, ht, hw, o1, o2, o3, o4, c1, c2, c3, r1, r2, r3, r4, r5,
+    obtain ⟨h264, hd, held, fit, hdw, hdr, hdk, -, ht, hw, o1, o2, o3, o4, c1, c2, c3, r1, r2, r3, r4, r5,
       k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, pk⟩ := h
     refine ⟨h264, ?_, hw, o1, o2, o3, o4, k1, r1, n1, c1, c2, c3, k2, k3, k4, r2, r3, r4, k5, r5, n3, n4,
       n2, n5, pk, held, fit, fun r hr => ?_⟩
@@ -341,7 +341,7 @@ theorem impliesE :
       Abi.withConsts] at h
     obtain ⟨h0, hs, h1, h2, h3, h4, h5, h6⟩ := h
     exact ⟨h0, h1, h2, h3, h4, h5, h6, hs⟩
-  sat := ⟨satStateTE, signE_spec_pre sat_localE⟩
+  sat := ⟨satStateTE, signE_spec_pre sat_localE (by decide)⟩
 
 theorem verifiedE (v : Compress) : Verified X86_64.target (codeExpanded bs fs v.callee v.suffix)
     (Spec.Ed25519.signExpandedContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 264) :=

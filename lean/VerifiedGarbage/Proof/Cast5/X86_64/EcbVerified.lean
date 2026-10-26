@@ -101,11 +101,11 @@ def ecbSat : State where
 /-- The shared contract's precondition, from its facts. -/
 theorem EPre.spec_pre (d : Spec.Cast5.Direction) {s : State} (h : EPre s)
     (dTsp : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.gpr .rsp, 8⟩)
-    (dspK : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdi, 128⟩) :
+    (dspK : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdi, 128⟩) (hal : (s.syms s1234Sym).toNat % 64 = 0) :
     (Spec.Cast5.ecbContract (X86_64.abi.withConsts ecbConsts) d).pre s := by
   sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, X86_64.abi, X86_64.argRegs,
     ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
-  refine ⟨by rw [h.rd]; rfl, h.held, h.fitT, fun r hr => ?_, dTsp, by rw [h.rd]; rfl, h.wr, h.dKD, h.dKS,
+  refine ⟨by rw [h.rd]; rfl, h.held, h.fitT, fun r hr => ?_, dTsp, hal, by rw [h.rd]; rfl, h.wr, h.dKD, h.dKS,
     h.dDS, dspK, h.dspD, h.dspS, h.fK, h.fD, h.fS, h.rounds⟩
   rw [h.wr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -118,7 +118,7 @@ theorem ecb_implies (d : Spec.Cast5.Direction) :
   pre s h := by
     sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, X86_64.abi, X86_64.argRegs,
       ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length] at h
-    obtain ⟨hdr, hheld, hfit, hdw, -, htk, hw, dKD, dKS, dDS, -, spD, spS, fK, fD, fS, hr⟩ := h
+    obtain ⟨hdr, hheld, hfit, hdw, -, -, htk, hw, dKD, dKS, dDS, -, spD, spS, fK, fD, fS, hr⟩ := h
     refine ⟨?_, hw, hheld, hfit, hdw _ (by rw [hw]; exact List.mem_cons_self),
       hdw _ (by rw [hw]; exact List.mem_cons_of_mem _ List.mem_cons_self), dKD, dKS, dDS, spD, spS, fK, fD,
       fS, hr⟩
@@ -137,7 +137,7 @@ theorem ecb_implies (d : Spec.Cast5.Direction) :
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     by decide, by decide, by decide, by decide⟩
-    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))⟩
+    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide)⟩
 
 theorem ecbEncrypt_verified :
     Verified X86_64.target ecbEncrypt (Spec.Cast5.ecbEncryptContract (X86_64.abi.withConsts ecbConsts)) :=

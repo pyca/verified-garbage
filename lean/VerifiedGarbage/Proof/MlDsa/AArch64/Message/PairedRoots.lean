@@ -46,7 +46,7 @@ theorem sign_pre_extend {p : Params} {s : State}
   obtain ⟨d3,d4,d5,d6,d7,h⟩ := h
   obtain ⟨k1,k2,k3,k4,k5,n1,n2,n3,n4,n5⟩ := h
   exact ⟨sp,by rw [hd]; rfl,hr.forward.held,hr.inverse.held,rp.held,hr.forward.fit,hr.forward.writable,
-    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,rp.fit,rp.writable,rp.stack,by rw [hd]; rfl,
+    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,rp.fit,rp.writable,rp.stack,hr.forward.aligned,hr.inverse.aligned,rp.aligned,by rw [hd]; rfl,
     wr,d1,d2,d3,d4,d5,d6,d7,k1,k2,k3,k4,k5,n1,n2,n3,n4,n5⟩
 
 /-- Reborrowing for the inner signer retains both tables and narrows only
@@ -57,7 +57,7 @@ theorem roots_reborrow {s : State} {rd wr : List Region} (h : StaticRoots 16 s)
   have transfer {nm : String} {ws : List (BitVec 64)} (ht : StaticTable 16 nm ws s)
       (hm : (⟨s.syms nm,3904⟩ : Region)∈rd) :
       StaticTable 16 nm ws (s.callEntry.withRegions rd wr) := by
-    refine ⟨ht.held,ht.fit,?_,?_,ht.stack⟩
+    refine ⟨ht.held,ht.fit,?_,?_,ht.stack,ht.aligned⟩
     · apply Covers.one
       exact ⟨⟨s.syms nm,3904⟩,List.mem_append_left _ hm,Region.contains_self _ _⟩
     · intro r hmem
@@ -78,7 +78,7 @@ theorem paired_ctx {p : Params} {s t : State} {g : Reg → BitVec 64} {v : VReg 
 theorem paired_reborrow {s : State} {rd wr : List Region} (h : PairedRoots 16 s)
     (hr : rootRegions s⊆rd) (hw : Covers wr s.wr) :
     PairedRoots 16 (s.callEntry.withRegions rd wr) := by
-  refine ⟨h.held,h.fit,?_,?_,h.stack⟩
+  refine ⟨h.held,h.fit,?_,?_,h.stack,h.aligned⟩
   · apply Covers.one
     exact ⟨⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩,
       List.mem_append_left _ (hr (by simp [rootRegions])),Region.contains_self _ _⟩

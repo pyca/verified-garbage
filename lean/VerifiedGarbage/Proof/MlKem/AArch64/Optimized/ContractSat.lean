@@ -31,7 +31,7 @@ theorem keyGen768_sat : ∃s,keyGen768Contract.pre s := by
     | decide
     | exact Region.disjoint_of_sep (by decide)
  · change ConstsOk constants 16 (addTables VG.Proof.MlKem.AArch64.KeyGen.sat)
-   refine ⟨?_,tableMem_held,?_⟩
+   refine ⟨?_,tableMem_held,?_,?_⟩
    · rfl
    · intro r hr
      rw [constants_regions] at hr
@@ -47,6 +47,10 @@ theorem keyGen768_sat : ∃s,keyGen768Contract.pre s := by
            change q∈[below (0x100000:Addr) 16] at hq
            rw [List.mem_singleton.mp hq]
            exact Region.disjoint_of_sep (by decide))
+   · intro r hr
+     rw [constants_regions] at hr
+     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+     all_goals first | contradiction | decide
 
 theorem decaps768_sat : ∃s,decaps768Contract.pre s := by
  refine ⟨addTables VG.Proof.MlKem.AArch64.Decaps.sat,?_⟩
@@ -62,7 +66,7 @@ theorem decaps768_sat : ∃s,decaps768Contract.pre s := by
     | decide
     | exact Region.disjoint_of_sep (by decide)
  · change ConstsOk constants 16 (addTables VG.Proof.MlKem.AArch64.Decaps.sat)
-   refine ⟨?_,tableMem_held,?_⟩
+   refine ⟨?_,tableMem_held,?_,?_⟩
    · rfl
    · intro r hr
      rw [constants_regions] at hr
@@ -78,6 +82,10 @@ theorem decaps768_sat : ∃s,decaps768Contract.pre s := by
            change q∈[below (0x100000:Addr) 16] at hq
            rw [List.mem_singleton.mp hq]
            exact Region.disjoint_of_sep (by decide))
+   · intro r hr
+     rw [constants_regions] at hr
+     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+     all_goals first | contradiction | decide
 
 theorem keyGen1024_sat : ∃s,keyGen1024Contract.pre s := by
  refine ⟨addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat,?_⟩
@@ -93,7 +101,7 @@ theorem keyGen1024_sat : ∃s,keyGen1024Contract.pre s := by
     | decide
     | exact Region.disjoint_of_sep (by decide)
  · change ConstsOk constants 16 (addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat)
-   refine ⟨?_,tableMem_held,?_⟩
+   refine ⟨?_,tableMem_held,?_,?_⟩
    · rfl
    · intro r hr
      rw [constants_regions] at hr
@@ -109,6 +117,10 @@ theorem keyGen1024_sat : ∃s,keyGen1024Contract.pre s := by
            change q∈[below (0x100000:Addr) 16] at hq
            rw [List.mem_singleton.mp hq]
            exact Region.disjoint_of_sep (by decide))
+   · intro r hr
+     rw [constants_regions] at hr
+     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+     all_goals first | contradiction | decide
 
 theorem decaps1024_sat : ∃s,decaps1024Contract.pre s := by
  refine ⟨addTables VG.Proof.MlKem1024.AArch64.Decaps.sat,?_⟩
@@ -124,7 +136,7 @@ theorem decaps1024_sat : ∃s,decaps1024Contract.pre s := by
     | decide
     | exact Region.disjoint_of_sep (by decide)
  · change ConstsOk constants 16 (addTables VG.Proof.MlKem1024.AArch64.Decaps.sat)
-   refine ⟨?_,tableMem_held,?_⟩
+   refine ⟨?_,tableMem_held,?_,?_⟩
    · rfl
    · intro r hr
      rw [constants_regions] at hr
@@ -140,4 +152,8 @@ theorem decaps1024_sat : ∃s,decaps1024Contract.pre s := by
            change q∈[below (0x100000:Addr) 16] at hq
            rw [List.mem_singleton.mp hq]
            exact Region.disjoint_of_sep (by decide))
+   · intro r hr
+     rw [constants_regions] at hr
+     rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+     all_goals first | contradiction | decide
 end VG.Proof.MlKem.AArch64.Optimized

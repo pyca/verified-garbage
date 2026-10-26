@@ -24,7 +24,7 @@ theorem sPre_spec {p : Params} {s : State} (h : SPre p s) :
     List.range,List.range.loop]
   refine ⟨h.sp,?_,h.roots.forward.held,h.roots.inverse.held,h.paired.held,h.roots.forward.fit,
     h.roots.forward.writable,h.roots.forward.stack,h.roots.inverse.fit,
-    h.roots.inverse.writable,h.roots.inverse.stack,h.paired.fit,h.paired.writable,h.paired.stack,?_,h.wr,
+    h.roots.inverse.writable,h.roots.inverse.stack,h.paired.fit,h.paired.writable,h.paired.stack,h.roots.forward.aligned,h.roots.inverse.aligned,h.paired.aligned,?_,h.wr,
     h.skSig,h.skScr,h.msgSig,h.msgScr,h.ctxSig,h.ctxScr,h.rndSig,h.rndScr,h.sigScr,
     h.stkSk,h.stkMsg,h.stkCtx,h.stkRnd,h.stkSig,h.stkScr,
     h.nSk,h.nMsg,h.nCtx,h.nRnd,h.nSig,h.nScr⟩
@@ -43,8 +43,8 @@ theorem signSatWith_roots (p : Params) (hp : Ok3 p) (m : Mem)
     (hi : ∀j<488,m.readW (1052480+BitVec.ofNat 64 (8*j)) 64=
       Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD j 0) :
     StaticRoots 16 (signSatWith p m) := by
-  refine ⟨⟨hf,by dsimp [signSatWith]; decide,?_,?_,?_⟩,
-    ⟨hi,by dsimp [signSatWith]; decide,?_,?_,?_⟩⟩
+  refine ⟨⟨hf,by dsimp [signSatWith]; decide,?_,?_,?_,by dsimp [signSatWith]; try decide⟩,
+    ⟨hi,by dsimp [signSatWith]; decide,?_,?_,?_,by dsimp [signSatWith]; try decide⟩⟩
   · apply Covers.one
     exact ⟨⟨1048576,3904⟩,by simp [signSatWith],Region.contains_self _ _⟩
   · rcases hp with rfl|rfl|rfl
@@ -79,7 +79,7 @@ theorem signSatWith_paired (p : Params) (hp : Ok3 p) (m : Mem)
     (hr : ∀j<512,m.readW (1056384+BitVec.ofNat 64 (8*j)) 64=
       Impl.MlDsa.AArch64.Optimized.Paired.expandedWords.getD j 0) :
     PairedRoots 16 (signSatWith p m) := by
-  refine ⟨hr,by dsimp [signSatWith]; decide,?_,?_,?_⟩
+  refine ⟨hr,by dsimp [signSatWith]; decide,?_,?_,?_,by dsimp [signSatWith]; try decide⟩
   · apply Covers.one
     exact ⟨⟨1056384,4096⟩,by simp [signSatWith],Region.contains_self _ _⟩
   · rcases hp with rfl|rfl|rfl

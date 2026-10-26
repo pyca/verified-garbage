@@ -72,8 +72,8 @@ def entryContractS (base : Contract isa) : Contract isa where
 theorem consts16 {s : State} (h : ConstsOk constants 128 s) : ConstsOk constants 16 s ∧ TStk s := by
   have sub : Region.Sub ⟨s.sp - BitVec.ofNat 64 16, 16⟩ (frame s.sp) := below_sub (by decide) (by decide)
   have st : ∀ t ∈ constRegs constants s, t.Disjoint (frame s.sp) := fun t ht =>
-    (h.2.2 t ht).2.2 _ (by simp [abi, stackBelow])
-  refine ⟨⟨h.1, h.2.1, fun t ht => ⟨(h.2.2 t ht).1, (h.2.2 t ht).2.1, fun r hr => ?_⟩⟩, ?_⟩
+    (h.2.2.1 t ht).2.2 _ (by simp [abi, stackBelow])
+  refine ⟨⟨h.1, h.2.1, fun t ht => ⟨(h.2.2.1 t ht).1, (h.2.2.1 t ht).2.1, fun r hr => ?_⟩, h.2.2.2⟩, ?_⟩
   · simp only [abi, stackBelow, List.mem_singleton] at hr
     subst hr
     exact (st t ht).sub_right sub

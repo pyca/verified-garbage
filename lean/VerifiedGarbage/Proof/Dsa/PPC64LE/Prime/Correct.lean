@@ -65,7 +65,7 @@ theorem table_rd {σ : State} (hk : ConstsOk K 176 σ) : (⟨σ.syms TrialTable3
 
 theorem consts_wr1 {name : String} {ws : List (BitVec 64)} {st : Nat} {s : State} (h : ConstsOk [(name, ws)] st s) :
     ∀ r ∈ s.wr, Region.Disjoint ⟨s.syms name, 8 * ws.length⟩ r :=
-  (h.2.2 _ List.mem_cons_self).2.1
+  (h.2.2.1 _ List.mem_cons_self).2.1
 
 theorem table_wr {σ : State} (hk : ConstsOk K 176 σ) :
     ∀ r ∈ σ.wr, Region.Disjoint ⟨σ.syms TrialTable32.symbol, 8192⟩ r := by

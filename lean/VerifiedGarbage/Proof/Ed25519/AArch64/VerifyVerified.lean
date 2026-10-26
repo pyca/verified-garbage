@@ -439,6 +439,7 @@ theorem verify_spec_pre {s : State}
       s.mem.readW (s.syms bSym + BitVec.ofNat 64 (8 * i)) 64 = bWords.getD i 0)
     (fit : (s.syms bSym).toNat + 8 * bWords.length ≤ 2 ^ 64)
     (hdw : Region.Disjoint ⟨s.syms bSym, 8 * bWords.length⟩ ⟨s.gpr .x3, 8192⟩)
+    (hal : (s.syms bSym).toNat % 64 = 0)
     (h1 : Region.Disjoint ⟨s.gpr .x0, 32⟩ ⟨s.gpr .x3, 8192⟩)
     (h2 : Region.Disjoint ⟨s.gpr .x1, 64⟩ ⟨s.gpr .x3, 8192⟩)
     (h3 : Region.Disjoint ⟨s.gpr .x2, 64⟩ ⟨s.gpr .x3, 8192⟩)
@@ -448,7 +449,7 @@ theorem verify_spec_pre {s : State}
   sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
     Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts,
     Abi.constRegions, Abi.constsHeld, stackBelow]
-  refine ⟨by rw [hrd]; rfl, held, fit, fun r hr => ?_, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1, f2, f3⟩
+  refine ⟨by rw [hrd]; rfl, held, fit, fun r hr => ?_, hal, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1, f2, f3⟩
   rw [hw, List.mem_singleton] at hr
   rw [hr]; exact hdw
 
@@ -458,7 +459,7 @@ theorem verify_implies :
     sig_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, AArch64.abi, AArch64.argRegs, bConsts_eq, Abi.withConsts,
       Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨hd, held, fit, hdw, ht, hw, d1, d2, d3, -, -, -, f3⟩ := h
+    obtain ⟨hd, held, fit, hdw, -, ht, hw, d1, d2, d3, -, -, -, f3⟩ := h
     simp only [bWords_length, Nat.reduceMul] at hd held fit hdw
     refine ⟨?_, hw, d1, d2, d3, f3, held, fit, fun r hr => hdw r (by rw [hw]; exact hr)⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
@@ -482,7 +483,7 @@ theorem verify_implies :
     have hl := bWords_length
     refine ⟨verifySatState, verify_spec_pre (by rw [hl]; rfl) rfl
       (fun i hi => bSatMem_held i (by rw [hl] at hi; exact hi)) (by rw [hl]; decide)
-      (by rw [hl]; exact Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+      (by rw [hl]; exact Region.disjoint_of_sep (by decide)) (by decide) (Region.disjoint_of_sep (by decide))
       (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide)
       (by decide) (by decide) (by decide)⟩
 

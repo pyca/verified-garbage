@@ -477,7 +477,7 @@ theorem pairedLow_pre_intro {s : State} (h : LowSpecPre s)
     (pairedLowContract (abi.withConsts pairedConsts)).pre s := by
   sig_pre [pairedLowContract,pairedLowSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow]
-  exact ⟨by rw [h.rd]; rfl,held,fitTable,h.tableSep,by rw [h.rd]; rfl,h.wr,
+  exact ⟨by rw [h.rd]; rfl,held,fitTable,h.tableSep,h.tableAl,by rw [h.rd]; rfl,h.wr,
     h.commonData,h.commonAux,h.commonWork,h.secretData,h.secretAux,h.secretWork,
     h.dataAux,h.dataWork,h.auxWork,fit0,fit1,fit2,fit3,fit4,h.products,h.data,h.gamma,h.boundLow,h.boundHigh⟩
 
@@ -509,7 +509,7 @@ theorem lowSatWith_pre (m : Mem)
     (hdata : ∀j<2,Reduced m (pairPolyPtr 12288 j)) :
     (pairedLowContract (abi.withConsts pairedConsts)).pre (lowSatWith m) := by
   apply pairedLow_pre_intro (s:=lowSatWith m) ?_ held (by dsimp only [lowSatWith]; decide) (by dsimp only [lowSatWith]; decide) (by dsimp only [lowSatWith]; decide) (by dsimp only [lowSatWith]; decide) (by dsimp only [lowSatWith]; decide) (by dsimp only [lowSatWith]; decide)
-  refine ⟨rfl,rfl,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,hprod,hdata,by dsimp only [lowSatWith]; decide,by dsimp only [lowSatWith]; decide,by dsimp only [lowSatWith]; decide⟩
+  refine ⟨rfl,rfl,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,hprod,hdata,by dsimp only [lowSatWith]; decide,by dsimp only [lowSatWith]; decide,by dsimp only [lowSatWith]; decide,by dsimp only [lowSatWith]; try decide⟩
   · intro i hi
     refine (held i hi).trans ?_
     rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by rw [PairedTable.expandedWords_length]; exact hi),
@@ -599,6 +599,7 @@ structure PairedLowReady (c secret out low work : Ptr) (g B : Nat) (s : State) :
   readable : Covers [⟨pa s c,1024⟩,⟨pa s secret,2048⟩,⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩,
     ⟨pa s out,2048⟩,⟨pa s low,2048⟩,⟨pa s work,2176⟩] (s.rd++s.wr)
   writable : Covers [⟨pa s out,2048⟩,⟨pa s low,2048⟩,⟨pa s work,2176⟩] s.wr
+  tableAligned : (s.syms "VG_MLDSA_INV_PAIR").toNat%64=0
 
 theorem PairedLowReady.gamma_lt {c secret out low work : Ptr} {g B : Nat} {s : State}
     (h : PairedLowReady c secret out low work g B s) : g<2^32 := by
@@ -620,7 +621,7 @@ theorem pairedLowAt_pre {s s1 : State} {c secret out low work : Ptr} {g B : Nat}
   have hg : ((BitVec.ofNat 64 g).setWidth 32).toNat=g := by have := h.gamma_lt; bv_omega_arith
   have hB : ((BitVec.ofNat 64 B).setWidth 32).toNat=B := by have := h.boundMax; bv_omega_arith
   rw [hg,hB]
-  exact ⟨trivial,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),h.tableApart _ (by simp),
+  exact ⟨trivial,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),h.tableApart _ (by simp),h.tableAligned,
     trivial,trivial,h.cOut,h.cLow,h.cWork,h.secretOut,h.secretLow,h.secretWork,h.outLow,h.outWork,h.lowWork,
     h.cFit,h.secretFit,h.outFit,h.lowFit,h.workFit,h.products,h.canonical,h.gamma,h.boundPos,h.boundMax⟩
 

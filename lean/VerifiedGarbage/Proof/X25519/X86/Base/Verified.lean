@@ -182,7 +182,7 @@ theorem x25519Base_sat :
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
-  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, ?_⟩
+  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, by decide, ?_⟩
   · rw [hl]
     intro r hr
     change r ∈ [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩] at hr
@@ -201,7 +201,7 @@ theorem x25519Base_implies :
     sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨h4, hsp, hd, held, hfit, hdw, -, hstk, ht, hw, -, o2, o3, i2, s3, r0, -, r2, -,
+    obtain ⟨h4, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, -, o2, o3, i2, s3, r0, -, r2, -,
       b0, b1, b2, -, f0, f1, f2⟩ := h
     have be : callStk s = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩ := below_eq (sp := s.gpr .esp) h4
     refine ⟨⟨?_, hw, o2, i2, o3.symm, s3.symm, r0, r2, f0, f1, f2, by omega, h4, by rw [be]; exact b1,

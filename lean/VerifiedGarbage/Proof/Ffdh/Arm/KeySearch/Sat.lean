@@ -147,7 +147,11 @@ private theorem vetted_satAux (W : List (BitVec 64)) (length : W.length = 2218) 
       | (change (searchMem W).readW 0x4010 64 = 64
          rw [searchSat_control W (by simp)]
          decide +kernel)
-  · refine ⟨?_, ?_, ?_⟩
+  · refine ⟨?_, ?_, ?_, fun r hr => by
+      simp only [constRegs, Abi.constRegions, List.mem_map, List.mem_singleton] at hr
+      obtain ⟨c, rfl, rfl⟩ := hr
+      dsimp only [symAddr, searchSat]
+      decide⟩
     · simp only [searchSat, keySat, constRegs, Abi.constRegions, symAddr, List.map_cons, List.map_nil, length]
       rfl
     · intro c hc i hi

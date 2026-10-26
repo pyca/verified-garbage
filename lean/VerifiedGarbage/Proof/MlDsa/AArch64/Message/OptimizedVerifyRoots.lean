@@ -41,7 +41,7 @@ theorem verify_pre_extend {p : Params} {s : State}
     List.range,List.range.loop]
   obtain ⟨sp,wr,d1,d2,d3,k1,k2,k3,k4,n1,n2,n3,n4⟩ := h
   exact ⟨sp,by rw [hd]; rfl,hr.forward.held,hr.inverse.held,hr.forward.fit,hr.forward.writable,
-    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,by rw [hd]; rfl,
+    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,hr.forward.aligned,hr.inverse.aligned,by rw [hd]; rfl,
     wr,d1,d2,d3,k1,k2,k3,k4,n1,n2,n3,n4⟩
 
 end VG.Proof.MlDsa.AArch64.Message.OptimizedVerify

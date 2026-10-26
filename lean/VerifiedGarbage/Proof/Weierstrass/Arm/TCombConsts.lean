@@ -25,6 +25,6 @@ theorem tableMem_of_consts {s : State} {K : List (String × List (BitVec 64))} {
 theorem table_disjoint_of_consts {s : State} {K : List (String × List (BitVec 64))} {st : Nat}
     (h : ConstsOk K st s) {name : String} {ws : List (BitVec 64)} (hc : (name,ws)∈K)
     {r : Region} (hr : r∈s.wr) : Region.Disjoint ⟨State.addr (s.syms name),8*ws.length⟩ r :=
-  (h.2.2 _ (List.mem_map_of_mem (f := fun c => (⟨symAddr s c.1,8*c.2.length⟩ : Region)) hc)).2.1 r hr
+  (h.2.2.1 _ (List.mem_map_of_mem (f := fun c => (⟨symAddr s c.1,8*c.2.length⟩ : Region)) hc)).2.1 r hr
 
 end VG.Proof.Weierstrass.Arm.TComb

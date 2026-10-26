@@ -198,10 +198,15 @@ calling convention as a contract for such code sees it: the state gives each
 table's address (`A.sym`), which is public, and the memory holds the table
 there; the code may read it (the tables come last in the regions it may
 read, after those the contract gives the arguments), no writable region or
-reserved memory overlaps it, and it does not wrap around the address space:
-as for a Rust `static`, a distinct immutable object holding exactly those
-words. With no tables, or on a target whose code cannot name a static, it is
-`A`. -/
+reserved memory overlaps it, it does not wrap around the address space,
+and its address is a multiple of 64: as for a Rust `static`, a distinct
+immutable object holding exactly those words. The emitter declares every
+table as a `static` of the type `Table`, `#[repr(C, align(64))]`
+(`TCB/Rust.lean`, `tablesMod` and `tableFile`), and the `align` modifier
+"forces the type to have a minimum alignment" of 64 (the Rust Reference,
+"Type layout", "The `align` modifier"), the static's address being a multiple
+of its type's alignment. With no tables, or on a target whose code cannot
+name a static, it is `A`. -/
 
 /-- The tables `cs` at the addresses `f` gives their names, each `8 * length`
 bytes. -/
@@ -225,7 +230,8 @@ def Abi.withConsts {M : ISA} (A : Abi M) (cs : List (String × List (BitVec 64))
         (A.rd s).drop ((A.rd s).length - cs.length) = Abi.constRegions (f s) cs ∧
         Abi.constsHeld (A.mem s) (f s) cs ∧
         (∀ t ∈ Abi.constRegions (f s) cs, t.base.toNat + t.len ≤ 2 ^ A.ptrBits ∧
-          (∀ r ∈ A.wr s, t.Disjoint r) ∧ ∀ r ∈ A.reserved n s, t.Disjoint r)
+          (∀ r ∈ A.wr s, t.Disjoint r) ∧ ∀ r ∈ A.reserved n s, t.Disjoint r) ∧
+        ∀ t ∈ Abi.constRegions (f s) cs, t.base.toNat % 64 = 0
       pub s₁ s₂ := A.pub s₁ s₂ ∧ ∀ c ∈ cs, f s₁ c.1 = f s₂ c.1 }
 
 /-- The `n` bytes below the stack pointer `sp`, if any. -/

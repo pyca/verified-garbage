@@ -31,8 +31,9 @@ def stripConsts (K : List (String × List (BitVec 64))) (s : State) : State :=
 /-- What `abi.withConsts K` adds to the calling convention's well-formedness. -/
 def ConstsOk (K : List (String × List (BitVec 64))) (st : Nat) (s : State) : Prop :=
   s.rd.drop (s.rd.length - K.length) = constRegs K s ∧ Abi.constsHeld s.mem (fun name => s.syms name) K ∧
-    ∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ abi.ptrBits ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
-      ∀ r ∈ abi.reserved st s, t.Disjoint r
+    (∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ abi.ptrBits ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
+      ∀ r ∈ abi.reserved st s, t.Disjoint r) ∧
+    ∀ t ∈ constRegs K s, t.base.toNat % 64 = 0
 
 @[simp] theorem stripConsts_gpr (K : List (String × List (BitVec 64))) (s : State) :
     (stripConsts K s).gpr = s.gpr := rfl
@@ -86,10 +87,10 @@ theorem pre_consts {s : State} :
     dsimp only
     rw [args_stripConsts h]
     constructor
-    · rintro ⟨⟨hw, hd, hh, ht⟩, hrd, hwr, hpw, hres, hnw, hpr⟩
-      exact ⟨⟨hw, hrd, hwr, hpw, hres, hnw, hpr⟩, hd, hh, ht⟩
-    · rintro ⟨⟨hw, hrd, hwr, hpw, hres, hnw, hpr⟩, hd, hh, ht⟩
-      exact ⟨⟨hw, hd, hh, ht⟩, hrd, hwr, hpw, hres, hnw, hpr⟩
+    · rintro ⟨⟨hw, hd, hh, ht, hal⟩, hrd, hwr, hpw, hres, hnw, hpr⟩
+      exact ⟨⟨hw, hrd, hwr, hpw, hres, hnw, hpr⟩, hd, hh, ht, hal⟩
+    · rintro ⟨⟨hw, hrd, hwr, hpw, hres, hnw, hpr⟩, hd, hh, ht, hal⟩
+      exact ⟨⟨hw, hd, hh, ht, hal⟩, hrd, hwr, hpw, hres, hnw, hpr⟩
 
 /-- A postcondition under `abi.withConsts` is the one under `abi`. -/
 theorem post_consts {s s' : State} :
@@ -125,8 +126,13 @@ variable {K : List (String × List (BitVec 64))} {st : Nat} {s : State} {name : 
 /-- A table lies within the address space. -/
 theorem ConstsOk.fit (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
     (s.syms name).toNat + 8 * ws.length ≤ 2 ^ 64 :=
-  (h.2.2 ⟨s.syms name, 8 * ws.length⟩ (List.mem_map_of_mem (f := fun c =>
+  (h.2.2.1 ⟨s.syms name, 8 * ws.length⟩ (List.mem_map_of_mem (f := fun c =>
     (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) hc)).1
+
+/-- A table's address is a multiple of 64. -/
+theorem ConstsOk.aligned (h : ConstsOk K st s) (hc : (name, ws) ∈ K) : (s.syms name).toNat % 64 = 0 :=
+  h.2.2.2 ⟨s.syms name, 8 * ws.length⟩ (List.mem_map_of_mem (f := fun c =>
+    (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) hc)
 
 /-- The table is readable. -/
 theorem ConstsOk.mem_rd (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
@@ -163,7 +169,7 @@ theorem ConstsOk.rd1 (h : ConstsOk [(name, ws)] st s) : (⟨s.syms name, 8 * ws.
 /-- No writable region overlaps it. -/
 theorem ConstsOk.wr1 (h : ConstsOk [(name, ws)] st s) :
     ∀ r ∈ s.wr, Region.Disjoint ⟨s.syms name, 8 * ws.length⟩ r :=
-  (h.2.2 _ List.mem_cons_self).2.1
+  (h.2.2.1 _ List.mem_cons_self).2.1
 
 end
 

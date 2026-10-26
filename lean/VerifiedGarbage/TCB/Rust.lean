@@ -93,8 +93,10 @@ the assembler expands to `auipc` and `addi` with the relocations
 `R_RISCV_PCREL_HI20` and `R_RISCV_PCREL_LO12_I`, position independent. The
 linker resolves them to the static's address, which the model gives
 (`State.syms`, fixed for the run as a static's address is) and at which the
-contract (`Abi.withConsts`) says the memory holds the table, readable and
-apart from every writable region: a `static` is a distinct immutable object.
+contract (`Abi.withConsts`) says the memory holds the table, readable,
+apart from every writable region and at a multiple of 64 (`Table`'s
+alignment): a `static` is a distinct immutable object, at a multiple of its
+type's alignment.
 
 An artifact whose code needs CPU features beyond the target's baseline
 (`Artifact.features`) also gets a last `# Safety` item saying the CPU must

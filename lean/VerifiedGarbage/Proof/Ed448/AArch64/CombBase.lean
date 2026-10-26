@@ -869,20 +869,21 @@ theorem sat_zero : ∀ i < 8, VG.Spec.X448.Field56.limbAt satMem2 0x1000 (slotAt
 /-- The shared contract's precondition, from its facts. -/
 theorem spec_pre {s : State} (hrd : s.rd = [⟨s.syms combSym, 8 * combWords.length⟩])
     (hw : s.wr = [⟨s.gpr .x0, 8192⟩]) (hnw : (s.gpr .x0).toNat + 8192 ≤ 2 ^ 64)
-    (ht : CombHeld s [⟨s.gpr .x0, 8192⟩]) (hn : (s.gpr .x1).toNat = 56 ∨ (s.gpr .x1).toNat = 57)
+    (ht : CombHeld s [⟨s.gpr .x0, 8192⟩])
+    (hal : (s.syms combSym).toNat % 64 = 0) (hn : (s.gpr .x1).toNat = 56 ∨ (s.gpr .x1).toNat = 57)
     (hbits : IsBits s.mem (s.gpr .x0) (8 * (s.gpr .x1).toNat)) (hb : Bounded s.mem (s.gpr .x0))
     (hz : ∀ i < 8, VG.Spec.X448.Field56.limbAt s.mem (s.gpr .x0) (slotAt 19) i = 0) :
     (Spec.Ed448.Comb56.combBaseContract (AArch64.abi.withConsts combConsts)).pre s := by
   sig_pre [Spec.Ed448.Comb56.combBaseContract, Spec.Ed448.Comb56.sig, AArch64.abi, AArch64.argRegs,
     combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
-  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, by rw [hrd]; rfl, hw, hnw, hn, hbits, hb, hz⟩
+  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, hal, by rw [hrd]; rfl, hw, hnw, hn, hbits, hb, hz⟩
 
 theorem implies : combL.Implies (Spec.Ed448.Comb56.combBaseContract (AArch64.abi.withConsts combConsts)) where
   pre s h := by
     sig_pre [Spec.Ed448.Comb56.combBaseContract, Spec.Ed448.Comb56.sig, AArch64.abi, AArch64.argRegs,
       combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨hd, hheld, hfit, hdw, ht, hw, hnw, hn, hbits, hb, hz⟩ := h
+    obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, hnw, hn, hbits, hb, hz⟩ := h
     refine ⟨?_, hw, hnw, ⟨hheld, hfit, by rw [hw] at hdw; exact hdw⟩, hn, hbits, hb, hz⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by
@@ -897,7 +898,7 @@ theorem implies : combL.Implies (Spec.Ed448.Comb56.combBaseContract (AArch64.abi
     exact ⟨h0, h1, hsp, hsy⟩
   sat := ⟨satState, by
     have hl := combWords_length
-    refine spec_pre (by rw [hl]; rfl) rfl (by decide) ⟨satMem2_held, by rw [hl]; decide, ?_⟩ (.inl rfl)
+    refine spec_pre (by rw [hl]; rfl) rfl (by decide) ⟨satMem2_held, by rw [hl]; decide, ?_⟩ (by decide) (.inl rfl)
       sat_bits sat_bounded sat_zero
     simp only [List.mem_singleton]
     rintro r rfl

@@ -35,7 +35,7 @@ open VG VG.Arm VG.Proof.Mont
     intro table member r hr
     obtain rfl := List.mem_singleton.mp hr
     exact (h.input.constants_stack table member).sub_right (arguments_sub h.input.bounds.stackFits))
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
   · rw [regions]
     cases sampling <;> rfl
   · intro c member i hi
@@ -54,7 +54,7 @@ open VG VG.Arm VG.Proof.Mont
     have initial : ConstsOk (KeyConstants.consts sampling) (stackUse sampling) original := h.input.2.2
     have originalMember : table ∈ constRegs (KeyConstants.consts sampling) original := by
       rw [h.input.constant_regions]; exact member
-    have facts := initial.2.2 table originalMember
+    have facts := initial.2.2.1 table originalMember
     refine ⟨facts.1, ?_, ?_⟩
     · intro r hr
       have changes : r ∈ callChanges p := by
@@ -74,6 +74,12 @@ open VG VG.Arm VG.Proof.Mont
         omega
       rw [← FrameStack.addr_sub' fit]
       exact (h.input.constants_stack table member).sub_right (callStack_sub h.input.bounds.stackFits)
+  · intro table member
+    rw [regions] at member
+    have initial : ConstsOk (KeyConstants.consts sampling) (stackUse sampling) original := h.input.2.2
+    have originalMember : table ∈ constRegs (KeyConstants.consts sampling) original := by
+      rw [h.input.constant_regions]; exact member
+    exact initial.2.2.2 table originalMember
 
  theorem call_pre {p : KeyPublic sampling} {used keys scalars : Nat} {original s u : State}
     (live : KeyLive p original used keys scalars s) (room : used + p.len ≤ p.randLen)

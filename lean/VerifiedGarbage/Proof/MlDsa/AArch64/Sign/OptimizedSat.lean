@@ -50,7 +50,7 @@ theorem staticRoots_pre {p : Params} {S : Nat} {s : State} (hS : 0<S)
     nttConsts_eq,Inverse.inverseConsts_eq,Abi.constRegions,Abi.constsHeld,
     TableConstants.staticNttWords_length,InverseTable.expandedWords_length,stackBelow]
   refine ⟨hsp,?_,hr.forward.held,hr.inverse.held,hr.forward.fit,hr.forward.writable,
-    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,?_,hw,
+    hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,hr.forward.aligned,hr.inverse.aligned,?_,hw,
     d1,d2,d3,d4,d5,d6,d7,k1,k2,k3,k4,k5,n1,n2,n3,n4,n5⟩
   · rw [hrd]; rfl
   · rw [hrd]; rfl
@@ -67,8 +67,8 @@ theorem optimizedSignSatWith_pre (p : Params) (hp : Ok3 p) (m : Mem)
     all_goals refine ⟨List.subset_append_left _ _, ?_⟩
     all_goals sig_and_intros
     all_goals first | rfl | exact Region.disjoint_of_sep (by decide) | decide
-  · refine ⟨⟨hf,by dsimp [optimizedSignSatWith]; decide,?_,?_,by dsimp [optimizedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide)⟩,
-      ⟨hi,by dsimp [optimizedSignSatWith]; decide,?_,?_,by dsimp [optimizedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide)⟩⟩
+  · refine ⟨⟨hf,by dsimp [optimizedSignSatWith]; decide,?_,?_,by dsimp [optimizedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [optimizedSignSatWith]; try decide⟩,
+      ⟨hi,by dsimp [optimizedSignSatWith]; decide,?_,?_,by dsimp [optimizedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [optimizedSignSatWith]; try decide⟩⟩
     · apply Covers.one
       exact ⟨⟨1048576,3904⟩,by simp [optimizedSignSatWith],Region.contains_self _ _⟩
     · rcases hp with rfl|rfl|rfl

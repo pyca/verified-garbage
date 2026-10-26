@@ -44,7 +44,7 @@ theorem optimizedDotReady {p : Params} (hp : PFacts p) {S : Nat} {σ s : State} 
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨ro,ra⟩,rb⟩,rz⟩,wo⟩,wz⟩,oa⟩,ob⟩,oz⟩,az⟩,bz⟩,_⟩ := hc
   have L := hs.lay hp hpre
   refine ⟨L.nwp ro,L.nwp ra,L.nwp rb,L.nwp rz,roots.inverse.held,roots.inverse.fit,?_,
-    L.disj oa,L.disj ob,L.disj oz,L.disj az,L.disj bz,ha,hb,?_,?_⟩
+    L.disj oa,L.disj ob,L.disj oz,L.disj az,L.disj bz,ha,hb,?_,?_,roots.inverse.aligned⟩
   · intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl

@@ -79,13 +79,14 @@ theorem spec_pre {s : State} (h184 : 184 ≤ (s.gpr .rsp).toNat)
     (td : Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseOddSym, 16384⟩ ⟨s.gpr .r8, 8192⟩)
     (tr : Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseOddSym, 16384⟩ ⟨s.gpr .rsp, 8⟩)
     (tk : Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseOddSym, 16384⟩
-      ⟨s.gpr .rsp - BitVec.ofNat 64 184, 184⟩) :
+      ⟨s.gpr .rsp - BitVec.ofNat 64 184, 184⟩)
+    (hal : (s.syms Impl.Ed25519.X86_64.baseOddSym).toNat % 64 = 0) :
     (Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts) 184).pre s := by
   sig_pre [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
     Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq', Abi.withConsts,
     Abi.constRegions, Abi.constsHeld, stackBelow, baseOddWords_length]
   exact ⟨h184, by rw [hrd]; rfl, held, fit, by rw [hw]; simp only [List.mem_singleton, forall_eq]; exact td,
-    tr, tk, by rw [hrd]; rfl, hw, pc, mc, sc, rp, rm, rs, rc, kp, km, ks, kc, np, nm, ns, nc⟩
+    tr, tk, hal, by rw [hrd]; rfl, hw, pc, mc, sc, rp, rm, rs, rc, kp, km, ks, kc, np, nm, ns, nc⟩
 
 theorem sat_spec :
     (Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts) 184).pre
@@ -97,7 +98,7 @@ theorem sat_spec :
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (by decide) (by decide) (by decide) (by decide)
     satMem_held (by decide) (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
-    (Region.disjoint_of_sep (by decide))
+    (Region.disjoint_of_sep (by decide)) (by decide)
 
 theorem implies : verifyMessageLocal.Implies
     (Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts) 184) where
@@ -105,7 +106,7 @@ theorem implies : verifyMessageLocal.Implies
     sig_pre [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
       Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseOddConsts_eq', Abi.withConsts,
       Abi.constRegions, Abi.constsHeld, stackBelow, baseOddWords_length] at h
-    obtain ⟨h184, hd, hheld, -, hdw, -, hstk, ht, hw, pc, mc, sc, rp, rm, rs, rc, kp, km, ks, kc, np, nm, ns,
+    obtain ⟨h184, hd, hheld, -, hdw, -, hstk, -, ht, hw, pc, mc, sc, rp, rm, rs, rc, kp, km, ks, kc, np, nm, ns,
       nc⟩ := h
     refine ⟨h184, ?_, hw, pc, mc, sc, rp, rm, rs, rc, kp, km, ks, kc, np, nm, ns, nc,
       hdw _ (by rw [hw]; simp), hstk, hheld⟩

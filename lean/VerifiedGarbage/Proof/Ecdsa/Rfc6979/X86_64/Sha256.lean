@@ -46,7 +46,8 @@ theorem spec_pre {s : State}
     (ng : (s.gpr .rdx).toNat + 32 ≤ 2 ^ 64) (nc : (s.gpr .rcx).toNat + 8192 ≤ 2 ^ 64)
     (hsp : 240 ≤ (s.gpr .rsp).toNat)
     (ht : TblHeld s [⟨s.gpr .rdi, 64⟩, ⟨s.gpr .rcx, 8192⟩, ⟨s.gpr .rsp, 8⟩,
-      ⟨s.gpr .rsp - BitVec.ofNat 64 240, 240⟩]) :
+      ⟨s.gpr .rsp - BitVec.ofNat 64 240, 240⟩])
+    (hal : (s.syms "VG_P256_COMB").toNat % 64 = 0) :
     (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 240).pre s := by
   sig_pre [Spec.Ecdsa.Rfc6979.P256Sha256.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
       Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
@@ -55,7 +56,7 @@ theorem spec_pre {s : State}
   obtain ⟨held, fit, hdw⟩ := ht
   exact ⟨hsp, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]),
-    hdw _ (by simp), hdw _ (by simp), by rw [hrd]; rfl, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc,
+    hdw _ (by simp), hdw _ (by simp), hal, by rw [hrd]; rfl, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc,
     no, nd, ng, nc⟩
 
 theorem sat_spec : (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 240).pre (satState 32 32 satMem [⟨0x100000, 151552⟩]) := by
@@ -70,7 +71,7 @@ theorem sat_spec : (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (X86_64.abi.
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
-    (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩
+    (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩ (by decide)
   all_goals rw [hl]
   · decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -82,7 +83,7 @@ theorem implies : (rfcX86_64 Impl.Ecdsa.X86_64.p256.combConsts Spec.Ecdsa.Rfc697
       Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
       X86_64.abi, X86_64.argRegs, p256_combConsts, Abi.withConsts, Abi.constRegions,
       Abi.constsHeld, stackBelow] at h
-    obtain ⟨hsp, hd, hheld, hfit, hdw, hdr, hds, ht, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd,
+    obtain ⟨hsp, hd, hheld, hfit, hdw, hdr, hds, -, ht, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd,
       ng, nc⟩ := h
     refine ⟨hsp, ?_, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, fun c hc => ?_,
       ?_⟩

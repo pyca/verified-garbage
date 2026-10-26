@@ -21,7 +21,7 @@ theorem comb_core_pre {s : State}
   obtain ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,tables⟩ := h
   have hp : Pre Impl.Ecdsa.Arm.secp256k1 s (constRegs secp256k1CombConsts s) :=
     ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp⟩
-  refine ⟨hp,?_,?_,?_⟩
+  refine ⟨hp,?_,?_,?_,?_⟩
   · rw [rd]
     rfl
   · exact fun c hc i hi => (tables c hc).1 i hi
@@ -33,10 +33,13 @@ theorem comb_core_pre {s : State}
       exact (tables c hc).2.1
     · intro w hw
       rw [wr] at hw
-      exact (tables c hc).2.2 w hw
+      exact (tables c hc).2.2.1 w hw
     · intro w hw
       change w∈[] at hw
       cases hw
+  · intro r hr
+    obtain ⟨c,hc,rfl⟩ := List.mem_map.mp hr
+    exact (tables c hc).2.2.2
 
 theorem comb_core_ct : ConstantTime isa
     (coreK Impl.Ecdsa.Arm.secp256k1 secp256k1CombConsts).pre

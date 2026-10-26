@@ -239,7 +239,7 @@ theorem dot_pre {count : Nat} {s : State}
     (h : (dotInverseContract count (abi.withConsts inverseConsts)).pre s) : (dotK count).pre s := by
   sig_pre [dotInverseContract,dotInverseSig,abi,argRegs,inverseConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,InverseTable.expandedWords_length,stackBelow] at h
-  obtain ⟨hd,held,_,hsep,ht,hw,rest⟩ := h
+  obtain ⟨hd,held,_,hsep,_,ht,hw,rest⟩ := h
   have hrd : s.rd=[dotFamilyRegion (s.gpr .x1) count,dotFamilyRegion (s.gpr .x2) count,
       tableRegion (s.syms "VG_MLDSA_INV_FOLDED")] := by
     rw [← List.take_append_drop (s.rd.length-1) s.rd,ht,hd]

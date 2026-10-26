@@ -390,7 +390,8 @@ theorem pk_spec_pre {s : State} (h72 : 72 ≤ (s.gpr .rsp).toNat)
     (f0 : (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64) (f1 : (s.gpr .rsi).toNat + 32 ≤ 2 ^ 64)
     (f2 : (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64)
     (ht : Proof.Ed25519.X86_64.CombHeld s [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rsp, 8⟩,
-      ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩]) :
+      ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩])
+    (hal : (s.syms combSym).toNat % 64 = 0) :
     (Spec.Ed25519.publicKeyContract (X86_64.abi.withConsts combConsts) 72).pre s := by
   sig_pre [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig, Spec.Ed25519.scratchWords,
     X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq, Abi.withConsts, Abi.constRegions,
@@ -398,7 +399,7 @@ theorem pk_spec_pre {s : State} (h72 : 72 ≤ (s.gpr .rsp).toNat)
   obtain ⟨held, fit, hdw⟩ := ht
   exact ⟨h72, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]),
-    hdw _ (by simp), hdw _ (by simp), by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, k1, k2, k3, f0, f1, f2⟩
+    hdw _ (by simp), hdw _ (by simp), hal, by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, k1, k2, k3, f0, f1, f2⟩
 
 theorem pk_sat :
     (Spec.Ed25519.publicKeyContract (X86_64.abi.withConsts combConsts) 72).pre
@@ -409,6 +410,7 @@ theorem pk_sat :
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (by decide) (by decide) (by decide) ⟨Proof.Ed25519.X86_64.combSatMem_held, by decide, ?_⟩
+    (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
 
@@ -418,7 +420,7 @@ theorem implies :
     sig_pre [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig, Spec.Ed25519.scratchWords,
       X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq, Abi.withConsts, Abi.constRegions,
       Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length] at h
-    obtain ⟨h72, hd, hheld, hfit, hdw, hdr, hdk, ht, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2⟩ := h
+    obtain ⟨h72, hd, hheld, hfit, hdw, hdr, hdk, -, ht, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2⟩ := h
     refine ⟨h72, ?_, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2, trivial, hheld, hfit, fun r hr => ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

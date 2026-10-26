@@ -24,12 +24,12 @@ theorem staticRoots_entry {p : Params} {S : Nat} {s : State}
   sig_pre [keyGenContract,keyGenSig,abi,argRegs,Abi.withConsts,signRootConsts_eq,
     nttConsts_eq,Inverse.inverseConsts_eq,Abi.constRegions,Abi.constsHeld,
     TableConstants.staticNttWords_length,InverseTable.expandedWords_length,stackBelow] at h
-  obtain ⟨hsp,hd,hf,hi,hff,hfw,hfs,hif,hiw,his,ht,hw,d1,d2,d3,d4,d5,d6,
+  obtain ⟨hsp,hd,hf,hi,hff,hfw,hfs,hif,hiw,his,hfa,hia,ht,hw,d1,d2,d3,d4,d5,d6,
     k1,k2,k3,k4,n1,n2,n3,n4⟩ := h
   have hrd : s.rd=[⟨s.gpr .x0,32⟩] ++
       [⟨s.syms "VG_MLDSA_NTT_EXPANDED",3904⟩,⟨s.syms "VG_MLDSA_INV_FOLDED",3904⟩] := by
     rw [← List.take_append_drop (s.rd.length-2) s.rd,ht,hd]
-  refine ⟨⟨?_,by rw [hrd]; simp⟩,⟨⟨hf,hff,?_,hfw,hfs⟩,⟨hi,hif,?_,hiw,his⟩⟩⟩
+  refine ⟨⟨?_,by rw [hrd]; simp⟩,⟨⟨hf,hff,?_,hfw,hfs,hfa⟩,⟨hi,hif,?_,hiw,his,hia⟩⟩⟩
   · sig_pre [keyGenContract,keyGenSig,abi,argRegs,stackBelow]
     exact ⟨hsp,hw,d1,d2,d3,d4,d5,d6,k1,k2,k3,k4,n1,n2,n3,n4⟩
   · apply Covers.one

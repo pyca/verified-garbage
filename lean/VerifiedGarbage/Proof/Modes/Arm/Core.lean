@@ -84,8 +84,8 @@ abbrev tabRegs (K : List (String × List (BitVec 64))) (s : State) : List Region
 state it is entered in: as `EcbPre`, with the working space writable, apart
 from the other regions, and the stack argument readable; and the
 `stack - 8` bytes below the stack pointer (`stack` with the push) apart; and
-the tables `K` readable, held, within the address space and apart from the
-writable regions and that stack. -/
+the tables `K` readable, held, within the address space, apart from the
+writable regions and that stack, and at multiples of 64. -/
 structure EcbPreS (c : Core) (keyLen stack : Nat) (rok : BitVec 32 → Prop) (K : List (String × List (BitVec 64)))
     (s : State) : Prop where
   stk : stack - 8 ≤ s.sp.toNat
@@ -112,6 +112,7 @@ structure EcbPreS (c : Core) (keyLen stack : Nat) (rok : BitVec 32 → Prop) (K 
   held : Abi.constsHeld s.mem (fun n => State.addr (s.syms n)) K
   tabs : ∀ t ∈ tabRegs K s, t.base.toNat + t.len ≤ 2 ^ 32 ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
     t.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 (stack - 8), stack - 8⟩
+  tAl : ∀ t ∈ tabRegs K s, t.base.toNat % 64 = 0
   a3 : ∀ k, c.arg3 = some k → s.gpr .r3 = BitVec.ofNat 32 k
 
 /-- What the modes need of the core `c` (see above). -/
@@ -174,7 +175,7 @@ theorem held_frame {K : List (String × List (BitVec 64))} {rs : List Region} {m
 state `s`: the schedule at `K`, the number of rounds `R` (if the core takes
 one), `n = 1`, room for the callee's stack, and the regions it is given
 readable, writable and apart; and the core's tables readable, held, within
-the address space and apart from the regions it writes. -/
+the address space, apart from the regions it writes and at multiples of 64. -/
 structure CallPre (c : Core) (S : CoreSpec c) (s : State) (K R B C : BitVec 32) : Prop where
   r0 : s.gpr .r0 = K
   r1 : c.rounds = true → s.gpr .r1 = R
@@ -202,6 +203,7 @@ structure CallPre (c : Core) (S : CoreSpec c) (s : State) (K R B C : BitVec 32) 
   tB : ∀ t ∈ tabRegs S.consts s, t.Disjoint ⟨State.addr B, c.bs⟩
   tC : ∀ t ∈ tabRegs S.consts s, t.Disjoint ⟨State.addr C, c.stackScratch⟩
   tS : ∀ t ∈ tabRegs S.consts s, t.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 S.stack, S.stack⟩
+  tAl : ∀ t ∈ tabRegs S.consts s, t.base.toNat % 64 = 0
 
 /-- What a call leaves: the permissions and stack pointer of `s`, its
 callee-saved registers but `lr`, memory changed only in the block, the
@@ -322,7 +324,7 @@ theorem CallPre.ecbPreS (h : CallPre c S s K R B C) (hs : c.stackScratch ≠ 0) 
     rw [show (8 : Addr) = BitVec.ofNat 64 8 from rfl, VG.Offset.sub_ofNat_eq (State.addr s.sp) (a := 8) (b := S.stack)
       (by omega_arith)]
     exact VG.Offset.base_disjoint _ (by omega_arith) (by omega_arith)
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun hr => ?_, ?_, ?_, fun k hk => ?_⟩ <;>
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun hr => ?_, ?_, ?_, ?_, fun k hk => ?_⟩ <;>
     try simp only [e0 .r0 (by decide) (by decide), e0 _ hd.1 hd.2.1, e0 _ hn.1 hn.2.1, h.r0, h.rd, h.rn, one_mul',
       State.withRegions_rd, State.withRegions_wr, Push.arg0 h8, h.r12 hs, Push.sa0 h8, h.calleeBelow hs]
   · rw [Push.view_sp h8]; omega_arith
@@ -359,6 +361,7 @@ theorem CallPre.ecbPreS (h : CallPre c S s K R B C) (hs : c.stackScratch ≠ 0) 
     rcases hr with rfl | rfl
     · exact h.tB t ht
     · exact h.tC t ht
+  · exact h.tAl
   · rw [e0 .r3 (by decide) (by decide), h.a3 k hk]
 
 theorem covers_mem {rs xs : List Region} {r : Region} (h : Covers rs xs) (hr : r ∈ rs) : Covers [r] xs :=

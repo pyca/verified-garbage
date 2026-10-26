@@ -133,12 +133,14 @@ theorem satisfiable {bits : Nat} (hb : Bits bits) : ∃ s, (contract bits).pre s
       | (show _ ≤ 8 * 2000; omega)
       | decide
       | exact Region.disjoint_of_sep (by decide +kernel)
-  · refine ⟨?_, sat_table hb, ?_⟩
+  · refine ⟨?_, sat_table hb, ?_, ?_⟩
     · simp only [constRegs, packed_regions]; rfl
     · simp only [constRegs, packed_regions]
       simp only [List.forall_mem_singleton, satState, abi, List.forall_mem_cons, stackBelow]
       exact ⟨by decide, ⟨Region.disjoint_of_sep (by decide +kernel), Region.disjoint_of_sep (by decide +kernel)⟩,
         Region.disjoint_of_sep (by decide +kernel)⟩
+    · simp only [constRegs, packed_regions, List.forall_mem_singleton, satState]
+      decide
 
 /-- `vg_dsa_probable_prime_{bits}`, calling the round `Ri`, is verified. -/
 theorem verified (Ri : RoundImpl) (bits : Nat) (hb : Bits bits := by decide) :

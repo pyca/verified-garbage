@@ -22,13 +22,13 @@ theorem entry {p : Params} {S : Nat} {s : State} (hS : 0<S)
   sig_pre [verifyContract,verifySig,abi,argRegs,Abi.withConsts,Sign.signRootConsts_eq,
     Abi.constRegions,Abi.constsHeld,TableConstants.staticNttWords_length,
     InverseTable.expandedWords_length,stackBelow,List.range,List.range.loop] at h
-  obtain ⟨hsp,hd,hf,hi,hff,hfw,hfs,hif,hiw,his,ht,hw,d1,d2,d3,
+  obtain ⟨hsp,hd,hf,hi,hff,hfw,hfs,hif,hiw,his,hfa,hia,ht,hw,d1,d2,d3,
     k1,k2,k3,k4,n1,n2,n3,n4⟩ := h
   have hrd : s.rd=vInputs p s++rootRegions s := by
     rw [←List.take_append_drop (s.rd.length-2) s.rd,ht,hd]
     rfl
   refine ⟨⟨?_,fun r hr=>by rw [hrd]; exact List.mem_append_left _ hr⟩,
-    ⟨⟨hf,hff,?_,hfw,?_⟩,⟨hi,hif,?_,hiw,?_⟩⟩⟩
+    ⟨⟨hf,hff,?_,hfw,?_,hfa⟩,⟨hi,hif,?_,hiw,?_,hia⟩⟩⟩
   · sig_pre [verifyContract,verifySig,abi,argRegs,List.range,List.range.loop]
     exact ⟨hsp,rfl,hw,d1,d2,d3,k1,k2,k3,k4,n1,n2,n3,n4⟩
   · apply Covers.one

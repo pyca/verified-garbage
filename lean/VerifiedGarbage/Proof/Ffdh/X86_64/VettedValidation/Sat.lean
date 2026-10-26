@@ -82,7 +82,10 @@ private theorem satRegions (words : List (BitVec 64)) (size : words.length = 221
 
 private theorem satConsts (words : List (BitVec 64)) (size : words.length = 2218) :
     ConstsOk [(tableSym, words)] 8 (satState words) :=
-  ⟨satLayout words size, satHeld words size, satRegions words size⟩
+  ⟨satLayout words size, satHeld words size, satRegions words size, fun r hr => by
+    simp only [constRegs, Abi.constRegions, List.mem_map, List.mem_singleton] at hr
+    obtain ⟨c, rfl, rfl⟩ := hr
+    exact (by decide : (0x100000 : BitVec 64).toNat % 64 = 0)⟩
 
 private theorem satAux (words : List (BitVec 64)) (size : words.length = 2218) :
     ∃ s, (Spec.Ffdh.checkDomainContract (abi.withConsts [(tableSym, words)]) 8).pre s :=

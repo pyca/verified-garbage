@@ -33,10 +33,10 @@ theorem tables_of_consts {s : State} (h : ConstsOk constants 16 s) : Tables s :=
   apply List.mem_append_left
   rw [←h.1] at hr
   exact List.mem_of_mem_drop hr
- have apart : ∀r∈constRegs constants s,∀q∈s.wr,r.Disjoint q := fun r hr=> (h.2.2 r hr).2.1
+ have apart : ∀r∈constRegs constants s,∀q∈s.wr,r.Disjoint q := fun r hr=> (h.2.2.1 r hr).2.1
  have stack : ∀r∈constRegs constants s,r.Disjoint (below s.sp 16) := by
   intro r hr
-  exact (h.2.2 r hr).2.2 _ (by simp [abi,stackBelow])
+  exact (h.2.2.1 r hr).2.2 _ (by simp [abi,stackBelow])
  have sh : (⟨s.syms "VG_MLKEM_REJ_SHUFFLE",4096⟩:Region)∈constRegs constants s := by rw [constants_regions]; simp
  have ga : (⟨s.syms "VG_MLKEM_GAMMA",512⟩:Region)∈constRegs constants s := by rw [constants_regions]; simp
  have fw : (⟨s.syms "VG_MLKEM_NTT16_ZETAS",512⟩:Region)∈constRegs constants s := by rw [constants_regions]; simp

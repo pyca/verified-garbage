@@ -215,6 +215,9 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
   have tRet : (tR o).Disjoint ⟨low o + BitVec.ofNat 64 172, 4⟩ := tL.sub_right Rs
   have tBel : (tR o).Disjoint ⟨low o, 172⟩ := tL.sub_right Bs
   have tBd := TF.1
+  have tAl : (tR o).base.toNat % 64 = 0 := A.tableAligned (tR o) (by
+    rw [Abi.constRegions_cons, Abi.constRegions_nil, VG.Proof.RsaKeyGen.X86.Candidate.packed_length]
+    exact List.mem_singleton_self _)
   sig_and_intros
   all_goals first
     | exact True.intro
@@ -223,6 +226,7 @@ theorem call_pre {o t : State} {used : Nat} (A : PSearchABI o) (hu : used < (arg
     | (rw [hrd]; rfl)
     | (intro r hr; simp only [List.mem_singleton] at hr; subst hr
        exact ⟨tBd, tO, tC, tB, tF, tRet, tBel⟩)
+    | (intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact tAl)
 
 
 end VG.Proof.Ffdh.X86.PSearch

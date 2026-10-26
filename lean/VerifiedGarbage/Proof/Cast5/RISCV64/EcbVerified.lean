@@ -182,8 +182,8 @@ theorem ecb_sat (up : Bool) : (Spec.Cast5.ecbContract (abi.withConsts ecbConsts)
     Abi.constRegions, Abi.constsHeld, stackBelow]
   subst e
   rw [hl]
-  refine ⟨by decide, rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, rfl, rfl,
-    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+  refine ⟨by decide, rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, rfl,
+    rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     by decide, by decide, by decide, by decide⟩
   change r ∈ [⟨0x2000, 0⟩, ⟨0x3000, 256⟩] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

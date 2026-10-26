@@ -131,7 +131,7 @@ theorem optimizedR0_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     · exact roots.roots.apart_write (h.b.l.st.lay.inW hww)
   have ready := pairedLowReady_layout h.b.l.st.lay hc hs ho hl hw hwo hwl hww
     hco hcl hcw hso hsl hsw hol how hlw roots.roots.held roots.roots.fit hsep roots.roots.readable
-    hprod (fun j hj => (hdata j hj).1) hgb.1 hgb.2.1 hgb.2.2
+    hprod (fun j hj => (hdata j hj).1) hgb.1 hgb.2.1 hgb.2.2 roots.roots.aligned
   unfold Impl.MlDsa.AArch64.Sign.Optimized.r0Pair
   refine WP.seq (WP.mono_syms (pairedLowAt_layout h.b.l.st.lay hc hs ho hl hw ready)
     fun a ⟨hpa,h24,hpost⟩ hsa => ?_)
