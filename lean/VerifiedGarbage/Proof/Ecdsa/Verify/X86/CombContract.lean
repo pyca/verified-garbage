@@ -34,7 +34,7 @@ theorem vComb_pre {s : State} (h : vCombSpec.pre s) :
     Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-  obtain ⟨lo, sp, _drop, held, fit, dw, _ret, st, _take, wr,
+  obtain ⟨lo, sp, _drop, held, fit, dw, _ret, st, -, _take, wr,
     ps, _pa, ds, _da, ss, _sia, sa, _rp, _rd, _rsi, rs, _ra,
     spk, sdg, ssi, _ss, _sa, fp, fd, fsi, fs⟩ := h
   have hb : below (s.gpr .esp) 20 = ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩ := by

@@ -32,7 +32,7 @@ theorem pkComb_pre {s : State} (h : pkCombSpec.pre s) :
     Spec.EcKey.Instance.publicKeySig, Spec.P256.curve, Spec.EcKey.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-  obtain ⟨lo, sp, _drop, held, fit, dw, _ret, st, _take, wr,
+  obtain ⟨lo, sp, _drop, held, fit, dw, _ret, st, -, _take, wr,
     od, os, oa, ds, _da, sa, ro, _rd, rs, _ra, _so, sd, _ss, _sa, fo, fd, fs⟩ := h
   have hb : below (s.gpr .esp) 20 = ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩ := by
     unfold below
