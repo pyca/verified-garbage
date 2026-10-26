@@ -622,6 +622,18 @@ def sampleRV : Prog RISCV64.isa :=
   "addi sp, sp, -16", "sd ra, 8(sp)", "addi sp, sp, -2032", "<call vg_f>",
   "addi sp, sp, 2032", "ld ra, 8(sp)", "addi sp, sp, 16", "ret"]
 #guard Rust.line RISCV64.printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
+-- A buffer of 2048 bytes or more: two `addi`s each way, of at most 2032
+-- bytes, the largest frame being 4064 bytes; 2047 bytes and less is one.
+#guard text (RISCV64.printer.function
+    (.frame (.alloc 2048) (.call "vg_f" (.block [])) (.free 2048) : Prog RISCV64.isa)) == [
+  "addi sp, sp, -2032", "addi sp, sp, -16", "<call vg_f>", "addi sp, sp, 16", "addi sp, sp, 2032", "ret"]
+#guard text (RISCV64.printer.function
+    (.frame (.alloc 4064) (.block [.addSp .a0 0]) (.free 4064) : Prog RISCV64.isa)) == [
+  "addi sp, sp, -2032", "addi sp, sp, -2032", "addi a0, sp, 0", "addi sp, sp, 2032", "addi sp, sp, 2032",
+  "ret"]
+#guard RISCV64.Instr.asm (.alloc 2304) == ["addi sp, sp, -2032", "addi sp, sp, -272"]
+#guard RISCV64.Instr.asm (.free 2304) == ["addi sp, sp, 272", "addi sp, sp, 2032"]
+#guard RISCV64.Instr.asm (.alloc 2032) == ["addi sp, sp, -2032"]
 
 -- The address of a static (RISC-V): `lla` of its symbol, a `sym` operand,
 -- which the assembler expands to `auipc` and `addi`. `asm` gives the text

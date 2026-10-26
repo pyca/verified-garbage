@@ -15,7 +15,7 @@ at byte `hdr + j · S` with the stride `S = 4 (w + 2)` in `r7` and `w` in
 are the division's extra word and the shift's incoming word.
 
 The operations here compute every address from `r7`, `r8` and `r9`, which
-they leave alone, with `mul` (`ptr`), so their addresses and branches depend
+they leave alone, with `mla` (`ptr`), so their addresses and branches depend
 only on them, and they run the verified word loops on the arrays:
 
 * `sub3 o a b`: `[o] := [a] - [b]` modulo `2^(32 w)`, the borrow in `r11`.
@@ -47,8 +47,11 @@ def sT : Nat := 112
 
 /-- `r` := the address of array `j`, `r8 + hdr + j · r7`. -/
 def ptr (r : Reg) (j : Nat) : List Instr :=
-  [.mov r (.imm (BitVec.ofNat 32 j)), .mul r r .r7, .dp .add r r (.reg .r8),
-   .dp .add r r (.imm (BitVec.ofNat 32 hdr))]
+  match j with
+  | 0 => [.dp .add r .r8 (.imm (BitVec.ofNat 32 hdr))]
+  | 1 => [.dp .add r .r8 (.reg .r7), .dp .add r r (.imm (BitVec.ofNat 32 hdr))]
+  | _ + 2 => [.mov r (.imm (BitVec.ofNat 32 j)), .mla r r .r7 .r8,
+      .dp .add r r (.imm (BitVec.ofNat 32 hdr))]
 
 /-- `r7 := 4 (r9 + 2)`, the stride. -/
 def stride : List Instr := [.dp .add .r7 .r9 (.imm 2), .mov .r7 (.shifted .r7 .lsl 2)]

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import Lean.Meta.Tactic.Simp.BuiltinSimprocs.Core
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Top
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen

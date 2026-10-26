@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Sm4.X86.Ctr32Verified
 import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.X86.KeyVerified
 import VerifiedGarbage.Proof.Sm4.X86.Lit
+import Mathlib.Tactic.Set
 
 /-!
 # SM4-GCM on x86: the calls

@@ -186,7 +186,7 @@ theorem buf_sub (s : State) (hb : n * e.size ≤ bytes) :
 /-- The precondition of the contract without the buffer gives the one with it
 in `narrow`. -/
 theorem narrow_pre (hk : (sig.words abi.ptrBits).length < 8)
-    (hb : 0 < bytes ∧ bytes < 2048 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes)
+    (hb : 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes)
     {s : State} (hs : (sig.contract abi pre post wa (stack + bytes)).pre s)
     (hl : Sig.noLists sig.params = true) :
     (Sig.scratchContract abi sig nm e n pre post wa stack).pre (narrow sig e n bytes s) := by
@@ -337,7 +337,7 @@ def popState (bytes : Nat) (s s₄ : State) : State :=
 calling convention requires, and whose memory and registers are those of
 that run. -/
 theorem withStackScratch_run {c : Prog isa} (hk : (sig.words abi.ptrBits).length < 8)
-    (hb : 0 < bytes ∧ bytes < 2048 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes) {s : State}
+    (hb : 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes) {s : State}
     (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) {t : List Leak} {s₄ : State}
     (he : Exec isa c (narrow sig e n bytes s) t s₄) (ha : abiPreserved (narrow sig e n bytes s) s₄)
     (hl : Sig.noLists sig.params = true) :
@@ -398,18 +398,20 @@ scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
 for the function without it, which allocates the buffer in a frame of
 `bytes` more bytes of stack and zeroes its first `words` doublewords after
 the code (`withStackScratchWiped`), if its postcondition reads the memory on
-return only within the function's buffers (`hpostOut`). -/
+return only within the function's buffers (`hpostOut`). The wipe's stores
+reach `words` doublewords from one base (`hwb`, which a frame below 2048
+bytes implies). -/
 theorem Verified.stackScratchWiped {c : Prog isa}
     (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
     (hk : (sig.words abi.ptrBits).length < 8)
-    (hb : 0 < bytes ∧ bytes < 2048 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes)
+    (hb : 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes)
     (hw : 8 * words ≤ n * e.size)
     (hpostOut : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
         Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
-    (hl : Sig.noLists sig.params = true := by decide) :
+    (hl : Sig.noLists sig.params = true := by decide) (hwb : 8 * words ≤ 2048 := by decide) :
     Verified target (withStackScratchWiped bytes (scratchReg sig) words c)
       (sig.contract abi pre post wa (stack + bytes)) := by
   obtain ⟨hcor, hct, -⟩ := h
@@ -443,7 +445,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     have hsp₃ : s₃.sp = s.sp - BitVec.ofNat 64 bytes := ha.2.1.trans (narrow_sp s)
     have hwr₃ : s₃.wr = (narrow sig e n bytes s).wr := (Exec.rdwr he).2.1
     obtain ⟨m', hblk, hfr⟩ := wipe_run ⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩ s₃ words
-      (by rw [hwr₃, narrow_wr]; simp) (by omega_using [hb, hw])
+      (by rw [hwr₃, narrow_wr]; simp) hwb
       (by rw [hsp₃, toNat_sub_ofNat' hsb]; omega_using [hal, hb])
       (fun k hk' => by
         rw [hsp₃]; exact Offset.contains_base _ (by omega_using [hw, hk']) (by omega_using [hb, hw, hk']))

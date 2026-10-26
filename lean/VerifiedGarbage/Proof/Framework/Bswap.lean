@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Byte reversal of a little-endian load is a big-endian load

@@ -9,7 +9,7 @@
 //! `CIPH_K` of the input block, and the input block at `iv` with the one to
 //! continue from, in constant time: their timing depends on none of the key,
 //! the input block and the data. Both are the modes' generic CFB8 over the
-//! scalar block function: on x86, x86-64, AArch64 and PPC64LE over the block code
+//! scalar block function: on x86, x86-64, AArch64, PPC64LE and RISC-V over the block code
 //! itself, on ARMv7 calling the verified `vg_triple_des_ecb_encrypt` for each
 //! byte. This module holds the key schedule.
 
@@ -18,7 +18,8 @@
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::triple_des::vg_triple_des_expand_key;

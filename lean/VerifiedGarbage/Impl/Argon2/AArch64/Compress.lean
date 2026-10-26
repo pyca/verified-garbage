@@ -26,6 +26,15 @@ open VG.AArch64
 product of the low halves to one operand, `t` to `b` and `a` to itself. -/
 def addMul (a b t : Reg) : List Instr := [.umaddl t a b b, .umaddl a a b a, .add .x a a t]
 
+/-- One low-half product with three additions. Interleaving this with the
+multiply-add form balances the multiplier and integer-add pipelines. -/
+def addMulOnce (a b t : Reg) : List Instr :=
+  [.umull t a b, .add .x a a b, .add .x a a t, .add .x a a t]
+
+/-- Alternate the two equivalent arithmetic forms among independent chains. -/
+def chainAdd (i : Nat) (a b : Reg) : List Instr :=
+  if i % 2 = 1 then addMulOnce a b .x17 else addMul a b .x17
+
 /-- Half of GB, parameterized by its two rotation counts. -/
 def halfGB (a b c d t : Reg) (r1 r2 : Nat) : List Instr :=
   addMul a b t ++
@@ -46,12 +55,26 @@ def lane (j : Fin 16) : Reg := lanes[j]
 /-- GB on words `a,b,c,d` of the row or column in registers. -/
 def gbOn (a b c d : Fin 16) : Prog isa := .block (gb (lane a) (lane b) (lane c) (lane d) .x17)
 
-/-- P on the sixteen registers. -/
+/-- Four independent GB chains, advanced one addition or rotation stage at
+once. Every BlaMka step consumes `x17` before the next step reuses it. -/
+def halfGBs (qs : List (Reg × Reg × Reg × Reg)) (r1 r2 : Nat) : List Instr :=
+  qs.zipIdx.flatMap (fun ((a, b, _, _), i) => chainAdd i a b) ++
+  qs.flatMap (fun (a, _, _, d) => [.logic .eor .x d d a, .ror .x d d r1]) ++
+  qs.zipIdx.flatMap (fun ((_, _, c, d), i) => chainAdd i c d) ++
+  qs.flatMap (fun (_, b, c, _) => [.logic .eor .x b b c, .ror .x b b r2])
+
+def gbGroup (qs : List (Reg × Reg × Reg × Reg)) : Prog isa :=
+  .block (halfGBs qs 32 24 ++ halfGBs qs 16 63)
+
+/-- P on the sixteen registers, interleaving the four independent chains
+within each half-round without additional registers or memory accesses. -/
 def permute : Prog isa :=
-  .seq (gbOn 0 4 8 12) <| .seq (gbOn 1 5 9 13) <|
-  .seq (gbOn 2 6 10 14) <| .seq (gbOn 3 7 11 15) <|
-  .seq (gbOn 0 5 10 15) <| .seq (gbOn 1 6 11 12) <|
-  .seq (gbOn 2 7 8 13) (gbOn 3 4 9 14)
+  .seq (gbGroup [(lane 0, lane 4, lane 8, lane 12),
+    (lane 1, lane 5, lane 9, lane 13), (lane 2, lane 6, lane 10, lane 14),
+    (lane 3, lane 7, lane 11, lane 15)])
+    (gbGroup [(lane 0, lane 5, lane 10, lane 15),
+      (lane 1, lane 6, lane 11, lane 12), (lane 2, lane 7, lane 8, lane 13),
+      (lane 3, lane 4, lane 9, lane 14)])
 
 /-- Load word `j` of the row or column selected by `index` from the permuted
 scratch block. -/

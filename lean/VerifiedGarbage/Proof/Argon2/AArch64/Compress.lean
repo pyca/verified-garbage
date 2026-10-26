@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Argon2.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Argon2.Permutation
 public import VerifiedGarbage.Proof.Argon2.AArch64.Words
+import VerifiedGarbage.Proof.Argon2.AArch64.Schedule
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -176,9 +177,16 @@ theorem gbOn_ok (a b c d : Fin 16)
   rw [hk _ (ne (Ne.symm haj)) (ne (Ne.symm hbj)) (ne (Ne.symm hcj))
     (ne (Ne.symm hdj)) (lane_ne_x17 j), hv j, Fin.getElem_fin]
 
+/-- Serial reference schedule, used only to reuse the arithmetic proof. -/
+def serialPermute : Prog isa :=
+  .seq (Impl.Argon2.AArch64.gbOn 0 4 8 12) <| .seq (Impl.Argon2.AArch64.gbOn 1 5 9 13) <|
+  .seq (Impl.Argon2.AArch64.gbOn 2 6 10 14) <| .seq (Impl.Argon2.AArch64.gbOn 3 7 11 15) <|
+  .seq (Impl.Argon2.AArch64.gbOn 0 5 10 15) <| .seq (Impl.Argon2.AArch64.gbOn 1 6 11 12) <|
+  .seq (Impl.Argon2.AArch64.gbOn 2 7 8 13) (Impl.Argon2.AArch64.gbOn 3 4 9 14)
+
 /-- P on the sixteen registers. -/
-theorem permute_ok (s : State) (v : Vector Word 16) (hv : InRegs s v) :
-    WP isa Impl.Argon2.AArch64.permute s fun t =>
+theorem serialPermute_ok (s : State) (v : Vector Word 16) (hv : InRegs s v) :
+    WP isa serialPermute s fun t =>
       InRegs t (permute v) ∧ Keeps s t ∧ t.mem = s.mem := by
   have advance (t : State) (v' : Vector Word 16)
       (h : InRegs t v' ∧ Keeps s t ∧ t.mem = s.mem) (a b c d : Fin 16)
@@ -189,7 +197,7 @@ theorem permute_ok (s : State) (v : Vector Word 16) (hv : InRegs s v) :
     refine (gbOn_ok a b c d hab hac had hbc hbd hcd t v' h.1).mono ?_
     rintro u ⟨hu, hk, hm⟩
     exact ⟨hu, h.2.1.trans hk, hm.trans h.2.2⟩
-  unfold Impl.Argon2.AArch64.permute
+  unfold serialPermute
   apply WP.seq
   refine (advance s _ ⟨hv, Keeps.refl s, rfl⟩ 0 4 8 12
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).mono ?_
@@ -220,6 +228,34 @@ theorem permute_ok (s : State) (v : Vector Word 16) (hv : InRegs s v) :
   intro s7 h7
   exact advance s7 _ h7 3 4 9 14
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+
+/-- The interleaved schedule has the same lane expressions as the serial
+schedule; its only extra state is the same caller-saved temporary. -/
+theorem permute_ok (s : State) (v : Vector Word 16) (hv : InRegs s v) :
+    WP isa Impl.Argon2.AArch64.permute s fun t =>
+      InRegs t (permute v) ∧ Keeps s t ∧ t.mem = s.mem := by
+  have hs : WP isa (.block (Schedule.serialOps.flatMap Schedule.lower)) s fun t =>
+      InRegs t (permute v) ∧ Keeps s t ∧ t.mem = s.mem := by
+    simpa only [Schedule.serialOps, List.flatMap_append, Schedule.columns, Schedule.diagonals,
+      List.flatMap_cons, List.flatMap_nil, Schedule.lower_gbOps, List.append_nil,
+      serialPermute, Impl.Argon2.AArch64.gbOn, WP.seq_iff (M := isa), WP.block_append_iff (M := isa)]
+      using serialPermute_ok s v hv
+  have hr := Schedule.list_ok Schedule.serialOps Schedule.good_serial s.gpr s (fun _ _ => rfl)
+  obtain ⟨_, old, _, ho, hro, _⟩ := hs.and hr
+  have hn := Schedule.list_ok Schedule.scheduledOps Schedule.good_scheduled s.gpr s
+    (fun _ _ => rfl)
+  have hnew : WP isa (.block (Schedule.scheduledOps.flatMap Schedule.lower)) s fun t =>
+      InRegs t (permute v) ∧ Keeps s t ∧ t.mem = s.mem := by
+    refine hn.mono ?_
+    rintro t ⟨ht, hm, hrd, hwr, hvec⟩
+    have same (r : Reg) (hrt : r ≠ .x17) : t.gpr r = old.gpr r :=
+      (ht r hrt).trans ((Schedule.same_values s.gpr r).trans (hro r hrt).symm)
+    exact ⟨fun j => (same (lane j) (lane_ne_x17 j)).trans (ho.1 j),
+      ⟨fun r hl ht => (same r ht).trans (ho.2.1.1 r hl ht), hrd, hwr, hvec⟩, hm⟩
+  simpa only [Schedule.scheduledOps, List.flatMap_append, Schedule.groupOps,
+    Schedule.lower_halfGroup, Schedule.columns, Schedule.diagonals,
+    Impl.Argon2.AArch64.permute, Impl.Argon2.AArch64.gbGroup,
+    WP.seq_iff (M := isa), WP.block_append_iff (M := isa)] using hnew
 
 /-- The row/column code meets the specification's gather, P, scatter definition. -/
 theorem permuteAt_ok (index : Fin 16 → Fin 128) (s : State) {p : Addr} (hs : Scratch s p) :

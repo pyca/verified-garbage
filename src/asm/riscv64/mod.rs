@@ -20,6 +20,9 @@ pub(crate) mod aes_ctr;
 pub(crate) mod aes_ofb;
 
 #[rustfmt::skip]
+pub(crate) mod aes_xts;
+
+#[rustfmt::skip]
 pub(crate) mod blake2b;
 
 #[rustfmt::skip]
@@ -38,10 +41,16 @@ pub(crate) mod blowfish_cfb;
 pub(crate) mod blowfish_ofb;
 
 #[rustfmt::skip]
+pub(crate) mod cast5;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]
 pub(crate) mod chacha20poly1305;
+
+#[rustfmt::skip]
+pub(crate) mod consts;
 
 #[rustfmt::skip]
 pub(crate) mod ct;
@@ -120,6 +129,18 @@ pub(crate) mod sm3;
 
 #[rustfmt::skip]
 pub(crate) mod triple_des;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cfb8;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod x25519;
