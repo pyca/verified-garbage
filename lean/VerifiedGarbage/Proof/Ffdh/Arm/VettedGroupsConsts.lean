@@ -62,7 +62,7 @@ theorem consts_singleton_regions {name : String} {words : List (BitVec 64)}
     (State.addr (s.syms name)).toNat + 8 * words.length ≤ 2 ^ 32 ∧
     (∀ r ∈ s.wr, (⟨State.addr (s.syms name), 8 * words.length⟩ : Region).Disjoint r) ∧
     ∀ r ∈ abi.reserved stack s, (⟨State.addr (s.syms name), 8 * words.length⟩ : Region).Disjoint r := by
-  have regions := hc.2.2
+  have regions := hc.2.2.1
   have same : constRegs [(name, words)] s = [(⟨State.addr (s.syms name), 8 * words.length⟩ : Region)] := rfl
   rw [same] at regions
   have result := regions (⟨State.addr (s.syms name), 8 * words.length⟩ : Region) List.mem_cons_self
