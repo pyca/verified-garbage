@@ -22,7 +22,7 @@ theorem vPre_spec {p : Params} {s : State} (h : VPre p s) :
     List.range,List.range.loop]
   refine ⟨h.sp,?_,h.roots.forward.held,h.roots.inverse.held,h.roots.forward.fit,
     h.roots.forward.writable,h.roots.forward.stack,h.roots.inverse.fit,
-    h.roots.inverse.writable,h.roots.inverse.stack,?_,h.wr,
+    h.roots.inverse.writable,h.roots.inverse.stack,h.roots.forward.aligned,h.roots.inverse.aligned,?_,h.wr,
     h.pkScr,h.msgScr,h.ctxScr,h.sigScr,
     h.stkPk,h.stkMsg,h.stkCtx,h.stkSig,h.stkScr,
     h.nPk,h.nMsg,h.nCtx,h.nSig,h.nScr⟩
@@ -50,8 +50,8 @@ theorem verifySatWith_roots (p : Params) (hp : Ok3 p) (m : Mem)
     (hi : ∀j<488,m.readW (1052480+BitVec.ofNat 64 (8*j)) 64=
       Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD j 0) :
     StaticRoots 16 (verifySatWith p m) := by
-  refine ⟨⟨hf,by dsimp [verifySatWith]; decide,?_,?_,?_⟩,
-    ⟨hi,by dsimp [verifySatWith]; decide,?_,?_,?_⟩⟩
+  refine ⟨⟨hf,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; try decide⟩,
+    ⟨hi,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; try decide⟩⟩
   · apply Covers.one
     exact ⟨⟨1048576,3904⟩,by simp [verifySatWith],Region.contains_self _ _⟩
   · rcases hp with rfl|rfl|rfl

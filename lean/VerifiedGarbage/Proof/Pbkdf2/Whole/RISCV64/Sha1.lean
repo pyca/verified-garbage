@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Shared
-public import VerifiedGarbage.Proof.Pbkdf2.RISCV64.Sha1
+public import VerifiedGarbage.Proof.Pbkdf2.Sha1.RISCV64.Verified
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Sha1.RISCV64.Stream
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Shared
-meta import VerifiedGarbage.Proof.Pbkdf2.RISCV64.Sha1
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
@@ -14,7 +12,8 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 # PBKDF2-HMAC-SHA-1 on RISC-V: the whole derivation
 
 `pbkdf2` over SHA-1's streaming functions, HMAC's `init` and `finalize` and
-PBKDF2's `iterate` (`F`, with 240 bytes of working space for `iterate`);
+SHA-1's own PBKDF2 `iterate` (`F`, with 240 bytes of working space for
+`iterate`, `Proof/Pbkdf2/Sha1/RISCV64/`);
 the taint checks of its pieces, which the kernel evaluates; and `pbkdf2`
 against the shared contract of `Spec.Hmac.sha1I`.
 -/
@@ -31,7 +30,7 @@ def F : Impl.Pbkdf2.Whole.RISCV64.Fns where
   hiN := Spec.Hmac.sha1I.initAnyKeyApi.name
   hfN := Spec.Hmac.sha1I.finalizeApi.name
   itN := Spec.Hmac.sha1I.iterateApi.name
-  itC := Pbkdf2.RISCV64.Sha1.code
+  itC := Impl.Pbkdf2.Sha1.RISCV64.iterate
   itW := 240
 
 /-- What the proofs need of them. -/
@@ -39,13 +38,9 @@ def okF : FnsOK F where
   hH := Proof.Hmac.Stream.RISCV64.Sha1.ok
   hiCt := Proof.Hmac.Stream.RISCV64.Sha1.init_ct
   hfCt := Proof.Hmac.Stream.RISCV64.Sha1.fin_ct
-  itOk s hs := by
-    have ho := Pbkdf2.RISCV64.Sha1.hashOkW 240 (by decide) (by decide)
-    obtain ⟨t, s', he, h₁, h₂⟩ := Pbkdf2.RISCV64.correct ho Pbkdf2.RISCV64.Sha1.callee
-      (Pbkdf2.RISCV64.pre_of ho.link.hS ho.link.hD hs)
-    exact ⟨t, s', he, h₁, h₂⟩
-  itCt := Pbkdf2.RISCV64.Sha1.ctW 240
-  itNf := Pbkdf2.RISCV64.iterate_noFrames _ Proof.Sha1.RISCV64.Stream.callee.noFrames
+  itOk := Pbkdf2.Sha1.RISCV64.verifiedW 240 (by decide) (by decide)
+  itCt := Pbkdf2.Sha1.RISCV64.ct fun _ _ h => h
+  itNf := Pbkdf2.Sha1.RISCV64.noFrames
   itW0 := by decide
   itB := by decide
   frB := by decide

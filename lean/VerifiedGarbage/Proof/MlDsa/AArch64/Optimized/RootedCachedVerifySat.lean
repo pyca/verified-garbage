@@ -26,7 +26,7 @@ theorem cachedPre_spec {p : Params} {s : State} (h : CachedPre p s) :
     List.range,List.range.loop]
   refine ⟨h.sp,?_,h.roots.forward.held,h.roots.inverse.held,h.roots.forward.fit,
     h.roots.forward.writable,h.roots.forward.stack,h.roots.inverse.fit,
-    h.roots.inverse.writable,h.roots.inverse.stack,?_,h.wr,
+    h.roots.inverse.writable,h.roots.inverse.stack,h.roots.forward.aligned,h.roots.inverse.aligned,?_,h.wr,
     h.pkScr,h.msgScr,h.ctxScr,h.sigScr,h.trScr.symm,
     h.stkPk,h.stkMsg,h.stkCtx,h.stkSig,h.stkScr,h.stkTr,
     h.nPk,h.nMsg,h.nCtx,h.nSig,h.nScr,h.nTr,h.digest⟩
@@ -78,8 +78,8 @@ private theorem roots (p : Params) (hp : Ok3 p) : StaticRoots 16 (verifySat p) :
     rw [satMem_high p _ (by bv_omega) (by bv_omega)]
     exact src.inverse.held j hj
   have h := Message.OptimizedVerify.verifySatWith_roots p hp (satMem p) heldF heldI
-  refine ⟨⟨h.forward.held,h.forward.fit,?_,h.forward.writable,h.forward.stack⟩,
-    ⟨h.inverse.held,h.inverse.fit,?_,h.inverse.writable,h.inverse.stack⟩⟩
+  refine ⟨⟨h.forward.held,h.forward.fit,?_,h.forward.writable,h.forward.stack,h.forward.aligned⟩,
+    ⟨h.inverse.held,h.inverse.fit,?_,h.inverse.writable,h.inverse.stack,h.inverse.aligned⟩⟩
   · apply Covers.one
     exact ⟨⟨1048576,3904⟩,by simp [verifySat],Region.contains_self _ _⟩
   · apply Covers.one

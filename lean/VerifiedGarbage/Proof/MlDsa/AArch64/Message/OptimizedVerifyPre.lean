@@ -39,12 +39,12 @@ theorem vPre_of {p : Params} {s : State}
     VG.Proof.MlDsa.AArch64.Sign.signRootConsts_eq,Abi.constRegions,Abi.constsHeld,
     TableConstants.staticNttWords_length,InverseTable.expandedWords_length,stackBelow,
     List.range,List.range.loop] at h
-  obtain ⟨hsp,hd,hf,hi,hff,hfw,hfs,hif,hiw,his,ht,hw,d1,d2,d3,d4,
+  obtain ⟨hsp,hd,hf,hi,hff,hfw,hfs,hif,hiw,his,hfa,hia,ht,hw,d1,d2,d3,d4,
     k1,k2,k3,k4,k5,n1,n2,n3,n4,n5⟩ := h
   have hrd : s.rd=[rKey s p.pkLen,rMsg s,rCtx s,⟨s.gpr .x5,p.sigLen⟩]++rootRegions s := by
     rw [← List.take_append_drop (s.rd.length-2) s.rd,ht,hd]
   refine ⟨hsp,hrd,hw,d1,d2,d3,d4,k1,k2,k3,k4,k5,n1,n2,n3,n4,n5,
-    ⟨⟨hf,hff,?_,hfw,hfs⟩,⟨hi,hif,?_,hiw,his⟩⟩⟩
+    ⟨⟨hf,hff,?_,hfw,hfs,hfa⟩,⟨hi,hif,?_,hiw,his,hia⟩⟩⟩
   · apply Covers.one
     refine ⟨⟨s.syms "VG_MLDSA_NTT_EXPANDED",3904⟩,?_,Region.contains_self _ _⟩
     rw [hrd]; simp [rootRegions]

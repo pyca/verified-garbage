@@ -35,6 +35,7 @@ structure InverseCallReady (f scratch : Ptr) (s : State) : Prop where
   tableFit : (s.syms "VG_MLDSA_INV_FOLDED").toNat+3904≤2^64
   tableApart : ∀ r∈[outputRegion (pa s f),outputRegion (pa s scratch)],
     (tableRegion (s.syms "VG_MLDSA_INV_FOLDED")).Disjoint r
+  tableAligned : (s.syms "VG_MLDSA_INV_FOLDED").toNat%64=0
   apart : (outputRegion (pa s f)).Disjoint (outputRegion (pa s scratch))
   reduced : Reduced s.mem (pa s f)
   readable : Covers ([tableRegion (s.syms "VG_MLDSA_INV_FOLDED")]++
@@ -53,6 +54,7 @@ theorem inverseAt_pre {s s1 : State} {f scratch : Ptr}
   · simpa [State.withRegions,State.callEntry,hy,Args.mem h1] using h.held
   · simpa [State.withRegions,State.callEntry,hy] using h.tableFit
   · simpa [State.withRegions,State.callEntry,hy,tableRegion] using h.tableApart
+  · simpa [State.withRegions,State.callEntry,hy] using h.tableAligned
   · simpa [State.withRegions,State.callEntry,Args.r0 h1,Args.r1 h1,Arg.val,outputRegion] using h.apart
   · simpa [State.withRegions,State.callEntry,Args.r0 h1,Arg.val] using h.fit
   · simpa [State.withRegions,State.callEntry,Args.r1 h1,Arg.val] using h.scratchFit

@@ -31,8 +31,9 @@ def stripConsts (K : List (String × List (BitVec 64))) (s : State) : State :=
 /-- What `abi.withConsts K` adds to the calling convention's well-formedness. -/
 def ConstsOk (K : List (String × List (BitVec 64))) (st : Nat) (s : State) : Prop :=
   s.rd.drop (s.rd.length - K.length) = constRegs K s ∧ Abi.constsHeld s.mem (fun name => s.syms name) K ∧
-    ∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ abi.ptrBits ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
-      ∀ r ∈ abi.reserved st s, t.Disjoint r
+    (∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ abi.ptrBits ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
+      ∀ r ∈ abi.reserved st s, t.Disjoint r) ∧
+    ∀ t ∈ constRegs K s, t.base.toNat % 64 = 0
 
 @[simp] theorem stripConsts_gpr (K : List (String × List (BitVec 64))) (s : State) :
     (stripConsts K s).gpr = s.gpr := rfl
@@ -125,7 +126,7 @@ variable {K : List (String × List (BitVec 64))} {st : Nat} {s : State} {name : 
 /-- A table lies within the address space. -/
 theorem ConstsOk.fit (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
     (s.syms name).toNat + 8 * ws.length ≤ 2 ^ 64 :=
-  (h.2.2 ⟨s.syms name, 8 * ws.length⟩ (List.mem_map_of_mem (f := fun c =>
+  (h.2.2.1 ⟨s.syms name, 8 * ws.length⟩ (List.mem_map_of_mem (f := fun c =>
     (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) hc)).1
 
 /-- The table is readable. -/

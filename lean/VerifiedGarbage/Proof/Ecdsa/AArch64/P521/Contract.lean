@@ -69,13 +69,14 @@ theorem spec_pre {s : State}
     (h7 : Region.Disjoint ⟨s.gpr .x3, 66⟩ ⟨s.gpr .x4, 8192⟩)
     (f0 : (s.gpr .x0).toNat + 132 ≤ 2 ^ 64) (f1 : (s.gpr .x1).toNat + 66 ≤ 2 ^ 64)
     (f2 : (s.gpr .x2).toNat + 66 ≤ 2 ^ 64) (f3 : (s.gpr .x3).toNat + 66 ≤ 2 ^ 64)
-    (f4 : (s.gpr .x4).toNat + 8192 ≤ 2 ^ 64) (ht : TblHeld s [⟨s.gpr .x0, 132⟩, ⟨s.gpr .x4, 8192⟩]) :
+    (f4 : (s.gpr .x4).toNat + 8192 ≤ 2 ^ 64) (ht : TblHeld s [⟨s.gpr .x0, 132⟩, ⟨s.gpr .x4, 8192⟩])
+    (hal : (s.syms p521.tsym).toNat % 64 = 0) :
     (Spec.Ecdsa.P521.inst.signContract (AArch64.abi.withConsts p521.combConsts)).pre s := by
   sig_pre [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
     Spec.P521.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p521_combConsts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
-  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, by rw [hrd]; rfl, hw, h1, h2, h3, h4, h5, h6,
+  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, hal, by rw [hrd]; rfl, hw, h1, h2, h3, h4, h5, h6,
     h7, f0, f1, f2, f3, f4⟩
 
 theorem sat_spec : (Spec.Ecdsa.P521.inst.signContract (AArch64.abi.withConsts p521.combConsts)).pre
@@ -87,7 +88,7 @@ theorem sat_spec : (Spec.Ecdsa.P521.inst.signContract (AArch64.abi.withConsts p5
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
-    (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩
+    (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩ (by decide)
   all_goals rw [hl]
   · decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -99,7 +100,7 @@ theorem implies :
     sig_pre [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
       Spec.P521.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p521_combConsts,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨hd, hheld, hfit, hdw, ht, hw, h1, h2, h3, h4, h5, h6, h7, h8, -, -, -, h9⟩ := h
+    obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, h1, h2, h3, h4, h5, h6, h7, h8, -, -, -, h9⟩ := h
     refine ⟨?_, hw, h4, h1, h2, h3, h5, h6, h7, h8, h9, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by

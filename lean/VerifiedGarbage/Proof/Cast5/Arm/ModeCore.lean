@@ -77,10 +77,10 @@ def ecbSpec (up : Bool) : CoreSpec (ecbCore up) where
   bs_enc := by cases up <;> decide
   consts_plain h := absurd h (by cases up <;> decide)
   pre_ofS _ s h := by
-    obtain ⟨_, spF, rd, wr, kd, ks, ds, da, sa, -, -, -, -, fK, fD, fS, rr, held, tabs⟩ := h
+    obtain ⟨_, spF, rd, wr, kd, ks, ds, da, sa, -, -, -, -, fK, fD, fS, rr, held, tabs, tAl⟩ := h
     have rr := rr rfl
     have hl : s.rd.length = 3 := by rw [rd]; rfl
-    refine pre_consts.mpr ⟨?_, ?_, held, fun t ht => ⟨(tabs t ht).1, (tabs t ht).2.1, fun r hr => ?_⟩⟩
+    refine pre_consts.mpr ⟨?_, ?_, held, fun t ht => ⟨(tabs t ht).1, (tabs t ht).2.1, fun r hr => ?_⟩, tAl⟩
     · have rd' : (stripConsts ecbConsts s).rd = [⟨State.addr (s.gpr .r0), 128⟩, ⟨stackArgAddr s 0, 4⟩] := by
         simp only [stripConsts, State.withRegions_rd, hl]; rw [rd]; rfl
       sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, Arm.abi, Arm.argRegs,

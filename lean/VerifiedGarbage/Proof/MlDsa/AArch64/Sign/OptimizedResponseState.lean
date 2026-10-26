@@ -37,10 +37,11 @@ theorem productReady_layout {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State}
     (hsep : ∀ r∈[Inverse.outputRegion (pa s out),Inverse.outputRegion (pa s scratch)],
       (Inverse.tableRegion (s.syms "VG_MLDSA_INV_FOLDED")).Disjoint r)
     (ht : Covers [Inverse.tableRegion (s.syms "VG_MLDSA_INV_FOLDED")] (s.rd++s.wr))
-    (hpa : PositiveReduced s.mem (pa s a)) (hpb : PositiveReduced s.mem (pa s b)) :
+    (hpa : PositiveReduced s.mem (pa s a)) (hpb : PositiveReduced s.mem (pa s b))
+    (hal : (s.syms "VG_MLDSA_INV_FOLDED").toNat%64=0) :
     Inverse.ProductCallReady out a b scratch s := by
   refine ⟨L.nwp ho,L.nwp ha,L.nwp hb,L.nwp hs,held,hfit,hsep,
-    L.disj hoa,L.disj hob,L.disj hos,L.disj has,L.disj hbs,hpa,hpb,?_,?_⟩
+    L.disj hoa,L.disj hob,L.disj hos,L.disj has,L.disj hbs,hpa,hpb,?_,?_,hal⟩
   · exact Covers.cons (L.cR ha) (Covers.cons (L.cR hb)
       (Covers.cons ht (Covers.cons (L.cR ho) (L.cR hs))))
   · exact Covers.cons (L.cW hwo) (L.cW hws)
@@ -124,7 +125,7 @@ theorem responseProduct_ok {p : Params} {S : Nat} {σ s : State} {out secret : P
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨ho,ha⟩,hb⟩,hsc⟩,hwo⟩,hws⟩,hoa⟩,hob⟩,hos⟩,has⟩,hbs⟩ := hc
   refine productAt_field_layout hs.1.lay ho ha hb hsc ?_ hf hg
   refine productReady_layout hs.1.lay ho ha hb hsc hwo hws hoa hob hos has hbs
-    hs.2.inverse.held hs.2.inverse.fit ?_ hs.2.inverse.readable hf.bound hg.bound
+    hs.2.inverse.held hs.2.inverse.fit ?_ hs.2.inverse.readable hf.bound hg.bound hs.2.inverse.aligned
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl

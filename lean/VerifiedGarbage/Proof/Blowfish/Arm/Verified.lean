@@ -154,7 +154,7 @@ theorem consts_init {st : Nat} {s : State} (hc : ConstsOk initConsts st s) :
       (∀ r ∈ s.wr, (⟨State.addr (s.syms initSym), 4168⟩ : Region).Disjoint r) ∧
       s.rd.drop (s.rd.length - 1) = [⟨State.addr (s.syms initSym), 4168⟩] := by
   have hf := hc.fit (name := initSym) (ws := Impl.Blowfish.initWords) List.mem_cons_self
-  obtain ⟨hd, hh, ht⟩ := hc
+  obtain ⟨hd, hh, ht, -⟩ := hc
   have e : constRegs initConsts s = [⟨State.addr (s.syms initSym), 4168⟩] := by
     rw [constRegs, initConsts_eq, Abi.constRegions_cons, Abi.constRegions_nil, initWords_length]; rfl
   have hl : initConsts.length = 1 := rfl

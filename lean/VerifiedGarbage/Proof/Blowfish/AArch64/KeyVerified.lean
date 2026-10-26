@@ -63,13 +63,13 @@ theorem key_spec_pre {s : State}
     (held : ∀ i < Impl.Blowfish.initWords.length,
       s.mem.readW (s.syms initSym + BitVec.ofNat 64 (8 * i)) 64 = Impl.Blowfish.initWords.getD i 0)
     (fitT : (s.syms initSym).toNat + 4168 ≤ 2 ^ 64)
-    (hdw : ∀ r ∈ s.wr, (⟨s.syms initSym, 4168⟩ : Region).Disjoint r) :
+    (hdw : ∀ r ∈ s.wr, (⟨s.syms initSym, 4168⟩ : Region).Disjoint r) (hal : (s.syms initSym).toNat % 64 = 0) :
     (Spec.Blowfish.expandKeyContract (AArch64.abi.withConsts initConsts)).pre s := by
   sig_pre [Spec.Blowfish.expandKeyContract, Spec.Blowfish.expandKeySig,
     Spec.Blowfish.expandKeyPre, AArch64.abi, AArch64.argRegs, initConsts_eq, Abi.withConsts,
     Abi.constRegions, Abi.constsHeld, stackBelow]
   rw [initWords_length]
-  exact ⟨by rw [hrd]; rfl, fun i hi => held i (by rw [initWords_length]; exact hi), fitT, hdw,
+  exact ⟨by rw [hrd]; rfl, fun i hi => held i (by rw [initWords_length]; exact hi), fitT, hdw, hal,
     by rw [hrd]; rfl, hw, ks, f0, f2, valid⟩
 
 theorem expandKey_implies :
@@ -79,7 +79,7 @@ theorem expandKey_implies :
       Spec.Blowfish.expandKeyPre, AArch64.abi, AArch64.argRegs, initConsts_eq, Abi.withConsts,
       Abi.constRegions, Abi.constsHeld, stackBelow] at h
     rw [initWords_length] at h
-    obtain ⟨hd, held, fitT, hdw, ht, hw, ks, -, fitS, valid⟩ := h
+    obtain ⟨hd, held, fitT, hdw, -, ht, hw, ks, -, fitS, valid⟩ := h
     have tw : ∀ r ∈ s.wr, (⟨s.syms initSym, 4168⟩ : Region).Disjoint r := hdw
     refine ⟨valid, ?_, hw, ks, fitS, held, fitT, tw _ (by rw [hw]; exact List.mem_cons_self)⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
@@ -101,7 +101,7 @@ theorem expandKey_implies :
   sat := ⟨keySatState, key_spec_pre rfl rfl (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
     (by decide) keySatMem_held (by decide) (fun r hr => by
       simp only [keySatState, List.mem_cons, List.not_mem_nil, or_false] at hr
-      subst hr; exact Region.disjoint_of_sep (by decide))⟩
+      subst hr; exact Region.disjoint_of_sep (by decide)) (by decide)⟩
 
 theorem expandKey_verified : Verified target Impl.Blowfish.AArch64.expandKey
     (Spec.Blowfish.expandKeyContract (AArch64.abi.withConsts initConsts)) :=

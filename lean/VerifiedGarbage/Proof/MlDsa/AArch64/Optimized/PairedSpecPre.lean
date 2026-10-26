@@ -31,13 +31,14 @@ structure ZSpecPre (s : State) : Prop where
   data : ∀j<2,Reduced s.mem (pairPolyPtr (s.gpr .x2) j)
   boundLow : 1≤((s.gpr .x6).setWidth 32).toNat
   boundHigh : ((s.gpr .x6).setWidth 32).toNat≤524288
+  tableAl : (s.syms "VG_MLDSA_INV_PAIR").toNat%64=0
 
 theorem pairedZ_pre {s : State}
     (h : (pairedZContract (abi.withConsts pairedConsts)).pre s) : ZSpecPre s := by
   sig_pre [pairedZContract,pairedZSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow] at h
-  obtain ⟨hdrop,hheld,_,hsep,htake,hwr,hcd,hcw,hsd,hsw,hdw,_,_,_,_,hprod,hdata,hbl,hbh⟩ := h
-  refine ⟨?_,hwr,?_,hsep,hcd,hcw,hsd,hsw,hdw,hprod,hdata,hbl,hbh⟩
+  obtain ⟨hdrop,hheld,_,hsep,hal,htake,hwr,hcd,hcw,hsd,hsw,hdw,_,_,_,_,hprod,hdata,hbl,hbh⟩ := h
+  refine ⟨?_,hwr,?_,hsep,hcd,hcw,hsd,hsw,hdw,hprod,hdata,hbl,hbh,hal⟩
   · rw [←List.take_append_drop (s.rd.length-1) s.rd,htake,hdrop]
     rfl
   · intro i hi

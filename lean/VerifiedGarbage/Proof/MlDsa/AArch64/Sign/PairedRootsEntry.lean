@@ -35,12 +35,12 @@ theorem pairedRoots_entry {p : Params} {S : Nat} {s : State}
     nttConsts_eq,
     Inverse.inverseConsts_eq,
     Abi.constRegions,Abi.constsHeld,TableConstants.staticNttWords_length,InverseTable.expandedWords_length,PairedTable.expandedWords_length,stackBelow] at h
-  obtain ⟨hsp,hd,hf,hi,hpair,hff,hfw,hfs,hif,hiw,his,hpf,hpw,hps,ht,hw,d1,d2,d3,d4,d5,d6,d7,
+  obtain ⟨hsp,hd,hf,hi,hpair,hff,hfw,hfs,hif,hiw,his,hpf,hpw,hps,hfa,hia,hpa,ht,hw,d1,d2,d3,d4,d5,d6,d7,
     k1,k2,k3,k4,k5,n1,n2,n3,n4,n5⟩ := h
   have hrd : s.rd=[⟨s.gpr .x0,p.skLen⟩,⟨s.gpr .x1,64⟩,⟨s.gpr .x2,32⟩] ++
       [⟨s.syms "VG_MLDSA_NTT_EXPANDED",3904⟩,⟨s.syms "VG_MLDSA_INV_FOLDED",3904⟩,⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩] := by
     rw [← List.take_append_drop (s.rd.length-3) s.rd,ht,hd]
-  refine ⟨?_,⟨⟨hf,hff,?_,hfw,hfs⟩,⟨hi,hif,?_,hiw,his⟩⟩,⟨?_,hpf,?_,hpw,hps⟩⟩
+  refine ⟨?_,⟨⟨hf,hff,?_,hfw,hfs,hfa⟩,⟨hi,hif,?_,hiw,his,hia⟩⟩,⟨?_,hpf,?_,hpw,hps,hpa⟩⟩
   · have hsub : [⟨s.gpr .x0,p.skLen⟩,⟨s.gpr .x1,64⟩,⟨s.gpr .x2,32⟩]⊆s.rd := by
       rw [hrd]
       exact List.subset_append_left _ _

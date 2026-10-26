@@ -387,6 +387,7 @@ theorem spec_pre {s : State} (hsp : 352 ≤ s.sp.toNat)
     (hfit : (s.syms combSym).toNat + 8 * combWords.length ≤ 2 ^ 64)
     (hdw : ∀ r ∈ s.wr, Region.Disjoint ⟨s.syms combSym, 8 * combWords.length⟩ r)
     (hds : Region.Disjoint ⟨s.syms combSym, 8 * combWords.length⟩ ⟨s.sp - 352#64, 352⟩)
+    (hal : (s.syms combSym).toNat % 64 = 0)
     (hrest : (⟨s.gpr .x0, 114⟩ : Region).Disjoint ⟨s.gpr .x1, 57⟩ ∧
       (⟨s.gpr .x0, 114⟩ : Region).Disjoint ⟨s.gpr .x2, 57⟩ ∧
       (⟨s.gpr .x0, 114⟩ : Region).Disjoint ⟨s.gpr .x3, (s.gpr .x4).toNat⟩ ∧
@@ -413,7 +414,7 @@ theorem spec_pre {s : State} (hsp : 352 ≤ s.sp.toNat)
     Spec.Ed448.scratchWords, AArch64.abi, AArch64.argRegs,
     VG.Proof.X448.AArch64.Base.combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
-  exact ⟨hsp, by rw [hrd]; rfl, hheld, hfit, hdw, hds, by rw [hrd]; rfl, hw, hrest.1, hrest.2.1, hrest.2.2.1,
+  exact ⟨hsp, by rw [hrd]; rfl, hheld, hfit, hdw, hds, hal, by rw [hrd]; rfl, hw, hrest.1, hrest.2.1, hrest.2.2.1,
     hrest.2.2.2.1, hrest.2.2.2.2.1, hrest.2.2.2.2.2.1, hrest.2.2.2.2.2.2.1, hrest.2.2.2.2.2.2.2.1,
     hrest.2.2.2.2.2.2.2.2.1, hrest.2.2.2.2.2.2.2.2.2.1, hrest.2.2.2.2.2.2.2.2.2.2.1,
     hrest.2.2.2.2.2.2.2.2.2.2.2.1, hrest.2.2.2.2.2.2.2.2.2.2.2.2.1, hrest.2.2.2.2.2.2.2.2.2.2.2.2.2.1,
@@ -425,7 +426,7 @@ theorem spec_pre {s : State} (hsp : 352 ≤ s.sp.toNat)
 theorem sat : ∃ s, (Spec.Ed448.signCachedContract (AArch64.abi.withConsts combConsts) 352).pre s := by
   have hl := combWords_length
   refine ⟨satState, spec_pre (by decide) (by rw [hl]; rfl) rfl satMemT_held (by rw [hl]; decide) ?_
-    (by rw [hl]; exact Region.disjoint_of_sep (by decide)) ?_ ?_ (by decide)⟩
+    (by rw [hl]; exact Region.disjoint_of_sep (by decide)) (by decide) ?_ ?_ (by decide)⟩
   · rw [hl]
     simp only [satState, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
@@ -442,7 +443,7 @@ theorem signCached_implies : scLocal.Implies
       Spec.Ed448.scratchWords, AArch64.abi, AArch64.argRegs,
       VG.Proof.X448.AArch64.Base.combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at h
-    obtain ⟨hsp, hd, held, fit, hdw, hds, ht, hw, os, op, ox, om, oc, sc, pc, xc, mc, ko, ks, kp, kx, km, kc,
+    obtain ⟨hsp, hd, held, fit, hdw, hds, -, ht, hw, os, op, ox, om, oc, sc, pc, xc, mc, ko, ks, kp, kx, km, kc,
       no, ns, np, -, -, nc, hpk, cl⟩ := h
     refine ⟨?_, hw, os, op, ox, om, oc, sc, pc, xc, mc, ko, ks, kp, kx, km, kc, no, ns, np, nc, hsp, hpk, cl,
       held, fit, ?_⟩

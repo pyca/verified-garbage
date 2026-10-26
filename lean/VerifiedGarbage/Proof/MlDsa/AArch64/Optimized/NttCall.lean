@@ -45,6 +45,7 @@ structure NttTableAt (s : State) (p : Addr) : Prop where
     staticNttWords.getD i 0
   fit : (s.syms "VG_MLDSA_NTT_EXPANDED").toNat+3904≤2^64
   apart : (expandedRegion (s.syms "VG_MLDSA_NTT_EXPANDED")).Disjoint (outputRegion p)
+  aligned : (s.syms "VG_MLDSA_NTT_EXPANDED").toNat%64=0
 
 abbrev positiveNttArgs (f : Ptr) : List (Reg × Arg) := [(.x0,.ptr f)]
 abbrev positiveNttOutArgs (out f : Ptr) : List (Reg × Arg) := [(.x0,.ptr out),(.x1,.ptr f)]
@@ -62,6 +63,7 @@ theorem positiveNttAt_pre {s s1 : State} {f : Ptr}
   · simpa [State.withRegions,State.callEntry,hy,Args.mem h1] using ht.held
   · simpa [State.withRegions,State.callEntry,hy] using ht.fit
   · simpa [State.withRegions,State.callEntry,hy,Args.r0 h1,Arg.val] using ht.apart
+  · simpa [State.withRegions,State.callEntry,hy] using ht.aligned
   · simpa [State.withRegions,State.callEntry,Args.r0 h1,Arg.val] using hfit
   · simpa [State.withRegions,State.callEntry,Args.r0 h1,Args.mem h1,Arg.val] using hf
 
@@ -98,6 +100,7 @@ theorem positiveNttOutAt_pre {s s1 : State} {out f : Ptr}
   · simpa [State.withRegions,State.callEntry,hy,Args.mem h1] using ht.held
   · simpa [State.withRegions,State.callEntry,hy] using ht.fit
   · simpa [State.withRegions,State.callEntry,hy,Args.r0 h1,Arg.val] using ht.apart
+  · simpa [State.withRegions,State.callEntry,hy] using ht.aligned
   · simpa [State.withRegions,State.callEntry,Args.r0 h1,Args.r1 h1,Arg.val] using hio
   · simpa [State.withRegions,State.callEntry,Args.r0 h1,Arg.val] using hofit
   · simpa [State.withRegions,State.callEntry,Args.r1 h1,Arg.val] using hfit

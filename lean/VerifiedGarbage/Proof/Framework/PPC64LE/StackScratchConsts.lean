@@ -94,10 +94,10 @@ theorem narrowK_pre (hk : (sig.words abi.ptrBits).length < 8)
     (hs : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes)).pre s) :
     (Sig.scratchContract (abi.withConsts (c₀ :: cs)) sig nm e n pre post wa stack).pre
       (narrow sig e n bytes s) := by
-  obtain ⟨hs', hdr, hd, ht⟩ := pre_consts.mp hs
+  obtain ⟨hs', hdr, hd, ht, hal⟩ := pre_consts.mp hs
   have hn := narrow_pre (nm := nm) hk hb hpre hs' hl
   have hR := reserved_below (stack := stack) (bytes := bytes) (by omega_using [hb]) s
-  refine pre_consts.mpr ⟨by rw [stripConsts_narrow]; exact hn, hdr, ?_, fun t ht' => ⟨(ht t ht').1, ?_, ?_⟩⟩
+  refine pre_consts.mpr ⟨by rw [stripConsts_narrow]; exact hn, hdr, ?_, fun t ht' => ⟨(ht t ht').1, ?_, ?_⟩, hal⟩
   · -- The push writes only the back chain, in the reserved stack.
     intro c hc i hi
     rw [narrow_mem, narrow_syms, ← hd c hc i hi]

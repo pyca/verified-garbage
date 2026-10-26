@@ -110,7 +110,7 @@ def frameSat (ivW : Bool) : State :=
 /-- What the contract says of the table, as the modes need it. -/
 theorem tabsOk_of {s : State} {st : Nat} (h : ConstsOk ecbConsts st s) (hst : 0 < st) :
     TabsOk ecbConsts st s := by
-  refine ⟨h.2.1, fun t ht => ⟨?_, (h.2.2 t ht).1, (h.2.2 t ht).2.1, (h.2.2 t ht).2.2 _ ?_⟩⟩
+  refine ⟨h.2.1, fun t ht => ⟨?_, (h.2.2.1 t ht).1, (h.2.2.1 t ht).2.1, (h.2.2.1 t ht).2.2 _ ?_⟩, h.2.2.2⟩
   · have hm : t ∈ s.rd.drop (s.rd.length - ecbConsts.length) := by rw [h.1]; exact ht
     exact List.mem_of_mem_drop hm
   · obtain ⟨k, rfl⟩ : ∃ k, st = k + 1 := ⟨st - 1, by omega⟩

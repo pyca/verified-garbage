@@ -44,7 +44,8 @@ theorem spec_pre {s : State}
     (kc : Region.Disjoint ⟨s.sp - BitVec.ofNat 64 256, 256⟩ ⟨s.gpr .x3, 8192⟩)
     (no : (s.gpr .x0).toNat + 64 ≤ 2 ^ 64) (nd : (s.gpr .x1).toNat + 32 ≤ 2 ^ 64)
     (ng : (s.gpr .x2).toNat + 32 ≤ 2 ^ 64) (nc : (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64) (hsp : 256 ≤ s.sp.toNat)
-    (ht : TblHeld s [⟨s.gpr .x0, 64⟩, ⟨s.gpr .x3, 8192⟩, ⟨s.sp - BitVec.ofNat 64 256, 256⟩]) :
+    (ht : TblHeld s [⟨s.gpr .x0, 64⟩, ⟨s.gpr .x3, 8192⟩, ⟨s.sp - BitVec.ofNat 64 256, 256⟩])
+    (hal : (s.syms Impl.Ecdsa.AArch64.p256.tsym).toNat % 64 = 0) :
     (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts) 256).pre s := by
   sig_pre [Spec.Ecdsa.Rfc6979.P256Sha256.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
     Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
@@ -52,7 +53,7 @@ theorem spec_pre {s : State}
     stackBelow, below]
   obtain ⟨held, fit, hdw⟩ := ht
   exact ⟨hsp, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (List.mem_append_left _ hr),
-    hdw _ (by simp), by rw [hrd]; rfl, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc⟩
+    hdw _ (by simp), hal, by rw [hrd]; rfl, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc⟩
 
 theorem sat_spec :
     (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts) 256).pre
@@ -65,7 +66,7 @@ theorem sat_spec :
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide)) (by decide) (by decide)
-    (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩
+    (by decide) (by decide) (by decide) ⟨held, ?_, ?_⟩ (by decide)
   all_goals rw [hl]
   · decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -79,7 +80,7 @@ theorem implies :
       Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
       AArch64.abi, AArch64.argRegs, p256_combConsts, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow, below] at h
-    obtain ⟨hsp, hd, hheld, hfit, hdw, hstk, ht, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc⟩ := h
+    obtain ⟨hsp, hd, hheld, hfit, hdw, hstk, -, ht, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc⟩ := h
     refine ⟨?_, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, hheld, hfit, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · simp only [List.mem_cons, List.not_mem_nil, or_false]

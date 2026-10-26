@@ -163,6 +163,7 @@ structure KeyPre (s : State) (K KL E O S : BitVec 32) : Prop where
   tS : (tbl s).Disjoint ⟨State.addr S, 512⟩
   tb : (below s).Disjoint (tbl s)
   trd : tbl s ∈ s.rd
+  tal : (State.addr (s.syms piSym)).toNat % 64 = 0
 
 /-- What the call of `vg_rc2_expand_key` leaves. -/
 structure KeyPost (s : State) (K KL E O S : BitVec 32) (s' : State) : Prop where
@@ -197,7 +198,7 @@ theorem KeyPre.consts {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E 
     ConstsOk piConsts 0 (view s (keyRdC s K KL) (keyWr O S)) := by
   have e : constRegs piConsts (view s (keyRdC s K KL) (keyWr O S)) = [tbl s] := by
     rw [constRegs, piConsts_eq, Abi.constRegions_cons, Abi.constRegions_nil, piQuads_length]; rfl
-  refine ⟨by rw [e]; rfl, ?_, ?_⟩
+  refine ⟨by rw [e]; rfl, ?_, ?_, ?_⟩
   · rw [piConsts_eq]
     intro c hc i hi
     simp only [List.mem_singleton] at hc
@@ -223,6 +224,11 @@ theorem KeyPre.consts {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E 
       rcases hr with rfl | rfl
       · exact h.tO
       · exact h.tS
+  · rw [e]
+    intro t ht
+    simp only [List.mem_singleton] at ht
+    subst ht
+    exact h.tal
 
 theorem KeyPre.pre {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) :
     keyContractC.pre (view s (keyRdC s K KL) (keyWr O S)) :=
@@ -707,6 +713,7 @@ structure InitTab (s : State) : Prop where
   held : Proof.Rc2.PiHeld s.mem (State.addr (s.syms piSym))
   wr : ∀ r ∈ s.wr, (tbl s).Disjoint r
   below : (tbl s).Disjoint ⟨State.addr s.sp - 8, 8⟩
+  al : (State.addr (s.syms piSym)).toNat % 64 = 0
 
 /-- `vg_rc2_cbc_init`'s contract under `abi.withConsts piConsts`, as the
 proofs state it. -/
@@ -724,7 +731,8 @@ theorem initC_pre {s : State} (h : initContract0.pre (stripConsts piConsts s)) (
     initContractC.pre s := by
   obtain ⟨hT, twr, tdrop, held, tres⟩ := consts_pi hc
   obtain ⟨a1, a2, hrd, rest⟩ := h
-  refine ⟨⟨a1, a2, ?_, rest⟩, ⟨hT.fit, held, twr, tres _ List.mem_cons_self⟩⟩
+  refine ⟨⟨a1, a2, ?_, rest⟩, ⟨hT.fit, held, twr, tres _ List.mem_cons_self,
+    hc.aligned (by rw [piConsts_eq]; exact List.mem_cons_self)⟩⟩
   rw [← List.take_append_drop (s.rd.length - 1) s.rd, tdrop]
   have h' : s.rd.take (s.rd.length - piConsts.length) = _ := hrd
   exact congrArg (· ++ _) h'

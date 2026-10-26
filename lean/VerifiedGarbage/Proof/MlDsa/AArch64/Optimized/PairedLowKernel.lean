@@ -188,13 +188,14 @@ structure LowSpecPre (s : State) : Prop where
   gamma : ((s.gpr .x5).setWidth 32).toNat∈gamma2s
   boundLow : 1≤((s.gpr .x6).setWidth 32).toNat
   boundHigh : ((s.gpr .x6).setWidth 32).toNat≤524288
+  tableAl : (s.syms "VG_MLDSA_INV_PAIR").toNat%64=0
 
 theorem pairedLow_pre {s : State}
     (h : (pairedLowContract (abi.withConsts pairedConsts)).pre s) : LowSpecPre s := by
   sig_pre [pairedLowContract,pairedLowSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow] at h
-  obtain ⟨hdrop,hheld,_,hsep,htake,hwr,hcd,hca,hcw,hsd,hsa,hsw,hda,hdw,haw,_,_,_,_,_,hprod,hdata,hgamma,hbl,hbh⟩ := h
-  refine ⟨?_,hwr,?_,hsep,hcd,hca,hcw,hsd,hsa,hsw,hda,hdw,haw,hprod,hdata,hgamma,hbl,hbh⟩
+  obtain ⟨hdrop,hheld,_,hsep,hal,htake,hwr,hcd,hca,hcw,hsd,hsa,hsw,hda,hdw,haw,_,_,_,_,_,hprod,hdata,hgamma,hbl,hbh⟩ := h
+  refine ⟨?_,hwr,?_,hsep,hcd,hca,hcw,hsd,hsa,hsw,hda,hdw,haw,hprod,hdata,hgamma,hbl,hbh,hal⟩
   · rw [←List.take_append_drop (s.rd.length-1) s.rd,htake,hdrop]
     rfl
   · intro i hi

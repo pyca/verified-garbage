@@ -104,11 +104,12 @@ def ecbSat : State where
   syms _ := 0x100000
 
 /-- The shared contract's precondition, from its facts. -/
-theorem EPre.spec_pre (d : Spec.Cast5.Direction) {s : State} (h : EPre s) :
+theorem EPre.spec_pre (d : Spec.Cast5.Direction) {s : State} (h : EPre s)
+    (hal : (s.syms s1234Sym).toNat % 64 = 0) :
     (Spec.Cast5.ecbContract (AArch64.abi.withConsts ecbConsts) d).pre s := by
   sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, AArch64.abi, AArch64.argRegs,
     ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length]
-  refine ⟨by rw [h.rd]; rfl, h.held, h.fitT, fun r hr => ?_, by rw [h.rd]; rfl, h.wr, h.dKD, h.dKS,
+  refine ⟨by rw [h.rd]; rfl, h.held, h.fitT, fun r hr => ?_, hal, by rw [h.rd]; rfl, h.wr, h.dKD, h.dKS,
     h.dDS, h.fK, h.fD, h.fS, h.rounds⟩
   rw [h.wr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -121,7 +122,7 @@ theorem ecb_implies (d : Spec.Cast5.Direction) :
   pre s h := by
     sig_pre [Spec.Cast5.ecbContract, Spec.Cast5.ecbSig, Spec.Cast5.ecbPre, AArch64.abi, AArch64.argRegs,
       ecbConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s1234_length] at h
-    obtain ⟨hdr, hheld, hfit, hdw, htk, hw, dKD, dKS, dDS, fK, fD, fS, hr⟩ := h
+    obtain ⟨hdr, hheld, hfit, hdw, -, htk, hw, dKD, dKS, dDS, fK, fD, fS, hr⟩ := h
     refine ⟨?_, hw, hheld, hfit, hdw _ (by rw [hw]; exact List.mem_cons_self),
       hdw _ (by rw [hw]; exact List.mem_cons_of_mem _ List.mem_cons_self), dKD, dKS, dDS, fK, fD, fS, hr⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, htk, hdr]
@@ -137,7 +138,7 @@ theorem ecb_implies (d : Spec.Cast5.Direction) :
     exact ⟨h1, h2, h3, h4, h5, hsp, hsy⟩
   sat := ⟨ecbSat, EPre.spec_pre d ⟨rfl, rfl, ecbSatMem_held, by decide, Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide⟩⟩
+    Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide⟩ (by decide)⟩
 
 theorem ecbEncrypt_verified :
     Verified AArch64.target ecbEncrypt (Spec.Cast5.ecbEncryptContract (AArch64.abi.withConsts ecbConsts)) :=

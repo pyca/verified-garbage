@@ -400,10 +400,10 @@ theorem PreA.callPre (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} 
   have sp : s₂.sp = s₀.sp := by rw [a.sp, h.sp]
   have ts := hM.tgt_sz
   have et : tabRegs S.consts s₂ = tabRegs S.consts s₀ := by simp only [tabRegs, hsy]
-  have tw := hp.tabs.2
+  have tw := hp.tabs.2.1
   refine ⟨a.r0, a.r1, hp.rok, a.rD, a.rN, a.a3, by rw [sp]; exact hp.stk, hp.fK, ts ▸ hL.bt_fit _, ?_, ?_, ?_, ?_, ?_,
     a.r12, hp.cs_fit, hp.key_scr.sub_right hp.cs_sub_scr, ?_, by rw [sp]; exact hp.b_scr.sub_right hp.cs_sub_scr,
-    fun hs => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    fun hs => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hL.bt_addr, ← ts]; exact hp.disj_blks hk hp.key_data hp.key_scr _
   · rw [sp]; exact hp.b_key
   · rw [sp, hL.bt_addr, ← ts]; exact hp.disj_blks hk hp.b_data hp.b_scr _
@@ -431,6 +431,7 @@ theorem PreA.callPre (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} 
     exact hp.disj_blks hk ((tw t ht).2.2.1 _ hp.data_in) ((tw t ht).2.2.1 _ hp.scr_in) _
   · rw [et]; exact fun t ht => ((tw t ht).2.2.1 _ hp.scr_in).sub_right hp.cs_sub_scr
   · rw [et, sp]; exact fun t ht => (tw t ht).2.2.2
+  · rw [et]; exact hp.tabs.2.2
 
 /-- The blocks after the call. -/
 theorem call_blks (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} {s s₂ s₃ : State}

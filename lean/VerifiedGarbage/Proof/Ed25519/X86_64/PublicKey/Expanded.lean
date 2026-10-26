@@ -269,7 +269,7 @@ theorem sat_localPE : pkLocalE.pre satStatePE := by
   rintro r (rfl | rfl | rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
 
 /-- The shared contract's precondition, from `pkLocalE`'s. -/
-theorem pkE_spec_pre {s : State} (h : pkLocalE.pre s) :
+theorem pkE_spec_pre {s : State} (h : pkLocalE.pre s) (hal : (s.syms Impl.Ed25519.X86_64.combSym).toNat % 64 = 0) :
     (Spec.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72).pre s := by
   obtain ⟨h72, hrd, hw, h1, h2, h3, r1, r2, r3, k1, k2, k3, f0, f1, f2, pk, held, fit, hdw⟩ := h
   sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
@@ -277,7 +277,7 @@ theorem pkE_spec_pre {s : State} (h : pkLocalE.pre s) :
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length]
   exact ⟨h72, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]),
-    hdw _ (by simp), hdw _ (by simp), by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, k1, k2, k3, f0, f1, f2, pk⟩
+    hdw _ (by simp), hdw _ (by simp), hal, by rw [hrd]; rfl, hw, h1, h2, h3, r1, r2, r3, k1, k2, k3, f0, f1, f2, pk⟩
 
 theorem impliesE :
     pkLocalE.Implies (Spec.Ed25519.publicKeyExpandedContract (X86_64.abi.withConsts combConsts) 72) where
@@ -285,7 +285,7 @@ theorem impliesE :
     sig_pre [Spec.Ed25519.publicKeyExpandedContract, Spec.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, Proof.Ed25519.X86_64.combWords_length] at h
-    obtain ⟨h72, hd, hheld, hfit, hdw, hdr, hdk, ht, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2, pk⟩ := h
+    obtain ⟨h72, hd, hheld, hfit, hdw, hdr, hdk, -, ht, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2, pk⟩ := h
     refine ⟨h72, ?_, hw, d1, d2, d3, d4, d5, d6, d7, d8, d9, f0, f1, f2, pk, hheld, hfit, fun r hr => ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -306,7 +306,7 @@ theorem impliesE :
       Abi.withConsts] at h
     obtain ⟨h0, hs, h1, h2, h3⟩ := h
     exact ⟨h0, h1, h2, h3, hs⟩
-  sat := ⟨_, pkE_spec_pre sat_localPE⟩
+  sat := ⟨_, pkE_spec_pre sat_localPE (by decide)⟩
 
 theorem publicKeyExpanded_verified :
     Verified X86_64.target (publicKeyExpanded bs fs)

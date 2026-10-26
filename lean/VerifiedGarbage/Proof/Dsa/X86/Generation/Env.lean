@@ -90,6 +90,7 @@ structure Env.Valid (E : Env) : Prop where
   lens : E.seedsLen < 2 ^ 32 ∧ E.hsLen < 2 ^ 32 ∧ E.witLen < 2 ^ 32
   tableFar : E.tableRegion.Disjoint E.scratchRegion ∧ E.tableRegion.Disjoint E.outRegion ∧
     E.tableRegion.Disjoint E.stackRegion
+  tableAligned : E.table.toNat % 64 = 0
 
 theorem Env.Valid.pLen_ge {E : Env} (v : E.Valid) : 128 ≤ E.pLen := by
   rcases v.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega

@@ -143,7 +143,7 @@ theorem decapsH768_sat : ∃s,decapsH768Contract.pre s := by
      | decide
      | exact Region.disjoint_of_sep (by decide)
   · change ConstsOk constants 128 (addTables VG.Proof.MlKem.AArch64.Decaps.sat)
-    refine ⟨?_,tableMem_held,?_⟩
+    refine ⟨?_,tableMem_held,?_,?_⟩
     · rfl
     · intro r hr
       rw [constants_regions] at hr
@@ -159,6 +159,10 @@ theorem decapsH768_sat : ∃s,decapsH768Contract.pre s := by
             change q∈[below (0x100000:Addr) 128] at hq
             rw [List.mem_singleton.mp hq]
             exact Region.disjoint_of_sep (by decide))
+    · intro r hr
+      rw [constants_regions] at hr
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+      all_goals first | contradiction | decide
 
 /-! ## ML-KEM-1024 -/
 
@@ -207,7 +211,7 @@ theorem decapsH1024_sat : ∃s,decapsH1024Contract.pre s := by
      | decide
      | exact Region.disjoint_of_sep (by decide)
   · change ConstsOk constants 128 (addTables VG.Proof.MlKem1024.AArch64.Decaps.sat)
-    refine ⟨?_,tableMem_held,?_⟩
+    refine ⟨?_,tableMem_held,?_,?_⟩
     · rfl
     · intro r hr
       rw [constants_regions] at hr
@@ -223,5 +227,9 @@ theorem decapsH1024_sat : ∃s,decapsH1024Contract.pre s := by
             change q∈[below (0x100000:Addr) 128] at hq
             rw [List.mem_singleton.mp hq]
             exact Region.disjoint_of_sep (by decide))
+    · intro r hr
+      rw [constants_regions] at hr
+      rcases hr with _|⟨_,_|⟨_,_|⟨_,_|⟨_,_|h⟩⟩⟩⟩
+      all_goals first | contradiction | decide
 
 end VG.Proof.MlKem.AArch64.Hybrid

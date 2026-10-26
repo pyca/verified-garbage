@@ -283,7 +283,7 @@ theorem pk_sat : (Spec.Ed25519.publicKeyContract (X86.abi.withConsts combConsts)
     Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
-  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, ?_⟩
+  refine ⟨by decide, by decide, by rw [hl]; rfl, held, by rw [hl]; decide, ?_, ?_, ?_, by decide, ?_⟩
   · rw [hl]
     intro r hr
     change r ∈ [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩, ⟨0x8004, 12⟩] at hr
@@ -302,7 +302,7 @@ theorem pkWide_implies :
     sig_pre [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    obtain ⟨h280, hsp, hd, held, hfit, hdw, -, hstk, ht, hw, os, oc, oa, sc, -, ca, ro, -, rc, -,
+    obtain ⟨h280, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, os, oc, oa, sc, -, ca, ro, -, rc, -,
       ko, ks, kc, -, f0, f1, f2⟩ := h
     refine ⟨?_, hw, os, oc, sc, oa.symm, ca.symm, ro, rc, ko, ks, kc, f0, f1, f2, h280, by omega,
       held, hfit, ?_⟩

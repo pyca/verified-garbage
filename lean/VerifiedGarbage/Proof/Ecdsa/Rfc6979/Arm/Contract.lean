@@ -35,7 +35,8 @@ def TablesOk (cs : List (String × List (BitVec 64))) (sy : String → BitVec 32
     (writes : List Region) : Prop :=
   ∀ c∈cs,(∀ i<c.2.length,m.readW (State.addr (sy c.1)+BitVec.ofNat 64 (8*i)) 64=c.2.getD i 0) ∧
     (sy c.1).toNat+8*c.2.length≤2^32 ∧
-    ∀ r∈writes,Region.Disjoint ⟨State.addr (sy c.1),8*c.2.length⟩ r
+    (∀ r∈writes,Region.Disjoint ⟨State.addr (sy c.1),8*c.2.length⟩ r) ∧
+    (State.addr (sy c.1)).toNat%64=0
 
 def rfcArm (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) (cs : List (String × List (BitVec 64)) := []) : Contract Arm.isa where
   pre s :=

@@ -34,7 +34,7 @@ theorem inverse_pre {s : State}
     (h : (montgomeryNttInvContract (abi.withConsts inverseConsts)).pre s) : inverseK.pre s := by
   sig_pre [montgomeryNttInvContract,inPlaceContract,inPlaceSig,abi,argRegs,inverseConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,InverseTable.expandedWords_length,stackBelow] at h
-  obtain ⟨hd,held,_,hsep,ht,hw,_,_,_,hred⟩ := h
+  obtain ⟨hd,held,_,hsep,_,ht,hw,_,_,_,hred⟩ := h
   have hrd : s.rd=[tableRegion (s.syms "VG_MLDSA_INV_FOLDED")] := by
     rw [← List.take_append_drop (s.rd.length-1) s.rd,ht,hd]
     rfl

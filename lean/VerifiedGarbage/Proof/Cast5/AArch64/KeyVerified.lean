@@ -97,11 +97,11 @@ def keySat : State where
   syms _ := 0x100000
 
 /-- The shared contract's precondition, from its facts. -/
-theorem KPre.spec_pre {s : State} (h : KPre s) :
+theorem KPre.spec_pre {s : State} (h : KPre s) (hal : (s.syms s5678Sym).toNat % 64 = 0) :
     (Spec.Cast5.expandKeyContract (AArch64.abi.withConsts keyConsts)).pre s := by
   sig_pre [Spec.Cast5.expandKeyContract, Spec.Cast5.expandKeySig, Spec.Cast5.expandKeyPre, AArch64.abi,
     AArch64.argRegs, keyConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s5678_length]
-  refine ⟨by rw [h.rd]; rfl, h.held, h.fitT, fun r hr => ?_, by rw [h.rd]; rfl, h.wr, h.dkK, h.dkS,
+  refine ⟨by rw [h.rd]; rfl, h.held, h.fitT, fun r hr => ?_, hal, by rw [h.rd]; rfl, h.wr, h.dkK, h.dkS,
     h.dKS, h.fk, h.fK, h.fS, h.len⟩
   rw [h.wr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -114,7 +114,7 @@ theorem key_implies : keyX.Implies (Spec.Cast5.expandKeyContract (AArch64.abi.wi
     sig_pre [Spec.Cast5.expandKeyContract, Spec.Cast5.expandKeySig, Spec.Cast5.expandKeyPre, AArch64.abi,
       AArch64.argRegs, keyConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
       s5678_length] at h
-    obtain ⟨hdr, hheld, hfit, hdw, htk, hw, dkK, dkS, dKS, fk, fK, fS, hl⟩ := h
+    obtain ⟨hdr, hheld, hfit, hdw, -, htk, hw, dkK, dkS, dKS, fk, fK, fS, hl⟩ := h
     refine ⟨?_, hw, hheld, hfit, hdw _ (by rw [hw]; exact List.mem_cons_self),
       hdw _ (by rw [hw]; exact List.mem_cons_of_mem _ List.mem_cons_self), dkK, dkS, dKS, fk, fK, fS, hl⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, htk, hdr]
@@ -130,7 +130,7 @@ theorem key_implies : keyX.Implies (Spec.Cast5.expandKeyContract (AArch64.abi.wi
     exact ⟨h1, h2, h3, h4, hsp, hsy⟩
   sat := ⟨keySat, KPre.spec_pre ⟨rfl, rfl, keySatMem_held, by decide, Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-    Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide⟩⟩
+    Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide⟩ (by decide)⟩
 
 theorem expandKey_verified :
     Verified AArch64.target expandKey (Spec.Cast5.expandKeyContract (AArch64.abi.withConsts keyConsts)) :=

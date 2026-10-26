@@ -175,7 +175,7 @@ theorem positiveNttOut_pre {s : State}
     (h : (positiveNttOutContract (abi.withConsts nttConsts)).pre s) : positiveNttOutK.pre s := by
   sig_pre [positiveNttOutContract,positiveNttOutSig,abi,argRegs,nttConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,TableConstants.staticNttWords_length,stackBelow] at h
-  obtain ⟨hd,held,_,hsep,ht,hw,hio,_,_,hred⟩ := h
+  obtain ⟨hd,held,_,hsep,_,ht,hw,hio,_,_,hred⟩ := h
   have hrd : s.rd=[outputRegion (s.gpr .x1),expandedRegion (s.syms "VG_MLDSA_NTT_EXPANDED")] := by
     rw [← List.take_append_drop (s.rd.length-1) s.rd,ht,hd]
     rfl
@@ -194,13 +194,14 @@ theorem positiveNttOut_spec_pre {s : State}
       staticNttWords.getD i 0)
     (hfit : (s.syms "VG_MLDSA_NTT_EXPANDED").toNat+3904≤2^64)
     (hsep : (expandedRegion (s.syms "VG_MLDSA_NTT_EXPANDED")).Disjoint (outputRegion (s.gpr .x0)))
+    (hal : (s.syms "VG_MLDSA_NTT_EXPANDED").toNat%64=0)
     (hio : (outputRegion (s.gpr .x0)).Disjoint (outputRegion (s.gpr .x1)))
     (hpfit : (s.gpr .x0).toNat+1024≤2^64) (hsfit : (s.gpr .x1).toNat+1024≤2^64)
     (hred : Reduced s.mem (s.gpr .x1)) :
     (positiveNttOutContract (abi.withConsts nttConsts)).pre s := by
   sig_pre [positiveNttOutContract,positiveNttOutSig,abi,argRegs,nttConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,TableConstants.staticNttWords_length,stackBelow]
-  refine ⟨by rw [hrd]; rfl,held,hfit,?_,by rw [hrd]; rfl,hwr,hio,hpfit,hsfit,hred⟩
+  refine ⟨by rw [hrd]; rfl,held,hfit,?_,hal,by rw [hrd]; rfl,hwr,hio,hpfit,hsfit,hred⟩
   intro r hr
   rw [hwr] at hr
   have he := List.mem_singleton.mp hr
@@ -217,6 +218,7 @@ theorem positiveNttOut_sat : (positiveNttOutContract (abi.withConsts nttConsts))
   · simpa only [nttOutSat,show nttSat.syms "VG_MLDSA_NTT_EXPANDED"=65536 from rfl] using nttSat_held
   · decide
   · exact Region.disjoint_of_sep (by decide)
+  · decide
   · exact Region.disjoint_of_sep (by decide)
   · decide
   · decide

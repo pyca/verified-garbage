@@ -37,7 +37,7 @@ theorem pairedHintReady_layout {S : Nat} {rbs wbs : List (Reg × Nat)} {s : Stat
     (hg : gamma∈gamma2s) :
     Paired.PairedHintReady c secret y high work gamma s := by
   refine ⟨L.nwp hc,L.nwp hs,L.nwp hy,L.nwp hh,L.nwp hw,roots.held,roots.fit,?_,L.disj hcy,L.disj hcw,
-    L.disj hsy,L.disj hsw,L.disj hyw,L.disj hyh,L.disj hhw,hprod,hg,hdata,?_,?_⟩
+    L.disj hsy,L.disj hsw,L.disj hyw,L.disj hyh,L.disj hhw,hprod,hg,hdata,?_,?_,roots.aligned⟩
   · intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl

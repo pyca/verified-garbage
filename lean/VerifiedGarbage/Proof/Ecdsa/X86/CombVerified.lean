@@ -22,7 +22,7 @@ theorem combSign_regions {s : State} (h : combSignSpec.pre s) :
     Spec.Ecdsa.Instance.signSig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-  obtain ⟨_, _, hd, _, _, _, _, _, ht, hw, _⟩ := h
+  obtain ⟨_, _, hd, _, _, _, _, _, _, ht, hw, _⟩ := h
   refine ⟨?_, hw⟩
   rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]
   simp only [p256Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil,

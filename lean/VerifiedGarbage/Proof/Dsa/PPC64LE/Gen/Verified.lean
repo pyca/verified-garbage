@@ -134,7 +134,7 @@ theorem generate_satisfiable : ∃ s, genK.pre s := by
   have e : constRegs [(Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed)] generateSat = _ :=
     constRegs_kT generateSat
   refine ⟨generateSat, (pre_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
-    (cs := [])).mpr ⟨?_, ?_, sat_table, ?_⟩⟩
+    (cs := [])).mpr ⟨?_, ?_, sat_table, ?_, ?_⟩⟩
   · sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs,
       stackArgs_four, List.append_eq, stackArg, stackArgAddr, List.getD, List.range, List.range.loop, stripConsts]
     sig_and_intros
@@ -153,6 +153,11 @@ theorem generate_satisfiable : ∃ s, genK.pre s := by
     · simp only [abi, stackBelow, List.mem_singleton] at hr
       subst hr
       exact Region.disjoint_of_sep (by decide)
+  · rw [e]
+    intro t ht
+    rw [List.mem_singleton] at ht
+    subst ht
+    decide
 
 /-- `vg_dsa_generate_parameters` over the three geometries meets its contract. -/
 theorem generate_verified (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384 32) :

@@ -793,7 +793,7 @@ theorem key_pre (s : State) (hs : initContract.pre s) (ht : InitTab s) (hv : IVa
     (ctxScr.sub_left p128).sub_right p512, ?_, ?_, ?_, fitK, by omega_arith, by omega_arith, ?_, ?_,
     by rw [hsy]; exact ht.fit, ?_, by rw [et]; exact tCtx.sub_right p128, by rw [et]; exact tScr.sub_right p512,
     by show (Region.mk (State.addr u.sp - 8) 8).Disjoint (tbl u); rw [et, eb]; exact ht.below.symm,
-    by rw [et, hu.rd, hrd]; simp⟩
+    by rw [et, hu.rd, hrd]; simp, by rw [hsy]; exact ht.al⟩
   · show (Region.mk (State.addr u.sp - 8) 8).Disjoint _; rw [eb]; exact bKey
   · show (Region.mk (State.addr u.sp - 8) 8).Disjoint _; rw [eb]; exact bCtx.sub_right p128
   · show (Region.mk (State.addr u.sp - 8) 8).Disjoint _; rw [eb]; exact bScr.sub_right p512

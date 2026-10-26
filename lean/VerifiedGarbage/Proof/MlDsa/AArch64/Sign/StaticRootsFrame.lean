@@ -17,7 +17,7 @@ theorem StaticTable.frame {S : Nat} {name : String} {words : List (BitVec 64)}
     (hf : Frame W s.mem t.mem) (hd : ∀ r∈W,(⟨s.syms name,3904⟩ : Region).Disjoint r)
     (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hs : t.sp=s.sp) (hy : t.syms=s.syms) :
     StaticTable S name words t := by
-  refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_⟩
+  refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_,by simpa only [hy] using h.aligned⟩
   · intro i hi
     rw [hy,hf.readW (r := ⟨s.syms name,3904⟩)
       (Offset.contains_base _ (by omega) (by omega)) hd (by decide)]

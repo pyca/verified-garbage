@@ -151,7 +151,7 @@ theorem cbc_implies {postX : State → State → Prop} {post : Spec.Cast5.cbcCha
     sig_pre [Proof.Cast5.modeScratchContract, Sig.scratchContract, Sig.withScratch, Spec.Cast5.cbcChainedSig,
       Proof.Cast5.cbcChainedPre, AArch64.abi, AArch64.argRegs, ecbConsts_eq, Abi.withConsts, Abi.constRegions,
       Abi.constsHeld, stackBelow, s1234_length, Curry.withScratch] at h
-    obtain ⟨hdr, hheld, hfit, hdw, htk, hw, dKV, dKD, dKS, dVD, dVS, dDS, fK, -, fD, fS, hr⟩ := h
+    obtain ⟨hdr, hheld, hfit, hdw, -, htk, hw, dKV, dKD, dKS, dVD, dVS, dDS, fK, -, fD, fS, hr⟩ := h
     refine ⟨?_, hw, hheld, hfit, hdw _ (by rw [hw]; exact List.mem_cons_self),
       hdw _ (by rw [hw]; exact List.mem_cons_of_mem _ List.mem_cons_self),
       hdw _ (by rw [hw]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)), dKV, dKD, dKS,

@@ -69,16 +69,17 @@ theorem inverse_spec_pre {s : State}
     (held : ∀ i<488,s.mem.readW (s.syms "VG_MLDSA_INV_FOLDED"+BitVec.ofNat 64 (8*i)) 64=expandedWords.getD i 0)
     (hfit : (s.syms "VG_MLDSA_INV_FOLDED").toNat+3904≤2^64)
     (hsep : ∀ r∈s.wr, (⟨s.syms "VG_MLDSA_INV_FOLDED",3904⟩ : Region).Disjoint r)
+    (hal : (s.syms "VG_MLDSA_INV_FOLDED").toNat%64=0)
     (hbuf : (⟨s.gpr .x0,1024⟩ : Region).Disjoint ⟨s.gpr .x1,1024⟩)
     (hf : (s.gpr .x0).toNat+1024≤2^64) (hs : (s.gpr .x1).toNat+1024≤2^64)
     (hred : Reduced s.mem (s.gpr .x0)) :
     (montgomeryNttInvContract (abi.withConsts inverseConsts)).pre s := by
   sig_pre [montgomeryNttInvContract,inPlaceContract,inPlaceSig,abi,argRegs,inverseConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,InverseTable.expandedWords_length,stackBelow]
-  exact ⟨by rw [hrd]; rfl,held,hfit,hsep,by rw [hrd]; rfl,hwr,hbuf,hf,hs,hred⟩
+  exact ⟨by rw [hrd]; rfl,held,hfit,hsep,hal,by rw [hrd]; rfl,hwr,hbuf,hf,hs,hred⟩
 
 theorem inverse_sat : (montgomeryNttInvContract (abi.withConsts inverseConsts)).pre inverseSat := by
-  apply inverse_spec_pre rfl rfl inverseSat_held (by decide) ?_
+  apply inverse_spec_pre rfl rfl inverseSat_held (by decide) ?_ (by decide)
     (Region.disjoint_of_sep (by decide)) (by decide) (by decide) inverseSat_reduced
   intro r hr
   change r∈[⟨4096,1024⟩,⟨8192,1024⟩] at hr
