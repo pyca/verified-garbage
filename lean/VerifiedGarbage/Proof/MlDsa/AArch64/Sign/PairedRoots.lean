@@ -21,6 +21,7 @@ structure PairedRoots (S : Nat) (s : State) : Prop where
   readable : Covers [⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩] (s.rd++s.wr)
   writable : ∀ r∈s.wr,(⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩ : Region).Disjoint r
   stack : (⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩ : Region).Disjoint (below s.sp S)
+  aligned : (s.syms "VG_MLDSA_INV_PAIR").toNat%64=0
 
 theorem PairedRoots.apart_write {S : Nat} 
     {s : State} (h : PairedRoots S s) {p : Addr} {n : Nat}
@@ -38,7 +39,7 @@ theorem PairedRoots.step {S : Nat}
     {s t : State} {ws : List (Ptr × Nat)} (h : PairedRoots S s)
     (hp : PPostB S s t ws) (hy : t.syms=s.syms)
     (hw : ∀ w∈ws,InRegions s.wr (pa s w.1) w.2) : PairedRoots S t := by
-  refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_⟩
+  refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_,by simpa only [hy] using h.aligned⟩
   · intro i hi
     rw [hy,hp.frame.readW (r := ⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩)
       (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)]

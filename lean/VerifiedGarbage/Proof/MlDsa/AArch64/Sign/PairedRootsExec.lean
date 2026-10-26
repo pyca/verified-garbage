@@ -17,7 +17,7 @@ theorem PairedRoots.exec {S : Nat} {s u : State} {code : Prog isa} {tr : List Le
   have hf := Frame.below_mono (VG.AArch64.Exec.frameSp he (by omega)) hd hS
   obtain ⟨hr,hw,hsp⟩ := VG.AArch64.Exec.rdwr he
   have hy := VG.AArch64.Exec.syms he
-  refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_⟩
+  refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_,by simpa only [hy] using h.aligned⟩
   · intro i hi
     rw [hy,hf.readW (r:=⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩)
       (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)]

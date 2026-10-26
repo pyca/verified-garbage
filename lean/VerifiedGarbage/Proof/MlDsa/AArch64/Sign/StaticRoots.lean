@@ -23,6 +23,7 @@ structure StaticTable (S : Nat) (name : String) (words : List (BitVec 64)) (s : 
   readable : Covers [⟨s.syms name,3904⟩] (s.rd++s.wr)
   writable : ∀ r∈s.wr,(⟨s.syms name,3904⟩ : Region).Disjoint r
   stack : (⟨s.syms name,3904⟩ : Region).Disjoint (below s.sp S)
+  aligned : (s.syms name).toNat%64=0
 
 /-- Both tables needed by the optimized signer, separate from polynomial
 invariants so the scalar fallback need not assume either table. -/
@@ -48,7 +49,7 @@ theorem StaticTable.step {S : Nat} {name : String} {words : List (BitVec 64)}
     {s t : State} {ws : List (Ptr × Nat)} (h : StaticTable S name words s)
     (hp : PPostB S s t ws) (hy : t.syms=s.syms)
     (hw : ∀ w∈ws,InRegions s.wr (pa s w.1) w.2) : StaticTable S name words t := by
-  refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_⟩
+  refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_,by simpa only [hy] using h.aligned⟩
   · intro i hi
     rw [hy,hp.frame.readW (r := ⟨s.syms name,3904⟩)
       (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)]

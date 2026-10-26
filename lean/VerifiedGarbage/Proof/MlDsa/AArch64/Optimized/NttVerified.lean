@@ -112,7 +112,7 @@ theorem positiveNtt_pre {s : State}
     (h : (positiveNttContract (abi.withConsts nttConsts)).pre s) : positiveNttK.pre s := by
   sig_pre [positiveNttContract,positiveNttSig,abi,argRegs,nttConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,TableConstants.staticNttWords_length,stackBelow] at h
-  obtain ⟨hd,held,_,hsep,ht,hw,_,hred⟩ := h
+  obtain ⟨hd,held,_,hsep,_,ht,hw,_,hred⟩ := h
   have hrd : s.rd=[expandedRegion (s.syms "VG_MLDSA_NTT_EXPANDED")] := by
     rw [← List.take_append_drop (s.rd.length-1) s.rd,ht,hd]
     rfl
@@ -131,11 +131,12 @@ theorem positiveNtt_pre {s : State}
       staticNttWords.getD i 0)
     (hfit : (s.syms "VG_MLDSA_NTT_EXPANDED").toNat+3904≤2^64)
     (hsep : (expandedRegion (s.syms "VG_MLDSA_NTT_EXPANDED")).Disjoint (outputRegion (s.gpr .x0)))
+    (hal : (s.syms "VG_MLDSA_NTT_EXPANDED").toNat%64=0)
     (hpfit : (s.gpr .x0).toNat+1024≤2^64) (hred : Reduced s.mem (s.gpr .x0)) :
     (positiveNttContract (abi.withConsts nttConsts)).pre s := by
   sig_pre [positiveNttContract,positiveNttSig,abi,argRegs,nttConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,TableConstants.staticNttWords_length,stackBelow]
-  refine ⟨by rw [hrd]; rfl,held,hfit,?_,by rw [hrd]; rfl,hwr,hpfit,hred⟩
+  refine ⟨by rw [hrd]; rfl,held,hfit,?_,hal,by rw [hrd]; rfl,hwr,hpfit,hred⟩
   intro r hr
   rw [hwr] at hr
   have he := List.mem_singleton.mp hr
@@ -144,7 +145,7 @@ theorem positiveNtt_pre {s : State}
 
 theorem positiveNtt_sat : (positiveNttContract (abi.withConsts nttConsts)).pre nttSat := by
   exact positiveNtt_spec_pre rfl rfl nttSat_held (by decide)
-    (Region.disjoint_of_sep (by decide)) (by decide) nttSat_reduced
+    (Region.disjoint_of_sep (by decide)) (by decide) (by decide) nttSat_reduced
 
 /-- A separate positive-output contract: no canonical-output claim is used. -/
 theorem positiveNtt_verified : Verified target staticNtt

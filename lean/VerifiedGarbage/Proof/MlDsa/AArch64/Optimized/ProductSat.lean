@@ -126,7 +126,7 @@ theorem productRaw_pre {s : State}
     (h : (multiplyInverseRawContract (abi.withConsts inverseConsts)).pre s) : productRawK.pre s := by
   sig_pre [multiplyInverseRawContract,multiplyInverseRawSig,multiplyInverseSig,abi,argRegs,
     inverseConsts_eq,Abi.withConsts,Abi.constRegions,Abi.constsHeld,InverseTable.expandedWords_length,stackBelow] at h
-  obtain ⟨hd,held,_,hsep,ht,hw,hoa,hob,_,_,_,_,_,_,_,hpa,hpb⟩ := h
+  obtain ⟨hd,held,_,hsep,_,ht,hw,hoa,hob,_,_,_,_,_,_,_,hpa,hpb⟩ := h
   have hrd : s.rd=[polyRegion (s.gpr .x1),polyRegion (s.gpr .x2),tableRegion (s.syms "VG_MLDSA_INV_FOLDED")] := by
     rw [← List.take_append_drop (s.rd.length-1) s.rd,ht,hd]
     rfl
@@ -192,6 +192,7 @@ theorem productRaw_spec_pre {s : State}
     (held : ∀ i<488,s.mem.readW (s.syms "VG_MLDSA_INV_FOLDED"+BitVec.ofNat 64 (8*i)) 64=expandedWords.getD i 0)
     (hfit : (s.syms "VG_MLDSA_INV_FOLDED").toNat+3904≤2^64)
     (hsep : ∀ r∈s.wr, (⟨s.syms "VG_MLDSA_INV_FOLDED",3904⟩ : Region).Disjoint r)
+    (hal : (s.syms "VG_MLDSA_INV_FOLDED").toNat%64=0)
     (h01 : (⟨s.gpr .x0,1024⟩ : Region).Disjoint ⟨s.gpr .x1,1024⟩)
     (h02 : (⟨s.gpr .x0,1024⟩ : Region).Disjoint ⟨s.gpr .x2,1024⟩)
     (h03 : (⟨s.gpr .x0,1024⟩ : Region).Disjoint ⟨s.gpr .x3,1024⟩)
@@ -203,13 +204,14 @@ theorem productRaw_spec_pre {s : State}
     (multiplyInverseRawContract (abi.withConsts inverseConsts)).pre s := by
   sig_pre [multiplyInverseRawContract,multiplyInverseRawSig,multiplyInverseSig,abi,argRegs,
     inverseConsts_eq,Abi.withConsts,Abi.constRegions,Abi.constsHeld,InverseTable.expandedWords_length,stackBelow]
-  exact ⟨by rw [hrd]; rfl,held,hfit,hsep,by rw [hrd]; rfl,hwr,h01,h02,h03,h13,h23,hf0,hf1,hf2,hf3,ha,hb⟩
+  exact ⟨by rw [hrd]; rfl,held,hfit,hsep,hal,by rw [hrd]; rfl,hwr,h01,h02,h03,h13,h23,hf0,hf1,hf2,hf3,ha,hb⟩
 
 theorem productSatWith_pre (m : Mem)
     (held : ∀ i<488,m.readW (65536+BitVec.ofNat 64 (8*i)) 64=expandedWords.getD i 0)
     (hpos : PositiveReduced m 4096) :
     (multiplyInverseRawContract (abi.withConsts inverseConsts)).pre (productSatWith m) := by
   apply productRaw_spec_pre (s := productSatWith m) rfl rfl held (by dsimp only [productSatWith]; decide) ?_
+    (by dsimp only [productSatWith]; decide)
     (Region.disjoint_of_sep (by dsimp only [productSatWith]; decide)) (Region.disjoint_of_sep (by dsimp only [productSatWith]; decide))
     (Region.disjoint_of_sep (by dsimp only [productSatWith]; decide)) (Region.disjoint_of_sep (by dsimp only [productSatWith]; decide))
     (Region.disjoint_of_sep (by dsimp only [productSatWith]; decide)) (by dsimp only [productSatWith]; decide) (by dsimp only [productSatWith]; decide) (by dsimp only [productSatWith]; decide) (by dsimp only [productSatWith]; decide)
