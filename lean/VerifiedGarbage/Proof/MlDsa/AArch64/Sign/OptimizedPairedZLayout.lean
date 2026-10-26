@@ -26,7 +26,7 @@ theorem pairedZReady_layout {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State}
     (hdata : ∀j<2,Reduced s.mem (pairPolyPtr (pa s y) j)) (hB : 1≤B) (hB' : B≤524288) :
     Paired.PairedZReady c secret y work B s := by
   refine ⟨L.nwp hc,L.nwp hs,L.nwp hy,L.nwp hw,roots.held,roots.fit,?_,L.disj hcy,L.disj hcw,
-    L.disj hsy,L.disj hsw,L.disj hyw,hprod,hdata,hB,hB',?_,?_⟩
+    L.disj hsy,L.disj hsw,L.disj hyw,hprod,hdata,hB,hB',?_,?_,roots.aligned⟩
   · intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl

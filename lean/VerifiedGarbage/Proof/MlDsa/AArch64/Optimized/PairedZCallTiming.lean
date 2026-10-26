@@ -51,6 +51,7 @@ structure PairedZReady (c secret y work : Ptr) (bound : Nat) (s : State) : Prop 
   readable : Covers ([⟨pa s c,1024⟩,⟨pa s secret,2048⟩,⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩]++
     [⟨pa s y,2048⟩,⟨pa s work,2176⟩]) (s.rd++s.wr)
   writable : Covers [⟨pa s y,2048⟩,⟨pa s work,2176⟩] s.wr
+  tableAligned : (s.syms "VG_MLDSA_INV_PAIR").toNat%64=0
 
 theorem pairedZAt_pre {s s1 : State} {c secret y unused work : Ptr} {gamma bound : Nat}
     (h : PairedZReady c secret y work bound s)
@@ -63,7 +64,7 @@ theorem pairedZAt_pre {s s1 : State} {c secret y unused work : Ptr} {gamma bound
   sig_pre [pairedZContract,pairedZSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow]
   simp only [hy,Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r4 h1,Args.mem h1,Arg.val,hb,hb32]
-  exact ⟨True.intro,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),True.intro,True.intro,h.cY,h.cWork,h.secretY,h.secretWork,
+  exact ⟨True.intro,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),h.tableAligned,True.intro,True.intro,h.cY,h.cWork,h.secretY,h.secretWork,
     h.yWork,h.cFit,h.secretFit,h.yFit,h.workFit,h.products,h.data,h.boundLow,h.boundHigh⟩
 
 theorem pairedZArgs_ok {c secret y unused work : Ptr} {gamma bound : Nat}

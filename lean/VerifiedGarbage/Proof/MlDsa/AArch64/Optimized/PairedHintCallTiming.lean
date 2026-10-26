@@ -54,6 +54,7 @@ structure PairedHintReady (c secret y high work : Ptr) (gamma : Nat) (s : State)
   readable : Covers ([⟨pa s c,1024⟩,⟨pa s secret,2048⟩,⟨pa s high,2048⟩,⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩]++
     [⟨pa s y,2048⟩,⟨pa s work,2176⟩]) (s.rd++s.wr)
   writable : Covers [⟨pa s y,2048⟩,⟨pa s work,2176⟩] s.wr
+  tableAligned : (s.syms "VG_MLDSA_INV_PAIR").toNat%64=0
 
 theorem pairedHintAt_pre {s s1 : State} {c secret y high work : Ptr} {gamma : Nat}
     (h : PairedHintReady c secret y high work gamma s)
@@ -67,7 +68,7 @@ theorem pairedHintAt_pre {s s1 : State} {c secret y high work : Ptr} {gamma : Na
   sig_pre [pairedHintContract,pairedHintSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
     Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow]
   simp only [hy,Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.r3 h1,Args.r4 h1,Args.mem h1,Arg.val,hg,hb,hg32]
-  exact ⟨True.intro,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),True.intro,True.intro,h.cY,h.cWork,h.secretY,h.secretWork,
+  exact ⟨True.intro,h.held,h.tableFit,h.tableApart _ (by simp),h.tableApart _ (by simp),h.tableAligned,True.intro,True.intro,h.cY,h.cWork,h.secretY,h.secretWork,
     h.yHigh,h.yWork,h.highWork,h.cFit,h.secretFit,h.yFit,h.highFit,h.workFit,h.products,h.gammaOk,True.intro,h.data⟩
 
 theorem pairedHintArgs_ok {c secret y high work : Ptr} {gamma : Nat}

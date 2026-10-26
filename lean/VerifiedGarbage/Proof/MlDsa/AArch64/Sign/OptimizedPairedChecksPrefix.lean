@@ -176,7 +176,7 @@ theorem pairedR0_ready {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     · exact roots.apart_write (h.b.l.st.lay.inW hww)
   have ready := pairedLowReady_layout h.b.l.st.lay hc hs ho hl hw hwo hwl hww
     hco hcl hcw hso hsl hsw hol how hlw roots.held roots.fit hsep roots.readable
-    hprod (fun j hj => (hdata j hj).1) hgb.1 hgb.2.1 hgb.2.2
+    hprod (fun j hj => (hdata j hj).1) hgb.1 hgb.2.1 hgb.2.2 roots.aligned
   exact ready
 
 theorem optimizedR0_pair_trace {p : Params} {S : Nat} (hp : Ok3 p) {t r : Nat} (hr : r+1<p.k)

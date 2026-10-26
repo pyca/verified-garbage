@@ -46,11 +46,12 @@ theorem pairedLowReady_layout {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State
     (ht : Covers [⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩] (s.rd++s.wr))
     (hprod : pairedProductsReduced s.mem (pa s c) (pa s secret))
     (hdata : ∀j<2,Reduced s.mem (pairPolyPtr (pa s out) j))
-    (hg : g∈gamma2s) (hB : 1≤B) (hB' : B≤524288) :
+    (hg : g∈gamma2s) (hB : 1≤B) (hB' : B≤524288)
+    (hal : (s.syms "VG_MLDSA_INV_PAIR").toNat%64=0) :
     Paired.PairedLowReady c secret out low work g B s := by
   refine ⟨L.nwp hc,L.nwp hsecret,L.nwp hout,L.nwp hlow,L.nwp hwork,held,hfit,hsep,
     L.disj hc_out,L.disj hc_low,L.disj hc_work,L.disj hsecret_out,L.disj hsecret_low,L.disj hsecret_work,L.disj hout_low,L.disj hout_work,L.disj hlow_work,
-    hprod,hdata,hg,hB,hB',?_,?_⟩
+    hprod,hdata,hg,hB,hB',?_,?_,hal⟩
   · exact Covers.cons (L.cR hc) (Covers.cons (L.cR hsecret) (Covers.cons ht
       (Covers.cons (L.cR hout) (Covers.cons (L.cR hlow) (L.cR hwork)))))
   · exact Covers.cons (L.cW hwout) (Covers.cons (L.cW hwlow) (L.cW hwwork))
@@ -139,7 +140,7 @@ theorem pairedLow_rooted {p : Params} {S : Nat} {σ s : State} {i : Nat}
     · exact hroots.apart_write (hstate.1.lay.inW hwl)
     · exact hroots.apart_write (hstate.1.lay.inW hww)
   have hready := pairedLowReady_layout hstate.1.lay hc hs ho hl hw hwo hwl hww
-    hco hcl hcw hso hsl hsw hol how hlw hroots.held hroots.fit hsep hroots.readable hprod hcan hg hB hB'
+    hco hcl hcw hso hsl hsw hol how hlw hroots.held hroots.fit hsep hroots.readable hprod hcan hg hB hB' hroots.aligned
   refine WP.mono_syms (pairedLowAt_layout hstate.1.lay hc hs ho hl hw hready) fun t ⟨hp,h24,hv⟩ hy => ?_
   have hwrites : ∀w∈[(wP p i,2048),(hP i,2048),(t1P,2176)],inB (sgW p) w.1 w.2=true := by
     simpa only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq] using And.intro hwo (And.intro hwl hww)
@@ -212,7 +213,7 @@ theorem optimizedR0_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     · exact roots.apart_write (h.b.l.st.lay.inW hww)
   have ready := pairedLowReady_layout h.b.l.st.lay hc hs ho hl hw hwo hwl hww
     hco hcl hcw hso hsl hsw hol how hlw roots.held roots.fit hsep roots.readable
-    hprod (fun j hj => (hdata j hj).1) hgb.1 hgb.2.1 hgb.2.2
+    hprod (fun j hj => (hdata j hj).1) hgb.1 hgb.2.1 hgb.2.2 roots.aligned
   unfold Impl.MlDsa.AArch64.Sign.Optimized.r0Pair
   refine WP.seq (WP.mono_syms (pairedLowAt_layout h.b.l.st.lay hc hs ho hl hw ready)
     fun a ⟨hpa,h24,hpost⟩ hsa => ?_)
