@@ -98,11 +98,11 @@ def keySat : State where
 
 /-- The shared contract's precondition, from its facts. -/
 theorem KPre.spec_pre {s : State} (h : KPre s)
-    (dTsp : Region.Disjoint ⟨s.syms s5678Sym, 4096⟩ ⟨s.gpr .rsp, 8⟩) :
+    (dTsp : Region.Disjoint ⟨s.syms s5678Sym, 4096⟩ ⟨s.gpr .rsp, 8⟩) (hal : (s.syms s5678Sym).toNat % 64 = 0) :
     (Spec.Cast5.expandKeyContract (X86_64.abi.withConsts keyConsts)).pre s := by
   sig_pre [Spec.Cast5.expandKeyContract, Spec.Cast5.expandKeySig, Spec.Cast5.expandKeyPre, X86_64.abi,
     X86_64.argRegs, keyConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, s5678_length]
-  refine ⟨by rw [h.rd]; rfl, h.held, h.fitT, fun r hr => ?_, dTsp, by rw [h.rd]; rfl, h.wr, h.dkK, h.dkS,
+  refine ⟨by rw [h.rd]; rfl, h.held, h.fitT, fun r hr => ?_, dTsp, hal, by rw [h.rd]; rfl, h.wr, h.dkK, h.dkS,
     h.dKS, h.dspk, h.dspK, h.dspS, h.fk, h.fK, h.fS, h.len⟩
   rw [h.wr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -115,7 +115,7 @@ theorem key_implies : keyX.Implies (Spec.Cast5.expandKeyContract (X86_64.abi.wit
     sig_pre [Spec.Cast5.expandKeyContract, Spec.Cast5.expandKeySig, Spec.Cast5.expandKeyPre, X86_64.abi,
       X86_64.argRegs, keyConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
       s5678_length] at h
-    obtain ⟨hdr, hheld, hfit, hdw, -, htk, hw, dkK, dkS, dKS, dspk, dspK, dspS, fk, fK, fS, hl⟩ := h
+    obtain ⟨hdr, hheld, hfit, hdw, -, -, htk, hw, dkK, dkS, dKS, dspk, dspK, dspS, fk, fK, fS, hl⟩ := h
     refine ⟨?_, hw, hheld, hfit, hdw _ (by rw [hw]; exact List.mem_cons_self),
       hdw _ (by rw [hw]; exact List.mem_cons_of_mem _ List.mem_cons_self), dkK, dkS, dKS, dspk, dspK, dspS,
       fk, fK, fS, hl⟩
@@ -134,7 +134,7 @@ theorem key_implies : keyX.Implies (Spec.Cast5.expandKeyContract (X86_64.abi.wit
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), by decide, by decide, by decide, by decide⟩
-    (Region.disjoint_of_sep (by decide))⟩
+    (Region.disjoint_of_sep (by decide)) (by decide)⟩
 
 theorem expandKey_verified :
     Verified X86_64.target expandKey (Spec.Cast5.expandKeyContract (X86_64.abi.withConsts keyConsts)) :=
