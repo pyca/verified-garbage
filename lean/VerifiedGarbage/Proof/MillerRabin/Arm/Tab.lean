@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Sq
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Scan
+import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
+import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rsa.Arm.RvBase
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.Arm.FiosFastChoice
 
 /-! # The Miller–Rabin round on ARMv7: the table
 
@@ -74,9 +77,66 @@ theorem AT_step {P : MP} {σ : State} {i : Nat} (hi : i < 14) :
       simp only [upd, he, hY, hX, AT, tabEnt, ↓reduceIte, hbound]
 
 
+/-- Select one final slot from the public count, without duplicating products. -/
+private theorem tab_copy_from {P : MP} {σ s : State} {A : Nat → Nat} {L : List Nat}
+    {V : Nat → Nat} {LS : List Nat} (h : KS P σ A L V LS s) (hw : Ws s P.B P.Z P.W nArr)
+    (ha : aY ∈ L) (i j n : Nat) (lo : j ≤ i) (hi : i ≤ j+n) (bound : j+n < 14)
+    (count : s.gpr .lr = BitVec.ofNat 32 (14-i)) :
+    WP isa (tabCopyFrom j n) s fun t =>
+      KS P σ (upd A (aT0+i+2) (num s.mem P.B P.W aY)) ((aT0+i+2)::L) V LS t ∧
+      Ws t P.B P.Z P.W nArr := by
+  induction n generalizing j s with
+  | zero =>
+    have eq : j=i := by omega
+    subst j
+    exact WP.mono (h.copy_ok hw (by simp [wJs,aT0]; omega) (h.live_lt _ ha)
+      (by simp only [aT0,aY]; omega)) fun _ ht => ⟨ht.1,ht.2.1⟩
+  | succ n ih =>
+    rw [tabCopyFrom,WP.seq_iff]
+    have enc : encodable (BitVec.ofNat 32 (14-j)) = true := by
+      have cases : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5 ∨ j=6 ∨ j=7 ∨ j=8 ∨ j=9 ∨ j=10 ∨ j=11 ∨ j=12 ∨ j=13 := by omega
+      rcases cases with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide
+    refine WP.mono (VG.Proof.Bignum.Arm.FiosFast.choose_ok s (14-i) (14-j)
+      (by omega) (by omega) enc count) ?_
+    rintro u ⟨z,mem,rest⟩
+    have hu := h.of_rest rest mem
+    have hwu := hw.rest rest
+    refine WP.ite u.z rfl ?_ ?_
+    · intro yes
+      have eq : j=i := by have := of_decide_eq_true (z.symm.trans yes); omega
+      subst j
+      exact WP.mono (hu.copy_ok hwu (by simp [wJs,aT0]; omega) (hu.live_lt _ ha)
+        (by simp only [aT0,aY]; omega)) fun t ht => by simpa only [mem] using And.intro ht.1 ht.2.1
+    · intro no
+      have ne : j ≠ i := by intro eq; subst j; simp at z; simp [z] at no
+      exact WP.mono (ih hu hwu (j+1) (by omega) (by omega) (by omega)
+        (by rw [rest.gpr .lr (by simp),count])) fun t ht => by simpa only [mem] using ht
+
+private theorem St.ptabCopy {P : MP} {E : State → Prop} {A : State → Nat → Nat}
+    {L : List Nat} {V : State → Nat → Nat} {LS : List Nat} (i : Nat) (hi : i<14)
+    (ha : aY ∈ L) (hk : sK ∈ LS) (vk : ∀ σ, E σ → V σ sK=14-i) :
+    VP (St P E A L V LS) tabCopy
+      (St P E (fun σ => upd (A σ) (aT0+i+2) (A σ aY)) ((aT0+i+2)::L) V LS) := by
+  rw [tabCopy]
+  refine VP.seq (G := fun σ s => St P E A L V LS σ s ∧ s.gpr .lr=BitVec.ofNat 32 (14-i)) ?_ ?_
+  · refine VP.kv tabCopyLoad_taint (fun _ _ h => h.2.2) fun σ s ⟨e,h,hw⟩ => ?_
+    refine h.ldr hw hk (r := .lr) (by decide) fun t ht hwt u => WP.block_nil ⟨⟨e,ht,hwt⟩,?_⟩
+    rw [u.gpr,vk σ e]
+  · refine VP.taint [.lr,.r7,.r8,.r9] tabCopyFrom_taint ?_ ?_
+    · intro σ₁ σ₂ s₁ s₂ h₁ h₂ r hr
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl|rfl|rfl|rfl
+      · rw [h₁.2,h₂.2]
+      · rw [h₁.1.2.2.r7,h₂.1.2.2.r7]
+      · rw [h₁.1.2.2.r8,h₂.1.2.2.r8]
+      · rw [h₁.1.2.2.r9,h₂.1.2.2.r9]
+    · intro σ s ⟨⟨e,h,hw⟩,count⟩
+      exact WP.mono (tab_copy_from h hw ha i 0 13 (by omega) (by omega) (by decide) count)
+        fun t ⟨ht,hwt⟩ => ⟨e,by rwa [h.arrs aY ha] at ht,hwt⟩
+
 /-- One fixed, public entry index. -/
 theorem tab_step {P : MP} (i : Nat) (hi : i < 14) (fios : Bool := false) :
-    VP (TS P (14 - i)) (tabStep i (fios := fios)) (TS P (13 - i)) := by
+    VP (TS P (14 - i)) (tabStep (fios := fios)) (fun σ s => TS P (13-i) σ s ∧ s.z=decide (13-i=0)) := by
   let V := fun (_ : State) => upd (fun _ => 0) sK (14 - i)
   refine VP.mono (F := St P (In P) (AT P i) LT V [sK]) ?_
     (fun σ s h => by simpa only [TS, Nat.sub_sub_self (by omega : i ≤ 14)] using h.2)
@@ -84,13 +144,12 @@ theorem tab_step {P : MP} (i : Nat) (hi : i < 14) (fios : Bool := false) :
   simp only [tabStep, seqs]
   refine VP.seq (St.pmulY (fios := fios) (P := P) (A := AT P i) (L := LT.tail) (.inr rfl)
     (by decide) (by decide) (by decide) (by decide) (fun σ e => tv_lt e _) (fun σ e => e.x5)) ?_
-  refine VP.seq (St.pcopy (tabCopy_taint i hi)
-    (by simp [wJs, aT0]; omega) (by simp) (by simp only [aT0, aY]; omega)) ?_
+  refine VP.seq (St.ptabCopy i hi (by simp) (by simp) (fun _ _ => rfl)) ?_
   refine (St.pcnt (n := 13 - i) (by simp) (fun σ _ => by simp [V, upd]; omega) (by omega)).mono
-    (fun _ _ h => h) fun σ s ⟨h, _⟩ => ?_
-  refine ⟨by omega, h.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, ?_⟩)
+    (fun _ _ h => h) fun σ s ⟨h, z⟩ => ?_
+  refine ⟨⟨by omega, h.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, ?_⟩)
     (fun d hd => ⟨by simp only [List.mem_singleton] at hd; simp [hd], by
-      simp only [List.mem_singleton] at hd; subst d; simp only [upd_self]⟩)⟩
+      simp only [List.mem_singleton] at hd; subst d; simp only [upd_self]⟩)⟩,z⟩
   change upd (upd (AT P i σ) aY _) (aT0 + i + 2) _ j = _
   rw [show (upd (AT P i σ) aY
       (mm (cOf P σ.mem) P.w (AT P i σ aY) (AT P i σ aX))) aY = tv P σ (i + 2) from rfl]
@@ -98,20 +157,23 @@ theorem tab_step {P : MP} (i : Nat) (hi : i < 14) (fios : Bool := false) :
   congr 1
   omega
 
-/-- The fixed entry schedule builds all fourteen remaining powers. -/
-theorem tab_build {P : MP} (fios : Bool) (n i : Nat) (hi : i + n = 14) :
-    VP (TS P n) (tabBuildFrom fios i n) (TS P 0) := by
-  induction n generalizing i with
-  | zero => exact VP.block_nil (fun _ _ h => h)
-  | succ n ih =>
-    simp only [tabBuildFrom]
-    have h1 : n + 1 = 14 - i := by omega
-    have h2 : n = 13 - i := by omega
-    rw [h1]
-    exact VP.seq (tab_step i (by omega) (fios := fios)) (by
-      rw [← h2]; exact ih (i + 1) (by omega))
-
+/-- The compact loop advances the completed prefix. -/
 theorem tab_loop {P : MP} (fios : Bool := false) :
-    VP (TS P 14) (tabBuild (fios := fios)) (TS P 0) := tab_build fios 14 0 rfl
+    VP (TS P 14) (tabBuild (fios := fios)) (TS P 0) := by
+  refine VP.loop (fun n => ?_) 13
+  by_cases hn : n+1 ≤ 14
+  · have hi : 14-(n+1)<14 := by omega
+    have eq1 : 14-(14-(n+1))=n+1 := by omega
+    have eq2 : 13-(14-(n+1))=n := by omega
+    refine (tab_step (P := P) (14-(n+1)) hi (fios := fios)).mono ?_ ?_
+    · intro σ s h
+      simpa only [eq1] using h
+    · intro σ s h
+      have ts : TS P n σ s := by simpa only [eq2] using h.1
+      refine ⟨?_,fun h0 => h0 ▸ ts,fun _ => ts⟩
+      show some (!s.z) = _
+      rw [h.2,eq2]
+      by_cases h0 : n=0 <;> simp [h0] <;> omega
+  · exact VP.of_false fun _ _ h => hn h.1
 
 end VG.Proof.MillerRabin.Arm

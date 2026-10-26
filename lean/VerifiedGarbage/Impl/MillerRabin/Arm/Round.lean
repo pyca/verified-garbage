@@ -113,16 +113,19 @@ def tabInit : List (Prog isa) :=
   [.block ctx, seqs (copyClr aT0 9), .block (Rsa.Arm.Recover.clrTop aX), copy (aT0 + 1) aX, copy aY aX,
     .block tabCnt]
 
-/-- Build entry `j + 2` once, directly in its final table slot. -/
-def tabStep (j : Nat) (fios : Bool := false) : Prog isa :=
-  seqs [seqs (mulY (fios := fios) aX), copy (aT0 + j + 2) aY, .block cntNext]
+/-- Choose a final slot using the public number of entries left. -/
+def tabCopyFrom : Nat → Nat → Prog isa
+  | j, 0 => copy (aT0+j+2) aY
+  | j, n+1 => .seq (.block (FiosFast.choose (BitVec.ofNat 32 (14-j))))
+      (.ite .eq (copy (aT0+j+2) aY) (tabCopyFrom (j+1) n))
 
-/-- Public, fixed entry indices avoid shifting the completed table. -/
-def tabBuildFrom (fios : Bool) : Nat → Nat → Prog isa
-  | _, 0 => .block []
-  | j, n + 1 => .seq (tabStep j (fios := fios)) (tabBuildFrom fios (j + 1) n)
+def tabCopy : Prog isa := .seq (.block [.ldr .lr .r8 sK]) (tabCopyFrom 0 13)
 
-def tabBuild (fios : Bool := false) : Prog isa := tabBuildFrom fios 0 14
+/-- One product and one final-slot copy, keeping the arithmetic in a loop. -/
+def tabStep (fios : Bool := false) : Prog isa :=
+  seqs [seqs (mulY (fios := fios) aX), tabCopy, .block cntNext]
+
+def tabBuild (fios : Bool := false) : Prog isa := .loop (tabStep (fios := fios)) .ne
 
 /-! ## Squarings -/
 
