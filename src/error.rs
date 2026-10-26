@@ -74,6 +74,8 @@ mod tests {
             crate::blowfish_ecb::Error::InvalidKeyLength,
             crate::blowfish_ecb::Error::OutputTooSmall,
             crate::rc4::Error::InvalidKeyLength,
+            crate::triple_des_cbc::Error::IncompleteBlock,
+            crate::triple_des_cbc::Error::InvalidKeyLength,
             crate::triple_des_ecb::Error::IncompleteBlock,
             crate::triple_des_ecb::Error::InvalidKeyLength,
         );

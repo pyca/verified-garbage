@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.WinBase
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Four-bit windows on PPC64LE: selecting `T_d`

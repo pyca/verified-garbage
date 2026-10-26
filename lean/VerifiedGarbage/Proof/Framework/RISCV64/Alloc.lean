@@ -8,8 +8,9 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 Untrusted: everything here is checked by Lean. A frame `alloc n` … `free n`
 (`addi sp, sp, -n` … `addi sp, sp, n`) runs its body from `allocd n s`, with
 the stack pointer moved down by `n` and the `n` bytes below the old one a
-writable region at the head of `wr`, and ends in `freed n s₂` (`WP.alloc`),
-as `WP.frame` (`Call.lean`) does for a frame saving a register.
+writable region at the head of `wr`, and ends in `freed n s₂` (`WP.allocLe`,
+and `WP.alloc` for a frame below 2048 bytes), as `WP.frame` (`Call.lean`)
+does for a frame saving a register.
 -/
 
 @[expose] public section
@@ -26,8 +27,8 @@ def freed (n : Nat) (s : State) : State :=
 
 /-- A frame allocating `n` bytes: its body runs from `allocd n s`, and the
 `free` leads to `freed n s₂`. -/
-theorem WP.alloc {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
-    (hn : 0 < n ∧ n < 2048 ∧ n % 16 = 0) (hsp : n ≤ s.sp.toNat)
+theorem WP.allocLe {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hn : 0 < n ∧ n ≤ 4064 ∧ n % 16 = 0) (hsp : n ≤ s.sp.toNat)
     (hb : WP isa body (allocd n s) fun s₂ => Q (freed n s₂)) :
     WP isa (.frame (.alloc n) body (.free n)) s Q := by
   obtain ⟨t, s₂, he, hq⟩ := hb
@@ -41,6 +42,13 @@ theorem WP.alloc {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     unfold pop
     exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hn.1, hn.2.1, hn.2.2, hp, hw, rfl⟩) |>.trans rfl
   exact ⟨_, _, Exec.frame hpush he hpop, hq⟩
+
+/-- `WP.allocLe`, for a frame below 2048 bytes (one `addi`). -/
+theorem WP.alloc {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hn : 0 < n ∧ n < 2048 ∧ n % 16 = 0) (hsp : n ≤ s.sp.toNat)
+    (hb : WP isa body (allocd n s) fun s₂ => Q (freed n s₂)) :
+    WP isa (.frame (.alloc n) body (.free n)) s Q :=
+  WP.allocLe ⟨hn.1, by omega, hn.2.2⟩ hsp hb
 
 /-- The state after the frame, when its body keeps the permissions and the
 stack pointer: those of `s`. -/

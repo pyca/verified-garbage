@@ -103,8 +103,10 @@ Modelling choices:
   region. A frame may instead allocate a buffer on the stack (`alloc`,
   `addi sp, sp, -bytes`), released by its pop (`free`, `addi sp, sp,
   bytes`), whose `bytes` bytes become a writable region. `bytes` is a
-  multiple of 16 below 2048, which `addi` encodes: less than a page, so that
-  the allocation does not move `sp` past a guard page below the stack.
+  multiple of 16 of at most 4064: less than a page, so that the allocation
+  does not move `sp` past a guard page below the stack. Below 2048, `addi`
+  encodes it; from 2048 on, it is two `addi`s of at most 2032 bytes each
+  (see `push`).
 * A `static` the code reads (`Artifact.consts`) is at the address
   `State.syms name`, where `name` is its name, which `lla` puts in a
   register: `auipc` of the high part of the static's distance from the
@@ -211,10 +213,12 @@ inductive Instr
   /-- `ld rd, 8(sp)` then `addi sp, sp, 16`: the pop of a frame of 16 bytes
   (see `pop`) -/
   | pop (r : Reg)
-  /-- `addi sp, sp, -bytes`: the push of a frame of `bytes` bytes, which it
-  does not write (see `push`); `0 < bytes < 2048`, a multiple of 16 -/
+  /-- `addi sp, sp, -bytes` (from 2048 on, `addi sp, sp, -2032` then
+  `addi sp, sp, -(bytes - 2032)`): the push of a frame of `bytes` bytes,
+  which it does not write (see `push`); `0 < bytes ≤ 4064`, a multiple of 16 -/
   | alloc (bytes : Nat)
-  /-- `addi sp, sp, bytes`: the pop of a frame of `bytes` bytes (see `pop`) -/
+  /-- `addi sp, sp, bytes` (from 2048 on, `addi sp, sp, bytes - 2032` then
+  `addi sp, sp, 2032`): the pop of a frame of `bytes` bytes (see `pop`) -/
   | free (bytes : Nat)
   /-- `addi rd, sp, imm` with `0 ≤ imm < 2048`: a pointer `imm` bytes above
   the stack pointer -/
@@ -459,9 +463,15 @@ become a writable region, at the head of `wr`, which it does not write: like
 the 8 bytes of `push`'s frame that it does not write, they hold what memory
 held there before, below the stack pointer, where the contract says nothing
 of them (`Abi.reserved`). Faults unless `bytes` is a multiple of 16 with
-`0 < bytes < 2048` (`-bytes` is then an encodable immediate, and so is
-`bytes` for `free`), or if the frame would wrap around the address space
-(`sp < bytes`). -/
+`0 < bytes ≤ 4064`, or if the frame would wrap around the address space
+(`sp < bytes`). Below 2048, `-bytes` is an encodable immediate, and so is
+`bytes` for `free`. From 2048 on, `alloc` is two instructions, `addi sp, sp,
+-2032` then `addi sp, sp, -(bytes - 2032)` (`-2048 ≤ -(bytes - 2032)`), and
+`free` is `addi sp, sp, bytes - 2032` then `addi sp, sp, 2032`
+(`bytes - 2032 < 2048`): one step of the model, as `push` is two
+instructions. The stack pointer between them is harmless: neither writes
+memory, nothing is stored to the frame until both have run, and each moves
+`sp` by less than a page, as does the whole frame. -/
 def push : Instr → State → Option State
   | .push r, s =>
     if 16 ≤ s.sp.toNat then
@@ -469,7 +479,7 @@ def push : Instr → State → Option State
       some { s with sp := sp, mem := s.mem.write (sp + 8) 8 (s.gpr r), wr := ⟨sp, 16⟩ :: s.wr }
     else none
   | .alloc bytes, s =>
-    if 0 < bytes ∧ bytes < 2048 ∧ bytes % 16 = 0 ∧ bytes ≤ s.sp.toNat then
+    if 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧ bytes ≤ s.sp.toNat then
       let sp := s.sp - BitVec.ofNat 64 bytes
       some { s with sp := sp, wr := ⟨sp, bytes⟩ :: s.wr }
     else none
@@ -479,14 +489,15 @@ def push : Instr → State → Option State
 "Integer Register-Immediate Instructions" (`addi sp, sp, 16`). Faults unless
 the stack pointer and the writable regions are those the push left (`s₁`),
 whose head is the frame; it removes that region. `free bytes` is `addi sp,
-sp, bytes` alone, likewise for the frame of `alloc bytes`. -/
+sp, bytes` alone (or the two `addi`s of `push`'s `alloc`), likewise for the
+frame of `alloc bytes`. -/
 def pop : Instr → State → State → Option State
   | .pop r, s₁, s₂ =>
     if s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp, 16⟩ then
       some { s₂.write r (s₂.mem.read (s₂.sp + 8) 8) with sp := s₂.sp + 16, wr := s₂.wr.tail }
     else none
   | .free bytes, s₁, s₂ =>
-    if 0 < bytes ∧ bytes < 2048 ∧ bytes % 16 = 0 ∧
+    if 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧
         s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp, bytes⟩ then
       some { s₂ with sp := s₂.sp + BitVec.ofNat 64 bytes, wr := s₂.wr.tail }
     else none

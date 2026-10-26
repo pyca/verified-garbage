@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Util.CompileInductive
+import Mathlib.Util.CompileInductive
 
 /-!
 # List functions for the kernel

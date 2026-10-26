@@ -8,7 +8,7 @@
 //! `vg_pbkdf2_hmac_sha384_avx2`: the same verified code calling
 //! `vg_sha512_compress_<suffix>`, with the same contract).
 //!
-//! On ARMv7, x86 and PPC64LE, the whole derivation is the one for every
+//! On ARMv7, x86, PPC64LE and RISC-V, the whole derivation is the one for every
 //! streaming hash function, calling SHA-384's verified streaming functions, HMAC-SHA-384's
 //! `init` and `finalize` and `vg_pbkdf2_hmac_sha384_iterate` (contract
 //! `VG.Spec.Hmac.Instance.iterateContract`), the one PBKDF2 iteration for
@@ -21,7 +21,8 @@
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::pbkdf2_sha384::vg_pbkdf2_hmac_sha384;

@@ -114,6 +114,43 @@ theorem ptr_val (B : BitVec 32) (j S : Nat) :
   rw [BitVec.ofNat_add, BitVec.ofNat_mul]
   ac_rfl
 
+/-- Address arithmetic from the two public layout registers. -/
+theorem ptr_regs_ok {s : State} {B : BitVec 32} {stride : Nat} {r : Reg}
+    (r7 : r ≠ .r7) (r8 : r ≠ .r8) {j : Nat} (hj : j < 256)
+    (h7 : s.gpr .r7 = BitVec.ofNat 32 stride) (h8 : s.gpr .r8 = B)
+    {rest : List Instr} {Q : State → Prop}
+    (k : ∀ t, t.gpr r = B + BitVec.ofNat 32 (hdr + j * stride) →
+      Rest [r] s t → t.mem = s.mem → WP isa (.block rest) t Q) :
+    WP isa (.block (ptr r j ++ rest)) s Q := by
+  cases j with
+  | zero =>
+    unfold ptr
+    refine wp_dp (op2_imm (by decide)) fun t u => k t ?_ (u.rest (by simp)) u.mem
+    rw [u.gpr, dpVal, h8]
+    simp only [Nat.zero_mul, Nat.add_zero]
+  | succ j =>
+    cases j with
+    | zero =>
+      unfold ptr
+      refine wp_dp (op2_reg _ _) fun s1 u1 => ?_
+      refine wp_dp (op2_imm (by decide)) fun t u2 => k t ?_
+        ((u1.rest (by simp)).trans (u2.rest (by simp))) (u2.mem.trans u1.mem)
+      rw [u2.gpr, dpVal, u1.gpr, dpVal, h7, h8]
+      simp only [Nat.zero_add, Nat.one_mul]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm stride hdr]
+    | succ j =>
+      unfold ptr
+      refine wp_mov (op2_imm (encodable_lt hj)) fun s1 u1 => ?_
+      let s2 := s1.setReg r (s1.gpr r * s1.gpr .r7 + s1.gpr .r8)
+      have u2 : Upd s1 s2 r (s1.gpr r * s1.gpr .r7 + s1.gpr .r8) := Upd.setReg _ _ _
+      refine VG.Proof.X25519.Arm.WP.cons rfl ?_
+      refine wp_dp (op2_imm (by decide)) fun t u3 => k t ?_
+        ((u1.rest (by simp)).trans ((u2.rest (by simp)).trans (u3.rest (by simp))))
+        (u3.mem.trans (u2.mem.trans u1.mem))
+      rw [u3.gpr, dpVal, u2.gpr, u1.gpr, u1.other .r8 r8.symm,
+        u1.other .r7 r7.symm, h7, h8]
+      exact ptr_val _ _ _
+
 /-- `ptr r j`: `r` holds the address of array `j`. -/
 theorem ptr_ok {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) {r : Reg}
     (hr : r ∉ [.r7, .r8, .r9]) {j : Nat} (hj : j < 256) {rest : List Instr} {Q : State → Prop}
@@ -123,18 +160,9 @@ theorem ptr_ok {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) {r :
   have r7 : r ≠ .r7 := fun e => hr (by simp [e])
   have r8 : r ≠ .r8 := fun e => hr (by simp [e])
   have r9 : r ≠ .r9 := fun e => hr (by simp [e])
-  unfold ptr
-  refine wp_mov (op2_imm (encodable_lt hj)) fun s1 u1 => ?_
-  refine wp_mul fun s2 u2 => ?_
-  refine wp_dp (op2_reg _ _) fun s3 u3 => ?_
-  refine wp_dp (op2_imm (by decide)) fun t u4 => ?_
-  have rest : Rest [r] s t :=
-    (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest (by simp))))
-  refine k t ?_ rest (by rw [u4.mem, u3.mem, u2.mem, u1.mem]) (h.rest rest
-    (by simpa using r7.symm) (by simpa using r8.symm) (by simpa using r9.symm))
-  rw [u4.gpr, dpVal, u3.gpr, dpVal, u2.gpr, u1.gpr, u2.other .r8 r8.symm, u1.other .r8 r8.symm,
-    u1.other .r7 r7.symm, h.r7, h.r8]
-  exact ptr_val _ _ _
+  refine ptr_regs_ok r7 r8 hj h.r7 h.r8 fun t p rest mem => ?_
+  exact k t p rest mem (h.rest rest (by simpa using r7.symm)
+    (by simpa using r8.symm) (by simpa using r9.symm))
 
 /-! ## Frames -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Proof.Framework.X86.TaintErase
+import Mathlib.Util.CompileInductive
 
 /-! # Erasing the fixed square before constructing its product instructions -/
 

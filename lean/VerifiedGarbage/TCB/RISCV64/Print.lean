@@ -14,7 +14,8 @@ assembler may expand to several (`li` of a large immediate), except `call`
 and `ret` (see `Isa.lean`), the branches on zero (`beqz`, `bnez`), which
 are one instruction each, and `lla` (see `Isa.lean`), whose operand is the
 static's symbol (`SymPart.bare`), which the assembler expands to `auipc` and
-`addi` with their relocations.
+`addi` with their relocations. A frame of 2048 bytes or more (`alloc`,
+`free`) is printed as its two `addi`s (see `push` in `Isa.lean`).
 -/
 
 @[expose] public section
@@ -61,8 +62,12 @@ def Instr.asm : Instr → List String
   | .store wd t n off => [s!"{wd.store} {t.name}, {off}({n.name})"]
   | .push r => ["addi sp, sp, -16", s!"sd {r.name}, 8(sp)"]
   | .pop r => [s!"ld {r.name}, 8(sp)", "addi sp, sp, 16"]
-  | .alloc bytes => [s!"addi sp, sp, -{bytes}"]
-  | .free bytes => [s!"addi sp, sp, {bytes}"]
+  | .alloc bytes =>
+    if bytes < 2048 then [s!"addi sp, sp, -{bytes}"]
+    else ["addi sp, sp, -2032", s!"addi sp, sp, -{bytes - 2032}"]
+  | .free bytes =>
+    if bytes < 2048 then [s!"addi sp, sp, {bytes}"]
+    else [s!"addi sp, sp, {bytes - 2032}", "addi sp, sp, 2032"]
   | .addSp d imm => [s!"addi {d.name}, sp, {imm}"]
   | .lla d name => [s!"lla {d.name}, {name}"]
 

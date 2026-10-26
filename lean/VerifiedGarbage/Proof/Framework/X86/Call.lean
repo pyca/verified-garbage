@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 
 /-!
 # Calls and frames (x86, 32-bit)
