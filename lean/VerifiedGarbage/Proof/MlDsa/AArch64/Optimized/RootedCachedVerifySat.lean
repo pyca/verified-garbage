@@ -78,8 +78,8 @@ private theorem roots (p : Params) (hp : Ok3 p) : StaticRoots 16 (verifySat p) :
     rw [satMem_high p _ (by bv_omega) (by bv_omega)]
     exact src.inverse.held j hj
   have h := Message.OptimizedVerify.verifySatWith_roots p hp (satMem p) heldF heldI
-  refine ⟨⟨h.forward.held,h.forward.fit,?_,h.forward.writable,h.forward.stack⟩,
-    ⟨h.inverse.held,h.inverse.fit,?_,h.inverse.writable,h.inverse.stack⟩⟩
+  refine ⟨⟨h.forward.held,h.forward.fit,?_,h.forward.writable,h.forward.stack,h.forward.aligned⟩,
+    ⟨h.inverse.held,h.inverse.fit,?_,h.inverse.writable,h.inverse.stack,h.inverse.aligned⟩⟩
   · apply Covers.one
     exact ⟨⟨1048576,3904⟩,by simp [verifySat],Region.contains_self _ _⟩
   · apply Covers.one
