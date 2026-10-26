@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ValidateCore
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Domain-check results control native seed retry or acceptance -/
 

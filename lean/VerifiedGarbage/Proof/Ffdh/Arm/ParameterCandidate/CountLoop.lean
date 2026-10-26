@@ -9,6 +9,8 @@ public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Rsa.RecoverMath
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
 
 /-! The native loop stops at the odd part and records the complete number
 of factors of two; the termination measure is the number being halved. -/

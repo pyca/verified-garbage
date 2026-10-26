@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuildCT
 public import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrameCTState
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Public subgroup-generation data excludes unused frame contents -/
 

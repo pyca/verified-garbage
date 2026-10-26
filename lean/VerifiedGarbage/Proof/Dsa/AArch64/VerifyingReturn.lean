@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Both verifying branches return the packed byte specification -/
 

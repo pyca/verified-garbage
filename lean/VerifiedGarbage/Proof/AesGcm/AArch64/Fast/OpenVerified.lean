@@ -1,5 +1,5 @@
 module
-public import Mathlib.Data.List.Dedup
+import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast

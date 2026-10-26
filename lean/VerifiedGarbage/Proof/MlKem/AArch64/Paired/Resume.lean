@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.SplitIfs
 
 /-! # Bounded fourth/fifth-block continuation and exact failure cleanup -/
 @[expose] public section

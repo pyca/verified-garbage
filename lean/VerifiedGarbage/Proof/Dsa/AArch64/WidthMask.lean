@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Equality masks for supported DSA modulus widths -/

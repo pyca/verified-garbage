@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
 public import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Block
+import Batteries.Tactic.Alias
 
 /-! # `inverse` on ARMv7: the differences and halvings modulo `m`
 

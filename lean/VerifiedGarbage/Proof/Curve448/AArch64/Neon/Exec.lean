@@ -8,8 +8,8 @@ public import VerifiedGarbage.Proof.X448.AArch64.Mem
 public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

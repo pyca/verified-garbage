@@ -4,7 +4,7 @@ public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
 import VerifiedGarbage.Proof.Dsa.Layout
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

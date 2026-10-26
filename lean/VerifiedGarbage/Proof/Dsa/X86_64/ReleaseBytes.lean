@@ -3,7 +3,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem

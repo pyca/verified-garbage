@@ -5,10 +5,10 @@ public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem

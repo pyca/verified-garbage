@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
+import Batteries.Logic
 
 /-!
 # Montgomery arithmetic on x86-64: eight and nine words by columns, for any modulus

@@ -8,6 +8,10 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Data.Nat.Init
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
 
 /-!
 # `vg_rsa_crt_values` on x86-64: `main`

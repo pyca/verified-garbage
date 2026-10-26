@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! The private schedule uses the retained context and never branches on x. -/
 

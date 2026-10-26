@@ -12,10 +12,10 @@ import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 import Mathlib.Data.Finset.Attr
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit

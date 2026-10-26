@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 import Mathlib.Tactic.Abel
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # The comb's tables represent `[k 1024^j]B`, `combG` represents `[G]B`, and `combStart` `[G']B`

@@ -6,10 +6,10 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
 /-! # Exact values and memory effects of native argument transfers -/

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateDepth
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryDepth
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySafety
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Correct
+import Mathlib.Data.Nat.Basic
 
 /-! # Functional correctness for the existing hash and primality backends -/
 

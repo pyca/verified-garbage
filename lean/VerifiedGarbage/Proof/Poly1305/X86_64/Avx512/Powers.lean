@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Load
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
 

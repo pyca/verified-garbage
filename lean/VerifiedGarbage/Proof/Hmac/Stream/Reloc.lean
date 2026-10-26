@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Hmac.Generic
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.OmegaLit
+import Mathlib.Tactic.Conv
 
 /-!
 # Streaming states that represent whole blocks, moved

@@ -1,7 +1,7 @@
 module
-public import Mathlib.Data.Nat.Prime.Defs
+import Mathlib.Data.Nat.Prime.Defs
 public import VerifiedGarbage.Impl.Ecdsa.X86_64
-public import Mathlib.Tactic.Tauto
+import Mathlib.Tactic.Tauto
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 

@@ -14,6 +14,9 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorInput
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
 
 /-! # Load the selected generator candidate from the persistent frame and evaluate it -/
 

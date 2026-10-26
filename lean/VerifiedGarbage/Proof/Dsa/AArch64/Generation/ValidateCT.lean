@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Timing of final parameter validation and its success/retry decision -/
 

@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Algebra.NeZero
 
 /-!
 # An FFDH parameter candidate on AArch64: the shape's flag

@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Dsa.X86.Installed
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Dsa.X86.InputBuffer
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Caller inputs and component addresses after argument installation -/
 

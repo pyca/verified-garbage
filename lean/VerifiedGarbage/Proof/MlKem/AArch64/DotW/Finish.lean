@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM's fused dot product of polynomials stored with 16 bits, on AArch64: the terms and the finish

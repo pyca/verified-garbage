@@ -1,6 +1,7 @@
 module
 
 public meta import Lean.Elab.Tactic.Basic
+public import Lean.Meta.Tactic.Simp.BuiltinSimprocs
 
 /-!
 # `plain_simp_names`: the simp lemmas a macro writes, by their constants

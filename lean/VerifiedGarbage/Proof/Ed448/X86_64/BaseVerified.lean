@@ -14,7 +14,7 @@ import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain

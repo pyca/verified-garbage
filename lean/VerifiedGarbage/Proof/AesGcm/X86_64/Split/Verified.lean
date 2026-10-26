@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.End
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchSplit
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
-public import Mathlib.Data.List.Dedup
+import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortRun
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP

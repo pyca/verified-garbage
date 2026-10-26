@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.X448.X86.Decode
 import VerifiedGarbage.Proof.X448.X86.Fill
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToDual
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): the loops

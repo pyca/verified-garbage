@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Seed.PPC64LE.Setup
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Key expansion on PPC64LE

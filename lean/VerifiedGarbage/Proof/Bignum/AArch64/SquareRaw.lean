@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.SquareCross
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.SplitIfs
 
 /-! The exact unreduced square, with unchanged header and input. -/
 

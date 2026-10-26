@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Aes.Blocks
 public import VerifiedGarbage.Proof.Aes.X86.Encrypt
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # One group of counter-mode blocks on x86 (32-bit)

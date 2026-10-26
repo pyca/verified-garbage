@@ -23,6 +23,8 @@ import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha512.X86.Lit
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.Order.RelClasses
 
 @[expose] public section
 

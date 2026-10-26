@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Algebra.NeZero
+import Mathlib.Data.Int.ModEq
 
 /-! # Subgroup outcomes determine the public phase status and entropy cursor -/
 

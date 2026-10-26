@@ -6,6 +6,9 @@ import VerifiedGarbage.Proof.Bignum.X86.ReverseEncoding
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Importing one recovery input into its zeroed workspace array
 

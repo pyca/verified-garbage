@@ -5,8 +5,8 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 import VerifiedGarbage.Proof.Dsa.X86_64.Significant
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont

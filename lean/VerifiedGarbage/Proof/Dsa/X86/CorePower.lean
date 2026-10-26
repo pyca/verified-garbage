@@ -10,6 +10,9 @@ import VerifiedGarbage.Proof.Dsa.X86.PowCall
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.Layout
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Complete modular exponentiation call, including byte I/O -/
 

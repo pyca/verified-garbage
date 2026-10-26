@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.AArch64
-public import Mathlib.Tactic.ClearExcept
+import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points

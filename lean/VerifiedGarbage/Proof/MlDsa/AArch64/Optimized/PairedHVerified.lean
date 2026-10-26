@@ -26,6 +26,10 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Order.Basic
+import Mathlib.Data.Fintype.Fin
+import Mathlib.Tactic.FinCases
 
 /-! ## From `PairedHAllFields.lean` -/
 

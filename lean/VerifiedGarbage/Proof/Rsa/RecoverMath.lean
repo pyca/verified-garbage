@@ -5,9 +5,9 @@ public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Data.Nat.Basic
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Basic
 import Mathlib.Data.Prod.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
 public import Mathlib.Logic.Function.Iterate

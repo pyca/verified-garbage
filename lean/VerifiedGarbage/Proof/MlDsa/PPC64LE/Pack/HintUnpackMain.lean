@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 import VerifiedGarbage.Proof.MlKem.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on PPC64LE: `vg_mldsa_hint_bit_unpack`, correct

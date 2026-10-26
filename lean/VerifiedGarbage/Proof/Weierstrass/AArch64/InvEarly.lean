@@ -1,7 +1,7 @@
 module
-public import Mathlib.Tactic.Linarith
-public import Mathlib.Tactic.Positivity
-public import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Divstep.Alg
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.Divstep.Iter
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
 
 @[expose] public section
 

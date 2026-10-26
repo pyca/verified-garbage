@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Aes
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES-CFB8 on PPC64LE: the contracts, and the loop

@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
 meta import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import Mathlib.Tactic.DefEqTransformations
+import Mathlib.Tactic.DefEqTransformations
 meta import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

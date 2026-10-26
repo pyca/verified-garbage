@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchBodyCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInvariant
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
 
 /-! # Public retry condition and strictly advancing generator tape cursor -/
 

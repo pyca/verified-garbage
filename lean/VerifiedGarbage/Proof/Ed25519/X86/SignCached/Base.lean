@@ -17,7 +17,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Framework.KernelRfl

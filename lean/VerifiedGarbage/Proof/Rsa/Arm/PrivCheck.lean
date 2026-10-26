@@ -1,8 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcCall
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
 
 import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckFrame

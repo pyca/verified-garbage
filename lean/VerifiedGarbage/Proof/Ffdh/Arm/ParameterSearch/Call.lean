@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallGeometry
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Tape
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import Mathlib.Basic.IsEmpty.Defs
 
 /-! The native search calls its selected, fully verified candidate and restores its live state. -/
 

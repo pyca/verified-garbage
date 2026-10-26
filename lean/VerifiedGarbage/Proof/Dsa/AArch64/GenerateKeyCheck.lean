@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Key generation's call of the domain check -/
 

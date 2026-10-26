@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
 public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Cmac.Stream

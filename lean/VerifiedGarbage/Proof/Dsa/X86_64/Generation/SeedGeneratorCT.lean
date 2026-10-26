@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorPlanCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FinishDomainCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGenerator
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
+import Mathlib.Basic.IsEmpty.Defs
 
 /-! # Generator selection supplies public inputs to the final validation gate -/
 

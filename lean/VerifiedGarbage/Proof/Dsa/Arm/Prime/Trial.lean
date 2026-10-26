@@ -11,6 +11,7 @@ import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import Mathlib.Tactic.Attr.Core
 
 /-! # A candidate on ARMv7: trial division by the table (`trialLoop_ok`)
 

@@ -15,6 +15,9 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # Ed448's comb on AArch64: `16 A + B` by calls

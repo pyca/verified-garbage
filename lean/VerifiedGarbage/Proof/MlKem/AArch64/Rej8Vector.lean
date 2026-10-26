@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Table
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Invariant
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import Mathlib.Tactic.SplitIfs
 
 /-! # Vector iteration under sampler memory and permission hypotheses -/
 

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.X448.X86.Bits
 public import VerifiedGarbage.Proof.X448.X86.Contract
 import VerifiedGarbage.Proof.X448.X86.Frame
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 

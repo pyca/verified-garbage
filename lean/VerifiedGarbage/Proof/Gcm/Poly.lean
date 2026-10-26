@@ -2,11 +2,11 @@ module
 
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RingTheory.AdjoinRoot
-public import Mathlib.Tactic.ComputeDegree
+import Mathlib.Tactic.ComputeDegree
 public import VerifiedGarbage.Proof.Gcm.Spec
-public import Mathlib.Tactic.LinearCombination
-public import Mathlib.Tactic.Ring.RingNF
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!

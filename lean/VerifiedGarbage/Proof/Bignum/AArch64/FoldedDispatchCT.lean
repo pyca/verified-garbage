@@ -22,6 +22,9 @@ meta import Mathlib.Tactic.Push
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToDual
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.FoldedPublic

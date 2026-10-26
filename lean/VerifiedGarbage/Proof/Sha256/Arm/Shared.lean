@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Digest
 import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Proof.Sha256.Digest
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Sha256.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PhaseState
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PhasePieces
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Util.CompileInductive
 
 /-! Compose the native policy setup for q and p. -/
 

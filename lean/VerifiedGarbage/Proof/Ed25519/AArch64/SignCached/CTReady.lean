@@ -12,6 +12,8 @@ import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
 public import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Data.Nat.Basic
+public import Mathlib.Order.RelClasses
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.CTCommon`. -/
 

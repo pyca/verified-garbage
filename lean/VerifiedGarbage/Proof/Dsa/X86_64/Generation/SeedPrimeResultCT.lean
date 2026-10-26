@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorPlanCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
+import Mathlib.Basic.IsEmpty.Defs
+import Mathlib.Data.Int.ModEq
 
 /-! # Public prime-search outcomes select the next generator phase -/
 

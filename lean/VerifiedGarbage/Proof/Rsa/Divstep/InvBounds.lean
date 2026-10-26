@@ -6,9 +6,9 @@ import VerifiedGarbage.Proof.Divstep.Alg32
 import VerifiedGarbage.Proof.Divstep.Tc32
 import Mathlib.Algebra.Order.Ring.Int
 import Mathlib.Algebra.Order.Ring.Abs
-public import Mathlib.Algebra.Group.Int.Defs
-public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+import Mathlib.Algebra.Group.Int.Defs
+import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
 
 /-! # Batched inversion bounds for an unreduced, odd-adjusted RSA operand -/

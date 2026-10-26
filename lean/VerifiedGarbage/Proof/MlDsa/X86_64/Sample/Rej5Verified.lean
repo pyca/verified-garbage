@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
 public import VerifiedGarbage.Proof.Sha3.X86_64.Round

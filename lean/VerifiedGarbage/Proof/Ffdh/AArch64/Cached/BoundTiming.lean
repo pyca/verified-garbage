@@ -13,6 +13,8 @@ meta import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Generate
 meta import VerifiedGarbage.Impl.Bignum.AArch64.Core
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.ToDual
 
 /-! Choosing q or p−1 and loading the bound exposes no private-scalar data. -/
 @[expose] public section

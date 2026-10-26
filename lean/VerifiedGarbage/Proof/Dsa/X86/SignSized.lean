@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Dsa.X86.SignBodySpec
 import VerifiedGarbage.Proof.Dsa.X86.Failure
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # The complete public-size signer, including invalid-domain output clearing -/
 

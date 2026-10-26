@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Util.CompileInductive
 
 /-! Copy each public controller argument into the candidate's AAPCS stack frame. -/
 

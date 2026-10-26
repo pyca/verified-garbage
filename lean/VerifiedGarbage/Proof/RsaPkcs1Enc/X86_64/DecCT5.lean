@@ -10,6 +10,7 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import Mathlib.Tactic.ToDual
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time

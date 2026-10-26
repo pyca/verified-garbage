@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Divstep.NegInput
 public import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Divstep.Packed
 import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 @[expose] public section
 

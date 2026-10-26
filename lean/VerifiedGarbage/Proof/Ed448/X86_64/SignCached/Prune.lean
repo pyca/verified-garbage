@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Ed448.X86_64.Words57
 import VerifiedGarbage.Proof.Ed448.Prune
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
 

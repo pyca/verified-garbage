@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.X448.BaseTable
-public import Mathlib.Algebra.Module.NatInt
+import Mathlib.Algebra.Module.NatInt
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # The fixed-base comb's digits and partial sums

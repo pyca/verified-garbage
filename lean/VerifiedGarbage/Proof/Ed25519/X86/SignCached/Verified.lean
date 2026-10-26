@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CT
 public import VerifiedGarbage.Spec.Ed25519.CachedSign
 public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 meta import VerifiedGarbage.Proof.Framework.Contract

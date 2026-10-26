@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.SignReleaseCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingPublic
 public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
+import Mathlib.Data.Nat.Basic
 
 /-! # Verified DSA signature checking under the merged immutable-key precondition -/
 

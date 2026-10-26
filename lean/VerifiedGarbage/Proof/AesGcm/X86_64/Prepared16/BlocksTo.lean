@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Gcm.Prepared16
-public import Mathlib.Data.List.Dedup
+import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece

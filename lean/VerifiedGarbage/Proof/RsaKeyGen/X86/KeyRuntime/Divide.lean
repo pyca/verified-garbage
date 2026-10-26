@@ -3,6 +3,14 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Div
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+import Mathlib.Data.Nat.Init
+import Mathlib.Logic.Function.Basic
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Util.CompileInductive
 
 /-! # The runtime division kernel is shared with RSA key checking -/
 

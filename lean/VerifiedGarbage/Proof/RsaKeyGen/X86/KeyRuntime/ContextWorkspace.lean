@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Establish the three runtime widths from the retained cdecl arguments -/
 

@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Rc2.Select32
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

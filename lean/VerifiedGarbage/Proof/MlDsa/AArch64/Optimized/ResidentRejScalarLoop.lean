@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

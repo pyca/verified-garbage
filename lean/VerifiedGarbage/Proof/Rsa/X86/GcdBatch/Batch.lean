@@ -12,14 +12,14 @@ public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
-public import Mathlib.Algebra.Group.Int.Defs
-public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+import Mathlib.Algebra.Group.Int.Defs
+import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Divstep.Steps
-public import Mathlib.Data.BitVec
-public import Mathlib.Data.Int.ModEq
-public import Mathlib.Tactic.Linarith
+import Mathlib.Data.BitVec
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 

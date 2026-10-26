@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
 public import VerifiedGarbage.Proof.Mont.Words
 
 import VerifiedGarbage.Proof.MillerRabin.X86.Caller
+import Mathlib.Tactic.Set
 
 /-! # Key argument copying retains all eighteen cdecl inputs -/
 

@@ -6,7 +6,7 @@ public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-public import Mathlib.Util.CompileInductive
+import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.X25519.X86_64.Step

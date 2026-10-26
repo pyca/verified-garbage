@@ -26,7 +26,7 @@ meta import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 meta import VerifiedGarbage.Impl.Ecdsa.P224.X86
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.CT
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 public import VerifiedGarbage.Impl.Ecdsa.P224.X86
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressContract

@@ -1,5 +1,5 @@
 module
-public import Mathlib.Logic.Function.Basic
+import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
 public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Hash

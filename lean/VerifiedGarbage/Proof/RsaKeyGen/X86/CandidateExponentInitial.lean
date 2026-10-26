@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponent
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentTimingInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSave
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateExponent
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32

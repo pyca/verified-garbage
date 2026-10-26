@@ -1,5 +1,5 @@
 module
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Pieces
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DPart

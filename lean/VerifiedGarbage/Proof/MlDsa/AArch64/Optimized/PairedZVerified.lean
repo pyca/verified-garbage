@@ -22,6 +22,10 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Basic.IsEmpty.Defs
+import Mathlib.Data.Fintype.Fin
+import Mathlib.Tactic.FinCases
 
 /-! ## From `PairedZContractTiming.lean` -/
 

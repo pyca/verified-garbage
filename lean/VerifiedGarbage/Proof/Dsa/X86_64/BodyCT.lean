@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
 
 /-! # Constant time through validation, computation and the ABI return -/
 

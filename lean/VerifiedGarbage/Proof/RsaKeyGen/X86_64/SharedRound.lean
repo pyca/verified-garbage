@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMid
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Algebra.GroupWithZero.Nat
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # RSA's witness policy around the callable shared round -/
 

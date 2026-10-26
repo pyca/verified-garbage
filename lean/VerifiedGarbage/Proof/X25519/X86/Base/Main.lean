@@ -18,6 +18,9 @@ import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-!
 # X25519 of the base point on x86: correctness

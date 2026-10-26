@@ -6,6 +6,7 @@ import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import Mathlib.Basic.IsEmpty.Defs
 
 @[expose] public section
 

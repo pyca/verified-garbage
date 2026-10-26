@@ -15,7 +15,7 @@ import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Data.Nat.Totient
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-! Bounded byte output for public signed digits. -/
 

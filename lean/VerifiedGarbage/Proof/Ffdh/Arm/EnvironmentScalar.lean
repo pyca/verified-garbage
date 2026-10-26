@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.SampleCut
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
+import Mathlib.Util.CompileInductive
 
 /-! A public sampling bound drives the existing fixed byte-cutting instructions. -/
 

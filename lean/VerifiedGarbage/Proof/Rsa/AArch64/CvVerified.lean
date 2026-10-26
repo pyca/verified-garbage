@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
 # `vg_rsa_crt_values` on AArch64: verified against the shared contract

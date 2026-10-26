@@ -9,6 +9,11 @@ public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
 import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the theory

@@ -93,7 +93,7 @@ theorem phaseRest_ok {s : State} {B : Addr} {Z mb : Nat} (hs : Scr s B Z) (h0 : 
   refine WP.keep [.x4, .x5, .x6, .x8, .x9] ?_ (by decide) (by decide) (by decide +kernel)
   have e1 : (BitVec.ofNat 64 mb + BitVec.ofNat 64 7) >>> 3 = BitVec.ofNat 64 (mLen mb) := by
     rw [ofNat_add_ofNat, shr_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-    simp only [mLen, Nat.reducePow]
+    all_goals simp only [mLen, Nat.reducePow]
   have e2 : ((BitVec.ofNat 64 mb + BitVec.ofNat 64 63) >>> 6) <<< 6 = BitVec.ofNat 64 (64 * mW mb) := by
     rw [ofNat_add_ofNat, shr_ofNat, Nat.mod_eq_of_lt (by omega_arith), shl_ofNat (by simp only [Nat.reducePow]; omega_arith)]
     congr 1; simp only [mW, Nat.reducePow]; omega_arith

@@ -1,5 +1,5 @@
 module
-public import Mathlib.Data.Fintype.Card
+import Mathlib.Data.Fintype.Card
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecMac
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncPre
 

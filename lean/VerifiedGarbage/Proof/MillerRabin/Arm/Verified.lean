@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.MillerRabin.Arm.Run
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 

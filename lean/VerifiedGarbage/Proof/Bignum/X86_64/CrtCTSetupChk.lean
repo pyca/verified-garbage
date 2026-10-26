@@ -17,6 +17,7 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 meta import VerifiedGarbage.Proof.Bignum.CrtKey
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Basic.IsEmpty.Defs
 
 /-!
 # RSA with the CRT on x86-64: constant time of the checks' pieces

@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Recovery subtraction without a borrow -/
 

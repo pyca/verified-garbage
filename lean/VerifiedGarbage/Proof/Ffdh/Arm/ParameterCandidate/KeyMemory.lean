@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.ToDual
 
 /-! Stack-local writes preserve the exact same scratch bytes through the
 native RSA and shared Montgomery views. -/

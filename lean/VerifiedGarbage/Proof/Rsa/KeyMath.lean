@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PowLit
-public import Mathlib.Data.Nat.Init
-public import Mathlib.Order.Defs.Prop
+import Mathlib.Data.Nat.Init
+import Mathlib.Order.Defs.Prop
 import Mathlib.Tactic.Conv
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega

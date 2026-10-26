@@ -1,5 +1,5 @@
 module
-public import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed8
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit

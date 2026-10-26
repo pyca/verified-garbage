@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Dsa.X86.KeyPointerStep
 import VerifiedGarbage.Proof.Dsa.X86.HeaderFrame
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Mont.X86.Instr
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Spec.Weierstrass

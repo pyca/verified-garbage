@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundState
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRound
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # FFDH parameter generation on x86-64: reusable shared primality round -/
 

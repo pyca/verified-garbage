@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-public import Mathlib.Data.Fintype.Fin
-public import Mathlib.Tactic.FinCases
+import Mathlib.Data.Fintype.Fin
+import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv

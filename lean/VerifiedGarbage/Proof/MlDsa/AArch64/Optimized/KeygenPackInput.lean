@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

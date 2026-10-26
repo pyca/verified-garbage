@@ -10,6 +10,12 @@ import VerifiedGarbage.Proof.Rsa.X86.RvBatchTimeCheck
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Rsa.X86.RvGcdSet
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.FrameBase
+import Mathlib.Data.Nat.Init
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Public selection and constant-time execution of recovery GCD -/
 

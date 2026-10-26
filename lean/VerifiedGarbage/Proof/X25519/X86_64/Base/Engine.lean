@@ -36,6 +36,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-! Clamped scalar bits, fixed-base multiplication, and Montgomery encoding. -/
 

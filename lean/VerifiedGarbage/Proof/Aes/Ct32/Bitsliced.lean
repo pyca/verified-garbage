@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Bitsliced AES on 32-bit words: the layout and the round transformations

@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Sha1.Spec
 public import VerifiedGarbage.Impl.Sha1.AArch64.Sha2
+import Mathlib.Tactic.SplitIfs
 
 /-! SHA-1's specification as computed by the AArch64 SHA instructions. -/
 

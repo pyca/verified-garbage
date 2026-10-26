@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
 import Mathlib.Tactic.Abel
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 
 /-! The sparse loop's group interpretation. -/
 

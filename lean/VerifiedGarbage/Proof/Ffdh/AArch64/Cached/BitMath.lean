@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Comb
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.PowLit
+import Mathlib.Tactic.SplitIfs
 
 /-! Width-guard and byte-extraction arithmetic for the public comb indices. -/
 @[expose] public section

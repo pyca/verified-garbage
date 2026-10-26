@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignArguments
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignLocalArgument
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackWord
+import Mathlib.Tactic.ToDual
 
 /-! # Install all twenty cdecl arguments for checked RSA signing -/
 

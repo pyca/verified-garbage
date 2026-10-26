@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
-public import Mathlib.Tactic.TermCongr
+import Mathlib.Tactic.TermCongr
 import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset

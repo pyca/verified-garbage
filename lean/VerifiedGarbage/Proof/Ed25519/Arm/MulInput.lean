@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.SplitIfs
 
 /-! The scalar input remains unchanged throughout table construction
 and descending accumulation. -/

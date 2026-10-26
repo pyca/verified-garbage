@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import Mathlib.Tactic.ToDual
 
 /-! # The nested ABI frames and scratch allocation realize the search geometry -/
 

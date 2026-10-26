@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
 import VerifiedGarbage.Proof.Ed25519.Arm.PointMulLoop
 import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
+import Mathlib.Tactic.SplitIfs
 
 /-! Full scalar multiplication agrees with the reviewed specification. -/
 

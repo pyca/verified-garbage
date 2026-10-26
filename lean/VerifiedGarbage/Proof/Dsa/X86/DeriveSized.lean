@@ -16,6 +16,9 @@ import VerifiedGarbage.Proof.Dsa.X86.DeriveSpec
 public import VerifiedGarbage.Proof.Dsa.X86.Checks
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeOperands
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
 
 /-! # Shape checking followed by derivation or full output clearing -/
 

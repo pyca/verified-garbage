@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import Mathlib.Algebra.Field.Basic
-public import Mathlib.Algebra.GroupWithZero.Basic
-public import Mathlib.Algebra.Group.Defs
-public import Mathlib.Algebra.Group.Basic
+import Mathlib.Algebra.Field.Basic
+import Mathlib.Algebra.GroupWithZero.Basic
+import Mathlib.Algebra.Group.Defs
+import Mathlib.Algebra.Group.Basic
 public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.FieldSimp
 public import Mathlib.Tactic.Ring

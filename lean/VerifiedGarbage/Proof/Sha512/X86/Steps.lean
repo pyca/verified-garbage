@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Sha512.X86.Sse
 public import VerifiedGarbage.Proof.Sha512.X86.Rounds
 import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-512 on x86 (32-bit) with SSE2: the rounds

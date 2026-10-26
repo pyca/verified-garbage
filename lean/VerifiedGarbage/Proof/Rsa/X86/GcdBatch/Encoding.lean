@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words32
-public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import Mathlib.Algebra.Order.Ring.Int
 import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
+import Mathlib.Data.BitVec
+import Mathlib.Data.Int.ModEq
 
 /-! # Low words and sign of a bounded signed GCD value -/
 

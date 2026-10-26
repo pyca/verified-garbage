@@ -40,9 +40,9 @@ meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.TCB.Axioms
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.ToAdditive
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
 public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums

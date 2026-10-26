@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 
 /-! Range-check a copied candidate against a possibly zero-padded modulus. -/
 @[expose] public section

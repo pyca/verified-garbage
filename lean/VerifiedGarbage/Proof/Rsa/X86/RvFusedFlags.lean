@@ -4,8 +4,8 @@ import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
-public import Mathlib.Tactic.Set
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Spec.Weierstrass

@@ -9,10 +9,10 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import Mathlib.Tactic.Push
 import Mathlib.Data.Nat.Basic
-public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-public import Mathlib.Tactic.Basic
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 
 /-!

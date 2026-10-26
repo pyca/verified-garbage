@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorPlan
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 import Mathlib.Tactic.Finiteness.Attr
 public import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
+public import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.OmegaLit

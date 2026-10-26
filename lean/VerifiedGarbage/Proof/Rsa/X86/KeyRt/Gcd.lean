@@ -6,6 +6,15 @@ import VerifiedGarbage.Proof.Rsa.X86.DivCount
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Data.Nat.Init
+import Mathlib.Logic.Function.Basic
+import Mathlib.Order.Defs.Prop
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.ToAdditive
+import Mathlib.Util.CompileInductive
 
 /-! # Binary GCD without inverse coefficients
 

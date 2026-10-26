@@ -12,6 +12,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import Mathlib.Algebra.Order.Field.Basic
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Ed448: the reference computations agree with the specification

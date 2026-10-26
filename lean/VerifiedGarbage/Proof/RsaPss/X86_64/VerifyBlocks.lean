@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import Mathlib.Tactic.Conv
 
 /-!
 # RSASSA-PSS verification on x86-64: the blocks

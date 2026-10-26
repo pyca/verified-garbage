@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
 import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Rsa.RecoverMath
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 

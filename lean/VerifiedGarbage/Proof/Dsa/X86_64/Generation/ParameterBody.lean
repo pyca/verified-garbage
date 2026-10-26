@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAttempt
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
+import Mathlib.Data.Int.ModEq
 
 /-! # Each native seed iteration advances the seed and witness tapes exactly -/
 

@@ -24,6 +24,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import Mathlib.Basic.IsEmpty.Defs
 
 /-!
 # `vg_rsa_crt_values` on AArch64: constant time, the pieces of `main`

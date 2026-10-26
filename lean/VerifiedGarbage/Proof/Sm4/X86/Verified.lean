@@ -16,8 +16,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.StackScratch.X86
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.Sm4.X86.Modes

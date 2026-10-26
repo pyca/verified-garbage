@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Mont.X86.ArgWs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Util.CompileInductive
 
 /-! # `vg_rsa_mont_mul_at` on x86 with SSE2: correctness
 

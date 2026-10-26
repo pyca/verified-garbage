@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecPrfLoop
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecTaint
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import Mathlib.Data.Nat.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: `CL` and `AM`

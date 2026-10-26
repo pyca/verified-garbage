@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafChoose
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
+import Mathlib.Tactic.Tauto
 
 /-! An odd digit advances by the window width; all skipped digits are zero. -/
 

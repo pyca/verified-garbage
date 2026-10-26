@@ -3,10 +3,10 @@ module
 import VerifiedGarbage.Proof.AesGcm.Arm.Frame
 public import VerifiedGarbage.Spec.Ocb.Contract
 public import Batteries.Logic
-public import Mathlib.Data.List.Induction
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
-public import Mathlib.Util.CompileInductive
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.AesGcm.Arm
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Contract

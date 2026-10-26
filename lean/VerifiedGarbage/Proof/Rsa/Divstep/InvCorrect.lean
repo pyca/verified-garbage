@@ -2,13 +2,13 @@ module
 public import VerifiedGarbage.Proof.Rsa.Divstep.InvCorrectDef
 
 public import VerifiedGarbage.Proof.Divstep.Alg32
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Rsa.Divstep.InvBounds
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Ring
-public import Mathlib.Algebra.Group.Int.Defs
-public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+import Mathlib.Algebra.Group.Int.Defs
+import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
 
 /-! # Correcting the sign and the two-bit-per-batch coefficient scale -/

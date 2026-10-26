@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 import VerifiedGarbage.Proof.MillerRabin.X86.Scalar
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # A positive public counter is decremented and determines the loop branch -/
 

@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Loading a pair of operands while retaining Montgomery constants -/
 

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Ffdh.X86.Cand.Halve
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
 public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
 import VerifiedGarbage.Proof.Ffdh.X86.Cand.Divides
+import Mathlib.Tactic.ToDual
 
 /-!
 # The FFDH candidate on i686: p's checks and tests

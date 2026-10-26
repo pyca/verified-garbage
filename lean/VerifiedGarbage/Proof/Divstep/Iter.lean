@@ -3,6 +3,14 @@ module
 public import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Divstep.Steps
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Algebra.Order.Ring.Rat
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Tactic.NormNum.Ineq
+import Mathlib.Tactic.Positivity.Core
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Positivity
 
 /-!
 # The divstep's bound

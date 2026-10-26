@@ -3,8 +3,8 @@ module
 import VerifiedGarbage.Proof.AesXts.Arm.Unit.CT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import Batteries.Logic
-public import Mathlib.Tactic.Conv
-public import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit

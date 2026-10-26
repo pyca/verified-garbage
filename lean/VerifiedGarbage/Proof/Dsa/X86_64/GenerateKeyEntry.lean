@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
-public import Mathlib.Tactic.Attr.Core
-public import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Basic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # Key generation's entry: the arguments saved in its frame -/

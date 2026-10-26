@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArguments
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToDual
 
 /-! # Candidate arithmetic accepts the persistent frame's actual words -/
 

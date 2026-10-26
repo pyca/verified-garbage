@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtImportQResidue
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import Mathlib.Data.Int.ModEq
 
 /-! # Preserve coefficient preconditions through workspace selection and residue import -/
 

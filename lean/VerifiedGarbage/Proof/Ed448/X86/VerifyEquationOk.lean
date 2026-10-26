@@ -3,18 +3,18 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
 import VerifiedGarbage.Proof.Ed448.X86.VerifyVerified
 import VerifiedGarbage.Proof.Ed448.Facts
-public import Mathlib.Algebra.Order.Field.Basic
-public import Mathlib.Data.Nat.Totient
-public import Mathlib.Data.Sym.Sym2.Init
-public import Mathlib.Tactic.ContinuousFunctionalCalculus
-public import Mathlib.Tactic.NormNum.GCD
-public import Mathlib.Tactic.NormNum.Prime
-public import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
 import VerifiedGarbage.Proof.Ed448.X86.VerifyCT
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
-public import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.Finite.Basic
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

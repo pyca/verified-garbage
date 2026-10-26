@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
-public import Mathlib.Data.List.Dedup
+import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context

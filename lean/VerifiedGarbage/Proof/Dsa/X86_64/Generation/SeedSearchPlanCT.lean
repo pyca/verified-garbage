@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedCTState
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchCTState
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Algebra.GroupWithZero.Nat
+public import Mathlib.Algebra.NeZero
+import Mathlib.Data.Int.ModEq
 
 /-! # Public seed inputs instantiate the bounded prime-search plan -/
 

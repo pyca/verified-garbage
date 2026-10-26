@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityCTState
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityCallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PTestSmallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PTestFullCT
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Public width rejection and full-width primality form one native p test -/
 

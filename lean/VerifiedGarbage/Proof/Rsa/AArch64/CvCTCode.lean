@@ -24,6 +24,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
 # `vg_rsa_crt_values` on AArch64: constant time but for `n`

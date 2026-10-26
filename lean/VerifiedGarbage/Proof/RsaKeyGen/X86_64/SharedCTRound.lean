@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMid
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
+import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Basic.IsEmpty.Defs
 
 /-! # Constant time of RSA's witness policy with the callable shared round -/
 

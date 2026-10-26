@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarLoop
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

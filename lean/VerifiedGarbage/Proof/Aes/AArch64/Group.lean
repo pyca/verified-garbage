@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import Mathlib.Tactic.SplitIfs
+import Mathlib.Data.List.Induction
 
 @[expose] public section
 

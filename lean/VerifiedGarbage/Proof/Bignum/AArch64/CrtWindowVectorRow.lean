@@ -9,6 +9,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.ToAdditive
 
 /-! A complete table-row selection, with fixed-address loads and SIMD masks. -/
 

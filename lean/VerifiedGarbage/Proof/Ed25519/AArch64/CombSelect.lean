@@ -10,7 +10,7 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import Mathlib.Algebra.Order.Field.Basic
-public import Mathlib.Tactic.ToAdditive
+import Mathlib.Tactic.ToAdditive
 
 /-!
 # The comb's tables

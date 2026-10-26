@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyOps
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
-public import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate

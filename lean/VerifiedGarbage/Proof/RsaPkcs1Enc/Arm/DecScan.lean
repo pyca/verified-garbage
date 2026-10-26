@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the scan of `EM`

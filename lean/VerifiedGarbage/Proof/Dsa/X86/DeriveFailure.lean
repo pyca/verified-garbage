@@ -3,9 +3,12 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86.Generate
 import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
 import VerifiedGarbage.Proof.Mont.X86.Instr
-public import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 public import VerifiedGarbage.Spec.Rsa.Contract
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Invalid shapes clear the complete derived key -/
 

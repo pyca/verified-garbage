@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncVerified
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
+import Mathlib.Data.Nat.Basic
 
 /-!
 # RSAES-OAEP on AArch64: the instances emitted

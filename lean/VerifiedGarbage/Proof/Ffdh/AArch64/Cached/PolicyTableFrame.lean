@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTable
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.SplitIfs
 
 /-! Writing the scalar width cannot change the read-only vetted-group table. -/
 @[expose] public section

@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.LocalCorrect
 import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Affine
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Correct
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Local
 public import VerifiedGarbage.Proof.Ed448.Ref

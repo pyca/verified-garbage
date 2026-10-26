@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import Mathlib.Tactic.Ring
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: saving registers, the accumulator, the constants

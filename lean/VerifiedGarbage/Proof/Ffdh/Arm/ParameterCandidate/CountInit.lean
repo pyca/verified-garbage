@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SaveWord
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Basic.IsEmpty.Defs
+import Mathlib.Data.Int.ModEq
 
 /-! Initialize the native decomposition with N−1 and a zero halving count. -/
 

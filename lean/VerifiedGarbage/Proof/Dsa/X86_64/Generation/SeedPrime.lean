@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # The full p search returns to the persistent seed-search state -/
 

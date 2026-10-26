@@ -23,7 +23,7 @@ public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 public import VerifiedGarbage.Spec.Ed448.Contract
-public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 public import VerifiedGarbage.Proof.Ed448.Formulas
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env

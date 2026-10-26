@@ -9,6 +9,7 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import Mathlib.Tactic.ToAdditive
 
 /-! Four independent load/BIT pairs, sharing one row-comparison mask. -/
 

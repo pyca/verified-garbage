@@ -6,6 +6,9 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
 import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
 
 /-! ## `InvCoeff` -/
 

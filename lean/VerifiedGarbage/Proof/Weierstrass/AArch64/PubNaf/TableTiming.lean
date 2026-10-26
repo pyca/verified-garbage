@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.CoZTable
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Timing of the public NAF's table

@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.TCB.AArch64.Simd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import Mathlib.Tactic.Linarith
 
 @[expose] public section
 

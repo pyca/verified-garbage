@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRelease
-public import Mathlib.Logic.Function.Basic
+import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCmpArgs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverZero

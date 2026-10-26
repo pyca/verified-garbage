@@ -8,6 +8,7 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTFront
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Tactic.ToDual
 
 /-!
 # A candidate on x86-64: constant time

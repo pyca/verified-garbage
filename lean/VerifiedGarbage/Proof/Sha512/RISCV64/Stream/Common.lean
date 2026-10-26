@@ -19,6 +19,7 @@ public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.RISCV64.Isa
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
+import Mathlib.Data.List.Nodup
 
 /-!
 # Streaming SHA-512 on RISC-V: common lemmas

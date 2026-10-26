@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningInput
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Bignum.Octets
+public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # The signing ABI and its shared-contract precondition -/
 

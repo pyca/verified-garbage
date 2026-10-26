@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.AbiCorrect
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallLayout
 import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Inline
+import Mathlib.Algebra.Group.Nat.Defs
 
 /-! # Complete internal candidate invocation, including its nested stack use -/
 

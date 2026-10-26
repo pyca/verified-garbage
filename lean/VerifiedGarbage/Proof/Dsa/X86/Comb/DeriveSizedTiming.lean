@@ -9,6 +9,9 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.DeriveBodyTiming
 import VerifiedGarbage.Proof.Dsa.X86.Comb.CanonicalFrame
 import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
 
 /-! # Derivation branches only on the public domain shape -/
 

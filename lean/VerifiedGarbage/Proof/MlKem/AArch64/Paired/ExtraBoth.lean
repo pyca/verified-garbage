@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Keep
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Extra
 import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.SplitIfs
 
 /-! # Resume both public matrix streams and combine their success flags -/
 @[expose] public section

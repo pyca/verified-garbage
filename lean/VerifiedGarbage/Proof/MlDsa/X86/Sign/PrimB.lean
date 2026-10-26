@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.Conv
 
 /-!
 # ML-DSA signing on x86 (32-bit): calls of the samplers

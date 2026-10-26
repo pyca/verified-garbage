@@ -1,7 +1,7 @@
 module
 
-public import Mathlib.Tactic.FinCases
-public import Mathlib.Data.Fintype.Fin
+import Mathlib.Tactic.FinCases
+import Mathlib.Data.Fintype.Fin
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame

@@ -9,6 +9,8 @@ public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Stack
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.Basic
 
 /-! # DSA parameter generation on ARMv7: the three geometries
 

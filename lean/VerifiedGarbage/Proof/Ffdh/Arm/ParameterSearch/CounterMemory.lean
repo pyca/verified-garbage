@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
+import Mathlib.Util.CompileInductive
 
 /-! Load, decrement and store the entire native u64 attempt budget. -/
 

@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import Mathlib.Data.Nat.Basic
+import Mathlib.Order.RelClasses
 
 /-! Call the existing RSA/shared compact Miller–Rabin implementation with
 its exact selected name and body, and its existing 56-byte stack bound. -/

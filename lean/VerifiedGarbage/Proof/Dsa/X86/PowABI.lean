@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.ToDual
 
 /-! # Resources for the shared IA-32 modular-exponentiation contract -/
 
