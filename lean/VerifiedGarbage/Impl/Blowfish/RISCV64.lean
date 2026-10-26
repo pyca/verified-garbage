@@ -9,18 +9,18 @@ public import VerifiedGarbage.Impl.Blowfish.Table
 
 The algorithm of the PPC64LE implementation (`Impl/Blowfish/PPC64LE.lean`):
 one block at a time in general-purpose registers, and an S-box lookup reads
-every entry of the S-box's four byte planes, a row of four entries of each
-plane (a word, `lwu`) at a time. A row's mask is all ones in the byte lane of
-the index's entry if the row holds it (`(q - 4k) >> 2` is zero, for the
-index `q`), else zero, made without a comparison: `(v - 1) >> 63`,
+every entry of the S-box's four byte planes, a row of eight entries of each
+plane (a doubleword, `ld`) at a time. A row's mask is all ones in the byte
+lane of the index's entry if the row holds it (`(q - 8k) >> 3` is zero, for
+the index `q`), else zero, made without a comparison: `(v - 1) >> 63`,
 arithmetically, is all ones exactly when `v < 2 ^ 63` is zero. The masked
-words are ORed into one accumulator, plane `b`'s rotated left by `8b`. The
-accumulator then holds byte `b` of the entry in lane `L + b` (mod 4), for
-the index's lane `L`, and rotating it right by `8L`, by two rotations
-selected by masks of `L`'s bits, gives the entry. Every address and branch
-is a public counter or pointer; the index is only ever an operand of the
-masks' arithmetic. There are no rotate instructions: a word rotation is two
-word shifts and an XOR.
+doublewords are ORed into one accumulator, plane `b`'s rotated left by `8b`.
+The accumulator then holds byte `b` of the entry in lane `L + b` (mod 8), for
+the index's lane `L`, and rotating it right by `8L`, by three rotations
+selected by masks of `L`'s bits, gives the entry in its low word. Every
+address and branch is a public counter or pointer; the index is only ever
+an operand of the masks' arithmetic. There are no rotate instructions: a
+rotation is two shifts and an XOR.
 
 The model faults on misaligned accesses, and the contracts state no
 alignment for the schedule, so the code keeps it in a frame of 4176 bytes
@@ -30,10 +30,11 @@ a byte at a time, and key expansion builds it there and copies it out. Both
 zero the frame before returning. The blocks and the key are accessed a
 byte at a time.
 
-The halves, F and the accumulator are 32-bit values in the low words of
-their registers; their high words are whatever the arithmetic leaves, which
-nothing reads: word shifts read the low word, word stores store it, and the
-index is taken from it.
+The halves and F are 32-bit values in the low words of their registers;
+their high words are whatever the arithmetic leaves, which nothing reads:
+word shifts read the low word, word stores store it, and the index is taken
+from it. The accumulator is a doubleword until the lookup's end, when its
+low word is the entry.
 
 Registers: the frame (the schedule) at `a7` (`sch`), the halves in `a3` (xL)
 and `a4` (xR), F in `a5`, the P-array pointer in `a6`; during a lookup, the
@@ -80,42 +81,43 @@ the top of the doubleword and back. -/
 def index (j : Nat) : List Instr :=
   [.shift .sll .d qReg xL (32 + 8 * j), .shift .srl .d qReg qReg 56]
 
-/-- `x` rotated right by `a` (as a word) if bit `c` of `q` is set:
+/-- `x` rotated right by `a` (as a doubleword) if bit `c` of `q` is set:
 `x := x XOR ((rotr x a XOR x) AND m)`, the mask `m` all ones if the bit is
 set (bit `c` shifted to the top, then arithmetically down). -/
 def condRot (x : Reg) (c a : Nat) : List Instr :=
-  [.shift .srl .w tmp x a, .shift .sll .w mReg x (32 - a), .logic .xor tmp tmp mReg,
+  [.shift .srl .d tmp x a, .shift .sll .d mReg x (64 - a), .logic .xor tmp tmp mReg,
    .logic .xor tmp tmp x, .shift .sll .d mReg qReg (63 - c), .shift .sra .d mReg mReg 63,
    .logic .and tmp tmp mReg, .logic .xor x x tmp]
 
-/-- The lane mask `0xFF <<< 8L` for the index's lane `L`, the accumulator
-and the row pointer, at S-box `j` (`sch + 1024 j`, in two steps). -/
+/-- The lane mask `0xFF <<< 8L` for the index's lane `L` (of a doubleword),
+the accumulator and the row pointer, at S-box `j` (`sch + 1024 j`, in two
+steps). -/
 def lookupStart (j : Nat) : List Instr :=
-  [.li lane 255] ++ condRot lane 0 24 ++ condRot lane 1 16 ++
+  [.li lane 255] ++ condRot lane 0 56 ++ condRot lane 1 48 ++ condRot lane 2 32 ++
     [.li acc 0, .addi rowPtr sch (512 * j : Nat), .addi rowPtr rowPtr (512 * j : Nat)]
 
-/-- Plane `b`'s word of the row, masked, into the accumulator, rotated left
-by `8b`. -/
+/-- Plane `b`'s doubleword of the row, masked, into the accumulator, rotated
+left by `8b`. -/
 def plane (b : Nat) : List Instr :=
-  if b = 0 then [.load .w tmp rowPtr 0, .logic .and tmp tmp mReg, .logic .or acc acc tmp]
-  else [.load .w tmp rowPtr (256 * b), .logic .and tmp tmp mReg,
-    .shift .srl .w tmp2 tmp (32 - 8 * b), .shift .sll .w tmp tmp (8 * b), .logic .xor tmp tmp tmp2,
+  if b = 0 then [.load .d tmp rowPtr 0, .logic .and tmp tmp mReg, .logic .or acc acc tmp]
+  else [.load .d tmp rowPtr (256 * b), .logic .and tmp tmp mReg,
+    .shift .srl .d tmp2 tmp (64 - 8 * b), .shift .sll .d tmp tmp (8 * b), .logic .xor tmp tmp tmp2,
     .logic .or acc acc tmp]
 
-/-- The row's mask: all ones in the index's lane if `q >> 2` is zero. -/
+/-- The row's mask: all ones in the index's lane if `q >> 3` is zero. -/
 def rowMask : List Instr :=
-  [.shift .srl .d mReg qReg 2, .addi mReg mReg (-1), .shift .sra .d mReg mReg 63,
-   .logic .and mReg mReg lane, .addi qReg qReg (-4)]
+  [.shift .srl .d mReg qReg 3, .addi mReg mReg (-1), .shift .sra .d mReg mReg 63,
+   .logic .and mReg mReg lane, .addi qReg qReg (-8)]
 
-/-- One row of S-box `j`: the mask, the four planes, and the next row;
-`tmp` is zero after the last. -/
+/-- One row (eight entries) of S-box `j`: the mask, the four planes, and the
+next row; `tmp` is zero after the last. -/
 def row (j : Nat) : List Instr :=
   rowMask ++ plane 0 ++ plane 1 ++ plane 2 ++ plane 3 ++
-    [.addi rowPtr rowPtr 4, .sub tmp rowPtr sch, .addi tmp tmp (-(512 * j : Nat)),
+    [.addi rowPtr rowPtr 8, .sub tmp rowPtr sch, .addi tmp tmp (-(512 * j : Nat)),
      .addi tmp tmp (-(512 * j + 256 : Nat))]
 
 /-- The accumulator rotated right by `8L`. -/
-def lookupEnd : List Instr := condRot acc 0 8 ++ condRot acc 1 16
+def lookupEnd : List Instr := condRot acc 0 8 ++ condRot acc 1 16 ++ condRot acc 2 32
 
 /-- S-box `j` of xL's byte `3 - j`, into the accumulator's low word. -/
 def lookup (j : Nat) : Prog isa :=

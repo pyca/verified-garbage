@@ -159,11 +159,18 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
   refine WP.mono (loadBlock_run a a1 (by rw [ak.2.1, ak.2.2]; exact blkR)) fun u₁ ⟨l₁, h₁, k₁, m₁⟩ => ?_
   have K₁ : Keep [.a7, .a1, .a3, .a4, .t4] s u₁ := ak.trans k₁
   have E : LookEnv u₁ := by
-    refine ⟨fun o ho ho' => ?_, ?_⟩
+    refine ⟨fun o ho ho' => ?_, fun o ho ho' => ?_, ?_, ?_⟩
     · rw [k₁.gpr (by decide), a7, K₁.2.1, K₁.2.2, Offset.add_add]
       obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 4 (by decide) (by cases up <;> simp only [dirCore, schOff, bufOff, bufSlot] <;> omega)
         (by simp only [schOff, bufOff, bufSlot]; omega)
       exact ⟨r, List.mem_append_right _ hr, hc⟩
+    · rw [k₁.gpr (by decide), a7, K₁.2.1, K₁.2.2, Offset.add_add]
+      obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 8 (by decide) (by cases up <;> simp only [dirCore, schOff, bufOff, bufSlot] <;> omega)
+        (by simp only [schOff, bufOff, bufSlot]; omega)
+      exact ⟨r, List.mem_append_right _ hr, hc⟩
+    · rw [k₁.gpr (by decide), a7, BitVec.toNat_add, BitVec.toNat_ofNat]
+      simp only [schOff, bufOff, bufSlot]
+      omega
     · rw [k₁.gpr (by decide), a7, BitVec.toNat_add, BitVec.toNat_ofNat]
       simp only [schOff, bufOff, bufSlot]
       omega

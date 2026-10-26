@@ -109,7 +109,7 @@ theorem expandKey_wp {s : State} (h : KeyPre s) :
     (by brun; all_goals rfl) (by decide) rfl) fun t₃ ⟨⟨b₃, c₃, m₃⟩, k₃⟩ => ?_
   have wr₃ : t₃.wr = (inner s).wr := by rw [k₃.2.2, I₂.keep.2.2, wr₁]
   have EE : EncEnv (frameBase s) t₃ :=
-    ⟨by rw [k₃.gpr (by decide), g₂ _ (by decide), (k₁.gpr (by decide))]; exact a7, by omega,
+    ⟨by rw [k₃.gpr (by decide), g₂ _ (by decide), (k₁.gpr (by decide))]; exact a7, by omega, by omega,
       by rw [wr₃]; exact W⟩
   have I₃ : EncInv (bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) (frameBase s) t₃ 0 t₃ :=
     ⟨by rw [m₃, hK₂, ksIter_zero], by rw [b₃, c₃, ksIter_zero]; rfl, Keep.refl _ _, Frame.refl _ _⟩

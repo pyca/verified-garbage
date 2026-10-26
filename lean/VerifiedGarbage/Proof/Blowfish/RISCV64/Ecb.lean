@@ -157,7 +157,9 @@ def loopRegs : List Reg := [.a1, .a2, .a3, .a4, .a5, .a6, .t0, .t1, .t2, .t3, .t
 structure LoopEnv (S D : Addr) (n : Nat) (s₀ : State) : Prop where
   a7 : s₀.gpr .a7 = S
   al : S.toNat % 4 = 0
+  al8 : S.toNat % 8 = 0
   key : ∀ o, o % 4 = 0 → o + 4 ≤ 4168 → InRegions (s₀.rd ++ s₀.wr) (S + BitVec.ofNat 64 o) 4
+  key8 : ∀ o, o % 8 = 0 → o + 8 ≤ 4168 → InRegions (s₀.rd ++ s₀.wr) (S + BitVec.ofNat 64 o) 8
   data : (⟨D, 8 * n⟩ : Region) ∈ s₀.wr
   keyData : (⟨S, 4168⟩ : Region).Disjoint ⟨D, 8 * n⟩
   fit : D.toNat + 8 * n ≤ 2 ^ 64
@@ -190,9 +192,12 @@ theorem ecb_step {S D : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEnv 
       simp only [List.mem_singleton] at hr; subst hr; exact L.keyData
   have Ku₁ : Keep loopRegs s₀ u₁ := (I.keep.trans k₁).mono (by decide)
   have E : LookEnv u₁ := by
-    refine ⟨fun o ha ho => ?_, by rw [Ku₁.gpr (by decide), L.a7]; exact L.al⟩
-    rw [Ku₁.gpr (by decide), L.a7, Ku₁.2.1, Ku₁.2.2]
-    exact L.key o ha ho
+    refine ⟨fun o ha ho => ?_, fun o ha ho => ?_, by rw [Ku₁.gpr (by decide), L.a7]; exact L.al,
+      by rw [Ku₁.gpr (by decide), L.a7]; exact L.al8⟩
+    · rw [Ku₁.gpr (by decide), L.a7, Ku₁.2.1, Ku₁.2.2]
+      exact L.key o ha ho
+    · rw [Ku₁.gpr (by decide), L.a7, Ku₁.2.1, Ku₁.2.2]
+      exact L.key8 o ha ho
   apply WP.seq
   refine WP.mono (cipher_run E up) fun u₂ ⟨c₂, k₂, m₂⟩ => ?_
   have Ku₂ : Keep loopRegs s₀ u₂ := (Ku₁.trans k₂).mono (by decide)
@@ -332,8 +337,10 @@ theorem ecb_wp (up : Bool) {s : State} (h : EcbPre s) :
   have hK : scheduleAt c.mem (frameBase s) = scheduleAt s.mem (s.gpr .a0) := scheduleAt_copy cc
   -- The blocks.
   have L : LoopEnv (frameBase s) D n c := by
-    refine ⟨c7, by omega, fun o ha ho => ?_, ?_, ?_, fit⟩
+    refine ⟨c7, by omega, by omega, fun o ha ho => ?_, fun o ha ho => ?_, ?_, ?_, fit⟩
     · obtain ⟨r, hr, hc⟩ := frame_in s (o := o) (n := 4) (by omega) (by omega)
+      exact ⟨r, List.mem_append_right _ (by rw [cwr]; exact hr), hc⟩
+    · obtain ⟨r, hr, hc⟩ := frame_in s (o := o) (n := 8) (by omega) (by omega)
       exact ⟨r, List.mem_append_right _ (by rw [cwr]; exact hr), hc⟩
     · rw [cwr, inner_wr, h.wr]; simp [D, n]
     · rw [hF]; exact h.stackData.sub_left (Region.sub_prefix (by decide))
