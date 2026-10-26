@@ -19,6 +19,11 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -D warnings
+  # Test builds without the line tables Cargo.toml's test profile keeps: CI
+  # needs none (panics keep their locations, and coverage does not use debug
+  # information), and they cost a third of the crate's test build for riscv64
+  # (a few percent on x86-64).
+  CARGO_PROFILE_TEST_DEBUG: "0"
 
 jobs:
   # Plans the Lean build: when it needs shards (see ci/lean_shards.py), it
