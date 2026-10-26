@@ -404,9 +404,38 @@ def cfgGate : List String → String
   | [c] => s!"#[cfg({c})]\n"
   | cs => s!"#[cfg(all({", ".intercalate cs}))]\n"
 
+/-- Assembler directives that open, and close, the text of every function
+of the target named `t`: the first and last lines of its template, so that
+they apply to all of it and to nothing after it.
+
+On RISC-V (`riscv64`), `.option push` and `.option arch, +m`, then
+`.option pop`, enable the M extension for the function alone. The model's
+multiplies, `mul` and `mulhu`, are M's (`TCB/RISCV64/Isa.lean`), and the
+target compiles them only where Rust enables it (`target_feature = "m"`,
+`TCB/RISCV64/Target.lean`'s `rustCfg`), but rustc does not always tell the
+assembler: in a release build with several codegen units, LLVM assembles
+some units' module-level assembly (where naked functions go) without M,
+rejecting `mul` as needing `Zmmul`. The RISC-V Assembly Programmer's Manual
+(riscv-non-isa/riscv-asm-manual), ".option": `arch` enables "specific ISA
+extensions for the following code regions, but without changing the arch
+attribute and `EF_RISCV_RVC` in the ELF flags", and `push`/`pop` "Push/pop
+current options to/from the options stack", the manual's recommended way to
+bound an `.option arch, +` ("We recommend `.option arch, +` and
+`.option arch, -` are used with `.option push`/`.option pop`"). So the
+options after the function are what they were before it. The directives
+emit no bytes and change no instruction: the assembler accepts the `mul` and
+`mulhu` that the model describes, the only instructions of M the printer
+emits. (They are keyed on the target here, rather than being a field of its
+`Printer`, so that adding them did not change what every proof imports.) -/
+def funcOptions : String → List String × List String
+  | "riscv64" => ([".option push", ".option arch, +m"], [".option pop"])
+  | _ => ([], [])
+
 /-- One artifact as a Rust naked function; `moduleOf` gives the module of
-each function it calls. The printer's `funcAlign` comes last, after the
-return (`Printer.function`) and any directives that follow it. -/
+each function it calls. The printer's `funcAlign` comes after the return
+(`Printer.function`) and any directives that follow it, and only the
+target's closing `funcOptions` after that, which close what its opening
+ones, the first lines, opened. -/
 def function (a : Artifact) (moduleOf : String → String) : String :=
   functionOf a (a.target.printer.function a.code) moduleOf
 where
@@ -414,8 +443,9 @@ where
   (`a.target.printer.function a.code`). -/
   functionOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
   let P := a.target.printer
-  let body := (a.features.flatMap P.enableFeature).map .text ++ lines ++
-    (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text
+  let (start, stop) := funcOptions a.target.name
+  let body := start.map .text ++ (a.features.flatMap P.enableFeature).map .text ++ lines ++
+    (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text ++ stop.map .text
   let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
   let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
   let gate := cfgGate (a.features.filterMap P.featureCfg)

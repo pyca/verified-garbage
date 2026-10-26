@@ -21,7 +21,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r"addi t0, a5, 2047
+        r".option push
+.option arch, +m
+addi t0, a5, 2047
 addi t0, t0, 8
 andi t0, t0, -8
 sd ra, 16(t0)
@@ -185,7 +187,8 @@ ld s3, 40(t0)
 ld s4, 48(t0)
 ld s5, 56(t0)
 ld s6, 64(t0)
-ret",
+ret
+.option pop",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }

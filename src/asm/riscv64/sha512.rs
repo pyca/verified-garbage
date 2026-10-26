@@ -19,7 +19,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
     core::arch::naked_asm!(
-        r"addi a3, a3, 7
+        r".option push
+.option arch, +m
+addi a3, a3, 7
 andi a3, a3, -8
 sd s0, 128(a3)
 beqz a2, 20f
@@ -5903,7 +5905,8 @@ j 21f
 20:
 21:
 ld s0, 128(a3)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -5918,7 +5921,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r"lui t0, 834490
+        r".option push
+.option arch, +m
+lui t0, 834490
 addiw t0, t0, -674
 slli t0, t0, 32
 lui t1, 790618
@@ -6086,7 +6091,8 @@ srli t2, t1, 16
 sb t2, 62(a0)
 srli t2, t1, 24
 sb t2, 63(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -6101,7 +6107,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r"lui t0, 434334
+        r".option push
+.option arch, +m
+lui t0, 434334
 addiw t0, t0, 1640
 slli t0, t0, 32
 lui t1, 998349
@@ -6269,7 +6277,8 @@ srli t2, t1, 16
 sb t2, 62(a0)
 srli t2, t1, 24
 sb t2, 63(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -6284,7 +6293,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r"lui t0, 574419
+        r".option push
+.option arch, +m
+lui t0, 574419
 addiw t0, t0, 1992
 slli t0, t0, 32
 lui t1, 103749
@@ -6452,7 +6463,8 @@ srli t2, t1, 16
 sb t2, 62(a0)
 srli t2, t1, 24
 sb t2, 63(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -6467,7 +6479,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        r"lui t0, 140050
+        r".option push
+.option arch, +m
+lui t0, 140050
 addiw t0, t0, 405
 slli t0, t0, 32
 lui t1, 1032895
@@ -6635,7 +6649,8 @@ srli t2, t1, 16
 sb t2, 62(a0)
 srli t2, t1, 24
 sb t2, 63(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -6654,7 +6669,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -208
+        r".option push
+.option arch, +m
+addi sp, sp, -208
 addi t0, sp, 0
 sd ra, 144(t0)
 sd s1, 152(t0)
@@ -6766,7 +6783,8 @@ ld s5, 184(s2)
 ld s6, 192(s2)
 ld s2, 160(s2)
 addi sp, sp, 208
-ret",
+ret
+.option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -6788,7 +6806,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -208
+        r".option push
+.option arch, +m
+addi sp, sp, -208
 addi t0, sp, 0
 sd ra, 144(t0)
 sd s1, 152(t0)
@@ -7185,7 +7205,8 @@ ld s5, 184(s2)
 ld s6, 192(s2)
 ld s2, 160(s2)
 addi sp, sp, 208
-ret",
+ret
+.option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -7207,7 +7228,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -208
+        r".option push
+.option arch, +m
+addi sp, sp, -208
 addi t0, sp, 0
 sd ra, 144(t0)
 sd s1, 152(t0)
@@ -7528,7 +7551,8 @@ ld s5, 184(s2)
 ld s6, 192(s2)
 ld s2, 160(s2)
 addi sp, sp, 208
-ret",
+ret
+.option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -7550,7 +7574,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -208
+        r".option push
+.option arch, +m
+addi sp, sp, -208
 addi t0, sp, 0
 sd ra, 144(t0)
 sd s1, 152(t0)
@@ -7795,7 +7821,8 @@ ld s5, 184(s2)
 ld s6, 192(s2)
 ld s2, 160(s2)
 addi sp, sp, 208
-ret",
+ret
+.option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -7817,7 +7844,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -208
+        r".option push
+.option arch, +m
+addi sp, sp, -208
 addi t0, sp, 0
 sd ra, 144(t0)
 sd s1, 152(t0)
@@ -8042,7 +8071,8 @@ ld s5, 184(s2)
 ld s6, 192(s2)
 ld s2, 160(s2)
 addi sp, sp, 208
-ret",
+ret
+.option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }

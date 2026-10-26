@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""rustfmt and Clippy for every target of the Rust jobs, from one x86-64
+"""rustfmt, Clippy and a release build for every target of the Rust jobs, from one x86-64
 Linux runner, in the lint image (`rust-lint` in ci.yml, ci/runner.Dockerfile).
 `LINT` is the JSON list of the targets to lint, ci/rust_matrix.toml's `lint`
 entries that ci/rust_arches.py keeps. Clippy only checks, so a target needs
@@ -10,6 +10,13 @@ C cross compiler and OpenSSL the image has for the build scripts of AWS-LC
 and OpenSSL's bindings, one target at a time: in one run, Cargo would enable
 the features of a dependency for one target (aws-lc-sys's `all-bindings`, on
 x86-64 and AArch64) on every target it builds.
+
+The library is also built in release for every target, in one run of Cargo:
+Clippy and the tests build it unoptimized, and an optimized build with
+several codegen units is where rustc has assembled naked functions without
+the target's features (RISC-V's M extension, which `Rust.funcOptions` in
+lean/VerifiedGarbage/TCB/Rust.lean now enables). `--lib` builds an rlib,
+which needs no linker either.
 
   rust_lint.py targets library|benchmarks
       the crate's targets, comma-separated, for rustup
@@ -50,6 +57,7 @@ def run(crate):
         cargo(["fmt", "--check"], ROOT)
         for features in FEATURES:
             cargo(["clippy", "--all-targets", "--locked", *targets, *features], ROOT)
+        cargo(["build", "--release", "--lib", "--locked", *targets], ROOT)
         return
     cargo(["fmt", "--check"], ROOT / "bench")
     for e in entries(crate):

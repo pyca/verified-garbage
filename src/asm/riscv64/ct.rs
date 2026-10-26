@@ -16,7 +16,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"addi a4, zero, 0
+        r".option push
+.option arch, +m
+addi a4, zero, 0
 sub a7, a1, a3
 beqz a7, 20f
 addi a0, zero, 0
@@ -40,6 +42,7 @@ j 23f
 addi a4, a4, -1
 srli a0, a4, 63
 21:
-ret",
+ret
+.option pop",
     )
 }

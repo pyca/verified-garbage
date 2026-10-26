@@ -18,7 +18,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_block(state: *const [u32; 16], buf: *mut [u32; 64]) {
     core::arch::naked_asm!(
-        r"addi t0, a1, 71
+        r".option push
+.option arch, +m
+addi t0, a1, 71
 andi t0, t0, -8
 sd s0, 0(t0)
 sd s1, 8(t0)
@@ -2080,7 +2082,8 @@ ld s1, 8(t0)
 ld s2, 16(t0)
 ld s3, 24(t0)
 ld s4, 32(t0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -2102,7 +2105,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        r"addi t0, a3, 263
+        r".option push
+.option arch, +m
+addi t0, a3, 263
 andi t0, t0, -8
 sd s5, 0(t0)
 sd s6, 8(t0)
@@ -2158,7 +2163,8 @@ andi t0, t0, -8
 ld ra, 16(t0)
 ld s5, 0(t0)
 ld s6, 8(t0)
-ret",
+ret
+.option pop",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
 }
@@ -2177,7 +2183,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r"lbu t1, 0(a1)
+        r".option push
+.option arch, +m
+lbu t1, 0(a1)
 sb t1, 16(a0)
 lbu t1, 1(a1)
 sb t1, 17(a0)
@@ -2335,7 +2343,8 @@ srli t1, t3, 16
 sb t1, 134(a0)
 srli t1, t3, 24
 sb t1, 135(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -2352,7 +2361,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r"lbu t1, 0(a1)
+        r".option push
+.option arch, +m
+lbu t1, 0(a1)
 sb t1, 48(a0)
 lbu t1, 1(a1)
 sb t1, 49(a0)
@@ -2445,7 +2456,8 @@ srli t1, t3, 16
 sb t1, 134(a0)
 srli t1, t3, 24
 sb t1, 135(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -2464,7 +2476,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        r"lbu t1, 128(a0)
+        r".option push
+.option arch, +m
+lbu t1, 128(a0)
 lbu t2, 129(a0)
 slli t2, t2, 8
 or t1, t1, t2
@@ -2749,7 +2763,8 @@ j 21f
 20:
 addi a0, zero, 0
 21:
-ret",
+ret
+.option pop",
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )

@@ -19,7 +19,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_compress(state: *mut [u32; 4], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 8]) {
     core::arch::naked_asm!(
-        r"beqz a2, 20f
+        r".option push
+.option arch, +m
+beqz a2, 20f
 22:
 lbu t0, 0(a0)
 lbu t4, 1(a0)
@@ -1547,7 +1549,8 @@ bnez a2, 22b
 j 21f
 20:
 21:
-ret",
+ret
+.option pop",
     )
 }
 
@@ -1562,7 +1565,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
-        r"lui t0, 422994
+        r".option push
+.option arch, +m
+lui t0, 422994
 addiw t0, t0, 769
 sb t0, 0(a0)
 srli t1, t0, 8
@@ -1598,7 +1603,8 @@ srli t1, t0, 16
 sb t1, 14(a0)
 srli t1, t0, 24
 sb t1, 15(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -1617,7 +1623,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -144
+        r".option push
+.option arch, +m
+addi sp, sp, -144
 addi t0, sp, 0
 sd ra, 80(t0)
 sd s1, 88(t0)
@@ -1729,7 +1737,8 @@ ld s5, 120(s2)
 ld s6, 128(s2)
 ld s2, 96(s2)
 addi sp, sp, 144
-ret",
+ret
+.option pop",
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
 }
@@ -1750,7 +1759,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -144
+        r".option push
+.option arch, +m
+addi sp, sp, -144
 addi t0, sp, 0
 sd ra, 80(t0)
 sd s1, 88(t0)
@@ -1893,7 +1904,8 @@ ld s5, 120(s2)
 ld s6, 128(s2)
 ld s2, 96(s2)
 addi sp, sp, 144
-ret",
+ret
+.option pop",
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
 }

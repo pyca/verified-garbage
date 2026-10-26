@@ -20,7 +20,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
     core::arch::naked_asm!(
-        r"addi t2, a1, -1
+        r".option push
+.option arch, +m
+addi t2, a1, -1
 srli t2, t2, 8
 bnez t2, 20f
 addi sp, sp, -256
@@ -1391,7 +1393,8 @@ j 21f
 20:
 addi a0, zero, 1
 21:
-ret",
+ret
+.option pop",
     )
 }
 
@@ -1412,7 +1415,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r"lbu a3, 256(a0)
+        r".option push
+.option arch, +m
+lbu a3, 256(a0)
 lbu t4, 257(a0)
 addi t6, zero, 0
 beqz a2, 20f
@@ -3653,6 +3658,7 @@ addi sp, sp, 256
 j 21f
 20:
 21:
-ret",
+ret
+.option pop",
     )
 }

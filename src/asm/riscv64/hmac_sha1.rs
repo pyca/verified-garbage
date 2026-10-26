@@ -18,7 +18,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -160
+        r".option push
+.option arch, +m
+addi sp, sp, -160
 addi t0, sp, 0
 sd ra, 104(t0)
 sd s7, 112(t0)
@@ -146,7 +148,8 @@ ld s10, 136(s8)
 ld s11, 144(s8)
 ld s8, 120(s8)
 addi sp, sp, 160
-ret",
+ret
+.option pop",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update = sym super::sha1::vg_sha1_update,
         vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
@@ -170,7 +173,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -80
+        r".option push
+.option arch, +m
+addi sp, sp, -80
 addi t0, sp, 0
 sd ra, 24(t0)
 sd s7, 32(t0)
@@ -241,7 +246,8 @@ ld s10, 56(s8)
 ld s11, 64(s8)
 ld s8, 40(s8)
 addi sp, sp, 80
-ret",
+ret
+.option pop",
         vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
         vg_sha1_update = sym super::sha1::vg_sha1_update,
     )

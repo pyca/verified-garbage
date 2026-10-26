@@ -18,7 +18,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -144
+        r".option push
+.option arch, +m
+addi sp, sp, -144
 addi t0, sp, 0
 sd ra, 96(t0)
 sd s7, 104(t0)
@@ -145,7 +147,8 @@ ld s10, 128(s8)
 ld s11, 136(s8)
 ld s8, 112(s8)
 addi sp, sp, 144
-ret",
+ret
+.option pop",
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_update = sym super::md5::vg_md5_update,
         vg_md5_finalize = sym super::md5::vg_md5_finalize,
@@ -169,7 +172,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -64
+        r".option push
+.option arch, +m
+addi sp, sp, -64
 addi t0, sp, 0
 sd ra, 16(t0)
 sd s7, 24(t0)
@@ -232,7 +237,8 @@ ld s10, 48(s8)
 ld s11, 56(s8)
 ld s8, 32(s8)
 addi sp, sp, 64
-ret",
+ret
+.option pop",
         vg_md5_finalize = sym super::md5::vg_md5_finalize,
         vg_md5_update = sym super::md5::vg_md5_update,
     )

@@ -20,7 +20,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_iterate(key: *const [u8; 168], u: *const [u8; 20], n: u32, t: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        r"slli a2, a2, 32
+        r".option push
+.option arch, +m
+slli a2, a2, 32
 srli a2, a2, 32
 addi a4, a4, 7
 andi a4, a4, -8
@@ -529,7 +531,8 @@ ld s4, 112(s2)
 ld s5, 120(s2)
 ld s6, 128(s2)
 ld s2, 96(s2)
-ret",
+ret
+.option pop",
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
@@ -551,7 +554,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -240
+        r".option push
+.option arch, +m
+addi sp, sp, -240
 addi sp, sp, -368
 addi t0, sp, 0
 sd ra, 0(t0)
@@ -846,7 +851,8 @@ ld s7, 56(s1)
 ld s1, 8(s1)
 addi sp, sp, 368
 addi sp, sp, 240
-ret",
+ret
+.option pop",
         vg_hmac_sha1_init = sym super::hmac_sha1::vg_hmac_sha1_init,
         vg_sha1_update = sym super::sha1::vg_sha1_update,
         vg_hmac_sha1_finalize = sym super::hmac_sha1::vg_hmac_sha1_finalize,

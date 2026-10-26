@@ -20,7 +20,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r"addi a3, a3, 7
+        r".option push
+.option arch, +m
+addi a3, a3, 7
 andi a3, a3, -8
 sd s0, 64(a3)
 sd s1, 72(a3)
@@ -1305,7 +1307,8 @@ ld s7, 120(a3)
 ld s8, 128(a3)
 ld s9, 136(a3)
 ld s10, 144(a3)
-ret",
+ret
+.option pop",
         VG_CAST5_S5678 = sym super::consts::VG_CAST5_S5678,
     )
 }
@@ -1328,7 +1331,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_ecb_encrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r"addi a4, a4, 7
+        r".option push
+.option arch, +m
+addi a4, a4, 7
 andi a4, a4, -8
 sd s0, 64(a4)
 sd s1, 72(a4)
@@ -1597,7 +1602,8 @@ ld s7, 120(a4)
 ld s8, 128(a4)
 ld s9, 136(a4)
 ld s10, 144(a4)
-ret",
+ret
+.option pop",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
@@ -1620,7 +1626,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_ecb_decrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r"addi a4, a4, 7
+        r".option push
+.option arch, +m
+addi a4, a4, 7
 andi a4, a4, -8
 sd s0, 64(a4)
 sd s1, 72(a4)
@@ -1891,7 +1899,8 @@ ld s7, 120(a4)
 ld s8, 128(a4)
 ld s9, 136(a4)
 ld s10, 144(a4)
-ret",
+ret
+.option pop",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
