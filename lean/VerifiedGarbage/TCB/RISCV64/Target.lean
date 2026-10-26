@@ -98,6 +98,9 @@ def abi : Abi isa where
     some ("the arguments on the stack", false)
   reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
   sym := some fun s name => s.syms name
+  -- `ld` and `sd` fault on an address not a multiple of 8 (`TCB/RISCV64/Isa.lean`),
+  -- and a `u64`'s alignment is 8 (the RISC-V ELF psABI, "C/C++ type details").
+  alignsU64 := true
 
 abbrev target : Target where
   name := "riscv64"

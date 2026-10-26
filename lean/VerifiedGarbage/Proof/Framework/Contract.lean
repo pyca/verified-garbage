@@ -124,7 +124,7 @@ theorem Sig.pairwise_of_pairsSep :
     exact this
 
 /-- All of the precondition of `sig.contract A pre post writeArgs stack` at
-`s` but `A.wf` and `pre`, with disjointness decided by `Region.sep`. -/
+`s` but `A.wf` and `pre` (the alignment of the `u64` buffers included), with disjointness decided by `Region.sep`. -/
 def Sig.check {M : ISA} (A : Abi M) (sig : Sig) (writeArgs : Bool) (stack : Nat) (s : M.State) :
     Bool :=
   let widths := (sig.words A.ptrBits).map (·.bits A.ptrBits)
@@ -138,7 +138,8 @@ def Sig.check {M : ISA} (A : Abi M) (sig : Sig) (writeArgs : Bool) (stack : Nat)
     decide (A.rd s = (all.filter (!·.2)).map (·.1)) &&
       decide (A.wr s = (all.filter (·.2)).map (·.1)) && Sig.pairsSep all &&
       (A.reserved stack s).all (fun r => all.all fun a => Region.sep r a.1) &&
-      bufs.all (fun a => decide (a.1.base.toNat + a.1.len ≤ 2 ^ A.ptrBits))
+      bufs.all (fun a => decide (a.1.base.toNat + a.1.len ≤ 2 ^ A.ptrBits)) &&
+      (!A.alignsU64 || (Sig.u64Bufs sig.params (vals s)).all (fun p => decide (p.toNat % 8 = 0)))
 
 /-- The rest of the precondition of `sig.contract A pre post writeArgs stack`
 at `s`: `A.wf` and `pre`. -/
@@ -162,9 +163,13 @@ theorem Sig.contract_pre_of_check {M : ISA} {A : Abi M} {sig : Sig}
   · rename_i vals hv
     rw [hv] at h ⊢
     simp only [Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true] at hc
-    obtain ⟨⟨⟨⟨hrd, hwr⟩, hp⟩, hr⟩, hb⟩ := hc
-    exact ⟨h.1, hrd, hwr, Sig.pairwise_of_pairsSep hp,
-      fun r hr' a ha => Region.disjoint_of_sep (hr r hr' a ha), hb, h.2⟩
+    obtain ⟨⟨⟨⟨⟨hrd, hwr⟩, hp⟩, hr⟩, hb⟩, ha⟩ := hc
+    refine ⟨h.1, hrd, hwr, Sig.pairwise_of_pairsSep hp,
+      fun r hr' a ha => Region.disjoint_of_sep (hr r hr' a ha), hb, ?_⟩
+    cases e : A.alignsU64
+    · exact h.2
+    · simp only [e, Bool.not_true, Bool.false_or, List.all_eq_true, decide_eq_true_eq] at ha
+      exact ⟨h.2, ha⟩
 
 /-- Proves `(sig.contract A …).pre w` (unfolded by `ls`, which `ws` extends to
 evaluate the witness `w`) by evaluating `Sig.check` in the kernel; `A.wf` and
