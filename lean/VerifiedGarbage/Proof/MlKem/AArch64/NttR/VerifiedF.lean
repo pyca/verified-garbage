@@ -139,11 +139,12 @@ theorem fast_pre {s : State} (hrd : s.rd = [⟨s.syms name, 928⟩])
     (red : ReducedW 16 s.mem (s.gpr .x0))
     (held : ∀ i < tabWords.length, s.mem.readW (s.syms name + BitVec.ofNat 64 (8 * i)) 64 = tabWords.getD i 0)
     (fitT : (s.syms name).toNat + 928 ≤ 2 ^ 64)
-    (hdw : ∀ r ∈ s.wr, (⟨s.syms name, 928⟩ : Region).Disjoint r) : fastContract.pre s := by
+    (hdw : ∀ r ∈ s.wr, (⟨s.syms name, 928⟩ : Region).Disjoint r) (hal : (s.syms name).toNat % 64 = 0) :
+    fastContract.pre s := by
   sig_pre [ntt16Contract, inPlace16Contract, inPlace16Sig, AArch64.abi, AArch64.argRegs, tables_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   rw [tabWords_length]
-  exact ⟨by rw [hrd]; rfl, fun i hi => held i (by rw [tabWords_length]; exact hi), fitT, hdw,
+  exact ⟨by rw [hrd]; rfl, fun i hi => held i (by rw [tabWords_length]; exact hi), fitT, hdw, hal,
     by rw [hrd]; rfl, hw, hdis, f0, f1, red⟩
 
 def satState : State where
@@ -159,7 +160,7 @@ theorem fast_sat : ∃ s, fastContract.pre s :=
   ⟨satState, fast_pre rfl rfl (Region.disjoint_of_sep (by decide)) (by decide) (by decide) satMem_reduced
     satMem_held (by decide) (fun r hr => by
       simp only [satState, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide))⟩
+      rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)) (by decide)⟩
 
 theorem fast_verified : Verified target fwdFast fastContract :=
   Verified.of_correct fast_correct fast_ct (Contract.Implies.refl fast_sat)
