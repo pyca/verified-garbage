@@ -105,4 +105,65 @@ def api (L : Layout) : Api where
       interpretation. They are not secret under this contract.",
     s!"The bytes {rangesDoc L.scratch} of `ws` are unspecified on return."]
 
+/-! ## One function for every size
+
+`vg_dsa_probable_prime` is the test of `api (layout bits)` for a size
+`bits` it takes as an argument, one of `sizes`: one function where a target
+would otherwise register one per size. Its meaning for each size is
+`contract (layout bits)`'s. -/
+
+/-- The working space, the random tape, the octets read and the size. -/
+def sizedSig : Sig where
+  params := [("ws", .slice true .u64 "ws_len"), ("rand", .slice false .u8 "rand_len"),
+    ("used", .array true .u64 1), ("bits", .int .usize true)]
+  ret := some .u32
+
+/-- `contract (layout bits)` for a size `bits` of `sizes`, given as an
+argument. The size is public, with the candidate and the tape. -/
+def sizedContract {I : ISA} (layout : Nat → Layout) (sizes : List Nat) (A : Abi I)
+    (stack : Nat := 0) : Contract I :=
+  sizedSig.contract A
+    (pre := fun ws wsLen _rand _randLen _used bits m =>
+      let L := layout bits.toNat
+      let w := candidateAt L m ws
+      bits.toNat ∈ sizes ∧ L.bits = bits.toNat ∧
+        L.size ≤ 8 * wsLen.toNat ∧ w % 2 = 1 ∧ Spec.Dsa.bitLength w = L.bits)
+    (post := fun ws wsLen rand randLen used bits m m' r =>
+      let L := layout bits.toNat
+      let res := Spec.Dsa.probablePrime (candidateAt L m ws) (bytesAt m rand randLen.toNat)
+      r.toNat = status res ∧ Keeps ws wsLen.toNat L.scratch m m' ∧
+        ∀ b rest, res = some (b, rest) →
+          wordsAt m' used 1 = [BitVec.ofNat 64 (randLen.toNat - rest.length)])
+    (writeArgs := true) (stack := stack)
+    (leak := some fun ws _wsLen rand randLen _used bits m =>
+      bits.toNat :: candidateAt (layout bits.toNat) m ws ::
+        (bytesAt m rand randLen.toNat).map (·.toNat))
+
+/-- The test of every size of `sizes`, laid out by `layout`, with the same
+meaning on every target that registers it. -/
+def sizedApi (layout : Nat → Layout) (sizes : List Nat) : Api where
+  module := "dsa"
+  name := "vg_dsa_probable_prime"
+  sig := sizedSig
+  writeArgs := true
+  contracts := some fun A stack => sizedContract layout sizes A stack
+  summary := s!"DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then \
+    RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) \
+    of an odd number of exactly `bits` bits, for `bits` one of {sizes}, stored as `bits / 8` \
+    big-endian bytes in `ws` at the offset `VG.Spec.Dsa.ProbablePrime.api` gives that size, \
+    with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a \
+    composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every \
+    byte of `ws` keeps its value but those of the size's scratch ranges. Acceptance is \
+    probable primality, not a certificate.\n\n\
+    Contract: `VG.Spec.Dsa.ProbablePrime.sizedContract`, which is \
+    `VG.Spec.Dsa.ProbablePrime.contract` of the size's layout. The size, the candidate and \
+    the tape are public: timing may depend on all three."
+  safety := [s!"`bits` must be one of {sizes}.",
+    "`ws_len` must be at least the size's working space, as for that size's \
+      `VG.Spec.Dsa.ProbablePrime.api`.",
+    "The candidate's bytes in `ws` must hold an odd number of exactly `bits` bits, big-endian.",
+    "`rand` must contain independent uniform random octets for the probabilistic \
+      interpretation. They are not secret under this contract.",
+    "The size's scratch ranges of `ws` are unspecified on return."]
+
 end VG.Spec.Dsa.ProbablePrime
