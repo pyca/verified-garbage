@@ -136,6 +136,29 @@ theorem pub_regs {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)
     implies_true, and_true]
   exact Iff.rfl
 
+/-- The public data of a contract whose arguments are all in registers, with
+its leak. -/
+theorem pub_regsL {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat} {s₁ s₂ : State}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true) :
+    (sig.contract abi pre post wa stack leak).pub s₁ s₂ ↔
+      (s₁.sp = s₂.sp ∧ leakAgree leak (regArgs sig s₁) s₁.mem (regArgs sig s₂) s₂.mem) ∧
+      ∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
+        ((regArgs sig s₁).getD i 0).setWidth
+            (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) =
+          ((regArgs sig s₂).getD i 0).setWidth
+            (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) := by
+  have hk' : (sig.words 64).length ≤ argRegs.length := by
+    have : (sig.words 64).length ≤ 8 := hk
+    simpa [argRegs] using this
+  have hD := fun vs => Sig.descs_of_noLists 64 sig.params vs hl
+  simp only [Sig.contract, abi, List.length_map, hk', ite_true, hD, List.not_mem_nil, false_implies,
+    implies_true, and_true]
+  cases leak with
+  | none => simp only [leakAgree, and_true]; exact Iff.rfl
+  | some f => exact Iff.rfl
+
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
@@ -287,6 +310,40 @@ theorem narrow_pub (hk : (sig.words abi.ptrBits).length < 8) {s₁ s₂ : State}
     exact hpa i hi
   · simp only [List.getD_eq_getElem?_getD]
     rw [List.getElem?_append_right (by omega_arith), List.getElem?_append_right (by omega_arith), l₁, l₂]
+
+/-- The public data of the contract without the buffer, with its leak, is
+public in `narrow` for the contract with it: `narrow` keeps the memory, so
+the leak is the same. -/
+theorem narrow_pubL (hk : (sig.words abi.ptrBits).length < 8) {s₁ s₂ : State}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (hp : (sig.contract abi pre post wa (stack + bytes) leak).pub s₁ s₂) (hl : Sig.noLists sig.params = true) :
+    (Sig.scratchContract abi sig nm e n pre post wa stack leak).pub (narrow sig e n bytes s₁)
+      (narrow sig e n bytes s₂) := by
+  rw [pub_regsL (by omega_arith) hl] at hp
+  obtain ⟨⟨hsp, hlk⟩, hpa⟩ := hp
+  have hp' : (sig.contract abi pre post wa (stack + bytes)).pub s₁ s₂ :=
+    (pub_regs (by omega_arith) hl).mpr ⟨hsp, hpa⟩
+  have hn := (pub_regs (sig := sig.withScratch nm e n)
+    (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
+    (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
+    (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_arith)
+    (Sig.noLists_withScratch nm e n hl)).mp (narrow_pub (nm := nm) hk hp' hl)
+  refine (pub_regsL (sig := sig.withScratch nm e n)
+    (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
+    (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
+    (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_arith)
+    (Sig.noLists_withScratch nm e n hl)).mpr ⟨⟨hn.1, ?_⟩, hn.2⟩
+  have l₁ := regArgs_length sig s₁ (by omega_arith)
+  have l₂ := regArgs_length sig s₂ (by omega_arith)
+  rw [narrow_regArgs hk, narrow_regArgs hk, narrow_mem, narrow_mem]
+  cases leak with
+  | none => trivial
+  | some f =>
+    show Curry.apply _ (Curry.withScratch abi.ptrBits nm e n sig.params f) _ _ =
+      Curry.apply _ (Curry.withScratch abi.ptrBits nm e n sig.params f) _ _
+    rw [Curry.apply_withScratch abi.ptrBits nm e n sig.params f _ _ l₁,
+      Curry.apply_withScratch abi.ptrBits nm e n sig.params f _ _ l₂]
+    exact hlk
 
 /-! ## The wipe -/
 
@@ -498,6 +555,50 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     have hsp₁₂ : s₁.sp = s₂.sp := ((pub_regs (by omega_using [hk]) hl).mp hp).1
     rw [hct _ _ _ _ _ _ (narrow_pre hk hb h₁ hl) (narrow_pre hk hb h₂ hl) (narrow_pub hk hp hl) f₁ f₂,
       hsp₁₂]
+
+/-- Code verified for a function whose last argument, in a register, is a
+scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
+for the function without it, which allocates the buffer in a frame of
+`bytes` more bytes of stack (`withStackScratch`), with any leak: the frame's
+`alloc` writes no memory, so the precondition, postcondition and leak see
+the memory they do without it. -/
+theorem Verified.stackScratchL {c : Prog isa}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
+    (hk : (sig.words abi.ptrBits).length < 8)
+    (hb : 0 < bytes ∧ bytes ≤ 4064 ∧ bytes % 16 = 0 ∧ n * e.size ≤ bytes)
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s)
+    (hl : Sig.noLists sig.params = true := by decide) :
+    Verified target (withStackScratch bytes (scratchReg sig) c)
+      (sig.contract abi pre post wa (stack + bytes) leak) := by
+  obtain ⟨hcor, hct, -⟩ := h
+  have hlen := regArgs_length sig
+  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → ∃ t s₃,
+      Exec isa c (narrow sig e n bytes s) t s₃ ∧
+      (Sig.scratchContract abi sig nm e n pre post wa stack).post (narrow sig e n bytes s) s₃ ∧
+      Exec isa (withStackScratch bytes (scratchReg sig) c) s t (popState bytes s s₃) ∧
+      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      (popState bytes s s₃).gpr = s₃.gpr := by
+    intro s hs
+    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hk hb hs hl)
+    exact ⟨t, s₃, he, hq, withStackScratch_run hk hb hs he ha hl⟩
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, s₃, -, hq, hex, ha, hm, hg⟩ := hrun s hs
+    refine ⟨_, _, hex, ha, ?_⟩
+    show (sig.contract abi pre post wa (stack + bytes)).post s _
+    rw [post_regs (by omega_using [hk])]
+    have hq' := (post_regs (sig := sig.withScratch nm e n)
+      (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
+      (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
+      (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk])).mp hq
+    rw [narrow_regArgs hk] at hq'
+    rw [hm, hg]
+    exact Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
+      post _ _ (hlen s (by omega_using [hk]))) _) s₃.mem) _) hq'
+  · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
+    obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]
+    exact hct _ _ _ _ _ _ (narrow_pre (post := post) hk hb h₁ hl) (narrow_pre (post := post) hk hb h₂ hl) (narrow_pubL hk hp hl) f₁ f₂
 
 end
 
