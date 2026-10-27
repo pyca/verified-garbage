@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateArgs
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateLoad
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateExponent
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateSieve
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateClose
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
@@ -32,31 +32,36 @@ def prepareAndTest (w : Nat) (montName : String) (montCode : Prog isa)
     (roundName : String) (roundCode : Prog isa) : Prog isa :=
   .seq (CandidateTest.code w montName montCode roundName roundCode) (CandidateFinish.mrResult w)
 
-def exponentCheck (w : Nat) (montName : String) (montCode : Prog isa)
-    (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (CandidateExponent.code w) (.seq (.block [.alu .cmp .eax (.imm 0)])
-    (.ite .e (CandidateFinish.used 3) (prepareAndTest w montName montCode roundName roundCode)))
-
-def sieveCheck (w : Nat) (montName : String) (montCode : Prog isa)
-    (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (CandidateSieve.code w) (.seq (.block [.alu .cmp .eax (.imm 0)])
-    (.ite .ne (CandidateFinish.used 3) (exponentCheck w montName montCode roundName roundCode)))
-
-def sized (w : Nat) (montName : String) (montCode : Prog isa)
-    (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (importCandidate w) (.seq (closeCheck w) (.seq (.block [.alu .cmp .eax (.imm 0)])
-    (.ite .ne (CandidateFinish.used 2) (sieveCheck w montName montCode roundName roundCode))))
-
-def dispatch (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : List Nat → Prog isa
+/-- The code for the width in `eax`, from the supported `widths`. -/
+def dispatch (part : Nat → Prog isa) : List Nat → Prog isa
   | [] => CandidateFinish.none
   | w :: rest => .seq (.block [.alu .cmp .eax (.imm (BitVec.ofNat 32 w))])
-      (.ite .e (sized w montName montCode roundName roundCode) (dispatch montName montCode roundName roundCode rest))
+      (.ite .e (part w) (dispatch part rest))
 
 def widths : List Nat := (List.range 61).map (· + 4)
 
+/-- `eax := w`, from the candidate's length in the header. -/
+def width : List Instr := [.mov .eax (.mem (sc 4)), .shift .shr .eax 3]
+
+/-- The candidate drawn and compared with `p`, and trial division: the result
+2 or 3 written, or `eax = 4` to go on. -/
+def front (w : Nat) : Prog isa :=
+  .seq (importCandidate w) (.seq (closeCheck w) (.seq (.block [.alu .cmp .eax (.imm 0)])
+    (.ite .ne (CandidateFinish.used 2) (.seq (CandidateSieve.code w) (.seq (.block [.alu .cmp .eax (.imm 0)])
+      (.ite .ne (CandidateFinish.used 3) (.block [.mov .eax (.imm 4)])))))))
+
+def tested (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
+  .seq (.block width) (dispatch (fun w => prepareAndTest w montName montCode roundName roundCode) widths)
+
+/-- Coprimality with `e`, at the run-time width, then Miller–Rabin. -/
+def exponentCheck (montName : String) (montCode : Prog isa)
+    (roundName : String) (roundCode : Prog isa) : Prog isa :=
+  .seq ExponentRt.code (.seq (.block [.alu .cmp .eax (.imm 0)])
+    (.ite .e (CandidateFinish.used 3) (tested montName montCode roundName roundCode)))
+
 def available (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (.block [.mov .eax (.mem (sc 4)), .shift .shr .eax 3])
-    (dispatch montName montCode roundName roundCode widths)
+  .seq (.block width) (.seq (dispatch front widths) (.seq (.block [.alu .cmp .eax (.imm 4)])
+    (.ite .e (exponentCheck montName montCode roundName roundCode) (.block []))))
 
 def body (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
   .seq CandidateArgs.enter (.seq clear

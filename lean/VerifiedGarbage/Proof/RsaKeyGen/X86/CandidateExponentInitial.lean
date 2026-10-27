@@ -1,10 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponent
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Copy
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentTimingInput
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSave
 import Mathlib.Algebra.Group.Nat.Defs
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateExponent
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
@@ -36,6 +36,7 @@ structure Initial (workspace p e : BitVec 32) (size w candidate len exponent : N
   exponentEq : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (e.setWidth 64) len) = exponent
   fit : 40 ≤ p.toNat
   separateStack : p.toNat ≤ (workspace.setWidth 64).toNat ∨ (workspace.setWidth 64).toNat + size + 40 ≤ p.toNat
+  outLen : s.mem.readW (off (workspace.setWidth 64) 4) 32 = BitVec.ofNat 32 (8 * w)
 
 theorem Initial.header {workspace p e : BitVec 32} {size w candidate len exponent : Nat} {s : State}
     (S : Initial workspace p e size w candidate len exponent s) : 256 ≤ size := by
@@ -56,26 +57,27 @@ theorem Initial.workspace {workspace p e : BitVec 32} {size w candidate len expo
   rw [S.scratch.edi_toNat, BitVec.toNat_setWidth,
     Nat.mod_eq_of_lt (Nat.lt_trans workspace.isLt (by decide : 2 ^ 32 < 2 ^ 64))]
 
+theorem Initial.spaceRt {workspace p e : BitVec 32} {size w candidate len exponent : Nat} {s : State}
+    (S : Initial workspace p e size w candidate len exponent s) : ExponentRt.Space workspace p size w s :=
+  ⟨S.scratch, S.stack, S.width, S.widthBound, S.space, S.outLen⟩
+
 theorem Initial.save_ok {workspace p e : BitVec 32} {size w candidate len exponent : Nat} {s : State}
     (S : Initial workspace p e size w candidate len exponent s) :
-    WP isa (VG.Impl.RsaKeyGen.X86.CandidateSave.save (2 * w) (slot w 0) (slot w 5)) s fun t =>
+    WP isa VG.Impl.RsaKeyGen.X86.ExponentRt.save s fun t =>
       Scr t (workspace.setWidth 64) size ∧ Outside (workspace.setWidth 64) (slot w 5) (8 * w) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
-  have gap : slot w 0 + 8 * w ≤ slot w 5 := by unfold slot stride VG.Impl.Bignum.hdrBytes; omega
-  refine WP.mono (CandidateSave.save_ok S.scratch (by have := S.width; omega)
-    (by have := S.space; omega) (by have := S.space; omega) (Or.inr (Or.inr (by omega)))
+  refine WP.mono (ExponentRt.save_ok S.scratch S.width S.widthBound S.space S.outLen
     (by rw [S.candidateEq]; exact S.odd)) fun t ⟨_, O, K⟩ => ?_
-  rw [show 4 * (2 * w) = 8 * w by omega] at O
-  exact ⟨S.scratch.of_keeps K (by decide), O, K.mono (by decide)⟩
+  exact ⟨S.scratch.of_keeps K (by decide), O, K⟩
 
 theorem Initial.prepare_ok {workspace p e : BitVec 32} {size w candidate len exponent : Nat} {s : State}
     (S : Initial workspace p e size w candidate len exponent s) :
-    WP isa (VG.Impl.RsaKeyGen.X86.CandidateExponent.prepare w) s
+    WP isa (.seq VG.Impl.RsaKeyGen.X86.ExponentRt.save VG.Impl.RsaKeyGen.X86.ExponentImport.code) s
       (ExponentFilter.TimingInput workspace p size w candidate exponent) := by
-  refine WP.mono (CandidateExponent.prepare_ok S.scratch S.width S.widthBound S.space S.candidateEq S.large S.odd
+  refine WP.mono (ExponentRt.prepare_ok S.scratch S.width S.widthBound S.space S.candidateEq S.large S.odd
     S.pointer S.length S.ePositive S.eBound S.eFit S.readable S.separateE
-    (by rw [S.stack]; exact S.fit) (by rw [S.stack]; exact S.separateStack)) fun t ⟨I, _, _, K⟩ => ?_
+    (by rw [S.stack]; exact S.fit) (by rw [S.stack]; exact S.separateStack) S.outLen) fun t ⟨I, _, _, K, L⟩ => ?_
   rw [S.exponentEq] at I
-  exact ⟨I, (K.1 .esp (by decide)).trans S.stack⟩
+  exact ⟨I, (K.1 .esp (by decide)).trans S.stack, L⟩
 
 end VG.Proof.RsaKeyGen.X86.CandidateExponent

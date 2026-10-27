@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePreparedTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingBranch
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponentInput
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingInput
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestTiming
@@ -26,7 +27,7 @@ theorem exponent_pair_trace {E : Environment} (v : E.Valid) {eBytes pBytes qByte
     (same : decide (Nat.gcd (candidateValue E rBytes - 1) (Spec.Rsa.os2ip eBytes) = 1) =
       decide (Nat.gcd (candidateValue E sBytes - 1) (Spec.Rsa.os2ip eBytes) = 1)) :
     RelCT isa (DrawnPair E eBytes pBytes qBytes rBytes sBytes)
-      (VG.Impl.RsaKeyGen.X86.CandidateExponent.code E.width)
+      VG.Impl.RsaKeyGen.X86.ExponentRt.code
       (WithFlag (TestPair E eBytes pBytes qBytes rBytes sBytes)
         (decide (Nat.gcd (candidateValue E rBytes - 1) (Spec.Rsa.os2ip eBytes) = 1))) := by
   intro s t tr ur u z P A B
@@ -34,6 +35,37 @@ theorem exponent_pair_trace {E : Environment} (v : E.Valid) {eBytes pBytes qByte
   obtain ⟨DU, flagU, saveU, _, _⟩ := wp_result (exponent_ok v P.left) A
   obtain ⟨DZ, flagZ, saveZ, _, _⟩ := wp_result (exponent_ok v P.right) B
   exact ⟨trace, ⟨⟨DU, DZ⟩, saveU, saveZ⟩, flagU, by rw [same]; exact flagZ⟩
+
+theorem TestPair.keepMem {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
+    {s t u z : State} (P : TestPair E eBytes pBytes qBytes rBytes sBytes s t) (MU : u.mem = s.mem) (MZ : z.mem = t.mem)
+    {regs : List Reg} (KU : Keeps regs s u) (KZ : Keeps regs t z) (base : .edi ∉ regs) (sp : .esp ∉ regs)
+    (SU : u.syms = s.syms) (SZ : z.syms = t.syms) : TestPair E eBytes pBytes qBytes rBytes sBytes u z := by
+  refine ⟨⟨P.left.keepMem v MU KU base sp SU, P.right.keepMem v MZ KZ base sp SZ⟩, ?_, ?_⟩
+  · rw [MU]; exact P.savedLeft
+  · rw [MZ]; exact P.savedRight
+
+theorem tested_trace {mont round : Prog isa} {montName roundName : String}
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
+    {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
+    (length : rBytes.length = sBytes.length) (enough : E.length ≤ E.randLength)
+    (shape : shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =
+      shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
+    RelCT isa (TestPair E eBytes pBytes qBytes rBytes sBytes)
+      (VG.Impl.RsaKeyGen.X86.Candidate.tested montName mont roundName round) (fun _ _ => True) := by
+  have bounds := v.width_bounds
+  unfold VG.Impl.RsaKeyGen.X86.Candidate.tested
+  refine RelCT.seq (width_trace v (fun _ _ P => P.left.input) (fun _ _ P => P.right.input)
+    (fun _ _ _ _ P MU MZ KU KZ SU SZ => P.keepMem v MU MZ KU KZ (by decide) (by decide) SU SZ)) ?_
+  refine dispatch_trace (by omega) (fun _ _ _ _ P U Z => P.keepFlags v U Z)
+    (prepared_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v length enough shape) _ ?_ ?_
+  · exact List.mem_map.mpr ⟨E.width - 4, List.mem_range.mpr (by omega), by omega⟩
+  · intro w mem
+    obtain ⟨i, index, rfl⟩ := List.mem_map.mp mem
+    have bound := List.mem_range.mp index
+    omega
 
 theorem exponent_stage_trace {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
@@ -48,14 +80,15 @@ theorem exponent_stage_trace {mont round : Prog isa} {montName roundName : Strin
       shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =
         shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
     RelCT isa (DrawnPair E eBytes pBytes qBytes rBytes sBytes)
-      (VG.Impl.RsaKeyGen.X86.Candidate.exponentCheck E.width montName mont roundName round) (fun _ _ => True) := by
+      (VG.Impl.RsaKeyGen.X86.Candidate.exponentCheck montName mont roundName round) (fun _ _ => True) := by
   unfold VG.Impl.RsaKeyGen.X86.Candidate.exponentCheck
   by_cases good : Nat.gcd (candidateValue E rBytes - 1) (Spec.Rsa.os2ip eBytes) = 1
   · have initialTrace := exponent_pair_trace (pBytes := pBytes) (qBytes := qBytes) v same
     rw [decide_eq_true good] at initialTrace
     refine RelCT.seq initialTrace (RelCT.seq ((cmp_flag_trace true (fun _ _ _ _ P U Z => P.keepFlags v U Z)).mono
       (fun _ _ P => P) (fun _ _ P => P.1)) ?_)
-    exact branch_false (prepared_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v length enough (shape good))
+    exact branch_false (tested_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v length enough
+      (shape good))
   · have initialTrace := exponent_pair_trace (pBytes := pBytes) (qBytes := qBytes) v same
     rw [decide_eq_false good] at initialTrace
     refine RelCT.seq initialTrace (RelCT.seq ((cmp_flag_trace false (fun _ _ _ _ P U Z => P.keepFlags v U Z)).mono
