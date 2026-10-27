@@ -143,6 +143,9 @@ pub(crate) mod poly1305;
 pub(crate) mod rc4;
 
 #[rustfmt::skip]
+pub(crate) mod seed;
+
+#[rustfmt::skip]
 pub(crate) mod sha1;
 
 #[rustfmt::skip]
