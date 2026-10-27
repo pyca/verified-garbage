@@ -57,12 +57,12 @@ theorem frame_other (m : Mem) (P : Addr) (v : BitVec 32) {k j : Nat} (h : j + 4 
     (m.writeW (P + BitVec.ofNat 64 k) v).readW (P + BitVec.ofNat 64 j) 32 = m.readW (P + BitVec.ofNat 64 j) 32 :=
   Mem.readW_writeW_sep (Offset.sep P h (by omega) (by omega)) (by decide)
 
-theorem mulArgs_ok {f : State} {len o a b : Nat} {wsLen : BitVec 32}
+theorem mulArgs_ok {f : State} {len o a b wl : Nat} {wsLen : BitVec 32}
     (hr3 : readSrc f (.mem (argAt 9 1)) = some (BitVec.ofNat 32 len))
-    (hr9 : readSrc f (.mem (argAt 9 9)) = some wsLen)
+    (hr9 : readSrc f (.mem (argAt 9 wl)) = some wsLen)
     (hl : len ≤ 1024) (ho : o ≤ 8) (ha : a ≤ 8) (hb : b ≤ 8)
     (hesp : (f.gpr .esp).toNat + 36 ≤ 2 ^ 32) (hfr : (⟨(f.gpr .esp).setWidth 64, 36⟩ : Region) ∈ f.wr) :
-    WP isa (.block (mulArgs o a b)) f fun g =>
+    WP isa (.block (mulArgs o a b wl)) f fun g =>
       Keeps [.eax, .edx] f g ∧ Frame [⟨(f.gpr .esp).setWidth 64, 36⟩] f.mem g.mem ∧
       ∀ i < 9, g.mem.readW ((f.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 * i)) 32 =
         mulArg len o a b (f.gpr .edi) wsLen i := by
@@ -76,7 +76,7 @@ theorem mulArgs_ok {f : State} {len o a b : Nat} {wsLen : BitVec 32}
     fun t he hw' k hk => frame_store (by rw [he, hP]) (by rw [he]; exact hesp) (by rw [hw']; exact hfr) hk
   have sp₁ : s₁.gpr .esp = f.gpr .esp := K₁.1 _ (by decide)
   have edi₁ : s₁.gpr .edi = f.gpr .edi := K₁.1 _ (by decide)
-  have hr9₁ : readSrc s₁ (.mem (argAt 9 9)) = some wsLen := by
+  have hr9₁ : readSrc s₁ (.mem (argAt 9 wl)) = some wsLen := by
     rw [← hr9]; simp only [readSrc, State.load32, State.ea, argAt, at_, sp₁, m₁, K₁.2.1, K₁.2.2]; rfl
   refine wp_movS hr9₁ fun s₂ u₂ _ => ?_
   have K₂ : Keeps [.eax, .edx] f s₂ := (K₁.mono (by decide)).trans (u₂.keeps.mono (by decide))

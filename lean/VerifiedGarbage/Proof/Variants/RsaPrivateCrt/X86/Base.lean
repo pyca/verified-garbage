@@ -50,22 +50,16 @@ public import VerifiedGarbage.Proof.Bignum.X86.ModulusRead
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeArgumentsEq
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeBodyTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeCorrect
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeDataTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeDispatch
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeDispatchTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeEntry
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeEntryTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeFailure
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeFailureTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeImport
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeInstalled
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeModulusTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeObservations
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOperation
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOperationTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOut
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeResources
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeSized
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeValidTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedArgumentsEq
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
@@ -85,7 +79,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 public import VerifiedGarbage.Proof.Bignum.X86.PublicImport
 public import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicMath
-public import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
 public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 public import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
@@ -261,22 +254,16 @@ import VerifiedGarbage.Proof.Bignum.X86.ModulusRead
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeArgumentsEq
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeBodyTiming
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeCorrect
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputeDataTiming
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputeDispatch
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputeDispatchTiming
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeEntry
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeEntryTiming
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeFailure
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeFailureTiming
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputeImport
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeInstalled
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeModulusTiming
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeObservations
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOperation
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOperationTiming
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOut
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeResources
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputeSized
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeValidTiming
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedArgumentsEq
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
@@ -296,7 +283,6 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 import VerifiedGarbage.Proof.Bignum.X86.PublicImport
 import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
 import VerifiedGarbage.Proof.Bignum.X86.PublicMath
-import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
 import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Bignum.X86.PublicTiming

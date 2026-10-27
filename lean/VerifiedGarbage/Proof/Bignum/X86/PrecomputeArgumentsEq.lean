@@ -15,7 +15,11 @@ theorem PrecomputeInputs.argsEq {base : Addr} {bytes len : Nat} {args other : Na
   have H1 := eq 1 (by decide)
   have H2 := eq 2 (by decide)
   have H3 := eq 3 (by decide)
-  refine ⟨H.scratch, H.lower, H.upper, H.space, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  have H4 := eq 4 (by decide)
+  have H5 := eq 5 (by decide)
+  refine ⟨H.scratch, H.lower, H.upper, H.space, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, H.room, H.top,
+    by rw [← H4]; exact H.hbase, by rw [← H5]; exact H.hbytes, H.argWrite, by rw [← H2]; exact H.nArg, by rw [← H0]; exact H.outArgs, H.spScratch,
+    by rw [← H0]; exact H.spOut⟩
   · intro i hi; rw [← eq i hi]; exact H.stack i hi
   · rw [← H1]; exact H.preLen
   · rw [← H3]; exact H.nLen

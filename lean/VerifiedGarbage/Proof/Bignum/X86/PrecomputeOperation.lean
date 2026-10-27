@@ -16,7 +16,7 @@ open VG VG.X86 VG.Impl.Bignum.X86 VG.Proof.Mont VG.Proof.Mont.X86
 theorem precomputeFailure_post {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : PrecomputeInputs base bytes len args s)
     (invalid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len)) len = false) :
-    WP isa PrecomputeFn.failure s fun t => PrecomputePost base bytes len args s.mem t ∧
+    WP isa PrecomputeFn.failure s fun t => PrecomputePost base bytes len args (s.gpr .esp) s.mem t ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have dims := h.dimensions
   have twice : 8 * (2 * Spec.Rsa.modulusWords len) = 16 * Spec.Rsa.modulusWords len := by omega
@@ -33,7 +33,7 @@ theorem precomputeFailure_post {s : State} {base : Addr} {bytes len : Nat} {args
 
 theorem precomputeBody_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : PrecomputeInputs base bytes len args s) :
-    WP isa PrecomputeFn.body s fun t => PrecomputePost base bytes len args s.mem t ∧
+    WP isa PrecomputeFn.body s fun t => PrecomputePost base bytes len args (s.gpr .esp) s.mem t ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   unfold PrecomputeFn.body
   refine WP.seq (WP.mono (argumentPair_ok (c := BitVec.ofNat 32 len) (by decide) (by decide)
@@ -46,12 +46,13 @@ theorem precomputeBody_ok {s : State} {base : Addr} {bytes len : Nat} {args : Na
   have Ks : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v :=
     (K.mono (by decide)).trans (Kv.mono (by decide))
   have hv := h.keep Ks (by decide) (by decide) (by rw [Ms]; exact Outside.refl _ _ _ _)
+  have sp : v.gpr .esp = s.gpr .esp := Ks.1 _ (by decide)
   refine WP.ite (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len)) len) Z ?_ ?_
   · intro valid
     refine WP.mono (precomputeValid_ok hv (by rw [Ms]; exact valid)) fun t ⟨R, T⟩ => ?_
-    exact ⟨by simpa only [Ms] using R, Ks.trans T⟩
+    exact ⟨by simpa only [Ms, sp] using R, Ks.trans T⟩
   · intro invalid
     refine WP.mono (precomputeFailure_post hv (by rw [Ms]; exact invalid)) fun t ⟨R, T⟩ => ?_
-    exact ⟨by simpa only [Ms] using R, Ks.trans T⟩
+    exact ⟨by simpa only [Ms, sp] using R, Ks.trans T⟩
 
 end VG.Proof.Bignum.X86.PublicContext

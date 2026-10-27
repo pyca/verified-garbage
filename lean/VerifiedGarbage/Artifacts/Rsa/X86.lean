@@ -78,13 +78,14 @@ def artifacts : List Artifact := [
     spSafe := Proof.Rsa.X86.RtShape.precomputed_spSafe
     stack := 96 },
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
-    notes := ["The public modulus's high bit selects a reduced seed reached by n+1 modular \
-      doublings; padded moduli use 65n doublings. Six Montgomery squares then produce R². \
-      The seed and fixed-count squaring loop are shared with DSA; one multiplication body \
-      serves all six squares, within the existing scratch and stack bounds."]
+    notes := ["The modulus's length gives the numbers' width at run time: `pre_len` is overwritten \
+      with `n_len`, from which every loop reads it. `R² mod n` from `2^(8 (n_len - 1))`, below n, \
+      by `65 w + 8 - 8 n_len` modular doublings (masked subtractions) to `2^(65 w)`, then six \
+      Montgomery squares, each a call of `vg_rsa_mont_mul_at`. Only the public modulus and its \
+      length select a branch. Callee-saved registers reside in scratch."]
     code := Impl.Bignum.X86.PrecomputeFn.code
     verified := Proof.Bignum.X86.precompute_verified
-    stack := 20 },
+    stack := 96 },
   Spec.Rsa.publicCheckedApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
       multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the \

@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputeResources
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Dsa.X86.EntrySave
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Correct
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Functional correctness and cdecl preservation of RSA precomputation -/
 
@@ -31,21 +33,44 @@ theorem precomputeOperation_ok {s : State} (A : PrecomputeABI s) :
   unfold PrecomputeFn.code
   refine WP.seq (WP.mono (precomputeInstalled_ok A) fun u ⟨I, S, K, O⟩ => ?_)
   refine WP.seq (WP.mono (precomputeBody_ok I) fun v ⟨⟨V, F⟩, Kv⟩ => ?_)
-  have Saved := publicFrame_saved F I.outApart low high S
-  have Whole : Frame [⟨argumentPointer s 4, (arg s 5).toNat * 8⟩,
-      ⟨argumentPointer s 0, 16 * Spec.Rsa.modulusWords (arg s 3).toNat⟩] s.mem v.mem := by
-    have Start := outside_frame O (by omega)
-    simp only [BitVec.add_zero] at Start
-    exact (Start.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp)).trans
-      (publicFrame_full F low)
-  have Ret : v.mem.readW ((s.gpr .esp).setWidth 64) 32 =
-      s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
-    apply Whole.readW (Region.contains_self _ 4) ?_ (by decide)
+  have espu : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
+  have slot : (⟨addr (u.gpr .esp) 8, 4⟩ : Region).Disjoint
+      ⟨argumentPointer s 4, (arg s 5).toNat * 8⟩ := (I.stack 1 (by decide)).stack.apart
+  rw [espu] at F slot
+  have Saved : VG.X86.Spill.Saved v.mem (off (argumentPointer s 4)) s.gpr PublicFn.savedRegisters := by
+    intro p hp
+    have B : p.2 + 4 ≤ 16 := by
+      simp only [PublicFn.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
+      rcases hp with rfl | rfl | rfl | rfl <;> decide
+    refine (F.readW (r := ⟨argumentPointer s 4, 16⟩) (Offset.contains_base _ B (by omega)) ?_ (by decide)).trans
+      (S p hp)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact A.retScratch
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact Offset.base_disjoint _ (Nat.le_refl 16) (by omega)
+    · exact I.outApart.sub_left (Region.sub_prefix (by omega))
+    · have := I.room.apart; rw [espu] at this; exact (this.sub_right (Region.sub_prefix (by omega))).symm
+    · exact (slot.sub_right (Region.sub_prefix (by omega))).symm
+  have Ret : v.mem.readW ((s.gpr .esp).setWidth 64) 32 =
+      s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
+    have Start := outside_frame O (by omega)
+    simp only [BitVec.add_zero] at Start
+    have hlow := A.stackLow
+    have hb := A.stackBound
+    rw [F.readW (Region.contains_self _ 4) ?_ (by decide)]
+    · refine Start.readW (Region.contains_self _ 4) ?_ (by decide)
+      intro r hr
+      rw [List.mem_singleton.mp hr]
+      exact A.retScratch
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact A.retScratch.sub_right (Offset.sub_base _ (by omega))
     · rw [← A.outputBytes]; exact A.retOut
+    · exact VG.Proof.Bignum.X86.PublicRt.ret_below hlow
+    · have e : addr (s.gpr .esp) 8 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 8 := addr_eq (by omega)
+      rw [e]
+      exact Offset.base_disjoint _ (by decide) (by omega)
   refine WP.mono (entryRestore_ok (I.scratch.of_keeps Kv (by decide) (by decide)) low Saved) fun t R => ?_
   refine ⟨?_, publicRestored_abi R ((Kv.1 _ (by decide)).trans (K.1 _ (by decide))) Ret⟩
   rw [R.mem, R.other .eax (by decide), A.preLength]
@@ -57,9 +82,9 @@ theorem precomputeOperation_ok {s : State} (A : PrecomputeABI s) :
   rw [N] at V
   exact V
 
-theorem precomputeCorrect (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 20).pre s) :
+theorem precomputeCorrect (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 96).pre s) :
     ∃ trace t, Exec isa PrecomputeFn.code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.publicPrecomputeContract abi 20).post s t := by
+      (Spec.Rsa.publicPrecomputeContract abi 96).post s t := by
   obtain ⟨trace, t, E, V, A⟩ := precomputeOperation_ok (precomputeABI_of h)
   refine ⟨trace, t, E, A, ?_⟩
   sig_post [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argSlots, argVal, argBytes]

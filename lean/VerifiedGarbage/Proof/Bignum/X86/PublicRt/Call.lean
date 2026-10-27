@@ -96,8 +96,8 @@ theorem rtBody_noSp : NoSp Sse2.atBody := VG.Proof.Mont.X86.Sse2.atBody_NoSp
 
 theorem rtBody_stackUse : stackUse Sse2.atBody = 56 := VG.Proof.Mont.X86.Sse2.atBody_stack
 
-theorem mulBody_noSp (o a b : Nat) :
-    NoSp (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) := by
+theorem mulBody_noSp (o a b : Nat) (wl : Nat := 9) :
+    NoSp (.seq (.block (mulArgs o a b wl)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) := by
   apply NoSp.of_all
   have e : (!Taint.clobbers (Instr.alu AluOp.add Reg.eax (Src.reg Reg.edx)) Reg.esp) = true := rfl
   rw [Code.allInstrs_eq]
