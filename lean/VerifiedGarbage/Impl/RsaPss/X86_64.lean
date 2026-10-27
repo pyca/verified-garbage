@@ -362,19 +362,6 @@ def clearTop : List Instr :=
 /-- `n₀`, and ZF set if it is zero. -/
 def n0 : List Instr := [.mov .rsi (.mem (sp sN)), .movzx8 .rax (at_ .rsi), .alu .test .rax (.reg .rax)]
 
-/-- `rdx := smear(n₀ >> 1)`, ZF set if zero. -/
-def smear : List Instr :=
-  [.mov .rdx (.reg .rax), .shift .shr .rdx 1, .mov .rax (.reg .rdx), .shift .shr .rax 1, .alu .or .rdx (.reg .rax),
-    .mov .rax (.reg .rdx), .shift .shr .rax 2, .alu .or .rdx (.reg .rax), .mov .rax (.reg .rdx),
-    .shift .shr .rax 4, .alu .or .rdx (.reg .rax), .alu .test .rdx (.reg .rdx)]
-
-/-- The mask `sC` and `lo` (`sLo`); `rax := emLen = k - lo`, and CF set
-if `emLen < hLen + 2`. -/
-def emLen : Prog isa :=
-  .seq (.ite .e (.block [.mov32 .rdx (.imm 0xFF), .mov32 .r8 (.imm 1)]) (.block [.mov32 .r8 (.imm 0)]))
-    (.block [.store (sp sC) .rdx, .store (sp sLo) .r8, .mov .rax (.mem (sp sK)), .alu .sub .rax (.reg .r8),
-      .alu .cmp .rax (.imm (BitVec.ofNat 32 (H.D + 2)))])
-
 /-- `rax := emLen - hLen - 2`, the longest salt, and CF set if it is less
 than the salt's length in `rdx`. -/
 def saltFits : List Instr :=
@@ -471,26 +458,10 @@ def privArgs : List Instr :=
   ([.mov .rdi (.mem (sp sOut)), .mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)),
     .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))] : List Instr)
 
-variable (privN : String) (privC : Prog isa)
-
 /-- After the checks: `EM` at `scratch + oEm`. -/
 def signEnc : Prog isa :=
   seqs [.block dbSlots, clearY, copyDigest H, copySaltY H, .block (signLen H), ctHash H, clearEm,
     putSalt, putH H, mgfXor H, .block clearTop]
-
-/-- After the checks: the encoding, and the private-key operation. -/
-def signMain : Prog isa := seqs [signEnc H, .block privArgs, .call privN privC]
-
-/-- The checks, then `signMain`. -/
-def signBody : Prog isa :=
-  seqs [.block (signPrologue ++ n0),
-    .ite .e signFail (seqs [.block smear, emLen H,
-      .ite .b signFail (seqs [.block (([.mov .rdx (.mem (sp sSaltLen))] : List Instr) ++ saltFits H),
-        .ite .b signFail (signMain H privN privC)])]),
-    .block restoreRegs]
-
-/-- `vg_rsa_pss_<H>_mgf1_<H>_sign`. -/
-def sign : Prog isa := .frame (.alloc frameBytes) (signBody H privN privC) (.free frameBytes)
 
 /-! ## Verifying
 
@@ -503,25 +474,8 @@ def verifyPrologue : List Instr :=
     .store (sp sDig) .r8, .store (sp sSig) .r9, .mov .rax (.mem (arg 3)), .store (sp sScr) .rax,
     .mov .rax (.mem (arg 4)), .store (sp sScrLen) .rax] : List Instr)
 
-/-- `sAny := any_salt_len ≠ 0` and `sSlen := salt_len`; `rdx` the expected
-length for the check, 0 if any. -/
-def anyArgs : Prog isa :=
-  .seq (.block [.mov .rax (.mem (arg 1)), .store (sp sSlen) .rax, .mov32 .rax (.mem (arg 2)),
-      .alu .test .rax (.reg .rax)])
-    (.ite .e (.block [.mov32 .rax (.imm 0), .store (sp sAny) .rax, .mov .rdx (.mem (sp sSlen))])
-      (.block [.mov32 .rax (.imm 1), .store (sp sAny) .rax, .mov32 .rdx (.imm 0)]))
-
 /-- 0 returned. -/
 def verifyFail : Prog isa := .block [.mov32 .rax (.imm 0)]
-
-/-- The arguments of `vg_rsa_public_checked`: `EM`'s place (`k` bytes),
-`n`, `e`, the signature (`k` bytes), and the rest of `scratch`. -/
-def pubArgs : List Instr :=
-  ([.mov .rax (.mem (sp sSig)), .store (sp 0) .rax, .mov .rax (.mem (sp sK)), .store (sp 8) .rax] : List Instr) ++
-  scr .rax oRsa ++ ([.store (sp 16) .rax, .mov .rax (.mem (sp sScrLen)), .alu .sub .rax (.imm 1024),
-    .store (sp 24) .rax] : List Instr) ++ scr .rdi oEm ++
-  ([.mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)), .mov .r8 (.mem (sp sE)),
-    .mov .r9 (.mem (sp sEl))] : List Instr)
 
 /-- `acc :=` the leading byte if `lo = 1`, `EM`'s last byte `⊕ 0xbc`, and the
 top bits of `maskedDB`'s first byte. -/
@@ -628,8 +582,6 @@ def cmpH : Prog isa :=
         .alu .or .rdx (.reg .rax)] (.imm (BitVec.ofNat 32 H.D)))
       (.block [.alu .cmp .rdx (.imm 1), .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 1)]))
 
-variable (pubN : String) (pubC : Prog isa)
-
 /-- Copy a fixed-length salt from the end of `DB`; both the address and
 count depend only on the public requested salt length. -/
 def copyFixedSalt : Prog isa :=
@@ -694,22 +646,5 @@ def saltBack : Prog isa :=
   .seq (.block [.mov .rax (.mem (sp sAny)), .alu .test .rax (.reg .rax)])
     (.ite .e (.seq (.block [.mov .rax (.mem (sp sSlen)), .alu .cmp .rax (.mem (sp sDb))])
       (.ite .b (fixedSaltBack H) (genericSaltBack H))) (genericSaltBack H))
-
-/-- After the public checks. -/
-def verifyMain : Prog isa :=
-  seqs [.block dbSlots, .block pubArgs, .call pubN pubC, .block acc0, mgfXor H, .block clearTop,
-    scanCheck H, saltBack H]
-
-def verifyBody : Prog isa :=
-  seqs [.block (verifyPrologue ++ n0),
-    .ite .e verifyFail (seqs [.block smear, emLen H,
-      .ite .b verifyFail (seqs [anyArgs, .block (([.mov .rax (.mem (sp sK)), .mov .r8 (.mem (sp sLo)),
-          .alu .sub .rax (.reg .r8)] : List Instr) ++
-          saltFits H),
-        .ite .b verifyFail (verifyMain H pubN pubC)])]),
-    .block restoreRegs]
-
-/-- `vg_rsa_pss_<H>_mgf1_<H>_verify`. -/
-def verify : Prog isa := .frame (.alloc frameBytes) (verifyBody H pubN pubC) (.free frameBytes)
 
 end VG.Impl.RsaPss.X86_64

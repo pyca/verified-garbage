@@ -156,9 +156,6 @@ variable (H) in
 def M4 (p : MA × Nat) (t : State) : Prop :=
   MOk (H := H) n p.1 ∧ Pub p.1.F p.1.S p.1.rest (mws H.D p.1 p.2) [] (fun _ _ => True) t
 
-theorem sub_mws {D : Nat} {a : MA} {j : Nat} {ws : List (Nat × BitVec 64)} (h : ∀ q ∈ ws, q ∈ mws D a j) :
-    ∀ q ∈ ws, q ∈ mws D a j := h
-
 include hH in
 theorem clearCopy_ct (hc : HashChecks H.P H.D n) :
     RelCT isa (Two (MB H n G)) (.seq (clearBlock H) (copyH H)) (Two (M1 H n)) := by
