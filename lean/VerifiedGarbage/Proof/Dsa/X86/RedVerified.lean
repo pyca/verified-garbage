@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Dsa.X86.PowVerified
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 

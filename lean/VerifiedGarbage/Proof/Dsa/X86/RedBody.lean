@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Dsa.X86.MulBody
 import VerifiedGarbage.Proof.Dsa.X86.Stream
 import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
 import VerifiedGarbage.Proof.Mont.X86.ContextInit
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.OutsZ
 import VerifiedGarbage.Proof.Framework.Offset

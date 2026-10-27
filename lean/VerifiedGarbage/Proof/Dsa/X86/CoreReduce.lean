@@ -58,7 +58,8 @@ theorem reduceHead_ok {s : State} {base : Addr} {size len inputLen n m : Nat} {i
     (hi : inputLen < 2 ^ 32)
     (hm : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .q)).setWidth 64) len) = m)
     (hm255 : 255 < m) (hodd : m % 2 = 1) :
-    WP isa (.seq (Core.load n len (slot n 0) (.input .q)) (.block (Core.pointer input ++ [.mov .ebx src]))) s
+    WP isa (.seq (Core.load n len (slot n 0) (.input .q))
+      (.block (Core.pointer input ++ ([.mov .ebx src] : List Instr)))) s
       fun w => Red.CallIn n m w base size (pointerValue base s input) inputLen ∧
         Outside base 0 (contextBytes n) s.mem w.mem ∧ Keeps powerClob s w := by
   have hn48 : n ≤ 48 := by omega

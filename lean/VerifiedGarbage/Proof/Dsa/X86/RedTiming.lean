@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Traces of the IA-32 DSA reduction
 

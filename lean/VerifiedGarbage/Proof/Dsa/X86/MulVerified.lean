@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Dsa.X86.MulTiming
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-! # IA-32 DSA products against the shared DSA specification -/

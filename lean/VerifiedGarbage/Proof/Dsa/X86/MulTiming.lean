@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Arith
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
+import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Dsa.X86.ArithmeticTiming
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Impl.Dsa.Layout
 
 /-! # Traces of the IA-32 DSA product and of its calls
 

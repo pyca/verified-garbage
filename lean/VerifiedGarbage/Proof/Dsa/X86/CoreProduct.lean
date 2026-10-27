@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 
-import VerifiedGarbage.Proof.Dsa.X86.CorePowerFrame
 import VerifiedGarbage.Proof.Dsa.X86.CoreStore
 import VerifiedGarbage.Proof.Dsa.X86.MulCall
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
