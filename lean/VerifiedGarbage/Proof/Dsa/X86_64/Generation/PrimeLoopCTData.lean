@@ -30,10 +30,9 @@ def LoopAfter (len drawBytes : Nat) (p : PrimeIterationPublic) (s : State) : Pro
 theorem primeIteration_transition (M : Mont) (K : Kernel) {len drawBytes : Nat}
     {p : PrimeIterationPublic} {s : State} (h : LoopBefore len drawBytes p s) :
     WP isa (Impl.Dsa.X86_64.Generation.primeIteration
-      (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run len drawBytes)) s (LoopAfter len drawBytes p) := by
+      (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run)) s (LoopAfter len drawBytes p) := by
   obtain ⟨mi, s₀, res, hs⟩ := h.1
   have hw := (primeIteration_ok M K hs).and (iteration_public M K hs)
-  rw [h.2.1, h.2.2] at hw
   refine WP.mono hw fun t ⟨ht, hz, huni⟩ => ⟨hz, fun hgo => ?_⟩
   rcases ht with ⟨he, _⟩ | ⟨_, uni', hn⟩
   · rw [hz, hgo] at he

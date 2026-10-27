@@ -42,13 +42,15 @@ theorem keeps_of_frame {bits : Nat} (hb : Supported bits) {s : State} (A : Prime
     exact A.stackWs _ (hs _ hx) hc
   · exact A.wsUsed _ hc hx
 
-theorem correct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits)
-    (ctl : ctlOk (code bits M.mm K.run) = true) (s : State) (pre : (contract bits).pre s) :
-    ∃ trace t, Exec isa (code bits M.mm K.run) s trace t ∧ abiPreserved s t ∧ (contract bits).post s t := by
-  have A := primeABI_of pre
+theorem correct (M : Mont) (K : Kernel)
+    (ctl : ctlOk (code M.mm K.run) = true) (s : State) (pre : contract.pre s) :
+    ∃ trace t, Exec isa (code M.mm K.run) s trace t ∧ abiPreserved s t ∧ contract.post s t := by
+  obtain ⟨hb, A⟩ := primeABI_of pre
+  have hwl : witness + len (s.gpr .r9).toNat ≤ domainCheck := by
+    rcases hb with h | h | h | h | h <;> rw [h] <;> decide
   have hl : 56 ≤ (s.gpr .rsp).toNat := by have : 184 ≤ (s.gpr .rsp).toNat := A.stackLower; omega
   obtain ⟨trace, f, he, hsp, hpost⟩ := alloc_frame_ok (bytes := 56) (by decide) hl
-    (Q := fun f => f.gpr .rsp = s.gpr .rsp ∧ BodyPost bits s f)
+    (Q := fun f => f.gpr .rsp = s.gpr .rsp ∧ BodyPost (s.gpr .r9).toNat s f)
     (WP.mono (body_ok M K hb A) fun t ⟨h1, h2, _, hp⟩ => ⟨h1, h2, freeState_rsp h1, by
       obtain ⟨hr, hu, hm, hg⟩ := hp
       exact ⟨hr, hu, hm, fun r hr' => by
@@ -66,15 +68,14 @@ theorem correct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits)
     simp only [changed, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact A.retWs.sub_right (ws_sub A (by decide))
-    · exact A.retWs.sub_right (ws_sub A (by
-        change witness + len bits ≤ domainCheck
-        rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide))
+    · exact A.retWs.sub_right (ws_sub A hwl)
     · exact (Offset.base_disjoint_below _ (by decide)).sub_right (below_frame_sub s)
     · have hs := frame_stack_sub s (d := 0) (n := 56) (by decide)
       simp only [off, BitVec.add_zero] at hs
       exact (Offset.base_disjoint_below _ (by decide)).sub_right hs
     · exact A.retUsed
-  · sig_post [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+  · sig_post [contract, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi,
+      argRegs]
     refine ⟨?_, keeps_of_frame hb A hframe, fun b rest h => ?_⟩
     · rw [hrax]
       have st : ∀ o : Option (Bool × Spec.RsaKeyGen.Rand),

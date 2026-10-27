@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # A state meets the probable-prime test's precondition
 
-An all-ones candidate of `bits` bits at its offset of a working space of 5120
+An all-ones candidate of 160 bits at its offset of a working space of 5120
 words, and an empty tape. -/
 
 @[expose] public section
@@ -23,7 +23,7 @@ def satMemory (bits : Nat) : Mem := fun a =>
 def satState (bits : Nat) : State where
   gpr r := match r with
     | .rdi => 0x100000 | .rsi => 5120 | .rdx => 0x200000 | .rcx => 0
-    | .r8 => 0x300000 | .rsp => 0x400000 | _ => 0
+    | .r8 => 0x300000 | .r9 => BitVec.ofNat 64 bits | .rsp => 0x400000 | _ => 0
   cf := none
   zf := none
   sf := none
@@ -81,13 +81,13 @@ theorem sat_length {bits : Nat} (hb : Supported bits) :
   have pos := Nat.two_pow_pos (bits - 1)
   exact (VG.Proof.Dsa.bitLength_iff_bounds (by omega)).mpr ⟨by omega, by omega⟩
 
-theorem satisfiable {bits : Nat} (hb : Supported bits) : ∃ s, (contract bits).pre s := by
-  refine ⟨satState bits, ?_⟩
-  sig_pre [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+theorem satisfiable : ∃ s, contract.pre s := by
+  refine ⟨satState 160, ?_⟩
+  sig_pre [contract, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi, argRegs]
   sig_and_intros
   all_goals first
-    | exact sat_odd hb
-    | exact sat_length hb
+    | exact sat_odd (bits := 160) (Or.inl rfl)
+    | exact sat_length (bits := 160) (Or.inl rfl)
     | exact Region.disjoint_of_sep (by decide +kernel)
     | decide +kernel
 

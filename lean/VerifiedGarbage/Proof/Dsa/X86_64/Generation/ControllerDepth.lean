@@ -37,7 +37,7 @@ theorem tapeLoop_depth {body : Prog isa} (hb : callerDepth body) (slots : TapeSl
   all_goals first | exact hb | exact (show 0 ≤ 192 by decide)
 
 theorem primeSearch_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256)
-    (prime : Nat → Prog isa) (hp : ∀ bits, callerDepth (prime bits)) (pLen qLen : Nat) :
+    (prime : Prog isa) (hp : callerDepth prime) (pLen qLen : Nat) :
     callerDepth (primeSearch H1 H256 prime pLen qLen) :=
   (callerDepth.of (generationDepth.block _)).seq
     (pSearch_depth (pAttempt_depth h1 h256 prime hp pLen qLen) _ _)

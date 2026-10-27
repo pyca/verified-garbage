@@ -22,13 +22,13 @@ open VG.Proof.Dsa.Generation
 theorem forceSample_ok {B p : Addr} {Z w N : Nat} {mi : BitVec 64} {bs : List Byte} {s : State}
     (h : SampleState B p Z w N mi bs s) (hd : MrDims B Z w)
     (hlen : 2 ≤ bs.length) (hmax : bs.length < 2 ^ 32) :
-    WP isa (Impl.Dsa.X86_64.Generation.forceStoredWitness kOut bs.length) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.forceStoredWitness kOut kUsedP) s fun t =>
       SampleState B p Z w N mi (forcedWitnessBytes bs) t ∧
       word t.mem B (8 * kU) = word s.mem B (8 * kU) ∧
-      WorkFrame B [] [⟨p, bs.length⟩] s.mem t.mem ∧ Keep [.rax, .rbx] s t := by
+      WorkFrame B [] [⟨p, bs.length⟩] s.mem t.mem ∧ Keep [.rax, .rbx, .rcx] s t := by
   have hz : 256 ≤ Z := by have := hd.z; simp only [slot, hdrBytes] at this; omega
   have hfl := forcedWitnessBytes_length hlen
-  refine WP.mono (forceStoredWitness_ok h.ready hd (by decide) h.ptr hlen hmax h.writable h.source.out)
+  refine WP.mono (forceStoredWitness_ok h.ready hd (by decide) h.ptr (by decide) h.len hlen hmax h.writable h.source.out)
     fun t ⟨ht, hbytes, hf, hwords, hk⟩ => ?_
   rw [h.bytes] at hbytes
   refine ⟨⟨ht, (hwords _ (by change 136 ≤ Z; omega)).trans h.ptr,

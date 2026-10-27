@@ -56,16 +56,11 @@ theorem primeBytesLoad_ready {len drawBytes : Nat} {p : PrimeBytesPublic} {s : S
   exact WP.mono (loadPrimeBytes_ok hs h.2.1 p.length p.value h.2.2.1) fun _ ⟨ht, _, hk⟩ =>
     ⟨⟨mi, ht⟩, hk.2.2.trans h.2.2.2.1, h.2.2.2.2⟩
 
-theorem primeBytes_ct (M : Mont) (K : Kernel) (len drawBytes : Nat)
-    {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht₁ : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.drawCopyArgs len drawBytes)) hc₁).isSome = true)
-    (ht₂ : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.forceWitness len)) hc₂).isSome = true) :
+theorem primeBytes_ct (M : Mont) (K : Kernel) (len drawBytes : Nat) :
     RelCT isa (Two (PrimeBytesBefore len drawBytes))
-      (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run len drawBytes) (fun _ _ => True) := by
+      (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.primeBytes
   exact RelCT.seq (two_post (primeBytesLoad_ct len drawBytes) (fun _ _ h => primeBytesLoad_ready h))
-    (two_map PrimeBytesPublic.call (fun _ _ h => h) (probablePrime_ct M K len drawBytes ht₁ ht₂))
+    (two_map PrimeBytesPublic.call (fun _ _ h => h) (probablePrime_ct M K len drawBytes))
 
 end VG.Proof.Dsa.X86_64.Generation

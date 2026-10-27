@@ -12,7 +12,7 @@ variable {checkName : String}
 
 
 def generate (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
-    (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
+    (prime : Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (parameterSearch (checkName := checkName) G1 G256 sq mul prime pLen qLen) finishOutput
 
 end VG.Impl.Dsa.X86_64.Generation

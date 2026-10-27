@@ -35,7 +35,7 @@ theorem tapeLoop_safe {body : Prog isa} (hb : generationSafe body) (slots : Tape
   rfl
 
 theorem primeSearch_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256)
-    (prime : Nat → Prog isa) (hp : ∀ bits, generationSafe (prime bits)) (pLen qLen : Nat) :
+    (prime : Prog isa) (hp : generationSafe prime) (pLen qLen : Nat) :
     generationSafe (primeSearch H1 H256 prime pLen qLen) :=
   (show generationSafe (.block controlBase) from rfl).seq
     (pSearch_safe (pAttempt_safe h1 h256 prime hp pLen qLen) _ _)

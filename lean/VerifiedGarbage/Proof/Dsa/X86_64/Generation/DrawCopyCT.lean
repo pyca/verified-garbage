@@ -29,14 +29,12 @@ def DrawCopyReady (len drawBytes : Nat) (p : DrawPublic) (s : State) : Prop :=
   s.gpr .rsi = off p.prime.rp (p.used + (drawBytes - len)) ∧ s.gpr .rdi = p.prime.p ∧
     s.gpr .rcx = BitVec.ofNat 64 len ∧ s.gpr .rdx = BitVec.ofNat 64 (8 * len)
 
-theorem drawCopy_ct (len drawBytes : Nat) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.drawCopyArgs len drawBytes)) hc).isSome = true) :
+theorem drawCopy_ct (len drawBytes : Nat) :
     RelCT isa (Two (DrawBefore len drawBytes))
-      (Impl.Dsa.X86_64.Generation.drawCopy len drawBytes) (fun _ _ => True) := by
+      (Impl.Dsa.X86_64.Generation.drawCopy) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.drawCopy
   simp only [seqs]
-  refine RelCT.seq (two_post (Ψ := DrawCopyReady len drawBytes) (two_taint [.rdi] ?_ ht) ?_) ?_
+  refine RelCT.seq (two_post (Ψ := DrawCopyReady len drawBytes) (two_taint [.rdi] ?_ (by taint_decide)) ?_) ?_
   · intro p s t hs ht r hr
     simp only [List.mem_singleton] at hr
     subst r
@@ -45,9 +43,9 @@ theorem drawCopy_ct (len drawBytes : Nat) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     exact hs.ready.good.rdi.trans ht.ready.good.rdi.symm
   · intro p s h
     obtain ⟨mi, hs⟩ := h.1
-    have hlen : len ≤ drawBytes := by rw [← h.2.1, ← h.2.2]; exact p.prime.lenDraw
-    have hd : drawBytes ≤ 1024 := by rw [← h.2.2]; exact p.prime.drawMax
-    exact WP.mono (drawCopyArgs_ok hs.ready.good p.prime.dims.z hlen hd hs.rand hs.ptr hs.used)
+    rw [← h.2.1, ← h.2.2]
+    exact WP.mono (drawCopyArgs_ok hs.ready.good p.prime.dims.z p.prime.lenDraw hs.rand hs.ptr hs.used
+      hs.draw hs.len)
       fun t ⟨_, hsi, hdi, hcx, hdx, _, _⟩ => ⟨hsi, hdi, hcx, hdx⟩
   · exact two_taint [.rdi, .rsi, .rcx, .rdx] (by
       intro p s t hs ht r hr

@@ -38,21 +38,16 @@ theorem primeCall_ready (M : Mont) {len drawBytes : Nat} {p : PrimeCallPublic} {
   exact WP.mono (primeInputSetup_ok M hs p.width) fun _ ⟨mi', ht, _, _⟩ =>
     ⟨⟨⟨mi', ht⟩, h.2.2.2⟩, h.2.2.1⟩
 
-theorem probablePrime_ct (M : Mont) (K : Kernel) (len drawBytes : Nat)
-    {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht₁ : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.drawCopyArgs len drawBytes)) hc₁).isSome = true)
-    (ht₂ : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.forceWitness len)) hc₂).isSome = true) :
+theorem probablePrime_ct (M : Mont) (K : Kernel) (len drawBytes : Nat) :
     RelCT isa (Two (PrimeCallBefore len drawBytes))
-      (Impl.Dsa.X86_64.Generation.probablePrime M.mm K.run len drawBytes) (fun _ _ => True) := by
+      (Impl.Dsa.X86_64.Generation.probablePrime M.mm K.run) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.probablePrime
   refine RelCT.seq (two_post (primeTrial_ct len drawBytes) (fun _ _ h => primeTrial_tested h)) ?_
   refine two_ite (fun _ _ _ hs ht => by simp only [eval, hs.2, ht.2]) ?_ ?_
   · refine RelCT.seq (two_post
       (two_map (fun p : PrimeCallPublic => p.draw.prime) (fun _ _ h => primeCall_setup h.1.1)
         (primeSetup_ct M)) (fun _ _ h => primeCall_ready M h.1.1)) ?_
-    exact two_map PrimeCallPublic.draw (fun _ _ h => h) (millerRabin_ct M K len drawBytes ht₁ ht₂)
+    exact two_map PrimeCallPublic.draw (fun _ _ h => h) (millerRabin_ct M K len drawBytes)
   · exact two_taint [.rdi] (by
       intro p s t hs ht r hr
       simp only [List.mem_singleton] at hr

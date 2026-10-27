@@ -44,16 +44,16 @@ def entryDerived : List Instr :=
     [.mov .rax (.mem (sp 40)), .alu .add .rax (.imm (BitVec.ofNat 32 offset)), .store (sp dst) .rax]) ++
   [.mov32 .rax (.imm 0), .store (sp 128) .rax]
 
-def dispatch (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa) : Prog isa :=
+def dispatch (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Prog isa) : Prog isa :=
   .seq (.block [.mov .rax (.mem (sp 136)), .alu .cmp .rax (.imm 128)])
     (.ite .e (generate (checkName := checkName) G1 G256 sq mul prime 128 20)
       (.seq (.block [.alu .cmp .rax (.imm 256)])
         (.ite .e (generate (checkName := checkName) G1 G256 sq mul prime 256 32) (generate (checkName := checkName) G1 G256 sq mul prime 384 32))))
 
-def entryBody (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa) : Prog isa :=
+def entryBody (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Prog isa) : Prog isa :=
   .seq (.block (entryHeader ++ entryIncoming ++ entryDerived)) (dispatch (checkName := checkName) G1 G256 sq mul prime)
 
-def code (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa) : Prog isa :=
+def code (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Prog isa) : Prog isa :=
   .frame (.alloc 48)
     (.seq (.block saveRegisters)
       (.seq (.frame (.alloc 296) (entryBody (checkName := checkName) G1 G256 sq mul prime) (.free 296)) (.block restoreRegisters)))
