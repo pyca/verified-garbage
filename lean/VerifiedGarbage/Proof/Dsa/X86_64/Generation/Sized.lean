@@ -126,10 +126,10 @@ theorem code_all (G1 G256 : Stream) (sq : Prog isa)
 theorem verified (G1 G256 : Stream) (sq : Prog isa)
     (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (hv : Verified target (VG.Impl.Dsa.X86_64.Generation.code (checkName := checkName) G1 G256 sq mul round)
-      (Spec.Dsa.generateParametersContract abi 472))
+      (Spec.Dsa.generateParametersContract abi 536))
     (pBytes : Nat) (hp : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384) :
     Verified target (VG.Impl.Dsa.X86_64.Generation.Sized.code (checkName := checkName) pBytes G1 G256 sq mul round)
-      (Spec.Dsa.GenerationSized.contract pBytes abi 472) := by
+      (Spec.Dsa.GenerationSized.contract pBytes abi 536) := by
   refine ⟨?_, ?_, sized_satisfiable pBytes hp⟩
   · intro s hs
     have old := pre_of_sized hs

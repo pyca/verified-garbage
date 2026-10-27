@@ -17,8 +17,8 @@ namespace VG.Proof.Dsa.X86_64.Generation.Sized
 open VG VG.X86_64
 
 theorem pre_of_sized {pBytes : Nat} {s : State}
-    (h : (Spec.Dsa.GenerationSized.contract pBytes abi 472).pre s) :
-    (Spec.Dsa.generateParametersContract abi 472).pre s := by
+    (h : (Spec.Dsa.GenerationSized.contract pBytes abi 536).pre s) :
+    (Spec.Dsa.generateParametersContract abi 536).pre s := by
   sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_split h
@@ -28,7 +28,7 @@ theorem pre_of_sized {pBytes : Nat} {s : State}
   all_goals with_reducible assumption
 
 theorem width_of_sized {pBytes : Nat} {s : State}
-    (h : (Spec.Dsa.GenerationSized.contract pBytes abi 472).pre s) :
+    (h : (Spec.Dsa.GenerationSized.contract pBytes abi 536).pre s) :
     (s.gpr .rdx).toNat = pBytes := by
   sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_pre [Spec.Dsa.GenerationSized.contract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
@@ -57,7 +57,7 @@ private theorem args_of_sized (p : Nat) :
   decide +kernel
 
 theorem sized_satisfiable (p : Nat) (hp : p = 128 ∨ p = 256 ∨ p = 384) :
-    ∃ s, (Spec.Dsa.GenerationSized.contract p abi 472).pre s := by
+    ∃ s, (Spec.Dsa.GenerationSized.contract p abi 536).pre s := by
   have hargs := args_of_sized p
   refine ⟨sizedSatState p, ?_⟩
   rcases hp with rfl | rfl | rfl

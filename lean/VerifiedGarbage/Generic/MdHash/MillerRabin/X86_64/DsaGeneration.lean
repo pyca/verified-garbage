@@ -16,7 +16,7 @@ def artifacts (h : Proof.Pbkdf2.Md.X86_64.MdHash) (v : RoundImpl) : List Artifac
   if hh : h.mgf.G.rust = "sha1" then
     [(Spec.Dsa.GenerationSized.api 128).artifact X86_64.target {
       suffix := Emit.qualifiedName "" [("sha1", h.suffix), ("mr", v.suffix)]
-      stack := 472
+      stack := 536
       code := Impl.Dsa.X86_64.Generation.Sized.single (checkName := VG.Proof.Dsa.X86_64.Generation.SharedChecker.name v) 128 h.H.stream
         v.inlineMont.toS.mm v.inlineMont.mm (Kernel.called v).run
       verified := sha1_verified h v hh
@@ -27,7 +27,7 @@ def artifacts (h : Proof.Pbkdf2.Md.X86_64.MdHash) (v : RoundImpl) : List Artifac
       have hp : p.val = 256 ∨ p.val = 384 := large_width p.property
       (Spec.Dsa.GenerationSized.api p.val).artifact X86_64.target {
         suffix := Emit.qualifiedName "" [("sha256", h.suffix), ("mr", v.suffix)]
-        stack := 472
+        stack := 536
         code := Impl.Dsa.X86_64.Generation.Sized.single (checkName := VG.Proof.Dsa.X86_64.Generation.SharedChecker.name v) p.val h.H.stream
           v.inlineMont.toS.mm v.inlineMont.mm (Kernel.called v).run
         verified := sha256_verified h v hh p.val hp

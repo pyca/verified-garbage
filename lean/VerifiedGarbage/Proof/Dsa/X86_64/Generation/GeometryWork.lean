@@ -15,7 +15,7 @@ def GenerationGeometry.pWork (p : GenerationGeometry) : List Region :=
    p.part VG.Impl.Dsa.Generation.Layout.hash oRsa, retR p.F,
    p.part arithmetic arithmeticBytes, p.part VG.Impl.Dsa.Generation.Layout.p p.pLen,
    p.part exponent p.pLen, p.part arithmetic arithmeticBytes, p.part witness p.pLen,
-   below p.F 128, ⟨p.F, frameBytes⟩]
+   below p.F 192, ⟨p.F, frameBytes⟩]
 
 theorem GenerationGeometry.small_bound (p : GenerationGeometry) {d n : Nat}
     (hd : d ≤ domainCheck) (hn : n ≤ arithmeticBytes) : d + n ≤ usedBytes p.pLen := by

@@ -32,8 +32,8 @@ abbrev body (bits : Nat) (mul : Nat → Nat → Nat → Prog isa) (round : Prog 
       .block restoreRegisters])
 
 /-- The memory the test may change. -/
-def changed (s : State) : List Region :=
-  [⟨off (s.gpr .rdi) arithmetic, arithmeticBytes⟩, ⟨off (s.gpr .rdi) witness, 384⟩,
+def changed (bits : Nat) (s : State) : List Region :=
+  [⟨off (s.gpr .rdi) arithmetic, arithmeticBytes⟩, ⟨off (s.gpr .rdi) witness, len bits⟩,
     below (frameSp s) 128, ⟨frameSp s, 56⟩, ⟨s.gpr .r8, 8⟩]
 
 /-- The test's result as the function returns it. -/
@@ -43,7 +43,7 @@ def BodyPost (bits : Nat) (s t : State) : Prop :=
   t.gpr .rax = BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status res) ∧
   (∀ b rest, res = some (b, rest) →
     t.mem.readW (s.gpr .r8) 64 = BitVec.ofNat 64 ((s.gpr .rcx).toNat - rest.length)) ∧
-  Frame (changed s) s.mem t.mem ∧
+  Frame (changed bits s) s.mem t.mem ∧
   (∀ r ∈ spillSlots.map Prod.fst, t.gpr r = s.gpr r)
 
 /-- What the test has set up when the shared prime test starts. -/
@@ -405,7 +405,7 @@ theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State}
       rcases hr with rfl | rfl | rfl | rfl
       · exact ⟨_, by simp [changed], fun _ h => h⟩
       · exact ⟨_, by simp [changed], fun _ h => h⟩
-      · exact ⟨⟨off (s.gpr .rdi) witness, 384⟩, by simp [changed], Region.sub_prefix hlen⟩
+      · exact ⟨_, by simp [changed], fun _ h => h⟩
       · exact ⟨_, by simp [changed], fun _ h => h⟩
     · intro r hr
       obtain rfl := List.mem_singleton.mp hr

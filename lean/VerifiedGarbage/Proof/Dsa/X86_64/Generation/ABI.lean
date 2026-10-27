@@ -25,7 +25,7 @@ theorem stackArgs_six (s : State) : List.map (stackArg s) (List.range 6) =
     [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5] := rfl
 
 structure GenerationABI (s : State) : Prop where
-  stackLower : 472 ≤ (s.gpr .rsp).toNat
+  stackLower : 536 ≤ (s.gpr .rsp).toNat
   stackUpper : (s.gpr .rsp).toNat + 56 ≤ 2 ^ 64
   rd : s.rd = [⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArgAddr s 0, 48⟩]
   wr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩]
@@ -44,12 +44,12 @@ structure GenerationABI (s : State) : Prop where
   retRand : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat⟩
   retScratch : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
   retArgs : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 48⟩
-  stackOut : (below (s.gpr .rsp) 472 : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
-  stackSeeds : (below (s.gpr .rsp) 472 : Region).Disjoint ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
-  stackHs : (below (s.gpr .rsp) 472 : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat⟩
-  stackRand : (below (s.gpr .rsp) 472 : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat⟩
-  stackScratch : (below (s.gpr .rsp) 472 : Region).Disjoint ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
-  stackArgs : (below (s.gpr .rsp) 472 : Region).Disjoint ⟨stackArgAddr s 0, 48⟩
+  stackOut : (below (s.gpr .rsp) 536 : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+  stackSeeds : (below (s.gpr .rsp) 536 : Region).Disjoint ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
+  stackHs : (below (s.gpr .rsp) 536 : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat⟩
+  stackRand : (below (s.gpr .rsp) 536 : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat⟩
+  stackScratch : (below (s.gpr .rsp) 536 : Region).Disjoint ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
+  stackArgs : (below (s.gpr .rsp) 536 : Region).Disjoint ⟨stackArgAddr s 0, 48⟩
   outBound : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64
   seedsBound : (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64
   hsBound : (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64
@@ -62,7 +62,7 @@ structure GenerationABI (s : State) : Prop where
   scratchLength : Spec.Dsa.generationScratchWords (s.gpr .rdx).toNat ≤ (stackArg s 5).toNat
 
 theorem generationABI_of {s : State}
-    (h : (Spec.Dsa.generateParametersContract abi 472).pre s) : GenerationABI s := by
+    (h : (Spec.Dsa.generateParametersContract abi 536).pre s) : GenerationABI s := by
   sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
   sig_split h

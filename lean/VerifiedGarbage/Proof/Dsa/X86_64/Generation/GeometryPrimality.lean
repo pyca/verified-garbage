@@ -41,7 +41,7 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     tapePtr := h13
     tapeLength := h15
     randMax := rand.size
-    stackSize := p.stackSize
+    stackSize := by have := p.stackSize; omega
     stackSeparate := (p.stack_part ha).symm
     bufferSeparate := ?_
     bufferOutside := ?_
@@ -63,7 +63,7 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
   · change (⟨rand.ptr, rand.bytes.length⟩ : Region).Disjoint ⟨off (W 5) witness, p.pLen⟩
     rw [h5]
     exact rand.part hw
-  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 128],
+  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 192],
       (⟨p.F, frameBytes⟩ : Region).Disjoint r
     rw [h5]
     intro r hr
@@ -72,7 +72,7 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     · exact p.frame_part ha
     · exact p.frame_part hw
     · exact p.frame_below
-  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 128],
+  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 192],
       (⟨p.hash, oRsa⟩ : Region).Disjoint r
     rw [h5]
     intro r hr
@@ -81,7 +81,7 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     · exact p.parts_disjoint hh ha (Or.inl (by decide))
     · exact p.parts_disjoint hh hw (Or.inl (by decide))
     · exact (p.stack_part hh).symm
-  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 128, ⟨p.F, frameBytes⟩],
+  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 192, ⟨p.F, frameBytes⟩],
       (⟨off (W 5) VG.Impl.Dsa.Generation.Layout.p, p.pLen⟩ : Region).Disjoint r
     rw [h5]
     intro r hr
@@ -91,7 +91,7 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     · exact p.parts_disjoint hp hw (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p witness; omega))
     · exact (p.stack_part hp).symm
     · exact (p.frame_part hp).symm
-  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 128, ⟨p.F, frameBytes⟩],
+  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 192, ⟨p.F, frameBytes⟩],
       (⟨off (W 5) exponent, p.pLen⟩ : Region).Disjoint r
     rw [h5]
     intro r hr

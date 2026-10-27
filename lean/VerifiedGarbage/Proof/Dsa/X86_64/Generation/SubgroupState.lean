@@ -50,17 +50,17 @@ structure SubgroupPlan where
   tapeHash : ∀ r ∈ [⟨output, prime.len⟩, ⟨hash, oRsa⟩, retR prime.sp],
     (⟨prime.rp, prime.rand.length⟩ : Region).Disjoint r
   framePrime : ∀ r ∈ [⟨prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩,
-      ⟨prime.p, prime.len⟩, below prime.sp 128], (⟨prime.sp, frameBytes⟩ : Region).Disjoint r
+      ⟨prime.p, prime.len⟩, below prime.sp 192], (⟨prime.sp, frameBytes⟩ : Region).Disjoint r
   hashPrime : ∀ r ∈ [⟨prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩,
-      ⟨prime.p, prime.len⟩, below prime.sp 128], (⟨hash, oRsa⟩ : Region).Disjoint r
+      ⟨prime.p, prime.len⟩, below prime.sp 192], (⟨hash, oRsa⟩ : Region).Disjoint r
   outputPrime : ∀ r ∈ [⟨prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩,
-      ⟨prime.p, prime.len⟩, below prime.sp 128], (⟨output, prime.len⟩ : Region).Disjoint r
+      ⟨prime.p, prime.len⟩, below prime.sp 192], (⟨output, prime.len⟩ : Region).Disjoint r
 
 def SubgroupPlan.hashWrites (p : SubgroupPlan) : List Region :=
   [⟨p.output, p.prime.len⟩, ⟨p.hash, oRsa⟩, retR p.prime.sp]
 
 def SubgroupPlan.primeWrites (p : SubgroupPlan) : List Region :=
-  [⟨p.prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩, ⟨p.prime.p, p.prime.len⟩, below p.prime.sp 128]
+  [⟨p.prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩, ⟨p.prime.p, p.prime.len⟩, below p.prime.sp 192]
 
 def SubgroupPlan.changed (p : SubgroupPlan) : List Region :=
   p.hashWrites ++ p.primeWrites ++ [⟨p.prime.sp, frameBytes⟩]

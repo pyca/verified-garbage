@@ -15,12 +15,13 @@ open VG VG.X86_64 VG.X86_64.Spill VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Dsa.X86_64.ProbablePrime VG.Impl.Dsa.Generation.Layout VG.Proof.MillerRabin.X86_64
 
 /-- No byte of `ws` but those of the test's scratch ranges is in a region the test changes. -/
-theorem keeps_of_frame {bits : Nat} {s : State} (A : PrimeABI bits s) {m : Mem}
-    (hf : Frame (changed s) s.mem m) :
+theorem keeps_of_frame {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) {m : Mem}
+    (hf : Frame (changed bits s) s.mem m) :
     Spec.Dsa.ModPow.Keeps (s.gpr .rdi) (s.gpr .rsi).toNat (layout bits).scratch s.mem m := by
   intro i hi hout
   have hw := A.wsBound
-  have h1 := hout (witness, 384) (by simp [layout])
+  have hlen : len bits ≤ 384 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
+  have h1 := hout (witness, len bits) (by simp [layout])
   have h2 := hout (arithmetic, arithmeticBytes) (by simp [layout])
   have hc : (wsRegion s).Contains (s.gpr .rdi + BitVec.ofNat 64 i) 1 :=
     Offset.contains_base _ (by omega) (by omega)
@@ -31,8 +32,9 @@ theorem keeps_of_frame {bits : Nat} {s : State} (A : PrimeABI bits s) {m : Mem}
   · have hd := Offset.disjoint (s.gpr .rdi) (d := i) (n := 1) (e := arithmetic) (k := arithmeticBytes)
       (by simp only at h2; omega) (by omega) (by have : arithmetic + arithmeticBytes ≤ 2 ^ 64 := (by decide); omega)
     exact hd _ (Region.contains_self _ _) hx
-  · have hd := Offset.disjoint (s.gpr .rdi) (d := i) (n := 1) (e := witness) (k := 384)
-      (by simp only at h1; omega) (by omega) (by have : witness + 384 ≤ 2 ^ 64 := (by decide); omega)
+  · have hd := Offset.disjoint (s.gpr .rdi) (d := i) (n := 1) (e := witness) (k := len bits)
+      (by simp only at h1; omega) (by omega)
+      (by have : witness + 384 ≤ 2 ^ 64 := (by decide); have := hlen; omega)
     exact hd _ (Region.contains_self _ _) hx
   · exact (A.stackWs.sub_left (below_frame_sub s)) _ hx hc
   · have hs := frame_stack_sub s (d := 0) (n := 56) (by decide)
@@ -64,14 +66,16 @@ theorem correct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits)
     simp only [changed, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact A.retWs.sub_right (ws_sub A (by decide))
-    · exact A.retWs.sub_right (ws_sub A (by decide))
+    · exact A.retWs.sub_right (ws_sub A (by
+        change witness + len bits ≤ domainCheck
+        rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide))
     · exact (Offset.base_disjoint_below _ (by decide)).sub_right (below_frame_sub s)
     · have hs := frame_stack_sub s (d := 0) (n := 56) (by decide)
       simp only [off, BitVec.add_zero] at hs
       exact (Offset.base_disjoint_below _ (by decide)).sub_right hs
     · exact A.retUsed
   · sig_post [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
-    refine ⟨?_, keeps_of_frame A hframe, fun b rest h => ?_⟩
+    refine ⟨?_, keeps_of_frame hb A hframe, fun b rest h => ?_⟩
     · rw [hrax]
       have st : ∀ o : Option (Bool × Spec.RsaKeyGen.Rand),
           (BitVec.setWidth 32 (BitVec.ofNat 64 (Spec.Dsa.ProbablePrime.status o))).toNat =

@@ -21,24 +21,24 @@ structure PPrimalityPlan where
   tapePtr : construct.hash.W 13 = rp
   tapeLength : construct.hash.W 15 = BitVec.ofNat 64 rand.length
   randMax : rand.length < 2 ^ 64
-  stackSize : 128 ≤ construct.hash.F.toNat
-  stackSeparate : Region.Disjoint ⟨construct.B, construct.Z⟩ (below construct.hash.F 128)
+  stackSize : 192 ≤ construct.hash.F.toNat
+  stackSeparate : Region.Disjoint ⟨construct.B, construct.Z⟩ (below construct.hash.F 192)
   bufferSeparate : Region.Disjoint ⟨construct.B, construct.Z⟩ ⟨off (construct.hash.W 5) witness, construct.len⟩
   bufferOutside : ∀ i < construct.len, construct.Z ≤ ofs construct.B (off (off (construct.hash.W 5) witness) i)
   tapeBuffer : Region.Disjoint ⟨rp, rand.length⟩ ⟨off (construct.hash.W 5) witness, construct.len⟩
-  tapeStack : Region.Disjoint ⟨rp, rand.length⟩ (below construct.hash.F 128)
+  tapeStack : Region.Disjoint ⟨rp, rand.length⟩ (below construct.hash.F 192)
   framePrime : ∀ r ∈ [⟨construct.B, arithmeticBytes⟩,
-      ⟨off (construct.hash.W 5) witness, construct.len⟩, below construct.hash.F 128],
+      ⟨off (construct.hash.W 5) witness, construct.len⟩, below construct.hash.F 192],
     (⟨construct.hash.F, frameBytes⟩ : Region).Disjoint r
   hashPrime : ∀ r ∈ [⟨construct.B, arithmeticBytes⟩,
-      ⟨off (construct.hash.W 5) witness, construct.len⟩, below construct.hash.F 128],
+      ⟨off (construct.hash.W 5) witness, construct.len⟩, below construct.hash.F 192],
     (⟨construct.hash.S, oRsa⟩ : Region).Disjoint r
   pPrime : ∀ r ∈ [⟨construct.B, arithmeticBytes⟩,
-      ⟨off (construct.hash.W 5) witness, construct.len⟩, below construct.hash.F 128,
+      ⟨off (construct.hash.W 5) witness, construct.len⟩, below construct.hash.F 192,
       ⟨construct.hash.F, frameBytes⟩],
     (⟨off (construct.hash.W 5) Impl.Dsa.Generation.Layout.p, construct.len⟩ : Region).Disjoint r
   exponentPrime : ∀ r ∈ [⟨construct.B, arithmeticBytes⟩,
-      ⟨off (construct.hash.W 5) witness, construct.len⟩, below construct.hash.F 128,
+      ⟨off (construct.hash.W 5) witness, construct.len⟩, below construct.hash.F 192,
       ⟨construct.hash.F, frameBytes⟩],
     (⟨off (construct.hash.W 5) exponent, construct.len⟩ : Region).Disjoint r
   tapeConstruct : ∀ r ∈ construct.changed, (⟨rp, rand.length⟩ : Region).Disjoint r
@@ -70,12 +70,12 @@ def PPrimalityPlan.prime (p : PPrimalityPlan) (h : VG.Proof.Dsa.Generation.PDoma
   n3 := by have := h.large; omega
   checksMax := by split <;> decide
   randMax := p.randMax
-  stackSize := p.stackSize
-  stackSeparate := p.stackSeparate
+  stackSize := by have := p.stackSize; omega
+  stackSeparate := p.stackSeparate.sub_right (below_sub (by decide) (by decide))
   bufferSeparate := p.bufferSeparate
   bufferOutside := p.bufferOutside
   tapeBuffer := p.tapeBuffer
-  tapeStack := p.tapeStack
+  tapeStack := p.tapeStack.sub_right (below_sub (by decide) (by decide))
 
 def PPrimalityPlan.call (p : PPrimalityPlan) (h : VG.Proof.Dsa.Generation.PDomain p.construct.len p.construct.value) : PrimeCallPlan where
   prime := p.prime h
@@ -103,7 +103,7 @@ def PPrimalityPlan.call (p : PPrimalityPlan) (h : VG.Proof.Dsa.Generation.PDomai
 
 def PPrimalityPlan.testWrites (p : PPrimalityPlan) : List Region :=
   [⟨p.construct.B, arithmeticBytes⟩,
-    ⟨off (p.construct.hash.W 5) witness, p.construct.len⟩, below p.construct.hash.F 128,
+    ⟨off (p.construct.hash.W 5) witness, p.construct.len⟩, below p.construct.hash.F 192,
     ⟨p.construct.hash.F, frameBytes⟩]
 
 def PPrimalityPlan.changed (p : PPrimalityPlan) : List Region :=

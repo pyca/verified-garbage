@@ -43,7 +43,7 @@ def candidate (bits : Nat) : Nat :=
 def layout (bits : Nat) : Spec.Dsa.ProbablePrime.Layout where
   bits := bits
   candidate := candidate bits
-  scratch := [(Generation.Layout.witness, 384), (Generation.Layout.arithmetic, Generation.Layout.arithmeticBytes)]
+  scratch := [(Generation.Layout.witness, len bits), (Generation.Layout.arithmetic, Generation.Layout.arithmeticBytes)]
   size := Generation.Layout.domainCheck
 
 /-- `[rsp + d]`. -/

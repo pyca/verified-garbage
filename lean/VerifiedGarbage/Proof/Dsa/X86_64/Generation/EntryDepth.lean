@@ -61,7 +61,7 @@ theorem entry_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H25
     (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round)
     (hc : generationDepth (.call checkName (VG.Impl.Dsa.X86_64.Generate.checkParameters sq mul))) :
-    (code (checkName := checkName) H1 H256 sq mul round).x86_64Depth ≤ 472 := by
+    (code (checkName := checkName) H1 H256 sq mul round).x86_64Depth ≤ 536 := by
   have body := dispatch_depth (checkName := checkName) h1 h256 sq mul round hs hm hr hc
   unfold generationDepth at body
   simp only [code, entryBody, Code.x86_64Depth, Instr.frameBytes, Nat.zero_max, Nat.max_zero]

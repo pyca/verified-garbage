@@ -27,8 +27,8 @@ private theorem generation_post_of_exec {c : Prog isa} {s t : State} {trace : Li
   exact hq
 
 theorem generation_constantTime (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel) :
-    ConstantTime isa (Spec.Dsa.generateParametersContract abi 472).pre
-      (Spec.Dsa.generateParametersContract abi 472).pub
+    ConstantTime isa (Spec.Dsa.generateParametersContract abi 536).pre
+      (Spec.Dsa.generateParametersContract abi 536).pub
       (code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) := by
   intro s t tsa tsb u v hs ht hpub ea eb
   have hsa := generationABI_of hs

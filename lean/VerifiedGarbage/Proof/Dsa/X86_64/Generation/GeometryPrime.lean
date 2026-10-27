@@ -55,7 +55,7 @@ def GenerationGeometry.qPrime (p : GenerationGeometry) (rand : GenerationTape p)
   n3 := (p.qShape seed).2
   checksMax := by decide
   randMax := rand.size
-  stackSize := p.stackSize
+  stackSize := by have := p.stackSize; omega
   stackSeparate := (p.stack_part (d := arithmetic) (n := arithmeticBytes) (by
     rcases p.width with h | h | h <;> rw [h] <;> decide)).symm
   bufferSeparate := p.parts_disjoint

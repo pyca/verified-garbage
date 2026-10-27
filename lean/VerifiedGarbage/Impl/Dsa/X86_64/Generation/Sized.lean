@@ -19,27 +19,27 @@ variable {checkName : String}
 
 
 def dispatch (pBytes : Nat) (G1 G256 : Stream) (sq : Prog isa)
-    (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
+    (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa) : Prog isa :=
   .seq (.block [.mov .rax (.mem (sp 136)), .alu .cmp .rax (.imm 128)])
-    (.ite .e (if pBytes = 128 then generate (checkName := checkName) G1 G256 sq mul round 128 20 else .block [])
+    (.ite .e (if pBytes = 128 then generate (checkName := checkName) G1 G256 sq mul prime 128 20 else .block [])
       (.seq (.block [.alu .cmp .rax (.imm 256)])
-        (.ite .e (if pBytes = 256 then generate (checkName := checkName) G1 G256 sq mul round 256 32 else .block [])
-          (if pBytes = 384 then generate (checkName := checkName) G1 G256 sq mul round 384 32 else .block []))))
+        (.ite .e (if pBytes = 256 then generate (checkName := checkName) G1 G256 sq mul prime 256 32 else .block [])
+          (if pBytes = 384 then generate (checkName := checkName) G1 G256 sq mul prime 384 32 else .block []))))
 
 def entryBody (pBytes : Nat) (G1 G256 : Stream) (sq : Prog isa)
-    (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
-  .seq (.block (entryHeader ++ entryIncoming ++ entryDerived)) (dispatch (checkName := checkName) pBytes G1 G256 sq mul round)
+    (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa) : Prog isa :=
+  .seq (.block (entryHeader ++ entryIncoming ++ entryDerived)) (dispatch (checkName := checkName) pBytes G1 G256 sq mul prime)
 
 def code (pBytes : Nat) (G1 G256 : Stream) (sq : Prog isa)
-    (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
+    (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa) : Prog isa :=
   .frame (.alloc 48)
     (.seq (.block saveRegisters)
-      (.seq (.frame (.alloc 296) (entryBody (checkName := checkName) pBytes G1 G256 sq mul round) (.free 296))
+      (.seq (.frame (.alloc 296) (entryBody (checkName := checkName) pBytes G1 G256 sq mul prime) (.free 296))
         (.block restoreRegisters))) (.free 48)
 
 /-- Only the selected hash survives the statically pruned size branches. -/
 def single (pBytes : Nat) (G : Stream) (sq : Prog isa)
-    (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
-  code (checkName := checkName) pBytes G G sq mul round
+    (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa) : Prog isa :=
+  code (checkName := checkName) pBytes G G sq mul prime
 
 end VG.Impl.Dsa.X86_64.Generation.Sized

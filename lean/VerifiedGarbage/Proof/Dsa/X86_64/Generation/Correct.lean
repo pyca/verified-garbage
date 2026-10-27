@@ -24,11 +24,11 @@ variable {checkName : String}
 theorem generation_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
     (sp : (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run).all
       (fun i => !isa.writesSp i) = true)
-    (depth : (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run).x86_64Depth ≤ 472)
+    (depth : (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run).x86_64Depth ≤ 536)
     (ctl : ctlOk (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) = true)
-    (s : State) (pre : (Spec.Dsa.generateParametersContract abi 472).pre s) :
+    (s : State) (pre : (Spec.Dsa.generateParametersContract abi 536).pre s) :
     ∃ trace t, Exec isa (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) s trace t ∧
-      abiPreserved s t ∧ (Spec.Dsa.generateParametersContract abi 472).post s t := by
+      abiPreserved s t ∧ (Spec.Dsa.generateParametersContract abi 536).post s t := by
   have h := generationABI_of pre
   obtain ⟨trace, t, he, result, callee, _, _⟩ := entryRun_ok (checkName := checkName) H M Sq K h
   refine ⟨trace, t, he, ⟨callee, ?_, VG.X86_64.Exec.ctl ctl he⟩, entry_shared_post result⟩

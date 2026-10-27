@@ -77,7 +77,7 @@ theorem seedValidate_ok (M : Mont) (Sq : MontS)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨⟨p.geo.B, usedBytes p.geo.pLen⟩, by simp [GenerationContext.changed], p.geo.part_sub arena⟩
-    · exact ⟨below p.geo.F 128, by simp [GenerationContext.changed], below_sub (by decide) (by decide)⟩
+    · exact ⟨below p.geo.F 192, by simp [GenerationContext.changed], below_sub (by decide) (by decide)⟩
     · exact ⟨⟨p.geo.F, frameBytes⟩, by simp [GenerationContext.changed], fun _ h => h⟩
   refine ⟨h.frame Lt ⟨V, Rt⟩ ?_ ff kt.2.1 kt.2.2, ?_, ff, kt.2.1, kt.2.2⟩
   · intro k hk
