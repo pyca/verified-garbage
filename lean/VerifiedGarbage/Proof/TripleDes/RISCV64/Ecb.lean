@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.TripleDes.RISCV64.ModeCore
 /-!
 # Triple DES ECB on RISC-V
 
-`ecb_wp`: in the modes' frame of 80 slots below the stack pointer, the
+`ecb_wp`: in the modes' frame of 118 slots below the stack pointer, the
 caller's `s1`–`s4` saved (`saves_wp`), the schedules copied
 (`Mode.prepare_wp`), the blocks (`loop_ok`), the registers restored
 (`restore_wp`) and the frame zeroed (`wipe_wp`).
@@ -30,7 +30,7 @@ open VG.Spec.TripleDes (Direction Schedule)
 open VG.Proof.TripleDes (blockAt_eq_of_frame scheduleAt_eq_of_frame)
 
 /-- What ECB may assume: the schedule readable, the `n` blocks writable,
-apart from each other and from the 640 bytes below the stack pointer, the
+apart from each other and from the 944 bytes below the stack pointer, the
 blocks not wrapping around. -/
 structure EcbPre (s : State) : Prop where
   rd : s.rd = [⟨s.gpr .a0, 384⟩]
@@ -38,9 +38,9 @@ structure EcbPre (s : State) : Prop where
   keyData : (⟨s.gpr .a0, 384⟩ : Region).Disjoint ⟨s.gpr .a1, 8 * (s.gpr .a2).toNat⟩
   fit : (s.gpr .a1).toNat + 8 * (s.gpr .a2).toNat ≤ 2 ^ 64
   al : s.sp.toNat % 16 = 0
-  sp : 640 ≤ s.sp.toNat
-  stackKey : (⟨s.sp - 640, 640⟩ : Region).Disjoint ⟨s.gpr .a0, 384⟩
-  stackData : (⟨s.sp - 640, 640⟩ : Region).Disjoint ⟨s.gpr .a1, 8 * (s.gpr .a2).toNat⟩
+  sp : 944 ≤ s.sp.toNat
+  stackKey : (⟨s.sp - 944, 944⟩ : Region).Disjoint ⟨s.gpr .a0, 384⟩
+  stackData : (⟨s.sp - 944, 944⟩ : Region).Disjoint ⟨s.gpr .a1, 8 * (s.gpr .a2).toNat⟩
 
 theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
     WP isa (Ecb.ecb d) s fun s' => abiPreserved s s' ∧ ∀ b < (s.gpr .a2).toNat,
@@ -53,8 +53,8 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
   let n := (s.gpr .a2).toNat
   let k := Spec.TripleDes.scheduleAt s.mem (s.gpr .a0)
   have hL := Mode.layout d
-  have htot : c.total = 80 := rfl
-  have hB : Fb s c = s.sp - 640 := rfl
+  have htot : c.total = 118 := rfl
+  have hB : Fb s c = s.sp - 944 := rfl
   unfold Ecb.ecb
   refine WP.ite (s.gpr .a2 == 0) (by rw [eval_zero]) (fun hz => ?_) (fun hz => ?_)
   · have hn : (s.gpr .a2).toNat = 0 := by simp only [beq_iff_eq] at hz; simp [hz]
@@ -63,13 +63,13 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
     have : s.gpr .a2 ≠ 0 := by simpa using hz
     have : (s.gpr .a2).toNat ≠ 0 := fun e => this (BitVec.eq_of_toNat_eq e)
     omega
-  have hBnat : (Fb s c).toNat = s.sp.toNat - 640 := Proof.Modes.RISCV64.fb_toNat' (c := c) h.sp
+  have hBnat : (Fb s c).toNat = s.sp.toNat - 944 := Proof.Modes.RISCV64.fb_toNat' (c := c) h.sp
   refine bigFrame_wp (n := 8 * c.total) (by rw [htot]) (by rw [htot]; exact h.sp) fun t ht => ?_
   have hS : ScrIn t (Fb s c) c.total := scrIn_of' h.al h.sp hL ht
   obtain ⟨ws, hws⟩ := ht.wr
-  have hframeR : (⟨Fb s c, 640⟩ : Region) ∈ t.wr := hS.low
+  have hframeR : (⟨Fb s c, 944⟩ : Region) ∈ t.wr := hS.low
   have hdataR : (⟨D, 8 * n⟩ : Region) ∈ t.wr := by rw [hws, h.wr]; simp [D, n]
-  have sepDF : (⟨D, 8 * n⟩ : Region).Disjoint ⟨Fb s c, 640⟩ := by rw [hB]; exact h.stackData.symm
+  have sepDF : (⟨D, 8 * n⟩ : Region).Disjoint ⟨Fb s c, 944⟩ := by rw [hB]; exact h.stackData.symm
   -- The entry.
   apply WP.seq
   rw [WP.block_append_iff]

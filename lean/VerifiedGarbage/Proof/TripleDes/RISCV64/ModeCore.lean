@@ -46,7 +46,7 @@ def KeyArgs (s : State) (rs : List Region) (k : Schedule) : Prop :=
 
 /-- The schedule's copy in the frame at `B` is `k`. -/
 def Ready (s : State) (B : Addr) (_ws : List Region) (k : Schedule) : Prop :=
-  Spec.TripleDes.scheduleAt s.mem (B + BitVec.ofNat 64 keyOff) = k ∧ B.toNat + 8 * 80 ≤ 2 ^ 64
+  Spec.TripleDes.scheduleAt s.mem (B + BitVec.ofNat 64 keyOff) = k ∧ B.toNat + 8 * 118 ≤ 2 ^ 64
 
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Schedule} (h : KeyArgs s rs k)
     (e : s'.gpr .a0 = s.gpr .a0) (hrd : s'.rd = s.rd) (hwr : ∃ ws, s'.wr = ws ++ s.wr)
@@ -91,10 +91,10 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
     WP isa (dirCore d).prepare s fun s' => Ready s' B rs k ∧ s'.gpr sb = B ∧
       (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hfit : B.toNat + 8 * 80 ≤ 2 ^ 64 := hS.fit
-  have hko : keyOff = 256 := rfl
+  have hfit : B.toNat + 8 * 118 ≤ 2 ^ 64 := hS.fit
+  have hko : keyOff = 560 := rfl
   obtain ⟨hkk, hin, hd⟩ := hk
-  have dK : (keyR s).Disjoint ⟨B, 8 * 80⟩ := hd _ hm
+  have dK : (keyR s).Disjoint ⟨B, 8 * 118⟩ := hd _ hm
   show WP isa modePrepare s _
   unfold modePrepare
   apply WP.seq
@@ -120,7 +120,7 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
       exact ⟨_, hS.low, Offset.contains_base _ (by simp only [dirCore, keyOff]; omega) (by omega)⟩)
     (by
       rw [a0, a2]
-      have hs : Region.Sub ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨B, 8 * 80⟩ :=
+      have hs : Region.Sub ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨B, 8 * 118⟩ :=
         Offset.sub_base _ (by simp only [keyOff]; omega)
       have h : Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨s.gpr .a0, 384⟩ :=
         Region.Disjoint.sub_left (Region.Disjoint.symm dK) hs
@@ -153,11 +153,11 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : 
       (∀ j < (dirCore d).G, Spec.Aes.bytesAt s'.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw) =
         dirCipher d k (Spec.Aes.bytesAt s.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hfit : B.toNat + 8 * 80 ≤ 2 ^ 64 := hS.fit
+  have hfit : B.toNat + 8 * 118 ≤ 2 ^ 64 := hS.fit
   have hal : B.toNat % 16 = 0 := hS.al
   have hbo : bufOff = 48 := rfl
   obtain ⟨hk, _⟩ := hR
-  have hlow : (⟨B, 640⟩ : Region) ∈ s.wr := hS.low
+  have hlow : (⟨B, 944⟩ : Region) ∈ s.wr := hS.low
   have hpre : BlockPre k sb bufOff s := by
     refine ⟨by decide, by decide, by rw [hB]; omega, fun o ho => ?_, by rw [hB]; exact hk,
       ⟨_, hlow, ?_⟩, ?_⟩

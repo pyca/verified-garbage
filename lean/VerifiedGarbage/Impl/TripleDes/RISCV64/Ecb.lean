@@ -9,12 +9,12 @@ public import VerifiedGarbage.Impl.TripleDes.RISCV64.Block
 `dirCore d`: the block function of the direction `d` (`Block.lean`), inlined,
 as a core for the modes (`Impl/Modes/RISCV64/Seq.lean`), encrypting or
 decrypting the block in its buffer in place. Its slots: the buffer's one
-block (slot 6), the registers the block function saves (slots 7–14), the
-S-boxes' spills (slots 15–30) and a copy of the three schedules (from slot
-32, byte `keyOff`), which `prepare` makes a byte at a time, since the
-contracts state no alignment for the schedule and the block function reads
-it a doubleword at a time. 80 slots in all, with the modes', which the mode
-zeroes before it frees them.
+block (slot 6), the registers the block function saves (slots 7–12), the
+round function's words of constants (slots 15–69) and a copy of the three
+schedules (from slot 70, byte `keyOff`), which `prepare` makes a byte at a
+time, since the contracts state no alignment for the schedule and the block
+function reads it a doubleword at a time. 118 slots in all, with the
+modes', which the mode zeroes before it frees them.
 
 `encrypt` and `decrypt` (schedule = a0, data = a1, n = a2) run the same
 frame as the modes, with the data pointer in `s2` and the blocks left in
@@ -44,7 +44,7 @@ def modePrepare : Prog isa :=
 def dirCore (d : Direction) : Modes.RISCV64.Core where
   prepare := modePrepare
   crypt := block d sb bufOff
-  total := 80
+  total := 118
   buf := bufSlot
   G := 1
   bw := 2

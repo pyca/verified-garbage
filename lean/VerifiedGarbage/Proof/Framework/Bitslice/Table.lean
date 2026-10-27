@@ -95,6 +95,10 @@ theorem getLsbD_ofBits (w : Nat) (f : Nat → Bool) (j : Nat) :
   simp only [ofBits, BitVec.getLsbD_ofNat, testBit_tableOf]
   cases decide (j < w) <;> simp
 
+theorem tableOf_lt (f : Nat → Bool) (n : Nat) : tableOf f n < 2 ^ n :=
+  Nat.lt_pow_two_of_testBit _ fun c hc => by
+    rw [testBit_tableOf]; simp [show ¬ c < n by omega]
+
 theorem ofBits_getLsbD {w : Nat} (x : BitVec w) : ofBits w x.getLsbD = x := by
   apply BitVec.eq_of_getLsbD_eq
   intro j hj

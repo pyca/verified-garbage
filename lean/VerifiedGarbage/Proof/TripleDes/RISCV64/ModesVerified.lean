@@ -27,7 +27,7 @@ meta import VerifiedGarbage.TCB.RISCV64.Target
 
 `cbcEncryptChained_verified`, `ofb_verified`, … : the modes of
 `Proof/Modes/RISCV64/` over Triple DES's core (`Mode.dirCoreSpec`) meet the
-shared contracts, with `stack := 640`: the mode's frame of 80 slots below
+shared contracts, with `stack := 944`: the mode's frame of 118 slots below
 the stack pointer, which it zeroes before returning (`seq_changes_wp`).
 The proofs are written against `modeContract`, which states the frame.
 -/
@@ -43,7 +43,7 @@ open VG.Proof.TripleDes.RISCV64 (modePub)
 open VG.Proof.TripleDes (bytesAt_eq)
 
 /-- The frame's bytes. -/
-abbrev frameBytes : Nat := 640
+abbrev frameBytes : Nat := 944
 
 /-- Triple DES under the schedule at `a0`, and its inverse. -/
 abbrev ciph (s : State) : Spec.Cbc.Cipher :=

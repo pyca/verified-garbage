@@ -125,7 +125,7 @@ theorem select_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3) (s : Stat
       exact branch t₂ 1 (by omega) rfl rfl rfl rfl hg₂
 
 /-- The registers a pass keeps. -/
-def passKept : List Reg := [.ra, .s1, .s2, .s3, .s4, .a0]
+def passKept : List Reg := [.ra, .s0, .s1, .s2, .s3, .s4, .s11, .a0]
 
 structure PassPost (keys : DesSchedule) (direction : Direction)
     (origin : State) (v : BitVec 32 × BitVec 32) (n : Nat) (s : State) : Prop where
@@ -135,7 +135,7 @@ structure PassPost (keys : DesSchedule) (direction : Direction)
   wr : s.wr = origin.wr
   sp : s.sp = origin.sp
   regs : ∀ q ∈ passKept, s.gpr q = origin.gpr q
-  frame : Frame [spillRegion origin] origin.mem s.mem
+  mem : s.mem = origin.mem
   pcount : s.gpr passes = BitVec.ofNat 64 (n - 1)
   zf : isa.eval (.nonzero passes) s = some (decide (n ≠ 1))
 
@@ -150,7 +150,7 @@ theorem passCountAdvance_ok (s : State) :
 /-- A complete DES pass. -/
 theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
     (keys : DesSchedule) (base : Addr) (origin : State) (v : BitVec 32 × BitVec 32)
-    (hok : Ok sboxCfg origin)
+    (hready : FeiReady origin)
     (hl : origin.gpr lReg = v.1.setWidth 64) (hr : origin.gpr rReg = v.2.setWidth 64)
     (hpasses : origin.gpr passes = BitVec.ofNat 64 p)
     (hptr : origin.gpr sb + BitVec.ofNat 64 (passOffset (passOf d p).1 (passOf d p).2) =
@@ -162,12 +162,10 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
   generalize (passOf d p).2 = dir at hs hptr hkeys ⊢
   have hbase : s.gpr sb = origin.gpr sb := hs.regs sb (by decide) (by decide) (by decide)
     (by decide)
-  have hspill : spillRegion s = spillRegion origin := by simp only [spillRegion, hbase]
   have hkeys' : KeysAt keys dir base s :=
-    ⟨by rw [hs.rd, hs.wr]; exact hkeys.read, hkeys.al, by rw [hspill]; exact hkeys.sep,
-      by rw [hs.mem]; exact hkeys.keys⟩
+    ⟨by rw [hs.rd, hs.wr]; exact hkeys.read, hkeys.al, by rw [hs.mem]; exact hkeys.keys⟩
   have hloop := roundsLoop_ok keys dir base s v
-    (hok.congr hbase hbase hs.rd hs.wr)
+    (hready.congr hbase hs.wr hs.mem)
     ((hs.regs lReg (by decide) (by decide) (by decide) (by decide)).trans hl)
     ((hs.regs rReg (by decide) (by decide) (by decide) (by decide)).trans hr)
     (hs.ptr.trans hptr) hs.count hs.stp hkeys'
@@ -192,10 +190,7 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
       revert hq; cases q <;> decide
     exact (regs₄ q hne.2.2.2.1).trans ((regs₃ q hq').trans ((hs₂.regs q hq'').trans
       (hs.regs q hne.1 hne.2.1 hne.2.2.1 hne.2.2.2.2)))
-  · have hf := hs₂.frame
-    rw [hspill, hs.mem] at hf
-    rw [mem₄, mem₃]
-    exact hf
+  · rw [mem₄, mem₃, hs₂.mem, hs.mem]
   · rw [p₄, hp₃, hsub]
   · change VG.RISCV64.eval (.nonzero passes) s₄ = some (decide (p ≠ 1))
     simp only [VG.RISCV64.eval, p₄, hp₃]

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.RISCV64.Common
-public import VerifiedGarbage.Impl.TripleDes.RISCV64.Sbox
+public import VerifiedGarbage.Impl.TripleDes.RISCV64.Feistel
 public import VerifiedGarbage.Impl.Words.RISCV64
 public import VerifiedGarbage.Impl.Words.RISCV64.Word64
 public import VerifiedGarbage.Spec.TripleDes
@@ -10,23 +10,23 @@ public import VerifiedGarbage.Spec.TripleDes
 # Scalar Triple DES blocks on RISC-V
 
 The algorithm of the PPC64LE implementation (`Impl/TripleDes/PPC64LE/Block.lean`),
-one block at a time: `block d dp doff` encrypts (or decrypts) the block at
-`doff(dp)` in place, with a frame at `sb` (`s4`, a multiple of 16) that holds
-the three DES schedules from byte `keyOff` on (`keySlot`), as the modes and
-ECB copy them there. The two 32-bit Feistel halves stay in `a1` (L) and `a2`
-(R). S-box input bits are formed with fixed shifts and XORs with the round
-key, passed through Boolean circuits, and XORed directly into their
-P-permuted destinations. The three passes share IP and FP, and one loop
-runs them, with the pass's first key and its step chosen by the passes
-left. `a4` counts the rounds, `a3` points at the round key, `a5` holds the
-key step (8 or −8) and `a6` the passes left. Slots 7–14 of the frame save
-`s0` and `s5`–`s11`, which the S-boxes use for their temporaries, and slots
-15–30 are the S-boxes' spills. Only temporaries, argument registers other
-than `a0`, and those saved registers are written, so that a caller can keep
-public values (a frame's base, a data pointer, a count) in `s1`–`s4` across
-a block: the taint analysis cannot follow a value through memory. Round
-counters and key addresses are public. The block is accessed a byte at a
-time, as it may be anywhere.
+one block at a time, but with the round function of `Feistel.lean`, which
+looks the eight S-boxes up at once in the 64 lanes of a word: `block d dp
+doff` encrypts (or decrypts) the block at `doff(dp)` in place, with a frame
+at `sb` (`s4`, a multiple of 16) that holds the three DES schedules from byte
+`keyOff` on (`keySlot`), as the modes and ECB copy them there. The two
+32-bit Feistel halves stay in `a1` (L) and `a2` (R). The three passes share
+IP and FP, and one loop runs them, with the pass's first key and its step
+chosen by the passes left. `a4` counts the rounds, `a3` points at the round
+key, `a5` holds the key step (8 or −8) and `a6` the passes left. Slots 7–12
+of the frame save `s5`–`s10`, which the round function uses, and slots
+15–69 hold its words of constants, which the block stores first
+(`storeConsts`). Only temporaries, argument registers other than `a0`, and
+those saved registers are written, so that a caller can keep public values
+(a frame's base, a data pointer, a count) in `s1`–`s4` across a block: the
+taint analysis cannot follow a value through memory. Round counters and key
+addresses are public. The block is accessed a byte at a time, as it may be
+anywhere.
 -/
 
 @[expose] public section
@@ -44,12 +44,13 @@ def cnt : Reg := .a4
 def kstep : Reg := .a5
 def passes : Reg := .a6
 
-/-- The first byte of the schedules' copy in the frame. -/
-def keyOff : Nat := 256
+/-- The first byte of the schedules' copy in the frame, after the round
+function's words of constants (slots 15–69). -/
+def keyOff : Nat := 560
 
 /-- The registers the block saves for its caller, and their slots' offsets. -/
 def savedSlots : List (Reg × Nat) :=
-  [(.s0, 56), (.s5, 64), (.s6, 72), (.s7, 80), (.s8, 88), (.s9, 96), (.s10, 104), (.s11, 112)]
+  [(.s5, 56), (.s6, 64), (.s7, 72), (.s8, 80), (.s9, 88), (.s10, 96)]
 
 def blockSave : List Instr := savedSlots.map fun (r, d) => .store .d r sb d
 def blockRestore : List Instr := savedSlots.map fun (r, d) => .load .d r sb d
@@ -60,30 +61,9 @@ def blockLoad (dp : Reg) (doff : Nat) : List Instr :=
     ([.shift .srl .d lReg .t2 32, .shift .sll .d rReg .t2 32, .shift .srl .d rReg rReg 32] :
       List Instr)
 
-/-- Six inputs, least significant first, for public S-box number `i`.
-The source R bit comes directly from E; the key's upper sixteen bits are
-never read as cipher bits. -/
-def sboxInputs (i : Nat) : List Instr :=
-  ([.load .d .t6 kp 0] : List Instr) ++ (List.range 6).flatMap fun j =>
-    let k := 6 * i + 5 - j
-    shrFrom (q j) rReg (32 - Spec.TripleDes.expansion.getD k 1) ++
-      shrFrom .a7 .t6 (47 - k) ++
-      ([.logic .xor (q j) (q j) .a7, .logicImm .and (q j) (q j) 1] : List Instr)
-
-/-- Deposit each output's low bit directly into its destination in L.
-The P table contains all 32 positions, so each destination is unique. -/
-def sboxOutputs (i : Nat) : List Instr :=
-  (List.range 4).flatMap fun j =>
-    let position := 4 * i + 4 - j
-    let dst := (Spec.TripleDes.p.toList.findIdx? (· == position)).getD 0
-    ([.logicImm .and (q j) (q j) 1] : List Instr) ++ placeBit (q j) (31 - dst) ++
-      ([.logic .xor lReg lReg (q j)] : List Instr)
-
-def box (i : Nat) : List Instr := sboxInputs i ++ sboxCode i ++ sboxOutputs i
-
 def swapHalves : List Instr := [movR .t0 lReg, movR lReg rReg, movR rReg .t0]
 
-def roundBody : List Instr := (List.range 8).flatMap box ++ swapHalves
+def roundBody : List Instr := feistel ++ swapHalves
 
 /-- The next round key, `kstep` bytes on, and the round counted. -/
 def roundAdvance : List Instr := [.add kp kp kstep, .addi cnt cnt (-1)]
@@ -127,7 +107,7 @@ def blockStore (dp : Reg) (doff : Nat) : List Instr :=
 
 /-- The block at `doff(dp)`, encrypted or decrypted in place. -/
 def block (d : Direction) (dp : Reg) (doff : Nat) : Prog isa :=
-  .seq (.block (blockSave ++ blockLoad dp doff))
+  .seq (.block (blockSave ++ storeConsts roundConsts constOff ++ blockLoad dp doff))
     (.seq (blockBody d) (.block (blockStore dp doff ++ blockRestore)))
 
 end VG.Impl.TripleDes.RISCV64
