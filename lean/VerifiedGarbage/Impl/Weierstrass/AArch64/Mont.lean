@@ -280,10 +280,11 @@ def mulFn (n m : Nat) : Prog isa :=
   if sparseOk n m then mulFn384 else if general n m then mulFnG n m else mulFnS n m
 
 open Spec.Weierstrass.Mont in
-/-- The moduli whose products are functions on AArch64: P-384's and P-521's
-`p` and `n`, whose inline products are long. A product of four words is
-short enough inline that calls do not pay. -/
-def fns : List Modulus := [p384p, p521p, p384n, p521n, brainpoolp512r1p, brainpoolp512r1n]
+/-- The moduli whose products are functions on AArch64: P-384's, P-521's,
+brainpoolP384r1's and brainpoolP512r1's `p` and `n`, whose inline products are
+long. A product of four words is short enough inline that calls do not pay. -/
+def fns : List Modulus :=
+  [p384p, p521p, p384n, p521n, brainpoolp512r1p, brainpoolp512r1n, brainpoolp384r1p, brainpoolp384r1n]
 
 /-- The function computing the products of the modulus `M` (its name and its
 modulus), if any: one of `fns` of `M.n` words and `M.minv`, if `M`'s
