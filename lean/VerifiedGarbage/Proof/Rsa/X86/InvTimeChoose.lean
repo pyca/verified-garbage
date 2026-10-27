@@ -80,15 +80,9 @@ theorem choose_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q
       _ _ _ _ _ _ ⟨⟨hs.1,hs.2.1⟩,⟨ht.1,ht.2.1⟩⟩ es et
   · exact other.mono (fun _ _ h => ⟨⟨h.1.1.1,h.1.1.2.1⟩,⟨h.1.2.1,h.1.2.2.1⟩⟩) (fun _ _ _ => trivial)
 
+omit rsaBatchLaw in
 theorem dispatch_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q' : Nat} {sp : BitVec 32} :
     RelCT isa (Pair args base size len P Q P' Q' sp) VG.Impl.Rsa.X86.CrtValuesRt.inverseChoice (fun _ _ => True) := by
-  obtain ⟨_, body64_check⟩ := InvBatch.body64_check
-  obtain ⟨_, body96_check⟩ := InvBatch.body96_check
-  obtain ⟨_, body128_check⟩ := InvBatch.body128_check
-  unfold VG.Impl.Rsa.X86.CrtValuesRt.inverseChoice VG.Impl.Rsa.X86.InvBatch.dispatch
-  refine choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) body64_check guard64_check
-    (choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) body96_check guard96_check
-      (choose_relCT (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) body128_check guard128_check ?_))
   exact (RelCT.taint (A:=sseTaint) τ (fun _ _ h => agree h.1.1.ws.ws.workspace h.2.1.ws.ws.workspace h.1.2 h.2.2) fallback_check.choose_spec).mono
     (fun _ _ h => h) (fun _ _ _ => trivial)
 

@@ -24,6 +24,7 @@ open VG VG.X86 VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.CrtValuesRt (body sized)
 open VG.Proof.Rsa.X86.CrtValuesRt (Lengths sizedNarrow_relCT)
 
+omit rsaBatchLaw in
 theorem body_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) (fit : sp.toNat + 68 ≤ 2 ^ 32)
     (apart : ∀ r ∈ g.writes, Region.Disjoint ⟨sp.setWidth 64, 68⟩ r) :
     RelCT isa (fun s t => (Pair g s t ∧ s.gpr .esp = sp) ∧ inputBytes g s.mem 0 = inputBytes g t.mem 0)

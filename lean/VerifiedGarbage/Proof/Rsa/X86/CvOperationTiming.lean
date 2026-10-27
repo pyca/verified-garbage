@@ -27,6 +27,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum.X86 VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.CrtValuesRt (code)
 
+omit rsaBatchLaw in
 theorem operation_trace {s t : State} (a : ABI s) (b : ABI t)
     (args : ∀ i < 16, arg s i = arg t i) (sp : s.gpr .esp = t.gpr .esp)
     (modulus : inputBytes (caller s) s.mem 0 = inputBytes (caller t) t.mem 0)
@@ -80,6 +81,7 @@ theorem operation_trace {s t : State} (a : ABI s) (b : ABI t)
           have eq3 := (publicRestore_relCT _ _ _ _ _ _ next.workspace e3 f3).1
           rw [eq1, eq2, eq3]
 
+omit rsaBatchLaw in
 theorem constantTime : ConstantTime isa (Spec.Rsa.crtValuesContract abi 20).pre
     (Spec.Rsa.crtValuesContract abi 20).pub code := by
   intro s t tr ur sf tf hs ht h es et

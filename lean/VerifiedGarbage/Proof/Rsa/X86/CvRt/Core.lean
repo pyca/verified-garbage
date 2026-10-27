@@ -169,6 +169,7 @@ theorem divQ_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h : St
 def coreArrays : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 18, 19, 20, 21, 22, 23]
 def coreSlots : List Nat := [sOdd, sB, sC, sT, sPodd, sE1, sE2, sE3, sMask, sCy, sQb]
 
+omit rsaBatchLaw in
 theorem core_ok {g : Geometry} {len : Nat} {s : State} (h : Start g len s) {args : Nat → BitVec 32}
     (gate : InvGate args g.base g.size g.P g.Q s) :
     WP isa core s fun t =>

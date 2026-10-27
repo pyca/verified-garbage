@@ -47,13 +47,10 @@ open VG.Impl.Rsa.X86.CrtValuesRt (lay)
     exact inverseBody_ok g.input hn nl hw he width (by omega) (by omega)
   · intro _; exact other u g.input
 
+omit rsaBatchLaw in
  theorem inverseDispatch_ok {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : State}
     (h : InvInput args base size len P Q s) :
-    WP isa (VG.Impl.Rsa.X86.InvBatch.dispatch (VG.Impl.Rsa.X86.KeyRt.inverse lay)) s
-      (InvPost base size len P Q s) := by
-  unfold VG.Impl.Rsa.X86.InvBatch.dispatch
-  exact inverseChoose_ok h (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) fun u hu =>
-    inverseChoose_ok hu (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) fun v hv =>
-      inverseChoose_ok hv (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) fun z hz => inverseFallback_ok hz
+    WP isa VG.Impl.Rsa.X86.CrtValuesRt.inverseChoice s (InvPost base size len P Q s) :=
+  inverseFallback_ok h
 
 end VG.Proof.Rsa.X86.CrtValuesRt

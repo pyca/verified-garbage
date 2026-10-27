@@ -46,9 +46,8 @@ def artifacts : List Artifact := [
     spSafe := Proof.Rsa.X86.RtShape.check_spSafe false
     stack := 20 },
   Spec.Rsa.crtValuesApi.artifact X86.target {
-    notes := ["The modulus and prime lengths are public. Balanced 2048/3072/4096-bit keys use \
-      thirty-step batched inversion at the prime width; other lengths use the general inverse. \
-      Each batch updates signed GCD rows and Montgomery-reduced coefficient rows. The shared \
+    notes := ["The modulus and prime lengths are public. `qInv` comes from the general inverse at \
+      the modulus's width, as on x86-64, whatever the key's size. The shared \
       key-workspace carry chains process eight words per iteration, then scalar tails, preserving \
       carry between words. Private values select no branch. Callee-saved registers reside in scratch."]
     code := Impl.Rsa.X86.CrtValuesRt.code

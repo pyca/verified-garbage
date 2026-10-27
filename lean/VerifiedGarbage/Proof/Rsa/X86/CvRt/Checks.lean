@@ -202,6 +202,7 @@ structure StD (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Prop wh
   dd : num s.mem g.base (kw len) aDD = 2 * (g.P / 2)
   mask : InverseResult g len X₁ X₂ s.mem
 
+omit rsaBatchLaw in
 theorem checksB_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h : StI g len X₁ X₂ s) {args : Nat → BitVec 32}
     (gate : InvGate args g.base g.size g.P g.Q s) :
     WP isa (seqs (checksB)) s fun t => StD g len X₁ X₂ t ∧

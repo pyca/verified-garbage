@@ -111,6 +111,7 @@ theorem after_inverse {g : CallGeometry} {m : Mem} {sp : BitVec 32} {s t : State
   exact ⟨h.1.after post.2.2.1 (by decide) (by decide) (scratchFrame h.1 outside),
     h.2.1.keep post.2.2.1 (by decide) outside⟩
 
+omit rsaBatchLaw in
 theorem sized_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
     RelCT isa (Both (Run g sp)) sized fun _ _ => True := by
   apply split_relCT
@@ -167,6 +168,7 @@ theorem narrow_run {g : CallGeometry} {sp : BitVec 32} {s : State} (S : SizedAt 
   · show (s.gpr .esp).toNat + 68 ≤ _; rw [esp]; exact fit
   · show Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 68⟩ r; rw [esp]; exact apart r hr
 
+omit rsaBatchLaw in
 theorem sizedNarrow_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
     RelCT isa (Both (SizedAt g sp)) sized fun _ _ => True := by
   refine relCT_narrow (Pn := Both (Run g sp)) (fun s => s.rd ++ s.wr)
