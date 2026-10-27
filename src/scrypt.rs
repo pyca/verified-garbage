@@ -465,4 +465,100 @@ mod blockmix_tests {
             }
         }
     }
+    #[test]
+    fn romix_matches_scalar() {
+        let n = 16;
+        let mut seed = 0x8b7f_1359_c2a4_0601u64;
+        for r in [1, 2, 3, 8, 13, 17, 32] {
+            for pattern in 0..3 {
+                let mut b = alloc::vec![[0xa5u8; 128]; r + 2];
+                for byte in b[1..r + 1].as_flattened_mut() {
+                    seed ^= seed << 13;
+                    seed ^= seed >> 7;
+                    seed ^= seed << 17;
+                    *byte = match pattern {
+                        0 => 0,
+                        1 => 255,
+                        _ => seed as u8,
+                    };
+                }
+                let mut x = b[1..r + 1].to_vec();
+                let mut table = alloc::vec::Vec::with_capacity(n);
+                for _ in 0..n {
+                    table.push(x.clone());
+                    x = reference(&x);
+                }
+                for _ in 0..n {
+                    let j =
+                        u64::from_le_bytes(x[r - 1][64..72].try_into().unwrap()) as usize & (n - 1);
+                    for (a, b) in x.as_flattened_mut().iter_mut().zip(table[j].as_flattened()) {
+                        *a ^= *b;
+                    }
+                    x = reference(&x);
+                }
+                let mut v = alloc::vec![[0x96; 128]; n * r + 2];
+                let mut scratch = alloc::vec![[0x69; 128]; r + 4];
+                // Complete disjoint buffers, positive r and power-of-two N;
+                // guards lie outside every region admitted by the contract.
+                unsafe {
+                    crate::arch::scrypt::vg_scrypt_romix(
+                        b[1..].as_mut_ptr(),
+                        r,
+                        v[1..].as_mut_ptr(),
+                        n * r,
+                        scratch[1..].as_mut_ptr(),
+                        r + 2,
+                    );
+                }
+                assert_eq!(b[1..r + 1], x, "r={r} pattern={pattern}");
+                assert_eq!(
+                    v[1..n * r + 1],
+                    table.into_iter().flatten().collect::<alloc::vec::Vec<_>>()
+                );
+                assert_eq!(b[0], [0xa5; 128]);
+                assert_eq!(b[r + 1], [0xa5; 128]);
+                assert_eq!(v[0], [0x96; 128]);
+                assert_eq!(v[n * r + 1], [0x96; 128]);
+                assert_eq!(scratch[0], [0x69; 128]);
+                assert_eq!(scratch[r + 3], [0x69; 128]);
+            }
+        }
+    }
+    #[test]
+    fn romix_unaligned_buffers() {
+        let (n, r) = (16, 3);
+        let input: alloc::vec::Vec<_> = (0..128 * r).map(|i| (i * 37) as u8).collect();
+        let run = |offset| {
+            let mut b = alloc::vec![0xa5; offset + 128 * r + 16];
+            let mut v = alloc::vec![0x96; offset + 128 * n * r + 16];
+            let mut scratch = alloc::vec![0x69; offset + 128 * (r + 2) + 16];
+            b[offset..offset + input.len()].copy_from_slice(&input);
+            // The contract imposes no alignment on its byte-array regions.
+            // Each allocation includes the full region and external guards.
+            unsafe {
+                crate::arch::scrypt::vg_scrypt_romix(
+                    b.as_mut_ptr().add(offset).cast(),
+                    r,
+                    v.as_mut_ptr().add(offset).cast(),
+                    n * r,
+                    scratch.as_mut_ptr().add(offset).cast(),
+                    r + 2,
+                );
+            }
+            assert!(b[..offset].iter().all(|x| *x == 0xa5));
+            assert!(b[offset + input.len()..].iter().all(|x| *x == 0xa5));
+            assert!(v[..offset].iter().all(|x| *x == 0x96));
+            assert!(v[offset + 128 * n * r..].iter().all(|x| *x == 0x96));
+            assert!(scratch[..offset].iter().all(|x| *x == 0x69));
+            assert!(scratch[offset + 128 * (r + 2)..].iter().all(|x| *x == 0x69));
+            (
+                b[offset..offset + input.len()].to_vec(),
+                v[offset..offset + 128 * n * r].to_vec(),
+            )
+        };
+        let aligned = run(0);
+        for offset in [1, 7, 15] {
+            assert_eq!(run(offset), aligned);
+        }
+    }
 }
