@@ -127,11 +127,19 @@ def final : Prog isa :=
     Mont.subCall c.SN (c.sl W) (c.sl XN) (c.sl RM'),
     .block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.Arm.Cfg.checkZero c (c.sl W) ++ finish c)]
 
-/-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
+/-- The scalar at slot `i` to where the multiplications read it: `K`'s slot,
+for `vg_<curve>_mul` (`Cfg.mul`; `r`, there, is not read again), else the
+table of its bits. -/
+def scalarAt (i : Nat) : Prog isa :=
+  match c.mul with
+  | some _ => .block (copy (2 * c.n) (c.sl K) (c.sl i))
+  | none => bits (c.sl i) (bitsAt c.n 0) (8 * c.n)
+
+/-- `[u]G + [v]Q`, into `R`. -/
 def pointsWith (generator : Prog isa) : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq generator <|
-  .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (Point.ladderP (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (sum c)
+  .seq (scalarAt c U) <| .seq generator <|
+  .seq (.block (save c)) <| .seq (scalarAt c V) <|
+  .seq (c.qMul Impl.Ecdh.Arm.PX Impl.Ecdh.Arm.PY) (sum c)
 
 /-- Everything after the checks of the key. -/
 def backWith (generator : Prog isa) : Prog isa :=
@@ -143,9 +151,9 @@ def verifyWith (generator : Prog isa) : Prog isa :=
   .seq (prefix' c) <| .seq (.block (loadS c)) <|
   .seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r0)) <| .seq (Impl.Ecdh.Arm.Cfg.validate c) (backWith c generator)
 
-def points : Prog isa := pointsWith c (Point.ladderP c.ladderCfg c.SP)
-def back : Prog isa := backWith c (Point.ladderP c.ladderCfg c.SP)
-def verify : Prog isa := verifyWith c (Point.ladderP c.ladderCfg c.SP)
+def points : Prog isa := pointsWith c c.gen
+def back : Prog isa := backWith c c.gen
+def verify : Prog isa := verifyWith c c.gen
 
 end Cfg
 

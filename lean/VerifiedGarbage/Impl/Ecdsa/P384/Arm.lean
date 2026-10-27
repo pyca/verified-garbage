@@ -11,9 +11,12 @@ namespace VG.Impl.Ecdsa.Arm
 open VG.Arm
 
 /-- P-384 as the code has it. -/
-def p384 : Cfg := ⟨6, Spec.P384.curve, Spec.Weierstrass.Mont.p384p, Spec.Weierstrass.Mont.p384n⟩
+def p384 : Cfg := ⟨6, Spec.P384.curve, Spec.Weierstrass.Mont.p384p, Spec.Weierstrass.Mont.p384n, some Spec.Weierstrass.Mul.p384⟩
 
 /-- `vg_ecdsa_p384_sign`. -/
 def signP384 : Prog isa := p384.sign
+
+/-- `vg_p384_mul`. -/
+def mulP384 : Prog isa := p384.mulFn
 
 end VG.Impl.Ecdsa.Arm
