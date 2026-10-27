@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Spec.Dsa.ProbablePrime
 
 /-! # DSA's probable-prime test as a function of its own (AArch64)
@@ -14,10 +13,11 @@ space, so that every hash backend's generator calls one copy of it. Its
 working space is that scratch space: the candidate, the witness buffer and
 the arithmetic workspace sit at the offsets `Generation.Layout` gives them.
 
-The 448-byte frame is the generation's: the callee-saved registers and the
-link register where the generation keeps them, and the slots the test reads
-its arguments from (the working space, the tape and `used`) where the
-generation keeps those, so that the test is the generation's own code.
+The 272-byte frame holds the generation's frame words: the test reads its
+arguments (the working space, the tape and `used`) from the slots where the
+generation keeps them, so that the test is the generation's own code. The
+test keeps every callee-saved register (it calls the round with the link
+register kept in a vector register), so the frame saves none.
 -/
 
 @[expose] public section
@@ -68,8 +68,6 @@ def test (bits : Nat) (mul : Nat → Nat → Nat → Prog isa) (roundCode : List
   checkPrime mul roundCode (words bits) (candidate bits) (len bits) (draw bits) (checks bits)
 
 def code (bits : Nat) (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
-  .frame (.alloc 448)
-    (seqs [.block entrySave, .block entry, test bits mul roundCode, .block exit, .block entryRestore])
-    (.free 448)
+  .frame (.alloc 272) (seqs [.block entry, test bits mul roundCode, .block exit]) (.free 272)
 
 end VG.Impl.Dsa.AArch64.ProbablePrime

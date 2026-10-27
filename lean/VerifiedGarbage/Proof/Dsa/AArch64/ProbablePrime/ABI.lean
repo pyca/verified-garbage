@@ -10,8 +10,8 @@ import VerifiedGarbage.Proof.Framework.Sig
 namespace VG.Proof.Dsa.AArch64.ProbablePrime
 open VG VG.AArch64
 
-/-- The stack the test uses: the generation's frame (the round is a leaf). -/
-abbrev stack : Nat := 448
+/-- The stack the test uses: its frame (the round is a leaf). -/
+abbrev stack : Nat := 272
 
 /-- The test's contract on AArch64. -/
 abbrev contract (bits : Nat) : Contract isa :=

@@ -28,7 +28,7 @@ namespace VG.Proof.Dsa.AArch64.ProbablePrime
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MillerRabin.AArch64
 open VG.Impl.Dsa.AArch64.ProbablePrime VG.Impl.Dsa.Generation.Layout VG.Impl.RsaKeyGen.AArch64.Candidate
 open VG.Proof.Dsa.AArch64.Generation (PrimeParams PrimeCallPublic PrimeBytesPublic PrimeFramePublic
-  PrimeFrameInputs CheckPrimeBefore allocState generationBase linkState)
+  PrimeFrameInputs CheckPrimeBefore allocState)
 open VG.Impl.Bignum.AArch64 (ldh)
 
 /-- What the contract makes public: the arguments, the stack pointer, the
@@ -123,7 +123,7 @@ def bytesPublic {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
 
 def framePublic {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) : PrimeFramePublic where
   bytes := bytesPublic hb A
-  F := generationBase s
+  F := frameBase s
   candidate := candidate bits
   candidateBound := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   checksBound := by change checks bits < _; rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
@@ -134,13 +134,13 @@ def framePublic {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
   witness := rfl
   separate := by
     intro k hk j hj
-    have D0 : Region.Disjoint ⟨generationBase s, 448⟩ ⟨off (s.gpr .x0) arithmetic, arithmeticBytes⟩ :=
+    have D0 : Region.Disjoint ⟨frameBase s, 272⟩ ⟨off (s.gpr .x0) arithmetic, arithmeticBytes⟩ :=
       (A.stackWs.sub_left (frame_sub s)).sub_right (ws_sub A (by decide))
     exact D0.sep (frame_contains s (by omega))
       (Offset.contains_base _ (by change 8 * j + 8 ≤ arithmeticBytes; unfold arithmeticBytes; omega) (by omega))
   outside := by
     intro k hk i hi
-    have D0 : Region.Disjoint ⟨generationBase s, 448⟩ ⟨off (s.gpr .x0) arithmetic, arithmeticBytes⟩ :=
+    have D0 : Region.Disjoint ⟨frameBase s, 272⟩ ⟨off (s.gpr .x0) arithmetic, arithmeticBytes⟩ :=
       (A.stackWs.sub_left (frame_sub s)).sub_right (ws_sub A (by decide))
     rw [off_off]
     exact out_scr D0 (frame_contains s (by omega))
@@ -155,7 +155,7 @@ theorem framePublic_eq {bits : Nat} (hb : Supported bits) {s₁ s₂ : State} (A
       Spec.Rsa.bytesAt s₂.mem (off (s₂.gpr .x0) (candidate bits)) (len bits) :=
     os2ip_inj (by rw [bytesAt_length, bytesAt_length]) hN
   rw [h0] at hbytes
-  have hF : generationBase s₁ = generationBase s₂ := by simp only [generationBase, hsp]
+  have hF : frameBase s₁ = frameBase s₂ := by simp only [frameBase, hsp]
   unfold framePublic bytesPublic callPublic
   simp only [hP, hbytes, h0, hF]
 
@@ -166,9 +166,9 @@ theorem before_of_prepared {bits : Nat} (hb : Supported bits) {s : State} (A : P
   have hlen : len bits ≤ 384 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   refine ⟨⟨P.sp, fun k hk => ⟨_, List.mem_append_right _ (by rw [P.wr]; exact List.mem_cons_self),
       frame_contains s (by omega)⟩, P.arena, P.tapePtr, ?_,
-      by change word u.mem (generationBase s) 128 = BitVec.ofNat 64 0; rw [P.used]; rfl, P.tape, P.source,
+      by change word u.mem (frameBase s) 128 = BitVec.ofNat 64 0; rw [P.used]; rfl, P.tape, P.source,
       fun i hi => ?_, Nat.zero_le _⟩, P.scr, P.x0, rfl, rfl, rfl, rfl, rfl⟩
-  · change word u.mem (generationBase s) 120 =
+  · change word u.mem (frameBase s) 120 =
       BitVec.ofNat 64 (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat).length
     rw [P.tapeLength]
     rw [bytesAt_length, ofNat_toNat64]
@@ -182,10 +182,7 @@ theorem before_of_prepared {bits : Nat} (hb : Supported bits) {s : State} (A : P
 /-! ## The stages, each with the public view of the arguments -/
 
 def Entered (bits : Nat) (v : View) (u : State) : Prop :=
-  ∃ s, ∃ _ : PrimeABI bits s, view bits s = v ∧ u = allocState 448 s
-
-def SavedAt (bits : Nat) (v : View) (u : State) : Prop :=
-  ∃ s, ∃ _ : PrimeABI bits s, view bits s = v ∧ u = linkState s
+  ∃ s, ∃ _ : PrimeABI bits s, view bits s = v ∧ u = allocState 272 s
 
 def PreparedAt {bits : Nat} (hb : Supported bits) (v : View) (u : State) : Prop :=
   ∃ s, ∃ A : PrimeABI bits s, view bits s = v ∧ Prepared hb A u
@@ -204,16 +201,11 @@ theorem post_of_exec {c : Prog isa} {s t : State} {trace : List Leak} {Q : State
   rw [heq]
   exact hq
 
-theorem save_ct (bits : Nat) :
-    RelCT isa (Two (Entered bits)) (.block Impl.Dsa.AArch64.Generation.entrySave) (Two (SavedAt bits)) :=
-  two_piece [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide) fun v u ⟨s, A, hv, hu⟩ =>
-    hu ▸ WP.mono (VG.Proof.Dsa.AArch64.Generation.entrySave_ok s) fun t ht => ⟨s, A, hv, ht⟩
-
 theorem entry_ct {bits : Nat} (hb : Supported bits) :
-    RelCT isa (Two (SavedAt bits)) (.block entry) (Two (PreparedAt hb)) :=
+    RelCT isa (Two (Entered bits)) (.block entry) (Two (PreparedAt hb)) :=
   two_piece [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide) fun v u ⟨s, A, hv, hu⟩ => by
     subst hu
-    exact WP.mono (entry_ok (s := linkState s) (F := generationBase s) rfl
+    exact WP.mono (entry_ok (s := allocState 272 s) (F := frameBase s) rfl
       (fun d hd => ⟨_, List.mem_cons_self, frame_contains s hd⟩))
       fun t ⟨m, x, k⟩ => ⟨s, A, hv, prepared hb A m x k⟩
 
@@ -242,10 +234,10 @@ abbrev exitStatus : List Instr := [.str .x .x3 .x4 0, ldh .x0 kStat, .lsr .x .x3
 theorem load_ok {bits : Nat} {hb : Supported bits} {v : View} {u : State} (h : TestedAt hb v u) :
     WP isa (.block exitLoad) u (Loaded v) := by
   obtain ⟨s, A, rfl, T⟩ := h
-  obtain ⟨⟨_, inp, _⟩, hsp, hwr, _, _, _, hU⟩ := T
+  obtain ⟨⟨_, inp, _⟩, hsp, hwr, _, _, _, _, hU⟩ := T
   have hx0 := inp.ws.x0
   have h216 := inp.ws.scr.ld (d := 216) (by have := inp.ws.h256; omega)
-  have h136 : InRegions (u.rd ++ u.wr) (off (generationBase s) usedSlot) 8 :=
+  have h136 : InRegions (u.rd ++ u.wr) (off (frameBase s) usedSlot) 8 :=
     ⟨_, List.mem_append_right _ (by rw [hwr]; exact List.mem_cons_self), frame_contains s (by decide)⟩
   have run : WP isa (.block exitLoad) u fun t => t.gpr .x4 = s.gpr .x4 := by
     simp only [word, off, usedSlot] at hU h136 h216
@@ -257,7 +249,7 @@ theorem load_ok {bits : Nat} {hb : Supported bits} {v : View} {u : State} (h : T
     ⟨(k.gpr .x0 (by decide)).trans hx0, h4⟩
 
 theorem exit_ct {bits : Nat} (hb : Supported bits) :
-    RelCT isa (Two (TestedAt hb)) (.block exit) fun a b => a.sp = b.sp := by
+    RelCT isa (Two (TestedAt hb)) (.block exit) fun _ _ => True := by
   have pins : Pins (TestedAt hb) [.x0] := by
     rintro v u₁ u₂ ⟨s₁, A₁, rfl, T₁⟩ ⟨s₂, A₂, h₂, T₂⟩ r hr
     obtain rfl := List.mem_singleton.mp hr
@@ -276,17 +268,7 @@ theorem exit_ct {bits : Nat} (hb : Supported bits) :
     rcases hr with rfl | rfl
     · rw [a0, b0]
     · rw [a4, b4]
-  obtain ⟨tr, -⟩ := two_taint [.x0, .x4] pl (by taint_decide) _ _ _ _ _ _ hp es et
-  obtain ⟨_, _, _, hsp⟩ := hp
-  exact ⟨tr, (Exec.rdwr es).2.2.trans (hsp.trans (Exec.rdwr et).2.2.symm)⟩
-
-theorem restore_ct :
-    RelCT isa (fun s t => s.sp = t.sp) (.block Impl.Dsa.AArch64.Generation.entryRestore) (fun _ _ => True) := by
-  apply (two_taint (Φ := fun (_ : Unit) (_ : State) => True) []
-    (by intro _ _ _ _ _ _ h; cases h) (by taint_decide)).mono
-  · intro s t h
-    exact ⟨(), True.intro, True.intro, h⟩
-  · exact fun _ _ _ => True.intro
+  exact two_taint [.x0, .x4] pl (by taint_decide) _ _ _ _ _ _ hp es et
 
 theorem code_ct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) :
     ConstantTime isa (contract bits).pre (contract bits).pub (code bits M.mm K.run) := by
@@ -294,8 +276,7 @@ theorem code_ct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) :
   have ct : RelCT isa (fun s t => (contract bits).pre s ∧ (contract bits).pre t ∧ (contract bits).pub s t)
       (code bits M.mm K.run) (fun _ _ => True) := by
     apply RelCT.alloc
-    refine RelCT.mono (RelCT.seq (save_ct bits) (RelCT.seq (entry_ct hb) (RelCT.seq (test_ct M K hb)
-      (RelCT.seq (exit_ct hb) restore_ct)))) ?_ fun _ _ h => h
+    refine RelCT.mono (RelCT.seq (entry_ct hb) (RelCT.seq (test_ct M K hb) (exit_ct hb))) ?_ fun _ _ h => h
     rintro a b ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩
     have hv := view_of_pub hp
     refine ⟨view bits s₁, ⟨s₁, primeABI_of h₁, rfl, rfl⟩, ⟨s₂, primeABI_of h₂, hv.symm, rfl⟩, ?_⟩

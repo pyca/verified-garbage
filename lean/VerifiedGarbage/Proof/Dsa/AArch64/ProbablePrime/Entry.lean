@@ -38,7 +38,7 @@ theorem entryMem_word (s : State) (F : Addr) :
       word (entryMem s F) F 120 = s.gpr .x3 ∧ word (entryMem s F) F usedSlot = s.gpr .x4 ∧
       word (entryMem s F) F 128 = 0 := by
   unfold entryMem usedSlot
-  have o (m : Mem) {d : Nat} (v : BitVec 64) (e : Nat) (he : e + 8 ≤ d ∨ d + 8 ≤ e) (hd : d + 8 ≤ 448) (he' : e + 8 ≤ 448) :
+  have o (m : Mem) {d : Nat} (v : BitVec 64) (e : Nat) (he : e + 8 ≤ d ∨ d + 8 ≤ e) (hd : d + 8 ≤ 272) (he' : e + 8 ≤ 272) :
       word (m.writeW (off F d) v) F e = word m F e :=
     (writeW_outside m F v (by omega)).word (by omega) (by omega)
   refine ⟨?_, ?_, ?_, ?_, word_writeW_self _ _ _ _⟩
@@ -52,7 +52,7 @@ theorem entryMem_word (s : State) (F : Addr) :
   · rw [o _ _ 136 (by decide) (by decide) (by decide), word_writeW_self]
 
 theorem entry_ok {s : State} {F : Addr} (hsp : s.sp = F)
-    (hw : ∀ d, d + 8 ≤ 448 → InRegions s.wr (off F d) 8) :
+    (hw : ∀ d, d + 8 ≤ 272 → InRegions s.wr (off F d) 8) :
     WP isa (.block entry) s fun t =>
       t.mem = entryMem s F ∧ t.gpr .x0 = off (s.gpr .x0) arithmetic ∧ Keep [.x0, .x3] s t := by
   have hr40 : InRegions (s.rd ++ s.wr) (off F 40) 8 := by

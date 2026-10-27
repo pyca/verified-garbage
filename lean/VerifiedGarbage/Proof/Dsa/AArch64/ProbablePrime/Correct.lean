@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Dsa.AArch64.ProbablePrime
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MillerRabin.AArch64
 open VG.Impl.Dsa.AArch64.ProbablePrime VG.Impl.Dsa.Generation.Layout
-open VG.Proof.Dsa.AArch64.Generation (allocState freeState generationBase alloc_frame_ok)
+open VG.Proof.Dsa.AArch64.Generation (allocState freeState alloc_frame_ok)
 
 /-- No byte of `ws` but those of the test's scratch ranges is in a region the test changes. -/
 theorem keeps_of_frame {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) {m : Mem}
@@ -42,10 +42,10 @@ theorem correct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) (s : 
     (pre : (contract bits).pre s) :
     ∃ trace t, Exec isa (code bits M.mm K.run) s trace t ∧ abiPreserved s t ∧ (contract bits).post s t := by
   have A := primeABI_of pre
-  obtain ⟨trace, t, he, hpre, hpost⟩ := alloc_frame_ok (bytes := 448) (by decide) A.stackLower
+  obtain ⟨trace, t, he, hpre, hpost⟩ := alloc_frame_ok (bytes := 272) (by decide) A.stackLower
     (Q := fun t => abiPreserved s t ∧ BodyPost bits s t)
     (WP.mono (body_ok M K hb A) fun t ⟨hsp, hwr, _, hp⟩ => ⟨hsp, hwr, ⟨hp.2.2.2.1, by
-        change t.sp + BitVec.ofNat 64 448 = s.sp
+        change t.sp + BitVec.ofNat 64 272 = s.sp
         rw [hsp]; exact BitVec.sub_add_cancel .., hp.2.2.2.2⟩, hp⟩)
   obtain ⟨hx0, hused, hframe, _, _⟩ := hpost
   refine ⟨trace, t, he, hpre, ?_⟩
