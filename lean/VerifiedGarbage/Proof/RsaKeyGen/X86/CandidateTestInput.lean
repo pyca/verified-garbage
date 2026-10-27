@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTest
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
+import VerifiedGarbage.Proof.RsaKeyGen.X86.MrExponentRt.Test
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateShape
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
@@ -23,7 +24,8 @@ theorem test_ok {mont round : Prog isa} {montName roundName : String}
     (D : Drawn E eBytes pBytes entropy s)
     (minusOne : val32 s.mem E.base (slot E.width 5) (2 * E.width) = candidateValue E entropy - 1)
     (enough : E.length ≤ E.randLength) :
-    WP isa (VG.Impl.RsaKeyGen.X86.CandidateTest.code E.width montName mont roundName round) s fun t =>
+    WP isa (VG.Impl.RsaKeyGen.X86.CandidateFrame.code
+      (VG.Impl.RsaKeyGen.X86.Candidate.testBody montName mont roundName round)) s fun t =>
       val32 t.mem E.base (slot E.width 0) (2 * E.width) = candidateValue E entropy ∧
       MillerRabinLoop.Result (E.parameters entropy) t ∧
       WorkspaceFrame E.geometry (CandidateTest.ranges E.geometry) s.mem t.mem ∧
@@ -37,13 +39,19 @@ theorem test_ok {mont round : Prog isa} {montName roundName : String}
       omega
     rw [eqPower]
     omega
-  refine WP.mono (CandidateTest.code_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack
-    (v.parameters_valid entropy D.input.memory.entropyLength) v.width_bounds.2 D.input.scratch (D.input.capacity_eq v)
+  refine WP.mono (MrExponentRt.tested_frame_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack
+    (v.parameters_valid entropy D.input.memory.entropyLength) v.width_bounds.1 v.width_bounds.2 rfl rfl rfl rfl
+    D.input.scratch (D.input.capacity_eq v)
     (by change E.p - 28#32 = s.gpr .esp - 28#32; rw [D.input.stack])
     (by rw [← Prepared.slot_eq]; exact D.candidate) (by rw [← Prepared.slot_eq]; exact minusOne)
     top D.input.memory.randRead D.input.memory.entropy D.input.rand_eq (D.input.randLength_eq v)
     (by change w32 s.mem E.base 152 = 8 * E.width; rw [D.used, v.length_eq])
     (by change 8 * E.width ≤ E.randLength; rw [v.length_eq]; exact enough)
+    (by
+      change s.mem.readW (off E.base (4 * 1)) 32 = BitVec.ofNat 32 (8 * E.width)
+      rw [D.input.header 1 (by decide)]
+      change BitVec.ofNat 32 E.length = _
+      rw [v.length_eq])
     (by rw [D.input.stack]; exact v.low) (by rw [D.input.stack]; exact v.workspaceStack)
     (by
       rw [D.input.stack]

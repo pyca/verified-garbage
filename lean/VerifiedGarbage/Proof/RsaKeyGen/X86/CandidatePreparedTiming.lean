@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateIterationLeak
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestInput
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePreparedResult
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateResultTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -27,7 +28,8 @@ theorem test_status_trace {mont round : Prog isa} {montName roundName : String}
     (shape : shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =
       shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
     RelCT isa (TestPair E eBytes pBytes qBytes rBytes sBytes)
-      (VG.Impl.RsaKeyGen.X86.CandidateTest.code E.width montName mont roundName round)
+      (VG.Impl.RsaKeyGen.X86.CandidateFrame.code
+        (VG.Impl.RsaKeyGen.X86.Candidate.testBody montName mont roundName round))
       (StatusPair E (candidateValue E rBytes) (candidateValue E sBytes)) := by
   intro s t tr ur u z H A B
   have trace := (test_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v
@@ -51,8 +53,9 @@ theorem prepared_trace {mont round : Prog isa} {montName roundName : String}
     (shape : shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =
       shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
     RelCT isa (TestPair E eBytes pBytes qBytes rBytes sBytes)
-      (VG.Impl.RsaKeyGen.X86.Candidate.prepareAndTest E.width montName mont roundName round) (fun _ _ => True) := by
-  unfold VG.Impl.RsaKeyGen.X86.Candidate.prepareAndTest
+      (VG.Impl.RsaKeyGen.X86.Candidate.tested montName mont roundName round) (fun _ _ => True) := by
+  unfold VG.Impl.RsaKeyGen.X86.Candidate.tested
+  rw [mrResult_zero E.width]
   exact RelCT.seq (test_status_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v length enough shape)
     (result_trace v)
 

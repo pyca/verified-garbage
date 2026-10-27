@@ -18,19 +18,20 @@ def copyBody : List Instr :=
   [.mov .eax (.mem (at_ .ebx 0)), .store (at_ .ebp 0) .eax,
     .alu .add .ebx (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .esi (.imm 1)]
 
-theorem copyLoop_ok {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
+/-- `copyLoop_ok`, with the pointers past the words copied. -/
+theorem copyLoop_ends {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
     (positive : 0 < N) (dstFit : x + 4 * N ≤ L) (srcFit : y + 4 * N ≤ L)
     (apart : x = y ∨ x + 4 * N ≤ y ∨ y + 4 * N ≤ x)
     (dst : PtrAt s W .ebp x) (src : PtrAt s W .ebx y) (count : (s.gpr .esi).toNat = N) :
     WP isa (.loop (.block copyBody) .ne) s fun t =>
       Outside W x (4 * N) s.mem t.mem ∧ val32 t.mem W x N = val32 s.mem W y N ∧
-      Keeps [.eax, .ebx, .ebp, .esi] s t := by
+      Keeps [.eax, .ebx, .ebp, .esi] s t ∧ PtrAt t W .ebp (x + 4 * N) ∧ PtrAt t W .ebx (y + 4 * N) := by
   have nowrap := hw.nowrap
   refine WP.mono (countLoop positive (fun i t => Keeps [.eax, .ebx, .ebp, .esi] s t ∧
     PtrAt t W .ebp (x + 4 * i) ∧ PtrAt t W .ebx (y + 4 * i) ∧ (t.gpr .esi).toNat = N - i ∧
     Outside W x (4 * i) s.mem t.mem ∧ val32 t.mem W x i = val32 s.mem W y i) ?_
     ⟨Keeps.refl _ _, by simpa using dst, by simpa using src, by simpa using count, Outside.refl _ _ _ _, rfl⟩)
-    fun t ⟨K, _, _, _, O, V⟩ => ⟨O, V, K⟩
+    fun t ⟨K, bp, bx, _, O, V⟩ => ⟨O, V, K, bp, bx⟩
   rintro i t index ⟨K, bp, bx, countI, O, V⟩
   have ht := hw.of_keeps K
   unfold copyBody
@@ -57,5 +58,14 @@ theorem copyLoop_ok {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
       V, A.gpr, Nat.add_zero, val32_succ s.mem W y]
     change _ + _ * w32 t.mem W (y + 4 * i) = _
     rw [word]
+
+theorem copyLoop_ok {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
+    (positive : 0 < N) (dstFit : x + 4 * N ≤ L) (srcFit : y + 4 * N ≤ L)
+    (apart : x = y ∨ x + 4 * N ≤ y ∨ y + 4 * N ≤ x)
+    (dst : PtrAt s W .ebp x) (src : PtrAt s W .ebx y) (count : (s.gpr .esi).toNat = N) :
+    WP isa (.loop (.block copyBody) .ne) s fun t =>
+      Outside W x (4 * N) s.mem t.mem ∧ val32 t.mem W x N = val32 s.mem W y N ∧
+      Keeps [.eax, .ebx, .ebp, .esi] s t :=
+  WP.mono (copyLoop_ends hw positive dstFit srcFit apart dst src count) fun _ ⟨O, V, K, _⟩ => ⟨O, V, K⟩
 
 end VG.Proof.MillerRabin.X86

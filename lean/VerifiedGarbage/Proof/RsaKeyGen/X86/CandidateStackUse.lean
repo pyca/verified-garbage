@@ -75,12 +75,6 @@ theorem test {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse 
 
 theorem exponentRt : stackUse ExponentRt.code = 20 := rfl
 
-theorem prepareAndTest {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (w : Nat) (montName roundName : String) : stackUse (Candidate.prepareAndTest w montName mont roundName round) ≤ 136 := by
-  have bound := test Hm Hr w montName roundName
-  change max (stackUse (CandidateTest.code w montName mont roundName round)) 0 ≤ 136
-  omega
-
 theorem dispatch {part : Nat → Prog isa} {bound : Nat} (H : ∀ w, stackUse (part w) ≤ bound) (widths : List Nat) :
     stackUse (Candidate.dispatch part widths) ≤ bound := by
   induction widths with
@@ -90,12 +84,49 @@ theorem dispatch {part : Nat → Prog isa} {bound : Nat} (H : ∀ w, stackUse (p
     change max 0 (max (stackUse (part w)) (stackUse (Candidate.dispatch part rest))) ≤ _
     omega
 
+theorem mrExponent : stackUse MrExponentRt.code = 20 := rfl
+
+theorem prepareHead {mont : Prog isa} (Hm : stackUse mont ≤ 56) (w : Nat) (montName : String) :
+    stackUse (Candidate.prepareHead w montName mont) ≤ 80 := by
+  have r2bound := r2 Hm w montName
+  have constantsBound := constants Hm w montName
+  change max 0 (max (stackUse (PreparedR2.code w montName mont)) (stackUse (Constants.code w montName mont))) ≤ 80
+  omega
+
+theorem prepared {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : String) :
+    stackUse (Candidate.prepared montName mont) ≤ 80 := by
+  have bound := dispatch (fun w => prepareHead Hm w montName) Candidate.widths
+  unfold Candidate.prepared
+  generalize Candidate.dispatch (fun w => Candidate.prepareHead w montName mont) Candidate.widths = d at bound ⊢
+  change max 0 (max (stackUse d) (stackUse MrExponentRt.code)) ≤ 80
+  rw [mrExponent]
+  omega
+
+theorem testBody {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
+    (montName roundName : String) : stackUse (Candidate.testBody montName mont roundName round) ≤ 108 := by
+  have head := prepared Hm montName
+  have loop := dispatch (fun w => millerRabin Hm Hr w montName roundName) Candidate.widths
+  unfold Candidate.testBody Candidate.witnesses
+  generalize Candidate.prepared montName mont = p at head ⊢
+  generalize Candidate.dispatch (fun w => MillerRabinLoop.code w montName mont roundName round)
+    Candidate.widths = d at loop ⊢
+  change max (stackUse p) (max 0 (stackUse d)) ≤ 108
+  omega
+
+theorem tested {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
+    (montName roundName : String) : stackUse (Candidate.tested montName mont roundName round) ≤ 136 := by
+  have bound := testBody Hm Hr montName roundName
+  unfold Candidate.tested CandidateFrame.code
+  generalize Candidate.testBody montName mont roundName round = b at bound ⊢
+  change max (max 0 (max 0 (stackUse b) + 28)) (stackUse (CandidateFinish.mrResult 0)) ≤ 136
+  have result : stackUse (CandidateFinish.mrResult 0) = 0 := rfl
+  omega
+
 theorem exponentCheck {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (Candidate.exponentCheck montName mont roundName round) ≤ 136 := by
-  have bound := dispatch (fun w => prepareAndTest Hm Hr w montName roundName) Candidate.widths
-  unfold Candidate.exponentCheck Candidate.tested
-  generalize Candidate.dispatch (fun w => Candidate.prepareAndTest w montName mont roundName round)
-    Candidate.widths = d at bound ⊢
+  have bound := tested Hm Hr montName roundName
+  unfold Candidate.exponentCheck
+  generalize Candidate.tested montName mont roundName round = d at bound ⊢
   change max (stackUse ExponentRt.code) (max 0 (max 0 (max 0 (stackUse d)))) ≤ 136
   rw [exponentRt]
   omega
