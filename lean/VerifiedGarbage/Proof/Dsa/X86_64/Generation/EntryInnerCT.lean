@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PublicContextCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryFrame
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 
 /-! # The inner ABI frame preserves the proved generator trace and stack pointer -/
 

@@ -19,7 +19,7 @@ open VG.Impl.Dsa.X86_64.Generation
 theorem subgroup_candidate_ready (H : GenerationHashes) {n : Nat}
     {p : SubgroupPublic} {s : State} (h : SubgroupBefore n p s) :
     WP isa (qCandidate H.sha1 H.sha256 p.plan.prime.len) s fun t =>
-      PrimeCallBefore (8 * p.plan.prime.len) p.primeCall t := by
+      PrimeTestBefore (8 * p.plan.prime.len) p.primeCall t := by
   obtain ⟨W, hw, hs, _, hwr⟩ := h
   let q := p.plan.withWords W hw
   have plen : p.plan.prime.len ≤ 32 := by rcases p.plan.width with h | h <;> omega

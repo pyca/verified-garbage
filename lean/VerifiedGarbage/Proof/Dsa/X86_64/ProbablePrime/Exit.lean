@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.ProbablePrime
-public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # The probable-prime test's exit: `used`, and the status in `rax` -/
 

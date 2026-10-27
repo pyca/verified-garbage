@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryResult
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 
 /-! # Complete native execution restores both frames and all saved registers -/
 

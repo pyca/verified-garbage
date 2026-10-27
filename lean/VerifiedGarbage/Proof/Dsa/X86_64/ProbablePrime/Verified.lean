@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Correct
+import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Correct
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.CT
-public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Satisfiable
+import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Satisfiable
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Safety
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundCode
+public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Params
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 
 /-! # `vg_dsa_probable_prime_{bits}` on x86-64 is verified
 

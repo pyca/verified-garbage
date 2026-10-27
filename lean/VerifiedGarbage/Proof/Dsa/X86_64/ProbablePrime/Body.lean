@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Params
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Save
-public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Exit
+import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Exit
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytes
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Entry
@@ -14,6 +14,10 @@ import VerifiedGarbage.Proof.Bignum.WorkFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+public import VerifiedGarbage.Impl.Dsa.X86_64.ProbablePrime
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # The probable-prime test's body, between its frame's push and pop -/
 

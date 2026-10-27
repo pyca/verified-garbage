@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Body
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytesCT
-public import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 public meta import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Body
 public meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytesCT
 import VerifiedGarbage.Proof.Framework.Sig
@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-! # The probable-prime test's timing depends only on its public inputs -/
 

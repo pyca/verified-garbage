@@ -40,7 +40,7 @@ theorem pPrimality_width {p : PPrimalityPublic} {s : State} (h : PPrimalityAfter
   simpa only [PPrimalityPublic.width, off, BitVec.add_zero] using read
 
 def PPrimalityPublic.primeCall (p : PPrimalityPublic)
-    (domain : PDomain p.plan.construct.len p.plan.construct.value) : PrimeCallPublic (8 * p.plan.construct.len) where
+    (domain : PDomain p.plan.construct.len p.plan.construct.value) : PrimeTestPublic (8 * p.plan.construct.len) where
   F := p.plan.construct.hash.F
   S := p.plan.construct.hash.S
   A := p.plan.construct.hash.W 5
@@ -52,7 +52,7 @@ def PPrimalityPublic.primeCall (p : PPrimalityPublic)
 
 theorem pPrimality_primeCall {p : PPrimalityPublic} {s : State} (h : PPrimalityAfter p s)
     (domain : PDomain p.plan.construct.len p.plan.construct.value) :
-    PrimeCallBefore (8 * p.plan.construct.len) (p.primeCall domain) s := by
+    PrimeTestBefore (8 * p.plan.construct.len) (p.primeCall domain) s := by
   obtain ⟨V, W, R, hw, hu⟩ := h.frame
   have hc : Impl.Dsa.X86_64.ProbablePrime.candidate (8 * p.plan.construct.len) = Impl.Dsa.Generation.Layout.p := by
     change (if 8 * p.plan.construct.len ≤ 256 then _ else _) = _

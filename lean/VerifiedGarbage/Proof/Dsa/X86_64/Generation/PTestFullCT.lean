@@ -15,15 +15,15 @@ open VG.Impl.Dsa.X86_64.Generation
 
 structure PTestFullPublic (len : Nat) where
   width : CandidateWidthPublic
-  call : PrimeCallPublic (8 * len)
+  call : PrimeTestPublic (8 * len)
   full : ¬ width.value < 2 ^ (8 * width.len - 1)
 
 def PTestFullBefore (len : Nat) (p : PTestFullPublic len) (s : State) : Prop :=
-  PrimeCallBefore (8 * len) p.call s ∧ CandidateWidthBefore p.width s
+  PrimeTestBefore (8 * len) p.call s ∧ CandidateWidthBefore p.width s
 
 theorem pTestFull_ready {len : Nat} {p : PTestFullPublic len} {s : State}
     (h : PTestFullBefore len p s) : WP isa (.block candidateWidth) s fun t =>
-      PrimeCallBefore (8 * len) p.call t ∧ t.cf = some false := by
+      PrimeTestBefore (8 * len) p.call t ∧ t.cf = some false := by
   refine WP.mono (candidateWidth_ok h.2.ws h.2.pointer p.width.positive p.width.fits h.2.bytes h.2.read)
     fun t ⟨cf, hm, hk⟩ => ?_
   obtain ⟨W, V, hi⟩ := h.1

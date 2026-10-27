@@ -17,7 +17,7 @@ def SubgroupSized (n len : Nat) (p : SubgroupPublic) (s : State) : Prop :=
   SubgroupBefore n p s ∧ p.plan.prime.len = len
 
 def SubgroupCall (len : Nat) (p : SubgroupPublic) (s : State) : Prop :=
-  PrimeCallBefore (8 * p.plan.prime.len) p.primeCall s ∧ p.plan.prime.len = len
+  PrimeTestBefore (8 * p.plan.prime.len) p.primeCall s ∧ p.plan.prime.len = len
 
 theorem subgroupCandidate_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3) (len : Nat) :
     RelCT isa (Two (SubgroupSized n len)) (qCandidate H.sha1 H.sha256 len) (Two (SubgroupCall len)) := by

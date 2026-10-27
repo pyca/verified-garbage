@@ -48,7 +48,7 @@ theorem subgroup_hash {n : Nat} {p : SubgroupPublic} {s : State}
   obtain ⟨V, R⟩ := hs.rep
   exact ⟨hf, hs.layout, V, W, R, hs.label, (p.plan.withWords W hw).outputSlot⟩
 
-def SubgroupPublic.primeCall (p : SubgroupPublic) : PrimeCallPublic (8 * p.plan.prime.len) where
+def SubgroupPublic.primeCall (p : SubgroupPublic) : PrimeTestPublic (8 * p.plan.prime.len) where
   F := p.plan.prime.sp
   S := p.plan.hash
   A := p.plan.W 5

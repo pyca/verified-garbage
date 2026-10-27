@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySavedFrame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInitial
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 
 /-! # Byte-level results at the public parameter-generation boundary -/
 

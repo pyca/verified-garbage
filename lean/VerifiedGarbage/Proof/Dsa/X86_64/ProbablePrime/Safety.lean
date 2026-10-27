@@ -33,6 +33,6 @@ theorem code_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
   unfold generationDepth at hp
   simp only [code, setup, Impl.Bignum.X86_64.seqs, Impl.Dsa.X86_64.Generation.workspace, Code.x86_64Depth, Instr.frameBytes,
     Nat.zero_max, Nat.max_zero]
-  omega
+  exact Nat.add_le_add_right hp 56
 
 end VG.Proof.Dsa.X86_64.ProbablePrime

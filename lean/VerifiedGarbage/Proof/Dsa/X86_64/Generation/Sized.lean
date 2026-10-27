@@ -18,10 +18,13 @@ import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Verified
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
+public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.CT
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! # Width-specific generation retains the original executed trace -/
 

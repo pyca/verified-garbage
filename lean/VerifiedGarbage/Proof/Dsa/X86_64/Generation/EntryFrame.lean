@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
-public import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 
 import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-! # Room on the stack for the nested parameter-generation frames -/
 
