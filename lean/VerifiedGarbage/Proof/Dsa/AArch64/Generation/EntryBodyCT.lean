@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum.AArch64
-open VG.Proof.RsaOaep.AArch64 VG.Proof.MillerRabin.AArch64 VG.Impl.Dsa.AArch64.Generation
+open VG.Proof.RsaOaep.AArch64 VG.Impl.Dsa.AArch64.Generation
 
 def EntryBefore (p : ParameterPublic) (s : State) : Prop :=
   EntryState p.context s ∧ p.randUsed = 0
@@ -29,10 +29,10 @@ theorem entryReady_ct : RelCT isa (Two EntryBefore)
   exact WP.mono (entryReady_ok h) fun t ⟨W, ht, h16, _, _⟩ =>
     ⟨⟨W, ht, by rw [hz]; exact h16⟩, rfl, rfl⟩
 
-theorem entryCore_ct (H : GenerationHashes) (M : Mont) (K : Kernel) :
+theorem entryCore_ct (H : GenerationHashes) (M : Mont) (T : PrimeTest) :
     RelCT isa (Two EntryBefore)
       (.seq (.block (entryHeader ++ entryIncoming ++ entryDerived))
-        (dispatch H.sha1 H.sha256 M.mm K.run)) (fun _ _ => True) :=
-  RelCT.seq entryReady_ct (dispatch_ct H M K)
+        (dispatch H.sha1 H.sha256 M.mm T.run)) (fun _ _ => True) :=
+  RelCT.seq entryReady_ct (dispatch_ct H M T)
 
 end VG.Proof.Dsa.AArch64.Generation

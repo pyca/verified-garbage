@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAttempt
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
-open VG.Impl.Dsa.AArch64.Generation VG.Proof.RsaOaep.AArch64 VG.Proof.MillerRabin.AArch64
+open VG.Impl.Dsa.AArch64.Generation VG.Proof.RsaOaep.AArch64
 
 def ParameterPublic.result (p : ParameterPublic) : Option (Option Spec.Dsa.Params × List Byte) :=
   VG.Proof.Dsa.Generation.seedResult (8 * p.context.geo.pLen) (8 * p.context.geo.qLen)
@@ -35,22 +35,22 @@ def ParameterBodyAfter (pLen qLen : Nat) (p : ParameterPublic) (s : State) : Pro
   p.context.geo.pLen = pLen ∧ p.context.geo.qLen = qLen ∧
   p.seedUsed + p.context.geo.qLen ≤ p.context.seeds.bytes.length
 
-theorem parameter_body_ct (H : GenerationHashes) (M : Mont)  (K : Kernel)
+theorem parameter_body_ct (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
     (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (ParameterTaken pLen qLen))
-      (seedAttempt H.sha1 H.sha256 M.mm K.run pLen qLen) (fun _ _ => True) := by
-  apply (seedAttempt_ct H M K pLen qLen sizes).mono ?_ (fun _ _ h => h)
+      (seedAttempt H.sha1 H.sha256 M.mm T.run pLen qLen) (fun _ _ => True) := by
+  apply (seedAttempt_ct H M T pLen qLen sizes).mono ?_ (fun _ _ h => h)
   rintro s t ⟨p, ⟨room, hs⟩, ⟨room', ht⟩, hsp⟩
   exact ⟨p.seed room, hs, ht, hsp⟩
 
-theorem parameter_body_ready (H : GenerationHashes) (M : Mont)  (K : Kernel)
+theorem parameter_body_ready (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
     {pLen qLen : Nat} {p : ParameterPublic} {s : State} (h : ParameterTaken pLen qLen p s) :
-    WP isa (seedAttempt H.sha1 H.sha256 M.mm K.run pLen qLen) s (ParameterBodyAfter pLen qLen p) := by
+    WP isa (seedAttempt H.sha1 H.sha256 M.mm T.run pLen qLen) s (ParameterBodyAfter pLen qLen p) := by
   obtain ⟨room, ⟨⟨⟨W, hm, h1, h16, h10⟩, seed, hq⟩, hp⟩⟩ := h
   change p.context.geo.pLen = pLen at hp
   change p.context.geo.qLen = qLen at hq
   subst pLen; subst qLen
-  refine WP.mono (seedAttempt_ok H M K hm (p.seed room).seed (p.seed room).length seed h1 h16 p.randBound)
+  refine WP.mono (seedAttempt_ok H M T hm (p.seed room).seed (p.seed room).length seed h1 h16 p.randBound)
     fun t ⟨Wt, used, ht, bound, u16, slots, outcome, _, _, wr⟩ => ?_
   change used ≤ p.context.rand.bytes.length at bound
   have cursor := (slots 10 (by simp [searchSlots])).trans h10

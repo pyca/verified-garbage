@@ -29,17 +29,17 @@ theorem generationBase_toNat {s : State} (h : GenerationABI s) :
   omega
 
 theorem generation_frame_sub (s : State) :
-    Region.Sub ⟨generationBase s, frameBytes⟩ (below (s.sp) 464) :=
+    Region.Sub ⟨generationBase s, frameBytes⟩ (below (s.sp) 720) :=
   Offset.sub_below _ (by decide) (by decide)
 
 theorem generation_stack_sub (s : State) :
-    Region.Sub (below (generationBase s) 16) (below (s.sp) 464) := by
-  have he : generationBase s - BitVec.ofNat 64 16 = s.sp - BitVec.ofNat 64 464 := by
+    Region.Sub (below (generationBase s) 272) (below (s.sp) 720) := by
+  have he : generationBase s - BitVec.ofNat 64 272 = s.sp - BitVec.ofNat 64 720 := by
     simp only [generationBase, BitVec.sub_sub]
     rfl
-  change Region.Sub ⟨_, 16⟩ ⟨_, 464⟩
+  change Region.Sub ⟨_, 272⟩ ⟨_, 720⟩
   rw [he]
-  simpa using (Offset.sub_base (s.sp - BitVec.ofNat 64 464) (d := 0) (n := 16) (k := 464) (by decide))
+  simpa using (Offset.sub_base (s.sp - BitVec.ofNat 64 720) (d := 0) (n := 272) (k := 720) (by decide))
 
 theorem generation_scratch_size {s : State} (h : GenerationABI s) :
     usedBytes (s.gpr .x2).toNat ≤ (stackArg s 3).toNat * 8 := by
@@ -67,7 +67,7 @@ def geometryOf {s : State} (h : GenerationABI s) : GenerationGeometry where
 def tapeOf {s : State} (h : GenerationABI s) (ptr : Addr) (len : BitVec 64)
     (bound : ptr.toNat + len.toNat ≤ 2 ^ 64)
     (arena : (⟨ptr, len.toNat⟩ : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩)
-    (stack : (below (s.sp) 464).Disjoint ⟨ptr, len.toNat⟩) : GenerationTape (geometryOf h) where
+    (stack : (below (s.sp) 720).Disjoint ⟨ptr, len.toNat⟩) : GenerationTape (geometryOf h) where
   ptr := ptr
   bytes := Spec.Rsa.bytesAt s.mem ptr len.toNat
   bound := by rw [bytesAt_length]; exact bound

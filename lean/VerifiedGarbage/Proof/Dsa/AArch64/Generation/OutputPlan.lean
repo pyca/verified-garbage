@@ -35,7 +35,8 @@ theorem OutputPlan.apart {p : GenerationContext} (o : OutputPlan p) :
   have hh := p.geo.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
   refine ⟨o.separate ⟨p.geo.F, frameBytes⟩ (by simp [GenerationContext.changed]), ?_, ?_⟩
   · exact (o.separate ⟨p.geo.B, usedBytes p.geo.pLen⟩ (by simp [GenerationContext.changed])).sub_right (p.geo.part_sub hh)
-  · exact o.separate (below p.geo.F 16) (by simp [GenerationContext.changed])
+  · exact (o.separate (below p.geo.F 272) (by simp [GenerationContext.changed])).sub_right
+      (below_sub (a := 16) (by decide) (by decide))
 
 theorem OutputPlan.packed {p : GenerationContext} (o : OutputPlan p) :
     (p.geo.part packed (2 * p.geo.pLen + p.geo.qLen)).Disjoint ⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩ := by

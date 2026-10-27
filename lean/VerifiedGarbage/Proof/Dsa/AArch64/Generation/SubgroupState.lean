@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
 public import VerifiedGarbage.Spec.Dsa
@@ -47,17 +48,19 @@ structure SubgroupPlan where
   tapeHash : ∀ r ∈ [⟨output, prime.len⟩, ⟨hash, oRsa⟩, retR F],
     (⟨prime.rp, prime.rand.length⟩ : Region).Disjoint r
   framePrime : ∀ r ∈ [⟨prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩,
-      ⟨prime.p, prime.len⟩], (⟨F, frameBytes⟩ : Region).Disjoint r
+      ⟨prime.p, prime.len⟩, below F callStack], (⟨F, frameBytes⟩ : Region).Disjoint r
   hashPrime : ∀ r ∈ [⟨prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩,
-      ⟨prime.p, prime.len⟩], (⟨hash, oRsa⟩ : Region).Disjoint r
+      ⟨prime.p, prime.len⟩, below F callStack], (⟨hash, oRsa⟩ : Region).Disjoint r
   outputPrime : ∀ r ∈ [⟨prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩,
-      ⟨prime.p, prime.len⟩], (⟨output, prime.len⟩ : Region).Disjoint r
+      ⟨prime.p, prime.len⟩, below F callStack], (⟨output, prime.len⟩ : Region).Disjoint r
+  geometry : PrimeCallGeometry (8 * prime.len) F hash (W 5) prime.rp prime.rand.length
 
 def SubgroupPlan.hashWrites (p : SubgroupPlan) : List Region :=
   [⟨p.output, p.prime.len⟩, ⟨p.hash, oRsa⟩, retR p.F]
 
 def SubgroupPlan.primeWrites (p : SubgroupPlan) : List Region :=
-  [⟨p.prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩, ⟨p.prime.p, p.prime.len⟩]
+  [⟨p.prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩, ⟨p.prime.p, p.prime.len⟩,
+    below p.F callStack]
 
 def SubgroupPlan.changed (p : SubgroupPlan) : List Region :=
   p.hashWrites ++ p.primeWrites ++ [⟨p.F, frameBytes⟩]
@@ -73,6 +76,8 @@ structure SubgroupState (p : SubgroupPlan) (used : Nat) (s : State) : Prop where
   witnessWrite : ∀ i < p.prime.len, InRegions s.wr (VG.Proof.Bignum.off p.prime.p i) 1
   usedSlot : p.W 16 = BitVec.ofNat 64 used
   usedBound : used ≤ p.prime.rand.length
+  arena : Scr s (p.W 5) Impl.Dsa.Generation.Layout.domainCheck
+  tapeCover : Covers [⟨p.prime.rp, p.prime.rand.length⟩] (s.rd ++ s.wr)
 
 theorem SubgroupPlan.bits (p : SubgroupPlan) : Spec.Dsa.bitLength p.prime.N = 8 * p.prime.len := by
   rw [p.modulus]

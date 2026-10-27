@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTest
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicContextCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryBodyCT
@@ -45,14 +46,14 @@ private theorem restores_ct : RelCT isa (fun s t => s.sp = t.sp) (.block entryRe
     exact ⟨(), True.intro, True.intro, h⟩
   · exact fun _ _ _ => True.intro
 
-private theorem entryTail_ct (H : GenerationHashes) (M : Mont) (K : Kernel) :
+private theorem entryTail_ct (H : GenerationHashes) (M : Mont) (T : PrimeTest) :
     RelCT isa (Two EntryBefore)
       (.seq (.block (entryHeader ++ entryIncoming ++ entryDerived))
-        (.seq (dispatch H.sha1 H.sha256 M.mm K.run) (.block entryRestore))) (fun _ _ => True) := by
+        (.seq (dispatch H.sha1 H.sha256 M.mm T.run) (.block entryRestore))) (fun _ _ => True) := by
   apply RelCT.assoc
   refine RelCT.seq (R := fun (s t : State) => s.sp = t.sp) ?_ restores_ct
   intro s t xs ys u v hp es et
-  have tr := (entryCore_ct H M K _ _ _ _ _ _ hp es et).1
+  have tr := (entryCore_ct H M T _ _ _ _ _ _ hp es et).1
   obtain ⟨_, _, _, hsp⟩ := hp
   exact ⟨tr, (Exec.rdwr es).2.2.trans (hsp.trans (Exec.rdwr et).2.2.symm)⟩
 
@@ -62,11 +63,11 @@ private theorem saved_state {s t : State} {tr : List Leak}
   obtain ⟨_, rfl⟩ := Exec.det h e
   exact hu
 
-theorem entryAllocated_ct (H : GenerationHashes) (M : Mont) (K : Kernel)
+theorem entryAllocated_ct (H : GenerationHashes) (M : Mont) (T : PrimeTest)
     {s t u v : State} (hs : GenerationABI s) (ht : GenerationABI t) (hp : GenerationPublicAgree s t)
     {xs ys : List Leak}
-    (es : Exec isa (entryBody H.sha1 H.sha256 M.mm K.run) (allocState 448 s) xs u)
-    (et : Exec isa (entryBody H.sha1 H.sha256 M.mm K.run) (allocState 448 t) ys v) : xs = ys := by
+    (es : Exec isa (entryBody H.sha1 H.sha256 M.mm T.run) (allocState 448 s) xs u)
+    (et : Exec isa (entryBody H.sha1 H.sha256 M.mm T.run) (allocState 448 t) ys v) : xs = ys := by
   cases es with
   | seq sa ba =>
     cases et with
@@ -81,7 +82,7 @@ theorem entryAllocated_ct (H : GenerationHashes) (M : Mont) (K : Kernel)
       have hsp : (linkState s).sp = (linkState t).sp := by
         change s.sp - 448#64 = t.sp - 448#64
         rw [hp.sp]
-      have tails := (entryTail_ct H M K _ _ _ _ _ _ ⟨parameterOf hs, ha, hb, hsp⟩ ba bb).1
+      have tails := (entryTail_ct H M T _ _ _ _ _ _ ⟨parameterOf hs, ha, hb, hsp⟩ ba bb).1
       exact congrArg₂ List.append hsaves tails
 
 end VG.Proof.Dsa.AArch64.Generation

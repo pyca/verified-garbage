@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.Rsa.AArch64 VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
-open VG.Proof.Pbkdf2.Md.AArch64 VG.Proof.MillerRabin.AArch64 VG.Impl.Dsa.Generation.Layout
+open VG.Proof.Pbkdf2.Md.AArch64 VG.Impl.Dsa.Generation.Layout
 
 def PConstructTestEnd (p : PPrimalityPlan) (used : Nat) (s t : State) : Prop :=
   ∃ (used' : Nat) (status : BitVec 64) (V : Nat → Byte),
@@ -36,16 +36,17 @@ def PConstructTestEnd (p : PPrimalityPlan) (used : Nat) (s t : State) : Prop :=
 
 theorem pConstructTest_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.stream)
     {H : Spec.Mgf1.Hash} (hHh : ∀ x, H.hash x = hG.SH.H.hash x)
-    (hsize : ∀ bytes, (H.hash bytes).length = G.D) (M : Mont) (K : Kernel)
+    (hsize : ∀ bytes, (H.hash bytes).length = G.D) (T : PrimeTest)
     {p : PPrimalityPlan} (hd : G.D = p.construct.hash.len) {s : State}
     (hs : PConstructState p.construct H s)
     (hhash : ∀ bs, H.hash bs = Spec.Dsa.seedHash (8 * p.construct.hash.len) bs)
     (hseedsize : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * p.construct.hash.len) bs).length = 8 * p.construct.hash.len)
     {used : Nat} (hused : p.construct.hash.W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.length)
     (htape : Src s p.construct.B p.construct.Z p.rp p.rand)
-    (hwitness : ∀ i < p.construct.len, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off (p.construct.hash.W 5) witness) i) 1) :
+    (hA : Scr s (p.construct.hash.W 5) domainCheck)
+    (htc : Covers [⟨p.rp, p.rand.length⟩] (s.rd ++ s.wr)) :
     WP isa (.seq (Impl.Dsa.AArch64.Generation.pConstruct G p.construct.len p.construct.hash.len)
-      (Impl.Dsa.AArch64.Generation.pTest M.mm K.run p.construct.len)) s (PConstructTestEnd p used s) := by
+      (Impl.Dsa.AArch64.Generation.pTest T.run p.construct.len)) s (PConstructTestEnd p used s) := by
   refine WP.seq (WP.mono (pConstruct_ok hG hHh hsize hd hs hhash hseedsize)
     fun u ⟨up, ue, ho, hb, Lu, ⟨Vu, Ru⟩, wu, hp, fu, rdu, wru⟩ => ?_)
   have hlen : 0 < p.construct.len ∧ p.construct.len < 2 ^ 64 := by
@@ -57,7 +58,7 @@ theorem pConstructTest_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK
     rw [rdu, wru]
     exact ⟨r, List.mem_append_right _ hr, by simpa [VG.Proof.Bignum.off] using hc⟩
   by_cases hsmall : p.construct.value < 2 ^ (8 * p.construct.len - 1)
-  · refine WP.mono (pTest_small_ok M.mm K.run Lu Ru wu hp hlen.1 hbound up hread hsmall)
+  · refine WP.mono (pTest_small_ok T.run Lu Ru wu hp hlen.1 hbound up hread hsmall)
       fun t ⟨Lt, Rt, ft, kt⟩ => ?_
     have ff : Frame p.testWrites u.mem t.mem := by
       intro a ha
@@ -85,23 +86,14 @@ theorem pConstructTest_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK
       ⟨p.construct.width, ho, Nat.le_of_not_gt hsmall, hb⟩
     let call := p.call domain
     have tape := source_of_frame htape fu p.tapeConstruct p.randMax rdu wru
-    let bs := Spec.Rsa.bytesAt u.mem (VG.Proof.Bignum.off (p.construct.hash.W 5) Impl.Dsa.Generation.Layout.p) p.construct.len
-    have blen : bs.length = p.construct.len := bytesAt_length _ _ _
-    have bval : Spec.Rsa.os2ip bs = p.construct.value := by
-      dsimp only [bs]
-      rw [up, ← VG.Proof.Dsa.decodeBE_os2ip]
-      exact VG.Proof.Dsa.decodeBE_encodeBE hbound
-    have src : Src u p.construct.B p.construct.Z
-        (VG.Proof.Bignum.off (p.construct.hash.W 5) Impl.Dsa.Generation.Layout.p) bs := by
-      refine ⟨?_, ?_, ?_⟩
-      · intro i hi
-        obtain ⟨r, hr, hc⟩ := hs.pWrite i (blen ▸ hi)
-        rw [rdu, wru]
-        exact ⟨r, List.mem_append_right _ hr, hc⟩
-      · intro i hi; simp [bs, Spec.Rsa.bytesAt]
-      · intro i hi; exact p.construct.pOutside i (blen ▸ hi)
-    refine WP.mono (pTest_full_ok M K (p := call) Lu Ru wu hp hbound up hread hsmall
-      rfl rfl rfl rfl hused hu tape (fun i hi => by rw [wru]; exact hwitness i hi) blen bval src)
+    have hcand : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt u.mem
+        (VG.Proof.Bignum.off (p.construct.hash.W 5) Impl.Dsa.Generation.Layout.p) p.construct.len) = p.construct.value := by
+      rw [up]; exact VG.Proof.Dsa.decodeBE_encodeBE hbound
+    have hcandidate : Impl.Dsa.AArch64.ProbablePrime.candidate call.bits = Impl.Dsa.Generation.Layout.p := by
+      change (if 8 * p.construct.len ≤ 256 then _ else _) = _
+      exact ite_eq_right (by rcases p.construct.width with hh | hh | hh <;> omega)
+    refine WP.mono (pTest_full_ok T (p := call) Lu Ru wu hp hbound up hread hsmall hcandidate hused hu
+      (hA.congr wru) (by rw [rdu, wru]; exact htc) tape hcand)
       fun t ⟨used', status, hbound', Lt, Rt, he, hr, ft, rdt, wrt⟩ => ?_
     dsimp only [call, PPrimalityPlan.call, PPrimalityPlan.prime] at he hr
     refine ⟨used', status, Vu, hbound', Lt, Rt, ?_, ?_, ?_, ?_, ?_, rdt.trans rdu, wrt.trans wru⟩

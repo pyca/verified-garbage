@@ -15,7 +15,7 @@ def GenerationGeometry.pWork (p : GenerationGeometry) : List Region :=
    p.part VG.Impl.Dsa.Generation.Layout.hash oRsa, retR p.F,
    p.part arithmetic arithmeticBytes, p.part VG.Impl.Dsa.Generation.Layout.p p.pLen,
    p.part exponent p.pLen, p.part arithmetic arithmeticBytes, p.part witness p.pLen,
-   ⟨p.F, frameBytes⟩]
+   below p.F 272, ⟨p.F, frameBytes⟩]
 
 theorem GenerationGeometry.small_bound (p : GenerationGeometry) {d n : Nat}
     (hd : d ≤ domainCheck) (hn : n ≤ arithmeticBytes) : d + n ≤ usedBytes p.pLen := by
@@ -33,7 +33,7 @@ theorem GenerationGeometry.pWork_separate (p : GenerationGeometry) {d n : Nat}
     · rcases which with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> unfold arithmeticBytes <;> omega
   intro r hr
   simp only [pWork, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · apply p.parts_disjoint hd (p.small_bound (d := shaped) (n := p.pLen) (by decide) (by dsimp only [arithmeticBytes, oRsa] at *; omega))
     rcases which with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
       dsimp only [VG.Impl.Dsa.Generation.Layout.control, q, shaped, hashes, wrappedSeed, VG.Impl.Dsa.Generation.Layout.hash, oRsa, arithmetic,
@@ -71,6 +71,7 @@ theorem GenerationGeometry.pWork_separate (p : GenerationGeometry) {d n : Nat}
     rcases which with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
       dsimp only [VG.Impl.Dsa.Generation.Layout.control, q, shaped, hashes, wrappedSeed, VG.Impl.Dsa.Generation.Layout.hash, oRsa, arithmetic,
         arithmeticBytes, VG.Impl.Dsa.Generation.Layout.p, exponent, witness] <;> omega
+  · exact (p.stack_part hd).symm
   · exact (p.frame_part hd).symm
 
 theorem GenerationTape.pWork {p : GenerationGeometry} (tape : GenerationTape p) :
@@ -80,7 +81,7 @@ theorem GenerationTape.pWork {p : GenerationGeometry} (tape : GenerationTape p) 
   have hn := p.hashSizes.2.1
   intro r hr
   simp only [GenerationGeometry.pWork, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact tape.part (p.small_bound (d := shaped) (n := p.pLen) (by decide) (by dsimp only [arithmeticBytes, oRsa] at *; omega))
   · exact tape.part (p.small_bound (d := hashes) (n := (p.count + 1) * p.qLen) (by decide) (by dsimp only [arithmeticBytes, oRsa] at *; omega))
   · exact tape.part (p.small_bound (d := wrappedSeed) (n := p.qLen) (by decide) (by dsimp only [arithmeticBytes, oRsa] at *; omega))
@@ -91,6 +92,7 @@ theorem GenerationTape.pWork {p : GenerationGeometry} (tape : GenerationTape p) 
   · exact tape.part (p.small_bound (d := exponent) (n := p.pLen) (by decide) (by dsimp only [arithmeticBytes, oRsa] at *; omega))
   · exact tape.part (p.small_bound (d := arithmetic) (n := arithmeticBytes) (by decide) (by dsimp only [arithmeticBytes, oRsa] at *; omega))
   · exact tape.part (p.small_bound (d := witness) (n := p.pLen) (by decide) (by dsimp only [arithmeticBytes, oRsa] at *; omega))
+  · exact tape.stack
   · exact tape.frame
 
 end VG.Proof.Dsa.AArch64.Generation
