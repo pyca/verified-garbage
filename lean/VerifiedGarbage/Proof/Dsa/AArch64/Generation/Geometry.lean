@@ -29,9 +29,9 @@ structure GenerationGeometry where
   lengths : Spec.Dsa.generationLengthsValid pLen qLen
   arenaBound : B.toNat + usedBytes pLen ≤ 2 ^ 64
   frameBound : F.toNat + frameBytes ≤ 2 ^ 64
-  stackSize : 16 ≤ F.toNat
+  stackSize : 272 ≤ F.toNat
   frameArena : (⟨F, frameBytes⟩ : Region).Disjoint ⟨B, usedBytes pLen⟩
-  stackArena : (below F 16).Disjoint ⟨B, usedBytes pLen⟩
+  stackArena : (below F 272).Disjoint ⟨B, usedBytes pLen⟩
 
 def GenerationGeometry.part (p : GenerationGeometry) (offset len : Nat) : Region := ⟨VG.Proof.Bignum.off p.B offset, len⟩
 def GenerationGeometry.hash (p : GenerationGeometry) : Addr := VG.Proof.Bignum.off p.B VG.Impl.Dsa.Generation.Layout.hash
@@ -59,7 +59,7 @@ theorem GenerationGeometry.frame_part (p : GenerationGeometry) {d n : Nat} (h : 
     (⟨p.F, frameBytes⟩ : Region).Disjoint (p.part d n) := p.frameArena.sub_right (p.part_sub h)
 
 theorem GenerationGeometry.stack_part (p : GenerationGeometry) {d n : Nat} (h : d + n ≤ usedBytes p.pLen) :
-    (below p.F 16).Disjoint (p.part d n) := p.stackArena.sub_right (p.part_sub h)
+    (below p.F 272).Disjoint (p.part d n) := p.stackArena.sub_right (p.part_sub h)
 
 theorem GenerationGeometry.parts_disjoint (p : GenerationGeometry) {d n e k : Nat}
     (hd : d + n ≤ usedBytes p.pLen) (he : e + k ≤ usedBytes p.pLen)
@@ -68,7 +68,7 @@ theorem GenerationGeometry.parts_disjoint (p : GenerationGeometry) {d n e k : Na
   exact Offset.disjoint p.B h (by omega) (by omega)
 
 theorem GenerationGeometry.frame_below (p : GenerationGeometry) :
-    (⟨p.F, frameBytes⟩ : Region).Disjoint (below p.F 16) :=
+    (⟨p.F, frameBytes⟩ : Region).Disjoint (below p.F 272) :=
   Offset.base_disjoint_below p.F (by decide)
 
 theorem GenerationGeometry.frame_headers (p : GenerationGeometry) :

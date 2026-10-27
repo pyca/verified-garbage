@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityCTState
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidthCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrimeCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCallCT
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -37,44 +37,43 @@ theorem pPrimality_width {p : PPrimalityPublic} {s : State} (h : PPrimalityAfter
     exact (p.width h.fits).positive)
   simpa only [PPrimalityPublic.width, VG.Proof.Bignum.off, BitVec.add_zero] using read
 
-def PPrimalityPublic.call (p : PPrimalityPublic) (domain : PDomain p.plan.construct.len p.plan.construct.value) :
-    PrimeFramePublic where
-  bytes := {
-    call := {
-      draw := ⟨p.plan.prime domain, p.used⟩
-      arena := p.plan.construct.hash.W 5
-      base := p.plan.construct.base.symm
-      width := (p.plan.call domain).wordsMax
-      tab := (p.plan.call domain).tableRoom
-      large := domain.large
-      policy := domain.policy }
-    source := VG.Proof.Bignum.off (p.plan.construct.hash.W 5) Impl.Dsa.Generation.Layout.p
-    bytes := Spec.Dsa.encodeBE p.plan.construct.len p.plan.construct.value
-    length := VG.Proof.Dsa.encodeBE_length _ _
-    value := by
-      rw [← VG.Proof.Dsa.decodeBE_os2ip]
-      exact VG.Proof.Dsa.decodeBE_encodeBE (p.width domain.upper).fits }
+def PPrimalityPublic.primeCall (p : PPrimalityPublic)
+    (domain : PDomain p.plan.construct.len p.plan.construct.value) : PrimeTestPublic (8 * p.plan.construct.len) where
   F := p.plan.construct.hash.F
-  candidate := Impl.Dsa.Generation.Layout.p
-  candidateBound := by decide
-  checksBound := (p.plan.call domain).checksMax
-  checks := domain.checks.symm
-  source := rfl
-  witness := rfl
-  separate := p.plan.construct.frameHeaders
-  outside := p.plan.construct.frameOutside
+  S := p.plan.construct.hash.S
+  A := p.plan.construct.hash.W 5
+  rp := p.plan.rp
+  rand := p.plan.rand
+  N := p.plan.construct.value
+  used := p.used
+  geometry := (p.plan.call domain).geometry
 
-theorem pPrimality_call {p : PPrimalityPublic} {s : State} (h : PPrimalityAfter p s)
+theorem pPrimality_primeCall {p : PPrimalityPublic} {s : State} (h : PPrimalityAfter p s)
     (domain : PDomain p.plan.construct.len p.plan.construct.value) :
-    CheckPrimeBefore (p.plan.construct.len / 8) Impl.Dsa.Generation.Layout.p p.plan.construct.len
-      p.plan.construct.len (if p.plan.construct.len ≤ 256 then 64 else 128) (p.call domain) s := by
+    PrimeTestBefore (8 * p.plan.construct.len) (p.primeCall domain) s := by
   obtain ⟨V, W, R, hw, hu⟩ := h.frame
-  refine ⟨?_, h.ws.scr, h.ws.x0, rfl, rfl, rfl, rfl, rfl⟩
-  refine ⟨h.layout.sp, ?_, ?_, ?_, ?_, ?_, h.tape, h.source, h.writable, h.usedBound⟩
-  · intro k hk; exact h.layout.ld (d := 8 * k) (n := 8) (by unfold VG.Impl.RsaOaep.AArch64.frameBytes; omega)
-  · exact (R.fr 5 (by decide)).trans (hw.1 5 (by decide))
-  · exact (R.fr 14 (by decide)).trans hw.2.1
-  · exact (R.fr 15 (by decide)).trans hw.2.2
-  · exact (R.fr 16 (by decide)).trans hu
+  have hc : Impl.Dsa.AArch64.ProbablePrime.candidate (8 * p.plan.construct.len) = Impl.Dsa.Generation.Layout.p := by
+    change (if 8 * p.plan.construct.len ≤ 256 then _ else _) = _
+    exact ite_eq_right (by rcases p.plan.construct.width with hh | hh | hh <;> omega)
+  exact ⟨W, V, {
+    layout := h.layout
+    rep := R
+    arena := hw.1 5 (by decide)
+    arenaWrite := h.arena
+    tapePtr := hw.2.1
+    tapeLength := hw.2.2
+    usedSlot := hu
+    usedBound := h.usedBound
+    tapeSize := p.plan.randMax
+    tapeCover := h.tapeCover
+    tapeBytes := bytes_of_src h.tape
+    candidate := by
+      rw [hc, Nat.mul_div_cancel_left _ (by decide)]
+      change Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem
+        (VG.Proof.Bignum.off (p.plan.construct.hash.W 5) Impl.Dsa.Generation.Layout.p) p.plan.construct.len) = _
+      rw [h.bytes]
+      exact VG.Proof.Dsa.decodeBE_encodeBE (p.width domain.upper).fits
+    odd := h.odd
+    bitLen := (p.plan.prime domain).bitLength_eq }⟩
 
 end VG.Proof.Dsa.AArch64.Generation

@@ -12,7 +12,6 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public
 open VG.Impl.RsaKeyGen.AArch64.Candidate
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.RsaKeyGen.AArch64
-open VG.Proof.MillerRabin.AArch64
 
 structure PrimeParams where
   B : Addr

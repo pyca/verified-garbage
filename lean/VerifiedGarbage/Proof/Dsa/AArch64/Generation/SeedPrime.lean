@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Dsa.Arithmetic
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
-open VG.Proof.MillerRabin.AArch64
 
 theorem GenerationGeometry.qDecode (p : GenerationGeometry) (seed : List Byte) :
     Spec.Rsa.os2ip (Spec.Dsa.encodeBE p.qLen (Spec.Dsa.qCandidate (8 * p.qLen) seed)) =
@@ -31,14 +30,14 @@ theorem GenerationGeometry.qDecode (p : GenerationGeometry) (seed : List Byte) :
     (by rcases p.qWidth with hh | hh <;> omega : 2 ≤ 8 * p.qLen) seed).2.2
   simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using h
 
-theorem seedPrime_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
+theorem seedPrime_ok (H : GenerationHashes) (T : PrimeTest)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
     (hseed : GenerationTapeMemory seed s) (h1 : W 1 = seed.ptr)
     (hq : Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B q) p.geo.qLen =
       Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes))
     {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length) :
-    WP isa (Impl.Dsa.AArch64.Generation.primeSearch H.sha1 H.sha256 M.mm K.run p.geo.pLen p.geo.qLen) s fun t =>
+    WP isa (Impl.Dsa.AArch64.Generation.primeSearch H.sha1 H.sha256 T.run p.geo.pLen p.geo.qLen) s fun t =>
       let res := Spec.Dsa.primeFromSeed (8 * p.geo.pLen) (8 * p.geo.qLen)
         (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) seed.bytes (p.rand.bytes.drop used)
       ∃ W' used', used' ≤ p.rand.bytes.length ∧ GenerationMemory p W' t ∧
@@ -69,7 +68,7 @@ theorem seedPrime_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
       (Spec.Rsa.os2ip (Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes)))
       seed.bytes (p.rand.bytes.drop used) = _
     rw [qdecode]
-  refine WP.mono (nativeSearch_ok (H.streamOK _) (H.hash_matches _) (H.hash_size _) M K
+  refine WP.mono (nativeSearch_ok (H.streamOK _) (H.hash_matches _) (H.hash_size _) T
     (H.hash_width hw) (generationHash_seed hw) (H.seed_size hw) state hc h16 hu)
     fun t ⟨Wt, usedt, mt, hut, h16t, outcome, ft, rd, wr⟩ => ?_
   have ff := h.search_frame seed hlen h1 ft

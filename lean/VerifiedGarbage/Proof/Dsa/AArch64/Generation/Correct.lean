@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTest
 public import VerifiedGarbage.Spec.Dsa.Generate
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryPost
@@ -11,11 +12,11 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryPost
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MillerRabin.AArch64
 
-theorem generation_correct (H : GenerationHashes) (M : Mont) (K : Kernel)
-    (s : State) (pre : (Spec.Dsa.generateParametersContract abi 464).pre s) :
-    ∃ trace t, Exec isa (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 M.mm K.run) s trace t ∧
-      abiPreserved s t ∧ (Spec.Dsa.generateParametersContract abi 464).post s t := by
-  obtain ⟨trace, t, he, result, habi, _, _⟩ := entryRun_ok H M K (generationABI_of pre)
+theorem generation_correct (H : GenerationHashes) (M : Mont) (T : PrimeTest)
+    (s : State) (pre : (Spec.Dsa.generateParametersContract abi 720).pre s) :
+    ∃ trace t, Exec isa (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 M.mm T.run) s trace t ∧
+      abiPreserved s t ∧ (Spec.Dsa.generateParametersContract abi 720).post s t := by
+  obtain ⟨trace, t, he, result, habi, _, _⟩ := entryRun_ok H M T (generationABI_of pre)
   exact ⟨trace, t, he, habi, entry_shared_post result⟩
 
 end VG.Proof.Dsa.AArch64.Generation

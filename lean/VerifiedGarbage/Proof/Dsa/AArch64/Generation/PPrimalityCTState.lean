@@ -27,6 +27,11 @@ def PPrimalityPlan.withWords (p : PPrimalityPlan) (W : Nat → BitVec 64)
     hashPrime := by simpa only [PConstructPlan.withWords, HashPlan.withWords, hw.1 5 (by decide)] using p.hashPrime
     pPrime := by simpa only [PConstructPlan.withWords, HashPlan.withWords, hw.1 5 (by decide)] using p.pPrime
     exponentPrime := by simpa only [PConstructPlan.withWords, HashPlan.withWords, hw.1 5 (by decide)] using p.exponentPrime
+    hashStack := by simpa only [PConstructPlan.withWords, HashPlan.withWords, hw.1 5 (by decide)] using p.hashStack
+    arenaBound := by simpa only [PConstructPlan.withWords, HashPlan.withWords, hw.1 5 (by decide)] using p.arenaBound
+    tapeArena := by simpa only [PConstructPlan.withWords, HashPlan.withWords, hw.1 5 (by decide)] using p.tapeArena
+    arenaFrame := by simpa only [PConstructPlan.withWords, HashPlan.withWords, hw.1 5 (by decide)] using p.arenaFrame
+    arenaStack := by simpa only [PConstructPlan.withWords, HashPlan.withWords, hw.1 5 (by decide)] using p.arenaStack
     tapeConstruct := by
       simpa only [PConstructPlan.withWords, HashPlan.withWords, PConstructPlan.changed, HashPlan.changed,
         hw.1 5 (by decide)] using p.tapeConstruct }
@@ -44,7 +49,8 @@ def PPrimalityBefore (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
       W 16 = BitVec.ofNat 64 p.used) ∧
     p.used ≤ p.plan.rand.length ∧
     Src s p.plan.construct.B p.plan.construct.Z p.plan.rp p.plan.rand ∧
-    (∀ i < p.plan.construct.len, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off (p.plan.construct.hash.W 5) witness) i) 1) ∧
+    (Scr s (p.plan.construct.hash.W 5) domainCheck ∧
+      Covers [⟨p.plan.rp, p.plan.rand.length⟩] (s.rd ++ s.wr)) ∧
     p.plan.construct.len = pLen ∧ p.plan.construct.hash.len = qLen
 
 theorem pPrimality_construct {pLen qLen : Nat} {H : Spec.Mgf1.Hash} {p : PPrimalityPublic} {s : State}
@@ -66,7 +72,8 @@ structure PPrimalityAfter (p : PPrimalityPublic) (s : State) : Prop where
     (VG.Proof.Bignum.off (p.plan.construct.hash.W 5) Impl.Dsa.Generation.Layout.p)
     (Spec.Dsa.encodeBE p.plan.construct.len p.plan.construct.value)
   tape : Src s p.plan.construct.B p.plan.construct.Z p.plan.rp p.plan.rand
-  writable : ∀ i < p.plan.construct.len, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off (p.plan.construct.hash.W 5) witness) i) 1
+  arena : Scr s (p.plan.construct.hash.W 5) domainCheck
+  tapeCover : Covers [⟨p.plan.rp, p.plan.rand.length⟩] (s.rd ++ s.wr)
   usedBound : p.used ≤ p.plan.rand.length
 
 end VG.Proof.Dsa.AArch64.Generation

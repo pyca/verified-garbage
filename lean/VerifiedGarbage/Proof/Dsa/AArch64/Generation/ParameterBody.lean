@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedSearch
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterInvariant
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTest
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterSemantics
 import VerifiedGarbage.Proof.Framework.Omega
@@ -18,7 +19,7 @@ open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch6
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 open VG.Proof.MillerRabin.AArch64
 
-theorem parameter_body_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
+theorem parameter_body_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
     {p : GenerationContext} {expected : Option Spec.Dsa.Params} {initial : State}
     {used : Nat} {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}
     (hi : ParameterInvariant p expected initial used s) (room : used + p.geo.qLen ≤ p.seeds.bytes.length)
@@ -26,7 +27,7 @@ theorem parameter_body_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
     (Rt : Rep t.mem p.geo.F p.geo.hash V
       (upd (upd W 1 (VG.Proof.Bignum.off (W 8) used)) 10 (BitVec.ofNat 64 (used + p.geo.qLen))))
     (ft : Frame [⟨p.geo.F, frameBytes⟩] s.mem t.mem) (kt : Keep [.x3, .x4, .x5, .x15] s t) :
-    WP isa (Impl.Dsa.AArch64.Generation.seedAttempt H.sha1 H.sha256 M.mm K.run p.geo.pLen p.geo.qLen) t fun u =>
+    WP isa (Impl.Dsa.AArch64.Generation.seedAttempt H.sha1 H.sha256 M.mm T.run p.geo.pLen p.geo.qLen) t fun u =>
       ∃ V' W', Lay u p.geo.F p.geo.hash ∧ Rep u.mem p.geo.F p.geo.hash V' W' ∧
         (if W' 19 = 3 then ParameterInvariant p expected initial (used + p.geo.qLen) u
           else ParameterFinished p expected initial u) := by
@@ -49,7 +50,7 @@ theorem parameter_body_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
     simp [Wt, upd, words 8 (by decide), h8, seed, GenerationTape.slice]
   have ht16 : Wt 16 = BitVec.ofNat 64 randUsed := by
     simpa [Wt, upd, words 16 (by decide)] using h16
-  refine WP.mono (seedAttempt_ok H M K ht seed hlen (ht.seeds.slice room) h1 ht16 bound)
+  refine WP.mono (seedAttempt_ok H M T ht seed hlen (ht.seeds.slice room) h1 ht16 bound)
     fun u ⟨Wu, randUsed', mu, bound', u16, slots, result, fu, ru, wu⟩ => ?_
   have frame := (fi.trans ff).trans fu
   have rd := ru.trans (kt.rd.trans ri)

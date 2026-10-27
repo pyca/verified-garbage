@@ -34,7 +34,9 @@ theorem seedPrime_memory {p : SeedPublic} {s : State} {W : Nat → BitVec 64}
     shapedWrite := ?_
     pWrite := ?_
     exponentWrite := ?_
-    witnessWrite := ?_ }
+    witnessWrite := ?_
+    arena := ?_
+    tapeCover := state.tapeCover }
   · change p.context.saved 26 = W 26
     exact (hm.slots 26 (by simp [generationSlots])).symm
   · have src := state.qSource
@@ -62,6 +64,11 @@ theorem seedPrime_memory {p : SeedPublic} {s : State} {W : Nat → BitVec 64}
     change ∀ i < p.context.geo.pLen, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off (p.context.saved 5) witness) i) 1
     rw [h5] at write
     exact write
+  · have a := state.arena
+    change Scr s (W 5) domainCheck at a
+    change Scr s (p.context.saved 5) domainCheck
+    rw [h5] at a
+    exact a
 
 theorem seedPrime_start {pLen qLen : Nat} {p : SeedPublic} {s : State}
     (h : SeedPrimeBefore pLen qLen p s) : SearchStart pLen qLen p.search s := by

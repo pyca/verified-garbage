@@ -14,7 +14,9 @@ for words of `w` bits (64 for BLAKE2b, 32 for BLAKE2s, with the 64-bit or
 * The sixteen words of the work vector `v` live in registers throughout
   (`wreg`); the rounds are fully unrolled, and each `G` loads its two
   message words from the block (little-endian loads, as BLAKE2 is
-  little-endian) into the temporary `x27` as it adds them.
+  little-endian) into the temporary `x27` as it adds them. The four column
+  Gs and then the four diagonal Gs run stage by stage, exposing independent
+  arithmetic while keeping each message load adjacent to its additions.
 * `x19`–`x24` and `x28`–`x30` are never written (the streaming functions keep
   their own values in `x19`–`x24` across a call); `x25`–`x27` are saved in
   `scratch[0, 24)` and restored at the end.
@@ -92,11 +94,46 @@ def gAt (r i x y z u : Nat) : Prog isa :=
   .block (g P (wreg x) (wreg y) (wreg z) (wreg u) (Spec.Blake2.sigmaAt r (2 * i))
     (Spec.Blake2.sigmaAt r (2 * i + 1)))
 
-/-- Round `r` (RFC 7693 §3.2). -/
+/-- Register indices for the four independent column or diagonal Gs. -/
+def slots (diagonal : Bool) : List (List Nat) :=
+  if diagonal then [[0, 5, 10, 15], [1, 6, 11, 12], [2, 7, 8, 13], [3, 4, 9, 14]]
+  else [[0, 4, 8, 12], [1, 5, 9, 13], [2, 6, 10, 14], [3, 7, 11, 15]]
+
+/-- One stage of a G. Its load and message addition stay together because
+all four lanes share `T`; the remaining stages use disjoint state registers. -/
+def stage (r : Nat) (diagonal : Bool) (lane step : Nat) : List Instr :=
+  let rs := ((slots diagonal).getD lane []).map wreg
+  let a := rs.getD 0 .x3
+  let b := rs.getD 1 .x3
+  let c := rs.getD 2 .x3
+  let d := rs.getD 3 .x3
+  let j := Spec.Blake2.sigmaAt r ((if diagonal then 8 else 0) + 2 * lane +
+    (if step < 6 then 0 else 1))
+  match step % 6 with
+  | 0 => [.ldr (sz w) T .x1 (ws w * j), .add (sz w) a a T, .add (sz w) a a b]
+  | 1 => [.logic .eor (sz w) d d a]
+  | 2 => [.ror (sz w) d d (if step < 6 then P.R1 else P.R3)]
+  | 3 => [.add (sz w) c c d]
+  | 4 => [.logic .eor (sz w) b b c]
+  | _ => [.ror (sz w) b b (if step < 6 then P.R2 else P.R4)]
+
+/-- The sequential instruction list for four independent Gs, used to prove
+that the schedule preserves their final machine state. -/
+def referencePass (r : Nat) (diagonal : Bool) : List Instr :=
+  (List.range 4).flatMap fun lane =>
+    let rs := ((slots diagonal).getD lane []).map wreg
+    g P (rs.getD 0 .x3) (rs.getD 1 .x3) (rs.getD 2 .x3) (rs.getD 3 .x3)
+      (Spec.Blake2.sigmaAt r ((if diagonal then 8 else 0) + 2 * lane))
+      (Spec.Blake2.sigmaAt r ((if diagonal then 8 else 0) + 2 * lane + 1))
+
+/-- Four-way scalar scheduling, without extra registers, loads or instructions. -/
+def passCode (r : Nat) (diagonal : Bool) : List Instr :=
+  (List.range 12).flatMap fun step =>
+    (List.range 4).flatMap fun lane => stage P r diagonal lane step
+
+/-- The same column/diagonal round, interleaved to expose independent arithmetic. -/
 def round (r : Nat) : Prog isa :=
-  .seq (gAt P r 0 0 4 8 12) <| .seq (gAt P r 1 1 5 9 13) <| .seq (gAt P r 2 2 6 10 14) <|
-  .seq (gAt P r 3 3 7 11 15) <| .seq (gAt P r 4 0 5 10 15) <| .seq (gAt P r 5 1 6 11 12) <|
-  .seq (gAt P r 6 2 7 8 13) (gAt P r 7 3 4 9 14)
+  .seq (.block (passCode P r false)) (.block (passCode P r true))
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa
