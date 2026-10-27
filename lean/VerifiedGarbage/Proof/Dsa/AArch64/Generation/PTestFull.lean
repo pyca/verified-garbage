@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
-import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # A full-width p candidate is tested by the probable-prime function -/
 
