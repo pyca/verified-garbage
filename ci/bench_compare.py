@@ -472,6 +472,10 @@ def main():
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
     p.add_argument("--arch", choices=EXECUTABLES, help="fail unless the binaries are this architecture's")
     args = p.parse_args()
+    # Temporary repeated public-API measurements, restricted to BLAKE2.
+    args.rounds = 3
+    args.warm_up_time = 0.3
+    args.measurement_time = 1.0
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
         p.error("--shard must be i/n with 1 <= i <= n")
@@ -496,9 +500,11 @@ def main():
     # also says which benchmark has each group, so that the sides can run
     # one benchmark at a time, if both binaries have head's benchmarks.
     listed, owner = list_groups(binaries["head"], modules["head"])
+    listed = {k: v for k, v in listed.items() if k.startswith("blake2")}
+    owner = {k: v for k, v in owner.items() if k in listed} if owner is not None else None
     if note is not None and binaries["base"] is not None:
         owner = None
-    groups = None
+    groups = sorted(listed)
     if shards > 1:
         groups = shard_groups(listed, shard, shards)
     # Interleaved, every group is named (base's runs of a benchmark it lacks
@@ -595,6 +601,8 @@ def main():
             references[library] = run(binaries["head"], args.work_dir.resolve() / library, library, args, head,
                                        modules["head"], groups)
 
+    for path in sorted(work.rglob("new/estimates.json")):
+        print("BLAKE2_SAMPLE " + json.dumps({"path": str(path.relative_to(work)), "estimates": json.loads(path.read_text()), "sample": json.loads(path.with_name("sample.json").read_text())}), flush=True)
     title = ", ".join([*([f"VG_CPU_FEATURES={cpu_features}"] if cpu_features else []),
                        *([f"shard {shard}/{shards}"] if shards > 1 else [])])
     runs = (f"Fastest of {args.rounds} runs of each side" if args.rounds > 1 else "One run of each side")
