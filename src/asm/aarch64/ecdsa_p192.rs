@@ -2404,7 +2404,7 @@ ret
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// Field elements are four 64-bit words in Montgomery form. Public scalar multiplication uses a joint radix-four table of fifteen projective points, 192 shared doublings and at most 96 additions with complete general RCB formulas. Inversions are calls of `vg_p192_inv_mod_p` and `vg_p192_inv_mod_n`, by divsteps. Branches and memory addresses depend only on pointers, counters and the public verification scalars.
+/// Field elements are four 64-bit words in Montgomery form. Public scalar multiplication uses a joint radix-four table of fifteen projective points, built by a shared addition loop, 192 shared doublings and at most 96 additions with complete general RCB formulas. Inversions are calls of `vg_p192_inv_mod_p` and `vg_p192_inv_mod_n`, by divsteps. Branches and memory addresses depend only on pointers, counters and the public verification scalars.
 ///
 /// # Safety
 ///

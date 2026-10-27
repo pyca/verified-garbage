@@ -74,7 +74,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.Secp256k1.curve) : L
     verified := Proof.Ecdsa.AArch64.Secp256k1.sign_verified h.law h.inv },
   Spec.Ecdsa.Secp256k1.verifyApi.artifact AArch64.target {
     notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Public scalar multiplication uses a joint radix-four table of fifteen projective points, \
+      Public scalar multiplication uses a joint radix-four table of fifteen projective points, built by a shared addition loop, \
       256 shared doublings and at most 128 additions with complete general RCB formulas. \
       The inversion modulo `n` is a call of `vg_secp256k1_inv_mod_n`, by divsteps. \
       Branches and memory addresses depend only on pointers, counters and the public verification scalars."]

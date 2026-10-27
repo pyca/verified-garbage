@@ -74,7 +74,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P192.curve) : List A
     verified := Proof.Ecdsa.AArch64.P192.sign_verified h.law h.inv },
   Spec.Ecdsa.P192.verifyApi.artifact AArch64.target {
     notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Public scalar multiplication uses a joint radix-four table of fifteen projective points, \
+      Public scalar multiplication uses a joint radix-four table of fifteen projective points, built by a shared addition loop, \
       192 shared doublings and at most 96 additions with complete general RCB formulas. \
       Inversions are calls of `vg_p192_inv_mod_p` and `vg_p192_inv_mod_n`, by divsteps. \
       Branches and memory addresses depend only on pointers, counters and the public verification scalars."]
