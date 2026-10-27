@@ -452,7 +452,7 @@ def fmt_time(ns):
 
 def main():
     # Temporary, scoped native experiment: all machine code is Lean-printed.
-    trial = Path(__file__).resolve().parent.parent / "experiments" / "blake2"
+    trial = pathlib.Path(__file__).resolve().parent.parent / "experiments" / "blake2"
     subprocess.run(["cc", "-shared", "-fPIC", str(trial / "prototypes-linux.S"), "-o", str(trial / "prototypes.so")], check=True)
     subprocess.run([sys.executable, str(trial / "measure.py")], check=True)
 
