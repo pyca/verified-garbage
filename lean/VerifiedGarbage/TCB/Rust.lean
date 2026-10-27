@@ -377,7 +377,7 @@ def fullDoc (a : Artifact) : String :=
   let items := Sig.layoutDoc A a.sig a.writeArgs a.stack
   featureDoc (prependSafety (insertNotes a.doc
       (Sig.layoutNote A a.sig a.writeArgs ++ writtenDoc a.name a.written))
-    (Sig.validDoc a.sig) ++ String.join (items.map ("\n* " ++ ·))) a.features
+    (Sig.validDoc A a.sig) ++ String.join (items.map ("\n* " ++ ·))) a.features
 
 /-- If the emitter adds anything to the documentation of `a` from its
 signature (`fullDoc`), `doc` ends with its `# Safety` section, which starts
@@ -389,7 +389,7 @@ def checkLayout (a : Artifact) : Except String Unit := do
       which the emitter generates from its signature (`Sig.validDoc`)"
   let A := a.target.abi
   if (Sig.layoutDoc A a.sig a.writeArgs a.stack).isEmpty &&
-      (Sig.layoutNote A a.sig a.writeArgs).isEmpty && (Sig.validDoc a.sig).isEmpty then return
+      (Sig.layoutNote A a.sig a.writeArgs).isEmpty && (Sig.validDoc A a.sig).isEmpty then return
   let ok := match a.doc.splitOn "\n# " with
     | [_] => false
     | parts => parts.getLast!.startsWith "Safety\n" &&

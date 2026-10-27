@@ -13,7 +13,7 @@
 /// * `schedule` must be valid for reads of 240 bytes.
 /// * `ctr` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `ctr`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).

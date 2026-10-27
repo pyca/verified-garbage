@@ -91,13 +91,15 @@ theorem pre_regs {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)
       (Sig.bufs sig.params (regArgs sig s)).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) ∧
       (∀ r ∈ stackBelow s.sp stack, ∀ a ∈ Sig.bufs sig.params (regArgs sig s), r.Disjoint a.1) ∧
       (∀ a ∈ Sig.bufs sig.params (regArgs sig s), a.1.base.toNat + a.1.len ≤ 2 ^ 64) ∧
-      Curry.apply (sig.words abi.ptrBits) pre (regArgs sig s) s.mem := by
+      Curry.apply (sig.words abi.ptrBits) pre (regArgs sig s) s.mem ∧
+      ∀ p ∈ Sig.u64Bufs sig.params (regArgs sig s), p.toNat % 8 = 0 := by
   have hk' : (sig.words 64).length ≤ argRegs.length := by
     have : (sig.words 64).length ≤ 8 := hk
     simpa [argRegs] using this
   have hz : (sig.words 64).length - argRegs.length = 0 := Nat.sub_eq_zero_of_le hk'
   have hL := fun vs => Sig.lists_of_noLists 64 s.mem sig.params vs hl
-  simp only [Sig.contract, abi, List.length_map, hk', hz, ite_true, List.map_nil, List.append_nil, hL]
+  simp only [Sig.contract, abi, List.length_map, hk', hz, ite_true, List.map_nil, List.append_nil, hL,
+    Bool.cond_true]
   refine and_congr ?_ Iff.rfl
   cases stack <;> simp
 
@@ -236,7 +238,18 @@ theorem narrow_pre (hk : (sig.words abi.ptrBits).length < 8)
       show (s.sp - BitVec.ofNat 64 bytes).toNat + n * e.size ≤ 2 ^ 64
       have := s.sp.isLt
       rw [hbase]; omega_arith
-  · exact Eq.mpr (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params pre _ _ hlen) _) hpr
+  · obtain ⟨hpr, hu⟩ := hpr
+    refine ⟨Eq.mpr (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params pre _ _ hlen) _) hpr,
+      ?_⟩
+    intro p hp
+    rw [show (sig.withScratch nm e n).params = sig.params ++ [(nm, .array true e n)] from rfl,
+      Sig.u64Bufs_append_array abi.ptrBits nm e n _ sig.params _ hlen] at hp
+    rcases List.mem_append.mp hp with hp | hp
+    · exact hu p hp
+    · split at hp
+      · simp only [List.mem_singleton] at hp; subst hp
+        rw [hbase]; omega_arith
+      · simp at hp
 
 /-- The public data of the contract without the buffer is public in
 `narrow` for the contract with it. -/

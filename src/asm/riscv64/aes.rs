@@ -1360,7 +1360,7 @@ ret
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `schedule` must be valid for reads and writes of 240 bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
+/// * `scratch` must be valid for reads and writes of 512 bytes, and aligned for `u64`.
 /// * `key_len` must be 16, 24 or 32.
 /// * The bytes of `schedule` after the key schedule are unspecified on return.
 /// * The contents of `scratch` on return are unspecified.
@@ -2642,7 +2642,7 @@ ret
 /// * `schedule` must be valid for reads of 240 bytes.
 /// * `counter` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `counter`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
@@ -4840,7 +4840,7 @@ ret
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
@@ -6937,7 +6937,7 @@ ret
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).

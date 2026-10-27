@@ -114,7 +114,10 @@ def Sig.contract {M : ISA} (A : Abi M) (sig : Sig)
         all.Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) ∧
         (∀ r ∈ A.reserved stack s, ∀ a ∈ all, r.Disjoint a.1) ∧
         (∀ a ∈ bufs, a.1.base.toNat + a.1.len ≤ 2 ^ A.ptrBits) ∧
-        Curry.apply ws pre (vals s) (A.mem s)
+        bif A.alignsU64 then
+          Curry.apply ws pre (vals s) (A.mem s) ∧
+            ∀ p ∈ Sig.u64Bufs sig.params (vals s), p.toNat % 8 = 0
+        else Curry.apply ws pre (vals s) (A.mem s)
     post s s' := match A.args widths with
       | none => False
       | some vals => Curry.apply ws post (vals s) (A.mem s) (A.mem s')
@@ -167,8 +170,10 @@ def Param.sizeDoc : Param → Option String
 /-- The `# Safety` items stating the memory each buffer of `sig` must be
 valid for, in order: the region `Sig.contract` lets the function read
 (every buffer; loads may read the writable regions too) and write (the
-writable buffers), of the size `Sig.bufs` gives it. -/
-def Sig.validDoc (sig : Sig) : List String :=
+writable buffers), of the size `Sig.bufs` gives it, and, on a target whose
+contracts require it (`Abi.alignsU64`), that a buffer of `u64`
+(`Sig.u64Bufs`) is aligned for `u64`. -/
+def Sig.validDoc {M : ISA} (A : Abi M) (sig : Sig) : List String :=
   sig.params.filterMap fun (n, p) =>
     let access := match p with
       | .array true .. | .slice true .. => "reads and writes"
@@ -177,7 +182,12 @@ def Sig.validDoc (sig : Sig) : List String :=
       | .slices e _ => if e.size = 1 then s!", and each slice it lists for reads of its length in \
           bytes" else s!", and each slice it lists for reads of {e.size} times its length in bytes"
       | _ => ""
-    p.sizeDoc.map fun size => s!"`{n}` must be valid for {access} of {size} bytes{listed}."
+    let aligned := match p with
+      | .array _ e _ | .slice _ e _ =>
+        if A.alignsU64 && e.isU64 then ", and aligned for `u64`" else ""
+      | _ => ""
+    p.sizeDoc.map fun size =>
+      s!"`{n}` must be valid for {access} of {size} bytes{listed}{aligned}."
 
 /-- `xs` as an English list joined by `conj`: "a", "a or b", "a, b or c". -/
 def englishList (conj : String) : List String → String

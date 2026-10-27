@@ -10,8 +10,8 @@
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 200 bytes.
-/// * `scratch` must be valid for reads and writes of 512 bytes.
+/// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
+/// * `scratch` must be valid for reads and writes of 512 bytes, and aligned for `u64`.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `scratch` may overlap the 608 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
@@ -1796,7 +1796,7 @@ ret
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
@@ -1865,7 +1865,7 @@ ret
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
 /// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
 /// * `state` must not overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -1904,7 +1904,7 @@ ret
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
 /// * `out` must be valid for reads and writes of `outlen` bytes.
 /// * `rate` must be 72, 104, 136, 144 or 168, and `pos` at most `rate`.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).

@@ -2,6 +2,7 @@ import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.TCB.Rust
 
 /-!
@@ -127,7 +128,7 @@ def many : Sig where
 
 /-! ## The memory each buffer must be valid for -/
 
-#guard Sig.validDoc sample == [
+#guard Sig.validDoc X86_64.abi sample == [
     "`w` must be valid for reads and writes of 16 bytes.",
     "`r` must be valid for reads of `len` bytes.",
     "`x` must be valid for reads and writes of 32 bytes.",
@@ -138,19 +139,32 @@ def wide : Sig where
   params := [("blocks", .slice false (.array .u8 64) "n"), ("out", .slice true .u32 "len"),
     ("state", .array true (.array .u64 5) 5)]
 
-#guard Sig.validDoc wide == [
+#guard Sig.validDoc X86_64.abi wide == [
     "`blocks` must be valid for reads of `64 * n` bytes.",
     "`out` must be valid for reads and writes of `4 * len` bytes.",
     "`state` must be valid for reads and writes of 200 bytes."]
 
-#guard Sig.validDoc none' == []
+#guard Sig.validDoc X86_64.abi none' == []
+
+-- On RISC-V, whose contracts require it (`Abi.alignsU64`), a buffer of `u64`
+-- (or of arrays of them) is also aligned.
+#guard Sig.validDoc RISCV64.abi sample == [
+    "`w` must be valid for reads and writes of 16 bytes.",
+    "`r` must be valid for reads of `len` bytes.",
+    "`x` must be valid for reads and writes of 32 bytes, and aligned for `u64`.",
+    "`y` must be valid for reads of 8 bytes."]
+
+#guard Sig.validDoc RISCV64.abi wide == [
+    "`blocks` must be valid for reads of `64 * n` bytes.",
+    "`out` must be valid for reads and writes of `4 * len` bytes.",
+    "`state` must be valid for reads and writes of 200 bytes, and aligned for `u64`."]
 
 /-- A list of slices, between a writable buffer and a read-only one. -/
 def lists : Sig where
   params := [("out", .array true .u8 16), ("parts", .slices .u8 "count"),
     ("words", .slices .u32 "n"), ("key", .array false .u8 16)]
 
-#guard Sig.validDoc lists == [
+#guard Sig.validDoc X86_64.abi lists == [
     "`out` must be valid for reads and writes of 16 bytes.",
     "`parts` must be valid for reads of `2 * size_of::<usize>() * count` bytes, and each slice \
       it lists for reads of its length in bytes.",

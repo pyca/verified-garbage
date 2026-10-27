@@ -13,7 +13,7 @@
 /// * `schedule` must be valid for reads of 240 bytes.
 /// * `tweak` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `tweak`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
@@ -292,7 +292,7 @@ ret
 /// * `schedule` must be valid for reads of 240 bytes.
 /// * `tweak` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `scratch` on return are unspecified.
 /// * `tweak`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
@@ -572,7 +572,7 @@ ret
 /// * `tweak_schedule` must be valid for reads of 240 bytes.
 /// * `i` must be valid for reads of 16 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
 /// * The contents of `scratch` on return are unspecified.
@@ -727,7 +727,7 @@ ret
 /// * `tweak_schedule` must be valid for reads of 240 bytes.
 /// * `i` must be valid for reads of 16 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes, and aligned for `u64`.
 /// * `rounds` must be 10, 12 or 14.
 /// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
 /// * The contents of `scratch` on return are unspecified.

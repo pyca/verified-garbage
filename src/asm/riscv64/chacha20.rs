@@ -2175,7 +2175,7 @@ ret
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `state` must be valid for reads and writes of 768 bytes, and aligned for `u64`.
 /// * `key` must be valid for reads of 32 bytes.
 /// * `nonce` must be valid for reads of 16 bytes.
 /// * `state` must not overlap `key` or `nonce` (distinct Rust objects never do).
@@ -2354,7 +2354,7 @@ ret
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `state` must be valid for reads and writes of 768 bytes, and aligned for `u64`.
 /// * `nonce` must be valid for reads of 16 bytes.
 /// * `state` must not overlap `nonce` (distinct Rust objects never do).
 /// * Neither `state` nor `nonce` may wrap around the end of the address space (no Rust object does).
@@ -2469,7 +2469,7 @@ ret
 ///
 /// # Safety
 ///
-/// * `state` must be valid for reads and writes of 768 bytes.
+/// * `state` must be valid for reads and writes of 768 bytes, and aligned for `u64`.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).

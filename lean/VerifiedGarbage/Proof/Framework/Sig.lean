@@ -135,6 +135,10 @@ theorem Sig.forall_mem_bound_iff {n : Nat} {l : List (Region × Bool)} :
       Sig.conj (l.map fun a => a.1.base.toNat + a.1.len ≤ 2 ^ n) :=
   Sig.conj_map.symm
 
+theorem Sig.forall_mem_aligned_iff {n : Nat} {l : List Addr} :
+    (∀ p ∈ l, p.toNat % n = 0) ↔ Sig.conj (l.map fun p => p.toNat % n = 0) :=
+  Sig.conj_map.symm
+
 /-- The facts `P i` for the public arguments `i` (from `k`) of `l`. -/
 def Sig.pubFacts (P : Nat → Prop) : List Bool → Nat → List Prop
   | [], _ => []
@@ -173,7 +177,10 @@ def Sig.preE {M : ISA} (A : Abi M) (sig : Sig) (pre : Curry (sig.words A.ptrBits
     Sig.conj (Sig.pairFacts all) ∧
     Sig.conj ((A.reserved stack s).flatMap fun r => all.map fun a => r.Disjoint a.1) ∧
     Sig.conj (bufs.map fun a => a.1.base.toNat + a.1.len ≤ 2 ^ A.ptrBits) ∧
-    Curry.apply ws pre (vals s) (A.mem s)
+    bif A.alignsU64 then
+      Curry.apply ws pre (vals s) (A.mem s) ∧
+        Sig.conj ((Sig.u64Bufs sig.params (vals s)).map fun p => p.toNat % 8 = 0)
+    else Curry.apply ws pre (vals s) (A.mem s)
 
 theorem Sig.contract_pre_iff {M : ISA} {A : Abi M} {sig : Sig}
     {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits} {writeArgs : Bool}
@@ -183,7 +190,8 @@ theorem Sig.contract_pre_iff {M : ISA} {A : Abi M} {sig : Sig}
   generalize A.args ((sig.words A.ptrBits).map (·.bits A.ptrBits)) = o
   cases o with
   | none => exact Iff.rfl
-  | some vals => simp only [Sig.pairwise_iff, Sig.forall_mem_disjoint_iff, Sig.forall_mem_bound_iff]
+  | some vals => simp only [Sig.pairwise_iff, Sig.forall_mem_disjoint_iff, Sig.forall_mem_bound_iff,
+      Sig.forall_mem_aligned_iff]
 
 /-- The public data of `sig.contract A _ _ _ _ leak`, with the public
 arguments as `Sig.conj` of a list, which evaluates. -/
@@ -337,7 +345,7 @@ macro_rules
            sig_reduce [$ls,*] $[$loc]?)
         | (sig_reduce [$ls,*] $[$loc]?
            try sig_simp_only [Sig.pairwise_iff, Sig.forall_mem_disjoint_iff, Sig.forall_mem_bound_iff,
-             Sig.forall_pubs_iff] $[$loc]?
+             Sig.forall_mem_aligned_iff, Sig.forall_pubs_iff] $[$loc]?
            try sig_reduce [] $[$loc]?)
       -- The tables' regions first, before `List.map` and `forall_eq` take them apart.
       sig_simp [$ls,*] [Sig.map_const_cons, List.map_nil, Sig.forall_mem_const_cons,
@@ -347,7 +355,7 @@ macro_rules
       -- against the filtered list by evaluation, and evaluates the symbolic
       -- values in it (the stack arguments' memory reads) as far as it can:
       -- seconds for some contracts.
-      sig_simp [$ls,*] [Sig.bufs, Sig.lists, Sig.descs, List.append_nil, List.map_nil, Sig.conj, Curry.apply, Curry.const, Curry.apply_const, ArgWord.ofRaw, Elem.size, List.filter_cons, List.filter_nil, List.map, List.cons_append, List.nil_append, List.all_cons, List.all_nil, Bool.not_true, Bool.not_false, Bool.and_true, Bool.and_false, Bool.true_and, Bool.false_and, Bool.and_self, Bool.or_true, Bool.true_or, Bool.or_false, Bool.false_or, Bool.false_eq_true, decide_true, decide_false, Nat.mul_one, Nat.one_mul, List.pairwise_cons, List.forall_mem_cons, List.not_mem_nil, List.Pairwise.nil, List.mem_cons, List.mem_nil_iff, forall_eq_or_imp, forall_eq, forall_false, implies_true, true_implies, false_implies, and_true, true_and, and_self, or_self, or_true, true_or, false_or, or_false, and_assoc, Nat.add_zero, List.zip_cons_cons, List.zip_nil_left, List.zip_nil_right, List.sum_cons, List.sum_nil, BitVec.setWidth_eq, BitVec.setWidth_32_64_32, BitVec.toNat_setWidth_32_64, BitVec.setWidth_setWidth_of_le, Sig.forall_pubs_cons, Sig.forall_pubs_nil, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv,
+      sig_simp [$ls,*] [Sig.bufs, Sig.u64Bufs, Elem.isU64, Bool.cond_true, Bool.cond_false, Sig.lists, Sig.descs, List.append_nil, List.map_nil, Sig.conj, Curry.apply, Curry.const, Curry.apply_const, ArgWord.ofRaw, Elem.size, List.filter_cons, List.filter_nil, List.map, List.cons_append, List.nil_append, List.all_cons, List.all_nil, Bool.not_true, Bool.not_false, Bool.and_true, Bool.and_false, Bool.true_and, Bool.false_and, Bool.and_self, Bool.or_true, Bool.true_or, Bool.or_false, Bool.false_or, Bool.false_eq_true, decide_true, decide_false, Nat.mul_one, Nat.one_mul, List.pairwise_cons, List.forall_mem_cons, List.not_mem_nil, List.Pairwise.nil, List.mem_cons, List.mem_nil_iff, forall_eq_or_imp, forall_eq, forall_false, implies_true, true_implies, false_implies, and_true, true_and, and_self, or_self, or_true, true_or, false_or, or_false, and_assoc, Nat.add_zero, List.zip_cons_cons, List.zip_nil_left, List.zip_nil_right, List.sum_cons, List.sum_nil, BitVec.setWidth_eq, BitVec.setWidth_32_64_32, BitVec.toNat_setWidth_32_64, BitVec.setWidth_setWidth_of_le, Sig.forall_pubs_cons, Sig.forall_pubs_nil, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv,
         Nat.reduceLeDiff, Nat.reduceEqDiff, ↓reduceIte] $[$loc]?))
 
 /-- Evaluates the precondition of a contract built with `Sig.contract` into

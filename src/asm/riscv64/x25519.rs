@@ -13,7 +13,7 @@
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * `scalar` must be valid for reads of 32 bytes.
 /// * `point` must be valid for reads of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 4096 bytes.
+/// * `scratch` must be valid for reads and writes of 4096 bytes, and aligned for `u64`.
 /// * The contents of `scratch` on return are unspecified.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may wrap around the end of the address space (no Rust object does).
