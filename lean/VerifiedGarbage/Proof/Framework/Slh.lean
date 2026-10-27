@@ -55,6 +55,20 @@ def Code.harden {I C : Type} (pt pe : C → List I) : Code I C → Code I C
 
 variable {M : ISA}
 
+theorem sblock_nil_inv {S : Spectre M} {s : M.State} {ms : Bool} {n : Nat} {t : List SLeak}
+    {r : Option (M.State × Nat)} (e : SBlock S [] s ms n t r) : t = [] ∧ r = some (s, n) := by
+  cases e; exact ⟨rfl, rfl⟩
+
+theorem sblock_cons_inv {S : Spectre M} {i : M.Instr} {is : List M.Instr} {s : M.State} {ms : Bool}
+    {n : Nat} {t : List SLeak} {r : Option (M.State × Nat)} (e : SBlock S (i :: is) s ms n t r) :
+    (n = 0 ∧ t = [] ∧ r = none) ∨ (ms = true ∧ S.fence i = true ∧ t = [] ∧ r = none) ∨
+      (∃ s₁ k t', (ms && S.fence i) = false ∧ n = k + 1 ∧ S.run ms i s = some s₁ ∧
+        SBlock S is s₁ ms k t' r ∧ t = (S.leaks ms i s).map .addr ++ t') := by
+  cases e with
+  | stop => exact .inl ⟨rfl, rfl, rfl⟩
+  | fence h => exact .inr (.inl ⟨rfl, h, rfl, rfl⟩)
+  | cons h x b => exact .inr (.inr ⟨_, _, _, h, rfl, x, b, rfl⟩)
+
 /-! ## Sequential runs -/
 
 section Seq
