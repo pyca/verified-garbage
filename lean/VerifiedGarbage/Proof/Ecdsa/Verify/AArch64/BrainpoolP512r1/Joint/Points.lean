@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.LoopOps
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Math
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Table
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Build
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.TableLayout
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Loop
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Moves
@@ -32,7 +33,7 @@ theorem setup_ok {base : Addr} {s₀ s : State} {g : Reg → BitVec 64} {P : Poi
       Running base (G C) P (sv cfg base s U) (sv cfg base s V) 256 t := by
   rw [setup]
   refine WP.seq (WP.mono (prepare_ok hc hC hM hrep) fun s₁ ⟨k₁,I₁,B₁⟩ => ?_)
-  refine WP.seq (WP.mono (build_ok hc hC hc.onG hP 15 (by decide) I₁) fun s₂ ⟨k₂,I₂,T₂⟩ => ?_)
+  refine WP.seq (WP.mono (build_ok hc hC hc.onG hP I₁) fun s₂ ⟨k₂,I₂,T₂⟩ => ?_)
   have B₂ := k₂.bits B₁
   rw [WP.block_append_iff]
   refine WP.mono (infinity_ok I₂.scr hc hC) fun s₃ ⟨k₃,R₃,_⟩ => ?_

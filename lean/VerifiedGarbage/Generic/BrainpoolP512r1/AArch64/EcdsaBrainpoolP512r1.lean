@@ -75,7 +75,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP512r1.curv
     verified := Proof.Ecdsa.AArch64.BrainpoolP512r1.sign_verified h.law h.inv },
   Spec.Ecdsa.BrainpoolP512r1.verifyApi.artifact AArch64.target {
     notes := ["Field elements are eight 64-bit words in Montgomery form. \
-      Joint radix-four multiplication shares 512 doublings and uses a fifteen-entry public table. \
+      Joint radix-four multiplication shares 512 doublings and uses a fifteen-entry public table built by a shared addition loop. \
       General complete addition formulas of Renes, Costello and Batina (Algorithm 1) handle any `a`. \
       The inversion modulo `n` is a call of `vg_brainpoolp512r1_inv_mod_n`, by divsteps. \
       Lookup addresses and zero-digit branches depend on the public digest and signature; \
