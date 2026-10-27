@@ -68,6 +68,12 @@ pub(crate) mod ct;
 pub(crate) mod ed25519;
 
 #[rustfmt::skip]
+pub(crate) mod ed25519_r32;
+
+#[rustfmt::skip]
+pub(crate) mod gf25519_r32;
+
+#[rustfmt::skip]
 pub(crate) mod hmac_md5;
 
 #[rustfmt::skip]
