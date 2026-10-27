@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.MulFn
-public import VerifiedGarbage.Proof.Weierstrass.PointFacts
+import VerifiedGarbage.Proof.Weierstrass.PointFacts
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
 import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!
 # `vg_<curve>_mul` on 32-bit ARM: the contract

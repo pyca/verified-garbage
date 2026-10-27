@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 
 /-!
 # `vg_<curve>_mul` on 32-bit ARM: correctness
