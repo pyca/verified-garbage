@@ -52,7 +52,8 @@ def PPrimalityBefore (n : Nat) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
       FrV n p.plan.construct.hash.F p.ws s ∧ W 16 = BitVec.ofNat 64 p.used) ∧
     s.wr = p.wr ∧ p.used ≤ p.plan.rand.length ∧
     Src s p.plan.construct.B p.plan.construct.Z p.plan.rp p.plan.rand ∧
-    (∀ i < p.plan.construct.len, InRegions s.wr (off (off (p.plan.construct.hash.W 5) witness) i) 1) ∧
+    (Scr s (p.plan.construct.hash.W 5) domainCheck ∧
+      Covers [⟨p.plan.rp, p.plan.rand.length⟩] (s.rd ++ s.wr)) ∧
     p.plan.construct.len = pLen ∧ p.plan.construct.hash.len = qLen
 
 theorem pPrimality_construct {n pLen qLen : Nat} {H : Spec.Mgf1.Hash} {p : PPrimalityPublic} {s : State}
@@ -74,7 +75,8 @@ structure PPrimalityAfter (p : PPrimalityPublic) (s : State) : Prop where
     (off (p.plan.construct.hash.W 5) Impl.Dsa.Generation.Layout.p)
     (Spec.Dsa.encodeBE p.plan.construct.len p.plan.construct.value)
   tape : Src s p.plan.construct.B p.plan.construct.Z p.plan.rp p.plan.rand
-  writable : ∀ i < p.plan.construct.len, InRegions s.wr (off (off (p.plan.construct.hash.W 5) witness) i) 1
+  arena : Scr s (p.plan.construct.hash.W 5) domainCheck
+  tapeCover : Covers [⟨p.plan.rp, p.plan.rand.length⟩] (s.rd ++ s.wr)
   wr : s.wr = p.wr
   usedBound : p.used ≤ p.plan.rand.length
 

@@ -58,16 +58,16 @@ theorem parameter_reset {n pLen qLen : Nat} {p : ParameterPublic} {s : State}
   exact ⟨⟨_, ht, by simp [seedTape, upd, ParameterPublic.start], by simpa [seedTape, upd, ParameterPublic.start] using hu⟩,
     hf.congr (kt.gpr (by decide)) kt.2.2, kt.2.2.trans hw, hp, hq⟩
 
-theorem nativeParameters_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem nativeParameters_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (ParameterStart n pLen qLen))
-      (parameterSearch (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run pLen qLen) (fun _ _ => True) := by
+      (parameterSearch (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen) (fun _ _ => True) := by
   unfold parameterSearch tapeLoop
   refine RelCT.seq (two_piece [.rsp] ?_ (by taint_decide)
     (fun _ _ h => parameter_reset h)) ?_
   · intro p s t ⟨⟨Ws, hs, _⟩, _⟩ ⟨⟨Wt, ht, _⟩, _⟩ r hr
     obtain rfl := List.mem_singleton.mp hr
     exact hs.layout.rsp.trans ht.layout.rsp.symm
-  · exact two_map ParameterPublic.start (fun _ _ h => h) (parameterLoop_ct (checkName := checkName) H M Sq K n hn pLen qLen sizes)
+  · exact two_map ParameterPublic.start (fun _ _ h => h) (parameterLoop_ct (checkName := checkName) H M Sq T n hn pLen qLen sizes)
 
 end VG.Proof.Dsa.X86_64.Generation

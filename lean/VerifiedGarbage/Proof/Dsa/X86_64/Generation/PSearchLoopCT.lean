@@ -18,7 +18,7 @@ private def searchLoopInv (n pLen qLen remaining : Nat) : State → State → Pr
 
 section
 variable (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream)
-variable (M : Mont) (K : Kernel) (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+variable (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
 variable (sizes : GenerationSizes pLen qLen)
 variable (hG : Calls.StreamOK (if qLen = 20 then G1 else G256))
 variable (hmatch : ∀ x, H.hash x = hG.SH.H.hash x)
@@ -30,11 +30,11 @@ variable (hd : (if qLen = 20 then G1 else G256).D = qLen)
 include hG hmatch hsize hhash hseedsize hd sizes
 
 theorem searchIteration_ready {p : SearchPublic} {s : State} (h : SearchBefore n pLen qLen p s) :
-    WP isa (pSearchIteration (pAttempt G1 G256 M.mm K.run pLen qLen)
+    WP isa (pSearchIteration (pAttempt G1 G256 T.run pLen qLen)
       (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1)) s (SearchIterationAfter n pLen qLen p) := by
   unfold pSearchIteration
   simp only [seqs]
-  refine WP.seq (WP.mono (searchBody_ready G1 G256 M K hG hmatch hsize hhash hseedsize hd h)
+  refine WP.seq (WP.mono (searchBody_ready G1 G256 T hG hmatch hsize hhash hseedsize hd h)
     fun _ ht => searchIteration_tail ⟨ht, h.2.2.2.2.2⟩ ?_ ?_)
   all_goals rcases sizes with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
@@ -42,18 +42,18 @@ include hn
 
 private theorem searchLoop_step (remaining : Nat) :
     RelCT isa (searchLoopInv n pLen qLen remaining)
-      (pSearchIteration (pAttempt G1 G256 M.mm K.run pLen qLen)
+      (pSearchIteration (pAttempt G1 G256 T.run pLen qLen)
         (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1))
       (fun s t => isa.eval .e s = isa.eval .e t ∧ (isa.eval .e s = some false → True) ∧
         (isa.eval .e s = some true → ∃ next < remaining, searchLoopInv n pLen qLen next s t)) := by
   have step : RelCT isa (searchLoopInv n pLen qLen remaining)
-      (pSearchIteration (pAttempt G1 G256 M.mm K.run pLen qLen)
+      (pSearchIteration (pAttempt G1 G256 T.run pLen qLen)
         (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1))
       (Two fun p s => 32 * pLen - p.counter = remaining ∧ SearchIterationAfter n pLen qLen p s) := by
-    refine two_post ((searchIteration_ct G1 G256 M K n hn H pLen qLen sizes hG hmatch hsize hhash hseedsize hd).mono
+    refine two_post ((searchIteration_ct G1 G256 T n hn H pLen qLen sizes hG hmatch hsize hhash hseedsize hd).mono
       (fun _ _ => two_mono fun _ _ h => h.2) (fun _ _ _ => True.intro)) ?_
     intro p s h
-    exact WP.mono (searchIteration_ready G1 G256 M K n H pLen qLen sizes hG hmatch hsize hhash hseedsize hd h.2)
+    exact WP.mono (searchIteration_ready G1 G256 T n H pLen qLen sizes hG hmatch hsize hhash hseedsize hd h.2)
       fun _ ht => ⟨h.1, ht⟩
   refine step.mono (fun _ _ h => h) ?_
   rintro s t ⟨p, ⟨hr, hs⟩, ⟨_, ht⟩⟩
@@ -67,11 +67,11 @@ private theorem searchLoop_step (remaining : Nat) :
   refine ⟨32 * pLen - (p.counter + 1), by omega, p.next cont, ⟨rfl, next⟩, rfl, ht.2 cont⟩
 
 theorem pSearchLoop_ct : RelCT isa (Two (SearchBefore n pLen qLen))
-    (.loop (pSearchIteration (pAttempt G1 G256 M.mm K.run pLen qLen)
+    (.loop (pSearchIteration (pAttempt G1 G256 T.run pLen qLen)
       (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1)) .e) (fun _ _ => True) := by
   rintro s t a b s' t' ⟨p, hs, ht⟩ es et
   exact RelCT.loop (searchLoopInv n pLen qLen)
-    (searchLoop_step G1 G256 M K n hn H pLen qLen sizes hG hmatch hsize hhash hseedsize hd)
+    (searchLoop_step G1 G256 T n hn H pLen qLen sizes hG hmatch hsize hhash hseedsize hd)
     (32 * pLen - p.counter) s t a b s' t' ⟨p, ⟨rfl, hs⟩, rfl, ht⟩ es et
 
 end

@@ -27,12 +27,16 @@ def primeCallArgs : List Instr :=
    .mov .r8 (.reg .rsp), .alu .add .r8 (.imm 152)]
 
 /-- Add the octets read to the cursor if the tape sufficed, then store the
-status (returned in `eax`), with 2 as 3. -/
-def primeCallResult : Prog isa :=
-  .seq (.block [.mov32 .rax (.reg .rax), .alu .test .rax (.reg .rax)])
+status, with 2 as 3. -/
+def primeCallStatus : Prog isa :=
+  .seq (.block [.alu .test .rax (.reg .rax)])
     (.seq (.ite .e (.block [])
         (.block [.mov .rcx (.mem (sp 152)), .alu .add .rcx (.mem (sp 128)), .store (sp 128) .rcx]))
       (.block [.mov .rcx (.reg .rax), .shift .shr .rcx 1, .alu .add .rax (.reg .rcx), .store (sp 152) .rax]))
+
+/-- The status, returned in `eax`, then `primeCallStatus`. -/
+def primeCallResult : Prog isa :=
+  .seq (.block [.mov32 .rax (.reg .rax)]) primeCallStatus
 
 /-- The test of a candidate of `bits` bits, called as `prime bits`. -/
 def primeCall (prime : Nat → Prog isa) (bits : Nat) : Prog isa :=

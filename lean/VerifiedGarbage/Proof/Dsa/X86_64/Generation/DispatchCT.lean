@@ -72,12 +72,12 @@ theorem dispatch_check256 (n : Nat) :
     refine WP.mono lengthTest256_ok fun t ⟨hz, he, hk⟩ => ?_
     exact ⟨dispatchBefore_congr h he hk, hn, by simp only [eval, hz, ha]⟩
 
-theorem dispatch_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem dispatch_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     (n : Nat) (hn : n = 2 ∨ n = 3) :
-    RelCT isa (Two (DispatchBefore n)) (dispatch (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) (fun _ _ => True) := by
+    RelCT isa (Two (DispatchBefore n)) (dispatch (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run) (fun _ _ => True) := by
   unfold dispatch
   refine RelCT.seq (dispatch_check n) (two_ite (fun _ _ _ hs ht => hs.2.2.trans ht.2.2.symm) ?_ ?_)
-  · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct (checkName := checkName) H M Sq K n hn 128 20 (Or.inl ⟨rfl, rfl⟩))
+  · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct (checkName := checkName) H M Sq T n hn 128 20 (Or.inl ⟨rfl, rfl⟩))
     intro p s h
     have hb := Option.some.inj (h.1.2.2.symm.trans h.2)
     rcases p.context.geo.lengths with ⟨hp, hq⟩ | ⟨hp, hq⟩ | ⟨hp, hq⟩
@@ -85,17 +85,17 @@ theorem dispatch_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
     all_goals simp [hp] at hb
   · have tail : RelCT isa (Two (DispatchLarge n))
         (.seq (.block [.alu .cmp .rax (.imm 256)])
-          (.ite .e (generate (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run 256 32)
-            (generate (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run 384 32))) (fun _ _ => True) := by
+          (.ite .e (generate (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run 256 32)
+            (generate (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run 384 32))) (fun _ _ => True) := by
       refine RelCT.seq (dispatch_check256 n) (two_ite (fun _ _ _ hs ht => hs.2.2.trans ht.2.2.symm) ?_ ?_)
-      · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct (checkName := checkName) H M Sq K n hn 256 32 (Or.inr (Or.inl ⟨rfl, rfl⟩)))
+      · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct (checkName := checkName) H M Sq T n hn 256 32 (Or.inr (Or.inl ⟨rfl, rfl⟩)))
         intro p s h
         have hb := Option.some.inj (h.1.2.2.symm.trans h.2)
         rcases p.context.geo.lengths with ⟨hp, hq⟩ | ⟨hp, hq⟩ | ⟨hp, hq⟩
         · exact False.elim (h.1.2.1 hp)
         · simpa only [DispatchBefore, hp, hq] using h.1.1
         · simp [hp] at hb
-      · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct (checkName := checkName) H M Sq K n hn 384 32 (Or.inr (Or.inr ⟨rfl, rfl⟩)))
+      · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct (checkName := checkName) H M Sq T n hn 384 32 (Or.inr (Or.inr ⟨rfl, rfl⟩)))
         intro p s h
         have hb := Option.some.inj (h.1.2.2.symm.trans h.2)
         rcases p.context.geo.lengths with ⟨hp, hq⟩ | ⟨hp, hq⟩ | ⟨hp, hq⟩

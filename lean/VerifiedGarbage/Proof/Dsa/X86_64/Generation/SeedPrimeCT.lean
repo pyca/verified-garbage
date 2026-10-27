@@ -12,14 +12,14 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashChoice
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 
-theorem seedPrime_ct (H : GenerationHashes) (M : Mont) (K : Kernel)
+theorem seedPrime_ct (H : GenerationHashes) (T : PrimeTest)
     (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (SeedPrimeBefore n pLen qLen))
-      (Impl.Dsa.X86_64.Generation.primeSearch H.sha1 H.sha256 M.mm K.run pLen qLen) (fun _ _ => True) := by
+      (Impl.Dsa.X86_64.Generation.primeSearch H.sha1 H.sha256 T.run pLen qLen) (fun _ _ => True) := by
   have hq : qLen = 20 ∨ qLen = 32 := by
     rcases sizes with h | h | h <;> simp [h.2]
   exact two_map SeedPublic.search (fun _ _ h => seedPrime_start h)
-    (primeSearch_ct H.sha1 H.sha256 M K n hn (generationHash qLen) pLen qLen sizes
+    (primeSearch_ct H.sha1 H.sha256 T n hn (generationHash qLen) pLen qLen sizes
       (H.streamOK qLen) (H.hash_matches qLen) (H.hash_size qLen)
       (generationHash_seed hq) (H.seed_size hq) (H.hash_width hq))
 
