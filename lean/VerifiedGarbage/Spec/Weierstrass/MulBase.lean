@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Weierstrass.Point
 # The multiplication of a curve's base point, in its working space, as a function
 
 **Trusted** (as every file in `Spec/`). The contract of one function for each
-curve of `curves` (so far P-224, P-256 and P-384), on the working space where the x86-64 code
+curve of `curves` (so far P-224, P-256, P-384 and P-521), on the working space where the x86-64 code
 of the curve's ECDSA signature and public key derivation keeps its numbers,
 so that both can call one copy of the multiplication instead of repeating it:
 
@@ -34,7 +34,10 @@ words). The function takes no offsets, so that every address it computes is
 fewer than six words, whose slots 29 and 30 cannot hold the caller's six
 callee-saved registers), the curve's temporary slot (`tmpAt`) and
 the `64 k + 8` bytes from slot 45 (`bitsAt`, where the code keeps a table of
-`k`'s bits) are the function's own working space (`Own`);
+`k`'s bits) are the function's own working space (`Own`), and for a curve
+with `tail` (P-521) so is every byte from slot 45 on, which holds the
+temporary areas of its products modulo `p` on every target (slot 55 on
+x86-64, slot 54 on AArch64);
 on return they are unspecified and may hold intermediate values, secret
 ones among them, and the caller's callee-saved registers. Every other byte
 of `ws` keeps its value but the result's (`Keeps`).
@@ -64,13 +67,15 @@ def sig : Sig where
 (its group, base point and prime `p`), its name (the function is
 `vg_<curve>_mul_base`, in the Rust module `<curve>_mul_base`), the count `k`
 of 64-bit words of a coordinate, with `p < 2^(64 k)`, how the documentation
-names it, and the slot of its products' temporary area. -/
+names it, the slot of its products' temporary area, and whether every byte
+from slot 45 on is the function's own working space too. -/
 structure Curve where
   W : Weierstrass.Curve
   curve : String
   k : Nat
   desc : String
   tmp : Nat
+  tail : Bool := false
 
 namespace Curve
 
@@ -105,11 +110,12 @@ def ptBytes : Nat := 24 * C.k
 
 /-- Byte `i` is in the function's own working space: slots 17 to 30 and 40
 (and 41 for fewer than six words), the temporary slot, or the `64 k + 8` bytes
-of the table of bits. -/
+of the table of bits; with `tail`, also every byte from the table of bits on. -/
 def Own (i : Nat) : Prop :=
   (C.slot 17 ≤ i ∧ i < C.slot 31) ∨ (C.slot 40 ≤ i ∧ i < C.slot 41) ∨
     (C.k < 6 ∧ C.slot 41 ≤ i ∧ i < C.slot 42) ∨
-    (C.tmpAt ≤ i ∧ i < C.tmpAt + 8 * C.k) ∨ (C.bitsAt ≤ i ∧ i < C.bitsAt + 64 * C.k + 8)
+    (C.tmpAt ≤ i ∧ i < C.tmpAt + 8 * C.k) ∨ (C.bitsAt ≤ i ∧ i < C.bitsAt + 64 * C.k + 8) ∨
+    (C.tail = true ∧ C.bitsAt ≤ i)
 
 /-- Every byte of `ws` but those of the function's own working space and of
 the result keeps its value. -/
@@ -149,6 +155,11 @@ def rangeDoc (o n : Nat) : String := s!"{o} to {o + n - 1}"
 
 /-- What the documentation says the function's own working space is. -/
 def ownDoc : String :=
+  if C.tail then
+    s!"Bytes {rangeDoc (C.slot 17) (C.slot 31 - C.slot 17)}, {rangeDoc (C.slot 40) (if C.k < 6 then 16 * C.k else 8 * C.k)}\
+      {if C.tmp < 45 then ", " ++ rangeDoc C.tmpAt (8 * C.k) else ""} and \
+      {rangeDoc C.bitsAt (wsBytes - C.bitsAt)} of `ws`"
+  else
   s!"Bytes {rangeDoc (C.slot 17) (C.slot 31 - C.slot 17)}, {rangeDoc (C.slot 40) (if C.k < 6 then 16 * C.k else 8 * C.k)}, \
     {rangeDoc C.tmpAt (8 * C.k)} and {rangeDoc C.bitsAt (64 * C.k + 8)} of `ws`"
 
@@ -181,7 +192,15 @@ def p224 : Curve := { W := Spec.P224.curve, curve := "p224", k := 4, desc := "P-
 def p256 : Curve := { W := Spec.P256.curve, curve := "p256", k := 4, desc := "P-256", tmp := 2 }
 def p384 : Curve := { W := Spec.P384.curve, curve := "p384", k := 6, desc := "P-384", tmp := 83 }
 
+/-- P-521's temporary area is in slot 55's place, as x86-64's has it for nine
+words (`Impl.Ecdsa.X86_64.Cfg.sl`, as `Spec/Weierstrass/Inverse.lean`'s
+`p521`); AArch64's products keep theirs in slot 54's (`Mont.moAt`), and
+ARMv7's, PPC64LE's and x86's Montgomery functions their working space below
+byte 4096: `tail` makes all of them the function's. -/
+def p521 : Curve :=
+  { W := Spec.P521.curve, curve := "p521", k := 9, desc := "P-521", tmp := 55, tail := true }
+
 /-- Every curve. -/
-def curves : List Curve := [p224, p256, p384]
+def curves : List Curve := [p224, p256, p384, p521]
 
 end VG.Spec.Weierstrass.MulBase
