@@ -192,7 +192,7 @@ theorem keyArgs_of (up : Bool) {n : Nat} {M : Mode} (hstep : M.step = 8) :
   have trd : (⟨s.syms s1234Sym, 4096⟩ : Region) ∈ s.rd := s1234_len ▸ ConstsOk.rd1 hk
   have twr : ∀ r ∈ s.wr, Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ r := s1234_len ▸ ConstsOk.wr1 hk
   have tst : Region.Disjoint ⟨s.syms s1234Sym, 4096⟩ ⟨s.sp - frameBytes, frameBytes⟩ := by
-    have := (hk.2.2 _ List.mem_cons_self).2.2 ⟨s.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩ (by
+    have := (hk.2.2.1 _ List.mem_cons_self).2.2 ⟨s.sp - BitVec.ofNat 64 frameBytes, frameBytes⟩ (by
       simp [abi, stackBelow])
     simp only [s1234_len] at this; exact this
   have ews : Proof.Modes.RISCV64.wrs0 (dirCore up n) M s₁ =

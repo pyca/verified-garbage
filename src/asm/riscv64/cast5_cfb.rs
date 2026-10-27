@@ -19,7 +19,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"addi t0, a1, 0
+        r".option push
+.option arch, +m
+addi t0, a1, 0
 addi a1, a2, 0
 addi a2, a3, 0
 addi a3, a4, 0
@@ -1010,7 +1012,8 @@ addi t2, t2, -1
 bnez t2, 233b
 addi sp, sp, 128
 21:
-ret",
+ret
+.option pop",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
@@ -1032,7 +1035,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"addi t0, a1, 0
+        r".option push
+.option arch, +m
+addi t0, a1, 0
 addi a1, a2, 0
 addi a2, a3, 0
 addi a3, a4, 0
@@ -2023,7 +2028,8 @@ addi t2, t2, -1
 bnez t2, 233b
 addi sp, sp, 128
 21:
-ret",
+ret
+.option pop",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
