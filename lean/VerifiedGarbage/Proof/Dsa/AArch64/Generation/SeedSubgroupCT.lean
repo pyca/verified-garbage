@@ -23,11 +23,11 @@ theorem seedArguments_ct (qLen : Nat) (hlen : qLen = 20 ∨ qLen = 32) :
     exact two_post (two_taint [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide))
       (fun _ _ h => seedArguments_ready h)
 
-theorem seedSubgroup_ct (H : GenerationHashes) (M : Mont) (K : Kernel)
+theorem seedSubgroup_ct (H : GenerationHashes) (M : Mont) (T : PrimeTest)
     (qLen : Nat) (hlen : qLen = 20 ∨ qLen = 32) :
     RelCT isa (Two (SeedBefore qLen))
-      (.seq (.block (seedArguments qLen)) (subgroup H.sha1 H.sha256 M.mm K.run qLen)) (fun _ _ => True) :=
+      (.seq (.block (seedArguments qLen)) (subgroup H.sha1 H.sha256 T.run qLen)) (fun _ _ => True) :=
   RelCT.seq (seedArguments_ct qLen hlen)
-    (two_map SeedPublic.subgroup (fun _ _ h => seedPrepared_subgroup h) (subgroup_ct H M K qLen hlen))
+    (two_map SeedPublic.subgroup (fun _ _ h => seedPrepared_subgroup h) (subgroup_ct H M T qLen hlen))
 
 end VG.Proof.Dsa.AArch64.Generation

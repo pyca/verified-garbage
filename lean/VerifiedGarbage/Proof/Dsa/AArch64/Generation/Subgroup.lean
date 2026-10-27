@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SubgroupState
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Subgroup
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTest
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeResult
@@ -29,9 +30,9 @@ theorem subgroup_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
     (he256 : ∀ x, Spec.Mgf1.sha256.hash x = h256.SH.H.hash x)
     (hs1 : ∀ x, (Spec.Mgf1.sha1.hash x).length = G1.D)
     (hs256 : ∀ x, (Spec.Mgf1.sha256.hash x).length = G256.D)
-    (hd1 : G1.D = 20) (hd256 : G256.D = 32) (M : Mont) (K : Kernel)
+    (hd1 : G1.D = 20) (hd256 : G256.D = 32) (M : Mont) (T : PrimeTest)
     {p : SubgroupPlan} {used : Nat} {s : State} (h : SubgroupState p used s) :
-    WP isa (Impl.Dsa.AArch64.Generation.subgroup G1 G256 M.mm K.run p.prime.len) s fun t =>
+    WP isa (Impl.Dsa.AArch64.Generation.subgroup G1 G256 T.run p.prime.len) s fun t =>
       let res := Spec.Dsa.probablePrime p.prime.N (p.prime.rand.drop used)
       ∃ used' status V', used' ≤ p.prime.rand.length ∧
         Lay t p.F p.hash ∧
@@ -80,13 +81,13 @@ theorem subgroup_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
   have hchecks : p.prime.checks = Spec.Dsa.primeChecks (Spec.Dsa.bitLength p.prime.N) := by
     rw [p.checks, p.bits]
     rcases p.width with hh | hh <;> rw [hh] <;> decide
-  have hcode : Impl.Dsa.AArch64.Generation.checkPrime M.mm K.run 4 Impl.Dsa.Generation.Layout.q
+  have hcode : Impl.Dsa.AArch64.Generation.checkPrime M.mm T.run 4 Impl.Dsa.Generation.Layout.q
       p.prime.len (if p.prime.len = 20 then 24 else 32) 64 =
-      Impl.Dsa.AArch64.Generation.checkPrime M.mm K.run p.prime.w Impl.Dsa.Generation.Layout.q
+      Impl.Dsa.AArch64.Generation.checkPrime M.mm T.run p.prime.w Impl.Dsa.Generation.Layout.q
         p.prime.len p.prime.drawBytes p.prime.checks := by
     rw [p.words, p.draw, p.checks]
   rw [hcode]
-  refine WP.seq (WP.mono (checkPrime_ok M K (h.scratch.congr (kv.wr.trans uwr)) hdi
+  refine WP.seq (WP.mono (checkPrime_ok M T (h.scratch.congr (kv.wr.trans uwr)) hdi
     (by decide : Impl.Dsa.Generation.Layout.q < 2 ^ 16) (by rw [p.checks]; decide)
     (kv.sp.trans Lu.sp)
     (fun k hk => by rw [kv.rd, kv.wr]; exact Lu.ld (d := 8 * k) (n := 8) (by unfold frameBytes; omega))

@@ -26,7 +26,7 @@ theorem searchBody_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash} {p : SearchPlan}
     (hG : Calls.StreamOK (if p.attempt.construct.hash.len = 20 then G1 else G256).stream)
     {H : Spec.Mgf1.Hash} (hHh : ∀ x, H.hash x = hG.SH.H.hash x)
     (hsize : ∀ bytes, (H.hash bytes).length = (if p.attempt.construct.hash.len = 20 then G1 else G256).D)
-    (M : Mont) (K : Kernel)
+    (M : Mont) (T : PrimeTest)
     (hd : (if p.attempt.construct.hash.len = 20 then G1 else G256).D = p.attempt.construct.hash.len)
     (hhash : ∀ bs, H.hash bs = Spec.Dsa.seedHash (8 * p.attempt.construct.hash.len) bs)
     (hseedsize : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * p.attempt.construct.hash.len) bs).length = 8 * p.attempt.construct.hash.len)
@@ -34,7 +34,7 @@ theorem searchBody_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash} {p : SearchPlan}
     (ctrl : SearchControl p.C counter (p.attempt.construct.hash.count + 1) s)
     (hc : counter < 32 * p.attempt.construct.len)
     (hused : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.attempt.rand.length) :
-    WP isa (Impl.Dsa.AArch64.Generation.pAttempt G1 G256 M.mm K.run
+    WP isa (Impl.Dsa.AArch64.Generation.pAttempt G1 G256 T.run
       p.attempt.construct.len p.attempt.construct.hash.len) s fun t =>
       SearchControl p.C counter (p.attempt.construct.hash.count + 1) t ∧
       ∃ (W' : Nat → BitVec 64) (used' : Nat) (status : BitVec 64),
@@ -67,7 +67,7 @@ theorem searchBody_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash} {p : SearchPlan}
       HashPlan.reframe, PPrimalityPlan.changed, PPrimalityPlan.testWrites, PConstructPlan.changed, HashPlan.changed]
     simp only [attemptWords, upd, ite_false, show ¬ (5 : Nat) = 25 by decide,
       show ¬ (5 : Nat) = 2 by decide, show ¬ (5 : Nat) = 0 by decide, h5]
-  refine WP.mono (pAttempt_ok (p := call) hG hHh hsize M K hd (h.entry offset carry H)
+  refine WP.mono (pAttempt_ok (p := call) hG hHh hsize M T hd (h.entry offset carry H)
     ctrl rfl (by rw [cw5]; exact p.controlBase) hhash hseedsize
     (by simpa [call, SearchMemory.attemptPlan, PPrimalityPlan.reframe, PConstructPlan.reframe,
       HashPlan.reframe, attemptWords, upd] using hused) hu h.tape

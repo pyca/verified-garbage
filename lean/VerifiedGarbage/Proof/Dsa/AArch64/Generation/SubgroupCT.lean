@@ -47,15 +47,15 @@ theorem subgroupWorkspace_ct (len : Nat) :
       p.plan.draw.trans (by rw [hu.2]), p.plan.checks⟩
   exact ⟨p.call, convert s hs, convert t ht, hsp⟩
 
-theorem subgroup_ct (H : GenerationHashes) (M : Mont) (K : Kernel)
+theorem subgroup_ct (H : GenerationHashes) (M : Mont) (T : PrimeTest)
     (len : Nat) (hlen : len = 20 ∨ len = 32) :
-    RelCT isa (Two (SubgroupSized len)) (subgroup H.sha1 H.sha256 M.mm K.run len)
+    RelCT isa (Two (SubgroupSized len)) (subgroup H.sha1 H.sha256 T.run len)
       (fun _ _ => True) := by
   unfold subgroup
   simp only [seqs]
   refine RelCT.seq (subgroupCandidate_ct H len)
     (RelCT.seq (subgroupWorkspace_ct len) ?_)
-  apply primeCall_ct M K
+  apply primeCall_ct M T
   rcases hlen with rfl | rfl
   · exact Or.inl ⟨rfl, rfl, rfl, rfl, rfl⟩
   · exact Or.inr (Or.inl ⟨rfl, rfl, rfl, rfl, rfl⟩)

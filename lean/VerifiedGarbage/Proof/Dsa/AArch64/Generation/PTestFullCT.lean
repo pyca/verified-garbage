@@ -37,9 +37,9 @@ theorem pTestFull_ready {len : Nat} {p : PTestFullPublic} {s : State}
     h.1.1.source.congrK (fun _ _ => by rw [hm]) hk,
     (fun i hi => by rw [hk.wr]; exact h.1.1.writable i hi), h.1.1.usedBound⟩
 
-theorem pTest_full_ct (M : Mont) (K : Kernel) (len : Nat)
+theorem pTest_full_ct (M : Mont) (T : PrimeTest) (len : Nat)
     (hlen : len = 128 ∨ len = 256 ∨ len = 384) :
-    RelCT isa (Two (PTestFullBefore len)) (pTest M.mm K.run len) (fun _ _ => True) := by
+    RelCT isa (Two (PTestFullBefore len)) (pTest T.run len) (fun _ _ => True) := by
   unfold pTest
   refine RelCT.seq (two_post ((two_map PTestFullPublic.width (fun _ _ h => h.2) candidateWidth_ct).mono
     (fun _ _ h => h) (fun _ _ _ => True.intro)) (fun _ _ h => pTestFull_ready h)) ?_
@@ -48,7 +48,7 @@ theorem pTest_full_ct (M : Mont) (K : Kernel) (len : Nat)
     rintro s t ⟨p, hs, _, _⟩
     cases Option.some.inj (hs.1.2.symm.trans hs.2)
   · apply two_map PTestFullPublic.call (fun _ _ h => h.1.1)
-    apply primeCall_ct M K
+    apply primeCall_ct M T
     rcases hlen with rfl | rfl | rfl
     · exact Or.inr (Or.inr (Or.inl ⟨rfl, rfl, rfl, rfl, rfl⟩))
     · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨rfl, rfl, rfl, rfl, rfl⟩)))

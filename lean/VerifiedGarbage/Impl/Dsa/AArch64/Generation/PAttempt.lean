@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PConstruct
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateWidth
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Search
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeCall
 
 /-! A p-search iteration constructs, checks width, and tests the candidate natively. -/
 @[expose] public section
@@ -22,21 +23,16 @@ def controlBase : List Instr :=
 
 def searchReturn : List Instr := controlBase ++ [.ldrSp .x3 152, sth .x3 2]
 
-def pTest (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) (pLen : Nat) : Prog isa :=
-  .seq (.block candidateWidth)
-    (.ite (.zero .x .x3) (.block (stackStatus 3))
-      (.seq (checkPrime mul roundCode (pLen / 8) VG.Impl.Dsa.Generation.Layout.p pLen pLen
-        (if pLen ≤ 256 then 64 else 128)) (.block primeResult)))
+def pTest (prime : Nat → Prog isa) (pLen : Nat) : Prog isa :=
+  .seq (.block candidateWidth) (.ite (.zero .x .x3) (.block (stackStatus 3)) (primeCall prime (8 * pLen)))
 
-def pAttempt (G1 G256 : Hash) (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa))
-    (pLen qLen : Nat) : Prog isa :=
+def pAttempt (G1 G256 : Hash) (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (.block pAttemptArgs)
-    (.seq (.seq (pConstruct (if qLen = 20 then G1 else G256) pLen qLen) (pTest mul roundCode pLen))
+    (.seq (.seq (pConstruct (if qLen = 20 then G1 else G256) pLen qLen) (pTest prime pLen))
       (.block searchReturn))
 
-def primeSearch (G1 G256 : Hash) (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa))
-    (pLen qLen : Nat) : Prog isa :=
+def primeSearch (G1 G256 : Hash) (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (.block controlBase)
-    (pSearch (pAttempt G1 G256 mul roundCode pLen qLen) (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1))
+    (pSearch (pAttempt G1 G256 prime pLen qLen) (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1))
 
 end VG.Impl.Dsa.AArch64.Generation
