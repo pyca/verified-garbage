@@ -18,19 +18,23 @@ registers, and restores `r28` after them.
 
 `dirCore d`: Camellia's core for the modes, its subkeys in the order of the
 direction `d`: encryption's for CBC encryption, OFB and CFB, decryption's
-for CBC decryption. It inlines the bodies of ECB's two halves
-(`Prepared.lean`): `prepare` runs `vg_camellia_prepare_keys`'s, which sets
-the masks and builds the table of bitsliced subkeys, once; `crypt` runs
-`vg_camellia_crypt_prepared`'s, which transforms the eight blocks of the
-tail buffer in place, of which the modes use the first (they take one step
-at a time).
+for CBC decryption. `prepare` inlines the body of `vg_camellia_prepare_keys`
+(`Prepared.lean`), which sets the masks and builds the table of bitsliced
+subkeys, once; `crypt` calls `vg_camellia_crypt_prepared`, which transforms
+the eight blocks of the tail buffer in place, of which the modes use the
+first (they take one step at a time).
 
-Both bodies use every callee-saved register, which they save in their
-working space and restore. The values the core must keep public (the modes'
-state in `r29`–`r31`, the schedule's address in `r3`, the number of rounds
-and the scratch buffer's address) wait meanwhile in registers the bodies do
-not write (`r0`, `r5`, `r6`, `r9`–`r12`), so that none of them passes through
-memory; `crypt_prepared`'s body leaves the working space's address in `r8`.
+Both functions use every callee-saved register, which they save in their
+working space and restore. The body of `vg_camellia_prepare_keys` stores
+through a pointer that the analysis of constant time cannot place, after
+which it knows nothing of the working space: so while it runs, the values
+the core must keep public (the modes' state in `r29`–`r31`, the schedule's
+address in `r3`, the number of rounds and the scratch buffer's address)
+wait in registers the body does not write (`r0`, `r5`, `r6`, `r9`–`r12`),
+so that none of them passes through memory. Around the call,
+`vg_camellia_crypt_prepared` keeps `r28`–`r31` in its working space, whose
+slots the analysis follows, and writes neither `r6` nor `r10`, which keep
+the scratch buffer's address and `r3`.
 
 The core's slots are the functions' 414 (`slots`), the modes' six after
 them, `wrap`'s one, and one more for alignment: 422 in all
@@ -67,19 +71,16 @@ def prepareCore (d : Dir) : Prog isa :=
     (.seq prepareKeys
       (.block [mov .r5 .r6, mov .r3 .r12, mov .r28 .r0, mov .r29 .r9, mov .r30 .r10, mov .r31 .r11]))
 
-/-- `vg_camellia_crypt_prepared`'s body (rounds = r3, ws = r4), the modes'
-state and `r3` kept in `r6` and `r10`–`r12`, the number of rounds in `r5`,
-and `sb` in `r8`. -/
-def cryptCore : Prog isa :=
-  .seq (.block [mov .r12 .r3, mov .r3 .r28, mov .r4 .r5, mov .r5 .r28, mov .r6 .r29, mov .r10 .r30,
-      mov .r11 .r31])
-    (.seq cryptPrepared
-      (.block [mov .r28 .r5, mov .r5 .r8, mov .r3 .r12, mov .r29 .r6, mov .r30 .r10, mov .r31 .r11]))
+/-- A call of `vg_camellia_crypt_prepared(r28, sb, slots)`, `r3` kept in `r10`
+and `sb` in `r6`, which the function does not write. -/
+def cryptCall : Prog isa :=
+  .seq (.block [mov .r10 .r3, mov .r6 .r5, mov .r3 .r28, mov .r4 .r5, .li .r5 slots])
+    (.seq (.call (Spec.Camellia.Prepared.cryptApi layout).name cryptPrepared) (.block [mov .r5 .r6, mov .r3 .r10]))
 
 /-- Camellia's core for the modes, in the direction `d`. -/
 def dirCore (d : Dir) : Modes.PPC64LE.Core where
   prepare := prepareCore d
-  crypt := cryptCore
+  crypt := cryptCall
   slots := slots
   total := modeSlots
   buf := tailSlot
