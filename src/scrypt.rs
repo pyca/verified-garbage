@@ -12,11 +12,10 @@
 //! `vg_scrypt_sha2` with the SHA-256 instructions.
 //!
 //! ROMix (contract `VG.Spec.Scrypt.roMixContract`) calls the verified
-//! `vg_scrypt_blockmix`, which computes Salsa20/8 itself on x86-64 and
-//! AArch64 and calls `vg_salsa20_8` on the other architectures. This module
-//! only checks the parameters and allocates the memory scrypt works in
-//! (and, for [`verify`], compares the derived key
-//! with the expected one).
+//! `vg_scrypt_blockmix`, which calls `vg_salsa20_8` or computes Salsa20/8
+//! itself, depending on the target. This module only checks the parameters
+//! and allocates the memory scrypt works in (and, for [`verify`], compares
+//! the derived key with the expected one).
 //!
 //! scryptROMix reads its table `V` at indices derived from the password, so
 //! its memory accesses (and hence its timing, through the caches) depend on
@@ -367,7 +366,7 @@ mod derive_tests {
 }
 
 #[cfg(all(test, target_arch = "aarch64"))]
-mod blockmix_tests {
+mod romix_tests {
     /// Independent scalar transcription of RFC 7914 sections 3 and 4. Odd
     /// block sizes exercise the even/odd output partition beyond RFC vectors.
     fn reference(input: &[[u8; 128]]) -> alloc::vec::Vec<[u8; 128]> {
@@ -422,49 +421,6 @@ mod blockmix_tests {
         out
     }
 
-    #[test]
-    fn blockmix_matches_scalar() {
-        let mut seed = 0x5c12_7971_44a0_e987u64;
-        for r in [1, 2, 3, 8, 13, 17, 32] {
-            for pattern in 0..32 {
-                let mut input = alloc::vec![[0u8; 128]; r];
-                for b in input.as_flattened_mut() {
-                    seed ^= seed << 13;
-                    seed ^= seed >> 7;
-                    seed ^= seed << 17;
-                    *b = match pattern {
-                        0 => 0,
-                        1 => 255,
-                        _ => seed as u8,
-                    };
-                }
-                let before = input.clone();
-                let mut output = alloc::vec![[0xa5; 128]; r + 2];
-                let mut scratch = [[0x5a5a_5a5au32; 32]; 3];
-                // The contract admits disjoint buffers of r 128-byte chunks
-                // and one 128-byte scratch array, with positive r.
-                unsafe {
-                    crate::arch::scrypt::vg_scrypt_blockmix(
-                        input.as_ptr(),
-                        r,
-                        output[1..].as_mut_ptr(),
-                        r,
-                        &mut scratch[1],
-                    );
-                }
-                assert_eq!(
-                    output[1..r + 1],
-                    reference(&input),
-                    "r={r} pattern={pattern}"
-                );
-                assert_eq!(input, before);
-                assert_eq!(output[0], [0xa5; 128]);
-                assert_eq!(output[r + 1], [0xa5; 128]);
-                assert_eq!(scratch[0], [0x5a5a_5a5a; 32]);
-                assert_eq!(scratch[2], [0x5a5a_5a5a; 32]);
-            }
-        }
-    }
     #[test]
     fn romix_matches_scalar() {
         let n = 16;
