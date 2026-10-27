@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
+public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
 import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateSafety
 public import VerifiedGarbage.TCB.Emit
@@ -12,30 +13,34 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
 public import VerifiedGarbage.Spec.Dsa.Derive
 
-/-! # Register one shared domain checker per generation arithmetic backend -/
+/-! # The domain checker parameter generation calls
+
+Generation's own arithmetic (the generator search and this check) is a few
+public exponentiations, against the many Miller–Rabin rounds its
+probable-prime calls run: it multiplies with the baseline round's inlined
+Montgomery multiplication on every backend, so one checker serves them all. -/
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation.SharedChecker
 open VG VG.X86_64 VG.Proof.MillerRabin.X86_64
 
-def suffix (v : RoundImpl) : String :=
-  Emit.qualifiedName "" [("mr", v.suffix)]
+/-- The Montgomery multiplication generation's own arithmetic uses. -/
+abbrev arith : RoundImpl := Proof.Variants.MillerRabin.X86_64.Base.variant
 
-def name (v : RoundImpl) : String := Spec.Dsa.generationCheckApi.name ++ suffix v
+def name : String := Spec.Dsa.generationCheckApi.name
 
-def code (v : RoundImpl) : Prog isa :=
-  Impl.Dsa.X86_64.Generate.checkParameters v.inlineMont.toS.mm v.inlineMont.mm
+def code : Prog isa :=
+  Impl.Dsa.X86_64.Generate.checkParameters arith.inlineMont.toS.mm arith.inlineMont.mm
 
-theorem safe (v : RoundImpl) : generationSafe (code v) :=
-  checkParameters_safe _ _ (v.inlineSafe _ _ _) v.inlineSafe
+theorem safe : generationSafe code :=
+  checkParameters_safe _ _ (arith.inlineSafe _ _ _) arith.inlineSafe
 
-theorem verified (v : RoundImpl) :
-    Verified target (code v) (Spec.Dsa.checkParametersContract abi) :=
+theorem verified : Verified target code (Spec.Dsa.checkParametersContract abi) :=
   parameters_verified _ _ (by
     rw [Code.allInstrs_eq]
     apply List.all_eq_true.mpr
     intro i hi
-    have h := (safe v)
+    have h := safe
     rw [generationSafe, Code.allInstrs_eq] at h
     have h := (Bool.and_eq_true _ _).mp (List.all_eq_true.mp h i hi)
     exact h.1)

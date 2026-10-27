@@ -17,8 +17,8 @@ def artifacts (h : Proof.Pbkdf2.Md.X86_64.MdHash) (v : RoundImpl) : List Artifac
     [(Spec.Dsa.GenerationSized.api 128).artifact X86_64.target {
       suffix := Emit.qualifiedName "" [("sha1", h.suffix), ("mr", v.suffix)]
       stack := 536
-      code := Impl.Dsa.X86_64.Generation.Sized.single (checkName := VG.Proof.Dsa.X86_64.Generation.SharedChecker.name v) 128 h.H.stream
-        v.inlineMont.toS.mm v.inlineMont.mm (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run
+      code := Impl.Dsa.X86_64.Generation.Sized.single (checkName := VG.Proof.Dsa.X86_64.Generation.SharedChecker.name) 128 h.H.stream
+        VG.Proof.Dsa.X86_64.Generation.SharedChecker.arith.inlineMont.toS.mm VG.Proof.Dsa.X86_64.Generation.SharedChecker.arith.inlineMont.mm (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run
       verified := sha1_verified h v hh
       spSafe := sha1_safe h v
       features := features }]
@@ -28,8 +28,8 @@ def artifacts (h : Proof.Pbkdf2.Md.X86_64.MdHash) (v : RoundImpl) : List Artifac
       (Spec.Dsa.GenerationSized.api p.val).artifact X86_64.target {
         suffix := Emit.qualifiedName "" [("sha256", h.suffix), ("mr", v.suffix)]
         stack := 536
-        code := Impl.Dsa.X86_64.Generation.Sized.single (checkName := VG.Proof.Dsa.X86_64.Generation.SharedChecker.name v) p.val h.H.stream
-          v.inlineMont.toS.mm v.inlineMont.mm (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run
+        code := Impl.Dsa.X86_64.Generation.Sized.single (checkName := VG.Proof.Dsa.X86_64.Generation.SharedChecker.name) p.val h.H.stream
+          VG.Proof.Dsa.X86_64.Generation.SharedChecker.arith.inlineMont.toS.mm VG.Proof.Dsa.X86_64.Generation.SharedChecker.arith.inlineMont.mm (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run
         verified := sha256_verified h v hh p.val hp
         spSafe := sha256_safe h v p.val hp
         features := features }
